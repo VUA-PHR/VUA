@@ -46,6 +46,15 @@
 | 插件 | 产品边界、插件协议、安全 ADR | 示例与兼容性测试 |
 | 旧资产迁移 | [迁移台账](migration/asset-ledger.md) | 仅被台账点名的旧文件和提交 |
 
+## 当前架构入口
+
+- [系统架构](architecture/system.md)
+- [Electron 桌面与表现层](architecture/desktop.md)
+- [Rust Orchestrator](architecture/orchestrator.md)
+- [BDB Local](architecture/bdb-local.md)
+- [AMF 与 Unity Bridge](architecture/amf-unity.md)
+- [第三方集成、插件与 Overlay](architecture/integrations-and-overlays.md)
+
 ## 文档规则
 
 - 一个事实只有一个规范归属；摘要通过链接引用，不复制完整定义。
