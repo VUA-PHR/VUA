@@ -1,0 +1,51 @@
+# Local migration and reference material
+/_migration/
+/_references/
+/_local_*/
+
+# Credentials and user data
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+*.key
+*.cookie
+*.cookies
+*.sqlite
+*.sqlite3
+*.db
+*.log
+
+# Paid or imported Unity assets
+*.unitypackage
+*.blend1
+
+# JavaScript / Electron
+node_modules/
+.pnpm-store/
+.vite/
+dist/
+out/
+coverage/
+
+# Rust
+target/
+
+# Unity generated state
+**/[Ll]ibrary/
+**/[Tt]emp/
+**/[Oo]bj/
+**/[Ll]ogs/
+**/[Uu]ser[Ss]ettings/
+**/[Mm]emoryCaptures/
+
+# Editors and operating systems
+.idea/
+.vs/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.example.json
+.DS_Store
+Thumbs.db
+Desktop.ini
