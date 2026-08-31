@@ -25,8 +25,8 @@
 | VUA 调研文档 | 归档 | 只有新决策明确引用的事实另行重查 | 竞品结论、旧产品建议、阶段性研究摘要 | 无 | 待归档 |
 | VUA 架构与 ADR | 按模块重写 | 仍成立的约束、失败经验和验收条件 | 旧仓拓扑、Tauri、云端 BDB 和已失效产品边界 | 新模块所有者审议 | 已整合 |
 | `GLM/orchestrator` | 重点提取 | Rust 核心、状态机、恢复/幂等逻辑、适配器端口、测试与固定向量 | Tauri 绑定、旧目录、旧 IPC、未经验证的文档结论 | 137 项自动测试通过；Clippy 通过；Electron IPC 与 CI 待后续切片 | 已提取 |
-| `kimi/docs-art-v04-dual-track` | 参考 | React 交互、可访问性测试、Design Token、组件与状态模式 | Tauri 壳、Tauri IPC/CSP/权限、旧路由与产品文案 | 在 Electron 垂直切片中重新实现并测试 | 待参考化 |
-| 美术风格与 UI/UX | 参考 | 可复用视觉语言、Token 候选、键盘与可访问性原则 | 未经产品页面验证的强制规则 | 新 Electron 原型验证 | 待参考化 |
+| `kimi/docs-art-v04-dual-track` | 参考 | React 交互、可访问性测试、Design Token、组件与状态模式 | Tauri 壳、Tauri IPC/CSP/权限、旧路由与产品文案 | 在 Electron 垂直切片中重新实现并测试 | 已参考化 |
+| 美术风格与 UI/UX | 参考 | 可复用视觉语言、Token 候选、键盘与可访问性原则 | 未经产品页面验证的强制规则 | 新 Electron 原型验证 | 已参考化 |
 | Unity Bridge | 迁移 | C# Package、版本化命令、Schema、EditMode/集成测试和已验证操作 | 付费素材、用户项目、临时场景、机器绝对路径 | 合成夹具测试；Unity 2022 本地验证；新协议审查 | 待提取 |
 
 ## 单项迁移记录模板
