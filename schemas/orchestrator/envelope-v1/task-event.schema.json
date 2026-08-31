@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.local/schemas/orchestrator/envelope-v1/task-event.schema.json",
+  "title": "TaskEventV1",
+  "description": "Low-frequency task lifecycle event (ORC-IPC-003, ORC-STA-003..005). Revision is monotonic per task.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "taskId",
+    "revision",
+    "occurredAt",
+    "correlationId",
+    "kind",
+    "state",
+    "payload"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "taskId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["accepted", "state_changed", "progress", "cancel_requested", "completed"]
+    },
+    "state": { "$ref": "task-state.schema.json" },
+    "payload": {}
+  }
+}

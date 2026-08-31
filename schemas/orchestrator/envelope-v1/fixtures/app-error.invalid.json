@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "code": "vua.demo.invalid",
+  "category": "totally_unknown_category",
+  "messageKey": "errors.demo.invalid",
+  "recoverable": false,
+  "retryable": false,
+  "correlationId": "01J8ZQ4M7KX5R3T9W2Y6A8BCDF"
+}

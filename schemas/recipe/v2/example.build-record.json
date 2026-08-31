@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "buildId": "019e0000-0000-7000-8000-000000000200",
+  "recipeId": "019e0000-0000-7000-8000-000000000001",
+  "recipeRevision": 3,
+  "startedAt": "2026-08-29T08:40:00Z",
+  "finishedAt": "2026-08-29T08:42:30Z",
+  "status": "succeeded",
+  "inputs": {
+    "recipeDigest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "lockedDigest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+    "localResolutionDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "planDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "snapshotId": "019e0000-0000-7000-8000-000000000201"
+  },
+  "tools": {
+    "vuaVersion": "0.4.0-dev",
+    "orchestratorVersion": "0.1.0-dev",
+    "unityBridgeVersion": "1.0.0",
+    "unityVersion": "2022.3.22f1"
+  },
+  "steps": [
+    {
+      "stepId": "resolve.inputs",
+      "kind": "recipe.resolve",
+      "status": "succeeded",
+      "startedAt": "2026-08-29T08:40:00Z",
+      "finishedAt": "2026-08-29T08:40:10Z"
+    },
+    {
+      "stepId": "assemble.avatar",
+      "kind": "assembly.apply",
+      "status": "succeeded",
+      "startedAt": "2026-08-29T08:40:10Z",
+      "finishedAt": "2026-08-29T08:42:00Z"
+    },
+    {
+      "stepId": "inspect.avatar",
+      "kind": "inspection.run",
+      "status": "succeeded",
+      "startedAt": "2026-08-29T08:42:00Z",
+      "finishedAt": "2026-08-29T08:42:30Z"
+    }
+  ],
+  "output": {
+    "sceneAssetGuid": "33333333333333333333333333333333",
+    "avatarObjectId": "GlobalObjectId_V1-2-33333333333333333333333333333333-100100000-0",
+    "semanticFingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "inspectionStatus": "passed"
+  }
+}

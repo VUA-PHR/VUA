@@ -1,0 +1,219 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.dev/schemas/recipe/v2/build-record.schema.json",
+  "title": "VUA Avatar Build Record v1",
+  "description": "Private evidence for one Orchestrator build. It records what ran without becoming desired state.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "buildId",
+    "recipeId",
+    "recipeRevision",
+    "startedAt",
+    "finishedAt",
+    "status",
+    "inputs",
+    "tools",
+    "steps",
+    "output"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "buildId": {
+      "$ref": "#/$defs/uuidV7"
+    },
+    "recipeId": {
+      "$ref": "#/$defs/uuidV7"
+    },
+    "recipeRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "startedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "finishedAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "rolled_back"
+      ]
+    },
+    "inputs": {
+      "$ref": "#/$defs/inputs"
+    },
+    "tools": {
+      "$ref": "#/$defs/tools"
+    },
+    "steps": {
+      "type": "array",
+      "maxItems": 4096,
+      "items": {
+        "$ref": "#/$defs/step"
+      }
+    },
+    "output": {
+      "$ref": "#/$defs/output"
+    }
+  },
+  "$defs": {
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "unityGuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeDigest",
+        "localResolutionDigest",
+        "planDigest"
+      ],
+      "properties": {
+        "recipeDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "lockedDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "localResolutionDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "planDigest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "snapshotId": {
+          "$ref": "#/$defs/uuidV7"
+        }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "vuaVersion",
+        "orchestratorVersion",
+        "unityBridgeVersion",
+        "unityVersion"
+      ],
+      "properties": {
+        "vuaVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "orchestratorVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "unityBridgeVersion": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "unityVersion": {
+          "type": "string",
+          "pattern": "^20[0-9]{2}\\.[0-9]+\\.[0-9]+[abfp][0-9]+$"
+        }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "stepId",
+        "kind",
+        "status",
+        "startedAt",
+        "finishedAt"
+      ],
+      "properties": {
+        "stepId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+        },
+        "kind": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "warning",
+            "failed",
+            "cancelled",
+            "skipped",
+            "rolled_back"
+          ]
+        },
+        "startedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "finishedAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "issueCodes": {
+          "type": "array",
+          "maxItems": 64,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sceneAssetGuid",
+        "avatarObjectId",
+        "semanticFingerprint",
+        "inspectionStatus"
+      ],
+      "properties": {
+        "sceneAssetGuid": {
+          "$ref": "#/$defs/unityGuid"
+        },
+        "avatarObjectId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 512
+        },
+        "semanticFingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "inspectionStatus": {
+          "enum": [
+            "passed",
+            "passed_with_warnings",
+            "failed",
+            "not_run"
+          ]
+        }
+      }
+    }
+  }
+}

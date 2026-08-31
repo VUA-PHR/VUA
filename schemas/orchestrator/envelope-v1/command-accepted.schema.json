@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.local/schemas/orchestrator/envelope-v1/command-accepted.schema.json",
+  "title": "CommandAcceptedV1",
+  "description": "Returned after a task-carrying command is durably accepted (ORC-IPC-008, ORC-STA-006).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "taskId", "acceptedRevision", "initialState"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "taskId": { "type": "string", "minLength": 1 },
+    "acceptedRevision": { "type": "integer", "minimum": 1 },
+    "initialState": { "$ref": "task-state.schema.json" }
+  }
+}

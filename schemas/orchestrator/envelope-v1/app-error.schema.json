@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.local/schemas/orchestrator/envelope-v1/app-error.schema.json",
+  "title": "AppErrorV1",
+  "description": "Unified error envelope (ORC-ERR-001..005). User text resolves via messageKey + params.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "code",
+    "category",
+    "messageKey",
+    "recoverable",
+    "retryable",
+    "correlationId"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "code": { "type": "string", "minLength": 1, "description": "Stable, searchable error code owned by its module." },
+    "category": {
+      "type": "string",
+      "enum": [
+        "validation",
+        "conflict",
+        "permission",
+        "dependency",
+        "unavailable",
+        "timeout",
+        "cancelled",
+        "external_failure",
+        "internal"
+      ]
+    },
+    "messageKey": { "type": "string", "minLength": 1 },
+    "params": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/paramValue" }
+    },
+    "recoverable": { "type": "boolean" },
+    "retryable": { "type": "boolean" },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "fieldPath": { "type": "string" },
+    "redactedContext": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/paramValue" }
+    }
+  },
+  "$defs": {
+    "paramValue": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "number" },
+        { "type": "boolean" }
+      ]
+    }
+  }
+}

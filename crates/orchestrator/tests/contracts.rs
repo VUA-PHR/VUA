@@ -1,0 +1,186 @@
+//! Envelope contract tests (E-S0, ORC-TYP-005, ORC-IPC-010).
+//!
+//! The Rust side and the TypeScript side (packages/contracts) both consume the
+//! same fixtures from `schemas/orchestrator/envelope-v1/fixtures`. Changing an
+//! envelope shape without updating schema, fixtures and both consumers fails
+//! here first.
+
+use std::fs;
+use std::path::PathBuf;
+use vua_orchestrator::{
+    AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
+    TaskState, ENVELOPE_SCHEMA_VERSION,
+};
+
+fn envelope_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/orchestrator/envelope-v1")
+}
+
+fn read_json(relative: &str) -> serde_json::Value {
+    let bytes = fs::read(envelope_dir().join(relative)).expect("fixture/schema must exist");
+    serde_json::from_slice(&bytes).expect("fixture/schema must be valid JSON")
+}
+
+#[test]
+fn orc_typ_005_schema_documents_exist_and_pin_schema_version_one() {
+    for name in [
+        "app-error.schema.json",
+        "command-accepted.schema.json",
+        "task-event.schema.json",
+    ] {
+        let schema = read_json(name);
+        assert_eq!(schema["properties"]["schemaVersion"]["const"], 1, "{name}");
+    }
+    let states = read_json("task-state.schema.json")["enum"]
+        .as_array()
+        .expect("task states enum")
+        .clone();
+    assert_eq!(states.len(), 9);
+}
+
+#[test]
+fn orc_typ_005_valid_app_error_fixture_deserializes_and_roundtrips() {
+    let fixture = read_json("fixtures/app-error.valid.json");
+    let error: AppErrorV1 = serde_json::from_value(fixture.clone()).unwrap();
+    assert_eq!(error.schema_version, ENVELOPE_SCHEMA_VERSION);
+    assert_eq!(error.category, ErrorCategory::ExternalFailure);
+    assert!(error.recoverable);
+    assert_eq!(
+        error.params.as_ref().unwrap()["package"],
+        ParamValue::Text("com.example.toolkit".into())
+    );
+    assert_eq!(
+        error.params.as_ref().unwrap()["exitCode"],
+        ParamValue::Number(2.0)
+    );
+
+    let roundtrip: AppErrorV1 =
+        serde_json::from_value(serde_json::to_value(&error).unwrap()).unwrap();
+    assert_eq!(error, roundtrip);
+}
+
+#[test]
+fn orc_ipc_010_unknown_error_category_is_rejected() {
+    let fixture = read_json("fixtures/app-error.invalid.json");
+    let result = serde_json::from_value::<AppErrorV1>(fixture);
+    assert!(
+        result.is_err(),
+        "an unknown category must fail deserialization"
+    );
+}
+
+#[test]
+fn orc_typ_005_valid_command_accepted_fixture_deserializes() {
+    let fixture = read_json("fixtures/command-accepted.valid.json");
+    let accepted: CommandAcceptedV1 = serde_json::from_value(fixture).unwrap();
+    assert_eq!(accepted.accepted_revision, 1);
+    assert_eq!(accepted.initial_state, TaskState::Queued);
+}
+
+#[test]
+fn orc_typ_005_valid_task_event_fixture_deserializes() {
+    let fixture = read_json("fixtures/task-event.valid.json");
+    let event: TaskEventV1 = serde_json::from_value(fixture).unwrap();
+    assert_eq!(event.revision, 4);
+    assert_eq!(event.kind, TaskEventKind::StateChanged);
+    assert_eq!(event.state, TaskState::Running);
+    assert_eq!(event.payload["step"], "install_package");
+}
+
+/// 真 JSON Schema 校验（外部审阅 Fix 7 的补强）：fixtures 与提案示例
+/// 不只过 serde 反序列化，还要真的过一遍 schema 文档。H-IPC 把 bindings
+/// 也接上同一来源。
+#[test]
+fn orc_typ_005_fixtures_validate_against_the_actual_json_schemas(
+) -> Result<(), Box<dyn std::error::Error>> {
+    let dir = envelope_dir();
+    let error_schema = serde_json::from_value::<serde_json::Value>(
+        serde_json::from_slice::<serde_json::Value>(
+            &std::fs::read(dir.join("app-error.schema.json")).unwrap(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let accepted_schema = serde_json::from_value::<serde_json::Value>(
+        serde_json::from_slice::<serde_json::Value>(
+            &std::fs::read(dir.join("command-accepted.schema.json")).unwrap(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let event_schema = serde_json::from_value::<serde_json::Value>(
+        serde_json::from_slice::<serde_json::Value>(
+            &std::fs::read(dir.join("task-event.schema.json")).unwrap(),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+
+    // $id 是绝对 URI，$ref 指向同目录的 task-state.schema.json——注册进
+    // 本地 registry 解析，绝不允许校验器联网（CI 纪律）。
+    let state_schema = read_json("task-state.schema.json");
+    let registry = jsonschema::Registry::new()
+        .add(state_schema["$id"].as_str().unwrap(), state_schema.clone())?
+        .prepare()?;
+    let error_validator = jsonschema::options()
+        .with_registry(&registry)
+        .build(&error_schema)?;
+    let accepted_validator = jsonschema::options()
+        .with_registry(&registry)
+        .build(&accepted_schema)?;
+    let event_validator = jsonschema::options()
+        .with_registry(&registry)
+        .build(&event_schema)?;
+    let _ = (&error_validator, &accepted_validator, &event_validator);
+
+    let app_error = read_json("fixtures/app-error.valid.json");
+    assert!(error_validator.is_valid(&app_error));
+    let accepted = read_json("fixtures/command-accepted.valid.json");
+    assert!(accepted_validator.is_valid(&accepted));
+    let event = read_json("fixtures/task-event.valid.json");
+    assert!(event_validator.is_valid(&event));
+
+    // 无效 fixture 同样要被 schema 拒绝（与 serde 拒绝互相印证）。
+    let invalid = read_json("fixtures/app-error.invalid.json");
+    assert!(!error_validator.is_valid(&invalid));
+    Ok(())
+}
+
+/// Recipe v2 提案自带的示例文档要过提案自带的 schema（E-RECIPE 补强）。
+#[test]
+fn orc_typ_005_recipe_v2_example_validates_against_the_proposal_schema() {
+    let recipe_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/recipe/v2");
+    let schema_value: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(recipe_dir.join("recipe.schema.json")).unwrap())
+            .unwrap();
+    let validator = jsonschema::validator_for(&schema_value).unwrap();
+    let example: serde_json::Value =
+        serde_json::from_slice(&std::fs::read(recipe_dir.join("example.recipe.json")).unwrap())
+            .unwrap();
+    let errors: Vec<String> = validator
+        .iter_errors(&example)
+        .map(|error| format!("{}: {}", error.instance_path(), error))
+        .collect();
+    assert!(errors.is_empty(), "schema violations: {errors:?}");
+}
+
+#[test]
+fn orc_ipc_010_task_states_serialize_to_the_nine_stable_snake_case_names() {
+    let pairs = [
+        (TaskState::Queued, "queued"),
+        (TaskState::Preparing, "preparing"),
+        (TaskState::Running, "running"),
+        (TaskState::WaitingForInput, "waiting_for_input"),
+        (TaskState::Paused, "paused"),
+        (TaskState::Succeeded, "succeeded"),
+        (TaskState::SucceededWithWarnings, "succeeded_with_warnings"),
+        (TaskState::Failed, "failed"),
+        (TaskState::Cancelled, "cancelled"),
+    ];
+    for (state, name) in pairs {
+        let encoded = serde_json::to_value(state).unwrap();
+        assert_eq!(encoded, name);
+    }
+    assert!(TaskState::Failed.is_terminal());
+    assert!(!TaskState::Running.is_terminal());
+}

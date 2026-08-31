@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "taskId": "task-01J8ZQ4M7KX5R3T9W2Y6A8BCDE",
+  "revision": 4,
+  "occurredAt": "2026-08-30T12:34:56.789Z",
+  "correlationId": "01J8ZQ4M7KX5R3T9W2Y6A8BCDF",
+  "kind": "state_changed",
+  "state": "running",
+  "payload": { "step": "install_package", "index": 2 }
+}

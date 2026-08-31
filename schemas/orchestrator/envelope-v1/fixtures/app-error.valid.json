@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "code": "vua.vpm.install_failed",
+  "category": "external_failure",
+  "messageKey": "errors.vpm.installFailed",
+  "params": { "package": "com.example.toolkit", "exitCode": 2 },
+  "recoverable": true,
+  "retryable": false,
+  "correlationId": "01J8ZQ4M7KX5R3T9W2Y6A8BCDE",
+  "redactedContext": { "projectId": "proj-77" }
+}
