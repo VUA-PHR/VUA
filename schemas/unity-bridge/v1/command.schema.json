@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/unity-bridge/v1/command.schema.json",
+  "title": "VUA Unity bridge command v1",
+  "description": "Versioned AMF Production command sent to the VUA Unity middleware.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "commandId", "operation", "projectId", "dryRun", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "commandId": { "type": "string", "minLength": 1 },
+    "operation": {
+      "enum": [
+        "inspect_project",
+        "identify_assets",
+        "install_outfit",
+        "create_toggle",
+        "validate_avatar",
+        "analyze_performance"
+      ]
+    },
+    "projectId": { "type": "string", "minLength": 1 },
+    "dryRun": { "type": "boolean" },
+    "expectedProjectFingerprint": { "type": "string", "minLength": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "avatarGlobalObjectId": { "type": "string", "minLength": 1 },
+        "avatarArmatureGlobalObjectId": { "type": "string", "minLength": 1 },
+        "outfitGlobalObjectId": { "type": "string", "minLength": 1 },
+        "outfitArmatureGlobalObjectId": { "type": "string", "minLength": 1 },
+        "toggleName": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": [
+              "inspect_project",
+              "identify_assets",
+              "validate_avatar",
+              "analyze_performance"
+            ]
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "dryRun": { "const": true }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "identify_assets" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["avatarGlobalObjectId", "outfitGlobalObjectId"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "install_outfit" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "avatarArmatureGlobalObjectId",
+              "outfitGlobalObjectId",
+              "outfitArmatureGlobalObjectId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "create_toggle" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "outfitGlobalObjectId",
+              "toggleName"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "validate_avatar" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "outfitGlobalObjectId",
+              "outfitArmatureGlobalObjectId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "analyze_performance" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["avatarGlobalObjectId"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": ["install_outfit", "create_toggle"]
+          },
+          "dryRun": { "const": false }
+        },
+        "required": ["operation", "dryRun"]
+      },
+      "then": {
+        "required": ["expectedProjectFingerprint"]
+      }
+    }
+  ]
+}

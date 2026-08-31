@@ -1,0 +1,13 @@
+{
+  "name": "Vua.Editor",
+  "rootNamespace": "Vua.Editor",
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "nadena.dev.modular-avatar.core"
+  ],
+  "autoReferenced": true,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}

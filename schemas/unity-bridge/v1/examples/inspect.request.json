@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "commandId": "01K45VUA000000000000000001",
+  "operation": "inspect_project",
+  "projectId": "local-project-01",
+  "dryRun": true,
+  "payload": {}
+}

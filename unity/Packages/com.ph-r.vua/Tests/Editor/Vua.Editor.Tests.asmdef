@@ -1,0 +1,17 @@
+{
+  "name": "Vua.Editor.Tests",
+  "rootNamespace": "Vua.Editor.Bridge.Tests",
+  "includePlatforms": [
+    "Editor"
+  ],
+  "references": [
+    "Vua.Editor",
+    "nadena.dev.modular-avatar.core"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false,
+  "overrideReferences": false,
+  "noEngineReferences": false
+}

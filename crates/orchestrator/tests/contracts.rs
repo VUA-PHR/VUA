@@ -9,7 +9,7 @@ use std::fs;
 use std::path::PathBuf;
 use vua_orchestrator::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
-    TaskState, ENVELOPE_SCHEMA_VERSION,
+    TaskState, UnityOperation, ENVELOPE_SCHEMA_VERSION,
 };
 
 fn envelope_dir() -> PathBuf {
@@ -19,6 +19,10 @@ fn envelope_dir() -> PathBuf {
 fn read_json(relative: &str) -> serde_json::Value {
     let bytes = fs::read(envelope_dir().join(relative)).expect("fixture/schema must exist");
     serde_json::from_slice(&bytes).expect("fixture/schema must be valid JSON")
+}
+
+fn unity_bridge_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/unity-bridge/v1")
 }
 
 #[test]
@@ -162,6 +166,42 @@ fn orc_typ_005_recipe_v2_example_validates_against_the_proposal_schema() {
         .map(|error| format!("{}: {}", error.instance_path(), error))
         .collect();
     assert!(errors.is_empty(), "schema violations: {errors:?}");
+}
+
+#[test]
+fn orc_typ_005_unity_bridge_examples_and_operation_enum_stay_in_sync() {
+    let dir = unity_bridge_dir();
+    for (schema_name, example_name) in [
+        ("command.schema.json", "examples/inspect.request.json"),
+        ("result.schema.json", "examples/inspect.result.json"),
+    ] {
+        let schema: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(schema_name)).unwrap()).unwrap();
+        let example: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(example_name)).unwrap()).unwrap();
+        let validator = jsonschema::validator_for(&schema).unwrap();
+        let errors: Vec<String> = validator
+            .iter_errors(&example)
+            .map(|error| format!("{}: {}", error.instance_path(), error))
+            .collect();
+        assert!(errors.is_empty(), "{example_name}: {errors:?}");
+    }
+
+    let command_schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(dir.join("command.schema.json")).unwrap()).unwrap();
+    let schema_operations = command_schema["properties"]["operation"]["enum"]
+        .as_array()
+        .unwrap();
+    let rust_operations = [
+        UnityOperation::InspectProject,
+        UnityOperation::IdentifyAssets,
+        UnityOperation::InstallOutfit,
+        UnityOperation::CreateToggle,
+        UnityOperation::ValidateAvatar,
+        UnityOperation::AnalyzePerformance,
+    ]
+    .map(|operation| serde_json::to_value(operation).unwrap());
+    assert_eq!(schema_operations, &rust_operations);
 }
 
 #[test]

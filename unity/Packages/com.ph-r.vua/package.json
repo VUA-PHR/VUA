@@ -1,0 +1,16 @@
+{
+  "name": "com.ph-r.vua",
+  "displayName": "VUA Unity Bridge",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "VUA Unity middleware for deterministic, reversible AMF production workflows.",
+  "author": {
+    "name": "VUA Project",
+    "url": "https://ph-r.com"
+  },
+  "vpmDependencies": {
+    "com.vrchat.avatars": "3.10.x",
+    "nadena.dev.modular-avatar": ">=1.13.0 <2.0.0-a"
+  },
+  "hideInEditor": false
+}

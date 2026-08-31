@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "commandId": "01K45VUA000000000000000001",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [
+    {
+      "code": "project.ready",
+      "severity": "info",
+      "message": "Unity 项目和当前场景可以读取。"
+    }
+  ],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "avatarName": "",
+    "outfitName": "",
+    "basis": "",
+    "triangles": 0,
+    "materialSlots": 0,
+    "skinnedMeshRenderers": 0,
+    "bones": 0,
+    "recommendations": []
+  }
+}

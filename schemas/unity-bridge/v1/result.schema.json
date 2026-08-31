@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/unity-bridge/v1/result.schema.json",
+  "title": "VUA Unity bridge result v1",
+  "description": "Versioned result returned by the VUA Unity middleware to AMF Production.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "commandId", "status", "changedPaths", "diagnostics"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "commandId": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["succeeded", "failed", "rejected"] },
+    "changedPaths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["info", "warning", "error"] },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "properties": {
+        "projectFingerprint": { "type": "string" },
+        "avatarName": { "type": "string" },
+        "outfitName": { "type": "string" },
+        "basis": { "enum": ["", "local_estimate"] },
+        "triangles": { "type": "integer", "minimum": 0 },
+        "materialSlots": { "type": "integer", "minimum": 0 },
+        "skinnedMeshRenderers": { "type": "integer", "minimum": 0 },
+        "bones": { "type": "integer", "minimum": 0 },
+        "recommendations": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

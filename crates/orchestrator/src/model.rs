@@ -42,7 +42,6 @@ pub enum UnityOperation {
     CreateToggle,
     ValidateAvatar,
     AnalyzePerformance,
-    BuildPreview,
 }
 
 impl UnityOperation {
