@@ -1,0 +1,30 @@
+{
+  "name": "@vua/desktop",
+  "version": "0.4.0",
+  "private": true,
+  "main": "dist/electron/main.js",
+  "scripts": {
+    "build": "node scripts/clean.mjs && tsc -p tsconfig.electron.json && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
+    "test": "vitest run src",
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "dev": "node scripts/dev.mjs",
+    "start": "pnpm build && electron ."
+  },
+  "dependencies": {
+    "@vua/contracts": "workspace:*",
+    "@vua/design-system": "workspace:*",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.1.1",
+    "electron": "44.1.1",
+    "typescript": "7.0.2",
+    "vite": "8.2.2",
+    "vitest": "4.1.11"
+  }
+}

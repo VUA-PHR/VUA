@@ -2,7 +2,7 @@
 
 > 状态：工作记录
 > 范围：`VRC_Ultra_assistant`、`VUA_BDB` 到新 VUA 仓库
-> 更新：2026-09-01
+> 更新：2026-09-02
 > 规范效力：无；只记录迁移裁决与验证状态
 
 迁移采用“按资产提取”，禁止合并旧仓库历史或整条旧分支。每项资产进入新仓库前必须确认目标
@@ -21,27 +21,67 @@
 
 | 来源 | 初步结论 | 应保留 | 明确不带入 | 验证门槛 | 状态 |
 | --- | --- | --- | --- | --- | --- |
-| `VUA_BDB` | 全部归档 | 无 | 全部决策、Schema、示例、API、爬虫、部署、运维、计划与数据库实现 | BDB Local 在新边界下从零设计和实现 | 已裁决 |
+| `VUA_BDB` | 全部归档 | 无 | 全部决策、Schema、示例、API、爬虫、部署、运维、计划与数据库实现 | AMF 所属 BDL 在新边界下从零设计和实现 | 已裁决 |
 | VUA 调研文档 | 归档 | 只有新决策明确引用的事实另行重查 | 竞品结论、旧产品建议、阶段性研究摘要 | 无 | 不迁移；仅留旧仓历史 |
 | VUA 架构与 ADR | 按模块重写 | 仍成立的约束、失败经验和验收条件 | 旧仓拓扑、Tauri、云端 BDB 和已失效产品边界 | 新模块所有者审议 | 已整合 |
-| `GLM/orchestrator` | 重点提取 | Rust 核心、状态机、恢复/幂等逻辑、适配器端口、测试与固定向量 | Tauri 绑定、旧目录、旧 IPC、未经验证的文档结论 | 138 项自动测试通过；Clippy 通过；Electron IPC 与 CI 待后续切片 | 已提取 |
-| `kimi/docs-art-v04-dual-track` | 参考 | React 交互、可访问性测试、Design Token、组件与状态模式 | Tauri 壳、Tauri IPC/CSP/权限、旧路由与产品文案 | 在 Electron 垂直切片中重新实现并测试 | 已参考化 |
-| 美术风格与 UI/UX | 参考 | 可复用视觉语言、Token 候选、键盘与可访问性原则 | 未经产品页面验证的强制规则 | 新 Electron 原型验证 | 已参考化 |
-| Unity Bridge | 迁移 | C# Package、版本化命令、Schema、EditMode/集成测试和已验证操作 | 付费素材、用户项目、临时场景、机器绝对路径 | Unity 2022.3.22f1 编译；6 项 VUA EditMode 测试通过；真实 Batchmode `inspect_project` 成功；CI 待后续切片 | 已迁移 |
+| `GLM/orchestrator` | 重点提取 | 应用核心、状态机、恢复/幂等逻辑、适配器端口、测试与固定向量 | Tauri 绑定、旧目录、旧通信层、未经验证的文档结论 | 138 项自动测试通过；Clippy 通过；Gateway 集成与 CI 待后续切片 | 已提取 |
+| `kimi/docs-art-v04-dual-track` | 按资产提取并在 Electron 重建 | React 交互、i18n 结构、Design Token、基础组件、固定导航与状态表现 | Tauri 壳、Tauri IPC/CSP/权限、旧 BDB/Catalog、生产 fixture 和机器绝对路径 | 新 Electron Main/Preload/Renderer 联合启动；边界、契约、导航和语言测试；生产构建 | 首个表现层切片完成 |
+| 美术风格与 UI/UX | 迁移参考 | 旧客户端已经实现的视觉语言、双辖区、键盘与可访问性经验 | 未经真实页面验证的产品结论 | 用户裁定迁移阶段不以 `design-standard-v0.6.0` 视觉和交互条款阻断旧资产重建；设计标准后续另行修订 | 迁移期非阻断 |
+| Unity Bridge | 迁移 | C# Package、版本化命令、Schema、EditMode/集成测试和已验证操作 | 付费素材、用户项目、临时场景、机器绝对路径、Library、原始运行日志和嵌入式第三方 Package | Unity 2022.3.22f1 编译；12 项 VUA EditMode 测试通过；真实 Batchmode `inspect_project` 成功；人工截图已核验 | 迁移封口完成 |
 
 ## Unity Bridge 迁移记录
 
 ```text
 资产：Unity Bridge v1
 旧来源：VRC_Ultra_assistant / GLM/orchestrator / efb2f7f / unity/Packages 与 schemas/v1
-新所有模块：unity/Packages/com.ph-r.vua、schemas/unity-bridge/v1、Rust Bridge adapter
-迁移结论：迁移
+新所有模块：unity/Packages/com.ph-r.vua、schemas/unity-bridge/v1；Orchestrator Bridge adapter 仅为初步参考实现
+迁移结论：迁移封口完成
 保留价值：公开 MA API 装配、只读检查、项目指纹、dry-run、结构化诊断
 拒绝携带的旧假设：个人包名、.vrcua 目录、旧命名空间、未实现的 build_preview、真实付费夹具
-许可证与 NOTICE：仓库许可证尚待首次公开发行前确定；依赖通过 VPM 声明，未复制上游源码
-本地验证：Unity 2022.3.22f1；6 项 VUA EditMode 测试（含合成装配与幂等重放）；Batchmode inspect 成功；Rust 全套测试和 Clippy 通过
+许可证与 NOTICE：仓库采用 Apache-2.0；依赖通过 VPM 声明，未复制上游源码；发行前仍需生成并
+审查该次构建的完整第三方声明
+本地验证：2026-09-02 使用 Unity 2022.3.22f1 (887be4894c44)；12 项 VUA EditMode 测试全部通过，
+包含固定 inspect Wire 名称、普通不支持版本统一拒绝、路径/dry-run/指纹边界，以及合成衣装与开关的
+幂等重放；Batchmode m0-unity-smoke-inspect 成功；请求示例与实际结果均通过 v1 JSON Schema；
+cargo test --locked -p vua-orchestrator --lib 仅作参考，26 项通过
+验证依赖：VRChat Avatars 3.10.4；Modular Avatar 1.18.0-beta.1；NDMF 1.14.1；lilToon 2.3.4
+验收证据：_migration/unity-bridge-smoke/m0-closure-test-results.xml、
+_migration/unity-bridge-smoke/.vua/bridge/m0-inspect.result.json；原始日志含本机与许可信息，不迁入仓库
+人工截图：docs/migration/evidence/unity-bridge-m0-2026-09-02.png；标题栏显示 Unity 2022.3.22f1，
+Test Runner 显示 19 项全部通过、0 失败，展开的 VUA Bridge 分支包含本次 12 个测试实例
+截图 SHA-256：c00c823b8e5b87e0a324434e2698b366596e73b8dee71a48defb5cff45f4e706
+CI 状态：按当前裁决不建立 Unity CI
+迁移提交：主体迁移 a8e3c87；本次封口修改尚未提交
+```
+
+## Unity Bridge M0 人工验收截图
+
+![Unity 2022.3.22f1 Test Runner 验收结果](evidence/unity-bridge-m0-2026-09-02.png)
+
+## Electron 表现层迁移记录
+
+```text
+资产：Electron 表现层首个迁移切片
+旧来源：kimi/docs-art-v04-dual-track / 5870d0c / _references/kimi-desktop-5870d0c/apps/desktop
+新所有模块：apps/desktop、packages/contracts、packages/design-system、根 pnpm workspace
+迁移结论：按资产提取并在 Electron 重新实现
+保留价值：React 固定导航壳、顶栏/侧栏/任务栏表现、深浅主题、VUA 紫/AMF 橙双辖区、
+基础组件、像素装配工、最小 i18n 结构、Gateway 窄口思想和纯模型测试
+拒绝携带的旧假设：Tauri Host、command/event、WebviewWindow、Tauri CSP/权限、vuaimg 自定义协议、
+旧 BDB/Catalog 身份与 API、旧生产 fixture、@vrcua/contracts 手写类型和本机绝对开发路径
+Electron 边界：Renderer 不导入 Electron/Node；Preload 只注入冻结的显式 Gateway 和三个窗口动作；
+Main 校验 sender origin、契约版本、requestId 和 64 KiB 请求上限；窗口启用 contextIsolation、sandbox、
+webSecurity，关闭 nodeIntegration，并默认拒绝权限请求、远程导航和新窗口
+当前契约：packages/contracts 中的 Desktop Gateway v1 只含 app.snapshot；这是 M1 最小宿主契约，
+不预先替代 M2 的完整 Command/Query/Event/Task/Capability 应用 Gateway
+许可证与 NOTICE：新增 Electron 44.1.1、React 19.2.8、Vite 8.2.2、TypeScript 7.0.2、Vitest 4.1.11
+及其构建依赖，版本由 pnpm-lock.yaml 固定；本切片未复制第三方源码，正式分发前仍需完成依赖许可、
+二进制再分发、NOTICE、签名、更新来源和移除路径审计
+本地验证：pnpm build 通过；pnpm check 通过；contracts 2 项、desktop 4 项，共 6 项测试通过；
+Windows Electron Main/Preload/Renderer 联合启动成功，VUA 窗口正常响应；冒烟退出后无残留 Electron 进程
+迁移内记录：apps/desktop/MIGRATION_ASSETS_ZH.md 与 MIGRATION_ASSETS_EN.md
 CI 状态：尚未建立
-迁移提交：本分支 Unity Bridge 迁移提交
+迁移提交：本次 Electron 表现层迁移提交
 ```
 
 ## 单项迁移记录模板
