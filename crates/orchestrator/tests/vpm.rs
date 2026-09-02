@@ -103,6 +103,8 @@ fn orc_adp_002_discovery_records_the_version_and_rejects_a_broken_backend() {
     runner.push(Ok(ProcessOutcome {
         exit_code: Some(0),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: "vrc-get 1.9.2 (abc123)\n".into(),
         stderr: String::new(),
         truncated: false,
@@ -240,6 +242,8 @@ fn orc_sto_006_retrying_the_same_plan_after_a_failed_attempt_works() {
     let discovery_ok = ProcessOutcome {
         exit_code: Some(0),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: "vrc-get 1.9.2
 "
         .into(),
@@ -264,6 +268,8 @@ fn orc_sto_006_retrying_the_same_plan_after_a_failed_attempt_works() {
     runner.push(Ok(ProcessOutcome {
         exit_code: None,
         timed_out: true,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: String::new(),
         stderr: String::new(),
         truncated: false,
@@ -388,6 +394,8 @@ fn orc_adp_003_backend_failures_map_to_stable_typed_errors() {
     let discovery_ok = ProcessOutcome {
         exit_code: Some(0),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: "vrc-get 1.9.2\n".into(),
         stderr: String::new(),
         truncated: false,
@@ -401,6 +409,8 @@ fn orc_adp_003_backend_failures_map_to_stable_typed_errors() {
     runner.push(Ok(ProcessOutcome {
         exit_code: None,
         timed_out: true,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: String::new(),
         stderr: String::new(),
         truncated: false,

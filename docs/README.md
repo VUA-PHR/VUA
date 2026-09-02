@@ -2,7 +2,7 @@
 
 > 状态：已接受
 > 范围：VUA 新仓库
-> 更新：2026-09-01
+> 更新：2026-09-03
 > 规范效力：本文只定义文档分层、阅读路径和权威顺序
 
 本仓库采用渐进式披露。先判断任务属于哪个模块，再读取完成任务所需的最小规范集合；历史仓库、
@@ -32,6 +32,7 @@
 | `architecture/` | 模块内部结构、依赖方向和适配器边界 | 可以，但不能扩展产品范围 |
 | `plans/` | 已接受工作的顺序、里程碑和验收 | 可以安排工作，不能创造需求 |
 | `migration/` | 旧资产去留、来源和验证状态 | 不可以 |
+| `research/` | 有时限的 Spike、上游调研和脱敏可行性证据 | 不可以，须由计划或协议接收 |
 | `reference/` | 调研、美术、UI/UX 和旧实现参考 | 不可以 |
 
 ## 按任务阅读
@@ -58,6 +59,11 @@
 ## 当前协议入口
 
 - [Unity Bridge v1](protocols/unity-bridge-v1.md)
+
+## 当前研究证据
+
+- [VPM 素材包 Spike 封口记录](research/vpm-package-spike_ZH.md)
+- [VPM asset-package Spike closure record](research/vpm-package-spike_EN.md)
 
 ## 文档规则
 

@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "vua.vpm-package-spike-result/v0.1",
+  "runId": "risk-refused",
+  "status": "failed",
+  "resultCode": "vua.vpm_spike.risk_decision_required",
+  "validationLevel": "none",
+  "source": {
+    "beforeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "afterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "unchanged": true
+  },
+  "package": {
+    "id": "com.ph-r.vua.local.asset.00000000000000000000000000000000",
+    "displayName": "Synthetic Script Asset",
+    "version": "0.0.1",
+    "manifestSha256": null,
+    "treeSha256": null,
+    "archiveSha256": null
+  },
+  "riskDecision": {
+    "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "executableInputs": ["Assets/Synthetic/Editor/Unsafe.cs"],
+    "choice": "not_provided",
+    "rememberedForSession": false
+  },
+  "phases": [],
+  "diagnostics": [
+    {
+      "code": "vua.vpm_spike.executable_input",
+      "severity": "risk",
+      "path": "Assets/Synthetic/Editor/Unsafe.cs"
+    }
+  ]
+}

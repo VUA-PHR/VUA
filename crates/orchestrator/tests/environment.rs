@@ -173,6 +173,8 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     runner.push(Ok(ProcessOutcome {
         exit_code: Some(0),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: "vrc-get 1.9.2\n".into(),
         stderr: String::new(),
         truncated: false,
@@ -198,6 +200,8 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     runner.push(Ok(ProcessOutcome {
         exit_code: None,
         timed_out: true,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: String::new(),
         stderr: String::new(),
         truncated: false,
