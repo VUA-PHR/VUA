@@ -1,11 +1,11 @@
-//! Serde types for Recipe v2 (proposal `2.0.0-draft.1`) and the private
+//! Serde types for the pre-alpha Recipe v0.2 test format and the private
 //! Local Resolution v1 document. Shapes mirror
-//! `schemas/recipe/v2/recipe.schema.json` / `local-resolution.schema.json`;
+//! `schemas/recipe/v0.2/recipe.schema.json` / `local-resolution.schema.json`;
 //! pattern and cross-field constraints that JSON Schema expresses with
 //! regex/`anyOf` are enforced by `validate.rs` (ORC-TYP-007: structure alone
 //! is not semantic validity).
 //!
-//! Strictness note: internally tagged `RelationV2` cannot combine serde's
+//! Strictness note: internally tagged `RelationV02` cannot combine serde's
 //! `deny_unknown_fields` with tag discrimination, so unknown keys inside a
 //! relation object are ignored until full JSON-Schema validation lands
 //! (H-STATE). Every other struct rejects unknown fields.
@@ -14,15 +14,15 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-pub const RECIPE_SCHEMA_VERSION: u8 = 2;
+pub const RECIPE_FORMAT_VERSION: &str = "0.2";
 pub const LOCK_SCHEMA_VERSION: u8 = 1;
 
-// --- Recipe v2 document ---
+// --- Recipe v0.2 document ---
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct RecipeV2 {
-    pub schema_version: u8,
+pub struct RecipeV02 {
+    pub format_version: String,
     pub recipe_id: String,
     pub revision: u64,
     pub title: String,
@@ -32,14 +32,14 @@ pub struct RecipeV2 {
     pub updated_at: String,
     pub environment: EnvironmentSpec,
     pub target: TargetSpec,
-    pub assets: Vec<AssetV2>,
-    pub instances: Vec<InstanceV2>,
+    pub assets: Vec<AssetV02>,
+    pub instances: Vec<InstanceV02>,
     #[serde(default)]
-    pub relations: Vec<RelationV2>,
+    pub relations: Vec<RelationV02>,
     #[serde(default)]
-    pub wardrobe_groups: Vec<WardrobeGroupV2>,
+    pub wardrobe_groups: Vec<WardrobeGroupV02>,
     #[serde(default)]
-    pub dependencies: Vec<DependencyV2>,
+    pub dependencies: Vec<DependencyV02>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locked: Option<LockedV1>,
     #[serde(default, skip_serializing_if = "map_is_empty")]
@@ -118,7 +118,7 @@ impl AssetRole {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct AssetV2 {
+pub struct AssetV02 {
     pub id: String,
     pub role: AssetRole,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -178,7 +178,7 @@ pub enum EntrypointKind {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct InstanceV2 {
+pub struct InstanceV02 {
     pub id: String,
     pub asset_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -207,7 +207,7 @@ pub struct EntrypointSelector {
 /// relation are ignored by serde (see module docs).
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub enum RelationV2 {
+pub enum RelationV02 {
     #[serde(rename_all = "camelCase")]
     InstallModularAsset {
         id: String,
@@ -221,7 +221,7 @@ pub enum RelationV2 {
         asset_instance_id: String,
         avatar_instance_id: String,
         bone: HumanoidBone,
-        local_transform: TransformV2,
+        local_transform: TransformV02,
     },
     #[serde(rename_all = "camelCase")]
     ExcludeObject {
@@ -277,7 +277,7 @@ pub enum HumanoidBone {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct TransformV2 {
+pub struct TransformV02 {
     pub position: Vector3,
     pub rotation: Quaternion,
     pub scale: Vector3,
@@ -320,7 +320,7 @@ pub enum SelectionMode {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct WardrobeGroupV2 {
+pub struct WardrobeGroupV02 {
     pub id: String,
     pub label: String,
     pub member_instance_ids: Vec<String>,
@@ -331,7 +331,7 @@ pub struct WardrobeGroupV2 {
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields, rename_all = "camelCase")]
-pub struct DependencyV2 {
+pub struct DependencyV02 {
     pub package_id: String,
     pub version_constraint: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -573,7 +573,7 @@ pub enum LockState {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RecipeReadModel {
-    pub recipe: RecipeV2,
+    pub recipe: RecipeV02,
     pub resolution_state: ResolutionState,
     pub reproducibility: ReproducibilityLevel,
     pub lock_state: LockState,

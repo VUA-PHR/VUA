@@ -14,16 +14,16 @@ use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use vua_orchestrator::{
     derive_project_spec, document_digest, AssemblyConfirmation, AssemblyEngine, BridgeError,
     ChangeItemV1, ChangeKindV1, ChangePreviewV1, FixedClock, FixedIdGenerator, MemoryJournal,
-    PackageRequestV1, ProjectRef, RecipeV2, SubmitRequest, TaskEventKind, TaskExit, TaskRuntime,
+    PackageRequestV1, ProjectRef, RecipeV02, SubmitRequest, TaskEventKind, TaskExit, TaskRuntime,
     TaskState, UnityBatchBridge, UnityBridge, UnityCommand, UnityResult, VpmBackend,
     VpmCapabilities,
 };
 
 // --- fixtures ---
 
-fn fixture_recipe() -> RecipeV2 {
+fn fixture_recipe() -> RecipeV02 {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../schemas/recipe/v2/example.recipe.json");
+        .join("../../schemas/recipe/v0.2/example.recipe.json");
     let bytes = std::fs::read(path).unwrap();
     serde_json::from_slice(&bytes).unwrap()
 }
@@ -296,7 +296,7 @@ fn make_project_at(root: &std::path::Path) {
     .unwrap();
 }
 
-fn plan_and_confirm(engine: &AssemblyEngine, recipe: &RecipeV2) -> AssemblyConfirmation {
+fn plan_and_confirm(engine: &AssemblyEngine, recipe: &RecipeV02) -> AssemblyConfirmation {
     let digest = document_digest(recipe).unwrap();
     let spec = derive_project_spec(recipe, &digest).unwrap();
     let plan = engine.derive_plan(&spec, recipe).expect("plan derivation");
@@ -709,7 +709,7 @@ fn orc_wf_002_multiple_packages_share_one_interaction_aware_preview() {
                 "artifactDigest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
             }
         }));
-    let recipe: RecipeV2 = serde_json::from_value(recipe_value).unwrap();
+    let recipe: RecipeV02 = serde_json::from_value(recipe_value).unwrap();
     let digest = document_digest(&recipe).unwrap();
     let spec = derive_project_spec(&recipe, &digest).unwrap();
     let plan = engine.derive_plan(&spec, &recipe).unwrap();

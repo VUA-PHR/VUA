@@ -1,0 +1,26 @@
+{
+  "name": "@vua/orchestrator-provider",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "pnpm --filter @vua/contracts build && node scripts/clean.mjs && tsc -p tsconfig.json",
+    "check": "pnpm --filter @vua/contracts build && tsc -p tsconfig.json --noEmit && vitest run src"
+  },
+  "dependencies": {
+    "@vua/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  }
+}

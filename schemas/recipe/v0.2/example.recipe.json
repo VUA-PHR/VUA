@@ -1,9 +1,9 @@
 {
-  "schemaVersion": 2,
+  "formatVersion": "0.2",
   "recipeId": "019e0000-0000-7000-8000-000000000001",
   "revision": 3,
   "title": "Self-authored two-piece fixture",
-  "description": "Redistributable fixture for Recipe v2 contract tests.",
+  "description": "Redistributable fixture for Recipe v0.2 contract tests.",
   "createdAt": "2026-08-29T08:00:00Z",
   "updatedAt": "2026-08-29T08:30:00Z",
   "environment": {

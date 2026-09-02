@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vua.dev/schemas/recipe/v2/local-resolution.schema.json",
+  "$id": "https://vua.dev/schemas/recipe/v0.2/local-resolution.schema.json",
   "title": "VUA Recipe Local Resolution v1",
   "description": "Private machine-local bindings from Recipe selectors to Warehouse and Unity objects. This document is never shareable.",
   "type": "object",

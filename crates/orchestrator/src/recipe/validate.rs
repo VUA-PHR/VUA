@@ -1,4 +1,4 @@
-//! Recipe v2 validation: pattern constraints the schema expresses with regex,
+//! Recipe v0.2 validation: pattern constraints the schema expresses with regex,
 //! plus the eleven cross-field domain invariants from the proposal
 //! ("Schema 之外的领域不变量"). Output is a list of typed issues with stable
 //! codes — never bare strings (ORC-ERR-001, ORC-IPC-010).
@@ -13,7 +13,7 @@ pub fn has_blocking(issues: &[RecipeIssue]) -> bool {
         .any(|issue| issue.severity == IssueSeverity::Blocking)
 }
 
-pub fn validate_recipe(recipe: &RecipeV2) -> Vec<RecipeIssue> {
+pub fn validate_recipe(recipe: &RecipeV02) -> Vec<RecipeIssue> {
     let mut collector = IssueCollector::new();
     validate_shapes(recipe, &mut collector);
     validate_invariants(recipe, &mut collector);
@@ -24,7 +24,7 @@ pub fn validate_recipe(recipe: &RecipeV2) -> Vec<RecipeIssue> {
 /// every entrypoint selector binds exactly one entrypoint, every object
 /// selector exactly one object (invariant 6).
 pub fn validate_local_resolution(
-    recipe: &RecipeV2,
+    recipe: &RecipeV02,
     resolution: &LocalResolutionV1,
 ) -> Vec<RecipeIssue> {
     let mut collector = IssueCollector::new();
@@ -58,7 +58,7 @@ pub fn validate_local_resolution(
         );
     }
 
-    let recipe_assets: HashMap<&str, &AssetV2> = recipe
+    let recipe_assets: HashMap<&str, &AssetV02> = recipe
         .assets
         .iter()
         .map(|asset| (asset.id.as_str(), asset))
@@ -82,12 +82,12 @@ pub fn validate_local_resolution(
         .relations
         .iter()
         .filter_map(|relation| match relation {
-            RelationV2::ExcludeObject {
+            RelationV02::ExcludeObject {
                 target_instance_id,
                 selector,
                 ..
             }
-            | RelationV2::SetObjectActive {
+            | RelationV02::SetObjectActive {
                 target_instance_id,
                 selector,
                 ..
@@ -207,8 +207,8 @@ pub fn validate_local_resolution(
     }
     for relation in &recipe.relations {
         let (relation_id, selector) = match relation {
-            RelationV2::ExcludeObject { id, selector, .. }
-            | RelationV2::SetObjectActive { id, selector, .. } => (id, selector),
+            RelationV02::ExcludeObject { id, selector, .. }
+            | RelationV02::SetObjectActive { id, selector, .. } => (id, selector),
             _ => continue,
         };
         let count = object_counts
@@ -311,13 +311,13 @@ fn label_key(kind: IssueActionKind) -> String {
 
 // --- shape checks (schema regex/min-max equivalents) ---
 
-fn validate_shapes(recipe: &RecipeV2, collector: &mut IssueCollector) {
-    if recipe.schema_version != RECIPE_SCHEMA_VERSION {
+fn validate_shapes(recipe: &RecipeV02, collector: &mut IssueCollector) {
+    if recipe.format_version != RECIPE_FORMAT_VERSION {
         collector.push(
-            "recipe.schema_version",
+            "recipe.format_version",
             IssueSeverity::Blocking,
             IssueSubject::Recipe,
-            "errors.recipe.schemaVersion",
+            "errors.recipe.formatVersion",
             vec![],
         );
     }
@@ -588,7 +588,7 @@ fn validate_lock_shapes(locked: &LockedV1, collector: &mut IssueCollector) {
 
 // --- cross-field invariants (proposal §"Schema 之外的领域不变量") ---
 
-fn validate_invariants(recipe: &RecipeV2, collector: &mut IssueCollector) {
+fn validate_invariants(recipe: &RecipeV02, collector: &mut IssueCollector) {
     // 1. namespace uniqueness
     check_unique(
         recipe.assets.iter().map(|asset| asset.id.as_str()),
@@ -619,12 +619,12 @@ fn validate_invariants(recipe: &RecipeV2, collector: &mut IssueCollector) {
         collector,
     );
 
-    let assets: HashMap<&str, &AssetV2> = recipe
+    let assets: HashMap<&str, &AssetV02> = recipe
         .assets
         .iter()
         .map(|asset| (asset.id.as_str(), asset))
         .collect();
-    let instances: HashMap<&str, &InstanceV2> = recipe
+    let instances: HashMap<&str, &InstanceV02> = recipe
         .instances
         .iter()
         .map(|instance| (instance.id.as_str(), instance))
@@ -712,13 +712,13 @@ fn validate_invariants(recipe: &RecipeV2, collector: &mut IssueCollector) {
     // 5. relation subjects/targets exist, roles match, no self-install
     for relation in &recipe.relations {
         match relation {
-            RelationV2::InstallModularAsset {
+            RelationV02::InstallModularAsset {
                 id,
                 asset_instance_id,
                 avatar_instance_id,
                 ..
             }
-            | RelationV2::AttachToBone {
+            | RelationV02::AttachToBone {
                 id,
                 asset_instance_id,
                 avatar_instance_id,
@@ -733,12 +733,12 @@ fn validate_invariants(recipe: &RecipeV2, collector: &mut IssueCollector) {
                     collector,
                 );
             }
-            RelationV2::ExcludeObject {
+            RelationV02::ExcludeObject {
                 id,
                 target_instance_id,
                 ..
             }
-            | RelationV2::SetObjectActive {
+            | RelationV02::SetObjectActive {
                 id,
                 target_instance_id,
                 ..
@@ -759,7 +759,7 @@ fn validate_invariants(recipe: &RecipeV2, collector: &mut IssueCollector) {
 
     // 6. transform sanity for attach_to_bone: finite values, non-zero scale
     for relation in &recipe.relations {
-        if let RelationV2::AttachToBone {
+        if let RelationV02::AttachToBone {
             id,
             local_transform,
             ..
@@ -922,8 +922,8 @@ fn check_pair_relation(
     relation_id: &str,
     asset_instance_id: &str,
     avatar_instance_id: &str,
-    instances: &HashMap<&str, &InstanceV2>,
-    assets: &HashMap<&str, &AssetV2>,
+    instances: &HashMap<&str, &InstanceV02>,
+    assets: &HashMap<&str, &AssetV02>,
     collector: &mut IssueCollector,
 ) {
     if asset_instance_id == avatar_instance_id {
@@ -1001,12 +1001,12 @@ where
     }
 }
 
-fn relation_id(relation: &RelationV2) -> &str {
+fn relation_id(relation: &RelationV02) -> &str {
     match relation {
-        RelationV2::InstallModularAsset { id, .. }
-        | RelationV2::AttachToBone { id, .. }
-        | RelationV2::ExcludeObject { id, .. }
-        | RelationV2::SetObjectActive { id, .. } => id,
+        RelationV02::InstallModularAsset { id, .. }
+        | RelationV02::AttachToBone { id, .. }
+        | RelationV02::ExcludeObject { id, .. }
+        | RelationV02::SetObjectActive { id, .. } => id,
     }
 }
 
@@ -1017,7 +1017,7 @@ fn relation_id(relation: &RelationV2) -> &str {
 /// B requires A——装配会死循环，必须在计划前拦下）。用显式栈而不是递归：
 /// 配方最多 256 个资产、依赖链可能很深，避免栈溢出；`stack.push((node,
 /// index+1))` 是迭代版 DFS 的"回来继续"手法——记下进度再深入下一个分支。
-fn find_asset_cycle(assets: &HashMap<&str, &AssetV2>) -> Option<String> {
+fn find_asset_cycle(assets: &HashMap<&str, &AssetV02>) -> Option<String> {
     #[derive(Clone, Copy, PartialEq)]
     enum Color {
         White,
@@ -1056,7 +1056,7 @@ fn find_asset_cycle(assets: &HashMap<&str, &AssetV2>) -> Option<String> {
 }
 
 fn is_known_extension_namespace(namespace: &str) -> bool {
-    // v0 registry: namespaces reviewed with the v2 proposal. Unknown
+    // v0 registry: namespaces reviewed with the v0.2 test format. Unknown
     // namespaces produce a warning and never gain execution power.
     matches!(namespace, "vua.ui" | "vua.warehouse" | "vua.testing")
 }

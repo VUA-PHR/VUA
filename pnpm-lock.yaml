@@ -69,6 +69,22 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  packages/orchestrator-provider:
+    dependencies:
+      '@vua/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.1
+        version: 24.10.1
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@24.10.1)(vite@8.2.2(@types/node@24.10.1))
+
 packages:
 
   '@electron-internal/extract-zip@1.0.5':

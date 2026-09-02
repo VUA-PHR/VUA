@@ -150,10 +150,10 @@ fn orc_typ_005_fixtures_validate_against_the_actual_json_schemas(
     Ok(())
 }
 
-/// Recipe v2 提案自带的示例文档要过提案自带的 schema（E-RECIPE 补强）。
+/// Recipe v0.2 测试格式的示例文档要通过同目录 schema（E-RECIPE 补强）。
 #[test]
-fn orc_typ_005_recipe_v2_example_validates_against_the_proposal_schema() {
-    let recipe_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/recipe/v2");
+fn orc_typ_005_recipe_v0_2_example_validates_against_its_schema() {
+    let recipe_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/recipe/v0.2");
     let schema_value: serde_json::Value =
         serde_json::from_slice(&std::fs::read(recipe_dir.join("recipe.schema.json")).unwrap())
             .unwrap();
@@ -166,6 +166,15 @@ fn orc_typ_005_recipe_v2_example_validates_against_the_proposal_schema() {
         .map(|error| format!("{}: {}", error.instance_path(), error))
         .collect();
     assert!(errors.is_empty(), "schema violations: {errors:?}");
+
+    let mut former_v2 = example;
+    let object = former_v2.as_object_mut().unwrap();
+    object.remove("formatVersion");
+    object.insert("schemaVersion".into(), 2.into());
+    assert!(
+        !validator.is_valid(&former_v2),
+        "the former integer Recipe v2 marker must not be accepted as v0.2"
+    );
 }
 
 #[test]

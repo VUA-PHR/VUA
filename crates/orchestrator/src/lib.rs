@@ -14,9 +14,14 @@ mod filesystem;
 mod journal;
 mod model;
 mod process;
+mod project_identity;
+mod provider_host;
+#[cfg(windows)]
+mod provider_job;
 mod provision;
 mod recipe;
 mod runtime;
+mod sqlite_task_store;
 mod state_file;
 mod time;
 mod tools;
@@ -54,10 +59,20 @@ pub use process::{
     outcome_with_exit, FakeProcessRunner, ProcessError, ProcessOutcome, ProcessRunner, ProcessSpec,
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,
 };
+pub use project_identity::{ProjectIdentity, ProjectIdentityError};
+pub use provider_host::{run_provider_host, ProviderHostError, PROVIDER_FRAME_VERSION};
+#[cfg(windows)]
+pub use provider_job::ProviderJobGuard;
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
 pub use recipe::*;
 pub use runtime::{
-    recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRuntime, TaskSnapshot,
+    recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRecoveryDisposition,
+    TaskRuntime, TaskSnapshot,
+};
+pub use sqlite_task_store::{
+    IdempotentCancellation, IdempotentTaskAcceptance, NewTask, ProjectMutationLease,
+    SqliteStoreError, SqliteTaskStore, StoredCancellationOutcome, StoredCancellationResult,
+    StoredTask, StoredTaskEvent, TaskMutation,
 };
 pub use state_file::{
     StateFile, StateFileError, StateLoad, StateRecoveryReason, STATE_FILE_SCHEMA_VERSION,

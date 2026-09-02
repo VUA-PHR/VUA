@@ -1,10 +1,10 @@
 //! Assembly engine (E-ASSEMBLE smoke, O6/O7 minimal): one Avatar + one outfit
-//! end to end — Recipe v2 → assembly plan → hash-bound confirmation →
+//! end to end — Recipe v0.2 → assembly plan → hash-bound confirmation →
 //! verified snapshot → provisioning + package install → Unity Bridge
 //! batchmode steps → domain validate → completion marker.
 //!
 //! Scope guards (agile plan): only `install_modular_asset` relations and
-//! wardrobe toggles are plannable here; other v2 relation kinds produce a
+//! wardrobe toggles are plannable here; other v0.2 relation kinds produce a
 //! blocking `recipe.relation_unsupported` issue instead of being silently
 //! skipped. The completion marker (`.vua/assembly/<planId>.done.json`) is
 //! an internal idempotency record, not the Build Record format (D-BR).
@@ -58,7 +58,7 @@ use crate::contracts::{AppErrorV1, ErrorCategory, ParamValue};
 use crate::filesystem::FileSystemSnapshotStore;
 use crate::recipe::{
     derive_project_spec, document_digest, DerivedProjectSpecV1, IssueAction, IssueActionKind,
-    IssueSeverity, IssueSubject, RecipeIssue, RecipeV2, RelationV2,
+    IssueSeverity, IssueSubject, RecipeIssue, RecipeV02, RelationV02,
 };
 use crate::time::Clock;
 use crate::vpm_backend::{PackageRequestV1, VpmBackend};
@@ -240,12 +240,12 @@ impl AssemblyEngine {
     pub fn derive_plan(
         &self,
         spec: &DerivedProjectSpecV1,
-        recipe: &RecipeV2,
+        recipe: &RecipeV02,
     ) -> Result<AssemblyPlanV1, Vec<RecipeIssue>> {
         let mut install_relations: Vec<String> = Vec::new();
         for relation in &recipe.relations {
             match relation {
-                RelationV2::InstallModularAsset {
+                RelationV02::InstallModularAsset {
                     id,
                     asset_instance_id,
                     ..
@@ -253,9 +253,9 @@ impl AssemblyEngine {
                     install_relations.push(asset_instance_id.clone());
                     let _ = id;
                 }
-                RelationV2::AttachToBone { id, .. }
-                | RelationV2::ExcludeObject { id, .. }
-                | RelationV2::SetObjectActive { id, .. } => {
+                RelationV02::AttachToBone { id, .. }
+                | RelationV02::ExcludeObject { id, .. }
+                | RelationV02::SetObjectActive { id, .. } => {
                     return Err(vec![blocking_issue(
                         id,
                         "recipe.relation_unsupported",
@@ -451,7 +451,7 @@ impl AssemblyEngine {
     pub fn execute(
         &self,
         confirmation: &AssemblyConfirmation,
-        recipe: &RecipeV2,
+        recipe: &RecipeV02,
         context: Option<&TaskContext>,
     ) -> Result<Value, AppErrorV1> {
         let plan = &confirmation.plan;
@@ -603,7 +603,7 @@ impl AssemblyEngine {
         &self,
         plan: &AssemblyPlanV1,
         spec: &DerivedProjectSpecV1,
-        recipe: &RecipeV2,
+        recipe: &RecipeV02,
         correlation: &str,
         context: Option<&TaskContext>,
     ) -> Result<Value, AppErrorV1> {
@@ -621,7 +621,7 @@ impl AssemblyEngine {
             .relations
             .iter()
             .filter_map(|relation| match relation {
-                RelationV2::InstallModularAsset {
+                RelationV02::InstallModularAsset {
                     asset_instance_id, ..
                 } => recipe
                     .instances
@@ -1043,7 +1043,7 @@ impl AssemblyEngine {
 
 // --- helpers ---
 
-fn instance_display_name(instance: &crate::recipe::InstanceV2) -> String {
+fn instance_display_name(instance: &crate::recipe::InstanceV02) -> String {
     instance
         .label
         .clone()
