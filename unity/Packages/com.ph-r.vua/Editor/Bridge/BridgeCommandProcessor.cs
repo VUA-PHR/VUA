@@ -13,10 +13,24 @@ namespace Vua.Editor.Bridge
 {
     internal static class BridgeCommandProcessor
     {
+        internal const string SupportedEditorVersion = "2022.3.22f1";
+
         internal static BridgeResult Process(BridgeCommand command)
+        {
+            return Process(command, Application.unityVersion);
+        }
+
+        internal static BridgeResult Process(BridgeCommand command, string editorVersion)
         {
             var invalid = ValidateEnvelope(command);
             if (invalid != null) return invalid;
+
+            if (!string.Equals(editorVersion, SupportedEditorVersion, StringComparison.Ordinal))
+            {
+                var actualVersion = string.IsNullOrWhiteSpace(editorVersion) ? "unknown" : editorVersion;
+                return BridgeResult.Reject(command, "bridge.editor_version_unsupported",
+                    $"当前 Unity Editor 版本为 {actualVersion}；Unity Bridge v1 仅支持 {SupportedEditorVersion}。");
+            }
 
             try
             {

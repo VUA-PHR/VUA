@@ -18,6 +18,23 @@ namespace Vua.Editor.Bridge.Tests
         }
 
         [Test]
+        public void CanonicalInspectFixtureUsesTheCSharpWireNames()
+        {
+            const string json = "{\"schemaVersion\":1,\"commandId\":\"01K45VUA000000000000000001\"," +
+                                "\"operation\":\"inspect_project\",\"projectId\":\"local-project-01\"," +
+                                "\"dryRun\":true,\"payload\":{}}";
+
+            var command = JsonUtility.FromJson<BridgeCommand>(json);
+
+            Assert.That(command.schemaVersion, Is.EqualTo(1));
+            Assert.That(command.commandId, Is.EqualTo("01K45VUA000000000000000001"));
+            Assert.That(command.operation, Is.EqualTo("inspect_project"));
+            Assert.That(command.projectId, Is.EqualTo("local-project-01"));
+            Assert.That(command.dryRun, Is.True);
+            Assert.That(command.payload, Is.Not.Null);
+        }
+
+        [Test]
         public void RejectsUnknownOperation()
         {
             var result = BridgeCommandProcessor.Process(Command("unknown", true));
@@ -42,6 +59,33 @@ namespace Vua.Editor.Bridge.Tests
 
             Assert.That(result.status, Is.EqualTo("rejected"));
             Assert.That(result.diagnostics[0].code, Is.EqualTo("bridge.fingerprint_required"));
+        }
+
+        [TestCase("2022.3.22f1c1")]
+        [TestCase("2022.3.6f1")]
+        [TestCase("2023.2.20f1")]
+        [TestCase("")]
+        public void RejectsEveryEditorVersionOtherThanTheExactProductionTarget(string editorVersion)
+        {
+            var result = BridgeCommandProcessor.Process(Command("inspect_project", true), editorVersion);
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.changedPaths, Is.Empty);
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("bridge.editor_version_unsupported"));
+            Assert.That(result.diagnostics[0].message, Does.Contain(BridgeCommandProcessor.SupportedEditorVersion));
+        }
+
+        [Test]
+        public void UnsupportedEditorRejectsMutationBeforeProjectAccess()
+        {
+            var command = Command("create_toggle", false);
+            command.expectedProjectFingerprint = "v1:synthetic";
+
+            var result = BridgeCommandProcessor.Process(command, "2022.3.6f1");
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.changedPaths, Is.Empty);
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("bridge.editor_version_unsupported"));
         }
 
         [Test]
