@@ -256,7 +256,13 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnost
 
 // --- VCC ---
 
-fn read_vcc_settings(candidates: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnostic>) -> VccCapability {
+/// Reads the first existing VCC settings candidate. Public so the
+/// environment engine can item-ize VCC capability without duplicating the
+/// resolution order or the schema handling.
+pub fn read_vcc_settings(
+    candidates: &[PathBuf],
+    diagnostics: &mut Vec<SpikeDiagnostic>,
+) -> VccCapability {
     for path in candidates {
         let metadata = match std::fs::metadata(path) {
             Ok(metadata) => metadata,

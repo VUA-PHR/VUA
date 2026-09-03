@@ -33,6 +33,7 @@ mod time;
 mod tools;
 mod vpm;
 mod vpm_backend;
+mod win_registry;
 mod workflow;
 
 pub use assembly::{
@@ -57,8 +58,8 @@ pub use editor_targets::{
     EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
 };
 pub use environment::{
-    error_codes as env_error_codes, CheckStatusV1, EnvironmentCheckItemV1, EnvironmentEngine,
-    EnvironmentRoots, EnvironmentSnapshotV1, Zone,
+    error_codes as env_error_codes, EnvironmentCheckItemV1, EnvironmentEngine, EnvironmentPresence,
+    EnvironmentRoots, EnvironmentSnapshotV1, VrRuntimeRoots, Zone,
 };
 pub use environment_managers::{
     codes as env_spike_codes, collect_environment_spike_snapshot, AlcomCapability, EditorFinding,
@@ -120,3 +121,4 @@ pub use vpm_backend::{
     VrcGetLibBackend,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
+pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

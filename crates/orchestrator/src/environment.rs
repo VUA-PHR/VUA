@@ -2,45 +2,50 @@
 //!
 //! Every check is a targeted observation of a configured, well-known root —
 //! never a scan, never a write (ORC-WF-001: Inspect is read-only by type and
-//! by test). Detection output is the data payload the frontend
-//! `EnvironmentPort` renders directly: `title`/`description` are player
-//! language, `facts` carries the engineering view. A machine without a
-//! component yields a deterministic "missing" result, never a bubbled-up
-//! error (ORC-ERR-005: every failure names the next step).
+//! by test). A machine without a component yields a deterministic
+//! "not detected" result, never a bubbled-up error (ORC-ERR-005: every
+//! failure names the next step).
 //!
-//! # 中文逐段讲解（E-ENV 审阅）
+//! # 检测器契约（presence 模型）
 //!
-//! 环境检测引擎回答一个问题："这台机器现在能不能玩/能不能创作？"
-//! 七个检查分两个辖区（对齐前端 DeployerView 的 play/create 分区）：
+//! 检测器只汇报事实：`presence`（detected / not_detected /
+//! detection_failed 三值）+ 裸 `facts`（路径、版本串、字节数、探测记录）+
+//! 稳定 ID。引擎不做策略决策——"缺失算 warning 还是 error"、磁盘阈值、
+//! 修复文案全部属于前端与修复计划的消费者侧。`detection_failed` 只在
+//! **观测本身失败**（目录不可读、探测超时、平台不支持）时出现，并且必须
+//! 携带稳定错误码；"没装"是正常结论不带码（验收：无 vrc-get 机器返回
+//! 确定"未安装"而非错误）。
 //!
-//! play 辖区 —— `check_vrchat`（在注入的 Steam 库根下定点看
-//! `VRChat/VRChat.exe` 在不在）、`check_steamvr`（`SteamVR` 目录；缺失是
-//! warning 不是 error，桌面玩家不需要它——这个判断只有引擎能下，前端
-//! 只认三色结论）、`check_network`（对 `vrchat.com:443` 做 TCP 连接探测，
-//! 能连上就行，不发请求不登录）。
+//! # 中文逐项说明
 //!
-//! create 辖区 —— `check_unity_hub`（默认安装路径定点探测）、
-//! `check_unity_editors`（枚举 Unity Hub 的编辑器目录：目录名解析出版本号
-//! `2022.3.22f1`，必须含 `Editor` 子目录，垃圾目录名跳过，按版本新到旧
-//! 排序；根目录打不开是"检测失败"带 `read_failed` 码，与"没装编辑器"
-//! 严格区分）、`check_vpm_cli`（经 ProcessRunner 跑 `--version`，复用
-//! E-PKG 的进程纪律；二进制不在=确定未装，超时=检测失败带码）、
-//! `check_disk_space`（kernel32 的 `GetDiskFreeSpaceExW` 直接 FFI，不引
-//! 依赖；阈值判断属于引擎：不足 10GiB error、不足 30GiB warning，前端
-//! 不做词法猜测）。
+//! Play 辖区 —— `steam`（注册表 InstallPath → 默认路径，再解析
+//! `libraryfolders.vdf` 枚举全部游戏库根，多盘安装不再误报）、
+//! `vrchat` / `steamvr`（在发现的库根下定点观测；Steam 缺失时退回配置
+//! 根）、`openxr_runtime`（Khronos 注册表 ActiveRuntime → 运行时 JSON 的
+//! 名称：当前串流会走谁）、五个头显运行时存在性检查
+//! `oculus_runtime` / `pico_runtime` / `vive_runtime` /
+//! `virtual_desktop` / `alvr`（候选根存在性，候选根可注入，确切路径的
+//! 核实记录在环境检测 Spike 的开放问题）、`network`（对 `vrchat.com:443`
+//! 做 TCP 探测，不发请求不登录）、`windows`（OS 版本注册表）、`gpu`
+//! （显示适配器类注册表 DriverDesc）。
 //!
-//! 数据形状 `EnvironmentCheckItemV1` 就是前端 CheckItem 的超集：
-//! `id`（稳定检查 ID，修复计划将来按它索引）+ `zone` + `title`/
-//! `description`（玩家语言数据负载，中文直接由引擎给出，前端查表渲染） +
-//! `status`（三色）+ `error_code`（只有"检测本身失败"才填；"没装"是
-//! 正常结论不带码）+ `facts`（工程视图：路径、版本、字节数、探测记录）。
+//! Create 辖区 —— `unity_hub`（默认安装路径定点探测）、
+//! `unity_editors`（枚举 Unity Hub 编辑器目录并按支持矩阵分类
+//! production_target / migration_source / other_unity_version /
+//! tuanjie_family，分类事实进 facts）、`vpm_cli`（经 ProcessRunner 跑
+//! `--version`）、`vcc`（VCC settings.json 能力：存在性、格式、注册项目
+//! 数——与包后端 vrc-get-vpm 同源）、`disk_space`（kernel32 的
+//! `GetDiskFreeSpaceExW` 直接 FFI，只报字节数；阈值判断属于消费者）。
 //!
-//! 两个结构级要点：`EnvironmentRoots` 把所有探测路径做成可注入——测试
-//! 全跑在合成目录树上，不依赖测试机的真实安装；只读性有测试证明
-//! （检测前后对观察目标做全树指纹比对，一个字节都不许变）。
+//! 结构级要点：`EnvironmentRoots` 把所有探测路径与注册表访问做成可注入
+//! ——测试全跑在合成目录树与合成注册表上，不依赖测试机的真实安装；只读
+//! 性有测试证明（检测前后对观察目标做全树指纹比对，一个字节都不许变）。
 
+use crate::editor_targets;
+use crate::environment_managers;
 use crate::process::{ProcessRunner, ProcessSpec};
 use crate::time::Clock;
+use crate::win_registry::{RegistryHive, RegistrySource};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::io;
@@ -61,7 +66,13 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 const NETWORK_TIMEOUT: Duration = Duration::from_secs(3);
 const OUTPUT_LIMIT: usize = 64 * 1024;
 
-/// Deployer zones, mirroring the frontend `CheckZone` (v0.4.0 §2.1).
+const STEAM_REGISTRY_SUBKEY: &str = "SOFTWARE\\WOW6432Node\\Valve\\Steam";
+const OPENXR_REGISTRY_SUBKEY: &str = "SOFTWARE\\Khronos\\OpenXR\\1";
+const WINDOWS_CURRENT_VERSION_SUBKEY: &str = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
+const GPU_CLASS_SUBKEY: &str =
+    "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
+
+/// Deployer zones, mirroring the frontend navigation (v0.4.0 §2.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Zone {
@@ -69,29 +80,30 @@ pub enum Zone {
     Create,
 }
 
-/// The three renderer states of a check (frontend `CheckStatus`).
+/// What the detector observed: the thing, its absence, or a failed
+/// observation. Severity ("is a missing SteamVR an error or a warning?")
+/// is a consumer-side decision and deliberately not expressed here.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
-pub enum CheckStatusV1 {
-    Ok,
-    Warning,
-    Error,
+pub enum EnvironmentPresence {
+    Detected,
+    NotDetected,
+    DetectionFailed,
 }
 
-/// One check result: a data payload rendered by the deployer cards.
+/// One check result: presence plus the raw facts consumers render or plan
+/// from. `error_code` is set only when `presence` is `DetectionFailed`.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnvironmentCheckItemV1 {
     pub schema_version: u8,
-    /// Stable check id, e.g. `vrchat`, `unity_editors` (fix plans key on it).
+    /// Stable check id, e.g. `steam`, `unity_editors` (fix plans and the
+    /// frontend severity table key on it).
     pub id: String,
     pub zone: Zone,
-    pub title: String,
-    pub status: CheckStatusV1,
-    pub description: String,
-    /// Set when the *detection itself* failed; a missing component does not
-    /// set this — that is a normal finding (验收: 无 VRChat 机器返回确定
-    /// "未安装"而非错误).
+    pub presence: EnvironmentPresence,
+    /// Set only when the *observation itself* failed; a missing component
+    /// is a normal finding without a code.
     pub error_code: Option<String>,
     /// Engineering view: paths, versions, byte counts, probe results.
     pub facts: Value,
@@ -106,11 +118,50 @@ pub struct EnvironmentSnapshotV1 {
     pub captured_at: String,
 }
 
+/// Candidate roots for headset runtime detection. Every list is ordered
+/// and every path is a targeted observation, not a scan; exact locations
+/// for vendors that ship no stable documented path stay injectable so a
+/// real machine can confirm them without a code change.
+#[derive(Debug, Clone)]
+pub struct VrRuntimeRoots {
+    pub oculus: Vec<PathBuf>,
+    pub pico: Vec<PathBuf>,
+    pub vive: Vec<PathBuf>,
+    pub virtual_desktop: Vec<PathBuf>,
+    pub alvr: Vec<PathBuf>,
+}
+
+impl Default for VrRuntimeRoots {
+    fn default() -> Self {
+        let local_app_data = std::env::var("LOCALAPPDATA")
+            .or_else(|_| std::env::var("HOME"))
+            .unwrap_or_default();
+        let program_files =
+            std::env::var("ProgramFiles").unwrap_or_else(|_| "C:\\Program Files".to_owned());
+        Self {
+            oculus: vec![
+                PathBuf::from(&local_app_data).join("Oculus"),
+                PathBuf::from(&program_files).join("Oculus"),
+            ],
+            pico: vec![
+                PathBuf::from(&program_files).join("PICO Connect"),
+                PathBuf::from(&local_app_data).join("Programs").join("PICO Connect"),
+            ],
+            vive: vec![PathBuf::from(&program_files).join("VIVE")],
+            virtual_desktop: vec![PathBuf::from(&local_app_data).join("VirtualDesktop")],
+            alvr: vec![PathBuf::from(&local_app_data).join("alvr")],
+        }
+    }
+}
+
 /// Injectable well-known roots. Defaults target a standard Windows install;
-/// tests substitute synthetic trees, so no test depends on this machine.
+/// tests substitute synthetic trees and a synthetic registry, so no test
+/// depends on this machine.
 #[derive(Debug, Clone)]
 pub struct EnvironmentRoots {
-    /// Steam library roots; games live under `<root>/<AppName>`.
+    /// Fallback Steam library roots used only when Steam itself is not
+    /// found; the `steam` check derives real roots from the install and
+    /// its `libraryfolders.vdf`.
     pub steam_common: Vec<PathBuf>,
     /// `%USERPROFILE%\AppData\LocalLow` on Windows.
     pub local_low: PathBuf,
@@ -119,14 +170,20 @@ pub struct EnvironmentRoots {
     pub unity_editors_root: PathBuf,
     /// Fixed vrc-get identity probed through the process runner.
     pub vrc_get_executable: String,
-    /// Drive whose free space is reported (VUA data root).
+    /// Drive whose free space is reported (VUA data root); consumers own
+    /// the thresholds.
     pub disk_target: PathBuf,
-    /// Free-space thresholds in GiB (conclusions belong to the data source,
-    /// not the renderer).
-    pub disk_warning_gib: f64,
-    pub disk_error_gib: f64,
     /// `host:port` TCP probes for plain reachability.
     pub network_probes: Vec<String>,
+    /// Registry view (production: real registry; tests: synthetic).
+    pub registry: Arc<dyn RegistrySource>,
+    /// Steam install candidates probed when the registry has no answer.
+    pub steam_install_candidates: Vec<PathBuf>,
+    /// Headset runtime candidate roots.
+    pub vr_runtime_roots: VrRuntimeRoots,
+    /// VCC settings candidates, same resolution order the package backend
+    /// uses (LOCALAPPDATA first, legacy Roaming fallback).
+    pub vcc_settings_candidates: Vec<PathBuf>,
 }
 
 impl Default for EnvironmentRoots {
@@ -136,6 +193,8 @@ impl Default for EnvironmentRoots {
             .unwrap_or_default();
         let local_app_data = std::env::var("LOCALAPPDATA")
             .unwrap_or_else(|_| format!("{user_profile}\\AppData\\Local"));
+        let roaming_app_data = std::env::var("APPDATA")
+            .unwrap_or_else(|_| format!("{user_profile}\\AppData\\Roaming"));
         Self {
             steam_common: vec![PathBuf::from(
                 "C:\\Program Files (x86)\\Steam\\steamapps\\common",
@@ -147,9 +206,20 @@ impl Default for EnvironmentRoots {
             unity_editors_root: PathBuf::from("C:\\Program Files\\Unity\\Hub\\Editor"),
             vrc_get_executable: "vrc-get".to_owned(),
             disk_target: PathBuf::from(&user_profile),
-            disk_warning_gib: 30.0,
-            disk_error_gib: 10.0,
             network_probes: vec!["vrchat.com:443".to_owned()],
+            registry: Arc::new(crate::win_registry::WindowsRegistrySource),
+            steam_install_candidates: vec![PathBuf::from(
+                "C:\\Program Files (x86)\\Steam",
+            )],
+            vr_runtime_roots: VrRuntimeRoots::default(),
+            vcc_settings_candidates: vec![
+                PathBuf::from(&local_app_data)
+                    .join("VRChatCreatorCompanion")
+                    .join("settings.json"),
+                PathBuf::from(&roaming_app_data)
+                    .join("VRChatCreatorCompanion")
+                    .join("settings.json"),
+            ],
         }
     }
 }
@@ -173,18 +243,31 @@ impl EnvironmentEngine {
         }
     }
 
-    /// Read-only snapshot of one zone (frontend `runCheck(zone)` payload).
+    /// Read-only snapshot of one zone.
     pub fn inspect_zone(&self, zone: Zone) -> Vec<EnvironmentCheckItemV1> {
         match zone {
             Zone::Play => vec![
+                self.check_steam(),
                 self.check_vrchat(),
                 self.check_steamvr(),
+                self.check_openxr_runtime(),
+                self.check_brand_runtime("oculus_runtime", &self.roots.vr_runtime_roots.oculus),
+                self.check_brand_runtime("pico_runtime", &self.roots.vr_runtime_roots.pico),
+                self.check_brand_runtime("vive_runtime", &self.roots.vr_runtime_roots.vive),
+                self.check_brand_runtime(
+                    "virtual_desktop",
+                    &self.roots.vr_runtime_roots.virtual_desktop,
+                ),
+                self.check_brand_runtime("alvr", &self.roots.vr_runtime_roots.alvr),
                 self.check_network(),
+                self.check_windows(),
+                self.check_gpu(),
             ],
             Zone::Create => vec![
                 self.check_unity_hub(),
                 self.check_unity_editors(),
                 self.check_vpm_cli(),
+                self.check_vcc(),
                 self.check_disk_space(),
             ],
         }
@@ -201,18 +284,76 @@ impl EnvironmentEngine {
         }
     }
 
-    // --- play zone ---
+    // --- play zone: Steam chain ---
+
+    /// Locates the Steam install (registry first, then candidate roots)
+    /// and derives every library's `steamapps/common` from
+    /// `libraryfolders.vdf`, so multi-drive installs are observed instead
+    /// of assumed.
+    fn discover_steam(&self) -> Option<(PathBuf, Vec<PathBuf>)> {
+        let mut install: Option<PathBuf> = self
+            .roots
+            .registry
+            .get_string(RegistryHive::LocalMachine, STEAM_REGISTRY_SUBKEY, "InstallPath")
+            .map(PathBuf::from)
+            .filter(|path| path.is_dir());
+        if install.is_none() {
+            install = self
+                .roots
+                .steam_install_candidates
+                .iter()
+                .find(|candidate| candidate.is_dir())
+                .cloned();
+        }
+        let install = install?;
+        let mut library_roots = vec![install.join("steamapps").join("common")];
+        for library in parse_vdf_library_roots(&install.join("steamapps").join("libraryfolders.vdf"))
+        {
+            let common = library.join("steamapps").join("common");
+            if !library_roots.contains(&common) {
+                library_roots.push(common);
+            }
+        }
+        Some((install, library_roots))
+    }
+
+    fn check_steam(&self) -> EnvironmentCheckItemV1 {
+        match self.discover_steam() {
+            Some((install, library_roots)) => item(
+                "steam",
+                Zone::Play,
+                EnvironmentPresence::Detected,
+                None,
+                json!({
+                    "path": install.to_string_lossy(),
+                    "libraryRoots": library_roots
+                        .iter()
+                        .map(|root| root.to_string_lossy())
+                        .collect::<Vec<_>>(),
+                }),
+            ),
+            None => item(
+                "steam",
+                Zone::Play,
+                EnvironmentPresence::NotDetected,
+                None,
+                json!({
+                    "registryKey": format!("HKLM\\{STEAM_REGISTRY_SUBKEY}:InstallPath"),
+                    "searchedCandidates": roots_display(&self.roots.steam_install_candidates),
+                }),
+            ),
+        }
+    }
 
     fn check_vrchat(&self) -> EnvironmentCheckItemV1 {
-        for root in &self.roots.steam_common {
+        let library_roots = self.effective_library_roots();
+        for root in &library_roots {
             let exe = root.join("VRChat").join("VRChat.exe");
             if exe.is_file() {
                 return item(
                     "vrchat",
                     Zone::Play,
-                    "VRChat 本体",
-                    CheckStatusV1::Ok,
-                    "已找到 VRChat 安装".to_owned(),
+                    EnvironmentPresence::Detected,
                     None,
                     json!({ "exe": exe.to_string_lossy() }),
                 );
@@ -221,41 +362,127 @@ impl EnvironmentEngine {
         item(
             "vrchat",
             Zone::Play,
-            "VRChat 本体",
-            CheckStatusV1::Error,
-            "未找到 VRChat；请先通过 Steam 安装 VRChat".to_owned(),
+            EnvironmentPresence::NotDetected,
             None,
-            json!({ "searchedRoots": roots_display(&self.roots.steam_common) }),
+            json!({ "searchedRoots": roots_display(&library_roots) }),
         )
     }
 
     fn check_steamvr(&self) -> EnvironmentCheckItemV1 {
-        for root in &self.roots.steam_common {
+        let library_roots = self.effective_library_roots();
+        for root in &library_roots {
             let install = root.join("SteamVR");
             if install.is_dir() {
                 return item(
                     "steamvr",
                     Zone::Play,
-                    "SteamVR",
-                    CheckStatusV1::Ok,
-                    "已找到 SteamVR".to_owned(),
+                    EnvironmentPresence::Detected,
                     None,
                     json!({ "root": install.to_string_lossy() }),
                 );
             }
         }
-        // SteamVR is only needed for VR play; a desktop player is fine
-        // without it, so absence is a warning, not a blocker.
         item(
             "steamvr",
             Zone::Play,
-            "SteamVR",
-            CheckStatusV1::Warning,
-            "未找到 SteamVR；仅桌面模式游玩时无需安装".to_owned(),
+            EnvironmentPresence::NotDetected,
             None,
-            json!({ "searchedRoots": roots_display(&self.roots.steam_common) }),
+            json!({ "searchedRoots": roots_display(&library_roots) }),
         )
     }
+
+    /// Library roots for game checks: the discovered Steam libraries when
+    /// Steam is present, the configured fallback roots otherwise.
+    fn effective_library_roots(&self) -> Vec<PathBuf> {
+        self.discover_steam()
+            .map(|(_, roots)| roots)
+            .unwrap_or_else(|| self.roots.steam_common.clone())
+    }
+
+    // --- play zone: VR runtimes ---
+
+    /// The active OpenXR runtime: which vendor's bridge a PCVR session
+    /// would actually use. Read from the Khronos registry key, then the
+    /// referenced runtime JSON's display name.
+    fn check_openxr_runtime(&self) -> EnvironmentCheckItemV1 {
+        let active = self
+            .roots
+            .registry
+            .get_string(RegistryHive::LocalMachine, OPENXR_REGISTRY_SUBKEY, "ActiveRuntime")
+            .or_else(|| {
+                self.roots
+                    .registry
+                    .get_string(RegistryHive::CurrentUser, OPENXR_REGISTRY_SUBKEY, "ActiveRuntime")
+            });
+        let Some(runtime_json) = active else {
+            return item(
+                "openxr_runtime",
+                Zone::Play,
+                EnvironmentPresence::NotDetected,
+                None,
+                json!({ "registryKeys": [
+                    format!("HKLM\\{OPENXR_REGISTRY_SUBKEY}:ActiveRuntime"),
+                    format!("HKCU\\{OPENXR_REGISTRY_SUBKEY}:ActiveRuntime"),
+                ] }),
+            );
+        };
+        let runtime_json_path = PathBuf::from(&runtime_json);
+        let runtime_name = std::fs::read_to_string(&runtime_json_path)
+            .ok()
+            .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+            .and_then(|value| {
+                value
+                    .pointer("/runtime/name")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+            });
+        match runtime_name {
+            Some(name) => item(
+                "openxr_runtime",
+                Zone::Play,
+                EnvironmentPresence::Detected,
+                None,
+                json!({ "activeRuntimePath": runtime_json, "runtimeName": name }),
+            ),
+            None => item(
+                "openxr_runtime",
+                Zone::Play,
+                EnvironmentPresence::DetectionFailed,
+                Some(error_codes::READ_FAILED.to_owned()),
+                json!({ "activeRuntimePath": runtime_json }),
+            ),
+        }
+    }
+
+    /// Presence check for one headset runtime family: ordered candidate
+    /// roots, first hit wins. A vendor without a stable documented path
+    /// keeps its candidates injectable (see the environment spike
+    /// findings' open questions).
+    fn check_brand_runtime(&self, id: &str, candidates: &[PathBuf]) -> EnvironmentCheckItemV1 {
+        for candidate in candidates {
+            if candidate.exists() {
+                return item(
+                    id,
+                    Zone::Play,
+                    EnvironmentPresence::Detected,
+                    None,
+                    json!({
+                        "root": candidate.to_string_lossy(),
+                        "searchedCandidates": roots_display(candidates),
+                    }),
+                );
+            }
+        }
+        item(
+            id,
+            Zone::Play,
+            EnvironmentPresence::NotDetected,
+            None,
+            json!({ "searchedCandidates": roots_display(candidates) }),
+        )
+    }
+
+    // --- play zone: machine identity ---
 
     fn check_network(&self) -> EnvironmentCheckItemV1 {
         let mut reachable: Vec<String> = Vec::new();
@@ -267,26 +494,78 @@ impl EnvironmentEngine {
                 unreachable.push(probe.clone());
             }
         }
-        if reachable.is_empty() {
-            return item(
-                "network",
-                Zone::Play,
-                "网络连接",
-                CheckStatusV1::Error,
-                "无法连接 VRChat 服务器；请检查网络后重试".to_owned(),
-                None,
-                json!({ "reachable": reachable, "unreachable": unreachable }),
-            );
-        }
+        let presence = if reachable.is_empty() {
+            EnvironmentPresence::NotDetected
+        } else {
+            EnvironmentPresence::Detected
+        };
         item(
             "network",
             Zone::Play,
-            "网络连接",
-            CheckStatusV1::Ok,
-            "网络连接正常".to_owned(),
+            presence,
             None,
             json!({ "reachable": reachable, "unreachable": unreachable }),
         )
+    }
+
+    /// Windows identity: product name, display version, build. Facts only;
+    /// minimum-spec conclusions belong to consumers.
+    fn check_windows(&self) -> EnvironmentCheckItemV1 {
+        let product = self
+            .roots
+            .registry
+            .get_string(RegistryHive::LocalMachine, WINDOWS_CURRENT_VERSION_SUBKEY, "ProductName");
+        let display_version = self
+            .roots
+            .registry
+            .get_string(RegistryHive::LocalMachine, WINDOWS_CURRENT_VERSION_SUBKEY, "DisplayVersion");
+        let build = self
+            .roots
+            .registry
+            .get_string(RegistryHive::LocalMachine, WINDOWS_CURRENT_VERSION_SUBKEY, "CurrentBuildNumber");
+        if product.is_none() && display_version.is_none() && build.is_none() {
+            return item(
+                "windows",
+                Zone::Play,
+                EnvironmentPresence::NotDetected,
+                None,
+                json!({ "registryKey": format!("HKLM\\{WINDOWS_CURRENT_VERSION_SUBKEY}") }),
+            );
+        }
+        item(
+            "windows",
+            Zone::Play,
+            EnvironmentPresence::Detected,
+            None,
+            json!({
+                "productName": product,
+                "displayVersion": display_version,
+                "build": build,
+            }),
+        )
+    }
+
+    /// Display adapters by class-guid `DriverDesc` across the first ten
+    /// class slots — slot 0000/0001 are frequently virtual display drivers
+    /// (IddCx, remote-desktop mirrors) while the physical GPU sits later.
+    /// Facts only — performance conclusions belong to analysis.
+    fn check_gpu(&self) -> EnvironmentCheckItemV1 {
+        let gpu_slots: [&str; 10] =
+            ["0000", "0001", "0002", "0003", "0004", "0005", "0006", "0007", "0008", "0009"];
+        let gpus: Vec<String> = gpu_slots
+            .iter()
+            .filter_map(|slot| {
+                self.roots
+                    .registry
+                    .get_string(RegistryHive::LocalMachine, &format!("{GPU_CLASS_SUBKEY}\\{slot}"), "DriverDesc")
+            })
+            .collect();
+        let presence = if gpus.is_empty() {
+            EnvironmentPresence::NotDetected
+        } else {
+            EnvironmentPresence::Detected
+        };
+        item("gpu", Zone::Play, presence, None, json!({ "gpus": gpus }))
     }
 
     // --- create zone ---
@@ -297,27 +576,14 @@ impl EnvironmentEngine {
             Ok(metadata) if metadata.is_file() => item(
                 "unity_hub",
                 Zone::Create,
-                "Unity Hub",
-                CheckStatusV1::Ok,
-                "已找到 Unity Hub".to_owned(),
+                EnvironmentPresence::Detected,
                 None,
                 json!({ "exe": exe.to_string_lossy() }),
             ),
-            Ok(_) => item(
+            _ => item(
                 "unity_hub",
                 Zone::Create,
-                "Unity Hub",
-                CheckStatusV1::Error,
-                "Unity Hub 路径异常；请重新安装 Unity Hub".to_owned(),
-                None,
-                json!({ "exe": exe.to_string_lossy() }),
-            ),
-            Err(_) => item(
-                "unity_hub",
-                Zone::Create,
-                "Unity Hub",
-                CheckStatusV1::Error,
-                "未找到 Unity Hub；请先安装 Unity Hub".to_owned(),
+                EnvironmentPresence::NotDetected,
                 None,
                 json!({ "exe": exe.to_string_lossy() }),
             ),
@@ -332,9 +598,7 @@ impl EnvironmentEngine {
                 return item(
                     "unity_editors",
                     Zone::Create,
-                    "Unity 编辑器",
-                    CheckStatusV1::Error,
-                    "未安装任何 Unity 编辑器；请通过 Unity Hub 安装 2022.3".to_owned(),
+                    EnvironmentPresence::NotDetected,
                     None,
                     json!({ "root": root_display }),
                 );
@@ -343,54 +607,60 @@ impl EnvironmentEngine {
                 return item(
                     "unity_editors",
                     Zone::Create,
-                    "Unity 编辑器",
-                    CheckStatusV1::Error,
-                    "Unity 编辑器目录无法读取；请检查权限后重试".to_owned(),
-                    Some(crate::environment::error_codes::READ_FAILED.to_owned()),
+                    EnvironmentPresence::DetectionFailed,
+                    Some(error_codes::READ_FAILED.to_owned()),
                     json!({ "root": root_display, "reason": error.to_string() }),
                 );
             }
         };
-        let mut editors: Vec<(EditorVersion, PathBuf)> = Vec::new();
+        let mut editors: Vec<(editor_targets::ParsedEditorVersion, PathBuf)> = Vec::new();
         for entry in read_dir.flatten() {
             let path = entry.path();
             if !path.is_dir() || !path.join("Editor").is_dir() {
                 continue;
             }
-            if let Some(version) = parse_editor_version(&entry.file_name().to_string_lossy()) {
-                editors.push((version, path));
+            if let Some(parsed) =
+                editor_targets::parse_editor_version(&entry.file_name().to_string_lossy())
+            {
+                editors.push((parsed, path));
             }
         }
         if editors.is_empty() {
             return item(
                 "unity_editors",
                 Zone::Create,
-                "Unity 编辑器",
-                CheckStatusV1::Error,
-                "未安装任何 Unity 编辑器；请通过 Unity Hub 安装 2022.3".to_owned(),
+                EnvironmentPresence::NotDetected,
                 None,
                 json!({ "root": root_display }),
             );
         }
         editors.sort_by(|left, right| {
-            let left = (left.0.major, left.0.minor, left.0.patch);
-            let right = (right.0.major, right.0.minor, right.0.patch);
+            let left = (left.0.major, left.0.minor, left.0.patch, left.0.release_number);
+            let right = (right.0.major, right.0.minor, right.0.patch, right.0.release_number);
             right.cmp(&left)
         });
         let listed: Vec<Value> = editors
             .iter()
-            .map(|(version, path)| {
-                json!({ "version": version.display, "path": path.to_string_lossy() })
+            .map(|(parsed, path)| {
+                let (classification, guidance_code) = editor_targets::classify_editor(parsed);
+                json!({
+                    "version": parsed.display,
+                    "path": path.to_string_lossy(),
+                    "classification": classification,
+                    "guidanceCode": guidance_code,
+                })
             })
             .collect();
         item(
             "unity_editors",
             Zone::Create,
-            "Unity 编辑器",
-            CheckStatusV1::Ok,
-            format!("已安装 {} 个 Unity 编辑器", editors.len()),
+            EnvironmentPresence::Detected,
             None,
-            json!({ "root": root_display, "editors": listed }),
+            json!({
+                "root": root_display,
+                "productionTarget": editor_targets::PRODUCTION_TARGET,
+                "editors": listed,
+            }),
         )
     }
 
@@ -416,9 +686,7 @@ impl EnvironmentEngine {
                 item(
                     "vpm_cli",
                     Zone::Create,
-                    "VPM 命令行 (vrc-get)",
-                    CheckStatusV1::Ok,
-                    format!("vrc-get 可用（{version}）"),
+                    EnvironmentPresence::Detected,
                     None,
                     json!({ "version": version, "exe": exe }),
                 )
@@ -426,79 +694,86 @@ impl EnvironmentEngine {
             Ok(outcome) if outcome.timed_out => item(
                 "vpm_cli",
                 Zone::Create,
-                "VPM 命令行 (vrc-get)",
-                CheckStatusV1::Error,
-                "vrc-get 探测超时；请稍后重试".to_owned(),
+                EnvironmentPresence::DetectionFailed,
                 Some(error_codes::PROBE_FAILED.to_owned()),
                 json!({ "exe": exe }),
             ),
+            // A missing binary or a failing probe is a normal missing
+            // finding, not a detection failure (验收: 无 vrc-get 机器返回
+            // 确定"未安装").
             Ok(outcome) => item(
                 "vpm_cli",
                 Zone::Create,
-                "VPM 命令行 (vrc-get)",
-                CheckStatusV1::Error,
-                "未找到可用的 vrc-get；将在环境部署时提供安装引导".to_owned(),
+                EnvironmentPresence::NotDetected,
                 None,
                 json!({ "exe": exe, "exitCode": outcome.exit_code }),
             ),
-            // A missing binary is a normal finding, not a detection failure
-            // (验收: 无 vrc-get 机器返回确定"未安装").
             Err(_) => item(
                 "vpm_cli",
                 Zone::Create,
-                "VPM 命令行 (vrc-get)",
-                CheckStatusV1::Error,
-                "未找到可用的 vrc-get；将在环境部署时提供安装引导".to_owned(),
+                EnvironmentPresence::NotDetected,
                 None,
                 json!({ "exe": exe }),
             ),
         }
     }
 
+    /// VCC capability, reading the same settings resolution order the
+    /// package backend uses. Counts only: project paths stay in the
+    /// spike snapshot, not in the deployer card facts.
+    fn check_vcc(&self) -> EnvironmentCheckItemV1 {
+        let mut diagnostics = Vec::new();
+        let capability = environment_managers::read_vcc_settings(
+            &self.roots.vcc_settings_candidates,
+            &mut diagnostics,
+        );
+        let presence = match capability.presence {
+            environment_managers::ManagerPresence::Found => EnvironmentPresence::Detected,
+            environment_managers::ManagerPresence::NotFound => EnvironmentPresence::NotDetected,
+            environment_managers::ManagerPresence::ReadFailed => {
+                EnvironmentPresence::DetectionFailed
+            }
+        };
+        let error_code = capability.error_code.map(str::to_owned);
+        let diagnostic_details: Vec<Value> = diagnostics
+            .iter()
+            .map(|diagnostic| {
+                json!({ "code": diagnostic.code, "severity": diagnostic.severity, "detail": diagnostic.detail })
+            })
+            .collect();
+        item(
+            "vcc",
+            Zone::Create,
+            presence,
+            error_code,
+            json!({
+                "settingsPath": capability.settings_path,
+                "projectsSource": capability.projects_source,
+                "registeredProjects": capability.user_projects.len(),
+                "registeredFolders": capability.local_project_folders.len(),
+                "diagnostics": diagnostic_details,
+            }),
+        )
+    }
+
     fn check_disk_space(&self) -> EnvironmentCheckItemV1 {
         let target = self.roots.disk_target.to_string_lossy().into_owned();
         match free_disk_bytes(&self.roots.disk_target) {
-            Ok((free, total)) => {
-                let free_gib = free as f64 / (1024.0 * 1024.0 * 1024.0);
-                let (status, description) = if free_gib < self.roots.disk_error_gib {
-                    (
-                        CheckStatusV1::Error,
-                        format!(
-                            "可用空间不足 {:.0} GiB；Avatar 项目至少需要 {:.0} GiB",
-                            free_gib, self.roots.disk_error_gib
-                        ),
-                    )
-                } else if free_gib < self.roots.disk_warning_gib {
-                    (
-                        CheckStatusV1::Warning,
-                        format!(
-                            "可用空间偏少（{:.0} GiB）；建议清理至 {:.0} GiB 以上",
-                            free_gib, self.roots.disk_warning_gib
-                        ),
-                    )
-                } else {
-                    (CheckStatusV1::Ok, format!("可用空间 {:.0} GiB", free_gib))
-                };
-                item(
-                    "disk_space",
-                    Zone::Create,
-                    "磁盘空间",
-                    status,
-                    description,
-                    None,
-                    json!({
-                        "target": target,
-                        "freeBytes": free,
-                        "totalBytes": total,
-                    }),
-                )
-            }
+            Ok((free, total)) => item(
+                "disk_space",
+                Zone::Create,
+                EnvironmentPresence::Detected,
+                None,
+                json!({
+                    "target": target,
+                    "freeBytes": free,
+                    "totalBytes": total,
+                }),
+            ),
             Err(code) => item(
                 "disk_space",
                 Zone::Create,
-                "磁盘空间",
-                CheckStatusV1::Error,
-                "无法读取磁盘空间；请检查目标磁盘".to_owned(),
+                EnvironmentPresence::DetectionFailed,
                 Some(code.unwrap_or_else(|| error_codes::UNSUPPORTED_PLATFORM.to_owned())),
                 json!({ "target": target }),
             ),
@@ -512,9 +787,7 @@ impl EnvironmentEngine {
 fn item(
     id: &str,
     zone: Zone,
-    title: &str,
-    status: CheckStatusV1,
-    description: String,
+    presence: EnvironmentPresence,
     error_code: Option<String>,
     facts: Value,
 ) -> EnvironmentCheckItemV1 {
@@ -522,9 +795,7 @@ fn item(
         schema_version: crate::ENVELOPE_SCHEMA_VERSION,
         id: id.to_owned(),
         zone,
-        title: title.to_owned(),
-        status,
-        description,
+        presence,
         error_code,
         facts,
     }
@@ -537,31 +808,31 @@ fn roots_display(roots: &[PathBuf]) -> Vec<String> {
         .collect()
 }
 
-struct EditorVersion {
-    display: String,
-    major: i64,
-    minor: i64,
-    patch: i64,
-}
-
-/// `2022.3.22f1` → display "2022.3.22f1", sort key (2022, 3, 22). Directory
-/// names that do not look like an editor version are ignored.
-fn parse_editor_version(name: &str) -> Option<EditorVersion> {
-    let mut parts = name.split('.');
-    let major = parts.next()?.parse::<i64>().ok()?;
-    let minor = parts.next()?.parse::<i64>().ok()?;
-    let rest = parts.next()?;
-    let patch_digits: String = rest
-        .chars()
-        .take_while(|character| character.is_ascii_digit())
-        .collect();
-    let patch = patch_digits.parse::<i64>().ok()?;
-    Some(EditorVersion {
-        display: name.to_owned(),
-        major,
-        minor,
-        patch,
-    })
+/// Extracts library install paths from Steam's `libraryfolders.vdf` —
+/// the `"path"` entries, with VDF's escaped backslashes unescaped. An
+/// unreadable or unexpected file yields no extra roots (the Steam install
+/// root itself remains a library).
+fn parse_vdf_library_roots(vdf_path: &Path) -> Vec<PathBuf> {
+    let Ok(text) = std::fs::read_to_string(vdf_path) else {
+        return Vec::new();
+    };
+    let mut roots = Vec::new();
+    for line in text.lines() {
+        let trimmed = line.trim();
+        let Some(rest) = trimmed.strip_prefix("\"path\"") else {
+            continue;
+        };
+        let value = rest.trim();
+        let value = value
+            .strip_prefix('"')
+            .and_then(|rest| rest.strip_suffix('"'))
+            .unwrap_or(value);
+        if value.is_empty() {
+            continue;
+        }
+        roots.push(PathBuf::from(value.replace("\\\\", "\\")));
+    }
+    roots
 }
 
 fn tcp_reachable(probe: &str) -> bool {
