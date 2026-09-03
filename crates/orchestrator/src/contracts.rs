@@ -1,17 +1,17 @@
-//! Versioned envelope contracts shared across IPC, journal and task events.
+//! Migrated envelope candidates used by the transitional runtime and journal.
 //!
-//! These types are the minimal envelope frozen by the agile plan (E-S0):
-//! `AppErrorV1`, `CommandAcceptedV1`, `TaskEventV1` and the nine outward task
-//! states. The normative wire documents live in
-//! `schemas/orchestrator/envelope-v1/`; fixtures are consumed by both the Rust
-//! contract tests and the TypeScript tests in `packages/contracts`.
-//!
-//! Envelope fields only grow; they never change meaning (agile plan §2).
+//! `AppErrorV1`, `CommandAcceptedV1`, `TaskEventV1`, and the nine task states
+//! preserve useful tested semantics from the earlier core. Their fixtures live
+//! in `schemas/orchestrator/envelope-v1/`, but B1 explicitly classifies them as
+//! input to the application contract rather than a frozen Gateway wire format.
+//! The v0.1 Provider maps these values explicitly; Renderer code and persistence
+//! never consume these Rust types directly.
 //!
 //! # 中文逐段讲解（E-S0 审阅）
 //!
-//! 本文件是整个引擎的"普通话词典"：Rust 后端、TypeScript 前端、journal 落盘
-//! 文件三方都说同一套话，词典就是这里定义的四个结构体。
+//! 本文件保留早期 Rust runtime 与过渡 journal 已验证的信封语义。它不是
+//! TypeScript 前端、Gateway 与持久化三方共用的类型来源；B1 应用契约通过显式
+//! DTO 映射吸收其中仍成立的错误、任务状态和 revision 行为。
 //!
 //!
 //! `ErrorCategory` —— 错误的九大类（validation=用户输入不对、
@@ -20,7 +20,7 @@
 //! cancelled=用户取消、external_failure=外部工具出错、internal=我们
 //! 自己的 bug）。封闭枚举：想加第十类必须走契约修订，防止随手塞。
 //! serde 的 snake_case 让 Rust 的 `ExternalFailure` 在 JSON 里变成
-//! `external_failure`——前端看到的就是这个名字。
+//! `external_failure`；Provider 映射会决定候选应用契约是否保留该值。
 //!
 //! `ParamValue` —— 一条本地化参数的值，只能是字符串/数字/布尔三种。
 //! `#[serde(untagged)]` 的意思是：JSON 里来什么形状就按什么形状接住，
@@ -39,24 +39,21 @@
 //! `schema_version` 固定为 1：将来字段破坏性变更时升版本，消费方
 //! 看到不认识的版本就拒绝，而不是猜。
 //!
-//! `TaskState` —— 对外统一的九个任务状态（需求规范 §7.2）。引擎内部
-//! 的阶段可以更细，但**对外只暴露这九个**，前端任务中心只认它们。
+//! `TaskState` —— 候选的九个任务状态。引擎内部阶段可以更细；B1 应用契约
+//! 当前保留这九态行为，但不通过 Rust enum 直接向前端暴露。
 //! `is_terminal()` 标出四个终态：终态之后任何转换都非法，这是
 //! "先到终态者赢、不被超时看门狗覆盖"规则的判断依据。
 //!
-//! `TaskEventV1<P>` —— 任务事件的信封。`revision` 每个任务内单调递增，
-//! 前端靠它发现"我漏了事件"（看到 revision 跳号就重新拉快照，
-//! ORC-STA-005）。`payload: P` 是泛型：信封形状固定，里面的业务数据
-//! 按使用处定型，避免到处用 `serde_json::Value` 裸奔（ORC-TYP-006）。
+//! `TaskEventV1<P>` —— 过渡 runtime 的任务事件信封。`revision` 每个任务内
+//! 单调递增；应用契约保留“发现跳号后重取权威快照”的语义，但不复用 journal
+//! payload。`payload: P` 让 Rust 内部调用处保持定型。
 //!
 //! `CommandAcceptedV1` —— 一条"会被执行成任务"的命令被接受后返回的
 //! 回执：taskId + 接受时的 revision + 初始状态。关键是它只在 journal
 //! 落盘之后才发出去（写先于说，ORC-STA-006）。
 //!
-//! 测试怎么锁住这些：`tests/contracts.rs`（Rust）和
-//! `packages/contracts/src/orchestrator-envelope.test.ts`（TypeScript）
-//! 消费**同一批** `schemas/orchestrator/envelope-v1/fixtures/*.json`——
-//! 改了形状而没同步两侧，必有一侧测试先红。
+//! `tests/contracts.rs` 继续锁住迁移固定实例；正式跨语言契约由
+//! `packages/contracts/src/application-contract.ts` 与 Provider 测试拥有。
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;

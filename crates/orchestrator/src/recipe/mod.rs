@@ -1,7 +1,7 @@
-//! Recipe v2 engine (E-RECIPE smoke, based on proposal `2.0.0-draft.1` and
+//! Recipe v0.2 engine (E-RECIPE smoke, retained as a pre-alpha test format and
 //! ADR-0005, per user adjudication 2026-08-30): typed document model, schema
 //! and invariant validation, UI read model, pure ProjectSpec derivation,
-//! document digest and the `vuar2.` share codec. `vuar1` keeps meaning only
+//! document digest and the `vuar0.2.` share codec. `vuar1` keeps meaning only
 //! v1; importers never guess the major version from JSON content.
 //!
 //! # 中文逐段讲解（E-RECIPE 审阅）
@@ -9,7 +9,7 @@
 //! 配方引擎负责"可分享、可复现的 Avatar 搭配"这一层的数据处理。四个
 //! 子文件各管一段：
 //!
-//! `model.rs`（数据模型）——RecipeV2 文档的完整 Rust 类型。核心概念：
+//! `model.rs`（数据模型）——RecipeV02 文档的完整 Rust 类型。核心概念：
 //! Asset 回答"素材是什么"（来源引用 entityRef/sourceRef + 角色 avatar_
 //! base/outfit/hair…），Instance 回答"这次用素材里的哪个入口"（selector +
 //! 变体），Relation 声明"入口之间怎么组合"（四种：MA 安装/挂骨骼/
@@ -39,7 +39,7 @@
 //! `share.rs`（分享与摘要）—— digest：JSON 键排序（serde_json 默认
 //! BTreeMap）后 SHA-256（`sha2` crate，ORC-DEV-005 登记），产出
 //! `sha256:<64hex>`，作为保存冲突检测与计划绑定的文档指纹；
-//! `vuar2.` 分享码：JSON → 无填充 base64url（手写 60 行，含 RFC 向量
+//! `vuar0.2.` 分享码：JSON → 无填充 base64url（手写 60 行，含 RFC 向量
 //! 测试，拒绝填充和标准字母表变体），256KiB 硬上限，前缀/填充/损坏/
 //! 版本错误各有稳定错误码。
 
@@ -49,15 +49,15 @@ pub(crate) mod share;
 pub(crate) mod validate;
 
 pub use model::{
-    AssetResolution, AssetRole, AssetV2, CapabilityRequirement, DependencyV2, EntrypointBinding,
+    AssetResolution, AssetRole, AssetV02, CapabilityRequirement, DependencyV02, EntrypointBinding,
     EntrypointKind, EntrypointSelector, EnvironmentSpec, Fingerprint, FingerprintAlgorithm,
-    HumanoidBone, InstallMode, InstanceV2, IssueAction, IssueActionKind, IssueSeverity,
+    HumanoidBone, InstallMode, InstanceV02, IssueAction, IssueActionKind, IssueSeverity,
     IssueSubject, LocalResolutionV1, LockState, LockStatus, LockedAsset, LockedPackage,
     LockedPackageSource, LockedResolution, LockedUnity, LockedV1, ObjectBinding, ObjectSelector,
     PackageSourceKind, PerformanceTarget, Platform, PublicSelection, Quaternion, RecipeIssue,
-    RecipeReadModel, RecipeV2, RelationV2, ReproducibilityLevel, ResolutionState, SelectionMode,
-    SourceRef, TargetSpec, TransformV2, Vector3, WardrobeGroupV2, LOCK_SCHEMA_VERSION,
-    RECIPE_SCHEMA_VERSION,
+    RecipeReadModel, RecipeV02, RelationV02, ReproducibilityLevel, ResolutionState, SelectionMode,
+    SourceRef, TargetSpec, TransformV02, Vector3, WardrobeGroupV02, LOCK_SCHEMA_VERSION,
+    RECIPE_FORMAT_VERSION,
 };
 pub use read_model::{
     build_read_model, derive_project_spec, AvatarEntry, DerivedProjectSpecV1, PackageSpec,

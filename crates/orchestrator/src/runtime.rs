@@ -84,6 +84,7 @@ use crate::journal::{
     JournalEntryKind, JournalEntryV1, JournalPayload, JournalSink, RecoveredDisposition,
     JOURNAL_SCHEMA_VERSION,
 };
+use crate::sqlite_task_store::{NewTask, SqliteStoreError, SqliteTaskStore, TaskMutation};
 use crate::time::{Clock, TaskIdGenerator};
 use serde_json::Value;
 use std::collections::HashMap;
@@ -132,6 +133,13 @@ pub struct TaskSnapshot {
     pub revision: u64,
     pub correlation_id: String,
     pub cancel_requested: bool,
+    pub recovery_disposition: TaskRecoveryDisposition,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TaskRecoveryDisposition {
+    None,
+    InspectRequired,
 }
 
 struct TaskRecord {
@@ -142,11 +150,13 @@ struct TaskRecord {
     timeout_requested: AtomicBool,
     warned: AtomicBool,
     poisoned: bool,
+    recovery_disposition: TaskRecoveryDisposition,
 }
 
 struct RuntimeInner {
     tasks: Mutex<HashMap<String, TaskRecord>>,
-    journal: Arc<dyn JournalSink>,
+    journal: Option<Arc<dyn JournalSink>>,
+    sqlite: Option<Arc<SqliteTaskStore>>,
     clock: Arc<dyn Clock>,
     ids: Arc<dyn TaskIdGenerator>,
     seq: Mutex<u64>,
@@ -172,13 +182,92 @@ impl RuntimeInner {
         let mut seq = self.seq.lock().expect("journal sequence poisoned");
         *seq += 1;
         let entry = self.journal_entry(*seq, task_id, kind, payload);
-        let result = self.journal.append(&entry);
+        let result = self
+            .journal
+            .as_ref()
+            .expect("legacy append requires a journal")
+            .append(&entry);
         if result.is_err() {
             // An append can fail after a partial write. Continuing to append
             // would make the tail impossible to replay deterministically.
             self.journal_accepting.store(false, Ordering::Release);
         }
         result
+    }
+
+    fn persist_acceptance(
+        &self,
+        task_id: &str,
+        correlation_id: &str,
+        occurred_at: &str,
+        accepted: &CommandAcceptedV1,
+    ) -> Result<(), PersistenceFailure> {
+        if let Some(sqlite) = &self.sqlite {
+            sqlite
+                .accept_task(&NewTask {
+                    task_id: task_id.into(),
+                    correlation_id: correlation_id.into(),
+                    occurred_at: occurred_at.into(),
+                })
+                .map(|_| ())
+                .map_err(PersistenceFailure::Sqlite)
+        } else {
+            self.append_journal(
+                task_id,
+                JournalEntryKind::Accepted,
+                JournalPayload::Accepted {
+                    accepted: accepted.clone(),
+                },
+            )
+            .map_err(PersistenceFailure::Journal)
+        }
+    }
+
+    fn persist_mutation(
+        &self,
+        task_id: &str,
+        expected_revision: u64,
+        occurred_at: &str,
+        mutation: TaskMutation,
+    ) -> Result<(), PersistenceFailure> {
+        if let Some(sqlite) = &self.sqlite {
+            sqlite
+                .mutate_task(task_id, expected_revision, occurred_at, mutation)
+                .map(|_| ())
+                .map_err(PersistenceFailure::Sqlite)
+        } else {
+            let legacy = match mutation {
+                TaskMutation::Transition { state, .. } => Some((
+                    JournalEntryKind::StateChanged,
+                    JournalPayload::StateChanged { state },
+                )),
+                // Progress was deliberately never part of the transitional
+                // JSONL format. Only the SQLite authority persists it.
+                TaskMutation::Progress { .. } => None,
+                TaskMutation::RequestCancellation { .. } => Some((
+                    JournalEntryKind::CancelRequested,
+                    JournalPayload::CancelRequested,
+                )),
+                TaskMutation::Complete {
+                    state,
+                    error,
+                    result,
+                } => Some((
+                    JournalEntryKind::Completed,
+                    JournalPayload::Completed {
+                        state,
+                        error,
+                        result,
+                    },
+                )),
+            };
+            match legacy {
+                Some((kind, payload)) => self
+                    .append_journal(task_id, kind, payload)
+                    .map_err(PersistenceFailure::Journal),
+                None => Ok(()),
+            }
+        }
     }
 
     fn publish(&self, event: TaskEventV1) {
@@ -188,27 +277,22 @@ impl RuntimeInner {
         subscribers.retain(|sender| sender.send(event.clone()).is_ok());
     }
 
-    fn make_event(
+    #[allow(clippy::too_many_arguments)]
+    fn make_event_at(
         &self,
         task_id: &str,
         revision: u64,
         kind: TaskEventKind,
         state: TaskState,
         payload: Value,
+        occurred_at: String,
+        correlation_id: String,
     ) -> TaskEventV1 {
-        let correlation_id = self
-            .tasks
-            .lock()
-            .expect("tasks poisoned")
-            .get(task_id)
-            .expect("events require an existing task")
-            .correlation_id
-            .clone();
         TaskEventV1 {
             schema_version: ENVELOPE_SCHEMA_VERSION,
             task_id: task_id.to_owned(),
             revision,
-            occurred_at: self.clock.now_rfc3339(),
+            occurred_at,
             correlation_id,
             kind,
             state,
@@ -232,6 +316,11 @@ impl RuntimeInner {
             payload,
         }
     }
+}
+
+enum PersistenceFailure {
+    Journal(crate::journal::JournalError),
+    Sqlite(SqliteStoreError),
 }
 
 /// The public handle. Cheap to clone; each engine slice owns one.
@@ -273,6 +362,11 @@ impl TaskRuntime {
                             timeout_requested: AtomicBool::new(false),
                             warned: AtomicBool::new(false),
                             poisoned: false,
+                            recovery_disposition: if recovered.last_state.is_terminal() {
+                                TaskRecoveryDisposition::None
+                            } else {
+                                TaskRecoveryDisposition::InspectRequired
+                            },
                         },
                     );
                 }
@@ -287,7 +381,8 @@ impl TaskRuntime {
         Self {
             inner: Arc::new(RuntimeInner {
                 tasks: Mutex::new(tasks),
-                journal,
+                journal: Some(journal),
+                sqlite: None,
                 clock,
                 ids,
                 seq: Mutex::new(start_seq),
@@ -295,6 +390,51 @@ impl TaskRuntime {
                 subscribers: Mutex::new(Vec::new()),
             }),
         }
+    }
+
+    /// Creates the production runtime over the SQLite task authority. Existing
+    /// nonterminal tasks are registered for explicit Inspect/recovery; their
+    /// vanished jobs are never resumed implicitly.
+    pub fn with_sqlite(
+        sqlite: Arc<SqliteTaskStore>,
+        clock: Arc<dyn Clock>,
+        ids: Arc<dyn TaskIdGenerator>,
+    ) -> Result<Self, SqliteStoreError> {
+        let tasks = sqlite
+            .tasks()?
+            .into_iter()
+            .map(|stored| {
+                (
+                    stored.task_id,
+                    TaskRecord {
+                        state: stored.state,
+                        revision: stored.revision,
+                        correlation_id: stored.correlation_id,
+                        cancel_requested: AtomicBool::new(stored.cancel_requested),
+                        timeout_requested: AtomicBool::new(false),
+                        warned: AtomicBool::new(false),
+                        poisoned: false,
+                        recovery_disposition: if stored.state.is_terminal() {
+                            TaskRecoveryDisposition::None
+                        } else {
+                            TaskRecoveryDisposition::InspectRequired
+                        },
+                    },
+                )
+            })
+            .collect();
+        Ok(Self {
+            inner: Arc::new(RuntimeInner {
+                tasks: Mutex::new(tasks),
+                journal: None,
+                sqlite: Some(sqlite),
+                clock,
+                ids,
+                seq: Mutex::new(0),
+                journal_accepting: AtomicBool::new(true),
+                subscribers: Mutex::new(Vec::new()),
+            }),
+        })
     }
 
     /// Subscribes to lifecycle events. Missed events are recovered by
@@ -332,6 +472,7 @@ impl TaskRuntime {
             accepted_revision: 1,
             initial_state: TaskState::Queued,
         };
+        let accepted_at = self.inner.clock.now_rfc3339();
 
         // Keep collision check, durable acceptance and in-memory visibility
         // under the task lock. A snapshot can never observe an unaccepted
@@ -346,35 +487,36 @@ impl TaskRuntime {
                     format!("corr-{task_id}"),
                 ));
             }
-            if let Err(error) = self.inner.append_journal(
-                &task_id,
-                JournalEntryKind::Accepted,
-                JournalPayload::Accepted {
-                    accepted: accepted.clone(),
-                },
-            ) {
-                return Err(journal_failure(&error, &task_id));
+            if let Err(error) =
+                self.inner
+                    .persist_acceptance(&task_id, &correlation_id, &accepted_at, &accepted)
+            {
+                self.inner.journal_accepting.store(false, Ordering::Release);
+                return Err(persistence_failure(&error, &task_id));
             }
             tasks.insert(
                 task_id.clone(),
                 TaskRecord {
                     state: TaskState::Queued,
                     revision: 1,
-                    correlation_id,
+                    correlation_id: correlation_id.clone(),
                     cancel_requested: AtomicBool::new(false),
                     timeout_requested: AtomicBool::new(false),
                     warned: AtomicBool::new(false),
                     poisoned: false,
+                    recovery_disposition: TaskRecoveryDisposition::None,
                 },
             );
         }
 
-        self.inner.publish(self.inner.make_event(
+        self.inner.publish(self.inner.make_event_at(
             &task_id,
             1,
             TaskEventKind::Accepted,
             TaskState::Queued,
             Value::Null,
+            accepted_at,
+            correlation_id,
         ));
 
         self.spawn_worker(task_id.clone(), request.job);
@@ -393,7 +535,8 @@ impl TaskRuntime {
         // journal-first (Fix 2): the flag is set only after the CancelRequested
         // line is durable -- otherwise a journal failure would leave the worker
         // observing a cancellation that the black box never recorded.
-        let (already_requested, state_at_request, revision_at_request) = {
+        let occurred_at = self.inner.clock.now_rfc3339();
+        let (state_at_request, revision_at_request, correlation_id) = {
             let mut tasks = self.inner.tasks.lock().expect("tasks poisoned");
             let Some(record) = tasks.get_mut(task_id) else {
                 return Err(AppErrorV1::new(
@@ -406,29 +549,32 @@ impl TaskRuntime {
             if record.state.is_terminal() || record.poisoned {
                 return Ok(());
             }
-            let already = record.cancel_requested.load(Ordering::SeqCst);
-            if already {
+            if record.cancel_requested.load(Ordering::SeqCst) {
                 return Ok(());
             }
-            if let Err(error) = self.inner.append_journal(
+            if let Err(error) = self.inner.persist_mutation(
                 task_id,
-                JournalEntryKind::CancelRequested,
-                JournalPayload::CancelRequested,
+                record.revision,
+                &occurred_at,
+                TaskMutation::RequestCancellation {
+                    payload: Value::Null,
+                },
             ) {
-                return Err(journal_failure(&error, task_id));
+                record.poisoned = true;
+                return Err(persistence_failure(&error, task_id));
             }
             record.cancel_requested.store(true, Ordering::SeqCst);
-            (already, record.state, record.revision)
+            record.revision += 1;
+            (record.state, record.revision, record.correlation_id.clone())
         };
-        if already_requested {
-            return Ok(());
-        }
-        self.inner.publish(self.inner.make_event(
+        self.inner.publish(self.inner.make_event_at(
             task_id,
             revision_at_request,
             TaskEventKind::CancelRequested,
             state_at_request,
             Value::Null,
+            occurred_at,
+            correlation_id,
         ));
         Ok(())
     }
@@ -442,6 +588,7 @@ impl TaskRuntime {
             revision: record.revision,
             correlation_id: record.correlation_id.clone(),
             cancel_requested: record.cancel_requested.load(Ordering::SeqCst),
+            recovery_disposition: record.recovery_disposition,
         })
     }
 
@@ -456,6 +603,7 @@ impl TaskRuntime {
                 revision: record.revision,
                 correlation_id: record.correlation_id.clone(),
                 cancel_requested: record.cancel_requested.load(Ordering::SeqCst),
+                recovery_disposition: record.recovery_disposition,
             })
             .collect();
         snapshots.sort_by(|left, right| left.task_id.cmp(&right.task_id));
@@ -540,8 +688,16 @@ impl TaskRuntime {
     }
 }
 
-fn journal_failure(error: &crate::journal::JournalError, task_id: &str) -> AppErrorV1 {
-    let _ = error; // never leak journal internals to the wire (ORC-ERR-004)
+fn persistence_failure(error: &PersistenceFailure, task_id: &str) -> AppErrorV1 {
+    match error {
+        PersistenceFailure::Journal(error) => {
+            let _ = error;
+        }
+        PersistenceFailure::Sqlite(error) => {
+            let _ = error;
+        }
+    }
+    // Never leak filesystem paths, SQL, or driver diagnostics to the wire.
     AppErrorV1::new(
         error_codes::JOURNAL_WRITE_FAILED,
         ErrorCategory::Internal,
@@ -652,25 +808,44 @@ impl TaskContext {
     /// stream stays strictly monotonic for consumers, but (unlike state
     /// transitions) it is not journaled in v0.
     pub fn emit_progress(&self, payload: Value) {
-        let (state, revision) = {
+        let occurred_at = self.runtime.inner.clock.now_rfc3339();
+        let (state, revision, correlation_id) = {
             let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
             match tasks.get_mut(&self.task_id) {
                 Some(record) => {
                     if record.state.is_terminal() || record.poisoned {
                         return;
                     }
+                    if self
+                        .runtime
+                        .inner
+                        .persist_mutation(
+                            &self.task_id,
+                            record.revision,
+                            &occurred_at,
+                            TaskMutation::Progress {
+                                payload: payload.clone(),
+                            },
+                        )
+                        .is_err()
+                    {
+                        record.poisoned = true;
+                        return;
+                    }
                     record.revision += 1;
-                    (record.state, record.revision)
+                    (record.state, record.revision, record.correlation_id.clone())
                 }
                 None => return,
             }
         };
-        self.runtime.inner.publish(self.runtime.inner.make_event(
+        self.runtime.inner.publish(self.runtime.inner.make_event_at(
             &self.task_id,
             revision,
             TaskEventKind::Progress,
             state,
             payload,
+            occurred_at,
+            correlation_id,
         ));
     }
 
@@ -682,7 +857,8 @@ impl TaskContext {
         // correctness wins. On failure the memory state is untouched and the
         // task is poisoned: spawn_worker must terminate instead of running
         // the job without a recovery record.
-        let revision = {
+        let occurred_at = self.runtime.inner.clock.now_rfc3339();
+        let (revision, correlation_id) = {
             let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
             let Some(record) = tasks.get_mut(&self.task_id) else {
                 return Err(AppErrorV1::new(
@@ -711,24 +887,30 @@ impl TaskContext {
                     self.task_id.clone(),
                 ));
             }
-            if let Err(error) = self.runtime.inner.append_journal(
+            if let Err(error) = self.runtime.inner.persist_mutation(
                 &self.task_id,
-                JournalEntryKind::StateChanged,
-                JournalPayload::StateChanged { state: to },
+                record.revision,
+                &occurred_at,
+                TaskMutation::Transition {
+                    state: to,
+                    payload: Value::Null,
+                },
             ) {
                 record.poisoned = true;
-                return Err(journal_failure(&error, &self.task_id));
+                return Err(persistence_failure(&error, &self.task_id));
             }
             record.revision += 1;
             record.state = to;
-            record.revision
+            (record.revision, record.correlation_id.clone())
         };
-        self.runtime.inner.publish(self.runtime.inner.make_event(
+        self.runtime.inner.publish(self.runtime.inner.make_event_at(
             &self.task_id,
             revision,
             TaskEventKind::StateChanged,
             to,
             Value::Null,
+            occurred_at,
+            correlation_id,
         ));
         Ok(())
     }
@@ -737,7 +919,8 @@ impl TaskContext {
         // 再修改内存和发布事件；写入失败时既不能向 UI 宣称成功，也不能
         // 留下只有 StateChanged、没有外部结果的半份终态（ORC-STO-002/004）。
         // 锁覆盖 append，保证 watchdog 与正常退出之间严格 first-writer-wins。
-        let revision = {
+        let occurred_at = self.runtime.inner.clock.now_rfc3339();
+        let (revision, correlation_id) = {
             let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
             let Some(record) = tasks.get_mut(&self.task_id) else {
                 return;
@@ -751,10 +934,11 @@ impl TaskContext {
             if self
                 .runtime
                 .inner
-                .append_journal(
+                .persist_mutation(
                     &self.task_id,
-                    JournalEntryKind::Completed,
-                    JournalPayload::Completed {
+                    record.revision,
+                    &occurred_at,
+                    TaskMutation::Complete {
                         state: desired,
                         error: error.clone(),
                         result: result.clone(),
@@ -767,9 +951,9 @@ impl TaskContext {
             }
             record.revision += 1;
             record.state = desired;
-            record.revision
+            (record.revision, record.correlation_id.clone())
         };
-        self.runtime.inner.publish(self.runtime.inner.make_event(
+        self.runtime.inner.publish(self.runtime.inner.make_event_at(
             &self.task_id,
             revision,
             TaskEventKind::Completed,
@@ -779,10 +963,13 @@ impl TaskContext {
                 (None, Some(value)) => value.clone(),
                 (None, None) => Value::Null,
             },
+            occurred_at,
+            correlation_id,
         ));
     }
 
     fn force_timeout(&self) {
+        let occurred_at = self.runtime.inner.clock.now_rfc3339();
         let event = {
             let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
             let Some(record) = tasks.get_mut(&self.task_id) else {
@@ -791,30 +978,39 @@ impl TaskContext {
             if record.state.is_terminal() || record.poisoned {
                 return;
             }
-            if !record.cancel_requested.load(Ordering::SeqCst)
-                && self
-                    .runtime
-                    .inner
-                    .append_journal(
-                        &self.task_id,
-                        JournalEntryKind::CancelRequested,
-                        JournalPayload::CancelRequested,
-                    )
-                    .is_err()
+            if record.cancel_requested.load(Ordering::SeqCst) {
+                record.timeout_requested.store(true, Ordering::SeqCst);
+                return;
+            }
+            if self
+                .runtime
+                .inner
+                .persist_mutation(
+                    &self.task_id,
+                    record.revision,
+                    &occurred_at,
+                    TaskMutation::RequestCancellation {
+                        payload: serde_json::json!({ "reason": "timeout" }),
+                    },
+                )
+                .is_err()
             {
                 record.poisoned = true;
                 return;
             }
             record.cancel_requested.store(true, Ordering::SeqCst);
             record.timeout_requested.store(true, Ordering::SeqCst);
-            (record.state, record.revision)
+            record.revision += 1;
+            (record.state, record.revision, record.correlation_id.clone())
         };
-        self.runtime.inner.publish(self.runtime.inner.make_event(
+        self.runtime.inner.publish(self.runtime.inner.make_event_at(
             &self.task_id,
             event.1,
             TaskEventKind::CancelRequested,
             event.0,
             serde_json::json!({ "reason": "timeout" }),
+            occurred_at,
+            event.2,
         ));
     }
 }

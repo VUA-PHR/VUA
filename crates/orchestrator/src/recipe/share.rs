@@ -1,4 +1,4 @@
-//! Document digest and `vuar2` share-code codec (proposal "摘要算法" and
+//! Document digest and `vuar0.2` share-code codec (test-format "摘要算法" and
 //! "编码").
 //!
 //! Digest profile: canonical JSON is produced by serde_json's default
@@ -9,13 +9,13 @@
 //! (H-STATE). Until then the digest is a process-stable document fingerprint,
 //! which is what save-conflict and plan-binding semantics need.
 
-use super::model::{RecipeV2, RECIPE_SCHEMA_VERSION};
+use super::model::{RecipeV02, RECIPE_FORMAT_VERSION};
 use crate::contracts::{AppErrorV1, ErrorCategory};
 use serde::Serialize;
 use serde_json::Value;
 use sha2::{Digest as ShaDigest, Sha256};
 
-pub const SHARE_PREFIX: &str = "vuar2.";
+pub const SHARE_PREFIX: &str = "vuar0.2.";
 /// Proposal hard limit: decoded payload may not exceed 256 KiB.
 pub const MAX_DECODED_BYTES: usize = 256 * 1024;
 /// Proposal target for regular exports; exceeding it is allowed but flagged
@@ -103,8 +103,8 @@ fn hex_lower(bytes: &[u8]) -> String {
 
 // --- share code ---
 
-/// Encodes a recipe as `vuar2.<unpadded base64url of UTF-8 JSON>`.
-pub fn encode_share_code(recipe: &RecipeV2) -> Result<String, AppErrorV1> {
+/// Encodes a recipe as `vuar0.2.<unpadded base64url of UTF-8 JSON>`.
+pub fn encode_share_code(recipe: &RecipeV02) -> Result<String, AppErrorV1> {
     let json = serde_json::to_vec(recipe).map_err(json_error)?;
     Ok(format!("{SHARE_PREFIX}{}", base64_url_encode(&json)))
 }
@@ -115,7 +115,7 @@ pub fn encode_share_code(recipe: &RecipeV2) -> Result<String, AppErrorV1> {
 /// 用户确认保存").
 pub fn decode_share_code(
     code: &str,
-) -> Result<(RecipeV2, Vec<super::model::RecipeIssue>), AppErrorV1> {
+) -> Result<(RecipeV02, Vec<super::model::RecipeIssue>), AppErrorV1> {
     let payload = code
         .strip_prefix(SHARE_PREFIX)
         .ok_or_else(|| share_error("vua.recipe.share_prefix_invalid"))?;
@@ -124,9 +124,9 @@ pub fn decode_share_code(
     if bytes.len() > MAX_DECODED_BYTES {
         return Err(share_error("vua.recipe.share_too_large"));
     }
-    let recipe: RecipeV2 = serde_json::from_slice(&bytes)
+    let recipe: RecipeV02 = serde_json::from_slice(&bytes)
         .map_err(|_| share_error("vua.recipe.share_payload_invalid"))?;
-    if recipe.schema_version != RECIPE_SCHEMA_VERSION {
+    if recipe.format_version != RECIPE_FORMAT_VERSION {
         return Err(share_error("vua.recipe.share_version_invalid"));
     }
     let issues = super::validate::validate_recipe(&recipe);

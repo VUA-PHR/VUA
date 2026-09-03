@@ -1,5 +1,5 @@
-//! E-RECIPE integration tests against the proposal's own fixtures
-//! (`schemas/recipe/v2/example.*.json`). Each test cites its ORC requirement
+//! E-RECIPE integration tests against the pre-alpha v0.2 test fixtures
+//! (`schemas/recipe/v0.2/example.*.json`). Each test cites its ORC requirement
 //! (ORC-TST-006).
 
 #![allow(clippy::result_large_err)]
@@ -8,12 +8,12 @@ use std::path::PathBuf;
 
 use vua_orchestrator::{
     build_read_model, decode_share_code, derive_project_spec, document_digest, encode_share_code,
-    has_blocking, validate_local_resolution, IssueSeverity, LocalResolutionV1, LockState, RecipeV2,
-    ReproducibilityLevel, ResolutionState,
+    has_blocking, validate_local_resolution, IssueSeverity, LocalResolutionV1, LockState,
+    RecipeV02, ReproducibilityLevel, ResolutionState,
 };
 
 fn fixture_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/recipe/v2")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/recipe/v0.2")
 }
 
 fn read_fixture(name: &str) -> serde_json::Value {
@@ -21,11 +21,11 @@ fn read_fixture(name: &str) -> serde_json::Value {
     serde_json::from_slice(&bytes).expect("fixture must be valid JSON")
 }
 
-fn parse_recipe(value: serde_json::Value) -> RecipeV2 {
-    serde_json::from_value(value).expect("fixture must typecheck against RecipeV2")
+fn parse_recipe(value: serde_json::Value) -> RecipeV02 {
+    serde_json::from_value(value).expect("fixture must typecheck against RecipeV02")
 }
 
-fn example_recipe() -> RecipeV2 {
+fn example_recipe() -> RecipeV02 {
     parse_recipe(read_fixture("example.recipe.json"))
 }
 
@@ -34,7 +34,7 @@ fn example_resolution() -> LocalResolutionV1 {
         .expect("fixture must typecheck against LocalResolutionV1")
 }
 
-fn mutate(recipe: &RecipeV2, edit: impl FnOnce(&mut serde_json::Value)) -> RecipeV2 {
+fn mutate(recipe: &RecipeV02, edit: impl FnOnce(&mut serde_json::Value)) -> RecipeV02 {
     let mut value = serde_json::to_value(recipe).unwrap();
     edit(&mut value);
     serde_json::from_value(value).expect("mutation must stay type-valid")
@@ -44,7 +44,7 @@ fn codes_of(issues: &[vua_orchestrator::RecipeIssue]) -> Vec<&str> {
     issues.iter().map(|issue| issue.code.as_str()).collect()
 }
 
-// --- happy path over the proposal's own fixtures ---
+// --- happy path over the v0.2 test fixtures ---
 
 #[test]
 fn orc_scp_002_example_recipe_validates_and_reads_as_version_locked() {
@@ -52,7 +52,7 @@ fn orc_scp_002_example_recipe_validates_and_reads_as_version_locked() {
     let issues = vua_orchestrator::validate_recipe(&recipe);
     assert!(
         !has_blocking(&issues),
-        "the proposal fixture must be clean, got {:?}",
+        "the v0.2 fixture must be clean, got {:?}",
         codes_of(&issues)
     );
 
@@ -107,7 +107,7 @@ fn orc_scp_002_invalid_recipe_or_resolution_identity_never_reports_ready() {
     assert_eq!(model.resolution_state, ResolutionState::NeedsInput);
 }
 
-// --- invariant negatives (proposal §"Schema 之外的领域不变量") ---
+// --- invariant negatives retained from the v0.2 test format ---
 
 #[test]
 fn orc_tst_002_duplicate_ids_and_missing_references_are_blocking() {
@@ -222,7 +222,7 @@ fn orc_ipc_010_unknown_required_capabilities_block_and_optional_warn() {
     optional_value["environment"]["capabilities"]
         .as_array_mut()
         .unwrap()[0]["required"] = serde_json::Value::Bool(false);
-    let optional = serde_json::from_value::<RecipeV2>(optional_value).unwrap();
+    let optional = serde_json::from_value::<RecipeV02>(optional_value).unwrap();
     let issues = vua_orchestrator::validate_recipe(&optional);
     let issue = issues
         .iter()
@@ -318,11 +318,14 @@ fn orc_typ_005_document_digest_is_stable_and_prefixed() {
 }
 
 #[test]
-fn orc_ipc_010_share_code_roundtrips_through_vuar2() {
+fn orc_ipc_010_share_code_roundtrips_through_vuar0_2() {
     let recipe = example_recipe();
     let code = encode_share_code(&recipe).unwrap();
-    assert!(code.starts_with("vuar2."));
-    assert!(!code[6..].contains('='), "payload carries no padding");
+    assert!(code.starts_with("vuar0.2."));
+    assert!(
+        !code["vuar0.2.".len()..].contains('='),
+        "payload carries no padding"
+    );
     let (decoded, issues) = decode_share_code(&code).unwrap();
     assert!(!has_blocking(&issues));
     assert_eq!(decoded, recipe);
@@ -334,29 +337,32 @@ fn orc_ipc_010_share_code_rejects_foreign_prefixes_and_corruption() {
     let code = encode_share_code(&recipe).unwrap();
 
     // vuar1 keeps meaning only v1 — never guessed from content.
-    let v1_style = format!("vuar1.{}", &code[6..]);
+    let v1_style = format!("vuar1.{}", &code["vuar0.2.".len()..]);
     let error = decode_share_code(&v1_style).unwrap_err();
     assert_eq!(error.code, "vua.recipe.share_prefix_invalid");
 
-    let padded = format!("vuar2.{}=", &code[6..]);
+    let former_v2_style = format!("vuar2.{}", &code["vuar0.2.".len()..]);
+    let error = decode_share_code(&former_v2_style).unwrap_err();
+    assert_eq!(error.code, "vua.recipe.share_prefix_invalid");
+
+    let padded = format!("vuar0.2.{}=", &code["vuar0.2.".len()..]);
     let error = decode_share_code(&padded).unwrap_err();
     assert_eq!(error.code, "vua.recipe.share_payload_invalid");
 
-    let garbage = "vuar2.!!!not-base64!!!";
+    let garbage = "vuar0.2.!!!not-base64!!!";
     let error = decode_share_code(garbage).unwrap_err();
     assert_eq!(error.code, "vua.recipe.share_payload_invalid");
 
     let oversized = format!(
-        "vuar2.{}",
+        "vuar0.2.{}",
         vua_orchestrator::base64_url_encode(&vec![7u8; 300 * 1024])
     );
     let error = decode_share_code(&oversized).unwrap_err();
     assert_eq!(error.code, "vua.recipe.share_too_large");
 
-    // Wrong schema version inside an otherwise valid payload is refused —
-    // the major version is never guessed from JSON content.
+    // A wrong format version inside an otherwise valid payload is refused.
     let mut wrong = recipe.clone();
-    wrong.schema_version = 1;
+    wrong.format_version = "0.1".into();
     let code = encode_share_code(&wrong).unwrap();
     let error = decode_share_code(&code).unwrap_err();
     assert_eq!(error.code, "vua.recipe.share_version_invalid");

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vua.dev/schemas/recipe/v2/recipe.schema.json",
-  "title": "VUA Recipe v2",
+  "$id": "https://vua.dev/schemas/recipe/v0.2/recipe.schema.json",
+  "title": "VUA Recipe v0.2",
   "description": "Portable desired-state description and optional public resolution lock for an Avatar composition.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "schemaVersion",
+    "formatVersion",
     "recipeId",
     "revision",
     "title",
@@ -19,8 +19,8 @@
     "relations"
   ],
   "properties": {
-    "schemaVersion": {
-      "const": 2
+    "formatVersion": {
+      "const": "0.2"
     },
     "recipeId": {
       "$ref": "#/$defs/uuidV7"

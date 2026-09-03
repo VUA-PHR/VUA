@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://vua.dev/schemas/recipe/v2/build-record.schema.json",
+  "$id": "https://vua.dev/schemas/recipe/v0.2/build-record.schema.json",
   "title": "VUA Avatar Build Record v1",
   "description": "Private evidence for one Orchestrator build. It records what ran without becoming desired state.",
   "type": "object",

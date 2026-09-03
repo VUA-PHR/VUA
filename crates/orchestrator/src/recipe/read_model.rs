@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 /// document when one exists; its presence lifts entrypoint/object binding
 /// issues from "needs input" to resolvable-or-blocking.
 pub fn build_read_model(
-    recipe: RecipeV2,
+    recipe: RecipeV02,
     local_resolution: Option<&LocalResolutionV1>,
 ) -> RecipeReadModel {
     let mut issues = validate_recipe(&recipe);
@@ -38,7 +38,7 @@ pub fn build_read_model(
 }
 
 fn classify(
-    recipe: &RecipeV2,
+    recipe: &RecipeV02,
     local_resolution_valid: bool,
 ) -> (LockState, ReproducibilityLevel, ResolutionState) {
     let Some(locked) = &recipe.locked else {
@@ -146,7 +146,7 @@ pub struct SpecCounts {
 /// constraints instead of failing (ADR-0005: a stale lock is never silently
 /// used, but the intent stays plannable).
 pub fn derive_project_spec(
-    recipe: &RecipeV2,
+    recipe: &RecipeV02,
     document_digest: &str,
 ) -> Result<DerivedProjectSpecV1, Vec<RecipeIssue>> {
     let issues = validate_recipe(recipe);
