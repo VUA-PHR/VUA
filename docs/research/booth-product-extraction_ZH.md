@@ -3,7 +3,7 @@
 [English](booth-product-extraction_EN.md) | [简体中文](booth-product-extraction_ZH.md)
 
 > 状态:已接受——约束识别管线重写
-> 规范版本:0.1
+> 规范版本:0.2(0.1 经黄金锚定祖先链追踪修正)
 > 范围:BOOTH 商品页(静态存档)抽取,服务 BDL
 > 更新:2026-09-04
 > 规范效力:BDL v1 识别管线的抽取规则;管线本身按本规范从零重写
@@ -33,7 +33,7 @@
 | 分类备用位置 | `#js-item-category-breadcrumbs` | 仅在根节点没有分类时使用;不自行推断分类。 |
 | 标题 | `article .summary h2` | 取页面显示的完整标题。 |
 | 标题备用位置 | `script[type="application/ld+json"]` 中 Product 的 `name` | `data-product-name` 已观测到截断(Nemesis),不能作为唯一标题来源。 |
-| 作者/店铺名 | `.summary .shop-name` | 取页面显示名称。 |
+| 作者/店铺名 | `article .shop-name`(位于 `section.shop-items` 块内:`.shop-info` → `.shop-name`) | 取页面显示名称。v0.1 首版定位在 `.summary` 下;黄金锚定 4431242 的祖先链追踪显示店铺块是 `.summary` 之外的独立 section。 |
 | 作者主页 | JSON-LD Product 的 `brand.url`,或店铺链接 | 只记录作者/店铺本身,不作为正文链接。 |
 | 成人标记 | `.summary [class~="bg-primary700"]`,文本为 `Adult` | 只认 BOOTH 明确显示的 Adult,不根据标题猜测。 |
 | 点赞数 | `#js-item-wishlist-button` | 浏览器渲染后,数量位于按钮内部文字节点(通常 `.typography-14`);静态存档中可能为空。 |
@@ -79,3 +79,10 @@
 
 - 条款观测(VN3/ToS)抽取规则——待 Google Docs/Drive 自动访问政策调研;v1 仅人工提取。
 - 正文与子商品名称中的兼容性/依赖抽取规则——同一方法:先真实 HTML,后成规则。
+
+## 变更记录
+
+- 0.2(2026-09-04):修正作者/店铺名的位置——店铺块是 `.summary` 之外的独立
+  `section.shop-items`;由首次识别管线运行时的黄金锚定祖先链追踪发现
+  (Meiyun 4431242 在 v0.1 规则下 `shop_name` 缺失)。
+- 0.1(2026-09-04):基于商品 4431242 与 5986971 的真实 HTML 初始规则。

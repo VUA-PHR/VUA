@@ -3,7 +3,7 @@
 [English](booth-product-extraction_EN.md) | [简体中文](booth-product-extraction_ZH.md)
 
 > Status: Accepted — governs the recognition-pipeline rewrite
-> Spec version: 0.1
+> Spec version: 0.2 (0.1 amended by golden-anchor ancestor trace)
 > Scope: BOOTH product page (static archive) extraction for BDL
 > Updated: 2026-09-04
 > Normative effect: Extraction rules for the BDL v1 recognition pipeline;
@@ -36,7 +36,7 @@ HTML, including the negative knowledge in the pitfalls section.
 | Category fallback | `#js-item-category-breadcrumbs` | Used only when the root carries no category; never infer a category. |
 | Title | `article .summary h2` | The full displayed title. |
 | Title fallback | `script[type="application/ld+json"]`, Product `name` | `data-product-name` was observed truncated (Nemesis), so it must not be the sole title source. |
-| Author / shop name | `.summary .shop-name` | The displayed name. |
+| Author / shop name | `article .shop-name` (inside the `section.shop-items` block: `.shop-info` → `.shop-name`) | The displayed name. v0.1 first located it under `.summary`; the golden-anchor ancestor trace (4431242) showed the shop block is a separate section outside `.summary`. |
 | Author page | JSON-LD Product `brand.url`, or the shop link | Records the author/shop itself; not treated as a body link. |
 | Adult marker | `.summary [class~="bg-primary700"]` with text `Adult` | Only BOOTH's explicit display counts; never guess from the title. |
 | Likes | `#js-item-wishlist-button` | After browser rendering the count sits in the button's text node (usually `.typography-14`); may be empty in static archives. |
@@ -90,3 +90,12 @@ HTML, including the negative knowledge in the pitfalls section.
   Docs/Drive automated-access policy review; v1 keeps human extraction.
 - Compatibility/dependency extraction rules from body text and subproduct
   names — same method: real HTML first, rules second.
+
+## Changelog
+
+- 0.2 (2026-09-04): corrected the author/shop-name location — the shop
+  block is a separate `section.shop-items` outside `.summary`; found by the
+  golden-anchor ancestor trace during the first recognition-pipeline run
+  (Meiyun 4431242 extracted with `shop_name` missing under the v0.1 rule).
+- 0.1 (2026-09-04): initial rules from the observed HTML of products
+  4431242 and 5986971.

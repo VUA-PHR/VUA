@@ -6,6 +6,7 @@
 #![allow(clippy::result_large_err)]
 
 mod assembly;
+mod booth_extraction;
 mod bridge;
 mod build_record;
 mod capability;
@@ -39,6 +40,9 @@ mod workflow;
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
+};
+pub use booth_extraction::{
+    extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
 pub use bridge::{BridgeError, UnityBatchBridge};
 pub use build_record::{
