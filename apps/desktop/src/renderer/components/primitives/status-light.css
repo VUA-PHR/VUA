@@ -1,0 +1,98 @@
+.vua-status-light {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-status-light__dot {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.vua-status-light--lg .vua-status-light__dot {
+  width: 64px;
+  height: 64px;
+}
+
+.vua-status-light--lg .vua-status-light__dot svg {
+  width: 36px;
+  height: 36px;
+}
+
+.vua-status-light[data-level="ok"] .vua-status-light__dot {
+  background: var(--vua-success);
+  color: var(--vua-on-status);
+}
+
+.vua-status-light[data-level="warning"] .vua-status-light__dot {
+  background: var(--vua-warning);
+  color: var(--vua-on-status);
+}
+
+.vua-status-light[data-level="error"] .vua-status-light__dot {
+  background: var(--vua-error);
+  color: var(--vua-on-status);
+}
+
+.vua-status-light[data-level="unknown"] .vua-status-light__dot {
+  background: var(--vua-border);
+  color: var(--vua-text-strong);
+}
+
+/* 英雄区(lg)状态色径向光晕:box-shadow 扩散,静态(§氛围基线 #8) */
+.vua-status-light--lg[data-level="ok"] .vua-status-light__dot {
+  box-shadow: 0 0 24px 6px color-mix(in srgb, var(--vua-success) 40%, transparent);
+}
+
+.vua-status-light--lg[data-level="unknown"] .vua-status-light__dot {
+  box-shadow: 0 0 24px 6px color-mix(in srgb, var(--vua-border) 40%, transparent);
+}
+
+/* warning/error 的静态光晕:脉冲动画运行时由动画接管,
+ * reduced-motion 压掉动画后回落到这里的静态光晕 */
+.vua-status-light--lg[data-level="warning"] .vua-status-light__dot {
+  box-shadow: 0 0 24px 6px color-mix(in srgb, var(--vua-warning) 40%, transparent);
+}
+
+.vua-status-light--lg[data-level="error"] .vua-status-light__dot {
+  box-shadow: 0 0 24px 6px color-mix(in srgb, var(--vua-error) 40%, transparent);
+}
+
+/*
+ * 呼吸脉冲(§氛围基线 #5):仅 warning/error,2s 一呼一吸,
+ * scale 1→1.06 + 光晕透明度变化;ok/unknown 常亮不动。
+ * --_glow 由各 level 注入,keyframes 共用;reduced-motion 全局规则
+ * 压掉动画后回到基态(无 fill-mode),不停在半透明光晕上。
+ */
+.vua-status-light[data-level="warning"] .vua-status-light__dot,
+.vua-status-light[data-level="error"] .vua-status-light__dot {
+  animation: vua-status-pulse 2s ease-in-out infinite alternate;
+}
+
+.vua-status-light[data-level="warning"] .vua-status-light__dot {
+  --_glow: var(--vua-warning);
+}
+
+.vua-status-light[data-level="error"] .vua-status-light__dot {
+  --_glow: var(--vua-error);
+}
+
+@keyframes vua-status-pulse {
+  from {
+    transform: scale(1);
+    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--_glow) 25%, transparent);
+  }
+  to {
+    transform: scale(1.06);
+    box-shadow: 0 0 20px 6px color-mix(in srgb, var(--_glow) 55%, transparent);
+  }
+}
+
+.vua-status-light__label {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}

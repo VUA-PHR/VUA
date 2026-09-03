@@ -1,0 +1,387 @@
+.vua-workshop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-5);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.vua-workshop__hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-workshop__hero p {
+  margin: 0;
+}
+
+/* Hero 大标题:辖区渐变文字(车间=橙);HC 下 gradient 置 none 退化纯色 */
+.vua-workshop__hero h1 {
+  background-color: var(--vua-accent);
+  background-image: var(--vua-accent-gradient);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: vua-hero-shimmer 12s linear infinite;
+}
+
+@media (forced-colors: active) {
+  .vua-workshop__hero h1 {
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    color: CanvasText;
+  }
+}
+
+/* 状态结论(§7.3):橙色系,不用红绿灯;图标 + 文字双通道 */
+.vua-workshop__conclusion {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  font-weight: 600;
+  color: var(--vua-accent);
+}
+
+.vua-workshop__conclusion[data-kind="needsConfirmation"] {
+  color: var(--vua-amber-text);
+}
+
+.vua-workshop__conclusion[data-kind="blocked"] {
+  color: var(--vua-error);
+}
+
+/* 完成态与进行态同为辖区橙,以图标(勾 / 箭头)区分;
+ * 深橙变体在深色底上对比度不达标,不用于文字(验收 #2 优先) */
+.vua-workshop__conclusion[data-kind="completed"] {
+  color: var(--vua-accent);
+}
+
+/* 未开始:中性色,不占用状态色语义 */
+.vua-workshop__conclusion[data-kind="notStarted"] {
+  color: var(--vua-text-secondary);
+}
+
+/* ---- 轨道 ---- */
+.vua-track {
+  display: flex;
+  align-items: center;
+  padding: var(--vua-space-4) 0;
+}
+
+.vua-track__item {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.vua-track__item:last-child {
+  flex: 0;
+}
+
+.vua-track__stage {
+  /* 按钮化(S-IX-1):整站可点,选中展开工位面板 */
+  appearance: none;
+  background: none;
+  border: none;
+  padding: var(--vua-space-1);
+  margin: calc(-1 * var(--vua-space-1));
+  font: inherit;
+  cursor: pointer;
+  border-radius: var(--vua-radius-control);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vua-space-2);
+  min-width: 72px;
+}
+
+/* 选中工位:outline 表达,不与 current 节点的辉光呼吸(box-shadow 动画)冲突 */
+.vua-track__stage[data-selected] .vua-track__node {
+  outline: 2px solid var(--vua-accent);
+  outline-offset: 3px;
+}
+
+.vua-track__stage[data-selected] .vua-track__label {
+  color: var(--vua-text-strong);
+}
+
+.vua-track__node {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--vua-border);
+  color: var(--vua-text-disabled);
+  background: var(--vua-bg-panel);
+}
+
+.vua-track__stage[data-state="completed"] .vua-track__node {
+  border-color: var(--vua-accent-pressed);
+  background: var(--vua-accent-pressed);
+  color: var(--vua-accent-contrast);
+  box-shadow: var(--vua-glow-accent-soft);
+}
+
+.vua-track__stage[data-state="current"] .vua-track__node {
+  border-color: var(--vua-accent);
+  background: var(--vua-accent);
+  color: var(--vua-accent-contrast);
+  /* 当前节点:辖区辉光呼吸;reduced-motion 全局压掉动画,回落静态辉光 */
+  box-shadow: var(--vua-glow-accent);
+  animation: vua-track-node-pulse 2s ease-in-out infinite alternate;
+}
+
+/* 能量脉冲环:当前节点向外扩散的同心环,与呼吸辉光同周期;
+ * reduced-motion 由 base.css 全局规则压掉(forced-colors 下描边取系统色,仍可读) */
+.vua-track__stage[data-state="current"] .vua-track__node::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: 50%;
+  border: 2px solid var(--vua-accent);
+  animation: vua-track-ring 2s ease-out infinite;
+}
+
+@keyframes vua-track-ring {
+  from {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+/* 琥珀仅检查点确认 */
+.vua-track__stage[data-state="needsConfirmation"] .vua-track__node {
+  border-color: var(--vua-amber);
+  color: var(--vua-amber);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--vua-amber) 45%, transparent);
+}
+
+.vua-track__stage[data-state="blocked"] .vua-track__node {
+  border-color: var(--vua-error);
+  color: var(--vua-error);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--vua-error) 45%, transparent);
+}
+
+@keyframes vua-track-node-pulse {
+  from {
+    box-shadow: var(--vua-glow-accent-soft);
+  }
+  to {
+    box-shadow: var(--vua-glow-accent);
+  }
+}
+
+.vua-track__label {
+  color: var(--vua-text-secondary);
+  white-space: nowrap;
+}
+
+.vua-track__stage[data-state="current"] .vua-track__label {
+  color: var(--vua-text-strong);
+  font-weight: 600;
+}
+
+/* 轨道段:橙色实线 = 已确认;橙色流光 = 执行中;灰色虚线 = 计划(§7.1) */
+.vua-track__segment {
+  flex: 1;
+  height: 0;
+  margin: 0 var(--vua-space-2);
+  margin-bottom: 24px;
+  border-top: 2px solid var(--vua-accent);
+}
+
+.vua-track__segment--flowing {
+  border-top-style: solid;
+  background: linear-gradient(90deg, transparent, var(--vua-accent-hover), transparent);
+  background-size: 40px 2px;
+  background-repeat: no-repeat;
+  animation: vua-track-flow 1.2s linear infinite;
+}
+
+.vua-track__segment--planned {
+  border-top: 2px dashed var(--vua-border);
+}
+
+/* 进料口 / 出货口端点连线:弱化的中性灰,不属于轨道 */
+.vua-track__endpoint-link {
+  flex: 1;
+  height: 0;
+  margin: 0 var(--vua-space-2);
+  margin-bottom: 24px;
+  border-top: 1px dashed var(--vua-border);
+}
+
+@keyframes vua-track-flow {
+  from {
+    background-position: -40px 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+
+.vua-workshop__track-hint {
+  margin: var(--vua-space-2) 0 0;
+}
+
+/* 劳动可视化(§7.2):只表达可由日志核实的数量 */
+.vua-workshop__operations {
+  margin: var(--vua-space-1) 0 0;
+}
+
+/* 回放控制条(C-WORKSHOP):胶囊按钮 + 细进度轨 */
+.vua-workshop__replay {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+  margin-top: var(--vua-space-3);
+  padding-top: var(--vua-space-3);
+  border-top: 1px solid var(--vua-border);
+}
+
+.vua-workshop__replay-progress {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: var(--vua-radius-pill);
+  background: var(--vua-border);
+}
+
+.vua-workshop__replay-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--vua-radius-pill);
+  /* 辖区渐变填充 + 微辉光;HC 下 gradient 置 none 退化纯色 */
+  background-color: var(--vua-accent);
+  background-image: var(--vua-accent-gradient);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--vua-accent) 55%, transparent);
+}
+
+/* ---- 执行日志 ---- */
+.vua-workshop__log-title {
+  margin: 0 0 var(--vua-space-3);
+}
+
+.vua-workshop__log-list {
+  margin: 0 0 var(--vua-space-3);
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-workshop__log-list span {
+  display: inline-block;
+  min-width: 64px;
+  font: var(--vua-font-caption);
+}
+
+/* ---- 工位面板(S-IX-1) ---- */
+.vua-workshop__station {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-workshop__station-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+.vua-workshop__station-head .vua-title {
+  margin: 0;
+}
+
+.vua-workshop__station-name {
+  font-weight: 600;
+}
+
+.vua-workshop__station p {
+  margin: 0;
+}
+
+.vua-workshop__station-events {
+  margin: var(--vua-space-1) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-workshop__station-events li {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-workshop__station-events span {
+  display: inline-block;
+  min-width: 64px;
+  font: var(--vua-font-caption);
+}
+
+/* ---- 流水线条(S-IX-1):配方 → 车间 → 出厂链卡 ---- */
+.vua-workshop__pipeline {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-workshop__pipeline-cell {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  min-width: 0;
+  flex: 1;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+button.vua-workshop__pipeline-cell:hover {
+  border-color: var(--vua-accent);
+  box-shadow: var(--vua-glow-accent-soft);
+}
+
+/* 当前页格:静态呈现(不跳转),辖区淡底标识"你在这里" */
+.vua-workshop__pipeline-cell--here {
+  cursor: default;
+  background: color-mix(in srgb, var(--vua-accent-tint) 55%, transparent);
+  border-color: color-mix(in srgb, var(--vua-accent) 45%, transparent);
+}
+
+.vua-workshop__pipeline-value {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vua-workshop__pipeline-arrow {
+  flex: 0 0 auto;
+  color: var(--vua-text-secondary);
+  display: inline-flex;
+}

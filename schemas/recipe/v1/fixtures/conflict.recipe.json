@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "recipeId": "019c0000-0000-7000-8000-000000000103",
+  "title": "Conflicting avatar bases (test sample)",
+  "description": "Legally valid document with two required avatar_base assets; the graph layer must surface this as a conflict (red frame), never auto-resolve it. Self-authored redistributable fixture.",
+  "createdAt": "2026-08-27T10:00:00Z",
+  "updatedAt": "2026-08-27T10:00:00Z",
+  "target": {
+    "platforms": [
+      "windows"
+    ],
+    "avatarAssetId": "avatar_main"
+  },
+  "assets": [
+    {
+      "id": "avatar_main",
+      "role": "avatar_base",
+      "label": "Sample Avatar Base A",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000110"
+      }
+    },
+    {
+      "id": "avatar_alt",
+      "role": "avatar_base",
+      "label": "Sample Avatar Base B",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000115"
+      }
+    },
+    {
+      "id": "hair_long",
+      "role": "hair",
+      "label": "Sample Long Hair",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000111"
+      }
+    }
+  ],
+  "extensions": {
+    "dev.vua.example": {
+      "fixture": "conflict",
+      "note": "two required avatar_base assets: graph must flag conflict, target.avatarAssetId still points at avatar_main"
+    }
+  }
+}

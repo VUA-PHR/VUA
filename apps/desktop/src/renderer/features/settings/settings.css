@@ -1,0 +1,38 @@
+/* 设置模块(C-SETTINGS):关于页 Banner 槽位——定稿前诚实占位(美术需求文档 §3) */
+.vua-about-banner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 21 / 9;
+  border: 1px dashed var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+}
+
+/* 语言选择器(C-I18N):与 Warehouse 筛选器同一控件质感 */
+.vua-settings-select {
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-panel);
+}
+
+/* 资源节约模式:按钮+状态行与勾选行的横向排布(复用通用间距 token) */
+.vua-settings-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-settings-check {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  cursor: pointer;
+  user-select: none;
+}
+
+.vua-settings-check input {
+  accent-color: var(--vua-accent);
+}

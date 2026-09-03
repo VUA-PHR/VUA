@@ -1,0 +1,175 @@
+/* 任务中心(ui-ux §4.2 底部):折叠摘要条 + 展开列表浮层。
+ * 色彩纪律:不用红绿灯语义(仅部署器辖区);进行中=辖区色,
+ * 警告=琥珀,失败=通用错误红,其余=次要文字色。 */
+
+.vua-shell__taskbar {
+  position: relative;
+  border-top: 1px solid var(--vua-border);
+  /* 玻璃任务栏:半透明 + 背景模糊,透出画布氛围 */
+  background: color-mix(in srgb, var(--vua-bg-panel) 65%, transparent);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  padding: var(--vua-space-2) var(--vua-space-5);
+}
+
+.vua-taskbar__toggle {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font: var(--vua-font-caption);
+  padding: var(--vua-space-1) var(--vua-space-2);
+  cursor: pointer;
+  text-align: left;
+}
+
+.vua-taskbar__toggle:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 6%, transparent);
+  color: var(--vua-text-strong);
+}
+
+.vua-taskbar__panel {
+  position: absolute;
+  bottom: calc(100% + var(--vua-space-2));
+  left: var(--vua-space-5);
+  right: var(--vua-space-5);
+  max-height: 40vh;
+  overflow: auto;
+  /* 展开列表属大型浮层:12px 圆角 + 玻璃质感 + 辉光阴影 */
+  background: color-mix(in srgb, var(--vua-bg-elevated) 85%, transparent);
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  border: 1px solid var(--vua-border-strong);
+  border-radius: var(--vua-radius-overlay);
+  box-shadow: var(--vua-shadow-elevated);
+  padding: var(--vua-space-3);
+  /* 浮层出现:150ms 透明度 + 4px 上移;
+   * reduced-motion 下全局规则降级为静态切换 */
+  animation: vua-taskbar-panel 150ms ease-out;
+}
+
+@keyframes vua-taskbar-panel {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 进行中 glyph:辖区色呼吸(reduced-motion 全局降级为静态) */
+.vua-taskbar__task-glyph[data-status="running"] {
+  animation: vua-taskbar-glyph-breathe 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes vua-taskbar-glyph-breathe {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* forced-colors:关闭模糊,边界交给系统色边框 */
+@media (forced-colors: active) {
+  .vua-shell__taskbar,
+  .vua-taskbar__panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+.vua-taskbar__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-taskbar__task {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-2);
+  border-radius: var(--vua-radius-control);
+}
+
+.vua-taskbar__task-glyph {
+  display: inline-flex;
+  margin-top: 2px;
+  color: var(--vua-text-secondary);
+}
+
+.vua-taskbar__task-glyph[data-status="running"],
+.vua-taskbar__task-glyph[data-status="preparing"] {
+  color: var(--vua-accent-text);
+}
+
+.vua-taskbar__task-glyph[data-status="waitingInput"],
+.vua-taskbar__task-glyph[data-status="completedWithWarnings"] {
+  color: var(--vua-amber-text);
+}
+
+.vua-taskbar__task-glyph[data-status="failed"] {
+  color: var(--vua-error);
+}
+
+.vua-taskbar__task-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-taskbar__task-title {
+  font: var(--vua-font-body);
+  color: var(--vua-text-strong);
+}
+
+.vua-taskbar__task-meta {
+  display: flex;
+  gap: var(--vua-space-3);
+}
+
+.vua-taskbar__task-status {
+  color: var(--vua-text-secondary);
+}
+
+.vua-taskbar__task-status[data-status="running"],
+.vua-taskbar__task-status[data-status="preparing"] {
+  color: var(--vua-accent-text);
+}
+
+.vua-taskbar__task-status[data-status="waitingInput"],
+.vua-taskbar__task-status[data-status="completedWithWarnings"] {
+  color: var(--vua-amber-text);
+}
+
+.vua-taskbar__task-status[data-status="failed"] {
+  color: var(--vua-error);
+}
+
+.vua-taskbar__rejected {
+  color: var(--vua-error);
+}
+
+.vua-taskbar__task-actions {
+  display: flex;
+  gap: var(--vua-space-2);
+  flex-shrink: 0;
+}
+
+.vua-taskbar__devtools {
+  margin-top: var(--vua-space-2);
+  display: flex;
+  justify-content: flex-end;
+}

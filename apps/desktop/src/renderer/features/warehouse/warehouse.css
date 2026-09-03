@@ -1,0 +1,607 @@
+/* Warehouse 目录浏览(G8):只消费 Token,不引入新的视觉值 */
+
+.vua-warehouse {
+  max-width: none;
+  /* 仓库页不做页面级滚动:滚动限定在图片墙区域(用户反馈 #2),
+   * hero/工具栏/详情抽屉常驻 */
+  overflow: visible;
+}
+
+/* ---- 双轨视图头(S-IX-3):云端目录 / 本地文件 大号轨道卡 ---- */
+
+.vua-warehouse__tracks {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 280px));
+  gap: var(--vua-space-3);
+  margin-top: var(--vua-space-3);
+}
+
+.vua-warehouse__track-choice {
+  appearance: none;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out,
+    background-color 120ms ease-out;
+}
+
+.vua-warehouse__track-choice:hover {
+  border-color: var(--vua-border-strong);
+}
+
+.vua-warehouse__track-choice[data-active] {
+  border-color: var(--vua-accent);
+  background: color-mix(in srgb, var(--vua-accent-tint) 45%, transparent);
+  box-shadow: var(--vua-glow-accent-soft);
+}
+
+.vua-warehouse__track-choice[data-active] > svg {
+  color: var(--vua-accent);
+}
+
+.vua-warehouse__track-choice > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--vua-text-secondary);
+}
+
+.vua-warehouse__track-choice-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.vua-warehouse__track-choice-title {
+  font-weight: 600;
+}
+
+/* 内容区:卡片墙 + 可选详情抽屉(页内右侧,不遮挡列表操作) */
+.vua-warehouse__content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--vua-space-4);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.vua-warehouse__content[data-drawer-open] {
+  grid-template-columns: minmax(0, 1fr) 320px;
+}
+
+.vua-warehouse__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 图片墙滚动区:工具栏固定,仅本区域滚动 */
+.vua-warehouse__wall-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  /* 卡片 hover 上浮(-2px)在滚动区内不裁切 */
+  padding-top: 2px;
+}
+
+/* ---- 工具栏:搜索 + 筛选 + 计数 ---- */
+
+.vua-warehouse__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+.vua-warehouse__search {
+  flex: 1 1 220px;
+  min-width: 160px;
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+}
+
+.vua-warehouse__search:focus-visible {
+  border-color: var(--vua-border-focus);
+}
+
+.vua-warehouse__filter {
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+  max-width: 180px;
+}
+
+/* ---- 卡片墙 ---- */
+
+.vua-warehouse__wall {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--vua-space-3);
+}
+
+.vua-warehouse-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  /* 玻璃卡:半透明底透出画布氛围(整墙卡片不上 backdrop-filter,性能优先) */
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+  overflow: hidden;
+  cursor: pointer;
+  /* 309 张卡片的长墙:视口外卡片跳过布局/绘制;auto 记住实测尺寸,
+   * 320px 仅是未渲染前的占位估计(媒体 1:1 + 卡体),滚动条保持稳定 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
+  /* 卡片抬升:hover 上浮 + 指针微倾斜(use-card-spotlight 写入 --rx/--ry)+ 辖区色边框 + 柔光 */
+  transition:
+    transform 120ms ease-out,
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+/* 指针聚光:跟随光斑(use-card-spotlight 写入 --px/--py);
+ * 纯 CSS 模式下停在中心,hover 才浮现,装饰性、不遮挡交互 */
+.vua-warehouse-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    180px circle at var(--px, 50%) var(--py, 50%),
+    color-mix(in srgb, var(--vua-accent) 14%, transparent),
+    transparent 70%
+  );
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.vua-warehouse-card:hover::before,
+.vua-warehouse-card:focus-visible::before {
+  opacity: 1;
+}
+
+.vua-warehouse-card:hover {
+  transform: translateY(-2px) perspective(600px) rotateX(var(--rx, 0deg))
+    rotateY(var(--ry, 0deg));
+  border-color: var(--vua-accent);
+  box-shadow: var(--vua-glow-accent-soft);
+}
+
+/* 入场:逐张浮现(最多前 12 张 stagger,更长列表不再延迟);
+ * 用独立 translate 属性而非 transform,避免 fill 留存覆盖 hover 倾斜;
+ * reduced-motion 由 base.css 全局规则压掉 */
+@keyframes vua-card-in {
+  from {
+    opacity: 0;
+    translate: 0 10px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card {
+  animation: vua-card-in 360ms ease-out both;
+}
+
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(2) { animation-delay: 30ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(3) { animation-delay: 60ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(4) { animation-delay: 90ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(5) { animation-delay: 120ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(6) { animation-delay: 150ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(7) { animation-delay: 180ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(8) { animation-delay: 210ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(9) { animation-delay: 240ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(10) { animation-delay: 270ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(11) { animation-delay: 300ms; }
+.vua-warehouse__wall[role="list"] > .vua-warehouse-card:nth-child(n+12) { animation-delay: 330ms; }
+
+/* 选中:辖区色描边 + 描边环 + 柔光 */
+.vua-warehouse-card[data-selected] {
+  border-color: var(--vua-accent);
+  box-shadow:
+    0 0 0 1px var(--vua-accent),
+    var(--vua-glow-accent-soft);
+}
+
+.vua-warehouse-card__media {
+  position: relative;
+}
+
+.vua-warehouse-card__no-image {
+  aspect-ratio: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--vua-bg-canvas);
+}
+
+/* hover / 键盘聚焦浮层已随相册交互移除(用户反馈 #5):
+ * 卡片本体即详情入口,焦点态用聚焦边框表达 */
+.vua-warehouse-card:focus-visible {
+  outline: 2px solid var(--vua-border-focus);
+  outline-offset: 1px;
+}
+
+.vua-warehouse-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  padding: var(--vua-space-2) var(--vua-space-3) var(--vua-space-3);
+}
+
+/* 标题两行截断;全称经 title 属性 hover 可见 */
+.vua-warehouse-card__title {
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  min-height: 2.6em;
+}
+
+.vua-warehouse-card__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--vua-space-2);
+}
+
+.vua-warehouse-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vua-space-1);
+  min-height: 20px;
+}
+
+/* 骨架占位:与卡片媒体同形(1:1),避免布局跳动 */
+.vua-warehouse-card__skeleton-media {
+  display: block;
+  aspect-ratio: 1 / 1;
+}
+
+/* ---- 详情抽屉 ---- */
+
+.vua-warehouse__drawer {
+  /* 内容区已限定高度:抽屉随网格拉伸满高,内部滚动;
+   * 不再需要 sticky(sticky 服务于整页滚动场景) */
+  height: 100%;
+  overflow-y: auto;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+  padding: var(--vua-space-3);
+}
+
+.vua-warehouse__drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+  margin-bottom: var(--vua-space-3);
+}
+
+.vua-warehouse-detail__title {
+  font: var(--vua-font-title);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.vua-warehouse-detail__content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+}
+
+.vua-warehouse-detail__content section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-warehouse-detail__section-title {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  margin: 0;
+}
+
+/* 3D 预览占位槽:细虚线边框 + 面板底,诚实表达"规划中",不做假渲染 */
+.vua-warehouse-detail__preview3d {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  padding: var(--vua-space-3);
+  border: 1px dashed var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-canvas) 60%, transparent);
+  text-align: center;
+}
+
+.vua-warehouse-detail__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vua-space-1);
+}
+
+.vua-warehouse-detail__price {
+  margin: 0;
+  font-weight: 600;
+}
+
+.vua-warehouse-detail__entities {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-warehouse-detail__entities li {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  overflow-wrap: anywhere;
+}
+
+.vua-warehouse-detail__relations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vua-space-1);
+}
+
+.vua-warehouse-detail__description {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.vua-warehouse-detail__source-url {
+  margin: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* 来源操作行(S-IX-3):应用内窗口 + 系统浏览器 双入口并列 */
+.vua-warehouse-detail__source-actions {
+  display: flex;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+/* 调试模式输出的领域 JSON:等宽小字、可选中复制、限高内滚 */
+.vua-warehouse-detail__debug {
+  margin: 0;
+  padding: var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-canvas);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  max-height: 280px;
+  overflow: auto;
+  user-select: text;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---- 相册(G8 增量):卡片位置翻页 + 详情点击翻页/放大 ---- */
+
+/* 卡片相册:主图常驻,堆叠层激活后覆盖;只消费 Token */
+.vua-warehouse-album {
+  position: relative;
+}
+
+.vua-warehouse-album__stack {
+  position: absolute;
+  inset: 0;
+}
+
+.vua-warehouse-album__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 与 MediaSlot 同理:未 loaded 的图保持隐藏,不渲染裂图 icon/alt 文字 */
+.vua-warehouse-album__img[hidden] {
+  display: none;
+}
+
+/* 已加载的图用不透明底盖住主图;未加载保持透明(主图露出 + 转圈指示) */
+.vua-warehouse-album__img[data-loaded] {
+  background: var(--vua-bg-elevated);
+}
+
+/* 圆点指示:中性灰,当前点用正文色(色彩纪律:不用品牌橙) */
+.vua-warehouse-album__dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+}
+
+.vua-warehouse-album__dots--overlay {
+  position: absolute;
+  bottom: 6px;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+}
+
+.vua-warehouse-album__dots > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--vua-border);
+}
+
+.vua-warehouse-album__dots > span[data-current] {
+  background: var(--vua-text-secondary);
+}
+
+/* 详情相册:点击区(左 25% 上一张 / 中 50% 放大 / 右 25% 下一张) */
+.vua-warehouse-detail-album {
+  position: relative;
+  /* 翻页卡片(S-IX-3):翻转容器需要的纵深 */
+  perspective: 900px;
+}
+
+/* 翻页过渡:同 key 重建触发旋入;方向经 data-dir 区分;
+ * reduced-motion / effects-off 由全局规则压为瞬切 */
+.vua-warehouse-detail-album__flip {
+  transform-origin: 50% 50%;
+  backface-visibility: hidden;
+}
+
+.vua-warehouse-detail-album__flip[data-dir="1"] {
+  animation: vua-flip-next 260ms ease-out;
+}
+
+.vua-warehouse-detail-album__flip[data-dir="-1"] {
+  animation: vua-flip-prev 260ms ease-out;
+}
+
+@keyframes vua-flip-next {
+  from {
+    transform: rotateY(72deg);
+    opacity: 0.35;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes vua-flip-prev {
+  from {
+    transform: rotateY(-72deg);
+    opacity: 0.35;
+  }
+  to {
+    transform: rotateY(0deg);
+    opacity: 1;
+  }
+}
+
+.vua-warehouse-detail-album__zones {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.vua-warehouse-detail-album__zone {
+  border: none;
+  padding: 0;
+  background: transparent;
+  font-size: 28px;
+  color: var(--vua-text-strong);
+  text-shadow: 0 0 4px var(--vua-bg-canvas);
+  opacity: 0;
+  transition: opacity 120ms ease-out;
+  cursor: pointer;
+}
+
+.vua-warehouse-detail-album__zone--prev {
+  flex: 0 0 25%;
+  text-align: left;
+  padding-left: var(--vua-space-2);
+}
+
+.vua-warehouse-detail-album__zone--zoom {
+  flex: 1 1 auto;
+  cursor: zoom-in;
+}
+
+.vua-warehouse-detail-album__zone--next {
+  flex: 0 0 25%;
+  text-align: right;
+  padding-right: var(--vua-space-2);
+}
+
+/* 箭头悬停/聚焦才显现:常态不遮挡图片 */
+.vua-warehouse-detail-album:hover .vua-warehouse-detail-album__zone,
+.vua-warehouse-detail-album__zone:focus-visible {
+  opacity: 1;
+}
+
+.vua-warehouse-detail-album__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--vua-space-1);
+}
+
+/* 灯箱:全屏放大查看,点击任意处或 Esc 关闭 */
+.vua-warehouse-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--vua-bg-canvas) 88%, transparent);
+  cursor: zoom-out;
+}
+
+.vua-warehouse-lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: var(--vua-radius-card);
+}
+
+.vua-warehouse-lightbox__close {
+  position: absolute;
+  top: var(--vua-space-4);
+  right: var(--vua-space-4);
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-panel);
+  color: var(--vua-text-strong);
+  font-size: 18px;
+  cursor: pointer;
+}
+
+/* ---- 本地素材图册(C-ACQUIRE 重做,ADR-0004):复用云端墙/卡片/抽屉,
+ *  仅保留本地特有的小块样式 ---- */
+
+/* 隔离 = 安全异常:展柜模块仅异常用红(§6.1),卡片左侧红线 */
+.vua-warehouse-card[data-verdict="quarantined"] {
+  border-left: 3px solid var(--vua-error);
+}
+
+.vua-acquire__executables {
+  margin: 0 0 var(--vua-space-2);
+  padding-left: var(--vua-space-4);
+}

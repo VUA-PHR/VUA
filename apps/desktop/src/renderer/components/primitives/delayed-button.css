@@ -1,0 +1,28 @@
+/* 延迟确认按钮(S-XVI):等待期间以进度填充表达剩余确认时间;
+ * 只消费 Token,压平/降级由全局 reduced-motion / effects-off 规则兜底 */
+
+.vua-delayed-button[data-waiting] {
+  overflow: hidden;
+}
+
+/* 进度填充:伪元素宽度随 --vua-delay 走一遍;JS 计时与动画同长,
+ * 动画结束即按钮解锁。reduced-motion 下全局规则把动画单帧化(瞬间填满),
+ * 视觉降级但 JS 延迟不变 */
+.vua-delayed-button[data-waiting]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 0;
+  background: color-mix(in srgb, var(--vua-accent-text) 22%, transparent);
+  animation: vua-delayed-fill var(--vua-delay, 1000ms) linear forwards;
+  pointer-events: none;
+}
+
+@keyframes vua-delayed-fill {
+  from {
+    width: 0;
+  }
+  to {
+    width: 100%;
+  }
+}

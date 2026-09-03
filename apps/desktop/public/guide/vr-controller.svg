@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img">
+  <!-- 自制示意图:一对 VR 手柄(无文字,键名标签由 HTML/i18n 提供)。
+       配色取双主题均可读的中性色,不绑定任一主题 Token。 -->
+  <g fill="none" stroke="#8f8aa8" stroke-width="4">
+    <circle cx="96" cy="52" r="26"/>
+    <circle cx="224" cy="52" r="26"/>
+    <rect x="78" y="66" width="36" height="88" rx="16"/>
+    <rect x="206" y="66" width="36" height="88" rx="16"/>
+  </g>
+  <!-- 高亮:扳机与握持区(开麦/跳跃/抓取) -->
+  <g fill="#6557d2">
+    <rect x="84" y="76" width="24" height="18" rx="8"/>
+    <rect x="212" y="76" width="24" height="18" rx="8"/>
+  </g>
+  <g fill="#8f8aa8" opacity="0.35">
+    <rect x="84" y="104" width="24" height="40" rx="10"/>
+    <rect x="212" y="104" width="24" height="40" rx="10"/>
+  </g>
+</svg>

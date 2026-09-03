@@ -1,0 +1,64 @@
+/*
+ * 工具合集(C-TOOLS,v0.4.0 §8):能力目录视觉语言——
+ * 细边框卡片、无投影、无工业装饰;四要素定义表两列排布;
+ * 紫仅用于选择/主操作,不滥用第三方品牌色。
+ */
+
+.vua-tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--vua-space-4);
+}
+
+.vua-tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-4);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+}
+
+.vua-tool-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-3);
+}
+
+.vua-tool-card__name {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vua-tool-card__fields {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.vua-tool-card__field {
+  display: flex;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-1) 0;
+}
+
+.vua-tool-card__field dt {
+  flex-shrink: 0;
+  min-width: 88px;
+}
+
+.vua-tool-card__field dd {
+  margin: 0;
+}
+
+.vua-tool-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding-top: var(--vua-space-2);
+  border-top: 1px solid var(--vua-border);
+}

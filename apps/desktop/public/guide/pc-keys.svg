@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 180" role="img">
+  <!-- 自制示意图:PC 键盘常用键位(无文字,键名标签由 HTML/i18n 提供)。
+       配色取双主题均可读的中性色,不绑定任一主题 Token(SVG 经 img 引用
+       无法继承 currentColor)。 -->
+  <g fill="none" stroke="#8f8aa8" stroke-width="4">
+    <rect x="24" y="24" width="272" height="132" rx="14"/>
+  </g>
+  <g fill="#8f8aa8" opacity="0.35">
+    <rect x="40" y="44" width="36" height="32" rx="6"/>
+    <rect x="84" y="44" width="36" height="32" rx="6"/>
+    <rect x="128" y="44" width="36" height="32" rx="6"/>
+    <rect x="172" y="44" width="36" height="32" rx="6"/>
+    <rect x="216" y="44" width="36" height="32" rx="6"/>
+    <rect x="40" y="84" width="36" height="32" rx="6"/>
+    <rect x="84" y="84" width="36" height="32" rx="6"/>
+    <rect x="128" y="84" width="36" height="32" rx="6"/>
+    <rect x="172" y="84" width="36" height="32" rx="6"/>
+    <rect x="216" y="84" width="36" height="32" rx="6"/>
+  </g>
+  <!-- 高亮:常用功能键(说话/聊天/表情轮盘)与空格 -->
+  <g fill="#6557d2">
+    <rect x="40" y="44" width="36" height="32" rx="6"/>
+    <rect x="84" y="44" width="36" height="32" rx="6"/>
+    <rect x="128" y="44" width="36" height="32" rx="6"/>
+    <rect x="84" y="124" width="152" height="20" rx="6"/>
+  </g>
+</svg>

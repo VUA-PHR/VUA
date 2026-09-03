@@ -1,0 +1,485 @@
+import { useEffect, useState } from "react";
+import { useMinBusyValue } from "../../app/busy-timing.ts";
+import { openExternalUrl } from "../../app/open-external.ts";
+import { Badge } from "../../components/primitives/Badge.tsx";
+import { Button } from "../../components/primitives/Button.tsx";
+import { Card } from "../../components/primitives/Card.tsx";
+import { EmptyState } from "../../components/primitives/EmptyState.tsx";
+import { Mascot } from "../../components/primitives/Mascot.tsx";
+import { StatusLight } from "../../components/primitives/StatusLight.tsx";
+import { format, strings } from "../../i18n/index.ts";
+import { useDataSource, useEnvironmentView, useGateway } from "../../gateway/index.ts";
+import { summarizeHealth, type CheckZone } from "./deployer-model.ts";
+import { canAdvanceStep, type FixPlanV1 } from "./fix-plan-model.ts";
+import { VersionPanel } from "./VersionPanel.tsx";
+import "./deployer.css";
+
+const copy = strings.deployer;
+
+/** 修复计划流的页面本地状态:confirm = 计划确认;executing = 引导执行 */
+type PlanState =
+  | { kind: "confirm"; plan: FixPlanV1 }
+  | { kind: "executing"; plan: FixPlanV1; stepIndex: number; candidate: string | null };
+
+/**
+ * 部署器(美术方案 v0.3.3 §4),按辖区拆为游玩环境 / 生产环境两页(§2.1)。
+ * 参考系:Windows 安全中心首页——英雄区状态结论 + 红绿灯状态卡片。
+ * 色彩纪律:红绿灯语义仅部署器辖区(§2.4/§3.3),品牌色只用于主按钮与选中态。
+ *
+ * 原则①:检查结论必须来自真实数据;真实检测器未接入时(not-run)
+ * 呈现诚实空态,绝不展示虚构的"已就绪"结论。
+ *
+ * 动作纪律(environment-port 契约):检测/修复是端口意图,入口按钮只在
+ * capability = ready 时出现(不出现,而非禁用);修复意图端口未接入前,
+ * 单项 fixLabel 只以文本呈现动作建议,不渲染可点击外观;检测动作
+ * 只有 runCheck(开始/重新检测),"一键修复/进入下一步"入口待修复
+ * 意图接入后恢复。
+ *
+ * 状态机(C-ENV):每辖区独立 not-run → running → results / failed;
+ * running/failed 携带的旧证据(last)只以"时间戳 + 仅供参考"呈现,
+ * 不升级为当前结论;running 态不提供重复触发入口,也无假进度条。
+ *
+ * 目标门控(v0.3.3 §2.2/§4.1):未选择环境部署目标(goal-off)或本辖区
+ * 未纳入目标(env-off)时显示中性说明,不显示健康结论、不激活英雄区;
+ * "选择环境目标"按钮跳往设置的目标重选页,不自动开始检测。
+ *
+ * 吉祥物取舍(§9.1 允许出现在引导/空态/检查/问题说明,本切片从紧):
+ * not-run 中性英雄区不放吉祥物,避免未检测时产生"正在检查"的感觉;
+ * 检查结果(含问题说明与全绿)英雄区保留,空态面板保留静态帧。
+ * 取数(G3):视图经 Gateway 环境端口注入(useEnvironmentView),
+ * "演示数据"徽标由 dataSource 驱动,页面不感知 fixture / live 实现差异。
+ */
+export function DeployerPage({
+  zone,
+  goal = "active",
+  onChooseGoals,
+}: {
+  zone: CheckZone;
+  /** 目标门控态:goal-off = 未选环境部署;env-off = 本辖区未纳入目标 */
+  goal?: "active" | "goal-off" | "env-off";
+  onChooseGoals?: () => void;
+}) {
+  const environmentView = useEnvironmentView();
+  const view = environmentView.deployer;
+  const phase = view.zones[zone];
+  // 版本轨道(S-XV):与检测相位无关的事实表面;版本源未接入(空数组)时整块不出现
+  const versionTracks = environmentView.versions[zone];
+  const isFixture = useDataSource() === "fixture";
+  const gateway = useGateway();
+  const zoneCopy = copy.zones[zone];
+  // 检测能力门控:capability 查询失败按不可用处理(入口不出现,而非禁用)
+  const [checkReady, setCheckReady] = useState(false);
+  const [checkFailed, setCheckFailed] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    void gateway.environment
+      .capability()
+      .then((report) => {
+        if (alive) setCheckReady(report.state === "ready");
+      })
+      .catch(() => {
+        /* 能力查询失败:保持不可用态 */
+      });
+    return () => {
+      alive = false;
+    };
+  }, [gateway]);
+
+  const runCheck = () => {
+    setCheckFailed(false);
+    void gateway.environment.runCheck(zone).catch(() => setCheckFailed(true));
+  };
+
+  // 修复计划流(C-ENV):planFix 生成版本化计划 → 用户确认 → 引导执行 → 重检。
+  // 执行只记录用户确认;结论只能由重检改变(原则①)
+  const [planState, setPlanState] = useState<PlanState | null>(null);
+  const [planLoading, setPlanLoading] = useState<string | null>(null);
+  // 最小忙碌(S-XIV-4):planFix 亚帧返回时加载提示仍挂满 700ms,防"没点中"感
+  const planBusyId = useMinBusyValue(planLoading);
+  const [planError, setPlanError] = useState<string | null>(null);
+  const [linkFailed, setLinkFailed] = useState(false);
+
+  const startFix = (checkId: string) => {
+    setPlanLoading(checkId);
+    setPlanError(null);
+    setPlanState(null);
+    void gateway.environment
+      .planFix(checkId)
+      .then((result) => {
+        setPlanLoading(null);
+        if (result.kind === "ok") {
+          setPlanState({ kind: "confirm", plan: result.plan });
+        } else {
+          setPlanError(
+            result.kind === "unknown-check" ? copy.fix.unknownCheck : copy.fix.unavailable,
+          );
+        }
+      })
+      .catch(() => {
+        setPlanLoading(null);
+        setPlanError(copy.fix.loadFailed);
+      });
+  };
+
+  /** 推进当前步骤:候选确认步须先选定候选;重检步触发 runCheck 并关闭计划卡 */
+  const advancePlanStep = () => {
+    if (planState?.kind !== "executing") return;
+    const step = planState.plan.steps[planState.stepIndex];
+    if (!step || !canAdvanceStep(step, planState.candidate)) return;
+    if (step.kind === "recheck") {
+      setPlanState(null);
+      runCheck();
+      return;
+    }
+    setLinkFailed(false);
+    setPlanState({ ...planState, stepIndex: planState.stepIndex + 1, candidate: null });
+  };
+
+  if (goal !== "active") {
+    const goalCopy = goal === "goal-off" ? copy.goalOff : copy.envOff;
+    const description =
+      goal === "env-off"
+        ? format(goalCopy.description, {
+            other: copy.zones[zone === "play" ? "create" : "play"].title,
+            zone: zoneCopy.title,
+          })
+        : goalCopy.description;
+    return (
+      <div className="vua-deployer">
+        <Card>
+          <EmptyState
+            title={goalCopy.title}
+            description={description}
+            action={
+              <Button variant="primary" onClick={onChooseGoals}>
+                {goalCopy.cta}
+              </Button>
+            }
+          />
+        </Card>
+      </div>
+    );
+  }
+
+  if (phase.kind === "not-run") {
+    return (
+      <div className="vua-deployer">
+        <Card className="vua-deployer__hero" data-status="unknown">
+          <StatusLight level="unknown" size="lg" />
+          <div className="vua-deployer__conclusion">
+            <h1 className="vua-display">{copy.page.notRunTitle}</h1>
+            <p className="vua-text-secondary">
+              {format(copy.page.notRunDescription, { zone: zoneCopy.title })}
+            </p>
+          </div>
+          <div className="vua-deployer__cta">
+            {/* 契约:能力不可用时入口不出现(而非禁用),只留里程碑说明 */}
+            {checkReady ? (
+              <Button variant="primary" onClick={runCheck}>
+                {copy.page.notRunCta}
+              </Button>
+            ) : (
+              <span className="vua-caption vua-text-secondary">{copy.page.notRunCtaHint}</span>
+            )}
+            {checkFailed ? (
+              <span className="vua-caption vua-text-secondary">{copy.page.checkFailed}</span>
+            ) : null}
+          </div>
+        </Card>
+        <Card>
+          <EmptyState
+            title={copy.page.emptyTitle}
+            description={zoneCopy.emptyDescription}
+          />
+        </Card>
+        {versionTracks.length > 0 ? <VersionPanel tracks={versionTracks} /> : null}
+      </div>
+    );
+  }
+
+  // 证据:results 是当前证据;running/failed 的 last 是旧证据,仅供参考
+  const evidence = phase.kind === "results" ? phase : phase.last;
+  const evidenceTime =
+    evidence !== null ? new Date(evidence.checkedAt).toLocaleString() : null;
+  const items = evidence?.items ?? [];
+  const summary = summarizeHealth(items);
+  const headline =
+    summary.headlineKey === "ready"
+      ? zoneCopy.readyHeadline
+      : summary.headlineKey === "empty"
+        ? copy.summary.empty
+        : format(copy.summary.pending, summary.headlineParams);
+
+  return (
+    <div className="vua-deployer">
+      {phase.kind === "running" ? (
+        <Card className="vua-deployer__hero" data-status="unknown">
+          <StatusLight level="unknown" size="lg" />
+          <div className="vua-deployer__conclusion">
+            <h1 className="vua-display">
+              {format(copy.page.runningTitle, { zone: zoneCopy.title })}
+            </h1>
+            <p className="vua-text-secondary">{copy.page.runningDescription}</p>
+          </div>
+          {/* 检测中不提供重复触发入口;不放假进度条(v0.4.0 §2.5) */}
+        </Card>
+      ) : phase.kind === "failed" ? (
+        <Card className="vua-deployer__hero" data-status="error">
+          <StatusLight level="error" size="lg" />
+          <div className="vua-deployer__conclusion">
+            <h1 className="vua-display">{copy.page.failedTitle}</h1>
+            <p className="vua-text-secondary">{copy.page.failedDescription}</p>
+          </div>
+          <div className="vua-deployer__cta">
+            {checkReady ? (
+              <Button variant="primary" onClick={runCheck}>
+                {copy.page.failedRetry}
+              </Button>
+            ) : (
+              <span className="vua-caption vua-text-secondary">{copy.page.notRunCtaHint}</span>
+            )}
+            {checkFailed ? (
+              <span className="vua-caption vua-text-secondary">{copy.page.checkFailed}</span>
+            ) : null}
+          </div>
+        </Card>
+      ) : (
+        <Card className="vua-deployer__hero" data-status={summary.overall}>
+          <StatusLight level={summary.overall} size="lg" />
+          <div className="vua-deployer__conclusion">
+            <h1 className="vua-display">
+              {headline}
+              {isFixture ? (
+                <>
+                  {" "}
+                  <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
+                </>
+              ) : null}
+            </h1>
+            <p className="vua-text-secondary">
+              {summary.headlineKey === "empty"
+                ? copy.summary.emptyDescription
+                : summary.ready
+                  ? format(zoneCopy.readyDescription, { zone: zoneCopy.title })
+                  : zoneCopy.pendingDescription}
+            </p>
+            {evidenceTime !== null ? (
+              <p className="vua-caption vua-text-secondary">
+                {format(copy.page.evidenceNote, { time: evidenceTime })}
+              </p>
+            ) : null}
+          </div>
+          {/* 空列表或检测能力不可用时没有可执行动作,不显示主按钮,避免虚构修复入口;
+              能力可用时唯一真实动作是 runCheck(重新检测) */}
+          {summary.headlineKey === "empty" || !checkReady ? null : (
+            <Button variant="primary" onClick={runCheck}>
+              {copy.summary.ctaRecheck}
+            </Button>
+          )}
+          {checkFailed ? (
+            <p className="vua-caption vua-text-secondary">{copy.page.checkFailed}</p>
+          ) : null}
+          <Mascot size={96} />
+        </Card>
+      )}
+
+      {planError !== null ? (
+        <p className="vua-caption vua-text-secondary">{planError}</p>
+      ) : null}
+
+      {/* 修复计划卡:计划确认 → 引导执行;同一时刻只有一张计划 */}
+      {planState !== null ? (
+        <FixPlanCard
+          state={planState}
+          linkFailed={linkFailed}
+          onOpenLink={(url) => {
+            setLinkFailed(false);
+            void openExternalUrl(url).then((ok) => {
+              if (!ok) setLinkFailed(true);
+            });
+          }}
+          onStart={() =>
+            setPlanState({ kind: "executing", plan: planState.plan, stepIndex: 0, candidate: null })
+          }
+          onSelectCandidate={(candidate) =>
+            planState.kind === "executing" ? setPlanState({ ...planState, candidate }) : null
+          }
+          onAdvance={advancePlanStep}
+          onCancel={() => setPlanState(null)}
+        />
+      ) : null}
+
+      {/* 旧证据(running/failed 的 last):仅供参考,时间戳 + 演示数据徽标如实标注 */}
+      {phase.kind !== "results" && evidenceTime !== null ? (
+        <p className="vua-caption vua-text-secondary">
+          {format(copy.page.staleNote, { time: evidenceTime })}
+          {isFixture ? (
+            <>
+              {" "}
+              <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
+            </>
+          ) : null}
+        </p>
+      ) : null}
+
+      <div className="vua-deployer__grid">
+        {items.map((item) => (
+          <Card key={item.id} className="vua-deployer__item" data-status={item.status}>
+            <header className="vua-deployer__item-header">
+              <StatusLight level={item.status} />
+              <h2 className="vua-deployer__item-title">{item.title}</h2>
+            </header>
+            <p className="vua-deployer__item-desc vua-text-secondary">{item.description}</p>
+            {/* 修复入口:能力可用时渲染真实按钮(planFix);不可用时动作建议
+                只以文本呈现,不渲染可点击外观(environment-port 契约) */}
+            {item.fixLabel ? (
+              checkReady ? (
+                <>
+                  <Button
+                    variant={item.status === "error" ? "primary" : "subtle"}
+                    disabled={planBusyId === item.id}
+                    onClick={() => startFix(item.id)}
+                  >
+                    {item.fixLabel}
+                  </Button>
+                  {planBusyId === item.id ? (
+                    <p className="vua-caption vua-text-secondary">{copy.fix.loading}</p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="vua-caption vua-text-secondary">{item.fixLabel}</p>
+              )
+            ) : null}
+          </Card>
+        ))}
+      </div>
+      {versionTracks.length > 0 ? <VersionPanel tracks={versionTracks} /> : null}
+    </div>
+  );
+}
+
+/* ---- 修复计划卡(C-ENV)---- */
+
+/**
+ * 修复计划卡:计划确认(步骤与影响范围明示)→ 引导执行(当前步骤动作区)。
+ * 步骤文案全部来自版本化负载(FixPlanV1),本组件只负责呈现与推进;
+ * 候选确认步未选定候选时"确认并继续"禁用(Issue #4:不替用户猜测)。
+ */
+function FixPlanCard({
+  state,
+  linkFailed,
+  onOpenLink,
+  onStart,
+  onSelectCandidate,
+  onAdvance,
+  onCancel,
+}: {
+  state: PlanState;
+  linkFailed: boolean;
+  onOpenLink: (url: string) => void;
+  onStart: () => void;
+  onSelectCandidate: (candidate: string) => void;
+  onAdvance: () => void;
+  onCancel: () => void;
+}) {
+  const { plan } = state;
+  const stepIndex = state.kind === "executing" ? state.stepIndex : -1;
+  const currentStep =
+    state.kind === "executing" ? plan.steps[state.stepIndex] : undefined;
+  return (
+    <Card>
+      <div className="vua-page__stack">
+        <h2 className="vua-deployer__item-title">{plan.title}</h2>
+        <div>
+          <h3 className="vua-caption vua-text-secondary">{copy.fix.impactTitle}</h3>
+          <p className="vua-caption vua-text-secondary">{plan.impact}</p>
+        </div>
+        <div>
+          <h3 className="vua-caption vua-text-secondary">{copy.fix.stepsTitle}</h3>
+          <ol className="vua-deployer__plan-steps">
+            {plan.steps.map((step, index) => {
+              const stepState =
+                stepIndex < 0
+                  ? "pending"
+                  : index < stepIndex
+                    ? "done"
+                    : index === stepIndex
+                      ? "current"
+                      : "pending";
+              return (
+                <li
+                  key={step.id}
+                  data-state={stepState}
+                  aria-current={stepState === "current" ? "step" : undefined}
+                >
+                  <span className="vua-deployer__plan-step-title">{step.title}</span>
+                  {step.description !== "" ? (
+                    <span className="vua-caption vua-text-secondary">{step.description}</span>
+                  ) : null}
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+        {state.kind === "confirm" ? (
+          <div className="vua-deployer__cta-row">
+            <Button variant="primary" onClick={onStart}>
+              {copy.fix.confirmStart}
+            </Button>
+            <Button variant="subtle" onClick={onCancel}>
+              {copy.fix.cancel}
+            </Button>
+          </div>
+        ) : currentStep ? (
+          <div className="vua-deployer__cta-row">
+            {currentStep.kind === "confirm-candidate" ? (
+              <>
+                {currentStep.candidates.map((candidate) => (
+                  <Button
+                    key={candidate}
+                    variant={state.candidate === candidate ? "primary" : "default"}
+                    aria-pressed={state.candidate === candidate}
+                    onClick={() => onSelectCandidate(candidate)}
+                  >
+                    {candidate}
+                  </Button>
+                ))}
+                <Button
+                  variant="primary"
+                  disabled={!canAdvanceStep(currentStep, state.candidate)}
+                  onClick={onAdvance}
+                >
+                  {copy.fix.confirmCandidate}
+                </Button>
+              </>
+            ) : currentStep.kind === "external-link" ? (
+              <>
+                <Button variant="default" onClick={() => onOpenLink(currentStep.url)}>
+                  {copy.fix.openPage}
+                </Button>
+                <Button variant="primary" onClick={onAdvance}>
+                  {copy.fix.stepDone}
+                </Button>
+              </>
+            ) : currentStep.kind === "manual" ? (
+              <Button variant="primary" onClick={onAdvance}>
+                {copy.fix.stepDone}
+              </Button>
+            ) : (
+              <Button variant="primary" onClick={onAdvance}>
+                {copy.fix.recheckNow}
+              </Button>
+            )}
+            <Button variant="subtle" onClick={onCancel}>
+              {copy.fix.cancel}
+            </Button>
+            {linkFailed ? (
+              <span className="vua-caption vua-text-secondary">{copy.fix.openPageFailed}</span>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </Card>
+  );
+}

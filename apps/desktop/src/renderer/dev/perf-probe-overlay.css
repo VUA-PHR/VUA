@@ -1,0 +1,27 @@
+/* 性能采样浮层(G2-A,dev-only):右下角固定,不遮挡内容,只消费 Token */
+
+.perf-probe {
+  position: fixed;
+  right: var(--vua-space-3);
+  bottom: var(--vua-space-3);
+  z-index: 100;
+  min-width: 160px;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+  color: var(--vua-text-secondary);
+  font: var(--vua-font-caption);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.perf-probe__title {
+  margin: 0;
+  font-weight: 600;
+  color: var(--vua-text-strong);
+}
+
+.perf-probe__line {
+  margin: 0;
+}

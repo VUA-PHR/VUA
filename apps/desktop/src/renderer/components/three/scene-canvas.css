@@ -1,0 +1,15 @@
+/* WebGL 场景画布(S-VFX-1):固定在壳层最底,玻璃面板的 backdrop-filter
+ * 直接吃到画面,毛玻璃因此"真"起来。pointer-events 关闭;
+ * 降级(reduced-motion/HC/effects-off/WebGL 不可用)时不渲染节点,
+ * CSS aurora/网格场景兜底。 */
+
+.vua-scene-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* 壳层 .vua-shell 是 z-index:0 的层叠上下文:-1 让画布沉到壳内容之下、
+   * body 画布氛围之上 */
+  z-index: -1;
+  pointer-events: none;
+}

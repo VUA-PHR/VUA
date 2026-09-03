@@ -1,0 +1,42 @@
+.vua-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  padding: 1px var(--vua-space-2);
+  border-radius: var(--vua-radius-badge);
+  font: var(--vua-font-caption);
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.vua-badge[data-tone="neutral"] {
+  background: var(--vua-bg-elevated);
+  border-color: var(--vua-border);
+  color: var(--vua-text-secondary);
+}
+
+/* 品牌徽章:辖区色 tint + 描边 + 微弱同色光晕(forced-colors 下 box-shadow 由 UA 抹除) */
+.vua-badge[data-tone="brand"] {
+  background: var(--vua-accent-tint);
+  border-color: var(--vua-accent);
+  color: var(--vua-accent-text);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--vua-accent) 25%, transparent);
+}
+
+.vua-badge[data-tone="success"] {
+  background: color-mix(in srgb, var(--vua-success) 16%, transparent);
+  border-color: var(--vua-success);
+  color: var(--vua-success);
+}
+
+.vua-badge[data-tone="warning"] {
+  background: color-mix(in srgb, var(--vua-warning) 16%, transparent);
+  border-color: var(--vua-warning);
+  color: var(--vua-warning);
+}
+
+.vua-badge[data-tone="error"] {
+  background: color-mix(in srgb, var(--vua-error) 16%, transparent);
+  border-color: var(--vua-error);
+  color: var(--vua-error);
+}

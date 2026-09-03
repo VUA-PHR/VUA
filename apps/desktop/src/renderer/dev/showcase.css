@@ -1,0 +1,175 @@
+/* 组件状态展台样式(G2-A,dev-only)。
+ * 纪律:布局值只引用 Token;.demo-* 强制交互态是既有 :hover/:active/
+ * :focus-visible 规则的镜像,取值不引入任何新视觉值。 */
+
+.showcase {
+  min-height: 100%;
+  padding: var(--vua-space-5);
+  background: var(--vua-bg-canvas);
+  color: var(--vua-text-strong);
+}
+
+/* 模拟减少动态效果:与 base.css 的 prefers-reduced-motion 全局规则一致 */
+.showcase--reduced *,
+.showcase--reduced *::before,
+.showcase--reduced *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+.showcase__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin-bottom: var(--vua-space-5);
+}
+
+.showcase__motion-toggle {
+  display: flex;
+  gap: var(--vua-space-2);
+}
+
+.showcase__themes {
+  display: grid;
+  /* 深/浅/高对比三列;窄窗口自动换行 */
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: var(--vua-space-4);
+}
+
+/* data-theme 作用域到面板:深/浅主题同页并排,互不影响 */
+.showcase__theme {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-5);
+  padding: var(--vua-space-4);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-canvas);
+  color: var(--vua-text-strong);
+}
+
+.showcase__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+}
+
+.showcase__section-title {
+  border-bottom: 1px solid var(--vua-border);
+  padding-bottom: var(--vua-space-2);
+}
+
+.showcase__districts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--vua-space-4);
+}
+
+.showcase__district {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border: 1px dashed var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+}
+
+.showcase__grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+}
+
+.showcase__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+  flex-wrap: wrap;
+}
+
+.showcase__line {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-4);
+  flex-wrap: wrap;
+}
+
+.showcase__cell {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vua-space-1);
+}
+
+.showcase__state-label {
+  margin: 0;
+  min-width: 48px;
+}
+
+/* 高对比度列空位(待 G11):占位虚线框,不产生视觉承诺 */
+/* ---- 强制交互态镜像(只引用既有 Token,与真实规则一一对应) ---- */
+
+/* Button:镜像 button.css 的 :hover/:active */
+.vua-button--primary.demo-hover {
+  background: var(--vua-accent-hover);
+}
+
+.vua-button--primary.demo-pressed {
+  background: var(--vua-accent-pressed);
+}
+
+.vua-button--default.demo-hover {
+  background: color-mix(in srgb, var(--vua-bg-elevated), var(--vua-text-strong) 6%);
+  border-color: var(--vua-border-strong);
+}
+
+.vua-button--subtle.demo-hover {
+  background: var(--vua-accent-tint);
+}
+
+/* pressed 仅 primary 有独立档;default/subtle 复用 hover 镜像 */
+.vua-button--default.demo-pressed {
+  background: color-mix(in srgb, var(--vua-bg-elevated), var(--vua-text-strong) 10%);
+  border-color: var(--vua-border-strong);
+}
+
+.vua-button--subtle.demo-pressed {
+  background: var(--vua-accent-tint);
+}
+
+/* 聚焦:镜像 base.css 的 :focus-visible */
+.demo-focus {
+  outline: 2px solid var(--vua-border-focus);
+  outline-offset: 2px;
+}
+
+/* Card:镜像 card.css 的 :hover(v0.4.0 §3.6:卡片无投影,hover 不加阴影) */
+.vua-card.demo-hover {
+  transform: translateY(-2px);
+  border-color: var(--vua-accent);
+}
+
+/* 导航:镜像 app-shell.css 的 tab/sidebar-item :hover */
+.vua-shell__tab.demo-hover,
+.vua-shell__sidebar-item.demo-hover {
+  background: var(--vua-bg-elevated);
+}
+
+/* 质感节输入框:镜像 v0.4.0 §3.6 的输入控件规则(1px 细边框、6px 圆角、面板底) */
+.showcase__input {
+  box-sizing: border-box;
+  width: 100%;
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-panel);
+  color: var(--vua-text);
+  font: inherit;
+}
+
+.showcase__input::placeholder {
+  color: var(--vua-text-secondary);
+}

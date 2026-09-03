@@ -1,0 +1,223 @@
+.vua-deployer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-5);
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* 英雄区:状态灯 + 一句话结论 + 主按钮,高度按窗口自适应(v0.3.3 §4.1) */
+.vua-deployer__hero {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-5);
+  padding: var(--vua-space-6);
+}
+
+/* Hero 大标题:辖区渐变文字(环境部署=紫);HC 下 gradient 置 none 退化纯色 */
+.vua-deployer__hero h1 {
+  background-color: var(--vua-accent);
+  background-image: var(--vua-accent-gradient);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: vua-hero-shimmer 12s linear infinite;
+}
+
+/* forced-colors:背景裁剪文字会被系统色强制失效,还原为系统文字色 */
+@media (forced-colors: active) {
+  .vua-deployer__hero h1 {
+    background: none;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    color: CanvasText;
+  }
+}
+
+/*
+ * 英雄区状态氛围(§氛围基线 #9):面板底色叠加状态色径向渐变
+ * (透明度 14%),让状态色"照亮"英雄区;unknown 不叠加,保持中性。
+ */
+.vua-deployer__hero[data-status="ok"] {
+  background:
+    radial-gradient(
+      ellipse at 18% 50%,
+      color-mix(in srgb, var(--vua-success) 14%, transparent),
+      transparent 65%
+    ),
+    var(--vua-bg-panel);
+}
+
+.vua-deployer__hero[data-status="warning"] {
+  background:
+    radial-gradient(
+      ellipse at 18% 50%,
+      color-mix(in srgb, var(--vua-warning) 14%, transparent),
+      transparent 65%
+    ),
+    var(--vua-bg-panel);
+}
+
+.vua-deployer__hero[data-status="error"] {
+  background:
+    radial-gradient(
+      ellipse at 18% 50%,
+      color-mix(in srgb, var(--vua-error) 14%, transparent),
+      transparent 65%
+    ),
+    var(--vua-bg-panel);
+}
+
+.vua-deployer__conclusion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-deployer__cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-deployer__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--vua-space-4);
+}
+
+.vua-deployer__item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vua-space-3);
+}
+
+/* 红灯卡片以左边框强调,修复按钮已提升为主操作级别(§4.1) */
+.vua-deployer__item[data-status="error"] {
+  border-left: 3px solid var(--vua-error);
+}
+
+.vua-deployer__item[data-status="warning"] {
+  border-left: 3px solid var(--vua-warning);
+}
+
+.vua-deployer__item-header {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+}
+
+.vua-deployer__item-title {
+  margin: 0;
+  font: var(--vua-font-body);
+  font-weight: 600;
+}
+
+.vua-deployer__item-desc {
+  margin: 0;
+  flex: 1;
+}
+
+/* 修复计划卡(C-ENV):步骤列表与动作区;质感纪律同卡片(细边框、无投影) */
+.vua-deployer__plan-steps {
+  margin: 0;
+  padding-left: var(--vua-space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-deployer__plan-steps li {
+  display: flex;
+  flex-direction: column;
+}
+
+.vua-deployer__plan-steps li[data-state="done"] {
+  color: var(--vua-text-secondary);
+}
+
+.vua-deployer__plan-steps li[data-state="current"] .vua-deployer__plan-step-title {
+  font-weight: 600;
+}
+
+.vua-deployer__cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vua-space-3);
+}
+
+/* ---- 版本轨道面板(S-XV,借鉴 Comfy-Desktop VersionStatPanel)----
+ * 事实表:轨道头(名称 + 状态胶囊)+ dl 行;细边框卡片,无投影(同 deployer 卡纪律) */
+.vua-version-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+}
+
+.vua-version-panel__title {
+  margin: 0;
+  font: var(--vua-font-title);
+}
+
+.vua-version-panel__tracks {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: var(--vua-space-3);
+}
+
+.vua-version-track {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 55%, transparent);
+}
+
+.vua-version-track__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-version-track__title {
+  margin: 0;
+  font: var(--vua-font-body);
+  font-weight: 600;
+}
+
+.vua-version-track__facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  font: var(--vua-font-caption);
+}
+
+.vua-version-track__fact {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-version-track__fact dt {
+  color: var(--vua-text-secondary);
+}
+
+.vua-version-track__fact dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 有可用更新时"最新版本"行高亮(辖区色文字;forced-colors 由全局守卫兜底) */
+.vua-version-track__fact dd[data-highlight="true"] {
+  color: var(--vua-accent-text);
+  font-weight: 600;
+}

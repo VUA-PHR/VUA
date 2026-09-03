@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "recipeId": "019c0000-0000-7000-8000-000000000102",
+  "title": "Missing-assets recipe (test sample)",
+  "description": "Legally valid document whose entityRefs intentionally do not resolve in the local warehouse fixture, exercising the missing-node graph state. Self-authored redistributable fixture.",
+  "createdAt": "2026-08-27T10:00:00Z",
+  "updatedAt": "2026-08-27T10:00:00Z",
+  "target": {
+    "platforms": [
+      "windows"
+    ],
+    "avatarAssetId": "avatar"
+  },
+  "assets": [
+    {
+      "id": "avatar",
+      "role": "avatar_base",
+      "label": "Sample Avatar Base",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000110"
+      }
+    },
+    {
+      "id": "outfit_missing",
+      "role": "outfit",
+      "label": "Missing Outfit Sample",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000009901"
+      }
+    },
+    {
+      "id": "animation_missing",
+      "role": "animation_pack",
+      "label": "Missing Animation Pack Sample",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000009902"
+      }
+    }
+  ],
+  "extensions": {
+    "dev.vua.example": {
+      "fixture": "missing-assets",
+      "note": "entityIds 019c...9901/9902 intentionally absent from the fixture warehouse"
+    }
+  }
+}

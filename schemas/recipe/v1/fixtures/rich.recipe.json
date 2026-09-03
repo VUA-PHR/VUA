@@ -1,0 +1,109 @@
+{
+  "schemaVersion": 1,
+  "recipeId": "019c0000-0000-7000-8000-000000000101",
+  "title": "Rich full-featured recipe (test sample)",
+  "description": "Exercises variants, wardrobe groups, dependencies and extensions. Self-authored redistributable fixture; all entities and URLs are placeholders.",
+  "createdAt": "2026-08-27T10:00:00Z",
+  "updatedAt": "2026-08-27T10:00:00Z",
+  "target": {
+    "platforms": [
+      "windows",
+      "android"
+    ],
+    "avatarAssetId": "avatar",
+    "performanceTarget": "good"
+  },
+  "assets": [
+    {
+      "id": "avatar",
+      "role": "avatar_base",
+      "label": "Sample Avatar Base",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000110"
+      }
+    },
+    {
+      "id": "hair_long",
+      "role": "hair",
+      "label": "Sample Long Hair",
+      "variant": "straight",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000111"
+      }
+    },
+    {
+      "id": "casual",
+      "role": "outfit",
+      "label": "Sample Casual Outfit",
+      "variant": "blue",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000112"
+      }
+    },
+    {
+      "id": "formal",
+      "role": "outfit",
+      "label": "Sample Formal Outfit",
+      "sourceRef": {
+        "provider": "booth",
+        "productId": "0000001",
+        "url": "https://example.invalid/items/0000001"
+      }
+    },
+    {
+      "id": "glasses",
+      "role": "accessory",
+      "label": "Sample Glasses",
+      "required": false,
+      "sourceRef": {
+        "provider": "booth",
+        "productId": "0000002",
+        "url": "https://example.invalid/items/0000002"
+      }
+    },
+    {
+      "id": "toon_shader",
+      "role": "shader",
+      "label": "Sample Toon Shader",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000113"
+      },
+      "versionConstraint": ">=1.0 <2.0"
+    },
+    {
+      "id": "skin_textures",
+      "role": "texture_pack",
+      "label": "Sample Skin Textures",
+      "variant": "hd",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000114"
+      }
+    }
+  ],
+  "wardrobeGroups": [
+    {
+      "id": "main_outfit",
+      "label": "Outfit",
+      "memberAssetIds": [
+        "casual",
+        "formal"
+      ],
+      "selectionMode": "exactly_one",
+      "defaultAssetIds": [
+        "casual"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "packageId": "nadena.dev.modular-avatar",
+      "versionConstraint": ">=1.10 <2.0"
+    }
+  ],
+  "extensions": {
+    "dev.vua.example": {
+      "fixture": "rich",
+      "note": "test sample; not a real product"
+    }
+  }
+}
