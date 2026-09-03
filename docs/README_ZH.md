@@ -4,7 +4,7 @@
 
 > 状态：已接受  
 > 范围：VUA 公开仓库  
-> 更新：2026-09-02  
+> 更新：2026-09-04
 > 规范效力：定义公开文档入口与权威顺序
 
 公开仓库保存最终产品边界、架构、版本化接口、发行政策和社区工具目录。每项任务从最小相关文档
@@ -65,6 +65,7 @@
 - [受监督 Provider 进程协议 v0.1](protocols/provider-process-v0.1_ZH.md)
 - [ADR：Orchestrator 受监督独立进程托管](decisions/orchestrator-supervised-provider_ZH.md)
 - [版本政策](release/versioning_ZH.md)
+- [v0.4.1 发行说明](release/v0.4.1_ZH.md)
 - [面向社区维护的工具目录](tool-catalog/README.md)
 
 ## 文档规则

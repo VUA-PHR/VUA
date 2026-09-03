@@ -10,6 +10,23 @@ This record does not restore the Tauri host, IPC, permissions, or product data c
 
 Minimal Electron host plus presentation shell; see the "Electron presentation migration record" in `docs/migration/asset-ledger.md`.
 
+## Slice 1 closure addendum (M1 acceptance, 2026-09-04)
+
+- **Provider routing**: Electron Main starts the controlled Mock Provider through
+  `provider-bootstrap.ts` (the `OrchestratorProviderV01` surface); `vua:gateway:invoke`
+  validates the envelope and `gateway-router.ts` routes it to the provider;
+  `capabilities` derive from the provider capability report instead of a Main-side
+  literal; invalid envelopes and untrusted senders are rejected before routing;
+- **Real remote permission smoke**: `scripts/smoke-remote-permissions.mjs` exercises a
+  synthetic `http://127.0.0.1` page — notifications/geolocation/media are denied by the
+  isolated session; the remote page has no `window.vua` and no Gateway; remote
+  navigation is blocked; HTTP(S) `window.open` hands off to the shell boundary without
+  creating an Electron window; evidence is written to `_local_m1/v0.4.1/` (excluded by
+  .gitignore, raw logs kept locally);
+- **Verification**: `pnpm check` passes; 24 TypeScript tests pass on the M line; the
+  product version is now `0.4.1` with release notes in `docs/release/v0.4.1_EN.md` /
+  `_ZH.md`; M1 is marked as passed in the development plan (EN and ZH).
+
 ## Slice 2: full legacy presentation asset restoration (this slice)
 
 The remaining KIMI presentation assets (feature pages, application models, four-locale i18n, WebGL scenes, remaining primitives) and the five quality-gate scripts are migrated into the Electron shell. Scheduling remains governed by `docs/plans/development-outline` (the F2–F7 application-contract integrations proceed as planned; this slice restores presentation and pure models only, and fabricates no production data).

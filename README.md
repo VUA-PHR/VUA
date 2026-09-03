@@ -7,7 +7,7 @@ environment setup, authorized asset acquisition, Avatar assembly and inspection,
 management, and reproducible production records into one connected workflow.
 
 > [!IMPORTANT]
-> **The current product version is v0.4.0 (pre-alpha).** This repository provides developer previews
+> **The current product version is v0.4.1 (pre-alpha).** This repository provides developer previews
 > and early evaluation builds; the everyday-player stability commitment begins with `1.0.0`.
 
 ## Product direction

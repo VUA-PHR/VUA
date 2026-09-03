@@ -10,6 +10,19 @@
 
 最小 Electron 宿主 + 表现层壳，见 `docs/migration/asset-ledger.md` 的"Electron 表现层迁移记录"。
 
+## 切片一收口补录（M1 验收，2026-09-04）
+
+- **Provider 路由**：Electron Main 经 `provider-bootstrap.ts` 启动受控 Mock
+  Provider（`OrchestratorProviderV01` 表面），`vua:gateway:invoke` 校验信封后由
+  `gateway-router.ts` 路由到 Provider；`capabilities` 从 Provider 能力报告派生，
+  不再由 Main 硬编码；非法信封与未信任来源在路由前拒绝；
+- **真实远程权限冒烟**：`scripts/smoke-remote-permissions.mjs` 以 `http://127.0.0.1`
+  合成页面实测——notifications/geolocation/media 由隔离 Session 拒绝；远程页面无
+  `window.vua`、无 Gateway；远程导航被阻止；HTTP(S) `window.open` 交给 Shell 边界，
+  未创建 Electron 窗口；证据写至 `_local_m1/v0.4.1/`（.gitignore 排除，原始日志留本地）；
+- **验证**：`pnpm check` 通过；M 线 24 项 TypeScript 测试通过；产品版本升至 `0.4.1`，
+  发行说明见 `docs/release/v0.4.1_ZH.md` / `_EN.md`；M1 在开发计划（中英文）标记为已通过。
+
 ## 切片二：旧表现层全量资产恢复（本轮）
 
 KIMI 表现层其余资产（功能页面、应用模型、4 语言 i18n、WebGL 场景、原语补齐）与 5 个质量门脚本迁入 Electron 壳。开发排期见 `docs/plans/development-outline`（F2–F7 各门的应用契约接入仍按计划推进；本轮只恢复表现层与纯模型，不伪造生产数据）。
