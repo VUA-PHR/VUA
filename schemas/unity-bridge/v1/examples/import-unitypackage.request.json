@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "commandId": "synthetic-import-01",
+  "operation": "import_unity_package",
+  "projectId": "synthetic-project",
+  "dryRun": false,
+  "expectedProjectFingerprint": "v1:synthetic-before",
+  "payload": {
+    "sourcePackagePath": "C:/VUA/Synthetic/input.unitypackage",
+    "sourcePackageSha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+  }
+}

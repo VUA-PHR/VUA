@@ -48,17 +48,26 @@ Orchestrator 在目标 Unity 项目的 `.vua/bridge/` 下原子写入请求文�
 | operation | 模式 | 用途 |
 | --- | --- | --- |
 | `inspect_project` | 必须 `dryRun: true` | 检查当前 Scene 是否可读并返回指纹 |
+| `import_unity_package` | 可检查或修改 | 校验来源摘要并导入批次中的一个 `.unitypackage` |
+| `create_local_vpm_package` | 可检查或修改 | 仅在带令牌的 VUA 暂存项目中整理 Editor/Runtime 并生成本地包 |
+| `validate_asset_paths` | 必须 `dryRun: true` | 确认计划素材路径可由 AssetDatabase 加载，仅证明最小结构 |
 | `identify_assets` | 必须 `dryRun: true` | 解析 Avatar 与衣装的 `GlobalObjectId` |
 | `install_outfit` | 可检查或修改 | 建立层级并配置 MA Merge Armature |
 | `create_toggle` | 可检查或修改 | 创建或更新 MA 菜单项和对象开关 |
 | `validate_avatar` | 必须 `dryRun: true` | 验证衣装层级和 MA 组件 |
 | `analyze_performance` | 必须 `dryRun: true` | 返回本地结构估算，不冒充官方等级 |
 
+两个素材操作属于 B3 双入口的版本化执行面：文件夹批次内所有来源包按规范化相对路径排序后逐个
+执行；`create_local_vpm_package` 必须验证 `.vua/staging.json` 中的一次性暂存令牌，不能对普通用户
+项目运行。包依赖由 Orchestrator 显式提供，Bridge 不猜测也不删除声明。
+
 修改模式是 `dryRun: false`。修改命令必须携带最近一次成功结果中的
 `data.projectFingerprint` 作为 `expectedProjectFingerprint`；不匹配时 Bridge 拒绝执行。
 
-`commandId` 用于请求与结果关联。当前修改操作在目标结构上保持幂等：重复装配不会叠加 Merge
-Armature，重复创建同名开关会更新既有对象。未来增加操作时必须先定义重复执行语义。
+`commandId` 用于请求、结果和完成回执关联。完成的修改命令在项目 `.vua/bridge/completed/` 保存回执；
+相同 `commandId` 重放只返回既有结果，不重复导入或移动素材。进程在回执落盘前中断属于未知结果，
+必须重新 Inspect，不能自动重放。装配操作另外保持目标结构幂等：重复装配不会叠加 Merge Armature，
+重复创建同名开关会更新既有对象。未来增加操作时必须先定义重复执行语义。
 
 可执行固定示例位于 `schemas/unity-bridge/v1/examples/`。示例只包含合成标识符和指纹。
 

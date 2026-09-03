@@ -2,6 +2,7 @@ use crate::{ProjectRef, SnapshotRef, SnapshotStore};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 const SNAPSHOT_SCOPES: [&str; 3] = ["Assets", "Packages", "ProjectSettings"];
@@ -71,6 +72,77 @@ const SNAPSHOT_MANIFEST_SCHEMA_VERSION: u8 = 1;
 const SNAPSHOT_MANIFEST_FILE: &str = "manifest.json";
 
 pub struct FileSystemProjectStore;
+
+/// Content fingerprint for the project scopes that a workflow owns. Symlinks
+/// are rejected so a project cannot smuggle external files into plan binding.
+pub fn project_tree_fingerprint(
+    project_root: &Path,
+    scopes: &[&str],
+) -> io::Result<Option<String>> {
+    use sha2::{Digest, Sha256};
+    if !project_root.exists() {
+        return Ok(None);
+    }
+    let mut files = Vec::new();
+    for scope in scopes {
+        validate_scope(scope)?;
+        let path = project_root.join(scope);
+        if path.exists() {
+            collect_fingerprint_files(project_root, &path, &mut files)?;
+        }
+    }
+    files.sort();
+    let mut digest = Sha256::new();
+    digest.update(b"vua-project-tree-v1\0");
+    for relative in files {
+        let normalized = relative.to_string_lossy().replace('\\', "/");
+        let mut file = fs::File::open(project_root.join(&relative))?;
+        let length = file.metadata()?.len();
+        digest.update((normalized.len() as u64).to_le_bytes());
+        digest.update(normalized.as_bytes());
+        digest.update(length.to_le_bytes());
+        let mut buffer = [0_u8; 64 * 1024];
+        loop {
+            let read = file.read(&mut buffer)?;
+            if read == 0 {
+                break;
+            }
+            digest.update(&buffer[..read]);
+        }
+    }
+    let mut encoded = String::with_capacity(64);
+    for byte in digest.finalize() {
+        use std::fmt::Write as _;
+        write!(&mut encoded, "{byte:02x}").expect("writing to String");
+    }
+    Ok(Some(format!("sha256:{encoded}")))
+}
+
+fn collect_fingerprint_files(
+    root: &Path,
+    path: &Path,
+    output: &mut Vec<PathBuf>,
+) -> io::Result<()> {
+    let metadata = fs::symlink_metadata(path)?;
+    if metadata.file_type().is_symlink() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "project fingerprint refuses symbolic links",
+        ));
+    }
+    if metadata.is_file() {
+        output.push(
+            path.strip_prefix(root)
+                .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "file outside project"))?
+                .to_owned(),
+        );
+    } else if metadata.is_dir() {
+        for entry in fs::read_dir(path)? {
+            collect_fingerprint_files(root, &entry?.path(), output)?;
+        }
+    }
+    Ok(())
+}
 
 impl FileSystemProjectStore {
     pub fn initialize(project: &ProjectRef) -> io::Result<()> {

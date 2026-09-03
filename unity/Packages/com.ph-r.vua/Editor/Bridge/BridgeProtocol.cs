@@ -4,6 +4,13 @@ using System.Collections.Generic;
 namespace Vua.Editor.Bridge
 {
     [Serializable]
+    internal sealed class BridgePackageDependency
+    {
+        public string packageId = string.Empty;
+        public string version = string.Empty;
+    }
+
+    [Serializable]
     internal sealed class BridgePayload
     {
         public string avatarGlobalObjectId = string.Empty;
@@ -11,6 +18,14 @@ namespace Vua.Editor.Bridge
         public string outfitGlobalObjectId = string.Empty;
         public string outfitArmatureGlobalObjectId = string.Empty;
         public string toggleName = string.Empty;
+        public string sourcePackagePath = string.Empty;
+        public string sourcePackageSha256 = string.Empty;
+        public string packageId = string.Empty;
+        public string packageDisplayName = string.Empty;
+        public string packageVersion = string.Empty;
+        public List<BridgePackageDependency> packageDependencies = new List<BridgePackageDependency>();
+        public string stagingToken = string.Empty;
+        public List<string> expectedAssetPaths = new List<string>();
     }
 
     [Serializable]
@@ -51,6 +66,10 @@ namespace Vua.Editor.Bridge
         public int skinnedMeshRenderers;
         public int bones;
         public List<string> recommendations = new List<string>();
+        public List<string> importedAssetPaths = new List<string>();
+        public string packageRoot = string.Empty;
+        public List<string> loadedAssetPaths = new List<string>();
+        public string commandFingerprint = string.Empty;
     }
 
     [Serializable]

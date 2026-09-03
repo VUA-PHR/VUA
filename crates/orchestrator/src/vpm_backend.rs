@@ -123,6 +123,11 @@ pub trait VpmBackend: Send + Sync {
         packages: &[PackageRequestV1],
         confirmed_digest: &str,
     ) -> Result<serde_json::Value, AppErrorV1>;
+    /// Registers a generated local package in this backend's isolated
+    /// environment. General repository management remains B6.
+    fn register_local_package(&self, _package_root: &Path) -> Result<(), AppErrorV1> {
+        Err(unsupported("register_local_package"))
+    }
     /// Creates a project from a template; backends without the capability
     /// return a `capability_missing` error.
     fn create_project(
@@ -305,6 +310,10 @@ impl VpmBackend for VrcGetLibBackend {
             create_project: true,
             preview_install: true,
         }
+    }
+
+    fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::register_local_package(self, package_root)
     }
 
     fn preview_install(

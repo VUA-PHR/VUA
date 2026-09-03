@@ -456,6 +456,7 @@ fn orc_adp_005_bridge_requests_are_written_into_the_versioned_job_directory() {
             outfit_global_object_id: "o".into(),
             outfit_armature_global_object_id: "oa".into(),
             toggle_name: "t".into(),
+            ..vua_orchestrator::UnityPayload::default()
         },
     };
     let path =

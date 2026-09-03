@@ -1,0 +1,42 @@
+# AMF material-intake protocol v0.1
+
+[English](material-intake-v0.1_EN.md) | [简体中文](material-intake-v0.1_ZH.md)
+
+> Status: B3 implementation baseline
+> Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
+> Updated: 2026-09-03
+
+## Batch and naming
+
+The user selects one source folder. Its folder name becomes the visible package name; collisions are shown as
+`Name (2)`, `Name (3)`. VUA generates and persists a valid local VPM machine ID without asking the user to see or
+enter it.
+
+Every `.unitypackage` below the folder, including descendants, enters one batch in normalized relative-path order.
+Inspect records each package's relative path, size, SHA-256, and archived asset paths, then digests the complete
+source and executable-risk inventory. Execution recomputes both; any addition, removal, replacement, or risk change
+returns `vua.material.source_drift`.
+
+## Risk decision
+
+VUA scans C#, managed assemblies, native plugins, `Editor` content, and likely build entry points. One batch receives
+one choice: create a full project protection point and continue, ignore the risk and continue (optionally remembered
+for this session only), or cancel. The second choice skips the extra full protection point but every B3 mutation still
+gets a minimum recovery snapshot of `Assets`, `Packages`, `ProjectSettings`, and the VPM manifest; the first also
+includes `UserSettings`. The decision binds both digests, and session memory is not persisted. VUA does not claim
+that a project snapshot prevents code execution or reverses effects outside the project.
+
+## Dual entry
+
+- `direct_unity_package` imports every source package in plan order through the versioned Bridge after a verified
+  target-project snapshot.
+- `local_reusable_vpm` imports the whole batch in an isolated token-bound staging project, creates an Editor/Runtime
+  layout and explicit dependency manifest, then uses VUA's `vrc-get` adapter to preview, install, and independently
+  validate the target project.
+
+Both paths use `validate_asset_paths` to prove only `minimum_structure`. AssetDatabase loading does not establish
+Avatar, outfit, material, animation, or Modular Avatar semantics.
+
+Plans conform to `schemas/amf-production/v0.1/material-plan.schema.json`; immutable results conform to the sibling
+`build-record.schema.json`. A completed Bridge mutation receipt binds `commandId` to the command digest. Interruption
+before that receipt requires Inspect and cannot automatically replay an unknown side effect.

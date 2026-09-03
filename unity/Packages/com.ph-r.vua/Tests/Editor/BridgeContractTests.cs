@@ -61,6 +61,36 @@ namespace Vua.Editor.Bridge.Tests
             Assert.That(result.diagnostics[0].code, Is.EqualTo("bridge.fingerprint_required"));
         }
 
+        [Test]
+        public void ImportRejectsMissingSourceBeforeMutation()
+        {
+            var command = Command("import_unity_package", false);
+            command.expectedProjectFingerprint = ProjectFingerprint.Compute();
+            command.payload.sourcePackagePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".unitypackage");
+            command.payload.sourcePackageSha256 = "sha256:" + new string('0', 64);
+
+            var result = BridgeCommandProcessor.Process(command);
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("package.source_missing"));
+        }
+
+        [Test]
+        public void LocalPackageCreationRejectsOrdinaryProjectWithoutStagingToken()
+        {
+            var command = Command("create_local_vpm_package", false);
+            command.expectedProjectFingerprint = ProjectFingerprint.Compute();
+            command.payload.packageId = "com.example.fixture";
+            command.payload.packageDisplayName = "Fixture";
+            command.payload.packageVersion = "0.0.1";
+            command.payload.stagingToken = "not-present";
+
+            var result = BridgeCommandProcessor.Process(command);
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("vpm.staging_required"));
+        }
+
         [TestCase("2022.3.22f1c1")]
         [TestCase("2022.3.6f1")]
         [TestCase("2023.2.20f1")]

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "commandId": "synthetic-vpm-01",
+  "operation": "create_local_vpm_package",
+  "projectId": "synthetic-staging-project",
+  "dryRun": false,
+  "expectedProjectFingerprint": "v1:synthetic-after-import",
+  "payload": {
+    "packageId": "com.example.vua.fixture",
+    "packageDisplayName": "Synthetic Outfit",
+    "packageVersion": "0.0.1",
+    "packageDependencies": [
+      {
+        "packageId": "jp.lilxyzw.liltoon",
+        "version": "2.3.4"
+      }
+    ],
+    "stagingToken": "synthetic-staging-token"
+  }
+}
