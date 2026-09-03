@@ -39,7 +39,11 @@
         "materialSlots": { "type": "integer", "minimum": 0 },
         "skinnedMeshRenderers": { "type": "integer", "minimum": 0 },
         "bones": { "type": "integer", "minimum": 0 },
-        "recommendations": { "type": "array", "items": { "type": "string" } }
+        "recommendations": { "type": "array", "items": { "type": "string" } },
+        "importedAssetPaths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "packageRoot": { "type": "string" },
+        "loadedAssetPaths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "commandFingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
       }
     }
   }

@@ -53,6 +53,7 @@ fn serialized_command_matches_the_cross_language_wire_shape() {
         outfit_global_object_id: "outfit".into(),
         outfit_armature_global_object_id: "outfit-armature".into(),
         toggle_name: "夏装".into(),
+        ..vua_orchestrator::UnityPayload::default()
     };
     let command = vua_orchestrator::UnityCommand {
         schema_version: 1,

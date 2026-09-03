@@ -10,8 +10,8 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    FakeProcessRunner, FixedClock, ProcessOutcome, VccCliBackend, VpmBackend,
-    CREDENTIAL_ENV_REMOVALS,
+    FakeProcessRunner, FixedClock, PackageRequestV1, ProcessOutcome, ProjectRef, VccCliBackend,
+    VpmBackend, VrcGetLibBackend, CREDENTIAL_ENV_REMOVALS,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -34,9 +34,35 @@ fn success(outcome_stdout: &str) -> ProcessOutcome {
     ProcessOutcome {
         exit_code: Some(0),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: outcome_stdout.to_owned(),
         stderr: String::new(),
         truncated: false,
+    }
+}
+
+fn minimal_vpm_project(root: &std::path::Path) -> ProjectRef {
+    fs::create_dir_all(root.join("Packages")).unwrap();
+    fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+    fs::write(
+        root.join("Packages/manifest.json"),
+        r#"{"dependencies":{}}"#,
+    )
+    .unwrap();
+    fs::write(
+        root.join("Packages/vpm-manifest.json"),
+        r#"{"dependencies":{},"locked":{}}"#,
+    )
+    .unwrap();
+    fs::write(
+        root.join("ProjectSettings/ProjectVersion.txt"),
+        "m_EditorVersion: 2022.3.22f1\n",
+    )
+    .unwrap();
+    ProjectRef {
+        id: "vpm-local-spike".to_owned(),
+        root: root.to_owned(),
     }
 }
 
@@ -177,5 +203,71 @@ fn orc_adp_004_template_missing_is_a_typed_dependency_error() {
     .expect_err("missing template must be a typed error");
     assert_eq!(error.code, "vua.vpm.template_missing");
     assert_eq!(error.category, vua_orchestrator::ErrorCategory::Dependency);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_spike_local_package_is_registered_previewed_and_installed_by_vrc_get() {
+    let base = unique_dir("local-package");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("validation-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    backend.register_local_package(&package_root).unwrap();
+    // Registration is idempotent within the private environment.
+    backend.register_local_package(&package_root).unwrap();
+    let request = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: Some("0.0.1".to_owned()),
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&request))
+        .unwrap();
+    assert_eq!(preview.items.len(), 1);
+    assert_eq!(preview.items[0].package_id, request.package_id);
+    assert!(!preview.destructive);
+
+    backend
+        .apply_install(&project, &[request], &preview.digest)
+        .unwrap();
+
+    let vpm_manifest = fs::read_to_string(project.root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(vpm_manifest.contains("com.ph-r.vua.local.synthetic"));
+    assert!(
+        project
+            .root
+            .join("Packages/com.ph-r.vua.local.synthetic/package.json")
+            .is_file(),
+        "the package must be installed by vrc-get, not copied by the test"
+    );
+    assert!(environment_root.join("settings.json").is_file());
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_spike_rejects_an_invalid_local_package_before_preview() {
+    let base = unique_dir("invalid-local-package");
+    let package_root = base.join("not-a-package");
+    fs::create_dir_all(&package_root).unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+
+    let error = backend.register_local_package(&package_root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.local_package_invalid");
     fs::remove_dir_all(&base).ok();
 }

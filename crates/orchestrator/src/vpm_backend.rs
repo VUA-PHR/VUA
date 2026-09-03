@@ -30,6 +30,8 @@ pub mod error_codes {
     pub const CAPABILITY_MISSING: &str = "vua.vpm.capability_missing";
     pub const TEMPLATE_MISSING: &str = "vua.vpm.template_missing";
     pub const BACKEND_UNAVAILABLE: &str = "vua.vpm.backend_unavailable";
+    pub const LOCAL_PACKAGE_INVALID: &str = "vua.vpm.local_package_invalid";
+    pub const LOCAL_PACKAGE_REGISTER_FAILED: &str = "vua.vpm.local_package_register_failed";
 }
 
 /// Which optional capabilities a backend actually provides (honest gating,
@@ -121,6 +123,11 @@ pub trait VpmBackend: Send + Sync {
         packages: &[PackageRequestV1],
         confirmed_digest: &str,
     ) -> Result<serde_json::Value, AppErrorV1>;
+    /// Registers a generated local package in this backend's isolated
+    /// environment. General repository management remains B6.
+    fn register_local_package(&self, _package_root: &Path) -> Result<(), AppErrorV1> {
+        Err(unsupported("register_local_package"))
+    }
     /// Creates a project from a template; backends without the capability
     /// return a `capability_missing` error.
     fn create_project(
@@ -187,6 +194,61 @@ impl VrcGetLibBackend {
         })
     }
 
+    /// Registers one generated local package in this backend's environment.
+    ///
+    /// Spike/B3 callers provide a dedicated environment root so this never
+    /// mutates the user's VCC or ALCOM settings. Registration is deliberately
+    /// separate from preview/apply: the normal digest-bound install path still
+    /// owns every project mutation.
+    pub fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
+        let package_root = std::fs::canonicalize(package_root).map_err(|error| {
+            AppErrorV1::new(
+                error_codes::LOCAL_PACKAGE_INVALID,
+                ErrorCategory::Validation,
+                "errors.vpm.localPackageInvalid",
+                "corr-vpm-local-package",
+            )
+            .with_param("reason", ParamValue::Text(error.to_string()))
+        })?;
+        if !package_root.join("package.json").is_file() {
+            return Err(AppErrorV1::new(
+                error_codes::LOCAL_PACKAGE_INVALID,
+                ErrorCategory::Validation,
+                "errors.vpm.localPackageInvalid",
+                "corr-vpm-local-package",
+            )
+            .with_param(
+                "reason",
+                ParamValue::Text("package.json is missing".to_owned()),
+            ));
+        }
+
+        let environment_root = self.environment_root.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(environment_root.into_boxed_path());
+            let mut settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_local_package_io("loading isolated VPM settings"))?;
+            match settings.add_user_package(&package_root, &io).await {
+                vrc_get_vpm::environment::AddUserPackageResult::Success
+                | vrc_get_vpm::environment::AddUserPackageResult::AlreadyAdded => {}
+                vrc_get_vpm::environment::AddUserPackageResult::NonAbsolute => {
+                    return Err(local_package_invalid("package path is not absolute"));
+                }
+                vrc_get_vpm::environment::AddUserPackageResult::BadPackage => {
+                    return Err(local_package_invalid(
+                        "package.json is not a valid local VPM package",
+                    ));
+                }
+            }
+            settings
+                .save(&io)
+                .await
+                .map_err(map_local_package_io("saving isolated VPM settings"))?;
+            Ok(())
+        })
+    }
+
     fn digest_of(
         items: &[ChangeItemV1],
         conflicts: &[String],
@@ -200,6 +262,28 @@ impl VrcGetLibBackend {
             "legacyFolders": legacy_folders,
         });
         crate::vpm::fnv1a_hex(canonical.to_string().as_bytes())
+    }
+}
+
+fn local_package_invalid(reason: &str) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::LOCAL_PACKAGE_INVALID,
+        ErrorCategory::Validation,
+        "errors.vpm.localPackageInvalid",
+        "corr-vpm-local-package",
+    )
+    .with_param("reason", ParamValue::Text(reason.to_owned()))
+}
+
+fn map_local_package_io(context: &'static str) -> impl Fn(std::io::Error) -> AppErrorV1 {
+    move |error| {
+        AppErrorV1::new(
+            error_codes::LOCAL_PACKAGE_REGISTER_FAILED,
+            ErrorCategory::ExternalFailure,
+            "errors.vpm.localPackageRegisterFailed",
+            "corr-vpm-local-package",
+        )
+        .with_param("reason", ParamValue::Text(format!("{context}: {error}")))
     }
 }
 
@@ -226,6 +310,10 @@ impl VpmBackend for VrcGetLibBackend {
             create_project: true,
             preview_install: true,
         }
+    }
+
+    fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::register_local_package(self, package_root)
     }
 
     fn preview_install(

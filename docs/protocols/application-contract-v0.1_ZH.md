@@ -2,9 +2,9 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
-> 状态：B1 候选开发契约  
-> 范围：Electron Kernel 与 Orchestrator Provider 之间的应用语义  
-> 更新：2026-09-02  
+> 状态：B1 候选开发契约
+> 范围：Electron Kernel 与 Orchestrator Provider 之间的应用语义
+> 更新：2026-09-02
 > 规范效力：约束 B1 实现与测试；M2 真实整合前不构成稳定 Gateway v1
 
 ## 目的与边界

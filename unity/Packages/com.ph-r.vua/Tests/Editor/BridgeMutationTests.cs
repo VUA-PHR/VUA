@@ -52,20 +52,37 @@ namespace Vua.Editor.Bridge.Tests
                 outfitArmatureGlobalObjectId = Id(outfitArmature),
                 toggleName = "Synthetic Outfit"
             };
+            var runId = Guid.NewGuid().ToString("N");
             var install = BridgeCommandProcessor.Process(Command(
-                "install_outfit", payload, ProjectFingerprint.Compute(), "install"));
+                "install_outfit", payload, ProjectFingerprint.Compute(), runId + "-install"));
 
             Assert.That(install.status, Is.EqualTo("succeeded"));
             Assert.That(outfit.transform.parent, Is.EqualTo(avatar.transform));
             Assert.That(outfitArmature.GetComponent<ModularAvatarMergeArmature>(), Is.Not.Null);
 
-            var firstToggle = BridgeCommandProcessor.Process(Command(
-                "create_toggle", payload, install.data.projectFingerprint, "toggle-1"));
+            var toggleCommand = Command(
+                "create_toggle", payload, install.data.projectFingerprint, runId + "-toggle-1");
+            var firstToggle = BridgeCommandProcessor.Process(toggleCommand);
             Assert.That(firstToggle.status, Is.EqualTo("succeeded"));
             Assert.That(ToggleCount(avatar), Is.EqualTo(1));
 
+            var replay = BridgeCommandProcessor.Process(toggleCommand);
+            Assert.That(replay.status, Is.EqualTo("succeeded"));
+            Assert.That(replay.diagnostics.Any(value => value.code == "bridge.idempotent_replay"), Is.True);
+
+            var conflictingPayload = new BridgePayload
+            {
+                avatarGlobalObjectId = payload.avatarGlobalObjectId,
+                outfitGlobalObjectId = payload.outfitGlobalObjectId,
+                toggleName = "Different request"
+            };
+            var conflict = BridgeCommandProcessor.Process(Command(
+                "create_toggle", conflictingPayload, firstToggle.data.projectFingerprint, runId + "-toggle-1"));
+            Assert.That(conflict.status, Is.EqualTo("rejected"));
+            Assert.That(conflict.diagnostics[0].code, Is.EqualTo("bridge.command_id_conflict"));
+
             var repeatedToggle = BridgeCommandProcessor.Process(Command(
-                "create_toggle", payload, firstToggle.data.projectFingerprint, "toggle-2"));
+                "create_toggle", payload, firstToggle.data.projectFingerprint, runId + "-toggle-2"));
             Assert.That(repeatedToggle.status, Is.EqualTo("succeeded"));
             Assert.That(ToggleCount(avatar), Is.EqualTo(1));
         }

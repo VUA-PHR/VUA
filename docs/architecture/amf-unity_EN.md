@@ -2,9 +2,9 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Status: Accepted  
-> Scope: AMF application services, Recipe, Build Record, `unity/`  
-> Updated: 2026-09-03  
+> Status: Accepted
+> Scope: AMF application services, Recipe, Build Record, `unity/`
+> Updated: 2026-09-03
 > Normative effect: Yes
 
 ## AMF production model

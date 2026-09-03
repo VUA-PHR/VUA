@@ -2,9 +2,9 @@
 
 [English](task-store-v0.1_EN.md) | [简体中文](task-store-v0.1_ZH.md)
 
-> Status: B2 implementation baseline  
-> Owner: Orchestrator persistence adapter  
-> Updated: 2026-09-02  
+> Status: B2 implementation baseline
+> Owner: Orchestrator persistence adapter
+> Updated: 2026-09-02
 > Format version: `0.1`
 
 ## Boundary

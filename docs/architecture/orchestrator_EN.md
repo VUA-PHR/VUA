@@ -2,9 +2,9 @@
 
 [English](orchestrator_EN.md) | [简体中文](orchestrator_ZH.md)
 
-> Status: Accepted  
-> Scope: Orchestrator application core and local adapters  
-> Updated: 2026-09-02  
+> Status: Accepted
+> Scope: Orchestrator application core and local adapters
+> Updated: 2026-09-02
 > Normative effect: Yes
 
 ## Responsibility

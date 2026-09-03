@@ -23,8 +23,8 @@
 //! 内存有上界；
 //! 轮询 `try_wait` 直到退出码或超时——std 没有带超时的 wait，只能
 //! 5ms 一次轮询；超时就 `kill()` 后再 `wait()` 收尸（不留僵尸）。
-//! 注意 v0 只杀直接子进程，Unity 再拉起的孙进程是已知局限
-//! （Windows Job Object 方案在 O6 硬化清单里）；
+//! Windows 上每次调用进入独立 Job Object；超时、取消或父进程正常
+//! 结束时都会收束本次调用留下的整个进程树，并记录是否清理完成；
 //! 汇总 `ProcessOutcome`：退出码、是否超时、截断后的输出。
 //!
 //! `drain_bounded` —— `total > limit` 才置 truncated 标记并追加
@@ -47,6 +47,18 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use std::time::{Duration, Instant};
+
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
+#[cfg(windows)]
+use windows_sys::Win32::Foundation::{CloseHandle, HANDLE};
+#[cfg(windows)]
+use windows_sys::Win32::System::JobObjects::{
+    AssignProcessToJobObject, CreateJobObjectW, JobObjectBasicAccountingInformation,
+    JobObjectExtendedLimitInformation, QueryInformationJobObject, SetInformationJobObject,
+    TerminateJobObject, JOBOBJECT_BASIC_ACCOUNTING_INFORMATION,
+    JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+};
 
 /// One external process invocation. `args` are typed values assembled by the
 /// owning adapter — never user-joined strings (ORC-ADP-004).
@@ -115,6 +127,12 @@ pub struct ProcessOutcome {
     pub exit_code: Option<i32>,
     /// True when the timeout fired and the process was killed.
     pub timed_out: bool,
+    /// True when a caller-provided cancellation signal stopped the process.
+    pub cancelled: bool,
+    /// On Windows, true only after the per-invocation Job Object reports no
+    /// surviving process. Other platforms currently guarantee the direct
+    /// child only and therefore report false.
+    pub process_tree_clean: bool,
     pub stdout: String,
     pub stderr: String,
     pub truncated: bool,
@@ -122,7 +140,7 @@ pub struct ProcessOutcome {
 
 impl ProcessOutcome {
     pub fn success(&self) -> bool {
-        !self.timed_out && self.exit_code == Some(0)
+        !self.timed_out && !self.cancelled && self.exit_code == Some(0)
     }
 }
 
@@ -143,17 +161,36 @@ impl std::error::Error for ProcessError {}
 
 pub trait ProcessRunner: Send + Sync {
     fn run(&self, spec: &ProcessSpec) -> Result<ProcessOutcome, ProcessError>;
+
+    /// Runs with a cooperative caller-side cancellation signal. Implementors
+    /// that cannot interrupt an invocation retain the original behavior; the
+    /// standard runner polls the signal and terminates its owned process tree.
+    fn run_cancellable(
+        &self,
+        spec: &ProcessSpec,
+        _is_cancelled: &(dyn Fn() -> bool + Send + Sync),
+    ) -> Result<ProcessOutcome, ProcessError> {
+        self.run(spec)
+    }
 }
 
 /// Real runner over `std::process`. The child is spawned without a shell;
-/// output is drained on dedicated threads and capped; the timeout kills the
-/// child (process-tree termination for nested spawners lands with the O6
-/// hardening slice and is a known v0 limitation).
+/// output is drained on dedicated threads and capped. Windows invocations use
+/// one Job Object per call so timeout/cancellation and normal completion leave
+/// no helper processes behind.
 #[derive(Debug, Default)]
 pub struct StdProcessRunner;
 
 impl ProcessRunner for StdProcessRunner {
     fn run(&self, spec: &ProcessSpec) -> Result<ProcessOutcome, ProcessError> {
+        self.run_cancellable(spec, &|| false)
+    }
+
+    fn run_cancellable(
+        &self,
+        spec: &ProcessSpec,
+        is_cancelled: &(dyn Fn() -> bool + Send + Sync),
+    ) -> Result<ProcessOutcome, ProcessError> {
         // 直接 exec 固定可执行文件：参数是独立数组元素传给 OS 的 execve，
         // 不存在"被 shell 重新解释"的环节，注入无从谈起（ORC-ADP-001）。
         // stdin 直接关闭：外部工具不该等输入。
@@ -174,6 +211,15 @@ impl ProcessRunner for StdProcessRunner {
             command.env(key, value);
         }
         let mut child = command.spawn().map_err(ProcessError::Io)?;
+        #[cfg(windows)]
+        let process_job = match ProcessJob::attach(&child) {
+            Ok(job) => job,
+            Err(error) => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return Err(ProcessError::Io(error));
+            }
+        };
 
         // 两条独立的抽干线：无论子进程输出多少、多快，管道都不会积压，
         // 父进程可以专心等退出（见 drain_bounded 的死锁说明）。
@@ -185,11 +231,24 @@ impl ProcessRunner for StdProcessRunner {
 
         let deadline = Instant::now() + spec.timeout;
         let mut timed_out = false;
+        let mut cancelled = false;
         let exit_code = loop {
             match child.try_wait().map_err(ProcessError::Io)? {
                 Some(status) => break status.code(),
                 None => {
+                    if is_cancelled() {
+                        #[cfg(windows)]
+                        process_job.terminate();
+                        #[cfg(not(windows))]
+                        let _ = child.kill();
+                        let _ = child.wait();
+                        cancelled = true;
+                        break None;
+                    }
                     if Instant::now() >= deadline {
+                        #[cfg(windows)]
+                        process_job.terminate();
+                        #[cfg(not(windows))]
                         let _ = child.kill();
                         let _ = child.wait();
                         timed_out = true;
@@ -200,6 +259,15 @@ impl ProcessRunner for StdProcessRunner {
             }
         };
 
+        // A tool that exits while leaving helpers behind does not own those
+        // helpers beyond this invocation. Terminating the job before joining
+        // the pipe readers also prevents an inherited stdout handle from
+        // keeping the readers blocked forever.
+        #[cfg(windows)]
+        let process_tree_clean = process_job.finish();
+        #[cfg(not(windows))]
+        let process_tree_clean = false;
+
         let (stdout, stdout_truncated) = stdout_reader
             .join()
             .map_err(|_| ProcessError::Io(std::io::Error::other("stdout reader panicked")))?;
@@ -209,10 +277,93 @@ impl ProcessRunner for StdProcessRunner {
         Ok(ProcessOutcome {
             exit_code,
             timed_out,
+            cancelled,
+            process_tree_clean,
             stdout,
             stderr,
             truncated: stdout_truncated || stderr_truncated,
         })
+    }
+}
+
+#[cfg(windows)]
+struct ProcessJob {
+    handle: HANDLE,
+}
+
+#[cfg(windows)]
+impl ProcessJob {
+    fn attach(child: &std::process::Child) -> std::io::Result<Self> {
+        // SAFETY: the initialized structures have the exact Win32 layout and
+        // the child/process handles remain valid for each call.
+        unsafe {
+            let handle = CreateJobObjectW(std::ptr::null(), std::ptr::null());
+            if handle.is_null() {
+                return Err(std::io::Error::last_os_error());
+            }
+            let mut limits: JOBOBJECT_EXTENDED_LIMIT_INFORMATION = std::mem::zeroed();
+            limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+            if SetInformationJobObject(
+                handle,
+                JobObjectExtendedLimitInformation,
+                (&raw const limits).cast(),
+                std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            ) == 0
+            {
+                let error = std::io::Error::last_os_error();
+                CloseHandle(handle);
+                return Err(error);
+            }
+            if AssignProcessToJobObject(handle, child.as_raw_handle() as HANDLE) == 0 {
+                let error = std::io::Error::last_os_error();
+                CloseHandle(handle);
+                return Err(error);
+            }
+            Ok(Self { handle })
+        }
+    }
+
+    fn terminate(&self) {
+        // SAFETY: handle is owned and valid until Drop.
+        unsafe {
+            let _ = TerminateJobObject(self.handle, 1);
+        }
+    }
+
+    fn finish(&self) -> bool {
+        self.terminate();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        loop {
+            // SAFETY: accounting points at writable storage of the requested
+            // information class and has the matching byte size.
+            let active = unsafe {
+                let mut accounting: JOBOBJECT_BASIC_ACCOUNTING_INFORMATION = std::mem::zeroed();
+                let ok = QueryInformationJobObject(
+                    self.handle,
+                    JobObjectBasicAccountingInformation,
+                    (&raw mut accounting).cast(),
+                    std::mem::size_of::<JOBOBJECT_BASIC_ACCOUNTING_INFORMATION>() as u32,
+                    std::ptr::null_mut(),
+                );
+                (ok != 0).then_some(accounting.ActiveProcesses)
+            };
+            match active {
+                Some(0) => return true,
+                None => return false,
+                Some(_) if Instant::now() >= deadline => return false,
+                Some(_) => std::thread::sleep(Duration::from_millis(5)),
+            }
+        }
+    }
+}
+
+#[cfg(windows)]
+impl Drop for ProcessJob {
+    fn drop(&mut self) {
+        // SAFETY: this guard uniquely owns the handle.
+        unsafe {
+            CloseHandle(self.handle);
+        }
     }
 }
 
@@ -312,6 +463,8 @@ impl ProcessRunner for FakeProcessRunner {
             None => Ok(ProcessOutcome {
                 exit_code: Some(0),
                 timed_out: false,
+                cancelled: false,
+                process_tree_clean: true,
                 stdout: String::new(),
                 stderr: String::new(),
                 truncated: false,
@@ -325,6 +478,8 @@ pub fn outcome_with_exit(code: i32, stderr: &str) -> ProcessOutcome {
     ProcessOutcome {
         exit_code: Some(code),
         timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
         stdout: String::new(),
         stderr: stderr.to_owned(),
         truncated: false,
@@ -334,6 +489,8 @@ pub fn outcome_with_exit(code: i32, stderr: &str) -> ProcessOutcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
 
     fn node_spec(script: &str, timeout: Duration, limit: usize) -> ProcessSpec {
         ProcessSpec {
@@ -386,7 +543,49 @@ mod tests {
             ))
             .unwrap();
         assert!(outcome.timed_out);
+        assert!(!outcome.cancelled);
+        #[cfg(windows)]
+        assert!(outcome.process_tree_clean);
         assert!(started.elapsed() < Duration::from_secs(10));
+    }
+
+    #[test]
+    fn b3_spike_std_runner_cancels_an_owned_process_tree() {
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let signal = Arc::clone(&cancelled);
+        let setter = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(120));
+            signal.store(true, Ordering::SeqCst);
+        });
+        let outcome = StdProcessRunner
+            .run_cancellable(
+                &node_spec(
+                    "setTimeout(() => {}, 30_000)",
+                    Duration::from_secs(30),
+                    4096,
+                ),
+                &|| cancelled.load(Ordering::SeqCst),
+            )
+            .unwrap();
+        setter.join().unwrap();
+        assert!(outcome.cancelled);
+        assert!(!outcome.timed_out);
+        #[cfg(windows)]
+        assert!(outcome.process_tree_clean);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn b3_spike_std_runner_cleans_helpers_left_by_a_successful_parent() {
+        let outcome = StdProcessRunner
+            .run(&node_spec(
+                "require('child_process').spawn(process.execPath,['-e','setTimeout(()=>{},30000)'],{stdio:'ignore'}).unref();",
+                Duration::from_secs(15),
+                4096,
+            ))
+            .unwrap();
+        assert!(outcome.success(), "{outcome:?}");
+        assert!(outcome.process_tree_clean);
     }
 
     #[test]

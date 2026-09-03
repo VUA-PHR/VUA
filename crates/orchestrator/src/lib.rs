@@ -7,11 +7,15 @@
 
 mod assembly;
 mod bridge;
+mod build_record;
 mod capability;
 mod contracts;
 mod environment;
 mod filesystem;
 mod journal;
+mod local_vpm_artifact;
+mod material_identity;
+mod material_intake;
 mod model;
 mod process;
 mod project_identity;
@@ -34,6 +38,11 @@ pub use assembly::{
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
 };
 pub use bridge::{BridgeError, UnityBatchBridge};
+pub use build_record::{
+    BridgeJobEvidenceV01, BuildRecordStatus, BuildRecordStore, BuildRecordV01,
+    BuildSnapshotEvidenceV01, BuildValidationEvidenceV01, LocalVpmEvidenceV01,
+    BUILD_RECORD_SCHEMA_VERSION,
+};
 pub use capability::{
     CapabilityRegistry, CapabilityReport, CapabilitySource, CapabilityState, UnavailableSource,
 };
@@ -46,13 +55,21 @@ pub use environment::{
     EnvironmentRoots, EnvironmentSnapshotV1, Zone,
 };
 pub use filesystem::{
-    FileSystemProjectStore, FileSystemSnapshotStore, SnapshotManifestEntry, SnapshotManifestV1,
-    VerifiedSnapshot,
+    project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,
+    SnapshotManifestEntry, SnapshotManifestV1, VerifiedSnapshot,
 };
 pub use journal::{
     recover_from_journal, JournalEntryKind, JournalEntryV1, JournalError, JournalPayload,
     JournalSink, JournalWriter, MemoryJournal, RecoveredDisposition, RecoveredTask, RecoveryReport,
     JOURNAL_SCHEMA_VERSION,
+};
+pub use local_vpm_artifact::{publish_local_vpm_artifact, PublishedLocalVpmArtifact};
+pub use material_identity::{LocalPackageIdentity, LocalPackageIdentityStore};
+pub use material_intake::{
+    error_codes as material_intake_error_codes, ExecutableRiskEvidence, ExecutableRiskKind,
+    MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
+    MaterialIntakeStepKind, MaterialIntakeStepV01, RiskDecisionChoice, RiskDecisionV01,
+    SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use model::*;
 pub use process::{

@@ -2,9 +2,9 @@
 
 [English](task-store-v0.1_EN.md) | [简体中文](task-store-v0.1_ZH.md)
 
-> 状态：B2 实现基线  
-> 所有者：Orchestrator 持久化适配器  
-> 更新：2026-09-02  
+> 状态：B2 实现基线
+> 所有者：Orchestrator 持久化适配器
+> 更新：2026-09-02
 > 格式版本：`0.1`
 
 ## 边界

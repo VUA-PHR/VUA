@@ -877,6 +877,7 @@ fn orc_adp_005_real_bridge_writes_requests_into_the_job_directory_shape() {
             outfit_global_object_id: "o".into(),
             outfit_armature_global_object_id: "o_Armature".into(),
             toggle_name: "t".into(),
+            ..vua_orchestrator::UnityPayload::default()
         },
     };
     let project = ProjectRef {

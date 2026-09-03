@@ -2,9 +2,9 @@
 
 [English](unity-bridge-v1_EN.md) | [简体中文](unity-bridge-v1_ZH.md)
 
-> Status: Accepted  
-> Protocol version: 1  
-> Updated: 2026-09-02  
+> Status: Accepted
+> Protocol version: 1
+> Updated: 2026-09-02
 > Normative effect: Yes; `schemas/unity-bridge/v1/` is authoritative for machine structure
 
 ## Purpose and boundary
@@ -51,16 +51,26 @@ Requests conform to [`command.schema.json`](../../schemas/unity-bridge/v1/comman
 | operation | Mode | Purpose |
 | --- | --- | --- |
 | `inspect_project` | `dryRun: true` required | Check current Scene readability and return fingerprint |
+| `import_unity_package` | inspect or mutate | Verify the source digest and import one `.unitypackage` from the reviewed batch |
+| `create_local_vpm_package` | inspect or mutate | Create the Editor/Runtime local-package layout only inside a token-bound VUA staging project |
+| `validate_asset_paths` | `dryRun: true` required | Confirm planned paths load through AssetDatabase; proves minimum structure only |
 | `identify_assets` | `dryRun: true` required | Resolve Avatar/outfit `GlobalObjectId` values |
 | `install_outfit` | inspect or mutate | Build hierarchy and configure MA Merge Armature |
 | `create_toggle` | inspect or mutate | Create/update MA menu entry and object toggle |
 | `validate_avatar` | `dryRun: true` required | Validate outfit hierarchy and MA components |
 | `analyze_performance` | `dryRun: true` required | Return a local structural estimate, never an official rating |
 
+The two material operations form B3's versioned dual-entry execution surface. Every source package in the folder
+batch executes in normalized relative-path order. `create_local_vpm_package` must match the one-time token stored
+in `.vua/staging.json` and cannot run against an ordinary user project. Dependencies are explicit Orchestrator
+inputs; the Bridge neither guesses nor removes them.
+
 Mutation is `dryRun: false` and requires the latest successful `data.projectFingerprint` as
-`expectedProjectFingerprint`. Mismatch rejects execution. `commandId` correlates request and result.
-Current mutations are idempotent on their target structure: repeated outfit installation does not
-stack Merge Armatures, and repeated same-name toggle creation updates the existing object. New
+`expectedProjectFingerprint`. Mismatch rejects execution. `commandId` binds request, result, and a completion
+receipt under `.vua/bridge/completed/`; replay of a completed command returns that result without importing or
+moving assets again. Interruption before the receipt is an unknown outcome that requires Inspect rather than
+automatic replay. Assembly mutations are also idempotent on their target structure: repeated outfit installation
+does not stack Merge Armatures, and repeated same-name toggle creation updates the existing object. New
 operations define repeat semantics before entering the schema. Executable synthetic examples live in
 `schemas/unity-bridge/v1/examples/`.
 

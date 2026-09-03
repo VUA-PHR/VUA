@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/amf-production/v0.1/material-plan.schema.json",
+  "title": "VUA B3 material intake plan v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "planId", "planHash", "mode", "projectId", "projectFingerprint", "source", "riskDecisionRequired", "steps"],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "planId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+    "planHash": { "$ref": "#/$defs/sha256" },
+    "mode": { "enum": ["direct_unity_package", "local_reusable_vpm"] },
+    "projectId": { "type": "string", "minLength": 1 },
+    "projectFingerprint": { "type": "string", "minLength": 1 },
+    "source": { "$ref": "#/$defs/source" },
+    "riskDecisionRequired": { "type": "boolean" },
+    "steps": {
+      "type": "array",
+      "minItems": 5,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "mutatesTargetProject", "safeBoundaryAfter"],
+        "properties": {
+          "kind": { "enum": ["verify_source", "create_snapshot", "import_unity_packages", "create_local_vpm_package", "preview_vpm_install", "apply_vpm_install", "validate_minimum_structure", "write_build_record"] },
+          "mutatesTargetProject": { "type": "boolean" },
+          "safeBoundaryAfter": { "const": true }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "displayName", "sourceFingerprint", "riskFingerprint", "packages", "executableRisks"],
+      "properties": {
+        "schemaVersion": { "const": "0.1" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "sourceFingerprint": { "$ref": "#/$defs/sha256" },
+        "riskFingerprint": { "$ref": "#/$defs/sha256" },
+        "packages": { "type": "array", "minItems": 1 },
+        "executableRisks": { "type": "array" }
+      }
+    }
+  }
+}

@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
+using System.IO;
+using System.Text.RegularExpressions;
 using System.Text;
 using nadena.dev.modular_avatar.core;
 using UnityEditor;
@@ -32,6 +34,18 @@ namespace Vua.Editor.Bridge
                     $"当前 Unity Editor 版本为 {actualVersion}；Unity Bridge v1 仅支持 {SupportedEditorVersion}。");
             }
 
+            if (IsMutating(command.operation) && TryReadReceipt(command, out var repeated))
+            {
+                if (!string.Equals(repeated.data.commandFingerprint, CommandFingerprint(command), StringComparison.Ordinal))
+                {
+                    return BridgeResult.Reject(command, "bridge.command_id_conflict",
+                        "相同 commandId 已绑定到不同请求，请重新规划。");
+                }
+                repeated.diagnostics.Add(BridgeDiagnostic.Info("bridge.idempotent_replay",
+                    "相同 commandId 已完成；返回既有结果，未重复执行副作用。"));
+                return repeated;
+            }
+
             try
             {
                 var currentFingerprint = ProjectFingerprint.Compute();
@@ -47,6 +61,15 @@ namespace Vua.Editor.Bridge
                 {
                     case "inspect_project":
                         result = InspectProject(command);
+                        break;
+                    case "import_unity_package":
+                        result = ImportUnityPackage(command);
+                        break;
+                    case "create_local_vpm_package":
+                        result = CreateLocalVpmPackage(command);
+                        break;
+                    case "validate_asset_paths":
+                        result = ValidateAssetPaths(command);
                         break;
                     case "identify_assets":
                         result = IdentifyAssets(command);
@@ -81,6 +104,11 @@ namespace Vua.Editor.Bridge
                     }
                 }
                 result.data.projectFingerprint = ProjectFingerprint.Compute();
+                if (result.status == "succeeded" && IsMutating(command.operation))
+                {
+                    result.data.commandFingerprint = CommandFingerprint(command);
+                    WriteReceipt(command, result);
+                }
                 return result;
             }
             catch (Exception exception)
@@ -91,7 +119,186 @@ namespace Vua.Editor.Bridge
 
         private static bool IsMutating(string operation)
         {
-            return operation == "install_outfit" || operation == "create_toggle";
+            return operation == "import_unity_package" || operation == "create_local_vpm_package" ||
+                   operation == "install_outfit" || operation == "create_toggle";
+        }
+
+        private static BridgeResult ImportUnityPackage(BridgeCommand command)
+        {
+            var source = command.payload.sourcePackagePath;
+            if (string.IsNullOrWhiteSpace(source) || !Path.IsPathRooted(source) || !File.Exists(source))
+            {
+                return BridgeResult.Reject(command, "package.source_missing", "找不到待导入的 Unity Package。");
+            }
+            if (!string.Equals(Path.GetExtension(source), ".unitypackage", StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.source_type_invalid", "来源文件不是 .unitypackage。");
+            }
+            var actualDigest = FileSha256(source);
+            if (string.IsNullOrWhiteSpace(command.payload.sourcePackageSha256) ||
+                !string.Equals(actualDigest, command.payload.sourcePackageSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.source_drift", "来源包摘要已变化，请重新检查。");
+            }
+            if (command.dryRun)
+            {
+                var dryRun = BridgeResult.Success(command);
+                dryRun.diagnostics.Add(BridgeDiagnostic.Info("package.import_ready", "来源包可读取，尚未导入。"));
+                return dryRun;
+            }
+
+            var before = new HashSet<string>(AssetDatabase.GetAllAssetPaths(), StringComparer.Ordinal);
+            AssetDatabase.ImportPackage(source, false);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var imported = AssetDatabase.GetAllAssetPaths()
+                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) && !before.Contains(path))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+            var result = BridgeResult.Success(command);
+            result.changedPaths.AddRange(imported);
+            result.data.importedAssetPaths.AddRange(imported);
+            result.diagnostics.Add(BridgeDiagnostic.Info("package.imported", "Unity Package 已完成受控导入。"));
+            return result;
+        }
+
+        private static BridgeResult CreateLocalVpmPackage(BridgeCommand command)
+        {
+            if (!ValidPackageId(command.payload.packageId) || string.IsNullOrWhiteSpace(command.payload.packageDisplayName) ||
+                string.IsNullOrWhiteSpace(command.payload.packageVersion))
+            {
+                return BridgeResult.Reject(command, "vpm.manifest_invalid", "本地 VPM 包身份或版本无效。");
+            }
+            var marker = Path.Combine(ProjectRoot(), ".vua", "staging.json");
+            if (!File.Exists(marker) || string.IsNullOrWhiteSpace(command.payload.stagingToken) ||
+                !string.Equals(File.ReadAllText(marker).Trim(), command.payload.stagingToken, StringComparison.Ordinal))
+            {
+                return BridgeResult.Reject(command, "vpm.staging_required", "该操作只允许在 VUA 暂存项目中执行。");
+            }
+            var packageRoot = "Packages/" + command.payload.packageId;
+            if (AssetDatabase.IsValidFolder(packageRoot))
+            {
+                return BridgeResult.Reject(command, "vpm.package_root_exists", "目标本地包目录已经存在。");
+            }
+            if (command.dryRun)
+            {
+                var dryRun = BridgeResult.Success(command);
+                dryRun.data.packageRoot = packageRoot;
+                dryRun.diagnostics.Add(BridgeDiagnostic.Info("vpm.creation_ready", "暂存项目可转换为本地 VPM 包。"));
+                return dryRun;
+            }
+
+            Directory.CreateDirectory(Path.Combine(ProjectRoot(), packageRoot, "Runtime"));
+            AssetDatabase.Refresh();
+            var topLevel = AssetDatabase.GetAllAssetPaths()
+                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) &&
+                               path.IndexOf('/', "Assets/".Length) < 0)
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+            var changed = new List<string>();
+            foreach (var source in topLevel)
+            {
+                var name = source.Substring("Assets/".Length);
+                var section = string.Equals(name, "Editor", StringComparison.OrdinalIgnoreCase) ? "Editor" : "Runtime";
+                var destination = section == "Editor" ? packageRoot + "/Editor" : packageRoot + "/Runtime/" + name;
+                var moveError = AssetDatabase.MoveAsset(source, destination);
+                if (!string.IsNullOrEmpty(moveError))
+                {
+                    return BridgeResult.Fail(command, "vpm.asset_move_failed", "素材无法移动到本地 VPM 包结构。");
+                }
+                changed.Add(destination);
+            }
+            File.WriteAllText(Path.Combine(ProjectRoot(), packageRoot, "package.json"), PackageManifest(command));
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var result = BridgeResult.Success(command);
+            result.changedPaths.AddRange(changed);
+            result.changedPaths.Add(packageRoot + "/package.json");
+            result.data.packageRoot = packageRoot;
+            result.diagnostics.Add(BridgeDiagnostic.Info("vpm.package_created", "已生成 local-reusable VPM 包。"));
+            return result;
+        }
+
+        private static BridgeResult ValidateAssetPaths(BridgeCommand command)
+        {
+            var expected = command.payload.expectedAssetPaths ?? new List<string>();
+            if (expected.Count == 0 || expected.Any(path => string.IsNullOrWhiteSpace(path) ||
+                (!path.StartsWith("Assets/", StringComparison.Ordinal) && !path.StartsWith("Packages/", StringComparison.Ordinal))))
+            {
+                return BridgeResult.Reject(command, "validation.asset_paths_invalid", "最小结构验证缺少有效素材路径。");
+            }
+            var missing = expected.Where(path => AssetDatabase.LoadMainAssetAtPath(path) == null).ToList();
+            if (missing.Count > 0)
+            {
+                return BridgeResult.Reject(command, "validation.asset_load_failed", "至少一个计划素材无法由 AssetDatabase 加载。");
+            }
+            var result = BridgeResult.Success(command);
+            result.data.loadedAssetPaths.AddRange(expected.OrderBy(path => path, StringComparer.Ordinal));
+            result.diagnostics.Add(BridgeDiagnostic.Info("validation.minimum_structure_passed",
+                "计划素材可由 AssetDatabase 加载；该结果不代表 Avatar 或衣装语义正确。"));
+            return result;
+        }
+
+        private static string PackageManifest(BridgeCommand command)
+        {
+            var dependencies = command.payload.packageDependencies ?? new List<BridgePackageDependency>();
+            var entries = dependencies.OrderBy(value => value.packageId, StringComparer.Ordinal)
+                .Select(value => "\"" + JsonEscape(value.packageId) + "\":\"" + JsonEscape(value.version) + "\"");
+            return "{\n" +
+                   "  \"name\": \"" + JsonEscape(command.payload.packageId) + "\",\n" +
+                   "  \"displayName\": \"" + JsonEscape(command.payload.packageDisplayName) + "\",\n" +
+                   "  \"version\": \"" + JsonEscape(command.payload.packageVersion) + "\",\n" +
+                   "  \"unity\": \"2022.3\",\n" +
+                   "  \"dependencies\": {" + string.Join(",", entries) + "}\n" +
+                   "}\n";
+        }
+
+        private static string JsonEscape(string value) => (value ?? string.Empty)
+            .Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\r", "\\r").Replace("\n", "\\n");
+
+        private static bool ValidPackageId(string value) => !string.IsNullOrWhiteSpace(value) &&
+            Regex.IsMatch(value, "^[a-z0-9][a-z0-9._-]{2,127}$", RegexOptions.CultureInvariant);
+
+        private static string ProjectRoot() => Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+
+        private static string FileSha256(string path)
+        {
+            using (var stream = File.OpenRead(path))
+            using (var sha = SHA256.Create())
+            {
+                return "sha256:" + BitConverter.ToString(sha.ComputeHash(stream)).Replace("-", string.Empty).ToLowerInvariant();
+            }
+        }
+
+        private static string CommandFingerprint(BridgeCommand command)
+        {
+            var bytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(command, false));
+            using (var sha = SHA256.Create())
+            {
+                return "sha256:" + BitConverter.ToString(sha.ComputeHash(bytes)).Replace("-", string.Empty).ToLowerInvariant();
+            }
+        }
+
+        private static string ReceiptPath(BridgeCommand command) => Path.Combine(
+            ProjectRoot(), ".vua", "bridge", "completed", command.commandId + ".json");
+
+        private static bool TryReadReceipt(BridgeCommand command, out BridgeResult result)
+        {
+            result = null;
+            var path = ReceiptPath(command);
+            if (!File.Exists(path)) return false;
+            result = JsonUtility.FromJson<BridgeResult>(File.ReadAllText(path));
+            return result != null && result.commandId == command.commandId && result.status == "succeeded";
+        }
+
+        private static void WriteReceipt(BridgeCommand command, BridgeResult result)
+        {
+            var path = ReceiptPath(command);
+            var directory = Path.GetDirectoryName(path);
+            if (string.IsNullOrWhiteSpace(directory)) throw new InvalidOperationException("回执路径缺少父目录。");
+            Directory.CreateDirectory(directory);
+            var temporary = path + ".tmp";
+            File.WriteAllText(temporary, JsonUtility.ToJson(result, true));
+            if (File.Exists(path)) File.Delete(temporary);
+            else File.Move(temporary, path);
         }
 
         private static BridgeResult InspectProject(BridgeCommand command)
@@ -257,7 +464,9 @@ namespace Vua.Editor.Bridge
         {
             if (command == null) return BridgeResult.Reject(null, "bridge.invalid_json", "命令 JSON 无法解析。");
             if (command.schemaVersion != 1) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
-            if (string.IsNullOrWhiteSpace(command.commandId)) return BridgeResult.Reject(command, "bridge.command_id_required", "命令缺少 ID。");
+            if (string.IsNullOrWhiteSpace(command.commandId) ||
+                !Regex.IsMatch(command.commandId, "^[A-Za-z0-9_-]{1,128}$", RegexOptions.CultureInvariant))
+                return BridgeResult.Reject(command, "bridge.command_id_required", "命令 ID 无效。");
             if (string.IsNullOrWhiteSpace(command.projectId)) return BridgeResult.Reject(command, "bridge.project_id_required", "命令缺少项目 ID。");
             if (command.payload == null) return BridgeResult.Reject(command, "bridge.payload_required", "命令缺少参数。");
             if (!IsAllowed(command.operation)) return BridgeResult.Reject(command, "bridge.operation_not_allowed", "该操作不在允许列表中。");
@@ -275,6 +484,9 @@ namespace Vua.Editor.Bridge
         private static bool IsAllowed(string operation)
         {
             return operation == "inspect_project" ||
+                   operation == "import_unity_package" ||
+                   operation == "create_local_vpm_package" ||
+                   operation == "validate_asset_paths" ||
                    operation == "identify_assets" ||
                    operation == "install_outfit" ||
                    operation == "create_toggle" ||

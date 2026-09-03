@@ -182,6 +182,14 @@ fn orc_typ_005_unity_bridge_examples_and_operation_enum_stay_in_sync() {
     let dir = unity_bridge_dir();
     for (schema_name, example_name) in [
         ("command.schema.json", "examples/inspect.request.json"),
+        (
+            "command.schema.json",
+            "examples/import-unitypackage.request.json",
+        ),
+        (
+            "command.schema.json",
+            "examples/create-local-vpm.request.json",
+        ),
         ("result.schema.json", "examples/inspect.result.json"),
     ] {
         let schema: serde_json::Value =
@@ -203,6 +211,9 @@ fn orc_typ_005_unity_bridge_examples_and_operation_enum_stay_in_sync() {
         .unwrap();
     let rust_operations = [
         UnityOperation::InspectProject,
+        UnityOperation::ImportUnityPackage,
+        UnityOperation::CreateLocalVpmPackage,
+        UnityOperation::ValidateAssetPaths,
         UnityOperation::IdentifyAssets,
         UnityOperation::InstallOutfit,
         UnityOperation::CreateToggle,

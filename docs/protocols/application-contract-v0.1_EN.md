@@ -2,9 +2,9 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
-> Status: B1 candidate development contract  
-> Scope: application semantics between the Electron Kernel and an Orchestrator Provider  
-> Updated: 2026-09-02  
+> Status: B1 candidate development contract
+> Scope: application semantics between the Electron Kernel and an Orchestrator Provider
+> Updated: 2026-09-02
 > Authority: constrains B1 implementation and tests; not stable Gateway v1 before real M2 integration
 
 ## Purpose and boundary

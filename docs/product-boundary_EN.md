@@ -2,9 +2,9 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Status: Accepted  
-> Scope: Entire VUA product  
-> Updated: 2026-09-03  
+> Status: Accepted
+> Scope: Entire VUA product
+> Updated: 2026-09-03
 > Normative effect: Yes
 
 ## Product definition

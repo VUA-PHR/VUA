@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/vpm-package-spike/v0.1/result.schema.json",
+  "title": "VUA local VPM package Spike result v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "runId",
+    "status",
+    "resultCode",
+    "validationLevel",
+    "source",
+    "package",
+    "riskDecision",
+    "phases",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "vua.vpm-package-spike-result/v0.1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "status": {
+      "enum": ["succeeded", "succeeded_with_warnings", "failed", "cancelled"]
+    },
+    "resultCode": {
+      "enum": [
+        "vua.vpm_spike.ok",
+        "vua.vpm_spike.ok_with_warnings",
+        "vua.vpm_spike.cancelled",
+        "vua.vpm_spike.risk_decision_required",
+        "vua.vpm_spike.source_changed",
+        "vua.vpm_spike.unity_version_unsupported",
+        "vua.vpm_spike.process_start_failed",
+        "vua.vpm_spike.process_timeout",
+        "vua.vpm_spike.process_cancelled",
+        "vua.vpm_spike.process_exit_nonzero",
+        "vua.vpm_spike.residual_process",
+        "vua.vpm_spike.disk_space_insufficient",
+        "vua.vpm_spike.disk_write_interrupted",
+        "vua.vpm_spike.recovery_required",
+        "vua.vpm_spike.package_manifest_invalid",
+        "vua.vpm_spike.package_policy_rejected",
+        "vua.vpm_spike.vrc_get_preview_failed",
+        "vua.vpm_spike.vrc_get_apply_failed",
+        "vua.vpm_spike.vrc_get_verification_failed",
+        "vua.vpm_spike.nondeterministic_output",
+        "vua.vpm_spike.unity_validation_failed"
+      ]
+    },
+    "validationLevel": {
+      "enum": ["none", "candidate_only", "minimum_structure", "unity_validated"]
+    },
+    "source": { "$ref": "#/$defs/digestRecord" },
+    "package": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "displayName",
+        "version",
+        "manifestSha256",
+        "treeSha256",
+        "archiveSha256"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "manifestSha256": { "$ref": "#/$defs/nullableSha256" },
+        "treeSha256": { "$ref": "#/$defs/nullableSha256" },
+        "archiveSha256": { "$ref": "#/$defs/nullableSha256" }
+      }
+    },
+    "riskDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceSha256", "executableInputs", "choice", "rememberedForSession"],
+      "properties": {
+        "sourceSha256": { "$ref": "#/$defs/sha256" },
+        "executableInputs": {
+          "type": "array",
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "choice": { "enum": ["snapshot_and_continue", "continue", "cancel", "not_required", "not_provided"] },
+        "rememberedForSession": { "type": "boolean" }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/phase" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "nullableSha256": {
+      "oneOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "digestRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["beforeSha256", "afterSha256", "unchanged"],
+      "properties": {
+        "beforeSha256": { "$ref": "#/$defs/sha256" },
+        "afterSha256": { "$ref": "#/$defs/sha256" },
+        "unchanged": { "type": "boolean" }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "status",
+        "timeoutMs",
+        "exitCode",
+        "timedOut",
+        "cancelled",
+        "processTreeClean"
+      ],
+      "properties": {
+        "name": {
+          "enum": [
+            "prepare",
+            "import",
+            "convert",
+            "vrc_get_install",
+            "unity_validate",
+            "publish"
+          ]
+        },
+        "status": { "enum": ["succeeded", "failed", "cancelled", "skipped"] },
+        "timeoutMs": { "type": "integer", "minimum": 1 },
+        "exitCode": { "type": ["integer", "null"] },
+        "timedOut": { "type": "boolean" },
+        "cancelled": { "type": "boolean" },
+        "processTreeClean": { "type": "boolean" }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^vua\\.vpm_spike\\." },
+        "severity": { "enum": ["info", "warning", "risk", "error"] },
+        "path": { "type": "string" },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

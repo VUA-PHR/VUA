@@ -37,6 +37,9 @@ pub struct AvatarSetupRequest {
 #[serde(rename_all = "snake_case")]
 pub enum UnityOperation {
     InspectProject,
+    ImportUnityPackage,
+    CreateLocalVpmPackage,
+    ValidateAssetPaths,
     IdentifyAssets,
     InstallOutfit,
     CreateToggle,
@@ -46,11 +49,24 @@ pub enum UnityOperation {
 
 impl UnityOperation {
     pub fn is_mutating(self) -> bool {
-        matches!(self, Self::InstallOutfit | Self::CreateToggle)
+        matches!(
+            self,
+            Self::ImportUnityPackage
+                | Self::CreateLocalVpmPackage
+                | Self::InstallOutfit
+                | Self::CreateToggle
+        )
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnityPackageDependency {
+    pub package_id: String,
+    pub version: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UnityPayload {
     pub avatar_global_object_id: String,
@@ -58,6 +74,22 @@ pub struct UnityPayload {
     pub outfit_global_object_id: String,
     pub outfit_armature_global_object_id: String,
     pub toggle_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_package_path: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_package_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package_display_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub package_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub package_dependencies: Vec<UnityPackageDependency>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub staging_token: Option<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub expected_asset_paths: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

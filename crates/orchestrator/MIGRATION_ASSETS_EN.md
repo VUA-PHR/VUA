@@ -1,9 +1,9 @@
 # Orchestrator Migration Asset Record
 
-> Status: B0 migration inventory complete; later slices are not yet formal implementations  
-> Legacy source: `GLM/orchestrator` and its early vertical slices  
-> Current owner: `crates/orchestrator`  
-> Updated: 2026-09-02  
+> Status: B0 migration inventory complete; later slices are not yet formal implementations
+> Legacy source: `GLM/orchestrator` and its early vertical slices
+> Current owner: `crates/orchestrator`
+> Updated: 2026-09-02
 > Authority: migration work record; product semantics remain owned by the product boundary, accepted architecture, and versioned protocols
 
 This record distinguishes existing behavior that passes tests from a product implementation that has been finalized. The

@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "vua.vpm-package-spike-result/v0.1",
+  "runId": "synthetic-a",
+  "status": "succeeded_with_warnings",
+  "resultCode": "vua.vpm_spike.ok_with_warnings",
+  "validationLevel": "minimum_structure",
+  "source": {
+    "beforeSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "afterSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "unchanged": true
+  },
+  "package": {
+    "id": "com.ph-r.vua.local.synthetic",
+    "displayName": "Synthetic",
+    "version": "0.0.1",
+    "manifestSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "treeSha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "archiveSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+  },
+  "riskDecision": {
+    "sourceSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "executableInputs": [],
+    "choice": "not_required",
+    "rememberedForSession": false
+  },
+  "phases": [
+    {
+      "name": "vrc_get_install",
+      "status": "succeeded",
+      "timeoutMs": 30000,
+      "exitCode": 0,
+      "timedOut": false,
+      "cancelled": false,
+      "processTreeClean": true
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "vua.vpm_spike.semantic_validation_not_performed",
+      "severity": "warning"
+    }
+  ]
+}

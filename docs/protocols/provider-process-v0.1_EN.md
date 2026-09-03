@@ -2,9 +2,9 @@
 
 [English](provider-process-v0.1_EN.md) | [简体中文](provider-process-v0.1_ZH.md)
 
-> Status: B2 implementation baseline  
-> Owner: Electron Kernel and Orchestrator Provider adapters  
-> Updated: 2026-09-02  
+> Status: B2 implementation baseline
+> Owner: Electron Kernel and Orchestrator Provider adapters
+> Updated: 2026-09-02
 > Frame version: `0.1`
 
 ## Boundary and artifact

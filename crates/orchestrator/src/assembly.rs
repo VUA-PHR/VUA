@@ -55,7 +55,7 @@
 
 use crate::bridge::{BridgeError, UnityBatchBridge};
 use crate::contracts::{AppErrorV1, ErrorCategory, ParamValue};
-use crate::filesystem::FileSystemSnapshotStore;
+use crate::filesystem::{project_tree_fingerprint, FileSystemSnapshotStore};
 use crate::recipe::{
     derive_project_spec, document_digest, DerivedProjectSpecV1, IssueAction, IssueActionKind,
     IssueSeverity, IssueSubject, RecipeIssue, RecipeV02, RelationV02,
@@ -66,9 +66,8 @@ use crate::{
     ProjectRef, SnapshotRef, TaskContext, UnityCommand, UnityOperation, UnityPayload, UnityResult,
 };
 use serde_json::{json, Value};
-use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
-use std::io::{self, Read};
+use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -902,6 +901,7 @@ impl AssemblyEngine {
                 outfit_global_object_id: outfit.to_owned(),
                 outfit_armature_global_object_id: format!("{outfit}_Armature"),
                 toggle_name: toggle_name.unwrap_or(avatar_name).to_owned(),
+                ..UnityPayload::default()
             },
         };
         let result = self
@@ -1052,66 +1052,7 @@ fn instance_display_name(instance: &crate::recipe::InstanceV02) -> String {
 }
 
 fn project_fingerprint(project_root: &Path) -> io::Result<Option<String>> {
-    if !project_root.exists() {
-        return Ok(None);
-    }
-    let mut files = Vec::new();
-    for scope in SNAPSHOT_SCOPES {
-        let path = project_root.join(scope);
-        if path.exists() {
-            collect_project_files(project_root, &path, &mut files)?;
-        }
-    }
-    files.sort();
-    let mut digest = Sha256::new();
-    digest.update(b"vua-project-tree-v1\0");
-    for relative in files {
-        let normalized = relative.to_string_lossy().replace('\\', "/");
-        let mut file = std::fs::File::open(project_root.join(&relative))?;
-        let length = file.metadata()?.len();
-        digest.update((normalized.len() as u64).to_le_bytes());
-        digest.update(normalized.as_bytes());
-        digest.update(length.to_le_bytes());
-        let mut buffer = [0_u8; 64 * 1024];
-        loop {
-            let read = file.read(&mut buffer)?;
-            if read == 0 {
-                break;
-            }
-            digest.update(&buffer[..read]);
-        }
-    }
-    let bytes = digest.finalize();
-    let mut encoded = String::with_capacity(64);
-    for byte in bytes {
-        use std::fmt::Write as _;
-        let _ = write!(&mut encoded, "{byte:02x}");
-    }
-    Ok(Some(format!("sha256:{encoded}")))
-}
-
-fn collect_project_files(root: &Path, path: &Path, output: &mut Vec<PathBuf>) -> io::Result<()> {
-    let metadata = std::fs::symlink_metadata(path)?;
-    if metadata.file_type().is_symlink() {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidData,
-            "project fingerprint refuses symbolic links",
-        ));
-    }
-    if metadata.is_file() {
-        output.push(
-            path.strip_prefix(root)
-                .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "file outside project"))?
-                .to_owned(),
-        );
-        return Ok(());
-    }
-    if metadata.is_dir() {
-        for entry in std::fs::read_dir(path)? {
-            collect_project_files(root, &entry?.path(), output)?;
-        }
-    }
-    Ok(())
+    project_tree_fingerprint(project_root, &SNAPSHOT_SCOPES)
 }
 
 fn remove_fresh_project(project_root: &Path) -> io::Result<()> {

@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/amf-production/v0.1/build-record.schema.json",
+  "title": "VUA AMF minimum Build Record v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion", "recordId", "taskId", "correlationId", "planId", "planHash", "mode",
+    "status", "startedAt", "completedAt", "source", "riskChoice", "projectId",
+    "initialProjectFingerprint", "unityEditorVersion", "bridgeJobs", "resultCode"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "recordId": { "$ref": "#/$defs/id" },
+    "taskId": { "$ref": "#/$defs/id" },
+    "correlationId": { "$ref": "#/$defs/id" },
+    "planId": { "$ref": "#/$defs/id" },
+    "planHash": { "$ref": "#/$defs/sha256" },
+    "mode": { "enum": ["direct_unity_package", "local_reusable_vpm"] },
+    "status": { "enum": ["succeeded", "succeeded_with_warnings", "failed", "cancelled", "recovered"] },
+    "startedAt": { "type": "string", "minLength": 1 },
+    "completedAt": { "type": "string", "minLength": 1 },
+    "source": { "$ref": "#/$defs/source" },
+    "riskChoice": { "enum": ["snapshot_and_continue", "continue", "cancel", "not_required"] },
+    "projectId": { "$ref": "#/$defs/id" },
+    "initialProjectFingerprint": { "type": "string", "minLength": 1 },
+    "finalProjectFingerprint": { "type": ["string", "null"] },
+    "unityEditorVersion": { "const": "2022.3.22f1" },
+    "snapshot": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["snapshotId", "verified", "restoreAttempted"],
+          "properties": {
+            "snapshotId": { "$ref": "#/$defs/id" },
+            "verified": { "type": "boolean" },
+            "restoreAttempted": { "type": "boolean" },
+            "restoreSucceeded": { "type": ["boolean", "null"] }
+          }
+        }
+      ]
+    },
+    "bridgeJobs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["commandId", "operation", "status", "changedPaths", "diagnostics"],
+        "properties": {
+          "commandId": { "$ref": "#/$defs/id" },
+          "operation": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["succeeded", "failed", "rejected"] },
+          "changedPaths": { "type": "array", "items": { "type": "string" } },
+          "diagnostics": { "type": "array" }
+        }
+      }
+    },
+    "localVpm": { "type": ["object", "null"] },
+    "validation": {
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["level", "unityValidated", "expectedAssetsLoaded", "diagnosticCodes"],
+          "properties": {
+            "level": { "const": "minimum_structure" },
+            "unityValidated": { "type": "boolean" },
+            "expectedAssetsLoaded": { "type": "array", "items": { "type": "string" } },
+            "diagnosticCodes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      ]
+    },
+    "resultCode": { "type": "string", "pattern": "^vua\\." }
+  },
+  "$defs": {
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,128}$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "displayName", "sourceFingerprint", "riskFingerprint", "packages", "executableRisks"],
+      "properties": {
+        "schemaVersion": { "const": "0.1" },
+        "displayName": { "type": "string", "minLength": 1 },
+        "sourceFingerprint": { "$ref": "#/$defs/sha256" },
+        "riskFingerprint": { "$ref": "#/$defs/sha256" },
+        "packages": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["relativePath", "sizeBytes", "sha256", "assetPaths"],
+            "properties": {
+              "relativePath": { "type": "string", "minLength": 1 },
+              "sizeBytes": { "type": "integer", "minimum": 0 },
+              "sha256": { "$ref": "#/$defs/sha256" },
+              "assetPaths": { "type": "array", "items": { "type": "string", "minLength": 1 }, "uniqueItems": true }
+            }
+          }
+        },
+        "executableRisks": { "type": "array" }
+      }
+    }
+  }
+}
