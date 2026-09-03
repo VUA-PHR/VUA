@@ -14,9 +14,10 @@ policy, and community-maintainable catalogs. Each task starts with the smallest 
 
 1. [Product boundary](product-boundary_EN.md)
 2. Versioned protocols, schemas, and fixed test vectors
-3. Module architecture
-4. Release and compatibility policy
-5. Tool-catalog rules for catalog entries
+3. Accepted architecture decision records under [`decisions/`](decisions/)
+4. Module architecture
+5. Release and compatibility policy
+6. Tool-catalog rules for catalog entries
 
 Higher layers own product meaning; lower layers supply implementation detail.
 
@@ -28,11 +29,13 @@ Higher layers own product meaning; lower layers supply implementation detail.
 | `architecture/` | Module structure, dependency direction, adapters, data ownership | Implementation architecture |
 | `compatibility/` | Verified production targets, migration inputs, and unsupported environments | Compatibility policy |
 | `protocols/` and `schemas/` | Gateway, Recipe, Unity Bridge, plugin, and persistent formats | Versioned interfaces |
+| `decisions/` | Accepted architecture decision records (ADRs) | Accepted decisions |
 | `release/` | Product versions, compatibility, tags, and artifacts | Release engineering |
 | `tool-catalog/` | `core / plugin / external` entries and release-risk rules | Catalog classification and contribution |
 
-Local decision history, migration evidence, plans, research, project handoff context, and visual-design
-working material stay in the local workspace. Their accepted outcomes are consolidated into the public
+Working decision history, migration evidence, plans, research, project handoff context, and
+visual-design working material stay in the local workspace. Accepted architecture decision
+records are published under `decisions/`; their outcomes are consolidated into the public
 documents above.
 
 ## Reading routes
