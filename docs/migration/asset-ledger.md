@@ -51,7 +51,7 @@ _migration/unity-bridge-smoke/.vua/bridge/m0-inspect.result.json；原始日志�
 Test Runner 显示 19 项全部通过、0 失败，展开的 VUA Bridge 分支包含本次 12 个测试实例
 截图 SHA-256：c00c823b8e5b87e0a324434e2698b366596e73b8dee71a48defb5cff45f4e706
 CI 状态：按当前裁决不建立 Unity CI
-迁移提交：主体迁移 a8e3c87；本次封口修改尚未提交
+迁移提交：主体迁移 a8e3c87；版本封口 a703b76
 ```
 
 ## Unity Bridge M0 人工验收截图
