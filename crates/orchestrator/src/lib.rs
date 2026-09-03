@@ -10,7 +10,9 @@ mod bridge;
 mod build_record;
 mod capability;
 mod contracts;
+mod editor_targets;
 mod environment;
+mod environment_managers;
 mod filesystem;
 mod journal;
 mod local_vpm_artifact;
@@ -50,9 +52,19 @@ pub use contracts::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
     TaskState, ENVELOPE_SCHEMA_VERSION,
 };
+pub use editor_targets::{
+    classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
+    EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
+};
 pub use environment::{
     error_codes as env_error_codes, CheckStatusV1, EnvironmentCheckItemV1, EnvironmentEngine,
     EnvironmentRoots, EnvironmentSnapshotV1, Zone,
+};
+pub use environment_managers::{
+    codes as env_spike_codes, collect_environment_spike_snapshot, AlcomCapability, EditorFinding,
+    EnvironmentSpikeSnapshotV01, ManagerPresence, ManagerRoots, ProjectAssociation,
+    ProjectFinding, SpikeDiagnostic, SpikeSeverity, VccCapability,
+    ENV_SPIKE_SNAPSHOT_SCHEMA_VERSION,
 };
 pub use filesystem::{
     project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,

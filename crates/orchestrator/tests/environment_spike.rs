@@ -1,0 +1,400 @@
+//! B6-preview spike tests: editor classification, project-manager
+//! capability detection, and the versioned snapshot contract. Everything
+//! runs against synthetic directory trees, so no test depends on this
+//! machine's real installs; real-machine evidence flows through the
+//! explicitly ignored manual test (ORC-TST-006).
+
+#![allow(clippy::result_large_err)]
+
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::time::{SystemTime, UNIX_EPOCH};
+
+use vua_orchestrator::{
+    classify_version_string, collect_environment_spike_snapshot, env_spike_codes,
+    project_tree_fingerprint, EditorClass, FixedClock, ManagerRoots, ManagerPresence,
+    ProjectAssociation, SpikeSeverity, PRODUCTION_TARGET,
+};
+
+fn unique_dir(label: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::env::temp_dir().join(format!("vua-env-spike-{label}-{nanos}"))
+}
+
+fn cleanup(base: &Path) {
+    if base.exists() {
+        fs::remove_dir_all(base).unwrap();
+    }
+}
+
+fn synthetic_managers(base: &Path) -> ManagerRoots {
+    ManagerRoots {
+        vcc_settings_candidates: vec![base.join("vcc/settings.json")],
+        alcom_settings_candidates: vec![base.join("alcom/setting.json")],
+    }
+}
+
+fn synthetic_editors(base: &Path) -> Vec<PathBuf> {
+    vec![base.join("editors")]
+}
+
+fn probe(base: &Path) -> vua_orchestrator::EnvironmentSpikeSnapshotV01 {
+    collect_environment_spike_snapshot(
+        &synthetic_managers(base),
+        &synthetic_editors(base),
+        &FixedClock::new(&["2026-09-04T02:00:00.000Z"]),
+    )
+}
+
+fn install_editor_dir(base: &Path, version: &str) {
+    fs::create_dir_all(base.join("editors").join(version).join("Editor")).unwrap();
+}
+
+fn install_vpm_project(base: &Path, name: &str, editor_version: &str) -> String {
+    let project = base.join("projects").join(name);
+    fs::create_dir_all(project.join("Packages")).unwrap();
+    fs::create_dir_all(project.join("ProjectSettings")).unwrap();
+    fs::write(project.join("Packages").join("vpm-manifest.json"), "{}").unwrap();
+    fs::write(
+        project.join("ProjectSettings").join("ProjectVersion.txt"),
+        format!(
+            "m_EditorVersion: {editor_version}\nm_EditorVersionWithEdition: {editor_version} (f1)\n"
+        ),
+    )
+    .unwrap();
+    project.to_string_lossy().into_owned()
+}
+
+// --- editor classification table (E-COMP support matrix) ---
+
+#[test]
+fn env_spike_001_editor_classification_follows_the_support_matrix() {
+    let cases: [(&str, Option<EditorClass>, bool); 7] = [
+        (PRODUCTION_TARGET, Some(EditorClass::ProductionTarget), false),
+        ("2019.4.31f1", Some(EditorClass::MigrationSource), false),
+        ("2022.3.6f1", Some(EditorClass::MigrationSource), false),
+        ("2022.3.22f1c1", Some(EditorClass::OtherUnityVersion), true),
+        ("6000.0.23f1", Some(EditorClass::OtherUnityVersion), false),
+        ("2022.3.22t1", Some(EditorClass::TuanjieFamily), false),
+        ("garbage", None, false),
+    ];
+    for (version, expected_class, china) in cases {
+        let classification = classify_version_string(version);
+        assert_eq!(
+            classification.map(|(class, _)| class),
+            expected_class,
+            "{version}"
+        );
+        if let Some(parsed) = vua_orchestrator::parse_editor_version(version) {
+            assert_eq!(parsed.china_suffix.is_some(), china, "{version}");
+        }
+    }
+
+    // Guidance codes are stable and specific: the China build of the
+    // target version earns the distribution diagnosis, not the generic
+    // off-target one; the production target never carries a code path
+    // that suggests replacement.
+    let (_, target_code) =
+        classify_version_string(PRODUCTION_TARGET).expect("target must parse");
+    assert_eq!(target_code, vua_orchestrator::editor_target_codes::EDITOR_PRODUCTION_TARGET);
+    let (_, china_code) = classify_version_string("2022.3.22f1c1").expect("china build must parse");
+    assert_eq!(china_code, vua_orchestrator::editor_target_codes::EDITOR_CHINA_DISTRIBUTION);
+    let (_, off_code) = classify_version_string("6000.0.23f1").expect("off target must parse");
+    assert_eq!(off_code, vua_orchestrator::editor_target_codes::EDITOR_OFF_TARGET);
+    let (_, tuanjie_code) =
+        classify_version_string("2022.3.22t1").expect("tuanjie build must parse");
+    assert_eq!(
+        tuanjie_code,
+        vua_orchestrator::editor_target_codes::EDITOR_TUANJIE_UNSUPPORTED
+    );
+}
+
+// --- editor root probing ---
+
+#[test]
+fn env_spike_002_editor_root_probe_classifies_and_stays_deterministic() {
+    let base = unique_dir("editors");
+    for version in [
+        "2022.3.22f1",
+        "2019.4.31f1",
+        "2022.3.6f1",
+        "2022.3.22f1c1",
+        "2022.3.22t1",
+        "6000.0.23f1",
+    ] {
+        install_editor_dir(&base, version);
+    }
+    // Not editors: a directory without an Editor child and a plain file.
+    fs::create_dir_all(base.join("editors").join("not-an-editor")).unwrap();
+    fs::write(base.join("editors").join("2023.1.1f1"), "file").unwrap();
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.editors.len(), 6, "garbage entries are skipped");
+    let find = |version: &str| {
+        snapshot
+            .editors
+            .iter()
+            .find(|finding| finding.version == version)
+            .unwrap_or_else(|| panic!("{version} must be listed"))
+    };
+    assert_eq!(find("2022.3.22f1").classification, EditorClass::ProductionTarget);
+    assert_eq!(find("2019.4.31f1").classification, EditorClass::MigrationSource);
+    assert_eq!(find("2022.3.6f1").classification, EditorClass::MigrationSource);
+    let china = find("2022.3.22f1c1");
+    assert_eq!(china.classification, EditorClass::OtherUnityVersion);
+    assert!(china.china_distribution);
+    assert_eq!(china.guidance_code, vua_orchestrator::editor_target_codes::EDITOR_CHINA_DISTRIBUTION);
+    assert_eq!(find("2022.3.22t1").classification, EditorClass::TuanjieFamily);
+    assert_eq!(find("6000.0.23f1").classification, EditorClass::OtherUnityVersion);
+
+    // Deterministic order: production target first, then classes and
+    // versions in stable sequence regardless of OS read_dir order.
+    assert_eq!(snapshot.editors[0].version, PRODUCTION_TARGET);
+    let again = probe(&base);
+    assert_eq!(again.editors, snapshot.editors);
+    cleanup(&base);
+}
+
+// --- VCC userProjects (current format) ---
+
+#[test]
+fn env_spike_003_vcc_user_projects_are_discovered_and_classified() {
+    let base = unique_dir("vcc-user-projects");
+    let production = install_vpm_project(&base, "prod-av", PRODUCTION_TARGET);
+    let migration = install_vpm_project(&base, "mig-av", "2019.4.31f1");
+    let not_a_project = base.join("projects").join("not-a-project");
+    fs::create_dir_all(&not_a_project).unwrap();
+    let missing = base.join("projects").join("missing");
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(
+        &settings_path,
+        serde_json::json!({
+            "userProjects": [production, migration, not_a_project.to_string_lossy(), missing.to_string_lossy()],
+            "localProjectFolders": []
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.vcc.presence, ManagerPresence::Found);
+    assert_eq!(snapshot.vcc.projects_source, Some("userProjects"));
+    assert_eq!(snapshot.vcc.error_code, None);
+
+    let projects: Vec<_> = snapshot
+        .projects
+        .iter()
+        .map(|finding| (finding.path.as_str(), finding.unity_classification))
+        .collect();
+    assert_eq!(projects.len(), 2, "missing and marker-less entries are not projects");
+    // Projects are sorted by path for deterministic snapshots regardless
+    // of userProjects order.
+    assert_eq!(
+        projects[0].0,
+        Path::new(&migration).to_string_lossy().to_string()
+    );
+    assert_eq!(projects[0].1, Some(EditorClass::MigrationSource));
+    assert_eq!(projects[1].0, Path::new(&production).to_string_lossy().to_string());
+    assert_eq!(
+        snapshot.projects[1].unity_classification,
+        Some(EditorClass::ProductionTarget)
+    );
+    assert!(snapshot
+        .projects
+        .iter()
+        .all(|finding| finding.association == ProjectAssociation::VccRegistered));
+
+    let codes: Vec<_> = snapshot
+        .diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.code)
+        .collect();
+    assert!(codes.contains(&env_spike_codes::PROJECT_PATH_MISSING));
+    assert!(codes.contains(&env_spike_codes::PROJECT_MARKERS_INCOMPLETE));
+
+    // Stale or broken registered entries are warnings, never errors:
+    // the snapshot itself succeeded.
+    assert!(snapshot
+        .diagnostics
+        .iter()
+        .all(|diagnostic| diagnostic.severity != SpikeSeverity::Error));
+    cleanup(&base);
+}
+
+// --- VCC legacy localProjectFolders format ---
+
+#[test]
+fn env_spike_004_vcc_legacy_folder_format_scans_registered_folders() {
+    let base = unique_dir("vcc-legacy");
+    let folder = base.join("registered-folder");
+    fs::create_dir_all(folder.join("RandomDir")).unwrap();
+    // A legacy folder registers project *directories*.
+    let legacy_project = folder.join("legacy-av");
+    fs::create_dir_all(legacy_project.join("Packages")).unwrap();
+    fs::create_dir_all(legacy_project.join("ProjectSettings")).unwrap();
+    fs::write(legacy_project.join("Packages").join("vpm-manifest.json"), "{}").unwrap();
+    fs::write(
+        legacy_project.join("ProjectSettings").join("ProjectVersion.txt"),
+        format!("m_EditorVersion: {PRODUCTION_TARGET}\n"),
+    )
+    .unwrap();
+
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(
+        &settings_path,
+        serde_json::json!({ "localProjectFolders": [folder.to_string_lossy()] }).to_string(),
+    )
+    .unwrap();
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.vcc.presence, ManagerPresence::Found);
+    assert_eq!(snapshot.vcc.projects_source, Some("localProjectFolders"));
+    assert_eq!(snapshot.projects.len(), 1);
+    assert_eq!(
+        snapshot.projects[0].unity_classification,
+        Some(EditorClass::ProductionTarget)
+    );
+    // RandomDir has no VPM markers: a warning diagnostic, not a finding.
+    assert!(snapshot
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.code == env_spike_codes::PROJECT_MARKERS_INCOMPLETE));
+    cleanup(&base);
+}
+
+// --- deterministic missing and failed observations ---
+
+#[test]
+fn env_spike_005_missing_managers_are_findings_not_errors() {
+    let base = unique_dir("vcc-missing");
+    install_editor_dir(&base, PRODUCTION_TARGET);
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.vcc.presence, ManagerPresence::NotFound);
+    assert_eq!(snapshot.alcom.presence, ManagerPresence::NotFound);
+    assert!(snapshot.projects.is_empty());
+    assert!(
+        snapshot.diagnostics.is_empty(),
+        "a missing component is a normal finding: {:?}",
+        snapshot.diagnostics
+    );
+    cleanup(&base);
+}
+
+#[test]
+fn env_spike_006_unparseable_vcc_settings_is_a_read_failed_diagnostic() {
+    let base = unique_dir("vcc-broken");
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(&settings_path, "{ not json").unwrap();
+    install_vpm_project(&base, "orphan", PRODUCTION_TARGET);
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.vcc.presence, ManagerPresence::ReadFailed);
+    assert_eq!(
+        snapshot.vcc.error_code,
+        Some(env_spike_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED)
+    );
+    assert!(snapshot.projects.is_empty());
+    assert!(snapshot
+        .diagnostics
+        .iter()
+        .any(|diagnostic| diagnostic.severity == SpikeSeverity::Error));
+    cleanup(&base);
+}
+
+// --- read-only discipline ---
+
+#[test]
+fn env_spike_007_probe_leaves_the_observed_tree_byte_identical() {
+    let base = unique_dir("read-only");
+    install_editor_dir(&base, PRODUCTION_TARGET);
+    install_vpm_project(&base, "watched", PRODUCTION_TARGET);
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    let project = base.join("projects").join("watched");
+    fs::write(
+        &settings_path,
+        serde_json::json!({ "userProjects": [project.to_string_lossy()] }).to_string(),
+    )
+    .unwrap();
+
+    let scopes = ["editors", "vcc", "projects"];
+    let before = project_tree_fingerprint(&base, &scopes).unwrap().expect("tree exists");
+    let snapshot = probe(&base);
+    let after = project_tree_fingerprint(&base, &scopes).unwrap().expect("tree exists");
+    assert_eq!(before, after, "the probe must not write a single byte");
+    assert_eq!(snapshot.projects.len(), 1);
+    cleanup(&base);
+}
+
+// --- versioned contract ---
+
+#[test]
+fn env_spike_008_synthetic_snapshot_conforms_to_the_versioned_schema() {
+    let base = unique_dir("schema-synthetic");
+    install_editor_dir(&base, PRODUCTION_TARGET);
+    install_vpm_project(&base, "schema-av", PRODUCTION_TARGET);
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(
+        &settings_path,
+        serde_json::json!({
+            "userProjects": [base.join("projects").join("schema-av").to_string_lossy()]
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let snapshot = probe(&base);
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let schema: serde_json::Value = serde_json::from_slice(
+        &fs::read(root.join("schemas/environment-spike/v0.1/snapshot.schema.json")).unwrap(),
+    )
+    .unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let payload: serde_json::Value = serde_json::to_value(&snapshot).unwrap();
+    let errors: Vec<_> = validator.iter_errors(&payload).collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+    cleanup(&base);
+}
+
+#[test]
+fn env_spike_009_schema_fixtures_conform_to_the_versioned_schema() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let schema: serde_json::Value = serde_json::from_slice(
+        &fs::read(root.join("schemas/environment-spike/v0.1/snapshot.schema.json")).unwrap(),
+    )
+    .unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    let fixture: serde_json::Value = serde_json::from_slice(
+        &fs::read(
+            root.join("schemas/environment-spike/v0.1/fixtures/snapshot.valid.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let errors: Vec<_> = validator.iter_errors(&fixture).collect();
+    assert!(errors.is_empty(), "{errors:#?}");
+}
+
+#[test]
+#[ignore = "manual local evidence paths are supplied through VUA_ENV_SPIKE_SNAPSHOTS"]
+fn manual_local_snapshot_conforms_to_the_versioned_schema() {
+    let paths = std::env::var_os("VUA_ENV_SPIKE_SNAPSHOTS").expect("VUA_ENV_SPIKE_SNAPSHOTS is required");
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let schema: serde_json::Value = serde_json::from_slice(
+        &fs::read(root.join("schemas/environment-spike/v0.1/snapshot.schema.json")).unwrap(),
+    )
+    .unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+    for path in std::env::split_paths(&paths) {
+        let fixture: serde_json::Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+        let errors: Vec<_> = validator.iter_errors(&fixture).collect();
+        assert!(errors.is_empty(), "{}: {errors:#?}", path.display());
+    }
+}
