@@ -67,6 +67,15 @@ the same namespaced value.
 ## Open items
 
 - Google Docs/Drive automated-access policy review (feeds IN-2 design).
+  Initial review 2026-09-04: no explicit prohibition on programmatically
+  downloading publicly shared files — Google publishes official download
+  methods (`webContentLink`, Drive API) and public files need no
+  authentication; the Drive API ToS restricts specific use cases (e.g.
+  backup services) without written consent; general abuse and throttling
+  policies still apply. Conclusion: the v1 human-extraction posture is
+  unchanged; a low-volume automated fetch of linked license documents looks
+  viable pending a full ToS read. Sending fetched license text to an
+  external LLM is a separate data-flow decision to make consciously.
 - `source_published_at` is admitted by ruling with a confirmed rendered-page
   location; values remain null until a rendered fetch capability exists.
 - Extraction spec formalization: the real-HTML extraction rules (selectors,
