@@ -100,6 +100,7 @@ pub struct MaterialExecutor {
     temp_root: PathBuf,
     unity_editor_version: String,
     identity_store: LocalPackageIdentityStore,
+    staging_template_override: Option<PathBuf>,
     cancel: Arc<AtomicBool>,
 }
 
@@ -124,8 +125,16 @@ impl MaterialExecutor {
             temp_root: temp_root.into(),
             unity_editor_version: unity_editor_version.into(),
             identity_store,
+            staging_template_override: None,
             cancel: Arc::new(AtomicBool::new(false)),
         }
+    }
+
+    /// 本地真机 Harness 接缝:以指定目录作为暂存项目骨架(含 Bridge 包与
+    /// 编译脚手架)。生产路径不设置,使用捆绑模板。
+    pub fn with_staging_template_override(mut self, dir: impl Into<PathBuf>) -> Self {
+        self.staging_template_override = Some(dir.into());
+        self
     }
 
     /// Requests cancellation; observed before each step boundary.
@@ -486,9 +495,22 @@ impl MaterialExecutor {
         // The staging project serves exactly one atomic task; the guard
         // destroys it on every path out of this scope. The staging token
         // binds the Bridge's create_local_vpm_package to THIS task.
-        // 提交态 StagingProject::create 为两参;第三参(staging token)随
-        // B3 在途改动落地,届时此处同步恢复
-        let staging = StagingProject::create(&self.temp_root, &confirmation.correlation_id, &confirmation.correlation_id)
+        // 暂存项目骨架:生产默认用捆绑模板;本地真机 Harness 可通过
+        // with_staging_template_override 注入含 Bridge 包与编译脚手架的
+        // 覆盖模板。staging token 始终绑定本任务。
+        let staging = match &self.staging_template_override {
+            Some(template) => StagingProject::create_from_template(
+                template,
+                &self.temp_root,
+                &confirmation.correlation_id,
+                &confirmation.correlation_id,
+            ),
+            None => StagingProject::create(
+                &self.temp_root,
+                &confirmation.correlation_id,
+                &confirmation.correlation_id,
+            ),
+        }
         .map_err(|error| {
             (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
         })?;

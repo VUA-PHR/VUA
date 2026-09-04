@@ -280,25 +280,35 @@ namespace Vua.Editor.Bridge
                 return dryRun;
             }
 
-            Directory.CreateDirectory(Path.Combine(ProjectRoot(), packageRoot, "Runtime"));
-            AssetDatabase.Refresh();
-            var topLevel = AssetDatabase.GetAllAssetPaths()
-                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) &&
-                               path.IndexOf('/', "Assets/".Length) < 0)
-                .OrderBy(path => path, StringComparer.Ordinal)
-                .ToList();
+            // 暂存项目是一次性容器：包布局直接在文件系统层组装，最后统一
+            // Refresh。AssetDatabase 的 Move/Copy 不能跨包边界（Assets 与
+            // Packages/<id> 对 AssetDatabase 是两个包）。
+            var packageRootFs = Path.Combine(ProjectRoot(), packageRoot.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.Combine(packageRootFs, "Runtime"));
             var changed = new List<string>();
-            foreach (var source in topLevel)
+            var assetsRoot = Path.Combine(ProjectRoot(), "Assets");
+            var allEntries = Directory.GetFileSystemEntries(assetsRoot)
+                .OrderBy(entry => entry, StringComparer.Ordinal).ToList();
+            var directories = allEntries.Where(entry => Directory.Exists(entry)).ToList();
+            var files = allEntries.Where(entry => File.Exists(entry) &&
+                !entry.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (var entry in directories)
             {
-                var name = source.Substring("Assets/".Length);
-                var section = string.Equals(name, "Editor", StringComparison.OrdinalIgnoreCase) ? "Editor" : "Runtime";
-                var destination = section == "Editor" ? packageRoot + "/Editor" : packageRoot + "/Runtime/" + name;
-                var moveError = AssetDatabase.MoveAsset(source, destination);
-                if (!string.IsNullOrEmpty(moveError))
+                var name = Path.GetFileName(entry);
+                if (name.Equals("Editor", StringComparison.OrdinalIgnoreCase))
                 {
-                    return BridgeResult.Fail(command, "vpm.asset_move_failed", "素材无法移动到本地 VPM 包结构。");
+                    MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Editor"));
+                    changed.Add(packageRoot + "/Editor");
+                    continue;
                 }
-                changed.Add(destination);
+                MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Runtime", name));
+                changed.Add(packageRoot + "/Runtime/" + name.Replace('\\', '/'));
+            }
+            foreach (var entry in files)
+            {
+                var name = Path.GetFileName(entry);
+                MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Runtime", name));
+                changed.Add(packageRoot + "/Runtime/" + name.Replace('\\', '/'));
             }
             File.WriteAllText(Path.Combine(ProjectRoot(), packageRoot, "package.json"), PackageManifest(command));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -345,6 +355,23 @@ namespace Vua.Editor.Bridge
                    "  \"unity\": \"2022.3\",\n" +
                    "  \"dependencies\": {" + string.Join(",", entries) + "}\n" +
                    "}\n";
+        }
+
+        /// 移动一个文件或目录（同卷，走文件系统层；失败抛出带原因的异常）。
+        private static void MoveFileSystemEntry(string source, string target)
+        {
+            if (Directory.Exists(source))
+            {
+                Directory.Move(source, target);
+            }
+            else if (File.Exists(source))
+            {
+                File.Move(source, target);
+            }
+            else
+            {
+                throw new FileNotFoundException("source entry missing: " + source);
+            }
         }
 
         /// 校验解包文件与 manifest.sha256 记录一致；不一致即失败。

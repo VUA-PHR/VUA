@@ -73,6 +73,27 @@ impl StagingProject {
         })
     }
 
+    /// Same contract, but the project skeleton comes from
+    /// `template_override_dir` (recursively copied) instead of the bundled
+    /// constants — the local-harness seam for real-Unity staging runs that
+    /// need the Bridge package and compile scaffolding inside the staging
+    /// project. The token marker contract is identical.
+    pub fn create_from_template(
+        template_override_dir: &Path,
+        temp_root: &Path,
+        session_id: &str,
+        staging_token: &str,
+    ) -> io::Result<Self> {
+        let root = staging_root(temp_root, session_id);
+        copy_tree(template_override_dir, &root)?;
+        fs::create_dir_all(root.join(".vua"))?;
+        fs::write(root.join(".vua").join("staging.json"), staging_token)?;
+        Ok(Self {
+            root,
+            destroyed: false,
+        })
+    }
+
     pub fn root(&self) -> &Path {
         &self.root
     }
@@ -91,4 +112,18 @@ impl Drop for StagingProject {
             let _ = fs::remove_dir_all(&self.root);
         }
     }
+}
+
+fn copy_tree(source: &Path, target: &Path) -> io::Result<()> {
+    fs::create_dir_all(target)?;
+    for entry in fs::read_dir(source)? {
+        let entry = entry?;
+        let target = target.join(entry.file_name());
+        if entry.file_type()?.is_dir() {
+            copy_tree(&entry.path(), &target)?;
+        } else {
+            fs::copy(entry.path(), target)?;
+        }
+    }
+    Ok(())
 }
