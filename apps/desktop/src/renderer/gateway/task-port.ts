@@ -34,7 +34,12 @@ export interface TaskCenterView {
 
 export type CancelTaskResult =
   | { kind: "ok"; view: TaskCenterView }
-  | { kind: "rejected"; reason: "unknown_task" | "not_cancellable"; view: TaskCenterView };
+  | {
+      kind: "rejected";
+      /** unavailable = Kernel/Provider 不可达(断连);其余为应用层裁决 */
+      reason: "unknown_task" | "not_cancellable" | "unavailable";
+      view: TaskCenterView;
+    };
 
 export interface TaskPort {
   snapshot(): Promise<TaskCenterView>;

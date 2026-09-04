@@ -97,6 +97,7 @@ export const strings: Strings = {
     backToOrigin: "回到来源页",
     cancel: "取消",
     cancelRejected: "该任务当前不可取消",
+demoTaskTitle: "演示任务",
     replay: "回放事件流",
     progress: "{done}/{total}",
   },

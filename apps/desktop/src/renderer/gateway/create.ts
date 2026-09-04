@@ -1,3 +1,4 @@
+import { createElectronGateway } from "./electron-gateway.ts";
 import { emptyGateway } from "./empty-gateway.ts";
 import { fixtureGateway } from "./fixture-gateway.ts";
 import type { VuaGateway } from "./gateway.ts";
@@ -17,7 +18,16 @@ export function createGatewayState(
   initialGoals: StoredGoalsV1 | null,
 ): { gateway: VuaGateway; name: ScenarioName } {
   if (!import.meta.env.DEV) {
-    return { gateway: emptyGateway(initialGoals), name: "not-run" };
+    // F2:Electron 宿主内走 live Gateway(任务/环境直达应用层);纯浏览器
+    // 打开生产产物时无 preload,保持 not-run 诚实空态(check-leak 验证
+    // fixture 仍只在 DEV 分支可达)
+    if (window.vua === undefined) {
+      return { gateway: emptyGateway(initialGoals), name: "not-run" };
+    }
+    return {
+      gateway: createElectronGateway(window.vua, initialGoals),
+      name: "not-run",
+    };
   }
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("scenario") ?? readStoredScenario();

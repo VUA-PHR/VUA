@@ -92,6 +92,7 @@ export const strings = {
     backToOrigin: "Back to origin page",
     cancel: "Cancel",
     cancelRejected: "This task cannot be cancelled right now",
+demoTaskTitle: "Demo task",
     replay: "Replay event stream",
     progress: "{done}/{total}",
   },
