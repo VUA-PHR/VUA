@@ -67,6 +67,12 @@ export async function routeDesktopGatewayInvoke(
     return failure(requestId, "invalid_request", "errors.gateway.invalidRequest");
   }
 
+  // F2 步进:方法表已扩,路由逐方法接入;未接入的方法显式 unsupported_method,
+  // 不允许回落 app.snapshot 伪造答案(诚实失败优于错误成功)。
+  if (request.method !== "app.snapshot") {
+    return failure(request.requestId, "unsupported_method", "errors.gateway.unsupportedMethod");
+  }
+
   try {
     const providerResponse = await context.provider.invoke({
       contractVersion: APPLICATION_CONTRACT_VERSION,

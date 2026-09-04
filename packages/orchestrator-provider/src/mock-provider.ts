@@ -1,4 +1,6 @@
 import {
+  type DemoTaskStartedV01,
+  type EnvironmentSnapshotV01,
   APPLICATION_CONTRACT_VERSION,
   isTerminalTaskStateV01,
   type AppErrorV01,
@@ -28,6 +30,7 @@ export interface MockProviderOptionsV01 {
   readonly capabilities?: readonly CapabilityOperationV01[];
   readonly tasks?: readonly TaskSnapshotV01[];
   readonly mutatingTaskIds?: readonly string[];
+  readonly environment?: EnvironmentSnapshotV01;
 }
 
 export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
@@ -40,7 +43,10 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   readonly #mutatingTaskIds = new Set<string>();
   readonly #listeners = new Set<ProviderEventListenerV01>();
   readonly #commandResults = new Map<string, { taskId: string; result: TaskCancellationResultV01 }>();
+  readonly #demoCommandResults = new Map<string, DemoTaskStartedV01>();
   readonly #capabilities: readonly CapabilityOperationV01[];
+  readonly #environment: EnvironmentSnapshotV01 | undefined;
+  #demoTaskSequence = 0;
   #state: ProviderStatusV01["state"] = "stopped";
   #acceptingCalls = false;
   #applicationRevision = 1;
@@ -54,6 +60,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       left.operationId.localeCompare(right.operationId));
     for (const task of options.tasks ?? []) this.#tasks.set(task.taskId, task);
     for (const taskId of options.mutatingTaskIds ?? []) this.#mutatingTaskIds.add(taskId);
+    this.#environment = options.environment;
   }
 
   status(): ProviderStatusV01 {
@@ -120,7 +127,80 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       }
       case "task.requestCancellation":
         return this.#requestCancellation(request);
+      case "environment.getSnapshot":
+        return this.#success(request, this.#environment ?? {
+          contractVersion: this.contractVersion,
+          revision: this.#applicationRevision,
+          capturedAt: this.#now(),
+          items: [],
+        });
+      case "task.startDemo":
+        return this.#startDemoTask(request);
     }
+  }
+
+  /**
+   * 演示任务(契约 F2):与真实任务完全相同的九态、事件、取消与关闭语义;
+   * 进度由测试经 commitTaskState 驱动,不依赖真实定时器。capability
+   * `demo.task` 不可用时命令被拒绝(诚实不可用,而非静默成功)。
+   */
+  #startDemoTask(
+    request: Extract<ApplicationRequestV01, { method: "task.startDemo" }>,
+  ): ApplicationResponseV01 {
+    const demoAvailable = this.#capabilities.some(
+      (operation) => operation.operationId === "demo.task" && operation.availability === "available",
+    );
+    if (!demoAvailable) {
+      return this.#failure(request, this.#error(
+        "vua.demo.unavailable",
+        "unavailable",
+        "errors.demo.unavailable",
+        request.correlationId,
+        true,
+        false,
+      ));
+    }
+
+    const replay = this.#demoCommandResults.get(request.commandId);
+    if (replay !== undefined) {
+      const task = this.#tasks.get(replay.task.taskId);
+      return this.#success(request, {
+        contractVersion: this.contractVersion,
+        task: task ?? replay.task,
+      });
+    }
+
+    this.#demoTaskSequence += 1;
+    const task: TaskSnapshotV01 = {
+      contractVersion: this.contractVersion,
+      taskId: `demo-${this.#demoTaskSequence}`,
+      revision: 1,
+      correlationId: request.correlationId,
+      state: "queued",
+      cancellationRequested: false,
+      recoveryDisposition: "none",
+      updatedAt: this.#now(),
+    };
+    this.#tasks.set(task.taskId, task);
+    this.#mutatingTaskIds.add(task.taskId);
+    this.#applicationRevision += 1;
+    const started: DemoTaskStartedV01 = {
+      contractVersion: this.contractVersion,
+      task,
+    };
+    this.#demoCommandResults.set(request.commandId, started);
+    this.#emit({
+      contractVersion: this.contractVersion,
+      eventId: this.#nextEventId(),
+      taskId: task.taskId,
+      revision: task.revision,
+      occurredAt: task.updatedAt,
+      correlationId: task.correlationId,
+      kind: "task.accepted",
+      state: task.state,
+      payload: {},
+    });
+    return this.#success(request, started);
   }
 
   subscribe(listener: ProviderEventListenerV01): ProviderUnsubscribe {

@@ -98,3 +98,18 @@ describe("Electron Desktop Gateway routing", () => {
     });
   });
 });
+
+  it("answers not-yet-routed F2 methods with unsupported_method instead of a fake snapshot", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const response = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-2", method: "task.list", params: {} },
+    );
+
+    expect(response).toMatchObject({ ok: false, error: { code: "unsupported_method" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });

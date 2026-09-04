@@ -126,7 +126,9 @@ export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
   | TaskGetQueryV01
-  | TaskCancellationCommandV01;
+  | TaskCancellationCommandV01
+  | EnvironmentSnapshotQueryV01
+  | DemoTaskStartCommandV01;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -144,11 +146,63 @@ export interface TaskCancellationResultV01 {
   readonly outcome: CancellationOutcomeV01;
 }
 
+/** 环境检测辖区，与 B6 检测 spike 的 Zone 一致 */
+export type EnvironmentZoneV01 = "play" | "create";
+
+/**
+ * 在场事实，不做严重度裁决：组件缺失是正常发现，不是错误。
+ * 缺失是否构成问题、以何种严重度呈现，由消费侧决定。
+ */
+export type EnvironmentPresenceV01 = "detected" | "not_detected" | "detection_failed";
+
+export interface EnvironmentCheckItemV01 {
+  /** 稳定检查 id（如 `steam`、`unity_editors`）；修复计划与表现层按它取键 */
+  readonly checkId: string;
+  readonly zone: EnvironmentZoneV01;
+  readonly presence: EnvironmentPresenceV01;
+  /** 仅在 presence === "detection_failed" 时设置 */
+  readonly errorCode?: string;
+  /** 工程事实（路径、版本、字节数等原始观测）；对契约不透明 */
+  readonly facts: Readonly<Record<string, unknown>>;
+}
+
+export interface EnvironmentSnapshotV01 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly revision: number;
+  readonly capturedAt: string;
+  readonly items: readonly EnvironmentCheckItemV01[];
+}
+
+export interface EnvironmentSnapshotQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "environment.getSnapshot";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+/**
+ * 演示任务命令（F2）：任务体验的端到端演示通道（提交 → 观察 → 取消）。
+ * 由操作级 capability（`demo.task`）门控；首个真实用例命令落地后降级为测试夹具。
+ * 创建的任务与真实任务走完全相同的九态、事件与取消语义，不携带用户数据。
+ */
+export interface DemoTaskStartCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "task.startDemo";
+  readonly commandId: string;
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface DemoTaskStartedV01 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly task: TaskSnapshotV01;
+}
+
 export type ApplicationSuccessValueV01 =
   | ApplicationSnapshotV01
   | TaskListSnapshotV01
   | TaskSnapshotV01
-  | TaskCancellationResultV01;
+  | TaskCancellationResultV01
+  | EnvironmentSnapshotV01
+  | DemoTaskStartedV01;
 
 export type ApplicationResponseV01 =
   | {
@@ -257,6 +311,15 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     const keys = Object.keys(value.params);
     if (!keys.every((key) => key === "taskId" || key === "observedRevision") || !keys.includes("taskId")) return false;
     return value.params.observedRevision === undefined || isNonNegativeInteger(value.params.observedRevision);
+  }
+  if (value.kind === "query" && value.method === "environment.getSnapshot") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "command" && value.method === "task.startDemo") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, []);
   }
   return false;
 }
