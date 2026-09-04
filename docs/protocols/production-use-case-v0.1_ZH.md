@@ -1,11 +1,12 @@
-# VUA 生产用例契约 v0.1（B3/F3 候选草案）
+# VUA 生产用例契约 v0.1（已冻结）
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
-> 状态：**B3 候选草案**——经 B 侧对齐并随首个用例实现冻结前，不约束任何一侧的实现
+> 状态：**已接受——2026-09-05 冻结**（B3/F3 词表已对齐;F 侧确认随 GLM/frontend
+> `b3318e0` 落地）。本版本起约束两侧实现。
 > 范围：第一个生产纵向用例（合成 Avatar + 一件衣装；`.unitypackage` 直接导入与本地 VPM
 > 制作/安装双素材入口）的前后端命令与查询面
-> 更新：2026-09-04
+> 更新：2026-09-05
 > 规范效力：F3 表现层与 B3 应用实现的对齐基线；方法名在 application-contract v0.1 方法表
 > 登记（引入 = B3/F3），值语义以本文档为准
 
@@ -13,60 +14,116 @@
 
 工作流阶段沿用既有词表：`inspect → plan → await_confirmation → snapshot → execute →
 validate → completed`，异常落 `recover` / `failed` / `failed_recoverable` / `expired`。
-每个生产命令创建一个标准任务（九态、commandId 幂等、事件 + revision、可取消），任务中心
-与车间轨道无需任何特判。阶段词汇与 Renderer `strings.workflowStage`、Unity Bridge v1 保持
-一致；漂移与超时是运行期事实，映射为 `failed_recoverable` / `expired` 运行态，不新造状态。
+每个生产命令创建标准任务（九态、commandId 幂等、事件 + revision、可取消）——任务中心与
+车间轨道无需特判。阶段词表与渲染层 `strings.workflowStage` 及 Unity Bridge v1 保持
+一致;漂移与超时是运行期事实,映射到 `failed_recoverable` / `expired` 运行态,不新增状态。
 
 ## 双素材入口
 
-`source.intake` 二值，对齐 [素材 intake 协议 v0.1](material-intake-v0.1_ZH.md)：
+`source.intake` 两个取值,对齐
+[素材入口协议 v0.1](material-intake-v0.1_ZH.md) schema 的 `mode` 枚举：
 
-- `unitypackage_direct`：来源 `.unitypackage` 原样直接导入目标项目；
-- `local_vpm`：隔离 Unity 暂存项目制作的 `local-reusable` VPM 包，经 VUA `vrc-get`
-  包管理器安装。
+- `direct_unity_package`：来源 `.unitypackage` 原样导入目标项目；
+- `local_reusable_vpm`：在隔离 Unity 暂存项目中制作的 `local-reusable` VPM 包，经 VUA
+  `vrc-get` 包管理器安装。
 
-素材文件选择经 Kernel 的显式文件对话框动作完成（新 preload 面，随 F3 切片设计）；Renderer
-不持有文件系统句柄，`source` 引用由 Kernel 侧解析后传给 Provider。
+（草案临时词 `unitypackage_direct` / `local_vpm` 退役；GLM/frontend `b3318e0` 已对齐
+端口、fixture、入口默认值与四语言表。）
 
-## 方法面（全部按 commandId 幂等；除查询外均创建任务）
+素材文件选择经 Kernel 显式文件对话框动作（`vua:dialog:pick-material-source` preload
+面）；Renderer 不持有文件系统句柄，Kernel 在转交 Provider 前解析 `source` 引用。
 
-| 种类 | 方法 | 语义 |
+## 词表冻结
+
+### Build Record：权威与显示是两套词表
+
+- **权威（契约事实）**——`BuildRecordAuthorityStatus`，`BuildRecordV01`
+  （`build_record.rs` v0.1）的五态：`succeeded` / `succeeded_with_warnings` / `failed` /
+  `cancelled` / `recovered`。记录同时携带结构化字段 `restoreAttempted: boolean` 与
+  `restoreSucceeded: boolean | null`（仅在尝试过恢复时存在）。
+- **显示（投影）**——`BuildRecordDisplayStatus` 四态：
+  `completed` / `aborted` / `rolled_back` / `rollback_failed`，按以下冻结映射派生：
+
+| 权威状态 | 快照证据（restoreAttempted / restoreSucceeded） | 显示 |
 | --- | --- | --- |
-| Command | `production.startInspection` | 对素材 + 目标组合启动 Inspect，产出兼容/缺失证据 |
-| Query | `production.getInspection` | 读取一份检查结果（证据、可计划性结论） |
-| Command | `production.requestPlan` | 基于检查结果生成执行计划（阶段、风险、预估） |
-| Query | `production.getPlan` | 读取一份计划供审阅 |
-| Command | `production.confirmPlan` | 用户确认计划；进入 snapshot → execute → validate 执行链 |
-| Command | `production.recover` | 对 `failed_recoverable` / `expired` 结果执行恢复（continue / rollback，携带用户决定 ID） |
-| Query | `production.getBuildRecord` | 读取最小 Build Record（结果、阶段、证据） |
+| `succeeded` | — | `completed` |
+| `succeeded_with_warnings` | — | `completed`（警告经 facts/diagnostics 呈现） |
+| `failed` 或 `cancelled` | false / —（**未突变即中止**） | `aborted` |
+| `failed` | true / true | `rolled_back` |
+| `failed` | true / false | `rollback_failed` |
+| `cancelled` | true / true | `rolled_back`（取消事实经 `run.cancelled` 呈现） |
+| `recovered` | — | `completed`（经恢复完成） |
 
-## 值语义（种子 = Rust 既有类型）
+`aborted`（冻结时新增，GLM/frontend `b3318e0`）诚实覆盖"已检查但未执行——未产生任何
+变更"；`completed` 与 `rolled_back` 对此都不成立。
 
-- **Build Record**：镜像 `crates/orchestrator/src/build_record.rs` 的 `BuildRecordV01`——
-  `recordId`、`status`（`BuildRecordStatus`）、四类证据（快照 / Bridge 作业 / 本地 VPM /
-  验证）以不透明 `facts` 载荷传递，字段名与 Rust 结构的 camelCase 序列化一致；
-- **检查结果**：兼容声明、缺失素材、依赖冲突等发现（对齐 material-intake 词表），携带
-  `recoverable` / `retryable` 标注；
-- **计划**：分阶段动作列表，每阶段引用工作流阶段词表；用户可见差异（计划 vs 检查结论）
-  以结构化字段表达，不由前端推断。
+### 发现、可计划性与计划差异
+
+B 侧采纳渲染层词表:`InspectionFindingKind`（`compat` / `missing` / `conflict`）、
+`Plannability`（`plannable` / `needs_attention` / `not_plannable`）、`PlanDiffKind`
+（`added` / `changed` / `resolved`）。素材入口检查产出的可执行风险证据以携带
+`recoverable` / `retryable` 标注的发现形式上报。
+
+### 阶段映射（B 步骤种类 → 工作流阶段）
+
+| B 步骤种类（`MaterialIntakeStepKind`） | 工作流阶段 |
+| --- | --- |
+| `verify_source` | `inspect` |
+| `create_snapshot` | `snapshot` |
+| `import_unity_packages` | `execute` |
+| `create_local_vpm_package` | `execute` |
+| `preview_vpm_install` | `execute` |
+| `apply_vpm_install` | `execute` |
+| `validate_minimum_structure` | `validate` |
+| `write_build_record` | `completed` |
+
+### Facts 不透明
+
+`BuildRecordFacts`（snapshot / bridgeJob / localVpm / validation）以对应 Rust 证据节的
+JSON 序列化形式传输；`bridgeJob` 序列化**全部** Bridge 作业，而非最后一个。渲染层原样
+展示。
+
+## 方法面（commandId 幂等；查询以外全部创建任务）
+
+| 类别 | 方法 | 语义 |
+| --- | --- | --- |
+| 命令 | `production.startInspection` | 对素材 + 目标组合启动 Inspect,产出兼容/缺失证据 |
+| 查询 | `production.getInspection` | 读取一份检查结果（证据、可计划性结论） |
+| 命令 | `production.requestPlan` | 从检查结果推导执行计划（阶段、风险、预估） |
+| 查询 | `production.getPlan` | 读取一份计划供审阅 |
+| 命令 | `production.confirmPlan` | 用户确认计划;进入 snapshot → execute → validate 链 |
+| 命令 | `production.recover` | 恢复 `failed_recoverable` / `expired` 结果（continue / rollback,携带用户决定 ID） |
+| 查询 | `production.getBuildRecord` | 读取最小 Build Record（结果、阶段、证据） |
 
 ## 确认与恢复纪律
 
-- `confirmPlan` 前的计划审阅是独立用户阶段：确认绑定计划 revision，计划变化后确认失效
-  （对应 `expired` 运行态），前端如实呈现"确认已过期"，不自动重新确认；
-- `recover` 的 `continue` / `rollback` 都必须携带 Kernel 生成的用户决定 ID（与 Provider
-  关闭协议同一纪律）；恢复是任务，不是瞬间动作；
-- 取消语义与全局任务契约一致：请求取消 ≠ 已取消，安全边界结束才呈现取消完成。
+- `confirmPlan` 前的计划审阅是独立的用户阶段:确认绑定计划 revision,计划变化即失效
+  （`expired` 运行态）——前端诚实呈现"确认已过期",绝不自动重确认;
+- `recover` 的 `continue` 与 `rollback` 都必须携带 Kernel 生成的用户决定 ID（与 Provider
+  关闭协议同一纪律）;恢复是任务,不是瞬时动作;
+- 取消语义遵循全局任务契约:请求取消不等于已取消——任务在安全边界结束后,界面才呈现
+  取消完成;
+- 回执仅在 SUCCEEDED 且 plan 哈希、项目、来源身份一致时重放;失败与取消的运行以
+  attempt 后缀的新记录 ID 全新重试,并配尝试唯一的恢复快照（B3 执行器契约,
+  material-intake v0.1）。
 
-## Capability 与验证门槛
+## 能力与验证门
 
-- 全部方法以 `production.*` 操作级 capability 逐项门控；不可用入口不出现；
-- 模拟 Provider 必须能脚本化演示五种生命周期表现：成功、取消、漂移
-  （`failed_recoverable`）、超时（`expired`）、回滚（recover → 回滚成功/失败）；
-- F3 验收 = 表现层在模拟 Provider 下覆盖全部五种表现 + 真实两端在 M3 整合门复验；
-- 本文档经 B3 实现冻结前，字段级调整不要求升版本号（修订记录登记即可）。
+- 每个方法按 `production.*` 能力逐操作门控;不可用条目不渲染;
+- 模拟 Provider 必须能脚本化全部五种生命周期呈现:成功、取消、漂移
+  （`failed_recoverable`）、超时（`expired`）、回滚（recover → 回滚成功/失败）;
+- F3 验收 = 表现层对模拟 Provider 覆盖全部五种呈现,真实两端在 M3 集成门复验;
+- 冻结时真机状态:direct 路径与陈旧指纹拒绝已对真实 Unity 2022.3.22f1 通过;
+  local_reusable 切片已端到端通过（暂存模板 + Bridge 物化 + 确定性发布 + 真实
+  vrc-get 安装 + 目标验证）。
 
 ## 修订记录
 
-- 2026-09-04：B3/F3 候选草案。七方法面、生命周期-任务映射、双素材入口、确认与恢复纪律、
-  值语义种子（BuildRecordV01 / material-intake / workflow 阶段词表）。
+- 2026-09-05:**冻结。** B 线回复与 F 线确认（`b3318e0`）的词表裁定:Build Record
+  权威/显示双词表（含 `aborted` 显示态与快照证据映射表）;`SourceIntake` 对齐素材入口
+  schema 枚举（`direct_unity_package` / `local_reusable_vpm`）;新增阶段映射表;facts
+  定义为不透明 JSON 且 `bridgeJob` 携带全部作业;batchmode `ImportPackage` 空操作已
+  记录——batchmode 执行改用 `materialize_extracted_package` Bridge 操作
+  （unity-bridge v1）。
+- 2026-09-04:B3/F3 候选草案。七方法面、生命周期-任务映射、双素材入口、确认与恢复
+  纪律、值语义种子（BuildRecordV01 / material-intake / 工作流阶段词表）。
