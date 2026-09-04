@@ -27,20 +27,13 @@ Quality gates: `check:boundary` (Gateway only via the barrel; renderer must not 
 
 ## Known notes
 
-1. **Build the provider first on a fresh clone**: the `@vua/orchestrator-provider` runtime
-   entry points to `dist/index.js`, while the desktop `test` script runs before `build` —
-   running `pnpm --filter @vua/desktop test` directly on a fresh clone (right after
-   `pnpm install`) fails to resolve the package because `dist/` is missing. Run
-   `pnpm build` once (the root script builds all packages in topological order) or
-   `pnpm --filter @vua/orchestrator-provider build` before testing. Fixing the ordering
-   (e.g. in the root `check` or ahead of the package `test`) is deferred to the M2/CI
-   slice for a decision.
-2. **Stale version string left on the M line**: on the `glm/orchestrator` branch the M1
-   shell's `src/renderer/gateway.ts` browser-fallback snapshot still carries
-   `productVersion: "0.4.0-dev"`. That file is already deleted on this branch (full
-   presentation migration) and replaced by the `src/renderer/gateway/` port system; it
-   disappears when this branch merges back to the main line and is visible only while the
-   M line stands alone. It blocks no gate.
+1. ~~Build the provider first on a fresh clone~~ **Fixed (M2 closure, 2026-09-04)**: the
+   desktop `test` script now chains the `@vua/orchestrator-provider` build first, so
+   package-level `test` / `check` work directly on a fresh clone without the earlier
+   missing-`dist/` resolution failure.
+2. ~~Stale version string left on the M line~~ **Resolved with the M2 closure
+   (2026-09-04)**: the file was deleted; version strings are carried by `app-meta.ts` and
+   the package.json files.
 
 ## Migration and verification records
 

@@ -145,9 +145,28 @@ export interface DesktopWindowApiV1 {
   close(): Promise<void>;
 }
 
+/**
+ * 素材来源选取对话框(生产用例契约草案"双素材入口":文件选择经 Kernel 的
+ * 显式对话框动作完成,Renderer 不持文件系统句柄)。Kernel 保存选取结果并
+ * 只回发不透明 refId 与展示名;路径在 Kernel 侧解析后随应用请求交给 Provider。
+ */
+export type MaterialSourceIntakeV1 = "unitypackage_direct" | "local_vpm";
+
+export interface PickedMaterialSourceV1 {
+  /** 不透明引用:Kernel 侧映射到真实路径;Renderer 只透传 */
+  readonly refId: string;
+  readonly displayName: string;
+}
+
+export interface DesktopDialogApiV1 {
+  /** 用户取消或无宿主时返回 null */
+  pickMaterialSource(intake: MaterialSourceIntakeV1): Promise<PickedMaterialSourceV1 | null>;
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
+  readonly dialog: DesktopDialogApiV1;
   readonly window: DesktopWindowApiV1;
 }
 

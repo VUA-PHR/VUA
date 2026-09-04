@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, session, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import type { ApplicationEventV01 } from "@vua/contracts";
@@ -16,6 +16,11 @@ const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
 let shutdownStarted = false;
+
+/** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
+ *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时解析回路径 */
+const materialSources = new Map<string, { path: string; displayName: string }>();
+let materialSourceSequence = 0;
 
 function assertLocalSender(senderUrl: string): void {
   if (!isAllowedLocalSender(senderUrl, rendererUrl)) throw new Error("untrusted renderer origin");
@@ -74,6 +79,38 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     senderFrameUrl(event),
     request,
   ));
+
+  // 素材来源对话框(生产用例契约草案"双素材入口"):按 intake 限定可选形态,
+  // 选取结果落 Kernel 映射,回发 { refId, displayName };取消返回 null
+  ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (intake !== "unitypackage_direct" && intake !== "local_vpm") {
+      throw new Error("invalid material intake");
+    }
+    const options =
+      intake === "unitypackage_direct"
+        ? {
+            title: "Unity package",
+            filters: [{ name: "Unity package", extensions: ["unitypackage"] }],
+            properties: ["openFile"] as ("openFile" | "openDirectory")[],
+          }
+        : {
+            title: "Local VPM package",
+            filters: [] as { name: string; extensions: string[] }[],
+            properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
+          };
+    const result =
+      mainWindow === null
+        ? await dialog.showOpenDialog(options)
+        : await dialog.showOpenDialog(mainWindow, options);
+    if (result.canceled || result.filePaths.length !== 1) return null;
+    const pickedPath = result.filePaths[0]!;
+    materialSourceSequence += 1;
+    const refId = `mat-${materialSourceSequence}-${crypto.randomUUID()}`;
+    const displayName = path.basename(pickedPath);
+    materialSources.set(refId, { path: pickedPath, displayName });
+    return { refId, displayName };
+  });
 
   ipcMain.handle("vua:window:minimize", (event) => {
     assertLocalSender(senderFrameUrl(event));

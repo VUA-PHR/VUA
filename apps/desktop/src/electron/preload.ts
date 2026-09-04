@@ -21,6 +21,10 @@ const api: VuaDesktopApiV1 = Object.freeze({
     version: DESKTOP_GATEWAY_VERSION,
     invoke: (request: DesktopGatewayRequestV1) => ipcRenderer.invoke("vua:gateway:invoke", request),
   }),
+  dialog: Object.freeze({
+    pickMaterialSource: (intake: "unitypackage_direct" | "local_vpm") =>
+      ipcRenderer.invoke("vua:dialog:pick-material-source", intake),
+  }),
   events: Object.freeze({
     subscribe: (listener: (event: ApplicationEventV01) => void) => {
       const wrapped = (_event: IpcRendererEvent, payload: ApplicationEventV01) => listener(payload);

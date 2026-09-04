@@ -27,16 +27,11 @@
 
 ## 已知备忘
 
-1. **全新克隆先构建 Provider**：`@vua/orchestrator-provider` 的运行时入口指向
-   `dist/index.js`，而 desktop 的 `test` 先于 `build` 执行——全新克隆直接运行
-   `pnpm --filter @vua/desktop test`（或 `pnpm install` 后直接跑包级 `test`）会因
-   `dist/` 缺失而解析失败。先执行一次 `pnpm build`（根脚本按拓扑序构建全部包）或
-   `pnpm --filter @vua/orchestrator-provider build` 再跑测试。该顺序固化（例如纳入根
-   `check` 或包 `test` 前置）留待 M2/CI 切片决议。
-2. **M 线遗留的过时版本串**：`glm/orchestrator` 分支上 M1 壳的
-   `src/renderer/gateway.ts` 浏览器回落快照仍写 `productVersion: "0.4.0-dev"`。该文件
-   已在本分支（表现层全量迁移）中删除，由 `src/renderer/gateway/` 端口体系取代；本
-   分支合并回主线时自然消失，此前仅在 M 线单独存在期间可见，不阻塞任何门。
+1. ~~全新克隆先构建 Provider~~ **已修复（M2 收口，2026-09-04）**：desktop 的
+   `test` 脚本现在先链式构建 `@vua/orchestrator-provider`，全新克隆可直接运行
+   包级 `test` / `check`，不再出现 `dist/` 缺失导致的解析失败。
+2. ~~M 线遗留的过时版本串~~ **已随 M2 封口消除（2026-09-04）**：该文件已删除，
+   版本串由 `app-meta.ts` 与 package.json 统一承载。
 
 ## 迁移与验证记录
 

@@ -3,9 +3,10 @@ import { neverChecked } from "../features/deployer/deployer-model.ts";
 import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
 import { projectEnvironmentSnapshot, projectTaskItem } from "./contract-projection.ts";
 import { emptyGateway } from "./empty-gateway.ts";
-import { createGatewayClient, type GatewayClient } from "./gateway-client.ts";
+import { createGatewayClient, type DesktopGatewayHost, type GatewayClient } from "./gateway-client.ts";
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { VuaGateway } from "./gateway.ts";
+import type { ModelProductionPort } from "./model-production-port.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
 
@@ -129,17 +130,43 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
   };
 }
 
+/** Kernel 宿主完整面:gateway/events 供 client,dialog 供素材来源选取 */
+export interface DesktopKernelHost extends DesktopGatewayHost {
+  dialog?: {
+    pickMaterialSource(
+      intake: "unitypackage_direct" | "local_vpm",
+    ): Promise<{ refId: string; displayName: string } | null>;
+  };
+}
+
 export function createElectronGateway(
-  host: Parameters<typeof createGatewayClient>[0],
+  host: DesktopKernelHost | undefined,
   initialGoals: StoredGoalsV1 | null,
 ): VuaGateway {
   const client = createGatewayClient(host);
   const notRun = emptyGateway(initialGoals);
+  // F3 素材来源选取已接 Kernel 文件对话框(遗留清理):其余生产命令仍为
+  // not-run/unavailable 诚实态,随 B3 冻结后的 live 切片接入(只换实现,
+  // 视图与端口形状不动)
+  const liveModelProduction: ModelProductionPort = {
+    ...notRun.modelProduction,
+    pickMaterial: async (intake) => {
+      if (host?.dialog === undefined) return null;
+      const picked = await host.dialog.pickMaterialSource(intake);
+      return picked === null
+        ? null
+        : {
+            materialId: picked.refId,
+            intake,
+            displayName: picked.displayName,
+          };
+    },
+  };
   return {
     environment: createLiveEnvironmentPort(client),
     task: createLiveTaskPort(client),
     tutorial: notRun.tutorial,
-    modelProduction: notRun.modelProduction,
+    modelProduction: liveModelProduction,
     toolCatalog: notRun.toolCatalog,
     settings: notRun.settings,
     acquire: notRun.acquire,

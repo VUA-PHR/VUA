@@ -172,4 +172,46 @@ describe("live Electron Gateway (F2)", () => {
     await expect(gateway.task.snapshot()).rejects.toThrow("task_list_unavailable");
     expect(await gateway.environment.planFix("steam")).toEqual({ kind: "unavailable" });
   });
+
+describe("live pickMaterial over the Kernel dialog surface", () => {
+  it("maps the picked source to a MaterialRef and degrades to null without a host", async () => {
+    const dialog = {
+      pickMaterialSource: async (intake: string) =>
+        intake === "unitypackage_direct"
+          ? { refId: "mat-1-abc", displayName: "closet.unitypackage" }
+          : null,
+    };
+    const invoke = async () => ({ ok: true as const, value: { contractVersion: "0.1" } as never });
+    const gateway = createElectronGateway(
+      { gateway: { invoke }, events: { subscribe: () => () => {} }, dialog },
+      null,
+    );
+
+    const picked = await gateway.modelProduction.pickMaterial("unitypackage_direct");
+    expect(picked).toEqual({
+      materialId: "mat-1-abc",
+      intake: "unitypackage_direct",
+      displayName: "closet.unitypackage",
+    });
+    expect(await gateway.modelProduction.pickMaterial("local_vpm")).toBeNull();
+  });
+
+  it("keeps the not-run production surface honest while pickMaterial is live", async () => {
+    const gateway = createElectronGateway(
+      {
+        gateway: { invoke: async () => ({ ok: true as const, value: { contractVersion: "0.1" } as never }) },
+        events: { subscribe: () => () => {} },
+        dialog: { pickMaterialSource: async () => null },
+      },
+      null,
+    );
+    const view = await gateway.modelProduction.snapshot();
+    expect(view.productionRun).toEqual({ schemaVersion: 1, kind: "not-connected" });
+    const capability = await gateway.modelProduction.capability();
+    expect(capability.production.state).toBe("unavailable");
+    // 无宿主:选取如实返回 null(入口本就由 capability 隐藏)
+    const gatewayNoHost = createElectronGateway(undefined, null);
+    await expect(gatewayNoHost.modelProduction.pickMaterial("local_vpm")).resolves.toBeNull();
+  });
+});
 });
