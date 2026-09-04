@@ -19,6 +19,7 @@ mod journal;
 mod local_vpm_artifact;
 mod material_identity;
 mod material_intake;
+mod material_task;
 mod material_exec;
 mod material_staging;
 mod model;
@@ -93,6 +94,9 @@ pub use material_intake::{
 pub use material_exec::{
     error_codes as material_exec_error_codes, MaterialExecutionReport, MaterialExecutionStatus,
     MaterialExecutor, RollbackOutcome,
+};
+pub use material_task::{
+    material_intake_job, submit_material_intake, MaterialIntakeTaskSpec, MaterialTaskResult,
 };
 pub use material_staging::{
     staging_root, StagingProject, STAGING_MANIFEST_JSON, STAGING_PROJECT_VERSION_TXT,
