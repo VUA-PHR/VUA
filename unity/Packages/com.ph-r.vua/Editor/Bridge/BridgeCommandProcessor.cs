@@ -125,38 +125,62 @@ namespace Vua.Editor.Bridge
 
         private static BridgeResult ImportUnityPackage(BridgeCommand command)
         {
-            var source = command.payload.sourcePackagePath;
-            if (string.IsNullOrWhiteSpace(source) || !Path.IsPathRooted(source) || !File.Exists(source))
+            // The caller extracts the .unitypackage (tar.gz of guid folders)
+            // under .vua/imports/<commandId>/ — Unity's own ImportPackage is
+            // a silent no-op in batchmode, so this op MATERIALIZES that
+            // extracted layout into Assets/ and refreshes the database.
+            var extractedRoot = command.payload.sourcePackagePath;
+            if (string.IsNullOrWhiteSpace(extractedRoot) || !Directory.Exists(extractedRoot))
             {
-                return BridgeResult.Reject(command, "package.source_missing", "找不到待导入的 Unity Package。");
-            }
-            if (!string.Equals(Path.GetExtension(source), ".unitypackage", StringComparison.OrdinalIgnoreCase))
-            {
-                return BridgeResult.Reject(command, "package.source_type_invalid", "来源文件不是 .unitypackage。");
-            }
-            var actualDigest = FileSha256(source);
-            if (string.IsNullOrWhiteSpace(command.payload.sourcePackageSha256) ||
-                !string.Equals(actualDigest, command.payload.sourcePackageSha256, StringComparison.OrdinalIgnoreCase))
-            {
-                return BridgeResult.Reject(command, "package.source_drift", "来源包摘要已变化，请重新检查。");
-            }
-            if (command.dryRun)
-            {
-                var dryRun = BridgeResult.Success(command);
-                dryRun.diagnostics.Add(BridgeDiagnostic.Info("package.import_ready", "来源包可读取，尚未导入。"));
-                return dryRun;
+                return BridgeResult.Reject(command, "package.source_missing", "找不到待导入的解包目录。");
             }
 
             var before = new HashSet<string>(AssetDatabase.GetAllAssetPaths(), StringComparer.Ordinal);
-            AssetDatabase.ImportPackage(source, false);
+            var imported = new List<string>();
+            foreach (var guidDir in Directory.GetDirectories(extractedRoot))
+            {
+                var pathnamePath = Path.Combine(guidDir, "pathname");
+                if (!File.Exists(pathnamePath))
+                {
+                    continue;
+                }
+                var logical = File.ReadAllText(pathnamePath).Trim().Replace("\\", "/");
+                if (!logical.StartsWith("Assets/", StringComparison.Ordinal) &&
+                    !logical.StartsWith("Packages/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+                var target = Path.Combine(ProjectRoot(), logical.Replace('/', Path.DirectorySeparatorChar));
+                var assetPath = Path.Combine(guidDir, "asset");
+                if (File.Exists(assetPath))
+                {
+                    // Regular asset: copy the payload bytes.
+                    Directory.CreateDirectory(Path.GetDirectoryName(target) ?? ProjectRoot());
+                    File.Copy(assetPath, target, true);
+                }
+                else
+                {
+                    // Folder asset: no payload file exists in the archive.
+                    Directory.CreateDirectory(target);
+                }
+                var meta = Path.Combine(guidDir, "asset.meta");
+                if (File.Exists(meta))
+                {
+                    File.Copy(meta, target + ".meta", true);
+                }
+                imported.Add(logical);
+            }
+            imported.Sort(StringComparer.Ordinal);
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            var imported = AssetDatabase.GetAllAssetPaths()
-                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) && !before.Contains(path))
-                .OrderBy(path => path, StringComparer.Ordinal)
-                .ToList();
             var result = BridgeResult.Success(command);
             result.changedPaths.AddRange(imported);
             result.data.importedAssetPaths.AddRange(imported);
+            // Empirical probe: ImportPackage is a silent no-op in some
+            // batchmode contexts; surface the counters so the caller can see
+            // exactly what happened instead of a lying "success".
+            var afterAssets = AssetDatabase.GetAllAssetPaths().Length;
+            result.diagnostics.Add(BridgeDiagnostic.Info("package.import_debug",
+                $"beforeAssets={before.Count} afterAssets={afterAssets} imported={imported.Count}"));
             result.diagnostics.Add(BridgeDiagnostic.Info("package.imported", "Unity Package 已完成受控导入。"));
             return result;
         }
@@ -228,7 +252,10 @@ namespace Vua.Editor.Bridge
             var missing = expected.Where(path => AssetDatabase.LoadMainAssetAtPath(path) == null).ToList();
             if (missing.Count > 0)
             {
-                return BridgeResult.Reject(command, "validation.asset_load_failed", "至少一个计划素材无法由 AssetDatabase 加载。");
+                var reject = BridgeResult.Reject(command, "validation.asset_load_failed", "至少一个计划素材无法由 AssetDatabase 加载。");
+                reject.diagnostics.Add(BridgeDiagnostic.Error("validation.missing_assets",
+                    "missing: " + string.Join("; ", missing)));
+                return reject;
             }
             var result = BridgeResult.Success(command);
             result.data.loadedAssetPaths.AddRange(expected.OrderBy(path => path, StringComparer.Ordinal));
