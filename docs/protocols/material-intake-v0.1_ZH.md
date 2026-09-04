@@ -4,7 +4,7 @@
 
 > 状态：B3 实现基线
 > 范围：`.unitypackage` 直接导入与 `local-reusable` VPM 制作/安装
-> 更新：2026-09-03
+> 更新：2026-09-05
 
 ## 批次与名称
 
@@ -23,6 +23,14 @@
 `UserSettings`。决议绑定来源摘要和风险摘要；会话记忆不写入持久配置。VUA 不声称项目快照能阻止
 代码执行或撤销项目外副作用。
 
+## 依赖声明
+
+来源文件夹可携带一个可选的 `vua-dependencies.json`——JSON 对象，键为包机器 ID，值为版本区间，
+如 `{ "com.vrchat.avatars": "3.10.x" }`。声明由用户/Recipe 整理写入，**从不自动探测**：Inspect
+读入后随来源指纹一起摘要（计划后编辑声明文件按 `vua.material.source_drift` 拒绝）；`local-reusable`
+制作本地包时声明逐字进入 `package.json` 的 `dependencies`，再由 `vrc-get` 在目标项目解析安装。
+文件缺失即"无声明"；文件存在但不可解析按 `vua.material.deps_invalid` 报错，绝不静默置空。
+
 ## 双入口
 
 - `direct_unity_package`：验证目标项目快照后，按计划顺序由版本化 Bridge 导入全部来源包；
@@ -31,8 +39,9 @@
 
 ## 暂存项目契约
 
-隔离暂存项目由 VUA 捆绑的最小模板构建——两个文本文件加一个空的 `Assets/` 文件夹；不含任何
-DLL 或源代码：
+隔离暂存项目由 VUA 捆绑模板构建——两个文本文件、一个空的 `Assets/` 文件夹，加内嵌的
+**Bridge 脚手架**（`com.ph-r.vua` 包与 `nadena.dev.modular-avatar.core` 编译 stub，均为
+VUA 自有代码，随客户端编译期内嵌；无 Bridge 的暂存项目无法执行任何 Bridge 命令）：
 
 - `ProjectSettings/ProjectVersion.txt`：写入基线锁定的 Unity 版本（`2022.3.22f1`）；
 - `Packages/manifest.json`：固定的 VPM 依赖锁（如 `com.vrchat.avatars` / `com.vrchat.base`

@@ -33,6 +33,7 @@ mod provision;
 mod recipe;
 mod runtime;
 mod sqlite_task_store;
+mod staging_scaffold;
 mod state_file;
 mod time;
 mod tools;
@@ -93,8 +94,8 @@ pub use material_intake::{
     SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use material_exec::{
-    error_codes as material_exec_error_codes, MaterialExecutionReport, MaterialExecutionStatus,
-    MaterialExecutor, RollbackOutcome,
+    error_codes as material_exec_error_codes, MaterialCancelToken, MaterialExecutionReport,
+    MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
 };
 pub use material_task::{
     material_intake_job, submit_material_intake, MaterialIntakeTaskSpec, MaterialTaskResult,
@@ -115,7 +116,10 @@ pub use project_lock::{
     MUTATION_MARKER_SCHEMA_VERSION, PROJECT_LOCK_SCHEMA_VERSION, LOCK_FILE_NAME,
     MARKER_FILE_NAME,
 };
-pub use provider_host::{run_provider_host, ProviderHostError, PROVIDER_FRAME_VERSION};
+pub use provider_host::{
+    run_provider_host, run_provider_host_with, ProductionConfig, ProviderHostError,
+    PROVIDER_FRAME_VERSION,
+};
 #[cfg(windows)]
 pub use provider_job::ProviderJobGuard;
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
@@ -123,6 +127,9 @@ pub use recipe::*;
 pub use runtime::{
     recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRecoveryDisposition,
     TaskRuntime, TaskSnapshot,
+};
+pub use staging_scaffold::{
+    MA_STUB_ASMDEF, MA_STUB_COMPONENTS_CS, MA_STUB_PACKAGE_ID, MA_STUB_PACKAGE_JSON,
 };
 pub use sqlite_task_store::{
     IdempotentCancellation, IdempotentTaskAcceptance, NewTask, ProjectMutationLease,

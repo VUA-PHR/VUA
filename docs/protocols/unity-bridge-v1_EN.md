@@ -52,7 +52,7 @@ Requests conform to [`command.schema.json`](../../schemas/unity-bridge/v1/comman
 | --- | --- | --- |
 | `inspect_project` | `dryRun: true` required | Check current Scene readability and return fingerprint |
 | `import_unity_package` | inspect or mutate | Verify the source digest and import one `.unitypackage` from the reviewed batch |
-| `materialize_extracted_package` | inspect or mutate | Materialize a caller-extracted guid layout (verified entry-by-entry against a `manifest.sha256` written at extraction time). Batchmode fact (2026-09-04): Unity's `ImportPackage` silently no-ops under `-batchmode`, so batchmode execution must use this operation; `import_unity_package` keeps its file-and-digest semantics |
+| `materialize_extracted_package` | inspect or modify | Materializes the caller-extracted guid layout (first verifies the command's `manifestSha256` against the manifest itself, then verifies each entry against `manifest.sha256` — the manifest lives in the same editable directory as its files, so without binding its own digest the check-then-swap window stays open). batchmode fact (2026-09-04): Unity's `ImportPackage` is a silent no-op under `-batchmode`; batchmode execution must use this operation; `import_unity_package` keeps its file+digest semantics |
 | `create_local_vpm_package` | inspect or mutate | Create the Editor/Runtime local-package layout only inside a token-bound VUA staging project |
 | `validate_asset_paths` | `dryRun: true` required | Confirm planned paths load through AssetDatabase; proves minimum structure only |
 | `identify_assets` | `dryRun: true` required | Resolve Avatar/outfit `GlobalObjectId` values |

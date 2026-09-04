@@ -135,3 +135,14 @@ fn plk_005_lock_and_marker_are_independent_gates() {
     drop(guard2);
     fs::remove_dir_all(&root).unwrap();
 }
+
+#[test]
+fn plk_006_unreadable_marker_read_errors_are_not_clean() {
+    let root = temp_project("unreadable");
+    let marker_path = root.join(".vua").join(MARKER_FILE_NAME);
+    fs::create_dir_all(&marker_path).unwrap();
+    // The marker path exists but cannot be read as a file (it IS a
+    // directory here) — a permission-denied elsewhere behaves the same.
+    assert_eq!(read_pending_mutation(&root), PendingMutation::Unreadable);
+    fs::remove_dir_all(&root).unwrap();
+}

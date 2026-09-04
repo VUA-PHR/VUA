@@ -205,8 +205,14 @@ pub fn acquire_project_lock(project_root: &Path, holder: LockHolder) -> Result<P
 /// mutation.
 pub fn read_pending_mutation(project_root: &Path) -> PendingMutation {
     let path = vua_dir(project_root).join(MARKER_FILE_NAME);
-    let raw = match fs::read_to_string(path) {
-        Err(_) => return PendingMutation::None,
+    let raw = match fs::read_to_string(&path) {
+        // Absent means clean; any OTHER read failure (permission, the path
+        // being a directory, ...) is evidence we cannot read — the
+        // inspect-first gate must treat it as Unreadable, never as clean.
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return PendingMutation::None;
+        }
+        Err(_) => return PendingMutation::Unreadable,
         Ok(raw) => raw,
     };
     match serde_json::from_str::<MutationMarkerV1>(&raw) {

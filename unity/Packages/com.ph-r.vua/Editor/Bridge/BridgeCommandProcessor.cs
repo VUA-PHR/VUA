@@ -189,6 +189,14 @@ namespace Vua.Editor.Bridge
             {
                 return BridgeResult.Reject(command, "package.manifest_missing", "解包目录缺少 manifest.sha256。");
             }
+            // The manifest lives in the same editable directory as the files
+            // it describes; verify its OWN digest (bound into the command by
+            // the caller) before trusting a single entry.
+            if (string.IsNullOrWhiteSpace(command.payload.manifestSha256) ||
+                !string.Equals(FileSha256(manifestPath), command.payload.manifestSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.manifest_drift", "解包清单自身摘要不符，解包内容可能在检查后被替换。");
+            }
             foreach (var line in File.ReadAllLines(manifestPath))
             {
                 var separator = line.IndexOf("  ", StringComparison.Ordinal);

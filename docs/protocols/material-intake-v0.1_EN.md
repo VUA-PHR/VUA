@@ -4,7 +4,7 @@
 
 > Status: B3 implementation baseline
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
-> Updated: 2026-09-03
+> Updated: 2026-09-05
 
 ## Batch and naming
 
@@ -26,6 +26,17 @@ gets a minimum recovery snapshot of `Assets`, `Packages`, `ProjectSettings`, and
 includes `UserSettings`. The decision binds both digests, and session memory is not persisted. VUA does not claim
 that a project snapshot prevents code execution or reverses effects outside the project.
 
+## Dependency declarations
+
+The source folder may carry an optional `vua-dependencies.json` — a JSON object mapping
+package id to version range, e.g. `{ "com.vrchat.avatars": "3.10.x" }`. Declarations are
+curated by the user/Recipe and **never auto-detected**: Inspect reads them into the source
+fingerprint (editing the file after planning is refused as `vua.material.source_drift`);
+`local-reusable` package production writes them verbatim into the produced package's
+`dependencies`, where `vrc-get` resolves and installs them in the target project. A missing
+file means "no declarations"; an unparseable file fails as `vua.material.deps_invalid` —
+never a silent empty.
+
 ## Dual entry
 
 - `direct_unity_package` imports every source package in plan order through the versioned Bridge after a verified
@@ -36,8 +47,11 @@ that a project snapshot prevents code execution or reverses effects outside the 
 
 ## Staging project contract
 
-The isolated staging project is built from a VUA-bundled minimal template — two text files plus an
-empty `Assets/` folder; no DLLs and no source code:
+The isolated staging project is built from a VUA-bundled template — two text files, an
+empty `Assets/` folder, plus the embedded **Bridge scaffold** (the `com.ph-r.vua` package
+and a `nadena.dev.modular-avatar.core` compile stub, both VUA-authored code embedded at
+client compile time; a staging project without the Bridge can execute no Bridge command at
+all):
 
 - `ProjectSettings/ProjectVersion.txt` — the baseline-locked Unity version (`2022.3.22f1`);
 - `Packages/manifest.json` — the fixed VPM dependency lock (e.g. `com.vrchat.avatars` / `com.vrchat.base`

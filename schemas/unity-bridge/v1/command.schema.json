@@ -37,6 +37,7 @@
         "toggleName": { "type": "string", "minLength": 1 },
         "sourcePackagePath": { "type": "string", "minLength": 1 },
         "sourcePackageSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "manifestSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
         "packageId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$" },
         "packageDisplayName": { "type": "string", "minLength": 1 },
         "packageVersion": { "type": "string", "minLength": 1 },
@@ -113,7 +114,7 @@
       },
       "then": {
         "properties": {
-          "payload": { "required": ["sourcePackagePath", "sourcePackageSha256"] }
+          "payload": { "required": ["sourcePackagePath", "sourcePackageSha256", "manifestSha256"] }
         }
       }
     },

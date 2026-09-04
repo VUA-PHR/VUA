@@ -384,7 +384,13 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
         "2022.3.22f1",
         vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
-    let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
     let elapsed = started.elapsed();
     println!("executor wall time: {elapsed:?}");
 
@@ -469,7 +475,13 @@ fn m3_real_stale_fingerprint_is_rejected_and_restored() {
         "2022.3.22f1",
         vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
-    let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
 
     assert_eq!(
         report.status,
@@ -650,7 +662,13 @@ fn m3_real_local_reusable_vertical_slice() {
     .with_staging_template_override(&staging_template);
 
     let started = Instant::now();
-    let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
     let elapsed = started.elapsed();
     println!("executor wall time (4+ Unity launches + vrc-get install): {elapsed:?}");
 

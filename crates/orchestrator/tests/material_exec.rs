@@ -13,7 +13,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tar::{Builder, Header};
 
 use vua_orchestrator::{
-    BuildRecordStore, BridgeError, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
+    BuildRecordStore, BridgeError, MaterialCancelToken, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
     LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutionStatus, MaterialExecutor,
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, PackageRequestV1,
     ProjectRef, ResultStatus, RiskDecisionChoice, RiskDecisionV01, RollbackOutcome,
@@ -274,7 +274,13 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
     let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
     assert!(!report.replayed);
@@ -307,7 +313,13 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     assert!(commands[1].dry_run);
 
     // The receipt replays idempotently: no further Unity traffic.
-    let replay = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let replay = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
     assert!(replay.replayed);
     assert_eq!(replay.status, MaterialExecutionStatus::Succeeded);
     assert_eq!(bridge.command_count(), 2, "replay must not touch Unity");
@@ -334,7 +346,13 @@ fn b3_exec_002_source_drift_fails_before_the_first_mutation() {
     // Drift: the source grows after Inspect/plan.
     unitypackage(&source.join("late.unitypackage"), &["Assets/Late.prefab"]);
 
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Failed);
     assert!(
@@ -355,10 +373,17 @@ fn b3_exec_003_cancellation_before_the_first_step_touches_nothing() {
     let source = base.join("source");
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
-    executor.cancel();
 
     let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let token = MaterialCancelToken::new();
+    token.cancel();
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &token,
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Cancelled);
     assert_eq!(report.completed_steps, vec![]);
@@ -386,7 +411,13 @@ fn b3_exec_004_bridge_rejection_restores_the_verified_snapshot() {
     let manifest_before =
         fs::read_to_string(project.root.join("vpm-manifest.json")).unwrap();
     let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Failed);
     assert_eq!(report.error_code.as_deref(), Some("vua.material.bridge_rejected"));
@@ -420,7 +451,13 @@ fn b3_exec_005_bridge_timeout_is_a_typed_failure_with_restore() {
     let executor = executor(&base, bridge, FakeVpm::new());
 
     let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Failed);
     assert_eq!(report.error_code.as_deref(), Some("vua.material.bridge_timeout"));
@@ -434,12 +471,25 @@ fn b3_exec_005_bridge_timeout_is_a_typed_failure_with_restore() {
 fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     let (base, project) = make_world("vpm-mode");
     let source = base.join("source");
+    // Curated dependency declarations travel verbatim into the produced
+    // package's package.json — never auto-detected.
+    fs::write(
+        source.join("vua-dependencies.json"),
+        r#"{ "com.vrchat.avatars": "3.10.x", "nadena.dev.modular-avatar": "^1.13.0" }"#,
+    )
+    .unwrap();
     let vpm = FakeVpm::new();
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
     let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source));
-    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
 
     assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
     let steps = &report.completed_steps;
@@ -467,6 +517,20 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     assert_eq!(
         commands[2].payload.staging_token.as_deref(),
         Some(confirmation.correlation_id.as_str())
+    );
+    // Declared dependencies reach the Bridge payload verbatim, sorted.
+    let declared: Vec<(String, String)> = commands[2]
+        .payload
+        .package_dependencies
+        .iter()
+        .map(|dependency| (dependency.package_id.clone(), dependency.version.clone()))
+        .collect();
+    assert_eq!(
+        declared,
+        vec![
+            ("com.vrchat.avatars".to_owned(), "3.10.x".to_owned()),
+            ("nadena.dev.modular-avatar".to_owned(), "^1.13.0".to_owned()),
+        ]
     );
     // The staging import chained the staging fingerprint from the inspect
     // (the fake bridge numbers its returned fingerprints fp-1, fp-2, …).
@@ -517,7 +581,13 @@ fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
     let bridge = FakeBridge::new(rejection);
     let first_executor = executor(&base, bridge.clone(), FakeVpm::new());
     let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
-    let first = first_executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let first = first_executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
     assert_eq!(first.status, MaterialExecutionStatus::Failed);
     let failed_record_id = first.build_record_id.expect("failed run records");
 
@@ -526,7 +596,13 @@ fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
     // the failed one.
     let bridge = FakeBridge::new(vec![]);
     let retry_executor = executor(&base, bridge.clone(), FakeVpm::new());
-    let second = retry_executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let second = retry_executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
     println!("second: {second:?}");
 
     assert_eq!(second.status, MaterialExecutionStatus::Succeeded);
@@ -564,6 +640,125 @@ fn b3_exec_008_same_name_sources_resolve_distinct_machine_identities() {
     // Stable across repeat resolution.
     let again = store.resolve(&source_one, "source").unwrap();
     assert_eq!(again.package_id, identity_one.package_id);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+/// Simulates the worst production failure: the recovery point vanishes
+/// between CreateSnapshot and the restore attempt (e.g. disk loss under
+/// `.vua/`). The first command fails AND takes the snapshot with it, so the
+/// executor's restore itself errors — the receipt must still be published.
+struct SnapshotDestroyingBridge {
+    inner: FakeBridge,
+}
+
+impl UnityBridge for SnapshotDestroyingBridge {
+    fn execute(
+        &self,
+        project: &ProjectRef,
+        command: &UnityCommand,
+    ) -> Result<UnityResult, BridgeError> {
+        let snapshots = project.root.join(".vua/snapshots");
+        if snapshots.is_dir() {
+            for entry in fs::read_dir(&snapshots).into_iter().flatten() {
+                let _ = fs::remove_dir_all(entry.expect("dir entry").path());
+            }
+        }
+        self.inner.execute(project, command)
+    }
+}
+
+#[test]
+fn b3_exec_007_restore_failure_still_publishes_the_receipt() {
+    let (base, project) = make_world("restore-fail");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![Err(BridgeError::TimedOut)]);
+    let executor = MaterialExecutor::new(
+        Arc::new(SnapshotDestroyingBridge { inner: bridge }),
+        FileSystemSnapshotStore,
+        FakeVpm::new(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("vua.material.rollback_failed"),
+        "the rollback_failed code is the finding: {:?}",
+        report.error_code
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Failed);
+
+    // The worst outcome is precisely when an immutable receipt matters: the
+    // record must carry restore_attempted=true, restore_succeeded=false.
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", confirmation.plan.plan_id))
+        .expect("a failed restore must still be recorded");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Failed);
+    let snapshot = record.snapshot.expect("snapshot evidence");
+    assert!(snapshot.restore_attempted);
+    assert_eq!(snapshot.restore_succeeded, Some(false));
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
+    let (base, project) = make_world("deps-drift");
+    let source = base.join("source");
+    fs::write(
+        source.join("vua-dependencies.json"),
+        r#"{ "com.vrchat.avatars": "3.10.x" }"#,
+    )
+    .unwrap();
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), FakeVpm::new());
+
+    let plan = plan(MaterialEntryMode::LocalReusableVpm, &source);
+    let confirmation = confirmation(&plan);
+
+    // The user edits the declarations after planning: the produced
+    // package.json would differ from what was confirmed, so the run must
+    // refuse before the first mutation.
+    fs::write(
+        source.join("vua-dependencies.json"),
+        r#"{ "com.vrchat.avatars": "3.12.x" }"#,
+    )
+    .unwrap();
+
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report.error_code.as_deref().unwrap_or("").contains("source_drift"),
+        "declaration edits are source drift: {:?}",
+        report.error_code
+    );
+    assert_eq!(bridge.command_count(), 0, "no Unity command may run on drift");
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }

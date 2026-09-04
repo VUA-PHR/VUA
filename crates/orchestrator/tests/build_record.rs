@@ -31,6 +31,7 @@ fn fixture() -> BuildRecordV01 {
                 asset_paths: vec!["Assets/Synthetic.prefab".into()],
             }],
             executable_risks: Vec::new(),
+            declared_dependencies: Vec::new(),
         },
         risk_choice: RiskDecisionChoice::NotRequired,
         project_id: "project-1".into(),

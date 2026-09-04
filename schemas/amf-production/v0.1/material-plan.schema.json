@@ -34,14 +34,26 @@
     "source": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["schemaVersion", "displayName", "sourceFingerprint", "riskFingerprint", "packages", "executableRisks"],
+      "required": ["schemaVersion", "displayName", "sourceFingerprint", "riskFingerprint", "packages", "executableRisks", "declaredDependencies"],
       "properties": {
         "schemaVersion": { "const": "0.1" },
         "displayName": { "type": "string", "minLength": 1 },
         "sourceFingerprint": { "$ref": "#/$defs/sha256" },
         "riskFingerprint": { "$ref": "#/$defs/sha256" },
         "packages": { "type": "array", "minItems": 1 },
-        "executableRisks": { "type": "array" }
+        "executableRisks": { "type": "array" },
+        "declaredDependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageId", "versionRange"],
+            "properties": {
+              "packageId": { "type": "string", "minLength": 1 },
+              "versionRange": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
       }
     }
   }

@@ -91,6 +91,28 @@ pub struct MaterialExecutionReport {
 /// One step's mutation outcome: continue with the run, or stop with a code.
 type StepFailure = (String, MaterialExecutionStatus);
 
+/// Per-execution cancellation flag. Ownership lives at the submission layer
+/// (task spec), never in the executor: a shared executor must not let one
+/// run's cancellation leak into later or concurrent runs, and a cancelled
+/// token is never reset — it is simply not reused.
+#[derive(Clone, Default, Debug)]
+pub struct MaterialCancelToken(Arc<AtomicBool>);
+
+impl MaterialCancelToken {
+    pub fn new() -> Self {
+        Self(Arc::new(AtomicBool::new(false)))
+    }
+
+    /// Requests cancellation; observed at the executor's step boundaries.
+    pub fn cancel(&self) {
+        self.0.store(true, Ordering::SeqCst);
+    }
+
+    fn is_cancelled(&self) -> bool {
+        self.0.load(Ordering::SeqCst)
+    }
+}
+
 pub struct MaterialExecutor {
     bridge: Arc<dyn UnityBridge>,
     snapshots: FileSystemSnapshotStore,
@@ -101,7 +123,6 @@ pub struct MaterialExecutor {
     unity_editor_version: String,
     identity_store: LocalPackageIdentityStore,
     staging_template_override: Option<PathBuf>,
-    cancel: Arc<AtomicBool>,
 }
 
 impl MaterialExecutor {
@@ -126,7 +147,6 @@ impl MaterialExecutor {
             unity_editor_version: unity_editor_version.into(),
             identity_store,
             staging_template_override: None,
-            cancel: Arc::new(AtomicBool::new(false)),
         }
     }
 
@@ -137,24 +157,17 @@ impl MaterialExecutor {
         self
     }
 
-    /// Requests cancellation; observed before each step boundary.
-    pub fn cancel(&self) {
-        self.cancel.store(true, Ordering::SeqCst);
-    }
-
-    fn cancelled(&self) -> bool {
-        self.cancel.load(Ordering::SeqCst)
-    }
-
     /// Drives the confirmed plan. Always returns a report — failures live in
     /// the report, not the error channel, so the task runtime can persist
-    /// them uniformly.
+    /// them uniformly. Cancellation is observed from `token` at each step
+    /// boundary; the token is the caller's, one per execution.
     pub fn execute(
         &self,
         confirmation: &MaterialIntakeConfirmationV01,
         source_folder: &Path,
         project: &ProjectRef,
         artifact_output_root: &Path,
+        token: &MaterialCancelToken,
     ) -> MaterialExecutionReport {
         let plan = &confirmation.plan;
         // The receipt is the replay guard — but only a SUCCEEDED receipt for
@@ -205,7 +218,7 @@ impl MaterialExecutor {
         let mut bridge_jobs: Vec<BridgeJobEvidenceV01> = Vec::new();
         let started_at = self.clock.now_rfc3339();
 
-        if self.cancelled() {
+        if token.is_cancelled() {
             report.status = MaterialExecutionStatus::Cancelled;
             report.error_code = Some(intake_codes::CANCELLED.to_owned());
             return report;
@@ -221,7 +234,7 @@ impl MaterialExecutor {
         }
         report.completed_steps.push(MaterialIntakeStepKind::VerifySource);
 
-        if self.cancelled() {
+        if token.is_cancelled() {
             report.status = MaterialExecutionStatus::Cancelled;
             report.error_code = Some(intake_codes::CANCELLED.to_owned());
             return report;
@@ -267,6 +280,7 @@ impl MaterialExecutor {
                     plan,
                     source_folder,
                     project,
+                    token,
                     &mut current_fingerprint,
                     &mut bridge_jobs,
                     &mut final_fingerprint,
@@ -285,6 +299,7 @@ impl MaterialExecutor {
                     source_folder,
                     project,
                     artifact_output_root,
+                    token,
                     &mut bridge_jobs,
                     &mut local_vpm,
                     &mut validation_expectations,
@@ -306,7 +321,7 @@ impl MaterialExecutor {
         let failure = match failure {
             Some(failure) => Some(failure),
             None => {
-                if self.cancelled() {
+                if token.is_cancelled() {
                     Some((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled))
                 } else {
                     match self.run_minimum_structure_validation(
@@ -329,30 +344,32 @@ impl MaterialExecutor {
         };
 
         // Failure rolls the verified snapshot back before anything else is
-        // recorded; a failed restore is the worst outcome and says so.
-        let (status, error_code) = match failure {
-            None => (MaterialExecutionStatus::Succeeded, None),
+        // recorded; a failed restore is the worst outcome and STILL gets a
+        // receipt — it must never bypass WriteBuildRecord.
+        let failure = match failure {
+            None => None,
             Some((code, run_status)) => {
                 snapshot_evidence.restore_attempted = true;
                 match self.snapshots.restore_verified(project, &verified.reference) {
                     Ok(()) => {
                         snapshot_evidence.restore_succeeded = Some(true);
                         report.rollback = RollbackOutcome::Restored;
+                        Some((code, run_status))
                     }
                     Err(error) => {
                         snapshot_evidence.restore_succeeded = Some(false);
                         report.rollback = RollbackOutcome::Failed;
-                        report.status = MaterialExecutionStatus::Failed;
-                        report.error_code = Some(format!(
-                            "{}: restore failed: {error}",
-                            error_codes::ROLLBACK_FAILED
-                        ));
-                        return report;
+                        Some((
+                            format!("{}: restore failed: {error}", error_codes::ROLLBACK_FAILED),
+                            MaterialExecutionStatus::Failed,
+                        ))
                     }
                 }
-                report.status = run_status;
-                (run_status, Some(code))
             }
+        };
+        let (status, error_code) = match failure {
+            None => (MaterialExecutionStatus::Succeeded, None),
+            Some((code, run_status)) => (run_status, Some(code)),
         };
         report.status = status;
         report.error_code = error_code;
@@ -413,13 +430,14 @@ impl MaterialExecutor {
         plan: &crate::material_intake::MaterialIntakePlanV01,
         source_folder: &Path,
         project: &ProjectRef,
+        token: &MaterialCancelToken,
         current_fingerprint: &mut String,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
         final_fingerprint: &mut Option<String>,
         validation_expectations: &mut Vec<String>,
     ) -> Result<(), StepFailure> {
         for package in &plan.source.packages {
-            if self.cancelled() {
+            if token.is_cancelled() {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
             let command_id = format!("{}-import-{}", plan.plan_id, bridge_jobs.len());
@@ -453,6 +471,16 @@ impl MaterialExecutor {
                 },
             )?;
             validation_expectations.extend(logical_paths);
+            // Bind the manifest's OWN digest into the command: the manifest
+            // lives in the same editable directory as the files it describes,
+            // so without this a files+manifest swap survives verification.
+            let manifest_digest =
+                sha256_file(&extracted_root.join("manifest.sha256")).map_err(|error| {
+                    (
+                        format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                        MaterialExecutionStatus::Failed,
+                    )
+                })?;
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
@@ -463,6 +491,7 @@ impl MaterialExecutor {
                 payload: UnityPayload {
                     source_package_path: Some(extracted_root.to_string_lossy().into_owned()),
                     source_package_sha256: Some(package.sha256.clone()),
+                    manifest_sha256: Some(manifest_digest),
                     ..UnityPayload::default()
                 },
             };
@@ -487,6 +516,7 @@ impl MaterialExecutor {
         source_folder: &Path,
         project: &ProjectRef,
         artifact_output_root: &Path,
+        token: &MaterialCancelToken,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
         local_vpm: &mut Option<crate::build_record::LocalVpmEvidenceV01>,
         validation_expectations: &mut Vec<String>,
@@ -541,7 +571,7 @@ impl MaterialExecutor {
 
         // Import the whole batch into staging (chained fingerprints).
         for package in &plan.source.packages {
-            if self.cancelled() {
+            if token.is_cancelled() {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
             let command_id = format!("{}-stage-import-{}", plan.plan_id, bridge_jobs.len());
@@ -563,6 +593,13 @@ impl MaterialExecutor {
                         MaterialExecutionStatus::Failed,
                     )
                 })?;
+            let manifest_digest =
+                sha256_file(&extracted_root.join("manifest.sha256")).map_err(|error| {
+                    (
+                        format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                        MaterialExecutionStatus::Failed,
+                    )
+                })?;
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
@@ -573,6 +610,7 @@ impl MaterialExecutor {
                 payload: UnityPayload {
                     source_package_path: Some(extracted_root.to_string_lossy().into_owned()),
                     source_package_sha256: Some(package.sha256.clone()),
+                    manifest_sha256: Some(manifest_digest),
                     ..UnityPayload::default()
                 },
             };
@@ -596,20 +634,26 @@ impl MaterialExecutor {
                 package_display_name: Some(identity.display_name.clone()),
                 package_version: Some("0.1.0".to_owned()),
                 staging_token: Some(confirmation.correlation_id.clone()),
+                // Declarations flow verbatim from the plan's source
+                // (vua-dependencies.json); the Bridge never guesses and the
+                // executor never invents a dependency.
+                package_dependencies: plan
+                    .source
+                    .declared_dependencies
+                    .iter()
+                    .map(|dependency| crate::UnityPackageDependency {
+                        package_id: dependency.package_id.clone(),
+                        version: dependency.version_range.clone(),
+                    })
+                    .collect(),
                 ..UnityPayload::default()
             },
         };
-        let created = self.dispatch(&staging_project, &command, bridge_jobs)?;
-        validation_expectations.extend(
-            created
-                .changed_paths
-                .iter()
-                .filter(|path| path.starts_with("Packages/"))
-                .cloned(),
-        );
-        if validation_expectations.is_empty() {
-            validation_expectations.push(format!("Packages/{package_id}/package.json"));
-        }
+        self.dispatch(&staging_project, &command, bridge_jobs)?;
+        // The Bridge's changedPaths are TOP-LEVEL entries (Runtime/<name>,
+        // Editor, package.json); a directory existing proves nothing about
+        // the files inside it. The validation list below is therefore built
+        // per-file from the published package tree instead.
 
         // Publish the produced package deterministically, then register and
         // install it into the target through the same backend.
@@ -622,6 +666,16 @@ impl MaterialExecutor {
         .map_err(|error| {
             (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
         })?;
+
+        // Every file the produced package carries must load in the target
+        // after install — nested prefabs, materials, textures included.
+        collect_package_files(&artifact.package_root, &package_id, validation_expectations)
+            .map_err(|error| {
+                (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
+            })?;
+        validation_expectations.sort();
+        validation_expectations.dedup();
+
         self.vpm
             .register_local_package(&artifact.package_root)
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
@@ -841,6 +895,32 @@ fn extract_package_into_dir(
 
 /// SHA-256 of a file on disk — binds the extracted layout to the
 /// digest-verified archive before any content reaches the Bridge.
+/// Collects every file under the produced package as a project-relative
+/// validation expectation (`Packages/<id>/<relative path>`), so the target
+/// project's minimum-structure validation proves the INSTALLED TREE, not
+/// just its top-level directories.
+fn collect_package_files(
+    package_root: &Path,
+    package_id: &str,
+    out: &mut Vec<String>,
+) -> std::io::Result<()> {
+    fn walk(dir: &Path, relative: &str, package_id: &str, out: &mut Vec<String>) -> std::io::Result<()> {
+        for entry in fs::read_dir(dir)? {
+            let entry = entry?;
+            let name = entry.file_name().to_string_lossy().into_owned();
+            let path = entry.path();
+            let relative = if relative.is_empty() { name } else { format!("{relative}/{name}") };
+            if path.is_dir() {
+                walk(&path, &relative, package_id, out)?;
+            } else {
+                out.push(format!("Packages/{package_id}/{relative}"));
+            }
+        }
+        Ok(())
+    }
+    walk(package_root, "", package_id, out)
+}
+
 fn sha256_file(path: &Path) -> std::io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();

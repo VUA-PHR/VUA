@@ -21,6 +21,9 @@ pub const STAGING_UNITY_VERSION: &str = "2022.3.22f1";
 
 pub const STAGING_PROJECT_VERSION_TXT: &str = "m_EditorVersion: 2022.3.22f1\n";
 
+/// The VUA Bridge package id inside the staging project.
+pub const BRIDGE_PACKAGE_ID: &str = "com.ph-r.vua";
+
 /// Fixed VPM dependency lock: the same SDK base VCC would produce, with the
 /// VRChat scoped registry so the lib backend can resolve the packages.
 pub const STAGING_MANIFEST_JSON: &str = r#"{
@@ -66,6 +69,10 @@ impl StagingProject {
             STAGING_PROJECT_VERSION_TXT,
         )?;
         fs::write(root.join("Packages").join("manifest.json"), STAGING_MANIFEST_JSON)?;
+        // The scaffold (Bridge package + MA compile stub) is what makes the
+        // staging project able to execute Bridge commands at all; without
+        // it the first dispatch fails for lack of a batchmode entry point.
+        crate::staging_scaffold::write_scaffold(&root.join("Packages"))?;
         fs::write(root.join(".vua").join("staging.json"), staging_token)?;
         Ok(Self {
             root,

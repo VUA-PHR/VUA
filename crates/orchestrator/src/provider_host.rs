@@ -1,16 +1,27 @@
 //! Transport adapter for the supervised Orchestrator Provider process.
 
+use crate::material_exec::{
+    MaterialCancelToken, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
+};
+use crate::material_intake::{
+    MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
+    RiskDecisionChoice, RiskDecisionV01, SourceFolderInspectionV01,
+};
+use crate::material_task::MaterialTaskResult;
+use crate::model::ProjectRef;
 use crate::{
-    IdempotentCancellation, IdempotentTaskAcceptance, NewTask, SqliteStoreError,
-    SqliteTaskStore, StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
+    AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
+    IdempotentTaskAcceptance, NewTask, SqliteStoreError, SqliteTaskStore, StoredTask,
+    StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, Write};
 use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 pub const PROVIDER_FRAME_VERSION: &str = "0.1";
@@ -78,9 +89,26 @@ struct OutboundFrame<'a> {
 }
 
 struct HostState {
-    store: SqliteTaskStore,
+    store: Arc<SqliteTaskStore>,
     provider_instance_id: String,
     recovered_nonterminal_tasks: HashSet<String>,
+    production: Option<Arc<ProductionServices>>,
+}
+
+/// Production use-case wiring (production-use-case v0.1): when absent, every
+/// `production.*` method answers a typed `unavailable` error — honest
+/// absence, never a silent success.
+pub struct ProductionConfig {
+    pub executor: Arc<MaterialExecutor>,
+    pub records: Arc<BuildRecordStore>,
+}
+
+struct ProductionServices {
+    executor: Arc<MaterialExecutor>,
+    records: Arc<BuildRecordStore>,
+    engine: MaterialIntakeEngine,
+    running: Mutex<HashMap<String, MaterialCancelToken>>,
+    completed_events: Mutex<Vec<StoredTaskEvent>>,
 }
 
 struct ProviderInstanceLock {
@@ -113,25 +141,82 @@ impl ProviderInstanceLock {
 /// Runs the bounded JSONL protocol until stdin closes or shutdown commits.
 /// Stdout is protocol-only; diagnostics belong on stderr in the binary shell.
 pub fn run_provider_host(
+    input: impl BufRead,
+    output: impl Write,
+    database_path: impl AsRef<Path>,
+) -> Result<(), ProviderHostError> {
+    run_provider_host_with(input, output, database_path, None)
+}
+
+/// Same protocol with the production use-case surface wired to concrete
+/// services (material intake executor + build record store).
+pub fn run_provider_host_with(
     mut input: impl BufRead,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
+    production: Option<ProductionConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
-    let store = SqliteTaskStore::open(database_path)?;
+    let store = Arc::new(SqliteTaskStore::open(database_path)?);
     let provider_instance_id = provider_instance_id();
-    let recovered_nonterminal_tasks = store
+    let recovered_nonterminal_tasks: HashSet<String> = store
         .tasks()?
         .into_iter()
         .filter(|task| !task.state.is_terminal())
         .map(|task| task.task_id)
         .collect();
     store.mark_other_owners_interrupted(&provider_instance_id, &now_rfc3339())?;
+
+    // A previous process may have died with production tasks mid-flight.
+    // They are failed as interrupted (recoverable) — never silently resumed;
+    // per the recovery discipline the next mutation must Inspect first.
+    for task in store.tasks()? {
+        if task.task_id.starts_with("prod-")
+            && !task.state.is_terminal()
+            && recovered_nonterminal_tasks.contains(&task.task_id)
+        {
+            let error = AppErrorV1::new(
+                "vua.task.interrupted",
+                ErrorCategory::ExternalFailure,
+                "errors.task.interrupted",
+                &task.correlation_id,
+            )
+            .with_recoverable(true);
+            let _ = advance_production_task(
+                &store,
+                &task.task_id,
+                TaskMutation::Complete {
+                    state: if matches!(task.state, TaskState::Queued | TaskState::Preparing) {
+                        TaskState::Cancelled
+                    } else {
+                        TaskState::Failed
+                    },
+                    error: if matches!(task.state, TaskState::Queued | TaskState::Preparing) {
+                        None
+                    } else {
+                        Some(error)
+                    },
+                    result: None,
+                },
+            );
+        }
+    }
+
+    let production = production.map(|config| {
+        Arc::new(ProductionServices {
+            executor: config.executor,
+            records: config.records,
+            engine: MaterialIntakeEngine,
+            running: Mutex::new(HashMap::new()),
+            completed_events: Mutex::new(Vec::new()),
+        })
+    });
     let mut state = HostState {
         store,
         provider_instance_id,
         recovered_nonterminal_tasks,
+        production,
     };
 
     loop {
@@ -151,7 +236,18 @@ pub fn run_provider_host(
         // demo.task deterministic progression: one stage per received frame,
         // holding at running awaiting cancellation; events are written before
         // this frame's response (notifications of fact, queries stay authoritative)
-        for event in advance_demo_tasks(&mut state)? {
+        let mut pending_events = advance_demo_tasks(&mut state)?;
+        // production workers finish in their own threads; their persisted
+        // events drain here and go out as ordinary event frames.
+        if let Some(services) = &state.production {
+            let mut guard = services
+                .completed_events
+                .lock()
+                .expect("completed events poisoned");
+            pending_events.extend(guard.drain(..));
+            drop(guard);
+        }
+        for event in pending_events {
             let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
             write_frame(&mut output, &event_id, "event", task_event(&event_id, &event))?;
         }
@@ -338,6 +434,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
         ));
     }
     let method = request.get("method").and_then(Value::as_str).unwrap_or("");
+    if method.starts_with("production.") {
+        return production_request(state, method, request, request_id, correlation_id);
+    }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
             "application.getSnapshot" => Ok(FrameOutcome::Response(application_success(
@@ -345,7 +444,7 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
                 json!({
                     "contractVersion": APPLICATION_CONTRACT_VERSION,
                     "revision": state.store.application_revision()?,
-                    "capabilities": {"revision": 0, "operations": served_capabilities()},
+                    "capabilities": {"revision": 0, "operations": served_capabilities(state)},
                 }),
             ))),
             "task.list" => {
@@ -419,11 +518,17 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
 /// Kernel-side derivation source for the Gateway boolean capabilities and the
 /// entry visibility (contract operation-level Capability). demo.task leaves the
 /// production capability table once the F3 real use-case command lands.
-fn served_capabilities() -> Value {
+fn served_capabilities(state: &HostState) -> Value {
+    let production_availability = if state.production.is_some() {
+        "available"
+    } else {
+        "unavailable"
+    };
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
+        {"operationId": "production.useCase", "availability": production_availability},
         {
             "operationId": "desktop.remoteBrowser",
             "availability": "unavailable",
@@ -587,6 +692,15 @@ fn handle_cancellation(
         .and_then(Value::as_u64);
     let fingerprint = request_fingerprint(&method_and_task(request));
     let occurred_at = now_rfc3339();
+    // Bridge the task-level cancel request to the running production
+    // execution: the worker observes it at the next step boundary.
+    if let Some(services) = &state.production {
+        if let Some(token) =
+            services.running.lock().expect("running poisoned").get(task_id)
+        {
+            token.cancel();
+        }
+    }
     let cancellation = state.store.request_cancellation_idempotent(
         command_id,
         &fingerprint,
@@ -762,6 +876,562 @@ fn now_rfc3339() -> String {
     use crate::Clock as _;
     crate::SystemClock.now_rfc3339()
 }
+
+// ==== production.* surface (production-use-case v0.1) ====
+//
+// Commands other than queries create persisted tasks; commandId idempotency
+// is the store's `command_idempotency` table. Fast, non-Unity stages
+// (Inspect, Plan) drive inline to a terminal state; confirmPlan/recover run
+// the material intake executor on a worker thread and complete through the
+// same store, so a host restart never loses an authoritative state.
+
+fn production_task_id(command_id: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(command_id.as_bytes());
+    let digest = hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<String>();
+    format!("prod-{}", &digest[..12])
+}
+
+/// Applies a mutation at the task's CURRENT revision (workers and the host
+/// loop share the store; revisions race through cancellation).
+fn advance_production_task(
+    store: &SqliteTaskStore,
+    task_id: &str,
+    mutation: TaskMutation,
+) -> Result<Option<StoredTaskEvent>, SqliteStoreError> {
+    let revision = store
+        .task(task_id)?
+        .ok_or_else(|| SqliteStoreError::UnknownTask(task_id.to_owned()))?
+        .revision;
+    store.mutate_task(task_id, revision, &now_rfc3339(), mutation)
+}
+
+fn param_str<'a>(request: &'a Value, pointer: &str) -> &'a str {
+    request
+        .pointer(pointer)
+        .and_then(Value::as_str)
+        .unwrap_or("")
+}
+
+fn production_request(
+    state: &mut HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(services) = state.production.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.production.unavailable",
+            "errors.production.unavailable",
+            "unavailable",
+        ));
+    };
+    let command_id = request.get("commandId").and_then(Value::as_str).unwrap_or("");
+    let outcome: Result<FrameOutcome, ProductionError> = match method {
+        "production.startInspection" => {
+            start_inspection(state, &services, request, request_id, correlation_id, command_id)
+        }
+        "production.getInspection" => get_task_payload(state, request, request_id, "inspection"),
+        "production.requestPlan" => {
+            request_plan(state, &services, request, request_id, correlation_id, command_id)
+        }
+        "production.getPlan" => get_task_payload(state, request, request_id, "plan"),
+        "production.confirmPlan" => {
+            confirm_plan(state, &services, request, request_id, correlation_id, command_id, false)
+        }
+        "production.recover" => {
+            confirm_plan(state, &services, request, request_id, correlation_id, command_id, true)
+        }
+        "production.getBuildRecord" => get_build_record(state, request, request_id),
+        _ => Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        ))),
+    };
+    match outcome {
+        Ok(outcome) => outcome,
+        Err(error) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            error.code,
+            error.message_key,
+            error.category,
+        )),
+    }
+}
+
+struct ProductionError {
+    code: &'static str,
+    message_key: &'static str,
+    category: &'static str,
+}
+
+impl From<SqliteStoreError> for ProductionError {
+    fn from(error: SqliteStoreError) -> Self {
+        Self {
+            code: store_error_code(&error),
+            message_key: "errors.provider.persistence",
+            category: store_error_category(&error),
+        }
+    }
+}
+
+fn validation_error(code: &'static str, message_key: &'static str) -> ProductionError {
+    ProductionError { code, message_key, category: "validation" }
+}
+
+/// Accepts a production task idempotently and drives the staged
+/// Queued → Preparing → Running transitions shared by every command.
+fn accept_production_task(
+    state: &HostState,
+    command_kind: &str,
+    command_id: &str,
+    fingerprint_input: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<(String, Option<FrameOutcome>), ProductionError> {
+    if command_id.is_empty() {
+        return Err(validation_error(
+            "vua.production.invalid_command",
+            "errors.production.invalidCommand",
+        ));
+    }
+    let task_id = production_task_id(command_id);
+    let new_task = NewTask {
+        task_id: task_id.clone(),
+        correlation_id: correlation_id.to_owned(),
+        occurred_at: now_rfc3339(),
+    };
+    let acceptance = state.store.accept_idempotent_task(
+        command_kind,
+        command_id,
+        &request_fingerprint(fingerprint_input),
+        &new_task,
+        &json!({"kind": command_kind}),
+    )?;
+    match acceptance {
+        // A replayed commandId answers with the task's CURRENT snapshot, so
+        // re-polling a command never shows a stale acceptance-time stub.
+        IdempotentTaskAcceptance::Replayed { .. } => {
+            let task = state
+                .store
+                .task(&task_id)?
+                .ok_or_else(|| SqliteStoreError::UnknownTask(task_id.clone()))?;
+            Ok((
+                task_id,
+                Some(FrameOutcome::Response(application_success(
+                    request_id,
+                    json!({
+                        "contractVersion": APPLICATION_CONTRACT_VERSION,
+                        "task": task_snapshot(state, &task),
+                    }),
+                ))),
+            ))
+        }
+        IdempotentTaskAcceptance::Accepted { .. } => {
+            advance_production_task(
+                &state.store,
+                &task_id,
+                TaskMutation::Transition { state: TaskState::Preparing, payload: json!({}) },
+            )?;
+            advance_production_task(
+                &state.store,
+                &task_id,
+                TaskMutation::Transition { state: TaskState::Running, payload: json!({}) },
+            )?;
+            Ok((task_id, None))
+        }
+    }
+}
+
+fn start_inspection(
+    state: &HostState,
+    services: &Arc<ProductionServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+    command_id: &str,
+) -> Result<FrameOutcome, ProductionError> {
+    let source_folder = param_str(request, "/params/sourceFolder").to_owned();
+    let (task_id, replayed) = accept_production_task(
+        state,
+        "production.startInspection",
+        command_id,
+        &json!({"kind": "production.startInspection", "commandId": command_id, "sourceFolder": source_folder}),
+        request_id,
+        correlation_id,
+    )?;
+    if let Some(outcome) = replayed {
+        return Ok(outcome);
+    }
+
+    let inspection = services
+        .engine
+        .inspect_folder(Path::new(&source_folder), correlation_id)
+        .map_err(|error| persist_task_error(&state.store, &task_id, error))?;
+    let result = serde_json::to_value(&inspection)
+        .map_err(|_| SqliteStoreError::CorruptValue { field: "inspection", value: "json".into() })?;
+    advance_production_task(
+        &state.store,
+        &task_id,
+        TaskMutation::Complete { state: TaskState::Succeeded, error: None, result: Some(result) },
+    )?;
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
+        }),
+    )))
+}
+
+fn request_plan(
+    state: &HostState,
+    services: &Arc<ProductionServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+    command_id: &str,
+) -> Result<FrameOutcome, ProductionError> {
+    let inspection_task_id = param_str(request, "/params/inspectionTaskId").to_owned();
+    let mode_raw = param_str(request, "/params/mode").to_owned();
+    let project_id = param_str(request, "/params/projectId").to_owned();
+    let project_fingerprint = param_str(request, "/params/projectFingerprint").to_owned();
+    if inspection_task_id.is_empty()
+        || mode_raw.is_empty()
+        || project_id.is_empty()
+        || project_fingerprint.is_empty()
+    {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
+    let mode: MaterialEntryMode = serde_json::from_value(Value::String(mode_raw))
+        .map_err(|_| {
+            validation_error(
+                "vua.production.invalid_params",
+                "errors.production.invalidParams",
+            )
+        })?;
+
+    let inspection_task = state
+        .store
+        .task(&inspection_task_id)?
+        .ok_or_else(|| {
+            validation_error("vua.task.not_found", "errors.task.notFound")
+        })?;
+    let inspection: SourceFolderInspectionV01 = serde_json::from_value(
+        inspection_task.result.clone().unwrap_or(Value::Null),
+    )
+    .map_err(|_| {
+        validation_error(
+            "vua.production.inspection_mismatch",
+            "errors.production.inspectionMismatch",
+        )
+    })?;
+
+    let (task_id, replayed) = accept_production_task(
+        state,
+        "production.requestPlan",
+        command_id,
+        &json!({"kind": "production.requestPlan", "commandId": command_id}),
+        request_id,
+        correlation_id,
+    )?;
+    if let Some(outcome) = replayed {
+        return Ok(outcome);
+    }
+
+    let plan = services
+        .engine
+        .plan(mode, project_id, project_fingerprint, inspection, correlation_id)
+        .map_err(|error| persist_task_error(&state.store, &task_id, error))?;
+    let result = serde_json::to_value(&plan)
+        .map_err(|_| SqliteStoreError::CorruptValue { field: "plan", value: "json".into() })?;
+    advance_production_task(
+        &state.store,
+        &task_id,
+        TaskMutation::Complete { state: TaskState::Succeeded, error: None, result: Some(result) },
+    )?;
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
+        }),
+    )))
+}
+
+/// Builds and runs the confirmed material intake (shared by confirmPlan and
+/// recover; recover additionally requires a user decision id).
+fn confirm_plan(
+    state: &HostState,
+    services: &Arc<ProductionServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+    command_id: &str,
+    recovery: bool,
+) -> Result<FrameOutcome, ProductionError> {
+    let plan_task_id = param_str(request, "/params/planTaskId").to_owned();
+    let source_folder = param_str(request, "/params/sourceFolder").to_owned();
+    let project_root = param_str(request, "/params/projectRoot").to_owned();
+    let artifact_output_root = param_str(request, "/params/artifactOutputRoot").to_owned();
+    let confirmed_at = param_str(request, "/params/confirmedAt").to_owned();
+    let risk_choice = param_str(request, "/params/riskChoice").to_owned();
+    let remember_for_session = request
+        .pointer("/params/rememberForSession")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let user_decision_id = param_str(request, "/params/userDecisionId").to_owned();
+    if recovery && user_decision_id.trim().is_empty() {
+        return Err(validation_error(
+            "vua.production.user_decision_required",
+            "errors.production.userDecisionRequired",
+        ));
+    }
+    if plan_task_id.is_empty()
+        || source_folder.is_empty()
+        || project_root.is_empty()
+        || artifact_output_root.is_empty()
+        || risk_choice.is_empty()
+    {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
+
+    let plan_task =
+        state.store.task(&plan_task_id)?.ok_or_else(|| {
+            validation_error("vua.task.not_found", "errors.task.notFound")
+        })?;
+    let plan: MaterialIntakePlanV01 = serde_json::from_value(
+        plan_task.result.clone().unwrap_or(Value::Null),
+    )
+    .map_err(|_| {
+        validation_error("vua.production.plan_mismatch", "errors.production.planMismatch")
+    })?;
+    let choice: RiskDecisionChoice = serde_json::from_value(Value::String(risk_choice))
+        .map_err(|_| {
+            validation_error(
+                "vua.production.invalid_params",
+                "errors.production.invalidParams",
+            )
+        })?;
+    let confirmation = MaterialIntakeConfirmationV01 {
+        plan: plan.clone(),
+        risk_decision: RiskDecisionV01 {
+            choice,
+            source_fingerprint: plan.source.source_fingerprint.clone(),
+            risk_fingerprint: plan.source.risk_fingerprint.clone(),
+            remember_for_session,
+        },
+        confirmed_at: if confirmed_at.is_empty() { now_rfc3339() } else { confirmed_at },
+        correlation_id: correlation_id.to_owned(),
+    };
+
+    let (task_id, replayed) = accept_production_task(
+        state,
+        if recovery { "production.recover" } else { "production.confirmPlan" },
+        command_id,
+        &json!({"kind": "production.confirmPlan", "commandId": command_id}),
+        request_id,
+        correlation_id,
+    )?;
+    if let Some(outcome) = replayed {
+        return Ok(outcome);
+    }
+
+    let token = MaterialCancelToken::new();
+    services
+        .running
+        .lock()
+        .expect("running poisoned")
+        .insert(task_id.clone(), token.clone());
+
+    // The task is already Running (accept_production_task drove it there);
+    // the worker completes it through the store from its own thread.
+
+    let store = Arc::clone(&state.store);
+    let executor = Arc::clone(&services.executor);
+    let services_for_worker = Arc::clone(services);
+    let worker_task_id = task_id.clone();
+    let worker_request_id = request_id.to_owned();
+    std::thread::spawn(move || {
+        let project = ProjectRef { id: confirmation.plan.project_id.clone(), root: PathBuf::from(&project_root) };
+        let report = executor.execute(
+            &confirmation,
+            Path::new(&source_folder),
+            &project,
+            Path::new(&artifact_output_root),
+            &token,
+        );
+        services_for_worker
+            .running
+            .lock()
+            .expect("running poisoned")
+            .remove(&worker_task_id);
+
+        let result = MaterialTaskResult {
+            plan_id: report.plan_id.clone(),
+            status: match report.status {
+                MaterialExecutionStatus::Succeeded => "succeeded".to_owned(),
+                MaterialExecutionStatus::Cancelled => "cancelled".to_owned(),
+                MaterialExecutionStatus::Failed => "failed".to_owned(),
+            },
+            error_code: report.error_code.clone(),
+            rollback: match report.rollback {
+                RollbackOutcome::NotNeeded => "not_needed".to_owned(),
+                RollbackOutcome::Restored => "restored".to_owned(),
+                RollbackOutcome::Failed => "failed".to_owned(),
+            },
+            build_record_id: report.build_record_id.clone(),
+            replayed: report.replayed,
+        };
+        let result_value = serde_json::to_value(&result).ok();
+        let mutation = match report.status {
+            MaterialExecutionStatus::Succeeded => TaskMutation::Complete {
+                state: TaskState::Succeeded,
+                error: None,
+                result: result_value,
+            },
+            MaterialExecutionStatus::Cancelled => TaskMutation::Complete {
+                state: TaskState::Cancelled,
+                error: None,
+                result: result_value,
+            },
+            MaterialExecutionStatus::Failed => TaskMutation::Complete {
+                state: TaskState::Failed,
+                error: Some(
+                    AppErrorV1::new(
+                        report
+                            .error_code
+                            .clone()
+                            .unwrap_or_else(|| "vua.material.failed".to_owned()),
+                        ErrorCategory::ExternalFailure,
+                        "errors.material.executionFailed",
+                        &confirmation.correlation_id,
+                    )
+                    .with_param(
+                        "planId",
+                        crate::contracts::ParamValue::Text(report.plan_id.clone()),
+                    )
+                    .with_recoverable(true),
+                ),
+                result: result_value,
+            },
+        };
+        if let Ok(Some(event)) = advance_production_task(&store, &worker_task_id, mutation) {
+            services_for_worker
+                .completed_events
+                .lock()
+                .expect("completed events poisoned")
+                .push(event);
+        }
+        let _ = worker_request_id;
+    });
+
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
+        }),
+    )))
+}
+
+fn get_task_payload(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    kind: &str,
+) -> Result<FrameOutcome, ProductionError> {
+    let task_id = param_str(request, "/params/taskId").to_owned();
+    let task = state
+        .store
+        .task(&task_id)?
+        .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "taskId": task.task_id,
+            "state": state_name(task.state),
+            kind: task.result,
+        }),
+    )))
+}
+
+fn get_build_record(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+) -> Result<FrameOutcome, ProductionError> {
+    let services = state.production.as_ref().expect("checked by production_request");
+    let plan_id = param_str(request, "/params/planId").to_owned();
+    if plan_id.is_empty() {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
+    let record_id = if plan_id.starts_with("material-") {
+        plan_id.clone()
+    } else {
+        format!("material-{plan_id}")
+    };
+    let record = services
+        .records
+        .read(&record_id)
+        .map_err(|_| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+    let value = serde_json::to_value(&record).map_err(|_| {
+        validation_error("vua.production.record_invalid", "errors.production.recordInvalid")
+    })?;
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "buildRecord": value,
+        }),
+    )))
+}
+
+/// Fails a task with the given application error; used when an inline stage
+/// (Inspect/Plan) fails so the authoritative terminal state is persisted.
+fn persist_task_error(
+    store: &SqliteTaskStore,
+    task_id: &str,
+    error: AppErrorV1,
+) -> ProductionError {
+    let _ = advance_production_task(
+        store,
+        task_id,
+        TaskMutation::Complete {
+            state: TaskState::Failed,
+            error: Some(error),
+            result: None,
+        },
+    );
+    ProductionError {
+        code: "vua.production.stage_failed",
+        message_key: "errors.production.stageFailed",
+        category: "external_failure",
+    }
+}
+
+
 
 fn write_frame(
     output: &mut impl Write,
@@ -1003,9 +1673,10 @@ mod tests {
             )
             .unwrap();
         let mut state = HostState {
-            store,
+            store: Arc::new(store),
             provider_instance_id: "provider-test".into(),
             recovered_nonterminal_tasks: HashSet::new(),
+            production: None,
         };
 
         let prepare = InboundFrame {

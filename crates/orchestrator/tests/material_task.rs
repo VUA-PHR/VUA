@@ -11,7 +11,8 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BridgeError, BuildRecordStore, BuildRecordStatus, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutor, MaterialIntakeConfirmationV01,
+    LocalPackageIdentityStore, MaterialCancelToken, MaterialEntryMode, MaterialExecutor,
+    MaterialIntakeConfirmationV01,
     MaterialIntakeEngine, MaterialIntakePlanV01, MaterialIntakeTaskSpec, ProjectRef, ResultStatus,
     RiskDecisionChoice, RiskDecisionV01, TaskRuntime, TaskState, UnityBridge, UnityCommand,
     UnityResult, VpmBackend, VpmCapabilities,
@@ -185,6 +186,7 @@ fn b3_task_001_happy_path_runs_and_replays() {
     let confirmation = confirmation(&plan);
 
     let (executor, bridge) = build_executor(&base, FakeBridge::new());
+    let token = MaterialCancelToken::new();
     let rt = runtime();
     let accepted = vua_orchestrator::submit_material_intake(
         &rt,
@@ -194,6 +196,7 @@ fn b3_task_001_happy_path_runs_and_replays() {
             source_folder: source.clone(),
             project: project.clone(),
             artifact_output_root: base.join("artifacts"),
+            token: token.clone(),
         },
         Some(Duration::from_secs(120)),
     )
@@ -208,7 +211,13 @@ fn b3_task_001_happy_path_runs_and_replays() {
     assert_eq!(bridge.command_count(), 2, "one import + one validation");
 
     // The published receipt makes a direct re-run a replay: no Unity traffic.
-    let second = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    let second = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
     assert!(second.replayed, "replay must not touch Unity");
     assert_eq!(bridge.command_count(), 2);
     if base.exists() {
@@ -235,7 +244,8 @@ fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
     // executor publishes no receipt (same semantics as b3_exec_003) — a
     // later re-run simply runs fresh.
     let (executor, bridge) = build_executor(&base, FakeBridge::new());
-    executor.cancel();
+    let token = MaterialCancelToken::new();
+    token.cancel();
     let rt = runtime();
     let accepted = vua_orchestrator::submit_material_intake(
         &rt,
@@ -245,6 +255,7 @@ fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
             source_folder: source.clone(),
             project: project.clone(),
             artifact_output_root: base.join("artifacts"),
+            token: token.clone(),
         },
         None,
     )
