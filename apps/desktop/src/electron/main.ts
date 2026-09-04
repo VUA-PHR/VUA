@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ipcMain, session, shell } from "electron";
+import fs from "node:fs";
 import path from "node:path";
 import type { ApplicationEventV01 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
@@ -13,6 +14,8 @@ import {
 
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
+let provider: OrchestratorProviderV01 | null = null;
+let shutdownStarted = false;
 
 function assertLocalSender(senderUrl: string): void {
   if (!isAllowedLocalSender(senderUrl, rendererUrl)) throw new Error("untrusted renderer origin");
@@ -29,6 +32,35 @@ function broadcastGatewayEvent(rendererUrl: string | undefined, event: Applicati
       window.webContents.send("vua:gateway:event", event);
     }
   }
+}
+
+/**
+ * 受监督 Provider 端点解析(M2):
+ * - 可执行文件:VUA_PROVIDER_EXECUTABLE 覆盖,否则取仓库构建产物
+ *   (dist/electron 相对仓库根上溯四级);文件缺失即启动失败——
+ *   诚实失败优于静默回落 Mock;
+ * - 任务库:用户数据目录,跨重启持久(重启恢复验收的权威来源)。
+ */
+function resolveProviderEndpoint(): { executablePath: string; databasePath: string } {
+  const platformSuffix = process.platform === "win32" ? ".exe" : "";
+  const executablePath = process.env.VUA_PROVIDER_EXECUTABLE
+    ?? path.join(
+      __dirname,
+      "..",
+      "..",
+      "..",
+      "..",
+      "target",
+      "release",
+      `vua-orchestrator-provider${platformSuffix}`,
+    );
+  if (!fs.existsSync(executablePath)) {
+    throw new Error(
+      `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-orchestrator --bin vua-orchestrator-provider)`,
+    );
+  }
+  const databasePath = path.join(app.getPath("userData"), "orchestrator", "provider.db");
+  return { executablePath, databasePath };
 }
 
 function registerIpc(provider: OrchestratorProviderV01): void {
@@ -80,7 +112,7 @@ async function createWindow(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
-  const provider = createDesktopOrchestratorProvider();
+  provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
   await provider.start();
   provider.subscribe((event) => broadcastGatewayEvent(rendererUrl, event));
   installPermissionDenyPolicy(session.defaultSession);
@@ -93,4 +125,31 @@ app.whenReady().then(async () => {
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
+});
+
+/**
+ * 进程关闭协议(M2 交付):退出前先 prepareShutdown——关闭新调用入口并等待
+ * 在途修改任务到安全边界;超时出现阻塞任务时,当前阶段尚无用户询问 UI,
+ * 以 Kernel 生成的用户决定 ID 强制退出(F3 任务中心接入询问流),遗留任务
+ * 由 SQLite 权威状态标记 inspect_required,下次启动如实呈现。
+ */
+app.on("before-quit", (event) => {
+  if (provider === null || shutdownStarted || provider.status().state === "stopped") return;
+  event.preventDefault();
+  shutdownStarted = true;
+  void (async () => {
+    try {
+      const result = await provider!.prepareShutdown({ timeoutMs: 3_000 });
+      if (result.outcome === "needs_user_choice") {
+        await provider!.continueShutdown({
+          decision: "force",
+          userDecisionId: crypto.randomUUID(),
+        });
+      }
+    } catch {
+      /* Provider 已不可达:进程树遏制保证子进程随后终止 */
+    } finally {
+      app.quit();
+    }
+  })();
 });

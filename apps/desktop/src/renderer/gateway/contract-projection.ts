@@ -50,6 +50,8 @@ export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
     originPage: "home",
     cancellable: !task.cancellationRequested && !isTerminalTaskStateV01(task.state),
     ...(task.error === undefined ? {} : { errorText: task.error.code }),
+    // 重启恢复(M2):遗留非终态任务如实标注,前端不得当作仍在执行
+    ...(task.recoveryDisposition === "inspect_required" ? { errorText: "inspect_required" } : {}),
   };
 }
 

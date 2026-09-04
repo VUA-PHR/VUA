@@ -46,6 +46,17 @@ describe("contract task state projection", () => {
     expect(projectTaskItem(task({ state: "succeeded" })).cancellable).toBe(false);
   });
 
+  it("marks restart-leftover tasks as inspect_required, never as running", () => {
+    const leftover = task({
+      state: "running",
+      recoveryDisposition: "inspect_required",
+    });
+    const item = projectTaskItem(leftover);
+    expect(item.status).toBe("running");
+    expect(item.errorText).toBe("inspect_required");
+    expect(item.cancellable).toBe(true);
+  });
+
   it("carries the contract error code as the engineering error text", () => {
     const failed = task({
       state: "failed",
