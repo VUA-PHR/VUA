@@ -2,102 +2,149 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
-> Status: B1 candidate development contract
+> Status: B1/F2 candidate development contract
 > Scope: application semantics between the Electron Kernel and an Orchestrator Provider
-> Updated: 2026-09-02
-> Authority: constrains B1 implementation and tests; not stable Gateway v1 before real M2 integration
+> Updated: 2026-09-04
+> Authority: constrains B1/F2 implementation and tests; not stable Gateway v1 before real M2 integration
 
 ## Purpose and boundary
 
-This contract defines application values independent of hosting, FFI, processes, and message transport. Electron
-Main/Kernel maps allowed Gateway calls into this contract; a Provider explicitly maps the contract into Rust application
-use cases. Renderer code never sees Provider lifecycle objects, Rust types, SQLite rows, journal payloads, native
-handles, or child-process messages.
+This contract defines application values independent of hosting, FFI, processes, and message transport.
+Electron Main/Kernel maps allowed Gateway calls into this contract; a Provider explicitly maps the contract
+into Rust application use cases. The Renderer consumes only the Gateway surface mapped by the Kernel and
+never sees Provider lifecycle objects, Rust types, SQLite rows, journal payloads, or child-process messages.
 
-The version value is the string `0.1`. Every request, response, event, handshake, and lifecycle result carries it.
-Unknown versions are rejected explicitly and are never inferred from the product version or payload shape.
+The version value is the string `0.1`. Every request, response, event, handshake, and lifecycle result
+carries it; unknown versions are rejected explicitly.
 
-## Minimal B1 use-case surface
+## Versioning and evolution
 
-| Kind | Method | Semantics |
-| --- | --- | --- |
-| Query | `application.getSnapshot` | Returns the application revision and operation-level capabilities |
-| Query | `task.list` | Returns the authoritative snapshots of currently visible tasks |
-| Query | `task.get` | Returns one authoritative task snapshot |
-| Command | `task.requestCancellation` | Submits a monotonic, idempotent cancellation intent for a stable task instance |
+The method surface grows with vertical slices, and this document is the single registry: every new method
+must be registered here with its owning use case, port, and capability gating. Incremental registration
+within the same candidate version is allowed (both implementations evolve in sync inside this repository);
+at the M2 freeze the contract is promoted to stable Gateway v1 as a whole, and only later breaking changes
+require a version bump.
 
-B1 does not add Recipe, Assembly, environment deployment, or Unity mutation commands. Later vertical slices may add
-them only after their owning use cases and ports are defined.
+## Method surface
 
-## Identity, errors, and revision
+| Kind | Method | Semantics | Introduced |
+| --- | --- | --- | --- |
+| Query | `application.getSnapshot` | Returns the application revision and operation-level capabilities | B1 |
+| Query | `task.list` | Returns the authoritative snapshots of currently visible tasks | B1 |
+| Query | `task.get` | Returns one authoritative task snapshot | B1 |
+| Command | `task.requestCancellation` | Submits a monotonic, idempotent cancellation intent for a stable task instance | B1 |
+| Query | `environment.getSnapshot` | Returns the read-only environment presence snapshot for both zones | F2 |
+| Command | `task.startDemo` | Capability-gated demonstration command: creates one observable, cancellable demo task | F2 |
 
-- `requestId` identifies a call; `correlationId` links a user intent with its later task and diagnostics.
-- A mutation command carries a stable `commandId`. Duplicate IDs return the existing result or an explicit conflict
-  and never repeat side effects.
-- `AppErrorV01` uses a stable code, localization key and params, with separate `recoverable` and `retryable` flags. It
-  never carries SQL, stack traces, cookies, tokens, full user paths, or paid-asset filenames.
-- Queries return authoritative snapshot revisions. Task event revisions increase monotonically within a task. After a
-  duplicate or gap, consumers reload through `task.get` or `task.list`.
-- An Event reports a post-commit fact and is not an authoritative state replica. The B1 mock proves the semantic shape;
-  B2 proves publication after a SQLite transaction.
+`task.startDemo` is the end-to-end demonstration channel for the task experience (submit → observe →
+cancel), gated by an operation-level capability (such as `demo.task`); production builds may declare it
+unavailable. Once the first real use-case command lands (the F3 inspection page), it demotes to a test
+fixture and leaves the production capability table.
 
-## Tasks and cancellation
+## Identifiers
 
-The candidate outward task states are `queued`, `preparing`, `running`, `waiting_for_input`, `paused`, `succeeded`,
-`succeeded_with_warnings`, `failed`, and `cancelled`. The final four are terminal and cannot be overwritten by
-cancellation, timeout, or a late result.
+- `requestId` identifies one call; `correlationId` links one user intent with its subsequent tasks and
+  diagnostics;
+- Mutating commands carry a stable `commandId`: for a repeated ID the Provider returns the existing result
+  or an explicit conflict, never a repeated side effect.
 
-Every task snapshot carries `recoveryDisposition`. Normal tasks use `none`. A nonterminal task left by a process
-restart keeps its last truthful `state` and uses `inspect_required`. This does not claim that the task is still
-executing, and it must not be silently converted to paused or failed. The recovery use case must Inspect the external
-project before it offers continue or rollback.
+## Errors
 
-`task.requestCancellation` binds `taskId` and `commandId` and may carry the `observedRevision` visible when the user
-clicked. Normal progress does not reject cancellation when the revision has advanced; the observed value is diagnostic.
-The response distinguishes:
+`AppErrorV01` uses stable error codes, localization keys, and parameters, and marks `recoverable` and
+`retryable`. An error payload is interface data, not a diagnostic dump: credentials, SQL, stack traces,
+cookies, tokens, full user paths, and paid-asset file names never enter an error payload.
 
-- `requested`: cancellation intent was accepted for the first time;
-- `already_requested`: the task already has a cancellation intent;
-- `already_terminal`: the task has ended and its original terminal state remains unchanged.
+## Revision and events
 
-A cancellation request is not completed cancellation. The UI reports completion only after the task reaches a safe
-boundary and commits the `cancelled` terminal state.
+- Queries return an authoritative snapshot revision; per-task event revisions increase monotonically
+  within the task. When events repeat or skip, consumers re-fetch the snapshot via `task.get` or
+  `task.list`;
+- Events are notifications of fact, not authoritative state copies; authoritative state comes from
+  queries only.
 
-## Operation-level Capability
+## Task semantics
 
-A Capability reports `available` or `unavailable` for each stable `operationId`, with a structured reason when
-unavailable. Module-level ready/degraded/unavailable is presentation derived from operation entries and cannot override
-the conclusion for a specific operation.
+The external task states are nine: `queued`, `preparing`, `running`, `waiting_for_input`, `paused`,
+`succeeded`, `succeeded_with_warnings`, `failed`, `cancelled`; the last four are terminal, and terminal
+states are never overwritten by cancellation, timeouts, or late results.
 
-For example, a wrong Unity version can leave environment diagnosis available while blocking project mutation; offline
-package management can read cache while blocking refresh; a VCC/ALCOM project can support inspection without claiming
-VUA-native creation.
+A task snapshot carries `recoveryDisposition`: `none` for normal tasks; a non-terminal task left behind
+by a process restart keeps its last real state and is marked `inspect_required` — this does not mean it
+is still executing. Inspect the external project again first, then let the recovery use case decide
+whether to continue or roll back.
+
+`task.requestCancellation` binds `taskId` and `commandId` and may carry the `observedRevision` the user
+saw when clicking (diagnostic only; normal progress that changed the revision does not reject the
+cancellation). The response distinguishes `requested` / `already_requested` / `already_terminal`.
+Requesting cancellation is not cancellation: the UI may show cancellation as complete only after the task
+has ended at a safe boundary and committed the `cancelled` terminal state.
+
+A task created by `task.startDemo` follows exactly the same nine states, events, and cancellation
+semantics as a real task; the only difference is that its payload is a demonstration and carries no user
+data.
+
+## Environment snapshot semantics
+
+`environment.getSnapshot` returns **presence facts** for the two zones (`play` / `create`) and makes no
+severity ruling: each check carries a stable `checkId`, `zone`, `presence` (`detected` /
+`not_detected` / `detection_failed`), `capturedAt`, and engineering `facts` (raw observations such as
+paths, versions, byte counts). `errorCode` is set only when the observation itself failed; a missing
+component is a normal finding, not an error. Whether an absence constitutes a problem, and with what
+severity it is presented, is decided by the consumer (presentation layer, fix plans). The vocabulary
+stays aligned with the B6 environment detection spike (`EnvironmentSnapshotV1` in
+`crates/orchestrator/src/environment.rs`).
+
+## Operation-level capability
+
+Capability reports `available` / `unavailable` per operation under a stable `operationId`, with a
+structured reason for unavailable entries. Module-level "ready / degraded / unavailable" is only a
+presentation-side derivation of the operation entries and never overrides a concrete operation verdict.
+For example, a wrong Unity version can keep environment diagnostics available while rejecting project
+mutation; offline package management can allow cache reads while refusing refresh.
 
 ## Provider interface
 
-The Provider is a trusted Kernel-internal interface and supplies:
+The Provider is a trusted Kernel-internal interface providing:
 
-1. `start()`, returning supported application-contract versions, Provider build identity, and instance identity;
-2. `invoke()`, accepting only the explicit application request union, with no generic channel, reflection call, or
-   arbitrary method name;
-3. `subscribe()`, observing typed events; unsubscribing affects only the observer, never task lifetime;
-4. `prepareShutdown()`, first closing admission and then waiting for mutating tasks to reach a safe boundary for a
-   bounded duration;
-5. `continueShutdown()`, accepting only `wait` or `force` after timeout. `force` requires a user decision ID, and a
-   Provider never treats timeout itself as authorization to force stop.
+1. `start()`: returns the supported application contract version, Provider build identity, and instance
+   identity;
+2. `invoke()`: accepts only the explicit application request union — no generic channel and no arbitrary
+   method names;
+3. `subscribe()`: subscribes to typed application events; unsubscribing affects only the observer and
+   never the task lifecycle;
+4. `prepareShutdown()`: closes the entry for new calls first, then waits for in-flight mutating tasks to
+   reach a safe boundary within a bounded, explicit timeout;
+5. `continueShutdown()`: after the timeout accepts only `wait` or a `force` carrying a user decision ID;
+   a Provider never equates a timeout with a forced exit on its own.
 
-Normal shutdown returns `safe_to_stop`. A timeout returns `needs_user_choice` plus summaries of blocking tasks. Waiting
-starts another bounded interval. Force stop carries a Kernel-generated `userDecisionId` for diagnostics and recovery.
+A normal shutdown returns `safe_to_stop`; exceeding the limit returns `needs_user_choice` with a summary
+of still-blocking tasks. The Provider's hosting form, handshake framing, crash supervision, and process
+tree policy are defined by the
+[Supervised Provider Process Protocol v0.1](provider-process-v0.1_EN.md).
 
-Provider hosting shape, handshake framing, crash supervision, SQLite leases, and Windows process-tree policy are
-fixed by B2's [Supervised Provider Process Protocol v0.1](provider-process-v0.1_EN.md) and are not v0.1 application
-values.
+## Presentation projection
 
-## B1 verification gate
+The presentation layer may project contract vocabulary for display (state names, groupings, copy keys),
+but projections must be total: when the contract adds a state that a projection does not cover, tests
+fail rather than the code silently falling into a default branch. Projections never alter contract facts —
+caches, display, and diagnostics always reference the original contract values.
 
-- TypeScript types and runtime checks reject unknown versions, unknown methods, and mixed Command/Query shapes.
-- A mock Provider verifies read-only queries, idempotent cancellation, terminal-state priority, operation-level
-  Capability, and snapshot reload after an event gap.
-- A mock Provider verifies admission closure, safe shutdown, timeout choice, and the user-decision requirement for
-  force stop.
-- Tests have no dependency on Rust, Electron, FFI, network, SQLite, or real Unity.
+## Verification gates
+
+- TypeScript types and runtime checks reject unknown versions, unknown methods, and mixed
+  Command/Query shapes;
+- The mock Provider verifies read-only queries, command idempotency, terminal-state priority,
+  operation-level capability, and snapshot re-fetch after event gaps;
+- The mock Provider verifies that the demo task walks the full nine-state chain and is cancellable;
+- Stopping new calls, safe shutdown, post-timeout choices, and forced exit all require a user decision ID;
+- Mapping tests between the contract and presentation projections stay total;
+- Tests do not depend on Rust, Electron, FFI, network, SQLite, or real Unity.
+
+## Revision history
+
+- 2026-09-02: B1 candidate contract. Four-method minimal surface: `application.getSnapshot`,
+  `task.list`, `task.get`, `task.requestCancellation`.
+- 2026-09-04: F2 extension. Added `environment.getSnapshot` (aligned with the presence-fact vocabulary
+  of the B6 environment detection spike) and `task.startDemo` (capability-gated demo task command);
+  replaced the former "B1 does not add …" restriction paragraph with the "Versioning and evolution"
+  growth model; added "Presentation projection" and the corresponding verification gates.
