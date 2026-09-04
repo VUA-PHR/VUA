@@ -25,6 +25,7 @@ mod material_staging;
 mod model;
 mod process;
 mod project_identity;
+mod project_lock;
 mod provider_host;
 #[cfg(windows)]
 mod provider_job;
@@ -108,6 +109,12 @@ pub use process::{
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,
 };
 pub use project_identity::{ProjectIdentity, ProjectIdentityError};
+pub use project_lock::{
+    acquire_project_lock, begin_mutation, read_pending_mutation, LockEnvelopeV1, LockHolder,
+    MutationMarkerGuard, MutationMarkerV1, PendingMutation, ProjectLockError, ProjectLockGuard,
+    MUTATION_MARKER_SCHEMA_VERSION, PROJECT_LOCK_SCHEMA_VERSION, LOCK_FILE_NAME,
+    MARKER_FILE_NAME,
+};
 pub use provider_host::{run_provider_host, ProviderHostError, PROVIDER_FRAME_VERSION};
 #[cfg(windows)]
 pub use provider_job::ProviderJobGuard;
