@@ -244,6 +244,7 @@ fn label(operation: UnityOperation) -> &'static str {
     match operation {
         UnityOperation::InspectProject => "检查 Unity 项目",
         UnityOperation::ImportUnityPackage => "导入 Unity Package",
+        UnityOperation::MaterializeExtractedPackage => "物化已解包 Unity Package",
         UnityOperation::CreateLocalVpmPackage => "创建本地 VPM 包",
         UnityOperation::ValidateAssetPaths => "验证素材路径",
         UnityOperation::IdentifyAssets => "确认 Avatar 与衣装",

@@ -31,6 +31,7 @@ use crate::material_intake::{
     error_codes as intake_codes, MaterialEntryMode, MaterialIntakeConfirmationV01,
     MaterialIntakeEngine, MaterialIntakeStepKind,
 };
+use crate::material_identity::LocalPackageIdentityStore;
 use crate::material_staging::StagingProject;
 use crate::model::{
     ProjectRef, ResultStatus, UnityCommand, UnityOperation, UnityPayload, UnityResult,
@@ -39,6 +40,8 @@ use crate::time::Clock;
 use crate::vpm_backend::{PackageRequestV1, VpmBackend};
 use crate::UnityBridge;
 use serde::Serialize;
+use sha2::{Digest, Sha256};
+use std::io::Read as _;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -96,6 +99,7 @@ pub struct MaterialExecutor {
     clock: Arc<dyn Clock>,
     temp_root: PathBuf,
     unity_editor_version: String,
+    identity_store: LocalPackageIdentityStore,
     cancel: Arc<AtomicBool>,
 }
 
@@ -109,6 +113,7 @@ impl MaterialExecutor {
         clock: Arc<dyn Clock>,
         temp_root: impl Into<PathBuf>,
         unity_editor_version: impl Into<String>,
+        identity_store: LocalPackageIdentityStore,
     ) -> Self {
         Self {
             bridge,
@@ -118,6 +123,7 @@ impl MaterialExecutor {
             clock,
             temp_root: temp_root.into(),
             unity_editor_version: unity_editor_version.into(),
+            identity_store,
             cancel: Arc::new(AtomicBool::new(false)),
         }
     }
@@ -142,21 +148,39 @@ impl MaterialExecutor {
         artifact_output_root: &Path,
     ) -> MaterialExecutionReport {
         let plan = &confirmation.plan;
-        let record_id = format!("material-{}", plan.plan_id);
-
-        // A published receipt is the replay guard: the run already completed,
-        // so Unity is not touched again.
-        if self.records.read(&record_id).is_ok() {
-            return MaterialExecutionReport {
-                plan_id: plan.plan_id.clone(),
-                correlation_id: confirmation.correlation_id.clone(),
-                status: MaterialExecutionStatus::Succeeded,
-                completed_steps: Vec::new(),
-                error_code: None,
-                rollback: RollbackOutcome::NotNeeded,
-                build_record_id: Some(record_id),
-                replayed: true,
-            };
+        // The receipt is the replay guard — but only a SUCCEEDED receipt for
+        // the same plan hash, project, and source identity replays as
+        // success. Failed and cancelled receipts do not get to lie: a retry
+        // runs fresh and publishes under the next free attempt id, leaving
+        // the prior receipt untouched as audit history.
+        let mut record_id = format!("material-{}", plan.plan_id);
+        let mut attempt: u32 = 1;
+        loop {
+            match self.records.read(&record_id) {
+                Err(_) => break,
+                Ok(prior) => {
+                    let same_identity = prior.plan_hash == plan.plan_hash
+                        && prior.project_id == project.id
+                        && prior.source.source_fingerprint == plan.source.source_fingerprint
+                        && prior.source.risk_fingerprint == plan.source.risk_fingerprint;
+                    if prior.status == crate::build_record::BuildRecordStatus::Succeeded
+                        && same_identity
+                    {
+                        return MaterialExecutionReport {
+                            plan_id: plan.plan_id.clone(),
+                            correlation_id: confirmation.correlation_id.clone(),
+                            status: MaterialExecutionStatus::Succeeded,
+                            completed_steps: Vec::new(),
+                            error_code: None,
+                            rollback: RollbackOutcome::NotNeeded,
+                            build_record_id: Some(record_id),
+                            replayed: true,
+                        };
+                    }
+                    attempt += 1;
+                    record_id = format!("material-{}-attempt{}", plan.plan_id, attempt);
+                }
+            }
         }
 
         let mut report = MaterialExecutionReport {
@@ -196,7 +220,9 @@ impl MaterialExecutor {
 
         // CreateSnapshot: the minimum recovery point every mutating run owes
         // the user; the scope extends with the risk decision.
-        let snapshot_id = format!("{}-recovery", plan.plan_id);
+        // Attempt-unique: a prior failed attempt's recovery point must
+        // stay on disk as its own audit trail.
+        let snapshot_id = format!("{record_id}-recovery");
         let verified: VerifiedSnapshot = match self.snapshots.create_verified(
             project,
             &snapshot_id,
@@ -393,6 +419,16 @@ impl MaterialExecutor {
             // unpacked under .vua/imports/<command_id>/ (inside the
             // snapshot-protected project) and the Bridge materializes it
             // into Assets/.
+            let archive_path = source_folder.join(&package.relative_path);
+            let archive_digest = sha256_file(&archive_path).map_err(|error| {
+                (
+                    format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+            if archive_digest != package.sha256 {
+                return Err((intake_codes::SOURCE_DRIFT.to_owned(), MaterialExecutionStatus::Failed));
+            }
             let extracted_root = project.root.join(".vua/imports").join(&command_id);
             let archive_path = source_folder.join(&package.relative_path);
             let logical_paths = extract_package_into_dir(&archive_path, &extracted_root).map_err(
@@ -411,7 +447,7 @@ impl MaterialExecutor {
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
-                operation: UnityOperation::ImportUnityPackage,
+                operation: UnityOperation::MaterializeExtractedPackage,
                 project_id: project.id.clone(),
                 dry_run: false,
                 expected_project_fingerprint: Some(current_fingerprint.clone()),
@@ -462,7 +498,18 @@ impl MaterialExecutor {
             id: format!("{}-staging", plan.project_id),
             root: staging.root().to_path_buf(),
         };
-        let package_id = slugify_package_id(&plan.source.display_name);
+        // 用户裁定：包机器 ID 走持久身份库（同目录稳定、同名文件夹自动
+        // `名称 (2)`），而不是从显示名重新 slug。
+        let identity = self
+            .identity_store
+            .resolve(source_folder, &plan.source.display_name)
+            .map_err(|error| {
+                (
+                    format!("{}: {error}", error_codes::STAGING_FAILED),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+        let package_id = identity.package_id;
 
         // The fresh staging project needs its own fingerprint for its first
         // mutating command.
@@ -478,6 +525,16 @@ impl MaterialExecutor {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
             let command_id = format!("{}-stage-import-{}", plan.plan_id, bridge_jobs.len());
+            let archive_path = source_folder.join(&package.relative_path);
+            let archive_digest = sha256_file(&archive_path).map_err(|error| {
+                (
+                    format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+            if archive_digest != package.sha256 {
+                return Err((intake_codes::SOURCE_DRIFT.to_owned(), MaterialExecutionStatus::Failed));
+            }
             let extracted_root = staging.root().join(".vua/imports").join(&command_id);
             extract_package_into_dir(&source_folder.join(&package.relative_path), &extracted_root)
                 .map_err(|error| {
@@ -489,7 +546,7 @@ impl MaterialExecutor {
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
-                operation: UnityOperation::ImportUnityPackage,
+                operation: UnityOperation::MaterializeExtractedPackage,
                 project_id: staging_project.id.clone(),
                 dry_run: false,
                 expected_project_fingerprint: Some(staging_fingerprint.clone()),
@@ -516,7 +573,7 @@ impl MaterialExecutor {
             expected_project_fingerprint: Some(staging_fingerprint.clone()),
             payload: UnityPayload {
                 package_id: Some(package_id.clone()),
-                package_display_name: Some(plan.source.display_name.clone()),
+                package_display_name: Some(identity.display_name.clone()),
                 package_version: Some("0.1.0".to_owned()),
                 staging_token: Some(confirmation.correlation_id.clone()),
                 ..UnityPayload::default()
@@ -562,7 +619,7 @@ impl MaterialExecutor {
 
         *local_vpm = Some(crate::build_record::LocalVpmEvidenceV01 {
             package_id,
-            display_name: plan.source.display_name.clone(),
+            display_name: identity.display_name.clone(),
             version: "0.1.0".to_owned(),
             manifest_sha256: artifact.manifest_sha256,
             tree_sha256: artifact.tree_sha256,
@@ -720,6 +777,7 @@ fn extract_package_into_dir(
     // Pass 2: dump the archive verbatim under extracted_root so the Bridge
     // can materialize each guid folder at its logical path.
     fs::create_dir_all(extracted_root)?;
+    let mut manifest_lines: Vec<String> = Vec::new();
     {
         let file = File::open(archive_path)?;
         let mut archive = Archive::new(GzDecoder::new(file));
@@ -739,34 +797,42 @@ fn extract_package_into_dir(
             }
             let mut bytes = Vec::new();
             entry.read_to_end(&mut bytes)?;
+            let mut hasher = Sha256::new();
+            hasher.update(&bytes);
+            let mut digest = String::new();
+            for byte in hasher.finalize() {
+                use std::fmt::Write as _;
+                write!(&mut digest, "{byte:02x}").expect("writing to String");
+            }
+            manifest_lines.push(format!("sha256:{digest}  {entry_path}"));
             fs::write(target, &bytes)?;
         }
     }
 
+    fs::write(
+        extracted_root.join("manifest.sha256"),
+        manifest_lines.join("
+") + "
+",
+    )?;
+
     Ok(folders.into_iter().map(|(_, logical)| logical).collect())
 }
 
-/// Package id rule from the Bridge: `^[a-z0-9][a-z0-9._-]{2,127}$`. The
-/// display name is lowercased and every foreign character collapses to `-`.
-fn slugify_package_id(display: &str) -> String {
-    let mut slug = String::new();
-    for character in display.chars() {
-        let character = character.to_ascii_lowercase();
-        if character.is_ascii_lowercase()
-            || character.is_ascii_digit()
-            || matches!(character, '.' | '-' | '_')
-        {
-            slug.push(character);
-        } else {
-            slug.push('-');
+/// SHA-256 of a file on disk — binds the extracted layout to the
+/// digest-verified archive before any content reaches the Bridge.
+fn sha256_file(path: &Path) -> std::io::Result<String> {
+    let mut file = fs::File::open(path)?;
+    let mut hasher = Sha256::new();
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let read = file.read(&mut buffer)?;
+        if read == 0 {
+            break;
         }
+        hasher.update(&buffer[..read]);
     }
-    let slug = slug.trim_matches('-').to_owned();
-    if slug.chars().count() >= 3 {
-        slug
-    } else {
-        format!("pkg-{slug}")
-    }
+    Ok(crate::material_intake::sha256_text(hasher.finalize().as_ref()))
 }
 
 fn fingerprint_of(result: &UnityResult) -> Option<String> {

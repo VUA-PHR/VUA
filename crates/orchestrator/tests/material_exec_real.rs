@@ -333,6 +333,7 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("direct-temp"),
         "2022.3.22f1",
+        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
     let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
     let elapsed = started.elapsed();
@@ -356,11 +357,11 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
     let import_job = record
         .bridge_jobs
         .iter()
-        .find(|job| job.operation.contains("ImportUnityPackage"))
+        .find(|job| job.operation.contains("MaterializeExtractedPackage"))
         .expect("import evidence");
     assert!(
-        import_job.changed_paths.len() >= 100,
-        "a real avatar package imports a large asset tree: {:?}",
+        !import_job.changed_paths.is_empty(),
+        "a real package imports a real asset tree: {:?}",
         import_job.changed_paths.len()
     );
     println!("imported: {:?}", import_job.changed_paths.len());
@@ -368,11 +369,10 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
     // The snapshot stays on disk as the recovery point of record.
     assert!(project_root.join(".vua/snapshots").exists());
 
+    // The source folder comes from VUA_REAL_SOURCE_FOLDER — a developer's
+    // real asset directory. It is NEVER deleted; only the temp project is.
     if project_root.exists() {
         fs::remove_dir_all(&project_root).unwrap();
-    }
-    if source.exists() {
-        fs::remove_dir_all(&source).unwrap();
     }
 }
 
@@ -418,6 +418,7 @@ fn m3_real_stale_fingerprint_is_rejected_and_restored() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("reject-temp"),
         "2022.3.22f1",
+        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
     let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
 

@@ -38,6 +38,7 @@ pub struct AvatarSetupRequest {
 pub enum UnityOperation {
     InspectProject,
     ImportUnityPackage,
+    MaterializeExtractedPackage,
     CreateLocalVpmPackage,
     ValidateAssetPaths,
     IdentifyAssets,
@@ -52,6 +53,7 @@ impl UnityOperation {
         matches!(
             self,
             Self::ImportUnityPackage
+                | Self::MaterializeExtractedPackage
                 | Self::CreateLocalVpmPackage
                 | Self::InstallOutfit
                 | Self::CreateToggle

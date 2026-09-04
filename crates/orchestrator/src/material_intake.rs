@@ -517,7 +517,7 @@ fn digest_json(value: &impl Serialize, correlation_id: &str) -> Result<String, A
     Ok(sha256_text(Sha256::digest(bytes).as_ref()))
 }
 
-fn sha256_text(bytes: &[u8]) -> String {
+pub(crate) fn sha256_text(bytes: &[u8]) -> String {
     let mut output = String::with_capacity(7 + bytes.len() * 2);
     output.push_str("sha256:");
     for byte in bytes {

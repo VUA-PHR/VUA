@@ -212,6 +212,7 @@ fn orc_typ_005_unity_bridge_examples_and_operation_enum_stay_in_sync() {
     let rust_operations = [
         UnityOperation::InspectProject,
         UnityOperation::ImportUnityPackage,
+        UnityOperation::MaterializeExtractedPackage,
         UnityOperation::CreateLocalVpmPackage,
         UnityOperation::ValidateAssetPaths,
         UnityOperation::IdentifyAssets,

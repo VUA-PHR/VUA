@@ -14,10 +14,11 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BuildRecordStore, BridgeError, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
-    MaterialEntryMode, MaterialExecutionStatus, MaterialExecutor, MaterialIntakeConfirmationV01,
-    MaterialIntakeEngine, MaterialIntakePlanV01, PackageRequestV1, ProjectRef, ResultStatus,
-    RiskDecisionChoice, RiskDecisionV01, RollbackOutcome, SourceFolderInspectionV01, UnityBridge,
-    UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+    LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutionStatus, MaterialExecutor,
+    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, PackageRequestV1,
+    ProjectRef, ResultStatus, RiskDecisionChoice, RiskDecisionV01, RollbackOutcome,
+    SourceFolderInspectionV01, UnityBridge, UnityCommand, UnityResult, VpmBackend,
+    VpmCapabilities,
 };
 
 // --- fixtures ---
@@ -258,6 +259,7 @@ fn executor(base: &Path, bridge: FakeBridge, vpm: Arc<FakeVpm>) -> MaterialExecu
         Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
         base.join("temp"),
         "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
     )
 }
 
@@ -292,7 +294,7 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     // plan's project fingerprint and the package digests.
     assert_eq!(bridge.command_count(), 2);
     let commands = bridge.state.lock().unwrap().commands.clone();
-    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::ImportUnityPackage);
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::MaterializeExtractedPackage);
     assert_eq!(
         commands[0].expected_project_fingerprint.as_deref(),
         Some("project-fingerprint")
@@ -455,7 +457,7 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     let commands = bridge.state.lock().unwrap().commands.clone();
     assert_eq!(commands.len(), 4);
     assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::InspectProject);
-    assert_eq!(commands[1].operation, vua_orchestrator::UnityOperation::ImportUnityPackage);
+    assert_eq!(commands[1].operation, vua_orchestrator::UnityOperation::MaterializeExtractedPackage);
     assert_eq!(commands[2].operation, vua_orchestrator::UnityOperation::CreateLocalVpmPackage);
     for command in &commands[..3] {
         assert!(command.project_id.ends_with("-staging"));
@@ -484,7 +486,84 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
         .read(&format!("material-{}", confirmation.plan.plan_id))
         .expect("receipt published");
     let local_vpm = record.local_vpm.expect("local vpm evidence");
-    assert_eq!(local_vpm.package_id, "source");
+    assert!(
+        local_vpm.package_id.starts_with("com.ph-r.vua.local.source."),
+        "machine id comes from the identity store: {}",
+        local_vpm.package_id
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- review findings: failed receipts never replay as success; same-name
+// sources get distinct machine identities ---
+
+#[test]
+fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
+    let (base, project) = make_world("retry-after-failure");
+    let source = base.join("source");
+
+    // Attempt 1: the real Bridge rejects the import; the receipt records
+    // the failure.
+    let rejection = vec![Ok(UnityResult {
+        schema_version: 1,
+        command_id: "rejected".into(),
+        status: ResultStatus::Rejected,
+        changed_paths: vec![],
+        diagnostics: vec![],
+        data: serde_json::json!({}),
+    })];
+    let bridge = FakeBridge::new(rejection);
+    let first_executor = executor(&base, bridge.clone(), FakeVpm::new());
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let first = first_executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    assert_eq!(first.status, MaterialExecutionStatus::Failed);
+    let failed_record_id = first.build_record_id.expect("failed run records");
+
+    // Attempt 2: a retry runs FRESH — Unity is invoked again, and the new
+    // receipt is published under the next free attempt id without touching
+    // the failed one.
+    let bridge = FakeBridge::new(vec![]);
+    let retry_executor = executor(&base, bridge.clone(), FakeVpm::new());
+    let second = retry_executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    println!("second: {second:?}");
+
+    assert_eq!(second.status, MaterialExecutionStatus::Succeeded);
+    assert!(!second.replayed, "a failed receipt must never replay as success");
+    assert_eq!(bridge.command_count(), 2, "the retry really executed");
+    assert_ne!(second.build_record_id.as_deref(), Some(failed_record_id.as_str()));
+
+    let store = vua_orchestrator::BuildRecordStore::new(base.join("records"));
+    let failed = store.read(&failed_record_id).expect("failed receipt intact");
+    assert_eq!(failed.status, vua_orchestrator::BuildRecordStatus::Failed);
+    let retried = store.read(second.build_record_id.as_deref().unwrap()).unwrap();
+    assert_eq!(retried.status, vua_orchestrator::BuildRecordStatus::Succeeded);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_008_same_name_sources_resolve_distinct_machine_identities() {
+    let base = temp_dir("identity");
+    let source_one = base.join("one").join("source");
+    let source_two = base.join("two").join("source");
+    for folder in [&source_one, &source_two] {
+        fs::create_dir_all(folder).unwrap();
+        unitypackage(&folder.join("pack.unitypackage"), &["Assets/Asset.prefab"]);
+    }
+    let store = LocalPackageIdentityStore::new(base.join("identities.json"));
+
+    let identity_one = store.resolve(&source_one, "source").expect("identity one");
+    let identity_two = store.resolve(&source_two, "source").expect("identity two");
+
+    assert_ne!(identity_one.package_id, identity_two.package_id);
+    assert_eq!(identity_one.display_name, "source");
+    assert_eq!(identity_two.display_name, "source (2)");
+    // Stable across repeat resolution.
+    let again = store.resolve(&source_one, "source").unwrap();
+    assert_eq!(again.package_id, identity_one.package_id);
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }

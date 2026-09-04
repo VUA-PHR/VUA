@@ -13,6 +13,7 @@
       "enum": [
         "inspect_project",
         "import_unity_package",
+        "materialize_extracted_package",
         "create_local_vpm_package",
         "validate_asset_paths",
         "identify_assets",
@@ -97,6 +98,17 @@
     {
       "if": {
         "properties": { "operation": { "const": "import_unity_package" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "required": ["sourcePackagePath", "sourcePackageSha256"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "materialize_extracted_package" } },
         "required": ["operation"]
       },
       "then": {
@@ -200,7 +212,7 @@
       "if": {
         "properties": {
           "operation": {
-            "enum": ["import_unity_package", "create_local_vpm_package", "install_outfit", "create_toggle"]
+            "enum": ["import_unity_package", "materialize_extracted_package", "create_local_vpm_package", "install_outfit", "create_toggle"]
           },
           "dryRun": { "const": false }
         },

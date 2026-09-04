@@ -53,17 +53,20 @@ pub struct StagingProject {
 
 impl StagingProject {
     /// Unpacks the bundled template into
-    /// `%TEMP%\VUA_Staging_{session_id}`.
-    pub fn create(temp_root: &Path, session_id: &str) -> io::Result<Self> {
+    /// `%TEMP%\VUA_Staging_{session_id}` and writes the `.vua/staging.json`
+    /// token marker the Bridge requires for `create_local_vpm_package`.
+    pub fn create(temp_root: &Path, session_id: &str, staging_token: &str) -> io::Result<Self> {
         let root = staging_root(temp_root, session_id);
         fs::create_dir_all(root.join("Assets"))?;
         fs::create_dir_all(root.join("ProjectSettings"))?;
         fs::create_dir_all(root.join("Packages"))?;
+        fs::create_dir_all(root.join(".vua"))?;
         fs::write(
             root.join("ProjectSettings").join("ProjectVersion.txt"),
             STAGING_PROJECT_VERSION_TXT,
         )?;
         fs::write(root.join("Packages").join("manifest.json"), STAGING_MANIFEST_JSON)?;
+        fs::write(root.join(".vua").join("staging.json"), staging_token)?;
         Ok(Self {
             root,
             destroyed: false,
