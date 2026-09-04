@@ -85,3 +85,50 @@ describe("desktop Gateway v1", () => {
     })).toBe(false);
   });
 });
+
+describe("production.* v0.1 方法守卫", () => {
+  const base = {
+    schemaVersion: 1,
+    requestId: "request-prod-1",
+    kind: "command",
+    method: "production.startInspection",
+    params: { materialRefId: "mat-1", commandId: "command-1" },
+  };
+  const variants: Record<string, Record<string, unknown>> = {
+    "production.getInspection": { inspectionId: "insp-1" },
+    "production.requestPlan": { inspectionId: "insp-1", commandId: "command-2" },
+    "production.getPlan": { planId: "plan-1" },
+    "production.confirmPlan": { planId: "plan-1", commandId: "command-3", observedRevision: 8 },
+    "production.recover": { taskId: "task-1", decision: "rollback", commandId: "command-4" },
+    "production.getBuildRecord": { buildRecordId: "record-1" },
+  };
+
+  it("accepts each production method with its exact params", () => {
+    for (const [method, params] of Object.entries(variants)) {
+      const request = {
+        schemaVersion: 1,
+        requestId: "request-prod",
+        method,
+        params,
+      };
+      expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    }
+  });
+
+  it("rejects malformed production params and unknown production methods", () => {
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.startInspection", params: {},
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.recover",
+      params: { taskId: "t", decision: "continue" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.recover",
+      params: { taskId: "t", decision: "sideways", commandId: "c" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.unknown", params: {},
+    })).toBe(false);
+  });
+});

@@ -76,13 +76,82 @@ export interface GatewayDemoTaskRequestV1 {
   };
 }
 
+// ---- production.*(production-use-case v0.1 冻结面) ----
+
+export interface ProductionStartInspectionRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.startInspection";
+  readonly params: {
+    readonly materialRefId: string;
+    readonly commandId: string;
+  };
+}
+
+export interface ProductionGetInspectionRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.getInspection";
+  readonly params: { readonly inspectionId: string };
+}
+
+export interface ProductionRequestPlanRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.requestPlan";
+  readonly params: { readonly inspectionId: string; readonly commandId: string };
+}
+
+export interface ProductionGetPlanRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.getPlan";
+  readonly params: { readonly planId: string };
+}
+
+export interface ProductionConfirmPlanRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.confirmPlan";
+  readonly params: {
+    readonly planId: string;
+    readonly commandId: string;
+    readonly observedRevision?: number;
+  };
+}
+
+export interface ProductionRecoverRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.recover";
+  readonly params: {
+    readonly taskId: string;
+    readonly decision: "continue" | "rollback";
+    readonly commandId: string;
+  };
+}
+
+export interface ProductionGetBuildRecordRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "production.getBuildRecord";
+  readonly params: { readonly buildRecordId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
   | GatewayTaskGetRequestV1
   | GatewayTaskCancellationRequestV1
   | GatewayEnvironmentSnapshotRequestV1
-  | GatewayDemoTaskRequestV1;
+  | GatewayDemoTaskRequestV1
+  | ProductionStartInspectionRequestV1
+  | ProductionGetInspectionRequestV1
+  | ProductionRequestPlanRequestV1
+  | ProductionGetPlanRequestV1
+  | ProductionConfirmPlanRequestV1
+  | ProductionRecoverRequestV1
+  | ProductionGetBuildRecordRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -92,6 +161,13 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "task.requestCancellation": "command",
   "environment.getSnapshot": "query",
   "task.startDemo": "command",
+  "production.startInspection": "command",
+  "production.getInspection": "query",
+  "production.requestPlan": "command",
+  "production.getPlan": "query",
+  "production.confirmPlan": "command",
+  "production.recover": "command",
+  "production.getBuildRecord": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -228,6 +304,40 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["commandId"])
         && isIdentifier(value.params.commandId);
+    case "production.startInspection":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["materialRefId", "commandId"])
+        && isIdentifier(value.params.materialRefId)
+        && isIdentifier(value.params.commandId);
+    case "production.getInspection":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["inspectionId"])
+        && isIdentifier(value.params.inspectionId);
+    case "production.requestPlan":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["inspectionId", "commandId"])
+        && isIdentifier(value.params.inspectionId)
+        && isIdentifier(value.params.commandId);
+    case "production.getPlan":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["planId"])
+        && isIdentifier(value.params.planId);
+    case "production.confirmPlan":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["planId", "commandId", "observedRevision"])
+        && isIdentifier(value.params.planId)
+        && isIdentifier(value.params.commandId)
+        && isNonNegativeInteger(value.params.observedRevision);
+    case "production.recover":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["taskId", "decision", "commandId"])
+        && isIdentifier(value.params.taskId)
+        && isIdentifier(value.params.commandId)
+        && (value.params.decision === "continue" || value.params.decision === "rollback");
+    case "production.getBuildRecord":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["buildRecordId"])
+        && isIdentifier(value.params.buildRecordId);
     default:
       return false;
   }
