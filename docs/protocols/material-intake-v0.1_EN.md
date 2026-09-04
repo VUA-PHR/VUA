@@ -34,6 +34,32 @@ that a project snapshot prevents code execution or reverses effects outside the 
   layout and explicit dependency manifest, then uses VUA's `vrc-get` adapter to preview, install, and independently
   validate the target project.
 
+## Staging project contract
+
+The isolated staging project is built from a VUA-bundled minimal template — two text files plus an
+empty `Assets/` folder; no DLLs and no source code:
+
+- `ProjectSettings/ProjectVersion.txt` — the baseline-locked Unity version (`2022.3.22f1`);
+- `Packages/manifest.json` — the fixed VPM dependency lock (e.g. `com.vrchat.avatars` / `com.vrchat.base`
+  `3.10.11`, `com.unity.textmeshpro` `3.0.6`) plus the `VRChat` scoped registry
+  (`https://packages.vrchat.com`).
+
+The template versions live as constants in the orchestrator; a VRChat SDK deprecation ships a small
+client update of these two text files. At run time the client unpacks the template into the staging
+directory and calls the `vrc-get` lib backend to resolve and install the manifest dependencies
+(first resolution needs network access; the vrc-get package cache serves later runs). The staging
+project then holds the same SDK base VCC would produce, with nothing preinstalled on the user
+machine.
+
+Operational rules:
+
+- The staging directory lives at `%TEMP%\VUA_Staging_{session_id}` — never under user-visible
+  folders such as Downloads or Desktop, where real-time antivirus scanning produces file locks.
+- The staging project serves exactly one atomic task: producing the local VPM package. Once the
+  package file has been moved into the user-designated local-reusable directory, the staging
+  project is destroyed immediately (`remove_dir_all`) on success, failure, and panic paths alike;
+  leftovers would poison later runs through path conflicts and lock files.
+
 Both paths use `validate_asset_paths` to prove only `minimum_structure`. AssetDatabase loading does not establish
 Avatar, outfit, material, animation, or Modular Avatar semantics.
 

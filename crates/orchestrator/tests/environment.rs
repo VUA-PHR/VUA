@@ -1,6 +1,8 @@
 //! E-ENV integration tests: read-only environment detection against
-//! synthetic roots, so no test depends on this machine's real installs.
-//! Each test cites its ORC requirement (ORC-TST-006).
+//! synthetic roots and a synthetic registry, so no test depends on this
+//! machine's real installs. Each test cites its ORC requirement
+//! (ORC-TST-006). The detector reports presence plus raw facts only;
+//! severity is a frontend decision and is deliberately not asserted here.
 
 #![allow(clippy::result_large_err)]
 
@@ -10,8 +12,8 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    env_error_codes, outcome_with_exit, CheckStatusV1, EnvironmentEngine, EnvironmentRoots,
-    FakeProcessRunner, FixedClock, ProcessOutcome, Zone,
+    env_error_codes, outcome_with_exit, EnvironmentEngine, EnvironmentPresence, EnvironmentRoots,
+    FakeProcessRunner, FakeRegistrySource, FixedClock, ProcessOutcome, RegistryHive, Zone,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -30,9 +32,17 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
         unity_editors_root: base.join("editors"),
         vrc_get_executable: "vrc-get".into(),
         disk_target: base.to_path_buf(),
-        disk_warning_gib: 30.0,
-        disk_error_gib: 10.0,
         network_probes: vec!["127.0.0.1:1".into()],
+        registry: Arc::new(FakeRegistrySource::new()),
+        steam_install_candidates: vec![base.join("steam")],
+        vr_runtime_roots: vua_orchestrator::VrRuntimeRoots {
+            oculus: vec![base.join("vr/Oculus")],
+            pico: vec![base.join("vr/PICO Connect")],
+            vive: vec![base.join("vr/VIVE")],
+            virtual_desktop: vec![base.join("vr/VirtualDesktop")],
+            alvr: vec![base.join("vr/alvr")],
+        },
+        vcc_settings_candidates: vec![base.join("vcc/settings.json")],
     }
 }
 
@@ -63,27 +73,27 @@ fn orc_wf_001_vrchat_detection_is_deterministic_for_present_and_missing() {
     let base = unique_dir("vrchat");
     let engine = engine_with(synthetic_roots(&base), default_runner());
 
-    // Missing: a deterministic finding, not a detection error (验收 2).
+    // Missing: a deterministic finding, not a detection failure (验收 2).
     let items = engine.inspect_zone(Zone::Play);
     let vrchat = find(&items, "vrchat");
-    assert_eq!(vrchat.status, CheckStatusV1::Error);
-    assert_eq!(vrchat.title, "VRChat 本体");
+    assert_eq!(vrchat.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(vrchat.error_code, None, "missing is a finding, not a failure");
     assert!(
-        vrchat.error_code.is_none(),
-        "missing is a finding, not a detection failure"
+        !vrchat.facts["searchedRoots"]
+            .as_array()
+            .unwrap()
+            .is_empty()
     );
-    assert!(vrchat.description.contains("未找到 VRChat"));
 
-    // Present: targeted path observation.
-    let exe = base
-        .join("steam/steamapps/common")
-        .join("VRChat")
-        .join("VRChat.exe");
+    // Present: targeted path observation. Steam itself is discoverable
+    // here, so the game check walks the *discovered* library root.
+    let common = base.join("steam").join("steamapps").join("common");
+    let exe = common.join("VRChat").join("VRChat.exe");
     fs::create_dir_all(exe.parent().unwrap()).unwrap();
     fs::write(&exe, "binary").unwrap();
     let items = engine.inspect_zone(Zone::Play);
     let vrchat = find(&items, "vrchat");
-    assert_eq!(vrchat.status, CheckStatusV1::Ok);
+    assert_eq!(vrchat.presence, EnvironmentPresence::Detected);
     assert_eq!(vrchat.facts["exe"], exe.to_string_lossy().to_string());
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
@@ -91,16 +101,101 @@ fn orc_wf_001_vrchat_detection_is_deterministic_for_present_and_missing() {
 }
 
 #[test]
-fn orc_wf_001_steamvr_absence_is_a_warning_not_a_blocker() {
+fn orc_wf_001_steam_missing_is_its_own_finding_before_vrchat() {
+    // Without Steam the game checks report not_detected against the
+    // configured fallback roots, and `steam` itself says not_detected:
+    // the frontend turns that into "install Steam first".
+    let base = unique_dir("steam-missing");
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let steam = find(&items, "steam");
+    assert_eq!(steam.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(steam.error_code, None);
+    assert!(steam.facts["registryKey"].as_str().unwrap().contains("Valve"));
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_wf_001_steam_library_vdf_discovers_secondary_drive_installs() {
+    // The install sits at base/steam; VRChat lives in a *second* library
+    // (base/library-two) referenced by libraryfolders.vdf. The pre-VDF
+    // check only looked at one hardcoded root and missed exactly this.
+    let base = unique_dir("steam-vdf");
+    let steam_root = base.join("steam");
+    let second_library = base.join("library-two");
+    fs::create_dir_all(steam_root.join("steamapps")).unwrap();
+    fs::create_dir_all(second_library.join("steamapps/common/VRChat")).unwrap();
+    fs::write(second_library.join("steamapps/common/VRChat/VRChat.exe"), "binary").unwrap();
+    // VDF escapes backslashes: `C:\\Dir` in the file means `C:\Dir`.
+    let vdf_value = format!(
+        "\"path\"\t\t\"{}\"",
+        second_library.to_string_lossy().replace('\\', "\\\\")
+    );
+    fs::write(
+        steam_root.join("steamapps/libraryfolders.vdf"),
+        format!("\"libraryfolders\"\n{{\n\t\"1\"\n\t{{\n\t\t{vdf_value}\n\t}}\n}}"),
+    )
+    .unwrap();
+
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+
+    let steam = find(&items, "steam");
+    assert_eq!(steam.presence, EnvironmentPresence::Detected);
+    assert_eq!(steam.facts["path"], steam_root.to_string_lossy().to_string());
+    let roots: Vec<&str> = steam.facts["libraryRoots"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| value.as_str().unwrap())
+        .collect();
+    assert_eq!(roots.len(), 2, "install root + vdf library");
+    let vrchat = find(&items, "vrchat");
+    assert_eq!(vrchat.presence, EnvironmentPresence::Detected,
+        "the secondary-drive install must be observed, not missed");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_wf_001_steam_install_path_resolves_through_the_registry() {
+    let base = unique_dir("steam-registry");
+    let registry_root = base.join("custom-steam");
+    fs::create_dir_all(&registry_root).unwrap();
+    let roots = EnvironmentRoots {
+        registry: Arc::new(FakeRegistrySource::new().with(
+            RegistryHive::LocalMachine,
+            "SOFTWARE\\WOW6432Node\\Valve\\Steam",
+            "InstallPath",
+            &registry_root.to_string_lossy(),
+        )),
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let steam = find(&items, "steam");
+    assert_eq!(steam.presence, EnvironmentPresence::Detected);
+    assert_eq!(steam.facts["path"], registry_root.to_string_lossy().to_string());
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_wf_001_steamvr_missing_is_not_detected_severity_belongs_to_the_frontend() {
     let base = unique_dir("steamvr");
     let engine = engine_with(synthetic_roots(&base), default_runner());
     let items = engine.inspect_zone(Zone::Play);
-    assert_eq!(find(&items, "steamvr").status, CheckStatusV1::Warning);
+    let steamvr = find(&items, "steamvr");
+    assert_eq!(steamvr.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(steamvr.error_code, None, "the detector carries no severity");
 
     fs::create_dir_all(base.join("steam/steamapps/common/SteamVR")).unwrap();
     let items = engine.inspect_zone(Zone::Play);
-    let steamvr = find(&items, "steamvr");
-    assert_eq!(steamvr.status, CheckStatusV1::Ok);
+    assert_eq!(find(&items, "steamvr").presence, EnvironmentPresence::Detected);
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
@@ -108,13 +203,14 @@ fn orc_wf_001_steamvr_absence_is_a_warning_not_a_blocker() {
 
 #[test]
 fn orc_adp_006_network_probe_reports_deterministic_unreachability() {
-    // 127.0.0.1:1 refuses connections quickly: the result is "unreachable"
-    // with a stable shape. No test asserts that the real internet is up.
+    // 127.0.0.1:1 refuses connections quickly: the result is "not
+    // detected" with a stable shape. No test asserts that the real
+    // internet is up.
     let base = unique_dir("network");
     let engine = engine_with(synthetic_roots(&base), default_runner());
     let items = engine.inspect_zone(Zone::Play);
     let network = find(&items, "network");
-    assert_eq!(network.status, CheckStatusV1::Error);
+    assert_eq!(network.presence, EnvironmentPresence::NotDetected);
     assert_eq!(network.error_code, None, "unreachable is a finding");
     assert_eq!(
         network.facts["unreachable"],
@@ -126,7 +222,129 @@ fn orc_adp_006_network_probe_reports_deterministic_unreachability() {
 }
 
 #[test]
-fn orc_wf_001_unity_editors_enumerate_versions_and_ignore_junk() {
+fn orc_env_openxr_runtime_reads_the_active_runtime_name() {
+    let base = unique_dir("openxr");
+    let runtime_json = base.join("openxr/openvr_xrapi.json");
+    fs::create_dir_all(runtime_json.parent().unwrap()).unwrap();
+    fs::write(
+        &runtime_json,
+        serde_json::json!({ "runtime": { "name": "SteamVR OpenXR Runtime" } }).to_string(),
+    )
+    .unwrap();
+    let roots = EnvironmentRoots {
+        registry: Arc::new(FakeRegistrySource::new().with(
+            RegistryHive::LocalMachine,
+            "SOFTWARE\\Khronos\\OpenXR\\1",
+            "ActiveRuntime",
+            &runtime_json.to_string_lossy(),
+        )),
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let openxr = find(&items, "openxr_runtime");
+    assert_eq!(openxr.presence, EnvironmentPresence::Detected);
+    assert_eq!(openxr.facts["runtimeName"], "SteamVR OpenXR Runtime");
+
+    // No registry value anywhere → deterministic not_detected.
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let openxr = find(&items, "openxr_runtime");
+    assert_eq!(openxr.presence, EnvironmentPresence::NotDetected);
+
+    // A dangling ActiveRuntime pointer is a detection failure, not a
+    // missing runtime: the value exists but cannot be observed.
+    let roots = EnvironmentRoots {
+        registry: Arc::new(FakeRegistrySource::new().with(
+            RegistryHive::LocalMachine,
+            "SOFTWARE\\Khronos\\OpenXR\\1",
+            "ActiveRuntime",
+            &base.join("openxr/missing.json").to_string_lossy(),
+        )),
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let openxr = find(&items, "openxr_runtime");
+    assert_eq!(openxr.presence, EnvironmentPresence::DetectionFailed);
+    assert_eq!(
+        openxr.error_code.as_deref(),
+        Some(env_error_codes::READ_FAILED)
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_headset_runtime_presence_checks_are_independent_findings() {
+    let base = unique_dir("vr-runtimes");
+    fs::create_dir_all(base.join("vr/Oculus")).unwrap();
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    assert_eq!(find(&items, "oculus_runtime").presence, EnvironmentPresence::Detected);
+    assert_eq!(
+        find(&items, "oculus_runtime").facts["root"],
+        base.join("vr/Oculus").to_string_lossy().to_string()
+    );
+    for id in ["pico_runtime", "vive_runtime", "virtual_desktop", "alvr"] {
+        let item = find(&items, id);
+        assert_eq!(item.presence, EnvironmentPresence::NotDetected, "{id}");
+        assert_eq!(item.error_code, None, "{id}: missing is a finding");
+    }
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_windows_and_gpu_report_registry_identity_facts() {
+    let base = unique_dir("machine");
+    let registry = FakeRegistrySource::new()
+        .with(
+            RegistryHive::LocalMachine,
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+            "ProductName",
+            "Windows 11 Pro",
+        )
+        .with(
+            RegistryHive::LocalMachine,
+            "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion",
+            "DisplayVersion",
+            "24H2",
+        )
+        .with(
+            RegistryHive::LocalMachine,
+            "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}\\0000",
+            "DriverDesc",
+            "Synthetic GPU 9000",
+        );
+    let roots = EnvironmentRoots {
+        registry: Arc::new(registry),
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let windows = find(&items, "windows");
+    assert_eq!(windows.presence, EnvironmentPresence::Detected);
+    assert_eq!(windows.facts["productName"], "Windows 11 Pro");
+    assert_eq!(windows.facts["displayVersion"], "24H2");
+    let gpu = find(&items, "gpu");
+    assert_eq!(gpu.presence, EnvironmentPresence::Detected);
+    assert_eq!(gpu.facts["gpus"][0], "Synthetic GPU 9000");
+
+    // Empty registry → deterministic not_detected on both.
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    assert_eq!(find(&items, "windows").presence, EnvironmentPresence::NotDetected);
+    assert_eq!(find(&items, "gpu").presence, EnvironmentPresence::NotDetected);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_wf_001_unity_editors_enumerate_classify_and_ignore_junk() {
     let base = unique_dir("editors");
     let editors_root = base.join("editors");
     for version in ["2022.3.22f1", "2019.4.31f1", "not-a-version", "999.9"] {
@@ -135,11 +353,21 @@ fn orc_wf_001_unity_editors_enumerate_versions_and_ignore_junk() {
     let engine = engine_with(synthetic_roots(&base), default_runner());
     let items = engine.inspect_zone(Zone::Create);
     let editors = find(&items, "unity_editors");
-    assert_eq!(editors.status, CheckStatusV1::Ok);
+    assert_eq!(editors.presence, EnvironmentPresence::Detected);
     assert_eq!(editors.facts["editors"].as_array().unwrap().len(), 2);
     assert_eq!(
         editors.facts["editors"][0]["version"], "2022.3.22f1",
         "sorted newest first"
+    );
+    assert_eq!(
+        editors.facts["editors"][0]["classification"], "production_target",
+        "the support matrix classification rides in facts"
+    );
+    assert_eq!(
+        editors.facts["editors"][1]["classification"], "migration_source"
+    );
+    assert_eq!(
+        editors.facts["productionTarget"], vua_orchestrator::PRODUCTION_TARGET
     );
 
     // "999.9" has an Editor dir but no patch component → ignored.
@@ -150,7 +378,7 @@ fn orc_wf_001_unity_editors_enumerate_versions_and_ignore_junk() {
     let engine = engine_with(synthetic_roots(&base2), default_runner());
     let items = engine.inspect_zone(Zone::Create);
     let editors = find(&items, "unity_editors");
-    assert_eq!(editors.status, CheckStatusV1::Error);
+    assert_eq!(editors.presence, EnvironmentPresence::DetectionFailed);
     assert_eq!(
         editors.error_code.as_deref(),
         Some(env_error_codes::READ_FAILED),
@@ -168,7 +396,7 @@ fn orc_wf_001_unity_editors_enumerate_versions_and_ignore_junk() {
 fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     let base = unique_dir("vpmcli");
 
-    // Probe succeeds → ok with the version fact.
+    // Probe succeeds → detected with the version fact.
     let runner = Arc::new(FakeProcessRunner::new());
     runner.push(Ok(ProcessOutcome {
         exit_code: Some(0),
@@ -182,7 +410,7 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
     let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.status, CheckStatusV1::Ok);
+    assert_eq!(vpm.presence, EnvironmentPresence::Detected);
     assert_eq!(vpm.facts["version"], "vrc-get 1.9.2");
 
     // Spawn failure (binary absent) → normal missing finding, no error code.
@@ -191,9 +419,8 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
     let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.status, CheckStatusV1::Error);
+    assert_eq!(vpm.presence, EnvironmentPresence::NotDetected);
     assert_eq!(vpm.error_code, None);
-    assert!(vpm.description.contains("未找到"));
 
     // Timed-out probe → detection failure with a stable code.
     let runner = Arc::new(FakeProcessRunner::new());
@@ -209,7 +436,7 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
     let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.status, CheckStatusV1::Error);
+    assert_eq!(vpm.presence, EnvironmentPresence::DetectionFailed);
     assert_eq!(
         vpm.error_code.as_deref(),
         Some(env_error_codes::PROBE_FAILED)
@@ -221,11 +448,64 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
     let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.status, CheckStatusV1::Error);
+    assert_eq!(vpm.presence, EnvironmentPresence::NotDetected);
     assert_eq!(vpm.error_code, None);
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
+}
+
+#[test]
+fn orc_env_vcc_capability_is_a_create_zone_item() {
+    let base = unique_dir("vcc-item");
+    let production = install_vpm_project(&base, "prod-av", "2022.3.22f1");
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(
+        &settings_path,
+        serde_json::json!({ "userProjects": [production] }).to_string(),
+    )
+    .unwrap();
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let vcc = find(&items, "vcc");
+    assert_eq!(vcc.presence, EnvironmentPresence::Detected);
+    assert_eq!(vcc.facts["projectsSource"], "userProjects");
+    assert_eq!(vcc.facts["registeredProjects"], 1);
+    assert_eq!(vcc.error_code, None);
+
+    // Missing settings → deterministic not_detected.
+    let base2 = unique_dir("vcc-item-missing");
+    let engine = engine_with(synthetic_roots(&base2), default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    assert_eq!(find(&items, "vcc").presence, EnvironmentPresence::NotDetected);
+
+    // Unparseable settings → detection failure with the stable code.
+    fs::write(&settings_path, "{ not json").unwrap();
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let vcc = find(&items, "vcc");
+    assert_eq!(vcc.presence, EnvironmentPresence::DetectionFailed);
+    assert!(vcc.error_code.is_some());
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+    if base2.exists() {
+        fs::remove_dir_all(&base2).unwrap();
+    }
+}
+
+fn install_vpm_project(base: &Path, name: &str, editor_version: &str) -> String {
+    let project = base.join("projects").join(name);
+    fs::create_dir_all(project.join("Packages")).unwrap();
+    fs::create_dir_all(project.join("ProjectSettings")).unwrap();
+    fs::write(project.join("Packages").join("vpm-manifest.json"), "{}").unwrap();
+    fs::write(
+        project.join("ProjectSettings").join("ProjectVersion.txt"),
+        format!("m_EditorVersion: {editor_version}\n"),
+    )
+    .unwrap();
+    project.to_string_lossy().into_owned()
 }
 
 #[cfg(windows)]
@@ -236,7 +516,7 @@ fn orc_env_disk_space_reads_real_free_bytes_via_kernel32() {
     let engine = engine_with(synthetic_roots(&base), default_runner());
     let items = engine.inspect_zone(Zone::Create);
     let disk = find(&items, "disk_space");
-    assert_eq!(disk.status, CheckStatusV1::Ok);
+    assert_eq!(disk.presence, EnvironmentPresence::Detected);
     let free = disk.facts["freeBytes"].as_u64().expect("freeBytes fact");
     assert!(free > 0, "a normal machine has free space: {free}");
     assert!(disk.facts["totalBytes"].as_u64().unwrap() >= free);
@@ -253,31 +533,11 @@ fn orc_env_disk_space_reports_unsupported_platform_honestly() {
     let engine = engine_with(synthetic_roots(&base), default_runner());
     let items = engine.inspect_zone(Zone::Create);
     let disk = find(&items, "disk_space");
-    assert_eq!(disk.status, CheckStatusV1::Error);
+    assert_eq!(disk.presence, EnvironmentPresence::DetectionFailed);
     assert_eq!(
         disk.error_code.as_deref(),
         Some(env_error_codes::UNSUPPORTED_PLATFORM)
     );
-    if base.exists() {
-        fs::remove_dir_all(&base).unwrap();
-    }
-}
-
-#[test]
-fn orc_env_disk_thresholds_make_conclusions_deterministic() {
-    // Enormous error threshold forces the error branch on any machine.
-    let base = unique_dir("disk-threshold");
-    fs::create_dir_all(&base).unwrap();
-    let mut roots = synthetic_roots(&base);
-    roots.disk_error_gib = f64::MAX / (1024.0 * 1024.0 * 1024.0);
-    roots.disk_warning_gib = roots.disk_error_gib;
-    let engine = engine_with(roots, default_runner());
-    #[cfg(windows)]
-    {
-        let items = engine.inspect_zone(Zone::Create);
-        let disk = find(&items, "disk_space");
-        assert_eq!(disk.status, CheckStatusV1::Error);
-    }
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
@@ -295,20 +555,49 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
     assert_eq!(
         ids,
         vec![
+            "steam",
             "vrchat",
             "steamvr",
+            "openxr_runtime",
+            "oculus_runtime",
+            "pico_runtime",
+            "vive_runtime",
+            "virtual_desktop",
+            "alvr",
             "network",
+            "windows",
+            "gpu",
             "unity_hub",
             "unity_editors",
             "vpm_cli",
+            "vcc",
             "disk_space"
         ]
     );
     for item in &snapshot.items {
         assert_eq!(item.schema_version, 1);
-        assert!(!item.title.is_empty());
-        assert!(!item.description.is_empty());
-        let expected_zone = matches!(item.id.as_str(), "vrchat" | "steamvr" | "network");
+        // The detector carries no severity: every error_code rides on an
+        // explicit detection failure only.
+        assert_eq!(
+            item.error_code.is_some(),
+            item.presence == EnvironmentPresence::DetectionFailed,
+            "{}: codes belong to failed observations only",
+            item.id
+        );
+        let expected_zone = matches!(
+            item.id.as_str(),
+            "steam" | "vrchat"
+                | "steamvr"
+                | "openxr_runtime"
+                | "oculus_runtime"
+                | "pico_runtime"
+                | "vive_runtime"
+                | "virtual_desktop"
+                | "alvr"
+                | "network"
+                | "windows"
+                | "gpu"
+        );
         assert_eq!(
             item.zone == Zone::Play,
             expected_zone,
@@ -331,6 +620,9 @@ fn orc_wf_001_inspection_writes_nothing_to_the_observed_roots() {
     fs::create_dir_all(base.join("editors/2022.3.22f1/Editor")).unwrap();
     fs::create_dir_all(base.join("hub")).unwrap();
     fs::write(base.join("hub/Unity Hub.exe"), "hub").unwrap();
+    let settings_path = base.join("vcc/settings.json");
+    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
+    fs::write(&settings_path, "{}").unwrap();
 
     let fingerprint_before = tree_fingerprint(&base);
     let engine = engine_with(synthetic_roots(&base), default_runner());
@@ -381,10 +673,9 @@ fn manual_real_machine_environment_snapshot() {
     let snapshot = engine.inspect_all();
     for item in &snapshot.items {
         println!(
-            "[{:>6}] {} — {} — {}{}",
-            format!("{:?}", item.status).to_uppercase(),
-            item.title,
-            item.description,
+            "[{:>14}] {} — {}{}",
+            format!("{:?}", item.presence).to_uppercase(),
+            item.id,
             item.facts,
             item.error_code
                 .as_ref()

@@ -6,6 +6,7 @@
 #![allow(clippy::result_large_err)]
 
 mod assembly;
+mod booth_extraction;
 mod bridge;
 mod build_record;
 mod capability;
@@ -18,6 +19,8 @@ mod journal;
 mod local_vpm_artifact;
 mod material_identity;
 mod material_intake;
+mod material_exec;
+mod material_staging;
 mod model;
 mod process;
 mod project_identity;
@@ -33,11 +36,15 @@ mod time;
 mod tools;
 mod vpm;
 mod vpm_backend;
+mod win_registry;
 mod workflow;
 
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
+};
+pub use booth_extraction::{
+    extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
 pub use bridge::{BridgeError, UnityBatchBridge};
 pub use build_record::{
@@ -57,8 +64,8 @@ pub use editor_targets::{
     EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
 };
 pub use environment::{
-    error_codes as env_error_codes, CheckStatusV1, EnvironmentCheckItemV1, EnvironmentEngine,
-    EnvironmentRoots, EnvironmentSnapshotV1, Zone,
+    error_codes as env_error_codes, EnvironmentCheckItemV1, EnvironmentEngine, EnvironmentPresence,
+    EnvironmentRoots, EnvironmentSnapshotV1, VrRuntimeRoots, Zone,
 };
 pub use environment_managers::{
     codes as env_spike_codes, collect_environment_spike_snapshot, AlcomCapability, EditorFinding,
@@ -82,6 +89,14 @@ pub use material_intake::{
     MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
     MaterialIntakeStepKind, MaterialIntakeStepV01, RiskDecisionChoice, RiskDecisionV01,
     SourceFolderInspectionV01, SourcePackageEvidenceV01,
+};
+pub use material_exec::{
+    error_codes as material_exec_error_codes, MaterialExecutionReport, MaterialExecutionStatus,
+    MaterialExecutor, RollbackOutcome,
+};
+pub use material_staging::{
+    staging_root, StagingProject, STAGING_MANIFEST_JSON, STAGING_PROJECT_VERSION_TXT,
+    STAGING_TEMPLATE_VERSION, STAGING_UNITY_VERSION,
 };
 pub use model::*;
 pub use process::{
@@ -120,3 +135,4 @@ pub use vpm_backend::{
     VrcGetLibBackend,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
+pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

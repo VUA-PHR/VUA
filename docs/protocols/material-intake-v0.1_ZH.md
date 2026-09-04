@@ -29,6 +29,29 @@
 - `local_reusable_vpm`：在带一次性令牌的隔离暂存项目导入全部来源包，生成 Editor/Runtime 布局和
   显式依赖清单，再由 VUA `vrc-get` 适配器预览、安装到目标项目并独立验证。
 
+## 暂存项目契约
+
+隔离暂存项目由 VUA 捆绑的最小模板构建——两个文本文件加一个空的 `Assets/` 文件夹；不含任何
+DLL 或源代码：
+
+- `ProjectSettings/ProjectVersion.txt`：写入基线锁定的 Unity 版本（`2022.3.22f1`）；
+- `Packages/manifest.json`：固定的 VPM 依赖锁（如 `com.vrchat.avatars` / `com.vrchat.base`
+  `3.10.11`、`com.unity.textmeshpro` `3.0.6`）加 `VRChat` scoped registry
+  （`https://packages.vrchat.com`）。
+
+模板版本号在 orchestrator 内定义为常量；VRChat SDK 强制废弃旧版时，随小版本客户端更新这两个
+文本文件即可。运行时客户端把模板解压到暂存目录，调用 `vrc-get` lib 后端解析并安装 manifest
+依赖（首次解析需要联网；后续运行由 vrc-get 包缓存服务）。暂存项目随即拥有与 VCC 官方一致的
+SDK 基底，用户机器无需预装任何东西。
+
+运行规则：
+
+- 暂存目录位于 `%TEMP%\VUA_Staging_{session_id}`——绝不放在 Downloads、Desktop 等用户可见
+  目录，实时杀软扫描会在那里产生文件锁；
+- 暂存项目只服务于"制作本地 VPM 包"这一项原子任务：打包完成后，生成的 `.vpm` 文件立即移入
+  用户指定的 local-reusable 目录，随即销毁暂存项目（`remove_dir_all`）——成功、失败、panic
+  路径一律执行；残留的暂存项目会通过路径冲突和文件锁毒化后续任务。
+
 两条路径都只以 `validate_asset_paths` 证明 `minimum_structure`。素材能由 AssetDatabase 加载不代表
 Avatar、衣装、材质、动画或 Modular Avatar 语义正确。
 
