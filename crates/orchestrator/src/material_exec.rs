@@ -912,7 +912,11 @@ fn collect_package_files(
             let relative = if relative.is_empty() { name } else { format!("{relative}/{name}") };
             if path.is_dir() {
                 walk(&path, &relative, package_id, out)?;
-            } else {
+            } else if !relative.ends_with(".meta") {
+                // .meta sidecars are not loadable assets — their integrity is
+                // covered by the publish-time archive/tree digests, while
+                // this list proves AssetDatabase loadability (F6 review: a
+                // per-file list including .meta would always fail).
                 out.push(format!("Packages/{package_id}/{relative}"));
             }
         }

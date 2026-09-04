@@ -25,6 +25,7 @@ zip = { version = "4.6", default-features = false, features = ["deflate"] }
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "=0.61.2", features = [
     "Win32_Foundation",
+    "Win32_System_Console",
     "Win32_Storage",
     "Win32_System_IO",
     "Win32_System_JobObjects",

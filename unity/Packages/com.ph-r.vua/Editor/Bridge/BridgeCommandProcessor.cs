@@ -361,7 +361,7 @@ namespace Vua.Editor.Bridge
                    "  \"displayName\": \"" + JsonEscape(command.payload.packageDisplayName) + "\",\n" +
                    "  \"version\": \"" + JsonEscape(command.payload.packageVersion) + "\",\n" +
                    "  \"unity\": \"2022.3\",\n" +
-                   "  \"dependencies\": {" + string.Join(",", entries) + "}\n" +
+                   "  \"vpmDependencies\": {" + string.Join(",", entries) + "}\n" +
                    "}\n";
         }
 

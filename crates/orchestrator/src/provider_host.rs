@@ -9,10 +9,14 @@ use crate::material_intake::{
 };
 use crate::material_task::MaterialTaskResult;
 use crate::model::ProjectRef;
+use crate::project_lock::{
+    acquire_project_lock, begin_mutation, LockHolder, MutationMarkerGuard, ProjectLockError,
+    ProjectLockGuard,
+};
 use crate::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
-    IdempotentTaskAcceptance, NewTask, SqliteStoreError, SqliteTaskStore, StoredTask,
-    StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
+    IdempotentTaskAcceptance, NewTask, ProjectIdentity, SqliteStoreError, SqliteTaskStore,
+    StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -141,7 +145,7 @@ impl ProviderInstanceLock {
 /// Runs the bounded JSONL protocol until stdin closes or shutdown commits.
 /// Stdout is protocol-only; diagnostics belong on stderr in the binary shell.
 pub fn run_provider_host(
-    input: impl BufRead,
+    input: impl BufRead + Send + 'static,
     output: impl Write,
     database_path: impl AsRef<Path>,
 ) -> Result<(), ProviderHostError> {
@@ -151,7 +155,7 @@ pub fn run_provider_host(
 /// Same protocol with the production use-case surface wired to concrete
 /// services (material intake executor + build record store).
 pub fn run_provider_host_with(
-    mut input: impl BufRead,
+    input: impl BufRead + Send + 'static,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
     production: Option<ProductionConfig>,
@@ -219,20 +223,46 @@ pub fn run_provider_host_with(
         production,
     };
 
-    loop {
-        let mut line = Vec::new();
-        let mut limited = std::io::Read::take(&mut input, MAX_FRAME_BYTES + 1);
-        let read = limited.read_until(b'\n', &mut line)?;
-        if read == 0 {
-            break;
+    // The reader runs on its own thread so the host can wake up between
+    // frames: worker completion events reach an idle Gateway without it
+    // having to send another request first.
+    let (line_sender, line_receiver) = std::sync::mpsc::channel::<std::io::Result<Vec<u8>>>();
+    std::thread::spawn(move || {
+        let mut limited = std::io::Read::take(input, MAX_FRAME_BYTES + 1);
+        loop {
+            let mut line = Vec::new();
+            match limited.read_until(b'\n', &mut line) {
+                Ok(0) => break,
+                Ok(_) => {
+                    if line_sender.send(Ok(line)).is_err() {
+                        break;
+                    }
+                }
+                Err(error) => {
+                    let _ = line_sender.send(Err(error));
+                    break;
+                }
+            }
         }
+    });
+
+    loop {
+        write_pending_events(&mut state, &mut output)?;
+        let mut line = match line_receiver.recv_timeout(Duration::from_millis(100)) {
+            Ok(Ok(line)) => line,
+            Ok(Err(error)) => return Err(ProviderHostError::Io(error)),
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                write_pending_events(&mut state, &mut output)?;
+                break;
+            }
+        };
         if line.len() as u64 > MAX_FRAME_BYTES {
             return Err(ProviderHostError::OversizedFrame);
         }
         while matches!(line.last(), Some(b'\n' | b'\r')) {
             line.pop();
         }
-
         // demo.task deterministic progression: one stage per received frame,
         // holding at running awaiting cancellation; events are written before
         // this frame's response (notifications of fact, queries stay authoritative)
@@ -692,15 +722,6 @@ fn handle_cancellation(
         .and_then(Value::as_u64);
     let fingerprint = request_fingerprint(&method_and_task(request));
     let occurred_at = now_rfc3339();
-    // Bridge the task-level cancel request to the running production
-    // execution: the worker observes it at the next step boundary.
-    if let Some(services) = &state.production {
-        if let Some(token) =
-            services.running.lock().expect("running poisoned").get(task_id)
-        {
-            token.cancel();
-        }
-    }
     let cancellation = state.store.request_cancellation_idempotent(
         command_id,
         &fingerprint,
@@ -708,6 +729,18 @@ fn handle_cancellation(
         observed_revision,
         &occurred_at,
     )?;
+    // The worker token is cancelled ONLY after the authoritative store has
+    // accepted the request — a request rejected by idempotency or revision
+    // validation must not cancel anything as a side effect.
+    if matches!(cancellation, IdempotentCancellation::Applied { .. }) {
+        if let Some(services) = &state.production {
+            if let Some(token) =
+                services.running.lock().expect("running poisoned").get(task_id)
+            {
+                token.cancel();
+            }
+        }
+    }
     match cancellation {
         IdempotentCancellation::Replayed(result) => {
             Ok(FrameOutcome::Response(application_success(
@@ -884,6 +917,44 @@ fn now_rfc3339() -> String {
 // (Inspect, Plan) drive inline to a terminal state; confirmPlan/recover run
 // the material intake executor on a worker thread and complete through the
 // same store, so a host restart never loses an authoritative state.
+
+/// Builds the production services from the provider process environment:
+/// `VUA_UNITY_EDITOR` — absolute path to the pinned Unity editor executable,
+/// `VUA_PROVIDER_DATA` — absolute root for the build records, package
+/// identities, temp roots and the vrc-get environment. Both must be set and
+/// absolute; anything else leaves production honestly unavailable.
+pub fn production_config_from_env() -> Option<ProductionConfig> {
+    let unity = std::env::var_os("VUA_UNITY_EDITOR")?;
+    let data = std::env::var_os("VUA_PROVIDER_DATA")?;
+    let (unity, data) = (PathBuf::from(unity), PathBuf::from(data));
+    if !unity.is_absolute() || !data.is_absolute() {
+        eprintln!(
+            "VUA provider: VUA_UNITY_EDITOR/VUA_PROVIDER_DATA must be absolute paths; production stays unavailable"
+        );
+        return None;
+    }
+    let vpm = match crate::VrcGetLibBackend::with_environment_root(data.join("vpm-env"), false) {
+        Ok(vpm) => Arc::new(vpm) as Arc<dyn crate::VpmBackend>,
+        Err(_) => {
+            eprintln!("VUA provider: vrc-get backend init failed; production stays unavailable");
+            return None;
+        }
+    };
+    let executor = Arc::new(MaterialExecutor::new(
+        Arc::new(crate::UnityBatchBridge::new(unity)),
+        crate::FileSystemSnapshotStore,
+        vpm,
+        BuildRecordStore::new(data.join("records")),
+        Arc::new(crate::SystemClock),
+        data.join("temp"),
+        "2022.3.22f1",
+        crate::LocalPackageIdentityStore::new(data.join("identities.json")),
+    ));
+    Some(ProductionConfig {
+        executor,
+        records: Arc::new(BuildRecordStore::new(data.join("records"))),
+    })
+}
 
 fn production_task_id(command_id: &str) -> String {
     let mut hasher = Sha256::new();
@@ -1117,7 +1188,7 @@ fn request_plan(
             "errors.production.invalidParams",
         ));
     }
-    let mode: MaterialEntryMode = serde_json::from_value(Value::String(mode_raw))
+    let mode: MaterialEntryMode = serde_json::from_value(Value::String(mode_raw.clone()))
         .map_err(|_| {
             validation_error(
                 "vua.production.invalid_params",
@@ -1145,7 +1216,13 @@ fn request_plan(
         state,
         "production.requestPlan",
         command_id,
-        &json!({"kind": "production.requestPlan", "commandId": command_id}),
+        &json!({
+            "commandId": command_id,
+            "inspectionTaskId": inspection_task_id,
+            "mode": mode_raw,
+            "projectId": project_id,
+            "projectFingerprint": project_fingerprint,
+        }),
         request_id,
         correlation_id,
     )?;
@@ -1173,8 +1250,14 @@ fn request_plan(
     )))
 }
 
-/// Builds and runs the confirmed material intake (shared by confirmPlan and
-/// recover; recover additionally requires a user decision id).
+/// Builds and runs the confirmed material intake (confirmPlan), or performs
+/// a recovery decision (recover): `continue` re-runs the confirmed plan
+/// fresh under the executor's attempt semantics; `rollback` restores the
+/// failed attempt's recovery point WITHOUT running any import. Recovery
+/// binds the original failed task and always requires a Kernel-issued user
+/// decision id. Every mutating run takes the full mutation gate — the
+/// SQLite project lease, the cross-profile project lock, and the
+/// pending-mutation marker — for its whole duration.
 fn confirm_plan(
     state: &HostState,
     services: &Arc<ProductionServices>,
@@ -1195,58 +1278,157 @@ fn confirm_plan(
         .and_then(Value::as_bool)
         .unwrap_or(false);
     let user_decision_id = param_str(request, "/params/userDecisionId").to_owned();
+    let original_task_id = param_str(request, "/params/originalTaskId").to_owned();
+    let decision = if recovery {
+        let decision = param_str(request, "/params/decision").to_owned();
+        if !matches!(decision.as_str(), "continue" | "rollback") {
+            return Err(validation_error(
+                "vua.production.invalid_params",
+                "errors.production.invalidParams",
+            ));
+        }
+        decision
+    } else {
+        "execute".to_owned()
+    };
     if recovery && user_decision_id.trim().is_empty() {
         return Err(validation_error(
             "vua.production.user_decision_required",
             "errors.production.userDecisionRequired",
         ));
     }
-    if plan_task_id.is_empty()
-        || source_folder.is_empty()
-        || project_root.is_empty()
-        || artifact_output_root.is_empty()
-        || risk_choice.is_empty()
+    if project_root.is_empty()
+        || (decision != "rollback"
+            && (plan_task_id.is_empty()
+                || source_folder.is_empty()
+                || artifact_output_root.is_empty()
+                || risk_choice.is_empty()))
     {
         return Err(validation_error(
             "vua.production.invalid_params",
             "errors.production.invalidParams",
         ));
     }
+    if recovery && original_task_id.is_empty() {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
+    if recovery {
+        // Recovery binds the ORIGINAL failed run: only a terminal failed or
+        // cancelled production task is a recovery source.
+        let original = state
+            .store
+            .task(&original_task_id)?
+            .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+        if !matches!(original.state, TaskState::Failed | TaskState::Cancelled)
+            || !original.task_id.starts_with("prod-")
+        {
+            return Err(validation_error(
+                "vua.production.not_recoverable",
+                "errors.production.notRecoverable",
+            ));
+        }
+    }
 
-    let plan_task =
-        state.store.task(&plan_task_id)?.ok_or_else(|| {
-            validation_error("vua.task.not_found", "errors.task.notFound")
-        })?;
-    let plan: MaterialIntakePlanV01 = serde_json::from_value(
-        plan_task.result.clone().unwrap_or(Value::Null),
-    )
-    .map_err(|_| {
-        validation_error("vua.production.plan_mismatch", "errors.production.planMismatch")
-    })?;
-    let choice: RiskDecisionChoice = serde_json::from_value(Value::String(risk_choice))
-        .map_err(|_| {
+    // What the worker will do. Built BEFORE accepting so a malformed plan
+    // or an unreadable receipt is a validation error, never a half-created
+    // task.
+    enum Run {
+        Execute(Box<MaterialIntakeConfirmationV01>),
+        Rollback { snapshot_id: String },
+    }
+    let run = if decision == "rollback" {
+        // The failed attempt's receipt names its recovery snapshot.
+        let original = state
+            .store
+            .task(&original_task_id)?
+            .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+        let record_id = original
+            .result
+            .as_ref()
+            .and_then(|result| result.get("buildRecordId"))
+            .and_then(Value::as_str)
+            .ok_or_else(|| {
+                validation_error(
+                    "vua.production.not_recoverable",
+                    "errors.production.notRecoverable",
+                )
+            })?
+            .to_owned();
+        let record = services.records.read(&record_id).map_err(|_| {
             validation_error(
-                "vua.production.invalid_params",
-                "errors.production.invalidParams",
+                "vua.production.not_recoverable",
+                "errors.production.notRecoverable",
             )
         })?;
-    let confirmation = MaterialIntakeConfirmationV01 {
-        plan: plan.clone(),
-        risk_decision: RiskDecisionV01 {
-            choice,
-            source_fingerprint: plan.source.source_fingerprint.clone(),
-            risk_fingerprint: plan.source.risk_fingerprint.clone(),
-            remember_for_session,
-        },
-        confirmed_at: if confirmed_at.is_empty() { now_rfc3339() } else { confirmed_at },
-        correlation_id: correlation_id.to_owned(),
+        let snapshot_id = record
+            .snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.snapshot_id.clone())
+            .ok_or_else(|| {
+                validation_error(
+                    "vua.production.not_recoverable",
+                    "errors.production.notRecoverable",
+                )
+            })?;
+        Run::Rollback { snapshot_id }
+    } else {
+        let plan_task = state
+            .store
+            .task(&plan_task_id)?
+            .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+        let plan: MaterialIntakePlanV01 =
+            serde_json::from_value(plan_task.result.clone().unwrap_or(Value::Null)).map_err(
+                |_| {
+                    validation_error(
+                        "vua.production.plan_mismatch",
+                        "errors.production.planMismatch",
+                    )
+                },
+            )?;
+        let choice: RiskDecisionChoice = serde_json::from_value(Value::String(risk_choice.clone()))
+            .map_err(|_| {
+                validation_error(
+                    "vua.production.invalid_params",
+                    "errors.production.invalidParams",
+                )
+            })?;
+        Run::Execute(Box::new(MaterialIntakeConfirmationV01 {
+            plan: plan.clone(),
+            risk_decision: RiskDecisionV01 {
+                choice,
+                source_fingerprint: plan.source.source_fingerprint.clone(),
+                risk_fingerprint: plan.source.risk_fingerprint.clone(),
+                remember_for_session,
+            },
+            confirmed_at: if confirmed_at.is_empty() { now_rfc3339() } else { confirmed_at.clone() },
+            correlation_id: correlation_id.to_owned(),
+        }))
     };
 
+    // The idempotency fingerprint binds the FULL parameter set: the same
+    // commandId with a different plan, source, project, risk decision or
+    // recovery decision is a conflict (vua.command.id_conflict), never a
+    // silent replay.
+    let fingerprint_input = json!({
+        "commandId": command_id,
+        "planTaskId": plan_task_id,
+        "sourceFolder": source_folder,
+        "projectRoot": project_root,
+        "artifactOutputRoot": artifact_output_root,
+        "confirmedAt": confirmed_at,
+        "riskChoice": risk_choice,
+        "rememberForSession": remember_for_session,
+        "originalTaskId": original_task_id,
+        "decision": decision,
+    });
     let (task_id, replayed) = accept_production_task(
         state,
         if recovery { "production.recover" } else { "production.confirmPlan" },
         command_id,
-        &json!({"kind": "production.confirmPlan", "commandId": command_id}),
+        &fingerprint_input,
         request_id,
         correlation_id,
     )?;
@@ -1261,86 +1443,175 @@ fn confirm_plan(
         .expect("running poisoned")
         .insert(task_id.clone(), token.clone());
 
-    // The task is already Running (accept_production_task drove it there);
-    // the worker completes it through the store from its own thread.
-
     let store = Arc::clone(&state.store);
     let executor = Arc::clone(&services.executor);
     let services_for_worker = Arc::clone(services);
+    let owner_instance_id = state.provider_instance_id.clone();
     let worker_task_id = task_id.clone();
-    let worker_request_id = request_id.to_owned();
+    let worker_correlation = correlation_id.to_owned();
     std::thread::spawn(move || {
-        let project = ProjectRef { id: confirmation.plan.project_id.clone(), root: PathBuf::from(&project_root) };
-        let report = executor.execute(
-            &confirmation,
-            Path::new(&source_folder),
-            &project,
-            Path::new(&artifact_output_root),
-            &token,
-        );
+        let project_id = match &run {
+            Run::Execute(confirmation) => confirmation.plan.project_id.clone(),
+            Run::Rollback { .. } => "project".to_owned(),
+        };
+        let project =
+            ProjectRef { id: project_id, root: PathBuf::from(&project_root) };
+
+        // The mutation gate: SQLite lease → cross-profile project lock →
+        // pending-mutation marker, held for the whole mutating run. A crash
+        // leaves the marker behind (inspect-first evidence) and the OS lock
+        // releases itself; prepare_shutdown sees the lease as blocking.
+        let gate = match MutationGate::acquire(
+            &store,
+            &project_root,
+            &owner_instance_id,
+            &worker_task_id,
+            &worker_correlation,
+        ) {
+            Ok(gate) => gate,
+            Err(error) => {
+                if let Ok(Some(event)) = advance_production_task(
+                    &store,
+                    &worker_task_id,
+                    TaskMutation::Complete {
+                        state: TaskState::Failed,
+                        error: Some(error),
+                        result: None,
+                    },
+                ) {
+                    services_for_worker
+                        .completed_events
+                        .lock()
+                        .expect("completed events poisoned")
+                        .push(event);
+                }
+                services_for_worker
+                    .running
+                    .lock()
+                    .expect("running poisoned")
+                    .remove(&worker_task_id);
+                return;
+            }
+        };
+
+        let (state_final, error, result_value) = match &run {
+            Run::Execute(confirmation) => {
+                let report = executor.execute(
+                    confirmation,
+                    Path::new(&source_folder),
+                    &project,
+                    Path::new(&artifact_output_root),
+                    &token,
+                );
+                let result = MaterialTaskResult {
+                    plan_id: report.plan_id.clone(),
+                    status: match report.status {
+                        MaterialExecutionStatus::Succeeded => "succeeded".to_owned(),
+                        MaterialExecutionStatus::Cancelled => "cancelled".to_owned(),
+                        MaterialExecutionStatus::Failed => "failed".to_owned(),
+                    },
+                    error_code: report.error_code.clone(),
+                    rollback: match report.rollback {
+                        RollbackOutcome::NotNeeded => "not_needed".to_owned(),
+                        RollbackOutcome::Restored => "restored".to_owned(),
+                        RollbackOutcome::Failed => "failed".to_owned(),
+                    },
+                    build_record_id: report.build_record_id.clone(),
+                    replayed: report.replayed,
+                };
+                let result_value = serde_json::to_value(&result).ok();
+                match report.status {
+                    MaterialExecutionStatus::Succeeded => {
+                        (TaskState::Succeeded, None, result_value)
+                    }
+                    MaterialExecutionStatus::Cancelled => {
+                        (TaskState::Cancelled, None, result_value)
+                    }
+                    MaterialExecutionStatus::Failed => (
+                        TaskState::Failed,
+                        Some(
+                            AppErrorV1::new(
+                                report
+                                    .error_code
+                                    .clone()
+                                    .unwrap_or_else(|| "vua.material.failed".to_owned()),
+                                ErrorCategory::ExternalFailure,
+                                "errors.material.executionFailed",
+                                &confirmation.correlation_id,
+                            )
+                            .with_param(
+                                "planId",
+                                crate::contracts::ParamValue::Text(report.plan_id.clone()),
+                            )
+                            .with_recoverable(true),
+                        ),
+                        result_value,
+                    ),
+                }
+            }
+            Run::Rollback { snapshot_id } => {
+                let reference = crate::SnapshotRef {
+                    id: snapshot_id.clone(),
+                    path: project.root.join(".vua/snapshots").join(snapshot_id),
+                };
+                // The failed attempt's restore left a quarantine for this
+                // same snapshot; the user's explicit rollback decision
+                // supersedes it (the receipt remains the audit trail), so
+                // clear it before restoring again.
+                let stale_quarantine =
+                    project.root.join(".vua/recovery").join(snapshot_id);
+                if stale_quarantine.exists() {
+                    let _ = std::fs::remove_dir_all(&stale_quarantine);
+                }
+                match crate::FileSystemSnapshotStore.restore_verified(&project, &reference) {
+                    Ok(()) => (
+                        TaskState::Succeeded,
+                        None,
+                        Some(json!({
+                            "recovered": "rollback",
+                            "restored": true,
+                            "snapshotId": snapshot_id,
+                        })),
+                    ),
+                    Err(restore_error) => (
+                        TaskState::Failed,
+                        Some(
+                            AppErrorV1::new(
+                                "vua.material.rollback_failed",
+                                ErrorCategory::ExternalFailure,
+                                "errors.material.executionFailed",
+                                &worker_correlation,
+                            )
+                            .with_recoverable(true),
+                        ),
+                        Some(json!({
+                            "recovered": "rollback",
+                            "restored": false,
+                            "detail": restore_error.to_string(),
+                        })),
+                    ),
+                }
+            }
+        };
+
+        gate.release();
         services_for_worker
             .running
             .lock()
             .expect("running poisoned")
             .remove(&worker_task_id);
 
-        let result = MaterialTaskResult {
-            plan_id: report.plan_id.clone(),
-            status: match report.status {
-                MaterialExecutionStatus::Succeeded => "succeeded".to_owned(),
-                MaterialExecutionStatus::Cancelled => "cancelled".to_owned(),
-                MaterialExecutionStatus::Failed => "failed".to_owned(),
-            },
-            error_code: report.error_code.clone(),
-            rollback: match report.rollback {
-                RollbackOutcome::NotNeeded => "not_needed".to_owned(),
-                RollbackOutcome::Restored => "restored".to_owned(),
-                RollbackOutcome::Failed => "failed".to_owned(),
-            },
-            build_record_id: report.build_record_id.clone(),
-            replayed: report.replayed,
-        };
-        let result_value = serde_json::to_value(&result).ok();
-        let mutation = match report.status {
-            MaterialExecutionStatus::Succeeded => TaskMutation::Complete {
-                state: TaskState::Succeeded,
-                error: None,
-                result: result_value,
-            },
-            MaterialExecutionStatus::Cancelled => TaskMutation::Complete {
-                state: TaskState::Cancelled,
-                error: None,
-                result: result_value,
-            },
-            MaterialExecutionStatus::Failed => TaskMutation::Complete {
-                state: TaskState::Failed,
-                error: Some(
-                    AppErrorV1::new(
-                        report
-                            .error_code
-                            .clone()
-                            .unwrap_or_else(|| "vua.material.failed".to_owned()),
-                        ErrorCategory::ExternalFailure,
-                        "errors.material.executionFailed",
-                        &confirmation.correlation_id,
-                    )
-                    .with_param(
-                        "planId",
-                        crate::contracts::ParamValue::Text(report.plan_id.clone()),
-                    )
-                    .with_recoverable(true),
-                ),
-                result: result_value,
-            },
-        };
-        if let Ok(Some(event)) = advance_production_task(&store, &worker_task_id, mutation) {
+        if let Ok(Some(event)) = advance_production_task(
+            &store,
+            &worker_task_id,
+            TaskMutation::Complete { state: state_final, error, result: result_value },
+        ) {
             services_for_worker
                 .completed_events
                 .lock()
                 .expect("completed events poisoned")
                 .push(event);
         }
-        let _ = worker_request_id;
     });
 
     Ok(FrameOutcome::Response(application_success(
@@ -1350,6 +1621,152 @@ fn confirm_plan(
             "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
         }),
     )))
+}
+
+/// The full cross-profile mutation gate, acquired in order (SQLite lease →
+/// project lock → pending-mutation marker) and released in reverse. Any
+/// acquisition failure fails the task with a typed error — never a silent
+/// mutate-without-lock.
+struct MutationGate {
+    store: Arc<SqliteTaskStore>,
+    identity: ProjectIdentity,
+    owner_instance_id: String,
+    generation: u64,
+    marker: Option<MutationMarkerGuard>,
+    lock: Option<ProjectLockGuard>,
+}
+
+impl MutationGate {
+    fn acquire(
+        store: &Arc<SqliteTaskStore>,
+        project_root: &str,
+        owner_instance_id: &str,
+        task_id: &str,
+        correlation_id: &str,
+    ) -> Result<Self, AppErrorV1> {
+        let identity = ProjectIdentity::from_existing_path(project_root).map_err(|error| {
+            AppErrorV1::new(
+                "vua.project.identity_invalid",
+                ErrorCategory::Validation,
+                "errors.project.identityInvalid",
+                correlation_id,
+            )
+            .with_recoverable(false)
+            .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
+        })?;
+
+        let lease = store
+            .acquire_project_lease(&identity, owner_instance_id, task_id, &now_rfc3339())
+            .map_err(|error| {
+                AppErrorV1::new(
+                    "vua.project.lease_unavailable",
+                    ErrorCategory::Unavailable,
+                    "errors.project.leaseUnavailable",
+                    correlation_id,
+                )
+                .with_recoverable(true)
+                .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
+            })?;
+
+        let holder = LockHolder {
+            channel: "provider".to_owned(),
+            profile: "default".to_owned(),
+            pid: std::process::id(),
+            instance_id: owner_instance_id.to_owned(),
+            acquired_at: now_rfc3339(),
+        };
+        let root = PathBuf::from(project_root);
+        let lock = match acquire_project_lock(&root, holder.clone()) {
+            Ok(lock) => Some(lock),
+            Err(ProjectLockError::Held { previous }) => {
+                let _ = store.release_project_lease(
+                    &identity,
+                    owner_instance_id,
+                    lease.generation,
+                );
+                return Err(AppErrorV1::new(
+                    "vua.project.lock_held",
+                    ErrorCategory::Conflict,
+                    "errors.project.lockHeld",
+                    correlation_id,
+                )
+                .with_recoverable(true)
+                .with_param(
+                    "holder",
+                    crate::contracts::ParamValue::Text(
+                        previous
+                            .map(|holder| holder.instance_id)
+                            .unwrap_or_else(|| "unknown".to_owned()),
+                    ),
+                ));
+            }
+            Err(ProjectLockError::Io(lock_error)) => {
+                let _ = store.release_project_lease(
+                    &identity,
+                    owner_instance_id,
+                    lease.generation,
+                );
+                return Err(AppErrorV1::new(
+                    "vua.project.lock_failed",
+                    ErrorCategory::ExternalFailure,
+                    "errors.project.lockFailed",
+                    correlation_id,
+                )
+                .with_recoverable(true)
+                .with_param(
+                    "detail",
+                    crate::contracts::ParamValue::Text(lock_error.to_string()),
+                ));
+            }
+        };
+
+        let marker = match begin_mutation(&root, "material_intake", &holder) {
+            Ok(marker) => Some(marker),
+            Err(marker_error) => {
+                drop(lock);
+                let _ = store.release_project_lease(
+                    &identity,
+                    owner_instance_id,
+                    lease.generation,
+                );
+                return Err(AppErrorV1::new(
+                    "vua.project.marker_failed",
+                    ErrorCategory::ExternalFailure,
+                    "errors.project.markerFailed",
+                    correlation_id,
+                )
+                .with_recoverable(true)
+                .with_param(
+                    "detail",
+                    crate::contracts::ParamValue::Text(marker_error.to_string()),
+                ));
+            }
+        };
+
+        Ok(Self {
+            store: Arc::clone(store),
+            identity,
+            owner_instance_id: owner_instance_id.to_owned(),
+            generation: lease.generation,
+            marker,
+            lock,
+        })
+    }
+
+    /// Releases in reverse order: marker → lock → SQLite lease.
+    fn release(self) {
+        if let Some(marker) = self.marker {
+            let _ = marker.release();
+        }
+        if let Some(lock) = self.lock {
+            let _ = lock.release();
+        }
+        let _ = self.store.release_project_lease(
+            &self.identity,
+            &self.owner_instance_id,
+            self.generation,
+        );
+    }
 }
 
 fn get_task_payload(
@@ -1432,6 +1849,28 @@ fn persist_task_error(
 }
 
 
+
+/// Emits every finished production task's terminal event — including when
+/// the host is otherwise idle waiting for input.
+fn write_pending_events(
+    state: &mut HostState,
+    output: &mut impl Write,
+) -> Result<(), ProviderHostError> {
+    let mut pending_events = Vec::new();
+    if let Some(services) = &state.production {
+        let mut guard = services
+            .completed_events
+            .lock()
+            .expect("completed events poisoned");
+        pending_events.extend(guard.drain(..));
+        drop(guard);
+    }
+    for event in pending_events {
+        let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
+        write_frame(output, &event_id, "event", task_event(&event_id, &event))?;
+    }
+    Ok(())
+}
 
 fn write_frame(
     output: &mut impl Write,

@@ -675,3 +675,649 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
     assert!(task.cancel_requested);
     let _ = fs::remove_dir_all(&base);
 }
+fn recover_params(
+    decision: &str,
+    original_task_id: &str,
+    plan_task_id: &str,
+    source: &Path,
+    project_root: &Path,
+    base: &Path,
+) -> Value {
+    json!({
+        "decision": decision,
+        "originalTaskId": original_task_id,
+        "planTaskId": plan_task_id,
+        "sourceFolder": source.to_string_lossy(),
+        "projectRoot": project_root.to_string_lossy(),
+        "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
+        "confirmedAt": "2026-09-05T00:00:00Z",
+        "riskChoice": "continue",
+        "rememberForSession": false,
+        "userDecisionId": format!("user-decision-{decision}"),
+    })
+}
+
+/// A Bridge whose every command fails — simulates a broken Unity run so a
+/// confirmed confirm lands Failed with a receipt and a recovery snapshot.
+struct FailingBridge;
+
+impl UnityBridge for FailingBridge {
+    fn execute(
+        &self,
+        _project: &vua_orchestrator::ProjectRef,
+        _command: &UnityCommand,
+    ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
+        Err(vua_orchestrator::BridgeError::TimedOut)
+    }
+}
+
+/// Runs inspect + plan + a FAILING confirm; returns the confirm task id and
+/// plan task id for recovery requests.
+fn run_failing_confirm(
+    label: &str,
+) -> (PathBuf, PathBuf, PathBuf, String, String) {
+    let (base, source, project_root) = make_world(label);
+
+    // Run 1: inspect + plan (real executor, instant fake bridge).
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![
+                frame(
+                    "f1",
+                    request(
+                        "req-inspect",
+                        "production.startInspection",
+                        "cmd-inspect",
+                        json!({ "sourceFolder": source.to_string_lossy() }),
+                    ),
+                ),
+                frame("f2", request("req-pump", "task.list", "", json!({}))),
+            ]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let inspection_task_id =
+        response_payload(&frames, "req-inspect")["task"]["taskId"]
+            .as_str()
+            .unwrap()
+            .to_owned();
+
+    // Run 2: plan.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-plan",
+                    "production.requestPlan",
+                    "cmd-plan",
+                    plan_params(&inspection_task_id),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // Run 3: confirm against the FAILING bridge. The worker persists the
+    // Failed terminal state (with a receipt and recovery snapshot).
+    let executor = Arc::new(MaterialExecutor::new(
+        Arc::new(FailingBridge),
+        FileSystemSnapshotStore,
+        Arc::new(NoVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    ));
+    let config = ProductionConfig {
+        executor,
+        records: Arc::new(BuildRecordStore::new(base.join("records"))),
+    };
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![
+                frame(
+                    "f1",
+                    request(
+                        "req-confirm",
+                        "production.confirmPlan",
+                        "cmd-confirm-fail",
+                        confirm_params(&plan_task_id, &source, &project_root, &base),
+                    ),
+                ),
+                frame("f2", request("req-pump", "task.list", "", json!({}))),
+            ]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let confirm = response_payload(&frames, "req-confirm");
+    let confirm_task_id = confirm["task"]["taskId"].as_str().unwrap().to_owned();
+
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&confirm_task_id).unwrap().expect("task persists");
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "failing confirm never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Failed, "{task:?}");
+    assert_eq!(task.error.as_ref().expect("typed error").code, "vua.material.bridge_timeout");
+
+    (base, source, project_root, plan_task_id, confirm_task_id)
+}
+
+#[test]
+fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
+    let (base, source, project_root, plan_task_id, confirm_task_id) =
+        run_failing_confirm("recover-continue");
+
+    // A succeeding host run recovers with decision=continue: the plan runs
+    // again fresh and this time the fake Bridge succeeds.
+    let (config, bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-continue",
+                    recover_params(
+                        "continue",
+                        &confirm_task_id,
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+    assert_ne!(recover_task_id, confirm_task_id, "recovery is its own task");
+
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().expect("task persists");
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "recover never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
+    let result = task.result.expect("result");
+    assert_eq!(result["status"], "succeeded");
+    assert_eq!(bridge.commands.lock().unwrap().len(), 2, "continue really re-runs");
+
+    // The new attempt's receipt lives under the next free attempt id; the
+    // failed receipt stays intact as audit history.
+    let records = BuildRecordStore::new(base.join("records"));
+    let record_id = result["buildRecordId"].as_str().unwrap().to_owned();
+    assert_ne!(record_id, "material-unknown");
+    assert!(records.read(&record_id).is_ok());
+
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_007_recover_rollback_restores_without_rerunning() {
+    let (base, source, project_root, plan_task_id, confirm_task_id) =
+        run_failing_confirm("recover-rollback");
+    let manifest_before = fs::read_to_string(project_root.join("vpm-manifest.json")).unwrap();
+
+    let (config, bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-rollback",
+                    recover_params(
+                        "rollback",
+                        &confirm_task_id,
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().expect("task persists");
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "rollback recovery never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
+    let result = task.result.expect("result");
+    assert_eq!(result["recovered"], "rollback");
+    assert_eq!(result["restored"], true);
+
+    // Rollback recovery runs NO Unity command and leaves the project as the
+    // failed attempt's restore left it.
+    assert_eq!(bridge.commands.lock().unwrap().len(), 0, "rollback never imports");
+    assert_eq!(fs::read_to_string(project_root.join("vpm-manifest.json")).unwrap(), manifest_before);
+
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_008_recover_requires_user_decision_and_recoverable_source() {
+    let (base, source, project_root, plan_task_id, confirm_task_id) =
+        run_failing_confirm("recover-guards");
+    let (config, _bridge) = production_config(&base, &project_root);
+
+    // Missing userDecisionId is refused.
+    let output = {
+        let mut output_buffer = Vec::new();
+        let mut payload = recover_params(
+            "continue",
+            &confirm_task_id,
+            &plan_task_id,
+            &source,
+            &project_root,
+            &base,
+        );
+        payload["userDecisionId"] = json!("");
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request("req-no-decision", "production.recover", "cmd-guard-1", payload),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let error = response_frame(&frames, "req-no-decision")["payload"]["error"].clone();
+    assert_eq!(error["code"], "vua.production.user_decision_required");
+
+    // An unknown original task is refused.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-unknown-origin",
+                    "production.recover",
+                    "cmd-guard-2",
+                    recover_params(
+                        "continue",
+                        "prod-nonexistent00",
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let error = response_frame(&frames, "req-unknown-origin")["payload"]["error"].clone();
+    assert_eq!(error["code"], "vua.task.not_found");
+
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_009_same_command_id_with_different_params_is_a_conflict() {
+    let (base, source, project_root, plan_task_id, _confirm_task_id) =
+        run_failing_confirm("id-conflict");
+
+    // The SAME commandId as the failed confirm, but a different risk
+    // decision: a fingerprint conflict, never a silent replay.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        let mut payload = confirm_params(&plan_task_id, &source, &project_root, &base);
+        payload["riskChoice"] = json!("snapshot_and_continue");
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request("req-conflict", "production.confirmPlan", "cmd-confirm-fail", payload),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let error = response_frame(&frames, "req-conflict")["payload"]["error"].clone();
+    assert_eq!(error["code"], "vua.command.id_conflict");
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use vua_orchestrator::{acquire_project_lock, read_pending_mutation, LockHolder,
+        PendingMutation};
+
+    struct BlockingBridge {
+        released: Arc<AtomicBool>,
+    }
+    impl UnityBridge for BlockingBridge {
+        fn execute(
+            &self,
+            _project: &vua_orchestrator::ProjectRef,
+            command: &UnityCommand,
+        ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
+            let deadline = Instant::now() + Duration::from_secs(10);
+            while !self.released.load(Ordering::SeqCst) && Instant::now() < deadline {
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            Ok(UnityResult {
+                schema_version: 1,
+                command_id: command.command_id.clone(),
+                status: vua_orchestrator::ResultStatus::Succeeded,
+                changed_paths: vec![],
+                diagnostics: vec![],
+                data: serde_json::json!({"projectFingerprint": "fp-blocked"}),
+            })
+        }
+    }
+
+    let (base, source, project_root) = make_world("gate");
+    let _ = &source;
+    let released = Arc::new(AtomicBool::new(false));
+    let executor = Arc::new(MaterialExecutor::new(
+        Arc::new(BlockingBridge { released: Arc::clone(&released) }),
+        FileSystemSnapshotStore,
+        Arc::new(NoVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    ));
+    let config = ProductionConfig {
+        executor,
+        records: Arc::new(BuildRecordStore::new(base.join("records"))),
+    };
+
+    let (sender, receiver) = std::sync::mpsc::channel::<Vec<u8>>();
+    let output_buffer = Arc::new(Mutex::new(Vec::new()));
+    let writer = SharedWriter(Arc::clone(&output_buffer));
+    let path = base.join("provider.db");
+    let host = std::thread::spawn(move || {
+        let _ = vua_orchestrator::run_provider_host_with(
+            ChannelReader { receiver, buffer: Vec::new(), position: 0, done: false },
+            writer,
+            path,
+            Some(config),
+        );
+    });
+    let send = |frame_value: Value| {
+        let mut bytes = frame_value.to_string().into_bytes();
+        bytes.push(b'\n');
+        sender.send(bytes).unwrap();
+    };
+
+    send(frame(
+        "f1",
+        request(
+            "req-inspect",
+            "production.startInspection",
+            "cmd-inspect",
+            json!({ "sourceFolder": source.to_string_lossy() }),
+        ),
+    ));
+    let inspect = wait_for_response(&output_buffer, "req-inspect");
+    let inspection_task_id = inspect["task"]["taskId"].as_str().unwrap().to_owned();
+    send(frame(
+        "f2",
+        request("req-plan", "production.requestPlan", "cmd-plan", plan_params(&inspection_task_id)),
+    ));
+    let plan = wait_for_response(&output_buffer, "req-plan");
+    let plan_task_id = plan["task"]["taskId"].as_str().unwrap().to_owned();
+    send(frame(
+        "f3",
+        request(
+            "req-confirm",
+            "production.confirmPlan",
+            "cmd-confirm-gate",
+            confirm_params(&plan_task_id, &source, &project_root, &base),
+        ),
+    ));
+    let confirm = wait_for_response(&output_buffer, "req-confirm");
+    let confirm_task_id = confirm["task"]["taskId"].as_str().unwrap().to_owned();
+
+    // While the worker sits inside the Bridge command, the mutation gate is
+    // held: the pending-mutation marker exists, and a cross-profile lock
+    // attempt from "another instance" is refused naming its holder.
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let holder_seen = loop {
+        if matches!(read_pending_mutation(&project_root), PendingMutation::Leftover(_)) {
+            let holder = LockHolder {
+                channel: "other".into(),
+                profile: "other".into(),
+                pid: 1,
+                instance_id: "other-instance".into(),
+                acquired_at: "2026-09-05T00:00:00Z".into(),
+            };
+            if let Err(vua_orchestrator::ProjectLockError::Held { previous }) =
+                acquire_project_lock(&project_root, holder)
+            {
+                break previous.map(|holder| holder.instance_id);
+            }
+        }
+        assert!(Instant::now() < deadline, "gate never observed");
+        std::thread::sleep(Duration::from_millis(10));
+    };
+    assert!(holder_seen.is_some(), "the cross-profile lock names its live holder");
+
+    // Release the run and let it finish.
+    released.store(true, Ordering::SeqCst);
+    send(frame("f4", request("req-pump", "task.list", "", json!({}))));
+    drop(sender);
+    host.join().unwrap();
+
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&confirm_task_id).unwrap().expect("task persists");
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "worker never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded);
+
+    // Released gates: marker cleared, project lock acquirable again.
+    assert_eq!(read_pending_mutation(&project_root), PendingMutation::None);
+    let holder = LockHolder {
+        channel: "other".into(),
+        profile: "other".into(),
+        pid: 1,
+        instance_id: "other-instance".into(),
+        acquired_at: "2026-09-05T00:00:00Z".into(),
+    };
+    let guard = acquire_project_lock(&project_root, holder).expect("lock released after run");
+    guard.release().unwrap();
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
+    let (base, source, project_root) = make_world("idle-event");
+
+    // Inspect + plan first.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![
+                frame(
+                    "f1",
+                    request(
+                        "req-inspect",
+                        "production.startInspection",
+                        "cmd-inspect",
+                        json!({ "sourceFolder": source.to_string_lossy() }),
+                    ),
+                ),
+                frame("f2", request("req-pump", "task.list", "", json!({}))),
+            ]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-plan",
+                    "production.requestPlan",
+                    "cmd-plan",
+                    plan_params(&inspection_task_id),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // Now confirm against the live host and then go COMPLETELY idle: the
+    // completion event must arrive on its own through the timed pump.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let (sender, receiver) = std::sync::mpsc::channel::<Vec<u8>>();
+    let output_buffer = Arc::new(Mutex::new(Vec::new()));
+    let writer = SharedWriter(Arc::clone(&output_buffer));
+    let path = base.join("provider.db");
+    let host = std::thread::spawn(move || {
+        let _ = vua_orchestrator::run_provider_host_with(
+            ChannelReader { receiver, buffer: Vec::new(), position: 0, done: false },
+            writer,
+            path,
+            Some(config),
+        );
+    });
+    let send = |frame_value: Value| {
+        let mut bytes = frame_value.to_string().into_bytes();
+        bytes.push(b'\n');
+        sender.send(bytes).unwrap();
+    };
+    send(frame(
+        "f1",
+        request(
+            "req-confirm",
+            "production.confirmPlan",
+            "cmd-confirm-idle",
+            confirm_params(&plan_task_id, &source, &project_root, &base),
+        ),
+    ));
+    let confirm = wait_for_response(&output_buffer, "req-confirm");
+    let confirm_task_id = confirm["task"]["taskId"].as_str().unwrap().to_owned();
+
+    // NO further frames: poll the wire for the terminal event.
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let delivered = loop {
+        let bytes = output_buffer.lock().unwrap().clone();
+        let frames = parse_frames(&bytes);
+        let hit = frames.iter().find(|frame| {
+            frame["kind"] == "event"
+                && frame["payload"]["taskId"] == confirm_task_id.as_str()
+                && frame["payload"]["state"] == "succeeded"
+        });
+        if hit.is_some() {
+            break true;
+        }
+        assert!(Instant::now() < deadline, "completion event never reached the idle host");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert!(delivered);
+
+    drop(sender);
+    host.join().unwrap();
+    let _ = fs::remove_dir_all(&base);
+}

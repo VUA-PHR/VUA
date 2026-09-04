@@ -134,13 +134,18 @@ impl UnityBridge for FakeBridge {
         // of that side effect for the deterministic publication step.
         if command.operation == vua_orchestrator::UnityOperation::CreateLocalVpmPackage {
             let package_id = command.payload.package_id.clone().unwrap_or_default();
-            let package_dir = project.root.join("Packages").join(package_id);
-            fs::create_dir_all(&package_dir).unwrap();
+            let package_dir = project.root.join("Packages").join(&package_id);
+            fs::create_dir_all(package_dir.join("Runtime")).unwrap();
             fs::write(
                 package_dir.join("package.json"),
                 serde_json::json!({ "name": "synthetic.local", "version": "0.1.0" }).to_string(),
             )
             .unwrap();
+            // A loadable asset plus its .meta sidecar: the validation list
+            // must carry the asset but never the sidecar (review P1: meta
+            // files are not loadable assets).
+            fs::write(package_dir.join("Runtime").join("Asset.prefab"), "synthetic").unwrap();
+            fs::write(package_dir.join("Runtime").join("Asset.prefab.meta"), "meta").unwrap();
         }
         // The real Bridge materializes the extracted layout into Assets/;
         // the fake mirrors that side effect so restores are observable.
@@ -519,6 +524,15 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
         Some(confirmation.correlation_id.as_str())
     );
     // Declared dependencies reach the Bridge payload verbatim, sorted.
+    let validated = &commands[3].payload.expected_asset_paths;
+    assert!(
+        validated.iter().any(|path| path.ends_with("Runtime/Asset.prefab")),
+        "loadable assets are validated: {validated:?}"
+    );
+    assert!(
+        validated.iter().all(|path| !path.ends_with(".meta")),
+        "meta sidecars are never validated as assets: {validated:?}"
+    );
     let declared: Vec<(String, String)> = commands[2]
         .payload
         .package_dependencies
