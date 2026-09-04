@@ -424,11 +424,9 @@ impl MaterialExecutor {
         // The staging project serves exactly one atomic task; the guard
         // destroys it on every path out of this scope. The staging token
         // binds the Bridge's create_local_vpm_package to THIS task.
-        let staging = StagingProject::create(
-            &self.temp_root,
-            &confirmation.correlation_id,
-            &confirmation.correlation_id,
-        )
+        // 提交态 StagingProject::create 为两参;第三参(staging token)随
+        // B3 在途改动落地,届时此处同步恢复
+        let staging = StagingProject::create(&self.temp_root, &confirmation.correlation_id)
         .map_err(|error| {
             (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
         })?;

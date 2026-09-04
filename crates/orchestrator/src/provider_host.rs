@@ -1,8 +1,8 @@
 //! Transport adapter for the supervised Orchestrator Provider process.
 
 use crate::{
-    IdempotentCancellation, SqliteStoreError, SqliteTaskStore, StoredTask, StoredTaskEvent,
-    TaskEventKind, TaskState,
+    IdempotentCancellation, IdempotentTaskAcceptance, NewTask, SqliteStoreError,
+    SqliteTaskStore, StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -146,6 +146,14 @@ pub fn run_provider_host(
         }
         while matches!(line.last(), Some(b'\n' | b'\r')) {
             line.pop();
+        }
+
+        // demo.task deterministic progression: one stage per received frame,
+        // holding at running awaiting cancellation; events are written before
+        // this frame's response (notifications of fact, queries stay authoritative)
+        for event in advance_demo_tasks(&mut state)? {
+            let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
+            write_frame(&mut output, &event_id, "event", task_event(&event_id, &event))?;
         }
         let frame = match serde_json::from_slice::<InboundFrame>(&line) {
             Ok(frame) => frame,
@@ -337,7 +345,7 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
                 json!({
                     "contractVersion": APPLICATION_CONTRACT_VERSION,
                     "revision": state.store.application_revision()?,
-                    "capabilities": {"revision": 0, "operations": []},
+                    "capabilities": {"revision": 0, "operations": served_capabilities()},
                 }),
             ))),
             "task.list" => {
@@ -376,6 +384,18 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
                 }
             }
             "task.requestCancellation" => handle_cancellation(state, request, request_id),
+            "environment.getSnapshot" => Ok(FrameOutcome::Response(application_success(
+                request_id,
+                json!({
+                    "contractVersion": APPLICATION_CONTRACT_VERSION,
+                    "revision": state.store.application_revision()?,
+                    "capturedAt": now_rfc3339(),
+                    // presence vocabulary frozen by the B6 spike; real probes land
+                    // with F6/B6 - an empty list is an honest empty, not a ready verdict
+                    "items": [],
+                }),
+            ))),
+            "task.startDemo" => Ok(handle_start_demo(state, request, request_id, correlation_id)),
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
                 correlation_id,
@@ -394,6 +414,159 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             store_error_category(&error),
         ))
     })
+}
+
+/// Kernel-side derivation source for the Gateway boolean capabilities and the
+/// entry visibility (contract operation-level Capability). demo.task leaves the
+/// production capability table once the F3 real use-case command lands.
+fn served_capabilities() -> Value {
+    json!([
+        {"operationId": "task.list", "availability": "available"},
+        {"operationId": "environment.getSnapshot", "availability": "available"},
+        {"operationId": "demo.task", "availability": "available"},
+        {
+            "operationId": "desktop.remoteBrowser",
+            "availability": "unavailable",
+            "reason": {
+                "contractVersion": APPLICATION_CONTRACT_VERSION,
+                "code": "vua.desktop.remote_browser_unavailable",
+                "category": "unavailable",
+                "messageKey": "errors.desktop.remoteBrowserUnavailable",
+                "recoverable": true,
+                "retryable": false,
+                "correlationId": "provider-capability",
+            },
+        },
+    ])
+}
+
+/// demo commandId -> deterministic task id: a repeated command hits the same
+/// task, with the persistence-layer idempotent accept as the second line of defense.
+fn demo_task_id(command_id: &str) -> String {
+    let mut hasher = Sha256::new();
+    hasher.update(command_id.as_bytes());
+    let digest = hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<String>();
+    format!("demo-{}", &digest[..12])
+}
+
+fn handle_start_demo(
+    state: &mut HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let command_id = request
+        .get("commandId")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    if command_id.is_empty() {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.demo.invalid_command",
+            "errors.demo.invalidCommand",
+            "validation",
+        ));
+    }
+    let task_id = demo_task_id(command_id);
+    if let Ok(Some(task)) = state.store.task(&task_id) {
+        // idempotent replay: the same commandId returns the existing task
+        // snapshot without creating a new task or emitting new events
+        return FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "contractVersion": APPLICATION_CONTRACT_VERSION,
+                "task": task_snapshot(state, &task),
+            }),
+        ));
+    }
+
+    let new_task = NewTask {
+        task_id: task_id.clone(),
+        correlation_id: correlation_id.to_string(),
+        occurred_at: now_rfc3339(),
+    };
+    let fingerprint_input = json!({"kind": "task.startDemo", "commandId": command_id});
+    let result = state.store.accept_idempotent_task(
+        "task.startDemo",
+        command_id,
+        &request_fingerprint(&fingerprint_input),
+        &new_task,
+        &json!({"demo": true}),
+    );
+    match result {
+        Ok(IdempotentTaskAcceptance::Accepted { task, event }) => {
+            let response = application_success(
+                request_id,
+                json!({
+                    "contractVersion": APPLICATION_CONTRACT_VERSION,
+                    "task": task_snapshot(state, &task),
+                }),
+            );
+            let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
+            FrameOutcome::ResponseAndEvent {
+                response,
+                event: (event_id.clone(), task_event(&event_id, &event)),
+            }
+        }
+        Ok(IdempotentTaskAcceptance::Replayed { response, .. }) => {
+            FrameOutcome::Response(application_success(request_id, response))
+        }
+        Err(error) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            store_error_code(&error),
+            "errors.provider.persistence",
+            store_error_category(&error),
+        )),
+    }
+}
+
+/// Demo task deterministic progression: queued -> preparing -> running, holding
+/// at running awaiting cancellation; cancellation then completes as cancelled.
+/// Progression is driven by received frames (deterministic, no timers).
+fn advance_demo_tasks(
+    state: &mut HostState,
+) -> Result<Vec<StoredTaskEvent>, SqliteStoreError> {
+    let mut events = Vec::new();
+    for task in state.store.tasks()? {
+        if !task.task_id.starts_with("demo-") || task.state.is_terminal() {
+            continue;
+        }
+        let target = if task.cancel_requested {
+            (task.state == TaskState::Running).then_some(TaskState::Cancelled)
+        } else {
+            match task.state {
+                TaskState::Queued => Some(TaskState::Preparing),
+                TaskState::Preparing => Some(TaskState::Running),
+                _ => None,
+            }
+        };
+        let Some(target) = target else { continue };
+        let mutation = if target.is_terminal() {
+            TaskMutation::Complete {
+                state: target,
+                error: None,
+                result: Some(json!({"demo": true})),
+            }
+        } else {
+            TaskMutation::Transition {
+                state: target,
+                payload: json!({}),
+            }
+        };
+        if let Some(event) = state
+            .store
+            .mutate_task(&task.task_id, task.revision, &now_rfc3339(), mutation)?
+        {
+            events.push(event);
+        }
+    }
+    Ok(events)
 }
 
 fn handle_cancellation(
@@ -865,6 +1038,101 @@ mod tests {
                 .unwrap()
                 .unwrap()
                 .recovery_required
+        );
+    }
+
+    #[test]
+    fn demo_task_walks_lifecycle_over_frames_and_replays_idempotently() {
+        let path = database_path("demo-lifecycle");
+
+        // run 1: start -> accepted queued(事件),确定性 taskId
+        let start = request(
+            "request-demo-1",
+            "task.startDemo",
+            json!({"commandId": "command-demo-1", "kind": "command"}),
+        );
+        let input = [frame("frame-1", "request", start)].join("\n") + "\n";
+        let mut output = Vec::new();
+        run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
+        let frames = parse_frames(output);
+        assert_eq!(frames.len(), 2);
+        assert_eq!(frames[0]["kind"], "response");
+        let task_id = frames[0]["payload"]["value"]["task"]["taskId"]
+            .as_str()
+            .expect("demo task id")
+            .to_string();
+        assert!(task_id.starts_with("demo-"));
+        assert_eq!(frames[0]["payload"]["value"]["task"]["state"], "queued");
+        assert_eq!(frames[1]["kind"], "event");
+        assert_eq!(frames[1]["payload"]["kind"], "task.accepted");
+
+        // run 2: 幂等重放返回既有任务(帧驱动推进一格:queued -> preparing);
+        // 取消 -> requested;能力表登记 demo.task
+        let replay = request(
+            "request-demo-2",
+            "task.startDemo",
+            json!({"commandId": "command-demo-1", "kind": "command"}),
+        );
+        let cancel = request(
+            "request-cancel",
+            "task.requestCancellation",
+            json!({
+                "commandId": "command-cancel-1",
+                "kind": "command",
+                "params": {"taskId": task_id},
+            }),
+        );
+        let input = [
+            frame("frame-2", "request", replay),
+            frame("frame-3", "request", cancel),
+            frame(
+                "frame-4",
+                "request",
+                request("request-snap", "application.getSnapshot", json!({})),
+            ),
+        ]
+        .join("\n")
+            + "\n";
+        let mut output = Vec::new();
+        run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
+        let frames = parse_frames(output);
+        // frame-2: 推进事件(preparing) + 重放响应;frame-3: 推进事件(running) + requested + 取消事件;
+        // frame-4: 能力表响应
+        assert_eq!(frames.len(), 7);
+        assert_eq!(frames[0]["kind"], "event");
+        assert_eq!(frames[0]["payload"]["state"], "preparing");
+        assert_eq!(frames[1]["payload"]["value"]["task"]["state"], "preparing");
+        assert_eq!(frames[2]["kind"], "event");
+        assert_eq!(frames[2]["payload"]["state"], "running");
+        assert_eq!(frames[3]["payload"]["value"]["outcome"], "requested");
+        assert_eq!(frames[4]["kind"], "event");
+        assert_eq!(frames[4]["payload"]["kind"], "task.cancellationRequested");
+        let operations = &frames[6]["payload"]["value"]["capabilities"]["operations"];
+        assert!(operations
+            .as_array()
+            .expect("operations array")
+            .iter()
+            .any(|operation| operation["operationId"] == "demo.task"));
+
+        // run 3: 重启后宿主推进取消中任务到 cancelled 终态(事件先于查询响应)
+        let input = [
+            frame(
+                "frame-5",
+                "request",
+                request("request-list", "task.list", json!({})),
+            ),
+        ]
+        .join("\n")
+            + "\n";
+        let mut output = Vec::new();
+        run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
+        let frames = parse_frames(output);
+        // 取消在 run 2 的下一帧推进中已完成;重启宿主后终态如实持久
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0]["payload"]["value"]["tasks"][0]["state"], "cancelled");
+        assert_eq!(
+            frames[0]["payload"]["value"]["tasks"][0]["recoveryDisposition"],
+            "none"
         );
     }
 }
