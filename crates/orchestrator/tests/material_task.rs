@@ -11,38 +11,34 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BridgeError, BuildRecordStore, BuildRecordStatus, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutor,
-    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
-    MaterialIntakeTaskSpec, ProjectRef, ResultStatus,
+    LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutor, MaterialIntakeConfirmationV01,
+    MaterialIntakeEngine, MaterialIntakePlanV01, MaterialIntakeTaskSpec, ProjectRef, ResultStatus,
     RiskDecisionChoice, RiskDecisionV01, TaskRuntime, TaskState, UnityBridge, UnityCommand,
     UnityResult, VpmBackend, VpmCapabilities,
 };
 
 fn temp_dir(label: &str) -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_nanos();
+    let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
     std::env::temp_dir().join(format!("vua-mtask-{label}-{nanos}"))
 }
 
-fn append(builder: &mut Builder<GzEncoder<fs::File>>, path: &str, bytes: &[u8]) {
-    let mut header = Header::new_gnu();
-    header.set_size(bytes.len() as u64);
-    header.set_cksum();
-    builder.append_data(&mut header, path, bytes).unwrap();
+fn append(b: &mut Builder<GzEncoder<fs::File>>, path: &str, bytes: &[u8]) {
+    let mut h = Header::new_gnu();
+    h.set_size(bytes.len() as u64);
+    h.set_cksum();
+    b.append_data(&mut h, path, bytes).unwrap();
 }
 
 fn unitypackage(path: &Path, assets: &[&str]) {
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).unwrap();
+    if let Some(p) = path.parent() {
+        fs::create_dir_all(p).unwrap();
     }
-    let file = fs::File::create(path).unwrap();
-    let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
-    for asset in assets {
-        append(&mut builder, asset, b"fixture");
+    let f = fs::File::create(path).unwrap();
+    let mut b = Builder::new(GzEncoder::new(f, flate2::Compression::default()));
+    for a in assets {
+        append(&mut b, a, b"fixture");
     }
-    builder.finish().unwrap();
+    b.finish().unwrap();
 }
 
 fn make_world(label: &str) -> (PathBuf, ProjectRef, PathBuf) {
@@ -54,10 +50,7 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef, PathBuf) {
     fs::create_dir_all(project_root.join("Packages")).unwrap();
     fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
-    let project = ProjectRef {
-        id: "project".into(),
-        root: project_root,
-    };
+    let project = ProjectRef { id: "project".into(), root: project_root };
     (base, project, source)
 }
 
@@ -76,78 +69,58 @@ fn confirmation(plan: &MaterialIntakePlanV01) -> MaterialIntakeConfirmationV01 {
 }
 
 struct NoVpm;
-
 impl VpmBackend for NoVpm {
     fn name(&self) -> &'static str {
         "none"
     }
-
     fn capabilities(&self) -> VpmCapabilities {
-        VpmCapabilities {
-            create_project: false,
-            preview_install: false,
-        }
+        VpmCapabilities { create_project: false, preview_install: false }
     }
-
     fn preview_install(
         &self,
-        _project: &ProjectRef,
-        _packages: &[vua_orchestrator::PackageRequestV1],
+        _: &ProjectRef,
+        _: &[vua_orchestrator::PackageRequestV1],
     ) -> Result<vua_orchestrator::ChangePreviewV1, vua_orchestrator::AppErrorV1> {
-        panic!("the direct path must not reach the vpm backend")
+        panic!("direct mode never previews")
     }
-
     fn apply_install(
         &self,
-        _project: &ProjectRef,
-        _packages: &[vua_orchestrator::PackageRequestV1],
-        _confirmed_digest: &str,
+        _: &ProjectRef,
+        _: &[vua_orchestrator::PackageRequestV1],
+        _: &str,
     ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
-        panic!("the direct path must not reach the vpm backend")
+        panic!("direct mode never installs")
     }
-
     fn create_project(
         &self,
-        _parent: &Path,
-        _name: &str,
-        _template: Option<&str>,
+        _: &Path,
+        _: &str,
+        _: Option<&str>,
     ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
-        panic!("the direct path must not reach the vpm backend")
+        panic!("direct mode never creates projects")
     }
 }
 
-// --- fake bridge (test double for UnityBridge) ---
-
-struct FakeBridgeState {
-    commands: Vec<UnityCommand>,
-}
-
-#[derive(Clone)]
+/// Always succeeds and reports a fresh project fingerprint per command, so
+/// the executor's fingerprint chaining is exercised for real.
 struct FakeBridge {
-    state: Arc<Mutex<FakeBridgeState>>,
+    commands: Mutex<Vec<UnityCommand>>,
 }
 
 impl FakeBridge {
     fn new() -> Self {
-        Self {
-            state: Arc::new(Mutex::new(FakeBridgeState {
-                commands: Vec::new(),
-            })),
-        }
+        Self { commands: Mutex::new(Vec::new()) }
     }
 
     fn command_count(&self) -> usize {
-        self.state.lock().unwrap().commands.len()
+        self.commands.lock().unwrap().len()
     }
 }
 
 impl UnityBridge for FakeBridge {
-    fn execute(
-        &self,
-        _project: &ProjectRef,
-        command: &UnityCommand,
-    ) -> Result<UnityResult, BridgeError> {
-        self.state.lock().unwrap().commands.push(command.clone());
+    fn execute(&self, _: &ProjectRef, command: &UnityCommand) -> Result<UnityResult, BridgeError> {
+        let mut commands = self.commands.lock().unwrap();
+        commands.push(command.clone());
         Ok(UnityResult {
             schema_version: 1,
             command_id: command.command_id.clone(),
@@ -155,28 +128,23 @@ impl UnityBridge for FakeBridge {
             changed_paths: vec![],
             diagnostics: vec![],
             data: serde_json::json!({
-                "projectFingerprint": format!("fp-{}", self.command_count())
+                "projectFingerprint": format!("fp-{}", commands.len())
             }),
         })
     }
 }
 
-fn build_executor(
-    base: &Path,
-    bridge: FakeBridge,
-) -> (Arc<MaterialExecutor>, Arc<FakeBridge>) {
+fn build_executor(base: &Path, bridge: FakeBridge) -> (Arc<MaterialExecutor>, Arc<FakeBridge>) {
     let bridge = Arc::new(bridge);
-    let identity_store = LocalPackageIdentityStore::new(base.join("identities.json"));
-    let clock = Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"]));
     let executor = Arc::new(MaterialExecutor::new(
         bridge.clone(),
         FileSystemSnapshotStore,
         Arc::new(NoVpm),
         BuildRecordStore::new(base.join("records")),
-        clock,
+        Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"])),
         base.join("temp"),
-        String::from("2022.3.22f1"),
-        identity_store,
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
     ));
     (executor, bridge)
 }
@@ -189,27 +157,22 @@ fn runtime() -> TaskRuntime {
     )
 }
 
-fn wait_for_terminal(
-    runtime: &TaskRuntime,
-    task_id: &str,
-) -> vua_orchestrator::TaskSnapshot {
+fn wait_for_terminal(rt: &TaskRuntime, task_id: &str) -> vua_orchestrator::TaskSnapshot {
     let deadline = Instant::now() + Duration::from_secs(30);
     loop {
-        let snapshot = runtime.snapshot(task_id).expect("task must exist");
-        if snapshot.state.is_terminal() {
-            return snapshot;
+        let s = rt.snapshot(task_id).expect("task must exist");
+        if s.state.is_terminal() {
+            return s;
         }
-        assert!(Instant::now() < deadline, "task did not finish in time");
+        assert!(Instant::now() < deadline, "task did not finish");
         std::thread::sleep(Duration::from_millis(5));
     }
 }
 
 #[test]
-fn b3_task_001_material_intake_runs_as_a_runtime_task_and_replays() {
+fn b3_task_001_happy_path_runs_and_replays() {
     let (base, project, source) = make_world("task-happy");
-    let inspection = MaterialIntakeEngine
-        .inspect_folder(&source, "corr")
-        .unwrap();
+    let inspection = MaterialIntakeEngine.inspect_folder(&source, "corr").unwrap();
     let plan = MaterialIntakeEngine
         .plan(
             MaterialEntryMode::DirectUnityPackage,
@@ -238,31 +201,25 @@ fn b3_task_001_material_intake_runs_as_a_runtime_task_and_replays() {
 
     let snapshot = wait_for_terminal(&rt, &accepted.task_id);
     assert_eq!(snapshot.state, TaskState::Succeeded);
-
     let record = BuildRecordStore::new(base.join("records"))
         .read(&format!("material-{}", plan.plan_id))
         .expect("receipt published");
     assert_eq!(record.status, BuildRecordStatus::Succeeded);
+    assert_eq!(bridge.command_count(), 2, "one import + one validation");
 
-    let second = executor.execute(
-        &confirmation,
-        &source,
-        &project,
-        &base.join("artifacts"),
-    );
-    assert!(second.replayed, "second execute must be a replay");
-    assert_eq!(bridge.command_count(), 2, "replay must not touch Unity");
+    // The published receipt makes a direct re-run a replay: no Unity traffic.
+    let second = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    assert!(second.replayed, "replay must not touch Unity");
+    assert_eq!(bridge.command_count(), 2);
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
 }
 
 #[test]
-fn b3_task_002_cancelled_run_records_cancelled_receipt() {
+fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
     let (base, project, source) = make_world("task-cancel");
-    let inspection = MaterialIntakeEngine
-        .inspect_folder(&source, "corr")
-        .unwrap();
+    let inspection = MaterialIntakeEngine.inspect_folder(&source, "corr").unwrap();
     let plan = MaterialIntakeEngine
         .plan(
             MaterialEntryMode::DirectUnityPackage,
@@ -274,9 +231,11 @@ fn b3_task_002_cancelled_run_records_cancelled_receipt() {
         .unwrap();
     let confirmation = confirmation(&plan);
 
-    let (executor, _) = build_executor(&base, FakeBridge::new());
+    // Cancellation lands before the first step: nothing mutated, so the
+    // executor publishes no receipt (same semantics as b3_exec_003) — a
+    // later re-run simply runs fresh.
+    let (executor, bridge) = build_executor(&base, FakeBridge::new());
     executor.cancel();
-
     let rt = runtime();
     let accepted = vua_orchestrator::submit_material_intake(
         &rt,
@@ -293,6 +252,13 @@ fn b3_task_002_cancelled_run_records_cancelled_receipt() {
 
     let snapshot = wait_for_terminal(&rt, &accepted.task_id);
     assert_eq!(snapshot.state, TaskState::Cancelled);
+    assert_eq!(bridge.command_count(), 0, "cancellation precedes every step");
+    assert!(
+        BuildRecordStore::new(base.join("records"))
+            .read(&format!("material-{}", plan.plan_id))
+            .is_err(),
+        "a pre-mutation cancel leaves no receipt"
+    );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
