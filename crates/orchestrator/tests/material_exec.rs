@@ -129,10 +129,11 @@ impl UnityBridge for FakeBridge {
         let mut state = self.state.lock().unwrap();
         state.commands.push(command.clone());
         // The real Bridge produces the package layout inside the staging
-        // project; the fake reproduces just enough of that side effect for
-        // the deterministic publication step.
+        // project at Packages/<packageId>/; the fake reproduces just enough
+        // of that side effect for the deterministic publication step.
         if command.operation == vua_orchestrator::UnityOperation::CreateLocalVpmPackage {
-            let package_dir = project.root.join("package");
+            let package_id = command.payload.package_id.clone().unwrap_or_default();
+            let package_dir = project.root.join("Packages").join(package_id);
             fs::create_dir_all(&package_dir).unwrap();
             fs::write(
                 package_dir.join("package.json"),
@@ -429,14 +430,27 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
         assert!(steps.contains(&expected), "missing {expected:?}");
     }
 
-    // The Bridge command ran inside the staging project, token-bound.
+    // The Bridge command sequence inside staging: inspect → import →
+    // create; all scoped to the staging project and token-bound. The final
+    // validation then runs against the TARGET project.
     let commands = bridge.state.lock().unwrap().commands.clone();
-    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::CreateLocalVpmPackage);
-    assert!(commands[0].project_id.ends_with("-staging"));
+    assert_eq!(commands.len(), 4);
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::InspectProject);
+    assert_eq!(commands[1].operation, vua_orchestrator::UnityOperation::ImportUnityPackage);
+    assert_eq!(commands[2].operation, vua_orchestrator::UnityOperation::CreateLocalVpmPackage);
+    for command in &commands[..3] {
+        assert!(command.project_id.ends_with("-staging"));
+    }
+    assert_eq!(commands[3].operation, vua_orchestrator::UnityOperation::ValidateAssetPaths);
+    assert_eq!(commands[3].project_id, "project");
     assert_eq!(
-        commands[0].payload.staging_token.as_deref(),
+        commands[2].payload.staging_token.as_deref(),
         Some(confirmation.correlation_id.as_str())
     );
+    // The staging import chained the staging fingerprint from the inspect
+    // (the fake bridge numbers its returned fingerprints fp-1, fp-2, …).
+    assert_eq!(commands[1].expected_project_fingerprint.as_deref(), Some("fp-1"));
+    assert_eq!(commands[2].expected_project_fingerprint.as_deref(), Some("fp-2"));
 
     // The package was registered and installed with the bound digest.
     assert_eq!(vpm.registrations.load(Ordering::SeqCst), 1);
