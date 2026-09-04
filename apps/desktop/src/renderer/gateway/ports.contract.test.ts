@@ -48,7 +48,10 @@ for (const { label, source, make } of implementations) {
   test(`${label}: 各端口 capability 形态合法`, async () => {
     const gateway = make();
     assertCapabilityShape(await gateway.environment.capability());
-    assertCapabilityShape(await gateway.modelProduction.capability());
+    // F3:模型生产领域能力为复合报告(overall 既有面 + production 纵向流程)
+    const modelProductionCaps = await gateway.modelProduction.capability();
+    assertCapabilityShape(modelProductionCaps.overall);
+    assertCapabilityShape(modelProductionCaps.production);
     assertCapabilityShape(await gateway.toolCatalog.capability());
     assertCapabilityShape(await gateway.task.capability());
     assertCapabilityShape(await gateway.acquire.capability());

@@ -243,6 +243,91 @@ export const fixtureStrings = {
       modularCloset: "Assets/ModularCloset (legacy)",
     },
   },
+  /** F3 生产纵向流程演示负载(F3 UI/UX 先行切片;素材名/发现/计划/证据/任务标题/
+   *  日志均为数据负载,词表键由代码承载,不进入字符串值) */
+  production: {
+    materials: {
+      unitypackageDirect: "Summer_Uniform_v1.2.unitypackage",
+      localVpm: "summer-uniform-local-1.0.0(本地 VPM 包)",
+    },
+    /** 车间标题行({stage} 由 format + termLabel 注入) */
+    headlines: {
+      active: "正在执行:{stage} · 换装导入与菜单生成",
+      completed: "流程已完成:{stage} · 全部阶段通过",
+      cancelled: "流程已取消:{stage} · 在安全边界结束",
+      failed: "流程失败:{stage} · 可从快照恢复",
+      expired: "确认已过期:{stage} · 未执行任何变更",
+    },
+    inspection: {
+      findings: {
+        compat: "衣装「Summer_Uniform」声明兼容目标素体(演示结论)。",
+        missing: "可选配件纹理「Summer_Hat」未在本地找到(非阻断)。",
+        conflict: "换装菜单与既有参数「OutfitToggle」存在命名冲突。",
+      },
+    },
+    plan: {
+      stageSummaries: {
+        snapshot: "执行前创建并验证项目快照。",
+        execute: "导入素材、绑定骨骼并生成换装菜单与参数。",
+        validate: "校验引用、菜单与参数一致性。",
+      },
+      risks: [
+        "换装菜单合并会改动现有参数,已规划快照回退路径。",
+        "预计额外占用磁盘约 300 MB。",
+      ],
+      diffs: {
+        added: "为缺失的可选配件纹理生成占位引用,不阻断构建。",
+        resolved: "命名冲突经重命名「OutfitToggle_v2」规避。",
+      },
+    },
+    /** Build Record 四类证据(快照/Bridge 作业/本地 VPM/验证;不透明载荷) */
+    recordFacts: {
+      completed: {
+        snapshot: "快照 r8 已创建并通过完整性校验(演示)。",
+        bridgeJob: "Bridge 作业 bridge-job-demo-0142 已完成(演示)。",
+        localVpm: "本地包 summer-uniform-local-1.0.0 安装成功(演示)。",
+        validation: "验证通过:引用、菜单与参数一致(演示)。",
+      },
+      rolledBack: {
+        snapshot: "已恢复执行前快照 r8,变更全部回退(演示)。",
+        bridgeJob: "Bridge 作业 bridge-job-demo-0142 已回退(演示)。",
+        localVpm: "本地包未发生变更(演示)。",
+        validation: "回滚后校验通过:项目回到执行前状态(演示)。",
+      },
+      rollbackFailed: {
+        snapshot: "恢复快照 r8 失败:快照校验和不匹配(演示)。",
+        bridgeJob: "Bridge 作业 bridge-job-demo-0142 回退中断(演示)。",
+        localVpm: "本地包状态未知,未再变更(演示)。",
+        validation: "回滚未完成:项目状态需要人工核对(演示)。",
+      },
+    },
+    /** 生产命令任务标题(任务中心数据负载) */
+    tasks: {
+      inspect: "检查素材与目标项目",
+      plan: "生成执行计划",
+      execute: "执行生产变更",
+      recover: "恢复生产运行",
+    },
+    /** 车间执行日志(按运行态迁移追加;时间为演示时钟,不代表真实耗时) */
+    transitionLog: {
+      inspectStarted: "开始检查素材与目标项目。",
+      inspectDone: "检查完成:1 项兼容声明、1 项非阻断缺失、1 项命名冲突。",
+      planStarted: "正在生成执行计划…",
+      planDone: "执行计划已生成,等待确认。",
+      snapshotStarted: "正在创建执行前快照…",
+      executeStarted: "正在导入素材并生成换装菜单…",
+      validateStarted: "正在校验引用与参数一致性…",
+      completed: "全部阶段通过,构建记录已生成。",
+      recoverStarted: "恢复任务已启动。",
+      continueRerun: "从最近安全点继续执行剩余阶段。",
+      expiredBack: "回到计划确认:请审阅最新修订。",
+      rollbackDone: "已回滚到执行前快照。",
+      rollbackFailed: "回滚失败:快照校验和不匹配,需要人工核对。",
+      drifted: "执行漂移:产物与计划不符,可恢复。",
+      expired: "计划已变化,此前确认失效,未执行任何变更。",
+      cancelled: "已取消:在安全边界结束,未留下半成品。",
+    },
+  },
 } as const;
 
 export type FixtureStrings = typeof fixtureStrings;

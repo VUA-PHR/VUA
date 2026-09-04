@@ -364,6 +364,143 @@ demoTaskTitle: "Demo task",
       operationsLine: "{count} automatic operations completed (verifiable in the log)",
     },
   },
+  /**
+   * Production flow (F3, hosted in the workshop page; interaction semantics:
+   * docs/protocols/production-use-case-v0.1 draft). Enum-keyed groups mirror the
+   * port unions in gateway/model-production-port.ts and the phase/disabled-reason
+   * unions in features/workshop/production-flow-model.ts 1:1 (parity-tested).
+   */
+  productionFlow: {
+    sectionTitle: "{production} flow",
+    sectionAria: "{production} flow",
+    material: {
+      title: "Material",
+      intakeAria: "Material source",
+      intake: {
+        unitypackage_direct: ".unitypackage direct import",
+        local_vpm: "Local VPM package",
+      },
+      intakeNote: {
+        unitypackage_direct: "Imports the source .unitypackage into the target project as-is.",
+        local_vpm:
+          "Built as a local-reusable VPM package in an isolated staging project, then installed by the package manager.",
+      },
+      pick: "Choose material file…",
+      pickFirst: "Choose a material file first",
+      pickedLine: "Selected: {name}",
+      start: "Start inspection",
+      startHint: "Inspection only reads the material and the project state; nothing is modified.",
+    },
+    inspection: {
+      title: "Material inspection",
+      loadingBody: "Inspecting the material against the target project…",
+      findingsTitle: "Findings",
+      emptyFindings: "No blocking findings.",
+      findingKind: {
+        compat: "Compatible",
+        missing: "Missing",
+        conflict: "Conflict",
+      },
+      recoverable: "Recoverable",
+      retryable: "Retryable",
+      plannabilityTitle: "Conclusion",
+      plannability: {
+        plannable: "Ready to plan",
+        needs_attention: "Plannable, with items to review",
+        not_plannable: "Not plannable yet",
+      },
+      requestPlan: "Generate execution plan",
+    },
+    plan: {
+      title: "Plan review",
+      loadingBody: "Generating the execution plan…",
+      revisionLine: "Revision {revision}",
+      stagesTitle: "Stages",
+      risksTitle: "Risks",
+      noRisks: "No known risks.",
+      estimate: "Estimated duration: about {minutes} min",
+      estimateUnknown: "No reliable estimate yet",
+      diffsTitle: "Differences from the inspection",
+      diffKind: {
+        added: "Added",
+        changed: "Changed",
+        resolved: "Resolved",
+      },
+      confirm: "Confirm plan and execute",
+      confirmHint: "Confirmation binds revision {revision}; if the plan changes, this confirmation expires.",
+      expiredTitle: "Confirmation expired",
+      expiredBody:
+        "The plan changed after it was confirmed, so nothing was executed. Recover below to continue or roll back.",
+    },
+    recover: {
+      title: "Recover",
+      body: "Recovery runs as a task, not an instant action; your decision is recorded with a decision ID.",
+      decisionAria: "Recovery decision",
+      decision: {
+        continue: "Continue",
+        rollback: "Roll back",
+      },
+      continueNote: "Resume from the last safe point and finish the remaining stages.",
+      rollbackNote: "Restore the pre-run snapshot and undo what was applied.",
+      runningNote: "Recovery task is running…",
+      confirm: "Start recovery",
+    },
+    record: {
+      title: "Build record",
+      status: {
+        completed: "Completed",
+        rolled_back: "Rolled back",
+        rollback_failed: "Rollback failed",
+      },
+      stagesTitle: "Executed stages",
+      factsTitle: "Evidence",
+      factLabels: {
+        snapshot: "Snapshot",
+        bridgeJob: "Bridge job",
+        localVpm: "Local VPM",
+        validation: "Validation",
+      },
+      finishedAt: "Finished at {time}",
+    },
+    phase: {
+      inspecting: "Inspecting",
+      inspectionReady: "Inspection complete — ready to plan",
+      planning: "Generating the plan",
+      awaiting: "Plan awaiting confirmation",
+      executing: "Executing",
+      recovering: "Recovering",
+      completed: "Completed",
+      cancelled: "Cancelled",
+      failed: "Failed",
+      failedRecoverable: "Failed (recoverable)",
+      expired: "Confirmation expired",
+    },
+    disabledReasons: {
+      runActive: "A production command is still running",
+      flowPending: "Finish or recover the current run first",
+      noInspection: "Run a material inspection first",
+      notPlannable: "The inspection conclusion does not allow planning yet",
+      noPlan: "Generate an execution plan first",
+      notAwaiting: "The plan is not waiting for confirmation",
+      notRecoverable: "Only recoverable failures or expired runs can be recovered",
+    },
+    rejected: {
+      stale_revision: "The plan changed after your confirmation; review the new revision and confirm again.",
+      not_recoverable: "This run is not in a recoverable state.",
+      invalid_state: "The run is not in a state that accepts this action.",
+      unknown_ref: "The referenced inspection, plan or task no longer exists.",
+    },
+    states: {
+      emptyTitle: "No production run yet",
+      emptyDescription:
+        "Choose a material and start an inspection; planning, execution and recovery all happen here.",
+      loadFailedTitle: "Failed to load production state",
+      loadFailedDescription:
+        "Reading the production capability or run failed. Retrying does not modify any local data.",
+      retry: "Retry",
+      actionUnavailable: "The production capability is not connected right now; the action was not sent.",
+    },
+  },
   guide: {
     progressSlotTitle: "Learning goals & progress",
     progressSlotEmpty:
@@ -1155,6 +1292,14 @@ demoTaskTitle: "Demo task",
     demoEnvFail: "Demo · check failed",
     demoAcquireScan: "Demo · empty local gallery",
     demoPackages: "Demo · packages",
+    productionInspect: "Demo · production inspect",
+    productionPlan: "Demo · production plan review",
+    productionRunning: "Demo · production running",
+    productionSuccess: "Demo · production success",
+    productionCancelled: "Demo · production cancelled",
+    productionDrifted: "Demo · production drifted",
+    productionExpired: "Demo · production expired",
+    productionRollback: "Demo · production rollback",
     notRun: "Honest empty state",
     perfProbe: {
       title: "Performance sampling",

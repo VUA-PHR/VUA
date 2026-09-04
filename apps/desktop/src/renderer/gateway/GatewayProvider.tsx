@@ -12,7 +12,7 @@ import { strings } from "../i18n/index.ts";
 import type { EnvironmentView } from "./environment-port.ts";
 import type { VuaGateway } from "./gateway.ts";
 import type { AcquireView } from "./acquire-port.ts";
-import type { ModelProductionView } from "./model-production-port.ts";
+import type { ModelProductionView, ProductionRunView } from "./model-production-port.ts";
 import type { PackagesView } from "./packages-port.ts";
 import type { SettingsView } from "./settings-port.ts";
 import type { TaskCenterView } from "./task-port.ts";
@@ -145,6 +145,11 @@ export function useEnvironmentView(): EnvironmentView {
 
 export function useWorkshopView(): WorkshopView {
   return useGatewayContext().views.modelProduction.workshop;
+}
+
+/** F3 生产纵向流程当前运行(productionRun 随同一 snapshot/subscribe 通道下发) */
+export function useProductionRunView(): ProductionRunView {
+  return useGatewayContext().views.modelProduction.productionRun;
 }
 
 export function useToolCatalogView(): ToolCatalogView {

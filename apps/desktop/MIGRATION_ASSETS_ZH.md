@@ -75,3 +75,36 @@ KIMI 表现层其余资产（功能页面、应用模型、4 语言 i18n、WebGL
 边界不变：Renderer 仍不接触 Provider 生命周期、Rust 类型或 IPC 细节；DEV fixture 防线不变
 （`check-leak` 120 条指纹零泄漏）；远程权限冒烟复跑通过（远程页面无 `window.vua`，events 面
 同样不可见）；Windows 启动冒烟通过（窗口 `VUA`、无应用错误、退出无残留）。
+
+## 切片四：F3 生产纵向体验 UI/UX 先行（2026-09-05，工作树 kimi/frontend）
+
+在 B3 交互逻辑（`production.*` 应用契约 + Rust 执行器 + Kernel 文件对话框）冻结之前，把
+F3 生产纵向用例的表现层完整落地在 renderer 自有端口 + DEV fixture 上：素材入口 → 检查结果 →
+计划审阅/确认（绑定 revision）→ 执行进度 → 恢复（continue/rollback）→ 最小 Build Record，
+覆盖成功/取消/漂移（failed_recoverable）/超时（expired）/回滚（含回滚成功与失败）五种生命周期。
+交互语义依据 `docs/protocols/production-use-case-v0.1_ZH.md`（B3/F3 候选草案）；视觉与交互验收依据
+设计规范 v0.6.1（`docs/design/design-standard-v0.6.1_ZH.md`，该目录按裁决永不入库，仅本地参考）。
+体验寄宿车间页（§2.2/§8.5：执行/等待/恢复是 Assembly 内的任务进展，不另设 Production 用户阶段），
+一级/二级导航与 PageId 结构未动。
+
+| 资产组 | 目标所有者 | 本轮交付 | 验证 |
+| --- | --- | --- | --- |
+| F3 端口扩展（七方法 + 素材选择占位 + 复合能力报告 + 判别联合值类型，全部 `schemaVersion: 1` + not-connected 退路） | `src/renderer/gateway/model-production-port.ts`、`empty-gateway.ts`、`index.ts` | `startInspection/getInspection/requestPlan/getPlan/confirmPlan(planId, revision)/recover(taskId, decision)/getBuildRecord`；`pickMaterial` 为 Kernel 文件对话框未实现前的显式占位（not-run 恒 null）；`ModelProductionView` 增 `productionRun` 字段 | `model-production-port.contract.test.ts`（16 项，empty/fixture 双实现） |
+| 流程纯模型（端口数据 → 视图 props；五生命周期展示映射；色彩纪律 橙=进行/完成、琥珀=待确认、红=仅阻断；确认过期显式态；禁用原因键） | `src/renderer/features/workshop/production-flow-model.ts` | `productionFlowModel()` + `phaseOfRun/toneForPhase`（switch 穷尽）；`primaryAction`（每屏至多一个主操作） | `production-flow-model.test.ts`（15 项：五态 × 加载/失败/not-connected/空态 + 枚举奇偶） |
+| 车间页 F3 流程段（素材入口条/检查卡/计划审阅卡/恢复卡/构建记录卡，页内卡 + DelayedButton，不新造 Dialog 原语） | `src/renderer/features/workshop/`（MaterialEntryBar/InspectionCard/PlanReviewCard/RecoverCard/BuildRecordCard/ProductionFlowSection + WorkshopPage 接入 + workshop.css） | 诚实四态：加载 Skeleton / 失败 EmptyState+重试 / not-connected 空态 / 能力未就绪整段隐藏；既有 idle/running/replay 行为与四盘回放带未动 | vitest 全量（含既有 274 项）；边界/对比度门禁 |
+| 五生命周期 fixture + 八个开发场景 + 任务中心联动 | `src/renderer/gateway/fixture-production.ts`、`fixture-signal.ts`、`fixture-gateway.ts`、`app/resolve-scenario.ts`、`app/DevScenarioBar.tsx` | 脚本化时间线驱动 run 视图；每个生产命令创建标准任务（await_confirmation→waitingInput，originPage=workshop 带来源页回跳）；任务取消联动运行取消；场景：`production-inspect/plan/running/success/cancelled/drifted/expired/rollback` | 契约测试覆盖八场景与取消/恢复/过期重确认路径 |
+| i18n 四表（en 为结构源）新增 `strings.productionFlow` 段 + `strings.dev` 八标签 | `src/renderer/i18n/strings.{en,zh-CN,ja,ko}.ts`、`strings.fixtures.zh-CN.ts` | 枚举键与 TS 联合类型一一对应（奇偶测试约束）；术语走 termLabel；fixture 文案只在 fixtures 表 | `check-i18n`、`check-i18n-tables`、`i18n.test` |
+
+### 显式声明（本切片不做）
+
+- **contracts 未登记**：`production.*` 未进入 `packages/contracts` 方法表（B3 对齐动作，另行切片）；
+- **live 未接线**：`electron-gateway.ts` 仍复用 not-run 的 modelProduction，生产构建呈现诚实空态；
+- **Kernel 文件对话框未实现**：素材选择由 `pickMaterial` 端口占位，fixture 返回合成 MaterialRef；
+- `strings.wizard` 遗留孤儿键（zh-CN 表 1260-1271 行附近：wrongStep/onlyReview/noProject/required/
+  labels.{outfit,outfitArmature,toggleName,workflowId}）经评估为旧"步骤向导表单校验"语义，
+  与计划审阅（阶段/风险/差异/修订确认）不贴合——**不接管、保持原样**，归属问题留待向导切片处理。
+
+任务中心衔接：fixture 生产任务经既有 TaskPort 流入 Taskbar；`waitingInput` 行的"回到来源页"
+入口（TaskRow 既有行为）+ `originPage: "workshop"` 即完成跳回车间，Taskbar 未做结构性修改。
+`runState` 直接消费已冻结的 `WorkflowRunState` 11 态词表与 `taskStatusForWorkflow` 投影，未自造枚举；
+取消是任务事实而非工作流状态，运行视图以 `cancelled` 标记表达（草案取消纪律）。

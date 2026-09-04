@@ -36,6 +36,14 @@ const environmentView: EnvironmentView = {
 const modelProductionView: ModelProductionView = {
   schemaVersion: 1,
   workshop: { kind: "idle" },
+  // F3 生产纵向流程:未接入,诚实 not-connected
+  productionRun: { schemaVersion: 1, kind: "not-connected" },
+};
+
+/** F3 生产命令依赖任务引擎;未接入时以 taskEngineMissing 说明 */
+const productionUnavailable: CapabilityReport = {
+  state: "unavailable",
+  detailKey: "taskEngineMissing",
 };
 
 const toolCatalogView: ToolCatalogView = { schemaVersion: 1, kind: "not-connected" };
@@ -88,7 +96,17 @@ function createEmptyModelProduction(): ModelProductionPort {
     importShareCode: () => Promise.resolve({ kind: "unavailable" }),
     exportShareCode: () => Promise.resolve({ kind: "unavailable" }),
     releaseWall: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
-    capability: () => Promise.resolve(unavailable),
+    // F3:Kernel 文件对话框与 production.* 均未接入,入口由 capability 显隐
+    pickMaterial: () => Promise.resolve(null),
+    startInspection: () => Promise.resolve({ kind: "unavailable" }),
+    getInspection: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    requestPlan: () => Promise.resolve({ kind: "unavailable" }),
+    getPlan: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    confirmPlan: () => Promise.resolve({ kind: "unavailable" }),
+    recover: () => Promise.resolve({ kind: "unavailable" }),
+    getBuildRecord: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    capability: () =>
+      Promise.resolve({ overall: unavailable, production: productionUnavailable }),
   };
 }
 
