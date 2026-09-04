@@ -62,3 +62,22 @@ The remaining KIMI presentation assets (feature pages, application models, four-
 - Windows Electron smoke test: the `dist` artifact launches, the window title `VUA` renders, the process tree is healthy, and no processes remain after exit;
 - New dependencies: `three` 0.185.1 and `@types/three` 0.185.4 (MIT; complete the license and NOTICE audit before distribution);
 - Fixture tree-shaking depends on the `sideEffects: ["**/*.css"]` declaration (do not remove; guarded by `check-leak`).
+
+## Slice 3: F2 Gateway client and task experience (2026-09-04)
+
+| Asset group | Target owner | Delivered in this slice | Verification |
+| --- | --- | --- | --- |
+| Contract | `packages/contracts`, `docs/protocols/application-contract-v0.1` | Contract revision (growth model + `environment.getSnapshot` + `task.startDemo`); Gateway v1 six-method table with per-method guards; application-error passthrough (`code=application`) | 10 contract tests (unknown version/method/mixed-shape rejection) |
+| Kernel | `apps/desktop/src/electron` | Full method routing to the Provider; typed event broadcast (local-origin windows only); operation-level capability registration | 8 router tests (passthrough/errors/gating/snapshot) |
+| Provider | `packages/orchestrator-provider` | Mock implementations of environment.getSnapshot (injected or honest empty) and task.startDemo (`demo.task` gating, commandId idempotency, deterministic state driving) | 14 provider tests |
+| Renderer | `src/renderer/gateway` | Typed client (explicit unavailable/request_rejected/application failures); contract projection (`satisfies`-locked totality, presence severity as a consumer-side default); live task-center and environment-snapshot ports; production assembly of the live Gateway (not-run fallback without a host) | 273 desktop tests (projection totality/cancel distinguishes unknown task from outage/event-driven refresh/unsubscribe) |
+
+Disconnection semantics: a first-frame failure propagates so the GatewayProvider shows the honest failure
+card with retry; refetch failures during subscriptions keep the previous view; cancellation is rejected as
+unknown task / not cancellable / unavailable. The detection execution command and environment events belong
+to F6/B6 — `runCheck` currently returns the current snapshot and entries appear only via capability.
+
+Boundaries unchanged: the Renderer still never touches Provider lifecycle, Rust types, or IPC details; the
+DEV fixture defense stands (`check-leak`, 120 fingerprints, zero leakage); the remote permission smoke
+passed again (a remote page sees neither `window.vua` nor the events surface); the Windows launch smoke
+passed (window `VUA`, no application errors, no leftover processes).

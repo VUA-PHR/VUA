@@ -58,3 +58,20 @@ KIMI 表现层其余资产（功能页面、应用模型、4 语言 i18n、WebGL
 - Windows Electron 冒烟：`dist` 产物启动，窗口标题 `VUA` 正常渲染，进程树正常，退出后无残留进程；
 - 新增依赖：`three` 0.185.1、`@types/three` 0.185.4（MIT；正式分发前完成依赖许可与 NOTICE 审计）；
 - fixture 树-shaking 依赖 `sideEffects: ["**/*.css"]` 声明（不得移除，`check-leak` 把守）。
+
+## 切片三：F2 Gateway 客户端与任务体验（2026-09-04）
+
+| 资产组 | 目标所有者 | 本轮交付 | 验证 |
+| --- | --- | --- | --- |
+| 契约 | `packages/contracts`、`docs/protocols/application-contract-v0.1` | 契约修订（增长模型 + `environment.getSnapshot` + `task.startDemo`）；Gateway v1 六方法表与按方法守卫；应用错误透传（`code=application`） | 契约测试 10 项（未知版本/方法/混合形状拒绝） |
+| Kernel | `apps/desktop/src/electron` | 全方法路由到 Provider；类型化事件广播（仅本地来源窗口）；操作级能力表注册 | router 测试 8 项（透传/错误/门控/快照） |
+| Provider | `packages/orchestrator-provider` | mock 实现 environment.getSnapshot（注入或诚实空态）与 task.startDemo（`demo.task` 门控、commandId 幂等、确定性状态驱动） | provider 测试 14 项 |
+| Renderer | `src/renderer/gateway` | 类型化 client（unavailable/request_rejected/application 三类失败显式）；契约投影（`satisfies` 穷尽性锁死，在场严重度为消费侧缺省裁决）；任务中心与环境快照 live 端口；生产装配 live Gateway（无宿主回落 not-run） | desktop 测试 273 项（投影穷尽/取消区分未知任务与断连/事件驱动刷新/退订） |
+
+断连语义：首帧取数失败向上抛出，由 GatewayProvider 呈现诚实失败卡与重试；订阅期间取数失败保留
+上一视图；取消按未知任务 / 不可取消 / 不可达三分类拒绝。检测执行命令与环境事件属 F6/B6，
+`runCheck` 当前返回当前快照，入口由 capability 显隐。
+
+边界不变：Renderer 仍不接触 Provider 生命周期、Rust 类型或 IPC 细节；DEV fixture 防线不变
+（`check-leak` 120 条指纹零泄漏）；远程权限冒烟复跑通过（远程页面无 `window.vua`，events 面
+同样不可见）；Windows 启动冒烟通过（窗口 `VUA`、无应用错误、退出无残留）。
