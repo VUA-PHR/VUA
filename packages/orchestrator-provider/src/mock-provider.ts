@@ -9,6 +9,7 @@ import {
   type ApplicationResponseV01,
   type CapabilityOperationV01,
   type TaskCancellationResultV01,
+  type ApplicationSuccessValueV01,
   type TaskSnapshotV01,
   type TaskStateV01,
 } from "@vua/contracts";
@@ -44,6 +45,8 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   readonly #listeners = new Set<ProviderEventListenerV01>();
   readonly #commandResults = new Map<string, { taskId: string; result: TaskCancellationResultV01 }>();
   readonly #demoCommandResults = new Map<string, DemoTaskStartedV01>();
+  #productionSequence = 0;
+  #productionRecords = new Map<string, { taskId: string; result: unknown }>();
   readonly #capabilities: readonly CapabilityOperationV01[];
   readonly #environment: EnvironmentSnapshotV01 | undefined;
   #demoTaskSequence = 0;
@@ -136,6 +139,20 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         });
       case "task.startDemo":
         return this.#startDemoTask(request);
+      case "production.startInspection":
+        return this.#startProductionInspection(request);
+      case "production.getInspection":
+        return this.#getProductionTaskPayload(request, "inspection");
+      case "production.requestPlan":
+        return this.#requestProductionPlan(request);
+      case "production.getPlan":
+        return this.#getProductionTaskPayload(request, "plan");
+      case "production.confirmPlan":
+        return this.#confirmProductionPlan(request);
+      case "production.recover":
+        return this.#confirmProductionPlan(request);
+      case "production.getBuildRecord":
+        return this.#getProductionBuildRecord(request);
     }
   }
 
@@ -144,6 +161,43 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
    * 进度由测试经 commitTaskState 驱动,不依赖真实定时器。capability
    * `demo.task` 不可用时命令被拒绝(诚实不可用,而非静默成功)。
    */
+  /**
+   * 生产命令任务创建(幂等):queued 状态入栈 + accepted 事件;
+   * 与 demo 任务同一套任务机制,进度由调用方驱动到终态。
+   */
+  #acceptProductionTask(
+    commandKind: string,
+    commandId: string,
+    taskId: string,
+    correlationId: string,
+  ): TaskSnapshotV01 {
+    const task: TaskSnapshotV01 = {
+      contractVersion: this.contractVersion,
+      taskId,
+      revision: 1,
+      correlationId,
+      state: "queued",
+      cancellationRequested: false,
+      recoveryDisposition: "none",
+      updatedAt: this.#now(),
+    };
+    this.#tasks.set(taskId, task);
+    this.#mutatingTaskIds.add(taskId);
+    this.#applicationRevision += 1;
+    this.#emit({
+      contractVersion: this.contractVersion,
+      eventId: this.#nextEventId(),
+      taskId,
+      revision: task.revision,
+      occurredAt: task.updatedAt,
+      correlationId,
+      kind: "task.accepted",
+      state: task.state,
+      payload: {},
+    });
+    return task;
+  }
+
   #startDemoTask(
     request: Extract<ApplicationRequestV01, { method: "task.startDemo" }>,
   ): ApplicationResponseV01 {
@@ -257,6 +311,150 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       state,
       payload: {},
     });
+  }
+
+  #productionUnavailable(request: Extract<ApplicationRequestV01, { method: `production.${string}` }>): ApplicationResponseV01 | null {
+    const productionAvailable = this.#capabilities.some(
+      (operation) => operation.operationId === "production.useCase" && operation.availability === "available",
+    );
+    if (productionAvailable) return null;
+    return this.#failure(request, this.#error(
+      "vua.production.unavailable",
+      "unavailable",
+      "errors.production.unavailable",
+      request.correlationId,
+      true,
+      false,
+    ));
+  }
+
+  #startProductionInspection(
+    request: Extract<ApplicationRequestV01, { method: "production.startInspection" }>,
+  ): ApplicationResponseV01 {
+    const unavailable = this.#productionUnavailable(request);
+    if (unavailable !== null) return unavailable;
+
+    const replay = this.#productionRecords.get(request.commandId);
+    if (replay !== undefined) {
+      const task = this.#tasks.get(replay.taskId);
+      return this.#success(request, (task ?? replay.result) as unknown as ApplicationSuccessValueV01);
+    }
+
+    this.#productionSequence += 1;
+    const taskId = `production-${this.#productionSequence}`;
+    const inspection = {
+      schemaVersion: "material-intake-inspection-v0.1",
+      displayName: "合成素材(模拟 Provider)",
+      sourceFingerprint: `synthetic-${this.#productionSequence}`,
+      riskFingerprint: `synthetic-risk-${this.#productionSequence}`,
+      packages: [{ id: "pkg-1", displayName: "合成衣装包", fileName: "synthetic.unitypackage" }],
+      executableRisks: [],
+      declaredDependencies: [],
+    };
+    const result = JSON.stringify(inspection);
+    const task = this.#acceptProductionTask(
+      "production.startInspection",
+      request.commandId,
+      taskId,
+      request.correlationId,
+    );
+    this.#productionRecords.set(request.commandId, { taskId, result: task });
+    return this.#success(request, task as unknown as ApplicationSuccessValueV01);
+  }
+
+  #getProductionTaskPayload(
+    request: Extract<ApplicationRequestV01, { method: "production.getInspection" | "production.getPlan" }>,
+    kind: "inspection" | "plan",
+  ): ApplicationResponseV01 {
+    const taskId = (request.params as { taskId?: string }).taskId ?? "";
+    const task = this.#tasks.get(taskId);
+    if (task === undefined) {
+      return this.#failure(request, this.#error(
+        "vua.task.not_found",
+        "validation",
+        "errors.task.notFound",
+        request.correlationId,
+        false,
+        false,
+      ));
+    }
+    return this.#success(request, task as unknown as ApplicationSuccessValueV01);
+  }
+
+  #requestProductionPlan(
+    request: Extract<ApplicationRequestV01, { method: "production.requestPlan" }>,
+  ): ApplicationResponseV01 {
+    const unavailable = this.#productionUnavailable(request);
+    if (unavailable !== null) return unavailable;
+
+    const replay = this.#productionRecords.get(request.commandId);
+    if (replay !== undefined) {
+      const task = this.#tasks.get(replay.taskId);
+      return this.#success(request, (task ?? replay.result) as unknown as ApplicationSuccessValueV01);
+    }
+
+    this.#productionSequence += 1;
+    const taskId = `production-plan-${this.#productionSequence}`;
+    const plan = {
+      schemaVersion: "material-intake-plan-v0.1",
+      displayName: "合成执行计划(模拟 Provider)",
+      inspectionId: request.params.inspectionId,
+      steps: [
+        { id: "step-1", displayName: "暂存项目准备" },
+        { id: "step-2", displayName: "素材导入" },
+        { id: "step-3", displayName: "目标验证" },
+      ],
+      risks: [],
+      estimatedDurationMs: 30_000,
+    };
+    const result = JSON.stringify(plan);
+    const task = this.#acceptProductionTask(
+      "production.requestPlan",
+      request.commandId,
+      taskId,
+      request.correlationId,
+    );
+    this.#productionRecords.set(request.commandId, { taskId, result: task });
+    return this.#success(request, task as unknown as ApplicationSuccessValueV01);
+  }
+
+  #confirmProductionPlan(
+    request: Extract<ApplicationRequestV01, { method: "production.confirmPlan" | "production.recover" }>,
+  ): ApplicationResponseV01 {
+    const unavailable = this.#productionUnavailable(request);
+    if (unavailable !== null) return unavailable;
+
+    const replay = this.#productionRecords.get(request.commandId);
+    if (replay !== undefined) {
+      const task = this.#tasks.get(replay.taskId);
+      return this.#success(request, (task ?? replay.result) as unknown as ApplicationSuccessValueV01);
+    }
+
+    this.#productionSequence += 1;
+    const taskId = `production-confirm-${this.#productionSequence}`;
+    const task = this.#acceptProductionTask(
+      "production.confirmPlan",
+      request.commandId,
+      taskId,
+      request.correlationId,
+    );
+    this.#productionRecords.set(request.commandId, { taskId, result: task });
+    return this.#success(request, task as unknown as ApplicationSuccessValueV01);
+  }
+
+  #getProductionBuildRecord(
+    request: Extract<ApplicationRequestV01, { method: "production.getBuildRecord" }>,
+  ): ApplicationResponseV01 {
+    const buildRecord = {
+      schemaVersion: "build-record-v0.1",
+      buildRecordId: request.params.buildRecordId,
+      displayName: "合成构建记录(模拟 Provider)",
+      outcome: "succeeded",
+      stages: ["snapshot", "execute", "validate"],
+      facts: { executor: "mock", bridgeJob: "合成 Bridge 作业序列化占位" },
+      finishedAt: this.#now(),
+    };
+    return this.#success(request, buildRecord as unknown as ApplicationSuccessValueV01);
   }
 
   #requestCancellation(

@@ -75,6 +75,12 @@ function registerIpc(provider: OrchestratorProviderV01): void {
       productVersion: app.getVersion(),
       platform: process.platform as "win32" | "darwin" | "linux",
       rendererUrl,
+      resolveMaterialSource: (refId) => {
+        const source = materialSources.get(refId);
+        return source === undefined
+          ? undefined
+          : { sourceFolder: source.path, intake: "direct_unity_package" };
+      },
     },
     senderFrameUrl(event),
     request,

@@ -125,9 +125,22 @@ export interface ProductionRecoverRequestV1 {
   readonly requestId: string;
   readonly method: "production.recover";
   readonly params: {
+    /** 原始失败任务(恢复绑定对象) */
     readonly taskId: string;
     readonly decision: "continue" | "rollback";
     readonly commandId: string;
+    /** 计划任务 id(continue 必需;rollback 可空) */
+    readonly planTaskId?: string;
+    /** 恢复上下文:来源与目标项目(rollback 时可空) */
+    readonly sourceFolder?: string;
+    readonly projectRoot?: string;
+    readonly artifactOutputRoot?: string;
+    /** 用户确认时刻(ISO);Kernel 生成 userDecisionId 后随请求下发 */
+    readonly confirmedAt?: string;
+    /** 风险选择(continue 消费) */
+    readonly riskChoice?: string;
+    /** 会话内记住本次选择 */
+    readonly rememberForSession?: boolean;
   };
 }
 
@@ -328,12 +341,25 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isIdentifier(value.params.planId)
         && isIdentifier(value.params.commandId)
         && isNonNegativeInteger(value.params.observedRevision);
-    case "production.recover":
-      return hasExactKeys(value, REQUEST_KEYS)
-        && hasExactKeys(value.params, ["taskId", "decision", "commandId"])
-        && isIdentifier(value.params.taskId)
-        && isIdentifier(value.params.commandId)
-        && (value.params.decision === "continue" || value.params.decision === "rollback");
+    case "production.recover": {
+      if (!hasExactKeys(value, REQUEST_KEYS)) return false;
+      const recoveryParams = value.params as Record<string, unknown>;
+      if (!isIdentifier(recoveryParams.taskId) || !isIdentifier(recoveryParams.commandId)) {
+        return false;
+      }
+      if (recoveryParams.decision !== "continue" && recoveryParams.decision !== "rollback") {
+        return false;
+      }
+      // 可选上下文字段存在时必须是字符串
+      for (const optionalField of ["planTaskId", "sourceFolder", "projectRoot", "artifactOutputRoot", "confirmedAt", "riskChoice"] as const) {
+        const fieldValue = recoveryParams[optionalField];
+        if (fieldValue !== undefined && typeof fieldValue !== "string") return false;
+      }
+      if (recoveryParams.rememberForSession !== undefined && typeof recoveryParams.rememberForSession !== "boolean") {
+        return false;
+      }
+      return true;
+    }
     case "production.getBuildRecord":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["buildRecordId"])

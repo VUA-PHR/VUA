@@ -122,13 +122,75 @@ export interface TaskCancellationCommandV01 extends ApplicationRequestBaseV01 {
   };
 }
 
+// ---- production.*(production-use-case v0.1 冻结面;素材路径已由 Kernel 解析) ----
+
+export interface ProductionStartInspectionCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "production.startInspection";
+  readonly commandId: string;
+  readonly params: { readonly sourceFolder: string };
+}
+
+export interface ProductionGetInspectionQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "production.getInspection";
+  readonly params: { readonly inspectionId: string };
+}
+
+export interface ProductionRequestPlanCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "production.requestPlan";
+  readonly commandId: string;
+  readonly params: { readonly inspectionId: string };
+}
+
+export interface ProductionGetPlanQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "production.getPlan";
+  readonly params: { readonly planId: string };
+}
+
+export interface ProductionConfirmPlanCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "production.confirmPlan";
+  readonly commandId: string;
+  readonly params: {
+    readonly planId: string;
+    readonly observedRevision?: number;
+  };
+}
+
+export interface ProductionRecoverCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "production.recover";
+  readonly commandId: string;
+  readonly params: {
+    readonly taskId: string;
+    readonly decision: "continue" | "rollback";
+    readonly decisionId: string;
+  };
+}
+
+export interface ProductionGetBuildRecordQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "production.getBuildRecord";
+  readonly params: { readonly buildRecordId: string };
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
   | TaskGetQueryV01
   | TaskCancellationCommandV01
   | EnvironmentSnapshotQueryV01
-  | DemoTaskStartCommandV01;
+  | DemoTaskStartCommandV01
+  | ProductionStartInspectionCommandV01
+  | ProductionGetInspectionQueryV01
+  | ProductionRequestPlanCommandV01
+  | ProductionGetPlanQueryV01
+  | ProductionConfirmPlanCommandV01
+  | ProductionRecoverCommandV01
+  | ProductionGetBuildRecordQueryV01;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -320,6 +382,48 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "command" && value.method === "production.startInspection") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["sourceFolder"])
+      && isIdentifier(value.params.sourceFolder);
+  }
+  if (value.kind === "query" && value.method === "production.getInspection") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["inspectionId"])
+      && isIdentifier(value.params.inspectionId);
+  }
+  if (value.kind === "command" && value.method === "production.requestPlan") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["inspectionId"])
+      && isIdentifier(value.params.inspectionId);
+  }
+  if (value.kind === "query" && value.method === "production.getPlan") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["planId"])
+      && isIdentifier(value.params.planId);
+  }
+  if (value.kind === "command" && value.method === "production.confirmPlan") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["planId"])
+      && isIdentifier(value.params.planId)
+      && (value.params.observedRevision === undefined || isNonNegativeInteger(value.params.observedRevision));
+  }
+  if (value.kind === "command" && value.method === "production.recover") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["taskId", "decision", "decisionId"])
+      && isIdentifier(value.params.taskId)
+      && isIdentifier(value.params.decisionId)
+      && (value.params.decision === "continue" || value.params.decision === "rollback");
+  }
+  if (value.kind === "query" && value.method === "production.getBuildRecord") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["buildRecordId"])
+      && isIdentifier(value.params.buildRecordId);
   }
   return false;
 }
