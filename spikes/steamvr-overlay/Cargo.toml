@@ -2,10 +2,9 @@
 name = "vua-steamvr-overlay-spike"
 version = "0.1.0"
 edition = "2021"
-description = "S-F7a spike: minimal IVROverlay presence/click verification against a live SteamVR+VRChat session"
+description = "S-F7a spike: IVROverlay wrist anchoring via the official openvr_api.dll (VRCX pattern)"
 
-# 独立 workspace(G4 模式):不并入主 workspace,不进安装包
 [workspace]
 
 [dependencies]
-openvr = "0.9.0"
+libloading = "0.8"
