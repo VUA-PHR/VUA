@@ -47,17 +47,52 @@ export type {
   CatalogRelationKind,
 } from "./catalog-browser-port.ts";
 export { createCatalogBrowser } from "./catalog-browser-instance.ts";
-export { taskStatusForWorkflow, workflowRunStates, type WorkflowRunState } from "./workflow.ts";
+export {
+  taskStatusForWorkflow,
+  workflowRunStates,
+  type WorkflowRunState,
+  type WorkflowStage,
+} from "./workflow.ts";
 export type { EnvironmentPort, EnvironmentView } from "./environment-port.ts";
 export { CURRENT_RECIPE_ID } from "./model-production-port.ts";
+export {
+  buildRecordStatuses,
+  inspectionFindingKinds,
+  planDiffKinds,
+  plannabilityStates,
+  productionRejectReasons,
+  recoverDecisionKinds,
+  sourceIntakes,
+} from "./model-production-port.ts";
 export type {
+  BuildRecord,
+  BuildRecordFacts,
+  BuildRecordStatus,
+  BuildRecordView,
+  InspectionFinding,
+  InspectionFindingKind,
+  InspectionReport,
+  InspectionView,
+  MaterialRef,
+  ModelProductionCapabilities,
   ModelProductionPort,
   ModelProductionView,
+  PlanDiff,
+  PlanDiffKind,
+  PlanStage,
+  PlanView,
+  Plannability,
+  ProductionIntentResult,
+  ProductionPlan,
+  ProductionRejectReason,
+  ProductionRunView,
   RecipeConflict,
   RecipeGraphEdge,
   RecipeGraphNode,
   RecipeGraphView,
   RecipeNodeState,
+  RecoverDecision,
+  RecoverDecisionKind,
   ReleaseInspection,
   ReleaseProject,
   ReleaseProjectHealth,
@@ -65,6 +100,7 @@ export type {
   ShareCodeExportResult,
   ShareCodeImportResult,
   ShareCodeRejectReason,
+  SourceIntake,
 } from "./model-production-port.ts";
 export type { ToolCard, ToolCatalogPort, ToolCatalogView, ToolCategory } from "./tool-catalog-port.ts";
 export type {
@@ -103,6 +139,7 @@ export {
   useEnvironmentView,
   useGateway,
   usePackagesView,
+  useProductionRunView,
   useSettingsView,
   useTaskCenter,
   useToolCatalogView,

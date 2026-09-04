@@ -81,3 +81,48 @@ Boundaries unchanged: the Renderer still never touches Provider lifecycle, Rust 
 DEV fixture defense stands (`check-leak`, 120 fingerprints, zero leakage); the remote permission smoke
 passed again (a remote page sees neither `window.vua` nor the events surface); the Windows launch smoke
 passed (window `VUA`, no application errors, no leftover processes).
+
+## Slice 4: F3 production vertical experience, UI/UX first (2026-09-05, worktree kimi/frontend)
+
+Before the B3 interaction logic (the `production.*` application contract + Rust executor + Kernel
+file dialog) is frozen, the F3 production vertical use case is fully implemented in the presentation
+layer on a renderer-owned port + DEV fixtures: material intake → inspection results → plan
+review/confirmation (bound to a revision) → execution progress → recovery (continue/rollback) →
+minimal Build Record, covering all five lifecycles: success / cancel / drift (failed_recoverable) /
+timeout (expired) / rollback (both rollback success and failure). Interaction semantics follow
+`docs/protocols/production-use-case-v0.1_EN.md` (B3/F3 candidate draft); visual and interaction
+acceptance follows design standard v0.6.1 (`docs/design/design-standard-v0.6.1_EN.md`, a directory
+that by ruling never enters the repository and is referenced locally only). The experience is hosted
+in the workshop page (§2.2/§8.5: execution, waiting and recovery are task progress inside Assembly;
+no separate Production user stage); the primary/secondary navigation and PageId structure are
+untouched.
+
+| Asset group | Target owner | Delivered in this slice | Verification |
+| --- | --- | --- | --- |
+| F3 port extension (seven methods + material-pick placeholder + composite capability report + discriminated-union value types, all `schemaVersion: 1` with not-connected fallbacks) | `src/renderer/gateway/model-production-port.ts`, `empty-gateway.ts`, `index.ts` | `startInspection/getInspection/requestPlan/getPlan/confirmPlan(planId, revision)/recover(taskId, decision)/getBuildRecord`; `pickMaterial` is the explicit placeholder until the Kernel file dialog exists (not-run always returns null); `ModelProductionView` gains `productionRun` | `model-production-port.contract.test.ts` (16 tests, empty/fixture dual implementations) |
+| Flow pure model (port data → view props; five-lifecycle display mapping; color discipline: orange = running/done, amber = awaiting confirmation, red = blocking only; explicit expired-confirmation state; disabled-reason keys) | `src/renderer/features/workshop/production-flow-model.ts` | `productionFlowModel()` + `phaseOfRun/toneForPhase` (exhaustive switches); `primaryAction` (at most one primary action per screen) | `production-flow-model.test.ts` (15 tests: five states × loading/failure/not-connected/empty + enum parity) |
+| Workshop-page F3 flow section (material entry bar / inspection card / plan review card / recover card / build record card; in-page cards + DelayedButton, no new Dialog primitive) | `src/renderer/features/workshop/` (MaterialEntryBar/InspectionCard/PlanReviewCard/RecoverCard/BuildRecordCard/ProductionFlowSection + WorkshopPage wiring + workshop.css) | Four honest states: Skeleton while loading / EmptyState+retry on failure / EmptyState for not-connected / whole section hidden when the capability is not ready; existing idle/running/replay behavior and the four replay tapes untouched | Full vitest run (including the pre-existing 274 tests); boundary/contrast gates |
+| Five-lifecycle fixtures + eight dev scenarios + task-center linkage | `src/renderer/gateway/fixture-production.ts`, `fixture-signal.ts`, `fixture-gateway.ts`, `app/resolve-scenario.ts`, `app/DevScenarioBar.tsx` | A scripted timeline drives the run view; every production command creates a standard task (await_confirmation → waitingInput, originPage=workshop with back-to-origin jump); task cancellation propagates to the run; scenarios: `production-inspect/plan/running/success/cancelled/drifted/expired/rollback` | Contract tests cover all eight scenarios plus cancel/recover/expired-reconfirm paths |
+| Four-locale i18n (en is the structural source): new `strings.productionFlow` section + eight `strings.dev` labels | `src/renderer/i18n/strings.{en,zh-CN,ja,ko}.ts`, `strings.fixtures.zh-CN.ts` | Enum keys mirror the TS unions 1:1 (parity-tested); terms flow through termLabel; fixture copy lives only in the fixtures table | `check-i18n`, `check-i18n-tables`, `i18n.test` |
+
+### Explicitly out of scope in this slice
+
+- **Contracts not registered**: `production.*` is not in the `packages/contracts` method table (a B3
+  alignment action, deferred to a later slice);
+- **Live not wired**: `electron-gateway.ts` still reuses the not-run modelProduction port, and
+  production builds show the honest empty state;
+- **Kernel file dialog not implemented**: material selection is the `pickMaterial` port placeholder;
+  the fixture returns a synthetic MaterialRef;
+- The legacy orphan keys in `strings.wizard` (around zh-CN lines 1260-1271: wrongStep/onlyReview/
+  noProject/required/labels.{outfit,outfitArmature,toggleName,workflowId}) were evaluated and found
+  to carry legacy "step-wizard form validation" semantics that do not fit plan review
+  (stages/risks/diffs/revision confirmation) — **not adopted, left as-is**; their ownership question
+  is deferred to the wizard slice.
+
+Task-center integration: fixture production tasks flow into the Taskbar through the existing
+TaskPort; the waitingInput row's "back to origin page" entry (existing TaskRow behavior) +
+`originPage: "workshop"` completes the jump back to the workshop, with no structural Taskbar change.
+`runState` consumes the frozen `WorkflowRunState` 11-state vocabulary and the
+`taskStatusForWorkflow` projection directly — no parallel enum was created; cancellation is a task
+fact rather than a workflow state, expressed on the run view as the `cancelled` flag (draft
+cancellation discipline).

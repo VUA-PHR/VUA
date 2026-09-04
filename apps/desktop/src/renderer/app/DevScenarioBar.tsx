@@ -18,6 +18,14 @@ const options: { name: ScenarioName; label: string }[] = [
   { name: "demo-env-fail", label: copy.demoEnvFail },
   { name: "demo-acquire-scan", label: copy.demoAcquireScan },
   { name: "demo-packages", label: copy.demoPackages },
+  { name: "production-inspect", label: copy.productionInspect },
+  { name: "production-plan", label: copy.productionPlan },
+  { name: "production-running", label: copy.productionRunning },
+  { name: "production-success", label: copy.productionSuccess },
+  { name: "production-cancelled", label: copy.productionCancelled },
+  { name: "production-drifted", label: copy.productionDrifted },
+  { name: "production-expired", label: copy.productionExpired },
+  { name: "production-rollback", label: copy.productionRollback },
   { name: "not-run", label: copy.notRun },
 ];
 

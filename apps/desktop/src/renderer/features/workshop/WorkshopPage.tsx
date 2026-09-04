@@ -10,7 +10,14 @@ import {
   CURRENT_RECIPE_ID,
   useDataSource,
   useGateway,
+  useProductionRunView,
   useWorkshopView,
+  type CapabilityReport,
+  type MaterialRef,
+  type ProductionIntentResult,
+  type ProductionRejectReason,
+  type RecoverDecisionKind,
+  type SourceIntake,
 } from "../../gateway/index.ts";
 import {
   isTrackStage,
@@ -25,6 +32,8 @@ import {
   type WorkshopView,
 } from "./track-model.ts";
 import { eventsForStage, formatTapeClock, tapeFrame } from "./workshop-replay.ts";
+import { productionFlowModel } from "./production-flow-model.ts";
+import { ProductionFlowSection, type FlowPending } from "./ProductionFlowSection.tsx";
 import "./workshop.css";
 
 const copy = strings.workshop;
@@ -509,6 +518,91 @@ export function WorkshopPage({
       alive = false;
     };
   }, [gateway]);
+
+  /* ---- F3 生产纵向流程段(production-use-case v0.1 草案) ----
+   * 能力未知(null)或非 ready 时整段隐藏(§2.6);读取失败走 EmptyState+重试,
+   * 重试只重拉能力报告,不修改任何本地数据。意图拒绝按 reason 行内呈现。 */
+  const productionRun = useProductionRunView();
+  const [productionCap, setProductionCap] = useState<CapabilityReport | null>(null);
+  const [flowFailed, setFlowFailed] = useState(false);
+  const [flowNonce, setFlowNonce] = useState(0);
+  const [flowPending, setFlowPending] = useState<FlowPending | null>(null);
+  const [flowRejection, setFlowRejection] = useState<ProductionRejectReason | "unavailable" | null>(
+    null,
+  );
+  const [pickedMaterial, setPickedMaterial] = useState<MaterialRef | null>(null);
+  useEffect(() => {
+    let alive = true;
+    setFlowFailed(false);
+    gateway.modelProduction
+      .capability()
+      .then((report) => {
+        if (alive) setProductionCap(report.production);
+      })
+      .catch(() => {
+        if (alive) setFlowFailed(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [gateway, flowNonce]);
+
+  const runFlowIntent = (kind: FlowPending, intent: () => Promise<ProductionIntentResult>) => {
+    setFlowPending(kind);
+    setFlowRejection(null);
+    void intent()
+      .then((result) => {
+        if (result.kind === "rejected") setFlowRejection(result.reason);
+        else if (result.kind === "unavailable") setFlowRejection("unavailable");
+      })
+      .catch(() => setFlowFailed(true))
+      .finally(() => setFlowPending(null));
+  };
+
+  const flowSection = (
+    <ProductionFlowSection
+      flow={productionFlowModel(productionRun, productionCap)}
+      failed={flowFailed}
+      pending={flowPending}
+      rejection={flowRejection}
+      material={pickedMaterial}
+      onRetry={() => setFlowNonce((nonce) => nonce + 1)}
+      onPickMaterial={(intake: SourceIntake) => {
+        setFlowPending("pick");
+        setFlowRejection(null);
+        void gateway.modelProduction
+          .pickMaterial(intake)
+          .then((material) => {
+            if (material !== null) setPickedMaterial(material);
+          })
+          .catch(() => setFlowFailed(true))
+          .finally(() => setFlowPending(null));
+      }}
+      onStartInspection={() => {
+        if (pickedMaterial === null) return;
+        const source = pickedMaterial;
+        runFlowIntent("start", () => gateway.modelProduction.startInspection(source));
+      }}
+      onRequestPlan={() => {
+        if (productionRun.kind !== "run" || productionRun.inspection === null) return;
+        const inspectionId = productionRun.inspection.inspectionId;
+        runFlowIntent("plan", () => gateway.modelProduction.requestPlan(inspectionId));
+      }}
+      onConfirmPlan={() => {
+        if (productionRun.kind !== "run" || productionRun.plan === null) return;
+        const { planId, revision } = productionRun.plan;
+        runFlowIntent("confirm", () => gateway.modelProduction.confirmPlan(planId, revision));
+      }}
+      onRecover={(kind: RecoverDecisionKind) => {
+        if (productionRun.kind !== "run") return;
+        const taskId = productionRun.taskId;
+        // 决定 ID 占位:正式实现由 Kernel 决定面生成(草案恢复纪律)
+        runFlowIntent("recover", () =>
+          gateway.modelProduction.recover(taskId, { kind, decisionId: crypto.randomUUID() }),
+        );
+      }}
+    />
+  );
   if (!envReady) {
     return (
       <div className="vua-workshop">
@@ -544,6 +638,7 @@ export function WorkshopPage({
             description={format(copy.idleDescription, { recipe: termLabel("recipe") })}
           />
         </Card>
+        {flowSection}
       </div>
     );
   }
@@ -579,6 +674,7 @@ export function WorkshopPage({
           onNavigate={onNavigate}
         />
       ) : null}
+      {flowSection}
       <WorkshopBody
         stages={view.stages}
         log={view.log}

@@ -18,6 +18,14 @@ export const fixtureNames = [
   "demo-env-fail",
   "demo-acquire-scan",
   "demo-packages",
+  "production-inspect",
+  "production-plan",
+  "production-running",
+  "production-success",
+  "production-cancelled",
+  "production-drifted",
+  "production-expired",
+  "production-rollback",
 ] as const;
 
 export type FixtureName = (typeof fixtureNames)[number];

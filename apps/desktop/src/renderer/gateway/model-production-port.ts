@@ -1,6 +1,7 @@
 import type { WorkshopView } from "../features/workshop/track-model.ts";
 import type { AssetRecord, RecipeSourceRef } from "./refs.ts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
+import type { WorkflowRunState, WorkflowStage } from "./workflow.ts";
 
 /**
  * 模型生产领域窄端口(M0 ModelProductionPort):车间轨道/生产流程视图,
@@ -126,9 +127,220 @@ export type ReleaseWallView =
   | { schemaVersion: 1; kind: "not-connected" }
   | { schemaVersion: 1; kind: "wall"; projects: readonly ReleaseProject[] };
 
+/* ---- F3 生产纵向流程(production-use-case v0.1 草案的渲染层先行面) ----
+ *
+ * 值语义镜像草案:判别联合 + schemaVersion: 1,查询面带 not-connected 退路;
+ * 意图方法返回"已创建任务 + 当前快照"。草案冻结前字段级调整不升版本
+ * (草案修订记录纪律),调整集中在本文档,视图与纯模型不动。
+ */
+
+/** 双素材入口(material-intake v0.1):.unitypackage 直接导入 / 本地 VPM 包经包管理器安装 */
+export type SourceIntake = "unitypackage_direct" | "local_vpm";
+
+/** 全集:与 strings.productionFlow.material.intake 一一对应(奇偶测试约束) */
+export const sourceIntakes: readonly SourceIntake[] = ["unitypackage_direct", "local_vpm"];
+
+/** 素材引用:Renderer 不持文件系统句柄,由 Kernel 侧解析后传给 Provider(草案双素材入口) */
+export interface MaterialRef {
+  readonly materialId: string;
+  readonly intake: SourceIntake;
+  /** 展示名(数据负载,由应用层提供) */
+  readonly displayName: string;
+}
+
+/** 检查发现词表(material-intake):兼容声明 / 缺失素材 / 依赖冲突 */
+export type InspectionFindingKind = "compat" | "missing" | "conflict";
+
+/** 全集:与 strings.productionFlow.inspection.findingKind 一一对应 */
+export const inspectionFindingKinds: readonly InspectionFindingKind[] = [
+  "compat",
+  "missing",
+  "conflict",
+];
+
+export interface InspectionFinding {
+  readonly id: string;
+  readonly kind: InspectionFindingKind;
+  /** 发现摘要(数据负载) */
+  readonly summary: string;
+  /** 可恢复 / 可重试标注(草案值语义) */
+  readonly recoverable: boolean;
+  readonly retryable: boolean;
+}
+
+/** 可计划性结论:由应用层给出,前端不推断 */
+export type Plannability = "plannable" | "needs_attention" | "not_plannable";
+
+/** 全集:与 strings.productionFlow.inspection.plannability 一一对应 */
+export const plannabilityStates: readonly Plannability[] = [
+  "plannable",
+  "needs_attention",
+  "not_plannable",
+];
+
+/** 检查结果负载(getInspection 查询面与运行视图内嵌共用) */
+export interface InspectionReport {
+  readonly inspectionId: string;
+  readonly source: MaterialRef;
+  readonly findings: readonly InspectionFinding[];
+  readonly plannability: Plannability;
+  /** ISO 8601 */
+  readonly inspectedAt: string;
+}
+
+/** 计划阶段:每个阶段引用工作流阶段词表(与 strings.workflowStage 一致) */
+export interface PlanStage {
+  readonly id: string;
+  readonly stage: WorkflowStage;
+  /** 阶段动作说明(数据负载) */
+  readonly summary: string;
+}
+
+/** 计划 vs 检查结论的结构化差异种类(草案:差异以结构化字段表达,不由前端推断) */
+export type PlanDiffKind = "added" | "changed" | "resolved";
+
+/** 全集:与 strings.productionFlow.plan.diffKind 一一对应 */
+export const planDiffKinds: readonly PlanDiffKind[] = ["added", "changed", "resolved"];
+
+export interface PlanDiff {
+  readonly id: string;
+  readonly kind: PlanDiffKind;
+  /** 差异说明(数据负载) */
+  readonly summary: string;
+}
+
+/** 执行计划负载(getPlan 查询面与运行视图内嵌共用) */
+export interface ProductionPlan {
+  readonly planId: string;
+  /** 确认绑定:计划变化即 revision 递增,旧 revision 的确认失效(草案确认纪律) */
+  readonly revision: number;
+  /** 本计划基于的检查结果 */
+  readonly inspectionId: string;
+  readonly stages: readonly PlanStage[];
+  /** 风险清单(数据负载) */
+  readonly risks: readonly string[];
+  /** 预估时长(ms);无真实总量来源时为 null,界面不得注水(§6.3) */
+  readonly estimatedDurationMs: number | null;
+  readonly diffs: readonly PlanDiff[];
+}
+
+/** Build Record 状态(镜像 BuildRecordV01 种子;展示三态:成功 / 回滚成功 / 回滚失败) */
+export type BuildRecordStatus = "completed" | "rolled_back" | "rollback_failed";
+
+/** 全集:与 strings.productionFlow.record.status 一一对应 */
+export const buildRecordStatuses: readonly BuildRecordStatus[] = [
+  "completed",
+  "rolled_back",
+  "rollback_failed",
+];
+
+/** 四类证据(快照 / Bridge 作业 / 本地 VPM / 验证):不透明载荷,界面原样展示不解析 */
+export interface BuildRecordFacts {
+  readonly snapshot: string;
+  readonly bridgeJob: string;
+  readonly localVpm: string;
+  readonly validation: string;
+}
+
+/** 最小 Build Record 负载(结果、阶段、四类证据) */
+export interface BuildRecord {
+  readonly recordId: string;
+  readonly status: BuildRecordStatus;
+  /** 实际执行过的工作流阶段 */
+  readonly stages: readonly WorkflowStage[];
+  readonly facts: BuildRecordFacts;
+  /** ISO 8601 */
+  readonly finishedAt: string;
+}
+
+/** 恢复决定种类(草案:continue / rollback) */
+export type RecoverDecisionKind = "continue" | "rollback";
+
+/** 全集:与 strings.productionFlow.recover.decision 一一对应 */
+export const recoverDecisionKinds: readonly RecoverDecisionKind[] = ["continue", "rollback"];
+
+/** 恢复决定:必须携带 Kernel 生成的用户决定 ID(与 Provider 关闭协议同一纪律);
+ *  交互逻辑冻结前由 fixture 生成占位 */
+export interface RecoverDecision {
+  readonly kind: RecoverDecisionKind;
+  readonly decisionId: string;
+}
+
+/** production.getInspection 查询面;未接入(或引用不存在)时 not-connected,不返回猜测结果 */
+export type InspectionView =
+  | { schemaVersion: 1; kind: "not-connected" }
+  | { schemaVersion: 1; kind: "inspection"; report: InspectionReport };
+
+export type PlanView =
+  | { schemaVersion: 1; kind: "not-connected" }
+  | { schemaVersion: 1; kind: "plan"; plan: ProductionPlan };
+
+export type BuildRecordView =
+  | { schemaVersion: 1; kind: "not-connected" }
+  | { schemaVersion: 1; kind: "record"; record: BuildRecord };
+
+/**
+ * 当前生产运行(随 snapshot/subscribe 通道下发)。
+ * runState 为工作流冻结词表(gateway/workflow.ts);inspection/plan/buildRecord
+ * 内嵌当前文档,免去逐卡查询;not-connected = 生产流程未接入或尚无运行。
+ */
+export type ProductionRunView =
+  | { schemaVersion: 1; kind: "not-connected" }
+  | {
+      schemaVersion: 1;
+      kind: "run";
+      runId: string;
+      /** 当前生产命令的任务 id(任务中心可见,originPage=workshop) */
+      taskId: string;
+      runState: WorkflowRunState;
+      /** 取消是任务事实而非工作流状态(草案:取消语义与全局任务契约一致);
+       *  true 时 runState 保留取消发生的最后阶段,界面呈现"已取消" */
+      cancelled: boolean;
+      source: MaterialRef;
+      /** 检查结果;inspect 完成前为 null */
+      inspection: InspectionReport | null;
+      /** 执行计划;requestPlan 完成前为 null */
+      plan: ProductionPlan | null;
+      /** 最小 Build Record;执行/恢复结案前为 null */
+      buildRecord: BuildRecord | null;
+    };
+
+/** 意图方法拒绝原因:stale_revision=确认绑定的 revision 已过期;
+ *  not_recoverable=当前运行不可恢复;invalid_state=当前状态不接受该意图;
+ *  unknown_ref=引用的检查/计划/任务不存在 */
+export type ProductionRejectReason =
+  | "stale_revision"
+  | "not_recoverable"
+  | "invalid_state"
+  | "unknown_ref";
+
+/** 全集:与 strings.productionFlow.rejected 一一对应 */
+export const productionRejectReasons: readonly ProductionRejectReason[] = [
+  "stale_revision",
+  "not_recoverable",
+  "invalid_state",
+  "unknown_ref",
+];
+
+/** 意图方法统一返回(草案:意图方法均返回"已创建任务 + 当前快照");
+ *  rejected/unavailable 也尽量携带当前运行快照供界面如实呈现 */
+export type ProductionIntentResult =
+  | { kind: "unavailable" }
+  | { kind: "ok"; taskId: string; run: ProductionRunView }
+  | { kind: "rejected"; reason: ProductionRejectReason; run: ProductionRunView };
+
+/** 领域能力报告:overall=既有面(车间/图谱/分享码/卡片墙);
+ *  production=F3 生产纵向七方法,非 ready 时素材入口不出现(§2.6) */
+export interface ModelProductionCapabilities {
+  readonly overall: CapabilityReport;
+  readonly production: CapabilityReport;
+}
+
 export interface ModelProductionView {
   schemaVersion: 1;
   workshop: WorkshopView;
+  /** F3 生产纵向流程当前运行;未接入或尚无运行时 not-connected */
+  productionRun: ProductionRunView;
 }
 
 export interface ModelProductionPort {
@@ -142,5 +354,25 @@ export interface ModelProductionPort {
   exportShareCode(recipeId: string): Promise<ShareCodeExportResult>;
   /** Release 项目卡片墙(C-RECIPE-3);未接入时返回 not-connected */
   releaseWall(): Promise<ReleaseWallView>;
-  capability(): Promise<CapabilityReport>;
+  /**
+   * F3 素材文件选择:正式实现为 Kernel 显式文件对话框 preload 面
+   * (草案双素材入口;对话框未实现前返回 null);fixture 模拟返回合成 MaterialRef。
+   * null = 用户取消或能力未接入。
+   */
+  pickMaterial(intake: SourceIntake): Promise<MaterialRef | null>;
+  /** F3:对素材 + 目标组合启动 Inspect,产出兼容/缺失/冲突证据(创建任务) */
+  startInspection(source: MaterialRef): Promise<ProductionIntentResult>;
+  /** F3:读取一份检查结果(证据、可计划性结论) */
+  getInspection(inspectionId: string): Promise<InspectionView>;
+  /** F3:基于检查结果生成执行计划(阶段、风险、预估;创建任务) */
+  requestPlan(inspectionId: string): Promise<ProductionIntentResult>;
+  /** F3:读取一份计划供审阅 */
+  getPlan(planId: string): Promise<PlanView>;
+  /** F3:确认计划(绑定 revision;过期返回 rejected/stale_revision;创建执行任务) */
+  confirmPlan(planId: string, revision: number): Promise<ProductionIntentResult>;
+  /** F3:对 failed_recoverable / expired 运行执行恢复(携带用户决定 ID;创建任务) */
+  recover(taskId: string, decision: RecoverDecision): Promise<ProductionIntentResult>;
+  /** F3:读取最小 Build Record(结果、阶段、证据) */
+  getBuildRecord(recordId: string): Promise<BuildRecordView>;
+  capability(): Promise<ModelProductionCapabilities>;
 }

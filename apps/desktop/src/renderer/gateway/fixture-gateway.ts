@@ -11,6 +11,8 @@ import { fixtureReleaseWall } from "./fixture-release.ts";
 import { fixtureWorkshopReplay } from "./fixture-workshop.ts";
 import { fixtureAcquireEmpty, fixtureAcquireGallery } from "./fixture-acquire.ts";
 import { createFixturePackages } from "./fixture-packages.ts";
+import { createSignal } from "./fixture-signal.ts";
+import { createFixtureProduction, type ProductionTaskLink } from "./fixture-production.ts";
 import type { AcquirePort } from "./acquire-port.ts";
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
@@ -29,24 +31,6 @@ import type { CapabilityReport, DataSource } from "./types.ts";
  * 徽标明确标识,禁止在任何安全相关结论中引用(原则①)。
  * 文案纪律:负载文案集中在 i18n/strings.fixtures.zh-CN.ts。
  */
-
-/* ---- 共享信号:端口快照 + 订阅的最小实现 ---- */
-
-function createSignal<T>(initial: T) {
-  let current = initial;
-  const listeners = new Set<(value: T) => void>();
-  return {
-    get: () => current,
-    set: (next: T) => {
-      current = next;
-      for (const callback of listeners) callback(current);
-    },
-    subscribe: (callback: (value: T) => void) => {
-      listeners.add(callback);
-      return () => listeners.delete(callback);
-    },
-  };
-}
 
 /* ---- 演示负载(自 scenario-fixtures 迁移) ---- */
 
@@ -346,7 +330,13 @@ function createFixtureEnvironment(
 }
 
 function createFixtureModelProduction(workshop: ModelProductionView["workshop"]): ModelProductionPort {
-  const view: ModelProductionView = { schemaVersion: 1, workshop };
+  const view: ModelProductionView = {
+    schemaVersion: 1,
+    workshop,
+    // F3 生产纵向流程:非 production-* 场景不接入(fixture 功能场景门控,
+    // 同 demo-packages 先例),production 能力 unavailable,入口不出现
+    productionRun: { schemaVersion: 1, kind: "not-connected" },
+  };
   return {
     snapshot: () => Promise.resolve(view),
     subscribe: () => () => {},
@@ -357,7 +347,19 @@ function createFixtureModelProduction(workshop: ModelProductionView["workshop"])
     exportShareCode: () => Promise.resolve({ kind: "unavailable" }),
     // Release 卡片墙(C-RECIPE-3):fixture 演示项目,覆盖健康/漂移/缺依赖
     releaseWall: () => Promise.resolve(fixtureReleaseWall()),
-    capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
+    pickMaterial: () => Promise.resolve(null),
+    startInspection: () => Promise.resolve({ kind: "unavailable" }),
+    getInspection: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    requestPlan: () => Promise.resolve({ kind: "unavailable" }),
+    getPlan: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    confirmPlan: () => Promise.resolve({ kind: "unavailable" }),
+    recover: () => Promise.resolve({ kind: "unavailable" }),
+    getBuildRecord: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    capability: () =>
+      Promise.resolve({
+        overall: { state: "ready" },
+        production: { state: "unavailable", detailKey: "taskEngineMissing" },
+      }),
   };
 }
 
@@ -398,7 +400,13 @@ export interface FixtureTaskPort extends TaskPort {
   replayDemoEvents?: () => void;
 }
 
-function createFixtureTask(withTasks: boolean): FixtureTaskPort {
+interface FixtureTaskHandle {
+  port: FixtureTaskPort;
+  /** F3 生产 fixture 的任务联动(命令创建/迁移/取消回调) */
+  link: ProductionTaskLink;
+}
+
+function createFixtureTask(withTasks: boolean): FixtureTaskHandle {
   const initial: TaskCenterView = { schemaVersion: 1, tasks: withTasks ? demoTasks : [] };
   const signal = createSignal<TaskCenterView>(initial);
 
@@ -411,6 +419,18 @@ function createFixtureTask(withTasks: boolean): FixtureTaskPort {
     });
   };
 
+  const upsertTask = (task: TaskItem) => {
+    const view = signal.get();
+    signal.set({
+      schemaVersion: 1,
+      tasks: view.tasks.some((item) => item.id === task.id)
+        ? view.tasks.map((item) => (item.id === task.id ? task : item))
+        : [...view.tasks, task],
+    });
+  };
+
+  let cancelHandler: ((taskId: string) => void) | null = null;
+
   const port: FixtureTaskPort = {
     snapshot: () => Promise.resolve(signal.get()),
     subscribe: signal.subscribe,
@@ -422,6 +442,8 @@ function createFixtureTask(withTasks: boolean): FixtureTaskPort {
         return Promise.resolve({ kind: "rejected" as const, reason: "not_cancellable" as const, view });
       }
       updateTask(taskId, { status: "cancelled", cancellable: false });
+      // F3:通知生产 fixture 联动(当前运行标记已取消);未注入时无操作
+      cancelHandler?.(taskId);
       return Promise.resolve({ kind: "ok" as const, view: signal.get() });
     },
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
@@ -441,7 +463,16 @@ function createFixtureTask(withTasks: boolean): FixtureTaskPort {
       });
     };
   }
-  return port;
+  return {
+    port,
+    link: {
+      upsertTask,
+      patchTask: updateTask,
+      setCancelHandler: (handler) => {
+        cancelHandler = handler;
+      },
+    },
+  };
 }
 
 /* ---- 包管理(S-XVI):占位端口,fixture 本体随后续切片(fixture-packages)接入 ---- */
@@ -476,8 +507,10 @@ export function fixtureGateway(
   name: FixtureName,
   initialGoals: StoredGoalsV1 | null = null,
   envOptions: { settleMs?: number; failZones?: readonly CheckZone[] } = {},
+  productionOptions: { settleMs?: number } = {},
 ): VuaGateway & { task: FixtureTaskPort } {
-  const green = name === "demo-all-green" || name.startsWith("demo-workshop");
+  const green =
+    name === "demo-all-green" || name.startsWith("demo-workshop") || name.startsWith("production-");
   // 车间(C-WORKSHOP):四盘回放带覆盖成功/警告/阻断/恢复;空态由
   // demo-all-green 承载;其余场景保留原静态 running 演示
   const workshop =
@@ -490,6 +523,10 @@ export function fixtureGateway(
   const envFresh = name === "demo-env-fresh" || name === "demo-env-fail";
   const envFailZones: readonly CheckZone[] =
     envOptions.failZones ?? (name === "demo-env-fail" ? ["play", "create"] : []);
+  const taskHandle = createFixtureTask(name === "demo-tasks");
+  // F3 生产纵向流程(production-* 场景):脚本化时间线驱动 run 视图并联动任务端口;
+  // 其余场景回落基础 fixture(production 能力 unavailable,入口不出现)
+  const production = createFixtureProduction(name, taskHandle.link, productionOptions);
   return {
     environment: createFixtureEnvironment(green ? allGreenChecks : mixedChecks, {
       startFresh: envFresh,
@@ -498,13 +535,13 @@ export function fixtureGateway(
       ...(envOptions.settleMs !== undefined ? { settleMs: envOptions.settleMs } : {}),
     }),
     tutorial: createInactiveTutorialPort(),
-    modelProduction: createFixtureModelProduction(workshop),
+    modelProduction: production ?? createFixtureModelProduction(workshop),
     toolCatalog: createFixtureToolCatalog(),
     acquire: createFixtureAcquire(name === "demo-acquire-scan"),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),
-    task: createFixtureTask(name === "demo-tasks"),
+    task: taskHandle.port,
     settings: createMemorySettingsPort(initialGoals),
     dataSource: () => source,
   };
