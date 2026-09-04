@@ -84,11 +84,11 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   // 选取结果落 Kernel 映射,回发 { refId, displayName };取消返回 null
   ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown) => {
     assertLocalSender(senderFrameUrl(event));
-    if (intake !== "unitypackage_direct" && intake !== "local_vpm") {
+    if (intake !== "direct_unity_package" && intake !== "local_reusable_vpm") {
       throw new Error("invalid material intake");
     }
     const options =
-      intake === "unitypackage_direct"
+      intake === "direct_unity_package"
         ? {
             title: "Unity package",
             filters: [{ name: "Unity package", extensions: ["unitypackage"] }],

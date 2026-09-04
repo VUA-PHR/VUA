@@ -150,7 +150,7 @@ export interface DesktopWindowApiV1 {
  * 显式对话框动作完成,Renderer 不持文件系统句柄)。Kernel 保存选取结果并
  * 只回发不透明 refId 与展示名;路径在 Kernel 侧解析后随应用请求交给 Provider。
  */
-export type MaterialSourceIntakeV1 = "unitypackage_direct" | "local_vpm";
+export type MaterialSourceIntakeV1 = "direct_unity_package" | "local_reusable_vpm";
 
 export interface PickedMaterialSourceV1 {
   /** 不透明引用:Kernel 侧映射到真实路径;Renderer 只透传 */

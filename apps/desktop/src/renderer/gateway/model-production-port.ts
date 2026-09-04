@@ -135,10 +135,14 @@ export type ReleaseWallView =
  */
 
 /** 双素材入口(material-intake v0.1):.unitypackage 直接导入 / 本地 VPM 包经包管理器安装 */
-export type SourceIntake = "unitypackage_direct" | "local_vpm";
+/** 与素材 intake 协议 schema 词表一致(B 线权威,2026-09-04 对齐) */
+export type SourceIntake = "direct_unity_package" | "local_reusable_vpm";
 
 /** 全集:与 strings.productionFlow.material.intake 一一对应(奇偶测试约束) */
-export const sourceIntakes: readonly SourceIntake[] = ["unitypackage_direct", "local_vpm"];
+export const sourceIntakes: readonly SourceIntake[] = [
+  "direct_unity_package",
+  "local_reusable_vpm",
+];
 
 /** 素材引用:Renderer 不持文件系统句柄,由 Kernel 侧解析后传给 Provider(草案双素材入口) */
 export interface MaterialRef {
@@ -224,12 +228,30 @@ export interface ProductionPlan {
   readonly diffs: readonly PlanDiff[];
 }
 
-/** Build Record 状态(镜像 BuildRecordV01 种子;展示三态:成功 / 回滚成功 / 回滚失败) */
-export type BuildRecordStatus = "completed" | "rolled_back" | "rollback_failed";
+/**
+ * B 权威状态词表(build_record.rs v0.1 五态):契约事实,显示裁决由投影承担。
+ * 2026-09-04 B 线回复对齐(见 docs/plans/b-line-reply-to-f-line-requirements_ZH.md)。
+ */
+export type BuildRecordAuthorityStatus =
+  | "succeeded"
+  | "succeeded_with_warnings"
+  | "failed"
+  | "cancelled"
+  | "recovered";
 
-/** 全集:与 strings.productionFlow.record.status 一一对应 */
-export const buildRecordStatuses: readonly BuildRecordStatus[] = [
+/**
+ * 显示投影四态:"aborted" = 检查后未执行即中止(未尝试恢复突变)。
+ * 全集:与 strings.productionFlow.record.status 一一对应。
+ */
+export type BuildRecordDisplayStatus =
+  | "completed"
+  | "aborted"
+  | "rolled_back"
+  | "rollback_failed";
+
+export const buildRecordDisplayStatuses: readonly BuildRecordDisplayStatus[] = [
   "completed",
+  "aborted",
   "rolled_back",
   "rollback_failed",
 ];
@@ -245,12 +267,35 @@ export interface BuildRecordFacts {
 /** 最小 Build Record 负载(结果、阶段、四类证据) */
 export interface BuildRecord {
   readonly recordId: string;
-  readonly status: BuildRecordStatus;
+  /** B 权威状态(五态);显示状态经 projectBuildRecordDisplayStatus 投影 */
+  readonly status: BuildRecordAuthorityStatus;
+  /** 恢复证据:是否尝试过回滚/恢复突变(决定 failed/cancelled 的显示分流) */
+  readonly restoreAttempted: boolean;
+  /** 仅 restoreAttempted 时存在:回滚突变本身是否成功 */
+  readonly restoreSucceeded?: boolean;
   /** 实际执行过的工作流阶段 */
   readonly stages: readonly WorkflowStage[];
   readonly facts: BuildRecordFacts;
   /** ISO 8601 */
   readonly finishedAt: string;
+}
+
+/**
+ * B 五态 + 恢复证据 → 显示四态(B 线回复映射表,2026-09-04):
+ * - succeeded / succeeded_with_warnings / recovered → completed;
+ * - failed / cancelled:未尝试恢复突变 → aborted;
+ *   已尝试 → restoreSucceeded ? rolled_back : rollback_failed。
+ */
+export function projectBuildRecordDisplayStatus(
+  status: BuildRecordAuthorityStatus,
+  restoreAttempted: boolean,
+  restoreSucceeded: boolean | undefined,
+): BuildRecordDisplayStatus {
+  if (status === "succeeded" || status === "succeeded_with_warnings" || status === "recovered") {
+    return "completed";
+  }
+  if (!restoreAttempted) return "aborted";
+  return restoreSucceeded === true ? "rolled_back" : "rollback_failed";
 }
 
 /** 恢复决定种类(草案:continue / rollback) */

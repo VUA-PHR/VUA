@@ -4,7 +4,7 @@ import { emptyGateway } from "./empty-gateway.ts";
 import { fixtureGateway } from "./fixture-gateway.ts";
 import { capabilityDetailKeys, capabilityStates, type CapabilityReport } from "./types.ts";
 import { workflowRunStates } from "./workflow.ts";
-import type { ModelProductionPort } from "./model-production-port.ts";
+import { projectBuildRecordDisplayStatus, type ModelProductionPort } from "./model-production-port.ts";
 
 /**
  * F3 生产纵向端口契约测试(production-use-case v0.1 草案;仿 ports.contract.test.ts):
@@ -56,8 +56,8 @@ for (const { label, make } of implementations) {
 
   test(`${label}: 未接入时七方法 + 素材选择全部诚实退路,不编造数据`, async () => {
     const port = make();
-    assert.equal(await port.pickMaterial("unitypackage_direct"), null);
-    const material = { materialId: "m", intake: "unitypackage_direct" as const, displayName: "demo" };
+    assert.equal(await port.pickMaterial("direct_unity_package"), null);
+    const material = { materialId: "m", intake: "direct_unity_package" as const, displayName: "demo" };
     assert.equal((await port.startInspection(material)).kind, "unavailable");
     assert.equal((await port.requestPlan("i-1")).kind, "unavailable");
     assert.equal((await port.confirmPlan("p-1", 1)).kind, "unavailable");
@@ -82,9 +82,9 @@ test("fixture(production-inspect): 全流程走查——检查 → 计划 → �
   assert.equal((await port.capability()).production.state, "ready");
 
   // 素材选择(fixture 模拟 Kernel 文件对话框,返回合成 MaterialRef)
-  const material = await port.pickMaterial("local_vpm");
+  const material = await port.pickMaterial("local_reusable_vpm");
   assert.ok(material !== null);
-  assert.equal(material.intake, "local_vpm");
+  assert.equal(material.intake, "local_reusable_vpm");
   assert.ok(material.displayName.length > 0);
 
   // startInspection:返回已创建任务 + 当前快照;任务经任务端口可见
@@ -159,7 +159,12 @@ test("fixture(production-inspect): 全流程走查——检查 → 计划 → �
   assert.ok(done.productionRun.buildRecord !== null);
   const record = done.productionRun.buildRecord;
   assert.ok(record !== null);
-  assert.equal(record.status, "completed");
+  assert.equal(record.status, "succeeded");
+  assert.equal(record.restoreAttempted, false);
+  assert.equal(
+    projectBuildRecordDisplayStatus(record.status, record.restoreAttempted, record.restoreSucceeded),
+    "completed",
+  );
   assert.ok(record.stages.length > 0);
   assert.equal((await port.getBuildRecord(record.recordId)).kind, "record");
   assert.equal(
@@ -220,7 +225,7 @@ test("fixture(production-success): 成功生命周期——completed + 构建记
   assert.equal(view.kind, "run");
   if (view.kind !== "run") return;
   assert.equal(view.runState, "completed");
-  assert.equal(view.buildRecord?.status, "completed");
+  assert.equal(view.buildRecord?.status, "succeeded");
   // 终态不接受恢复
   const recovered = await port.recover(view.taskId, { kind: "rollback", decisionId: "d-1" });
   assert.equal(recovered.kind, "rejected");
@@ -259,7 +264,17 @@ test("fixture(production-drifted): 漂移——failed_recoverable;rollback 演�
   assert.equal(done.kind, "run");
   if (done.kind !== "run") return;
   assert.equal(done.runState, "failed");
-  assert.equal(done.buildRecord?.status, "rollback_failed");
+  assert.equal(done.buildRecord?.status, "failed");
+  assert.equal(done.buildRecord?.restoreAttempted, true);
+  assert.equal(done.buildRecord?.restoreSucceeded, false);
+  assert.equal(
+    projectBuildRecordDisplayStatus(
+      done.buildRecord.status,
+      done.buildRecord.restoreAttempted,
+      done.buildRecord.restoreSucceeded,
+    ),
+    "rollback_failed",
+  );
 });
 
 test("fixture(production-drifted): continue 从安全点继续执行到 completed", async () => {
@@ -275,7 +290,7 @@ test("fixture(production-drifted): continue 从安全点继续执行到 complete
   assert.equal(done.kind, "run");
   if (done.kind !== "run") return;
   assert.equal(done.runState, "completed");
-  assert.equal(done.buildRecord?.status, "completed");
+  assert.equal(done.buildRecord?.status, "succeeded");
 });
 
 test("fixture(production-expired): 超时——expired;continue 回到待确认并可重新确认", async () => {
@@ -333,7 +348,17 @@ test("fixture(production-rollback): 回滚生命周期——recover 后 rolled_b
   assert.equal(done.kind, "run");
   if (done.kind !== "run") return;
   assert.equal(done.runState, "completed");
-  assert.equal(done.buildRecord?.status, "rolled_back");
+  assert.equal(done.buildRecord?.status, "failed");
+  assert.equal(done.buildRecord?.restoreAttempted, true);
+  assert.equal(done.buildRecord?.restoreSucceeded, true);
+  assert.equal(
+    projectBuildRecordDisplayStatus(
+      done.buildRecord.status,
+      done.buildRecord.restoreAttempted,
+      done.buildRecord.restoreSucceeded,
+    ),
+    "rolled_back",
+  );
 });
 
 test("fixture(production-*): 订阅推送运行迁移;非生产场景 production 能力 unavailable", async () => {
@@ -343,7 +368,7 @@ test("fixture(production-*): 订阅推送运行迁移;非生产场景 production
     const state = view.productionRun.kind === "run" ? view.productionRun.runState : "not-connected";
     if (seen.at(-1) !== state) seen.push(state);
   });
-  const material = await gateway.modelProduction.pickMaterial("unitypackage_direct");
+  const material = await gateway.modelProduction.pickMaterial("direct_unity_package");
   assert.ok(material !== null);
   await gateway.modelProduction.startInspection(material);
   await sleep(30);

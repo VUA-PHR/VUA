@@ -9,7 +9,7 @@ import type { ActionAvailability } from "./production-flow-model.ts";
 const copy = strings.productionFlow.material;
 
 /**
- * 素材入口条(F3):双素材入口选择(unitypackage_direct / local_vpm)+
+ * 素材入口条(F3):双素材入口选择(direct_unity_package / local_reusable_vpm)+
  * 选择文件按钮 + 开始检查。文件选择在 fixture 下模拟返回合成 MaterialRef;
  * 生产 capability 非 ready 时整条不渲染(由 Section 的 hidden 态保证,§2.6)。
  * 开始检查的关键动作禁用时给出可发现原因(§5)。
@@ -30,7 +30,7 @@ export function MaterialEntryBar({
   onPick: (intake: SourceIntake) => void;
   onStart: () => void;
 }) {
-  const [intake, setIntake] = useState<SourceIntake>("unitypackage_direct");
+  const [intake, setIntake] = useState<SourceIntake>("direct_unity_package");
   const startReason = !availability.enabled
     ? strings.productionFlow.disabledReasons[availability.reason]
     : material === null

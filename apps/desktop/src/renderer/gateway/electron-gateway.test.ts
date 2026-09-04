@@ -177,7 +177,7 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
   it("maps the picked source to a MaterialRef and degrades to null without a host", async () => {
     const dialog = {
       pickMaterialSource: async (intake: string) =>
-        intake === "unitypackage_direct"
+        intake === "direct_unity_package"
           ? { refId: "mat-1-abc", displayName: "closet.unitypackage" }
           : null,
     };
@@ -187,13 +187,13 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
       null,
     );
 
-    const picked = await gateway.modelProduction.pickMaterial("unitypackage_direct");
+    const picked = await gateway.modelProduction.pickMaterial("direct_unity_package");
     expect(picked).toEqual({
       materialId: "mat-1-abc",
-      intake: "unitypackage_direct",
+      intake: "direct_unity_package",
       displayName: "closet.unitypackage",
     });
-    expect(await gateway.modelProduction.pickMaterial("local_vpm")).toBeNull();
+    expect(await gateway.modelProduction.pickMaterial("local_reusable_vpm")).toBeNull();
   });
 
   it("keeps the not-run production surface honest while pickMaterial is live", async () => {
@@ -211,7 +211,7 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
     expect(capability.production.state).toBe("unavailable");
     // 无宿主:选取如实返回 null(入口本就由 capability 隐藏)
     const gatewayNoHost = createElectronGateway(undefined, null);
-    await expect(gatewayNoHost.modelProduction.pickMaterial("local_vpm")).resolves.toBeNull();
+    await expect(gatewayNoHost.modelProduction.pickMaterial("local_reusable_vpm")).resolves.toBeNull();
   });
 });
 });

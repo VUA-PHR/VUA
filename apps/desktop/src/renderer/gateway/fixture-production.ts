@@ -66,7 +66,7 @@ const notConnectedRun: ProductionRunView = { schemaVersion: 1, kind: "not-connec
 /* ---- 演示负载构造 ---- */
 
 function materialFor(intake: SourceIntake): MaterialRef {
-  return intake === "unitypackage_direct"
+  return intake === "direct_unity_package"
     ? {
         materialId: "fixture-material-unitypackage",
         intake,
@@ -132,12 +132,15 @@ function planFor(inspectionId: string, revision: number): ProductionPlan {
 
 function recordFor(
   status: BuildRecord["status"],
+  restore: Pick<BuildRecord, "restoreAttempted"> &
+    Partial<Pick<BuildRecord, "restoreSucceeded">>,
   facts: BuildRecordFacts,
   stages: BuildRecord["stages"],
 ): BuildRecord {
   return {
     recordId: "fixture-record-1",
     status,
+    ...restore,
     stages,
     facts,
     finishedAt: "2026-09-04T10:33:10+08:00",
@@ -145,11 +148,26 @@ function recordFor(
 }
 
 const completedRecord = (): BuildRecord =>
-  recordFor("completed", copy.recordFacts.completed, ["snapshot", "execute", "validate"]);
+  recordFor(
+    "succeeded",
+    { restoreAttempted: false },
+    copy.recordFacts.completed,
+    ["snapshot", "execute", "validate"],
+  );
 const rolledBackRecord = (): BuildRecord =>
-  recordFor("rolled_back", copy.recordFacts.rolledBack, ["snapshot", "execute", "recover"]);
+  recordFor(
+    "failed",
+    { restoreAttempted: true, restoreSucceeded: true },
+    copy.recordFacts.rolledBack,
+    ["snapshot", "execute", "recover"],
+  );
 const rollbackFailedRecord = (): BuildRecord =>
-  recordFor("rollback_failed", copy.recordFacts.rollbackFailed, ["snapshot", "execute", "recover"]);
+  recordFor(
+    "failed",
+    { restoreAttempted: true, restoreSucceeded: false },
+    copy.recordFacts.rollbackFailed,
+    ["snapshot", "execute", "recover"],
+  );
 
 /* ---- 车间轨道联动:运行态 → 三工位状态(端点恒定;不触碰 TrackModel 行为) ---- */
 
@@ -255,7 +273,7 @@ export function createFixtureProduction(
 
   /* ---- 初始运行态(八场景共享脚本,只改开局与恢复结局) ---- */
 
-  const source = materialFor("unitypackage_direct");
+  const source = materialFor("direct_unity_package");
   const inspection = inspectionFor(source);
   const planV1 = planFor(inspection.inspectionId, 1);
 

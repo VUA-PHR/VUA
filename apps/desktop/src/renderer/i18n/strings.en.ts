@@ -377,12 +377,12 @@ demoTaskTitle: "Demo task",
       title: "Material",
       intakeAria: "Material source",
       intake: {
-        unitypackage_direct: ".unitypackage direct import",
-        local_vpm: "Local VPM package",
+        direct_unity_package: ".unitypackage direct import",
+        local_reusable_vpm: "Local VPM package",
       },
       intakeNote: {
-        unitypackage_direct: "Imports the source .unitypackage into the target project as-is.",
-        local_vpm:
+        direct_unity_package: "Imports the source .unitypackage into the target project as-is.",
+        local_reusable_vpm:
           "Built as a local-reusable VPM package in an isolated staging project, then installed by the package manager.",
       },
       pick: "Choose material file…",
@@ -449,7 +449,8 @@ demoTaskTitle: "Demo task",
       title: "Build record",
       status: {
         completed: "Completed",
-        rolled_back: "Rolled back",
+        aborted: "Aborted",
+rolled_back: "Rolled back",
         rollback_failed: "Rollback failed",
       },
       stagesTitle: "Executed stages",

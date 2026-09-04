@@ -1,13 +1,17 @@
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import { format, strings } from "../../i18n/index.ts";
-import type { BuildRecord, BuildRecordStatus } from "../../gateway/index.ts";
+import {
+  projectBuildRecordDisplayStatus,
+  type BuildRecordDisplayStatus,
+} from "../../gateway/index.ts";
+import type { BuildRecord } from "../../gateway/index.ts";
 
 const copy = strings.productionFlow.record;
 const stageCopy = strings.workflowStage;
 
-/** 结果徽标色调(§7.3):成功/回滚成功为辖区橙(完成),回滚失败为红(阻断) */
-function statusTone(status: BuildRecordStatus): "brand" | "error" {
+/** 结果徽标色调(§7.3):中止/成功/回滚成功为辖区橙,回滚失败为红(阻断) */
+function statusTone(status: BuildRecordDisplayStatus): "brand" | "error" {
   return status === "rollback_failed" ? "error" : "brand";
 }
 
@@ -16,6 +20,11 @@ function statusTone(status: BuildRecordStatus): "brand" | "error" {
  * (快照/Bridge 作业/本地 VPM/验证,不透明载荷原样展示)。
  */
 export function BuildRecordCard({ record }: { record: BuildRecord }) {
+  const displayStatus = projectBuildRecordDisplayStatus(
+    record.status,
+    record.restoreAttempted,
+    record.restoreSucceeded,
+  );
   const facts: ReadonlyArray<{ key: keyof typeof copy.factLabels; value: string }> = [
     { key: "snapshot", value: record.facts.snapshot },
     { key: "bridgeJob", value: record.facts.bridgeJob },
@@ -26,7 +35,9 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
     <Card className="vua-flow__card">
       <div className="vua-flow__card-head">
         <h3 className="vua-title">{copy.title}</h3>
-        <Badge tone={statusTone(record.status)}>{copy.status[record.status]}</Badge>
+        <Badge tone={statusTone(displayStatus)}>
+          {copy.status[displayStatus]}
+        </Badge>
       </div>
       <section>
         <h4 className="vua-caption vua-text-secondary">{copy.stagesTitle}</h4>

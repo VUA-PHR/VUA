@@ -134,7 +134,7 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
 export interface DesktopKernelHost extends DesktopGatewayHost {
   dialog?: {
     pickMaterialSource(
-      intake: "unitypackage_direct" | "local_vpm",
+      intake: "direct_unity_package" | "local_reusable_vpm",
     ): Promise<{ refId: string; displayName: string } | null>;
   };
 }

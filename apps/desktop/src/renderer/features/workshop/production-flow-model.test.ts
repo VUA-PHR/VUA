@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import { strings } from "../../i18n/strings.zh-CN.ts";
 import {
-  buildRecordStatuses,
+  buildRecordDisplayStatuses,
+  projectBuildRecordDisplayStatus,
   inspectionFindingKinds,
   planDiffKinds,
   plannabilityStates,
@@ -38,7 +39,7 @@ const errored: CapabilityReport = { state: "error" };
 
 const material: MaterialRef = {
   materialId: "m-1",
-  intake: "unitypackage_direct",
+  intake: "direct_unity_package",
   displayName: "demo.unitypackage",
 };
 
@@ -64,7 +65,8 @@ const planV1: ProductionPlan = {
 
 const recordCompleted: BuildRecord = {
   recordId: "r-1",
-  status: "completed",
+  status: "succeeded",
+  restoreAttempted: false,
   stages: ["snapshot", "execute", "validate"],
   facts: { snapshot: "s", bridgeJob: "b", localVpm: "v", validation: "ok" },
   finishedAt: "2026-09-04T10:33:10+08:00",
@@ -104,7 +106,10 @@ test("parity: 端口与模型的枚举键和 strings.productionFlow 一一对应
     Object.keys(flow.inspection.plannability).sort(),
   );
   assert.deepEqual([...planDiffKinds].sort(), Object.keys(flow.plan.diffKind).sort());
-  assert.deepEqual([...buildRecordStatuses].sort(), Object.keys(flow.record.status).sort());
+  assert.deepEqual(
+    [...buildRecordDisplayStatuses].sort(),
+    Object.keys(flow.record.status).sort(),
+  );
   assert.deepEqual([...recoverDecisionKinds].sort(), Object.keys(flow.recover.decision).sort());
   assert.deepEqual([...productionRejectReasons].sort(), Object.keys(flow.rejected).sort());
   assert.deepEqual([...productionFlowPhases].sort(), Object.keys(flow.phase).sort());
@@ -182,22 +187,41 @@ test("recover(恢复进行中): 橙(进行),恢复卡保持可见但动作禁用
   assert.deepEqual(model.actions.recover, { enabled: false, reason: "notRecoverable" });
 });
 
-test("recover 结局: rolled_back / rollback_failed 记录直通(三态齐备)", () => {
-  for (const status of buildRecordStatuses) {
+test("recover 结局: 显示四态齐备且经 B 五态 + 恢复证据投影", () => {
+  const cases = [
+    { display: "completed", authority: "succeeded", restoreAttempted: false, restoreSucceeded: undefined, runState: "completed" },
+    { display: "completed", authority: "recovered", restoreAttempted: true, restoreSucceeded: true, runState: "completed" },
+    { display: "aborted", authority: "cancelled", restoreAttempted: false, restoreSucceeded: undefined, runState: "expired" },
+    { display: "rolled_back", authority: "failed", restoreAttempted: true, restoreSucceeded: true, runState: "completed" },
+    { display: "rollback_failed", authority: "failed", restoreAttempted: true, restoreSucceeded: false, runState: "failed" },
+  ] as const;
+  for (const testCase of cases) {
     const model = productionFlowModel(
       runWith({
-        runState: status === "rollback_failed" ? "failed" : "completed",
-        buildRecord: { ...recordCompleted, status },
+        runState: testCase.runState,
+        buildRecord: {
+          ...recordCompleted,
+          status: testCase.authority,
+          restoreAttempted: testCase.restoreAttempted,
+          ...(testCase.restoreSucceeded === undefined
+            ? {}
+            : { restoreSucceeded: testCase.restoreSucceeded }),
+        },
       }),
       ready,
     );
     assert.equal(model.kind, "run");
     if (model.kind !== "run") return;
     assert.equal(model.cards.buildRecord, true);
-    assert.equal(model.buildRecord?.status, status);
+    assert.ok(model.buildRecord !== null);
+    const display = projectBuildRecordDisplayStatus(
+      model.buildRecord.status,
+      model.buildRecord.restoreAttempted,
+      model.buildRecord.restoreSucceeded,
+    );
+    assert.equal(display, testCase.display);
   }
 });
-
 /* ---- × 加载 / 失败 / not-connected / 空态 ---- */
 
 test("五生命周期 × 能力加载中/能力失败/能力不可用:一律 hidden(入口不出现)", () => {
@@ -280,7 +304,15 @@ test("计划生成中: planning,计划卡 Skeleton;待确认: awaiting,琥珀,�
 
 test("failed(不可恢复失败): 红,恢复禁用,可重新开始", () => {
   const model = productionFlowModel(
-    runWith({ runState: "failed", buildRecord: { ...recordCompleted, status: "rollback_failed" } }),
+    runWith({
+      runState: "failed",
+      buildRecord: {
+        ...recordCompleted,
+        status: "failed",
+        restoreAttempted: true,
+        restoreSucceeded: false,
+      },
+    }),
     ready,
   );
   assert.equal(model.kind, "run");

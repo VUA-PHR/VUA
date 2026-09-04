@@ -22,7 +22,7 @@ const api: VuaDesktopApiV1 = Object.freeze({
     invoke: (request: DesktopGatewayRequestV1) => ipcRenderer.invoke("vua:gateway:invoke", request),
   }),
   dialog: Object.freeze({
-    pickMaterialSource: (intake: "unitypackage_direct" | "local_vpm") =>
+    pickMaterialSource: (intake: "direct_unity_package" | "local_reusable_vpm") =>
       ipcRenderer.invoke("vua:dialog:pick-material-source", intake),
   }),
   events: Object.freeze({

@@ -56,7 +56,8 @@ export {
 export type { EnvironmentPort, EnvironmentView } from "./environment-port.ts";
 export { CURRENT_RECIPE_ID } from "./model-production-port.ts";
 export {
-  buildRecordStatuses,
+  buildRecordDisplayStatuses,
+  projectBuildRecordDisplayStatus,
   inspectionFindingKinds,
   planDiffKinds,
   plannabilityStates,
@@ -67,7 +68,8 @@ export {
 export type {
   BuildRecord,
   BuildRecordFacts,
-  BuildRecordStatus,
+  BuildRecordAuthorityStatus,
+  BuildRecordDisplayStatus,
   BuildRecordView,
   InspectionFinding,
   InspectionFindingKind,
