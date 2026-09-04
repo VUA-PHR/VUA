@@ -141,6 +141,25 @@ impl UnityBridge for FakeBridge {
             )
             .unwrap();
         }
+        // The real Bridge materializes the extracted layout into Assets/;
+        // the fake mirrors that side effect so restores are observable.
+        if command.operation == vua_orchestrator::UnityOperation::ImportUnityPackage {
+            if let Some(extracted) = &command.payload.source_package_path {
+                for entry in fs::read_dir(Path::new(extracted)).into_iter().flatten() {
+                    let guid_dir = entry.expect("dir entry").path();
+                    let logical = match fs::read_to_string(guid_dir.join("pathname")) {
+                        Ok(logical) => logical.trim().to_owned(),
+                        Err(_) => continue,
+                    };
+                    let target = project.root.join(&logical);
+                    if let Some(parent) = target.parent() {
+                        fs::create_dir_all(parent).unwrap();
+                    }
+                    fs::copy(guid_dir.join("asset"), &target).unwrap();
+                    let _ = fs::copy(guid_dir.join("asset.meta"), target.with_extension("meta"));
+                }
+            }
+        }
         match state.script.pop_front() {
             Some(outcome) => outcome,
             None => Ok(UnityResult {

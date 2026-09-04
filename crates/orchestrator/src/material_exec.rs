@@ -14,8 +14,9 @@
 //! - Mutating Bridge commands carry `expected_project_fingerprint` and the
 //!   fingerprint CHAINS: each success returns the project's new fingerprint
 //!   (result.data.projectFingerprint), which the next command must expect.
-//! - `source_package_path` is the ABSOLUTE path of the `.unitypackage` —
-//!   the Bridge rejects relative paths (package.source_missing).
+//! - Unity's `ImportPackage` is a silent no-op in batchmode, so archives are
+//!   extracted under `.vua/imports/<command_id>/` (inside the snapshot-
+//!   protected project) and the Bridge materializes that layout instead.
 //!
 //! Tests cover the state machine on fake ports; real-Unity calibration
 //! (timeout budget, real rejection payloads, rollback equivalence) is the
@@ -38,7 +39,7 @@ use crate::time::Clock;
 use crate::vpm_backend::{PackageRequestV1, VpmBackend};
 use crate::UnityBridge;
 use serde::Serialize;
-use serde_json::Value;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -216,9 +217,10 @@ impl MaterialExecutor {
         };
         report.completed_steps.push(MaterialIntakeStepKind::CreateSnapshot);
 
-        // The Bridge fingerprint CHAINS across mutating commands: every
-        // success returns the project's new fingerprint, which the next
-        // mutation must expect. The plan's fingerprint starts the chain.
+        // Mutating body plus read-only validation. The Bridge fingerprint
+        // CHAINS across mutating commands: every success returns the
+        // project's next fingerprint, which the following command must
+        // expect. Any failure routes through the rollback branch below.
         let mut current_fingerprint = plan.project_fingerprint.clone();
         let mut validation_expectations: Vec<String> = Vec::new();
         let mut final_fingerprint: Option<String> = None;
@@ -233,6 +235,7 @@ impl MaterialExecutor {
                     &mut current_fingerprint,
                     &mut bridge_jobs,
                     &mut final_fingerprint,
+                    &mut validation_expectations,
                 ) {
                     Ok(()) => {
                         report.completed_steps.push(MaterialIntakeStepKind::ImportUnityPackages);
@@ -251,14 +254,13 @@ impl MaterialExecutor {
                     &mut local_vpm,
                     &mut validation_expectations,
                 ) {
-                    Ok(paths) => {
+                    Ok(()) => {
                         report.completed_steps.extend([
                             MaterialIntakeStepKind::ImportUnityPackages,
                             MaterialIntakeStepKind::CreateLocalVpmPackage,
                             MaterialIntakeStepKind::PreviewVpmInstall,
                             MaterialIntakeStepKind::ApplyVpmInstall,
                         ]);
-                        validation_expectations = paths;
                         None
                     }
                     Err(failure) => Some(failure),
@@ -320,8 +322,9 @@ impl MaterialExecutor {
         report.status = status;
         report.error_code = error_code;
 
-        // WriteBuildRecord: the receipt, published for both success and
-        // failure — the record is what makes a later re-run a replay.
+        // WriteBuildRecord: the receipt, published for success, cancellation
+        // and failure alike — the record is what makes a later re-run a
+        // replay instead of a blind second mutation.
         let record = BuildRecordV01 {
             schema_version: crate::build_record::BUILD_RECORD_SCHEMA_VERSION.to_owned(),
             record_id: record_id.clone(),
@@ -369,6 +372,7 @@ impl MaterialExecutor {
 
     // --- direct_unity_package ---
 
+    #[allow(clippy::too_many_arguments)]
     fn run_direct_imports(
         &self,
         plan: &crate::material_intake::MaterialIntakePlanV01,
@@ -377,14 +381,33 @@ impl MaterialExecutor {
         current_fingerprint: &mut String,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
         final_fingerprint: &mut Option<String>,
+        validation_expectations: &mut Vec<String>,
     ) -> Result<(), StepFailure> {
         for package in &plan.source.packages {
             if self.cancelled() {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
-            // The Bridge requires the ABSOLUTE source path.
-            let absolute = source_folder.join(&package.relative_path);
             let command_id = format!("{}-import-{}", plan.plan_id, bridge_jobs.len());
+            // Unity's ImportPackage is a silent no-op in batchmode, so the
+            // Bridge consumes an EXTRACTED layout instead: the archive is
+            // unpacked under .vua/imports/<command_id>/ (inside the
+            // snapshot-protected project) and the Bridge materializes it
+            // into Assets/.
+            let extracted_root = project.root.join(".vua/imports").join(&command_id);
+            let archive_path = source_folder.join(&package.relative_path);
+            let logical_paths = extract_package_into_dir(&archive_path, &extracted_root).map_err(
+                |error| {
+                    (
+                        format!(
+                            "{}: {}: {error}",
+                            intake_codes::ARCHIVE_INVALID,
+                            archive_path.display()
+                        ),
+                        MaterialExecutionStatus::Failed,
+                    )
+                },
+            )?;
+            validation_expectations.extend(logical_paths);
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
@@ -393,17 +416,20 @@ impl MaterialExecutor {
                 dry_run: false,
                 expected_project_fingerprint: Some(current_fingerprint.clone()),
                 payload: UnityPayload {
-                    source_package_path: Some(absolute.to_string_lossy().into_owned()),
+                    source_package_path: Some(extracted_root.to_string_lossy().into_owned()),
                     source_package_sha256: Some(package.sha256.clone()),
                     ..UnityPayload::default()
                 },
             };
             let result = self.dispatch(project, &command, bridge_jobs)?;
+            let _ = fs::remove_dir_all(&extracted_root);
             // Chain: the next mutation must expect the post-import state.
             *current_fingerprint =
                 fingerprint_of(&result).unwrap_or_else(|| current_fingerprint.clone());
             *final_fingerprint = Some(current_fingerprint.clone());
         }
+        validation_expectations.sort();
+        validation_expectations.dedup();
         Ok(())
     }
 
@@ -419,7 +445,7 @@ impl MaterialExecutor {
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
         local_vpm: &mut Option<crate::build_record::LocalVpmEvidenceV01>,
         validation_expectations: &mut Vec<String>,
-    ) -> Result<Vec<String>, StepFailure> {
+    ) -> Result<(), StepFailure> {
         let plan = &confirmation.plan;
         // The staging project serves exactly one atomic task; the guard
         // destroys it on every path out of this scope. The staging token
@@ -436,21 +462,28 @@ impl MaterialExecutor {
         };
         let package_id = slugify_package_id(&plan.source.display_name);
 
-        // The staging project needs its own starting fingerprint for its
-        // first mutating command.
-        let inspect = self.inspect(&staging_project, &format!("{}-stage-inspect", plan.plan_id), bridge_jobs)?;
-        let mut staging_fingerprint = fingerprint_of(&inspect)
-            .ok_or_else(|| {
-                (error_codes::BRIDGE_FAILED.to_owned(), MaterialExecutionStatus::Failed)
-            })?;
+        // The fresh staging project needs its own fingerprint for its first
+        // mutating command.
+        let inspect =
+            self.inspect(&staging_project, &format!("{}-stage-inspect", plan.plan_id), bridge_jobs)?;
+        let mut staging_fingerprint = fingerprint_of(&inspect).ok_or_else(|| {
+            (error_codes::BRIDGE_FAILED.to_owned(), MaterialExecutionStatus::Failed)
+        })?;
 
         // Import the whole batch into staging (chained fingerprints).
         for package in &plan.source.packages {
             if self.cancelled() {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
-            let absolute = source_folder.join(&package.relative_path);
             let command_id = format!("{}-stage-import-{}", plan.plan_id, bridge_jobs.len());
+            let extracted_root = staging.root().join(".vua/imports").join(&command_id);
+            extract_package_into_dir(&source_folder.join(&package.relative_path), &extracted_root)
+                .map_err(|error| {
+                    (
+                        format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                        MaterialExecutionStatus::Failed,
+                    )
+                })?;
             let command = UnityCommand {
                 schema_version: crate::ENVELOPE_SCHEMA_VERSION,
                 command_id,
@@ -459,7 +492,7 @@ impl MaterialExecutor {
                 dry_run: false,
                 expected_project_fingerprint: Some(staging_fingerprint.clone()),
                 payload: UnityPayload {
-                    source_package_path: Some(absolute.to_string_lossy().into_owned()),
+                    source_package_path: Some(extracted_root.to_string_lossy().into_owned()),
                     source_package_sha256: Some(package.sha256.clone()),
                     ..UnityPayload::default()
                 },
@@ -488,6 +521,16 @@ impl MaterialExecutor {
             },
         };
         let created = self.dispatch(&staging_project, &command, bridge_jobs)?;
+        validation_expectations.extend(
+            created
+                .changed_paths
+                .iter()
+                .filter(|path| path.starts_with("Packages/"))
+                .cloned(),
+        );
+        if validation_expectations.is_empty() {
+            validation_expectations.push(format!("Packages/{package_id}/package.json"));
+        }
 
         // Publish the produced package deterministically, then register and
         // install it into the target through the same backend.
@@ -515,20 +558,8 @@ impl MaterialExecutor {
             .apply_install(project, std::slice::from_ref(&request), &preview.digest)
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
 
-        // Validation after the move targets the package's own destinations.
-        *validation_expectations = created
-            .changed_paths
-            .iter()
-            .filter(|path| path.starts_with("Packages/"))
-            .cloned()
-            .collect();
-        if validation_expectations.is_empty() {
-            validation_expectations
-                .push(format!("Packages/{package_id}/package.json"));
-        }
-
         *local_vpm = Some(crate::build_record::LocalVpmEvidenceV01 {
-            package_id: package_id.clone(),
+            package_id,
             display_name: plan.source.display_name.clone(),
             version: "0.1.0".to_owned(),
             manifest_sha256: artifact.manifest_sha256,
@@ -536,7 +567,7 @@ impl MaterialExecutor {
             archive_sha256: artifact.archive_sha256,
             installed_version: "0.1.0".to_owned(),
         });
-        Ok(validation_expectations.clone())
+        Ok(())
     }
 
     // --- validate_minimum_structure ---
@@ -566,10 +597,23 @@ impl MaterialExecutor {
                 return Err(format!("{}: {}", error_codes::BRIDGE_FAILED, diagnostic.code));
             }
         }
+        // The validate op reports the loaded list through
+        // data.loadedAssetPaths, not through changedPaths.
+        let expected_assets_loaded = result
+            .data
+            .get("loadedAssetPaths")
+            .and_then(serde_json::Value::as_array)
+            .map(|items| {
+                items
+                    .iter()
+                    .filter_map(|item| item.as_str().map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default();
         Ok(BuildValidationEvidenceV01 {
             level: "minimum_structure".to_owned(),
             unity_validated: true,
-            expected_assets_loaded: result.changed_paths.clone(),
+            expected_assets_loaded,
             diagnostic_codes: result
                 .diagnostics
                 .iter()
@@ -637,13 +681,78 @@ impl MaterialExecutor {
     }
 }
 
+/// Unpacks a `.unitypackage` (tar.gz of `<guid>` folders carrying `asset`,
+/// `asset.meta`, and `pathname`) verbatim into `extracted_root` and returns
+/// the logical asset paths (`Assets/…`) recorded by the pathname entries.
+/// Untrusted pathnames are skipped, not followed.
+fn extract_package_into_dir(
+    archive_path: &Path,
+    extracted_root: &Path,
+) -> std::io::Result<Vec<String>> {
+        use flate2::read::GzDecoder;
+        use std::fs::File;
+        use std::io::Read;
+        use tar::Archive;
+
+    // Pass 1: map each guid folder to its logical asset path.
+    let mut folders: Vec<(String, String)> = Vec::new();
+    {
+        let file = File::open(archive_path)?;
+        let mut archive = Archive::new(GzDecoder::new(file));
+        for entry in archive.entries()? {
+            let mut entry = entry?;
+            let entry_path = entry.path()?.to_string_lossy().replace('\\', "/");
+            if let Some(guid) = entry_path.strip_suffix("/pathname") {
+                let mut logical = String::new();
+                entry.read_to_string(&mut logical)?;
+                let logical = logical.trim().replace('\\', "/");
+                if logical.starts_with("Assets/")
+                    && !logical.split('/').any(|part| part.is_empty() || part == "..")
+                {
+                    folders.push((guid.to_owned(), logical));
+                }
+            }
+        }
+    }
+
+    // Pass 2: dump the archive verbatim under extracted_root so the Bridge
+    // can materialize each guid folder at its logical path.
+    fs::create_dir_all(extracted_root)?;
+    {
+        let file = File::open(archive_path)?;
+        let mut archive = Archive::new(GzDecoder::new(file));
+        for entry in archive.entries()? {
+            let mut entry = entry?;
+            let entry_path = entry.path()?.to_string_lossy().replace('\\', "/");
+            if entry_path.contains("..") || entry_path.starts_with('/') {
+                continue;
+            }
+            let target = extracted_root.join(&entry_path);
+            if entry.header().entry_type().is_dir() {
+                fs::create_dir_all(target)?;
+                continue;
+            }
+            if let Some(parent) = target.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            let mut bytes = Vec::new();
+            entry.read_to_end(&mut bytes)?;
+            fs::write(target, &bytes)?;
+        }
+    }
+
+    Ok(folders.into_iter().map(|(_, logical)| logical).collect())
+}
+
 /// Package id rule from the Bridge: `^[a-z0-9][a-z0-9._-]{2,127}$`. The
 /// display name is lowercased and every foreign character collapses to `-`.
 fn slugify_package_id(display: &str) -> String {
     let mut slug = String::new();
     for character in display.chars() {
         let character = character.to_ascii_lowercase();
-        if character.is_ascii_lowercase() || character.is_ascii_digit() || matches!(character, '.' | '-' | '_')
+        if character.is_ascii_lowercase()
+            || character.is_ascii_digit()
+            || matches!(character, '.' | '-' | '_')
         {
             slug.push(character);
         } else {
@@ -654,7 +763,7 @@ fn slugify_package_id(display: &str) -> String {
     if slug.chars().count() >= 3 {
         slug
     } else {
-        format!("pkg-{}", slug)
+        format!("pkg-{slug}")
     }
 }
 
@@ -662,6 +771,20 @@ fn fingerprint_of(result: &UnityResult) -> Option<String> {
     result
         .data
         .get("projectFingerprint")
-        .and_then(Value::as_str)
+        .and_then(serde_json::Value::as_str)
         .map(str::to_owned)
+}
+
+#[cfg(test)]
+mod probe {
+    #[test]
+    #[ignore = "manual probe: needs VUA_PROBE_ARCHIVE / VUA_PROBE_OUT"]
+    fn probe_extract_real_archive() {
+        let archive = std::path::PathBuf::from(std::env::var("VUA_PROBE_ARCHIVE").unwrap());
+        let out = std::path::PathBuf::from(std::env::var("VUA_PROBE_OUT").unwrap());
+        match super::extract_package_into_dir(&archive, &out) {
+            Ok(paths) => println!("OK {} logical paths, first: {:?}", paths.len(), paths.first()),
+            Err(e) => println!("ERR io={e} raw_os_error={:?}", e.raw_os_error()),
+        }
+    }
 }
