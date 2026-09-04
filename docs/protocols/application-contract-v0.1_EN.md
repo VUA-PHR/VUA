@@ -2,10 +2,12 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
-> Status: B1/F2 candidate development contract
+> Status: **Frozen (M2, 2026-09-04) — stable Gateway v1**
 > Scope: application semantics between the Electron Kernel and an Orchestrator Provider
 > Updated: 2026-09-04
-> Authority: constrains B1/F2 implementation and tests; not stable Gateway v1 before real M2 integration
+> Authority: binds Kernel, Provider, and Renderer implementations; breaking changes require a
+> version bump, new methods follow the "Versioning and evolution" registration and the revision
+> history
 
 ## Purpose and boundary
 
@@ -20,10 +22,10 @@ carries it; unknown versions are rejected explicitly.
 ## Versioning and evolution
 
 The method surface grows with vertical slices, and this document is the single registry: every new method
-must be registered here with its owning use case, port, and capability gating. Incremental registration
-within the same candidate version is allowed (both implementations evolve in sync inside this repository);
-at the M2 freeze the contract is promoted to stable Gateway v1 as a whole, and only later breaking changes
-require a version bump.
+must be registered here with its owning use case, port, and capability gating. The contract was frozen as
+stable Gateway v1 at M2 (2026-09-04): breaking changes now require a version bump; new methods continue to
+be registered incrementally, recorded in the revision history with an explicit backward-compatibility
+statement.
 
 ## Method surface
 
@@ -161,6 +163,9 @@ caches, display, and diagnostics always reference the original contract values.
   of the B6 environment detection spike) and `task.startDemo` (capability-gated demo task command);
   replaced the former "B1 does not add …" restriction paragraph with the "Versioning and evolution"
   growth model; added "Presentation projection" and the corresponding verification gates.
+- 2026-09-04: **M2 freeze**. After the B1/F2 surface passed the real integration acceptance
+  (supervised provider process, SQLite authoritative state, five delivery evidences), it is
+  promoted to stable Gateway v1; the `production.*` surface remains a B3/F3 candidate draft.
 - 2026-09-04: Registered the production use-case surface (B3/F3 candidate draft). The seven
   `production.*` methods; lifecycle, dual material intake, and value semantics live in the
   [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md).

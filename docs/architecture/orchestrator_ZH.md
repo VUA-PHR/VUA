@@ -53,8 +53,8 @@ Provider 关闭时先关闭新调用入口，再按契约等待进行中修改�
 恢复。Provider 替换只能发生在空闲关闭边界。
 
 B1 的传输无关请求、任务、取消、操作级 Capability 与安全关闭语义见
-[应用契约 v0.1](../protocols/application-contract-v0.1_ZH.md)。该候选契约在 M2 真实整合前不构成
-稳定 Gateway v1。
+[应用契约 v0.1](../protocols/application-contract-v0.1_ZH.md)。该契约已于 M2（2026-09-04）经真实
+整合验收冻结为稳定 Gateway v1。
 
 B2 的 SQLite 表、事务、幂等、耐久与重启语义见
 [任务存储格式 v0.1](../protocols/task-store-v0.1_ZH.md)；进程封帧、握手、监督、单实例与关闭语义见
