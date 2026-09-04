@@ -1,9 +1,7 @@
 import type {
-  DemoTaskStartedV01,
-  EnvironmentSnapshotV01,
-  TaskCancellationResultV01,
-  TaskListSnapshotV01,
-  TaskSnapshotV01,
+  AppErrorV01,
+  ApplicationEventV01,
+  ApplicationSuccessValueV01,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -98,14 +96,24 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
 
-/** 各方法的成功返回值:直接采用 application-contract v0.1 的应用值 */
-export type DesktopGatewaySuccessValueV1 =
-  | AppSnapshotV1
-  | TaskListSnapshotV01
-  | TaskSnapshotV01
-  | TaskCancellationResultV01
-  | EnvironmentSnapshotV01
-  | DemoTaskStartedV01;
+/**
+ * 各方法的成功返回值:应用契约值原样透传,外加 Kernel 派生的 app.snapshot。
+ */
+export type DesktopGatewaySuccessValueV1 = AppSnapshotV1 | ApplicationSuccessValueV01;
+
+/**
+ * Gateway 错误:Kernel 自身的三种失败用 code + messageKey;Provider 的应用
+ * 错误原样透传(code = "application"),本地化与重试判定引用 AppErrorV01 原值。
+ */
+export type DesktopGatewayErrorV1 =
+  | {
+      readonly code: "invalid_request" | "unsupported_method" | "internal";
+      readonly messageKey: string;
+    }
+  | {
+      readonly code: "application";
+      readonly application: AppErrorV01;
+    };
 
 export type DesktopGatewayResponseV1 =
   | {
@@ -118,11 +126,13 @@ export type DesktopGatewayResponseV1 =
       readonly schemaVersion: 1;
       readonly requestId: string;
       readonly ok: false;
-      readonly error: {
-        readonly code: "invalid_request" | "unsupported_method" | "internal";
-        readonly messageKey: string;
-      };
+      readonly error: DesktopGatewayErrorV1;
     };
+
+/** 事件订阅面:Provider 的类型化应用事件经 Kernel 广播到全部本地来源窗口 */
+export interface DesktopGatewayEventsApiV1 {
+  subscribe(listener: (event: ApplicationEventV01) => void): () => void;
+}
 
 export interface DesktopGatewayApiV1 {
   readonly version: 1;
@@ -137,6 +147,7 @@ export interface DesktopWindowApiV1 {
 
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
+  readonly events: DesktopGatewayEventsApiV1;
   readonly window: DesktopWindowApiV1;
 }
 

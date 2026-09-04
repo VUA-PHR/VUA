@@ -4,7 +4,9 @@ import {
   DESKTOP_GATEWAY_VERSION,
   isDesktopGatewayRequestV1,
   requestByteLength,
+  type ApplicationRequestV01,
   type ApplicationSnapshotV01,
+  type DesktopGatewayRequestV1,
   type DesktopGatewayResponseV1,
 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
@@ -24,13 +26,13 @@ function requestIdFrom(value: unknown): string {
   return value !== null
     && typeof value === "object"
     && typeof (value as { requestId?: unknown }).requestId === "string"
-    ? (value as { requestId: string }).requestId
-    : "invalid";
+      ? (value as { requestId: string }).requestId
+      : "invalid";
 }
 
 function failure(
   requestId: string,
-  code: Extract<DesktopGatewayResponseV1, { ok: false }>["error"]["code"],
+  code: "invalid_request" | "unsupported_method" | "internal",
   messageKey: string,
 ): DesktopGatewayResponseV1 {
   return {
@@ -55,6 +57,46 @@ function capabilityAvailable(snapshot: ApplicationSnapshotV01, operationId: stri
   );
 }
 
+/** Gateway 方法 → 应用契约请求;方法表穷尽,新增方法在此同步登记 */
+function toApplicationRequest(request: DesktopGatewayRequestV1): ApplicationRequestV01 {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: request.requestId,
+    correlationId: request.requestId,
+  };
+  switch (request.method) {
+    case "app.snapshot":
+      return { ...base, kind: "query", method: "application.getSnapshot", params: {} };
+    case "task.list":
+      return { ...base, kind: "query", method: "task.list", params: {} };
+    case "task.get":
+      return { ...base, kind: "query", method: "task.get", params: { taskId: request.params.taskId } };
+    case "task.requestCancellation":
+      return {
+        ...base,
+        kind: "command",
+        method: "task.requestCancellation",
+        commandId: request.params.commandId,
+        params: {
+          taskId: request.params.taskId,
+          ...(request.params.observedRevision === undefined
+            ? {}
+            : { observedRevision: request.params.observedRevision }),
+        },
+      };
+    case "environment.getSnapshot":
+      return { ...base, kind: "query", method: "environment.getSnapshot", params: {} };
+    case "task.startDemo":
+      return {
+        ...base,
+        kind: "command",
+        method: "task.startDemo",
+        commandId: request.params.commandId,
+        params: {},
+      };
+  }
+}
+
 export async function routeDesktopGatewayInvoke(
   context: DesktopGatewayRouteContext,
   senderUrl: string,
@@ -67,43 +109,44 @@ export async function routeDesktopGatewayInvoke(
     return failure(requestId, "invalid_request", "errors.gateway.invalidRequest");
   }
 
-  // F2 步进:方法表已扩,路由逐方法接入;未接入的方法显式 unsupported_method,
-  // 不允许回落 app.snapshot 伪造答案(诚实失败优于错误成功)。
-  if (request.method !== "app.snapshot") {
-    return failure(request.requestId, "unsupported_method", "errors.gateway.unsupportedMethod");
-  }
-
   try {
-    const providerResponse = await context.provider.invoke({
-      contractVersion: APPLICATION_CONTRACT_VERSION,
-      requestId: request.requestId,
-      correlationId: request.requestId,
-      kind: "query",
-      method: "application.getSnapshot",
-      params: {},
-    });
+    const providerResponse = await context.provider.invoke(toApplicationRequest(request));
     if (!providerResponse.ok) {
-      return failure(request.requestId, "internal", providerResponse.error.messageKey);
+      // 应用错误原样透传:本地化键、可重试与可恢复判定引用契约原值
+      return {
+        schemaVersion: DESKTOP_GATEWAY_VERSION,
+        requestId: request.requestId,
+        ok: false,
+        error: { code: "application", application: providerResponse.error },
+      };
     }
-    if (!isApplicationSnapshot(providerResponse.value)) {
-      return failure(request.requestId, "internal", "errors.gateway.invalidProviderResponse");
+    if (request.method === "app.snapshot") {
+      if (!isApplicationSnapshot(providerResponse.value)) {
+        return failure(request.requestId, "internal", "errors.gateway.invalidProviderResponse");
+      }
+      return {
+        schemaVersion: DESKTOP_GATEWAY_VERSION,
+        requestId: request.requestId,
+        ok: true,
+        value: {
+          schemaVersion: 1,
+          productVersion: context.productVersion,
+          runtime: "electron",
+          platform: context.platform,
+          capabilities: {
+            gateway: true,
+            tasks: capabilityAvailable(providerResponse.value, TASK_LIST_CAPABILITY),
+            remoteBrowser: capabilityAvailable(providerResponse.value, REMOTE_BROWSER_CAPABILITY),
+          },
+        },
+      };
     }
-
+    // 其余方法:应用契约值原样作为 Gateway 返回值(方法表已保证形状)
     return {
       schemaVersion: DESKTOP_GATEWAY_VERSION,
       requestId: request.requestId,
       ok: true,
-      value: {
-        schemaVersion: 1,
-        productVersion: context.productVersion,
-        runtime: "electron",
-        platform: context.platform,
-        capabilities: {
-          gateway: true,
-          tasks: capabilityAvailable(providerResponse.value, TASK_LIST_CAPABILITY),
-          remoteBrowser: capabilityAvailable(providerResponse.value, REMOTE_BROWSER_CAPABILITY),
-        },
-      },
+      value: providerResponse.value,
     };
   } catch {
     return failure(request.requestId, "internal", "errors.gateway.providerUnavailable");

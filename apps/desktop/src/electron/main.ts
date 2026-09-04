@@ -1,5 +1,6 @@
 import { app, BrowserWindow, ipcMain, session, shell } from "electron";
 import path from "node:path";
+import type { ApplicationEventV01 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
@@ -19,6 +20,15 @@ function assertLocalSender(senderUrl: string): void {
 
 function senderFrameUrl(event: Electron.IpcMainInvokeEvent): string {
   return event.senderFrame?.url ?? "";
+}
+
+/** Provider 类型化事件 → 全部本地来源窗口(多窗口同步的 Kernel 侧) */
+function broadcastGatewayEvent(rendererUrl: string | undefined, event: ApplicationEventV01): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (isAllowedLocalSender(window.webContents.getURL(), rendererUrl)) {
+      window.webContents.send("vua:gateway:event", event);
+    }
+  }
 }
 
 function registerIpc(provider: OrchestratorProviderV01): void {
@@ -72,6 +82,7 @@ async function createWindow(): Promise<void> {
 app.whenReady().then(async () => {
   const provider = createDesktopOrchestratorProvider();
   await provider.start();
+  provider.subscribe((event) => broadcastGatewayEvent(rendererUrl, event));
   installPermissionDenyPolicy(session.defaultSession);
   registerIpc(provider);
   await createWindow();
