@@ -537,14 +537,14 @@ fn advance_demo_tasks(
         if !task.task_id.starts_with("demo-") || task.state.is_terminal() {
             continue;
         }
-        let target = if task.cancel_requested {
-            (task.state == TaskState::Running).then_some(TaskState::Cancelled)
-        } else {
-            match task.state {
-                TaskState::Queued => Some(TaskState::Preparing),
-                TaskState::Preparing => Some(TaskState::Running),
-                _ => None,
-            }
+        // 取消不阻塞前进:演示任务照常推进到 running,取消请求把
+        // running 的下一步转为 cancelled 终态(修复:取消在 queued/preparing
+        // 到达时任务曾永久卡在 preparing,旧假绿掩盖了它)
+        let target = match task.state {
+            TaskState::Queued => Some(TaskState::Preparing),
+            TaskState::Preparing => Some(TaskState::Running),
+            TaskState::Running if task.cancel_requested => Some(TaskState::Cancelled),
+            _ => None,
         };
         let Some(target) = target else { continue };
         let mutation = if target.is_terminal() {

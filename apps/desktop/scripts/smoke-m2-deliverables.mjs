@@ -9,6 +9,7 @@
 // 6. 进程关闭:prepareShutdown → Provider 协议化退出,无孤儿。
 // 证据写入 _local_m2/v<版本>/m2-deliverables-smoke.json(.gitignore 排除)。
 import assert from "node:assert/strict";
+import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import http from "node:http";
@@ -40,10 +41,50 @@ function log(event, detail = {}) {
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// 可靠性验收:任何未处理的拒绝都计为冒烟失败,不允许带警告零退出
+let unhandledRejections = 0;
+process.on("unhandledRejection", (reason) => {
+  unhandledRejections += 1;
+  log("smoke.unhandled_rejection", { message: String(reason) });
+});
+
+// 只终止本次冒烟拥有的 Provider:按命令行里的专属数据库文件名过滤 PID
+const PROVIDER_IMAGE = "vua-orchestrator-provider.exe";
+
+function listOwnedProviderPids() {
+  // wmic CSV:CommandLine 含专属数据库文件名的行才是本次冒烟拥有的 Provider;
+  // CSV 行尾最后一列即 ProcessId
+  let output = "";
+  try {
+    output = execSync(
+      "wmic process where \"name='vua-orchestrator-provider.exe'\" get processid,commandline /format:csv",
+      { stdio: ["ignore", "pipe", "ignore"] },
+    )
+      .toString()
+      .trim();
+  } catch {
+    return [];
+  }
+  return output
+    .split(/\r?\n/)
+    .filter((line) => line.includes("m2-smoke-provider.db"))
+    .map((line) => Number(line.trim().split(",").pop()))
+    .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
+function killOwnedProviders() {
+  const pids = listOwnedProviderPids();
+  for (const pid of pids) {
+    execSync(`taskkill /F /PID ${pid}`, { stdio: "ignore" });
+  }
+  return pids.length;
+}
+
 async function waitFor(predicate, label, timeoutMs = 10_000) {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    if (predicate()) return;
+    // 必须 await:异步判定返回 Promise 本身恒为真值,会让检查假绿
+    if (await predicate()) return;
     await delay(25);
   }
   throw new Error(`Timed out waiting for ${label}`);
@@ -141,15 +182,26 @@ async function main() {
   }, "demo task to reach cancelled");
   check("demo_task.cancelled_terminal", true, { taskId });
 
-  // ---- 检查 2:暂时断连(杀进程 → invoke 不可用 → 重启恢复) ----
-  const { execSync } = await import("node:child_process");
-  execSync("taskkill /F /IM vua-orchestrator-provider.exe", { stdio: "ignore" });
+  // ---- 检查 2:暂时断连(只杀测试拥有的 Provider → invoke 不可用 → 重启恢复) ----
+  const killed = killOwnedProviders();
   await delay(300);
-  const during = await invoke(provider, "task.list", {});
+  let during = null;
+  let transportDead = false;
+  try {
+    during = await invoke(provider, "task.list", {});
+  } catch {
+    // 传输层死亡(写入已退出的进程)同样是断连事实
+    transportDead = true;
+  }
   check(
     "disconnect.invoke_unavailable",
-    during.ok === false && during.error?.code === "vua.provider.not_accepting",
-    { code: during.ok ? "ok" : during.error.code },
+    transportDead || (during !== null && during.ok === false),
+    { transportDead, code: during === null ? "transport" : during.ok ? "ok" : during.error.code },
+  );
+  check(
+    "disconnect.no_orphan_after_kill",
+    killed > 0 && listOwnedProviderPids().length === 0,
+    { killed },
   );
 
   provider = new SupervisedProcessProviderV01({
@@ -187,9 +239,8 @@ async function main() {
   check(
     "restart_recovery.inspect_required",
     leftoverTask !== undefined
-      && leftoverTask.recoveryDisposition === "inspect_required"
-      && leftoverTask.state !== "cancelled"
-      && leftoverTask.state !== "succeeded",
+      && leftoverTask.state === "running"
+      && leftoverTask.recoveryDisposition === "inspect_required",
     { state: leftoverTask?.state, disposition: leftoverTask?.recoveryDisposition },
   );
 
@@ -333,9 +384,15 @@ async function main() {
   check("shutdown.safe_to_stop", shutdown.outcome === "safe_to_stop", {
     outcome: shutdown.outcome,
   });
-  await waitFor(() => !existsSync(`${databasePath}.provider.lock.locked`), "lock release", 3_000).catch(
-    () => {},
+  await delay(500);
+  check(
+    "shutdown.no_orphan_provider",
+    listOwnedProviderPids().length === 0,
+    { remaining: listOwnedProviderPids().length },
   );
+  check("reliability.no_unhandled_rejections", unhandledRejections === 0, {
+    count: unhandledRejections,
+  });
 
   await mkdir(evidenceDirectory, { recursive: true });
   await writeFile(
