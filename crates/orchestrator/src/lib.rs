@@ -19,6 +19,8 @@ mod journal;
 mod local_vpm_artifact;
 mod material_identity;
 mod material_intake;
+mod material_exec;
+mod material_staging;
 mod model;
 mod process;
 mod project_identity;
@@ -87,6 +89,14 @@ pub use material_intake::{
     MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
     MaterialIntakeStepKind, MaterialIntakeStepV01, RiskDecisionChoice, RiskDecisionV01,
     SourceFolderInspectionV01, SourcePackageEvidenceV01,
+};
+pub use material_exec::{
+    error_codes as material_exec_error_codes, MaterialExecutionReport, MaterialExecutionStatus,
+    MaterialExecutor, RollbackOutcome,
+};
+pub use material_staging::{
+    staging_root, StagingProject, STAGING_MANIFEST_JSON, STAGING_PROJECT_VERSION_TXT,
+    STAGING_TEMPLATE_VERSION, STAGING_UNITY_VERSION,
 };
 pub use model::*;
 pub use process::{

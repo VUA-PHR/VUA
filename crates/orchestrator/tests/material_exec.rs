@@ -1,0 +1,458 @@
+//! B3 executor tests: the plan state machine against fake ports, with the
+//! REAL verified-snapshot store so rollback semantics are proven against
+//! actual file trees. Real-Unity calibration (timeout budget, rejection
+//! payloads, restore equivalence) is the separate local matrix (M3 gate).
+
+use flate2::write::GzEncoder;
+use std::collections::VecDeque;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::{Arc, Mutex};
+use std::time::{SystemTime, UNIX_EPOCH};
+use tar::{Builder, Header};
+
+use vua_orchestrator::{
+    BuildRecordStore, BridgeError, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
+    MaterialEntryMode, MaterialExecutionStatus, MaterialExecutor, MaterialIntakeConfirmationV01,
+    MaterialIntakeEngine, MaterialIntakePlanV01, PackageRequestV1, ProjectRef, ResultStatus,
+    RiskDecisionChoice, RiskDecisionV01, RollbackOutcome, SourceFolderInspectionV01, UnityBridge,
+    UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+};
+
+// --- fixtures ---
+
+fn temp_dir(label: &str) -> PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    std::env::temp_dir().join(format!("vua-mexec-{label}-{nanos}"))
+}
+
+fn append(builder: &mut Builder<GzEncoder<fs::File>>, path: &str, bytes: &[u8]) {
+    let mut header = Header::new_gnu();
+    header.set_size(bytes.len() as u64);
+    header.set_mode(0o644);
+    header.set_cksum();
+    builder.append_data(&mut header, path, bytes).unwrap();
+}
+
+fn unitypackage(path: &Path, assets: &[&str]) {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+    let file = fs::File::create(path).unwrap();
+    let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+    for asset in assets {
+        append(&mut builder, asset, b"synthetic asset bytes");
+    }
+    builder.finish().unwrap();
+}
+
+fn make_world(label: &str) -> (PathBuf, ProjectRef) {
+    let base = temp_dir(label);
+    let source = base.join("source");
+    fs::create_dir_all(&source).unwrap();
+    unitypackage(&source.join("pack.unitypackage"), &["Assets/Asset.prefab"]);
+    let project_root = base.join("target");
+    fs::create_dir_all(project_root.join("Assets")).unwrap();
+    fs::create_dir_all(project_root.join("Packages")).unwrap();
+    fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
+    fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
+    let project = ProjectRef {
+        id: "project".into(),
+        root: project_root,
+    };
+    (base, project)
+}
+
+fn inspection(folder: &Path) -> SourceFolderInspectionV01 {
+    MaterialIntakeEngine
+        .inspect_folder(folder, "corr")
+        .expect("source inspects")
+}
+
+fn plan(mode: MaterialEntryMode, folder: &Path) -> MaterialIntakePlanV01 {
+    MaterialIntakeEngine
+        .plan(mode, "project", "project-fingerprint", inspection(folder), "corr")
+        .expect("plan builds")
+}
+
+fn confirmation(plan: &MaterialIntakePlanV01) -> MaterialIntakeConfirmationV01 {
+    MaterialIntakeConfirmationV01 {
+        plan: plan.clone(),
+        risk_decision: RiskDecisionV01 {
+            choice: RiskDecisionChoice::Continue,
+            source_fingerprint: plan.source.source_fingerprint.clone(),
+            risk_fingerprint: plan.source.risk_fingerprint.clone(),
+            remember_for_session: false,
+        },
+        confirmed_at: "2026-09-04T00:00:00Z".into(),
+        correlation_id: "corr".into(),
+    }
+}
+
+// --- fake ports ---
+
+struct FakeBridgeState {
+    script: VecDeque<Result<UnityResult, BridgeError>>,
+    commands: Vec<UnityCommand>,
+}
+
+#[derive(Clone)]
+struct FakeBridge {
+    state: Arc<Mutex<FakeBridgeState>>,
+}
+
+impl FakeBridge {
+    fn new(script: Vec<Result<UnityResult, BridgeError>>) -> Self {
+        Self {
+            state: Arc::new(Mutex::new(FakeBridgeState {
+                script: script.into(),
+                commands: Vec::new(),
+            })),
+        }
+    }
+
+    fn command_count(&self) -> usize {
+        self.state.lock().unwrap().commands.len()
+    }
+}
+
+impl UnityBridge for FakeBridge {
+    fn execute(
+        &self,
+        project: &ProjectRef,
+        command: &UnityCommand,
+    ) -> Result<UnityResult, BridgeError> {
+        let mut state = self.state.lock().unwrap();
+        state.commands.push(command.clone());
+        // The real Bridge produces the package layout inside the staging
+        // project; the fake reproduces just enough of that side effect for
+        // the deterministic publication step.
+        if command.operation == vua_orchestrator::UnityOperation::CreateLocalVpmPackage {
+            let package_dir = project.root.join("package");
+            fs::create_dir_all(&package_dir).unwrap();
+            fs::write(
+                package_dir.join("package.json"),
+                serde_json::json!({ "name": "synthetic.local", "version": "0.1.0" }).to_string(),
+            )
+            .unwrap();
+        }
+        match state.script.pop_front() {
+            Some(outcome) => outcome,
+            None => Ok(UnityResult {
+                schema_version: 1,
+                command_id: command.command_id.clone(),
+                status: ResultStatus::Succeeded,
+                changed_paths: vec![],
+                diagnostics: vec![],
+                data: serde_json::json!({
+                    "projectFingerprint": format!("fp-{}", state.commands.len())
+                }),
+            }),
+        }
+    }
+}
+
+struct FakeVpm {
+    installs: AtomicUsize,
+    registrations: AtomicUsize,
+}
+
+impl FakeVpm {
+    fn new() -> Arc<Self> {
+        Arc::new(Self {
+            installs: AtomicUsize::new(0),
+            registrations: AtomicUsize::new(0),
+        })
+    }
+}
+
+impl VpmBackend for FakeVpm {
+    fn name(&self) -> &'static str {
+        "fake-vpm"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: false,
+            preview_install: true,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        self.installs.fetch_add(1, Ordering::SeqCst);
+        assert_eq!(confirmed_digest, "digest-1", "apply binds the confirmed digest");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn register_local_package(&self, _package_root: &Path) -> Result<(), vua_orchestrator::AppErrorV1> {
+        self.registrations.fetch_add(1, Ordering::SeqCst);
+        Ok(())
+    }
+
+    fn create_project(
+        &self,
+        _parent: &Path,
+        _name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        // The bundled-template path never asks a backend to create projects.
+        Err(vua_orchestrator::AppErrorV1::new(
+            "vua.vpm.capability_missing",
+            vua_orchestrator::ErrorCategory::Unavailable,
+            "errors.vpm.capabilityMissing",
+            "corr",
+        ))
+    }
+}
+
+fn executor(base: &Path, bridge: FakeBridge, vpm: Arc<FakeVpm>) -> MaterialExecutor {
+    MaterialExecutor::new(
+        Arc::new(bridge),
+        FileSystemSnapshotStore,
+        vpm,
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+    )
+}
+
+// --- the state machine ---
+
+#[test]
+fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
+    let (base, project) = make_world("direct-happy");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = FakeVpm::new();
+    let executor = executor(&base, bridge.clone(), vpm.clone());
+
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
+    assert!(!report.replayed);
+    assert_eq!(
+        report.completed_steps,
+        vec![
+            vua_orchestrator::MaterialIntakeStepKind::VerifySource,
+            vua_orchestrator::MaterialIntakeStepKind::CreateSnapshot,
+            vua_orchestrator::MaterialIntakeStepKind::ImportUnityPackages,
+            vua_orchestrator::MaterialIntakeStepKind::ValidateMinimumStructure,
+            vua_orchestrator::MaterialIntakeStepKind::WriteBuildRecord,
+        ]
+    );
+    assert_eq!(report.rollback, RollbackOutcome::NotNeeded);
+
+    // One import + one validation command; mutating command binds the
+    // plan's project fingerprint and the package digests.
+    assert_eq!(bridge.command_count(), 2);
+    let commands = bridge.state.lock().unwrap().commands.clone();
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::ImportUnityPackage);
+    assert_eq!(
+        commands[0].expected_project_fingerprint.as_deref(),
+        Some("project-fingerprint")
+    );
+    assert_eq!(
+        commands[0].payload.source_package_sha256.as_deref(),
+        Some(inspection(&source).packages[0].sha256.as_str())
+    );
+    assert_eq!(commands[1].operation, vua_orchestrator::UnityOperation::ValidateAssetPaths);
+    assert!(commands[1].dry_run);
+
+    // The receipt replays idempotently: no further Unity traffic.
+    let replay = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+    assert!(replay.replayed);
+    assert_eq!(replay.status, MaterialExecutionStatus::Succeeded);
+    assert_eq!(bridge.command_count(), 2, "replay must not touch Unity");
+
+    // The receipt record carries the final fingerprint the fake returned.
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", confirmation.plan.plan_id))
+        .expect("receipt published");
+    assert_eq!(record.final_project_fingerprint.as_deref(), Some("fp-1"));
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_002_source_drift_fails_before_the_first_mutation() {
+    let (base, project) = make_world("drift");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), FakeVpm::new());
+
+    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source);
+    let confirmation = confirmation(&plan);
+    // Drift: the source grows after Inspect/plan.
+    unitypackage(&source.join("late.unitypackage"), &["Assets/Late.prefab"]);
+
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report.error_code.as_deref().unwrap_or("").contains("source_drift"),
+        "the drift code is the finding: {:?}",
+        report.error_code
+    );
+    assert_eq!(bridge.command_count(), 0, "no Unity command may run on drift");
+    assert_eq!(report.rollback, RollbackOutcome::NotNeeded, "nothing mutated yet");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_003_cancellation_before_the_first_step_touches_nothing() {
+    let (base, project) = make_world("cancel");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), FakeVpm::new());
+    executor.cancel();
+
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Cancelled);
+    assert_eq!(report.completed_steps, vec![]);
+    assert_eq!(bridge.command_count(), 0);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_004_bridge_rejection_restores_the_verified_snapshot() {
+    let (base, project) = make_world("reject");
+    let source = base.join("source");
+    // First command (the import) is rejected by the real Bridge semantics.
+    let bridge = FakeBridge::new(vec![Ok(UnityResult {
+        schema_version: 1,
+        command_id: "rejected".into(),
+        status: ResultStatus::Rejected,
+        changed_paths: vec![],
+        diagnostics: vec![],
+        data: serde_json::json!({}),
+    })]);
+    let executor = executor(&base, bridge, FakeVpm::new());
+
+    let manifest_before =
+        fs::read_to_string(project.root.join("vpm-manifest.json")).unwrap();
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert_eq!(report.error_code.as_deref(), Some("vua.material.bridge_rejected"));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+
+    // The receipt is published for the failed run too — it is what makes a
+    // later re-run a replay instead of a blind second mutation.
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", confirmation.plan.plan_id))
+        .expect("failed runs are recorded");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Failed);
+    let snapshot = record.snapshot.expect("snapshot evidence");
+    assert!(snapshot.restore_attempted);
+    assert_eq!(snapshot.restore_succeeded, Some(true));
+
+    // The restore must leave the project as it was.
+    assert_eq!(
+        fs::read_to_string(project.root.join("vpm-manifest.json")).unwrap(),
+        manifest_before
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_005_bridge_timeout_is_a_typed_failure_with_restore() {
+    let (base, project) = make_world("timeout");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![Err(BridgeError::TimedOut)]);
+    let executor = executor(&base, bridge, FakeVpm::new());
+
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert_eq!(report.error_code.as_deref(), Some("vua.material.bridge_timeout"));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
+    let (base, project) = make_world("vpm-mode");
+    let source = base.join("source");
+    let vpm = FakeVpm::new();
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), vpm.clone());
+
+    let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source));
+    let report = executor.execute(&confirmation, &source, &project, &base.join("artifacts"));
+
+    assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
+    let steps = &report.completed_steps;
+    for expected in [
+        vua_orchestrator::MaterialIntakeStepKind::CreateLocalVpmPackage,
+        vua_orchestrator::MaterialIntakeStepKind::PreviewVpmInstall,
+        vua_orchestrator::MaterialIntakeStepKind::ApplyVpmInstall,
+    ] {
+        assert!(steps.contains(&expected), "missing {expected:?}");
+    }
+
+    // The Bridge command ran inside the staging project, token-bound.
+    let commands = bridge.state.lock().unwrap().commands.clone();
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::CreateLocalVpmPackage);
+    assert!(commands[0].project_id.ends_with("-staging"));
+    assert_eq!(
+        commands[0].payload.staging_token.as_deref(),
+        Some(confirmation.correlation_id.as_str())
+    );
+
+    // The package was registered and installed with the bound digest.
+    assert_eq!(vpm.registrations.load(Ordering::SeqCst), 1);
+    assert_eq!(vpm.installs.load(Ordering::SeqCst), 1);
+
+    // The staging directory is destroyed on the success path.
+    let staging = vua_orchestrator::staging_root(&base.join("temp"), "corr");
+    assert!(!staging.exists(), "staging leftovers poison later runs");
+
+    // The receipt carries the local VPM evidence.
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", confirmation.plan.plan_id))
+        .expect("receipt published");
+    let local_vpm = record.local_vpm.expect("local vpm evidence");
+    assert_eq!(local_vpm.package_id, "source");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
