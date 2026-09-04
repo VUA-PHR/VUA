@@ -17,7 +17,8 @@
     "check:leak": "node --experimental-strip-types scripts/check-leak.mjs",
     "dev": "node scripts/dev.mjs",
     "start": "pnpm build && electron .",
-    "smoke:remote-permissions": "pnpm build && electron scripts/smoke-remote-permissions.mjs"
+    "smoke:remote-permissions": "pnpm build && electron scripts/smoke-remote-permissions.mjs",
+    "smoke:m2-deliverables": "pnpm build && electron scripts/smoke-m2-deliverables.mjs"
   },
   "dependencies": {
     "@vua/contracts": "workspace:*",

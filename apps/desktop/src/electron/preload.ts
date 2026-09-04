@@ -1,10 +1,14 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
-import {
-  DESKTOP_GATEWAY_VERSION,
-  type ApplicationEventV01,
-  type DesktopGatewayRequestV1,
-  type VuaDesktopApiV1,
+import type {
+  ApplicationEventV01,
+  DesktopGatewayRequestV1,
+  VuaDesktopApiV1,
 } from "@vua/contracts";
+
+// 沙箱 preload 只允许 require electron 白名单模块:@vua/contracts 在此仅做
+// 类型导入(编译期擦除,不产生运行时 require)。DESKTOP_GATEWAY_VERSION 以
+// 本地字面量对齐,漂移由 packages/contracts 的契约测试把守。
+const DESKTOP_GATEWAY_VERSION = 1 as const;
 
 /** contextBridge 会克隆回调:持有原监听器到包装器的映射,保证退订精确移除 */
 const eventListeners = new WeakMap<
