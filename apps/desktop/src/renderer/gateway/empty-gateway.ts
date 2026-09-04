@@ -1,0 +1,144 @@
+import { createInactiveTutorialPort } from "./tutorial-port.ts";
+import { createMemorySettingsPort } from "./settings-port.ts";
+import type { AcquirePort, AcquireView } from "./acquire-port.ts";
+import type {
+  CatalogBrowserPort,
+  CatalogDetailView,
+  CatalogListView,
+} from "./catalog-browser-port.ts";
+import type { CatalogStatus } from "./catalog.ts";
+import type { EnvironmentPort, EnvironmentView } from "./environment-port.ts";
+import { neverChecked } from "../features/deployer/deployer-model.ts";
+import type { ModelProductionPort, ModelProductionView } from "./model-production-port.ts";
+import type { PackagesPort, PackagesView } from "./packages-port.ts";
+import type { TaskPort } from "./task-port.ts";
+import type { ToolCatalogPort, ToolCatalogView } from "./tool-catalog-port.ts";
+import type { VuaGateway } from "./gateway.ts";
+import type { CapabilityReport, DataSource } from "./types.ts";
+import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
+
+/**
+ * not-run 诚实实现(G3):任何构建模式下都安全的默认 Gateway。
+ * 所有领域返回空态,页面据此呈现"尚未检测/尚未接入"(原则①);
+ * capability 一律 unavailable,由入口显隐表达,不渲染虚构按钮。
+ * 生产构建的唯一实现;DEV 下显式 ?scenario=not-run 也走这里。
+ */
+
+const unavailable: CapabilityReport = { state: "unavailable", detailKey: "detectorsMissing" };
+
+const environmentView: EnvironmentView = {
+  schemaVersion: 1,
+  deployer: neverChecked(),
+  // 版本源未接入:空数组,表现层整块不渲染(§2.6 不出现,而非虚构数据)
+  versions: { play: [], create: [] },
+};
+
+const modelProductionView: ModelProductionView = {
+  schemaVersion: 1,
+  workshop: { kind: "idle" },
+};
+
+const toolCatalogView: ToolCatalogView = { schemaVersion: 1, kind: "not-connected" };
+
+const acquireView: AcquireView = { schemaVersion: 1, kind: "not-connected" };
+
+function createEmptyAcquire(): AcquirePort {
+  return {
+    snapshot: () => Promise.resolve(acquireView),
+    subscribe: () => () => {},
+    capability: () => Promise.resolve(unavailable),
+  };
+}
+
+const packagesView: PackagesView = { schemaVersion: 1, kind: "not-connected" };
+
+function createEmptyPackages(): PackagesPort {
+  return {
+    snapshot: () => Promise.resolve(packagesView),
+    subscribe: () => () => {},
+    selectProject: () => Promise.resolve(packagesView),
+    addProject: () => Promise.resolve({ kind: "unavailable" }),
+    importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
+    previewChanges: () => Promise.resolve({ kind: "unavailable" }),
+    applyChanges: () => Promise.resolve({ kind: "unavailable" }),
+    setRepoEnabled: () => Promise.resolve(packagesView),
+    capability: () =>
+      Promise.resolve<CapabilityReport>({
+        state: "unavailable",
+        detailKey: "packagesEngineMissing",
+      }),
+  };
+}
+
+function createEmptyEnvironment(): EnvironmentPort {
+  return {
+    snapshot: () => Promise.resolve(environmentView),
+    subscribe: () => () => {},
+    runCheck: () => Promise.resolve(environmentView),
+    planFix: () => Promise.resolve({ kind: "unavailable" }),
+    capability: () => Promise.resolve(unavailable),
+  };
+}
+
+function createEmptyModelProduction(): ModelProductionPort {
+  return {
+    snapshot: () => Promise.resolve(modelProductionView),
+    subscribe: () => () => {},
+    recipeGraph: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    importShareCode: () => Promise.resolve({ kind: "unavailable" }),
+    exportShareCode: () => Promise.resolve({ kind: "unavailable" }),
+    releaseWall: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    capability: () => Promise.resolve(unavailable),
+  };
+}
+
+function createEmptyToolCatalog(): ToolCatalogPort {
+  return {
+    snapshot: () => Promise.resolve(toolCatalogView),
+    subscribe: () => () => {},
+    capability: () => Promise.resolve(unavailable),
+  };
+}
+
+function createEmptyTask(): TaskPort {
+  const view = { schemaVersion: 1, tasks: [] } as const;
+  return {
+    snapshot: () => Promise.resolve(view),
+    subscribe: () => () => {},
+    cancel: () => Promise.resolve({ kind: "rejected", reason: "unknown_task", view }),
+    capability: () => Promise.resolve({ state: "unavailable", detailKey: "taskEngineMissing" }),
+  };
+}
+
+const catalogListView: CatalogListView = { schemaVersion: 1, kind: "not-connected" };
+const catalogDetailView: CatalogDetailView = { schemaVersion: 1, kind: "not-connected" };
+
+/**
+ * 目录浏览 not-connected 实现(G8):生产构建的默认——目录能力未接入时
+ * Warehouse 呈现诚实空态("尚未接入"),不返回猜测商品(§2.6 禁止)。
+ */
+export function createEmptyCatalogBrowser(): CatalogBrowserPort {
+  return {
+    list: () => Promise.resolve(catalogListView),
+    detail: () => Promise.resolve(catalogDetailView),
+    status: () => Promise.resolve<CatalogStatus>({ health: "unknown" }),
+    capability: () =>
+      Promise.resolve<CapabilityReport>({ state: "unavailable", detailKey: "catalogMissing" }),
+  };
+}
+
+/** dataSource 恒为 "none":不携带任何 fixture 负载,生产安全 */
+export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGateway {
+  const source: DataSource = "none";
+  return {
+    environment: createEmptyEnvironment(),
+    tutorial: createInactiveTutorialPort(),
+    modelProduction: createEmptyModelProduction(),
+    toolCatalog: createEmptyToolCatalog(),
+    acquire: createEmptyAcquire(),
+    packages: createEmptyPackages(),
+    task: createEmptyTask(),
+    settings: createMemorySettingsPort(initialGoals),
+    dataSource: () => source,
+  };
+}

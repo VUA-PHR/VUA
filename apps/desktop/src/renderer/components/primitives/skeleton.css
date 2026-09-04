@@ -1,0 +1,25 @@
+/* 骨架屏:仅表示内容正在加载。
+ * 微光扫过(shimmer):高光带从右向左循环,color-mix 自文字色,深浅主题自适应;
+ * 系统"减少动态效果"时全局规则压掉动画,退化为带静态高光的色块。 */
+.vua-skeleton {
+  display: block;
+  border-radius: var(--vua-radius-badge);
+  background-color: var(--vua-bg-elevated);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--vua-text-strong) 8%, transparent) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: vua-skeleton-shimmer 1.6s linear infinite;
+}
+
+@keyframes vua-skeleton-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}

@@ -1,0 +1,83 @@
+/* 桌面教程伴随窗口(G4):独立小窗布局,复用 Token,不引入主壳样式 */
+
+.vua-tutorial {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--vua-bg-canvas);
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+}
+
+.vua-tutorial__titlebar {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  height: 40px;
+  padding: 0 var(--vua-space-2) 0 var(--vua-space-3);
+  border-bottom: 1px solid var(--vua-border);
+  user-select: none;
+  flex: none;
+}
+
+.vua-tutorial__title {
+  flex: 1;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}
+
+.vua-tutorial__chrome-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 28px;
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.vua-tutorial__chrome-button:hover {
+  background: var(--vua-bg-elevated);
+  color: var(--vua-text-strong);
+}
+
+.vua-tutorial__chrome-button[aria-pressed="true"] {
+  color: var(--vua-accent);
+}
+
+.vua-tutorial__chrome-button--close:hover {
+  background: var(--vua-error);
+  color: var(--vua-on-status);
+}
+
+.vua-tutorial__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-4);
+  overflow-y: auto;
+}
+
+.vua-tutorial__step-body {
+  margin: 0;
+  color: var(--vua-text-secondary);
+}
+
+.vua-tutorial__actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vua-space-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vua-tutorial__chrome-button {
+    transition: none;
+  }
+}

@@ -84,6 +84,30 @@ CI 状态：尚未建立
 迁移提交：本次 Electron 表现层迁移提交
 ```
 
+## Electron 表现层第二切片迁移记录（旧表现层全量资产）
+
+```text
+资产：KIMI 表现层其余资产 + 质量门脚本（功能页面、应用模型、4 语言 i18n、WebGL 三场景、原语补齐、5 个检查脚本）
+旧来源：kimi/docs-art-v04-dual-track / 5870d0c / _references/kimi-desktop-5870d0c/apps/desktop
+新所有模块：apps/desktop/src/renderer（app/components/features/gateway/i18n/dev）、packages/design-system（tokens/base/Icon）、
+apps/desktop/scripts、根 schemas/recipe/v1/fixtures
+迁移结论：按资产提取并在 Electron 重建（诚实降级项逐条记录于 apps/desktop/MIGRATION_ASSETS_*.md）
+保留价值：16 个功能页面表现层与布局模型、纯模型测试（252 项）、四语言 i18n 与术语纪律、完整 Design Token（含
+高对比双通道与 aurora 氛围层）、Context/Media/Skeleton 等原语、质量门（边界/对比度/i18n 完整性/多表一致/fixture 泄漏）
+拒绝携带的旧假设：Tauri command/event/WebviewWindow/vuaimg 自定义协议、真实 BDB vendored 快照（309 商品）与
+catalog-browser-dev 装配、真实商品图 URL（booth.pximg.net，改合成 SVG data URI）、机器绝对开发路径（vite fs.allow）、
+旧 schemas/tutorial 双端 JSON 机制、旧 app-meta 版本与身份
+教程与目录降级：教程端口恒 inactive、openTutorialWindow 显式失败（M5 重建）；应用内浏览与 vuaimg 缓存降级为
+系统浏览器直开（F4 以 WebContentsView + 隔离 Session + 素材 intake 协议重建）；VR overlay DEV 入口显式失败（G7/M5）
+Electron 边界：沿用切片一（contextIsolation/sandbox/来源校验/请求上限）；renderer 禁止 electron/node:/@vrcua 遗留，
+外部链接统一 window.open → Main setWindowOpenHandler（仅 http/https）
+许可证与 NOTICE：新增 three 0.185.1 / @types/three 0.185.4（MIT）；正式分发前仍需完成完整第三方声明审计
+本地验证：pnpm check 全绿（desktop 252 项测试；renderer/electron 双严格类型检查；vite 构建含 three 懒加载分包）；
+5 个质量门通过（含 120 条 fixture 指纹生产零泄漏、5 上下文 WCAG AA 对比度）；Windows Electron 冒烟启动与退出无残留
+迁移内记录：apps/desktop/MIGRATION_ASSETS_ZH.md 与 MIGRATION_ASSETS_EN.md（切片二章节）
+CI 状态：尚未建立
+```
+
 ## 单项迁移记录模板
 
 ```text

@@ -9,7 +9,9 @@
     "./base.css": "./src/base.css"
   },
   "scripts": {
-    "check": "tsc -p tsconfig.json --noEmit"
+    "check": "pnpm typecheck && pnpm test",
+    "test": "vitest run --passWithNoTests src",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
     "react": "19.2.8"
@@ -17,6 +19,10 @@
   "devDependencies": {
     "@types/react": "19.2.14",
     "react": "19.2.8",
-    "typescript": "7.0.2"
-  }
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
 }

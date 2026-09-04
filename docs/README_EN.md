@@ -4,7 +4,7 @@
 
 > Status: Accepted  
 > Scope: Public VUA repository  
-> Updated: 2026-09-02  
+> Updated: 2026-09-04
 > Normative effect: Defines public documentation routes and authority
 
 The public repository contains final product boundaries, architecture, versioned interfaces, release
@@ -67,6 +67,7 @@ documents above.
 - [Supervised Provider Process Protocol v0.1](protocols/provider-process-v0.1_EN.md)
 - [ADR: Supervised independent-process Orchestrator Provider](decisions/orchestrator-supervised-provider_EN.md)
 - [Versioning policy](release/versioning_EN.md)
+- [v0.4.1 release notes](release/v0.4.1_EN.md)
 - [Community-maintainable tool catalog](tool-catalog/README.md)
 
 ## Documentation rules

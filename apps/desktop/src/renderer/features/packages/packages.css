@@ -1,0 +1,581 @@
+/* 包管理页(S-XVI):只消费 Token,不引入新的视觉值。
+ * 纪律:表格区 = 玻璃卡 + 细边框 + sticky 表头,不使用 backdrop-filter
+ * (同卡片墙性能纪律);行密度 compact(约 32px);状态一律图标 + 文字;
+ * 橙色仅选中描边/主操作(data-module=production 自动辖区)。 */
+
+.vua-packages {
+  max-width: none;
+  /* 页面级不滚动:滚动限定在表格区,hero/工具栏/抽屉常驻 */
+  overflow: visible;
+}
+
+/* ---- 页内分段:包 / 仓库订阅 ---- */
+
+.vua-packages__sections {
+  display: inline-flex;
+  gap: var(--vua-space-1);
+  padding: var(--vua-space-1);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-pill);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+  width: fit-content;
+}
+
+.vua-packages__section-tab {
+  appearance: none;
+  border: 1px solid transparent;
+  border-radius: var(--vua-radius-pill);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font: var(--vua-font-body);
+  padding: var(--vua-space-1) var(--vua-space-3);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.vua-packages__section-tab:hover {
+  color: var(--vua-text-strong);
+}
+
+.vua-packages__section-tab[data-active] {
+  background: var(--vua-accent-tint);
+  color: var(--vua-accent-text);
+  border-color: var(--vua-accent);
+}
+
+/* ---- 项目头:项目下拉 + 添加项目文件夹 ---- */
+
+.vua-packages__project-header {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+.vua-packages__project-select {
+  height: var(--vua-control-height);
+  min-width: 240px;
+  max-width: 420px;
+  padding: 0 var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+}
+
+.vua-packages__project-select:focus-visible {
+  border-color: var(--vua-border-focus);
+}
+
+/* 无效项目解释行:图标 + 文字,禁用原因可发现 */
+.vua-packages__invalid-projects {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-packages__invalid-projects li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--vua-space-2);
+  color: var(--vua-text-secondary);
+}
+
+.vua-packages__invalid-projects svg {
+  position: relative;
+  top: 2px;
+  color: var(--vua-warning);
+  flex: 0 0 auto;
+}
+
+/* ---- 迁移建议卡:诚实说明,无假按钮 ---- */
+
+.vua-packages__migration {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+}
+
+.vua-packages__migration svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--vua-accent-text);
+}
+
+.vua-packages__migration p {
+  margin: 0;
+}
+
+/* ---- 工具栏 ---- */
+
+.vua-packages__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+.vua-packages__search {
+  flex: 1 1 200px;
+  min-width: 160px;
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+}
+
+.vua-packages__search:focus-visible {
+  border-color: var(--vua-border-focus);
+}
+
+.vua-packages__filter {
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+  max-width: 180px;
+}
+
+.vua-packages__prerelease {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  color: var(--vua-text-secondary);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* ---- 内容区:表格 + 可选详情抽屉 ---- */
+
+.vua-packages__content {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--vua-space-4);
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+}
+
+.vua-packages__content[data-drawer-open] {
+  grid-template-columns: minmax(0, 1fr) 340px;
+}
+
+.vua-packages__main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 表格区 = 玻璃卡 + 细边框;不用 backdrop-filter(性能纪律,同卡片墙) */
+.vua-packages__table-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+}
+
+.vua-packages__table {
+  width: 100%;
+  border-collapse: collapse;
+  font: var(--vua-font-body);
+}
+
+/* sticky 表头:半透明底换不透明面板色,滚动时不透字 */
+.vua-packages__table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--vua-bg-elevated);
+  border-bottom: 1px solid var(--vua-border-strong);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  text-align: left;
+  padding: var(--vua-space-1) var(--vua-space-2);
+  white-space: nowrap;
+}
+
+/* compact 行密度:约 32px 行高 */
+.vua-packages__table tbody td {
+  padding: 4px var(--vua-space-2);
+  border-bottom: 1px solid var(--vua-border);
+  vertical-align: middle;
+  height: 32px;
+}
+
+.vua-packages__table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.vua-packages__table tbody tr[data-selected] {
+  background: color-mix(in srgb, var(--vua-accent-tint) 55%, transparent);
+  box-shadow: inset 2px 0 0 var(--vua-accent);
+}
+
+.vua-packages__table tbody tr:hover {
+  background: color-mix(in srgb, var(--vua-bg-elevated) 55%, transparent);
+}
+
+.vua-packages__name {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.vua-packages__name-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46ch;
+}
+
+.vua-packages__name-desc {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 46ch;
+}
+
+.vua-packages__version-cell {
+  white-space: nowrap;
+}
+
+/* 版本下拉:行内高级控件,宽度收敛 */
+.vua-packages__version-select {
+  max-width: 150px;
+  height: 26px;
+  padding: 0 var(--vua-space-1);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+  font: var(--vua-font-caption);
+}
+
+/* 更新钮:橙边(辖区色描边) */
+.vua-packages__update {
+  border-color: var(--vua-accent);
+  color: var(--vua-accent-text);
+  min-height: 26px;
+  padding: 0 var(--vua-space-2);
+}
+
+.vua-packages__row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+}
+
+/* 状态文字:图标 + 文字成对出现 */
+.vua-packages__state {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  color: var(--vua-text-secondary);
+  white-space: nowrap;
+}
+
+.vua-packages__state svg {
+  flex: 0 0 auto;
+}
+
+/* ---- 批量操作条:选中 ≥1 浮出,sticky 贴住表格滚动区底部 ---- */
+
+.vua-packages__bulkbar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border-top: 1px solid var(--vua-border-strong);
+  background: var(--vua-bg-elevated);
+  box-shadow: var(--vua-shadow-elevated);
+}
+
+/* ---- 详情抽屉:右侧栏内嵌,不遮挡列表操作 ---- */
+
+.vua-packages__drawer {
+  height: 100%;
+  overflow-y: auto;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+  padding: var(--vua-space-3);
+}
+
+.vua-packages__drawer-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+  margin-bottom: var(--vua-space-3);
+}
+
+.vua-packages__drawer-title {
+  font: var(--vua-font-title);
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.vua-packages__drawer-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+}
+
+.vua-packages__drawer-body section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-packages__drawer-section-title {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  margin: 0;
+}
+
+.vua-packages__facts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-packages__facts-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__facts-row dt {
+  color: var(--vua-text-secondary);
+}
+
+.vua-packages__facts-row dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* ---- 对话框(变更预览 / 预发布警告 / 社区仓库风险) ---- */
+
+.vua-packages-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--vua-bg-canvas) 72%, transparent);
+}
+
+.vua-packages-dialog__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  width: min(560px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  padding: var(--vua-space-4);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-overlay);
+  background: var(--vua-bg-elevated);
+  box-shadow: var(--vua-shadow-elevated);
+}
+
+.vua-packages-dialog__title {
+  font: var(--vua-font-title);
+  margin: 0;
+}
+
+/* 警告条:图标 + 文字;大版本升级/降级与风险提示共用 */
+.vua-packages__warning-strip {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-warning);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-warning) 12%, transparent);
+}
+
+.vua-packages__warning-strip svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--vua-warning);
+}
+
+.vua-packages__warning-strip p {
+  margin: 0;
+}
+
+/* 冲突红名单:图标 + 文字,异常用红(辖区纪律) */
+.vua-packages__conflicts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  margin: 0;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  list-style: none;
+  border: 1px solid var(--vua-error);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-error) 10%, transparent);
+}
+
+.vua-packages__conflicts li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__conflicts svg {
+  position: relative;
+  top: 2px;
+  flex: 0 0 auto;
+  color: var(--vua-error);
+}
+
+.vua-packages__change-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-packages__change-group-title {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  margin: 0;
+}
+
+.vua-packages__change-item {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+  overflow-wrap: anywhere;
+}
+
+.vua-packages__legacy-list {
+  margin: 0;
+  padding-left: var(--vua-space-4);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 12px;
+  user-select: text;
+}
+
+.vua-packages-dialog__footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages-dialog__hint {
+  margin: 0;
+  margin-right: auto;
+}
+
+/* ---- 仓库订阅 ---- */
+
+.vua-packages__repos {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-packages__repo {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+}
+
+.vua-packages__repo-name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.vua-packages__repo-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  cursor: pointer;
+}
+
+/* 健康点:中性色圆点 + 文字标签,不进红绿灯语义;unreachable 属异常用红 */
+.vua-packages__health {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  color: var(--vua-text-secondary);
+}
+
+.vua-packages__health-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--vua-border-strong);
+  flex: 0 0 auto;
+}
+
+.vua-packages__health[data-health="unreachable"] {
+  color: var(--vua-error);
+}
+
+.vua-packages__health[data-health="unreachable"] .vua-packages__health-dot {
+  background: var(--vua-error);
+}
+
+.vua-packages__repo-url {
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* ---- 结果 toast:右下角短暂停留(role=status 供读屏) ---- */
+
+.vua-packages-toast {
+  position: fixed;
+  right: var(--vua-space-4);
+  bottom: var(--vua-space-4);
+  z-index: 240;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-elevated);
+  box-shadow: var(--vua-shadow-elevated);
+  animation: vua-packages-toast-in 160ms ease-out;
+}
+
+@keyframes vua-packages-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

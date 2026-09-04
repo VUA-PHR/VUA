@@ -1,0 +1,642 @@
+import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { catalogBrowser } from "../../app/catalog-browser-instance.ts";
+import { browseWindowSupported, openBrowseWindow } from "../../app/browse-window.ts";
+import { openExternalUrl } from "../../app/open-external.ts";
+import { Badge } from "../../components/primitives/Badge.tsx";
+import { Button } from "../../components/primitives/Button.tsx";
+import { EmptyState } from "../../components/primitives/EmptyState.tsx";
+import { Skeleton } from "../../components/primitives/Skeleton.tsx";
+import {
+  ContextMenu,
+  type ContextMenuState,
+} from "../../components/primitives/ContextMenu.tsx";
+import { Icon } from "@vua/design-system";
+import {
+  useDataSource,
+  type CatalogAvailability,
+  type CatalogDetailView,
+  type CatalogListView,
+  type CatalogProductDetail,
+  type CatalogProductSummary,
+  type CatalogRelationKind,
+} from "../../gateway/index.ts";
+import { format, strings, termLabel } from "../../i18n/index.ts";
+import {
+  lifecycleOf,
+  loadLifecycle,
+  saveLifecycle,
+  setPurchaseMark,
+  type StoredLifecycleV1,
+} from "./asset-lifecycle.ts";
+import { useDebugMode } from "../../app/debug-mode.ts";
+import { useCardSpotlight } from "./use-card-spotlight.ts";
+import { CardAlbumMedia, DetailAlbum } from "./WarehouseAlbum.tsx";
+import { WarehouseAcquire } from "./WarehouseAcquire.tsx";
+import {
+  emptyWarehouseQuery,
+  hasActiveFilter,
+  priceKind,
+  toPortQuery,
+  type WarehouseQueryState,
+} from "./warehouse-model.ts";
+import "./warehouse.css";
+
+const copy = strings.warehouse;
+
+/** 实体类型显示名:已知类型走 i18n;词表外新类型回落原文(词表随数据,不崩溃) */
+function entityTypeLabel(value: string): string {
+  return (copy.entityType as Record<string, string>)[value] ?? value;
+}
+
+/**
+ * Warehouse 目录浏览(G8):BDB 目录快照的卡片墙。
+ *
+ * 数据来源与诚实纪律:
+ * - dataSource "none"(生产构建 / not-run 场景)→ 诚实空态,不发起查询;
+ * - dataSource "fixture"(DEV)→ vendored 草案快照,挂"演示数据"徽标;
+ * - 骨架屏只出现在真实加载期间(首次拉取);筛选变更保留旧结果,
+ *   不用骨架屏闪烁(ui-ux §2.8);
+ * - 色彩纪律(v0.3.3 §6.1):橙仅用于选中描边;徽标一律中性灰,
+ *   已购买用 success 芯片;不使用轨道语汇;吉祥物只出现在空态组件内。
+ */
+
+type ListState =
+  | { kind: "loading" }
+  | { kind: "failed" }
+  | { kind: "loaded"; view: CatalogListView };
+
+type DetailState =
+  | { kind: "loading" }
+  | { kind: "failed" }
+  | { kind: "loaded"; view: CatalogDetailView };
+
+function priceText(product: { price: CatalogProductSummary["price"] }): string {
+  switch (priceKind(product.price)) {
+    case "free":
+      return copy.card.free;
+    case "none":
+      return copy.card.noPrice;
+    case "priced":
+      // 价格纪律:字符串金额原样展示,绝不经 JS number 转换
+      return format(copy.card.price, {
+        currency: product.price?.currency ?? "",
+        amount: product.price?.amount ?? "",
+      });
+  }
+}
+
+/* ---- 商品卡片 ---- */
+
+function WarehouseCard({
+  item,
+  purchased,
+  selected,
+  onOpen,
+  onMenu,
+}: {
+  item: CatalogProductSummary;
+  purchased: boolean;
+  selected: boolean;
+  onOpen: () => void;
+  /** 素材卡右键菜单(S-XII):由页面组装真实动作项 */
+  onMenu: (event: ReactMouseEvent<HTMLElement>) => void;
+}) {
+  return (
+    <article
+      className="vua-warehouse-card"
+      data-selected={selected || undefined}
+      onClick={onOpen}
+      onContextMenu={onMenu}
+      // 卡片本体即"查看详情"入口(浮层已随相册交互移除):键盘可达,
+      // Enter/Space 打开详情(用户反馈 #5;购买标记由其他功能模块承担)
+      role="listitem"
+      tabIndex={0}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <div className="vua-warehouse-card__media">
+        {item.imageUrls.length > 0 ? (
+          // 多图卡:悬停 2s 进相册(光标横向位置翻页);单图退化为普通媒体槽
+          <CardAlbumMedia imageUrls={item.imageUrls} title={item.title} />
+        ) : (
+          <div className="vua-warehouse-card__no-image">
+            <span className="vua-caption vua-text-secondary">{copy.card.noImage}</span>
+          </div>
+        )}
+      </div>
+      <div className="vua-warehouse-card__body">
+        {/* 两行截断;hover 经 title 属性显示全称 */}
+        <p className="vua-warehouse-card__title" title={item.title}>
+          {item.title}
+        </p>
+        <div className="vua-warehouse-card__meta">
+          <span>{priceText(item)}</span>
+          <span className="vua-caption vua-text-secondary">
+            {format(copy.card.entityCount, { count: item.entityCount })}
+          </span>
+        </div>
+        <div className="vua-warehouse-card__badges">
+          {/* 在售是默认态不贴标;停售/未知/墓碑以中性灰文字徽标表达(§6.1) */}
+          {item.availability !== "available" ? (
+            <Badge tone="neutral">{copy.availability[item.availability]}</Badge>
+          ) : null}
+          {/* 徽标只渲染非 unknown 事实:purchase 唯一来源是用户标记 */}
+          {purchased ? <Badge tone="success">{copy.card.purchasedBadge}</Badge> : null}
+        </div>
+      </div>
+    </article>
+  );
+}
+
+/* ---- 详情抽屉 ---- */
+
+function DetailContent({ product }: { product: CatalogProductDetail }) {
+  // 调试模式(设置·版本页开关):显示解析后的完整领域 JSON(含实体 UUID),
+  // 供排查"数据问题还是解析问题";仅影响展示,与页面渲染同源
+  const debugMode = useDebugMode();
+  // 来源跳转失败(系统浏览器调用被拒/出错)时显式提示,不静默吞掉
+  const [openSourceFailed, setOpenSourceFailed] = useState(false);
+  // 应用内窗口打开失败(S-IX-3):同样显式提示,引导改用系统浏览器
+  const [openInAppFailed, setOpenInAppFailed] = useState(false);
+  return (
+    <div className="vua-warehouse-detail__content">
+      {/* 相册:详情媒体数组;详情缺媒体时回落主图单张(列表兜底场景) */}
+      <DetailAlbum
+        imageUrls={
+          product.media.imageUrls.length > 0
+            ? product.media.imageUrls
+            : product.imageUrl !== null
+              ? [product.imageUrl]
+              : []
+        }
+        title={product.title}
+      />
+      {/* 3D 预览占位(S-VFX-4):VRM 实时预览落地前的诚实槽位,
+       * 平面槽与已有 media-slot 风格一致,不做假渲染 */}
+      <section>
+        <h3 className="vua-warehouse-detail__section-title">{copy.detail.preview3dTitle}</h3>
+        <div className="vua-warehouse-detail__preview3d">
+          <span className="vua-caption vua-text-secondary">{copy.detail.preview3dNote}</span>
+        </div>
+      </section>
+      <div className="vua-warehouse-detail__badges">
+        <Badge tone="neutral">{copy.availability[product.availability]}</Badge>
+        {product.entities.map((entity) => (
+          <Badge key={entity.entityId} tone="neutral">
+            {entityTypeLabel(entity.entityType)}
+          </Badge>
+        ))}
+      </div>
+      {product.availability === "deleted" ? (
+        <p className="vua-caption vua-text-secondary">{copy.detail.tombstoneNote}</p>
+      ) : null}
+      <p className="vua-warehouse-detail__price">{priceText(product)}</p>
+
+      <section>
+        <h3 className="vua-warehouse-detail__section-title">{copy.detail.entitiesTitle}</h3>
+        {product.entities.length === 0 ? (
+          <p className="vua-caption vua-text-secondary">{copy.detail.entitiesEmpty}</p>
+        ) : (
+          <ul className="vua-warehouse-detail__entities">
+            {product.entities.map((entity) => (
+              <li key={entity.entityId}>
+                <span>{entity.canonicalName ?? entity.entityId}</span>
+                {entity.relations.length > 0 ? (
+                  <span className="vua-warehouse-detail__relations">
+                    {entity.relations.map((relation) => (
+                      <Badge
+                        key={`${relation.kind}:${relation.objectEntityId}`}
+                        tone="neutral"
+                        title={relation.objectEntityId}
+                      >
+                        {/* 关系对象名经实体档案补齐;库外实体回落只显示关系种类 */}
+                        {relation.objectName !== null
+                          ? `${copy.relationKind[relation.kind]}: ${relation.objectName}`
+                          : copy.relationKind[relation.kind]}
+                      </Badge>
+                    ))}
+                  </span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {product.attribution !== null ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.attributionTitle}</h3>
+          <p className="vua-caption vua-text-secondary">
+            {[product.attribution.shopName, product.attribution.creatorName]
+              .filter((value): value is string => value !== null)
+              .join(" / ")}
+          </p>
+        </section>
+      ) : null}
+
+      {product.terms.length > 0 ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.termsTitle}</h3>
+          <div className="vua-warehouse-detail__badges">
+            {product.terms.map((term) => (
+              <Badge key={term.termKey} tone="neutral">
+                {term.label ?? term.termKey}
+              </Badge>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {product.description !== null ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.descriptionTitle}</h3>
+          <p className="vua-caption vua-text-secondary vua-warehouse-detail__description">
+            {product.description}
+          </p>
+        </section>
+      ) : null}
+
+      {product.sourceUrl !== null ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.sourceTitle}</h3>
+          <p className="vua-caption vua-text-secondary vua-warehouse-detail__source-url">
+            {product.sourceUrl}
+          </p>
+          <div className="vua-warehouse-detail__source-actions">
+            {/* 应用内窗口(S-IX-3):仅桌面壳内渲染入口;失败诚实提示 */}
+            {browseWindowSupported() ? (
+              <Button
+                variant="default"
+                onClick={() => {
+                  setOpenInAppFailed(false);
+                  const url = product.sourceUrl;
+                  if (url === null) return;
+                  void openBrowseWindow(url, product.title).then((ok) => {
+                    if (!ok) setOpenInAppFailed(true);
+                  });
+                }}
+              >
+                {copy.detail.openInApp}
+              </Button>
+            ) : null}
+            <Button
+              variant="default"
+              onClick={() => {
+                setOpenSourceFailed(false);
+                const url = product.sourceUrl;
+                if (url === null) return;
+                void openExternalUrl(url).then((ok) => {
+                  if (!ok) setOpenSourceFailed(true);
+                });
+              }}
+            >
+              {copy.detail.openSource}
+            </Button>
+          </div>
+          {openInAppFailed ? (
+            <p className="vua-caption vua-text-secondary">{copy.detail.openInAppFailed}</p>
+          ) : null}
+          {openSourceFailed ? (
+            <p className="vua-caption vua-text-secondary">{copy.detail.openSourceFailed}</p>
+          ) : null}
+          <p className="vua-caption vua-text-secondary">
+            {format(copy.detail.sourceUrlNote, { warehouse: termLabel("warehouse") })}
+          </p>
+        </section>
+      ) : null}
+
+      {debugMode ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.debugTitle}</h3>
+          <pre className="vua-warehouse-detail__debug">{JSON.stringify(product, null, 2)}</pre>
+        </section>
+      ) : null}
+    </div>
+  );
+}
+
+/* ---- 页面 ---- */
+
+export function WarehousePage() {
+  const dataSource = useDataSource();
+  const connected = dataSource !== "none";
+  // 双轨汇合(§2.10):目录浏览 / 本地素材接管分段切换
+  const [section, setSection] = useState<"catalog" | "local">("catalog");
+
+  const [query, setQuery] = useState<WarehouseQueryState>(emptyWarehouseQuery);
+  const [listState, setListState] = useState<ListState>({ kind: "loading" });
+  const [reloadKey, setReloadKey] = useState(0);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailState, setDetailState] = useState<DetailState>({ kind: "loading" });
+  const [detailReloadKey, setDetailReloadKey] = useState(0);
+  const [lifecycle, setLifecycle] = useState<StoredLifecycleV1>(loadLifecycle);
+  /** 素材卡右键菜单(S-XII):null 即关闭;动作全部映射真实能力 */
+  const [cardMenu, setCardMenu] = useState<ContextMenuState | null>(null);
+
+  // 指针聚光 + 微倾斜:回调 ref 追踪 wall-scroll 元素(视图切换会重建它),
+  // hook 内部按场景模式决定是否挂载监听(非 animated 模式零开销)
+  const [wallEl, setWallEl] = useState<HTMLDivElement | null>(null);
+  useCardSpotlight(wallEl);
+
+  // 列表查询:筛选变更保留旧结果(stale-while-revalidate),骨架屏只留给首次加载
+  useEffect(() => {
+    if (!connected) return;
+    let active = true;
+    setListState((prev) => (prev.kind === "loaded" ? prev : { kind: "loading" }));
+    catalogBrowser.list(toPortQuery(query)).then(
+      (view) => {
+        if (active) setListState({ kind: "loaded", view });
+      },
+      () => {
+        if (active) setListState({ kind: "failed" });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [query, connected, reloadKey]);
+
+  // 详情查询
+  useEffect(() => {
+    if (selectedId === null) return;
+    let active = true;
+    setDetailState({ kind: "loading" });
+    catalogBrowser.detail(selectedId).then(
+      (view) => {
+        if (active) setDetailState({ kind: "loaded", view });
+      },
+      () => {
+        if (active) setDetailState({ kind: "failed" });
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [selectedId, detailReloadKey]);
+
+  const resultsView =
+    listState.kind === "loaded" && listState.view.kind === "results" ? listState.view : null;
+
+  /** 素材卡右键菜单(S-XII):仅真实动作——查看详情/已购标记。
+   *  sourceUrl 只在详情负载上,打开来源/复制链接归详情抽屉,卡片菜单不猜 URL */
+  const openCardMenu = (event: ReactMouseEvent<HTMLElement>, item: CatalogProductSummary) => {
+    event.preventDefault();
+    const marked = lifecycleOf(lifecycle, item.productId).purchase === "user_confirmed";
+    setCardMenu({
+      x: event.clientX,
+      y: event.clientY,
+      items: [
+        { id: "open", label: copy.card.detailsCta, onSelect: () => setSelectedId(item.productId) },
+        {
+          id: "togglePurchased",
+          label: marked ? copy.card.unmarkPurchased : copy.card.markPurchased,
+          onSelect: () =>
+            setLifecycle((prev) => {
+              const next = setPurchaseMark(prev, item.productId, !marked);
+              saveLifecycle(next);
+              return next;
+            }),
+        },
+      ],
+    });
+  };
+
+  return (
+    <div className="vua-page vua-warehouse">
+      <section className="vua-page__hero">
+        <h1 className="vua-title">{termLabel("warehouse")}</h1>
+        {/* 双轨视图头(S-IX-3):云端目录 / 本地文件,带图标的大号轨道卡 */}
+        <div className="vua-warehouse__tracks" role="group" aria-label={copy.acquire.viewSwitchAria}>
+          <button
+            type="button"
+            className="vua-warehouse__track-choice"
+            data-active={section === "catalog" || undefined}
+            aria-pressed={section === "catalog"}
+            onClick={() => setSection("catalog")}
+          >
+            <Icon name="cloud" size={20} />
+            <span className="vua-warehouse__track-choice-text">
+              <span className="vua-warehouse__track-choice-title">{copy.acquire.viewCatalog}</span>
+              <span className="vua-caption vua-text-secondary">{copy.acquire.trackCatalogDesc}</span>
+            </span>
+          </button>
+          <button
+            type="button"
+            className="vua-warehouse__track-choice"
+            data-active={section === "local" || undefined}
+            aria-pressed={section === "local"}
+            onClick={() => setSection("local")}
+          >
+            <Icon name="folder" size={20} />
+            <span className="vua-warehouse__track-choice-text">
+              <span className="vua-warehouse__track-choice-title">{copy.acquire.viewLocal}</span>
+              <span className="vua-caption vua-text-secondary">{copy.acquire.trackLocalDesc}</span>
+            </span>
+          </button>
+        </div>
+        <p className="vua-text-secondary">{copy.subtitle}</p>
+        {dataSource === "fixture" ? (
+          <div>
+            <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
+          </div>
+        ) : null}
+      </section>
+
+      {section === "local" ? (
+        <WarehouseAcquire />
+      ) : !connected ||
+      (listState.kind === "loaded" && listState.view.kind === "not-connected") ? (
+        <EmptyState
+          title={copy.states.notConnectedTitle}
+          description={copy.states.notConnectedDescription}
+        />
+      ) : listState.kind === "failed" ? (
+        <EmptyState
+          title={copy.states.loadFailedTitle}
+          description={copy.states.loadFailedDescription}
+          action={
+            <Button variant="default" onClick={() => setReloadKey((key) => key + 1)}>
+              {copy.states.retry}
+            </Button>
+          }
+        />
+      ) : (
+        <div className="vua-warehouse__content" data-drawer-open={selectedId !== null || undefined}>
+          <div className="vua-warehouse__main">
+            {/* 工具栏:词表随数据(vocabulary),不硬编码 */}
+            <div className="vua-warehouse__toolbar" role="search">
+              <input
+                type="search"
+                className="vua-warehouse__search"
+                placeholder={copy.searchPlaceholder}
+                aria-label={copy.searchAria}
+                value={query.text}
+                onChange={(event) =>
+                  setQuery((prev) => ({ ...prev, text: event.target.value }))
+                }
+              />
+              <select
+                className="vua-warehouse__filter"
+                aria-label={copy.filters.availability}
+                value={query.availability}
+                onChange={(event) =>
+                  setQuery((prev) => ({
+                    ...prev,
+                    availability: event.target.value as CatalogAvailability | "",
+                  }))
+                }
+              >
+                <option value="">{copy.filters.allAvailability}</option>
+                {(resultsView?.vocabulary.availabilities ?? []).map((value) => (
+                  <option key={value} value={value}>
+                    {copy.availability[value]}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="vua-warehouse__filter"
+                aria-label={copy.filters.entityType}
+                value={query.entityType}
+                onChange={(event) =>
+                  setQuery((prev) => ({ ...prev, entityType: event.target.value }))
+                }
+              >
+                <option value="">{copy.filters.allEntityTypes}</option>
+                {(resultsView?.vocabulary.entityTypes ?? []).map((value) => (
+                  <option key={value} value={value}>
+                    {entityTypeLabel(value)}
+                  </option>
+                ))}
+              </select>
+              <select
+                className="vua-warehouse__filter"
+                aria-label={copy.filters.relationKind}
+                value={query.relationKind}
+                onChange={(event) =>
+                  setQuery((prev) => ({
+                    ...prev,
+                    relationKind: event.target.value as CatalogRelationKind | "",
+                  }))
+                }
+              >
+                <option value="">{copy.filters.allRelationKinds}</option>
+                {(resultsView?.vocabulary.relationKinds ?? []).map((value) => (
+                  <option key={value} value={value}>
+                    {copy.relationKind[value]}
+                  </option>
+                ))}
+              </select>
+              {resultsView !== null ? (
+                <span className="vua-caption vua-text-secondary">
+                  {hasActiveFilter(query)
+                    ? format(copy.resultCount, {
+                        shown: resultsView.items.length,
+                        total: resultsView.total,
+                      })
+                    : format(copy.resultCountAll, { total: resultsView.total })}
+                </span>
+              ) : null}
+            </div>
+
+            {/* 滚动限定在本容器:工具栏/hero 不随图片墙滚动(用户反馈 #2) */}
+            <div className="vua-warehouse__wall-scroll" ref={setWallEl}>
+              {listState.kind === "loading" ? (
+                /* 真实加载期间:与卡片墙同形的骨架(ui-ux §2.8) */
+                <div className="vua-warehouse__wall" aria-hidden="true">
+                  {Array.from({ length: 8 }, (_, index) => (
+                    <div className="vua-warehouse-card" key={index}>
+                      <Skeleton width="100%" height="auto" className="vua-warehouse-card__skeleton-media" />
+                      <div className="vua-warehouse-card__body">
+                        <Skeleton width="90%" height={14} />
+                        <Skeleton width="60%" height={12} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : resultsView !== null && resultsView.items.length === 0 ? (
+                /* 搜索/筛选无结果 ≠ 目录未接入 */
+                <EmptyState
+                  title={copy.states.emptyResultTitle}
+                  description={copy.states.emptyResultDescription}
+                />
+              ) : resultsView !== null ? (
+                <div className="vua-warehouse__wall" role="list">
+                  {resultsView.items.map((item) => (
+                    <WarehouseCard
+                      key={item.productId}
+                      item={item}
+                      purchased={lifecycleOf(lifecycle, item.productId).purchase === "user_confirmed"}
+                      selected={selectedId === item.productId}
+                      onOpen={() => setSelectedId(item.productId)}
+                      onMenu={(event) => openCardMenu(event, item)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </div>
+          </div>
+
+          {selectedId !== null ? (
+            <aside
+              className="vua-warehouse__drawer"
+              aria-label={copy.detail.panelAria}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setSelectedId(null);
+              }}
+            >
+              <div className="vua-warehouse__drawer-header">
+                {detailState.kind === "loaded" && detailState.view.kind === "detail" ? (
+                  <h2 className="vua-warehouse-detail__title" title={detailState.view.product.title}>
+                    {detailState.view.product.title}
+                  </h2>
+                ) : (
+                  <Skeleton width="70%" height={18} />
+                )}
+                <Button
+                  variant="subtle"
+                  aria-label={copy.detail.closeAria}
+                  onClick={() => setSelectedId(null)}
+                >
+                  {copy.detail.close}
+                </Button>
+              </div>
+              {detailState.kind === "loading" ? (
+                <div className="vua-warehouse-detail__content">
+                  <Skeleton width="100%" height="auto" className="vua-warehouse-card__skeleton-media" />
+                  <Skeleton width="50%" height={14} />
+                  <Skeleton width="100%" height={60} />
+                </div>
+              ) : detailState.kind === "failed" ? (
+                <div className="vua-warehouse-detail__content">
+                  <p className="vua-text-secondary">{copy.detail.loadFailed}</p>
+                  <div>
+                    <Button
+                      variant="default"
+                      onClick={() => setDetailReloadKey((key) => key + 1)}
+                    >
+                      {copy.detail.retry}
+                    </Button>
+                  </div>
+                </div>
+              ) : detailState.view.kind === "detail" ? (
+                /* key=productId:切换商品时重置组件内状态(如来源跳转失败标记) */
+                <DetailContent key={detailState.view.product.productId} product={detailState.view.product} />
+              ) : (
+                <div className="vua-warehouse-detail__content">
+                  <p className="vua-text-secondary">{copy.detail.notFound}</p>
+                </div>
+              )}
+            </aside>
+          ) : null}
+        </div>
+      )}
+      {cardMenu !== null ? (
+        <ContextMenu menu={cardMenu} onClose={() => setCardMenu(null)} />
+      ) : null}
+    </div>
+  );
+}

@@ -1,19 +1,148 @@
-*, *::before, *::after { box-sizing: border-box; }
-html, body, #root { width: 100%; height: 100%; }
+/* 全局基础样式:只消费 Token,不引入新的视觉值 */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
-  overflow: hidden;
   font: var(--vua-font-body);
   color: var(--vua-text-strong);
-  background:
-    radial-gradient(60% 50% at 18% 0%, rgb(167 139 250 / 0.14), transparent 70%),
-    radial-gradient(55% 45% at 92% 100%, rgb(255 122 69 / 0.1), transparent 70%),
-    var(--vua-bg-canvas);
   -webkit-font-smoothing: antialiased;
+  /* 深邃空间画布:近黑紫基底 + 紫/橙双星辉光斑(--vua-aurora-*) +
+   * 极淡网格纹理(color-mix 自文字色,深浅主题自适应);
+   * forced-colors 由 UA 抹除背景图,[data-hc="on"] 下 aurora 为 none、
+   * 网格 4% 白近似不可见,均安全降级 */
+  background-color: var(--vua-bg-canvas);
+  background-image:
+    var(--vua-aurora-1),
+    var(--vua-aurora-2),
+    repeating-linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--vua-text-strong) 4%, transparent) 0 1px,
+      transparent 1px 44px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--vua-text-strong) 4%, transparent) 0 1px,
+      transparent 1px 44px
+    );
 }
-button, input, select, textarea { font: inherit; color: inherit; }
-button { -webkit-app-region: no-drag; }
-:focus-visible { outline: 2px solid var(--vua-accent); outline-offset: 2px; }
+
+/* 选中区:辖区色淡底(模型生产自动变橙);forced-colors 由 UA 映射系统 Highlight */
+::selection {
+  background-color: color-mix(in srgb, var(--vua-accent) 38%, transparent);
+  color: var(--vua-text-strong);
+}
+
+/* 细滚动条:轨道透明,拇指圆头;hover 时染辖区色 */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--vua-border-strong) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--vua-border-strong);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--vua-accent);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--vua-border-focus);
+  outline-offset: 2px;
+  /* 辖区色柔光环;forced-colors 下 UA 抹除 box-shadow,outline 仍在 */
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vua-accent) 30%, transparent);
+}
+
+/* 字阶工具类 */
+.vua-display {
+  font: var(--vua-font-display);
+  margin: 0;
+}
+
+.vua-title {
+  font: var(--vua-font-title);
+  margin: 0;
+}
+
+.vua-caption {
+  font: var(--vua-font-caption);
+}
+
+.vua-text-secondary {
+  color: var(--vua-text-secondary);
+}
+
+/* Hero 标题流光(共享 keyframes):渐变文字背景位慢扫;
+ * 消费方:app-shell(.vua-page__hero h1)、workshop、deployer、onboarding */
+@keyframes vua-hero-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* 系统"减少动态效果"开启时的第二档降级(借鉴 Comfy-Desktop 逐过渡
+ * opacity-only 降级的思路,全局化):动画单帧化;过渡只放行 opacity
+ * (120ms 短降级),位移/缩放/颜色等其余属性瞬时切换——减动但保留
+ * "状态变了"的可感知反馈,不做完全瞬切 */
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    /* 交错延迟一并压平:fill:both 的入场动画若保留 delay,
+     * 元素会以 from 态(常为透明)滞留整个延迟窗 */
+    animation-delay: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity !important;
+    transition-duration: 120ms !important;
+    transition-delay: 0ms !important;
+  }
+}
+
+/* 特效总开关关闭(S-VFX-5,VR/省资源):全量硬压平档(比 reduced-motion 的
+ * opacity-only 第二档更硬)——动画单帧化、过渡瞬时化;装饰 token 置 none
+ * 在 tokens.css 末尾,WebGL 场景由 useSceneMode 判定不挂载。
+ * 状态语义不受影响(颜色/文本双通道) */
+[data-effects="off"] *,
+[data-effects="off"] *::before,
+[data-effects="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-delay: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  transition-delay: 0ms !important;
 }

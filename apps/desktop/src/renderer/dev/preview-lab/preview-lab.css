@@ -1,0 +1,201 @@
+/* 预览实验室样式(Meiyun Tenshi 演示 spike,DEV-only ?dev=preview-lab)。
+ * 纪律与 showcase.css 一致:布局与视觉值只引用 Token,不引入新视觉值;
+ * 状态灯颜色:loading=info、ready=accent、failed=error(success/warning
+ * 依 token 注释仅限环境部署模块,此处不用)。 */
+
+.preview-lab {
+  min-height: 100%;
+  padding: var(--vua-space-5);
+  background: var(--vua-bg-canvas);
+  color: var(--vua-text-strong);
+}
+
+.preview-lab__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin-bottom: var(--vua-space-5);
+}
+
+.preview-lab__title {
+  margin: 0;
+  font: var(--vua-font-display);
+}
+
+.preview-lab__subtitle {
+  margin: 0;
+  max-width: 72ch;
+  font: var(--vua-font-body);
+  color: var(--vua-text-secondary);
+}
+
+.preview-lab__root {
+  margin: 0;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-disabled);
+  word-break: break-all;
+}
+
+.preview-lab__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  margin-bottom: var(--vua-space-5);
+}
+
+.preview-lab__section-title {
+  margin: 0;
+  border-bottom: 1px solid var(--vua-border);
+  padding-bottom: var(--vua-space-2);
+  font: var(--vua-font-title);
+}
+
+.preview-lab__note {
+  margin: 0;
+  max-width: 72ch;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}
+
+.preview-lab__grid {
+  display: grid;
+  /* 双栏起步,窄窗口自动单列 */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--vua-space-4);
+}
+
+.preview-lab__card {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+}
+
+.preview-lab__card-head {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3) var(--vua-space-4);
+}
+
+.preview-lab__card-title {
+  flex: 1;
+  min-width: 0;
+  font: var(--vua-font-body);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-lab__kind {
+  flex-shrink: 0;
+  padding: 2px var(--vua-space-2);
+  border: 1px solid var(--vua-border-strong);
+  border-radius: var(--vua-radius-badge);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}
+
+.preview-lab__status {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.preview-lab__status--loading {
+  background: var(--vua-info);
+  animation: preview-lab-pulse 1.2s ease-in-out infinite;
+}
+
+.preview-lab__status--ready {
+  background: var(--vua-accent);
+}
+
+.preview-lab__status--failed {
+  background: var(--vua-error);
+}
+
+@keyframes preview-lab-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* 舞台区:3D 画布与转盘播放器共用的固定高区域,透明底透出面板色 */
+.preview-lab__stage {
+  position: relative;
+  height: 300px;
+  border-top: 1px solid var(--vua-border);
+  background: var(--vua-bg-canvas);
+}
+
+.preview-lab__viewer {
+  position: absolute;
+  inset: 0;
+}
+
+.preview-lab__canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.preview-lab__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vua-space-4);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  text-align: center;
+  pointer-events: none;
+}
+
+.preview-lab__overlay--failed {
+  color: var(--vua-error);
+  /* 失败原因可点选复制路径 */
+  pointer-events: auto;
+  user-select: text;
+}
+
+.preview-lab__card-foot {
+  padding: var(--vua-space-2) var(--vua-space-4);
+  border-top: 1px solid var(--vua-border);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-disabled);
+  word-break: break-all;
+}
+
+.preview-lab__empty {
+  max-width: 64ch;
+  padding: var(--vua-space-5);
+  border: 1px dashed var(--vua-border-strong);
+  border-radius: var(--vua-radius-card);
+}
+
+.preview-lab__empty h2 {
+  margin: 0 0 var(--vua-space-2);
+  font: var(--vua-font-title);
+}
+
+.preview-lab__empty p {
+  margin: 0;
+  font: var(--vua-font-body);
+  color: var(--vua-text-secondary);
+}
+
+/* 减少动态效果:状态灯停脉冲(与 base.css 全局规则同向) */
+@media (prefers-reduced-motion: reduce) {
+  .preview-lab__status--loading {
+    animation: none;
+  }
+}

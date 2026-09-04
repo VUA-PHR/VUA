@@ -196,3 +196,135 @@ describe("mock Orchestrator Provider v0.1", () => {
       .toMatchObject({ outcome: "forced", userDecisionId: "decision-1", interruptedTasks: [{ taskId: "task-1" }] });
   });
 });
+
+describe("mock provider F2 surface", () => {
+  function demoRequest(commandId: string): ApplicationRequestV01 {
+    return {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: `request-${commandId}`,
+      correlationId: `correlation-${commandId}`,
+      commandId,
+      kind: "command",
+      method: "task.startDemo",
+      params: {},
+    };
+  }
+
+  it("starts a demo task when capability is available and walks it to a cancellable terminal", async () => {
+    const provider = new MockOrchestratorProviderV01({
+      capabilities: [{ operationId: "demo.task", availability: "available" }],
+    });
+    await provider.start();
+
+    const events: string[] = [];
+    provider.subscribe((event) => events.push(event.kind === "capability.changed" ? event.kind : `${event.kind}:${event.state}`));
+
+    const started = await provider.invoke(demoRequest("demo-1"));
+    if (!started.ok || started.value.contractVersion !== APPLICATION_CONTRACT_VERSION || !("task" in started.value)) {
+      throw new Error("demo start failed");
+    }
+    expect(started.value.task.state).toBe("queued");
+    expect(started.value.task.cancellationRequested).toBe(false);
+    expect(events).toEqual(["task.accepted:queued"]);
+
+    // 幂等重放:相同 commandId 返回既有任务,不产生新任务与新事件
+    const replay = await provider.invoke(demoRequest("demo-1"));
+    if (!replay.ok || !("task" in replay.value)) throw new Error("demo replay failed");
+    expect(replay.value.task.taskId).toBe(started.value.task.taskId);
+    expect(events).toEqual(["task.accepted:queued"]);
+
+    // 观察:提交 → 运行 → 请求取消 → 终态,事件 revision 单调
+    provider.commitTaskState(started.value.task.taskId, "running");
+    const cancel = await provider.invoke({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-cancel",
+      correlationId: "correlation-cancel",
+      commandId: "cancel-1",
+      kind: "command",
+      method: "task.requestCancellation",
+      params: { taskId: started.value.task.taskId },
+    });
+    if (!cancel.ok || !("outcome" in cancel.value)) throw new Error("cancel failed");
+    expect(cancel.value.outcome).toBe("requested");
+    provider.commitTaskState(started.value.task.taskId, "cancelled");
+
+    const list = await provider.invoke({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-list",
+      correlationId: "correlation-list",
+      kind: "query",
+      method: "task.list",
+      params: {},
+    });
+    if (!list.ok || !("tasks" in list.value)) throw new Error("task.list failed");
+    expect(list.value.tasks).toHaveLength(1);
+    expect(list.value.tasks[0]?.state).toBe("cancelled");
+    expect(events).toEqual([
+      "task.accepted:queued",
+      "task.stateChanged:running",
+      "task.cancellationRequested:running",
+      "task.completed:cancelled",
+    ]);
+  });
+
+  it("rejects the demo command when the capability is unavailable", async () => {
+    const provider = new MockOrchestratorProviderV01({ capabilities: [] });
+    await provider.start();
+
+    const response = await provider.invoke(demoRequest("demo-1"));
+    expect(response.ok).toBe(false);
+    if (!response.ok) expect(response.error.code).toBe("vua.demo.unavailable");
+    expect(Object.keys(response)).not.toContain("value");
+  });
+
+  it("returns the injected environment snapshot, or an honest empty one", async () => {
+    const injected = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 4,
+      capturedAt: "2026-09-04T00:00:00.000Z",
+      items: [
+        {
+          checkId: "steam",
+          zone: "play" as const,
+          presence: "detected" as const,
+          facts: { installPath: "C:/Program Files (x86)/Steam" },
+        },
+        {
+          checkId: "unity_editors",
+          zone: "create" as const,
+          presence: "detection_failed" as const,
+          errorCode: "vua.env.probe_failed",
+          facts: {},
+        },
+      ],
+    };
+    const seeded = new MockOrchestratorProviderV01({ environment: injected });
+    await seeded.start();
+    const snapshot = await seeded.invoke({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-env",
+      correlationId: "correlation-env",
+      kind: "query",
+      method: "environment.getSnapshot",
+      params: {},
+    });
+    expect(snapshot.ok).toBe(true);
+    if (snapshot.ok && "items" in snapshot.value) expect(snapshot.value).toEqual(injected);
+
+    const bare = new MockOrchestratorProviderV01();
+    await bare.start();
+    const empty = await bare.invoke({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-env-empty",
+      correlationId: "correlation-env-empty",
+      kind: "query",
+      method: "environment.getSnapshot",
+      params: {},
+    });
+    expect(empty.ok).toBe(true);
+    if (empty.ok && "items" in empty.value) {
+      expect(empty.value.items).toEqual([]);
+      expect(typeof empty.value.capturedAt).toBe("string");
+    }
+  });
+});

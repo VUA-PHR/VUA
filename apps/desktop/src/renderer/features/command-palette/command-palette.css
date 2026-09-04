@@ -1,0 +1,85 @@
+/*
+ * 命令面板(C-EFFICIENCY):玻璃浮层——半透明底 + 强模糊 + 辖区色辉光;
+ * 细边框、胶囊输入、大留白;选中行用 tint + 描边 + 柔光,不用重色块。
+ */
+
+.vua-palette__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 15vh;
+  background: color-mix(in srgb, var(--vua-bg-canvas) 60%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.vua-palette {
+  display: flex;
+  flex-direction: column;
+  width: min(560px, 90vw);
+  max-height: 60vh;
+  overflow: hidden;
+  border: 1px solid var(--vua-border-strong);
+  border-radius: var(--vua-radius-overlay);
+  background: color-mix(in srgb, var(--vua-bg-elevated) 82%, transparent);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  box-shadow: var(--vua-shadow-elevated);
+}
+
+.vua-palette__input {
+  padding: var(--vua-space-3) var(--vua-space-4);
+  border: none;
+  border-bottom: 1px solid var(--vua-border);
+  outline: none;
+  background: transparent;
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+}
+
+.vua-palette__list {
+  margin: 0;
+  padding: var(--vua-space-2);
+  overflow-y: auto;
+  list-style: none;
+}
+
+.vua-palette__option {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border-radius: var(--vua-radius-control);
+  cursor: pointer;
+}
+
+.vua-palette__option span {
+  min-width: 40px;
+}
+
+.vua-palette__option:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 5%, transparent);
+}
+
+/* 选中行:tint + 描边 + 辖区色柔光;HC 下 glow 置 none,filter 自动失效 */
+.vua-palette__option[data-active] {
+  background: var(--vua-accent-tint);
+  box-shadow: inset 0 0 0 1px var(--vua-accent);
+  filter: drop-shadow(var(--vua-glow-accent-soft));
+}
+
+.vua-palette__empty {
+  padding: var(--vua-space-4) var(--vua-space-3);
+}
+
+/* forced-colors:关闭模糊,边界交给系统色边框 */
+@media (forced-colors: active) {
+  .vua-palette__backdrop,
+  .vua-palette {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}

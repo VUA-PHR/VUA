@@ -1,0 +1,338 @@
+/*
+ * Recipe 图谱页(C-RECIPE,S-XI Obsidian 风力导图)
+ * 质感纪律:圆点 + 侧标 + 细线;色彩纪律 §6.1——节点/边中性灰,
+ * 红仅冲突/缺失,橙/紫仅选中态;unresolved 是中性事实(空心点),不是异常。
+ */
+
+.vua-recipe-canvas-card {
+  overflow: hidden;
+}
+
+/* 图谱视口(S-X-3):固定高度世界,拖拽空白平移、滚轮缩放;
+ * overflow hidden + 世界层 transform,不再横向滚动 */
+.vua-recipe-canvas {
+  position: relative;
+  overflow: hidden;
+  height: clamp(460px, 60vh, 700px);
+  border-radius: var(--vua-radius-card);
+  cursor: grab;
+  touch-action: none;
+  /* S-XII-1:拖拽平移/拖节点时浏览器原生文本选择会把侧标标出底色,整画布禁选 */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.vua-recipe-canvas[data-panning] {
+  cursor: grabbing;
+}
+
+/* 世界层:平移/缩放唯一载体,原点即世界左上角 */
+.vua-recipe-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.vua-recipe-graph {
+  position: relative;
+  transition: transform 420ms ease;
+}
+
+.vua-recipe-graph__edges {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+
+/* 边:中性灰细直线,线型区分语义(实线组成/虚线换装/点线依赖) */
+.vua-recipe-graph__edge {
+  fill: none;
+  stroke: var(--vua-border-strong);
+  stroke-width: 1;
+  transition: opacity 240ms ease;
+}
+
+.vua-recipe-graph__edge[data-kind="wardrobe"] {
+  stroke-dasharray: 6 4;
+}
+
+.vua-recipe-graph__edge[data-kind="dependency"] {
+  stroke-dasharray: 2 4;
+}
+
+/* 悬停节点时弱化无关边(Obsidian 邻居高亮语言) */
+.vua-recipe-graph__edge[data-dim] {
+  opacity: 0.14;
+}
+
+/* 节点:圆点 + 侧标(S-XI)。position 即中心点,translate(-50%,-50%) 对齐;
+ * 拖拽走 left/top,与 transform 互不干扰 */
+.vua-recipe-graph__node {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-1) var(--vua-space-2);
+  border: none;
+  border-radius: var(--vua-radius-pill);
+  background: transparent;
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+  cursor: grab;
+  touch-action: none;
+  transform: translate(-50%, -50%);
+  transition:
+    transform 420ms ease,
+    opacity 240ms ease;
+}
+
+.vua-recipe-graph__node[data-dim] {
+  opacity: 0.22;
+}
+
+.vua-recipe-graph__node[data-dragging] {
+  z-index: 1;
+  cursor: grabbing;
+}
+
+/* 圆点:中性灰实心 = ready;底色描边让点在压线处可读 */
+.vua-recipe-graph__dot {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--vua-text-secondary);
+  box-shadow: 0 0 0 2px var(--vua-bg-panel);
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease,
+    background-color 160ms ease;
+}
+
+.vua-recipe-graph__node:hover .vua-recipe-graph__dot {
+  transform: scale(1.3);
+}
+
+/* Avatar 主轴点:加大 + 辖区色 + 柔光(图谱的唯一视觉重心) */
+.vua-recipe-graph__node[data-avatar] .vua-recipe-graph__dot {
+  width: 18px;
+  height: 18px;
+  background: var(--vua-accent);
+  box-shadow:
+    0 0 0 2px var(--vua-bg-panel),
+    0 0 16px color-mix(in srgb, var(--vua-accent) 65%, transparent);
+}
+
+/* 冲突/缺失才用红(§6.1) */
+.vua-recipe-graph__node[data-state="conflict"] .vua-recipe-graph__dot,
+.vua-recipe-graph__node[data-state="missing"] .vua-recipe-graph__dot {
+  background: var(--vua-error);
+}
+
+/* unresolved:空心中性,提示"尚未解析"而非错误 */
+.vua-recipe-graph__node[data-state="unresolved"] .vua-recipe-graph__dot {
+  background: transparent;
+  box-shadow:
+    inset 0 0 0 1.5px var(--vua-text-secondary),
+    0 0 0 2px var(--vua-bg-panel);
+}
+
+/* 选中:双重点色环(橙/紫) */
+.vua-recipe-graph__node[data-selected] .vua-recipe-graph__dot {
+  transform: scale(1.3);
+  box-shadow:
+    0 0 0 2px var(--vua-bg-panel),
+    0 0 0 4px var(--vua-accent),
+    0 0 14px color-mix(in srgb, var(--vua-accent) 55%, transparent);
+}
+
+/* 侧标:压线可读底色光晕;选中/hover 提亮 */
+.vua-recipe-graph__node-label {
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow:
+    0 0 6px var(--vua-bg-panel),
+    0 0 2px var(--vua-bg-panel);
+}
+
+.vua-recipe-graph__node[data-avatar] .vua-recipe-graph__node-label {
+  font-weight: 600;
+}
+
+.vua-recipe-graph__node[data-selected] .vua-recipe-graph__node-label {
+  color: var(--vua-accent-text);
+  font-weight: 600;
+}
+
+/* 复位视图:画布右下角浮层,玻璃质感 */
+.vua-recipe-canvas__reset {
+  position: absolute;
+  right: var(--vua-space-3);
+  bottom: var(--vua-space-3);
+  z-index: 2;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-pill);
+  padding: var(--vua-space-1) var(--vua-space-3);
+  background: color-mix(in srgb, var(--vua-bg-panel) 82%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--vua-text-secondary);
+  font: var(--vua-font-caption);
+  cursor: pointer;
+}
+
+.vua-recipe-canvas__reset:hover {
+  color: var(--vua-text-strong);
+  border-color: var(--vua-border-strong);
+}
+
+/* 图例:线型小样与画布边同款 */
+.vua-recipe-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  margin: 0;
+}
+
+.vua-recipe-legend__sample {
+  display: inline-block;
+  width: 24px;
+  border-top: 2px solid var(--vua-border-strong);
+}
+
+.vua-recipe-legend__sample[data-kind="wardrobe"] {
+  border-top-style: dashed;
+}
+
+.vua-recipe-legend__sample[data-kind="dependency"] {
+  border-top-style: dotted;
+}
+
+/* 列表视图:整行按钮,与图谱共用状态语义,常驻可用(ui-ux §6.2) */
+.vua-recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-recipe-list__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+  width: 100%;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-panel);
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.vua-recipe-list__row:hover {
+  border-color: var(--vua-border-strong);
+}
+
+.vua-recipe-list__row[data-state="conflict"],
+.vua-recipe-list__row[data-state="missing"] {
+  border-left: 3px solid var(--vua-error);
+}
+
+.vua-recipe-list__row[data-selected] {
+  border-color: var(--vua-accent);
+  box-shadow: inset 0 0 0 1px var(--vua-accent);
+}
+
+.vua-recipe-list__label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* S-IX-4 版本管理器:备注输入与快照列表,与图谱卡片同一节奏 */
+.vua-recipe-versions__save {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--vua-space-3);
+}
+
+.vua-recipe-versions__note {
+  flex: 1 1 220px;
+  min-width: 160px;
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+}
+
+.vua-recipe-versions__note:focus-visible {
+  border-color: var(--vua-border-focus);
+}
+
+.vua-recipe-versions__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-recipe-versions__entry {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-panel);
+}
+
+.vua-recipe-versions__entry-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-3);
+}
+
+.vua-recipe-versions__entry-note {
+  margin: 0;
+}
+
+/* S-IX-5 爆炸视图:容器给透视,图谱缓倾,语义层沿 Z 轴拉开;边线隐藏(表达分层构成)。
+ * 世界层需要 preserve-3d 透传,否则图谱的 3D 被压平回平面。
+ * 过渡压平由全局 reduced-motion / effects-off 规则兜底,压平后仍是静态炸开。 */
+.vua-recipe-canvas[data-exploded] {
+  perspective: 1400px;
+  perspective-origin: 50% 30%;
+}
+
+.vua-recipe-canvas[data-exploded] .vua-recipe-world {
+  transform-style: preserve-3d;
+}
+
+.vua-recipe-canvas[data-exploded] .vua-recipe-graph {
+  transform: rotateX(46deg);
+  transform-style: preserve-3d;
+}
+
+.vua-recipe-canvas[data-exploded] .vua-recipe-graph__edges {
+  opacity: 0;
+}
+
+.vua-recipe-canvas[data-exploded] .vua-recipe-graph__node {
+  transform: translate(-50%, -50%) translateZ(calc(var(--layer-depth, 0) * 56px));
+  cursor: pointer;
+}

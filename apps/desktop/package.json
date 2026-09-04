@@ -1,26 +1,38 @@
 {
   "name": "@vua/desktop",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "private": true,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "dist/electron/main.js",
   "scripts": {
-    "build": "node scripts/clean.mjs && tsc -p tsconfig.electron.json && vite build",
+    "build": "pnpm --filter @vua/orchestrator-provider build && cargo build --release -p vua-orchestrator --bin vua-orchestrator-provider && node scripts/clean.mjs && tsc -p tsconfig.electron.json && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "test": "vitest run src",
-    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "check": "pnpm typecheck && pnpm test && pnpm build && pnpm check:boundary && pnpm check:i18n && pnpm check:contrast && pnpm check:leak",
+    "check:boundary": "node scripts/check-boundary.mjs",
+    "check:i18n": "node scripts/check-i18n.mjs && node --experimental-strip-types scripts/check-i18n-tables.mjs",
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "check:leak": "node --experimental-strip-types scripts/check-leak.mjs",
     "dev": "node scripts/dev.mjs",
-    "start": "pnpm build && electron ."
+    "start": "pnpm build && electron .",
+    "smoke:remote-permissions": "pnpm build && electron scripts/smoke-remote-permissions.mjs",
+    "smoke:m2-deliverables": "pnpm build && electron scripts/smoke-m2-deliverables.mjs"
   },
   "dependencies": {
     "@vua/contracts": "workspace:*",
     "@vua/design-system": "workspace:*",
+    "@vua/orchestrator-provider": "workspace:*",
     "react": "19.2.8",
-    "react-dom": "19.2.8"
+    "react-dom": "19.2.8",
+    "three": "0.185.1"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
+    "@types/three": "0.185.4",
     "@vitejs/plugin-react": "6.1.1",
     "electron": "44.1.1",
     "typescript": "7.0.2",

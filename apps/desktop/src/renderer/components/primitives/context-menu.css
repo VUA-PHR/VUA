@@ -1,0 +1,42 @@
+/* 右键上下文菜单(S-XII):玻璃浮层 + 细边框,与画布浮层同一质感;
+ * 压平/高对比由全局 reduced-motion / forced-colors 规则兜底 */
+
+.vua-context-menu {
+  position: fixed;
+  /* 高于仓储抽屉(200),低于 dev 探针(100)之上的诊断层无需覆盖:取 300 */
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  min-width: 168px;
+  padding: var(--vua-space-1);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 86%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--vua-shadow-elevated);
+}
+
+.vua-context-menu__item {
+  display: block;
+  width: 100%;
+  padding: var(--vua-space-1) var(--vua-space-3);
+  border: none;
+  border-radius: calc(var(--vua-radius-control) - 4px);
+  background: transparent;
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vua-context-menu__item:hover:not(:disabled),
+.vua-context-menu__item:focus-visible {
+  background: color-mix(in srgb, var(--vua-accent) 14%, transparent);
+}
+
+.vua-context-menu__item:disabled {
+  color: var(--vua-text-secondary);
+  opacity: 0.55;
+  cursor: default;
+}

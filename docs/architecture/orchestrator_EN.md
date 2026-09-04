@@ -47,7 +47,10 @@ authoritative persistence. Provider replacement occurs only at an idle shutdown 
 
 The transport-independent B1 request, task, cancellation, operation-level Capability, and safe
 shutdown semantics are defined by [Application Contract v0.1](../protocols/application-contract-v0.1_EN.md).
-This candidate is not stable Gateway v1 before real M2 integration.
+The transport-independent request, task, cancellation, operation-level capability, and safe-shutdown
+semantics of B1 are defined by the [Application Contract v0.1](../protocols/application-contract-v0.1_EN.md).
+The contract was frozen as stable Gateway v1 at M2 (2026-09-04) after passing the real two-end
+integration acceptance.
 
 B2 SQLite tables, transactions, idempotency, durability, and restart semantics are defined by
 [Task Store Format v0.1](../protocols/task-store-v0.1_EN.md). Process framing, handshake, supervision,

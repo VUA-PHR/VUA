@@ -1,3 +1,1 @@
-import "./components.css";
-
-export * from "./primitives.js";
+export * from "./icons/Icon.js";

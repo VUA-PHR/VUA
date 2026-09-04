@@ -2,7 +2,7 @@
 
 > 状态：已接受
 > 范围：VUA 新仓库
-> 更新：2026-09-03
+> 更新：2026-09-04
 > 规范效力：本文只定义文档分层、阅读路径和权威顺序
 
 本仓库采用渐进式披露。先判断任务属于哪个模块，再读取完成任务所需的最小规范集合；历史仓库、
@@ -41,7 +41,7 @@
 | --- | --- | --- |
 | Electron / React | 产品边界、对应桌面架构 | IPC、UI 参考、相关 ADR |
 | Rust Orchestrator | 产品边界、Orchestrator 架构 | IPC、状态、恢复和适配器协议 |
-| BDB Local / 浏览下载 | 产品边界、BDB 架构 | 数据格式、Session 与下载协议 |
+| BDL / 浏览下载 | 产品边界、BDL 架构 | 数据格式、Session 与下载协议 |
 | AMF / Recipe / Unity | 产品边界、对应模块架构 | Recipe、Unity Bridge、固定实例 |
 | 项目与运行时工具 | 产品边界、适配器协议 | 对应上游审计与能力矩阵 |
 | 插件 | 产品边界、插件协议、安全 ADR | 示例与兼容性测试 |
@@ -52,7 +52,7 @@
 - [系统架构](architecture/system.md)
 - [Electron 桌面与表现层](architecture/desktop.md)
 - [Rust Orchestrator](architecture/orchestrator.md)
-- [BDB Local](architecture/bdb-local.md)
+- [BDL](architecture/bdl_ZH.md)
 - [AMF 与 Unity Bridge](architecture/amf-unity.md)
 - [第三方集成、插件与 Overlay](architecture/integrations-and-overlays.md)
 

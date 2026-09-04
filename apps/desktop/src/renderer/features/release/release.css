@@ -1,0 +1,205 @@
+/*
+ * Release 展柜(C-RECIPE-3,美术方案 v0.4.0 §6;S-IX-2 传送带 + 立体展台):
+ * 细边框、无投影;选中描边用辖区重点色;预览占位诚实说明,
+ * 不伪造缩略图;元数据常驻最多两行(名称 + 徽标行,§6.2)。
+ * 传送带 coverflow 变形由 use-conveyor 逐帧写 transform(非 CSS 过渡),
+ * effects-off / reduced-motion 下自动退回平直横滚。
+ */
+
+/* ---- 传送带(coverflow 轮盘) ---- */
+
+.vua-release-conveyor {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-release-conveyor__nav {
+  flex: 0 0 auto;
+}
+
+.vua-release-conveyor__track {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  gap: var(--vua-space-4);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  /* 轮盘变形需要的纵深;上下留白给 tilt 后的卡片不裁切 */
+  perspective: 1000px;
+  padding: var(--vua-space-3) var(--vua-space-2);
+  cursor: grab;
+}
+
+.vua-release-conveyor__track:active {
+  cursor: grabbing;
+}
+
+.vua-release-card {
+  flex: 0 0 240px;
+  scroll-snap-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+  color: var(--vua-text-strong);
+  font: var(--vua-font-body);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+  transition:
+    border-color 120ms ease-out,
+    box-shadow 120ms ease-out;
+}
+
+.vua-release-card:hover {
+  border-color: var(--vua-border-strong);
+}
+
+.vua-release-card[data-selected] {
+  border-color: var(--vua-accent);
+  box-shadow:
+    inset 0 0 0 1px var(--vua-accent),
+    var(--vua-glow-accent-soft);
+}
+
+/* ---- 立体展台(S-IX-2):canvas 透明叠加在 CSS 台座光晕上;
+ * mode=off 时 canvas 不渲染,CSS 呼吸台座兜底 ---- */
+
+.vua-release__stage {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 4fr);
+  gap: var(--vua-space-4);
+  align-items: start;
+}
+
+.vua-release__pedestal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  min-height: 300px;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  /* CSS 台座兜底:椭圆地面光晕 + 缓慢呼吸(降级时唯一视觉,正常时在 canvas 底下) */
+  background:
+    radial-gradient(
+      42% 30% at 50% 62%,
+      color-mix(in srgb, var(--vua-accent) 18%, transparent),
+      transparent 70%
+    ),
+    color-mix(in srgb, var(--vua-bg-panel) 78%, transparent);
+  background-repeat: no-repeat;
+  animation: vua-release-pedestal-breathe 4s ease-in-out infinite alternate;
+  overflow: hidden;
+}
+
+@keyframes vua-release-pedestal-breathe {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+  to {
+    background-position:
+      0 8px,
+      0 0;
+  }
+}
+
+.vua-release__pedestal-canvas {
+  display: block;
+  width: 100%;
+  height: 300px;
+}
+
+.vua-release__pedestal-note {
+  margin: 0;
+  padding: 0 var(--vua-space-3) var(--vua-space-3);
+  text-align: center;
+}
+
+/* 预览槽(1:1,§6.2):无烘焙定位时保持诚实虚线占位;有封面时实边框铺满 */
+.vua-release-card__preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  border: 1px dashed var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  overflow: hidden;
+}
+
+.vua-release-card__preview[data-has-cover] {
+  border-style: solid;
+}
+
+.vua-release-card__cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 详情内嵌 T2 烘焙转盘舞台(DEV 接线):固定高区域,透明底透出画布色 */
+.vua-release__bake-stage {
+  position: relative;
+  height: 320px;
+  margin-top: var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: var(--vua-bg-canvas);
+  overflow: hidden;
+}
+
+.vua-release__bake-failed {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vua-space-4);
+  text-align: center;
+  pointer-events: none;
+}
+
+.vua-release-card__title {
+  overflow: hidden;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.vua-release-card__badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--vua-space-2);
+}
+
+/* 详情定义表:标签/值两列,细线分隔 */
+.vua-release-detail {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.vua-release-detail__row {
+  display: flex;
+  gap: var(--vua-space-4);
+  padding: var(--vua-space-2) 0;
+  border-bottom: 1px solid var(--vua-border);
+}
+
+.vua-release-detail__row:last-child {
+  border-bottom: none;
+}
+
+.vua-release-detail__row dt {
+  min-width: 96px;
+}
+
+.vua-release-detail__row dd {
+  margin: 0;
+}

@@ -1,0 +1,73 @@
+import type { CSSProperties } from "react";
+
+/**
+ * 图标基线为 Fluent System Icons 风格:圆角端点、约 1.5px 视觉描边(§3.4)。
+ * 当前仅内联切片所需的最小集合,后续按 design-system/icons 规范扩充。
+ */
+export type IconName =
+  | "check"
+  | "warning"
+  | "close"
+  | "question"
+  | "arrow-right"
+  | "flask"
+  | "arrow-left"
+  | "clock"
+  | "minimize"
+  | "maximize"
+  | "pin"
+  | "chevron-down"
+  | "cloud"
+  | "folder"
+  | "avatar"
+  | "outfit"
+  | "anim"
+  | "shader";
+
+const paths: Record<IconName, string> = {
+  check: "M5 12.5l4.5 4.5L19 7.5",
+  warning: "M12 4 L21 20 H3 Z M12 10v4 M12 17v.5",
+  close: "M6 6l12 12M18 6L6 18",
+  question: "M9.5 9a2.5 2.5 0 1 1 3.4 2.34c-.83.3-.9 1-.9 1.66M12 17v.5",
+  "arrow-right": "M4 12h15M13 6l6 6-6 6",
+  "arrow-left": "M20 12H5M11 6l-6 6 6 6",
+  flask: "M10 3h4M10 3v5l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.5L14 8V3",
+  clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7.5V12l3.5 2",
+  minimize: "M5 12h14",
+  maximize: "M6 6h12v12H6z",
+  pin: "M15.5 3.5l5 5-2.5 1L13.5 14l-1 4-3-3-5 5-1-1 5-5-3-3 4-1 4.5-4.5 1-2.5z",
+  "chevron-down": "M6 9.5l6 6 6-6",
+  cloud: "M7 18.5a4.5 4.5 0 1 1 .42-8.98 5.5 5.5 0 0 1 10.66 1.6A3.75 3.75 0 0 1 17.5 18.5Z",
+  folder: "M3.5 7a2 2 0 0 1 2-2h3.6l2 2.2h7.4a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2Z",
+  // S-X-3 径向图谱角色图标(Fluent 风格描边)
+  avatar: "M12 11.5a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5ZM4.75 20c.6-3.8 3.7-6 7.25-6s6.65 2.2 7.25 6",
+  outfit: "M10 3.8a2 2 0 1 1 2 2v1.7M12 7.5l8.3 9.2a1.4 1.4 0 0 1-1 2.3H4.7a1.4 1.4 0 0 1-1-2.3L12 7.5Z",
+  anim: "M8 5.1v13.8c0 .8.9 1.3 1.6.9l11-6.9a1.04 1.04 0 0 0 0-1.8l-11-6.9c-.7-.4-1.6.1-1.6.9Z",
+  shader: "M12 3.5 13.9 9.1l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.6L4.5 11l5.6-1.9L12 3.5Z",
+};
+
+export interface IconProps {
+  name: IconName;
+  /** 16 / 20 / 24(§3.4) */
+  size?: 16 | 20 | 24;
+  style?: CSSProperties;
+}
+
+export function Icon({ name, size = 20, style }: IconProps) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={name === "warning" ? 1.6 : 1.8}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      style={style}
+    >
+      <path d={paths[name]} />
+    </svg>
+  );
+}

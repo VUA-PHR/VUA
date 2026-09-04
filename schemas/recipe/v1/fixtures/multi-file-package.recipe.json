@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "recipeId": "019c0000-0000-7000-8000-000000000104",
+  "title": "Multi-file package recipe (test sample)",
+  "description": "Legally valid document whose outfit asset bundles multiple files (recorded as lazy extension metadata); the graph layer renders it as one node with a multi-file badge. Self-authored redistributable fixture.",
+  "createdAt": "2026-08-27T10:00:00Z",
+  "updatedAt": "2026-08-27T10:00:00Z",
+  "target": {
+    "platforms": [
+      "windows"
+    ],
+    "avatarAssetId": "avatar"
+  },
+  "assets": [
+    {
+      "id": "avatar",
+      "role": "avatar_base",
+      "label": "Sample Avatar Base",
+      "entityRef": {
+        "entityId": "019c0000-0000-7000-8000-000000000110"
+      }
+    },
+    {
+      "id": "winter_set",
+      "role": "outfit",
+      "label": "Sample Winter Set",
+      "variant": "complete-pack",
+      "sourceRef": {
+        "provider": "booth",
+        "productId": "0000003",
+        "url": "https://example.invalid/items/0000003"
+      }
+    }
+  ],
+  "extensions": {
+    "dev.vua.example": {
+      "fixture": "multi-file-package",
+      "files": [
+        "coat",
+        "scarf",
+        "boots"
+      ],
+      "note": "files are descriptive fixture metadata, not paths or archive hashes"
+    }
+  }
+}
