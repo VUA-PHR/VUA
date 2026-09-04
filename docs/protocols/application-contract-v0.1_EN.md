@@ -35,6 +35,19 @@ require a version bump.
 | Command | `task.requestCancellation` | Submits a monotonic, idempotent cancellation intent for a stable task instance | B1 |
 | Query | `environment.getSnapshot` | Returns the read-only environment presence snapshot for both zones | F2 |
 | Command | `task.startDemo` | Capability-gated demonstration command: creates one observable, cancellable demo task | F2 |
+| Command | `production.startInspection` | Starts Inspect for the first production use case (dual material intake; candidate) | B3/F3 |
+| Query | `production.getInspection` | Reads an inspection result (compatibility/missing evidence) | B3/F3 |
+| Command | `production.requestPlan` | Derives an execution plan from an inspection result | B3/F3 |
+| Query | `production.getPlan` | Reads a plan for review | B3/F3 |
+| Command | `production.confirmPlan` | Confirms the plan and enters the snapshot → execute → validate chain | B3/F3 |
+| Command | `production.recover` | Recovers a failed/expired outcome (continue / rollback) | B3/F3 |
+| Query | `production.getBuildRecord` | Reads the minimal Build Record | B3/F3 |
+
+The seven `production.*` methods are the registered surface of the
+[Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md) (B3 candidate draft):
+lifecycle-to-task mapping, dual material intake, confirmation and recovery discipline, and
+value-semantics seeds live there; until B3 freezes the implementation it constrains neither
+side.
 
 `task.startDemo` is the end-to-end demonstration channel for the task experience (submit → observe →
 cancel), gated by an operation-level capability (such as `demo.task`); production builds may declare it
@@ -148,3 +161,6 @@ caches, display, and diagnostics always reference the original contract values.
   of the B6 environment detection spike) and `task.startDemo` (capability-gated demo task command);
   replaced the former "B1 does not add …" restriction paragraph with the "Versioning and evolution"
   growth model; added "Presentation projection" and the corresponding verification gates.
+- 2026-09-04: Registered the production use-case surface (B3/F3 candidate draft). The seven
+  `production.*` methods; lifecycle, dual material intake, and value semantics live in the
+  [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md).

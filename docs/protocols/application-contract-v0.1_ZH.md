@@ -33,6 +33,17 @@
 | Command | `task.requestCancellation` | 对稳定任务实例提交单调、幂等的取消意图 | B1 |
 | Query | `environment.getSnapshot` | 返回双辖区的环境在场事实快照（只读） | F2 |
 | Command | `task.startDemo` | 能力门控的演示命令：创建一个可观察、可取消的演示任务 | F2 |
+| Command | `production.startInspection` | 启动首个生产用例的 Inspect（双素材入口；候选） | B3/F3 |
+| Query | `production.getInspection` | 读取检查结果（兼容/缺失证据） | B3/F3 |
+| Command | `production.requestPlan` | 基于检查结果生成执行计划 | B3/F3 |
+| Query | `production.getPlan` | 读取计划供审阅 | B3/F3 |
+| Command | `production.confirmPlan` | 确认计划，进入 snapshot → execute → validate 执行链 | B3/F3 |
+| Command | `production.recover` | 对失败/过期结果执行恢复（continue / rollback） | B3/F3 |
+| Query | `production.getBuildRecord` | 读取最小 Build Record | B3/F3 |
+
+`production.*` 七方法是[生产用例契约 v0.1](production-use-case-v0.1_ZH.md)（B3 候选草案）的
+登记面：生命周期-任务映射、双素材入口、确认与恢复纪律、值语义种子以该文档为准；经 B3
+实现冻结前不约束任何一侧的实现。
 
 `task.startDemo` 是任务体验的端到端演示通道（提交 → 观察 → 取消），由操作级 capability
 （如 `demo.task`）门控，生产构建可以声明不可用；首个真实用例命令（F3 检查页面）落地后，
@@ -128,3 +139,5 @@ Provider 的具体托管形态、握手封帧、崩溃监督与进程树策略�
 - 2026-09-04：F2 扩展。新增 `environment.getSnapshot`（对齐 B6 环境检测 spike 的在场
   事实词表）与 `task.startDemo`（能力门控的演示任务命令）；原"B1 不加入……"限制段落
   改为"版本与演进"增长模型；新增"与表现层的衔接"与对应验证门槛。
+- 2026-09-04：登记生产用例面（B3/F3 候选草案）。`production.*` 七方法，生命周期、双素材
+  入口与值语义见[生产用例契约 v0.1](production-use-case-v0.1_ZH.md)。
