@@ -1,18 +1,10 @@
-# BDL Read-Model Protocol v0.1 (catalog and warehouse queries)
+# BDL Read-Model Protocol v0.2 (catalog and warehouse queries)
 
-[English](bdl-queries-v0.1_EN.md) | [简体中文](bdl-queries-v0.1_ZH.md)
+[English](bdl-queries-v0.2_EN.md) | [简体中文](bdl-queries-v0.2_ZH.md)
 
-> **⚠️ Superseded by v0.2 (2026-09-06)**: availability revised to the dual
-> field (`availabilityRaw` + `availabilityStatus`), filtering switched to the
-> derived stable enum. The current protocol is
-> [bdl-queries-v0.2_EN.md](bdl-queries-v0.2_EN.md); this document remains as
-> history only, matching `schemas/bdl-queries/v0.1/` (do not edit).
-
-> Status: Frozen (2026-09-06) — confirmed by both alignment replies
-> (`docs/plans/` coordination notes: `f4-catalog-gateway-alignment-to-b`,
-> `b-reply-to-f4-catalog-gateway-alignment`,
-> `f-reply-to-b4-catalog-gateway-alignment`);
-> machine-readable vocabulary in `schemas/bdl-queries/v0.1/`
+> Status: **Frozen** (2026-09-06) — supersedes v0.1 (the only change is the
+> "v0.2 revision" below); machine-readable vocabulary in
+> `schemas/bdl-queries/v0.2/`
 > Scope: five read-only query methods served by AMF from the local BDL — the
 > cloud-track trio (catalog.*) and the local-track pair (warehouse.*) — plus
 > the three-state presentation mapping of LocalArtifact inspection verdicts
@@ -21,6 +13,37 @@
 > the narrow AMF application-service surface); `docs/architecture/desktop_EN.md`
 > (the renderer never holds Electron or BDL objects)
 > Updated: 2026-09-06
+
+## v0.2 revision
+
+availability is revised from a single field (verbatim observed word, filtered
+by exact raw-word match) to a **dual field**:
+
+- `availabilityRaw: string | null` — the verbatim observed page word, for
+  evidence and detail display, never normalized;
+- `availabilityStatus: available | unavailable | unknown` — derived by the
+  AMF/BDL processor under a **versioned rule table**; UI badges and filters
+  consume **only the stable enum**; the renderer never guesses and never
+  derives.
+
+Motivation: with pure verbatim filtering, `InStock`, full schema.org URLs and
+case variants fragment into distinct filter values, and an internationalized
+UI would leak platform-internal words. The deriving party is the data owner
+(AMF/BDL), not the renderer — consistent with the "renderer does not guess"
+discipline.
+
+**Derivation rule table (v0.2, versioned with this protocol; changes bump the
+version)**: compare the last path segment of the raw word, lowercased
+(`https://schema.org/InStock` and `InStock` judge identically):
+
+| Raw word (last segment, lowercased) | availabilityStatus |
+| --- | --- |
+| `instock`, `limitedavailability`, `instoreonly` | `available` |
+| `outofstock`, `soldout`, `discontinued` | `unavailable` |
+| everything else, null | `unknown` (raw preserved verbatim) |
+
+Everything else is identical to v0.1; the v0.1 document remains as history
+(do not edit `schemas/bdl-queries/v0.1/`).
 
 ## Dependency direction
 
@@ -57,17 +80,17 @@ part of this protocol.
 
 ## catalog query set and field surface
 
-The `catalog.list` query closed set = `{ text, availability, limit, offset }`
-(all optional):
+The `catalog.list` query closed set = `{ text, availabilityStatus, limit,
+offset }` (all optional):
 
 - `text`: case-insensitive substring over title and productId; absent = no
   filtering;
-- `availability`: exact match against the **verbatim observed word**; absent =
-  no filtering;
+- `availabilityStatus`: exact match against the **derived stable enum**;
+  absent = no filtering;
 - `limit` (1–200, default 50) / `offset` (default 0): card-wall pagination;
 - entry order = `productId` ascending (identity-derived, deterministic
   pagination);
-- `entityType` / `relationKind` are **not in the closed set**: v0.1 has no
+- `entityType` / `relationKind` are **not in the closed set**: v0.2 has no
   entity or relation storage; their presence is a contract error, never a
   silently empty answer;
 - tombstone products (`status: missing`, 404/410 kept as records) are **not
@@ -80,33 +103,32 @@ single-price products only; variant prices live in detail `subproducts`;
 missing price / multi-currency is honestly null, never guessed or converted),
 `imageUrl` (always `imageUrls[0]` or null), `imageUrls` (verbatim observed
 source URLs carried by the vuaimg cache protocol — **AMF hands out URLs, never
-embedded handles or local paths**), `availability` (**verbatim observed word
-pass-through**, never translated, rewritten or merged; unknown values display
-as-is), `entityCount` (const `0` in v0.1), `entityTypes` (const `[]` in v0.1 —
-honest empty slots; entity storage belongs to BDL v2).
+embedded handles or local paths**), `availabilityRaw` / `availabilityStatus`
+(dual field, see "v0.2 revision"), `entityCount` (const `0`), `entityTypes`
+(const `[]` — honest empty slots; entity storage belongs to BDL v2).
 
 `catalog.detail` additional fields: `description`, `shopName` / `shopUrl`,
 `ageRestriction`, `adult` (true only with the explicit BOOTH Adult badge),
 `videoUrls`, `sourceCategory` (BOOTH display category, no inference),
-`subproducts` (`variationId` / `name` / `price` / `availability`). The entity
-and relation areas are **not in v0.1**; the renderer keeps empty states at the
-not-connected level; freezing the three relation words
-(`compatible_with/addon_for/requires`) follows the V2-3 relation-edge
-vocabulary when it is written. "null fallback for out-of-library entity
-canonical names" is accepted as a v2 shape rule.
+`subproducts` (`variationId` / `name` / `price` / `availabilityRaw` /
+`availabilityStatus`). The entity and relation areas are **not in v0.2**; the
+renderer keeps empty states at the not-connected level; freezing the three
+relation words (`compatible_with/addon_for/requires`) follows the V2-3
+relation-edge vocabulary when it is written. "null fallback for
+out-of-library entity canonical names" is accepted as a v2 shape rule.
 `compatibility_observations.raw_quote` does **not** enter the catalog
 surface — unconfirmed semantics never enter a browsing UI (IN-3 data belongs
 to the IN-3 surface).
 
-`catalog.status`: `health` (v0.1 three states `unknown` / `ok` /
-`incompatible` — the last being the BDL version fence rejecting the store;
-`corrupted` and `stale` are renderer-reserved states that v0.1 never sends)
-plus `revision` (`catalogUpdatedSeq`: number | null — always null until the
-observation-pipeline bookkeeping counter exists; `datasetRevision`: string,
-v0.1 = the BDL format_version). `sourceUpdatedSeq` was deleted: it originated
-from the G13-era freshness question, which only exists once a refresh path
-exists; when G13 lands, its own sync bookkeeping answers it — the dead column
-name is not revived.
+`catalog.status`: `health` (three states `unknown` / `ok` / `incompatible` —
+the last being the BDL version fence rejecting the store; `corrupted` and
+`stale` are renderer-reserved states that v0.2 never sends) plus `revision`
+(`catalogUpdatedSeq`: number | null — always null until the
+observation-pipeline bookkeeping counter exists; `datasetRevision`: string, =
+the BDL format_version). `sourceUpdatedSeq` was deleted permanently: it
+originated from the G13-era freshness question, which only exists once a
+refresh path exists; when G13 lands, its own sync bookkeeping answers it —
+the dead column name is not revived.
 
 ## warehouse entry surface
 
@@ -124,7 +146,7 @@ quarantined), `sourceCorrelated` (existence of an `artifact_mappings` row),
 
 - **`storedPath` never enters the render surface** — path semantics stop at
   AMF/BDL and users do not browse the disk (ruling 3);
-- the copy list carries **no role annotation** in v0.1 (original vs generated
+- the copy list carries **no role annotation** (original vs generated
   package): the role bit lands with a B4-7 version bump;
 - the **artifact-mode setting (write path) is outside this protocol** — it is
   an audited destructive setting (delete originals after generation), belongs
@@ -139,34 +161,35 @@ quarantined), `sourceCorrelated` (existence of an `artifact_mappings` row),
 | `quarantined` | `rejected` (always carries an honest rejection reason) |
 
 `executables` (detected executable-content list) is **always an empty array**
-in v0.1 — inspection hooks (archive content scanning) are an interface
-placeholder in the download-events protocol and land with the hook slice in a
-version bump. Size is null only while the transfer is incomplete; unextracted
-previews are empty arrays. Download status presentation **does not use this
-protocol**: a download is a recoverable task and follows the global task
-contract's nine states; "retry" is presented as a task-level action adjudicated
-by AMF (the application-contract retry command is defined by the B side,
-idempotency fingerprinting modeled on production.*) — no new download.*
-surface.
+— inspection hooks (archive content scanning) are an interface placeholder in
+the download-events protocol and land with the hook slice in a version bump.
+Size is null only while the transfer is incomplete; unextracted previews are
+empty arrays. Download status presentation **does not use this protocol**: a
+download is a recoverable task and follows the global task contract's nine
+states; "retry" is presented as a task-level action adjudicated by AMF (the
+application-contract retry command is defined by the B side, idempotency
+fingerprinting modeled on production.*) — no new download.* surface.
 
 ## Alignment with the seed allowlist
 
-The isolated-session base (`https://booth.pm`) is re-checked with this freeze:
-every URL carried by v0.1 catalog fields is a verbatim observed URL of a BOOTH
-page or its embedded media; embedded-media hostnames (image CDNs) follow real
+The isolated-session base (`https://booth.pm`) is re-checked: every URL
+carried by v0.2 catalog fields is a verbatim observed URL of a BOOTH page or
+its embedded media; embedded-media hostnames (image CDNs) follow real
 observations and are enumerated by the F-side security layer before F4-5 goes
 live — this protocol does not hard-code a hostname list.
 
 ## Machine-readable vocabulary
 
-`schemas/bdl-queries/v0.1/`: `query.schema.json` (operation vocabulary +
+`schemas/bdl-queries/v0.2/`: `query.schema.json` (operation vocabulary +
 query closed set), `result.schema.json` (the five result shapes),
-`examples/` (5 requests + 5 results + 1 negative: an entity filter param must
-be rejected). Dual-end fixtures: Rust side `contracts.rs` + `bdl_queries.rs`
-(operation enum and three-state mapping anchor); the F side registers its
-contracts types and Kernel router arms with the freeze (modeled on the
-production.* two steps). Vocabulary or field changes must bump the version,
-never rewrite in place.
+`examples/` (5 requests + 5 results + 2 negatives: an entity filter param and
+an illegal availabilityStatus enum value must be rejected). Dual-end
+fixtures: Rust side `contracts.rs` + `bdl_queries.rs` (operation enum,
+three-state mapping and the **availability derivation function** — the
+executable form of the rule table); the F side registers its contracts types
+and Kernel router arms with the freeze (modeled on the production.* two
+steps). Vocabulary or field changes must bump the version, never rewrite in
+place.
 
 ## Open items
 

@@ -30,7 +30,7 @@ fn download_events_dir() -> PathBuf {
 }
 
 fn bdl_queries_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.1")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.2")
 }
 
 #[test]
@@ -280,9 +280,10 @@ fn orc_typ_005_download_event_examples_validate_against_the_frozen_schema() {
     );
 }
 
-/// 冻结的 BDL 读取面（v0.1，五只读方法）：请求/响应示例必须过对应 schema；
-/// 负例（实体过滤参数）必须被拒——v0.1 无实体存储，收到即契约错误而非
-/// 静默空答案；操作词表与 Rust 枚举互相钉死。
+/// 冻结的 BDL 读取面（v0.2，五只读方法）：请求/响应示例必须过对应 schema；
+/// 负例（实体过滤参数、非法 availabilityStatus 枚举值）必须被拒——v0.2 无
+/// 实体存储、筛选只吃派生稳定枚举，违规即契约错误而非静默空答案；操作词表
+/// 与 Rust 枚举互相钉死。
 #[test]
 fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
     use vua_orchestrator::BdlQueryOperation;
@@ -290,6 +291,7 @@ fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
     let dir = bdl_queries_dir();
     let query_schema: serde_json::Value =
         serde_json::from_slice(&fs::read(dir.join("query.schema.json")).unwrap()).unwrap();
+    assert_eq!(query_schema["properties"]["schemaVersion"]["const"], "0.2");
     let result_schema: serde_json::Value =
         serde_json::from_slice(&fs::read(dir.join("result.schema.json")).unwrap()).unwrap();
     let query_validator = jsonschema::validator_for(&query_schema).unwrap();
@@ -334,7 +336,15 @@ fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
     .unwrap();
     assert!(
         !query_validator.is_valid(&invalid),
-        "entityType filtering has no v0.1 backing; it is a contract error"
+        "entityType filtering has no v0.2 backing; it is a contract error"
+    );
+    let invalid: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join("examples/invalid-availability-filter.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !query_validator.is_valid(&invalid),
+        "filtering consumes the derived stable enum, never free-form raw words"
     );
 
     let schema_operations = query_schema["properties"]["operation"]["enum"]

@@ -1,17 +1,19 @@
-//! BDL read-model query vocabulary v0.1 (frozen 2026-09-06).
+//! BDL read-model query vocabulary v0.2 (frozen 2026-09-06).
 //!
-//! Rust anchor for `schemas/bdl-queries/v0.1` (docs/protocols/
-//! bdl-queries-v0.1): the five read-only operations, the wire three-state
-//! LocalArtifact verdict and the catalog health vocabulary. The serving face
-//! lands later — warehouse queries with B4-7, catalog queries with the
-//! observation-pipeline slice — but the vocabulary is frozen now so the F
-//! side registers its contracts against a stable shape. Any vocabulary
-//! change must bump the schema version, never rewrite in place.
+//! Rust anchor for `schemas/bdl-queries/v0.2` (docs/protocols/
+//! bdl-queries-v0.2): the five read-only operations, the wire three-state
+//! LocalArtifact verdict, the catalog health vocabulary and the availability
+//! derivation function — the executable form of the protocol's versioned
+//! rule table. The serving face lands later — warehouse queries with B4-7,
+//! catalog queries with the observation-pipeline slice — but the vocabulary
+//! is frozen now so the F side registers its contracts against a stable
+//! shape. Any vocabulary change must bump the schema version, never rewrite
+//! in place.
 
 use crate::bdl_store::ArtifactInspectionState;
 use serde::{Deserialize, Serialize};
 
-pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.1";
+pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.2";
 
 /// The five read-only operations. Transport envelopes belong to the
 /// application contract; this enum pins the operation vocabulary only.
@@ -57,15 +59,47 @@ impl ArtifactInspectionVerdict {
     }
 }
 
-/// Catalog health, v0.1. `incompatible` is the BDL version fence rejecting
+/// Catalog health, v0.2. `incompatible` is the BDL version fence rejecting
 /// the store; `corrupted` and `stale` are renderer-reserved display states
-/// that v0.1 never sends.
+/// that v0.2 never sends.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum CatalogHealth {
     Unknown,
     Ok,
     Incompatible,
+}
+
+/// The stable availability enum (v0.2 dual field): UI badges and filters
+/// consume only this; the raw observed word rides along as
+/// `availabilityRaw` evidence.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AvailabilityStatus {
+    Available,
+    Unavailable,
+    Unknown,
+}
+
+/// Derives `availabilityStatus` from the verbatim observed word, per the
+/// v0.2 rule table in the protocol (last path segment, lowercased;
+/// `https://schema.org/InStock` and `InStock` judge identically; everything
+/// unrecognized or missing is unknown with the raw preserved by the caller).
+pub fn availability_status(raw: Option<&str>) -> AvailabilityStatus {
+    let Some(raw) = raw else {
+        return AvailabilityStatus::Unknown;
+    };
+    let word = raw
+        .rsplit('/')
+        .next()
+        .unwrap_or(raw)
+        .trim()
+        .to_ascii_lowercase();
+    match word.as_str() {
+        "instock" | "limitedavailability" | "instoreonly" => AvailabilityStatus::Available,
+        "outofstock" | "soldout" | "discontinued" => AvailabilityStatus::Unavailable,
+        _ => AvailabilityStatus::Unknown,
+    }
 }
 
 #[cfg(test)]
@@ -113,5 +147,33 @@ mod tests {
             serde_json::to_value(CatalogHealth::Incompatible).unwrap(),
             "incompatible"
         );
+    }
+
+    #[test]
+    fn availability_derivation_matches_the_v0_2_rule_table() {
+        use AvailabilityStatus::*;
+        // The whole rule table, including the URL-normalized forms.
+        assert_eq!(availability_status(Some("InStock")), Available);
+        assert_eq!(
+            availability_status(Some("https://schema.org/InStock")),
+            Available
+        );
+        assert_eq!(
+            availability_status(Some("https://schema.org/LimitedAvailability")),
+            Available
+        );
+        assert_eq!(availability_status(Some("SoldOut")), Unavailable);
+        assert_eq!(
+            availability_status(Some("https://schema.org/OutOfStock")),
+            Unavailable
+        );
+        assert_eq!(availability_status(Some("Discontinued")), Unavailable);
+        // Unrecognized words and absence stay honest unknowns.
+        assert_eq!(availability_status(Some("PreOrder")), Unknown);
+        assert_eq!(
+            availability_status(Some("https://example.com/whatever")),
+            Unknown
+        );
+        assert_eq!(availability_status(None), Unknown);
     }
 }

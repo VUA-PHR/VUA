@@ -54,7 +54,8 @@ pub use assembly::{
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
 };
 pub use bdl_queries::{
-    ArtifactInspectionVerdict, BdlQueryOperation, CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
+    availability_status, ArtifactInspectionVerdict, AvailabilityStatus, BdlQueryOperation,
+    CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
 };
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactRecording, ArtifactRecordingOutcome,
