@@ -304,11 +304,11 @@ export type RecoverDecisionKind = "continue" | "rollback";
 /** 全集:与 strings.productionFlow.recover.decision 一一对应 */
 export const recoverDecisionKinds: readonly RecoverDecisionKind[] = ["continue", "rollback"];
 
-/** 恢复决定:必须携带 Kernel 生成的用户决定 ID(与 Provider 关闭协议同一纪律);
- *  交互逻辑冻结前由 fixture 生成占位 */
+/** 恢复决定:只携带语义选择。用户决定 ID 是 Kernel 侧概念——受理时生成并与
+ *  taskId + revision + decision 绑定(可审计、幂等、单次消费),渲染层不可见
+ *  也不传;用户同意来自确认界面与校验链,不来自 ID 的存在 */
 export interface RecoverDecision {
   readonly kind: RecoverDecisionKind;
-  readonly decisionId: string;
 }
 
 /** production.getInspection 查询面;未接入(或引用不存在)时 not-connected,不返回猜测结果 */

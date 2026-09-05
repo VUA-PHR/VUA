@@ -504,7 +504,8 @@ export function createLiveModelProduction(
       ),
 
     recover: (taskId: string, decision: RecoverDecision) =>
-      // decisionId 由 Kernel 生成(冻结纪律);渲染层入参仅是占位,不随请求下发
+      // decisionId 由 Kernel 受理时生成并绑定(taskId + revision + decision),
+      // 渲染层不携带该概念,请求只表达语义选择
       submitIntent(
         "production.recover",
         { taskId, decision: decision.kind, commandId: crypto.randomUUID() },

@@ -242,7 +242,7 @@ describe("live production port over the Kernel route (F-3)", () => {
     await vi.waitFor(async () => expect(runStateOf(await port.snapshot())).toBe("failed_recoverable"));
 
     // 恢复决定 ID 由 Kernel 生成:渲染层不携带 decisionId,应用请求带 udid- 前缀
-    const recovered = await port.recover(confirmed.taskId, { kind: "rollback", decisionId: "renderer-placeholder" });
+    const recovered = await port.recover(confirmed.taskId, { kind: "rollback" });
     expect(recovered.kind).toBe("ok");
     const recoverCall = invokeSpy.mock.calls.filter(([request]) => request.method === "production.recover").at(-1)?.[0];
     expect(recoverCall).toMatchObject({ kind: "command", params: { taskId: confirmed.taskId, decision: "rollback" } });
@@ -256,9 +256,9 @@ describe("live production port over the Kernel route (F-3)", () => {
     expect(recordOf(await port.snapshot())).not.toBeNull();
 
     // 终态成功不可恢复;未知任务引用拒绝
-    expect(await port.recover(recovered.taskId, { kind: "continue", decisionId: "x" }))
+    expect(await port.recover(recovered.taskId, { kind: "continue" }))
       .toMatchObject({ kind: "rejected", reason: "not_recoverable" });
-    expect(await port.recover("__missing__", { kind: "rollback", decisionId: "x" }))
+    expect(await port.recover("__missing__", { kind: "rollback" }))
       .toMatchObject({ kind: "rejected", reason: "unknown_ref" });
   });
 
@@ -269,7 +269,7 @@ describe("live production port over the Kernel route (F-3)", () => {
     expect(await port.startInspection(material!)).toEqual({ kind: "unavailable" });
     expect(await port.requestPlan("i-1")).toEqual({ kind: "unavailable" });
     expect(await port.confirmPlan("p-1", 1)).toEqual({ kind: "unavailable" });
-    expect(await port.recover("t-1", { kind: "rollback", decisionId: "d" })).toEqual({ kind: "unavailable" });
+    expect(await port.recover("t-1", { kind: "rollback" })).toEqual({ kind: "unavailable" });
     expect(await port.getInspection("i-1")).toEqual({ schemaVersion: 1, kind: "not-connected" });
     expect(await port.getPlan("p-1")).toEqual({ schemaVersion: 1, kind: "not-connected" });
     expect(await port.getBuildRecord("r-1")).toEqual({ schemaVersion: 1, kind: "not-connected" });

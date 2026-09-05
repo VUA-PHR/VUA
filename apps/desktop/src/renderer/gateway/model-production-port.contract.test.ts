@@ -62,7 +62,7 @@ for (const { label, make } of implementations) {
     assert.equal((await port.requestPlan("i-1")).kind, "unavailable");
     assert.equal((await port.confirmPlan("p-1", 1)).kind, "unavailable");
     assert.equal(
-      (await port.recover("t-1", { kind: "rollback", decisionId: "d-1" })).kind,
+      (await port.recover("t-1", { kind: "rollback" })).kind,
       "unavailable",
     );
     assert.equal((await port.getInspection("i-1")).kind, "not-connected");
@@ -227,7 +227,7 @@ test("fixture(production-success): 成功生命周期——completed + 构建记
   assert.equal(view.runState, "completed");
   assert.equal(view.buildRecord?.status, "succeeded");
   // 终态不接受恢复
-  const recovered = await port.recover(view.taskId, { kind: "rollback", decisionId: "d-1" });
+  const recovered = await port.recover(view.taskId, { kind: "rollback" });
   assert.equal(recovered.kind, "rejected");
   if (recovered.kind === "rejected") assert.equal(recovered.reason, "not_recoverable");
 });
@@ -254,10 +254,10 @@ test("fixture(production-drifted): 漂移——failed_recoverable;rollback 演�
 
   // 未知任务引用被拒绝
   assert.equal(
-    (await port.recover("__missing__", { kind: "rollback", decisionId: "d-1" })).kind,
+    (await port.recover("__missing__", { kind: "rollback" })).kind,
     "rejected",
   );
-  const recovered = await port.recover(view.taskId, { kind: "rollback", decisionId: "d-2" });
+  const recovered = await port.recover(view.taskId, { kind: "rollback" });
   assert.equal(recovered.kind, "ok");
   await sleep(30);
   const done = (await port.snapshot()).productionRun;
@@ -283,7 +283,7 @@ test("fixture(production-drifted): continue 从安全点继续执行到 complete
   const view = (await port.snapshot()).productionRun;
   assert.equal(view.kind, "run");
   if (view.kind !== "run") return;
-  const recovered = await port.recover(view.taskId, { kind: "continue", decisionId: "d-3" });
+  const recovered = await port.recover(view.taskId, { kind: "continue" });
   assert.equal(recovered.kind, "ok");
   await sleep(60);
   const done = (await port.snapshot()).productionRun;
@@ -308,7 +308,7 @@ test("fixture(production-expired): 超时——expired;continue 回到待确认�
   // expired 投影为 cancelled(工作流词表纪律:过期 ≠ 失败)
   assert.equal(expiredTask?.status, "cancelled");
 
-  const recovered = await port.recover(view.taskId, { kind: "continue", decisionId: "d-4" });
+  const recovered = await port.recover(view.taskId, { kind: "continue" });
   assert.equal(recovered.kind, "ok");
   if (recovered.kind !== "ok") return;
   const awaiting = (await port.snapshot()).productionRun;
@@ -341,7 +341,7 @@ test("fixture(production-rollback): 回滚生命周期——recover 后 rolled_b
   assert.equal(view.kind, "run");
   if (view.kind !== "run") return;
   assert.equal(view.runState, "failed_recoverable");
-  const recovered = await port.recover(view.taskId, { kind: "rollback", decisionId: "d-5" });
+  const recovered = await port.recover(view.taskId, { kind: "rollback" });
   assert.equal(recovered.kind, "ok");
   await sleep(30);
   const done = (await port.snapshot()).productionRun;

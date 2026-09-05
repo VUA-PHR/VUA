@@ -596,10 +596,8 @@ export function WorkshopPage({
       onRecover={(kind: RecoverDecisionKind) => {
         if (productionRun.kind !== "run") return;
         const taskId = productionRun.taskId;
-        // 决定 ID 占位:正式实现由 Kernel 决定面生成(草案恢复纪律)
-        runFlowIntent("recover", () =>
-          gateway.modelProduction.recover(taskId, { kind, decisionId: crypto.randomUUID() }),
-        );
+        // 只表达语义选择;用户决定 ID 由 Kernel 受理时生成并绑定
+        runFlowIntent("recover", () => gateway.modelProduction.recover(taskId, { kind }));
       }}
     />
   );
