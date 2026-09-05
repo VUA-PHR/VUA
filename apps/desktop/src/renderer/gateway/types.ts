@@ -26,7 +26,12 @@ export type CapabilityState =
 export interface CapabilityReport {
   state: CapabilityState;
   /** 说明文案 key(strings.capability.details);无补充说明时省略 */
-  detailKey?: "detectorsMissing" | "taskEngineMissing" | "catalogMissing" | "packagesEngineMissing";
+  detailKey?:
+    | "detectorsMissing"
+    | "taskEngineMissing"
+    | "catalogMissing"
+    | "packagesEngineMissing"
+    | "warehouseMissing";
 }
 
 /** 七态全集:与 strings.capability.states 一一对应(契约测试与展台共用) */
@@ -48,6 +53,7 @@ export const capabilityDetailKeys: readonly CapabilityDetailKey[] = [
   "taskEngineMissing",
   "catalogMissing",
   "packagesEngineMissing",
+  "warehouseMissing",
 ];
 
 export type Unsubscribe = () => void;

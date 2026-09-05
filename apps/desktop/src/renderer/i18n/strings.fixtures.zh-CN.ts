@@ -181,17 +181,45 @@ export const fixtureStrings = {
     unity: "Unity 编辑器",
     vrcsdk: "VRChat SDK",
   },
-  /** 本地素材图册演示负载(C-ACQUIRE,ADR-0004 后 BLM 适配移除;文件名/路径/
-   *  可执行内容均为数据负载,检查结论词表由代码承载,不进入字符串值) */
+  /** Warehouse 条目演示负载(F4-6 条目模型;文件夹名/显示名/相对路径/拒绝
+   *  理由均为数据负载,状态/角色/模式词表由代码承载,不进入字符串值) */
   acquire: {
-    scanDirs: ["~/Downloads/VRChat 素材"],
-    artifacts: {
-      summerPack: { fileName: "Summer_Uniform_v1.2.zip" },
-      mikoDress: { fileName: "Miko_Dress_set.zip" },
-      stageSet: { fileName: "Stage_Set_pack.zip" },
+    entries: {
+      summerUniform: {
+        displayName: "夏日制服 ver1.2",
+        folderName: "Summer_Uniform_v1.2",
+        original: {
+          relativePath: "Summer_Uniform_v1.2.unitypackage",
+          suggestedFileName: "Summer_Uniform_v1.2.unitypackage",
+        },
+      },
+      mikoDress: {
+        displayName: "巫女裙套装",
+        folderName: "Miko_Dress_set",
+        original: {
+          relativePath: "orig/Miko_Dress_set_v1.0.unitypackage",
+          suggestedFileName: "Miko_Dress_set_v1.0.unitypackage",
+        },
+        generatedVpm: {
+          relativePath: "generated/Miko_Dress_set_v1.0.vpm",
+          suggestedFileName: "Miko_Dress_set_v1.0.vpm",
+        },
+      },
+      stageSet: {
+        displayName: "舞台道具包",
+        folderName: "Stage_Set_pack",
+        original: {
+          relativePath: "Stage_Set_pack_v0.3.unitypackage",
+          suggestedFileName: "Stage_Set_pack_v0.3.unitypackage",
+        },
+      },
       suspicious: {
-        fileName: "free_avatar_bundle.zip",
-        executables: ["setup.exe", "scripts/install.bat"],
+        displayName: "免费 Avatar 合集",
+        folderName: "free_avatar_bundle",
+        original: {
+          relativePath: "pack/free_avatar_bundle.zip",
+          rejectionReason: "检出可执行内容:setup.exe、scripts/install.bat",
+        },
       },
     },
   },

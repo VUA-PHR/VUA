@@ -16,7 +16,7 @@ export const fixtureNames = [
   "demo-tasks",
   "demo-env-fresh",
   "demo-env-fail",
-  "demo-acquire-scan",
+  "demo-acquire-empty",
   "demo-packages",
   "production-inspect",
   "production-plan",

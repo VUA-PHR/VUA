@@ -9,7 +9,7 @@ import { createMemorySettingsPort } from "./settings-port.ts";
 import { fixtureRecipeGraph } from "./fixture-recipes.ts";
 import { fixtureReleaseWall } from "./fixture-release.ts";
 import { fixtureWorkshopReplay } from "./fixture-workshop.ts";
-import { fixtureAcquireEmpty, fixtureAcquireGallery } from "./fixture-acquire.ts";
+import { fixtureAcquireEmpty, fixtureAcquireEntries, fixtureAcquireEntryDetail } from "./fixture-acquire.ts";
 import { createFixturePackages } from "./fixture-packages.ts";
 import { createSignal } from "./fixture-signal.ts";
 import { createFixtureProduction, type ProductionTaskLink } from "./fixture-production.ts";
@@ -381,14 +381,18 @@ function createFixtureToolCatalog(): ToolCatalogPort {
 }
 
 /**
- * fixture 获取端口(C-ACQUIRE,ADR-0004 后 BLM 适配移除):
- * demo-acquire-scan 走查"扫描范围已指定、尚无素材到达"的空图册;
- * 其余场景给三种检查结论 + 预览已提取/未提取的混合图册。
+ * fixture 获取端口(C-ACQUIRE,F4-6 条目模型):
+ * demo-acquire-empty 走查"空仓库"的诚实空态;其余场景给四条目混合负载
+ * (两 kind / 三检查状态 / 两副本角色 / 模式覆盖与跟随全局)。
  */
 function createFixtureAcquire(empty: boolean): AcquirePort {
-  const view = empty ? fixtureAcquireEmpty() : fixtureAcquireGallery();
+  const view = empty ? fixtureAcquireEmpty() : fixtureAcquireEntries();
   return {
     snapshot: () => Promise.resolve(view),
+    entryDetail: (warehouseItemId) => {
+      if (empty) return Promise.resolve({ schemaVersion: 1, kind: "not-connected" });
+      return Promise.resolve(fixtureAcquireEntryDetail(warehouseItemId));
+    },
     subscribe: () => () => {},
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
@@ -538,7 +542,7 @@ export function fixtureGateway(
     tutorial: createInactiveTutorialPort(),
     modelProduction: production ?? createFixtureModelProduction(workshop),
     toolCatalog: createFixtureToolCatalog(),
-    acquire: createFixtureAcquire(name === "demo-acquire-scan"),
+    acquire: createFixtureAcquire(name === "demo-acquire-empty"),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),

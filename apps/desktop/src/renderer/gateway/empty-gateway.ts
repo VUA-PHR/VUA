@@ -1,6 +1,6 @@
 import { createInactiveTutorialPort } from "./tutorial-port.ts";
 import { createMemorySettingsPort } from "./settings-port.ts";
-import type { AcquirePort, AcquireView } from "./acquire-port.ts";
+import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -49,10 +49,12 @@ const productionUnavailable: CapabilityReport = {
 const toolCatalogView: ToolCatalogView = { schemaVersion: 1, kind: "not-connected" };
 
 const acquireView: AcquireView = { schemaVersion: 1, kind: "not-connected" };
+const acquireEntryNotConnected: AcquireEntryDetailView = { schemaVersion: 1, kind: "not-connected" };
 
 function createEmptyAcquire(): AcquirePort {
   return {
     snapshot: () => Promise.resolve(acquireView),
+    entryDetail: () => Promise.resolve(acquireEntryNotConnected),
     subscribe: () => () => {},
     capability: () => Promise.resolve(unavailable),
   };

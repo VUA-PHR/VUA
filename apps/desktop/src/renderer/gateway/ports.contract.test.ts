@@ -134,28 +134,46 @@ for (const { label, source, make } of implementations) {
     }
   });
 
-  test(`${label}: 获取视图形态合法(C-ACQUIRE);隔离件必带可执行清单`, async () => {
+  test(`${label}: 获取视图形态合法(C-ACQUIRE,F4-6 条目模型)`, async () => {
     const gateway = make();
     const view = await gateway.acquire.snapshot();
     assert.equal(view.schemaVersion, 1);
     if (source === "fixture") {
-      assert.equal(view.kind, "gallery");
-      if (view.kind !== "gallery") return;
-      assert.ok(view.artifacts.length > 0);
-      for (const artifact of view.artifacts) {
-        assert.ok(artifact.artifactId.length > 0);
-        assert.ok(artifact.fileName.length > 0);
-        assert.ok(Array.isArray(artifact.previewImageUrls));
-        assert.ok(["pending", "clean", "quarantined"].includes(artifact.inspection.verdict));
-        // 诚实纪律:隔离结论必须附带检出清单;未见可执行内容/待检查不得虚构清单
-        if (artifact.inspection.verdict === "quarantined") {
-          assert.ok(artifact.inspection.executables.length > 0);
-        } else {
-          assert.equal(artifact.inspection.executables.length, 0);
+      assert.equal(view.kind, "entries");
+      if (view.kind !== "entries") return;
+      for (const entry of view.entries) {
+        assert.ok(entry.warehouseItemId.length > 0);
+        assert.ok(entry.folderName.length > 0);
+        assert.ok(entry.displayName.length > 0);
+        assert.ok(["imported_material", "downloaded_material"].includes(entry.kind));
+        // 模式闭集:覆盖为 null(跟随全局)或两模式之一;生效模式必为两模式之一
+        assert.ok(
+          entry.artifactMode === null ||
+            ["use_original_unitypackage", "generate_vpm"].includes(entry.artifactMode),
+        );
+        assert.ok(["use_original_unitypackage", "generate_vpm"].includes(entry.effectiveArtifactMode));
+        assert.ok(entry.artifacts.length > 0);
+        for (const artifact of entry.artifacts) {
+          assert.ok(artifact.artifactSha256.startsWith("sha256:"));
+          assert.ok(artifact.relativePath.length > 0);
+          assert.ok(["pending", "clean", "quarantined"].includes(artifact.state));
+          assert.ok(["original", "generated_vpm"].includes(artifact.role));
+          assert.ok(Number.isSafeInteger(artifact.sizeBytes) && artifact.sizeBytes >= 0);
         }
       }
     } else {
       assert.equal(view.kind, "not-connected");
+    }
+  });
+
+  test(`${label}: 未知条目详情不猜测(C-ACQUIRE)`, async () => {
+    const gateway = make();
+    const detail = await gateway.acquire.entryDetail("__missing__");
+    assert.equal(detail.schemaVersion, 1);
+    if (source === "fixture") {
+      assert.equal(detail.kind, "not-found");
+    } else {
+      assert.equal(detail.kind, "not-connected");
     }
   });
 }
@@ -271,25 +289,55 @@ test("empty(C-ENV): planFix 恒 unavailable", async () => {
   assert.equal(result.kind, "unavailable");
 });
 
-/* ---- C-ACQUIRE:本地图册走查(ADR-0004 后 BLM 适配移除) ---- */
+/* ---- C-ACQUIRE:本地图册走查(F4-6 条目模型;扫描范围场景已随裁决退役) ---- */
 
-test("fixture(C-ACQUIRE): demo-acquire-scan 场景为扫描范围已指定的空图册", async () => {
-  const gateway = fixtureGateway("demo-acquire-scan");
+test("fixture(C-ACQUIRE): demo-acquire-empty 场景为空仓库(诚实空态)", async () => {
+  const gateway = fixtureGateway("demo-acquire-empty");
   const view = await gateway.acquire.snapshot();
-  assert.equal(view.kind, "gallery");
-  if (view.kind !== "gallery") return;
-  assert.ok(view.scanDirs.length > 0);
-  assert.equal(view.artifacts.length, 0);
+  assert.equal(view.kind, "entries");
+  if (view.kind !== "entries") return;
+  assert.equal(view.entries.length, 0);
 });
 
-test("fixture(C-ACQUIRE): 默认场景覆盖三种检查结论与预览已提取/未提取两种形态", async () => {
+test("fixture(C-ACQUIRE): 默认场景覆盖两 kind、三检查状态、两副本角色与两种模式形态", async () => {
   const gateway = fixtureGateway("demo-mixed");
   const view = await gateway.acquire.snapshot();
-  assert.equal(view.kind, "gallery");
-  if (view.kind !== "gallery") return;
-  const verdicts = new Set(view.artifacts.map((artifact) => artifact.inspection.verdict));
-  assert.ok(verdicts.has("pending") && verdicts.has("clean") && verdicts.has("quarantined"));
-  // 图册形态:至少一件带多图预览(相册交互),至少一件无预览(诚实空槽)
-  assert.ok(view.artifacts.some((artifact) => artifact.previewImageUrls.length > 1));
-  assert.ok(view.artifacts.some((artifact) => artifact.previewImageUrls.length === 0));
+  assert.equal(view.kind, "entries");
+  if (view.kind !== "entries") return;
+  const kinds = new Set(view.entries.map((entry) => entry.kind));
+  assert.ok(kinds.has("imported_material") && kinds.has("downloaded_material"));
+  const states = new Set(view.entries.flatMap((entry) => entry.artifacts.map((a) => a.state)));
+  assert.ok(states.has("pending") && states.has("clean") && states.has("quarantined"));
+  const roles = new Set(view.entries.flatMap((entry) => entry.artifacts.map((a) => a.role)));
+  assert.ok(roles.has("original") && roles.has("generated_vpm"));
+  // 模式形态:既有覆盖(generate_vpm),也有跟随全局(null)
+  assert.ok(view.entries.some((entry) => entry.artifactMode === "generate_vpm"));
+  assert.ok(view.entries.some((entry) => entry.artifactMode === null));
+});
+
+test("fixture(C-ACQUIRE): 已知条目详情携带检查事实;隔离件附拒绝理由", async () => {
+  const gateway = fixtureGateway("demo-mixed");
+  const view = await gateway.acquire.snapshot();
+  if (view.kind !== "entries") return;
+  const quarantined = view.entries.find((entry) =>
+    entry.artifacts.some((artifact) => artifact.state === "quarantined"),
+  );
+  assert.ok(quarantined !== undefined);
+  const detail = await gateway.acquire.entryDetail(quarantined.warehouseItemId);
+  assert.equal(detail.kind, "detail");
+  if (detail.kind !== "detail") return;
+  assert.equal(detail.entry.warehouseItemId, quarantined.warehouseItemId);
+  for (const fact of detail.entry.artifacts) {
+    // 诚实纪律:quarantined 必附拒绝理由;pending 无判定时刻;非隔离无理由
+    if (fact.state === "quarantined") {
+      assert.ok(fact.rejectionReason !== null && fact.rejectionReason.length > 0);
+      assert.ok(fact.inspectedAt !== null);
+    } else if (fact.state === "pending") {
+      assert.equal(fact.inspectedAt, null);
+      assert.equal(fact.rejectionReason, null);
+    } else {
+      assert.equal(fact.rejectionReason, null);
+      assert.ok(fact.inspectedAt !== null);
+    }
+  }
 });

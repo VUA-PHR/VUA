@@ -85,6 +85,7 @@ export const strings: Strings = {
       taskEngineMissing: "任务引擎尚未接入",
       catalogMissing: "工具目录尚未接入",
       packagesEngineMissing: "包管理引擎尚未接入",
+      warehouseMissing: "仓库读取面尚未接入",
     },
   },
   /** 任务中心(G3;九态文案在 taskStatus,此处为框架与操作文案) */
@@ -763,37 +764,53 @@ rolled_back: "已回滚",
       /** 调试模式开启时的原始数据区块标题(app/debug-mode.ts) */
       debugTitle: "调试信息",
     },
-    /** 本地素材接管(C-ACQUIRE,双轨之二,ui-ux §2.10) */
+    /** 本地素材接管(C-ACQUIRE,F4-6 条目模型,双轨之二,ui-ux §2.10) */
     acquire: {
       viewCatalog: "目录",
       viewLocal: "本地素材",
       viewSwitchAria: "目录/本地素材视图切换",
       /** 双轨视图头(S-IX-3):轨道卡描述行 */
       trackCatalogDesc: "云端目录快照;购买与下载始终在来源页或官方工具完成",
-      trackLocalDesc: "扫描范围内的本地素材图册;到达素材先检查再使用",
-      scanTitle: "扫描范围",
-      scanEmpty: "尚未指定扫描范围。指定后,到达该范围的新素材会先接受检查,再供使用。",
-      artifactsTitle: "到达素材",
-      artifactsEmpty: "还没有素材到达。",
+      trackLocalDesc: "仓库中的素材包条目图册;素材先检查再使用",
+      entriesTitle: "仓库条目",
+      entriesEmpty: "仓库中还没有素材包条目。素材经授权下载或批量导入进入仓库。",
+      entryCount: "共 {count} 个条目",
+      artifactsTitle: "条目工件",
       previewEmpty: "预览图尚未提取",
-      sizeUnknown: "大小未知",
       sizeB: "{amount} B",
       sizeKb: "{amount} KB",
       sizeMb: "{amount} MB",
       sizeGb: "{amount} GB",
-      /** 检查结论(键与 gateway ArtifactInspectionVerdict 对应) */
+      /** 检查状态(键与 gateway WarehouseArtifactState 对应) */
       verdict: {
         pending: "待检查",
         clean: "未见可执行内容",
         quarantined: "已隔离",
       },
-      executablesTitle: "检出可执行内容",
+      /** 副本角色(键与 gateway WarehouseArtifactRole 对应) */
+      role: {
+        original: "原始包",
+        generated_vpm: "生成 VPM",
+      },
+      /** 条目路径(键与 gateway WarehouseEntryKind 对应) */
+      kind: {
+        imported_material: "批量导入",
+        downloaded_material: "授权下载",
+      },
+      /** 产物模式(键与 gateway WarehouseArtifactMode 对应;模式行是 F4-9 编辑展示位) */
+      mode: {
+        use_original_unitypackage: "使用原始 UnityPackage",
+        generate_vpm: "生成 VPM",
+      },
+      modeOverride: "覆盖全局",
+      modeFollowGlobal: "跟随全局",
+      detailLoadFailed: "条目详情加载失败。",
+      detailNotFound: "未找到该条目。它可能已被移除,或本地数据需要更新。",
       neverRunNote: "压缩包内的可执行内容绝不会被自动运行;已隔离素材不能被{recipe}引用。",
-      pendingNote: "检查完成前,该素材不能被{recipe}引用。",
+      pendingNote: "检查完成前,待检查素材不能被{recipe}引用。",
       states: {
         notConnectedTitle: "本地素材图册尚未接入",
-        notConnectedDescription:
-          "能力接入后,这里会以图册显示扫描范围内到达素材的预览与检查结论。",
+        notConnectedDescription: "能力接入后,这里会以图册显示仓库中的素材包条目与检查结论。",
       },
     },
     states: {
@@ -1342,7 +1359,7 @@ rolled_back: "已回滚",
     demoTasks: "演示 · 任务",
     demoEnvFresh: "演示 · 环境未检",
     demoEnvFail: "演示 · 检测失败",
-    demoAcquireScan: "演示 · 空本地图册",
+    demoAcquireEmpty: "演示 · 空仓库",
     demoPackages: "演示 · 包管理",
     productionInspect: "演示 · 生产检查",
     productionPlan: "演示 · 生产计划审阅",

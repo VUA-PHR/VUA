@@ -16,7 +16,7 @@ const options: { name: ScenarioName; label: string }[] = [
   { name: "demo-tasks", label: copy.demoTasks },
   { name: "demo-env-fresh", label: copy.demoEnvFresh },
   { name: "demo-env-fail", label: copy.demoEnvFail },
-  { name: "demo-acquire-scan", label: copy.demoAcquireScan },
+  { name: "demo-acquire-empty", label: copy.demoAcquireEmpty },
   { name: "demo-packages", label: copy.demoPackages },
   { name: "production-inspect", label: copy.productionInspect },
   { name: "production-plan", label: copy.productionPlan },

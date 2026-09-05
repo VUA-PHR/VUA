@@ -1,8 +1,16 @@
 /**
- * 本地素材接管的纯函数模型(C-ACQUIRE)。
- * 大小展示:未知(null)由页面回落"大小未知",本函数只处理已知字节数;
+ * Warehouse 本地轨的纯函数模型(C-ACQUIRE,F4-6 条目模型)。
+ * 大小展示:条目工件登记面必填字节数,本函数只处理已知字节数;
  * 单位键与 i18n strings.warehouse.acquire 的 sizeB/sizeKb/sizeMb/sizeGb 对应。
+ * 卡片与模式行是页面的数据源纯函数:条目 × 工件展开保留图册卡片交互
+ * (组件零重写),模式行(覆盖 or 跟随全局)是 F4-9 编辑入口的展示位。
  */
+
+import type {
+  WarehouseArtifact,
+  WarehouseArtifactMode,
+  WarehouseEntry,
+} from "../../gateway/index.ts";
 
 export type SizeUnitKey = "sizeB" | "sizeKb" | "sizeMb" | "sizeGb";
 
@@ -25,4 +33,45 @@ export function sizeText(sizeBytes: number): SizeText {
   const amount =
     unit === 0 ? String(Math.round(value)) : String(Math.round(value * 10) / 10);
   return { amount, unitKey: units[unit] ?? "sizeB" };
+}
+
+/** 卡片墙数据源:条目 × 工件展开(工件卡携带条目上下文) */
+export interface AcquireArtifactCard {
+  /** 列表 key:条目身份 + 内容身份(同条目内 sha 唯一) */
+  readonly key: string;
+  readonly entry: WarehouseEntry;
+  readonly artifact: WarehouseArtifact;
+}
+
+export function artifactCards(
+  entries: readonly WarehouseEntry[],
+): readonly AcquireArtifactCard[] {
+  return entries.flatMap((entry) =>
+    entry.artifacts.map((artifact) => ({
+      key: `${entry.warehouseItemId}:${artifact.artifactSha256}`,
+      entry,
+      artifact,
+    })),
+  );
+}
+
+/** 卡片搜索:显示名 / 文件夹名 / 相对路径子串匹配(大小写不敏感;空词全过) */
+export function artifactCardMatches(card: AcquireArtifactCard, query: string): boolean {
+  const text = query.trim().toLowerCase();
+  if (text === "") return true;
+  return (
+    card.entry.displayName.toLowerCase().includes(text) ||
+    card.entry.folderName.toLowerCase().includes(text) ||
+    card.artifact.relativePath.toLowerCase().includes(text)
+  );
+}
+
+/** 产物模式行:覆盖与否 + 生效模式(覆盖 ?? 全局,读取面已动态解析) */
+export interface EntryModeLine {
+  readonly overridden: boolean;
+  readonly effective: WarehouseArtifactMode;
+}
+
+export function entryModeLine(entry: WarehouseEntry): EntryModeLine {
+  return { overridden: entry.artifactMode !== null, effective: entry.effectiveArtifactMode };
 }

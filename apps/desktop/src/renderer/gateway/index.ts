@@ -106,10 +106,17 @@ export type {
 } from "./model-production-port.ts";
 export type { ToolCard, ToolCatalogPort, ToolCatalogView, ToolCategory } from "./tool-catalog-port.ts";
 export type {
+  AcquireEntryDetailView,
   AcquirePort,
   AcquireView,
-  ArtifactInspectionVerdict,
-  LocalArtifact,
+  WarehouseArtifact,
+  WarehouseArtifactFact,
+  WarehouseArtifactMode,
+  WarehouseArtifactRole,
+  WarehouseArtifactState,
+  WarehouseEntry,
+  WarehouseEntryDetail,
+  WarehouseEntryKind,
 } from "./acquire-port.ts";
 export type {
   ChangeRequest,
