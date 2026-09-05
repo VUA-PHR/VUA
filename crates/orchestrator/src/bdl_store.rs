@@ -377,6 +377,17 @@ impl BdlStore {
         select_download_events(&connection, download_id)
     }
 
+    /// Distinct download identities with persisted events — the enumeration
+    /// the crash-recovery path folds to find non-terminal (orphaned) work.
+    pub fn download_ids(&self) -> Result<Vec<String>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let mut statement =
+            connection.prepare("SELECT DISTINCT download_id FROM download_events ORDER BY download_id")?;
+        let rows = statement.query_map([], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(BdlStoreError::from)
+    }
+
     /// First sight of a content: the untrusted row. Idempotent per content —
     /// re-downloads and batch-import sightings return `Existing`; a size
     /// disagreement under the same sha256 is corruption, never a silent keep.

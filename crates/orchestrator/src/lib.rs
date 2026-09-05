@@ -5,6 +5,7 @@
 // errors would leak through serde shapes for no wire benefit.
 #![allow(clippy::result_large_err)]
 
+mod artifact_inspection;
 mod assembly;
 mod bdl_store;
 mod booth_extraction;
@@ -44,6 +45,9 @@ mod vpm_backend;
 mod win_registry;
 mod workflow;
 
+pub use artifact_inspection::{
+    ArtifactInspectionRequest, ArtifactInspector, InspectionError, InspectionPolicy,
+};
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
@@ -70,7 +74,9 @@ pub use contracts::{
     TaskState, ENVELOPE_SCHEMA_VERSION,
 };
 pub use download_events::{
-    DownloadEventV01, DownloadEventKind, DownloadFailureKind, DOWNLOAD_EVENT_SCHEMA_VERSION,
+    backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
+    DownloadEventKind, DownloadEventV01, DownloadFailureKind, DownloadLifecycle, DownloadPhase,
+    IngestOutcome, RetryDecision, DOWNLOAD_EVENT_SCHEMA_VERSION, MAX_DOWNLOAD_ATTEMPTS,
 };
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
