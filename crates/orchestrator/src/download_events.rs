@@ -481,6 +481,57 @@ impl<'a> DownloadEventConsumer<'a> {
         }
         Ok(lifecycles)
     }
+
+    /// The completion-manifest entry for one download: derived from the
+    /// persisted event log, present only while the fold sits at
+    /// `TransferDone` (a terminal download has no grant; an unfinished one
+    /// has nothing to inspect). The token is a consistency binding over the
+    /// completed delivery — AMF-internal, never part of the event
+    /// vocabulary — so an inspector call proves it is acting on THIS
+    /// completed event rather than an arbitrary path a caller produced.
+    pub fn staging_completion(
+        &self,
+        download_id: &str,
+    ) -> Result<Option<StagingCompletion>, ConsumerError> {
+        let history = self.store.download_events(download_id)?;
+        let lifecycle = fold_lifecycle(download_id, &history)?;
+        if lifecycle.phase != DownloadPhase::TransferDone || !lifecycle.started {
+            return Ok(None);
+        }
+        let completed = history
+            .iter()
+            .rev()
+            .find(|event| event.kind == DownloadEventKind::Completed)
+            .expect("a TransferDone fold has a completed event");
+        let stored_path = completed.stored_path.clone().expect(
+            "the frozen schema requires storedPath on download.completed",
+        );
+        let reported_size_bytes = completed.received_bytes.expect(
+            "the frozen schema requires receivedBytes on download.completed",
+        );
+        Ok(Some(StagingCompletion {
+            staging_token: staging_token_for(download_id, &completed.occurred_at),
+            download_id: download_id.to_string(),
+            stored_path,
+            reported_size_bytes,
+            suggested_file_name: completed.suggested_file_name.clone(),
+        }))
+    }
+}
+
+/// Completion-manifest handle: the binding between a completed delivery and
+/// the staged file AMF is willing to inspect.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StagingCompletion {
+    pub staging_token: String,
+    pub download_id: String,
+    pub stored_path: String,
+    pub reported_size_bytes: u64,
+    pub suggested_file_name: Option<String>,
+}
+
+fn staging_token_for(download_id: &str, occurred_at: &str) -> String {
+    format!("stg1:{download_id}:{occurred_at}")
 }
 
 #[cfg(test)]

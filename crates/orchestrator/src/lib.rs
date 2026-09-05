@@ -47,7 +47,8 @@ mod win_registry;
 mod workflow;
 
 pub use artifact_inspection::{
-    ArtifactInspectionRequest, ArtifactInspector, InspectionError, InspectionPolicy,
+    ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
+    InspectionPolicy, StagingRejection,
 };
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
@@ -81,7 +82,8 @@ pub use contracts::{
 pub use download_events::{
     backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
     DownloadEventKind, DownloadEventV01, DownloadFailureKind, DownloadLifecycle, DownloadPhase,
-    IngestOutcome, RetryDecision, DOWNLOAD_EVENT_SCHEMA_VERSION, MAX_DOWNLOAD_ATTEMPTS,
+    IngestOutcome, RetryDecision, StagingCompletion, DOWNLOAD_EVENT_SCHEMA_VERSION,
+    MAX_DOWNLOAD_ATTEMPTS,
 };
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
