@@ -1,9 +1,10 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import type { ApplicationEventV01 } from "@vua/contracts";
+import type { ApplicationEventV01, RemoteContentEventV1 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
+import { RemoteContentManager } from "./remote-content.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
 import {
   installLocalContentNavigationPolicy,
@@ -15,6 +16,7 @@ import {
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
+let remoteContent: RemoteContentManager | null = null;
 let shutdownStarted = false;
 
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
@@ -35,6 +37,15 @@ function broadcastGatewayEvent(rendererUrl: string | undefined, event: Applicati
   for (const window of BrowserWindow.getAllWindows()) {
     if (isAllowedLocalSender(window.webContents.getURL(), rendererUrl)) {
       window.webContents.send("vua:gateway:event", event);
+    }
+  }
+}
+
+/** 远程内容事件 → 全部本地来源窗口(隔离基座 F4-2;违规透明上报) */
+function broadcastRemoteContentEvent(rendererUrl: string | undefined, event: RemoteContentEventV1): void {
+  for (const window of BrowserWindow.getAllWindows()) {
+    if (isAllowedLocalSender(window.webContents.getURL(), rendererUrl)) {
+      window.webContents.send("vua:remote-content:event", event);
     }
   }
 }
@@ -132,6 +143,31 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     assertLocalSender(senderFrameUrl(event));
     BrowserWindow.fromWebContents(event.sender)?.close();
   });
+
+  // 远程内容窄面(F4-2 隔离基座):Renderer 只发语义动作;来源允许清单在
+  // Main 侧裁决,视图内违规以事件透明上报。种子允许清单只含目录浏览域,
+  // 真实值随 catalog 契约冻结(F4-1②)调整
+  ipcMain.handle("vua:remote-content:open", (event, request: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    const url = (request as { url?: unknown } | null)?.url;
+    if (typeof url !== "string") throw new Error("invalid remote content request");
+    return remoteContent!.open(url);
+  });
+  ipcMain.handle("vua:remote-content:navigate", (event, viewId: unknown, url: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string" || typeof url !== "string") throw new Error("invalid remote content request");
+    return remoteContent!.navigate(viewId, url);
+  });
+  ipcMain.handle("vua:remote-content:close", (event, viewId: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string") throw new Error("invalid remote content request");
+    remoteContent!.close(viewId);
+  });
+  ipcMain.handle("vua:remote-content:set-visible", (event, viewId: unknown, visible: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string" || typeof visible !== "boolean") throw new Error("invalid remote content request");
+    return remoteContent!.setVisible(viewId, visible);
+  });
 }
 
 async function createWindow(): Promise<void> {
@@ -149,6 +185,22 @@ async function createWindow(): Promise<void> {
 
   installLocalContentNavigationPolicy(mainWindow.webContents, rendererUrl, (url) => shell.openExternal(url));
   mainWindow.once("ready-to-show", () => mainWindow?.show());
+
+  // 远程内容管理器(F4-2):独立 partition Session;目录浏览域为种子允许清单,
+  // 真实值随 catalog 契约冻结(F4-1②)调整;违规事件广播到本地来源窗口
+  remoteContent = new RemoteContentManager({
+    partition: "persist:vua-remote",
+    allowedOrigins: ["https://booth.pm"],
+    openExternal: (url) => void shell.openExternal(url),
+    broadcast: (event) => broadcastRemoteContentEvent(rendererUrl, event),
+  });
+  remoteContent.setHostWindow(mainWindow);
+  mainWindow.on("resize", () => remoteContent?.refreshBounds());
+  mainWindow.on("closed", () => {
+    remoteContent?.dispose();
+    remoteContent = null;
+    mainWindow = null;
+  });
 
   if (rendererUrl) await mainWindow.loadURL(rendererUrl);
   else await mainWindow.loadFile(path.join(__dirname, "../renderer/index.html"));

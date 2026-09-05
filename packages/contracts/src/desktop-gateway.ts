@@ -252,11 +252,57 @@ export interface DesktopDialogApiV1 {
   pickMaterialSource(intake: MaterialSourceIntakeV1): Promise<PickedMaterialSourceV1 | null>;
 }
 
+// ---- 远程内容窄面(F4 隔离浏览):Renderer 只发语义动作,不持任何 Electron
+// 对象;远程页面本身无 preload、无 Node、无本地 Gateway(隔离红线见
+// docs/architecture/desktop_ZH:Main 持有 Session/WebContentsView,Cookie 与
+// 下载令牌永不进渲染层) ----
+
+/** 远程内容视图状态(动作返回值;地址栏/前进后退 UI 的输入) */
+export interface RemoteContentViewStateV1 {
+  readonly viewId: string;
+  readonly url: string;
+  readonly visible: boolean;
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
+}
+
+/** 远程内容事件(Main → 本地渲染层;违规透明上报,不静默吞掉) */
+export type RemoteContentEventV1 =
+  | { readonly kind: "view-opened"; readonly viewId: string; readonly url: string }
+  | {
+      readonly kind: "navigated";
+      readonly viewId: string;
+      readonly url: string;
+      readonly canGoBack: boolean;
+      readonly canGoForward: boolean;
+    }
+  | { readonly kind: "view-closed"; readonly viewId: string }
+  | {
+      readonly kind: "blocked";
+      readonly viewId: string;
+      readonly url: string;
+      readonly reason:
+        | "origin_not_allowed"
+        | "download_denied"
+        | "popup_denied"
+        | "permission_denied";
+    };
+
+export interface RemoteContentApiV1 {
+  /** 打开远程视图并加载 URL;来源不在允许清单时以错误拒绝 */
+  open(request: { readonly url: string }): Promise<RemoteContentViewStateV1>;
+  navigate(viewId: string, url: string): Promise<RemoteContentViewStateV1>;
+  close(viewId: string): Promise<void>;
+  setVisible(viewId: string, visible: boolean): Promise<RemoteContentViewStateV1>;
+  events: { subscribe(listener: (event: RemoteContentEventV1) => void): () => void };
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
   readonly dialog: DesktopDialogApiV1;
   readonly window: DesktopWindowApiV1;
+  readonly remoteContent: RemoteContentApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

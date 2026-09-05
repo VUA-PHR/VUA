@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   ApplicationEventV01,
   DesktopGatewayRequestV1,
+  RemoteContentEventV1,
   VuaDesktopApiV1,
 } from "@vua/contracts";
 
@@ -14,6 +15,11 @@ const DESKTOP_GATEWAY_VERSION = 1 as const;
 const eventListeners = new WeakMap<
   (event: ApplicationEventV01) => void,
   (event: IpcRendererEvent, payload: ApplicationEventV01) => void
+>();
+
+const remoteContentListeners = new WeakMap<
+  (event: RemoteContentEventV1) => void,
+  (event: IpcRendererEvent, payload: RemoteContentEventV1) => void
 >();
 
 const api: VuaDesktopApiV1 = Object.freeze({
@@ -41,6 +47,26 @@ const api: VuaDesktopApiV1 = Object.freeze({
     minimize: () => ipcRenderer.invoke("vua:window:minimize"),
     toggleMaximize: () => ipcRenderer.invoke("vua:window:toggle-maximize"),
     close: () => ipcRenderer.invoke("vua:window:close"),
+  }),
+  // 远程内容窄面(F4-2):只发语义动作;远程页面本身无 preload、无本面
+  remoteContent: Object.freeze({
+    open: (request: { readonly url: string }) => ipcRenderer.invoke("vua:remote-content:open", request),
+    navigate: (viewId: string, url: string) => ipcRenderer.invoke("vua:remote-content:navigate", viewId, url),
+    close: (viewId: string) => ipcRenderer.invoke("vua:remote-content:close", viewId),
+    setVisible: (viewId: string, visible: boolean) =>
+      ipcRenderer.invoke("vua:remote-content:set-visible", viewId, visible),
+    events: Object.freeze({
+      subscribe: (listener: (event: RemoteContentEventV1) => void) => {
+        const wrapped = (_event: IpcRendererEvent, payload: RemoteContentEventV1) => listener(payload);
+        remoteContentListeners.set(listener, wrapped);
+        ipcRenderer.on("vua:remote-content:event", wrapped);
+        return () => {
+          const wrappedListener = remoteContentListeners.get(listener);
+          if (wrappedListener) ipcRenderer.removeListener("vua:remote-content:event", wrappedListener);
+          remoteContentListeners.delete(listener);
+        };
+      },
+    }),
   }),
 });
 
