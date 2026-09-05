@@ -124,6 +124,16 @@ JSON 序列化形式传输；`bridgeJob` 序列化**全部** Bridge 作业，而
 
 ## 修订记录
 
+- 2026-09-06:**M3 修订（T1 落地）。** 七方法参数面改订为域引用形状:
+  `startInspection` 四元组（路径一次性绑定）、`requestPlan = {inspectionId, mode}`、
+  `confirmPlan = {planId, observedRevision, riskChoice, rememberForSession?}`、
+  `recover = {taskId, decision, decisionId}`、查询面 `getInspection/getPlan/
+  getBuildRecord` 按领域身份直取;`getBuildRecord` 响应改 v0.2 投影
+  （evidenceSummary 取代 facts 不透明 JSON）;`inspectionId`/`planId` 领域身份
+  登记表与 `riskChoice` 枚举（snapshot_and_continue/continue/cancel/not_required）
+  随 `schemas/amf-production/v0.2/` 固定向量钉死。此修订为会签主稿
+  （`m3-production-revision-b-draft` + F 会签）的实现落地;状态仍为 M3 候选,
+  M3 验收时冻结。
 - 2026-09-05:**冻结。** B 线回复与 F 线确认（`b3318e0`）的词表裁定:Build Record
   权威/显示双词表（含 `aborted` 显示态与快照证据映射表）;`SourceIntake` 对齐素材入口
   schema 枚举（`direct_unity_package` / `local_reusable_vpm`）;新增阶段映射表;facts

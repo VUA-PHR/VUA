@@ -144,6 +144,18 @@ Bridge jobs of the run, not only the last. The Renderer displays them verbatim.
 
 ## Revision history
 
+- 2026-09-06: **M3 revision (T1 landed).** The seven-method parameter face
+  moves to domain-reference shapes: `startInspection` takes the four-tuple
+  (paths bound once), `requestPlan = {inspectionId, mode}`, `confirmPlan =
+  {planId, observedRevision, riskChoice, rememberForSession?}`, `recover =
+  {taskId, decision, decisionId}`, and the query faces address records by
+  domain identity; `getBuildRecord` responds with the v0.2 projection
+  (evidenceSummary replacing the opaque facts JSON); the `inspectionId`/
+  `planId` domain registry and the `riskChoice` enum
+  (snapshot_and_continue/continue/cancel/not_required) are pinned by
+  `schemas/amf-production/v0.2/` with fixed vectors. This lands the cosigned
+  main draft (`m3-production-revision-b-draft` + F cosign); the status
+  remains M3 candidate until acceptance freezes it.
 - 2026-09-05: **Frozen.** Vocabulary rulings from the B-line reply and the F-line
   confirmations (`b3318e0`): BuildRecord authority/display dual vocabulary with the
   `aborted` display state and the snapshot-evidence mapping; `SourceIntake` aligned to the
