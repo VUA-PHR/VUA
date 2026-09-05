@@ -253,7 +253,8 @@ impl<'a> ArtifactInspector<'a> {
                 actual: actual_size,
             });
         }
-        if let Some(reason) = self.mechanical_rejection_reason(
+        if let Some(reason) = mechanical_rejection(
+            &self.policy,
             completion.suggested_file_name.as_deref(),
             &staged,
             actual_size,
@@ -300,38 +301,43 @@ impl<'a> ArtifactInspector<'a> {
             None,
         )?)
     }
+}
 
-    fn mechanical_rejection_reason(
-        &self,
-        suggested_file_name: Option<&str>,
-        staged_path: &Path,
-        size_bytes: u64,
-    ) -> Option<String> {
-        if size_bytes > self.policy.max_bytes {
-            return Some(format!(
-                "size {size_bytes} exceeds the allowed maximum {}",
-                self.policy.max_bytes
-            ));
+/// The shared mechanical (pre-digest) verdict behind the download staging
+/// boundary and warehouse batch import: policy size bound first, then the
+/// extension allowlist over the suggested name (falling back to the final
+/// path component). A `Some` reason means the content is refused before any
+/// byte is read or any row is keyed.
+pub(crate) fn mechanical_rejection(
+    policy: &InspectionPolicy,
+    suggested_file_name: Option<&str>,
+    fallback_path: &Path,
+    size_bytes: u64,
+) -> Option<String> {
+    if size_bytes > policy.max_bytes {
+        return Some(format!(
+            "size {size_bytes} exceeds the allowed maximum {}",
+            policy.max_bytes
+        ));
+    }
+    let name = suggested_file_name
+        .map(PathBuf::from)
+        .or_else(|| Some(fallback_path.to_path_buf()));
+    let extension = name
+        .as_deref()
+        .and_then(|path| path.extension())
+        .and_then(|extension| extension.to_str())
+        .map(|extension| extension.to_ascii_lowercase());
+    match extension {
+        None => Some("file name carries no extension to allow-list".into()),
+        Some(extension) if !policy.allowed_extensions.contains(&extension) => {
+            Some(format!("extension \".{extension}\" is not in the allowed list"))
         }
-        let name = suggested_file_name
-            .map(PathBuf::from)
-            .or_else(|| Some(staged_path.to_path_buf()));
-        let extension = name
-            .as_deref()
-            .and_then(|path| path.extension())
-            .and_then(|extension| extension.to_str())
-            .map(|extension| extension.to_ascii_lowercase());
-        match extension {
-            None => Some("file name carries no extension to allow-list".into()),
-            Some(extension) if !self.policy.allowed_extensions.contains(&extension) => {
-                Some(format!("extension \".{extension}\" is not in the allowed list"))
-            }
-            Some(_) => None,
-        }
+        Some(_) => None,
     }
 }
 
-fn sha256_file(path: &Path) -> std::io::Result<[u8; 32]> {
+pub(crate) fn sha256_file(path: &Path) -> std::io::Result<[u8; 32]> {
     let mut file = std::fs::File::open(path)?;
     let mut hasher = Sha256::new();
     let mut buffer = vec![0u8; 1024 * 1024];
@@ -345,7 +351,7 @@ fn sha256_file(path: &Path) -> std::io::Result<[u8; 32]> {
     Ok(hasher.finalize().into())
 }
 
-fn hex_lower(bytes: &[u8]) -> String {
+pub(crate) fn hex_lower(bytes: &[u8]) -> String {
     let mut output = String::with_capacity(bytes.len() * 2);
     for byte in bytes {
         output.push(char::from_digit(u32::from(byte >> 4), 16).expect("nibble"));

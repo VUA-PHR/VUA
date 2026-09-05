@@ -15,8 +15,10 @@
 //! (download_id, attempt, kind, occurred_at) because the port delivers
 //! at-least-once.
 
+use crate::bdl_queries::ArtifactInspectionVerdict;
 use crate::download_events::{DownloadEventKind, DownloadEventV01, DownloadFailureKind};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
+use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -32,6 +34,7 @@ pub enum BdlStoreError {
     InvalidEvent(&'static str),
     UnknownArtifact(String),
     UnknownProduct(String),
+    UnknownWarehouseItem(String),
     InvalidTransition {
         artifact_sha256: String,
         from: ArtifactInspectionState,
@@ -59,6 +62,9 @@ impl std::fmt::Display for BdlStoreError {
                 formatter,
                 "artifact mapping target {product} was never observed by the pipeline"
             ),
+            Self::UnknownWarehouseItem(item) => {
+                write!(formatter, "unknown warehouse item {item}")
+            }
             Self::InvalidTransition {
                 artifact_sha256,
                 from,
@@ -200,6 +206,79 @@ pub enum ArtifactMappingOutcome {
 pub struct ArtifactRecording {
     pub outcome: ArtifactRecordingOutcome,
     pub artifact: StoredArtifact,
+}
+
+/// One material-package entry (warehouse_items row). The folder name is the
+/// entry's VUA-generated local identity.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoredWarehouseItem {
+    pub warehouse_item_id: String,
+    pub display_name: String,
+    pub folder_name: String,
+    pub kind: String,
+    pub created_at: String,
+}
+
+/// One physical copy of an artifact inside an entry (artifact_copies row).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StoredArtifactCopy {
+    pub copy_id: String,
+    pub warehouse_item_id: String,
+    pub artifact_sha256: String,
+    pub relative_path: String,
+    pub stored_path: String,
+    pub created_at: String,
+}
+
+/// `warehouse.listEntries` card (bdl-queries v0.2 wire shape).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WarehouseEntryCard {
+    pub warehouse_item_id: String,
+    pub folder_name: String,
+    pub display_name: String,
+    pub kind: String,
+    pub created_at: String,
+    pub artifacts: Vec<WarehouseArtifactRef>,
+}
+
+/// Light artifact reference on an entry card.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WarehouseArtifactRef {
+    pub relative_path: String,
+    pub artifact_sha256: String,
+    pub state: ArtifactInspectionVerdict,
+    pub size_bytes: u64,
+}
+
+/// `warehouse.entryDetail` payload (bdl-queries v0.2 wire shape).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WarehouseEntryDetail {
+    pub warehouse_item_id: String,
+    pub folder_name: String,
+    pub display_name: String,
+    pub kind: String,
+    pub created_at: String,
+    pub artifacts: Vec<WarehouseArtifactFact>,
+}
+
+/// Per-artifact inspection facts with source-correlation existence.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WarehouseArtifactFact {
+    pub relative_path: String,
+    pub artifact_sha256: String,
+    pub state: ArtifactInspectionVerdict,
+    pub size_bytes: u64,
+    pub suggested_file_name: Option<String>,
+    pub inspected_at: Option<String>,
+    pub rejection_reason: Option<String>,
+    pub source_correlated: bool,
+    pub mapped_product_ids: Vec<String>,
 }
 
 pub struct BdlStore {
@@ -564,6 +643,301 @@ impl BdlStore {
         let connection = self.connection.lock().expect("SQLite connection poisoned");
         connection.execute_batch("PRAGMA wal_checkpoint(TRUNCATE);")?;
         Ok(())
+    }
+
+    /// Create one material-package entry. The VUA-generated identity is the
+    /// entry's folder name under the warehouse root — stable, never derived
+    /// from display names (warehouse-layout ruling 2).
+    pub fn create_warehouse_item(
+        &self,
+        display_name: &str,
+        kind: &str,
+        created_at: &str,
+    ) -> Result<StoredWarehouseItem, BdlStoreError> {
+        if display_name.trim().is_empty() {
+            return Err(BdlStoreError::InvalidEvent("warehouse display name"));
+        }
+        if kind.trim().is_empty() {
+            return Err(BdlStoreError::InvalidEvent("warehouse item kind"));
+        }
+        let warehouse_item_id = format!(
+            "whi-{:016x}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|error| {
+                    BdlStoreError::Database(rusqlite::Error::ToSqlConversionFailure(
+                        Box::new(error),
+                    ))
+                })?
+                .as_nanos()
+        );
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        connection.execute(
+            "INSERT INTO warehouse_items(
+                warehouse_item_id, display_name, folder_name, kind, created_at
+             ) VALUES (?1, ?2, ?1, ?3, ?4)",
+            params![warehouse_item_id, display_name, kind, created_at],
+        )?;
+        Ok(StoredWarehouseItem {
+            warehouse_item_id: warehouse_item_id.clone(),
+            display_name: display_name.to_string(),
+            folder_name: warehouse_item_id,
+            kind: kind.to_string(),
+            created_at: created_at.to_string(),
+        })
+    }
+
+    /// Record one physical copy inside an entry. The referenced artifact must
+    /// exist in any inspection state — a copy is physical reality, and a
+    /// later admission rejection legitimately turns an already-copied
+    /// artifact quarantined (that is the quarantine card's origin).
+    pub fn record_artifact_copy(
+        &self,
+        warehouse_item_id: &str,
+        artifact_sha256: &str,
+        relative_path: &str,
+        stored_path: &str,
+        created_at: &str,
+    ) -> Result<StoredArtifactCopy, BdlStoreError> {
+        if relative_path.trim().is_empty() || stored_path.trim().is_empty() {
+            return Err(BdlStoreError::InvalidEvent("artifact copy path"));
+        }
+        let mut connection = self.connection.lock().expect("SQLite connection poisoned");
+        let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let item_known: bool = transaction
+            .query_row(
+                "SELECT 1 FROM warehouse_items WHERE warehouse_item_id = ?1",
+                [warehouse_item_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !item_known {
+            return Err(BdlStoreError::UnknownWarehouseItem(
+                warehouse_item_id.to_string(),
+            ));
+        }
+        let artifact_known: bool = transaction
+            .query_row(
+                "SELECT 1 FROM local_artifacts WHERE artifact_sha256 = ?1",
+                [artifact_sha256],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !artifact_known {
+            return Err(BdlStoreError::UnknownArtifact(artifact_sha256.to_string()));
+        }
+        let copy_id = format!(
+            "cpy-{:016x}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map_err(|error| {
+                    BdlStoreError::Database(rusqlite::Error::ToSqlConversionFailure(
+                        Box::new(error),
+                    ))
+                })?
+                .as_nanos()
+        );
+        let inserted = transaction.execute(
+            "INSERT INTO artifact_copies(
+                copy_id, artifact_sha256, warehouse_item_id,
+                relative_path, stored_path, created_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![
+                copy_id,
+                artifact_sha256,
+                warehouse_item_id,
+                relative_path,
+                stored_path,
+                created_at,
+            ],
+        );
+        if let Err(rusqlite::Error::SqliteFailure(failure, _)) = &inserted {
+            if failure.code == rusqlite::ErrorCode::ConstraintViolation {
+                return Err(BdlStoreError::CorruptValue {
+                    field: "artifact copy",
+                    value: format!("{warehouse_item_id}:{relative_path}"),
+                });
+            }
+        }
+        inserted?;
+        transaction.commit()?;
+        Ok(StoredArtifactCopy {
+            copy_id,
+            warehouse_item_id: warehouse_item_id.to_string(),
+            artifact_sha256: artifact_sha256.to_string(),
+            relative_path: relative_path.to_string(),
+            stored_path: stored_path.to_string(),
+            created_at: created_at.to_string(),
+        })
+    }
+
+    /// The `warehouse.listEntries` read face: every entry card with its
+    /// light artifact references, wire shapes per bdl-queries v0.2.
+    pub fn warehouse_entry_cards(&self) -> Result<Vec<WarehouseEntryCard>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let mut statement = connection.prepare(
+            "SELECT warehouse_item_id, display_name, folder_name, kind, created_at
+             FROM warehouse_items ORDER BY warehouse_item_id",
+        )?;
+        let items = statement
+            .query_map([], |row| {
+                Ok(StoredWarehouseItem {
+                    warehouse_item_id: row.get(0)?,
+                    display_name: row.get(1)?,
+                    folder_name: row.get(2)?,
+                    kind: row.get(3)?,
+                    created_at: row.get(4)?,
+                })
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut cards = Vec::with_capacity(items.len());
+        for item in items {
+            let artifacts = self.warehouse_artifact_refs(&connection, &item.warehouse_item_id)?;
+            cards.push(WarehouseEntryCard {
+                warehouse_item_id: item.warehouse_item_id,
+                folder_name: item.folder_name,
+                display_name: item.display_name,
+                kind: item.kind,
+                created_at: item.created_at,
+                artifacts,
+            });
+        }
+        Ok(cards)
+    }
+
+    /// The `warehouse.entryDetail` read face: per-artifact inspection facts
+    /// plus source-correlation existence.
+    pub fn warehouse_entry_detail(
+        &self,
+        warehouse_item_id: &str,
+    ) -> Result<Option<WarehouseEntryDetail>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let item = connection
+            .query_row(
+                "SELECT warehouse_item_id, display_name, folder_name, kind, created_at
+                 FROM warehouse_items WHERE warehouse_item_id = ?1",
+                [warehouse_item_id],
+                |row| {
+                    Ok(StoredWarehouseItem {
+                        warehouse_item_id: row.get(0)?,
+                        display_name: row.get(1)?,
+                        folder_name: row.get(2)?,
+                        kind: row.get(3)?,
+                        created_at: row.get(4)?,
+                    })
+                },
+            )
+            .optional()?;
+        let Some(item) = item else {
+            return Ok(None);
+        };
+        let mut statement = connection.prepare(
+            "SELECT c.relative_path, a.artifact_sha256, a.inspection_state, a.size_bytes,
+                    a.suggested_file_name, a.inspected_at, a.rejection_reason
+             FROM artifact_copies c
+             JOIN local_artifacts a ON a.artifact_sha256 = c.artifact_sha256
+             WHERE c.warehouse_item_id = ?1
+             ORDER BY c.relative_path",
+        )?;
+        let rows = statement
+            .query_map([warehouse_item_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)?,
+                    row.get::<_, Option<String>>(4)?,
+                    row.get::<_, Option<String>>(5)?,
+                    row.get::<_, Option<String>>(6)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut artifacts = Vec::with_capacity(rows.len());
+        for (
+            relative_path,
+            artifact_sha256,
+            inspection_state,
+            size_bytes,
+            suggested_file_name,
+            inspected_at,
+            rejection_reason,
+        ) in rows
+        {
+            let mapped_product_ids = self.mapped_product_ids(&connection, &artifact_sha256)?;
+            artifacts.push(WarehouseArtifactFact {
+                relative_path,
+                state: ArtifactInspectionVerdict::from_storage_state(
+                    ArtifactInspectionState::parse(&inspection_state)?,
+                ),
+                size_bytes: to_u64(size_bytes, "artifact size")?,
+                suggested_file_name,
+                inspected_at,
+                rejection_reason,
+                source_correlated: !mapped_product_ids.is_empty(),
+                mapped_product_ids,
+                artifact_sha256,
+            });
+        }
+        Ok(Some(WarehouseEntryDetail {
+            warehouse_item_id: item.warehouse_item_id,
+            folder_name: item.folder_name,
+            display_name: item.display_name,
+            kind: item.kind,
+            created_at: item.created_at,
+            artifacts,
+        }))
+    }
+
+    fn warehouse_artifact_refs(
+        &self,
+        connection: &Connection,
+        warehouse_item_id: &str,
+    ) -> Result<Vec<WarehouseArtifactRef>, BdlStoreError> {
+        let mut statement = connection.prepare(
+            "SELECT c.relative_path, a.artifact_sha256, a.inspection_state, a.size_bytes
+             FROM artifact_copies c
+             JOIN local_artifacts a ON a.artifact_sha256 = c.artifact_sha256
+             WHERE c.warehouse_item_id = ?1
+             ORDER BY c.relative_path",
+        )?;
+        let rows = statement
+            .query_map([warehouse_item_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, i64>(3)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        rows.into_iter()
+            .map(|(relative_path, artifact_sha256, inspection_state, size_bytes)| {
+                Ok(WarehouseArtifactRef {
+                    relative_path,
+                    artifact_sha256,
+                    state: ArtifactInspectionVerdict::from_storage_state(
+                        ArtifactInspectionState::parse(&inspection_state)?,
+                    ),
+                    size_bytes: to_u64(size_bytes, "artifact size")?,
+                })
+            })
+            .collect()
+    }
+
+    fn mapped_product_ids(
+        &self,
+        connection: &Connection,
+        artifact_sha256: &str,
+    ) -> Result<Vec<String>, BdlStoreError> {
+        let mut statement = connection.prepare(
+            "SELECT product_id FROM artifact_mappings
+             WHERE artifact_sha256 = ?1 ORDER BY product_id",
+        )?;
+        let rows = statement.query_map([artifact_sha256], |row| row.get::<_, String>(0))?;
+        rows.collect::<Result<Vec<_>, _>>()
+            .map_err(BdlStoreError::from)
     }
 
     #[cfg(test)]
@@ -1041,6 +1415,72 @@ mod tests {
             store.record_artifact_mapping(SHA_B, "booth:1000001", None, None, "2026-09-06T08:22:00.000Z"),
             Err(BdlStoreError::UnknownArtifact(_))
         ));
+    }
+
+    #[test]
+    fn warehouse_items_and_copies_support_the_v0_2_read_face() {
+        let store = BdlStore::open_in_memory().unwrap();
+        let item = store
+            .create_warehouse_item("Fixture Material Pack", "imported_material", "2026-09-06T08:20:00.000Z")
+            .unwrap();
+        assert!(item.warehouse_item_id.starts_with("whi-"));
+        assert_eq!(
+            item.folder_name, item.warehouse_item_id,
+            "the generated identity is the entry's folder name"
+        );
+        assert!(matches!(
+            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", "t"),
+            Err(BdlStoreError::UnknownArtifact(_))
+        ));
+        assert!(matches!(
+            store.record_artifact_copy("whi-nope", SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", "t"),
+            Err(BdlStoreError::UnknownWarehouseItem(_))
+        ));
+
+        store
+            .record_untrusted_artifact(&NewLocalArtifact {
+                artifact_sha256: SHA_A.into(),
+                size_bytes: 4096,
+                suggested_file_name: Some("pack.zip".into()),
+                download_id: None,
+                first_seen_at: "2026-09-06T08:20:00.000Z".into(),
+            })
+            .unwrap();
+        store
+            .transition_artifact(SHA_A, ArtifactInspectionState::Inspected, "2026-09-06T08:21:00.000Z", None)
+            .unwrap();
+        store
+            .record_artifact_copy(
+                &item.warehouse_item_id,
+                SHA_A,
+                "original/pack.zip",
+                "C:\\warehouse\\original\\pack.zip",
+                "2026-09-06T08:22:00.000Z",
+            )
+            .unwrap();
+        assert!(matches!(
+            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "again", "t"),
+            Err(BdlStoreError::CorruptValue { field: "artifact copy", .. })
+        ));
+
+        let cards = store.warehouse_entry_cards().unwrap();
+        assert_eq!(cards.len(), 1);
+        assert_eq!(cards[0].artifacts.len(), 1);
+        assert_eq!(cards[0].artifacts[0].state, ArtifactInspectionVerdict::Pending);
+        let wire = serde_json::to_value(&cards[0]).unwrap();
+        assert_eq!(wire["warehouseItemId"], item.warehouse_item_id);
+        assert_eq!(wire["artifacts"][0]["sizeBytes"], 4096);
+
+        let detail = store.warehouse_entry_detail(&item.warehouse_item_id).unwrap().unwrap();
+        assert!(!detail.artifacts[0].source_correlated);
+        store.seed_product("booth:1000001", "1000001").unwrap();
+        store
+            .record_artifact_mapping(SHA_A, "booth:1000001", None, None, "2026-09-06T08:23:00.000Z")
+            .unwrap();
+        let detail = store.warehouse_entry_detail(&item.warehouse_item_id).unwrap().unwrap();
+        assert!(detail.artifacts[0].source_correlated);
+        assert_eq!(detail.artifacts[0].mapped_product_ids, vec!["booth:1000001"]);
+        assert_eq!(store.warehouse_entry_detail("whi-nope").unwrap(), None);
     }
 
     #[test]

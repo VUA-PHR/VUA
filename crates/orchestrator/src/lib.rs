@@ -43,6 +43,7 @@ mod time;
 mod tools;
 mod vpm;
 mod vpm_backend;
+mod warehouse_import;
 mod win_registry;
 mod workflow;
 
@@ -61,7 +62,8 @@ pub use bdl_queries::{
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactRecording, ArtifactRecordingOutcome,
     BdlStore, BdlStoreError, EventAppendence, NewLocalArtifact, StoredArtifact,
-    StoredDownloadEvent, BDL_FORMAT_VERSION,
+    StoredArtifactCopy, StoredDownloadEvent, StoredWarehouseItem, WarehouseArtifactFact,
+    WarehouseArtifactRef, WarehouseEntryCard, WarehouseEntryDetail, BDL_FORMAT_VERSION,
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
@@ -174,6 +176,10 @@ pub use vpm_backend::{
     backends_summary, create_from_template, error_codes as vpm_backend_error_codes, ChangeItemV1,
     ChangeKindV1, ChangePreviewV1, PackageRequestV1, VccCliBackend, VpmBackend, VpmCapabilities,
     VrcGetLibBackend,
+};
+pub use warehouse_import::{
+    ImportedArtifact, ImportError as WarehouseImportError, SkippedSourceFile,
+    WarehouseImportReport, WarehouseImporter, IMPORT_ENTRY_KIND,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};
