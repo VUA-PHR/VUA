@@ -10,8 +10,9 @@ use crate::material_intake::{
 use crate::material_task::MaterialTaskResult;
 use crate::model::ProjectRef;
 use crate::project_lock::{
-    acquire_project_lock, begin_mutation, LockHolder, MutationMarkerGuard, ProjectLockError,
-    ProjectLockGuard,
+    acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
+    MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
+    MARKER_FILE_NAME,
 };
 use crate::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
@@ -228,10 +229,18 @@ pub fn run_provider_host_with(
     // having to send another request first.
     let (line_sender, line_receiver) = std::sync::mpsc::channel::<std::io::Result<Vec<u8>>>();
     std::thread::spawn(move || {
-        let mut limited = std::io::Read::take(input, MAX_FRAME_BYTES + 1);
+        let mut input = input;
         loop {
             let mut line = Vec::new();
-            match limited.read_until(b'\n', &mut line) {
+            // The frame budget is re-established for EVERY frame: a
+            // single cumulative Take would treat ~1 MiB of total session
+            // traffic as EOF and silently end the protocol.
+            let read = {
+                let mut limited =
+                    std::io::Read::take(input.by_ref(), MAX_FRAME_BYTES + 1);
+                std::io::BufRead::read_until(&mut limited, b'\n', &mut line)
+            };
+            match read {
                 Ok(0) => break,
                 Ok(_) => {
                     if line_sender.send(Ok(line)).is_err() {
@@ -427,6 +436,23 @@ fn wait_for_safe_boundary(state: &HostState, timeout: Duration) -> FrameOutcome 
 
 fn blocking_tasks(state: &HostState) -> Result<Vec<Value>, SqliteStoreError> {
     let mut tasks = Vec::new();
+    // A registered production task blocks shutdown even BEFORE its
+    // worker acquired the lease (the spawn window) — a safe_to_stop
+    // verdict must never race a mutation that is about to start.
+    if let Some(services) = &state.production {
+        let running = services.running.lock().expect("running poisoned");
+        for task_id in running.keys() {
+            if let Some(task) = state.store.task(task_id)? {
+                if !task.state.is_terminal() {
+                    tasks.push(json!({
+                        "taskId": task.task_id,
+                        "revision": task.revision,
+                        "state": state_name(task.state),
+                    }));
+                }
+            }
+        }
+    }
     for lease in state.store.project_leases()? {
         if lease.owner_instance_id != state.provider_instance_id || lease.recovery_required {
             continue;
@@ -851,6 +877,8 @@ fn store_error_code(error: &SqliteStoreError) -> &'static str {
     match error {
         SqliteStoreError::UnknownTask(_) => "vua.task.not_found",
         SqliteStoreError::IdempotencyConflict { .. } => "vua.command.id_conflict",
+        SqliteStoreError::LeaseInspectionRequired(_) => "vua.project.inspect_required",
+        SqliteStoreError::LeaseFenceMismatch { .. } => "vua.project.lease_conflict",
         SqliteStoreError::RevisionConflict { .. } => "vua.task.revision_conflict",
         _ => "vua.provider.persistence_failed",
     }
@@ -1055,6 +1083,13 @@ impl From<SqliteStoreError> for ProductionError {
             category: store_error_category(&error),
         }
     }
+}
+
+fn not_recoverable_error() -> ProductionError {
+    validation_error(
+        "vua.production.not_recoverable",
+        "errors.production.notRecoverable",
+    )
 }
 
 fn validation_error(code: &'static str, message_key: &'static str) -> ProductionError {
@@ -1337,7 +1372,10 @@ fn confirm_plan(
     // task.
     enum Run {
         Execute(Box<MaterialIntakeConfirmationV01>),
-        Rollback { snapshot_id: String },
+        Rollback {
+            snapshot_id: String,
+            original_record: Box<crate::build_record::BuildRecordV01>,
+        },
     }
     let run = if decision == "rollback" {
         // The failed attempt's receipt names its recovery snapshot.
@@ -1367,13 +1405,18 @@ fn confirm_plan(
             .snapshot
             .as_ref()
             .map(|snapshot| snapshot.snapshot_id.clone())
-            .ok_or_else(|| {
-                validation_error(
-                    "vua.production.not_recoverable",
-                    "errors.production.notRecoverable",
-                )
-            })?;
-        Run::Rollback { snapshot_id }
+            .ok_or_else(not_recoverable_error)?;
+        // The requested project must actually own this snapshot: a
+        // recovery can never restore a snapshot directory from ANOTHER
+        // project root the caller supplies.
+        if !PathBuf::from(&project_root)
+            .join(".vua/snapshots")
+            .join(&snapshot_id)
+            .is_dir()
+        {
+            return Err(not_recoverable_error());
+        }
+        Run::Rollback { snapshot_id, original_record: Box::new(record) }
     } else {
         let plan_task = state
             .store
@@ -1407,6 +1450,39 @@ fn confirm_plan(
             correlation_id: correlation_id.to_owned(),
         }))
     };
+
+    // A recovery `continue` binds the ORIGINAL failed run: its receipt
+    // must belong to the same plan and the same project as this
+    // request, otherwise the two are unrelated and not recoverable.
+    if recovery && decision == "continue" {
+        let original = state
+            .store
+            .task(&original_task_id)?
+            .ok_or_else(not_recoverable_error)?;
+        let original_record_id = original
+            .result
+            .as_ref()
+            .and_then(|result| result.get("buildRecordId"))
+            .and_then(Value::as_str);
+        let plan_for_binding = match &run {
+            Run::Execute(confirmation) => &confirmation.plan,
+            Run::Rollback { .. } => unreachable!(),
+        };
+        if let Some(original_record_id) = original_record_id {
+            let original_record = services
+                .records
+                .read(original_record_id)
+                .map_err(|_| not_recoverable_error())?;
+            if original_record.plan_id != plan_for_binding.plan_id
+                || original_record.project_id != plan_for_binding.project_id
+            {
+                return Err(not_recoverable_error());
+            }
+        }
+        // An original WITHOUT a receipt was refused before any mutation
+        // (e.g. at the mutation gate): nothing to bind, recovery proceeds
+        // fresh.
+    }
 
     // The idempotency fingerprint binds the FULL parameter set: the same
     // commandId with a different plan, source, project, risk decision or
@@ -1449,6 +1525,9 @@ fn confirm_plan(
     let owner_instance_id = state.provider_instance_id.clone();
     let worker_task_id = task_id.clone();
     let worker_correlation = correlation_id.to_owned();
+    // The inspect-first acknowledgment: only a recovery decision carries a
+    // user decision id, and only it may supersede a stale lease or marker.
+    let recovery_ack = if recovery { Some(user_decision_id.clone()) } else { None };
     std::thread::spawn(move || {
         let project_id = match &run {
             Run::Execute(confirmation) => confirmation.plan.project_id.clone(),
@@ -1467,6 +1546,7 @@ fn confirm_plan(
             &owner_instance_id,
             &worker_task_id,
             &worker_correlation,
+            recovery_ack.as_deref(),
         ) {
             Ok(gate) => gate,
             Err(error) => {
@@ -1549,30 +1629,70 @@ fn confirm_plan(
                     ),
                 }
             }
-            Run::Rollback { snapshot_id } => {
+            Run::Rollback { snapshot_id, original_record } => {
                 let reference = crate::SnapshotRef {
                     id: snapshot_id.clone(),
                     path: project.root.join(".vua/snapshots").join(snapshot_id),
                 };
                 // The failed attempt's restore left a quarantine for this
-                // same snapshot; the user's explicit rollback decision
-                // supersedes it (the receipt remains the audit trail), so
-                // clear it before restoring again.
+                // same snapshot. The user's explicit rollback supersedes
+                // it, but the quarantine holds the pre-restore project
+                // state — it is VERSIONED aside, never deleted before the
+                // new restore has succeeded.
+                let stamp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|elapsed| elapsed.as_millis())
+                    .unwrap_or(0);
                 let stale_quarantine =
                     project.root.join(".vua/recovery").join(snapshot_id);
                 if stale_quarantine.exists() {
-                    let _ = std::fs::remove_dir_all(&stale_quarantine);
+                    let archived = project
+                        .root
+                        .join(".vua/recovery")
+                        .join(format!("{snapshot_id}.superseded-{stamp}"));
+                    let _ = std::fs::rename(&stale_quarantine, &archived);
                 }
                 match crate::FileSystemSnapshotStore.restore_verified(&project, &reference) {
-                    Ok(()) => (
-                        TaskState::Succeeded,
-                        None,
-                        Some(json!({
-                            "recovered": "rollback",
-                            "restored": true,
-                            "snapshotId": snapshot_id,
-                        })),
-                    ),
+                    Ok(()) => {
+                        // The recovery itself gets an immutable receipt
+                        // with status `recovered`: it proves the user's
+                        // decision and its outcome, distinct from the
+                        // failed run's own record.
+                        let recovered_id = format!(
+                            "{}-recover-{stamp}",
+                            original_record.record_id
+                        );
+                        let mut recovered = original_record.clone();
+                        recovered.record_id = recovered_id.clone();
+                        recovered.status = crate::BuildRecordStatus::Recovered;
+                        recovered.completed_at = now_rfc3339();
+                        recovered.snapshot = Some(crate::BuildSnapshotEvidenceV01 {
+                            snapshot_id: snapshot_id.clone(),
+                            verified: true,
+                            restore_attempted: true,
+                            restore_succeeded: Some(true),
+                        });
+                        recovered.bridge_jobs = Vec::new();
+                        recovered.validation = None;
+                        recovered.local_vpm = None;
+                        recovered.result_code = "vua.material.recovered".to_owned();
+                        let published =
+                            services_for_worker.records.publish(&recovered).is_ok();
+                        (
+                            TaskState::Succeeded,
+                            None,
+                            Some(json!({
+                                "recovered": "rollback",
+                                "restored": true,
+                                "snapshotId": snapshot_id,
+                                "buildRecordId": if published {
+                                    Value::String(recovered_id)
+                                } else {
+                                    Value::Null
+                                },
+                            })),
+                        )
+                    }
                     Err(restore_error) => (
                         TaskState::Failed,
                         Some(
@@ -1594,13 +1714,9 @@ fn confirm_plan(
             }
         };
 
-        gate.release();
-        services_for_worker
-            .running
-            .lock()
-            .expect("running poisoned")
-            .remove(&worker_task_id);
-
+        // Persist the authoritative terminal state BEFORE releasing the
+        // gate: between the two, a safe_to_stop verdict could otherwise
+        // miss both the lease and the unfinished task.
         if let Ok(Some(event)) = advance_production_task(
             &store,
             &worker_task_id,
@@ -1612,6 +1728,12 @@ fn confirm_plan(
                 .expect("completed events poisoned")
                 .push(event);
         }
+        gate.release();
+        services_for_worker
+            .running
+            .lock()
+            .expect("running poisoned")
+            .remove(&worker_task_id);
     });
 
     Ok(FrameOutcome::Response(application_success(
@@ -1643,6 +1765,7 @@ impl MutationGate {
         owner_instance_id: &str,
         task_id: &str,
         correlation_id: &str,
+        recovery_ack: Option<&str>,
     ) -> Result<Self, AppErrorV1> {
         let identity = ProjectIdentity::from_existing_path(project_root).map_err(|error| {
             AppErrorV1::new(
@@ -1655,18 +1778,105 @@ impl MutationGate {
             .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
         })?;
 
-        let lease = store
-            .acquire_project_lease(&identity, owner_instance_id, task_id, &now_rfc3339())
-            .map_err(|error| {
-                AppErrorV1::new(
-                    "vua.project.lease_unavailable",
-                    ErrorCategory::Unavailable,
-                    "errors.project.leaseUnavailable",
-                    correlation_id,
-                )
-                .with_recoverable(true)
-                .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
-            })?;
+        let lease =
+            match store.acquire_project_lease(
+                &identity,
+                owner_instance_id,
+                task_id,
+                &now_rfc3339(),
+            ) {
+                Ok(lease) => lease,
+                Err(SqliteStoreError::LeaseHeld { .. }) => {
+                    let existing = store
+                        .project_lease(&identity)
+                        .map_err(|error| {
+                            AppErrorV1::new(
+                                "vua.project.lease_unavailable",
+                                ErrorCategory::Unavailable,
+                                "errors.project.leaseUnavailable",
+                                correlation_id,
+                            )
+                            .with_recoverable(true)
+                            .with_param(
+                                "detail",
+                                crate::contracts::ParamValue::Text(error.to_string()),
+                            )
+                        })?
+                        .ok_or_else(|| {
+                            AppErrorV1::new(
+                                "vua.project.lease_unavailable",
+                                ErrorCategory::Unavailable,
+                                "errors.project.leaseUnavailable",
+                                correlation_id,
+                            )
+                            .with_recoverable(true)
+                        })?;
+                    if !existing.recovery_required {
+                        // A live owner holds the lease: refuse, never steal.
+                        return Err(AppErrorV1::new(
+                            "vua.project.lease_unavailable",
+                            ErrorCategory::Unavailable,
+                            "errors.project.leaseUnavailable",
+                            correlation_id,
+                        )
+                        .with_recoverable(true)
+                        .with_param(
+                            "holder",
+                            crate::contracts::ParamValue::Text(
+                                existing.owner_instance_id.clone(),
+                            ),
+                        ));
+                    }
+                    // A stale lease from an interrupted owner recovers ONLY
+                    // through the inspect-first acknowledgment: a recovery
+                    // decision carries the user decision id; a plain confirm
+                    // is told to run recovery first.
+                    let Some(inspection_id) = recovery_ack else {
+                        return Err(AppErrorV1::new(
+                            "vua.project.inspect_required",
+                            ErrorCategory::Conflict,
+                            "errors.project.inspectRequired",
+                            correlation_id,
+                        )
+                        .with_recoverable(true));
+                    };
+                    store
+                        .takeover_project_lease_after_inspect(
+                            &identity,
+                            existing.generation,
+                            owner_instance_id,
+                            task_id,
+                            inspection_id,
+                            &now_rfc3339(),
+                        )
+                        .map_err(|error| {
+                            AppErrorV1::new(
+                                "vua.project.lease_unavailable",
+                                ErrorCategory::Unavailable,
+                                "errors.project.leaseUnavailable",
+                                correlation_id,
+                            )
+                            .with_recoverable(true)
+                            .with_param(
+                                "detail",
+                                crate::contracts::ParamValue::Text(error.to_string()),
+                            )
+                        })?
+                }
+                Err(error) => {
+                    return Err(AppErrorV1::new(
+                        "vua.project.lease_unavailable",
+                        ErrorCategory::Unavailable,
+                        "errors.project.leaseUnavailable",
+                        correlation_id,
+                    )
+                    .with_recoverable(true)
+                    .with_param(
+                        "detail",
+                        crate::contracts::ParamValue::Text(error.to_string()),
+                    ))
+                }
+            };
 
         let holder = LockHolder {
             channel: "provider".to_owned(),
@@ -1719,6 +1929,46 @@ impl MutationGate {
                 ));
             }
         };
+
+        // Inspect-first discipline (ADR decision 7): a leftover marker
+        // from any profile is never silently overwritten. Plain confirms
+        // are refused until a recovery decision supersedes it — and that
+        // path ARCHIVES the old marker instead of destroying it.
+        match read_pending_mutation(&root) {
+            PendingMutation::None => {}
+            finding @ (PendingMutation::Leftover(_) | PendingMutation::Unreadable) => {
+                if recovery_ack.is_none() {
+                    drop(lock);
+                    let _ = store.release_project_lease(
+                        &identity,
+                        owner_instance_id,
+                        lease.generation,
+                    );
+                    return Err(AppErrorV1::new(
+                        "vua.project.inspect_required",
+                        ErrorCategory::Conflict,
+                        "errors.project.inspectRequired",
+                        correlation_id,
+                    )
+                    .with_recoverable(true)
+                    .with_param(
+                        "finding",
+                        crate::contracts::ParamValue::Text(match finding {
+                            PendingMutation::Leftover(marker) => marker.mutation_kind,
+                            _ => "unreadable".to_owned(),
+                        }),
+                    ));
+                }
+                let stamp = std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .map(|elapsed| elapsed.as_millis())
+                    .unwrap_or(0);
+                let _ = std::fs::rename(
+                    root.join(".vua").join(MARKER_FILE_NAME),
+                    root.join(".vua").join(format!("{MARKER_FILE_NAME}.superseded-{stamp}")),
+                );
+            }
+        }
 
         let marker = match begin_mutation(&root, "material_intake", &holder) {
             Ok(marker) => Some(marker),

@@ -15,9 +15,9 @@ use tar::{Builder, Header};
 use serde_json::{json, Value};
 
 use vua_orchestrator::{
-    BuildRecordStore, FileSystemSnapshotStore, FixedClock, LocalPackageIdentityStore,
-    MaterialExecutor, ProductionConfig, TaskState, UnityBridge, UnityCommand, UnityResult,
-    VpmBackend, VpmCapabilities,
+    read_pending_mutation, BuildRecordStore, FileSystemSnapshotStore, FixedClock,
+    LocalPackageIdentityStore, MaterialExecutor, ProductionConfig, TaskState, UnityBridge,
+    UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
 };
 
 fn temp_root(label: &str) -> PathBuf {
@@ -1319,5 +1319,497 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
 
     drop(sender);
     host.join().unwrap();
+    let _ = fs::remove_dir_all(&base);
+}
+#[test]
+fn ph_012_crashed_lease_recovers_through_the_decision_path() {
+    // Simulate a provider crash: a lease owned by a dead instance stays in
+    // the store, and startup marks it recovery_required. A PLAIN confirm
+    // must be refused (inspect-first); only a recovery decision may take
+    // the lease over — after which the run succeeds.
+    let (base, source, project_root) = make_world("crashed-lease");
+    let path = base.join("provider.db");
+    {
+        let store = vua_orchestrator::SqliteTaskStore::open(&path).unwrap();
+        let identity =
+            vua_orchestrator::ProjectIdentity::from_existing_path(&project_root).unwrap();
+        store
+            .accept_task(&vua_orchestrator::NewTask {
+                task_id: "prod-deadbeef".into(),
+                correlation_id: "corr-dead".into(),
+                occurred_at: "2026-09-05T00:00:00Z".into(),
+            })
+            .unwrap();
+        store
+            .acquire_project_lease(
+                &identity,
+                "provider-dead",
+                "prod-deadbeef",
+                "2026-09-05T00:00:00Z",
+            )
+            .unwrap();
+        store.mark_other_owners_interrupted("someone", "2026-09-05T00:00:01Z").unwrap();
+    }
+
+    // Inspect + plan (no gate involved).
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![
+                frame(
+                    "f1",
+                    request(
+                        "req-inspect",
+                        "production.startInspection",
+                        "cmd-inspect",
+                        json!({ "sourceFolder": source.to_string_lossy() }),
+                    ),
+                ),
+                frame("f2", request("req-pump", "task.list", "", json!({}))),
+            ]),
+            &mut output_buffer,
+            &path,
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-plan",
+                    "production.requestPlan",
+                    "cmd-plan",
+                    plan_params(&inspection_task_id),
+                ),
+            )]),
+            &mut output_buffer,
+            &path,
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // A plain confirm hits the stale lease and is refused as
+    // inspect_required — never a silent takeover, never a permanent lock.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-confirm",
+                    "production.confirmPlan",
+                    "cmd-confirm-stale",
+                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                ),
+            )]),
+            &mut output_buffer,
+            &path,
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let confirm = response_payload(&frames, "req-confirm");
+    let confirm_task_id = confirm["task"]["taskId"].as_str().unwrap().to_owned();
+    let store = vua_orchestrator::SqliteTaskStore::open(&path).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&confirm_task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "refused confirm never finished");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Failed);
+    assert_eq!(task.error.expect("typed error").code, "vua.project.inspect_required");
+
+    // The recovery decision carries the acknowledgment: the lease is taken
+    // over after inspect and the run succeeds.
+    let (config, bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-takeover",
+                    recover_params(
+                        "continue",
+                        &confirm_task_id,
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            &path,
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "recovery never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
+    assert_eq!(bridge.commands.lock().unwrap().len(), 2, "continue re-runs after takeover");
+
+    // The lease now belongs to the live run and is released on completion.
+    let identity = vua_orchestrator::ProjectIdentity::from_existing_path(&project_root).unwrap();
+    assert!(store.project_lease(&identity).unwrap().is_none(), "lease released after success");
+
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
+    let (base, source, project_root, plan_task_id, confirm_task_id) =
+        run_failing_confirm("rollback-record");
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-rollback",
+                    recover_params(
+                        "rollback",
+                        &confirm_task_id,
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "rollback recovery never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
+    let result = task.result.expect("result");
+    assert_eq!(result["restored"], true);
+
+    // The recovery generated its own Build Record with status `recovered`.
+    let recovered_record_id = result["buildRecordId"].as_str().expect("recorded recovery");
+    let record = BuildRecordStore::new(base.join("records"))
+        .read(recovered_record_id)
+        .expect("recovery record exists");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Recovered);
+
+    // The superseded quarantine was VERSIONED aside, not deleted.
+    let recovery_dir = project_root.join(".vua/recovery");
+    let versions: Vec<_> = fs::read_dir(&recovery_dir)
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert!(
+        versions.iter().any(|name| name.contains(".superseded-")),
+        "quarantine is versioned aside: {versions:?}"
+    );
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_014_rollback_refuses_a_project_that_does_not_own_the_snapshot() {
+    let (base, source, project_root, plan_task_id, confirm_task_id) =
+        run_failing_confirm("rollback-wrong-project");
+
+    // An unrelated directory does not carry the failed run's snapshot.
+    let elsewhere = base.join("elsewhere");
+    fs::create_dir_all(&elsewhere).unwrap();
+    let (config, bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        let mut payload = recover_params(
+            "rollback",
+            &confirm_task_id,
+            &plan_task_id,
+            &source,
+            &project_root,
+            &base,
+        );
+        payload["projectRoot"] = json!(elsewhere.to_string_lossy());
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request("req-recover", "production.recover", "cmd-recover-x", payload),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    // The refusal happens before acceptance: an error envelope, no task,
+    // and no Unity traffic.
+    let frames = parse_frames(&output);
+    let error = response_frame(&frames, "req-recover")["payload"]["error"].clone();
+    assert_eq!(error["code"], "vua.production.not_recoverable");
+    assert_eq!(bridge.commands.lock().unwrap().len(), 0, "refused recovery touches nothing");
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_015_session_traffic_beyond_one_mib_still_processes_frames() {
+    // The frame budget must be per frame: cumulative ~1 MiB of session
+    // traffic used to be mistaken for EOF and silently ended the protocol.
+    let (base, _source, _project_root) = make_world("budget");
+    let pad = "x".repeat(400_000);
+    let mut frames = Vec::new();
+    for index in 0..4 {
+        frames.push(frame(
+            &format!("f{index}"),
+            request(
+                &format!("req-{index}"),
+                "task.list",
+                "",
+                json!({ "pad": pad }),
+            ),
+        ));
+    }
+    let mut output_buffer = Vec::new();
+    vua_orchestrator::run_provider_host_with(
+        frames_input(frames),
+        &mut output_buffer,
+        base.join("provider.db"),
+        None,
+    )
+    .unwrap();
+    let frames_out = parse_frames(&output_buffer);
+    for index in 0..4 {
+        let request_id = format!("req-{index}");
+        assert!(
+            frames_out.iter().any(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == request_id.as_str()
+            }),
+            "response {request_id} missing — session died early"
+        );
+    }
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
+fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
+    let (base, source, project_root) = make_world("marker-supersede");
+
+    // A crash on another profile left a pending-mutation marker behind.
+    let holder = vua_orchestrator::LockHolder {
+        channel: "stable".into(),
+        profile: "default".into(),
+        pid: 424242,
+        instance_id: "stable-instance".into(),
+        acquired_at: "2026-09-05T00:00:00Z".into(),
+    };
+    let marker =
+        vua_orchestrator::begin_mutation(&project_root, "material_intake", &holder).unwrap();
+    core::mem::forget(marker); // simulate the crash: the guard never releases
+
+    // Inspect + plan.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![
+                frame(
+                    "f1",
+                    request(
+                        "req-inspect",
+                        "production.startInspection",
+                        "cmd-inspect",
+                        json!({ "sourceFolder": source.to_string_lossy() }),
+                    ),
+                ),
+                frame("f2", request("req-pump", "task.list", "", json!({}))),
+            ]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-plan",
+                    "production.requestPlan",
+                    "cmd-plan",
+                    plan_params(&inspection_task_id),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
+
+    // A plain confirm is refused: the leftover marker demands inspect-first.
+    let (config, bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-confirm",
+                    "production.confirmPlan",
+                    "cmd-confirm-marker",
+                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let confirm = response_payload(&frames, "req-confirm");
+    let confirm_task_id = confirm["task"]["taskId"].as_str().unwrap().to_owned();
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&confirm_task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "refused confirm never finished");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Failed);
+    assert_eq!(task.error.expect("typed error").code, "vua.project.inspect_required");
+    assert_eq!(bridge.commands.lock().unwrap().len(), 0);
+
+    // The recovery decision supersedes the marker (archived, not deleted)
+    // and the run proceeds.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-marker",
+                    recover_params(
+                        "continue",
+                        &confirm_task_id,
+                        &plan_task_id,
+                        &source,
+                        &project_root,
+                        &base,
+                    ),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "recovery never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
+
+    // The old marker was archived; the live marker was cleaned up on
+    // completion.
+    let vua_dir = project_root.join(".vua");
+    let archived: Vec<_> = fs::read_dir(&vua_dir)
+        .unwrap()
+        .filter_map(|entry| entry.ok())
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .filter(|name| name.starts_with("pending-mutation.json.superseded-"))
+        .collect();
+    assert!(!archived.is_empty(), "superseded marker archived: {archived:?}");
+    assert_eq!(
+        read_pending_mutation(&project_root),
+        vua_orchestrator::PendingMutation::None
+    );
     let _ = fs::remove_dir_all(&base);
 }
