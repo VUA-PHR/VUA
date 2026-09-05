@@ -850,6 +850,53 @@ rolled_back: "롤백됨",
       },
     },
   },
+  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
+   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  overlay: {
+    surfaceTitle: "VUA 오버레이",
+    taskSectionLabel: "현재 작업",
+    environmentSectionLabel: "환경",
+    progress: "{done} / {total}",
+    moreEnvironments: "외 {count}개",
+    actions: {
+      openOnDesktop: "데스크톱에서 열기",
+      dismiss: "오버레이 닫기",
+      requestCancel: "취소 요청",
+      cancelConfirm: "취소 확인",
+      cancelKeep: "계속 실행",
+    },
+    cancelHint: "취소는 요청입니다. 작업은 안전한 경계에서 중지됩니다.",
+    cancelArmedHint: "한 번 더 누르면 취소가 확정됩니다.",
+    closeWindow: "창 닫기",
+    retry: "다시 시도",
+    loadErrorTitle: "지금은 앱 레이어에 연결할 수 없습니다",
+    loadErrorBody:
+      "오버레이 스냅샷 요청이 실패했거나 시간 초과되었습니다. 다시 시도해도 메인 창에는 영향이 없습니다. 이 창을 닫아도 오버레이만 닫힙니다.",
+    inactiveTitle: "지금 표시할 내용이 없습니다",
+    inactiveBody: "오버레이 서비스가 아직 연결되지 않았습니다. 세션이 시작되면 여기에 상태가 표시됩니다.",
+    statusTones: {
+      inactive: "유휴",
+      active: "진행 중",
+      waiting: "확인 대기",
+      blocked: "차단됨",
+    },
+    disabledReasons: {
+      notAllowed: "현재 상태에서는 사용할 수 없습니다",
+      noTask: "진행 중인 작업이 없습니다",
+      notCancellable: "이 작업은 지금 취소할 수 없습니다",
+    },
+    environmentStates: {
+      ready: "준비됨",
+      running: "실행 중",
+      missing: "감지되지 않음",
+    },
+    environmentNames: {
+      steamvr: "SteamVR",
+      unity: "Unity 에디터",
+      vrchat: "VRChat",
+      vpm: "VPM",
+    },
+  },
   media: {
     loadFailed: "이미지를 불러오지 못했습니다",
     retry: "다시 시도",

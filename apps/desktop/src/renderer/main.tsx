@@ -3,6 +3,8 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
 import { ShowcasePage } from "./dev/ShowcasePage.tsx";
 import { TutorialSurface } from "./features/tutorial/TutorialSurface.tsx";
+import { DesktopOverlaySurface } from "./features/overlay/DesktopOverlaySurface.tsx";
+import { VrOverlaySurface } from "./features/overlay/VrOverlaySurface.tsx";
 import { currentLocale } from "./i18n/index.ts";
 import "@vua/design-system/tokens.css";
 import "@vua/design-system/base.css";
@@ -10,6 +12,7 @@ import "./app-shell.css";
 
 /**
  * 表面分流(应用初始化最早阶段):教程伴随窗口只渲染 TutorialSurface,
+ * 桌面/VR 覆盖层只渲染各自的 OverlaySurface(切片五 F7a,与 tutorial 同级),
  * 不初始化主壳 Gateway、DEV scenario、路由与业务 store(G4 P0 边界);
  * 其余表面进入应用壳。窗口路由由创建窗口的一方决定,渲染器不接受
  * 来自任意来源的跳转(Electron Main 对 will-navigate 白名单校验)。
@@ -43,6 +46,10 @@ createRoot(document.getElementById("root")!).render(
   <StrictMode>
     {surface === "tutorial" ? (
       <TutorialSurface />
+    ) : surface === "overlay-desktop" ? (
+      <DesktopOverlaySurface />
+    ) : surface === "overlay-vr" ? (
+      <VrOverlaySurface />
     ) : devView === "showcase" ? (
       <ShowcasePage />
     ) : devView === "preview-lab" && PreviewLabPage !== null ? (

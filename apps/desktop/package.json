@@ -18,7 +18,8 @@
     "dev": "node scripts/dev.mjs",
     "start": "pnpm build && electron .",
     "smoke:remote-permissions": "pnpm build && electron scripts/smoke-remote-permissions.mjs",
-    "smoke:m2-deliverables": "pnpm build && electron scripts/smoke-m2-deliverables.mjs"
+    "smoke:m2-deliverables": "pnpm build && electron scripts/smoke-m2-deliverables.mjs",
+    "preview:overlay": "electron scripts/preview-overlay.mjs"
   },
   "dependencies": {
     "@vua/contracts": "workspace:*",

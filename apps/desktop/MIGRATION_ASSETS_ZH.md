@@ -108,3 +108,31 @@ F3 生产纵向用例的表现层完整落地在 renderer 自有端口 + DEV fix
 入口（TaskRow 既有行为）+ `originPage: "workshop"` 即完成跳回车间，Taskbar 未做结构性修改。
 `runState` 直接消费已冻结的 `WorkflowRunState` 11 态词表与 `taskStatusForWorkflow` 投影，未自造枚举；
 取消是任务事实而非工作流状态，运行视图以 `cancelled` 标记表达（草案取消纪律）。
+
+## 切片五：F7a 覆盖层双表面演示（2026-09-05，工作树 kimi/frontend）
+
+桌面与 VR 两套 Overlay 表面的 UI/UX 先行切片（演示占位内容，非终版）。范围：版本化
+`OverlaySnapshot` 契约镜像 + 窄化 Surface Port（snapshot/subscribe/dispatch）+ 纯表现模型
++ 两个最早分流的渲染表面（`?surface=overlay-desktop` / `?surface=overlay-vr`）+ DEV 演示端口
++ `preview:overlay` 预览/抓帧脚本。依据：`docs/architecture/integrations-and-overlays_ZH.md`
+§Overlay（双表面共享同一展示状态，窄端口 + 语义动作，不注入 VRChat）、设计规范 v0.6.1 §8.8
+（更高对比、更少层级、更大目标；不用毛玻璃/复杂背景/长列表；桌面回退始终可见）、
+S-F7a spike 证据（`scripts/spike-overlay.mjs` 桌面形态、`spikes/steamvr-overlay` 的
+IVROverlay_028 纹理推流与事件轮询，本切片不修改 spikes/）。
+
+| 资产组 | 目标所有者 | 本轮交付 | 验证 |
+| --- | --- | --- | --- |
+| Overlay 契约镜像 + 端口 + 装配点（`schemaVersion: 1`；`OverlayAction` 三语义动作；DEV 演示端口经 `import.meta.env.DEV` 折叠 + 动态 import 装配，生产恒 inactive） | `src/renderer/features/overlay/`（overlay-contract/overlay-port/overlay-port-instance/demo） | 与 tutorial-contract/tutorial-port 同惯例；取消是请求语义（`request_cancel_task` 仅任务进行中可用） | `overlay-model.test.ts` 14 项（有/无任务 × desktop/vr × inactive/失败态 + 枚举奇偶） |
+| 表现模型（区块可见性/动作可用性与禁用原因键/tone 映射 橙=进行·琥珀=等待·红=仅阻断/进度不注水/VR 环境截断 ≤3） | `src/renderer/features/overlay/overlay-model.ts` | 纯函数无 IO 无文案字面量；复用冻结的 `WorkflowStage` 词表，未自造枚举 | 同上测试矩阵 |
+| 桌面表面（键鼠：拖拽区标题栏 + 关闭 chrome、Tab 焦点环、Esc 关闭、hover 态、32–40px 目标、单主操作、DelayedButton 延迟确认）与 VR 表面（激光点按：1024×768 平面面板、无 hover 依赖、≥56px 目标、≤3 大按钮、取消两步确认 + 超时还原、无装饰动画） | `src/renderer/features/overlay/DesktopOverlaySurface.tsx`、`VrOverlaySurface.tsx`、`overlay.css` | 诚实四态（骨架/失败+重试/inactive 空态/正常），首帧超时 4000ms 抄 TutorialSurface；关闭永远可用（退化 `nativeWindow?.close()`）；`main.tsx` 最早分流不进主壳 | vitest 全量 + check:boundary/check:i18n/check:contrast/check:leak |
+| i18n 四表 `strings.overlay` 段（en 为结构源；枚举键与 TS 联合一一对应）+ 演示负载入 `strings.fixtures.zh-CN.ts`（任务标题复用 `tasks.assembly`） | `src/renderer/i18n/strings.{en,zh-CN,ja,ko}.ts`、`strings.fixtures.zh-CN.ts` | 演示态显示既有 `strings.common.fixtureBadge`；fixtures 头注释更新引用链说明 | `check-i18n`、`check-i18n-tables`、枚举奇偶测试 |
+| `preview:overlay` 脚本（默认桌面预览窗；`--vr` 1024×768 固定窗；`--both` 双开；`--capture <out.rgba>` 离屏抓帧 VR 表面→ BGRA→RGBA 原始字节 + `.json` 元数据） | `apps/desktop/scripts/preview-overlay.mjs`、`apps/desktop/package.json` | 渲染地址 `VUA_RENDERER_URL` → dev 服务器探测 → dist 产物回退（缺失响亮失败）；抓帧产物是喂给 spikes/steamvr-overlay `SetOverlayRaw` 的接缝产物 | 手工/后续切片实机走查 |
+
+### 显式声明（本切片不做）
+
+- **桌面置顶/点击穿透切换、VR 纹理推流与事件回传为 Kernel/spike 侧接缝**：本切片不含任何
+  live 接线（overlay 窗口创建、IVROverlay helper 进程、动作回传通道均不在内）；
+- **演示数据仅 DEV**：demo 端口只在 `import.meta.env.DEV` 分支可达，生产构建恒 inactive
+  诚实空态（check-leak 指纹把守）；
+- `OverlaySnapshot` 是渲染层本地镜像，正式版本化契约随 Overlay 接线切片进入
+  `packages/contracts`，届时以本镜像对齐，不另造词表。

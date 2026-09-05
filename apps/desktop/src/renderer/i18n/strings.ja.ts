@@ -851,6 +851,54 @@ rolled_back: "ロールバック済み",
       },
     },
   },
+  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
+   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  overlay: {
+    surfaceTitle: "VUA オーバーレイ",
+    taskSectionLabel: "現在のタスク",
+    environmentSectionLabel: "環境",
+    progress: "{done} / {total}",
+    moreEnvironments: "ほか {count} 件",
+    actions: {
+      openOnDesktop: "デスクトップで開く",
+      dismiss: "オーバーレイを閉じる",
+      requestCancel: "キャンセルをリクエスト",
+      cancelConfirm: "キャンセルを確定",
+      cancelKeep: "実行を続ける",
+    },
+    cancelHint: "キャンセルはリクエストです。タスクは安全な境界で停止します。",
+    cancelArmedHint: "もう一度タップするとキャンセルが確定します。",
+    closeWindow: "ウィンドウを閉じる",
+    retry: "再試行",
+    loadErrorTitle: "アプリ層に一時的に接続できません",
+    loadErrorBody:
+      "オーバーレイのスナップショット要求が失敗またはタイムアウトしました。再試行してもメインウィンドウには影響しません。このウィンドウを閉じてもオーバーレイが閉じるだけです。",
+    inactiveTitle: "現在表示できるものはありません",
+    inactiveBody:
+      "オーバーレイサービスはまだ接続されていません。セッションが開始されると、ここにステータスが表示されます。",
+    statusTones: {
+      inactive: "アイドル",
+      active: "進行中",
+      waiting: "確認待ち",
+      blocked: "ブロック中",
+    },
+    disabledReasons: {
+      notAllowed: "現在の状態では使用できません",
+      noTask: "進行中のタスクがありません",
+      notCancellable: "このタスクは現在キャンセルできません",
+    },
+    environmentStates: {
+      ready: "準備完了",
+      running: "実行中",
+      missing: "未検出",
+    },
+    environmentNames: {
+      steamvr: "SteamVR",
+      unity: "Unity エディター",
+      vrchat: "VRChat",
+      vpm: "VPM",
+    },
+  },
   media: {
     loadFailed: "画像の読み込みに失敗しました",
     retry: "再試行",
