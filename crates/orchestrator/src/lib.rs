@@ -6,6 +6,7 @@
 #![allow(clippy::result_large_err)]
 
 mod assembly;
+mod bdl_store;
 mod booth_extraction;
 mod bridge;
 mod build_record;
@@ -46,6 +47,11 @@ mod workflow;
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
+};
+pub use bdl_store::{
+    ArtifactInspectionState, ArtifactMappingOutcome, ArtifactRecording, ArtifactRecordingOutcome,
+    BdlStore, BdlStoreError, EventAppendence, NewLocalArtifact, StoredArtifact,
+    StoredDownloadEvent, BDL_FORMAT_VERSION,
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
