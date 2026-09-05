@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { DownloadItem, WebContents } from "electron";
+import type { DownloadItem, Session, WebContents } from "electron";
 import {
   DOWNLOAD_EVENT_SCHEMA_VERSION,
   type DownloadEventV01,
@@ -33,6 +33,8 @@ export interface DownloadEventSink {
 export interface DownloadPortOptions {
   /** VUA 管控的下载暂存目录(注入;端口不自选路径策略) */
   readonly stagingRoot: string;
+  /** 分区 Session(retry 全新 attempt 时经 downloadURL 重发起) */
+  readonly partitionSession: Session;
   readonly allowedOrigins: readonly string[];
   readonly sink: DownloadEventSink;
   readonly now?: () => string;
@@ -40,7 +42,12 @@ export interface DownloadPortOptions {
   readonly progressIntervalMs?: number;
 }
 
-export type DownloadIntent = "retry" | "abandon";
+/**
+ * AMF 意图词汇(冻结裁定):`resume` = 可续传中断的同一 attempt 续传;
+ * `retry` = 弃件后全新 attempt(经 downloadURL 重发起,重绑原 downloadId);
+ * `abandon` = 放弃(取消并弃除部分文件,终态)。
+ */
+export type DownloadIntent = "abandon" | "resume" | "retry";
 
 interface DownloadRecord {
   readonly downloadId: string;
@@ -199,12 +206,14 @@ export class DownloadPort {
     const record = this.#records.get(downloadId);
     if (record === undefined || record.abandoned) return;
     const item = record.item;
-    if (intent === "retry") {
+    if (intent === "resume") {
+      // 同一 attempt 续传:canResume() 是唯一判据
       if (item.canResume()) item.resume();
       return;
     }
-    // abandon:取消 + 弃除部分文件;重试由 AMF 下发新意图后经 downloadURL
-    // 重发起,新 item 在 will-download 重绑原 downloadId(attempt + 1)
+    // abandon / retry(全新 attempt):取消 + 弃除部分文件;retry 经
+    // downloadURL 重发起,新 item 在 will-download 重绑原 downloadId
+    // (attempt + 1);abandon 到此为止(AMF 已放弃)
     record.abandoned = true;
     const partialPath = item.getSavePath();
     item.cancel();
@@ -216,7 +225,11 @@ export class DownloadPort {
         /* 部分文件已不存在:弃除语义已达成 */
       }
     }
-    this.#pendingRestarts.set(record.sourceUrl, { downloadId, attempt: record.attempt });
+    if (intent === "retry") {
+      // 全新 attempt:重发起的新 item 将在 will-download 重绑原 downloadId
+      this.#pendingRestarts.set(record.sourceUrl, { downloadId, attempt: record.attempt });
+      this.#options.partitionSession.downloadURL(record.sourceUrl);
+    }
   }
 
   #emitProgressThrottled(record: DownloadRecord): void {

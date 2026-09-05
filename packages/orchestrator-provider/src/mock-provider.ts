@@ -203,6 +203,17 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           false,
           false,
         ));
+      case "download.ingest":
+      case "download.retry":
+        // 模拟 Provider 未配置下载域:诚实不可用(同 production.* 纪律)
+        return this.#failure(request, this.#error(
+          "vua.download.unavailable",
+          "unavailable",
+          "errors.download.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
     }
   }
 

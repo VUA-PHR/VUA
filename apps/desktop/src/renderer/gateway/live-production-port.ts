@@ -304,7 +304,7 @@ export function createLiveModelProduction(
   // 端口创建即订阅事件通道:运行视图的推导与文档回填不依赖 UI 订阅者,
   // port.subscribe 只负责把视图变更推给监听方。
   client.subscribe((event) => {
-    if (event.kind === "capability.changed") return;
+    if (event.kind === "capability.changed" || event.kind === "download.intent") return;
     void refreshTask(event.taskId);
   });
 

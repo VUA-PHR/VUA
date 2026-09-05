@@ -196,6 +196,14 @@ export interface WarehouseEntryDetailRequestV1 {
   readonly params: { readonly warehouseItemId: string };
 }
 
+/** 渲染层"重试"入口(任务级动作):AMF 以冻结重试策略裁决 */
+export interface DownloadRetryRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "download.retry";
+  readonly params: { readonly taskId: string; readonly commandId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -214,7 +222,8 @@ export type DesktopGatewayRequestV1 =
   | CatalogDetailRequestV1
   | CatalogStatusRequestV1
   | WarehouseListEntriesRequestV1
-  | WarehouseEntryDetailRequestV1;
+  | WarehouseEntryDetailRequestV1
+  | DownloadRetryRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -236,6 +245,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "catalog.status": "query",
   "warehouse.listEntries": "query",
   "warehouse.entryDetail": "query",
+  "download.retry": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -499,6 +509,11 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])
         && isIdentifier(value.params.warehouseItemId);
+    case "download.retry":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["taskId", "commandId"])
+        && isIdentifier(value.params.taskId)
+        && isIdentifier(value.params.commandId);
     default:
       return false;
   }

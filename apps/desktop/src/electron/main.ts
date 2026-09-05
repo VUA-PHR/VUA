@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import type { ApplicationEventV01, RemoteContentEventV1 } from "@vua/contracts";
+import type { ApplicationEventV01, DownloadEventV01, DownloadIngestReceiptV03, RemoteContentEventV1 } from "@vua/contracts";
+import { APPLICATION_CONTRACT_VERSION } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
 import { DownloadPort } from "./download-port.js";
@@ -18,6 +19,9 @@ const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
 let remoteContent: RemoteContentManager | null = null;
+let downloadPort: DownloadPort | null = null;
+let providerHandshake: Awaited<ReturnType<OrchestratorProviderV01["start"]>> | null = null;
+const lastAppliedIntentSeq = new Map<string, number>();
 let shutdownStarted = false;
 
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
@@ -187,18 +191,68 @@ async function createWindow(): Promise<void> {
   installLocalContentNavigationPolicy(mainWindow.webContents, rendererUrl, (url) => shell.openExternal(url));
   mainWindow.once("ready-to-show", () => mainWindow?.show());
 
-  // 下载端口(F4-3):will-download 接管 + 冻结词表事件规范化。事件汇当前
-  // 写诊断通道(stderr);Main→AMF 的 ingest 投递腿随 M3 双向契约切片接线,
-  // 汇接口不变。暂存根跟随用户数据目录布局,由注入决定,端口不自选策略
-  const downloadPort = new DownloadPort({
-    stagingRoot: path.join(app.getPath("userData"), "downloads-staging"),
-    allowedOrigins: ["https://booth.pm"],
-    sink: {
-      emit: (event) => {
-        // 诊断通道(stderr);投递腿接线后同一汇转发给 AMF ingest
+  // 下载端口(F4-3/F4-4):will-download 接管 + 冻结词表事件规范化。事件汇
+  // 按传输定案批量投递 download.ingest(at-least-once:回执裁剪缓冲 + BDL
+  // 去重;握手未声明下载域时诚实降级写诊断通道)。暂存根跟随用户数据目录
+  // 布局,由注入决定,端口不自选策略
+  const buffer: DownloadEventV01[] = [];
+  let flushTimer: NodeJS.Timeout | null = null;
+  const flushIngest = async (): Promise<void> => {
+    if (buffer.length === 0 || provider === null) return;
+    const batch = buffer.splice(0, buffer.length);
+    try {
+      const response = await provider.invoke({
+        contractVersion: APPLICATION_CONTRACT_VERSION,
+        requestId: crypto.randomUUID(),
+        correlationId: crypto.randomUUID(),
+        commandId: crypto.randomUUID(),
+        kind: "command",
+        method: "download.ingest",
+        params: { schemaVersion: "0.1", events: batch },
+      });
+      if (!response.ok) throw new Error(response.error.code);
+      const receipt = response.value as unknown as DownloadIngestReceiptV03;
+      for (const rejected of receipt.rejected) {
+        // 单条非法事件死信(不毒化整批);诊断通道留痕
+        process.stderr.write(`${JSON.stringify({ channel: "download-events", deadLetter: rejected })}\n`);
+      }
+    } catch (error) {
+      // 投递失败:整批回灌,等待下次冲刷(at-least-once)
+      buffer.unshift(...batch);
+      process.stderr.write(`${JSON.stringify({ channel: "download-events", ingestRetry: String(error) })}\n`);
+    }
+  };
+  const scheduleFlush = (): void => {
+    if (flushTimer !== null || buffer.length === 0) return;
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      void flushIngest();
+    }, 1_000);
+  };
+  const downloadSink = {
+    emit: (event: DownloadEventV01): void => {
+      if (providerHandshake?.downloadIngest === true) {
+        buffer.push(event);
+        if (buffer.length > 1_000) buffer.splice(0, buffer.length - 1_000);
+        if (buffer.length >= 20) {
+          if (flushTimer !== null) {
+            clearTimeout(flushTimer);
+            flushTimer = null;
+          }
+          void flushIngest();
+        } else {
+          scheduleFlush();
+        }
+      } else {
         process.stderr.write(`${JSON.stringify({ channel: "download-events", ...event })}\n`);
-      },
+      }
     },
+  };
+  downloadPort = new DownloadPort({
+    stagingRoot: path.join(app.getPath("userData"), "downloads-staging"),
+    partitionSession: session.fromPartition("persist:vua-remote"),
+    allowedOrigins: ["https://booth.pm"],
+    sink: downloadSink,
   });
 
   // 远程内容管理器(F4-2):独立 partition Session;目录浏览域为种子允许清单,
@@ -208,7 +262,7 @@ async function createWindow(): Promise<void> {
     allowedOrigins: ["https://booth.pm"],
     openExternal: (url) => void shell.openExternal(url),
     broadcast: (event) => broadcastRemoteContentEvent(rendererUrl, event),
-    willDownload: (event, item, webContents) => downloadPort.handleWillDownload(event, item, webContents),
+    willDownload: (event, item, webContents) => downloadPort?.handleWillDownload(event, item, webContents),
   });
   remoteContent.setHostWindow(mainWindow);
   mainWindow.on("resize", () => remoteContent?.refreshBounds());
@@ -224,8 +278,20 @@ async function createWindow(): Promise<void> {
 
 app.whenReady().then(async () => {
   provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
-  await provider.start();
-  provider.subscribe((event) => broadcastGatewayEvent(rendererUrl, event));
+  providerHandshake = await provider.start();
+  provider.subscribe((event) => {
+    if (event.kind === "download.intent") {
+      // 端口意图:intentSeq 去重后串行解释;Main 内部消费,不广播渲染层
+      const { downloadId, intent, intentSeq } = event.payload;
+      const last = lastAppliedIntentSeq.get(downloadId) ?? -1;
+      if (intentSeq <= last) return;
+      lastAppliedIntentSeq.set(downloadId, intentSeq);
+      // 意图直通:applyIntent 按冻结裁定解释 resume/retry/abandon
+      downloadPort?.applyIntent(downloadId, intent);
+      return;
+    }
+    broadcastGatewayEvent(rendererUrl, event);
+  });
   installPermissionDenyPolicy(session.defaultSession);
   registerIpc(provider);
   await createWindow();

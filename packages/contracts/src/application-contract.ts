@@ -1,3 +1,5 @@
+import { isDownloadEventV01 } from "./download-events.js";
+
 export const APPLICATION_CONTRACT_VERSION = "0.1" as const;
 
 export type ApplicationContractVersion = typeof APPLICATION_CONTRACT_VERSION;
@@ -358,6 +360,60 @@ export interface WarehouseEntryDetailResultV03 {
   };
 }
 
+// ---- download.*(下载域命令与意图事件;词表见 download-events v0.1 冻结面
+// 与 b-reply-to-f4-download-task-requirements 的形状裁定) ----
+
+/** Main → AMF 批量投递下载事件(at-least-once:重发 + BDL 唯一键去重);
+ *  回执为批量级 high-water——收到任一回执即可裁剪整批缓冲 */
+export interface DownloadIngestCommandV03 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "download.ingest";
+  readonly commandId: string;
+  readonly params: {
+    readonly schemaVersion: "0.1";
+    readonly events: readonly import("./download-events.js").DownloadEventV01[];
+  };
+}
+
+/** 批量折叠回执:folded = 新折叠数;duplicates = 去重数;rejected = 单条
+ *  非法事件(不毒化整批,Main 决定重投或死信) */
+export interface DownloadIngestReceiptV03 {
+  readonly folded: number;
+  readonly duplicates: number;
+  readonly rejected: readonly { readonly index: number; readonly code: string; readonly reason: string }[];
+}
+
+/** 渲染层"重试"入口(任务级动作):AMF 以冻结重试策略裁决,不可重试时
+ *  `vua.download.not_retryable` 拒绝 */
+export interface DownloadRetryCommandV03 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "download.retry";
+  readonly commandId: string;
+  readonly params: { readonly taskId: string };
+}
+
+export interface DownloadRetryResultV03 {
+  readonly taskId: string;
+  readonly decision: "resume" | "retry";
+  readonly intentSeq: number;
+}
+
+/** AMF → Main 的端口意图事件(经既有 event 帧):Main 按 downloadId 丢弃
+ *  intentSeq ≤ lastApplied 的意图,到达序经 applyIntent 串行解释 */
+export interface DownloadIntentEventV03 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly eventId: string;
+  readonly revision: number;
+  readonly occurredAt: string;
+  readonly correlationId: string;
+  readonly kind: "download.intent";
+  readonly payload: {
+    readonly downloadId: string;
+    readonly intent: "abandon" | "resume" | "retry";
+    readonly intentSeq: number;
+  };
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
@@ -376,7 +432,9 @@ export type ApplicationRequestV01 =
   | CatalogDetailQueryV03
   | CatalogStatusQueryV03
   | WarehouseListEntriesQueryV03
-  | WarehouseEntryDetailQueryV03;
+  | WarehouseEntryDetailQueryV03
+  | DownloadIngestCommandV03
+  | DownloadRetryCommandV03;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -519,7 +577,7 @@ export interface CapabilityChangedEventV01 {
   readonly payload: CapabilitySnapshotV01;
 }
 
-export type ApplicationEventV01 = TaskEventV01 | CapabilityChangedEventV01;
+export type ApplicationEventV01 = TaskEventV01 | CapabilityChangedEventV01 | DownloadIntentEventV03;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -656,6 +714,21 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["warehouseItemId"])
       && isIdentifier(value.params.warehouseItemId);
+  }
+  if (value.kind === "command" && value.method === "download.ingest") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)) {
+      return false;
+    }
+    const ingestParams = value.params as { schemaVersion?: unknown; events?: unknown };
+    if (ingestParams.schemaVersion !== "0.1" || !Array.isArray(ingestParams.events)) return false;
+    return ingestParams.events.every((event) => isDownloadEventV01(event));
+  }
+  if (value.kind === "command" && value.method === "download.retry") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["taskId"])
+      && isIdentifier(value.params.taskId);
   }
   return false;
 }

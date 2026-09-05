@@ -81,6 +81,7 @@ class FakeDownloadItem extends EventEmitter {
 describe("download port (F4-3)", () => {
   let stagingRoot: string;
   let events: DownloadEventV01[];
+  let downloadURLs: string[];
 
   function createPort(overrides: { allowedOrigins?: readonly string[]; progressIntervalMs?: number } = {}): DownloadPort {
     const sink: DownloadEventSink = {
@@ -91,6 +92,7 @@ describe("download port (F4-3)", () => {
     };
     return new DownloadPort({
       stagingRoot,
+      partitionSession: { downloadURL: (url: string) => downloadURLs.push(url) } as never,
       allowedOrigins: overrides.allowedOrigins ?? ["https://booth.pm"],
       sink,
       now: () => "2026-09-06T00:00:00.000Z",
@@ -101,6 +103,7 @@ describe("download port (F4-3)", () => {
   beforeEach(() => {
     stagingRoot = mkdtempSync(path.join(tmpdir(), "vua-download-port-"));
     events = [];
+    downloadURLs = [];
   });
 
   afterEach(() => {
@@ -187,7 +190,7 @@ describe("download port (F4-3)", () => {
       failureKind: null,
     });
 
-    port.applyIntent(downloadId, "retry");
+    port.applyIntent(downloadId, "resume");
     expect(item.resumed).toBe(true);
   });
 
@@ -217,9 +220,11 @@ describe("download port (F4-3)", () => {
     const started = events.find((event) => event.kind === "download.started")!;
     writeFileSync(started.storedPath!, "partial bytes");
 
-    port.applyIntent(started.downloadId, "abandon");
+    // retry 全新 attempt:弃件 + 经 downloadURL 重发起(session 桩捕获)
+    port.applyIntent(started.downloadId, "retry");
     expect(item.cancelled).toBe(true);
     expect(existsSync(started.storedPath!)).toBe(false);
+    expect(downloadURLs).toEqual(["https://booth.pm/download/5"]);
 
     // 同 URL 重发起:新 item 重绑原 downloadId,attempt 递增
     const second = new FakeDownloadItem("https://booth.pm/download/5");

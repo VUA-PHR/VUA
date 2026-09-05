@@ -172,6 +172,8 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "warehouse.listEntries", params: {} };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
+    case "download.retry":
+      return { ...base, kind: "command", method: "download.retry", commandId: request.params.commandId, params: { taskId: request.params.taskId } };
   }
 }
 

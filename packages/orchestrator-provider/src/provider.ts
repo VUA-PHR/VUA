@@ -19,6 +19,9 @@ export interface ProviderHandshakeV01 {
   readonly supportedContractVersions: readonly ApplicationContractVersion[];
   readonly providerBuildId: string;
   readonly providerInstanceId: string;
+  /** 下载域就绪位(v0.1 增补):true 时宿主可投递 download.ingest;
+   *  缺省/false = Provider 未配置下载域,download.* 诚实不可用 */
+  readonly downloadIngest?: boolean;
 }
 
 export interface BlockingTaskV01 {
