@@ -14,11 +14,19 @@
 // (dev server);不可达则回退 dist/renderer/index.html(存在性检查,不存在则
 // 明确报错并非零退出)。
 // preload 存在(dist/electron 已编译)时注入,窗口获得 window.vua.window 壳层
-// 动作(关闭按钮真实关窗);缺失时窗口仍可预览,关闭按钮退化为端口 dismiss。
+// 动作;本脚本注册与 src/electron/main.ts 相同的 vua:window:* 处理器
+// (关闭按钮真实关窗);preload 缺失时窗口仍可预览,关闭按钮退化为端口 dismiss。
 import { existsSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
+
+// 启动方管道可能先死(终端关闭/输出被截断):Windows 上 GUI 进程向已断管道
+// console.error 会抛 EPIPE 未捕获异常并弹出错误对话框。stdio 写失败对本
+// 预览无害,一律吞掉,保证窗口不因日志通道死亡而崩溃。
+for (const stream of [process.stdout, process.stderr]) {
+  stream.on("error", () => {});
+}
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const DEV_RENDERER_URL = "http://127.0.0.1:5173";
@@ -72,6 +80,21 @@ function webPreferences() {
     sandbox: true,
     webSecurity: true,
   };
+}
+
+/** 与 main.ts 相同的窗口控制处理器(预览本地版):preload 暴露的
+ * window.vua.window.* 走这三个 channel;缺处理器时关窗 invoke 会拒绝,
+ * 窗口表现为"关不掉"。动作只作用于事件发送者自己的窗口。 */
+function registerWindowControls() {
+  const forSenderWindow = (event, apply) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) apply(win);
+  };
+  ipcMain.handle("vua:window:minimize", (event) => forSenderWindow(event, (w) => w.minimize()));
+  ipcMain.handle("vua:window:toggle-maximize", (event) =>
+    forSenderWindow(event, (w) => (w.isMaximized() ? w.unmaximize() : w.maximize())),
+  );
+  ipcMain.handle("vua:window:close", (event) => forSenderWindow(event, (w) => w.close()));
 }
 
 function surfaceUrl(base, surface) {
@@ -159,6 +182,7 @@ async function captureVrSurface(base, outPath) {
 app
   .whenReady()
   .then(async () => {
+    registerWindowControls();
     const base = await resolveRendererTarget();
     if (capturePath !== null) {
       await captureVrSurface(base, path.resolve(capturePath));

@@ -107,7 +107,9 @@ export function DesktopOverlaySurface() {
 
   /** 关闭 = dismiss + 关窗;后端不可达时退化为原生关窗,窗口永远关得掉 */
   const closeSurface = useCallback(() => {
-    const nativeClose = () => void nativeWindow?.close();
+    // 宿主未注册窗口处理器时(预览 harness/桥异常)invoke 会拒绝:
+    // 关窗是尽力而为,拒绝必须静默,不能表现为未处理异常
+    const nativeClose = () => void nativeWindow?.close()?.catch(() => {});
     if (!nativeWindow) {
       void overlayPort
         .dispatch("dismiss")
