@@ -1,0 +1,217 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/amf-production/v0.2/methods/get-plan.schema.json",
+  "title": "VUA production.get-plan (v0.2 candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspectionId": {
+      "type": "string",
+      "pattern": "^insp-[0-9a-f]{16}$"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^plan-[0-9a-f]{16}$"
+    },
+    "buildRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "mode": {
+      "enum": [
+        "direct_unity_package",
+        "local_reusable_vpm"
+      ]
+    },
+    "riskChoice": {
+      "enum": [
+        "snapshot_and_continue",
+        "continue",
+        "cancel",
+        "not_required"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "continue",
+        "rollback"
+      ]
+    },
+    "decisionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findingKind": {
+      "enum": [
+        "compat",
+        "missing",
+        "conflict"
+      ]
+    },
+    "plannability": {
+      "enum": [
+        "plannable",
+        "needs_attention",
+        "not_plannable"
+      ]
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "recovered"
+      ]
+    },
+    "workflowStage": {
+      "enum": [
+        "inspect",
+        "snapshot",
+        "execute",
+        "validate",
+        "completed"
+      ]
+    },
+    "get-planRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId"
+      ],
+      "properties": {
+        "planId": {
+          "type": "string",
+          "pattern": "^plan-[0-9a-f]{16}$"
+        }
+      }
+    },
+    "get-planResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "state",
+        "plan"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "planId",
+            "revision",
+            "inspectionId",
+            "mode",
+            "projectId",
+            "projectFingerprint",
+            "stages",
+            "riskDecisionRequired",
+            "risks",
+            "diffs",
+            "estimatedDurationMs"
+          ],
+          "properties": {
+            "planId": {
+              "type": "string",
+              "pattern": "^plan-[0-9a-f]{16}$"
+            },
+            "revision": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "inspectionId": {
+              "type": "string",
+              "pattern": "^insp-[0-9a-f]{16}$"
+            },
+            "mode": {
+              "enum": [
+                "direct_unity_package",
+                "local_reusable_vpm"
+              ]
+            },
+            "projectId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "projectFingerprint": {
+              "type": "string",
+              "minLength": 1
+            },
+            "stages": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "inspect",
+                  "snapshot",
+                  "execute",
+                  "validate",
+                  "completed"
+                ]
+              }
+            },
+            "riskDecisionRequired": {
+              "type": "boolean"
+            },
+            "risks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "summary",
+                  "recoverable",
+                  "retryable"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "compat",
+                      "missing",
+                      "conflict"
+                    ]
+                  },
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "recoverable": {
+                    "type": "boolean"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "diffs": {
+              "type": "array",
+              "items": {
+                "type": "object"
+              }
+            },
+            "estimatedDurationMs": {
+              "type": [
+                "integer",
+                "null"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,288 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/amf-production/v0.2/methods/get-build-record.schema.json",
+  "title": "VUA production.get-build-record (v0.2 candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspectionId": {
+      "type": "string",
+      "pattern": "^insp-[0-9a-f]{16}$"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^plan-[0-9a-f]{16}$"
+    },
+    "buildRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "mode": {
+      "enum": [
+        "direct_unity_package",
+        "local_reusable_vpm"
+      ]
+    },
+    "riskChoice": {
+      "enum": [
+        "snapshot_and_continue",
+        "continue",
+        "cancel",
+        "not_required"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "continue",
+        "rollback"
+      ]
+    },
+    "decisionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findingKind": {
+      "enum": [
+        "compat",
+        "missing",
+        "conflict"
+      ]
+    },
+    "plannability": {
+      "enum": [
+        "plannable",
+        "needs_attention",
+        "not_plannable"
+      ]
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "recovered"
+      ]
+    },
+    "workflowStage": {
+      "enum": [
+        "inspect",
+        "snapshot",
+        "execute",
+        "validate",
+        "completed"
+      ]
+    },
+    "get-build-recordRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buildRecordId"
+      ],
+      "properties": {
+        "buildRecordId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_-]{1,128}$"
+        }
+      }
+    },
+    "get-build-recordResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "state",
+        "buildRecord"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "buildRecord": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "recordId",
+            "taskId",
+            "planId",
+            "mode",
+            "status",
+            "stages",
+            "evidenceSummary",
+            "restoreAttempted",
+            "restoreSucceeded",
+            "startedAt",
+            "finishedAt"
+          ],
+          "properties": {
+            "recordId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "taskId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "planId": {
+              "type": "string",
+              "minLength": 1
+            },
+            "mode": {
+              "enum": [
+                "direct_unity_package",
+                "local_reusable_vpm"
+              ]
+            },
+            "status": {
+              "enum": [
+                "succeeded",
+                "succeeded_with_warnings",
+                "failed",
+                "cancelled",
+                "recovered"
+              ]
+            },
+            "stages": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "inspect",
+                  "snapshot",
+                  "execute",
+                  "validate",
+                  "completed"
+                ]
+              }
+            },
+            "evidenceSummary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "snapshot",
+                "bridge",
+                "localVpm",
+                "validation"
+              ],
+              "properties": {
+                "snapshot": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "attempted",
+                    "succeeded"
+                  ],
+                  "properties": {
+                    "attempted": {
+                      "type": "boolean"
+                    },
+                    "succeeded": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "bridge": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "jobsRun",
+                    "allSucceeded",
+                    "lastOperation"
+                  ],
+                  "properties": {
+                    "jobsRun": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "allSucceeded": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "lastOperation": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "localVpm": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "attempted",
+                    "published",
+                    "packageId"
+                  ],
+                  "properties": {
+                    "attempted": {
+                      "type": "boolean"
+                    },
+                    "published": {
+                      "type": [
+                        "boolean",
+                        "null"
+                      ]
+                    },
+                    "packageId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  }
+                },
+                "validation": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "status"
+                  ],
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "passed",
+                        "failed",
+                        "skipped"
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "restoreAttempted": {
+              "type": "boolean"
+            },
+            "restoreSucceeded": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "startedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "finishedAt": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

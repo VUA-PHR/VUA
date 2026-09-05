@@ -1,0 +1,213 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/amf-production/v0.2/methods/get-inspection.schema.json",
+  "title": "VUA production.get-inspection (v0.2 candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspectionId": {
+      "type": "string",
+      "pattern": "^insp-[0-9a-f]{16}$"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^plan-[0-9a-f]{16}$"
+    },
+    "buildRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "mode": {
+      "enum": [
+        "direct_unity_package",
+        "local_reusable_vpm"
+      ]
+    },
+    "riskChoice": {
+      "enum": [
+        "snapshot_and_continue",
+        "continue",
+        "cancel",
+        "not_required"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "continue",
+        "rollback"
+      ]
+    },
+    "decisionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findingKind": {
+      "enum": [
+        "compat",
+        "missing",
+        "conflict"
+      ]
+    },
+    "plannability": {
+      "enum": [
+        "plannable",
+        "needs_attention",
+        "not_plannable"
+      ]
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "recovered"
+      ]
+    },
+    "workflowStage": {
+      "enum": [
+        "inspect",
+        "snapshot",
+        "execute",
+        "validate",
+        "completed"
+      ]
+    },
+    "get-inspectionRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inspectionId"
+      ],
+      "properties": {
+        "inspectionId": {
+          "type": "string",
+          "pattern": "^insp-[0-9a-f]{16}$"
+        }
+      }
+    },
+    "get-inspectionResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "state",
+        "inspection"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "type": "string",
+          "minLength": 1
+        },
+        "inspection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "inspectionId",
+            "inspectedAt",
+            "displayName",
+            "sourceFingerprint",
+            "riskFingerprint",
+            "packages",
+            "findings",
+            "plannability"
+          ],
+          "properties": {
+            "inspectionId": {
+              "type": "string",
+              "pattern": "^insp-[0-9a-f]{16}$"
+            },
+            "inspectedAt": {
+              "type": "string",
+              "minLength": 1
+            },
+            "displayName": {
+              "type": "string"
+            },
+            "sourceFingerprint": {
+              "type": "string",
+              "minLength": 1
+            },
+            "riskFingerprint": {
+              "type": "string",
+              "minLength": 1
+            },
+            "packages": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "relativePath",
+                  "sizeBytes",
+                  "sha256"
+                ],
+                "properties": {
+                  "relativePath": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
+              }
+            },
+            "findings": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "summary",
+                  "recoverable",
+                  "retryable"
+                ],
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "compat",
+                      "missing",
+                      "conflict"
+                    ]
+                  },
+                  "summary": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "recoverable": {
+                    "type": "boolean"
+                  },
+                  "retryable": {
+                    "type": "boolean"
+                  }
+                }
+              }
+            },
+            "plannability": {
+              "enum": [
+                "plannable",
+                "needs_attention",
+                "not_plannable"
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

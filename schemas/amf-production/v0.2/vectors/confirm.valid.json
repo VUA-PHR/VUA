@@ -1,0 +1,49 @@
+{
+  "name": "confirm.valid",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder",
+        "projectRoot": "$projectRoot",
+        "artifactOutputRoot": "$artifactOutputRoot",
+        "projectId": "$projectId"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.requestPlan",
+      "params": {
+        "inspectionId": "$inspectionId",
+        "mode": "direct_unity_package"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.getPlan",
+      "params": {
+        "planId": "$planId"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.confirmPlan",
+      "params": {
+        "planId": "$planId",
+        "observedRevision": "$revision",
+        "riskChoice": "continue",
+        "rememberForSession": false
+      },
+      "expect": {
+        "ok": true
+      },
+      "waitTerminal": "$taskId"
+    }
+  ]
+}

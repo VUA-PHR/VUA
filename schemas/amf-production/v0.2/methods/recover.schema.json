@@ -1,0 +1,136 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/amf-production/v0.2/methods/recover.schema.json",
+  "title": "VUA production.recover (v0.2 candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspectionId": {
+      "type": "string",
+      "pattern": "^insp-[0-9a-f]{16}$"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^plan-[0-9a-f]{16}$"
+    },
+    "buildRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "mode": {
+      "enum": [
+        "direct_unity_package",
+        "local_reusable_vpm"
+      ]
+    },
+    "riskChoice": {
+      "enum": [
+        "snapshot_and_continue",
+        "continue",
+        "cancel",
+        "not_required"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "continue",
+        "rollback"
+      ]
+    },
+    "decisionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findingKind": {
+      "enum": [
+        "compat",
+        "missing",
+        "conflict"
+      ]
+    },
+    "plannability": {
+      "enum": [
+        "plannable",
+        "needs_attention",
+        "not_plannable"
+      ]
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "recovered"
+      ]
+    },
+    "workflowStage": {
+      "enum": [
+        "inspect",
+        "snapshot",
+        "execute",
+        "validate",
+        "completed"
+      ]
+    },
+    "recoverRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "decision",
+        "decisionId"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            "continue",
+            "rollback"
+          ]
+        },
+        "decisionId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planId": {
+          "type": "string",
+          "pattern": "^plan-[0-9a-f]{16}$",
+          "description": "continue-only linkage when the failed run carries no receipt (refused before any mutation)."
+        }
+      }
+    },
+    "recoverResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "state"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "state": {
+          "enum": [
+            "queued",
+            "preparing",
+            "running",
+            "succeeded",
+            "succeeded_with_warnings",
+            "failed",
+            "cancelled"
+          ]
+        }
+      }
+    }
+  }
+}

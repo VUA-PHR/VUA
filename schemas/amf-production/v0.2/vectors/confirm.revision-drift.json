@@ -1,0 +1,39 @@
+{
+  "name": "confirm.revision-drift",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder",
+        "projectRoot": "$projectRoot",
+        "artifactOutputRoot": "$artifactOutputRoot",
+        "projectId": "$projectId"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.requestPlan",
+      "params": {
+        "inspectionId": "$inspectionId",
+        "mode": "direct_unity_package"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.confirmPlan",
+      "params": {
+        "planId": "$planId",
+        "observedRevision": 99,
+        "riskChoice": "continue"
+      },
+      "expect": {
+        "ok": false,
+        "errorCode": "vua.production.plan_mismatch"
+      }
+    }
+  ]
+}

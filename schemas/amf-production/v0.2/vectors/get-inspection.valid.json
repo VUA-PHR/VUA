@@ -1,0 +1,37 @@
+{
+  "name": "get-inspection.valid",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder",
+        "projectRoot": "$projectRoot",
+        "artifactOutputRoot": "$artifactOutputRoot",
+        "projectId": "$projectId"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.getInspection",
+      "params": {
+        "inspectionId": "$inspectionId"
+      },
+      "expect": {
+        "ok": true,
+        "checks": {
+          "inspection.inspectionId": {
+            "startsWith": "insp-"
+          },
+          "inspection.plannability": {
+            "equals": "plannable"
+          },
+          "inspection.findings": {
+            "isArray": true
+          }
+        }
+      }
+    }
+  ]
+}

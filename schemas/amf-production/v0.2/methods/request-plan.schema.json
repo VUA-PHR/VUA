@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/amf-production/v0.2/methods/request-plan.schema.json",
+  "title": "VUA production.request-plan (v0.2 candidate)",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "inspectionId": {
+      "type": "string",
+      "pattern": "^insp-[0-9a-f]{16}$"
+    },
+    "planId": {
+      "type": "string",
+      "pattern": "^plan-[0-9a-f]{16}$"
+    },
+    "buildRecordId": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,128}$"
+    },
+    "mode": {
+      "enum": [
+        "direct_unity_package",
+        "local_reusable_vpm"
+      ]
+    },
+    "riskChoice": {
+      "enum": [
+        "snapshot_and_continue",
+        "continue",
+        "cancel",
+        "not_required"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "continue",
+        "rollback"
+      ]
+    },
+    "decisionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "findingKind": {
+      "enum": [
+        "compat",
+        "missing",
+        "conflict"
+      ]
+    },
+    "plannability": {
+      "enum": [
+        "plannable",
+        "needs_attention",
+        "not_plannable"
+      ]
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "recovered"
+      ]
+    },
+    "workflowStage": {
+      "enum": [
+        "inspect",
+        "snapshot",
+        "execute",
+        "validate",
+        "completed"
+      ]
+    },
+    "request-planRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inspectionId",
+        "mode"
+      ],
+      "properties": {
+        "inspectionId": {
+          "type": "string",
+          "pattern": "^insp-[0-9a-f]{16}$"
+        },
+        "mode": {
+          "enum": [
+            "direct_unity_package",
+            "local_reusable_vpm"
+          ]
+        }
+      }
+    },
+    "request-planResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "planId",
+        "revision"
+      ],
+      "properties": {
+        "taskId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planId": {
+          "type": "string",
+          "pattern": "^plan-[0-9a-f]{16}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  }
+}

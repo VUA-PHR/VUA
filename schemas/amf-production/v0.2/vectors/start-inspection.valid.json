@@ -1,0 +1,22 @@
+{
+  "name": "start-inspection.valid",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder",
+        "projectRoot": "$projectRoot",
+        "artifactOutputRoot": "$artifactOutputRoot",
+        "projectId": "$projectId"
+      },
+      "expect": {
+        "ok": true,
+        "checks": {
+          "inspectionId": {
+            "startsWith": "insp-"
+          }
+        }
+      }
+    }
+  ]
+}

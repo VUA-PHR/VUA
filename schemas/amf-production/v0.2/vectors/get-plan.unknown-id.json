@@ -1,0 +1,15 @@
+{
+  "name": "get-plan.unknown-id",
+  "steps": [
+    {
+      "method": "production.getPlan",
+      "params": {
+        "planId": "plan-0000000000000000"
+      },
+      "expect": {
+        "ok": false,
+        "errorCode": "vua.production.record_not_found"
+      }
+    }
+  ]
+}
