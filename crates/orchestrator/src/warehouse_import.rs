@@ -265,6 +265,129 @@ fn collect_files(
     Ok(())
 }
 
+// ============================ Task layer ============================
+//
+// The batch import as a TaskRuntime task type (v0.4.2 frozen runtime):
+// nine states, revisioned events, commandId idempotency live in the
+// runtime; this layer only binds the Kernel-resolved folders and the
+// warehouse root into a one-shot closure and maps outcomes. Folder
+// boundaries are the safe cancellation boundaries — a folder already
+// imported stays imported (entries are durable in BDL), and the job checks
+// the task cancel flag before starting each folder.
+
+use crate::contracts::{ErrorCategory, ParamValue};
+use crate::runtime::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
+use std::sync::Arc;
+use std::time::Duration;
+
+/// One batch-import task binding. All folders are Kernel-resolved; the
+/// display-name rule (source folder's final component) and the entry
+/// identity rule are the importer's.
+#[derive(Debug, Clone)]
+pub struct WarehouseImportTaskSpec {
+    pub correlation_id: String,
+    pub source_folders: Vec<PathBuf>,
+    pub warehouse_root: PathBuf,
+}
+
+/// Task-layer result payload (Done exit): per-folder reports in submission
+/// order.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WarehouseImportTaskResult {
+    pub correlation_id: String,
+    pub folders_requested: usize,
+    pub folders_imported: usize,
+    pub reports: Vec<WarehouseImportReport>,
+}
+
+fn import_error_to_app(
+    error: ImportError,
+    correlation_id: &str,
+    folder: &Path,
+) -> crate::AppErrorV1 {
+    let (code, category) = match &error {
+        ImportError::Store(_) => ("vua.warehouse.storeFailed", ErrorCategory::Internal),
+        ImportError::Io(_) => ("vua.warehouse.importIoFailed", ErrorCategory::ExternalFailure),
+        ImportError::UnnamedSource(_) | ImportError::SourceInsideWarehouse(_) => {
+            ("vua.warehouse.invalidSource", ErrorCategory::Validation)
+        }
+        ImportError::CopySizeMismatch { .. } => {
+            ("vua.warehouse.copySizeMismatch", ErrorCategory::ExternalFailure)
+        }
+    };
+    crate::AppErrorV1::new(code, category, "errors.warehouse.importFailed", correlation_id)
+        .with_param(
+            "folder",
+            ParamValue::Text(folder.to_string_lossy().into_owned()),
+        )
+        .with_param("reason", ParamValue::Text(error.to_string()))
+        .with_recoverable(true)
+}
+
+/// Assemble the task closure: folders import in submission order with a
+/// progress event after each; a cancel request stops the batch at the next
+/// folder boundary (Cancelled exit, no payload — the durable partial state
+/// is queryable through `warehouse.listEntries`).
+pub fn warehouse_import_job(
+    store: Arc<BdlStore>,
+    clock: Arc<dyn Clock>,
+    spec: Arc<WarehouseImportTaskSpec>,
+) -> TaskJob {
+    Box::new(move |ctx| {
+        let mut reports = Vec::new();
+        for folder in &spec.source_folders {
+            if ctx.check_cancel() {
+                ctx.emit_progress(serde_json::json!({
+                    "kind": "warehouse.import.cancelled",
+                    "cancelledBeforeFolder": folder.to_string_lossy(),
+                    "foldersImported": reports.len(),
+                }));
+                return Ok(TaskExit::Cancelled);
+            }
+            let importer = WarehouseImporter::new(&store, &*clock, spec.warehouse_root.clone());
+            match importer.import_folder(folder) {
+                Ok(report) => {
+                    ctx.emit_progress(serde_json::json!({
+                        "kind": "warehouse.import.folderImported",
+                        "folder": folder.to_string_lossy(),
+                        "entryId": report.entry.warehouse_item_id,
+                        "foldersImported": reports.len() + 1,
+                    }));
+                    reports.push(report);
+                }
+                Err(error) => {
+                    return Err(import_error_to_app(error, &spec.correlation_id, folder))
+                }
+            }
+        }
+        let result = WarehouseImportTaskResult {
+            correlation_id: spec.correlation_id.clone(),
+            folders_requested: spec.source_folders.len(),
+            folders_imported: reports.len(),
+            reports,
+        };
+        let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+        Ok(TaskExit::Done(payload))
+    })
+}
+
+/// Convenience submission: the correlation id binds the whole batch.
+pub fn submit_warehouse_import(
+    runtime: &TaskRuntime,
+    store: Arc<BdlStore>,
+    clock: Arc<dyn Clock>,
+    spec: WarehouseImportTaskSpec,
+    timeout: Option<Duration>,
+) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+    let correlation_id = spec.correlation_id.clone();
+    runtime.submit(SubmitRequest {
+        correlation_id: Some(correlation_id),
+        timeout,
+        job: warehouse_import_job(store, clock, Arc::new(spec)),
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -436,5 +559,183 @@ mod tests {
             Err(ImportError::SourceInsideWarehouse(_))
         ));
         std::fs::remove_dir_all(&warehouse_root).ok();
+    }
+
+    // ============================ task layer ============================
+
+    mod task {
+        use super::*;
+        use crate::contracts::{AppErrorV1, TaskState};
+        use crate::runtime::TaskRuntime;
+        use crate::time::{FixedIdGenerator, SystemClock};
+        use std::time::{Duration, Instant};
+
+        fn runtime() -> TaskRuntime {
+            TaskRuntime::new(
+                Arc::new(crate::journal::MemoryJournal::default()),
+                Arc::new(SystemClock),
+                Arc::new(FixedIdGenerator::default()),
+            )
+        }
+
+        fn wait_for_terminal(rt: &TaskRuntime, task_id: &str) -> crate::runtime::TaskSnapshot {
+            let deadline = Instant::now() + Duration::from_secs(30);
+            loop {
+                let snapshot = rt.snapshot(task_id).expect("task must exist");
+                if snapshot.state.is_terminal() {
+                    return snapshot;
+                }
+                assert!(Instant::now() < deadline, "task did not finish");
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+
+        fn make_folder(parent: &Path, name: &str, contents: &[u8]) -> PathBuf {
+            let folder = parent.join(name);
+            std::fs::create_dir_all(&folder).unwrap();
+            std::fs::write(folder.join("pack.unitypackage"), contents).unwrap();
+            folder
+        }
+
+        #[test]
+        fn import_task_runs_folders_in_order_and_reports_each() {
+            let store = Arc::new(BdlStore::open_in_memory().unwrap());
+            let warehouse_root = unique_dir("wh");
+            let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
+            let parent = unique_dir("parent");
+            let folders = vec![
+                make_folder(&parent, "alpha", b"PK alpha"),
+                make_folder(&parent, "beta", b"PK beta"),
+            ];
+            let rt = runtime();
+            let events = rt.subscribe();
+            let accepted = submit_warehouse_import(
+                &rt,
+                store.clone(),
+                clock,
+                WarehouseImportTaskSpec {
+                    correlation_id: "corr-import-1".into(),                    source_folders: folders,
+                    warehouse_root: warehouse_root.clone(),
+                },
+                None,
+            )
+            .unwrap();
+
+            let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+            assert_eq!(snapshot.state, TaskState::Succeeded);
+            let mut completed_payload = None;
+            while let Ok(event) = events.try_recv() {
+                if event.kind == crate::contracts::TaskEventKind::Completed {
+                    completed_payload = Some(event.payload);
+                }
+            }
+            let payload = completed_payload.expect("a completed event with the batch result");
+            assert_eq!(payload["foldersRequested"], 2);
+            assert_eq!(payload["foldersImported"], 2);
+            assert_eq!(payload["reports"][0]["entry"]["displayName"], "alpha");
+            assert_eq!(payload["reports"][1]["entry"]["displayName"], "beta");
+            // The durable read face shows both entries.
+            assert_eq!(store.warehouse_entry_cards().unwrap().len(), 2);
+            std::fs::remove_dir_all(&warehouse_root).ok();
+            std::fs::remove_dir_all(&parent).ok();
+        }
+
+        #[test]
+        fn import_task_fails_fast_and_keeps_already_imported_entries() {
+            let store = Arc::new(BdlStore::open_in_memory().unwrap());
+            let warehouse_root = unique_dir("wh");
+            let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
+            let parent = unique_dir("parent");
+            let good = make_folder(&parent, "good", b"PK good");
+            // The second folder lives inside the warehouse root: invalid.
+            let nested = warehouse_root.join("nested-source");
+            std::fs::create_dir_all(&nested).unwrap();
+            std::fs::write(nested.join("pack.unitypackage"), b"PK").unwrap();
+            let rt = runtime();
+            let accepted = submit_warehouse_import(
+                &rt,
+                store.clone(),
+                clock,
+                WarehouseImportTaskSpec {
+                    correlation_id: "corr-import-2".into(),
+                    source_folders: vec![good, nested],
+                    warehouse_root: warehouse_root.clone(),
+                },
+                None,
+            )
+            .unwrap();
+
+            let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+            assert_eq!(snapshot.state, TaskState::Failed);
+            // Fail-fast keeps the durable partial state queryable.
+            let cards = store.warehouse_entry_cards().unwrap();
+            assert_eq!(cards.len(), 1);
+            assert_eq!(cards[0].display_name, "good");
+            std::fs::remove_dir_all(&warehouse_root).ok();
+            std::fs::remove_dir_all(&parent).ok();
+        }
+
+        #[test]
+        fn cancellation_takes_effect_at_folder_boundaries() {
+            let store = Arc::new(BdlStore::open_in_memory().unwrap());
+            let warehouse_root = unique_dir("wh");
+            let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
+            let parent = unique_dir("parent");
+            let folders: Vec<PathBuf> = (0..40)
+                .map(|index| make_folder(&parent, &format!("f{index:03}"), b"PK"))
+                .collect();
+            let rt = runtime();
+            let events = rt.subscribe();
+            let accepted = submit_warehouse_import(
+                &rt,
+                store.clone(),
+                clock,
+                WarehouseImportTaskSpec {
+                    correlation_id: "corr-import-3".into(),
+                    source_folders: folders,
+                    warehouse_root: warehouse_root.clone(),
+                },
+                None,
+            )
+            .unwrap();
+
+            // Cancel as soon as the first folder's progress is observable;
+            // the job stops at the next folder boundary.
+            let deadline = Instant::now() + Duration::from_secs(30);
+            loop {
+                if let Ok(event) = events.try_recv() {
+                    if event.payload["kind"] == "warehouse.import.folderImported" {
+                        rt.cancel(&accepted.task_id).unwrap();
+                        break;
+                    }
+                }
+                assert!(Instant::now() < deadline, "no folder progress observed");
+                std::thread::sleep(Duration::from_millis(1));
+            }
+            let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+            assert_eq!(snapshot.state, TaskState::Cancelled);
+            let imported = store.warehouse_entry_cards().unwrap().len();
+            assert!(
+                imported < 40,
+                "cancellation must stop the batch at a folder boundary (imported {imported})"
+            );
+            assert!(imported >= 1, "the in-flight folder completed");
+            std::fs::remove_dir_all(&warehouse_root).ok();
+            std::fs::remove_dir_all(&parent).ok();
+        }
+
+        #[test]
+        fn error_shape_carries_folder_and_reason_params() {
+            let error = import_error_to_app(
+                ImportError::SourceInsideWarehouse(PathBuf::from("C:\\wh\\nested")),
+                "corr-x",
+                Path::new("C:\\wh\\nested"),
+            );
+            let AppErrorV1 {
+                code, params, ..
+            } = error;
+            assert_eq!(code, "vua.warehouse.invalidSource");
+            assert_eq!(params.as_ref().unwrap()["folder"], ParamValue::Text("C:\\wh\\nested".into()));
+        }
     }
 }

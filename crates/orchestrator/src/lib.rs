@@ -178,8 +178,9 @@ pub use vpm_backend::{
     VrcGetLibBackend,
 };
 pub use warehouse_import::{
-    ImportedArtifact, ImportError as WarehouseImportError, SkippedSourceFile,
-    WarehouseImportReport, WarehouseImporter, IMPORT_ENTRY_KIND,
+    submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
+    SkippedSourceFile, WarehouseImportReport, WarehouseImportTaskResult, WarehouseImporter,
+    WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};
