@@ -28,6 +28,7 @@ mod material_exec;
 mod material_staging;
 mod model;
 mod process;
+mod production_documents;
 mod project_identity;
 mod project_lock;
 mod provider_host;
@@ -72,9 +73,14 @@ pub use booth_extraction::{
 };
 pub use bridge::{BridgeError, UnityBatchBridge};
 pub use build_record::{
-    BridgeJobEvidenceV01, BuildRecordStatus, BuildRecordStore, BuildRecordV01,
-    BuildSnapshotEvidenceV01, BuildValidationEvidenceV01, LocalVpmEvidenceV01,
-    BUILD_RECORD_SCHEMA_VERSION,
+    wire_v02, BridgeJobEvidenceV01, BridgeSummary, BuildRecordStatus, BuildRecordStore,
+    BuildRecordV01, BuildRecordWireV02, BuildSnapshotEvidenceV01, BuildValidationEvidenceV01,
+    EvidenceSummary, LocalVpmEvidenceV01, LocalVpmSummary, SnapshotSummary, ValidationSummary,
+    BUILD_RECORD_SCHEMA_VERSION, PRODUCTION_STAGES,
+};
+pub use production_documents::{
+    build_inspection_document, build_plan_document, InspectionDocument, InspectionFinding,
+    InspectionFindingKind, PlanDocument, Plannability,
 };
 pub use capability::{
     CapabilityRegistry, CapabilityReport, CapabilitySource, CapabilityState, UnavailableSource,

@@ -1496,11 +1496,23 @@ fn production_request(
         "production.startInspection" => {
             start_inspection(state, &services, request, request_id, correlation_id, command_id)
         }
-        "production.getInspection" => get_task_payload(state, request, request_id, "inspection"),
+        "production.getInspection" => get_domain_document(
+            state,
+            request,
+            request_id,
+            "inspection",
+            "inspectionId",
+        ),
         "production.requestPlan" => {
             request_plan(state, &services, request, request_id, correlation_id, command_id)
         }
-        "production.getPlan" => get_task_payload(state, request, request_id, "plan"),
+        "production.getPlan" => get_domain_document(
+            state,
+            request,
+            request_id,
+            "plan",
+            "planId",
+        ),
         "production.confirmPlan" => {
             confirm_plan(state, &services, request, request_id, correlation_id, command_id, false)
         }
@@ -1627,12 +1639,31 @@ fn start_inspection(
     correlation_id: &str,
     command_id: &str,
 ) -> Result<FrameOutcome, ProductionError> {
+    // v0.2: Kernel hands over the four-tuple ONCE — source and project paths
+    // are bound here and never re-submitted by the renderer (M3/T1 ruling).
     let source_folder = param_str(request, "/params/sourceFolder").to_owned();
+    let project_root = param_str(request, "/params/projectRoot").to_owned();
+    let artifact_output_root = param_str(request, "/params/artifactOutputRoot").to_owned();
+    let project_id = param_str(request, "/params/projectId").to_owned();
+    if source_folder.is_empty()
+        || project_root.is_empty()
+        || artifact_output_root.is_empty()
+        || project_id.is_empty()
+    {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
     let (task_id, replayed) = accept_production_task(
         state,
         "production.startInspection",
         command_id,
-        &json!({"kind": "production.startInspection", "commandId": command_id, "sourceFolder": source_folder}),
+        &json!({
+            "kind": "production.startInspection", "commandId": command_id,
+            "sourceFolder": source_folder, "projectRoot": project_root,
+            "artifactOutputRoot": artifact_output_root, "projectId": project_id
+        }),
         request_id,
         correlation_id,
     )?;
@@ -1646,16 +1677,40 @@ fn start_inspection(
         .map_err(|error| persist_task_error(&state.store, &task_id, error))?;
     let result = serde_json::to_value(&inspection)
         .map_err(|_| SqliteStoreError::CorruptValue { field: "inspection", value: "json".into() })?;
+
+    // Issue the stable domain identity and bind the one-time Kernel handover.
+    let inspection_id = issue_domain_id("insp");
+    let binding = json!({
+        "sourceFolder": source_folder,
+        "projectRoot": project_root,
+        "artifactOutputRoot": artifact_output_root,
+        "projectId": project_id,
+        "createdAt": now_rfc3339(),
+    });
+    state.store.put_domain_record(
+        &inspection_id,
+        "inspection",
+        &task_id,
+        &result.to_string(),
+        &binding.to_string(),
+        &now_rfc3339(),
+    )?;
+
     advance_production_task(
         &state.store,
         &task_id,
-        TaskMutation::Complete { state: TaskState::Succeeded, error: None, result: Some(result) },
+        TaskMutation::Complete {
+            state: TaskState::Succeeded,
+            error: None,
+            result: Some(json!({ "inspectionId": inspection_id })),
+        },
     )?;
     Ok(FrameOutcome::Response(application_success(
         request_id,
         json!({
             "contractVersion": APPLICATION_CONTRACT_VERSION,
             "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
+            "inspectionId": inspection_id,
         }),
     )))
 }
@@ -1668,15 +1723,11 @@ fn request_plan(
     correlation_id: &str,
     command_id: &str,
 ) -> Result<FrameOutcome, ProductionError> {
-    let inspection_task_id = param_str(request, "/params/inspectionTaskId").to_owned();
+    // v0.2: {inspectionId, mode} — the project identity and every path come
+    // from the inspection binding (mode is the only genuine user decision).
+    let inspection_id = param_str(request, "/params/inspectionId").to_owned();
     let mode_raw = param_str(request, "/params/mode").to_owned();
-    let project_id = param_str(request, "/params/projectId").to_owned();
-    let project_fingerprint = param_str(request, "/params/projectFingerprint").to_owned();
-    if inspection_task_id.is_empty()
-        || mode_raw.is_empty()
-        || project_id.is_empty()
-        || project_fingerprint.is_empty()
-    {
+    if inspection_id.is_empty() || mode_raw.is_empty() {
         return Err(validation_error(
             "vua.production.invalid_params",
             "errors.production.invalidParams",
@@ -1690,21 +1741,35 @@ fn request_plan(
             )
         })?;
 
-    let inspection_task = state
-        .store
-        .task(&inspection_task_id)?
-        .ok_or_else(|| {
-            validation_error("vua.task.not_found", "errors.task.notFound")
-        })?;
-    let inspection: SourceFolderInspectionV01 = serde_json::from_value(
-        inspection_task.result.clone().unwrap_or(Value::Null),
+    let (_record_kind, _inspection_task_id, inspection_value, inspection_binding) =
+        domain_record_checked(state, &inspection_id, "inspection")?;
+    let source_folder = string_field(&inspection_binding, "sourceFolder");
+    let project_root = string_field(&inspection_binding, "projectRoot");
+    let project_id = string_field(&inspection_binding, "projectId");
+    if source_folder.is_empty() || project_root.is_empty() || project_id.is_empty() {
+        return Err(validation_error(
+            "vua.production.record_invalid",
+            "errors.production.recordInvalid",
+        ));
+    }
+    // The fingerprint is computed at plan time from the bound project root —
+    // drift between inspection and plan is therefore still detected.
+    let project_fingerprint = crate::filesystem::project_tree_fingerprint(
+        Path::new(&project_root),
+        &["Assets", "Packages", "ProjectSettings"],
     )
-    .map_err(|_| {
-        validation_error(
-            "vua.production.inspection_mismatch",
-            "errors.production.inspectionMismatch",
-        )
-    })?;
+    .map_err(|error| {
+        SqliteStoreError::CorruptValue { field: "project fingerprint", value: error.to_string() }
+    })?
+    .unwrap_or_default();
+
+    let inspection: SourceFolderInspectionV01 = serde_json::from_value(inspection_value.clone())
+        .map_err(|_| {
+            validation_error(
+                "vua.production.inspection_mismatch",
+                "errors.production.inspectionMismatch",
+            )
+        })?;
 
     let (task_id, replayed) = accept_production_task(
         state,
@@ -1712,10 +1777,8 @@ fn request_plan(
         command_id,
         &json!({
             "commandId": command_id,
-            "inspectionTaskId": inspection_task_id,
+            "inspectionId": inspection_id,
             "mode": mode_raw,
-            "projectId": project_id,
-            "projectFingerprint": project_fingerprint,
         }),
         request_id,
         correlation_id,
@@ -1733,25 +1796,50 @@ fn request_plan(
     advance_production_task(
         &state.store,
         &task_id,
-        TaskMutation::Complete { state: TaskState::Succeeded, error: None, result: Some(result) },
+        TaskMutation::Complete { state: TaskState::Succeeded, error: None, result: Some(result.clone()) },
     )?;
+
+    // Issue the plan domain identity, bound to the inspection and the plan
+    // task's post-completion revision (the value confirmPlan validates).
+    let plan_id = issue_domain_id("plan");
+    let plan_revision = state.store.task(&task_id)?.expect("plan task exists").revision;
+    let binding = json!({
+        "inspectionId": inspection_id,
+        "revision": plan_revision,
+    });
+    state.store.put_domain_record(
+        &plan_id,
+        "plan",
+        &task_id,
+        &result.to_string(),
+        &binding.to_string(),
+        &now_rfc3339(),
+    )?;
+    // Alias under the ENGINE plan id: build-record receipts reference the
+    // engine id, and the recovery chain resolves receipts through it back
+    // to this same plan record.
+    let mut alias_binding = binding.clone();
+    alias_binding["domainPlanId"] = json!(plan_id);
+    state.store.put_domain_record(
+        &plan.plan_id,
+        "plan",
+        &task_id,
+        &result.to_string(),
+        &alias_binding.to_string(),
+        &now_rfc3339(),
+    )?;
+
     Ok(FrameOutcome::Response(application_success(
         request_id,
         json!({
             "contractVersion": APPLICATION_CONTRACT_VERSION,
             "task": task_snapshot(state, &state.store.task(&task_id)?.expect("task exists")),
+            "planId": plan_id,
+            "revision": plan_revision,
         }),
     )))
 }
 
-/// Builds and runs the confirmed material intake (confirmPlan), or performs
-/// a recovery decision (recover): `continue` re-runs the confirmed plan
-/// fresh under the executor's attempt semantics; `rollback` restores the
-/// failed attempt's recovery point WITHOUT running any import. Recovery
-/// binds the original failed task and always requires a Kernel-issued user
-/// decision id. Every mutating run takes the full mutation gate — the
-/// SQLite project lease, the cross-profile project lock, and the
-/// pending-mutation marker — for its whole duration.
 fn confirm_plan(
     state: &HostState,
     services: &Arc<ProductionServices>,
@@ -1761,18 +1849,11 @@ fn confirm_plan(
     command_id: &str,
     recovery: bool,
 ) -> Result<FrameOutcome, ProductionError> {
-    let plan_task_id = param_str(request, "/params/planTaskId").to_owned();
-    let source_folder = param_str(request, "/params/sourceFolder").to_owned();
-    let project_root = param_str(request, "/params/projectRoot").to_owned();
-    let artifact_output_root = param_str(request, "/params/artifactOutputRoot").to_owned();
-    let confirmed_at = param_str(request, "/params/confirmedAt").to_owned();
-    let risk_choice = param_str(request, "/params/riskChoice").to_owned();
-    let remember_for_session = request
-        .pointer("/params/rememberForSession")
-        .and_then(Value::as_bool)
-        .unwrap_or(false);
-    let user_decision_id = param_str(request, "/params/userDecisionId").to_owned();
-    let original_task_id = param_str(request, "/params/originalTaskId").to_owned();
+    // --- v0.2 sourcing: domain references + registry bindings (M3/T1) ---
+    // Confirm face: {planId, observedRevision, riskChoice, rememberForSession?}
+    // Recovery face: {taskId, decision, decisionId} — the registry chain
+    // taskId -> receipt -> planId -> plan binding -> inspection binding
+    // resolves every path; the renderer never re-submits one.
     let decision = if recovery {
         let decision = param_str(request, "/params/decision").to_owned();
         if !matches!(decision.as_str(), "continue" | "rollback") {
@@ -1785,52 +1866,145 @@ fn confirm_plan(
     } else {
         "execute".to_owned()
     };
-    if recovery && user_decision_id.trim().is_empty() {
+    // decisionId is issued by the Kernel at acceptance, bound to
+    // taskId + revision + decision, and persisted with the recovery run.
+    let decision_id = param_str(request, "/params/decisionId").to_owned();
+    if recovery && decision_id.trim().is_empty() {
         return Err(validation_error(
-            "vua.production.user_decision_required",
-            "errors.production.userDecisionRequired",
+            "vua.production.decision_id_required",
+            "errors.production.decisionIdRequired",
         ));
     }
-    if project_root.is_empty()
-        || (decision != "rollback"
-            && (plan_task_id.is_empty()
-                || source_folder.is_empty()
-                || artifact_output_root.is_empty()
-                || risk_choice.is_empty()))
-    {
-        return Err(validation_error(
-            "vua.production.invalid_params",
-            "errors.production.invalidParams",
-        ));
+    let observed_revision = request
+        .pointer("/params/observedRevision")
+        .and_then(Value::as_u64);
+
+    let (plan_id, original_task_id, user_decision_id, risk_choice, remember_for_session) =
+        if recovery {
+            let original_task_id = param_str(request, "/params/taskId").to_owned();
+            if original_task_id.is_empty() {
+                return Err(validation_error(
+                    "vua.production.invalid_params",
+                    "errors.production.invalidParams",
+                ));
+            }
+            // Recovery binds the ORIGINAL failed run: only a terminal failed
+            // or cancelled production task is a recovery source. The receipt
+            // is required — an original without one is not recoverable
+            // through this path (the Inspect-first discipline governs the
+            // next fresh run instead).
+            let original = state
+                .store
+                .task(&original_task_id)?
+                .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+            if !matches!(original.state, TaskState::Failed | TaskState::Cancelled) {
+                return Err(not_recoverable_error());
+            }
+            // Plan linkage: the receipt's engine plan id resolves through
+            // the registry alias when a receipt exists; a `continue` without
+            // a receipt (refused before any mutation) carries the planId the
+            // renderer held from the plan response. A rollback without a
+            // receipt is refused — no run means no snapshot.
+            let record_id = original
+                .result
+                .as_ref()
+                .and_then(|result| result.get("buildRecordId"))
+                .and_then(Value::as_str)
+                .map(str::to_owned);
+            let plan_link = match record_id {
+                Some(record_id) => {
+                    let record = services.records.read(&record_id).map_err(|_| {
+                        validation_error(
+                            "vua.production.not_recoverable",
+                            "errors.production.notRecoverable",
+                        )
+                    })?;
+                    record.plan_id
+                }
+                None if decision == "rollback" => return Err(not_recoverable_error()),
+                None => param_str(request, "/params/planId").to_owned(),
+            };
+            if plan_link.is_empty() {
+                return Err(not_recoverable_error());
+            }
+            (
+                plan_link,
+                original_task_id,
+                decision_id.clone(),
+                "not_required".to_owned(),
+                false,
+            )
+        } else {
+            let plan_id = param_str(request, "/params/planId").to_owned();
+            if plan_id.is_empty() {
+                return Err(validation_error(
+                    "vua.production.invalid_params",
+                    "errors.production.invalidParams",
+                ));
+            }
+            let risk_choice = param_str(request, "/params/riskChoice").to_owned();
+            if risk_choice.is_empty() {
+                return Err(validation_error(
+                    "vua.production.invalid_params",
+                    "errors.production.invalidParams",
+                ));
+            }
+            let remember_for_session = request
+                .pointer("/params/rememberForSession")
+                .and_then(Value::as_bool)
+                .unwrap_or(false);
+            (plan_id, String::new(), String::new(), risk_choice, remember_for_session)
+        };
+
+    // Registry chain: plan record -> its plan task and its inspection
+    // binding (paths + project identity were handed over once at
+    // startInspection).
+    let (plan_task_id, plan_binding) =
+        match state.store.domain_record(&plan_id)? {
+            Some((kind, task_id, _document, binding)) if kind == "plan" => {
+                (task_id, binding)
+            }
+            _ => {
+                return Err(validation_error(
+                    "vua.production.record_not_found",
+                    "errors.production.recordNotFound",
+                ))
+            }
+        };
+    let inspection_id = string_field(&plan_binding, "inspectionId");
+    if recovery {
+        // The plan revision binds the confirmation: a recovery started from
+        // a plan whose revision drifted is refused.
+        if let Some(expected) = observed_revision {
+            let plan_revision = plan_binding["revision"].as_u64().unwrap_or(0);
+            if plan_revision != expected {
+                return Err(validation_error(
+                    "vua.production.plan_mismatch",
+                    "errors.production.planMismatch",
+                ));
+            }
+        }
+    } else {
+        let plan_revision = plan_binding["revision"].as_u64().unwrap_or(0);
+        if observed_revision != Some(plan_revision) {
+            return Err(validation_error(
+                "vua.production.plan_mismatch",
+                "errors.production.planMismatch",
+            ));
+        }
     }
-    if recovery && original_task_id.is_empty() {
-        return Err(validation_error(
-            "vua.production.invalid_params",
-            "errors.production.invalidParams",
-        ));
-    }
+    let (_kind, _inspection_task_id, _inspection_document, inspection_binding) =
+        domain_record_checked(state, &inspection_id, "inspection")?;
+    let source_folder = string_field(&inspection_binding, "sourceFolder");
+    let project_root = string_field(&inspection_binding, "projectRoot");
+    let artifact_output_root = string_field(&inspection_binding, "artifactOutputRoot");
+    let confirmed_at = String::new();
     // Inspect-first applies to the WHOLE recovery: every recovery run
     // captures a project inspection before its mutation, whatever the
     // original failure was. ("No receipt" alone would prove nothing — a
     // crash after Unity mutated but before the record was written also has
     // no receipt — so the inspection, not the receipt, governs here.)
     let require_project_inspection = recovery;
-    if recovery {
-        // Recovery binds the ORIGINAL failed run: only a terminal failed or
-        // cancelled production task is a recovery source.
-        let original = state
-            .store
-            .task(&original_task_id)?
-            .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
-        if !matches!(original.state, TaskState::Failed | TaskState::Cancelled)
-            || !original.task_id.starts_with("prod-")
-        {
-            return Err(validation_error(
-                "vua.production.not_recoverable",
-                "errors.production.notRecoverable",
-            ));
-        }
-    }
 
     // What the worker will do. Built BEFORE accepting so a malformed plan
     // or an unreadable receipt is a validation error, never a half-created
@@ -1970,16 +2144,14 @@ fn confirm_plan(
     // silent replay.
     let fingerprint_input = json!({
         "commandId": command_id,
+        "planId": plan_id,
         "planTaskId": plan_task_id,
-        "sourceFolder": source_folder,
-        "projectRoot": project_root,
-        "artifactOutputRoot": artifact_output_root,
-        "confirmedAt": confirmed_at,
+        "observedRevision": observed_revision,
         "riskChoice": risk_choice,
         "rememberForSession": remember_for_session,
         "originalTaskId": original_task_id,
         "decision": decision,
-        "userDecisionId": user_decision_id,
+        "decisionId": decision_id,
     });
     let (task_id, replayed) = accept_production_task(
         state,
@@ -2647,26 +2819,117 @@ impl MutationGate {
     }
 }
 
-fn get_task_payload(
+fn get_domain_document(
     state: &HostState,
     request: &Value,
     request_id: &str,
     kind: &str,
+    param_name: &str,
 ) -> Result<FrameOutcome, ProductionError> {
-    let task_id = param_str(request, "/params/taskId").to_owned();
-    let task = state
-        .store
-        .task(&task_id)?
-        .ok_or_else(|| validation_error("vua.task.not_found", "errors.task.notFound"))?;
+    let domain_id = param_str(request, &format!("/params/{param_name}")).to_owned();
+    if domain_id.is_empty() {
+        return Err(validation_error(
+            "vua.production.invalid_params",
+            "errors.production.invalidParams",
+        ));
+    }
+    let (record_kind, task_id, document, binding) =
+        domain_record_checked(state, &domain_id, kind)?;
+    let _ = record_kind;
+    let task = state.store.task(&task_id)?;
+    let document_value = if kind == "inspection" {
+        let inspection: SourceFolderInspectionV01 = serde_json::from_value(document)
+            .map_err(|_| {
+                validation_error(
+                    "vua.production.record_invalid",
+                    "errors.production.recordInvalid",
+                )
+            })?;
+        let inspected_at = string_field(&binding, "createdAt");
+        serde_json::to_value(crate::production_documents::build_inspection_document(
+            &domain_id,
+            &inspected_at,
+            &inspection,
+        ))
+        .map_err(|_| {
+            validation_error(
+                "vua.production.record_invalid",
+                "errors.production.recordInvalid",
+            )
+        })?
+    } else {
+        let inspection_id = string_field(&binding, "inspectionId");
+        let revision = binding["revision"].as_u64().unwrap_or(0);
+        let plan: MaterialIntakePlanV01 = serde_json::from_value(document).map_err(|_| {
+            validation_error(
+                "vua.production.record_invalid",
+                "errors.production.recordInvalid",
+            )
+        })?;
+        let mut plan_document =
+            crate::production_documents::build_plan_document(&inspection_id, revision, &plan);
+        // The plan document's identity is the DOMAIN planId (the registry
+        // id); the engine's internal plan id stays at the diagnostics
+        // boundary.
+        plan_document.plan_id = domain_id.clone();
+        serde_json::to_value(&plan_document)
+        .map_err(|_| {
+            validation_error(
+                "vua.production.record_invalid",
+                "errors.production.recordInvalid",
+            )
+        })?
+    };
+    let mut payload = json!({
+        "contractVersion": APPLICATION_CONTRACT_VERSION,
+        "taskId": task_id,
+        "state": task.map(|task| state_name(task.state)).unwrap_or("unknown"),
+    });
+    // The document rides under the record kind ("inspection" / "plan") —
+    // inserted as a dynamic key, not a literal.
+    payload
+        .as_object_mut()
+        .expect("payload object")
+        .insert(kind.to_owned(), document_value);
     Ok(FrameOutcome::Response(application_success(
         request_id,
-        json!({
-            "contractVersion": APPLICATION_CONTRACT_VERSION,
-            "taskId": task.task_id,
-            "state": state_name(task.state),
-            kind: task.result,
-        }),
+        payload,
     )))
+}
+
+/// Registry lookup that also enforces the expected record kind.
+fn domain_record_checked(
+    state: &HostState,
+    domain_id: &str,
+    expected_kind: &str,
+) -> Result<(String, String, Value, Value), ProductionError> {
+    match state.store.domain_record(domain_id)? {
+        Some((kind, task_id, document, binding)) if kind == expected_kind => {
+            Ok((kind, task_id, document, binding))
+        }
+        _ => Err(validation_error(
+            "vua.production.record_not_found",
+            "errors.production.recordNotFound",
+        )),
+    }
+}
+
+fn string_field(binding: &Value, key: &str) -> String {
+    binding
+        .get(key)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned()
+}
+
+/// Stable domain identities: a kind prefix plus nanos — unique per provider
+/// process, stable across retries and recoveries.
+fn issue_domain_id(prefix: &str) -> String {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|value| value.as_nanos())
+        .unwrap_or(0);
+    format!("{prefix}-{nanos:016x}")
 }
 
 fn get_build_record(
@@ -2675,30 +2938,29 @@ fn get_build_record(
     request_id: &str,
 ) -> Result<FrameOutcome, ProductionError> {
     let services = state.production.as_ref().expect("checked by production_request");
-    let plan_id = param_str(request, "/params/planId").to_owned();
-    if plan_id.is_empty() {
+    // v0.2: {buildRecordId} — the wire shape is the presentation-safe
+    // projection (status, stages, evidenceSummary, restore fields); the raw
+    // evidence sections stay in the stored record at the diagnostics
+    // boundary.
+    let record_id = param_str(request, "/params/buildRecordId").to_owned();
+    if record_id.is_empty() {
         return Err(validation_error(
             "vua.production.invalid_params",
             "errors.production.invalidParams",
         ));
     }
-    let record_id = if plan_id.starts_with("material-") {
-        plan_id.clone()
-    } else {
-        format!("material-{plan_id}")
-    };
     let record = services
         .records
         .read(&record_id)
-        .map_err(|_| validation_error("vua.task.not_found", "errors.task.notFound"))?;
-    let value = serde_json::to_value(&record).map_err(|_| {
+        .map_err(|_| validation_error("vua.production.record_not_found", "errors.production.recordNotFound"))?;
+    let build_record = serde_json::to_value(crate::build_record::wire_v02(&record)).map_err(|_| {
         validation_error("vua.production.record_invalid", "errors.production.recordInvalid")
     })?;
     Ok(FrameOutcome::Response(application_success(
         request_id,
         json!({
             "contractVersion": APPLICATION_CONTRACT_VERSION,
-            "buildRecord": value,
+            "buildRecord": build_record,
         }),
     )))
 }

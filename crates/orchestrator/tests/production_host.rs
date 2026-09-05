@@ -202,12 +202,10 @@ fn production_config(base: &Path, _project_root: &Path) -> (ProductionConfig, Fa
     )
 }
 
-fn plan_params(inspection_task_id: &str) -> Value {
+fn plan_params(inspection_id: &str) -> Value {
     json!({
-        "inspectionTaskId": inspection_task_id,
+        "inspectionId": inspection_id,
         "mode": "direct_unity_package",
-        "projectId": "project",
-        "projectFingerprint": "project-fingerprint",
     })
 }
 
@@ -226,7 +224,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
                     "req-inspect-1",
                     "production.startInspection",
                     "cmd-inspect-1",
-                    json!({ "sourceFolder": source.to_string_lossy() }),
+                    inspect_params(&source, &project_root, &base),
                 ),
             )]),
             &mut output_buffer,
@@ -239,7 +237,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let frames = parse_frames(&output);
     let inspect = response_payload(&frames, "req-inspect-1");
     assert_eq!(inspect["task"]["state"], "succeeded", "inspect: {inspect}");
-    let inspection_task_id = inspect["task"]["taskId"].as_str().unwrap().to_owned();
+    let inspection_id = inspect["inspectionId"].as_str().unwrap().to_owned();
 
     // Run 2 (same store): Plan from the persisted inspection.
     let (config, _bridge) = production_config(&base, &project_root);
@@ -252,7 +250,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
                     "req-plan-1",
                     "production.requestPlan",
                     "cmd-plan-1",
-                    plan_params(&inspection_task_id),
+                    plan_params(&inspection_id),
                 ),
             )]),
             &mut output_buffer,
@@ -264,8 +262,57 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     };
     let frames = parse_frames(&output);
     let plan = response_payload(&frames, "req-plan-1");
+    if plan["planId"].is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-plan-1"
+            })
+            .expect("plan response frame");
+        panic!("plan-1 full frame: {}", frame);
+    }
     assert_eq!(plan["task"]["state"], "succeeded", "plan: {plan}");
-    let plan_task_id = plan["task"]["taskId"].as_str().unwrap().to_owned();
+    let plan_id = plan["planId"].as_str().unwrap().to_owned();
+
+    // Run 2b: read the plan document — its revision is the confirm binding.
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_orchestrator::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-getplan-1",
+                    "production.getPlan",
+                    "",
+                    json!({ "planId": plan_id }),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    if response_payload(&frames, "req-getplan-1").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response"
+                    && frame["payload"]["requestId"] == "req-getplan-1"
+            })
+            .expect("getplan response frame");
+        panic!("getplan full frame: {}", frame);
+    }
+    let plan_document = response_payload(&frames, "req-getplan-1");
+    assert_eq!(plan_document["plan"]["planId"], plan_id);
+    assert_eq!(
+        plan_document["plan"]["stages"].as_array().expect("stages").len(),
+        5
+    );
+    let revision = plan_document["plan"]["revision"].as_u64().expect("plan revision");
 
     // Run 3: Confirm. The response carries Running; the worker completes
     // through the store afterwards.
@@ -279,7 +326,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
                     "req-confirm-1",
                     "production.confirmPlan",
                     "cmd-confirm-1",
-                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                    confirm_params(&plan_id, revision),
                 ),
             )]),
             &mut output_buffer,
@@ -323,7 +370,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
                     "req-record-1",
                     "production.getBuildRecord",
                     "",
-                    json!({ "planId": record_id }),
+                    json!({ "buildRecordId": record_id }),
                 ),
             )]),
             &mut output_buffer,
@@ -350,7 +397,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
                     "req-confirm-2",
                     "production.confirmPlan",
                     "cmd-confirm-1",
-                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                    confirm_params(&plan_id, revision),
                 ),
             )]),
             &mut output_buffer,
@@ -368,15 +415,30 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let _ = fs::remove_dir_all(&base);
 }
 
-fn confirm_params(plan_task_id: &str, source: &Path, project_root: &Path, base: &Path) -> Value {
+fn confirm_params(plan_id: &str, revision: u64) -> Value {
     json!({
-        "planTaskId": plan_task_id,
+        "planId": plan_id,
+        "observedRevision": revision,
+        "riskChoice": "continue",
+        "rememberForSession": false,
+    })
+}
+
+fn inspect_params(source: &Path, project_root: &Path, base: &Path) -> Value {
+    json!({
         "sourceFolder": source.to_string_lossy(),
         "projectRoot": project_root.to_string_lossy(),
         "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
-        "confirmedAt": "2026-09-05T00:00:00Z",
-        "riskChoice": "continue",
-        "rememberForSession": false,
+        "projectId": "project",
+    })
+}
+
+fn recover_params_v02(decision: &str, original_task_id: &str, plan_id: &str) -> Value {
+    json!({
+        "taskId": original_task_id,
+        "decision": decision,
+        "decisionId": format!("kernel-decision-{decision}"),
+        "planId": plan_id,
     })
 }
 
@@ -618,17 +680,18 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
             "req-inspect",
             "production.startInspection",
             "cmd-inspect",
-            json!({ "sourceFolder": source.to_string_lossy() }),
+            inspect_params(&source, &project_root, &base),
         ),
     ));
     let inspect = wait_for_response(&output_buffer, "req-inspect");
-    let inspection_task_id = inspect["task"]["taskId"].as_str().unwrap().to_owned();
+    let inspection_id = inspect["inspectionId"].as_str().unwrap().to_owned();
     send(frame(
         "f2",
-        request("req-plan", "production.requestPlan", "cmd-plan", plan_params(&inspection_task_id)),
+        request("req-plan", "production.requestPlan", "cmd-plan", plan_params(&inspection_id)),
     ));
     let plan = wait_for_response(&output_buffer, "req-plan");
-    let plan_task_id = plan["task"]["taskId"].as_str().unwrap().to_owned();
+    let plan_id = plan["planId"].as_str().unwrap().to_owned();
+    let plan_revision = plan["revision"].as_u64().unwrap();
 
     // Confirm: the worker enters the blocking Bridge command.
     send(frame(
@@ -637,7 +700,7 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
             "req-confirm",
             "production.confirmPlan",
             "cmd-confirm-cancel",
-            confirm_params(&plan_task_id, &source, &project_root, &base),
+            confirm_params(&plan_id, plan_revision),
         ),
     ));
     let confirm = wait_for_response(&output_buffer, "req-confirm");
@@ -675,27 +738,6 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
     assert!(task.cancel_requested);
     let _ = fs::remove_dir_all(&base);
 }
-fn recover_params(
-    decision: &str,
-    original_task_id: &str,
-    plan_task_id: &str,
-    source: &Path,
-    project_root: &Path,
-    base: &Path,
-) -> Value {
-    json!({
-        "decision": decision,
-        "originalTaskId": original_task_id,
-        "planTaskId": plan_task_id,
-        "sourceFolder": source.to_string_lossy(),
-        "projectRoot": project_root.to_string_lossy(),
-        "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
-        "confirmedAt": "2026-09-05T00:00:00Z",
-        "riskChoice": "continue",
-        "rememberForSession": false,
-        "userDecisionId": format!("user-decision-{decision}"),
-    })
-}
 
 /// A Bridge whose every command fails — simulates a broken Unity run so a
 /// confirmed confirm lands Failed with a receipt and a recovery snapshot.
@@ -715,7 +757,7 @@ impl UnityBridge for FailingBridge {
 /// plan task id for recovery requests.
 fn run_failing_confirm(
     label: &str,
-) -> (PathBuf, PathBuf, PathBuf, String, String) {
+) -> (PathBuf, PathBuf, PathBuf, String, u64, String) {
     let (base, source, project_root) = make_world(label);
 
     // Run 1: inspect + plan (real executor, instant fake bridge).
@@ -730,7 +772,7 @@ fn run_failing_confirm(
                         "req-inspect",
                         "production.startInspection",
                         "cmd-inspect",
-                        json!({ "sourceFolder": source.to_string_lossy() }),
+                        inspect_params(&source, &project_root, &base),
                     ),
                 ),
                 frame("f2", request("req-pump", "task.list", "", json!({}))),
@@ -743,11 +785,10 @@ fn run_failing_confirm(
         output_buffer
     };
     let frames = parse_frames(&output);
-    let inspection_task_id =
-        response_payload(&frames, "req-inspect")["task"]["taskId"]
-            .as_str()
-            .unwrap()
-            .to_owned();
+    let inspection_id = response_payload(&frames, "req-inspect")["inspectionId"]
+        .as_str()
+        .unwrap()
+        .to_owned();
 
     // Run 2: plan.
     let (config, _bridge) = production_config(&base, &project_root);
@@ -760,7 +801,7 @@ fn run_failing_confirm(
                     "req-plan",
                     "production.requestPlan",
                     "cmd-plan",
-                    plan_params(&inspection_task_id),
+                    plan_params(&inspection_id),
                 ),
             )]),
             &mut output_buffer,
@@ -771,10 +812,13 @@ fn run_failing_confirm(
         output_buffer
     };
     let frames = parse_frames(&output);
-    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let plan_id = response_payload(&frames, "req-plan")["planId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
+    let plan_revision = response_payload(&frames, "req-plan")["revision"]
+    .as_u64()
+    .unwrap();
 
     // Run 3: confirm against the FAILING bridge. The worker persists the
     // Failed terminal state (with a receipt and recovery snapshot).
@@ -802,7 +846,7 @@ fn run_failing_confirm(
                         "req-confirm",
                         "production.confirmPlan",
                         "cmd-confirm-fail",
-                        confirm_params(&plan_task_id, &source, &project_root, &base),
+                        confirm_params(&plan_id, plan_revision),
                     ),
                 ),
                 frame("f2", request("req-pump", "task.list", "", json!({}))),
@@ -831,12 +875,12 @@ fn run_failing_confirm(
     assert_eq!(task.state, TaskState::Failed, "{task:?}");
     assert_eq!(task.error.as_ref().expect("typed error").code, "vua.material.bridge_timeout");
 
-    (base, source, project_root, plan_task_id, confirm_task_id)
+    (base, source, project_root, plan_id, plan_revision, confirm_task_id)
 }
 
 #[test]
 fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
-    let (base, source, project_root, plan_task_id, confirm_task_id) =
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
         run_failing_confirm("recover-continue");
 
     // A succeeding host run recovers with decision=continue: the plan runs
@@ -851,14 +895,7 @@ fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
                     "req-recover",
                     "production.recover",
                     "cmd-recover-continue",
-                    recover_params(
-                        "continue",
-                        &confirm_task_id,
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("continue", &confirm_task_id, &plan_id),
                 ),
             )]),
             &mut output_buffer,
@@ -869,6 +906,15 @@ fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
         output_buffer
     };
     let frames = parse_frames(&output);
+    if response_payload(&frames, "req-recover").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-recover"
+            })
+            .expect("recover response frame");
+        panic!("recover error frame: {}", frame);
+    }
     let recover = response_payload(&frames, "req-recover");
     let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
     assert_ne!(recover_task_id, confirm_task_id, "recovery is its own task");
@@ -901,7 +947,7 @@ fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
 
 #[test]
 fn ph_007_recover_rollback_restores_without_rerunning() {
-    let (base, source, project_root, plan_task_id, confirm_task_id) =
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
         run_failing_confirm("recover-rollback");
     let manifest_before = fs::read_to_string(project_root.join("vpm-manifest.json")).unwrap();
 
@@ -915,14 +961,7 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
                     "req-recover",
                     "production.recover",
                     "cmd-recover-rollback",
-                    recover_params(
-                        "rollback",
-                        &confirm_task_id,
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("rollback", &confirm_task_id, &plan_id),
                 ),
             )]),
             &mut output_buffer,
@@ -933,6 +972,15 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
         output_buffer
     };
     let frames = parse_frames(&output);
+    if response_payload(&frames, "req-recover").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-recover"
+            })
+            .expect("recover response frame");
+        panic!("recover error frame: {}", frame);
+    }
     let recover = response_payload(&frames, "req-recover");
     let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
 
@@ -962,22 +1010,15 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
 
 #[test]
 fn ph_008_recover_requires_user_decision_and_recoverable_source() {
-    let (base, source, project_root, plan_task_id, confirm_task_id) =
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
         run_failing_confirm("recover-guards");
     let (config, _bridge) = production_config(&base, &project_root);
 
     // Missing userDecisionId is refused.
     let output = {
         let mut output_buffer = Vec::new();
-        let mut payload = recover_params(
-            "continue",
-            &confirm_task_id,
-            &plan_task_id,
-            &source,
-            &project_root,
-            &base,
-        );
-        payload["userDecisionId"] = json!("");
+        let mut payload = recover_params_v02("continue", &confirm_task_id, &plan_id);
+        payload["decisionId"] = json!("");
         vua_orchestrator::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
@@ -992,7 +1033,7 @@ fn ph_008_recover_requires_user_decision_and_recoverable_source() {
     };
     let frames = parse_frames(&output);
     let error = response_frame(&frames, "req-no-decision")["payload"]["error"].clone();
-    assert_eq!(error["code"], "vua.production.user_decision_required");
+    assert_eq!(error["code"], "vua.production.decision_id_required");
 
     // An unknown original task is refused.
     let (config, _bridge) = production_config(&base, &project_root);
@@ -1005,14 +1046,7 @@ fn ph_008_recover_requires_user_decision_and_recoverable_source() {
                     "req-unknown-origin",
                     "production.recover",
                     "cmd-guard-2",
-                    recover_params(
-                        "continue",
-                        "prod-nonexistent00",
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("continue", "prod-nonexistent00", ""),
                 ),
             )]),
             &mut output_buffer,
@@ -1031,7 +1065,7 @@ fn ph_008_recover_requires_user_decision_and_recoverable_source() {
 
 #[test]
 fn ph_009_same_command_id_with_different_params_is_a_conflict() {
-    let (base, source, project_root, plan_task_id, _confirm_task_id) =
+    let (base, _source, project_root, plan_id, plan_revision, _confirm_task_id) =
         run_failing_confirm("id-conflict");
 
     // The SAME commandId as the failed confirm, but a different risk
@@ -1039,7 +1073,7 @@ fn ph_009_same_command_id_with_different_params_is_a_conflict() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        let mut payload = confirm_params(&plan_task_id, &source, &project_root, &base);
+        let mut payload = confirm_params(&plan_id, plan_revision);
         payload["riskChoice"] = json!("snapshot_and_continue");
         vua_orchestrator::run_provider_host_with(
             frames_input(vec![frame(
@@ -1131,24 +1165,30 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
             "req-inspect",
             "production.startInspection",
             "cmd-inspect",
-            json!({ "sourceFolder": source.to_string_lossy() }),
+            json!({
+            "sourceFolder": source.to_string_lossy(),
+            "projectRoot": project_root.to_string_lossy(),
+            "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
+            "projectId": "project",
+        }),
         ),
     ));
     let inspect = wait_for_response(&output_buffer, "req-inspect");
-    let inspection_task_id = inspect["task"]["taskId"].as_str().unwrap().to_owned();
+    let inspection_id = inspect["inspectionId"].as_str().unwrap().to_owned();
     send(frame(
         "f2",
-        request("req-plan", "production.requestPlan", "cmd-plan", plan_params(&inspection_task_id)),
+        request("req-plan", "production.requestPlan", "cmd-plan", plan_params(&inspection_id)),
     ));
     let plan = wait_for_response(&output_buffer, "req-plan");
-    let plan_task_id = plan["task"]["taskId"].as_str().unwrap().to_owned();
+    let plan_id = plan["planId"].as_str().unwrap().to_owned();
+    let plan_revision = plan["revision"].as_u64().unwrap();
     send(frame(
         "f3",
         request(
             "req-confirm",
             "production.confirmPlan",
             "cmd-confirm-gate",
-            confirm_params(&plan_task_id, &source, &project_root, &base),
+            confirm_params(&plan_id, plan_revision),
         ),
     ));
     let confirm = wait_for_response(&output_buffer, "req-confirm");
@@ -1226,7 +1266,12 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
                         "req-inspect",
                         "production.startInspection",
                         "cmd-inspect",
-                        json!({ "sourceFolder": source.to_string_lossy() }),
+                        json!({
+            "sourceFolder": source.to_string_lossy(),
+            "projectRoot": project_root.to_string_lossy(),
+            "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
+            "projectId": "project",
+        }),
                     ),
                 ),
                 frame("f2", request("req-pump", "task.list", "", json!({}))),
@@ -1239,10 +1284,10 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let inspection_id = response_payload(&frames, "req-inspect")["inspectionId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
@@ -1253,7 +1298,7 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
                     "req-plan",
                     "production.requestPlan",
                     "cmd-plan",
-                    plan_params(&inspection_task_id),
+                    plan_params(&inspection_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1264,10 +1309,13 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let plan_id = response_payload(&frames, "req-plan")["planId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
+    let plan_revision = response_payload(&frames, "req-plan")["revision"]
+    .as_u64()
+    .unwrap();
 
     // Now confirm against the live host and then go COMPLETELY idle: the
     // completion event must arrive on its own through the timed pump.
@@ -1295,7 +1343,7 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
             "req-confirm",
             "production.confirmPlan",
             "cmd-confirm-idle",
-            confirm_params(&plan_task_id, &source, &project_root, &base),
+            confirm_params(&plan_id, plan_revision),
         ),
     ));
     let confirm = wait_for_response(&output_buffer, "req-confirm");
@@ -1365,7 +1413,12 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
                         "req-inspect",
                         "production.startInspection",
                         "cmd-inspect",
-                        json!({ "sourceFolder": source.to_string_lossy() }),
+                        json!({
+            "sourceFolder": source.to_string_lossy(),
+            "projectRoot": project_root.to_string_lossy(),
+            "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
+            "projectId": "project",
+        }),
                     ),
                 ),
                 frame("f2", request("req-pump", "task.list", "", json!({}))),
@@ -1378,10 +1431,10 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let inspection_id = response_payload(&frames, "req-inspect")["inspectionId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
@@ -1392,7 +1445,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
                     "req-plan",
                     "production.requestPlan",
                     "cmd-plan",
-                    plan_params(&inspection_task_id),
+                    plan_params(&inspection_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1403,10 +1456,13 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let plan_id = response_payload(&frames, "req-plan")["planId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
+    let plan_revision = response_payload(&frames, "req-plan")["revision"]
+    .as_u64()
+    .unwrap();
 
     // A plain confirm hits the stale lease and is refused as
     // inspect_required — never a silent takeover, never a permanent lock.
@@ -1420,7 +1476,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
                     "req-confirm",
                     "production.confirmPlan",
                     "cmd-confirm-stale",
-                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                    confirm_params(&plan_id, plan_revision),
                 ),
             )]),
             &mut output_buffer,
@@ -1458,14 +1514,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
                     "req-recover",
                     "production.recover",
                     "cmd-recover-takeover",
-                    recover_params(
-                        "continue",
-                        &confirm_task_id,
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("continue", &confirm_task_id, &plan_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1476,6 +1525,15 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
         output_buffer
     };
     let frames = parse_frames(&output);
+    if response_payload(&frames, "req-recover").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-recover"
+            })
+            .expect("recover response frame");
+        panic!("recover error frame: {}", frame);
+    }
     let recover = response_payload(&frames, "req-recover");
     let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
     let deadline = Instant::now() + Duration::from_secs(15);
@@ -1500,7 +1558,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
 
 #[test]
 fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
-    let (base, source, project_root, plan_task_id, confirm_task_id) =
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
         run_failing_confirm("rollback-record");
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
@@ -1512,14 +1570,7 @@ fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
                     "req-recover",
                     "production.recover",
                     "cmd-recover-rollback",
-                    recover_params(
-                        "rollback",
-                        &confirm_task_id,
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("rollback", &confirm_task_id, &plan_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1530,6 +1581,15 @@ fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
         output_buffer
     };
     let frames = parse_frames(&output);
+    if response_payload(&frames, "req-recover").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-recover"
+            })
+            .expect("recover response frame");
+        panic!("recover error frame: {}", frame);
+    }
     let recover = response_payload(&frames, "req-recover");
     let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
 
@@ -1569,24 +1629,19 @@ fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
 }
 
 #[test]
-fn ph_014_rollback_refuses_a_project_that_does_not_own_the_snapshot() {
-    let (base, source, project_root, plan_task_id, confirm_task_id) =
-        run_failing_confirm("rollback-wrong-project");
+fn ph_014_rollback_paths_come_from_the_binding_not_the_caller() {
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
+        run_failing_confirm("rollback-binding");
 
-    // An unrelated directory does not carry the failed run's snapshot.
+    // v0.2: the caller cannot point a recovery at another project root —
+    // paths live in the registry binding. A poison projectRoot field in the
+    // payload is simply ignored; the rollback follows the bound path.
     let elsewhere = base.join("elsewhere");
     fs::create_dir_all(&elsewhere).unwrap();
-    let (config, bridge) = production_config(&base, &project_root);
+    let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        let mut payload = recover_params(
-            "rollback",
-            &confirm_task_id,
-            &plan_task_id,
-            &source,
-            &project_root,
-            &base,
-        );
+        let mut payload = recover_params_v02("rollback", &confirm_task_id, &plan_id);
         payload["projectRoot"] = json!(elsewhere.to_string_lossy());
         vua_orchestrator::run_provider_host_with(
             frames_input(vec![frame(
@@ -1600,12 +1655,20 @@ fn ph_014_rollback_refuses_a_project_that_does_not_own_the_snapshot() {
         .unwrap();
         output_buffer
     };
-    // The refusal happens before acceptance: an error envelope, no task,
-    // and no Unity traffic.
     let frames = parse_frames(&output);
-    let error = response_frame(&frames, "req-recover")["payload"]["error"].clone();
-    assert_eq!(error["code"], "vua.production.not_recoverable");
-    assert_eq!(bridge.commands.lock().unwrap().len(), 0, "refused recovery touches nothing");
+    let recover = response_payload(&frames, "req-recover");
+    let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let deadline = Instant::now() + Duration::from_secs(15);
+    let task = loop {
+        let task = store.task(&recover_task_id).unwrap().expect("task persists");
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "rollback never completed");
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(task.state, TaskState::Succeeded, "rollback restores the BOUND project");
     let _ = fs::remove_dir_all(&base);
 }
 
@@ -1676,7 +1739,12 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
                         "req-inspect",
                         "production.startInspection",
                         "cmd-inspect",
-                        json!({ "sourceFolder": source.to_string_lossy() }),
+                        json!({
+            "sourceFolder": source.to_string_lossy(),
+            "projectRoot": project_root.to_string_lossy(),
+            "artifactOutputRoot": base.join("artifacts").to_string_lossy(),
+            "projectId": "project",
+        }),
                     ),
                 ),
                 frame("f2", request("req-pump", "task.list", "", json!({}))),
@@ -1689,10 +1757,10 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let inspection_task_id = response_payload(&frames, "req-inspect")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let inspection_id = response_payload(&frames, "req-inspect")["inspectionId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
@@ -1703,7 +1771,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
                     "req-plan",
                     "production.requestPlan",
                     "cmd-plan",
-                    plan_params(&inspection_task_id),
+                    plan_params(&inspection_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1714,10 +1782,13 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
         output_buffer
     };
     let frames = parse_frames(&output);
-    let plan_task_id = response_payload(&frames, "req-plan")["task"]["taskId"]
-        .as_str()
-        .unwrap()
-        .to_owned();
+    let plan_id = response_payload(&frames, "req-plan")["planId"]
+    .as_str()
+    .unwrap()
+    .to_owned();
+    let plan_revision = response_payload(&frames, "req-plan")["revision"]
+    .as_u64()
+    .unwrap();
 
     // A plain confirm is refused: the leftover marker demands inspect-first.
     let (config, bridge) = production_config(&base, &project_root);
@@ -1730,7 +1801,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
                     "req-confirm",
                     "production.confirmPlan",
                     "cmd-confirm-marker",
-                    confirm_params(&plan_task_id, &source, &project_root, &base),
+                    confirm_params(&plan_id, plan_revision),
                 ),
             )]),
             &mut output_buffer,
@@ -1769,14 +1840,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
                     "req-recover",
                     "production.recover",
                     "cmd-recover-marker",
-                    recover_params(
-                        "continue",
-                        &confirm_task_id,
-                        &plan_task_id,
-                        &source,
-                        &project_root,
-                        &base,
-                    ),
+                    recover_params_v02("continue", &confirm_task_id, &plan_id),
                 ),
             )]),
             &mut output_buffer,
@@ -1787,6 +1851,15 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
         output_buffer
     };
     let frames = parse_frames(&output);
+    if response_payload(&frames, "req-recover").is_null() {
+        let frame = frames
+            .iter()
+            .find(|frame| {
+                frame["kind"] == "response" && frame["payload"]["requestId"] == "req-recover"
+            })
+            .expect("recover response frame");
+        panic!("recover error frame: {}", frame);
+    }
     let recover = response_payload(&frames, "req-recover");
     let recover_task_id = recover["task"]["taskId"].as_str().unwrap().to_owned();
     let deadline = Instant::now() + Duration::from_secs(15);
