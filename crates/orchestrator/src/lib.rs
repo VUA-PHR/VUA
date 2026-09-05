@@ -98,10 +98,10 @@ pub use environment::{
     EnvironmentRoots, EnvironmentSnapshotV1, VrRuntimeRoots, Zone,
 };
 pub use environment_managers::{
-    codes as env_spike_codes, collect_environment_spike_snapshot, AlcomCapability, EditorFinding,
-    EnvironmentSpikeSnapshotV01, ManagerPresence, ManagerRoots, ProjectAssociation,
-    ProjectFinding, SpikeDiagnostic, SpikeSeverity, VccCapability,
-    ENV_SPIKE_SNAPSHOT_SCHEMA_VERSION,
+    codes as env_managers_codes, collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
+    EnvironmentManagersSnapshotV01, ManagerPresence, ManagerRoots, ProjectAssociation,
+    ProjectFinding, ManagerDiagnostic, FindingSeverity, VccCapability,
+    ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION,
 };
 pub use filesystem::{
     project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,

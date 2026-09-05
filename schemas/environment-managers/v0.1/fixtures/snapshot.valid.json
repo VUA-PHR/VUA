@@ -1,0 +1,63 @@
+{
+  "schemaVersion": "vua.environment-managers-snapshot/v0.1",
+  "capturedAt": "2026-09-04T02:00:00.000Z",
+  "productionTarget": "2022.3.22f1",
+  "migrationSources": [
+    "2019.4.31f1",
+    "2022.3.6f1"
+  ],
+  "editorRoots": [
+    "D:/synthetic/Unity/Hub/Editor"
+  ],
+  "editors": [
+    {
+      "version": "2022.3.22f1",
+      "classification": "production_target",
+      "chinaDistribution": false,
+      "guidanceCode": "vua.env_managers.editor_production_target",
+      "path": "D:/synthetic/Unity/Hub/Editor/2022.3.22f1"
+    },
+    {
+      "version": "2019.4.31f1",
+      "classification": "migration_source",
+      "chinaDistribution": false,
+      "guidanceCode": "vua.env_managers.editor_migration_source",
+      "path": "D:/synthetic/Unity/Hub/Editor/2019.4.31f1"
+    },
+    {
+      "version": "2022.3.22f1c1",
+      "classification": "other_unity_version",
+      "chinaDistribution": true,
+      "guidanceCode": "vua.env_managers.editor_china_distribution",
+      "path": "D:/synthetic/Unity/Hub/Editor/2022.3.22f1c1"
+    }
+  ],
+  "vcc": {
+    "presence": "found",
+    "settingsPath": "D:/synthetic/AppData/Local/VRChatCreatorCompanion/settings.json",
+    "projectsSource": "userProjects",
+    "userProjects": [
+      "D:/synthetic/projects/Avatar A"
+    ],
+    "localProjectFolders": [],
+    "errorCode": null
+  },
+  "alcom": {
+    "presence": "not_found",
+    "settingsPath": null,
+    "topLevelKeys": [],
+    "errorCode": null,
+    "userProjects": []
+  },
+  "projects": [
+    {
+      "path": "D:/synthetic/projects/Avatar A",
+      "unityVersion": "2022.3.22f1",
+      "unityClassification": "production_target",
+      "associations": [
+        "vcc_registered"
+      ]
+    }
+  ],
+  "diagnostics": []
+}

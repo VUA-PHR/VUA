@@ -25,11 +25,11 @@ pub const MIGRATION_SOURCES: [&str; 2] = ["2019.4.31f1", "2022.3.6f1"];
 
 /// Stable spike guidance codes; findings and fix plans key on them.
 pub mod codes {
-    pub const EDITOR_PRODUCTION_TARGET: &str = "vua.env_spike.editor_production_target";
-    pub const EDITOR_MIGRATION_SOURCE: &str = "vua.env_spike.editor_migration_source";
-    pub const EDITOR_OFF_TARGET: &str = "vua.env_spike.editor_off_target";
-    pub const EDITOR_CHINA_DISTRIBUTION: &str = "vua.env_spike.editor_china_distribution";
-    pub const EDITOR_TUANJIE_UNSUPPORTED: &str = "vua.env_spike.editor_tuanjie_unsupported";
+    pub const EDITOR_PRODUCTION_TARGET: &str = "vua.env_managers.editor_production_target";
+    pub const EDITOR_MIGRATION_SOURCE: &str = "vua.env_managers.editor_migration_source";
+    pub const EDITOR_OFF_TARGET: &str = "vua.env_managers.editor_off_target";
+    pub const EDITOR_CHINA_DISTRIBUTION: &str = "vua.env_managers.editor_china_distribution";
+    pub const EDITOR_TUANJIE_UNSUPPORTED: &str = "vua.env_managers.editor_tuanjie_unsupported";
 }
 
 /// Support-matrix class of one editor version.
