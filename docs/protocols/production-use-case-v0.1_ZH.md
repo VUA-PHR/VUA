@@ -1,12 +1,17 @@
-# VUA 生产用例契约 v0.1（已冻结）
+# VUA 生产用例契约 v0.1（M3 候选）
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
-> 状态：**已接受——2026-09-05 冻结**（B3/F3 词表已对齐;F 侧确认随 GLM/frontend
-> `b3318e0` 落地）。本版本起约束两侧实现。
+> 状态：**M3 候选草案**（2026-09-06 撤回 2026-09-05 的冻结声明：评审核实真实 TS/Rust
+> 参数面 6/7 不一致，请求/响应 Schema 与跨语言固定向量缺失——"冻结"名不副实，恢复
+> 候选是诚实纪律的必然结论。2026-09-05 达成的词表、生命周期-任务映射、确认/恢复纪律
+> 保留为候选基线；按 M3 对齐切片完成 ①七方法精确请求/响应 Schema ②TS/Rust 共用固定
+> JSON 向量 ③Provider 与 Gateway 双向契约测试 ④真实 Electron → Rust → Unity 冒烟后，
+> M3 验收时再冻结。域引用形状（`planId`/`inspectionId`/`buildRecordId` 优先于路径重复
+> 提交）与 BuildRecord 版本化证据摘要一并随该切片修订）
 > 范围：第一个生产纵向用例（合成 Avatar + 一件衣装；`.unitypackage` 直接导入与本地 VPM
 > 制作/安装双素材入口）的前后端命令与查询面
-> 更新：2026-09-05
+> 更新：2026-09-06
 > 规范效力：F3 表现层与 B3 应用实现的对齐基线；方法名在 application-contract v0.1 方法表
 > 登记（引入 = B3/F3），值语义以本文档为准
 

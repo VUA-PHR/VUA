@@ -1,13 +1,22 @@
-# VUA Production Use-Case Contract v0.1 (frozen)
+# VUA Production Use-Case Contract v0.1 (M3 candidate)
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
-> Status: **Accepted — frozen 2026-09-05** (B3/F3 vocabulary aligned; F confirmations
-> landed in GLM/frontend `b3318e0`). This revision constrains both sides.
+> Status: **M3 candidate draft** (2026-09-06: the 2026-09-05 freeze claim is withdrawn —
+> review verified 6/7 mismatches between the real TS/Rust parameter surfaces, with no
+> request/response JSON Schemas and no cross-language fixture vectors; "frozen" was not
+> accurate, and returning to candidate is what the honesty discipline requires. The
+> 2026-09-05 vocabulary, lifecycle-to-task mapping and confirmation/recovery discipline
+> remain as the candidate baseline; the freeze is re-attempted at M3 acceptance after
+> the alignment slice delivers ① precise per-method request/response Schemas, ② shared
+> TS/Rust fixture vectors, ③ bidirectional Provider/Gateway contract tests, and ④ a real
+> Electron → Rust → Unity smoke run. The domain-reference shape (`planId`/
+> `inspectionId`/`buildRecordId` over re-submitted paths) and the versioned
+> BuildRecord evidence summary are revised in the same slice)
 > Scope: the command and query surface of the first production vertical use case (one
 > synthetic Avatar + one clothing item; dual material intake via direct `.unitypackage`
 > import and local VPM build/install)
-> Updated: 2026-09-05
+> Updated: 2026-09-06
 > Authority: the alignment baseline for the F3 presentation layer and the B3 application
 > implementation; method names are registered in the application-contract v0.1 method table
 > (introduced = B3/F3), with value semantics defined here
