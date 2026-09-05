@@ -63,6 +63,7 @@
 - [应用契约 v0.1](protocols/application-contract-v0.1_ZH.md)
 - [Orchestrator 任务存储格式 v0.1](protocols/task-store-v0.1_ZH.md)
 - [受监督 Provider 进程协议 v0.1](protocols/provider-process-v0.1_ZH.md)
+- [下载事件协议 v0.1](protocols/download-events-v0.1_ZH.md)
 - [ADR：Orchestrator 受监督独立进程托管](decisions/orchestrator-supervised-provider_ZH.md)
 - [版本政策](release/versioning_ZH.md)
 - [v0.4.1 发行说明](release/v0.4.1_ZH.md)

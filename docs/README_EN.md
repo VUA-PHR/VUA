@@ -65,6 +65,7 @@ documents above.
 - [Application Contract v0.1](protocols/application-contract-v0.1_EN.md)
 - [Orchestrator Task Store Format v0.1](protocols/task-store-v0.1_EN.md)
 - [Supervised Provider Process Protocol v0.1](protocols/provider-process-v0.1_EN.md)
+- [Download Events Protocol v0.1](protocols/download-events-v0.1_EN.md)
 - [ADR: Supervised independent-process Orchestrator Provider](decisions/orchestrator-supervised-provider_EN.md)
 - [Versioning policy](release/versioning_EN.md)
 - [v0.4.1 release notes](release/v0.4.1_EN.md)
