@@ -60,17 +60,24 @@ export type RemoteContentViolationReason =
 
 export type RemoteContentViolationObserver = (url: string, reason: RemoteContentViolationReason) => void;
 
-function remoteOriginOf(url: string): { protocol: string; host: string } | null {
+function remoteOriginOf(url: string): { protocol: string; host: string; port: string } | null {
   try {
     const parsed = new URL(url);
     if (parsed.protocol !== "https:" && parsed.protocol !== "http:") return null;
-    return { protocol: parsed.protocol, host: parsed.hostname.toLowerCase() };
+    // 端口属于 origin 语义:显式端口与协议默认端口(https 443 / http 80)
+    // 归一,避免 127.0.0.1:A 与 127.0.0.1:B 互相同源
+    const defaultPort = parsed.protocol === "https:" ? "443" : "80";
+    return {
+      protocol: parsed.protocol,
+      host: parsed.hostname.toLowerCase(),
+      port: parsed.port === "" ? defaultPort : parsed.port,
+    };
   } catch {
     return null;
   }
 }
 
-/** 远程来源允许判定:https/http + 主机相等或子域(allowed 条目的点后缀语义) */
+/** 远程来源允许判定:https/http + 协议、主机(点后缀子域语义)与端口一致 */
 export function isAllowedRemoteOrigin(url: string, allowedOrigins: readonly string[]): boolean {
   const target = remoteOriginOf(url);
   if (target === null) return false;
@@ -78,6 +85,7 @@ export function isAllowedRemoteOrigin(url: string, allowedOrigins: readonly stri
     const origin = remoteOriginOf(allowed);
     if (origin === null) return false;
     if (origin.protocol !== target.protocol) return false;
+    if (origin.port !== target.port) return false;
     return target.host === origin.host || target.host.endsWith(`.${origin.host}`);
   });
 }
@@ -107,17 +115,31 @@ export function installRemoteContentNavigationPolicy(
   });
 }
 
-/** 远程分区 Session 面:权限请求全拒绝;下载默认拒绝(F4-3 下载端口
- *  接管后由端口替换本钩子),两次拒绝都以违规事件透明上报 */
+/** 远程分区 Session 面:权限请求全拒绝;下载默认拒绝——`willDownload`
+ *  接缝存在时委托给下载端口(F4-3 接管,策略拒绝由端口 preventDefault),
+ *  不存在则保持安全默认并上报 */
 export function installRemoteContentSessionPolicy(
   targetSession: Session,
-  options: Pick<RemoteContentPolicyOptions, "onViolation">,
+  options: Pick<RemoteContentPolicyOptions, "onViolation"> & {
+    readonly willDownload?: (
+      event: { readonly preventDefault: () => void },
+      item: import("electron").DownloadItem,
+      webContents: import("electron").WebContents,
+    ) => void;
+  },
 ): void {
   installPermissionDenyPolicy(targetSession, (permission, requestingUrl) => {
     options.onViolation?.(requestingUrl, "permission_denied");
   });
-  targetSession.on("will-download", (event, item) => {
-    event.preventDefault();
-    options.onViolation?.(item.getURL(), "download_denied");
-  });
+  if (options.willDownload) {
+    const willDownload = options.willDownload;
+    targetSession.on("will-download", (event, item, webContents) => {
+      willDownload(event, item, webContents);
+    });
+  } else {
+    targetSession.on("will-download", (event, item) => {
+      event.preventDefault();
+      options.onViolation?.(item.getURL(), "download_denied");
+    });
+  }
 }

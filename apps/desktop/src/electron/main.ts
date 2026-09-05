@@ -4,6 +4,7 @@ import path from "node:path";
 import type { ApplicationEventV01, RemoteContentEventV1 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
+import { DownloadPort } from "./download-port.js";
 import { RemoteContentManager } from "./remote-content.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
 import {
@@ -186,6 +187,20 @@ async function createWindow(): Promise<void> {
   installLocalContentNavigationPolicy(mainWindow.webContents, rendererUrl, (url) => shell.openExternal(url));
   mainWindow.once("ready-to-show", () => mainWindow?.show());
 
+  // 下载端口(F4-3):will-download 接管 + 冻结词表事件规范化。事件汇当前
+  // 写诊断通道(stderr);Main→AMF 的 ingest 投递腿随 M3 双向契约切片接线,
+  // 汇接口不变。暂存根跟随用户数据目录布局,由注入决定,端口不自选策略
+  const downloadPort = new DownloadPort({
+    stagingRoot: path.join(app.getPath("userData"), "downloads-staging"),
+    allowedOrigins: ["https://booth.pm"],
+    sink: {
+      emit: (event) => {
+        // 诊断通道(stderr);投递腿接线后同一汇转发给 AMF ingest
+        process.stderr.write(`${JSON.stringify({ channel: "download-events", ...event })}\n`);
+      },
+    },
+  });
+
   // 远程内容管理器(F4-2):独立 partition Session;目录浏览域为种子允许清单,
   // 真实值随 catalog 契约冻结(F4-1②)调整;违规事件广播到本地来源窗口
   remoteContent = new RemoteContentManager({
@@ -193,6 +208,7 @@ async function createWindow(): Promise<void> {
     allowedOrigins: ["https://booth.pm"],
     openExternal: (url) => void shell.openExternal(url),
     broadcast: (event) => broadcastRemoteContentEvent(rendererUrl, event),
+    willDownload: (event, item, webContents) => downloadPort.handleWillDownload(event, item, webContents),
   });
   remoteContent.setHostWindow(mainWindow);
   mainWindow.on("resize", () => remoteContent?.refreshBounds());

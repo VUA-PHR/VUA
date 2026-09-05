@@ -28,6 +28,12 @@ export interface RemoteContentManagerOptions {
   readonly allowedOrigins: readonly string[];
   readonly openExternal: ExternalUrlOpener;
   readonly broadcast: (event: RemoteContentEventV1) => void;
+  /** 下载接缝:存在时下载交由调用方端口接管(F4-3),缺失保持默认拒绝 */
+  readonly willDownload?: (
+    event: { readonly preventDefault: () => void },
+    item: import("electron").DownloadItem,
+    webContents: import("electron").WebContents,
+  ) => void;
 }
 
 interface ManagedView {
@@ -50,7 +56,10 @@ export class RemoteContentManager {
     const onViolation: RemoteContentViolationObserver = (url, reason) => {
       this.#broadcast({ kind: "blocked", viewId: "", url, reason });
     };
-    installRemoteContentSessionPolicy(this.#session, { onViolation });
+    installRemoteContentSessionPolicy(this.#session, {
+      onViolation,
+      ...(options.willDownload === undefined ? {} : { willDownload: options.willDownload }),
+    });
   }
 
   setHostWindow(window: BrowserWindow | null): void {
