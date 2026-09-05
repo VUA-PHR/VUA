@@ -103,6 +103,9 @@
           }
         },
         "executableRisks": { "type": "array" },
+        "projectIdentity": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "recoveredFromRecordId": { "type": "string", "minLength": 1 },
+        "recoveryDecisionId": { "type": "string", "minLength": 1 },
         "declaredDependencies": {
           "type": "array",
           "items": {

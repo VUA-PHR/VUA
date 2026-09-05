@@ -157,6 +157,47 @@ impl MaterialExecutor {
         self
     }
 
+    /// Read-only project inspection — the recovery credential source. The
+    /// returned fingerprint, bound to the project's normalized identity and
+    /// the lease generation, is what authorizes a lease takeover; nothing
+    /// is mutated.
+    pub fn inspect_project(
+        &self,
+        project: &ProjectRef,
+        correlation_id: &str,
+    ) -> Result<String, crate::AppErrorV1> {
+        let command = UnityCommand {
+            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            command_id: format!("project-inspect-{}", self.clock.now_rfc3339()),
+            operation: UnityOperation::InspectProject,
+            project_id: project.id.clone(),
+            dry_run: true,
+            expected_project_fingerprint: None,
+            payload: UnityPayload::default(),
+        };
+        let mut jobs = Vec::new();
+        let result = self
+            .dispatch(project, &command, &mut jobs)
+            .map_err(|(code, _)| {
+                crate::AppErrorV1::new(
+                    code,
+                    crate::ErrorCategory::ExternalFailure,
+                    "errors.material.executionFailed",
+                    correlation_id,
+                )
+                .with_recoverable(true)
+            })?;
+        fingerprint_of(&result).ok_or_else(|| {
+            crate::AppErrorV1::new(
+                error_codes::BRIDGE_FAILED.to_owned(),
+                crate::ErrorCategory::ExternalFailure,
+                "errors.material.executionFailed",
+                correlation_id,
+            )
+            .with_recoverable(true)
+        })
+    }
+
     /// Drives the confirmed plan. Always returns a report — failures live in
     /// the report, not the error channel, so the task runtime can persist
     /// them uniformly. Cancellation is observed from `token` at each step
@@ -395,6 +436,11 @@ impl MaterialExecutor {
             source: plan.source.clone(),
             risk_choice: confirmation.risk_decision.choice,
             project_id: project.id.clone(),
+            project_identity: crate::ProjectIdentity::from_existing_path(&project.root)
+                .ok()
+                .map(|identity| identity.as_str().to_owned()),
+            recovered_from_record_id: None,
+            recovery_decision_id: None,
             initial_project_fingerprint: plan.project_fingerprint.clone(),
             final_project_fingerprint: final_fingerprint,
             unity_editor_version: self.unity_editor_version.clone(),

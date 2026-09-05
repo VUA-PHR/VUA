@@ -1350,6 +1350,12 @@ fn confirm_plan(
             "errors.production.invalidParams",
         ));
     }
+    // Inspect-first applies to the WHOLE recovery: every recovery run
+    // captures a project inspection before its mutation, whatever the
+    // original failure was. ("No receipt" alone would prove nothing — a
+    // crash after Unity mutated but before the record was written also has
+    // no receipt — so the inspection, not the receipt, governs here.)
+    let require_project_inspection = recovery;
     if recovery {
         // Recovery binds the ORIGINAL failed run: only a terminal failed or
         // cancelled production task is a recovery source.
@@ -1401,6 +1407,21 @@ fn confirm_plan(
                 "errors.production.notRecoverable",
             )
         })?;
+        // Three-way ownership binding, sides 1+2: the failed run's receipt
+        // must name the very project the caller points at (side 3 — the
+        // snapshot manifest — is enforced inside restore). Records written
+        // before identity binding existed carry none and are not
+        // recoverable through this path.
+        let request_identity = ProjectIdentity::from_existing_path(&project_root)
+            .map_err(|_| {
+                validation_error(
+                    "vua.project.identity_invalid",
+                    "errors.project.identityInvalid",
+                )
+            })?;
+        if record.project_identity.as_deref() != Some(request_identity.as_str()) {
+            return Err(not_recoverable_error());
+        }
         let snapshot_id = record
             .snapshot
             .as_ref()
@@ -1499,6 +1520,7 @@ fn confirm_plan(
         "rememberForSession": remember_for_session,
         "originalTaskId": original_task_id,
         "decision": decision,
+        "userDecisionId": user_decision_id,
     });
     let (task_id, replayed) = accept_production_task(
         state,
@@ -1525,13 +1547,23 @@ fn confirm_plan(
     let owner_instance_id = state.provider_instance_id.clone();
     let worker_task_id = task_id.clone();
     let worker_correlation = correlation_id.to_owned();
-    // The inspect-first acknowledgment: only a recovery decision carries a
-    // user decision id, and only it may supersede a stale lease or marker.
-    let recovery_ack = if recovery { Some(user_decision_id.clone()) } else { None };
+    // userDecisionId stays an AUTHORIZATION record (task result + recovery
+    // receipt); the lease takeover credential is a PROJECT INSPECTION.
+    let recovery_decision_id = user_decision_id.clone();
+    let recovery_started_at = now_rfc3339();
+    let inspect: Option<ProjectInspectFn> = if recovery {
+        let executor_for_inspect = Arc::clone(&executor);
+        let correlation_for_inspect = worker_correlation.clone();
+        Some(Arc::new(move |project: &ProjectRef| {
+            executor_for_inspect.inspect_project(project, &correlation_for_inspect)
+        }))
+    } else {
+        None
+    };
     std::thread::spawn(move || {
         let project_id = match &run {
             Run::Execute(confirmation) => confirmation.plan.project_id.clone(),
-            Run::Rollback { .. } => "project".to_owned(),
+            Run::Rollback { original_record, .. } => original_record.project_id.clone(),
         };
         let project =
             ProjectRef { id: project_id, root: PathBuf::from(&project_root) };
@@ -1540,13 +1572,14 @@ fn confirm_plan(
         // pending-mutation marker, held for the whole mutating run. A crash
         // leaves the marker behind (inspect-first evidence) and the OS lock
         // releases itself; prepare_shutdown sees the lease as blocking.
-        let gate = match MutationGate::acquire(
+        let (gate, inspection_evidence) = match MutationGate::acquire(
             &store,
             &project_root,
             &owner_instance_id,
             &worker_task_id,
             &worker_correlation,
-            recovery_ack.as_deref(),
+            inspect.as_ref(),
+            require_project_inspection,
         ) {
             Ok(gate) => gate,
             Err(error) => {
@@ -1655,9 +1688,9 @@ fn confirm_plan(
                 match crate::FileSystemSnapshotStore.restore_verified(&project, &reference) {
                     Ok(()) => {
                         // The recovery itself gets an immutable receipt
-                        // with status `recovered`: it proves the user's
-                        // decision and its outcome, distinct from the
-                        // failed run's own record.
+                        // with status `recovered`, bound to THIS recovery
+                        // task and decision, referencing the failed run's
+                        // record it supersedes.
                         let recovered_id = format!(
                             "{}-recover-{stamp}",
                             original_record.record_id
@@ -1665,7 +1698,14 @@ fn confirm_plan(
                         let mut recovered = original_record.clone();
                         recovered.record_id = recovered_id.clone();
                         recovered.status = crate::BuildRecordStatus::Recovered;
+                        recovered.task_id = worker_task_id.clone();
+                        recovered.correlation_id = worker_correlation.clone();
+                        recovered.started_at = recovery_started_at.clone();
                         recovered.completed_at = now_rfc3339();
+                        recovered.recovered_from_record_id =
+                            Some(original_record.record_id.clone());
+                        recovered.recovery_decision_id =
+                            Some(recovery_decision_id.clone());
                         recovered.snapshot = Some(crate::BuildSnapshotEvidenceV01 {
                             snapshot_id: snapshot_id.clone(),
                             verified: true,
@@ -1676,22 +1716,42 @@ fn confirm_plan(
                         recovered.validation = None;
                         recovered.local_vpm = None;
                         recovered.result_code = "vua.material.recovered".to_owned();
-                        let published =
-                            services_for_worker.records.publish(&recovered).is_ok();
-                        (
-                            TaskState::Succeeded,
-                            None,
-                            Some(json!({
-                                "recovered": "rollback",
-                                "restored": true,
-                                "snapshotId": snapshot_id,
-                                "buildRecordId": if published {
-                                    Value::String(recovered_id)
-                                } else {
-                                    Value::Null
-                                },
-                            })),
-                        )
+                        // The project restore HAS happened; a receipt
+                        // publish failure is nevertheless a typed failure
+                        // (authoritative receipts are not optional) whose
+                        // retry is safe: the restore repeats and the record
+                        // is written under the same id.
+                        match services_for_worker.records.publish(&recovered) {
+                            Ok(_) => (
+                                TaskState::Succeeded,
+                                None,
+                                Some(json!({
+                                    "recovered": "rollback",
+                                    "restored": true,
+                                    "snapshotId": snapshot_id,
+                                    "buildRecordId": recovered_id,
+                                    "recoveryDecisionId": recovery_decision_id,
+                                })),
+                            ),
+                            Err(publish_error) => (
+                                TaskState::Failed,
+                                Some(
+                                    AppErrorV1::new(
+                                        "vua.material.record_failed",
+                                        ErrorCategory::ExternalFailure,
+                                        "errors.material.recordFailed",
+                                        &worker_correlation,
+                                    )
+                                    .with_recoverable(true),
+                                ),
+                                Some(json!({
+                                    "recovered": "rollback",
+                                    "restored": true,
+                                    "recordPersisted": false,
+                                    "detail": publish_error.to_string(),
+                                })),
+                            ),
+                        }
                     }
                     Err(restore_error) => (
                         TaskState::Failed,
@@ -1713,6 +1773,20 @@ fn confirm_plan(
                 }
             }
         };
+
+        // The captured project inspection rides along in the task result:
+        // it ties the recovery to an observed project state, not just to a
+        // user decision.
+        let result_value = result_value.map(|mut value| {
+            if let Some(inspection) = inspection_evidence.as_ref() {
+                if let Some(object) = value.as_object_mut() {
+                    if let Ok(evidence) = serde_json::to_value(inspection) {
+                        object.insert("projectInspection".into(), evidence);
+                    }
+                }
+            }
+            value
+        });
 
         // Persist the authoritative terminal state BEFORE releasing the
         // gate: between the two, a safe_to_stop verdict could otherwise
@@ -1745,6 +1819,81 @@ fn confirm_plan(
     )))
 }
 
+/// The read-only project inspection closure a recovery run carries: it
+/// produces the fingerprint the takeover credential binds.
+type ProjectInspectFn =
+    Arc<dyn Fn(&ProjectRef) -> Result<String, crate::AppErrorV1> + Send + Sync>;
+
+/// A captured project inspection: the credential that authorizes a lease
+/// takeover and the supersession of crash evidence. `inspection_id` binds
+/// the normalized project identity, the observed fingerprint and the lease
+/// generation at inspection time.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProjectInspectionEvidence {
+    pub inspection_id: String,
+    pub project_fingerprint: String,
+    pub observed_at: String,
+    pub lease_generation: u64,
+}
+
+/// Builds the project ref an inspection command addresses. The id is a
+/// task-scoped label — the binding power lives in the identity digest,
+/// not in this label.
+fn rootless_project_ref(project_root: &str, task_id: &str) -> ProjectRef {
+    ProjectRef {
+        id: format!("{task_id}-project-inspect"),
+        root: PathBuf::from(project_root),
+    }
+}
+
+/// Runs the read-only project inspection through the recover closure and
+/// derives the inspection id from identity + fingerprint + generation.
+fn run_project_inspection(
+    inspect: Option<&ProjectInspectFn>,
+    identity: &ProjectIdentity,
+    project: &ProjectRef,
+    lease_generation: u64,
+    correlation_id: &str,
+) -> Result<ProjectInspectionEvidence, AppErrorV1> {
+    let inspect = inspect.ok_or_else(|| {
+        AppErrorV1::new(
+            "vua.project.inspect_required",
+            ErrorCategory::Conflict,
+            "errors.project.inspectRequired",
+            correlation_id,
+        )
+        .with_recoverable(true)
+    })?;
+    let project_fingerprint = inspect(project).map_err(|error| {
+        AppErrorV1::new(
+            "vua.project.inspect_failed",
+            ErrorCategory::ExternalFailure,
+            "errors.project.inspectFailed",
+            correlation_id,
+        )
+        .with_recoverable(true)
+        .with_param("detail", crate::contracts::ParamValue::Text(format!("{error:?}")))
+    })?;
+    let observed_at = now_rfc3339();
+    let mut hasher = Sha256::new();
+    hasher.update(identity.as_str().as_bytes());
+    hasher.update(project_fingerprint.as_bytes());
+    hasher.update(lease_generation.to_le_bytes());
+    hasher.update(observed_at.as_bytes());
+    let digest = hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<String>();
+    Ok(ProjectInspectionEvidence {
+        inspection_id: format!("pins-{}", &digest[..16]),
+        project_fingerprint,
+        observed_at,
+        lease_generation,
+    })
+}
+
 /// The full cross-profile mutation gate, acquired in order (SQLite lease →
 /// project lock → pending-mutation marker) and released in reverse. Any
 /// acquisition failure fails the task with a typed error — never a silent
@@ -1765,8 +1914,9 @@ impl MutationGate {
         owner_instance_id: &str,
         task_id: &str,
         correlation_id: &str,
-        recovery_ack: Option<&str>,
-    ) -> Result<Self, AppErrorV1> {
+        inspect: Option<&ProjectInspectFn>,
+        require_project_inspection: bool,
+    ) -> Result<(Self, Option<ProjectInspectionEvidence>), AppErrorV1> {
         let identity = ProjectIdentity::from_existing_path(project_root).map_err(|error| {
             AppErrorV1::new(
                 "vua.project.identity_invalid",
@@ -1778,6 +1928,7 @@ impl MutationGate {
             .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
         })?;
 
+        let mut inspection_evidence: Option<ProjectInspectionEvidence> = None;
         let lease =
             match store.acquire_project_lease(
                 &identity,
@@ -1785,7 +1936,19 @@ impl MutationGate {
                 task_id,
                 &now_rfc3339(),
             ) {
-                Ok(lease) => lease,
+                Ok(lease) => {
+                if require_project_inspection {
+                    let inspection = run_project_inspection(
+                        inspect,
+                        &identity,
+                        &rootless_project_ref(project_root, task_id),
+                        lease.generation,
+                        correlation_id,
+                    )?;
+                    inspection_evidence = Some(inspection);
+                }
+                lease
+            }
                 Err(SqliteStoreError::LeaseHeld { .. }) => {
                     let existing = store
                         .project_lease(&identity)
@@ -1828,25 +1991,26 @@ impl MutationGate {
                         ));
                     }
                     // A stale lease from an interrupted owner recovers ONLY
-                    // through the inspect-first acknowledgment: a recovery
-                    // decision carries the user decision id; a plain confirm
-                    // is told to run recovery first.
-                    let Some(inspection_id) = recovery_ack else {
-                        return Err(AppErrorV1::new(
-                            "vua.project.inspect_required",
-                            ErrorCategory::Conflict,
-                            "errors.project.inspectRequired",
-                            correlation_id,
-                        )
-                        .with_recoverable(true));
-                    };
+                    // through a PROJECT INSPECTION: the read-only Bridge
+                    // inspection produces the credential (identity +
+                    // fingerprint + lease generation) that the takeover
+                    // binds. A user decision alone never supersedes it.
+                    let inspection = run_project_inspection(
+                        inspect,
+                        &identity,
+                        &rootless_project_ref(project_root, task_id),
+                        existing.generation,
+                        correlation_id,
+                    )?;
+                    let inspection_id = inspection.inspection_id.clone();
+                    inspection_evidence = Some(inspection);
                     store
                         .takeover_project_lease_after_inspect(
                             &identity,
                             existing.generation,
                             owner_instance_id,
                             task_id,
-                            inspection_id,
+                            inspection_id.as_str(),
                             &now_rfc3339(),
                         )
                         .map_err(|error| {
@@ -1937,7 +2101,9 @@ impl MutationGate {
         match read_pending_mutation(&root) {
             PendingMutation::None => {}
             finding @ (PendingMutation::Leftover(_) | PendingMutation::Unreadable) => {
-                if recovery_ack.is_none() {
+                // Superseding requires a CAPTURED project inspection — a
+                // user decision alone never archives crash evidence.
+                if inspection_evidence.is_none() {
                     drop(lock);
                     let _ = store.release_project_lease(
                         &identity,
@@ -1993,14 +2159,17 @@ impl MutationGate {
             }
         };
 
-        Ok(Self {
-            store: Arc::clone(store),
-            identity,
-            owner_instance_id: owner_instance_id.to_owned(),
-            generation: lease.generation,
-            marker,
-            lock,
-        })
+        Ok((
+            Self {
+                store: Arc::clone(store),
+                identity,
+                owner_instance_id: owner_instance_id.to_owned(),
+                generation: lease.generation,
+                marker,
+                lock,
+            },
+            inspection_evidence,
+        ))
     }
 
     /// Releases in reverse order: marker → lock → SQLite lease.

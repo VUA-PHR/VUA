@@ -886,7 +886,8 @@ fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
     assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
     let result = task.result.expect("result");
     assert_eq!(result["status"], "succeeded");
-    assert_eq!(bridge.commands.lock().unwrap().len(), 2, "continue really re-runs");
+    // inspect (project credential) + import + validation
+    assert_eq!(bridge.commands.lock().unwrap().len(), 3, "continue really re-runs");
 
     // The new attempt's receipt lives under the next free attempt id; the
     // failed receipt stays intact as audit history.
@@ -952,7 +953,8 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
 
     // Rollback recovery runs NO Unity command and leaves the project as the
     // failed attempt's restore left it.
-    assert_eq!(bridge.commands.lock().unwrap().len(), 0, "rollback never imports");
+    // Rollback runs ONLY the read-only project inspection — never an import.
+    assert_eq!(bridge.commands.lock().unwrap().len(), 1, "rollback never imports");
     assert_eq!(fs::read_to_string(project_root.join("vpm-manifest.json")).unwrap(), manifest_before);
 
     let _ = fs::remove_dir_all(&base);
@@ -1486,7 +1488,8 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
         std::thread::sleep(Duration::from_millis(20));
     };
     assert_eq!(task.state, TaskState::Succeeded, "{task:?}");
-    assert_eq!(bridge.commands.lock().unwrap().len(), 2, "continue re-runs after takeover");
+    // inspect (the takeover credential) + import + validation
+    assert_eq!(bridge.commands.lock().unwrap().len(), 3, "continue re-runs after takeover");
 
     // The lease now belongs to the live run and is released on completion.
     let identity = vua_orchestrator::ProjectIdentity::from_existing_path(&project_root).unwrap();

@@ -75,6 +75,15 @@ pub struct BuildRecordV01 {
     pub source: SourceFolderInspectionV01,
     pub risk_choice: RiskDecisionChoice,
     pub project_id: String,
+    /// Normalized digest of the project root the record belongs to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project_identity: Option<String>,
+    /// Set on recovery receipts: the failed run's record this one
+    /// supersedes, and the user decision that authorized the recovery.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovered_from_record_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery_decision_id: Option<String>,
     pub initial_project_fingerprint: String,
     pub final_project_fingerprint: Option<String>,
     pub unity_editor_version: String,
