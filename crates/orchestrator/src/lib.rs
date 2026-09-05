@@ -144,8 +144,9 @@ pub use project_lock::{
     MARKER_FILE_NAME,
 };
 pub use provider_host::{
-    production_config_from_env, run_provider_host, run_provider_host_with, ProductionConfig,
-    ProviderHostError, PROVIDER_FRAME_VERSION,
+    production_config_from_env, run_provider_host, run_provider_host_with,
+    run_provider_host_with_downloads, DownloadConfig, ProductionConfig, ProviderHostError,
+    PROVIDER_FRAME_VERSION,
 };
 #[cfg(windows)]
 pub use provider_job::ProviderJobGuard;

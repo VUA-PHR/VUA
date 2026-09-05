@@ -17,9 +17,22 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // executor serves production.*; without them every production method
     // answers a typed unavailable error.
     let production = vua_orchestrator::production_config_from_env();
+    // Download acquisition (B4/F4-4): when a data directory is configured,
+    // the provider serves download.ingest / download.retry and folds port
+    // events into the BDL database under <data>/bdl.
+    let downloads = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
+        let bdl = vua_orchestrator::BdlStore::open(
+            std::path::Path::new(&data).join("bdl").join("bdl.db"),
+        )
+        .map(std::sync::Arc::new)
+        .expect("BDL store must open");
+        vua_orchestrator::DownloadConfig { bdl }
+    });
     let input = stdin_reader();
     let output = std::io::stdout().lock();
-    vua_orchestrator::run_provider_host_with(input, output, database_path, production)?;
+    vua_orchestrator::run_provider_host_with_downloads(
+        input, output, database_path, production, downloads,
+    )?;
     Ok(())
 }
 

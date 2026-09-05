@@ -138,14 +138,24 @@ pub enum RetryDecision {
 
 pub fn retry_decision(lifecycle: &DownloadLifecycle) -> RetryDecision {
     match lifecycle.phase {
-        // The frozen bound wins: at three interrupted attempts AMF gives up.
-        DownloadPhase::Interrupted if lifecycle.attempt >= MAX_DOWNLOAD_ATTEMPTS => {
-            RetryDecision::GiveUp
+        // Resume continues the SAME attempt over the live connection.
+        DownloadPhase::Interrupted
+            if lifecycle.attempt < MAX_DOWNLOAD_ATTEMPTS && lifecycle.resumable =>
+        {
+            RetryDecision::Resume
         }
-        DownloadPhase::Interrupted if lifecycle.resumable => RetryDecision::Resume,
-        DownloadPhase::Interrupted => RetryDecision::StartNextAttempt {
-            attempt: lifecycle.attempt + 1,
-        },
+        // A fresh attempt restarts from zero (interrupted non-resumable, or
+        // the port reported a hard failure inside the attempt bound) — the
+        // B3 discipline: a new attempt record, never a blind second run.
+        DownloadPhase::Interrupted | DownloadPhase::Failed
+            if lifecycle.attempt < MAX_DOWNLOAD_ATTEMPTS =>
+        {
+            RetryDecision::StartNextAttempt {
+                attempt: lifecycle.attempt + 1,
+            }
+        }
+        // The frozen bound wins, and downloads that are in flight, already
+        // transferred, or user-cancelled have nothing to retry.
         _ => RetryDecision::GiveUp,
     }
 }
@@ -217,7 +227,15 @@ pub fn fold_lifecycle(
         received_bytes: None,
     };
     for event in events {
-        if lifecycle.phase.is_terminal() {
+        // A user-cancelled download is final; a hard failure inside the
+        // attempt bound may be followed by an AMF-adjudicated fresh attempt
+        // (the B3 attempt discipline — new attempt, new record).
+        let adjudicated_retry_start = lifecycle.phase == DownloadPhase::Failed
+            && lifecycle.started
+            && event.kind == DownloadEventKind::Started
+            && event.attempt == lifecycle.attempt + 1
+            && event.attempt <= MAX_DOWNLOAD_ATTEMPTS;
+        if lifecycle.phase.is_terminal() && !adjudicated_retry_start {
             return Err(ConsumerError::IllegalSequence {
                 download_id: download_id.to_string(),
                 kind: event.kind,
@@ -225,6 +243,7 @@ pub fn fold_lifecycle(
             });
         }
         if lifecycle.started
+            && !adjudicated_retry_start
             && event.kind != DownloadEventKind::Started
             && event.attempt != lifecycle.attempt
         {
@@ -245,14 +264,15 @@ pub fn fold_lifecycle(
                         });
                     }
                 } else {
-                    if lifecycle.phase != DownloadPhase::Interrupted
-                        || event.attempt != lifecycle.attempt + 1
-                        || event.attempt > MAX_DOWNLOAD_ATTEMPTS
-                    {
+                    let retry_start = (lifecycle.phase == DownloadPhase::Interrupted
+                        || lifecycle.phase == DownloadPhase::Failed)
+                        && event.attempt == lifecycle.attempt + 1
+                        && event.attempt <= MAX_DOWNLOAD_ATTEMPTS;
+                    if !retry_start {
                         return Err(ConsumerError::IllegalSequence {
                             download_id: download_id.to_string(),
                             kind: event.kind,
-                            reason: "a fresh attempt only follows an interruption within the attempt bound",
+                            reason: "a fresh attempt only follows an interruption or a failure inside the attempt bound",
                         });
                     }
                 }
@@ -338,7 +358,13 @@ fn check_sequence(
         kind: event.kind,
         reason,
     };
+    let adjudicated_retry_start = prior.phase == DownloadPhase::Failed
+        && prior.started
+        && event.kind == DownloadEventKind::Started
+        && event.attempt == prior.attempt + 1
+        && event.attempt <= MAX_DOWNLOAD_ATTEMPTS;
     if prior.started
+        && !adjudicated_retry_start
         && event.kind != DownloadEventKind::Started
         && event.attempt != prior.attempt
     {
@@ -350,13 +376,16 @@ fn check_sequence(
                 if event.attempt != 1 {
                     return Err(reject("the first attempt must be 1"));
                 }
-            } else if prior.phase != DownloadPhase::Interrupted
-                || event.attempt != prior.attempt + 1
-                || event.attempt > MAX_DOWNLOAD_ATTEMPTS
-            {
-                return Err(reject(
-                    "a fresh attempt only follows an interruption within the attempt bound",
-                ));
+            } else {
+                let retry_start = (prior.phase == DownloadPhase::Interrupted
+                    || prior.phase == DownloadPhase::Failed)
+                    && event.attempt == prior.attempt + 1
+                    && event.attempt <= MAX_DOWNLOAD_ATTEMPTS;
+                if !retry_start {
+                    return Err(reject(
+                        "a fresh attempt only follows an interruption or failure within the attempt bound",
+                    ));
+                }
             }
         }
         DownloadEventKind::Progress => {
@@ -429,10 +458,20 @@ impl<'a> DownloadEventConsumer<'a> {
         }
         let prior = fold_lifecycle(&event.download_id, &history)?;
         if prior.is_terminal() {
-            return Err(ConsumerError::AlreadyTerminal {
-                download_id: event.download_id.clone(),
-                phase: prior.phase,
-            });
+            // One exception: an AMF-adjudicated fresh attempt after a hard
+            // failure (new attempt record inside the bound). Everything else
+            // after a terminal fact is refused at the gate.
+            let adjudicated_retry_start = prior.phase == DownloadPhase::Failed
+                && prior.started
+                && event.kind == DownloadEventKind::Started
+                && event.attempt == prior.attempt + 1
+                && event.attempt <= MAX_DOWNLOAD_ATTEMPTS;
+            if !adjudicated_retry_start {
+                return Err(ConsumerError::AlreadyTerminal {
+                    download_id: event.download_id.clone(),
+                    phase: prior.phase,
+                });
+            }
         }
         check_sequence(&prior, event)?;
         self.store.append_download_event(event)?;
@@ -818,6 +857,25 @@ mod tests {
                 "every non-terminal download is an orphan candidate: TransferDone still owes AMF verification, Downloading owes the partial-file decision"
             );
             assert_eq!(orphans[1].stored_path.as_deref(), Some("C:\\staging\\dl-orphan-1-pack.zip"));
+        }
+
+        #[test]
+        fn a_failed_attempt_inside_the_bound_retries_as_a_fresh_attempt() {
+            let lifecycle = DownloadLifecycle {
+                download_id: "dl-f".into(),
+                attempt: 1,
+                phase: DownloadPhase::Failed,
+                started: true,
+                resumable: false,
+                stored_path: None,
+                expected_bytes: None,
+                received_bytes: None,
+            };
+            assert_eq!(
+                retry_decision(&lifecycle),
+                RetryDecision::StartNextAttempt { attempt: 2 },
+                "a hard failure inside the bound is retried from zero, not abandoned"
+            );
         }
 
         #[test]

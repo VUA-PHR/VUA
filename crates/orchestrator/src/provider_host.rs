@@ -14,11 +14,16 @@ use crate::project_lock::{
     MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
     MARKER_FILE_NAME,
 };
+use crate::download_events::{
+    fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
+    IngestOutcome, RetryDecision,
+};
 use crate::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
     IdempotentTaskAcceptance, NewTask, ProjectIdentity, SqliteStoreError, SqliteTaskStore,
-    StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
+    BdlStore, StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
+use crate::contracts::ParamValue;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -98,6 +103,50 @@ struct HostState {
     provider_instance_id: String,
     recovered_nonterminal_tasks: HashSet<String>,
     production: Option<Arc<ProductionServices>>,
+    downloads: Option<Arc<DownloadServices>>,
+}
+
+/// B4/F4-4 download acquisition wiring. When absent, every `download.*`
+/// method answers a typed `unavailable` error — honest absence, never a
+/// silent success (same discipline as production.*).
+pub struct DownloadConfig {
+    /// The BDL local database the download consumer folds events into.
+    pub bdl: Arc<BdlStore>,
+}
+
+struct DownloadServices {
+    bdl: Arc<BdlStore>,
+    /// Per-download monotonic intent sequence (AMF-issued, Main-side dedup
+    /// key). In-memory only: intents concern live downloads, and a provider
+    /// restart leaves no live downloads behind (orphan discipline).
+    intent_seqs: Mutex<std::collections::HashMap<String, u64>>,
+    /// Outbound Provider -> Main intent notifications, drained by the frame
+    /// loop as ordinary event frames (the same ordering channel as events).
+    pending_intents: Mutex<Vec<serde_json::Value>>,
+}
+
+impl DownloadServices {
+    fn next_intent(&self, download_id: &str, intent: &str) -> serde_json::Value {
+        let mut intents = self.intent_seqs.lock().expect("download intents poisoned");
+        let seq = intents.entry(download_id.to_owned()).or_insert(0);
+        *seq += 1;
+        serde_json::json!({
+            "kind": "download.intent",
+            "downloadId": download_id,
+            "intent": intent,
+            "intentSeq": *seq,
+        })
+    }
+
+    fn queue_intent(&self, download_id: &str, intent: &str) -> u64 {
+        let payload = self.next_intent(download_id, intent);
+        let seq = payload["intentSeq"].as_u64().unwrap_or(0);
+        self.pending_intents
+            .lock()
+            .expect("pending intents poisoned")
+            .push(payload);
+        seq
+    }
 }
 
 /// Production use-case wiring (production-use-case v0.1): when absent, every
@@ -157,9 +206,22 @@ pub fn run_provider_host(
 /// services (material intake executor + build record store).
 pub fn run_provider_host_with(
     input: impl BufRead + Send + 'static,
+    output: impl Write,
+    database_path: impl AsRef<Path>,
+    production: Option<ProductionConfig>,
+) -> Result<(), ProviderHostError> {
+    run_provider_host_with_downloads(input, output, database_path, production, None)
+}
+
+/// The download-capable entry: when `downloads` is configured, the host
+/// serves `download.ingest` / `download.retry` and emits download intents
+/// over the event channel.
+pub fn run_provider_host_with_downloads(
+    input: impl BufRead + Send + 'static,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
     production: Option<ProductionConfig>,
+    downloads: Option<DownloadConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -217,11 +279,19 @@ pub fn run_provider_host_with(
             completed_events: Mutex::new(Vec::new()),
         })
     });
+    let downloads = downloads.map(|config| {
+        Arc::new(DownloadServices {
+            bdl: config.bdl,
+            intent_seqs: Mutex::new(std::collections::HashMap::new()),
+            pending_intents: Mutex::new(Vec::new()),
+        })
+    });
     let mut state = HostState {
         store,
         provider_instance_id,
         recovered_nonterminal_tasks,
         production,
+        downloads,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -263,6 +333,22 @@ pub fn run_provider_host_with(
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
                 write_pending_events(&mut state, &mut output)?;
+                // Intents queued by the LAST frame still go out before the
+                // host exits — ordering never strands a port intent.
+                if let Some(downloads) = &state.downloads {
+                    let mut intents = downloads
+                        .pending_intents
+                        .lock()
+                        .expect("pending intents poisoned");
+                    for payload in intents.drain(..) {
+                        let frame_id = format!(
+                            "download-intent-{}-{}",
+                            payload["downloadId"].as_str().unwrap_or("?"),
+                            payload["intentSeq"].as_u64().unwrap_or(0)
+                        );
+                        write_frame(&mut output, &frame_id, "event", payload)?;
+                    }
+                }
                 break;
             }
         };
@@ -289,6 +375,20 @@ pub fn run_provider_host_with(
         for event in pending_events {
             let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
             write_frame(&mut output, &event_id, "event", task_event(&event_id, &event))?;
+        }
+        if let Some(downloads) = &state.downloads {
+            let mut intents = downloads
+                .pending_intents
+                .lock()
+                .expect("pending intents poisoned");
+            for payload in intents.drain(..) {
+                let frame_id = format!(
+                    "download-intent-{}-{}",
+                    payload["downloadId"].as_str().unwrap_or("?"),
+                    payload["intentSeq"].as_u64().unwrap_or(0)
+                );
+                write_frame(&mut output, &frame_id, "event", payload)?;
+            }
         }
         let frame = match serde_json::from_slice::<InboundFrame>(&line) {
             Ok(frame) => frame,
@@ -350,6 +450,7 @@ fn handle_frame(
             "supportedContractVersions": [APPLICATION_CONTRACT_VERSION],
             "providerBuildId": env!("CARGO_PKG_VERSION"),
             "providerInstanceId": state.provider_instance_id,
+            "downloadIngest": state.downloads.is_some(),
         })),
         "request" => handle_application_request(state, &frame.payload),
         "prepare_shutdown" => wait_for_safe_boundary(state, shutdown_timeout(&frame.payload)),
@@ -492,6 +593,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     let method = request.get("method").and_then(Value::as_str).unwrap_or("");
     if method.starts_with("production.") {
         return production_request(state, method, request, request_id, correlation_id);
+    }
+    if method.starts_with("download.") {
+        return download_request(state, method, request, request_id, correlation_id);
     }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
@@ -766,6 +870,16 @@ fn handle_cancellation(
                 token.cancel();
             }
         }
+        // Download tasks: the user's cancellation folds to an abandon intent
+        // for the port (discard the partial file). The download task id is
+        // `dl-<downloadId>-a<attempt>`; the intent carries the downloadId.
+        if task_id.starts_with("dl-") {
+            if let Some(downloads) = &state.downloads {
+                if let Ok(Some(task)) = state.store.task(task_id) {
+                    downloads.queue_intent(&task.correlation_id, "abandon");
+                }
+            }
+        }
     }
     match cancellation {
         IdempotentCancellation::Replayed(result) => {
@@ -848,6 +962,351 @@ fn application_success(request_id: &str, value: Value) -> Value {
         "ok": true,
         "value": value,
     })
+}
+
+/// B4/F4-4: the download acquisition surface. `download.ingest` folds port
+/// events into BDL (at-least-once; the BDL unique key dedups) and drives the
+/// per-attempt nine-state task; `download.retry` adjudicates a user retry
+/// through the frozen retry policy and emits the port intent.
+fn download_request(
+    state: &mut HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(downloads) = state.downloads.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.download.unavailable",
+            "errors.download.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "download.ingest" => {
+            download_ingest(state, downloads, request, request_id, correlation_id)
+        }
+        "download.retry" => {
+            download_retry(state, downloads, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn download_ingest(
+    state: &mut HostState,
+    downloads: Arc<DownloadServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    if request.pointer("/params/schemaVersion").and_then(Value::as_str)
+        != Some(crate::download_events::DOWNLOAD_EVENT_SCHEMA_VERSION)
+    {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.download.unsupported_schema",
+            "errors.download.unsupportedSchema",
+            "validation",
+        ));
+    }
+    let empty = Vec::new();
+    let events = request
+        .pointer("/params/events")
+        .and_then(Value::as_array)
+        .unwrap_or(&empty);
+    let consumer = DownloadEventConsumer::new(&downloads.bdl);
+    let mut folded = 0u64;
+    let mut duplicates = 0u64;
+    let mut rejected: Vec<Value> = Vec::new();
+    for (index, value) in events.iter().enumerate() {
+        let event: DownloadEventV01 = match serde_json::from_value(value.clone()) {
+            Ok(event) => event,
+            Err(error) => {
+                rejected.push(json!({
+                    "index": index,
+                    "code": "vua.download.invalid_event",
+                    "reason": error.to_string(),
+                }));
+                continue;
+            }
+        };
+        match consumer.ingest(&event) {
+            Ok(IngestOutcome::Recorded { .. }) => {
+                folded += 1;
+                if let Err(error) = fold_download_task(state, &event) {
+                    rejected.push(json!({
+                        "index": index,
+                        "code": "vua.download.store_failed",
+                        "reason": error.to_string(),
+                    }));
+                }
+            }
+            Ok(IngestOutcome::Duplicate { .. }) => duplicates += 1,
+            Err(error) => rejected.push(json!({
+                "index": index,
+                "code": consumer_error_code(&error),
+                "reason": error.to_string(),
+            })),
+        }
+    }
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "folded": folded,
+            "duplicates": duplicates,
+            "rejected": rejected,
+        }),
+    ))
+}
+
+/// The download task exists per ATTEMPT (`dl-<downloadId>-a<attempt>`): the
+/// nine-state task records one run, and a fresh retry attempt is a new
+/// record — the B3 attempt discipline. Folding is idempotent: a redelivered
+/// event never advances a task twice.
+fn fold_download_task(
+    state: &HostState,
+    event: &DownloadEventV01,
+) -> Result<(), SqliteStoreError> {
+    let task_id = format!("dl-{}-a{}", event.download_id, event.attempt);
+    let occurred_at = event.occurred_at.as_str();
+    match event.kind {
+        crate::download_events::DownloadEventKind::Started => {
+            if state.store.task(&task_id)?.is_none() {
+                state.store.accept_task(&NewTask {
+                    task_id: task_id.clone(),
+                    correlation_id: event.download_id.clone(),
+                    occurred_at: occurred_at.to_owned(),
+                })?;
+            }
+            // The nine-state machine walks Queued -> Preparing -> Running;
+            // a started download is already transferring, so it walks both
+            // steps immediately (idempotently for redeliveries).
+            let payload = || {
+                json!({
+                    "receivedBytes": event.received_bytes,
+                    "expectedBytes": event.expected_bytes,
+                })
+            };
+            if let Some(task) = state.store.task(&task_id)? {
+                if task.state == TaskState::Queued {
+                    state.store.mutate_task(
+                        &task_id,
+                        task.revision,
+                        occurred_at,
+                        TaskMutation::Transition {
+                            state: TaskState::Preparing,
+                            payload: payload(),
+                        },
+                    )?;
+                }
+            }
+            if let Some(task) = state.store.task(&task_id)? {
+                if task.state == TaskState::Preparing {
+                    state.store.mutate_task(
+                        &task_id,
+                        task.revision,
+                        occurred_at,
+                        TaskMutation::Transition {
+                            state: TaskState::Running,
+                            payload: payload(),
+                        },
+                    )?;
+                }
+            }
+        }
+        crate::download_events::DownloadEventKind::Progress => {
+            if let Some(task) = state.store.task(&task_id)? {
+                if task.state == TaskState::Running {
+                    state.store.mutate_task(
+                        &task_id,
+                        task.revision,
+                        occurred_at,
+                        TaskMutation::Progress {
+                            payload: json!({
+                                "receivedBytes": event.received_bytes,
+                                "expectedBytes": event.expected_bytes,
+                            }),
+                        },
+                    )?;
+                }
+            }
+        }
+        // interrupted returns to downloading: no task-side transition (the
+        // same-attempt progress proves the resume).
+        crate::download_events::DownloadEventKind::Interrupted => {}
+        crate::download_events::DownloadEventKind::Completed => {
+            complete_download_task(
+                state,
+                &task_id,
+                occurred_at,
+                TaskState::Succeeded,
+                None,
+            )?;
+        }
+        crate::download_events::DownloadEventKind::Cancelled => {
+            complete_download_task(
+                state,
+                &task_id,
+                occurred_at,
+                TaskState::Cancelled,
+                None,
+            )?;
+        }
+        crate::download_events::DownloadEventKind::Failed => {
+            let failure_kind = event
+                .failure_kind
+                .map(|kind| match kind {
+                    crate::download_events::DownloadFailureKind::Policy => "policy",
+                    crate::download_events::DownloadFailureKind::Unknown => "unknown",
+                })
+                .unwrap_or("unknown");
+            let error = AppErrorV1::new(
+                "vua.download.failed",
+                ErrorCategory::ExternalFailure,
+                "errors.download.failed",
+                &event.download_id,
+            )
+            .with_param("failureKind", ParamValue::Text(failure_kind.to_owned()));
+            complete_download_task(
+                state,
+                &task_id,
+                occurred_at,
+                TaskState::Failed,
+                Some(error),
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn complete_download_task(
+    state: &HostState,
+    task_id: &str,
+    occurred_at: &str,
+    state_to: TaskState,
+    error: Option<AppErrorV1>,
+) -> Result<(), SqliteStoreError> {
+    if let Some(task) = state.store.task(task_id)? {
+        if !task.state.is_terminal() {
+            state.store.mutate_task(
+                task_id,
+                task.revision,
+                occurred_at,
+                TaskMutation::Complete {
+                    state: state_to,
+                    error,
+                    result: None,
+                },
+            )?;
+        }
+    }
+    Ok(())
+}
+
+fn consumer_error_code(error: &ConsumerError) -> &'static str {
+    match error {
+        ConsumerError::SchemaVersion(_) => "vua.download.unsupported_schema",
+        ConsumerError::AlreadyTerminal { .. } => "vua.download.already_terminal",
+        ConsumerError::IllegalSequence { .. } => "vua.download.illegal_sequence",
+        ConsumerError::Store(_) => "vua.download.store_failed",
+    }
+}
+
+fn download_retry(
+    state: &mut HostState,
+    downloads: Arc<DownloadServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let task_id = request
+        .pointer("/params/taskId")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let task = match state.store.task(task_id) {
+        Ok(Some(task)) => task,
+        Ok(None) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.task.not_found",
+                "errors.task.notFound",
+                "validation",
+            ))
+        }
+        Err(error) => {
+            let _ = error;
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.download.store_failed",
+                "errors.download.storeFailed",
+                "internal",
+            ));
+        }
+    };
+    let download_id = task.correlation_id.clone();
+    let history = match downloads.bdl.download_events(&download_id) {
+        Ok(history) => history,
+        Err(error) => {
+            let _ = error;
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.download.store_failed",
+                "errors.download.storeFailed",
+                "internal",
+            ));
+        }
+    };
+    let lifecycle = match fold_lifecycle(&download_id, &history) {
+        Ok(lifecycle) => lifecycle,
+        Err(error) => {
+            let _ = error;
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.download.not_retryable",
+                "errors.download.notRetryable",
+                "conflict",
+            ));
+        }
+    };
+    let decision = retry_decision(&lifecycle);
+    let intent = match decision {
+        RetryDecision::Resume => "resume",
+        RetryDecision::StartNextAttempt { .. } => "retry",
+        RetryDecision::GiveUp => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.download.not_retryable",
+                "errors.download.notRetryable",
+                "conflict",
+            ))
+        }
+    };
+    let intent_seq = downloads.queue_intent(&download_id, intent);
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "taskId": task_id,
+            "decision": intent,
+            "intentSeq": intent_seq,
+        }),
+    ))
 }
 
 fn application_error(
@@ -2535,6 +2994,7 @@ mod tests {
             provider_instance_id: "provider-test".into(),
             recovered_nonterminal_tasks: HashSet::new(),
             production: None,
+            downloads: None,
         };
 
         let prepare = InboundFrame {
