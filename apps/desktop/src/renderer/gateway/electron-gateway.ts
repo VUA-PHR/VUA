@@ -6,13 +6,14 @@ import { emptyGateway } from "./empty-gateway.ts";
 import { createGatewayClient, type DesktopGatewayHost, type GatewayClient } from "./gateway-client.ts";
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { VuaGateway } from "./gateway.ts";
-import type { ModelProductionPort } from "./model-production-port.ts";
+import { createLiveModelProduction } from "./live-production-port.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
 
 /**
- * Electron live Gateway(F2):任务中心与环境快照经 Kernel 直达应用层;
- * 其余领域仍为 not-run 诚实空态,随所属纵向切片逐个接入(页面零重写)。
+ * Electron live Gateway(F2/F-3):任务中心、环境快照与生产纵向七方法经
+ * Kernel 直达应用层;其余领域仍为 not-run 诚实空态,随所属纵向切片逐个
+ * 接入(页面零重写)。
  * 断连语义:首帧取数失败向上抛出(GatewayProvider 呈现诚实失败 + 重试);
  * 订阅期间取数失败保留上一视图,恢复由下一次事件或用户重试驱动。
  */
@@ -145,23 +146,10 @@ export function createElectronGateway(
 ): VuaGateway {
   const client = createGatewayClient(host);
   const notRun = emptyGateway(initialGoals);
-  // F3 素材来源选取已接 Kernel 文件对话框(遗留清理):其余生产命令仍为
-  // not-run/unavailable 诚实态,随 B3 冻结后的 live 切片接入(只换实现,
-  // 视图与端口形状不动)
-  const liveModelProduction: ModelProductionPort = {
-    ...notRun.modelProduction,
-    pickMaterial: async (intake) => {
-      if (host?.dialog === undefined) return null;
-      const picked = await host.dialog.pickMaterialSource(intake);
-      return picked === null
-        ? null
-        : {
-            materialId: picked.refId,
-            intake,
-            displayName: picked.displayName,
-          };
-    },
-  };
+  // F3(F-3):生产纵向七方法经 live 端口走 Kernel 路由(运行视图由任务
+  // 生命周期推导,文档按引用查询);图谱/分享码/卡片墙仍走 notRun 退路,
+  // 随所属切片接入(只换实现,视图与端口形状不动)
+  const liveModelProduction = createLiveModelProduction(client, host, notRun.modelProduction);
   return {
     environment: createLiveEnvironmentPort(client),
     task: createLiveTaskPort(client),

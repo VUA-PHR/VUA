@@ -1,12 +1,13 @@
 import { format, termLabel } from "../i18n/index.ts";
 import { fixtureStrings } from "../i18n/strings.fixtures.zh-CN.ts";
 import type { FixtureName } from "../app/resolve-scenario.ts";
-import type { LogEntry, StageNode, StageState, WorkshopView } from "../features/workshop/track-model.ts";
+import type { LogEntry, WorkshopView } from "../features/workshop/track-model.ts";
 import type { TaskItem } from "./task-port.ts";
 import { taskStatusForWorkflow, type WorkflowRunState } from "./workflow.ts";
 import { createSignal } from "./fixture-signal.ts";
 import { fixtureRecipeGraph } from "./fixture-recipes.ts";
 import { fixtureReleaseWall } from "./fixture-release.ts";
+import { workshopStagesFor } from "./production-workshop-view.ts";
 import type {
   BuildRecord,
   BuildRecordFacts,
@@ -169,59 +170,7 @@ const rollbackFailedRecord = (): BuildRecord =>
     ["snapshot", "execute", "recover"],
   );
 
-/* ---- 车间轨道联动:运行态 → 三工位状态(端点恒定;不触碰 TrackModel 行为) ---- */
-
-function workshopStagesFor(run: ProductionRunView): StageNode[] {
-  // 默认:尚无运行,三工位全部未开始(不虚构进度,原则①)
-  let assembly: StageState = "pending";
-  let production: StageState = "pending";
-  let inspection: StageState = "pending";
-  if (run.kind === "run") {
-    // 进入运行后:inspect 是当前工位;其后装配恒为已完成
-    assembly = run.runState === "inspect" ? "current" : "completed";
-    if (run.cancelled) {
-      assembly = "completed";
-      production = "pending";
-    } else {
-      switch (run.runState) {
-        case "inspect":
-          break;
-        case "plan":
-          production = "current";
-          break;
-        case "await_confirmation":
-        case "expired":
-          production = "needsConfirmation";
-          break;
-        case "snapshot":
-        case "execute":
-        case "recover":
-          production = "current";
-          break;
-        case "validate":
-          production = "completed";
-          inspection = "current";
-          break;
-        case "completed":
-          production = "completed";
-          inspection = "completed";
-          break;
-        case "failed":
-        case "failed_recoverable":
-          production = "blocked";
-          break;
-      }
-    }
-  }
-  return [
-    { id: "warehouse", label: termLabel("warehouse"), state: "completed" },
-    { id: "recipe", label: termLabel("recipe"), state: "completed" },
-    { id: "assembly", label: termLabel("assembly"), state: assembly },
-    { id: "production", label: termLabel("production"), state: production },
-    { id: "inspection", label: termLabel("inspection"), state: inspection },
-    { id: "release", label: termLabel("release"), state: "pending" },
-  ];
-}
+/* ---- 车间轨道联动:推导函数在 production-workshop-view.ts(fixture 与 live 共享) ---- */
 
 function headlineFor(run: ProductionRunView): string {
   const stage = termLabel("production");

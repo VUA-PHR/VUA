@@ -37,8 +37,8 @@ export type WorkflowStage =
  */
 export type WorkflowRunState = WorkflowStage | "failed" | "failed_recoverable" | "expired";
 
-/** 全集:与 strings.workflowStage 一一对应(i18n 奇偶测试约束) */
-export const workflowRunStates: readonly WorkflowRunState[] = [
+/** 工作流阶段全集(unity-bridge v1 镜像;增补三态之外的部分) */
+export const workflowStages: readonly WorkflowStage[] = [
   "inspect",
   "plan",
   "await_confirmation",
@@ -47,6 +47,11 @@ export const workflowRunStates: readonly WorkflowRunState[] = [
   "validate",
   "completed",
   "recover",
+];
+
+/** 全集:与 strings.workflowStage 一一对应(i18n 奇偶测试约束) */
+export const workflowRunStates: readonly WorkflowRunState[] = [
+  ...workflowStages,
   "failed",
   "failed_recoverable",
   "expired",

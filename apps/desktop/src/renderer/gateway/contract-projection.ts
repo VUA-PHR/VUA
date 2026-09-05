@@ -9,6 +9,7 @@ import {
 import type { TaskStatus } from "../app/task-status.ts";
 import type { CheckItem, CheckStatus, CheckZone, DeployerView } from "../features/deployer/deployer-model.ts";
 import type { EnvironmentView } from "./environment-port.ts";
+import type { WorkflowRunState } from "./workflow.ts";
 import type { TaskItem } from "./task-port.ts";
 import { strings } from "../i18n/index.ts";
 
@@ -94,4 +95,80 @@ export function projectEnvironmentSnapshot(snapshot: EnvironmentSnapshotV01): En
     },
     versions: { play: [], create: [] },
   };
+}
+
+/* ---- 生产运行状态投影(F3 live;production-use-case v0.1 生命周期-任务映射) ----
+ * 任务九态是唯一权威事实:运行视图的阶段由"命令角色 × 任务九态"推导,
+ * 不由前端虚构细粒度阶段(原则①)。快照/导入/验证同属 execute 命令的
+ * 执行链,九态不区分链内阶段——运行态停在链的粗粒度表达上,任务中心的
+ * 进度与事件仍是细粒度事实的唯一来源。 */
+
+/** 当前生产命令在运行视图中的角色(命令 → 工作流阶段锚点) */
+export type ProductionTaskRole = "inspect" | "plan" | "execute" | "recover";
+
+/**
+ * 角色 × 任务九态 → WorkflowRunState;两维都必须穷尽(satisfies 编译锁定)。
+ * - cancelled 九态不在此表表达终态:取消是任务事实,运行视图经 run.cancelled
+ *   呈现,runState 保留取消发生的最后阶段(角色基准态);
+ * - failed 九态经 projectWorkflowRunState 按 recoveryDisposition 细分
+ *   failed / failed_recoverable;
+ * - waiting_for_input 是运行级"等待用户"事实:plan/recover 角色对应
+ *   工作流的用户等待点(待确认 / 恢复决定),inspect/execute 角色无
+ *   用户等待点,回落角色基准态。
+ */
+const WORKFLOW_RUN_STATE_PROJECTION: Readonly<
+  Record<ProductionTaskRole, Readonly<Record<TaskStateV01, WorkflowRunState>>>
+> = {
+  inspect: {
+    queued: "inspect",
+    preparing: "inspect",
+    running: "inspect",
+    waiting_for_input: "inspect",
+    paused: "inspect",
+    succeeded: "inspect",
+    succeeded_with_warnings: "inspect",
+    failed: "failed",
+    cancelled: "inspect",
+  },
+  plan: {
+    queued: "plan",
+    preparing: "plan",
+    running: "plan",
+    waiting_for_input: "await_confirmation",
+    paused: "plan",
+    succeeded: "await_confirmation",
+    succeeded_with_warnings: "await_confirmation",
+    failed: "failed",
+    cancelled: "plan",
+  },
+  execute: {
+    queued: "snapshot",
+    preparing: "snapshot",
+    running: "execute",
+    waiting_for_input: "execute",
+    paused: "execute",
+    succeeded: "completed",
+    succeeded_with_warnings: "completed",
+    failed: "failed",
+    cancelled: "execute",
+  },
+  recover: {
+    queued: "recover",
+    preparing: "recover",
+    running: "recover",
+    waiting_for_input: "failed_recoverable",
+    paused: "recover",
+    succeeded: "completed",
+    succeeded_with_warnings: "completed",
+    failed: "failed",
+    cancelled: "recover",
+  },
+};
+
+/** 任务快照 → 运行阶段(inspect_required = 需用户恢复决定 → failed_recoverable) */
+export function projectWorkflowRunState(role: ProductionTaskRole, task: TaskSnapshotV01): WorkflowRunState {
+  if (task.state === "failed" && task.recoveryDisposition === "inspect_required") {
+    return "failed_recoverable";
+  }
+  return WORKFLOW_RUN_STATE_PROJECTION[role][task.state];
 }

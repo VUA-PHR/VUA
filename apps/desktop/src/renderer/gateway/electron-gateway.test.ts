@@ -196,10 +196,21 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
     expect(await gateway.modelProduction.pickMaterial("local_reusable_vpm")).toBeNull();
   });
 
-  it("keeps the not-run production surface honest while pickMaterial is live", async () => {
+  it("keeps the run view honest before any run while capability follows the task engine", async () => {
     const gateway = createElectronGateway(
       {
-        gateway: { invoke: async () => ({ ok: true as const, value: { contractVersion: "0.1" } as never }) },
+        gateway: {
+          invoke: async () => ({
+            ok: true as const,
+            value: {
+              schemaVersion: 1 as const,
+              productVersion: "0.4.2",
+              runtime: "electron" as const,
+              platform: "win32" as const,
+              capabilities: { gateway: true as const, tasks: false, remoteBrowser: false },
+            },
+          }),
+        },
         events: { subscribe: () => () => {} },
         dialog: { pickMaterialSource: async () => null },
       },
@@ -207,8 +218,23 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
     );
     const view = await gateway.modelProduction.snapshot();
     expect(view.productionRun).toEqual({ schemaVersion: 1, kind: "not-connected" });
+    expect(view.workshop).toEqual({ kind: "idle" });
+    // F-3:能力报告随任务引擎事实(生产缺席在命令层以应用错误如实拒绝)
     const capability = await gateway.modelProduction.capability();
-    expect(capability.production.state).toBe("unavailable");
+    expect(capability).toEqual({
+      overall: { state: "unavailable", detailKey: "detectorsMissing" },
+      production: { state: "unavailable", detailKey: "taskEngineMissing" },
+    });
+    // 取数失败:首帧诚实失败向上抛(页面呈现失败卡 + 重试)
+    const broken = createElectronGateway(
+      {
+        gateway: { invoke: async () => ({ ok: false, error: { code: "internal", messageKey: "x" } }) },
+        events: { subscribe: () => () => {} },
+        dialog: { pickMaterialSource: async () => null },
+      },
+      null,
+    );
+    await expect(broken.modelProduction.capability()).rejects.toThrow("production_capability_unavailable");
     // 无宿主:选取如实返回 null(入口本就由 capability 隐藏)
     const gatewayNoHost = createElectronGateway(undefined, null);
     await expect(gatewayNoHost.modelProduction.pickMaterial("local_reusable_vpm")).resolves.toBeNull();
