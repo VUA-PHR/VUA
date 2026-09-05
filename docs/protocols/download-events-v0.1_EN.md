@@ -76,9 +76,10 @@ LocalArtifact eligible for source correlation and Warehouse decisions.
   otherwise the partial file is discarded and recorded as a failed download for the
   user's retry decision. This is the global "receipt unknown → inspect first"
   discipline made concrete.
-- **BDL idempotency**: admission is keyed by content (`artifact_sha256`), not by
-  download events; downloading the same file twice never produces a second artifact
-  record.
+- **BDL idempotency**: inspection facts are idempotent per content
+  (`artifact_sha256`); physical copies exist per entry — downloading the same asset
+  again creates new physical copies and a new package entry, but never repeats
+  inspection or source correlation (warehouse-layout ruling 2).
 
 ## Source correlation
 
@@ -96,15 +97,25 @@ submissions are idempotent.
 
 ## Warehouse mapping
 
-After inspection passes, AMF decides whether to create a Warehouse entry:
+The layout is governed by `docs/decisions/warehouse-layout_EN.md` (accepted,
+2026-09-06): **semantic directory tree, no deduplication, copy-in import**. After
+inspection passes, AMF decides whether to create a material-package entry:
 
-- `warehouseItemId` is a VUA-generated local identity (same discipline as package
-  machine ids: stable, never derived from display names);
-- the file moves into the Warehouse layout (**physical layout pending a ruling** — see
-  open items) and `storedPath` is updated after the move;
-- BDL records `warehouse_items` + `warehouse_artifacts` (item ↔ artifact); the existing
-  `artifact_mappings` stays unchanged — the artifact-to-product fact does not follow
-  Warehouse organization.
+- the warehouse is organized by material package: one entry per folder, the folder name
+  being a VUA-generated local identity (stable, never derived from display names), with
+  `storedPath` updated when the root setting changes;
+- **no deduplication**: the same content may exist many times — inspection facts are
+  idempotent per content, physical copies exist per entry, and source correlation
+  (`artifact_mappings`) is unaffected by copy count;
+- **import = copy-in + batch**: multi-select folders, each folder becomes one
+  material-package entry, originals untouched;
+- **artifact-mode setting**: the generated VPM package and the material folder are
+  siblings within an entry; the settings expose "use VPM package (optional: delete
+  originals after generation) / use the original .unitypackage (default)", mapping to
+  the two material-intake v0.1 channels; original deletion executes only after
+  generation and verification succeed, and is audited;
+- users do not browse the disk: the warehouse is presented by VUA's own content
+  manager.
 
 ## F-line port alignment
 
@@ -119,9 +130,10 @@ After inspection passes, AMF decides whether to create a Warehouse entry:
 
 ## Open items
 
-- Warehouse physical layout (on-disk organization, naming, dedup) — needs a
-  product-owner one-pager ruling;
 - Inspection hooks (archive content scanning etc.) are defined as an interface
   placeholder; B4 implements only the minimal size/type/digest set;
 - Machine-readable JSON Schema for event payloads lands in
   `schemas/download-events/v0.1/` when F confirms the vocabulary at freeze.
+
+The warehouse physical layout is ruled (`docs/decisions/warehouse-layout_EN.md`):
+semantic tree, no deduplication, copy-in + batch import, artifact-mode setting.

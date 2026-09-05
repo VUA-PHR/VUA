@@ -4,8 +4,8 @@
 -- Evolved from schemas/bdl-spike/v0.1/schema.sql (corpus-validated: 135,973
 -- record-v2 records + 100 a1-smoke normalized rows + two golden anchors). The
 -- four observation tables are carried over UNCHANGED; the B4 additions are
--- download_events / local_artifacts / warehouse_items / warehouse_artifacts,
--- each justified against the v1 boundary IN rows.
+-- download_events / local_artifacts / artifact_copies / warehouse_items, each
+-- justified against the v1 boundary IN rows.
 --
 -- Admission rule (docs/research/bdl-v1-boundary_ZH.md): every column must
 -- answer "which boundary capability row and which filter/mapping query needs
@@ -18,9 +18,16 @@
 -- Identity conventions:
 --   product ids are namespaced corpus identities ("booth:<native_product_id>");
 --   child tables use the same namespace key;
---   artifact identity is content ("sha256:<hex>" of the inspected file);
---   warehouse item ids are VUA-generated local identities (stable, never
---   derived from display names).
+--   artifact identity is CONTENT ("sha256:<hex>" of the inspected file) and is
+--     deliberately NOT the physical file identity — the warehouse keeps a
+--     semantic tree WITHOUT deduplication (warehouse-layout ruling 2): the same
+--     content may exist as many physical copies, so copies are their own rows;
+--   warehouse item ids and copy ids are VUA-generated local identities (stable,
+--   never derived from display names).
+--
+-- Warehouse physical layout is governed by the accepted ruling
+-- docs/decisions/warehouse-layout_ZH.md: semantic tree (one folder per
+-- material package), copy-in import with batch support, no disk browsing.
 
 CREATE TABLE bdl_meta (
   key   TEXT PRIMARY KEY,               -- 'schema_version' => '0.1'
@@ -84,9 +91,9 @@ CREATE TABLE compatibility_observations (        -- boundary IN-3: declared comp
 
 -- ================= B4 additions: the acquisition pipeline =================
 
--- Boundary IN-5 support + download-events protocol v0.1: the normalized
--- download lifecycle as reported by the F4 port (transport facts only — no
--- credentials, no content identity; the sha256 lives in local_artifacts).
+-- Download-events protocol v0.1: the normalized download lifecycle as
+-- reported by the F4 port (transport facts only — no credentials, no content
+-- identity; the sha256 lives in local_artifacts).
 CREATE TABLE download_events (
   event_id            INTEGER PRIMARY KEY,
   download_id         TEXT NOT NULL,           -- port-assigned, stable across retry attempts
@@ -107,23 +114,39 @@ CREATE TABLE download_events (
 CREATE INDEX idx_download_events_id   ON download_events(download_id, attempt);
 CREATE INDEX idx_download_events_kind ON download_events(kind);
 
--- The inspected file identity (download-events protocol: completed ≠
--- admitted). One row per content digest — re-downloads are idempotent.
+-- Inspection facts are PER CONTENT (download-events protocol: completed ≠
+-- admitted). Re-downloading the same content never duplicates this row —
+-- physical copies live in artifact_copies instead (warehouse-layout ruling 2:
+-- no deduplication).
 CREATE TABLE local_artifacts (
   artifact_sha256     TEXT PRIMARY KEY,        -- content identity, AMF-computed
   size_bytes          INTEGER NOT NULL,
   suggested_file_name TEXT,
-  stored_path         TEXT NOT NULL,           -- updated on warehouse moves
   inspection_state    TEXT NOT NULL CHECK (inspection_state IN
                         ('untrusted', 'inspected', 'admitted', 'rejected')),
   inspected_at        TEXT,
-  download_id         TEXT,                    -- nullable: artifacts can enter by import too
+  download_id         TEXT,                    -- nullable: artifacts can enter by batch import too
   first_seen_at       TEXT NOT NULL
 );
 CREATE INDEX idx_artifacts_state ON local_artifacts(inspection_state);
 
--- Boundary IN-4: downloaded artifact -> source product. Many-to-many fact —
--- the same file can be referenced by several product pages. Repeated
+-- Physical copies (warehouse-layout ruling 2): one row per file in the
+-- semantic tree. stored_path is updated on warehouse-root relocations; the
+-- in-package relative path is stable.
+CREATE TABLE artifact_copies (
+  copy_id            TEXT PRIMARY KEY,          -- VUA-generated copy identity
+  artifact_sha256    TEXT NOT NULL REFERENCES local_artifacts(artifact_sha256),
+  warehouse_item_id  TEXT NOT NULL REFERENCES warehouse_items(warehouse_item_id),
+  relative_path      TEXT NOT NULL,             -- path within the package folder
+  stored_path        TEXT NOT NULL,             -- absolute location (updated on moves)
+  created_at         TEXT NOT NULL,
+  UNIQUE (warehouse_item_id, relative_path)
+);
+CREATE INDEX idx_copies_artifact ON artifact_copies(artifact_sha256);
+
+-- Boundary IN-4: downloaded artifact CONTENT -> source product. Many-to-many
+-- fact — the same content can be referenced by several product pages, and the
+-- fact does not follow copy count or warehouse organization. Repeated
 -- submissions are idempotent (primary key).
 CREATE TABLE artifact_mappings (
   artifact_sha256      TEXT NOT NULL REFERENCES local_artifacts(artifact_sha256),
@@ -135,23 +158,16 @@ CREATE TABLE artifact_mappings (
 );
 CREATE INDEX idx_artifact_product ON artifact_mappings(product_id);
 
--- Warehouse mapping (B4): VUA-owned organization on top of admitted
--- artifacts. The artifact->product facts above never change with warehouse
--- organization.
+-- Warehouse items (warehouse-layout rulings 1/2/5): one folder per material
+-- package under the (user-changeable) warehouse root; generated VPM packages
+-- and original material folders are siblings within an entry.
 CREATE TABLE warehouse_items (
   warehouse_item_id TEXT PRIMARY KEY,          -- VUA-generated local identity
   display_name      TEXT NOT NULL,
-  kind              TEXT NOT NULL,             -- artifact family (e.g. 'unitypackage'), no semantic inference
+  folder_name       TEXT NOT NULL UNIQUE,      -- folder under the warehouse root (semantic tree)
+  kind              TEXT NOT NULL,             -- artifact family (e.g. 'unitypackage', 'local_vpm')
   created_at        TEXT NOT NULL
 );
-
-CREATE TABLE warehouse_artifacts (
-  warehouse_item_id TEXT NOT NULL REFERENCES warehouse_items(warehouse_item_id),
-  artifact_sha256   TEXT NOT NULL REFERENCES local_artifacts(artifact_sha256),
-  mapped_at         TEXT NOT NULL,
-  PRIMARY KEY (warehouse_item_id, artifact_sha256)
-);
-CREATE INDEX idx_warehouse_artifacts_artifact ON warehouse_artifacts(artifact_sha256);
 
 -- ================= Boundary IN-5 query support (carried over) =================
 

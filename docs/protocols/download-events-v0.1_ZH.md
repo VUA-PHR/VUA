@@ -65,8 +65,9 @@ queued → downloading → transferDone → verifying → inspected → admitted
 - **崩溃恢复**：重启后无终态事件的下载为 `orphaned`——部分文件只检查不静默续传：能确证
   完整（大小一致且 SHA-256 与既有记录匹配）则走检查，否则丢弃部分文件并记录为失败下载，
   由用户决定是否重试。回执未知时先 Inspect 的全局纪律在这里的具体化。
-- **BDL 幂等**：入库键是内容（`artifact_sha256`）而非下载事件；重复下载同一文件不会产生
-  第二条工件记录。
+- **BDL 幂等**：检查事实按内容（`artifact_sha256`）幂等；物理副本按条目各自存在——重复
+  下载同一素材会建立新的物理副本与素材包条目，但不重复检查、不重复来源关联
+  （warehouse-layout 裁决 2）。
 
 ## 来源关联
 
@@ -82,12 +83,18 @@ queued → downloading → transferDone → verifying → inspected → admitted
 
 ## Warehouse 映射
 
-检查通过后，AMF 决定是否建立 Warehouse 条目：
+布局由 `docs/decisions/warehouse-layout_ZH.md` 裁决（已接受，2026-09-06）：**语义目录树、
+不做去重、拷入导入**。检查通过后，AMF 决定是否建立素材包条目：
 
-- `warehouseItemId` 由 VUA 生成本地身份（与包机器 ID 同纪律：稳定、不向显示名倾斜）；
-- 文件移入 Warehouse 布局（**物理布局待裁决**——见开放项），移动后 `storedPath` 更新；
-- BDL 记录 `warehouse_items` + `warehouse_artifacts`（条目 ↔ 工件），原
-  `artifact_mappings` 保持不变——工件到来源商品的事实不随 Warehouse 组织变化。
+- 仓库以素材包为单位组织：一个条目一个文件夹，文件夹名是 VUA 生成的本地身份（稳定、
+  不向显示名倾斜），`storedPath` 随根目录设置更新；
+- **不做去重**：同一内容的素材可存在多份——检查事实按内容幂等，物理副本（`copies`）按
+  条目各自存在，来源关联（`artifact_mappings`）不受副本数量影响；
+- **导入 = 拷入 + 批量**：批量选择文件夹，每个文件夹成为一个素材包条目，原始目录不动；
+- **产物模式设置**：条目内生成的 VPM 包与素材文件夹平级；设置界面开放"使用 VPM 包
+  （可选：生成后删除原始文件）/ 使用原始 .unitypackage（默认）"，映射素材入口 v0.1 双通道；
+  删除原始文件仅在生成与验证成功后执行，并进入审计；
+- 用户不翻磁盘：仓库由 VUA 自建内容管理器呈现。
 
 ## 与 F 线端口的对齐点
 
@@ -100,6 +107,8 @@ queued → downloading → transferDone → verifying → inspected → admitted
 
 ## 开放项
 
-- Warehouse 物理布局（磁盘组织、命名、去重）——需要产品所有者一页纸裁决；
 - 检查钩子（归档内容扫描等）定义为接口占位，B4 只实现大小/类型/摘要最小集；
 - 事件载荷的机器可读 JSON Schema 在 F 线确认词表后随冻结补入 `schemas/download-events/v0.1/`。
+
+Warehouse 物理布局已裁决（`docs/decisions/warehouse-layout_ZH.md`）：语义目录树、不去重、
+拷入 + 批量导入、产物模式设置。
