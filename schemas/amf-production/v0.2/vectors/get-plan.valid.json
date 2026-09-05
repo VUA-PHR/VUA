@@ -1,0 +1,50 @@
+{
+  "name": "get-plan.valid",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder",
+        "projectRoot": "$projectRoot",
+        "artifactOutputRoot": "$artifactOutputRoot",
+        "projectId": "$projectId"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.requestPlan",
+      "params": {
+        "inspectionId": "$inspectionId",
+        "mode": "direct_unity_package"
+      },
+      "expect": {
+        "ok": true
+      }
+    },
+    {
+      "method": "production.getPlan",
+      "params": {
+        "planId": "$planId"
+      },
+      "expect": {
+        "ok": true,
+        "checks": {
+          "plan.planId": {
+            "startsWith": "plan-"
+          },
+          "plan.stages": {
+            "isArray": true
+          },
+          "plan.diffs": {
+            "equals": []
+          },
+          "plan.estimatedDurationMs": {
+            "equals": null
+          }
+        }
+      }
+    }
+  ]
+}

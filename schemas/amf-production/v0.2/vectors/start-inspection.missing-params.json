@@ -1,0 +1,15 @@
+{
+  "name": "start-inspection.missing-params",
+  "steps": [
+    {
+      "method": "production.startInspection",
+      "params": {
+        "sourceFolder": "$sourceFolder"
+      },
+      "expect": {
+        "ok": false,
+        "errorCode": "vua.production.invalid_params"
+      }
+    }
+  ]
+}
