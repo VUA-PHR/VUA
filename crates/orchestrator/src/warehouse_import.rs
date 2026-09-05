@@ -16,8 +16,8 @@
 
 use crate::artifact_inspection::{hex_lower, mechanical_rejection, sha256_file, InspectionPolicy};
 use crate::bdl_store::{
-    ArtifactInspectionState, ArtifactRecordingOutcome, BdlStore, BdlStoreError,
-    NewLocalArtifact, WarehouseEntryDetail,
+    ArtifactInspectionState, ArtifactMode, ArtifactRecordingOutcome, BdlStore, BdlStoreError,
+    CopyRole, NewLocalArtifact, WarehouseEntryDetail,
 };
 use crate::time::Clock;
 use serde::Serialize;
@@ -221,6 +221,7 @@ impl<'a> WarehouseImporter<'a> {
                 &identity,
                 &relative_path,
                 &destination.to_string_lossy(),
+                CopyRole::Original,
                 &now,
             )?;
             imported.push(ImportedArtifact {
@@ -232,7 +233,7 @@ impl<'a> WarehouseImporter<'a> {
 
         let entry = self
             .store
-            .warehouse_entry_detail(&item.warehouse_item_id)?
+            .warehouse_entry_detail(&item.warehouse_item_id, ArtifactMode::UseOriginalUnitypackage)?
             .expect("the entry was created in this import");
         Ok(WarehouseImportReport {
             entry,
@@ -521,7 +522,7 @@ mod tests {
             "inspection facts stay idempotent per content"
         );
         assert_eq!(store.artifact(&first.imported[0].artifact_sha256).unwrap().unwrap().download_id, None);
-        let cards = store.warehouse_entry_cards().unwrap();
+        let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
         assert_eq!(cards.len(), 2);
         std::fs::remove_dir_all(&warehouse_root).ok();
         std::fs::remove_dir_all(&source).ok();
@@ -538,7 +539,7 @@ mod tests {
         let report = importer.import_folder(&source).unwrap();
         assert!(report.imported.is_empty());
         assert!(report.entry.artifacts.is_empty());
-        let cards = store.warehouse_entry_cards().unwrap();
+        let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
         assert_eq!(cards.len(), 1);
         std::fs::remove_dir_all(&warehouse_root).ok();
         std::fs::remove_dir_all(&source).ok();
@@ -635,7 +636,7 @@ mod tests {
             assert_eq!(payload["reports"][0]["entry"]["displayName"], "alpha");
             assert_eq!(payload["reports"][1]["entry"]["displayName"], "beta");
             // The durable read face shows both entries.
-            assert_eq!(store.warehouse_entry_cards().unwrap().len(), 2);
+            assert_eq!(store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap().len(), 2);
             std::fs::remove_dir_all(&warehouse_root).ok();
             std::fs::remove_dir_all(&parent).ok();
         }
@@ -668,7 +669,7 @@ mod tests {
             let snapshot = wait_for_terminal(&rt, &accepted.task_id);
             assert_eq!(snapshot.state, TaskState::Failed);
             // Fail-fast keeps the durable partial state queryable.
-            let cards = store.warehouse_entry_cards().unwrap();
+            let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
             assert_eq!(cards.len(), 1);
             assert_eq!(cards[0].display_name, "good");
             std::fs::remove_dir_all(&warehouse_root).ok();
@@ -714,7 +715,7 @@ mod tests {
             }
             let snapshot = wait_for_terminal(&rt, &accepted.task_id);
             assert_eq!(snapshot.state, TaskState::Cancelled);
-            let imported = store.warehouse_entry_cards().unwrap().len();
+            let imported = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap().len();
             assert!(
                 imported < 40,
                 "cancellation must stop the batch at a folder boundary (imported {imported})"

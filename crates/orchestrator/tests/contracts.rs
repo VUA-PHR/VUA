@@ -30,7 +30,7 @@ fn download_events_dir() -> PathBuf {
 }
 
 fn bdl_queries_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.2")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.3")
 }
 
 #[test]
@@ -291,7 +291,7 @@ fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
     let dir = bdl_queries_dir();
     let query_schema: serde_json::Value =
         serde_json::from_slice(&fs::read(dir.join("query.schema.json")).unwrap()).unwrap();
-    assert_eq!(query_schema["properties"]["schemaVersion"]["const"], "0.2");
+    assert_eq!(query_schema["properties"]["schemaVersion"]["const"], "0.3");
     let result_schema: serde_json::Value =
         serde_json::from_slice(&fs::read(dir.join("result.schema.json")).unwrap()).unwrap();
     let query_validator = jsonschema::validator_for(&query_schema).unwrap();
@@ -329,6 +329,15 @@ fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
             .collect();
         assert!(errors.is_empty(), "examples/{name}.json: {errors:?}");
     }
+
+    let invalid_kind: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join("examples/invalid-entry-kind.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !result_validator.is_valid(&invalid_kind),
+        "the entry-kind vocabulary is closed in v0.3"
+    );
 
     let invalid: serde_json::Value = serde_json::from_slice(
         &fs::read(dir.join("examples/invalid-entity-filter.json")).unwrap(),

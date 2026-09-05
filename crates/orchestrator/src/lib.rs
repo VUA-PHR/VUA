@@ -60,10 +60,11 @@ pub use bdl_queries::{
     CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
 };
 pub use bdl_store::{
-    ArtifactInspectionState, ArtifactMappingOutcome, ArtifactRecording, ArtifactRecordingOutcome,
-    BdlStore, BdlStoreError, EventAppendence, NewLocalArtifact, StoredArtifact,
-    StoredArtifactCopy, StoredDownloadEvent, StoredWarehouseItem, WarehouseArtifactFact,
-    WarehouseArtifactRef, WarehouseEntryCard, WarehouseEntryDetail, BDL_FORMAT_VERSION,
+    ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
+    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole, EventAppendence,
+    NewLocalArtifact, StoredArtifact, StoredArtifactCopy, StoredDownloadEvent,
+    StoredWarehouseItem, WarehouseArtifactFact, WarehouseArtifactRef, WarehouseEntryCard,
+    WarehouseEntryDetail, WAREHOUSE_ITEM_KINDS, BDL_FORMAT_VERSION,
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,

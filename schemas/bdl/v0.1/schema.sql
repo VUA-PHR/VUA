@@ -138,15 +138,32 @@ CREATE TABLE local_artifacts (
 );
 CREATE INDEX idx_artifacts_state ON local_artifacts(inspection_state);
 
+-- Warehouse items (warehouse-layout rulings 1/2/5): one folder per material
+-- package under the (user-changeable) warehouse root; generated VPM packages
+-- and original material folders are siblings within an entry.
+-- artifact_mode is the per-entry CONSUMPTION PREFERENCE override (null =
+-- follow the shell-level global default, resolved dynamically at read time —
+-- never a generation trigger and never a statement that a VPM exists).
+CREATE TABLE warehouse_items (
+  warehouse_item_id TEXT PRIMARY KEY,          -- VUA-generated local identity
+  display_name      TEXT NOT NULL,
+  folder_name       TEXT NOT NULL UNIQUE,      -- folder under the warehouse root (semantic tree)
+  kind              TEXT NOT NULL,             -- imported_material | downloaded_material
+  artifact_mode     TEXT CHECK (artifact_mode IN ('use_original_unitypackage', 'generate_vpm')),
+  created_at        TEXT NOT NULL
+);
+
 -- Physical copies (warehouse-layout ruling 2): one row per file in the
--- semantic tree. stored_path is updated on warehouse-root relocations; the
--- in-package relative path is stable.
+-- semantic tree. role separates originals from generated VPM packages —
+-- the delete-originals flow removes original rows (with their files) and
+-- keeps generated_vpm rows.
 CREATE TABLE artifact_copies (
   copy_id            TEXT PRIMARY KEY,          -- VUA-generated copy identity
   artifact_sha256    TEXT NOT NULL REFERENCES local_artifacts(artifact_sha256),
   warehouse_item_id  TEXT NOT NULL REFERENCES warehouse_items(warehouse_item_id),
   relative_path      TEXT NOT NULL,             -- path within the package folder
   stored_path        TEXT NOT NULL,             -- absolute location (updated on moves)
+  role               TEXT NOT NULL CHECK (role IN ('original', 'generated_vpm')),
   created_at         TEXT NOT NULL,
   UNIQUE (warehouse_item_id, relative_path)
 );
@@ -165,17 +182,6 @@ CREATE TABLE artifact_mappings (
   PRIMARY KEY (artifact_sha256, product_id)
 );
 CREATE INDEX idx_artifact_product ON artifact_mappings(product_id);
-
--- Warehouse items (warehouse-layout rulings 1/2/5): one folder per material
--- package under the (user-changeable) warehouse root; generated VPM packages
--- and original material folders are siblings within an entry.
-CREATE TABLE warehouse_items (
-  warehouse_item_id TEXT PRIMARY KEY,          -- VUA-generated local identity
-  display_name      TEXT NOT NULL,
-  folder_name       TEXT NOT NULL UNIQUE,      -- folder under the warehouse root (semantic tree)
-  kind              TEXT NOT NULL,             -- artifact family (e.g. 'unitypackage', 'local_vpm')
-  created_at        TEXT NOT NULL
-);
 
 -- ================= Boundary IN-5 query support (carried over) =================
 

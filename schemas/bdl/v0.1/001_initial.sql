@@ -115,7 +115,8 @@ CREATE TABLE warehouse_items (
   warehouse_item_id TEXT PRIMARY KEY NOT NULL,
   display_name      TEXT NOT NULL,
   folder_name       TEXT NOT NULL UNIQUE,
-  kind              TEXT NOT NULL,
+  kind              TEXT NOT NULL CHECK (kind IN ('imported_material', 'downloaded_material')),
+  artifact_mode     TEXT CHECK (artifact_mode IN ('use_original_unitypackage', 'generate_vpm')),
   created_at        TEXT NOT NULL
 ) STRICT;
 
@@ -125,6 +126,7 @@ CREATE TABLE artifact_copies (
   warehouse_item_id  TEXT NOT NULL REFERENCES warehouse_items(warehouse_item_id),
   relative_path      TEXT NOT NULL,
   stored_path        TEXT NOT NULL,
+  role               TEXT NOT NULL CHECK (role IN ('original', 'generated_vpm')),
   created_at         TEXT NOT NULL,
   UNIQUE (warehouse_item_id, relative_path)
 ) STRICT;

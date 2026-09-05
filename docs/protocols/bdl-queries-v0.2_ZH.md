@@ -2,14 +2,18 @@
 
 [English](bdl-queries-v0.2_EN.md) | [简体中文](bdl-queries-v0.2_ZH.md)
 
-> 状态：**已冻结**（2026-09-06）——取代 v0.1（唯一变更见"v0.2 修订"）；
+> **⚠️ 已被 v0.3 取代（2026-09-06）**：artifact-mode 双读取字段、副本角色位、
+> kind 词表收敛。现行规范见 [bdl-queries-v0.3_ZH.md](bdl-queries-v0.3_ZH.md)；
+> 本文仅作历史保留，对应 `schemas/bdl-queries/v0.2/`（勿改）。
+>
+> 状态：已冻结（2026-09-06）——取代 v0.1（唯一变更见"v0.2 修订"）；
 > 机器可读词表见 `schemas/bdl-queries/v0.2/`
 > 范围：AMF 从本地 BDL 出的五个只读查询方法——云端目录三方法（catalog.*）与
 > 本地轨两方法（warehouse.*）——及 LocalArtifact 检查结论的三态呈现映射
 > 所有权边界：`docs/architecture/bdl_ZH.md`（BDL 是 AMF 私有本地模块，只存 AMF
 > 批准持久化的数据，只经 AMF 应用服务出窄口）；`docs/architecture/desktop_ZH.md`
 > （渲染层不持任何 Electron/BDL 对象）
-> 更新：2026-09-06
+> 更新：2026-09-06（已废弃，见顶部横幅）
 
 ## v0.2 修订
 

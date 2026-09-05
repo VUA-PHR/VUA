@@ -2,7 +2,12 @@
 
 [English](bdl-queries-v0.2_EN.md) | [简体中文](bdl-queries-v0.2_ZH.md)
 
-> Status: **Frozen** (2026-09-06) — supersedes v0.1 (the only change is the
+> **⚠️ Superseded by v0.3 (2026-09-06)**: artifact-mode dual read fields, the
+> copy role bit and the closed entry-kind vocabulary. The current protocol is
+> [bdl-queries-v0.3_EN.md](bdl-queries-v0.3_EN.md); this document remains as
+> history only, matching `schemas/bdl-queries/v0.2/` (do not edit).
+>
+> Status: Frozen (2026-09-06) — supersedes v0.1 (the only change is the
 > "v0.2 revision" below); machine-readable vocabulary in
 > `schemas/bdl-queries/v0.2/`
 > Scope: five read-only query methods served by AMF from the local BDL — the

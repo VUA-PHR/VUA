@@ -18,7 +18,7 @@
 use crate::bdl_queries::ArtifactInspectionVerdict;
 use crate::download_events::{DownloadEventKind, DownloadEventV01, DownloadFailureKind};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -208,6 +208,70 @@ pub struct ArtifactRecording {
     pub artifact: StoredArtifact,
 }
 
+/// The per-entry artifact-mode override (bdl-queries v0.3). Absent = the
+/// entry follows the shell-level global default, resolved dynamically at
+/// read time. A consumption preference — never a generation trigger, never
+/// a statement that a VPM exists.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ArtifactMode {
+    UseOriginalUnitypackage,
+    GenerateVpm,
+}
+
+impl ArtifactMode {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::UseOriginalUnitypackage => "use_original_unitypackage",
+            Self::GenerateVpm => "generate_vpm",
+        }
+    }
+
+    pub fn parse(value: &str) -> Result<Self, BdlStoreError> {
+        match value {
+            "use_original_unitypackage" => Ok(Self::UseOriginalUnitypackage),
+            "generate_vpm" => Ok(Self::GenerateVpm),
+            _ => Err(BdlStoreError::CorruptValue {
+                field: "artifact mode",
+                value: value.into(),
+            }),
+        }
+    }
+}
+
+/// Role of a physical copy inside an entry: the material original, or a
+/// generated VPM package (siblings per warehouse-layout ruling 5). The
+/// delete-originals flow removes original rows and keeps generated_vpm.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CopyRole {
+    Original,
+    GeneratedVpm,
+}
+
+impl CopyRole {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Original => "original",
+            Self::GeneratedVpm => "generated_vpm",
+        }
+    }
+
+    pub fn parse(value: &str) -> Result<Self, BdlStoreError> {
+        match value {
+            "original" => Ok(Self::Original),
+            "generated_vpm" => Ok(Self::GeneratedVpm),
+            _ => Err(BdlStoreError::CorruptValue {
+                field: "artifact copy role",
+                value: value.into(),
+            }),
+        }
+    }
+}
+
+/// The two legal entry kinds (bdl-queries v0.3 closed vocabulary).
+pub const WAREHOUSE_ITEM_KINDS: [&str; 2] = ["imported_material", "downloaded_material"];
+
 /// One material-package entry (warehouse_items row). The folder name is the
 /// entry's VUA-generated local identity.
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -217,6 +281,7 @@ pub struct StoredWarehouseItem {
     pub display_name: String,
     pub folder_name: String,
     pub kind: String,
+    pub artifact_mode: Option<String>,
     pub created_at: String,
 }
 
@@ -229,10 +294,11 @@ pub struct StoredArtifactCopy {
     pub artifact_sha256: String,
     pub relative_path: String,
     pub stored_path: String,
+    pub role: CopyRole,
     pub created_at: String,
 }
 
-/// `warehouse.listEntries` card (bdl-queries v0.2 wire shape).
+/// `warehouse.listEntries` card (bdl-queries v0.3 wire shape).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WarehouseEntryCard {
@@ -240,6 +306,10 @@ pub struct WarehouseEntryCard {
     pub folder_name: String,
     pub display_name: String,
     pub kind: String,
+    /// Per-entry override; null = follows the global default.
+    pub artifact_mode: Option<ArtifactMode>,
+    /// Dynamically resolved: override ?? the injected global default.
+    pub effective_artifact_mode: ArtifactMode,
     pub created_at: String,
     pub artifacts: Vec<WarehouseArtifactRef>,
 }
@@ -252,9 +322,10 @@ pub struct WarehouseArtifactRef {
     pub artifact_sha256: String,
     pub state: ArtifactInspectionVerdict,
     pub size_bytes: u64,
+    pub role: CopyRole,
 }
 
-/// `warehouse.entryDetail` payload (bdl-queries v0.2 wire shape).
+/// `warehouse.entryDetail` payload (bdl-queries v0.3 wire shape).
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WarehouseEntryDetail {
@@ -262,6 +333,8 @@ pub struct WarehouseEntryDetail {
     pub folder_name: String,
     pub display_name: String,
     pub kind: String,
+    pub artifact_mode: Option<ArtifactMode>,
+    pub effective_artifact_mode: ArtifactMode,
     pub created_at: String,
     pub artifacts: Vec<WarehouseArtifactFact>,
 }
@@ -279,6 +352,34 @@ pub struct WarehouseArtifactFact {
     pub rejection_reason: Option<String>,
     pub source_correlated: bool,
     pub mapped_product_ids: Vec<String>,
+    pub role: CopyRole,
+}
+
+fn effective_mode(artifact_mode: Option<String>, global_default: ArtifactMode) -> ArtifactMode {
+    artifact_mode
+        .as_deref()
+        .map(|mode| ArtifactMode::parse(mode).unwrap_or(global_default))
+        .unwrap_or(global_default)
+}
+
+fn warehouse_card(
+    item: StoredWarehouseItem,
+    global_default: ArtifactMode,
+    artifacts: Vec<WarehouseArtifactRef>,
+) -> WarehouseEntryCard {
+    WarehouseEntryCard {
+        effective_artifact_mode: effective_mode(item.artifact_mode.clone(), global_default),
+        artifact_mode: item
+            .artifact_mode
+            .as_deref()
+            .map(|mode| ArtifactMode::parse(mode).expect("stored mode is enum-validated")),
+        warehouse_item_id: item.warehouse_item_id,
+        folder_name: item.folder_name,
+        display_name: item.display_name,
+        kind: item.kind,
+        created_at: item.created_at,
+        artifacts,
+    }
 }
 
 pub struct BdlStore {
@@ -657,7 +758,7 @@ impl BdlStore {
         if display_name.trim().is_empty() {
             return Err(BdlStoreError::InvalidEvent("warehouse display name"));
         }
-        if kind.trim().is_empty() {
+        if !WAREHOUSE_ITEM_KINDS.contains(&kind) {
             return Err(BdlStoreError::InvalidEvent("warehouse item kind"));
         }
         let warehouse_item_id = format!(
@@ -683,6 +784,7 @@ impl BdlStore {
             display_name: display_name.to_string(),
             folder_name: warehouse_item_id,
             kind: kind.to_string(),
+            artifact_mode: None,
             created_at: created_at.to_string(),
         })
     }
@@ -697,6 +799,7 @@ impl BdlStore {
         artifact_sha256: &str,
         relative_path: &str,
         stored_path: &str,
+        role: CopyRole,
         created_at: &str,
     ) -> Result<StoredArtifactCopy, BdlStoreError> {
         if relative_path.trim().is_empty() || stored_path.trim().is_empty() {
@@ -742,14 +845,15 @@ impl BdlStore {
         let inserted = transaction.execute(
             "INSERT INTO artifact_copies(
                 copy_id, artifact_sha256, warehouse_item_id,
-                relative_path, stored_path, created_at
-             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                relative_path, stored_path, role, created_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
             params![
                 copy_id,
                 artifact_sha256,
                 warehouse_item_id,
                 relative_path,
                 stored_path,
+                role.name(),
                 created_at,
             ],
         );
@@ -769,16 +873,69 @@ impl BdlStore {
             artifact_sha256: artifact_sha256.to_string(),
             relative_path: relative_path.to_string(),
             stored_path: stored_path.to_string(),
+            role,
             created_at: created_at.to_string(),
         })
     }
 
+    /// Set (or clear) the per-entry artifact-mode override. `None` = follow
+    /// the global default again; resolution stays dynamic at read time.
+    pub fn set_artifact_mode(
+        &self,
+        warehouse_item_id: &str,
+        mode: Option<ArtifactMode>,
+    ) -> Result<(), BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let changed = connection.execute(
+            "UPDATE warehouse_items SET artifact_mode = ?1 WHERE warehouse_item_id = ?2",
+            params![mode.map(ArtifactMode::name), warehouse_item_id],
+        )?;
+        if changed != 1 {
+            return Err(BdlStoreError::UnknownWarehouseItem(
+                warehouse_item_id.to_string(),
+            ));
+        }
+        Ok(())
+    }
+
+    /// Delete the ORIGINAL copy rows of one entry (the delete-originals
+    /// task removes the physical files around this call). Generated VPM
+    /// rows and every inspection fact are kept.
+    pub fn delete_entry_originals(&self, warehouse_item_id: &str) -> Result<u64, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let item_known: bool = connection
+            .query_row(
+                "SELECT 1 FROM warehouse_items WHERE warehouse_item_id = ?1",
+                [warehouse_item_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !item_known {
+            return Err(BdlStoreError::UnknownWarehouseItem(
+                warehouse_item_id.to_string(),
+            ));
+        }
+        let deleted = connection.execute(
+            "DELETE FROM artifact_copies
+             WHERE warehouse_item_id = ?1 AND role = 'original'",
+            [warehouse_item_id],
+        )?;
+        Ok(deleted as u64)
+    }
+
     /// The `warehouse.listEntries` read face: every entry card with its
-    /// light artifact references, wire shapes per bdl-queries v0.2.
-    pub fn warehouse_entry_cards(&self) -> Result<Vec<WarehouseEntryCard>, BdlStoreError> {
+    /// light artifact references, wire shapes per bdl-queries v0.3. The
+    /// shell-level global mode default is injected per query — resolution
+    /// stays dynamic (override ?? default), never an import-time snapshot.
+    pub fn warehouse_entry_cards(
+        &self,
+        global_default: ArtifactMode,
+    ) -> Result<Vec<WarehouseEntryCard>, BdlStoreError> {
         let connection = self.connection.lock().expect("SQLite connection poisoned");
         let mut statement = connection.prepare(
-            "SELECT warehouse_item_id, display_name, folder_name, kind, created_at
+            "SELECT warehouse_item_id, display_name, folder_name, kind,
+                    artifact_mode, created_at
              FROM warehouse_items ORDER BY warehouse_item_id",
         )?;
         let items = statement
@@ -788,21 +945,16 @@ impl BdlStore {
                     display_name: row.get(1)?,
                     folder_name: row.get(2)?,
                     kind: row.get(3)?,
-                    created_at: row.get(4)?,
+                    artifact_mode: row.get::<_, Option<String>>(4)?,
+                    created_at: row.get(5)?,
                 })
             })?
             .collect::<Result<Vec<_>, _>>()?;
         let mut cards = Vec::with_capacity(items.len());
         for item in items {
-            let artifacts = self.warehouse_artifact_refs(&connection, &item.warehouse_item_id)?;
-            cards.push(WarehouseEntryCard {
-                warehouse_item_id: item.warehouse_item_id,
-                folder_name: item.folder_name,
-                display_name: item.display_name,
-                kind: item.kind,
-                created_at: item.created_at,
-                artifacts,
-            });
+            let artifacts =
+                self.warehouse_artifact_refs(&connection, &item.warehouse_item_id)?;
+            cards.push(warehouse_card(item, global_default, artifacts));
         }
         Ok(cards)
     }
@@ -812,11 +964,13 @@ impl BdlStore {
     pub fn warehouse_entry_detail(
         &self,
         warehouse_item_id: &str,
+        global_default: ArtifactMode,
     ) -> Result<Option<WarehouseEntryDetail>, BdlStoreError> {
         let connection = self.connection.lock().expect("SQLite connection poisoned");
         let item = connection
             .query_row(
-                "SELECT warehouse_item_id, display_name, folder_name, kind, created_at
+                "SELECT warehouse_item_id, display_name, folder_name, kind,
+                        artifact_mode, created_at
                  FROM warehouse_items WHERE warehouse_item_id = ?1",
                 [warehouse_item_id],
                 |row| {
@@ -825,7 +979,8 @@ impl BdlStore {
                         display_name: row.get(1)?,
                         folder_name: row.get(2)?,
                         kind: row.get(3)?,
-                        created_at: row.get(4)?,
+                        artifact_mode: row.get::<_, Option<String>>(4)?,
+                        created_at: row.get(5)?,
                     })
                 },
             )
@@ -835,7 +990,7 @@ impl BdlStore {
         };
         let mut statement = connection.prepare(
             "SELECT c.relative_path, a.artifact_sha256, a.inspection_state, a.size_bytes,
-                    a.suggested_file_name, a.inspected_at, a.rejection_reason
+                    a.suggested_file_name, a.inspected_at, a.rejection_reason, c.role
              FROM artifact_copies c
              JOIN local_artifacts a ON a.artifact_sha256 = c.artifact_sha256
              WHERE c.warehouse_item_id = ?1
@@ -851,6 +1006,7 @@ impl BdlStore {
                     row.get::<_, Option<String>>(4)?,
                     row.get::<_, Option<String>>(5)?,
                     row.get::<_, Option<String>>(6)?,
+                    row.get::<_, String>(7)?,
                 ))
             })?
             .collect::<Result<Vec<_>, _>>()?;
@@ -863,11 +1019,13 @@ impl BdlStore {
             suggested_file_name,
             inspected_at,
             rejection_reason,
+            role,
         ) in rows
         {
             let mapped_product_ids = self.mapped_product_ids(&connection, &artifact_sha256)?;
             artifacts.push(WarehouseArtifactFact {
                 relative_path,
+                artifact_sha256,
                 state: ArtifactInspectionVerdict::from_storage_state(
                     ArtifactInspectionState::parse(&inspection_state)?,
                 ),
@@ -877,7 +1035,7 @@ impl BdlStore {
                 rejection_reason,
                 source_correlated: !mapped_product_ids.is_empty(),
                 mapped_product_ids,
-                artifact_sha256,
+                role: CopyRole::parse(&role)?,
             });
         }
         Ok(Some(WarehouseEntryDetail {
@@ -885,6 +1043,11 @@ impl BdlStore {
             folder_name: item.folder_name,
             display_name: item.display_name,
             kind: item.kind,
+            artifact_mode: item
+                .artifact_mode
+                .as_deref()
+                .map(|mode| ArtifactMode::parse(mode).expect("stored mode is enum-validated")),
+            effective_artifact_mode: effective_mode(item.artifact_mode, global_default),
             created_at: item.created_at,
             artifacts,
         }))
@@ -896,7 +1059,7 @@ impl BdlStore {
         warehouse_item_id: &str,
     ) -> Result<Vec<WarehouseArtifactRef>, BdlStoreError> {
         let mut statement = connection.prepare(
-            "SELECT c.relative_path, a.artifact_sha256, a.inspection_state, a.size_bytes
+            "SELECT c.relative_path, a.artifact_sha256, a.inspection_state, a.size_bytes, c.role
              FROM artifact_copies c
              JOIN local_artifacts a ON a.artifact_sha256 = c.artifact_sha256
              WHERE c.warehouse_item_id = ?1
@@ -909,20 +1072,24 @@ impl BdlStore {
                     row.get::<_, String>(1)?,
                     row.get::<_, String>(2)?,
                     row.get::<_, i64>(3)?,
+                    row.get::<_, String>(4)?,
                 ))
             })?
             .collect::<Result<Vec<_>, _>>()?;
         rows.into_iter()
-            .map(|(relative_path, artifact_sha256, inspection_state, size_bytes)| {
-                Ok(WarehouseArtifactRef {
-                    relative_path,
-                    artifact_sha256,
-                    state: ArtifactInspectionVerdict::from_storage_state(
-                        ArtifactInspectionState::parse(&inspection_state)?,
-                    ),
-                    size_bytes: to_u64(size_bytes, "artifact size")?,
-                })
-            })
+            .map(
+                |(relative_path, artifact_sha256, inspection_state, size_bytes, role)| {
+                    Ok(WarehouseArtifactRef {
+                        relative_path,
+                        artifact_sha256,
+                        state: ArtifactInspectionVerdict::from_storage_state(
+                            ArtifactInspectionState::parse(&inspection_state)?,
+                        ),
+                        size_bytes: to_u64(size_bytes, "artifact size")?,
+                        role: CopyRole::parse(&role)?,
+                    })
+                },
+            )
             .collect()
     }
 
@@ -1418,7 +1585,7 @@ mod tests {
     }
 
     #[test]
-    fn warehouse_items_and_copies_support_the_v0_2_read_face() {
+    fn warehouse_items_and_copies_support_the_v0_3_read_face() {
         let store = BdlStore::open_in_memory().unwrap();
         let item = store
             .create_warehouse_item("Fixture Material Pack", "imported_material", "2026-09-06T08:20:00.000Z")
@@ -1429,11 +1596,11 @@ mod tests {
             "the generated identity is the entry's folder name"
         );
         assert!(matches!(
-            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", "t"),
+            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", CopyRole::Original, "t"),
             Err(BdlStoreError::UnknownArtifact(_))
         ));
         assert!(matches!(
-            store.record_artifact_copy("whi-nope", SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", "t"),
+            store.record_artifact_copy("whi-nope", SHA_A, "original/pack.zip", "C:\\wh\\pack.zip", CopyRole::Original, "t"),
             Err(BdlStoreError::UnknownWarehouseItem(_))
         ));
 
@@ -1455,32 +1622,69 @@ mod tests {
                 SHA_A,
                 "original/pack.zip",
                 "C:\\warehouse\\original\\pack.zip",
+                CopyRole::Original,
                 "2026-09-06T08:22:00.000Z",
             )
             .unwrap();
         assert!(matches!(
-            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "again", "t"),
+            store.record_artifact_copy(&item.warehouse_item_id, SHA_A, "original/pack.zip", "again", CopyRole::Original, "t"),
             Err(BdlStoreError::CorruptValue { field: "artifact copy", .. })
         ));
 
-        let cards = store.warehouse_entry_cards().unwrap();
+        let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
         assert_eq!(cards.len(), 1);
         assert_eq!(cards[0].artifacts.len(), 1);
         assert_eq!(cards[0].artifacts[0].state, ArtifactInspectionVerdict::Pending);
+        assert_eq!(cards[0].artifacts[0].role, CopyRole::Original);
+        assert_eq!(cards[0].artifact_mode, None, "no override = follows global");
+        assert_eq!(
+            cards[0].effective_artifact_mode,
+            ArtifactMode::UseOriginalUnitypackage
+        );
         let wire = serde_json::to_value(&cards[0]).unwrap();
         assert_eq!(wire["warehouseItemId"], item.warehouse_item_id);
         assert_eq!(wire["artifacts"][0]["sizeBytes"], 4096);
+        assert_eq!(wire["artifacts"][0]["role"], "original");
 
-        let detail = store.warehouse_entry_detail(&item.warehouse_item_id).unwrap().unwrap();
+        // The override is a preference: set it and dynamic resolution follows;
+        // clear it and the entry follows the global default again.
+        store
+            .set_artifact_mode(&item.warehouse_item_id, Some(ArtifactMode::GenerateVpm))
+            .unwrap();
+        let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
+        assert_eq!(cards[0].artifact_mode, Some(ArtifactMode::GenerateVpm));
+        assert_eq!(cards[0].effective_artifact_mode, ArtifactMode::GenerateVpm);
+        store.set_artifact_mode(&item.warehouse_item_id, None).unwrap();
+        let cards = store.warehouse_entry_cards(ArtifactMode::GenerateVpm).unwrap();
+        assert_eq!(cards[0].artifact_mode, None);
+        assert_eq!(cards[0].effective_artifact_mode, ArtifactMode::GenerateVpm);
+        assert!(matches!(
+            store.set_artifact_mode("whi-nope", Some(ArtifactMode::GenerateVpm)),
+            Err(BdlStoreError::UnknownWarehouseItem(_))
+        ));
+
+        // delete-originals removes only original rows — exercised after the
+        // mapping assertions below, since it empties the entry's artifacts.
+        assert!(matches!(
+            store.delete_entry_originals("whi-nope"),
+            Err(BdlStoreError::UnknownWarehouseItem(_))
+        ));
+
+        let detail = store.warehouse_entry_detail(&item.warehouse_item_id, ArtifactMode::UseOriginalUnitypackage).unwrap().unwrap();
         assert!(!detail.artifacts[0].source_correlated);
         store.seed_product("booth:1000001", "1000001").unwrap();
         store
             .record_artifact_mapping(SHA_A, "booth:1000001", None, None, "2026-09-06T08:23:00.000Z")
             .unwrap();
-        let detail = store.warehouse_entry_detail(&item.warehouse_item_id).unwrap().unwrap();
+        let detail = store.warehouse_entry_detail(&item.warehouse_item_id, ArtifactMode::UseOriginalUnitypackage).unwrap().unwrap();
         assert!(detail.artifacts[0].source_correlated);
         assert_eq!(detail.artifacts[0].mapped_product_ids, vec!["booth:1000001"]);
-        assert_eq!(store.warehouse_entry_detail("whi-nope").unwrap(), None);
+        assert_eq!(store.warehouse_entry_detail("whi-nope", ArtifactMode::UseOriginalUnitypackage).unwrap(), None);
+
+        let deleted = store.delete_entry_originals(&item.warehouse_item_id).unwrap();
+        assert_eq!(deleted, 1);
+        let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
+        assert_eq!(cards[0].artifacts.len(), 0, "generated_vpm copies would survive");
     }
 
     #[test]

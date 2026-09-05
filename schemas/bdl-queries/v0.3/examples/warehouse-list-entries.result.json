@@ -1,0 +1,26 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "warehouse.listEntries",
+  "result": {
+    "entries": [
+      {
+        "warehouseItemId": "whi-01hexample0000000000000a",
+        "folderName": "whi-01hexample0000000000000a",
+        "displayName": "Fixture Material Pack",
+        "kind": "imported_material",
+        "createdAt": "2026-09-06T08:20:00.000Z",
+        "artifacts": [
+          {
+            "relativePath": "original/material-pack.unitypackage",
+            "artifactSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "state": "clean",
+            "sizeBytes": 183501824,
+            "role": "original"
+          }
+        ],
+        "artifactMode": null,
+        "effectiveArtifactMode": "use_original_unitypackage"
+      }
+    ]
+  }
+}
