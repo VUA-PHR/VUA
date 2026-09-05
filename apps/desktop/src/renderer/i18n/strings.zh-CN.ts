@@ -913,6 +913,52 @@ rolled_back: "已回滚",
       },
     },
   },
+  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
+   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  overlay: {
+    surfaceTitle: "VUA 覆盖层",
+    taskSectionLabel: "当前任务",
+    environmentSectionLabel: "环境",
+    progress: "{done} / {total}",
+    moreEnvironments: "还有 {count} 项",
+    actions: {
+      openOnDesktop: "在桌面打开",
+      dismiss: "关闭覆盖层",
+      requestCancel: "请求取消任务",
+      cancelConfirm: "确认取消",
+      cancelKeep: "继续运行",
+    },
+    cancelHint: "取消是请求语义:任务会在安全边界结束。",
+    cancelArmedHint: "再按一次确认取消。",
+    closeWindow: "关闭窗口",
+    retry: "重试",
+    loadErrorTitle: "暂时无法连接应用层",
+    loadErrorBody: "覆盖层快照请求失败或超时。重试不会影响主窗口;关闭本窗口仅关闭覆盖层。",
+    inactiveTitle: "当前没有可显示的内容",
+    inactiveBody: "覆盖层服务尚未接入。会话开始后,状态会显示在这里。",
+    statusTones: {
+      inactive: "空闲",
+      active: "进行中",
+      waiting: "待确认",
+      blocked: "已阻断",
+    },
+    disabledReasons: {
+      notAllowed: "当前状态下不可用",
+      noTask: "没有进行中的任务",
+      notCancellable: "该任务当前不可取消",
+    },
+    environmentStates: {
+      ready: "就绪",
+      running: "运行中",
+      missing: "未检测到",
+    },
+    environmentNames: {
+      steamvr: "SteamVR",
+      unity: "Unity 编辑器",
+      vrchat: "VRChat",
+      vpm: "VPM",
+    },
+  },
   /** MediaSlot 媒体槽:加载失败语义(ui-ux §2.8) */
   media: {
     loadFailed: "图片加载失败",

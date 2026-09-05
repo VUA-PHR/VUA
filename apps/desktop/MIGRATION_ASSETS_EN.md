@@ -126,3 +126,37 @@ TaskPort; the waitingInput row's "back to origin page" entry (existing TaskRow b
 `taskStatusForWorkflow` projection directly — no parallel enum was created; cancellation is a task
 fact rather than a workflow state, expressed on the run view as the `cancelled` flag (draft
 cancellation discipline).
+
+## Slice 5: F7a overlay dual-surface demo (2026-09-05, worktree kimi/frontend)
+
+UI/UX-first slice for the two Overlay surfaces — desktop and VR — with demo placeholder content
+(not final). Scope: a versioned `OverlaySnapshot` contract mirror + a narrowed Surface Port
+(snapshot/subscribe/dispatch) + a pure presentation model + two earliest-diverted render surfaces
+(`?surface=overlay-desktop` / `?surface=overlay-vr`) + a DEV-only demo port + the
+`preview:overlay` preview/capture script. Basis: `docs/architecture/integrations-and-overlays_EN.md`
+§Overlay (both surfaces share one presentation state behind a narrowed port with semantic actions;
+no VRChat injection), design standard v0.6.1 §8.8 (higher text contrast, fewer levels, larger
+targets; no frosted glass / complex backgrounds / long lists; the desktop fallback is always
+visible), and the S-F7a spike evidence (`scripts/spike-overlay.mjs` for the desktop shape,
+`spikes/steamvr-overlay` for IVROverlay_028 texture streaming and event polling — untouched by
+this slice).
+
+| Asset group | Target owner | Delivered in this slice | Verification |
+| --- | --- | --- | --- |
+| Overlay contract mirror + port + assembly point (`schemaVersion: 1`; three `OverlayAction` semantic actions; the DEV demo port is assembled behind `import.meta.env.DEV` folding + dynamic import, production stays inactive) | `src/renderer/features/overlay/` (overlay-contract/overlay-port/overlay-port-instance/demo) | Same conventions as tutorial-contract/tutorial-port; cancellation is request semantics (`request_cancel_task` only while a task is running) | `overlay-model.test.ts` (14 tests: task/no-task × desktop/vr × inactive/failure + enum parity) |
+| Presentation model (section visibility / action availability with disabled-reason keys / tone mapping: accent=running, amber=waiting, red=blocking only / no fabricated progress / VR environment truncation ≤3) | `src/renderer/features/overlay/overlay-model.ts` | Pure function, no IO, no copy literals; consumes the frozen `WorkflowStage` vocabulary — no parallel enum | Same test matrix |
+| Desktop surface (keyboard/mouse: drag-region titlebar + close chrome, Tab focus ring, Esc to close, hover states, 32–40px targets, single primary action, DelayedButton delayed confirm) and VR surface (laser tap: flat 1024×768 panel, no hover dependency, ≥56px targets, ≤3 large buttons, two-step cancel confirm with timeout revert, no decorative animation) | `src/renderer/features/overlay/DesktopOverlaySurface.tsx`, `VrOverlaySurface.tsx`, `overlay.css` | Four honest states (skeleton / failure+retry / inactive empty / ready), 4000ms first-frame timeout as in TutorialSurface; close always available (falls back to `nativeWindow?.close()`); earliest diversion in `main.tsx`, never entering the main shell | Full vitest run + check:boundary/check:i18n/check:contrast/check:leak |
+| Four-locale `strings.overlay` section (en is the structural source; enum keys mirror the TS unions 1:1) + demo payload in `strings.fixtures.zh-CN.ts` (task title reuses `tasks.assembly`) | `src/renderer/i18n/strings.{en,zh-CN,ja,ko}.ts`, `strings.fixtures.zh-CN.ts` | Demo state shows the existing `strings.common.fixtureBadge`; fixtures header comment updated for the new reference chain | `check-i18n`, `check-i18n-tables`, enum-parity tests |
+| `preview:overlay` script (desktop preview window by default; `--vr` 1024×768 fixed window; `--both` opens both; `--capture <out.rgba>` renders the VR surface offscreen → BGRA→RGBA raw bytes + `.json` metadata) | `apps/desktop/scripts/preview-overlay.mjs`, `apps/desktop/package.json` | Renderer address: `VUA_RENDERER_URL` → dev-server probe → dist artifact fallback (loud failure when missing); the capture artifact is the seam product feeding `SetOverlayRaw` in spikes/steamvr-overlay | Manual / later-slice on-device walkthrough |
+
+### Explicitly out of scope in this slice
+
+- **Desktop always-on-top/click-through toggling, VR texture streaming and event return are
+  Kernel/spike-side seams**: this slice wires nothing live (no overlay-window creation, no
+  IVROverlay helper process, no action-return channel);
+- **Demo data is DEV-only**: the demo port is reachable only from the `import.meta.env.DEV`
+  branch; production builds always show the inactive honest empty state (guarded by check-leak
+  fingerprints);
+- `OverlaySnapshot` is a renderer-local mirror; the formal versioned contract enters
+  `packages/contracts` with the Overlay wiring slice, which must align to this mirror rather than
+  coining a second vocabulary.

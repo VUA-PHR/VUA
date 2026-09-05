@@ -911,6 +911,54 @@ rolled_back: "Rolled back",
       },
     },
   },
+  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
+   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  overlay: {
+    surfaceTitle: "VUA Overlay",
+    taskSectionLabel: "Current task",
+    environmentSectionLabel: "Environment",
+    progress: "{done} / {total}",
+    moreEnvironments: "+{count} more",
+    actions: {
+      openOnDesktop: "Open on desktop",
+      dismiss: "Dismiss overlay",
+      requestCancel: "Request cancel",
+      cancelConfirm: "Confirm cancel",
+      cancelKeep: "Keep running",
+    },
+    cancelHint: "Cancellation is a request — the task stops at a safe boundary.",
+    cancelArmedHint: "Tap again to confirm cancellation.",
+    closeWindow: "Close window",
+    retry: "Retry",
+    loadErrorTitle: "Cannot reach the app layer right now",
+    loadErrorBody:
+      "The overlay snapshot request failed or timed out. Retrying does not affect the main window; closing this window only closes the overlay.",
+    inactiveTitle: "Nothing to show right now",
+    inactiveBody:
+      "The overlay service is not connected yet. Once a session starts, its status appears here.",
+    statusTones: {
+      inactive: "Idle",
+      active: "In progress",
+      waiting: "Waiting",
+      blocked: "Blocked",
+    },
+    disabledReasons: {
+      notAllowed: "Not available in the current state",
+      noTask: "No task in progress",
+      notCancellable: "This task cannot be cancelled right now",
+    },
+    environmentStates: {
+      ready: "Ready",
+      running: "Running",
+      missing: "Not detected",
+    },
+    environmentNames: {
+      steamvr: "SteamVR",
+      unity: "Unity Editor",
+      vrchat: "VRChat",
+      vpm: "VPM",
+    },
+  },
   media: {
     loadFailed: "Image failed to load",
     retry: "Retry",

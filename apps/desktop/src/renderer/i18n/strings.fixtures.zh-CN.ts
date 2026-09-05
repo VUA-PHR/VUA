@@ -2,8 +2,9 @@
  * 演示数据负载文案(zh-CN)—— DEV 构建专用。
  *
  * 原则①硬防线的结构保证:本模块只被 gateway/fixture-*.ts(fixture-gateway
- * 及其拆分子模块)引用,而 fixture-gateway.ts 仅在 import.meta.env.DEV 分支
- * 可达(gateway/create.ts),
+ * 及其拆分子模块)与 features/overlay/demo/(切片五 Overlay 演示端口)引用,
+ * 两条引用链都仅在 import.meta.env.DEV 分支可达(gateway/create.ts 静态分支、
+ * overlay-port-instance.ts 动态 import),
  * 生产构建中整条引用链被 Rollup 剔除,演示文案不会进入生产包。
  * 真实数据源接入后,本文件随 fixture-gateway.ts 一并移除。
  *
@@ -164,6 +165,14 @@ export const fixtureStrings = {
     assembly: { title: "装配 Summer_Uniform:骨骼绑定与菜单生成" },
     envCheck: { title: "创作环境检测", warning: "VPM 环境未通过验证" },
     warehouseScan: { title: "仓库素材扫描" },
+  },
+  /** Overlay 双表面演示负载(切片五 F7a;标题/详情为数据负载,词表键由代码承载;
+   *  任务标题复用 tasks.assembly,同一演示任务在任务中心与 Overlay 一致) */
+  overlay: {
+    statusTitle: "装配进行中(演示)",
+    statusDetail: "桌面与 VR 覆盖层共享同一份演示快照,动作在两侧同步生效。",
+    cancelledTitle: "任务已取消(演示)",
+    cancelledDetail: "取消请求已接受,流程在安全边界结束,未留下半成品。",
   },
   /** 版本轨道演示负载(S-XV;轨道名为数据负载,版本号/时间戳/结论在代码侧) */
   versions: {

@@ -1,0 +1,297 @@
+/* Overlay 双表面样式(切片五 F7a;设计规范 v0.6.1 §8.8):
+ * 比桌面更高的文字对比、更少层级、更大操作目标;不用毛玻璃/复杂背景/长列表。
+ * 颜色/间距/圆角只消费语义 token;字号用 px/em(VR 端整体放大,
+ * 并经 --vua-overlay-text-scale 响应快照 presentation.textScale)。 */
+
+/* 透明窗体(desktop overlay spike 形态):表面根占满视口,body 画布氛围
+ * (aurora/网格)不进入覆盖层——§8.8 不用复杂背景;VR 窗不透明,同样安全 */
+body:has(.vua-overlay) {
+  background: transparent;
+}
+
+.vua-overlay {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--vua-bg-canvas);
+  color: var(--vua-text-strong);
+  font-family: var(--vua-font-family);
+}
+
+.vua-overlay--reduced-motion * {
+  transition: none !important;
+}
+
+/* ---------- 桌面形态(键鼠):紧凑面板,目标 32–40px ---------- */
+
+.vua-overlay--desktop {
+  font-size: calc(14px * var(--vua-overlay-text-scale, 1));
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-overlay);
+}
+
+.vua-overlay__titlebar {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  height: 40px;
+  padding: 0 var(--vua-space-2) 0 var(--vua-space-3);
+  border-bottom: 1px solid var(--vua-border);
+  user-select: none;
+  flex: none;
+}
+
+/* 无边框窗拖拽:标题栏整体可拖,交互元素显式 no-drag */
+.vua-overlay__titlebar button {
+  -webkit-app-region: no-drag;
+}
+
+.vua-overlay__title {
+  flex: 1;
+  font-size: 0.86em;
+  color: var(--vua-text-secondary);
+}
+
+.vua-overlay__chrome-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    color 120ms ease-out;
+}
+
+.vua-overlay__chrome-button:hover {
+  background: var(--vua-bg-elevated);
+  color: var(--vua-text-strong);
+}
+
+.vua-overlay__chrome-button--close:hover {
+  background: var(--vua-error);
+  color: var(--vua-on-status);
+}
+
+.vua-overlay__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-4);
+  overflow-y: auto;
+}
+
+.vua-overlay--vr .vua-overlay__body {
+  gap: var(--vua-space-4);
+  padding: var(--vua-space-5) var(--vua-space-6);
+  overflow: hidden;
+}
+
+/* 状态区块:左侧基调色条 + 语义徽标(色彩/文本双通道,§3.2.2) */
+.vua-overlay__status {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  background: var(--vua-bg-panel);
+  border: 1px solid var(--vua-border);
+  border-left: 3px solid var(--vua-border-strong);
+  border-radius: var(--vua-radius-card);
+}
+
+.vua-overlay__status[data-tone="accent"] {
+  border-left-color: var(--vua-accent);
+}
+
+.vua-overlay__status[data-tone="amber"] {
+  border-left-color: var(--vua-amber);
+}
+
+.vua-overlay__status[data-tone="error"] {
+  border-left-color: var(--vua-error);
+}
+
+.vua-overlay__status-title {
+  margin: 0;
+  font-size: 1.15em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.vua-overlay__status-detail {
+  margin: 0;
+  font-size: 0.93em;
+  color: var(--vua-text-secondary);
+}
+
+.vua-overlay__section-label {
+  margin: 0;
+  font-size: 0.86em;
+  color: var(--vua-text-secondary);
+}
+
+.vua-overlay__task-title {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.vua-overlay__task-meta {
+  margin: 0;
+  font-size: 0.93em;
+  color: var(--vua-text-secondary);
+}
+
+/* 桌面端任务卡允许一层卡片(内容层级可略多);VR 端为平面行,不嵌套卡 */
+.vua-overlay__task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+}
+
+.vua-overlay__environment {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vua-overlay__environment-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-3);
+  min-height: 32px;
+}
+
+.vua-overlay__environment-name {
+  font-size: 0.93em;
+}
+
+.vua-overlay__more {
+  margin: 0;
+  font-size: 0.86em;
+  color: var(--vua-text-secondary);
+}
+
+.vua-overlay__actions {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-overlay__actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vua-space-2);
+}
+
+.vua-overlay__hint {
+  margin: 0;
+  font-size: 0.86em;
+  color: var(--vua-text-secondary);
+}
+
+.vua-overlay__reason {
+  margin: 0;
+  font-size: 0.86em;
+  color: var(--vua-text-disabled);
+}
+
+.vua-overlay__error-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vua-space-2);
+}
+
+/* ---------- VR 形态(激光点按):1024×768 设计预算,目标 ≥56px,
+ *   无 hover 依赖——按下即 :active 反馈;不做装饰动画 ---------- */
+
+.vua-overlay--vr {
+  font-size: calc(20px * var(--vua-overlay-text-scale, 1));
+}
+
+.vua-overlay--vr .vua-overlay__titlebar {
+  height: 64px;
+  padding: 0 var(--vua-space-4) 0 var(--vua-space-5);
+}
+
+.vua-overlay--vr .vua-overlay__title {
+  font-size: 1em;
+}
+
+.vua-overlay--vr .vua-overlay__chrome-button {
+  width: 56px;
+  height: 56px;
+  border: 1px solid var(--vua-border);
+  background: var(--vua-bg-elevated);
+  color: var(--vua-text-strong);
+}
+
+.vua-overlay--vr .vua-overlay__chrome-button:active {
+  filter: brightness(0.9);
+}
+
+.vua-overlay--vr .vua-overlay__status {
+  padding: var(--vua-space-4);
+}
+
+.vua-overlay--vr .vua-overlay__status-title {
+  font-size: 1.3em;
+}
+
+.vua-overlay--vr .vua-overlay__task {
+  padding: var(--vua-space-4) 0 0;
+  border-top: 1px solid var(--vua-border);
+}
+
+.vua-overlay--vr .vua-overlay__task-title {
+  font-size: 1.1em;
+}
+
+.vua-overlay--vr .vua-overlay__environment-row {
+  min-height: 48px;
+}
+
+.vua-overlay--vr .vua-overlay__actions-row {
+  flex-direction: column;
+}
+
+.vua-overlay--vr .vua-overlay__actions .vua-button {
+  width: 100%;
+  min-height: 56px;
+  font-size: 1em;
+}
+
+.vua-overlay--vr .vua-overlay__actions .vua-button:active:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.vua-overlay--vr .vua-overlay__hint,
+.vua-overlay--vr .vua-overlay__reason {
+  font-size: 0.9em;
+}
+
+/* 两步确认中的确认按钮(仅 VR):错误色实底表达破坏性语义 */
+.vua-overlay__button--danger {
+  background: var(--vua-error);
+  border-color: var(--vua-error);
+  color: var(--vua-on-status);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vua-overlay__chrome-button {
+    transition: none;
+  }
+}
