@@ -7,6 +7,7 @@
 
 mod artifact_inspection;
 mod assembly;
+mod bdl_queries;
 mod bdl_store;
 mod booth_extraction;
 mod bridge;
@@ -51,6 +52,9 @@ pub use artifact_inspection::{
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
+};
+pub use bdl_queries::{
+    ArtifactInspectionVerdict, BdlQueryOperation, CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
 };
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactRecording, ArtifactRecordingOutcome,

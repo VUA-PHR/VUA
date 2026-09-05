@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "warehouse.entryDetail",
+  "params": {
+    "warehouseItemId": "whi-01hexample0000000000000a"
+  }
+}

@@ -29,6 +29,10 @@ fn download_events_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/download-events/v0.1")
 }
 
+fn bdl_queries_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.1")
+}
+
 #[test]
 fn orc_typ_005_schema_documents_exist_and_pin_schema_version_one() {
     for name in [
@@ -274,6 +278,77 @@ fn orc_typ_005_download_event_examples_validate_against_the_frozen_schema() {
         !validator.is_valid(&invalid_user_path),
         "storedPath is the only path field; extra path semantics are rejected"
     );
+}
+
+/// 冻结的 BDL 读取面（v0.1，五只读方法）：请求/响应示例必须过对应 schema；
+/// 负例（实体过滤参数）必须被拒——v0.1 无实体存储，收到即契约错误而非
+/// 静默空答案；操作词表与 Rust 枚举互相钉死。
+#[test]
+fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
+    use vua_orchestrator::BdlQueryOperation;
+
+    let dir = bdl_queries_dir();
+    let query_schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(dir.join("query.schema.json")).unwrap()).unwrap();
+    let result_schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(dir.join("result.schema.json")).unwrap()).unwrap();
+    let query_validator = jsonschema::validator_for(&query_schema).unwrap();
+    let result_validator = jsonschema::validator_for(&result_schema).unwrap();
+
+    for name in [
+        "catalog-list.request",
+        "catalog-detail.request",
+        "catalog-status.request",
+        "warehouse-list-entries.request",
+        "warehouse-entry-detail.request",
+    ] {
+        let example: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(format!("examples/{name}.json"))).unwrap())
+                .unwrap();
+        let errors: Vec<String> = query_validator
+            .iter_errors(&example)
+            .map(|error| format!("{}: {}", error.instance_path(), error))
+            .collect();
+        assert!(errors.is_empty(), "examples/{name}.json: {errors:?}");
+    }
+    for name in [
+        "catalog-list.result",
+        "catalog-detail.result",
+        "catalog-status.result",
+        "warehouse-list-entries.result",
+        "warehouse-entry-detail.result",
+    ] {
+        let example: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(format!("examples/{name}.json"))).unwrap())
+                .unwrap();
+        let errors: Vec<String> = result_validator
+            .iter_errors(&example)
+            .map(|error| format!("{}: {}", error.instance_path(), error))
+            .collect();
+        assert!(errors.is_empty(), "examples/{name}.json: {errors:?}");
+    }
+
+    let invalid: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join("examples/invalid-entity-filter.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !query_validator.is_valid(&invalid),
+        "entityType filtering has no v0.1 backing; it is a contract error"
+    );
+
+    let schema_operations = query_schema["properties"]["operation"]["enum"]
+        .as_array()
+        .unwrap();
+    let rust_operations = [
+        BdlQueryOperation::CatalogList,
+        BdlQueryOperation::CatalogDetail,
+        BdlQueryOperation::CatalogStatus,
+        BdlQueryOperation::WarehouseListEntries,
+        BdlQueryOperation::WarehouseEntryDetail,
+    ]
+    .map(|operation| serde_json::to_value(operation).unwrap());
+    assert_eq!(schema_operations, &rust_operations);
 }
 
 #[test]
