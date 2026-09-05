@@ -32,6 +32,8 @@ pub mod error_codes {
     pub const BACKEND_UNAVAILABLE: &str = "vua.vpm.backend_unavailable";
     pub const LOCAL_PACKAGE_INVALID: &str = "vua.vpm.local_package_invalid";
     pub const LOCAL_PACKAGE_REGISTER_FAILED: &str = "vua.vpm.local_package_register_failed";
+    pub const PACKAGE_NOT_INSTALLED: &str = "vua.vpm.package_not_installed";
+    pub const PROJECT_LOAD_FAILED: &str = "vua.vpm.project_load_failed";
 }
 
 /// Which optional capabilities a backend actually provides (honest gating,
@@ -41,8 +43,14 @@ pub mod error_codes {
 pub struct VpmCapabilities {
     pub create_project: bool,
     pub preview_install: bool,
-    // resolve / project_registry（ADR-0006 能力表）在后端补上对应方法时
-    // 才加入此结构——ORC-DEV-004 禁止预留无实现的能力位。
+    /// B6: read the installed package set of one project.
+    pub list_packages: bool,
+    /// B6: digest-bound removal preview + apply on one project.
+    pub remove_packages: bool,
+    /// B6: enumerate the manager's registered project paths.
+    pub project_registry: bool,
+    // resolve（ADR-0006 能力表）在后端补上对应方法时才加入此结构——
+    // ORC-DEV-004 禁止预留无实现的能力位。
 }
 
 /// One entry of an install preview (ORC-WF-002: the plan must cover every
@@ -92,6 +100,26 @@ pub struct PackageRequestV1 {
     pub version: Option<String>,
 }
 
+/// One installed package of a project, as resolved from its VPM manifest
+/// and lock by the backend.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledPackageV1 {
+    pub package_id: String,
+    pub version: String,
+    /// Direct dependencies the installed package declares.
+    pub dependencies: Vec<String>,
+}
+
+/// One project registered in the manager's project registry (the
+/// VCC-compatible database VUA shares with VCC/ALCOM/vrc-get).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegisteredProjectV1 {
+    pub path: String,
+    pub name: String,
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -124,9 +152,35 @@ pub trait VpmBackend: Send + Sync {
         confirmed_digest: &str,
     ) -> Result<serde_json::Value, AppErrorV1>;
     /// Registers a generated local package in this backend's isolated
-    /// environment. General repository management remains B6.
+    /// environment.
     fn register_local_package(&self, _package_root: &Path) -> Result<(), AppErrorV1> {
         Err(unsupported("register_local_package"))
+    }
+    /// B6: read the installed package set of one project (manifest + lock).
+    fn list_packages(&self, _project: &ProjectRef) -> Result<Vec<InstalledPackageV1>, AppErrorV1> {
+        Err(unsupported("list_packages"))
+    }
+    /// B6: read-only removal preview — what disappears, what breaks.
+    fn preview_remove(
+        &self,
+        _project: &ProjectRef,
+        _package_ids: &[String],
+    ) -> Result<ChangePreviewV1, AppErrorV1> {
+        Err(unsupported("preview_remove"))
+    }
+    /// B6: apply a confirmed removal under the same digest discipline as
+    /// installs.
+    fn apply_remove(
+        &self,
+        _project: &ProjectRef,
+        _package_ids: &[String],
+        _confirmed_digest: &str,
+    ) -> Result<serde_json::Value, AppErrorV1> {
+        Err(unsupported("preview_remove"))
+    }
+    /// B6: enumerate the manager's registered project paths.
+    fn project_registry(&self) -> Result<Vec<RegisteredProjectV1>, AppErrorV1> {
+        Err(unsupported("project_registry"))
     }
     /// Creates a project from a template; backends without the capability
     /// return a `capability_missing` error.
@@ -309,11 +363,175 @@ impl VpmBackend for VrcGetLibBackend {
         VpmCapabilities {
             create_project: true,
             preview_install: true,
+            list_packages: true,
+            remove_packages: true,
+            project_registry: true,
         }
     }
 
     fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
         VrcGetLibBackend::register_local_package(self, package_root)
+    }
+
+    fn list_packages(&self, project: &ProjectRef) -> Result<Vec<InstalledPackageV1>, AppErrorV1> {
+        let project_root = project.root.clone();
+        self.runtime.block_on(async move {
+            let project_io = vrc_get_vpm::io::DefaultProjectIo::new(
+                project_root.into_boxed_path(),
+            );
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            let mut packages: Vec<InstalledPackageV1> = unity_project
+                .all_installed_packages()
+                .map(|manifest| {
+                    let mut dependencies: Vec<String> = manifest
+                        .vpm_dependencies()
+                        .keys()
+                        .map(|key| key.to_string())
+                        .collect();
+                    dependencies.sort();
+                    InstalledPackageV1 {
+                        package_id: manifest.name().to_string(),
+                        version: manifest.version().to_string(),
+                        dependencies,
+                    }
+                })
+                .collect();
+            packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
+            Ok(packages)
+        })
+    }
+
+    fn preview_remove(
+        &self,
+        project: &ProjectRef,
+        package_ids: &[String],
+    ) -> Result<ChangePreviewV1, AppErrorV1> {
+        let project_root = project.root.clone();
+        let package_ids = package_ids.to_vec();
+        self.runtime.block_on(async move {
+            let project_io = vrc_get_vpm::io::DefaultProjectIo::new(
+                project_root.into_boxed_path(),
+            );
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            let names: Vec<&str> = package_ids.iter().map(String::as_str).collect();
+            let changes = unity_project
+                .remove_request(&names)
+                .await
+                .map_err(map_remove_request("calculating removal preview"))?;
+            let (items, conflicts, legacy_files, legacy_folders) = summarize_changes(&changes);
+            let destructive =
+                !conflicts.is_empty() || !legacy_files.is_empty() || !legacy_folders.is_empty();
+            let digest = VrcGetLibBackend::digest_of(
+                &items,
+                &conflicts,
+                &legacy_files,
+                &legacy_folders,
+            );
+            Ok(ChangePreviewV1 {
+                items,
+                conflicts,
+                remove_legacy_files: legacy_files,
+                remove_legacy_folders: legacy_folders,
+                destructive,
+                digest,
+            })
+        })
+    }
+
+    fn apply_remove(
+        &self,
+        project: &ProjectRef,
+        package_ids: &[String],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, AppErrorV1> {
+        // 同安装的双摘要纪律：预览重算 + 应用重算，任一漂移即拒绝。
+        let preview = self.preview_remove(project, package_ids)?;
+        if preview.digest != confirmed_digest {
+            return Err(AppErrorV1::new(
+                error_codes::PREVIEW_DRIFT,
+                ErrorCategory::Conflict,
+                "errors.vpm.previewDrift",
+                "corr-vpm-remove",
+            )
+            .with_recoverable(true));
+        }
+        let environment_root = self.environment_root.clone();
+        let project_root = project.root.clone();
+        let package_ids = package_ids.to_vec();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.clone().into_boxed_path(),
+            );
+            let project_io = vrc_get_vpm::io::DefaultProjectIo::new(
+                project_root.clone().into_boxed_path(),
+            );
+            let mut unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            let names: Vec<&str> = package_ids.iter().map(String::as_str).collect();
+            let changes = unity_project
+                .remove_request(&names)
+                .await
+                .map_err(map_remove_request("re-checking removal"))?;
+            let (items, conflicts, legacy_files, legacy_folders) = summarize_changes(&changes);
+            let digest = VrcGetLibBackend::digest_of(
+                &items,
+                &conflicts,
+                &legacy_files,
+                &legacy_folders,
+            );
+            if digest != confirmed_digest {
+                return Err(AppErrorV1::new(
+                    error_codes::PREVIEW_DRIFT,
+                    ErrorCategory::Conflict,
+                    "errors.vpm.previewDrift",
+                    "corr-vpm-remove",
+                )
+                .with_recoverable(true));
+            }
+            let installer = vrc_get_vpm::environment::PackageInstaller::new(&io, Some(&http));
+            unity_project
+                .apply_pending_changes(&installer, changes)
+                .await
+                .map_err(|error| {
+                    AppErrorV1::new(
+                        error_codes::APPLY_FAILED,
+                        ErrorCategory::ExternalFailure,
+                        "errors.vpm.applyFailed",
+                        "corr-vpm-remove",
+                    )
+                    .with_param("reason", ParamValue::Text(error.to_string()))
+                })?;
+            Ok(json!({
+                "removed": items,
+            }))
+        })
+    }
+
+    fn project_registry(&self) -> Result<Vec<RegisteredProjectV1>, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let connection = vrc_get_vpm::environment::VccDatabaseConnection::connect(&io)
+                .await
+                .map_err(map_project_load("opening the manager project registry"))?;
+            Ok(connection
+                .get_projects()
+                .into_iter()
+                .filter_map(|project| {
+                    let path = project.path()?.to_owned();
+                    let name = project.name().unwrap_or_default().to_owned();
+                    Some(RegisteredProjectV1 { path, name })
+                })
+                .collect())
+        })
     }
 
     fn preview_install(
@@ -749,6 +967,9 @@ impl VpmBackend for VccCliBackend {
         VpmCapabilities {
             create_project: true,
             preview_install: false,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
         }
     }
 
@@ -1037,6 +1258,51 @@ fn summarize_changes(
         .collect();
     legacy_folders.sort();
     (items, conflicts, legacy_files, legacy_folders)
+}
+
+fn map_project_load(context: &'static str) -> impl Fn(std::io::Error) -> AppErrorV1 {
+    move |error: std::io::Error| {
+        AppErrorV1::new(
+            error_codes::PROJECT_LOAD_FAILED,
+            ErrorCategory::ExternalFailure,
+            "errors.vpm.projectLoadFailed",
+            "corr-vpm-lib",
+        )
+        .with_param("reason", ParamValue::Text(format!("{context}: {error}")))
+    }
+}
+
+fn map_remove_request(
+    context: &'static str,
+) -> impl Fn(vrc_get_vpm::unity_project::RemovePackageErr) -> AppErrorV1 {
+    move |error: vrc_get_vpm::unity_project::RemovePackageErr| {
+        let (code, category) = match &error {
+            vrc_get_vpm::unity_project::RemovePackageErr::NotInstalled(_) => {
+                (error_codes::PACKAGE_NOT_INSTALLED, ErrorCategory::Validation)
+            }
+            _ => (error_codes::PREVIEW_FAILED, ErrorCategory::ExternalFailure),
+        };
+        let mut app = AppErrorV1::new(
+            code,
+            category,
+            "errors.vpm.removeFailed",
+            "corr-vpm-remove",
+        )
+        .with_param("reason", ParamValue::Text(format!("{context}: {error}")));
+        if let vrc_get_vpm::unity_project::RemovePackageErr::NotInstalled(names) = &error {
+            app = app.with_param(
+                "packages",
+                ParamValue::Text(
+                    names
+                        .iter()
+                        .map(|name| name.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", "),
+                ),
+            );
+        }
+        app
+    }
 }
 
 fn map_io(context: &'static str) -> impl Fn(std::io::Error) -> AppErrorV1 {

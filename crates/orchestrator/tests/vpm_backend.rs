@@ -271,3 +271,132 @@ fn b3_spike_rejects_an_invalid_local_package_before_preview() {
     assert_eq!(error.code, "vua.vpm.local_package_invalid");
     fs::remove_dir_all(&base).ok();
 }
+
+
+// --- B6: general project/package management path ---
+
+/// Builds the B3 local-package world (isolated environment + generated
+/// package + project) and installs the package through the digest-bound
+/// path, so removal and listing tests start from a real installed state.
+fn installed_world(label: &str) -> (VrcGetLibBackend, ProjectRef, PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("managed-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+    let request = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: Some("0.0.1".to_owned()),
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&request))
+        .unwrap();
+    backend
+        .apply_install(&project, &[request], &preview.digest)
+        .unwrap();
+    (backend, project, base)
+}
+
+#[test]
+fn b6_list_packages_reports_the_installed_content_of_one_project() {
+    let (backend, project, base) = installed_world("b6-list");
+    let packages = backend.list_packages(&project).unwrap();
+    assert_eq!(packages.len(), 1);
+    assert_eq!(packages[0].package_id, "com.ph-r.vua.local.synthetic");
+    assert_eq!(packages[0].version, "0.0.1");
+    assert!(packages[0].dependencies.is_empty());
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b6_remove_roundtrip_is_digest_bound_and_honest_in_preview() {
+    let (backend, project, base) = installed_world("b6-remove");
+    let package_ids = vec!["com.ph-r.vua.local.synthetic".to_owned()];
+
+    let preview = backend.preview_remove(&project, &package_ids).unwrap();
+    assert_eq!(preview.items.len(), 1);
+    assert_eq!(
+        preview.items[0].kind,
+        vua_orchestrator::ChangeKindV1::Remove
+    );
+    assert!(!preview.destructive, "removing the only package breaks nothing");
+
+    // The double-digest discipline: a stale confirmation is refused.
+    let forged = format!("sha256-deadbeef{}", &preview.digest[14..]);
+    let error = backend
+        .apply_remove(&project, &package_ids, &forged)
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.preview_drift");
+
+    backend
+        .apply_remove(&project, &package_ids, &preview.digest)
+        .unwrap();
+    let packages = backend.list_packages(&project).unwrap();
+    assert!(packages.is_empty(), "the package is gone from the project");
+    let manifest = fs::read_to_string(project.root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(
+        !manifest.contains("com.ph-r.vua.local.synthetic"),
+        "the manifest no longer references the removed package"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b6_removing_an_uninstalled_package_is_a_typed_validation_error() {
+    let (backend, project, base) = installed_world("b6-remove-miss");
+    let preview_result = backend.preview_remove(&project, &["com.example.absent".to_owned()]);
+    let error = preview_result.expect_err("an absent package must be a typed error");
+    assert_eq!(error.code, "vua.vpm.package_not_installed");
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::Validation
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b6_project_registry_reports_vcc_compatible_registrations() {
+    let (backend, project, base) = installed_world("b6-registry");
+
+    // Seed the VCC-compatible registry the way a manager does: register the
+    // project through the library's own project-management API.
+    let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+        base.join("isolated-vpm-environment").into_boxed_path(),
+    );
+    let project_io =
+        vrc_get_vpm::io::DefaultProjectIo::new(project.root.clone().into_boxed_path());
+    tokio::runtime::Runtime::new()
+        .unwrap()
+        .block_on(async move {
+            let mut connection = vrc_get_vpm::environment::VccDatabaseConnection::connect(&io)
+                .await
+                .unwrap();
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io).await.unwrap();
+            connection.add_project(&unity_project).await.unwrap();
+            // The registry persists only on an explicit save.
+            connection.save(&io).await.unwrap();
+        });
+
+    let registered = backend.project_registry().unwrap();
+    assert_eq!(registered.len(), 1);
+    assert_eq!(
+        registered[0].path,
+        project.root.to_string_lossy().into_owned()
+    );
+    assert_eq!(registered[0].name, "managed-project");
+    fs::remove_dir_all(&base).ok();
+}

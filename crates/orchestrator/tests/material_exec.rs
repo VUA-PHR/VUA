@@ -205,6 +205,9 @@ impl VpmBackend for FakeVpm {
         VpmCapabilities {
             create_project: false,
             preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
         }
     }
 

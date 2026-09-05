@@ -75,7 +75,7 @@ impl VpmBackend for NoVpm {
         "none"
     }
     fn capabilities(&self) -> VpmCapabilities {
-        VpmCapabilities { create_project: false, preview_install: false }
+        VpmCapabilities { create_project: false, preview_install: false, list_packages: false, remove_packages: false, project_registry: false }
     }
     fn preview_install(
         &self,

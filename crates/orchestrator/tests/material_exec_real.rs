@@ -526,6 +526,9 @@ impl VpmBackend for NoVpm {
         vua_orchestrator::VpmCapabilities {
             create_project: false,
             preview_install: false,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
         }
     }
 
