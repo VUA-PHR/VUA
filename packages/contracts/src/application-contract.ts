@@ -177,6 +177,174 @@ export interface ProductionGetBuildRecordQueryV01 extends ApplicationRequestBase
   readonly params: { readonly buildRecordId: string };
 }
 
+// ---- catalog.* / warehouse.*(bdl-queries v0.2 冻结面:AMF 从本地 BDL 出的
+// 五个只读查询。传输信封归本契约;本节冻结操作词表、查询闭集、字段面与结果
+// 形状。渲染层永不直接触达 BDL;协议变更须升版,不得原地改写) ----
+
+/** v0.2 availability 稳定枚举:由 AMF/BDL 处理器按协议版本化规则表从观测
+ *  原词派生;渲染层只消费该枚举(徽标与筛选),原词证据走 availabilityRaw */
+export type CatalogAvailabilityStatusV02 = "available" | "unavailable" | "unknown";
+
+export interface CatalogListQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "catalog.list";
+  readonly params: {
+    /** 标题与 productId 的不区分大小写子串匹配;缺省或 null 不过滤 */
+    readonly text?: string | null;
+    /** 对派生稳定枚举精确匹配;缺省或 null 不过滤 */
+    readonly availabilityStatus?: CatalogAvailabilityStatusV02 | null;
+    /** 1–200,默认 50 */
+    readonly limit?: number;
+    /** ≥ 0,默认 0 */
+    readonly offset?: number;
+  };
+}
+
+export interface CatalogDetailQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "catalog.detail";
+  readonly params: { readonly productId: string };
+}
+
+export interface CatalogStatusQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "catalog.status";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface WarehouseListEntriesQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "warehouse.listEntries";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface WarehouseEntryDetailQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "warehouse.entryDetail";
+  readonly params: { readonly warehouseItemId: string };
+}
+
+export interface CatalogPriceV02 {
+  /** 字符串金额 + 币种(禁用 JS number 表示货币);仅单价商品有值 */
+  readonly amount: string;
+  readonly currency: string;
+}
+
+/** v0.2 双字段:raw = 观测原词(证据,可为裸词或完整 schema.org URL,永不
+ *  归一化);status = 处理器按版本化规则表派生的稳定枚举 */
+export interface CatalogAvailabilityPairV02 {
+  readonly raw: string | null;
+  readonly status: CatalogAvailabilityStatusV02;
+}
+
+export interface CatalogProductSummaryV02 {
+  /** booth:<数字> 命名空间身份 */
+  readonly productId: string;
+  readonly title: string | null;
+  readonly price: CatalogPriceV02 | null;
+  /** 恒等于 imageUrls[0] 或 null;经 vuaimg 缓存协议承载 */
+  readonly imageUrl: string | null;
+  readonly imageUrls: readonly string[];
+  readonly availabilityRaw: string | null;
+  readonly availabilityStatus: CatalogAvailabilityStatusV02;
+  /** v0.2 诚实空槽:实体存储属 BDL v2 */
+  readonly entityCount: 0;
+  readonly entityTypes: readonly [];
+}
+
+export interface CatalogListResultV02 {
+  /** 分页总数(limit/offset 截取前计算) */
+  readonly total: number;
+  readonly entries: readonly CatalogProductSummaryV02[];
+}
+
+export interface CatalogSubproductV02 {
+  readonly variationId: string | null;
+  readonly name: string | null;
+  readonly price: CatalogPriceV02 | null;
+  readonly availabilityRaw: string | null;
+  readonly availabilityStatus: CatalogAvailabilityStatusV02;
+}
+
+export interface CatalogProductDetailV02 {
+  readonly productId: string;
+  readonly title: string | null;
+  readonly price: CatalogPriceV02 | null;
+  readonly imageUrl: string | null;
+  readonly imageUrls: readonly string[];
+  readonly availabilityRaw: string | null;
+  readonly availabilityStatus: CatalogAvailabilityStatusV02;
+  readonly entityCount: 0;
+  readonly entityTypes: readonly [];
+  readonly description: string | null;
+  readonly shopName: string | null;
+  readonly shopUrl: string | null;
+  /** 仅显式 BOOTH Adult 徽标为真 */
+  readonly adult: boolean;
+  readonly videoUrls: readonly string[];
+  /** BOOTH 展示分类,无推断 */
+  readonly sourceCategory: string | null;
+  readonly subproducts: readonly CatalogSubproductV02[];
+}
+
+export interface CatalogDetailResultV02 {
+  readonly product: CatalogProductDetailV02;
+}
+
+export type CatalogHealthV02 = "unknown" | "ok" | "incompatible";
+
+export interface CatalogRevisionV02 {
+  /** 观察管线簿记计数器落地前恒 null */
+  readonly catalogUpdatedSeq: number | null;
+  /** v0.2 = BDL format_version */
+  readonly datasetRevision: string;
+}
+
+export interface CatalogStatusResultV02 {
+  readonly health: CatalogHealthV02;
+  readonly revision: CatalogRevisionV02;
+}
+
+export type WarehouseArtifactStateV02 = "pending" | "clean" | "quarantined";
+
+export interface WarehouseArtifactRefV02 {
+  readonly relativePath: string;
+  /** sha256:<64 位小写十六进制> */
+  readonly artifactSha256: string;
+  readonly state: WarehouseArtifactStateV02;
+  readonly sizeBytes: number;
+}
+
+export interface WarehouseEntryCardV02 {
+  /** VUA 生成身份,稳定且不从显示名派生 */
+  readonly warehouseItemId: string;
+  readonly folderName: string;
+  readonly displayName: string;
+  readonly kind: string;
+  readonly createdAt: string;
+  readonly artifacts: readonly WarehouseArtifactRefV02[];
+}
+
+export interface WarehouseListEntriesResultV02 {
+  readonly entries: readonly WarehouseEntryCardV02[];
+}
+
+export interface WarehouseArtifactFactV02 extends WarehouseArtifactRefV02 {
+  readonly suggestedFileName: string | null;
+  /** 机械判定时刻;pending 时 null */
+  readonly inspectedAt: string | null;
+  /** 诚实判定文本;仅 quarantined 非空 */
+  readonly rejectionReason: string | null;
+  readonly sourceCorrelated: boolean;
+  readonly mappedProductIds: readonly string[];
+}
+
+export interface WarehouseEntryDetailResultV02 {
+  readonly entry: Omit<WarehouseEntryCardV02, "artifacts"> & {
+    readonly artifacts: readonly WarehouseArtifactFactV02[];
+  };
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
@@ -190,7 +358,12 @@ export type ApplicationRequestV01 =
   | ProductionGetPlanQueryV01
   | ProductionConfirmPlanCommandV01
   | ProductionRecoverCommandV01
-  | ProductionGetBuildRecordQueryV01;
+  | ProductionGetBuildRecordQueryV01
+  | CatalogListQueryV02
+  | CatalogDetailQueryV02
+  | CatalogStatusQueryV02
+  | WarehouseListEntriesQueryV02
+  | WarehouseEntryDetailQueryV02;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -264,7 +437,12 @@ export type ApplicationSuccessValueV01 =
   | TaskSnapshotV01
   | TaskCancellationResultV01
   | EnvironmentSnapshotV01
-  | DemoTaskStartedV01;
+  | DemoTaskStartedV01
+  | CatalogListResultV02
+  | CatalogDetailResultV02
+  | CatalogStatusResultV02
+  | WarehouseListEntriesResultV02
+  | WarehouseEntryDetailResultV02;
 
 export type ApplicationResponseV01 =
   | {
@@ -424,6 +602,47 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["buildRecordId"])
       && isIdentifier(value.params.buildRecordId);
+  }
+  if (value.kind === "query" && value.method === "catalog.list") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])) return false;
+    const listParams = value.params as CatalogListQueryV02["params"];
+    if (!Object.keys(listParams).every((key) => key === "text" || key === "availabilityStatus" || key === "limit" || key === "offset")) {
+      return false;
+    }
+    if (listParams.text !== undefined && listParams.text !== null
+      && (typeof listParams.text !== "string" || listParams.text.length < 1)) return false;
+    if (listParams.availabilityStatus !== undefined && listParams.availabilityStatus !== null
+      && !(["available", "unavailable", "unknown"] as readonly string[]).includes(listParams.availabilityStatus)) {
+      return false;
+    }
+    if (listParams.limit !== undefined
+      && (typeof listParams.limit !== "number" || !Number.isSafeInteger(listParams.limit) || listParams.limit < 1 || listParams.limit > 200)) {
+      return false;
+    }
+    if (listParams.offset !== undefined
+      && (typeof listParams.offset !== "number" || !Number.isSafeInteger(listParams.offset) || listParams.offset < 0)) {
+      return false;
+    }
+    return true;
+  }
+  if (value.kind === "query" && value.method === "catalog.detail") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["productId"])
+      && typeof value.params.productId === "string"
+      && /^booth:[0-9]+$/.test(value.params.productId);
+  }
+  if (value.kind === "query" && value.method === "catalog.status") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "query" && value.method === "warehouse.listEntries") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "query" && value.method === "warehouse.entryDetail") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["warehouseItemId"])
+      && isIdentifier(value.params.warehouseItemId);
   }
   return false;
 }

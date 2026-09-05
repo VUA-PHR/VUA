@@ -161,6 +161,17 @@ function toApplicationRequest(
         },
       };
     }
+    // bdl-queries v0.2 只读查询面:查询闭集已由信封守卫验证,参数原样透传
+    case "catalog.list":
+      return { ...base, kind: "query", method: "catalog.list", params: request.params };
+    case "catalog.detail":
+      return { ...base, kind: "query", method: "catalog.detail", params: request.params };
+    case "catalog.status":
+      return { ...base, kind: "query", method: "catalog.status", params: {} };
+    case "warehouse.listEntries":
+      return { ...base, kind: "query", method: "warehouse.listEntries", params: {} };
+    case "warehouse.entryDetail":
+      return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
   }
 }
 

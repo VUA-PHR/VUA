@@ -132,3 +132,64 @@ describe("production.* v0.1 方法守卫", () => {
     })).toBe(false);
   });
 });
+
+describe("bdl-queries v0.2 gateway surface", () => {
+  const base = { schemaVersion: 1, requestId: "r" } as const;
+
+  it("accepts the five read-only queries within the frozen closed sets", () => {
+    expect(isDesktopGatewayRequestV1({ ...base, method: "catalog.list", params: {} })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "catalog.list",
+      params: { text: "uniform", availabilityStatus: "available", limit: 50, offset: 0 },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "catalog.list",
+      params: { text: null, availabilityStatus: null },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.detail", params: { productId: "booth:1000001" },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({ ...base, method: "catalog.status", params: {} })).toBe(true);
+    expect(isDesktopGatewayRequestV1({ ...base, method: "warehouse.listEntries", params: {} })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.entryDetail", params: { warehouseItemId: "wh-1" },
+    })).toBe(true);
+  });
+
+  it("rejects entity filters, bad enum values, out-of-range paging, and bad identities", () => {
+    // 负例对齐 schemas/bdl-queries/v0.2/examples:实体过滤参数必被拒
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { entityType: "avatar" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { relationKind: "addon_for" },
+    })).toBe(false);
+    // 负例对齐:非稳定枚举的筛选值必被拒(原词透传不构成合法筛选项)
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { availabilityStatus: "InStock" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { limit: 0 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { limit: 201 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { offset: -1 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.list", params: { text: "" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.detail", params: { productId: "product-1" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "catalog.status", params: { extra: 1 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.entryDetail", params: {},
+    })).toBe(false);
+  });
+});

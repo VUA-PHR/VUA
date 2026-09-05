@@ -2,6 +2,7 @@ import type {
   AppErrorV01,
   ApplicationEventV01,
   ApplicationSuccessValueV01,
+  CatalogAvailabilityStatusV02,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -151,6 +152,50 @@ export interface ProductionGetBuildRecordRequestV1 {
   readonly params: { readonly buildRecordId: string };
 }
 
+// ---- catalog.* / warehouse.*(bdl-queries v0.2 冻结面:AMF 从本地 BDL 出的
+// 五个只读查询;查询闭集与字段面见 docs/protocols/bdl-queries-v0.2,
+// 守卫与操作词表一一对应,协议变更须升版) ----
+
+export interface CatalogListRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "catalog.list";
+  readonly params: {
+    readonly text?: string | null;
+    readonly availabilityStatus?: CatalogAvailabilityStatusV02 | null;
+    readonly limit?: number;
+    readonly offset?: number;
+  };
+}
+
+export interface CatalogDetailRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "catalog.detail";
+  readonly params: { readonly productId: string };
+}
+
+export interface CatalogStatusRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "catalog.status";
+  readonly params: Record<string, never>;
+}
+
+export interface WarehouseListEntriesRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.listEntries";
+  readonly params: Record<string, never>;
+}
+
+export interface WarehouseEntryDetailRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.entryDetail";
+  readonly params: { readonly warehouseItemId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -164,7 +209,12 @@ export type DesktopGatewayRequestV1 =
   | ProductionGetPlanRequestV1
   | ProductionConfirmPlanRequestV1
   | ProductionRecoverRequestV1
-  | ProductionGetBuildRecordRequestV1;
+  | ProductionGetBuildRecordRequestV1
+  | CatalogListRequestV1
+  | CatalogDetailRequestV1
+  | CatalogStatusRequestV1
+  | WarehouseListEntriesRequestV1
+  | WarehouseEntryDetailRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -181,6 +231,11 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "production.confirmPlan": "command",
   "production.recover": "command",
   "production.getBuildRecord": "query",
+  "catalog.list": "query",
+  "catalog.detail": "query",
+  "catalog.status": "query",
+  "warehouse.listEntries": "query",
+  "warehouse.entryDetail": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -410,6 +465,40 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["buildRecordId"])
         && isIdentifier(value.params.buildRecordId);
+    case "catalog.list": {
+      if (!hasExactKeys(value, REQUEST_KEYS)) return false;
+      const listParams = value.params as CatalogListRequestV1["params"];
+      if (!Object.keys(listParams).every((key) => key === "text" || key === "availabilityStatus" || key === "limit" || key === "offset")) {
+        return false;
+      }
+      if (listParams.text !== undefined && listParams.text !== null
+        && (typeof listParams.text !== "string" || listParams.text.length < 1)) return false;
+      if (listParams.availabilityStatus !== undefined && listParams.availabilityStatus !== null
+        && !(["available", "unavailable", "unknown"] as readonly string[]).includes(listParams.availabilityStatus)) {
+        return false;
+      }
+      if (listParams.limit !== undefined
+        && (typeof listParams.limit !== "number" || !Number.isSafeInteger(listParams.limit) || listParams.limit < 1 || listParams.limit > 200)) {
+        return false;
+      }
+      if (listParams.offset !== undefined
+        && (typeof listParams.offset !== "number" || !Number.isSafeInteger(listParams.offset) || listParams.offset < 0)) {
+        return false;
+      }
+      return true;
+    }
+    case "catalog.detail":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["productId"])
+        && typeof value.params.productId === "string"
+        && /^booth:[0-9]+$/.test(value.params.productId);
+    case "catalog.status":
+    case "warehouse.listEntries":
+      return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "warehouse.entryDetail":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["warehouseItemId"])
+        && isIdentifier(value.params.warehouseItemId);
     default:
       return false;
   }

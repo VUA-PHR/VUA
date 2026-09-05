@@ -174,6 +174,35 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         return this.#confirmProductionPlan(request);
       case "production.getBuildRecord":
         return this.#getProductionBuildRecord(request);
+      // bdl-queries v0.2 只读面:模拟 Provider 无本地 BDL 存储,按协议
+      // "空态即终态"如实回空集/未知健康;未知引用明确拒绝
+      case "catalog.list":
+        return this.#success(request, { total: 0, entries: [] });
+      case "catalog.detail":
+        return this.#failure(request, this.#error(
+          "vua.catalog.not_found",
+          "validation",
+          "errors.catalog.notFound",
+          request.correlationId,
+          false,
+          false,
+        ));
+      case "catalog.status":
+        return this.#success(request, {
+          health: "unknown",
+          revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" },
+        });
+      case "warehouse.listEntries":
+        return this.#success(request, { entries: [] });
+      case "warehouse.entryDetail":
+        return this.#failure(request, this.#error(
+          "vua.warehouse.not_found",
+          "validation",
+          "errors.warehouse.notFound",
+          request.correlationId,
+          false,
+          false,
+        ));
     }
   }
 

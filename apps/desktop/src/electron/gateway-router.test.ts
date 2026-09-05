@@ -212,3 +212,103 @@ describe("Electron Desktop Gateway routing", () => {
     }
   });
 });
+
+describe("bdl-queries v0.2 routing", () => {
+  it("routes the five read-only queries through to the provider verbatim", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const listResponse = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.2", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-catalog-list",
+        method: "catalog.list",
+        params: { text: "uniform", availabilityStatus: "available", limit: 20, offset: 0 },
+      },
+    );
+
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-catalog-list",
+      correlationId: "desktop-catalog-list",
+      kind: "query",
+      method: "catalog.list",
+      params: { text: "uniform", availabilityStatus: "available", limit: 20, offset: 0 },
+    });
+    expect(listResponse).toMatchObject({
+      ok: true,
+      value: { total: 0, entries: [] },
+    });
+
+    const statusResponse = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.2", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-catalog-status", method: "catalog.status", params: {} },
+    );
+    expect(statusResponse).toMatchObject({
+      ok: true,
+      value: { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
+    });
+
+    const detailResponse = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.2", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-catalog-detail",
+        method: "catalog.detail",
+        params: { productId: "booth:404" },
+      },
+    );
+    expect(detailResponse).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.catalog.not_found" } },
+    });
+
+    const entryResponse = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.2", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-entry-detail",
+        method: "warehouse.entryDetail",
+        params: { warehouseItemId: "wh-1" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-entry-detail",
+      correlationId: "desktop-entry-detail",
+      kind: "query",
+      method: "warehouse.entryDetail",
+      params: { warehouseItemId: "wh-1" },
+    });
+    expect(entryResponse).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.warehouse.not_found" } },
+    });
+  });
+
+  it("rejects entity filters at the envelope before the provider is invoked", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const response = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.2", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-entity-filter",
+        method: "catalog.list",
+        params: { entityType: "avatar" },
+      },
+    );
+
+    expect(response).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});

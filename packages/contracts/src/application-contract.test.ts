@@ -100,3 +100,47 @@ describe("application contract v0.1", () => {
     expect(isTerminalTaskStateV01("cancelled")).toBe(true);
   });
 });
+
+describe("bdl-queries v0.2 application surface", () => {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: "request-bdl",
+    correlationId: "correlation-bdl",
+    kind: "query",
+  } as const;
+
+  it("accepts the five read-only BDL queries within their closed sets", () => {
+    expect(isApplicationRequestV01({ ...base, method: "catalog.list", params: {} })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "catalog.list",
+      params: { text: "uniform", availabilityStatus: "unknown", limit: 100, offset: 50 },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, method: "catalog.detail", params: { productId: "booth:1000001" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({ ...base, method: "catalog.status", params: {} })).toBe(true);
+    expect(isApplicationRequestV01({ ...base, method: "warehouse.listEntries", params: {} })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, method: "warehouse.entryDetail", params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(true);
+  });
+
+  it("rejects entity filters, raw-word filters, and malformed identities", () => {
+    expect(isApplicationRequestV01({
+      ...base, method: "catalog.list", params: { entityType: "avatar" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "catalog.list", params: { availabilityStatus: "InStock" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "catalog.list", params: { limit: 201 },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "catalog.detail", params: { productId: "booth:abc" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "warehouse.entryDetail", params: { warehouseItemId: "" },
+    })).toBe(false);
+  });
+});
