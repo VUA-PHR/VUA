@@ -25,6 +25,10 @@ fn unity_bridge_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/unity-bridge/v1")
 }
 
+fn download_events_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/download-events/v0.1")
+}
+
 #[test]
 fn orc_typ_005_schema_documents_exist_and_pin_schema_version_one() {
     for name in [
@@ -223,6 +227,53 @@ fn orc_typ_005_unity_bridge_examples_and_operation_enum_stay_in_sync() {
     ]
     .map(|operation| serde_json::to_value(operation).unwrap());
     assert_eq!(schema_operations, &rust_operations);
+}
+
+/// 冻结的下载事件词表（v0.1）：七个正例必须过 schema，两个负例（端口不可
+/// 如实归因的 network 失败、旁路用户路径字段）必须被拒绝。serde 侧的同一
+/// 批 fixtures 在 `download_events.rs` 单元测试里互相印证。
+#[test]
+fn orc_typ_005_download_event_examples_validate_against_the_frozen_schema() {
+    let dir = download_events_dir();
+    let schema: serde_json::Value =
+        serde_json::from_slice(&fs::read(dir.join("event.schema.json")).unwrap()).unwrap();
+    let validator = jsonschema::validator_for(&schema).unwrap();
+
+    for name in [
+        "started",
+        "progress",
+        "interrupted",
+        "completed",
+        "cancelled",
+        "failed-policy",
+        "failed-unknown",
+    ] {
+        let example: serde_json::Value =
+            serde_json::from_slice(&fs::read(dir.join(format!("examples/{name}.json"))).unwrap())
+                .unwrap();
+        let errors: Vec<String> = validator
+            .iter_errors(&example)
+            .map(|error| format!("{}: {}", error.instance_path(), error))
+            .collect();
+        assert!(errors.is_empty(), "examples/{name}.json: {errors:?}");
+    }
+
+    let invalid_network: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join("examples/invalid-failed-network.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !validator.is_valid(&invalid_network),
+        "the port cannot honestly attribute network/disk/server failures"
+    );
+    let invalid_user_path: serde_json::Value = serde_json::from_slice(
+        &fs::read(dir.join("examples/invalid-user-chosen-path.json")).unwrap(),
+    )
+    .unwrap();
+    assert!(
+        !validator.is_valid(&invalid_user_path),
+        "storedPath is the only path field; extra path semantics are rejected"
+    );
 }
 
 #[test]

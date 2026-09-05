@@ -2,12 +2,14 @@
 
 [English](download-events-v0.1_EN.md) | [简体中文](download-events-v0.1_ZH.md)
 
-> 状态：草案——与 F 线端口形状同批对齐后冻结；冻结前无规范效力
+> 状态：**已冻结**（2026-09-06）——F 线四项确认与三处修订（`resumable` 措辞统一、
+> `failureKind` 可空/`unknown`、可选 `urlChain`）并入本版；机器可读词表见
+> `schemas/download-events/v0.1/`
 > 范围：AMF 素材获取的下载事件规范化、重试/恢复语义、来源关联、LocalArtifact 检查与
 > Warehouse 映射（B4：素材获取与 BDL）
 > 所有权边界：`docs/architecture/desktop_ZH.md`（Electron 持有 Session/DownloadItem）、
 > `docs/architecture/bdl_ZH.md`（BDL 只存 AMF 批准持久化的元数据子集）
-> 更新：2026-09-05
+> 更新：2026-09-06
 
 ## 事件流与所有权
 
@@ -36,10 +38,15 @@ AMF 作出。事件中永不携带 Cookie、下载令牌或凭据。
 | `download.failed` | 不可恢复失败，终态 |
 
 规范化字段（每事件携带）：`downloadId`（端口分配，跨重试稳定）、`attempt`（1 起）、
-`sourceUrl`、`initiatedFromPageUrl`、`suggestedFileName`、`storedPath`（VUA 管控的下载
-暂存路径，绝不直接落用户目录）、`expectedBytes`（可空；Content-Length）、`receivedBytes`、
-`resumable`（端口观察到 `Accept-Ranges: bytes` 或 206 响应才为真）、`failureKind`
-（`network` / `disk` / `policy` / `server`，仅失败事件）、`occurredAt`。
+`sourceUrl`、`initiatedFromPageUrl`（`will-download` 时刻捕获的页面上下文）、
+`urlChain`（可选，`will-download` 时刻捕获的重定向链——来源核对输入，B 侧已采纳）、
+`suggestedFileName`、`storedPath`（VUA 管控的下载暂存路径，绝不直接落用户目录；策略
+拒绝发生在 `will-download` 阶段、文件未创建时可空）、`expectedBytes`（可空；
+Content-Length，未知大小报 `null`，不得以 0 注水）、`receivedBytes`、`resumable`
+（**端口的可续传判定**，即 Electron `canResume()`；端口不再自观察范围头字段作为第二
+信号，避免双信号漂移）、`failureKind`（仅失败事件：`policy` 为端口自证的下载目标
+允许清单拒绝；其余失败端口**不可如实区分**网络/磁盘/服务器归因，一律如实标
+`unknown`——"不猜测、不注水"纪律）、`occurredAt`。
 
 ## 状态机
 
@@ -96,19 +103,34 @@ queued → downloading → transferDone → verifying → inspected → admitted
   删除原始文件仅在生成与验证成功后执行，并进入审计；
 - 用户不翻磁盘：仓库由 VUA 自建内容管理器呈现。
 
-## 与 F 线端口的对齐点
+## 与 F 线端口的对齐结论（已确认，2026-09-06）
+
+F 线四项全部接受（`docs/plans/f-reply-to-b4-download-port-alignment_ZH.md`），冻结时
+并入以下结论：
 
 - 能力位：`desktop.remoteBrowser` 已在 Provider 能力表中（当前 unavailable）；下载端口
-  属同一桌面能力族；
-- 事件载荷即本文词表；传输通道（Gateway 通知 vs 端口帧）由 F4 实现选型，词表与字段是
-  冻结对象；
-- 端口实现不得在事件之外旁路传递文件路径语义——`storedPath` 是唯一路径字段，由 VUA
-  管控目录派生。
+  属同一桌面能力族；事件载荷即本文词表，传输通道（Gateway 通知 vs 端口帧）由 F4 实现
+  选型；
+- **失败派生**：状态到达 `interrupted` 时调 `canResume()`——真报
+  `download.interrupted`，假报 `download.failed`；这是 Electron `DownloadItem` 上唯一
+  的原生判别信号；
+- **字段映射**：逐行确认。`initiatedFromPageUrl` 与 `urlChain` 必须在 `will-download`
+  时刻捕获（事件发出后再取就晚了）；`expectedBytes` 未知时报 `null` 不得以 0 注水；
+- **重试职责切分**：策略归 AMF（是否重试、3 次上限、退避、放弃），机制归端口
+  （`resume()`、部分文件管理、attempt 计数）；AMF 意图命令在同一 `downloadId` 上由
+  端口**串行化**解释（按命令到达序 + revision 裁决，`resume` 与取消不得并发解释）；
+  端口不自行发起 AMF 未授权的重试；
+- **暂存目录注入**：`storedPath` 从 shell/AMF 注入的 VUA 管控暂存目录派生，端口不持有
+  自己的路径策略；注入目录内的同名消歧（如短 `downloadId` 码缀）归端口实现，最终名
+  verbatim 上报，AMF 不解析其构成；
+- `policy` 类失败由端口在 `will-download` 阶段直接 `event.cancel()` 并报
+  `failed/policy`，与本地内容导航策略同一做法。
 
 ## 开放项
 
 - 检查钩子（归档内容扫描等）定义为接口占位，B4 只实现大小/类型/摘要最小集；
-- 事件载荷的机器可读 JSON Schema 在 F 线确认词表后随冻结补入 `schemas/download-events/v0.1/`。
+- 事件载荷的机器可读 JSON Schema 已随冻结落地 `schemas/download-events/v0.1/`
+  （`event.schema.json` + `examples/`）；词表或字段变更须升版，不得原地改写。
 
 Warehouse 物理布局已裁决（`docs/decisions/warehouse-layout_ZH.md`）：语义目录树、不去重、
 拷入 + 批量导入、产物模式设置。

@@ -2,15 +2,17 @@
 
 [English](download-events-v0.1_EN.md) | [简体中文](download-events-v0.1_ZH.md)
 
-> Status: Draft — frozen together with the F-line port shape confirmation; no normative
-> effect until frozen
+> Status: **Frozen** (2026-09-06) — the F-line's four acceptances and three revisions
+> (`resumable` wording unification, `failureKind` nullable/`unknown`, optional
+> `urlChain`) are merged into this edition; machine-readable vocabulary in
+> `schemas/download-events/v0.1/`
 > Scope: Normalized download events, retry/recovery semantics, source correlation,
 > LocalArtifact inspection and Warehouse mapping for AMF material acquisition
 > (B4: material acquisition and BDL)
 > Ownership boundaries: `docs/architecture/desktop_EN.md` (Electron owns Session/
 > DownloadItem), `docs/architecture/bdl_EN.md` (BDL stores only the metadata subset AMF
 > approves for persistence)
-> Updated: 2026-09-05
+> Updated: 2026-09-06
 
 ## Event flow and ownership
 
@@ -40,11 +42,19 @@ carry cookies, download tokens or credentials.
 | `download.failed` | unrecoverable failure; terminal |
 
 Normalized fields (carried by every event): `downloadId` (port-assigned, stable across
-retries), `attempt` (1-based), `sourceUrl`, `initiatedFromPageUrl`, `suggestedFileName`,
-`storedPath` (VUA-managed download staging path — never user folders directly),
-`expectedBytes` (nullable; Content-Length), `receivedBytes`, `resumable` (true only if
-the port observed `Accept-Ranges: bytes` or a 206 response), `failureKind`
-(`network` / `disk` / `policy` / `server`, failure events only), `occurredAt`.
+retries), `attempt` (1-based), `sourceUrl`, `initiatedFromPageUrl` (page context
+captured at `will-download` time), `urlChain` (optional, redirect chain captured at
+`will-download` time — source-verification input, adopted by the B side),
+`suggestedFileName`, `storedPath` (VUA-managed download staging path — never user
+folders directly; nullable when a policy rejection happens at `will-download` and no
+file was created), `expectedBytes` (nullable; Content-Length — unknown size is
+reported as `null`, never inflated to 0), `receivedBytes`, `resumable` (**the port's
+resumability verdict**, i.e. Electron `canResume()`; the port never self-observes
+range headers as a second signal, avoiding dual-signal drift), `failureKind` (failure
+events only: `policy` is the port's self-attributable download-target allowlist
+denial; for every other failure the port **cannot honestly distinguish** network,
+disk or server causes, so it reports `unknown` — the "no guessing, no inflation"
+discipline), `occurredAt`.
 
 ## State machine
 
@@ -117,23 +127,42 @@ inspection passes, AMF decides whether to create a material-package entry:
 - users do not browse the disk: the warehouse is presented by VUA's own content
   manager.
 
-## F-line port alignment
+## F-line port alignment conclusions (confirmed, 2026-09-06)
+
+The F line accepted all four items (`docs/plans/f-reply-to-b4-download-port-alignment_ZH.md`);
+the freeze merges these conclusions:
 
 - Capability: `desktop.remoteBrowser` is already in the Provider capability table
   (currently unavailable); the download port belongs to the same desktop capability
-  family;
-- Event payloads are exactly this vocabulary; the transport channel (Gateway
-  notifications vs port frames) is F4's implementation choice — the vocabulary and
-  fields are the freezing target;
-- The port implementation must not smuggle file-path semantics outside events —
-  `storedPath` is the only path field, derived from the VUA-managed directory.
+  family; event payloads are exactly this vocabulary, and the transport channel
+  (Gateway notifications vs port frames) is F4's implementation choice;
+- **Failure derivation**: on reaching `interrupted` the port calls `canResume()` —
+  true reports `download.interrupted`, false reports `download.failed`; this is the
+  only native discriminator on the Electron `DownloadItem`;
+- **Field mapping**: confirmed row by row. `initiatedFromPageUrl` and `urlChain` must
+  be captured at `will-download` time (fetching after the event fires is too late);
+  `expectedBytes` reports `null` for unknown size, never inflated to 0;
+- **Retry responsibility split**: policy belongs to AMF (whether to retry, the 3-attempt
+  bound, backoff, giving up); mechanism belongs to the port (`resume()`, partial-file
+  management, attempt counting); AMF intent commands on the same `downloadId` are
+  **serialized** by the port (adjudicated by command arrival order + revision — `resume`
+  and cancellation are never interpreted concurrently); the port never initiates a
+  retry AMF did not authorize;
+- **Staging directory injection**: `storedPath` is derived from the VUA-managed staging
+  directory injected by the shell/AMF; the port holds no path policy of its own;
+  same-name disambiguation inside the injected directory (e.g. a short `downloadId`
+  suffix) is the port's implementation detail, the final name is reported verbatim,
+  and AMF never parses its construction;
+- `policy` failures cancel via `event.cancel()` directly at `will-download` and report
+  `failed/policy`, the same practice as the local content navigation policy.
 
 ## Open items
 
 - Inspection hooks (archive content scanning etc.) are defined as an interface
   placeholder; B4 implements only the minimal size/type/digest set;
-- Machine-readable JSON Schema for event payloads lands in
-  `schemas/download-events/v0.1/` when F confirms the vocabulary at freeze.
+- The machine-readable JSON Schema for event payloads landed with the freeze in
+  `schemas/download-events/v0.1/` (`event.schema.json` + `examples/`); vocabulary or
+  field changes must bump the version, never rewrite in place.
 
 The warehouse physical layout is ruled (`docs/decisions/warehouse-layout_EN.md`):
 semantic tree, no deduplication, copy-in + batch import, artifact-mode setting.

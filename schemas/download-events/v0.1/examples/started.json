@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.1",
+  "kind": "download.started",
+  "downloadId": "dl-01hexample0000000000000a",
+  "attempt": 1,
+  "sourceUrl": "https://booth.example.com/download/1000001/9ab8c7d6-e5f4-3a2b-1c0d-9e8f7a6b5c4d",
+  "initiatedFromPageUrl": "https://booth.example.com/items/1000001",
+  "urlChain": [
+    "https://booth.example.com/download/1000001/9ab8c7d6-e5f4-3a2b-1c0d-9e8f7a6b5c4d",
+    "https://cdn.example.com/booth-materials/1000001/material-pack.zip"
+  ],
+  "suggestedFileName": "material-pack.zip",
+  "storedPath": "C:\\Users\\example\\AppData\\Local\\VUA\\installed\\default\\downloads\\dl-01hexample0000000000000a-1-material-pack.zip",
+  "expectedBytes": 183501824,
+  "receivedBytes": 0,
+  "resumable": true,
+  "occurredAt": "2026-09-06T08:15:00.000Z"
+}

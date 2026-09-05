@@ -91,25 +91,32 @@ CREATE TABLE compatibility_observations (        -- boundary IN-3: declared comp
 
 -- ================= B4 additions: the acquisition pipeline =================
 
--- Download-events protocol v0.1: the normalized download lifecycle as
--- reported by the F4 port (transport facts only — no credentials, no content
--- identity; the sha256 lives in local_artifacts).
+-- Download-events protocol v0.1 (FROZEN 2026-09-06): the normalized download
+-- lifecycle as reported by the F4 port (transport facts only — no credentials,
+-- no content identity; the sha256 lives in local_artifacts). The port's
+-- failureKind closes to policy|unknown: policy is the port's self-attributable
+-- allowlist denial, everything else is honestly unknown (F-line alignment);
+-- url_chain is the will-download-time redirect chain, a boundary IN-4
+-- source-verification input. (download_id, attempt, kind, occurred_at) is
+-- unique for at-least-once ingestion dedup.
 CREATE TABLE download_events (
   event_id            INTEGER PRIMARY KEY,
   download_id         TEXT NOT NULL,           -- port-assigned, stable across retry attempts
-  attempt             INTEGER NOT NULL,        -- 1-based; same downloadId, incremented per retry
+  attempt             INTEGER NOT NULL,        -- 1-based; same downloadId, incremented per fresh retry
   kind                TEXT NOT NULL CHECK (kind IN
                         ('started', 'progress', 'interrupted', 'completed',
                          'cancelled', 'failed')),
   source_url          TEXT NOT NULL,
   initiated_from_page_url TEXT,                -- page context at click time (correlation input)
+  url_chain           TEXT,                    -- JSON array of strings; redirect chain at click time
   suggested_file_name TEXT,
   stored_path         TEXT,                    -- VUA-managed staging path; the ONLY path field
   expected_bytes      INTEGER,                 -- Content-Length when the server sent one
   received_bytes      INTEGER,
-  resumable           INTEGER NOT NULL DEFAULT 0, -- 1 only with observed Accept-Ranges/206
-  failure_kind        TEXT CHECK (failure_kind IN ('network', 'disk', 'policy', 'server')),
-  occurred_at         TEXT NOT NULL
+  resumable           INTEGER NOT NULL DEFAULT 0, -- the port's resumability verdict (canResume), never self-observed headers
+  failure_kind        TEXT CHECK (failure_kind IN ('policy', 'unknown')), -- failed events only
+  occurred_at         TEXT NOT NULL,
+  UNIQUE (download_id, attempt, kind, occurred_at)
 );
 CREATE INDEX idx_download_events_id   ON download_events(download_id, attempt);
 CREATE INDEX idx_download_events_kind ON download_events(kind);
@@ -124,6 +131,7 @@ CREATE TABLE local_artifacts (
   suggested_file_name TEXT,
   inspection_state    TEXT NOT NULL CHECK (inspection_state IN
                         ('untrusted', 'inspected', 'admitted', 'rejected')),
+  rejection_reason    TEXT,                    -- honest user-facing verdict; null unless rejected
   inspected_at        TEXT,
   download_id         TEXT,                    -- nullable: artifacts can enter by batch import too
   first_seen_at       TEXT NOT NULL

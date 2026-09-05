@@ -11,6 +11,7 @@ mod bridge;
 mod build_record;
 mod capability;
 mod contracts;
+mod download_events;
 mod editor_targets;
 mod environment;
 mod environment_managers;
@@ -61,6 +62,9 @@ pub use capability::{
 pub use contracts::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
     TaskState, ENVELOPE_SCHEMA_VERSION,
+};
+pub use download_events::{
+    DownloadEventV01, DownloadEventKind, DownloadFailureKind, DOWNLOAD_EVENT_SCHEMA_VERSION,
 };
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
