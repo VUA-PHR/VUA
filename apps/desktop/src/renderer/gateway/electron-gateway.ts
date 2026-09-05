@@ -68,6 +68,30 @@ function createLiveTaskPort(client: GatewayClient): TaskPort {
       }
       return { kind: "rejected", reason: "unavailable", view: await refreshBestEffort() };
     },
+    async retry(taskId) {
+      const result = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "download.retry",
+        params: { taskId, commandId: crypto.randomUUID() },
+      });
+      if (result.ok && "decision" in result.value) {
+        return {
+          kind: "ok",
+          decision: result.value.decision as "resume" | "retry",
+        };
+      }
+      if (!result.ok && result.error.kind === "application") {
+        const code = result.error.error.code;
+        return {
+          kind: "rejected",
+          reason: code === "vua.task.not_found"
+            ? "unknown_task"
+            : code === "vua.download.not_retryable" ? "not_retryable" : "unavailable",
+        };
+      }
+      return { kind: "rejected", reason: "unavailable" };
+    },
     async capability() {
       const result = await client.invoke({
         schemaVersion: 1,

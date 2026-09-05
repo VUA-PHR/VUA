@@ -84,6 +84,8 @@ export const strings: Strings = {
     backToOrigin: "元のページへ戻る",
     cancel: "キャンセル",
     cancelRejected: "このタスクは現在キャンセルできません",
+    retry: "再試行",
+    retryRejected: "このタスクは現在再試行できません",
 demoTaskTitle: "デモタスク",
     replay: "イベントストリームを再生",
     progress: "{done}/{total}",

@@ -124,6 +124,8 @@ function createEmptyTask(): TaskPort {
     snapshot: () => Promise.resolve(view),
     subscribe: () => () => {},
     cancel: () => Promise.resolve({ kind: "rejected", reason: "unknown_task", view }),
+    // 下载域未接入:重试意图诚实不可用
+    retry: () => Promise.resolve({ kind: "rejected", reason: "unavailable" }),
     capability: () => Promise.resolve({ state: "unavailable", detailKey: "taskEngineMissing" }),
   };
 }

@@ -84,6 +84,8 @@ export const strings: Strings = {
     backToOrigin: "원래 페이지로",
     cancel: "취소",
     cancelRejected: "지금은 이 태스크를 취소할 수 없습니다",
+    retry: "재시도",
+    retryRejected: "이 작업은 지금 다시 시도할 수 없습니다",
 demoTaskTitle: "데모 작업",
     replay: "이벤트 스트림 재생",
     progress: "{done}/{total}",

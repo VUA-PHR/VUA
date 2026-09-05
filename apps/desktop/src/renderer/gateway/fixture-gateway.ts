@@ -434,6 +434,7 @@ function createFixtureTask(withTasks: boolean): FixtureTaskHandle {
   const port: FixtureTaskPort = {
     snapshot: () => Promise.resolve(signal.get()),
     subscribe: signal.subscribe,
+    retry: () => Promise.resolve({ kind: "rejected", reason: "unavailable" }),
     cancel: (taskId) => {
       const view = signal.get();
       const task = view.tasks.find((item) => item.id === taskId);

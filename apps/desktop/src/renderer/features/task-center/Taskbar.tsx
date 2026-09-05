@@ -43,11 +43,13 @@ function TaskRow({
   task,
   rejected,
   onCancel,
+  onRetry,
   onBackToOrigin,
 }: {
   task: TaskItem;
   rejected: boolean;
   onCancel: () => void;
+  onRetry: () => void;
   onBackToOrigin: () => void;
 }) {
   // 单调进度地板(S-XIV-4):快照乱序/重算导致的回退不显示;
@@ -91,6 +93,11 @@ function TaskRow({
             {copy.cancel}
           </Button>
         ) : null}
+        {task.status === "failed" ? (
+          <Button variant="subtle" onClick={onRetry}>
+            {copy.retry}
+          </Button>
+        ) : null}
       </div>
     </li>
   );
@@ -127,6 +134,12 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
     setRejectedId(result.kind === "rejected" ? taskId : null);
   }
 
+  // 重试 = 任务级动作:AMF 以冻结重试策略裁决,拒绝原因如实呈现
+  async function handleRetry(taskId: string) {
+    const result = await gateway.task.retry(taskId);
+    setRejectedId(result.kind === "rejected" ? taskId : null);
+  }
+
   // DEV 演示回放:仅 fixture 任务端口实现该可选方法时才出现
   const replay =
     import.meta.env.DEV && "replayDemoEvents" in gateway.task
@@ -145,6 +158,7 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
                   task={task}
                   rejected={rejectedId === task.id}
                   onCancel={() => void handleCancel(task.id)}
+                  onRetry={() => void handleRetry(task.id)}
                   onBackToOrigin={() => {
                     setExpanded(false);
                     navigate(task.originPage);

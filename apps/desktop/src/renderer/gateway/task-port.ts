@@ -41,10 +41,21 @@ export type CancelTaskResult =
       view: TaskCenterView;
     };
 
+export type RetryTaskResult =
+  | { kind: "ok"; decision: "resume" | "retry" }
+  | {
+      kind: "rejected";
+      /** unavailable = 断连;not_retryable = AMF 重试策略裁决(任务级动作,
+       *  由 AMF 权威决定,渲染层如实呈现拒绝原因) */
+      reason: "unknown_task" | "not_retryable" | "unavailable";
+    };
+
 export interface TaskPort {
   snapshot(): Promise<TaskCenterView>;
   subscribe(callback: (view: TaskCenterView) => void): Unsubscribe;
   /** 取消意图:应用层裁决 ok / rejected,一律携带最新快照 */
   cancel(taskId: string): Promise<CancelTaskResult>;
+  /** 重试意图(下载等可重试任务):任务级动作,AMF 以冻结重试策略裁决 */
+  retry(taskId: string): Promise<RetryTaskResult>;
   capability(): Promise<CapabilityReport>;
 }
