@@ -44,6 +44,7 @@ mod tools;
 mod vpm;
 mod vpm_backend;
 mod warehouse_import;
+mod warehouse_maintenance;
 mod win_registry;
 mod workflow;
 
@@ -182,6 +183,9 @@ pub use warehouse_import::{
     submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
     SkippedSourceFile, WarehouseImportReport, WarehouseImportTaskResult, WarehouseImporter,
     WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
+};
+pub use warehouse_maintenance::{
+    submit_delete_originals, DeleteOriginalsResult, DeleteOriginalsTaskSpec, MaintenanceError,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

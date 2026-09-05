@@ -898,6 +898,70 @@ impl BdlStore {
         Ok(())
     }
 
+    /// Raw copy rows of one entry, all roles, including `storedPath` — the
+    /// AMF-side view for maintenance flows (the wire read face never carries
+    /// paths).
+    pub fn entry_copies(
+        &self,
+        warehouse_item_id: &str,
+    ) -> Result<Vec<StoredArtifactCopy>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let mut statement = connection.prepare(
+            "SELECT copy_id, warehouse_item_id, artifact_sha256,
+                    relative_path, stored_path, role, created_at
+             FROM artifact_copies
+             WHERE warehouse_item_id = ?1
+             ORDER BY relative_path",
+        )?;
+        let rows = statement
+            .query_map([warehouse_item_id], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, String>(6)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        rows.into_iter()
+            .map(
+                |(
+                    copy_id,
+                    warehouse_item_id,
+                    artifact_sha256,
+                    relative_path,
+                    stored_path,
+                    role,
+                    created_at,
+                )| {
+                    Ok(StoredArtifactCopy {
+                        copy_id,
+                        warehouse_item_id,
+                        artifact_sha256,
+                        relative_path,
+                        stored_path,
+                        role: CopyRole::parse(&role)?,
+                        created_at,
+                    })
+                },
+            )
+            .collect()
+    }
+
+    /// Delete one copy row (the maintenance flow removes the physical file
+    /// first, then the row — per-copy consistency, resumable on retry).
+    /// Returns false when the row was already gone.
+    pub fn delete_artifact_copy(&self, copy_id: &str) -> Result<bool, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let deleted = connection.execute("DELETE FROM artifact_copies WHERE copy_id = ?1", [
+            copy_id,
+        ])?;
+        Ok(deleted == 1)
+    }
+
     /// Delete the ORIGINAL copy rows of one entry (the delete-originals
     /// task removes the physical files around this call). Generated VPM
     /// rows and every inspection fact are kept.
