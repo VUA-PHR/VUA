@@ -2,7 +2,7 @@ import type {
   AppErrorV01,
   ApplicationEventV01,
   ApplicationSuccessValueV01,
-  CatalogAvailabilityStatusV02,
+  CatalogAvailabilityStatusV03,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -162,7 +162,7 @@ export interface CatalogListRequestV1 {
   readonly method: "catalog.list";
   readonly params: {
     readonly text?: string | null;
-    readonly availabilityStatus?: CatalogAvailabilityStatusV02 | null;
+    readonly availabilityStatus?: CatalogAvailabilityStatusV03 | null;
     readonly limit?: number;
     readonly offset?: number;
   };
