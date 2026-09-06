@@ -1,6 +1,7 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
+import { DelayedButton } from "../../components/primitives/DelayedButton.tsx";
 import { EmptyState } from "../../components/primitives/EmptyState.tsx";
 import {
   ContextMenu,
@@ -12,17 +13,22 @@ import {
   useGateway,
   type AcquireEntryDetailView,
   type WarehouseArtifact,
+  type WarehouseArtifactMode,
   type WarehouseArtifactState,
+  type WarehouseCommandOutcome,
+  type WarehouseEntry,
 } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import {
   artifactCardMatches,
   artifactCards,
+  entryActions,
   entryModeLine,
   sizeText,
   type AcquireArtifactCard,
 } from "./acquire-model.ts";
 import { useCardSpotlight } from "./use-card-spotlight.ts";
+import { useWarehouseExperimentalMode } from "../../app/warehouse-experimental-mode.ts";
 
 const copy = strings.warehouse.acquire;
 const cloudCopy = strings.warehouse;
@@ -117,14 +123,33 @@ type DetailState =
   | { kind: "failed" }
   | { kind: "loaded"; view: AcquireEntryDetailView };
 
-/* 走查 3c 裁决(2026-09-07):模式编辑与生成/删除动作不再作为条目抽屉的默认
- * 呈现——产品语义归「设置-实验性」入口(方案见 proposal 007,路径表态中)。
- * 写命令端口层(warehouse-commands-port/live/fixture)保留,待入口落位后复用。 */
+type ModeDraft = "follow" | WarehouseArtifactMode;
+
+/* 走查 3c 裁决(2026-09-07)+proposal 007 路径 b 表态:模式编辑与生成/删除动作
+ * 移入「设置-实验性」开关控制——默认不呈现;开关开启后显示,入口挂实验性标注。
+ * 命令面为已冻结的 bdl-commands v0.1 条目级三命令;全局默认由服务端配置,
+ * 不进 wire。 */
+
+/** 命令错误 → 本地化文案:code 是协议冻结面,键为点号转下划线;未知码回落通用失败文案 */
+function commandErrorText(error: {
+  kind: "unavailable" | "request_rejected" | "application";
+  code?: string;
+}): string {
+  if (error.kind === "application" && typeof error.code === "string") {
+    const table = copy.commandErrors as Record<string, string>;
+    return table[error.code.replaceAll(".", "_")] ?? table.fallback!;
+  }
+  return copy.commandErrors.vua_warehouse_unavailable;
+}
 
 function EntryDetail({ entryId }: { entryId: string }) {
   const gateway = useGateway();
+  const experimentalOn = useWarehouseExperimentalMode();
   const [state, setState] = useState<DetailState>({ kind: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
+  const [modeDraft, setModeDraft] = useState<ModeDraft>("follow");
+  const [busy, setBusy] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -141,6 +166,27 @@ function EntryDetail({ entryId }: { entryId: string }) {
       active = false;
     };
   }, [gateway, entryId, reloadKey]);
+
+  const loadedEntry: WarehouseEntry | null =
+    state.kind === "loaded" && state.view.kind === "detail" ? state.view.entry : null;
+
+  // 重载/切换条目后草稿跟随服务端事实(覆盖值;null = 跟随全局)
+  useEffect(() => {
+    if (loadedEntry !== null) setModeDraft(loadedEntry.artifactMode ?? "follow");
+  }, [loadedEntry]);
+
+  async function runCommand(run: () => Promise<WarehouseCommandOutcome>): Promise<void> {
+    setBusy(true);
+    setFeedback(null);
+    const outcome = await run();
+    setBusy(false);
+    if (outcome.ok) {
+      setFeedback(copy.acceptedNote);
+      setReloadKey((key) => key + 1);
+    } else {
+      setFeedback(commandErrorText(outcome.error));
+    }
+  }
 
   if (state.kind === "loading") {
     return (
@@ -190,6 +236,129 @@ function EntryDetail({ entryId }: { entryId: string }) {
       <p className="vua-caption vua-text-secondary" title={entry.folderName}>
         {entry.folderName}
       </p>
+
+      {/* F4-9 产物模式编辑(实验性,proposal 007 路径 b):开关开启后呈现;
+          跟随全局 = 清除覆盖(写 null),生效模式以服务端读回为准 */}
+      {experimentalOn ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">
+            {copy.modeEditTitle} <Badge tone="neutral">{strings.settings.experimental.badge}</Badge>
+          </h3>
+          <div role="radiogroup" aria-label={copy.modeEditTitle}>
+            <label>
+              <input
+                type="radio"
+                name={`mode-${entry.warehouseItemId}`}
+                checked={modeDraft === "follow"}
+                onChange={() => setModeDraft("follow")}
+              />{" "}
+              {copy.modeFollowGlobalOption}
+            </label>{" "}
+            <label>
+              <input
+                type="radio"
+                name={`mode-${entry.warehouseItemId}`}
+                checked={modeDraft === "use_original_unitypackage"}
+                onChange={() => setModeDraft("use_original_unitypackage")}
+              />{" "}
+              {copy.mode.use_original_unitypackage}
+            </label>{" "}
+            <label>
+              <input
+                type="radio"
+                name={`mode-${entry.warehouseItemId}`}
+                checked={modeDraft === "generate_vpm"}
+                onChange={() => setModeDraft("generate_vpm")}
+              />{" "}
+              {copy.mode.generate_vpm}
+            </label>
+          </div>
+          <Button
+            variant="subtle"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              setFeedback(null);
+              void gateway.warehouseCommands
+                .setArtifactMode(entry.warehouseItemId, modeDraft === "follow" ? null : modeDraft)
+                .then((outcome) => {
+                  setBusy(false);
+                  if (outcome.ok) {
+                    setReloadKey((key) => key + 1);
+                  } else {
+                    setFeedback(commandErrorText(outcome.error));
+                  }
+                });
+            }}
+          >
+            {busy ? copy.modeApplying : copy.modeApply}
+          </Button>
+        </section>
+      ) : null}
+
+      {/* 条目动作(实验性):可见性镜像服务端守卫;删除原始为审计性破坏操作,
+          高危样式 + 延迟确认(§8.1),受理后进度走任务中心 */}
+      {experimentalOn && entryActions(entry).length > 0 ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">
+            {copy.actionsTitle} <Badge tone="neutral">{strings.settings.experimental.badge}</Badge>
+          </h3>
+          {entryActions(entry).includes("generateVpm") ? (
+            <Button
+              disabled={busy}
+              onClick={() => {
+                setBusy(true);
+                setFeedback(null);
+                void gateway.warehouseCommands
+                  .generateVpm(entry.warehouseItemId)
+                  .then((outcome) => {
+                    setBusy(false);
+                    if (outcome.ok) {
+                      setFeedback(copy.acceptedNote);
+                      setReloadKey((key) => key + 1);
+                    } else {
+                      setFeedback(commandErrorText(outcome.error));
+                    }
+                  });
+              }}
+            >
+              {copy.actionGenerateVpm}
+            </Button>
+          ) : null}{" "}
+          {entryActions(entry).includes("deleteOriginals") ? (
+            <div>
+              <p className="vua-caption vua-text-secondary">{copy.deleteConfirmNote}</p>
+              <DelayedButton
+                variant="danger"
+                delayMs={1500}
+                disabled={busy}
+                onClick={() => {
+                  setBusy(true);
+                  setFeedback(null);
+                  void gateway.warehouseCommands
+                    .deleteOriginals(entry.warehouseItemId)
+                    .then((outcome) => {
+                      setBusy(false);
+                      if (outcome.ok) {
+                        setFeedback(copy.acceptedNote);
+                        setReloadKey((key) => key + 1);
+                      } else {
+                        setFeedback(commandErrorText(outcome.error));
+                      }
+                    });
+                }}
+              >
+                {copy.actionDeleteOriginals}
+              </DelayedButton>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+      {experimentalOn && feedback !== null ? (
+        <p className="vua-caption vua-text-secondary" role="status">
+          {feedback}
+        </p>
+      ) : null}
 
       {entry.artifacts.some((artifact) => artifact.state === "quarantined") ? (
         <p className="vua-caption vua-text-secondary">

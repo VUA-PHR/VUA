@@ -73,6 +73,7 @@ test("every page belongs to exactly its own module", () => {
   assert.equal(moduleOf("tools-discover"), "tools");
   assert.equal(moduleOf("tools-installed"), "tools");
   assert.equal(moduleOf("settings-version"), "settings");
+  assert.equal(moduleOf("settings-experimental"), "settings");
   assert.equal(moduleOf("settings-goals"), "settings");
 });
 
