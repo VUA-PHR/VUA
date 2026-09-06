@@ -7,8 +7,7 @@ import type {
   WarehouseCommandsPort,
 } from "./warehouse-commands-port.ts";
 import type { ProductionTaskLink } from "./fixture-production.ts";
-import { format } from "../i18n/index.ts";
-import { fixtureStrings } from "../i18n/strings.fixtures.zh-CN.ts";
+import { format, strings } from "../i18n/index.ts";
 
 /**
  * Warehouse 写命令 fixture(F4-9 走查载体,仅 DEV 可达):在演示条目数据上
@@ -44,7 +43,7 @@ export function createFixtureWarehouseCommands(
   options: FixtureWarehouseCommandsOptions = {},
 ): WarehouseCommandsPort {
   const { taskLink } = options;
-  const taskTitles = fixtureStrings.tasks;
+  const taskTitles = strings.taskTitles;
 
   const linkTask = (taskId: string, title: string): void => {
     taskLink?.upsertTask({
@@ -106,7 +105,7 @@ export function createFixtureWarehouseCommands(
       const taskId = `task-wh-gen-${warehouseItemId}`;
       const correlationId = `corr-${taskId}`;
       // 走查 3a 修复:任务标题绑定操作条目实体(displayName),不再固定演示名
-      linkTask(taskId, format(taskTitles.generateVpm.title, { name: entry.displayName }));
+      linkTask(taskId, format(taskTitles.generateVpm, { name: entry.displayName }));
       setTimeout(() => {
         store.addGeneratedVpm(warehouseItemId);
         completeTask(taskId);
@@ -137,7 +136,7 @@ export function createFixtureWarehouseCommands(
       const taskId = `task-wh-del-${warehouseItemId}`;
       const correlationId = `corr-${taskId}`;
       // 走查 3b 修复:同 3a,标题绑定操作条目实体
-      linkTask(taskId, format(taskTitles.deleteOriginals.title, { name: entry.displayName }));
+      linkTask(taskId, format(taskTitles.deleteOriginals, { name: entry.displayName }));
       setTimeout(() => {
         store.removeOriginals(warehouseItemId);
         completeTask(taskId);

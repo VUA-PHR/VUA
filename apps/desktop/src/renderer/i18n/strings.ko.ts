@@ -76,6 +76,19 @@ export const strings: Strings = {
       warehouseMissing: "창고 읽기 면이 아직 연결되지 않았습니다",
     },
   },
+  /** 작업 제목 템플릿(워크스루 #4 i18n):동사와 상태 문구는 i18n 경유,
+   *  엔티티 이름은 원문 유지. 데모 작업은 조립 시 현재 언어로 합성됩니다. */
+  taskTitles: {
+    assembly: "{name} 조립:본 릭깅과 메뉴 생성",
+    download: "{name} 다운로드",
+    downloadInterruptedNote: "다운로드 중단:연결이 끊겼습니다. 수신된 부분은 재개할 수 있습니다.",
+    downloadPolicyRefusedNote: "다운로드가 정책에 의해 거부되었습니다:허용 목록 밖이며 저장되지 않았습니다.",
+    envCheck: "창작 환경 검사",
+    envCheckWarning: "VPM 환경 검증 실패",
+    warehouseScan: "창고 애셋 스캔",
+    generateVpm: "VPM 생성:{name}",
+    deleteOriginals: "오리지널 삭제:{name}",
+  },
   taskCenter: {
     title: "알림 센터",
     expandAria: "태스크 목록 펼치기, {count}개",

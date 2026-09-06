@@ -41,7 +41,7 @@ const statusGlyph: Record<TaskStatus, IconName> = {
   paused: "clock",
   completed: "check",
   completedWithWarnings: "warning",
-  failed: "close",
+  failed: "error-circle",
   cancelled: "close",
 };
 
