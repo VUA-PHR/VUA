@@ -77,13 +77,15 @@ export const strings: Strings = {
     },
   },
   taskCenter: {
-    title: "タスクセンター",
+    title: "通知センター",
     expandAria: "タスク一覧を展開、{count} 件",
     collapseAria: "タスク一覧を折りたたむ",
     runningSummary: "{title} ほか {count} 件",
     idleSummary: "実行中のタスクはありません",
     backToOrigin: "元のページへ戻る",
     cancel: "キャンセル",
+    clear: "クリア",
+    showCompleted: "完了を表示",
     cancelRejected: "このタスクは現在キャンセルできません",
     retry: "再試行",
     retryRejected: "このタスクは現在再試行できません",
@@ -121,6 +123,7 @@ demoTaskTitle: "デモタスク",
       settingsGoals: "目標の再選択",
       settingsLanguage: "言語",
       settingsTheme: "テーマ",
+      settingsExperimental: "実験的",
       settingsVersion: "バージョン",
       settingsAbout: "について",
       settingsDonate: "寄付",
@@ -1286,6 +1289,17 @@ rolled_back: "ロールバック済み",
     skip: "スキップ",
   },
   settings: {
+    /** 実験的機能ページ(proposal 007 パス b)。トグルはユーザー設定で入口の
+     *  表示のみ制御し、グローバル既定はサーバー設定によるため、ここでは
+     *  読み取り専用として表示する。 */
+    experimental: {
+      title: "実験的機能",
+      badge: "実験的",
+      warehouseModeTitle: "VPM 生成モード入口",
+      warehouseModeDesc: "オンにすると、倉庫エントリ詳細に成果物モード編集と「VPM を生成 / オリジナルを削除」のエントリ操作を表示します(凍結済みの bdl-commands v0.1 エントリレベルコマンドを使用)。グローバル既定はサーバー設定で決まるため、ここにグローバル既定のスイッチはありません。オフにしても入口が隠れるだけで、保存済みのモードは変わりません。",
+      on: "オン",
+      off: "オフ",
+    },
     goals: {
       heading: "目標の再選択",
       description: "初回起動の目標選択をやり直します。現在の選択は確認するまで保持されます。",

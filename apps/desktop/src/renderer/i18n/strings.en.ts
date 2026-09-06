@@ -85,13 +85,15 @@ export const strings = {
     },
   },
   taskCenter: {
-    title: "Task Center",
+    title: "Notification Center",
     expandAria: "Expand task list, {count} items",
     collapseAria: "Collapse task list",
     runningSummary: "{title} and {count} more",
     idleSummary: "No running tasks",
     backToOrigin: "Back to origin page",
     cancel: "Cancel",
+    clear: "Clear",
+    showCompleted: "Show completed",
     cancelRejected: "This task cannot be cancelled right now",
     retry: "Retry",
     retryRejected: "This task cannot be retried right now",
@@ -129,6 +131,7 @@ demoTaskTitle: "Demo task",
       settingsGoals: "Reset Goals",
       settingsLanguage: "Language",
       settingsTheme: "Theme",
+      settingsExperimental: "Experimental",
       settingsVersion: "Version",
       settingsAbout: "About",
       settingsDonate: "Donate",
@@ -1347,6 +1350,17 @@ rolled_back: "Rolled back",
     skip: "Skip",
   },
   settings: {
+    /** Experimental features page (proposal 007 path b): the toggle is a user
+     *  preference controlling entry visibility only; the global default comes
+     *  from server configuration and is presented read-only here. */
+    experimental: {
+      title: "Experimental features",
+      badge: "Experimental",
+      warehouseModeTitle: "Generate VPM mode entry",
+      warehouseModeDesc: "When on, the warehouse entry drawer shows the artifact-mode editor and the “Generate VPM / Delete originals” entry actions (using the frozen bdl-commands v0.1 entry-level commands). The global default is decided by server configuration; no global-default toggle is provided here. Turning it off only hides the entry; saved modes are unchanged.",
+      on: "On",
+      off: "Off",
+    },
     goals: {
       heading: "Reset Goals",
       description: "Re-run the first-launch goal selection. Current choices are kept until you confirm.",

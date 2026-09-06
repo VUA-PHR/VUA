@@ -26,4 +26,10 @@ export const storageKeys = {
   effects: "vua-effects",
   /** SteamVR 运行时自动打开资源节约模式:"on" | "off";缺省 off(检测器接入后生效,issue #27) */
   effectsAuto: "vua-effects-auto-steamvr",
+  /** 产物模式实验开关(proposal 007 路径 b):"on" | "off";缺省 off——纯表现层入口
+   *  显隐偏好,命令面仍为已冻结的 bdl-commands v0.1 条目级三命令 */
+  warehouseExperimentalMode: "vua-warehouse-experimental-mode",
+  /** 通知中心已清除通知(proposal 007 路径 b):已清除终态任务 id 的 JSON 数组;
+   *  只隐藏通知呈现,任务权威事实仍可经任务列表/详情面查询 */
+  notificationDismissed: "vua-notification-dismissed",
 } as const;

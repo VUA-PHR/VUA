@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { monotonicDone } from "../../app/busy-timing.ts";
+import { storageKeys } from "../../app/storage-keys.ts";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Icon, type IconName } from "@vua/design-system";
 import { format, strings } from "../../i18n/index.ts";
@@ -12,6 +13,13 @@ import {
 } from "../../gateway/index.ts";
 import type { PageId } from "../../app/nav-model.ts";
 import type { TaskStatus } from "../../app/task-status.ts";
+import {
+  canDismiss,
+  isTerminalStatus,
+  loadDismissedIds,
+  saveDismissedId,
+  visibleNotifications,
+} from "./notification-model.ts";
 import "./taskbar.css";
 
 const copy = strings.taskCenter;
@@ -44,12 +52,14 @@ function TaskRow({
   rejected,
   onCancel,
   onRetry,
+  onDismiss,
   onBackToOrigin,
 }: {
   task: TaskItem;
   rejected: boolean;
   onCancel: () => void;
   onRetry: () => void;
+  onDismiss?: (() => void) | undefined;
   onBackToOrigin: () => void;
 }) {
   // 单调进度地板(S-XIV-4):快照乱序/重算导致的回退不显示;
@@ -98,6 +108,11 @@ function TaskRow({
             {copy.retry}
           </Button>
         ) : null}
+        {onDismiss ? (
+          <Button variant="subtle" onClick={onDismiss}>
+            {copy.clear}
+          </Button>
+        ) : null}
       </div>
     </li>
   );
@@ -109,6 +124,10 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
   const [capability, setCapability] = useState<CapabilityReport | null>(null);
   const [expanded, setExpanded] = useState(false);
   const [rejectedId, setRejectedId] = useState<string | null>(null);
+  // 通知中心(proposal 007 路径 b):已清除终态通知(持久化)与「显示已完成」视图开关;
+  // 任务权威快照不动,清除只影响通知呈现,事实仍可经任务列表/详情面查询
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() => loadDismissedIds());
+  const [showCompleted, setShowCompleted] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -119,6 +138,12 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
       active = false;
     };
   }, [gateway]);
+
+  // 通知投影:活动任务恒显;终态任务需「显示已完成」开启且未被清除
+  const notifications = useMemo(
+    () => visibleNotifications(view.tasks, dismissed, showCompleted),
+    [view.tasks, dismissed, showCompleted],
+  );
 
   // §2.6:任务引擎未接入(unavailable)时入口整条不出现
   if (capability?.state !== "ready") return null;
@@ -140,6 +165,16 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
     setRejectedId(result.kind === "rejected" ? taskId : null);
   }
 
+  function handleDismiss(taskId: string) {
+    setDismissed(saveDismissedId(taskId));
+  }
+
+  function dismissVisible(task: TaskItem): (() => void) | undefined {
+    return isTerminalStatus(task.status) && canDismiss(task)
+      ? () => handleDismiss(task.id)
+      : undefined;
+  }
+
   // DEV 演示回放:仅 fixture 任务端口实现该可选方法时才出现
   const replay =
     import.meta.env.DEV && "replayDemoEvents" in gateway.task
@@ -148,17 +183,18 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
 
   return (
     <div className="vua-shell__taskbar">
-      {expanded && (view.tasks.length > 0 || replay) ? (
+      {expanded && (notifications.length > 0 || replay) ? (
         <div className="vua-taskbar__panel" role="region" aria-label={copy.title}>
-          {view.tasks.length > 0 ? (
+          {notifications.length > 0 ? (
             <ul className="vua-taskbar__list">
-              {view.tasks.map((task) => (
+              {notifications.map((task) => (
                 <TaskRow
                   key={task.id}
                   task={task}
                   rejected={rejectedId === task.id}
                   onCancel={() => void handleCancel(task.id)}
                   onRetry={() => void handleRetry(task.id)}
+                  onDismiss={dismissVisible(task)}
                   onBackToOrigin={() => {
                     setExpanded(false);
                     navigate(task.originPage);
@@ -167,6 +203,16 @@ export function Taskbar({ navigate }: { navigate: (target: PageId) => void }) {
               ))}
             </ul>
           ) : null}
+          <div className="vua-taskbar__filters">
+            <label className="vua-taskbar__show-completed">
+              <input
+                type="checkbox"
+                checked={showCompleted}
+                onChange={(event) => setShowCompleted(event.target.checked)}
+              />{" "}
+              {copy.showCompleted}
+            </label>
+          </div>
           {replay ? (
             <div className="vua-taskbar__devtools">
               <Button variant="subtle" onClick={replay}>

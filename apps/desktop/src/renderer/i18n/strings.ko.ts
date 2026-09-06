@@ -77,13 +77,15 @@ export const strings: Strings = {
     },
   },
   taskCenter: {
-    title: "태스크 센터",
+    title: "알림 센터",
     expandAria: "태스크 목록 펼치기, {count}개",
     collapseAria: "태스크 목록 접기",
     runningSummary: "{title} 외 {count}개",
     idleSummary: "실행 중인 태스크가 없습니다",
     backToOrigin: "원래 페이지로",
     cancel: "취소",
+    clear: "지우기",
+    showCompleted: "완료 항목 표시",
     cancelRejected: "지금은 이 태스크를 취소할 수 없습니다",
     retry: "재시도",
     retryRejected: "이 작업은 지금 다시 시도할 수 없습니다",
@@ -121,6 +123,7 @@ demoTaskTitle: "데모 작업",
       settingsGoals: "목표 다시 선택",
       settingsLanguage: "언어",
       settingsTheme: "테마",
+      settingsExperimental: "실험적",
       settingsVersion: "버전",
       settingsAbout: "정보",
       settingsDonate: "후원",
@@ -1282,6 +1285,17 @@ rolled_back: "롤백됨",
     skip: "건너뛰기",
   },
   settings: {
+    /** 실험적 기능 페이지(proposal 007 경로 b). 토글은 사용자 설정으로 입구
+     *  표시만 제어하며, 전역 기본값은 서버 설정에 따르므로 여기서는 읽기
+     *  전용으로 표시합니다. */
+    experimental: {
+      title: "실험적 기능",
+      badge: "실험적",
+      warehouseModeTitle: "VPM 생성 모드 입구",
+      warehouseModeDesc: "켜면 창고 항목 상세에 아티팩트 모드 편집과 「VPM 생성 / 오리지널 삭제」 항목 작업을 표시합니다(동결된 bdl-commands v0.1 항목 수준 명령 사용). 전역 기본값은 서버 설정으로 결정되며, 여기에 전역 기본값 스위치는 없습니다. 끄면 입구만 숨겨지며 저장된 모드는 변경되지 않습니다.",
+      on: "켬",
+      off: "끔",
+    },
     goals: {
       heading: "목표 다시 선택",
       description: "첫 실행의 목표 선택을 다시 진행합니다. 현재 선택은 확인하기 전까지 유지됩니다.",
