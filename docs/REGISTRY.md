@@ -34,7 +34,7 @@
 | docs/protocols/unity-bridge-v1_ZH.md | v1 | 已接受 | 产线 | 2026-09-06 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/design/design-standard_ZH.md | 0.6.1 | 已接受 | 桌面 | 2026-09-06 |
-| docs/development-outline_ZH.md | 2.0.0 | 已接受 | 集成 | 2026-09-06 |
+| docs/development-outline_ZH.md | 2.0.1 | 已接受 | 集成 | 2026-09-07 |
 | docs/meta/documentation-governance_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | CONTRIBUTING_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/REGISTRY.md | 事件驱动 | 已接受 | 集成 | 2026-09-06 |
