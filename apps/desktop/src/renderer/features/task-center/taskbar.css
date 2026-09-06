@@ -39,9 +39,8 @@
   max-height: 40vh;
   overflow: auto;
   /* 展开列表属大型浮层:12px 圆角 + 玻璃质感 + 辉光阴影 */
-  background: color-mix(in srgb, var(--vua-bg-elevated) 85%, transparent);
-  backdrop-filter: blur(18px) saturate(1.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+  /* 走查#2:backdrop-filter 合成层在行移除时留下裁切残影,改实底(92%)消除 */
+  background: color-mix(in srgb, var(--vua-bg-elevated) 92%, transparent);
   border: 1px solid var(--vua-border-strong);
   border-radius: var(--vua-radius-overlay);
   box-shadow: var(--vua-shadow-elevated);

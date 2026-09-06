@@ -8,6 +8,7 @@ export type IconName =
   | "check"
   | "warning"
   | "close"
+  | "error-circle"
   | "question"
   | "arrow-right"
   | "flask"
@@ -28,6 +29,7 @@ const paths: Record<IconName, string> = {
   check: "M5 12.5l4.5 4.5L19 7.5",
   warning: "M12 4 L21 20 H3 Z M12 10v4 M12 17v.5",
   close: "M6 6l12 12M18 6L6 18",
+  "error-circle": "M12 3a9 9 0 100 18 9 9 0 000-18 Z M12 7.5v5.5 M12 16.2v.5",
   question: "M9.5 9a2.5 2.5 0 1 1 3.4 2.34c-.83.3-.9 1-.9 1.66M12 17v.5",
   "arrow-right": "M4 12h15M13 6l6 6-6 6",
   "arrow-left": "M20 12H5M11 6l-6 6 6 6",

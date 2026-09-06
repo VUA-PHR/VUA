@@ -16,6 +16,7 @@
  * 模块不得有顶层副作用(与 tutorial-overlay-dev.ts 同一纪律):定时器在
  * createDemoOverlayPort() 内启动,推进到尾声或会话结束后自行停止。
  */
+import { format, strings } from "../../../i18n/index.ts";
 import { fixtureStrings } from "../../../i18n/strings.fixtures.zh-CN.ts";
 import type { OverlaySnapshot } from "../overlay-contract.ts";
 import type { OverlaySurfacePort, Unsubscribe } from "../overlay-port.ts";
@@ -40,7 +41,7 @@ function buildInitialSnapshot(): OverlaySnapshot {
     },
     status: { tone: "active", title: copy.statusTitle, detail: copy.statusDetail },
     task: {
-      title: fixtureStrings.tasks.assembly.title,
+      title: format(strings.taskTitles.assembly, { name: "Summer_Uniform" }),
       stage: "execute",
       progress: { done: 3, total: PROGRESS_TOTAL },
       cancellable: true,

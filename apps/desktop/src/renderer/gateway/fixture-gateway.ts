@@ -1,4 +1,4 @@
-import { format, termLabel } from "../i18n/index.ts";
+import { format, strings, termLabel } from "../i18n/index.ts";
 import { fixtureStrings } from "../i18n/strings.fixtures.zh-CN.ts";
 import type { CheckItem, CheckZone, VersionTrack, ZoneCheckResult, ZonePhase } from "../features/deployer/deployer-model.ts";
 import type { LogEntry, StageNode } from "../features/workshop/track-model.ts";
@@ -190,12 +190,14 @@ const fixtureFixPlans: Record<string, FixPlanV1> = {
 
 /* ---- 任务演示负载(demo-tasks) ---- */
 
-const taskCopy = fixtureStrings.tasks;
+// 走查#4 四语化:任务标题/说明改按当前语言动词模板组合,实体名保持原文
+const titleCopy = strings.taskTitles;
+const demoName = { assembly: "Summer_Uniform", downloadActive: "Summer_Uniform_ADDONS ver2.0", downloadInterrupted: "Miko_Dress_fix ver1.1", downloadCancelled: "Stage_Props_pack ver0.9", downloadPolicyRefused: "tool_installer.exe" };
 
 const demoTasks: TaskItem[] = [
   {
     id: "task-assembly",
-    title: taskCopy.assembly.title,
+    title: format(titleCopy.assembly, { name: demoName.assembly }),
     status: "running",
     progress: { done: 42, total: 100 },
     originPage: "workshop",
@@ -203,15 +205,15 @@ const demoTasks: TaskItem[] = [
   },
   {
     id: "task-envcheck",
-    title: taskCopy.envCheck.title,
+    title: titleCopy.envCheck,
     status: "completedWithWarnings",
     originPage: "env-create",
     cancellable: false,
-    errorText: taskCopy.envCheck.warning,
+    errorText: titleCopy.envCheckWarning,
   },
   {
     id: "task-scan",
-    title: taskCopy.warehouseScan.title,
+    title: titleCopy.warehouseScan,
     status: "completed",
     originPage: "warehouse",
     cancellable: false,
@@ -222,7 +224,7 @@ const demoTasks: TaskItem[] = [
    * (不可重试),均由任务级动作交 AMF 裁决,fixture 端口镜像同一语义。 */
   {
     id: "task-download-active",
-    title: taskCopy.downloadActive.title,
+    title: format(titleCopy.download, { name: demoName.downloadActive }),
     status: "running",
     progress: { done: 34, total: 100 },
     originPage: "warehouse",
@@ -230,26 +232,26 @@ const demoTasks: TaskItem[] = [
   },
   {
     id: "task-download-interrupted",
-    title: taskCopy.downloadInterrupted.title,
+    title: format(titleCopy.download, { name: demoName.downloadInterrupted }),
     status: "failed",
     originPage: "warehouse",
     cancellable: false,
-    errorText: taskCopy.downloadInterrupted.errorText,
+    errorText: titleCopy.downloadInterruptedNote,
   },
   {
     id: "task-download-cancelled",
-    title: taskCopy.downloadCancelled.title,
+    title: format(titleCopy.download, { name: demoName.downloadCancelled }),
     status: "cancelled",
     originPage: "warehouse",
     cancellable: false,
   },
   {
     id: "task-download-policy",
-    title: taskCopy.downloadPolicyRefused.title,
+    title: format(titleCopy.download, { name: demoName.downloadPolicyRefused }),
     status: "failed",
     originPage: "warehouse",
     cancellable: false,
-    errorText: taskCopy.downloadPolicyRefused.errorText,
+    errorText: titleCopy.downloadPolicyRefusedNote,
   },
 ];
 
