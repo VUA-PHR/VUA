@@ -58,6 +58,10 @@ import {
   buildDiagnostics,
   downloadDiagnostics,
 } from "./features/settings/diagnostics.ts";
+import {
+  saveWarehouseExperimentalMode,
+  useWarehouseExperimentalMode,
+} from "./app/warehouse-experimental-mode.ts";
 import { appMeta } from "./app/app-meta.ts";
 import { NavOverflowMenu } from "./app/NavOverflowMenu.tsx";
 import { openExternalUrl } from "./app/open-external.ts";
@@ -166,6 +170,42 @@ function PlaceholderPage({ title, description }: { title: string; description: s
       </section>
       {/* 空态面板不再套大灰框(§氛围基线 #11):吉祥物静态帧 + 文案直放页面 */}
       <EmptyState title={strings.placeholders.notOpenTitle} description={description} />
+    </div>
+  );
+}
+
+/**
+ * 设置-实验性页(proposal 007 路径 b):产物模式实验开关是用户偏好(localStorage),
+ * 只控制仓储条目抽屉中模式编辑/条目动作入口的显隐;命令面为已冻结的
+ * bdl-commands v0.1 条目级三命令。全局默认由服务端配置(provider 运行时),
+ * 此处只读呈现「由服务端配置」,不提供全局默认写入口(须先协议升版)。
+ */
+function ExperimentalSettingsPage() {
+  const on = useWarehouseExperimentalMode();
+  const copy = strings.settings.experimental;
+  return (
+    <div className="vua-page">
+      <section className="vua-page__hero">
+        <h1 className="vua-title">{strings.nav.pages.settingsExperimental}</h1>
+      </section>
+      <Card>
+        <div className="vua-page__stack">
+          <h2 className="vua-title">{copy.title}</h2>
+          <div>
+            <span className="vua-caption vua-text-secondary">{copy.badge}</span>
+            <strong>{copy.warehouseModeTitle}</strong>
+            <div className="vua-page__stack">
+              <Button
+                variant={on ? "primary" : "default"}
+                onClick={() => saveWarehouseExperimentalMode(!on)}
+              >
+                {on ? copy.on : copy.off}
+              </Button>
+              <p className="vua-caption vua-text-secondary">{copy.warehouseModeDesc}</p>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -512,6 +552,8 @@ function renderPage(
       return <ThemeSettingsPage {...prefs} />;
     case "settings-version":
       return <VersionPage />;
+    case "settings-experimental":
+      return <ExperimentalSettingsPage />;
     case "settings-about":
       return <AboutPage />;
     case "settings-donate":

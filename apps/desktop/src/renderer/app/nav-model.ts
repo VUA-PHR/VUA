@@ -46,6 +46,7 @@ export type PageId =
   | "settings-language"
   | "settings-theme"
   | "settings-version"
+  | "settings-experimental"
   | "settings-about"
   | "settings-donate";
 
@@ -179,6 +180,7 @@ export const settingsModule: ModuleDef = {
         { id: "settings-language", labelKey: "settingsLanguage" },
         { id: "settings-theme", labelKey: "settingsTheme" },
         { id: "settings-version", labelKey: "settingsVersion" },
+        { id: "settings-experimental", labelKey: "settingsExperimental" },
         { id: "settings-about", labelKey: "settingsAbout" },
         { id: "settings-donate", labelKey: "settingsDonate" },
       ],
