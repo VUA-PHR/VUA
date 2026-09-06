@@ -89,6 +89,19 @@ export const strings: Strings = {
     },
   },
   /** 任务中心(G3;九态文案在 taskStatus,此处为框架与操作文案) */
+  /** 任务标题模板(F4-9 走查#4 四语化):动词与状态描述走 i18n,实体名保持原文。
+   *  fixture 演示任务在装配时按当前语言组合,通知中心零特判渲染。 */
+  taskTitles: {
+    assembly: "装配 {name}:骨骼绑定与菜单生成",
+    download: "下载 {name}",
+    downloadInterruptedNote: "下载中断:连接已断开,已接收部分可续传。",
+    downloadPolicyRefusedNote: "下载已被策略拒绝:来源或文件形态不在允许清单内,未落盘。",
+    envCheck: "创作环境检测",
+    envCheckWarning: "VPM 环境未通过验证",
+    warehouseScan: "仓库素材扫描",
+    generateVpm: "生成 VPM:{name}",
+    deleteOriginals: "删除原始素材:{name}",
+  },
   taskCenter: {
     title: "通知中心",
     expandAria: "展开任务列表,共 {count} 项",
