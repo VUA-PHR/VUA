@@ -13,7 +13,8 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-use vua_orchestrator::{BdlStore, DownloadConfig};
+use vua_bdl_store::BdlStore;
+use vua_orchestrator::DownloadConfig;
 
 fn unique_dir(label: &str) -> PathBuf {
     let nanos = SystemTime::now()

@@ -404,8 +404,7 @@ impl BdlStore {
         Ok(store)
     }
 
-    #[cfg(test)]
-    pub(crate) fn open_in_memory() -> Result<Self, BdlStoreError> {
+    pub fn open_in_memory() -> Result<Self, BdlStoreError> {
         let store = Self {
             path: None,
             connection: Mutex::new(Connection::open_in_memory()?),
@@ -1180,8 +1179,7 @@ impl BdlStore {
     /// Seed one minimal synthetic observed-product row (boundary IN-1). The
     /// real row belongs to the observation pipeline; tests need it only so
     /// artifact mappings can reference a product that was "observed".
-    #[cfg(test)]
-    pub(crate) fn seed_product(
+    pub fn seed_product(
         &self,
         product_id: &str,
         native_product_id: &str,

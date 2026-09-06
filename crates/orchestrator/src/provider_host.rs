@@ -14,15 +14,16 @@ use crate::project_lock::{
     MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
     MARKER_FILE_NAME,
 };
-use crate::download_events::{
+use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
     IngestOutcome, RetryDecision,
 };
 use crate::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
     IdempotentTaskAcceptance, NewTask, ProjectIdentity, SqliteStoreError, SqliteTaskStore,
-    BdlStore, StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
+    StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
+use vua_bdl_store::bdl_store::BdlStore;
 use crate::contracts::ParamValue;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -1009,7 +1010,7 @@ fn download_ingest(
     correlation_id: &str,
 ) -> FrameOutcome {
     if request.pointer("/params/schemaVersion").and_then(Value::as_str)
-        != Some(crate::download_events::DOWNLOAD_EVENT_SCHEMA_VERSION)
+        != Some(vua_bdl_store::download_events::DOWNLOAD_EVENT_SCHEMA_VERSION)
     {
         return FrameOutcome::Response(application_error(
             request_id,
@@ -1081,7 +1082,7 @@ fn fold_download_task(
     let task_id = format!("dl-{}-a{}", event.download_id, event.attempt);
     let occurred_at = event.occurred_at.as_str();
     match event.kind {
-        crate::download_events::DownloadEventKind::Started => {
+        vua_bdl_store::download_events::DownloadEventKind::Started => {
             if state.store.task(&task_id)?.is_none() {
                 state.store.accept_task(&NewTask {
                     task_id: task_id.clone(),
@@ -1125,7 +1126,7 @@ fn fold_download_task(
                 }
             }
         }
-        crate::download_events::DownloadEventKind::Progress => {
+        vua_bdl_store::download_events::DownloadEventKind::Progress => {
             if let Some(task) = state.store.task(&task_id)? {
                 if task.state == TaskState::Running {
                     state.store.mutate_task(
@@ -1144,8 +1145,8 @@ fn fold_download_task(
         }
         // interrupted returns to downloading: no task-side transition (the
         // same-attempt progress proves the resume).
-        crate::download_events::DownloadEventKind::Interrupted => {}
-        crate::download_events::DownloadEventKind::Completed => {
+        vua_bdl_store::download_events::DownloadEventKind::Interrupted => {}
+        vua_bdl_store::download_events::DownloadEventKind::Completed => {
             complete_download_task(
                 state,
                 &task_id,
@@ -1154,7 +1155,7 @@ fn fold_download_task(
                 None,
             )?;
         }
-        crate::download_events::DownloadEventKind::Cancelled => {
+        vua_bdl_store::download_events::DownloadEventKind::Cancelled => {
             complete_download_task(
                 state,
                 &task_id,
@@ -1163,12 +1164,12 @@ fn fold_download_task(
                 None,
             )?;
         }
-        crate::download_events::DownloadEventKind::Failed => {
+        vua_bdl_store::download_events::DownloadEventKind::Failed => {
             let failure_kind = event
                 .failure_kind
                 .map(|kind| match kind {
-                    crate::download_events::DownloadFailureKind::Policy => "policy",
-                    crate::download_events::DownloadFailureKind::Unknown => "unknown",
+                    vua_bdl_store::download_events::DownloadFailureKind::Policy => "policy",
+                    vua_bdl_store::download_events::DownloadFailureKind::Unknown => "unknown",
                 })
                 .unwrap_or("unknown");
             let error = AppErrorV1::new(

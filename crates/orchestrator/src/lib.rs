@@ -7,14 +7,11 @@
 
 mod artifact_inspection;
 mod assembly;
-mod bdl_queries;
-mod bdl_store;
 mod booth_extraction;
 mod bridge;
 mod build_record;
 mod capability;
 mod contracts;
-mod download_events;
 mod editor_targets;
 mod environment;
 mod environment_managers;
@@ -57,17 +54,6 @@ pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
 };
-pub use bdl_queries::{
-    availability_status, ArtifactInspectionVerdict, AvailabilityStatus, BdlQueryOperation,
-    CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
-};
-pub use bdl_store::{
-    ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
-    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole, EventAppendence,
-    NewLocalArtifact, StoredArtifact, StoredArtifactCopy, StoredDownloadEvent,
-    StoredWarehouseItem, WarehouseArtifactFact, WarehouseArtifactRef, WarehouseEntryCard,
-    WarehouseEntryDetail, WAREHOUSE_ITEM_KINDS, BDL_FORMAT_VERSION,
-};
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
@@ -88,12 +74,6 @@ pub use capability::{
 pub use contracts::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
     TaskState, ENVELOPE_SCHEMA_VERSION,
-};
-pub use download_events::{
-    backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
-    DownloadEventKind, DownloadEventV01, DownloadFailureKind, DownloadLifecycle, DownloadPhase,
-    IngestOutcome, RetryDecision, StagingCompletion, DOWNLOAD_EVENT_SCHEMA_VERSION,
-    MAX_DOWNLOAD_ATTEMPTS,
 };
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,

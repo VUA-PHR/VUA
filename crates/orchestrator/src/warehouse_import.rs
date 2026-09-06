@@ -15,7 +15,7 @@
 //! name.
 
 use crate::artifact_inspection::{hex_lower, mechanical_rejection, sha256_file, InspectionPolicy};
-use crate::bdl_store::{
+use vua_bdl_store::bdl_store::{
     ArtifactInspectionState, ArtifactMode, ArtifactRecordingOutcome, BdlStore, BdlStoreError,
     CopyRole, NewLocalArtifact, WarehouseEntryDetail,
 };
@@ -392,7 +392,7 @@ pub fn submit_warehouse_import(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bdl_queries::ArtifactInspectionVerdict;
+    use vua_bdl_store::bdl_queries::ArtifactInspectionVerdict;
     use crate::time::FixedClock;
 
     fn unique_dir(tag: &str) -> PathBuf {

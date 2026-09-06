@@ -18,11 +18,11 @@
 //! per content: re-inspecting an already-concluded artifact returns the
 //! stored verdict instead of erroring.
 
-use crate::bdl_store::{
+use vua_bdl_store::bdl_store::{
     ArtifactInspectionState, ArtifactRecordingOutcome, BdlStore, BdlStoreError, NewLocalArtifact,
     StoredArtifact,
 };
-use crate::download_events::{ConsumerError, DownloadEventConsumer};
+use vua_bdl_store::download_events::{ConsumerError, DownloadEventConsumer};
 use crate::time::Clock;
 use sha2::{Digest, Sha256};
 use std::io::Read;
@@ -363,8 +363,8 @@ pub(crate) fn hex_lower(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bdl_store::ArtifactInspectionState as StorageState;
-    use crate::download_events::{
+    use vua_bdl_store::bdl_store::ArtifactInspectionState as StorageState;
+    use vua_bdl_store::download_events::{
         DownloadEventKind, DownloadEventV01, DOWNLOAD_EVENT_SCHEMA_VERSION,
     };
     use crate::time::FixedClock;

@@ -20,7 +20,7 @@
 //! reported in the task result — the audit trail the adjudication requires.
 
 use crate::artifact_inspection::{hex_lower, sha256_file};
-use crate::bdl_store::{
+use vua_bdl_store::bdl_store::{
     ArtifactMode, BdlStore, BdlStoreError, CopyRole,
 };
 use crate::contracts::{ErrorCategory, ParamValue};
@@ -205,10 +205,10 @@ fn maintenance_error_to_app(error: MaintenanceError, correlation_id: &str) -> cr
 /// Guards (a)/(b): the entry holds generated VPM copies and every one of
 /// them physically exists with content matching its recorded identity.
 fn verify_generated_copies(
-    copies: &[crate::bdl_store::StoredArtifactCopy],
+    copies: &[vua_bdl_store::bdl_store::StoredArtifactCopy],
     entry_id: &str,
 ) -> Result<Option<String>, MaintenanceError> {
-    let generated: Vec<&crate::bdl_store::StoredArtifactCopy> = copies
+    let generated: Vec<&vua_bdl_store::bdl_store::StoredArtifactCopy> = copies
         .iter()
         .filter(|copy| copy.role == CopyRole::GeneratedVpm)
         .collect();
@@ -260,7 +260,7 @@ fn run_delete_originals(
     let copies = store.entry_copies(&spec.warehouse_item_id)?;
     let kept_generated = verify_generated_copies(&copies, &spec.warehouse_item_id)?;
 
-    let originals: Vec<&crate::bdl_store::StoredArtifactCopy> = copies
+    let originals: Vec<&vua_bdl_store::bdl_store::StoredArtifactCopy> = copies
         .iter()
         .filter(|copy| copy.role == CopyRole::Original)
         .collect();
@@ -438,7 +438,7 @@ fn run_generate_vpm(
     }
 
     let copies = store.entry_copies(&spec.warehouse_item_id)?;
-    let originals: Vec<&crate::bdl_store::StoredArtifactCopy> = copies
+    let originals: Vec<&vua_bdl_store::bdl_store::StoredArtifactCopy> = copies
         .iter()
         .filter(|copy| copy.role == CopyRole::Original)
         .collect();
@@ -578,7 +578,7 @@ fn now_rfc3339() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bdl_store::NewLocalArtifact;
+    use vua_bdl_store::bdl_store::NewLocalArtifact;
     use crate::contracts::TaskState;
     use crate::runtime::TaskSnapshot;
     use crate::time::{FixedIdGenerator, SystemClock};

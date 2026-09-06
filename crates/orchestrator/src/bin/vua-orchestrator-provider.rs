@@ -21,7 +21,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // the provider serves download.ingest / download.retry and folds port
     // events into the BDL database under <data>/bdl.
     let downloads = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
-        let bdl = vua_orchestrator::BdlStore::open(
+        let bdl = vua_bdl_store::BdlStore::open(
             std::path::Path::new(&data).join("bdl").join("bdl.db"),
         )
         .map(std::sync::Arc::new)
