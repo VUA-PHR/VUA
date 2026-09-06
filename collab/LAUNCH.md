@@ -18,16 +18,20 @@ git worktree list   # 应有 VUA(main) + VUA-2..VUA-6(slot/wt-2..6)
 
 ## 2. 首轮：六个进程入职
 
-开六个 CLI 进程，工作目录与首条消息（**粘贴文件全文，只发一次**）：
+ZCode 子智能体**已创建，勿重复创建**（系统提示词的改动先改
+`collab/roles/system-prompts/<role>.md` 文件，再同步进子智能体配置）：
 
-| 进程 | 工作目录 | 首条消息（入职提示词） | 槽位分支 |
-| --- | --- | --- | --- |
-| 集成 | `C:\Users\AR\Documents\VUA` | `collab/roles/integration.md` | main |
-| 核心 | `C:\Users\AR\Documents\VUA-2` | `collab/roles/core.md` | slot/wt-2 |
-| 桌面 | `C:\Users\AR\Documents\VUA-3` | `collab/roles/desktop.md` | slot/wt-3 |
-| 产线 | `C:\Users\AR\Documents\VUA-4` | `collab/roles/production.md` | slot/wt-4 |
-| 数据 | `C:\Users\AR\Documents\VUA-5` | `collab/roles/data.md` | slot/wt-5 |
-| 环境 | `C:\Users\AR\Documents\VUA-6` | `collab/roles/environment.md` | slot/wt-6 |
+| 进程 | 子智能体（描述） | 模型/工具 | 工作目录 | 首条消息（入职提示词全文，只发一次） | 槽位分支 |
+| --- | --- | --- | --- | --- | --- |
+| 集成 | Integration（VUA集成子代理） | GLM-5.3-Flash / 全部工具 | `C:\Users\AR\Documents\VUA` | `collab/roles/integration.md` | main |
+| 核心 | Core（VUA核心子代理） | 同上 | `C:\Users\AR\Documents\VUA-2` | `collab/roles/core.md` | slot/wt-2 |
+| 桌面 | Desktop（VUA桌面子代理） | 同上 | `C:\Users\AR\Documents\VUA-3` | `collab/roles/desktop.md` | slot/wt-3 |
+| 产线 | Production（VUA产线子代理） | 同上 | `C:\Users\AR\Documents\VUA-4` | `collab/roles/production.md` | slot/wt-4 |
+| 数据 | Data（VUA数据子代理） | 同上 | `C:\Users\AR\Documents\VUA-5` | `collab/roles/data.md` | slot/wt-5 |
+| 环境 | Environment（VUA环境子代理） | 同上 | `C:\Users\AR\Documents\VUA-6` | `collab/roles/environment.md` | slot/wt-6 |
+
+各子智能体的「系统提示词」字段内容来自 `collab/roles/system-prompts/<role>.md`，
+「注入 AGENTS.md」保持开启。
 
 入职完成标志：各进程输出其读到的 BOARD 摘要与本角色当前任务。
 
@@ -47,4 +51,6 @@ git worktree list   # 应有 VUA(main) + VUA-2..VUA-6(slot/wt-2..6)
 
 ## 修订记录
 
+- v1.1（2026-09-07）：登记已创建的六个 ZCode 子智能体（勿重复创建）；系统提示词独立为
+  `collab/roles/system-prompts/<role>.md`。
 - v1（2026-09-07）：初版。
