@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.1
+> Document version: 2.0.2
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.1)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.2)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -90,7 +90,10 @@ Responsibility rules:
 
 ## Current window (M3 wrap-up and in-flight M4 work)
 
-> Snapshot date: 2026-09-06 (W12 added 2026-09-07). Every task in this window is decomposed to a role; once complete, the
+> Snapshot date: 2026-09-06 (W12 added 2026-09-07; progress updated the same day: W2–W9
+> delivered and merged back; W1/I-1 completed 16/16 real-Unity cells and merged; W10 frozen
+> at M3 acceptance; W11 closure in execution; W12 awaits the M4 window opening). Every task
+> in this window is decomposed to a role; once complete, the
 > Integration role accepts them and advances the M3/M4 gates.
 
 | # | Task | Owning role | Collaborators | Anchor / acceptance |
@@ -230,7 +233,7 @@ history):
 | T1 Seven-method Schema + fixed vectors (amf-production v0.2) | Production | ✅ Delivered |
 | T2 production-surface v0.2 TS registration batch | Desktop | ✅ Delivered |
 | I-3 branch integration | Integration | ✅ Completed 2026-09-06 |
-| I-1 real Unity matrix | Production | ⏸ window W1 |
+| I-1 real Unity matrix | Production | ✅ Completed 2026-09-07 (16/16 cells on real Unity, merged 5ccace6; evidence `_local_w1/`) |
 
 ### M4 — v0.6.0: Warehouse, acquisition, and BDL
 
@@ -462,6 +465,9 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.2 (2026-09-07): M3 closure update — I-1 completed (16/16 real-Unity cells), current
+  window progress note, W10/production-use-case v0.1 and amf-production v0.2 frozen at M3
+  acceptance.
 - 2.0.1 (2026-09-07): the current window gains W12 (catalog observation-pipeline service face,
   owned by Data, executed when the M4 window opens) — making the desktop W6/W7 walkthrough's
   implicit wait on the data-side observation pipeline an explicit M4-prerequisite schedule
