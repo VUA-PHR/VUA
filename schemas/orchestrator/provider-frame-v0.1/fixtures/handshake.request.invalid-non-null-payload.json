@@ -1,0 +1,6 @@
+{
+  "frameVersion": "0.1",
+  "frameId": "handshake-req-1",
+  "kind": "handshake",
+  "payload": { "probedField": true }
+}

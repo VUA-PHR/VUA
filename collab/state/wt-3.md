@@ -2,26 +2,25 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 4b8be26
+baseline_commit: f496924
 updated: 2026-09-07
 ---
 ## 当前焦点
-W6(F4-7)域内完成待合并;W7(F4-8)进行中:聚合冒烟+abandon 语义修复已交付(4b8be26),
-剩验收矩阵/走查清单参数化起草与 BOOTH 允许清单审阅;W9 依赖 W8 协议冻结。
-## 自基线交付(2cf559d..4b8be26)
-- main 同步合并(c8439c6);F4-8 切片 4b8be26:
-  1) smoke:f4-deliverables 聚合三红线冒烟(permissions/remote-content/download-port,
-     _local_m4 证据摘要,真实运行 3/3 过);
-  2) 修冒烟退出码吞噬缺陷(app.quit() 丢 process.exitCode→app.exit,失败曾恒 exit 0);
-  3) abandon 语义对齐冻结三值词汇:冒烟断言系 F4-3 二值时代遗留(实现本身符合
-     「abandon=terminal give-up」),补 retry 重绑断言段 + partitionSession 注入;
-  4) applyIntent doc 注释同步修正。pnpm check 全链绿(171 指纹零泄漏)。
+W6/W7 域内完成并已回流 main(f496924);BOARD #3(proposal 002 ageRestriction TS
+镜像)已按数据侧精确规格执行并回执,等数据角色核对词表后关闭;W9 等 W8。
+## 自基线交付(46abdd6..f496924)
+- main 同步(b9b7d2b:W2 handshake schema 冻结切片等);
+- proposal 002 落地(c5c8d35+da0d87c):CatalogProductDetailV03 补 schema required
+  字段 ageRestriction(string|null,置于 adult 前,对齐 v0.3 属性序),两例编译锁定
+  回归测试(显式值/null);live 防御收窄未动(行为已正确);线程回执,等数据核对关闭;
+- 两次合并者复验全绿(contracts 25 测试+桌面 check,171 指纹零泄漏);
+  本树同步 f496924,无在途分叉。
 ## 阻塞
 - catalog 三方法服务面待数据角色观察管线(不变)。
 ## 下次合并意图
-W7 矩阵/审阅文档定稿后一并 --no-ff 合并回 main(F4-7+联合切片)。
+无在途分叉;下一切片完成后再合并。
 ## 留言
-- F4-7 状态:载体+5 测试已锁表现层完备性;DEV 目视走查执行归 F4-8 参数化清单
-  (待起草)与用户 DEV 会话,未执行不宣称。
-- [→集成] F4-7 域内完成,合并请求随 W7 首批文档定稿一并发出。
+- W7 剩余:W1–W10 目视走查需 GUI 会话(自动化已锁状态机/投影/红线);
+- W9(F4-9 三命令 UI)等核心/数据的 W8 协议冻结,冻结即开工(表现层规格已备
+  f4-task-breakdown F4-9 行);
 - F5/F6 预审稿在 docs/plans(本地草稿),正式对齐走 proposals。

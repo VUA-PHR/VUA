@@ -3,7 +3,8 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07 02:0x（wt-5 W4 切片自并入 main〔60e434f：acquisition 登记缺陷修复+补测〕，集成复核 cargo test --workspace 全绿 + clippy 0 告警；U6 开窗请求与 proposal 004 线程经 1cad93d/a02f143 并入）
+最近更新：2026-09-07 02:2x（W2 握手帧面冻结经 a7f87df 并入，集成复核双侧全绿；#2/#4 销账；
+契约表增 bdl-commands v0.1 与 provider-process v0.2；004 双方收敛选项 3；Cargo.lock 两度补漏）
 
 ## 工作树指派
 
@@ -39,6 +40,8 @@ M3 进度：
 | 契约/制品 | 版本 | 状态 |
 | --- | --- | --- |
 | application-contract | v0.1 | 冻结（M2 冻结） |
+| provider-process（协议本/握手帧面） | v0.2 | 握手帧面 Schema 冻结（provider-frame-v0.1 + 双端 11 向量；proposal 001 关闭） |
+| bdl-commands | v0.1 | 已冻结（W8：Schema＋向量＋消费测试；跨域接线见 proposal 005） |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
 | unity-bridge | v1 | 冻结 |
@@ -51,13 +54,11 @@ M3 进度：
 
 | # | 问题 | 归属 | 载体 |
 | --- | --- | --- | --- |
-| 1 | I-1 真机窗口未开，M3 无法验收 | 集成树 | 等待真机 |
-| 2 | 帧协议 v0.1 handshake 无机器可读 Schema | 核心 | proposal 001 |
-| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | 数据＋桌面 | proposal 002 |
-| 4 | generate-VPM / delete-originals / set_artifact_mode 零测试 | 数据 | proposal 003；已由数据补测并修登记缺陷（eae1550，经 60e434f 入 main），待核心核对提案线程后关闭 |
-| 5 | F4-9 三命令协议未排期 | 核心＋桌面 | 未排期 |
-| 6 | environment_managers 因深耦合未随 project-manager 拆出 | 环境 | proposal 004 |
-| 7 | production_host 套件偶发失败一次（拆分后首次全量链，1/5 运行；其后 4 连绿，疑似时序敏感，未定名） | 核心 | 观察项，复现即立项 |
+| 1 | I-1 真机窗口未开，M3 无法验收 | 集成树 | 等待真机（升级见 U6） |
+| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | 数据＋桌面 | proposal 002；数据侧已核实并给出精确镜像规格（e82adbb），待桌面 TS 面执行 |
+| 5 | F4-9 三命令协议未排期 | 核心＋桌面 | 已解冻：词表在 bdl-commands v0.1 冻结，接线分工见 proposal 005 |
+| 6 | environment_managers 因深耦合未随 project-manager 拆出 | 环境 | proposal 004 已收敛：环境＋核心一致选项 3（含切片边界），环境切片待执行（架构级，U2 留用户确认） |
+| 7 | 未定名瞬败观察：核心 W2 期间 workspace 一次 4passed/1failed（后 3 连轮全绿）；数据报 import-task 一次性瞬败——同模式疑似时序敏感 | 核心＋数据 | 观察项，复现即立项 |
 
 ## 待用户裁决
 
@@ -67,7 +68,7 @@ M3 进度：
 | # | 事项 | 提出方 | 需要用户决定 |
 | --- | --- | --- | --- |
 | U1 | EAC 实验性恢复的边界裁决稿 | 环境 | 批准边界条款后才有实现（M6 前置） |
-| U2 | environment_managers 拆分三选项（proposal 004） | 环境 | 选 1/2/3 或维持现状 |
+| U2 | environment_managers 拆分三选项（proposal 004） | 环境 | ~~选 1/2/3~~ 环境＋核心已技术收敛于选项 3（004 线程，含切片边界）；因属架构级拆分，留用户确认或默许后由环境执行切片 |
 | U3 | F6：VUA 是否写外部工具（ALCOM/VCC）管理的项目 | 桌面 | 产品语义裁决（M6 前置） |
 | U4 | remote 建立时点（现行裁决：M3 验收当日） | 集成 | 是否提前建 private 仓库让 CI 先行 |
 | U5 | VUA-2/VUA-3 内 node_modules.pre-rename 与 target.pre-rename 目录清理 | 集成 | 确认后删除（auto 模式进程禁 rm -rf；2026-09-07 核实四目录仍在） |

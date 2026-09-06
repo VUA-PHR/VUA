@@ -317,7 +317,10 @@ function isHandshake(value: unknown): value is ProviderHandshakeV01 {
     && typeof value.providerBuildId === "string"
     && value.providerBuildId.length > 0
     && typeof value.providerInstanceId === "string"
-    && value.providerInstanceId.length > 0;
+    && value.providerInstanceId.length > 0
+    // proposal 001: downloadIngest is a mandatory v0.1 capability bit; a
+    // handshake without it is the drift that once broke the F4-4 receipt loop.
+    && typeof value.downloadIngest === "boolean";
 }
 
 function isApplicationResponse(value: unknown, requestId: string): value is ApplicationResponseV01 {

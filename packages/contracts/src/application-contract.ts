@@ -434,6 +434,8 @@ export interface CatalogProductDetailV03 {
   readonly description: string | null;
   readonly shopName: string | null;
   readonly shopUrl: string | null;
+  /** BOOTH 年龄限制原词(null = 无标注;与 bdl-queries v0.3 schema required 对齐) */
+  readonly ageRestriction: string | null;
   /** 仅显式 BOOTH Adult 徽标为真 */
   readonly adult: boolean;
   readonly videoUrls: readonly string[];

@@ -174,10 +174,7 @@ fn b4_dl_001_ingest_folds_events_creates_tasks_and_answers_receipts() {
                 "frameVersion": "0.1",
                 "frameId": "f-handshake",
                 "kind": "handshake",
-                "payload": {
-                    "providerBuildId": "test",
-                    "providerInstanceId": "test",
-                },
+                "payload": null,
             }),
             frame(
                 "f1",

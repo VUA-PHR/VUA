@@ -1,0 +1,12 @@
+{
+  "frameVersion": "0.1",
+  "frameId": "handshake-req-1",
+  "kind": "event",
+  "payload": {
+    "contractVersion": "0.1",
+    "supportedContractVersions": ["0.1"],
+    "providerBuildId": "provider-build-vector",
+    "providerInstanceId": "provider-instance-vector",
+    "downloadIngest": true
+  }
+}
