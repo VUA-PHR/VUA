@@ -2,15 +2,15 @@
 
 [English](bdl-queries-v0.1_EN.md) | [简体中文](bdl-queries-v0.1_ZH.md)
 
-> **⚠️ Superseded by v0.2 (2026-09-06)**: availability revised to the dual
+> **⚠️ Superseded (2026-09-06)**: availability revised to the dual
 > field (`availabilityRaw` + `availabilityStatus`), filtering switched to the
 > derived stable enum. The current protocol is
-> [bdl-queries-v0.2_EN.md](bdl-queries-v0.2_EN.md); this document remains as
+> [bdl-queries-v0.3_EN.md](bdl-queries-v0.3_EN.md); this document remains as
 > history only, matching `schemas/bdl-queries/v0.1/` (do not edit).
 
 > Document version: 0.1
-> Status: Frozen (2026-09-06) — confirmed by both alignment replies
-> (`docs/plans/` coordination notes: `f4-catalog-gateway-alignment-to-b`,
+> Status: Superseded (2026-09-06, → bdl-queries-v0.3); historical coordination
+> notes (`docs/plans/`: `f4-catalog-gateway-alignment-to-b`,
 > `b-reply-to-f4-catalog-gateway-alignment`,
 > `f-reply-to-b4-catalog-gateway-alignment`);
 > machine-readable vocabulary in `schemas/bdl-queries/v0.1/`

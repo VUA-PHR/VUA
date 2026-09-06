@@ -218,16 +218,20 @@ function registryCheck() {
     const full = path.join(repoRoot, regPath0);
     let head = '';
     try {
-      head = readFileSync(full, 'utf8').split(/\r?\n/).slice(0, 10).join('\n');
+      head = readFileSync(full, 'utf8').split(/\r?\n/).slice(0, 16).join('\n');
     } catch {
       bad.push(`✗ ${regPath0}：文件缺失`);
       continue;
     }
-    const v = head.match(/^>\s*文档版本：\s*(.+?)\s*$/m);
-    const st = head.match(/^>\s*状态：\s*(.+?)\s*$/m);
+    const v = head.match(/^>\s*(?:文档版本|Document version)[:：]\s*(.+?)\s*$/im);
+    const st = head.match(/^>\s*(?:状态|Status)[:：]\s*(.+?)\s*$/im);
     const docVer = v ? normVer(v[1]) : null;
-    // 状态比较取“（/→”之前的词干，容忍两侧括注写法不同
-    const stem = (x) => normStatus(x).split(/[（(→]/)[0].trim();
+    // 状态比较取“（/→”之前的词干，容忍两侧括注写法不同；英文头部键按同义词归一
+    const STATUS_ALIAS = { accepted: '已接受', frozen: '已冻结', draft: '草案', superseded: '已取代', candidate: '候选' };
+    const stem = (x) => {
+      const s0 = normStatus(x).replace(/\*+/g, '').split(/[（(→—]|--/)[0].trim();
+      return STATUS_ALIAS[s0.toLowerCase()] ?? s0;
+    };
     const docStem = st ? stem(st[1]) : null;
     const regStem = stem(regStatus);
     const verOk = docVer !== null && docVer === normVer(regVer);

@@ -2,14 +2,14 @@
 
 [English](bdl-queries-v0.1_EN.md) | [简体中文](bdl-queries-v0.1_ZH.md)
 
-> **⚠️ 已被 v0.2 取代（2026-09-06）**：availability 修订为双字段
+> **⚠️ 已被取代（2026-09-06）**：availability 修订为双字段
 > （`availabilityRaw` + `availabilityStatus`），筛选改用派生稳定枚举。
-> 现行规范见 [bdl-queries-v0.2_ZH.md](bdl-queries-v0.2_ZH.md)；本文仅作历史保留，
+> 现行规范见 [bdl-queries-v0.3_ZH.md](bdl-queries-v0.3_ZH.md)；本文仅作历史保留，
 > 对应 `schemas/bdl-queries/v0.1/`（勿改）。
 
 > 文档版本：0.1
-> 状态：已冻结（2026-09-06）——B/F 双方对齐回执确认
-> （`docs/plans/` 协调稿：`f4-catalog-gateway-alignment-to-b`、
+> 状态：已取代（2026-09-06，→ bdl-queries-v0.3）；历史协调稿：
+> （`docs/plans/`：`f4-catalog-gateway-alignment-to-b`、
 > `b-reply-to-f4-catalog-gateway-alignment`、`f-reply-to-b4-catalog-gateway-alignment`）；
 > 机器可读词表见 `schemas/bdl-queries/v0.1/`
 > 范围：AMF 从本地 BDL 出的五个只读查询方法——云端目录三方法（catalog.*）与
