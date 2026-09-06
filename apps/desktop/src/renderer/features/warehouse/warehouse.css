@@ -374,6 +374,34 @@
   gap: var(--vua-space-1);
 }
 
+/* v0.3 增量:变体价列表(subproducts)与视频链接列表(videoUrls) */
+.vua-warehouse-detail__subproducts {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-warehouse-detail__subproducts li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--vua-space-2);
+  overflow-wrap: anywhere;
+}
+
+.vua-warehouse-detail__videos {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+}
+
 .vua-warehouse-detail__description {
   margin: 0;
   white-space: pre-wrap;

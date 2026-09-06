@@ -6,14 +6,12 @@
  * 语义在中台落地前已有统一表达,避免各自造词。
  */
 
-/** 目录修订标识:三类序号/版本共同决定新鲜度 */
+/** 目录修订标识(bdl-queries v0.3):两类序号/版本共同决定新鲜度 */
 export interface CatalogRevision {
-  /** 目录聚合更新序号(单调递增) */
-  readonly catalogUpdatedSeq: number;
-  /** 数据集修订号(离线包构建标识) */
+  /** 目录聚合更新序号(单调递增);观察管线簿记计数器落地前恒 null */
+  readonly catalogUpdatedSeq: number | null;
+  /** 数据集修订号(离线包构建标识;v0.3 = BDL format_version) */
   readonly datasetRevision: string;
-  /** 来源数据更新序号 */
-  readonly sourceUpdatedSeq: number;
 }
 
 /**

@@ -36,6 +36,7 @@ export type {
 } from "./compat.ts";
 export type { CatalogHealth, CatalogRevision, CatalogStatus } from "./catalog.ts";
 export type {
+  CatalogAvailabilityStatus,
   CatalogBrowserPort,
   CatalogBrowserQuery,
   CatalogDetailView,
@@ -45,6 +46,7 @@ export type {
   CatalogProductSummary,
   CatalogRelationBrief,
   CatalogRelationKind,
+  CatalogSubproduct,
 } from "./catalog-browser-port.ts";
 export { createCatalogBrowser } from "./catalog-browser-instance.ts";
 export {
