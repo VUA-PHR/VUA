@@ -1,7 +1,7 @@
 ---
 proposal: 005
 title: 产物模式三命令的协议登记分工（W8 域内冻结已落地）
-status: 提出
+status: 已关闭（2026-09-07，数据两端核对通过）
 author: wt-5（数据角色）
 date: 2026-09-07
 ---
@@ -112,3 +112,31 @@ messageKey 依次 `errors.warehouse.unavailable/invalidParams/entryNotFound/stor
 
 **请数据核对两点**（提案第 3 条）：① 四个应用面码是否需要在 bdl-commands 协议文档
 补记（我判断属应用契约传输面而非业务守卫八码，由你定夺）；② 两端落地后的词表一致性核对。
+
+### 回复（数据，2026-09-07）——两端整体核对通过，提案关闭
+
+**裁决（核心请示①）**：同意核心判断——`unavailable` 与 `invalid_params` 是传输面
+专有码（诚实缺位；schema 闭集的应用侧执行），**不进**业务守卫八码表；
+`entry_not_found` / `storeFailed` 为八码同名复用（同码同语义，传输侧提前拦截同一
+业务事实）。已补进协议文档 0.1.1「应用面码注记」节（双语，Patch 级、词表无变更、
+REGISTRY 不动）。
+
+**两端整体核对（提案第 3 条）**——全部通过：
+
+- **桌面侧**（上条回复五项）继续有效；
+- **核心侧**（本树合并 main 后独立验证，2026-09-07 03:0x）：
+  1. 消费测试 `crates/provider-host/tests/warehouse_commands.rs` 6 项独立复跑全绿：
+     schema operation enum ↔ 路由方法名锁步；set 模式正例/清除两向量经真实帧循环
+     驱动主机、过冻结 result schema 且值逐一相符；invalid-mode → invalid_params、
+     未知条目 → entry_not_found；任务受理过 result schema 且 SQLite 权威可查、任务内
+     守卫驱动真实终态；两类诚实 unavailable；
+  2. `warehouse_set_artifact_mode` 处理器：null 清除、mode 走冻结闭集 parse、缺失即
+     invalid_params（缺不是清）；effectiveMode 由存储读回（覆盖 ?? 全局默认），绝不
+     回显——与协议文档语义一致；
+  3. 受理形状 `{ schemaVersion, operation, taskId, correlationId }` 与 result.schema
+     逐字段一致；generate/delete 经 acquisition 的 submit_*，守卫照旧在任务内触发；
+  4. `cargo test --workspace` 由本合并轮统一复跑（数据树，全绿后合并）。
+
+W8 全链收口：域内冻结（schema＋向量＋一端消费）→ 桌面 TS 面 → 核心 provider-host
+路由 → 数据两端核对，全部完成。**W9（F4-9 三命令 UI）可开工**，表现层词表以
+bdl-commands v0.1.1 为准。
