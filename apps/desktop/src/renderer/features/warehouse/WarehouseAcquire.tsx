@@ -1,7 +1,6 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
-import { DelayedButton } from "../../components/primitives/DelayedButton.tsx";
 import { EmptyState } from "../../components/primitives/EmptyState.tsx";
 import {
   ContextMenu,
@@ -13,16 +12,12 @@ import {
   useGateway,
   type AcquireEntryDetailView,
   type WarehouseArtifact,
-  type WarehouseArtifactMode,
   type WarehouseArtifactState,
-  type WarehouseCommandOutcome,
-  type WarehouseEntry,
 } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import {
   artifactCardMatches,
   artifactCards,
-  entryActions,
   entryModeLine,
   sizeText,
   type AcquireArtifactCard,
@@ -122,25 +117,14 @@ type DetailState =
   | { kind: "failed" }
   | { kind: "loaded"; view: AcquireEntryDetailView };
 
-type ModeDraft = "follow" | WarehouseArtifactMode;
-
-/** 命令错误 → 本地化文案:code 是协议冻结面,键为点号转下划线;未知码回落通用失败文案 */
-function commandErrorText(error: { kind: "unavailable" | "request_rejected" | "application"; code?: string }): string {
-  if (error.kind === "application" && typeof error.code === "string") {
-    const table = copy.commandErrors as Record<string, string>;
-    return table[error.code.replaceAll(".", "_")] ?? table.fallback!;
-  }
-  return copy.commandErrors.vua_warehouse_unavailable;
-}
+/* 走查 3c 裁决(2026-09-07):模式编辑与生成/删除动作不再作为条目抽屉的默认
+ * 呈现——产品语义归「设置-实验性」入口(方案见 proposal 007,路径表态中)。
+ * 写命令端口层(warehouse-commands-port/live/fixture)保留,待入口落位后复用。 */
 
 function EntryDetail({ entryId }: { entryId: string }) {
   const gateway = useGateway();
   const [state, setState] = useState<DetailState>({ kind: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
-  // F4-9:模式编辑草稿与命令反馈(错误码如实呈现;受理 = 引导任务中心)
-  const [modeDraft, setModeDraft] = useState<ModeDraft>("follow");
-  const [busy, setBusy] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -157,28 +141,6 @@ function EntryDetail({ entryId }: { entryId: string }) {
       active = false;
     };
   }, [gateway, entryId, reloadKey]);
-
-  const loadedEntry: WarehouseEntry | null =
-    state.kind === "loaded" && state.view.kind === "detail" ? state.view.entry : null;
-
-  // 重载/切换条目后草稿跟随服务端事实(覆盖值;null = 跟随全局)
-  useEffect(() => {
-    if (loadedEntry !== null) setModeDraft(loadedEntry.artifactMode ?? "follow");
-  }, [loadedEntry]);
-
-  async function runCommand(run: () => Promise<WarehouseCommandOutcome>): Promise<void> {
-    setBusy(true);
-    setFeedback(null);
-    const outcome = await run();
-    setBusy(false);
-    if (outcome.ok) {
-      // 受理或生效事实已落:重载详情读取权威快照;进度呈现归任务中心
-      setFeedback(copy.acceptedNote);
-      setReloadKey((key) => key + 1);
-    } else {
-      setFeedback(commandErrorText(outcome.error));
-    }
-  }
 
   if (state.kind === "loading") {
     return (
@@ -228,148 +190,6 @@ function EntryDetail({ entryId }: { entryId: string }) {
       <p className="vua-caption vua-text-secondary" title={entry.folderName}>
         {entry.folderName}
       </p>
-
-      {/* F4-9 产物模式编辑:全局默认由服务端配置(不进 wire),这里只编辑条目级
-          覆盖;「跟随全局」= 清除覆盖(mode null),生效模式以服务端读回为准 */}
-      <section>
-        <h3 className="vua-warehouse-detail__section-title">{copy.modeEditTitle}</h3>
-        <div role="radiogroup" aria-label={copy.modeEditTitle}>
-          <label>
-            <input
-              type="radio"
-              name={`mode-${entry.warehouseItemId}`}
-              checked={modeDraft === "follow"}
-              onChange={() => setModeDraft("follow")}
-            />{" "}
-            {copy.modeFollowGlobalOption}
-          </label>{" "}
-          <label>
-            <input
-              type="radio"
-              name={`mode-${entry.warehouseItemId}`}
-              checked={modeDraft === "use_original_unitypackage"}
-              onChange={() => setModeDraft("use_original_unitypackage")}
-            />{" "}
-            {copy.mode.use_original_unitypackage}
-          </label>{" "}
-          <label>
-            <input
-              type="radio"
-              name={`mode-${entry.warehouseItemId}`}
-              checked={modeDraft === "generate_vpm"}
-              onChange={() => setModeDraft("generate_vpm")}
-            />{" "}
-            {copy.mode.generate_vpm}
-          </label>
-        </div>
-        <Button
-          variant="subtle"
-          disabled={busy}
-          onClick={() => {
-            setBusy(true);
-            setFeedback(null);
-            void gateway.warehouseCommands
-              .setArtifactMode(entry.warehouseItemId, modeDraft === "follow" ? null : modeDraft)
-              .then((outcome) => {
-                setBusy(false);
-                if (outcome.ok) {
-                  setReloadKey((key) => key + 1);
-                } else {
-                  setFeedback(commandErrorText(outcome.error));
-                }
-              });
-          }}
-        >
-          {busy ? copy.modeApplying : copy.modeApply}
-        </Button>
-      </section>
-
-      {/* F4-9 条目动作:可见性镜像服务端守卫(见 entryActions);删除原始为
-          审计性破坏操作,高危样式 + 延迟确认(§8.1),受理后进度走任务中心 */}
-      {entryActions(entry).length > 0 ? (
-        <section>
-          <h3 className="vua-warehouse-detail__section-title">{copy.actionsTitle}</h3>
-          {entryActions(entry).includes("generateVpm") ? (
-            <Button
-              disabled={busy}
-              onClick={() => {
-                setBusy(true);
-                setFeedback(null);
-                void gateway.warehouseCommands
-                  .generateVpm(entry.warehouseItemId)
-                  .then((outcome) => {
-                    setBusy(false);
-                    if (outcome.ok) {
-                      setFeedback(copy.acceptedNote);
-                      setReloadKey((key) => key + 1);
-                    } else {
-                      setFeedback(commandErrorText(outcome.error));
-                    }
-                  });
-              }}
-            >
-              {copy.actionGenerateVpm}
-            </Button>
-          ) : null}{" "}
-          {entryActions(entry).includes("deleteOriginals") ? (
-            <div>
-              <p className="vua-caption vua-text-secondary">{copy.deleteConfirmNote}</p>
-              <DelayedButton
-                variant="danger"
-                delayMs={1500}
-                disabled={busy}
-                onClick={() => {
-                  setBusy(true);
-                  setFeedback(null);
-                  void gateway.warehouseCommands
-                    .deleteOriginals(entry.warehouseItemId)
-                    .then((outcome) => {
-                      setBusy(false);
-                      if (outcome.ok) {
-                        setFeedback(copy.acceptedNote);
-                        setReloadKey((key) => key + 1);
-                      } else {
-                        setFeedback(commandErrorText(outcome.error));
-                      }
-                    });
-                }}
-              >
-                {copy.actionDeleteOriginals}
-              </DelayedButton>
-            </div>
-          ) : null}
-          {feedback !== null ? (
-            <p className="vua-caption vua-text-secondary" role="status">
-              {feedback}
-            </p>
-          ) : null}
-        </section>
-      ) : (
-        feedback !== null && (
-          <p className="vua-caption vua-text-secondary" role="status">
-            {feedback}
-          </p>
-        )
-      )}
-
-      <section>
-        <h3 className="vua-warehouse-detail__section-title">{copy.artifactsTitle}</h3>
-        <ul className="vua-acquire__executables">
-          {entry.artifacts.map((artifact) => (
-            <li key={artifact.artifactSha256}>
-              <div>
-                <code>{artifact.relativePath}</code>{" "}
-                <Badge tone={stateTone(artifact.state)}>{copy.verdict[artifact.state]}</Badge>{" "}
-                <Badge tone="neutral">{copy.role[artifact.role]}</Badge>{" "}
-                <span className="vua-caption vua-text-secondary">{artifactSize(artifact)}</span>
-              </div>
-              {artifact.state === "quarantined" && artifact.rejectionReason !== null ? (
-                <p className="vua-caption vua-text-secondary">{artifact.rejectionReason}</p>
-              ) : null}
-            </li>
-          ))}
-        </ul>
-      </section>
 
       {entry.artifacts.some((artifact) => artifact.state === "quarantined") ? (
         <p className="vua-caption vua-text-secondary">

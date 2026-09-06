@@ -77,7 +77,8 @@
 }
 
 .vua-warehouse__content[data-drawer-open] {
-  grid-template-columns: minmax(0, 1fr) 320px;
+  /* 走查#6:详情为右侧专门区(弹性宽),主列保持多列卡片墙不再塌成单列 */
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
 }
 
 .vua-warehouse__main {
@@ -133,7 +134,8 @@
 
 .vua-warehouse__wall {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* 走查#6:列数随窗口宽度自适应;最小 148px 保证详情区开启时主列仍可多列 */
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
   gap: var(--vua-space-3);
 }
 

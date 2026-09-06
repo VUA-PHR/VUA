@@ -1342,6 +1342,8 @@ rolled_back: "롤백됨",
   dev: {
     tag: "DEV",
     aria: "개발 시나리오 전환",
+    expandAria: "개발 시나리오 전환 펼치기",
+    collapseAria: "개발 시나리오 전환 접기",
     demoMixed: "데모 · 혼합",
     demoAllGreen: "데모 · 올 그린",
     demoWorkshop: "데모 · 작업장",
@@ -1369,11 +1371,11 @@ rolled_back: "롤백됨",
       empty: "샘플 없음",
     },
   },
-  /** 프리뷰 랩(DEV spike ?dev=preview-lab):T1 webview 직접 렌더 소재 / T2 Unity 베이크成品 비교 */
+  /** 프리뷰 랩(DEV spike ?dev=preview-lab):T1 webview 직접 렌더 소재 / T2 Unity 베이크 산출물 비교 */
   previewLab: {
     title: "프리뷰 랩",
     subtitle:
-      "DEV spike: T1 webview 직접 렌더 소재와 T2 Unity 베이크成品을 비교합니다. 프로젝트 데이터는 로컬 데모 매니페스트에서 읽으며 리포지토리에 커밋하지 않습니다.",
+      "DEV spike: T1 webview 직접 렌더 소재와 T2 Unity 베이크 산출물을 비교합니다. 프로젝트 데이터는 로컬 데모 매니페스트에서 읽으며 리포지토리에 커밋하지 않습니다.",
     needRootTitle: "데모 프로젝트가 지정되지 않음",
     needRootBody:
       "URL 에 &demoRoot=<Unity 프로젝트 경로> 를 추가하세요. 해당 프로젝트의 .vrcua/bridge/demo-lab.json 을 읽습니다.",
@@ -1385,13 +1387,13 @@ rolled_back: "롤백됨",
     sourcesTitle: "소재 · T1 webview 직접 렌더",
     sourcesNote:
       "Unity 커스텀 셰이더는 기본 머티리얼+메인 텍스처로 근사하고 FBX 임베디드 텍스처는 유지합니다. 조명과 셰이딩은 Unity 베이크와 다릅니다.",
-    productsTitle: "成品 · T2 Unity 에디터 베이크",
+    productsTitle: "산출물 · T2 Unity 에디터 베이크",
     productsNote:
       "턴테이블 프레임은 Unity 에디터 브리지가 .vrcua/bridge/preview/ 에 베이크합니다. VRM 은 대조군으로 webview 에서 직접 렌더합니다.",
     cardStatusLoading: "로딩 중…",
     cardStatusFailed: "로드 실패",
     bakePending:
-      "베이크产物을 찾을 수 없습니다. 먼저 Unity 에서 build_preview 를 실행하세요({path}).",
+      "베이크 산출물을 찾을 수 없습니다. 먼저 Unity 에서 build_preview 를 실행하세요({path}).",
     bakedMeta: "{frames} 프레임 · {width}×{height} · 삼각형 {triangles}",
     loadingFrames: "프레임 로드 중 {loaded}/{total}…",
     dragHint: "드래그하여 회전",
