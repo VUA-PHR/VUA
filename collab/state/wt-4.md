@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: fe3195c
+baseline_commit: f496924
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -25,9 +25,18 @@ W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户
   待用户裁决；W1 按规则跳过（[需用户] 不得代决，停止轮询环境变量）。main 合并维护：
   fast-forward 至 fe3195c（带入数据域 W4 测试批、Cargo.lock 补漏、桌面 F4-7/F4-8 批），
   合并后本树 cargo test --workspace 40 套件全绿、clippy 无告警。
+- tick 4（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f496924（带入核心
+  W2 契约面：provider-process v0.2、handshake Schema+11 向量、bdl-commands v0.1、
+  proposal 002/005 等）。合并后首轮全量跑出现 1 例瞬败（provider_host
+  ph_010_mutation_gate_holds_lock_and_marker_during_the_run，14 passed/1 failed）；随即
+  provider_host 单独重跑 4 次 + workspace 全量 2 次全绿（42 套件）——与 BOARD #7
+  「偶发瞬败、疑似时序敏感」吻合，已留言 [→核心]。
 ## 阻塞
 - W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
 ## 下次合并意图
 首个切片（W1 执行批）完成并全绿后合并回 main；BOARD U6 行随下次合并由集成带入。
 ## 留言
-无。
+- [→核心] BOARD #7 再添一次可考复现（2026-09-07 02:4x，本树 tick 4）：合并 f496924 后
+  首轮 `cargo test --workspace` 中 provider_host `ph_010_mutation_gate_holds_lock_and_marker_during_the_run`
+  瞬败一次；provider_host 单独 4 连跑与 workspace 全量 2 连跑均全绿。时序敏感疑点未变，
+  是否立项由核心裁决（provider-host 属核心域，产线不代修）。
