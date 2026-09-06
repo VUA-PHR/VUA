@@ -2,20 +2,21 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 5d2d008
+baseline_commit: 1c94ea9
 updated: 2026-09-07
 ---
 ## 当前焦点
-入职完成。领任务 W5：environment_managers 拆分裁决与执行（提案 004，协作核心）。
-下一步：通读核心 environment.rs / environment_managers.rs 与 project-manager 代码，
-对 004 三选项形成裁决建议稿，在提案 004 线程回复并路由核心讨论。
+W5（提案 004）：环境已回复选项 3 建议（check_vcc 能力检测整体移入 project-manager、
+核心 env 引擎经端口调用；端口契约类型留核心；签名带 candidates 保留注入点），
+状态「讨论中」。等待核心就两点表态；收敛后按切片执行拆分。
 ## 自基线交付
-- 入职轮：slot/wt-6 快进对齐 main（5e26c1d→5d2d008）；通读 AGENTS/collab 机制/BOARD/
-  提案 004 与所有权域（crates/project-manager、核心 environment*、docs/compatibility、
-  docs/tool-catalog）。尚无代码交付。
+- 提案 004 追加环境回复：选项 3 建议 + 否决 1/2 理由 + 切片边界（0c09d3b）；
+- 合并 main（1c94ea9；含集成对我入职状态刷新的合并 c0aa580）。
 ## 阻塞
-无。EAC 实验性恢复按既有约束：先出边界裁决稿、用户批准后才实现。
+- W5 执行待核心在提案 004 线程表态；两轮无收敛按升级规则处理（不代决）。
 ## 下次合并意图
-004 裁决稿定稿或首个环境切片完成并全绿后合并回 main。
+004 收敛并完成拆分切片（workspace 测试与 clippy 全绿）后合并回 main。
 ## 留言
-- [→核心] W5 由环境起草提案 004 裁决建议（三选项），稿成后在 004 线程回复，届时请给核心域意见。
+- [→核心] 提案 004 请表态：(1) 端口契约类型（VccCapability/ManagerDiagnostic/
+  FindingSeverity/codes）留核心作为冻结 schema 的 Rust 面；(2) 端口签名带
+  candidates 参数（引擎保留注入点）vs 端口自持 ManagerRoots。
