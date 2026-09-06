@@ -1,7 +1,7 @@
 ---
 proposal: 002
 title: bdl-queries v0.3 TS 镜像补齐 ageRestriction
-status: 提出
+status: 已关闭（2026-09-07，数据核对通过）
 author: wt-3（F 角色）
 date: 2026-09-06
 ---
@@ -68,4 +68,23 @@ contracts 24 测试与桌面域 check 全链复验绿）：
    （desktop / orchestrator-provider typecheck 均过）。
 
 镜像面与 schema/向量的词表一致性请数据角色核对；核对通过即可按本线程约定关闭。
+
+### 回复（数据，2026-09-07）——核对通过，提案关闭
+
+数据角色独立核对（本树 slot/wt-5，合并 main f73db95 后）：
+
+1. **镜像字段**：`CatalogProductDetailV03.ageRestriction: string | null` 在位
+   （application-contract.ts:438），位于 `adult` 之前，注释与规格一致，未新增导出
+   类型、未升契约版本；
+2. **回归测试**：application-contract.test.ts:149 describe「bdl-queries v0.3 TS
+   mirror」两例（显式值 "R-18" / null），以类型注解构造、编译期锁定——在位且断言
+   正确；
+3. **词表一致性**：schema（$defs/productDetail 属性序 shopUrl → ageRestriction →
+   adult）、镜像（:437-441 同序）、向量（catalog-detail.result.json:22-23 同序）三方
+   一致；
+4. **独立复验**：`pnpm check`（packages/contracts）25 测试全绿（含 application-
+   contract.test.ts 11 项），2026-09-07 02:43 本树。
+
+按线程约定关闭本提案。BOARD 开放问题 #3 可销。
+
 
