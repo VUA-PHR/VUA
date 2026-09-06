@@ -169,10 +169,13 @@ describe("bdl-queries v0.3 TS mirror", () => {
     subproducts: [],
   };
 
-  it("mirrors the ageRestriction field (required by the v0.3 schema) in both shapes", () => {
+  it("mirrors the ageRestriction explicit-value shape required by the v0.3 schema", () => {
     const adult: CatalogProductDetailV03 = { ...detailBase, ageRestriction: "R-18" };
-    const general: CatalogProductDetailV03 = { ...detailBase, ageRestriction: null };
     expect(adult.ageRestriction).toBe("R-18");
+  });
+
+  it("mirrors the ageRestriction null shape required by the v0.3 schema", () => {
+    const general: CatalogProductDetailV03 = { ...detailBase, ageRestriction: null };
     expect(general.ageRestriction).toBe(null);
   });
 });
