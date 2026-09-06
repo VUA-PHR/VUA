@@ -25,10 +25,11 @@
 | docs/protocols/bdl-queries-v0.1_ZH.md | 0.1 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已冻结 | 数据 | 2026-09-06 |
+| docs/protocols/bdl-commands-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-07 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | M3 候选草案 | 核心 | 2026-09-06 |
-| docs/protocols/provider-process-v0.1_ZH.md | 0.1 | B2 实现基线 | 核心 | 2026-09-06 |
+| docs/protocols/provider-process-v0.1_ZH.md | 0.2 | B2 实现基线（握手帧面 Schema 已冻结） | 核心 | 2026-09-07 |
 | docs/protocols/task-store-v0.1_ZH.md | 0.1 | 已冻结 | 核心 | 2026-09-06 |
 | docs/protocols/unity-bridge-v1_ZH.md | v1 | 已接受 | 产线 | 2026-09-06 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |

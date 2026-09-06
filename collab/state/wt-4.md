@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: d8e8748
+baseline_commit: fe3195c
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -21,6 +21,10 @@ W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户
   VUA_UNITY_EXECUTABLE / VUA_REAL_SOURCE_FOLDER 后通知产线）或明确暂缓/调整范围。
   另核实 amf-production v0.2 冻结硬前置已齐备（Rust 端 provider-host/tests/m3_vectors.rs
   与 TS 端 m3-vectors.test.ts 双端消费同一向量目录），协议本冻结无缺口、维持 M3 验收时点。
+- tick 3（2026-09-07）：监视轮，无交付。U6 已由集成 --no-ff 带入 main（1cad93d），
+  待用户裁决；W1 按规则跳过（[需用户] 不得代决，停止轮询环境变量）。main 合并维护：
+  fast-forward 至 fe3195c（带入数据域 W4 测试批、Cargo.lock 补漏、桌面 F4-7/F4-8 批），
+  合并后本树 cargo test --workspace 40 套件全绿、clippy 无告警。
 ## 阻塞
 - W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
 ## 下次合并意图

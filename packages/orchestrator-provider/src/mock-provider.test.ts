@@ -46,6 +46,7 @@ describe("mock Orchestrator Provider v0.1", () => {
       supportedContractVersions: ["0.1"],
       providerBuildId: "build-abc",
       providerInstanceId: "instance-abc",
+      downloadIngest: false,
     });
     expect(provider.status()).toEqual({ contractVersion: "0.1", state: "ready", acceptingCalls: true });
     expect(JSON.stringify(handshake)).not.toMatch(/ffi|napi|pipe|socket|sidecar/i);

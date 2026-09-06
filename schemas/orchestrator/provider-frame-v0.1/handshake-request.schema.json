@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.local/schemas/orchestrator/provider-frame-v0.1/handshake-request.schema.json",
+  "title": "ProviderFrameV01HandshakeRequest",
+  "description": "Supervised Provider frame protocol v0.1 handshake request frame (provider-process-v0.1, proposal 001). The supervisor must send exactly this frame first; the Provider answers before any application call is admitted. A handshake frame whose payload is not null is an illegal frame and must be answered with a protocol_error frame.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["frameVersion", "frameId", "kind", "payload"],
+  "properties": {
+    "frameVersion": { "const": "0.1" },
+    "frameId": { "type": "string", "minLength": 1 },
+    "kind": { "const": "handshake" },
+    "payload": { "const": null }
+  }
+}

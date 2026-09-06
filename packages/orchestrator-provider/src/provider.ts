@@ -19,9 +19,12 @@ export interface ProviderHandshakeV01 {
   readonly supportedContractVersions: readonly ApplicationContractVersion[];
   readonly providerBuildId: string;
   readonly providerInstanceId: string;
-  /** 下载域就绪位(v0.1 增补):true 时宿主可投递 download.ingest;
-   *  缺省/false = Provider 未配置下载域,download.* 诚实不可用 */
-  readonly downloadIngest?: boolean;
+  /**
+   * 下载域就绪位(v0.1 冻结,proposal 001):必发位,不再是可选。
+   * true = 宿主可投递 download.ingest;false = Provider 未配置下载域,
+   * download.* 诚实不可用。线面权威定义:schemas/orchestrator/provider-frame-v0.1。
+   */
+  readonly downloadIngest: boolean;
 }
 
 export interface BlockingTaskV01 {

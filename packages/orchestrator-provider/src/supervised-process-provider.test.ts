@@ -26,6 +26,7 @@ class FakeProviderProcess extends EventEmitter {
     supportedContractVersions: ["0.1"],
     providerBuildId: "fake-build",
     providerInstanceId: "fake-instance",
+    downloadIngest: false,
   }) {
     super();
     this.#handshakePayload = handshakePayload;

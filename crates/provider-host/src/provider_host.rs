@@ -418,6 +418,9 @@ pub fn run_provider_host_with_downloads(
             FrameOutcome::Response(payload) => {
                 write_frame(&mut output, &frame.frame_id, "response", payload)?;
             }
+            FrameOutcome::ProtocolError(payload) => {
+                write_frame(&mut output, &frame.frame_id, "protocol_error", payload)?;
+            }
             FrameOutcome::ResponseAndEvent { response, event } => {
                 write_frame(&mut output, &frame.frame_id, "response", response)?;
                 write_frame(&mut output, &event.0, "event", event.1)?;
@@ -434,6 +437,7 @@ pub fn run_provider_host_with_downloads(
 
 enum FrameOutcome {
     Response(Value),
+    ProtocolError(Value),
     ResponseAndEvent {
         response: Value,
         event: (String, Value),
@@ -446,12 +450,18 @@ fn handle_frame(
     frame: &InboundFrame,
 ) -> Result<FrameOutcome, ProviderHostError> {
     Ok(match frame.kind.as_str() {
-        "handshake" => FrameOutcome::Response(json!({
+        // Handshake wire shape is frozen by schemas/orchestrator/provider-frame-v0.1
+        // (proposal 001): the request payload must be null; anything else is an
+        // illegal frame and is answered with protocol_error, never a handshake.
+        "handshake" if frame.payload.is_null() => FrameOutcome::Response(json!({
             "contractVersion": APPLICATION_CONTRACT_VERSION,
             "supportedContractVersions": [APPLICATION_CONTRACT_VERSION],
             "providerBuildId": env!("CARGO_PKG_VERSION"),
             "providerInstanceId": state.provider_instance_id,
             "downloadIngest": state.downloads.is_some(),
+        })),
+        "handshake" => FrameOutcome::ProtocolError(json!({
+            "code": "vua.provider.invalid_handshake",
         })),
         "request" => handle_application_request(state, &frame.payload),
         "prepare_shutdown" => wait_for_safe_boundary(state, shutdown_timeout(&frame.payload)),

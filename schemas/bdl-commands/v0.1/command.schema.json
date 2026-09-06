@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/bdl-commands/v0.1/command.schema.json",
+  "title": "VUA BDL warehouse command v0.1",
+  "description": "Write commands over the local BDL warehouse (docs/protocols/bdl-commands-v0.1): the B4 artifact-mode trio. setArtifactMode sets or clears the per-entry artifact-mode override (null clears; resolution stays dynamic: override ?? global default). generateVpm and deleteOriginals submit audited maintenance tasks and return a task acceptance; their completion payloads travel the application-contract task surface, not this schema. The transport envelope (requestId, commandId, correlationId, taskId semantics) belongs to the application contract — this schema freezes the operation closed set and the params. Guards are server-side facts, never client assertions: generateVpm runs only in the generate_vpm effective mode with original material and no existing artifact; deleteOriginals only in the generate_vpm effective mode with a verified generated artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": [
+        "warehouse.setArtifactMode",
+        "warehouse.generateVpm",
+        "warehouse.deleteOriginals"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.setArtifactMode" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId", "mode"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 },
+              "mode": {
+                "enum": ["use_original_unitypackage", "generate_vpm", null]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.generateVpm" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.deleteOriginals" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
