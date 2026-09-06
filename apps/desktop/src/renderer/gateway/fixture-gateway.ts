@@ -216,6 +216,41 @@ const demoTasks: TaskItem[] = [
     originPage: "warehouse",
     cancellable: false,
   },
+  /* F4-7 下载任务链走查载体:下载生命周期五态(下载中/中断/重试/取消/失败)
+   * 经任务中心统一九态呈现(任务中心零特判,F4-4 裁定)。中断 = failed +
+   * 可续传说明(重试入口的呈现条件),策略拒绝 = failed + 拒绝说明
+   * (不可重试),均由任务级动作交 AMF 裁决,fixture 端口镜像同一语义。 */
+  {
+    id: "task-download-active",
+    title: taskCopy.downloadActive.title,
+    status: "running",
+    progress: { done: 34, total: 100 },
+    originPage: "warehouse",
+    cancellable: true,
+  },
+  {
+    id: "task-download-interrupted",
+    title: taskCopy.downloadInterrupted.title,
+    status: "failed",
+    originPage: "warehouse",
+    cancellable: false,
+    errorText: taskCopy.downloadInterrupted.errorText,
+  },
+  {
+    id: "task-download-cancelled",
+    title: taskCopy.downloadCancelled.title,
+    status: "cancelled",
+    originPage: "warehouse",
+    cancellable: false,
+  },
+  {
+    id: "task-download-policy",
+    title: taskCopy.downloadPolicyRefused.title,
+    status: "failed",
+    originPage: "warehouse",
+    cancellable: false,
+    errorText: taskCopy.downloadPolicyRefused.errorText,
+  },
 ];
 
 /* ---- 版本轨道演示负载(S-XV)---- */
@@ -438,7 +473,20 @@ function createFixtureTask(withTasks: boolean): FixtureTaskHandle {
   const port: FixtureTaskPort = {
     snapshot: () => Promise.resolve(signal.get()),
     subscribe: signal.subscribe,
-    retry: () => Promise.resolve({ kind: "rejected", reason: "unavailable" }),
+    // F4-7:镜像 AMF 重试裁决(download.retry 冻结语义)——仅中断可续传的
+    // 下载任务放行(resume = 同一 attempt 延续,回到 running 且可取消);
+    // 策略拒绝与其余任务如实 not_retryable,未知任务 unknown_task
+    retry: (taskId) => {
+      const view = signal.get();
+      if (!view.tasks.some((item) => item.id === taskId)) {
+        return Promise.resolve({ kind: "rejected" as const, reason: "unknown_task" as const });
+      }
+      if (taskId !== "task-download-interrupted") {
+        return Promise.resolve({ kind: "rejected" as const, reason: "not_retryable" as const });
+      }
+      updateTask(taskId, { status: "running", cancellable: true });
+      return Promise.resolve({ kind: "ok" as const, decision: "resume" as const });
+    },
     cancel: (taskId) => {
       const view = signal.get();
       const task = view.tasks.find((item) => item.id === taskId);
@@ -456,6 +504,8 @@ function createFixtureTask(withTasks: boolean): FixtureTaskHandle {
 
   if (withTasks) {
     port.replayDemoEvents = () => {
+      // F4-7:装配任务与下载任务各走一遍 queued→…→completed 迁移,
+      // 演示任务中心的订阅链路与下载生命周期推进(下载半拍错开)
       const steps: Array<Partial<TaskItem>> = [
         { status: "queued", cancellable: true },
         { status: "preparing" },
@@ -465,6 +515,7 @@ function createFixtureTask(withTasks: boolean): FixtureTaskHandle {
       ];
       steps.forEach((patch, index) => {
         setTimeout(() => updateTask("task-assembly", patch), index * 900);
+        setTimeout(() => updateTask("task-download-active", patch), index * 900 + 450);
       });
     };
   }

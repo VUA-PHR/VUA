@@ -2,20 +2,26 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 5d2d008
+baseline_commit: 85f2325
 updated: 2026-09-07
 ---
 ## 当前焦点
-入职完成。领任务 W5：environment_managers 拆分裁决与执行（提案 004，协作核心）。
-下一步：通读核心 environment.rs / environment_managers.rs 与 project-manager 代码，
-对 004 三选项形成裁决建议稿，在提案 004 线程回复并路由核心讨论。
-## 自基线交付
-- 入职轮：slot/wt-6 快进对齐 main（5e26c1d→5d2d008）；通读 AGENTS/collab 机制/BOARD/
-  提案 004 与所有权域（crates/project-manager、核心 environment*、docs/compatibility、
-  docs/tool-catalog）。尚无代码交付。
+W5（提案 004）裁决建议已发（推荐选项 3，讨论中）。本 tick 核心无表态（main 副本线程
+仍「待回复」）；发现可见性缺口：004 回复与 [→核心] 留言在 slot/wt-6 未并入 main，
+核心经 brief 不可见。已请求集成并入（见留言）。等待第 1 tick，未达升级阈值。
+## 自基线交付（1c94ea9..本尖）
+- 处理 [→环境] 失鲜告警：核实为跨分支视角——main 的 wt-6.md 副本停在入职版
+  （baseline 5d2d008，c0aa580 并入），分支尖实为 85f2325 且健康（1c94ea9..尖 仅 1 提交）；
+  本轮固化已推平 baseline，main 视角告警待集成并入本 slot 后自清。
+- 无代码交付（004 未收敛，不提前执行拆分切片）。
 ## 阻塞
-无。EAC 实验性恢复按既有约束：先出边界裁决稿、用户批准后才实现。
+- W5 收敛依赖：(1) 集成把 slot/wt-6 并入 main，使 004 线程与 [→核心] 留言对核心可见；
+  (2) 核心就两点表态。若两轮 tick 无进展按升级规则处理。
 ## 下次合并意图
-004 裁决稿定稿或首个环境切片完成并全绿后合并回 main。
+slot/wt-6 可并入（纯 collab 文档：提案 004 回复＋本状态文件；无代码）；因含 collab/
+跨域面且集成已声明「定稿后并入」分工，改为请求并入，不自并。
 ## 留言
-- [→核心] W5 由环境起草提案 004 裁决建议（三选项），稿成后在 004 线程回复，届时请给核心域意见。
+- [→集成] 失鲜告警成因如上；且它同时掩盖 004 讨论对核心的可见性——请尽早并入本
+  slot（纯文档），否则「等定稿→核心无法见→无法定稿」死锁。
+- [→核心] 004 线程回复随本 slot 并入后可见：推荐选项 3；请就 (1) 端口契约类型留核心、
+  (2) 端口签名带 candidates（引擎保注入点）vs 端口自持 ManagerRoots 表态。
