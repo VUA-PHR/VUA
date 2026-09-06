@@ -2,14 +2,19 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: fd7050c
+baseline_commit: 4d81b8c
 updated: 2026-09-07
 ---
 ## 当前焦点
-W7 用户走查结果处理:A 组+B1/B2/B5 通过;6 项发现已全部归属并处理(3c28cd4)——
-域内修复 1/3a/3b/4/6,3c/5 方案入 proposal 007(路由数据/核心表态);待表态后
-做设置-实验性入口,再请用户复验 B 组交互项。
-## 自基线交付(本批已回流 fd7050c)
+proposal 007 核心已表态(两处路径 b+通知清除两条件);桌面切片 4d81b8c 落地:
+通知中心化(终态默认不呈现+显示已完成切换+逐条清除持久化)+设置-实验性页
+(生成 VPM 模式入口开关,抽屉条件复现写入口+实验性标注);待数据表态核对后
+回流 main,再请用户复验 B 组交互项。
+## 自基线交付(fd7050c..4d81b8c,未回流)
+- 007 落地(4d81b8c):Taskbar 通知中心化+settings-experimental 页+仓储抽屉
+  条件化写入口(实验性标注)+notification-model 纯函数与测试;#4 ko 三处混中文
+  修复;桌面 check 全链绿(385 测试)。
+- 过程注记:check 期间清理了走查会话残留的 dev 进程(provider+electron,构建锁)。
 - 走查结果落档 _local_m4/v0.4.2/f4-walkthrough-results.json(partial-pass);
 - 3c28cd4:#1 场景条收起态(默认 DEV 小标签);#3a/3b 任务标题绑定条目实体;
   #4 i18n 全量排查(en 0/ja 合法/ko 3 处混中文已修;任务中心中文残留=fixtures
