@@ -109,7 +109,11 @@ Responsibility rules:
 | W9 | F4-9 artifact-mode three-command UI | Desktop | Core | depends on the W8 protocol freeze |
 | W10 | Freeze production-use-case v0.1 (at M3 acceptance) | Core | Production, Desktop | M3 candidate → freeze; per the freeze hard precondition |
 | W11 | M3 closure: v0.5.0 tag, remote establishment, three CI workflows, Release | Integration | All | Execute on the day of M3 local acceptance (user ruling 2026-09-06) |
-| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | Reserved header note in `bdl_queries.rs`; execute when the M4 window opens (until then W6/W7 walkthroughs use the desktop fixture/observation face; this does not count as data-side pending work) |
+| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | Reserved header note in `bdl_queries.rs`; **M4 window is open — Data's first slice** |
+| W13 | Warehouse layout rework (adaptive columns + right-side details region) | Desktop | — | U7 ruling: M4; acceptance = design-standard sync + walkthrough |
+| W14 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | U8/005 hard preconditions: Schema + vectors + consumption tests + bilingual protocol |
+| W15 | Settings-Experimental full form (two-option entry) | Desktop | Data | depends on W14; acceptance = user walkthrough |
+| W16 | Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | revision after the 007 rulings and U7 landing |
 
 ## M sequence: Main integration and delivery
 
@@ -246,17 +250,23 @@ history):
 - **Delivery:** make an authorized download enter Warehouse through a recoverable task and local
   inspection; update the version and release notes to `0.6.0`.
 
-Task breakdown:
+Task breakdown (M4 allocation audit 2026-09-07: historical progress verified item-by-item
+before updating):
 
 | Task | Owning role | Collaborators | Status |
 | --- | --- | --- | --- |
-| Remote content / Session / download port and isolated browse UI | Desktop | — | Mostly delivered (F4-2/3/4/6); walkthroughs in W6/W7 |
-| Warehouse list / filter / detail / inspection-state presentation | Desktop | Data | Delivered (F4-5/6); walkthrough in W6 |
-| Minimal BDL persistence format and Warehouse mapping | Data | Core | Delivered (bdl/v0.1, bdl-queries v0.3) |
-| Download-event consumption, retry/recovery, and task closure | Data | Core | Delivered; extra tests in W4 |
-| Asset-acquisition use cases and the LocalArtifact inspection pipeline | Data | Core | Delivered (artifact_inspection) |
-| Generation stream (generate-VPM etc.) and the three-command protocol | Data | Core | In flight (W8/W9) |
-| Gate acceptance and release | Integration | All | Pending M3 closure |
+| Remote content / Session / download port and isolated browse UI | Desktop | — | ✅ Delivered (F4-2/3/4/6), walkthroughs closed (W6/W7) |
+| Warehouse list / filter / detail / inspection-state presentation | Desktop | Data | ✅ Delivered (F4-5/6), walkthrough closed; layout rework in W13 |
+| Minimal BDL persistence format and Warehouse mapping | Data | Core | ✅ Delivered (bdl/v0.1, bdl-queries v0.3) |
+| Download-event consumption, retry/recovery, and task closure | Data | Core | ✅ Delivered (incl. W4 test coverage) |
+| Asset-acquisition use cases and the LocalArtifact inspection pipeline | Data | Core | ✅ Delivered (artifact_inspection) |
+| Generation stream (generate-VPM etc.) and the three-command protocol | Data | Core | ✅ Delivered (W8/W9: bdl-commands v0.1.1 full chain) |
+| Catalog observation-pipeline service face | Data | Desktop | W12 (first M4 slice) |
+| Warehouse layout rework (adaptive columns + right-side details) | Desktop | — | W13 (U7 ruling: M4) |
+| bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | W14 (U8/005 hard preconditions) |
+| Settings-Experimental full form (two-option entry) | Desktop | Data | W15 (depends on W14) |
+| Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | W16 |
+| Gate acceptance and release | Integration | All | M3 closed (v0.5.0); M4 acceptance per gate order |
 
 ### M5 — v0.7.0: Recipe and the AMF production line
 
@@ -467,7 +477,9 @@ stable `1.0.0` (standing product boundary).
 
 - 2.0.2 (2026-09-07): M3 closure update — I-1 completed (16/16 real-Unity cells), current
   window progress note, W10/production-use-case v0.1 and amf-production v0.2 frozen at M3
-  acceptance.
+  acceptance; M4 allocation audit and assignment (W12–W16: six delivered items verified,
+  catalog observation pipeline, warehouse layout rework, bdl-commands v0.2,
+  Settings-Experimental full form, design-standard sync).
 - 2.0.1 (2026-09-07): the current window gains W12 (catalog observation-pipeline service face,
   owned by Data, executed when the M4 window opens) — making the desktop W6/W7 walkthrough's
   implicit wait on the data-side observation pipeline an explicit M4-prerequisite schedule
