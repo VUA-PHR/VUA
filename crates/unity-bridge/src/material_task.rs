@@ -9,8 +9,8 @@
 
 use crate::material_exec::{MaterialCancelToken, MaterialExecutor};
 use crate::material_intake::MaterialIntakeConfirmationV01;
-use crate::model::ProjectRef;
-use crate::runtime::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
+use vua_orchestrator::ProjectRef;
+use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
 use serde::Serialize;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -98,13 +98,13 @@ pub fn material_intake_job(
             crate::MaterialExecutionStatus::Succeeded => Ok(TaskExit::Done(payload)),
             crate::MaterialExecutionStatus::Cancelled => Ok(TaskExit::Cancelled),
             crate::MaterialExecutionStatus::Failed => Err(
-                crate::AppErrorV1::new(
+                vua_orchestrator::AppErrorV1::new(
                     report.error_code.clone().unwrap_or_else(|| "vua.material.failed".to_owned()),
-                    crate::contracts::ErrorCategory::ExternalFailure,
+                    vua_orchestrator::ErrorCategory::ExternalFailure,
                     "errors.material.executionFailed",
                     &spec.confirmation.correlation_id,
                 )
-                .with_param("planId", crate::contracts::ParamValue::Text(plan_id))
+                .with_param("planId", vua_orchestrator::ParamValue::Text(plan_id))
                 .with_recoverable(true),
             ),
         }
@@ -117,7 +117,7 @@ pub fn submit_material_intake(
     executor: Arc<MaterialExecutor>,
     spec: MaterialIntakeTaskSpec,
     timeout: Option<Duration>,
-) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
     let correlation_id = spec.confirmation.correlation_id.clone();
     runtime.submit(SubmitRequest {
         correlation_id: Some(correlation_id),

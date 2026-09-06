@@ -6,9 +6,8 @@
 //! plan diffs) and answer honestly where B3 produces nothing (diffs are
 //! empty, duration is null).
 
-use crate::material_intake::{
-    ExecutableRiskKind, MaterialIntakePlanV01, SourceFolderInspectionV01,
-};
+use crate::material_intake::MaterialIntakePlanV01;
+use vua_orchestrator::{ExecutableRiskKind, SourceFolderInspectionV01};
 use serde::Serialize;
 
 /// The closed finding vocabulary (production-use-case): `compat` /
@@ -66,7 +65,7 @@ pub struct PlanDocument {
     pub plan_id: String,
     pub revision: u64,
     pub inspection_id: String,
-    pub mode: crate::material_intake::MaterialEntryMode,
+    pub mode: vua_orchestrator::MaterialEntryMode,
     pub project_id: String,
     pub project_fingerprint: String,
     /// Workflow stages in execution order (the unity-bridge lifecycle).
@@ -145,7 +144,7 @@ pub fn build_plan_document(
         mode: plan.mode,
         project_id: plan.project_id.clone(),
         project_fingerprint: plan.project_fingerprint.clone(),
-        stages: crate::build_record::PRODUCTION_STAGES.to_vec(),
+        stages: vua_orchestrator::PRODUCTION_STAGES.to_vec(),
         risk_decision_required: plan.risk_decision_required,
         risks: inspection_view.findings,
         diffs: Vec::new(),
@@ -166,8 +165,8 @@ fn risk_kind_name(kind: ExecutableRiskKind) -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::material_intake::{
-        ExecutableRiskEvidence, SourcePackageEvidenceV01, SourceFolderInspectionV01,
+    use vua_orchestrator::{
+        ExecutableRiskEvidence, SourceFolderInspectionV01, SourcePackageEvidenceV01,
     };
 
     fn inspection(with_risk: bool, packages: usize) -> SourceFolderInspectionV01 {
@@ -219,7 +218,7 @@ mod tests {
             schema_version: "vua.material-intake-plan/v0.1".into(),
             plan_id: "plan-1".into(),
             plan_hash: "sha256:ccc".into(),
-            mode: crate::material_intake::MaterialEntryMode::DirectUnityPackage,
+            mode: vua_orchestrator::MaterialEntryMode::DirectUnityPackage,
             project_id: "project".into(),
             project_fingerprint: "sha256:ddd".into(),
             source: inspection(false, 1),

@@ -24,7 +24,7 @@ use vua_bdl_store::bdl_store::{
     ArtifactMode, BdlStore, BdlStoreError, CopyRole,
 };
 use vua_orchestrator::{ErrorCategory, ParamValue};
-use vua_orchestrator::{MaterialCancelToken, MaterialExecutor};
+use vua_unity_bridge::{MaterialCancelToken, MaterialExecutor};
 use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
 use serde::Serialize;
 use std::fs;
@@ -453,9 +453,9 @@ fn run_generate_vpm(
         });
     }
 
-    let sources: Vec<vua_orchestrator::GenerateSourcePackage> = originals
+    let sources: Vec<vua_unity_bridge::GenerateSourcePackage> = originals
         .iter()
-        .map(|copy| vua_orchestrator::GenerateSourcePackage {
+        .map(|copy| vua_unity_bridge::GenerateSourcePackage {
             archive_path: PathBuf::from(&copy.stored_path),
             sha256: copy.artifact_sha256.clone(),
         })
@@ -481,7 +481,7 @@ fn run_generate_vpm(
             &token,
         )
         .map_err(|(code, status)| {
-            if status == vua_orchestrator::MaterialExecutionStatus::Cancelled {
+            if status == vua_unity_bridge::MaterialExecutionStatus::Cancelled {
                 MaintenanceError::GenerationFailed {
                     code: "vua.warehouse.generation_cancelled".into(),
                     message: "cancelled at a package boundary".into(),

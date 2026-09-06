@@ -13,12 +13,15 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use tar::{Builder, Header};
 
 use vua_orchestrator::{
-    BuildRecordStore, BridgeError, MaterialCancelToken, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialEntryMode, MaterialExecutionStatus, MaterialExecutor,
-    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, PackageRequestV1,
-    ProjectRef, ResultStatus, RiskDecisionChoice, RiskDecisionV01, RollbackOutcome,
+    BridgeError, BuildRecordStore, ChangePreviewV1, FileSystemSnapshotStore, FixedClock,
+    MaterialEntryMode, PackageRequestV1, ProjectRef, ResultStatus, RiskDecisionChoice,
     SourceFolderInspectionV01, UnityBridge, UnityCommand, UnityResult, VpmBackend,
     VpmCapabilities,
+};
+use vua_unity_bridge::{
+    LocalPackageIdentityStore, MaterialCancelToken, MaterialExecutionStatus, MaterialExecutor,
+    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
+    RollbackOutcome,
 };
 
 // --- fixtures ---
@@ -295,11 +298,11 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     assert_eq!(
         report.completed_steps,
         vec![
-            vua_orchestrator::MaterialIntakeStepKind::VerifySource,
-            vua_orchestrator::MaterialIntakeStepKind::CreateSnapshot,
-            vua_orchestrator::MaterialIntakeStepKind::ImportUnityPackages,
-            vua_orchestrator::MaterialIntakeStepKind::ValidateMinimumStructure,
-            vua_orchestrator::MaterialIntakeStepKind::WriteBuildRecord,
+            vua_unity_bridge::MaterialIntakeStepKind::VerifySource,
+            vua_unity_bridge::MaterialIntakeStepKind::CreateSnapshot,
+            vua_unity_bridge::MaterialIntakeStepKind::ImportUnityPackages,
+            vua_unity_bridge::MaterialIntakeStepKind::ValidateMinimumStructure,
+            vua_unity_bridge::MaterialIntakeStepKind::WriteBuildRecord,
         ]
     );
     assert_eq!(report.rollback, RollbackOutcome::NotNeeded);
@@ -502,9 +505,9 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
     let steps = &report.completed_steps;
     for expected in [
-        vua_orchestrator::MaterialIntakeStepKind::CreateLocalVpmPackage,
-        vua_orchestrator::MaterialIntakeStepKind::PreviewVpmInstall,
-        vua_orchestrator::MaterialIntakeStepKind::ApplyVpmInstall,
+        vua_unity_bridge::MaterialIntakeStepKind::CreateLocalVpmPackage,
+        vua_unity_bridge::MaterialIntakeStepKind::PreviewVpmInstall,
+        vua_unity_bridge::MaterialIntakeStepKind::ApplyVpmInstall,
     ] {
         assert!(steps.contains(&expected), "missing {expected:?}");
     }
@@ -559,7 +562,7 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     assert_eq!(vpm.installs.load(Ordering::SeqCst), 1);
 
     // The staging directory is destroyed on the success path.
-    let staging = vua_orchestrator::staging_root(&base.join("temp"), "corr");
+    let staging = vua_unity_bridge::staging_root(&base.join("temp"), "corr");
     assert!(!staging.exists(), "staging leftovers poison later runs");
 
     // The receipt carries the local VPM evidence.

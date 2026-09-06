@@ -19,6 +19,7 @@ serde_json = "1"
 sha2 = "0.11.0"
 vua-bdl-store = { path = "../bdl-store" }
 vua-orchestrator = { path = "../orchestrator" }
+vua-unity-bridge = { path = "../unity-bridge" }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "=0.61.2", features = [

@@ -4,9 +4,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 use tar::{Builder, Header};
-use vua_orchestrator::{
-    MaterialEntryMode, MaterialIntakeEngine, RiskDecisionChoice, RiskDecisionV01,
-};
+use vua_orchestrator::{MaterialEntryMode, RiskDecisionChoice};
+use vua_unity_bridge::{MaterialIntakeEngine, RiskDecisionV01};
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 

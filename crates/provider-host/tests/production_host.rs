@@ -16,9 +16,9 @@ use serde_json::{json, Value};
 
 use vua_orchestrator::{
     read_pending_mutation, BuildRecordStore, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialExecutor, TaskState, UnityBridge, UnityCommand,
-    UnityResult, VpmBackend, VpmCapabilities,
+    TaskState, UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
 };
+use vua_unity_bridge::{LocalPackageIdentityStore, MaterialExecutor};
 use vua_provider_host::ProductionConfig;
 
 fn temp_root(label: &str) -> PathBuf {

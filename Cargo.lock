@@ -2831,6 +2831,7 @@ dependencies = [
  "sha2",
  "vua-bdl-store",
  "vua-orchestrator",
+ "vua-unity-bridge",
 ]
 
 [[package]]
@@ -2846,7 +2847,6 @@ dependencies = [
 name = "vua-orchestrator"
 version = "0.1.0"
 dependencies = [
- "flate2",
  "jsonschema",
  "reqwest",
  "rusqlite",
@@ -2854,12 +2854,10 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tar",
  "tokio",
  "vrc-get-vpm",
  "vua-bdl-store",
  "windows-sys 0.61.2",
- "zip",
 ]
 
 [[package]]
@@ -2873,7 +2871,22 @@ dependencies = [
  "tar",
  "vua-bdl-store",
  "vua-orchestrator",
+ "vua-unity-bridge",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "vua-unity-bridge"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "vua-orchestrator",
+ "zip",
 ]
 
 [[package]]

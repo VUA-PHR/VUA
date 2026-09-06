@@ -1,6 +1,6 @@
 use std::fs;
 use std::sync::atomic::{AtomicU64, Ordering};
-use vua_orchestrator::LocalPackageIdentityStore;
+use vua_unity_bridge::LocalPackageIdentityStore;
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 

@@ -4,7 +4,11 @@
 //! `.unitypackage` below that folder is included, so inspection, risk consent,
 //! and drift binding cover exactly the bytes that may later reach Unity.
 
-use crate::{AppErrorV1, ErrorCategory, ParamValue};
+use vua_orchestrator::{
+    AppErrorV1, DeclaredDependencyV01, ErrorCategory, ExecutableRiskEvidence, ExecutableRiskKind,
+    MaterialEntryMode, ParamValue, RiskDecisionChoice, SourceFolderInspectionV01,
+    SourcePackageEvidenceV01,
+};
 use flate2::read::GzDecoder;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -26,63 +30,6 @@ pub mod error_codes {
     pub const RISK_DECISION_REQUIRED: &str = "vua.material.risk_decision_required";
     pub const RISK_DECISION_STALE: &str = "vua.material.risk_decision_stale";
     pub const CANCELLED: &str = "vua.material.cancelled";
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum MaterialEntryMode {
-    DirectUnityPackage,
-    LocalReusableVpm,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ExecutableRiskKind {
-    CSharpSource,
-    ManagedAssembly,
-    NativePlugin,
-    EditorContent,
-    BuildEntryPoint,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ExecutableRiskEvidence {
-    pub package_path: String,
-    pub asset_path: String,
-    pub kind: ExecutableRiskKind,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SourcePackageEvidenceV01 {
-    pub relative_path: String,
-    pub size_bytes: u64,
-    pub sha256: String,
-    pub asset_paths: Vec<String>,
-}
-
-/// A user/Recipe-curated dependency declaration from the source folder's
-/// optional `vua-dependencies.json`. Declarations travel with the source
-/// fingerprint (edits between plan and execute are drift) and reach the
-/// produced package's `package.json` verbatim — never auto-detected.
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DeclaredDependencyV01 {
-    pub package_id: String,
-    pub version_range: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct SourceFolderInspectionV01 {
-    pub schema_version: String,
-    pub display_name: String,
-    pub source_fingerprint: String,
-    pub risk_fingerprint: String,
-    pub packages: Vec<SourcePackageEvidenceV01>,
-    pub executable_risks: Vec<ExecutableRiskEvidence>,
-    pub declared_dependencies: Vec<DeclaredDependencyV01>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -118,15 +65,6 @@ pub struct MaterialIntakePlanV01 {
     pub source: SourceFolderInspectionV01,
     pub risk_decision_required: bool,
     pub steps: Vec<MaterialIntakeStepV01>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum RiskDecisionChoice {
-    SnapshotAndContinue,
-    Continue,
-    Cancel,
-    NotRequired,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

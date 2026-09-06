@@ -17,10 +17,11 @@ use flate2::write::GzEncoder;
 use tar::{Builder, Header};
 
 use vua_orchestrator::{
-    BuildRecordStore, FixedClock, LocalPackageIdentityStore, MaterialExecutor,
-    FileSystemSnapshotStore, UnityBridge, UnityCommand, UnityResult, ResultStatus, VpmBackend,
-    VpmCapabilities, PackageRequestV1, ChangePreviewV1, AppErrorV1, ProjectRef,
+    BuildRecordStore, FixedClock, FileSystemSnapshotStore, UnityBridge, UnityCommand,
+    UnityResult, ResultStatus, VpmBackend, VpmCapabilities, PackageRequestV1, ChangePreviewV1,
+    AppErrorV1, ProjectRef,
 };
+use vua_unity_bridge::{LocalPackageIdentityStore, MaterialExecutor};
 use vua_provider_host::ProductionConfig;
 
 // --- fakes ---

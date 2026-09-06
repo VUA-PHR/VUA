@@ -8,7 +8,7 @@ fn staged_project_bundles_the_bridge_scaffold_by_default() {
             .unwrap()
             .as_nanos()
     ));
-    let staging = vua_orchestrator::StagingProject::create(&temp, "sess", "token")
+    let staging = vua_unity_bridge::StagingProject::create(&temp, "sess", "token")
         .expect("staging creates");
     let packages = staging.root().join("Packages");
 

@@ -11,11 +11,13 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BridgeError, BuildRecordStore, BuildRecordStatus, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialCancelToken, MaterialEntryMode, MaterialExecutor,
-    MaterialIntakeConfirmationV01,
-    MaterialIntakeEngine, MaterialIntakePlanV01, MaterialIntakeTaskSpec, ProjectRef, ResultStatus,
-    RiskDecisionChoice, RiskDecisionV01, TaskRuntime, TaskState, UnityBridge, UnityCommand,
-    UnityResult, VpmBackend, VpmCapabilities,
+    MaterialEntryMode, ProjectRef, ResultStatus, RiskDecisionChoice, TaskRuntime, TaskState,
+    UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+};
+use vua_unity_bridge::{
+    LocalPackageIdentityStore, MaterialCancelToken, MaterialExecutor,
+    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
+    MaterialIntakeTaskSpec, RiskDecisionV01,
 };
 
 fn temp_dir(label: &str) -> PathBuf {
@@ -188,7 +190,7 @@ fn b3_task_001_happy_path_runs_and_replays() {
     let (executor, bridge) = build_executor(&base, FakeBridge::new());
     let token = MaterialCancelToken::new();
     let rt = runtime();
-    let accepted = vua_orchestrator::submit_material_intake(
+    let accepted = vua_unity_bridge::submit_material_intake(
         &rt,
         executor.clone(),
         MaterialIntakeTaskSpec {
@@ -247,7 +249,7 @@ fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
     let token = MaterialCancelToken::new();
     token.cancel();
     let rt = runtime();
-    let accepted = vua_orchestrator::submit_material_intake(
+    let accepted = vua_unity_bridge::submit_material_intake(
         &rt,
         executor,
         MaterialIntakeTaskSpec {

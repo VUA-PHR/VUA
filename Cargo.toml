@@ -5,4 +5,5 @@ members = [
     "crates/bdl-store",
     "crates/orchestrator",
     "crates/provider-host",
+    "crates/unity-bridge",
 ]

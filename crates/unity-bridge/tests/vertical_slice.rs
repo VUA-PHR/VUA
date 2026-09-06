@@ -2,9 +2,10 @@ use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 use vua_orchestrator::{
     AvatarSetupRequest, AvatarSetupWorkflow, Diagnostic, DiagnosticSeverity,
-    FileSystemProjectStore, FileSystemSnapshotStore, ProjectRef, ResultStatus, UnityBatchBridge,
-    UnityResult, VpmProjectProvisioner, WorkflowStage,
+    FileSystemProjectStore, FileSystemSnapshotStore, ProjectRef, ResultStatus, UnityResult,
+    VpmProjectProvisioner, WorkflowStage,
 };
+use vua_unity_bridge::UnityBatchBridge;
 
 fn project() -> ProjectRef {
     let suffix = SystemTime::now()

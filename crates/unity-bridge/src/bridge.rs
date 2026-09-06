@@ -1,8 +1,8 @@
-use crate::process::{ProcessOutcome, ProcessRunner, ProcessSpec, StdProcessRunner};
-use crate::{FileSystemProjectStore, ProjectRef, UnityCommand, UnityResult};
-use std::fmt::{Display, Formatter};
+use vua_orchestrator::{
+    BridgeError, FileSystemProjectStore, ProcessOutcome, ProcessRunner, ProcessSpec, ProjectRef,
+    StdProcessRunner, UnityBridge, UnityCommand, UnityResult,
+};
 use std::fs;
-use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
@@ -10,33 +10,13 @@ use std::time::Duration;
 const DEFAULT_BRIDGE_TIMEOUT: Duration = Duration::from_secs(1200);
 const OUTPUT_LIMIT: usize = 256 * 1024;
 
-#[derive(Debug)]
-pub enum BridgeError {
-    Io(io::Error),
-    UnityFailed(Option<i32>),
-    /// The Unity process hit its wall-clock budget and was killed.
-    TimedOut,
-    MissingResult,
-    InvalidResult(serde_json::Error),
-}
-
-impl Display for BridgeError {
-    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Io(_) => write!(formatter, "bridge file operation failed"),
-            Self::UnityFailed(code) => write!(formatter, "Unity exited unsuccessfully ({code:?})"),
-            Self::TimedOut => write!(formatter, "Unity did not finish within the budget"),
-            Self::MissingResult => write!(formatter, "Unity did not write a bridge result"),
-            Self::InvalidResult(_) => write!(formatter, "Unity wrote an invalid bridge result"),
-        }
-    }
-}
-
-impl std::error::Error for BridgeError {}
-
-impl From<io::Error> for BridgeError {
-    fn from(value: io::Error) -> Self {
-        Self::Io(value)
+impl UnityBridge for UnityBatchBridge {
+    fn execute(
+        &self,
+        project: &ProjectRef,
+        command: &UnityCommand,
+    ) -> Result<UnityResult, BridgeError> {
+        UnityBatchBridge::execute(self, project, command)
     }
 }
 
@@ -94,14 +74,14 @@ impl UnityBatchBridge {
             timeout: self.timeout,
             output_limit: OUTPUT_LIMIT,
             // R2-2: Unity 子进程同样剥离凭据基线。
-            removals: crate::process::CREDENTIAL_ENV_REMOVALS
+            removals: vua_orchestrator::CREDENTIAL_ENV_REMOVALS
                 .iter()
                 .map(|key| key.to_string())
                 .collect(),
             ..Default::default()
         };
         let outcome = self.runner.run(&spec).map_err(|error| match error {
-            crate::process::ProcessError::Io(io) => BridgeError::Io(io),
+            vua_orchestrator::ProcessError::Io(io) => BridgeError::Io(io),
         })?;
         Self::collect(&outcome, &result_path)
     }

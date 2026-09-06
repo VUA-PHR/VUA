@@ -22,23 +22,24 @@
 //! (timeout budget, real rejection payloads, rollback equivalence) is the
 //! separate local matrix per the M3 gate.
 
-use crate::build_record::{
+use vua_orchestrator::{
     BridgeJobEvidenceV01, BuildRecordStatus, BuildRecordStore, BuildRecordV01,
     BuildSnapshotEvidenceV01, BuildValidationEvidenceV01,
 };
-use crate::filesystem::{FileSystemSnapshotStore, VerifiedSnapshot};
+use vua_orchestrator::{FileSystemSnapshotStore, VerifiedSnapshot};
 use crate::material_intake::{
-    error_codes as intake_codes, MaterialEntryMode, MaterialIntakeConfirmationV01,
-    MaterialIntakeEngine, MaterialIntakeStepKind,
+    error_codes as intake_codes, MaterialIntakeConfirmationV01, MaterialIntakeEngine,
+    MaterialIntakeStepKind,
 };
+use vua_orchestrator::MaterialEntryMode;
 use crate::material_identity::LocalPackageIdentityStore;
 use crate::material_staging::StagingProject;
-use crate::model::{
+use vua_orchestrator::{
     ProjectRef, ResultStatus, UnityCommand, UnityOperation, UnityPayload, UnityResult,
 };
-use crate::time::Clock;
-use crate::vpm_backend::{PackageRequestV1, VpmBackend};
-use crate::UnityBridge;
+use vua_orchestrator::Clock;
+use vua_orchestrator::{PackageRequestV1, VpmBackend};
+use vua_orchestrator::UnityBridge;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use std::io::Read as _;
@@ -180,9 +181,9 @@ impl MaterialExecutor {
         &self,
         project: &ProjectRef,
         correlation_id: &str,
-    ) -> Result<String, crate::AppErrorV1> {
+    ) -> Result<String, vua_orchestrator::AppErrorV1> {
         let command = UnityCommand {
-            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
             command_id: format!("project-inspect-{}", self.clock.now_rfc3339()),
             operation: UnityOperation::InspectProject,
             project_id: project.id.clone(),
@@ -194,18 +195,18 @@ impl MaterialExecutor {
         let result = self
             .dispatch(project, &command, &mut jobs)
             .map_err(|(code, _)| {
-                crate::AppErrorV1::new(
+                vua_orchestrator::AppErrorV1::new(
                     code,
-                    crate::ErrorCategory::ExternalFailure,
+                    vua_orchestrator::ErrorCategory::ExternalFailure,
                     "errors.material.executionFailed",
                     correlation_id,
                 )
                 .with_recoverable(true)
             })?;
         fingerprint_of(&result).ok_or_else(|| {
-            crate::AppErrorV1::new(
+            vua_orchestrator::AppErrorV1::new(
                 error_codes::BRIDGE_FAILED.to_owned(),
-                crate::ErrorCategory::ExternalFailure,
+                vua_orchestrator::ErrorCategory::ExternalFailure,
                 "errors.material.executionFailed",
                 correlation_id,
             )
@@ -241,7 +242,7 @@ impl MaterialExecutor {
                         && prior.project_id == project.id
                         && prior.source.source_fingerprint == plan.source.source_fingerprint
                         && prior.source.risk_fingerprint == plan.source.risk_fingerprint;
-                    if prior.status == crate::build_record::BuildRecordStatus::Succeeded
+                    if prior.status == vua_orchestrator::BuildRecordStatus::Succeeded
                         && same_identity
                     {
                         return MaterialExecutionReport {
@@ -329,7 +330,7 @@ impl MaterialExecutor {
         let mut validation_expectations: Vec<String> = Vec::new();
         let mut final_fingerprint: Option<String> = None;
         let mut validation: Option<BuildValidationEvidenceV01> = None;
-        let mut local_vpm: Option<crate::build_record::LocalVpmEvidenceV01> = None;
+        let mut local_vpm: Option<vua_orchestrator::LocalVpmEvidenceV01> = None;
         let failure = match plan.mode {
             MaterialEntryMode::DirectUnityPackage => {
                 match self.run_direct_imports(
@@ -434,7 +435,7 @@ impl MaterialExecutor {
         // and failure alike — the record is what makes a later re-run a
         // replay instead of a blind second mutation.
         let record = BuildRecordV01 {
-            schema_version: crate::build_record::BUILD_RECORD_SCHEMA_VERSION.to_owned(),
+            schema_version: vua_orchestrator::BUILD_RECORD_SCHEMA_VERSION.to_owned(),
             record_id: record_id.clone(),
             task_id: confirmation.correlation_id.clone(),
             correlation_id: confirmation.correlation_id.clone(),
@@ -451,7 +452,7 @@ impl MaterialExecutor {
             source: plan.source.clone(),
             risk_choice: confirmation.risk_decision.choice,
             project_id: project.id.clone(),
-            project_identity: crate::ProjectIdentity::from_existing_path(&project.root)
+            project_identity: vua_orchestrator::ProjectIdentity::from_existing_path(&project.root)
                 .ok()
                 .map(|identity| identity.as_str().to_owned()),
             recovered_from_record_id: None,
@@ -543,7 +544,7 @@ impl MaterialExecutor {
                     )
                 })?;
             let command = UnityCommand {
-                schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+                schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
                 command_id,
                 operation: UnityOperation::MaterializeExtractedPackage,
                 project_id: project.id.clone(),
@@ -579,7 +580,7 @@ impl MaterialExecutor {
         artifact_output_root: &Path,
         token: &MaterialCancelToken,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
-        local_vpm: &mut Option<crate::build_record::LocalVpmEvidenceV01>,
+        local_vpm: &mut Option<vua_orchestrator::LocalVpmEvidenceV01>,
         validation_expectations: &mut Vec<String>,
     ) -> Result<(), StepFailure> {
         let plan = &confirmation.plan;
@@ -662,7 +663,7 @@ impl MaterialExecutor {
                     )
                 })?;
             let command = UnityCommand {
-                schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+                schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
                 command_id,
                 operation: UnityOperation::MaterializeExtractedPackage,
                 project_id: staging_project.id.clone(),
@@ -684,7 +685,7 @@ impl MaterialExecutor {
         // Produce the local-reusable package layout + manifest.
         let command_id = format!("{}-stage-vpm", plan.plan_id);
         let command = UnityCommand {
-            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
             command_id,
             operation: UnityOperation::CreateLocalVpmPackage,
             project_id: staging_project.id.clone(),
@@ -702,7 +703,7 @@ impl MaterialExecutor {
                     .source
                     .declared_dependencies
                     .iter()
-                    .map(|dependency| crate::UnityPackageDependency {
+                    .map(|dependency| vua_orchestrator::UnityPackageDependency {
                         package_id: dependency.package_id.clone(),
                         version: dependency.version_range.clone(),
                     })
@@ -752,7 +753,7 @@ impl MaterialExecutor {
             .apply_install(project, std::slice::from_ref(&request), &preview.digest)
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
 
-        *local_vpm = Some(crate::build_record::LocalVpmEvidenceV01 {
+        *local_vpm = Some(vua_orchestrator::LocalVpmEvidenceV01 {
             package_id,
             display_name: identity.display_name.clone(),
             version: "0.1.0".to_owned(),
@@ -774,7 +775,7 @@ impl MaterialExecutor {
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
     ) -> Result<BuildValidationEvidenceV01, String> {
         let command = UnityCommand {
-            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
             command_id: command_id.to_owned(),
             operation: UnityOperation::ValidateAssetPaths,
             project_id: project.id.clone(),
@@ -787,7 +788,7 @@ impl MaterialExecutor {
         };
         let result = self.dispatch(project, &command, bridge_jobs).map_err(|(code, _)| code)?;
         for diagnostic in &result.diagnostics {
-            if diagnostic.severity == crate::model::DiagnosticSeverity::Error {
+            if diagnostic.severity == vua_orchestrator::DiagnosticSeverity::Error {
                 return Err(format!("{}: {}", error_codes::BRIDGE_FAILED, diagnostic.code));
             }
         }
@@ -894,7 +895,7 @@ impl MaterialExecutor {
                     )
                 })?;
             let command = UnityCommand {
-                schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+                schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
                 command_id,
                 operation: UnityOperation::MaterializeExtractedPackage,
                 project_id: staging_project.id.clone(),
@@ -916,7 +917,7 @@ impl MaterialExecutor {
         // Produce the local-reusable package layout + manifest.
         let command_id = format!("{correlation_id}-stage-vpm");
         let command = UnityCommand {
-            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
             command_id,
             operation: UnityOperation::CreateLocalVpmPackage,
             project_id: staging_project.id.clone(),
@@ -956,7 +957,7 @@ impl MaterialExecutor {
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
     ) -> Result<UnityResult, StepFailure> {
         let command = UnityCommand {
-            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
             command_id: command_id.to_owned(),
             operation: UnityOperation::InspectProject,
             project_id: project.id.clone(),
@@ -994,7 +995,7 @@ impl MaterialExecutor {
                     None => Ok(result),
                 }
             }
-            Err(crate::BridgeError::TimedOut) => Err((
+            Err(vua_orchestrator::BridgeError::TimedOut) => Err((
                 error_codes::BRIDGE_TIMEOUT.to_owned(),
                 MaterialExecutionStatus::Failed,
             )),

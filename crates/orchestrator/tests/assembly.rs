@@ -15,7 +15,7 @@ use vua_orchestrator::{
     derive_project_spec, document_digest, AssemblyConfirmation, AssemblyEngine, BridgeError,
     ChangeItemV1, ChangeKindV1, ChangePreviewV1, FixedClock, FixedIdGenerator, MemoryJournal,
     PackageRequestV1, ProjectRef, RecipeV02, SubmitRequest, TaskEventKind, TaskExit, TaskRuntime,
-    TaskState, UnityBatchBridge, UnityBridge, UnityCommand, UnityResult, VpmBackend,
+    TaskState, UnityBridge, UnityCommand, UnityResult, VpmBackend,
     VpmCapabilities,
 };
 
@@ -855,45 +855,6 @@ fn orc_con_001_assembly_runs_as_a_task_with_monotonic_step_events() {
         }
     }
     assert!(manifest_text(&project_root).contains("dev.fixture.modular-avatar"));
-    fs::remove_dir_all(&base).ok();
-}
-
-#[test]
-fn orc_adp_005_real_bridge_writes_requests_into_the_job_directory_shape() {
-    // The production bridge still satisfies the job-directory discipline
-    // after the ProcessRunner refactor: request file written, invocation
-    // args allowlisted.
-    let base = unique_dir("bridge");
-    let project_root = base.join("project");
-    make_project(&project_root);
-    let bridge = UnityBatchBridge::new("C:/Unity/Unity.exe");
-    let command = UnityCommand {
-        schema_version: 1,
-        command_id: "asm-01".into(),
-        operation: vua_orchestrator::UnityOperation::InspectProject,
-        project_id: "proj".into(),
-        dry_run: true,
-        expected_project_fingerprint: None,
-        payload: vua_orchestrator::UnityPayload {
-            avatar_global_object_id: "a".into(),
-            avatar_armature_global_object_id: "a_Armature".into(),
-            outfit_global_object_id: "o".into(),
-            outfit_armature_global_object_id: "o_Armature".into(),
-            toggle_name: "t".into(),
-            ..vua_orchestrator::UnityPayload::default()
-        },
-    };
-    let project = ProjectRef {
-        id: "proj".into(),
-        root: project_root.clone(),
-    };
-    // Without a real Unity executable the runner fails to spawn; the request
-    // file must already exist (write happens before the process call).
-    let _ = bridge.execute(&project, &command);
-    assert!(project_root
-        .join(".vua/bridge")
-        .join("asm-01.request.json")
-        .is_file());
     fs::remove_dir_all(&base).ok();
 }
 

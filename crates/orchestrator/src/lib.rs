@@ -7,7 +7,6 @@
 
 mod assembly;
 mod booth_extraction;
-mod bridge;
 mod build_record;
 mod capability;
 mod contracts;
@@ -16,22 +15,15 @@ mod environment;
 mod environment_managers;
 mod filesystem;
 mod journal;
-mod local_vpm_artifact;
-mod material_identity;
-mod material_intake;
-mod material_task;
-mod material_exec;
-mod material_staging;
+mod material_types;
 mod model;
 mod process;
-mod production_documents;
 mod project_identity;
 mod project_lock;
 mod provision;
 mod recipe;
 mod runtime;
 mod sqlite_task_store;
-mod staging_scaffold;
 mod state_file;
 mod time;
 mod tools;
@@ -42,21 +34,16 @@ mod workflow;
 
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
-    AssemblyPlanV1, AssemblyStepV1, UnityBridge,
+    AssemblyPlanV1, AssemblyStepV1, BridgeError, UnityBridge,
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
-pub use bridge::{BridgeError, UnityBatchBridge};
 pub use build_record::{
     wire_v02, BridgeJobEvidenceV01, BridgeSummary, BuildRecordStatus, BuildRecordStore,
     BuildRecordV01, BuildRecordWireV02, BuildSnapshotEvidenceV01, BuildValidationEvidenceV01,
     EvidenceSummary, LocalVpmEvidenceV01, LocalVpmSummary, SnapshotSummary, ValidationSummary,
     BUILD_RECORD_SCHEMA_VERSION, PRODUCTION_STAGES,
-};
-pub use production_documents::{
-    build_inspection_document, build_plan_document, InspectionDocument, InspectionFinding,
-    InspectionFindingKind, PlanDocument, Plannability,
 };
 pub use capability::{
     CapabilityRegistry, CapabilityReport, CapabilitySource, CapabilityState, UnavailableSource,
@@ -88,24 +75,9 @@ pub use journal::{
     JournalSink, JournalWriter, MemoryJournal, RecoveredDisposition, RecoveredTask, RecoveryReport,
     JOURNAL_SCHEMA_VERSION,
 };
-pub use local_vpm_artifact::{publish_local_vpm_artifact, PublishedLocalVpmArtifact};
-pub use material_identity::{LocalPackageIdentity, LocalPackageIdentityStore};
-pub use material_intake::{
-    error_codes as material_intake_error_codes, ExecutableRiskEvidence, ExecutableRiskKind,
-    MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
-    MaterialIntakeStepKind, MaterialIntakeStepV01, RiskDecisionChoice, RiskDecisionV01,
-    SourceFolderInspectionV01, SourcePackageEvidenceV01,
-};
-pub use material_exec::{
-    error_codes as material_exec_error_codes, GenerateSourcePackage, MaterialCancelToken,
-    MaterialExecutionReport, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
-};
-pub use material_task::{
-    material_intake_job, submit_material_intake, MaterialIntakeTaskSpec, MaterialTaskResult,
-};
-pub use material_staging::{
-    staging_root, StagingProject, STAGING_MANIFEST_JSON, STAGING_PROJECT_VERSION_TXT,
-    STAGING_TEMPLATE_VERSION, STAGING_UNITY_VERSION,
+pub use material_types::{
+    DeclaredDependencyV01, ExecutableRiskEvidence, ExecutableRiskKind, MaterialEntryMode,
+    RiskDecisionChoice, SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use model::*;
 pub use process::{
@@ -124,9 +96,6 @@ pub use recipe::*;
 pub use runtime::{
     recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRecoveryDisposition,
     TaskRuntime, TaskSnapshot,
-};
-pub use staging_scaffold::{
-    MA_STUB_ASMDEF, MA_STUB_COMPONENTS_CS, MA_STUB_PACKAGE_ID, MA_STUB_PACKAGE_JSON,
 };
 pub use sqlite_task_store::{
     IdempotentCancellation, IdempotentTaskAcceptance, NewTask, ProjectMutationLease,

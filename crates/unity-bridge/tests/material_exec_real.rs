@@ -17,10 +17,12 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 use tar::{Builder, Header};
 
 use vua_orchestrator::{
-    BuildRecordStore, FileSystemSnapshotStore, MaterialEntryMode, MaterialExecutor,
-    MaterialIntakeConfirmationV01, MaterialIntakeEngine,
-    MaterialIntakeStepKind, ProjectRef, RiskDecisionChoice, RiskDecisionV01,
-    UnityBatchBridge, UnityBridge, VpmBackend,
+    BuildRecordStore, FileSystemSnapshotStore, MaterialEntryMode, ProjectRef, RiskDecisionChoice,
+    UnityBridge, VpmBackend,
+};
+use vua_unity_bridge::{
+    MaterialExecutor, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakeStepKind,
+    RiskDecisionV01, UnityBatchBridge,
 };
 
 const UNITY_VERSION_LINE: &str = "m_EditorVersion: 2022.3.22f1\nm_EditorVersionWithEdition: 2022.3.22f1\n";
@@ -329,7 +331,7 @@ fn fingerprint(bridge: &dyn UnityBridge, project: &ProjectRef) -> String {
 
 use serde_json::Value;
 
-fn confirmation_for(plan: &vua_orchestrator::MaterialIntakePlanV01) -> MaterialIntakeConfirmationV01 {
+fn confirmation_for(plan: &vua_unity_bridge::MaterialIntakePlanV01) -> MaterialIntakeConfirmationV01 {
     MaterialIntakeConfirmationV01 {
         plan: plan.clone(),
         risk_decision: RiskDecisionV01 {
@@ -382,24 +384,24 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("direct-temp"),
         "2022.3.22f1",
-        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
+        vua_unity_bridge::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
     let report = executor.execute(
         &confirmation,
         &source,
         &project,
         &project_root.join(".vua/artifacts"),
-        &vua_orchestrator::MaterialCancelToken::new(),
+        &vua_unity_bridge::MaterialCancelToken::new(),
     );
     let elapsed = started.elapsed();
     println!("executor wall time: {elapsed:?}");
 
     assert_eq!(
         report.status,
-        vua_orchestrator::MaterialExecutionStatus::Succeeded,
+        vua_unity_bridge::MaterialExecutionStatus::Succeeded,
         "report: {report:?}"
     );
-    assert_eq!(report.rollback, vua_orchestrator::RollbackOutcome::NotNeeded);
+    assert_eq!(report.rollback, vua_unity_bridge::RollbackOutcome::NotNeeded);
     assert!(report
         .completed_steps
         .contains(&MaterialIntakeStepKind::WriteBuildRecord));
@@ -473,26 +475,26 @@ fn m3_real_stale_fingerprint_is_rejected_and_restored() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("reject-temp"),
         "2022.3.22f1",
-        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
+        vua_unity_bridge::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
     let report = executor.execute(
         &confirmation,
         &source,
         &project,
         &project_root.join(".vua/artifacts"),
-        &vua_orchestrator::MaterialCancelToken::new(),
+        &vua_unity_bridge::MaterialCancelToken::new(),
     );
 
     assert_eq!(
         report.status,
-        vua_orchestrator::MaterialExecutionStatus::Failed,
+        vua_unity_bridge::MaterialExecutionStatus::Failed,
         "the real Bridge rejects the stale fingerprint"
     );
     assert_eq!(
         report.error_code.as_deref(),
         Some("vua.material.bridge_rejected")
     );
-    assert_eq!(report.rollback, vua_orchestrator::RollbackOutcome::Restored);
+    assert_eq!(report.rollback, vua_unity_bridge::RollbackOutcome::Restored);
 
     let record = vua_orchestrator::BuildRecordStore::new(project_root.join(".vua/records"))
         .read(&report.build_record_id.expect("record id"))
@@ -648,10 +650,10 @@ fn m3_real_local_reusable_vertical_slice() {
     );
     // Resolve the machine identity first (persisted on disk; the executor's
     // own store instance re-reads the same file).
-    let identity = vua_orchestrator::LocalPackageIdentityStore::new(base.join("identities.json"))
+    let identity = vua_unity_bridge::LocalPackageIdentityStore::new(base.join("identities.json"))
         .resolve(&source, "outfit")
         .expect("identity resolves");
-    let identity_store = vua_orchestrator::LocalPackageIdentityStore::new(base.join("identities.json"));
+    let identity_store = vua_unity_bridge::LocalPackageIdentityStore::new(base.join("identities.json"));
     let executor = MaterialExecutor::new(
         bridge,
         FileSystemSnapshotStore,
@@ -670,14 +672,14 @@ fn m3_real_local_reusable_vertical_slice() {
         &source,
         &project,
         &project_root.join(".vua/artifacts"),
-        &vua_orchestrator::MaterialCancelToken::new(),
+        &vua_unity_bridge::MaterialCancelToken::new(),
     );
     let elapsed = started.elapsed();
     println!("executor wall time (4+ Unity launches + vrc-get install): {elapsed:?}");
 
     assert_eq!(
         report.status,
-        vua_orchestrator::MaterialExecutionStatus::Succeeded,
+        vua_unity_bridge::MaterialExecutionStatus::Succeeded,
         "report: {report:?}"
     );
     for expected in [
@@ -692,7 +694,7 @@ fn m3_real_local_reusable_vertical_slice() {
     }
 
     // The staging project is destroyed — no leftovers.
-    let staging_expected = vua_orchestrator::staging_root(&base.join("temp"), correlation);
+    let staging_expected = vua_unity_bridge::staging_root(&base.join("temp"), correlation);
     assert!(
         !staging_expected.exists(),
         "staging leftovers poison later runs"

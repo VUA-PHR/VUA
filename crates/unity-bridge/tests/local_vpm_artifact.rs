@@ -1,6 +1,6 @@
 use std::fs;
 use std::sync::atomic::{AtomicU64, Ordering};
-use vua_orchestrator::publish_local_vpm_artifact;
+use vua_unity_bridge::publish_local_vpm_artifact;
 
 static NEXT: AtomicU64 = AtomicU64::new(1);
 

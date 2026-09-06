@@ -1,13 +1,13 @@
 //! Transport adapter for the supervised Orchestrator Provider process.
 
-use vua_orchestrator::{
+use vua_unity_bridge::{
     MaterialCancelToken, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
 };
-use vua_orchestrator::{
-    MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
-    RiskDecisionChoice, RiskDecisionV01, SourceFolderInspectionV01,
+use vua_orchestrator::{MaterialEntryMode, RiskDecisionChoice, SourceFolderInspectionV01};
+use vua_unity_bridge::{
+    MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
 };
-use vua_orchestrator::MaterialTaskResult;
+use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_orchestrator::{
     acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
@@ -1429,14 +1429,14 @@ pub fn production_config_from_env() -> Option<ProductionConfig> {
         }
     };
     let executor = Arc::new(MaterialExecutor::new(
-        Arc::new(vua_orchestrator::UnityBatchBridge::new(unity)),
+        Arc::new(vua_unity_bridge::UnityBatchBridge::new(unity)),
         vua_orchestrator::FileSystemSnapshotStore,
         vpm,
         BuildRecordStore::new(data.join("records")),
         Arc::new(vua_orchestrator::SystemClock),
         data.join("temp"),
         "2022.3.22f1",
-        vua_orchestrator::LocalPackageIdentityStore::new(data.join("identities.json")),
+        vua_unity_bridge::LocalPackageIdentityStore::new(data.join("identities.json")),
     ));
     Some(ProductionConfig {
         executor,
@@ -2847,7 +2847,7 @@ fn get_domain_document(
                 )
             })?;
         let inspected_at = string_field(&binding, "createdAt");
-        serde_json::to_value(vua_orchestrator::build_inspection_document(
+        serde_json::to_value(vua_unity_bridge::build_inspection_document(
             &domain_id,
             &inspected_at,
             &inspection,
@@ -2868,7 +2868,7 @@ fn get_domain_document(
             )
         })?;
         let mut plan_document =
-            vua_orchestrator::build_plan_document(&inspection_id, revision, &plan);
+            vua_unity_bridge::build_plan_document(&inspection_id, revision, &plan);
         // The plan document's identity is the DOMAIN planId (the registry
         // id); the engine's internal plan id stays at the diagnostics
         // boundary.
