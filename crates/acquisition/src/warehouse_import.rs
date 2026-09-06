@@ -19,7 +19,7 @@ use vua_bdl_store::bdl_store::{
     ArtifactInspectionState, ArtifactMode, ArtifactRecordingOutcome, BdlStore, BdlStoreError,
     CopyRole, NewLocalArtifact, WarehouseEntryDetail,
 };
-use crate::time::Clock;
+use vua_orchestrator::Clock;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 
@@ -276,8 +276,8 @@ fn collect_files(
 // imported stays imported (entries are durable in BDL), and the job checks
 // the task cancel flag before starting each folder.
 
-use crate::contracts::{ErrorCategory, ParamValue};
-use crate::runtime::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
+use vua_orchestrator::{ErrorCategory, ParamValue};
+use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -306,7 +306,7 @@ fn import_error_to_app(
     error: ImportError,
     correlation_id: &str,
     folder: &Path,
-) -> crate::AppErrorV1 {
+) -> vua_orchestrator::AppErrorV1 {
     let (code, category) = match &error {
         ImportError::Store(_) => ("vua.warehouse.storeFailed", ErrorCategory::Internal),
         ImportError::Io(_) => ("vua.warehouse.importIoFailed", ErrorCategory::ExternalFailure),
@@ -317,7 +317,7 @@ fn import_error_to_app(
             ("vua.warehouse.copySizeMismatch", ErrorCategory::ExternalFailure)
         }
     };
-    crate::AppErrorV1::new(code, category, "errors.warehouse.importFailed", correlation_id)
+    vua_orchestrator::AppErrorV1::new(code, category, "errors.warehouse.importFailed", correlation_id)
         .with_param(
             "folder",
             ParamValue::Text(folder.to_string_lossy().into_owned()),
@@ -380,7 +380,7 @@ pub fn submit_warehouse_import(
     clock: Arc<dyn Clock>,
     spec: WarehouseImportTaskSpec,
     timeout: Option<Duration>,
-) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
     let correlation_id = spec.correlation_id.clone();
     runtime.submit(SubmitRequest {
         correlation_id: Some(correlation_id),
@@ -393,7 +393,7 @@ pub fn submit_warehouse_import(
 mod tests {
     use super::*;
     use vua_bdl_store::bdl_queries::ArtifactInspectionVerdict;
-    use crate::time::FixedClock;
+    use vua_orchestrator::FixedClock;
 
     fn unique_dir(tag: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!(
@@ -566,20 +566,20 @@ mod tests {
 
     mod task {
         use super::*;
-        use crate::contracts::{AppErrorV1, TaskState};
-        use crate::runtime::TaskRuntime;
-        use crate::time::{FixedIdGenerator, SystemClock};
+        use vua_orchestrator::{AppErrorV1, TaskState};
+        use vua_orchestrator::TaskRuntime;
+        use vua_orchestrator::{FixedIdGenerator, SystemClock};
         use std::time::{Duration, Instant};
 
         fn runtime() -> TaskRuntime {
             TaskRuntime::new(
-                Arc::new(crate::journal::MemoryJournal::default()),
+                Arc::new(vua_orchestrator::MemoryJournal::default()),
                 Arc::new(SystemClock),
                 Arc::new(FixedIdGenerator::default()),
             )
         }
 
-        fn wait_for_terminal(rt: &TaskRuntime, task_id: &str) -> crate::runtime::TaskSnapshot {
+        fn wait_for_terminal(rt: &TaskRuntime, task_id: &str) -> vua_orchestrator::TaskSnapshot {
             let deadline = Instant::now() + Duration::from_secs(30);
             loop {
                 let snapshot = rt.snapshot(task_id).expect("task must exist");
@@ -626,7 +626,7 @@ mod tests {
             assert_eq!(snapshot.state, TaskState::Succeeded);
             let mut completed_payload = None;
             while let Ok(event) = events.try_recv() {
-                if event.kind == crate::contracts::TaskEventKind::Completed {
+                if event.kind == vua_orchestrator::TaskEventKind::Completed {
                     completed_payload = Some(event.payload);
                 }
             }

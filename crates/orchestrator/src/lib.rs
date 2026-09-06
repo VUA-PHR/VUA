@@ -5,7 +5,6 @@
 // errors would leak through serde shapes for no wire benefit.
 #![allow(clippy::result_large_err)]
 
-mod artifact_inspection;
 mod assembly;
 mod booth_extraction;
 mod bridge;
@@ -38,15 +37,9 @@ mod time;
 mod tools;
 mod vpm;
 mod vpm_backend;
-mod warehouse_import;
-mod warehouse_maintenance;
 mod win_registry;
 mod workflow;
 
-pub use artifact_inspection::{
-    ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
-    InspectionPolicy, StagingRejection,
-};
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
     AssemblyPlanV1, AssemblyStepV1, UnityBridge,
@@ -104,8 +97,8 @@ pub use material_intake::{
     SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use material_exec::{
-    error_codes as material_exec_error_codes, MaterialCancelToken, MaterialExecutionReport,
-    MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
+    error_codes as material_exec_error_codes, GenerateSourcePackage, MaterialCancelToken,
+    MaterialExecutionReport, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
 };
 pub use material_task::{
     material_intake_job, submit_material_intake, MaterialIntakeTaskSpec, MaterialTaskResult,
@@ -155,15 +148,6 @@ pub use vpm_backend::{
     backends_summary, create_from_template, error_codes as vpm_backend_error_codes, ChangeItemV1,
     ChangeKindV1, ChangePreviewV1, PackageRequestV1, VccCliBackend, VpmBackend, VpmCapabilities,
     VrcGetLibBackend,
-};
-pub use warehouse_import::{
-    submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
-    SkippedSourceFile, WarehouseImportReport, WarehouseImportTaskResult, WarehouseImporter,
-    WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
-};
-pub use warehouse_maintenance::{
-    generate_vpm_job, submit_delete_originals, submit_generate_vpm, DeleteOriginalsResult,
-    DeleteOriginalsTaskSpec, GenerateVpmResult, GenerateVpmTaskSpec, MaintenanceError,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

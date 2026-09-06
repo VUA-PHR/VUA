@@ -23,7 +23,7 @@ use vua_bdl_store::bdl_store::{
     StoredArtifact,
 };
 use vua_bdl_store::download_events::{ConsumerError, DownloadEventConsumer};
-use crate::time::Clock;
+use vua_orchestrator::Clock;
 use sha2::{Digest, Sha256};
 use std::io::Read;
 use std::path::{Path, PathBuf};
@@ -367,7 +367,7 @@ mod tests {
     use vua_bdl_store::download_events::{
         DownloadEventKind, DownloadEventV01, DOWNLOAD_EVENT_SCHEMA_VERSION,
     };
-    use crate::time::FixedClock;
+    use vua_orchestrator::FixedClock;
 
     fn clock(readings: &[&str]) -> FixedClock {
         FixedClock::new(readings)

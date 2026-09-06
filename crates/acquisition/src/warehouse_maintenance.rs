@@ -23,9 +23,9 @@ use crate::artifact_inspection::{hex_lower, sha256_file};
 use vua_bdl_store::bdl_store::{
     ArtifactMode, BdlStore, BdlStoreError, CopyRole,
 };
-use crate::contracts::{ErrorCategory, ParamValue};
-use crate::material_exec::{MaterialCancelToken, MaterialExecutor};
-use crate::runtime::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
+use vua_orchestrator::{ErrorCategory, ParamValue};
+use vua_orchestrator::{MaterialCancelToken, MaterialExecutor};
+use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -134,7 +134,7 @@ pub struct DeleteOriginalsResult {
     pub kept_generated_sha256: Option<String>,
 }
 
-fn maintenance_error_to_app(error: MaintenanceError, correlation_id: &str) -> crate::AppErrorV1 {
+fn maintenance_error_to_app(error: MaintenanceError, correlation_id: &str) -> vua_orchestrator::AppErrorV1 {
     let (code, category, params): (String, ErrorCategory, Vec<(String, String)>) = match &error {
         MaintenanceError::Store(_) => (
             "vua.warehouse.storeFailed".to_owned().to_owned(),
@@ -189,7 +189,7 @@ fn maintenance_error_to_app(error: MaintenanceError, correlation_id: &str) -> cr
             ],
         ),
     };
-    let mut app = crate::AppErrorV1::new(
+    let mut app = vua_orchestrator::AppErrorV1::new(
         &code,
         category,
         "errors.warehouse.maintenanceFailed",
@@ -243,7 +243,7 @@ fn verify_generated_copies(
 fn run_delete_originals(
     store: &BdlStore,
     spec: &DeleteOriginalsTaskSpec,
-    ctx: &crate::runtime::TaskContext,
+    ctx: &vua_orchestrator::TaskContext,
 ) -> Result<TaskExit, MaintenanceError> {
     let detail = store
         .warehouse_entry_detail(&spec.warehouse_item_id, spec.global_default)?
@@ -319,7 +319,7 @@ pub fn submit_delete_originals(
     store: Arc<BdlStore>,
     spec: DeleteOriginalsTaskSpec,
     timeout: Option<Duration>,
-) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
     let correlation_id = spec.correlation_id.clone();
     runtime.submit(SubmitRequest {
         correlation_id: Some(correlation_id),
@@ -351,7 +351,7 @@ pub struct GenerateVpmResult {
     pub archive_sha256: String,
 }
 
-fn generate_error_to_app(error: MaintenanceError, correlation_id: &str) -> crate::AppErrorV1 {
+fn generate_error_to_app(error: MaintenanceError, correlation_id: &str) -> vua_orchestrator::AppErrorV1 {
     let (code, category, params): (String, ErrorCategory, Vec<(String, String)>) = match &error {
         MaintenanceError::Store(_) => (
             "vua.warehouse.storeFailed".to_owned(),
@@ -406,7 +406,7 @@ fn generate_error_to_app(error: MaintenanceError, correlation_id: &str) -> crate
             ],
         ),
     };
-    let mut app = crate::AppErrorV1::new(
+    let mut app = vua_orchestrator::AppErrorV1::new(
         &code,
         category,
         "errors.warehouse.maintenanceFailed",
@@ -423,7 +423,7 @@ fn run_generate_vpm(
     store: &BdlStore,
     executor: &MaterialExecutor,
     spec: &GenerateVpmTaskSpec,
-    ctx: &crate::runtime::TaskContext,
+    ctx: &vua_orchestrator::TaskContext,
 ) -> Result<TaskExit, MaintenanceError> {
     let detail = store
         .warehouse_entry_detail(&spec.warehouse_item_id, spec.global_default)?
@@ -453,9 +453,9 @@ fn run_generate_vpm(
         });
     }
 
-    let sources: Vec<crate::material_exec::GenerateSourcePackage> = originals
+    let sources: Vec<vua_orchestrator::GenerateSourcePackage> = originals
         .iter()
-        .map(|copy| crate::material_exec::GenerateSourcePackage {
+        .map(|copy| vua_orchestrator::GenerateSourcePackage {
             archive_path: PathBuf::from(&copy.stored_path),
             sha256: copy.artifact_sha256.clone(),
         })
@@ -481,7 +481,7 @@ fn run_generate_vpm(
             &token,
         )
         .map_err(|(code, status)| {
-            if status == crate::MaterialExecutionStatus::Cancelled {
+            if status == vua_orchestrator::MaterialExecutionStatus::Cancelled {
                 MaintenanceError::GenerationFailed {
                     code: "vua.warehouse.generation_cancelled".into(),
                     message: "cancelled at a package boundary".into(),
@@ -548,7 +548,7 @@ pub fn generate_vpm_job(
     store: Arc<BdlStore>,
     executor: Arc<MaterialExecutor>,
     spec: Arc<GenerateVpmTaskSpec>,
-) -> crate::runtime::TaskJob {
+) -> vua_orchestrator::TaskJob {
     Box::new(move |ctx| match run_generate_vpm(&store, executor.as_ref(), &spec, ctx) {
         Ok(exit) => Ok(exit),
         Err(error) => Err(generate_error_to_app(error, &spec.correlation_id)),
@@ -561,7 +561,7 @@ pub fn submit_generate_vpm(
     executor: Arc<MaterialExecutor>,
     spec: GenerateVpmTaskSpec,
     timeout: Option<Duration>,
-) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
     let correlation_id = spec.correlation_id.clone();
     runtime.submit(SubmitRequest {
         correlation_id: Some(correlation_id),
@@ -579,9 +579,9 @@ fn now_rfc3339() -> String {
 mod tests {
     use super::*;
     use vua_bdl_store::bdl_store::NewLocalArtifact;
-    use crate::contracts::TaskState;
-    use crate::runtime::TaskSnapshot;
-    use crate::time::{FixedIdGenerator, SystemClock};
+    use vua_orchestrator::TaskState;
+    use vua_orchestrator::TaskSnapshot;
+    use vua_orchestrator::{FixedIdGenerator, SystemClock};
     use std::path::Path;
     use std::time::{Duration, Instant};
 
@@ -599,7 +599,7 @@ mod tests {
 
     fn runtime() -> TaskRuntime {
         TaskRuntime::new(
-            Arc::new(crate::journal::MemoryJournal::default()),
+            Arc::new(vua_orchestrator::MemoryJournal::default()),
             Arc::new(SystemClock),
             Arc::new(FixedIdGenerator::default()),
         )

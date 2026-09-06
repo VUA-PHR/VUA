@@ -1,0 +1,25 @@
+//! Acquisition domain: artifact inspection, warehouse import and warehouse
+//! maintenance over the BDL store.
+
+// AppErrorV1 is a deliberately fat value type: it carries the localization
+// key, params and redacted context through IPC, events and the journal. Boxed
+// errors would leak through serde shapes for no wire benefit.
+#![allow(clippy::result_large_err)]
+
+pub mod artifact_inspection;
+pub mod warehouse_import;
+pub mod warehouse_maintenance;
+
+pub use artifact_inspection::{
+    ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
+    InspectionPolicy, StagingRejection,
+};
+pub use warehouse_import::{
+    submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
+    SkippedSourceFile, WarehouseImportReport, WarehouseImportTaskResult, WarehouseImporter,
+    WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
+};
+pub use warehouse_maintenance::{
+    generate_vpm_job, submit_delete_originals, submit_generate_vpm, DeleteOriginalsResult,
+    DeleteOriginalsTaskSpec, GenerateVpmResult, GenerateVpmTaskSpec, MaintenanceError,
+};
