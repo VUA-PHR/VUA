@@ -2,11 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.0.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.1.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-06
+> Updated: 2026-09-07
 > Normative effect: Yes
 
 ## Product definition
@@ -22,7 +22,13 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
 2. **Orchestrator:** durable tasks, plans, approval, cancellation, recovery, Build Records, and
    adapter coordination behind a replaceable, versioned Provider boundary.
 3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, Inspection, Release; native browsing,
-   authorized downloads, content management, and external-source adapters; and **BDL**, its private
+   authorized downloads, content management, and external-source adapters;
+   - **Material-entry semantics (user ruling, 2026-09-07):** the default path is direct use of the
+     original `.unitypackage` (beginner-oriented positioning); "generate VPM as a replacement" and
+     "delete original material after generation" are **experimental** capabilities, presented under
+     a Settings-Experimental location; VPM generation results are always clearly distinguished from
+     direct-import results (`unityValidated` vs experimental offline output);
+   - and **BDL**, its private
    local catalog, terms, compatibility, source, search, and mapping module.
 4. **Environment deployment:** prerequisite detection, guided deployment, and bounded recovery for
    hardware, VR, Unity, VRChat, and related tools without which play or Avatar production is blocked.
@@ -111,6 +117,10 @@ remain release-engineering decisions.
 
 ## Document changelog
 
+- 1.1.0 (2026-09-07): added the material-entry semantics clause to the AMF composition item —
+  the default path is the original `.unitypackage`; "generate VPM as a replacement" and "delete
+  original after generation" are experimental, presented under Settings-Experimental (user ruling
+  2026-09-07). Mirrors the ZH edition.
 - 1.0.0 (2026-09-06): entered version management. Item 7 split into the desktop overlay (retained
   in the `1.0.0` composition) and the VR overlay (removed from `1.0.0`, pointing to the v1.1
   outlook in the development outline); all other items unchanged.
