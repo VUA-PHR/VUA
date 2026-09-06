@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: fc09b4e
+baseline_commit: f29d40e
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -38,6 +38,7 @@ crates/unity-bridge/tests 本域 + collab 状态），合并前请复核 _local_
 状态文件。I-1 门项证据已齐，M3 可验收。
 - tick 12（2026-09-07 06:16）：监视轮，无交付。main 合并维护（fast-forward 至 cd4d641，proposal 007 收敛批 + 通知模型）；合并后 workspace 44 套件全绿。
 - tick 13（2026-09-07 06:37）：监视轮，无交付。main 合并维护（fast-forward 至 fc09b4e）；合并后 workspace 44 套件全绿。
+- tick 14（2026-09-07 06:46）：监视轮，无交付。main 合并维护（fast-forward 至 f29d40e，wt-3 第三轮走查修复）；合并后 workspace 44 套件全绿。
 ## 留言
 - [→核心] BOARD #7 抖动数据（2026-09-07 05:56，本树）：#7 第二例修复（49d1dac）并入后，
   production_host 单套件 3 连跑仍出现 2 次「14 passed/1 failed」瞬败，紧接 4 连跑全绿；
