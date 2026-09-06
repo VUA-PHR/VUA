@@ -90,13 +90,15 @@ export const strings: Strings = {
   },
   /** 任务中心(G3;九态文案在 taskStatus,此处为框架与操作文案) */
   taskCenter: {
-    title: "任务中心",
+    title: "通知中心",
     expandAria: "展开任务列表,共 {count} 项",
     collapseAria: "收起任务列表",
     runningSummary: "{title} · 等 {count} 项",
     idleSummary: "暂无运行中的任务",
     backToOrigin: "回到来源页",
     cancel: "取消",
+    clear: "清除",
+    showCompleted: "显示已完成",
     cancelRejected: "该任务当前不可取消",
     retry: "重试",
     retryRejected: "此任务当前无法重试",
@@ -134,6 +136,7 @@ demoTaskTitle: "演示任务",
       settingsGoals: "目标重选",
       settingsLanguage: "语言",
       settingsTheme: "主题",
+      settingsExperimental: "实验性",
       settingsVersion: "版本",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
@@ -1354,6 +1357,16 @@ rolled_back: "已回滚",
     skip: "跳过",
   },
   settings: {
+    /** 实验性功能页(proposal 007 路径 b):开关是用户偏好,只控制入口显隐;
+     *  全局默认由服务端配置,此处只读呈现,不提供全局默认写入口 */
+    experimental: {
+      title: "实验性功能",
+      badge: "实验性",
+      warehouseModeTitle: "生成 VPM 模式入口",
+      warehouseModeDesc: "开启后,仓储条目详情中显示产物模式编辑与「生成 VPM / 删除原始素材」条目动作(走已冻结的 bdl-commands v0.1 条目级命令)。全局默认由服务端配置决定,此处不提供全局默认开关。",
+      on: "开",
+      off: "关",
+    },
     goals: {
       heading: "目标重选",
       description: "重新进行首次启动的目标选择。当前选择会保留,确认后才会生效。",
