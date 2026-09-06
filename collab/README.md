@@ -58,6 +58,9 @@ pnpm collab:brief
 - 合并 main：改动只含本角色所有权域且相关测试全绿时可自并；跨域合并留给集成角色。
 - 入职提示词在 `collab/roles/<role>.md`；统一定时节拍命令在 `collab/TICK.md`；
   操作者启动清单在 `collab/LAUNCH.md`。
+- harness 适配：支持自定义系统提示词的（如 ZCode 子智能体）——每角色建专用子智能体，
+  系统提示词用角色文件内的「系统提示词」节、注入 AGENTS.md 开启、角色文件全文作首条
+  任务消息；不支持的——角色文件全文即首条消息（内置引导会读 AGENTS.md）。
 
 ## 合并节奏
 
