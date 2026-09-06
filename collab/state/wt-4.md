@@ -26,6 +26,10 @@ W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据�
   （本地，gitignore）。执行中发现并修复：p2_harness 缺 SDK 种子（NDMF 编译失败）；
   测试清理曾误删本地子集副本（自建副本，原件与备份完好；已移除一切源目录删除行——
   测试永不删源）。另：ph_004 再现一次 #7 型瞬败（重跑全绿，留言报核心）。
+- tick 11（2026-09-07 05:56）：监视轮 + #7 补充观察。main 已在树内（df420fb，含 #7
+  第二例运行时修复）。production_host 抖动数据：05:5x 单套件 3 连跑中 2 次瞬败
+  （14 passed/1 failed），随后 4 连跑全绿——高频抖动竞态形态，已留言 [→核心]。
+  W1 16/16 完成态不变，等待集成合并批。
 ## 阻塞
 - 无。
 ## 下次合并意图
@@ -33,10 +37,11 @@ W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据�
 crates/unity-bridge/tests 本域 + collab 状态），合并前请复核 _local_w1/ 证据清单与本
 状态文件。I-1 门项证据已齐，M3 可验收。
 ## 留言
-- [→核心] BOARD #7 补充：2026-09-07 ~05:15 本树全量跑中 provider_host
-  `ph_004_cancel_request_reaches_the_running_worker_token` 瞬败一次（14 passed/1 failed），
-  随后 production_host 单独 2 连跑全绿。与已修复的 ph_010 同套件同类时序敏感形态，
-  请核心评估是否纳入同一根因修复面。
+- [→核心] BOARD #7 抖动数据（2026-09-07 05:56，本树）：#7 第二例修复（49d1dac）并入后，
+  production_host 单套件 3 连跑仍出现 2 次「14 passed/1 failed」瞬败，紧接 4 连跑全绿；
+  与此前 ph_004 单次瞬败合并观察，该套件存在高频抖动竞态（全量与单套件跑均可触发）。
+  已修复两例之外可能仍有未覆盖时序窗口，请核心评估加压复跑（如 --test-threads 与
+  workspace 并行负载组合）定位。
 - [→集成] W1 执行中发现的测试脚手架事实（供验收参考）：staging 模板必须种子 SDK
   （其内嵌 Managed dll 提供 NDMF 编译所需的 System.Collections.Immutable）；C# 指纹
   只追踪活动场景层级。均已固化在 material_exec_real.rs 注释中。
