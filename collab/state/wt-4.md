@@ -2,55 +2,46 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: f5fe9c1
+baseline_commit: 20ca54c
 updated: 2026-09-07
 ---
 ## 当前焦点
-W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户]，待用户设置环境变量。
+W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据在本地 _local_w1/），
+请求集成验收并合并 W1 执行批回 main。
 ## 自基线交付
-- 入职轮（2026-09-07）：collab:brief 四区已读；所有权域现状浏览完毕；main 并入（fast-forward 至 5d2d008）。
-- W1 计划轮（2026-09-07，tick 1）：main 并入（d8e8748）；起草 W1 执行计划
-  `docs/plans/m3-i1-real-matrix-plan_ZH.md`（该目录为 gitignore 的本地草稿区，文件保留
-  本地、不入库、不产生协调效力）——16 格定义（P1/P2 × S1–S8，契约词汇锚定
-  material_exec.rs）、既有 3 个 #[ignore] 测试覆盖 4 格的映射、12 格缺口与触发手法
-  （S4 用 UnityBatchBridge::with_timeout、S7 用 execute 期间删快照 manifest 注入，
-  均已核实可行、无需改 executor）、执行规程与证据格式。真机格遵循「窗口开后写一格
-  跑一格校准一格」，本轮不盲写未验证测试。
-- tick 2（2026-09-07）：无代码交付。W1 窗口三轮等待无变化（入职/tick1/tick2 环境
-  变量均 unset），按升级规则写入 BOARD「待用户裁决」U6 [需用户]：开窗（设
-  VUA_UNITY_EXECUTABLE / VUA_REAL_SOURCE_FOLDER 后通知产线）或明确暂缓/调整范围。
-  另核实 amf-production v0.2 冻结硬前置已齐备（Rust 端 provider-host/tests/m3_vectors.rs
-  与 TS 端 m3-vectors.test.ts 双端消费同一向量目录），协议本冻结无缺口、维持 M3 验收时点。
-- tick 3（2026-09-07）：监视轮，无交付。U6 已由集成 --no-ff 带入 main（1cad93d），
-  待用户裁决；W1 按规则跳过（[需用户] 不得代决，停止轮询环境变量）。main 合并维护：
-  fast-forward 至 fe3195c（带入数据域 W4 测试批、Cargo.lock 补漏、桌面 F4-7/F4-8 批），
-  合并后本树 cargo test --workspace 40 套件全绿、clippy 无告警。
-- tick 4（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f496924（带入核心
-  W2 契约面：provider-process v0.2、handshake Schema+11 向量、bdl-commands v0.1、
-  proposal 002/005 等）。合并后首轮全量跑出现 1 例瞬败（provider_host
-  ph_010_mutation_gate_holds_lock_and_marker_during_the_run，14 passed/1 failed）；随即
-  provider_host 单独重跑 4 次 + workspace 全量 2 次全绿（42 套件）——与 BOARD #7
-  「偶发瞬败、疑似时序敏感」吻合，已留言 [→核心]。
-- tick 5（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 4774e98
-  （proposal 005 桌面接线批：bdl-commands v0.1 write-command TS 面）；合并后本树
-  cargo test --workspace 42 套件全绿、无瞬败。U6 仍待用户；#7 已由集成升级为
-  「达立项条件，请核心立项」（本树 tick 4 复现记录被采信）。
-- tick 6（2026-09-07）：监视轮，无交付。main 合并维护（merge c7b39f9）：004 拆分
-  （environment_managers 迁 project-manager）、005 核心侧（warehouse 三方法路由+消费测试）、
-  #7 根因修复（ph_010 尾部竞态改轮询）一并带入；合并后本树 cargo test --workspace
-  44 套件全绿、clippy 无告警。BOARD 开放问题 #3/#5/#6 已销账；U6 仍待用户。
-- tick 7（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 ccf0c60
-  （W9 产物模式 UI 接线切片 part 2、proposal 006 EAC 裁决稿入库等桌面/环境域变更）；
-  合并后本树 cargo test --workspace 44 套件全绿、无瞬败。U6 仍待用户。
-- tick 8（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f5fe9c1
-  （outline 2.0.1 增补 W12 观察管线排期、W9 复核回执、状态批折叠）；合并后本树
-  cargo test --workspace 44 套件全绿。U6 仍待用户。
+- 入职与准备轮（2026-09-07 tick 1–8 前半，细节见 git 历史与本树提交 1415625..131fc4d）：
+  域现状浏览、main 常备同步、U6 开窗请求升级 BOARD [需用户]、W1 执行计划起草
+  （本地 docs/plans/m3-i1-real-matrix-plan_ZH.md：16 格定义+触发手法核实）、
+  BOARD #7 ph_010 瞬败复现上报（核心已根因修复）、监视轮维护。
+- W1 执行轮一（提交 fb8935e）：窗口前置验证；既有 3 个 #[ignore] 真机测试真机通过
+  （P1×S1/S5/S6、P2×S1，4 格）；脚手架升级为复制用户 VCC 项目真实 Modular Avatar 1.11.6
+  + NDMF 栈（stub 仅回退），修复真实 NDMF 插件素材编译失败；S1 校准：成功格用自包含
+  子集（55MB 成套包），整目录 fuku 两轮真实失败留作 S5/S6 变体证据。
+- W1 执行轮二（提交 efd2c3f + 20ca54c）：新增 11 个真机测试，16/16 格全部真机通过。
+  P1×S2（边界取消+cancelled 码+收据）、S3（source_drift 首写前）、S4（1s 预算
+  bridge_timeout+Restored）、S7（快照损失注入→RollbackOutcome::Failed+rollback_failed
+  收据）、S8（重放 351µs 零 Unity）；P2×S2/S3/S4/S5/S6/S7/S8 对应通过（S5 注入为篡改
+  第 2 个 import 的 manifest.sha256 触发真实 C# 校验拒绝——事件驱动注入；C# 指纹只追踪
+  活动场景层级，Assets 文件注入不影响）。每格 Unity 真实运行，证据 log 在 _local_w1/
+  （本地，gitignore）。执行中发现并修复：p2_harness 缺 SDK 种子（NDMF 编译失败）；
+  测试清理曾误删本地子集副本（自建副本，原件与备份完好；已移除一切源目录删除行——
+  测试永不删源）。另：ph_004 再现一次 #7 型瞬败（重跑全绿，留言报核心）。
+- tick 11（2026-09-07 05:56）：监视轮 + #7 补充观察。main 已在树内（df420fb，含 #7
+  第二例运行时修复）。production_host 抖动数据：05:5x 单套件 3 连跑中 2 次瞬败
+  （14 passed/1 failed），随后 4 连跑全绿——高频抖动竞态形态，已留言 [→核心]。
+  W1 16/16 完成态不变，等待集成合并批。
 ## 阻塞
-- W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
+- 无。
 ## 下次合并意图
-首个切片（W1 执行批）完成并全绿后合并回 main；BOARD U6 行随下次合并由集成带入。
+**请求集成 --no-ff 合并本树 W1 执行批**（fb8935e、efd2c3f、20ca54c：全部在
+crates/unity-bridge/tests 本域 + collab 状态），合并前请复核 _local_w1/ 证据清单与本
+状态文件。I-1 门项证据已齐，M3 可验收。
 ## 留言
-- [→核心] BOARD #7 再添一次可考复现（2026-09-07 02:4x，本树 tick 4）：合并 f496924 后
-  首轮 `cargo test --workspace` 中 provider_host `ph_010_mutation_gate_holds_lock_and_marker_during_the_run`
-  瞬败一次；provider_host 单独 4 连跑与 workspace 全量 2 连跑均全绿。时序敏感疑点未变，
-  是否立项由核心裁决（provider-host 属核心域，产线不代修）。
+- [→核心] BOARD #7 抖动数据（2026-09-07 05:56，本树）：#7 第二例修复（49d1dac）并入后，
+  production_host 单套件 3 连跑仍出现 2 次「14 passed/1 failed」瞬败，紧接 4 连跑全绿；
+  与此前 ph_004 单次瞬败合并观察，该套件存在高频抖动竞态（全量与单套件跑均可触发）。
+  已修复两例之外可能仍有未覆盖时序窗口，请核心评估加压复跑（如 --test-threads 与
+  workspace 并行负载组合）定位。
+- [→集成] W1 执行中发现的测试脚手架事实（供验收参考）：staging 模板必须种子 SDK
+  （其内嵌 Managed dll 提供 NDMF 编译所需的 System.Collections.Immutable）；C# 指纹
+  只追踪活动场景层级。均已固化在 material_exec_real.rs 注释中。
