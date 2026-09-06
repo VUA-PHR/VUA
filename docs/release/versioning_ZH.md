@@ -2,6 +2,7 @@
 
 [English](versioning_EN.md) | [简体中文](versioning_ZH.md)
 
+> 文档版本：1.0.0  
 > 状态：已接受  
 > 范围：VUA 产品发行、Tag、包与公开契约  
 > 更新：2026-09-02  

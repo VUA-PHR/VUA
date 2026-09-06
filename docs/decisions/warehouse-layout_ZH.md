@@ -2,6 +2,7 @@
 
 [English](warehouse-layout_EN.md) | [简体中文](warehouse-layout_ZH.md)
 
+> 文档版本：ADR
 > 状态：已接受——产品所有者裁决（2026-09-06）
 > 范围：B4 Warehouse 物理布局、导入语义与产物模式设置
 > 规范效力：约束 BDL Warehouse 表的物理语义、素材导入功能面与设置项；映射层定义见

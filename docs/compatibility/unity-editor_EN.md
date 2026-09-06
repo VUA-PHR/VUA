@@ -2,6 +2,7 @@
 
 [English](unity-editor_EN.md) | [简体中文](unity-editor_ZH.md)
 
+> Document version: 1.0.0  
 > Status: Accepted  
 > Scope: Unity detection, project intake, AMF production, and Unity Bridge execution  
 > Updated: 2026-09-02  

@@ -7,6 +7,7 @@
 > [bdl-queries-v0.3_EN.md](bdl-queries-v0.3_EN.md); this document remains as
 > history only, matching `schemas/bdl-queries/v0.2/` (do not edit).
 >
+> Document version: 0.2
 > Status: Frozen (2026-09-06) — supersedes v0.1 (the only change is the
 > "v0.2 revision" below); machine-readable vocabulary in
 > `schemas/bdl-queries/v0.2/`

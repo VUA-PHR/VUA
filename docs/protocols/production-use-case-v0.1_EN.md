@@ -2,6 +2,7 @@
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
+> Document version: 0.1
 > Status: **M3 candidate draft** (2026-09-06: the 2026-09-05 freeze claim is withdrawn —
 > review verified 6/7 mismatches between the real TS/Rust parameter surfaces, with no
 > request/response JSON Schemas and no cross-language fixture vectors; "frozen" was not

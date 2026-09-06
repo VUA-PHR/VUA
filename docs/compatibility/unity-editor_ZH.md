@@ -2,6 +2,7 @@
 
 [English](unity-editor_EN.md) | [简体中文](unity-editor_ZH.md)
 
+> 文档版本：1.0.0  
 > 状态：已接受  
 > 范围：Unity 侦测、项目接入、AMF 生产与 Unity Bridge 执行  
 > 更新：2026-09-02  

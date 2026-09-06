@@ -2,6 +2,7 @@
 
 [English](task-store-v0.1_EN.md) | [简体中文](task-store-v0.1_ZH.md)
 
+> 文档版本：0.1
 > 状态：已冻结（M2，2026-09-04）——SQLite 权威任务状态
 > 所有者：Orchestrator 持久化适配器
 > 更新：2026-09-02

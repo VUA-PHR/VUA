@@ -2,6 +2,7 @@
 
 [English](download-events-v0.1_EN.md) | [简体中文](download-events-v0.1_ZH.md)
 
+> Document version: 0.1
 > Status: **Frozen** (2026-09-06) — the F-line's four acceptances and three revisions
 > (`resumable` wording unification, `failureKind` nullable/`unknown`, optional
 > `urlChain`) are merged into this edition; machine-readable vocabulary in

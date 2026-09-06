@@ -2,6 +2,7 @@
 
 [English](task-store-v0.1_EN.md) | [简体中文](task-store-v0.1_ZH.md)
 
+> Document version: 0.1
 > Status: Frozen (M2, 2026-09-04) — SQLite authoritative task state
 > Owner: Orchestrator persistence adapter
 > Updated: 2026-09-02

@@ -2,6 +2,7 @@
 
 [English](download-events-v0.1_EN.md) | [简体中文](download-events-v0.1_ZH.md)
 
+> 文档版本：0.1
 > 状态：**已冻结**（2026-09-06）——F 线四项确认与三处修订（`resumable` 措辞统一、
 > `failureKind` 可空/`unknown`、可选 `urlChain`）并入本版；机器可读词表见
 > `schemas/download-events/v0.1/`

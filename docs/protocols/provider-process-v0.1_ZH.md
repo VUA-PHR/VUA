@@ -2,6 +2,7 @@
 
 [English](provider-process-v0.1_EN.md) | [简体中文](provider-process-v0.1_ZH.md)
 
+> 文档版本：0.1
 > 状态：B2 实现基线
 > 所有者：Electron Kernel 与 Orchestrator Provider 适配器
 > 更新：2026-09-02

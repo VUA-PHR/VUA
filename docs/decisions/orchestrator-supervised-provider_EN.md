@@ -2,6 +2,7 @@
 
 [English](orchestrator-supervised-provider_EN.md) | [简体中文](orchestrator-supervised-provider_ZH.md)
 
+> Document version: ADR
 > Status: Accepted
 > Date: 2026-09-02
 > Decider: Product owner

@@ -2,6 +2,7 @@
 
 [English](versioning_EN.md) | [简体中文](versioning_ZH.md)
 
+> Document version: 1.0.0  
 > Status: Accepted  
 > Scope: VUA product releases, tags, packages, and public contracts  
 > Updated: 2026-09-02  

@@ -2,6 +2,7 @@
 
 [English](unity-bridge-v1_EN.md) | [简体中文](unity-bridge-v1_ZH.md)
 
+> 文档版本：v1
 > 状态：已接受
 > 协议版本：1
 > 更新：2026-09-02

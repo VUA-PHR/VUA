@@ -7,6 +7,7 @@
 > 现行规范见 [bdl-queries-v0.2_ZH.md](bdl-queries-v0.2_ZH.md)；本文仅作历史保留，
 > 对应 `schemas/bdl-queries/v0.1/`（勿改）。
 
+> 文档版本：0.1
 > 状态：已冻结（2026-09-06）——B/F 双方对齐回执确认
 > （`docs/plans/` 协调稿：`f4-catalog-gateway-alignment-to-b`、
 > `b-reply-to-f4-catalog-gateway-alignment`、`f-reply-to-b4-catalog-gateway-alignment`）；

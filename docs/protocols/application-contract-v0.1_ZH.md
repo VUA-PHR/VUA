@@ -2,6 +2,7 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
+> 文档版本：0.1
 > 状态：**已冻结（M2，2026-09-04）——稳定 Gateway v1**
 > 范围：Electron Kernel 与 Orchestrator Provider 之间的应用语义
 > 更新：2026-09-04

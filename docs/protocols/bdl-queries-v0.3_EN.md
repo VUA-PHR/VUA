@@ -2,6 +2,7 @@
 
 [English](bdl-queries-v0.3_EN.md) | [简体中文](bdl-queries-v0.3_ZH.md)
 
+> Document version: 0.3
 > Status: **Frozen** (2026-09-06) — supersedes v0.2 (the only change is the
 > "v0.3 revision" below); machine-readable vocabulary in
 > `schemas/bdl-queries/v0.3/`

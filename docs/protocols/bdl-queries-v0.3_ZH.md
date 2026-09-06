@@ -2,6 +2,7 @@
 
 [English](bdl-queries-v0.3_EN.md) | [简体中文](bdl-queries-v0.3_ZH.md)
 
+> 文档版本：0.3
 > 状态：**已冻结**（2026-09-06）——取代 v0.2（唯一变更见"v0.3 修订"）；
 > 机器可读词表见 `schemas/bdl-queries/v0.3/`
 > 范围：AMF 从本地 BDL 出的五个只读查询方法——云端目录三方法（catalog.*）与

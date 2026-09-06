@@ -2,6 +2,7 @@
 
 [English](vua-instance-identity_EN.md) | [简体中文](vua-instance-identity_ZH.md)
 
+> 文档版本:ADR
 > 状态:已接受
 > 日期:2026-09-05(产品所有者裁决;取代 2026-09-04 的 Proposed 文本)
 > 范围:桌面壳 bootstrap/路径解析、环境检测、安装器与更新器(M9/M10)、B 线执行器

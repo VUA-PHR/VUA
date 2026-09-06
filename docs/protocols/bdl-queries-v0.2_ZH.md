@@ -6,6 +6,7 @@
 > kind 词表收敛。现行规范见 [bdl-queries-v0.3_ZH.md](bdl-queries-v0.3_ZH.md)；
 > 本文仅作历史保留，对应 `schemas/bdl-queries/v0.2/`（勿改）。
 >
+> 文档版本：0.2
 > 状态：已冻结（2026-09-06）——取代 v0.1（唯一变更见"v0.2 修订"）；
 > 机器可读词表见 `schemas/bdl-queries/v0.2/`
 > 范围：AMF 从本地 BDL 出的五个只读查询方法——云端目录三方法（catalog.*）与

@@ -2,6 +2,7 @@
 
 [English](orchestrator-supervised-provider_EN.md) | [简体中文](orchestrator-supervised-provider_ZH.md)
 
+> 文档版本：ADR
 > 状态：已接受
 > 日期：2026-09-02
 > 决策者：产品所有者

@@ -2,6 +2,7 @@
 
 [English](vua-instance-identity_EN.md) | [简体中文](vua-instance-identity_ZH.md)
 
+> Document version: ADR
 > Status: Accepted
 > Date: 2026-09-05 (product-owner ruling; supersedes the 2026-09-04 Proposed text)
 > Scope: desktop shell bootstrap/path resolution, environment detection, installer/updater

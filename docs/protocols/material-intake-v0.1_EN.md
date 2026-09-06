@@ -2,6 +2,7 @@
 
 [English](material-intake-v0.1_EN.md) | [简体中文](material-intake-v0.1_ZH.md)
 
+> Document version: 0.1
 > Status: B3 implementation baseline
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-05

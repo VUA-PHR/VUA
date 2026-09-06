@@ -8,6 +8,7 @@
 > [bdl-queries-v0.2_EN.md](bdl-queries-v0.2_EN.md); this document remains as
 > history only, matching `schemas/bdl-queries/v0.1/` (do not edit).
 
+> Document version: 0.1
 > Status: Frozen (2026-09-06) — confirmed by both alignment replies
 > (`docs/plans/` coordination notes: `f4-catalog-gateway-alignment-to-b`,
 > `b-reply-to-f4-catalog-gateway-alignment`,

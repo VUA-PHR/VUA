@@ -2,6 +2,7 @@
 
 [English](unity-bridge-v1_EN.md) | [简体中文](unity-bridge-v1_ZH.md)
 
+> Document version: v1
 > Status: Accepted
 > Protocol version: 1
 > Updated: 2026-09-02

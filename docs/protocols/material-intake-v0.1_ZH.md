@@ -2,6 +2,7 @@
 
 [English](material-intake-v0.1_EN.md) | [简体中文](material-intake-v0.1_ZH.md)
 
+> 文档版本：0.1
 > 状态：B3 实现基线
 > 范围：`.unitypackage` 直接导入与 `local-reusable` VPM 制作/安装
 > 更新：2026-09-05

@@ -2,6 +2,7 @@
 
 [English](application-contract-v0.1_EN.md) | [简体中文](application-contract-v0.1_ZH.md)
 
+> Document version: 0.1
 > Status: **Frozen (M2, 2026-09-04) — stable Gateway v1**
 > Scope: application semantics between the Electron Kernel and an Orchestrator Provider
 > Updated: 2026-09-04

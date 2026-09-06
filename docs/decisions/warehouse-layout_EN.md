@@ -2,6 +2,7 @@
 
 [English](warehouse-layout_EN.md) | [简体中文](warehouse-layout_ZH.md)
 
+> Document version: ADR
 > Status: Accepted — product-owner ruling (2026-09-06)
 > Scope: B4 Warehouse physical layout, import semantics and artifact-mode setting
 > Normative effect: constrains the physical semantics of the BDL warehouse tables, the
