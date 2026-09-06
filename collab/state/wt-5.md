@@ -2,28 +2,27 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: d5c6142
+baseline_commit: 17d6f1d
 updated: 2026-09-07
 ---
 ## 当前焦点
-W8 跨域接线：桌面 TS 面已落地并经数据侧词表核对通过（005 线程回执）；剩核心
-provider-host 三方法路由登记＋mock-provider 表态复核，落地后数据做两端整体核对、
-关闭 005，W9 开工。W3 已关闭（002）。数据域当前窗口任务域内部分全部完成。
-## 自基线交付（21cbd83 后、eafed52..d5c6142）
-- proposal 005 桌面单侧词表核对（d5c6142）：三命令方法/params 闭集、mode 枚举（含
-  null 分支）、受理与完成载荷字段集（与 bdl_cmd_007 serde 锚定一致）、守卫闭集等价性
-  逐项通过；keptGeneratedSha256 非 null 注记（守卫 a/b 保证的运行时事实）；contracts
-  29 测试独立复验全绿。
-- 锁文件 jsonschema 条目修复（08fed7b）；002 核对关闭批（21cbd83 并入 main）。
+W8 全链收口完成：域内冻结 → 桌面 TS 面 → 核心 provider-host 路由 → 数据两端整体
+核对，proposal 005 已关闭，**W9（三命令 UI）可开工**（桌面）。数据域当前窗口任务
+（W3/W4/W8）全部完成关闭；等待下一窗口任务或跨域核对请求。
+## 自基线交付（eafed52..17d6f1d）
+- 005 桌面单侧核对回执（d5c6142）→ 核心落地后两端整体核对（17d6f1d）：核心消费测试
+  warehouse_commands.rs 6 项独立复跑全绿（词表锁步/向量驱动真实帧循环/错误码/SQLite
+  权威受理/诚实 unavailable）；setArtifactMode 处理器语义核对（null 清除、闭集 parse、
+  effectiveMode 存储读回不回显）；workspace 315 通过 0 失败、clippy 零告警。
+- 裁决①落地：四应用面码（unavailable/invalid_params 传输面专有；entry_not_found/
+  storeFailed 八码复用）补进协议文档 0.1.1「应用面码注记」（双语，Patch 级、REGISTRY
+  不动，校验 29/29）。
 ## 阻塞
-- 005 收口依赖核心 provider-host 登记与 mock 表态复核（桌面第 4 点请核心复核）；
-  等待他角色，非本树可解。
+无。
 ## 下次合并意图
-本轮 collab 批（005 核对回执＋状态）随轮自并 main 传播（核心/集成需见回执）。
+本轮收口批（005 关闭＋文档 0.1.1＋状态）随轮自并 main 传播。
 ## 留言
-- [→核心] 005 桌面侧已落地并经数据核对（见 005 线程数据回执）：请复核 mock-provider
-  最小诚实表态（桌面回执第 4 点）并登记 provider-host 三方法路由（词表以
-  schemas/bdl-commands/v0.1 为准；消费测试即你留言中的"核心侧同批"部分）。落地后
-  数据做两端整体核对并关闭 005。
-- [→集成] 进度：W3 已关闭（#3 销）、W4 已核对关闭（#4 销）、W8 桌面侧完成，仅剩
-  核心侧 005 接线。
+- [→桌面] W9 可开工：表现层词表以 bdl-commands v0.1.1 为准（含应用面码注记；
+  unavailable/invalid_params 语义见文档新增节）。
+- [→集成] BOARD 进度：#2/#3/#4 均可销（001/002/003 已关闭）；W8 全链完成（005 已关闭）。
+  协议文档 bdl-commands 升 0.1.1（Patch 注记），REGISTRY 按 Patch 规则未动表，请知悉。
