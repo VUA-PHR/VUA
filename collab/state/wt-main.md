@@ -1,11 +1,13 @@
 ---
 worktree: wt-main
 branch: main
+role: 集成
 baseline_commit: 5059949
-updated: 2026-09-06
+updated: 2026-09-07
 ---
 ## 当前焦点
-过渡执行 Phase G（crate 拆分，slice/crate-split 在 VUA-2 进行）；随后 Phase H 最终总审。
+常驻进程模型已启用（collab/roles + TICK）；M3 剩余 I-1（产线，需真机窗口）；
+M3 验收当日执行 remote/tag/CI（W11）。
 ## 自基线交付
 - Phase A–F 完成：pre-transition/* 备份 tags；三车道统一合并 b211f7a/6837271（T6 取 B 撤回稿）；
   main 为唯一集成分支；治理文档落地（AGENTS.md 1.0.0、documentation-governance、REGISTRY 28/28、

@@ -15,7 +15,7 @@ collab/
 
 - 每棵工作树一份 `collab/state/wt-N.md`（编号与工作树目录一致：VUA→wt-main、VUA-2→wt-2、VUA-3→wt-3），
   覆盖式维护、**非追加**，上限约 60 行。历史不进文件——git 历史就是档案，文件永远只反映"现在"。
-- 固定结构：front-matter（worktree / branch / baseline_commit / updated）+ 五节
+- 固定结构：front-matter（worktree / branch / role / baseline_commit / updated）+ 五节
   （当前焦点 / 自基线交付 / 阻塞 / 下次合并意图 / 留言）。
 - 阻塞与留言用 `[→角色]` 路由（六角色：集成/桌面/核心/产线/数据/环境，定义与代码所有权见
   `docs/development-outline_ZH.md`；域 Schema 冻结责任归域角色，TS 面登记归桌面角色，
@@ -47,6 +47,16 @@ pnpm collab:brief
 2. 遇到阻塞时立即；
 3. 契约版本落地时；
 4. 请求合并前。
+
+## 常驻进程模型（六角色 × 六工作树）
+
+- 当前指派：集成→VUA（main）、核心→VUA-2、桌面→VUA-3、产线→VUA-4、数据→VUA-5、
+  环境→VUA-6。工作树本身不受角色限制，改派在 BOARD 登记。
+- 每棵工作树一条常驻槽位分支 `slot/wt-N`：切片工作在其上提交（开工前先对齐 main），
+  合并回 main 后继续使用；一次性会话可用 `slice/<slug>`。
+- 切片由负责角色的进程单独执行；协作方经留言/proposal 参与，不共写分支。
+- 合并 main：改动只含本角色所有权域且相关测试全绿时可自并；跨域合并留给集成角色。
+- 入职提示词在 `collab/roles/<role>.md`；统一定时节拍命令在 `collab/TICK.md`。
 
 ## 合并节奏
 

@@ -3,7 +3,20 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-06（过渡执行完成：统一合并 + 治理落地 + collab 机制 + 工作树更名 + crate 拆分）
+最近更新：2026-09-07（常驻进程模型启用：六角色 × 六工作树 + TICK 节拍）
+
+## 工作树指派
+
+| 工作树 | 分支 | 角色 |
+| --- | --- | --- |
+| VUA（wt-main） | main | 集成 |
+| VUA-2（wt-2） | slot/wt-2 | 核心 |
+| VUA-3（wt-3） | slot/wt-3 | 桌面 |
+| VUA-4（wt-4） | slot/wt-4 | 产线 |
+| VUA-5（wt-5） | slot/wt-5 | 数据 |
+| VUA-6（wt-6） | slot/wt-6 | 环境 |
+
+入职提示词：`collab/roles/<role>.md`；节拍命令：`collab/TICK.md`。
 
 ## M 门状态
 

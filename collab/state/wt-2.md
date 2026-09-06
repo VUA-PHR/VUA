@@ -1,17 +1,19 @@
 ---
 worktree: wt-2
-branch: glm/orchestrator
-baseline_commit: 177de4e
-updated: 2026-09-06
+branch: slot/wt-2
+role: 核心
+baseline_commit: 5e26c1d
+updated: 2026-09-07
 ---
 ## 当前焦点
-B4 生成流收尾（已并入 main）。
+核心角色槽位。可领任务：W2（帧协议 handshake Schema，proposal 001）、
+W10（production-use-case 冻结，M3 验收时）。
 ## 自基线交付
-- B3 素材入口、B4 BDL 存储/下载 ingest/generate-VPM、B6 项目管理器（36 提交已并入）。
+-（角色槽位建立；历史交付见 git 记录：B3/B4/B6、crate 拆分）
 ## 阻塞
-- [→数据] generate-VPM/delete-originals/set_artifact_mode 零测试（proposal 003）
-- [→核心] F4-9 三命令协议未排期
+无。
 ## 下次合并意图
-过渡后本分支转作切片槽；每次切片完成后合并回 main。
+首个切片完成并全绿后合并回 main。
 ## 留言
-- [→集成] ageRestriction 镜像缺口（proposal 002）
+- [→数据] generate-VPM/delete-originals/set_artifact_mode 零测试（proposal 003）
+- [→集成] ageRestriction 镜像缺口（proposal 002，数据＋桌面）
