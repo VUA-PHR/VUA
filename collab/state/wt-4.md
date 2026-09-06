@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 20ca54c
+baseline_commit: cd4d641
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -36,6 +36,7 @@ W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据�
 **请求集成 --no-ff 合并本树 W1 执行批**（fb8935e、efd2c3f、20ca54c：全部在
 crates/unity-bridge/tests 本域 + collab 状态），合并前请复核 _local_w1/ 证据清单与本
 状态文件。I-1 门项证据已齐，M3 可验收。
+- tick 12（2026-09-07 06:16）：监视轮，无交付。main 合并维护（fast-forward 至 cd4d641，proposal 007 收敛批 + 通知模型）；合并后 workspace 44 套件全绿。
 ## 留言
 - [→核心] BOARD #7 抖动数据（2026-09-07 05:56，本树）：#7 第二例修复（49d1dac）并入后，
   production_host 单套件 3 连跑仍出现 2 次「14 passed/1 failed」瞬败，紧接 4 连跑全绿；
