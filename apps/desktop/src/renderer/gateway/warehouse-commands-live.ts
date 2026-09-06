@@ -1,0 +1,133 @@
+import type { GatewayClient } from "./gateway-client.ts";
+import type { WarehouseArtifactMode } from "./acquire-port.ts";
+import type {
+  WarehouseCommandOutcome,
+  WarehouseCommandsPort,
+} from "./warehouse-commands-port.ts";
+
+/**
+ * F4-9 live 写命令端口:warehouse.setArtifactMode / generateVpm /
+ * deleteOriginals(bdl-commands v0.1 冻结业务词表)经 typed client →
+ * Kernel 路由 → provider-host → AMF/BDL 真实链路。
+ *
+ * - 收窄纪律(client 纪律):wire 受理载荷带协议判别信封(schemaVersion/
+ *   operation,proposal 005 核心回执),按字段存在性收窄为域结果;词表外
+ *   生效模式或收不齐必需字段 = 提供方响应不可解释,如实 unavailable;
+ * - 错误透传:应用错误(vua.warehouse.* 稳定码 + recoverable/retryable)
+ *   原样透传,不在本层翻译、吞掉或改判重试性。
+ */
+
+const MODES: readonly WarehouseArtifactMode[] = [
+  "use_original_unitypackage",
+  "generate_vpm",
+];
+
+function asString(value: unknown): string | null {
+  return typeof value === "string" && value.length > 0 ? value : null;
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function outcomeFromClientError(error: {
+  kind: "unavailable" | "request_rejected" | "application";
+  error?: {
+    code: string;
+    messageKey: string;
+    recoverable: boolean;
+    retryable: boolean;
+  };
+}): WarehouseCommandOutcome {
+  if (error.kind === "application" && error.error !== undefined) {
+    return {
+      ok: false,
+      error: {
+        kind: "application",
+        code: error.error.code,
+        messageKey: error.error.messageKey,
+        recoverable: error.error.recoverable,
+        retryable: error.error.retryable,
+      },
+    };
+  }
+  return { ok: false, error: { kind: error.kind === "application" ? "unavailable" : error.kind } };
+}
+
+function narrowModeSet(value: unknown): WarehouseCommandOutcome {
+  const record = asRecord(value);
+  const warehouseItemId = record === null ? null : asString(record.warehouseItemId);
+  const effectiveRaw = record === null ? null : record.effectiveMode;
+  if (
+    warehouseItemId === null
+    || typeof effectiveRaw !== "string"
+    || !MODES.includes(effectiveRaw as WarehouseArtifactMode)
+  ) {
+    return { ok: false, error: { kind: "unavailable" } };
+  }
+  return {
+    ok: true,
+    result: { warehouseItemId, effectiveMode: effectiveRaw as WarehouseArtifactMode },
+  };
+}
+
+function narrowAcceptance(value: unknown): WarehouseCommandOutcome {
+  const record = asRecord(value);
+  const taskId = record === null ? null : asString(record.taskId);
+  const correlationId = record === null ? null : asString(record.correlationId);
+  if (taskId === null || correlationId === null) {
+    return { ok: false, error: { kind: "unavailable" } };
+  }
+  return { ok: true, accepted: { taskId, correlationId } };
+}
+
+export function createWarehouseCommands(client: GatewayClient): WarehouseCommandsPort {
+  return {
+    setArtifactMode: async (warehouseItemId, mode) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.setArtifactMode",
+        params: {
+          warehouseItemId,
+          mode,
+          commandId: `whcmd-${crypto.randomUUID()}`,
+        },
+      });
+      return response.ok ? narrowModeSet(response.value) : outcomeFromClientError(response.error);
+    },
+    generateVpm: async (warehouseItemId) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.generateVpm",
+        params: { warehouseItemId, commandId: `whcmd-${crypto.randomUUID()}` },
+      });
+      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+    },
+    deleteOriginals: async (warehouseItemId) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.deleteOriginals",
+        params: { warehouseItemId, commandId: `whcmd-${crypto.randomUUID()}` },
+      });
+      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+    },
+    capability: async () => {
+      // 能力探测同 live-acquire 先例:读面探针(写面与读面同域,服务缺位时
+      // 一并缺位);detailKey 与读取面一致,入口显隐由页面按 §2.6 裁决
+      const result = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.listEntries",
+        params: {},
+      });
+      return result.ok
+        ? { state: "ready" }
+        : { state: "unavailable", detailKey: "warehouseMissing" };
+    },
+  };
+}

@@ -176,6 +176,8 @@ export const fixtureStrings = {
       title: "下载 tool_installer.exe",
       errorText: "下载已被策略拒绝:来源或文件形态不在允许清单内,未落盘。",
     },
+    generateVpm: { title: "生成 VPM:Summer_Uniform_ADDONS" },
+    deleteOriginals: { title: "删除原始素材:Stage_Props_pack" },
   },
   /** Overlay 双表面演示负载(切片五 F7a;标题/详情为数据负载,词表键由代码承载;
    *  任务标题复用 tasks.assembly,同一演示任务在任务中心与 Overlay 一致) */

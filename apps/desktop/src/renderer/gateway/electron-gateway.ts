@@ -7,6 +7,7 @@ import { createGatewayClient, type DesktopGatewayHost, type GatewayClient } from
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { VuaGateway } from "./gateway.ts";
 import { createLiveAcquire } from "./live-acquire-port.ts";
+import { createWarehouseCommands } from "./warehouse-commands-live.ts";
 import { createLiveModelProduction } from "./live-production-port.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
@@ -178,6 +179,8 @@ export function createElectronGateway(
   // F4-6:本地轨条目面(warehouse.listEntries/entryDetail)经 live 端口走
   // Kernel 路由;查询失败回落诚实 not-connected,不阻断启动
   const liveAcquire = createLiveAcquire(client);
+  // F4-9:warehouse 写命令面(bdl-commands v0.1)经 live 端口走 Kernel 路由
+  const liveWarehouseCommands = createWarehouseCommands(client);
   return {
     environment: createLiveEnvironmentPort(client),
     task: createLiveTaskPort(client),
@@ -186,6 +189,7 @@ export function createElectronGateway(
     toolCatalog: notRun.toolCatalog,
     settings: notRun.settings,
     acquire: liveAcquire,
+    warehouseCommands: liveWarehouseCommands,
     packages: notRun.packages,
     dataSource: (): DataSource => "live",
   };
