@@ -61,6 +61,8 @@
 - [Unity Bridge v1](protocols/unity-bridge-v1.md)
 - [AMF 素材入口协议 v0.1](protocols/material-intake-v0.1_ZH.md)
 - [AMF material-intake protocol v0.1](protocols/material-intake-v0.1_EN.md)
+- [下载事件协议 v0.1（草案）](protocols/download-events-v0.1_ZH.md)
+- [Download events protocol v0.1 (draft)](protocols/download-events-v0.1_EN.md)
 
 ## 当前研究证据
 

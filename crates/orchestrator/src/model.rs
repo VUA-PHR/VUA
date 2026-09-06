@@ -38,6 +38,7 @@ pub struct AvatarSetupRequest {
 pub enum UnityOperation {
     InspectProject,
     ImportUnityPackage,
+    MaterializeExtractedPackage,
     CreateLocalVpmPackage,
     ValidateAssetPaths,
     IdentifyAssets,
@@ -52,6 +53,7 @@ impl UnityOperation {
         matches!(
             self,
             Self::ImportUnityPackage
+                | Self::MaterializeExtractedPackage
                 | Self::CreateLocalVpmPackage
                 | Self::InstallOutfit
                 | Self::CreateToggle
@@ -78,6 +80,8 @@ pub struct UnityPayload {
     pub source_package_path: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source_package_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest_sha256: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub package_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

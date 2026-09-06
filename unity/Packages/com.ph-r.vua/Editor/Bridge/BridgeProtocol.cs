@@ -20,6 +20,7 @@ namespace Vua.Editor.Bridge
         public string toggleName = string.Empty;
         public string sourcePackagePath = string.Empty;
         public string sourcePackageSha256 = string.Empty;
+        public string manifestSha256 = string.Empty;
         public string packageId = string.Empty;
         public string packageDisplayName = string.Empty;
         public string packageVersion = string.Empty;

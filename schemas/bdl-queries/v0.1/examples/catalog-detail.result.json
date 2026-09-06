@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "catalog.detail",
+  "result": {
+    "product": {
+      "productId": "booth:1000001",
+      "title": "Synthetic Uniform Set for Fixture Testing",
+      "price": { "amount": "2480", "currency": "JPY" },
+      "imageUrl": "https://booth.example.com/images/1000001/thumb.jpg",
+      "imageUrls": [
+        "https://booth.example.com/images/1000001/thumb.jpg",
+        "https://booth.example.com/images/1000001/preview-2.jpg"
+      ],
+      "availability": "InStock",
+      "entityCount": 0,
+      "entityTypes": [],
+      "description": "Synthetic fixture description text with no real product content.",
+      "shopName": "Fixture Workshop",
+      "shopUrl": "https://booth.example.com/shops/fixture-workshop",
+      "ageRestriction": null,
+      "adult": false,
+      "videoUrls": [],
+      "sourceCategory": "3Dキャラクター",
+      "subproducts": [
+        {
+          "variationId": "2000001",
+          "name": "Uniform A",
+          "price": { "amount": "2480", "currency": "JPY" },
+          "availability": "InStock"
+        },
+        {
+          "variationId": "2000002",
+          "name": "Uniform B",
+          "price": null,
+          "availability": "SoldOut"
+        }
+      ]
+    }
+  }
+}

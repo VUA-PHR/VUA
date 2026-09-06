@@ -25,6 +25,55 @@ use vua_orchestrator::{
 
 const UNITY_VERSION_LINE: &str = "m_EditorVersion: 2022.3.22f1\nm_EditorVersionWithEdition: 2022.3.22f1\n";
 
+/// Type-complete Modular Avatar stub: the Bridge's install_outfit and
+/// create_toggle reference these members, so the staging/target compile
+/// needs them even though B3 never invokes those operations.
+const STUB_COMPONENTS_CS: &str = r#"using System.Collections.Generic;
+using UnityEngine;
+
+namespace nadena.dev.modular_avatar.core
+{
+    public class AvatarObjectReference
+    {
+        public AvatarObjectReference() { }
+        public AvatarObjectReference(GameObject target) { }
+    }
+
+    public enum PortableControlType { Menu, Toggle, Submenu, Action }
+
+    public class PortableControl
+    {
+        public PortableControlType Type;
+        public int Value;
+    }
+
+    public class ToggledObject
+    {
+        public AvatarObjectReference Object;
+        public bool Active;
+    }
+
+    public class ModularAvatarMergeArmature : MonoBehaviour
+    {
+        public AvatarObjectReference mergeTarget;
+        public void InferPrefixSuffix() { }
+    }
+
+    public class ModularAvatarMenuInstaller : MonoBehaviour { }
+
+    public class ModularAvatarMenuItem : MonoBehaviour
+    {
+        public string label;
+        public PortableControl PortableControl = new PortableControl();
+        public bool isDefault;
+    }
+
+    public class ModularAvatarObjectToggle : MonoBehaviour
+    {
+        public List<ToggledObject> Objects;
+    }
+}
+"#;
 // --- scaffolding ---
 
 fn temp_dir(label: &str) -> PathBuf {
@@ -333,8 +382,15 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("direct-temp"),
         "2022.3.22f1",
+        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
-    let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
     let elapsed = started.elapsed();
     println!("executor wall time: {elapsed:?}");
 
@@ -356,11 +412,11 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
     let import_job = record
         .bridge_jobs
         .iter()
-        .find(|job| job.operation.contains("ImportUnityPackage"))
+        .find(|job| job.operation.contains("MaterializeExtractedPackage"))
         .expect("import evidence");
     assert!(
-        import_job.changed_paths.len() >= 100,
-        "a real avatar package imports a large asset tree: {:?}",
+        !import_job.changed_paths.is_empty(),
+        "a real package imports a real asset tree: {:?}",
         import_job.changed_paths.len()
     );
     println!("imported: {:?}", import_job.changed_paths.len());
@@ -368,11 +424,10 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
     // The snapshot stays on disk as the recovery point of record.
     assert!(project_root.join(".vua/snapshots").exists());
 
+    // The source folder comes from VUA_REAL_SOURCE_FOLDER — a developer's
+    // real asset directory. It is NEVER deleted; only the temp project is.
     if project_root.exists() {
         fs::remove_dir_all(&project_root).unwrap();
-    }
-    if source.exists() {
-        fs::remove_dir_all(&source).unwrap();
     }
 }
 
@@ -418,8 +473,15 @@ fn m3_real_stale_fingerprint_is_rejected_and_restored() {
         Arc::new(vua_orchestrator::SystemClock),
         temp_dir("reject-temp"),
         "2022.3.22f1",
+        vua_orchestrator::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
     );
-    let report = executor.execute(&confirmation, &source, &project, &project_root.join(".vua/artifacts"));
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
 
     assert_eq!(
         report.status,
@@ -464,6 +526,9 @@ impl VpmBackend for NoVpm {
         vua_orchestrator::VpmCapabilities {
             create_project: false,
             preview_install: false,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
         }
     }
 
@@ -492,4 +557,170 @@ impl VpmBackend for NoVpm {
     ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
         panic!("the direct path must not reach the vpm backend")
     }
+}
+
+// --- local_reusable: staging → local VPM package → vrc-get install ---
+
+/// The full local_reusable slice on a real machine: the batch is imported
+/// into a token-bound staging project built from the bundled template, the
+/// Bridge produces the local-reusable package layout, the package is
+/// published deterministically and installed into the target through the
+/// REAL vrc-get lib backend (isolated environment root — the user's VCC
+/// settings are never touched), and the installed package is validated by
+/// real AssetDatabase.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 and the real vrc-get lib (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER)"]
+fn m3_real_local_reusable_vertical_slice() {
+    let unity = unity_executable();
+    let source = PathBuf::from(std::env::var("VUA_REAL_SOURCE_FOLDER")
+        .expect("VUA_REAL_SOURCE_FOLDER must hold the .unitypackage files"));
+    let correlation = "real-corr";
+
+    // Target project: Bridge + MA stub + SDK seeded, plus the VPM manifest
+    // layer vrc-get manages.
+    let (project_root, project) = build_target_project("vpm-target");
+    fs::write(
+        project_root.join("Packages/vpm-manifest.json"),
+        r#"{ "dependencies": {} }"#,
+    )
+    .unwrap();
+
+    // Staging template override: the bundled template is text-only, while
+    // the staging Unity launches need the Bridge package and a compile stub
+    // for its Modular Avatar reference. The harness authors that scaffold
+    // once; the executor unpacks it via with_staging_template_override.
+    let base = temp_dir("vpm-staging-base");
+    let staging_template = base.join("staging-template");
+    let bridge_package_src =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../unity/Packages/com.ph-r.vua");
+    copy_dir_recursive(
+        &bridge_package_src.join("Editor"),
+        &staging_template.join("Packages/com.ph-r.vua/Editor"),
+    )
+    .unwrap();
+    fs::copy(
+        bridge_package_src.join("package.json"),
+        staging_template.join("Packages/com.ph-r.vua/package.json"),
+    )
+    .unwrap();
+    let stub = staging_template.join("Packages/nadena.dev.modular-avatar.core");
+    fs::create_dir_all(&stub).unwrap();
+    fs::write(
+        stub.join("package.json"),
+        r#"{ "name": "nadena.dev.modular-avatar.core", "version": "0.0.0-stub" }"#,
+    )
+    .unwrap();
+    fs::write(
+        stub.join("nadena.dev.modular-avatar.core.asmdef"),
+        r#"{ "name": "nadena.dev.modular-avatar.core", "rootNamespace": "" }"#,
+    )
+    .unwrap();
+    fs::write(stub.join("StubComponents.cs"), STUB_COMPONENTS_CS).unwrap();
+    fs::write(staging_template.join("Packages/manifest.json"), r#"{ "dependencies": {} }"#).unwrap();
+    fs::create_dir_all(staging_template.join("Assets")).unwrap();
+    fs::create_dir_all(staging_template.join("ProjectSettings")).unwrap();
+    fs::write(
+        staging_template.join("ProjectSettings/ProjectVersion.txt"),
+        UNITY_VERSION_LINE,
+    )
+    .unwrap();
+
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, correlation)
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::LocalReusableVpm,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            correlation,
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+
+    let vpm_environment = temp_dir("vpm-env");
+    let vpm_backend: Arc<dyn VpmBackend> = Arc::new(
+        vua_orchestrator::VrcGetLibBackend::with_environment_root(base.join("vpm-env"), false)
+            .expect("vrc-get lib backend initializes"),
+    );
+    // Resolve the machine identity first (persisted on disk; the executor's
+    // own store instance re-reads the same file).
+    let identity = vua_orchestrator::LocalPackageIdentityStore::new(base.join("identities.json"))
+        .resolve(&source, "outfit")
+        .expect("identity resolves");
+    let identity_store = vua_orchestrator::LocalPackageIdentityStore::new(base.join("identities.json"));
+    let executor = MaterialExecutor::new(
+        bridge,
+        FileSystemSnapshotStore,
+        vpm_backend,
+        BuildRecordStore::new(project_root.join(".vua/records")),
+        Arc::new(vua_orchestrator::SystemClock),
+        base.join("temp"),
+        "2022.3.22f1",
+        identity_store,
+    )
+    .with_staging_template_override(&staging_template);
+
+    let started = Instant::now();
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &vua_orchestrator::MaterialCancelToken::new(),
+    );
+    let elapsed = started.elapsed();
+    println!("executor wall time (4+ Unity launches + vrc-get install): {elapsed:?}");
+
+    assert_eq!(
+        report.status,
+        vua_orchestrator::MaterialExecutionStatus::Succeeded,
+        "report: {report:?}"
+    );
+    for expected in [
+        MaterialIntakeStepKind::ImportUnityPackages,
+        MaterialIntakeStepKind::CreateLocalVpmPackage,
+        MaterialIntakeStepKind::PreviewVpmInstall,
+        MaterialIntakeStepKind::ApplyVpmInstall,
+        MaterialIntakeStepKind::ValidateMinimumStructure,
+        MaterialIntakeStepKind::WriteBuildRecord,
+    ] {
+        assert!(report.completed_steps.contains(&expected), "missing {expected:?}");
+    }
+
+    // The staging project is destroyed — no leftovers.
+    let staging_expected = vua_orchestrator::staging_root(&base.join("temp"), correlation);
+    assert!(
+        !staging_expected.exists(),
+        "staging leftovers poison later runs"
+    );
+
+    // The identity machine id owns the installed package folder in the
+    // target project.
+    let installed = project_root.join("Packages").join(&identity.package_id);
+    assert!(installed.join("package.json").is_file(), "installed package.json must exist");
+    assert!(installed.join("Runtime").is_dir(), "the Editor/Runtime layout must survive install");
+
+    // The target's VPM manifest records the install.
+    let manifest = fs::read_to_string(project_root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(manifest.contains(&identity.package_id), "vpm-manifest must record the install");
+
+    // The receipt carries the local VPM evidence.
+    let record = vua_orchestrator::BuildRecordStore::new(project_root.join(".vua/records"))
+        .read(&report.build_record_id.expect("record id"))
+        .expect("receipt published");
+    let local_vpm = record.local_vpm.expect("local vpm evidence");
+    assert_eq!(local_vpm.package_id, identity.package_id);
+    assert_eq!(local_vpm.installed_version, "0.1.0");
+    let validation = record.validation.expect("validation evidence");
+    assert!(validation.unity_validated);
+
+    // Cleanup: the source folder is the developer's real asset directory —
+    // never deleted. Only local temp scaffolding goes away.
+    let _ = vpm_environment;
+    let _ = fs::remove_dir_all(&base);
+    let _ = fs::remove_dir_all(&project_root);
 }

@@ -22,6 +22,7 @@ pub mod error_codes {
     pub const ARCHIVE_INVALID: &str = "vua.material.archive_invalid";
     pub const PLAN_HASH_MISMATCH: &str = "vua.material.plan_hash_mismatch";
     pub const SOURCE_DRIFT: &str = "vua.material.source_drift";
+    pub const DEPS_INVALID: &str = "vua.material.deps_invalid";
     pub const RISK_DECISION_REQUIRED: &str = "vua.material.risk_decision_required";
     pub const RISK_DECISION_STALE: &str = "vua.material.risk_decision_stale";
     pub const CANCELLED: &str = "vua.material.cancelled";
@@ -61,6 +62,17 @@ pub struct SourcePackageEvidenceV01 {
     pub asset_paths: Vec<String>,
 }
 
+/// A user/Recipe-curated dependency declaration from the source folder's
+/// optional `vua-dependencies.json`. Declarations travel with the source
+/// fingerprint (edits between plan and execute are drift) and reach the
+/// produced package's `package.json` verbatim — never auto-detected.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeclaredDependencyV01 {
+    pub package_id: String,
+    pub version_range: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SourceFolderInspectionV01 {
@@ -70,6 +82,7 @@ pub struct SourceFolderInspectionV01 {
     pub risk_fingerprint: String,
     pub packages: Vec<SourcePackageEvidenceV01>,
     pub executable_risks: Vec<ExecutableRiskEvidence>,
+    pub declared_dependencies: Vec<DeclaredDependencyV01>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -216,7 +229,17 @@ impl MaterialIntakeEngine {
         }
         risks.sort();
         risks.dedup();
-        let source_fingerprint = digest_json(&packages, correlation_id)?;
+        let declared_dependencies =
+            read_declared_dependencies(&canonical).map_err(|error| {
+                source_error(error_codes::DEPS_INVALID, correlation_id, error)
+            })?;
+        // The declarations reach the produced package.json, so they are part
+        // of the source identity: editing the deps file after planning is
+        // drift, caught by verify_source_unchanged's re-inspection.
+        let source_fingerprint = digest_json(
+            &SourceDigestInput { packages: &packages, declared_dependencies: &declared_dependencies },
+            correlation_id,
+        )?;
         let risk_fingerprint = digest_json(&risks, correlation_id)?;
         Ok(SourceFolderInspectionV01 {
             schema_version: MATERIAL_INTAKE_SCHEMA_VERSION.to_owned(),
@@ -225,6 +248,7 @@ impl MaterialIntakeEngine {
             risk_fingerprint,
             packages,
             executable_risks: risks,
+            declared_dependencies,
         })
     }
 
@@ -362,6 +386,58 @@ fn step(kind: MaterialIntakeStepKind, mutates_target_project: bool) -> MaterialI
         mutates_target_project,
         safe_boundary_after: true,
     }
+}
+
+#[derive(serde::Serialize)]
+struct SourceDigestInput<'a> {
+    packages: &'a [SourcePackageEvidenceV01],
+    declared_dependencies: &'a [DeclaredDependencyV01],
+}
+
+/// Reads the source folder's optional `vua-dependencies.json` — a JSON
+/// object mapping package id to version range, e.g.
+/// `{ "com.vrchat.avatars": "3.10.x" }`. Absent means "no declarations";
+/// anything unparseable is a typed error, never a silent empty.
+fn read_declared_dependencies(source_folder: &Path) -> io::Result<Vec<DeclaredDependencyV01>> {
+    use std::fs::File;
+    use std::io::Read;
+
+    let path = source_folder.join("vua-dependencies.json");
+    let mut raw = String::new();
+    match File::open(&path) {
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(error),
+        Ok(mut file) => {
+            file.read_to_string(&mut raw)?;
+        }
+    }
+    let value: serde_json::Value = serde_json::from_str(&raw).map_err(|error| {
+        io::Error::new(io::ErrorKind::InvalidData, format!("not valid JSON: {error}"))
+    })?;
+    let map = value.as_object().ok_or_else(|| {
+        io::Error::new(io::ErrorKind::InvalidData, "expected a JSON object of id → range")
+    })?;
+    let mut declared = Vec::with_capacity(map.len());
+    for (package_id, version) in map {
+        let version_range = version.as_str().ok_or_else(|| {
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!("dependency '{package_id}' must map to a version-range string"),
+            )
+        })?;
+        if package_id.trim().is_empty() || version_range.trim().is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "dependency id and range must be non-empty",
+            ));
+        }
+        declared.push(DeclaredDependencyV01 {
+            package_id: package_id.clone(),
+            version_range: version_range.to_owned(),
+        });
+    }
+    declared.sort();
+    Ok(declared)
 }
 
 fn collect_packages(root: &Path, current: &Path, output: &mut Vec<PathBuf>) -> io::Result<()> {
@@ -517,7 +593,7 @@ fn digest_json(value: &impl Serialize, correlation_id: &str) -> Result<String, A
     Ok(sha256_text(Sha256::digest(bytes).as_ref()))
 }
 
-fn sha256_text(bytes: &[u8]) -> String {
+pub(crate) fn sha256_text(bytes: &[u8]) -> String {
     let mut output = String::with_capacity(7 + bytes.len() * 2);
     output.push_str("sha256:");
     for byte in bytes {

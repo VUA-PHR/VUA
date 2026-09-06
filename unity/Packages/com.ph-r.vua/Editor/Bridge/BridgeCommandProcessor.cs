@@ -65,6 +65,9 @@ namespace Vua.Editor.Bridge
                     case "import_unity_package":
                         result = ImportUnityPackage(command);
                         break;
+                    case "materialize_extracted_package":
+                        result = MaterializeExtractedPackage(command);
+                        break;
                     case "create_local_vpm_package":
                         result = CreateLocalVpmPackage(command);
                         break;
@@ -113,17 +116,63 @@ namespace Vua.Editor.Bridge
             }
             catch (Exception exception)
             {
-                return BridgeResult.Fail(command, "bridge.unhandled", exception.GetType().Name + "：操作未完成。");
+                var stackTop = (exception.StackTrace ?? "").Split('\n').FirstOrDefault()?.Trim() ?? "";
+                return BridgeResult.Fail(command, "bridge.unhandled",
+                    exception.GetType().Name + "：" + exception.Message + " @ " + stackTop);
             }
         }
 
         private static bool IsMutating(string operation)
         {
-            return operation == "import_unity_package" || operation == "create_local_vpm_package" ||
+            return operation == "import_unity_package" ||
+                   operation == "materialize_extracted_package" ||
+                   operation == "create_local_vpm_package" ||
                    operation == "install_outfit" || operation == "create_toggle";
         }
 
         private static BridgeResult ImportUnityPackage(BridgeCommand command)
+        {
+            // 原语义保留：接收 .unitypackage 绝对路径并校验 SHA-256。已知
+            // 限制（2026-09-04 实测）：-batchmode 下 ImportPackage 静默
+            // 空操作；batchmode 执行请改用 materialize_extracted_package。
+            var source = command.payload.sourcePackagePath;
+            if (string.IsNullOrWhiteSpace(source) || !Path.IsPathRooted(source) || !File.Exists(source))
+            {
+                return BridgeResult.Reject(command, "package.source_missing", "找不到待导入的 Unity Package。");
+            }
+            if (!string.Equals(Path.GetExtension(source), ".unitypackage", StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.source_type_invalid", "来源文件不是 .unitypackage。");
+            }
+            var actualDigest = FileSha256(source);
+            if (string.IsNullOrWhiteSpace(command.payload.sourcePackageSha256) ||
+                !string.Equals(actualDigest, command.payload.sourcePackageSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.source_drift", "来源包摘要已变化，请重新检查。");
+            }
+            if (command.dryRun)
+            {
+                var dryRun = BridgeResult.Success(command);
+                dryRun.diagnostics.Add(BridgeDiagnostic.Info("package.import_ready", "来源包可读取，尚未导入。"));
+                return dryRun;
+            }
+            var before = new HashSet<string>(AssetDatabase.GetAllAssetPaths(), StringComparer.Ordinal);
+            AssetDatabase.ImportPackage(source, false);
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            var imported = AssetDatabase.GetAllAssetPaths()
+                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) && !before.Contains(path))
+                .OrderBy(path => path, StringComparer.Ordinal)
+                .ToList();
+            var result = BridgeResult.Success(command);
+            result.changedPaths.AddRange(imported);
+            result.data.importedAssetPaths.AddRange(imported);
+            result.diagnostics.Add(BridgeDiagnostic.Info("package.import_debug",
+                $"beforeAssets={before.Count} afterAssets={AssetDatabase.GetAllAssetPaths().Length} imported={imported.Count}"));
+            result.diagnostics.Add(BridgeDiagnostic.Info("package.imported", "Unity Package 已完成受控导入。"));
+            return result;
+        }
+
+        private static BridgeResult MaterializeExtractedPackage(BridgeCommand command)
         {
             // The caller extracts the .unitypackage (tar.gz of guid folders)
             // under .vua/imports/<commandId>/ — Unity's own ImportPackage is
@@ -132,7 +181,31 @@ namespace Vua.Editor.Bridge
             var extractedRoot = command.payload.sourcePackagePath;
             if (string.IsNullOrWhiteSpace(extractedRoot) || !Directory.Exists(extractedRoot))
             {
-                return BridgeResult.Reject(command, "package.source_missing", "找不到待导入的解包目录。");
+                return BridgeResult.Reject(command, "package.source_missing", "找不到待物化的解包目录。");
+            }
+            var manifestLines = new Dictionary<string, string>(StringComparer.Ordinal);
+            var manifestPath = Path.Combine(extractedRoot, "manifest.sha256");
+            if (!File.Exists(manifestPath))
+            {
+                return BridgeResult.Reject(command, "package.manifest_missing", "解包目录缺少 manifest.sha256。");
+            }
+            // The manifest lives in the same editable directory as the files
+            // it describes; verify its OWN digest (bound into the command by
+            // the caller) before trusting a single entry.
+            if (string.IsNullOrWhiteSpace(command.payload.manifestSha256) ||
+                !string.Equals(FileSha256(manifestPath), command.payload.manifestSha256, StringComparison.OrdinalIgnoreCase))
+            {
+                return BridgeResult.Reject(command, "package.manifest_drift", "解包清单自身摘要不符，解包内容可能在检查后被替换。");
+            }
+            foreach (var line in File.ReadAllLines(manifestPath))
+            {
+                var separator = line.IndexOf("  ", StringComparison.Ordinal);
+                if (separator <= 0)
+                {
+                    continue;
+                }
+                var manifestKey = line.Substring(separator + 2);
+                manifestLines[manifestKey] = line.Substring(0, separator);
             }
 
             var before = new HashSet<string>(AssetDatabase.GetAllAssetPaths(), StringComparer.Ordinal);
@@ -152,9 +225,12 @@ namespace Vua.Editor.Bridge
                 }
                 var target = Path.Combine(ProjectRoot(), logical.Replace('/', Path.DirectorySeparatorChar));
                 var assetPath = Path.Combine(guidDir, "asset");
+                var metaPath = Path.Combine(guidDir, "asset.meta");
                 if (File.Exists(assetPath))
                 {
-                    // Regular asset: copy the payload bytes.
+                    // Regular asset: verify then copy the payload bytes.
+                    VerifyAgainstManifest(manifestLines, extractedRoot,
+                        Path.Combine(guidDir, "asset"));
                     Directory.CreateDirectory(Path.GetDirectoryName(target) ?? ProjectRoot());
                     File.Copy(assetPath, target, true);
                 }
@@ -163,10 +239,11 @@ namespace Vua.Editor.Bridge
                     // Folder asset: no payload file exists in the archive.
                     Directory.CreateDirectory(target);
                 }
-                var meta = Path.Combine(guidDir, "asset.meta");
-                if (File.Exists(meta))
+                if (File.Exists(metaPath))
                 {
-                    File.Copy(meta, target + ".meta", true);
+                    VerifyAgainstManifest(manifestLines, extractedRoot,
+                        Path.Combine(guidDir, "asset.meta"));
+                    File.Copy(metaPath, target + ".meta", true);
                 }
                 imported.Add(logical);
             }
@@ -211,25 +288,35 @@ namespace Vua.Editor.Bridge
                 return dryRun;
             }
 
-            Directory.CreateDirectory(Path.Combine(ProjectRoot(), packageRoot, "Runtime"));
-            AssetDatabase.Refresh();
-            var topLevel = AssetDatabase.GetAllAssetPaths()
-                .Where(path => path.StartsWith("Assets/", StringComparison.Ordinal) &&
-                               path.IndexOf('/', "Assets/".Length) < 0)
-                .OrderBy(path => path, StringComparer.Ordinal)
-                .ToList();
+            // 暂存项目是一次性容器：包布局直接在文件系统层组装，最后统一
+            // Refresh。AssetDatabase 的 Move/Copy 不能跨包边界（Assets 与
+            // Packages/<id> 对 AssetDatabase 是两个包）。
+            var packageRootFs = Path.Combine(ProjectRoot(), packageRoot.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.Combine(packageRootFs, "Runtime"));
             var changed = new List<string>();
-            foreach (var source in topLevel)
+            var assetsRoot = Path.Combine(ProjectRoot(), "Assets");
+            var allEntries = Directory.GetFileSystemEntries(assetsRoot)
+                .OrderBy(entry => entry, StringComparer.Ordinal).ToList();
+            var directories = allEntries.Where(entry => Directory.Exists(entry)).ToList();
+            var files = allEntries.Where(entry => File.Exists(entry) &&
+                !entry.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)).ToList();
+            foreach (var entry in directories)
             {
-                var name = source.Substring("Assets/".Length);
-                var section = string.Equals(name, "Editor", StringComparison.OrdinalIgnoreCase) ? "Editor" : "Runtime";
-                var destination = section == "Editor" ? packageRoot + "/Editor" : packageRoot + "/Runtime/" + name;
-                var moveError = AssetDatabase.MoveAsset(source, destination);
-                if (!string.IsNullOrEmpty(moveError))
+                var name = Path.GetFileName(entry);
+                if (name.Equals("Editor", StringComparison.OrdinalIgnoreCase))
                 {
-                    return BridgeResult.Fail(command, "vpm.asset_move_failed", "素材无法移动到本地 VPM 包结构。");
+                    MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Editor"));
+                    changed.Add(packageRoot + "/Editor");
+                    continue;
                 }
-                changed.Add(destination);
+                MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Runtime", name));
+                changed.Add(packageRoot + "/Runtime/" + name.Replace('\\', '/'));
+            }
+            foreach (var entry in files)
+            {
+                var name = Path.GetFileName(entry);
+                MoveFileSystemEntry(entry, Path.Combine(packageRootFs, "Runtime", name));
+                changed.Add(packageRoot + "/Runtime/" + name.Replace('\\', '/'));
             }
             File.WriteAllText(Path.Combine(ProjectRoot(), packageRoot, "package.json"), PackageManifest(command));
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
@@ -274,8 +361,44 @@ namespace Vua.Editor.Bridge
                    "  \"displayName\": \"" + JsonEscape(command.payload.packageDisplayName) + "\",\n" +
                    "  \"version\": \"" + JsonEscape(command.payload.packageVersion) + "\",\n" +
                    "  \"unity\": \"2022.3\",\n" +
-                   "  \"dependencies\": {" + string.Join(",", entries) + "}\n" +
+                   "  \"vpmDependencies\": {" + string.Join(",", entries) + "}\n" +
                    "}\n";
+        }
+
+        /// 移动一个文件或目录（同卷，走文件系统层；失败抛出带原因的异常）。
+        private static void MoveFileSystemEntry(string source, string target)
+        {
+            if (Directory.Exists(source))
+            {
+                Directory.Move(source, target);
+            }
+            else if (File.Exists(source))
+            {
+                File.Move(source, target);
+            }
+            else
+            {
+                throw new FileNotFoundException("source entry missing: " + source);
+            }
+        }
+
+        /// 校验解包文件与 manifest.sha256 记录一致；不一致即失败。
+        private static void VerifyAgainstManifest(
+            Dictionary<string, string> manifest, string extractedRoot, string relative)
+        {
+            var rootFullPath = Path.GetFullPath(extractedRoot);
+            var manifestKey = Path.GetFullPath(relative)
+                .Substring(rootFullPath.Length + 1)
+                .Replace(Path.DirectorySeparatorChar, '/');
+            if (!manifest.TryGetValue(manifestKey, out var expected))
+            {
+                throw new FileNotFoundException("解包文件不在清单中，key=" + manifestKey);
+            }
+            var actual = FileSha256(Path.Combine(extractedRoot, relative));
+            if (!string.Equals(actual, expected, StringComparison.OrdinalIgnoreCase))
+            {
+                throw new FileNotFoundException("摘要不一致，key=" + manifestKey);
+            }
         }
 
         private static string JsonEscape(string value) => (value ?? string.Empty)
@@ -512,6 +635,7 @@ namespace Vua.Editor.Bridge
         {
             return operation == "inspect_project" ||
                    operation == "import_unity_package" ||
+                   operation == "materialize_extracted_package" ||
                    operation == "create_local_vpm_package" ||
                    operation == "validate_asset_paths" ||
                    operation == "identify_assets" ||

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/bdl-queries/v0.1/query.schema.json",
+  "title": "VUA BDL read query v0.1",
+  "description": "Read-only catalog and warehouse queries served by AMF from the local BDL (docs/protocols/bdl-queries-v0.1). AMF decides what is served; the renderer never touches BDL. The transport envelope belongs to the application contract — this schema freezes the operation vocabulary, the query closed set and the params. v0.1 serves only locally observed data: empty is an honest answer.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "operation", "params"],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": [
+        "catalog.list",
+        "catalog.detail",
+        "catalog.status",
+        "warehouse.listEntries",
+        "warehouse.entryDetail"
+      ]
+    },
+    "params": { "type": "object" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "catalog.list" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": { "params": { "$ref": "#/$defs/catalogListParams" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "catalog.detail" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": { "params": { "$ref": "#/$defs/catalogDetailParams" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "catalog.status" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": { "params": { "$ref": "#/$defs/emptyParams" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.listEntries" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": { "params": { "$ref": "#/$defs/emptyParams" } }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.entryDetail" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": { "params": { "$ref": "#/$defs/warehouseEntryDetailParams" } }
+      }
+    }
+  ],
+  "$defs": {
+    "emptyParams": {
+      "type": "object",
+      "additionalProperties": false
+    },
+    "catalogListParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "The v0.1 query closed set. entityType / relationKind are deliberately absent — entity and relation storage belongs to BDL v2; their presence is a contract error, never a silently empty answer. Entries are ordered by productId ascending (identity-derived, deterministic pagination).",
+      "properties": {
+        "text": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Case-insensitive substring over title and productId; null or omitted = no filtering."
+        },
+        "availability": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Exact match against the verbatim observed availability word; null or omitted = no filtering."
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50,
+          "description": "Page size for the card wall."
+        },
+        "offset": {
+          "type": "integer",
+          "minimum": 0,
+          "default": 0
+        }
+      }
+    },
+    "catalogDetailParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["productId"],
+      "properties": {
+        "productId": {
+          "type": "string",
+          "pattern": "^booth:[0-9]+$",
+          "description": "Namespaced corpus identity."
+        }
+      }
+    },
+    "warehouseEntryDetailParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["warehouseItemId"],
+      "properties": {
+        "warehouseItemId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "VUA-generated local identity, stable and never derived from display names."
+        }
+      }
+    }
+  }
+}

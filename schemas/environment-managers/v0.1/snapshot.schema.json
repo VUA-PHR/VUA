@@ -1,0 +1,198 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/environment-managers/v0.1/snapshot.schema.json",
+  "title": "VUA environment managers snapshot v0.1",
+  "description": "Read-only ALCOM/VCC project-manager capability detection (B6), productized from the environment detection spike. Every finding is deterministic for a given tree; only a failed observation produces an error diagnostic.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "capturedAt",
+    "productionTarget",
+    "migrationSources",
+    "editorRoots",
+    "editors",
+    "vcc",
+    "alcom",
+    "projects",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "vua.environment-managers-snapshot/v0.1" },
+    "capturedAt": { "type": "string", "minLength": 1 },
+    "productionTarget": { "const": "2022.3.22f1" },
+    "migrationSources": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "editorRoots": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "editors": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/editorFinding" }
+    },
+    "vcc": { "$ref": "#/$defs/vccCapability" },
+    "alcom": { "$ref": "#/$defs/alcomCapability" },
+    "projects": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/projectFinding" }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "editorClass": {
+      "enum": [
+        "production_target",
+        "migration_source",
+        "other_unity_version",
+        "tuanjie_family"
+      ]
+    },
+    "managerPresence": {
+      "enum": ["found", "not_found", "read_failed"]
+    },
+    "projectAssociation": {
+      "enum": ["vcc_registered", "alcom_registered"]
+    },
+    "severity": {
+      "enum": ["info", "warning", "error"]
+    },
+    "editorFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "classification",
+        "chinaDistribution",
+        "guidanceCode",
+        "path"
+      ],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "classification": { "$ref": "#/$defs/editorClass" },
+        "chinaDistribution": { "type": "boolean" },
+        "guidanceCode": {
+          "type": "string",
+          "pattern": "^vua\\.env_managers\\."
+        },
+        "path": { "type": "string", "minLength": 1 }
+      }
+    },
+    "vccCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presence",
+        "settingsPath",
+        "projectsSource",
+        "userProjects",
+        "localProjectFolders",
+        "errorCode"
+      ],
+      "properties": {
+        "presence": { "$ref": "#/$defs/managerPresence" },
+        "settingsPath": { "type": ["string", "null"] },
+        "projectsSource": {
+          "enum": ["userProjects", "localProjectFolders", null]
+        },
+        "userProjects": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "localProjectFolders": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "errorCode": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^vua\\.env_managers\\."
+            },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "alcomCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "presence",
+        "settingsPath",
+        "topLevelKeys",
+        "userProjects",
+        "errorCode"
+      ],
+      "properties": {
+        "presence": { "$ref": "#/$defs/managerPresence" },
+        "settingsPath": { "type": ["string", "null"] },
+        "topLevelKeys": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "userProjects": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "The vrc-get-compatible userProjects field, read only when present; an unrecognized settings shape is a warning finding, never an invented schema."
+        },
+        "errorCode": {
+          "oneOf": [
+            {
+              "type": "string",
+              "pattern": "^vua\\.env_managers\\."
+            },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "projectFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "associations",
+        "unityVersion",
+        "unityClassification"
+      ],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "associations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/projectAssociation" },
+          "description": "All managers that registered this path, sorted — VCC and ALCOM can manage the same project simultaneously."
+        },
+        "unityVersion": { "type": ["string", "null"] },
+        "unityClassification": {
+          "oneOf": [
+            { "$ref": "#/$defs/editorClass" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "detail"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^vua\\.env_managers\\."
+        },
+        "severity": { "$ref": "#/$defs/severity" },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

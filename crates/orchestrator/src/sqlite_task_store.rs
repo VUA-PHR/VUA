@@ -12,10 +12,13 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
 pub const SQLITE_TASK_FORMAT_VERSION: &str = "0.1";
-const SQLITE_MIGRATION_VERSION: i64 = 1;
+const SQLITE_MIGRATION_VERSION: i64 = 2;
 
 const MIGRATION_001: &str =
     include_str!("../../../schemas/orchestrator-task-store/v0.1/001_initial.sql");
+const MIGRATION_002: &str = include_str!(
+    "../../../schemas/orchestrator-task-store/v0.1/002_production_domain_records.sql"
+);
 
 #[derive(Debug)]
 pub enum SqliteStoreError {
@@ -280,6 +283,16 @@ impl SqliteTaskStore {
             let transaction =
                 connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
             transaction.execute_batch(MIGRATION_001)?;
+            transaction.pragma_update(None, "user_version", 1)?;
+            transaction.commit()?;
+        }
+        if migration < 2 {
+            // M3/T1: the production domain identity registry. Existing v1
+            // databases carry no domain records, so the new table starts
+            // empty and no data migration is needed.
+            let transaction =
+                connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            transaction.execute_batch(MIGRATION_002)?;
             transaction.pragma_update(None, "user_version", SQLITE_MIGRATION_VERSION)?;
             transaction.commit()?;
         }
@@ -921,6 +934,61 @@ impl SqliteTaskStore {
             |row| row.get(0),
         )?;
         to_u64(revision, "application revision")
+    }
+
+    /// Put one production domain record (inspection/plan) into the
+    /// registry. Idempotent per domain id — replays keep the original.
+    pub fn put_domain_record(
+        &self,
+        domain_id: &str,
+        kind: &str,
+        task_id: &str,
+        document_json: &str,
+        binding_json: &str,
+        created_at: &str,
+    ) -> Result<(), SqliteStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        connection.execute(
+            "INSERT INTO production_domain_records(
+                domain_id, kind, task_id, document_json, binding_json, created_at
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(domain_id) DO NOTHING",
+            params![domain_id, kind, task_id, document_json, binding_json, created_at],
+        )?;
+        Ok(())
+    }
+
+    /// Read one domain record: (kind, task_id, document, binding).
+    pub fn domain_record(
+        &self,
+        domain_id: &str,
+    ) -> Result<Option<(String, String, Value, Value)>, SqliteStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let row = connection
+            .query_row(
+                "SELECT kind, task_id, document_json, binding_json
+                 FROM production_domain_records WHERE domain_id = ?1",
+                [domain_id],
+                |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                    ))
+                },
+            )
+            .optional()?;
+        row.map(|(kind, task_id, document, binding)| {
+            Ok((
+                kind,
+                task_id,
+                serde_json::from_str(&document)?,
+                serde_json::from_str(&binding)?,
+            ))
+        })
+        .transpose()
+        .map_err(|error: serde_json::Error| SqliteStoreError::Json(error))
     }
 
     pub fn checkpoint(&self) -> Result<(), SqliteStoreError> {

@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.1",
+  "kind": "download.failed",
+  "downloadId": "dl-01hexample0000000000000c",
+  "attempt": 1,
+  "sourceUrl": "https://download.example.net/attachments/9999999/pack.zip",
+  "initiatedFromPageUrl": "https://booth.example.com/items/1000001",
+  "suggestedFileName": "pack.exe",
+  "expectedBytes": null,
+  "receivedBytes": 0,
+  "resumable": false,
+  "failureKind": "policy",
+  "occurredAt": "2026-09-06T09:10:00.000Z"
+}

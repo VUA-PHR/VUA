@@ -1,4 +1,5 @@
-//! B6-preview spike: project-manager capability detection.
+//! B6: project-manager capability detection (ALCOM/VCC), productized from
+//! the environment detection spike.
 //!
 //! Read-only, targeted observation of configured well-known roots — the
 //! same discipline as `environment`: never a scan, never a write. VCC
@@ -14,7 +15,7 @@
 //! the spike record, so the probe reports what it sees without inventing
 //! a schema.
 //!
-//! Output is the versioned `EnvironmentSpikeSnapshotV01` payload, whose
+//! Output is the versioned `EnvironmentManagersSnapshotV01` payload, whose
 //! shape is pinned by `schemas/environment-spike/v0.1/snapshot.schema.json`.
 
 use crate::editor_targets::{self, EditorClass};
@@ -24,18 +25,20 @@ use serde_json::Value;
 use std::io;
 use std::path::{Path, PathBuf};
 
-pub const ENV_SPIKE_SNAPSHOT_SCHEMA_VERSION: &str = "vua.environment-spike-snapshot/v0.1";
+pub const ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION: &str = "vua.environment-managers-snapshot/v0.1";
 
 /// Stable spike codes; findings and fix plans key on them.
 pub mod codes {
-    pub const VCC_SETTINGS_READ_FAILED: &str = "vua.env_spike.vcc_settings_read_failed";
-    pub const VCC_SETTINGS_SCHEMA_UNEXPECTED: &str = "vua.env_spike.vcc_settings_schema_unexpected";
-    pub const MANAGER_SETTINGS_READ_FAILED: &str = "vua.env_spike.manager_settings_read_failed";
-    pub const PROJECT_PATH_MISSING: &str = "vua.env_spike.project_path_missing";
-    pub const PROJECT_MARKERS_INCOMPLETE: &str = "vua.env_spike.project_markers_incomplete";
-    pub const PROJECT_VERSION_UNPARSEABLE: &str = "vua.env_spike.project_version_unparseable";
-    pub const EDITOR_ENTRY_UNPARSEABLE: &str = "vua.env_spike.editor_entry_unparseable";
-    pub const EDITOR_ROOT_READ_FAILED: &str = "vua.env_spike.editor_root_read_failed";
+    pub const VCC_SETTINGS_READ_FAILED: &str = "vua.env_managers.vcc_settings_read_failed";
+    pub const VCC_SETTINGS_SCHEMA_UNEXPECTED: &str = "vua.env_managers.vcc_settings_schema_unexpected";
+    pub const MANAGER_SETTINGS_READ_FAILED: &str = "vua.env_managers.manager_settings_read_failed";
+    pub const ALCOM_PROJECTS_NOT_RECOGNIZED: &str =
+        "vua.env_managers.alcom_projects_not_recognized";
+    pub const PROJECT_PATH_MISSING: &str = "vua.env_managers.project_path_missing";
+    pub const PROJECT_MARKERS_INCOMPLETE: &str = "vua.env_managers.project_markers_incomplete";
+    pub const PROJECT_VERSION_UNPARSEABLE: &str = "vua.env_managers.project_version_unparseable";
+    pub const EDITOR_ENTRY_UNPARSEABLE: &str = "vua.env_managers.editor_entry_unparseable";
+    pub const EDITOR_ROOT_READ_FAILED: &str = "vua.env_managers.editor_root_read_failed";
 }
 
 /// Injectable well-known roots. Defaults follow what the current VCC and
@@ -112,28 +115,34 @@ pub struct AlcomCapability {
     pub presence: ManagerPresence,
     pub settings_path: Option<String>,
     pub top_level_keys: Vec<String>,
+    /// ALCOM resolves the same vrc-get-compatible `userProjects` field; the
+    /// array is read only when present — an absent or unrecognized field is
+    /// a warning finding, never an invented schema.
+    pub user_projects: Vec<String>,
     pub error_code: Option<&'static str>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ProjectAssociation {
     VccRegistered,
-    Unattributed,
+    AlcomRegistered,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProjectFinding {
     pub path: String,
-    pub association: ProjectAssociation,
+    /// All managers that registered this path, sorted — VCC and ALCOM can
+    /// manage the same project simultaneously.
+    pub associations: Vec<ProjectAssociation>,
     pub unity_version: Option<String>,
     pub unity_classification: Option<EditorClass>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
-pub enum SpikeSeverity {
+pub enum FindingSeverity {
     Info,
     Warning,
     Error,
@@ -141,9 +150,9 @@ pub enum SpikeSeverity {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SpikeDiagnostic {
+pub struct ManagerDiagnostic {
     pub code: &'static str,
-    pub severity: SpikeSeverity,
+    pub severity: FindingSeverity,
     pub detail: String,
 }
 
@@ -151,7 +160,7 @@ pub struct SpikeDiagnostic {
 /// `schemas/environment-spike/v0.1/snapshot.schema.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct EnvironmentSpikeSnapshotV01 {
+pub struct EnvironmentManagersSnapshotV01 {
     pub schema_version: &'static str,
     pub captured_at: String,
     pub production_target: &'static str,
@@ -161,24 +170,24 @@ pub struct EnvironmentSpikeSnapshotV01 {
     pub vcc: VccCapability,
     pub alcom: AlcomCapability,
     pub projects: Vec<ProjectFinding>,
-    pub diagnostics: Vec<SpikeDiagnostic>,
+    pub diagnostics: Vec<ManagerDiagnostic>,
 }
 
 /// Assembles the full read-only snapshot. Every finding is deterministic
 /// for a given tree: a missing component is a normal finding, and only a
 /// failed *observation* produces an error diagnostic.
-pub fn collect_environment_spike_snapshot(
+pub fn collect_environment_managers_snapshot(
     roots: &ManagerRoots,
     editor_roots: &[PathBuf],
     clock: &dyn Clock,
-) -> EnvironmentSpikeSnapshotV01 {
+) -> EnvironmentManagersSnapshotV01 {
     let mut diagnostics = Vec::new();
     let editors = collect_editors(editor_roots, &mut diagnostics);
     let vcc = read_vcc_settings(&roots.vcc_settings_candidates, &mut diagnostics);
     let alcom = read_alcom_settings(&roots.alcom_settings_candidates, &mut diagnostics);
-    let projects = collect_projects(&vcc, &mut diagnostics);
-    EnvironmentSpikeSnapshotV01 {
-        schema_version: ENV_SPIKE_SNAPSHOT_SCHEMA_VERSION,
+    let projects = collect_projects(&vcc, &alcom, &mut diagnostics);
+    EnvironmentManagersSnapshotV01 {
+        schema_version: ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION,
         captured_at: clock.now_rfc3339(),
         production_target: editor_targets::PRODUCTION_TARGET,
         migration_sources: editor_targets::MIGRATION_SOURCES,
@@ -196,16 +205,16 @@ pub fn collect_environment_spike_snapshot(
 
 // --- editors ---
 
-fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnostic>) -> Vec<EditorFinding> {
+fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagnostic>) -> Vec<EditorFinding> {
     let mut editors = Vec::new();
     for root in editor_roots {
         let read_dir = match std::fs::read_dir(root) {
             Ok(read_dir) => read_dir,
             Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
             Err(error) => {
-                diagnostics.push(SpikeDiagnostic {
+                diagnostics.push(ManagerDiagnostic {
                     code: codes::EDITOR_ROOT_READ_FAILED,
-                    severity: SpikeSeverity::Error,
+                    severity: FindingSeverity::Error,
                     detail: format!("{}: {error}", root.display()),
                 });
                 continue;
@@ -218,9 +227,9 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnost
             }
             let name = entry.file_name().to_string_lossy().into_owned();
             let Some(parsed) = editor_targets::parse_editor_version(&name) else {
-                diagnostics.push(SpikeDiagnostic {
+                diagnostics.push(ManagerDiagnostic {
                     code: codes::EDITOR_ENTRY_UNPARSEABLE,
-                    severity: SpikeSeverity::Warning,
+                    severity: FindingSeverity::Warning,
                     detail: format!("{}: editor directory name is not a complete version string", path.display()),
                 });
                 continue;
@@ -261,7 +270,7 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnost
 /// resolution order or the schema handling.
 pub fn read_vcc_settings(
     candidates: &[PathBuf],
-    diagnostics: &mut Vec<SpikeDiagnostic>,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
 ) -> VccCapability {
     for path in candidates {
         let metadata = match std::fs::metadata(path) {
@@ -292,9 +301,9 @@ pub fn read_vcc_settings(
         if value.get("userProjects").is_none() && value.get("localProjectFolders").is_none() {
             // A found-but-unrecognized settings file is a finding, not a
             // crash: report presence with an unexpected-schema warning.
-            diagnostics.push(SpikeDiagnostic {
+            diagnostics.push(ManagerDiagnostic {
                 code: codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
-                severity: SpikeSeverity::Warning,
+                severity: FindingSeverity::Warning,
                 detail: format!(
                     "{}: neither userProjects nor localProjectFolders present; keys: {}",
                     display,
@@ -338,11 +347,11 @@ fn vcc_read_failed(
     display: &str,
     code: &'static str,
     detail: String,
-    diagnostics: &mut Vec<SpikeDiagnostic>,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
 ) -> VccCapability {
-    diagnostics.push(SpikeDiagnostic {
+    diagnostics.push(ManagerDiagnostic {
         code,
-        severity: SpikeSeverity::Error,
+        severity: FindingSeverity::Error,
         detail,
     });
     VccCapability {
@@ -355,7 +364,7 @@ fn vcc_read_failed(
     }
 }
 
-fn string_array(value: Option<&Value>, source: &str, diagnostics: &mut Vec<SpikeDiagnostic>) -> Vec<String> {
+fn string_array(value: Option<&Value>, source: &str, diagnostics: &mut Vec<ManagerDiagnostic>) -> Vec<String> {
     match value {
         None => Vec::new(),
         Some(Value::Array(items)) => items
@@ -363,9 +372,9 @@ fn string_array(value: Option<&Value>, source: &str, diagnostics: &mut Vec<Spike
             .filter_map(|item| item.as_str().map(str::to_owned))
             .collect(),
         Some(_) => {
-            diagnostics.push(SpikeDiagnostic {
+            diagnostics.push(ManagerDiagnostic {
                 code: codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
-                severity: SpikeSeverity::Warning,
+                severity: FindingSeverity::Warning,
                 detail: format!("{}: expected a JSON string array", source),
             });
             Vec::new()
@@ -384,7 +393,7 @@ fn top_level_keys(value: &Value) -> Vec<String> {
 
 // --- ALCOM (presence level only; schema is an open spike question) ---
 
-fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<SpikeDiagnostic>) -> AlcomCapability {
+fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiagnostic>) -> AlcomCapability {
     for path in candidates {
         let metadata = match std::fs::metadata(path) {
             Ok(metadata) => metadata,
@@ -397,34 +406,52 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<SpikeDiagno
         let text = match std::fs::read_to_string(path) {
             Ok(text) => text,
             Err(error) => {
-                diagnostics.push(SpikeDiagnostic {
+                diagnostics.push(ManagerDiagnostic {
                     code: codes::MANAGER_SETTINGS_READ_FAILED,
-                    severity: SpikeSeverity::Error,
+                    severity: FindingSeverity::Error,
                     detail: format!("{}: {error}", display),
                 });
                 return AlcomCapability {
                     presence: ManagerPresence::ReadFailed,
                     settings_path: Some(display),
                     top_level_keys: Vec::new(),
+                    user_projects: Vec::new(),
                     error_code: Some(codes::MANAGER_SETTINGS_READ_FAILED),
                 };
             }
         };
-        let top_level_keys = match serde_json::from_str::<Value>(&text) {
-            Ok(value) => top_level_keys(&value),
+        let (top_level_keys, user_projects) = match serde_json::from_str::<Value>(&text) {
+            Ok(value) => {
+                let keys = top_level_keys(&value);
+                let user_projects =
+                    string_array(value.get("userProjects"), &display, diagnostics);
+                if value.get("userProjects").is_none() {
+                    diagnostics.push(ManagerDiagnostic {
+                        code: codes::ALCOM_PROJECTS_NOT_RECOGNIZED,
+                        severity: FindingSeverity::Warning,
+                        detail: format!(
+                            "{}: no userProjects field recognized; keys: {}",
+                            display,
+                            keys.join(", ")
+                        ),
+                    });
+                }
+                (keys, user_projects)
+            }
             Err(_) => {
-                diagnostics.push(SpikeDiagnostic {
+                diagnostics.push(ManagerDiagnostic {
                     code: codes::MANAGER_SETTINGS_READ_FAILED,
-                    severity: SpikeSeverity::Warning,
+                    severity: FindingSeverity::Warning,
                     detail: format!("{}: settings file is not valid JSON", display),
                 });
-                Vec::new()
+                (Vec::new(), Vec::new())
             }
         };
         return AlcomCapability {
             presence: ManagerPresence::Found,
             settings_path: Some(display),
             top_level_keys,
+            user_projects,
             error_code: None,
         };
     }
@@ -432,38 +459,71 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<SpikeDiagno
         presence: ManagerPresence::NotFound,
         settings_path: None,
         top_level_keys: Vec::new(),
+        user_projects: Vec::new(),
         error_code: None,
     }
 }
 
 // --- projects ---
 
-fn collect_projects(vcc: &VccCapability, diagnostics: &mut Vec<SpikeDiagnostic>) -> Vec<ProjectFinding> {
-    let mut projects = Vec::new();
+/// Per-path accumulation across managers during project discovery.
+#[derive(Default)]
+struct AccumulatedProject {
+    associations: Vec<ProjectAssociation>,
+    unity_version: Option<String>,
+    unity_classification: Option<EditorClass>,
+}
+
+/// Collects the union of VCC- and ALCOM-managed projects. A path registered
+/// by both managers produces ONE finding carrying both associations — the
+/// project is the same folder, and the read face must not duplicate it.
+fn collect_projects(
+    vcc: &VccCapability,
+    alcom: &AlcomCapability,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
+) -> Vec<ProjectFinding> {
+    let mut by_path: std::collections::BTreeMap<String, AccumulatedProject> =
+        std::collections::BTreeMap::new();
+
     match vcc.projects_source {
         Some("userProjects") => {
             for path in &vcc.user_projects {
-                inspect_project(path, ProjectAssociation::VccRegistered, diagnostics, &mut projects);
+                inspect_project(path, ProjectAssociation::VccRegistered, diagnostics, &mut by_path);
             }
         }
         Some("localProjectFolders") => {
             for folder in &vcc.local_project_folders {
-                scan_project_folder(folder, diagnostics, &mut projects);
+                scan_project_folder(folder, diagnostics, &mut by_path);
             }
         }
         _ => {}
     }
-    projects.sort_by(|left, right| left.path.cmp(&right.path));
-    projects
+    for path in &alcom.user_projects {
+        inspect_project(path, ProjectAssociation::AlcomRegistered, diagnostics, &mut by_path);
+    }
+
+    by_path
+        .into_iter()
+        .map(|(path, accumulated)| ProjectFinding {
+            path,
+            associations: accumulated.associations,
+            unity_version: accumulated.unity_version,
+            unity_classification: accumulated.unity_classification,
+        })
+        .collect()
 }
 
-fn scan_project_folder(folder: &str, diagnostics: &mut Vec<SpikeDiagnostic>, projects: &mut Vec<ProjectFinding>) {
+fn scan_project_folder(
+    folder: &str,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
+    by_path: &mut std::collections::BTreeMap<String, AccumulatedProject>,
+) {
     let read_dir = match std::fs::read_dir(folder) {
         Ok(read_dir) => read_dir,
         Err(error) => {
-            diagnostics.push(SpikeDiagnostic {
+            diagnostics.push(ManagerDiagnostic {
                 code: codes::PROJECT_PATH_MISSING,
-                severity: SpikeSeverity::Warning,
+                severity: FindingSeverity::Warning,
                 detail: format!("{}: {error}", folder),
             });
             return;
@@ -474,60 +534,72 @@ fn scan_project_folder(folder: &str, diagnostics: &mut Vec<SpikeDiagnostic>, pro
         if !path.is_dir() {
             continue;
         }
-        inspect_project(&path.to_string_lossy(), ProjectAssociation::VccRegistered, diagnostics, projects);
+        inspect_project(
+            &path.to_string_lossy(),
+            ProjectAssociation::VccRegistered,
+            diagnostics,
+            by_path,
+        );
     }
 }
 
 fn inspect_project(
     path: &str,
     association: ProjectAssociation,
-    diagnostics: &mut Vec<SpikeDiagnostic>,
-    projects: &mut Vec<ProjectFinding>,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
+    by_path: &mut std::collections::BTreeMap<String, AccumulatedProject>,
 ) {
     let dir = Path::new(path);
     let metadata = match std::fs::metadata(dir) {
         Ok(metadata) => metadata,
         Err(_) => {
-            diagnostics.push(SpikeDiagnostic {
+            diagnostics.push(ManagerDiagnostic {
                 code: codes::PROJECT_PATH_MISSING,
-                severity: SpikeSeverity::Warning,
+                severity: FindingSeverity::Warning,
                 detail: format!("{}: registered project path does not exist", path),
             });
             return;
         }
     };
     if !metadata.is_dir() {
-        diagnostics.push(SpikeDiagnostic {
+        diagnostics.push(ManagerDiagnostic {
             code: codes::PROJECT_MARKERS_INCOMPLETE,
-            severity: SpikeSeverity::Warning,
+            severity: FindingSeverity::Warning,
             detail: format!("{}: registered project path is not a directory", path),
         });
         return;
     }
     let Some(marker) = read_project_markers(dir) else {
-        diagnostics.push(SpikeDiagnostic {
+        diagnostics.push(ManagerDiagnostic {
             code: codes::PROJECT_MARKERS_INCOMPLETE,
-            severity: SpikeSeverity::Warning,
+            severity: FindingSeverity::Warning,
             detail: format!("{}: missing vpm-manifest.json or a parseable ProjectVersion.txt", path),
         });
         return;
     };
+    let entry = by_path.entry(path.to_owned()).or_default();
+    if !entry.associations.contains(&association) {
+        entry.associations.push(association);
+        entry.associations.sort();
+    }
     match marker {
-        Ok((version, classification)) => projects.push(ProjectFinding {
-            path: path.to_owned(),
-            association,
-            unity_version: Some(version),
-            unity_classification: Some(classification),
-        }),
+        Ok((version, classification)) => {
+            if entry.unity_version.is_none() {
+                entry.unity_version = Some(version);
+                entry.unity_classification = Some(classification);
+            }
+        }
         Err(raw) => {
-            diagnostics.push(SpikeDiagnostic {
-                code: codes::PROJECT_VERSION_UNPARSEABLE,
-                severity: SpikeSeverity::Warning,
-                detail: format!(
-                    "{}: ProjectVersion.txt does not contain a complete version string: {}",
-                    path, raw
-                ),
-            });
+            if entry.unity_version.is_none() {
+                diagnostics.push(ManagerDiagnostic {
+                    code: codes::PROJECT_VERSION_UNPARSEABLE,
+                    severity: FindingSeverity::Warning,
+                    detail: format!(
+                        "{}: ProjectVersion.txt does not contain a complete version string: {}",
+                        path, raw
+                    ),
+                });
+            }
         }
     }
 }

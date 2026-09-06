@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.1",
+  "kind": "download.completed",
+  "downloadId": "dl-01hexample0000000000000a",
+  "attempt": 2,
+  "sourceUrl": "https://booth.example.com/download/1000001/9ab8c7d6-e5f4-3a2b-1c0d-9e8f7a6b5c4d",
+  "initiatedFromPageUrl": "https://booth.example.com/items/1000001",
+  "suggestedFileName": "material-pack.zip",
+  "storedPath": "C:\\Users\\example\\AppData\\Local\\VUA\\installed\\default\\downloads\\dl-01hexample0000000000000a-2-material-pack.zip",
+  "expectedBytes": 183501824,
+  "receivedBytes": 183501824,
+  "resumable": true,
+  "occurredAt": "2026-09-06T08:16:40.000Z"
+}

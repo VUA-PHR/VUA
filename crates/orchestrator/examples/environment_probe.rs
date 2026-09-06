@@ -12,7 +12,7 @@ use std::path::PathBuf;
 fn main() {
     let roots = vua_orchestrator::ManagerRoots::default();
     let editor_roots = vec![PathBuf::from("C:\\Program Files\\Unity\\Hub\\Editor")];
-    let snapshot = vua_orchestrator::collect_environment_spike_snapshot(
+    let snapshot = vua_orchestrator::collect_environment_managers_snapshot(
         &roots,
         &editor_roots,
         &vua_orchestrator::SystemClock,

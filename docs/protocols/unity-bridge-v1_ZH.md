@@ -49,6 +49,7 @@ Orchestrator 在目标 Unity 项目的 `.vua/bridge/` 下原子写入请求文�
 | --- | --- | --- |
 | `inspect_project` | 必须 `dryRun: true` | 检查当前 Scene 是否可读并返回指纹 |
 | `import_unity_package` | 可检查或修改 | 校验来源摘要并导入批次中的一个 `.unitypackage` |
+| `materialize_extracted_package` | 可检查或修改 | 物化调用方解包的 guid 布局（先校验命令携带的 `manifestSha256` 与清单自身一致，再逐条目对 `manifest.sha256` 校验——清单与文件同目录可编辑，不绑定清单自身摘要则检查-替换窗口不闭合）。batchmode 事实（2026-09-04）：Unity 的 `ImportPackage` 在 `-batchmode` 下静默空操作，batchmode 执行必须使用本操作；`import_unity_package` 保留文件+摘要语义 |
 | `create_local_vpm_package` | 可检查或修改 | 仅在带令牌的 VUA 暂存项目中整理 Editor/Runtime 并生成本地包 |
 | `validate_asset_paths` | 必须 `dryRun: true` | 确认计划素材路径可由 AssetDatabase 加载，仅证明最小结构 |
 | `identify_assets` | 必须 `dryRun: true` | 解析 Avatar 与衣装的 `GlobalObjectId` |

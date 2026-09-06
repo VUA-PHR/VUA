@@ -1,13 +1,22 @@
-# VUA Production Use-Case Contract v0.1 (frozen)
+# VUA Production Use-Case Contract v0.1 (M3 candidate)
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
-> Status: **Accepted — frozen 2026-09-05** (B3/F3 vocabulary aligned; F confirmations
-> landed in GLM/frontend `b3318e0`). This revision constrains both sides.
+> Status: **M3 candidate draft** (2026-09-06: the 2026-09-05 freeze claim is withdrawn —
+> review verified 6/7 mismatches between the real TS/Rust parameter surfaces, with no
+> request/response JSON Schemas and no cross-language fixture vectors; "frozen" was not
+> accurate, and returning to candidate is what the honesty discipline requires. The
+> 2026-09-05 vocabulary, lifecycle-to-task mapping and confirmation/recovery discipline
+> remain as the candidate baseline; the freeze is re-attempted at M3 acceptance after
+> the alignment slice delivers ① precise per-method request/response Schemas, ② shared
+> TS/Rust fixture vectors, ③ bidirectional Provider/Gateway contract tests, and ④ a real
+> Electron → Rust → Unity smoke run. The domain-reference shape (`planId`/
+> `inspectionId`/`buildRecordId` over re-submitted paths) and the versioned
+> BuildRecord evidence summary are revised in the same slice)
 > Scope: the command and query surface of the first production vertical use case (one
 > synthetic Avatar + one clothing item; dual material intake via direct `.unitypackage`
 > import and local VPM build/install)
-> Updated: 2026-09-05
+> Updated: 2026-09-06
 > Authority: the alignment baseline for the F3 presentation layer and the B3 application
 > implementation; method names are registered in the application-contract v0.1 method table
 > (introduced = B3/F3), with value semantics defined here
@@ -135,6 +144,18 @@ Bridge jobs of the run, not only the last. The Renderer displays them verbatim.
 
 ## Revision history
 
+- 2026-09-06: **M3 revision (T1 landed).** The seven-method parameter face
+  moves to domain-reference shapes: `startInspection` takes the four-tuple
+  (paths bound once), `requestPlan = {inspectionId, mode}`, `confirmPlan =
+  {planId, observedRevision, riskChoice, rememberForSession?}`, `recover =
+  {taskId, decision, decisionId}`, and the query faces address records by
+  domain identity; `getBuildRecord` responds with the v0.2 projection
+  (evidenceSummary replacing the opaque facts JSON); the `inspectionId`/
+  `planId` domain registry and the `riskChoice` enum
+  (snapshot_and_continue/continue/cancel/not_required) are pinned by
+  `schemas/amf-production/v0.2/` with fixed vectors. This lands the cosigned
+  main draft (`m3-production-revision-b-draft` + F cosign); the status
+  remains M3 candidate until acceptance freezes it.
 - 2026-09-05: **Frozen.** Vocabulary rulings from the B-line reply and the F-line
   confirmations (`b3318e0`): BuildRecord authority/display dual vocabulary with the
   `aborted` display state and the snapshot-evidence mapping; `SourceIntake` aligned to the

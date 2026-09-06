@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "catalog.status",
+  "result": {
+    "health": "ok",
+    "revision": {
+      "catalogUpdatedSeq": null,
+      "datasetRevision": "0.1"
+    }
+  }
+}

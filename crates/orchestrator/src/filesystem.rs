@@ -36,6 +36,9 @@ const SNAPSHOT_SCOPES: [&str; 3] = ["Assets", "Packages", "ProjectSettings"];
 pub struct SnapshotManifestV1 {
     pub schema_version: u8,
     pub snapshot_id: String,
+    /// Normalized digest of the owning project root: the three-way
+    /// recovery check (request root ↔ record ↔ manifest) anchors here.
+    pub project_identity: String,
     pub scopes: Vec<String>,
     pub entries: Vec<SnapshotManifestEntry>,
     pub verified: bool,
@@ -68,7 +71,7 @@ impl std::fmt::Debug for VerifiedSnapshot {
     }
 }
 
-const SNAPSHOT_MANIFEST_SCHEMA_VERSION: u8 = 1;
+const SNAPSHOT_MANIFEST_SCHEMA_VERSION: u8 = 2;
 const SNAPSHOT_MANIFEST_FILE: &str = "manifest.json";
 
 pub struct FileSystemProjectStore;
@@ -252,6 +255,12 @@ impl FileSystemSnapshotStore {
             let manifest = SnapshotManifestV1 {
                 schema_version: SNAPSHOT_MANIFEST_SCHEMA_VERSION,
                 snapshot_id: snapshot_id.to_owned(),
+                project_identity: crate::ProjectIdentity::from_existing_path(&project.root)
+                    .map_err(|error| {
+                        io::Error::new(io::ErrorKind::InvalidInput, error.to_string())
+                    })?
+                    .as_str()
+                    .to_owned(),
                 scopes: scope_list.clone(),
                 entries: entries.clone(),
                 verified: true,
@@ -321,6 +330,16 @@ impl FileSystemSnapshotStore {
         // manifest.json 位于项目目录内，是**不可信数据**：恢复前把清单里的
         // 每个路径重新过一遍与创建时相同的校验，伪造 `../../` 的作用域或
         // 条目在此被拒——这是访问控制，不是可选的完整性强化。
+        // The manifest must name THIS project: a copied or misplaced
+        // snapshot directory can never be restored into another project.
+        let project_identity = crate::ProjectIdentity::from_existing_path(&project.root)
+            .map_err(|error| io::Error::new(io::ErrorKind::InvalidInput, error.to_string()))?;
+        if manifest.project_identity != project_identity.as_str() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "snapshot belongs to another project",
+            ));
+        }
         if manifest.snapshot_id != snapshot.id {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,

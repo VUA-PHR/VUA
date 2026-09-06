@@ -1,0 +1,154 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/download-events/v0.1/event.schema.json",
+  "title": "VUA download event v0.1",
+  "description": "One normalized transport event reported by the F4 download port to AMF (docs/protocols/download-events-v0.1). The port reports transport facts only: content identity, inspection verdicts, source correlation and Warehouse decisions are AMF's. Events never carry cookies, download tokens or credentials, and storedPath is the only path field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "downloadId",
+    "attempt",
+    "sourceUrl",
+    "resumable",
+    "occurredAt"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "kind": {
+      "enum": [
+        "download.started",
+        "download.progress",
+        "download.interrupted",
+        "download.completed",
+        "download.cancelled",
+        "download.failed"
+      ]
+    },
+    "downloadId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Port-assigned identity, stable across retry attempts and resume() continuations of the same DownloadItem."
+    },
+    "attempt": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "1-based port counter; unchanged across an interrupted/resume continuation, incremented on a fresh retry attempt."
+    },
+    "sourceUrl": { "type": "string", "minLength": 1 },
+    "initiatedFromPageUrl": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Page context captured at will-download time; correlation input for AMF source mapping."
+    },
+    "urlChain": {
+      "type": ["array", "null"],
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Redirect chain captured at will-download time (getURLChain); source-verification input, never a path or credential carrier."
+    },
+    "suggestedFileName": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "Server-suggested or derived file name; never parsed for identity by AMF."
+    },
+    "storedPath": {
+      "type": ["string", "null"],
+      "minLength": 1,
+      "description": "The ONLY path field: final name inside the VUA-managed staging directory, reported verbatim. Absent when no file was created (policy rejection at will-download)."
+    },
+    "expectedBytes": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Content-Length when the server sent one; unknown size is null, never inflated to 0."
+    },
+    "receivedBytes": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "resumable": {
+      "type": "boolean",
+      "description": "The port's resumability verdict (Electron canResume()); the port never self-observes range headers as a second signal."
+    },
+    "failureKind": {
+      "enum": ["policy", "unknown", null],
+      "description": "Failure attribution, failed events only: policy is the port's own self-attributable allowlist denial at will-download; everything else is unknown — the port cannot honestly distinguish network, disk or server causes on the Electron event surface."
+    },
+    "occurredAt": { "type": "string", "minLength": 1 }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "download.started" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": { "storedPath": { "type": "string", "minLength": 1 } },
+        "required": ["storedPath"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "download.progress" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "storedPath": { "type": "string", "minLength": 1 },
+          "receivedBytes": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["storedPath", "receivedBytes"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "download.interrupted" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "storedPath": { "type": "string", "minLength": 1 },
+          "failureKind": { "enum": [null] }
+        },
+        "required": ["storedPath"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "download.completed" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "storedPath": { "type": "string", "minLength": 1 },
+          "receivedBytes": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["storedPath", "receivedBytes"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "download.failed" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "failureKind": { "enum": ["policy", "unknown"] }
+        },
+        "required": ["failureKind"]
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "kind": { "enum": ["download.started", "download.progress", "download.interrupted", "download.completed"] }
+        },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": { "failureKind": { "enum": [null] } }
+      }
+    }
+  ]
+}

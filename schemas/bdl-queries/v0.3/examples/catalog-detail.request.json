@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "catalog.detail",
+  "params": {
+    "productId": "booth:1000001"
+  }
+}
