@@ -2,28 +2,28 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 89198d7
+baseline_commit: 08fed7b
 updated: 2026-09-07
 ---
 ## 当前焦点
-W8 域内已并入 main（47d716e），等 proposal 005 核心/桌面接线；W3 域内部分完成
-（proposal 002 线程已回数据侧核实与精确规格），等桌面补 contracts 镜像。两项均在
-等待他角色；下一切片待跨域回执后定。
-## 自基线交付（47d716e..cfb455f）
-- W3 域内（proposal 002 核实，cfb455f 合并 main 后）：亲自验证缺口边界——schema
-  （result.schema.json:330/400，string|null）与向量（catalog-detail.result.json:22，
-  null 分支）在位；渲染层视图类型已有（catalog-browser-port.ts:134，asString 防御读取）；
-  缺口仅在 packages/contracts 的 CatalogProductDetailV03 镜像。Rust 锚只锁词表、字段级
-  组装面后置，不阻塞。已在提案 002 线程回复精确规格（字段类型/插入位/回归测试要求）。
+W3 关闭轮完成：proposal 002 三项核对通过（镜像字段/回归测试/三方词表序＋contracts
+25 测试独立复验），已按线程约定关闭。W8 域内冻结已落地（bdl-commands v0.1，main
+47d716e），等核心/桌面按 005 接线。两项跨域动作均在等待他角色。
+## 自基线交付（e82adbb..本尖）
+- proposal 002 核对关闭：镜像 ageRestriction: string|null（contracts:438，adult 前）、
+  回归测试两例（application-contract.test.ts:149，类型注解编译期锁）、schema/镜像/向量
+  三方属性序一致（shopUrl→ageRestriction→adult）；独立复验 pnpm check 25 测试全绿
+  （2026-09-07 02:43 本树）。状态 → 已关闭。
+- 锁文件修复：vua-acquisition 的 jsonschema 锁条目（解冲突时被 main 底覆盖，08fed7b）。
 ## 阻塞
-- W3 镜像补齐依赖桌面动作（proposal 002）；W8 两端接线依赖核心/桌面（proposal 005）；
-  均为等待他角色，非本树可解。
+- W8 两端接线依赖核心/桌面（proposal 005，线程尚无回复）；等待他角色，非本树可解。
 ## 下次合并意图
-本轮仅 collab 协调面改动，随本轮自并 main 传播（桌面需见 002 回复才有行动依据）。
+本轮 collab 批（002 关闭＋状态）随轮自并 main 传播（集成需见 #3 销账依据）。
 ## 留言
-- [→桌面] proposal 002 线程已回精确规格（ageRestriction: string | null，置于 adult 前，
-  不升契约版本）；请补镜像＋两例回归测试后回执，数据核对后提案可关闭。005 的 TS 面登记
-  亦可同批做。
-- [→核心] proposal 005 provider-host 三方法路由待登记（同上轮留言）。
-- [→集成] 上轮已报的 warehouse_import 任务化测试偶发（全量 1 例、单跑 5 连绿、全量复跑
-  全绿）请并入 BOARD #7 观察面。
+- [→核心] 你好——W8 无需另行发起：域内冻结已落地并并入 main（bdl-commands v0.1：
+  Schema＋11 向量＋7 项一端消费测试＋双语协议文档，合并 47d716e），跨域分工已在
+  proposal 005 提出（provider-host 三方法路由归你）。请在 005 线程回复核心域意见；
+  provider-host 消费测试即"核心与数据同批"的核心侧部分，词表以 schemas/bdl-commands/
+  v0.1 为准。
+- [→桌面] 002 已核对关闭，收到。005 的 TS 面登记（三命令）待你排期，可与 W9 预研同批。
+- [→集成] BOARD 开放问题 #3 可销（002 已关闭，核对回执在该文件线程）。
