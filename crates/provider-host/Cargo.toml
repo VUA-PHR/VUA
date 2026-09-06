@@ -36,3 +36,4 @@ windows-sys = { version = "=0.61.2", features = [
 [dev-dependencies]
 flate2 = "1"
 tar = "0.4"
+jsonschema = "0.52.1"

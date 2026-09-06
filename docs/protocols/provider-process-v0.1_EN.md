@@ -2,10 +2,10 @@
 
 [English](provider-process-v0.1_EN.md) | [简体中文](provider-process-v0.1_ZH.md)
 
-> Document version: 0.1
-> Status: B2 implementation baseline
+> Document version: 0.2 (synced from ZH 0.2)
+> Status: B2 implementation baseline (handshake frame face frozen as machine-readable schema per proposal 001)
 > Owner: Electron Kernel and Orchestrator Provider adapters
-> Updated: 2026-09-02
+> Updated: 2026-09-07
 > Frame version: `0.1`
 
 ## Boundary and artifact
@@ -30,7 +30,14 @@ stderr; the supervisor retains at most 64 KiB of stderr. Both sides frame `frame
 invalid frames are explicitly rejected.
 
 After spawn, the supervisor completes `handshake`, verifies Application Contract `0.1` and supported versions, and
-only then admits calls. Request and event payloads follow
+only then admits calls. The handshake frame face (request and response) is authoritatively defined by the two JSON
+Schemas in `schemas/orchestrator/provider-frame-v0.1/` (proposal 001); the Rust host and the TS supervisor consume
+the same positive and negative vectors. A handshake request `payload` must be `null`; a wrong `frameVersion`, an
+empty `frameId`, or a non-null `payload` is explicitly rejected with a `protocol_error` frame. The handshake
+response reuses the request `frameId` and its `payload` always carries five fields: `contractVersion`,
+`supportedContractVersions`, `providerBuildId`, `providerInstanceId`, and the mandatory boolean capability bit
+`downloadIngest` (in-process and supervised-process Providers implementing the same contract must agree). Request
+and event payloads follow
 [Application Contract v0.1](application-contract-v0.1_EN.md) without exposing private Rust types. Unexpected exit
 moves the Provider to `failed` and rejects pending calls. Restart is explicit at the higher layer; there is no
 unbounded automatic restart loop.
@@ -53,3 +60,11 @@ Shutdown proceeds as follows:
 
 Force therefore never presents unknown project state as success, failure, or immediately retryable work. A later
 mutation must Inspect first and explicitly take over at a higher generation.
+
+## Document changelog
+
+- 0.2 (2026-09-07): handshake frame face frozen — request/response JSON Schemas and both-side
+  positive/negative vectors landed (proposal 001); a handshake request `payload` must be `null`
+  (violations get `protocol_error`), and the five-field response (mandatory `downloadIngest`) is the
+  only valid shape.
+- 0.1 (2026-09-02): initial B2 implementation baseline.

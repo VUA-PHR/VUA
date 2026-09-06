@@ -1,0 +1,6 @@
+{
+  "frameVersion": "1.0",
+  "frameId": "handshake-req-1",
+  "kind": "handshake",
+  "payload": null
+}
