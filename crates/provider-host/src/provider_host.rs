@@ -20,10 +20,11 @@ use vua_bdl_store::download_events::{
 };
 use vua_orchestrator::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
-    IdempotentTaskAcceptance, NewTask, ProjectIdentity, SqliteStoreError, SqliteTaskStore,
-    StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
+    IdempotentTaskAcceptance, NanosTaskIdGenerator, NewTask, ProjectIdentity, SqliteStoreError,
+    SqliteTaskStore, StoredTask, StoredTaskEvent, SystemClock, TaskEventKind, TaskMutation,
+    TaskRuntime, TaskState,
 };
-use vua_bdl_store::bdl_store::BdlStore;
+use vua_bdl_store::{ArtifactMode, BdlStore, BdlStoreError};
 use vua_orchestrator::ParamValue;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -105,6 +106,7 @@ struct HostState {
     recovered_nonterminal_tasks: HashSet<String>,
     production: Option<Arc<ProductionServices>>,
     downloads: Option<Arc<DownloadServices>>,
+    warehouse: Option<Arc<WarehouseServices>>,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -113,6 +115,36 @@ struct HostState {
 pub struct DownloadConfig {
     /// The BDL local database the download consumer folds events into.
     pub bdl: Arc<BdlStore>,
+}
+
+/// B4 warehouse maintenance wiring (proposal 005): roots and the global
+/// default mode are provider-side runtime configuration and never travel the
+/// wire; the wire params carry only the warehouse item id and (for
+/// setArtifactMode) the per-entry override.
+pub struct WarehouseConfig {
+    /// The BDL local database the warehouse commands operate on.
+    pub bdl: Arc<BdlStore>,
+    /// The warehouse root the generate-VPM staging/publish flow writes under.
+    pub warehouse_root: PathBuf,
+    /// The shell-level default artifact mode (override resolution stays
+    /// dynamic: per-entry override ?? this default).
+    pub global_default: ArtifactMode,
+    /// The real Unity conversion executor for `warehouse.generateVpm`
+    /// (same source as the production wiring). When absent, generation
+    /// answers a typed unavailable error while the other two commands and
+    /// the read face keep working — honest absence, never a silent success.
+    pub executor: Option<Arc<MaterialExecutor>>,
+}
+
+struct WarehouseServices {
+    bdl: Arc<BdlStore>,
+    warehouse_root: PathBuf,
+    global_default: ArtifactMode,
+    executor: Option<Arc<MaterialExecutor>>,
+    /// The tasked commands (generateVpm / deleteOriginals) run on the SQLite
+    /// task authority: existing nonterminal tasks register for explicit
+    /// Inspect/recovery and are never resumed implicitly.
+    runtime: TaskRuntime,
 }
 
 struct DownloadServices {
@@ -219,10 +251,25 @@ pub fn run_provider_host_with(
 /// over the event channel.
 pub fn run_provider_host_with_downloads(
     input: impl BufRead + Send + 'static,
+    output: impl Write,
+    database_path: impl AsRef<Path>,
+    production: Option<ProductionConfig>,
+    downloads: Option<DownloadConfig>,
+) -> Result<(), ProviderHostError> {
+    run_provider_host_with_services(input, output, database_path, production, downloads, None)
+}
+
+/// The full entry: additionally wires the B4 warehouse command trio
+/// (proposal 005, `warehouse.setArtifactMode` / `warehouse.generateVpm` /
+/// `warehouse.deleteOriginals`). When `warehouse` is configured the tasked
+/// commands run on the SQLite task authority over the same store.
+pub fn run_provider_host_with_services(
+    input: impl BufRead + Send + 'static,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
     production: Option<ProductionConfig>,
     downloads: Option<DownloadConfig>,
+    warehouse: Option<WarehouseConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -287,12 +334,31 @@ pub fn run_provider_host_with_downloads(
             pending_intents: Mutex::new(Vec::new()),
         })
     });
+    let warehouse = warehouse
+        .map(|config| {
+            TaskRuntime::with_sqlite(
+                store.clone(),
+                Arc::new(SystemClock),
+                Arc::new(NanosTaskIdGenerator::default()),
+            )
+            .map(|runtime| {
+                Arc::new(WarehouseServices {
+                    bdl: config.bdl,
+                    warehouse_root: config.warehouse_root,
+                    global_default: config.global_default,
+                    executor: config.executor,
+                    runtime,
+                })
+            })
+        })
+        .transpose()?;
     let mut state = HostState {
         store,
         provider_instance_id,
         recovered_nonterminal_tasks,
         production,
         downloads,
+        warehouse,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -607,6 +673,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     }
     if method.starts_with("download.") {
         return download_request(state, method, request, request_id, correlation_id);
+    }
+    if method.starts_with("warehouse.") {
+        return warehouse_request(state, method, request, request_id, correlation_id);
     }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
@@ -979,6 +1048,194 @@ fn application_success(request_id: &str, value: Value) -> Value {
 /// events into BDL (at-least-once; the BDL unique key dedups) and drives the
 /// per-attempt nine-state task; `download.retry` adjudicates a user retry
 /// through the frozen retry policy and emits the port intent.
+/// B4 warehouse maintenance surface (proposal 005, bdl-commands v0.1).
+/// `warehouse.setArtifactMode` applies synchronously and reports the entry's
+/// resulting effective mode; `warehouse.generateVpm` / `warehouse.deleteOriginals`
+/// submit audited maintenance tasks and return a task acceptance — their Done
+/// payloads travel the application-contract task surface. Guards are
+/// server-side facts evaluated inside the tasks, never at admission.
+fn warehouse_request(
+    state: &mut HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse) = state.warehouse.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.warehouse.unavailable",
+            "errors.warehouse.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "warehouse.setArtifactMode" => {
+            warehouse_set_artifact_mode(warehouse, request, request_id, correlation_id)
+        }
+        "warehouse.generateVpm" | "warehouse.deleteOriginals" => {
+            warehouse_submit_task(warehouse, method, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn warehouse_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.warehouse.invalid_params",
+        "errors.warehouse.invalidParams",
+        "validation",
+    ))
+}
+
+fn warehouse_item_id_param(request: &Value) -> Option<String> {
+    request
+        .pointer("/params/warehouseItemId")
+        .and_then(Value::as_str)
+        .map(str::to_owned)
+        .filter(|id| !id.is_empty())
+}
+
+fn warehouse_set_artifact_mode(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse_item_id) = warehouse_item_id_param(request) else {
+        return warehouse_invalid_params(request_id, correlation_id);
+    };
+    let mode = match request.pointer("/params/mode") {
+        // The override follows the frozen closed vocabulary; null clears it
+        // so the entry follows the global default again. A missing mode is a
+        // params violation, not a clear.
+        Some(Value::Null) => None,
+        Some(Value::String(raw)) => match ArtifactMode::parse(raw) {
+            Ok(mode) => Some(mode),
+            Err(_) => return warehouse_invalid_params(request_id, correlation_id),
+        },
+        Some(_) | None => return warehouse_invalid_params(request_id, correlation_id),
+    };
+    match warehouse.bdl.set_artifact_mode(&warehouse_item_id, mode) {
+        Ok(()) => {}
+        Err(BdlStoreError::UnknownWarehouseItem(_)) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.warehouse.entry_not_found",
+                "errors.warehouse.entryNotFound",
+                "validation",
+            ));
+        }
+        Err(_) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.warehouse.storeFailed",
+                "errors.warehouse.storeFailed",
+                "internal",
+            ));
+        }
+    }
+    // The effective mode is read back from the store (override ?? global
+    // default), never echoed from the request.
+    let effective = warehouse
+        .bdl
+        .warehouse_entry_detail(&warehouse_item_id, warehouse.global_default)
+        .ok()
+        .flatten()
+        .map(|detail| detail.effective_artifact_mode.name().to_owned())
+        .unwrap_or_default();
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": "0.1",
+            "operation": "warehouse.setArtifactMode",
+            "warehouseItemId": warehouse_item_id,
+            "effectiveMode": effective,
+        }),
+    ))
+}
+
+fn warehouse_submit_task(
+    warehouse: Arc<WarehouseServices>,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse_item_id) = warehouse_item_id_param(request) else {
+        return warehouse_invalid_params(request_id, correlation_id);
+    };
+    let accepted = match method {
+        "warehouse.generateVpm" => {
+            let Some(executor) = warehouse.executor.clone() else {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.warehouse.unavailable",
+                    "errors.warehouse.unavailable",
+                    "unavailable",
+                ));
+            };
+            vua_acquisition::warehouse_maintenance::submit_generate_vpm(
+                &warehouse.runtime,
+                warehouse.bdl.clone(),
+                executor,
+                vua_acquisition::warehouse_maintenance::GenerateVpmTaskSpec {
+                    correlation_id: correlation_id.to_owned(),
+                    warehouse_item_id,
+                    warehouse_root: warehouse.warehouse_root.clone(),
+                    global_default: warehouse.global_default,
+                },
+                None,
+            )
+        }
+        "warehouse.deleteOriginals" => {
+            vua_acquisition::warehouse_maintenance::submit_delete_originals(
+                &warehouse.runtime,
+                warehouse.bdl.clone(),
+                vua_acquisition::warehouse_maintenance::DeleteOriginalsTaskSpec {
+                    correlation_id: correlation_id.to_owned(),
+                    warehouse_item_id,
+                    global_default: warehouse.global_default,
+                },
+                None,
+            )
+        }
+        _ => unreachable!("warehouse_request dispatches only the tasked pair"),
+    };
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": "0.1",
+                "operation": method,
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority
+        // (the guards themselves fire inside the task, not at admission).
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.warehouse.storeFailed",
+            "errors.warehouse.storeFailed",
+            "internal",
+        )),
+    }
+}
+
 fn download_request(
     state: &mut HostState,
     method: &str,
@@ -3268,6 +3525,7 @@ mod tests {
             recovered_nonterminal_tasks: HashSet::new(),
             production: None,
             downloads: None,
+            warehouse: None,
         };
 
         let prepare = InboundFrame {

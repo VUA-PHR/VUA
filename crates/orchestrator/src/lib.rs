@@ -12,7 +12,6 @@ mod capability;
 mod contracts;
 mod editor_targets;
 mod environment;
-mod environment_managers;
 mod filesystem;
 mod journal;
 mod material_types;
@@ -56,14 +55,10 @@ pub use editor_targets::{
     EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
 };
 pub use environment::{
-    error_codes as env_error_codes, EnvironmentCheckItemV1, EnvironmentEngine, EnvironmentPresence,
-    EnvironmentRoots, EnvironmentSnapshotV1, VrRuntimeRoots, Zone,
-};
-pub use environment_managers::{
-    codes as env_managers_codes, collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
-    EnvironmentManagersSnapshotV01, ManagerPresence, ManagerRoots, ProjectAssociation,
-    ProjectFinding, ManagerDiagnostic, FindingSeverity, VccCapability,
-    ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION,
+    codes as env_managers_codes, error_codes as env_error_codes, EnvironmentCheckItemV1,
+    EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, EnvironmentSnapshotV1,
+    FindingSeverity, ManagerDiagnostic, ManagerPresence, VccCapability, VccSettingsReader,
+    VrRuntimeRoots, Zone,
 };
 pub use filesystem::{
     project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,
