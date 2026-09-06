@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.1.1
+> Document version: 1.1.2
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -39,6 +39,9 @@ current implementation authority.
 - Standing processes: per-role bootstrap prompts live in `collab/roles/<role>.md`, and the shared
   periodic command lives in `collab/TICK.md`; worktree↔role assignments are recorded in
   `collab/BOARD.md` and mirrored in each `collab/state/wt-N.md` front-matter.
+- Escalation beats stubbornness: a problem that cannot be solved honestly is escalated to the user
+  (BOARD「待用户裁决」, tagged `[需用户]`) instead of being worked around by guessing, lowering the
+  bar, or manufacturing consensus across processes. Rule text: `collab/README.md`.
 - Execution uses six roles — Integration, Desktop, Core, Production, Data, and Environment —
   defined with code ownership in `docs/development-outline_ZH.md` ("执行角色（六角色）"). A role is
   a hat a session wears, not a branch or a worktree; within one slice the same session may hold
@@ -173,6 +176,8 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.1.2 (2026-09-07): added the escalation rule — unsolvable problems go to the user
+  (BOARD「待用户裁决」, `[需用户]`) instead of consensus-manufacturing or bar-lowering.
 - 1.1.1 (2026-09-07): added the standing-process pointers (`collab/roles/`, `collab/TICK.md`,
   worktree↔role assignment in BOARD).
 - 1.1.0 (2026-09-06): six execution roles (Integration / Desktop / Core / Production / Data /
