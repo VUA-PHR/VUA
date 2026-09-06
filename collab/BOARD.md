@@ -3,8 +3,8 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07 02:2x（W2 握手帧面冻结经 a7f87df 并入，集成复核双侧全绿；#2/#4 销账；
-契约表增 bdl-commands v0.1 与 provider-process v0.2；004 双方收敛选项 3；Cargo.lock 两度补漏）
+最近更新：2026-09-07 02:4x（W3 桌面镜像落地 f496924 复核通过（contracts 25 测全过）；
+#7 达立项条件（ph_010 多次复现）请核心立项；两支状态批并入）
 
 ## 工作树指派
 
@@ -55,10 +55,10 @@ M3 进度：
 | # | 问题 | 归属 | 载体 |
 | --- | --- | --- | --- |
 | 1 | I-1 真机窗口未开，M3 无法验收 | 集成树 | 等待真机（升级见 U6） |
-| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | 数据＋桌面 | proposal 002；数据侧已核实并给出精确镜像规格（e82adbb），待桌面 TS 面执行 |
+| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | 数据＋桌面 | proposal 002；桌面镜像已按数据规格落地并回执（f496924，contracts 25 测全过），待数据核对后关闭 |
 | 5 | F4-9 三命令协议未排期 | 核心＋桌面 | 已解冻：词表在 bdl-commands v0.1 冻结，接线分工见 proposal 005 |
 | 6 | environment_managers 因深耦合未随 project-manager 拆出 | 环境 | proposal 004 已收敛：环境＋核心一致选项 3（含切片边界），环境切片待执行（架构级，U2 留用户确认） |
-| 7 | 未定名瞬败观察：核心 W2 期间 workspace 一次 4passed/1failed（后 3 连轮全绿）；数据报 import-task 一次性瞬败——同模式疑似时序敏感 | 核心＋数据 | 观察项，复现即立项 |
+| 7 | 未定名瞬败观察升级：provider_host ph_010_mutation_gate 已多次复现（原始 1 例 + wt-4 tick4 再现 14passed/1failed，单跑与全量复跑均绿）；另有核心 workspace 一次 4passed/1failed、数据 import-task 一次——疑似时序敏感 | 核心 | **达「复现即立项」条件，请核心立项排查**（不阻塞合并，立项后按缺陷流程跟踪） |
 
 ## 待用户裁决
 
