@@ -75,3 +75,25 @@ export interface EntryModeLine {
 export function entryModeLine(entry: WarehouseEntry): EntryModeLine {
   return { overridden: entry.artifactMode !== null, effective: entry.effectiveArtifactMode };
 }
+
+/* ---- F4-9 条目动作(bdl-commands v0.1 写命令的入口可见性) ----
+ * 可见性是服务端守卫的镜像呈现,不是客户端守卫:动作发出后守卫事实仍归
+ * 服务端(协议八码),这里的条件只决定"入口是否出现",与协议语义一致:
+ * - 两组动作都只在生效模式为 generate_vpm 时出现;
+ * - 生成入口:生效模式 generate_vpm + 持有原始素材 + 尚无生成副本
+ *   (生成副本永不静默替换);
+ * - 删除入口:生效模式 generate_vpm + 生成副本在场(审计性破坏操作的
+ *   前置事实);删除动作以高危样式 + 二次确认呈现(UI 层纪律)。
+ */
+
+export type WarehouseEntryAction = "generateVpm" | "deleteOriginals";
+
+export function entryActions(entry: WarehouseEntry): readonly WarehouseEntryAction[] {
+  if (entry.effectiveArtifactMode !== "generate_vpm") return [];
+  const hasOriginal = entry.artifacts.some((artifact) => artifact.role === "original");
+  const hasGenerated = entry.artifacts.some((artifact) => artifact.role === "generated_vpm");
+  const actions: WarehouseEntryAction[] = [];
+  if (hasOriginal && !hasGenerated) actions.push("generateVpm");
+  if (hasGenerated) actions.push("deleteOriginals");
+  return actions;
+}

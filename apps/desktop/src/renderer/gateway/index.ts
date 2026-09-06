@@ -123,6 +123,12 @@ export type {
   WarehouseEntryKind,
 } from "./acquire-port.ts";
 export type {
+  WarehouseCommandOutcome,
+  WarehouseCommandsPort,
+  WarehouseMaintenanceAcceptance,
+  WarehouseModeSetResult,
+} from "./warehouse-commands-port.ts";
+export type {
   ChangeRequest,
   PackageChangeItem,
   PackageChangeKind,

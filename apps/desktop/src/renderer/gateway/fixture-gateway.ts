@@ -9,11 +9,11 @@ import { createMemorySettingsPort } from "./settings-port.ts";
 import { fixtureRecipeGraph } from "./fixture-recipes.ts";
 import { fixtureReleaseWall } from "./fixture-release.ts";
 import { fixtureWorkshopReplay } from "./fixture-workshop.ts";
-import { fixtureAcquireEmpty, fixtureAcquireEntries, fixtureAcquireEntryDetail } from "./fixture-acquire.ts";
+import { createAcquireFixtureStore } from "./fixture-acquire.ts";
 import { createFixturePackages } from "./fixture-packages.ts";
+import { createFixtureWarehouseCommands } from "./fixture-warehouse-commands.ts";
 import { createSignal } from "./fixture-signal.ts";
 import { createFixtureProduction, type ProductionTaskLink } from "./fixture-production.ts";
-import type { AcquirePort } from "./acquire-port.ts";
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
 import type { ModelProductionPort, ModelProductionView } from "./model-production-port.ts";
@@ -420,19 +420,6 @@ function createFixtureToolCatalog(): ToolCatalogPort {
  * demo-acquire-empty 走查"空仓库"的诚实空态;其余场景给四条目混合负载
  * (两 kind / 三检查状态 / 两副本角色 / 模式覆盖与跟随全局)。
  */
-function createFixtureAcquire(empty: boolean): AcquirePort {
-  const view = empty ? fixtureAcquireEmpty() : fixtureAcquireEntries();
-  return {
-    snapshot: () => Promise.resolve(view),
-    entryDetail: (warehouseItemId) => {
-      if (empty) return Promise.resolve({ schemaVersion: 1, kind: "not-connected" });
-      return Promise.resolve(fixtureAcquireEntryDetail(warehouseItemId));
-    },
-    subscribe: () => () => {},
-    capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
-  };
-}
-
 /** fixture 任务端口:较 TaskPort 多出 DEV 演示回放(仅 demo-tasks 场景提供) */
 export interface FixtureTaskPort extends TaskPort {
   /** 按时间序列驱动装配任务状态迁移,演示订阅链路;任务不存在时无操作 */
@@ -583,6 +570,12 @@ export function fixtureGateway(
   // F3 生产纵向流程(production-* 场景):脚本化时间线驱动 run 视图并联动任务端口;
   // 其余场景回落基础 fixture(production 能力 unavailable,入口不出现)
   const production = createFixtureProduction(name, taskHandle.link, productionOptions);
+  // F4-9:条目演示数据升级为共享 store(命令走查联动);写命令演示守卫语义
+  // 并联动任务中心,任务联动仅在 demo-tasks 场景接线(同任务演示门控)
+  const acquireStore = createAcquireFixtureStore(name === "demo-acquire-empty");
+  const warehouseCommands = createFixtureWarehouseCommands(acquireStore, {
+    ...(name === "demo-tasks" ? { taskLink: taskHandle.link } : {}),
+  });
   return {
     environment: createFixtureEnvironment(green ? allGreenChecks : mixedChecks, {
       startFresh: envFresh,
@@ -593,7 +586,8 @@ export function fixtureGateway(
     tutorial: createInactiveTutorialPort(),
     modelProduction: production ?? createFixtureModelProduction(workshop),
     toolCatalog: createFixtureToolCatalog(),
-    acquire: createFixtureAcquire(name === "demo-acquire-empty"),
+    acquire: acquireStore.port,
+    warehouseCommands,
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),

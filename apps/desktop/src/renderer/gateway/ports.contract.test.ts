@@ -399,3 +399,94 @@ test("fixture(C-ACQUIRE): 已知条目详情携带检查事实;隔离件附拒�
     }
   }
 });
+
+/* ---- F4-9:写命令 fixture 守卫语义走查(bdl-commands v0.1 演示) ---- */
+
+test("fixture(F4-9): setArtifactMode 未知条目 entry_not_found;清除/设置回读生效模式", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const missing = await gateway.warehouseCommands.setArtifactMode("whentry-missing", "generate_vpm");
+  assert.equal(missing.ok, false);
+  if (!missing.ok && missing.error.kind === "application") {
+    assert.equal(missing.error.code, "vua.warehouse.entry_not_found");
+  } else {
+    assert.fail("expected application error");
+  }
+
+  // null = 清除覆盖,回落 fixture 全局默认(use_original_unitypackage)
+  const cleared = await gateway.warehouseCommands.setArtifactMode("whentry-miko-dress", null);
+  assert.deepEqual(cleared, {
+    ok: true,
+    result: { warehouseItemId: "whentry-miko-dress", effectiveMode: "use_original_unitypackage" },
+  });
+  // 重新设置覆盖后生效模式跟随覆盖
+  const overridden = await gateway.warehouseCommands.setArtifactMode("whentry-miko-dress", "generate_vpm");
+  assert.deepEqual(overridden, {
+    ok: true,
+    result: { warehouseItemId: "whentry-miko-dress", effectiveMode: "generate_vpm" },
+  });
+});
+
+test("fixture(F4-9): generateVpm 守卫演示 invalid_state 与 already_generated", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  // 生效模式非 generate_vpm:invalid_state
+  const wrongMode = await gateway.warehouseCommands.generateVpm("whentry-summer-uniform");
+  assert.equal(wrongMode.ok, false);
+  if (!wrongMode.ok && wrongMode.error.kind === "application") {
+    assert.equal(wrongMode.error.code, "vua.warehouse.invalid_state");
+  } else {
+    assert.fail("expected application error");
+  }
+  // 已有生成副本:already_generated(副本永不静默替换)
+  const duplicated = await gateway.warehouseCommands.generateVpm("whentry-miko-dress");
+  assert.equal(duplicated.ok, false);
+  if (!duplicated.ok && duplicated.error.kind === "application") {
+    assert.equal(duplicated.error.code, "vua.warehouse.already_generated");
+  } else {
+    assert.fail("expected application error");
+  }
+});
+
+test("fixture(F4-9): deleteOriginals 无生成副本时 generated_artifact_missing", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  // stage-set 原本 pending + 无生成副本:先开覆盖再尝试删除
+  await gateway.warehouseCommands.setArtifactMode("whentry-stage-set", "generate_vpm");
+  const deleted = await gateway.warehouseCommands.deleteOriginals("whentry-stage-set");
+  assert.equal(deleted.ok, false);
+  if (!deleted.ok && deleted.error.kind === "application") {
+    assert.equal(deleted.error.code, "vua.warehouse.generated_artifact_missing");
+  } else {
+    assert.fail("expected application error");
+  }
+});
+
+test("fixture(F4-9): 生成受理 → 任务中心九态 + 完成后条目出现生成副本(演示联动)", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  await gateway.warehouseCommands.setArtifactMode("whentry-stage-set", "generate_vpm");
+
+  const accepted = await gateway.warehouseCommands.generateVpm("whentry-stage-set");
+  assert.deepEqual(accepted, {
+    ok: true,
+    accepted: { taskId: "task-wh-gen-whentry-stage-set", correlationId: "corr-task-wh-gen-whentry-stage-set" },
+  });
+  // 受理即任务中心出现运行中任务
+  const running = (await gateway.task.snapshot()).tasks.find(
+    (task) => task.id === "task-wh-gen-whentry-stage-set",
+  );
+  assert.equal(running?.status, "running");
+
+  // fixture 即时完成演示:条目出现 generated_vpm 工件,任务 completed
+  await new Promise((resolve) => setTimeout(resolve, 1100));
+  const view = await gateway.acquire.snapshot();
+  assert.equal(view.kind, "entries");
+  if (view.kind === "entries") {
+    const entry = view.entries.find((item) => item.warehouseItemId === "whentry-stage-set");
+    assert.equal(
+      entry?.artifacts.some((artifact) => artifact.role === "generated_vpm"),
+      true,
+    );
+  }
+  const done = (await gateway.task.snapshot()).tasks.find(
+    (task) => task.id === "task-wh-gen-whentry-stage-set",
+  );
+  assert.equal(done?.status, "completed");
+});
