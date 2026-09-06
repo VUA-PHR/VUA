@@ -1,15 +1,15 @@
 //! Transport adapter for the supervised Orchestrator Provider process.
 
-use crate::material_exec::{
+use vua_orchestrator::{
     MaterialCancelToken, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
 };
-use crate::material_intake::{
+use vua_orchestrator::{
     MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
     RiskDecisionChoice, RiskDecisionV01, SourceFolderInspectionV01,
 };
-use crate::material_task::MaterialTaskResult;
-use crate::model::ProjectRef;
-use crate::project_lock::{
+use vua_orchestrator::MaterialTaskResult;
+use vua_orchestrator::ProjectRef;
+use vua_orchestrator::{
     acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
     MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
     MARKER_FILE_NAME,
@@ -18,13 +18,13 @@ use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
     IngestOutcome, RetryDecision,
 };
-use crate::{
+use vua_orchestrator::{
     AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
     IdempotentTaskAcceptance, NewTask, ProjectIdentity, SqliteStoreError, SqliteTaskStore,
     StoredTask, StoredTaskEvent, TaskEventKind, TaskMutation, TaskState,
 };
 use vua_bdl_store::bdl_store::BdlStore;
-use crate::contracts::ParamValue;
+use vua_orchestrator::ParamValue;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
@@ -1394,8 +1394,8 @@ fn provider_instance_id() -> String {
 }
 
 fn now_rfc3339() -> String {
-    use crate::Clock as _;
-    crate::SystemClock.now_rfc3339()
+    use vua_orchestrator::Clock as _;
+    vua_orchestrator::SystemClock.now_rfc3339()
 }
 
 // ==== production.* surface (production-use-case v0.1) ====
@@ -1421,22 +1421,22 @@ pub fn production_config_from_env() -> Option<ProductionConfig> {
         );
         return None;
     }
-    let vpm = match crate::VrcGetLibBackend::with_environment_root(data.join("vpm-env"), false) {
-        Ok(vpm) => Arc::new(vpm) as Arc<dyn crate::VpmBackend>,
+    let vpm = match vua_orchestrator::VrcGetLibBackend::with_environment_root(data.join("vpm-env"), false) {
+        Ok(vpm) => Arc::new(vpm) as Arc<dyn vua_orchestrator::VpmBackend>,
         Err(_) => {
             eprintln!("VUA provider: vrc-get backend init failed; production stays unavailable");
             return None;
         }
     };
     let executor = Arc::new(MaterialExecutor::new(
-        Arc::new(crate::UnityBatchBridge::new(unity)),
-        crate::FileSystemSnapshotStore,
+        Arc::new(vua_orchestrator::UnityBatchBridge::new(unity)),
+        vua_orchestrator::FileSystemSnapshotStore,
         vpm,
         BuildRecordStore::new(data.join("records")),
-        Arc::new(crate::SystemClock),
+        Arc::new(vua_orchestrator::SystemClock),
         data.join("temp"),
         "2022.3.22f1",
-        crate::LocalPackageIdentityStore::new(data.join("identities.json")),
+        vua_orchestrator::LocalPackageIdentityStore::new(data.join("identities.json")),
     ));
     Some(ProductionConfig {
         executor,
@@ -1755,7 +1755,7 @@ fn request_plan(
     }
     // The fingerprint is computed at plan time from the bound project root —
     // drift between inspection and plan is therefore still detected.
-    let project_fingerprint = crate::filesystem::project_tree_fingerprint(
+    let project_fingerprint = vua_orchestrator::project_tree_fingerprint(
         Path::new(&project_root),
         &["Assets", "Packages", "ProjectSettings"],
     )
@@ -2014,7 +2014,7 @@ fn confirm_plan(
         Execute(Box<MaterialIntakeConfirmationV01>),
         Rollback {
             snapshot_id: String,
-            original_record: Box<crate::build_record::BuildRecordV01>,
+            original_record: Box<vua_orchestrator::BuildRecordV01>,
         },
     }
     let run = if decision == "rollback" {
@@ -2286,7 +2286,7 @@ fn confirm_plan(
                             )
                             .with_param(
                                 "planId",
-                                crate::contracts::ParamValue::Text(report.plan_id.clone()),
+                                vua_orchestrator::ParamValue::Text(report.plan_id.clone()),
                             )
                             .with_recoverable(true),
                         ),
@@ -2295,7 +2295,7 @@ fn confirm_plan(
                 }
             }
             Run::Rollback { snapshot_id, original_record } => {
-                let reference = crate::SnapshotRef {
+                let reference = vua_orchestrator::SnapshotRef {
                     id: snapshot_id.clone(),
                     path: project.root.join(".vua/snapshots").join(snapshot_id),
                 };
@@ -2317,7 +2317,7 @@ fn confirm_plan(
                         .join(format!("{snapshot_id}.superseded-{stamp}"));
                     let _ = std::fs::rename(&stale_quarantine, &archived);
                 }
-                match crate::FileSystemSnapshotStore.restore_verified(&project, &reference) {
+                match vua_orchestrator::FileSystemSnapshotStore.restore_verified(&project, &reference) {
                     Ok(()) => {
                         // The recovery itself gets an immutable receipt
                         // with status `recovered`, bound to THIS recovery
@@ -2329,7 +2329,7 @@ fn confirm_plan(
                         );
                         let mut recovered = original_record.clone();
                         recovered.record_id = recovered_id.clone();
-                        recovered.status = crate::BuildRecordStatus::Recovered;
+                        recovered.status = vua_orchestrator::BuildRecordStatus::Recovered;
                         recovered.task_id = worker_task_id.clone();
                         recovered.correlation_id = worker_correlation.clone();
                         recovered.started_at = recovery_started_at.clone();
@@ -2338,7 +2338,7 @@ fn confirm_plan(
                             Some(original_record.record_id.clone());
                         recovered.recovery_decision_id =
                             Some(recovery_decision_id.clone());
-                        recovered.snapshot = Some(crate::BuildSnapshotEvidenceV01 {
+                        recovered.snapshot = Some(vua_orchestrator::BuildSnapshotEvidenceV01 {
                             snapshot_id: snapshot_id.clone(),
                             verified: true,
                             restore_attempted: true,
@@ -2454,7 +2454,7 @@ fn confirm_plan(
 /// The read-only project inspection closure a recovery run carries: it
 /// produces the fingerprint the takeover credential binds.
 type ProjectInspectFn =
-    Arc<dyn Fn(&ProjectRef) -> Result<String, crate::AppErrorV1> + Send + Sync>;
+    Arc<dyn Fn(&ProjectRef) -> Result<String, vua_orchestrator::AppErrorV1> + Send + Sync>;
 
 /// A captured project inspection: the credential that authorizes a lease
 /// takeover and the supersession of crash evidence. `inspection_id` binds
@@ -2505,7 +2505,7 @@ fn run_project_inspection(
             correlation_id,
         )
         .with_recoverable(true)
-        .with_param("detail", crate::contracts::ParamValue::Text(format!("{error:?}")))
+        .with_param("detail", vua_orchestrator::ParamValue::Text(format!("{error:?}")))
     })?;
     let observed_at = now_rfc3339();
     let mut hasher = Sha256::new();
@@ -2557,7 +2557,7 @@ impl MutationGate {
                 correlation_id,
             )
             .with_recoverable(false)
-            .with_param("detail", crate::contracts::ParamValue::Text(error.to_string()))
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
         })?;
 
         let mut inspection_evidence: Option<ProjectInspectionEvidence> = None;
@@ -2594,7 +2594,7 @@ impl MutationGate {
                             .with_recoverable(true)
                             .with_param(
                                 "detail",
-                                crate::contracts::ParamValue::Text(error.to_string()),
+                                vua_orchestrator::ParamValue::Text(error.to_string()),
                             )
                         })?
                         .ok_or_else(|| {
@@ -2617,7 +2617,7 @@ impl MutationGate {
                         .with_recoverable(true)
                         .with_param(
                             "holder",
-                            crate::contracts::ParamValue::Text(
+                            vua_orchestrator::ParamValue::Text(
                                 existing.owner_instance_id.clone(),
                             ),
                         ));
@@ -2655,7 +2655,7 @@ impl MutationGate {
                             .with_recoverable(true)
                             .with_param(
                                 "detail",
-                                crate::contracts::ParamValue::Text(error.to_string()),
+                                vua_orchestrator::ParamValue::Text(error.to_string()),
                             )
                         })?
                 }
@@ -2669,7 +2669,7 @@ impl MutationGate {
                     .with_recoverable(true)
                     .with_param(
                         "detail",
-                        crate::contracts::ParamValue::Text(error.to_string()),
+                        vua_orchestrator::ParamValue::Text(error.to_string()),
                     ))
                 }
             };
@@ -2699,7 +2699,7 @@ impl MutationGate {
                 .with_recoverable(true)
                 .with_param(
                     "holder",
-                    crate::contracts::ParamValue::Text(
+                    vua_orchestrator::ParamValue::Text(
                         previous
                             .map(|holder| holder.instance_id)
                             .unwrap_or_else(|| "unknown".to_owned()),
@@ -2721,7 +2721,7 @@ impl MutationGate {
                 .with_recoverable(true)
                 .with_param(
                     "detail",
-                    crate::contracts::ParamValue::Text(lock_error.to_string()),
+                    vua_orchestrator::ParamValue::Text(lock_error.to_string()),
                 ));
             }
         };
@@ -2751,7 +2751,7 @@ impl MutationGate {
                     .with_recoverable(true)
                     .with_param(
                         "finding",
-                        crate::contracts::ParamValue::Text(match finding {
+                        vua_orchestrator::ParamValue::Text(match finding {
                             PendingMutation::Leftover(marker) => marker.mutation_kind,
                             _ => "unreadable".to_owned(),
                         }),
@@ -2786,7 +2786,7 @@ impl MutationGate {
                 .with_recoverable(true)
                 .with_param(
                     "detail",
-                    crate::contracts::ParamValue::Text(marker_error.to_string()),
+                    vua_orchestrator::ParamValue::Text(marker_error.to_string()),
                 ));
             }
         };
@@ -2847,7 +2847,7 @@ fn get_domain_document(
                 )
             })?;
         let inspected_at = string_field(&binding, "createdAt");
-        serde_json::to_value(crate::production_documents::build_inspection_document(
+        serde_json::to_value(vua_orchestrator::build_inspection_document(
             &domain_id,
             &inspected_at,
             &inspection,
@@ -2868,7 +2868,7 @@ fn get_domain_document(
             )
         })?;
         let mut plan_document =
-            crate::production_documents::build_plan_document(&inspection_id, revision, &plan);
+            vua_orchestrator::build_plan_document(&inspection_id, revision, &plan);
         // The plan document's identity is the DOMAIN planId (the registry
         // id); the engine's internal plan id stays at the diagnostics
         // boundary.
@@ -2954,7 +2954,7 @@ fn get_build_record(
         .records
         .read(&record_id)
         .map_err(|_| validation_error("vua.production.record_not_found", "errors.production.recordNotFound"))?;
-    let build_record = serde_json::to_value(crate::build_record::wire_v02(&record)).map_err(|_| {
+    let build_record = serde_json::to_value(vua_orchestrator::wire_v02(&record)).map_err(|_| {
         validation_error("vua.production.record_invalid", "errors.production.recordInvalid")
     })?;
     Ok(FrameOutcome::Response(application_success(
@@ -3036,7 +3036,7 @@ fn write_frame(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{NewTask, ProjectIdentity};
+    use vua_orchestrator::{NewTask, ProjectIdentity};
     use std::io::Cursor;
 
     fn database_path(label: &str) -> std::path::PathBuf {

@@ -14,7 +14,7 @@ use std::sync::Arc;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
 use vua_bdl_store::BdlStore;
-use vua_orchestrator::DownloadConfig;
+use vua_provider_host::DownloadConfig;
 
 fn unique_dir(label: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -150,7 +150,7 @@ fn download_config(world: &World) -> DownloadConfig {
 
 fn run(world: &World, frames: Vec<serde_json::Value>) -> Vec<serde_json::Value> {
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host_with_downloads(
+    vua_provider_host::run_provider_host_with_downloads(
         frames_input(frames),
         &mut output_buffer,
         world.database.clone(),
@@ -384,7 +384,7 @@ fn b4_dl_006_retry_answers_give_up_outside_the_bound() {
 fn b4_dl_007_without_configuration_the_surface_answers_honestly_unavailable() {
     let world = make_world("absent");
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host_with(
+    vua_provider_host::run_provider_host_with(
         frames_input(vec![frame(
             "f1",
             request("req-1", "download.ingest",

@@ -28,9 +28,6 @@ mod process;
 mod production_documents;
 mod project_identity;
 mod project_lock;
-mod provider_host;
-#[cfg(windows)]
-mod provider_job;
 mod provision;
 mod recipe;
 mod runtime;
@@ -129,13 +126,6 @@ pub use project_lock::{
     MUTATION_MARKER_SCHEMA_VERSION, PROJECT_LOCK_SCHEMA_VERSION, LOCK_FILE_NAME,
     MARKER_FILE_NAME,
 };
-pub use provider_host::{
-    production_config_from_env, run_provider_host, run_provider_host_with,
-    run_provider_host_with_downloads, DownloadConfig, ProductionConfig, ProviderHostError,
-    PROVIDER_FRAME_VERSION,
-};
-#[cfg(windows)]
-pub use provider_job::ProviderJobGuard;
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
 pub use recipe::*;
 pub use runtime::{

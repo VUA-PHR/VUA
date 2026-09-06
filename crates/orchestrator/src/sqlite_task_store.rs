@@ -245,8 +245,7 @@ impl SqliteTaskStore {
         Ok(store)
     }
 
-    #[cfg(test)]
-    pub(crate) fn open_in_memory() -> Result<Self, SqliteStoreError> {
+    pub fn open_in_memory() -> Result<Self, SqliteStoreError> {
         let store = Self {
             path: None,
             connection: Mutex::new(Connection::open_in_memory()?),

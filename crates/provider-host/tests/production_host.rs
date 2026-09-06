@@ -16,9 +16,10 @@ use serde_json::{json, Value};
 
 use vua_orchestrator::{
     read_pending_mutation, BuildRecordStore, FileSystemSnapshotStore, FixedClock,
-    LocalPackageIdentityStore, MaterialExecutor, ProductionConfig, TaskState, UnityBridge,
-    UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+    LocalPackageIdentityStore, MaterialExecutor, TaskState, UnityBridge, UnityCommand,
+    UnityResult, VpmBackend, VpmCapabilities,
 };
+use vua_provider_host::ProductionConfig;
 
 fn temp_root(label: &str) -> PathBuf {
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
@@ -217,7 +218,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     // Run 1: Inspect. The fast stage drives inline to Succeeded.
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -243,7 +244,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -278,7 +279,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -319,7 +320,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let (config, bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -363,7 +364,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -390,7 +391,7 @@ fn ph_001_full_command_chain_runs_persists_and_replays() {
     let (config, bridge2) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -446,7 +447,7 @@ fn recover_params_v02(decision: &str, original_task_id: &str, plan_id: &str) -> 
 fn ph_002_unavailable_when_production_is_not_wired() {
     let (base, source, _project_root) = make_world("unavailable");
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host(
+    vua_provider_host::run_provider_host(
         frames_input(vec![frame(
             "f1",
             request(
@@ -507,7 +508,7 @@ fn ph_003_interrupted_production_tasks_fail_as_recoverable_on_restart() {
 
     let (config, _bridge) = production_config(&base, &base.join("target"));
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host_with(
+    vua_provider_host::run_provider_host_with(
         frames_input(vec![frame("f1", request("req-list", "task.list", "", json!({})))]),
         &mut output_buffer,
         &path,
@@ -660,7 +661,7 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
     let writer = SharedWriter(Arc::clone(&output_buffer));
     let path = base.join("provider.db");
     let host = std::thread::spawn(move || {
-        let _ = vua_orchestrator::run_provider_host_with(
+        let _ = vua_provider_host::run_provider_host_with(
             ChannelReader { receiver, buffer: Vec::new(), position: 0, done: false },
             writer,
             path,
@@ -764,7 +765,7 @@ fn run_failing_confirm(
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![
                 frame(
                     "f1",
@@ -794,7 +795,7 @@ fn run_failing_confirm(
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -838,7 +839,7 @@ fn run_failing_confirm(
     };
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![
                 frame(
                     "f1",
@@ -888,7 +889,7 @@ fn ph_005_recover_continue_reruns_fresh_and_succeeds() {
     let (config, bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -954,7 +955,7 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
     let (config, bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1019,7 +1020,7 @@ fn ph_008_recover_requires_user_decision_and_recoverable_source() {
         let mut output_buffer = Vec::new();
         let mut payload = recover_params_v02("continue", &confirm_task_id, &plan_id);
         payload["decisionId"] = json!("");
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request("req-no-decision", "production.recover", "cmd-guard-1", payload),
@@ -1039,7 +1040,7 @@ fn ph_008_recover_requires_user_decision_and_recoverable_source() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1075,7 +1076,7 @@ fn ph_009_same_command_id_with_different_params_is_a_conflict() {
         let mut output_buffer = Vec::new();
         let mut payload = confirm_params(&plan_id, plan_revision);
         payload["riskChoice"] = json!("snapshot_and_continue");
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request("req-conflict", "production.confirmPlan", "cmd-confirm-fail", payload),
@@ -1146,7 +1147,7 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
     let writer = SharedWriter(Arc::clone(&output_buffer));
     let path = base.join("provider.db");
     let host = std::thread::spawn(move || {
-        let _ = vua_orchestrator::run_provider_host_with(
+        let _ = vua_provider_host::run_provider_host_with(
             ChannelReader { receiver, buffer: Vec::new(), position: 0, done: false },
             writer,
             path,
@@ -1258,7 +1259,7 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![
                 frame(
                     "f1",
@@ -1291,7 +1292,7 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1325,7 +1326,7 @@ fn ph_011_completion_event_reaches_an_idle_host_without_a_request() {
     let writer = SharedWriter(Arc::clone(&output_buffer));
     let path = base.join("provider.db");
     let host = std::thread::spawn(move || {
-        let _ = vua_orchestrator::run_provider_host_with(
+        let _ = vua_provider_host::run_provider_host_with(
             ChannelReader { receiver, buffer: Vec::new(), position: 0, done: false },
             writer,
             path,
@@ -1405,7 +1406,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![
                 frame(
                     "f1",
@@ -1438,7 +1439,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1469,7 +1470,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1507,7 +1508,7 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
     let (config, bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1563,7 +1564,7 @@ fn ph_013_rollback_publishes_a_recovered_record_and_versions_the_quarantine() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1643,7 +1644,7 @@ fn ph_014_rollback_paths_come_from_the_binding_not_the_caller() {
         let mut output_buffer = Vec::new();
         let mut payload = recover_params_v02("rollback", &confirm_task_id, &plan_id);
         payload["projectRoot"] = json!(elsewhere.to_string_lossy());
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request("req-recover", "production.recover", "cmd-recover-x", payload),
@@ -1691,7 +1692,7 @@ fn ph_015_session_traffic_beyond_one_mib_still_processes_frames() {
         ));
     }
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host_with(
+    vua_provider_host::run_provider_host_with(
         frames_input(frames),
         &mut output_buffer,
         base.join("provider.db"),
@@ -1731,7 +1732,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![
                 frame(
                     "f1",
@@ -1764,7 +1765,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1794,7 +1795,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     let (config, bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(
@@ -1833,7 +1834,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     let (config, _bridge) = production_config(&base, &project_root);
     let output = {
         let mut output_buffer = Vec::new();
-        vua_orchestrator::run_provider_host_with(
+        vua_provider_host::run_provider_host_with(
             frames_input(vec![frame(
                 "f1",
                 request(

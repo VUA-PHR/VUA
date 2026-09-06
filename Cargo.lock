@@ -2852,6 +2852,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "vua-provider-host"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "vua-bdl-store",
+ "vua-orchestrator",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
 name = "walkdir"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"

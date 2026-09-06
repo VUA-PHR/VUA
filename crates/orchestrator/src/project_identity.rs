@@ -55,8 +55,7 @@ impl ProjectIdentity {
         Ok(Self(format!("sha256:{}", hex.to_ascii_lowercase())))
     }
 
-    #[cfg(test)]
-    pub(crate) fn from_test_label(label: &str) -> Self {
+    pub fn from_test_label(label: &str) -> Self {
         let digest = Sha256::digest(label.as_bytes());
         Self(format!("sha256:{}", hex_lower(&digest)))
     }

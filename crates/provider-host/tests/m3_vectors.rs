@@ -18,10 +18,10 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BuildRecordStore, FixedClock, LocalPackageIdentityStore, MaterialExecutor,
-    ProductionConfig, FileSystemSnapshotStore, UnityBridge, UnityCommand, UnityResult,
-    ResultStatus, VpmBackend, VpmCapabilities, PackageRequestV1, ChangePreviewV1, AppErrorV1,
-    ProjectRef,
+    FileSystemSnapshotStore, UnityBridge, UnityCommand, UnityResult, ResultStatus, VpmBackend,
+    VpmCapabilities, PackageRequestV1, ChangePreviewV1, AppErrorV1, ProjectRef,
 };
+use vua_provider_host::ProductionConfig;
 
 // --- fakes ---
 
@@ -272,7 +272,7 @@ fn check_entry(value: &serde_json::Value, checks: &serde_json::Value) -> Vec<Str
 
 fn run_step(database: &Path, method: &str, command_id: &str, params: serde_json::Value) -> (bool, Option<String>, serde_json::Value) {
     let mut output_buffer = Vec::new();
-    vua_orchestrator::run_provider_host_with(
+    vua_provider_host::run_provider_host_with(
         frames_input(vec![frame(
             &format!("f-{command_id}"),
             request(&format!("req-{command_id}"), method, command_id, params),

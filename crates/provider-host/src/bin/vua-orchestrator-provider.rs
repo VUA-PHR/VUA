@@ -11,12 +11,12 @@ fn main() {
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let database_path = parse_database_path()?;
     #[cfg(windows)]
-    let _job = vua_orchestrator::ProviderJobGuard::contain_current_process_tree()?;
+    let _job = vua_provider_host::ProviderJobGuard::contain_current_process_tree()?;
     // Production capability comes entirely from the environment: with
     // VUA_UNITY_EDITOR + VUA_PROVIDER_DATA set, the real material intake
     // executor serves production.*; without them every production method
     // answers a typed unavailable error.
-    let production = vua_orchestrator::production_config_from_env();
+    let production = vua_provider_host::production_config_from_env();
     // Download acquisition (B4/F4-4): when a data directory is configured,
     // the provider serves download.ingest / download.retry and folds port
     // events into the BDL database under <data>/bdl.
@@ -26,11 +26,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         )
         .map(std::sync::Arc::new)
         .expect("BDL store must open");
-        vua_orchestrator::DownloadConfig { bdl }
+        vua_provider_host::DownloadConfig { bdl }
     });
     let input = stdin_reader();
     let output = std::io::stdout().lock();
-    vua_orchestrator::run_provider_host_with_downloads(
+    vua_provider_host::run_provider_host_with_downloads(
         input, output, database_path, production, downloads,
     )?;
     Ok(())
