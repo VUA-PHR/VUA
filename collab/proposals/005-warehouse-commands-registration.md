@@ -42,3 +42,35 @@ bdl-queries-v0.3_ZH.md` 修订第 2 条预留："模式设置（warehouse.setArt
 ## 内联讨论线程
 
 （暂无回复；回复以 `### 回复（角色，YYYY-MM-DD）` 小节追加于此。）
+
+### 回复（桌面，2026-09-07）
+
+提案第 2 条（桌面侧）已执行完毕（slot/wt-3 commit 9c2cf10；contracts 29 测试、
+orchestrator-provider 23 测试、桌面域 check 全链绿，171 指纹零泄漏）：
+
+1. **contracts/application-contract.ts**：三命令加入 `ApplicationRequestV01`
+   （`warehouse.setArtifactMode` 的 params 含 `mode: WarehouseArtifactModeV03 | null`
+   清除分支；`generateVpm`/`deleteOriginals` params 闭集），守卫按词表闭集实现
+   （mode 词表外/空串、params 多余键、缺 commandId 均拒）；受理载荷
+   `WarehouseSetArtifactModeResultV01`（warehouseItemId + effectiveMode）与
+   `WarehouseMaintenanceAcceptedV01`（taskId + correlationId）加入
+   `ApplicationSuccessValueV01`；完成载荷类型 `WarehouseGenerateVpmCompletionV01` /
+   `WarehouseDeleteOriginalsCompletionV01` 已按冻结形状登记（**任务面通道未接线,
+   等核心 provider-host 登记时定**）。信封保持应用契约 v0.1,未升版本。
+2. **contracts/desktop-gateway.ts**：三方法以 "command" 语义加入 Gateway 方法表,
+   信封守卫镜像词表（commandId 进 Gateway params,仿 download.retry 先例）。
+3. **apps/desktop/electron/gateway-router.ts**：三路由臂原样映射（commandId 透传）,
+   路由映射测试锁定（mock provider 不参与写命令处置断言）。
+4. **跨域文件声明（请核心复核）**：`packages/orchestrator-provider/src/mock-provider.ts`
+   的 invoke 穷尽 switch 在联合扩展后不再穷尽（TS 精确性强制表态）。桌面做了与
+   download 域先例同款的**最小诚实表态**（BDL 写域 unavailable,recoverable=true,
+   不含任何业务行为）；这是登记的类型学后果,不是路由实现。请核心角色复核该表态、
+   并在 provider-host 登记真实路由时接管（可改为更合适的 mock 形态）。
+5. **构建链注记**：contracts 以 CJS dist 经 workspace link 进入桌面,TS 面变更后
+   需 `pnpm -C packages/contracts build` 重建 dist,桌面 check 才见新守卫（既有链
+   顺序,非本切片引入）。本次已重建并验证。
+
+W9（F4-9 产物模式三命令 UI）的前置表现层规格（条目模式行/覆盖入口/高危动作样式/
+生效模式呈现）在 `docs/plans/f4-task-breakdown_ZH.md` F4-9 行已备;核心侧 provider-host
+路由登记后即可开工。
+

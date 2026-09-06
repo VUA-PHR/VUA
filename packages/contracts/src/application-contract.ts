@@ -569,6 +569,67 @@ export interface DownloadIntentEventV03 {
   };
 }
 
+// ---- warehouse 写命令(bdl-commands v0.1 冻结业务词表的 TS 面,proposal 005;
+//      wire 信封 schemaVersion/operation 由应用契约 response 层承载,镜像按
+//      既有惯例剥除;稳定错误码词表见 docs/protocols/bdl-commands-v0.1_ZH.md) ----
+
+/** setArtifactMode 的受理载荷即结果:条目级覆盖设置/清除后的查询期生效模式 */
+export interface WarehouseSetArtifactModeResultV01 {
+  readonly warehouseItemId: string;
+  readonly effectiveMode: WarehouseArtifactModeV03;
+}
+
+/** 任务化维护命令的受理载荷(generateVpm / deleteOriginals 共用) */
+export interface WarehouseMaintenanceAcceptedV01 {
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
+/** generateVpm 完成载荷(经任务面投递;任务面通道由核心 provider-host 登记时接线) */
+export interface WarehouseGenerateVpmCompletionV01 {
+  readonly correlationId: string;
+  readonly warehouseItemId: string;
+  readonly packageId: string;
+  readonly archiveRelativePath: string;
+  /** 发布档案内容身份(sha256:…) */
+  readonly archiveSha256: string;
+}
+
+/** deleteOriginals 完成载荷(审计性破坏操作;经任务面投递,通道同上) */
+export interface WarehouseDeleteOriginalsCompletionV01 {
+  readonly correlationId: string;
+  readonly warehouseItemId: string;
+  readonly deletedCount: number;
+  readonly deletedRelativePaths: readonly string[];
+  /** 保留的生成副本内容身份(sha256:…),删除守卫依赖它校验后才执行 */
+  readonly keptGeneratedSha256: string;
+}
+
+export interface WarehouseSetArtifactModeCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.setArtifactMode";
+  readonly commandId: string;
+  readonly params: {
+    readonly warehouseItemId: string;
+    /** null = 清除条目级覆盖,回落「覆盖 ?? 全局默认」动态解析 */
+    readonly mode: WarehouseArtifactModeV03 | null;
+  };
+}
+
+export interface WarehouseGenerateVpmCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.generateVpm";
+  readonly commandId: string;
+  readonly params: { readonly warehouseItemId: string };
+}
+
+export interface WarehouseDeleteOriginalsCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.deleteOriginals";
+  readonly commandId: string;
+  readonly params: { readonly warehouseItemId: string };
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
@@ -589,7 +650,10 @@ export type ApplicationRequestV01 =
   | WarehouseListEntriesQueryV03
   | WarehouseEntryDetailQueryV03
   | DownloadIngestCommandV03
-  | DownloadRetryCommandV03;
+  | DownloadRetryCommandV03
+  | WarehouseSetArtifactModeCommandV01
+  | WarehouseGenerateVpmCommandV01
+  | WarehouseDeleteOriginalsCommandV01;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -673,7 +737,9 @@ export type ApplicationSuccessValueV01 =
   | CatalogDetailResultV03
   | CatalogStatusResultV03
   | WarehouseListEntriesResultV03
-  | WarehouseEntryDetailResultV03;
+  | WarehouseEntryDetailResultV03
+  | WarehouseSetArtifactModeResultV01
+  | WarehouseMaintenanceAcceptedV01;
 
 export type ApplicationResponseV01 =
   | {
@@ -945,6 +1011,22 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, ["taskId"])
       && isIdentifier(value.params.taskId);
+  }
+  // bdl-commands v0.1 写命令(proposal 005):params 闭集 + 模式词表闭集
+  if (value.kind === "command" && value.method === "warehouse.setArtifactMode") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["warehouseItemId", "mode"])
+      && isIdentifier(value.params.warehouseItemId)
+      && (value.params.mode === null
+        || value.params.mode === "use_original_unitypackage"
+        || value.params.mode === "generate_vpm");
+  }
+  if (value.kind === "command" && (value.method === "warehouse.generateVpm" || value.method === "warehouse.deleteOriginals")) {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["warehouseItemId"])
+      && isIdentifier(value.params.warehouseItemId);
   }
   return false;
 }
