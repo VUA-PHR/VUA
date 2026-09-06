@@ -2,6 +2,10 @@
 
 [English](CONTRIBUTING_EN.md) | [简体中文](CONTRIBUTING_ZH.md)
 
+> Document version: 1.0.0
+> Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors CONTRIBUTING_ZH.md at 1.0.0)
+
 VUA is currently pre-alpha. Contributions are welcome, but product boundaries and versioned
 contracts take priority over rapidly expanding the implementation.
 
@@ -42,6 +46,20 @@ data, or a working exploit in a public issue. Contact the maintainers privately 
 repository security-reporting channel. A dedicated address will be documented before public binary
 distribution.
 
+## Open-source release and acceptance evidence
+
+- Shipped in the repository: source code, tests, schemas and test vectors, managed documents, and
+  release notes.
+- Acceptance conclusions are committed: each M gate's acceptance result is written into the release
+  notes with a machine-readable acceptance checklist. Raw logs, screenshots, and run artifacts are
+  not committed; they stay local under the `_local_*` convention.
+- CI is the publicly reviewable acceptance: GitHub Actions runs cargo test/clippy, pnpm check, and
+  schema-vector validation, and the badges are the public acceptance state. The real Unity matrix
+  keeps running locally, with its conclusions recorded in the release notes.
+- The remote is created on the day the M3 (v0.5.0) local acceptance passes: push the full history,
+  backfill tags for the known gate commits, and publish the v0.5.0 release notes with the acceptance
+  checklist. Every later M gate gets a tag and a Release.
+
 ## License of contributions
 
 The repository is licensed under the [Apache License 2.0](LICENSE). Under Section 5 of that license,
@@ -53,3 +71,10 @@ policy may change only through an explicit, documented governance decision.
 
 Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS_EN.md).
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; added the "Open-source release and acceptance
+  evidence" section (repository scope, acceptance conclusions with machine-readable checklists, raw
+  evidence kept local, CI as public review, the real Unity matrix run locally, and the remote
+  created on the M3 local-acceptance day).
