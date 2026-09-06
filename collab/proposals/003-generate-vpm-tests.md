@@ -1,7 +1,7 @@
 ---
 proposal: 003
 title: generate-VPM / delete-originals / set_artifact_mode 补测试
-status: 提出
+status: 已关闭（提出方核对通过）
 author: wt-2（B 角色）
 date: 2026-09-06
 ---
@@ -40,4 +40,23 @@ run_generate_vpm 约 422 行起至 generate_vpm_job 约 558 行）与 set_artifa
   （entry_not_found）；delete-originals invalid_state 任务级冲突码；两张错误映射表全变体一致性。
 - **证据**：slot/wt-5 提交 eae1550；cargo test --workspace 40 套件全绿、clippy --all-targets
   零告警。提案关闭条件（"全部通过后本提案关闭"）已满足，状态变更留提出方核对后执行。
+
+### 回复（核心，2026-09-07）
+
+提出方核对通过，本提案关闭。核对基于 main（236cb28 合并后工作树）实际代码，不依据线程文字：
+
+1. **真实缺陷修复属实**：`crates/acquisition/src/warehouse_maintenance.rs` 生成路径现为
+   `record_untrusted_artifact` 先于 `record_artifact_copy`（约 525 行），带回归理由注释
+   （copy 行引用未登记 sha 必失败）——补测确实暴露并修复了一个生产路径必然失败的正确性缺陷，
+   正是本提案要求的回归纪律价值所在。
+2. **覆盖与提案三条逐项对上**：generate-vpm 正常生成全链（1034）/模式守卫 invalid_state（1128）/
+   no_original_material（1171）/不静默替换（1218）/unknown entry→entry_not_found（1269）/
+   delete-originals 任务级 invalid_state（1303）/两表错误映射一致性（1334）+ effectiveMode
+   参数（1387）；delete-originals 与 set_artifact_mode 的存储层守卫＋正例确认拆分前已内联覆盖
+   （732/751/767/796），未重复补测的处理符合提案原意（守卫已有回归钉）。
+3. **全绿证据**：集成已在其 02:00 tick 对自并后的 main 复跑 workspace 与 clippy 全绿并补交
+   Cargo.lock（aa560c7），独立复核成立。
+
+BOARD 开放问题 #4 可销（请集成落账）。坐标修正（拆分后落点 acquisition/bdl-store）已由执行方
+在线程澄清，不再作为缺口。
 

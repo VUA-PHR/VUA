@@ -2,10 +2,10 @@
 
 [English](provider-process-v0.1_EN.md) | [简体中文](provider-process-v0.1_ZH.md)
 
-> 文档版本：0.1
-> 状态：B2 实现基线
+> 文档版本：0.2
+> 状态：B2 实现基线（握手帧面已按 proposal 001 冻结为机器可读 Schema）
 > 所有者：Electron Kernel 与 Orchestrator Provider 适配器
-> 更新：2026-09-02
+> 更新：2026-09-07
 > 封帧版本：`0.1`
 
 ## 边界与制品
@@ -26,7 +26,13 @@ stdin/stdout 使用 UTF-8 JSON Lines，一行一帧，每帧最多 1 MiB。stdou
 stderr；监督端最多保留 64 KiB stderr。双方按 `frameVersion: "0.1"`、非空 `frameId`、`kind` 与
 `payload` 封帧。请求/响应复用 `frameId`，事件使用独立 ID。未知或非法封帧被明确拒绝。
 
-监督端启动后必须先完成 `handshake`，核对应用契约 `0.1` 和支持版本，之后才开放调用。应用请求和
+监督端启动后必须先完成 `handshake`，核对应用契约 `0.1` 和支持版本，之后才开放调用。握手帧面（请求
+与响应）由 `schemas/orchestrator/provider-frame-v0.1/` 的两份 JSON Schema 权威定义（proposal 001），
+Rust 宿主与 TS 监督端消费同批正负例向量。握手请求的 `payload` 必须为 `null`；`frameVersion` 错误、
+空 `frameId` 或非空 `payload` 一律以 `protocol_error` 帧明确拒绝。握手响应复用请求 `frameId`，
+`payload` 必发五字段：`contractVersion`、`supportedContractVersions`、`providerBuildId`、
+`providerInstanceId` 与必发布尔能力位 `downloadIngest`（实现同一契约的进程内与受监督进程 Provider
+均须一致）。应用请求和
 事件内容遵循[应用契约 v0.1](application-contract-v0.1_ZH.md)，传输不得暴露 Rust 私有类型。意外退出
 使 Provider 进入 `failed` 并拒绝待处理调用；只允许由上层显式重启，不进行无界自动重启。
 
@@ -47,3 +53,10 @@ stderr；监督端最多保留 64 KiB stderr。双方按 `frameVersion: "0.1"`�
 
 因此强制退出不会把未知项目状态伪装成成功、失败或可立即重试。下一次修改必须先执行 Inspect，再以
 更高 generation 显式接管。
+
+## 文档变更日志
+
+- 0.2 (2026-09-07): 握手帧面冻结——请求/响应 JSON Schema 与双端正负例向量落地（proposal 001）；
+  握手请求 `payload` 必须 `null`（违规即 `protocol_error`），响应五字段（含必发 `downloadIngest`）
+  为唯一合法形态。
+- 0.1 (2026-09-02): B2 实现基线初版。

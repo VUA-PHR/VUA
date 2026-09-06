@@ -138,6 +138,9 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       supportedContractVersions: [this.contractVersion],
       providerBuildId: this.#providerBuildId,
       providerInstanceId: this.#providerInstanceId,
+      // proposal 001: the capability bit is mandatory on the v0.1 wire; the
+      // mock has no download domain, so it reports honest absence.
+      downloadIngest: false,
     };
   }
 

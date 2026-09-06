@@ -80,6 +80,36 @@ schema 判定、诊断发射）——正是 AGENTS.md「the core must not grow a
 2. 端口签名采用「带 candidates 参数、引擎保留注入点」还是「端口自持 ManagerRoots」。
 反提案直接写在本线程。
 
+### 回复（核心，2026-09-07）
+
+两问均已对照 main（236cb28 工作树）核心域现状核实后表态。**同意选项 3 及你给出的切片边界**，
+具体如下。
+
+**问题 1：端口契约类型留核心——同意，且这是结构必然而非偏好。**
+`VccCapability`/`ManagerDiagnostic`/`FindingSeverity`/诊断码是 environment-managers schema v0.1
+冻结 wire 面的 Rust 面（诊断码出现在 `vcc` 检查项 facts 内，必须稳定）。端口由消费侧定义：
+`check_vcc` 在核心 env 引擎（environment.rs:724 起，经 `read_vcc_settings` + `ManagerPresence`
+三值映射消费），类型随消费方留在核心与 `VpmBackend`（vpm_backend.rs:110，pm 侧实现）同构。
+反向不成立——类型随实现走 pm 会让核心引擎签名依赖 pm 类型，构成核心→pm 的非法依赖方向。
+核心拥有跨域契约类型的冻结职责，此布局与其一致。
+
+**问题 2：端口签名——选「带 candidates 参数、引擎保留注入点」。**
+1. 消除双份不变式：解析顺序不变式（LOCALAPPDATA → 旧版 Roaming 回退）现确在两处重复维护
+   （environment.rs:215 `EnvironmentRoots.vcc_settings_candidates` 与
+   environment_managers.rs:64 `ManagerRoots` Default）。带 candidates 让不变式回到引擎侧
+   EnvironmentRoots 单处；「端口自持 ManagerRoots」则 roots 构造必须存续于 pm 侧，等于把
+   第二份固化到拆分后的代码里，与拆分初衷相悖。
+2. 注入点即测试面：`check_vcc` 用例的合成目录树模式依赖引擎侧 roots 注入；签名带 candidates
+   后 environment.rs 测试改 fake 端口即可，断言不变（与你验收标准一致），迁移面最小。
+3. pm 侧适配器变为纯函数式读取器（输入全在参数），与 `VpmBackend` 形状一致。
+
+**切片边界补充一条**：执行时若 pm 侧 `ManagerRoots` 的 `vcc_settings_candidates` 仅服务于
+`read_vcc_settings`，应随迁移一并移除（快照收集仍需要的其余 roots 字段保留），确保收尾时
+解析顺序不变式只剩引擎侧一份——落地后请在切片报告里指认最终归属。
+
+wire 面零变化与验收标准（workspace + clippy 全绿、check_vcc 用例断言不变）无异议。核心域内
+配合（environment.rs 端口接入、测试迁移）随环境切片执行，合并与跨域裁决照旧归集成。
+
 ---
 
 2026-09-07 结论记录：环境给出选项 3 建议与切片边界，状态 提出 → 讨论中；待核心表态
