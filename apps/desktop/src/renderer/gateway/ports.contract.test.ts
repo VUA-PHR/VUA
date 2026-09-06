@@ -197,7 +197,7 @@ test("fixture: cancel 后订阅者收到最新快照推送", async () => {
   const off = gateway.task.subscribe((view) => pushed.push(view.tasks.length));
   await gateway.task.cancel("task-assembly");
   off();
-  assert.deepEqual(pushed, [3]);
+  assert.deepEqual(pushed, [7]);
 });
 
 test("fixture: cancel 不可取消任务返回 rejected(not_cancellable)", async () => {
@@ -205,6 +205,64 @@ test("fixture: cancel 不可取消任务返回 rejected(not_cancellable)", async
   const result = await gateway.task.cancel("task-scan");
   assert.equal(result.kind, "rejected");
   if (result.kind === "rejected") assert.equal(result.reason, "not_cancellable");
+});
+
+/* ---- F4-7:下载任务链 fixture 走查(下载侧五态经任务中心统一九态呈现) ---- */
+
+test("fixture(F4-7): 下载任务链五态在任务中心快照中的呈现形态", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const view = await gateway.task.snapshot();
+  const byId = new Map(view.tasks.map((task) => [task.id, task]));
+  // 下载中:running + 进度 + 可取消(任务中心零特判的九态呈现)
+  const active = byId.get("task-download-active");
+  assert.equal(active?.status, "running");
+  assert.deepEqual(active?.progress, { done: 34, total: 100 });
+  assert.equal(active?.cancellable, true);
+  assert.equal(active?.originPage, "warehouse");
+  // 中断:failed + 可续传说明(重试入口的呈现条件,不造九态外新词)
+  const interrupted = byId.get("task-download-interrupted");
+  assert.equal(interrupted?.status, "failed");
+  assert.equal(interrupted?.cancellable, false);
+  assert.ok(interrupted?.errorText);
+  // 策略拒绝:failed + 拒绝说明(不可重试形态)
+  const policy = byId.get("task-download-policy");
+  assert.equal(policy?.status, "failed");
+  assert.ok(policy?.errorText);
+  // 取消:cancelled 终态
+  assert.equal(byId.get("task-download-cancelled")?.status, "cancelled");
+});
+
+test("fixture(F4-7): 下载中断任务 retry → ok/resume,回运行态且可取消", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const result = await gateway.task.retry("task-download-interrupted");
+  assert.deepEqual(result, { kind: "ok", decision: "resume" });
+  const view = await gateway.task.snapshot();
+  const task = view.tasks.find((item) => item.id === "task-download-interrupted");
+  assert.equal(task?.status, "running");
+  assert.equal(task?.cancellable, true);
+});
+
+test("fixture(F4-7): 策略拒绝任务 retry → not_retryable 如实拒绝", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const result = await gateway.task.retry("task-download-policy");
+  assert.deepEqual(result, { kind: "rejected", reason: "not_retryable" });
+});
+
+test("fixture(F4-7): 非重试任务与未知任务的 retry 裁决如实呈现", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const regular = await gateway.task.retry("task-scan");
+  assert.deepEqual(regular, { kind: "rejected", reason: "not_retryable" });
+  const missing = await gateway.task.retry("__missing__");
+  assert.deepEqual(missing, { kind: "rejected", reason: "unknown_task" });
+});
+
+test("fixture(F4-7): 下载中任务 cancel → cancelled 终态(取消传导呈现)", async () => {
+  const gateway = fixtureGateway("demo-tasks");
+  const result = await gateway.task.cancel("task-download-active");
+  assert.equal(result.kind, "ok");
+  const task = result.view.tasks.find((item) => item.id === "task-download-active");
+  assert.equal(task?.status, "cancelled");
+  assert.equal(task?.cancellable, false);
 });
 
 test("empty: 全领域诚实空态", async () => {
