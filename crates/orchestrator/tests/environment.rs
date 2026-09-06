@@ -12,8 +12,10 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    env_error_codes, outcome_with_exit, EnvironmentEngine, EnvironmentPresence, EnvironmentRoots,
-    FakeProcessRunner, FakeRegistrySource, FixedClock, ProcessOutcome, RegistryHive, Zone,
+    env_error_codes, env_managers_codes, outcome_with_exit, EnvironmentEngine, EnvironmentPresence,
+    EnvironmentRoots, FakeProcessRunner, FakeRegistrySource, FindingSeverity, FixedClock,
+    ManagerDiagnostic, ManagerPresence, ProcessOutcome, RegistryHive, VccCapability,
+    VccSettingsReader, Zone,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -46,11 +48,65 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
     }
 }
 
+/// Fake VCC port: the engine-side mapping tests never touch the file
+/// system; the real reader runs against synthetic trees in the
+/// project-manager suite (proposal 004 split).
+struct FixedVccReader {
+    capability: VccCapability,
+    diagnostics: Vec<ManagerDiagnostic>,
+}
+
+impl VccSettingsReader for FixedVccReader {
+    fn read_vcc_settings(
+        &self,
+        _candidates: &[PathBuf],
+        diagnostics: &mut Vec<ManagerDiagnostic>,
+    ) -> VccCapability {
+        diagnostics.extend(self.diagnostics.iter().cloned());
+        self.capability.clone()
+    }
+}
+
+fn vcc_reader(
+    presence: ManagerPresence,
+    error_code: Option<&'static str>,
+    diagnostics: Vec<ManagerDiagnostic>,
+) -> Arc<FixedVccReader> {
+    Arc::new(FixedVccReader {
+        capability: VccCapability {
+            presence,
+            settings_path: None,
+            projects_source: if presence == ManagerPresence::Found {
+                Some("userProjects")
+            } else {
+                None
+            },
+            user_projects: if presence == ManagerPresence::Found {
+                vec!["synthetic-project".into()]
+            } else {
+                Vec::new()
+            },
+            local_project_folders: Vec::new(),
+            error_code,
+        },
+        diagnostics,
+    })
+}
+
 fn engine_with(roots: EnvironmentRoots, runner: Arc<FakeProcessRunner>) -> EnvironmentEngine {
+    engine_with_vcc(roots, runner, vcc_reader(ManagerPresence::NotFound, None, Vec::new()))
+}
+
+fn engine_with_vcc(
+    roots: EnvironmentRoots,
+    runner: Arc<FakeProcessRunner>,
+    vcc: Arc<FixedVccReader>,
+) -> EnvironmentEngine {
     EnvironmentEngine::new(
         runner,
         Arc::new(FixedClock::new(&["2026-08-30T09:00:00.000Z"])),
         roots,
+        vcc,
     )
 }
 
@@ -457,16 +513,14 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
 
 #[test]
 fn orc_env_vcc_capability_is_a_create_zone_item() {
+    // Found capability → Detected; the reader's values render into facts
+    // (the real reader runs in the project-manager integration suite).
     let base = unique_dir("vcc-item");
-    let production = install_vpm_project(&base, "prod-av", "2022.3.22f1");
-    let settings_path = base.join("vcc/settings.json");
-    fs::create_dir_all(settings_path.parent().unwrap()).unwrap();
-    fs::write(
-        &settings_path,
-        serde_json::json!({ "userProjects": [production] }).to_string(),
-    )
-    .unwrap();
-    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let engine = engine_with_vcc(
+        synthetic_roots(&base),
+        default_runner(),
+        vcc_reader(ManagerPresence::Found, None, Vec::new()),
+    );
     let items = engine.inspect_zone(Zone::Create);
     let vcc = find(&items, "vcc");
     assert_eq!(vcc.presence, EnvironmentPresence::Detected);
@@ -474,38 +528,46 @@ fn orc_env_vcc_capability_is_a_create_zone_item() {
     assert_eq!(vcc.facts["registeredProjects"], 1);
     assert_eq!(vcc.error_code, None);
 
-    // Missing settings → deterministic not_detected.
+    // Missing settings → deterministic not_detected, no error code.
     let base2 = unique_dir("vcc-item-missing");
     let engine = engine_with(synthetic_roots(&base2), default_runner());
     let items = engine.inspect_zone(Zone::Create);
-    assert_eq!(find(&items, "vcc").presence, EnvironmentPresence::NotDetected);
+    let vcc = find(&items, "vcc");
+    assert_eq!(vcc.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(vcc.error_code, None);
 
-    // Unparseable settings → detection failure with the stable code.
-    fs::write(&settings_path, "{ not json").unwrap();
-    let engine = engine_with(synthetic_roots(&base), default_runner());
+    // ReadFailed → detection failure with the stable code, and the
+    // adapter diagnostics render into the facts.
+    let engine = engine_with_vcc(
+        synthetic_roots(&base),
+        default_runner(),
+        vcc_reader(
+            ManagerPresence::ReadFailed,
+            Some(env_managers_codes::VCC_SETTINGS_READ_FAILED),
+            vec![ManagerDiagnostic {
+                code: env_managers_codes::VCC_SETTINGS_READ_FAILED,
+                severity: FindingSeverity::Error,
+                detail: "synthetic read failure".into(),
+            }],
+        ),
+    );
     let items = engine.inspect_zone(Zone::Create);
     let vcc = find(&items, "vcc");
     assert_eq!(vcc.presence, EnvironmentPresence::DetectionFailed);
-    assert!(vcc.error_code.is_some());
+    assert_eq!(
+        vcc.error_code.as_deref(),
+        Some(env_managers_codes::VCC_SETTINGS_READ_FAILED)
+    );
+    assert_eq!(
+        vcc.facts["diagnostics"][0]["code"],
+        env_managers_codes::VCC_SETTINGS_READ_FAILED
+    );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
     if base2.exists() {
         fs::remove_dir_all(&base2).unwrap();
     }
-}
-
-fn install_vpm_project(base: &Path, name: &str, editor_version: &str) -> String {
-    let project = base.join("projects").join(name);
-    fs::create_dir_all(project.join("Packages")).unwrap();
-    fs::create_dir_all(project.join("ProjectSettings")).unwrap();
-    fs::write(project.join("Packages").join("vpm-manifest.json"), "{}").unwrap();
-    fs::write(
-        project.join("ProjectSettings").join("ProjectVersion.txt"),
-        format!("m_EditorVersion: {editor_version}\n"),
-    )
-    .unwrap();
-    project.to_string_lossy().into_owned()
 }
 
 #[cfg(windows)]
@@ -657,30 +719,6 @@ fn tree_fingerprint(root: &Path) -> Vec<(String, u64)> {
 
 // --- manual smoke against this machine (E-ENV acceptance) ---
 
-/// E-ENV manual acceptance (agile plan): prints the default-root snapshot of
-/// THIS machine so a human can compare each finding against reality. Never
-/// runs in CI (depends on the real desktop environment and network):
-///
-///   cargo test -p vua-orchestrator --test environment manual_real -- --ignored --nocapture
-#[test]
-#[ignore = "manual acceptance only: compares findings against this real machine"]
-fn manual_real_machine_environment_snapshot() {
-    let engine = EnvironmentEngine::new(
-        Arc::new(vua_orchestrator::StdProcessRunner),
-        Arc::new(vua_orchestrator::SystemClock),
-        EnvironmentRoots::default(),
-    );
-    let snapshot = engine.inspect_all();
-    for item in &snapshot.items {
-        println!(
-            "[{:>14}] {} — {}{}",
-            format!("{:?}", item.presence).to_uppercase(),
-            item.id,
-            item.facts,
-            item.error_code
-                .as_ref()
-                .map(|code| format!(" (code: {code})"))
-                .unwrap_or_default(),
-        );
-    }
-}
+// Moved to the project-manager suite with the VCC settings reader
+// (proposal 004):
+//   cargo test -p vua-project-manager --test environment_engine manual_real -- --ignored --nocapture
