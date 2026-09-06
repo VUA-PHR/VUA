@@ -645,7 +645,7 @@ fn m3_real_local_reusable_vertical_slice() {
 
     let vpm_environment = temp_dir("vpm-env");
     let vpm_backend: Arc<dyn VpmBackend> = Arc::new(
-        vua_orchestrator::VrcGetLibBackend::with_environment_root(base.join("vpm-env"), false)
+        vua_project_manager::VrcGetLibBackend::with_environment_root(base.join("vpm-env"), false)
             .expect("vrc-get lib backend initializes"),
     );
     // Resolve the machine identity first (persisted on disk; the executor's

@@ -7,7 +7,7 @@
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use vua_orchestrator::{
+use vua_project_manager::{
     acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder, PendingMutation,
     ProjectLockError, LOCK_FILE_NAME, MARKER_FILE_NAME,
 };
@@ -48,8 +48,8 @@ fn plk_001_second_holder_is_refused_with_diagnostics_then_wins_after_release() {
 
     // The envelope on disk is the versioned diagnostic of the holder.
     let raw = fs::read_to_string(&lock_path).unwrap();
-    let envelope: vua_orchestrator::LockEnvelopeV1 = serde_json::from_str(&raw).unwrap();
-    assert_eq!(envelope.lock_version, vua_orchestrator::PROJECT_LOCK_SCHEMA_VERSION);
+    let envelope: vua_project_manager::LockEnvelopeV1 = serde_json::from_str(&raw).unwrap();
+    assert_eq!(envelope.lock_version, vua_project_manager::PROJECT_LOCK_SCHEMA_VERSION);
     assert_eq!(envelope.holder.profile, "profile-a");
 
     guard.release().expect("release");
@@ -81,7 +81,7 @@ fn plk_003_marker_lifecycle_and_leftover_findings() {
     match read_pending_mutation(&root) {
         PendingMutation::Leftover(left) => {
             assert_eq!(left.mutation_kind, "material_intake");
-            assert_eq!(left.marker_version, vua_orchestrator::MUTATION_MARKER_SCHEMA_VERSION);
+            assert_eq!(left.marker_version, vua_project_manager::MUTATION_MARKER_SCHEMA_VERSION);
             assert_eq!(left.holder.instance_id, "a");
         }
         other => panic!("live marker must read as Leftover, got {other:?}"),

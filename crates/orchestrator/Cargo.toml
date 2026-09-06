@@ -10,14 +10,11 @@ license = "Apache-2.0"
 path = "src/lib.rs"
 
 [dependencies]
-reqwest = { version = "0.13.4", default-features = false, features = ["stream", "rustls"] }
 rusqlite = { version = "=0.40.1", features = ["bundled"] }
 scraper = "0.27.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11.0"
-tokio = { version = "1.53.1", default-features = false, features = ["rt-multi-thread", "fs"] }
-vrc-get-vpm = { version = "=0.0.16", features = ["rustls", "vrc-get-litedb", "experimental-project-management"] }
 vua-bdl-store = { path = "../bdl-store" }
 
 [target.'cfg(windows)'.dependencies]
@@ -33,7 +30,3 @@ windows-sys = { version = "=0.61.2", features = [
 
 [dev-dependencies]
 jsonschema = "0.52.1"
-# B6 tests drive the library's own settings/registry APIs to seed fixtures
-# with the exact same pinned version as the runtime dependency.
-vrc-get-vpm = "=0.0.16"
-tokio = { version = "1.53.1", default-features = false, features = ["rt-multi-thread"] }

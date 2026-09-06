@@ -20,3 +20,4 @@ zip = { version = "4.6", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 jsonschema = "0.52.1"
+vua-project-manager = { path = "../project-manager" }

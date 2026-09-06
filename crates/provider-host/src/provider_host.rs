@@ -9,7 +9,7 @@ use vua_unity_bridge::{
 };
 use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
-use vua_orchestrator::{
+use vua_project_manager::{
     acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
     MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
     MARKER_FILE_NAME,
@@ -1421,7 +1421,7 @@ pub fn production_config_from_env() -> Option<ProductionConfig> {
         );
         return None;
     }
-    let vpm = match vua_orchestrator::VrcGetLibBackend::with_environment_root(data.join("vpm-env"), false) {
+    let vpm = match vua_project_manager::VrcGetLibBackend::with_environment_root(data.join("vpm-env"), false) {
         Ok(vpm) => Arc::new(vpm) as Arc<dyn vua_orchestrator::VpmBackend>,
         Err(_) => {
             eprintln!("VUA provider: vrc-get backend init failed; production stays unavailable");

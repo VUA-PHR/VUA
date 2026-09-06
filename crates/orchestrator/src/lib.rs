@@ -19,7 +19,6 @@ mod material_types;
 mod model;
 mod process;
 mod project_identity;
-mod project_lock;
 mod provision;
 mod recipe;
 mod runtime;
@@ -85,12 +84,6 @@ pub use process::{
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,
 };
 pub use project_identity::{ProjectIdentity, ProjectIdentityError};
-pub use project_lock::{
-    acquire_project_lock, begin_mutation, read_pending_mutation, LockEnvelopeV1, LockHolder,
-    MutationMarkerGuard, MutationMarkerV1, PendingMutation, ProjectLockError, ProjectLockGuard,
-    MUTATION_MARKER_SCHEMA_VERSION, PROJECT_LOCK_SCHEMA_VERSION, LOCK_FILE_NAME,
-    MARKER_FILE_NAME,
-};
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
 pub use recipe::*;
 pub use runtime::{
@@ -112,11 +105,10 @@ pub use tools::{
     registry_ids, ProbeRoot, ToolCardV1, ToolProbe, ToolRegistration, ToolsEngine, ToolsRoots,
     TOOL_REGISTRY,
 };
-pub use vpm::{InstallConfirmation, InstallPlanV1, InstallRequest, PlanStepV1, VpmEngine};
+pub use vpm::{fnv1a_hex, InstallConfirmation, InstallPlanV1, InstallRequest, PlanStepV1, VpmEngine};
 pub use vpm_backend::{
-    backends_summary, create_from_template, error_codes as vpm_backend_error_codes, ChangeItemV1,
-    ChangeKindV1, ChangePreviewV1, PackageRequestV1, VccCliBackend, VpmBackend, VpmCapabilities,
-    VrcGetLibBackend,
+    error_codes as vpm_backend_error_codes, ChangeItemV1, ChangeKindV1, ChangePreviewV1,
+    InstalledPackageV1, PackageRequestV1, RegisteredProjectV1, VpmBackend, VpmCapabilities,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

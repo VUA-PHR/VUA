@@ -2848,15 +2848,25 @@ name = "vua-orchestrator"
 version = "0.1.0"
 dependencies = [
  "jsonschema",
- "reqwest",
  "rusqlite",
  "scraper",
  "serde",
  "serde_json",
  "sha2",
+ "vua-bdl-store",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "vua-project-manager"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
  "vrc-get-vpm",
- "vua-bdl-store",
+ "vua-orchestrator",
  "windows-sys 0.61.2",
 ]
 
@@ -2871,6 +2881,7 @@ dependencies = [
  "tar",
  "vua-bdl-store",
  "vua-orchestrator",
+ "vua-project-manager",
  "vua-unity-bridge",
  "windows-sys 0.61.2",
 ]
@@ -2886,6 +2897,7 @@ dependencies = [
  "sha2",
  "tar",
  "vua-orchestrator",
+ "vua-project-manager",
  "zip",
 ]
 

@@ -15,10 +15,11 @@ use tar::{Builder, Header};
 use serde_json::{json, Value};
 
 use vua_orchestrator::{
-    read_pending_mutation, BuildRecordStore, FileSystemSnapshotStore, FixedClock,
+    BuildRecordStore, FileSystemSnapshotStore, FixedClock,
     TaskState, UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
 };
 use vua_unity_bridge::{LocalPackageIdentityStore, MaterialExecutor};
+use vua_project_manager::read_pending_mutation;
 use vua_provider_host::ProductionConfig;
 
 fn temp_root(label: &str) -> PathBuf {
@@ -1097,7 +1098,7 @@ fn ph_009_same_command_id_with_different_params_is_a_conflict() {
 #[test]
 fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
     use std::sync::atomic::{AtomicBool, Ordering};
-    use vua_orchestrator::{acquire_project_lock, read_pending_mutation, LockHolder,
+    use vua_project_manager::{acquire_project_lock, read_pending_mutation, LockHolder,
         PendingMutation};
 
     struct BlockingBridge {
@@ -1208,7 +1209,7 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
                 instance_id: "other-instance".into(),
                 acquired_at: "2026-09-05T00:00:00Z".into(),
             };
-            if let Err(vua_orchestrator::ProjectLockError::Held { previous }) =
+            if let Err(vua_project_manager::ProjectLockError::Held { previous }) =
                 acquire_project_lock(&project_root, holder)
             {
                 break previous.map(|holder| holder.instance_id);
@@ -1717,7 +1718,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     let (base, source, project_root) = make_world("marker-supersede");
 
     // A crash on another profile left a pending-mutation marker behind.
-    let holder = vua_orchestrator::LockHolder {
+    let holder = vua_project_manager::LockHolder {
         channel: "stable".into(),
         profile: "default".into(),
         pid: 424242,
@@ -1725,7 +1726,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
         acquired_at: "2026-09-05T00:00:00Z".into(),
     };
     let marker =
-        vua_orchestrator::begin_mutation(&project_root, "material_intake", &holder).unwrap();
+        vua_project_manager::begin_mutation(&project_root, "material_intake", &holder).unwrap();
     core::mem::forget(marker); // simulate the crash: the guard never releases
 
     // Inspect + plan.
@@ -1886,7 +1887,7 @@ fn ph_016_leftover_marker_is_superseded_only_by_a_recovery_decision() {
     assert!(!archived.is_empty(), "superseded marker archived: {archived:?}");
     assert_eq!(
         read_pending_mutation(&project_root),
-        vua_orchestrator::PendingMutation::None
+        vua_project_manager::PendingMutation::None
     );
     let _ = fs::remove_dir_all(&base);
 }

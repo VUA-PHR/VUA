@@ -10,9 +10,10 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    FakeProcessRunner, FixedClock, PackageRequestV1, ProcessOutcome, ProjectRef, VccCliBackend,
-    VpmBackend, VrcGetLibBackend, CREDENTIAL_ENV_REMOVALS,
+    FakeProcessRunner, FixedClock, PackageRequestV1, ProcessOutcome, ProjectRef, VpmBackend,
+    CREDENTIAL_ENV_REMOVALS,
 };
+use vua_project_manager::{VccCliBackend, VrcGetLibBackend};
 
 fn unique_dir(label: &str) -> PathBuf {
     let nanos = SystemTime::now()
@@ -170,7 +171,7 @@ fn orc_adp_004_template_creation_copies_sets_product_name_and_registers() {
     .unwrap();
     fs::write(template_dir.join("Packages/manifest.json"), "{}").unwrap();
 
-    let project = vua_orchestrator::create_from_template(
+    let project = vua_project_manager::create_from_template(
         &environment_root,
         &base.join("workspace"),
         "My Avatar",
@@ -194,7 +195,7 @@ fn orc_adp_004_template_creation_copies_sets_product_name_and_registers() {
 fn orc_adp_004_template_missing_is_a_typed_dependency_error() {
     let base = unique_dir("no-template");
     fs::create_dir_all(&base).unwrap();
-    let error = vua_orchestrator::create_from_template(
+    let error = vua_project_manager::create_from_template(
         &base,
         &base.join("workspace"),
         "Nope",

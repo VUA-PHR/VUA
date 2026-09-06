@@ -5,7 +5,8 @@
 use std::path::PathBuf;
 
 use serde_json::json;
-use vua_orchestrator::{AppErrorV1, PackageRequestV1, ProjectRef, VpmBackend, VrcGetLibBackend};
+use vua_orchestrator::{AppErrorV1, PackageRequestV1, ProjectRef, VpmBackend};
+use vua_project_manager::VrcGetLibBackend;
 
 fn app<T>(result: Result<T, AppErrorV1>) -> Result<T, Box<dyn std::error::Error>> {
     result.map_err(|error| {
