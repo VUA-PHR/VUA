@@ -3,6 +3,7 @@ import { test } from "vitest";
 import {
   artifactCardMatches,
   artifactCards,
+  entryActions,
   entryModeLine,
   sizeText,
   type AcquireArtifactCard,
@@ -122,5 +123,71 @@ test("entryModeLine: 覆盖与跟随全局两形态,生效模式读取面已解�
       }),
     ),
     { overridden: true, effective: "generate_vpm" },
+  );
+});
+
+/* ---- F4-9 条目动作可见性(bdl-commands v0.1 入口条件镜像) ---- */
+
+function withArtifacts(
+  partial: Partial<WarehouseEntry> & { warehouseItemId: string },
+  roles: ReadonlyArray<"original" | "generated_vpm">,
+): WarehouseEntry {
+  const entry = entryOf(partial);
+  return {
+    ...entry,
+    artifacts: roles.map((role, index) => ({
+      ...entry.artifacts[0]!,
+      artifactSha256: `sha256:${role}-${index}-${"0".repeat(48)}`,
+      role,
+    })),
+  };
+}
+
+test("entryActions: 生效模式非 generate_vpm 时动作整组不出现", () => {
+  assert.deepEqual(entryActions(entryOf({ warehouseItemId: "whentry-x" })), []);
+  assert.deepEqual(
+    entryActions(entryOf({
+      warehouseItemId: "whentry-y",
+      artifactMode: "generate_vpm",
+      effectiveArtifactMode: "use_original_unitypackage",
+    })),
+    [],
+  );
+});
+
+test("entryActions: 生成入口 = 生效 generate_vpm + 有原始件 + 无生成副本", () => {
+  assert.deepEqual(
+    entryActions(withArtifacts({
+      warehouseItemId: "whentry-gen",
+      effectiveArtifactMode: "generate_vpm",
+    }, ["original"])),
+    ["generateVpm"],
+  );
+  // 已有生成副本:生成入口消失(副本永不静默替换),删除入口出现
+  assert.deepEqual(
+    entryActions(withArtifacts({
+      warehouseItemId: "whentry-both",
+      effectiveArtifactMode: "generate_vpm",
+    }, ["original", "generated_vpm"])),
+    ["deleteOriginals"],
+  );
+});
+
+test("entryActions: 删除入口 = 生效 generate_vpm + 生成副本在场", () => {
+  assert.deepEqual(
+    entryActions(withArtifacts({
+      warehouseItemId: "whentry-del",
+      artifactMode: "generate_vpm",
+      effectiveArtifactMode: "generate_vpm",
+    }, ["generated_vpm"])),
+    ["deleteOriginals"],
+  );
+  // 生效 generate_vpm 但无生成副本:删除入口不出现(服务端守卫必拒)
+  assert.deepEqual(
+    entryActions(withArtifacts({
+      warehouseItemId: "whentry-none",
+      effectiveArtifactMode: "generate_vpm",
+    }, ["original"])),
+    ["generateVpm"],
   );
 });

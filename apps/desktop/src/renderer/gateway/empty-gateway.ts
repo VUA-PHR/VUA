@@ -1,6 +1,7 @@
 import { createInactiveTutorialPort } from "./tutorial-port.ts";
 import { createMemorySettingsPort } from "./settings-port.ts";
 import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire-port.ts";
+import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -56,6 +57,26 @@ function createEmptyAcquire(): AcquirePort {
     snapshot: () => Promise.resolve(acquireView),
     entryDetail: () => Promise.resolve(acquireEntryNotConnected),
     subscribe: () => () => {},
+    capability: () => Promise.resolve(unavailable),
+  };
+}
+
+/** F4-9 写命令面:not-run 时三命令诚实 unavailable(错误词表同 live) */
+function createEmptyWarehouseCommands(): WarehouseCommandsPort {
+  const unavailableOutcome = {
+    ok: false as const,
+    error: {
+      kind: "application" as const,
+      code: "vua.warehouse.unavailable",
+      messageKey: "errors.warehouse.unavailable",
+      recoverable: true,
+      retryable: false,
+    },
+  };
+  return {
+    setArtifactMode: () => Promise.resolve(unavailableOutcome),
+    generateVpm: () => Promise.resolve(unavailableOutcome),
+    deleteOriginals: () => Promise.resolve(unavailableOutcome),
     capability: () => Promise.resolve(unavailable),
   };
 }
@@ -158,6 +179,7 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     modelProduction: createEmptyModelProduction(),
     toolCatalog: createEmptyToolCatalog(),
     acquire: createEmptyAcquire(),
+    warehouseCommands: createEmptyWarehouseCommands(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),

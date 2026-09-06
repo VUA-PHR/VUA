@@ -1,11 +1,14 @@
 import { fixtureStrings } from "../i18n/strings.fixtures.zh-CN.ts";
 import type {
   AcquireEntryDetailView,
+  AcquirePort,
   AcquireView,
   WarehouseArtifactFact,
+  WarehouseArtifactMode,
   WarehouseEntry,
   WarehouseEntryDetail,
 } from "./acquire-port.ts";
+import { createSignal } from "./fixture-signal.ts";
 
 /**
  * Warehouse 条目 fixture 适配(C-ACQUIRE,仅 DEV 可达;F4-6 条目模型裁决后
@@ -157,4 +160,100 @@ export function fixtureAcquireEntryDetail(warehouseItemId: string): AcquireEntry
     artifacts: entry.artifacts.map((artifact) => factsOf(entry.warehouseItemId, artifact)),
   };
   return { schemaVersion: 1, kind: "detail", entry: detail };
+}
+
+/* ---- 可变共享 store(F4-9 命令走查):写命令 fixture 与条目读取面共用同一份
+ *      演示数据,命令成功后推送新视图;守卫语义演示见 fixture-warehouse-commands ---- */
+
+/** 合成内容身份的种子形态复用(生成 VPM 完成演示) */
+export function syntheticShaOf(seed: string): string {
+  return syntheticSha(seed);
+}
+
+export interface AcquireFixtureStore {
+  readonly port: AcquirePort;
+  /** 当前条目(未知条目 null;命令守卫的事实来源) */
+  entry(warehouseItemId: string): WarehouseEntry | null;
+  /** 设置/清除条目级覆盖(mode null = 清除);false = 未知条目 */
+  setMode(warehouseItemId: string, mode: WarehouseArtifactMode | null): boolean;
+  /** 追加 generated_vpm 工件(生成完成演示);false = 未知条目或已有生成副本 */
+  addGeneratedVpm(warehouseItemId: string): boolean;
+  /** 移除条目全部 original 工件(删除完成演示);false = 未知条目或无原始件 */
+  removeOriginals(warehouseItemId: string): boolean;
+}
+
+export function createAcquireFixtureStore(empty: boolean): AcquireFixtureStore {
+  const initialView = empty ? fixtureAcquireEmpty() : fixtureAcquireEntries();
+  const entries: WarehouseEntry[] =
+    initialView.kind === "entries" ? initialView.entries.map((entry) => ({ ...entry })) : [];
+  const signal = createSignal<AcquireView>({ schemaVersion: 1, kind: "entries", entries: [...entries] });
+
+  const push = () => {
+    signal.set({ schemaVersion: 1, kind: "entries", entries: [...entries] });
+  };
+  const find = (warehouseItemId: string): WarehouseEntry | null =>
+    entries.find((entry) => entry.warehouseItemId === warehouseItemId) ?? null;
+
+  const store: AcquireFixtureStore = {
+    port: {
+      snapshot: () => Promise.resolve(signal.get()),
+      entryDetail: (warehouseItemId) => {
+        const entry = find(warehouseItemId);
+        if (entry === null) return Promise.resolve({ schemaVersion: 1, kind: "not-found" });
+        const detail: WarehouseEntryDetail = {
+          ...entry,
+          artifacts: entry.artifacts.map((artifact) => factsOf(entry.warehouseItemId, artifact)),
+        };
+        return Promise.resolve({ schemaVersion: 1, kind: "detail", entry: detail });
+      },
+      subscribe: signal.subscribe,
+      capability: () => Promise.resolve({ state: "ready" }),
+    },
+    entry: find,
+    setMode: (warehouseItemId, mode) => {
+      const entry = find(warehouseItemId);
+      if (entry === null) return false;
+      entries.splice(entries.indexOf(entry), 1, {
+        ...entry,
+        artifactMode: mode,
+        effectiveArtifactMode: mode ?? entry.effectiveArtifactMode,
+      });
+      push();
+      return true;
+    },
+    addGeneratedVpm: (warehouseItemId) => {
+      const entry = find(warehouseItemId);
+      if (entry === null) return false;
+      if (entry.artifacts.some((artifact) => artifact.role === "generated_vpm")) return false;
+      const original = entry.artifacts.find((artifact) => artifact.role === "original");
+      if (original === undefined) return false;
+      entries.splice(entries.indexOf(entry), 1, {
+        ...entry,
+        artifacts: [
+          ...entry.artifacts,
+          {
+            artifactSha256: syntheticSha(`generated-${entry.warehouseItemId}`),
+            relativePath: `${entry.folderName}.vpm`,
+            state: "clean",
+            sizeBytes: 16_384,
+            role: "generated_vpm",
+          },
+        ],
+      });
+      push();
+      return true;
+    },
+    removeOriginals: (warehouseItemId) => {
+      const entry = find(warehouseItemId);
+      if (entry === null) return false;
+      if (!entry.artifacts.some((artifact) => artifact.role === "original")) return false;
+      entries.splice(entries.indexOf(entry), 1, {
+        ...entry,
+        artifacts: entry.artifacts.filter((artifact) => artifact.role !== "original"),
+      });
+      push();
+      return true;
+    },
+  };
+  return store;
 }

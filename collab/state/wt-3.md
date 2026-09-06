@@ -2,27 +2,26 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 9c2cf10
+baseline_commit: e771430
 updated: 2026-09-07
 ---
 ## 当前焦点
-W8 协议冻结(bdl-commands v0.1)后按 proposal 005 完成桌面侧三命令 TS 面登记
-(9c2cf10),回执已发,跨域 mock 表态请核心复核;W9(F4-9 三命令 UI)等核心
-provider-host 路由登记后开工(表现层规格已备)。
-## 自基线交付(f496924..9c2cf10)
-- main 同步(21cbd83:proposal 002 数据核对关闭等);main 尖吸收本树 7081718。
-- proposal 005 桌面侧落地(9c2cf10):contracts 三写命令入 ApplicationRequestV01
-  (闭集守卫,含 mode|null 清除分支)+受理载荷入成功值联合+两完成载荷类型(任务面
-  通道待核心接线);Gateway 方法表+守卫+路由臂三臂齐;守卫/路由测试 8 例锁定;
-  mock-provider 穷尽性最小表态(unavailable,跨域动作已在 005 线程声明请核心复核)。
-- contracts 29 测试+provider 23 测试+桌面 check 全链绿(171 指纹零泄漏);
-  contracts dist 已重建(CJS link 链注记见 005 回执)。
+W9(F4-9 产物模式三命令 UI)切片完成:端口层(7169310)+UI 装配(e771430)全绿,
+本轮回流 main 后待数据/集成验收;DEV 目视走查(F4-8 W1–W10)仍待 GUI 会话。
+## 自基线交付(bb06b0a..e771430)
+- main 同步(0f07a11:proposal 005 双端核对关闭、004/005 治理同步、BOARD #7 修复);
+- F4-9 part 1(7169310,已随 32567e7 回流):warehouse-commands 窄端口+fixture
+  守卫演示共享 store+live/empty+entryActions 可见性镜像;
+- F4-9 part 2(e771430):条目抽屉产物模式编辑(跟随全局/两模式三选,清除=写 null,
+  生效模式恒服务端读回)+条目动作(生成 VPM;删除原始=danger 变体+延迟确认+不可恢复
+  明示)+协议稳定码→四语文案映射(未知码回落通用失败);Button 增 danger 变体
+  (error 令牌描边,HC 安全);i18n 四表 F4-9 键齐;桌面 check 全链绿(381 测试)。
 ## 阻塞
-- catalog 三方法服务面待数据角色观察管线(不变);
-- W9 等 provider-host 路由(核心,proposal 005 第 1 条)。
+- catalog 三方法服务面待数据角色观察管线(不变)。
 ## 下次合并意图
-本批 TS 面登记全绿即回流 main(--no-ff),数据角色可开始词表一致性核对。
+本批回流 main 后无在途分叉;下一切片完成后再合并。
 ## 留言
-- [→核心] proposal 005 线程:mock-provider 穷尽表态请复核;provider-host 三命令
-  路由登记(提案第 1 条)在途,完成后 W9 解锁;
-- W7 剩余:W1–W10 目视走查需 GUI 会话(自动化已锁状态机/投影/红线)。
+- F4-9 范围注记(兑现):全局默认由 provider 配置注入不进 wire,抽屉只编辑条目级
+  覆盖并只读呈现跟随全局;如需设置页写入口须先协议升版(005 线程已备案)。
+- W7 剩余:W1–W10 目视走查需 GUI 会话(自动化已锁状态机/投影/红线/命令可见性)。
+- F4-9 真机动作链(真实 generateVpm 需 Unity 执行器)归 I-4c 整合门,未宣称端到端。

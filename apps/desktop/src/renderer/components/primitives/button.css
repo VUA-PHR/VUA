@@ -104,3 +104,16 @@
 .vua-button--subtle:hover:not(:disabled) {
   background: var(--vua-accent-tint);
 }
+
+/* 破坏性操作(F4-9 删除原始等):错误红描边与文字,hover 加错误红面;
+   文字对比按 error 令牌的语义色计算,HC 主题退化纯色描边(§8.1 高危形态) */
+.vua-button--danger {
+  background: transparent;
+  border-color: var(--vua-error);
+  color: var(--vua-error);
+}
+
+.vua-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--vua-error) 16%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vua-error) 24%, transparent);
+}
