@@ -1,12 +1,12 @@
-# VUA design standard v0.6.1
+# VUA design standard v0.6.2
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.6.1
+> Document version: 0.6.2
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.6.1)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.6.2)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-02  
+> Updated: 2026-09-07  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -173,6 +173,28 @@ recovery, or compatibility rules.
 - Package, project, Unity, and batch changes present Inspect → Plan → Confirm → Execute → Validate,
   including full changes, conflicts, removals, and recovery conditions.
 
+### 6.1 Notification-center semantics (v0.6.2)
+
+The task center presents as a **notification center**: active tasks are always notifications;
+tasks that reach a terminal state (completed / completed-with-warnings / failed / cancelled) no
+longer appear as notifications by default; a "show completed" switch keeps historical terminal
+tasks reachable; a per-item "clear" removes only the notification presentation (preference
+persisted) - the task authority remains queryable through the task list and detail surfaces.
+Clearing removes the notification, not the fact. A failed notification must use a glyph that is
+semantically distinct from the dismiss/close ✕ (e.g. a circled exclamation mark).
+
+### 6.2 Experimental feature presentation (v0.6.2)
+
+Experimental features live on the "Settings - Experimental" page: the toggle is a **user
+preference** (locally persisted; legitimately present in production builds), controlling only the
+visibility of the feature entry - it is not a development gate. Rules: when on, the entry appears
+with an "Experimental" badge; turning it off only hides the entry and never changes saved state
+(e.g. a saved per-entry artifact-mode override); server-side authority is unaffected - hiding an
+entry is not removing a guard, and direct commands are still adjudicated by the versioned
+protocol; destructive actions inside an experimental entry keep the danger styling and delayed
+confirmation (§8.1); entries that depend on an unfrozen protocol must not provide write-path
+placeholders (a server-configured global default is presented read-only as "set by the server").
+
 ## 7. Motion and asset discipline
 
 | Token | Duration | Use |
@@ -209,6 +231,12 @@ stable untilted cards.
   directly exposed. Unchecked `LocalArtifact` values are pending/quarantined; executables are listed,
   never offered a run action. Animated mode may add a restrained pointer spotlight and tilt to cards;
   all other modes retain stable cards with identical selection, detail, and keyboard behavior.
+  Layout (v0.6.2/W13): the card wall adapts its column count to the window width; the entry detail
+  is a dedicated right-hand panel (own scroll, sticky header), not a drawer that squeezes the wall;
+  narrow windows stack it below. Artifact-mode semantics (novice-first): the original UnityPackage
+  is the default; per-entry "generate VPM / delete originals" entries are gated by the
+  Settings-Experimental toggle (6.2); the effective mode is always read back from the server and
+  the global default is server configuration presented read-only.
 - **Recipe:** graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
@@ -269,3 +297,14 @@ validation.
 The final logo remains a separate commission. The visual direction retained here and its development
 schedule are reviewed separately; a schedule change does not automatically delete an approved design
 direction.
+
+## 12. Document changelog
+
+- **0.6.2 (2026-09-07)**: W7/W9/W13 landing sync - notification-center semantics (terminal
+  tasks default to non-notification, show-completed switch, clear removes only the
+  notification), new 6.2 experimental feature presentation (preference toggle, entry badge,
+  entry-hiding is not guard removal), Warehouse layout (adaptive columns + dedicated
+  right-hand detail panel + narrow-window stacking) and artifact-mode semantics
+  (use_original default, experimental-gated per-entry entries, read-only global default);
+  failed-notification glyph distinguished from the close ✕.
+- 0.6.1 and earlier: see git history.
