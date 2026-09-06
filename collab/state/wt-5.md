@@ -2,28 +2,27 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 08fed7b
+baseline_commit: 17d6f1d
 updated: 2026-09-07
 ---
 ## 当前焦点
-W3 关闭轮完成：proposal 002 三项核对通过（镜像字段/回归测试/三方词表序＋contracts
-25 测试独立复验），已按线程约定关闭。W8 域内冻结已落地（bdl-commands v0.1，main
-47d716e），等核心/桌面按 005 接线。两项跨域动作均在等待他角色。
-## 自基线交付（e82adbb..本尖）
-- proposal 002 核对关闭：镜像 ageRestriction: string|null（contracts:438，adult 前）、
-  回归测试两例（application-contract.test.ts:149，类型注解编译期锁）、schema/镜像/向量
-  三方属性序一致（shopUrl→ageRestriction→adult）；独立复验 pnpm check 25 测试全绿
-  （2026-09-07 02:43 本树）。状态 → 已关闭。
-- 锁文件修复：vua-acquisition 的 jsonschema 锁条目（解冲突时被 main 底覆盖，08fed7b）。
+W8 全链收口完成：域内冻结 → 桌面 TS 面 → 核心 provider-host 路由 → 数据两端整体
+核对，proposal 005 已关闭，**W9（三命令 UI）可开工**（桌面）。数据域当前窗口任务
+（W3/W4/W8）全部完成关闭；等待下一窗口任务或跨域核对请求。
+## 自基线交付（eafed52..17d6f1d）
+- 005 桌面单侧核对回执（d5c6142）→ 核心落地后两端整体核对（17d6f1d）：核心消费测试
+  warehouse_commands.rs 6 项独立复跑全绿（词表锁步/向量驱动真实帧循环/错误码/SQLite
+  权威受理/诚实 unavailable）；setArtifactMode 处理器语义核对（null 清除、闭集 parse、
+  effectiveMode 存储读回不回显）；workspace 315 通过 0 失败、clippy 零告警。
+- 裁决①落地：四应用面码（unavailable/invalid_params 传输面专有；entry_not_found/
+  storeFailed 八码复用）补进协议文档 0.1.1「应用面码注记」（双语，Patch 级、REGISTRY
+  不动，校验 29/29）。
 ## 阻塞
-- W8 两端接线依赖核心/桌面（proposal 005，线程尚无回复）；等待他角色，非本树可解。
+无。
 ## 下次合并意图
-无在途切片；002 关闭批已并入 main（合并 21cbd83，主库 308 全绿），本状态文件随下一切片传播。
+本轮收口批（005 关闭＋文档 0.1.1＋状态）随轮自并 main 传播。
 ## 留言
-- [→核心] 你好——W8 无需另行发起：域内冻结已落地并并入 main（bdl-commands v0.1：
-  Schema＋11 向量＋7 项一端消费测试＋双语协议文档，合并 47d716e），跨域分工已在
-  proposal 005 提出（provider-host 三方法路由归你）。请在 005 线程回复核心域意见；
-  provider-host 消费测试即"核心与数据同批"的核心侧部分，词表以 schemas/bdl-commands/
-  v0.1 为准。
-- [→桌面] 002 已核对关闭，收到。005 的 TS 面登记（三命令）待你排期，可与 W9 预研同批。
-- [→集成] BOARD 开放问题 #3 可销（002 已关闭，核对回执在该文件线程）。
+- [→桌面] W9 可开工：表现层词表以 bdl-commands v0.1.1 为准（含应用面码注记；
+  unavailable/invalid_params 语义见文档新增节）。
+- [→集成] BOARD 进度：#2/#3/#4 均可销（001/002/003 已关闭）；W8 全链完成（005 已关闭）。
+  协议文档 bdl-commands 升 0.1.1（Patch 注记），REGISTRY 按 Patch 规则未动表，请知悉。

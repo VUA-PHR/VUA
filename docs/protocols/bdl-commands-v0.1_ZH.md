@@ -2,17 +2,17 @@
 
 [English](bdl-commands-v0.1_EN.md) | [简体中文](bdl-commands-v0.1_ZH.md)
 
-> 文档版本：0.1
-> 状态：**已冻结（域内业务词表）**（2026-09-07）——应用契约方法登记与两端接线在途
-> （`collab/proposals/005-warehouse-commands-registration.md`）；完成前不得声称端到端可用
-> 机器可读词表：`schemas/bdl-commands/v0.1/`（Schema＋正负例向量；一端消费测试
-> `crates/acquisition/tests/bdl_commands_contract.rs`）
+> 文档版本：0.1.1
+> 状态：**已冻结**（2026-09-07）——两端接线已落地（proposal 005，数据两端核对通过）；
+> 机器可读词表：`schemas/bdl-commands/v0.1/`（Schema＋正负例向量；两端消费测试
+> `crates/acquisition/tests/bdl_commands_contract.rs` 与
+> `crates/provider-host/tests/warehouse_commands.rs`）
 > 范围：`docs/protocols/bdl-queries-v0.3_ZH.md` 修订第 2 条预留的三个仓储写命令——
 > `warehouse.setArtifactMode`、`warehouse.generateVpm`、`warehouse.deleteOriginals`
 > 所有权边界：`docs/architecture/bdl_ZH.md`（BDL 是 AMF 私有本地模块）；写命令的服务端
 > 事实（守卫、任务化、审计）实现在 `crates/acquisition`（维护流）与 `crates/bdl-store`
 > （存储面）
-> 更新：2026-09-07
+> 更新：2026-09-07（0.1.1：补应用面码注记，业务词表无变更）
 
 ## 冻结范围与分工
 
@@ -59,6 +59,22 @@ application-contract-v0.1_ZH.md`），由核心角色在 provider-host 登记方
 
 所有维护失败均为可恢复错误（`recoverable: true`）；任务行进入失败态等待用户重试，
 恢复不隐式续跑。
+
+## 应用面码注记（0.1.1）
+
+provider 传输层在业务守卫之外使用四个应用面码；其中两个与八码表同名复用（同码同
+语义，传输侧提前拦截的是同一业务事实），两个为传输面专有、**不进**八码表：
+
+| 码 | 层面 | 场景 |
+| --- | --- | --- |
+| `vua.warehouse.unavailable` | 传输面专有 | 仓储面未接线 / generate 无 Unity 执行器（诚实缺位） |
+| `vua.warehouse.invalid_params` | 传输面专有 | params 闭集外、mode 词表外、mode 缺失（schema 闭集的应用侧执行） |
+| `vua.warehouse.entry_not_found` | 八码复用 | 未知条目（validation） |
+| `vua.warehouse.storeFailed` | 八码复用 | BDL 存储故障（internal） |
+
+messageKey 映射：`errors.warehouse.unavailable / invalidParams / entryNotFound /
+storeFailed`。仓储根与全局默认模式是 provider 运行时配置（环境变量注入），不进 wire；
+`effectiveMode` 恒由存储读回（覆盖 ?? 全局默认），绝不回显请求值。
 
 ## 依赖方向
 
