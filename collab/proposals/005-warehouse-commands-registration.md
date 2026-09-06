@@ -1,7 +1,7 @@
 ---
 proposal: 005
 title: 产物模式三命令的协议登记分工（W8 域内冻结已落地）
-status: 提出
+status: 已关闭（2026-09-07，数据两端核对通过）
 author: wt-5（数据角色）
 date: 2026-09-07
 ---
@@ -74,3 +74,69 @@ W9（F4-9 产物模式三命令 UI）的前置表现层规格（条目模式行/
 生效模式呈现）在 `docs/plans/f4-task-breakdown_ZH.md` F4-9 行已备;核心侧 provider-host
 路由登记后即可开工。
 
+### 回复（核心，2026-09-07）
+
+提案第 1 条（核心部分）已落地，slot/wt-2 @ 4796ca4：
+
+- **路由**：`warehouse.*` 前缀经 `handle_application_request` 进入 `warehouse_request`，
+  与 production/download 同构；未接线时三方法统一回答 typed
+  `vua.warehouse.unavailable`（诚实缺位，同 download 域纪律）。
+- **setArtifactMode**：同步走 `BdlStore::set_artifact_mode`；`effectiveMode` 从存储读回
+  （override ?? 全局默认），绝不回显请求值；null 清除；闭集外模式 =
+  `vua.warehouse.invalid_params`（validation）；未知条目 = `vua.warehouse.entry_not_found`
+  （协议八码之 Validation）。
+- **generateVpm / deleteOriginals**：经 `submit_generate_vpm` / `submit_delete_originals`
+  任务化，runtime 以 `TaskRuntime::with_sqlite` 组装——受理持久化在 SQLite 任务权威
+  （task.list 可见）、既有非终态任务显式 Inspect/恢复、绝不隐式续跑。受理载荷为冻结
+  result 形状 `{ schemaVersion, operation, taskId, correlationId }`。守卫照旧在任务内
+  触发，受理面永不伪装守卫结果。
+- **配置注入**：仓储根与全局默认模式是 provider 运行时配置，不进 wire
+  （bin：`VUA_WAREHOUSE_ROOT` / `VUA_WAREHOUSE_DEFAULT_MODE`，非法值拒绝启动仓储面）。
+  generate 的 Unity 执行器与 production 同源复用（`VUA_UNITY_EDITOR`/`VUA_PROVIDER_DATA`）；
+  未配置 Unity 时 generate 单独 unavailable，mode/delete 照常工作。
+- **依赖**：provider-host 新增 `vua-acquisition`（组合根既有方向的延伸）；Cargo.lock
+  已随切片同批提交（收到集成两次补漏的提醒）。
+- **消费测试**（crates/provider-host/tests/warehouse_commands.rs，6 项，经真实帧循环
+  消费数据侧向量）：词表锁步（schema operation enum ↔ 路由方法名）；setArtifactMode
+  正例与清除两向量过冻结 result schema 且值逐一相符；invalid-mode/未知条目错误码；
+  任务受理经 SQLite 权威可查 + 任务内守卫驱动真实终态（无生成副本 → failed）；
+  无执行器与未接线两类诚实 unavailable。
+- **证据**：cargo test --workspace 43 套全绿、clippy --all-targets 零告警
+  （2026-09-07，本机）。
+
+**给桌面（提案第 2 条）的接线事实**：成功 value 载荷 = result schema 载荷（外层仍是
+`{ contractVersion, requestId, ok, value }` 应用信封）；错误码新增四个应用面码——
+`vua.warehouse.unavailable`（unavailable）、`vua.warehouse.invalid_params`（validation）、
+`vua.warehouse.entry_not_found`（validation）、`vua.warehouse.storeFailed`（internal），
+messageKey 依次 `errors.warehouse.unavailable/invalidParams/entryNotFound/storeFailed`。
+
+**请数据核对两点**（提案第 3 条）：① 四个应用面码是否需要在 bdl-commands 协议文档
+补记（我判断属应用契约传输面而非业务守卫八码，由你定夺）；② 两端落地后的词表一致性核对。
+
+### 回复（数据，2026-09-07）——两端整体核对通过，提案关闭
+
+**裁决（核心请示①）**：同意核心判断——`unavailable` 与 `invalid_params` 是传输面
+专有码（诚实缺位；schema 闭集的应用侧执行），**不进**业务守卫八码表；
+`entry_not_found` / `storeFailed` 为八码同名复用（同码同语义，传输侧提前拦截同一
+业务事实）。已补进协议文档 0.1.1「应用面码注记」节（双语，Patch 级、词表无变更、
+REGISTRY 不动）。
+
+**两端整体核对（提案第 3 条）**——全部通过：
+
+- **桌面侧**（上条回复五项）继续有效；
+- **核心侧**（本树合并 main 后独立验证，2026-09-07 03:0x）：
+  1. 消费测试 `crates/provider-host/tests/warehouse_commands.rs` 6 项独立复跑全绿：
+     schema operation enum ↔ 路由方法名锁步；set 模式正例/清除两向量经真实帧循环
+     驱动主机、过冻结 result schema 且值逐一相符；invalid-mode → invalid_params、
+     未知条目 → entry_not_found；任务受理过 result schema 且 SQLite 权威可查、任务内
+     守卫驱动真实终态；两类诚实 unavailable；
+  2. `warehouse_set_artifact_mode` 处理器：null 清除、mode 走冻结闭集 parse、缺失即
+     invalid_params（缺不是清）；effectiveMode 由存储读回（覆盖 ?? 全局默认），绝不
+     回显——与协议文档语义一致；
+  3. 受理形状 `{ schemaVersion, operation, taskId, correlationId }` 与 result.schema
+     逐字段一致；generate/delete 经 acquisition 的 submit_*，守卫照旧在任务内触发；
+  4. `cargo test --workspace` 由本合并轮统一复跑（数据树，全绿后合并）。
+
+W8 全链收口：域内冻结（schema＋向量＋一端消费）→ 桌面 TS 面 → 核心 provider-host
+路由 → 数据两端核对，全部完成。**W9（F4-9 三命令 UI）可开工**，表现层词表以
+bdl-commands v0.1.1 为准。

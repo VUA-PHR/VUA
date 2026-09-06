@@ -2,20 +2,20 @@
 
 [English](bdl-commands-v0.1_EN.md) | [简体中文](bdl-commands-v0.1_ZH.md)
 
-> Document version: 0.1
-> Status: **Frozen (domain vocabulary)** (2026-09-07) — application-contract method
-> registration and both-end wiring are in flight
-> (`collab/proposals/005-warehouse-commands-registration.md`); end-to-end availability
-> must not be claimed until that lands
+> Document version: 0.1.1
+> Status: **Frozen** (2026-09-07) — both ends wired (proposal 005, data-side two-end
+> verification passed)
 > Machine-readable vocabulary: `schemas/bdl-commands/v0.1/` (schema + positive/negative
-> vectors; one-end consumer test `crates/acquisition/tests/bdl_commands_contract.rs`)
+> vectors; two-end consumer tests `crates/acquisition/tests/bdl_commands_contract.rs`
+> and `crates/provider-host/tests/warehouse_commands.rs`)
 > Scope: the three warehouse write commands reserved by revision 2 of
 > `docs/protocols/bdl-queries-v0.3_EN.md` — `warehouse.setArtifactMode`,
 > `warehouse.generateVpm`, `warehouse.deleteOriginals`
 > Ownership boundaries: `docs/architecture/bdl_EN.md` (BDL is an AMF-private local
 > module); the server-side facts (guards, tasking, audit) live in `crates/acquisition`
 > (maintenance flows) and `crates/bdl-store` (storage)
-> Updated: 2026-09-07
+> Updated: 2026-09-07 (0.1.1: application-face code annotation; business vocabulary
+> unchanged)
 
 ## Frozen scope and division of labor
 
@@ -74,6 +74,25 @@ protocol version first.
 All maintenance failures are recoverable errors (`recoverable: true`); the task row
 enters the failed state awaiting an explicit user retry — recovery never resumes
 implicitly.
+
+## Application-face code annotation (0.1.1)
+
+Beyond the business guards, the provider transport layer uses four application-face
+codes; two reuse table names (same code, same semantics — the transport side
+intercepts the same business fact earlier), two are transport-specific and are **not**
+part of the eight-code table:
+
+| Code | Layer | Scenario |
+| --- | --- | --- |
+| `vua.warehouse.unavailable` | transport-specific | warehouse face not wired / generate without a Unity executor (honest absence) |
+| `vua.warehouse.invalid_params` | transport-specific | params outside the closed set, mode outside the vocabulary, mode missing (application-side enforcement of the schema closed set) |
+| `vua.warehouse.entry_not_found` | table reuse | unknown entry (validation) |
+| `vua.warehouse.storeFailed` | table reuse | BDL store failure (internal) |
+
+messageKey mapping: `errors.warehouse.unavailable / invalidParams / entryNotFound /
+storeFailed`. The warehouse root and the global default mode are provider runtime
+configuration (environment-injected), never on the wire; `effectiveMode` is always
+read back from the store (override ?? global default), never echoed from the request.
 
 ## Dependency direction
 

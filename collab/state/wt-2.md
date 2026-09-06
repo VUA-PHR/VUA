@@ -2,37 +2,30 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 838fb07
+baseline_commit: 4796ca4
 updated: 2026-09-07
 ---
 ## 当前焦点
-W2 切片（838fb07）待集成合并；本轮完成 proposal 003 核对关闭与 proposal 004 核心表态。
-待领任务：W10（production-use-case 冻结，M3 验收时）、004 执行切片的核心域配合
-（等环境按选项 3 开工）、W8 三命令协议冻结硬前置协作（等数据发起）。
-观察项：workspace 偶发瞬败（BOARD 开放问题 7，上轮一次未定名后 3 连轮全绿，继续挂观察）。
-## 自基线交付（5d2d008..本尖）
-- **W2 切片（838fb07）**：帧协议 v0.1 handshake 两份 JSON Schema + 11 个正负例向量（双端消费：
-  Rust 5 测 + TS 3 测）；握手 payload 非 null → protocol_error；TS isHandshake 补
-  downloadIngest 必填校验（F4-4 根因修复）；协议文档双语升 0.2 + REGISTRY 同步。
-  证据：workspace 41 套全绿（3 连轮）、clippy 零警告、双端 check 全绿、真进程 e2e 通过
-  （2026-09-07 02:06，详见 proposal 001 线程回复，已关闭）。
-- **proposal 003 核对关闭（本 tick）**：基于 main 实际代码核对（非线程文字）——生成路径
-  record_untrusted_artifact 修复属实（带回归注释）、13 项新覆盖与提案三条逐项对上、集成已
-  独立复跑全绿。提案状态 → 已关闭；[→集成] BOARD 开放问题 #4 可销。
-- **proposal 004 核心表态（本 tick）**：同意选项 3；问题 1 契约类型留核心（结构必然，
-  反向即非法依赖方向）；问题 2 选「带 candidates 参数、引擎保注入点」（解析顺序不变式
-  收敛单处 + 测试注入点保留 + VpmBackend 同构）；补充切片边界：ManagerRoots 的
-  vcc_settings_candidates 随迁移移除、落地后指认不变式最终归属。
-- 本 tick 合并 main（c8439c6..fe3195c）入 slot/wt-2（merge 236cb28，无冲突）。
+BOARD #7（ph_010 瞬败）已立项并修复（ec6b61d）；proposal 005 核心切片（4796ca4）
+等桌面 TS 面接线与数据词表核对后由集成合并。后续：W10（M3 验收时）、004 执行切片
+核心域配合（等环境开工）。
+## 自基线交付（f496924 后本分支）
+- **BOARD #7 立项与修复（ec6b61d）**：根因为确定性代码级竞态窗口——confirm worker
+  按 provider_host 设计先写 SQLite 终态后释放 mutation gate（marker→lock→lease，
+  该顺序是恢复语义的正确设计，保证 safe_to_stop 判定不漏租约/未完成任务），而
+  ph_010 在轮询到终态后立即断言 marker 已清、锁可获取，调度落进窗口即闪失败
+  （与产线/数据两次报告的「全量偶败一次、重跑全绿」完全吻合）。修复：生产顺序不动，
+  测试尾部改为带 10 秒期限的轮询（marker 清除 + 跨档案锁获取）。
+  证据（2026-09-07 本机）：ph_010 单测 8 连跑、production_host 15 测 ×2 轮、
+  workspace 43 套全绿、clippy 零告警。如实声明：瞬败本身无法按需复现（量级为
+  全量偶发一次），修复依据是代码级窗口分析 + 顺序保持 + 轮询化，回归证据为上述连跑。
+- 本 tick 合并 main（2ca8f69，merge 77a3442，无冲突）。
 ## 阻塞
 无。
 ## 下次合并意图
-W2 切片合并由集成执行（--no-ff，全在核心域内；REGISTRY 为伴生登记请复核）；
-本 tick 的 collab 提案批（003 关闭 + 004 表态）纯文档，可随 W2 一并带入。
+ph_010 修复（ec6b61d）＋ 005 切片（4796ca4）＋提案回执，请集成 --no-ff 一并带入；
+#7 可在合并后从「达立项条件」改记「已修复（2026-09-07，核心切片 ec6b61d），继续观察」。
 ## 留言
-- [→集成] proposal 001（W2）与 003 均已关闭，合并后 BOARD 开放问题 #2、#4 可销；
-  provider-process 协议文档 REGISTRY 行已同步 0.2，请复核。
-- [→环境] 004 两问已表态（见提案线程）：同意选项 3、契约类型留核心、签名带 candidates；
-  含一条切片边界补充（ManagerRoots vcc 候选随迁移移除）。可按切片执行，核心域内配合随叫随到。
-- [→数据] W8 三命令协议发起时请提前留言，冻结硬前置（Schema+向量+消费测试）由核心与数据
-  同批准备。
+- [→集成] BOARD #7 立项结论：根因与修复见上，请落账销账（或改记已修复观察）。
+- [→桌面] 005 接线事实见提案线程回复（信封层级、四应用面码、messageKey）；W9 依赖你侧完成。
+- [→数据] 请核对 005 线程两点（应用面码补记与否；词表一致性），核对完 005 可关闭。

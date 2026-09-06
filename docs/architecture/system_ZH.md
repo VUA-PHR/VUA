@@ -2,9 +2,9 @@
 
 [English](system_EN.md) | [简体中文](system_ZH.md)
 
-> 文档版本：1.0.0
+> 文档版本：1.0.1
 > 状态：已接受
-> 权威语言：简体中文（EN 为镜像，同步至 1.0.0）
+> 权威语言：简体中文（EN 为镜像，同步至 1.0.1）
 > 范围：VUA 全系统
 > 最近符合性复核：2026-09-06
 > 规范效力：有
@@ -57,8 +57,8 @@ Cargo workspace 当前只有一个成员：`crates/orchestrator`（约 26.8k 行
   `material_identity`、`material_task`、`local_vpm_artifact`、`artifact_inspection`；
 - **素材获取与 BDL**：`download_events`、`booth_extraction`、`warehouse_import`、
   `warehouse_maintenance`、`bdl_store`、`bdl_queries`；
-- **项目与环境**：`vpm`、`vpm_backend`、`environment`、`environment_managers`、`win_registry`、
-  `tools`。
+- **项目与环境**：`vpm`、`vpm_backend`、`environment`、`win_registry`、
+  `tools`。（`environment_managers` 自 2026-09-07 起迁至 `project-manager`，见下。）
 
 "BDL 是 AMF 私有模块"自 2026-09-06 拆分落地起由 `bdl-store` crate 提供结构强制（此前由调用
 纪律维持）。
@@ -88,14 +88,16 @@ Cargo workspace 当前只有一个成员：`crates/orchestrator`（约 26.8k 行
 | `orchestrator`（核心） | 任务运行时、取消/恢复、用例、域端口、应用契约类型、`material_types` 叶类型、`vpm_backend` 端口 trait | 单一应用核心 |
 | `bdl-store` | `bdl_store`、`bdl_queries`、`download_events`、BDL SQLite schema/迁移消费 | "AMF 私有"自此有结构强制 |
 | `unity-bridge` | `bridge`、`material_intake`/`material_exec`/`material_staging`/`material_task`、`staging_scaffold`、`local_vpm_artifact`、`production_documents` | 与 C# 包、Bridge schema 同生命周期 |
-| `provider-host` | `provider_host`、`process`、`provider_job` + `vua-orchestrator-provider` 二进制 | 独立进程边界；组合根 |
+| `provider-host` | `provider_host`、`process`、`provider_job` + `vua-orchestrator-provider` 二进制；warehouse 三命令服务登记（`WarehouseConfig`/`run_provider_host_with_services`，proposal 005） | 独立进程边界；组合根 |
 | `acquisition` | `warehouse_import`、`warehouse_maintenance`、`artifact_inspection` | 下载/仓储域 |
-| `project-manager` | `vpm_backend` 实现、`project_lock` | 外部工具适配 |
+| `project-manager` | `vpm_backend` 实现、`project_lock`、`environment_managers`（经核心 `VccSettingsReader` 端口消费，proposal 004 选项 3，2026-09-07 落地） | 外部工具适配；环境管理器 |
 
 依赖方向：域类型与端口留在核心，适配器 crate 依赖核心，provider-host 作为组合根依赖全部；
-crate 间无环由 cargo 强制。**例外**：`environment_managers` 因与核心 environment 引擎深耦合
-暂留核心，拆分决策见 `collab/proposals/004-environment-managers-split.md`。新模块直接落进
-所属 crate，不得喂大核心。
+crate 间无环由 cargo 强制。`environment_managers` 曾因与核心 environment 引擎深耦合暂留核心
+（proposal 004），2026-09-07 按选项 3 迁入 `project-manager`：端口契约类型（`VccSettingsReader`/
+`VccCapability`/`ManagerDiagnostic`/`FindingSeverity`/诊断码）留在核心作为冻结 schema 的 Rust
+面，端口签名带 candidates 参数、引擎保留注入点；VCC settings 解析顺序不变式单处归于核心
+`EnvironmentRoots::default()`，wire 面零变化。新模块直接落进所属 crate，不得喂大核心。
 
 ## 协作与工作树
 

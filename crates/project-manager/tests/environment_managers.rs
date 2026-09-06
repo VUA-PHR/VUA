@@ -2,7 +2,10 @@
 //! detection, and the versioned snapshot contract. Everything
 //! runs against synthetic directory trees, so no test depends on this
 //! machine's real installs; real-machine evidence flows through the
-//! explicitly ignored manual test (ORC-TST-006).
+//! explicitly ignored manual test (ORC-TST-006). Moved from the core with
+//! the module (proposal 004): the VCC settings candidates are passed in
+//! explicitly so the resolution-order invariant stays single-sourced in
+//! the core `EnvironmentRoots`.
 
 #![allow(clippy::result_large_err)]
 
@@ -11,9 +14,12 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    classify_version_string, collect_environment_managers_snapshot, env_managers_codes,
-    project_tree_fingerprint, EditorClass, FixedClock, ManagerRoots, ManagerPresence,
-    ProjectAssociation, FindingSeverity, PRODUCTION_TARGET,
+    classify_version_string, env_managers_codes, project_tree_fingerprint, EditorClass,
+    FindingSeverity, FixedClock, ManagerPresence, PRODUCTION_TARGET,
+};
+use vua_project_manager::{
+    collect_environment_managers_snapshot, EnvironmentManagersSnapshotV01, ManagerRoots,
+    ProjectAssociation,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -32,17 +38,21 @@ fn cleanup(base: &Path) {
 
 fn synthetic_managers(base: &Path) -> ManagerRoots {
     ManagerRoots {
-        vcc_settings_candidates: vec![base.join("vcc/settings.json")],
         alcom_settings_candidates: vec![base.join("alcom/setting.json")],
     }
+}
+
+fn synthetic_vcc_candidates(base: &Path) -> Vec<PathBuf> {
+    vec![base.join("vcc/settings.json")]
 }
 
 fn synthetic_editors(base: &Path) -> Vec<PathBuf> {
     vec![base.join("editors")]
 }
 
-fn probe(base: &Path) -> vua_orchestrator::EnvironmentManagersSnapshotV01 {
+fn probe(base: &Path) -> EnvironmentManagersSnapshotV01 {
     collect_environment_managers_snapshot(
+        &synthetic_vcc_candidates(base),
         &synthetic_managers(base),
         &synthetic_editors(base),
         &FixedClock::new(&["2026-09-04T02:00:00.000Z"]),
@@ -413,8 +423,6 @@ fn env_managers_012_unrecognized_alcom_settings_warn_without_blocking_presence()
     }));
     cleanup(&base);
 }
-
-// --- versioned contract ---
 
 // --- versioned contract ---
 

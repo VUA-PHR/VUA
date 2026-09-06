@@ -12,7 +12,7 @@
 | AGENTS.md | 1.1.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/product-boundary_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/architecture/system_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
+| docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/architecture/desktop_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/architecture/bdl_ZH.md | 1.0.0 | 已接受 | 数据 | 2026-09-06 |

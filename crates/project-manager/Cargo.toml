@@ -23,3 +23,6 @@ windows-sys = { version = "=0.61.2", features = [
     "Win32_Storage",
     "Win32_System_IO",
 ] }
+
+[dev-dependencies]
+jsonschema = "0.52.1"
