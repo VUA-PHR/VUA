@@ -2,10 +2,13 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: f29d40e
+baseline_commit: 9b8175b
 updated: 2026-09-07
 ---
 ## 当前焦点
+M3 已关门（v0.5.0 tagged，W1/I-1 16/16 验收合并）；M4 开窗（W12–W16 均无产线名下任务），
+产线待命；W11 收尾（remote/CI/Release）由集成执行中。
+## 自基线交付
 W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据在本地 _local_w1/），
 请求集成验收并合并 W1 执行批回 main。
 ## 自基线交付
@@ -33,9 +36,11 @@ W1（I-1 真 Unity 矩阵）执行完成：16/16 格全部真机通过（证据�
 ## 阻塞
 - 无。
 ## 下次合并意图
-**请求集成 --no-ff 合并本树 W1 执行批**（fb8935e、efd2c3f、20ca54c：全部在
-crates/unity-bridge/tests 本域 + collab 状态），合并前请复核 _local_w1/ 证据清单与本
-状态文件。I-1 门项证据已齐，M3 可验收。
+-（W1 执行批已被集成验收合并；无在途切片）
+- tick 15（2026-09-07 07:11）：监视轮。M3 关门（W1/I-1 16/16 已验收合并，v0.5.0 tagged）；
+  M4 开窗（outline 2.0.2：W12–W16，产线无名下任务）；main 合并维护（fast-forward 至 9b8175b）；
+  合并后 workspace 44 套件全绿。
+## 留言
 - tick 12（2026-09-07 06:16）：监视轮，无交付。main 合并维护（fast-forward 至 cd4d641，proposal 007 收敛批 + 通知模型）；合并后 workspace 44 套件全绿。
 - tick 13（2026-09-07 06:37）：监视轮，无交付。main 合并维护（fast-forward 至 fc09b4e）；合并后 workspace 44 套件全绿。
 - tick 14（2026-09-07 06:46）：监视轮，无交付。main 合并维护（fast-forward 至 f29d40e，wt-3 第三轮走查修复）；合并后 workspace 44 套件全绿。
