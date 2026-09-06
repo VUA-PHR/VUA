@@ -20,11 +20,15 @@
 //! reported in the task result — the audit trail the adjudication requires.
 
 use crate::artifact_inspection::{hex_lower, sha256_file};
-use crate::bdl_store::{ArtifactMode, BdlStore, BdlStoreError, CopyRole};
+use crate::bdl_store::{
+    ArtifactMode, BdlStore, BdlStoreError, CopyRole,
+};
 use crate::contracts::{ErrorCategory, ParamValue};
+use crate::material_exec::{MaterialCancelToken, MaterialExecutor};
 use crate::runtime::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
 use serde::Serialize;
-use std::path::PathBuf;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -43,6 +47,21 @@ pub enum MaintenanceError {
     GeneratedArtifactMissing {
         entry_id: String,
         reason: String,
+    },
+    /// Generate guard: the entry holds no original material to generate from.
+    NoOriginalMaterial {
+        entry_id: String,
+    },
+    /// Generate guard: a generated VPM artifact already exists — never
+    /// silently replaced (delete the entry's VPM copy to regenerate).
+    AlreadyGenerated {
+        entry_id: String,
+    },
+    /// Generation failed inside the staging chain (staging/bridge/archive),
+    /// carrying the stable intake-style code.
+    GenerationFailed {
+        code: String,
+        message: String,
     },
 }
 
@@ -80,6 +99,15 @@ impl std::fmt::Display for MaintenanceError {
                     "entry {entry_id}: the generated VPM artifact failed verification: {reason}"
                 )
             }
+            Self::NoOriginalMaterial { entry_id } => {
+                write!(formatter, "entry {entry_id} holds no original material to generate from")
+            }
+            Self::AlreadyGenerated { entry_id } => {
+                write!(formatter, "entry {entry_id} already has a generated VPM artifact")
+            }
+            Self::GenerationFailed { code, message } => {
+                write!(formatter, "generation failed ({code}): {message}")
+            }
         }
     }
 }
@@ -107,51 +135,69 @@ pub struct DeleteOriginalsResult {
 }
 
 fn maintenance_error_to_app(error: MaintenanceError, correlation_id: &str) -> crate::AppErrorV1 {
-    let (code, category, params) = match &error {
+    let (code, category, params): (String, ErrorCategory, Vec<(String, String)>) = match &error {
         MaintenanceError::Store(_) => (
-            "vua.warehouse.storeFailed",
+            "vua.warehouse.storeFailed".to_owned().to_owned(),
             ErrorCategory::Internal,
             Vec::new(),
         ),
         MaintenanceError::Io(_) => (
-            "vua.warehouse.maintenanceIoFailed",
+            "vua.warehouse.maintenanceIoFailed".to_owned(),
             ErrorCategory::ExternalFailure,
             Vec::new(),
         ),
         MaintenanceError::UnknownEntry(entry_id) => (
-            "vua.warehouse.entry_not_found",
+            "vua.warehouse.entry_not_found".to_owned(),
             ErrorCategory::Validation,
-            vec![("warehouseItemId", entry_id.clone())],
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
         ),
         MaintenanceError::InvalidState {
             entry_id,
             effective_mode,
         } => (
-            "vua.warehouse.invalid_state",
+            "vua.warehouse.invalid_state".to_owned(),
             ErrorCategory::Conflict,
             vec![
-                ("warehouseItemId", entry_id.clone()),
-                ("effectiveMode", effective_mode.name().to_string()),
+                ("warehouseItemId".to_owned(), entry_id.clone()),
+                ("effectiveMode".to_owned(), effective_mode.name().to_string()),
             ],
         ),
         MaintenanceError::GeneratedArtifactMissing { entry_id, reason } => (
-            "vua.warehouse.generated_artifact_missing",
+            "vua.warehouse.generated_artifact_missing".to_owned(),
             ErrorCategory::Conflict,
             vec![
-                ("warehouseItemId", entry_id.clone()),
-                ("reason", reason.clone()),
+                ("warehouseItemId".to_owned(), entry_id.clone()),
+                ("reason".to_owned(), reason.clone()),
+            ],
+        ),
+        MaintenanceError::NoOriginalMaterial { entry_id } => (
+            "vua.warehouse.no_original_material".to_owned(),
+            ErrorCategory::Conflict,
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
+        ),
+        MaintenanceError::AlreadyGenerated { entry_id } => (
+            "vua.warehouse.already_generated".to_owned(),
+            ErrorCategory::Conflict,
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
+        ),
+        MaintenanceError::GenerationFailed { code, message } => (
+            "vua.warehouse.generation_failed".to_owned().to_owned(),
+            ErrorCategory::ExternalFailure,
+            vec![
+                ("code".to_owned(), code.clone()),
+                ("reason".to_owned(), message.clone()),
             ],
         ),
     };
     let mut app = crate::AppErrorV1::new(
-        code,
+        &code,
         category,
         "errors.warehouse.maintenanceFailed",
         correlation_id,
     )
     .with_recoverable(true);
     for (name, value) in params {
-        app = app.with_param(name, ParamValue::Text(value));
+        app = app.with_param(name.as_str(), ParamValue::Text(value));
     }
     app
 }
@@ -281,6 +327,253 @@ pub fn submit_delete_originals(
         job: delete_originals_job(store, Arc::new(spec)),
     })
 }
+
+// --- B4 artifact-mode: the generate-VPM task ---
+
+/// One generate-VPM task binding. The effective mode guard (generate_vpm)
+/// is enforced inside the job against `global_default`.
+#[derive(Debug, Clone)]
+pub struct GenerateVpmTaskSpec {
+    pub correlation_id: String,
+    pub warehouse_item_id: String,
+    pub warehouse_root: PathBuf,
+    pub global_default: ArtifactMode,
+}
+
+/// Audit payload (Done exit).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GenerateVpmResult {
+    pub correlation_id: String,
+    pub warehouse_item_id: String,
+    pub package_id: String,
+    pub archive_relative_path: String,
+    pub archive_sha256: String,
+}
+
+fn generate_error_to_app(error: MaintenanceError, correlation_id: &str) -> crate::AppErrorV1 {
+    let (code, category, params): (String, ErrorCategory, Vec<(String, String)>) = match &error {
+        MaintenanceError::Store(_) => (
+            "vua.warehouse.storeFailed".to_owned(),
+            ErrorCategory::Internal,
+            Vec::new(),
+        ),
+        MaintenanceError::Io(_) => (
+            "vua.warehouse.maintenanceIoFailed".to_owned(),
+            ErrorCategory::ExternalFailure,
+            Vec::new(),
+        ),
+        MaintenanceError::UnknownEntry(entry_id) => (
+            "vua.warehouse.entry_not_found".to_owned(),
+            ErrorCategory::Validation,
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
+        ),
+        MaintenanceError::InvalidState {
+            entry_id,
+            effective_mode,
+        } => (
+            "vua.warehouse.invalid_state".to_owned(),
+            ErrorCategory::Conflict,
+            vec![
+                ("warehouseItemId".to_owned(), entry_id.clone()),
+                ("effectiveMode".to_owned(), effective_mode.name().to_owned()),
+            ],
+        ),
+        MaintenanceError::GeneratedArtifactMissing { entry_id, reason } => (
+            "vua.warehouse.generated_artifact_missing".to_owned(),
+            ErrorCategory::Conflict,
+            vec![
+                ("warehouseItemId".to_owned(), entry_id.clone()),
+                ("reason".to_owned(), reason.clone()),
+            ],
+        ),
+        MaintenanceError::NoOriginalMaterial { entry_id } => (
+            "vua.warehouse.no_original_material".to_owned(),
+            ErrorCategory::Conflict,
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
+        ),
+        MaintenanceError::AlreadyGenerated { entry_id } => (
+            "vua.warehouse.already_generated".to_owned(),
+            ErrorCategory::Conflict,
+            vec![("warehouseItemId".to_owned(), entry_id.clone())],
+        ),
+        MaintenanceError::GenerationFailed { code, message } => (
+            "vua.warehouse.generation_failed".to_owned(),
+            ErrorCategory::ExternalFailure,
+            vec![
+                ("code".to_owned(), code.clone()),
+                ("reason".to_owned(), message.clone()),
+            ],
+        ),
+    };
+    let mut app = crate::AppErrorV1::new(
+        &code,
+        category,
+        "errors.warehouse.maintenanceFailed",
+        correlation_id,
+    )
+    .with_recoverable(true);
+    for (name, value) in &params {
+        app = app.with_param(name.as_str(), ParamValue::Text(value.clone()));
+    }
+    app
+}
+
+fn run_generate_vpm(
+    store: &BdlStore,
+    executor: &MaterialExecutor,
+    spec: &GenerateVpmTaskSpec,
+    ctx: &crate::runtime::TaskContext,
+) -> Result<TaskExit, MaintenanceError> {
+    let detail = store
+        .warehouse_entry_detail(&spec.warehouse_item_id, spec.global_default)?
+        .ok_or_else(|| MaintenanceError::UnknownEntry(spec.warehouse_item_id.clone()))?;
+
+    // Guard: generation runs only in the generate_vpm mode.
+    if detail.effective_artifact_mode != ArtifactMode::GenerateVpm {
+        return Err(MaintenanceError::InvalidState {
+            entry_id: spec.warehouse_item_id.clone(),
+            effective_mode: detail.effective_artifact_mode,
+        });
+    }
+
+    let copies = store.entry_copies(&spec.warehouse_item_id)?;
+    let originals: Vec<&crate::bdl_store::StoredArtifactCopy> = copies
+        .iter()
+        .filter(|copy| copy.role == CopyRole::Original)
+        .collect();
+    if originals.is_empty() {
+        return Err(MaintenanceError::NoOriginalMaterial {
+            entry_id: spec.warehouse_item_id.clone(),
+        });
+    }
+    if copies.iter().any(|copy| copy.role == CopyRole::GeneratedVpm) {
+        return Err(MaintenanceError::AlreadyGenerated {
+            entry_id: spec.warehouse_item_id.clone(),
+        });
+    }
+
+    let sources: Vec<crate::material_exec::GenerateSourcePackage> = originals
+        .iter()
+        .map(|copy| crate::material_exec::GenerateSourcePackage {
+            archive_path: PathBuf::from(&copy.stored_path),
+            sha256: copy.artifact_sha256.clone(),
+        })
+        .collect();
+
+    let publish_root = std::env::temp_dir().join(format!(
+        "vua-genpub-{}-{}",
+        spec.warehouse_item_id,
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
+
+    let token = MaterialCancelToken::new();
+    let generated = executor
+        .generate_vpm_only(
+            &sources,
+            &detail.display_name,
+            &spec.warehouse_root.join(&detail.folder_name),
+            &publish_root,
+            &spec.correlation_id,
+            &token,
+        )
+        .map_err(|(code, status)| {
+            if status == crate::MaterialExecutionStatus::Cancelled {
+                MaintenanceError::GenerationFailed {
+                    code: "vua.warehouse.generation_cancelled".into(),
+                    message: "cancelled at a package boundary".into(),
+                }
+            } else {
+                MaintenanceError::GenerationFailed {
+                    code,
+                    message: "the staging chain refused the generation".into(),
+                }
+            }
+        })?;
+
+    // Copy the published archive into the entry as a generated_vpm copy.
+    let relative_path = format!(
+        "vpm/{}",
+        generated
+            .artifact
+            .archive_path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default()
+    );
+    let destination = entry_folder_path(&spec.warehouse_root, &detail.folder_name)
+        .join(&relative_path);
+    if let Some(parent) = destination.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::copy(&generated.artifact.archive_path, &destination)?;
+    let archive_sha256 = sha256_file(&destination)?;
+    let archive_sha = format!("sha256:{}", hex_lower(&archive_sha256));
+    if archive_sha != generated.artifact.archive_sha256 {
+        return Err(MaintenanceError::GenerationFailed {
+            code: "vua.warehouse.copy_drift".into(),
+            message: format!("the copied archive {archive_sha} != published {}", generated.artifact.archive_sha256),
+        });
+    }
+
+    store.record_artifact_copy(
+        &spec.warehouse_item_id,
+        &archive_sha,
+        &relative_path,
+        &destination.to_string_lossy(),
+        CopyRole::GeneratedVpm,
+        &now_rfc3339(),
+    )?;
+
+    let result = GenerateVpmResult {
+        correlation_id: spec.correlation_id.clone(),
+        warehouse_item_id: spec.warehouse_item_id.clone(),
+        package_id: generated.package_id.clone(),
+        archive_relative_path: relative_path,
+        archive_sha256: archive_sha,
+    };
+    let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+    ctx.emit_progress(payload.clone());
+    Ok(TaskExit::Done(payload))
+}
+
+fn entry_folder_path(warehouse_root: &Path, folder_name: &str) -> PathBuf {
+    warehouse_root.join(folder_name)
+}
+
+pub fn generate_vpm_job(
+    store: Arc<BdlStore>,
+    executor: Arc<MaterialExecutor>,
+    spec: Arc<GenerateVpmTaskSpec>,
+) -> crate::runtime::TaskJob {
+    Box::new(move |ctx| match run_generate_vpm(&store, executor.as_ref(), &spec, ctx) {
+        Ok(exit) => Ok(exit),
+        Err(error) => Err(generate_error_to_app(error, &spec.correlation_id)),
+    })
+}
+
+pub fn submit_generate_vpm(
+    runtime: &TaskRuntime,
+    store: Arc<BdlStore>,
+    executor: Arc<MaterialExecutor>,
+    spec: GenerateVpmTaskSpec,
+    timeout: Option<Duration>,
+) -> Result<crate::CommandAcceptedV1, crate::AppErrorV1> {
+    let correlation_id = spec.correlation_id.clone();
+    runtime.submit(SubmitRequest {
+        correlation_id: Some(correlation_id),
+        timeout,
+        job: generate_vpm_job(store, executor, Arc::new(spec)),
+    })
+}
+
+fn now_rfc3339() -> String {
+    "2026-09-06T00:00:00.000Z".to_owned()
+}
+
 
 #[cfg(test)]
 mod tests {

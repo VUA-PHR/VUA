@@ -89,7 +89,22 @@ pub struct MaterialExecutionReport {
 }
 
 /// One step's mutation outcome: continue with the run, or stop with a code.
-type StepFailure = (String, MaterialExecutionStatus);
+/// One warehouse original offered to [`MaterialExecutor::generate_vpm_only`].
+#[derive(Debug, Clone)]
+pub struct GenerateSourcePackage {
+    pub archive_path: PathBuf,
+    pub sha256: String,
+}
+
+/// The outcome of a successful generate-only run: the published VPM
+/// artifact (package tree + archive) in the caller's output root.
+#[derive(Debug, Clone)]
+pub struct GeneratedVpm {
+    pub package_id: String,
+    pub artifact: crate::local_vpm_artifact::PublishedLocalVpmArtifact,
+}
+
+pub type StepFailure = (String, MaterialExecutionStatus);
 
 /// Per-execution cancellation flag. Ownership lives at the submission layer
 /// (task spec), never in the executor: a shared executor must not let one
@@ -799,6 +814,137 @@ impl MaterialExecutor {
                 .map(|diagnostic| diagnostic.code.clone())
                 .collect(),
         })
+    }
+
+    // --- B4 artifact-mode: generate-only VPM production ---
+
+    /// Generates a local VPM package from a warehouse entry's original
+    /// `.unitypackage` copies — the same staging → materialize → create →
+    /// publish chain as `run_local_reusable`, minus the target install and
+    /// validation (there is no target project: the warehouse entry IS the
+    /// destination). Staging serves one atomic call (the guard destroys it
+    /// on exit); the published artifact is deterministic and survives
+    /// staging teardown. Cancellation is observed at package boundaries.
+    pub fn generate_vpm_only(
+        &self,
+        originals: &[GenerateSourcePackage],
+        display_name: &str,
+        entry_folder: &Path,
+        artifact_output_root: &Path,
+        correlation_id: &str,
+        token: &MaterialCancelToken,
+    ) -> Result<GeneratedVpm, StepFailure> {
+        let staging = StagingProject::create(&self.temp_root, correlation_id, correlation_id)
+            .map_err(|error| {
+                (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
+            })?;
+        let staging_project = ProjectRef {
+            id: format!("{correlation_id}-staging"),
+            root: staging.root().to_path_buf(),
+        };
+        // 用户裁定:包机器 ID 走持久身份库——入口文件夹即身份来源,同条目
+        // 稳定、同名自动去重。
+        let identity = self
+            .identity_store
+            .resolve(entry_folder, display_name)
+            .map_err(|error| {
+                (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
+            })?;
+        let package_id = identity.package_id;
+
+        // The fresh staging project needs its own fingerprint for its first
+        // mutating command (same chained-fingerprint discipline as intake).
+        let inspect = self.inspect(
+            &staging_project,
+            &format!("{correlation_id}-stage-inspect"),
+            &mut Vec::new(),
+        )?;
+        let mut staging_fingerprint = fingerprint_of(&inspect).ok_or_else(|| {
+            (error_codes::BRIDGE_FAILED.to_owned(), MaterialExecutionStatus::Failed)
+        })?;
+
+        for (index, package) in originals.iter().enumerate() {
+            if token.is_cancelled() {
+                return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
+            }
+            // Drift check against the copy row's recorded identity: the
+            // warehouse original must be byte-identical to what BDL inspected.
+            let archive_digest = sha256_file(&package.archive_path).map_err(|error| {
+                (
+                    format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+            if archive_digest != package.sha256 {
+                return Err((intake_codes::SOURCE_DRIFT.to_owned(), MaterialExecutionStatus::Failed));
+            }
+            let command_id = format!("{correlation_id}-stage-import-{index}");
+            let extracted_root = staging.root().join(".vua/imports").join(&command_id);
+            extract_package_into_dir(&package.archive_path, &extracted_root).map_err(|error| {
+                (
+                    format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+            let manifest_digest =
+                sha256_file(&extracted_root.join("manifest.sha256")).map_err(|error| {
+                    (
+                        format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                        MaterialExecutionStatus::Failed,
+                    )
+                })?;
+            let command = UnityCommand {
+                schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+                command_id,
+                operation: UnityOperation::MaterializeExtractedPackage,
+                project_id: staging_project.id.clone(),
+                dry_run: false,
+                expected_project_fingerprint: Some(staging_fingerprint.clone()),
+                payload: UnityPayload {
+                    source_package_path: Some(extracted_root.to_string_lossy().into_owned()),
+                    source_package_sha256: Some(package.sha256.clone()),
+                    manifest_sha256: Some(manifest_digest),
+                    ..UnityPayload::default()
+                },
+            };
+            let result = self.dispatch(&staging_project, &command, &mut Vec::new())?;
+            if let Some(fingerprint) = fingerprint_of(&result) {
+                staging_fingerprint = fingerprint;
+            }
+        }
+
+        // Produce the local-reusable package layout + manifest.
+        let command_id = format!("{correlation_id}-stage-vpm");
+        let command = UnityCommand {
+            schema_version: crate::ENVELOPE_SCHEMA_VERSION,
+            command_id,
+            operation: UnityOperation::CreateLocalVpmPackage,
+            project_id: staging_project.id.clone(),
+            dry_run: false,
+            expected_project_fingerprint: Some(staging_fingerprint.clone()),
+            payload: UnityPayload {
+                package_id: Some(package_id.clone()),
+                package_display_name: Some(display_name.to_owned()),
+                package_version: Some("0.1.0".to_owned()),
+                staging_token: Some(correlation_id.to_owned()),
+                ..UnityPayload::default()
+            },
+        };
+        self.dispatch(&staging_project, &command, &mut Vec::new())?;
+
+        // Publish deterministically into the caller's output root; the
+        // artifact survives staging teardown (publish copies the tree out).
+        let artifact = crate::local_vpm_artifact::publish_local_vpm_artifact(
+            &staging.root().join("Packages").join(&package_id),
+            artifact_output_root,
+            &package_id,
+            "0.1.0",
+        )
+        .map_err(|error| {
+            (format!("{}: {error}", error_codes::STAGING_FAILED), MaterialExecutionStatus::Failed)
+        })?;
+
+        Ok(GeneratedVpm { package_id, artifact })
     }
 
     // --- port helpers ---

@@ -192,7 +192,8 @@ pub use warehouse_import::{
     WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
 };
 pub use warehouse_maintenance::{
-    submit_delete_originals, DeleteOriginalsResult, DeleteOriginalsTaskSpec, MaintenanceError,
+    generate_vpm_job, submit_delete_originals, submit_generate_vpm, DeleteOriginalsResult,
+    DeleteOriginalsTaskSpec, GenerateVpmResult, GenerateVpmTaskSpec, MaintenanceError,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};
