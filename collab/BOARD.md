@@ -3,7 +3,7 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07（wt-main 基线刷新至 5d2d008；pre-rename 目录清理升级为 U5）
+最近更新：2026-09-07（wt-main 基线刷新至 5d2d008；pre-rename 目录清理升级为 U5；U6 产线升级 I-1 开窗请求）
 
 ## 工作树指派
 
@@ -71,3 +71,4 @@ M3 进度：
 | U3 | F6：VUA 是否写外部工具（ALCOM/VCC）管理的项目 | 桌面 | 产品语义裁决（M6 前置） |
 | U4 | remote 建立时点（现行裁决：M3 验收当日） | 集成 | 是否提前建 private 仓库让 CI 先行 |
 | U5 | VUA-2/VUA-3 内 node_modules.pre-rename 与 target.pre-rename 目录清理 | 集成 | 确认后删除（auto 模式进程禁 rm -rf；2026-09-07 核实四目录仍在） |
+| U6 | I-1 真机窗口开启（M3 唯一剩余门项 W1，已三轮等待：入职/tick1/tick2 均 unset） | 产线 | (a) 设置 `VUA_UNITY_EXECUTABLE`（全球版 2022.3.22f1 `Unity.exe` 路径）与 `VUA_REAL_SOURCE_FOLDER`（合法素材目录：开发者合法取得、仅本地保存、不入仓库）后通知产线开跑；(b) 或明确暂缓 I-1 / 调整 M3 验收范围（需用户裁决，产线不代决）。产线侧准备已就绪：16 格执行计划与逐格触发手法已核实（本地 `docs/plans/m3-i1-real-matrix-plan_ZH.md`），窗口一开即逐格写跑校准 |
