@@ -1,18 +1,23 @@
-# VUA 生产用例契约 v0.1（M3 候选）
+# VUA 生产用例契约 v0.1
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
 > 文档版本：0.1
-> 状态：**M3 候选草案**（2026-09-06 撤回 2026-09-05 的冻结声明：评审核实真实 TS/Rust
-> 参数面 6/7 不一致，请求/响应 Schema 与跨语言固定向量缺失——"冻结"名不副实，恢复
-> 候选是诚实纪律的必然结论。2026-09-05 达成的词表、生命周期-任务映射、确认/恢复纪律
-> 保留为候选基线；按 M3 对齐切片完成 ①七方法精确请求/响应 Schema ②TS/Rust 共用固定
-> JSON 向量 ③Provider 与 Gateway 双向契约测试 ④真实 Electron → Rust → Unity 冒烟后，
-> M3 验收时再冻结。域引用形状（`planId`/`inspectionId`/`buildRecordId` 优先于路径重复
-> 提交）与 BuildRecord 版本化证据摘要一并随该切片修订）
+> 状态：**已冻结（2026-09-07，M3 验收）**。冻结前置四项已交付并核实：
+> ① 七方法精确请求/响应 Schema（`schemas/amf-production/v0.2/methods/`，T1）；
+> ② TS/Rust 共用固定 JSON 向量（`schemas/amf-production/v0.2/vectors/`，5 正 3 负）；
+> ③ Provider 与 Gateway 双向契约测试（`crates/provider-host/tests/m3_vectors.rs` 与
+> `apps/desktop/src/electron/m3-vectors.test.ts` 消费同一向量目录）；
+> ④ 真实 Electron → Rust → Unity 冒烟（I-1 真机矩阵 16/16 格通过，证据
+> `_local_w1/`；合并 5ccace6）。
+> 历史：2026-09-06 曾撤回 2026-09-05 的冻结声明（评审核实真实 TS/Rust 参数面 6/7
+> 不一致，请求/响应 Schema 与跨语言固定向量缺失——"冻结"名不副实，恢复候选是诚实
+> 纪律的必然结论）。2026-09-05 达成的词表、生命周期-任务映射、确认/恢复纪律保留为
+> 候选基线并经本轮核实后随冻结生效。域引用形状（`planId`/`inspectionId`/
+> `buildRecordId` 优先于路径重复提交）与 BuildRecord 版本化证据摘要已随 T1 切片修订。
 > 范围：第一个生产纵向用例（合成 Avatar + 一件衣装；`.unitypackage` 直接导入与本地 VPM
 > 制作/安装双素材入口）的前后端命令与查询面
-> 更新：2026-09-06
+> 更新：2026-09-07
 > 规范效力：F3 表现层与 B3 应用实现的对齐基线；方法名在 application-contract v0.1 方法表
 > 登记（引入 = B3/F3），值语义以本文档为准
 
@@ -125,6 +130,9 @@ JSON 序列化形式传输；`bridgeJob` 序列化**全部** Bridge 作业，而
 
 ## 修订记录
 
+- 2026-09-07:**冻结（M3 验收）。** 四项冻结前置全部交付核实（七方法 Schema、共用
+  固定向量、双端契约测试、I-1 真机矩阵 16/16 格）；状态改「已冻结」。撤回历史保留
+  于状态段（诚实纪律），不删除。
 - 2026-09-06:**M3 修订（T1 落地）。** 七方法参数面改订为域引用形状:
   `startInspection` 四元组（路径一次性绑定）、`requestPlan = {inspectionId, mode}`、
   `confirmPlan = {planId, observedRevision, riskChoice, rememberForSession?}`、

@@ -6,6 +6,6 @@
  */
 export const appMeta = {
   name: "vua-desktop",
-  version: "0.4.2",
-  repoUrl: "https://github.com/Aran52/VRC_Ultra_assistant",
+  version: "0.5.0",
+  repoUrl: "https://github.com/VUA-PHR/VUA",
 } as const;
