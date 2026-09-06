@@ -84,6 +84,20 @@ export const strings = {
       warehouseMissing: "Warehouse read face is not connected yet",
     },
   },
+  /** Task-title templates (walkthrough #4 i18n): verbs and status wording go
+   *  through i18n; entity names stay verbatim. Demo tasks compose at gateway
+   *  assembly time in the active language. */
+  taskTitles: {
+    assembly: "Assemble {name}: bone rigging and menu generation",
+    download: "Download {name}",
+    downloadInterruptedNote: "Download interrupted: connection lost; the received part is resumable.",
+    downloadPolicyRefusedNote: "Download refused by policy: source or file type is not allow-listed; nothing was saved.",
+    envCheck: "Creative environment check",
+    envCheckWarning: "VPM environment validation failed",
+    warehouseScan: "Warehouse asset scan",
+    generateVpm: "Generate VPM: {name}",
+    deleteOriginals: "Delete originals: {name}",
+  },
   taskCenter: {
     title: "Notification Center",
     expandAria: "Expand task list, {count} items",
