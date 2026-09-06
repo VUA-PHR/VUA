@@ -2827,6 +2827,7 @@ name = "vua-acquisition"
 version = "0.1.0"
 dependencies = [
  "flate2",
+ "jsonschema",
  "serde",
  "serde_json",
  "sha2",
