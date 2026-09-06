@@ -160,11 +160,22 @@ export const fixtureStrings = {
       },
     ],
   },
-  /** 任务中心演示负载(demo-tasks 场景;标题/说明为数据负载,同 checks 纪律) */
+  /** 任务中心演示负载(demo-tasks 场景;标题/说明为数据负载,同 checks 纪律;
+   *  下载任务链为 F4-7 走查载体:名称均为合成演示身份,与真实商品无关联) */
   tasks: {
     assembly: { title: "装配 Summer_Uniform:骨骼绑定与菜单生成" },
     envCheck: { title: "创作环境检测", warning: "VPM 环境未通过验证" },
     warehouseScan: { title: "仓库素材扫描" },
+    downloadActive: { title: "下载 Summer_Uniform_ADDONS ver2.0" },
+    downloadInterrupted: {
+      title: "下载 Miko_Dress_fix ver1.1",
+      errorText: "下载中断:连接已断开,已接收部分可续传。",
+    },
+    downloadCancelled: { title: "下载 Stage_Props_pack ver0.9" },
+    downloadPolicyRefused: {
+      title: "下载 tool_installer.exe",
+      errorText: "下载已被策略拒绝:来源或文件形态不在允许清单内,未落盘。",
+    },
   },
   /** Overlay 双表面演示负载(切片五 F7a;标题/详情为数据负载,词表键由代码承载;
    *  任务标题复用 tasks.assembly,同一演示任务在任务中心与 Overlay 一致) */

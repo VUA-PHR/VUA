@@ -209,7 +209,7 @@ async function run() {
     console.log(`Evidence: ${evidencePath}`);
     console.log(`Raw log: ${rawLogPath}`);
     if (hostWindow && !hostWindow.isDestroyed()) hostWindow.destroy();
-    app.quit();
+    app.exit(process.exitCode ?? 0);
   }
 }
 
