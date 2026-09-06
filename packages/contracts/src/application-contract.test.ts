@@ -3,6 +3,7 @@ import {
   APPLICATION_CONTRACT_VERSION,
   isApplicationRequestV01,
   isTerminalTaskStateV01,
+  type CatalogProductDetailV03,
 } from "./application-contract.js";
 
 describe("application contract v0.1", () => {
@@ -142,6 +143,37 @@ describe("bdl-queries v0.2 application surface", () => {
     expect(isApplicationRequestV01({
       ...base, method: "warehouse.entryDetail", params: { warehouseItemId: "" },
     })).toBe(false);
+  });
+});
+
+describe("bdl-queries v0.3 TS mirror", () => {
+  // proposal 002:镜像面与 schemas/bdl-queries/v0.3 的 result 对齐——
+  // ageRestriction 是 schema required 字段(登记缺陷回归锁):显式值与
+  // null 两态的对象都必须携带该字段,镜像面缺字段在编译期即失败
+  const detailBase = {
+    productId: "booth:1000001",
+    title: "Sample Product",
+    price: { amount: "1500", currency: "JPY" },
+    imageUrl: null,
+    imageUrls: [],
+    availabilityRaw: "unknown",
+    availabilityStatus: "unknown",
+    entityCount: 0 as const,
+    entityTypes: [],
+    description: null,
+    shopName: "Sample Shop",
+    shopUrl: "https://sample.booth.pm/",
+    adult: false,
+    videoUrls: [],
+    sourceCategory: null,
+    subproducts: [],
+  };
+
+  it("mirrors the ageRestriction field (required by the v0.3 schema) in both shapes", () => {
+    const adult: CatalogProductDetailV03 = { ...detailBase, ageRestriction: "R-18" };
+    const general: CatalogProductDetailV03 = { ...detailBase, ageRestriction: null };
+    expect(adult.ageRestriction).toBe("R-18");
+    expect(general.ageRestriction).toBe(null);
   });
 });
 
