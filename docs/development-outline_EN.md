@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.0
+> Document version: 2.0.1
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.0)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.1)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -90,7 +90,7 @@ Responsibility rules:
 
 ## Current window (M3 wrap-up and in-flight M4 work)
 
-> Snapshot date: 2026-09-06. Every task in this window is decomposed to a role; once complete, the
+> Snapshot date: 2026-09-06 (W12 added 2026-09-07). Every task in this window is decomposed to a role; once complete, the
 > Integration role accepts them and advances the M3/M4 gates.
 
 | # | Task | Owning role | Collaborators | Anchor / acceptance |
@@ -106,6 +106,7 @@ Responsibility rules:
 | W9 | F4-9 artifact-mode three-command UI | Desktop | Core | depends on the W8 protocol freeze |
 | W10 | Freeze production-use-case v0.1 (at M3 acceptance) | Core | Production, Desktop | M3 candidate → freeze; per the freeze hard precondition |
 | W11 | M3 closure: v0.5.0 tag, remote establishment, three CI workflows, Release | Integration | All | Execute on the day of M3 local acceptance (user ruling 2026-09-06) |
+| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | Reserved header note in `bdl_queries.rs`; execute when the M4 window opens (until then W6/W7 walkthroughs use the desktop fixture/observation face; this does not count as data-side pending work) |
 
 ## M sequence: Main integration and delivery
 
@@ -461,6 +462,10 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.1 (2026-09-07): the current window gains W12 (catalog observation-pipeline service face,
+  owned by Data, executed when the M4 window opens) — making the desktop W6/W7 walkthrough's
+  implicit wait on the data-side observation pipeline an explicit M4-prerequisite schedule
+  (data request, integration ruling).
 - 2.0.0 (2026-09-06): the six-role system replaces the three lanes and the two-role split
   (Integration/Desktop/Core/Production/Data/Environment, with the code-ownership mapping); adds the
   "current window" task table (W1–W11); M4–M10 each gain a role-based task table; the F/B sequence
