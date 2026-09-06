@@ -480,3 +480,81 @@ describe("amf-production v0.2 routing", () => {
     expect(stale).toMatchObject({ ok: false, error: { code: "invalid_request" } });
   });
 });
+
+describe("bdl-commands v0.1 command routing", () => {
+  it("routes the three warehouse write commands with commandId mapping", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    // provider-host 路由由核心登记(proposal 005);本测试锁映射与透传,
+    // 不依赖 provider 对写命令的真实处置
+    const invoke = vi.spyOn(provider, "invoke").mockResolvedValue({
+      ok: true,
+      value: { warehouseItemId: "wh-1", effectiveMode: "use_original_unitypackage" },
+    });
+    const context = { provider, productVersion: "0.4.2", platform: "win32" as const, rendererUrl };
+
+    const modeResponse = await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-wh-mode",
+        method: "warehouse.setArtifactMode",
+        params: { warehouseItemId: "wh-1", mode: null, commandId: "cmd-1" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-wh-mode",
+      correlationId: "desktop-wh-mode",
+      kind: "command",
+      method: "warehouse.setArtifactMode",
+      commandId: "cmd-1",
+      params: { warehouseItemId: "wh-1", mode: null },
+    });
+    expect(modeResponse).toMatchObject({
+      ok: true,
+      value: { warehouseItemId: "wh-1", effectiveMode: "use_original_unitypackage" },
+    });
+
+    await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-wh-vpm",
+        method: "warehouse.generateVpm",
+        params: { warehouseItemId: "wh-1", commandId: "cmd-2" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-wh-vpm",
+      correlationId: "desktop-wh-vpm",
+      kind: "command",
+      method: "warehouse.generateVpm",
+      commandId: "cmd-2",
+      params: { warehouseItemId: "wh-1" },
+    });
+
+    await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-wh-del",
+        method: "warehouse.deleteOriginals",
+        params: { warehouseItemId: "wh-1", commandId: "cmd-3" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-wh-del",
+      correlationId: "desktop-wh-del",
+      kind: "command",
+      method: "warehouse.deleteOriginals",
+      commandId: "cmd-3",
+      params: { warehouseItemId: "wh-1" },
+    });
+  });
+});

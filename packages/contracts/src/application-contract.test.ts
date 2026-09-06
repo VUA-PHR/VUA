@@ -180,6 +180,62 @@ describe("bdl-queries v0.3 TS mirror", () => {
   });
 });
 
+describe("bdl-commands v0.1 application surface", () => {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: "request-whcmd",
+    correlationId: "correlation-whcmd",
+    kind: "command",
+  } as const;
+
+  it("accepts the three warehouse write commands within their closed sets", () => {
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-1", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: "generate_vpm" },
+    })).toBe(true);
+    // null = 清除条目级覆盖(回落「覆盖 ?? 全局默认」动态解析)
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-2", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: null },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-3", method: "warehouse.generateVpm",
+      params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-4", method: "warehouse.deleteOriginals",
+      params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(true);
+  });
+
+  it("rejects mode vocabulary escapes, closed-set violations, and missing command ids", () => {
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-5", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: "R-18" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-6", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: "" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-7", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-8", method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: null, extra: 1 },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "warehouse.generateVpm",
+      params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-9", method: "warehouse.deleteOriginals",
+      params: { warehouseItemId: "", mode: null },
+    })).toBe(false);
+  });
+});
+
 describe("amf-production v0.2 application surface", () => {
   const base = {
     contractVersion: APPLICATION_CONTRACT_VERSION,
