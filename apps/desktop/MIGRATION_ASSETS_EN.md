@@ -29,7 +29,7 @@ Minimal Electron host plus presentation shell; see the "Electron presentation mi
 
 ## Slice 2: full legacy presentation asset restoration (this slice)
 
-The remaining KIMI presentation assets (feature pages, application models, four-locale i18n, WebGL scenes, remaining primitives) and the five quality-gate scripts are migrated into the Electron shell. Scheduling remains governed by `docs/plans/development-outline` (the F2–F7 application-contract integrations proceed as planned; this slice restores presentation and pure models only, and fabricates no production data).
+The remaining KIMI presentation assets (feature pages, application models, four-locale i18n, WebGL scenes, remaining primitives) and the five quality-gate scripts are migrated into the Electron shell. Scheduling remains governed by `docs/development-outline_EN.md` (the F2–F7 application-contract integrations proceed as planned; this slice restores presentation and pure models only, and fabricates no production data).
 
 | Asset group | Target owner | Preserved in this slice | Explicitly rejected | Verification |
 | --- | --- | --- | --- | --- |
