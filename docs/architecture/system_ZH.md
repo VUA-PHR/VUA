@@ -86,10 +86,10 @@ Cargo workspace 当前只有一个成员：`crates/orchestrator`（约 26.8k 行
 | crate | 内容 | 说明 |
 | --- | --- | --- |
 | `orchestrator`（核心） | 任务运行时、取消/恢复、用例、域端口、应用契约类型、`material_types` 叶类型、`vpm_backend` 端口 trait | 单一应用核心 |
-| `bdl-store` | `bdl_store`、`bdl_queries`、BDL SQLite schema/迁移消费 | "AMF 私有"自此有结构强制 |
+| `bdl-store` | `bdl_store`、`bdl_queries`、`download_events`、BDL SQLite schema/迁移消费 | "AMF 私有"自此有结构强制 |
 | `unity-bridge` | `bridge`、`material_intake`/`material_exec`/`material_staging`/`material_task`、`staging_scaffold`、`local_vpm_artifact`、`production_documents` | 与 C# 包、Bridge schema 同生命周期 |
 | `provider-host` | `provider_host`、`process`、`provider_job` + `vua-orchestrator-provider` 二进制 | 独立进程边界；组合根 |
-| `acquisition` | `download_events`、`warehouse_import`、`warehouse_maintenance`、`artifact_inspection` | 下载/仓储域 |
+| `acquisition` | `warehouse_import`、`warehouse_maintenance`、`artifact_inspection` | 下载/仓储域 |
 | `project-manager` | `vpm_backend` 实现、`project_lock` | 外部工具适配 |
 
 依赖方向：域类型与端口留在核心，适配器 crate 依赖核心，provider-host 作为组合根依赖全部；

@@ -93,10 +93,10 @@ green):
 | Crate | Contents | Notes |
 | --- | --- | --- |
 | `orchestrator` (core) | task runtime, cancellation/recovery, use cases, domain ports, application contract types, `material_types` leaf types, `vpm_backend` port trait | single application core |
-| `bdl-store` | `bdl_store`, `bdl_queries`, BDL SQLite schema/migration consumption | "AMF-private" gains structural enforcement |
+| `bdl-store` | `bdl_store`, `bdl_queries`, `download_events`, BDL SQLite schema/migration consumption | "AMF-private" gains structural enforcement |
 | `unity-bridge` | `bridge`, `material_intake`/`material_exec`/`material_staging`/`material_task`, `staging_scaffold`, `local_vpm_artifact`, `production_documents` | same lifecycle as the C# package and Bridge schemas |
 | `provider-host` | `provider_host`, `process`, `provider_job` + the `vua-orchestrator-provider` binary | separate process boundary; composition root |
-| `acquisition` | `download_events`, `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain |
+| `acquisition` | `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain |
 | `project-manager` | `vpm_backend` implementation, `project_lock` | external tool adapters |
 
 Dependency direction: domain types and ports stay in the core; adapter crates depend on the core;
