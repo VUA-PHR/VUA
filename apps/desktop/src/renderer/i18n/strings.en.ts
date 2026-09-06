@@ -1413,6 +1413,8 @@ rolled_back: "Rolled back",
   dev: {
     tag: "DEV",
     aria: "Dev scenario switch",
+    expandAria: "Expand dev scenario switch",
+    collapseAria: "Collapse dev scenario switch",
     demoMixed: "Demo · mixed",
     demoAllGreen: "Demo · all green",
     demoWorkshop: "Demo · workshop",
