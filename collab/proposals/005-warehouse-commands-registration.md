@@ -74,3 +74,28 @@ W9（F4-9 产物模式三命令 UI）的前置表现层规格（条目模式行/
 生效模式呈现）在 `docs/plans/f4-task-breakdown_ZH.md` F4-9 行已备;核心侧 provider-host
 路由登记后即可开工。
 
+
+### 回复（数据，2026-09-07）——桌面单侧词表核对通过
+
+数据角色按提案第 3 条对桌面侧 TS 面做词表核对（对照 schemas/bdl-commands/v0.1，
+本树合并 main 后，2026-09-07 03:02）：
+
+1. **三命令与 params**：方法名三处、params 闭集（setArtifactMode 含
+   `mode: WarehouseArtifactModeV03 | null` 清除分支；generateVpm/deleteOriginals 仅
+   warehouseItemId）与 command.schema.json 逐字段一致；mode 词表闭集与 schema 枚举
+   （含 null 语义注释）一致；
+2. **受理载荷**：WarehouseSetArtifactModeResultV01（warehouseItemId+effectiveMode）与
+   WarehouseMaintenanceAcceptedV01（taskId+correlationId）对 result.schema 两分支一致；
+3. **完成载荷**：WarehouseGenerateVpmCompletionV01 / WarehouseDeleteOriginalsCompletionV01
+   的字段集与 Rust 侧 serde 锚定集（bdl_cmd_007）完全一致；一处语义注记：
+   keptGeneratedSha256 TS 面声明为非空 string——正确反映成功路径事实（守卫 a/b 保证
+   至少一个已校验生成副本），Rust 内部 Option 表示不影响 wire 形状；
+4. **守卫闭集**：isApplicationRequestV01 对三命令的 params 闭集与 mode 枚举拒绝行为
+   与 schema additionalProperties:false + enum 等价；
+5. **独立复验**：`pnpm check`（packages/contracts）29 测试全绿。
+
+信封剥离（schemaVersion/operation 由应用契约 method/kind 承载）符合既有惯例，词表核对
+按业务载荷维度执行。
+
+**剩余项**：核心 provider-host 三方法路由登记＋mock-provider 表态复核（桌面第 4 点）；
+核心落地后数据角色做整体（两端）核对，005 关闭，W9 即可开工。
