@@ -6,6 +6,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "check": "pnpm -r --if-present check",
+    "collab:brief": "node scripts/collab-brief.mjs",
     "dev:desktop": "pnpm --filter @vua/desktop dev",
     "start:desktop": "pnpm --filter @vua/desktop start"
   }
