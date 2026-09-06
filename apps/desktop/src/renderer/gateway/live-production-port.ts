@@ -10,7 +10,7 @@ import { projectWorkflowRunState, type ProductionTaskRole } from "./contract-pro
 import type {
   BuildRecord,
   BuildRecordAuthorityStatus,
-  BuildRecordFacts,
+  BuildRecordEvidenceSummary,
   BuildRecordView,
   InspectionFinding,
   InspectionReport,
@@ -20,7 +20,8 @@ import type {
   ModelProductionPort,
   ModelProductionView,
   PlanDiff,
-  PlanStage,
+  PlanRisk,
+  PlanRiskChoice,
   PlanView,
   ProductionIntentResult,
   ProductionPlan,
@@ -29,6 +30,7 @@ import type {
   RecoverDecision,
   SourceIntake,
 } from "./model-production-port.ts";
+import { sourceIntakes } from "./model-production-port.ts";
 import { liveWorkshopView } from "./production-workshop-view.ts";
 import { workflowStages, type WorkflowStage } from "./workflow.ts";
 import type { GatewayClient, GatewayClientError } from "./gateway-client.ts";
@@ -70,10 +72,14 @@ interface RunRecord {
   readonly tasks: readonly TrackedTask[];
   /** 各任务最近一次权威快照(task.get 回执) */
   readonly snapshots: ReadonlyMap<string, TaskSnapshotV01>;
+  /** 检查域身份(v0.2:startInspection 回执签发,文档按它直取,不再以任务 id 代用) */
+  readonly inspectionId: string | null;
+  /** 计划域身份(v0.2:requestPlan 回执签发) */
+  readonly planId: string | null;
   readonly inspection: InspectionReport | null;
   readonly plan: ProductionPlan | null;
   readonly buildRecord: BuildRecord | null;
-  /** 查询构建记录的引用(计划任务 id;应用侧按 planId 派生 recordId) */
+  /** 查询构建记录的引用(计划域身份;记录按 planId 别名可取) */
   readonly recordRef: string | null;
   readonly cancelled: boolean;
   /** 确认已过期的运行级事实(stale_revision 拒绝;九态无此表达) */
@@ -131,6 +137,8 @@ function rejectReasonFor(error: GatewayClientError): ProductionRejectReason | "u
   const map: Readonly<Record<string, ProductionRejectReason>> = {
     "vua.production.plan_mismatch": "stale_revision",
     "vua.production.not_recoverable": "not_recoverable",
+    // v0.2:领域身份存在性统一词(record_not_found);任务面未知引用同义
+    "vua.production.record_not_found": "unknown_ref",
     "vua.task.not_found": "unknown_ref",
   };
   return map[error.error.code] ?? "unavailable";
@@ -178,19 +186,30 @@ function inspectionReportFrom(payload: Record<string, unknown>, source: Material
   };
 }
 
+/** v0.2 计划文档收敛:stages 为工作流阶段词表,risks 为标注对象 */
 function planFrom(payload: Record<string, unknown>, planId: string): ProductionPlan | null {
   const revision = payload["revision"];
-  if (typeof revision !== "number" || !Number.isSafeInteger(revision) || revision < 0) return null;
-  const stages: PlanStage[] = [];
-  for (const entry of asArray(payload["stages"])) {
-    const stage = asRecord(entry);
-    if (stage === null) continue;
-    const stageName = stage["stage"];
-    if (!isWorkflowStage(stageName)) continue;
-    stages.push({
-      id: asString(stage["id"]) ?? `stage-${stages.length}`,
-      stage: stageName,
-      summary: asString(stage["summary"]) ?? "",
+  if (typeof revision !== "number" || !Number.isSafeInteger(revision) || revision < 1) return null;
+  const mode = payload["mode"];
+  if (typeof mode !== "string" || !(sourceIntakes as readonly string[]).includes(mode)) return null;
+  const projectId = asString(payload["projectId"]);
+  const projectFingerprint = asString(payload["projectFingerprint"]);
+  const riskDecisionRequired = payload["riskDecisionRequired"];
+  if (projectId === null || projectFingerprint === null || typeof riskDecisionRequired !== "boolean") {
+    return null;
+  }
+  const stages = stagesFrom(payload["stages"]);
+  const risks: PlanRisk[] = [];
+  for (const entry of asArray(payload["risks"])) {
+    const risk = asRecord(entry);
+    if (risk === null) continue;
+    const kind = risk["kind"];
+    if (typeof kind !== "string" || !FINDING_KINDS.includes(kind)) continue;
+    risks.push({
+      kind: kind as PlanRisk["kind"],
+      summary: asString(risk["summary"]) ?? "",
+      recoverable: risk["recoverable"] === true,
+      retryable: risk["retryable"] === true,
     });
   }
   const diffs: PlanDiff[] = [];
@@ -210,33 +229,67 @@ function planFrom(payload: Record<string, unknown>, planId: string): ProductionP
     planId: asString(payload["planId"]) ?? planId,
     revision,
     inspectionId: asString(payload["inspectionId"]) ?? "",
+    mode: mode as ProductionPlan["mode"],
+    projectId,
+    projectFingerprint,
     stages,
-    risks: asArray(payload["risks"]).filter((risk): risk is string => typeof risk === "string"),
+    riskDecisionRequired,
+    risks,
     // 无真实总量来源时 null,界面不得注水(§6.3)
     estimatedDurationMs: typeof estimated === "number" && Number.isSafeInteger(estimated) ? estimated : null,
     diffs,
   };
 }
 
+/** v0.2 构建记录收敛:evidenceSummary 四节,未尝试节 null 锚 */
 function buildRecordFrom(payload: Record<string, unknown>, ref: string): BuildRecord | null {
   const status = payload["status"];
   if (typeof status !== "string" || !RECORD_STATUS.includes(status as BuildRecordAuthorityStatus)) return null;
-  const factsPayload = asRecord(payload["facts"]);
-  if (factsPayload === null) return null;
-  const factValue = (key: keyof BuildRecordFacts): string => asString(factsPayload[key]) ?? "";
+  const mode = payload["mode"];
+  if (typeof mode !== "string" || !(sourceIntakes as readonly string[]).includes(mode)) return null;
+  const evidence = asRecord(payload["evidenceSummary"]);
+  if (evidence === null) return null;
+  const snapshot = asRecord(evidence["snapshot"]);
+  const bridge = asRecord(evidence["bridge"]);
+  const localVpm = asRecord(evidence["localVpm"]);
+  const validation = asRecord(evidence["validation"]);
+  if (snapshot === null || bridge === null || localVpm === null || validation === null) return null;
+  const validationStatus = validation["status"];
+  if (validationStatus !== "passed" && validationStatus !== "failed" && validationStatus !== "skipped") {
+    return null;
+  }
+  const nullableBoolean = (value: unknown): boolean | null => (value === null ? null : value === true);
   const restoreSucceeded = payload["restoreSucceeded"];
+  const evidenceSummary: BuildRecordEvidenceSummary = {
+    snapshot: {
+      attempted: snapshot["attempted"] === true,
+      succeeded: nullableBoolean(snapshot["succeeded"]),
+    },
+    bridge: {
+      jobsRun: typeof bridge["jobsRun"] === "number" && Number.isSafeInteger(bridge["jobsRun"]) && bridge["jobsRun"] >= 0
+        ? bridge["jobsRun"]
+        : 0,
+      allSucceeded: nullableBoolean(bridge["allSucceeded"]),
+      lastOperation: asString(bridge["lastOperation"]),
+    },
+    localVpm: {
+      attempted: localVpm["attempted"] === true,
+      published: nullableBoolean(localVpm["published"]),
+      packageId: asString(localVpm["packageId"]),
+    },
+    validation: { status: validationStatus },
+  };
   return {
     recordId: asString(payload["recordId"]) ?? ref,
+    taskId: asString(payload["taskId"]) ?? "",
+    planId: asString(payload["planId"]) ?? "",
+    mode: mode as BuildRecord["mode"],
     status: status as BuildRecordAuthorityStatus,
     restoreAttempted: payload["restoreAttempted"] === true,
-    ...(restoreSucceeded === undefined ? {} : { restoreSucceeded: restoreSucceeded === true }),
+    restoreSucceeded: restoreSucceeded === undefined ? null : restoreSucceeded === true,
     stages: stagesFrom(payload["stages"]),
-    facts: {
-      snapshot: factValue("snapshot"),
-      bridgeJob: factValue("bridgeJob"),
-      localVpm: factValue("localVpm"),
-      validation: factValue("validation"),
-    },
+    evidenceSummary,
+    startedAt: asString(payload["startedAt"]) ?? "",
     finishedAt: asString(payload["finishedAt"]) ?? "",
   };
 }
@@ -321,8 +374,9 @@ export function createLiveModelProduction(
     // 终态成功后按引用补齐内嵌文档(失败保留上一视图,等下一次事件)
     if (task.state === "succeeded" || task.state === "succeeded_with_warnings") {
       const role = run.tasks.find((entry) => entry.taskId === taskId)?.role;
-      if (role === "inspect") void refreshInspection(taskId);
-      if (role === "plan") void refreshPlan(taskId);
+      // v0.2:文档按回执签发的域身份直取(不再以任务 id 代用)
+      if (role === "inspect" && run.inspectionId !== null) void refreshInspection(run.inspectionId);
+      if (role === "plan" && run.planId !== null) void refreshPlan(run.planId);
       if ((role === "execute" || role === "recover") && run.recordRef !== null) {
         void refreshRecord(run.recordRef);
       }
@@ -393,12 +447,17 @@ export function createLiveModelProduction(
     }
     const task = taskFromValue(result.value);
     if (task === null) return { kind: "unavailable" };
+    // v0.2 域身份:startInspection/requestPlan 回执各自签发文档引用
+    const issuedInspectionId = asString(valueFields(result.value)["inspectionId"]);
+    const issuedPlanId = asString(valueFields(result.value)["planId"]);
     if (beginRun !== null) {
       run = {
         runId: task.correlationId,
         source: beginRun,
         tasks: [],
         snapshots: new Map(),
+        inspectionId: issuedInspectionId,
+        planId: null,
         inspection: null,
         plan: null,
         buildRecord: null,
@@ -410,6 +469,7 @@ export function createLiveModelProduction(
     } else if (run !== null) {
       // 新命令推进运行:确认过期事实随之解除(重新确认/恢复是显式用户动作)
       run = { ...run, expired: false };
+      run = role === "plan" ? { ...run, planId: issuedPlanId } : run;
       run = role === "execute" ? { ...run, recordRef: params["planId"] as string } : run;
     }
     const base = run ?? {
@@ -417,6 +477,8 @@ export function createLiveModelProduction(
       source: { materialId: "", intake: "direct_unity_package", displayName: "" },
       tasks: [],
       snapshots: new Map<string, TaskSnapshotV01>(),
+      inspectionId: null,
+      planId: null,
       inspection: null,
       plan: null,
       buildRecord: null,
@@ -432,6 +494,13 @@ export function createLiveModelProduction(
     };
     pushLog(task.updatedAt);
     emit();
+    // v0.2 内联完成:startInspection/requestPlan 的回执任务可能已 succeeded,
+    // 而其 completed 事件在 invoke 返回前已发出(当时 run 尚未登记)——
+    // 此处补一次文档回填,不依赖事件时序;引用用回执签发的域身份
+    if (task.state === "succeeded" || task.state === "succeeded_with_warnings") {
+      if (role === "inspect" && run.inspectionId !== null) void refreshInspection(run.inspectionId);
+      if (role === "plan" && issuedPlanId !== null) void refreshPlan(issuedPlanId);
+    }
     return { kind: "ok", taskId: task.taskId, run: runView() };
   };
 
@@ -469,9 +538,8 @@ export function createLiveModelProduction(
     getInspection: async (inspectionId): Promise<InspectionView> => {
       const result = await invoke("production.getInspection", { inspectionId });
       const payload = result.ok ? asRecord(valueFields(result.value)["inspection"]) : null;
-      const source = run !== null && run.tasks.some((entry) => entry.taskId === inspectionId)
-        ? run.source
-        : null;
+      // source 关联按域身份比对(v0.2):本运行签发的检查才呈现本运行来源
+      const source = run !== null && run.inspectionId === inspectionId ? run.source : null;
       const report = payload !== null && source !== null ? inspectionReportFrom(payload, source) : null;
       return report === null
         ? { schemaVersion: 1, kind: "not-connected" }
@@ -481,7 +549,12 @@ export function createLiveModelProduction(
     requestPlan: (inspectionId: string) =>
       submitIntent(
         "production.requestPlan",
-        { inspectionId, commandId: crypto.randomUUID() },
+        {
+          inspectionId,
+          commandId: crypto.randomUUID(),
+          // v0.2:mode 是用户在素材入口的真实决策,从运行已选素材的 intake 内取
+          mode: run?.source.intake ?? "direct_unity_package",
+        },
         "plan",
         null,
       ),
@@ -495,10 +568,16 @@ export function createLiveModelProduction(
         : { schemaVersion: 1, kind: "plan", plan };
     },
 
-    confirmPlan: (planId: string, revision: number) =>
+    confirmPlan: (planId: string, revision: number, riskChoice: PlanRiskChoice, rememberForSession?: boolean) =>
       submitIntent(
         "production.confirmPlan",
-        { planId, commandId: crypto.randomUUID(), observedRevision: revision },
+        {
+          planId,
+          commandId: crypto.randomUUID(),
+          observedRevision: revision,
+          riskChoice,
+          ...(rememberForSession === undefined ? {} : { rememberForSession }),
+        },
         "execute",
         null,
       ),

@@ -303,40 +303,30 @@ export const fixtureStrings = {
       },
     },
     plan: {
-      stageSummaries: {
-        snapshot: "执行前创建并验证项目快照。",
-        execute: "导入素材、绑定骨骼并生成换装菜单与参数。",
-        validate: "校验引用、菜单与参数一致性。",
-      },
       risks: [
-        "换装菜单合并会改动现有参数,已规划快照回退路径。",
-        "预计额外占用磁盘约 300 MB。",
+        {
+          kind: "conflict",
+          summary: "换装菜单合并会改动现有参数,已规划快照回退路径。",
+          recoverable: true,
+          retryable: true,
+        },
+        {
+          kind: "missing",
+          summary: "预计额外占用磁盘约 300 MB。",
+          recoverable: true,
+          retryable: true,
+        },
       ],
       diffs: {
         added: "为缺失的可选配件纹理生成占位引用,不阻断构建。",
         resolved: "命名冲突经重命名「OutfitToggle_v2」规避。",
       },
     },
-    /** Build Record 四类证据(快照/Bridge 作业/本地 VPM/验证;不透明载荷) */
-    recordFacts: {
-      completed: {
-        snapshot: "快照 r8 已创建并通过完整性校验(演示)。",
-        bridgeJob: "Bridge 作业 bridge-job-demo-0142 已完成(演示)。",
-        localVpm: "本地包 summer-uniform-local-1.0.0 安装成功(演示)。",
-        validation: "验证通过:引用、菜单与参数一致(演示)。",
-      },
-      rolledBack: {
-        snapshot: "已恢复执行前快照 r8,变更全部回退(演示)。",
-        bridgeJob: "Bridge 作业 bridge-job-demo-0142 已回退(演示)。",
-        localVpm: "本地包未发生变更(演示)。",
-        validation: "回滚后校验通过:项目回到执行前状态(演示)。",
-      },
-      rollbackFailed: {
-        snapshot: "恢复快照 r8 失败:快照校验和不匹配(演示)。",
-        bridgeJob: "Bridge 作业 bridge-job-demo-0142 回退中断(演示)。",
-        localVpm: "本地包状态未知,未再变更(演示)。",
-        validation: "回滚未完成:项目状态需要人工核对(演示)。",
-      },
+    /** Build Record 末次操作小字(v0.2 evidenceSummary;结构化布尔由代码承载) */
+    recordEvidence: {
+      completed: "Bridge 作业 bridge-job-demo-0142 已完成(演示)。",
+      rolledBack: "Bridge 作业 bridge-job-demo-0142 已回退(演示)。",
+      rollbackFailed: "Bridge 作业 bridge-job-demo-0142 回退中断(演示)。",
     },
     /** 生产命令任务标题(任务中心数据负载) */
     tasks: {

@@ -192,13 +192,29 @@ export interface InspectionReport {
   readonly inspectedAt: string;
 }
 
-/** 计划阶段:每个阶段引用工作流阶段词表(与 strings.workflowStage 一致) */
-export interface PlanStage {
-  readonly id: string;
-  readonly stage: WorkflowStage;
-  /** 阶段动作说明(数据负载) */
+/** 计划风险(v0.2 计划文档;与检查发现同形,无独立 id) */
+export interface PlanRisk {
+  readonly kind: InspectionFindingKind;
+  /** 风险摘要(数据负载) */
   readonly summary: string;
+  readonly recoverable: boolean;
+  readonly retryable: boolean;
 }
+
+/**
+ * 风险决策四枚举(amf-production v0.2 $defs.riskChoice;B 侧
+ * RiskDecisionChoice 权威词表):计划审阅的风险决策控件呈现,
+ * rememberForSession 为可选的会话内记忆。
+ */
+export type PlanRiskChoice = "snapshot_and_continue" | "continue" | "cancel" | "not_required";
+
+/** 全集:与 strings.productionFlow.plan.riskChoice 一一对应 */
+export const planRiskChoices: readonly PlanRiskChoice[] = [
+  "snapshot_and_continue",
+  "continue",
+  "cancel",
+  "not_required",
+];
 
 /** 计划 vs 检查结论的结构化差异种类(草案:差异以结构化字段表达,不由前端推断) */
 export type PlanDiffKind = "added" | "changed" | "resolved";
@@ -213,16 +229,27 @@ export interface PlanDiff {
   readonly summary: string;
 }
 
-/** 执行计划负载(getPlan 查询面与运行视图内嵌共用) */
+/**
+ * 执行计划负载(getPlan 查询面与运行视图内嵌共用;amf-production v0.2
+ * 计划文档面):阶段引用工作流阶段词表,风险带 recoverable/retryable 标注。
+ */
 export interface ProductionPlan {
   readonly planId: string;
   /** 确认绑定:计划变化即 revision 递增,旧 revision 的确认失效(草案确认纪律) */
   readonly revision: number;
   /** 本计划基于的检查结果 */
   readonly inspectionId: string;
-  readonly stages: readonly PlanStage[];
+  /** 双素材模式(用户在素材入口做出的真实决策) */
+  readonly mode: SourceIntake;
+  /** 项目身份(VUA 管辖的执行上下文) */
+  readonly projectId: string;
+  readonly projectFingerprint: string;
+  /** 将执行的工作流阶段(unity-bridge 词表) */
+  readonly stages: readonly WorkflowStage[];
+  /** 该计划是否要求用户做出风险决策(驱动审阅卡的风险决策控件) */
+  readonly riskDecisionRequired: boolean;
   /** 风险清单(数据负载) */
-  readonly risks: readonly string[];
+  readonly risks: readonly PlanRisk[];
   /** 预估时长(ms);无真实总量来源时为 null,界面不得注水(§6.3) */
   readonly estimatedDurationMs: number | null;
   readonly diffs: readonly PlanDiff[];
@@ -256,27 +283,46 @@ export const buildRecordDisplayStatuses: readonly BuildRecordDisplayStatus[] = [
   "rollback_failed",
 ];
 
-/** 四类证据(快照 / Bridge 作业 / 本地 VPM / 验证):不透明载荷,界面原样展示不解析 */
-export interface BuildRecordFacts {
-  readonly snapshot: string;
-  readonly bridgeJob: string;
-  readonly localVpm: string;
-  readonly validation: string;
+/**
+ * evidenceSummary 四节(v0.2 表现安全投影;快照 / Bridge 作业 / 本地 VPM /
+ * 验证):attempted 为 false 的节其余字段为 null 锚——未尝试即无事实,
+ * 界面如实呈现空槽。
+ */
+export interface BuildRecordEvidenceSummary {
+  readonly snapshot: { readonly attempted: boolean; readonly succeeded: boolean | null };
+  readonly bridge: {
+    readonly jobsRun: number;
+    readonly allSucceeded: boolean | null;
+    readonly lastOperation: string | null;
+  };
+  readonly localVpm: {
+    readonly attempted: boolean;
+    readonly published: boolean | null;
+    /** 保留字段:现无跳转目标(Release 详情属后续切片),不作链接 */
+    readonly packageId: string | null;
+  };
+  readonly validation: { readonly status: "passed" | "failed" | "skipped" };
 }
 
-/** 最小 Build Record 负载(结果、阶段、四类证据) */
+/** Build Record 负载(v0.2:结果、阶段、evidenceSummary、恢复字段) */
 export interface BuildRecord {
   readonly recordId: string;
+  /** 产生记录的执行/恢复任务 */
+  readonly taskId: string;
+  /** 记录归属的计划 */
+  readonly planId: string;
+  readonly mode: SourceIntake;
   /** B 权威状态(五态);显示状态经 projectBuildRecordDisplayStatus 投影 */
   readonly status: BuildRecordAuthorityStatus;
-  /** 恢复证据:是否尝试过回滚/恢复突变(决定 failed/cancelled 的显示分流) */
-  readonly restoreAttempted: boolean;
-  /** 仅 restoreAttempted 时存在:回滚突变本身是否成功 */
-  readonly restoreSucceeded?: boolean;
   /** 实际执行过的工作流阶段 */
   readonly stages: readonly WorkflowStage[];
-  readonly facts: BuildRecordFacts;
+  readonly evidenceSummary: BuildRecordEvidenceSummary;
+  /** 恢复证据:是否尝试过回滚/恢复突变(决定 failed/cancelled 的显示分流) */
+  readonly restoreAttempted: boolean;
+  /** 仅 restoreAttempted 时非 null:回滚突变本身是否成功 */
+  readonly restoreSucceeded: boolean | null;
   /** ISO 8601 */
+  readonly startedAt: string;
   readonly finishedAt: string;
 }
 
@@ -289,7 +335,7 @@ export interface BuildRecord {
 export function projectBuildRecordDisplayStatus(
   status: BuildRecordAuthorityStatus,
   restoreAttempted: boolean,
-  restoreSucceeded: boolean | undefined,
+  restoreSucceeded: boolean | null,
 ): BuildRecordDisplayStatus {
   if (status === "succeeded" || status === "succeeded_with_warnings" || status === "recovered") {
     return "completed";
@@ -409,12 +455,25 @@ export interface ModelProductionPort {
   startInspection(source: MaterialRef): Promise<ProductionIntentResult>;
   /** F3:读取一份检查结果(证据、可计划性结论) */
   getInspection(inspectionId: string): Promise<InspectionView>;
-  /** F3:基于检查结果生成执行计划(阶段、风险、预估;创建任务) */
+  /**
+   * F3:基于检查结果生成执行计划(阶段、风险、预估;创建任务)。
+   * v0.2:mode 携带双素材入口的真实用户决策(live 端口从运行已选素材的
+   * intake 内取,调用方不重复传递)。
+   */
   requestPlan(inspectionId: string): Promise<ProductionIntentResult>;
   /** F3:读取一份计划供审阅 */
   getPlan(planId: string): Promise<PlanView>;
-  /** F3:确认计划(绑定 revision;过期返回 rejected/stale_revision;创建执行任务) */
-  confirmPlan(planId: string, revision: number): Promise<ProductionIntentResult>;
+  /**
+   * F3:确认计划(绑定 revision;过期返回 rejected/stale_revision;创建执行任务)。
+   * v0.2:riskChoice 必填(计划审阅的风险决策控件),rememberForSession
+   * 可选勾选。
+   */
+  confirmPlan(
+    planId: string,
+    revision: number,
+    riskChoice: PlanRiskChoice,
+    rememberForSession?: boolean,
+  ): Promise<ProductionIntentResult>;
   /** F3:对 failed_recoverable / expired 运行执行恢复(携带用户决定 ID;创建任务) */
   recover(taskId: string, decision: RecoverDecision): Promise<ProductionIntentResult>;
   /** F3:读取最小 Build Record(结果、阶段、证据) */

@@ -10,12 +10,12 @@ import { fixtureReleaseWall } from "./fixture-release.ts";
 import { workshopStagesFor } from "./production-workshop-view.ts";
 import type {
   BuildRecord,
-  BuildRecordFacts,
   InspectionReport,
   MaterialRef,
   ModelProductionCapabilities,
   ModelProductionPort,
   ModelProductionView,
+  PlanRiskChoice,
   ProductionIntentResult,
   ProductionPlan,
   ProductionRejectReason,
@@ -117,12 +117,12 @@ function planFor(inspectionId: string, revision: number): ProductionPlan {
     planId: "fixture-plan-1",
     revision,
     inspectionId,
-    stages: [
-      { id: "s-snapshot", stage: "snapshot", summary: copy.plan.stageSummaries.snapshot },
-      { id: "s-execute", stage: "execute", summary: copy.plan.stageSummaries.execute },
-      { id: "s-validate", stage: "validate", summary: copy.plan.stageSummaries.validate },
-    ],
-    risks: [...copy.plan.risks],
+    mode: "direct_unity_package",
+    projectId: "fixture-project",
+    projectFingerprint: "fixture-project-fingerprint",
+    stages: ["snapshot", "execute", "validate"],
+    riskDecisionRequired: true,
+    risks: copy.plan.risks.map((risk) => ({ ...risk })),
     estimatedDurationMs: 8 * 60_000,
     diffs: [
       { id: "d-added", kind: "added", summary: copy.plan.diffs.added },
@@ -131,19 +131,49 @@ function planFor(inspectionId: string, revision: number): ProductionPlan {
   };
 }
 
+/** evidenceSummary 四节(结构化布尔由代码承载;末次操作小字是数据负载) */
+function evidenceFor(kind: keyof typeof copy.recordEvidence): BuildRecord["evidenceSummary"] {
+  const lastOperation = copy.recordEvidence[kind];
+  if (kind === "completed") {
+    return {
+      snapshot: { attempted: true, succeeded: true },
+      bridge: { jobsRun: 1, allSucceeded: true, lastOperation },
+      localVpm: { attempted: true, published: true, packageId: "summer-uniform-local-1.0.0" },
+      validation: { status: "passed" },
+    };
+  }
+  if (kind === "rolledBack") {
+    return {
+      snapshot: { attempted: true, succeeded: true },
+      bridge: { jobsRun: 1, allSucceeded: true, lastOperation },
+      localVpm: { attempted: false, published: null, packageId: null },
+      validation: { status: "passed" },
+    };
+  }
+  return {
+    snapshot: { attempted: true, succeeded: false },
+    bridge: { jobsRun: 1, allSucceeded: false, lastOperation },
+    localVpm: { attempted: false, published: null, packageId: null },
+    validation: { status: "skipped" },
+  };
+}
+
 function recordFor(
   status: BuildRecord["status"],
-  restore: Pick<BuildRecord, "restoreAttempted"> &
-    Partial<Pick<BuildRecord, "restoreSucceeded">>,
-  facts: BuildRecordFacts,
+  restore: Pick<BuildRecord, "restoreAttempted" | "restoreSucceeded">,
+  evidenceKind: keyof typeof copy.recordEvidence,
   stages: BuildRecord["stages"],
 ): BuildRecord {
   return {
     recordId: "fixture-record-1",
+    taskId: "fixture-task-execute-1",
+    planId: "fixture-plan-1",
+    mode: "direct_unity_package",
     status,
     ...restore,
     stages,
-    facts,
+    evidenceSummary: evidenceFor(evidenceKind),
+    startedAt: "2026-09-04T10:25:10+08:00",
     finishedAt: "2026-09-04T10:33:10+08:00",
   };
 }
@@ -151,22 +181,22 @@ function recordFor(
 const completedRecord = (): BuildRecord =>
   recordFor(
     "succeeded",
-    { restoreAttempted: false },
-    copy.recordFacts.completed,
+    { restoreAttempted: false, restoreSucceeded: null },
+    "completed",
     ["snapshot", "execute", "validate"],
   );
 const rolledBackRecord = (): BuildRecord =>
   recordFor(
     "failed",
     { restoreAttempted: true, restoreSucceeded: true },
-    copy.recordFacts.rolledBack,
+    "rolledBack",
     ["snapshot", "execute", "recover"],
   );
 const rollbackFailedRecord = (): BuildRecord =>
   recordFor(
     "failed",
     { restoreAttempted: true, restoreSucceeded: false },
-    copy.recordFacts.rollbackFailed,
+    "rollbackFailed",
     ["snapshot", "execute", "recover"],
   );
 
@@ -500,7 +530,12 @@ export function createFixtureProduction(
     return { kind: "ok", taskId, run: currentRun };
   };
 
-  const confirmPlan = (planId: string, revision: number): ProductionIntentResult => {
+  const confirmPlan = (
+    planId: string,
+    revision: number,
+    _riskChoice: PlanRiskChoice,
+    _rememberForSession?: boolean,
+  ): ProductionIntentResult => {
     if (currentRun.kind !== "run" || currentRun.plan?.planId !== planId) {
       return rejected("unknown_ref");
     }
@@ -597,7 +632,8 @@ export function createFixtureProduction(
           ? { schemaVersion: 1 as const, kind: "plan" as const, plan: currentRun.plan }
           : { schemaVersion: 1 as const, kind: "not-connected" as const },
       ),
-    confirmPlan: (planId, revision) => Promise.resolve(confirmPlan(planId, revision)),
+    confirmPlan: (planId, revision, riskChoice, rememberForSession) =>
+      Promise.resolve(confirmPlan(planId, revision, riskChoice, rememberForSession)),
     recover: (taskId, decision) => Promise.resolve(recover(taskId, decision)),
     getBuildRecord: (recordId) =>
       Promise.resolve(

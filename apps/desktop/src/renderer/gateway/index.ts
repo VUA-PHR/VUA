@@ -60,6 +60,7 @@ export {
   projectBuildRecordDisplayStatus,
   inspectionFindingKinds,
   planDiffKinds,
+  planRiskChoices,
   plannabilityStates,
   productionRejectReasons,
   recoverDecisionKinds,
@@ -67,7 +68,7 @@ export {
 } from "./model-production-port.ts";
 export type {
   BuildRecord,
-  BuildRecordFacts,
+  BuildRecordEvidenceSummary,
   BuildRecordAuthorityStatus,
   BuildRecordDisplayStatus,
   BuildRecordView,
@@ -81,7 +82,8 @@ export type {
   ModelProductionView,
   PlanDiff,
   PlanDiffKind,
-  PlanStage,
+  PlanRisk,
+  PlanRiskChoice,
   PlanView,
   Plannability,
   ProductionIntentResult,

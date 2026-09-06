@@ -25,9 +25,32 @@ const lastAppliedIntentSeq = new Map<string, number>();
 let shutdownStarted = false;
 
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
- *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时解析回路径 */
+ *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组 */
 const materialSources = new Map<string, { path: string; displayName: string }>();
 let materialSourceSequence = 0;
+
+/**
+ * 生产上下文(amf-production v0.2,M3 纵向):projectRoot/artifactOutputRoot/
+ * projectId 是 VUA 管辖配置的确定性路径(合成 Avatar 纵向,位于用户数据目录,
+ * 渲染层不可见);sourceFolder 是用户显式选取的素材路径。四元组随
+ * startInspection 一次性转交 AMF,此后任何请求面不再出现路径。
+ */
+function resolveProductionContext(refId: string): {
+  sourceFolder: string;
+  projectRoot: string;
+  artifactOutputRoot: string;
+  projectId: string;
+} | undefined {
+  const source = materialSources.get(refId);
+  if (source === undefined) return undefined;
+  const productionRoot = path.join(app.getPath("userData"), "production");
+  return {
+    sourceFolder: source.path,
+    projectRoot: path.join(productionRoot, "synthetic-avatar-project"),
+    artifactOutputRoot: path.join(productionRoot, "artifacts"),
+    projectId: "vua-m3-synthetic-avatar",
+  };
+}
 
 function assertLocalSender(senderUrl: string): void {
   if (!isAllowedLocalSender(senderUrl, rendererUrl)) throw new Error("untrusted renderer origin");
@@ -91,12 +114,7 @@ function registerIpc(provider: OrchestratorProviderV01): void {
       productVersion: app.getVersion(),
       platform: process.platform as "win32" | "darwin" | "linux",
       rendererUrl,
-      resolveMaterialSource: (refId) => {
-        const source = materialSources.get(refId);
-        return source === undefined
-          ? undefined
-          : { sourceFolder: source.path, intake: "direct_unity_package" };
-      },
+      resolveMaterialSource: resolveProductionContext,
     },
     senderFrameUrl(event),
     request,

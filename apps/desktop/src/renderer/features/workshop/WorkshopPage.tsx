@@ -14,6 +14,7 @@ import {
   useWorkshopView,
   type CapabilityReport,
   type MaterialRef,
+  type PlanRiskChoice,
   type ProductionIntentResult,
   type ProductionRejectReason,
   type RecoverDecisionKind,
@@ -588,10 +589,12 @@ export function WorkshopPage({
         const inspectionId = productionRun.inspection.inspectionId;
         runFlowIntent("plan", () => gateway.modelProduction.requestPlan(inspectionId));
       }}
-      onConfirmPlan={() => {
+      onConfirmPlan={(riskChoice: PlanRiskChoice, rememberForSession: boolean) => {
         if (productionRun.kind !== "run" || productionRun.plan === null) return;
         const { planId, revision } = productionRun.plan;
-        runFlowIntent("confirm", () => gateway.modelProduction.confirmPlan(planId, revision));
+        // v0.2:确认绑定 revision + 风险决策(必填);rememberForSession 可选
+        runFlowIntent("confirm", () =>
+          gateway.modelProduction.confirmPlan(planId, revision, riskChoice, rememberForSession));
       }}
       onRecover={(kind: RecoverDecisionKind) => {
         if (productionRun.kind !== "run") return;

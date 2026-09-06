@@ -8,9 +8,12 @@ import {
   type ApplicationEventV01,
   type ApplicationRequestV01,
   type ApplicationResponseV01,
-  type CapabilityOperationV01,
-  type TaskCancellationResultV01,
   type ApplicationSuccessValueV01,
+  type BuildRecordDocumentV02,
+  type CapabilityOperationV01,
+  type InspectionDocumentV02,
+  type PlanDocumentV02,
+  type TaskCancellationResultV01,
   type TaskSnapshotV01,
   type TaskRecoveryDispositionV01,
   type TaskStateV01,
@@ -34,18 +37,45 @@ export interface MockProviderOptionsV01 {
   readonly tasks?: readonly TaskSnapshotV01[];
   readonly mutatingTaskIds?: readonly string[];
   readonly environment?: EnvironmentSnapshotV01;
+  /**
+   * confirmPlan/recover 受理后立即完成(镜像真实 worker 驱动到终态的语义,
+   * 供向量回放的 waitTerminal 使用)。默认 false:任务保持 queued,由调用方
+   * 经 commitTaskState 脚本化驱动(mock 既有测试纪律)。
+   */
+  readonly productionAutoComplete?: boolean;
 }
 
 /**
- * production 命令成功值(与 B 线 provider_host 同形:{ contractVersion, task };
- * 与 DemoTaskStartedV01 同一包装纪律)。文档查询(getInspection / getPlan /
- * getBuildRecord)按 get_task_payload 形状返回 { contractVersion, taskId,
- * state, inspection?/plan?/buildRecord?: 负载 | null }。
+ * production 命令成功值(amf-production v0.2,与 B 线 provider_host 同形):
+ * 命令回执 = { contractVersion, task } + 域身份(startInspection 附
+ * inspectionId;requestPlan 附 planId/revision);文档查询 = 任务事实 +
+ * 内嵌文档。域身份登记表(inspectionId/planId → 文档 + 绑定 + 任务)镜像
+ * B 侧 production_domain_records:路径四元组随 startInspection 绑定一次,
+ * 后续命令不再携带路径。
  */
 export interface ProductionTaskStartedV01 {
   readonly contractVersion: ApplicationContractVersion;
   readonly task: TaskSnapshotV01;
 }
+
+/** 域身份登记条目(模拟 B 侧 production_domain_records 行) */
+interface MockDomainRecord {
+  readonly kind: "inspection" | "plan";
+  readonly taskId: string;
+  readonly document: InspectionDocumentV02 | PlanDocumentV02;
+  /** 一次性绑定:startInspection = 四元组 + createdAt;requestPlan = 引用 + revision */
+  readonly binding: Record<string, unknown>;
+}
+
+const PRODUCTION_MODES_V02: readonly string[] = ["direct_unity_package", "local_reusable_vpm"];
+const PRODUCTION_RISK_CHOICES_V02: readonly string[] = [
+  "snapshot_and_continue",
+  "continue",
+  "cancel",
+  "not_required",
+];
+const INSPECTION_ID_PATTERN = /^insp-[0-9a-f]{16}$/;
+const PLAN_ID_PATTERN = /^plan-[0-9a-f]{16}$/;
 
 export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   readonly contractVersion = APPLICATION_CONTRACT_VERSION;
@@ -59,17 +89,19 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   readonly #commandResults = new Map<string, { taskId: string; result: TaskCancellationResultV01 }>();
   readonly #demoCommandResults = new Map<string, DemoTaskStartedV01>();
   #productionSequence = 0;
-  /** commandId → 已创建任务 id(幂等重放依据) */
-  #productionCommands = new Map<string, string>();
-  /** 检查文档(inspect 任务 id → 负载):冻结词表(production-use-case v0.1,
-   *  B 侧采纳渲染层词表)的合成 InspectionReport 形状 */
-  #inspectionDocs = new Map<string, Record<string, unknown>>();
-  /** 计划文档(plan 任务 id → 负载) */
-  #planDocs = new Map<string, Record<string, unknown>>();
-  /** 构建记录(plan 任务 id → 负载):合成记录随计划就位;真实写入属执行器 */
-  #buildRecords = new Map<string, Record<string, unknown>>();
+  #domainSequence = 0;
+  /** commandId → 已创建任务与签发域身份(幂等重放依据) */
+  #productionCommands = new Map<
+    string,
+    { taskId: string; inspectionId?: string; planId?: string; revision?: number }
+  >();
+  /** 域身份登记表(inspectionId/planId → 文档 + 一次性绑定 + 任务) */
+  #domainRecords = new Map<string, MockDomainRecord>();
+  /** 构建记录(recordId → 负载;planId 别名同键):真实写入属执行器 */
+  #buildRecords = new Map<string, BuildRecordDocumentV02>();
   readonly #capabilities: readonly CapabilityOperationV01[];
   readonly #environment: EnvironmentSnapshotV01 | undefined;
+  readonly #productionAutoComplete: boolean;
   #demoTaskSequence = 0;
   #state: ProviderStatusV01["state"] = "stopped";
   #acceptingCalls = false;
@@ -85,6 +117,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     for (const task of options.tasks ?? []) this.#tasks.set(task.taskId, task);
     for (const taskId of options.mutatingTaskIds ?? []) this.#mutatingTaskIds.add(taskId);
     this.#environment = options.environment;
+    this.#productionAutoComplete = options.productionAutoComplete ?? false;
   }
 
   status(): ProviderStatusV01 {
@@ -163,11 +196,11 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "production.startInspection":
         return this.#startProductionInspection(request);
       case "production.getInspection":
-        return this.#getProductionTaskPayload(request, "inspection");
+        return this.#getProductionInspection(request);
       case "production.requestPlan":
         return this.#requestProductionPlan(request);
       case "production.getPlan":
-        return this.#getProductionTaskPayload(request, "plan");
+        return this.#getProductionPlan(request);
       case "production.confirmPlan":
         return this.#confirmProductionPlan(request);
       case "production.recover":
@@ -405,18 +438,83 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     ));
   }
 
-  /** 幂等重放:同一 commandId 返回当前任务快照的包装值(回执纪律) */
+  /** 幂等重放:同一 commandId 返回同形回执(域身份 + 当前任务快照) */
   #replayOrUndefined(
     request: Extract<ApplicationRequestV01, { method: "production.startInspection" | "production.requestPlan" | "production.confirmPlan" | "production.recover" }>,
   ): ApplicationResponseV01 | null {
-    const taskId = this.#productionCommands.get(request.commandId);
-    if (taskId === undefined) return null;
-    const task = this.#tasks.get(taskId);
+    const issued = this.#productionCommands.get(request.commandId);
+    if (issued === undefined) return null;
+    const task = this.#tasks.get(issued.taskId);
     if (task === undefined) return null;
-    return this.#success(request, {
+    const base = { contractVersion: this.contractVersion, task };
+    if (issued.inspectionId !== undefined) {
+      return this.#success(request, { ...base, inspectionId: issued.inspectionId });
+    }
+    if (issued.planId !== undefined) {
+      return this.#success(request, {
+        ...base,
+        planId: issued.planId,
+        revision: issued.revision ?? 1,
+      });
+    }
+    return this.#success(request, base);
+  }
+
+  /** 域身份签发:前缀 + 16 位小写十六进制(Schema $defs 模式) */
+  #nextDomainId(prefix: "insp" | "plan"): string {
+    this.#domainSequence += 1;
+    return `${prefix}-${this.#domainSequence.toString(16).padStart(16, "0")}`;
+  }
+
+  #invalidParams(request: ApplicationRequestV01): ApplicationResponseV01 {
+    return this.#failure(request, this.#error(
+      "vua.production.invalid_params",
+      "validation",
+      "errors.production.invalidParams",
+      request.correlationId,
+      false,
+      false,
+    ));
+  }
+
+  #recordNotFound(request: ApplicationRequestV01): ApplicationResponseV01 {
+    return this.#failure(request, this.#error(
+      "vua.production.record_not_found",
+      "validation",
+      "errors.production.recordNotFound",
+      request.correlationId,
+      false,
+      false,
+    ));
+  }
+
+  /**
+   * 模拟执行器瞬时完成:queued → succeeded 同步迁移并发出 completed 事件
+   * (真实链路由 worker 线程驱动到终态;mock 保持确定性回放)。
+   */
+  #completeProductionTask(taskId: string): TaskSnapshotV01 {
+    const task = this.#tasks.get(taskId);
+    if (task === undefined) throw new Error(`unknown mock task: ${taskId}`);
+    const next: TaskSnapshotV01 = {
+      ...task,
+      revision: task.revision + 1,
+      state: "succeeded",
+      updatedAt: this.#now(),
+    };
+    this.#tasks.set(taskId, next);
+    this.#applicationRevision += 1;
+    this.#emit({
       contractVersion: this.contractVersion,
-      task,
-    } satisfies ProductionTaskStartedV01 as unknown as ApplicationSuccessValueV01);
+      eventId: this.#nextEventId(),
+      taskId,
+      revision: next.revision,
+      occurredAt: next.updatedAt,
+      correlationId: next.correlationId,
+      kind: "task.completed",
+      state: next.state,
+      payload: {},
+    });
+    return next;
   }
 
   #startProductionInspection(
@@ -427,57 +525,67 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     const replay = this.#replayOrUndefined(request);
     if (replay !== null) return replay;
 
+    // v0.2 参数面:四元组必填且非空(缺参在任务创建前拒绝)
+    const params = request.params;
+    if ([params.sourceFolder, params.projectRoot, params.artifactOutputRoot, params.projectId]
+      .some((value) => typeof value !== "string" || value.length === 0)) {
+      return this.#invalidParams(request);
+    }
+
     this.#productionSequence += 1;
     const taskId = `production-${this.#productionSequence}`;
-    // 合成检查负载:冻结词表(plannability / findings 带 recoverable、retryable);
-    // source 由渲染层以自己提交的 MaterialRef 呈现,文档不回带
-    this.#inspectionDocs.set(taskId, {
-      inspectionId: taskId,
-      findings: [],
-      plannability: "plannable",
-      inspectedAt: this.#now(),
-    });
-    const task = this.#acceptProductionTask(
+    const inspectionId = this.#nextDomainId("insp");
+    this.#acceptProductionTask(
       "production.startInspection",
       request.commandId,
       taskId,
       request.correlationId,
     );
-    this.#productionCommands.set(request.commandId, taskId);
-    return this.#success(request, {
-      contractVersion: this.contractVersion,
-      task,
-    } satisfies ProductionTaskStartedV01 as unknown as ApplicationSuccessValueV01);
+    const task = this.#completeProductionTask(taskId);
+    this.#productionCommands.set(request.commandId, { taskId, inspectionId });
+    // 一次性绑定:四元组随本次请求登记,后续命令不再携带路径
+    this.#domainRecords.set(inspectionId, {
+      kind: "inspection",
+      taskId,
+      binding: {
+        sourceFolder: params.sourceFolder,
+        projectRoot: params.projectRoot,
+        artifactOutputRoot: params.artifactOutputRoot,
+        projectId: params.projectId,
+        createdAt: this.#now(),
+      },
+      document: {
+        inspectionId,
+        inspectedAt: this.#now(),
+        displayName: `合成素材包 ${this.#productionSequence}(模拟 Provider)`,
+        sourceFingerprint: `sha256:mock-source-${this.#productionSequence}`,
+        riskFingerprint: `sha256:mock-risk-${this.#productionSequence}`,
+        packages: [
+          {
+            relativePath: "pack.unitypackage",
+            sizeBytes: 1024,
+            sha256: `sha256:mock-pack-${this.#productionSequence}`,
+          },
+        ],
+        findings: [],
+        plannability: "plannable",
+      },
+    });
+    return this.#success(request, { contractVersion: this.contractVersion, task, inspectionId });
   }
 
-  /** get_task_payload 形状(B 线同形):任务存在即回任务态,负载可为 null(未就绪) */
-  #getProductionTaskPayload(
-    request: Extract<ApplicationRequestV01, { method: "production.getInspection" | "production.getPlan" }>,
-    kind: "inspection" | "plan",
+  #getProductionInspection(
+    request: Extract<ApplicationRequestV01, { method: "production.getInspection" }>,
   ): ApplicationResponseV01 {
-    const ref =
-      kind === "inspection"
-        ? (request.params as { inspectionId?: string }).inspectionId
-        : (request.params as { planId?: string }).planId;
-    const task = this.#tasks.get(ref ?? "");
-    if (task === undefined) {
-      return this.#failure(request, this.#error(
-        "vua.task.not_found",
-        "validation",
-        "errors.task.notFound",
-        request.correlationId,
-        false,
-        false,
-      ));
-    }
-    const document =
-      kind === "inspection" ? this.#inspectionDocs.get(ref!) : this.#planDocs.get(ref!);
+    const record = this.#domainRecords.get(request.params.inspectionId);
+    if (record === undefined || record.kind !== "inspection") return this.#recordNotFound(request);
+    const task = this.#tasks.get(record.taskId);
     return this.#success(request, {
       contractVersion: this.contractVersion,
-      taskId: task.taskId,
-      state: task.state,
-      [kind]: document ?? null,
-    } as unknown as ApplicationSuccessValueV01);
+      taskId: record.taskId,
+      state: task?.state ?? "unknown",
+      inspection: record.document as InspectionDocumentV02,
+    });
   }
 
   #requestProductionPlan(
@@ -488,48 +596,67 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     const replay = this.#replayOrUndefined(request);
     if (replay !== null) return replay;
 
+    // v0.2:{ inspectionId, mode };项目身份与全部路径来自检查绑定
+    const { inspectionId, mode } = request.params;
+    if (!PRODUCTION_MODES_V02.includes(mode)) return this.#invalidParams(request);
+    const inspection = this.#domainRecords.get(inspectionId);
+    if (inspection === undefined || inspection.kind !== "inspection") {
+      return this.#recordNotFound(request);
+    }
+
     this.#productionSequence += 1;
     const taskId = `production-plan-${this.#productionSequence}`;
-    // 合成计划负载:阶段词表与 production-use-case v0.1 阶段映射一致;
-    // 确认绑定 revision(确认纪律),预估时长为合成事实
-    this.#planDocs.set(taskId, {
-      planId: taskId,
-      revision: 1,
-      inspectionId: request.params.inspectionId,
-      stages: [
-        { id: `${taskId}-snapshot`, stage: "snapshot", summary: "合成阶段:快照(模拟 Provider)" },
-        { id: `${taskId}-execute`, stage: "execute", summary: "合成阶段:导入(模拟 Provider)" },
-        { id: `${taskId}-validate`, stage: "validate", summary: "合成阶段:验证(模拟 Provider)" },
-      ],
-      risks: [],
-      estimatedDurationMs: 30_000,
-      diffs: [],
-    });
-    // 合成构建记录随计划就位(planId 派生 recordId,B 线 material- 前缀同形)
-    this.#buildRecords.set(taskId, {
-      recordId: `material-${taskId}`,
-      status: "succeeded",
-      restoreAttempted: false,
-      stages: ["snapshot", "execute", "validate"],
-      facts: {
-        snapshot: "合成快照证据(模拟 Provider)",
-        bridgeJob: "合成 Bridge 作业序列化占位(模拟 Provider)",
-        localVpm: "合成本地 VPM 证据(模拟 Provider)",
-        validation: "合成验证证据(模拟 Provider)",
-      },
-      finishedAt: this.#now(),
-    });
-    const task = this.#acceptProductionTask(
+    const planId = this.#nextDomainId("plan");
+    this.#acceptProductionTask(
       "production.requestPlan",
       request.commandId,
       taskId,
       request.correlationId,
     );
-    this.#productionCommands.set(request.commandId, taskId);
+    // 确认绑定 revision = 计划任务完成后的修订(Rust 同形:worker 终态即登记)
+    const task = this.#completeProductionTask(taskId);
+    const revision = task.revision;
+    this.#productionCommands.set(request.commandId, { taskId, planId, revision });
+    const projectId = inspection.binding["projectId"];
+    this.#domainRecords.set(planId, {
+      kind: "plan",
+      taskId,
+      binding: { inspectionId, revision },
+      document: {
+        planId,
+        revision,
+        inspectionId,
+        mode,
+        projectId: typeof projectId === "string" ? projectId : "unknown",
+        projectFingerprint: `sha256:mock-project-${this.#productionSequence}`,
+        stages: ["snapshot", "execute", "validate"],
+        riskDecisionRequired: true,
+        risks: [],
+        diffs: [],
+        // 诚实预估:模拟 Provider 无真实总量来源,null 锚(向量断言同值)
+        estimatedDurationMs: null,
+      },
+    });
     return this.#success(request, {
       contractVersion: this.contractVersion,
       task,
-    } satisfies ProductionTaskStartedV01 as unknown as ApplicationSuccessValueV01);
+      planId,
+      revision,
+    });
+  }
+
+  #getProductionPlan(
+    request: Extract<ApplicationRequestV01, { method: "production.getPlan" }>,
+  ): ApplicationResponseV01 {
+    const record = this.#domainRecords.get(request.params.planId);
+    if (record === undefined || record.kind !== "plan") return this.#recordNotFound(request);
+    const task = this.#tasks.get(record.taskId);
+    return this.#success(request, {
+      contractVersion: this.contractVersion,
+      taskId: record.taskId,
+      state: task?.state ?? "unknown",
+      plan: record.document as PlanDocumentV02,
+    });
   }
 
   #confirmProductionPlan(
@@ -540,22 +667,23 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     const replay = this.#replayOrUndefined(request);
     if (replay !== null) return replay;
 
+    let planRecord: MockDomainRecord | undefined;
+    let planId = "";
     if (request.method === "production.confirmPlan") {
-      // 确认纪律:确认绑定计划 revision,过期确认在被接受前拒绝(不产生半个任务)
-      const planId = request.params.planId;
-      const plan = this.#planDocs.get(planId);
-      if (plan === undefined) {
-        return this.#failure(request, this.#error(
-          "vua.task.not_found",
-          "validation",
-          "errors.task.notFound",
-          request.correlationId,
-          false,
-          false,
-        ));
+      // v0.2:observedRevision 与 riskChoice 必填;过期确认在任务创建前拒绝
+      const { planId: requestedPlanId, observedRevision, riskChoice } = request.params;
+      if (typeof observedRevision !== "number"
+        || !Number.isSafeInteger(observedRevision)
+        || observedRevision < 1) {
+        return this.#invalidParams(request);
       }
-      const observedRevision = request.params.observedRevision;
-      if (observedRevision !== undefined && plan["revision"] !== observedRevision) {
+      if (!PRODUCTION_RISK_CHOICES_V02.includes(riskChoice)) return this.#invalidParams(request);
+      if (!PLAN_ID_PATTERN.test(requestedPlanId)) return this.#recordNotFound(request);
+      planRecord = this.#domainRecords.get(requestedPlanId);
+      if (planRecord === undefined || planRecord.kind !== "plan") {
+        return this.#recordNotFound(request);
+      }
+      if (planRecord.binding["revision"] !== observedRevision) {
         return this.#failure(request, this.#error(
           "vua.production.plan_mismatch",
           "validation",
@@ -565,10 +693,25 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           false,
         ));
       }
+      planId = requestedPlanId;
     } else {
-      // 恢复绑定原始失败任务:引用不存在明确拒绝(not_found),
-      // 存在但未处于 failed / cancelled 终态则不可恢复(B 线同形)
-      const original = this.#tasks.get(request.params.taskId);
+      // 恢复:decisionId 必填(Kernel 受理时生成);绑定原始失败任务——
+      // 引用不存在为 not_found,存在但未处于 failed/cancelled 终态不可恢复
+      const { taskId, decision, decisionId } = request.params;
+      if (typeof decisionId !== "string" || decisionId.length === 0) {
+        return this.#failure(request, this.#error(
+          "vua.production.decision_id_required",
+          "validation",
+          "errors.production.decisionIdRequired",
+          request.correlationId,
+          false,
+          false,
+        ));
+      }
+      if (decision !== "continue" && decision !== "rollback") {
+        return this.#invalidParams(request);
+      }
+      const original = this.#tasks.get(taskId);
       if (original === undefined) {
         return this.#failure(request, this.#error(
           "vua.task.not_found",
@@ -593,38 +736,61 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
 
     this.#productionSequence += 1;
     const taskId = `production-confirm-${this.#productionSequence}`;
-    const task = this.#acceptProductionTask(
+    this.#acceptProductionTask(
       request.method,
       request.commandId,
       taskId,
       request.correlationId,
     );
-    this.#productionCommands.set(request.commandId, taskId);
-    return this.#success(request, {
-      contractVersion: this.contractVersion,
-      task,
-    } satisfies ProductionTaskStartedV01 as unknown as ApplicationSuccessValueV01);
+    // autoComplete:worker 完成语义的快进(向量 waitTerminal);默认保持
+    // queued 由调用方脚本化驱动
+    const task = this.#productionAutoComplete
+      ? this.#completeProductionTask(taskId)
+      : this.#tasks.get(taskId)!;
+    this.#productionCommands.set(request.commandId, { taskId });
+
+    // 执行结案即合成构建记录 v0.2(evidenceSummary 四节;未尝试节 null 锚);
+    // planId 别名同键(渲染层的 recordRef 即 planId)
+    if (planRecord !== undefined && planRecord.kind === "plan") {
+      const planDocument = planRecord.document as PlanDocumentV02;
+      const recordId = `record-${planId}`;
+      const buildRecord: BuildRecordDocumentV02 = {
+        recordId,
+        taskId,
+        planId,
+        mode: planDocument.mode,
+        status: "succeeded",
+        stages: ["snapshot", "execute", "validate"],
+        evidenceSummary: {
+          snapshot: { attempted: true, succeeded: true },
+          bridge: {
+            jobsRun: 2,
+            allSucceeded: true,
+            lastOperation: "合成 Bridge 作业(模拟 Provider)",
+          },
+          localVpm: { attempted: false, published: null, packageId: null },
+          validation: { status: "passed" },
+        },
+        restoreAttempted: false,
+        restoreSucceeded: null,
+        startedAt: this.#now(),
+        finishedAt: this.#now(),
+      };
+      this.#buildRecords.set(recordId, buildRecord);
+      this.#buildRecords.set(planId, buildRecord);
+    }
+    return this.#success(request, { contractVersion: this.contractVersion, task });
   }
 
   #getProductionBuildRecord(
     request: Extract<ApplicationRequestV01, { method: "production.getBuildRecord" }>,
   ): ApplicationResponseV01 {
-    const ref = request.params.buildRecordId;
-    const record = this.#buildRecords.get(ref) ?? this.#buildRecords.get(`material-${ref}`);
-    if (record === undefined) {
-      return this.#failure(request, this.#error(
-        "vua.task.not_found",
-        "validation",
-        "errors.task.notFound",
-        request.correlationId,
-        false,
-        false,
-      ));
-    }
+    const record = this.#buildRecords.get(request.params.buildRecordId);
+    if (record === undefined) return this.#recordNotFound(request);
     return this.#success(request, {
       contractVersion: this.contractVersion,
       buildRecord: record,
-    } as unknown as ApplicationSuccessValueV01);
+    });
   }
 
   #requestCancellation(

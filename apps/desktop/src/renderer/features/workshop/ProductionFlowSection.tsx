@@ -4,6 +4,7 @@ import { EmptyState } from "../../components/primitives/EmptyState.tsx";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import type {
   MaterialRef,
+  PlanRiskChoice,
   ProductionRejectReason,
   RecoverDecisionKind,
   SourceIntake,
@@ -53,7 +54,8 @@ export function ProductionFlowSection({
   onPickMaterial: (intake: SourceIntake) => void;
   onStartInspection: () => void;
   onRequestPlan: () => void;
-  onConfirmPlan: () => void;
+  /** v0.2:确认携带风险决策(计划审阅控件)+ 可选的会话内记忆 */
+  onConfirmPlan: (riskChoice: PlanRiskChoice, rememberForSession: boolean) => void;
   onRecover: (decision: RecoverDecisionKind) => void;
 }) {
   const sectionLabel = format(copy.sectionAria, { production: termLabel("production") });

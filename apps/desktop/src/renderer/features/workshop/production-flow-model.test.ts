@@ -57,7 +57,11 @@ const planV1: ProductionPlan = {
   planId: "p-1",
   revision: 1,
   inspectionId: "i-1",
-  stages: [{ id: "s-1", stage: "execute", summary: "run" }],
+  mode: "direct_unity_package",
+  projectId: "project",
+  projectFingerprint: "fp-plan-1",
+  stages: ["snapshot", "execute", "validate"],
+  riskDecisionRequired: true,
   risks: [],
   estimatedDurationMs: null,
   diffs: [],
@@ -65,10 +69,20 @@ const planV1: ProductionPlan = {
 
 const recordCompleted: BuildRecord = {
   recordId: "r-1",
+  taskId: "task-1",
+  planId: "p-1",
+  mode: "direct_unity_package",
   status: "succeeded",
   restoreAttempted: false,
+  restoreSucceeded: null,
   stages: ["snapshot", "execute", "validate"],
-  facts: { snapshot: "s", bridgeJob: "b", localVpm: "v", validation: "ok" },
+  evidenceSummary: {
+    snapshot: { attempted: true, succeeded: true },
+    bridge: { jobsRun: 1, allSucceeded: true, lastOperation: null },
+    localVpm: { attempted: false, published: null, packageId: null },
+    validation: { status: "passed" },
+  },
+  startedAt: "2026-09-04T10:25:10+08:00",
   finishedAt: "2026-09-04T10:33:10+08:00",
 };
 

@@ -60,7 +60,7 @@ for (const { label, make } of implementations) {
     const material = { materialId: "m", intake: "direct_unity_package" as const, displayName: "demo" };
     assert.equal((await port.startInspection(material)).kind, "unavailable");
     assert.equal((await port.requestPlan("i-1")).kind, "unavailable");
-    assert.equal((await port.confirmPlan("p-1", 1)).kind, "unavailable");
+    assert.equal((await port.confirmPlan("p-1", 1, "continue")).kind, "unavailable");
     assert.equal(
       (await port.recover("t-1", { kind: "rollback" })).kind,
       "unavailable",
@@ -143,12 +143,12 @@ test("fixture(production-inspect): 全流程走查——检查 → 计划 → �
   assert.equal((await port.getPlan(plan.planId)).kind, "plan");
 
   // confirmPlan:revision 不匹配 → rejected(stale_revision),确认不失效于旧修订
-  const stale = await port.confirmPlan(plan.planId, 99);
+  const stale = await port.confirmPlan(plan.planId, 99, "continue");
   assert.equal(stale.kind, "rejected");
   if (stale.kind === "rejected") assert.equal(stale.reason, "stale_revision");
 
   // 正确 revision → 执行链 snapshot → execute → validate → completed + Build Record
-  const confirmed = await port.confirmPlan(plan.planId, plan.revision);
+  const confirmed = await port.confirmPlan(plan.planId, plan.revision, "snapshot_and_continue");
   assert.equal(confirmed.kind, "ok");
   if (confirmed.kind !== "ok") return;
   await sleep(80);
@@ -186,12 +186,12 @@ test("fixture(production-plan): 开局即待确认;confirmPlan 非法状态/引�
   assert.equal(task?.status, "waitingInput");
   assert.equal(task?.originPage, "workshop");
 
-  assert.equal((await port.confirmPlan("__missing__", 1)).kind, "rejected");
-  const ok = await port.confirmPlan(view.plan!.planId, view.plan!.revision);
+  assert.equal((await port.confirmPlan("__missing__", 1, "continue")).kind, "rejected");
+  const ok = await port.confirmPlan(view.plan!.planId, view.plan!.revision, "continue");
   assert.equal(ok.kind, "ok");
   // 已确认后重复确认同一 revision:状态已迁移,拒绝 invalid_state
   await sleep(30);
-  const again = await port.confirmPlan(view.plan!.planId, view.plan!.revision);
+  const again = await port.confirmPlan(view.plan!.planId, view.plan!.revision, "continue");
   assert.equal(again.kind, "rejected");
 });
 
@@ -325,7 +325,7 @@ test("fixture(production-expired): 超时——expired;continue 回到待确认�
   // 重新确认当前 revision → 执行链跑完
   const plan = awaiting.plan;
   assert.ok(plan !== null);
-  const confirmed = await port.confirmPlan(plan!.planId, plan!.revision);
+  const confirmed = await port.confirmPlan(plan!.planId, plan!.revision, "continue");
   assert.equal(confirmed.kind, "ok");
   await sleep(80);
   const done = (await port.snapshot()).productionRun;

@@ -329,11 +329,17 @@ describe("mock provider F2 surface", () => {
   });
 });
 
-describe("mock provider production surface (production-use-case v0.1)", () => {
+describe("mock provider production surface (amf-production v0.2)", () => {
   const productionCapability: CapabilityOperationV01[] = [
     { operationId: "task.list", availability: "available" },
     { operationId: "production.useCase", availability: "available" },
   ];
+  const quad = {
+    sourceFolder: "C:/materials/closet",
+    projectRoot: "C:/projects/target",
+    artifactOutputRoot: "C:/artifacts",
+    projectId: "project",
+  };
 
   async function startedProvider() {
     const provider = new MockOrchestratorProviderV01({ capabilities: productionCapability });
@@ -346,7 +352,7 @@ describe("mock provider production surface (production-use-case v0.1)", () => {
       commandId,
       kind: "command",
       method: "production.startInspection",
-      params: { sourceFolder: "C:/materials/closet" },
+      params: { ...quad },
     } as Parameters<typeof request>[0]);
   }
 
@@ -362,77 +368,97 @@ describe("mock provider production surface (production-use-case v0.1)", () => {
     });
   });
 
-  it("accepts inspection idempotently, serves the document by task reference, and scripts drift", async () => {
+  it("rejects an incomplete quadrant before creating any task (vector parity)", async () => {
+    const provider = await startedProvider();
+    const rejected = await provider.invoke(request({
+      commandId: "command-0",
+      kind: "command",
+      method: "production.startInspection",
+      params: { sourceFolder: quad.sourceFolder },
+    } as Parameters<typeof request>[0]));
+    expect(rejected).toMatchObject({ ok: false, error: { code: "vua.production.invalid_params" } });
+  });
+
+  it("issues a stable domain identity, completes inline, and replays idempotently", async () => {
     const provider = await startedProvider();
 
     const started = await provider.invoke(startInspection("command-1"));
-    if (!started.ok || !("task" in started.value)) throw new Error("inspection start failed");
+    if (!started.ok || !("task" in started.value) || !("inspectionId" in started.value)) {
+      throw new Error("inspection start failed");
+    }
     const taskId = started.value.task.taskId;
-    expect(started.value.task.state).toBe("queued");
+    const inspectionId = started.value.inspectionId;
+    // 真实链内联完成(Rust 同形):回执任务即 succeeded;域身份 insp- 前缀
+    expect(started.value.task.state).toBe("succeeded");
+    expect(inspectionId).toMatch(/^insp-[0-9a-f]{16}$/);
 
-    // 幂等重放:相同 commandId 回放既有任务,不新建
+    // 幂等重放:相同 commandId 回放既有回执,不新建
     const replay = await provider.invoke(startInspection("command-1"));
-    if (!replay.ok || !("task" in replay.value)) throw new Error("inspection replay failed");
+    if (!replay.ok || !("task" in replay.value) || !("inspectionId" in replay.value)) {
+      throw new Error("inspection replay failed");
+    }
     expect(replay.value.task.taskId).toBe(taskId);
+    expect(replay.value.inspectionId).toBe(inspectionId);
 
-    // 查询面:任务在(负载可 null),未知引用明确拒绝
-    const beforeDone = await provider.invoke(request({
+    // 查询面:按域身份直取文档;未知引用明确拒绝(record_not_found)
+    const document = await provider.invoke(request({
       kind: "query",
       method: "production.getInspection",
-      params: { inspectionId: taskId },
+      params: { inspectionId },
     } as Parameters<typeof request>[0]));
-    if (!beforeDone.ok || !("inspection" in beforeDone.value)) throw new Error("inspection query failed");
-    expect(beforeDone.value.inspection).not.toBeNull();
-    expect(beforeDone.value.state).toBe("queued");
+    if (!document.ok || !("inspection" in document.value)) throw new Error("inspection query failed");
+    expect(document.value.inspection).toMatchObject({
+      inspectionId,
+      plannability: "plannable",
+    });
+    expect(document.value.state).toBe("succeeded");
     const missing = await provider.invoke(request({
       kind: "query",
       method: "production.getInspection",
-      params: { inspectionId: "__missing__" },
+      params: { inspectionId: "insp-ffffffffffffffff" },
     } as Parameters<typeof request>[0]));
-    expect(missing).toMatchObject({ ok: false, error: { code: "vua.task.not_found" } });
-
-    // 脚本化漂移:failed + inspect_required(渲染层投影 failed_recoverable)
-    provider.commitTaskState(taskId, "failed", { recoveryDisposition: "inspect_required" });
-    const drifted = await provider.invoke({
-      contractVersion: APPLICATION_CONTRACT_VERSION,
-      requestId: "request-get",
-      correlationId: "correlation-get",
-      kind: "query",
-      method: "task.get",
-      params: { taskId },
-    });
-    if (!drifted.ok || !("state" in drifted.value)) throw new Error("task.get failed");
-    expect(drifted.value).toMatchObject({ state: "failed", recoveryDisposition: "inspect_required" });
+    expect(missing).toMatchObject({ ok: false, error: { code: "vua.production.record_not_found" } });
   });
 
   it("plans with a bound revision and rejects stale confirmations before creating a task", async () => {
     const provider = await startedProvider();
     const started = await provider.invoke(startInspection("command-1"));
-    if (!started.ok || !("task" in started.value)) throw new Error("inspection start failed");
+    if (!started.ok || !("inspectionId" in started.value)) throw new Error("inspection start failed");
+    const inspectionId = started.value.inspectionId;
 
     const planned = await provider.invoke(request({
       commandId: "command-2",
       kind: "command",
       method: "production.requestPlan",
-      params: { inspectionId: started.value.task.taskId },
+      params: { inspectionId, mode: "direct_unity_package" },
     } as Parameters<typeof request>[0]));
-    if (!planned.ok || !("task" in planned.value)) throw new Error("plan start failed");
-    const planTaskId = planned.value.task.taskId;
+    if (!planned.ok || !("planId" in planned.value) || !("revision" in planned.value)) {
+      throw new Error("plan start failed");
+    }
+    const planId = planned.value.planId;
+    expect(planId).toMatch(/^plan-[0-9a-f]{16}$/);
+    const revision = planned.value.revision;
+    expect(revision).toBeGreaterThanOrEqual(1);
 
     const planDoc = await provider.invoke(request({
       kind: "query",
       method: "production.getPlan",
-      params: { planId: planTaskId },
+      params: { planId },
     } as Parameters<typeof request>[0]));
     if (!planDoc.ok || !("plan" in planDoc.value)) throw new Error("plan query failed");
-    expect(planDoc.value.plan).toMatchObject({ revision: 1, inspectionId: started.value.task.taskId });
+    expect(planDoc.value.plan).toMatchObject({
+      revision,
+      inspectionId,
+      estimatedDurationMs: null,
+      diffs: [],
+    });
 
     // 确认纪律:过期 revision 在任务创建前拒绝(不产生半个任务)
     const stale = await provider.invoke(request({
       commandId: "command-3",
       kind: "command",
       method: "production.confirmPlan",
-      params: { planId: planTaskId, observedRevision: 99 },
+      params: { planId, observedRevision: 99, riskChoice: "continue" },
     } as Parameters<typeof request>[0]));
     expect(stale).toMatchObject({ ok: false, error: { code: "vua.production.plan_mismatch" } });
 
@@ -440,48 +466,70 @@ describe("mock provider production surface (production-use-case v0.1)", () => {
       commandId: "command-4",
       kind: "command",
       method: "production.confirmPlan",
-      params: { planId: planTaskId, observedRevision: 1 },
+      params: { planId, observedRevision: revision, riskChoice: "snapshot_and_continue" },
     } as Parameters<typeof request>[0]));
     expect(confirmed.ok).toBe(true);
 
-    // 构建记录按计划引用派生;未知引用明确拒绝
+    // 构建记录按计划引用可取(planId 别名);未知引用明确拒绝
     const record = await provider.invoke(request({
       kind: "query",
       method: "production.getBuildRecord",
-      params: { buildRecordId: planTaskId },
+      params: { buildRecordId: planId },
     } as Parameters<typeof request>[0]));
     if (!record.ok || !("buildRecord" in record.value)) throw new Error("record query failed");
-    expect(record.value.buildRecord).toMatchObject({ status: "succeeded", restoreAttempted: false });
+    expect(record.value.buildRecord).toMatchObject({
+      status: "succeeded",
+      restoreAttempted: false,
+      evidenceSummary: { snapshot: { attempted: true, succeeded: true } },
+    });
     expect(await provider.invoke(request({
       kind: "query",
       method: "production.getBuildRecord",
-      params: { buildRecordId: "__missing__" },
-    } as Parameters<typeof request>[0]))).toMatchObject({ ok: false, error: { code: "vua.task.not_found" } });
+      params: { buildRecordId: "record-missing" },
+    } as Parameters<typeof request>[0]))).toMatchObject({
+      ok: false,
+      error: { code: "vua.production.record_not_found" },
+    });
   });
 
-  it("binds recovery to terminal failed or cancelled production tasks only", async () => {
-    const provider = await startedProvider();
-    const started = await provider.invoke(startInspection("command-1"));
-    if (!started.ok || !("task" in started.value)) throw new Error("inspection start failed");
-    const taskId = started.value.task.taskId;
+  it("requires the decision id and binds recovery to terminal failed or cancelled tasks", async () => {
+    const failedTask = task({ taskId: "task-failed-1", state: "failed", revision: 5 });
+    const queuedTask = task({ taskId: "task-queued-1", state: "queued", revision: 1 });
+    const provider = new MockOrchestratorProviderV01({
+      capabilities: productionCapability,
+      tasks: [failedTask, queuedTask],
+    });
+    await provider.start();
 
-    // 排队中的任务不可恢复
+    // decisionId 缺失:绑定三元组不成立,受理前拒绝
+    const missingDecision = await provider.invoke(request({
+      commandId: "recover-0",
+      kind: "command",
+      method: "production.recover",
+      params: { taskId: "task-failed-1", decision: "rollback", decisionId: "" },
+    } as Parameters<typeof request>[0]));
+    expect(missingDecision).toMatchObject({
+      ok: false,
+      error: { code: "vua.production.decision_id_required" },
+    });
+
+    // 非终态任务不可恢复
     const healthy = await provider.invoke(request({
       commandId: "recover-1",
       kind: "command",
       method: "production.recover",
-      params: { taskId, decision: "rollback", decisionId: "udid-1" },
+      params: { taskId: "task-queued-1", decision: "rollback", decisionId: "udid-1" },
     } as Parameters<typeof request>[0]));
     expect(healthy).toMatchObject({ ok: false, error: { code: "vua.production.not_recoverable" } });
 
-    provider.commitTaskState(taskId, "failed");
+    // failed 终态可恢复:新任务受理
     const recovered = await provider.invoke(request({
       commandId: "recover-2",
       kind: "command",
       method: "production.recover",
-      params: { taskId, decision: "rollback", decisionId: "udid-2" },
+      params: { taskId: "task-failed-1", decision: "rollback", decisionId: "udid-2" },
     } as Parameters<typeof request>[0]));
     if (!recovered.ok || !("task" in recovered.value)) throw new Error("recover failed");
-    expect(recovered.value.task.taskId).not.toBe(taskId);
+    expect(recovered.value.task.taskId).not.toBe("task-failed-1");
   });
 });

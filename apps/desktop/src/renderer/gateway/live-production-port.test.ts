@@ -33,14 +33,20 @@ function kernelHost(
         routeDesktopGatewayInvoke(
           {
             provider,
-            productVersion: "0.4.2",
+            productVersion: "0.5.0",
             platform: "win32",
             rendererUrl,
+            // v0.2:Kernel 解析生产上下文四元组(素材路径 + VUA 管辖配置)
             resolveMaterialSource: (refId) => {
               const sourceFolder = materialSources.get(refId);
               return sourceFolder === undefined
                 ? undefined
-                : { sourceFolder, intake: "direct_unity_package" };
+                : {
+                    sourceFolder,
+                    projectRoot: "C:/projects/target",
+                    artifactOutputRoot: "C:/artifacts",
+                    projectId: "project",
+                  };
             },
           },
           `${rendererUrl}/`,
@@ -74,12 +80,11 @@ async function liveGateway(capabilities: CapabilityOperationV01[] = PRODUCTION_C
   return { provider, port: gateway.modelProduction, gateway };
 }
 
-/** 把检查任务推进到 succeeded 并等文档回填(事件 → task.get → getInspection) */
-async function completeInspection(provider: MockOrchestratorProviderV01, port: ModelProductionPort) {
+/** v0.2:检查内联完成(回执即 succeeded);等事件驱动的文档回填 */
+async function completeInspection(port: ModelProductionPort) {
   const view = await port.snapshot();
   if (view.productionRun.kind !== "run") throw new Error("expected a run");
   const inspectTaskId = view.productionRun.taskId;
-  provider.commitTaskState(inspectTaskId, "succeeded");
   await vi.waitFor(async () => {
     expect(inspectionOf(await port.snapshot())).not.toBeNull();
   });
@@ -88,10 +93,10 @@ async function completeInspection(provider: MockOrchestratorProviderV01, port: M
   return { inspectTaskId, inspection };
 }
 
-async function planAndWait(provider: MockOrchestratorProviderV01, port: ModelProductionPort, inspectionId: string) {
+async function planAndWait(port: ModelProductionPort, inspectionId: string) {
   const planned = await port.requestPlan(inspectionId);
   if (planned.kind !== "ok") throw new Error("expected plan acceptance");
-  provider.commitTaskState(planned.taskId, "succeeded");
+  // v0.2:计划任务同样内联完成;等计划文档按域身份回填
   await vi.waitFor(async () => {
     expect(planOf(await port.snapshot())).not.toBeNull();
   });
@@ -140,44 +145,58 @@ describe("live production port over the Kernel route (F-3)", () => {
     expect(started.run.source).toEqual(material);
     expect(started.run.inspection).toBeNull();
     const startCall = invokeSpy.mock.calls.find(([request]) => request.method === "production.startInspection")?.[0];
-    // Kernel 已把 refId 翻译为真实路径(materialRefId 是 Gateway 面参数,不进应用请求)
+    // Kernel 已把 refId 翻译为生产上下文四元组(materialRefId 是 Gateway 面参数,不进应用请求)
     expect(startCall).toMatchObject({
       kind: "command",
-      params: { sourceFolder: "C:/materials/closet" },
+      params: {
+        sourceFolder: "C:/materials/closet",
+        projectRoot: "C:/projects/target",
+        artifactOutputRoot: "C:/artifacts",
+        projectId: "project",
+      },
     });
 
-    // 检查任务成功 → 检查文档回填;任务中心如实呈现已完成任务
-    const { inspectTaskId, inspection } = await completeInspection(provider, port);
+    // 检查任务内联成功 → 检查文档按回执 inspectionId 回填;任务中心如实呈现
+    const { inspection } = await completeInspection(port);
     expect(inspection.plannability).toBe("plannable");
     expect(inspection.source).toEqual(material);
-    const centerTask = (await gateway.task.snapshot()).tasks.find((task) => task.id === inspectTaskId);
+    const centerTask = (await gateway.task.snapshot()).tasks.find((task) => task.id === started.taskId);
     expect(centerTask).toMatchObject({ status: "completed", cancellable: false });
 
-    // getInspection:已知引用返回结果,未知引用诚实 not-connected
-    expect((await port.getInspection(inspectTaskId)).kind).toBe("inspection");
-    expect(await port.getInspection("__missing__")).toEqual({ schemaVersion: 1, kind: "not-connected" });
+    // getInspection:已知域引用返回结果,未知引用诚实 not-connected
+    expect((await port.getInspection(inspection.inspectionId)).kind).toBe("inspection");
+    expect(await port.getInspection("insp-ffffffffffffffff")).toEqual({ schemaVersion: 1, kind: "not-connected" });
 
-    // requestPlan → 计划文档回填,阶段转 await_confirmation
-    const { planTaskId, plan } = await planAndWait(provider, port, inspectTaskId);
+    // requestPlan → 计划文档回填(阶段为工作流词表),任务成功转 await_confirmation
+    const { plan } = await planAndWait(port, inspection.inspectionId);
     expect(runStateOf(await port.snapshot())).toBe("await_confirmation");
-    expect(plan.revision).toBe(1);
-    expect(plan.stages.map((stage) => stage.stage)).toEqual(["snapshot", "execute", "validate"]);
-    expect(plan.estimatedDurationMs).not.toBeNull();
+    expect(plan.revision).toBeGreaterThanOrEqual(1);
+    expect(plan.stages).toEqual(["snapshot", "execute", "validate"]);
+    // 诚实预估:模拟 Provider 无真实总量来源,null 锚
+    expect(plan.estimatedDurationMs).toBeNull();
     expect((await port.getPlan(plan.planId)).kind).toBe("plan");
-    expect(await port.getPlan("__missing__")).toEqual({ schemaVersion: 1, kind: "not-connected" });
+    expect(await port.getPlan("plan-ffffffffffffffff")).toEqual({ schemaVersion: 1, kind: "not-connected" });
 
     // 超时(确认失效):过期 revision 被拒,运行态 expired(超时生命周期)
-    const stale = await port.confirmPlan(plan.planId, 99);
+    const stale = await port.confirmPlan(plan.planId, 99, "continue");
     expect(stale).toMatchObject({ kind: "rejected", reason: "stale_revision" });
     expect(runStateOf(await port.snapshot())).toBe("expired");
 
-    // 确认绑定 revision:正确 revision 创建执行任务,expired 解除
-    const confirmed = await port.confirmPlan(plan.planId, plan.revision);
+    // 确认绑定 revision + 风险决策:正确 revision 创建执行任务,expired 解除
+    const confirmed = await port.confirmPlan(plan.planId, plan.revision, "snapshot_and_continue", true);
     expect(confirmed.kind).toBe("ok");
     if (confirmed.kind !== "ok" || confirmed.run.kind !== "run") throw new Error("expected a run");
     expect(confirmed.run.runState).toBe("snapshot");
     const confirmCall = invokeSpy.mock.calls.filter(([request]) => request.method === "production.confirmPlan").at(-1)?.[0];
-    expect(confirmCall).toMatchObject({ kind: "command", params: { planId: plan.planId, observedRevision: plan.revision } });
+    expect(confirmCall).toMatchObject({
+      kind: "command",
+      params: {
+        planId: plan.planId,
+        observedRevision: plan.revision,
+        riskChoice: "snapshot_and_continue",
+        rememberForSession: true,
+      },
+    });
 
     // 执行链:running → execute;succeeded → completed + Build Record 回填
     provider.commitTaskState(confirmed.taskId, "running");
@@ -190,9 +209,11 @@ describe("live production port over the Kernel route (F-3)", () => {
     expect(record.status).toBe("succeeded");
     expect(record.restoreAttempted).toBe(false);
     expect(record.stages).toEqual(["snapshot", "execute", "validate"]);
-    expect(Object.values(record.facts).every((fact) => fact.length > 0)).toBe(true);
+    // v0.2:evidenceSummary 四节投影(模拟 Provider 合成记录)
+    expect(record.evidenceSummary.snapshot).toMatchObject({ attempted: true, succeeded: true });
+    expect(record.evidenceSummary.validation.status).toBe("passed");
 
-    // getBuildRecord:计划引用派生记录 id;未知引用诚实 not-connected
+    // getBuildRecord:计划域引用别名可取;未知引用诚实 not-connected
     expect((await port.getBuildRecord(plan.planId)).kind).toBe("record");
     expect(await port.getBuildRecord("__missing__")).toEqual({ schemaVersion: 1, kind: "not-connected" });
 
@@ -211,16 +232,22 @@ describe("live production port over the Kernel route (F-3)", () => {
     const material = await port.pickMaterial("direct_unity_package");
     const started = await port.startInspection(material!);
     if (started.kind !== "ok") throw new Error("expected start acceptance");
+    const { inspection } = await completeInspection(port);
+    const { plan } = await planAndWait(port, inspection.inspectionId);
+    const confirmed = await port.confirmPlan(plan.planId, plan.revision, "continue");
+    if (confirmed.kind !== "ok") throw new Error("expected confirm acceptance");
 
-    // 取消纪律:cancelled 是任务事实;runState 保留取消发生的阶段
-    provider.commitTaskState(started.taskId, "cancelled");
+    // 取消纪律:cancelled 是任务事实;runState 保留取消发生的阶段(execute
+    // 命令取消投影为 execute);inspect/plan 任务在真实链内联完成,取消
+    // 走查落在执行命令上
+    provider.commitTaskState(confirmed.taskId, "cancelled");
     await vi.waitFor(async () => {
       expect(await port.snapshot()).toMatchObject({
-        productionRun: { kind: "run", cancelled: true, runState: "inspect" },
+        productionRun: { kind: "run", cancelled: true, runState: "execute" },
       });
     });
     // 取消后任务中心如实呈现
-    const task = (await gateway.task.snapshot()).tasks.find((entry) => entry.id === started.taskId);
+    const task = (await gateway.task.snapshot()).tasks.find((entry) => entry.id === confirmed.taskId);
     expect(task).toMatchObject({ status: "cancelled", cancellable: false });
   });
 
@@ -231,9 +258,9 @@ describe("live production port over the Kernel route (F-3)", () => {
     const material = await port.pickMaterial("direct_unity_package");
     const started = await port.startInspection(material!);
     if (started.kind !== "ok") throw new Error("expected start acceptance");
-    const { inspectTaskId } = await completeInspection(provider, port);
-    const { plan } = await planAndWait(provider, port, inspectTaskId);
-    const confirmed = await port.confirmPlan(plan.planId, plan.revision);
+    const { inspection } = await completeInspection(port);
+    const { plan } = await planAndWait(port, inspection.inspectionId);
+    const confirmed = await port.confirmPlan(plan.planId, plan.revision, "continue");
     if (confirmed.kind !== "ok") throw new Error("expected confirm acceptance");
 
     // 漂移:failed + inspect_required → failed_recoverable(恢复卡片事实)
@@ -267,8 +294,8 @@ describe("live production port over the Kernel route (F-3)", () => {
     const { port } = await liveGateway([PRODUCTION_CAPABILITIES[0]!]);
     const material = await port.pickMaterial("direct_unity_package");
     expect(await port.startInspection(material!)).toEqual({ kind: "unavailable" });
-    expect(await port.requestPlan("i-1")).toEqual({ kind: "unavailable" });
-    expect(await port.confirmPlan("p-1", 1)).toEqual({ kind: "unavailable" });
+    expect(await port.requestPlan("insp-0123456789abcdef")).toEqual({ kind: "unavailable" });
+    expect(await port.confirmPlan("plan-0123456789abcdef", 1, "continue")).toEqual({ kind: "unavailable" });
     expect(await port.recover("t-1", { kind: "rollback" })).toEqual({ kind: "unavailable" });
     expect(await port.getInspection("i-1")).toEqual({ schemaVersion: 1, kind: "not-connected" });
     expect(await port.getPlan("p-1")).toEqual({ schemaVersion: 1, kind: "not-connected" });
@@ -299,25 +326,48 @@ describe("live production port over the Kernel route (F-3)", () => {
     const views: ModelProductionView[] = [];
     const unsubscribe = livePort.subscribe((view) => views.push(view));
 
+    // 走到执行命令:v0.2 检查/计划内联完成,可脚本化的非终态任务是执行命令
     const material = await livePort.pickMaterial("direct_unity_package");
     const started = await livePort.startInspection(material!);
     if (started.kind !== "ok") throw new Error("expected start acceptance");
+    await vi.waitFor(async () => {
+      expect(inspectionOf(await livePort.snapshot())).not.toBeNull();
+    });
+    const inspectedView = await livePort.snapshot();
+    if (inspectedView.productionRun.kind !== "run" || inspectedView.productionRun.inspection === null) {
+      throw new Error("expected an inspection");
+    }
+    const planned = await livePort.requestPlan(inspectedView.productionRun.inspection.inspectionId);
+    if (planned.kind !== "ok") throw new Error("expected plan acceptance");
+    await vi.waitFor(async () => {
+      expect(planOf(await livePort.snapshot())).not.toBeNull();
+    });
+    const plannedView = await livePort.snapshot();
+    if (plannedView.productionRun.kind !== "run" || plannedView.productionRun.plan === null) {
+      throw new Error("expected a plan");
+    }
+    const confirmed = await livePort.confirmPlan(
+      plannedView.productionRun.plan.planId,
+      plannedView.productionRun.plan.revision,
+      "continue",
+    );
+    if (confirmed.kind !== "ok") throw new Error("expected confirm acceptance");
     await vi.waitFor(() => expect(views.length).toBeGreaterThanOrEqual(1));
-    expect(runStateOf(views[views.length - 1]!)).toBe("inspect");
+    expect(runStateOf(views[views.length - 1]!)).toBe("snapshot");
 
     // 断连期间事件到达:task.get 失败 → 保留上一视图(阶段不回退、不虚构)
     broken = true;
-    provider.commitTaskState(started.taskId, "running");
+    provider.commitTaskState(confirmed.taskId, "running");
     const count = views.length;
     await new Promise((resolve) => setTimeout(resolve, 20));
     expect(views.length).toBe(count);
-    expect(runStateOf(views[views.length - 1]!)).toBe("inspect");
+    expect(runStateOf(views[views.length - 1]!)).toBe("snapshot");
 
     // 恢复后下一次事件继续驱动(权威状态重取成功)
     broken = false;
-    provider.commitTaskState(started.taskId, "cancelled");
+    provider.commitTaskState(confirmed.taskId, "cancelled");
     await vi.waitFor(async () => {
-      expect(await livePort.snapshot()).toMatchObject({ productionRun: { cancelled: true, runState: "inspect" } });
+      expect(await livePort.snapshot()).toMatchObject({ productionRun: { cancelled: true, runState: "execute" } });
     });
     unsubscribe();
   });

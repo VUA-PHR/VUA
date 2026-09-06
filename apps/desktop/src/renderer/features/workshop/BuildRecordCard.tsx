@@ -16,8 +16,10 @@ function statusTone(status: BuildRecordDisplayStatus): "brand" | "error" {
 }
 
 /**
- * 最小 Build Record 卡(F3):结果、已执行阶段、四类证据
- * (快照/Bridge 作业/本地 VPM/验证,不透明载荷原样展示)。
+ * Build Record 卡(v0.2 evidenceSummary 投影):快照 attempted/succeeded、
+ * Bridge jobsRun/allSucceeded/lastOperation 小字、本地 VPM attempted/published、
+ * 验证 status。未尝试的节以 null 锚如实呈现;packageId 保留字段不做链接
+ * (Release 详情链接属后续切片)。
  */
 export function BuildRecordCard({ record }: { record: BuildRecord }) {
   const displayStatus = projectBuildRecordDisplayStatus(
@@ -25,11 +27,50 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
     record.restoreAttempted,
     record.restoreSucceeded,
   );
-  const facts: ReadonlyArray<{ key: keyof typeof copy.factLabels; value: string }> = [
-    { key: "snapshot", value: record.facts.snapshot },
-    { key: "bridgeJob", value: record.facts.bridgeJob },
-    { key: "localVpm", value: record.facts.localVpm },
-    { key: "validation", value: record.facts.validation },
+  const evidence = record.evidenceSummary;
+  const outcome = (value: boolean | null): string =>
+    value === true ? copy.evidence.success : value === false ? copy.evidence.failed : copy.evidence.outcomeUnknown;
+
+  const snapshotLine = evidence.snapshot.attempted
+    ? `${copy.evidence.attempted} · ${outcome(evidence.snapshot.succeeded)}`
+    : copy.evidence.notAttempted;
+  const bridgeLine = `${format(copy.evidence.jobsLine, { count: evidence.bridge.jobsRun })} · ${
+    evidence.bridge.allSucceeded === true
+      ? copy.evidence.allSucceeded
+      : evidence.bridge.allSucceeded === false
+        ? copy.evidence.notAllSucceeded
+        : copy.evidence.outcomeUnknown
+  }`;
+  const localVpmLine = evidence.localVpm.attempted
+    ? evidence.localVpm.published === true
+      ? copy.evidence.published
+      : evidence.localVpm.published === false
+        ? copy.evidence.notPublished
+        : copy.evidence.outcomeUnknown
+    : copy.evidence.notAttempted;
+  const rows: ReadonlyArray<{ key: string; label: string; line: string; note: string | null }> = [
+    { key: "snapshot", label: copy.evidence.snapshot, line: snapshotLine, note: null },
+    {
+      key: "bridge",
+      label: copy.evidence.bridge,
+      line: bridgeLine,
+      note: evidence.bridge.lastOperation,
+    },
+    {
+      key: "localVpm",
+      label: copy.evidence.localVpm,
+      line: localVpmLine,
+      note:
+        evidence.localVpm.attempted && evidence.localVpm.packageId !== null
+          ? format(copy.evidence.packageId, { packageId: evidence.localVpm.packageId })
+          : null,
+    },
+    {
+      key: "validation",
+      label: copy.evidence.validation,
+      line: copy.evidence.validationStatus[evidence.validation.status],
+      note: null,
+    },
   ];
   return (
     <Card className="vua-flow__card">
@@ -52,10 +93,15 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
       <section>
         <h4 className="vua-caption vua-text-secondary">{copy.factsTitle}</h4>
         <dl className="vua-flow__facts">
-          {facts.map((fact) => (
-            <div key={fact.key} className="vua-flow__fact">
-              <dt className="vua-caption vua-text-secondary">{copy.factLabels[fact.key]}</dt>
-              <dd>{fact.value}</dd>
+          {rows.map((row) => (
+            <div key={row.key} className="vua-flow__fact">
+              <dt className="vua-caption vua-text-secondary">{row.label}</dt>
+              <dd>
+                {row.line}
+                {row.note !== null ? (
+                  <span className="vua-caption vua-text-secondary"> — {row.note}</span>
+                ) : null}
+              </dd>
             </div>
           ))}
         </dl>

@@ -86,7 +86,7 @@ describe("desktop Gateway v1", () => {
   });
 });
 
-describe("production.* v0.1 方法守卫", () => {
+describe("production.* v0.2 方法守卫", () => {
   const base = {
     schemaVersion: 1,
     requestId: "request-prod-1",
@@ -95,10 +95,19 @@ describe("production.* v0.1 方法守卫", () => {
     params: { materialRefId: "mat-1", commandId: "command-1" },
   };
   const variants: Record<string, Record<string, unknown>> = {
-    "production.getInspection": { inspectionId: "insp-1" },
-    "production.requestPlan": { inspectionId: "insp-1", commandId: "command-2" },
-    "production.getPlan": { planId: "plan-1" },
-    "production.confirmPlan": { planId: "plan-1", commandId: "command-3", observedRevision: 8 },
+    "production.getInspection": { inspectionId: "insp-0123456789abcdef" },
+    "production.requestPlan": {
+      inspectionId: "insp-0123456789abcdef",
+      commandId: "command-2",
+      mode: "direct_unity_package",
+    },
+    "production.getPlan": { planId: "plan-0123456789abcdef" },
+    "production.confirmPlan": {
+      planId: "plan-0123456789abcdef",
+      commandId: "command-3",
+      observedRevision: 8,
+      riskChoice: "snapshot_and_continue",
+    },
     "production.recover": { taskId: "task-1", decision: "rollback", commandId: "command-4" },
     "production.getBuildRecord": { buildRecordId: "record-1" },
   };
@@ -115,10 +124,44 @@ describe("production.* v0.1 方法守卫", () => {
     }
   });
 
+  it("accepts the optional rememberForSession on confirmPlan", () => {
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1,
+      requestId: "r",
+      method: "production.confirmPlan",
+      params: {
+        planId: "plan-0123456789abcdef",
+        commandId: "command-5",
+        observedRevision: 8,
+        riskChoice: "continue",
+        rememberForSession: true,
+      },
+    })).toBe(true);
+  });
+
   it("rejects malformed production params and unknown production methods", () => {
     expect(isDesktopGatewayRequestV1({
       schemaVersion: 1, requestId: "r", method: "production.startInspection", params: {},
     })).toBe(false);
+    // v0.2:observedRevision 必填、riskChoice 必填且在四枚举内
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.confirmPlan",
+      params: { planId: "plan-0123456789abcdef", commandId: "c", riskChoice: "continue" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.confirmPlan",
+      params: { planId: "plan-0123456789abcdef", commandId: "c", observedRevision: 8, riskChoice: "snapshot_first" },
+    })).toBe(false);
+    // v0.2:mode 必填且在双素材词表内
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.requestPlan",
+      params: { inspectionId: "insp-0123456789abcdef", commandId: "c" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.requestPlan",
+      params: { inspectionId: "insp-0123456789abcdef", commandId: "c", mode: "mystery_mode" },
+    })).toBe(false);
+    // v0.2:recover 瘦身为语义选择,渲染层携带的路径/决定 ID 一律拒绝
     expect(isDesktopGatewayRequestV1({
       schemaVersion: 1, requestId: "r", method: "production.recover",
       params: { taskId: "t", decision: "continue" },
@@ -126,6 +169,10 @@ describe("production.* v0.1 方法守卫", () => {
     expect(isDesktopGatewayRequestV1({
       schemaVersion: 1, requestId: "r", method: "production.recover",
       params: { taskId: "t", decision: "sideways", commandId: "c" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "r", method: "production.recover",
+      params: { taskId: "t", decision: "rollback", commandId: "c", sourceFolder: "C:/x" },
     })).toBe(false);
     expect(isDesktopGatewayRequestV1({
       schemaVersion: 1, requestId: "r", method: "production.unknown", params: {},

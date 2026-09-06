@@ -15,13 +15,24 @@ import { isAllowedLocalSender } from "./security.js";
 const TASK_LIST_CAPABILITY = "task.list";
 const REMOTE_BROWSER_CAPABILITY = "desktop.remoteBrowser";
 
+/** 生产上下文四元组(amf-production v0.2:startInspection 一次性转交) */
+export interface ProductionContextV02 {
+  readonly sourceFolder: string;
+  readonly projectRoot: string;
+  readonly artifactOutputRoot: string;
+  readonly projectId: string;
+}
+
 export interface DesktopGatewayRouteContext {
   readonly provider: OrchestratorProviderV01;
   readonly productVersion: string;
   readonly platform: "win32" | "darwin" | "linux";
   readonly rendererUrl: string | undefined;
-  /** 素材引用解析:refId → 真实路径(Main 侧 materialSources 映射);未知引用返回 undefined */
-  readonly resolveMaterialSource: (refId: string) => { sourceFolder: string; intake: string } | undefined;
+  /** 生产上下文解析(M3):refId → 四元组。sourceFolder 来自用户显式选取,
+   *  projectRoot/artifactOutputRoot/projectId 是 VUA 管辖配置,渲染层不可见;
+   *  未知引用返回 undefined。四元组随 startInspection 一次性转交,此后路径
+   *  不再出现在任何请求面 */
+  readonly resolveMaterialSource: (refId: string) => ProductionContextV02 | undefined;
 }
 
 function requestIdFrom(value: unknown): string {
@@ -100,8 +111,9 @@ function toApplicationRequest(
         params: {},
       };
     case "production.startInspection": {
-      const source = resolveMaterialSource(request.params.materialRefId);
-      if (source === undefined) {
+      // v0.2:四元组在此一次性转交;渲染层仍只持 materialRefId + commandId
+      const context = resolveMaterialSource(request.params.materialRefId);
+      if (context === undefined) {
         throw new UnknownMaterialSourceError(request.params.materialRefId);
       }
       return {
@@ -109,7 +121,12 @@ function toApplicationRequest(
         kind: "command",
         method: "production.startInspection",
         commandId: request.params.commandId,
-        params: { sourceFolder: source.sourceFolder },
+        params: {
+          sourceFolder: context.sourceFolder,
+          projectRoot: context.projectRoot,
+          artifactOutputRoot: context.artifactOutputRoot,
+          projectId: context.projectId,
+        },
       };
     }
     case "production.getInspection":
@@ -120,7 +137,11 @@ function toApplicationRequest(
         kind: "command",
         method: "production.requestPlan",
         commandId: request.params.commandId,
-        params: { inspectionId: request.params.inspectionId },
+        params: {
+          inspectionId: request.params.inspectionId,
+          // 双素材入口的真实用户决策,渲染层从已选素材的 intake 透传
+          mode: request.params.mode,
+        },
       };
     case "production.getPlan":
       return { ...base, kind: "query", method: "production.getPlan", params: { planId: request.params.planId } };
@@ -132,15 +153,18 @@ function toApplicationRequest(
         commandId: request.params.commandId,
         params: {
           planId: request.params.planId,
-          ...(request.params.observedRevision === undefined
+          observedRevision: request.params.observedRevision,
+          riskChoice: request.params.riskChoice,
+          ...(request.params.rememberForSession === undefined
             ? {}
-            : { observedRevision: request.params.observedRevision }),
+            : { rememberForSession: request.params.rememberForSession }),
         },
       };
     case "production.getBuildRecord":
       return { ...base, kind: "query", method: "production.getBuildRecord", params: { buildRecordId: request.params.buildRecordId } };
     case "production.recover": {
-      // 用户决定 ID 由 Kernel 生成(冻结纪律):渲染层不传入,防伪造授权
+      // v0.2:用户决定 ID 由 Kernel 生成并绑定(taskId + revision + decision),
+      // 渲染层不传入,防伪造授权;路径已在登记绑定中,不再由请求携带
       const decisionId = `udid-${crypto.randomUUID()}`;
       return {
         ...base,
@@ -151,13 +175,6 @@ function toApplicationRequest(
           taskId: request.params.taskId,
           decision: request.params.decision,
           decisionId,
-          ...(request.params.planTaskId === undefined ? {} : { planTaskId: request.params.planTaskId }),
-          ...(request.params.sourceFolder === undefined ? {} : { sourceFolder: request.params.sourceFolder }),
-          ...(request.params.projectRoot === undefined ? {} : { projectRoot: request.params.projectRoot }),
-          ...(request.params.artifactOutputRoot === undefined ? {} : { artifactOutputRoot: request.params.artifactOutputRoot }),
-          ...(request.params.confirmedAt === undefined ? {} : { confirmedAt: request.params.confirmedAt }),
-          ...(request.params.riskChoice === undefined ? {} : { riskChoice: request.params.riskChoice }),
-          ...(request.params.rememberForSession === undefined ? {} : { rememberForSession: request.params.rememberForSession }),
         },
       };
     }

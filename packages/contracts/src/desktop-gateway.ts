@@ -3,6 +3,8 @@ import type {
   ApplicationEventV01,
   ApplicationSuccessValueV01,
   CatalogAvailabilityStatusV03,
+  ProductionModeV02,
+  ProductionRiskChoiceV02,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -77,7 +79,10 @@ export interface GatewayDemoTaskRequestV1 {
   };
 }
 
-// ---- production.*(production-use-case v0.1 冻结面) ----
+// ---- production.*(amf-production v0.2 登记面:渲染层面不变的部分保持原样;
+// requestPlan 增 mode、confirmPlan 增 riskChoice/rememberForSession、recover
+// 瘦身为语义选择——路径与项目身份由 Kernel 经 startInspection 一次性转交,
+// decisionId 由 Kernel 受理时生成,渲染层均不可见) ----
 
 export interface ProductionStartInspectionRequestV1 {
   readonly schemaVersion: 1;
@@ -100,7 +105,12 @@ export interface ProductionRequestPlanRequestV1 {
   readonly schemaVersion: 1;
   readonly requestId: string;
   readonly method: "production.requestPlan";
-  readonly params: { readonly inspectionId: string; readonly commandId: string };
+  readonly params: {
+    readonly inspectionId: string;
+    readonly commandId: string;
+    /** 双素材入口的真实用户决策(渲染层从已选素材的 intake 透传) */
+    readonly mode: ProductionModeV02;
+  };
 }
 
 export interface ProductionGetPlanRequestV1 {
@@ -117,7 +127,10 @@ export interface ProductionConfirmPlanRequestV1 {
   readonly params: {
     readonly planId: string;
     readonly commandId: string;
-    readonly observedRevision?: number;
+    readonly observedRevision: number;
+    /** 风险决策(v0.2 必填:计划审阅的风险决策控件) */
+    readonly riskChoice: ProductionRiskChoiceV02;
+    readonly rememberForSession?: boolean;
   };
 }
 
@@ -128,20 +141,9 @@ export interface ProductionRecoverRequestV1 {
   readonly params: {
     /** 原始失败任务(恢复绑定对象) */
     readonly taskId: string;
+    /** 只携带语义选择;decisionId 由 Kernel 受理时生成并绑定 */
     readonly decision: "continue" | "rollback";
     readonly commandId: string;
-    /** 计划任务 id(continue 必需;rollback 可空) */
-    readonly planTaskId?: string;
-    /** 恢复上下文:来源与目标项目(rollback 时可空) */
-    readonly sourceFolder?: string;
-    readonly projectRoot?: string;
-    readonly artifactOutputRoot?: string;
-    /** 用户确认时刻(ISO);Kernel 生成 userDecisionId 后随请求下发 */
-    readonly confirmedAt?: string;
-    /** 风险选择(continue 消费) */
-    readonly riskChoice?: string;
-    /** 会话内记住本次选择 */
-    readonly rememberForSession?: boolean;
   };
 }
 
@@ -388,6 +390,22 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
+const PRODUCTION_MODES_V02: readonly string[] = ["direct_unity_package", "local_reusable_vpm"];
+const PRODUCTION_RISK_CHOICES_V02: readonly string[] = [
+  "snapshot_and_continue",
+  "continue",
+  "cancel",
+  "not_required",
+];
+
+function isProductionModeV02(value: unknown): boolean {
+  return typeof value === "string" && PRODUCTION_MODES_V02.includes(value);
+}
+
+function isProductionRiskChoiceV02(value: unknown): boolean {
+  return typeof value === "string" && PRODUCTION_RISK_CHOICES_V02.includes(value);
+}
+
 const REQUEST_KEYS = ["schemaVersion", "requestId", "method", "params"] as const;
 
 export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatewayRequestV1 {
@@ -439,38 +457,37 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isIdentifier(value.params.inspectionId);
     case "production.requestPlan":
       return hasExactKeys(value, REQUEST_KEYS)
-        && hasExactKeys(value.params, ["inspectionId", "commandId"])
+        && hasExactKeys(value.params, ["inspectionId", "commandId", "mode"])
         && isIdentifier(value.params.inspectionId)
-        && isIdentifier(value.params.commandId);
+        && isIdentifier(value.params.commandId)
+        && isProductionModeV02(value.params.mode);
     case "production.getPlan":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["planId"])
         && isIdentifier(value.params.planId);
-    case "production.confirmPlan":
-      return hasExactKeys(value, REQUEST_KEYS)
-        && hasExactKeys(value.params, ["planId", "commandId", "observedRevision"])
-        && isIdentifier(value.params.planId)
-        && isIdentifier(value.params.commandId)
-        && isNonNegativeInteger(value.params.observedRevision);
-    case "production.recover": {
+    case "production.confirmPlan": {
       if (!hasExactKeys(value, REQUEST_KEYS)) return false;
-      const recoveryParams = value.params as Record<string, unknown>;
-      if (!isIdentifier(recoveryParams.taskId) || !isIdentifier(recoveryParams.commandId)) {
+      const confirmParams = value.params as Record<string, unknown>;
+      const confirmKeys = Object.keys(confirmParams).sort();
+      const confirmExpected = ["commandId", "observedRevision", "planId", "rememberForSession", "riskChoice"];
+      if (confirmKeys.length !== 4 && confirmKeys.length !== 5) return false;
+      if (!confirmKeys.every((key) => confirmExpected.includes(key))) return false;
+      if (!isIdentifier(confirmParams.planId) || !isIdentifier(confirmParams.commandId)) return false;
+      if (typeof confirmParams.observedRevision !== "number"
+        || !Number.isSafeInteger(confirmParams.observedRevision)
+        || confirmParams.observedRevision < 1) {
         return false;
       }
-      if (recoveryParams.decision !== "continue" && recoveryParams.decision !== "rollback") {
-        return false;
-      }
-      // 可选上下文字段存在时必须是字符串
-      for (const optionalField of ["planTaskId", "sourceFolder", "projectRoot", "artifactOutputRoot", "confirmedAt", "riskChoice"] as const) {
-        const fieldValue = recoveryParams[optionalField];
-        if (fieldValue !== undefined && typeof fieldValue !== "string") return false;
-      }
-      if (recoveryParams.rememberForSession !== undefined && typeof recoveryParams.rememberForSession !== "boolean") {
-        return false;
-      }
-      return true;
+      if (!isProductionRiskChoiceV02(confirmParams.riskChoice)) return false;
+      return confirmParams.rememberForSession === undefined
+        || typeof confirmParams.rememberForSession === "boolean";
     }
+    case "production.recover":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["taskId", "decision", "commandId"])
+        && isIdentifier(value.params.taskId)
+        && isIdentifier(value.params.commandId)
+        && (value.params.decision === "continue" || value.params.decision === "rollback");
     case "production.getBuildRecord":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["buildRecordId"])

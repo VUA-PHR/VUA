@@ -124,59 +124,212 @@ export interface TaskCancellationCommandV01 extends ApplicationRequestBaseV01 {
   };
 }
 
-// ---- production.*(production-use-case v0.1 冻结面;素材路径已由 Kernel 解析) ----
+// ---- production.*(amf-production v0.2 登记面:七方法参数/响应/文档面与
+// schemas/amf-production/v0.2/methods 七份 Schema 逐字段一致,与 Rust
+// provider_host 及固定向量三处同批;路径与项目身份由 Kernel 经
+// startInspection 一次性转交,此后不再出现在请求面) ----
 
-export interface ProductionStartInspectionCommandV01 extends ApplicationRequestBaseV01 {
+/** 风险决策四枚举($defs.riskChoice;B 侧 RiskDecisionChoice 为权威词表) */
+export type ProductionRiskChoiceV02 =
+  | "snapshot_and_continue"
+  | "continue"
+  | "cancel"
+  | "not_required";
+
+/** 双素材模式($defs.mode;与素材 intake 词表一致,requestPlan 携带) */
+export type ProductionModeV02 = "direct_unity_package" | "local_reusable_vpm";
+
+/** 恢复决定($defs.decision) */
+export type ProductionDecisionV02 = "continue" | "rollback";
+
+/** 工作流阶段($defs.workflowStage;unity-bridge 词表) */
+export type ProductionWorkflowStageV02 =
+  | "inspect"
+  | "snapshot"
+  | "execute"
+  | "validate"
+  | "completed";
+
+/** 检查发现与计划风险共用形状(kind 闭集 + recoverable/retryable 标注) */
+export interface ProductionFindingV02 {
+  readonly kind: "compat" | "missing" | "conflict";
+  readonly summary: string;
+  readonly recoverable: boolean;
+  readonly retryable: boolean;
+}
+
+/** 可计划性结论(由应用层给出,前端不推断) */
+export type ProductionPlannabilityV02 = "plannable" | "needs_attention" | "not_plannable";
+
+/** 检查文档(C1 文档面:get-inspectionResult.inspection) */
+export interface InspectionDocumentV02 {
+  readonly inspectionId: string;
+  readonly inspectedAt: string;
+  readonly displayName: string;
+  readonly sourceFingerprint: string;
+  readonly riskFingerprint: string;
+  readonly packages: readonly {
+    readonly relativePath: string;
+    readonly sizeBytes: number;
+    readonly sha256: string;
+  }[];
+  readonly findings: readonly ProductionFindingV02[];
+  readonly plannability: ProductionPlannabilityV02;
+}
+
+/** 计划文档(C1 文档面:get-planResult.plan;diffs 条目 Schema 留开) */
+export interface PlanDocumentV02 {
+  readonly planId: string;
+  readonly revision: number;
+  readonly inspectionId: string;
+  readonly mode: ProductionModeV02;
+  readonly projectId: string;
+  readonly projectFingerprint: string;
+  readonly stages: readonly ProductionWorkflowStageV02[];
+  readonly riskDecisionRequired: boolean;
+  readonly risks: readonly ProductionFindingV02[];
+  readonly diffs: readonly Record<string, unknown>[];
+  readonly estimatedDurationMs: number | null;
+}
+
+/** 构建记录权威状态五态(build_record v0.2) */
+export type BuildRecordStatusV02 =
+  | "succeeded"
+  | "succeeded_with_warnings"
+  | "failed"
+  | "cancelled"
+  | "recovered";
+
+/** evidenceSummary 四节(快照 / Bridge 作业 / 本地 VPM / 验证;未尝试节 null 锚) */
+export interface BuildRecordEvidenceSummaryV02 {
+  readonly snapshot: { readonly attempted: boolean; readonly succeeded: boolean | null };
+  readonly bridge: {
+    readonly jobsRun: number;
+    readonly allSucceeded: boolean | null;
+    readonly lastOperation: string | null;
+  };
+  readonly localVpm: {
+    readonly attempted: boolean;
+    readonly published: boolean | null;
+    readonly packageId: string | null;
+  };
+  readonly validation: { readonly status: "passed" | "failed" | "skipped" };
+}
+
+/** 构建记录 v0.2 文档(get-build-recordResult.buildRecord;表现安全投影) */
+export interface BuildRecordDocumentV02 {
+  readonly recordId: string;
+  readonly taskId: string;
+  readonly planId: string;
+  readonly mode: ProductionModeV02;
+  readonly status: BuildRecordStatusV02;
+  readonly stages: readonly ProductionWorkflowStageV02[];
+  readonly evidenceSummary: BuildRecordEvidenceSummaryV02;
+  readonly restoreAttempted: boolean;
+  readonly restoreSucceeded: boolean | null;
+  readonly startedAt: string;
+  readonly finishedAt: string;
+}
+
+/** 命令受理回执(与 provider_host 同形:{ contractVersion, task }) */
+export interface ProductionTaskStartedV02 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly task: TaskSnapshotV01;
+}
+
+export interface ProductionStartInspectionCommandV02 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "production.startInspection";
   readonly commandId: string;
-  readonly params: { readonly sourceFolder: string };
+  readonly params: {
+    readonly sourceFolder: string;
+    readonly projectRoot: string;
+    readonly artifactOutputRoot: string;
+    readonly projectId: string;
+  };
 }
 
-export interface ProductionGetInspectionQueryV01 extends ApplicationRequestBaseV01 {
+/** startInspection 成功值:任务 + 签发的检查域身份(insp- 前缀) */
+export interface ProductionInspectionStartedV02 extends ProductionTaskStartedV02 {
+  readonly inspectionId: string;
+}
+
+export interface ProductionGetInspectionQueryV02 extends ApplicationRequestBaseV01 {
   readonly kind: "query";
   readonly method: "production.getInspection";
   readonly params: { readonly inspectionId: string };
 }
 
-export interface ProductionRequestPlanCommandV01 extends ApplicationRequestBaseV01 {
+/** 文档查询成功值:任务事实 + 内嵌文档 */
+export interface ProductionInspectionViewV02 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly taskId: string;
+  readonly state: string;
+  readonly inspection: InspectionDocumentV02;
+}
+
+export interface ProductionRequestPlanCommandV02 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "production.requestPlan";
   readonly commandId: string;
-  readonly params: { readonly inspectionId: string };
+  readonly params: {
+    readonly inspectionId: string;
+    readonly mode: ProductionModeV02;
+  };
 }
 
-export interface ProductionGetPlanQueryV01 extends ApplicationRequestBaseV01 {
+/** requestPlan 成功值:任务 + 计划域身份(plan- 前缀)+ 确认绑定 revision */
+export interface ProductionPlanIssuedV02 extends ProductionTaskStartedV02 {
+  readonly planId: string;
+  readonly revision: number;
+}
+
+export interface ProductionGetPlanQueryV02 extends ApplicationRequestBaseV01 {
   readonly kind: "query";
   readonly method: "production.getPlan";
   readonly params: { readonly planId: string };
 }
 
-export interface ProductionConfirmPlanCommandV01 extends ApplicationRequestBaseV01 {
+export interface ProductionPlanViewV02 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly taskId: string;
+  readonly state: string;
+  readonly plan: PlanDocumentV02;
+}
+
+export interface ProductionConfirmPlanCommandV02 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "production.confirmPlan";
   readonly commandId: string;
   readonly params: {
     readonly planId: string;
-    readonly observedRevision?: number;
+    readonly observedRevision: number;
+    readonly riskChoice: ProductionRiskChoiceV02;
+    readonly rememberForSession?: boolean;
   };
 }
 
-export interface ProductionRecoverCommandV01 extends ApplicationRequestBaseV01 {
+export interface ProductionRecoverCommandV02 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "production.recover";
   readonly commandId: string;
   readonly params: {
     readonly taskId: string;
-    readonly decision: "continue" | "rollback";
+    readonly decision: ProductionDecisionV02;
     readonly decisionId: string;
+    readonly planId?: string;
   };
 }
 
-export interface ProductionGetBuildRecordQueryV01 extends ApplicationRequestBaseV01 {
+export interface ProductionGetBuildRecordQueryV02 extends ApplicationRequestBaseV01 {
   readonly kind: "query";
   readonly method: "production.getBuildRecord";
   readonly params: { readonly buildRecordId: string };
+}
+
+export interface ProductionBuildRecordViewV02 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly buildRecord: BuildRecordDocumentV02;
 }
 
 // ---- catalog.* / warehouse.*(bdl-queries v0.3 冻结面:AMF 从本地 BDL 出的
@@ -421,13 +574,13 @@ export type ApplicationRequestV01 =
   | TaskCancellationCommandV01
   | EnvironmentSnapshotQueryV01
   | DemoTaskStartCommandV01
-  | ProductionStartInspectionCommandV01
-  | ProductionGetInspectionQueryV01
-  | ProductionRequestPlanCommandV01
-  | ProductionGetPlanQueryV01
-  | ProductionConfirmPlanCommandV01
-  | ProductionRecoverCommandV01
-  | ProductionGetBuildRecordQueryV01
+  | ProductionStartInspectionCommandV02
+  | ProductionGetInspectionQueryV02
+  | ProductionRequestPlanCommandV02
+  | ProductionGetPlanQueryV02
+  | ProductionConfirmPlanCommandV02
+  | ProductionRecoverCommandV02
+  | ProductionGetBuildRecordQueryV02
   | CatalogListQueryV03
   | CatalogDetailQueryV03
   | CatalogStatusQueryV03
@@ -509,6 +662,11 @@ export type ApplicationSuccessValueV01 =
   | TaskCancellationResultV01
   | EnvironmentSnapshotV01
   | DemoTaskStartedV01
+  | ProductionInspectionStartedV02
+  | ProductionInspectionViewV02
+  | ProductionPlanIssuedV02
+  | ProductionPlanViewV02
+  | ProductionBuildRecordViewV02
   | CatalogListResultV03
   | CatalogDetailResultV03
   | CatalogStatusResultV03
@@ -597,6 +755,39 @@ function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
+/** Schema minLength: 1 的自由文本(路径、项目 id、decisionId 等) */
+function isNonEmptyText(value: unknown): value is string {
+  return typeof value === "string" && value.length >= 1;
+}
+
+/** 域引用身份($defs):前缀 + 16 位小写十六进制 */
+const INSPECTION_ID_PATTERN = /^insp-[0-9a-f]{16}$/;
+const PLAN_ID_PATTERN = /^plan-[0-9a-f]{16}$/;
+
+function isInspectionId(value: unknown): value is string {
+  return typeof value === "string" && INSPECTION_ID_PATTERN.test(value);
+}
+
+function isPlanId(value: unknown): value is string {
+  return typeof value === "string" && PLAN_ID_PATTERN.test(value);
+}
+
+const PRODUCTION_MODES_V02: readonly string[] = ["direct_unity_package", "local_reusable_vpm"];
+const PRODUCTION_RISK_CHOICES_V02: readonly string[] = [
+  "snapshot_and_continue",
+  "continue",
+  "cancel",
+  "not_required",
+];
+
+function isProductionMode(value: unknown): boolean {
+  return typeof value === "string" && PRODUCTION_MODES_V02.includes(value);
+}
+
+function isProductionRiskChoice(value: unknown): boolean {
+  return typeof value === "string" && PRODUCTION_RISK_CHOICES_V02.includes(value);
+}
+
 export function isApplicationRequestV01(value: unknown): value is ApplicationRequestV01 {
   if (!isRecord(value) || value.contractVersion !== APPLICATION_CONTRACT_VERSION) return false;
   if (!isIdentifier(value.requestId) || !isIdentifier(value.correlationId) || !isRecord(value.params)) return false;
@@ -633,46 +824,69 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && hasExactKeys(value.params, []);
   }
   if (value.kind === "command" && value.method === "production.startInspection") {
+    // v0.2 四元组:路径与项目身份由 Kernel 一次性转交,Schema 只要求非空字符串
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
       && isIdentifier(value.commandId)
-      && hasExactKeys(value.params, ["sourceFolder"])
-      && isIdentifier(value.params.sourceFolder);
+      && hasExactKeys(value.params, ["sourceFolder", "projectRoot", "artifactOutputRoot", "projectId"])
+      && isNonEmptyText(value.params.sourceFolder)
+      && isNonEmptyText(value.params.projectRoot)
+      && isNonEmptyText(value.params.artifactOutputRoot)
+      && isNonEmptyText(value.params.projectId);
   }
   if (value.kind === "query" && value.method === "production.getInspection") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["inspectionId"])
-      && isIdentifier(value.params.inspectionId);
+      && isInspectionId(value.params.inspectionId);
   }
   if (value.kind === "command" && value.method === "production.requestPlan") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
       && isIdentifier(value.commandId)
-      && hasExactKeys(value.params, ["inspectionId"])
-      && isIdentifier(value.params.inspectionId);
+      && hasExactKeys(value.params, ["inspectionId", "mode"])
+      && isInspectionId(value.params.inspectionId)
+      && isProductionMode(value.params.mode);
   }
   if (value.kind === "query" && value.method === "production.getPlan") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["planId"])
-      && isIdentifier(value.params.planId);
+      && isPlanId(value.params.planId);
   }
   if (value.kind === "command" && value.method === "production.confirmPlan") {
-    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
-      && isIdentifier(value.commandId)
-      && hasExactKeys(value.params, ["planId"])
-      && isIdentifier(value.params.planId)
-      && (value.params.observedRevision === undefined || isNonNegativeInteger(value.params.observedRevision));
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)) {
+      return false;
+    }
+    // v0.2:observedRevision 与 riskChoice 必填(确认纪律 + 风险决策 UI 义务),
+    // rememberForSession 可选;词表外参数拒绝
+    const confirmKeys = Object.keys(value.params).sort();
+    const confirmExpected = ["observedRevision", "planId", "rememberForSession", "riskChoice"];
+    if (confirmKeys.length !== 3 && confirmKeys.length !== 4) return false;
+    if (!confirmKeys.every((key) => confirmExpected.includes(key))) return false;
+    if (!isPlanId(value.params.planId)) return false;
+    if (typeof value.params.observedRevision !== "number"
+      || !Number.isSafeInteger(value.params.observedRevision)
+      || value.params.observedRevision < 1) return false;
+    if (!isProductionRiskChoice(value.params.riskChoice)) return false;
+    return value.params.rememberForSession === undefined
+      || typeof value.params.rememberForSession === "boolean";
   }
   if (value.kind === "command" && value.method === "production.recover") {
-    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
-      && isIdentifier(value.commandId)
-      && hasExactKeys(value.params, ["taskId", "decision", "decisionId"])
-      && isIdentifier(value.params.taskId)
-      && isIdentifier(value.params.decisionId)
-      && (value.params.decision === "continue" || value.params.decision === "rollback");
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)) {
+      return false;
+    }
+    const recoverKeys = Object.keys(value.params).sort();
+    const recoverExpected = ["decision", "decisionId", "planId", "taskId"];
+    if (recoverKeys.length !== 3 && recoverKeys.length !== 4) return false;
+    if (!recoverKeys.every((key) => recoverExpected.includes(key))) return false;
+    if (!isIdentifier(value.params.taskId) || !isNonEmptyText(value.params.decisionId)) return false;
+    if (value.params.decision !== "continue" && value.params.decision !== "rollback") return false;
+    return value.params.planId === undefined || isPlanId(value.params.planId);
   }
   if (value.kind === "query" && value.method === "production.getBuildRecord") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["buildRecordId"])
-      && isIdentifier(value.params.buildRecordId);
+      && typeof value.params.buildRecordId === "string"
+      && /^[A-Za-z0-9_-]{1,128}$/.test(value.params.buildRecordId);
   }
   if (value.kind === "query" && value.method === "catalog.list") {
     if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])) return false;

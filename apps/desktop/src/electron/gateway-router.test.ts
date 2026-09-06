@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockOrchestratorProviderV01 } from "@vua/orchestrator-provider";
-import { routeDesktopGatewayInvoke } from "./gateway-router.js";
+import { routeDesktopGatewayInvoke, type DesktopGatewayRouteContext } from "./gateway-router.js";
 
 const rendererUrl = "http://127.0.0.1:5173";
 
@@ -310,5 +310,173 @@ describe("bdl-queries v0.2 routing", () => {
 
     expect(response).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
+describe("amf-production v0.2 routing", () => {
+  const quad = {
+    sourceFolder: "C:/materials/source",
+    projectRoot: "C:/projects/target",
+    artifactOutputRoot: "C:/artifacts",
+    projectId: "vua-m3-synthetic-avatar",
+  };
+
+  function productionContext(provider: DesktopGatewayRouteContext["provider"]): DesktopGatewayRouteContext {
+    return {
+      provider,
+      productVersion: "0.5.0",
+      platform: "win32",
+      rendererUrl,
+      resolveMaterialSource: (refId) => (refId === "mat-1" ? quad : undefined),
+    };
+  }
+
+  it("translates startInspection into the one-time production context handover", async () => {
+    const provider = new MockOrchestratorProviderV01({
+      capabilities: [{ operationId: "production.useCase", availability: "available" }],
+    });
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const response = await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-start-1",
+        method: "production.startInspection",
+        params: { materialRefId: "mat-1", commandId: "command-1" },
+      },
+    );
+
+    expect(response.ok).toBe(true);
+    expect(invoke).toHaveBeenCalledWith(expect.objectContaining({
+      kind: "command",
+      method: "production.startInspection",
+      commandId: "command-1",
+      // 四元组随应用请求一次性转交;渲染层只有 refId
+      params: quad,
+    }));
+
+    const unknown = await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-start-2",
+        method: "production.startInspection",
+        params: { materialRefId: "mat-missing", commandId: "command-2" },
+      },
+    );
+    expect(unknown).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.material.source_unknown" } },
+    });
+  });
+
+  it("passes requestPlan mode and confirmPlan risk decision through verbatim", async () => {
+    const provider = new MockOrchestratorProviderV01({
+      capabilities: [{ operationId: "production.useCase", availability: "available" }],
+    });
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-plan-1",
+        method: "production.requestPlan",
+        params: {
+          inspectionId: "insp-0123456789abcdef",
+          commandId: "command-plan",
+          mode: "local_reusable_vpm",
+        },
+      },
+    );
+    expect(invoke).toHaveBeenLastCalledWith(expect.objectContaining({
+      method: "production.requestPlan",
+      params: { inspectionId: "insp-0123456789abcdef", mode: "local_reusable_vpm" },
+    }));
+
+    await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-confirm-1",
+        method: "production.confirmPlan",
+        params: {
+          planId: "plan-0123456789abcdef",
+          commandId: "command-confirm",
+          observedRevision: 3,
+          riskChoice: "snapshot_and_continue",
+          rememberForSession: true,
+        },
+      },
+    );
+    expect(invoke).toHaveBeenLastCalledWith(expect.objectContaining({
+      method: "production.confirmPlan",
+      params: {
+        planId: "plan-0123456789abcdef",
+        observedRevision: 3,
+        riskChoice: "snapshot_and_continue",
+        rememberForSession: true,
+      },
+    }));
+  });
+
+  it("generates the recover decisionId in the Kernel and never accepts renderer paths", async () => {
+    const provider = new MockOrchestratorProviderV01({
+      capabilities: [{ operationId: "production.useCase", availability: "available" }],
+    });
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const response = await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-recover-1",
+        method: "production.recover",
+        params: {
+          taskId: "task-failed-1",
+          decision: "rollback",
+          commandId: "command-recover",
+        },
+      },
+    );
+
+    // 本测试只锁 Kernel 翻译(任务不存在时 mock 的应用错误与本翻译无关)
+    const application = invoke.mock.calls.at(-1)?.[0] as {
+      method: string;
+      params: { decisionId: string; taskId: string; decision: string };
+    };
+    expect(application.method).toBe("production.recover");
+    expect(application.params.taskId).toBe("task-failed-1");
+    expect(application.params.decision).toBe("rollback");
+    // 用户决定 ID 是 Kernel 侧授权事实:受理时生成并绑定,渲染层不可见
+    expect(application.params.decisionId).toMatch(/^udid-/);
+    expect(response.ok).toBe(false);
+
+    // 信封守卫:v0.2 recover 面不再接受渲染层携带路径/风险选择等权威字段
+    const stale = await routeDesktopGatewayInvoke(
+      productionContext(provider),
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-recover-2",
+        method: "production.recover",
+        params: {
+          taskId: "task-failed-1",
+          decision: "rollback",
+          commandId: "command-recover-2",
+          sourceFolder: "C:/renderer-supplied",
+        },
+      },
+    );
+    expect(stale).toMatchObject({ ok: false, error: { code: "invalid_request" } });
   });
 });
