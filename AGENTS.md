@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.1.2
+> Document version: 1.1.3
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -100,9 +100,10 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - Current code reality: the Cargo workspace splits the Orchestrator into `crates/orchestrator`
   (core: task runtime, recovery, use cases, domain ports, contract types) plus `bdl-store`,
   `unity-bridge`, `provider-host`, `acquisition`, and `project-manager` (layout table in
-  `docs/architecture/system_ZH.md`). `environment_managers` remains in the core pending the
-  deferred extraction decision (`collab/proposals/004-environment-managers-split.md`). New modules
-  land in their owning crate from the start; the core must not grow adapter code.
+  `docs/architecture/system_ZH.md`). `environment_managers` moved to `project-manager` behind the
+  core-owned `VccSettingsReader` port (proposal 004, option 3, landed 2026-09-07); wire face and
+  core port contracts are unchanged. New modules land in their owning crate from the start; the
+  core must not grow adapter code.
 - Community plugins never join the trusted in-process composition context or receive Electron
   Main/Orchestrator Provider authority. Their execution requires a separately accepted isolation and
   security decision.
@@ -176,6 +177,9 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.1.3 (2026-09-07): code-reality bullet updated — `environment_managers` moved to
+  `project-manager` behind the core-owned `VccSettingsReader` port (proposal 004 option 3
+  landed); the deferred-extraction exception is closed.
 - 1.1.2 (2026-09-07): added the escalation rule — unsolvable problems go to the user
   (BOARD「待用户裁决」, `[需用户]`) instead of consensus-manufacturing or bar-lowering.
 - 1.1.1 (2026-09-07): added the standing-process pointers (`collab/roles/`, `collab/TICK.md`,

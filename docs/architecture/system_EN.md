@@ -2,9 +2,9 @@
 
 [English](system_EN.md) | [简体中文](system_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.0.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors system_ZH.md at 1.0.0)
+> Authoritative language: 简体中文 (this English edition mirrors system_ZH.md at 1.0.1)
 > Scope: Entire VUA system
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
@@ -59,8 +59,8 @@ Modules, grouped by domain:
   `material_identity`, `material_task`, `local_vpm_artifact`, `artifact_inspection`;
 - **Acquisition and BDL:** `download_events`, `booth_extraction`, `warehouse_import`,
   `warehouse_maintenance`, `bdl_store`, `bdl_queries`;
-- **Project and environment:** `vpm`, `vpm_backend`, `environment`, `environment_managers`,
-  `win_registry`, `tools`.
+- **Project and environment:** `vpm`, `vpm_backend`, `environment`, `win_registry`,
+  `tools`. (`environment_managers` moved to `project-manager` on 2026-09-07, see below.)
 
 "BDL is AMF-private" has had structural enforcement through the `bdl-store` crate since the crate
 split landed on 2026-09-06 (previously upheld by calling discipline alone).
@@ -95,15 +95,19 @@ green):
 | `orchestrator` (core) | task runtime, cancellation/recovery, use cases, domain ports, application contract types, `material_types` leaf types, `vpm_backend` port trait | single application core |
 | `bdl-store` | `bdl_store`, `bdl_queries`, `download_events`, BDL SQLite schema/migration consumption | "AMF-private" gains structural enforcement |
 | `unity-bridge` | `bridge`, `material_intake`/`material_exec`/`material_staging`/`material_task`, `staging_scaffold`, `local_vpm_artifact`, `production_documents` | same lifecycle as the C# package and Bridge schemas |
-| `provider-host` | `provider_host`, `process`, `provider_job` + the `vua-orchestrator-provider` binary | separate process boundary; composition root |
+| `provider-host` | `provider_host`, `process`, `provider_job` + the `vua-orchestrator-provider` binary; warehouse three-command service registration (`WarehouseConfig`/`run_provider_host_with_services`, proposal 005) | separate process boundary; composition root |
 | `acquisition` | `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain |
-| `project-manager` | `vpm_backend` implementation, `project_lock` | external tool adapters |
+| `project-manager` | `vpm_backend` implementation, `project_lock`, `environment_managers` (consumed through the core-owned `VccSettingsReader` port, proposal 004 option 3, landed 2026-09-07) | external tool adapters; environment managers |
 
 Dependency direction: domain types and ports stay in the core; adapter crates depend on the core;
-`provider-host` is the composition root depending on all; cargo enforces acyclicity. **Exception**:
-`environment_managers` remains in the core for now due to deep coupling with the core environment
-engine — see `collab/proposals/004-environment-managers-split.md`. New modules land in their owning
-crate from the start; the core must not grow adapter code.
+`provider-host` is the composition root depending on all; cargo enforces acyclicity.
+`environment_managers` formerly stayed in the core due to deep coupling with the core environment
+engine (proposal 004); on 2026-09-07 it moved to `project-manager` per option 3: the port contract
+types (`VccSettingsReader`/`VccCapability`/`ManagerDiagnostic`/`FindingSeverity`/diagnostic codes)
+stay in the core as the Rust face of the frozen schema, the port signature takes a candidates
+parameter keeping the injection point in the engine, and the VCC settings parse-order invariant
+lives in exactly one place, the core `EnvironmentRoots::default()`; the wire face is unchanged.
+New modules land in their owning crate from the start; the core must not grow adapter code.
 
 ## Collaboration and worktrees
 
