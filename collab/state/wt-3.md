@@ -2,15 +2,14 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: f5fe9c1
+baseline_commit: 5c42be4
 updated: 2026-09-07
 ---
 ## 当前焦点
 桌面窗口任务(W6/W7/W9)全部完成并已回流 main;无新可领任务,待命。
 等待项:W7 目视走查(GUI 会话)、M3 验收(I-1 真机)、W12(M4 开窗,桌面协作面届时领取)。
-## 自基线交付(ccf0c60..f5fe9c1)
-- main 同步(f5fe9c1:W12 排期入大纲 2.0.1、proposal 005 关闭、W9 合并核验);
-  本树无新交付。
+## 自基线交付(f5fe9c1..5c42be4)
+- main 同步(5c42be4:各树待命状态批次);本树无新交付,监视轮。
 ## 阻塞
 无。(原「catalog 三方法服务面」阻塞经 W12 排期裁决:数据侧 M4 开窗执行,
 此前走查以桌面 fixture/观察面为准,不构成在途等待。)
