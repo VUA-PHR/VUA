@@ -2,7 +2,7 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 10ce13f
+baseline_commit: 88b4551
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -32,7 +32,7 @@ bdl-commands v0.2 冻结后直接接线,预计 1 切片)。
 - 3c/5 的实验入口与清除语义等 proposal 007 表态(数据/核心);
 - W9 真机动作链归 I-4c;B 组交互项复验待新入口落位。
 ## 下次合并意图
-W13/W16 批回流 main(--no-ff);W15 等 W14 冻结。
+无在途分叉;W15 等 W14 冻结后接线。
 ## 阻塞
 - W15 依赖 W14(数据侧排期中);M3 c 环节(v0.5.0 推送)归集成。
 ## 留言
