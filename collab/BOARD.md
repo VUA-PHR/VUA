@@ -39,9 +39,9 @@ M3 进度：
 | # | 问题 | 归属 | 载体 |
 | --- | --- | --- | --- |
 | 1 | I-1 真机窗口未开，M3 无法验收 | 集成树 | 等待真机 |
-| 2 | 帧协议 v0.1 handshake 无机器可读 Schema | B 角色 | proposal 001 |
-| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | B/F 角色 | proposal 002 |
-| 4 | generate-VPM / delete-originals / set_artifact_mode 零测试 | B 角色 | proposal 003 |
-| 5 | F4-9 三命令协议未排期 | F/B 角色 | 未排期 |
-| 6 | environment_managers 因深耦合未随 project-manager 拆出 | B 角色 | proposal 004 |
-| 7 | production_host 套件偶发失败一次（拆分后首次全量链，1/5 运行；其后 4 连绿，疑似时序敏感，未定名） | B 角色 | 观察项，复现即立项 |
+| 2 | 帧协议 v0.1 handshake 无机器可读 Schema | 核心 | proposal 001 |
+| 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | 数据＋桌面 | proposal 002 |
+| 4 | generate-VPM / delete-originals / set_artifact_mode 零测试 | 数据 | proposal 003 |
+| 5 | F4-9 三命令协议未排期 | 核心＋桌面 | 未排期 |
+| 6 | environment_managers 因深耦合未随 project-manager 拆出 | 环境 | proposal 004 |
+| 7 | production_host 套件偶发失败一次（拆分后首次全量链，1/5 运行；其后 4 连绿，疑似时序敏感，未定名） | 核心 | 观察项，复现即立项 |

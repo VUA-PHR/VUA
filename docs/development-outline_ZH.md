@@ -2,43 +2,24 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> 文档版本：1.0.0
+> 文档版本：2.0.0
 > 状态：已接受
-> 权威语言：简体中文（EN 为镜像，同步至 1.0.0）
+> 权威语言：简体中文（EN 为镜像，同步至 2.0.0）
 > 范围：v0.4 重建基线至正式版 `1.0.0`
 > 规范效力：只安排已接受工作，不扩展产品边界
 
 ## 目标与基线
 
 自 2026-09-06 起，工作按**单一集成分支 + 垂直切片**组织（结构性裁决见治理改良方案 §8；
-协调机制见 `collab/README.md`）。本计划保留 M/F/B 三组编号作为门序列与角色责任划分：
+协调机制见 `collab/README.md`）。M 是产品门序列；执行侧自 2.0.0 起划分为**六个角色**
+（见下节），取代原 M/F/B 三车道与过渡期的 F/B 双角色。
 
-- **M（Main 门）** 是产品门序列，负责双语文档、迁移封口、前后端整合、跨组件验收、发行说明
-  与产品版本更新。M 门 = 集成分支上的 tag + 验收清单：门清单全绿后打 tag、发布发行说明，
-  不再是多条物理分支的合并事件；
-- **F（Frontend 角色）** 负责 Electron Main/Preload、React Renderer、设计系统、远程网页与
-  桌面 Overlay 表现；
-- **B（Backend 角色）** 负责 Orchestrator、持久化、应用契约、BDL、项目/环境适配器与 Unity
-  Bridge。
-
-F 与 B 是角色，不再是物理车道：F 线/B 线长期分支已于 2026-09-06 废止。同一垂直切片分支内
-包含 Schema（如涉及）、Rust、TypeScript、测试与文档，由同一会话分饰 F/B 两角；B 角色保有
-Schema 冻结责任，F 角色保有登记责任。M 不重复实现 F/B 的内部任务，只在对应门槛验收切片
-产出并更新唯一产品版本。
-
-```text
-F0 ─┐    F1 ─┐    F2 ─┐                      F10 ─┐
-    ├→ M0    ├→ M1    ├→ M2 → ...                ├→ M10
-B0 ─┘    B1 ─┘    B2 ─┘                      B10 ─┘
- v0.4.0   v0.4.1   v0.4.2                    v1.0.0
-```
-
-图中 F/B 汇入 M 表示角色产出在门处验收，不表示物理分支合并。M 门按顺序关闭。前一 M 门确认
-的契约和迁移结果是下一阶段的共同基线；不依赖未决契约的工作可以提前在切片中推进，但不能
-绕过对应 M 门形成产品发行。
+M 门 = 集成分支上的 tag + 验收清单：门清单全绿后打 tag、发布发行说明。M 门按顺序关闭；
+前一 M 门确认的契约和迁移结果是下一阶段的共同基线；不依赖未决契约的工作可以提前在切片
+中推进，但不能绕过对应 M 门形成产品发行。
 
 以下为计划接受时（2026-09-04，v0.4 重建基线）的起始状态快照；各门最新验收状态见对应
-章节：
+章节与 `collab/BOARD.md`：
 
 - `_references/kimi-desktop-5870d0c` 只作为 React 表现层资产提取来源；
 - `unity/Packages/com.ph-r.vua`、`schemas/unity-bridge/v1` 与 Orchestrator Bridge adapter 已完成第一轮
@@ -49,10 +30,33 @@ B0 ─┘    B1 ─┘    B2 ─┘                      B10 ─┘
   包和加载指定资源已有证据；通过 VUA `vrc-get` 包管理器完成安装仍是 B3 前的关闭项；
 - 运行时工具集成、社区插件执行与插件市场在正式版 `1.0.0` 前不实施。
 
+## 执行角色（六角色）
+
+角色是**责任与所有权的划分**，不是分支、不是工作树、不是固定的人或会话。同一代理会话在
+一个切片内可以分饰多个角色；跨角色边界的行为仍走版本化契约。角色与代码所有权的映射
+（crate 布局见 `docs/architecture/system_ZH.md`）：
+
+| 角色 | 职责域 | 代码/文档所有权 |
+| --- | --- | --- |
+| **集成**（Integration） | M 门验收、发行与版本、治理文档、合并与冲突裁决、REGISTRY/BOARD 维护、CI | `main` 分支、`docs/`、`collab/`、（remote 后）`.github/` |
+| **桌面**（Desktop） | Electron Main/Preload、React Renderer、设计系统、远程网页、桌面 Overlay | `apps/desktop`、`packages/design-system`、`packages/contracts`（TS 面） |
+| **核心**（Core） | 任务运行时、取消/恢复、应用用例、域端口、应用契约类型、Provider 组合根 | `crates/orchestrator`、`crates/provider-host`、`packages/orchestrator-provider`；application-contract、task-store、provider-process 协议 |
+| **产线**（Production） | Unity Bridge、素材入口执行、装配、Build Record 产出、Unity 侧 C# 包 | `crates/unity-bridge`、`unity/Packages`、`schemas/unity-bridge`、`schemas/amf-production` |
+| **数据**（Data） | BDL、下载事件、仓储导入/维护、素材检查 | `crates/bdl-store`、`crates/acquisition`、`schemas/bdl*`、`schemas/bdl-queries`、`schemas/download-events` |
+| **环境**（Environment） | 项目/环境适配器、`vrc-get`、ALCOM/VCC 兼容、环境检测 | `crates/project-manager`、核心内 `environment*`（暂，见 `collab/proposals/004`） |
+
+责任规则：
+
+1. **Schema 冻结责任归域角色**：数据域 schema 由数据角色冻结，产线域由产线角色冻结，跨域
+   应用契约由核心角色冻结；争议由集成角色仲裁或升级用户裁决。
+2. **桌面角色负责 TS 面登记**：契约落地后由桌面角色登记 contracts 类型面与 Gateway 路由。
+3. 每个任务在文档中**恰好一个负责角色**（协作方另列）；负责角色对验收证据负责。
+4. 历史文档中的 F/B 编号保留备查：F≈桌面，B 按域分入核心/产线/数据/环境。
+
 ## 共同执行纪律
 
-1. 跨前后端行为先确定版本化应用契约，再由 F/B 角色在同一切片内实现和测试。
-2. F/B 角色的测试可以使用模拟对端；M 门必须使用该阶段的真实两端制品完成整合验证。
+1. 跨前后端行为先确定版本化应用契约，再由相关角色在同一切片内实现和测试。
+2. 各角色的测试可以使用模拟对端；M 门必须使用该阶段的真实两端制品完成整合验证。
 3. 修改型切片覆盖适用的 Inspect、Plan、Confirm、Snapshot、Execute、Validate、Recover，并验证
    取消、重试、漂移和重启恢复。
 4. 每个 M 门同步维护匹配的 `_EN.md` / `_ZH.md` 文档、迁移证据、协议或 Schema 版本、发行说明和
@@ -60,9 +64,27 @@ B0 ─┘    B1 ─┘    B2 ─┘                      B10 ─┘
 5. 仓库与云端 CI 测试只使用结构具有代表性、但不含真实商品或用户内容的合成网页、项目与文件；
    本地只读兼容性测试可以访问公开 BOOTH 页面；本地 Unity 集成与冒烟测试可以使用开发者合法取得的
    素材。真实会话、订单、付费素材、用户项目、网页捕获、测试配置和输出不进入仓库或云端制品。
-6. F/B 编号表示角色责任划分，不是产品版本；只有 M 门更新产品 SemVer 和 Git 发行状态。
+6. F/B 历史编号与任务分解不更新产品版本；只有 M 门更新产品 SemVer 和 Git 发行状态。
 7. 协调结论只以 `collab/` 为准（机制见 `collab/README.md`）；`docs/plans/` 的成对信件协调模式
    已废止，plans/ 仅作本地草稿区，不产生协调效力。
+
+## 当前窗口（M3 收尾与 M4 在途任务）
+
+> 快照日期：2026-09-06。本窗口的全部任务已分解到角色；完成后由集成角色验收并推进 M3/M4 门。
+
+| # | 任务 | 负责角色 | 协作 | 锚点/验收 |
+| --- | --- | --- | --- | --- |
+| W1 | I-1 真 Unity 矩阵（16 格：双路径 × 八生命周期） | 产线 | 核心 | `docs/plans/m3-i1-real-matrix-plan_ZH.md`；**M3 唯一剩余门项**，需真机窗口与合法素材环境变量 |
+| W2 | 帧协议 v0.1 handshake 补 Schema + 双端向量 | 核心 | 桌面 | `collab/proposals/001-handshake-schema.md` |
+| W3 | bdl-queries v0.3 TS 镜像补 `ageRestriction` + 回归测试 | 数据 | 桌面 | `collab/proposals/002-age-restriction-mirror.md` |
+| W4 | generate-VPM / delete-originals / set_artifact_mode 补测试 | 数据 | — | `collab/proposals/003-generate-vpm-tests.md` |
+| W5 | environment_managers 拆分裁决与执行 | 环境 | 核心 | `collab/proposals/004-environment-managers-split.md` |
+| W6 | F4-7 Warehouse/获取走查闭环 | 桌面 | 数据 | F4 切片现场 |
+| W7 | F4-8 验收矩阵 + BOOTH 登录/购买允许清单审阅 | 桌面 | 数据、集成 | 门验收清单 |
+| W8 | B4 生成流收尾 + 产物模式三命令协议登记 | 数据 | 核心 | 协议冻结硬前置（Schema+向量+消费测试） |
+| W9 | F4-9 产物模式三命令 UI | 桌面 | 核心 | 依赖 W8 协议冻结 |
+| W10 | production-use-case v0.1 冻结（M3 验收时） | 核心 | 产线、桌面 | M3 候选 → 冻结；按冻结硬前置 |
+| W11 | M3 关闭：v0.5.0 tag、remote 建立、CI 三 workflow、Release | 集成 | 全部 | M3 本地验收当日执行（用户裁决 2026-09-06） |
 
 ## M 序列：Main 整合与交付
 
@@ -132,6 +154,9 @@ Spike 在进入 B3 生产实现前关闭以下缺口：
 
 ### M3（v0.5.0）：首个 Electron—Orchestrator—Unity 纵向交付
 
+> 进度注记（2026-09-06）：T1（M3 修订路径）、T2（production 面 v0.2 登记）、I-3（三车道统一
+> 合并入 main）均已完成；本门剩余 I-1 真 Unity 矩阵（当前窗口 W1），完成后按 W11 关闭本门。
+
 - **文档**：记录首个端到端用例、错误/恢复语义、最小 Build Record、Bridge 操作覆盖，以及直接
   导入与本地 VPM 制作/安装的两条素材入口契约；
 - **迁移**：只提取该切片所需的旧页面行为和 Unity 语义，完成对应迁移台账；
@@ -140,8 +165,14 @@ Spike 在进入 B3 生产实现前关闭以下缺口：
 - **交付**：两条路径均通过成功、取消、漂移、超时、Bridge 拒绝、回滚成功/失败和幂等重放；VPM
   结果明确区分 `unityValidated` 与实验性离线输出，更新版本与发行说明到 `0.5.0`。
 
-> 进度注记（2026-09-06）：T1（M3 修订路径）、T2（production 面 v0.2 登记）与 I-3（分支整合，
-> 三条车道已统一合并入集成分支 main）已完成；本门剩余 I-1 真 Unity 矩阵。
+任务分解（除 W1 外均已完成，历史见 `collab/BOARD.md` 与提交历史）：
+
+| 任务 | 负责角色 | 状态 |
+| --- | --- | --- |
+| T1 七方法 Schema + 固定向量（amf-production v0.2） | 产线 | ✅ 已交付 |
+| T2 production 面 v0.2 TS 登记批 | 桌面 | ✅ 已交付 |
+| I-3 分支整合 | 集成 | ✅ 2026-09-06 完成 |
+| I-1 真 Unity 矩阵 | 产线 | ⏸ 当前窗口 W1 |
 
 ### M4（v0.6.0）：Warehouse、素材获取与 BDL
 
@@ -150,12 +181,36 @@ Spike 在进入 B3 生产实现前关闭以下缺口：
 - **整合**：连接 F4 的隔离浏览/下载界面与 B4 的 AMF 素材获取、检查和 BDL 映射；
 - **交付**：用户授权下载经可恢复任务和本地检查进入 Warehouse，更新版本与发行说明到 `0.6.0`。
 
+任务分解：
+
+| 任务 | 负责角色 | 协作 | 状态 |
+| --- | --- | --- | --- |
+| 远程内容/Session/下载端口与隔离浏览界面 | 桌面 | — | 大部分已交付（F4-2/3/4/6），走查见 W6/W7 |
+| Warehouse 列表/筛选/详情/检查状态呈现 | 桌面 | 数据 | 已交付（F4-5/6），走查见 W6 |
+| BDL 最小持久格式与 Warehouse 映射 | 数据 | 核心 | 已交付（bdl/v0.1、bdl-queries v0.3） |
+| 下载事件消费、重试恢复与任务闭环 | 数据 | 核心 | 已交付；补测试见 W4 |
+| 素材获取用例与 LocalArtifact 检查流水线 | 数据 | 核心 | 已交付（artifact_inspection） |
+| 生成流（generate-VPM 等）与三命令协议 | 数据 | 核心 | 在途（W8/W9） |
+| 门验收与发行 | 集成 | 全部 | 待 M3 关闭后启动 |
+
 ### M5（v0.7.0）：Recipe 与 AMF 生产主线
 
 - **文档**：固化 Recipe、Local Resolution、Build Record 与新增 Unity Bridge 操作；
 - **迁移**：完成 Recipe/Warehouse 表现模型和合法本地素材测试路径的迁移；
 - **整合**：连接 F5 工作台与 B5 解析、计划、Unity 作业、验证和恢复；
 - **交付**：一个 Avatar 加一件衣装的合法自有本地冒烟路径可复现，更新版本与发行说明到 `0.7.0`。
+
+任务分解：
+
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| Recipe v0.3、Local Resolution、版本锁 | 核心 | 数据 |
+| Unity Bridge 操作扩展（dry-run、幂等、恢复）与 C# 侧实现 | 产线 | 核心 |
+| 完整 Build Record（计划差异、证据摘要） | 核心 | 产线 |
+| 兼容/缺失证据模型 | 数据 | 核心 |
+| Recipe/Assembly 工作台（三视图共享选择与领域语义） | 桌面 | 核心 |
+| 合法自有素材冒烟路径与复现 | 产线 | 集成 |
+| 门验收与发行 | 集成 | 全部 |
 
 ### M6（v0.8.0）：项目管理与环境部署
 
@@ -164,6 +219,17 @@ Spike 在进入 B3 生产实现前关闭以下缺口：
 - **整合**：连接 F6 的引导/计划/确认页面与 B6 的项目、环境、网络、磁盘和进程适配器；
 - **交付**：三条项目路径诚实报告能力，新用户可完成最小生产环境准备，更新版本与发行说明到
   `0.8.0`。
+
+任务分解：
+
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| 通用 `vrc-get` 项目与包管理路径 | 环境 | 核心 |
+| ALCOM/VCC 能力检测与兼容矩阵 | 环境 | 桌面 |
+| Unity/VRChat/SteamVR 环境检查、网络/磁盘/残留进程失败处理 | 环境 | 核心 |
+| EAC 实验性恢复适配器（先出边界裁决稿） | 环境 | 集成（裁决） |
+| F6 引导/计划/确认页面与逐次警告确认 | 桌面 | 环境 |
+| 门验收与发行 | 集成 | 全部 |
 
 ### M7（v0.9.0）：Inspection、Release 与桌面 Overlay
 
@@ -176,12 +242,33 @@ Spike 在进入 B3 生产实现前关闭以下缺口：
 VR Dashboard/VR Overlay 不进入本门与 `1.0.0`（用户裁决，2026-09-06）；方向锚点见
 「`1.0.0` 之后」节 v1.1。
 
+任务分解：
+
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| 检查证据（功能、性能、依赖、光照、上传准备度） | 产线 | 核心 |
+| 报告、快照与只读服务（桌面 Overlay Surface） | 核心 | 桌面 |
+| Inspection/Release 页面与官方 SDK 交接 | 桌面 | 产线 |
+| 桌面 Overlay 收尾（只消费稳定快照与语义动作） | 桌面 | 核心 |
+| 门验收与发行 | 集成 | 全部 |
+
 ### M8（v0.10.0）：Beta 1 功能与契约冻结
 
 - **文档**：冻结 `1.0.0` 功能集合、公开契约、兼容范围和目录风险门；
 - **迁移**：完成所有进入 `1.0.0` 的 Schema、数据库与配置迁移路径；
 - **整合**：合并 F8/B8 的功能收口、性能基线和 Provider 生命周期压测；
 - **交付**：完整产品路径可启动、降级、关闭和恢复，目录风险门无 `pending`，更新版本到 `0.10.0`。
+
+任务分解：
+
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| 各域 Schema/数据库/配置迁移路径冻结 | 数据、产线、环境（各域） | 核心 |
+| `1.0.0` 应用契约冻结 | 核心 | 桌面 |
+| 页面路径、错误/空态、国际化与性能缺口收口 | 桌面 | — |
+| Provider 生命周期压测与性能基线 | 核心 | 产线 |
+| 目录风险门 `vua.risk-gate/v1` 执行 | 集成 | 全部 |
+| 门验收与发行 | 集成 | 全部 |
 
 ### M9（v0.11.0）：Beta 2 恢复、安全与发行验证
 
@@ -190,6 +277,17 @@ VR Dashboard/VR Overlay 不进入本门与 `1.0.0`（用户裁决，2026-09-06�
 - **整合**：合并 F9/B9 的可访问性、性能、安全、恢复与合法自有冒烟矩阵；
 - **交付**：只剩发行候选缺陷；需要时发布 `1.0.0-rc.1`，产品版本更新到 `0.11.0`。
 
+任务分解：
+
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| 升级/降级/备份/损坏恢复演练 | 核心 | 环境 |
+| 可访问性、键盘、屏幕阅读器、缩放、DPI 验证 | 桌面 | 集成 |
+| 诊断脱敏与安全审计 | 核心 | 集成 |
+| 合法自有素材冒烟矩阵 | 产线 | 集成 |
+| 安装/更新/回滚与卸载保留 | 集成 | 环境 |
+| 门验收与发行 | 集成 | 全部 |
+
 ### M10（v1.0.0）：稳定版发布
 
 - **文档**：完成四语 README、双语开发文档、Release Notes、Apache-2.0/NOTICE、贡献与支持入口；
@@ -197,128 +295,60 @@ VR Dashboard/VR Overlay 不进入本门与 `1.0.0`（用户裁决，2026-09-06�
 - **整合**：锁定 F10/B10 制品、安装包、Provider、Unity Package、协议与诊断版本；
 - **交付**：Windows CI、签名、安装、更新、回滚、许可证和完整冒烟门通过，发布 `v1.0.0`。
 
-## F 序列：Frontend / Electron
+任务分解：
 
-F 序列是 Frontend 角色的责任划分，按垂直切片执行，不再对应物理分支。
+| 任务 | 负责角色 | 协作 |
+| --- | --- | --- |
+| 依赖与制品锁定（Electron/Rust/Unity Package/第三方） | 集成 | 全部 |
+| 签名安装包与更新制品、CI 冒烟门 | 集成 | 核心 |
+| 四语 README 与 Release Notes | 集成 | — |
+| 受支持旧版本迁移验证 | 核心 | 数据 |
+| 发布 `v1.0.0` | 集成 | 全部 |
 
-### F0：表现层资产分级
+## 历史切片记录（F/B 序列）
 
-提取 React 页面模型、i18n、可访问性、Token 和基础组件；登记应用壳、远程网页、图片、教程和任务
-交互的迁移目标，拒绝 Tauri 窗口、IPC、权限与旧数据契约。
+F/B 序列是六角色制之前的责任划分记录，物理车道已于 2026-09-06 废止。F0–F4 与 B0–B4 已交付
+（对应 M0–M2 门与 M3/M4 在途工作）；F5–F10 与 B5–B10 的内容已并入上文 M5–M10 的任务分解表，
+以下原文保留备查。角色映射：F≈桌面；B 按域分入核心/产线/数据/环境。
 
-### F1：Electron 桌面基线
+### F 序列（F≈桌面角色）
 
-建立 Electron Main、Preload、React Renderer、Vite、设计系统和最小导航壳；锁定运行时版本；
-Preload 只暴露显式 Gateway；远程测试页面无法获得 Node.js 或本地 Gateway。
+- **F0 表现层资产分级**（已交付）：提取 React 页面模型、i18n、可访问性、Token 和基础组件；
+  登记迁移目标，拒绝 Tauri 窗口、IPC、权限与旧数据契约。
+- **F1 Electron 桌面基线**（已交付）：Electron Main、Preload、React Renderer、Vite、设计系统和
+  最小导航壳；Preload 只暴露显式 Gateway；远程测试页面无法获得 Node.js 或本地 Gateway。
+- **F2 Gateway 客户端与任务体验**（已交付）：类型化 Gateway client、环境只读快照、任务中心、
+  提交/观察/取消、重载恢复、多窗口同步和明确断连状态。
+- **F3 首个生产纵向页面**（已交付）：检查结果、计划审阅、确认、实时进度、结构化诊断、恢复
+  结果和最小 Build Record 展示。
+- **F4 远程素材与 Warehouse**（大部分已交付，收尾见当前窗口 W6–W9）：Main 管理的
+  `WebContentsView`、隔离 Session、权限/导航/下载交互、Warehouse 列表与 LocalArtifact 检查状态；
+  Renderer 不持有 Cookie、令牌或 Electron 私有对象。
+- **F5 Recipe 与 Assembly 工作台**：见 M5 任务分解表。
+- **F6 项目与环境页面**：见 M6 任务分解表。
+- **F7 Inspection、Release 与桌面 Overlay**：见 M7 任务分解表。
+- **F8 Beta 1 前端冻结**：见 M8 任务分解表。
+- **F9 Beta 2 前端验证**：见 M9 任务分解表。
+- **F10 稳定版前端制品**：见 M10 任务分解表。
 
-### F2：Gateway 客户端与任务体验
+### B 序列（按域分入核心/产线/数据/环境）
 
-实现类型化 Gateway client、环境只读快照、任务中心、提交/观察/取消、重载恢复、多窗口同步和明确
-断连状态；使用模拟 Provider 完成前端独立测试。
-
-### F3：首个生产纵向页面
-
-实现检查结果、计划审阅、确认、实时进度、结构化诊断、恢复结果和最小 Build Record 展示；覆盖
-成功、取消、漂移、超时与回滚表现。
-
-### F4：远程素材与 Warehouse
-
-实现 Main 管理的 `WebContentsView`、隔离 Session、权限/导航/下载交互、Warehouse 列表、筛选、
-详情和 LocalArtifact 检查状态；Renderer 不持有 Cookie、令牌或 Electron 私有对象。
-
-### F5：Recipe 与 Assembly 工作台
-
-实现素材选择、兼容证据、缺失素材、版本锁、人工修订、计划差异、Assembly 任务和恢复入口；三种
-Recipe 视图共享同一选择和领域语义。
-
-### F6：项目与环境页面
-
-实现 VUA/ALCOM/VCC 三条项目能力表现、环境诊断、部署计划、确认、人工路径和 EAC 实验性高风险
-动作的逐次警告与确认。
-
-### F7：Inspection、Release 与桌面 Overlay
-
-实现检查报告、官方/本地结论区分、版本/快照/Build Record、SDK 交接与桌面 Overlay 表现；Overlay
-只消费稳定快照和语义动作。VR Dashboard/VR Overlay 不进入 `1.0.0`，见「`1.0.0` 之后」节。
-
-### F8：Beta 1 前端冻结
-
-关闭完整页面路径、错误/空态、国际化和性能缺口；冻结面向 `1.0.0` 的 Gateway 使用面与设计系统
-公共表面。
-
-### F9：Beta 2 前端验证
-
-完成键盘、屏幕阅读器、缩放、高对比、DPI、最小窗口、远程内容安全和安装/更新 UI 验证。
-
-### F10：稳定版前端制品
-
-冻结 Electron/Chromium/Node/Vite/打包依赖，生成签名安装包与更新制品，验证生产构建无 Fixture、
-调试入口、凭据或私有日志泄漏。
-
-## B 序列：Backend / Orchestrator / Unity
-
-B 序列是 Backend 角色的责任划分，按垂直切片执行，不再对应物理分支。
-
-### B0：Unity Bridge 与 Orchestrator 迁移封口
-
-以 Bridge v1 Schema、C# Package、合成固定实例、本机 EditMode、幂等装配和 Batchmode
-`inspect_project` 建立新基线；盘点 Rust 核心中可保留行为和过渡持久化负债。
-
-### B1：后端应用契约基线
-
-整理 Command、Query、Event、Task、Capability、错误、revision、取消和应用用例边界；建立可替换
-Provider 接口和模拟适配器，不将 FFI、传输或 Rust 私有类型暴露给 Gateway。
-
-### B2：持久任务与 Orchestrator 托管决议
-
-建立 SQLite 权威任务状态、取消、幂等、事务后事件和重启恢复。用同一 Gateway/恢复测试比较进程内
-原生 Provider 与受监督独立进程 Provider，验证打包、签名、崩溃隔离、握手/回调、关闭、进程树、
-延迟、调试和移除路径，形成单独已接受的托管 ADR。该 Spike 是后端实现工作，不占用独立产品版本。
-
-### B3：首个 Orchestrator—Unity 用例与双素材入口
-
-以合成 Recipe、Avatar/衣装和 Unity 项目实现指纹、计划、快照、版本化 Bridge 作业、验证、恢复和
-最小 Build Record；保留 `.unitypackage` 直接导入，并实现来源包不变、隔离 Unity 暂存、
-`local-reusable` VPM 包制作、最小 `vrc-get` 安装和独立项目验证的并行路径。包制作、安装与发布分别
-建模；离线转换保持实验性风险结果；覆盖取消、漂移、超时、拒绝、回滚与幂等重放。
-
-### B4：素材获取与 BDL
-
-实现 AMF 素材获取用例、下载事件规范化、来源关联、重试恢复、LocalArtifact 检查、Warehouse 映射
-和最小 BDL SQLite Schema。仓库与云端 CI 使用结构等价的合成网页与文件；本地只读兼容性测试通过
-正常公开入口访问 BOOTH 公开页面，不固化页面响应、截图或商品元数据。
-
-### B5：Recipe 与生产扩展
-
-实现 Recipe v0.3、Local Resolution、兼容/缺失证据、版本锁、计划和完整 Build Record；Recipe
-v0.2 仅保留到 v0.3 定型并在此后整体废弃，不建设迁移器；逐项扩展 Unity Bridge Schema、dry-run、
-幂等、恢复及 C#/应用侧测试。云端矩阵使用合成项目；本地集成与冒烟矩阵可以使用开发者合法取得的
-Avatar、衣装及相关 Unity 素材，素材、项目、配置和输出均保留在本地。
-
-### B6：项目与环境适配器
-
-在 B3 最小本地 VPM 安装切片上完成通用 `vrc-get` 项目与包管理路径，实现 ALCOM/VCC 能力检测、
-Unity/VRChat/SteamVR 环境检查、网络/磁盘/残留进程失败处理和边界受限的 EAC 实验性恢复适配器。
-
-### B7：Inspection、Release 与桌面 Overlay 服务
-
-实现功能、性能、依赖、光照与上传准备度证据，提供项目版本、快照、Build Record、SDK 交接和只读
-桌面 Overlay Surface 服务；Overlay 不拥有任务或敏感数据。
-
-### B8：Beta 1 后端冻结
-
-冻结 `1.0.0` 应用契约、Schema 与数据库迁移，完成 Provider 生命周期、任务恢复、并发、性能和磁盘
-压力测试，并对发行目录条目执行 `vua.risk-gate/v1`。
-
-### B9：Beta 2 后端验证
-
-完成升级/降级/损坏恢复、Provider 启动/握手失败、诊断脱敏、兼容矩阵、安全审计和合法自有素材
-冒烟验证。
-
-### B10：稳定版后端制品
-
-锁定 Rust、Provider、SQLite、Unity Package 和第三方依赖；生成或校验版本元数据、许可证清单、
-签名/更新制品与卸载保留策略。
+- **B0 Unity Bridge 与 Orchestrator 迁移封口**（已交付）：Bridge v1 Schema、C# Package、合成
+  固定实例、本机 EditMode、幂等装配和 Batchmode `inspect_project`。
+- **B1 后端应用契约基线**（已交付）：Command/Query/Event/Task/Capability/错误/revision/取消
+  边界；可替换 Provider 接口和模拟适配器。
+- **B2 持久任务与托管决议**（已交付）：SQLite 权威任务状态、取消、幂等、事务后事件和重启
+  恢复；受监督进程托管 ADR。
+- **B3 首个 Orchestrator—Unity 用例与双素材入口**（已交付，验证收尾见 W1）：指纹、计划、
+  快照、版本化 Bridge 作业、验证、恢复和最小 Build Record；双素材入口。
+- **B4 素材获取与 BDL**（大部分已交付，收尾见 W4/W8）：AMF 素材获取用例、下载事件规范化、
+  来源关联、重试恢复、LocalArtifact 检查、Warehouse 映射和最小 BDL SQLite Schema。
+- **B5 Recipe 与生产扩展**：见 M5 任务分解表（Recipe v0.3 定型后 v0.2 整体废弃，不建迁移器）。
+- **B6 项目与环境适配器**：见 M6 任务分解表。
+- **B7 Inspection、Release 与桌面 Overlay 服务**：见 M7 任务分解表。
+- **B8 Beta 1 后端冻结**：见 M8 任务分解表。
+- **B9 Beta 2 后端验证**：见 M9 任务分解表。
+- **B10 稳定版后端制品**：见 M10 任务分解表。
 
 ## `1.0.0` 之后（非承诺展望）
 
@@ -337,6 +367,9 @@ Unity/VRChat/SteamVR 环境检查、网络/磁盘/残留进程失败处理和边
 
 ## 文档变更日志
 
+- 2.0.0（2026-09-06）：六角色制取代三车道/双角色（集成/桌面/核心/产线/数据/环境，含代码
+  所有权映射）；新增「当前窗口」任务分解表（W1–W11）；M4–M10 各门新增角色任务分解表；
+  F/B 序列降为历史记录并逐条映射到门任务表；M3 进度注记更新。
 - 1.0.0（2026-09-06）：移入版本控制。协作机制切换为 collab/（plans/ 信件模式废止）；M 门改为
   集成分支 tag + 验收清单；F/B 由物理车道改为角色责任划分；M7/F7/B7 收窄，VR Dashboard/VR
   Overlay 移出 `1.0.0`；"`1.0.0` 之后"改写为 v1.1–v1.5 非承诺展望；M3 追加进度注记；起始基线

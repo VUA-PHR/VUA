@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.0.1
+> Document version: 1.1.0
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -36,9 +36,11 @@ current implementation authority.
 - Coordination conclusions count only once they land in `collab/` (state files, proposals, BOARD;
   mechanism in `collab/README.md`). `docs/plans/` remains a local scratch area and carries no
   coordination authority.
-- `F` and `B` are roles, not lanes. Physical lane branches are abolished; within one slice the same
-  session may hold both hats. The B role keeps schema-freeze responsibility and the F role keeps
-  registration responsibility.
+- Execution uses six roles — Integration, Desktop, Core, Production, Data, and Environment —
+  defined with code ownership in `docs/development-outline_ZH.md` ("执行角色（六角色）"). A role is
+  a hat a session wears, not a branch or a worktree; within one slice the same session may hold
+  several hats. Domain schemas are frozen by their owning role; Desktop registers the TS face of
+  contracts; Integration arbitrates disputes.
 
 ## Honesty discipline
 
@@ -168,6 +170,9 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.1.0 (2026-09-06): six execution roles (Integration / Desktop / Core / Production / Data /
+  Environment) replace the transitional F/B role pair; schema-freeze responsibility moves to the
+  domain-owning role. See `docs/development-outline_ZH.md` 2.0.0.
 - 1.0.1 (2026-09-06): crate split landed (merge `a261393`) — the code-reality bullet now describes
   the six-crate layout; the `environment_managers` exception is registered as proposal 004.
 - 1.0.0 (2026-09-06): entered version management. Added the collab-first read step, the
