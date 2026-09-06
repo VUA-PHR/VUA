@@ -198,8 +198,10 @@ export class DownloadPort {
 
   /**
    * AMF 意图命令唯一入口(同一下载按到达序串行解释;策略归 AMF,机制归
-   * 端口):`retry` = canResume() 时 resume(同一 attempt);`abandon` =
-   * 取消并弃除部分文件,下一同 URL 下载重绑原 downloadId 且 attempt 递增。
+   * 端口):`retry` = 弃件并经 downloadURL 重发起,新 item 重绑原
+   * downloadId 且 attempt 递增(冻结裁定:放弃部分文件从零重启才递增);
+   * `abandon` = 终局放弃(取消并弃除部分文件,不重绑——其后同 URL 重发起
+   * 是用户新授权,全新 downloadId、attempt 从 1)。
    * 未知 downloadId 静默忽略(命令与下载生命周期的竞态由 AMF 层权威裁决)。
    */
   applyIntent(downloadId: string, intent: DownloadIntent): void {

@@ -194,7 +194,7 @@ async function run() {
     console.log(`Raw log: ${rawLogPath}`);
     if (applicationWindow && !applicationWindow.isDestroyed()) applicationWindow.destroy();
     if (remoteWindow && !remoteWindow.isDestroyed()) remoteWindow.destroy();
-    app.quit();
+    app.exit(process.exitCode ?? 0);
   }
 }
 

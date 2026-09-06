@@ -103,9 +103,12 @@ async function run() {
 
     const events = [];
     const stagingRoot = path.join(app.getPath("temp"), `vua-download-smoke-${process.pid}`);
+    const downloadSession = session.fromPartition(`vua-download-smoke-${process.pid}`);
     const port = new DownloadPort({
       stagingRoot,
       allowedOrigins: [allowedOrigin],
+      // F4-4 retry 语义:弃件后端口经同一 Session downloadURL 重发起
+      partitionSession: downloadSession,
       progressIntervalMs: 0,
       sink: {
         emit: (event) => {
@@ -122,7 +125,6 @@ async function run() {
       },
     });
 
-    const downloadSession = session.fromPartition(`vua-download-smoke-${process.pid}`);
     downloadSession.on("will-download", (event, item, webContents) => {
       port.handleWillDownload(event, item, webContents);
     });
@@ -155,8 +157,9 @@ async function run() {
     assert.equal(rejected.storedPath, null);
     log("policy.rejection.passed");
 
-    // 4. 弃件:abandon 意图 → 部分文件弃除(不 Emit cancelled——弃件不是
-    //    终态,downloadId 以 attempt+1 延续);同 URL 重发起重绑原 downloadId
+    // 4a. 弃件放弃:abandon 意图 = 终局放弃(取消 + 弃除部分文件,不 Emit
+    //     cancelled);其后同 URL 重发起 = 用户新授权,全新 downloadId、
+    //     attempt 从 1(三值词汇裁定:abandon = terminal give-up)
     events.length = 0;
     downloadSession.downloadURL(`${allowedOrigin}/abandon.bin`);
     await waitFor(() => events.some((event) => event.kind === "download.started"), "abandon download started");
@@ -168,10 +171,24 @@ async function run() {
 
     events.length = 0;
     downloadSession.downloadURL(`${allowedOrigin}/abandon.bin`);
-    await waitFor(() => events.some((event) => event.kind === "download.started"), "rebound download started");
-    const rebound = events.find((event) => event.kind === "download.started");
-    assert.equal(rebound.downloadId, abandonStarted.downloadId, "downloadId stable across restart");
-    assert.equal(rebound.attempt, 2, "fresh-from-zero restart increments attempt");
+    await waitFor(() => events.some((event) => event.kind === "download.started"), "post-abandon download started");
+    const fresh = events.find((event) => event.kind === "download.started");
+    assert.notEqual(fresh.downloadId, abandonStarted.downloadId, "post-abandon restart is a fresh download");
+    assert.equal(fresh.attempt, 1, "post-abandon restart starts at attempt 1");
+
+    // 4b. 弃件重试:retry 意图 = 弃件 + 端口经 downloadURL 重发起,新 item
+    //     重绑原 downloadId 且 attempt 递增(冻结裁定:放弃部分文件从零重启
+    //     才递增,重绑原 id)
+    events.length = 0;
+    downloadSession.downloadURL(`${allowedOrigin}/retry.bin`);
+    await waitFor(() => events.some((event) => event.kind === "download.started"), "retry download started");
+    const retryStarted = events.find((event) => event.kind === "download.started");
+    assert.ok(existsSync(retryStarted.storedPath));
+    port.applyIntent(retryStarted.downloadId, "retry");
+    await waitFor(() => events.some((event) => event.kind === "download.started" && event.downloadId === retryStarted.downloadId && event.attempt === 2), "rebound download started");
+    const rebound = events.find((event) => event.kind === "download.started" && event.attempt === 2);
+    assert.equal(rebound.downloadId, retryStarted.downloadId, "downloadId stable across retry restart");
+    assert.equal(rebound.attempt, 2, "retry restart increments attempt");
     port.applyIntent(rebound.downloadId, "abandon");
     log("abandon.rebind.passed");
 
@@ -199,7 +216,7 @@ async function run() {
     await writeFile(rawLogPath, `${logLines.join("\n")}\n`, "utf8");
     console.log(`Evidence: ${evidencePath}`);
     console.log(`Raw log: ${rawLogPath}`);
-    app.quit();
+    app.exit(process.exitCode ?? 0);
   }
 }
 
