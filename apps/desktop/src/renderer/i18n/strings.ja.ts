@@ -1346,6 +1346,8 @@ rolled_back: "ロールバック済み",
   dev: {
     tag: "DEV",
     aria: "開発シナリオ切替",
+    expandAria: "開発シナリオ切替を展開",
+    collapseAria: "開発シナリオ切替を折りたたむ",
     demoMixed: "デモ · 混合",
     demoAllGreen: "デモ · 全緑",
     demoWorkshop: "デモ · 作業場",

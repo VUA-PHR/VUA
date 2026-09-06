@@ -1423,6 +1423,8 @@ rolled_back: "已回滚",
   dev: {
     tag: "DEV",
     aria: "开发场景切换",
+    expandAria: "展开开发场景切换",
+    collapseAria: "收起开发场景切换",
     demoMixed: "演示 · 混合态",
     demoAllGreen: "演示 · 全绿",
     demoWorkshop: "演示 · 车间",
