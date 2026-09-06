@@ -19,4 +19,5 @@ vua-unity-bridge = { path = "../unity-bridge" }
 
 [dev-dependencies]
 flate2 = "1"
+jsonschema = "0.52.1"
 tar = "0.4"

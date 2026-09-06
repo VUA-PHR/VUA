@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/bdl-commands/v0.1/result.schema.json",
+  "title": "VUA BDL warehouse command result v0.1",
+  "description": "Acceptance payloads for the B4 warehouse commands (docs/protocols/bdl-commands-v0.1), discriminated by operation. setArtifactMode applies synchronously and reports the entry's resulting effective mode. generateVpm and deleteOriginals are audited maintenance tasks: the result is a task acceptance (taskId + correlationId); their Done payloads (generation receipt with the package id and archive identity; deletion audit with the deleted paths and the kept generated artifact identity) travel the application-contract task surface. Failures are application errors with stable vua.warehouse.* codes and never appear in this schema.",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "operation",
+        "warehouseItemId",
+        "effectiveMode"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "0.1" },
+        "operation": { "const": "warehouse.setArtifactMode" },
+        "warehouseItemId": { "type": "string", "minLength": 1 },
+        "effectiveMode": {
+          "enum": ["use_original_unitypackage", "generate_vpm"]
+        }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "operation",
+        "taskId",
+        "correlationId"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "0.1" },
+        "operation": { "const": "warehouse.generateVpm" },
+        "taskId": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "operation",
+        "taskId",
+        "correlationId"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "0.1" },
+        "operation": { "const": "warehouse.deleteOriginals" },
+        "taskId": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    }
+  ]
+}
