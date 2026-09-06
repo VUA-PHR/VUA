@@ -1096,3 +1096,437 @@ fn m3_real_direct_rollback_failure_is_recorded_not_hidden() {
         fs::remove_dir_all(&source).unwrap();
     }
 }
+
+// --- P2 remaining cells (local_reusable): cancel (S2), drift (S3), timeout
+// (S4), Bridge rejection (S5), rollback success (S6), rollback failure (S7),
+// replay (S8). All reuse the real self-contained subset source and the real
+// vrc-get lib backend exactly like the P2xS1 slice above.
+
+struct P2Harness {
+    project_root: PathBuf,
+    project: ProjectRef,
+    source: PathBuf,
+    base: PathBuf,
+    confirmation: MaterialIntakeConfirmationV01,
+    executor: MaterialExecutor,
+}
+
+fn p2_harness(label: &str) -> P2Harness {
+    let unity = unity_executable();
+    let source = PathBuf::from(
+        std::env::var("VUA_REAL_SOURCE_FOLDER")
+            .expect("VUA_REAL_SOURCE_FOLDER must hold the .unitypackage files"),
+    );
+    let correlation = format!("real-corr-{}", label);
+    let (project_root, project) = build_target_project(label);
+    fs::write(
+        project_root.join("Packages/vpm-manifest.json"),
+        r#"{ "dependencies": {} }"#,
+    )
+    .unwrap();
+
+    let base = temp_dir(&format!("{label}-base"));
+    let staging_template = base.join("staging-template");
+    let bridge_package_src =
+        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../unity/Packages/com.ph-r.vua");
+    copy_dir_recursive(
+        &bridge_package_src.join("Editor"),
+        &staging_template.join("Packages/com.ph-r.vua/Editor"),
+    )
+    .unwrap();
+    fs::copy(
+        bridge_package_src.join("package.json"),
+        staging_template.join("Packages/com.ph-r.vua/package.json"),
+    )
+    .unwrap();
+    fs::write(staging_template.join("Packages/manifest.json"), r#"{ "dependencies": {} }"#).unwrap();
+    let vcc_project = find_vcc_project_with_sdk();
+    // The staging scaffold needs the same real dependency stack as the
+    // target: the VRC SDK (its embedded Managed dlls carry
+    // System.Collections.Immutable etc. that NDMF compiles against) plus the
+    // real Modular Avatar + NDMF packages.
+    let staging_sdk_seeded = vcc_project
+        .as_deref()
+        .map(|project| seed_vrc_sdk(project, &staging_template))
+        .unwrap_or(false);
+    let staging_real_ma = vcc_project
+        .as_deref()
+        .map(|project| copy_real_avatar_stack(project, &staging_template.join("Packages")))
+        .unwrap_or(false);
+    println!(
+        "staging scaffold: sdk {staging_sdk_seeded}, real Modular Avatar stack: {staging_real_ma}"
+    );
+    if !staging_real_ma {
+        write_ma_stub(&staging_template.join("Packages"));
+    }
+    fs::create_dir_all(staging_template.join("Assets")).unwrap();
+    fs::create_dir_all(staging_template.join("ProjectSettings")).unwrap();
+    fs::write(
+        staging_template.join("ProjectSettings/ProjectVersion.txt"),
+        UNITY_VERSION_LINE,
+    )
+    .unwrap();
+
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, &correlation)
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::LocalReusableVpm,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            &correlation,
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+
+    let vpm_backend: Arc<dyn VpmBackend> = Arc::new(
+        vua_project_manager::VrcGetLibBackend::with_environment_root(base.join("vpm-env"), false)
+            .expect("vrc-get lib backend initializes"),
+    );
+    let identity_store =
+        vua_unity_bridge::LocalPackageIdentityStore::new(base.join("identities.json"));
+    let executor = MaterialExecutor::new(
+        bridge,
+        FileSystemSnapshotStore,
+        vpm_backend,
+        BuildRecordStore::new(project_root.join(".vua/records")),
+        Arc::new(vua_orchestrator::SystemClock),
+        base.join("temp"),
+        "2022.3.22f1",
+        identity_store,
+    )
+    .with_staging_template_override(&staging_template);
+
+    P2Harness {
+        project_root,
+        project,
+        source,
+        base,
+        confirmation,
+        executor,
+    }
+}
+
+/// S2: cancellation observed at a staging-import boundary reports Cancelled
+/// with a receipt — the staging project is destroyed, nothing is installed.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER); cancels mid-run"]
+fn m3_real_local_reusable_cancel_at_step_boundary_records_facts() {
+    let harness = p2_harness("vpm-cancel");
+    let token = MaterialCancelToken::new();
+    let cancel_handle = token.clone();
+    std::thread::spawn(move || {
+        // Staging creation + the first Unity inspect take 30s+; cancelling
+        // at 2s lands the request before the first staging import lands.
+        std::thread::sleep(Duration::from_secs(2));
+        cancel_handle.cancel();
+    });
+    let report = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &token,
+    );
+    println!("cancelled P2 run completed steps: {:?}", report.completed_steps);
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Cancelled,
+        "report: {report:?}"
+    );
+    assert_eq!(report.error_code.as_deref(), Some("vua.material.cancelled"));
+    assert!(report.build_record_id.is_some(), "cancelled runs get a receipt");
+    let staging_expected =
+        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    assert!(!staging_expected.exists(), "cancelled staging must be destroyed");
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
+
+/// S3: a source archive changed after confirm fails the P2 run with
+/// `vua.material.source_drift` before that archive is imported.
+#[test]
+#[ignore = "manual: real filesystem drift probe against the real local-reusable pipeline"]
+fn m3_real_local_reusable_source_drift_fails_the_run() {
+    let harness = p2_harness("vpm-drift");
+    // Drift one archive after confirm, before execute.
+    let pack = harness
+        .source
+        .join("Cineon_Meiyun_v1.00.unitypackage");
+    let mut bytes = fs::read(&pack).unwrap();
+    bytes.extend_from_slice(b"drift");
+    fs::write(&pack, &bytes).unwrap();
+
+    let report = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert_eq!(
+        report.error_code.as_deref(),
+        Some("vua.material.source_drift")
+    );
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
+
+/// S4: a 1s bridge budget cannot survive the staging inspect, so the P2 run
+/// fails with `vua.material.bridge_timeout` and the verified target snapshot
+/// is restored.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER) under a 1s budget"]
+fn m3_real_local_reusable_bridge_timeout_budget_is_enforced() {
+    let unity = unity_executable();
+    let harness = p2_harness("vpm-timeout");
+    let tight_bridge: Arc<dyn UnityBridge> =
+        Arc::new(UnityBatchBridge::new(unity).with_timeout(Duration::from_secs(1)));
+    let executor = MaterialExecutor::new(
+        tight_bridge,
+        FileSystemSnapshotStore,
+        Arc::new(NoVpm),
+        BuildRecordStore::new(harness.project_root.join(".vua/records")),
+        Arc::new(vua_orchestrator::SystemClock),
+        harness.base.join("temp-tight"),
+        "2022.3.22f1",
+        vua_unity_bridge::LocalPackageIdentityStore::new(harness.base.join("identities.json")),
+    );
+    let report = executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert!(report
+        .error_code
+        .as_deref()
+        .unwrap_or("")
+        .starts_with("vua.material.bridge_timeout"));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
+
+/// S5+S6: an external mutation of the staging project between its commands
+/// breaks the chained fingerprint, the Bridge rejects, and the verified
+/// target snapshot is restored.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER); injects a staging mutation mid-run"]
+fn m3_real_local_reusable_staging_rejection_restores_target() {
+    let harness = p2_harness("vpm-reject");
+    let staging_dir =
+        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    let injector = staging_dir.clone();
+    std::thread::spawn(move || {
+        // Wait until the first staging import has returned (its result file
+        // lands in the staging bridge exchange), then mutate the staging
+        // tree: the next staging command's chained fingerprint no longer
+        // matches and the real Bridge rejects it. A fixed sleep cannot do
+        // this reliably — a mutation landing during the staging inspect is
+        // absorbed into that inspect's fingerprint.
+        // The project fingerprint tracks the active scene hierarchy, not
+        // loose Assets files, so a file drop cannot move it. Instead, corrupt
+        // the second staging import's unpacked manifest.sha256 once it
+        // lands: the Bridge's manifest validation then rejects the command
+        // for real.
+        let imports_dir = injector.join(".vua/imports");
+        let deadline = Instant::now() + Duration::from_secs(900);
+        loop {
+            if Instant::now() > deadline {
+                break;
+            }
+            let mut manifests: Vec<std::path::PathBuf> = Vec::new();
+            if let Ok(entries) = fs::read_dir(&imports_dir) {
+                for entry in entries.filter_map(Result::ok) {
+                    let manifest = entry.path().join("manifest.sha256");
+                    if manifest.is_file() {
+                        manifests.push(manifest);
+                    }
+                }
+            }
+            if manifests.len() >= 2 {
+                manifests.sort_by_key(|path| {
+                    fs::metadata(path).and_then(|m| m.modified()).ok()
+                });
+                if let Some(latest) = manifests.last() {
+                    let mut bytes = fs::read(latest).unwrap_or_default();
+                    bytes.truncate(bytes.len().saturating_sub(64));
+                    let _ = fs::write(latest, &bytes);
+                }
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+    });
+    let report = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert_eq!(
+        report.error_code.as_deref(),
+        Some("vua.material.bridge_rejected"),
+        "the real Bridge must reject the drifted staging fingerprint"
+    );
+    assert_eq!(
+        report.rollback,
+        RollbackOutcome::Restored,
+        "a post-snapshot rejection restores the verified target snapshot"
+    );
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
+
+/// S7: a failed restore is recorded as `RollbackOutcome::Failed` with a
+/// `rollback_failed` receipt - injected by removing the target snapshot
+/// manifest while the staging pipeline runs.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER); injects snapshot loss mid-run"]
+fn m3_real_local_reusable_rollback_failure_is_recorded_not_hidden() {
+    let harness = p2_harness("vpm-rbfail");
+    let staging_dir =
+        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    let injector_root = harness.project_root.clone();
+    let injector_staging = staging_dir.clone();
+    std::thread::spawn(move || {
+        // 1) Force a real failure: mutate the staging tree once its first
+        //    import has returned, so the Bridge rejects the next command.
+        // The project fingerprint tracks the active scene hierarchy, not
+        // loose Assets files, so a file drop cannot move it. Instead, corrupt
+        // the second staging import's unpacked manifest.sha256 once it
+        // lands: the Bridge's manifest validation then rejects the command
+        // for real.
+        let imports_dir = injector_staging.join(".vua/imports");
+        let deadline = Instant::now() + Duration::from_secs(900);
+        loop {
+            if Instant::now() > deadline {
+                break;
+            }
+            let mut manifests: Vec<std::path::PathBuf> = Vec::new();
+            if let Ok(entries) = fs::read_dir(&imports_dir) {
+                for entry in entries.filter_map(Result::ok) {
+                    let manifest = entry.path().join("manifest.sha256");
+                    if manifest.is_file() {
+                        manifests.push(manifest);
+                    }
+                }
+            }
+            if manifests.len() >= 2 {
+                manifests.sort_by_key(|path| {
+                    fs::metadata(path).and_then(|m| m.modified()).ok()
+                });
+                if let Some(latest) = manifests.last() {
+                    let mut bytes = fs::read(latest).unwrap_or_default();
+                    bytes.truncate(bytes.len().saturating_sub(64));
+                    let _ = fs::write(latest, &bytes);
+                }
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(500));
+        }
+        // 2) The target snapshot was created before the pipeline started;
+        //    removing its manifest turns the now-attempted restore into a
+        //    recorded failure.
+        let snapshots = injector_root.join(".vua/snapshots");
+        if let Ok(entries) = fs::read_dir(&snapshots) {
+            for entry in entries.filter_map(Result::ok) {
+                let _ = fs::remove_file(entry.path().join("manifest.json"));
+            }
+        }
+    });
+    let report = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Failed);
+    assert!(report
+        .error_code
+        .as_deref()
+        .unwrap_or("")
+        .contains("vua.material.rollback_failed"));
+    let record = vua_orchestrator::BuildRecordStore::new(harness.project_root.join(".vua/records"))
+        .read(report.build_record_id.as_deref().expect("record id"))
+        .expect("the worst outcome still gets a receipt");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Failed);
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
+
+/// S8: a succeeded local-reusable receipt replays without touching Unity.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER)"]
+fn m3_real_local_reusable_replay_of_succeeded_receipt_skips_unity() {
+    let harness = p2_harness("vpm-replay");
+    let first = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        first.status,
+        MaterialExecutionStatus::Succeeded,
+        "first run: {first:?}"
+    );
+    assert!(!first.replayed);
+    let requests_after_first = bridge_request_count(&harness.project_root);
+
+    let started = Instant::now();
+    let second = harness.executor.execute(
+        &harness.confirmation,
+        &harness.source,
+        &harness.project,
+        &harness.project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    println!("P2 replay wall time: {:?}", started.elapsed());
+    assert!(second.replayed, "a succeeded receipt must replay: {second:?}");
+    assert_eq!(second.status, MaterialExecutionStatus::Succeeded);
+    assert_eq!(second.completed_steps, Vec::new());
+    assert_eq!(second.build_record_id, first.build_record_id);
+    assert_eq!(
+        bridge_request_count(&harness.project_root),
+        requests_after_first,
+        "the replay must not touch Unity"
+    );
+
+    let _ = fs::remove_dir_all(&harness.base);
+    let _ = fs::remove_dir_all(&harness.project_root);
+}
