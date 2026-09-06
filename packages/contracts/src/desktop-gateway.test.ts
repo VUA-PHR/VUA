@@ -240,3 +240,37 @@ describe("bdl-queries v0.2 gateway surface", () => {
     })).toBe(false);
   });
 });
+
+describe("bdl-commands v0.1 gateway surface", () => {
+  const base = { schemaVersion: 1, requestId: "r" } as const;
+
+  it("accepts the three warehouse write commands with commandId and closed mode sets", () => {
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: "generate_vpm", commandId: "cmd-1" },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: null, commandId: "cmd-2" },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.generateVpm",
+      params: { warehouseItemId: "wh-entry-1", commandId: "cmd-3" },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.deleteOriginals",
+      params: { warehouseItemId: "wh-entry-1", commandId: "cmd-4" },
+    })).toBe(true);
+  });
+
+  it("rejects mode vocabulary escapes and missing command ids", () => {
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.setArtifactMode",
+      params: { warehouseItemId: "wh-entry-1", mode: "unknown_mode", commandId: "cmd-5" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "warehouse.generateVpm",
+      params: { warehouseItemId: "wh-entry-1" },
+    })).toBe(false);
+  });
+});

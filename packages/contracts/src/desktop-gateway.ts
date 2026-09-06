@@ -5,6 +5,7 @@ import type {
   CatalogAvailabilityStatusV03,
   ProductionModeV02,
   ProductionRiskChoiceV02,
+  WarehouseArtifactModeV03,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -206,6 +207,33 @@ export interface DownloadRetryRequestV1 {
   readonly params: { readonly taskId: string; readonly commandId: string };
 }
 
+/** 产物模式三命令入口(bdl-commands v0.1,proposal 005):任务级动作经 AMF */
+export interface WarehouseSetArtifactModeRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.setArtifactMode";
+  readonly params: {
+    readonly warehouseItemId: string;
+    /** null = 清除条目级覆盖,回落「覆盖 ?? 全局默认」动态解析 */
+    readonly mode: WarehouseArtifactModeV03 | null;
+    readonly commandId: string;
+  };
+}
+
+export interface WarehouseGenerateVpmRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.generateVpm";
+  readonly params: { readonly warehouseItemId: string; readonly commandId: string };
+}
+
+export interface WarehouseDeleteOriginalsRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.deleteOriginals";
+  readonly params: { readonly warehouseItemId: string; readonly commandId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -225,7 +253,10 @@ export type DesktopGatewayRequestV1 =
   | CatalogStatusRequestV1
   | WarehouseListEntriesRequestV1
   | WarehouseEntryDetailRequestV1
-  | DownloadRetryRequestV1;
+  | DownloadRetryRequestV1
+  | WarehouseSetArtifactModeRequestV1
+  | WarehouseGenerateVpmRequestV1
+  | WarehouseDeleteOriginalsRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -248,6 +279,9 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.listEntries": "query",
   "warehouse.entryDetail": "query",
   "download.retry": "command",
+  "warehouse.setArtifactMode": "command",
+  "warehouse.generateVpm": "command",
+  "warehouse.deleteOriginals": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -530,6 +564,20 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["taskId", "commandId"])
         && isIdentifier(value.params.taskId)
+        && isIdentifier(value.params.commandId);
+    case "warehouse.setArtifactMode":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["warehouseItemId", "mode", "commandId"])
+        && isIdentifier(value.params.warehouseItemId)
+        && (value.params.mode === null
+          || value.params.mode === "use_original_unitypackage"
+          || value.params.mode === "generate_vpm")
+        && isIdentifier(value.params.commandId);
+    case "warehouse.generateVpm":
+    case "warehouse.deleteOriginals":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["warehouseItemId", "commandId"])
+        && isIdentifier(value.params.warehouseItemId)
         && isIdentifier(value.params.commandId);
     default:
       return false;

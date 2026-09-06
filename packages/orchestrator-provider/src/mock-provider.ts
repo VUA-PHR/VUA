@@ -250,6 +250,19 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "warehouse.setArtifactMode":
+      case "warehouse.generateVpm":
+      case "warehouse.deleteOriginals":
+        // 模拟 Provider 未配置 BDL 写域:诚实不可用(bdl-commands v0.1,
+        // proposal 005;桌面登记 TS 面时的穷尽性最小表态,业务路由归核心)
+        return this.#failure(request, this.#error(
+          "vua.warehouse.unavailable",
+          "unavailable",
+          "errors.warehouse.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
     }
   }
 

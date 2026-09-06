@@ -191,6 +191,13 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":
       return { ...base, kind: "command", method: "download.retry", commandId: request.params.commandId, params: { taskId: request.params.taskId } };
+    // bdl-commands v0.1 写命令(proposal 005):词表已由信封守卫验证,原样映射
+    case "warehouse.setArtifactMode":
+      return { ...base, kind: "command", method: "warehouse.setArtifactMode", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId, mode: request.params.mode } };
+    case "warehouse.generateVpm":
+      return { ...base, kind: "command", method: "warehouse.generateVpm", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId } };
+    case "warehouse.deleteOriginals":
+      return { ...base, kind: "command", method: "warehouse.deleteOriginals", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId } };
   }
 }
 
