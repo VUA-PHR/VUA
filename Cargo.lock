@@ -2883,6 +2883,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "tar",
+ "vua-acquisition",
  "vua-bdl-store",
  "vua-orchestrator",
  "vua-project-manager",
