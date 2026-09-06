@@ -44,3 +44,4 @@ M3 进度：
 | 4 | generate-VPM / delete-originals / set_artifact_mode 零测试 | B 角色 | proposal 003 |
 | 5 | F4-9 三命令协议未排期 | F/B 角色 | 未排期 |
 | 6 | environment_managers 因深耦合未随 project-manager 拆出 | B 角色 | proposal 004 |
+| 7 | production_host 套件偶发失败一次（拆分后首次全量链，1/5 运行；其后 4 连绿，疑似时序敏感，未定名） | B 角色 | 观察项，复现即立项 |
