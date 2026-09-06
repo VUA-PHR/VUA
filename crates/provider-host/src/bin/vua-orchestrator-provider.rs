@@ -20,18 +20,64 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Download acquisition (B4/F4-4): when a data directory is configured,
     // the provider serves download.ingest / download.retry and folds port
     // events into the BDL database under <data>/bdl.
+    let mut bdl = None;
     let downloads = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
-        let bdl = vua_bdl_store::BdlStore::open(
+        let store = vua_bdl_store::BdlStore::open(
             std::path::Path::new(&data).join("bdl").join("bdl.db"),
         )
         .map(std::sync::Arc::new)
         .expect("BDL store must open");
-        vua_provider_host::DownloadConfig { bdl }
+        bdl = Some(store.clone());
+        vua_provider_host::DownloadConfig { bdl: store }
+    });
+    // Warehouse maintenance (B4/proposal 005): with VUA_WAREHOUSE_ROOT set,
+    // the provider serves the artifact-mode trio over the same BDL database.
+    // Generation reuses the production executor when the Unity environment is
+    // configured; without it the generate command answers a typed unavailable
+    // error while the mode and deletion commands keep working.
+    let warehouse = std::env::var("VUA_WAREHOUSE_ROOT").ok().and_then(|root| {
+        let warehouse_root = PathBuf::from(&root);
+        if !warehouse_root.is_absolute() {
+            eprintln!(
+                "VUA provider: VUA_WAREHOUSE_ROOT must be an absolute path; warehouse stays unavailable"
+            );
+            return None;
+        }
+        let global_default = match std::env::var("VUA_WAREHOUSE_DEFAULT_MODE").ok().as_deref() {
+            None | Some("") => vua_bdl_store::ArtifactMode::UseOriginalUnitypackage,
+            Some(mode) => match vua_bdl_store::ArtifactMode::parse(mode) {
+                Ok(mode) => mode,
+                Err(_) => {
+                    eprintln!(
+                        "VUA provider: VUA_WAREHOUSE_DEFAULT_MODE={mode} is not a frozen mode; \
+                         warehouse stays unavailable"
+                    );
+                    return None;
+                }
+            },
+        };
+        let store = match bdl.clone() {
+            Some(store) => store,
+            None => {
+                let data = std::env::var("VUA_PROVIDER_DATA").ok()?;
+                vua_bdl_store::BdlStore::open(
+                    std::path::Path::new(&data).join("bdl").join("bdl.db"),
+                )
+                .map(std::sync::Arc::new)
+                .expect("BDL store must open")
+            }
+        };
+        Some(vua_provider_host::WarehouseConfig {
+            bdl: store,
+            warehouse_root,
+            global_default,
+            executor: production.as_ref().map(|config| config.executor.clone()),
+        })
     });
     let input = stdin_reader();
     let output = std::io::stdout().lock();
-    vua_provider_host::run_provider_host_with_downloads(
-        input, output, database_path, production, downloads,
+    vua_provider_host::run_provider_host_with_services(
+        input, output, database_path, production, downloads, warehouse,
     )?;
     Ok(())
 }

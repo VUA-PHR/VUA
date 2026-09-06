@@ -1238,16 +1238,39 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
     };
     assert_eq!(task.state, TaskState::Succeeded);
 
-    // Released gates: marker cleared, project lock acquirable again.
-    assert_eq!(read_pending_mutation(&project_root), PendingMutation::None);
-    let holder = LockHolder {
-        channel: "other".into(),
-        profile: "other".into(),
-        pid: 1,
-        instance_id: "other-instance".into(),
-        acquired_at: "2026-09-05T00:00:00Z".into(),
+    // The worker persists the authoritative terminal state BEFORE releasing
+    // the mutation gate (provider_host keeps the lease visible until the run
+    // is fully done, so a safe_to_stop verdict can never miss it). The
+    // marker and the cross-profile lock therefore clear a few scheduler
+    // ticks after the terminal state becomes visible — poll for the
+    // release instead of racing it (BOARD #7: this used to be an immediate
+    // assertion and flaked when the scheduler landed inside the window).
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        if read_pending_mutation(&project_root) == PendingMutation::None {
+            break;
+        }
+        assert!(Instant::now() < deadline, "marker never cleared after the run");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let guard = loop {
+        let holder = LockHolder {
+            channel: "other".into(),
+            profile: "other".into(),
+            pid: 1,
+            instance_id: "other-instance".into(),
+            acquired_at: "2026-09-05T00:00:00Z".into(),
+        };
+        match acquire_project_lock(&project_root, holder) {
+            Ok(guard) => break guard,
+            Err(vua_project_manager::ProjectLockError::Held { .. }) => {
+                assert!(Instant::now() < deadline, "lock never released after run");
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => panic!("unexpected project lock error after the run: {error}"),
+        }
     };
-    let guard = acquire_project_lock(&project_root, holder).expect("lock released after run");
     guard.release().unwrap();
     let _ = fs::remove_dir_all(&base);
 }
