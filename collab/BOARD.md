@@ -3,7 +3,7 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07（常驻进程模型启用：六角色 × 六工作树 + TICK 节拍）
+最近更新：2026-09-07（wt-main 基线刷新至 5d2d008；pre-rename 目录清理升级为 U5）
 
 ## 工作树指派
 
@@ -70,3 +70,4 @@ M3 进度：
 | U2 | environment_managers 拆分三选项（proposal 004） | 环境 | 选 1/2/3 或维持现状 |
 | U3 | F6：VUA 是否写外部工具（ALCOM/VCC）管理的项目 | 桌面 | 产品语义裁决（M6 前置） |
 | U4 | remote 建立时点（现行裁决：M3 验收当日） | 集成 | 是否提前建 private 仓库让 CI 先行 |
+| U5 | VUA-2/VUA-3 内 node_modules.pre-rename 与 target.pre-rename 目录清理 | 集成 | 确认后删除（auto 模式进程禁 rm -rf；2026-09-07 核实四目录仍在） |
