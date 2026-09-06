@@ -62,8 +62,8 @@ Modules, grouped by domain:
 - **Project and environment:** `vpm`, `vpm_backend`, `environment`, `environment_managers`,
   `win_registry`, `tools`.
 
-"BDL is AMF-private" is currently upheld by calling discipline without structural enforcement; the
-target crate layout gives it enforcement through the `bdl-store` crate.
+"BDL is AMF-private" has had structural enforcement through the `bdl-store` crate since the crate
+split landed on 2026-09-06 (previously upheld by calling discipline alone).
 
 ## Provider process boundary
 
@@ -84,26 +84,26 @@ The accepted hosting decision is a **supervised independent-process Provider** (
   supervised-process Providers implement the same versioned application contract; the hosting model
   is replaceable and is not a product invariant.
 
-## Target crate layout (accepted decision, transition in progress)
+## Crate layout (split landed 2026-09-06)
 
-The user has ruled to split the single crate along the existing code seams (governance reform
-§6.1). Target layout:
+The split ruled by the user is complete (slice/crate-split, merge `a261393`; one purely mechanical
+move commit per crate, sources and tests moved together, behavior unchanged, full tests and Clippy
+green):
 
-| Crate | Contents (current location) | Reason |
+| Crate | Contents | Notes |
 | --- | --- | --- |
-| `orchestrator` (core, retained) | task runtime, cancellation/recovery, use cases, domain ports, application contract types | single application core |
-| `bdl-store` (first) | `bdl_store`, `bdl_queries`, BDL SQLite schema/migrations | own persistent schema, closest to an independent data module; "AMF-private" gains structural enforcement |
-| `unity-bridge` | `bridge`, `material_intake`/`material_exec`/`material_staging`, `staging_scaffold` | same lifecycle as the C# package and Bridge schemas |
-| `provider-host` | `provider_host`, `process`, `provider_job` | already a separate binary boundary |
-| `acquisition` | `download_events`, `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain with its own state machine |
-| `project-manager` | `vpm_backend`, `environment_managers`, `project_lock` | project/environment adapters for external tools |
+| `orchestrator` (core) | task runtime, cancellation/recovery, use cases, domain ports, application contract types, `material_types` leaf types, `vpm_backend` port trait | single application core |
+| `bdl-store` | `bdl_store`, `bdl_queries`, BDL SQLite schema/migration consumption | "AMF-private" gains structural enforcement |
+| `unity-bridge` | `bridge`, `material_intake`/`material_exec`/`material_staging`/`material_task`, `staging_scaffold`, `local_vpm_artifact`, `production_documents` | same lifecycle as the C# package and Bridge schemas |
+| `provider-host` | `provider_host`, `process`, `provider_job` + the `vua-orchestrator-provider` binary | separate process boundary; composition root |
+| `acquisition` | `download_events`, `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain |
+| `project-manager` | `vpm_backend` implementation, `project_lock` | external tool adapters |
 
 Dependency direction: domain types and ports stay in the core; adapter crates depend on the core;
-the core never depends on adapter implementations; cargo enforces acyclicity. The split executes in
-the order `bdl-store` → `unity-bridge` → `provider-host` → `acquisition` → `project-manager`, one
-purely mechanical move commit per crate (sources and tests move together, behavior unchanged). Until
-the split lands, new modules are assigned by this table and must not keep growing the orchestrator
-core.
+`provider-host` is the composition root depending on all; cargo enforces acyclicity. **Exception**:
+`environment_managers` remains in the core for now due to deep coupling with the core environment
+engine — see `collab/proposals/004-environment-managers-split.md`. New modules land in their owning
+crate from the start; the core must not grow adapter code.
 
 ## Collaboration and worktrees
 

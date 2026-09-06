@@ -3,7 +3,7 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-06（三车道统一合并后）
+最近更新：2026-09-06（过渡执行完成：统一合并 + 治理落地 + collab 机制 + 工作树更名 + crate 拆分）
 
 ## M 门状态
 
@@ -43,3 +43,4 @@ M3 进度：
 | 3 | bdl-queries v0.3 TS 镜像 ageRestriction 缺口 | B/F 角色 | proposal 002 |
 | 4 | generate-VPM / delete-originals / set_artifact_mode 零测试 | B 角色 | proposal 003 |
 | 5 | F4-9 三命令协议未排期 | F/B 角色 | 未排期 |
+| 6 | environment_managers 因深耦合未随 project-manager 拆出 | B 角色 | proposal 004 |

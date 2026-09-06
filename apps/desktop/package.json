@@ -7,7 +7,7 @@
   ],
   "main": "dist/electron/main.js",
   "scripts": {
-    "build": "pnpm --filter @vua/orchestrator-provider build && cargo build --release -p vua-orchestrator --bin vua-orchestrator-provider && node scripts/clean.mjs && tsc -p tsconfig.electron.json && vite build",
+    "build": "pnpm --filter @vua/orchestrator-provider build && cargo build --release -p vua-provider-host --bin vua-orchestrator-provider && node scripts/clean.mjs && tsc -p tsconfig.electron.json && vite build",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.electron.json --noEmit",
     "test": "pnpm --filter @vua/orchestrator-provider build && vitest run src",
     "check": "pnpm typecheck && pnpm test && pnpm build && pnpm check:boundary && pnpm check:i18n && pnpm check:contrast && pnpm check:leak",

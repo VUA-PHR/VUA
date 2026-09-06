@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.0.0
+> Document version: 1.0.1
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -89,11 +89,12 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - Rust Orchestrator hosting and transport remain replaceable. In-process native and
   supervised-process Providers must implement the same versioned application contract; neither
   napi-rs nor a sidecar is a product invariant.
-- Current code reality: the Cargo workspace has a single member, `crates/orchestrator`, which hosts
-  every Orchestrator module. An accepted decision splits it into the target layout `bdl-store` /
-  `unity-bridge` / `provider-host` / `acquisition` / `project-manager` (target table in
-  `docs/architecture/system_ZH.md`); the split is in transition. Until it lands, assign new modules
-  by the target layout in the architecture documents rather than by the current single-crate shape.
+- Current code reality: the Cargo workspace splits the Orchestrator into `crates/orchestrator`
+  (core: task runtime, recovery, use cases, domain ports, contract types) plus `bdl-store`,
+  `unity-bridge`, `provider-host`, `acquisition`, and `project-manager` (layout table in
+  `docs/architecture/system_ZH.md`). `environment_managers` remains in the core pending the
+  deferred extraction decision (`collab/proposals/004-environment-managers-split.md`). New modules
+  land in their owning crate from the start; the core must not grow adapter code.
 - Community plugins never join the trusted in-process composition context or receive Electron
   Main/Orchestrator Provider authority. Their execution requires a separately accepted isolation and
   security decision.
@@ -167,6 +168,8 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.0.1 (2026-09-06): crate split landed (merge `a261393`) — the code-reality bullet now describes
+  the six-crate layout; the `environment_managers` exception is registered as proposal 004.
 - 1.0.0 (2026-09-06): entered version management. Added the collab-first read step, the
   collaboration/merge discipline (single integration branch, vertical slices, numbered worktrees),
   the codified honesty discipline with checks, and the single-crate reality with the accepted

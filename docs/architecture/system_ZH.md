@@ -60,8 +60,8 @@ Cargo workspace 当前只有一个成员：`crates/orchestrator`（约 26.8k 行
 - **项目与环境**：`vpm`、`vpm_backend`、`environment`、`environment_managers`、`win_registry`、
   `tools`。
 
-"BDL 是 AMF 私有模块"当前由调用纪律维持，尚无结构强制；目标 crate 布局落地后由
-`bdl-store` crate 提供强制。
+"BDL 是 AMF 私有模块"自 2026-09-06 拆分落地起由 `bdl-store` crate 提供结构强制（此前由调用
+纪律维持）。
 
 ## Provider 进程边界
 
@@ -78,23 +78,24 @@ Cargo workspace 当前只有一个成员：`crates/orchestrator`（约 26.8k 行
 - Provider 替换只能发生在空闲关闭边界；进程内原生 Provider 与受监督进程 Provider 实现同一
   版本化应用契约，托管方式可替换不是产品不变量。
 
-## 目标 crate 布局（已接受决策，过渡执行中）
+## crate 布局（2026-09-06 拆分落地）
 
-用户已裁决按现有代码接缝拆分单 crate（治理改良方案 §6.1）。目标布局：
+拆分已按用户裁决执行完成（slice/crate-split，合并 `a261393`；每 crate 一次纯机械移动提交，
+源文件与测试同搬、行为不变，全量测试与 Clippy 绿）：
 
-| crate | 内容（现状位置） | 拆分理由 |
+| crate | 内容 | 说明 |
 | --- | --- | --- |
-| `orchestrator`（核心保留） | 任务运行时、取消/恢复、用例、域端口、应用契约类型 | 单一应用核心 |
-| `bdl-store`（先行） | `bdl_store`、`bdl_queries`、BDL SQLite schema/迁移 | 自有持久 schema，最接近独立数据模块；"AMF 私有"自此有结构强制 |
-| `unity-bridge` | `bridge`、`material_intake`/`material_exec`/`material_staging`、`staging_scaffold` | 与 C# 包、Bridge schema 同生命周期 |
-| `provider-host` | `provider_host`、`process`、`provider_job` | 已是独立二进制边界 |
-| `acquisition` | `download_events`、`warehouse_import`、`warehouse_maintenance`、`artifact_inspection` | 下载/仓储域，自有状态机 |
-| `project-manager` | `vpm_backend`、`environment_managers`、`project_lock` | 项目/环境适配器，外部工具适配 |
+| `orchestrator`（核心） | 任务运行时、取消/恢复、用例、域端口、应用契约类型、`material_types` 叶类型、`vpm_backend` 端口 trait | 单一应用核心 |
+| `bdl-store` | `bdl_store`、`bdl_queries`、BDL SQLite schema/迁移消费 | "AMF 私有"自此有结构强制 |
+| `unity-bridge` | `bridge`、`material_intake`/`material_exec`/`material_staging`/`material_task`、`staging_scaffold`、`local_vpm_artifact`、`production_documents` | 与 C# 包、Bridge schema 同生命周期 |
+| `provider-host` | `provider_host`、`process`、`provider_job` + `vua-orchestrator-provider` 二进制 | 独立进程边界；组合根 |
+| `acquisition` | `download_events`、`warehouse_import`、`warehouse_maintenance`、`artifact_inspection` | 下载/仓储域 |
+| `project-manager` | `vpm_backend` 实现、`project_lock` | 外部工具适配 |
 
-依赖方向：域类型与端口留在核心，适配器 crate 依赖核心，核心不依赖适配器实现；crate 间无环
-由 cargo 强制。拆分执行顺序为 `bdl-store` → `unity-bridge` → `provider-host` → `acquisition` →
-`project-manager`，每 crate 一次纯机械移动提交（源文件与测试同搬、不改行为）。拆分完成前，
-新模块归属以本表为准，不得继续喂大 orchestrator 核心。
+依赖方向：域类型与端口留在核心，适配器 crate 依赖核心，provider-host 作为组合根依赖全部；
+crate 间无环由 cargo 强制。**例外**：`environment_managers` 因与核心 environment 引擎深耦合
+暂留核心，拆分决策见 `collab/proposals/004-environment-managers-split.md`。新模块直接落进
+所属 crate，不得喂大核心。
 
 ## 协作与工作树
 

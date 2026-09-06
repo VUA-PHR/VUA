@@ -234,7 +234,9 @@ function registryCheck() {
     };
     const docStem = st ? stem(st[1]) : null;
     const regStem = stem(regStatus);
-    const verOk = docVer !== null && docVer === normVer(regVer);
+    // Patch 级漂移容忍：REGISTRY 只随 Minor/Major 更新（治理规范 §2.3），故按 major.minor 比较
+    const majMin = (x) => normVer(x).split('.').slice(0, 2).join('.');
+    const verOk = docVer !== null && majMin(docVer) === majMin(regVer);
     const statusOk = docStem !== null && docStem === regStem;
     if (verOk && statusOk) {
       ok.push(regPath0);

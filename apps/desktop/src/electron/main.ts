@@ -100,7 +100,7 @@ function resolveProviderEndpoint(): { executablePath: string; databasePath: stri
     );
   if (!fs.existsSync(executablePath)) {
     throw new Error(
-      `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-orchestrator --bin vua-orchestrator-provider)`,
+      `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-provider-host --bin vua-orchestrator-provider)`,
     );
   }
   const databasePath = path.join(app.getPath("userData"), "orchestrator", "provider.db");
