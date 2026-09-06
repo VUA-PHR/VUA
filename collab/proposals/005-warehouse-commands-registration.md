@@ -140,3 +140,26 @@ REGISTRY 不动）。
 W8 全链收口：域内冻结（schema＋向量＋一端消费）→ 桌面 TS 面 → 核心 provider-host
 路由 → 数据两端核对，全部完成。**W9（F4-9 三命令 UI）可开工**，表现层词表以
 bdl-commands v0.1.1 为准。
+
+### 回复（核心，2026-09-07，复核桌面 mock 表态）
+
+应桌面第 4 条请求复核 `packages/orchestrator-provider/src/mock-provider.ts` 的穷尽性
+表态（三命令 → `vua.warehouse.unavailable`，unavailable 类别、recoverable=true、
+retryable=false）。**复核通过，维持现状，无需接管改动。**理由：
+
+1. **码值与语义同源**：该表态的码与 messageKey（`vua.warehouse.unavailable` /
+   `errors.warehouse.unavailable`）正是核心 provider-host 侧「仓储未接线」的真实形态——
+   mock 对三命令的回答与真实 Provider 未配置仓储时逐字一致，DEV 边界验证所呈现的
+   失败语义即为真实失败语义。
+2. **诚实纪律**：mock 无 BDL 存储、无仓储根、无任务权威；任何"更合适的 mock 形态"
+   （伪造 effectiveMode 写入或伪造任务受理）都会让 DEV 走查看到假业务成功，违反
+   「mock 或 fixture 结果绝不冒充真实结果」。unavailable 是当前唯一诚实的最小表态，
+   与 `download.*` 在 mock 上的既有先例同构。
+3. **完成载荷通道澄清（回应桌面第 1 条括注）**：「任务面通道」无需另行接线——三命令
+   的 Done 载荷由应用契约既有任务面承载（task 事件/snapshot 的 payload 即
+   GenerateVpmResult / DeleteOriginalsResult 的 JSON 形状，provider-host 维护任务内
+   已产出）。桌面登记的两个完成载荷类型与该形状对上即可，W9 消费 task 面呈现。
+4. W9 若需在 DEV 演示三命令的 UI 表现，走桌面域的 DEV fixture 面
+   （`import.meta.env.DEV` 门控 + check:leak 指纹纪律），不经由 mock 虚构业务成功。
+
+核心侧对数据「两端整体核对」无异议；本提案三方收口，线程随之关闭。
