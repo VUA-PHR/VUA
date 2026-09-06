@@ -182,10 +182,21 @@ function registryCheck() {
       .slice(1, -1)
       .map((c) => c.trim());
   const rows = readFileSync(regPath, 'utf8').split(/\r?\n/);
-  const headIdx = rows.findIndex((l) => {
-    const c = cells(l);
-    return c.includes('路径') && c.includes('版本') && c.includes('状态');
-  });
+  // 表头行识别：某格恰为“路径”、某格含“版本”（列名可能是“文档版本”）、某格恰为“状态”。
+  // 注意这里是数组元素级比较：c.includes('版本') 会把 '文档版本' 元素判为不匹配，故用 findIndex。
+  let headIdx = -1;
+  let col = null;
+  for (let i = 0; i < rows.length; i += 1) {
+    const c = cells(rows[i]);
+    const p = c.findIndex((x) => x === '路径');
+    const v = c.findIndex((x) => x.includes('版本'));
+    const s = c.findIndex((x) => x === '状态');
+    if (p >= 0 && v >= 0 && s >= 0) {
+      headIdx = i;
+      col = { p, v, s };
+      break;
+    }
+  }
   if (headIdx === -1) {
     line('REGISTRY 表头未找到（需含 路径/版本/状态 列的表格），跳过校验。');
     return;
@@ -197,10 +208,11 @@ function registryCheck() {
   let total = 0;
   for (const l of rows.slice(headIdx + 1)) {
     const c = cells(l);
-    if (c.length < 3 || c.every((x) => /^:?-{2,}:?$/.test(x))) continue; // 分隔行/残行
-    const regPath0 = c[0].replace(/^\[([^\]]+)\]\(([^)]+)\)$/, '$2').replace(/^`|`$/g, '');
-    const regVer = c[1];
-    const regStatus = c[2];
+    const need = Math.max(col.p, col.v, col.s);
+    if (c.length <= need || c.every((x) => /^:?-{2,}:?$/.test(x))) continue; // 残行/分隔行
+    const regPath0 = c[col.p].replace(/^\[([^\]]+)\]\(([^)]+)\)$/, '$2').replace(/^`|`$/g, '');
+    const regVer = c[col.v];
+    const regStatus = c[col.s];
     if (!regPath0 || regPath0 === '---') continue;
     total += 1;
     const full = path.join(repoRoot, regPath0);
