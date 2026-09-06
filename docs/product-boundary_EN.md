@@ -2,9 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
+> Document version: 1.0.0
 > Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.0.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-03
+> Updated: 2026-09-06
 > Normative effect: Yes
 
 ## Product definition
@@ -28,7 +30,10 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    with ALCOM-managed and VCC-managed projects.
 6. **Unity Bridge:** a versioned deterministic protocol whose production target is exactly global
    Unity `2022.3.22f1`; historical editor projects enter through the documented migration boundary.
-7. **Desktop and VR overlays:** guidance, status, and runtime information through stable services.
+7. **Desktop overlay:** guidance, status, and runtime information through stable application
+   services; part of the `1.0.0` product composition. **VR overlay:** removed from the `1.0.0`
+   scope (user ruling, 2026-09-06) and kept as a post-`1.0.0` direction anchor (see the v1.1
+   outlook in the [development plan outline](development-outline_EN.md)).
 8. **Integrated runtimes:** major optional native-feeling capabilities, including face tracking,
    motion tracking, and Avatar optimization, through managed or external-connection adapters.
    Implementation begins only after `1.0.0`.
@@ -103,3 +108,9 @@ protocols govern implementation. Runtime-tool integration begins after `1.0.0`. 
 license is Apache-2.0 and the public
 contribution policy is defined in the root contribution guide. Release signing and update design
 remain release-engineering decisions.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management. Item 7 split into the desktop overlay (retained
+  in the `1.0.0` composition) and the VR overlay (removed from `1.0.0`, pointing to the v1.1
+  outlook in the development outline); all other items unchanged.
