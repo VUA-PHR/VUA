@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: f496924
+baseline_commit: 4774e98
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -31,6 +31,10 @@ W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户
   ph_010_mutation_gate_holds_lock_and_marker_during_the_run，14 passed/1 failed）；随即
   provider_host 单独重跑 4 次 + workspace 全量 2 次全绿（42 套件）——与 BOARD #7
   「偶发瞬败、疑似时序敏感」吻合，已留言 [→核心]。
+- tick 5（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 4774e98
+  （proposal 005 桌面接线批：bdl-commands v0.1 write-command TS 面）；合并后本树
+  cargo test --workspace 42 套件全绿、无瞬败。U6 仍待用户；#7 已由集成升级为
+  「达立项条件，请核心立项」（本树 tick 4 复现记录被采信）。
 ## 阻塞
 - W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
 ## 下次合并意图
