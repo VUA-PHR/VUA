@@ -91,8 +91,8 @@ review/confirmation (bound to a revision) → execution progress → recovery (c
 minimal Build Record, covering all five lifecycles: success / cancel / drift (failed_recoverable) /
 timeout (expired) / rollback (both rollback success and failure). Interaction semantics follow
 `docs/protocols/production-use-case-v0.1_EN.md` (B3/F3 candidate draft); visual and interaction
-acceptance follows design standard v0.6.1 (`docs/design/design-standard-v0.6.1_EN.md`, a directory
-that by ruling never enters the repository and is referenced locally only). The experience is hosted
+acceptance follows design standard v0.6.1 (`docs/design/design-standard_EN.md`, now tracked
+and managed in the repository). The experience is hosted
 in the workshop page (§2.2/§8.5: execution, waiting and recovery are task progress inside Assembly;
 no separate Production user stage); the primary/secondary navigation and PageId structure are
 untouched.

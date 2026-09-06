@@ -83,7 +83,7 @@ F3 生产纵向用例的表现层完整落地在 renderer 自有端口 + DEV fix
 计划审阅/确认（绑定 revision）→ 执行进度 → 恢复（continue/rollback）→ 最小 Build Record，
 覆盖成功/取消/漂移（failed_recoverable）/超时（expired）/回滚（含回滚成功与失败）五种生命周期。
 交互语义依据 `docs/protocols/production-use-case-v0.1_ZH.md`（B3/F3 候选草案）；视觉与交互验收依据
-设计规范 v0.6.1（`docs/design/design-standard-v0.6.1_ZH.md`，该目录按裁决永不入库，仅本地参考）。
+设计规范 v0.6.1（`docs/design/design-standard_ZH.md`，已入库受管）。
 体验寄宿车间页（§2.2/§8.5：执行/等待/恢复是 Assembly 内的任务进展，不另设 Production 用户阶段），
 一级/二级导航与 PageId 结构未动。
 

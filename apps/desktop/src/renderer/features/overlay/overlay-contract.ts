@@ -3,7 +3,7 @@
  *
  * 语义来源:docs/architecture/integrations-and-overlays_ZH.md §Overlay——桌面与
  * VR Overlay 共享同一展示状态,经窄化 Surface Port 获取版本化快照并只回语义
- * 动作;docs/design/design-standard-v0.6.1_ZH.md §8.8——Overlay 只展示稳定快照
+ * 动作;docs/design/design-standard_ZH.md §8.8——Overlay 只展示稳定快照
  * 和语义动作。正式版本化契约随 Kernel/VR helper 接线切片进入 packages/contracts;
  * 此前本镜像是唯一事实来源,接入时必须以此对齐,不得另造第二套词表。
  */
