@@ -780,9 +780,21 @@ rolled_back: "已回滚",
       notFound: "未找到该商品。它可能已从目录移除,或本地数据需要更新。",
       loadFailed: "详情加载失败。",
       tombstoneNote: "该商品已被删除(墓碑)。目录仅保留其最后标题与主图,供追溯已有引用。",
+      /** v0.3:仅显式 BOOTH Adult 徽标为真时显示 */
+      adultBadge: "R-18",
+      /** v0.3:观测原词证据(availabilityRaw),只在详情展示 */
+      availabilityEvidence: "原始标记:{raw}",
+      /** v0.3:BOOTH 年龄限制原文 */
+      ageRestrictionNote: "年龄限制:{value}",
       entitiesTitle: "实体与关系",
       entitiesEmpty: "该商品尚未解析出实体。",
       attributionTitle: "店铺与作者",
+      /** v0.3 增量:多版本商品的变体价(subproducts) */
+      subproductsTitle: "版本与价格",
+      subproductUnnamed: "未命名版本",
+      /** v0.3 增量:详情视频媒体(videoUrls) */
+      videosTitle: "视频",
+      openVideoFailed: "未能调用系统浏览器,请手动复制视频链接。",
       termsTitle: "标签",
       descriptionTitle: "商品描述",
       sourceTitle: "来源",

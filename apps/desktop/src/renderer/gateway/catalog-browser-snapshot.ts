@@ -7,6 +7,7 @@ import {
 import type {
   CatalogBrowserPort,
   CatalogBrowserQuery,
+  CatalogAvailabilityStatus,
   CatalogDetailView,
   CatalogEntityBrief,
   CatalogListView,
@@ -108,6 +109,21 @@ const AVAILABILITY_VALUES: readonly CatalogAvailability[] = [
   "unknown",
   "deleted",
 ];
+
+/** 派生稳定枚举面(筛选词表与 availabilityStatus 过滤;墓碑不参与) */
+const AVAILABILITY_STATUS_VALUES: readonly CatalogAvailabilityStatus[] = [
+  "available",
+  "unavailable",
+  "unknown",
+];
+
+/**
+ * 徽标词表 → 派生稳定枚举:墓碑(deleted)不属于三值枚举,返回 null
+ * (不匹配任何 availabilityStatus 过滤,也不进筛选词表)。
+ */
+function availabilityStatusOf(availability: CatalogAvailability): CatalogAvailabilityStatus | null {
+  return availability === "deleted" ? null : availability;
+}
 
 const RELATION_KINDS: readonly CatalogRelationKind[] = [
   "compatible_with",
@@ -268,6 +284,8 @@ export function createSnapshotCatalogBrowser(data: CatalogSnapshotData): Catalog
         // 相册数组:详情媒体全量;无媒体时由主图兜底成单图(列表兜底在下方回写)
         imageUrls: mediaImages.length > 0 ? mediaImages : primary !== null ? [primary] : [],
         availability: parseAvailability(detail.availability),
+        // 观测原词证据:词表外取值不归一化,如实携带(徽标已归 unknown)
+        availabilityRaw: asString(detail.availability),
         entityCount:
           typeof detail.entity_count === "number" ? detail.entity_count : entities.length,
         entityTypes,
@@ -310,6 +328,7 @@ export function createSnapshotCatalogBrowser(data: CatalogSnapshotData): Catalog
               imageUrl: fallbackImage,
               imageUrls: fallbackGallery,
               availability: parseAvailability(item.availability),
+              availabilityRaw: asString(item.availability),
               entityCount: typeof item.entity_count === "number" ? item.entity_count : 0,
               entityTypes: [],
             },
@@ -320,8 +339,11 @@ export function createSnapshotCatalogBrowser(data: CatalogSnapshotData): Catalog
 
   function matches(record: SnapshotRecord, query: CatalogBrowserQuery): boolean {
     const { summary } = record;
-    if (query.availability !== undefined && summary.availability !== query.availability) {
-      return false;
+    if (query.availabilityStatus !== undefined) {
+      // 派生稳定枚举精确匹配;墓碑不属于三值枚举,不匹配任何过滤
+      if (availabilityStatusOf(summary.availability) !== query.availabilityStatus) {
+        return false;
+      }
     }
     if (query.entityType !== undefined && !summary.entityTypes.includes(query.entityType)) {
       return false;
@@ -362,18 +384,20 @@ export function createSnapshotCatalogBrowser(data: CatalogSnapshotData): Catalog
 
   // 筛选词表:全量目录中实际出现的取值(与过滤条件无关,UI 词表随数据走)
   const vocabulary = (() => {
-    const availabilities = new Set<CatalogAvailability>();
+    const availabilities = new Set<CatalogAvailabilityStatus>();
     const entityTypes = new Set<string>();
     const relationKinds = new Set<CatalogRelationKind>();
     for (const record of records) {
-      availabilities.add(record.summary.availability);
+      // 墓碑不在三值枚举内,不进筛选词表
+      const status = availabilityStatusOf(record.summary.availability);
+      if (status !== null) availabilities.add(status);
       for (const type of record.summary.entityTypes) entityTypes.add(type);
       for (const entity of parseEntities(record.wire.entities, resolveEntityName)) {
         for (const relation of entity.relations) relationKinds.add(relation.kind);
       }
     }
     return {
-      availabilities: AVAILABILITY_VALUES.filter((value) => availabilities.has(value)),
+      availabilities: AVAILABILITY_STATUS_VALUES.filter((value) => availabilities.has(value)),
       entityTypes: [...entityTypes].sort(),
       relationKinds: RELATION_KINDS.filter((kind) => relationKinds.has(kind)),
     };
@@ -407,15 +431,21 @@ export function createSnapshotCatalogBrowser(data: CatalogSnapshotData): Catalog
       price: record.summary.price,
       imageUrl: record.summary.imageUrl,
       availability: record.summary.availability,
+      availabilityRaw: record.summary.availabilityRaw,
       sourceUrl: asString(wire.source_url),
       sourceLocale: asString(wire.source_locale),
       description: asString(wire.description),
       attribution,
+      // BDB 0.2 草案无 v0.3 增量字段:诚实缺省,等 live 面或草案升版携带
+      adult: false,
+      ageRestriction: null,
+      sourceCategory: null,
       media: {
         imageUrls: parseStringArray(wire.media?.image_urls),
         videoUrls: parseStringArray(wire.media?.video_urls),
       },
       terms,
+      subproducts: [],
       entities: parseEntities(wire.entities, resolveEntityName),
     };
     detailCache.set(record.summary.productId, detail);

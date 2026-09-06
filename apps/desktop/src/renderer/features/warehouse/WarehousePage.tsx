@@ -13,7 +13,7 @@ import {
 import { Icon } from "@vua/design-system";
 import {
   useDataSource,
-  type CatalogAvailability,
+  type CatalogAvailabilityStatus,
   type CatalogDetailView,
   type CatalogListView,
   type CatalogProductDetail,
@@ -49,11 +49,12 @@ function entityTypeLabel(value: string): string {
 }
 
 /**
- * Warehouse 目录浏览(G8):BDB 目录快照的卡片墙。
+ * Warehouse 目录浏览(G8):云端目录轨的卡片墙。
  *
  * 数据来源与诚实纪律:
- * - dataSource "none"(生产构建 / not-run 场景)→ 诚实空态,不发起查询;
- * - dataSource "fixture"(DEV)→ vendored 草案快照,挂"演示数据"徽标;
+ * - dataSource "none"(纯浏览器 / not-run 场景)→ 诚实空态,不发起查询;
+ * - dataSource "live"(桌面壳)→ catalog.* 走 Kernel→AMF/BDL 真实链路;
+ *   BDL 未落观测数据时 = 空目录 + health unknown,空态即终态(F4-5);
  * - 骨架屏只出现在真实加载期间(首次拉取);筛选变更保留旧结果,
  *   不用骨架屏闪烁(ui-ux §2.8);
  * - 色彩纪律(v0.3.3 §6.1):橙仅用于选中描边;徽标一律中性灰,
@@ -121,7 +122,7 @@ function WarehouseCard({
       <div className="vua-warehouse-card__media">
         {item.imageUrls.length > 0 ? (
           // 多图卡:悬停 2s 进相册(光标横向位置翻页);单图退化为普通媒体槽
-          <CardAlbumMedia imageUrls={item.imageUrls} title={item.title} />
+          <CardAlbumMedia imageUrls={item.imageUrls} title={item.title ?? item.productId} />
         ) : (
           <div className="vua-warehouse-card__no-image">
             <span className="vua-caption vua-text-secondary">{copy.card.noImage}</span>
@@ -129,15 +130,18 @@ function WarehouseCard({
         )}
       </div>
       <div className="vua-warehouse-card__body">
-        {/* 两行截断;hover 经 title 属性显示全称 */}
-        <p className="vua-warehouse-card__title" title={item.title}>
-          {item.title}
+        {/* 两行截断;hover 经 title 属性显示全称;无题观测回落 productId */}
+        <p className="vua-warehouse-card__title" title={item.title ?? item.productId}>
+          {item.title ?? item.productId}
         </p>
         <div className="vua-warehouse-card__meta">
           <span>{priceText(item)}</span>
-          <span className="vua-caption vua-text-secondary">
-            {format(copy.card.entityCount, { count: item.entityCount })}
-          </span>
+          {/* v0.3 实体存储属 BDL v2:恒空时计数自然消失,不留"0 个实体"噪音 */}
+          {item.entityCount > 0 ? (
+            <span className="vua-caption vua-text-secondary">
+              {format(copy.card.entityCount, { count: item.entityCount })}
+            </span>
+          ) : null}
         </div>
         <div className="vua-warehouse-card__badges">
           {/* 在售是默认态不贴标;停售/未知/墓碑以中性灰文字徽标表达(§6.1) */}
@@ -160,6 +164,8 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
   const debugMode = useDebugMode();
   // 来源跳转失败(系统浏览器调用被拒/出错)时显式提示,不静默吞掉
   const [openSourceFailed, setOpenSourceFailed] = useState(false);
+  // 视频链接跳转失败:同样显式提示(v0.3 增量字段 videoUrls)
+  const [openVideoFailed, setOpenVideoFailed] = useState(false);
   // 应用内窗口打开失败(S-IX-3):同样显式提示,引导改用系统浏览器
   const [openInAppFailed, setOpenInAppFailed] = useState(false);
   return (
@@ -173,7 +179,7 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
               ? [product.imageUrl]
               : []
         }
-        title={product.title}
+        title={product.title ?? product.productId}
       />
       {/* 3D 预览占位(S-VFX-4):VRM 实时预览落地前的诚实槽位,
        * 平面槽与已有 media-slot 风格一致,不做假渲染 */}
@@ -185,6 +191,12 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
       </section>
       <div className="vua-warehouse-detail__badges">
         <Badge tone="neutral">{copy.availability[product.availability]}</Badge>
+        {/* Adult 徽标位必须显式(v0.3 仅显式 BOOTH Adult 徽标为真) */}
+        {product.adult ? <Badge tone="neutral">{copy.detail.adultBadge}</Badge> : null}
+        {/* BOOTH 展示分类原文:徽标呈现,不做翻译或推断 */}
+        {product.sourceCategory !== null ? (
+          <Badge tone="neutral">{product.sourceCategory}</Badge>
+        ) : null}
         {product.entities.map((entity) => (
           <Badge key={entity.entityId} tone="neutral">
             {entityTypeLabel(entity.entityType)}
@@ -193,6 +205,17 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
       </div>
       {product.availability === "deleted" ? (
         <p className="vua-caption vua-text-secondary">{copy.detail.tombstoneNote}</p>
+      ) : null}
+      {/* 观测原词证据:只在详情展示,永不参与徽标与筛选 */}
+      {product.availabilityRaw !== null ? (
+        <p className="vua-caption vua-text-secondary">
+          {format(copy.detail.availabilityEvidence, { raw: product.availabilityRaw })}
+        </p>
+      ) : null}
+      {product.ageRestriction !== null ? (
+        <p className="vua-caption vua-text-secondary">
+          {format(copy.detail.ageRestrictionNote, { value: product.ageRestriction })}
+        </p>
       ) : null}
       <p className="vua-warehouse-detail__price">{priceText(product)}</p>
 
@@ -238,6 +261,53 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
         </section>
       ) : null}
 
+      {/* 多版本商品的变体价(v0.3 subproducts):单价商品为空,区块自然消失 */}
+      {product.subproducts.length > 0 ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.subproductsTitle}</h3>
+          <ul className="vua-warehouse-detail__subproducts">
+            {product.subproducts.map((subproduct, index) => (
+              <li key={subproduct.variationId ?? index}>
+                <span>
+                  {subproduct.name ?? subproduct.variationId ?? copy.detail.subproductUnnamed}
+                </span>
+                <span className="vua-caption vua-text-secondary">{priceText(subproduct)}</span>
+                {subproduct.availability !== "available" ? (
+                  <Badge tone="neutral">{copy.availability[subproduct.availability]}</Badge>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {/* 视频媒体(v0.3 videoUrls):外跳系统浏览器,失败诚实提示 */}
+      {product.media.videoUrls.length > 0 ? (
+        <section>
+          <h3 className="vua-warehouse-detail__section-title">{copy.detail.videosTitle}</h3>
+          <ul className="vua-warehouse-detail__videos">
+            {product.media.videoUrls.map((url) => (
+              <li key={url}>
+                <Button
+                  variant="default"
+                  onClick={() => {
+                    setOpenVideoFailed(false);
+                    void openExternalUrl(url).then((ok) => {
+                      if (!ok) setOpenVideoFailed(true);
+                    });
+                  }}
+                >
+                  {url}
+                </Button>
+              </li>
+            ))}
+          </ul>
+          {openVideoFailed ? (
+            <p className="vua-caption vua-text-secondary">{copy.detail.openVideoFailed}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       {product.terms.length > 0 ? (
         <section>
           <h3 className="vua-warehouse-detail__section-title">{copy.detail.termsTitle}</h3>
@@ -275,7 +345,7 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
                   setOpenInAppFailed(false);
                   const url = product.sourceUrl;
                   if (url === null) return;
-                  void openBrowseWindow(url, product.title).then((ok) => {
+                  void openBrowseWindow(url, product.title ?? product.productId).then((ok) => {
                     if (!ok) setOpenInAppFailed(true);
                   });
                 }}
@@ -482,11 +552,11 @@ export function WarehousePage() {
               <select
                 className="vua-warehouse__filter"
                 aria-label={copy.filters.availability}
-                value={query.availability}
+                value={query.availabilityStatus}
                 onChange={(event) =>
                   setQuery((prev) => ({
                     ...prev,
-                    availability: event.target.value as CatalogAvailability | "",
+                    availabilityStatus: event.target.value as CatalogAvailabilityStatus | "",
                   }))
                 }
               >
@@ -590,8 +660,11 @@ export function WarehousePage() {
             >
               <div className="vua-warehouse__drawer-header">
                 {detailState.kind === "loaded" && detailState.view.kind === "detail" ? (
-                  <h2 className="vua-warehouse-detail__title" title={detailState.view.product.title}>
-                    {detailState.view.product.title}
+                  <h2
+                    className="vua-warehouse-detail__title"
+                    title={detailState.view.product.title ?? detailState.view.product.productId}
+                  >
+                    {detailState.view.product.title ?? detailState.view.product.productId}
                   </h2>
                 ) : (
                   <Skeleton width="70%" height={18} />

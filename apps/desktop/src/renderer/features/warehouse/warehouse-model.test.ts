@@ -23,13 +23,13 @@ test("toPortQuery: 筛选条件逐项透传", () => {
   assert.deepEqual(
     toPortQuery({
       text: "x",
-      availability: "deleted",
+      availabilityStatus: "unavailable",
       entityType: "outfit",
       relationKind: "requires",
     }),
     {
       text: "x",
-      availability: "deleted",
+      availabilityStatus: "unavailable",
       entityType: "outfit",
       relationKind: "requires",
     },
@@ -39,7 +39,10 @@ test("toPortQuery: 筛选条件逐项透传", () => {
 test("hasActiveFilter: 任一条件生效即为真(区分搜索空与未接入)", () => {
   assert.equal(hasActiveFilter(emptyWarehouseQuery), false);
   assert.equal(hasActiveFilter({ ...emptyWarehouseQuery, text: "a" }), true);
-  assert.equal(hasActiveFilter({ ...emptyWarehouseQuery, availability: "available" }), true);
+  assert.equal(
+    hasActiveFilter({ ...emptyWarehouseQuery, availabilityStatus: "available" }),
+    true,
+  );
   assert.equal(hasActiveFilter({ ...emptyWarehouseQuery, entityType: "tool" }), true);
   assert.equal(hasActiveFilter({ ...emptyWarehouseQuery, relationKind: "addon_for" }), true);
 });

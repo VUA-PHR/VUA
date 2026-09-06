@@ -1,5 +1,5 @@
 import type {
-  CatalogAvailability,
+  CatalogAvailabilityStatus,
   CatalogBrowserQuery,
   CatalogPrice,
   CatalogRelationKind,
@@ -8,18 +8,20 @@ import type {
 /**
  * Warehouse 页面查询状态(纯逻辑,可测)。
  * 表单值用 "" 表示"不筛选";toPortQuery 负责收敛为端口查询。
+ * 可用性筛选消费 v0.3 派生稳定枚举(availabilityStatus),原词不进筛选。
  */
 
 export interface WarehouseQueryState {
   readonly text: string;
-  readonly availability: CatalogAvailability | "";
+  readonly availabilityStatus: CatalogAvailabilityStatus | "";
+  /** 退役保留字段位:v0.3 无实体/关系存储,live 端口不发送 */
   readonly entityType: string | "";
   readonly relationKind: CatalogRelationKind | "";
 }
 
 export const emptyWarehouseQuery: WarehouseQueryState = {
   text: "",
-  availability: "",
+  availabilityStatus: "",
   entityType: "",
   relationKind: "",
 };
@@ -28,13 +30,13 @@ export const emptyWarehouseQuery: WarehouseQueryState = {
 export function toPortQuery(state: WarehouseQueryState): CatalogBrowserQuery {
   const query: {
     text?: string;
-    availability?: CatalogAvailability;
+    availabilityStatus?: CatalogAvailabilityStatus;
     entityType?: string;
     relationKind?: CatalogRelationKind;
   } = {};
   const text = state.text.trim();
   if (text.length > 0) query.text = text;
-  if (state.availability !== "") query.availability = state.availability;
+  if (state.availabilityStatus !== "") query.availabilityStatus = state.availabilityStatus;
   if (state.entityType !== "") query.entityType = state.entityType;
   if (state.relationKind !== "") query.relationKind = state.relationKind;
   return query;
@@ -47,7 +49,7 @@ export function toPortQuery(state: WarehouseQueryState): CatalogBrowserQuery {
 export function hasActiveFilter(state: WarehouseQueryState): boolean {
   return (
     state.text.trim().length > 0 ||
-    state.availability !== "" ||
+    state.availabilityStatus !== "" ||
     state.entityType !== "" ||
     state.relationKind !== ""
   );

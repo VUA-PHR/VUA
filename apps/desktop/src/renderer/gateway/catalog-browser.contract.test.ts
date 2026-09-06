@@ -227,14 +227,19 @@ test("snapshot: 全量列表与计数", async () => {
   );
 });
 
-test("snapshot: 可用性过滤(含墓碑)", async () => {
+test("snapshot: 可用性过滤走派生稳定枚举(墓碑不属于三值枚举)", async () => {
   const port = createSnapshotCatalogBrowser(syntheticSnapshot());
-  const deleted = await port.list({ availability: "deleted" });
-  assert.equal(deleted.kind, "results");
-  if (deleted.kind !== "results") return;
-  assert.equal(deleted.items.length, 1);
-  assert.equal(deleted.items[0]?.productId, "booth:1003");
-  assert.equal(deleted.total, 4);
+  const available = await port.list({ availabilityStatus: "available" });
+  assert.equal(available.kind, "results");
+  if (available.kind !== "results") return;
+  assert.deepEqual(available.items.map((item) => item.productId), ["booth:1001"]);
+  assert.equal(available.total, 4);
+  // 墓碑(1003)不在三值枚举内:不匹配任何 availabilityStatus 过滤
+  const unknown = await port.list({ availabilityStatus: "unknown" });
+  assert.equal(unknown.kind, "results");
+  if (unknown.kind !== "results") return;
+  // 1004 词表外 availability 归 unknown(1003 deleted 不算)
+  assert.deepEqual(unknown.items.map((item) => item.productId), ["booth:1004"]);
 });
 
 test("snapshot: 文本搜索大小写不敏感,命中标题与 productId", async () => {
@@ -386,6 +391,8 @@ test("snapshot: 防御解析(词表外 availability 归 unknown,未知关系跳�
   if (view.kind !== "results") return;
   const legacy = view.items.find((item) => item.productId === "booth:1004");
   assert.equal(legacy?.availability, "unknown");
+  // 双字段纪律:徽标归 unknown,原词证据原样保留,永不归一化
+  assert.equal(legacy?.availabilityRaw, "discontinued");
   assert.equal(legacy?.price, null);
 
   const detail = await port.detail("booth:1001");
@@ -401,16 +408,11 @@ test("snapshot: 防御解析(词表外 availability 归 unknown,未知关系跳�
 
 test("snapshot: 筛选词表来自全量数据(与过滤条件无关)", async () => {
   const port = createSnapshotCatalogBrowser(syntheticSnapshot());
-  const view = await port.list({ availability: "deleted" });
+  const view = await port.list({ availabilityStatus: "unknown" });
   assert.equal(view.kind, "results");
   if (view.kind !== "results") return;
-  // 四态俱全(含词表外值归 unknown);未知关系种类 bundled_with 不进词表
-  assert.deepEqual(view.vocabulary.availabilities, [
-    "available",
-    "unavailable",
-    "unknown",
-    "deleted",
-  ]);
+  // 词表 = 派生稳定枚举面:墓碑不在三值枚举内;词表外值归 unknown
+  assert.deepEqual(view.vocabulary.availabilities, ["available", "unavailable", "unknown"]);
   assert.deepEqual(view.vocabulary.entityTypes, [
     "avatar",
     "outfit",
