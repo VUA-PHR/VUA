@@ -919,8 +919,13 @@ impl TaskContext {
         // 再修改内存和发布事件；写入失败时既不能向 UI 宣称成功，也不能
         // 留下只有 StateChanged、没有外部结果的半份终态（ORC-STO-002/004）。
         // 锁覆盖 append，保证 watchdog 与正常退出之间严格 first-writer-wins。
+        // 发布同样在锁内：终态对 snapshot 可见与 Completed 事件入队是同一
+        // 临界区——消费者（订阅事件 + 轮询快照）在观察到终态后立即排空事件
+        // 通道必须能看到 Completed。锁外的 publish 曾留下这个窗口，全量并行
+        // 下偶发"终态已见、事件未到"（BOARD #7 观察面，warehouse_import 任务
+        // 化测试 2026-09-07 定名复现）。通道无界，锁内 send 不阻塞。
         let occurred_at = self.runtime.inner.clock.now_rfc3339();
-        let (revision, correlation_id) = {
+        {
             let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
             let Some(record) = tasks.get_mut(&self.task_id) else {
                 return;
@@ -951,21 +956,20 @@ impl TaskContext {
             }
             record.revision += 1;
             record.state = desired;
-            (record.revision, record.correlation_id.clone())
-        };
-        self.runtime.inner.publish(self.runtime.inner.make_event_at(
-            &self.task_id,
-            revision,
-            TaskEventKind::Completed,
-            desired,
-            match (&error, &result) {
-                (Some(error), _) => serde_json::to_value(error).unwrap_or(Value::Null),
-                (None, Some(value)) => value.clone(),
-                (None, None) => Value::Null,
-            },
-            occurred_at,
-            correlation_id,
-        ));
+            self.runtime.inner.publish(self.runtime.inner.make_event_at(
+                &self.task_id,
+                record.revision,
+                TaskEventKind::Completed,
+                desired,
+                match (&error, &result) {
+                    (Some(error), _) => serde_json::to_value(error).unwrap_or(Value::Null),
+                    (None, Some(value)) => value.clone(),
+                    (None, None) => Value::Null,
+                },
+                occurred_at,
+                record.correlation_id.clone(),
+            ));
+        }
     }
 
     fn force_timeout(&self) {
