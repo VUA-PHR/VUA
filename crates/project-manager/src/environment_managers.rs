@@ -1,14 +1,17 @@
 //! B6: project-manager capability detection (ALCOM/VCC), productized from
-//! the environment detection spike.
+//! the environment detection spike. Moved here from the orchestrator core
+//! by the proposal 004 split: the core env engine consumes the VCC part
+//! through the `VccSettingsReader` port (implemented below by
+//! [`VccSettingsFileReader`]); the port contract types live in the core.
 //!
 //! Read-only, targeted observation of configured well-known roots — the
-//! same discipline as `environment`: never a scan, never a write. VCC
-//! exposes its registered projects through `settings.json`; the current
-//! VCC (and our `vrc-get-vpm` package backend) resolve that file under
-//! `%LOCALAPPDATA%\VRChatCreatorCompanion`, with the legacy `%APPDATA%`
-//! location kept as fallback (see the environment detection spike
-//! findings). `userProjects` lists absolute project paths explicitly, so
-//! project discovery reads exactly those paths instead of sweeping user
+//! same discipline as the core `environment` engine: never a scan, never a
+//! write. VCC exposes its registered projects through `settings.json`; the
+//! current VCC (and our `vrc-get-vpm` package backend) resolve that file
+//! under `%LOCALAPPDATA%\VRChatCreatorCompanion`, with the legacy
+//! `%APPDATA%` location kept as fallback (see the environment detection
+//! spike findings). `userProjects` lists absolute project paths explicitly,
+//! so project discovery reads exactly those paths instead of sweeping user
 //! folders; the legacy `localProjectFolders` form falls back to reading
 //! the registered folders' immediate subdirectories. ALCOM is probed at
 //! presence level only — its configuration format is an open question on
@@ -16,10 +19,13 @@
 //! a schema.
 //!
 //! Output is the versioned `EnvironmentManagersSnapshotV01` payload, whose
-//! shape is pinned by `schemas/environment-spike/v0.1/snapshot.schema.json`.
+//! shape is pinned by `schemas/environment-managers/v0.1/snapshot.schema.json`.
 
-use crate::editor_targets::{self, EditorClass};
-use crate::time::Clock;
+use vua_orchestrator::{
+    classify_editor, classify_version_string, env_managers_codes, parse_editor_version, Clock,
+    EditorClass, FindingSeverity, ManagerDiagnostic, ManagerPresence, VccCapability,
+    VccSettingsReader, MIGRATION_SOURCES, PRODUCTION_TARGET,
+};
 use serde::Serialize;
 use serde_json::Value;
 use std::io;
@@ -27,61 +33,29 @@ use std::path::{Path, PathBuf};
 
 pub const ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION: &str = "vua.environment-managers-snapshot/v0.1";
 
-/// Stable spike codes; findings and fix plans key on them.
-pub mod codes {
-    pub const VCC_SETTINGS_READ_FAILED: &str = "vua.env_managers.vcc_settings_read_failed";
-    pub const VCC_SETTINGS_SCHEMA_UNEXPECTED: &str = "vua.env_managers.vcc_settings_schema_unexpected";
-    pub const MANAGER_SETTINGS_READ_FAILED: &str = "vua.env_managers.manager_settings_read_failed";
-    pub const ALCOM_PROJECTS_NOT_RECOGNIZED: &str =
-        "vua.env_managers.alcom_projects_not_recognized";
-    pub const PROJECT_PATH_MISSING: &str = "vua.env_managers.project_path_missing";
-    pub const PROJECT_MARKERS_INCOMPLETE: &str = "vua.env_managers.project_markers_incomplete";
-    pub const PROJECT_VERSION_UNPARSEABLE: &str = "vua.env_managers.project_version_unparseable";
-    pub const EDITOR_ENTRY_UNPARSEABLE: &str = "vua.env_managers.editor_entry_unparseable";
-    pub const EDITOR_ROOT_READ_FAILED: &str = "vua.env_managers.editor_root_read_failed";
-}
-
-/// Injectable well-known roots. Defaults follow what the current VCC and
-/// `vrc-get-vpm` actually resolve on Windows; tests substitute synthetic
-/// trees, so no test depends on this machine.
+/// Injectable well-known roots. Defaults follow what the current ALCOM
+/// resolves on Windows; tests substitute synthetic trees, so no test
+/// depends on this machine. The VCC settings candidates are NOT rooted
+/// here: the resolution-order invariant is single-sourced in the core
+/// `EnvironmentRoots::default()` (proposal 004), and callers pass the
+/// candidates into [`collect_environment_managers_snapshot`].
 #[derive(Debug, Clone)]
 pub struct ManagerRoots {
-    /// VCC settings candidates in priority order.
-    pub vcc_settings_candidates: Vec<PathBuf>,
     /// ALCOM settings candidates in priority order.
     pub alcom_settings_candidates: Vec<PathBuf>,
 }
 
 impl Default for ManagerRoots {
     fn default() -> Self {
-        let local_app_data = std::env::var("LOCALAPPDATA")
-            .or_else(|_| std::env::var("XDG_DATA_HOME"))
-            .unwrap_or_default();
         let roaming_app_data = std::env::var("APPDATA")
             .or_else(|_| std::env::var("XDG_CONFIG_HOME"))
             .unwrap_or_default();
         Self {
-            vcc_settings_candidates: vec![
-                PathBuf::from(&local_app_data)
-                    .join("VRChatCreatorCompanion")
-                    .join("settings.json"),
-                PathBuf::from(&roaming_app_data)
-                    .join("VRChatCreatorCompanion")
-                    .join("settings.json"),
-            ],
             alcom_settings_candidates: vec![PathBuf::from(&roaming_app_data)
                 .join("alcom")
                 .join("setting.json")],
         }
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ManagerPresence {
-    Found,
-    NotFound,
-    ReadFailed,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -92,21 +66,6 @@ pub struct EditorFinding {
     pub china_distribution: bool,
     pub guidance_code: &'static str,
     pub path: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct VccCapability {
-    pub presence: ManagerPresence,
-    /// Which settings file answered (current LOCALAPPDATA location vs
-    /// legacy Roaming location).
-    pub settings_path: Option<String>,
-    /// `userProjects` is the current explicit per-project list;
-    /// `localProjectFolders` is the legacy folder-list form.
-    pub projects_source: Option<&'static str>,
-    pub user_projects: Vec<String>,
-    pub local_project_folders: Vec<String>,
-    pub error_code: Option<&'static str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -140,24 +99,8 @@ pub struct ProjectFinding {
     pub unity_classification: Option<EditorClass>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "snake_case")]
-pub enum FindingSeverity {
-    Info,
-    Warning,
-    Error,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ManagerDiagnostic {
-    pub code: &'static str,
-    pub severity: FindingSeverity,
-    pub detail: String,
-}
-
 /// Versioned spike payload pinned by
-/// `schemas/environment-spike/v0.1/snapshot.schema.json`.
+/// `schemas/environment-managers/v0.1/snapshot.schema.json`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnvironmentManagersSnapshotV01 {
@@ -175,22 +118,25 @@ pub struct EnvironmentManagersSnapshotV01 {
 
 /// Assembles the full read-only snapshot. Every finding is deterministic
 /// for a given tree: a missing component is a normal finding, and only a
-/// failed *observation* produces an error diagnostic.
+/// failed *observation* produces an error diagnostic. The VCC settings
+/// candidates are passed in by the caller so the resolution-order
+/// invariant stays single-sourced in the core `EnvironmentRoots`.
 pub fn collect_environment_managers_snapshot(
+    vcc_settings_candidates: &[PathBuf],
     roots: &ManagerRoots,
     editor_roots: &[PathBuf],
     clock: &dyn Clock,
 ) -> EnvironmentManagersSnapshotV01 {
     let mut diagnostics = Vec::new();
     let editors = collect_editors(editor_roots, &mut diagnostics);
-    let vcc = read_vcc_settings(&roots.vcc_settings_candidates, &mut diagnostics);
+    let vcc = read_vcc_settings(vcc_settings_candidates, &mut diagnostics);
     let alcom = read_alcom_settings(&roots.alcom_settings_candidates, &mut diagnostics);
     let projects = collect_projects(&vcc, &alcom, &mut diagnostics);
     EnvironmentManagersSnapshotV01 {
         schema_version: ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION,
         captured_at: clock.now_rfc3339(),
-        production_target: editor_targets::PRODUCTION_TARGET,
-        migration_sources: editor_targets::MIGRATION_SOURCES,
+        production_target: PRODUCTION_TARGET,
+        migration_sources: MIGRATION_SOURCES,
         editor_roots: editor_roots
             .iter()
             .map(|root| root.to_string_lossy().into_owned())
@@ -213,7 +159,7 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagno
             Err(error) if error.kind() == io::ErrorKind::NotFound => continue,
             Err(error) => {
                 diagnostics.push(ManagerDiagnostic {
-                    code: codes::EDITOR_ROOT_READ_FAILED,
+                    code: env_managers_codes::EDITOR_ROOT_READ_FAILED,
                     severity: FindingSeverity::Error,
                     detail: format!("{}: {error}", root.display()),
                 });
@@ -226,15 +172,15 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagno
                 continue;
             }
             let name = entry.file_name().to_string_lossy().into_owned();
-            let Some(parsed) = editor_targets::parse_editor_version(&name) else {
+            let Some(parsed) = parse_editor_version(&name) else {
                 diagnostics.push(ManagerDiagnostic {
-                    code: codes::EDITOR_ENTRY_UNPARSEABLE,
+                    code: env_managers_codes::EDITOR_ENTRY_UNPARSEABLE,
                     severity: FindingSeverity::Warning,
                     detail: format!("{}: editor directory name is not a complete version string", path.display()),
                 });
                 continue;
             };
-            let (classification, guidance_code) = editor_targets::classify_editor(&parsed);
+            let (classification, guidance_code) = classify_editor(&parsed);
             editors.push(EditorFinding {
                 version: name,
                 classification,
@@ -253,7 +199,7 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagno
         EditorClass::TuanjieFamily => 3,
     };
     let version_key = |finding: &EditorFinding| {
-        editor_targets::parse_editor_version(&finding.version)
+        parse_editor_version(&finding.version)
             .map(|parsed| (parsed.major, parsed.minor, parsed.patch, parsed.release_number))
             .unwrap_or((0, 0, 0, 0))
     };
@@ -265,9 +211,10 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagno
 
 // --- VCC ---
 
-/// Reads the first existing VCC settings candidate. Public so the
-/// environment engine can item-ize VCC capability without duplicating the
-/// resolution order or the schema handling.
+/// Reads the first existing VCC settings candidate. The concrete reader
+/// behind the core env engine's `VccSettingsReader` port (proposal 004):
+/// the engine keeps the check item and presence mapping, this side owns
+/// the file reading and schema handling.
 pub fn read_vcc_settings(
     candidates: &[PathBuf],
     diagnostics: &mut Vec<ManagerDiagnostic>,
@@ -283,14 +230,14 @@ pub fn read_vcc_settings(
         let display = path.to_string_lossy().into_owned();
         let text = match std::fs::read_to_string(path) {
             Ok(text) => text,
-            Err(error) => return vcc_read_failed(&display, codes::VCC_SETTINGS_READ_FAILED, format!("{}: {error}", display), diagnostics),
+            Err(error) => return vcc_read_failed(&display, env_managers_codes::VCC_SETTINGS_READ_FAILED, format!("{}: {error}", display), diagnostics),
         };
         let value: Value = match serde_json::from_str(&text) {
             Ok(value) => value,
             Err(error) => {
                 return vcc_read_failed(
                     &display,
-                    codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
+                    env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
                     format!("{}: settings.json is not valid JSON: {error}", display),
                     diagnostics,
                 )
@@ -302,7 +249,7 @@ pub fn read_vcc_settings(
             // A found-but-unrecognized settings file is a finding, not a
             // crash: report presence with an unexpected-schema warning.
             diagnostics.push(ManagerDiagnostic {
-                code: codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
+                code: env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
                 severity: FindingSeverity::Warning,
                 detail: format!(
                     "{}: neither userProjects nor localProjectFolders present; keys: {}",
@@ -316,7 +263,7 @@ pub fn read_vcc_settings(
                 projects_source: None,
                 user_projects,
                 local_project_folders,
-                error_code: Some(codes::VCC_SETTINGS_SCHEMA_UNEXPECTED),
+                error_code: Some(env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED),
             };
         }
         let projects_source = if value.get("userProjects").is_some() {
@@ -340,6 +287,20 @@ pub fn read_vcc_settings(
         user_projects: Vec::new(),
         local_project_folders: Vec::new(),
         error_code: None,
+    }
+}
+
+/// The project-manager adapter for the core env engine's VCC capability
+/// port: a pure function of its inputs, mirroring the `VpmBackend` shape.
+pub struct VccSettingsFileReader;
+
+impl VccSettingsReader for VccSettingsFileReader {
+    fn read_vcc_settings(
+        &self,
+        candidates: &[PathBuf],
+        diagnostics: &mut Vec<ManagerDiagnostic>,
+    ) -> VccCapability {
+        read_vcc_settings(candidates, diagnostics)
     }
 }
 
@@ -373,7 +334,7 @@ fn string_array(value: Option<&Value>, source: &str, diagnostics: &mut Vec<Manag
             .collect(),
         Some(_) => {
             diagnostics.push(ManagerDiagnostic {
-                code: codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
+                code: env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
                 severity: FindingSeverity::Warning,
                 detail: format!("{}: expected a JSON string array", source),
             });
@@ -407,7 +368,7 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiag
             Ok(text) => text,
             Err(error) => {
                 diagnostics.push(ManagerDiagnostic {
-                    code: codes::MANAGER_SETTINGS_READ_FAILED,
+                    code: env_managers_codes::MANAGER_SETTINGS_READ_FAILED,
                     severity: FindingSeverity::Error,
                     detail: format!("{}: {error}", display),
                 });
@@ -416,7 +377,7 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiag
                     settings_path: Some(display),
                     top_level_keys: Vec::new(),
                     user_projects: Vec::new(),
-                    error_code: Some(codes::MANAGER_SETTINGS_READ_FAILED),
+                    error_code: Some(env_managers_codes::MANAGER_SETTINGS_READ_FAILED),
                 };
             }
         };
@@ -427,7 +388,7 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiag
                     string_array(value.get("userProjects"), &display, diagnostics);
                 if value.get("userProjects").is_none() {
                     diagnostics.push(ManagerDiagnostic {
-                        code: codes::ALCOM_PROJECTS_NOT_RECOGNIZED,
+                        code: env_managers_codes::ALCOM_PROJECTS_NOT_RECOGNIZED,
                         severity: FindingSeverity::Warning,
                         detail: format!(
                             "{}: no userProjects field recognized; keys: {}",
@@ -440,7 +401,7 @@ fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiag
             }
             Err(_) => {
                 diagnostics.push(ManagerDiagnostic {
-                    code: codes::MANAGER_SETTINGS_READ_FAILED,
+                    code: env_managers_codes::MANAGER_SETTINGS_READ_FAILED,
                     severity: FindingSeverity::Warning,
                     detail: format!("{}: settings file is not valid JSON", display),
                 });
@@ -522,7 +483,7 @@ fn scan_project_folder(
         Ok(read_dir) => read_dir,
         Err(error) => {
             diagnostics.push(ManagerDiagnostic {
-                code: codes::PROJECT_PATH_MISSING,
+                code: env_managers_codes::PROJECT_PATH_MISSING,
                 severity: FindingSeverity::Warning,
                 detail: format!("{}: {error}", folder),
             });
@@ -554,7 +515,7 @@ fn inspect_project(
         Ok(metadata) => metadata,
         Err(_) => {
             diagnostics.push(ManagerDiagnostic {
-                code: codes::PROJECT_PATH_MISSING,
+                code: env_managers_codes::PROJECT_PATH_MISSING,
                 severity: FindingSeverity::Warning,
                 detail: format!("{}: registered project path does not exist", path),
             });
@@ -563,7 +524,7 @@ fn inspect_project(
     };
     if !metadata.is_dir() {
         diagnostics.push(ManagerDiagnostic {
-            code: codes::PROJECT_MARKERS_INCOMPLETE,
+            code: env_managers_codes::PROJECT_MARKERS_INCOMPLETE,
             severity: FindingSeverity::Warning,
             detail: format!("{}: registered project path is not a directory", path),
         });
@@ -571,7 +532,7 @@ fn inspect_project(
     }
     let Some(marker) = read_project_markers(dir) else {
         diagnostics.push(ManagerDiagnostic {
-            code: codes::PROJECT_MARKERS_INCOMPLETE,
+            code: env_managers_codes::PROJECT_MARKERS_INCOMPLETE,
             severity: FindingSeverity::Warning,
             detail: format!("{}: missing vpm-manifest.json or a parseable ProjectVersion.txt", path),
         });
@@ -592,7 +553,7 @@ fn inspect_project(
         Err(raw) => {
             if entry.unity_version.is_none() {
                 diagnostics.push(ManagerDiagnostic {
-                    code: codes::PROJECT_VERSION_UNPARSEABLE,
+                    code: env_managers_codes::PROJECT_VERSION_UNPARSEABLE,
                     severity: FindingSeverity::Warning,
                     detail: format!(
                         "{}: ProjectVersion.txt does not contain a complete version string: {}",
@@ -625,7 +586,7 @@ fn read_project_markers(dir: &Path) -> Option<Result<(String, EditorClass), Stri
     if raw.is_empty() {
         return Some(Err(raw.to_owned()));
     }
-    let Some((classification, _)) = editor_targets::classify_version_string(raw) else {
+    let Some((classification, _)) = classify_version_string(raw) else {
         return Some(Err(raw.to_owned()));
     };
     Some(Ok((raw.to_owned(), classification)))

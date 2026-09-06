@@ -2864,6 +2864,7 @@ dependencies = [
 name = "vua-project-manager"
 version = "0.1.0"
 dependencies = [
+ "jsonschema",
  "reqwest",
  "serde",
  "serde_json",
