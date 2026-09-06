@@ -2,9 +2,12 @@
 
 [English](orchestrator_EN.md) | [简体中文](orchestrator_ZH.md)
 
+> Document version: 1.0.0
 > Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors orchestrator_ZH.md at 1.0.0)
 > Scope: Orchestrator application core and local adapters
-> Updated: 2026-09-02
+> Updated: 2026-09-06
+> Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## Responsibility
@@ -47,8 +50,6 @@ authoritative persistence. Provider replacement occurs only at an idle shutdown 
 
 The transport-independent B1 request, task, cancellation, operation-level Capability, and safe
 shutdown semantics are defined by [Application Contract v0.1](../protocols/application-contract-v0.1_EN.md).
-The transport-independent request, task, cancellation, operation-level capability, and safe-shutdown
-semantics of B1 are defined by the [Application Contract v0.1](../protocols/application-contract-v0.1_EN.md).
 The contract was frozen as stable Gateway v1 at M2 (2026-09-04) after passing the real two-end
 integration acceptance.
 
@@ -75,3 +76,9 @@ coverage with the first real use case.
 Adapters pass argument arrays, filter inherited secrets, declare minimal environment/workdir/timeout/
 cancellation/exit semantics per tool, execute allowlisted programs from trusted installation sources,
 supervise Windows process trees, and redact and truncate logs.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; header normalized, conformance-review date added,
+  and a duplicated contract-reference sentence removed. Content otherwise reviewed against reality
+  with no change.

@@ -2,9 +2,12 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
+> Document version: 1.0.0
 > Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.0.0)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-03
+> Updated: 2026-09-06
+> Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## AMF production model
@@ -81,3 +84,8 @@ provable compensation boundary precedes mutation. Repository and cloud-CI tests 
 equivalent synthetic projects and assets without real product or user content. Developers may use
 lawfully obtained assets for local Unity integration and smoke validation; the assets, projects,
 configuration, and outputs remain local. Deterministic operations use defined Bridge commands.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; header normalized and conformance-review date
+  added. Content reviewed against reality with no change.

@@ -2,10 +2,13 @@
 
 [English](bdl_EN.md) | [简体中文](bdl_ZH.md)
 
-> Status: Module boundary accepted; internal model pending  
-> Scope: AMF-owned BDL module  
-> Updated: 2026-09-01  
-> Normative effect: Module boundary authority; data model pending
+> Document version: 1.0.0
+> Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors bdl_ZH.md at 1.0.0)
+> Scope: AMF-owned BDL module
+> Updated: 2026-09-06
+> Last conformance review: 2026-09-06
+> Normative effect: Yes
 
 ## Ownership
 
@@ -60,7 +63,17 @@ The native AMF path remains complete on its own. Optional BLM/VAE adapters use p
 authorized boundaries, publish honest capability snapshots, keep third-party sessions and private
 schemas within their owners, and submit data through AMF validation.
 
-Entity identity, SQLite schema, observation format, terms representation, compatibility evidence, and
-Warehouse mapping remain to be frozen by the first new AMF+BDL vertical slice. The first BDL surface
-is private to AMF application services; later public read surfaces require their own accepted
-contract.
+## Landing status (reviewed 2026-09-06)
+
+The first persistent format and query contract landed with the B4 slice: `schemas/bdl/v0.1` (the
+BDL SQLite persistent format) and `schemas/bdl-queries/` (the query contract, now at v0.3),
+implemented in the `bdl_store` / `bdl_queries` modules of `crates/orchestrator`. The surface remains
+private to AMF application services; any later public read surface requires its own accepted
+contract. Entity identity, observation formats, terms representation, and compatibility evidence
+evolve with future AMF+BDL vertical slices.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; the "pending" closing section rewritten as the
+  landing status (`schemas/bdl/v0.1` and the bdl-queries query contract v0.3 landed with B4); the
+  header status updated to accepted to match reality.

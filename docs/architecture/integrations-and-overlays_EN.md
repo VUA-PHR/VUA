@@ -2,9 +2,12 @@
 
 [English](integrations-and-overlays_EN.md) | [简体中文](integrations-and-overlays_ZH.md)
 
-> Status: Accepted  
-> Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays  
-> Updated: 2026-09-02  
+> Document version: 1.0.0
+> Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors integrations-and-overlays_ZH.md at 1.0.0)
+> Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays
+> Updated: 2026-09-06
+> Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## Trust classes
@@ -91,7 +94,16 @@ described as complete compatibility; unsafe writes become read-only, conversion 
 ## Overlay boundary
 
 Desktop and VR overlays consume the same versioned display snapshot and return semantic actions.
-The application core owns task and business state. The first VR path is a separately built, explicitly started
+The application core owns task and business state.
+
+> Scope ruling (2026-09-06): the desktop overlay stays in the `1.0.0` product composition; the VR
+> overlay is removed from `1.0.0` and kept as a post-`1.0.0` direction anchor (the v1.1 outlook —
+> see item 7 of the [product boundary](../product-boundary_EN.md) and the
+> [development plan outline](../development-outline_EN.md)). The VR path described below is the
+> accepted design constraint set for when that direction starts; it is not a `1.0.0` scope
+> commitment.
+
+The first VR path is a separately built, explicitly started
 SteamVR Dashboard helper using public `IVROverlay`. It receives display snapshots and returns actions
 such as `next`, `back`, `dismiss`, and `open_on_desktop`; receives no assets, projects, credentials, or
 general file capability; and uses bounded messages, version handshake, current-user restriction, and
@@ -100,3 +112,9 @@ process supervision. Unsupported runtime falls back to desktop.
 Overlays never inject into VRChat, hook graphics/OpenXR, install VRChat-affecting API layers, inspect
 VRChat process memory, modify EAC, or confirm account, safety, or upload UI. Public OSC input is
 untrusted and cannot authorize local mutation.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; added the scope-ruling note to the overlay
+  boundary section (VR overlay removed from `1.0.0`, pointing to product boundary item 7 and the
+  development outline v1.1 outlook); header normalized.

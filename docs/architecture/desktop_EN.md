@@ -2,9 +2,12 @@
 
 [English](desktop_EN.md) | [简体中文](desktop_ZH.md)
 
-> Status: Accepted  
-> Scope: `apps/desktop`, `packages/design-system`, frontend Gateway  
-> Updated: 2026-09-02  
+> Document version: 1.0.0
+> Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors desktop_ZH.md at 1.0.0)
+> Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
+> Updated: 2026-09-06
+> Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## Technology decision
@@ -70,3 +73,8 @@ are version-locked. The independent supervised Provider executable is packaged a
 supported Windows architecture according to the accepted hosting decision. Releases require
 dependency/license review, Electron security checks, remote-permission tests, signing, and update
 rollback validation. The redistribution review authorizes each bundled binary.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management; header normalized and conformance-review date
+  added. Content reviewed against reality with no change.
