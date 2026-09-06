@@ -56,7 +56,8 @@ pnpm collab:brief
   合并回 main 后继续使用；一次性会话可用 `slice/<slug>`。
 - 切片由负责角色的进程单独执行；协作方经留言/proposal 参与，不共写分支。
 - 合并 main：改动只含本角色所有权域且相关测试全绿时可自并；跨域合并留给集成角色。
-- 入职提示词在 `collab/roles/<role>.md`；统一定时节拍命令在 `collab/TICK.md`。
+- 入职提示词在 `collab/roles/<role>.md`；统一定时节拍命令在 `collab/TICK.md`；
+  操作者启动清单在 `collab/LAUNCH.md`。
 
 ## 合并节奏
 
