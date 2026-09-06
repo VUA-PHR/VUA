@@ -13,7 +13,7 @@ use flate2::write::GzEncoder;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tar::{Builder, Header};
 
 use vua_orchestrator::{
@@ -21,8 +21,9 @@ use vua_orchestrator::{
     UnityBridge, VpmBackend,
 };
 use vua_unity_bridge::{
-    MaterialExecutor, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakeStepKind,
-    RiskDecisionV01, UnityBatchBridge,
+    MaterialCancelToken, MaterialExecutor, MaterialIntakeConfirmationV01, MaterialIntakeEngine,
+    MaterialIntakeStepKind, MaterialExecutionStatus, RiskDecisionV01, RollbackOutcome,
+    UnityBatchBridge,
 };
 
 const UNITY_VERSION_LINE: &str = "m_EditorVersion: 2022.3.22f1\nm_EditorVersionWithEdition: 2022.3.22f1\n";
@@ -714,4 +715,384 @@ fn m3_real_local_reusable_vertical_slice() {
     let _ = vpm_environment;
     let _ = fs::remove_dir_all(&base);
     let _ = fs::remove_dir_all(&project_root);
+}
+
+// --- P1 remaining cells: replay (S8), cancel (S2), drift (S3), timeout (S4),
+// rollback failure (S7). These use a synthetic self-contained package so a
+// single cell runs in one Unity launch; the S1/S5/S6 cells above already
+// cover the real-asset path end to end.
+
+fn synthetic_source(label: &str) -> PathBuf {
+    let source = temp_dir(label);
+    fs::create_dir_all(&source).unwrap();
+    write_unitypackage(
+        &source.join("synthetic-pack.unitypackage"),
+        &[("cccccccccccccccccccccccccccccccc", "Assets/VuaSynthetic/Cell.txt")],
+    );
+    source
+}
+
+fn direct_executor(
+    bridge: Arc<dyn UnityBridge>,
+    project_root: &Path,
+    temp_label: &str,
+) -> MaterialExecutor {
+    MaterialExecutor::new(
+        bridge,
+        FileSystemSnapshotStore,
+        Arc::new(NoVpm),
+        BuildRecordStore::new(project_root.join(".vua/records")),
+        Arc::new(vua_orchestrator::SystemClock),
+        temp_dir(temp_label),
+        "2022.3.22f1",
+        vua_unity_bridge::LocalPackageIdentityStore::new(project_root.join(".vua/identities.json")),
+    )
+}
+
+fn bridge_request_count(project_root: &Path) -> usize {
+    fs::read_dir(project_root.join(".vua/bridge"))
+        .map(|entries| {
+            entries
+                .filter_map(Result::ok)
+                .filter(|e| e.file_name().to_string_lossy().ends_with(".request.json"))
+                .count()
+        })
+        .unwrap_or(0)
+}
+
+fn remove_snapshot_manifests(project_root: &Path) {
+    let snapshots = project_root.join(".vua/snapshots");
+    if let Ok(entries) = fs::read_dir(&snapshots) {
+        for entry in entries.filter_map(Result::ok) {
+            let _ = fs::remove_file(entry.path().join("manifest.json"));
+        }
+    }
+}
+
+/// S8: a succeeded receipt for the same plan identity must replay as success
+/// without touching Unity again — the receipt is the replay guard.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE)"]
+fn m3_real_direct_replay_of_succeeded_receipt_skips_unity() {
+    let unity = unity_executable();
+    let source = synthetic_source("replay-source");
+    let (project_root, project) = build_target_project("replay");
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, "real-corr")
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            "real-corr",
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+    let executor = direct_executor(bridge.clone(), &project_root, "replay-temp");
+
+    let first = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        first.status,
+        MaterialExecutionStatus::Succeeded,
+        "first run: {first:?}"
+    );
+    assert!(!first.replayed, "the first run must not be a replay");
+    let requests_after_first = bridge_request_count(&project_root);
+    assert!(
+        requests_after_first > 0,
+        "the first run must have talked to Unity"
+    );
+
+    let started = Instant::now();
+    let second = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    println!("replay wall time: {:?}", started.elapsed());
+    assert_eq!(second.status, MaterialExecutionStatus::Succeeded);
+    assert!(
+        second.replayed,
+        "a succeeded receipt must replay: {second:?}"
+    );
+    assert_eq!(second.completed_steps, Vec::new());
+    assert_eq!(second.build_record_id, first.build_record_id);
+    assert_eq!(
+        bridge_request_count(&project_root),
+        requests_after_first,
+        "the replay must not touch Unity"
+    );
+
+    let _ = fs::remove_dir_all(&project_root);
+    let _ = fs::remove_dir_all(&source);
+}
+
+/// S2: cancellation observed at a step boundary reports Cancelled with the
+/// steps completed so far and still publishes the receipt.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE); cancels mid-run"]
+fn m3_real_direct_cancel_at_step_boundary_records_facts() {
+    let unity = unity_executable();
+    let source = synthetic_source("cancel-source");
+    let (project_root, project) = build_target_project("cancel");
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, "real-corr")
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            "real-corr",
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+    let executor = direct_executor(bridge, &project_root, "cancel-temp");
+
+    let token = MaterialCancelToken::new();
+    let cancel_handle = token.clone();
+    std::thread::spawn(move || {
+        // The snapshot completes in seconds; Unity's first launch takes
+        // 30s+. Cancelling at 2s lands the request at a mid-run boundary.
+        std::thread::sleep(Duration::from_secs(2));
+        cancel_handle.cancel();
+    });
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &token,
+    );
+    println!("cancelled run completed steps: {:?}", report.completed_steps);
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Cancelled,
+        "report: {report:?}"
+    );
+    assert_eq!(
+        report.error_code.as_deref(),
+        Some("vua.material.cancelled"),
+        "a cancelled report carries the cancelled code"
+    );
+    assert!(
+        report.build_record_id.is_some(),
+        "cancelled runs still get a receipt"
+    );
+    let record = vua_orchestrator::BuildRecordStore::new(project_root.join(".vua/records"))
+        .read(report.build_record_id.as_deref().expect("record id"))
+        .expect("receipt published");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Cancelled);
+
+    if project_root.exists() {
+        fs::remove_dir_all(&project_root).unwrap();
+    }
+    if source.exists() {
+        fs::remove_dir_all(&source).unwrap();
+    }
+}
+
+/// S3: recomputed source digests that no longer match the plan fail the run
+/// with `vua.material.source_drift` before the first write — no Unity, no
+/// snapshot, no mutation.
+#[test]
+#[ignore = "manual: real filesystem drift probe against the real intake pipeline"]
+fn m3_real_direct_source_drift_fails_before_first_write() {
+    let unity = unity_executable();
+    let source = synthetic_source("drift-source");
+    let (project_root, project) = build_target_project("drift");
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, "real-corr")
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            "real-corr",
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+    let executor = direct_executor(bridge, &project_root, "drift-temp");
+
+    // Drift the source after confirm, before execute.
+    let pack = source.join("synthetic-pack.unitypackage");
+    let mut bytes = fs::read(&pack).unwrap();
+    bytes.extend_from_slice(b"drift");
+    fs::write(&pack, &bytes).unwrap();
+
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert_eq!(
+        report.error_code.as_deref(),
+        Some("vua.material.source_drift")
+    );
+    assert_eq!(
+        report.rollback,
+        RollbackOutcome::NotNeeded,
+        "drift fails before the first write"
+    );
+    assert!(
+        !project_root.join(".vua/snapshots").exists(),
+        "no snapshot may exist when drift is detected before the first write"
+    );
+
+    if project_root.exists() {
+        fs::remove_dir_all(&project_root).unwrap();
+    }
+    if source.exists() {
+        fs::remove_dir_all(&source).unwrap();
+    }
+}
+
+/// S4: a 1s bridge timeout budget cannot survive a real Unity launch, so the
+/// first mutating step fails with `vua.material.bridge_timeout` and the
+/// verified snapshot is restored.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE) under a 1s budget"]
+fn m3_real_direct_bridge_timeout_budget_is_enforced() {
+    let unity = unity_executable();
+    let source = synthetic_source("timeout-source");
+    let (project_root, project) = build_target_project("timeout");
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity.clone()));
+    let fingerprint = fingerprint(bridge.as_ref(), &project);
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, "real-corr")
+        .expect("source inspects");
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            fingerprint,
+            inspection,
+            "real-corr",
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+    let tight_bridge: Arc<dyn UnityBridge> =
+        Arc::new(UnityBatchBridge::new(unity.clone()).with_timeout(Duration::from_secs(1)));
+    let executor = direct_executor(tight_bridge, &project_root, "timeout-temp");
+
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert!(report
+        .error_code
+        .as_deref()
+        .unwrap_or("")
+        .starts_with("vua.material.bridge_timeout"));
+    assert_eq!(
+        report.rollback,
+        RollbackOutcome::Restored,
+        "a post-snapshot timeout restores the verified snapshot"
+    );
+
+    if project_root.exists() {
+        fs::remove_dir_all(&project_root).unwrap();
+    }
+    if source.exists() {
+        fs::remove_dir_all(&source).unwrap();
+    }
+}
+
+/// S7: a restore that itself fails is recorded as `RollbackOutcome::Failed`
+/// with a `rollback_failed` receipt — the worst outcome still gets a receipt
+/// and is never hidden behind a clean-looking failure.
+#[test]
+#[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE); injects snapshot loss mid-run"]
+fn m3_real_direct_rollback_failure_is_recorded_not_hidden() {
+    let unity = unity_executable();
+    let source = synthetic_source("rbfail-source");
+    let (project_root, project) = build_target_project("rbfail");
+    let bridge: Arc<dyn UnityBridge> = Arc::new(UnityBatchBridge::new(unity));
+    let inspection = MaterialIntakeEngine
+        .inspect_folder(&source, "real-corr")
+        .expect("source inspects");
+    // Deliberately stale fingerprint: the Bridge rejects, the executor then
+    // attempts the restore — whose manifest a background thread removes.
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            "stale-fingerprint",
+            inspection,
+            "real-corr",
+        )
+        .expect("plan builds");
+    let confirmation = confirmation_for(&plan);
+    let executor = direct_executor(bridge, &project_root, "rbfail-temp");
+
+    let injector_root = project_root.clone();
+    std::thread::spawn(move || {
+        // The snapshot is created before Unity's first launch (seconds);
+        // the Bridge rejection lands after the Unity round-trip (30s+).
+        std::thread::sleep(Duration::from_secs(15));
+        remove_snapshot_manifests(&injector_root);
+    });
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &project_root.join(".vua/artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Failed,
+        "report: {report:?}"
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Failed);
+    assert!(report
+        .error_code
+        .as_deref()
+        .unwrap_or("")
+        .contains("vua.material.rollback_failed"));
+    let record = vua_orchestrator::BuildRecordStore::new(project_root.join(".vua/records"))
+        .read(report.build_record_id.as_deref().expect("record id"))
+        .expect("the worst outcome still gets a receipt");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Failed);
+
+    if project_root.exists() {
+        fs::remove_dir_all(&project_root).unwrap();
+    }
+    if source.exists() {
+        fs::remove_dir_all(&source).unwrap();
+    }
 }
