@@ -2,27 +2,27 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 7a9cdb5
+baseline_commit: 72185bb
 updated: 2026-09-07
 ---
 ## 当前焦点
-W5 执行完成：提案 004（选项 3）已接受并落地拆分切片（7a9cdb5），workspace 测试与
-clippy 全绿（快进合并 main 21cbd83 后复跑仍绿）。等待集成并入 main。
-## 自基线交付
-- 提案 004 讨论中→已接受（两轮收敛：环境建议选项 3，核心同意并补一条执行条款）；
-- 拆分切片（7a9cdb5）：environment_managers 整体迁入 project-manager（读取器、编辑器/
-  项目收集、快照组装）+ VccSettingsFileReader 适配器；核心保留 env 引擎、vcc 检查项与
-  端口契约（VccSettingsReader/VccCapability/ManagerDiagnostic/FindingSeverity/
-  ManagerPresence/codes）；tests 与 example 随迁，新增 pm 引擎集成测试（原 check_vcc
-  合成树断言原样保留）；wire 面零变化（vcc facts、快照 schema v0.1）。
-- 不变式归属（核心要求切片报告指认）：VCC settings 解析顺序不变式单处归于核心
-  `EnvironmentRoots::default()`；`ManagerRoots` 移除 `vcc_settings_candidates`，快照
-  收集改显式传参，example 复用核心默认值。
+W5 已落地 main（dea54c5，已核实）。本轮处理 U2 程序更正与 U1 裁决稿交付（proposal 006）。
+等待：集成完成 W5 并入后的文档同步；集成按 R9 仲裁 006；用户批 U1/U2（[需用户]）。
+## 自基线交付（本批均为 collab 文档）
+- 快进对齐 main，确认 W5 切片已并入；
+- BOARD U2 程序更正：如实记录切片执行（02:40–02:50）与集成 02:40 写入的「留用户确认」
+  门重叠——领任务时未重读 BOARD 漏看该门；请用户裁决 (a) 确认保留（集成随之做文档同步）
+  或 (b) 回退（revert 7a9cdb5 即可，wire 面零变化）；
+- U1 裁决稿交付：proposal 006（裁决项 R1–R9：能力面/清单治理/执行前核验/活跃会话拒绝/
+  确认披露/可观察恢复/非目标/测试纪律/流程），严格对齐架构 §环境修改与 EAC 恢复与产品
+  边界既有表述；BOARD U1 载体已指向 006。
 ## 阻塞
-无（等待集成并入）。
+- U1/U2 为 [需用户]，环境侧无可再做；W5 文档同步（AGENTS.md/architecture #60/#96 行）
+  归集成且与 U2 裁决联动。
 ## 下次合并意图
-请求集成把 slot/wt-6（acd5efe、7a9cdb5）--no-ff 并入 main；并入后请同步：AGENTS.md
-代码现状句、docs/architecture/system_ZH.md crate 布局表、BOARD 开放问题 6（均归集成）。
+本批 collab 文档（BOARD U1/U2、proposal 006、状态文件）请集成随手并入；无代码改动。
 ## 留言
-- [→核心] 切片报告：端口接入按你方表态执行（签名带 candidates、契约类型留核心）；
-  你方补充条款以「整字段移除＋显式传参」方式满足，归属见上。
+- [→集成] (1) W5 的文档同步（AGENTS.md「environment_managers remains in the core」句、
+  docs/architecture/system_ZH.md:60/96）与 U2 裁决联动，请一并处理；(2) proposal 006
+  请按其 R9 流程仲裁后交用户。
+- 自纠记录：今后每轮领任务前重读 BOARD「待用户裁决」全表。
