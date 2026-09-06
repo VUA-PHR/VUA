@@ -6,51 +6,25 @@ baseline_commit: f5fe9c1
 updated: 2026-09-07
 ---
 ## 当前焦点
-W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户]，待用户设置环境变量。
+W1 真机矩阵执行中：既有 3 测试对应 4 格真机全过（P1×S1、P1×S5、P1×S6、P2×S1），
+剩余 12 格测试按「写一格跑一格校准一格」推进。
 ## 自基线交付
-- 入职轮（2026-09-07）：collab:brief 四区已读；所有权域现状浏览完毕；main 并入（fast-forward 至 5d2d008）。
-- W1 计划轮（2026-09-07，tick 1）：main 并入（d8e8748）；起草 W1 执行计划
-  `docs/plans/m3-i1-real-matrix-plan_ZH.md`（该目录为 gitignore 的本地草稿区，文件保留
-  本地、不入库、不产生协调效力）——16 格定义（P1/P2 × S1–S8，契约词汇锚定
-  material_exec.rs）、既有 3 个 #[ignore] 测试覆盖 4 格的映射、12 格缺口与触发手法
-  （S4 用 UnityBatchBridge::with_timeout、S7 用 execute 期间删快照 manifest 注入，
-  均已核实可行、无需改 executor）、执行规程与证据格式。真机格遵循「窗口开后写一格
-  跑一格校准一格」，本轮不盲写未验证测试。
-- tick 2（2026-09-07）：无代码交付。W1 窗口三轮等待无变化（入职/tick1/tick2 环境
-  变量均 unset），按升级规则写入 BOARD「待用户裁决」U6 [需用户]：开窗（设
-  VUA_UNITY_EXECUTABLE / VUA_REAL_SOURCE_FOLDER 后通知产线）或明确暂缓/调整范围。
-  另核实 amf-production v0.2 冻结硬前置已齐备（Rust 端 provider-host/tests/m3_vectors.rs
-  与 TS 端 m3-vectors.test.ts 双端消费同一向量目录），协议本冻结无缺口、维持 M3 验收时点。
-- tick 3（2026-09-07）：监视轮，无交付。U6 已由集成 --no-ff 带入 main（1cad93d），
-  待用户裁决；W1 按规则跳过（[需用户] 不得代决，停止轮询环境变量）。main 合并维护：
-  fast-forward 至 fe3195c（带入数据域 W4 测试批、Cargo.lock 补漏、桌面 F4-7/F4-8 批），
-  合并后本树 cargo test --workspace 40 套件全绿、clippy 无告警。
-- tick 4（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f496924（带入核心
-  W2 契约面：provider-process v0.2、handshake Schema+11 向量、bdl-commands v0.1、
-  proposal 002/005 等）。合并后首轮全量跑出现 1 例瞬败（provider_host
-  ph_010_mutation_gate_holds_lock_and_marker_during_the_run，14 passed/1 failed）；随即
-  provider_host 单独重跑 4 次 + workspace 全量 2 次全绿（42 套件）——与 BOARD #7
-  「偶发瞬败、疑似时序敏感」吻合，已留言 [→核心]。
-- tick 5（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 4774e98
-  （proposal 005 桌面接线批：bdl-commands v0.1 write-command TS 面）；合并后本树
-  cargo test --workspace 42 套件全绿、无瞬败。U6 仍待用户；#7 已由集成升级为
-  「达立项条件，请核心立项」（本树 tick 4 复现记录被采信）。
-- tick 6（2026-09-07）：监视轮，无交付。main 合并维护（merge c7b39f9）：004 拆分
-  （environment_managers 迁 project-manager）、005 核心侧（warehouse 三方法路由+消费测试）、
-  #7 根因修复（ph_010 尾部竞态改轮询）一并带入；合并后本树 cargo test --workspace
-  44 套件全绿、clippy 无告警。BOARD 开放问题 #3/#5/#6 已销账；U6 仍待用户。
-- tick 7（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 ccf0c60
-  （W9 产物模式 UI 接线切片 part 2、proposal 006 EAC 裁决稿入库等桌面/环境域变更）；
-  合并后本树 cargo test --workspace 44 套件全绿、无瞬败。U6 仍待用户。
-- tick 8（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f5fe9c1
-  （outline 2.0.1 增补 W12 观察管线排期、W9 复核回执、状态批折叠）；合并后本树
-  cargo test --workspace 44 套件全绿。U6 仍待用户。
+- 入职与准备轮（2026-09-07 tick 1–8 前半，细节见 git 历史与本树提交 1415625..131fc4d）：
+  域现状浏览、main 常备同步、U6 开窗请求升级 BOARD [需用户]、W1 执行计划起草
+  （本地 docs/plans/m3-i1-real-matrix-plan_ZH.md：16 格定义+触发手法核实）、
+  BOARD #7 ph_010 瞬败复现上报（核心已根因修复）、监视轮维护。
+- W1 执行轮一（2026-09-07，U6 开窗后）：窗口前置验证（Unity 2022.3.22f1 全球版、素材
+  目录 fuku、备份标志均核验）。既有 3 个 #[ignore] 真机测试真机全部通过，覆盖 4 格：
+  P1×S1（自包含子集第 3 轮：19 资产导入、快照+收据，executor 65s）、P1×S5（真实 Bridge
+  拒绝过期指纹）、P1×S6（Restored 恢复）、P2×S1（staging→真 vrc-get 安装全链 172s，
+  六步骤+local_vpm 证据+unity_validated）。脚手架升级：复制用户 VCC 项目真实
+  Modular Avatar 1.11.6 + NDMF 栈（stub 仅回退），修复真实 NDMF 插件素材编译失败。
+  整目录 fuku 两轮真实失败为高价值证据（NDMF 脚本编译失败→bridge_failed；缺失依赖
+  MegamiVFX→validate 拒绝 bridge_rejected+Restored+收据），S1 校准决策：成功格用
+  自包含子集（衬衫外套校服成套包 55MB）。证据均在 _local_w1/（本地，gitignore，不入仓库）。
 ## 阻塞
-- W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
+- 无外部阻塞。W1 剩余 12 格（P1×S2/S3/S4/S7/S8、P2×S2–S8）测试编写与真机执行进行中。
 ## 下次合并意图
-首个切片（W1 执行批）完成并全绿后合并回 main；BOARD U6 行随下次合并由集成带入。
+W1 执行批完成（16 格证据齐或形成阶段性证据包）并全绿后合并回 main。
 ## 留言
-- [→核心] BOARD #7 再添一次可考复现（2026-09-07 02:4x，本树 tick 4）：合并 f496924 后
-  首轮 `cargo test --workspace` 中 provider_host `ph_010_mutation_gate_holds_lock_and_marker_during_the_run`
-  瞬败一次；provider_host 单独 4 连跑与 workspace 全量 2 连跑均全绿。时序敏感疑点未变，
-  是否立项由核心裁决（provider-host 属核心域，产线不代修）。
+无。

@@ -111,78 +111,32 @@ fn build_target_project(label: &str) -> (PathBuf, ProjectRef) {
     fs::create_dir_all(root.join("ProjectSettings")).unwrap();
     fs::create_dir_all(root.join("Packages")).unwrap();
     fs::write(root.join("ProjectSettings/ProjectVersion.txt"), UNITY_VERSION_LINE).unwrap();
-    // A real AMF production project carries the VRChat SDK (VRC expression
-    // assets inside material packages need its types to load). The SDK is
-    // copied from an existing local VCC project — discovered through the
-    // standard VCC settings file — instead of a registry round-trip, which
-    // packages.vrchat.com denies without VRChat account credentials. The
-    // candidate project's UPM manifest dependencies (com.unity.* runtime
-    // packages) are inherited so the copied SDK compiles.
-    let mut manifest_dependencies = serde_json::json!({
-        "com.unity.textmeshpro": "3.0.6"
-    });
-    let mut sdk_seeded = false;
-    let vcc_settings = std::env::var("LOCALAPPDATA")
-        .map(|local| PathBuf::from(local).join("VRChatCreatorCompanion/settings.json"))
-        .ok();
-    if let Some(settings_path) = vcc_settings {
-        if let Ok(settings) = fs::read_to_string(&settings_path) {
-            if let Ok(value) = serde_json::from_str::<Value>(&settings) {
-                if let Some(projects) = value.get("userProjects").and_then(Value::as_array) {
-                    for candidate in projects {
-                        let Some(candidate) = candidate.as_str() else {
-                            continue;
-                        };
-                        let sdk = Path::new(candidate).join("Packages/com.vrchat.avatars");
-                        if !sdk.is_dir() {
-                            continue;
-                        }
-                        for package in ["com.vrchat.avatars", "com.vrchat.base"] {
-                            let from = Path::new(candidate).join("Packages").join(package);
-                            if from.is_dir() {
-                                copy_dir_recursive(
-                                    &from,
-                                    &root.join("Packages").join(package),
-                                )
-                                .unwrap();
-                            }
-                        }
-                        // Inherit the candidate's UPM manifest dependencies
-                        // (com.unity.* runtime packages) so the copied SDK
-                        // compiles in the bare project.
-                        if let Ok(candidate_manifest) = fs::read_to_string(
-                            Path::new(candidate).join("Packages/manifest.json"),
-                        ) {
-                            let deps = serde_json::from_str::<Value>(&candidate_manifest)
-                                .ok()
-                                .and_then(|manifest| {
-                                    manifest.get("dependencies").cloned()
-                                })
-                                .and_then(|deps| deps.as_object().cloned());
-                            if let Some(deps) = deps {
-                                if let Some(target) = manifest_dependencies.as_object_mut() {
-                                    for (key, dep) in deps {
-                                        target.insert(key, dep);
-                                    }
-                                }
-                            }
-                        }
-                        sdk_seeded = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    println!("sdk seeded from local VCC project: {sdk_seeded}");
     fs::write(
         root.join("Packages/manifest.json"),
         serde_json::to_string_pretty(&serde_json::json!({
-            "dependencies": manifest_dependencies
+            "dependencies": { "com.unity.textmeshpro": "3.0.6" }
         }))
         .unwrap(),
     )
     .unwrap();
+    // A real AMF production project carries the VRChat SDK (VRC expression
+    // assets inside material packages need its types to load) plus the real
+    // Modular Avatar + NDMF stack (real assets ship NDMF plugin Editor
+    // scripts that the minimal stub cannot satisfy). Everything is copied
+    // from an existing local VCC project — discovered through the standard
+    // VCC settings file — instead of a registry round-trip.
+    let vcc_project = find_vcc_project_with_sdk();
+    let sdk_seeded = vcc_project
+        .as_deref()
+        .map(|project| seed_vrc_sdk(project, &root))
+        .unwrap_or(false);
+    let real_ma = vcc_project
+        .as_deref()
+        .map(|project| copy_real_avatar_stack(project, &root.join("Packages")))
+        .unwrap_or(false);
+    println!(
+        "sdk seeded from local VCC project: {sdk_seeded}; real Modular Avatar stack: {real_ma}"
+    );
     // Copy only the runtime pieces of the Bridge package; the NUnit test
     // assembly has no framework to resolve against in this bare project.
     copy_dir_recursive(
@@ -192,76 +146,12 @@ fn build_target_project(label: &str) -> (PathBuf, ProjectRef) {
     .unwrap();
     fs::copy(bridge_package_src.join("package.json"), root.join("Packages/com.ph-r.vua/package.json"))
         .unwrap();
-    // Stub package satisfying the Bridge asmdef reference.
-    let stub = root.join("Packages/nadena.dev.modular-avatar.core");
-    fs::create_dir_all(&stub).unwrap();
-    fs::write(
-        stub.join("package.json"),
-        r#"{ "name": "nadena.dev.modular-avatar.core", "version": "0.0.0-stub" }"#,
-    )
-    .unwrap();
-    fs::write(
-        stub.join("nadena.dev.modular-avatar.core.asmdef"),
-        r#"{ "name": "nadena.dev.modular-avatar.core", "rootNamespace": "" }"#,
-    )
-    .unwrap();
-    // The Bridge's editor code references the MA component types; the stub
-    // declares them so the assembly compiles. B3 operations never touch
-    // them — they exist for install_outfit/create_toggle only.
-    // The Bridge's editor code references the MA component types; the stub
-    // declares them with the exact member shapes the Bridge uses. B3
-    // operations never touch them — they exist for install_outfit and
-    // create_toggle only.
-    fs::write(
-        stub.join("StubComponents.cs"),
-        r#"using System.Collections.Generic;
-using UnityEngine;
-
-namespace nadena.dev.modular_avatar.core
-{
-    public class AvatarObjectReference
-    {
-        public AvatarObjectReference() { }
-        public AvatarObjectReference(GameObject target) { }
+    // Stub package satisfying the Bridge asmdef reference — fallback only:
+    // with the real MA stack present (copied above) the stub would collide
+    // with the real nadena.dev.modular-avatar.core assembly.
+    if !real_ma {
+        write_ma_stub(&root.join("Packages"));
     }
-
-    public enum PortableControlType { Menu, Toggle, Submenu, Action }
-
-    public class PortableControl
-    {
-        public PortableControlType Type;
-        public int Value;
-    }
-
-    public class ToggledObject
-    {
-        public AvatarObjectReference Object;
-        public bool Active;
-    }
-
-    public class ModularAvatarMergeArmature : MonoBehaviour
-    {
-        public AvatarObjectReference mergeTarget;
-        public void InferPrefixSuffix() { }
-    }
-
-    public class ModularAvatarMenuInstaller : MonoBehaviour { }
-
-    public class ModularAvatarMenuItem : MonoBehaviour
-    {
-        public string label;
-        public PortableControl PortableControl = new PortableControl();
-        public bool isDefault;
-    }
-
-    public class ModularAvatarObjectToggle : MonoBehaviour
-    {
-        public List<ToggledObject> Objects;
-    }
-}
-"#,
-    )
-    .unwrap();
     (
         root.clone(),
         ProjectRef {
@@ -297,6 +187,100 @@ fn write_unitypackage(path: &Path, entries: &[(&str, &str)]) {
         tar.append_data(&mut path_header, format!("{guid}/pathname"), path_bytes).unwrap();
     }
     tar.finish().unwrap();
+}
+
+/// Discovers a local VCC-managed project that carries the VRChat SDK, so the
+/// bare test project can be seeded the way a real user project looks.
+fn find_vcc_project_with_sdk() -> Option<PathBuf> {
+    let vcc_settings = std::env::var("LOCALAPPDATA")
+        .ok()
+        .map(|local| PathBuf::from(local).join("VRChatCreatorCompanion/settings.json"))?;
+    let settings = fs::read_to_string(&vcc_settings).ok()?;
+    let value = serde_json::from_str::<Value>(&settings).ok()?;
+    for candidate in value.get("userProjects")?.as_array()? {
+        if let Some(path) = candidate.as_str() {
+            if Path::new(path).join("Packages/com.vrchat.avatars").is_dir() {
+                return Some(PathBuf::from(path));
+            }
+        }
+    }
+    None
+}
+
+/// Copies the VRChat SDK packages from the discovered VCC project and merges
+/// its UPM manifest dependencies, so the copied SDK compiles in the bare
+/// project. Returns true when any SDK package was seeded.
+fn seed_vrc_sdk(vcc_project: &Path, root: &Path) -> bool {
+    let mut seeded = false;
+    for package in ["com.vrchat.avatars", "com.vrchat.base"] {
+        let from = vcc_project.join("Packages").join(package);
+        if from.is_dir() {
+            copy_dir_recursive(&from, &root.join("Packages").join(package)).unwrap();
+            seeded = true;
+        }
+    }
+    if seeded {
+        if let Ok(candidate_manifest) = fs::read_to_string(vcc_project.join("Packages/manifest.json")) {
+            if let Ok(manifest) = serde_json::from_str::<Value>(&candidate_manifest) {
+                if let Some(deps) = manifest.get("dependencies").and_then(Value::as_object).cloned() {
+                    let manifest_path = root.join("Packages/manifest.json");
+                    let mut merged =
+                        serde_json::json!({ "dependencies": { "com.unity.textmeshpro": "3.0.6" } });
+                    if let Ok(existing) = fs::read_to_string(&manifest_path) {
+                        if let Ok(value) = serde_json::from_str::<Value>(&existing) {
+                            merged = value;
+                        }
+                    }
+                    if let Some(target) = merged.get_mut("dependencies").and_then(Value::as_object_mut) {
+                        for (key, dep) in deps {
+                            target.insert(key, dep);
+                        }
+                    }
+                    fs::write(&manifest_path, serde_json::to_string_pretty(&merged).unwrap()).unwrap();
+                }
+            }
+        }
+    }
+    seeded
+}
+
+/// Copies the developer's real Modular Avatar + NDMF packages when the
+/// discovered VCC project carries them. Real assets commonly ship NDMF
+/// plugin Editor scripts (ExportsPluginAttribute/Plugin<>/BuildContext);
+/// the minimal compile stub cannot satisfy those, and chasing every type a
+/// real asset may reference is not viable. With the real stack the bare
+/// project compiles exactly like a real user project. Returns true when the
+/// real MA package was copied (the stub is then skipped).
+fn copy_real_avatar_stack(vcc_project: &Path, packages_dir: &Path) -> bool {
+    let ma_src = vcc_project.join("Packages/nadena.dev.modular-avatar");
+    if !ma_src.is_dir() {
+        return false;
+    }
+    let _ = copy_dir_recursive(&ma_src, &packages_dir.join("nadena.dev.modular-avatar"));
+    let ndmf_src = vcc_project.join("Packages/nadena.dev.ndmf");
+    if ndmf_src.is_dir() {
+        let _ = copy_dir_recursive(&ndmf_src, &packages_dir.join("nadena.dev.ndmf"));
+    }
+    true
+}
+
+/// Writes the fallback Modular Avatar stub (used only when no real MA stack
+/// is available locally) and returns the stub's source, shared with the
+/// staging template path.
+fn write_ma_stub(packages_dir: &Path) {
+    let stub = packages_dir.join("nadena.dev.modular-avatar.core");
+    fs::create_dir_all(&stub).unwrap();
+    fs::write(
+        stub.join("package.json"),
+        r#"{ "name": "nadena.dev.modular-avatar.core", "version": "0.0.0-stub" }"#,
+    )
+    .unwrap();
+    fs::write(
+        stub.join("nadena.dev.modular-avatar.core.asmdef"),
+        r#"{ "name": "nadena.dev.modular-avatar.core", "rootNamespace": "" }"#,
+    )
+    .unwrap();
+    fs::write(stub.join("StubComponents.cs"), STUB_COMPONENTS_CS).unwrap();
 }
 
 fn unity_executable() -> PathBuf {
@@ -577,6 +561,7 @@ fn m3_real_local_reusable_vertical_slice() {
     let source = PathBuf::from(std::env::var("VUA_REAL_SOURCE_FOLDER")
         .expect("VUA_REAL_SOURCE_FOLDER must hold the .unitypackage files"));
     let correlation = "real-corr";
+    let vcc_project = find_vcc_project_with_sdk();
 
     // Target project: Bridge + MA stub + SDK seeded, plus the VPM manifest
     // layer vrc-get manages.
@@ -588,9 +573,12 @@ fn m3_real_local_reusable_vertical_slice() {
     .unwrap();
 
     // Staging template override: the bundled template is text-only, while
-    // the staging Unity launches need the Bridge package and a compile stub
-    // for its Modular Avatar reference. The harness authors that scaffold
-    // once; the executor unpacks it via with_staging_template_override.
+    // the staging Unity launches need the Bridge package plus the same real
+    // dependency stack as the target (VRC SDK + real Modular Avatar/NDMF,
+    // stub only as fallback) — real assets imported into staging compile
+    // their NDMF plugin Editor scripts exactly like in the target. The
+    // harness authors that scaffold once; the executor unpacks it via
+    // with_staging_template_override.
     let base = temp_dir("vpm-staging-base");
     let staging_template = base.join("staging-template");
     let bridge_package_src =
@@ -605,20 +593,21 @@ fn m3_real_local_reusable_vertical_slice() {
         staging_template.join("Packages/com.ph-r.vua/package.json"),
     )
     .unwrap();
-    let stub = staging_template.join("Packages/nadena.dev.modular-avatar.core");
-    fs::create_dir_all(&stub).unwrap();
-    fs::write(
-        stub.join("package.json"),
-        r#"{ "name": "nadena.dev.modular-avatar.core", "version": "0.0.0-stub" }"#,
-    )
-    .unwrap();
-    fs::write(
-        stub.join("nadena.dev.modular-avatar.core.asmdef"),
-        r#"{ "name": "nadena.dev.modular-avatar.core", "rootNamespace": "" }"#,
-    )
-    .unwrap();
-    fs::write(stub.join("StubComponents.cs"), STUB_COMPONENTS_CS).unwrap();
     fs::write(staging_template.join("Packages/manifest.json"), r#"{ "dependencies": {} }"#).unwrap();
+    let staging_sdk_seeded = vcc_project
+        .as_deref()
+        .map(|project| seed_vrc_sdk(project, &staging_template))
+        .unwrap_or(false);
+    let staging_real_ma = vcc_project
+        .as_deref()
+        .map(|project| copy_real_avatar_stack(project, &staging_template.join("Packages")))
+        .unwrap_or(false);
+    println!(
+        "staging scaffold: sdk {staging_sdk_seeded}, real Modular Avatar stack: {staging_real_ma}"
+    );
+    if !staging_real_ma {
+        write_ma_stub(&staging_template.join("Packages"));
+    }
     fs::create_dir_all(staging_template.join("Assets")).unwrap();
     fs::create_dir_all(staging_template.join("ProjectSettings")).unwrap();
     fs::write(
