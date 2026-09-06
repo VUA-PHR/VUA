@@ -1,23 +1,29 @@
-# VUA Production Use-Case Contract v0.1 (M3 candidate)
+# VUA Production Use-Case Contract v0.1
 
 [English](production-use-case-v0.1_EN.md) | [简体中文](production-use-case-v0.1_ZH.md)
 
 > Document version: 0.1
-> Status: **M3 candidate draft** (2026-09-06: the 2026-09-05 freeze claim is withdrawn —
-> review verified 6/7 mismatches between the real TS/Rust parameter surfaces, with no
-> request/response JSON Schemas and no cross-language fixture vectors; "frozen" was not
-> accurate, and returning to candidate is what the honesty discipline requires. The
-> 2026-09-05 vocabulary, lifecycle-to-task mapping and confirmation/recovery discipline
-> remain as the candidate baseline; the freeze is re-attempted at M3 acceptance after
-> the alignment slice delivers ① precise per-method request/response Schemas, ② shared
-> TS/Rust fixture vectors, ③ bidirectional Provider/Gateway contract tests, and ④ a real
-> Electron → Rust → Unity smoke run. The domain-reference shape (`planId`/
-> `inspectionId`/`buildRecordId` over re-submitted paths) and the versioned
-> BuildRecord evidence summary are revised in the same slice)
+> Status: **Frozen (2026-09-07, at M3 acceptance)**. All four freeze preconditions are
+> delivered and verified:
+> ① precise per-method request/response Schemas (`schemas/amf-production/v0.2/methods/`,
+> T1); ② shared TS/Rust fixture JSON vectors (`schemas/amf-production/v0.2/vectors/`,
+> 5 positive / 3 negative); ③ bidirectional Provider/Gateway contract tests
+> (`crates/provider-host/tests/m3_vectors.rs` and
+> `apps/desktop/src/electron/m3-vectors.test.ts` consume the same vector directory);
+> ④ a real Electron → Rust → Unity smoke run (I-1 real-machine matrix 16/16 cells
+> passed, evidence `_local_w1/`; merged 5ccace6).
+> History: on 2026-09-06 the 2026-09-05 freeze claim was withdrawn — review verified
+> 6/7 mismatches between the real TS/Rust parameter surfaces, with no request/response
+> JSON Schemas and no cross-language fixture vectors; "frozen" was not accurate, and
+> returning to candidate is what the honesty discipline requires. The 2026-09-05
+> vocabulary, lifecycle-to-task mapping and confirmation/recovery discipline remained
+> as the candidate baseline and are verified into this freeze. The domain-reference
+> shape (`planId`/`inspectionId`/`buildRecordId` over re-submitted paths) and the
+> versioned BuildRecord evidence summary were revised in the T1 slice.
 > Scope: the command and query surface of the first production vertical use case (one
 > synthetic Avatar + one clothing item; dual material intake via direct `.unitypackage`
 > import and local VPM build/install)
-> Updated: 2026-09-06
+> Updated: 2026-09-07
 > Authority: the alignment baseline for the F3 presentation layer and the B3 application
 > implementation; method names are registered in the application-contract v0.1 method table
 > (introduced = B3/F3), with value semantics defined here
@@ -145,6 +151,10 @@ Bridge jobs of the run, not only the last. The Renderer displays them verbatim.
 
 ## Revision history
 
+- 2026-09-07: **Frozen (at M3 acceptance).** All four freeze preconditions delivered and
+  verified (seven-method Schemas, shared fixture vectors, bidirectional contract tests,
+  I-1 real-machine matrix 16/16 cells); status moves to Frozen. The withdrawal history is
+  preserved in the status block (honesty discipline), not deleted.
 - 2026-09-06: **M3 revision (T1 landed).** The seven-method parameter face
   moves to domain-reference shapes: `startInspection` takes the four-tuple
   (paths bound once), `requestPlan = {inspectionId, mode}`, `confirmPlan =

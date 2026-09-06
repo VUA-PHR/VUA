@@ -76,6 +76,19 @@ export const strings: Strings = {
       warehouseMissing: "倉庫読み取り面は未接続です",
     },
   },
+  /** タスクタイトルテンプレート(ウォークスルー#4 i18n):動詞と状態記述は i18n
+   *  経由、エンティティ名は原文のまま。デモタスクは組立時に現在言語で合成。 */
+  taskTitles: {
+    assembly: "{name} を組立:ボーンリグとメニュー生成",
+    download: "{name} をダウンロード",
+    downloadInterruptedNote: "ダウンロード中断:接続が切れました。受信済み部分は再開できます。",
+    downloadPolicyRefusedNote: "ダウンロードはポリシーにより拒否されました:許可リスト外のため、保存されていません。",
+    envCheck: "創作環境チェック",
+    envCheckWarning: "VPM 環境の検証に失敗しました",
+    warehouseScan: "倉庫アセットスキャン",
+    generateVpm: "VPM を生成:{name}",
+    deleteOriginals: "オリジナルを削除:{name}",
+  },
   taskCenter: {
     title: "通知センター",
     expandAria: "タスク一覧を展開、{count} 件",
