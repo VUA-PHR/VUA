@@ -7,6 +7,7 @@ import type {
   WarehouseCommandsPort,
 } from "./warehouse-commands-port.ts";
 import type { ProductionTaskLink } from "./fixture-production.ts";
+import { format } from "../i18n/index.ts";
 import { fixtureStrings } from "../i18n/strings.fixtures.zh-CN.ts";
 
 /**
@@ -104,7 +105,8 @@ export function createFixtureWarehouseCommands(
       }
       const taskId = `task-wh-gen-${warehouseItemId}`;
       const correlationId = `corr-${taskId}`;
-      linkTask(taskId, taskTitles.generateVpm.title);
+      // 走查 3a 修复:任务标题绑定操作条目实体(displayName),不再固定演示名
+      linkTask(taskId, format(taskTitles.generateVpm.title, { name: entry.displayName }));
       setTimeout(() => {
         store.addGeneratedVpm(warehouseItemId);
         completeTask(taskId);
@@ -134,7 +136,8 @@ export function createFixtureWarehouseCommands(
       }
       const taskId = `task-wh-del-${warehouseItemId}`;
       const correlationId = `corr-${taskId}`;
-      linkTask(taskId, taskTitles.deleteOriginals.title);
+      // 走查 3b 修复:同 3a,标题绑定操作条目实体
+      linkTask(taskId, format(taskTitles.deleteOriginals.title, { name: entry.displayName }));
       setTimeout(() => {
         store.removeOriginals(warehouseItemId);
         completeTask(taskId);

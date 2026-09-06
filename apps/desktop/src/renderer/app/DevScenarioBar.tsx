@@ -38,28 +38,41 @@ const storageKey = storageKeys.scenario;
  */
 export function DevScenarioBar({ active }: { active: ScenarioName }) {
   const [last, setLast] = useState(active);
+  // 走查#1:默认收起为 DEV 小标签,展开后才显示场景列表——避免遮挡底部任务中心
+  const [expanded, setExpanded] = useState(false);
   return (
-    <div className="vua-dev-bar" role="group" aria-label={copy.aria}>
-      <span className="vua-dev-bar__tag">{copy.tag}</span>
-      {options.map((option) => (
-        <button
-          key={option.name}
-          type="button"
-          className="vua-dev-bar__option"
-          aria-pressed={last === option.name}
-          onClick={() => {
-            setLast(option.name);
-            try {
-              sessionStorage.setItem(storageKey, option.name);
-            } catch {
-              /* sessionStorage 不可用时仅本次生效 */
-            }
-            window.location.reload();
-          }}
-        >
-          {option.label}
-        </button>
-      ))}
+    <div className="vua-dev-bar" role="group" aria-label={copy.aria} data-expanded={expanded || undefined}>
+      <button
+        type="button"
+        className="vua-dev-bar__toggle"
+        aria-expanded={expanded}
+        aria-label={expanded ? copy.collapseAria : copy.expandAria}
+        title={active}
+        onClick={() => setExpanded((value) => !value)}
+      >
+        {copy.tag}
+      </button>
+      {expanded
+        ? options.map((option) => (
+            <button
+              key={option.name}
+              type="button"
+              className="vua-dev-bar__option"
+              aria-pressed={last === option.name}
+              onClick={() => {
+                setLast(option.name);
+                try {
+                  sessionStorage.setItem(storageKey, option.name);
+                } catch {
+                  /* sessionStorage 不可用时仅本次生效 */
+                }
+                window.location.reload();
+              }}
+            >
+              {option.label}
+            </button>
+          ))
+        : null}
     </div>
   );
 }
