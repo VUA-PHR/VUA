@@ -2,7 +2,7 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 78258a3
+baseline_commit: 2dabd64
 updated: 2026-09-07
 ---
 ## 当前焦点
