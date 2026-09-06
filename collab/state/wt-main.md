@@ -2,27 +2,31 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: aa560c7
+baseline_commit: b9b7d2b
 updated: 2026-09-07
 ---
 ## 当前焦点
-tick（02:00）：合并与复核轮。wt-5 W4 自并复核通过（含 Cargo.lock 补漏）；wt-4 U6 批与
-wt-6 004 线程批已带入；操作者合并 f3af305（F4-7/F4-8）独立复核通过；M3 仍等 I-1 真机
-窗口（BOARD U6 [需用户]）。
-## 自基线交付（c8439c6..aa560c7）
-- 复核 wt-5 W4 自并（60e434f）：main 复跑 cargo test --workspace 全绿、clippy 0 告警；
-  发现并补交其遗漏的 Cargo.lock（flate2/tar，aa560c7）；
-- --no-ff 并入 slot/wt-4（U6，1cad93d）与 slot/wt-6（004 线程，a02f143）；机制纠正：
-  提案线程讨论批应及时并入 main（防「定稿前不可见→无法定稿」死锁），「定稿后合并」
-  仅约束执行批；
-- 独立复核操作者合并 f3af305（F4-7 下载链夹具 + F4-8 聚合冒烟）：download-port.ts 仅
-  doc 注释对齐冻结词汇；桌面 check 全链绿（含 check-leak 171 指纹生产构建零泄漏）；
-  smoke:f4-deliverables 复跑通过（证据 _local_m4/v0.4.2/，2026-09-07 本机）。
+tick（02:20）：W2 合并验收轮。核心 W2 握手帧面冻结切片已验收并入（a7f87df）；
+proposal 003/001 关闭销账、004 收敛；M3 仍等 I-1 真机窗口（U6 [需用户]）。
+## 自基线交付（aa560c7..b9b7d2b）
+- W2 合并验收（slot/wt-2，核心自证 41 套 3 连轮+双端向量+真进程 e2e）：审 diff（协议本
+  provider-process 0.1→0.2 双语含变更日志、REGISTRY 同步、两份 handshake Schema+11 向量、
+  downloadIngest 必发位修复 F4-4 位漂移根因）→ --no-ff 并入 → 合并后 main 复核双侧全绿
+  （cargo test --workspace、clippy 0 告警、桌面 check 全链含 171 指纹零泄漏、
+  orchestrator-provider 4 文件 23 测含新增 3 测与 e2e；2026-09-07 本机）；
+- Cargo.lock 两度补漏（6aaa648：jsonschema 引用行，47d716e 半同步；此前 aa560c7）；
+- 并入 wt-3/4/6 状态批（6f0549f/74cac20/b9b7d2b）；
+- BOARD 落账：#2/#4 销账（001/003 关闭）；#6 记 004 收敛（双方一致选项 3）；#7 泛化
+  （核心+数据各报一次未定名瞬败）；契约表增 bdl-commands v0.1、provider-process v0.2；
+  U2 加收敛备注留用户确认。
 ## 阻塞
-- M3 验收依赖 I-1 真机窗口（产线 W1）：BOARD U6 [需用户]，等用户开窗或裁决暂缓。
+- M3 验收依赖 I-1 真机窗口（产线 W1）：BOARD U6 [需用户]，等开窗或裁决暂缓。
 ## 下次合并意图
-wt-3 W7（F4-8 验收矩阵+BOOTH 允许清单审阅）文档定稿批；wt-2（W2）切片到达时同程序。
+proposal 005 接线批（核心 provider-host 三方法 / 桌面 TS 面）；004 环境切片（跨域，
+归集成合并）；wt-3 W7 文档定稿批。
 ## 留言
-- [需用户] U5：VUA-2/VUA-3 pre-rename 目录清理；U6：I-1 开窗（设 VUA_UNITY_EXECUTABLE /
-  VUA_REAL_SOURCE_FOLDER）或明确暂缓。均待用户白天批量处理；
-- 首批切片锚点见 proposals 001–004。
+- [→核心][→数据] Cargo.lock 须随依赖变更同切片提交——今日两度由集成补漏（aa560c7、
+  6aaa648），后续再发现将按阻塞升级；
+- [→环境] 004 核心表态已随 a7f87df 入 main（同意选项 3+切片边界），可开工切片；
+  U2 留用户确认，不阻塞技术准备；
+- [需用户] U5 pre-rename 清理；U6 I-1 开窗/暂缓。待用户白天批量处理。
