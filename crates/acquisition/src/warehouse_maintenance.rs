@@ -21,7 +21,7 @@
 
 use crate::artifact_inspection::{hex_lower, sha256_file};
 use vua_bdl_store::bdl_store::{
-    ArtifactMode, BdlStore, BdlStoreError, CopyRole,
+    ArtifactMode, BdlStore, BdlStoreError, CopyRole, NewLocalArtifact,
 };
 use vua_orchestrator::{ErrorCategory, ParamValue};
 use vua_unity_bridge::{MaterialCancelToken, MaterialExecutor};
@@ -519,6 +519,21 @@ fn run_generate_vpm(
         });
     }
 
+    // The generated archive enters BDL like any other sighting first: copy
+    // rows reference registered artifacts, so an unregistered sha would make
+    // the recording below fail (the regression this registration closes).
+    store.record_untrusted_artifact(&NewLocalArtifact {
+        artifact_sha256: archive_sha.clone(),
+        size_bytes: fs::metadata(&destination)?.len(),
+        suggested_file_name: generated
+            .artifact
+            .archive_path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned()),
+        download_id: None,
+        first_seen_at: now_rfc3339(),
+    })?;
+
     store.record_artifact_copy(
         &spec.warehouse_item_id,
         &archive_sha,
@@ -794,5 +809,597 @@ mod tests {
         .unwrap();
         let snapshot = wait_for_terminal(&rt, &accepted.task_id);
         assert_eq!(snapshot.state, TaskState::Failed);
+    }
+
+    // --- generate-VPM task coverage (proposal 003) ---
+
+    use vua_orchestrator::{
+        AppErrorV1, BridgeError, BuildRecordStore, FileSystemSnapshotStore, FixedClock,
+        JournalEntryKind, JournalPayload, MemoryJournal, ProjectRef, ResultStatus, UnityBridge,
+        UnityCommand, UnityOperation, UnityResult, VpmBackend, VpmCapabilities,
+    };
+    use std::sync::Mutex;
+    use vua_unity_bridge::LocalPackageIdentityStore;
+
+    /// Synthetic tar.gz stand-in for a downloaded `.unitypackage`: structure
+    /// only, fixed fixture bytes — never real product content.
+    fn write_synthetic_archive(path: &Path, entries: &[&str]) {
+        use flate2::write::GzEncoder;
+        use tar::{Builder, Header};
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent).unwrap();
+        }
+        let file = fs::File::create(path).unwrap();
+        let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+        for entry in entries {
+            let mut header = Header::new_gnu();
+            header.set_size(b"fixture".len() as u64);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, entry, b"fixture".as_slice())
+                .unwrap();
+        }
+        builder.finish().unwrap();
+    }
+
+    /// A generate-VPM world: one entry whose single original is a synthetic
+    /// tar.gz archive (the staging chain really unpacks it) and no generated
+    /// copy yet. Everything on disk and in BDL is consistent.
+    fn make_generate_world(parent: &Path) -> World {
+        let store = Arc::new(BdlStore::open_in_memory().unwrap());
+        let entry_folder = parent.join("entry");
+        fs::create_dir_all(entry_folder.join("original")).unwrap();
+        fs::create_dir_all(entry_folder.join("vpm")).unwrap();
+        let entry_id = store
+            .create_warehouse_item(
+                "Fixture Pack",
+                "imported_material",
+                "2026-09-06T09:00:00.000Z",
+            )
+            .unwrap()
+            .warehouse_item_id;
+
+        let original_path = entry_folder.join("original").join("pack.unitypackage");
+        write_synthetic_archive(&original_path, &["Assets/fixture/asset.txt"]);
+        let original_sha = format!("sha256:{}", hex_lower(&sha256_file(&original_path).unwrap()));
+        store
+            .record_untrusted_artifact(&NewLocalArtifact {
+                artifact_sha256: original_sha.clone(),
+                size_bytes: std::fs::metadata(&original_path).unwrap().len(),
+                suggested_file_name: Some("pack.unitypackage".into()),
+                download_id: None,
+                first_seen_at: "2026-09-06T09:00:00.000Z".into(),
+            })
+            .unwrap();
+        store
+            .record_artifact_copy(
+                &entry_id,
+                &original_sha,
+                "original/pack.unitypackage",
+                &original_path.to_string_lossy(),
+                CopyRole::Original,
+                "2026-09-06T09:00:00.000Z",
+            )
+            .unwrap();
+
+        // The identity store canonicalizes the entry folder (the identity
+        // source), so the folder the generate flow resolves must exist.
+        let detail = store
+            .warehouse_entry_detail(&entry_id, ArtifactMode::UseOriginalUnitypackage)
+            .unwrap()
+            .expect("the fixture entry exists");
+        fs::create_dir_all(parent.join(&detail.folder_name)).unwrap();
+
+        World {
+            store,
+            entry_id,
+            original_path,
+            generated_path: entry_folder.join("vpm"),
+        }
+    }
+
+    /// Test double for the Unity side of the staging chain: every command
+    /// succeeds, and `CreateLocalVpmPackage` really materializes a minimal
+    /// `package.json` in the staging project so the deterministic publish
+    /// step has something to copy out. This is a simulation — it never
+    /// claims a real Unity editor ran.
+    struct GeneratingBridge {
+        commands: Mutex<Vec<UnityCommand>>,
+    }
+
+    impl GeneratingBridge {
+        fn new() -> Self {
+            Self { commands: Mutex::new(Vec::new()) }
+        }
+    }
+
+    impl UnityBridge for GeneratingBridge {
+        fn execute(
+            &self,
+            project: &ProjectRef,
+            command: &UnityCommand,
+        ) -> Result<UnityResult, BridgeError> {
+            let mut commands = self.commands.lock().unwrap();
+            commands.push(command.clone());
+            if command.operation == UnityOperation::CreateLocalVpmPackage {
+                let package_id = command.payload.package_id.clone().unwrap_or_default();
+                let package_root = project.root.join("Packages").join(&package_id);
+                fs::create_dir_all(&package_root).unwrap();
+                fs::write(
+                    package_root.join("package.json"),
+                    format!(r#"{{"name":"{package_id}","version":"0.1.0"}}"#),
+                )
+                .unwrap();
+            }
+            Ok(UnityResult {
+                schema_version: 1,
+                command_id: command.command_id.clone(),
+                status: ResultStatus::Succeeded,
+                changed_paths: vec![],
+                diagnostics: vec![],
+                data: serde_json::json!({
+                    "projectFingerprint": format!("fp-{}", commands.len())
+                }),
+            })
+        }
+    }
+
+    /// The generate-only chain never touches VPM projects; any call is a
+    /// test failure, not a silent success.
+    struct NoVpmBackend;
+
+    impl VpmBackend for NoVpmBackend {
+        fn name(&self) -> &'static str {
+            "none"
+        }
+        fn capabilities(&self) -> VpmCapabilities {
+            VpmCapabilities {
+                create_project: false,
+                preview_install: false,
+                list_packages: false,
+                remove_packages: false,
+                project_registry: false,
+            }
+        }
+        fn preview_install(
+            &self,
+            _: &ProjectRef,
+            _: &[vua_orchestrator::PackageRequestV1],
+        ) -> Result<vua_orchestrator::ChangePreviewV1, AppErrorV1> {
+            panic!("generate-vpm never previews")
+        }
+        fn apply_install(
+            &self,
+            _: &ProjectRef,
+            _: &[vua_orchestrator::PackageRequestV1],
+            _: &str,
+        ) -> Result<serde_json::Value, AppErrorV1> {
+            panic!("generate-vpm never installs")
+        }
+        fn create_project(
+            &self,
+            _: &Path,
+            _: &str,
+            _: Option<&str>,
+        ) -> Result<ProjectRef, AppErrorV1> {
+            panic!("generate-vpm never creates projects")
+        }
+    }
+
+    fn make_generate_setup(
+        parent: &Path,
+    ) -> (World, Arc<MaterialExecutor>, Arc<GeneratingBridge>) {
+        let world = make_generate_world(parent);
+        let bridge = Arc::new(GeneratingBridge::new());
+        let executor = Arc::new(MaterialExecutor::new(
+            bridge.clone(),
+            FileSystemSnapshotStore,
+            Arc::new(NoVpmBackend),
+            BuildRecordStore::new(parent.join("records")),
+            Arc::new(FixedClock::new(&["2026-09-07T00:00:00Z"])),
+            parent.join("executor-temp"),
+            "2022.3.22f1",
+            LocalPackageIdentityStore::new(parent.join("identities.json")),
+        ));
+        (world, executor, bridge)
+    }
+
+    fn generate_runtime() -> (TaskRuntime, Arc<MemoryJournal>) {
+        let journal = Arc::new(MemoryJournal::default());
+        let rt = TaskRuntime::new(
+            journal.clone(),
+            Arc::new(SystemClock),
+            Arc::new(FixedIdGenerator::default()),
+        );
+        (rt, journal)
+    }
+
+    fn completed_payload(journal: &MemoryJournal, task_id: &str) -> JournalPayload {
+        journal
+            .snapshot()
+            .into_iter()
+            .find(|entry| entry.task_id == task_id && entry.kind == JournalEntryKind::Completed)
+            .map(|entry| entry.payload)
+            .expect("the journal records exactly one completion per task")
+    }
+
+    fn expect_failed_error(journal: &MemoryJournal, task_id: &str) -> AppErrorV1 {
+        match completed_payload(journal, task_id) {
+            JournalPayload::Completed { error: Some(error), .. } => error,
+            other => panic!("expected a failed completion, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn generate_vpm_happy_path_publishes_and_records_a_generated_copy() {
+        let parent = unique_dir("gen-happy");
+        let (world, executor, bridge) = make_generate_setup(&parent);
+        world
+            .store
+            .set_artifact_mode(&world.entry_id, Some(ArtifactMode::GenerateVpm))
+            .unwrap();
+
+        let (rt, journal) = generate_runtime();
+        let accepted = submit_generate_vpm(
+            &rt,
+            world.store.clone(),
+            executor,
+            GenerateVpmTaskSpec {
+                correlation_id: "corr-gen".into(),
+                warehouse_item_id: world.entry_id.clone(),
+                warehouse_root: parent.clone(),
+                global_default: ArtifactMode::UseOriginalUnitypackage,
+            },
+            Some(Duration::from_secs(120)),
+        )
+        .unwrap();
+
+        let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+        assert_eq!(
+            snapshot.state,
+            TaskState::Succeeded,
+            "generation must succeed, else: {:?}",
+            expect_failed_error(&journal, &accepted.task_id)
+        );
+        assert_eq!(snapshot.correlation_id, "corr-gen", "the audit binding rides the task row");
+
+        // Task-row lifecycle: accepted first, completed without error.
+        let entries = journal.snapshot();
+        assert!(
+            entries
+                .iter()
+                .any(|entry| entry.task_id == accepted.task_id && entry.kind == JournalEntryKind::Accepted),
+            "acceptance is journaled before the job runs"
+        );
+        match completed_payload(&journal, &accepted.task_id) {
+            JournalPayload::Completed { state, error, result } => {
+                assert_eq!(state, TaskState::Succeeded);
+                assert!(error.is_none(), "a done generation carries no error");
+                let result = result.expect("a done generation carries its audit payload");
+                assert_eq!(result["correlationId"], "corr-gen");
+                assert_eq!(result["warehouseItemId"], world.entry_id.as_str());
+                assert!(
+                    result["archiveRelativePath"]
+                        .as_str()
+                        .unwrap()
+                        .starts_with("vpm/"),
+                    "the copy lives under the entry's vpm/ folder"
+                );
+                assert!(
+                    result["archiveSha256"].as_str().unwrap().starts_with("sha256:"),
+                    "the receipt carries a content identity"
+                );
+                assert!(
+                    !result["packageId"].as_str().unwrap().is_empty(),
+                    "the stable package identity is reported"
+                );
+            }
+            other => panic!("expected a successful completion, got {other:?}"),
+        }
+
+        // BDL: exactly one generated copy, physically consistent with its
+        // recorded identity.
+        let copies = world.store.entry_copies(&world.entry_id).unwrap();
+        let generated: Vec<_> =
+            copies.iter().filter(|copy| copy.role == CopyRole::GeneratedVpm).collect();
+        assert_eq!(generated.len(), 1, "generation is recorded exactly once");
+        let digest = sha256_file(Path::new(&generated[0].stored_path)).unwrap();
+        assert_eq!(
+            format!("sha256:{}", hex_lower(&digest)),
+            generated[0].artifact_sha256,
+            "the recorded identity matches the physical file"
+        );
+        assert!(world.original_path.exists(), "generation keeps the originals");
+
+        // The staging chain really drove the simulated Unity side.
+        let commands = bridge.commands.lock().unwrap();
+        assert!(
+            commands.iter().any(|command| command.operation == UnityOperation::MaterializeExtractedPackage),
+            "the original was staged for materialization"
+        );
+        assert!(
+            commands.iter().any(|command| command.operation == UnityOperation::CreateLocalVpmPackage),
+            "the package was created before publish"
+        );
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn generate_vpm_refuses_outside_the_generate_vpm_mode_with_the_conflict_code() {
+        let parent = unique_dir("gen-guard");
+        let (world, executor, _bridge) = make_generate_setup(&parent);
+        // No override: the global default (use_original_unitypackage) rules.
+
+        let (rt, journal) = generate_runtime();
+        let accepted = submit_generate_vpm(
+            &rt,
+            world.store.clone(),
+            executor,
+            GenerateVpmTaskSpec {
+                correlation_id: "corr-gen-guard".into(),
+                warehouse_item_id: world.entry_id.clone(),
+                warehouse_root: parent.clone(),
+                global_default: ArtifactMode::UseOriginalUnitypackage,
+            },
+            None,
+        )
+        .unwrap();
+        let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+        assert_eq!(snapshot.state, TaskState::Failed);
+
+        let app = expect_failed_error(&journal, &accepted.task_id);
+        assert_eq!(app.code, "vua.warehouse.invalid_state");
+        assert_eq!(app.category, vua_orchestrator::ErrorCategory::Conflict);
+        assert!(app.recoverable);
+        let params = app.params.expect("the conflict names its context");
+        assert_eq!(
+            params.get("warehouseItemId"),
+            Some(&ParamValue::Text(world.entry_id.clone()))
+        );
+        assert_eq!(
+            params.get("effectiveMode"),
+            Some(&ParamValue::Text("use_original_unitypackage".into()))
+        );
+        assert!(
+            world.original_path.exists(),
+            "a refused generation leaves the original untouched"
+        );
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn generate_vpm_refuses_an_entry_without_original_material() {
+        let parent = unique_dir("gen-noorig");
+        let store = Arc::new(BdlStore::open_in_memory().unwrap());
+        let entry_id = store
+            .create_warehouse_item(
+                "Empty Pack",
+                "imported_material",
+                "2026-09-06T09:00:00.000Z",
+            )
+            .unwrap()
+            .warehouse_item_id;
+        store
+            .set_artifact_mode(&entry_id, Some(ArtifactMode::GenerateVpm))
+            .unwrap();
+
+        let (rt, journal) = generate_runtime();
+        let accepted = submit_generate_vpm(
+            &rt,
+            store,
+            Arc::new(MaterialExecutor::new(
+                Arc::new(GeneratingBridge::new()),
+                FileSystemSnapshotStore,
+                Arc::new(NoVpmBackend),
+                BuildRecordStore::new(parent.join("records")),
+                Arc::new(FixedClock::new(&["2026-09-07T00:00:00Z"])),
+                parent.join("executor-temp"),
+                "2022.3.22f1",
+                LocalPackageIdentityStore::new(parent.join("identities.json")),
+            )),
+            GenerateVpmTaskSpec {
+                correlation_id: "corr-gen-empty".into(),
+                warehouse_item_id: entry_id.clone(),
+                warehouse_root: parent.clone(),
+                global_default: ArtifactMode::UseOriginalUnitypackage,
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(wait_for_terminal(&rt, &accepted.task_id).state, TaskState::Failed);
+        assert_eq!(
+            expect_failed_error(&journal, &accepted.task_id).code,
+            "vua.warehouse.no_original_material"
+        );
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn generate_vpm_never_silently_replaces_an_existing_artifact() {
+        let parent = unique_dir("gen-twice");
+        let (world, executor, _bridge) = make_generate_setup(&parent);
+        world
+            .store
+            .set_artifact_mode(&world.entry_id, Some(ArtifactMode::GenerateVpm))
+            .unwrap();
+
+        let (rt, journal) = generate_runtime();
+        let spec = |correlation_id: &str| GenerateVpmTaskSpec {
+            correlation_id: correlation_id.into(),
+            warehouse_item_id: world.entry_id.clone(),
+            warehouse_root: parent.clone(),
+            global_default: ArtifactMode::UseOriginalUnitypackage,
+        };
+        let first = submit_generate_vpm(
+            &rt,
+            world.store.clone(),
+            executor.clone(),
+            spec("corr-gen-1"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(wait_for_terminal(&rt, &first.task_id).state, TaskState::Succeeded);
+
+        let second = submit_generate_vpm(
+            &rt,
+            world.store.clone(),
+            executor,
+            spec("corr-gen-2"),
+            None,
+        )
+        .unwrap();
+        assert_eq!(wait_for_terminal(&rt, &second.task_id).state, TaskState::Failed);
+        assert_eq!(
+            expect_failed_error(&journal, &second.task_id).code,
+            "vua.warehouse.already_generated",
+            "the existing artifact is never silently replaced"
+        );
+        let generated_count = world
+            .store
+            .entry_copies(&world.entry_id)
+            .unwrap()
+            .iter()
+            .filter(|copy| copy.role == CopyRole::GeneratedVpm)
+            .count();
+        assert_eq!(generated_count, 1, "the second run recorded nothing");
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn generate_vpm_unknown_entry_maps_to_entry_not_found() {
+        let parent = unique_dir("gen-unknown");
+        let store = Arc::new(BdlStore::open_in_memory().unwrap());
+        let (rt, journal) = generate_runtime();
+        let accepted = submit_generate_vpm(
+            &rt,
+            store,
+            Arc::new(MaterialExecutor::new(
+                Arc::new(GeneratingBridge::new()),
+                FileSystemSnapshotStore,
+                Arc::new(NoVpmBackend),
+                BuildRecordStore::new(parent.join("records")),
+                Arc::new(FixedClock::new(&["2026-09-07T00:00:00Z"])),
+                parent.join("executor-temp"),
+                "2022.3.22f1",
+                LocalPackageIdentityStore::new(parent.join("identities.json")),
+            )),
+            GenerateVpmTaskSpec {
+                correlation_id: "corr-gen-x".into(),
+                warehouse_item_id: "whi-nope".into(),
+                warehouse_root: parent.clone(),
+                global_default: ArtifactMode::GenerateVpm,
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(wait_for_terminal(&rt, &accepted.task_id).state, TaskState::Failed);
+        let app = expect_failed_error(&journal, &accepted.task_id);
+        assert_eq!(app.code, "vua.warehouse.entry_not_found");
+        assert_eq!(app.category, vua_orchestrator::ErrorCategory::Validation);
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn delete_originals_invalid_state_surfaces_the_conflict_code() {
+        let parent = unique_dir("del-code");
+        let world = make_world(&parent, true);
+        // No override: guard (c) must refuse with the stable conflict code.
+
+        let (rt, journal) = generate_runtime();
+        let accepted = submit_delete_originals(
+            &rt,
+            world.store.clone(),
+            DeleteOriginalsTaskSpec {
+                correlation_id: "corr-del-code".into(),
+                warehouse_item_id: world.entry_id.clone(),
+                global_default: ArtifactMode::UseOriginalUnitypackage,
+            },
+            None,
+        )
+        .unwrap();
+        assert_eq!(wait_for_terminal(&rt, &accepted.task_id).state, TaskState::Failed);
+        let app = expect_failed_error(&journal, &accepted.task_id);
+        assert_eq!(app.code, "vua.warehouse.invalid_state");
+        assert_eq!(app.category, vua_orchestrator::ErrorCategory::Conflict);
+        assert!(app.recoverable);
+        let params = app.params.expect("the conflict names its context");
+        assert_eq!(
+            params.get("effectiveMode"),
+            Some(&ParamValue::Text("use_original_unitypackage".into()))
+        );
+        fs::remove_dir_all(&parent).ok();
+    }
+
+    #[test]
+    fn maintenance_error_mapping_is_stable_across_both_tables() {
+        let samples: Vec<Box<dyn Fn() -> MaintenanceError>> = vec![
+            Box::new(|| MaintenanceError::Store(BdlStoreError::UnknownWarehouseItem("whi-x".into()))),
+            Box::new(|| MaintenanceError::Io(std::io::Error::other("disk gone"))),
+            Box::new(|| MaintenanceError::UnknownEntry("whi-x".into())),
+            Box::new(|| MaintenanceError::InvalidState {
+                entry_id: "whi-x".into(),
+                effective_mode: ArtifactMode::UseOriginalUnitypackage,
+            }),
+            Box::new(|| MaintenanceError::GeneratedArtifactMissing {
+                entry_id: "whi-x".into(),
+                reason: "tampered".into(),
+            }),
+            Box::new(|| MaintenanceError::NoOriginalMaterial { entry_id: "whi-x".into() }),
+            Box::new(|| MaintenanceError::AlreadyGenerated { entry_id: "whi-x".into() }),
+            Box::new(|| MaintenanceError::GenerationFailed {
+                code: "vua.material.staging_failed".into(),
+                message: "the staging chain refused".into(),
+            }),
+        ];
+        let expected: &[(&str, vua_orchestrator::ErrorCategory)] = &[
+            ("vua.warehouse.storeFailed", vua_orchestrator::ErrorCategory::Internal),
+            (
+                "vua.warehouse.maintenanceIoFailed",
+                vua_orchestrator::ErrorCategory::ExternalFailure,
+            ),
+            ("vua.warehouse.entry_not_found", vua_orchestrator::ErrorCategory::Validation),
+            ("vua.warehouse.invalid_state", vua_orchestrator::ErrorCategory::Conflict),
+            (
+                "vua.warehouse.generated_artifact_missing",
+                vua_orchestrator::ErrorCategory::Conflict,
+            ),
+            ("vua.warehouse.no_original_material", vua_orchestrator::ErrorCategory::Conflict),
+            ("vua.warehouse.already_generated", vua_orchestrator::ErrorCategory::Conflict),
+            (
+                "vua.warehouse.generation_failed",
+                vua_orchestrator::ErrorCategory::ExternalFailure,
+            ),
+        ];
+        for (make_error, (code, category)) in samples.into_iter().zip(expected) {
+            let via_delete = maintenance_error_to_app(make_error(), "corr-map");
+            let via_generate = generate_error_to_app(make_error(), "corr-map");
+            assert_eq!(via_delete.code, *code, "delete table maps {code}");
+            assert_eq!(via_delete.category, *category, "delete table maps {code}");
+            assert!(via_delete.recoverable, "maintenance failures stay recoverable");
+            assert_eq!(via_generate.code, *code, "generate table maps {code}");
+            assert_eq!(via_generate.category, *category, "generate table maps {code}");
+            assert!(via_generate.recoverable, "maintenance failures stay recoverable");
+            assert_eq!(via_generate.correlation_id, "corr-map");
+        }
+    }
+
+    #[test]
+    fn invalid_state_mapping_carries_the_effective_mode_param() {
+        let app = generate_error_to_app(
+            MaintenanceError::InvalidState {
+                entry_id: "whi-x".into(),
+                effective_mode: ArtifactMode::UseOriginalUnitypackage,
+            },
+            "corr-guard",
+        );
+        let params = app.params.expect("the conflict carries params");
+        assert_eq!(
+            params.get("warehouseItemId"),
+            Some(&ParamValue::Text("whi-x".into()))
+        );
+        assert_eq!(
+            params.get("effectiveMode"),
+            Some(&ParamValue::Text("use_original_unitypackage".into()))
+        );
     }
 }
