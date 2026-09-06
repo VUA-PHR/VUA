@@ -2,7 +2,7 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: ccf0c60
+baseline_commit: f5fe9c1
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -42,6 +42,9 @@ W1（I-1 真机矩阵）准备就绪；开窗请求已升级 BOARD U6 [需用户
 - tick 7（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 ccf0c60
   （W9 产物模式 UI 接线切片 part 2、proposal 006 EAC 裁决稿入库等桌面/环境域变更）；
   合并后本树 cargo test --workspace 44 套件全绿、无瞬败。U6 仍待用户。
+- tick 8（2026-09-07）：监视轮，无交付。main 合并维护：fast-forward 至 f5fe9c1
+  （outline 2.0.1 增补 W12 观察管线排期、W9 复核回执、状态批折叠）；合并后本树
+  cargo test --workspace 44 套件全绿。U6 仍待用户。
 ## 阻塞
 - W1 真机窗口未开：已升级 BOARD U6 [需用户]，等待用户开窗或裁决暂缓；产线不再重复轮询。
 ## 下次合并意图
