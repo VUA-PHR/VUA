@@ -1,7 +1,8 @@
 //! Prints the environment detection spike snapshot as JSON — the
-//! local-evidence companion to the environment spike tests.
+//! local-evidence companion to the environment spike tests. Moved from the
+//! core with the module (proposal 004).
 //!
-//! Usage: cargo run -p vua-orchestrator --example environment_probe [-- <output-path>]
+//! Usage: cargo run -p vua-project-manager --example environment_probe [-- <output-path>]
 //!
 //! The snapshot reflects this machine's real installs. Keep it local:
 //! real project paths never enter the repository (they flow through the
@@ -10,9 +11,13 @@
 use std::path::PathBuf;
 
 fn main() {
-    let roots = vua_orchestrator::ManagerRoots::default();
+    let roots = vua_project_manager::ManagerRoots::default();
+    // The VCC settings resolution-order invariant lives in the core
+    // `EnvironmentRoots::default()` (proposal 004); reuse it here.
+    let vcc_candidates = vua_orchestrator::EnvironmentRoots::default().vcc_settings_candidates;
     let editor_roots = vec![PathBuf::from("C:\\Program Files\\Unity\\Hub\\Editor")];
-    let snapshot = vua_orchestrator::collect_environment_managers_snapshot(
+    let snapshot = vua_project_manager::collect_environment_managers_snapshot(
+        &vcc_candidates,
         &roots,
         &editor_roots,
         &vua_orchestrator::SystemClock,

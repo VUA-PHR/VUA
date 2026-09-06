@@ -1,6 +1,6 @@
 # 004 environment_managers 拆分 deferred 决策
 
-> status: 讨论中
+> status: 已接受
 > 提出：集成树（crate 拆分执行代理报告，2026-09-06）
 
 ## 背景
@@ -114,3 +114,8 @@ wire 面零变化与验收标准（workspace + clippy 全绿、check_vcc 用例�
 
 2026-09-07 结论记录：环境给出选项 3 建议与切片边界，状态 提出 → 讨论中；待核心表态
 后由环境按切片执行（合并与跨域改动留给集成角色）。
+
+2026-09-07 结论记录：核心表态同意选项 3 与全部切片边界（契约类型留核心＝结构必然；
+签名带 candidates 保留引擎注入点），并补充：pm 侧 `ManagerRoots.vcc_settings_candidates`
+若仅服务读取器应随迁移移除。两轮线程收敛，状态 讨论中 → 已接受；由环境（W5 负责角色）
+按选项 3 执行拆分切片，验收＝workspace 测试与 clippy 全绿、wire 面零变化。

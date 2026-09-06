@@ -42,7 +42,6 @@
 //! 性有测试证明（检测前后对观察目标做全树指纹比对，一个字节都不许变）。
 
 use crate::editor_targets;
-use crate::environment_managers;
 use crate::process::{ProcessRunner, ProcessSpec};
 use crate::time::Clock;
 use crate::win_registry::{RegistryHive, RegistrySource};
@@ -116,6 +115,78 @@ pub struct EnvironmentSnapshotV1 {
     pub schema_version: u8,
     pub items: Vec<EnvironmentCheckItemV1>,
     pub captured_at: String,
+}
+
+/// Stable spike codes; findings and fix plans key on them. These are the
+/// Rust face of the frozen `environment-managers` schema v0.1 — the codes
+/// appear inside the `vcc` check item facts and must stay stable; the
+/// reading implementation lives in the project-manager adapter, which
+/// depends on this core (proposal 004 split).
+pub mod codes {
+    pub const VCC_SETTINGS_READ_FAILED: &str = "vua.env_managers.vcc_settings_read_failed";
+    pub const VCC_SETTINGS_SCHEMA_UNEXPECTED: &str = "vua.env_managers.vcc_settings_schema_unexpected";
+    pub const MANAGER_SETTINGS_READ_FAILED: &str = "vua.env_managers.manager_settings_read_failed";
+    pub const ALCOM_PROJECTS_NOT_RECOGNIZED: &str =
+        "vua.env_managers.alcom_projects_not_recognized";
+    pub const PROJECT_PATH_MISSING: &str = "vua.env_managers.project_path_missing";
+    pub const PROJECT_MARKERS_INCOMPLETE: &str = "vua.env_managers.project_markers_incomplete";
+    pub const PROJECT_VERSION_UNPARSEABLE: &str = "vua.env_managers.project_version_unparseable";
+    pub const EDITOR_ENTRY_UNPARSEABLE: &str = "vua.env_managers.editor_entry_unparseable";
+    pub const EDITOR_ROOT_READ_FAILED: &str = "vua.env_managers.editor_root_read_failed";
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ManagerPresence {
+    Found,
+    NotFound,
+    ReadFailed,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FindingSeverity {
+    Info,
+    Warning,
+    Error,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ManagerDiagnostic {
+    pub code: &'static str,
+    pub severity: FindingSeverity,
+    pub detail: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VccCapability {
+    pub presence: ManagerPresence,
+    /// Which settings file answered (current LOCALAPPDATA location vs
+    /// legacy Roaming location).
+    pub settings_path: Option<String>,
+    /// `userProjects` is the current explicit per-project list;
+    /// `localProjectFolders` is the legacy folder-list form.
+    pub projects_source: Option<&'static str>,
+    pub user_projects: Vec<String>,
+    pub local_project_folders: Vec<String>,
+    pub error_code: Option<&'static str>,
+}
+
+/// Port: read VCC capability the way the package backend resolves it.
+/// Implemented by the project-manager adapter (`VccSettingsFileReader`);
+/// the engine owns the check item, the presence mapping and the fact
+/// rendering. Candidates stay an engine-side injection point
+/// (`EnvironmentRoots::vcc_settings_candidates`) so the resolution-order
+/// invariant is single-sourced here and tests keep the synthetic-tree
+/// pattern.
+pub trait VccSettingsReader: Send + Sync {
+    fn read_vcc_settings(
+        &self,
+        candidates: &[PathBuf],
+        diagnostics: &mut Vec<ManagerDiagnostic>,
+    ) -> VccCapability;
 }
 
 /// Candidate roots for headset runtime detection. Every list is ordered
@@ -228,6 +299,7 @@ pub struct EnvironmentEngine {
     runner: Arc<dyn ProcessRunner>,
     clock: Arc<dyn Clock>,
     roots: EnvironmentRoots,
+    vcc_reader: Arc<dyn VccSettingsReader>,
 }
 
 impl EnvironmentEngine {
@@ -235,11 +307,13 @@ impl EnvironmentEngine {
         runner: Arc<dyn ProcessRunner>,
         clock: Arc<dyn Clock>,
         roots: EnvironmentRoots,
+        vcc_reader: Arc<dyn VccSettingsReader>,
     ) -> Self {
         Self {
             runner,
             clock,
             roots,
+            vcc_reader,
         }
     }
 
@@ -718,19 +792,19 @@ impl EnvironmentEngine {
         }
     }
 
-    /// VCC capability, reading the same settings resolution order the
-    /// package backend uses. Counts only: project paths stay in the
-    /// spike snapshot, not in the deployer card facts.
+    /// VCC capability, read through the `VccSettingsReader` port
+    /// (project-manager adapter) with the engine's configured candidate
+    /// roots. Counts only: project paths stay in the spike snapshot, not
+    /// in the deployer card facts.
     fn check_vcc(&self) -> EnvironmentCheckItemV1 {
         let mut diagnostics = Vec::new();
-        let capability = environment_managers::read_vcc_settings(
-            &self.roots.vcc_settings_candidates,
-            &mut diagnostics,
-        );
+        let capability = self
+            .vcc_reader
+            .read_vcc_settings(&self.roots.vcc_settings_candidates, &mut diagnostics);
         let presence = match capability.presence {
-            environment_managers::ManagerPresence::Found => EnvironmentPresence::Detected,
-            environment_managers::ManagerPresence::NotFound => EnvironmentPresence::NotDetected,
-            environment_managers::ManagerPresence::ReadFailed => {
+            ManagerPresence::Found => EnvironmentPresence::Detected,
+            ManagerPresence::NotFound => EnvironmentPresence::NotDetected,
+            ManagerPresence::ReadFailed => {
                 EnvironmentPresence::DetectionFailed
             }
         };
