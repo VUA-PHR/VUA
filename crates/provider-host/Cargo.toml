@@ -1,21 +1,26 @@
 [package]
-name = "vua-orchestrator"
+name = "vua-provider-host"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Local-first VUA orchestration core for Recipe-first AMF workflows."
+description = "Supervised provider process host: composition root serving the versioned application contract."
 license = "Apache-2.0"
 
 [lib]
 path = "src/lib.rs"
 
+[[bin]]
+name = "vua-orchestrator-provider"
+path = "src/bin/vua-orchestrator-provider.rs"
+
 [dependencies]
-rusqlite = { version = "=0.40.1", features = ["bundled"] }
-scraper = "0.27.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.11.0"
 vua-bdl-store = { path = "../bdl-store" }
+vua-orchestrator = { path = "../orchestrator" }
+vua-project-manager = { path = "../project-manager" }
+vua-unity-bridge = { path = "../unity-bridge" }
 
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "=0.61.2", features = [
@@ -29,4 +34,5 @@ windows-sys = { version = "=0.61.2", features = [
 ] }
 
 [dev-dependencies]
-jsonschema = "0.52.1"
+flate2 = "1"
+tar = "0.4"

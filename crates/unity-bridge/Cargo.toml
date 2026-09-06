@@ -1,0 +1,23 @@
+[package]
+name = "vua-unity-bridge"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "Unity Bridge adapter and the material production pipeline (intake, staging, execution, documents)."
+license = "Apache-2.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+flate2 = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.11.0"
+tar = "0.4"
+vua-orchestrator = { path = "../orchestrator" }
+zip = { version = "4.6", default-features = false, features = ["deflate"] }
+
+[dev-dependencies]
+jsonschema = "0.52.1"
+vua-project-manager = { path = "../project-manager" }

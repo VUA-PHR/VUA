@@ -286,7 +286,7 @@ fn orc_typ_005_download_event_examples_validate_against_the_frozen_schema() {
 /// 与 Rust 枚举互相钉死。
 #[test]
 fn orc_typ_005_bdl_query_examples_validate_against_the_frozen_schemas() {
-    use vua_orchestrator::BdlQueryOperation;
+    use vua_bdl_store::BdlQueryOperation;
 
     let dir = bdl_queries_dir();
     let query_schema: serde_json::Value =

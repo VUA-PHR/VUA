@@ -5,82 +5,44 @@
 // errors would leak through serde shapes for no wire benefit.
 #![allow(clippy::result_large_err)]
 
-mod artifact_inspection;
 mod assembly;
-mod bdl_queries;
-mod bdl_store;
 mod booth_extraction;
-mod bridge;
 mod build_record;
 mod capability;
 mod contracts;
-mod download_events;
 mod editor_targets;
 mod environment;
 mod environment_managers;
 mod filesystem;
 mod journal;
-mod local_vpm_artifact;
-mod material_identity;
-mod material_intake;
-mod material_task;
-mod material_exec;
-mod material_staging;
+mod material_types;
 mod model;
 mod process;
-mod production_documents;
 mod project_identity;
-mod project_lock;
-mod provider_host;
-#[cfg(windows)]
-mod provider_job;
 mod provision;
 mod recipe;
 mod runtime;
 mod sqlite_task_store;
-mod staging_scaffold;
 mod state_file;
 mod time;
 mod tools;
 mod vpm;
 mod vpm_backend;
-mod warehouse_import;
-mod warehouse_maintenance;
 mod win_registry;
 mod workflow;
 
-pub use artifact_inspection::{
-    ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
-    InspectionPolicy, StagingRejection,
-};
 pub use assembly::{
     error_codes as assembly_error_codes, AssemblyConfirmation, AssemblyEngine, AssemblyOperation,
-    AssemblyPlanV1, AssemblyStepV1, UnityBridge,
-};
-pub use bdl_queries::{
-    availability_status, ArtifactInspectionVerdict, AvailabilityStatus, BdlQueryOperation,
-    CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
-};
-pub use bdl_store::{
-    ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
-    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole, EventAppendence,
-    NewLocalArtifact, StoredArtifact, StoredArtifactCopy, StoredDownloadEvent,
-    StoredWarehouseItem, WarehouseArtifactFact, WarehouseArtifactRef, WarehouseEntryCard,
-    WarehouseEntryDetail, WAREHOUSE_ITEM_KINDS, BDL_FORMAT_VERSION,
+    AssemblyPlanV1, AssemblyStepV1, BridgeError, UnityBridge,
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
-pub use bridge::{BridgeError, UnityBatchBridge};
 pub use build_record::{
     wire_v02, BridgeJobEvidenceV01, BridgeSummary, BuildRecordStatus, BuildRecordStore,
     BuildRecordV01, BuildRecordWireV02, BuildSnapshotEvidenceV01, BuildValidationEvidenceV01,
     EvidenceSummary, LocalVpmEvidenceV01, LocalVpmSummary, SnapshotSummary, ValidationSummary,
     BUILD_RECORD_SCHEMA_VERSION, PRODUCTION_STAGES,
-};
-pub use production_documents::{
-    build_inspection_document, build_plan_document, InspectionDocument, InspectionFinding,
-    InspectionFindingKind, PlanDocument, Plannability,
 };
 pub use capability::{
     CapabilityRegistry, CapabilityReport, CapabilitySource, CapabilityState, UnavailableSource,
@@ -88,12 +50,6 @@ pub use capability::{
 pub use contracts::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
     TaskState, ENVELOPE_SCHEMA_VERSION,
-};
-pub use download_events::{
-    backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
-    DownloadEventKind, DownloadEventV01, DownloadFailureKind, DownloadLifecycle, DownloadPhase,
-    IngestOutcome, RetryDecision, StagingCompletion, DOWNLOAD_EVENT_SCHEMA_VERSION,
-    MAX_DOWNLOAD_ATTEMPTS,
 };
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
@@ -118,24 +74,9 @@ pub use journal::{
     JournalSink, JournalWriter, MemoryJournal, RecoveredDisposition, RecoveredTask, RecoveryReport,
     JOURNAL_SCHEMA_VERSION,
 };
-pub use local_vpm_artifact::{publish_local_vpm_artifact, PublishedLocalVpmArtifact};
-pub use material_identity::{LocalPackageIdentity, LocalPackageIdentityStore};
-pub use material_intake::{
-    error_codes as material_intake_error_codes, ExecutableRiskEvidence, ExecutableRiskKind,
-    MaterialEntryMode, MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
-    MaterialIntakeStepKind, MaterialIntakeStepV01, RiskDecisionChoice, RiskDecisionV01,
-    SourceFolderInspectionV01, SourcePackageEvidenceV01,
-};
-pub use material_exec::{
-    error_codes as material_exec_error_codes, MaterialCancelToken, MaterialExecutionReport,
-    MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
-};
-pub use material_task::{
-    material_intake_job, submit_material_intake, MaterialIntakeTaskSpec, MaterialTaskResult,
-};
-pub use material_staging::{
-    staging_root, StagingProject, STAGING_MANIFEST_JSON, STAGING_PROJECT_VERSION_TXT,
-    STAGING_TEMPLATE_VERSION, STAGING_UNITY_VERSION,
+pub use material_types::{
+    DeclaredDependencyV01, ExecutableRiskEvidence, ExecutableRiskKind, MaterialEntryMode,
+    RiskDecisionChoice, SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use model::*;
 pub use process::{
@@ -143,27 +84,11 @@ pub use process::{
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,
 };
 pub use project_identity::{ProjectIdentity, ProjectIdentityError};
-pub use project_lock::{
-    acquire_project_lock, begin_mutation, read_pending_mutation, LockEnvelopeV1, LockHolder,
-    MutationMarkerGuard, MutationMarkerV1, PendingMutation, ProjectLockError, ProjectLockGuard,
-    MUTATION_MARKER_SCHEMA_VERSION, PROJECT_LOCK_SCHEMA_VERSION, LOCK_FILE_NAME,
-    MARKER_FILE_NAME,
-};
-pub use provider_host::{
-    production_config_from_env, run_provider_host, run_provider_host_with,
-    run_provider_host_with_downloads, DownloadConfig, ProductionConfig, ProviderHostError,
-    PROVIDER_FRAME_VERSION,
-};
-#[cfg(windows)]
-pub use provider_job::ProviderJobGuard;
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
 pub use recipe::*;
 pub use runtime::{
     recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRecoveryDisposition,
     TaskRuntime, TaskSnapshot,
-};
-pub use staging_scaffold::{
-    MA_STUB_ASMDEF, MA_STUB_COMPONENTS_CS, MA_STUB_PACKAGE_ID, MA_STUB_PACKAGE_JSON,
 };
 pub use sqlite_task_store::{
     IdempotentCancellation, IdempotentTaskAcceptance, NewTask, ProjectMutationLease,
@@ -180,20 +105,10 @@ pub use tools::{
     registry_ids, ProbeRoot, ToolCardV1, ToolProbe, ToolRegistration, ToolsEngine, ToolsRoots,
     TOOL_REGISTRY,
 };
-pub use vpm::{InstallConfirmation, InstallPlanV1, InstallRequest, PlanStepV1, VpmEngine};
+pub use vpm::{fnv1a_hex, InstallConfirmation, InstallPlanV1, InstallRequest, PlanStepV1, VpmEngine};
 pub use vpm_backend::{
-    backends_summary, create_from_template, error_codes as vpm_backend_error_codes, ChangeItemV1,
-    ChangeKindV1, ChangePreviewV1, PackageRequestV1, VccCliBackend, VpmBackend, VpmCapabilities,
-    VrcGetLibBackend,
-};
-pub use warehouse_import::{
-    submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
-    SkippedSourceFile, WarehouseImportReport, WarehouseImportTaskResult, WarehouseImporter,
-    WarehouseImportTaskSpec, IMPORT_ENTRY_KIND,
-};
-pub use warehouse_maintenance::{
-    generate_vpm_job, submit_delete_originals, submit_generate_vpm, DeleteOriginalsResult,
-    DeleteOriginalsTaskSpec, GenerateVpmResult, GenerateVpmTaskSpec, MaintenanceError,
+    error_codes as vpm_backend_error_codes, ChangeItemV1, ChangeKindV1, ChangePreviewV1,
+    InstalledPackageV1, PackageRequestV1, RegisteredProjectV1, VpmBackend, VpmCapabilities,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

@@ -2823,21 +2823,81 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5c3082ca00d5a5ef149bb8b555a72ae84c9c59f7250f013ac822ac2e49b19c64"
 
 [[package]]
+name = "vua-acquisition"
+version = "0.1.0"
+dependencies = [
+ "serde",
+ "serde_json",
+ "sha2",
+ "vua-bdl-store",
+ "vua-orchestrator",
+ "vua-unity-bridge",
+]
+
+[[package]]
+name = "vua-bdl-store"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "vua-orchestrator"
 version = "0.1.0"
 dependencies = [
- "flate2",
  "jsonschema",
- "reqwest",
  "rusqlite",
  "scraper",
  "serde",
  "serde_json",
  "sha2",
- "tar",
+ "vua-bdl-store",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "vua-project-manager"
+version = "0.1.0"
+dependencies = [
+ "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
  "vrc-get-vpm",
+ "vua-orchestrator",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "vua-provider-host"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "vua-bdl-store",
+ "vua-orchestrator",
+ "vua-project-manager",
+ "vua-unity-bridge",
+ "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "vua-unity-bridge"
+version = "0.1.0"
+dependencies = [
+ "flate2",
+ "jsonschema",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tar",
+ "vua-orchestrator",
+ "vua-project-manager",
  "zip",
 ]
 

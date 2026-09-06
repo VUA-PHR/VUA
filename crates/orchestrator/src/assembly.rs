@@ -53,7 +53,6 @@
 //! 幂等（不重复创建 MA 组件）由 Unity 包负责，引擎用 marker 保证
 //! 整计划级不重跑。
 
-use crate::bridge::{BridgeError, UnityBatchBridge};
 use crate::contracts::{AppErrorV1, ErrorCategory, ParamValue};
 use crate::filesystem::{project_tree_fingerprint, FileSystemSnapshotStore};
 use crate::recipe::{
@@ -67,6 +66,7 @@ use crate::{
 };
 use serde_json::{json, Value};
 use std::collections::BTreeMap;
+use std::fmt::{Display, Formatter};
 use std::io;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -85,6 +85,36 @@ pub mod error_codes {
     pub const MARKER_FAILED: &str = "vua.assembly.marker_failed";
 }
 
+#[derive(Debug)]
+pub enum BridgeError {
+    Io(io::Error),
+    UnityFailed(Option<i32>),
+    /// The Unity process hit its wall-clock budget and was killed.
+    TimedOut,
+    MissingResult,
+    InvalidResult(serde_json::Error),
+}
+
+impl Display for BridgeError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Io(_) => write!(formatter, "bridge file operation failed"),
+            Self::UnityFailed(code) => write!(formatter, "Unity exited unsuccessfully ({code:?})"),
+            Self::TimedOut => write!(formatter, "Unity did not finish within the budget"),
+            Self::MissingResult => write!(formatter, "Unity did not write a bridge result"),
+            Self::InvalidResult(_) => write!(formatter, "Unity wrote an invalid bridge result"),
+        }
+    }
+}
+
+impl std::error::Error for BridgeError {}
+
+impl From<io::Error> for BridgeError {
+    fn from(value: io::Error) -> Self {
+        Self::Io(value)
+    }
+}
+
 /// The Unity execution port; fakes implement this for consumer tests
 /// (ORC-DEV-003), the batchmode bridge implements it in production.
 pub trait UnityBridge: Send + Sync {
@@ -93,16 +123,6 @@ pub trait UnityBridge: Send + Sync {
         project: &ProjectRef,
         command: &UnityCommand,
     ) -> Result<UnityResult, BridgeError>;
-}
-
-impl UnityBridge for UnityBatchBridge {
-    fn execute(
-        &self,
-        project: &ProjectRef,
-        command: &UnityCommand,
-    ) -> Result<UnityResult, BridgeError> {
-        UnityBatchBridge::execute(self, project, command)
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

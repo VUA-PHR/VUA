@@ -1,0 +1,15 @@
+[package]
+name = "vua-bdl-store"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "BDL store: AMF-private local persistence schema, query model and download event log."
+license = "Apache-2.0"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+rusqlite = { version = "=0.40.1", features = ["bundled"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

@@ -1,0 +1,19 @@
+//! Supervised provider process host: the composition root that serves the
+//! versioned application contract over stdio frames.
+
+// AppErrorV1 is a deliberately fat value type: it carries the localization
+// key, params and redacted context through IPC, events and the journal. Boxed
+// errors would leak through serde shapes for no wire benefit.
+#![allow(clippy::result_large_err)]
+
+pub mod provider_host;
+#[cfg(windows)]
+pub mod provider_job;
+
+pub use provider_host::{
+    production_config_from_env, run_provider_host, run_provider_host_with,
+    run_provider_host_with_downloads, DownloadConfig, ProductionConfig, ProviderHostError,
+    PROVIDER_FRAME_VERSION,
+};
+#[cfg(windows)]
+pub use provider_job::ProviderJobGuard;
