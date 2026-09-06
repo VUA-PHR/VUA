@@ -2,9 +2,11 @@
 
 [English](system_EN.md) | [简体中文](system_ZH.md)
 
-> Status: Accepted  
-> Scope: Entire VUA system  
-> Updated: 2026-09-02  
+> Document version: 1.0.0
+> Status: Accepted
+> Authoritative language: 简体中文 (this English edition mirrors system_ZH.md at 1.0.0)
+> Scope: Entire VUA system
+> Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## Shape
@@ -36,6 +38,91 @@ The Kernel owns bootstrap, Gateway, Provider lifecycle, and desktop security enf
 not own a generic business-module system. Product rules reside in application and domain layers.
 Orchestrator is the business-state authority for recoverable workflows; AMF owns Avatar production
 and exclusively reaches BDL; Unity Bridge executes already approved Unity work.
+
+## Code-structure reality (reviewed 2026-09-06)
+
+The Cargo workspace currently has a single member: `crates/orchestrator` (about 26.8k lines of
+Rust). Every Orchestrator module hangs off `src/lib.rs` as a `mod`; the six empty placeholder crate
+directories were deleted on 2026-09-06, so the structure no longer pretends a multi-crate shape.
+Modules, grouped by domain:
+
+- **Application core and runtime:** `runtime`, `workflow`, `model`, `contracts` (application
+  contract types and errors), `capability`, `time`;
+- **Persistence and recovery:** `sqlite_task_store` (authoritative task state), `journal`,
+  `state_file` (transitional format), `filesystem` (project/snapshot stores);
+- **Provider process boundary:** `provider_host`, `process`, `provider_job` (Windows Job Object),
+  plus the supervised Provider binary `src/bin/vua-orchestrator-provider.rs`;
+- **AMF production:** `recipe/` (model/read_model/share/validate), `assembly`, `build_record`,
+  `production_documents`, `editor_targets`, `project_identity`, `project_lock`, `provision`,
+  `staging_scaffold`;
+- **Material and Unity Bridge:** `bridge`, `material_intake`, `material_exec`, `material_staging`,
+  `material_identity`, `material_task`, `local_vpm_artifact`, `artifact_inspection`;
+- **Acquisition and BDL:** `download_events`, `booth_extraction`, `warehouse_import`,
+  `warehouse_maintenance`, `bdl_store`, `bdl_queries`;
+- **Project and environment:** `vpm`, `vpm_backend`, `environment`, `environment_managers`,
+  `win_registry`, `tools`.
+
+"BDL is AMF-private" is currently upheld by calling discipline without structural enforcement; the
+target crate layout gives it enforcement through the `bdl-store` crate.
+
+## Provider process boundary
+
+The accepted hosting decision is a **supervised independent-process Provider** (ADR:
+[Supervised independent-process Orchestrator Provider](../decisions/orchestrator-supervised-provider_EN.md)):
+
+- the Provider runs as the separate `vua-orchestrator-provider` binary, started, supervised, and
+  shut down by the Kernel inside Electron Main;
+- inter-process communication uses the versioned frame protocol
+  ([Supervised Provider Process Protocol v0.1](../protocols/provider-process-v0.1_EN.md)) with
+  handshake, version negotiation, a single-instance lock, and explicit shutdown semantics;
+- the Windows child process tree is contained in a Job Object (`provider_job`), so a Provider crash
+  cannot take down the desktop process;
+- authoritative task state lives in SQLite ([Task Store Format v0.1](../protocols/task-store-v0.1_EN.md));
+  after a Provider restart, recovery reads persistent state and non-terminal tasks surface as
+  `inspect_required` awaiting an explicit decision;
+- Provider replacement happens only at an idle shutdown boundary. In-process native and
+  supervised-process Providers implement the same versioned application contract; the hosting model
+  is replaceable and is not a product invariant.
+
+## Target crate layout (accepted decision, transition in progress)
+
+The user has ruled to split the single crate along the existing code seams (governance reform
+§6.1). Target layout:
+
+| Crate | Contents (current location) | Reason |
+| --- | --- | --- |
+| `orchestrator` (core, retained) | task runtime, cancellation/recovery, use cases, domain ports, application contract types | single application core |
+| `bdl-store` (first) | `bdl_store`, `bdl_queries`, BDL SQLite schema/migrations | own persistent schema, closest to an independent data module; "AMF-private" gains structural enforcement |
+| `unity-bridge` | `bridge`, `material_intake`/`material_exec`/`material_staging`, `staging_scaffold` | same lifecycle as the C# package and Bridge schemas |
+| `provider-host` | `provider_host`, `process`, `provider_job` | already a separate binary boundary |
+| `acquisition` | `download_events`, `warehouse_import`, `warehouse_maintenance`, `artifact_inspection` | download/warehouse domain with its own state machine |
+| `project-manager` | `vpm_backend`, `environment_managers`, `project_lock` | project/environment adapters for external tools |
+
+Dependency direction: domain types and ports stay in the core; adapter crates depend on the core;
+the core never depends on adapter implementations; cargo enforces acyclicity. The split executes in
+the order `bdl-store` → `unity-bridge` → `provider-host` → `acquisition` → `project-manager`, one
+purely mechanical move commit per crate (sources and tests move together, behavior unchanged). Until
+the split lands, new modules are assigned by this table and must not keep growing the orchestrator
+core.
+
+## Collaboration and worktrees
+
+The coordination substrate is version-controlled at the repository root in `collab/` (mechanism:
+`collab/README.md`):
+
+- `collab/BOARD.md`: global board (M-gate status, frozen-contract table, cross-tree open questions),
+  maintained by the integration tree after gates and merges;
+- `collab/state/wt-N.md`: one overwrite-style state file per active worktree;
+- `collab/proposals/`: single-file proposals for contract changes and cross-tree needs, with the
+  discussion thread inline.
+
+Worktrees are numbered, not role-bound. The `VUA` main checkout holds the `.git` directory, stays on
+the integration branch `main`, and never moves; linked worktrees are named `VUA-2`, `VUA-3`, … and
+may host any slice. Work proceeds in vertical slices on `slice/<slug>` branches (lifetime ≤3 days,
+≤15 commits behind `main`); schemas and contracts align only through git merges — manual copying is
+forbidden. Run `pnpm collab:brief` before starting work to read blockers and messages routed to this
+worktree or your role. Coordination conclusions count only in `collab/`; `docs/plans/` is a local
+scratch area.
 
 ## Dependency direction
 
@@ -91,3 +178,12 @@ Offline mode preserves local recovery and Unity work. Missing or incompatible to
 capability result and manual path. Accepted tasks survive UI, browser, and overlay reloads. Unknown
 protocol versions enter read-only inspection or manual handoff. Diagnostics redact accounts, home
 paths, tokens, cookies, and paid-asset filenames by default.
+
+## Document changelog
+
+- 1.0.0 (2026-09-06): entered version management and was rewritten against reality. Added the
+  code-structure reality section (single-crate module inventory), the Provider process boundary
+  section, the target crate layout (accepted split decision), and the collaboration/worktree
+  numbering section; removed the structural fiction left after the empty placeholder crate
+  directories were deleted; the existing component-boundary, dependency-direction,
+  interaction-model, data-ownership, and degradation sections are retained.
