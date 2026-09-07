@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.7
+> Document version: 2.0.8
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.7)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.8)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -88,34 +88,26 @@ Responsibility rules:
    The paired-letter coordination mode under `docs/plans/` is abolished; plans/ is a local scratch
    area only and carries no coordination authority.
 
-## Current window (M3 wrap-up and in-flight M4 work)
+## Current window (M5: Recipe and the AMF production mainline, v0.7.0)
 
-> Snapshot date: 2026-09-08 (2.0.5 update: W17 delivered across the chain — desktop surfacing
-> c93ac5e + data write face 73cae1b; W12 closed across the full chain; the M4 gate acceptance
-> awaits only the W15 user walkthrough).
+> Snapshot date: 2026-09-08 (2.0.8 update: **M4 closed (v0.6.0, 2026-09-08)** — W12–W17
+> delivered across the chain, W15 re-review passed + both fix items landed + user
+> confirmation; M5 opens, the M4 task table is fully settled in the M4 section).
 > Every task
 > in this window is decomposed to a role; once complete, the
-> Integration role accepts them and advances the M3/M4 gates.
+> Integration role accepts them and advances the M5 gate.
 
 | # | Task | Owning role | Collaborators | Anchor / acceptance |
 | --- | --- | --- | --- | --- |
-| W1 | I-1 real-Unity matrix (16 cells: two paths × eight lifecycles) | Production | Core | `docs/plans/m3-i1-real-matrix-plan_ZH.md`; **the only remaining M3 gate item**; requires a real-machine window and lawful-asset environment variables |
-| W2 | Frame-protocol v0.1 handshake Schema + paired vectors | Core | Desktop | `collab/proposals/001-handshake-schema.md` |
-| W3 | bdl-queries v0.3 TS mirror adds `ageRestriction` + regression tests | Data | Desktop | `collab/proposals/002-age-restriction-mirror.md` |
-| W4 | Add tests for generate-VPM / delete-originals / set_artifact_mode | Data | — | `collab/proposals/003-generate-vpm-tests.md` |
-| W5 | environment_managers split ruling and execution | Environment | Core | `collab/proposals/004-environment-managers-split.md` |
-| W6 | F4-7 Warehouse/acquisition walkthrough loop | Desktop | Data | F4 slice site |
-| W7 | F4-8 acceptance matrix + BOOTH login/purchase allowlist review | Desktop | Data, Integration | gate acceptance checklist |
-| W8 | B4 generation-stream closure + artifact-mode three-command protocol registration | Data | Core | protocol-freeze hard precondition (Schema + vectors + consumption tests) |
-| W9 | F4-9 artifact-mode three-command UI | Desktop | Core | depends on the W8 protocol freeze |
-| W10 | Freeze production-use-case v0.1 (at M3 acceptance) | Core | Production, Desktop | M3 candidate → freeze; per the freeze hard precondition |
-| W11 | M3 closure: v0.5.0 tag, remote establishment, three CI workflows, Release | Integration | All | **✅ Executed (2026-09-07)**: v0.5.0 tag + remote + backfilled v0.4.0–v0.4.2 tags + GitHub Release + glm/* branch cleanup; three CI workflows landed (schema-vectors green; rust/ts first runs exposed in-domain defects #7/#8, tracked on BOARD) |
-| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | **✅ Closed across the full chain**: service face 6062a13 + provider routes 80ad6e7 + consumer alignment 5fd8c6b (application codes + four-language keys) |
-| W13 | Warehouse layout rework (adaptive columns + right-side details region) | Desktop | — | **✅ Merged (88b4551)**; U7 acceptance walkthrough awaits the user batch |
-| W14 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | **✅ Delivered and frozen (bdl-commands v0.2, 6062a13)**; route registration awaits core |
-| W15 | Settings-Experimental full form (two-option entry) | Desktop | Data | **Unlocked** (W14 frozen + dependencies in main); acceptance = user walkthrough |
-| W16 | Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | **✅ Delivered (design standard v0.6.2, 88b4551)** |
-| W17 | Observation-pipeline write side (observation data written into the BDL products table; with the errors.catalog.* pass-through surfacing inside the catalog view) | Data | Desktop | **✅ Delivered across the chain**: data write face eb899f1 (merged 73cae1b: full-column products upsert + catalog_updated_seq bookkeeping + catalog consumption of observation columns + 9 consumer tests) + desktop surfacing 869519b (merged c93ac5e) |
+| W18 | **M5 first batch**: proposal 008 path-a wiring — the "delete original material after generation" toggle = a desktop local preference; after the generate Done receipt, call the existing `warehouse.deleteOriginals` entry by entry (each deletion an independently audited task) | Desktop | Core, Data | proposal 008 accepted (integration ruling, 2026-09-08); authority boundary = desktop holds only the initiation timing, execution/guards/audit stay in the provider task face |
+| W19 | **M5 first batch (merged design)**: import-time automatic-generation hook and orchestration semantics (the semantics of starting the generate task inside the import flow; desktop presentation + core/data task-face semantics designed in one batch) | Desktop | Core, Data | product-boundary 1.2.1 trigger-timing semantics; honest labeling removed when wired |
+| W20 | Recipe v0.3, Local Resolution, version locks | Core | Data | existing M5 table row |
+| W21 | Unity Bridge operation extensions (dry-run, idempotency, recovery) and the C# implementation | Production | Core | existing M5 table row |
+| W22 | Full Build Record (plan diff, evidence digest) | Core | Production | existing M5 table row |
+| W23 | Compatibility/missing-evidence model | Data | Core | existing M5 table row |
+| W24 | Recipe/Assembly workbench (shared selection and domain semantics across three views) | Desktop | Core | existing M5 table row |
+| W25 | Lawful self-owned asset smoke path and reproducibility | Production | Integration | existing M5 table row; real-machine window and lawful-asset environment variables |
+| W26 | Gate acceptance and release (v0.7.0) | Integration | All | per the M4 closure precedent: document review → gate-item verification → version/release/push |
 
 ## M sequence: Main integration and delivery
 
@@ -253,7 +245,7 @@ history):
   inspection; update the version and release notes to `0.6.0`.
 
 Task breakdown (M4 allocation audit 2026-09-07: historical progress verified item-by-item
-before updating):
+before updating; settled at closure, 2026-09-08):
 
 | Task | Owning role | Collaborators | Status |
 | --- | --- | --- | --- |
@@ -265,11 +257,11 @@ before updating):
 | Generation stream (generate-VPM etc.) and the three-command protocol | Data | Core | ✅ Delivered (W8/W9: bdl-commands v0.1.1 full chain) |
 | Catalog observation-pipeline service face | Data | Desktop | ✅ Closed across the full chain (W12: service face 6062a13 + routes 80ad6e7 + consumer 5fd8c6b) |
 | Observation-pipeline write side (products-table writes) + surfacing | Data | Desktop | ✅ Delivered across the chain (W17: write face 73cae1b + surfacing c93ac5e) |
-| Warehouse layout rework (adaptive columns + right-side details) | Desktop | — | ✅ Merged (W13, 88b4551); acceptance walkthrough awaits the user batch |
-| bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | ✅ Delivered and frozen (W14, bdl-commands v0.2) |
-| Settings-Experimental full form (two-option entry) | Desktop | Data | W15 unlocked (depends on W14 ✅); acceptance = user walkthrough |
-| Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | ✅ Delivered (W16, design standard v0.6.2) |
-| Gate acceptance and release | Integration | All | M3 closed (v0.5.0); M4 acceptance per gate order — W15 and W12 closure remain |
+| Warehouse layout rework (adaptive columns + right-side details) | Desktop | — | ✅ Merged (W13, 88b4551); confirmed by the user with the M4 closure (2026-09-08) |
+| bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | ✅ Delivered and frozen (W14, bdl-commands v0.2); provider route registration complete (core 10325cd) |
+| Settings-Experimental full form (two-option entry) | Desktop | Data | ✅ **Closed (W15)**: first walkthrough failed → reworked per the user sketch (global-toggle form, 4fb6411) + fix batch (trigger timing = material-import semantics + "VPM package replacement" wording + honest not-wired labeling, 2fa260d) → second-round re-review passed + user confirmation closed the gate (2026-09-08) |
+| Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | ✅ Delivered (W16, design standard v0.6.2; 0.6.3 reworked with the W15 redo) |
+| Gate acceptance and release | Integration | All | ✅ **M4 closed (v0.6.0, 2026-09-08)**: W12–W17 full-chain evidence + CI/full-suite green + 008 ruling path a + re-review passed + user confirmation |
 
 ### M5 — v0.7.0: Recipe and the AMF production line
 
@@ -282,17 +274,20 @@ before updating):
 - **Delivery:** reproduce a lawfully held local smoke path of one Avatar plus one outfit; update the
   version and release notes to `0.7.0`.
 
-Task breakdown:
+Task breakdown (M5 opened 2026-09-08: historical progress verified — no pre-deliveries —
+then landed into the current window as W18–W26; the desktop M5 first batch is the proposal
+008 wiring plus the import-time hook merged design):
 
-| Task | Owning role | Collaborators |
-| --- | --- | --- |
-| Recipe v0.3, Local Resolution, version locks | Core | Data |
-| Unity Bridge operation expansion (dry-run, idempotency, recovery) with the C#-side implementation | Production | Core |
-| Complete Build Record (plan diffs, evidence summary) | Core | Production |
-| Compatibility / missing-evidence model | Data | Core |
-| Recipe/Assembly workbench (three views sharing selection and domain semantics) | Desktop | Core |
-| Lawfully held asset smoke path and reproduction | Production | Integration |
-| Gate acceptance and release | Integration | All |
+| Task | Owning role | Collaborators | Current-window row |
+| --- | --- | --- | --- |
+| Recipe v0.3, Local Resolution, version locks | Core | Data | W20 |
+| Unity Bridge operation expansion (dry-run, idempotency, recovery) with the C#-side implementation | Production | Core | W21 |
+| Complete Build Record (plan diffs, evidence summary) | Core | Production | W22 |
+| Compatibility / missing-evidence model | Data | Core | W23 |
+| Recipe/Assembly workbench (shared selection and domain semantics across three views) | Desktop | Core | W24 |
+| Lawful self-owned asset smoke path and reproducibility | Production | Integration | W25 |
+| 008 path-a wiring (delete originals after generation) + import-time automatic-generation hook and orchestration semantics (merged design, M5 first batch) | Desktop | Core, Data | W18/W19 |
+| Gate acceptance and release | Integration | All | W26 |
 
 ### M6 — v0.8.0: Project management and environment deployment
 
@@ -480,6 +475,14 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.8 (2026-09-08): **M4 closure + M5 opening landed** — the current window is rewritten as
+  M5 (W18–W26: desktop M5 first batch = 008 path-a wiring + import-time hook merged design;
+  core Recipe v0.3/Local Resolution/version locks/full Build Record; production Bridge
+  operation extensions/lawful asset smoke path; data compatibility/missing-evidence model);
+  the M4 task table is fully settled (W15 closed: rework → re-review passed → fix batch →
+  user confirmation; W13 confirmed by the user with the closure; W14 route-registration note);
+  the trigger-timing semantics (at material import) landed in product-boundary 1.2.1 with the
+  re-review fixes; bilingual sync.
 - 2.0.7 (2026-09-08): U3 ruling anchors landed — the M6 table row for F6 and the F6 reference
   line now note the ALCOM/VCC read-only compatibility surface (write handoff and the explicit
   "import as a VUA-managed copy" entry; authoritative semantics in product-boundary 1.2.0;

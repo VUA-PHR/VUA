@@ -6,6 +6,6 @@
  */
 export const appMeta = {
   name: "vua-desktop",
-  version: "0.5.0",
+  version: "0.6.0",
   repoUrl: "https://github.com/VUA-PHR/VUA",
 } as const;

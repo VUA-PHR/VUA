@@ -326,7 +326,7 @@ describe("amf-production v0.2 routing", () => {
   function productionContext(provider: DesktopGatewayRouteContext["provider"]): DesktopGatewayRouteContext {
     return {
       provider,
-      productVersion: "0.5.0",
+      productVersion: "0.6.0",
       platform: "win32",
       rendererUrl,
       resolveMaterialSource: (refId) => (refId === "mat-1" ? quad : undefined),
