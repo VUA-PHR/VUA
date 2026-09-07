@@ -198,6 +198,8 @@ function toApplicationRequest(
       return { ...base, kind: "command", method: "warehouse.generateVpm", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId } };
     case "warehouse.deleteOriginals":
       return { ...base, kind: "command", method: "warehouse.deleteOriginals", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId } };
+    case "warehouse.setGlobalDefaultMode":
+      return { ...base, kind: "command", method: "warehouse.setGlobalDefaultMode", commandId: request.params.commandId, params: { mode: request.params.mode } };
   }
 }
 

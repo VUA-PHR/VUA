@@ -41,6 +41,7 @@ export type {
   CatalogBrowserQuery,
   CatalogDetailView,
   CatalogEntityBrief,
+  CatalogErrorKey,
   CatalogListView,
   CatalogProductDetail,
   CatalogProductSummary,

@@ -24,6 +24,11 @@ export interface WarehouseModeSetResult {
   readonly effectiveMode: WarehouseArtifactMode;
 }
 
+/** 全局默认写入结果(bdl-commands v0.2):持久事实读回,非回显 */
+export interface WarehouseGlobalDefaultResult {
+  readonly globalDefaultMode: WarehouseArtifactMode;
+}
+
 export interface WarehouseMaintenanceAcceptance {
   readonly taskId: string;
   readonly correlationId: string;
@@ -31,6 +36,7 @@ export interface WarehouseMaintenanceAcceptance {
 
 export type WarehouseCommandOutcome =
   | { readonly ok: true; readonly result: WarehouseModeSetResult }
+  | { readonly ok: true; readonly global: WarehouseGlobalDefaultResult }
   | { readonly ok: true; readonly accepted: WarehouseMaintenanceAcceptance }
   | {
       readonly ok: false;
@@ -63,5 +69,10 @@ export interface WarehouseCommandsPort {
    * generate_vpm 且生成副本在场,守卫在服务端)
    */
   deleteOriginals(warehouseItemId: string): Promise<WarehouseCommandOutcome>;
+  /**
+   * 写全局默认产物模式(bdl-commands v0.2 两级选项的全局层;同步受理,
+   * 回执为从 BDL 读回的持久事实,非回显;无 null——全局默认恒有值)
+   */
+  setGlobalDefaultMode(mode: WarehouseArtifactMode): Promise<WarehouseCommandOutcome>;
   capability(): Promise<CapabilityReport>;
 }

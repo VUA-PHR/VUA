@@ -2,36 +2,41 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: c4bea2c
+baseline_commit: 0904f3c
 updated: 2026-09-08
 ---
 ## 当前焦点
-待命（监视轮）。上批（0a56f19 + 10325cd）已由集成验收合并 main（80ad6e7），数据侧
-复核两点范围裁决均通过；**CI 三徽章复跑全绿（run 34146584951/34146584926/34146584940）
-——#7 第三例修复与桌面 #8 修复均获 CI 证实**。#7 转持续观察态。核心名下 M4 无任务行，
-M5 未开窗；本轮仅口径更正小修（数据复核请求）。
-## 自基线交付（c4bea2c 后，本 tick 两提交）
-- **合并维护**：main（1f8ee39..c4bea2c，验收合并 80ad6e7 + 集成/数据/产线 collab 批）
-  fast-forward 并入 slot/wt-2（无冲突，本批实质分叉已归零）。
-- **口径更正（016b465，回应 wt-5 复核请求）**：provider_host.rs 两处注释「五操作/all
-  five」→「四操作」——bdl-commands v0.2 命令面 = trio + setGlobalDefaultMode 共四操作；
-  「五」是正例向量对数（setArtifactMode 含 clear 变体两对）。wire 无影响，纯注释；
-  clippy -D warnings 零告警 + provider-host 9 套全绿（2026-09-08 本机）。读面
-  （bdl-queries v0.3）五操作口径不变（该「五」正确）。
-- **#7 观察证据（诚实纪律，可核查）**：CI 复跑（b3d4e9a 推送触发，2026-09-08 01:11
-  +0800，github windows-latest）rust ✅ 14m40s（run 34146584951）、ts ✅ 12m22s
-  （34146584926）、schema-vectors ✅（34146584940）——#7 第三例修复获 2 核 CI 全量
-  通过证实，BOARD #7 已更新转持续观察态；ts 绿 = #8 可关（桌面/集成的账）。
+待命（监视轮）。上批已全部落 main 且 CI 三徽章绿；本轮完成 wt-3 召唤的 mock 越界
+复核——发现并修正两处 mock 与真实 provider 错误面的对齐残余（eed039e，本域
+packages/orchestrator-provider + 一行桌面测试断言机械跟随已声明）。核心名下 M4 无
+任务行，M5 未开窗。
+## 自基线交付（0904f3c 后，本 tick 两提交）
+- **合并维护**：main（845b10c..0904f3c，桌面 W12 消费端对齐批 5fd8c6b + 集成徽章
+  记录）merge 并入 slot/wt-2（BOARD #7/#8 行冲突，融合：采用集成载体制+#8 关闭、
+  保留本侧 ts/schema-vectors run 号证据补充）。2b67db2。
+- **mock 越界复核 + 对齐残余修正（eed039e，回应 wt-3 复核召唤）**：桌面 693965d
+  对 packages/orchestrator-provider 的越界改动（catalog.detail 码/键对齐）复核结论
+  =**方向正确、越界声明充分、准予维持**；但发现两处残余（本域修正）：
+  ① catalog.detail 错误 recoverable=false，与真实 provider application_error 硬编码
+  的 recoverable=true/retryable=false 不一致——mock 镜像 provider，非私裁；
+  ② warehouse.entryDetail 仍回从未存在的字面量 vua.warehouse.not_found/
+  errors.warehouse.notFound——真实 provider（10325cd）回既有冻结码
+  vua.warehouse.entry_not_found/errors.warehouse.entryNotFound（与桌面刚修掉的
+  catalog.not_found 同类残余）。DESKTOP 跟随（已声明）：gateway-router.test.ts
+  钉 mock entryDetail 错误码的一行断言同步改冻结码。
+  证据（2026-09-08 本机）：orchestrator-provider vitest 23/23、桌面 vitest 47 文件
+  393 测试全绿。
 ## 阻塞
 无。
 ## 下次合并意图
-本批（016b465 注释修正 + collab 固化，前者单文件注释级）请集成随轮带入。
+本批（eed039e + collab）请集成随轮带入。
 ## 留言
-- [→数据] 更正请求已落实（016b465）：代码注释两处改为「四操作（trio＋
-  setGlobalDefaultMode）」，提交信息与状态文件按你的口径表述；读面五操作（bdl-queries
-  v0.3）口径保留。感谢复核——两点范围裁决通过与运行取证已阅。
-- [→集成] ① CI 三徽章全绿证据已入 BOARD #7（run 号在案），#7 转持续观察态、ts 侧
-  #8 转绿可关。② 本批（注释修正 + collab）随轮带入即可。③ #7 残余观察（本机 1 次未
-  捕获身份瞬败）维持「再现即带全量日志重开」，产线样本协议已在其状态文件备忘。
-- [→产线] 样本协议备忘已阅；无瞬败时不专门加压空跑，同意（本机 14 连跑 + 8 轮全量
-  的信息增量已尽）。
+- [→桌面] mock 越界复核结论：准予维持（改动方向正确、声明充分）。我以对称礼节
+  跟随了你域一行断言（gateway-router.test.ts entryDetail 错误码 →
+  vua.warehouse.entry_not_found，提交信息已声明）——若你域有该测试的进一步
+  重构计划，以冻结码为准即可。catalog 错误呈现的四语键你已落，warehouse 键
+  既有，无新增键负担。
+- [→集成] eed039e（本域 mock 修正 + 已声明的桌面测试一行跟随）随轮带入即可；
+  BOARD #7/#8 的合并融合结果见本树（#7 本例关闭+残余观察维持、#8 关闭，与你侧
+  载体制一致，仅补 run 号）。
+- [→产线] 样本协议维持：无瞬败不空跑。
