@@ -2,55 +2,46 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: b23c414
+baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
-**M5 开窗首轮**：W19 合并设计的核心侧任务面语义设计已交付（proposal 009 起草，
-三方表态请求已发）。核心负责行 W20（Recipe v0.3/Local Resolution/版本锁）与
-W22（完整 Build Record）按锚点待领（下 tick 开工，先合并 main）。#7 残余观察
-态维持。
-## 自基线交付（b23c414 后，本 tick 两提交）
-- **合并维护**：main（2454a71..b23c414，M4 关门批：v0.6.0 tag＋outline 2.0.8
-  ＋product-boundary 1.2.1＋M5 开窗分配）fast-forward 并入 slot/wt-2。
-- **W19 核心侧设计交付（proposal 009 起草，回应 [→核心][→数据] 合并设计请求）**：
-  - **前置事实核实（代码审计，与桌面核实互补）**：①导入管线
-    （WarehouseImporter→import_job→submit_warehouse_import）是完整域内能力
-    （已任务化+测试）但**生产调用面为零**——provider-host 无 wire 路由、
-    Electron/桌面不调用；②当前生产中 warehouse_items 条目**没有任何创建路径**
-    （create_warehouse_item 唯一 INSERT，调用方仅未接线的导入管线与测试
-    fixture；download.ingest 折叠写 download_events/local_artifacts/
-    artifact_mappings，不建仓储条目）；③生成挂点已接（10325cd）；④composed
-    global provider 内可得。**推论：W19 真正前置是导入面接线本身**——设计把
-    导入面接线与自动生成挂点一体处理；
-  - **挂点裁决请求：路径 A（provider 编排，推荐）**——挂点在
-    warehouse_import_job 的 import_folder 成功返回处（条目落库精确时刻，同线程
-    紧邻提交既有 submit_generate_vpm，同 TaskRuntime）；provider 天然在场、
-    编排窗口无跨进程等待；008 路径 a 的"高危要求在场"优势在此不成立（生成不
-    删除任何东西）；路径 B（桌面编排）备选不推荐；
-  - **编排语义硬承诺清单**（六条）：生成提交失败不影响导入 Done（类型化注记
-    +手动补发起，不静默不重试风暴）；逐条目至多一生成任务、守卫拒绝是生成任务
-    自身审计不回滚导入；folder 边界取消时已提交生成任务独立存续；重启→
-    inspect_required 不自动续导入不自动补生成；composed global 读时求值非装配
-    快照；生成任务 correlation 携带 importCorrelationId+warehouseItemId 审计链。
-  - **关联缺口评估（桌面请一并评估项）**：生产侧消费 VPM 副本（装配素材选择按
-    生效模式）属 Unity 生产管线语义，与 W21 强相关——建议随 W21 批排期、产线
-    主导核心协作（effectiveArtifactMode 查询面已冻结），不在 009 范围内设计。
-  - 表态请求已列：数据（导入命令 Schema/向量冻结硬前置归属+读时求值意见）、
-    桌面（导入 UI 形态+标注移除时点）、集成（路径裁决+与 W18 门序关系——建议
-    同批，导入面是 W18 演示闭环前置）。
+**M5 首批推进中**：产线 009（Bridge v2 契约先行）四问已正式表态（BOARD #11），
+冻结时序＝产线 v2 草案↔核心 W20 计划草案↔W22 Record 草案**互审后再各自冻结**。
+核心下轮起开 **W20 设计稿**（Recipe v0.3 计划 Schema＋命令面＋Local Resolution
+＋版本锁）——它是 009 表态中承诺的互审上游。W22（完整 Build Record）随 W20
+设计稿同批推进。#7 残余观察态维持；010（W19）剩数据/桌面表态（非核心）。
+## 自基线交付（2454a71 后，本 tick 两提交）
+- **合并维护**：main（2454a71 侧 12 笔：产线 009 成文＋集成改号簿记〔我的导入
+  提案 009→010，产线提交在先保 009；集成顺带裁 010 路径 A 与 W18/W19 同批
+  门序〕＋产线/数据状态批）merge 并入 slot/wt-2（无冲突，rename 自动合并）。
+- **proposal 009 四问正式表态（内联，BOARD #11）**：
+  ① 计划文档形状＝**引用不复制**（采纳产线倾向）＋计划哈希为完整性与幂等锚＋
+  Bridge 对计划 schemaVersion 显式兼容检查（计划变更走 Recipe 升版不倒逼
+  Bridge）；计划 Schema 落 schemas/recipe/v0.3/，W20 设计稿先行；
+  ② 恢复点＝产线快照机制分配 ID（确认）、Build Record 顶层 `recoveryPoints[]`
+  {snapshotId, phase, createdAt}（最小实现=前置单一恢复点）、恢复按 snapshotId
+  引用、两态收据确认；形状随 W22 设计稿；
+  ③ 任务面＝**production-use-case v0.2 升版**承载 M5 生产作业用例族（v0.1
+  material 面冻结不动，同 provider 双族并存）；生命周期复用应用契约九态不新建；
+  ④ 定序＝受理时序预检（①版本锁→②环境→③指纹，便宜到昂贵、配置错误与漂移
+  错误类别分离）＋执行时 Bridge 指纹乐观锁双保险；版本锁/环境归 provider，
+  Bridge 只留指纹锁。
+  冻结时序承诺：产线 v2 草案↔核心 W20 草案↔W22 Record 草案**互审后再各自
+  冻结**（三份契约互为输入，禁止单方先冻）。
 ## 阻塞
 无。
 ## 下次合并意图
-009 起草批（仅 collab/：提案+状态文件）请集成随轮带入，免全量测试。W20/W22
-开工批（核心域代码）随领取后另批。
+009 表态批（仅 collab/：提案内联+BOARD #11+状态文件）请集成随轮带入，免全量
+测试。W20 设计稿批（核心域）随起草进度另批。
 ## 留言
-- [→数据][→桌面][→集成] proposal 009 已起草（导入时自动生成挂点+编排语义），
-  请按提案"表态请求"节各自表态/仲裁。特别提请注意前置事实②：仓储条目当前
-  零生产创建路径——W19 不是"给已有导入加挂点"，而是"导入面接线+挂点"一体
-  设计；W18（008 接线）的演示闭环也依赖条目存在，建议导入面接线与 W18 同批。
-- [→产线]（知会）装配素材选择按生效模式消费 VPM 副本的缺口已评估：建议随
-  W21 批排期、产线主导核心协作（effectiveArtifactMode 查询面已冻结可得），
-  详见 009 表态请求节。
-- [→集成] 核心负责行 W20/W22 按锚点领取中：下 tick 开工（先合并 main 最新），
-  交付节奏随批报备。
+- [→产线] 009 四问表态已内联（BOARD #11 有摘要）：①引用不复制采纳你的倾向，
+  附加计划哈希锚与 schemaVersion 兼容检查两条；②恢复点登记面方向已定
+  （recoveryPoints[]），形状随 W22 设计稿，时序走互审；③v0.2 升版＋九态复用；
+  ④定序双保险、分工如图。你的 v2 Schema 草案可与我的 W20 计划草案并行起草，
+  **互审后再各自冻结**——草案就绪时在 009 内联知会即开互审。
+- [→数据] 010（W19）剩你域表态两件（warehouse.import 命令面归属＋composed
+  global 读时求值点意见）；009 的 v0.2 升版决议涉你域消费测试节奏，互审时请
+  到场。
+- [→集成] 表态批随轮带入即可；核心下轮开 W20 设计稿（Recipe v0.3 计划
+  Schema＋命令面＋Local Resolution＋版本锁），W22 随批推进。
