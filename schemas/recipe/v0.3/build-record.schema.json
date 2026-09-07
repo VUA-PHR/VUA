@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.dev/schemas/recipe/v0.3/build-record.schema.json",
+  "title": "VUA Build Record v3",
+  "description": "The historical record of one approved-plan execution: what was planned (planHash anchor), what each job actually consumed (per-job receipt transposition from Unity Bridge v2 — never reinterpreted), where execution deviated from the plan (typed deviations only), which recovery points were registered, and how a recovery concluded (two-state receipts). The plan carries authorization; this record carries the facts. Storage: the AMF production document store (011 convergence decision), not BDL.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "buildId",
+    "recipeId",
+    "recipeRevision",
+    "planId",
+    "planHash",
+    "planSchemaVersion",
+    "environmentId",
+    "startedAt",
+    "finishedAt",
+    "status",
+    "inputs",
+    "jobs",
+    "recoveryPoints",
+    "evidenceSummary"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.3" },
+    "buildId": { "$ref": "#/$defs/uuidV7" },
+    "recipeId": { "$ref": "#/$defs/uuidV7" },
+    "recipeRevision": { "type": "integer", "minimum": 1 },
+    "planId": { "$ref": "#/$defs/uuidV7" },
+    "planHash": { "$ref": "#/$defs/sha256" },
+    "planSchemaVersion": { "const": "0.3" },
+    "environmentId": { "$ref": "#/$defs/uuidV7" },
+    "startedAt": { "type": "string", "format": "date-time" },
+    "finishedAt": { "type": "string", "format": "date-time" },
+    "status": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "rolled_back",
+        "recovered"
+      ]
+    },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["recipeDigest", "localResolutionDigest", "planHash"],
+      "properties": {
+        "recipeDigest": { "$ref": "#/$defs/sha256" },
+        "lockedDigest": { "$ref": "#/$defs/sha256" },
+        "localResolutionDigest": { "$ref": "#/$defs/sha256" },
+        "planHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "tools": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "unityVersion": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "packages": {
+          "type": "array",
+          "maxItems": 512,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "version"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 240 },
+              "version": { "type": "string", "minLength": 1, "maxLength": 64 }
+            }
+          }
+        }
+      }
+    },
+    "jobs": {
+      "description": "Receipt transposition for the jobs that actually produced a receipt, in execution order (an ordered PREFIX of the plan's jobs — a fail-fast interruption leaves the plan longer than the record, and the interruption itself is carried by the top-level status). One job entry per plan job (1:1 with resolvedSource; multi-source slots would be a future version bump). rejected entries are admission refusals, never execution deviations — they carry rejectReason (machine-comparable error code transposed from the receipt diagnostics) and are exempt from snapshot/fingerprint evidence.",
+      "type": "array",
+      "maxItems": 512,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "jobId",
+          "commandId",
+          "kind",
+          "planHash",
+          "dryRun",
+          "replayed",
+          "status",
+          "resolvedSourceUsed"
+        ],
+        "allOf": [
+          {
+            "if": {
+              "properties": { "status": { "const": "rejected" } },
+              "required": ["status"]
+            },
+            "then": { "required": ["rejectReason"] }
+          }
+        ],
+        "properties": {
+          "jobId": { "$ref": "#/$defs/uuidV7" },
+          "commandId": {
+            "description": "The Bridge v2 receipt identity — the audit-chain anchor back to the exact transposed receipt and the comparison key for the double-record (plan declaration vs this record).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          },
+          "kind": {
+            "enum": [
+              "install_modular_asset",
+              "attach_to_bone",
+              "exclude_object",
+              "set_object_active"
+            ]
+          },
+          "planHash": { "$ref": "#/$defs/sha256" },
+          "dryRun": { "type": "boolean" },
+          "replayed": {
+            "description": "True when this receipt is an idempotent replay (same plan hash + project + plan version) rather than a first run — an aggregation that misrecords a replay as a first run is discoverable here.",
+            "type": "boolean"
+          },
+          "status": { "enum": ["succeeded", "failed", "rejected"] },
+          "resolvedSourceUsed": { "$ref": "#/$defs/resolvedSource" },
+          "changedPaths": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": { "type": "string", "minLength": 1, "maxLength": 512 }
+          },
+          "diagnostics": {
+            "type": "array",
+            "maxItems": 256,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["code", "severity", "message"],
+              "properties": {
+                "code": { "type": "string", "minLength": 1 },
+                "severity": { "enum": ["info", "warning", "error"] },
+                "message": { "type": "string", "minLength": 1 }
+              }
+            }
+          },
+          "rejectReason": {
+            "description": "Required iff status is rejected: the machine-comparable error code (transposed from the receipt diagnostics; message stays human-readable there).",
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      }
+    },
+    "planDeviations": {
+      "description": "Typed plan-vs-actual deviations only. A resolvedSourceUsed that differs from the plan's declaration MUST appear here as source_fallback (double-record cross-evidence); rejected admissions are NOT deviations.",
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["jobId", "deviationKind", "detail"],
+        "properties": {
+          "jobId": { "$ref": "#/$defs/uuidV7" },
+          "deviationKind": {
+            "enum": ["source_fallback", "guard_skip", "partial_completion"]
+          },
+          "detail": { "type": "string", "minLength": 1, "maxLength": 512 }
+        }
+      }
+    },
+    "recoveryPoints": {
+      "description": "The registered recovery points (009 cross-review point 5): snapshotId assigned by the production snapshot mechanism, phase marking where in the job sequence the snapshot was taken. Minimal form is a single pre_job point; post_job points are an extension capability (M5 does not require them).",
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["snapshotId", "phase", "createdAt"],
+        "properties": {
+          "snapshotId": { "$ref": "#/$defs/uuidV7" },
+          "phase": {
+            "type": "string",
+            "pattern": "^pre_job$|^post_job:[a-z][a-z0-9_.-]{0,127}$"
+          },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "recovery": {
+      "description": "The recovery facts, when a restore was attempted. Two-state receipt (restored | rollback_failed) — no third state is ever invented. restoredFrom references a registered recoveryPoint.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["restored", "receipt"],
+      "properties": {
+        "restored": { "type": "boolean" },
+        "restoredFrom": { "$ref": "#/$defs/uuidV7" },
+        "receipt": { "enum": ["restored", "rollback_failed"] },
+        "recoveredAt": { "type": "string", "format": "date-time" },
+        "decisionId": { "type": "string", "minLength": 1, "maxLength": 128 }
+      }
+    },
+    "evidenceSummary": {
+      "description": "Identity-only references into the W23 production-evidence store (kind counts and evidence bodies live there — keeping this minimal avoids redundant drift).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["evidenceIds"],
+      "properties": {
+        "evidenceIds": {
+          "type": "array",
+          "maxItems": 256,
+          "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "sceneAssetGuid": { "$ref": "#/$defs/unityGuid" },
+        "avatarObjectId": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "semanticFingerprint": { "$ref": "#/$defs/sha256" },
+        "inspectionStatus": {
+          "enum": [
+            "passed",
+            "passed_with_warnings",
+            "failed",
+            "not_performed"
+          ]
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": { "type": "object" },
+      "default": {}
+    }
+  },
+  "$defs": {
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "unityGuid": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{32}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "resolvedSource": {
+      "description": "The actually consumed source for this slot, transposed from the receipt (original vs generated_vpm; never confusable after the fact).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceKind", "artifactSha256"],
+      "properties": {
+        "sourceKind": { "enum": ["original", "generated_vpm"] },
+        "artifactSha256": { "$ref": "#/$defs/sha256" },
+        "warehouseItemId": { "$ref": "#/$defs/uuidV7" },
+        "fallbackUsed": { "type": "boolean" }
+      }
+    }
+  }
+}

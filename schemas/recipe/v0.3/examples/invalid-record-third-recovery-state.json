@@ -1,0 +1,104 @@
+{
+  "schemaVersion": "0.3",
+  "buildId": "019e0000-0000-7000-8000-000000000302",
+  "recipeId": "019e0000-0000-7000-8000-000000000001",
+  "recipeRevision": 3,
+  "planId": "019e0000-0000-7000-8000-000000000201",
+  "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "planSchemaVersion": "0.3",
+  "environmentId": "019e0000-0000-7000-8000-000000000100",
+  "startedAt": "2026-09-08T09:32:00Z",
+  "finishedAt": "2026-09-08T09:34:00Z",
+  "status": "recovered",
+  "inputs": {
+    "recipeDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "lockedDigest": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "localResolutionDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+    "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+  },
+  "tools": {
+    "unityVersion": "2022.3.22f1",
+    "packages": [
+      {
+        "name": "com.vrchat.avatars",
+        "version": "3.7.0"
+      }
+    ]
+  },
+  "jobs": [
+    {
+      "jobId": "019e0000-0000-7000-8000-000000000210",
+      "commandId": "cmd-v2-0000000001",
+      "kind": "install_modular_asset",
+      "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "dryRun": false,
+      "replayed": false,
+      "status": "succeeded",
+      "resolvedSourceUsed": {
+        "sourceKind": "original",
+        "artifactSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        "warehouseItemId": "019e0000-0000-7000-8000-000000000111",
+        "fallbackUsed": false
+      },
+      "changedPaths": [
+        "Assets/VUA/outfit.prefab"
+      ],
+      "diagnostics": []
+    },
+    {
+      "jobId": "019e0000-0000-7000-8000-000000000211",
+      "commandId": "cmd-v2-0000000002",
+      "kind": "attach_to_bone",
+      "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+      "dryRun": false,
+      "replayed": true,
+      "status": "failed",
+      "resolvedSourceUsed": {
+        "sourceKind": "original",
+        "artifactSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "warehouseItemId": "019e0000-0000-7000-8000-000000000110",
+        "fallbackUsed": false
+      },
+      "changedPaths": [
+        "Assets/VUA/avatar.unity"
+      ],
+      "diagnostics": [
+        {
+          "code": "vua.bridge.attach_failed",
+          "severity": "error",
+          "message": "bone not found"
+        }
+      ]
+    }
+  ],
+  "planDeviations": [
+    {
+      "jobId": "019e0000-0000-7000-8000-000000000211",
+      "deviationKind": "partial_completion",
+      "detail": "second job failed; first kept"
+    }
+  ],
+  "recoveryPoints": [
+    {
+      "snapshotId": "019e0000-0000-7000-8000-000000000320",
+      "phase": "pre_job",
+      "createdAt": "2026-09-08T09:31:50Z"
+    }
+  ],
+  "evidenceSummary": {
+    "evidenceIds": []
+  },
+  "output": {
+    "sceneAssetGuid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "avatarObjectId": "193472",
+    "semanticFingerprint": "sha256:9999999999999999999999999999999999999999999999999999999999999999",
+    "inspectionStatus": "passed"
+  },
+  "recovery": {
+    "restored": true,
+    "restoredFrom": "019e0000-0000-7000-8000-000000000320",
+    "receipt": "partially_restored",
+    "recoveredAt": "2026-09-08T09:35:00Z",
+    "decisionId": "dec-019e00000000000000000000000001"
+  }
+}
