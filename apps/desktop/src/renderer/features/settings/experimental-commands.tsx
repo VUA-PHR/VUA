@@ -15,7 +15,7 @@ import { commandErrorText, inferGlobalDefaultMode, type GlobalDefaultInference }
 /**
  * 设置-实验性页(W15 重做形态,用户走查示意图 A/B):
  * - 卡片 = 标题「实验性功能」+ 副题 + 黄色警示条 + 两行开关;
- * - 行 1「生成 VPM 替代」= 全局开关,写已冻结的 warehouse.setGlobalDefaultMode
+ * - 行 1「生成 VPM 包替代」= 全局开关,写已冻结的 warehouse.setGlobalDefaultMode
  *   (bdl-commands v0.2 全局层);初值由条目读面推断(无覆盖条目的生效模式即
  *   composed 全局默认),推断不出时如实标注 unknown;写回执为服务端持久事实,
  *   直接更新开关态(推断仅是初值);
@@ -82,7 +82,7 @@ export function ExperimentalCommands() {
         ⚠ {copy.warning}
       </div>
 
-      {/* 行 1:生成 VPM 替代(全局默认模式写面;bdl-commands v0.2) */}
+      {/* 行 1:生成 VPM 包替代(全局默认模式写面;bdl-commands v0.2) */}
       <section className="vua-exp-card__row">
         <div className="vua-exp-card__text">
           <strong>{copy.generateTitle}</strong>
@@ -90,6 +90,7 @@ export function ExperimentalCommands() {
           {effective.kind === "unknown" ? (
             <p className="vua-caption vua-text-secondary">{copy.globalReadUnknown}</p>
           ) : null}
+          <p className="vua-caption vua-text-secondary">{copy.generateNotWired}</p>
           {feedback !== null ? (
             <p className="vua-caption vua-text-secondary" role="status">
               {feedback}
