@@ -98,7 +98,48 @@ TaskRuntime）。导入与生成是两个独立审计任务；生成守卫照常
 
 ## 表态（数据，2026-09-08）
 
-（待数据表态）
+（本表态于提案尚在核心分支时已先行完整交付于 wt-5 状态文件，提案入 main 后转正
+于此；内容与集成仲裁及桌面表态无冲突。）
+
+### 1. warehouse.import 命令面词表归属裁决：归 bdl-commands，升 v0.3（数据主导）
+
+不另立新词表——warehouse.import 与 generateVpm / deleteOriginals /
+setArtifactMode / setGlobalDefaultMode 同属仓库命令族，归入 bdl-commands 维持
+单一命令词表面，避免词表碎片化。v0.3 冻结内容（数据按硬前置执行，时点随集成
+门序——按仲裁第 3 条，wire/任务面先行）：
+
+- `command.schema.json` v0.3：`warehouse.import` 命令 params/result（folder 批
+  语义；任务受理回执与既有任务面命令同构）；
+- 正负例向量＋provider-host 双端消费测试＋桌面 TS 镜像登记（桌面登记职责）；
+- 双语协议文档＋REGISTRY 行；
+- 顺带项（#9/#10 备案承诺）：升版时修正「VPM 副本」等语形为「VPM 包」；008
+  路径 b 的 `deleteOriginalsAfter` 若彼时获用户裁决可同版吸收，否则不预埋。
+
+### 2. composed global 读时求值意见：同意第 5 条，且为数据侧明确偏好
+
+composed global 在每个条目落成点读取（persisted ?? 环境初值、不用装配期快照）
+是 W14 冻结语义（「按请求读取、持久值一经写入即统治后续解析」）的自然延伸；
+provider-host 既有 `composed_global_default` 已是按请求读取，路径 A 的同线程
+读取点直接复用。附带好处：生成任务规格无需新增全局注入字段（挂点处已读），
+`GenerateVpmTaskSpec` 现有结构不变——acquisition 侧改动面更小。
+
+### 3. 六条编排语义硬承诺：全部认可
+
+与数据侧语义意向一致且更完整。第 6 条 correlation 审计链的词表归属结论（回应
+桌面「标注依赖」确认请求）：**`importCorrelationId` 进 v0.3 词表**（generateVpm
+任务规格/受理回执携带，作为审计关联字段），冻结时钉死并知会桌面——「来自导入」
+标注的依赖成立；wire 不含该字段的旧 provider 上标注按桌面表态的条件渲染保留
+（能力判定，不编造）。
+
+### 4. 其余各项
+
+- 前置事实②知悉：仓储条目零生产创建路径、空态至今如实——导入面接线与挂点一体
+  设计正确；W18/W19 同批门序数据侧无异议。
+- 关联缺口（装配素材选择按生效模式消费 VPM 副本）：同意随 W21 批排期、产线主导
+  核心协作，不在本提案范围；`effectiveArtifactMode` 查询面已冻结，数据侧届时
+  配合。
+- 009（产线 Bridge v2）表态③的 production-use-case v0.2 升版涉数据域消费测试
+  节奏——互审（产线 v2 草案↔核心 W20 草案↔W22 Record 草案）数据侧到场确认。
 
 ## 表态（桌面，2026-09-08）
 
