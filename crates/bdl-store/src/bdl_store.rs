@@ -901,6 +901,44 @@ impl BdlStore {
         Ok(())
     }
 
+    /// The persisted global default mode (U8 two-level options, global
+    /// level): `None` = not persisted yet — the provider's
+    /// environment-injected initial default rules until the first write.
+    /// The entry level lives in `warehouse_items.artifact_mode`; resolution
+    /// stays `override ?? global default`, read-time, never a snapshot.
+    pub fn global_default_mode(&self) -> Result<Option<ArtifactMode>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let persisted: Option<String> = connection
+            .query_row(
+                "SELECT value FROM bdl_meta WHERE key = 'warehouse_global_default_mode'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?;
+        drop(connection);
+        persisted
+            .map(|value| ArtifactMode::parse(&value))
+            .transpose()
+    }
+
+    /// Persists the global default mode (bdl_meta) and reads it back — the
+    /// write never echoes the request; the stored fact is the answer. The
+    /// environment-injected initial default remains the provider's fallback
+    /// only until the first write replaces it here.
+    pub fn set_global_default_mode(
+        &self,
+        mode: ArtifactMode,
+    ) -> Result<ArtifactMode, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        connection.execute(
+            "INSERT INTO bdl_meta(key, value) VALUES ('warehouse_global_default_mode', ?1)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+            params![mode.name()],
+        )?;
+        drop(connection);
+        Ok(mode)
+    }
+
     /// Raw copy rows of one entry, all roles, including `storedPath` — the
     /// AMF-side view for maintenance flows (the wire read face never carries
     /// paths).
