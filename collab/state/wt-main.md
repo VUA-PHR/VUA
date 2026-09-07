@@ -2,41 +2,35 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 0f500c3
+baseline_commit: fa100b6
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W12 全链闭环（消费端 693965d/5fd8c6b 落 main，桌面消解「真实面切换」剩余项）；
-W17 观察管线写入侧已入表（outline 2.0.4，数据三次排期请求的集成裁决）**。CI 三徽章
-全绿维持；核心注释修正批与数据 collab 批已带入（563dee3/0f500c3），合并尖 341 全绿。
-M4 门验收按门序只剩 W15 用户走查。
-## 自基线交付（c4bea2c..本轮，排期裁决轮）
-- **带入核心批**（563dee3，--no-ff）：016b465 注释口径更正（命令面四操作/五向量对，
-  响应数据复核请求；wire 无影响）＋collab；合并尖全量 341 通过 0 失败+clippy 零告警；
-- **带入数据 collab 批**（0f500c3）：复核记录 687f82b＋状态固化；
-- **W17 排期裁决**（数据第三次请求）：outline 2.0.4 双语——当前窗口与 M4 分解表
-  增补「W17 观察管线写入侧（观察数据写入 BDL products 表）＋errors.catalog.* 在
-  catalog 视图的透传呈现接线（数据+桌面）」，锚点=M4 收尾批或 M5 开窗首批；写入侧
-  落地前 catalog 持续诚实空态（合规）；W12 任务定义（服务面）不受影响；
-- **W12 消费端闭环核实**：桌面消解成立——693965d 修复 detail miss 误报
-  not-connected 的不诚实映射（旧字面码 vua.catalog.not_found 在升级后 provider 上
-  不存在）＋errors.catalog.* 四语键；「真实面切换」经桌面核实本无切换改动（消费面
-  就绪，provider 服务后自愈）；DEV mock 越界声明已在提交信息；
-- BOARD：M4 进度更新（W12 闭环、W17 入表）、最近更新行；
-- outline 2.0.4 双语+变更日志（REGISTRY 校验通过）。
+**W12 全链闭环＋mock 对齐残余收尾（eed039e 验收合并 fa100b6，CI ts 复跑绿）**；
+W17 观察管线写入侧已入表（outline 2.0.4）。CI 徽章维持全绿。M4 门验收按门序只剩
+W15 用户走查；W17 待数据/桌面领取。
+## 自基线交付（0f500c3..fa100b6，mock 对齐轮）
+- **验收合并核心 mock 对齐批**（fa100b6，--no-ff）：eed039e 复核桌面 693965d 的
+  mock 越界改动后修正两处对齐残余——① catalog.detail 错误 recoverable 镜像真实
+  provider（true/retryable=false）；② warehouse.entryDetail 旧 not_found 字面量
+  （从未存在）改冻结码 vua.warehouse.entry_not_found/errors.warehouse.entryNotFound
+  （与桌面修掉的 catalog.not_found 同类残余）；桌面 gateway-router.test.ts 一行
+  断言机械跟随（已声明，核实为实）；DEV mock 不偏离冻结面，生产代码零改动；
+- 合并尖本机验证：pnpm check 全链绿（typecheck+vitest+build+boundary+i18n+
+  contrast+leak 160 指纹零泄漏）；**CI ts 复跑绿**（run 34149102571）；
+- 陈旧留言注记：wt-3（消解/备案）、wt-4（状态批）、wt-5（带入+排期）均为上轮
+  已处理项，各树下轮追平基线即消解。
 ## 阻塞
 无。
 ## 下次合并意图
 W17 切片（数据+桌面，开工时先合并 main）；W15 走查反馈批（如有）；#7 残余样本
 （再现即带全量日志）。
 ## 留言
-- [→数据] **W17 已入表**（outline 2.0.4 当前窗口+M4 分解表，锚点=M4 收尾批或 M5
-  开窗首批）——三次排期请求已裁决落表，可随时领取开工（先合并 main）；范围以你
-  的词表/切片定义为准；
-- [→桌面] 备案项（errors.catalog.* 消费面呈现接线）已随 W17 排入（协作列）；W15
-  走查反馈可一并驱动；
-- [→核心] 016b465 已带入（563dee3），合并尖 341 全绿；#7 残余观察态维持；
-- [→产线] 状态批早已带入（06d2fa2），留言为陈旧项，下轮追平基线即可消解；
+- [→核心] eed039e 已验收合并（fa100b6），合并尖 pnpm check 全链绿+CI ts 复跑绿；
+  跨域一行跟随声明核实兑现；
+- [→桌面] mock entryDetail 错误码已随 eed039e 对齐冻结码（核心对称跟随你的
+  gateway-router.test.ts 一行）——你域该测试后续重构以冻结码为准即可；
+- [→数据] W17 已入表（outline 2.0.4），可随时领取开工（先合并 main）；
 - [→操作者→用户] **W15 验收走查待批**：设置-实验性页第二张卡，DEV 下 fixture 条目
   可直接操作两级选项；
 - [需用户·已阅暂缓] U1/U3 维持暂缓；U5 用户自行清理。
