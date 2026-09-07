@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vua.dev/schemas/recipe/v0.3/approved-plan.schema.json",
+  "title": "VUA Approved Plan v3",
+  "description": "The user-authorized execution plan: Local Resolution conclusions plus the ordered Unity job sequence, fixed at approval time. planHash (canonical-serialization SHA-256) is the integrity and idempotency anchor; the expectedProjectFingerprint records the project state at approval. Execution facts live in the Build Record (W22) — the plan only carries authorization, hence no executed status. Consumed by Unity Bridge v2 execute_production_job (proposal 009): the plan travels to the job directory as a file, planHash rides the command, and the Bridge verifies the hash locally before executing.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "planId",
+    "recipeId",
+    "recipeRevision",
+    "localResolutionId",
+    "environmentId",
+    "createdAt",
+    "approvedAt",
+    "planHash",
+    "fingerprint",
+    "target",
+    "jobs",
+    "status"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.3" },
+    "planId": { "$ref": "#/$defs/uuidV7" },
+    "recipeId": { "$ref": "#/$defs/uuidV7" },
+    "recipeRevision": { "type": "integer", "minimum": 1 },
+    "localResolutionId": { "$ref": "#/$defs/uuidV7" },
+    "environmentId": { "$ref": "#/$defs/uuidV7" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "approvedAt": { "type": "string", "format": "date-time" },
+    "planHash": { "$ref": "#/$defs/sha256" },
+    "fingerprint": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedProjectFingerprint"],
+      "properties": {
+        "expectedProjectFingerprint": { "type": "string", "minLength": 1, "maxLength": 256 }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["avatarInstanceId"],
+      "properties": {
+        "avatarInstanceId": { "$ref": "#/$defs/localId" },
+        "resolvedSource": { "$ref": "#/$defs/resolvedSource" }
+      }
+    },
+    "jobs": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 512,
+      "items": { "$ref": "#/$defs/job" }
+    },
+    "status": { "enum": ["draft", "approved", "superseded"] },
+    "extensions": {
+      "type": "object",
+      "additionalProperties": { "type": "object" },
+      "default": {}
+    }
+  },
+  "$defs": {
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "localId": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,63}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "resolvedSource": {
+      "description": "Where the material for this slot actually resolves to (Local Resolution output). sourceKind selects original vs generated_vpm per the effective artifact mode; the identity fields make the Build Record auditable about which copy was used.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceKind", "artifactSha256"],
+      "properties": {
+        "sourceKind": { "enum": ["original", "generated_vpm"] },
+        "artifactSha256": { "$ref": "#/$defs/sha256" },
+        "warehouseItemId": { "$ref": "#/$defs/uuidV7" },
+        "fallbackUsed": { "type": "boolean" }
+      }
+    },
+    "job": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["jobId", "kind", "inputs"],
+      "properties": {
+        "jobId": { "$ref": "#/$defs/uuidV7" },
+        "kind": {
+          "description": "Closed vocabulary projected from the Recipe v0.2 operation set; the Bridge dispatches on it and rejects unknown kinds with a typed error.",
+          "enum": [
+            "install_modular_asset",
+            "attach_to_bone",
+            "exclude_object",
+            "set_object_active"
+          ]
+        },
+        "inputs": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [],
+          "properties": {
+            "selectorId": { "$ref": "#/$defs/localId" },
+            "assetId": { "$ref": "#/$defs/localId" },
+            "bone": { "type": "string", "minLength": 1, "maxLength": 128 },
+            "objectPath": { "type": "string", "minLength": 1, "maxLength": 512 },
+            "active": { "type": "boolean" },
+            "resolvedSource": { "$ref": "#/$defs/resolvedSource" }
+          }
+        },
+        "label": { "type": "string", "minLength": 1, "maxLength": 200 }
+      }
+    }
+  }
+}
