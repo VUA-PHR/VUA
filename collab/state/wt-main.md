@@ -19,7 +19,8 @@ schema-vectors 已触发）。
   wire 零变化（核心/桌面无跟随负担）；架构双语 1.1.0＋REGISTRY 刷新；
   product_observation.rs 9 项消费测试；
 - 合并尖本机全量：cargo test --workspace **350 通过 0 失败**（净增 9）＋clippy
-  --all-targets -D warnings 零告警；推送 73cae1b → CI rust/schema-vectors 触发；
+  --all-targets -D warnings 零告警；推送 73cae1b → CI 触发并复跑绿：**rust ✅
+  （run 34151441179）＋schema-vectors ✅（34151441213）**（ts 不涉本批，paths 未触发）；
 - outline 2.0.5 双语（W17 全链交付落表＋变更日志）＋BOARD M4 进度；
 - 陈旧留言注记：wt-2（eed039e 已带入）、wt-4（状态批已带入）。
 ## 阻塞
