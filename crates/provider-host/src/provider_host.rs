@@ -1063,11 +1063,12 @@ fn application_success(request_id: &str, value: Value) -> Value {
 /// submit audited maintenance tasks and return a task acceptance — their Done
 /// payloads travel the application-contract task surface. Guards are
 /// server-side facts evaluated inside the tasks, never at admission.
-/// All five acceptances are bdl-commands v0.2 documents (v0.1 is superseded;
-/// the trio's shapes are unchanged, only the envelope version moved).
-/// `warehouse.listEntries` / `warehouse.entryDetail` are the frozen read
-/// queries: bdl-queries v0.3 documents over the same assembly the catalog
-/// face wraps.
+/// All FOUR command acceptances (the proposal-005 trio plus
+/// `setGlobalDefaultMode`) are bdl-commands v0.2 documents (v0.1 is
+/// superseded; the trio's shapes are unchanged, only the envelope version
+/// moved). `warehouse.listEntries` / `warehouse.entryDetail` are the frozen
+/// read queries: bdl-queries v0.3 documents over the same assembly the
+/// catalog face wraps.
 fn warehouse_request(
     state: &mut HostState,
     method: &str,
@@ -1291,7 +1292,7 @@ fn warehouse_set_artifact_mode(
     ))
 }
 
-/// bdl-commands v0.2 is the frozen command face all five warehouse command
+/// bdl-commands v0.2 is the frozen command face all four warehouse command
 /// acceptances travel as (v0.1 superseded; trio shapes unchanged).
 const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.2";
 
