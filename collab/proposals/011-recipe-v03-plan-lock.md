@@ -1,0 +1,178 @@
+proposal: 011
+title: Recipe v0.3、Local Resolution 与批准计划、版本锁——W20 设计稿（009 互审上游）
+status: 提出（核心起草＝009 表态承诺的互审上游；请产线/数据/桌面按节表态，集成仲裁）
+author: wt-2（核心角色）
+date: 2026-09-08
+---
+## 0. 本文的地位与纪律
+
+W20＝「Recipe v0.3、Local Resolution、版本锁」（核心负责、数据协作；outline
+2.0.8）。本文是 009 表态承诺的**互审上游**：产线 Bridge v2 草案（009）消费的
+「批准计划」形状在此给出草案；数据（W23 兼容/缺失证据、bdl 存储交界）、桌面
+（W24 工作台消费）的接口点在此显式化。**本文是设计稿不是冻结**——收敛后按冻
+结硬前置落 `schemas/recipe/v0.3/`（Schema＋正负例向量＋至少一端消费测试）。
+演进纪律沿用 outline 既有裁决：Recipe v0.3 定型后 v0.2 整体废弃，不建迁移器。
+
+## 1. 现状基线（v0.2，M3 冻结面）
+
+`schemas/recipe/v0.2/` 三件套：
+
+- **recipe**：`{ formatVersion, recipeId, revision, title, description,
+  createdAt, updatedAt, environment(unityVersionConstraint+capabilities),
+  target(platforms+avatarInstanceId+performanceTarget), assets[](role/label/
+  entityRef/sourceRef/selection/requiresAssetIds/required), instances[],
+  relations[], wardrobeGroups[], dependencies[], locked(lockVersion/
+  recipeRevision/generatedAt/status/unity/packages/assets), extensions }`；
+- **local-resolution**：`{ schemaVersion, recipeId, recipeRevision,
+  environmentId, resolvedAt, assets[] }`——解析产物已任务化存在，但**没有
+  「批准」语义**，也不是 Bridge 的输入形状；
+- **build-record**：`{ buildId, recipeId, recipeRevision, status, inputs,
+  tools, steps, output }`——M3 material 线消费中（W22 升 v0.3 另批）。
+
+M5 生产主线缺口：**「Recipe→解析→批准→执行→记录」的中间产物「批准计划」
+不存在**——009 骨架的 `execute_production_job` 输入（计划文档引用＋计划哈希
+＋期望前置指纹）没有权威形状。本提案补这个洞。
+
+## 2. 产物链与文档边界（M5 生产主线）
+
+```text
+Recipe v0.3（用户草拟/编辑，AMF 持久域）
+  → Local Resolution v0.3（provider 运行解析：本机素材/包/版本事实 × Recipe）
+  → 批准计划 approved-plan v0.3（解析结果＋操作序列＋用户批准固化）★新产物
+  → Bridge v2 作业（execute_production_job，产线 009）
+  → Build Record v0.3（W22，逐作业收据聚合＋恢复点）
+```
+
+文档边界：**Recipe 是意图**（做什么）；**Local Resolution 是事实**（本机
+有什么、每个素材解析到哪个来源）；**批准计划是授权**（用户看过解析与操作
+序列后批准的执行授权，含计划哈希与前置指纹）；**Build Record 是历史**（实际
+发生了什么）。四者独立版本化、独立审计，互不内联（009 表态第 1 条的
+引用不复制原则贯穿）。
+
+## 3. Recipe v0.3 演进点（相对 v0.2）
+
+1. **`locked` 段升格为版本锁的一等语义**（见 §6）：锁的生成/校验时机与受理
+   预检序列（009 表态④）绑定；`lockedPackageSource` 扩展 VPM 副本作为锁对象
+   形态（同 `warehouseItemId` 关联）。
+2. **素材引用支持仓储条目来源**：`asset.sourceRef` 扩展 `warehouse:` 来源
+   形态（warehouseItemId＋角色 original/generated_vpm 可解析引用）——导入面
+   接线（010 已裁路径 A）后，导入产生的条目是素材的合法来源；解析语义见 §5。
+3. **`environment.unityVersionConstraint` 与版本锁的关系显式化**：constraint
+   是作者意图（兼容范围），locked.unity 是解析结论（本机锁定值）——v0.3 在
+   文档内注明两者不得混写。
+4. 其余段（assets/instances/relations/wardrobeGroups）形状沿用 v0.2，M5 冒烟
+   路径（一个 Avatar＋一件衣装）所需的操作词汇已在 v0.2 relations 覆盖
+   （installModularAsset/attachToBone/excludeObject/setObjectActive）。
+
+## 4. 批准计划 approved-plan v0.3（Schema 草案——009 互审核心件）
+
+```jsonc
+{
+  "schemaVersion": "0.3",
+  "planId": "uuidv7",
+  "recipeId": "…", "recipeRevision": 7,
+  "localResolutionId": "…",           // 来源解析文档身份（事实链）
+  "environmentId": "…",
+  "createdAt": "…", "approvedAt": "…",
+  "planHash": "sha256:…",             // 完整性与幂等锚（009 表态①）
+  "fingerprint": { "expectedProjectFingerprint": "…" },  // 批准时点项目状态
+  "target": {                          // 解析后的目标（引用 Recipe 并补解析结论）
+    "avatarInstanceId": "…",
+    "resolvedSource": { "sourceKind": "original|generated_vpm",
+                        "artifactSha256": "…", "warehouseItemId": "…|null" }
+  },
+  "jobs": [{                           // 有序 Unity 作业序列（Bridge v2 逐作业）
+    "jobId": "…", "kind": "install_modular_asset|attach_to_bone|…", // v0.2 操作词汇
+    "inputs": { … },                   // 作业输入（词汇随 kind，引用解析结论）
+    "resolvedSource": { … }            // 逐作业素材来源解析结果（产线范围注记：
+                                       //   dry-run 清单与收据携带它，Bridge 照实转抄）
+  }],
+  "status": "draft|approved|superseded",
+  "extensions": { }
+}
+```
+
+设计要点：
+
+- **planHash＝对计划文档规范序列化的 SHA-256**（009 表态①的锚；幂等重放键=
+  planHash＋项目＋计划版本，产线骨架已对齐）；
+- **status 生命周期**：draft（解析后未批准）→approved（用户批准，固化为执行
+  授权）→superseded（新计划/新解析取代，旧计划不作废已产出的收据）；不存在
+  executed 态——执行事实在 Build Record，计划只管授权（诚实分工）；
+- **批准语义**：approve 是用户对「解析结果＋操作序列＋dry-run 结果（如有）」
+  的显式确认（高危确认纪律的 M5 形态；删除类动作仍走 008/007 裁定的延迟确认）；
+- **jobs 词汇来源**：v0.2 relations/操作词汇的作业化投影；Bridge v2 消费时
+  按 kind 分发到 v2 操作——词汇闭集在 recipe v0.3 Schema 枚举，词表外＝契约
+  错误。
+
+## 5. Local Resolution v0.3 语义
+
+- **输入**：Recipe v0.3 ＋ 本机事实（warehouse 条目与工件身份——
+  `warehouse_entry_cards`/`entryDetail` 查询面已冻结；Unity 版本与包安装
+  事实——environment 域查询面）；
+- **解析规则（每 asset）**：候选来源枚举（warehouse 条目 original 件/
+  generated_vpm 副本/文件系统路径），按 `effectiveArtifactMode`
+  （override ?? composed global，W14 冻结查询面）选择来源——**选择语义的
+  守卫（何时可用副本）在此落实**：generated_vpm 仅当条目存在 role=
+  generated_vpm 的已验证副本（三态检查结论 clean）时可被选中，否则如实回落
+  original 并在解析文档记录 `fallbackUsed: true`（不猜测、不虚构）；
+- **输出**：local-resolution v0.3 文档（解析结论＋缺失/不满足项的诚实标记
+  ——**缺失证据本体归 W23 数据模型**，解析文档引用之，不内联）；
+- **解析是 provider 只读操作**（不落 BDL 变更、不触 Unity 变更）；产物持久化
+  归 AMF（存储面请数据表态）。
+
+## 6. 版本锁语义（v0.2 locked → v0.3）
+
+- **锁的生成**：Local Resolution 时按解析结论生成/更新 `locked` 段
+  （unity 锁定值、packages 锁、assets 锁）；`lockVersion` 随每次重新解析递增；
+- **锁的消费**：进入 009 表态④的受理预检序列第①步（版本锁校验＝Recipe 锁定
+  值 vs 全局政策 2022.3.22f1＋环境实际值，纯数据/环境事实，不触 Unity）；
+- **锁的失效**：环境变化（Unity 升级/包卸载）使锁失效→解析过期标记→重新解析
+  →重新批准（批准计划的 fingerprint 预检会拦住过期计划，009 表态④第③步）；
+  失效不静默：任务面类型化错误＋桌面呈现（呈现形态归桌面 W24）。
+
+## 7. 命令面（production-use-case v0.2 词表草案——010 已裁升版）
+
+草案词表（全部走 production-use-case v0.2；任务生命周期复用九态，010 已裁）：
+
+| 方法 | 语义 | 任务化 |
+| --- | --- | --- |
+| `recipe.save` | Recipe 草拟/更新（AMF 持久域写入） | 同步 |
+| `recipe.get` / `recipe.list` | 读面（工作台消费） | 同步 |
+| `recipe.resolve` | 运行 Local Resolution（只读解析） | 任务（解析可能较重） |
+| `plan.approve` | 批准计划固化（draft→approved） | 同步（幂等） |
+| `plan.get` / `plan.list` | 读面 | 同步 |
+| `job.execute` | 提交批准计划给 Bridge v2 执行（009 骨架） | 任务（九态＋取消＋恢复） |
+| `record.get` / `record.list` | Build Record 读面（W22 升版后） | 同步 |
+
+开放点（请数据/桌面表态）：Recipe 草拟的编辑发生在桌面本地还是 AMF 侧
+（`recipe.save` 的粒度：整文档提交 vs 段落级操作）；读面分页/过滤闭集。
+
+## 8. 各方表态请求
+
+- [→产线] **互审核心件**：§4 批准计划形状 vs 009 骨架的 `execute_production_job`
+  输入——jobs 词汇投影、planHash 锚、fingerprint 预检的消费方式；互审通过后
+  两边再各自冻结（009 表态第 3 条时序）；
+- [→数据] §5 解析产物的存储面归属（AMF 持久域的哪块；bdl 是否参与）；§7
+  `recipe.save` 粒度意见；W23 缺失证据模型与 §5 的引用交界；
+- [→桌面] §7 读面消费（W24 工作台）；§6 失效呈现形态；§4 批准交互（approve
+  的 UI 语义与 dry-run 结果呈现）；
+- [→集成] 门序：本文收敛后 W20 冻结切片（Schema＋向量＋消费测试）的验收归属
+  与 W18/W19 接线批的关系（建议：W20 冻结先行——010 已裁 v0.3 冻结先行于
+  wire/挂点实现，同为 M5 首批内的冻结硬前置）。
+
+## 表态（产线，2026-09-08）
+
+（待产线表态——009 互审）
+
+## 表态（数据，2026-09-08）
+
+（待数据表态）
+
+## 表态（桌面，2026-09-08）
+
+（待桌面表态）
+
+## 仲裁（集成，2026-09-08）
+
+（待集成仲裁）
