@@ -1515,4 +1515,17 @@ rolled_back: "롤백됨",
       workflowId: "워크플로 ID",
     },
   },
+  /** 앱 면 오류 문구: 키 = 와이어상의 messageKey(키 선행. provider는
+   *  오류 채널로 errors.catalog.*를 전송). 카탈로그 브라우저는 현재
+   *  실패를 not-connected/not-found로 처리하므로, 이 뷰에서의 투과
+   *  표시는 후속 슬라이스. */
+  errors: {
+    catalog: {
+      productNotFound:
+        "해당 카탈로그 항목을 찾을 수 없습니다. 삭제되었거나 판매가 종료되었을 수 있습니다.",
+      invalidParams: "카탈로그 요청이 검증을 통과하지 못했습니다.",
+      unavailable: "카탈로그 서비스에 연결되어 있지 않습니다.",
+      storeFailed: "카탈로그 저장소에 장애가 발생하여 요청을 완료하지 못했습니다.",
+    },
+  },
 };

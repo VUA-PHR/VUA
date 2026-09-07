@@ -1596,4 +1596,15 @@ rolled_back: "已回滚",
       workflowId: "工作流 ID",
     },
   },
+  /** 应用面错误文案:键 = 线上 messageKey(键先行,provider 在错误通道下发
+   *  errors.catalog.*);catalog 浏览器当前将失败回落 not-connected/not-found,
+   *  该视图中透传呈现这些键为后续切片 */
+  errors: {
+    catalog: {
+      productNotFound: "未找到该目录条目,它可能已被移除或下架。",
+      invalidParams: "目录请求未通过校验。",
+      unavailable: "目录服务尚未接入。",
+      storeFailed: "目录存储发生故障,请求未完成。",
+    },
+  },
 };

@@ -215,10 +215,13 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "catalog.list":
         return this.#success(request, { total: 0, entries: [] });
       case "catalog.detail":
+        // W12 对齐(核心 10325cd):detail 未命中(含墓碑)的应用面码为
+        // vua.catalog.product_not_found,messageKey 随之;与真实
+        // provider-host 的错误词表保持一致,DEV mock 不偏离冻结面
         return this.#failure(request, this.#error(
-          "vua.catalog.not_found",
+          "vua.catalog.product_not_found",
           "validation",
-          "errors.catalog.notFound",
+          "errors.catalog.productNotFound",
           request.correlationId,
           false,
           false,
