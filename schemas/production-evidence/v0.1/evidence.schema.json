@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ph-r.com/vua/schemas/production-evidence/v0.1/evidence.schema.json",
   "title": "VUA production evidence entry v0.1 (W23 — compatibility/missing evidence model)",
-  "description": "One honest evidence entry recording a missing or unsatisfied fact discovered while preparing or running production (proposal 011 §5: the Local Resolution document marks missing/unsatisfied items and references the evidence bodies; the bodies live here — referenced, never inlined). Producers: the resolution pipeline (missing assets/packages, version mismatches) and task guards (guard denials). Consumers: the Local Resolution document (evidenceIds[]), the Build Record evidence summary, and the desktop surfacing. DRAFT for the proposal 011 convergence review — frozen only after the W20 storage-domain decision (the evidence store lives in the AMF production persistence domain, never in BDL; see the data-side stance in proposal 011).",
+  "description": "One honest evidence entry recording a missing or unsatisfied fact discovered while preparing or running production (proposal 011 §5: the Local Resolution document marks missing/unsatisfied items and references the evidence bodies; the bodies live here — referenced, never inlined). Producers: the resolution pipeline (missing assets/packages, version mismatches) and task guards (guard denials). Consumers: the Local Resolution document (assetResolution.evidenceIds[] per the frozen recipe v0.3 suite — the cross-vocabulary reference is consumed by production_evidence_contract.rs), the Build Record evidence summary, and the desktop surfacing. FROZEN (2026-09-08, proposal 011 convergence): the evidence store lives in the AMF production persistence domain, never in BDL (data-side stance in proposal 011); the storage implementation lands with the W20 implementation slice.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -18,9 +18,9 @@
   "properties": {
     "schemaVersion": { "const": "0.1" },
     "evidenceId": {
-      "description": "VUA-generated evidence identity (uuid v7). The Local Resolution document carries this id in its evidenceIds[]; the Build Record evidence summary may carry it too — reference, never copy.",
+      "description": "VUA-generated evidence identity (uuid v7). The Local Resolution document carries this id in its assetResolution.evidenceIds[]; the Build Record evidence summary may carry it too — reference, never copy.",
       "type": "string",
-      "minLength": 1
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
     },
     "kind": {
       "description": "Closed vocabulary. missing_asset = a Recipe-referenced asset is absent from the warehouse and the filesystem; missing_package = a declared dependency package is absent; version_mismatch = an observed Unity/package version contradicts the recipe's constraint or lock; guard_denied = a server-side guard refused an action and the refusal is the evidence.",
