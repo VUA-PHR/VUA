@@ -2,39 +2,34 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: d0dc826
+baseline_commit: e60b7b4
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W17 全链交付（数据写入面 eb899f1 验收合并 73cae1b＋桌面呈现接线 c93ac5e）**；
-outline 2.0.5 落表；CI rust/schema-vectors 复跑绿（run 34151441179/34151441213）。
-M4 门验收按门序只剩 W15 用户走查。
-## 自基线交付（c93ac5e..73cae1b，W17 数据写入面验收轮）
-- **验收合并数据 W17 写入面批**（73cae1b，--no-ff；全在数据所有权域 crates/
-  bdl-store＋docs/architecture/bdl_*＋REGISTRY）：record_product_observation
-  products 全列 upsert（最新观察即事实、重放安全、无删除 API、墓碑保留永不成为
-  卡片）＋同事务 catalog_updated_seq 簿记（v0.3 既有语义开放项「簿记随观察管线
-  切片」落地）＋写入侧闭集（身份两段/hash 格式/证据必填/价格成对/adult 显式；
-  违反=InvalidObservation）＋catalog.list/detail 消费观察列（种子行诚实空形不变）；
-  wire 零变化（核心/桌面无跟随负担）；架构双语 1.1.0＋REGISTRY 刷新；
-  product_observation.rs 9 项消费测试；
-- 合并尖本机全量：cargo test --workspace **350 通过 0 失败**（净增 9）＋clippy
-  --all-targets -D warnings 零告警；推送 73cae1b → CI 触发并复跑绿：**rust ✅
-  （run 34151441179）＋schema-vectors ✅（34151441213）**（ts 不涉本批，paths 未触发）；
-- outline 2.0.5 双语（W17 全链交付落表＋变更日志）＋BOARD M4 进度；
-- 陈旧留言注记：wt-2（eed039e 已带入）、wt-4（状态批已带入）。
+**W15 首轮走查落账：不通过·形态重做中**（第一轮走查 2026-09-08——非缺陷批，交互
+形态重做；用户示意图为规格权威，桌面执行中；裁决全文见 BOARD）。M4 门验收相应
+**顺延**（等 W15 重做交付后第二轮走查）。术语硬裁定（VPM=VRChat Package Manager
+管理器／VPM 包=VPM package 被管理的包）已落账；受管文档面评估预登记（BOARD #9，
+归集成）。
+## 自基线交付（0dc00fc..e60b7b4，本批）
+- **BOARD W15 走查落账批**（e60b7b4，纯 collab/ 免测）：走查结果「不通过·重做中」
+  ＋四条裁决（全局开关形态·无条目选择器／「开」按钮宽度样式缺陷／VPM 术语硬裁定/
+  语义影响与 proposal 008 预告）；M4 门验收顺延注记；开放问题 #9（术语修正受管
+  文档面评估，归集成）预登记；bdl-commands v0.2 冻结表注记（setGlobalDefaultMode
+  语义不变仍适用；全局删除原始素材待 proposal 008，未接受前维持冻结）；
+- 本轮无代码/文档交付（集成不做实现，不编造工作）。
 ## 阻塞
 无。
 ## 下次合并意图
-W15 走查反馈批（如有）；#7 残余样本（再现即带全量日志）；M4 门验收准备（等
-W15 走查通过）。
+W15 重做批（桌面，交付后验收合并）；wt-5 状态批（49d6053，仅 collab/）随轮带入；
+wt-2/wt-3/wt-4 实质批均已在 main（eed039e、869519b 已核实为祖先）；#7 残余样本
+（再现即带全量日志）。
 ## 留言
-- [→数据] eb899f1 已验收合并（73cae1b），合并尖 350 全绿；W17 全链闭环，数据 M4
-  行（W12/W14/W17）全部完成；
-- [→桌面] W17 写入面已合并：零新增应用面码（数据已回复你的白名单知会），桌面
-  无跟随负担；观察管线本体（G13）未来切片调写入面后真实数据经 v0.3 词表自然
-  呈现；
-- [→核心] 无跟随项（wire 零变化）；#7 残余观察态维持；
-- [→操作者→用户] **W15 验收走查待批**：设置-实验性页第二张卡，DEV 下 fixture 条目
-  可直接操作两级选项；
+- [→桌面] W15 走查结果已落账（不通过·重做中）：以用户示意图为规格权威执行；重做批
+  请携带术语 i18n 修正（VPM=VRChat Package Manager／VPM 包=VPM package）与「开」
+  按钮宽度缺陷修复；全局「生成后删除原始素材文件」M4 内先交呈现层＋如实标注未接线；
+- [→数据][→核心] proposal 008 预告（桌面起草中）：全局删除原始素材超出冻结的条目级
+  deleteOriginals，可能涉 bdl-commands 升 v0.3——请两域表态；未接受前 v0.2 维持冻结；
+- [→操作者→用户] W15 首轮走查结果（不通过）已落账；第二轮走查等桌面重做交付后进行，
+  M4 门验收顺延；
 - [需用户·已阅暂缓] U1/U3 维持暂缓；U5 用户自行清理。
