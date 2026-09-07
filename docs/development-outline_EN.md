@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.3
+> Document version: 2.0.4
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.3)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.4)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -90,9 +90,10 @@ Responsibility rules:
 
 ## Current window (M3 wrap-up and in-flight M4 work)
 
-> Snapshot date: 2026-09-07 (2.0.3 update: M3 closed with v0.5.0; W11 executed; W12/W13/W14/W16
-> delivered and merged, W15 unlocked; the red rust/ts CI badges are two in-domain defects tracked
-> as BOARD #7/#8). Every task
+> Snapshot date: 2026-09-08 (2.0.4 update: W12 closed across the full chain — service face +
+> provider routes + consumer alignment; W17 observation-pipeline write side scheduled [third
+> data-side request, Integration ruling]; #7 case closed / #8 closed; CI badges all green).
+> Every task
 > in this window is decomposed to a role; once complete, the
 > Integration role accepts them and advances the M3/M4 gates.
 
@@ -109,11 +110,12 @@ Responsibility rules:
 | W9 | F4-9 artifact-mode three-command UI | Desktop | Core | depends on the W8 protocol freeze |
 | W10 | Freeze production-use-case v0.1 (at M3 acceptance) | Core | Production, Desktop | M3 candidate → freeze; per the freeze hard precondition |
 | W11 | M3 closure: v0.5.0 tag, remote establishment, three CI workflows, Release | Integration | All | **✅ Executed (2026-09-07)**: v0.5.0 tag + remote + backfilled v0.4.0–v0.4.2 tags + GitHub Release + glm/* branch cleanup; three CI workflows landed (schema-vectors green; rust/ts first runs exposed in-domain defects #7/#8, tracked on BOARD) |
-| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | **✅ Delivered (merged 6062a13)**; closure awaits core provider-host catalog.* route registration |
+| W12 | Catalog observation-pipeline service face (Rust assembly for `catalog.list/detail/status`; vocabulary frozen with bdl-queries v0.3) | Data | Desktop | **✅ Closed across the full chain**: service face 6062a13 + provider routes 80ad6e7 + consumer alignment 5fd8c6b (application codes + four-language keys) |
 | W13 | Warehouse layout rework (adaptive columns + right-side details region) | Desktop | — | **✅ Merged (88b4551)**; U7 acceptance walkthrough awaits the user batch |
 | W14 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | **✅ Delivered and frozen (bdl-commands v0.2, 6062a13)**; route registration awaits core |
 | W15 | Settings-Experimental full form (two-option entry) | Desktop | Data | **Unlocked** (W14 frozen + dependencies in main); acceptance = user walkthrough |
 | W16 | Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | **✅ Delivered (design standard v0.6.2, 88b4551)** |
+| W17 | Observation-pipeline write side (observation data written into the BDL products table; with the errors.catalog.* pass-through surfacing inside the catalog view) | Data | Desktop | anchor = the M4 closing batch or the first M5 batch; catalog stays an honest empty state until the write side lands (third data-side scheduling request; Integration ruling 2026-09-08) |
 
 ## M sequence: Main integration and delivery
 
@@ -261,7 +263,8 @@ before updating):
 | Download-event consumption, retry/recovery, and task closure | Data | Core | ✅ Delivered (incl. W4 test coverage) |
 | Asset-acquisition use cases and the LocalArtifact inspection pipeline | Data | Core | ✅ Delivered (artifact_inspection) |
 | Generation stream (generate-VPM etc.) and the three-command protocol | Data | Core | ✅ Delivered (W8/W9: bdl-commands v0.1.1 full chain) |
-| Catalog observation-pipeline service face | Data | Desktop | ✅ Delivered (W12, 6062a13); closure awaits core catalog.* routes |
+| Catalog observation-pipeline service face | Data | Desktop | ✅ Closed across the full chain (W12: service face 6062a13 + routes 80ad6e7 + consumer 5fd8c6b) |
+| Observation-pipeline write side (products-table writes) + surfacing | Data | Desktop | W17 (the M4 closing batch or the first M5 batch; Integration ruling 2026-09-08) |
 | Warehouse layout rework (adaptive columns + right-side details) | Desktop | — | ✅ Merged (W13, 88b4551); acceptance walkthrough awaits the user batch |
 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | ✅ Delivered and frozen (W14, bdl-commands v0.2) |
 | Settings-Experimental full form (two-option entry) | Desktop | Data | W15 unlocked (depends on W14 ✅); acceptance = user walkthrough |
@@ -475,6 +478,11 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.4 (2026-09-08): W12 closed across the full chain (service face + provider routes +
+  consumer alignment 5fd8c6b, where the consumer found and fixed a dishonest mapping of
+  detail misses to not-connected); added W17, the observation-pipeline write side (with
+  errors.catalog.* surfacing, Data+Desktop) — third data-side scheduling request, ruled
+  into the window by Integration (the M4 closing batch or the first M5 batch); bilingual sync.
 - 2.0.3 (2026-09-07): first M4 progress landed — W11 executed (three CI workflows, tag
   backfill, Release, historical-branch cleanup; red rust/ts badges = BOARD #7/#8 in-domain
   defects under tracking), W12/W14 delivered (6062a13), W13/W16 merged (88b4551), W15

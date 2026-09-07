@@ -3,9 +3,11 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 01:3x（**CI 三徽章全绿**：rust/ts/schema-vectors 均在合并尖
-b3d4e9a 上通过——#7 第三例修复 CI 确认（rust 14m 内绿）、#8 修复确认（ts 绿）；
-核心批验收合并（80ad6e7）；W15 验收=用户走查待批）
+最近更新：2026-09-08 01:4x（**W12 全链闭环**：消费端对齐 693965d 随 5fd8c6b 落 main
+〔修复 miss 误报 not-connected 的不诚实映射＋errors.catalog.* 四语键〕，桌面「真实面
+切换」剩余项消去；**W17 观察管线写入侧入表**〔数据三次排期请求，集成裁决：M4 收尾批
+或 M5 开窗首批；outline 2.0.4〕；核心注释修正批 016b465 与数据 collab 批已带入，
+合并尖 341 全绿；W15 验收=用户走查待批）
 
 ## 工作树指派
 
@@ -71,13 +73,14 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 布局重构（桌面）；W14 bdl-commands v0.2 升版（数据）；W15 设置-实验性完整形态（桌面，
 依赖 W14）；W16 设计标准同步（桌面）。M4 分解表六项历史交付已核实（outline 2.0.2）。
 
-**M4 进度（2026-09-08 01:2x）**：W12 ✅ **完成**（数据 4b1e5d4/8f90986＋核心收口
-10325cd 合并 80ad6e7：provider 注册 catalog.list/detail/status＋warehouse 读面五操作
-全词表路由＋setGlobalDefaultMode＋仓库命令面升 v0.2 信封＋两级解析组装）；W13 ✅＋
-W16 ✅（88b4551）；W14 ✅（bdl-commands v0.2 冻结＋provider 路由同批）；W15 ✅ 已交付
-（18603ac，随 97390f8 入 main；**验收=用户走查待批**——参考：设置-实验性页第二张
-卡，DEV fixture 条目可操作）。M4 剩：桌面 W12 消费端真实面切换＋新错误码四语键
-（errors.catalog.productNotFound/invalidParams/unavailable/storeFailed）；W15 用户走查。
+**M4 进度（2026-09-08 01:4x）**：W12 ✅ **全链闭环**（服务面 6062a13＋provider 路由
+80ad6e7＋消费端对齐 693965d/5fd8c6b：应用码映射修复〔detail miss 曾会误报
+not-connected 的不诚实呈现〕＋errors.catalog.* 四语键；桌面核实「真实面切换」本无
+切换改动——消费面就绪，provider 服务后自愈）；W13 ✅＋W16 ✅（88b4551）；W14 ✅
+（bdl-commands v0.2 冻结＋provider 路由）；W15 ✅ 已交付（18603ac；**验收=用户走查
+待批**——参考：设置-实验性页第二张卡）；**W17 已入表**（观察管线写入侧＋
+errors.catalog.* 呈现接线，数据+桌面，M4 收尾批或 M5 开窗首批，outline 2.0.4——
+写入侧落地前 catalog 持续诚实空态）。M4 门验收按门序：剩 W15 走查（用户）。
 
 ## 冻结契约表
 
