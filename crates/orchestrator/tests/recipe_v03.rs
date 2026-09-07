@@ -140,3 +140,77 @@ fn plan_hash_and_resolved_source_survive_a_round_trip() {
     assert_eq!(parsed["jobs"][0]["inputs"]["resolvedSource"], example["jobs"][0]["inputs"]["resolvedSource"]);
     assert_eq!(parsed["status"], "approved");
 }
+
+// --- build-record v0.3 (W22 freeze; proposal 012 + production/data stances) ---
+
+#[test]
+fn build_record_positive_examples_validate() {
+    let schema = read_json("build-record.schema.json");
+    let validator = validator_for(&schema);
+    for name in [
+        "example.build-record.json",
+        "examples/example.build-record.recovered.json",
+    ] {
+        let example = read_json(name);
+        let problems = violations(&validator, &example);
+        assert!(problems.is_empty(), "{name} must validate: {problems:?}");
+    }
+}
+
+#[test]
+fn build_record_carries_the_double_record_and_recovery_register() {
+    let example = read_json("example.build-record.json");
+    let job = &example["jobs"][0];
+    // Transposition fields (production cross-review): the receipt identity,
+    // the plan hash echo, and the replay marker — an aggregation that
+    // misrecords a replay as a first run is discoverable.
+    assert_eq!(job["commandId"], "cmd-v2-0000000001");
+    assert_eq!(job["planHash"], example["planHash"]);
+    assert_eq!(job["replayed"], false);
+    // The recovery-point register (009 point 5): snapshotId assigned by the
+    // production mechanism, phase markers, restore by reference.
+    assert_eq!(
+        example["recoveryPoints"][0]["phase"],
+        "pre_job"
+    );
+    let recovered = read_json("examples/example.build-record.recovered.json");
+    assert_eq!(recovered["status"], "recovered");
+    assert_eq!(
+        recovered["recovery"]["restoredFrom"],
+        recovered["recoveryPoints"][0]["snapshotId"],
+        "restore must reference a registered recovery point"
+    );
+    assert_eq!(recovered["recovery"]["receipt"], "restored");
+    // Failed jobs surface as typed plan deviations (partial_completion).
+    assert_eq!(
+        recovered["planDeviations"][0]["deviationKind"],
+        "partial_completion"
+    );
+}
+
+#[test]
+fn build_record_negative_vectors_are_rejected() {
+    let validator = validator_for(&read_json("build-record.schema.json"));
+    // The plan state must never leak into the record.
+    let executed = read_json("examples/invalid-record-executed-status.json");
+    assert!(
+        !validator.is_valid(&executed),
+        "executed status must not validate on the record"
+    );
+    // A rejected job without its rejectReason violates the conditional
+    // requirement (admission refusals carry their machine-comparable code).
+    let rejected = read_json("examples/invalid-record-rejected-without-reason.json");
+    assert!(
+        !validator.is_valid(&rejected),
+        "rejected without rejectReason must not validate"
+    );
+    // No third recovery state is ever invented (two-state receipts).
+    let third = read_json("examples/invalid-record-third-recovery-state.json");
+    assert!(
+        !validator.is_valid(&third),
+        "partially_restored must not validate"
+    );
+    // The job kind vocabulary is closed on the record side too.
+    let bad_kind = read_json("examples/invalid-record-kind.json");
+    assert!(!validator.is_valid(&bad_kind), "unknown kind must not validate");
+}

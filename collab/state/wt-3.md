@@ -11,11 +11,12 @@ updated: 2026-09-08
 确认面板,dry-run 折叠呈现,计划要点 planHash 锚定)。010 已收口(表态采纳入验收
 基准)。M5 首批双冻结线并行(bdl-commands v0.3 与 recipe v0.3 互不依赖),桌面批
 待 W20 冻结。
-## 自基线交付(c21a0fc 合并 main 后)
-- 无新交付(不编造工作)。main 合并维护(fast-forward 至 c21a0fc,含 W20 冻结切片)。
-- **接收:W20 冻结已落 main**(recipe v0.3 套件=recipe/local-resolution/
-  approved-plan 三 Schema+正负例向量+消费测试)——W24 工作台的 Schema 前置达成;
-  呈现批(W18/W19)仍等核心执行序②(warehouse.import wire/挂点),门序一体不提前。
+## 自基线交付(3bc03ac 合并 main 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 3bc03ac,含 build-record
+  v0.3 冻结/W22 切片)。
+- **接收:recipe v0.3 套件四件齐**(recipe/local-resolution/approved-plan/
+  build-record 全冻结)——W24 工作台的 Schema 依赖全部齐备(record.get/list 读面
+  同构确认随 011 §7);呈现批(W18/W19)门序不变,等核心执行序②落地后随批。
 ## 阻塞
 - W15 关门=用户确认第二轮修正(两修正项已交付);
 - 导入时自动生成的 provider/AMF 侧挂点=跨域需求,已路由(见留言),M5 与 008 接线
