@@ -1519,4 +1519,17 @@ rolled_back: "ロールバック済み",
       workflowId: "ワークフロー ID",
     },
   },
+  /** アプリ面エラーコピー:キー = ワイヤ上の messageKey(キー先行。
+   *  provider はエラーチャネルで errors.catalog.* を送信)。カタログ
+   *  ブラウザは現在、失敗を not-connected/not-found に落とすため、
+   *  このビューでの透過表示は後続スライス。 */
+  errors: {
+    catalog: {
+      productNotFound:
+        "このカタログエントリは見つかりません。削除または出品終了した可能性があります。",
+      invalidParams: "カタログリクエストが検証を通過しませんでした。",
+      unavailable: "カタログサービスに未接続です。",
+      storeFailed: "カタログストアで障害が発生し、リクエストを完了できませんでした。",
+    },
+  },
 };

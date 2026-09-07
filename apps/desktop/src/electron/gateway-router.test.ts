@@ -265,7 +265,7 @@ describe("bdl-queries v0.2 routing", () => {
     );
     expect(detailResponse).toMatchObject({
       ok: false,
-      error: { code: "application", application: { code: "vua.catalog.not_found" } },
+      error: { code: "application", application: { code: "vua.catalog.product_not_found" } },
     });
 
     const entryResponse = await routeDesktopGatewayInvoke(

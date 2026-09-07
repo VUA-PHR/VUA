@@ -2,33 +2,31 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 9f1443f
-updated: 2026-09-07
+baseline_commit: 0904f3c
+updated: 2026-09-08
 ---
 ## 当前焦点
-**W15 完成 + BOARD #8 修复完成(待回流/自并)**:设置-实验性两级选项区(条目选择器
-+ generateVpm/deleteOriginals 设置页内发起 + 全局默认只读行)已交付;#8 i18n 测试
-locale 耦合已修(测试显式固定 zh-CN 表)。桌面 check 全链绿(47 文件,2026-09-07 本树)。
-## 自基线交付(4b6dbe7 合并 main 后,两提交)
-- f4d288d **#8 修复**:termLabel/termSequence 经 current-table 按宿主 navigator
-  选表,CI(en-US)解析 en 表注解空串致 3 测试失败;i18n.test.ts 与 nav-model.test.ts
-  以 vi.mock 显式固定 current-table 为 zh-CN(不依赖宿主 locale),附引用相等 pin
-  测试作 mock 生效回归锚点;
-- 18603ac **W15**:设置-实验性页两级选项区(experimental-commands.tsx):条目选择器
-  复用 listEntries 只读面;generateVpm/deleteOriginals 与仓储抽屉共享同一冻结命令面;
-  前置置灰+原因是与 entryActions 同一服务端守卫的镜像(gates 纯函数与 entryActions
-  可用性逐一对应的性质测试在案);删除原始保持高危+延迟确认+不可恢复明示(§8.1);
-  受理=引导任务中心,设置页不建第二事实源;全局默认=只读行(不进 wire,不虚构当前值);
-  commandErrorText 抽为 acquire-model 共享纯函数(仓储抽屉同步改用);i18n 四语补键;
-  纯函数测试 16/16。
+**待命(监视轮)。桌面 M4 名下切片全部交付**:W13/W16(88b4551 验收合并)、W15
+(18603ac,验收=用户走查待批)、#8(f4d288d,CI ts 徽章绿已关闭)、W12 消费面对齐
+(693965d/5fd8c6b 已落 main)。四层任务来源(本树在途/BOARD 桌面行/outline 桌面行/
+M4 分解表桌面行)均为空或 [需用户],不自行开工。
+## 自基线交付(0904f3c 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 0904f3c,含 #7/#8 关闭
+  落账与 CI 三徽章全绿记录)。
+- **消解集成"下一步可领"项**:wt-main 0904f3c 留言所指「W12 消费端真实面切换 +
+  errors.catalog.* 四语键」即 693965d(已落 main 5fd8c6b,数据侧 wt-5 确认无遗留
+  无异议)——集成状态基线(c4bea2c)早于该合并一笔,所指工作已交付,无剩余可领项。
+  其中"真实面切换"经核实本无切换改动:消费面(live 端口)早已就绪,provider 服务
+  后真实面自愈;错误码对齐与四语键为该批实质交付。
 ## 阻塞
-- W15 验收=用户走查(outline 2.0.3 门序);
-- #8 修复后 ts 徽章转绿待 CI 复跑确认(本机无法复现 en-US 宿主,以 CI 为准)。
+- W15 验收=用户走查(U7 批,归用户,不代决)。
 ## 下次合并意图
-本批(#8+W15)自并 main(--no-ff,全部本域 apps/desktop+collab);合并后集成可复跑
-ts workflow 验证徽章转绿。
+本状态文件固化批(仅 collab/)随轮自并,免全量测试。无在途代码改动。
 ## 留言
-- [→集成] BOARD #8 修复已交付(f4d288d):测试侧 vi.mock 固定语言表,生产代码零改动;
-  请随批带入并在合并后观察 CI ts workflow——徽章转绿即关闭 #8;
-- [→集成] W15 已交付(18603ac),验收=用户走查;走查参考:设置-实验性页第二张卡
-  (开关卡之下),DEV 下 fixture 条目可直接操作两级选项。
+- [→集成] 「桌面 W12 消费端真实面切换」可从 M4 剩余项中消去:=693965d,已落
+  5fd8c6b,见上文消解段;桌面 M4 名下仅剩 W15 用户走查待批;
+- [→集成] 已声明的后续项备案:errors.catalog.* 四语键的消费面接线(catalog 视图
+  内区分"未找到/请求无效/服务故障"的透传呈现)不在任何窗口表与门分解中,未自行
+  开工;宜随下一个有依据的桌面切片或 W15 走查反馈一起排期;
+- [→核心] 上轮三点对齐(错误码/四语键/两处核实无需改动)已随 5fd8c6b 落 main,
+  数据侧已确认无遗留;mock-provider 越界声明如需复核见 693965d 提交信息。
