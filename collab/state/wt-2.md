@@ -2,41 +2,42 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 0904f3c
+baseline_commit: 6d4162e
 updated: 2026-09-08
 ---
 ## 当前焦点
-待命（监视轮）。上批已全部落 main 且 CI 三徽章绿；本轮完成 wt-3 召唤的 mock 越界
-复核——发现并修正两处 mock 与真实 provider 错误面的对齐残余（eed039e，本域
-packages/orchestrator-provider + 一行桌面测试断言机械跟随已声明）。核心名下 M4 无
-任务行，M5 未开窗。
-## 自基线交付（0904f3c 后，本 tick 两提交）
-- **合并维护**：main（845b10c..0904f3c，桌面 W12 消费端对齐批 5fd8c6b + 集成徽章
-  记录）merge 并入 slot/wt-2（BOARD #7/#8 行冲突，融合：采用集成载体制+#8 关闭、
-  保留本侧 ts/schema-vectors run 号证据补充）。2b67db2。
-- **mock 越界复核 + 对齐残余修正（eed039e，回应 wt-3 复核召唤）**：桌面 693965d
-  对 packages/orchestrator-provider 的越界改动（catalog.detail 码/键对齐）复核结论
-  =**方向正确、越界声明充分、准予维持**；但发现两处残余（本域修正）：
-  ① catalog.detail 错误 recoverable=false，与真实 provider application_error 硬编码
-  的 recoverable=true/retryable=false 不一致——mock 镜像 provider，非私裁；
-  ② warehouse.entryDetail 仍回从未存在的字面量 vua.warehouse.not_found/
-  errors.warehouse.notFound——真实 provider（10325cd）回既有冻结码
-  vua.warehouse.entry_not_found/errors.warehouse.entryNotFound（与桌面刚修掉的
-  catalog.not_found 同类残余）。DESKTOP 跟随（已声明）：gateway-router.test.ts
-  钉 mock entryDetail 错误码的一行断言同步改冻结码。
-  证据（2026-09-08 本机）：orchestrator-provider vitest 23/23、桌面 vitest 47 文件
-  393 测试全绿。
+待命。本轮交付 proposal 008 正式表态（路径 a，含任务面语义论证与路径 b 量级
+评估）——两域表态齐（数据+核心均路径 a），待集成仲裁。#7 残余观察态维持；
+W15 重做（桌面）与 M4 顺延均非核心行；M5 未开窗。
+## 自基线交付（6d4162e 后，本 tick 两提交）
+- **合并维护**：main（ba83f46..6d4162e，W15 首轮走查不通过落账、用户术语裁决
+  #9 关闭、proposal 008 成文、数据 W17 收尾批）merge 并入 slot/wt-2（无冲突）。
+- **proposal 008 正式表态（内联，回应 [→核心] 表态请求）**：**路径 a**。两问
+  按实现事实回答：
+  ① 桌面编排与任务面权威**不冲突**——删除的执行/守卫/审计留在 provider 任务面，
+  桌面编排只是发起时机（同"从哪个页面发起"）；逐条提交=逐条独立守卫裁决与审计
+  回执，无批量模糊态；"桌面不在线不执行"符合不可逆动作要求在场的纪律，服务端
+  无隐式续删承诺即无隐式续跑风险面；
+  ② 路径 b 真实量级远超旗标字段——隐性成本在编排窗口任务语义（生成 Done→删除
+  提交失败的窗口语义、审计关联字段、取消/恢复交互与"绝不隐式续跑"纪律、路由
+  闭集变化），合计独立切片（Schema+向量+acquisition 规格+路由+语义测试+双端
+  消费+双语协议+REGISTRY），与 W12→收口链同阶，M4 内不可完成；若走 b 建议先补
+  "编排窗口语义"设计物；
+  ③ 路径 c 反对（审计纪律不可调和）。
+  衍生变更复核：**认可 007 偏好开关取代**（该偏好纯桌面 localStorage，从未进
+  provider 面任务规格或 bdl_meta；抽屉入口事实镜像消费 v0.3 读面既有冻结字段，
+  provider 零阻碍）；术语顺带项同意（v0.2 冻结期间措辞不动）。
+  提案 status 行已更新为「两域已表态，待集成仲裁」。
 ## 阻塞
 无。
 ## 下次合并意图
-本批（eed039e + collab）请集成随轮带入。
+表态批（仅 collab/：提案内联表态 + 状态文件）请集成随轮带入，免全量测试。
 ## 留言
-- [→桌面] mock 越界复核结论：准予维持（改动方向正确、声明充分）。我以对称礼节
-  跟随了你域一行断言（gateway-router.test.ts entryDetail 错误码 →
-  vua.warehouse.entry_not_found，提交信息已声明）——若你域有该测试的进一步
-  重构计划，以冻结码为准即可。catalog 错误呈现的四语键你已落，warehouse 键
-  既有，无新增键负担。
-- [→集成] eed039e（本域 mock 修正 + 已声明的桌面测试一行跟随）随轮带入即可；
-  BOARD #7/#8 的合并融合结果见本树（#7 本例关闭+残余观察维持、#8 关闭，与你侧
-  载体制一致，仅补 run 号）。
-- [→产线] 样本协议维持：无瞬败不空跑。
+- [→集成] 008 两域表态齐（均路径 a）：请仲裁与门序归属（路径 a 的桌面接线切片
+  随 M4 收尾批或 M5 首批——我无预设；若改选路径 b，核心侧先要的是"编排窗口
+  语义"设计物，量级清单已在表态内）。
+- [→桌面] 008 核心表态支持路径 a：你的"生成 Done 回执后逐条提交
+  deleteOriginals"编排面与任务面权威无冲突，放心接线；守卫逐条独立裁决、
+  审计独立回执都在既有冻结面内。007 偏好开关取代亦认可（provider 零阻碍）。
+- [→数据] 路径 b 量级评估与你侧冻结承诺对齐（我的清单见表态②，acquisition
+  规格扩展也在内）——备而不用，仲裁改选前不启动。
