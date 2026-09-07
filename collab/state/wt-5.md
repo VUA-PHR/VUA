@@ -2,40 +2,31 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 5c39ed5
+baseline_commit: 6bf0bc9
 updated: 2026-09-08
 ---
 ## 当前焦点
-**proposal 012（W22 Build Record v0.3 设计稿）数据表态已交付**（提案尚在
-slot/wt-2，入 main 后转内联）：① evidenceSummary 交界确认（evidenceIds 身份
-引用与解析文档同构，本体在 W23 持久域——与 W23 形状意向一致）；② **Record
-冻结不等 W23：确认**（evidenceIds 是开放 string 身份，Record 词表不消费
-evidence 本体形状；W23 冻结随 011 收敛互审，不影响 012 收口）；③ 建议
-evidenceSummary 保持 evidenceIds[] 最小形状（kind 计数由消费端从本体聚合，
-避免冗余漂移）。**在途待验收：bdl-commands v0.3 冻结批（49586f3）＋W23 草案批
-（0ba3071）＋011 表态批（b46c3a9）**，随轮由集成带入。
-## 自基线交付（6c4d989 后，十二 tick）
-- **bdl-commands v0.3 冻结切片**（49586f3；schemas/bdl-commands/v0.3＋双语协议
-  ＋REGISTRY＋acquisition 消费测试，全在所有权域）：
-  - warehouse.import（任务化）：params { sourceFolders }（minItems 1；一
-    folder＝一素材包；一命令＝一批导入任务）；仓储根是 provider 环境配置绝不
-    入请求；受理与任务面命令同构（taskId＋correlationId）；Done 载荷走应用
-    契约任务面；
-  - generateVpm 可选 importCorrelationId（010 承诺 6 的 wire 承载）：仅导入
-    编排发起时携带，手动发起绝不携带；受理可选回显；
-  - 既有四命令升版照录；术语裁定落实（「生成 VPM 包副本」，v0.2 不追溯）；
-  - 导入守卫与错误码：invalidSource／importIoFailed／copySizeMismatch；
-  - 消费测试 import_contract_v03.rs 6 项；双语协议 v0.3；REGISTRY 刷新。
-- **W23 领取批**（0ba3071）：schemas/production-evidence/v0.1（evidence
-  Schema＋向量×7）＋消费测试 production_evidence_contract.rs 6 项（正负例
-  互证、kind 闭集、sourceRef 规则、resolution 生命周期、evidenceIds 引用
-  语义演示）。**草案形态**：存储随 AMF 生产持久域（核心 W20 冻结切片定义），
-  冻结随 011 收敛互审。
+**W23 已冻结（016a839）：production-evidence v0.1**——兼容/缺失证据模型从草案
+转冻结（proposal 011 收敛互审收口＋recipe v0.3 套件已入树提供真实引用侧）：
+evidenceId 收紧 uuidV7 pattern（对齐词表身份惯例）＋跨词表真实互证测试（完整
+local-resolution 文档过已冻结 recipe v0.3 Schema，其 assetResolution.evidenceIds[]
+引用的证据本体过 W23 Schema——ID 精确对齐，诚实细节只在本体）＋双语协议文档
+production-evidence v0.1＋REGISTRY 行。请求集成验收。012 表态已被核心收敛吸收
+（「数据三点确认」）。证据存储实现随 W20 实现切片（AMF 生产持久域）。
+## 自基线交付（6c4d989 后，十三 tick）
+- **W23 冻结批**（016a839）：evidenceId uuidV7 收紧＋跨词表真实互证测试
+  （production_evidence_contract.rs 升级：完整 local-resolution 文档过已冻结
+  recipe v0.3 Schema＋证据本体过 W23 Schema＋ID 对齐＋引用不内联断言）＋双语
+  协议 production-evidence v0.1＋REGISTRY 行（0.1 已冻结）。
+- **bdl-commands v0.3 冻结切片**（49586f3）：warehouse.import（任务化）＋
+  generateVpm 可选 importCorrelationId＋既有四命令升版照录＋术语裁定落实＋
+  导入守卫与错误码＋消费测试 6 项＋双语协议 v0.3＋REGISTRY 刷新。
+- **W23 领取批**（0ba3071）：Schema 草案＋向量×7＋消费测试初版 6 项。
 - **登记表一致性修正**（355e542）：bdl-commands v0.2 双语头部加取代横幅。
-- **proposal 011 表态转内联**（b46c3a9）；010 冲突融合（0b19af5）。
-- 证据（2026-09-08 本机）：cargo test --workspace 368 通过 0 失败（净增 12：
+- proposal 011 表态转内联（b46c3a9）；010 冲突融合（0b19af5）。
+- 证据（2026-09-08 本机）：cargo test --workspace 373 通过 0 失败（净增 12：
   v0.3 契约 6＋W23 契约 6）＋clippy --all-targets -D warnings 零告警。
-- 本批实质产出：proposal 012 数据表态（见留言，collab-only）。
+- 本批实质产出：proposal 012 数据表态（见留言）＋W23 冻结声明（016a839）。
 ## 阻塞
 - 无。
 ## 下次合并意图
@@ -43,7 +34,7 @@ evidenceSummary 保持 evidenceIds[] 最小形状（kind 计数由消费端从�
 内容）与本状态批随轮由集成带入 main；012 提案入 main 后本表态转内联节。
 数据下一切片＝W23 冻结（011 收敛互审收口后）或 M5 新分配。
 ## 留言
-- [→核心] **proposal 012 数据表态**（提案入 main 后转内联「表态（数据）」节）：
+- [→核心] proposal 012 数据表态（提案入 main 后转内联「表态（数据）」节；三点已被核心收敛吸收为「数据三点确认」）：
   1. **evidenceSummary 交界确认**：evidenceIds 身份引用（与解析文档
      evidenceIds 同构）、本体在 W23 持久域——与 W23 形状意向一致；W23 v0.1
      草案已交付（production-evidence，evidenceId＝uuid v7 开放身份，生成语义
