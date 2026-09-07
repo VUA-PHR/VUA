@@ -74,7 +74,17 @@
             "properties": {
               "kind": { "type": "string", "minLength": 1 },
               "status": { "enum": ["pending", "executed", "failed", "skipped"] },
-              "warning": { "type": "string" }
+              "warning": { "type": "string" },
+              "resolvedSource": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sourceKind", "artifactSha256"],
+                "properties": {
+                  "sourceKind": { "enum": ["original", "generated_vpm"] },
+                  "artifactSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+                  "warehouseItemId": { "type": ["string", "null"], "minLength": 1 }
+                }
+              }
             }
           }
         },
