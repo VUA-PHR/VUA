@@ -15,6 +15,10 @@
 //! (download_id, attempt, kind, occurred_at) because the port delivers
 //! at-least-once.
 
+use crate::bdl_queries::{
+    AvailabilityStatus, CatalogDetailResult, CatalogHealth, CatalogListParams, CatalogListResult,
+    CatalogProductDetail, CatalogProductSummary, CatalogRevision, CatalogStatusResult,
+};
 use crate::bdl_queries::ArtifactInspectionVerdict;
 use crate::download_events::{DownloadEventKind, DownloadEventV01, DownloadFailureKind};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
@@ -1199,6 +1203,147 @@ impl BdlStore {
             ],
         )?;
         Ok(())
+    }
+
+    // --- catalog serving face (W12; docs/protocols/bdl-queries-v0.3) ---
+
+    /// `catalog.list`: assembles the v0.3 card list from the observation
+    /// products table. Tombstones (`status = 'missing'`, 404/410 keepsakes)
+    /// are never cards. Until the observation pipeline writes, the table is
+    /// empty and this answers the honest empty set — 空态即终态. Presentation
+    /// fields assemble as the schema's honest empty shapes (null / [] /
+    /// derived-unknown) until observation rows carry them; the availability
+    /// filter therefore matches only `unknown` rows today, and `available`/
+    /// `unavailable` filters answer an empty set (never a fabricated match).
+    pub fn catalog_list(
+        &self,
+        params: &CatalogListParams,
+    ) -> Result<CatalogListResult, BdlStoreError> {
+        if params.availability_status == Some(AvailabilityStatus::Available)
+            || params.availability_status == Some(AvailabilityStatus::Unavailable)
+        {
+            // No observation row carries a derived available/unavailable
+            // status yet: the filter is honest, the empty set is the answer.
+            return Ok(CatalogListResult { total: 0, entries: Vec::new() });
+        }
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let mut statement = connection.prepare(
+            "SELECT product_id FROM products
+             WHERE status = 'complete'
+             ORDER BY product_id",
+        )?;
+        let ids: Vec<String> = statement
+            .query_map([], |row| row.get::<_, String>(0))?
+            .collect::<Result<Vec<_>, _>>()?;
+        drop(statement);
+
+        let needle = params.text.as_ref().map(|text| text.to_ascii_lowercase());
+        let matched: Vec<&String> = ids
+            .iter()
+            .filter(|product_id| match &needle {
+                // text is a case-insensitive substring over title and
+                // productId; titles are not observed yet, so productId alone
+                // is the honest match surface.
+                Some(needle) => product_id.to_ascii_lowercase().contains(needle),
+                None => true,
+            })
+            .collect();
+
+        let total = matched.len() as i64;
+        let entries = matched
+            .iter()
+            .skip(params.offset as usize)
+            .take(params.limit as usize)
+            .map(|product_id| CatalogProductSummary {
+                product_id: (*product_id).clone(),
+                title: None,
+                price: None,
+                image_url: None,
+                image_urls: Vec::new(),
+                availability_raw: None,
+                availability_status: AvailabilityStatus::Unknown,
+                entity_count: 0,
+                entity_types: Vec::new(),
+            })
+            .collect();
+        Ok(CatalogListResult { total, entries })
+    }
+
+    /// `catalog.detail`: assembles one v0.3 product detail. Unknown ids and
+    /// tombstones answer `None` (the application face owns the miss code);
+    /// presentation fields assemble as the honest empty shapes until the
+    /// observation pipeline carries them.
+    pub fn catalog_detail(
+        &self,
+        product_id: &str,
+    ) -> Result<Option<CatalogDetailResult>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let known: bool = connection
+            .query_row(
+                "SELECT 1 FROM products WHERE product_id = ?1 AND status = 'complete'",
+                [product_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        drop(connection);
+        if !known {
+            return Ok(None);
+        }
+        Ok(Some(CatalogDetailResult {
+            product: CatalogProductDetail {
+                product_id: product_id.to_owned(),
+                title: None,
+                price: None,
+                image_url: None,
+                image_urls: Vec::new(),
+                availability_raw: None,
+                availability_status: AvailabilityStatus::Unknown,
+                entity_count: 0,
+                entity_types: Vec::new(),
+                description: None,
+                shop_name: None,
+                shop_url: None,
+                age_restriction: None,
+                adult: false,
+                video_urls: Vec::new(),
+                source_category: None,
+                subproducts: Vec::new(),
+            },
+        }))
+    }
+
+    /// `catalog.status`: health and revision snapshot. The health is
+    /// `unknown` until the observation-pipeline bookkeeping counter exists
+    /// in `bdl_meta` (protocol v0.3: 观察管线未落数据前 health = unknown —
+    /// 空态即终态); `datasetRevision` is the BDL format_version.
+    pub fn catalog_status(&self) -> Result<CatalogStatusResult, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        let catalog_updated_seq: Option<i64> = connection
+            .query_row(
+                "SELECT value FROM bdl_meta WHERE key = 'catalog_updated_seq'",
+                [],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .and_then(|value| value.parse().ok());
+        let dataset_revision: String = connection
+            .query_row(
+                "SELECT value FROM bdl_meta WHERE key = 'format_version'",
+                [],
+                |row| row.get(0),
+            )
+            .optional()?
+            .ok_or_else(|| BdlStoreError::UnsupportedFormat("missing".into()))?;
+        drop(connection);
+        Ok(CatalogStatusResult {
+            health: if catalog_updated_seq.is_some() {
+                CatalogHealth::Ok
+            } else {
+                CatalogHealth::Unknown
+            },
+            revision: CatalogRevision { catalog_updated_seq, dataset_revision },
+        })
     }
 }
 
