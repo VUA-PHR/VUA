@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.4
+> Document version: 2.0.5
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.4)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.5)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -90,9 +90,9 @@ Responsibility rules:
 
 ## Current window (M3 wrap-up and in-flight M4 work)
 
-> Snapshot date: 2026-09-08 (2.0.4 update: W12 closed across the full chain — service face +
-> provider routes + consumer alignment; W17 observation-pipeline write side scheduled [third
-> data-side request, Integration ruling]; #7 case closed / #8 closed; CI badges all green).
+> Snapshot date: 2026-09-08 (2.0.5 update: W17 delivered across the chain — desktop surfacing
+> c93ac5e + data write face 73cae1b; W12 closed across the full chain; the M4 gate acceptance
+> awaits only the W15 user walkthrough).
 > Every task
 > in this window is decomposed to a role; once complete, the
 > Integration role accepts them and advances the M3/M4 gates.
@@ -115,7 +115,7 @@ Responsibility rules:
 | W14 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | **✅ Delivered and frozen (bdl-commands v0.2, 6062a13)**; route registration awaits core |
 | W15 | Settings-Experimental full form (two-option entry) | Desktop | Data | **Unlocked** (W14 frozen + dependencies in main); acceptance = user walkthrough |
 | W16 | Design-standard sync (notification center / warehouse layout / experimental semantics) | Desktop | — | **✅ Delivered (design standard v0.6.2, 88b4551)** |
-| W17 | Observation-pipeline write side (observation data written into the BDL products table; with the errors.catalog.* pass-through surfacing inside the catalog view) | Data | Desktop | anchor = the M4 closing batch or the first M5 batch; catalog stays an honest empty state until the write side lands (third data-side scheduling request; Integration ruling 2026-09-08) |
+| W17 | Observation-pipeline write side (observation data written into the BDL products table; with the errors.catalog.* pass-through surfacing inside the catalog view) | Data | Desktop | **✅ Delivered across the chain**: data write face eb899f1 (merged 73cae1b: full-column products upsert + catalog_updated_seq bookkeeping + catalog consumption of observation columns + 9 consumer tests) + desktop surfacing 869519b (merged c93ac5e) |
 
 ## M sequence: Main integration and delivery
 
@@ -264,7 +264,7 @@ before updating):
 | Asset-acquisition use cases and the LocalArtifact inspection pipeline | Data | Core | ✅ Delivered (artifact_inspection) |
 | Generation stream (generate-VPM etc.) and the three-command protocol | Data | Core | ✅ Delivered (W8/W9: bdl-commands v0.1.1 full chain) |
 | Catalog observation-pipeline service face | Data | Desktop | ✅ Closed across the full chain (W12: service face 6062a13 + routes 80ad6e7 + consumer 5fd8c6b) |
-| Observation-pipeline write side (products-table writes) + surfacing | Data | Desktop | W17 (the M4 closing batch or the first M5 batch; Integration ruling 2026-09-08) |
+| Observation-pipeline write side (products-table writes) + surfacing | Data | Desktop | ✅ Delivered across the chain (W17: write face 73cae1b + surfacing c93ac5e) |
 | Warehouse layout rework (adaptive columns + right-side details) | Desktop | — | ✅ Merged (W13, 88b4551); acceptance walkthrough awaits the user batch |
 | bdl-commands v0.2 upgrade (two-option semantics + persistence-location decision) | Data | Desktop | ✅ Delivered and frozen (W14, bdl-commands v0.2) |
 | Settings-Experimental full form (two-option entry) | Desktop | Data | W15 unlocked (depends on W14 ✅); acceptance = user walkthrough |
@@ -478,6 +478,10 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.5 (2026-09-08): W17 delivered across the chain — data write face (full-column products
+  upsert + catalog_updated_seq bookkeeping + catalog consumption of observation columns,
+  73cae1b) + desktop surfacing (error pass-through whitelist + live-acquire stale-code fix,
+  c93ac5e); badge-all-green note added to W11; bilingual sync.
 - 2.0.4 (2026-09-08): W12 closed across the full chain (service face + provider routes +
   consumer alignment 5fd8c6b, where the consumer found and fixed a dishonest mapping of
   detail misses to not-connected); added W17, the observation-pipeline write side (with

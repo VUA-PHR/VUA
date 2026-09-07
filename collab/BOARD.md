@@ -3,10 +3,10 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 02:1x（**W17 桌面协作面已交付验收**：869519b 自并 c93ac5e——
-errors.catalog.* 透传呈现白名单＋live-acquire entryDetail 旧码修复〔live 面 miss
-曾会误报断连〕；合并尖 394 测试全绿＋CI ts 绿；W17 剩数据写入侧；W15 验收=用户
-走查待批）
+最近更新：2026-09-08 02:3x（**W17 全链交付**：数据写入面 eb899f1 验收合并 73cae1b
+〔products 全列 upsert＋catalog_updated_seq 簿记＋读组装消费观察列＋9 项消费测试；
+合并尖 350 通过 0 失败＋clippy 零告警〕＋桌面呈现接线 c93ac5e；outline 2.0.5；
+M4 门验收只剩 W15 用户走查）
 
 ## 工作树指派
 
@@ -77,10 +77,13 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 not-connected 的不诚实呈现〕＋errors.catalog.* 四语键；桌面核实「真实面切换」本无
 切换改动——消费面就绪，provider 服务后自愈）；W13 ✅＋W16 ✅（88b4551）；W14 ✅
 （bdl-commands v0.2 冻结＋provider 路由）；W15 ✅ 已交付（18603ac；**验收=用户走查
-待批**——参考：设置-实验性页第二张卡）；**W17 已入表**（outline 2.0.4）且**桌面
-协作面已交付验收**（869519b 自并 c93ac5e：错误透传呈现白名单＋live-acquire
-entryDetail 旧码修复——live 面 miss 曾会误报断连；合并尖 394 测试全绿＋CI ts 绿
-run 34150144613）——W17 剩数据写入侧。M4 门验收按门序：剩 W15 走查（用户）。
+待批**——参考：设置-实验性页第二张卡）；**W17 已入表**（outline 2.0.4）且 **✅ 全链交付**：桌面协作面（869519b 自并 c93ac5e：
+错误透传呈现白名单＋live-acquire entryDetail 旧码修复——live 面 miss 曾会误报断连；
+394 测试全绿＋CI ts 绿）＋数据写入面（eb899f1 验收合并 73cae1b：products 全列 upsert
+〔重放安全、无删除 API、墓碑保留〕＋bdl_meta.catalog_updated_seq 簿记〔v0.3 既有
+语义开放项落地〕＋catalog 读组装消费观察列＋写入侧闭集 InvalidObservation 拒绝＋
+9 项消费测试；350 通过 0 失败＋clippy 零告警；wire 零变化，架构双语 1.1.0）。
+M4 门验收按门序：剩 W15 走查（用户）。
 
 ## 冻结契约表
 
