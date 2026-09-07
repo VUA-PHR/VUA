@@ -3,12 +3,12 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 07:2x（**双冻结批验收合并**：产线 **unity-bridge v2 已冻结**
-〔互审收口后 Schema 终版＋双语协议 v2＋REGISTRY；v1 双族并存；集成复跑 **376/0**
-〕＋数据 **production-evidence v0.1 已冻结**〔W23 兼容/缺失证据模型，跨词表引用
-消费 recipe v0.3 套件〕——M5 首批冻结面收口：bdl-commands v0.3＋recipe v0.3
-四件＋unity-bridge v2＋production-evidence v0.1；剩执行序②核心 wire/挂点＋W22
-实现＋③桌面呈现）
+最近更新：2026-09-08 07:4x（**执行序②核心半边验收合并**〔6b4f21a：warehouse.import
+wire 路由＋挂点精确设计交数据落实〔job 内联＋auto_generate spec＋import_correlation_id〕；
+集成复跑 **379/0**〕＋**四 plan-kind 执行语义冻结**〔471a4ee：approved-plan Schema
+细化＋2 例，回应产线 C# 切片 1〕＋产线 **W21 C# 切片 1 验收合并**〔06802b9：v2 协议层
+＋分发＋编排框架＋restore_project 完整；per-kind executors 诚实未接线〕——剩：数据
+挂点落实、W22 实现、③桌面呈现、production-use-case v0.2 冻结）
 
 ## 工作树指派
 
