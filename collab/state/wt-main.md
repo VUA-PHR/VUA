@@ -2,31 +2,39 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: a2f0243
+baseline_commit: 6f35bbb
 updated: 2026-09-07
 ---
 ## 当前焦点
-**M3 已通过并关门（v0.5.0 已推送 github.com/VUA-PHR/VUA，private）；M4 分配完成
-（outline 2.0.2，W12–W16）**。等：桌面第三轮缺陷修复批回流 + W12/W13/W14 切片启动。
-## 自基线交付（5cf451b..a2f0243，本关门轮）
-- a 全文档审查：outline 2.0.2（M3 任务表 I-1 ✅、窗口进展注记，双语+变更日志）；
-- b 无冲突确认：W10 冻结落账（production-use-case v0.1 ZH/EN 状态段+修订记录，撤回
-  历史保留）；amf-production v0.2 冻结（BOARD 契约表）；REGISTRY 29/29；全量验证绿
-  （cargo-exit=0、clippy 0、桌面 47 文件 385 测+check-leak 160 指纹零泄漏）；
-- c 版本与发行：0.4.2→0.5.0（root/desktop package.json+app-meta，repoUrl→VUA-PHR/VUA）；
-  v0.5.0 双语发行说明（语义裁决 M4 实施、#7 观察态、真机证据 _local_w1 本地、
-  provider-process 0.1→0.2 帧面变化均如实声明）；tag v0.5.0=9a3e119；
-- **推送**：gh repo create VUA --private（github.com/VUA-PHR/VUA）→ origin main+
-  v0.5.0 tag 推送成功；
-- **M4 分配**：outline 2.0.2 M4 分解表六项历史交付核实+五项新任务（W12–W16）双语
-  落表；BOARD M4 段记录分配结果；
-- BOARD：M3 状态=已通过；W7 三轮走查闭环关闭。
+**W11 收尾完成（CI 三 workflow + tags 回填 + Release + glm/* 清理）；W12/W13/W14/W16
+已合并落账，M4 剩 W15（桌面，已解锁）与 W12 收口（等核心路由）**。等：CI 三 workflow
+转绿（已触发、进行中，转绿前不宣称徽章绿）。
+## 自基线交付（a2f0243..6f35bbb，W11 收尾轮）
+- 各树自并批确认落 main（分叉实质归零）：W12+W14（数据，6062a13/01ebb73）、
+  W13+W16（桌面，88b4551）、第三轮走查修复（b5bf926）；
+- **CI 三 workflow**（6f35bbb）：rust（cargo test --workspace+clippy -D warnings）、
+  ts（root pnpm check 全链含 check:leak）、schema-vectors（6 crate 13 个消费
+  schemas/ 的 --test 定点面）；组合命令本地全绿后才落（Rust 全量 330 通过 0 失败
+  +clippy 零告警+向量逐 crate 验证；2026-09-07 本机）；
+- README 四语：版本行 v0.4.1→v0.5.0（M3 文档审查漏网修正）+三徽章；
+- **推送**：origin main 927de51..6f35bbb；回填 tags v0.4.0=9598f1f（M0）、
+  v0.4.1=003bf0c（M1）、v0.4.2=c0e8393（M2）（版本号变更提交核实）；
+- **GitHub Release v0.5.0**：github.com/VUA-PHR/VUA/releases/tag/v0.5.0（双语发行
+  说明链接+中文全文）；
+- glm/frontend、glm/implementation、glm/orchestrator 评估删除：三分支均 --merged
+  main 实质领先 0，pre-transition/* 备份 tag 在，已删（W11 原计划项）；
+- BOARD：bdl-commands v0.2 冻结落表；M4 进度段（W12/W13/W14/W16 ✅、W15 解锁）。
 ## 阻塞
-无。
+无（CI 转绿等待中，非阻塞）。
 ## 下次合并意图
-桌面第三轮缺陷修复批（M3 后收尾批）；W12（数据首切片）/W13（桌面）/W14（数据）切片批。
+W15（桌面切片）；W12 收口批（核心 catalog 路由，跨域合并由集成验收）。
 ## 留言
-- [→全部] M4 已开窗：W12（数据）、W13/W15/W16（桌面）、W14（数据，先于 W15）按
-  outline 2.0.2 领取；开工前先合并 main 最新并重跑 collab:brief；
-- [→核心] #7 观察态继续（再现即重开）；W10 冻结已落账（production-use-case v0.1）；
-- [需用户·已阅暂缓] U1/U3 随收尾前批量裁决；U5 用户收尾前自行清理。
+- [→产线] W1 验收参考事实已阅并采纳（staging 种子 SDK、C# 指纹场景层级注释）——
+  W1 验收与 M3 关门时已消化，感谢留痕；
+- [→数据] W12+W14 批已确认落 main；bdl-commands v0.2 已入 BOARD 冻结契约表；
+  W12 收口等核心路由（已在你树阻塞区对齐）；观察管线写入侧待排期；
+- [→桌面] W15 已解锁（W14 v0.2 冻结+main 已含），按 outline 2.0.2 领取；W15 验收
+  =用户走查；
+- [→核心] 两项路由登记请求见 wt-5 留言（catalog.* 三查询、warehouse.
+  setGlobalDefaultMode），W12 收口与 v0.2 路由配合归核心；
+- [需用户·已阅暂缓] U1/U3 维持暂缓；U5 用户自行清理。
