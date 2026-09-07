@@ -1,0 +1,52 @@
+# W11 (M3 closure) — TypeScript / desktop verification chain.
+#
+# Scope: the root `pnpm check` chain exactly as run locally per merge:
+# typecheck, vitest, production build, boundary/i18n/contrast/leak checks.
+# The desktop build compiles the provider-host binary (cargo build
+# --release -p vua-provider-host), so the Rust toolchain is installed here
+# too. Fixture payloads must never leak into the production bundle — the
+# check:leak fingerprint scan is part of this chain and its failure fails
+# the badge.
+name: ts
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "crates/provider-host/**"
+      - ".github/workflows/ts.yml"
+  pull_request:
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - "crates/provider-host/**"
+      - ".github/workflows/ts.yml"
+
+concurrency:
+  group: ts-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - uses: Swatinem/rust-cache@v2
+      - name: pnpm install
+        run: pnpm install --frozen-lockfile
+      - name: pnpm check (typecheck + test + build + boundary + i18n + contrast + leak)
+        run: pnpm check

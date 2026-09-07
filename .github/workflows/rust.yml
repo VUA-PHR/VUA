@@ -1,0 +1,42 @@
+# W11 (M3 closure) — full Rust workspace verification.
+#
+# Scope: the same commands the local full-verification gate runs on every
+# merge (cargo test --workspace, cargo clippy --all-targets). Real-machine
+# Unity tests are marked #[ignore] and never run here; cloud CI uses
+# structurally representative synthetic data only (AGENTS.md security
+# boundaries). A green badge means the workspace logic is green, not that
+# real-machine evidence exists.
+name: rust
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust.yml"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/rust.yml"
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-clippy:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: cargo test --workspace
+        run: cargo test --workspace
+      - name: cargo clippy --all-targets
+        run: cargo clippy --all-targets -- -D warnings
