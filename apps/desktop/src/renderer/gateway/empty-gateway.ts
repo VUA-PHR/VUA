@@ -61,7 +61,7 @@ function createEmptyAcquire(): AcquirePort {
   };
 }
 
-/** F4-9 写命令面:not-run 时三命令诚实 unavailable(错误词表同 live) */
+/** F4-9 写命令面:not-run 时写命令诚实 unavailable(错误词表同 live) */
 function createEmptyWarehouseCommands(): WarehouseCommandsPort {
   const unavailableOutcome = {
     ok: false as const,
@@ -77,6 +77,7 @@ function createEmptyWarehouseCommands(): WarehouseCommandsPort {
     setArtifactMode: () => Promise.resolve(unavailableOutcome),
     generateVpm: () => Promise.resolve(unavailableOutcome),
     deleteOriginals: () => Promise.resolve(unavailableOutcome),
+    setGlobalDefaultMode: () => Promise.resolve(unavailableOutcome),
     capability: () => Promise.resolve(unavailable),
   };
 }

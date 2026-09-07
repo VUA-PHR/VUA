@@ -86,7 +86,7 @@ export const strings: Strings = {
     envCheck: "創作環境チェック",
     envCheckWarning: "VPM 環境の検証に失敗しました",
     warehouseScan: "倉庫アセットスキャン",
-    generateVpm: "VPM を生成:{name}",
+    generateVpm: "VPM パッケージを生成:{name}",
     deleteOriginals: "オリジナルを削除:{name}",
   },
   taskCenter: {
@@ -469,7 +469,7 @@ rolled_back: "ロールバック済み",
       evidence: {
         snapshot: "スナップショット",
         bridge: "Bridge ジョブ",
-        localVpm: "ローカル VPM",
+        localVpm: "ローカル VPM パッケージ",
         validation: "検証",
         attempted: "試行済み",
         notAttempted: "未試行",
@@ -792,7 +792,7 @@ rolled_back: "ロールバック済み",
       },
       role: {
         original: "オリジナルパッケージ",
-        generated_vpm: "生成 VPM",
+        generated_vpm: "生成 VPM パッケージ",
       },
       kind: {
         imported_material: "一括インポート",
@@ -800,7 +800,7 @@ rolled_back: "ロールバック済み",
       },
       mode: {
         use_original_unitypackage: "オリジナル UnityPackage を使用",
-        generate_vpm: "VPM を生成",
+        generate_vpm: "VPM パッケージを生成",
       },
       modeOverride: "グローバル設定を上書き",
       modeFollowGlobal: "グローバル設定に従う",
@@ -812,16 +812,16 @@ rolled_back: "ロールバック済み",
       modeApply: "上書きを適用",
       modeApplying: "適用中…",
       actionsTitle: "エントリ操作",
-      actionGenerateVpm: "VPM を生成",
+      actionGenerateVpm: "VPM パッケージを生成",
       actionDeleteOriginals: "オリジナルを削除",
-      deleteConfirmNote: "削除は元に戻せません:オリジナルファイルは倉庫から削除され、生成 VPM コピーは保持されます。",
+      deleteConfirmNote: "削除は元に戻せません:オリジナルファイルは倉庫から削除され、生成された VPM パッケージコピーは保持されます。",
       acceptedNote: "受け付けました。進行状況はタスクセンターで確認できます。",
       commandFailed: "操作を完了できませんでした。",
       commandErrors: {
-        vua_warehouse_invalid_state: "現在の実効モードが「VPM を生成」ではないため、この操作は利用できません。",
-        vua_warehouse_generated_artifact_missing: "生成 VPM コピーが存在しないか検証に失敗したため、オリジナルを削除できません。",
+        vua_warehouse_invalid_state: "現在の実効モードが「VPM パッケージを生成」ではないため、この操作は利用できません。",
+        vua_warehouse_generated_artifact_missing: "VPM パッケージコピーが存在しないか検証に失敗したため、オリジナルを削除できません。",
         vua_warehouse_no_original_material: "このエントリには生成元のオリジナル素材がありません。",
-        vua_warehouse_already_generated: "生成 VPM コピーが既に存在します。再生成するには先に削除してください。",
+        vua_warehouse_already_generated: "VPM パッケージコピーが既に存在します。再生成するには先に削除してください。",
         vua_warehouse_entry_not_found: "エントリが見つかりません。ローカルデータが更新された可能性があります。",
         vua_warehouse_unavailable: "倉庫サービスに未接続です。",
         vua_warehouse_invalid_params: "リクエストパラメータが検証に失敗しました。",
@@ -1302,16 +1302,33 @@ rolled_back: "ロールバック済み",
     skip: "スキップ",
   },
   settings: {
-    /** 実験的機能ページ(proposal 007 パス b)。トグルはユーザー設定で入口の
-     *  表示のみ制御し、グローバル既定はサーバー設定によるため、ここでは
-     *  読み取り専用として表示する。 */
+        /** 実験的機能ページ(W15 リワーク,ユーザーウォークスルー図 A/B):単一カード=
+     *  タイトル+サブタイトル+警告帯+2行のトグル。1行目「VPM 生成で置き換え」=
+     *  グローバル既定モードの書き込み面(bdl-commands v0.2 グローバル層
+     *  setGlobalDefaultMode);2行目「生成後にオリジナルを削除」=危険トグル、
+     *  未接続の設定(グローバル自動削除は凍結済みエントリレベルコマンドの範囲を
+     *  超える。wire 面は proposal 008 の裁决に従う)。有効化には危険確認
+     *  ダイアログが必須で、未接続表示が常時付く */
     experimental: {
       title: "実験的機能",
+      subtitle: "デフォルトはオフ。使用前に説明をよくお読みください",
       badge: "実験的",
-      warehouseModeTitle: "VPM 生成モード入口",
-      warehouseModeDesc: "オンにすると、倉庫エントリ詳細に成果物モード編集と「VPM を生成 / オリジナルを削除」のエントリ操作を表示します(凍結済みの bdl-commands v0.1 エントリレベルコマンドを使用)。グローバル既定はサーバー設定で決まるため、ここにグローバル既定のスイッチはありません。オフにしても入口が隠れるだけで、保存済みのモードは変わりません。",
-      on: "オン",
-      off: "オフ",
+      warning: "実験的機能は予期しない動作をする可能性があります。有効化前に影響を必ず理解してください。",
+      generateTitle: "VPM 生成で置き換え",
+      generateDesc: "組立時に VPM 互換パッケージマニフェストを自動生成します(実験的)。",
+      globalReadUnknown: "現在のグローバル既定値はまだ読み取られていません。一度切り替えるとサーバーの応答が正となります。",
+      deleteTitle: "生成後にオリジナルを削除",
+      deleteBadge: "危険",
+      deleteDesc: "VPM 生成の完了後、オリジナルの .unitypackage ファイルを削除します。この操作は元に戻せません。生成品質を確認した後にのみ有効化してください。「VPM 生成で置き換え」を先に有効にする必要があります。",
+      notWired: "この機能はまだサーバーに接続されていません。有効化は意図の記録のみ行います(wire 面は proposal 008 の裁决後に実装)。",
+      devPrototypeNote: "このプロトタイプは実際にはファイルを削除しません。",
+      dialogTitle: "危険な操作の確認",
+      dialogBodyA: "「生成後にオリジナルを削除」を有効にすると、VPM 生成の完了時に対応する .unitypackage ファイルを",
+      dialogBodyEmphasis: "永久に削除",
+      dialogBodyB: "します。",
+      dialogWarning: "この操作は元に戻せません。有効化する前に VPM 生成結果を検証済みであることを確認してください。",
+      dialogCancel: "キャンセル",
+      dialogConfirm: "リスクを理解し、有効化する",
     },
     goals: {
       heading: "目標の再選択",
@@ -1501,6 +1518,20 @@ rolled_back: "ロールバック済み",
       outfitArmature: "衣装 Armature",
       toggleName: "トグル名",
       workflowId: "ワークフロー ID",
+    },
+  },
+  /** アプリ面エラーコピー:キー = ワイヤ上の messageKey(キー先行。
+   *  provider はエラーチャネルで errors.catalog.* を送信)。カタログ
+   *  ブラウザは現在、失敗を not-connected/not-found に落とすため、
+   *  このビューでの透過表示は後続スライス。 */
+  errors: {
+    catalog: {
+      productNotFound:
+        "このカタログエントリは見つかりません。削除または出品終了した可能性があります。",
+      invalidParams: "カタログリクエストが検証を通過しませんでした。",
+      unavailable: "カタログサービスに未接続です。",
+      storeFailed: "カタログストアで障害が発生し、リクエストを完了できませんでした。",
+      fallback: "カタログ操作を完了できませんでした。",
     },
   },
 };

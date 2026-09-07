@@ -5,6 +5,7 @@ import type {
   CatalogBrowserPort,
   CatalogBrowserQuery,
   CatalogDetailView,
+  CatalogErrorKey,
   CatalogListView,
   CatalogProductDetail,
   CatalogProductSummary,
@@ -251,6 +252,32 @@ function projectStatus(value: unknown): CatalogStatus | null {
   };
 }
 
+/** W17 透传呈现:冻结应用面码 → 白名单 messageKey;词表外码回落 fallback */
+const APPLICATION_ERROR_KEYS: Record<string, CatalogErrorKey> = {
+  "vua.catalog.invalid_params": "errors.catalog.invalidParams",
+  "vua.catalog.unavailable": "errors.catalog.unavailable",
+  "vua.catalog.store_failed": "errors.catalog.storeFailed",
+};
+
+/**
+ * application 错误 → 透传 error 视图(W17):稳定码按白名单收窄,词表外码
+ * 如实回落 fallback("目录操作未能完成"),不猜测具体原因。product_not_found
+ * 由调用处特判为 not-found 形态(未命中是事实,不是错误文案)。
+ */
+function applicationErrorView(error: {
+  kind: "unavailable" | "request_rejected" | "application";
+  error?: { code: string };
+}): CatalogErrorKey {
+  if (
+    error.kind === "application" &&
+    error.error !== undefined &&
+    APPLICATION_ERROR_KEYS[error.error.code] !== undefined
+  ) {
+    return APPLICATION_ERROR_KEYS[error.error.code]!;
+  }
+  return "errors.catalog.fallback";
+}
+
 export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserPort {
   return {
     async list(query: CatalogBrowserQuery = {}): Promise<CatalogListView> {
@@ -260,7 +287,13 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
         method: "catalog.list",
         params: listParams(query),
       });
-      if (!result.ok) return notConnectedListView;
+      // W17:application 错误透传为 error 视图(键经 strings.errors 解析);
+      // 传输面失败(服务未达)仍是 not-connected
+      if (!result.ok) {
+        return result.error.kind === "application"
+          ? { schemaVersion: 1, kind: "error", messageKey: applicationErrorView(result.error) }
+          : notConnectedListView;
+      }
       // 形态不齐按未接入处理,不渲染半可信列表
       return projectList(result.value) ?? notConnectedListView;
     },
@@ -283,13 +316,18 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
           ? { schemaVersion: 1, kind: "detail", product }
           : { schemaVersion: 1, kind: "not-connected" };
       }
+      // W12 对齐(provider 10325cd):detail 未命中(含墓碑)的应用面码为
+      // vua.catalog.product_not_found,如实呈现 not-found,不误报断连
       if (
         result.error.kind === "application" &&
-        result.error.error.code === "vua.catalog.not_found"
+        result.error.error.code === "vua.catalog.product_not_found"
       ) {
         return { schemaVersion: 1, kind: "not-found" };
       }
-      return { schemaVersion: 1, kind: "not-connected" };
+      // W17:其余 application 错误透传为 error 视图;传输面失败仍是 not-connected
+      return result.error.kind === "application"
+        ? { schemaVersion: 1, kind: "error", messageKey: applicationErrorView(result.error) }
+        : { schemaVersion: 1, kind: "not-connected" };
     },
 
     async status(): Promise<CatalogStatus> {

@@ -2841,6 +2841,7 @@ dependencies = [
 name = "vua-bdl-store"
 version = "0.1.0"
 dependencies = [
+ "jsonschema",
  "rusqlite",
  "serde",
  "serde_json",
@@ -2880,6 +2881,7 @@ version = "0.1.0"
 dependencies = [
  "flate2",
  "jsonschema",
+ "rusqlite",
  "serde",
  "serde_json",
  "sha2",

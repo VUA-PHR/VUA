@@ -1,9 +1,11 @@
-//! Warehouse command trio wire tests (proposal 005, bdl-commands v0.1).
+//! Warehouse command face wire tests (proposal 005; bdl-commands v0.2).
 //!
 //! The host consumes the data-side frozen vectors from
-//! `schemas/bdl-commands/v0.1/examples` through the real frame loop:
+//! `schemas/bdl-commands/v0.2/examples` through the real frame loop:
 //! `warehouse.setArtifactMode` applies synchronously and reports the
-//! entry's effective mode read back from the store; the tasked commands
+//! entry's effective mode read back from the store (override ?? composed
+//! global default); `warehouse.setGlobalDefaultMode` persists the global
+//! level and reports the stored fact read back; the tasked commands
 //! return a task acceptance that validates against the frozen result
 //! schema and persists on the SQLite task authority. Guards fire inside
 //! the tasks, never at admission; generation without a Unity executor is
@@ -22,7 +24,7 @@ use vua_bdl_store::{ArtifactMode, BdlStore};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn command_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.1")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.2")
 }
 
 fn read_json(relative: &str) -> Value {
@@ -132,7 +134,7 @@ fn reworded_result(result: &Value, warehouse_item_id: &str) -> Value {
 }
 
 #[test]
-fn warehouse_trio_matches_the_frozen_operation_vocabulary() {
+fn warehouse_commands_match_the_frozen_operation_vocabulary() {
     let schema = read_json("command.schema.json");
     let operations = schema["properties"]["operation"]["enum"].as_array().unwrap();
     // These are exactly the methods the host routes (warehouse_request).
@@ -140,6 +142,7 @@ fn warehouse_trio_matches_the_frozen_operation_vocabulary() {
         json!("warehouse.setArtifactMode"),
         json!("warehouse.generateVpm"),
         json!("warehouse.deleteOriginals"),
+        json!("warehouse.setGlobalDefaultMode"),
     ];
     assert_eq!(operations, &routed);
 }
@@ -277,4 +280,98 @@ fn warehouse_commands_are_unavailable_without_wiring() {
         .map(|line| serde_json::from_str(line).unwrap())
         .collect();
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.warehouse.unavailable");
+}
+
+#[test]
+fn set_global_default_mode_vector_drives_the_persisted_global_level() {
+    let world = make_world("global-default");
+    let validator = result_validator();
+
+    // Before any write the global level is not persisted: the environment
+    // initial default rules, and the clear vector's read-back reports it.
+    let clear = reworded(&read_json("examples/warehouse-set-artifact-mode-clear.request.json"), &world.warehouse_item_id);
+    let frames = run_frames(&world, "corr-global-before", &[clear]);
+    assert_eq!(frames[0]["payload"]["value"]["effectiveMode"], "use_original_unitypackage");
+    assert_eq!(world.bdl.global_default_mode().unwrap(), None);
+
+    // The frozen positive vector drives the wire write; the acceptance is
+    // the frozen result document with the stored fact read back.
+    let request = read_json("examples/warehouse-set-global-default.request.json");
+    let frames = run_frames(&world, "corr-global-write", &[request]);
+    assert_eq!(frames[0]["kind"], "response");
+    let value = &frames[0]["payload"]["value"];
+    assert!(
+        validator.is_valid(value),
+        "the acceptance must match the frozen result schema: {value}"
+    );
+    let expected = read_json("examples/warehouse-set-global-default.result.json");
+    assert_eq!(value, &expected);
+    // The persisted fact (not an echo path) now rules the global level.
+    assert_eq!(world.bdl.global_default_mode().unwrap(), Some(ArtifactMode::GenerateVpm));
+
+    // Two-level resolution follows the persisted global: the same clear
+    // vector now reports generate_vpm for the override-less entry.
+    let clear = reworded(&read_json("examples/warehouse-set-artifact-mode-clear.request.json"), &world.warehouse_item_id);
+    let frames = run_frames(&world, "corr-global-after", &[clear]);
+    assert_eq!(frames[0]["payload"]["value"]["effectiveMode"], "generate_vpm");
+
+    // The entry level still wins over the persisted global default.
+    let mut override_request = reworded(&read_json("examples/warehouse-set-artifact-mode.request.json"), &world.warehouse_item_id);
+    override_request["params"]["mode"] = json!("use_original_unitypackage");
+    let frames = run_frames(&world, "corr-global-entry-wins", &[override_request]);
+    assert_eq!(frames[0]["payload"]["value"]["effectiveMode"], "use_original_unitypackage");
+}
+
+#[test]
+fn set_global_default_mode_rejects_null_missing_and_unknown_modes() {
+    let world = make_world("global-default-guards");
+    let validator = result_validator();
+
+    // The frozen negative vector: the global level has no null — the default
+    // always has a value, so an explicit null is a params violation.
+    let null_mode = read_json("examples/invalid-global-default-mode.json");
+    let frames = run_frames(&world, "corr-global-null", &[null_mode]);
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.warehouse.invalid_params");
+
+    // A missing mode is likewise a params violation, not a no-op.
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": "frame-global-missing",
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": "req-global-missing",
+            "correlationId": "corr-global-missing",
+            "kind": "command",
+            "method": "warehouse.setGlobalDefaultMode",
+            "params": {},
+        },
+    });
+    let mut output = Vec::new();
+    run_provider_host_with_services(
+        Cursor::new(format!("{frame}\n")),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        Some(WarehouseConfig {
+            bdl: world.bdl.clone(),
+            warehouse_root: world.base.join("warehouse"),
+            global_default: ArtifactMode::UseOriginalUnitypackage,
+            executor: None,
+        }),
+    )
+    .expect("frame loop runs");
+    let frames: Vec<Value> = String::from_utf8(output)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.warehouse.invalid_params");
+
+    // Nothing was persisted along the failure paths.
+    assert_eq!(world.bdl.global_default_mode().unwrap(), None);
+    // Every error path stays an application error: it never validates as a
+    // frozen result.
+    assert!(!validator.is_valid(&frames[0]["payload"]["error"]));
 }

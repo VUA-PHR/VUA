@@ -233,6 +233,13 @@ export interface WarehouseDeleteOriginalsRequestV1 {
   readonly method: "warehouse.deleteOriginals";
   readonly params: { readonly warehouseItemId: string; readonly commandId: string };
 }
+/** 全局默认产物模式写入口(bdl-commands v0.2 全局层,W14/W15) */
+export interface WarehouseSetGlobalDefaultModeRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.setGlobalDefaultMode";
+  readonly params: { readonly mode: WarehouseArtifactModeV03; readonly commandId: string };
+}
 
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
@@ -256,7 +263,8 @@ export type DesktopGatewayRequestV1 =
   | DownloadRetryRequestV1
   | WarehouseSetArtifactModeRequestV1
   | WarehouseGenerateVpmRequestV1
-  | WarehouseDeleteOriginalsRequestV1;
+  | WarehouseDeleteOriginalsRequestV1
+  | WarehouseSetGlobalDefaultModeRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -282,6 +290,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.setArtifactMode": "command",
   "warehouse.generateVpm": "command",
   "warehouse.deleteOriginals": "command",
+  "warehouse.setGlobalDefaultMode": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;

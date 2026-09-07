@@ -21,8 +21,8 @@ import { format, strings } from "../i18n/index.ts";
  * - 错误形态与 live 同构:协议稳定码原样透传,不在端口层吞掉或翻译。
  */
 
-/** fixture 演示全局默认(真实值由 provider 运行时配置注入,不进 wire) */
-const FIXTURE_GLOBAL_DEFAULT: WarehouseArtifactMode = "use_original_unitypackage";
+/** fixture 演示全局默认(W15 重做:全局开关写入后联动条目生效模式解析) */
+let fixtureGlobalDefault: WarehouseArtifactMode = "use_original_unitypackage";
 
 const SETTLE_MS = 900;
 
@@ -68,7 +68,7 @@ export function createFixtureWarehouseCommands(
         ));
       }
       // 演示语义:生效模式 = 覆盖 ?? fixture 全局默认(真实解析在服务端读回)
-      const effective = mode ?? FIXTURE_GLOBAL_DEFAULT;
+      const effective = mode ?? fixtureGlobalDefault;
       store.setMode(warehouseItemId, mode);
       return Promise.resolve({
         ok: true,
@@ -142,6 +142,12 @@ export function createFixtureWarehouseCommands(
         completeTask(taskId);
       }, SETTLE_MS);
       return Promise.resolve({ ok: true, accepted: { taskId, correlationId } });
+    },
+
+    // W14 v0.2 全局层(演示语义):同步写入演示状态并回读持久事实(非回显)
+    setGlobalDefaultMode: (mode) => {
+      fixtureGlobalDefault = mode;
+      return Promise.resolve({ ok: true, global: { globalDefaultMode: mode } });
     },
 
     capability: () => Promise.resolve({ state: "ready" }),

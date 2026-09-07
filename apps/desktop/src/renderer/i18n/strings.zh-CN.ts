@@ -99,7 +99,7 @@ export const strings: Strings = {
     envCheck: "创作环境检测",
     envCheckWarning: "VPM 环境未通过验证",
     warehouseScan: "仓库素材扫描",
-    generateVpm: "生成 VPM:{name}",
+    generateVpm: "生成 VPM 包:{name}",
     deleteOriginals: "删除原始素材:{name}",
   },
   taskCenter: {
@@ -505,7 +505,7 @@ rolled_back: "已回滚",
       evidence: {
         snapshot: "快照",
         bridge: "Bridge 作业",
-        localVpm: "本地 VPM",
+        localVpm: "本地 VPM 包",
         validation: "验证",
         attempted: "已尝试",
         notAttempted: "未尝试",
@@ -854,7 +854,7 @@ rolled_back: "已回滚",
       /** 副本角色(键与 gateway WarehouseArtifactRole 对应) */
       role: {
         original: "原始包",
-        generated_vpm: "生成 VPM",
+        generated_vpm: "生成 VPM 包",
       },
       /** 条目路径(键与 gateway WarehouseEntryKind 对应) */
       kind: {
@@ -864,7 +864,7 @@ rolled_back: "已回滚",
       /** 产物模式(键与 gateway WarehouseArtifactMode 对应;模式行是 F4-9 编辑展示位) */
       mode: {
         use_original_unitypackage: "使用原始 UnityPackage",
-        generate_vpm: "生成 VPM",
+        generate_vpm: "生成 VPM 包",
       },
       modeOverride: "覆盖全局",
       modeFollowGlobal: "跟随全局",
@@ -875,16 +875,16 @@ rolled_back: "已回滚",
       modeApply: "应用覆盖",
       modeApplying: "正在应用…",
       actionsTitle: "条目动作",
-      actionGenerateVpm: "生成 VPM",
+      actionGenerateVpm: "生成 VPM 包",
       actionDeleteOriginals: "删除原始素材",
-      deleteConfirmNote: "删除不可恢复:原始素材文件将从仓库移除,生成 VPM 副本保留。",
+      deleteConfirmNote: "删除不可恢复:原始素材文件将从仓库移除,生成的 VPM 包副本保留。",
       acceptedNote: "已受理,进度请在任务中心查看。",
       commandFailed: "操作未能完成。",
       commandErrors: {
-        vua_warehouse_invalid_state: "当前生效模式不是「生成 VPM」,此操作不可用。",
-        vua_warehouse_generated_artifact_missing: "生成 VPM 副本缺失或校验未通过,无法删除原始素材。",
+        vua_warehouse_invalid_state: "当前生效模式不是「生成 VPM 包」,此操作不可用。",
+        vua_warehouse_generated_artifact_missing: "VPM 包副本缺失或校验未通过,无法删除原始素材。",
         vua_warehouse_no_original_material: "该条目没有原始素材,无法生成。",
-        vua_warehouse_already_generated: "已有生成 VPM 副本;删除它之后才能重新生成。",
+        vua_warehouse_already_generated: "已有 VPM 包副本;删除它之后才能重新生成。",
         vua_warehouse_entry_not_found: "未找到该条目,本地数据可能已更新。",
         vua_warehouse_unavailable: "仓库服务尚未接入。",
         vua_warehouse_invalid_params: "请求参数未通过校验。",
@@ -1370,15 +1370,31 @@ rolled_back: "已回滚",
     skip: "跳过",
   },
   settings: {
-    /** 实验性功能页(proposal 007 路径 b):开关是用户偏好,只控制入口显隐;
-     *  全局默认由服务端配置,此处只读呈现,不提供全局默认写入口 */
+    /** 实验性功能页(W15 重做形态,用户走查示意图 A/B):单卡=标题+副题+警示条
+     *  +两行开关。行1「生成 VPM 替代」=全局默认模式写面(bdl-commands v0.2 全局层
+     *  setGlobalDefaultMode);行2「生成后删除原始素材文件」=危险开关,未接线偏好
+     *  (全局自动删除超出已冻结条目级命令,协议面随 proposal 008 裁决),开启必经
+     *  危险确认对话框,恒挂未接线标注 */
     experimental: {
       title: "实验性功能",
+      subtitle: "默认关闭,使用前请仔细阅读说明",
       badge: "实验性",
-      warehouseModeTitle: "生成 VPM 模式入口",
-      warehouseModeDesc: "开启后,仓储条目详情中显示产物模式编辑与「生成 VPM / 删除原始素材」条目动作(走已冻结的 bdl-commands v0.1 条目级命令)。全局默认由服务端配置决定,此处不提供全局默认开关。关闭仅隐藏入口,不改变已保存的模式。",
-      on: "开",
-      off: "关",
+      warning: "实验性功能可能产生非预期行为。启用前请确保你理解其影响。",
+      generateTitle: "生成 VPM 替代",
+      generateDesc: "在装配时自动生成 VPM 兼容包清单(实验性)。",
+      globalReadUnknown: "当前全局默认值尚未读取;切换一次后以服务端回执为准。",
+      deleteTitle: "生成后删除原始素材文件",
+      deleteBadge: "危险",
+      deleteDesc: "VPM 生成完成后删除原始 .unitypackage 文件。此操作不可逆,仅可在已确认生成质量后启用。需要「生成 VPM 替代」先开启。",
+      notWired: "该功能尚未接线到服务端,开启仅记录意图(协议面随 proposal 008 裁决后实现)。",
+      devPrototypeNote: "本原型不会真正删除任何文件。",
+      dialogTitle: "危险操作确认",
+      dialogBodyA: "启用「生成后删除原始素材文件」后,VPM 生成完成时将",
+      dialogBodyEmphasis: "永久删除",
+      dialogBodyB: "对应的 .unitypackage 文件。",
+      dialogWarning: "此操作不可逆。确保你已验证 VPM 生成结果后再启用。",
+      dialogCancel: "取消",
+      dialogConfirm: "我已了解风险,启用",
     },
     goals: {
       heading: "目标重选",
@@ -1577,6 +1593,18 @@ rolled_back: "已回滚",
       outfitArmature: "衣装 Armature",
       toggleName: "开关名称",
       workflowId: "工作流 ID",
+    },
+  },
+  /** 应用面错误文案:键 = 线上 messageKey(键先行,provider 在错误通道下发
+   *  errors.catalog.*);catalog 浏览器当前将失败回落 not-connected/not-found,
+   *  该视图中透传呈现这些键为后续切片 */
+  errors: {
+    catalog: {
+      productNotFound: "未找到该目录条目,它可能已被移除或下架。",
+      invalidParams: "目录请求未通过校验。",
+      unavailable: "目录服务尚未接入。",
+      storeFailed: "目录存储发生故障,请求未完成。",
+      fallback: "目录操作未能完成。",
     },
   },
 };

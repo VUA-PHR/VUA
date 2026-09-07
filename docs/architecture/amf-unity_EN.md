@@ -2,11 +2,11 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.0.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.0.0)
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.0.1)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-06
+> Updated: 2026-09-08
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -56,7 +56,7 @@ Unknown format, lock, or capability means read-only inspection, conversion advic
 ## Build Record
 
 Each production run retains an immutable record linking the Recipe version and fingerprint, resolved
-local assets and provenance, Unity/VPM/tool versions, ProjectSpec, approved plan, initial/final project
+local assets and provenance, Unity/VPM package/tool versions, ProjectSpec, approved plan, initial/final project
 fingerprints, Bridge requests/results/warnings/inspection summary, and snapshots/recovery points. Its
 content is limited to reproducibility metadata and excludes session secrets, upload identity, and
 redistribution-restricted asset contents.
@@ -87,5 +87,7 @@ configuration, and outputs remain local. Deterministic operations use defined Br
 
 ## Document changelog
 
+- 1.0.1 (2026-09-08): mirror fix — "Unity/VPM/tool versions" aligned with the authoritative ZH
+  wording ("Unity、VPM 包与工具版本"); per BOARD #9 terminology, VPM 包 = VPM package.
 - 1.0.0 (2026-09-06): entered version management; header normalized and conformance-review date
   added. Content reviewed against reality with no change.

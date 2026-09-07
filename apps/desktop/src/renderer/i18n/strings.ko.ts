@@ -86,7 +86,7 @@ export const strings: Strings = {
     envCheck: "창작 환경 검사",
     envCheckWarning: "VPM 환경 검증 실패",
     warehouseScan: "창고 애셋 스캔",
-    generateVpm: "VPM 생성:{name}",
+    generateVpm: "VPM 패키지 생성:{name}",
     deleteOriginals: "오리지널 삭제:{name}",
   },
   taskCenter: {
@@ -468,7 +468,7 @@ rolled_back: "롤백됨",
       evidence: {
         snapshot: "스냅샷",
         bridge: "Bridge 작업",
-        localVpm: "로컬 VPM",
+        localVpm: "로컬 VPM 패키지",
         validation: "검증",
         attempted: "시도됨",
         notAttempted: "시도 안 함",
@@ -791,7 +791,7 @@ rolled_back: "롤백됨",
       },
       role: {
         original: "원본 패키지",
-        generated_vpm: "생성된 VPM",
+        generated_vpm: "생성된 VPM 패키지",
       },
       kind: {
         imported_material: "일괄 가져오기",
@@ -799,7 +799,7 @@ rolled_back: "롤백됨",
       },
       mode: {
         use_original_unitypackage: "원본 UnityPackage 사용",
-        generate_vpm: "VPM 생성",
+        generate_vpm: "VPM 패키지 생성",
       },
       modeOverride: "전역 설정 재정의",
       modeFollowGlobal: "전역 설정 따름",
@@ -811,16 +811,16 @@ rolled_back: "롤백됨",
       modeApply: "덮어쓰기 적용",
       modeApplying: "적용 중…",
       actionsTitle: "항목 작업",
-      actionGenerateVpm: "VPM 생성",
+      actionGenerateVpm: "VPM 패키지 생성",
       actionDeleteOriginals: "오리지널 삭제",
-      deleteConfirmNote: "삭제는 되돌릴 수 없습니다: 원본 파일은 창고에서 제거되고 생성된 VPM 복사본은 유지됩니다.",
+      deleteConfirmNote: "삭제는 되돌릴 수 없습니다: 원본 파일은 창고에서 제거되고 생성된 VPM 패키지 복사본은 유지됩니다.",
       acceptedNote: "접수되었습니다. 진행 상황은 작업 센터에서 확인하세요.",
       commandFailed: "작업을 완료하지 못했습니다.",
       commandErrors: {
-        vua_warehouse_invalid_state: "현재 실효 모드가 「VPM 생성」이 아니므로 이 작업을 사용할 수 없습니다.",
-        vua_warehouse_generated_artifact_missing: "생성된 VPM 복사본이 없거나 검증에 실패하여 오리지널을 삭제할 수 없습니다.",
+        vua_warehouse_invalid_state: "현재 실효 모드가 「VPM 패키지 생성」이 아니므로 이 작업을 사용할 수 없습니다.",
+        vua_warehouse_generated_artifact_missing: "VPM 패키지 복사본이 없거나 검증에 실패하여 오리지널을 삭제할 수 없습니다.",
         vua_warehouse_no_original_material: "이 항목에는 생성원이 되는 오리지널 소재가 없습니다.",
-        vua_warehouse_already_generated: "생성된 VPM 복사본이 이미 있습니다. 다시 생성하려면 먼저 삭제하세요.",
+        vua_warehouse_already_generated: "VPM 패키지 복사본이 이미 있습니다. 다시 생성하려면 먼저 삭제하세요.",
         vua_warehouse_entry_not_found: "항목을 찾을 수 없습니다. 로컬 데이터가 변경되었을 수 있습니다.",
         vua_warehouse_unavailable: "창고 서비스에 연결되어 있지 않습니다.",
         vua_warehouse_invalid_params: "요청 매개변수가 검증에 실패했습니다.",
@@ -1298,16 +1298,32 @@ rolled_back: "롤백됨",
     skip: "건너뛰기",
   },
   settings: {
-    /** 실험적 기능 페이지(proposal 007 경로 b). 토글은 사용자 설정으로 입구
-     *  표시만 제어하며, 전역 기본값은 서버 설정에 따르므로 여기서는 읽기
-     *  전용으로 표시합니다. */
+        /** 실험적 기능 페이지(W15 리워크, 사용자 워크스루 도식 A/B): 단일 카드=
+     *  제목+부제+경고 띠+2줄 토글. 1행「VPM 생성 대체」= 전역 기본 모드 쓰기면
+     *  (bdl-commands v0.2 전역 층 setGlobalDefaultMode); 2행「생성 후 원본 삭제」=
+     *  위험 토글, 미연결 설정(전역 자동 삭제는 동결된 항목 수준 명령의 범위를
+     *  넘으므로 wire 면은 proposal 008 결정을 따름). 활성화에는 위험 확인
+     *  대화상자가 필수이며 미연결 표시가 항상 붙습니다 */
     experimental: {
       title: "실험적 기능",
+      subtitle: "기본값은 꺼짐입니다. 사용 전에 설명을 꼼꼼히 읽어주세요",
       badge: "실험적",
-      warehouseModeTitle: "VPM 생성 모드 입구",
-      warehouseModeDesc: "켜면 창고 항목 상세에 아티팩트 모드 편집과 「VPM 생성 / 오리지널 삭제」 항목 작업을 표시합니다(동결된 bdl-commands v0.1 항목 수준 명령 사용). 전역 기본값은 서버 설정으로 결정되며, 여기에 전역 기본값 스위치는 없습니다. 끄면 입구만 숨겨지며 저장된 모드는 변경되지 않습니다.",
-      on: "켬",
-      off: "끔",
+      warning: "실험적 기능은 예기치 않은 동작을 일으킬 수 있습니다. 활성화 전에 영향을 반드시 이해하세요.",
+      generateTitle: "VPM 생성 대체",
+      generateDesc: "조립 시 VPM 호환 패키지 매니페스트를 자동 생성합니다(실험적).",
+      globalReadUnknown: "현재 전역 기본값은 아직 읽지 않았습니다. 한 번 전환하면 서버 응답이 기준이 됩니다.",
+      deleteTitle: "생성 후 원본 삭제",
+      deleteBadge: "위험",
+      deleteDesc: "VPM 생성 완료 후 원본 .unitypackage 파일을 삭제합니다. 이 작업은 되돌릴 수 없으며, 생성 품질을 확인한 후에만 활성화하세요. 「VPM 생성 대체」를 먼저 켜야 합니다.",
+      notWired: "이 기능은 아직 서버에 연결되지 않았습니다. 켜는 것은 의도 기록일 뿐입니다(wire 면은 proposal 008 결정 후 구현).",
+      devPrototypeNote: "이 프로토타입은 실제로 파일을 삭제하지 않습니다.",
+      dialogTitle: "위험 작업 확인",
+      dialogBodyA: "「생성 후 원본 삭제」를 활성화하면 VPM 생성 완료 시 해당 .unitypackage 파일을",
+      dialogBodyEmphasis: "영구 삭제",
+      dialogBodyB: "합니다.",
+      dialogWarning: "이 작업은 되돌릴 수 없습니다. 활성화하기 전에 VPM 생성 결과를 검증했는지 확인하세요.",
+      dialogCancel: "취소",
+      dialogConfirm: "위험을 이해했으며 활성화",
     },
     goals: {
       heading: "목표 다시 선택",
@@ -1497,6 +1513,20 @@ rolled_back: "롤백됨",
       outfitArmature: "의상 Armature",
       toggleName: "토글 이름",
       workflowId: "워크플로 ID",
+    },
+  },
+  /** 앱 면 오류 문구: 키 = 와이어상의 messageKey(키 선행. provider는
+   *  오류 채널로 errors.catalog.*를 전송). 카탈로그 브라우저는 현재
+   *  실패를 not-connected/not-found로 처리하므로, 이 뷰에서의 투과
+   *  표시는 후속 슬라이스. */
+  errors: {
+    catalog: {
+      productNotFound:
+        "해당 카탈로그 항목을 찾을 수 없습니다. 삭제되었거나 판매가 종료되었을 수 있습니다.",
+      invalidParams: "카탈로그 요청이 검증을 통과하지 못했습니다.",
+      unavailable: "카탈로그 서비스에 연결되어 있지 않습니다.",
+      storeFailed: "카탈로그 저장소에 장애가 발생하여 요청을 완료하지 못했습니다.",
+      fallback: "카탈로그 작업을 완료하지 못했습니다.",
     },
   },
 };

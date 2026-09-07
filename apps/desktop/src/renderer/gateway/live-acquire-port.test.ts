@@ -178,7 +178,7 @@ describe("live acquire port (F4-6)", () => {
     if (detail.kind !== "detail") return;
     expect(detail.entry.artifacts[0]?.inspectedAt).toBe("2026-09-01T10:21:00+08:00");
 
-    client.queue(errApplication("vua.warehouse.not_found"));
+    client.queue(errApplication("vua.warehouse.entry_not_found"));
     expect((await port.entryDetail("whentry-missing")).kind).toBe("not-found");
 
     client.queue(errApplication("vua.warehouse.unavailable"));

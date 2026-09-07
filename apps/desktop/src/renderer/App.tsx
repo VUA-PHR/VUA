@@ -58,10 +58,7 @@ import {
   buildDiagnostics,
   downloadDiagnostics,
 } from "./features/settings/diagnostics.ts";
-import {
-  saveWarehouseExperimentalMode,
-  useWarehouseExperimentalMode,
-} from "./app/warehouse-experimental-mode.ts";
+import { ExperimentalCommands } from "./features/settings/experimental-commands.tsx";
 import { appMeta } from "./app/app-meta.ts";
 import { NavOverflowMenu } from "./app/NavOverflowMenu.tsx";
 import { openExternalUrl } from "./app/open-external.ts";
@@ -175,36 +172,19 @@ function PlaceholderPage({ title, description }: { title: string; description: s
 }
 
 /**
- * 设置-实验性页(proposal 007 路径 b):产物模式实验开关是用户偏好(localStorage),
- * 只控制仓储条目抽屉中模式编辑/条目动作入口的显隐;命令面为已冻结的
- * bdl-commands v0.1 条目级三命令。全局默认由服务端配置(provider 运行时),
- * 此处只读呈现「由服务端配置」,不提供全局默认写入口(须先协议升版)。
+ * 设置-实验性页(W15 重做形态,用户走查示意图 A/B):单卡 = 标题+副题+警示条
+ * +「生成 VPM 替代」全局开关(已冻结的 warehouse.setGlobalDefaultMode)+
+ * 「生成后删除原始素材文件」危险开关(未接线偏好,确认对话框,proposal 008)。
+ * 007 的「生成 VPM 模式入口」偏好开关被全局开关语义取代(提案 008 复核)。
  */
 function ExperimentalSettingsPage() {
-  const on = useWarehouseExperimentalMode();
-  const copy = strings.settings.experimental;
   return (
     <div className="vua-page">
       <section className="vua-page__hero">
         <h1 className="vua-title">{strings.nav.pages.settingsExperimental}</h1>
       </section>
       <Card>
-        <div className="vua-page__stack">
-          <h2 className="vua-title">{copy.title}</h2>
-          <div>
-            <span className="vua-caption vua-text-secondary">{copy.badge}</span>
-            <strong>{copy.warehouseModeTitle}</strong>
-            <div className="vua-page__stack">
-              <Button
-                variant={on ? "primary" : "default"}
-                onClick={() => saveWarehouseExperimentalMode(!on)}
-              >
-                {on ? copy.on : copy.off}
-              </Button>
-              <p className="vua-caption vua-text-secondary">{copy.warehouseModeDesc}</p>
-            </div>
-          </div>
-        </div>
+        <ExperimentalCommands />
       </Card>
     </div>
   );

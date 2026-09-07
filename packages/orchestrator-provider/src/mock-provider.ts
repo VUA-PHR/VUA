@@ -215,12 +215,17 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "catalog.list":
         return this.#success(request, { total: 0, entries: [] });
       case "catalog.detail":
+        // W12 对齐(核心 10325cd):detail 未命中(含墓碑)的应用面码为
+        // vua.catalog.product_not_found,messageKey 随之;与真实
+        // provider-host 的错误词表保持一致,DEV mock 不偏离冻结面。
+        // recoverable/retryable 同样镜像 provider 的 application_error
+        // (recoverable=true, retryable=false)——核心复核补齐(2026-09-08)
         return this.#failure(request, this.#error(
-          "vua.catalog.not_found",
+          "vua.catalog.product_not_found",
           "validation",
-          "errors.catalog.notFound",
+          "errors.catalog.productNotFound",
           request.correlationId,
-          false,
+          true,
           false,
         ));
       case "catalog.status":
@@ -231,12 +236,16 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "warehouse.listEntries":
         return this.#success(request, { entries: [] });
       case "warehouse.entryDetail":
+        // 同上对齐:真实 provider(10325cd)对 entryDetail 未命中回既有
+        // 冻结码 vua.warehouse.entry_not_found / errors.warehouse.
+        // entryNotFound,不是此处旧存的 not_found 字面量(从未存在)——
+        // 核心复核补齐(2026-09-08)
         return this.#failure(request, this.#error(
-          "vua.warehouse.not_found",
+          "vua.warehouse.entry_not_found",
           "validation",
-          "errors.warehouse.notFound",
+          "errors.warehouse.entryNotFound",
           request.correlationId,
-          false,
+          true,
           false,
         ));
       case "download.ingest":
@@ -253,6 +262,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "warehouse.setArtifactMode":
       case "warehouse.generateVpm":
       case "warehouse.deleteOriginals":
+      case "warehouse.setGlobalDefaultMode":
         // 模拟 Provider 未配置 BDL 写域:诚实不可用(bdl-commands v0.1,
         // proposal 005;桌面登记 TS 面时的穷尽性最小表态,业务路由归核心)
         return this.#failure(request, this.#error(

@@ -97,3 +97,100 @@ export function entryActions(entry: WarehouseEntry): readonly WarehouseEntryActi
   if (hasGenerated) actions.push("deleteOriginals");
   return actions;
 }
+
+/* ---- W15 设置-实验性两级选项(设置页内发起的条目级操作) ----
+ * 与 entryActions 同一面服务端守卫的镜像,但呈现诉求不同:仓储抽屉是
+ * "入口隐藏/出现",设置页是"置灰 + 原因"。守卫事实仍归服务端(协议
+ * 八码),这里的条件只决定入口可用性与置灰原因文案,与协议语义一致。
+ */
+
+/** 两级选项置灰原因(i18n 键,settings.experimental.gate*) */
+export type ExperimentalGateReason =
+  | "modeNotGenerateVpm"
+  | "noOriginal"
+  | "alreadyGenerated"
+  | "noGeneratedCopy";
+
+export interface ExperimentalGate {
+  readonly available: boolean;
+  /** available=false 时的置灰原因;available=true 恒为 null */
+  readonly reason: ExperimentalGateReason | null;
+}
+
+export interface ExperimentalActionGates {
+  readonly generateVpm: ExperimentalGate;
+  readonly deleteOriginals: ExperimentalGate;
+}
+
+/** 设置页两级选项前置镜像(条件与 entryActions 逐一对应) */
+export function experimentalActionGates(entry: WarehouseEntry): ExperimentalActionGates {
+  const modeOk = entry.effectiveArtifactMode === "generate_vpm";
+  const hasOriginal = entry.artifacts.some((artifact) => artifact.role === "original");
+  const hasGenerated = entry.artifacts.some((artifact) => artifact.role === "generated_vpm");
+  return {
+    // 生成 = 生效 generate_vpm + 有原始件 + 尚无生成副本(副本永不静默替换)
+    generateVpm: !modeOk
+      ? { available: false, reason: "modeNotGenerateVpm" }
+      : !hasOriginal
+        ? { available: false, reason: "noOriginal" }
+        : hasGenerated
+          ? { available: false, reason: "alreadyGenerated" }
+          : { available: true, reason: null },
+    // 删除原始 = 生效 generate_vpm + 生成副本在场(审计性破坏操作的前置事实)
+    deleteOriginals: !modeOk
+      ? { available: false, reason: "modeNotGenerateVpm" }
+      : !hasGenerated
+        ? { available: false, reason: "noGeneratedCopy" }
+        : { available: true, reason: null },
+  };
+}
+
+/** W15 条目选择器数据投影:值 = 条目身份,标签 = 显示名,副行 = 文件夹名 */
+export interface SettingsEntryOption {
+  readonly value: string;
+  readonly label: string;
+  readonly folderName: string;
+}
+
+export function settingsEntryOptions(
+  entries: readonly WarehouseEntry[],
+): readonly SettingsEntryOption[] {
+  return entries.map((entry) => ({
+    value: entry.warehouseItemId,
+    label: entry.displayName,
+    folderName: entry.folderName,
+  }));
+}
+
+/**
+ * 写命令错误 → 本地化文案查表(仓储抽屉与设置页共用):code 是协议冻结面,
+ * 键为点号转下划线;未知码回落通用失败文案;传输面三态回落服务未接入。
+ */
+export function commandErrorText(
+  error: { kind: "unavailable" | "request_rejected" | "application"; code?: string },
+  commandErrors: Readonly<Record<string, string>>,
+): string {
+  if (error.kind === "application" && typeof error.code === "string") {
+    return commandErrors[error.code.replaceAll(".", "_")] ?? commandErrors.fallback!;
+  }
+  return commandErrors.vua_warehouse_unavailable!;
+}
+
+/* ---- W15 重做:全局默认模式的读面推断(设置页全局开关的初值) ----
+ * wire 无独立的全局默认查询;条目读面中无覆盖条目的生效模式即
+ * 「覆盖 ?? composed 全局默认」的动态解析结果,可据此推断。全部条目
+ * 均有覆盖(或空仓库)时不可知——如实 unknown,UI 标注而非猜测初值。
+ */
+
+export type GlobalDefaultInference =
+  | { readonly kind: "known"; readonly mode: WarehouseArtifactMode }
+  | { readonly kind: "unknown" };
+
+export function inferGlobalDefaultMode(
+  entries: readonly WarehouseEntry[],
+): GlobalDefaultInference {
+  const probe = entries.find((entry) => entry.artifactMode === null);
+  return probe === undefined
+    ? { kind: "unknown" }
+    : { kind: "known", mode: probe.effectiveArtifactMode };
+}

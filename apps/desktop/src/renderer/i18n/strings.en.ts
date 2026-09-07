@@ -847,7 +847,7 @@ rolled_back: "Rolled back",
       },
       role: {
         original: "Original package",
-        generated_vpm: "Generated VPM",
+        generated_vpm: "Generated VPM package",
       },
       kind: {
         imported_material: "Batch import",
@@ -855,7 +855,7 @@ rolled_back: "Rolled back",
       },
       mode: {
         use_original_unitypackage: "Use original UnityPackage",
-        generate_vpm: "Generate VPM",
+        generate_vpm: "Generate VPM package",
       },
       modeOverride: "Overrides global",
       modeFollowGlobal: "Follows global",
@@ -876,7 +876,7 @@ rolled_back: "Rolled back",
         vua_warehouse_invalid_state: "The effective mode is not “Generate VPM”; this action is unavailable.",
         vua_warehouse_generated_artifact_missing: "The generated VPM copy is missing or failed verification; originals cannot be deleted.",
         vua_warehouse_no_original_material: "This entry has no original material to generate from.",
-        vua_warehouse_already_generated: "A generated VPM copy already exists; delete it before regenerating.",
+        vua_warehouse_already_generated: "A VPM package copy already exists; delete it before regenerating.",
         vua_warehouse_entry_not_found: "Entry not found; local data may have changed.",
         vua_warehouse_unavailable: "The warehouse service is not connected.",
         vua_warehouse_invalid_params: "Request parameters failed validation.",
@@ -1364,16 +1364,34 @@ rolled_back: "Rolled back",
     skip: "Skip",
   },
   settings: {
-    /** Experimental features page (proposal 007 path b): the toggle is a user
-     *  preference controlling entry visibility only; the global default comes
-     *  from server configuration and is presented read-only here. */
+    /** Experimental page (W15 rework, user walkthrough mockups A/B): one card
+     *  = title + subtitle + warning strip + two toggle rows. Row 1 “Generate
+     *  VPM replacement” writes the frozen warehouse.setGlobalDefaultMode
+     *  (bdl-commands v0.2 global level); row 2 “Delete originals after
+     *  generation” is a danger toggle backed by an unwired preference (the
+     *  global auto-delete exceeds the frozen entry-level command; the wire
+     *  face follows proposal 008), guarded by a danger confirm dialog and
+     *  permanently labeled as unwired. */
     experimental: {
       title: "Experimental features",
+      subtitle: "Off by default; read the notes carefully before use",
       badge: "Experimental",
-      warehouseModeTitle: "Generate VPM mode entry",
-      warehouseModeDesc: "When on, the warehouse entry drawer shows the artifact-mode editor and the “Generate VPM / Delete originals” entry actions (using the frozen bdl-commands v0.1 entry-level commands). The global default is decided by server configuration; no global-default toggle is provided here. Turning it off only hides the entry; saved modes are unchanged.",
-      on: "On",
-      off: "Off",
+      warning: "Experimental features may behave unexpectedly. Make sure you understand the impact before enabling.",
+      generateTitle: "Generate VPM replacement",
+      generateDesc: "Automatically generates a VPM-compatible package manifest during assembly (experimental).",
+      globalReadUnknown: "The current global default has not been read yet; after one toggle the server receipt is authoritative.",
+      deleteTitle: "Delete originals after generation",
+      deleteBadge: "Danger",
+      deleteDesc: "Deletes the original .unitypackage files once VPM generation completes. This is irreversible; enable only after confirming the generated quality. Requires “Generate VPM replacement” first.",
+      notWired: "This feature is not wired to the server yet; enabling it only records intent (the wire face follows proposal 008).",
+      devPrototypeNote: "This prototype does not actually delete any files.",
+      dialogTitle: "Dangerous operation confirm",
+      dialogBodyA: "After enabling “Delete originals after generation”, VPM generation will ",
+      dialogBodyEmphasis: "permanently delete",
+      dialogBodyB: " the corresponding .unitypackage files.",
+      dialogWarning: "This is irreversible. Make sure you have verified the VPM generation result before enabling.",
+      dialogCancel: "Cancel",
+      dialogConfirm: "I understand the risk, enable",
     },
     goals: {
       heading: "Reset Goals",
@@ -1568,6 +1586,20 @@ rolled_back: "Rolled back",
       outfitArmature: "Outfit Armature",
       toggleName: "Toggle name",
       workflowId: "Workflow ID",
+    },
+  },
+  /** Application-face error copy, keyed by the messageKey the wire carries
+   *  (key-first: provider sends errors.catalog.* on the error channel). The
+   *  catalog browser currently degrades failures to not-connected/not-found;
+   *  surfacing these keys in that view is a follow-up slice. */
+  errors: {
+    catalog: {
+      productNotFound:
+        "This catalog entry was not found. It may have been removed or delisted.",
+      invalidParams: "The catalog request did not pass validation.",
+      unavailable: "The catalog service is not connected.",
+      storeFailed: "The catalog store hit a failure; the request was not completed.",
+      fallback: "The catalog operation could not be completed.",
     },
   },
 };

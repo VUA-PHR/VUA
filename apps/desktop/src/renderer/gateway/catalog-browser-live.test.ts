@@ -194,13 +194,56 @@ describe("live catalog browser port (F4-5)", () => {
     expect((await port.detail("booth:3681787")).kind).toBe("not-connected");
 
     // 未知/墓碑 productId → 诚实 not-found(应用错误透传呈现)
-    client.queue(errApplication("vua.catalog.not_found"));
+    client.queue(errApplication("vua.catalog.product_not_found"));
     expect((await port.detail("booth:3681787")).kind).toBe("not-found");
 
     // 身份形态不齐的查询不投递必败请求,直接诚实 not-found
     expect((await port.detail("shopify:42")).kind).toBe("not-found");
     // 前三条走线 detail 各一次;形态不齐身份未发请求
     expect(client.sent().filter((r) => r.method === "catalog.detail")).toHaveLength(3);
+  });
+
+  it("surfaces application errors as typed error views (W17 pass-through)", async () => {
+    const client = stubClient();
+    const port = createLiveCatalogBrowser(client);
+
+    // 冻结码 → 白名单键(list 与 detail 同规则);messageKey 经 strings.errors 解析
+    client.queue(errApplication("vua.catalog.invalid_params"));
+    expect(await port.list()).toEqual({
+      schemaVersion: 1,
+      kind: "error",
+      messageKey: "errors.catalog.invalidParams",
+    });
+    client.queue(errApplication("vua.catalog.store_failed"));
+    expect(await port.list()).toEqual({
+      schemaVersion: 1,
+      kind: "error",
+      messageKey: "errors.catalog.storeFailed",
+    });
+    client.queue(errApplication("vua.catalog.unavailable"));
+    expect(await port.detail("booth:3681787")).toEqual({
+      schemaVersion: 1,
+      kind: "error",
+      messageKey: "errors.catalog.unavailable",
+    });
+
+    // 词表外 application 码 → fallback,不猜测具体原因
+    client.queue(errApplication("vua.catalog.something_new"));
+    expect(await port.detail("booth:3681787")).toEqual({
+      schemaVersion: 1,
+      kind: "error",
+      messageKey: "errors.catalog.fallback",
+    });
+
+    // 未命中(product_not_found)是 not-found 事实形态,不是错误文案(W12 语义不变)
+    client.queue(errApplication("vua.catalog.product_not_found"));
+    expect((await port.detail("booth:3681787")).kind).toBe("not-found");
+
+    // 传输面失败(服务未达)仍是 not-connected,不冒充错误文案
+    client.queue(errUnavailable);
+    expect((await port.list()).kind).toBe("not-connected");
+    client.queue(errUnavailable);
+    expect((await port.detail("booth:3681787")).kind).toBe("not-connected");
   });
 
   it("maps detail increments honestly: adult/sourceCategory/subproducts/empty slots", async () => {
