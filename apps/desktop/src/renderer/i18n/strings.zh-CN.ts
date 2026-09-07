@@ -1605,6 +1605,7 @@ rolled_back: "已回滚",
       invalidParams: "目录请求未通过校验。",
       unavailable: "目录服务尚未接入。",
       storeFailed: "目录存储发生故障,请求未完成。",
+      fallback: "目录操作未能完成。",
     },
   },
 };
