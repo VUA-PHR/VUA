@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-7c8d-7e9f-8a1b-9c0d1e2f3a4b",
+  "kind": "guard_denied",
+  "subject": {
+    "ref": "warehouse:0198f2e1-d4c3-b2a1-9098-776655443322"
+  },
+  "observedAt": "2026-09-08T06:35:00.000Z",
+  "detail": "sourceRef carries neither reference — an evidence without its producing context is not admissible.",
+  "sourceRef": {},
+  "resolution": null
+}

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ph-r.com/vua/schemas/unity-bridge/v2/result.schema.json",
-  "title": "VUA Unity bridge result v2 (DRAFT — mutual review before freeze, proposal 009)",
-  "description": "Versioned result returned by the VUA Unity middleware to AMF Production. v2 is a superset of v1: all v1 fields preserved; production-job receipts add explicit dry-run/real-run distinction (honesty rule: a dry-run receipt never poses as a real run), per-step plan lists (step-kind vocabulary owned by the plan schema, W20), the replay guard echo, and snapshot/restore identity per proposal 009 rulings.",
+  "title": "VUA Unity bridge result v2",
+  "description": "Versioned result returned by the VUA Unity middleware to AMF Production. v2 is a frozen superset of v1: all v1 fields preserved; production-job receipts add explicit dry-run/real-run distinction (honesty rule: a dry-run receipt never poses as a real run), per-step plan lists (step-kind vocabulary owned by the plan schema, W20), per-step resolved-source transcription (auditable, never re-interpreted), the replay guard echo, and snapshot/restore identity per proposal 009 rulings. A rejected receipt carries no snapshot — snapshot plus before-fingerprint are evidence of executed change, not of dryRun=false.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "commandId", "status", "changedPaths", "diagnostics"],

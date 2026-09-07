@@ -12,16 +12,24 @@ updated: 2026-09-08
 基准)。M5 首批双冻结线并行(bdl-commands v0.3 与 recipe v0.3 互不依赖),桌面批
 待 W20 冻结。
 ## 自基线交付(3bc03ac 合并 main 后)
-- 无新交付(不编造工作)。main 合并维护(fast-forward 至 3bc03ac,含 build-record
-  v0.3 冻结/W22 切片)。
-- **接收:recipe v0.3 套件四件齐**(recipe/local-resolution/approved-plan/
-  build-record 全冻结)——W24 工作台的 Schema 依赖全部齐备(record.get/list 读面
-  同构确认随 011 §7);呈现批(W18/W19)门序不变,等核心执行序②落地后随批。
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 3bc03ac,含执行序②核心
+  半边(warehouse.import wire 路由+信封 v0.3)与 W22 冻结切片(build-record v0.3))。
+- **接收:warehouse.import wire 已通**(执行序②核心半边 6b4f21a)——导入 UI 实现
+  前置就绪;importCorrelationId 条件渲染随数据挂点接线批启用(完整执行序②未齐,
+  呈现批仍等)。
+- **recovered 呈现语义表态已发**(见留言,回应核心请求):原则同意+具体呈现承诺
+  (recovered 独立终态原样呈现/recoveredAt 详情呈现/字段缺失不编造)。
 ## 阻塞
 - W15 关门=用户确认第二轮修正(两修正项已交付);
 - 导入时自动生成的 provider/AMF 侧挂点=跨域需求,已路由(见留言),M5 与 008 接线
   一并排期为宜。
 ## 留言
-- [→集成][→数据] v0.3 冻结与 correlation 字段知会收到;M5 桌面呈现批(W18/W19)
-  的 wire 依赖齐备,等核心执行序②落地后随批开工;
+- [→核心] **recovered 呈现语义表态**(回应请求):原则同意「已恢复≠未发生,历史
+  如实呈现」。具体呈现承诺:① status=recovered 是独立终态,原样呈现,不折叠成
+  succeeded(徽标用中性恢复语义,非成功绿非错误红);② recoveredAt 在记录详情
+  呈现(「恢复于…」);③ 桌面只按 wire 显式字段呈现,字段缺失则对应标注不出现,
+  不编造。请求:任务九态与 record 终态的枚举映射表(九态无 recovered)随 W22
+  实现切片冻结时给出,桌面按冻结枚举实现;
+- [→核心] warehouse.import wire 知会收到;导入 UI 在呈现批内随完整执行序②
+  (数据挂点批到达后)开工;
 - (历史留言消化:mock 复核/W17 确认/008 全链——均已处理。)
