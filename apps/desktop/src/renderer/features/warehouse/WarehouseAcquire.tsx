@@ -29,7 +29,6 @@ import {
   type AcquireArtifactCard,
 } from "./acquire-model.ts";
 import { useCardSpotlight } from "./use-card-spotlight.ts";
-import { useWarehouseExperimentalMode } from "../../app/warehouse-experimental-mode.ts";
 
 const copy = strings.warehouse.acquire;
 const cloudCopy = strings.warehouse;
@@ -126,10 +125,11 @@ type DetailState =
 
 type ModeDraft = "follow" | WarehouseArtifactMode;
 
-/* 走查 3c 裁决(2026-09-07)+proposal 007 路径 b 表态:模式编辑与生成/删除动作
- * 移入「设置-实验性」开关控制——默认不呈现;开关开启后显示,入口挂实验性标注。
- * 命令面为已冻结的 bdl-commands v0.1 条目级三命令;全局默认由服务端配置,
- * 不进 wire。命令错误文案映射为 W15 起与设置页共用的 acquire-model 纯函数。 */
+/* 走查 3c 裁决(2026-09-07)+W15 重做(用户走查不通过,2026-09-08):模式编辑与
+ * 生成/删除动作不再受偏好开关门控——入口可见性回归条目事实镜像(生效模式与
+ * 工件条件),入口挂实验性标注;全局行为由设置页「生成 VPM 替代」开关写入
+ * 已冻结的 warehouse.setGlobalDefaultMode(v0.2 全局层)。命令错误文案映射
+ * 为与设置页共用的 acquire-model 纯函数。 */
 
 function commandErrorTextFor(error: {
   kind: "unavailable" | "request_rejected" | "application";
@@ -140,7 +140,6 @@ function commandErrorTextFor(error: {
 
 function EntryDetail({ entryId }: { entryId: string }) {
   const gateway = useGateway();
-  const experimentalOn = useWarehouseExperimentalMode();
   const [state, setState] = useState<DetailState>({ kind: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [modeDraft, setModeDraft] = useState<ModeDraft>("follow");
@@ -233,10 +232,9 @@ function EntryDetail({ entryId }: { entryId: string }) {
         {entry.folderName}
       </p>
 
-      {/* F4-9 产物模式编辑(实验性,proposal 007 路径 b):开关开启后呈现;
-          跟随全局 = 清除覆盖(写 null),生效模式以服务端读回为准 */}
-      {experimentalOn ? (
-        <section>
+      {/* F4-9 产物模式编辑(实验性,W15 重做:不再受偏好开关门控,入口可见性
+          回归条目事实;跟随全局 = 清除覆盖(写 null),生效模式以服务端读回为准) */}
+      <section>
           <h3 className="vua-warehouse-detail__section-title">
             {copy.modeEditTitle} <Badge tone="neutral">{strings.settings.experimental.badge}</Badge>
           </h3>
@@ -288,13 +286,12 @@ function EntryDetail({ entryId }: { entryId: string }) {
             }}
           >
             {busy ? copy.modeApplying : copy.modeApply}
-          </Button>
-        </section>
-      ) : null}
+        </Button>
+      </section>
 
       {/* 条目动作(实验性):可见性镜像服务端守卫;删除原始为审计性破坏操作,
           高危样式 + 延迟确认(§8.1),受理后进度走任务中心 */}
-      {experimentalOn && entryActions(entry).length > 0 ? (
+      {entryActions(entry).length > 0 ? (
         <section>
           <h3 className="vua-warehouse-detail__section-title">
             {copy.actionsTitle} <Badge tone="neutral">{strings.settings.experimental.badge}</Badge>
@@ -350,7 +347,7 @@ function EntryDetail({ entryId }: { entryId: string }) {
           ) : null}
         </section>
       ) : null}
-      {experimentalOn && feedback !== null ? (
+      {feedback !== null ? (
         <p className="vua-caption vua-text-secondary" role="status">
           {feedback}
         </p>
