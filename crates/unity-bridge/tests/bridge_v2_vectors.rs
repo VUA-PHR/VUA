@@ -52,6 +52,7 @@ fn w21_positive_vectors_validate_against_both_draft_schemas() {
         "examples/production-job-run.result.json",
         "examples/production-job-replayed.result.json",
         "examples/production-job-rejected.result.json",
+        "examples/production-job-failed.result.json",
         "examples/restore-project.result.json",
         "examples/restore-project-failed.result.json",
     ] {
