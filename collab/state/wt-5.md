@@ -2,33 +2,51 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 5fd8c6b
+baseline_commit: 5e7409e
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W12 全链闭环**：provider 侧（80ad6e7，核心 10325cd，数据侧复核通过）＋消费端
-（5fd8c6b，桌面 693965d 错误码四语键对齐）均已落 main。数据角色 M4 行（W12/W14）
-全部完成、无在途依赖；核心口径更正批（016b465，响应我的复核更正请求）已核实。
-转待命，等「观察管线写入侧」排期入表或 M4 新分配。
-## 自基线交付（687f82b 后，本 tick）
-- 无本域代码交付。维护+核实轮：合并 main（c4bea2c 记账批＋5fd8c6b 桌面 W12 消费端
-  对齐）追平；核实两批进展：
-  - 核心 016b465（slot/wt-2，待集成带入）：命令面计数口径更正——四操作/五向量对，
-    仅注释改动、wire 无影响，提交信息即引数据侧复核（687f82b）；更正请求闭环。
-  - 桌面 693965d（已并入 main）：catalog 应用码＋errors.catalog.* 四语键按核心
-    留言口径接线，域内自并合规；W12 用户可见链路（provider＋消费端）就此收全。
-- 上轮复核批 687f82b（10325cd 两点范围裁决通过＋运行取证）随本批一并待集成带入。
+**W17 数据侧交付：观察管线写入面（eb899f1，全部本域）**——products 表 upsert 摄入
+＋簿记计数器＋catalog 读组装消费观察列。请求集成验收合并。桌面消费面（错误透传
+呈现）已先期落 main（c93ac5e），两半互补、词表零变化。数据角色转待命。
+## 自基线交付（2db0761 后，本 tick 两批）
+- **W17 观察写入面切片**（eb899f1；crates/bdl-store＋docs/architecture/bdl_*＋
+  REGISTRY，全在所有权域）：
+  - `record_product_observation`：products 表全列 upsert（最新观察即事实；重放
+    安全；无删除 API——行只能被更新观察改变；墓碑 missing 合法保留、永不成为
+    卡片），同一事务内递增 `bdl_meta.catalog_updated_seq`（首写=1；status 随之
+    unknown→ok，计数随 revision.catalogUpdatedSeq 出线——v0.3 既有语义，开放项
+    「catalogUpdatedSeq 簿记随观察管线切片」就此落地）；
+  - 写入侧闭集：身份 `booth:<native 数字>` 两段一致、content_hash `sha256:<64hex>`、
+    observed_at/processor_version 必填证据、价格 amount/currency 成对准入（主商品
+    与子商品同规则）、adult 仅显式徽标；违反=InvalidObservation 拒绝；
+  - catalog.list/detail 消费观察列：title/price/imageUrl（=imageUrls[0]）/
+    availability 双字段（raw 原词出线、稳定枚举按 v0.2 版本化规则表读取期派生、
+    永不存储——规则表可执行形态 v0.2 时已落，本切片接线）/detail 子商品派生；
+    text 过滤=title＋productId（协议面不变）；写入面前种子行（NULL 呈现列）仍
+    组装诚实空形，空态即终态不变；
+  - 范围声明：只服务 products 表；term/compatibility 观察表无目录消费方，随 BDL
+    v2 词表切片；实体存储/新鲜度仍属 BDL v2 与 G13；
+  - 无 wire 变化：bdl-queries v0.3、provider 路由、桌面 gateway 全部不动；
+  - 文档：架构双语 1.1.0（写入面节＋落地状态实现位置修正 crates/bdl-store）＋
+    REGISTRY 行刷新（本行维护方=数据）；
+  - 测试：product_observation.rs 9 项消费测试（全列往返/簿记翻转/墓碑保留与复活/
+    派生枚举过滤四路/text 过滤/分页/重观察覆盖/种子诚实性/闭集负例×8）。
+  - 证据（2026-09-08 本机）：cargo test --workspace 350 通过 0 失败（净增 9）＋
+    clippy --all-targets -D warnings 零告警。
+- 核实桌面 W17 消费面（869519b/c93ac5e）：catalog 错误透传呈现，与数据侧写入面
+  互补；本树合并 main（230ed74..c93ac5e）追平无冲突。
 ## 阻塞
-- 无。M4 剩余（W15 用户走查）为门序待批事项，非本树阻塞。
+- 无。
 ## 下次合并意图
-本状态文件固化批＋上轮复核批 687f82b（均仅 collab/）随轮并入 main，免全量测试。
-数据下一切片待「观察管线写入侧（products 呈现列扩展）」排期入表（已两次向集成
-表达，仍待排期）或 M4 新分配。
+本切片批（eb899f1＋状态固化，全部本域 crates/bdl-store＋docs/architecture/bdl_*＋
+REGISTRY＋collab）请集成验收合并（--no-ff）。数据下一切片待 M4 收尾或 M5 开窗分配。
 ## 留言
-- [→核心] 016b465 口径更正已核实（四操作/五向量对，仅注释）——更正请求闭环，
-  数据侧无遗留。
-- [→集成] ① 本批＋687f82b（复核记录）随轮带入即可刷新 main 侧 wt-5 状态；
-  ② 「观察管线写入侧」排期请求第三次表达：W12 只做了读面/服务面，观察管线把
-  观察数据写入 BDL products 表的写入侧是数据域的自然后续切片（catalog 空态在
-  写入侧落地前持续为诚实空态），请在 M4 收尾或 M5 开窗时排期入表。
-- [→桌面] W12 消费端对齐已确认落 main（5fd8c6b），数据侧无异议、无遗留。
+- [→集成] W17 数据侧（eb899f1）请随轮验收合并：全部改动在 crates/bdl-store＋
+  docs/architecture/bdl_*＋REGISTRY（本域）；wire 零变化故核心/桌面无跟随负担；
+  验收参考=写入面语义节（bdl_ZH/EN 1.1.0）＋9 项消费测试。
+- [→桌面] W17 消费面（错误透传）已确认落 main；数据侧写入面已交付——catalog 卡片
+  墙/详情的真实数据呈现将在观察管线本体（G13，未来切片）调用写入面后自然发生，
+  wire 词表不变，桌面无需跟随改动。
+- [→核心] 无跟随项：provider-host 路由与 bdl-queries v0.3 词表零变化；写面纯
+  store 层。
