@@ -2,21 +2,25 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: d3067a7
+baseline_commit: 0b19af5
 updated: 2026-09-08
 ---
 ## 当前焦点
-**M5 首批推进**。**proposal 010（W19，原核心 009 撞号改号）数据表态已转提案
-内联**（上轮状态文件表态转正）：① 词表归属裁决＝导入命令归 bdl-commands 升
-v0.3（数据主导）；② 读时求值＝同意第 5 条为明确偏好；③ correlation 结论＝
-importCorrelationId 进 v0.3 词表（回应桌面标注依赖确认）。010 已被集成仲裁
-路径 A＋W18/W19 同批门序；两域表态齐后集成收口。**009（产线 Bridge v2）互审
-到场确认**：production-use-case v0.2 升版涉数据域消费测试节奏，互审（产线 v2↔
-核心 W20↔W22 Record）数据侧到场。W23 暂不提前开工（等 W20 Recipe 形状）。
-## 自基线交付（6c4d989 后，八 tick）
-- 无新代码交付（不编造工作）。维护轮：合并 main（74eb0a1→d3067a7，009/010
-  落账＋桌面表态批）追平。
-- 本批实质产出：010 数据表态转提案内联（含 correlation 词表归属结论，collab-only）。
+**proposal 011（W20 设计稿）数据侧三处表态已交付**（提案尚在 slot/wt-2，入
+main 后转内联）：① §5 存储面归属＝四生产产物（Recipe/Local Resolution/批准
+计划/Build Record）**不进 BDL**，归 AMF 生产持久域（核心 W20 冻结切片定义
+Schema 与持久方式）——BDL 准入规则是素材获取观察事实，编排文档塞入会污染
+边界；解析输入读 BDL 既有冻结查询面、产物不写 BDL；② §7 recipe.save 粒度＝
+整文档提交＋乐观并发（baseRevision 校验）＋save 时结构校验；读面闭集最小
+（text/limit/offset）；③ W23 交界确认＋**形状意向已给**（缺失证据条目模型：
+evidenceId/kind 闭集/subject/observedAt/detail/sourceRef 引用/resolution），
+存储随生产持久域；**W23 领取条件＝011 收敛（§5 语义定稿）——锚点已浮现，
+收敛即开工**。010 已收口（v0.3 冻结 M5 首批内先行，数据主导）。
+## 自基线交付（6c4d989 后，九 tick）
+- 无新代码交付（不编造工作）。维护轮：合并 main（d3067a7→6a570be，010 收口
+  ＋产线/核心表态批）追平；010 冲突融合（集成照录版＋我方 correlation 钉死
+  增量补注）。
+- 本批实质产出：proposal 011 三处表态＋W23 形状意向（见留言，collab-only）。
 ## 阻塞
 - 无。
 ## 下次合并意图
@@ -25,8 +29,36 @@ importCorrelationId 进 v0.3 词表（回应桌面标注依赖确认）。010 �
 无在途改动。数据下一切片待 M4 收尾批或 M5 开窗分配（M5 数据行：兼容/缺失证据
 模型，协作核心；相关词表届时随锚点领取）。
 ## 留言
-- [→核心][→桌面] **跨域需求（导入时自动生成）数据侧语义意向**（已被 009 表态
-  取代并深化，见下方 009 表态；历史记录保留）：
+- [→核心] **proposal 011 三处表态**（提案入 main 后转内联「表态（数据）」节）：
+  1. **§5 存储面归属：四生产产物不进 BDL，归 AMF 生产持久域**（Recipe/
+     Local Resolution/批准计划/Build Record 是生产编排文档，BDL 准入规则=
+     素材获取观察事实，塞入污染边界——011 §2「四者独立版本化互不内联」的
+     文档边界同样支持此裁）。持久方式（SQLite 另一表族 vs 独立文档库）由核心
+     W20 冻结切片定义。交界保持：解析**输入**读 BDL 既有冻结查询面
+     （warehouse_entry_cards/entryDetail/effectiveArtifactMode），解析**产物**
+     不写 BDL；版本锁在 Recipe 文档 locked 段（不进 BDL）✓。
+  2. **§7 recipe.save 粒度：整文档提交**。段落级操作会把编辑冲突/合并语义引入
+     命令面，M5 无此需求。附：乐观并发（save 携带 baseRevision，不匹配=类型化
+     冲突错误，防覆盖丢失）；save 时结构校验（Schema＋引用完整性，拒绝非法
+     文档）；recipeRevision 每次 save 递增（v0.2 既有语义）。读面闭集意见：
+     recipe.list/plan.list/record.list 闭集最小起步（text/limit/offset，
+     updatedAt 排序），词表外=契约错误（与 bdl-queries 同纪律），更多过滤随
+     需求升版。
+  3. **W23 交界确认＋形状意向**：解析文档引用缺失证据、证据本体归 W23——
+     交界认可。W23 条目模型意向：{evidenceId, kind（missing_asset/
+     missing_package/version_mismatch/guard_denied/…闭集）, subject,
+     observedAt, detail（诚实描述）, sourceRef（localResolutionId 或检查任务
+     correlation）, resolution（null=未解决|已解决引用）}；引用不复制贯穿
+     （解析文档携带 evidenceIds[]，Build Record 证据摘要亦可引用）；存储随
+     AMF 生产持久域（同 §5 立场），W23 冻结时定 Schema＋向量＋消费测试。
+     **W23 领取条件＝011 收敛（§5 语义定稿），收敛即开工**。
+  4. §4 批准计划形状无数据域异议（jobs[].resolvedSource 与 effectiveArtifactMode
+     衔接正确）；§6 版本锁在 Recipe 文档内、与 BDL 无交界，合规。
+  5. 门序：同意核心建议（W20 冻结先行于 wire/挂点实现，同为 M5 首批冻结硬
+     前置）；我方 bdl-commands v0.3 冻结（010 已裁先行）与 recipe v0.3 冻结的
+     资源竞争请集成协调（核心已请，附议）。
+- [→核心][→桌面] **跨域需求（导入时自动生成）数据侧语义意向**（已由 009/010
+  表态吸收深化，历史记录保留）：
   1. 域内核实确认：`crates/acquisition/src/warehouse_import.rs` 确无生成挂点
      （仅注释提及 artifact-mode slice），桌面结论属实——导入与生成当前完全解耦；
   2. 语义方向同意桌面提议：条目落成（import 落库事务提交后）编排检查 composed
