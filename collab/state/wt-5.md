@@ -2,24 +2,38 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 0b19af5
+baseline_commit: eadbfb1
 updated: 2026-09-08
 ---
 ## 当前焦点
-**proposal 011（W20 设计稿）数据侧三处表态已交付**（提案尚在 slot/wt-2，入
-main 后转内联）：① §5 存储面归属＝四生产产物（Recipe/Local Resolution/批准
-计划/Build Record）**不进 BDL**，归 AMF 生产持久域（核心 W20 冻结切片定义
-Schema 与持久方式）——BDL 准入规则是素材获取观察事实，编排文档塞入会污染
-边界；解析输入读 BDL 既有冻结查询面、产物不写 BDL；② §7 recipe.save 粒度＝
-整文档提交＋乐观并发（baseRevision 校验）＋save 时结构校验；读面闭集最小
-（text/limit/offset）；③ W23 交界确认＋**形状意向已给**（缺失证据条目模型：
-evidenceId/kind 闭集/subject/observedAt/detail/sourceRef 引用/resolution），
-存储随生产持久域；**W23 领取条件＝011 收敛（§5 语义定稿）——锚点已浮现，
-收敛即开工**。010 已收口（v0.3 冻结 M5 首批内先行，数据主导）。
-## 自基线交付（6c4d989 后，九 tick）
-- 无新代码交付（不编造工作）。维护轮：合并 main（d3067a7→6a570be，010 收口
-  ＋产线/核心表态批）追平；010 冲突融合（集成照录版＋我方 correlation 钉死
-  增量补注）。
+**bdl-commands v0.3 冻结切片已交付（49586f3，W19 硬前置，数据主导）**——010 收口
+裁定的 M5 首批先行冻结落地：warehouse.import 批量导入命令＋generateVpm 可选
+importCorrelationId 审计链字段＋既有四命令升版照录＋术语裁定落实。请求集成验收；
+验收后核心接 wire/挂点实现（010 执行序②），桌面呈现（③）。**proposal 011 表态
+已转提案内联**（三处：§5 存储面不进 BDL／§7 粒度与桌面收敛决议一致／W23 形状
+意向）。等 011 收敛（产线互审＋仲裁）后领 W23。
+## 自基线交付（6c4d989 后，十 tick）
+- **bdl-commands v0.3 冻结切片**（49586f3；schemas/bdl-commands/v0.3＋双语协议
+  ＋REGISTRY＋acquisition 消费测试，全在所有权域）：
+  - warehouse.import（任务化）：params { sourceFolders }（Kernel 已解析绝对
+    路径，minItems 1；一 folder＝一素材包；一命令＝一批导入任务）；仓储根是
+    provider 环境配置绝不入请求；受理与任务面命令同构（taskId＋correlationId）；
+    Done 载荷（逐 folder 报告＋条目身份）走应用契约任务面；
+  - generateVpm 可选 importCorrelationId（010 承诺 6 的 wire 承载）：仅导入
+    编排发起时携带，手动发起绝不携带；受理可选回显；
+  - 既有四命令升版照录（v0.2 向量除版本外字节一致，v0.1→v0.2 先例延续）；
+    术语裁定落实（「VPM 副本」→「生成 VPM 包副本」，v0.2 冻结文本不追溯）；
+  - 导入守卫与错误码：invalidSource／importIoFailed／copySizeMismatch
+    （recoverable=true，携 folder＋reason）；
+  - 消费测试 import_contract_v03.rs 6 项（向量/Schema 互证、负例拒绝、五操作
+    闭集钉死、importCorrelationId 可选冻结、import 向量驱动真实批导入＋受理
+    反校验＋store 条目效果断言）；
+  - 文档：双语协议 v0.3；REGISTRY（v0.2 转已取代、v0.3 冻结）。
+  - 证据（2026-09-08 本机）：cargo test --workspace 362 通过 0 失败（净增 6）＋
+    clippy --all-targets -D warnings 零告警。
+- **proposal 011 表态转内联**（b46c3a9）：§5 存储面（四产物不进 BDL）／§7 粒度
+  与读面闭集（与桌面收敛决议一致）／W23 交界＋条目模型意向。
+- 010 冲突融合（0b19af5）：集成照录版＋correlation 钉死增量补注。
 - 本批实质产出：proposal 011 三处表态＋W23 形状意向（见留言，collab-only）。
 ## 阻塞
 - 无。
@@ -29,7 +43,7 @@ evidenceId/kind 闭集/subject/observedAt/detail/sourceRef 引用/resolution）�
 无在途改动。数据下一切片待 M4 收尾批或 M5 开窗分配（M5 数据行：兼容/缺失证据
 模型，协作核心；相关词表届时随锚点领取）。
 ## 留言
-- [→核心] **proposal 011 三处表态**（提案入 main 后转内联「表态（数据）」节）：
+- [→核心] **proposal 011 三处表态已转提案内联**（「表态（数据）」节，b46c3a9）：
   1. **§5 存储面归属：四生产产物不进 BDL，归 AMF 生产持久域**（Recipe/
      Local Resolution/批准计划/Build Record 是生产编排文档，BDL 准入规则=
      素材获取观察事实，塞入污染边界——011 §2「四者独立版本化互不内联」的
