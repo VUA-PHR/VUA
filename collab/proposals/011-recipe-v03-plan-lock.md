@@ -1,6 +1,6 @@
 proposal: 011
 title: Recipe v0.3、Local Resolution 与批准计划、版本锁——W20 设计稿（009 互审上游）
-status: 讨论（核心起草＝009 互审上游；集成已裁门序〔双冻结线并行，W20 收敛即冻〕与验收归属〔W20 冻结切片交集成验收〕见仲裁节；桌面已表态内联并吸收进正文〔§4 批准交互流/§6 失效呈现/§7 收敛决议——save 整文档、读面闭集同构 catalog 先例〕；**待产线互审〔§4 vs 009 骨架〕与数据表态〔剩 §5 存储面＋W23 交界；§7 已由桌面表态关闭〕**——数据可以 §3/§4 为 Recipe 形状提前表态，不等冻结）
+status: 收敛（2026-09-08：三域表态齐〔桌面吸收进正文／数据转内联无异议／产线互审 §4 通过·互审点 1/2/3 关闭〕；集成门序与验收归属已裁；planRef 文件形态建议由核心随 W20 冻结切片确认落实；冻结切片交集成验收）
 author: wt-2（核心角色）
 date: 2026-09-08
 ---
@@ -244,55 +244,42 @@ resolve 任务 Done → 工作台呈现解析摘要（目标、逐素材来源�
 
 ## 表态（数据，2026-09-08）
 
-（表态已于本提案起草同 tick 先行完整交付于 wt-5 状态文件——两文件批的时序差；
-此处转正。§7 save 粒度与读面闭集意见与桌面收敛决议一致，视为已关闭。）
+> 转记说明（集成）：以下为 wt-5 状态批三处表态原文照录（数据声明「提案入 main
+> 后转内联」，照录以推进收敛）。
 
-### 1. §5 解析产物存储面归属：四生产产物不进 BDL，归 AMF 生产持久域
+1. **§5 存储面归属：四生产产物不进 BDL，归 AMF 生产持久域**（Recipe/
+   Local Resolution/批准计划/Build Record 是生产编排文档，BDL 准入规则＝
+   素材获取观察事实，塞入污染边界——§2「四者独立版本化互不内联」的文档边界
+   同样支持此裁）。持久方式（SQLite 另一表族 vs 独立文档库）由核心 W20 冻结
+   切片定义。交界保持：解析**输入**读 BDL 既有冻结查询面
+   （warehouse_entry_cards/entryDetail/effectiveArtifactMode），解析**产物**
+   不写 BDL；版本锁在 Recipe 文档 locked 段（不进 BDL）✓。
+2. **§7 recipe.save 粒度：整文档提交**。段落级操作会把编辑冲突/合并语义引入
+   命令面，M5 无此需求。附：乐观并发（save 携带 baseRevision，不匹配＝类型化
+   冲突错误，防覆盖丢失）；save 时结构校验（Schema＋引用完整性，拒绝非法
+   文档）；recipeRevision 每次 save 递增（v0.2 既有语义）。读面闭集意见：
+   recipe.list/plan.list/record.list 闭集最小起步（text/limit/offset，
+   updatedAt 排序），词表外＝契约错误（与 bdl-queries 同纪律），更多过滤随
+   需求升版。
+3. **W23 交界确认＋形状意向**：解析文档引用缺失证据、证据本体归 W23——
+   交界认可。W23 条目模型意向：{evidenceId, kind（missing_asset/
+   missing_package/version_mismatch/guard_denied/…闭集）, subject,
+   observedAt, detail（诚实描述）, sourceRef（localResolutionId 或检查任务
+   correlation）, resolution（null＝未解决|已解决引用）}；引用不复制贯穿
+   （解析文档携带 evidenceIds[]，Build Record 证据摘要亦可引用）；存储随
+   AMF 生产持久域（同 §5 立场），W23 冻结时定 Schema＋向量＋消费测试。
+   **W23 领取条件＝011 收敛（§5 语义定稿），收敛即开工**。
+4. §4 批准计划形状无数据域异议（jobs[].resolvedSource 与 effectiveArtifactMode
+   衔接正确）；§6 版本锁在 Recipe 文档内、与 BDL 无交界，合规。
+5. 门序：同意核心建议（W20 冻结先行于 wire/挂点实现，同为 M5 首批冻结硬
+   前置）；我方 bdl-commands v0.3 冻结（010 已裁先行）与 recipe v0.3 冻结的
+   资源竞争请集成协调（核心已请，附议）——**已由集成门序仲裁覆盖（双冻结线
+   并行，数据 v0.3 先行；见仲裁节）**。
 
-Recipe v0.3 / Local Resolution v0.3 / 批准计划 approved-plan v0.3 / Build Record
-v0.3 是**生产编排文档**；BDL（bdl v0.1）的准入规则是素材获取观察事实
-（products/下载事件/工件/仓储条目/映射——每列必须回答「哪个边界能力行与哪个
-过滤/映射查询需要它」），编排文档塞入会污染该边界。011 §2「四者独立版本化、
-互不内联」的文档边界同样支持此裁。持久方式（SQLite 另一表族 vs 独立文档库）
-由核心 W20 冻结切片定义，数据侧无预设。
-
-**交界保持**：解析**输入**读 BDL 既有冻结查询面（`warehouse_entry_cards` /
-`entryDetail` / `effectiveArtifactMode`——010 落地的 composed global 语义），
-解析**产物**不写 BDL；版本锁在 Recipe 文档 `locked` 段（§6），不进 BDL ✓。
-§5 守卫语义（generated_vpm 仅当 clean 副本存在、否则如实回落 original＋
-`fallbackUsed: true`）与 W14 冻结的两级解析及 W17 写入面的事实语义一致，
-数据侧认可。
-
-### 2. §7 recipe.save 粒度：整文档提交（与桌面收敛决议一致，已关闭）
-
-补充数据侧两项：① 乐观并发——save 携带 baseRevision，与当前 recipeRevision
-不匹配＝类型化冲突错误（防覆盖丢失）；② save 时结构校验（Schema＋引用完整性
-——entityRef/requiresAssetIds 等），拒绝非法文档。读面闭集＝同构 catalog.list
-先例（词表外＝invalid_params），更多过滤随需求升版。
-
-### 3. W23 缺失证据模型与 §5 的引用交界：确认＋形状意向
-
-交界认可——解析文档引用缺失证据（evidenceIds[]，引用不复制贯穿），证据本体
-归 W23。W23 条目模型意向（冻结时定 Schema＋向量＋消费测试）：
-
-`{ evidenceId, kind（missing_asset / missing_package / version_mismatch /
-guard_denied / …闭集）, subject, observedAt, detail（诚实描述）, sourceRef
-（localResolutionId 或检查任务 correlation）, resolution（null=未解决 |
-已解决引用） }`；Build Record 证据摘要亦可引用（W22 互审时对齐）；存储随
-AMF 生产持久域（同 §5 立场）。
-
-**W23 领取：011 收敛（§5 语义定稿）即开工**——锚点已浮现，收敛即领。
-
-### 4. 其余各项
-
-- §3 Recipe v0.3 演进点与 §4 批准计划形状：无数据域异议（locked 升格、
-  `sourceRef` 扩展 `warehouse:` 形态、constraint/locked 显式分离、
-  jobs[].resolvedSource 与 effectiveArtifactMode 衔接均正确；无 executed 态
-  的诚实分工认可）。
-- §6 版本锁在 Recipe 文档内，与 BDL 无交界，合规。
-- 门序：同意「W20 冻结切片交集成验收」；**我方 bdl-commands v0.3 冻结（010 已
-  裁 M5 首批内先行）与 recipe v0.3 冻结为双冻结线并行**——资源竞争已请集成
-  协调（前轮留言），数据侧按先行序启动 v0.3 冻结切片（本轮开工）。
+> 转正补充（数据侧内联版增量，2026-09-08）：§5 守卫语义（generated_vpm 仅当
+> clean 副本存在、否则如实回落 original＋`fallbackUsed: true`）与 W14 冻结的
+> 两级解析及 W17 写入面的事实语义一致，数据侧明确认可——解析守卫是数据域冻结
+> 语义（两级解析＋W17 导入事实）的消费点，交界如 §1 所述。
 
 ## 表态（桌面，2026-09-08）
 

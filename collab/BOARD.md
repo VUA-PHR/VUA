@@ -3,11 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 05:5x（**proposal 011 已起草并落集成门序仲裁**〔核心 W20
-设计稿：Recipe v0.3/Local Resolution/批准计划 approved-plan ★新产物/版本锁；
-双冻结线并行裁决＝bdl-commands v0.3 与 W20 冻结互不等待、各自先行于对应实现；
-三冻结批均交集成验收；W20 锚点协调＝数据 v0.3 先行、W23 完成冻结后按锚点领取〕；
-**010 补记**：数据转正钉死 importCorrelationId 进 v0.3 词表，集成确认采纳）
+最近更新：2026-09-08 06:1x（**011 收敛＋产线 v2 草案验收合并**：011 三域表态齐
+〔桌面吸收进正文/数据转内联无异议/产线互审 §4 通过·互审点 1/2/3 关闭〕——
+**W20 冻结切片解锁**（核心，交集成验收；planRef 文件形态建议随冻结确认）；产线
+**unity-bridge v2 契约草案**验收合并〔v1 超集＋execute_production_job/
+restore_project＋16 向量＋6 消费测试；集成复跑 356/0＋clippy 零告警；契约表
+unity-bridge 行等互审收敛随冻结批走〕；数据 011 表态转内联〔四产物不进 BDL/
+save 整文档＋乐观并发/W23 形状意向〕）
 
 ## 工作树指派
 
@@ -155,9 +157,9 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败；本地绿系隐性依赖开发机 zh-CN 系统语言。修复=f4d288d（测试 vi.mock 显式固定 zh-CN 表，生产代码零改动） | 桌面 | **✅ 关闭（2026-09-08）**：随 97390f8 入 main，CI ts workflow 复跑绿（run 34146584926） |
 | 9 | 术语修正（**VPM = VRChat Package Manager／VPM 包 = VPM package**，W15 走查硬裁定）需评估受管文档面：product-boundary 双语、协议文档措辞核查；**v0.5.0 已发布文本不追溯**；M4 交付文档须用对术语；应用内 i18n/注释随 W15 重做切片由桌面按裁定修正 | 集成 | **✅ 彻底闭环（2026-09-08）**：集成域活文档修正 8011af4（product-boundary 1.1.1＋outline 2.0.6 双语）；应用面四语 i18n＋注释随桌面重做批 4fb6411；产线域 amf-unity **1.0.1** 镜像修正随批合并（7a8e72f）；design-standard 条目级旧形态随 W15 重做改版（桌面，重做批已移除条目选择器）。不追溯面：v0.5.0 发行文本、冻结协议文档（升版时修正，含 008 → v0.3 若立案）、warehouse-layout ADR |
 | 10 | proposal 008：全局「生成后删除原始素材文件」开关的协议面（三路径；数据**正式表态路径 a**＝桌面偏好＋桌面编排零协议影响，反对 c；衍生变更〔007 偏好开关取代〕数据认可；**核心表态待**）→ 集成仲裁＋门序归属（路径 a 接线切片随 M4 收尾批或 M5 首批） | 核心 → 集成 | **✅ 已接受·路径 a（集成仲裁 2026-09-08，f37f752 后落提案）**：两域表态一致；接线＝桌面 Done 回执后逐条 deleteOriginals（权威边界照核心裁决）；路径 b 备而不用（用户裁决＋编排窗口语义设计物双前置）；路径 c 拒绝；007 取代确认；**接线切片归 M5 首批（桌面）**，M4 门验收不以此为前置；v0.2 维持冻结，零 wire/Schema 变化 |
-| 11 | proposal **009**（产线，W21 契约先行）：Unity Bridge v2 升版骨架——现状审计（v1 冻结面 10 操作＋dry-run/指纹已有）＋五点骨架（生产作业操作/dry-run 细化/幂等守卫推广/恢复/错误码闭集）＋**待核心表态四问题**（计划文档形状引用 vs 内联、Build Record 恢复点登记面、任务面扩展节奏、版本锁与指纹定序） | 核心 → 产线 | **核心已表态（2026-09-08，提案内联）**：①计划形状＝引用不复制＋计划哈希锚＋schemaVersion 显式兼容检查（计划变更走 Recipe 升版不倒逼 Bridge）；②恢复点＝产线快照机制分配 ID、Build Record `recoveryPoints[]` 登记面（W22 设计稿给形状）、两态收据确认；③任务面＝production-use-case **v0.2 升版**承载生产作业用例族（v0.1 冻结不动双族并存）、生命周期复用九态；④定序＝受理时序预检（版本锁→环境→指纹，便宜到昂贵）＋执行时 Bridge 指纹乐观锁双保险，版本锁/环境归 provider、Bridge 只留指纹锁。**冻结时序＝产线 v2 草案↔核心 W20 计划草案↔W22 Record 草案先互审再各自冻结** |
+| 11 | proposal **009**（产线，W21 契约先行）：Unity Bridge v2 升版骨架——现状审计＋五点骨架＋核心四问表态（①引用不复制＋哈希锚＋schemaVersion 兼容检查；②recoveryPoints[]；③production-use-case v0.2＋九态复用；④受理预检＋指纹乐观锁双保险）；**v2 契约草案已就绪并验收合并**（v1 超集＋execute_production_job/restore_project＋16 向量＋6 消费测试，集成复跑 356/0）；互审 5 点中 1/2/3 已关（planHash 锚/planSchemaVersion 闭集/planRef＝job 目录计划文件引用＋Bridge 本地哈希校验建议待核心确认）；4/5（rejected 收据语义、恢复乐观锁）待核心意见 | 产线 ↔ 核心 | **互审进行中（2026-09-08）**：三契约互审后再各自冻结（禁止单方先冻）；rejected 收据语义发现＝Schema 条件按 status∈{succeeded,failed} 收窄（已入草案）；契约表 unity-bridge 行升版登记等互审收敛随冻结批走 |
 | 12 | proposal **010**（核心，W19 合并设计）：素材导入时自动生成挂点与编排语义——核心代码审计**导入面零生产调用、仓储条目零生产创建路径**（W19 真正前置＝导入面接线本身）；**集成已裁：路径 A**（挂点在导入任务条目落成点，同 TaskRuntime）＋**W18/W19 同批门序**（导入面是 W18 演示闭环前置）；六条编排语义硬承诺照单采纳；warehouse.import 新命令面冻结硬前置归数据（词表归属数据裁决） | 数据/桌面 → 集成 | **✅ 已接受·收口（2026-09-08）**：数据六点（**bdl-commands 升 v0.3** 承载 import、读时求值为数据明确偏好、六承诺认可、correlation 面归属意见）＋桌面三项（导入 UI 系统文件夹对话框优先/任务中心九态复用＋关联标注条件渲染/标注移除双条件）全部一致无保留；收口裁决＝**v0.3 冻结 M5 首批内先行**＋importCorrelationId 归属随 v0.3 冻结定＋执行序①v0.3 冻结→②核心 wire/挂点→③桌面呈现；改号簿记见提案注记（与产线 009 撞号，产线在先保 009）。**补记**：数据转正钉死 `importCorrelationId` 进 v0.3 词表（词表主导权行使），集成确认采纳 |
-| 13 | proposal **011**（核心，W20 设计稿＝009 互审上游）：Recipe v0.3（locked 升格版本锁＋warehouse: 来源＋constraint/locked 分离）＋Local Resolution v0.3（effectiveArtifactMode 选择＋clean 守卫＋fallbackUsed 如实记录）＋**批准计划 approved-plan v0.3 ★新产物**（planHash 锚＋jobs[].resolvedSource＋fingerprint 预检＋无 executed 态）＋production-use-case v0.2 词表草案（recipe.save/get/list/resolve、plan.approve/get/list、job.execute、record.get/list） | 产线/数据/桌面 → 集成 | **讨论中（2026-09-08）；集成门序已裁**：双冻结线并行（bdl-commands v0.3 与 W20 冻结互不等待、各自先行于对应实现）；数据 v0.3 先行、W20 收敛即冻；W23 完成冻结后按锚点领取；**W20 冻结切片交集成验收**（三冻结批同例）。待产线〔互审 §4〕/数据〔§5 存储面＋§7 save 粒度＋W23 交界〕/桌面〔§7 读面＋§6 失效呈现＋§4 批准交互〕表态 |
+| 13 | proposal **011**（核心，W20 设计稿＝009 互审上游）：Recipe v0.3（locked 升格版本锁＋warehouse: 来源＋constraint/locked 分离）＋Local Resolution v0.3（effectiveArtifactMode 选择＋clean 守卫＋fallbackUsed 如实记录）＋**批准计划 approved-plan v0.3 ★新产物**（planHash 锚＋jobs[].resolvedSource＋fingerprint 预检＋无 executed 态）＋production-use-case v0.2 词表（§7 收敛决议：save 整文档＋读面闭集同构 catalog 先例） | 产线/数据/桌面 → 集成 | **✅ 收敛（2026-09-08，三域表态齐）**：桌面吸收进正文（§4 批准交互流/§6 两层失效呈现/§7 收敛决议）；数据转内联无异议（四产物不进 BDL 归 AMF 生产持久域/save 整文档＋baseRevision 乐观并发/W23 形状意向——收敛即开工）；产线互审 §4 通过。**W20 冻结切片解锁**（核心：schemas/recipe/v0.3/＋向量＋消费测试，交集成验收）；planRef 文件形态建议随冻结确认；门序已裁（双冻结线并行） |
 
 ## 待用户裁决
 
