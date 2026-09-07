@@ -3,7 +3,7 @@
 [English](bdl-commands-v0.1_EN.md) | [简体中文](bdl-commands-v0.1_ZH.md)
 
 > 文档版本：0.1.1
-> 状态：**已冻结**（2026-09-07）——两端接线已落地（proposal 005，数据两端核对通过）；
+> 状态：**已取代（→ v0.2）**（2026-09-07）——v0.1 词表随 M4 实验设置完整形态升版（U8 裁决）；
 > 机器可读词表：`schemas/bdl-commands/v0.1/`（Schema＋正负例向量；两端消费测试
 > `crates/acquisition/tests/bdl_commands_contract.rs` 与
 > `crates/provider-host/tests/warehouse_commands.rs`）

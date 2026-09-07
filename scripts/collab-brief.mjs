@@ -14,8 +14,9 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
-const WT_BY_DIR = { VUA: 'wt-main', 'VUA-2': 'wt-2', 'VUA-3': 'wt-3' };
-const ROLE_BY_WT = { 'wt-main': '集成树', 'wt-2': 'B角色', 'wt-3': 'F角色' };
+const WT_BY_DIR = { VUA: 'wt-main', 'VUA-2': 'wt-2', 'VUA-3': 'wt-3', 'VUA-4': 'wt-4', 'VUA-5': 'wt-5', 'VUA-6': 'wt-6' };
+// 角色以各状态文件 front-matter 的 role: 字段为准（六角色制）；本表仅作旧文件兜底
+const ROLE_FALLBACK = { 'wt-main': '集成', 'wt-2': '核心', 'wt-3': '桌面', 'wt-4': '产线', 'wt-5': '数据', 'wt-6': '环境' };
 const STALE_LIMIT = 10; // baseline_commit 落后分支尖超过该提交数视为失鲜
 const STATE_DIR = 'collab/state/';
 
@@ -39,6 +40,12 @@ function runGit(args, cwd) {
 }
 
 const now = new Date();
+// 某分支上某文件的最后变更时间（epoch 秒）；用于选取状态文件的最新副本
+const fileEpoch = (b, f) => {
+  const t = runGit(['log', '-1', '--format=%ct', b, '--', f]);
+  const n = Number(t);
+  return t && Number.isFinite(n) ? n : 0;
+};
 const pad = (n) => String(n).padStart(2, '0');
 const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 const clock = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
@@ -104,16 +111,17 @@ for (const b of branchList) {
       branch: b,
       file: f,
       content,
+      epoch: fileEpoch(b, f),
     });
   }
 }
 
-// 同 wt 去重：main 优先，其次分支尖最新的那份
+// 同 wt 去重：取该文件在各分支上最后变更时间最新的那份。
+// 不做 main 优先——main 上的副本可能只是尚未回流的旧状态（2026-09-07 教训）
 const bestOf = new Map();
 for (const e of entries) {
   const prev = bestOf.get(e.wt);
-  const score = (x) => (x.branch === 'main' ? Infinity : branchMeta[x.branch]?.epoch ?? 0);
-  if (!prev || score(e) > score(prev)) bestOf.set(e.wt, e);
+  if (!prev || e.epoch > prev.epoch) bestOf.set(e.wt, e);
 }
 const states = [...bestOf.values()].sort((a, b) => {
   const rank = (wt) => (wt === 'wt-main' ? 0 : /^wt-(\d+)$/.test(wt) ? 1 + Number(/^wt-(\d+)$/.exec(wt)[1]) : 99);
@@ -133,7 +141,11 @@ if (!currentWt) {
     wtNote = `${wtNote}（检出分支 ${cur}，无对应状态登记）`;
   }
 }
-const currentRole = ROLE_BY_WT[currentWt] ?? null;
+const currentRole = (() => {
+  const own = states.find((s) => s.wt === currentWt);
+  const fromMeta = own ? frontMeta(own.content).role : null;
+  return fromMeta || ROLE_FALLBACK[currentWt] || null;
+})();
 
 // ---------- ① 解析：指向当前 wt/角色的阻塞与留言；失鲜检查 ----------
 const targets = new Set([currentWt]);
@@ -160,8 +172,9 @@ for (const s of states) {
   // 声明分支缺失时退回文件所在分支。
   const tipBranch = declared && branchMeta[declared] ? declared : branchMeta[s.branch] ? s.branch : null;
   if (!tipBranch) continue;
-  const n = runGit(['rev-list', '--count', `${base}..${tipBranch}`]);
-  if (n === null) continue;
+  // 失鲜只按非 collab/ 实质提交计：纯状态/协调提交不算推进（防空转反馈环）
+  const n = runGit(['rev-list', '--count', `${base}..${tipBranch}`, '--', '.', ':(exclude)collab/']);
+  if (n === null || n === '') continue;
   const count = Number(n);
   if (Number.isFinite(count) && count > STALE_LIMIT) {
     stale.push({ wt: s.wt, branch: tipBranch, count });
@@ -290,7 +303,7 @@ if (noCollab.length) {
 }
 
 line();
-line('【③ 分叉】（相对集成分支 main；落后 = main 独有提交，领先 = 分支独有提交）');
+line('【③ 分叉】（相对集成分支 main；落后 = main 独有提交，领先 = 分支独有提交；实质 = 非 collab/ 提交）');
 for (const b of branchList) {
   const lr = runGit(['rev-list', '--left-right', '--count', `main...${b}`]);
   if (lr === null) {
@@ -298,8 +311,11 @@ for (const b of branchList) {
     continue;
   }
   const [behind, ahead] = lr.split(/\s+/).map(Number);
+  const lrReal = runGit(['rev-list', '--left-right', '--count', `main...${b}`, '--', '.', ':(exclude)collab/']);
+  const [behindR, aheadR] = lrReal ? lrReal.split(/\s+/).map(Number) : [null, null];
+  const real = behindR === null ? '' : `｜实质 落后 ${behindR} / 领先 ${aheadR}`;
   const meta = branchMeta[b];
-  line(`main...${b}${b === 'main' ? '（自身）' : ''}：落后 ${behind} / 领先 ${ahead}${meta ? `   尖 ${meta.short}（${meta.date}）` : ''}`);
+  line(`main...${b}${b === 'main' ? '（自身）' : ''}：落后 ${behind} / 领先 ${ahead}${real}${meta ? `   尖 ${meta.short}（${meta.date}）` : ''}`);
 }
 
 line();
