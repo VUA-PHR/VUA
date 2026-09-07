@@ -1,19 +1,22 @@
-//! BDL read-model query vocabulary v0.2 (frozen 2026-09-06).
+//! BDL read-model query vocabulary v0.3 (frozen 2026-09-06; serving face
+//! landed with W12, 2026-09-07).
 //!
-//! Rust anchor for `schemas/bdl-queries/v0.2` (docs/protocols/
-//! bdl-queries-v0.2): the five read-only operations, the wire three-state
-//! LocalArtifact verdict, the catalog health vocabulary and the availability
-//! derivation function — the executable form of the protocol's versioned
-//! rule table. The serving face lands later — warehouse queries with B4-7,
-//! catalog queries with the observation-pipeline slice — but the vocabulary
-//! is frozen now so the F side registers its contracts against a stable
-//! shape. Any vocabulary change must bump the schema version, never rewrite
+//! Rust anchor for `schemas/bdl-queries/v0.3` (docs/protocols/
+//! bdl-queries-v0.3): the five read-only operations, the wire three-state
+//! LocalArtifact verdict, the catalog health vocabulary, the availability
+//! derivation function and the catalog serving-face result types — the
+//! executable form of the protocol's versioned rule table. The catalog face
+//! assembles from the observation products table: until the observation
+//! pipeline writes, the table is empty and the face answers the honest
+//! empty state (list = empty set, status.health = unknown — 空态即终态).
+//! Any vocabulary change must bump the schema version, never rewrite
 //! in place.
 
 use crate::bdl_store::ArtifactInspectionState;
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 
-pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.2";
+pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.3";
 
 /// The five read-only operations. Transport envelopes belong to the
 /// application contract; this enum pins the operation vocabulary only.
@@ -102,13 +105,252 @@ pub fn availability_status(raw: Option<&str>) -> AvailabilityStatus {
     }
 }
 
+// --- catalog serving-face types (W12; shapes mirror result.schema.json
+//     $defs exactly — a field here that the schema does not know is a
+//     contract break caught by the consumer tests) ---
+
+/// `price`: single-price products only; null = no price information (never
+/// guessed, never converted). Variant prices live in subproducts.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogPrice {
+    pub amount: String,
+    pub currency: String,
+}
+
+/// `catalog.list` entry (`productSummary`): `entityCount` is the honest
+/// empty slot (constant 0) and `entityTypes` the constant empty list —
+/// entity storage belongs to BDL v2.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogProductSummary {
+    pub product_id: String,
+    pub title: Option<String>,
+    pub price: Option<CatalogPrice>,
+    pub image_url: Option<String>,
+    pub image_urls: Vec<String>,
+    pub availability_raw: Option<String>,
+    pub availability_status: AvailabilityStatus,
+    pub entity_count: u32,
+    pub entity_types: Vec<String>,
+}
+
+/// `catalog.detail` subproduct.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogSubproduct {
+    pub variation_id: Option<String>,
+    pub name: Option<String>,
+    pub price: Option<CatalogPrice>,
+    pub availability_raw: Option<String>,
+    pub availability_status: AvailabilityStatus,
+}
+
+/// `catalog.detail` entry (`productDetail`).
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogProductDetail {
+    pub product_id: String,
+    pub title: Option<String>,
+    pub price: Option<CatalogPrice>,
+    pub image_url: Option<String>,
+    pub image_urls: Vec<String>,
+    pub availability_raw: Option<String>,
+    pub availability_status: AvailabilityStatus,
+    pub entity_count: u32,
+    pub entity_types: Vec<String>,
+    pub description: Option<String>,
+    pub shop_name: Option<String>,
+    pub shop_url: Option<String>,
+    pub age_restriction: Option<String>,
+    /// True only with the explicit BOOTH Adult badge.
+    pub adult: bool,
+    pub video_urls: Vec<String>,
+    pub source_category: Option<String>,
+    pub subproducts: Vec<CatalogSubproduct>,
+}
+
+/// `catalog.list` result: `total` is computed after filtering, before
+/// limit/offset.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogListResult {
+    pub total: i64,
+    pub entries: Vec<CatalogProductSummary>,
+}
+
+/// `catalog.detail` result.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogDetailResult {
+    pub product: CatalogProductDetail,
+}
+
+/// `catalog.status` revision block: `catalogUpdatedSeq` stays null until the
+/// observation-pipeline bookkeeping counter exists; `datasetRevision` is the
+/// BDL format_version.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogRevision {
+    pub catalog_updated_seq: Option<i64>,
+    pub dataset_revision: String,
+}
+
+/// `catalog.status` result.
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogStatusResult {
+    pub health: CatalogHealth,
+    pub revision: CatalogRevision,
+}
+
+/// Params violation for the catalog query closed set. The application face
+/// maps these to its own validation codes; the assembly never answers a
+/// request that violates the frozen closed set (never a silent empty answer).
+#[derive(Debug, Clone, PartialEq)]
+pub enum CatalogParamsError {
+    /// A key outside `{ text, availabilityStatus, limit, offset }` — for
+    /// example `entityType`/`relationKind`, whose presence is a contract
+    /// error (entity storage belongs to BDL v2), never a silently empty
+    /// answer.
+    UnknownKey(String),
+    /// A known key carrying an out-of-vocabulary or out-of-range value.
+    InvalidValue { key: &'static str, reason: String },
+}
+
+impl std::fmt::Display for CatalogParamsError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownKey(key) => write!(formatter, "unknown query key {key}"),
+            Self::InvalidValue { key, reason } => {
+                write!(formatter, "invalid {key}: {reason}")
+            }
+        }
+    }
+}
+
+/// `catalog.list` closed set `{ text, availabilityStatus, limit, offset }`,
+/// all optional. Defaults: limit 50 (1–200), offset 0. Explicit nulls mean
+/// "no filtering". Unknown keys and out-of-vocabulary values are contract
+/// errors, mirroring the schema's `additionalProperties: false` and enums.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CatalogListParams {
+    pub text: Option<String>,
+    pub availability_status: Option<AvailabilityStatus>,
+    pub limit: i64,
+    pub offset: i64,
+}
+
+impl Default for CatalogListParams {
+    fn default() -> Self {
+        Self { text: None, availability_status: None, limit: 50, offset: 0 }
+    }
+}
+
+impl CatalogListParams {
+    pub fn from_value(value: &Value) -> Result<Self, CatalogParamsError> {
+        const KEYS: [&str; 4] = ["text", "availabilityStatus", "limit", "offset"];
+        let object = value
+            .as_object()
+            .ok_or(CatalogParamsError::InvalidValue {
+                key: "params",
+                reason: "expected an object".into(),
+            })?;
+        for key in object.keys() {
+            if !KEYS.contains(&key.as_str()) {
+                return Err(CatalogParamsError::UnknownKey(key.clone()));
+            }
+        }
+        let text = match object.get("text") {
+            None | Some(Value::Null) => None,
+            Some(Value::String(raw)) if raw.is_empty() => {
+                return Err(CatalogParamsError::InvalidValue {
+                    key: "text",
+                    reason: "minLength 1".into(),
+                });
+            }
+            Some(Value::String(raw)) => Some(raw.clone()),
+            Some(_) => {
+                return Err(CatalogParamsError::InvalidValue {
+                    key: "text",
+                    reason: "expected a string or null".into(),
+                });
+            }
+        };
+        let availability_status = match object.get("availabilityStatus") {
+            None | Some(Value::Null) => None,
+            Some(Value::String(raw)) => {
+                let parsed = serde_json::from_value::<AvailabilityStatus>(
+                    Value::String(raw.clone()),
+                )
+                .map_err(|_| CatalogParamsError::InvalidValue {
+                    key: "availabilityStatus",
+                    reason: format!("{raw} is outside the stable enum"),
+                })?;
+                Some(parsed)
+            }
+            Some(_) => {
+                return Err(CatalogParamsError::InvalidValue {
+                    key: "availabilityStatus",
+                    reason: "expected a string or null".into(),
+                });
+            }
+        };
+        let limit = match object.get("limit") {
+            None => 50,
+            Some(Value::Number(raw)) => {
+                let raw = raw.as_i64().ok_or(CatalogParamsError::InvalidValue {
+                    key: "limit",
+                    reason: "expected an integer".into(),
+                })?;
+                if !(1..=200).contains(&raw) {
+                    return Err(CatalogParamsError::InvalidValue {
+                        key: "limit",
+                        reason: "out of range 1–200".into(),
+                    });
+                }
+                raw
+            }
+            Some(_) => {
+                return Err(CatalogParamsError::InvalidValue {
+                    key: "limit",
+                    reason: "expected an integer".into(),
+                });
+            }
+        };
+        let offset = match object.get("offset") {
+            None => 0,
+            Some(Value::Number(raw)) => {
+                let raw = raw.as_i64().ok_or(CatalogParamsError::InvalidValue {
+                    key: "offset",
+                    reason: "expected an integer".into(),
+                })?;
+                if raw < 0 {
+                    return Err(CatalogParamsError::InvalidValue {
+                        key: "offset",
+                        reason: "must not be negative".into(),
+                    });
+                }
+                raw
+            }
+            Some(_) => {
+                return Err(CatalogParamsError::InvalidValue {
+                    key: "offset",
+                    reason: "expected an integer".into(),
+                });
+            }
+        };
+        Ok(Self { text, availability_status, limit, offset })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn schema_dir() -> std::path::PathBuf {
         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-            .join("../../schemas/bdl-queries/v0.1")
+            .join("../../schemas/bdl-queries/v0.3")
     }
 
     #[test]
@@ -125,6 +367,55 @@ mod tests {
         ]
         .map(|operation| serde_json::to_value(operation).unwrap());
         assert_eq!(schema_operations, &rust_operations);
+    }
+
+    #[test]
+    fn catalog_list_params_reject_out_of_closed_set_keys_and_values() {
+        // entityType is deliberately absent from the v0.3 closed set — its
+        // presence is a contract error, never a silently empty answer.
+        let entity = serde_json::json!({ "text": null, "entityType": "avatar" });
+        assert!(matches!(
+            CatalogListParams::from_value(&entity),
+            Err(CatalogParamsError::UnknownKey(key)) if key == "entityType"
+        ));
+        // A mode word outside the stable availability enum is a value error.
+        let availability = serde_json::json!({ "text": null, "availabilityStatus": "in stock" });
+        assert!(matches!(
+            CatalogListParams::from_value(&availability),
+            Err(CatalogParamsError::InvalidValue { key: "availabilityStatus", .. })
+        ));
+        // Range violations.
+        let limit = serde_json::json!({ "limit": 201 });
+        assert!(matches!(
+            CatalogListParams::from_value(&limit),
+            Err(CatalogParamsError::InvalidValue { key: "limit", .. })
+        ));
+        let offset = serde_json::json!({ "offset": -1 });
+        assert!(matches!(
+            CatalogListParams::from_value(&offset),
+            Err(CatalogParamsError::InvalidValue { key: "offset", .. })
+        ));
+        let empty_text = serde_json::json!({ "text": "" });
+        assert!(matches!(
+            CatalogListParams::from_value(&empty_text),
+            Err(CatalogParamsError::InvalidValue { key: "text", .. })
+        ));
+    }
+
+    #[test]
+    fn catalog_list_params_parse_the_positive_vector_shape() {
+        // The frozen positive vector's explicit nulls mean "no filtering".
+        let vector = serde_json::json!({
+            "text": "uniform", "limit": 50, "offset": 0, "availabilityStatus": null
+        });
+        let params = CatalogListParams::from_value(&vector).unwrap();
+        assert_eq!(params.text.as_deref(), Some("uniform"));
+        assert_eq!(params.availability_status, None);
+        assert_eq!(params.limit, 50);
+        assert_eq!(params.offset, 0);
+        // Defaults fill the omitted keys.
+        let defaults = CatalogListParams::from_value(&serde_json::json!({})).unwrap();
+        assert_eq!(defaults, CatalogListParams::default());
     }
 
     #[test]

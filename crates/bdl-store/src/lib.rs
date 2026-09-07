@@ -7,7 +7,9 @@ pub mod download_events;
 
 pub use bdl_queries::{
     availability_status, ArtifactInspectionVerdict, AvailabilityStatus, BdlQueryOperation,
-    CatalogHealth, BDL_QUERIES_SCHEMA_VERSION,
+    CatalogDetailResult, CatalogHealth, CatalogListParams, CatalogListResult, CatalogParamsError,
+    CatalogPrice, CatalogProductDetail, CatalogProductSummary, CatalogRevision,
+    CatalogStatusResult, CatalogSubproduct, BDL_QUERIES_SCHEMA_VERSION,
 };
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
