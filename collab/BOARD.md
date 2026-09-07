@@ -140,7 +140,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | bdl-commands | **v0.3** | **已冻结（M5 首批先行，2026-09-08，数据主导，集成验收 ef9854b：复跑 362/0＋clippy -D warnings 零告警）**——五命令闭集：v0.2 四命令照录（向量除版本外字节一致）＋**warehouse.import 批量导入**（任务化，folder 批，010/W19 硬前置）＋generateVpm 可选 `importCorrelationId` 审计链字段（仅导入编排发起携带；010 承诺 6 wire 承载）；术语裁定落实（「生成 VPM 包副本」）；v0.2/v0.1 已取代。历史：v0.2（W14）全局默认模式＋008 路径 a 零扩展裁决见 git；协议双语＋REGISTRY 已刷新 |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
-| unity-bridge | v1 | 冻结。**v2 契约草案已验收合并（互审中）**——v1 超集＋execute_production_job/restore_project＋16 向量＋6 消费测试（集成复跑 356/0 后 v2 修订 367/0）；冻结等核心确认 planRef job 目录文件形态一件（互审点 1–5 均关闭）；契约表升版随冻结批 |
+| unity-bridge | **v2** | **已冻结（W21，2026-09-08，产线，互审收口：互审点 1–5 全关＋核心确认 planRef job 目录文件形态；冻结批交集成验收）**——v1 超集（同面升版）＋execute_production_job/restore_project＋批准计划 job 目录文件形态与 Bridge 本地哈希校验＋作业收据（dry-run 显式区分/steps 逐操作与来源转抄/replayed/snapshotId）＋恢复两态收据；16 向量＋6 消费测试（集成复跑 356/0，v2 修订 367/0）；协议双语 v2＋REGISTRY 已刷。v1 保持已接受：material 线（production-use-case v0.1）继续消费，双族并存语义对齐不合并 |
 | recipe / local-resolution / approved-plan（schemas/recipe/v0.3） | v0.3 | **已冻结（W20，2026-09-08，核心，集成验收 0400bee：复跑 367/0＋clippy 零告警）**——M5 生产主线产物链前三件（意图/事实/授权；引用不复制）；build-record v0.3（W22，proposal 012 互审中）为套件收尾件 |
 | material-intake | v0.1 | 冻结 |
 | bdl（schema） | v0.1 | 冻结 |
