@@ -58,6 +58,7 @@ import {
   buildDiagnostics,
   downloadDiagnostics,
 } from "./features/settings/diagnostics.ts";
+import { ExperimentalCommands } from "./features/settings/experimental-commands.tsx";
 import {
   saveWarehouseExperimentalMode,
   useWarehouseExperimentalMode,
@@ -177,7 +178,8 @@ function PlaceholderPage({ title, description }: { title: string; description: s
 /**
  * 设置-实验性页(proposal 007 路径 b):产物模式实验开关是用户偏好(localStorage),
  * 只控制仓储条目抽屉中模式编辑/条目动作入口的显隐;命令面为已冻结的
- * bdl-commands v0.1 条目级三命令。全局默认由服务端配置(provider 运行时),
+ * bdl-commands 条目级三命令。W15 两级选项区 = 条目级命令在设置页内的另一个
+ * 发起位置(ExperimentalCommands)。全局默认由服务端配置(provider 运行时),
  * 此处只读呈现「由服务端配置」,不提供全局默认写入口(须先协议升版)。
  */
 function ExperimentalSettingsPage() {
@@ -205,6 +207,9 @@ function ExperimentalSettingsPage() {
             </div>
           </div>
         </div>
+      </Card>
+      <Card>
+        <ExperimentalCommands />
       </Card>
     </div>
   );

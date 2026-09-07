@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/bdl-commands/v0.2/command.schema.json",
+  "title": "VUA BDL warehouse command v0.2",
+  "description": "Write commands over the local BDL warehouse (docs/protocols/bdl-commands-v0.2): the B4 artifact-mode trio plus the U8-ruled global-default write (warehouse.setGlobalDefaultMode). setArtifactMode sets or clears the per-entry artifact-mode override (null clears; resolution stays dynamic: override ?? global default). generateVpm and deleteOriginals submit audited maintenance tasks and return a task acceptance; their completion payloads travel the application-contract task surface, not this schema. setGlobalDefaultMode persists the two-level options' global level into BDL (bdl_meta), superseding the provider's environment-injected initial default from the moment of the write; it is synchronous and never touches entry overrides. The transport envelope (requestId, commandId, correlationId, taskId semantics) belongs to the application contract — this schema freezes the operation closed set and the params. Guards are server-side facts, never client assertions: generateVpm runs only in the generate_vpm effective mode with original material and no existing artifact; deleteOriginals only in the generate_vpm effective mode with a verified generated artifact.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "operation": {
+      "enum": [
+        "warehouse.setArtifactMode",
+        "warehouse.generateVpm",
+        "warehouse.deleteOriginals",
+        "warehouse.setGlobalDefaultMode"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.setArtifactMode" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId", "mode"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 },
+              "mode": {
+                "enum": ["use_original_unitypackage", "generate_vpm", null]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.generateVpm" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.deleteOriginals" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["warehouseItemId"],
+            "properties": {
+              "warehouseItemId": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "warehouse.setGlobalDefaultMode" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["mode"],
+            "properties": {
+              "mode": {
+                "description": "The persisted global default. Unlike the entry-level override there is no null: the global default always has a value (the provider's environment-injected initial default until the first write).",
+                "enum": ["use_original_unitypackage", "generate_vpm"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

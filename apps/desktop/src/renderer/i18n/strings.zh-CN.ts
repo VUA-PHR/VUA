@@ -1371,7 +1371,8 @@ rolled_back: "已回滚",
   },
   settings: {
     /** 实验性功能页(proposal 007 路径 b):开关是用户偏好,只控制入口显隐;
-     *  全局默认由服务端配置,此处只读呈现,不提供全局默认写入口 */
+     *  W15 两级选项 = 条目级命令在设置页的另一个发起位置;全局默认由服务端
+     *  配置,此处只读呈现,不提供全局默认写入口 */
     experimental: {
       title: "实验性功能",
       badge: "实验性",
@@ -1379,6 +1380,22 @@ rolled_back: "已回滚",
       warehouseModeDesc: "开启后,仓储条目详情中显示产物模式编辑与「生成 VPM / 删除原始素材」条目动作(走已冻结的 bdl-commands v0.1 条目级命令)。全局默认由服务端配置决定,此处不提供全局默认开关。关闭仅隐藏入口,不改变已保存的模式。",
       on: "开",
       off: "关",
+      entriesLabel: "选择仓库条目",
+      entriesEmpty: "仓库中还没有素材包条目。素材经授权下载或批量导入进入仓库。",
+      warehouseNotConnected: "仓库服务尚未接入,条目信息不可用。",
+      commandsTitle: "「生成 VPM 替代原始」两级选项",
+      generateTitle: "生成 VPM 替代 UnityPackage",
+      generateDesc: "为选定条目生成本地 VPM 包,原始 UnityPackage 保留。生效模式为「生成 VPM」且尚未有生成副本时可用。",
+      deleteTitle: "生成后删除原始素材",
+      deleteDesc: "删除选定条目的原始 UnityPackage,只保留生成的 VPM 副本。生效模式为「生成 VPM」且生成副本在场时可用。",
+      deleteIrreversible: "不可恢复:删除后原始素材无法找回,请确认已有生成副本。",
+      gateModeNotGenerateVpm: "生效模式不是「生成 VPM」,请先在仓储条目中调整产物模式。",
+      gateNoOriginal: "该条目没有原始素材,无法生成。",
+      gateAlreadyGenerated: "该条目已有生成副本;删除它之后才能重新生成。",
+      gateNoGeneratedCopy: "该条目尚无生成副本,无需删除原始素材。",
+      acceptedNote: "已受理。进度见任务中心;完成后条目事实在仓储页刷新。",
+      globalDefaultTitle: "全局默认产物模式",
+      globalDefaultReadonly: "由服务端配置,本地不读取当前值;各条目的生效模式可在仓储条目中查看。",
     },
     goals: {
       heading: "目标重选",

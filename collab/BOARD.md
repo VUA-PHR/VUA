@@ -3,9 +3,9 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07 07:2x（**M3 已通过并关门：v0.5.0 已推送 github.com/VUA-PHR/VUA**
-〔main+tag，private〕；**M4 分配完成**〔outline 2.0.2：W12–W16，六项已交付核实〕；
-等桌面第三轮缺陷修复批回流）
+最近更新：2026-09-07 23:xx（**W11 收尾完成：CI 三 workflow 落地并推送、v0.4.0–v0.4.2
+tags 回填、GitHub Release v0.5.0 发布、glm/* 历史分支清理**；W12/W13/W14/W16 已合并
+落账，W15 解锁待桌面；README 四语版本行 v0.4.1→v0.5.0 修正）
 
 ## 工作树指派
 
@@ -71,6 +71,11 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 布局重构（桌面）；W14 bdl-commands v0.2 升版（数据）；W15 设置-实验性完整形态（桌面，
 依赖 W14）；W16 设计标准同步（桌面）。M4 分解表六项历史交付已核实（outline 2.0.2）。
 
+**M4 进度（2026-09-07 23:xx）**：W12 ✅（数据，6062a13/01ebb73 合并；收口待核心
+provider-host 注册 catalog.* 路由）；W13 ✅＋W16 ✅（桌面，88b4551 合并）；W14 ✅
+（数据，bdl-commands v0.2 冻结，6062a13 合并）；**W15 解锁**（桌面，依赖已满足）。
+M4 门验收按门序等 W15 与 W12 收口完成后由集成执行。
+
 ## 冻结契约表
 
 契约登记的权威清单在 docs/REGISTRY.md（C-a 侧建立）；下表是门视角摘要。
@@ -79,7 +84,7 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 | --- | --- | --- |
 | application-contract | v0.1 | 冻结（M2 冻结） |
 | provider-process（协议本/握手帧面） | v0.2 | 握手帧面 Schema 冻结（provider-frame-v0.1 + 双端 11 向量；proposal 001 关闭） |
-| bdl-commands | v0.1 | 已冻结（W8：Schema＋向量＋消费测试；跨域接线见 proposal 005） |
+| bdl-commands | **v0.2** | **已冻结（W14，2026-09-07）**——两级选项全局写 `warehouse.setGlobalDefaultMode`，持久化 BDL bdl_meta；v0.1（W8 三命令）已取代 |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
 | unity-bridge | v1 | 冻结 |
@@ -94,7 +99,8 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 | # | 问题 | 归属 | 载体 |
 | --- | --- | --- | --- |
 | 1 | I-1 真 Unity 矩阵 | 集成树 | **✅ 已交付关闭**（16/16 真机通过，合并 5ccace6；验收=证据清单核实+抽查终态+集成独立复验 1 格） |
-| 7 | 两例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，终态蕴含事件，属真实时序窗口修复非测试侧）；扩展观察面（warehouse_import/早段套件偶发）未再复现 | 核心 | 两修复经合并复核后转观察；再现即重开 |
+| 7 | 两例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，终态蕴含事件，属真实时序窗口修复非测试侧）；**CI 再现（2026-09-07 23:xx，重开）**：首次 CI 运行（windows-latest 2 核）`cargo test --workspace` 中 ph_012_crashed_lease 失败（production_host.rs:1579，恢复任务未达 Succeeded；14 passed/1 failed 与 wt-4 报告形态一致）；本地单测复跑 0.07s 通过——低核并行环境放大竞态，归核心排查 | 核心 | 两修复经合并复核后转观察；**再现即重开——已再现，待核心定位** |
+| 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败（i18n.test.ts 24/33、nav-model.test.ts 115）；本地绿系隐性依赖开发机 zh-CN 系统语言。修复方向：测试显式固定语言表（mock current-table 或注入），不得依赖宿主 locale | 桌面 | 待桌面修复切片；修复后 ts 徽章转绿 |
 
 ## 待用户裁决
 

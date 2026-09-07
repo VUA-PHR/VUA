@@ -2,44 +2,33 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: fc09b4e
+baseline_commit: 9f1443f
 updated: 2026-09-07
 ---
 ## 当前焦点
-**W7 已关闭**(用户终验 2026-09-07 ~07:05:R1–R5 全过,三轮走查闭环)。桌面域 M3
-任务(W6/W7/W9)全部完成。M3 关门程序(集成启动)中 b/c 环节桌面无动作项,待命;
-M4 分配后桌面积累项:仓储布局重构、实验设置完整形态接线(bdl-commands v0.2)。
-## 自基线交付(cd4d641..fc09b4e)
-- main 同步(fc09b4e:监视批次折叠,007 收敛与 #7 无结论压力猎取被知悉);
-  本树无新交付,监视轮。
-- W1 完成:产线真 Unity 矩阵 16/16 全通过(I-1 执行完成,等集成验收)——M3 关门
-  路径推进至「验收审计→确认→v0.5.0+push」;
-- 007 收敛:数据表态同意路径 b+零协议影响成立;路径 a v0.2 硬前置清单备案
-  (含持久化位置决策,M4+ 需求证实后执行);数据词表注记已采纳(四语文案);
-- a25e5d7:桌面 check 全链绿(385 测试)。
-- 007 落地(4d81b8c):Taskbar 通知中心化+settings-experimental 页+仓储抽屉
-  条件化写入口(实验性标注)+notification-model 纯函数与测试;#4 ko 三处混中文
-  修复;桌面 check 全链绿(385 测试)。
-- 过程注记:check 期间清理了走查会话残留的 dev 进程(provider+electron,构建锁)。
-- 走查结果落档 _local_m4/v0.4.2/f4-walkthrough-results.json(partial-pass);
-- 3c28cd4:#1 场景条收起态(默认 DEV 小标签);#3a/3b 任务标题绑定条目实体;
-  #4 i18n 全量排查(en 0/ja 合法/ko 3 处混中文已修;任务中心中文残留=fixtures
-  演示数据负载单语,纪律性说明见 007 引注与留言);#6 详情改右侧弹性区
-  +卡片墙 148px 自适应;3c 裁决执行:抽屉撤下模式编辑/条目动作默认呈现(写命令
-  端口层保留待实验性入口复用);proposal 007 提出(3c 路径 a/b、5 通知中心语义);
-- 桌面 check 全链绿(381 测试)。
+**W15 完成 + BOARD #8 修复完成(待回流/自并)**:设置-实验性两级选项区(条目选择器
++ generateVpm/deleteOriginals 设置页内发起 + 全局默认只读行)已交付;#8 i18n 测试
+locale 耦合已修(测试显式固定 zh-CN 表)。桌面 check 全链绿(47 文件,2026-09-07 本树)。
+## 自基线交付(4b6dbe7 合并 main 后,两提交)
+- f4d288d **#8 修复**:termLabel/termSequence 经 current-table 按宿主 navigator
+  选表,CI(en-US)解析 en 表注解空串致 3 测试失败;i18n.test.ts 与 nav-model.test.ts
+  以 vi.mock 显式固定 current-table 为 zh-CN(不依赖宿主 locale),附引用相等 pin
+  测试作 mock 生效回归锚点;
+- 18603ac **W15**:设置-实验性页两级选项区(experimental-commands.tsx):条目选择器
+  复用 listEntries 只读面;generateVpm/deleteOriginals 与仓储抽屉共享同一冻结命令面;
+  前置置灰+原因是与 entryActions 同一服务端守卫的镜像(gates 纯函数与 entryActions
+  可用性逐一对应的性质测试在案);删除原始保持高危+延迟确认+不可恢复明示(§8.1);
+  受理=引导任务中心,设置页不建第二事实源;全局默认=只读行(不进 wire,不虚构当前值);
+  commandErrorText 抽为 acquire-model 共享纯函数(仓储抽屉同步改用);i18n 四语补键;
+  纯函数测试 16/16。
 ## 阻塞
-- 3c/5 的实验入口与清除语义等 proposal 007 表态(数据/核心);
-- W9 真机动作链归 I-4c;B 组交互项复验待新入口落位。
+- W15 验收=用户走查(outline 2.0.3 门序);
+- #8 修复后 ts 徽章转绿待 CI 复跑确认(本机无法复现 en-US 宿主,以 CI 为准)。
 ## 下次合并意图
-无在途分叉;等待第三轮复验结果与 M3 验收程序。
+本批(#8+W15)自并 main(--no-ff,全部本域 apps/desktop+collab);合并后集成可复跑
+ts workflow 验证徽章转绿。
 ## 留言
-- [→数据][→核心] proposal 007 请表态:产物模式实验开关路径 a(协议扩展)/
-  b(前端偏好,无协议影响,桌面推荐);通知中心清除路径 a(dismiss 词汇)/
-  b(本地隐藏终态,桌面推荐)。
-- [→操作者→用户] #2 问询答复:demo-acquire-empty 空态预期文案即现在呈现的
-  「仓库条目 / 仓库中还没有素材包条目。素材经授权下载或批量导入进入仓库。」
-  (i18n 键 warehouse.acquire.entriesTitle/entriesEmpty;依据 ui-ux §2.6
-  「空态即终态」与 F4-6 条目模型)。"honest empty" 是纪律名而非文案。
-- 交付注记:任务标题/说明为数据负载(fixture 演示数据单语 zh 为 DEV 纪律;
-  live 时由应用层数据决定),非 i18n 键——口径将随 007 讨论如实说明。
+- [→集成] BOARD #8 修复已交付(f4d288d):测试侧 vi.mock 固定语言表,生产代码零改动;
+  请随批带入并在合并后观察 CI ts workflow——徽章转绿即关闭 #8;
+- [→集成] W15 已交付(18603ac),验收=用户走查;走查参考:设置-实验性页第二张卡
+  (开关卡之下),DEV 下 fixture 条目可直接操作两级选项。

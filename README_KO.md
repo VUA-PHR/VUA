@@ -2,12 +2,16 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | 한국어
 
+[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+
 VUA는 Windows를 우선 대상으로 하는 로컬 우선 VRChat 데스크톱 제작 환경입니다. 환경 구성,
 정당하게 허가된 에셋 획득, Avatar 조립과 검사, 로컬 에셋 관리, 재현 가능한 제작 기록을 하나의
 하나의 연속된 워크플로로 구성합니다.
 
 > [!IMPORTANT]
-> **현재 제품 버전은 v0.4.1(pre-alpha)입니다.** 이 저장소는 초기 평가와 개발을 위한 것이며,
+> **현재 제품 버전은 v0.5.0(pre-alpha)입니다.** 이 저장소는 초기 평가와 개발을 위한 것이며,
 > 일반 사용자가 일상적으로 사용할 수 있는 안정 버전은 아직 아닙니다.
 
 ## 제품 방향

@@ -2,11 +2,15 @@
 
 [English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
+[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+
 VUA 是以 Windows 为首要平台、本地优先的 VRChat 桌面生产环境。它把环境部署、授权素材获取、
 Avatar 装配与检测、本地素材管理和可复现生产记录组织为一套连贯工作流。
 
 > [!IMPORTANT]
-> **当前产品版本为 v0.4.1（pre-alpha）。** 本仓库提供开发预览与早期试用版本；面向普通玩家的
+> **当前产品版本为 v0.5.0（pre-alpha）。** 本仓库提供开发预览与早期试用版本；面向普通玩家的
 > 稳定性承诺从 `1.0.0` 开始。
 
 ## 产品方向

@@ -1,11 +1,21 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { format } from "./format.ts";
 import { strings } from "./strings.zh-CN.ts";
 import { fixtureStrings } from "./strings.fixtures.zh-CN.ts";
 import { TERMS, termLabel, termSequence, type TermId } from "./terms.ts";
 import { capabilityDetailKeys, capabilityStates } from "../gateway/types.ts";
 import { workflowRunStates } from "../gateway/workflow.ts";
+
+/**
+ * BOARD #8:术语注解断言期望中文注解,termLabel/termSequence 经 current-table
+ * 按宿主 navigator 选表——CI(en-US)解析到 en 表注解为空串而失败。测试显式
+ * 固定语言表为 zh-CN,不依赖宿主 locale。
+ */
+vi.mock("./current-table.ts", async () => {
+  const { strings: zhCN } = await import("./strings.zh-CN.ts");
+  return { currentLocale: "zh-CN", currentStrings: zhCN };
+});
 
 test("format expands named params", () => {
   assert.equal(format(strings.deployer.summary.pending, { count: 2 }), "还差 2 项准备");
@@ -18,6 +28,12 @@ test("format keeps placeholders for missing params (visible in dev)", () => {
 
 test("term ids and term annotations stay in 1:1 parity", () => {
   assert.deepEqual(Object.keys(TERMS).sort(), Object.keys(strings.terms).sort());
+});
+
+test("suite pins the annotation table to zh-CN (BOARD #8 mock is in effect)", async () => {
+  const pinned = await import("./current-table.ts");
+  assert.equal(pinned.currentLocale, "zh-CN");
+  assert.equal(pinned.currentStrings, strings);
 });
 
 test("termLabel renders term + local annotation; bare term when annotation is empty", () => {
