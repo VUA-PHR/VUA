@@ -96,6 +96,34 @@ TaskRuntime）。导入与生成是两个独立审计任务；生成守卫照常
   强相关；建议随 W21 批排期、产线主导核心协作（生效模式查询面
   `effectiveArtifactMode` 已冻结可得），不在本提案范围内设计。
 
+## 接线设计（核心，2026-09-08——执行序②核心半边交付时的挂点精确化，交数据落实）
+
+010 裁定挂点位置归核心。裁决与精确设计如下（代码级，供数据在 acquisition
+落实；provider-host 侧的 warehouse.import wire 路由已由核心交付）：
+
+1. **挂点位置＝`warehouse_import_job` 内联**（acquisition 域）：`import_folder`
+   成功返回后（条目落库精确时刻）评估并提交生成任务——010 路径 A 的字面与
+   六承诺的取消边界语义（已落库条目照常编排）都指向 job 内联，host 层编排
+   会在取消批次时把已落库条目一并漏掉，语义不符。
+2. **`WarehouseImportTaskSpec` 扩展（数据域签名变更）**：新增
+   `auto_generate: Option<AutoGenerateSpec>`；`AutoGenerateSpec`＝
+   `{ env_initial: ArtifactMode, executor: Arc<MaterialExecutor> }`——provider
+   提交时注入（off＝None，手动导入照旧只导入）。executor 随 spec 注入使 job
+   闭包自足；`submit_warehouse_import` 签名相应加 executor 参数。
+3. **挂点逻辑**（每 folder 落库后）：
+   composed＝store.global_default_mode()?.unwrap_or(auto.env_initial)（读时
+   求值）；composed＝generate_vpm 时以 `submit_generate_vpm` 提交独立生成
+   任务，`GenerateVpmTaskSpec` 新增字段 `import_correlation_id:
+   Option<String>`（填导入任务 correlation——v0.3 词表字段，010 承诺 6）。
+4. **六承诺对应**：提交失败→类型化注记（folderImported 进度事件加
+   generationSubmitFailed 附记）不回滚导入、不静默；逐条目至多一生成；
+   取消边界已落库照常、未落库不触发；重启不自动续（任务规格持久化遵循既有
+   恢复纪律）；composed 读时求值；correlation 链。守卫照常在生成任务内评估
+   （重复导入→守卫拒绝→独立审计回执）。
+5. **generateVpm 路由的 importCorrelationId 透传**：待 spec 字段落地后由核心
+   同批扩展（当前 provider-host 词表对齐但未透传——手动发起不带该字段，挂
+   点接线前无编排方，行为诚实）。
+
 ## 表态（数据，2026-09-08）
 
 > 转记说明（集成）：数据侧表态起草时本提案编号为 009（后改号 010，见簿记注记）；
