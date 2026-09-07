@@ -2,9 +2,9 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.2.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.2.1)
 > Scope: Entire VUA product
 > Updated: 2026-09-08
 > Normative effect: Yes
@@ -23,12 +23,17 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    adapter coordination behind a replaceable, versioned Provider boundary.
 3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, Inspection, Release; native browsing,
    authorized downloads, content management, and external-source adapters;
-   - **Material-entry semantics (user ruling, 2026-09-07):** the default path is direct use of the
-     original `.unitypackage` (beginner-oriented positioning); "generate a VPM package as a
-     replacement" and "delete original material after generation" are **experimental** capabilities,
-     presented under a Settings-Experimental location; VPM package generation results are always
-     clearly distinguished from direct-import results (`unityValidated` vs experimental offline
-     output);
+   - **Material-entry semantics (user ruling, 2026-09-07; trigger-timing clarification with the
+     W15 re-review, 2026-09-08):** the default path is direct use of the original
+     `.unitypackage` (beginner-oriented positioning); the **target trigger timing** of "generate
+     a VPM package as a replacement" is **at material import** (automatic generation, replacing
+     the original UnityPackage); both it and "delete original material after generation" are
+     **experimental** capabilities presented under the Settings-Experimental location; in the
+     current version this automatic generation is **not yet wired** (honestly labeled in the
+     UI) — generation is still started manually by the user from the warehouse entry, and the
+     import-time hook and orchestration semantics land with the M5 wiring; VPM package
+     generation results are always clearly distinguished from direct-import results
+     (`unityValidated` vs experimental offline output);
    - and **BDL**, its private
    local catalog, terms, compatibility, source, search, and mapping module.
 4. **Environment deployment:** prerequisite detection, guided deployment, and bounded recovery for
@@ -139,6 +144,11 @@ remain release-engineering decisions.
 
 ## Document changelog
 
+- 1.2.1 (2026-09-08): trigger-timing clarification (W15 second-round re-review fix item) — the
+  target trigger timing of "generate a VPM package as a replacement" is **at material import**
+  (automatic generation); not yet wired in the current version (honestly labeled in the UI),
+  generation still starts manually, and the import-time hook and orchestration semantics land
+  with the M5 wiring. Mirrors the ZH edition.
 - 1.2.0 (2026-09-08): U3 user ruling landed in the boundary (after third-party arbitration
   review) — project-management item 5 becomes read-only compatibility with ALCOM/VCC-managed
   projects plus the single write path "import as a VUA-managed copy"; a new Explicit-boundaries

@@ -33,7 +33,7 @@ function kernelHost(
         routeDesktopGatewayInvoke(
           {
             provider,
-            productVersion: "0.5.0",
+            productVersion: "0.6.0",
             platform: "win32",
             rendererUrl,
             // v0.2:Kernel 解析生产上下文四元组(素材路径 + VUA 管辖配置)

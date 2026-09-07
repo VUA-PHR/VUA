@@ -136,7 +136,7 @@ describe("m3 fixed vectors replay green through the gateway route (T2)", () => {
         routeDesktopGatewayInvoke(
           {
             provider,
-            productVersion: "0.5.0",
+            productVersion: "0.6.0",
             platform: "win32",
             rendererUrl: "http://127.0.0.1:5173",
             resolveMaterialSource: (refId) =>
