@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-5a6b-7c7d-8e9f-7a6b5c4d3e2f",
+  "kind": "something_went_wrong",
+  "subject": {
+    "ref": "booth:1234567"
+  },
+  "observedAt": "2026-09-08T06:34:00.000Z",
+  "detail": "The kind is outside the closed vocabulary.",
+  "sourceRef": {
+    "localResolutionId": "0198a7b3-9f8e-7d6c-5b4a-321098765432"
+  },
+  "resolution": null
+}

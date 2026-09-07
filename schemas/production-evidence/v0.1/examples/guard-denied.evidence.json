@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-3e4f-7a5b-8c7d-5e4f3a2b1c0d",
+  "kind": "guard_denied",
+  "subject": {
+    "ref": "warehouse:0198f2e1-d4c3-b2a1-9098-776655443322",
+    "label": null
+  },
+  "observedAt": "2026-09-08T06:32:00.000Z",
+  "detail": "The import-orchestrated generation task was refused by the generation guard: the entry already carries a generated VPM package copy (already_generated). The refusal itself is the evidence; the import task stays Done.",
+  "sourceRef": {
+    "taskCorrelation": "corr-import-1"
+  },
+  "resolution": null
+}

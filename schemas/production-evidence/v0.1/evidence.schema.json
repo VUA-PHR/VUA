@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/production-evidence/v0.1/evidence.schema.json",
+  "title": "VUA production evidence entry v0.1 (W23 — compatibility/missing evidence model)",
+  "description": "One honest evidence entry recording a missing or unsatisfied fact discovered while preparing or running production (proposal 011 §5: the Local Resolution document marks missing/unsatisfied items and references the evidence bodies; the bodies live here — referenced, never inlined). Producers: the resolution pipeline (missing assets/packages, version mismatches) and task guards (guard denials). Consumers: the Local Resolution document (evidenceIds[]), the Build Record evidence summary, and the desktop surfacing. DRAFT for the proposal 011 convergence review — frozen only after the W20 storage-domain decision (the evidence store lives in the AMF production persistence domain, never in BDL; see the data-side stance in proposal 011).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceId",
+    "kind",
+    "subject",
+    "observedAt",
+    "detail",
+    "sourceRef",
+    "resolution"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "evidenceId": {
+      "description": "VUA-generated evidence identity (uuid v7). The Local Resolution document carries this id in its evidenceIds[]; the Build Record evidence summary may carry it too — reference, never copy.",
+      "type": "string",
+      "minLength": 1
+    },
+    "kind": {
+      "description": "Closed vocabulary. missing_asset = a Recipe-referenced asset is absent from the warehouse and the filesystem; missing_package = a declared dependency package is absent; version_mismatch = an observed Unity/package version contradicts the recipe's constraint or lock; guard_denied = a server-side guard refused an action and the refusal is the evidence.",
+      "enum": [
+        "missing_asset",
+        "missing_package",
+        "version_mismatch",
+        "guard_denied"
+      ]
+    },
+    "subject": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": {
+          "description": "Namespaced identity of the subject the evidence is about (booth:<id> product, warehouse:<itemId> entry, pkg:<id> package, or an explicit path when no identity exists yet).",
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "description": "Display label when one was observed; never invented.",
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "observedAt": {
+      "description": "When the fact was observed (RFC 3339), never a claim about when it became true.",
+      "type": "string",
+      "minLength": 1
+    },
+    "detail": {
+      "description": "The honest description of what was observed and what is missing or unsatisfied — no guessing at causes beyond the observation.",
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "localResolutionId": {
+          "description": "The Local Resolution document that produced this evidence (exactly one of the two references is required).",
+          "type": "string",
+          "minLength": 1
+        },
+        "taskCorrelation": {
+          "description": "The task correlation that produced this evidence (e.g. a guard denial inside a tasked command).",
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "anyOf": [
+        { "required": ["localResolutionId"] },
+        { "required": ["taskCorrelation"] }
+      ]
+    },
+    "resolution": {
+      "description": "null = unresolved (the evidence stands); an object = the fact was later satisfied, with the reference to what satisfied it. Resolving never deletes or rewrites the observed evidence.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["resolvedAt", "resolutionRef"],
+          "properties": {
+            "resolvedAt": { "type": "string", "minLength": 1 },
+            "resolutionRef": {
+              "description": "What satisfied the fact: a later localResolutionId, a planId, a warehouseItemId, …",
+              "type": "string",
+              "minLength": 1
+            },
+            "note": { "type": "string" }
+          }
+        }
+      ]
+    }
+  }
+}
