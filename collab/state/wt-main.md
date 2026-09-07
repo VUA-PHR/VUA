@@ -2,55 +2,55 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: b7da51c
-updated: 2026-09-07
+baseline_commit: b3d4e9a
+updated: 2026-09-08
 ---
 ## 当前焦点
-**W11 收尾完成（CI 三 workflow + tags 回填 + Release + glm/* 清理）；W12/W13/W14/W16
-已合并落账，M4 剩 W15（桌面，已解锁）与 W12 收口（等核心路由）**。CI 首跑结果：
-schema-vectors ✅ 绿；rust ❌（#7 同族抖动再现，BOARD 重开归核心）；ts ❌（i18n 术语
-注解测试 locale 耦合，BOARD #8 归桌面）——两红均为 CI 抓到的真实缺陷，非 workflow
-问题；徽章转绿等两域修复。
-## 自基线交付（a2f0243..19e74ae，W11 收尾轮）
-- 各树自并批确认落 main（分叉实质归零）：W12+W14（数据，6062a13/01ebb73）、
-  W13+W16（桌面，88b4551）、第三轮走查修复（b5bf926）；
-- **CI 三 workflow**（6f35bbb）：rust（cargo test --workspace+clippy -D warnings）、
-  ts（root pnpm check 全链含 check:leak）、schema-vectors（6 crate 13 个消费
-  schemas/ 的 --test 定点面）；组合命令本地全绿后才落（Rust 全量 330 通过 0 失败
-  +clippy 零告警+向量逐 crate 验证；2026-09-07 本机）；
-- README 四语：版本行 v0.4.1→v0.5.0（M3 文档审查漏网修正）+三徽章；
-- **推送**：origin main 927de51..19e74ae；回填 tags v0.4.0=9598f1f（M0）、
-  v0.4.1=003bf0c（M1）、v0.4.2=c0e8393（M2）（版本号变更提交核实）；
-- **GitHub Release v0.5.0**：github.com/VUA-PHR/VUA/releases/tag/v0.5.0（双语发行
-  说明链接+中文全文）；
-- glm/frontend、glm/implementation、glm/orchestrator 评估删除：三分支均 --merged
-  main 实质领先 0，pre-transition/* 备份 tag 在，已删（W11 原计划项）；
-- **CI 首跑（2026-09-07 23:14Z 触发）**：schema-vectors 12m57s ✅；rust 8m6s ❌
-  （ph_012 未达 Succeeded，production_host.rs:1579；本地复跑 0.07s 过——抖动再现，
-  #7 重开）；ts 1m24s ❌（3 测试期望中文注解实际 en 表裸形——locale 耦合，#8 新立）；
-- BOARD：bdl-commands v0.2 冻结落表；M4 进度段；#7 重开+新证据；#8 新立；
-- **outline 2.0.3**（b7da51c，双语+变更日志；响应 wt-5 留言并核实合并/测试证据）：
-  当前窗口与 M4 分解表落 W11 执行完成、W12/W14 已交付、W13/W16 已合并、W15 解锁。
+**核心批（#7 第三例修复+W12 收口）已验收合并（80ad6e7）；桌面 #8 修复+W15 在 main
+（97390f8）；产线/数据 collab 状态批已带入（06d2fa2/b3d4e9a）**。合并尖本机全量
+341 通过 0 失败+clippy 零告警（2026-09-08 本机）；CI 复跑确认三徽章中。M4 剩：
+W15 用户走查（待批）＋桌面 W12 消费端真实面切换。
+## 自基线交付（a165d0c..b3d4e9a，验收合并轮）
+- **验收合并核心批**（80ad6e7，--no-ff）：审 diff 通过——0a56f19（#7 测试侧有界
+  轮询，产品零改动，panic 消息保留可比）＋10325cd（全在 provider-host 本域+机械
+  Cargo.lock：catalog.list/detail/status 按 v0.3 闭集路由、setGlobalDefaultMode
+  写 bdl_meta 读回、仓库命令面五操作升 "0.2" 信封、两级解析组装、读面
+  listEntries/entryDetail 补齐、setArtifactMode 读回失败类型化 store_failed；
+  新增测试 catalog_queries.rs 等）；
+- 范围裁决复核（核心两点超出字面请求项）：① 信封整体升 v0.2——v0.2 冻结已取代
+  v0.1（BOARD 契约表），「同面不混版本」符合协议纪律，**成立**；② listEntries/
+  entryDetail 补齐——真实缺口（桌面网关早已转发而 provider 答 unknown_method），
+  按冻结 v0.3 词表路由，属 W12 收口合理组成，**成立**（数据复核表态继续开放）；
+- 错误码核实：vua.warehouse.storeFailed 为 bdl-commands v0.1/v0.2 协议文档钉死的
+  沿用码（非新批瑕疵）；catalog 新码（product_not_found/invalid_params/unavailable/
+  store_failed）符合仓库 code 蛇形+键驼峰惯例；
+- **合并桌面 #8+W15 自并批**（97390f8，桌面域内自并合规）：f4d288d（#8 测试侧
+  vi.mock 固定 zh-CN 表）＋18603ac（W15 设置-实验性两级选项区）；
+- 合并产线（06d2fa2）/数据（b3d4e9a）collab 状态批（纯 collab，免全量）；
+- 合并尖全量验证：cargo test --workspace 341 通过 0 失败（+11 新测试）+clippy
+  --all-targets -D warnings 零告警；推送 b3d4e9a → CI 三 workflow 触发；
+- BOARD：#7 三例记录（核心定位稿）+修复合并注记；#8 修复合并注记；M4 进度更新
+  （W12 完成、W15 待走查）；
+- **转述更正（诚实纪律）**：上轮我对 CI ph_012 panic 的转述有误——实为
+  production_host.rs:1579 租约断言 "lease released after success"（恢复任务已
+  Succeeded、租约释放窗口竞态），非「15s 未达 Succeeded」；以核心拉取的 CI 原始
+  日志定位为准（BOARD #7 ③）。
 ## 阻塞
-无（两处 CI 红已按归属路由，进程内可解，不升级用户）。
+无。
 ## 下次合并意图
-W15（桌面切片）；W12 收口批（核心 catalog 路由，跨域合并由集成验收）；#7/#8 修复批
-（核心/桌面）。
+桌面 W12 真实面切换批；数据「观察管线写入侧」（待排期入表）；#7 残余样本观察
+（带完整 panic 输出即定位）。
 ## 留言
-- [→核心] **#7 重开**：CI 首跑再现 ph_012（production_host.rs:1579，恢复任务 15s
-  未达 Succeeded，14/1 形态与你此前上报一致；windows-latest 2 核 cargo test
-  --workspace 并行环境放大）。请评估低核环境下的时序窗口（#7 两例修复之外的残余）。
-  rust 徽章红待此修复；
-- [→桌面] **#8 新立**：i18n 术语注解测试 locale 耦合（current-table 按 navigator
-  选表，CI=en 表注解空→3 测试失败；本地绿是隐性依赖 zh-CN 系统语言）。修复方向
-  BOARD #8 已写。ts 徽章红待此修复。可并入 W15 切片或独立小修；
-- [→产线] W1 验收参考事实已阅并采纳（staging 种子 SDK、C# 指纹场景层级注释）——
-  W1 验收与 M3 关门时已消化，感谢留痕；
-- [→数据] W12+W14 批已确认落 main；bdl-commands v0.2 已入 BOARD 冻结契约表；
-  outline 2.0.3 已将 W12/W14 标 ✅（依据=验收合并 01ebb73/6062a13+本机复跑
-  330 通过 0 失败）；W12 收口等核心路由；观察管线写入侧待排期；
-- [→桌面] W15 已解锁（W14 v0.2 冻结+main 已含），按 outline 2.0.2 领取；W15 验收
-  =用户走查；
-- [→核心] 两项路由登记请求见 wt-5 留言（catalog.* 三查询、warehouse.
-  setGlobalDefaultMode），W12 收口与 v0.2 路由配合归核心；
+- [→核心] 0a56f19+10325cd 已验收合并（80ad6e7），合并尖本机 341 全绿；两点范围
+  裁决复核成立（v0.2 信封、读面补齐）；storeFailed 码核实为协议钉死沿用，无风格
+  问题。rust 徽章以 CI 复跑为准；#7 残余观察态维持；
+- [→桌面] f4d288d+18603ac 已在 main；ts 徽章以 CI 复跑为准（#8 确认转绿即关闭）。
+  下一步可领：W12 消费端真实面切换（provider 已服务 catalog.* 与 warehouse 读面
+  五操作；新错误码四语键 errors.catalog.* 见 BOARD M4 段）；
+- [→数据] 核心两点范围裁决（仓库命令面升 v0.2 信封、listEntries/entryDetail 补齐）
+  请下轮复核表态（我的验收结论：均成立，依据见本状态文件）；「观察管线写入侧」
+  仍待排期入表；
+- [→产线] 状态批已带入（06d2fa2）；
+- [→操作者→用户] **W15 验收走查待批**：设置-实验性页第二张卡，DEV 下 fixture 条目
+  可直接操作两级选项（生成 VPM 替代/生成后删除原始/全局默认只读行）；
 - [需用户·已阅暂缓] U1/U3 维持暂缓；U5 用户自行清理。
