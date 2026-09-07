@@ -1,187 +1,158 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
-import { Button } from "../../components/primitives/Button.tsx";
-import { DelayedButton } from "../../components/primitives/DelayedButton.tsx";
-import { EmptyState } from "../../components/primitives/EmptyState.tsx";
+import { ConfirmDialog } from "../../components/primitives/ConfirmDialog.tsx";
+import { Toggle } from "../../components/primitives/Toggle.tsx";
 import {
   useAcquireView,
   useGateway,
+  type WarehouseArtifactMode,
   type WarehouseCommandOutcome,
 } from "../../gateway/index.ts";
 import { strings } from "../../i18n/index.ts";
-import {
-  commandErrorText,
-  experimentalActionGates,
-  settingsEntryOptions,
-  type ExperimentalGateReason,
-} from "../warehouse/acquire-model.ts";
+import { useDeleteOriginalsAfterGenerate } from "../../app/delete-originals-flag.ts";
+import { commandErrorText, inferGlobalDefaultMode, type GlobalDefaultInference } from "../warehouse/acquire-model.ts";
 
 /**
- * W15 设置-实验性两级选项区(「生成 VPM 替代原始」在设置页内的发起位置):
- * - 条目选择器复用 warehouse.listEntries 只读面(AcquireView 快照推送);
- *   两个选项与仓储条目抽屉共享同一命令面(已冻结的 bdl-commands 条目级
- *   generateVpm / deleteOriginals),前置置灰是同一服务端守卫的镜像呈现,
- *   发出后守卫事实仍归服务端(协议稳定码原样映射);
- * - 诚实纪律:受理 = 引导任务中心,条目权威事实在仓储条目刷新,本区不建
- *   第二事实源;仓储未接入/空仓库渲染设计的空态,不猜测条目;
- * - 全局默认产物模式是 provider 运行时配置(不进 wire),只读行如实标注
- *   「由服务端配置,本地不读取当前值」,不虚构开关或数值。
+ * 设置-实验性页(W15 重做形态,用户走查示意图 A/B):
+ * - 卡片 = 标题「实验性功能」+ 副题 + 黄色警示条 + 两行开关;
+ * - 行 1「生成 VPM 替代」= 全局开关,写已冻结的 warehouse.setGlobalDefaultMode
+ *   (bdl-commands v0.2 全局层);初值由条目读面推断(无覆盖条目的生效模式即
+ *   composed 全局默认),推断不出时如实标注 unknown;写回执为服务端持久事实,
+ *   直接更新开关态(推断仅是初值);
+ * - 行 2「生成后删除原始素材文件」= 危险开关,主开关关闭时置灰;开启必经
+ *   危险确认对话框(示意图 B)。**未接线如实标注**:全局自动删除超出已冻结
+ *   的条目级 deleteOriginals,协议面随 proposal 008 裁决——本偏好仅记录
+ *   意图,不触发任何服务端行为;DEV/fixture 面加注「本原型不会真正删除任何
+ *   文件」(mock/fixture 不出 DEV 纪律);
+ * - 走查不通过重做:原 per-entry 条目选择器整组移除;007 的「生成 VPM 模式
+ *   入口」偏好开关被全局开关语义取代(变更随 proposal 008 复核)。
  */
 
 const copy = strings.settings.experimental;
 const acquireCopy = strings.warehouse.acquire;
 
-const GATE_REASON_TEXT: Record<ExperimentalGateReason, string> = {
-  modeNotGenerateVpm: copy.gateModeNotGenerateVpm,
-  noOriginal: copy.gateNoOriginal,
-  alreadyGenerated: copy.gateAlreadyGenerated,
-  noGeneratedCopy: copy.gateNoGeneratedCopy,
-};
-
-function gateReasonText(reason: ExperimentalGateReason): string {
-  return GATE_REASON_TEXT[reason];
+function commandErrorsTable(): Record<string, string> {
+  return acquireCopy.commandErrors as Record<string, string>;
 }
 
 export function ExperimentalCommands() {
   const gateway = useGateway();
   const acquire = useAcquireView();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleteFlag, setDeleteFlag] = useDeleteOriginalsAfterGenerate();
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
+  /** 写回执的持久事实(优先于条目推断);null = 尚未写入 */
+  const [persisted, setPersisted] = useState<GlobalDefaultInference | null>(null);
 
   const entries = acquire.kind === "entries" ? acquire.entries : null;
-  const options = entries === null ? [] : settingsEntryOptions(entries);
-  const selected =
-    selectedId === null
-      ? null
-      : (entries?.find((entry) => entry.warehouseItemId === selectedId) ?? null);
-  const gates = selected === null ? null : experimentalActionGates(selected);
+  const effective: GlobalDefaultInference =
+    persisted ?? (entries === null ? { kind: "unknown" } : inferGlobalDefaultMode(entries));
+  const generateOn = effective.kind === "known" && effective.mode === "generate_vpm";
 
-  // 选中项消失(如命令完成后他页删除)时回落到未选择,不猜测下一个
+  // 未连接/空仓库的诚实空态由调用方(页面)分层;此处 entries===null 时仅渲染开关区,
+  // 推断为 unknown 并标注——写面仍可尝试(服务可用而读面空是合法组合)
   useEffect(() => {
-    if (
-      selectedId !== null &&
-      entries !== null &&
-      !entries.some((entry) => entry.warehouseItemId === selectedId)
-    ) {
-      setSelectedId(null);
-    }
-  }, [entries, selectedId]);
+    setFeedback(null);
+  }, [entries]);
 
-  function runCommand(run: () => Promise<WarehouseCommandOutcome>): void {
+  function writeGlobalMode(mode: WarehouseArtifactMode): void {
     setBusy(true);
     setFeedback(null);
-    void run().then((outcome) => {
+    void gateway.warehouseCommands.setGlobalDefaultMode(mode).then((outcome: WarehouseCommandOutcome) => {
       setBusy(false);
-      setFeedback(
-        outcome.ok
-          ? copy.acceptedNote
-          : commandErrorText(outcome.error, acquireCopy.commandErrors as Record<string, string>),
-      );
+      if (outcome.ok && "global" in outcome) {
+        setPersisted({ kind: "known", mode: outcome.global.globalDefaultMode });
+      } else if (!outcome.ok) {
+        setFeedback(commandErrorText(outcome.error, commandErrorsTable()));
+      }
     });
   }
 
-  if (entries === null) {
-    return <EmptyState title={copy.entriesLabel} description={copy.warehouseNotConnected} />;
-  }
-  if (options.length === 0) {
-    return <EmptyState title={copy.commandsTitle} description={copy.entriesEmpty} />;
-  }
-
   return (
-    <div className="vua-page__stack">
-      <div className="vua-settings-row vua-settings-row--stacked">
-        <label htmlFor="vua-exp-entries">{copy.entriesLabel}</label>
-        <select
-          id="vua-exp-entries"
-          className="vua-settings-select"
-          value={selectedId ?? ""}
-          onChange={(event) => {
-            setFeedback(null);
-            setSelectedId(event.target.value === "" ? null : event.target.value);
-          }}
-        >
-          <option value="">—</option>
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-        {selected !== null ? (
-          <span className="vua-caption vua-text-secondary" title={selected.folderName}>
-            {selected.folderName}
-          </span>
-        ) : null}
+    <div className="vua-page__stack vua-exp-card">
+      <header className="vua-exp-card__header">
+        <div>
+          <h2 className="vua-title">{copy.title}</h2>
+          <p className="vua-caption vua-text-secondary">{copy.subtitle}</p>
+        </div>
+      </header>
+
+      <div className="vua-exp-card__warning" role="note">
+        ⚠ {copy.warning}
       </div>
 
-      {gates !== null ? (
-        <>
-          {/* 选项 1:生成 VPM 替代(前置不满足置灰 + 原因;守卫仍归服务端) */}
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">
-              {copy.generateTitle}{" "}
-              <Badge tone="neutral">{copy.badge}</Badge>
-            </h3>
-            <p className="vua-caption vua-text-secondary">{copy.generateDesc}</p>
-            {gates.generateVpm.available ? null : (
-              <p className="vua-caption vua-text-secondary" role="note">
-                {gateReasonText(gates.generateVpm.reason!)}
-              </p>
-            )}
-            <Button
-              variant="primary"
-              disabled={busy || !gates.generateVpm.available}
-              onClick={() => {
-                runCommand(() => gateway.warehouseCommands.generateVpm(selected!.warehouseItemId));
-              }}
-            >
-              {busy ? "…" : copy.generateTitle}
-            </Button>
-          </section>
-
-          {/* 选项 2:生成后删除原始(审计性破坏操作:高危样式 + 延迟确认 +
-              不可恢复明示,§8.1;前置不满足置灰 + 原因) */}
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">
-              {copy.deleteTitle} <Badge tone="neutral">{copy.badge}</Badge>
-            </h3>
-            <p className="vua-caption vua-text-secondary">{copy.deleteDesc}</p>
-            <p className="vua-caption vua-text-secondary" role="note">
-              {copy.deleteIrreversible}
+      {/* 行 1:生成 VPM 替代(全局默认模式写面;bdl-commands v0.2) */}
+      <section className="vua-exp-card__row">
+        <div className="vua-exp-card__text">
+          <strong>{copy.generateTitle}</strong>
+          <p className="vua-caption vua-text-secondary">{copy.generateDesc}</p>
+          {effective.kind === "unknown" ? (
+            <p className="vua-caption vua-text-secondary">{copy.globalReadUnknown}</p>
+          ) : null}
+          {feedback !== null ? (
+            <p className="vua-caption vua-text-secondary" role="status">
+              {feedback}
             </p>
-            {gates.deleteOriginals.available ? null : (
-              <p className="vua-caption vua-text-secondary" role="note">
-                {gateReasonText(gates.deleteOriginals.reason!)}
-              </p>
-            )}
-            <DelayedButton
-              variant="danger"
-              delayMs={1500}
-              disabled={busy || !gates.deleteOriginals.available}
-              onClick={() => {
-                runCommand(() =>
-                  gateway.warehouseCommands.deleteOriginals(selected!.warehouseItemId),
-                );
-              }}
-            >
-              {copy.deleteTitle}
-            </DelayedButton>
-          </section>
-        </>
-      ) : null}
-
-      {feedback !== null ? (
-        <p className="vua-caption vua-text-secondary" role="status">
-          {feedback}
-        </p>
-      ) : null}
-
-      {/* 全局默认只读行:provider 运行时配置不进 wire,不虚构开关或当前值 */}
-      <section>
-        <h3 className="vua-warehouse-detail__section-title">{copy.globalDefaultTitle}</h3>
-        <p className="vua-caption vua-text-secondary">{copy.globalDefaultReadonly}</p>
+          ) : null}
+        </div>
+        <Toggle
+          on={generateOn}
+          disabled={busy}
+          label={copy.generateTitle}
+          onToggle={() => writeGlobalMode(generateOn ? "use_original_unitypackage" : "generate_vpm")}
+        />
       </section>
+
+      {/* 行 2:生成后删除原始素材文件(危险;未接线偏好,proposal 008 未决) */}
+      <section className="vua-exp-card__row">
+        <div className="vua-exp-card__text">
+          <p className="vua-exp-card__row-title">
+            <strong>{copy.deleteTitle}</strong>{" "}
+            <Badge tone="error">{copy.deleteBadge}</Badge>
+          </p>
+          <p className="vua-caption vua-text-secondary">{copy.deleteDesc}</p>
+          <p className="vua-caption vua-text-secondary">{copy.notWired}</p>
+        </div>
+        <Toggle
+          on={deleteFlag}
+          disabled={busy || !generateOn}
+          variant="danger"
+          label={copy.deleteTitle}
+          onToggle={() => {
+            if (deleteFlag) {
+              setDeleteFlag(false);
+              return;
+            }
+            // 关闭无危险;开启必经危险确认对话框(示意图 B)
+            setConfirmOpen(true);
+          }}
+        />
+      </section>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        danger
+        title={copy.dialogTitle}
+        cancelLabel={copy.dialogCancel}
+        confirmLabel={copy.dialogConfirm}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          setDeleteFlag(true);
+        }}
+      >
+        <p className="vua-confirm-dialog__lede">
+          {copy.dialogBodyA}
+          <strong>{copy.dialogBodyEmphasis}</strong>
+          {copy.dialogBodyB}
+        </p>
+        <div className="vua-confirm-dialog__warning">
+          <p>{copy.dialogWarning}</p>
+          <p>{copy.notWired}</p>
+          {import.meta.env.DEV ? <p>{copy.devPrototypeNote}</p> : null}
+        </div>
+      </ConfirmDialog>
     </div>
   );
 }

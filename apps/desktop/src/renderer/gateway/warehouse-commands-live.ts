@@ -83,6 +83,20 @@ function narrowAcceptance(value: unknown): WarehouseCommandOutcome {
   return { ok: true, accepted: { taskId, correlationId } };
 }
 
+/** W14 v0.2 全局层:回执 = 从 BDL 读回的持久事实(globalDefaultMode),非回显 */
+function narrowGlobalDefault(value: unknown): WarehouseCommandOutcome {
+  const record = asRecord(value);
+  const modeRaw = record === null ? null : record.globalDefaultMode;
+  if (
+    modeRaw === null ||
+    typeof modeRaw !== "string" ||
+    !MODES.includes(modeRaw as WarehouseArtifactMode)
+  ) {
+    return { ok: false, error: { kind: "unavailable" } };
+  }
+  return { ok: true, global: { globalDefaultMode: modeRaw as WarehouseArtifactMode } };
+}
+
 export function createWarehouseCommands(client: GatewayClient): WarehouseCommandsPort {
   return {
     setArtifactMode: async (warehouseItemId, mode) => {
@@ -115,6 +129,16 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
         params: { warehouseItemId, commandId: `whcmd-${crypto.randomUUID()}` },
       });
       return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+    },
+    // W14 v0.2 全局层(W15 重做:设置页全局开关的写面)
+    setGlobalDefaultMode: async (mode) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.setGlobalDefaultMode",
+        params: { mode, commandId: `whcmd-${crypto.randomUUID()}` },
+      });
+      return response.ok ? narrowGlobalDefault(response.value) : outcomeFromClientError(response.error);
     },
     capability: async () => {
       // 能力探测同 live-acquire 先例:读面探针(写面与读面同域,服务缺位时

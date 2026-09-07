@@ -1,0 +1,92 @@
+/* 确认对话框(W15 重做形态,示意图 B):遮罩 + 面板 + 危险标题/警示框/双按钮 */
+.vua-confirm-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--vua-z-dialog, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--vua-bg-canvas) 55%, transparent);
+}
+
+.vua-confirm-dialog {
+  width: min(560px, calc(100vw - 48px));
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-elevated);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--vua-bg-canvas) 60%, transparent);
+}
+
+.vua-confirm-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--vua-space-3) var(--vua-space-3) var(--vua-space-2);
+}
+
+/* 标题危险红(danger 确认形态):文字级语义色,对比按 error 令牌语义色计算 */
+.vua-confirm-dialog__title {
+  font-weight: 700;
+  color: var(--vua-error);
+}
+
+.vua-confirm-dialog__title[data-danger]::before {
+  content: "⚠ ";
+}
+
+.vua-confirm-dialog__close {
+  border: none;
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vua-confirm-dialog__close:hover {
+  color: var(--vua-text);
+}
+
+.vua-confirm-dialog__body {
+  display: grid;
+  gap: var(--vua-space-3);
+  padding: 0 var(--vua-space-3) var(--vua-space-3);
+}
+
+/* 红框警示(§8.1 高危形态):error 淡底 + error 文字 */
+.vua-confirm-dialog__warning {
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-error);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-error) 12%, transparent);
+  color: var(--vua-error);
+}
+
+.vua-confirm-dialog__warning p {
+  margin: 0;
+}
+
+.vua-confirm-dialog__warning p + p {
+  margin-top: var(--vua-space-1);
+}
+
+.vua-confirm-dialog__actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+  padding: 0 var(--vua-space-3) var(--vua-space-3);
+}
+
+/* 危险实心确认按钮(示意图 B 红底形态):error 底 + on-status 近黑字,
+   与状态灯同法——两主题与 HC 退化下对比均达标;局部覆盖描边 danger */
+.vua-confirm-dialog__actions .vua-button--danger {
+  background: var(--vua-error);
+  border-color: var(--vua-error);
+  color: var(--vua-on-status);
+}
+
+.vua-confirm-dialog__actions .vua-button--danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--vua-error) 84%, var(--vua-on-status));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vua-error) 24%, transparent);
+}
