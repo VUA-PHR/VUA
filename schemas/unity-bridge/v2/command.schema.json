@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://ph-r.com/vua/schemas/unity-bridge/v2/command.schema.json",
-  "title": "VUA Unity bridge command v2 (DRAFT — mutual review before freeze, proposal 009)",
-  "description": "Versioned command sent by AMF Production to the VUA Unity middleware. v2 is a superset of v1 (same-face upgrade): all v1 operations and fields are preserved; new production-job and restore operations follow proposal 009 rulings (plan-hash anchor, schemaVersion compatibility check, snapshot-id restore points, dry-run receipts share the result schema).",
+  "title": "VUA Unity bridge command v2",
+  "description": "Versioned command sent by AMF Production to the VUA Unity middleware. v2 is a frozen superset of v1 (same-face upgrade): all v1 operations and fields are preserved; new production-job and restore operations follow proposal 009 rulings — the plan document is written by the provider into the job directory (existing job-directory discipline), planRef references it, and planHash is verified locally by the Bridge before execution; real runs (dryRun=false) demand the expectedProjectFingerprint lock.",
   "type": "object",
   "additionalProperties": false,
   "required": ["schemaVersion", "commandId", "operation", "projectId", "dryRun", "payload"],
