@@ -93,8 +93,9 @@ orchestrator-provider 23＋cargo workspace 350 通过 0 失败。
 - [x] W17 观察管线写入侧（73cae1b：350/0＋9 项消费测试）；
 - [x] 全量测试绿（2026-09-08 本机关门核实：cargo workspace 350 通过 0 失败；桌面 check
   全链 47 文件 395 测试＋leak 160 条指纹零命中；contracts 29＋orchestrator-provider 23）；
-- [x] CI 三徽章：上一轮全绿 run（rust 34151441179／schema-vectors 34151441213；ts 于
-  本版推送触发，结果见 GitHub Actions）；
+- [x] CI：ts **run 34160725827 ✅**（关门批推送触发，2026-09-08）；rust/schema-vectors
+  因 paths 过滤未触发（关门批无 crates/schema 改动）——最近全绿证据 rust
+  34151441179／schema-vectors 34151441213（2026-09-08，W17 批）；
 - [x] #7 观察态如实引用（本机 8 轮 1 次 14/1 未捕获瞬败＋7 轮全绿，发行说明如实声明）；
 - [x] proposal 008 仲裁路径 a 已落（提案已接受；接线切片 M5 首批＝W18）；
 - [x] 触发时机语义落受管文档（product-boundary 1.2.1）；U1/U3 用户裁决销账（1.2.0/2.0.7）。
