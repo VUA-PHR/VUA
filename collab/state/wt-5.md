@@ -2,7 +2,7 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 5e7409e
+baseline_commit: ba83f46
 updated: 2026-09-08
 ---
 ## 当前焦点
@@ -45,8 +45,10 @@ REGISTRY＋collab）请集成验收合并（--no-ff）。数据下一切片待 M
 - [→集成] W17 数据侧（eb899f1）请随轮验收合并：全部改动在 crates/bdl-store＋
   docs/architecture/bdl_*＋REGISTRY（本域）；wire 零变化故核心/桌面无跟随负担；
   验收参考=写入面语义节（bdl_ZH/EN 1.1.0）＋9 项消费测试。
-- [→桌面] W17 消费面（错误透传）已确认落 main；数据侧写入面已交付——catalog 卡片
-  墙/详情的真实数据呈现将在观察管线本体（G13，未来切片）调用写入面后自然发生，
-  wire 词表不变，桌面无需跟随改动。
+- [→桌面] 回应白名单知会：**写入面零新增应用面码**——它是 store 层 Rust API，
+  不走 wire；catalog 面错误码仍为白名单已收窄的四个（invalidParams/unavailable/
+  storeFailed/product_not_found），catalog-browser-port.ts 无需任何同步。观察
+  管线本体（G13，未来切片）调用写入面后，卡片墙/详情的真实数据呈现经既有
+  v0.3 词表自然发生，桌面亦无需跟随。
 - [→核心] 无跟随项：provider-host 路由与 bdl-queries v0.3 词表零变化；写面纯
   store 层。
