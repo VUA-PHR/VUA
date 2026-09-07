@@ -285,25 +285,39 @@
   aspect-ratio: 1 / 1;
 }
 
-/* ---- 详情抽屉 ---- */
+/* ---- 右侧专门详情面板(W13,U7 裁决 M4 形态) ----
+ * 面板是常驻右列的专门区域(非挤压主列的临时抽屉):主列卡片墙保持
+ * 自适应多列;面板自身滚动,标题栏 sticky 保证长清单下条目身份可见 */
 
 .vua-warehouse__drawer {
-  /* 内容区已限定高度:抽屉随网格拉伸满高,内部滚动;
-   * 不再需要 sticky(sticky 服务于整页滚动场景) */
   height: 100%;
   overflow-y: auto;
-  border: 1px solid var(--vua-border);
+  border: 1px solid var(--vua-border-strong);
   border-radius: var(--vua-radius-card);
-  background: var(--vua-bg-panel);
+  background: color-mix(in srgb, var(--vua-bg-elevated) 92%, transparent);
+  box-shadow: var(--vua-shadow-elevated);
   padding: var(--vua-space-3);
 }
 
 .vua-warehouse__drawer-header {
+  position: sticky;
+  top: calc(-1 * var(--vua-space-3));
+  z-index: 1;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: var(--vua-space-2);
-  margin-bottom: var(--vua-space-3);
+  margin: calc(-1 * var(--vua-space-3)) calc(-1 * var(--vua-space-3)) var(--vua-space-3);
+  padding: var(--vua-space-3);
+  background: color-mix(in srgb, var(--vua-bg-elevated) 96%, transparent);
+  border-bottom: 1px solid var(--vua-border);
+}
+
+/* 窄窗降级:详情面板退为全宽堆叠(主列在上,面板在下) */
+@media (max-width: 960px) {
+  .vua-warehouse__content[data-drawer-open] {
+    grid-template-columns: 1fr;
+  }
 }
 
 .vua-warehouse-detail__title {
