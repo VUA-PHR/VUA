@@ -3,10 +3,11 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 03:4x（**BOARD #9 术语受管文档面评估完成**：集成域活文档已修正
-——product-boundary 1.1.1＋outline 2.0.6 双语〔8011af4〕；冻结协议/已发布/ADR 文本
-不追溯如实记录；design-standard 条目级旧形态随桌面 W15 重做批改版；M4 门验收仍
-顺延等 W15 重做）
+最近更新：2026-09-08 03:5x（**W15 重做批验收合并**〔4fb6411 自并 4954349：全局开关
+形态＋危险开关未接线如实标注＋术语四语修正＋「开」按钮宽度；集成验收＝TS 全链
+check 绿 395/29/23＋leak 160 指纹＋cargo 350/0〕；M4 门验收＝**第二轮用户走查**；
+proposal 008 立案讨论中〔数据正式表态路径 a，核心表态待〕；amf-unity 1.0.1 随产线
+批合并 7a8e72f）
 
 ## 工作树指派
 
@@ -76,15 +77,19 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 80ad6e7＋消费端对齐 693965d/5fd8c6b：应用码映射修复〔detail miss 曾会误报
 not-connected 的不诚实呈现〕＋errors.catalog.* 四语键；桌面核实「真实面切换」本无
 切换改动——消费面就绪，provider 服务后自愈）；W13 ✅＋W16 ✅（88b4551）；W14 ✅
-（bdl-commands v0.2 冻结＋provider 路由）；W15 首轮走查 **不通过·重做中**（2026-09-08，裁决见下；18603ac 交付形态被裁定
-重做——非缺陷批，样式仅一处「开」按钮宽度）；**W17 已入表**（outline 2.0.4）且 **✅ 全链交付**：桌面协作面（869519b 自并 c93ac5e：
+（bdl-commands v0.2 冻结＋provider 路由）；W15 **重做批已交付并验收合并**（2026-09-08：4fb6411 桌面自并 4954349，集成验收）——
+示意图 A 全局开关形态＋危险开关（未接线如实标注，DEV 注明不删文件）＋VPM 术语
+四语修正＋「开」按钮宽度随形态消除＋contracts TS 面登记（setGlobalDefaultMode，
+词表与 v0.2 冻结一致）；mock 1 行越界声明充分（005 既有「诚实不可用」立场）准予
+维持。验收证据（2026-09-08 本机）：桌面 check 全链绿（typecheck＋47 文件 395 测试
+＋build＋boundary＋i18n＋contrast＋leak 160 条指纹零泄露）＋contracts 29＋
+orchestrator-provider 23＋cargo workspace 350 通过 0 失败。
+M4 门验收＝**第二轮用户走查**（重做后复验；此前「顺延」注记的等待对象已交付）。**W17 已入表**（outline 2.0.4）且 **✅ 全链交付**：桌面协作面（869519b 自并 c93ac5e：
 错误透传呈现白名单＋live-acquire entryDetail 旧码修复——live 面 miss 曾会误报断连；
 394 测试全绿＋CI ts 绿）＋数据写入面（eb899f1 验收合并 73cae1b：products 全列 upsert
 〔重放安全、无删除 API、墓碑保留〕＋bdl_meta.catalog_updated_seq 簿记〔v0.3 既有
 语义开放项落地〕＋catalog 读组装消费观察列＋写入侧闭集 InvalidObservation 拒绝＋
 9 项消费测试；350 通过 0 失败＋clippy 零告警；wire 零变化，架构双语 1.1.0）。
-M4 门验收**顺延**（2026-09-08）：等 W15 形态重做交付后第二轮用户走查（原「剩 W15
-走查」状态作废）。
 
 W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通过**——交互形态重做，
 非缺陷批；**用户示意图为规格权威**，桌面执行中）：
@@ -109,7 +114,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | --- | --- | --- |
 | application-contract | v0.1 | 冻结（M2 冻结） |
 | provider-process（协议本/握手帧面） | v0.2 | 握手帧面 Schema 冻结（provider-frame-v0.1 + 双端 11 向量；proposal 001 关闭） |
-| bdl-commands | **v0.2** | **已冻结（W14，2026-09-07）**——全局默认模式写 `warehouse.setGlobalDefaultMode`，持久化 BDL bdl_meta；v0.1（W8 三命令）已取代。W15 走查裁定改全局开关形态：`setGlobalDefaultMode` 语义不变仍适用（接线无协议障碍）；全局删除原始素材超出冻结面，proposal 008（桌面起草中）可能升 v0.3——未接受前 v0.2 维持冻结 |
+| bdl-commands | **v0.2** | **已冻结（W14，2026-09-07）**——全局默认模式写 `warehouse.setGlobalDefaultMode`，持久化 BDL bdl_meta；v0.1（W8 三命令）已取代。W15 走查裁定改全局开关形态：`setGlobalDefaultMode` 已接线（桌面 TS 面 4fb6411 登记）；全局删除原始素材超出冻结面，**proposal 008 立案讨论中**（数据正式表态路径 a＝桌面偏好＋桌面编排零协议影响；核心表态待）——未裁决前 v0.2 维持冻结 |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
 | unity-bridge | v1 | 冻结 |
@@ -126,7 +131,8 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | 1 | I-1 真 Unity 矩阵 | 集成树 | **✅ 已交付关闭**（16/16 真机通过，合并 5ccace6；验收=证据清单核实+抽查终态+集成独立复验 1 格） |
 | 7 | 三例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，真实时序窗口修复）；③ **CI ph_012（0a56f19，2026-09-08 定位）**：拉取 CI 日志（run 34137292736）核实 panic 实为 1579 行 "lease released after success"（非 15s deadline）——worker 按 safe_to_stop 设计先落终态再释放 mutation gate（marker/lock 文件 I/O 先于 SQLite 删除），测试看到终态后立即断言租约已清，2 核负载下输掉竞态；产品顺序正确，测试改为有界轮询等释放（保留原 panic 消息供证据可比）。残余观察（如实）：2026-09-08 本机 8 轮全量中 1 次 14/1 瞬败（套件约 0.19s，身份未捕获——输出未留存），随后 7 轮全绿；不做猜测性修复，再现即按程序取全量日志定位 | 核心 | ③ 修复已随批合并（80ad6e7）且 **CI 复跑绿**（rust run 34146584951，2026-09-08；同批 ts 34146584926 ✅、schema-vectors 34146584940 ✅）——本例关闭；残余观察态维持，再现即按程序带全量日志重开 |
 | 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败；本地绿系隐性依赖开发机 zh-CN 系统语言。修复=f4d288d（测试 vi.mock 显式固定 zh-CN 表，生产代码零改动） | 桌面 | **✅ 关闭（2026-09-08）**：随 97390f8 入 main，CI ts workflow 复跑绿（run 34146584926） |
-| 9 | 术语修正（**VPM = VRChat Package Manager／VPM 包 = VPM package**，W15 走查硬裁定）需评估受管文档面：product-boundary 双语、协议文档措辞核查；**v0.5.0 已发布文本不追溯**；M4 交付文档须用对术语；应用内 i18n/注释随 W15 重做切片由桌面按裁定修正 | 集成 | **✅ 评估完成（2026-09-08，8011af4）**：集成域活文档已修正——product-boundary 1.1.1 双语（「生成 VPM 包作为替代」等 3 处）＋outline 2.0.6 双语（B3 Spike 标题与 M3 条目 4 处；`generate-VPM` 等操作/提案标识符按专有名保留）。不追溯面（如实记录）：v0.5.0 发行文本、五份冻结协议文档（VPM 单用语形随未来升版修正，含 proposal 008 → bdl-commands v0.3）、warehouse-layout ADR（历史决策）；design-standard「条目级」旧形态描述已被 W15 裁决推翻——随桌面 W15 重做批/W16 同步改版（桌面域）；amf-unity EN 镜像 "VPM"→"VPM package" 一处不一致（产线域，已留言知会）；docs/README 与 research 为非受管面，不动 |
+| 9 | 术语修正（**VPM = VRChat Package Manager／VPM 包 = VPM package**，W15 走查硬裁定）需评估受管文档面：product-boundary 双语、协议文档措辞核查；**v0.5.0 已发布文本不追溯**；M4 交付文档须用对术语；应用内 i18n/注释随 W15 重做切片由桌面按裁定修正 | 集成 | **✅ 彻底闭环（2026-09-08）**：集成域活文档修正 8011af4（product-boundary 1.1.1＋outline 2.0.6 双语）；应用面四语 i18n＋注释随桌面重做批 4fb6411；产线域 amf-unity **1.0.1** 镜像修正随批合并（7a8e72f）；design-standard 条目级旧形态随 W15 重做改版（桌面，重做批已移除条目选择器）。不追溯面：v0.5.0 发行文本、冻结协议文档（升版时修正，含 008 → v0.3 若立案）、warehouse-layout ADR |
+| 10 | proposal 008：全局「生成后删除原始素材文件」开关的协议面（三路径；数据**正式表态路径 a**＝桌面偏好＋桌面编排零协议影响，反对 c；衍生变更〔007 偏好开关取代〕数据认可；**核心表态待**）→ 集成仲裁＋门序归属（路径 a 接线切片随 M4 收尾批或 M5 首批） | 核心 → 集成 | 008 线程讨论中（2026-09-08；裁决前桌面开关维持「未接线」呈现，v0.2 维持冻结） |
 
 ## 待用户裁决
 
