@@ -288,7 +288,9 @@ describe("bdl-queries v0.2 routing", () => {
     });
     expect(entryResponse).toMatchObject({
       ok: false,
-      error: { code: "application", application: { code: "vua.warehouse.not_found" } },
+      // mock-provider 对齐(核心复核 2026-09-08):真实 provider(10325cd)对
+      // entryDetail 未命中回既有冻结码 entry_not_found,非旧 not_found 字面量
+      error: { code: "application", application: { code: "vua.warehouse.entry_not_found" } },
     });
   });
 
