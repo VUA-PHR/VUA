@@ -1095,6 +1095,9 @@ fn warehouse_request(
         "warehouse.generateVpm" | "warehouse.deleteOriginals" => {
             warehouse_submit_task(warehouse, method, request, request_id, correlation_id)
         }
+        "warehouse.import" => {
+            warehouse_import_submit(warehouse, request, request_id, correlation_id)
+        }
         "warehouse.listEntries" => {
             warehouse_list_entries(warehouse, request, request_id, correlation_id)
         }
@@ -1292,9 +1295,11 @@ fn warehouse_set_artifact_mode(
     ))
 }
 
-/// bdl-commands v0.2 is the frozen command face all four warehouse command
-/// acceptances travel as (v0.1 superseded; trio shapes unchanged).
-const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.2";
+/// bdl-commands v0.3 is the frozen command face all warehouse command
+/// acceptances travel as (v0.1/v0.2 superseded; the trio and the global
+/// default keep their shapes, and v0.3 adds `warehouse.import` — the
+/// M5 batch-import task, proposal 010).
+const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.3";
 
 /// `warehouse.setGlobalDefaultMode` (bdl-commands v0.2, U8 ruling): the
 /// synchronous write of the two-level options' GLOBAL level. The global
@@ -1565,6 +1570,65 @@ fn catalog_status(
             Err(_) => catalog_store_failed(request_id, correlation_id),
         },
         Err(_) => catalog_store_failed(request_id, correlation_id),
+    }
+}
+
+/// `warehouse.import` (bdl-commands v0.3, proposal 010/012): submits ONE
+/// batch-import task over the given source folders (per-folder progress;
+/// entry creation, guards and the audit trail stay inside the task). The
+/// closed param set is `{ sourceFolders }` — kernel-resolved absolute
+/// paths, non-empty. The acceptance is the frozen v0.3 task document. The
+/// import-time generation hook (010 path A) lives inside the import task
+/// itself (acquisition, data-domain slice) and needs no wire surface here.
+fn warehouse_import_submit(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let source_folders = match request.get("params") {
+        Some(Value::Object(params)) if params.keys().all(|key| key == "sourceFolders") => {
+            match params.get("sourceFolders") {
+                Some(Value::Array(folders)) if !folders.is_empty() => folders
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_str()
+                            .filter(|raw| !raw.is_empty())
+                            .map(PathBuf::from)
+                    })
+                    .collect::<Option<Vec<PathBuf>>>(),
+                _ => None,
+            }
+        }
+        _ => None,
+    };
+    let Some(source_folders) = source_folders else {
+        return warehouse_invalid_params(request_id, correlation_id);
+    };
+    let accepted = vua_acquisition::submit_warehouse_import(
+        &warehouse.runtime,
+        warehouse.bdl.clone(),
+        Arc::new(SystemClock),
+        vua_acquisition::WarehouseImportTaskSpec {
+            correlation_id: correlation_id.to_owned(),
+            source_folders,
+            warehouse_root: warehouse.warehouse_root.clone(),
+        },
+        None,
+    );
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "operation": "warehouse.import",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority.
+        Err(_) => warehouse_store_failed(request_id, correlation_id),
     }
 }
 

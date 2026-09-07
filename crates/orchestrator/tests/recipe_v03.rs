@@ -100,6 +100,45 @@ fn approved_plan_has_no_executed_state_and_a_closed_job_vocabulary() {
 }
 
 #[test]
+fn execution_semantics_inputs_are_frozen_with_the_plan_schema() {
+    // Execution-semantics errata (011: the four plan kinds): the attach and
+    // exclude/set_active input shapes are frozen with the plan Schema.
+    let schema = read_json("approved-plan.schema.json");
+    let inputs = &schema["$defs"]["job"]["properties"]["inputs"]["properties"];
+    for field in ["localTransform", "selector"] {
+        assert!(
+            inputs.get(field).is_some(),
+            "the frozen inputs must carry {field}: {:?}",
+            serde_json::to_string(&inputs).unwrap()
+        );
+    }
+    // The structured selector keeps the catalogEntryId/pathHint forms inside
+    // its own definition.
+    let selector = serde_json::to_string(&schema["$defs"]["selector"]).unwrap();
+    assert!(selector.contains("pathHint"), "{selector}");
+    assert!(selector.contains("catalogEntryId"), "{selector}");
+
+    let validator = validator_for(&schema);
+
+    // attach_to_bone carries its local transform.
+    let attach = read_json("examples/example.plan-attach-transform.json");
+    let problems = violations(&validator, &attach);
+    assert!(problems.is_empty(), "attach plan must validate: {problems:?}");
+
+    // exclude_object with a pathHint selector.
+    let exclude = read_json("examples/example.plan-exclude-pathhint.json");
+    let problems = violations(&validator, &exclude);
+    assert!(problems.is_empty(), "exclude plan must validate: {problems:?}");
+
+    // A selector with neither catalogEntryId nor pathHint is a contract error.
+    let bad_selector = read_json("examples/invalid-plan-selector-no-target.json");
+    assert!(
+        !validator.is_valid(&bad_selector),
+        "selector without a target must not validate"
+    );
+}
+
+#[test]
 fn negative_vectors_are_rejected() {
     let plan_validator = validator_for(&read_json("approved-plan.schema.json"));
     let resolution_validator = validator_for(&read_json("local-resolution.schema.json"));

@@ -1,4 +1,5 @@
-//! Warehouse command face wire tests (proposal 005; bdl-commands v0.2).
+//! Warehouse command face wire tests (proposal 005 + 010; bdl-commands
+//! v0.3 — the trio, the global default, and the M5 batch import).
 //!
 //! The host consumes the data-side frozen vectors from
 //! `schemas/bdl-commands/v0.2/examples` through the real frame loop:
@@ -24,7 +25,7 @@ use vua_bdl_store::{ArtifactMode, BdlStore};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn command_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.2")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.3")
 }
 
 fn read_json(relative: &str) -> Value {
@@ -143,6 +144,7 @@ fn warehouse_commands_match_the_frozen_operation_vocabulary() {
         json!("warehouse.generateVpm"),
         json!("warehouse.deleteOriginals"),
         json!("warehouse.setGlobalDefaultMode"),
+        json!("warehouse.import"),
     ];
     assert_eq!(operations, &routed);
 }
@@ -374,4 +376,95 @@ fn set_global_default_mode_rejects_null_missing_and_unknown_modes() {
     // Every error path stays an application error: it never validates as a
     // frozen result.
     assert!(!validator.is_valid(&frames[0]["payload"]["error"]));
+}
+
+#[test]
+fn import_vector_drives_the_batch_import_task_and_lands_entries() {
+    let world = make_world("import");
+    let validator = result_validator();
+
+    // Two real source folders (one folder = one material package), standing
+    // in for the vector's kernel-resolved absolute paths.
+    let folder_a = world.base.join("imports").join("pack-a");
+    let folder_b = world.base.join("imports").join("pack-b");
+    for folder in [&folder_a, &folder_b] {
+        fs::create_dir_all(folder).expect("source folder");
+        fs::write(folder.join("material-pack.unitypackage"), b"PK fixture").expect("package file");
+    }
+
+    // The frozen request vector, reworded onto the temp folders.
+    let request = read_json("examples/warehouse-import.request.json");
+    let mut params = request["params"].clone();
+    params["sourceFolders"] = json!([
+        folder_a.to_string_lossy(),
+        folder_b.to_string_lossy()
+    ]);
+    let command = json!({ "operation": "warehouse.import", "params": params });
+    let frames = run_frames(&world, "corr-import-vector", &[command]);
+    assert_eq!(frames.len(), 1);
+    let value = &frames[0]["payload"]["value"];
+    assert!(
+        validator.is_valid(value),
+        "the acceptance must match the frozen result schema: {value}"
+    );
+    assert_eq!(value["operation"], "warehouse.import");
+    assert_eq!(value["correlationId"], "corr-import-vector");
+    let task_id = value["taskId"].as_str().expect("taskId is a string").to_owned();
+
+    // The batch-import task runs to Done on the SQLite task authority, and
+    // both folders land as warehouse entries (the wire face really imports).
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let state = loop {
+        let store =
+            vua_orchestrator::SqliteTaskStore::open(&world.database_path).expect("store opens");
+        let task = store
+            .task(&task_id)
+            .expect("store readable")
+            .expect("accepted task is durable");
+        if task.state.is_terminal() {
+            break task.state;
+        }
+        assert!(Instant::now() < deadline, "the import task did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(serde_json::to_value(state).unwrap(), "succeeded");
+    let cards = world.bdl.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
+    let mut names: Vec<&str> = cards.iter().map(|card| card.display_name.as_str()).collect();
+    names.sort_unstable();
+    // make_world seeds one fixture entry besides the two imported folders.
+    assert_eq!(
+        names,
+        ["pack-a", "pack-b", "vector entry"],
+        "both folders must land as entries"
+    );
+}
+
+#[test]
+fn import_negative_vectors_are_params_violations() {
+    let world = make_world("import-guards");
+
+    // The frozen negative vectors: an empty folder list and a non-string
+    // element are params violations, never a silently empty import.
+    for name in [
+        "examples/invalid-import-empty-folders.json",
+        "examples/invalid-import-folders-type.json",
+    ] {
+        let request = read_json(name);
+        let command = json!({ "operation": "warehouse.import", "params": request["params"].clone() });
+        let frames = run_frames(&world, "req-import-invalid", &[command]);
+        assert_eq!(
+            frames[0]["payload"]["error"]["code"],
+            "vua.warehouse.invalid_params",
+            "{name}"
+        );
+    }
+
+    // An unknown params key is a contract error too (closed set).
+    let command = json!({
+        "operation": "warehouse.import",
+        "params": { "sourceFolders": ["C:/tmp/imports/pack-x"], "recursive": true }
+    });
+    let frames = run_frames(&world, "req-import-unknown", &[command]);
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.warehouse.invalid_params");
 }

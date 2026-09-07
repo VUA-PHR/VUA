@@ -3,10 +3,12 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 07:0x（**W22 冻结切片验收合并·recipe v0.3 套件四件全冻结**
-〔build-record v0.3：产线互审确认＋commandId/replayed 缺口吸收；集成复跑 **370/0**
-＋clippy 零告警，proposal 012 收口〕；契约表 recipe 套件行并合；执行序②核心
-wire/挂点解锁中；009 v2 冻结解锁〔planRef 已确认〕；W23 数据批开工条件达成）
+最近更新：2026-09-08 07:4x（**执行序②核心半边验收合并**〔6b4f21a：warehouse.import
+wire 路由＋挂点精确设计交数据落实〔job 内联＋auto_generate spec＋import_correlation_id〕；
+集成复跑 **379/0**〕＋**四 plan-kind 执行语义冻结**〔471a4ee：approved-plan Schema
+细化＋2 例，回应产线 C# 切片 1〕＋产线 **W21 C# 切片 1 验收合并**〔06802b9：v2 协议层
+＋分发＋编排框架＋restore_project 完整；per-kind executors 诚实未接线〕——剩：数据
+挂点落实、W22 实现、③桌面呈现、production-use-case v0.2 冻结）
 
 ## 工作树指派
 
@@ -144,6 +146,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | bdl（schema） | v0.1 | 冻结 |
 | environment-managers（schema） | v0.1 | 冻结 |
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
+| production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
 | production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16） |
 

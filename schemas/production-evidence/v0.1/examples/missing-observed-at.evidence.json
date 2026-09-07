@@ -1,0 +1,13 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-6b7c-7d8e-9f0a-8b9c0d1e2f3a",
+  "kind": "missing_asset",
+  "subject": {
+    "ref": "booth:7654321"
+  },
+  "detail": "observedAt is required evidence — an observation without its time is not admissible.",
+  "sourceRef": {
+    "localResolutionId": "0198a7b3-9f8e-7d6c-5b4a-321098765432"
+  },
+  "resolution": null
+}

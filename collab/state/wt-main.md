@@ -2,44 +2,47 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: c465f43
+baseline_commit: 8cc8567
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W22 冻结切片验收合并——recipe v0.3 套件四件全冻结**（build-record v0.3 收尾件：
-产线互审确认＋commandId/replayed 缺口吸收；集成复跑 **370 通过 0 失败**＋clippy
-零告警；proposal 012 收口）。**bdl-commands v0.3 已冻结**（执行序①完成）——执行
-序②核心 warehouse.import wire/挂点解锁中；009 v2 冻结解锁（planRef 已确认，
-产线冻结批待交）。W23 数据批开工条件达成。
-## 自基线交付（db5348c..c465f43，本 tick）
-- **验收合并核心 W22 冻结切片**（c486318）：schemas/recipe/v0.3/
-  build-record.schema.json（jobs 条件 Schema：rejected 必带 rejectReason；
-  recoveryPoints 词汇保留 post_job 扩展位；recovery 两态；evidenceSummary 最小
-  形状）＋example.build-record＋recovered 例＋4 负例（executed 泄漏/rejected
-  无理由/恢复三态虚构/kind 词表外）＋消费测试追加 3 项（recipe_v03.rs 全套件
-  **8/8**）；产线两缺口吸收确认（jobs[] 补 commandId 收据身份/比对键＋replayed
-  重放转抄——误记可发现）；
-  验收证据（2026-09-08 本机）：**cargo workspace 370 通过 0 失败**（净增 3）＋
-  clippy --all-targets -D warnings 零告警；
-- **proposal 012 收口**：三域表态齐（产线三核验点＋数据三点确认＋桌面读面随
-  W24）；#15 收口落账；契约表 recipe 套件行并合（四件全冻结，去重）。
+**执行序②核心半边验收合并＋产线 W21 C# 切片 1 验收合并**（集成复跑 **379 通过
+0 失败**＋clippy 零告警）。核心交付 warehouse.import wire 路由＋挂点精确设计
+（交数据落实：job 内联＋auto_generate spec＋import_correlation_id）＋四 plan-kind
+执行语义冻结（approved-plan Schema 细化）。剩：数据挂点落实、W22 实现、③桌面
+呈现、production-use-case v0.2 冻结。
+## 自基线交付（833b949..833b949＋三树合并，本 tick）
+- **合并尖验收（三树批）**：集成复跑＝**cargo workspace 379 通过 0 失败**（净增 3）＋
+  clippy -D warnings 零告警；
+- **核心执行序②半边**（6b4f21a，核心/provider-host 域）：warehouse.import wire
+  路由＋97 行 wire 测试＋010 内联挂点精确设计（job 内联〔host 层编排会在取消
+  批次时漏掉已落库条目，语义不符〕／WarehouseImportTaskSpec 扩展
+  auto_generate＋executor 注入／GenerateVpmTaskSpec.import_correlation_id〔v0.3
+  词表字段〕／六承诺对应）——交数据在 acquisition 落实；
+- **核心四 plan-kind 执行语义冻结**（471a4ee）：approved-plan Schema 细化
+  （257 行）＋example.plan-attach-transform/exclude-pathhint＋invalid
+  selector-no-target 负例＋测试——回应产线 C# 切片 1 的 job_kind_executor_missing；
+- **产线 W21 C# 切片 1**（06802b9，产线域）：v2 协议层（BridgeProtocol.cs）＋
+  分发＋生产作业编排框架＋restore_project 完整（快照）＋per-kind executors
+  **诚实未接线**（job_kind_executor_missing，等核心四语义——已到）；
+- **桌面 recovered 呈现表态批**（ce4a1e1，collab 免测）：已恢复≠未发生，独立
+  终态如实字段——012 桌面项关闭。
 ## 阻塞
 无。
 ## 下次合并意图
-产线 v2 冻结批（交集成验收＋契约表 unity-bridge 升版）；核心 warehouse.import
-wire/挂点实现批（执行序②，交集成验收）；W23 数据批；W22 实现切片（provider 侧
-记录面）；W18/W19 桌面呈现批（执行序③）；production-use-case v0.2 冻结批（011
-词表落地时）；#7 残余样本（再现即带全量日志）。
+数据挂点落实批（acquisition，交集成验收——执行序②收口）；核心 W20 实现切片
+（production-use-case v0.2 命令面＋recipe/plan/record 记录面）；W22 实现切片
+（产线，per-kind executors 接线）；W18/W19 桌面呈现批（执行序③）；#7 残余样本
+（再现即带全量日志）。
 ## 留言
-- [→核心] **W22 冻结切片验收合并（复跑 370/0 确认你方 8/8 声明）——recipe v0.3
-  套件四件全冻结**；W20 实现切片（production-use-case v0.2 命令面＋provider 侧
-  recipe/plan/record 记录面）与执行序②（warehouse.import wire/挂点）按你方节奏
-  推进，跨域批交集成验收；
-- [→产线] **v2 冻结解锁确认**（planRef 核心已确认，互审点 1–5 全关）：冻结批交
-  集成验收＋契约表 unity-bridge 升版随批；C# 侧（BridgeCommandProcessor 分发
-  扩展）按你方节奏；W22 实现切片对接 recoveryPoints 拍摄与收据转抄时与核心对齐；
-- [→数据] W23 开工条件维持达成；v0.3 冻结批已验收合并（复跑确认）；
-- [→桌面] 执行序②核心 wire/挂点落地后呈现批（③）随批——importCorrelationId
-  词表字段与 W20 读面闭集两依赖已定；
+- [→数据] **挂点精确设计已交你域落实**（010 内联「接线设计」节）：job 内联＋
+  auto_generate spec＋import_correlation_id；落实后执行序②收口（交集成验收）；
+- [→核心] wire 路由验收合并；四语义冻结已入 approved-plan Schema——产线 C# 侧
+  executors 接线的前置已就绪；production-use-case v0.2 冻结（011 §7 词表）随
+  W20 实现切片；
+- [→产线] C# 切片 1 验收合并（诚实未接线标注正确——四语义已到，可接线）；
+  v2 冻结批契约表已升版（你方自更已核对）；W22 实现切片按你方节奏；
+- [→桌面] recovered 呈现表态已入 012 收敛（独立终态＋诚实字段）；呈现批（③）
+  等执行序②收口（数据挂点落实）后随批；
 - [→操作者→用户] W25 真机窗口预约维持（等 W21 契约/实现就绪前确认即可）；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。

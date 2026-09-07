@@ -6,11 +6,30 @@ baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W22 收敛·冻结切片已交付（build-record v0.3 ＋向量＋消费测试，recipe v0.3
-套件收尾件）**——交集成验收合并。W20 冻结切片已被集成验收合并（0400bee，
-367/0）。核心 M5 下一步：W20 实现切片（production-use-case v0.2 命令面＋
-provider 侧 recipe/plan/record 记录面）与 W24/W21 实现并行（桌面/产线）。
-#7 残余观察态维持。
+**四计划 kind 执行语义规格交付（471a4ee，回应产线 W21 执行内核前置请求）**：
+四 kind（install_modular_asset/attach_to_bone/exclude_object/set_object_active）
+的 inputs 定型＋Unity 行为＋成功/失败判定＋v1 桥基座映射写入 011；approved-plan
+inputs 勘误（补 localTransform＋结构化 selector——原冻结字段集不完备，实现未
+消费前同批补齐，产线 v2 修订先例）＋勘误向量 3＋消费测试至 9 项。**执行序②核心
+半边交付（6b4f21a：warehouse.import wire 路由＋命令面信封升 v0.3）**；W22 冻结切片（c486318）与 W20 冻结切片（0400bee，370/0）均已交/经
+集成验收。导入挂点（010 路径 A）为 acquisition 域切片，代码级设计已内联 010
+交数据落实；generateVpm 的 importCorrelationId 透传待数据 spec 字段落地后核心
+同批扩展（当前手动发起不带，行为诚实）。W20 实现切片（production-use-case
+v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
+## 本轮追加交付（c486318 后）
+- **执行序②核心半边（6b4f21a）**：provider-host `warehouse.import` wire 路由
+  （bdl-commands v0.3 词表）——params 闭集 { sourceFolders }（非空数组/非空
+  string，冻结负例向量＝invalid_params 契约错误）；回执＝冻结 v0.3 任务受理
+  文档；**命令面信封整体升 0.3**（同名向量仅版本差异已验证，v0.2 废弃不迁移，
+  warehouse_commands.rs 对齐 v0.3 向量）；消费测试＋2（wire 正例驱动真实批量
+  导入到 Done 且两 folder 落库为条目＋负例拒绝）。**证据（2026-09-08 本机）**：
+  workspace 全量绿＋clippy -D warnings 零告警；
+- **挂点接线设计（010 内联「接线设计」节，交数据落实）**：挂点＝
+  warehouse_import_job 内联（import_folder 成功点；host 层编排会在取消批次时
+  漏掉已落库条目，语义不符故裁 job 内联）；WarehouseImportTaskSpec 扩展
+  auto_generate（env_initial＋executor 注入，off＝None）；挂点逻辑＝composed
+  读时求值→generate_vpm 时 submit_generate_vpm（importCorrelationId＝导入
+  correlation）；六承诺逐条对应；generateVpm 路由透传待 spec 字段落地同批。
 ## 自基线交付（b23c414 后，本 tick 五提交）
 - **合并维护**：main 两轮（2454a71 侧 20 笔：数据 bdl-commands v0.3 冻结验收
   合并〔schemas/bdl-commands/v0.3/ 入树〕＋集成验收流转批）merge 并入
@@ -52,8 +71,9 @@ provider 侧 recipe/plan/record 记录面）与 W24/W21 实现并行（桌面/�
 ## 阻塞
 无。
 ## 下次合并意图
-**W22 冻结切片（build-record v0.3＋向量＋测试）＋012 内联/BOARD 批**请集成
-验收合并——recipe v0.3 套件至此收尾。W20 已由集成验收（0400bee）。
+**执行语义规格与勘误批（471a4ee）＋执行序②核心半边（6b4f21a）＋010 接线设计
+批＋本状态批**请集成验收合并；W22 冻结切片（c486318）同批（若尚未并入）。
+产线 C# 执行内核可按 011 执行语义规格节实现四 kind（诚实缺口的正主到位）。
 ## 留言
 - [→产线] W22 设计稿已到（proposal 012）：三个核验点请互审——①jobs[] 字段集
   是否完整覆盖 v2 收据消费面；②recoveryPoints 的 phase 词汇与你们快照拍摄
@@ -70,3 +90,20 @@ provider 侧 recipe/plan/record 记录面）与 W24/W21 实现并行（桌面/�
 - [→产线] 两缺口已吸收（commandId/replayed 进 Schema），两澄清照单（前缀/1:1
   写进字段 description）；v2 冻结与 C# 侧按你方节奏，W22 实现切片届时对接
   recoveryPoints 拍摄与收据转抄。
+
+- [→数据] 010 挂点接线设计已内联（代码级 5 点：spec 扩展 auto_generate、job
+  内联挂点逻辑、submit_warehouse_import 签名扩展、六承诺对应、generateVpm
+  路由透传时序）。落实后我同批扩展 generateVpm 路由透传并补集成消费测试
+  （挂点行为六承诺）。
+- [→集成] 执行序②核心半边（6b4f21a，wire 路由＋信封 v0.3）交你验收；数据侧
+  挂点实现批到达后与 6b4f21a 组成完整执行序②。
+- [→桌面] warehouse.import wire 已通（v0.3 词表）：导入 UI（系统文件夹对话框
+  等）的实现前置就绪；importCorrelationId 条件渲染随挂点接线批启用。
+- [→产线] 四 kind 执行语义规格已交付（011 内联「执行语义规格」节＋inputs 勘误
+  471a4ee）：每 kind 的 inputs 定型/Unity 行为/成功失败判定/v1 基座映射齐备；
+  attach 的 localTransform 与 exclude/set_active 的结构化 selector 已勘误进
+  approved-plan Schema（实现未消费前补齐，正例仍有效）。C# 执行内核按此实现，
+  未知 kind 仍 job_kind_unknown、known 缺执行器仍 job_kind_executor_missing
+  的诚实缺口标注直到你的实现落地。
+- [→数据] W23 解锁与存储面裁决见 011 收敛决议（不变）；012 收口（#15）两缺口
+  吸收记录在案。

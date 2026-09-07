@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-4f5a-7b6c-9d8e-6f5a4b3c2d1e",
+  "kind": "missing_package",
+  "subject": {
+    "ref": "pkg:jp.example.missing-dependency"
+  },
+  "observedAt": "2026-09-08T06:33:00.000Z",
+  "detail": "A declared dependency package was absent at resolution time; the user imported it afterwards and re-ran the resolution.",
+  "sourceRef": {
+    "localResolutionId": "0198a7b3-9f8e-7d6c-5b4a-321098765432"
+  },
+  "resolution": {
+    "resolvedAt": "2026-09-08T07:12:00.000Z",
+    "resolutionRef": "0198a7c9-1122-7334-4556-677889900011",
+    "note": "Satisfied by the follow-up resolution after the package import."
+  }
+}
