@@ -22,6 +22,7 @@ import { format, strings, termLabel } from "../../i18n/index.ts";
 import {
   artifactCardMatches,
   artifactCards,
+  commandErrorText,
   entryActions,
   entryModeLine,
   sizeText,
@@ -128,18 +129,13 @@ type ModeDraft = "follow" | WarehouseArtifactMode;
 /* 走查 3c 裁决(2026-09-07)+proposal 007 路径 b 表态:模式编辑与生成/删除动作
  * 移入「设置-实验性」开关控制——默认不呈现;开关开启后显示,入口挂实验性标注。
  * 命令面为已冻结的 bdl-commands v0.1 条目级三命令;全局默认由服务端配置,
- * 不进 wire。 */
+ * 不进 wire。命令错误文案映射为 W15 起与设置页共用的 acquire-model 纯函数。 */
 
-/** 命令错误 → 本地化文案:code 是协议冻结面,键为点号转下划线;未知码回落通用失败文案 */
-function commandErrorText(error: {
+function commandErrorTextFor(error: {
   kind: "unavailable" | "request_rejected" | "application";
   code?: string;
 }): string {
-  if (error.kind === "application" && typeof error.code === "string") {
-    const table = copy.commandErrors as Record<string, string>;
-    return table[error.code.replaceAll(".", "_")] ?? table.fallback!;
-  }
-  return copy.commandErrors.vua_warehouse_unavailable;
+  return commandErrorText(error, copy.commandErrors as Record<string, string>);
 }
 
 function EntryDetail({ entryId }: { entryId: string }) {
@@ -184,7 +180,7 @@ function EntryDetail({ entryId }: { entryId: string }) {
       setFeedback(copy.acceptedNote);
       setReloadKey((key) => key + 1);
     } else {
-      setFeedback(commandErrorText(outcome.error));
+      setFeedback(commandErrorTextFor(outcome.error));
     }
   }
 
@@ -286,7 +282,7 @@ function EntryDetail({ entryId }: { entryId: string }) {
                   if (outcome.ok) {
                     setReloadKey((key) => key + 1);
                   } else {
-                    setFeedback(commandErrorText(outcome.error));
+                    setFeedback(commandErrorTextFor(outcome.error));
                   }
                 });
             }}
@@ -317,7 +313,7 @@ function EntryDetail({ entryId }: { entryId: string }) {
                       setFeedback(copy.acceptedNote);
                       setReloadKey((key) => key + 1);
                     } else {
-                      setFeedback(commandErrorText(outcome.error));
+                      setFeedback(commandErrorTextFor(outcome.error));
                     }
                   });
               }}
@@ -343,7 +339,7 @@ function EntryDetail({ entryId }: { entryId: string }) {
                         setFeedback(copy.acceptedNote);
                         setReloadKey((key) => key + 1);
                       } else {
-                        setFeedback(commandErrorText(outcome.error));
+                        setFeedback(commandErrorTextFor(outcome.error));
                       }
                     });
                 }}

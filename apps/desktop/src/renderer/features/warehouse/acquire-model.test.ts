@@ -3,8 +3,11 @@ import { test } from "vitest";
 import {
   artifactCardMatches,
   artifactCards,
+  commandErrorText,
   entryActions,
   entryModeLine,
+  experimentalActionGates,
+  settingsEntryOptions,
   sizeText,
   type AcquireArtifactCard,
 } from "./acquire-model.ts";
@@ -190,4 +193,103 @@ test("entryActions: 删除入口 = 生效 generate_vpm + 生成副本在场", ()
     }, ["original"])),
     ["generateVpm"],
   );
+});
+
+/* ---- W15 设置-实验性两级选项(前置镜像 + 选择器投影 + 错误文案映射) ---- */
+
+test("experimentalActionGates: 生效 generate_vpm + 有原始件 + 无生成副本 = 生成可用,删除置灰", () => {
+  const gates = experimentalActionGates(
+    withArtifacts({ warehouseItemId: "whentry-g1", effectiveArtifactMode: "generate_vpm" }, [
+      "original",
+    ]),
+  );
+  assert.deepEqual(gates.generateVpm, { available: true, reason: null });
+  assert.deepEqual(gates.deleteOriginals, { available: false, reason: "noGeneratedCopy" });
+});
+
+test("experimentalActionGates: 已有生成副本 = 生成置灰(alreadyGenerated),删除可用", () => {
+  const gates = experimentalActionGates(
+    withArtifacts({ warehouseItemId: "whentry-g2", effectiveArtifactMode: "generate_vpm" }, [
+      "original",
+      "generated_vpm",
+    ]),
+  );
+  assert.deepEqual(gates.generateVpm, { available: false, reason: "alreadyGenerated" });
+  assert.deepEqual(gates.deleteOriginals, { available: true, reason: null });
+});
+
+test("experimentalActionGates: 生效模式非 generate_vpm = 两选项均置灰 modeNotGenerateVpm", () => {
+  const gates = experimentalActionGates(
+    withArtifacts(
+      {
+        warehouseItemId: "whentry-g4",
+        artifactMode: "generate_vpm",
+        effectiveArtifactMode: "use_original_unitypackage",
+      },
+      ["original", "generated_vpm"],
+    ),
+  );
+  // 覆盖存在但生效模式由服务端读回解析:生效非 generate_vpm 时整组置灰
+  assert.deepEqual(gates.generateVpm, { available: false, reason: "modeNotGenerateVpm" });
+  assert.deepEqual(gates.deleteOriginals, { available: false, reason: "modeNotGenerateVpm" });
+});
+
+test("experimentalActionGates: 生效 generate_vpm 但无原始件 = 生成置灰 noOriginal", () => {
+  const gates = experimentalActionGates(
+    withArtifacts({ warehouseItemId: "whentry-g5", effectiveArtifactMode: "generate_vpm" }, [
+      "generated_vpm",
+    ]),
+  );
+  assert.deepEqual(gates.generateVpm, { available: false, reason: "noOriginal" });
+  assert.deepEqual(gates.deleteOriginals, { available: true, reason: null });
+});
+
+test("experimentalActionGates 与 entryActions 的可用性逐一对应", () => {
+  const samples: ReadonlyArray<ReadonlyArray<"original" | "generated_vpm">> = [
+    [],
+    ["original"],
+    ["generated_vpm"],
+    ["original", "generated_vpm"],
+  ];
+  for (const roles of samples) {
+    for (const effective of ["use_original_unitypackage", "generate_vpm"] as const) {
+      const entry = withArtifacts({ warehouseItemId: "whentry-x", effectiveArtifactMode: effective }, roles);
+      const gates = experimentalActionGates(entry);
+      const actions = entryActions(entry);
+      assert.equal(gates.generateVpm.available, actions.includes("generateVpm"));
+      assert.equal(gates.deleteOriginals.available, actions.includes("deleteOriginals"));
+    }
+  }
+});
+
+test("settingsEntryOptions: 值=条目身份,标签=显示名,副行=文件夹名", () => {
+  const options = settingsEntryOptions([
+    entryOf({ warehouseItemId: "whentry-s1", displayName: "示例条目一" }),
+    entryOf({ warehouseItemId: "whentry-s2", displayName: "示例条目二" }),
+  ]);
+  assert.deepEqual(options, [
+    { value: "whentry-s1", label: "示例条目一", folderName: "whentry-s1" },
+    { value: "whentry-s2", label: "示例条目二", folderName: "whentry-s2" },
+  ]);
+});
+
+test("commandErrorText: 已知码查表,未知码回落 fallback,传输面回落服务未接入", () => {
+  const table = {
+    vua_warehouse_invalid_state: "模式不符",
+    vua_warehouse_unavailable: "服务未接入",
+    fallback: "操作未能完成",
+  };
+  assert.equal(
+    commandErrorText(
+      { kind: "application", code: "vua.warehouse.invalid_state" },
+      table,
+    ),
+    "模式不符",
+  );
+  assert.equal(
+    commandErrorText({ kind: "application", code: "vua.warehouse.unknown_code" }, table),
+    "操作未能完成",
+  );
+  assert.equal(commandErrorText({ kind: "unavailable" }, table), "服务未接入");
+  assert.equal(commandErrorText({ kind: "request_rejected" }, table), "服务未接入");
 });

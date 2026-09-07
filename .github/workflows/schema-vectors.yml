@@ -1,0 +1,63 @@
+# W11 (M3 closure) — contract schema/vector face.
+#
+# Scope: every Rust test that consumes a frozen schema vocabulary or fixed
+# vector set under `schemas/` for real (both ends of each contract). This
+# badge is the machine-readable "contract face is green" signal: when a
+# schema, vector, or consumer test changes, these targeted tests run fast
+# and standalone. The authoritative list below must be extended whenever a
+# new contract test that reads `schemas/` lands.
+name: schema-vectors
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "schemas/**"
+      - "crates/**/tests/**"
+      - "crates/*/Cargo.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/schema-vectors.yml"
+  pull_request:
+    paths:
+      - "schemas/**"
+      - "crates/**/tests/**"
+      - "crates/*/Cargo.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/schema-vectors.yml"
+
+concurrency:
+  group: schema-vectors-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  vectors:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.97.1
+      - uses: Swatinem/rust-cache@v2
+      # Contract anchor per crate (tests that read schemas/ for real):
+      # - vua-acquisition:    bdl_commands_contract           (bdl-commands v0.1)
+      # - vua-bdl-store:      catalog_serving                 (bdl-queries v0.3)
+      #                       global_default_v02              (bdl-commands v0.2)
+      # - vua-orchestrator:   assembly, build_record, contracts,
+      #                       recipe, vpm_spike_contract
+      # - vua-project-manager: environment_managers           (environment-managers v0.1)
+      # - vua-provider-host:  m3_vectors                      (amf-production v0.2)
+      #                       provider_frame_handshake        (provider-frame-v0.1)
+      #                       warehouse_commands              (bdl-commands v0.1)
+      # - vua-unity-bridge:   material_intake                 (material-intake v0.1)
+      - name: vua-acquisition
+        run: cargo test -p vua-acquisition --test bdl_commands_contract
+      - name: vua-bdl-store
+        run: cargo test -p vua-bdl-store --test catalog_serving --test global_default_v02
+      - name: vua-orchestrator
+        run: cargo test -p vua-orchestrator --test assembly --test build_record --test contracts --test recipe --test vpm_spike_contract
+      - name: vua-project-manager
+        run: cargo test -p vua-project-manager --test environment_managers
+      - name: vua-provider-host
+        run: cargo test -p vua-provider-host --test m3_vectors --test provider_frame_handshake --test warehouse_commands
+      - name: vua-unity-bridge
+        run: cargo test -p vua-unity-bridge --test material_intake

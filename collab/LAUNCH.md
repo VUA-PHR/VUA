@@ -19,7 +19,12 @@ git worktree list   # 应有 VUA(main) + VUA-2..VUA-6(slot/wt-2..6)
 ## 2. 首轮：六个进程入职
 
 ZCode 子智能体**已创建，勿重复创建**（系统提示词的改动先改
-`collab/roles/system-prompts/<role>.md` 文件，再同步进子智能体配置）：
+`collab/roles/system-prompts/<role>.md` 文件，再同步进子智能体配置）。六个生产角色外另有一个
+**独立审阅者 Reviewer**（更大模型，不产出实现）：系统提示词 `collab/roles/system-prompts/reviewer.md`，
+报告产出在 `collab/reviews/`；按需调用（合并批复核、门验收复核、抽查），不进 20 分钟节拍。
+
+六角色注册表：
+
 
 | 进程 | 子智能体（描述） | 模型/工具 | 工作目录 | 首条消息（入职提示词全文，只发一次） | 槽位分支 |
 | --- | --- | --- | --- | --- | --- |

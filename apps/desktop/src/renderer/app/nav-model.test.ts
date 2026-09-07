@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import { strings } from "../i18n/strings.zh-CN.ts";
 import { TERMS, termSequence, type TermId } from "../i18n/terms.ts";
 import {
@@ -16,6 +16,16 @@ import {
   type ModuleDef,
   type SidebarPage,
 } from "./nav-model.ts";
+
+/**
+ * BOARD #8:termSequence 经 current-table 按宿主 navigator 选表,CI(en-US)
+ * 解析到 en 表注解为空串,期望中文注解的断言随之失败。测试显式固定语言表
+ * 为 zh-CN,不依赖宿主 locale。
+ */
+vi.mock("../i18n/current-table.ts", async () => {
+  const { strings: zhCN } = await import("../i18n/strings.zh-CN.ts");
+  return { currentLocale: "zh-CN", currentStrings: zhCN };
+});
 
 const allPages = modules.flatMap((m) => m.groups.flatMap((g) => g.pages));
 const allPageIds = allPages.map((p) => p.id);

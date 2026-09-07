@@ -2,12 +2,16 @@
 
 English | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
+[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+
 VUA is a Windows-first, local-first desktop production environment for VRChat players. It brings
 environment setup, authorized asset acquisition, Avatar assembly and inspection, local asset
 management, and reproducible production records into one connected workflow.
 
 > [!IMPORTANT]
-> **The current product version is v0.4.1 (pre-alpha).** This repository provides developer previews
+> **The current product version is v0.5.0 (pre-alpha).** This repository provides developer previews
 > and early evaluation builds; the everyday-player stability commitment begins with `1.0.0`.
 
 ## Product direction
