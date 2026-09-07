@@ -89,6 +89,12 @@ namespace Vua.Editor.Bridge
                     case "analyze_performance":
                         result = AnalyzePerformance(command);
                         break;
+                    case "execute_production_job":
+                        result = ExecuteProductionJob(command);
+                        break;
+                    case "restore_project":
+                        result = RestoreProject(command);
+                        break;
                     default:
                         return BridgeResult.Reject(command, "bridge.operation_not_allowed", "该操作不在允许列表中。");
                 }
@@ -127,7 +133,8 @@ namespace Vua.Editor.Bridge
             return operation == "import_unity_package" ||
                    operation == "materialize_extracted_package" ||
                    operation == "create_local_vpm_package" ||
-                   operation == "install_outfit" || operation == "create_toggle";
+                   operation == "install_outfit" || operation == "create_toggle" ||
+                   operation == "execute_production_job" || operation == "restore_project";
         }
 
         private static BridgeResult ImportUnityPackage(BridgeCommand command)
@@ -610,10 +617,317 @@ namespace Vua.Editor.Bridge
             return result;
         }
 
+        // ---- v2: production jobs and restore (unity-bridge v2, proposal 009) ----
+
+        private static readonly string[] SupportedPlanSchemaVersions = { "0.3" };
+
+        // Job kinds frozen in the approved-plan schema (recipe v0.3). The
+        // Unity-side executors for these kinds are NOT wired yet (the
+        // execution semantics — e.g. how selectorId resolves to a scene
+        // object — are defined with the core W20 implementation slice);
+        // dispatching to them fails honestly with job_kind_executor_missing
+        // instead of guessing. Unknown kinds are contract errors.
+        private static readonly string[] KnownPlanJobKinds =
+        {
+            "install_modular_asset", "attach_to_bone", "exclude_object", "set_object_active"
+        };
+
+        private static BridgeResult ExecuteProductionJob(BridgeCommand command)
+        {
+            if (string.IsNullOrWhiteSpace(command.payload.planHash) ||
+                string.IsNullOrWhiteSpace(command.payload.planSchemaVersion) ||
+                string.IsNullOrWhiteSpace(command.payload.planRef))
+            {
+                return BridgeResult.Reject(command, "bridge.payload_required",
+                    "execute_production_job 需要 planHash、planSchemaVersion 与 planRef。");
+            }
+            if (Array.IndexOf(SupportedPlanSchemaVersions, command.payload.planSchemaVersion) < 0)
+            {
+                return BridgeResult.Reject(command, "plan_schema_version_unsupported",
+                    $"计划 schemaVersion {command.payload.planSchemaVersion} 不在支持集合内。");
+            }
+
+            var planPath = ResolveJobFile(command.payload.planRef);
+            if (planPath == null || !File.Exists(planPath))
+            {
+                return BridgeResult.Reject(command, "plan_ref_missing",
+                    "计划文件在 job 目录中不存在或越出 job 目录。");
+            }
+            var actualPlanHash = FileSha256(planPath);
+            if (!string.Equals(actualPlanHash, command.payload.planHash, StringComparison.OrdinalIgnoreCase))
+            {
+                // Local integrity check: the Bridge never trusts the provider's
+                // word that the file matches the approved hash (009 ruling).
+                return BridgeResult.Reject(command, "plan_hash_mismatch",
+                    "计划文件哈希与 planHash 不一致，拒绝执行。");
+            }
+
+            BridgePlanDocument plan;
+            try
+            {
+                plan = JsonUtility.FromJson<BridgePlanDocument>(File.ReadAllText(planPath));
+            }
+            catch (Exception exception)
+            {
+                return BridgeResult.Reject(command, "plan_unreadable",
+                    "计划文件无法解析：" + exception.Message);
+            }
+            if (plan == null || plan.jobs == null)
+            {
+                return BridgeResult.Reject(command, "plan_unreadable", "计划文件缺少作业序列。");
+            }
+            if (plan.jobs.Count == 0)
+            {
+                return BridgeResult.Reject(command, "plan_empty", "计划不含任何作业。");
+            }
+
+            var steps = new List<BridgeStep>();
+            foreach (var job in plan.jobs)
+            {
+                steps.Add(new BridgeStep
+                {
+                    kind = job.kind,
+                    status = "pending",
+                    resolvedSource = job.resolvedSource
+                });
+            }
+
+            var receipt = new BridgeResult
+            {
+                schemaVersion = 2,
+                commandId = command.commandId,
+                operation = command.operation,
+                status = "succeeded",
+                data =
+                {
+                    dryRun = command.dryRun,
+                    replayed = false,
+                    planHash = command.payload.planHash,
+                    steps = steps
+                }
+            };
+
+            if (command.dryRun)
+            {
+                // A dry-run never touches the project; the returned
+                // fingerprint is the pre-check-time state, never a prediction.
+                receipt.data.projectFingerprint = ProjectFingerprint.Compute();
+                return receipt;
+            }
+
+            // Real run: pre-job snapshot first (proposal 012 minimal form).
+            var fingerprintBefore = ProjectFingerprint.Compute();
+            receipt.data.projectFingerprintBefore = fingerprintBefore;
+            string snapshotId;
+            var snapshotProblem = ProjectSnapshot.Create(out snapshotId);
+            if (snapshotProblem != null)
+            {
+                // Pre-condition failure before any change: rejected (same
+                // semantics as the fingerprint gate), not a run failure —
+                // no snapshot exists yet to reference.
+                return BridgeResult.Reject(command, "snapshot_failed", snapshotProblem);
+            }
+            receipt.data.snapshotId = snapshotId;
+
+            // Execute the ordered job sequence. The per-kind Unity executors
+            // are not wired yet (semantics pending the core W20 implementation
+            // slice) — every known kind fails honestly instead of guessing.
+            for (var index = 0; index < plan.jobs.Count; index++)
+            {
+                var job = plan.jobs[index];
+                if (Array.IndexOf(KnownPlanJobKinds, job.kind) < 0)
+                {
+                    steps[index].status = "failed";
+                    receipt.status = "failed";
+                    receipt.diagnostics.Add(BridgeDiagnostic.Error("job_kind_unknown",
+                        $"作业 {job.jobId} 的 kind「{job.kind}」不在计划词表内。"));
+                    break;
+                }
+                steps[index].status = "failed";
+                receipt.status = "failed";
+                receipt.diagnostics.Add(BridgeDiagnostic.Error("job_kind_executor_missing",
+                    $"作业 {job.jobId}（{job.kind}）的 Unity 执行器尚未接线（执行语义随核心 W20 实现切片定义）；未执行任何该作业副作用。"));
+                break;
+            }
+
+            AssetDatabase.SaveAssets();
+            receipt.data.projectFingerprint = ProjectFingerprint.Compute();
+            return receipt;
+        }
+
+        private static BridgeResult RestoreProject(BridgeCommand command)
+        {
+            if (string.IsNullOrWhiteSpace(command.payload.snapshotId))
+            {
+                return BridgeResult.Reject(command, "bridge.payload_required", "restore_project 需要 snapshotId。");
+            }
+            var snapshotProblem = ProjectSnapshot.VerifyExists(command.payload.snapshotId, command.dryRun);
+            if (snapshotProblem != null)
+            {
+                return BridgeResult.Fail(command, "restore_failed", snapshotProblem);
+            }
+            if (command.dryRun)
+            {
+                return new BridgeResult
+                {
+                    schemaVersion = 2,
+                    commandId = command.commandId,
+                    operation = command.operation,
+                    status = "succeeded",
+                    data =
+                    {
+                        replayed = false,
+                        restoredFrom = command.payload.snapshotId,
+                        projectFingerprint = ProjectFingerprint.Compute()
+                    }
+                };
+            }
+
+            var restoreProblem = ProjectSnapshot.Restore(command.payload.snapshotId);
+            if (restoreProblem != null)
+            {
+                return BridgeResult.Fail(command, "restore_failed", restoreProblem);
+            }
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+            return new BridgeResult
+            {
+                schemaVersion = 2,
+                commandId = command.commandId,
+                operation = command.operation,
+                status = "succeeded",
+                changedPaths = new List<string> { "Assets/", "Packages/", "ProjectSettings/" },
+                data =
+                {
+                    replayed = false,
+                    restoredFrom = command.payload.snapshotId,
+                    projectFingerprint = ProjectFingerprint.Compute()
+                }
+            };
+        }
+
+        private static string ResolveJobFile(string planRef)
+        {
+            if (string.IsNullOrWhiteSpace(planRef)) return null;
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            if (string.IsNullOrWhiteSpace(projectRoot)) return null;
+            var candidate = Path.GetFullPath(Path.Combine(projectRoot, planRef.Replace("\\", "/")));
+            var bridgeRoot = Path.GetFullPath(Path.Combine(projectRoot, ".vua", "bridge"));
+            // The plan file must live inside the job-directory root (existing
+            // discipline: request/result files stay under .vua/bridge/).
+            if (!candidate.StartsWith(bridgeRoot, StringComparison.Ordinal)) return null;
+            return candidate;
+        }
+
+        internal static class ProjectSnapshot
+        {
+            private static string SnapshotRoot =>
+                Path.Combine(Directory.GetParent(Application.dataPath)?.FullName ?? "",
+                    ".vua", "bridge", "snapshots");
+
+            private static readonly string[] TrackedRoots = { "Assets", "Packages", "ProjectSettings" };
+
+            internal static string Create(out string snapshotId)
+            {
+                snapshotId = NewUuidV7();
+                try
+                {
+                    var root = Path.Combine(SnapshotRoot, snapshotId);
+                    Directory.CreateDirectory(root);
+                    var projectRoot = Directory.GetParent(Application.dataPath).FullName;
+                    foreach (var tracked in TrackedRoots)
+                    {
+                        var source = Path.Combine(projectRoot, tracked);
+                        if (!Directory.Exists(source)) continue;
+                        CopyDirectory(source, Path.Combine(root, tracked));
+                    }
+                    File.WriteAllText(Path.Combine(root, "snapshot.meta"),
+                        "{\"snapshotId\":\"" + snapshotId + "\",\"phase\":\"pre_job\"}");
+                    return null;
+                }
+                catch (Exception exception)
+                {
+                    return "快照创建失败：" + exception.Message;
+                }
+            }
+
+            internal static string VerifyExists(string snapshotId, bool dryRunOnly)
+            {
+                var dir = Path.Combine(SnapshotRoot, snapshotId);
+                return Directory.Exists(dir) ? null : "恢复点不存在或已被清理：" + snapshotId;
+            }
+
+            internal static string Restore(string snapshotId)
+            {
+                try
+                {
+                    var root = Path.Combine(SnapshotRoot, snapshotId);
+                    var projectRoot = Directory.GetParent(Application.dataPath).FullName;
+                    foreach (var tracked in TrackedRoots)
+                    {
+                        var current = Path.Combine(projectRoot, tracked);
+                        var backup = Path.Combine(root, tracked);
+                        if (!Directory.Exists(backup)) continue;
+                        if (Directory.Exists(current))
+                        {
+                            var trash = Path.Combine(SnapshotRoot, snapshotId + ".replaced", tracked);
+                            Directory.CreateDirectory(Path.GetDirectoryName(trash));
+                            if (Directory.Exists(trash)) Directory.Delete(trash, true);
+                            Directory.Move(current, trash);
+                        }
+                        CopyDirectory(backup, current);
+                    }
+                    return null;
+                }
+                catch (Exception exception)
+                {
+                    return "恢复失败：" + exception.Message;
+                }
+            }
+
+            private static void CopyDirectory(string source, string target)
+            {
+                Directory.CreateDirectory(target);
+                foreach (var file in Directory.GetFiles(source))
+                {
+                    File.Copy(file, Path.Combine(target, Path.GetFileName(file)), true);
+                }
+                foreach (var dir in Directory.GetDirectories(source))
+                {
+                    CopyDirectory(dir, Path.Combine(target, Path.GetFileName(dir)));
+                }
+            }
+
+            // UUID v7 form (unix-ms timestamp + random), matching the
+            // build-record recoveryPoints identity convention.
+            internal static string NewUuidV7()
+            {
+                var unixMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var random = new byte[10];
+                System.Security.Cryptography.RandomNumberGenerator.Fill(random);
+                var bytes = new byte[16];
+                bytes[0] = (byte)(unixMs >> 40);
+                bytes[1] = (byte)(unixMs >> 32);
+                bytes[2] = (byte)(unixMs >> 24);
+                bytes[3] = (byte)(unixMs >> 16);
+                bytes[4] = (byte)(unixMs >> 8);
+                bytes[5] = (byte)unixMs;
+                bytes[6] = (byte)(0x70 | (random[0] & 0x0F));
+                bytes[7] = random[1];
+                bytes[8] = (byte)(0x80 | (random[2] & 0x3F));
+                Array.Copy(random, 3, bytes, 9, 7);
+                var hex = BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
+                return hex.Insert(8, "-").Insert(14, "-").Insert(19, "-").Insert(24, "-");
+            }
+        }
+
         private static BridgeResult ValidateEnvelope(BridgeCommand command)
         {
             if (command == null) return BridgeResult.Reject(null, "bridge.invalid_json", "命令 JSON 无法解析。");
-            if (command.schemaVersion != 1) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
+            if (command.schemaVersion != 1 && command.schemaVersion != 2) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
+            if (command.schemaVersion == 1 && (command.operation == "execute_production_job" || command.operation == "restore_project"))
+            {
+                return BridgeResult.Reject(command, "bridge.unsupported_schema", "生产作业与恢复操作需要协议 v2。");
+            }
             if (string.IsNullOrWhiteSpace(command.commandId) ||
                 !Regex.IsMatch(command.commandId, "^[A-Za-z0-9_-]{1,128}$", RegexOptions.CultureInvariant))
                 return BridgeResult.Reject(command, "bridge.command_id_required", "命令 ID 无效。");
@@ -642,7 +956,9 @@ namespace Vua.Editor.Bridge
                    operation == "install_outfit" ||
                    operation == "create_toggle" ||
                    operation == "validate_avatar" ||
-                   operation == "analyze_performance";
+                   operation == "analyze_performance" ||
+                   operation == "execute_production_job" ||
+                   operation == "restore_project";
         }
 
         private static bool TryResolve(string serializedId, out GameObject gameObject)

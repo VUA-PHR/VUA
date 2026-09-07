@@ -96,8 +96,11 @@
   "allOf": [
     {
       "if": {
-        "properties": { "operation": { "const": "execute_production_job" } },
-        "required": ["operation"]
+        "properties": {
+          "operation": { "const": "execute_production_job" },
+          "status": { "enum": ["succeeded", "failed"] }
+        },
+        "required": ["operation", "status"]
       },
       "then": {
         "properties": {
