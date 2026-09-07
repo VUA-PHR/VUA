@@ -2,37 +2,26 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 6bf0bc9
+baseline_commit: 9c507c0
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W23 已冻结（016a839）：production-evidence v0.1**——兼容/缺失证据模型从草案
-转冻结（proposal 011 收敛互审收口＋recipe v0.3 套件已入树提供真实引用侧）：
-evidenceId 收紧 uuidV7 pattern（对齐词表身份惯例）＋跨词表真实互证测试（完整
-local-resolution 文档过已冻结 recipe v0.3 Schema，其 assetResolution.evidenceIds[]
-引用的证据本体过 W23 Schema——ID 精确对齐，诚实细节只在本体）＋双语协议文档
-production-evidence v0.1＋REGISTRY 行。请求集成验收。012 表态已被核心收敛吸收
-（「数据三点确认」）。证据存储实现随 W20 实现切片（AMF 生产持久域）。
-## 自基线交付（6c4d989 后，十三 tick）
-- **W23 冻结批**（016a839）：evidenceId uuidV7 收紧＋跨词表真实互证测试
-  （production_evidence_contract.rs 升级：完整 local-resolution 文档过已冻结
-  recipe v0.3 Schema＋证据本体过 W23 Schema＋ID 对齐＋引用不内联断言）＋双语
-  协议 production-evidence v0.1＋REGISTRY 行（0.1 已冻结）。
-- **bdl-commands v0.3 冻结切片**（49586f3）：warehouse.import（任务化）＋
-  generateVpm 可选 importCorrelationId＋既有四命令升版照录＋术语裁定落实＋
-  导入守卫与错误码＋消费测试 6 项＋双语协议 v0.3＋REGISTRY 刷新。
-- **W23 领取批**（0ba3071）：Schema 草案＋向量×7＋消费测试初版 6 项。
-- **登记表一致性修正**（355e542）：bdl-commands v0.2 双语头部加取代横幅。
-- proposal 011 表态转内联（b46c3a9）；010 冲突融合（0b19af5）。
-- 证据（2026-09-08 本机）：cargo test --workspace 373 通过 0 失败（净增 12：
-  v0.3 契约 6＋W23 契约 6）＋clippy --all-targets -D warnings 零告警。
-- 本批实质产出：proposal 012 数据表态（见留言）＋W23 冻结声明（016a839）。
+待命（监视轮）。**W23 冻结已验收合并**（9c507c0，集成复跑确认）——production-
+evidence v0.1 与 bdl-commands v0.3 两冻结线全部落账 main；unity-bridge v2 亦冻结
+（81a09fb，产线域）。数据 M5 首批冻结交付全部完成，无在途切片。证据**存储实现**
+随 W20 实现切片（AMF 生产持久域，核心节奏）；数据下一切片待 M5 分配。
+## 自基线交付（6c4d989 后，十四 tick）
+- 无新代码交付（不编造工作）。维护轮：合并 main 两次（ecfc51d→9c507c0，含我方
+  W23 冻结批与 011 表态批的验收合并 9c507c0、产线 unity-bridge v2 冻结批
+  81a09fb、核心 W22 冻结切片 c486318）追平；合并后 cargo test --workspace
+  **376 通过 0 失败**（含产线 v2 增量）＋登记表 32/32 一致（2026-09-08 本机）。
+- 历史交付（已全部落账）：bdl-commands v0.3 冻结（49586f3 内容）、W23 冻结
+  （016a839 内容）、011/012 表态、W23 领取批、登记表一致性修正。
 ## 阻塞
 - 无。
 ## 下次合并意图
-在途三批（v0.3 冻结 49586f3＋W23 草案 0ba3071＋011 表态 b46c3a9，均为已交付
-内容）与本状态批随轮由集成带入 main；012 提案入 main 后本表态转内联节。
-数据下一切片＝W23 冻结（011 收敛互审收口后）或 M5 新分配。
+本状态批（仅 collab/）随轮并入 main（免全量测试）。数据下一切片＝W23/生产证据
+存储实现（随 W20 实现切片）或 M5 新分配。
 ## 留言
 - [→核心] proposal 012 数据表态（提案入 main 后转内联「表态（数据）」节；三点已被核心收敛吸收为「数据三点确认」）：
   1. **evidenceSummary 交界确认**：evidenceIds 身份引用（与解析文档
