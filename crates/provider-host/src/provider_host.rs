@@ -24,7 +24,10 @@ use vua_orchestrator::{
     SqliteTaskStore, StoredTask, StoredTaskEvent, SystemClock, TaskEventKind, TaskMutation,
     TaskRuntime, TaskState,
 };
-use vua_bdl_store::{ArtifactMode, BdlStore, BdlStoreError};
+use vua_bdl_store::{
+    ArtifactMode, BdlStore, BdlStoreError, CatalogListParams, CatalogParamsError,
+    BDL_QUERIES_SCHEMA_VERSION,
+};
 use vua_orchestrator::ParamValue;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -674,6 +677,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("download.") {
         return download_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("catalog.") {
+        return catalog_request(state, method, request, request_id, correlation_id);
+    }
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
     }
@@ -1048,12 +1054,20 @@ fn application_success(request_id: &str, value: Value) -> Value {
 /// events into BDL (at-least-once; the BDL unique key dedups) and drives the
 /// per-attempt nine-state task; `download.retry` adjudicates a user retry
 /// through the frozen retry policy and emits the port intent.
-/// B4 warehouse maintenance surface (proposal 005, bdl-commands v0.1).
-/// `warehouse.setArtifactMode` applies synchronously and reports the entry's
-/// resulting effective mode; `warehouse.generateVpm` / `warehouse.deleteOriginals`
+/// B4 warehouse maintenance surface (proposal 005, bdl-commands v0.2) plus
+/// the bdl-queries v0.3 warehouse read face.
+/// `warehouse.setArtifactMode` / `warehouse.setGlobalDefaultMode` apply
+/// synchronously and report the stored fact read back from BDL — the entry's
+/// resulting effective mode / the persisted global default, never an echo of
+/// the request. `warehouse.generateVpm` / `warehouse.deleteOriginals`
 /// submit audited maintenance tasks and return a task acceptance — their Done
 /// payloads travel the application-contract task surface. Guards are
 /// server-side facts evaluated inside the tasks, never at admission.
+/// All five acceptances are bdl-commands v0.2 documents (v0.1 is superseded;
+/// the trio's shapes are unchanged, only the envelope version moved).
+/// `warehouse.listEntries` / `warehouse.entryDetail` are the frozen read
+/// queries: bdl-queries v0.3 documents over the same assembly the catalog
+/// face wraps.
 fn warehouse_request(
     state: &mut HostState,
     method: &str,
@@ -1074,8 +1088,17 @@ fn warehouse_request(
         "warehouse.setArtifactMode" => {
             warehouse_set_artifact_mode(warehouse, request, request_id, correlation_id)
         }
+        "warehouse.setGlobalDefaultMode" => {
+            warehouse_set_global_default_mode(warehouse, request, request_id, correlation_id)
+        }
         "warehouse.generateVpm" | "warehouse.deleteOriginals" => {
             warehouse_submit_task(warehouse, method, request, request_id, correlation_id)
+        }
+        "warehouse.listEntries" => {
+            warehouse_list_entries(warehouse, request, request_id, correlation_id)
+        }
+        "warehouse.entryDetail" => {
+            warehouse_entry_detail_query(warehouse, request, request_id, correlation_id)
         }
         _ => FrameOutcome::Response(application_error(
             request_id,
@@ -1097,12 +1120,124 @@ fn warehouse_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutc
     ))
 }
 
+/// `warehouse.listEntries` (bdl-queries v0.3 read face): every entry card,
+/// effective modes resolved against the composed global default. The closed
+/// set is `{}` — any key at all is a contract error.
+fn warehouse_list_entries(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    if !matches!(request.get("params"), Some(Value::Object(params)) if params.is_empty()) {
+        return warehouse_invalid_params(request_id, correlation_id);
+    }
+    let global_default = match composed_global_default(&warehouse.bdl, warehouse.global_default) {
+        Ok(global_default) => global_default,
+        Err(_) => return warehouse_store_failed(request_id, correlation_id),
+    };
+    match warehouse.bdl.warehouse_entry_cards(global_default) {
+        Ok(entries) => match serde_json::to_value(&entries) {
+            Ok(entries) => bdl_query_success(
+                request_id,
+                "warehouse.listEntries",
+                json!({ "entries": entries }),
+            ),
+            Err(_) => warehouse_store_failed(request_id, correlation_id),
+        },
+        Err(_) => warehouse_store_failed(request_id, correlation_id),
+    }
+}
+
+/// `warehouse.entryDetail` (bdl-queries v0.3 read face): per-artifact
+/// inspection facts for one entry. The closed set is `{ warehouseItemId }`;
+/// a miss is the frozen application-face entry_not_found.
+fn warehouse_entry_detail_query(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let warehouse_item_id = match request.get("params") {
+        Some(Value::Object(params)) if params.keys().all(|key| key == "warehouseItemId") => {
+            params
+                .get("warehouseItemId")
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+                .filter(|id| !id.is_empty())
+        }
+        _ => None,
+    };
+    let Some(warehouse_item_id) = warehouse_item_id else {
+        return warehouse_invalid_params(request_id, correlation_id);
+    };
+    let global_default = match composed_global_default(&warehouse.bdl, warehouse.global_default) {
+        Ok(global_default) => global_default,
+        Err(_) => return warehouse_store_failed(request_id, correlation_id),
+    };
+    match warehouse
+        .bdl
+        .warehouse_entry_detail(&warehouse_item_id, global_default)
+    {
+        Ok(Some(detail)) => match serde_json::to_value(&detail) {
+            Ok(entry) => {
+                bdl_query_success(request_id, "warehouse.entryDetail", json!({ "entry": entry }))
+            }
+            Err(_) => warehouse_store_failed(request_id, correlation_id),
+        },
+        Ok(None) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.warehouse.entry_not_found",
+            "errors.warehouse.entryNotFound",
+            "validation",
+        )),
+        Err(_) => warehouse_store_failed(request_id, correlation_id),
+    }
+}
+
 fn warehouse_item_id_param(request: &Value) -> Option<String> {
     request
         .pointer("/params/warehouseItemId")
         .and_then(Value::as_str)
         .map(str::to_owned)
         .filter(|id| !id.is_empty())
+}
+
+/// The composed global default (U8 two-level options, global level): the
+/// persisted bdl_meta value once one exists, otherwise the provider's
+/// environment-injected initial default. Read per request — never a wiring
+/// time snapshot, so a setGlobalDefaultMode rules every later resolution.
+fn composed_global_default(
+    bdl: &BdlStore,
+    initial: ArtifactMode,
+) -> Result<ArtifactMode, BdlStoreError> {
+    Ok(bdl.global_default_mode()?.unwrap_or(initial))
+}
+
+fn warehouse_store_failed(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.warehouse.storeFailed",
+        "errors.warehouse.storeFailed",
+        "internal",
+    ))
+}
+
+/// The entry's resulting effective mode, read back from the store:
+/// `override ?? composed global default`. A miss after a successful write
+/// is an internal failure, never an empty mode.
+fn warehouse_entry_effective_mode(
+    warehouse: &WarehouseServices,
+    warehouse_item_id: &str,
+) -> Result<String, BdlStoreError> {
+    let global = composed_global_default(&warehouse.bdl, warehouse.global_default)?;
+    let detail = warehouse
+        .bdl
+        .warehouse_entry_detail(warehouse_item_id, global)?
+        .ok_or_else(|| BdlStoreError::UnknownWarehouseItem(warehouse_item_id.to_owned()))?;
+    Ok(detail.effective_artifact_mode.name().to_owned())
 }
 
 fn warehouse_set_artifact_mode(
@@ -1136,32 +1271,66 @@ fn warehouse_set_artifact_mode(
                 "validation",
             ));
         }
-        Err(_) => {
-            return FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                "vua.warehouse.storeFailed",
-                "errors.warehouse.storeFailed",
-                "internal",
-            ));
-        }
+        Err(_) => return warehouse_store_failed(request_id, correlation_id),
     }
-    // The effective mode is read back from the store (override ?? global
-    // default), never echoed from the request.
-    let effective = warehouse
-        .bdl
-        .warehouse_entry_detail(&warehouse_item_id, warehouse.global_default)
-        .ok()
-        .flatten()
-        .map(|detail| detail.effective_artifact_mode.name().to_owned())
-        .unwrap_or_default();
+    // The effective mode is read back from the store (override ?? composed
+    // global default), never echoed from the request. A read-back failure is
+    // an internal failure whose retry is safe — never an empty mode.
+    let effective = match warehouse_entry_effective_mode(&warehouse, &warehouse_item_id) {
+        Ok(effective) => effective,
+        Err(_) => return warehouse_store_failed(request_id, correlation_id),
+    };
     FrameOutcome::Response(application_success(
         request_id,
         json!({
-            "schemaVersion": "0.1",
+            "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
             "operation": "warehouse.setArtifactMode",
             "warehouseItemId": warehouse_item_id,
             "effectiveMode": effective,
+        }),
+    ))
+}
+
+/// bdl-commands v0.2 is the frozen command face all five warehouse command
+/// acceptances travel as (v0.1 superseded; trio shapes unchanged).
+const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.2";
+
+/// `warehouse.setGlobalDefaultMode` (bdl-commands v0.2, U8 ruling): the
+/// synchronous write of the two-level options' GLOBAL level. The global
+/// default always has a value — a persisted fact once written, the
+/// environment-injected initial default before — so the params carry no
+/// null: a missing/null mode is a params violation, not a no-op. The
+/// acceptance reports the persisted fact read back from BDL, never the
+/// echoed request.
+fn warehouse_set_global_default_mode(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let mode = match request.pointer("/params/mode") {
+        Some(Value::String(raw)) => match ArtifactMode::parse(raw) {
+            Ok(mode) => mode,
+            Err(_) => return warehouse_invalid_params(request_id, correlation_id),
+        },
+        _ => return warehouse_invalid_params(request_id, correlation_id),
+    };
+    if warehouse.bdl.set_global_default_mode(mode).is_err() {
+        return warehouse_store_failed(request_id, correlation_id);
+    }
+    // Read back the stored fact through the ordinary read path; a write
+    // that cannot be read back is an internal failure whose retry is safe
+    // (the write is idempotent).
+    let persisted = match warehouse.bdl.global_default_mode() {
+        Ok(Some(persisted)) => persisted,
+        _ => return warehouse_store_failed(request_id, correlation_id),
+    };
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+            "operation": "warehouse.setGlobalDefaultMode",
+            "globalDefaultMode": persisted.name(),
         }),
     ))
 }
@@ -1176,6 +1345,14 @@ fn warehouse_submit_task(
     let Some(warehouse_item_id) = warehouse_item_id_param(request) else {
         return warehouse_invalid_params(request_id, correlation_id);
     };
+    // The composed global default at submission time (persisted ?? env
+    // initial): the guards fire inside the tasks and resolve overrides
+    // against this value.
+    let global_default =
+        match composed_global_default(&warehouse.bdl, warehouse.global_default) {
+            Ok(global_default) => global_default,
+            Err(_) => return warehouse_store_failed(request_id, correlation_id),
+        };
     let accepted = match method {
         "warehouse.generateVpm" => {
             let Some(executor) = warehouse.executor.clone() else {
@@ -1195,7 +1372,7 @@ fn warehouse_submit_task(
                     correlation_id: correlation_id.to_owned(),
                     warehouse_item_id,
                     warehouse_root: warehouse.warehouse_root.clone(),
-                    global_default: warehouse.global_default,
+                    global_default,
                 },
                 None,
             )
@@ -1207,7 +1384,7 @@ fn warehouse_submit_task(
                 vua_acquisition::warehouse_maintenance::DeleteOriginalsTaskSpec {
                     correlation_id: correlation_id.to_owned(),
                     warehouse_item_id,
-                    global_default: warehouse.global_default,
+                    global_default,
                 },
                 None,
             )
@@ -1218,7 +1395,7 @@ fn warehouse_submit_task(
         Ok(accepted) => FrameOutcome::Response(application_success(
             request_id,
             json!({
-                "schemaVersion": "0.1",
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
                 "operation": method,
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
@@ -1226,13 +1403,167 @@ fn warehouse_submit_task(
         )),
         // Submission rejection is a persistence failure of the task authority
         // (the guards themselves fire inside the task, not at admission).
-        Err(_) => FrameOutcome::Response(application_error(
+        Err(_) => warehouse_store_failed(request_id, correlation_id),
+    }
+}
+
+/// W12 closeout: the catalog read face (bdl-queries v0.3) — the three
+/// cloud-catalog queries over the same BDL the warehouse surface serves.
+/// The assembly (bdl-store) produces the result payload; this face wraps it
+/// into the frozen `{ schemaVersion, operation, result }` document. Params
+/// closed-set violations are contract errors, never silently empty answers;
+/// a detail miss (tombstones included — they are observation-side data and
+/// never catalog cards) is the application-face product_not_found.
+fn catalog_request(
+    state: &HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse) = state.warehouse.clone() else {
+        return FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
-            "vua.warehouse.storeFailed",
-            "errors.warehouse.storeFailed",
-            "internal",
+            "vua.catalog.unavailable",
+            "errors.catalog.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "catalog.list" => catalog_list(warehouse, request, request_id, correlation_id),
+        "catalog.detail" => catalog_detail(warehouse, request, request_id, correlation_id),
+        "catalog.status" => catalog_status(warehouse, request, request_id, correlation_id),
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
         )),
+    }
+}
+
+/// The bdl-queries v0.3 envelope all read queries travel as: the frozen
+/// `{ schemaVersion, operation, result }` document wrapped in the
+/// application-contract success value.
+fn bdl_query_success(request_id: &str, operation: &str, result: Value) -> FrameOutcome {
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": BDL_QUERIES_SCHEMA_VERSION,
+            "operation": operation,
+            "result": result,
+        }),
+    ))
+}
+
+fn catalog_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.catalog.invalid_params",
+        "errors.catalog.invalidParams",
+        "validation",
+    ))
+}
+
+fn catalog_store_failed(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.catalog.store_failed",
+        "errors.catalog.storeFailed",
+        "internal",
+    ))
+}
+
+fn catalog_list(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // The closed-set parse is the data side's frozen one (reused, not
+    // reimplemented): keys outside { text, availabilityStatus, limit,
+    // offset } and out-of-vocabulary values are contract errors, never a
+    // silently filtered answer.
+    let params = match request.get("params") {
+        Some(params) => match CatalogListParams::from_value(params) {
+            Ok(params) => params,
+            Err(CatalogParamsError::UnknownKey(_))
+            | Err(CatalogParamsError::InvalidValue { .. }) => {
+                return catalog_invalid_params(request_id, correlation_id);
+            }
+        },
+        None => return catalog_invalid_params(request_id, correlation_id),
+    };
+    match warehouse.bdl.catalog_list(&params) {
+        Ok(result) => match serde_json::to_value(&result) {
+            Ok(result) => bdl_query_success(request_id, "catalog.list", result),
+            Err(_) => catalog_store_failed(request_id, correlation_id),
+        },
+        Err(_) => catalog_store_failed(request_id, correlation_id),
+    }
+}
+
+fn catalog_detail(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // The detail closed set is { productId }: a non-empty string. Any other
+    // key, an explicit null, or an empty string is a contract error.
+    let product_id = match request.get("params") {
+        Some(Value::Object(params)) if params.keys().all(|key| key == "productId") => {
+            params
+                .get("productId")
+                .and_then(Value::as_str)
+                .map(str::to_owned)
+                .filter(|id| !id.is_empty())
+        }
+        _ => None,
+    };
+    let Some(product_id) = product_id else {
+        return catalog_invalid_params(request_id, correlation_id);
+    };
+    match warehouse.bdl.catalog_detail(&product_id) {
+        Ok(Some(result)) => match serde_json::to_value(&result) {
+            Ok(result) => bdl_query_success(request_id, "catalog.detail", result),
+            Err(_) => catalog_store_failed(request_id, correlation_id),
+        },
+        // A miss (including a tombstone, which the assembly never serves as
+        // a card) is the application-face not-found, never a fabricated
+        // empty product.
+        Ok(None) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.catalog.product_not_found",
+            "errors.catalog.productNotFound",
+            "validation",
+        )),
+        Err(_) => catalog_store_failed(request_id, correlation_id),
+    }
+}
+
+fn catalog_status(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // The status closed set is {} — the health/revision snapshot takes no
+    // filter; any key at all is a contract error.
+    if !matches!(request.get("params"), Some(Value::Object(params)) if params.is_empty()) {
+        return catalog_invalid_params(request_id, correlation_id);
+    }
+    match warehouse.bdl.catalog_status() {
+        Ok(result) => match serde_json::to_value(&result) {
+            Ok(result) => bdl_query_success(request_id, "catalog.status", result),
+            Err(_) => catalog_store_failed(request_id, correlation_id),
+        },
+        Err(_) => catalog_store_failed(request_id, correlation_id),
     }
 }
 
