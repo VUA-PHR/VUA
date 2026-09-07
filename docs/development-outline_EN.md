@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.5
+> Document version: 2.0.6
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.5)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.6)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -175,7 +175,7 @@ The standalone `v0.4.3` architecture spike is cancelled. The core-composition fr
 enters the product; the Orchestrator-hosting comparison is performed by B2, its result accepted by
 M2, and consumed by M3.
 
-### Pre-B3 spike (no product version): VPM asset-package creation and installation path
+### Pre-B3 spike (no product version): VPM package creation and installation path
 
 This spike adds a parallel path beside importing a `.unitypackage` directly into a VUA-controlled
 Unity project: preserve the source artifact, create a local VPM package in an isolated Unity
@@ -214,15 +214,15 @@ The spike closes the following gaps before B3 production implementation:
 
 - **Documentation:** record the first end-to-end use case, error/recovery semantics, minimal Build
   Record, Bridge operation coverage, and the two material-entry contracts — direct import and local
-  VPM creation/installation.
+  VPM package creation/installation.
 - **Migration:** extract only the legacy page behavior and Unity semantics required by this slice
   and close the matching migration ledger.
 - **Integration:** combine F3 and B3 and run Inspect through Recover with a synthetic Avatar, one
   synthetic outfit, and a global Unity `2022.3.22f1` project through both the direct
-  `.unitypackage` import path and the local VPM path (creation, then installation through VUA's
+  `.unitypackage` import path and the local VPM package path (creation, then installation through VUA's
   package manager).
 - **Delivery:** both paths pass success, cancellation, drift, timeout, Bridge rejection,
-  successful/failed rollback, and idempotent replay; VPM results clearly distinguish
+  successful/failed rollback, and idempotent replay; VPM package results clearly distinguish
   `unityValidated` from experimental offline output; update the version and release notes to
   `0.5.0`.
 
@@ -478,6 +478,11 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.6 (2026-09-08): terminology fix (hard user ruling, 2026-09-08) — VPM = VRChat Package
+  Manager (the manager), VPM package = the managed package; "VPM asset-package", "local VPM
+  creation", and "VPM results" in the Pre-B3 spike heading and the M3 documentation/integration/
+  delivery items unified to the "VPM package" form; operation/proposal identifiers such as
+  `generate-VPM` stay as proper names; bilingual sync.
 - 2.0.5 (2026-09-08): W17 delivered across the chain — data write face (full-column products
   upsert + catalog_updated_seq bookkeeping + catalog consumption of observation columns,
   73cae1b) + desktop surfacing (error pass-through whitelist + live-acquire stale-code fix,

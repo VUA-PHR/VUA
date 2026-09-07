@@ -578,6 +578,11 @@ export interface WarehouseSetArtifactModeResultV01 {
   readonly warehouseItemId: string;
   readonly effectiveMode: WarehouseArtifactModeV03;
 }
+/** setGlobalDefaultMode 的受理载荷即结果(bdl-commands v0.2 全局层,W14):
+ *  从 BDL 读回的持久事实,非回显 */
+export interface WarehouseSetGlobalDefaultModeResultV02 {
+  readonly globalDefaultMode: WarehouseArtifactModeV03;
+}
 
 /** 任务化维护命令的受理载荷(generateVpm / deleteOriginals 共用) */
 export interface WarehouseMaintenanceAcceptedV01 {
@@ -629,6 +634,14 @@ export interface WarehouseDeleteOriginalsCommandV01 extends ApplicationRequestBa
   readonly commandId: string;
   readonly params: { readonly warehouseItemId: string };
 }
+/** 全局默认产物模式写命令(bdl-commands v0.2 全局层,W14/W15):同步写 BDL
+ *  bdl_meta;无 null——全局默认恒有值,缺/null/词表外 = 参数违反 */
+export interface WarehouseSetGlobalDefaultModeCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.setGlobalDefaultMode";
+  readonly commandId: string;
+  readonly params: { readonly mode: WarehouseArtifactModeV03 };
+}
 
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
@@ -652,6 +665,7 @@ export type ApplicationRequestV01 =
   | DownloadIngestCommandV03
   | DownloadRetryCommandV03
   | WarehouseSetArtifactModeCommandV01
+  | WarehouseSetGlobalDefaultModeCommandV02
   | WarehouseGenerateVpmCommandV01
   | WarehouseDeleteOriginalsCommandV01;
 
@@ -739,6 +753,7 @@ export type ApplicationSuccessValueV01 =
   | WarehouseListEntriesResultV03
   | WarehouseEntryDetailResultV03
   | WarehouseSetArtifactModeResultV01
+  | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseMaintenanceAcceptedV01;
 
 export type ApplicationResponseV01 =
@@ -1027,6 +1042,14 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, ["warehouseItemId"])
       && isIdentifier(value.params.warehouseItemId);
+  }
+  // bdl-commands v0.2 全局层(W14):params 闭集 = mode,词表闭集无 null
+  if (value.kind === "command" && value.method === "warehouse.setGlobalDefaultMode") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["mode"])
+      && (value.params.mode === "use_original_unitypackage"
+        || value.params.mode === "generate_vpm");
   }
   return false;
 }

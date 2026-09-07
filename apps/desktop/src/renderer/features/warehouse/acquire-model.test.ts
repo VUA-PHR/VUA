@@ -293,3 +293,25 @@ test("commandErrorText: 已知码查表,未知码回落 fallback,传输面回落
   assert.equal(commandErrorText({ kind: "unavailable" }, table), "服务未接入");
   assert.equal(commandErrorText({ kind: "request_rejected" }, table), "服务未接入");
 });
+
+/* ---- W15 重做:全局默认读面推断(设置页全局开关初值) ---- */
+
+import { inferGlobalDefaultMode } from "./acquire-model.ts";
+
+test("inferGlobalDefaultMode: 无覆盖条目的生效模式即全局默认;不可知如实 unknown", () => {
+  // 无覆盖条目:生效模式 = composed 全局默认
+  const known = inferGlobalDefaultMode([
+    entryOf({ warehouseItemId: "whentry-i1", artifactMode: "generate_vpm", effectiveArtifactMode: "generate_vpm" }),
+    entryOf({ warehouseItemId: "whentry-i2" }),
+  ]);
+  assert.deepEqual(known, { kind: "known", mode: "use_original_unitypackage" });
+
+  // 全部条目有覆盖:不可知,不猜测
+  const unknown = inferGlobalDefaultMode([
+    entryOf({ warehouseItemId: "whentry-i3", artifactMode: "generate_vpm", effectiveArtifactMode: "generate_vpm" }),
+  ]);
+  assert.deepEqual(unknown, { kind: "unknown" });
+
+  // 空仓库:不可知
+  assert.deepEqual(inferGlobalDefaultMode([]), { kind: "unknown" });
+});

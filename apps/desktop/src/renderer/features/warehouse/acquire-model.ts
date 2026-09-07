@@ -175,3 +175,22 @@ export function commandErrorText(
   }
   return commandErrors.vua_warehouse_unavailable!;
 }
+
+/* ---- W15 重做:全局默认模式的读面推断(设置页全局开关的初值) ----
+ * wire 无独立的全局默认查询;条目读面中无覆盖条目的生效模式即
+ * 「覆盖 ?? composed 全局默认」的动态解析结果,可据此推断。全部条目
+ * 均有覆盖(或空仓库)时不可知——如实 unknown,UI 标注而非猜测初值。
+ */
+
+export type GlobalDefaultInference =
+  | { readonly kind: "known"; readonly mode: WarehouseArtifactMode }
+  | { readonly kind: "unknown" };
+
+export function inferGlobalDefaultMode(
+  entries: readonly WarehouseEntry[],
+): GlobalDefaultInference {
+  const probe = entries.find((entry) => entry.artifactMode === null);
+  return probe === undefined
+    ? { kind: "unknown" }
+    : { kind: "known", mode: probe.effectiveArtifactMode };
+}
