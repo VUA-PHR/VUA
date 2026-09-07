@@ -147,8 +147,21 @@ export interface CatalogProductDetail {
   readonly entities: readonly CatalogEntityBrief[];
 }
 
+/**
+ * W17 透传呈现:application 错误按冻结稳定码(vua.catalog.*)收窄为白名单
+ * messageKey(键先行,provider 在错误通道下发同值),页面经 strings.errors
+ * 解析;词表外码回落 fallback,不猜测具体原因。product_not_found 不入此
+ * 表——未命中是独立事实形态(kind "not-found"),不是错误文案。
+ */
+export type CatalogErrorKey =
+  | "errors.catalog.invalidParams"
+  | "errors.catalog.unavailable"
+  | "errors.catalog.storeFailed"
+  | "errors.catalog.fallback";
+
 export type CatalogListView =
   | { schemaVersion: 1; kind: "not-connected" }
+  | { schemaVersion: 1; kind: "error"; messageKey: CatalogErrorKey }
   | {
       schemaVersion: 1;
       kind: "results";
@@ -171,6 +184,7 @@ export interface CatalogVocabulary {
 export type CatalogDetailView =
   | { schemaVersion: 1; kind: "not-connected" }
   | { schemaVersion: 1; kind: "not-found" }
+  | { schemaVersion: 1; kind: "error"; messageKey: CatalogErrorKey }
   | { schemaVersion: 1; kind: "detail"; product: CatalogProductDetail };
 
 export interface CatalogBrowserPort {

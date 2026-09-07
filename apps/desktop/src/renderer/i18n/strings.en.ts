@@ -1597,6 +1597,7 @@ rolled_back: "Rolled back",
       invalidParams: "The catalog request did not pass validation.",
       unavailable: "The catalog service is not connected.",
       storeFailed: "The catalog store hit a failure; the request was not completed.",
+      fallback: "The catalog operation could not be completed.",
     },
   },
 };

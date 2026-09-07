@@ -15,6 +15,7 @@ import {
   useDataSource,
   type CatalogAvailabilityStatus,
   type CatalogDetailView,
+  type CatalogErrorKey,
   type CatalogListView,
   type CatalogProductDetail,
   type CatalogProductSummary,
@@ -42,6 +43,17 @@ import {
 import "./warehouse.css";
 
 const copy = strings.warehouse;
+
+/** W17 透传呈现:CatalogErrorKey 白名单 → strings.errors.catalog 文案(类型安全) */
+function catalogErrorText(messageKey: CatalogErrorKey): string {
+  const table: Record<CatalogErrorKey, string> = {
+    "errors.catalog.invalidParams": strings.errors.catalog.invalidParams,
+    "errors.catalog.unavailable": strings.errors.catalog.unavailable,
+    "errors.catalog.storeFailed": strings.errors.catalog.storeFailed,
+    "errors.catalog.fallback": strings.errors.catalog.fallback,
+  };
+  return table[messageKey];
+}
 
 /** 实体类型显示名:已知类型走 i18n;词表外新类型回落原文(词表随数据,不崩溃) */
 function entityTypeLabel(value: string): string {
@@ -524,6 +536,17 @@ export function WarehousePage() {
           title={copy.states.notConnectedTitle}
           description={copy.states.notConnectedDescription}
         />
+      ) : listState.kind === "loaded" && listState.view.kind === "error" ? (
+        /* W17 透传呈现:服务端 application 错误按冻结码映射文案,不与断连混淆 */
+        <EmptyState
+          title={copy.states.loadFailedTitle}
+          description={catalogErrorText(listState.view.messageKey)}
+          action={
+            <Button variant="default" onClick={() => setReloadKey((key) => key + 1)}>
+              {copy.states.retry}
+            </Button>
+          }
+        />
       ) : listState.kind === "failed" ? (
         <EmptyState
           title={copy.states.loadFailedTitle}
@@ -698,6 +721,19 @@ export function WarehousePage() {
               ) : detailState.view.kind === "detail" ? (
                 /* key=productId:切换商品时重置组件内状态(如来源跳转失败标记) */
                 <DetailContent key={detailState.view.product.productId} product={detailState.view.product} />
+              ) : detailState.view.kind === "error" ? (
+                /* W17 透传呈现:application 错误文案 + 重试;与 not-found/断连区分 */
+                <div className="vua-warehouse-detail__content">
+                  <p className="vua-text-secondary">{catalogErrorText(detailState.view.messageKey)}</p>
+                  <div>
+                    <Button
+                      variant="default"
+                      onClick={() => setDetailReloadKey((key) => key + 1)}
+                    >
+                      {copy.detail.retry}
+                    </Button>
+                  </div>
+                </div>
               ) : (
                 <div className="vua-warehouse-detail__content">
                   <p className="vua-text-secondary">{copy.detail.notFound}</p>
