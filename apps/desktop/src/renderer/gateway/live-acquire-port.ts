@@ -271,9 +271,12 @@ export function createLiveAcquire(client: GatewayClient): AcquirePort {
           ? { schemaVersion: 1, kind: "detail", entry }
           : { schemaVersion: 1, kind: "not-connected" };
       }
+      // W17 对齐:entryDetail 未命中的冻结应用面码为
+      // vua.warehouse.entry_not_found(旧字面 vua.warehouse.not_found 在
+      // 真实 provider 上不存在),如实呈现 not-found,不误报断连
       if (
         result.error.kind === "application" &&
-        result.error.error.code === "vua.warehouse.not_found"
+        result.error.error.code === "vua.warehouse.entry_not_found"
       ) {
         return { schemaVersion: 1, kind: "not-found" };
       }
