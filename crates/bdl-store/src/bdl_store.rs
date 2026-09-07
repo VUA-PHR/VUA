@@ -4,10 +4,12 @@
 //! decides what is persisted, BDL stores it. This store owns the B4
 //! acquisition tables (download_events / local_artifacts / artifact_mappings)
 //! with the durability discipline of the task store (WAL, synchronous FULL,
-//! versioned migration). The observation tables belong to the observation
-//! pipeline; the store only enforces that artifact mappings reference
-//! OBSERVED products — the foreign key rejects every unobserved target,
-//! which is the boundary itself.
+//! versioned migration). The observation products table is served by the
+//! W17 write side (`record_product_observation`): the observation pipeline
+//! (G13, a future slice) is the intended caller — until it exists the
+//! catalog face keeps answering the honest empty state. The store only
+//! enforces that artifact mappings reference OBSERVED products — the foreign
+//! key rejects every unobserved target, which is the boundary itself.
 //!
 //! Inspection facts are idempotent per content (`artifact_sha256`);
 //! re-downloading the same content never duplicates a row (warehouse-layout
@@ -16,13 +18,15 @@
 //! at-least-once.
 
 use crate::bdl_queries::{
-    AvailabilityStatus, CatalogDetailResult, CatalogHealth, CatalogListParams, CatalogListResult,
-    CatalogProductDetail, CatalogProductSummary, CatalogRevision, CatalogStatusResult,
+    availability_status, CatalogDetailResult, CatalogHealth, CatalogListParams, CatalogListResult,
+    CatalogPrice, CatalogProductDetail, CatalogProductSummary, CatalogRevision,
+    CatalogStatusResult, CatalogSubproduct,
 };
 use crate::bdl_queries::ArtifactInspectionVerdict;
 use crate::download_events::{DownloadEventKind, DownloadEventV01, DownloadFailureKind};
 use rusqlite::{params, Connection, OptionalExtension, TransactionBehavior};
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
@@ -36,6 +40,7 @@ pub enum BdlStoreError {
     Json(serde_json::Error),
     UnsupportedFormat(String),
     InvalidEvent(&'static str),
+    InvalidObservation(&'static str),
     UnknownArtifact(String),
     UnknownProduct(String),
     UnknownWarehouseItem(String),
@@ -59,6 +64,9 @@ impl std::fmt::Display for BdlStoreError {
                 write!(formatter, "unsupported BDL format {version}")
             }
             Self::InvalidEvent(reason) => write!(formatter, "invalid download event: {reason}"),
+            Self::InvalidObservation(reason) => {
+                write!(formatter, "invalid product observation: {reason}")
+            }
             Self::UnknownArtifact(artifact) => {
                 write!(formatter, "unknown local artifact {artifact}")
             }
@@ -275,6 +283,336 @@ impl CopyRole {
 
 /// The two legal entry kinds (bdl-queries v0.3 closed vocabulary).
 pub const WAREHOUSE_ITEM_KINDS: [&str; 2] = ["imported_material", "downloaded_material"];
+
+/// One observed subproduct inside a `ProductObservation`: the BOOTH
+/// variation facts as observed (availability is the verbatim word, the
+/// stable enum is derived by the read face per the versioned rule table —
+/// never stored).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SubproductObservation {
+    pub variation_id: Option<String>,
+    pub name: Option<String>,
+    pub price_amount: Option<String>,
+    pub price_currency: Option<String>,
+    pub availability: Option<String>,
+}
+
+/// The page-observation status closed set. `missing` is the tombstone
+/// (404/410 keepsake): the row stays, the catalog never serves it as a
+/// card, and nothing ever deletes it physically.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProductObservationStatus {
+    Complete,
+    Missing,
+}
+
+impl ProductObservationStatus {
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Complete => "complete",
+            Self::Missing => "missing",
+        }
+    }
+}
+
+/// One observation-pipeline row for the products table (boundary IN-1).
+/// Field semantics are the v0.1 schema's: availability/age/price carry
+/// observed facts only; `adult` is true only with the explicit BOOTH Adult
+/// badge; `missing_fields` is the honest extraction-gap list;
+/// `content_hash` is content-addressed observation evidence and
+/// `observed_at` the pipeline observation time (never a BOOTH publish
+/// time). Presentation fields flow to the catalog face verbatim — the
+/// derivations (availabilityStatus, imageUrl = imageUrls[0]) happen at
+/// read time, per the versioned rule tables.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProductObservation {
+    /// Corpus identity `booth:<native_product_id>` — both parts must agree
+    /// (the store rejects a mismatched pair).
+    pub product_id: String,
+    pub native_product_id: String,
+    pub source_url: String,
+    pub final_url: Option<String>,
+    pub status: ProductObservationStatus,
+    pub source_locale: Option<String>,
+    pub source_category: Option<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub age_restriction: Option<String>,
+    pub adult: bool,
+    /// Verbatim observed word (JSON-LD offers.availability); the stable
+    /// enum is derived per the v0.2 rule table, never stored.
+    pub availability: Option<String>,
+    /// Single-price products only; amount and currency are admitted or
+    /// rejected as a pair (one without the other is a violation).
+    pub price_amount: Option<String>,
+    pub price_currency: Option<String>,
+    pub shop_name: Option<String>,
+    pub shop_url: Option<String>,
+    pub image_urls: Vec<String>,
+    pub video_urls: Vec<String>,
+    pub subproducts: Vec<SubproductObservation>,
+    pub source_published_at: Option<String>,
+    /// `sha256:<hex>` of the observed HTML.
+    pub content_hash: String,
+    /// Pipeline observation time (RFC 3339 string), never a BOOTH publish
+    /// time.
+    pub observed_at: String,
+    pub run_id: Option<String>,
+    pub processor_version: String,
+    /// Honest extraction gaps, carried verbatim.
+    pub missing_fields: Vec<String>,
+}
+
+/// Validates one observation against the write-face closed sets: corpus
+/// identity (`booth:<digits>` with both parts agreeing), the status
+/// vocabulary, the content-hash shape, required evidence fields, and the
+/// price-pair rule (amount and currency admitted or rejected together).
+fn validate_product_observation(
+    observation: &ProductObservation,
+) -> Result<(), BdlStoreError> {
+    let expected_product_id = format!("booth:{}", observation.native_product_id);
+    if observation.product_id != expected_product_id
+        || !observation
+            .native_product_id
+            .chars()
+            .all(|character| character.is_ascii_digit())
+        || observation.native_product_id.is_empty()
+    {
+        return Err(BdlStoreError::InvalidObservation(
+            "product identity must be booth:<native digits> with both parts agreeing",
+        ));
+    }
+    if observation.source_url.trim().is_empty() {
+        return Err(BdlStoreError::InvalidObservation("source url"));
+    }
+    let hash_ok = observation.content_hash.split_once(':').is_some_and(
+        |(algorithm, digest)| {
+            algorithm == "sha256"
+                && digest.len() == 64
+                && digest.chars().all(|character| character.is_ascii_hexdigit())
+        },
+    );
+    if !hash_ok {
+        return Err(BdlStoreError::InvalidObservation(
+            "content hash must be sha256:<64 hex>",
+        ));
+    }
+    if observation.observed_at.trim().is_empty()
+        || observation.processor_version.trim().is_empty()
+    {
+        return Err(BdlStoreError::InvalidObservation(
+            "observed_at and processor_version are required evidence",
+        ));
+    }
+    if observation.price_amount.is_some() != observation.price_currency.is_some() {
+        return Err(BdlStoreError::InvalidObservation(
+            "price amount and currency are admitted or rejected as a pair",
+        ));
+    }
+    for subproduct in &observation.subproducts {
+        if subproduct.price_amount.is_some() != subproduct.price_currency.is_some() {
+            return Err(BdlStoreError::InvalidObservation(
+                "subproduct price amount and currency are admitted or rejected as a pair",
+            ));
+        }
+    }
+    Ok(())
+}
+
+/// The v0.1 search projection: body + title + shop + subproduct names,
+/// lowercased (IN-5 query support column; the v0.3 catalog text filter
+/// itself stays title+productId per the protocol).
+fn normalized_search_text(observation: &ProductObservation) -> String {
+    let mut parts = Vec::new();
+    if let Some(title) = &observation.title {
+        parts.push(title.as_str());
+    }
+    if let Some(description) = &observation.description {
+        parts.push(description.as_str());
+    }
+    if let Some(shop_name) = &observation.shop_name {
+        parts.push(shop_name.as_str());
+    }
+    for subproduct in &observation.subproducts {
+        if let Some(name) = &subproduct.name {
+            parts.push(name.as_str());
+        }
+    }
+    parts.join(" ").to_lowercase()
+}
+
+/// Parses a JSON-array text column. The write face always persists a JSON
+/// array; `NULL` (pre-write-face rows, e.g. seeds) is the honest empty
+/// list. Anything else non-null that does not parse is a corrupt value.
+fn parse_json_array_text(
+    field: &'static str,
+    raw: Option<String>,
+) -> Result<serde_json::Value, BdlStoreError> {
+    match raw {
+        None => Ok(serde_json::Value::Array(Vec::new())),
+        Some(text) => serde_json::from_str(&text).map_err(|_| BdlStoreError::CorruptValue {
+            field,
+            value: text,
+        }),
+    }
+}
+
+/// One observed products row as read for `catalog.list` — the minimal
+/// projection of the card face.
+struct ObservedCard {
+    product_id: String,
+    title: Option<String>,
+    price_amount: Option<String>,
+    price_currency: Option<String>,
+    image_urls: Option<String>,
+    availability: Option<String>,
+}
+
+impl ObservedCard {
+    /// The price is admitted only as a pair; a stored row with exactly one
+    /// half is a corrupt value (the write face rejects it upstream).
+    fn as_price(&self) -> Result<Option<CatalogPrice>, BdlStoreError> {
+        match (&self.price_amount, &self.price_currency) {
+            (Some(amount), Some(currency)) => {
+                Ok(Some(CatalogPrice { amount: amount.clone(), currency: currency.clone() }))
+            }
+            (None, None) => Ok(None),
+            _ => Err(BdlStoreError::CorruptValue {
+                field: "price pair",
+                value: self.product_id.clone(),
+            }),
+        }
+    }
+
+    fn as_summary(&self) -> Result<CatalogProductSummary, BdlStoreError> {
+        let image_urls_value = parse_json_array_text("image_urls", self.image_urls.clone())?;
+        let image_urls: Vec<String> = serde_json::from_value(image_urls_value)
+            .map_err(|_| BdlStoreError::CorruptValue {
+                field: "image_urls",
+                value: self.product_id.clone(),
+            })?;
+        Ok(CatalogProductSummary {
+            product_id: self.product_id.clone(),
+            title: self.title.clone(),
+            price: self.as_price()?,
+            image_url: image_urls.first().cloned(),
+            availability_raw: self.availability.clone(),
+            availability_status: availability_status(self.availability.as_deref()),
+            image_urls,
+            entity_count: 0,
+            entity_types: Vec::new(),
+        })
+    }
+}
+
+/// One observed products row as read for `catalog.detail` — the full
+/// presentation projection.
+struct ObservedDetail {
+    title: Option<String>,
+    price_amount: Option<String>,
+    price_currency: Option<String>,
+    image_urls: Option<String>,
+    availability: Option<String>,
+    description: Option<String>,
+    shop_name: Option<String>,
+    shop_url: Option<String>,
+    age_restriction: Option<String>,
+    adult: bool,
+    video_urls: Option<String>,
+    source_category: Option<String>,
+    subproducts: Option<String>,
+}
+
+impl ObservedDetail {
+    fn as_detail(&self, product_id: &str) -> Result<CatalogDetailResult, BdlStoreError> {
+        let image_urls_value = parse_json_array_text("image_urls", self.image_urls.clone())?;
+        let image_urls: Vec<String> = serde_json::from_value(image_urls_value)
+            .map_err(|_| BdlStoreError::CorruptValue {
+                field: "image_urls",
+                value: product_id.to_owned(),
+            })?;
+        let video_urls_value = parse_json_array_text("video_urls", self.video_urls.clone())?;
+        let video_urls: Vec<String> = serde_json::from_value(video_urls_value)
+            .map_err(|_| BdlStoreError::CorruptValue {
+                field: "video_urls",
+                value: product_id.to_owned(),
+            })?;
+        let subproducts_value =
+            parse_json_array_text("subproducts", self.subproducts.clone())?;
+        let subproducts = subproducts_value
+            .as_array()
+            .ok_or(BdlStoreError::CorruptValue {
+                field: "subproducts",
+                value: product_id.to_owned(),
+            })?
+            .iter()
+            .map(|subproduct| {
+                let price = match (
+                    subproduct.get("price_amount").and_then(Value::as_str),
+                    subproduct.get("price_currency").and_then(Value::as_str),
+                ) {
+                    (Some(amount), Some(currency)) => Some(CatalogPrice {
+                        amount: amount.to_owned(),
+                        currency: currency.to_owned(),
+                    }),
+                    (None, None) => None,
+                    _ => {
+                        return Err(BdlStoreError::CorruptValue {
+                            field: "subproduct price pair",
+                            value: product_id.to_owned(),
+                        })
+                    }
+                };
+                let availability =
+                    subproduct.get("availability").and_then(Value::as_str);
+                Ok(CatalogSubproduct {
+                    variation_id: subproduct
+                        .get("variation_id")
+                        .and_then(Value::as_str)
+                        .map(str::to_owned),
+                    name: subproduct.get("name").and_then(Value::as_str).map(str::to_owned),
+                    price,
+                    availability_raw: availability.map(str::to_owned),
+                    availability_status: availability_status(availability),
+                })
+            })
+            .collect::<Result<Vec<_>, BdlStoreError>>()?;
+        let price = match (&self.price_amount, &self.price_currency) {
+            (Some(amount), Some(currency)) => Some(CatalogPrice {
+                amount: amount.clone(),
+                currency: currency.clone(),
+            }),
+            (None, None) => None,
+            _ => {
+                return Err(BdlStoreError::CorruptValue {
+                    field: "price pair",
+                    value: product_id.to_owned(),
+                })
+            }
+        };
+        Ok(CatalogDetailResult {
+            product: CatalogProductDetail {
+                product_id: product_id.to_owned(),
+                title: self.title.clone(),
+                price,
+                image_url: image_urls.first().cloned(),
+                availability_raw: self.availability.clone(),
+                availability_status: availability_status(self.availability.as_deref()),
+                image_urls,
+                entity_count: 0,
+                entity_types: Vec::new(),
+                description: self.description.clone(),
+                shop_name: self.shop_name.clone(),
+                shop_url: self.shop_url.clone(),
+                age_restriction: self.age_restriction.clone(),
+                adult: self.adult,
+                video_urls,
+                source_category: self.source_category.clone(),
+                subproducts,
+            },
+        })
+    }
+}
 
 /// One material-package entry (warehouse_items row). The folder name is the
 /// entry's VUA-generated local identity.
@@ -1243,47 +1581,192 @@ impl BdlStore {
         Ok(())
     }
 
+    // --- observation write face (W17; docs/architecture/bdl_ZH.md) ---
+
+    /// Record one product observation: an upsert of the latest observed
+    /// facts (a re-observation overwrites the row in the same transaction
+    /// that bumps the `catalog_updated_seq` bookkeeping counter, so the
+    /// catalog status turns `ok` with the first write and the revision
+    /// travels every write). Tombstones are kept, never deleted; the API
+    /// offers no delete — only a newer observation can change a row.
+    ///
+    /// Scope note: only the products table is served here. The term and
+    /// compatibility observation tables have no catalog consumer yet and
+    /// stay with their own (BDL v2 vocabulary) slices.
+    pub fn record_product_observation(
+        &self,
+        observation: &ProductObservation,
+    ) -> Result<i64, BdlStoreError> {
+        validate_product_observation(observation)?;
+        let image_urls = serde_json::to_string(&observation.image_urls)?;
+        let video_urls = serde_json::to_string(&observation.video_urls)?;
+        let subproducts = serde_json::to_string(
+            &observation
+                .subproducts
+                .iter()
+                .map(|subproduct| {
+                    serde_json::json!({
+                        "variation_id": subproduct.variation_id,
+                        "name": subproduct.name,
+                        "price_amount": subproduct.price_amount,
+                        "price_currency": subproduct.price_currency,
+                        "availability": subproduct.availability,
+                    })
+                })
+                .collect::<Vec<_>>(),
+        )?;
+        let missing_fields = serde_json::to_string(&observation.missing_fields)?;
+        let mut connection = self.connection.lock().expect("SQLite connection poisoned");
+        let transaction =
+            connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction.execute(
+            "INSERT INTO products(
+                product_id, native_product_id, source_url, final_url, status,
+                source_locale, source_category, title, description,
+                age_restriction, adult, availability, price_amount,
+                price_currency, shop_name, shop_url, image_urls, video_urls,
+                subproducts, search_text_normalized, source_published_at,
+                content_hash, observed_at, run_id, processor_version,
+                missing_fields
+             ) VALUES (
+                ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14,
+                ?15, ?16, ?17, ?18, ?19, ?20, ?21, ?22, ?23, ?24, ?25, ?26
+             )
+             ON CONFLICT(product_id) DO UPDATE SET
+                native_product_id = excluded.native_product_id,
+                source_url = excluded.source_url,
+                final_url = excluded.final_url,
+                status = excluded.status,
+                source_locale = excluded.source_locale,
+                source_category = excluded.source_category,
+                title = excluded.title,
+                description = excluded.description,
+                age_restriction = excluded.age_restriction,
+                adult = excluded.adult,
+                availability = excluded.availability,
+                price_amount = excluded.price_amount,
+                price_currency = excluded.price_currency,
+                shop_name = excluded.shop_name,
+                shop_url = excluded.shop_url,
+                image_urls = excluded.image_urls,
+                video_urls = excluded.video_urls,
+                subproducts = excluded.subproducts,
+                search_text_normalized = excluded.search_text_normalized,
+                source_published_at = excluded.source_published_at,
+                content_hash = excluded.content_hash,
+                observed_at = excluded.observed_at,
+                run_id = excluded.run_id,
+                processor_version = excluded.processor_version,
+                missing_fields = excluded.missing_fields",
+            params![
+                observation.product_id,
+                observation.native_product_id,
+                observation.source_url,
+                observation.final_url,
+                observation.status.name(),
+                observation.source_locale,
+                observation.source_category,
+                observation.title,
+                observation.description,
+                observation.age_restriction,
+                i64::from(observation.adult),
+                observation.availability,
+                observation.price_amount,
+                observation.price_currency,
+                observation.shop_name,
+                observation.shop_url,
+                image_urls,
+                video_urls,
+                subproducts,
+                normalized_search_text(observation),
+                observation.source_published_at,
+                observation.content_hash,
+                observation.observed_at,
+                observation.run_id,
+                observation.processor_version,
+                missing_fields,
+            ],
+        )?;
+        transaction.execute(
+            "INSERT INTO bdl_meta(key, value) VALUES ('catalog_updated_seq', '1')
+             ON CONFLICT(key) DO UPDATE SET
+                value = CAST(CAST(value AS INTEGER) + 1 AS TEXT)",
+            [],
+        )?;
+        let updated: i64 = transaction
+            .query_row(
+                "SELECT value FROM bdl_meta WHERE key = 'catalog_updated_seq'",
+                [],
+                |row| row.get::<_, String>(0),
+            )?
+            .parse()
+            .map_err(|_| BdlStoreError::CorruptValue {
+                field: "catalog_updated_seq",
+                value: "non-integer".into(),
+            })?;
+        transaction.commit()?;
+        Ok(updated)
+    }
+
     // --- catalog serving face (W12; docs/protocols/bdl-queries-v0.3) ---
 
     /// `catalog.list`: assembles the v0.3 card list from the observation
     /// products table. Tombstones (`status = 'missing'`, 404/410 keepsakes)
-    /// are never cards. Until the observation pipeline writes, the table is
-    /// empty and this answers the honest empty set — 空态即终态. Presentation
-    /// fields assemble as the schema's honest empty shapes (null / [] /
-    /// derived-unknown) until observation rows carry them; the availability
-    /// filter therefore matches only `unknown` rows today, and `available`/
-    /// `unavailable` filters answer an empty set (never a fabricated match).
+    /// are never cards. Presentation fields assemble from the observed
+    /// columns verbatim (W17 write side); the availability filter matches
+    /// the derived stable enum (v0.2 rule table), rows without a
+    /// recognizable word stay honest `unknown`. Empty table = the honest
+    /// empty set — 空态即终态.
     pub fn catalog_list(
         &self,
         params: &CatalogListParams,
     ) -> Result<CatalogListResult, BdlStoreError> {
-        if params.availability_status == Some(AvailabilityStatus::Available)
-            || params.availability_status == Some(AvailabilityStatus::Unavailable)
-        {
-            // No observation row carries a derived available/unavailable
-            // status yet: the filter is honest, the empty set is the answer.
-            return Ok(CatalogListResult { total: 0, entries: Vec::new() });
-        }
         let connection = self.connection.lock().expect("SQLite connection poisoned");
         let mut statement = connection.prepare(
-            "SELECT product_id FROM products
+            "SELECT product_id, title, price_amount, price_currency,
+                    image_urls, availability
+             FROM products
              WHERE status = 'complete'
              ORDER BY product_id",
         )?;
-        let ids: Vec<String> = statement
-            .query_map([], |row| row.get::<_, String>(0))?
+        let observed: Vec<ObservedCard> = statement
+            .query_map([], |row| {
+                Ok(ObservedCard {
+                    product_id: row.get(0)?,
+                    title: row.get(1)?,
+                    price_amount: row.get(2)?,
+                    price_currency: row.get(3)?,
+                    image_urls: row.get(4)?,
+                    availability: row.get(5)?,
+                })
+            })?
             .collect::<Result<Vec<_>, _>>()?;
         drop(statement);
 
         let needle = params.text.as_ref().map(|text| text.to_ascii_lowercase());
-        let matched: Vec<&String> = ids
+        let matched: Vec<&ObservedCard> = observed
             .iter()
-            .filter(|product_id| match &needle {
+            .filter(|card| match &needle {
                 // text is a case-insensitive substring over title and
-                // productId; titles are not observed yet, so productId alone
-                // is the honest match surface.
-                Some(needle) => product_id.to_ascii_lowercase().contains(needle),
+                // productId (the v0.3 protocol surface).
+                Some(needle) => {
+                    card.product_id.to_ascii_lowercase().contains(needle)
+                        || card
+                            .title
+                            .as_deref()
+                            .is_some_and(|title| title.to_ascii_lowercase().contains(needle))
+                }
                 None => true,
+            })
+            .filter(|card| {
+                // The availability filter matches the derived enum; rows
+                // with no recognizable word derive to unknown.
+                match params.availability_status {
+                    Some(expected) => {
+                        availability_status(card.availability.as_deref()) == expected
+                    }
+                    None => true,
+                }
             })
             .collect();
 
@@ -1292,63 +1775,52 @@ impl BdlStore {
             .iter()
             .skip(params.offset as usize)
             .take(params.limit as usize)
-            .map(|product_id| CatalogProductSummary {
-                product_id: (*product_id).clone(),
-                title: None,
-                price: None,
-                image_url: None,
-                image_urls: Vec::new(),
-                availability_raw: None,
-                availability_status: AvailabilityStatus::Unknown,
-                entity_count: 0,
-                entity_types: Vec::new(),
-            })
-            .collect();
+            .map(|card| card.as_summary())
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(CatalogListResult { total, entries })
     }
 
-    /// `catalog.detail`: assembles one v0.3 product detail. Unknown ids and
-    /// tombstones answer `None` (the application face owns the miss code);
-    /// presentation fields assemble as the honest empty shapes until the
-    /// observation pipeline carries them.
+    /// `catalog.detail`: assembles one v0.3 product detail from the
+    /// observed columns (W17 write side). Unknown ids and tombstones answer
+    /// `None` (the application face owns the miss code); absent presentation
+    /// fields assemble as the honest empty shapes.
     pub fn catalog_detail(
         &self,
         product_id: &str,
     ) -> Result<Option<CatalogDetailResult>, BdlStoreError> {
         let connection = self.connection.lock().expect("SQLite connection poisoned");
-        let known: bool = connection
+        let observed = connection
             .query_row(
-                "SELECT 1 FROM products WHERE product_id = ?1 AND status = 'complete'",
+                "SELECT title, price_amount, price_currency, image_urls,
+                        availability, description, shop_name, shop_url,
+                        age_restriction, adult, video_urls, source_category,
+                        subproducts
+                 FROM products
+                 WHERE product_id = ?1 AND status = 'complete'",
                 [product_id],
-                |_| Ok(()),
+                |row| {
+                    Ok(ObservedDetail {
+                        title: row.get(0)?,
+                        price_amount: row.get(1)?,
+                        price_currency: row.get(2)?,
+                        image_urls: row.get(3)?,
+                        availability: row.get(4)?,
+                        description: row.get(5)?,
+                        shop_name: row.get(6)?,
+                        shop_url: row.get(7)?,
+                        age_restriction: row.get(8)?,
+                        adult: row.get::<_, i64>(9)? != 0,
+                        video_urls: row.get(10)?,
+                        source_category: row.get(11)?,
+                        subproducts: row.get(12)?,
+                    })
+                },
             )
-            .optional()?
-            .is_some();
+            .optional()?;
         drop(connection);
-        if !known {
-            return Ok(None);
-        }
-        Ok(Some(CatalogDetailResult {
-            product: CatalogProductDetail {
-                product_id: product_id.to_owned(),
-                title: None,
-                price: None,
-                image_url: None,
-                image_urls: Vec::new(),
-                availability_raw: None,
-                availability_status: AvailabilityStatus::Unknown,
-                entity_count: 0,
-                entity_types: Vec::new(),
-                description: None,
-                shop_name: None,
-                shop_url: None,
-                age_restriction: None,
-                adult: false,
-                video_urls: Vec::new(),
-                source_category: None,
-                subproducts: Vec::new(),
-            },
-        }))
+        observed
+            .map(|observed| observed.as_detail(product_id))
+            .transpose()
     }
 
     /// `catalog.status`: health and revision snapshot. The health is

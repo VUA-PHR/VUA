@@ -2,11 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.1.0
+> Document version: 1.1.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.1.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.1.1)
 > Scope: Entire VUA product
-> Updated: 2026-09-07
+> Updated: 2026-09-08
 > Normative effect: Yes
 
 ## Product definition
@@ -24,10 +24,11 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
 3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, Inspection, Release; native browsing,
    authorized downloads, content management, and external-source adapters;
    - **Material-entry semantics (user ruling, 2026-09-07):** the default path is direct use of the
-     original `.unitypackage` (beginner-oriented positioning); "generate VPM as a replacement" and
-     "delete original material after generation" are **experimental** capabilities, presented under
-     a Settings-Experimental location; VPM generation results are always clearly distinguished from
-     direct-import results (`unityValidated` vs experimental offline output);
+     original `.unitypackage` (beginner-oriented positioning); "generate a VPM package as a
+     replacement" and "delete original material after generation" are **experimental** capabilities,
+     presented under a Settings-Experimental location; VPM package generation results are always
+     clearly distinguished from direct-import results (`unityValidated` vs experimental offline
+     output);
    - and **BDL**, its private
    local catalog, terms, compatibility, source, search, and mapping module.
 4. **Environment deployment:** prerequisite detection, guided deployment, and bounded recovery for
@@ -117,6 +118,10 @@ remain release-engineering decisions.
 
 ## Document changelog
 
+- 1.1.1 (2026-09-08): terminology fix (hard user ruling, 2026-09-08) — VPM = VRChat Package
+  Manager (the manager), VPM package = the managed package; in the item-3 material-entry
+  semantics, "generate VPM as a replacement" and "VPM generation results" became "generate a
+  VPM package as a replacement" and "VPM package generation results". Mirrors the ZH edition.
 - 1.1.0 (2026-09-07): added the material-entry semantics clause to the AMF composition item —
   the default path is the original `.unitypackage`; "generate VPM as a replacement" and "delete
   original after generation" are experimental, presented under Settings-Experimental (user ruling
