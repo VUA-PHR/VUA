@@ -1586,6 +1586,19 @@ rolled_back: "Rolled back",
       workflowId: "Workflow ID",
     },
   },
+  /** Application-face error copy, keyed by the messageKey the wire carries
+   *  (key-first: provider sends errors.catalog.* on the error channel). The
+   *  catalog browser currently degrades failures to not-connected/not-found;
+   *  surfacing these keys in that view is a follow-up slice. */
+  errors: {
+    catalog: {
+      productNotFound:
+        "This catalog entry was not found. It may have been removed or delisted.",
+      invalidParams: "The catalog request did not pass validation.",
+      unavailable: "The catalog service is not connected.",
+      storeFailed: "The catalog store hit a failure; the request was not completed.",
+    },
+  },
 };
 
 /**

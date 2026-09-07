@@ -3,9 +3,10 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-07 23:xx（**W11 收尾完成：CI 三 workflow 落地并推送、v0.4.0–v0.4.2
-tags 回填、GitHub Release v0.5.0 发布、glm/* 历史分支清理**；W12/W13/W14/W16 已合并
-落账，W15 解锁待桌面；README 四语版本行 v0.4.1→v0.5.0 修正）
+最近更新：2026-09-08 01:2x（**集成验收合并三批**：核心 #7 第三例修复+W12 收口批
+〔80ad6e7〕、产线/数据 collab 状态批；此前桌面 #8 修复+W15 已自并入 main〔97390f8〕；
+合并尖本机全量 341 通过 0 失败+clippy 零告警；CI 复跑确认三徽章中；W15 验收=用户
+走查待批）
 
 ## 工作树指派
 
@@ -71,12 +72,13 @@ M4 已积累裁决项（U7/U8 落定 2026-09-07，随 M4 分配一并实施）�
 布局重构（桌面）；W14 bdl-commands v0.2 升版（数据）；W15 设置-实验性完整形态（桌面，
 依赖 W14）；W16 设计标准同步（桌面）。M4 分解表六项历史交付已核实（outline 2.0.2）。
 
-**M4 进度（2026-09-08 00:xx）**：W12 ✅（数据，6062a13/01ebb73 合并）；**W12 收口 ✅
-交付（核心，10325cd：provider-host 注册 catalog.list/detail/status＋warehouse 读面
-五操作全词表路由；随批仓库命令面升 v0.2 信封、两级解析组装落地，待集成验收合并）**；
-W13 ✅＋W16 ✅（桌面，88b4551 合并）；W14 ✅（数据，bdl-commands v0.2 冻结，
-6062a13 合并；setGlobalDefaultMode 路由随 10325cd 交付）；**W15 解锁**（桌面，
-依赖已满足）。M4 门验收按门序等 W15 与 W12 收口批合并完成后由集成执行。
+**M4 进度（2026-09-08 01:2x）**：W12 ✅ **完成**（数据 4b1e5d4/8f90986＋核心收口
+10325cd 合并 80ad6e7：provider 注册 catalog.list/detail/status＋warehouse 读面五操作
+全词表路由＋setGlobalDefaultMode＋仓库命令面升 v0.2 信封＋两级解析组装）；W13 ✅＋
+W16 ✅（88b4551）；W14 ✅（bdl-commands v0.2 冻结＋provider 路由同批）；W15 ✅ 已交付
+（18603ac，随 97390f8 入 main；**验收=用户走查待批**——参考：设置-实验性页第二张
+卡，DEV fixture 条目可操作）。M4 剩：桌面 W12 消费端真实面切换＋新错误码四语键
+（errors.catalog.productNotFound/invalidParams/unavailable/storeFailed）；W15 用户走查。
 
 ## 冻结契约表
 
@@ -102,7 +104,7 @@ W13 ✅＋W16 ✅（桌面，88b4551 合并）；W14 ✅（数据，bdl-commands
 | --- | --- | --- | --- |
 | 1 | I-1 真 Unity 矩阵 | 集成树 | **✅ 已交付关闭**（16/16 真机通过，合并 5ccace6；验收=证据清单核实+抽查终态+集成独立复验 1 格） |
 | 7 | 三例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，真实时序窗口修复）；③ **CI ph_012（0a56f19，2026-09-08 定位）**：拉取 CI 日志（run 34137292736）核实 panic 实为 1579 行 "lease released after success"（非 15s deadline）——worker 按 safe_to_stop 设计先落终态再释放 mutation gate（marker/lock 文件 I/O 先于 SQLite 删除），测试看到终态后立即断言租约已清，2 核负载下输掉竞态；产品顺序正确，测试改为有界轮询等释放（保留原 panic 消息供证据可比）。残余观察（如实）：2026-09-08 本机 8 轮全量中 1 次 14/1 瞬败（套件约 0.19s，身份未捕获——输出未留存），随后 7 轮全绿；不做猜测性修复，下个带完整 panic 输出的样本到手即定位 | 核心 | ③ 修复随批合并后 rust 徽章待 CI 复跑确认；继续观察态，再现即按程序取全量日志定位 |
-| 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败（i18n.test.ts 24/33、nav-model.test.ts 115）；本地绿系隐性依赖开发机 zh-CN 系统语言。修复方向：测试显式固定语言表（mock current-table 或注入），不得依赖宿主 locale | 桌面 | 待桌面修复切片；修复后 ts 徽章转绿 |
+| 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败；本地绿系隐性依赖开发机 zh-CN 系统语言。**修复已交付**（f4d288d：i18n.test.ts/nav-model.test.ts 以 vi.mock 显式固定 zh-CN 表，生产代码零改动，随 97390f8 入 main）；ts 徽章待 CI 复跑确认后关闭 | 桌面 | 修复已合并；CI 复跑确认中 |
 
 ## 待用户裁决
 

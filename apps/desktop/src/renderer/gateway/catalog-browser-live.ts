@@ -283,9 +283,11 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
           ? { schemaVersion: 1, kind: "detail", product }
           : { schemaVersion: 1, kind: "not-connected" };
       }
+      // W12 对齐(provider 10325cd):detail 未命中(含墓碑)的应用面码为
+      // vua.catalog.product_not_found,如实呈现 not-found,不误报断连
       if (
         result.error.kind === "application" &&
-        result.error.error.code === "vua.catalog.not_found"
+        result.error.error.code === "vua.catalog.product_not_found"
       ) {
         return { schemaVersion: 1, kind: "not-found" };
       }

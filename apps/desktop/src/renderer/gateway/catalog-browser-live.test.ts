@@ -194,7 +194,7 @@ describe("live catalog browser port (F4-5)", () => {
     expect((await port.detail("booth:3681787")).kind).toBe("not-connected");
 
     // 未知/墓碑 productId → 诚实 not-found(应用错误透传呈现)
-    client.queue(errApplication("vua.catalog.not_found"));
+    client.queue(errApplication("vua.catalog.product_not_found"));
     expect((await port.detail("booth:3681787")).kind).toBe("not-found");
 
     // 身份形态不齐的查询不投递必败请求,直接诚实 not-found
