@@ -6,11 +6,26 @@ baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W22 收敛·冻结切片已交付（build-record v0.3 ＋向量＋消费测试，recipe v0.3
-套件收尾件）**——交集成验收合并。W20 冻结切片已被集成验收合并（0400bee，
-367/0）。核心 M5 下一步：W20 实现切片（production-use-case v0.2 命令面＋
-provider 侧 recipe/plan/record 记录面）与 W24/W21 实现并行（桌面/产线）。
-#7 残余观察态维持。
+**执行序②核心半边交付（6b4f21a：warehouse.import wire 路由＋命令面信封升
+v0.3）**；W22 冻结切片（c486318）与 W20 冻结切片（0400bee，370/0）均已交/经
+集成验收。导入挂点（010 路径 A）为 acquisition 域切片，代码级设计已内联 010
+交数据落实；generateVpm 的 importCorrelationId 透传待数据 spec 字段落地后核心
+同批扩展（当前手动发起不带，行为诚实）。W20 实现切片（production-use-case
+v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
+## 本轮追加交付（c486318 后）
+- **执行序②核心半边（6b4f21a）**：provider-host `warehouse.import` wire 路由
+  （bdl-commands v0.3 词表）——params 闭集 { sourceFolders }（非空数组/非空
+  string，冻结负例向量＝invalid_params 契约错误）；回执＝冻结 v0.3 任务受理
+  文档；**命令面信封整体升 0.3**（同名向量仅版本差异已验证，v0.2 废弃不迁移，
+  warehouse_commands.rs 对齐 v0.3 向量）；消费测试＋2（wire 正例驱动真实批量
+  导入到 Done 且两 folder 落库为条目＋负例拒绝）。**证据（2026-09-08 本机）**：
+  workspace 全量绿＋clippy -D warnings 零告警；
+- **挂点接线设计（010 内联「接线设计」节，交数据落实）**：挂点＝
+  warehouse_import_job 内联（import_folder 成功点；host 层编排会在取消批次时
+  漏掉已落库条目，语义不符故裁 job 内联）；WarehouseImportTaskSpec 扩展
+  auto_generate（env_initial＋executor 注入，off＝None）；挂点逻辑＝composed
+  读时求值→generate_vpm 时 submit_generate_vpm（importCorrelationId＝导入
+  correlation）；六承诺逐条对应；generateVpm 路由透传待 spec 字段落地同批。
 ## 自基线交付（b23c414 后，本 tick 五提交）
 - **合并维护**：main 两轮（2454a71 侧 20 笔：数据 bdl-commands v0.3 冻结验收
   合并〔schemas/bdl-commands/v0.3/ 入树〕＋集成验收流转批）merge 并入
