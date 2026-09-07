@@ -3,9 +3,10 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 03:1x（**W15 首轮走查落账：不通过·形态重做中**——非缺陷批，
-用户示意图为规格权威，桌面重做中；M4 门验收相应**顺延**；术语硬裁定 VPM/VPM 包
-落账，集成预登记受管文档面评估〔开放问题 #9〕）
+最近更新：2026-09-08 03:4x（**BOARD #9 术语受管文档面评估完成**：集成域活文档已修正
+——product-boundary 1.1.1＋outline 2.0.6 双语〔8011af4〕；冻结协议/已发布/ADR 文本
+不追溯如实记录；design-standard 条目级旧形态随桌面 W15 重做批改版；M4 门验收仍
+顺延等 W15 重做）
 
 ## 工作树指派
 
@@ -125,7 +126,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | 1 | I-1 真 Unity 矩阵 | 集成树 | **✅ 已交付关闭**（16/16 真机通过，合并 5ccace6；验收=证据清单核实+抽查终态+集成独立复验 1 格） |
 | 7 | 三例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，真实时序窗口修复）；③ **CI ph_012（0a56f19，2026-09-08 定位）**：拉取 CI 日志（run 34137292736）核实 panic 实为 1579 行 "lease released after success"（非 15s deadline）——worker 按 safe_to_stop 设计先落终态再释放 mutation gate（marker/lock 文件 I/O 先于 SQLite 删除），测试看到终态后立即断言租约已清，2 核负载下输掉竞态；产品顺序正确，测试改为有界轮询等释放（保留原 panic 消息供证据可比）。残余观察（如实）：2026-09-08 本机 8 轮全量中 1 次 14/1 瞬败（套件约 0.19s，身份未捕获——输出未留存），随后 7 轮全绿；不做猜测性修复，再现即按程序取全量日志定位 | 核心 | ③ 修复已随批合并（80ad6e7）且 **CI 复跑绿**（rust run 34146584951，2026-09-08；同批 ts 34146584926 ✅、schema-vectors 34146584940 ✅）——本例关闭；残余观察态维持，再现即按程序带全量日志重开 |
 | 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败；本地绿系隐性依赖开发机 zh-CN 系统语言。修复=f4d288d（测试 vi.mock 显式固定 zh-CN 表，生产代码零改动） | 桌面 | **✅ 关闭（2026-09-08）**：随 97390f8 入 main，CI ts workflow 复跑绿（run 34146584926） |
-| 9 | 术语修正（**VPM = VRChat Package Manager／VPM 包 = VPM package**，W15 走查硬裁定）需评估受管文档面：product-boundary 双语、协议文档措辞核查；**v0.5.0 已发布文本不追溯**；M4 交付文档须用对术语；应用内 i18n/注释随 W15 重做切片由桌面按裁定修正 | 集成 | 预登记（2026-09-08），M4 内评估执行 |
+| 9 | 术语修正（**VPM = VRChat Package Manager／VPM 包 = VPM package**，W15 走查硬裁定）需评估受管文档面：product-boundary 双语、协议文档措辞核查；**v0.5.0 已发布文本不追溯**；M4 交付文档须用对术语；应用内 i18n/注释随 W15 重做切片由桌面按裁定修正 | 集成 | **✅ 评估完成（2026-09-08，8011af4）**：集成域活文档已修正——product-boundary 1.1.1 双语（「生成 VPM 包作为替代」等 3 处）＋outline 2.0.6 双语（B3 Spike 标题与 M3 条目 4 处；`generate-VPM` 等操作/提案标识符按专有名保留）。不追溯面（如实记录）：v0.5.0 发行文本、五份冻结协议文档（VPM 单用语形随未来升版修正，含 proposal 008 → bdl-commands v0.3）、warehouse-layout ADR（历史决策）；design-standard「条目级」旧形态描述已被 W15 裁决推翻——随桌面 W15 重做批/W16 同步改版（桌面域）；amf-unity EN 镜像 "VPM"→"VPM package" 一处不一致（产线域，已留言知会）；docs/README 与 research 为非受管面，不动 |
 
 ## 待用户裁决
 
