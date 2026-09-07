@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-2d3e-7f4a-9b6c-4d3e2f1a0b9c",
+  "kind": "version_mismatch",
+  "subject": {
+    "ref": "pkg:com.vrchat.avatars",
+    "label": "VRChat Avatars SDK"
+  },
+  "observedAt": "2026-09-08T06:31:00.000Z",
+  "detail": "Recipe constraint expects SDK 3.7.x; the environment reports 3.5.2 installed. Resolution refused to mark the plan approvable while the mismatch stands.",
+  "sourceRef": {
+    "localResolutionId": "0198a7b3-9f8e-7d6c-5b4a-321098765432"
+  },
+  "resolution": null
+}

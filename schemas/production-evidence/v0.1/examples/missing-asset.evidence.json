@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.1",
+  "evidenceId": "0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8b",
+  "kind": "missing_asset",
+  "subject": {
+    "ref": "booth:1234567",
+    "label": "Sailor Uniform Set"
+  },
+  "observedAt": "2026-09-08T06:30:00.000Z",
+  "detail": "Recipe references the asset by sourceRef warehouse:0198… but no entry with role=original exists and no filesystem path resolves; Local Resolution marked fallbackUsed=false and the asset unsatisfied.",
+  "sourceRef": {
+    "localResolutionId": "0198a7b3-9f8e-7d6c-5b4a-321098765432"
+  },
+  "resolution": null
+}

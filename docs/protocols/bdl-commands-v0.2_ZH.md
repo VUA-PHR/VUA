@@ -2,10 +2,13 @@
 
 [English](bdl-commands-v0.2_EN.md) | [简体中文](bdl-commands-v0.2_ZH.md)
 
+> **⚠️ 已被 v0.3 取代（2026-09-08）**：批量导入命令 `warehouse.import`、生成命令
+> 审计链字段 `importCorrelationId`、术语裁定落实（VPM 包）。现行规范见
+> [bdl-commands-v0.3_ZH.md](bdl-commands-v0.3_ZH.md)；本文仅作历史保留，对应
+> `schemas/bdl-commands/v0.2/`（勿改）。
 > 文档版本：0.2
-> 状态：**已冻结（域内业务词表）**（2026-09-07）——provider-host 路由登记待核心
-> 执行（U8 裁决 (a)：当前开关门控形态 M3 先行；本 v0.2 词表随 M4 完整形态实施）；
-> 完成前不得声称端到端可用
+> 状态：**已取代（→ v0.3）**（2026-09-08；原状态：已冻结 2026-09-07——v0.2 词表
+> 已随 M4 完整形态实施并经 provider-host 路由验证）
 > 机器可读词表：`schemas/bdl-commands/v0.2/`（Schema＋正负例向量；消费测试
 > `crates/bdl-store/tests/global_default_v02.rs`；v0.1 目录保留勿改）
 > 范围：v0.1 三命令（`warehouse.setArtifactMode` / `warehouse.generateVpm` /
