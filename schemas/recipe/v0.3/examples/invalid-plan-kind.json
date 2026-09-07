@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "0.3",
+  "planId": "019e0000-0000-7000-8000-000000000201",
+  "recipeId": "019e0000-0000-7000-8000-000000000001",
+  "recipeRevision": 3,
+  "localResolutionId": "019e0000-0000-7000-8000-000000000202",
+  "environmentId": "019e0000-0000-7000-8000-000000000100",
+  "createdAt": "2026-09-08T09:30:00Z",
+  "approvedAt": "2026-09-08T09:31:00Z",
+  "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+  "fingerprint": {
+    "expectedProjectFingerprint": "projfp-019e-synthetic-0001"
+  },
+  "target": {
+    "avatarInstanceId": "avatar_asset",
+    "resolvedSource": {
+      "sourceKind": "original",
+      "artifactSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "warehouseItemId": "019e0000-0000-7000-8000-000000000110",
+      "fallbackUsed": false
+    }
+  },
+  "jobs": [
+    {
+      "jobId": "019e0000-0000-7000-8000-000000000210",
+      "kind": "delete_everything",
+      "label": "install outfit on avatar",
+      "inputs": {
+        "assetId": "outfit_asset",
+        "resolvedSource": {
+          "sourceKind": "original",
+          "artifactSha256": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+          "warehouseItemId": "019e0000-0000-7000-8000-000000000111",
+          "fallbackUsed": false
+        }
+      }
+    },
+    {
+      "jobId": "019e0000-0000-7000-8000-000000000211",
+      "kind": "attach_to_bone",
+      "inputs": {
+        "selectorId": "outfit_root",
+        "bone": "Hip"
+      }
+    }
+  ],
+  "status": "approved"
+}

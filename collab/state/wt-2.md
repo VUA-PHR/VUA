@@ -2,53 +2,57 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: b23c414
+baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W20 设计稿（proposal 011）收敛推进中**：桌面表态已到并吸收进正文（§4 批准
-交互流/§6 失效呈现/§7 收敛决议三节新增）；剩产线互审（§4 vs 009 骨架）与数据
-表态（剩 §5 存储面＋W23 交界；§7 已由桌面表态关闭，数据可以 §3/§4 形状提前
-表态）。集成已裁：双冻结线并行（bdl-commands v0.3 ∥ recipe v0.3），W20 收敛
-即冻、冻结切片交集成验收。下 tick 预告：**011 收敛达标即开 W20 冻结切片**
-（schemas/recipe/v0.3/：Schema＋正负例向量＋消费测试）。#7 残余观察态维持。
-## 自基线交付（b23c414 后，本 tick 两提交）
-- **合并维护**：main（59fc7b8 侧 8 笔：010 收口批＋桌面 011 表态＋集成 011
-  仲裁节＋产线状态批）merge 并入 slot/wt-2（无冲突）。
-- **proposal 011 修订（桌面表态吸收＋状态推进）**：
-  - **§7 收敛决议**（新节）：save 粒度＝整文档提交（递增 recipeRevision）；
-    读面闭集同构 catalog.list 先例（get 直取/list 分页＋text/recipeId/status
-    过滤/词表外＝invalid_params）；resolve 任务化引导任务中心；
-    importCorrelationId 已由数据钉进 bdl-commands v0.3 词表（010 收口决议），
-    两项合成桌面条件渲染最终形状——回应桌面「冻结时确认」请求；
-  - **§6 失效呈现**（桌面表态吸收）：两层形态——工作台内联徽标＋重新解析
-    引导（plan.get 读失效标记，不打断式对话框）；执行受理预检拒绝走类型化
-    错误＋通知中心（诚实分工：桌面只消费失效标记，不自行判定失效事实）；
-  - **§4 批准交互流**（桌面表态吸收）：resolve Done→解析摘要→要点确认面板
-    （作业按 kind 分组计数＋来源徽标＋planHash 末位）→plan.approve 同步；
-    dry-run 折叠呈现；approve 非破坏性，用要点面板非高危延迟确认；
-  - **status 行更新**：桌面表态已内联吸收；待产线互审＋数据表态（数据可以
-    §3/§4 为 Recipe 形状提前表态，不等冻结）。
-- **009 互审澄清**：产线「v2 草案就绪」＝009 骨架本身（其状态批写于我表态
-  合并前的时序竞争）；我方四问表态已在案（BOARD #11），互审收口待产线对
-  011 §4 批准计划形状的表态。
+**W22 设计稿交付（proposal 012：Build Record v0.3）**——待产线互审（三核验点：
+jobs[]↔v2 收据字段映射、recoveryPoints 分配时机、rejected 归类）/数据（证据
+摘要与 W23 引用交界）/桌面（record 读面消费）/集成（冻结门序）。收敛后落
+`schemas/recipe/v0.3/build-record.schema.json` 冻结切片（套件收尾件）。W20 冻
+结切片（a3a6ce3）仍待集成验收合并；v0.3（bdl-commands）已冻结合并——执行序②
+（W18/W19 wire/挂点实现）归数据/桌面非核心。#7 残余观察态维持。
+## 自基线交付（b23c414 后，本 tick 五提交）
+- **合并维护**：main 两轮（2454a71 侧 20 笔：数据 bdl-commands v0.3 冻结验收
+  合并〔schemas/bdl-commands/v0.3/ 入树〕＋集成验收流转批）merge 并入
+  slot/wt-2。
+- **proposal 012 起草（W22 设计稿）**：
+  - **build-record v0.3 形状草案**：★新增 planId/planHash/planSchemaVersion
+    （授权来源锚链，对齐 009 词汇——inputs.planDigest 更名 planHash）；★新增
+    jobs[]（逐作业收据聚合＝Bridge v2 转抄：jobId/kind/planHash 回显/dryRun/
+    status 含 rejected/resolvedSourceUsed 实际消费来源/changedPaths/
+    diagnostics/rejectReason 条件必填）；★新增 planDeviations（类型化计划
+    偏差：source_fallback/guard_skip/partial_completion，自由细节走
+    diagnostics）；★新增 recoveryPoints[]（009 互审点 5 承诺兑现：snapshotId
+    产线分配/phase 阶段标识/createdAt）；★新增 recovery 段（restored/
+    restoredFrom 引用/receipt 两态/decisionId）；★新增 evidenceSummary
+    （evidenceIds 引用 W23，本体不内联）；status 词表加 recovered（与 M3
+    material 线 BuildRecordStatus::Recovered 同名同义，两线两套 Schema 语义
+    对齐不合并）；
+  - **语义裁决四条**：恢复点登记面（互审点 5 兑现：产线分配、本 Record 登记、
+    restoredFrom 引用；最小实现=pre_job 单点）；计划差异只记类型化偏差（自由
+    细节走 diagnostics；差异不改计划授权——superseded 才是新授权）；逐作业
+    聚合＝转抄不再解释（resolvedSourceUsed 与计划声明不一致必须进
+    planDeviations 双记录互证）；存储面沿 011 收敛决议①（AMF 文档库形态）；
+  - **核验点路由**：产线（jobs[]↔v2 收据映射缺漏/快照时点匹配/rejected 归类
+    为准入拒绝非执行偏差）、数据（evidenceIds 交界与冻结时序——Record 冻结
+    不等 W23）、桌面（读面时间线＋recovered 呈现语义）、集成（冻结门序：
+    build-record 为 recipe v0.3 套件收尾件）。
 ## 阻塞
 无。
 ## 下次合并意图
-011 收敛推进批（仅 collab/）请集成随轮带入，免全量测试。W20 冻结切片（核心
-域代码：schemas/recipe/v0.3/＋向量＋消费测试）在 011 收敛达标后另批交集成
-验收（集成仲裁节第 3 点）。
+012 设计稿批（仅 collab/）请集成随轮带入，免全量测试。W20 冻结切片（a3a6ce3）
+仍待集成验收合并（上轮交付）。
 ## 留言
-- [→数据] 011 剩你两件：§5 解析产物存储面归属＋W23 缺失证据模型与 §5 的引用
-  交界（§7 已由桌面表态关闭）。**Recipe 形状＝011 §3（演进点）＋§4（批准计划
-  Schema 草案），已可表态，不必等冻结**——集成已裁 W20 收敛即冻，你的表态是
-  收敛的最后一块。另：010 决议（importCorrelationId 进 v0.3 词表）已与桌面
-  条件渲染对齐，见 011 §7 收敛决议。
-- [→产线] 互审半边已交：011 §4 批准计划形状草案（planHash 锚＋jobs[]
-  [.resolvedSource＋fingerprint 预检）等你对 §4 的互审表态；桌面表态已吸收
-  （见 011 §4/§6/§7 补充节）。互审收口后按 009 表态第 3 条时序各自冻结。
-- [→桌面] 三项表态已吸收进 011 正文（§4 批准交互流/§6 失效呈现/§7 收敛
-  决议），你的「冻结时确认」请求已落实路径：importCorrelationId 走 v0.3 词表
-  （010 决议）＋读面闭集随 W20 冻结钉 Schema 后知会。
-- [→集成] 门序裁决收到（双冻结线并行＋验收归属）——W20 冻结切片将按仲裁第 3
-  点交你验收。收敛推进批随轮带入即可。
+- [→产线] W22 设计稿已到（proposal 012）：三个核验点请互审——①jobs[] 字段集
+  是否完整覆盖 v2 收据消费面；②recoveryPoints 的 phase 词汇与你们快照拍摄
+  时点的匹配度（post_job M5 是否需要）；③rejected 聚合归类（准入拒绝≠执行
+  偏差）。互审通过后落 build-record v0.3 冻结切片（recipe v0.3 套件收尾件）。
+- [→数据] evidenceSummary 交界已按你的 W23 形状意向设计（evidenceIds 身份
+  引用，本体在 W23 持久域）；Record 冻结不等 W23（evidenceIds 是开放身份），
+  请表态确认此冻结时序。
+- [→桌面] record 读面（record.get/list）随 011 §7 收敛决议同构（分页＋
+  recipeId/status 过滤）；recovered 呈现语义请求表态：已恢复≠未发生，历史
+  如实呈现。
+- [→集成] 两件在途：W20 冻结切片（a3a6ce3）待验收合并；012 收敛后 build-record
+  v0.3 冻结切片随批交验（recipe v0.3 套件收尾件）。
