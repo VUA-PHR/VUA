@@ -2,35 +2,41 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: fa100b6
+baseline_commit: 73cae1b
 updated: 2026-09-08
 ---
 ## 当前焦点
-**W17 桌面协作面完成(869519b,待回流)**:errors.catalog.* 在 catalog 视图的透传
-呈现接线已交付;顺手修复 live-acquire entryDetail 同款旧码残留(真缺陷)。W15 验收
-仍等用户走查。
-## 自基线交付(fa100b6 合并 main 后,一提交)
-- 869519b **W17 消费面**:CatalogListView/DetailView 增加类型化 error 形态——live
-  端按冻结稳定码收窄为白名单 messageKey(invalidParams/unavailable/storeFailed;
-  词表外码如实回落 fallback,不猜测原因);product_not_found 仍为 not-found 事实
-  形态,传输面失败仍为 not-connected——断连/未找到/错误三类语义不再混淆;
-  WarehousePage 渲染 error 形态(本地化文案+重试);errors.catalog.fallback 四语键;
-  - **顺手修复(同 693965d 残留类)**:live-acquire-port entryDetail 仍在匹配不存在
-    的旧字面 vua.warehouse.not_found——未命中会被误报断连;已对齐冻结码
-    vua.warehouse.entry_not_found(核心 eed039e 在 mock/router 侧钉下的同码,
-    桌面 live 面此处对齐);
-- 复核核心 eed039e 对称跟随(我域 gateway-router.test.ts 一行断言):方向正确、
-  声明充分,认可,无需动作。
+**W15 走查不通过·重做批交付(4fb6411)＋proposal 008 提出(d9924da 后续提交)**:按
+用户示意图 A/B 重做设置-实验性页(全局开关+危险开关+确认框);全局删除原始素材的
+协议面待 008 裁决,开关恒挂未接线标注。W15 复验=用户走查。
+## 自基线交付(73cae1b 合并 main 后,两提交)
+- 4fb6411 **W15 重做批(呈现层,走查不通过重做)**:单卡形态=标题+副题+黄色警示条
+  +两行开关(示意图 A);per-entry 条目选择器整组移除(用户裁定);行1「生成 VPM
+  替代」=全局开关,写已冻结 warehouse.setGlobalDefaultMode(v0.2 全局层)——
+  contracts TS 面登记(命令/结果/narrow/方法表,桌面登记职责)+router/mock 分支;
+  初值由条目读面推断(无覆盖条目生效模式=composed 全局),不可知如实标注,写回执
+  (持久事实非回显)更新开关;行2「生成后删除原始素材文件」=危险开关(主开关关时
+  置灰),开启必经危险确认对话框(示意图 B),**未接线如实标注**(协议面随 008),
+  DEV 加注「本原型不会真正删除任何文件」;007 偏好开关被全局开关语义取代(抽屉
+  门控移除,入口回归条目事实镜像——随 008 复核);「开」按钮宽度缺陷随形态重做
+  消除;VPM 术语四语全量修正(VPM=管理器,VPM 包=被管理的包);新 Toggle/ConfirmDialog
+  primitives(实心危险确认用 error 底+on-status 字,状态灯同法);桌面 check 全链绿
+  (47 文件,2026-09-08 本机);
+- **proposal 008 提出**:全局自动删除三路径(a 桌面偏好+桌面编排/数据倾向;b 任务
+  旗标 v0.3;c 批量命令双方反对)+不变式(逐条目审计/高危确认不弱化/v0.2 冻结维持)
+  +衍生变更备案(007 偏好开关取代);路由数据/核心表态、集成仲裁。
 ## 阻塞
-- W15 验收=用户走查(U7 批,归用户,不代决)。
+- W15 复验=用户走查(重做后);
+- 008 表态待数据/核心(预表态已收:数据倾向路径 a)。
 ## 下次合并意图
-本批(869519b)自并 main(--no-ff,全部本域)。W17 数据侧写入面归数据,桌面面已就绪;
-catalog 写入侧落地前持续诚实空态(合规)。
+本两批(4fb6411+008/状态)自并 main(--no-ff;4fb6411 含桌面域+contracts TS 面
+登记+mock 分支——contracts 登记为桌面声明职责,mock 为已声明越界,提交信息注明)。
 ## 留言
-- [→集成] W17 桌面协作面已交付(869519b):错误透传呈现接线+entryDetail 旧码修复,
-  请随轮验收合并;W17 剩余=数据写入侧;
-- [→数据] W17 桌面面就绪:错误形态按冻结码白名单收窄(messageKey 与你侧线协议
-  下发键同值),词表外码回落 fallback;写入侧落地后如新增应用面码,白名单在
-  catalog-browser-port.ts APPLICATION 映射处同步即可(留言知会桌面);
-- [→核心] eed039e 对称跟随已复核认可;顺带报告:live-acquire live 面存在同款旧码
-  残留(你侧只修了 mock/router),已在本批修复——同类残留如再发现请留言知会。
+- [→操作者→用户] W15 重做批已交付:设置-实验性页=示意图 A 形态(全局开关+
+  危险开关+确认框),复验请再走查;危险开关当前为未接线偏好(008 裁决后接线),
+  界面已如实标注;
+- [→数据][→核心] proposal 008 请正式表态(数据预表态倾向路径 a 已吸收进提案
+  文本);注意提案含一条衍生变更请一并复核:007 偏好开关(仓储抽屉入口门控)被
+  全局开关语义取代,抽屉入口回归条目事实镜像;
+- [→集成] 重做批携带了要求的术语修正/宽度缺陷修复/未接线标注;contracts TS 面
+  登记(setGlobalDefaultMode,词表 W14 已冻结)与 mock 分支为声明内登记,随批验收。
