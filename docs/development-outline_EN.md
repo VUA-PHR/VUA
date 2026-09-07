@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.6
+> Document version: 2.0.7
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.6)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.7)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -313,7 +313,7 @@ Task breakdown:
 | ALCOM/VCC capability detection and compatibility matrix | Environment | Desktop |
 | Unity/VRChat/SteamVR environment checks; network/disk/residual-process failure handling | Environment | Core |
 | Experimental EAC recovery adapter (boundary ruling draft first) | Environment | Integration (ruling) |
-| F6 guidance/plan/confirmation pages with per-action warning consent | Desktop | Environment |
+| F6 guidance/plan/confirmation pages with per-action warning consent (incl. the U3 read-only compatibility surface: write handoff and the "import as a VUA-managed copy" entry; see product-boundary 1.2.0) | Desktop | Environment |
 | Gate acceptance and release | Integration | All |
 
 ### M7 — v0.9.0: Inspection, Release, and the desktop overlay
@@ -430,7 +430,9 @@ domain into Core/Production/Data/Environment.
   and LocalArtifact inspection state; the Renderer holds no cookies, tokens, or Electron-private
   objects.
 - **F5 Recipe and Assembly workbench**: see the M5 task table.
-- **F6 Project and environment pages**: see the M6 task table.
+- **F6 Project and environment pages**: see the M6 task table; includes the U3 read-only
+  compatibility surface for ALCOM/VCC (write handoff and the explicit "import as a VUA-managed
+  copy" entry; product-boundary 1.2.0).
 - **F7 Inspection, Release, and desktop Overlay**: see the M7 task table.
 - **F8 Beta 1 frontend freeze**: see the M8 task table.
 - **F9 Beta 2 frontend validation**: see the M9 task table.
@@ -478,6 +480,10 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.7 (2026-09-08): U3 ruling anchors landed — the M6 table row for F6 and the F6 reference
+  line now note the ALCOM/VCC read-only compatibility surface (write handoff and the explicit
+  "import as a VUA-managed copy" entry; authoritative semantics in product-boundary 1.2.0;
+  further task-row breakdown happens when M6 opens); bilingual sync.
 - 2.0.6 (2026-09-08): terminology fix (hard user ruling, 2026-09-08) — VPM = VRChat Package
   Manager (the manager), VPM package = the managed package; "VPM asset-package", "local VPM
   creation", and "VPM results" in the Pre-B3 spike heading and the M3 documentation/integration/
