@@ -3,13 +3,12 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 06:1x（**011 收敛＋产线 v2 草案验收合并**：011 三域表态齐
-〔桌面吸收进正文/数据转内联无异议/产线互审 §4 通过·互审点 1/2/3 关闭〕——
-**W20 冻结切片解锁**（核心，交集成验收；planRef 文件形态建议随冻结确认）；产线
-**unity-bridge v2 契约草案**验收合并〔v1 超集＋execute_production_job/
-restore_project＋16 向量＋6 消费测试；集成复跑 356/0＋clippy 零告警；契约表
-unity-bridge 行等互审收敛随冻结批走〕；数据 011 表态转内联〔四产物不进 BDL/
-save 整文档＋乐观并发/W23 形状意向〕）
+最近更新：2026-09-08 06:2x（**bdl-commands v0.3 已冻结·集成验收合并**〔数据主导
+49586f3：warehouse.import 批量导入＋generateVpm 可选 importCorrelationId＋术语
+落实；集成复跑 362/0＋clippy -D warnings 零告警；REGISTRY/双语协议已刷〕——
+010 执行序①完成；②核心 warehouse.import wire/挂点、③桌面呈现解锁；**011 收敛**
+〔三域表态齐，W20 冻结切片解锁，交集成验收〕；009 v2 草案已验收合并〔356/0 复跑〕，
+互审点 4/5 等核心）
 
 ## 工作树指派
 
@@ -138,7 +137,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | --- | --- | --- |
 | application-contract | v0.1 | 冻结（M2 冻结） |
 | provider-process（协议本/握手帧面） | v0.2 | 握手帧面 Schema 冻结（provider-frame-v0.1 + 双端 11 向量；proposal 001 关闭） |
-| bdl-commands | **v0.2** | **已冻结（W14，2026-09-07）**——全局默认模式写 `warehouse.setGlobalDefaultMode`，持久化 BDL bdl_meta；v0.1（W8 三命令）已取代。W15 走查裁定改全局开关形态：`setGlobalDefaultMode` 已接线（桌面 TS 面 4fb6411 登记）；全局删除原始素材经 **proposal 008 已接受路径 a**（桌面偏好＋桌面编排，逐条既有 deleteOriginals）——**零协议扩展，v0.2 维持冻结**；接线切片归 M5 首批 |
+| bdl-commands | **v0.3** | **已冻结（M5 首批先行，2026-09-08，数据主导，集成验收 ef9854b：复跑 362/0＋clippy -D warnings 零告警）**——五命令闭集：v0.2 四命令照录（向量除版本外字节一致）＋**warehouse.import 批量导入**（任务化，folder 批，010/W19 硬前置）＋generateVpm 可选 `importCorrelationId` 审计链字段（仅导入编排发起携带；010 承诺 6 wire 承载）；术语裁定落实（「生成 VPM 包副本」）；v0.2/v0.1 已取代。历史：v0.2（W14）全局默认模式＋008 路径 a 零扩展裁决见 git；协议双语＋REGISTRY 已刷新 |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
 | unity-bridge | v1 | 冻结 |
