@@ -1371,7 +1371,7 @@ rolled_back: "已回滚",
   },
   settings: {
     /** 实验性功能页(W15 重做形态,用户走查示意图 A/B):单卡=标题+副题+警示条
-     *  +两行开关。行1「生成 VPM 替代」=全局默认模式写面(bdl-commands v0.2 全局层
+     *  +两行开关。行1「生成 VPM 包替代」=全局默认模式写面(bdl-commands v0.2 全局层
      *  setGlobalDefaultMode);行2「生成后删除原始素材文件」=危险开关,未接线偏好
      *  (全局自动删除超出已冻结条目级命令,协议面随 proposal 008 裁决),开启必经
      *  危险确认对话框,恒挂未接线标注 */
@@ -1380,12 +1380,13 @@ rolled_back: "已回滚",
       subtitle: "默认关闭,使用前请仔细阅读说明",
       badge: "实验性",
       warning: "实验性功能可能产生非预期行为。启用前请确保你理解其影响。",
-      generateTitle: "生成 VPM 替代",
-      generateDesc: "在装配时自动生成 VPM 兼容包清单(实验性)。",
+      generateTitle: "生成 VPM 包替代",
+      generateDesc: "素材导入时自动生成 VPM 包,替代原始 UnityPackage(实验性)。",
       globalReadUnknown: "当前全局默认值尚未读取;切换一次后以服务端回执为准。",
+      generateNotWired: "素材导入时的自动生成尚未接线:当前版本中,生成仍需在仓储条目中手动发起(发起后条目进入任务中心)。",
       deleteTitle: "生成后删除原始素材文件",
       deleteBadge: "危险",
-      deleteDesc: "VPM 生成完成后删除原始 .unitypackage 文件。此操作不可逆,仅可在已确认生成质量后启用。需要「生成 VPM 替代」先开启。",
+      deleteDesc: "VPM 生成完成后删除原始 .unitypackage 文件。此操作不可逆,仅可在已确认生成质量后启用。需要「生成 VPM 包替代」先开启。",
       notWired: "该功能尚未接线到服务端,开启仅记录意图(协议面随 proposal 008 裁决后实现)。",
       devPrototypeNote: "本原型不会真正删除任何文件。",
       dialogTitle: "危险操作确认",
