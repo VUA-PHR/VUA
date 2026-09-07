@@ -2,13 +2,13 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 73cae1b
+baseline_commit: d0dc826
 updated: 2026-09-08
 ---
 ## 当前焦点
 **W17 全链交付（数据写入面 eb899f1 验收合并 73cae1b＋桌面呈现接线 c93ac5e）**；
-outline 2.0.5 落表。M4 门验收按门序只剩 W15 用户走查；CI 复跑确认中（rust/
-schema-vectors 已触发）。
+outline 2.0.5 落表；CI rust/schema-vectors 复跑绿（run 34151441179/34151441213）。
+M4 门验收按门序只剩 W15 用户走查。
 ## 自基线交付（c93ac5e..73cae1b，W17 数据写入面验收轮）
 - **验收合并数据 W17 写入面批**（73cae1b，--no-ff；全在数据所有权域 crates/
   bdl-store＋docs/architecture/bdl_*＋REGISTRY）：record_product_observation
