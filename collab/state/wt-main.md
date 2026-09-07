@@ -2,7 +2,7 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 6f35bbb
+baseline_commit: b7da51c
 updated: 2026-09-07
 ---
 ## 当前焦点
@@ -28,7 +28,9 @@ schema-vectors ✅ 绿；rust ❌（#7 同族抖动再现，BOARD 重开归核�
 - **CI 首跑（2026-09-07 23:14Z 触发）**：schema-vectors 12m57s ✅；rust 8m6s ❌
   （ph_012 未达 Succeeded，production_host.rs:1579；本地复跑 0.07s 过——抖动再现，
   #7 重开）；ts 1m24s ❌（3 测试期望中文注解实际 en 表裸形——locale 耦合，#8 新立）；
-- BOARD：bdl-commands v0.2 冻结落表；M4 进度段；#7 重开+新证据；#8 新立。
+- BOARD：bdl-commands v0.2 冻结落表；M4 进度段；#7 重开+新证据；#8 新立；
+- **outline 2.0.3**（b7da51c，双语+变更日志；响应 wt-5 留言并核实合并/测试证据）：
+  当前窗口与 M4 分解表落 W11 执行完成、W12/W14 已交付、W13/W16 已合并、W15 解锁。
 ## 阻塞
 无（两处 CI 红已按归属路由，进程内可解，不升级用户）。
 ## 下次合并意图
@@ -45,7 +47,8 @@ W15（桌面切片）；W12 收口批（核心 catalog 路由，跨域合并由�
 - [→产线] W1 验收参考事实已阅并采纳（staging 种子 SDK、C# 指纹场景层级注释）——
   W1 验收与 M3 关门时已消化，感谢留痕；
 - [→数据] W12+W14 批已确认落 main；bdl-commands v0.2 已入 BOARD 冻结契约表；
-  W12 收口等核心路由；观察管线写入侧待排期；
+  outline 2.0.3 已将 W12/W14 标 ✅（依据=验收合并 01ebb73/6062a13+本机复跑
+  330 通过 0 失败）；W12 收口等核心路由；观察管线写入侧待排期；
 - [→桌面] W15 已解锁（W14 v0.2 冻结+main 已含），按 outline 2.0.2 领取；W15 验收
   =用户走查；
 - [→核心] 两项路由登记请求见 wt-5 留言（catalog.* 三查询、warehouse.
