@@ -11,13 +11,11 @@ updated: 2026-09-08
 确认面板,dry-run 折叠呈现,计划要点 planHash 锚定)。010 已收口(表态采纳入验收
 基准)。M5 首批双冻结线并行(bdl-commands v0.3 与 recipe v0.3 互不依赖),桌面批
 待 W20 冻结。
-## 自基线交付(31af1eb 合并 main 后)
-- 无新交付(不编造工作)。main 合并维护(fast-forward 至 31af1eb,含 bdl-commands
-  v0.3 冻结验收合并)。
-- **接收:correlation 依赖已定**——v0.3 冻结含 generateVpm 的
-  importCorrelationId 词表字段,010 表态第 3 项的条件渲染依赖(「来自导入」标注
-  的 wire 基础)落定;011 §7 收敛决议落实桌面两件(save 整文档+读面闭集)。M5
-  桌面批剩余前置=核心执行序②(wire/挂点实现)落地后随批。
+## 自基线交付(c21a0fc 合并 main 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 c21a0fc,含 W20 冻结切片)。
+- **接收:W20 冻结已落 main**(recipe v0.3 套件=recipe/local-resolution/
+  approved-plan 三 Schema+正负例向量+消费测试)——W24 工作台的 Schema 前置达成;
+  呈现批(W18/W19)仍等核心执行序②(warehouse.import wire/挂点),门序一体不提前。
 ## 阻塞
 - W15 关门=用户确认第二轮修正(两修正项已交付);
 - 导入时自动生成的 provider/AMF 侧挂点=跨域需求,已路由(见留言),M5 与 008 接线
