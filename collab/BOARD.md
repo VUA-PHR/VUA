@@ -99,7 +99,8 @@ M4 门验收按门序等 W15 与 W12 收口完成后由集成执行。
 | # | 问题 | 归属 | 载体 |
 | --- | --- | --- | --- |
 | 1 | I-1 真 Unity 矩阵 | 集成树 | **✅ 已交付关闭**（16/16 真机通过，合并 5ccace6；验收=证据清单核实+抽查终态+集成独立复验 1 格） |
-| 7 | 两例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，终态蕴含事件，属真实时序窗口修复非测试侧）；扩展观察面（warehouse_import/早段套件偶发）未再复现 | 核心 | 两修复经合并复核后转观察；再现即重开 |
+| 7 | 两例均已命名并根因修复：① ph_010_mutation_gate（ec6b61d，测试尾部竞态改轮询）；② 运行时 Completed 发布竞态（49d1dac：publish 移入 tasks 锁内，终态蕴含事件，属真实时序窗口修复非测试侧）；**CI 再现（2026-09-07 23:xx，重开）**：首次 CI 运行（windows-latest 2 核）`cargo test --workspace` 中 ph_012_crashed_lease 失败（production_host.rs:1579，恢复任务未达 Succeeded；14 passed/1 failed 与 wt-4 报告形态一致）；本地单测复跑 0.07s 通过——低核并行环境放大竞态，归核心排查 | 核心 | 两修复经合并复核后转观察；**再现即重开——已再现，待核心定位** |
+| 8 | CI ts 徽章红：i18n 术语注解测试环境耦合——`current-table.ts` 按 `navigator.languages` fallback 选表，CI runner 为 en-US → en 表注解空串，3 个期望中文注解的测试失败（i18n.test.ts 24/33、nav-model.test.ts 115）；本地绿系隐性依赖开发机 zh-CN 系统语言。修复方向：测试显式固定语言表（mock current-table 或注入），不得依赖宿主 locale | 桌面 | 待桌面修复切片；修复后 ts 徽章转绿 |
 
 ## 待用户裁决
 
