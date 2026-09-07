@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 2,
+  "commandId": "job-run-01",
+  "operation": "execute_production_job",
+  "status": "succeeded",
+  "changedPaths": ["Assets/outfit-0001.prefab"],
+  "diagnostics": [],
+  "data": {
+    "dryRun": false,
+    "replayed": false,
+    "planHash": "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "steps": [
+      { "kind": "import_package", "status": "executed" }
+    ],
+    "projectFingerprint": "fp-after-job-0001"
+  }
+}

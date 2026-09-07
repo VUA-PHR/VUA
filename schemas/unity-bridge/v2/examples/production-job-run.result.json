@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 2,
+  "commandId": "job-run-01",
+  "operation": "execute_production_job",
+  "status": "succeeded",
+  "changedPaths": ["Assets/outfit-0001.prefab"],
+  "diagnostics": [
+    { "code": "triangles_above_budget", "severity": "warning", "message": "76k triangles against 70k budget" }
+  ],
+  "data": {
+    "dryRun": false,
+    "replayed": false,
+    "planHash": "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "steps": [
+      { "kind": "import_package", "status": "executed" },
+      { "kind": "install_outfit", "status": "executed" },
+      { "kind": "validate_avatar", "status": "executed", "warning": "mesh may exceed budget" }
+    ],
+    "snapshotId": "snap-0001",
+    "projectFingerprintBefore": "fp-before-job-0001",
+    "projectFingerprint": "fp-after-job-0001",
+    "triangles": 76234,
+    "materialSlots": 5,
+    "basis": "local_estimate"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 2,
+  "commandId": "job-run-02",
+  "operation": "execute_production_job",
+  "status": "rejected",
+  "changedPaths": [],
+  "diagnostics": [
+    { "code": "plan_schema_version_unsupported", "severity": "error", "message": "plan schemaVersion 0.9 is outside the supported set" }
+  ],
+  "data": {
+    "dryRun": false,
+    "replayed": false,
+    "planHash": "sha256:9a8b7c6d5e4f302918a7b6c5d4e3f2091a8b7c6d5e4f302918a7b6c5d4e3f209",
+    "steps": []
+  }
+}

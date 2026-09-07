@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 2,
+  "commandId": "restore-01",
+  "operation": "restore_project",
+  "status": "succeeded",
+  "changedPaths": ["Assets/outfit-0001.prefab"],
+  "diagnostics": [],
+  "data": {
+    "replayed": false,
+    "restoredFrom": "snap-0001",
+    "projectFingerprint": "fp-before-job-0001"
+  }
+}

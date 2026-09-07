@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "commandId": "bad-01",
+  "operation": "teleport_project",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": true,
+  "payload": {}
+}

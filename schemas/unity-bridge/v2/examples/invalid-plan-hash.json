@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 2,
+  "commandId": "bad-05",
+  "operation": "execute_production_job",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": true,
+  "payload": {
+    "planHash": "md5:deadbeef",
+    "planSchemaVersion": "0.3",
+    "planRef": "recipe/plans/plan-0001.json"
+  }
+}

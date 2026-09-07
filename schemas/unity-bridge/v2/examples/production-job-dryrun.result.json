@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 2,
+  "commandId": "job-dryrun-01",
+  "operation": "execute_production_job",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [],
+  "data": {
+    "dryRun": true,
+    "replayed": false,
+    "planHash": "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+    "steps": [
+      { "kind": "import_package", "status": "pending" },
+      { "kind": "install_outfit", "status": "pending" },
+      { "kind": "validate_avatar", "status": "pending", "warning": "mesh may exceed budget" }
+    ]
+  }
+}

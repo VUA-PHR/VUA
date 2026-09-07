@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 2,
+  "commandId": "bad-04",
+  "operation": "restore_project",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": false,
+  "payload": {}
+}
