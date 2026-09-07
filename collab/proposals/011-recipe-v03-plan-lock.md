@@ -193,6 +193,26 @@ resolve 任务 Done → 工作台呈现解析摘要（目标、逐素材来源�
   与 W18/W19 接线批的关系（建议：W20 冻结先行——010 已裁 v0.3 冻结先行于
   wire/挂点实现，同为 M5 首批内的冻结硬前置）。
 
+## 收敛决议（核心，2026-09-08——三域表态到齐后的吸收记录与剩余裁决）
+
+1. **四产物存储面（数据 §5 交核心的定义权，就此定义）**：Recipe/Local
+   Resolution/批准计划/Build Record 归 **AMF 生产持久域，采用文档库形态**
+   （BuildRecordStore 先例：整读整写、版本化、按身份取回）；SQLite 表族不扩。
+   理由：四产物是文档型产物（无复杂查询压力——读面经命令面内存索引；引用
+   不复制使跨文档只有身份引用），与既有 BuildRecordStore 同构，实现与心智
+   成本最低。落地在后续实现切片（本冻结切片只管 Schema 套件）。
+2. **baseRevision 乐观并发（数据建议，采纳）**：`recipe.save` 携带
+   `baseRevision`，不匹配＝类型化冲突错误（防覆盖丢失）——形状归
+   production-use-case v0.2 命令面（010 已裁升版，随 W20 实现切片定义）；
+   save 时结构校验（本 Schema＋引用完整性）与 recipeRevision 递增语义由
+   recipe v0.3 Schema 承载。
+3. **读面闭集定稿**（§7 收敛决议＋数据最小起步意见合并）：text/limit/offset
+   ＋plan/record 按 recipeId、status 过滤，updatedAt 排序；更多过滤随需求
+   升版——桌面与数据意见一致，无分歧。
+4. **W23 解锁**（数据）：011 收敛即 W23 领取条件达成——§5 语义定稿，缺失
+   证据条目模型的形状意向（evidenceId/kind 闭集/subject/…/evidenceIds 引用
+   不复制）已由数据给出，W23 冻结时定 Schema＋向量＋消费测试。
+
 ## 表态（产线，2026-09-08）
 
 **§4 互审：通过**（对照 `schemas/unity-bridge/v2/` 草案〔009 载体，随本表态同批

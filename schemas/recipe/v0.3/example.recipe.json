@@ -1,0 +1,142 @@
+{
+  "formatVersion": "0.3",
+  "recipeId": "019e0000-0000-7000-8000-000000000001",
+  "revision": 3,
+  "title": "Self-authored two-piece fixture",
+  "description": "Redistributable fixture for Recipe v0.2 contract tests.",
+  "createdAt": "2026-08-29T08:00:00Z",
+  "updatedAt": "2026-08-29T08:30:00Z",
+  "environment": {
+    "unityVersionConstraint": "2022.3.22f1",
+    "capabilities": [
+      {
+        "id": "vrchat.avatar.pc",
+        "required": true
+      }
+    ]
+  },
+  "target": {
+    "platforms": [
+      "windows"
+    ],
+    "avatarInstanceId": "avatar_root",
+    "performanceTarget": "good"
+  },
+  "assets": [
+    {
+      "id": "avatar_asset",
+      "role": "avatar_base",
+      "label": "Fixture Avatar",
+      "sourceRef": {
+        "warehouseItemId": "019e0000-0000-7000-8000-000000000110",
+        "role": "original"
+      },
+      "selection": {
+        "releaseId": "avatar-release-1"
+      }
+    },
+    {
+      "id": "outfit_asset",
+      "role": "outfit",
+      "label": "Fixture Outfit",
+      "sourceRef": {
+        "provider": "fixture",
+        "productId": "outfit-001",
+        "url": "https://example.invalid/products/outfit-001"
+      },
+      "selection": {
+        "releaseId": "outfit-release-2"
+      },
+      "requiresAssetIds": [
+        "avatar_asset"
+      ]
+    }
+  ],
+  "instances": [
+    {
+      "id": "avatar_root",
+      "assetId": "avatar_asset",
+      "entrypoint": {
+        "selectorId": "avatar_prefab",
+        "kind": "avatar_prefab",
+        "catalogEntryId": "fixture-avatar-prefab"
+      }
+    },
+    {
+      "id": "outfit_blue",
+      "assetId": "outfit_asset",
+      "variant": "blue",
+      "entrypoint": {
+        "selectorId": "outfit_blue_prefab",
+        "kind": "modular_avatar_prefab",
+        "catalogEntryId": "fixture-outfit-blue-prefab"
+      }
+    }
+  ],
+  "relations": [
+    {
+      "id": "install_outfit_blue",
+      "kind": "install_modular_asset",
+      "assetInstanceId": "outfit_blue",
+      "avatarInstanceId": "avatar_root",
+      "mode": "consume_authored_setup"
+    }
+  ],
+  "wardrobeGroups": [
+    {
+      "id": "main_outfit",
+      "label": "Main outfit",
+      "memberInstanceIds": [
+        "outfit_blue"
+      ],
+      "selectionMode": "zero_or_one",
+      "defaultInstanceIds": [
+        "outfit_blue"
+      ]
+    }
+  ],
+  "dependencies": [
+    {
+      "packageId": "dev.fixture.modular-avatar",
+      "versionConstraint": ">=1.0 <2.0",
+      "requestedByAssetIds": [
+        "outfit_asset"
+      ]
+    }
+  ],
+  "locked": {
+    "lockVersion": 1,
+    "recipeRevision": 3,
+    "generatedAt": "2026-08-29T08:30:00Z",
+    "status": "complete",
+    "unity": {
+      "version": "2022.3.22f1",
+      "revision": "887be4894c44"
+    },
+    "packages": [
+      {
+        "packageId": "dev.fixture.modular-avatar",
+        "version": "1.4.0",
+        "depth": 0,
+        "source": {
+          "kind": "vpm_copy",
+          "restorable": true,
+          "warehouseItemId": "019e0000-0000-7000-8000-000000000110",
+          "derivedFromSha256": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      }
+    ],
+    "assets": [
+      {
+        "assetId": "avatar_asset",
+        "resolution": "exact",
+        "releaseId": "avatar-release-1"
+      },
+      {
+        "assetId": "outfit_asset",
+        "resolution": "exact",
+        "releaseId": "outfit-release-2"
+      }
+    ]
+  }
+}

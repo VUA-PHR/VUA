@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 2,
+  "recipeId": "019e0000-0000-7000-8000-000000000001",
+  "recipeRevision": 3,
+  "environmentId": "019e0000-0000-7000-8000-000000000100",
+  "resolvedAt": "2026-08-29T08:35:00Z",
+  "assets": [
+    {
+      "assetId": "avatar_asset",
+      "warehouseAssetId": "019e0000-0000-7000-8000-000000000110",
+      "artifactId": "019e0000-0000-7000-8000-000000000111",
+      "artifactFingerprint": {
+        "algorithm": "sha256-archive-v1",
+        "value": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+      },
+      "entrypoints": [
+        {
+          "selectorId": "avatar_prefab",
+          "unityAssetGuid": "11111111111111111111111111111111"
+        }
+      ],
+      "objectBindings": [],
+      "sourceKind": "original",
+      "fallbackUsed": false,
+      "warehouseItemId": "019e0000-0000-7000-8000-000000000110"
+    },
+    {
+      "assetId": "outfit_asset",
+      "warehouseAssetId": "019e0000-0000-7000-8000-000000000120",
+      "artifactId": "019e0000-0000-7000-8000-000000000121",
+      "artifactFingerprint": {
+        "algorithm": "sha256-tree-v1",
+        "value": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "entrypoints": [
+        {
+          "selectorId": "outfit_blue_prefab",
+          "unityAssetGuid": "22222222222222222222222222222222"
+        }
+      ],
+      "objectBindings": [],
+      "sourceKind": "generated_vpm",
+      "fallbackUsed": false,
+      "warehouseItemId": "019e0000-0000-7000-8000-000000000111",
+      "evidenceIds": [
+        "evd-019e0000000000000000000000000001"
+      ]
+    }
+  ]
+}

@@ -97,6 +97,26 @@ Recipe/Assembly 侧（W20 计划形状会把「素材来源解析结果」作为
 自然结果：Bridge 拿到的计划已含解析结论，收据照实转抄即可。两边在
 011/009 互审时对齐字段。
 
+### 核心确认二（互审收口，2026-09-08，回应产线两件确认请求）
+
+1. **planRef 形态：确认采纳你的裁决建议**。计划文档由 provider 以文件形态
+   写入 job 目录（既有 job-directory 纪律），planHash 随命令下发，Bridge 侧
+   读取后**本地校验哈希一致才执行**——完整性不依赖 provider 单方诚实，与
+   「计划哈希是完整性与幂等锚」互为支撑，防御深度正确。实现归属：计划文档的
+   序列化与 job 目录写入在 provider 执行层（unity-bridge crate 侧执行器，
+   核心域）；Bridge 只消费文件＋哈希，哈希不一致＝类型化拒绝（不入执行，无
+   部分状态）。011 §4 批准计划是 AMF 持久域的权威文档（W20 冻结切片），job
+   目录文件是其执行投影——权威仍在 AMF，投影以哈希锚定。
+2. **rejected 收据语义：确认正确**。「快照＋前置指纹」是「执行了变更」的证据
+   而非「dryRun=false」的证据——rejected 是准入拒绝，未进入执行，无变更即无
+   快照需求，豁免正确且比可选字段更诚实（条件 Schema 杜绝「rejected 却带
+   快照」的混乱态）。已核 v2 草案：条件必填（execute_production_job 的
+   data.required=[dryRun, planHash, steps]＋status∈{succeeded,failed} 分支）
+   与 planHash 回显均在——**v2 侧无待审项，互审收口**。互审点 5（restore
+   强制指纹乐观锁）确认符合任务面恢复预期（恢复是变更操作，同受 fencing；
+   与 010 六条承诺的「重启不自动续」正交——乐观锁管并发，恢复纪律管隐式
+   续跑）。互审点 5 的登记面对齐随 W22 Record 草案（按时序）。
+
 ## 产线下一步（核心表态后）
 
 1. 冻结 `schemas/unity-bridge/v2/`：command/result Schema＋正负例向量＋至少
