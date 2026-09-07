@@ -195,7 +195,52 @@ resolve 任务 Done → 工作台呈现解析摘要（目标、逐素材来源�
 
 ## 表态（产线，2026-09-08）
 
-（待产线表态——009 互审）
+**§4 互审：通过**（对照 `schemas/unity-bridge/v2/` 草案〔009 载体，随本表态同批
+更新〕逐点审查；澄清：产线互审侧已是完整 Schema 草案＋16 向量＋6 消费测试，非
+仅骨架——此前「骨架」表述是时序竞争下的保守措辞）。
+
+**对齐确认（§4 草案 ↔ v2 草案，互审点 1/2/3 就此关闭）**：
+
+1. **planHash 锚**：§4「规范序列化 SHA-256」与 v2 `payload.planHash`
+   （`^sha256:[0-9a-f]{64}$`）对齐；重放键三元组＝planHash＋项目＋
+   planSchemaVersion（兼容检查通过为前提；哈希本身已唯一标识内容，版本字段
+   是兼容闸不是键）——v2 result 全部作业收据回显 planHash（回显测试已钉）。
+2. **planSchemaVersion 闭集**：§4 `schemaVersion: "0.3"` 与 v2 枚举 `["0.3"]`
+   一致（互审点 1 关闭；W20 形状变更只改此枚举）。
+3. **planRef 形态（互审点 2 关闭，附一项裁决建议）**：§4 有 `planId`（uuidv7）
+   ——v2 `planRef` 定为 **job 目录内计划文件引用**（既有 job-directory 纪律：
+   请求文件先于 Unity 进程调用写入）。建议：**计划文档由 provider 以文件形态
+   写入 job 目录，planHash 随命令下发，Bridge 侧读取后本地校验哈希一致才执行**
+   ——计划文档在 AMF 持久域（Unity 进程不可达），文件交换是既有架构；哈希
+   Unity 侧本地可验使完整性不依赖 provider 单方诚实（与「计划哈希是完整性
+   与幂等锚」的裁决互为支撑）。请核心确认此形态。
+4. **jobs[].kind 词汇（互审点 3 关闭）**：§4「词汇闭集在 recipe v0.3 Schema
+   枚举，词表外＝契约错误」——v2 `steps[].kind` 保持 **string 引用不复制**
+   （与「引用不复制」总原则一致）；上游合法性由计划 Schema 闭集保证，Bridge
+   运行时遇到无法分发的 kind＝类型化拒绝。不收窄为枚举。
+5. **fingerprint 预检**：§4 `fingerprint.expectedProjectFingerprint`（批准
+   时点状态）→ provider 受理预检第③步填入 v2 命令顶层
+   `expectedProjectFingerprint` → Bridge 执行时乐观锁双保险（009 表态④
+   序列）——三层消费路径闭合，v2 无需改动。
+
+**互审产出：v2 草案一处缺口已修**（范围注记的兑现）：
+
+- 范围注记承诺「dry-run 清单与实跑收据携带解析后来源身份」，§4 `jobs[]`
+  也要求「逐作业 resolvedSource……Bridge 照实转抄」——v2 草案原 `steps[]`
+  缺该字段。已补：`steps[].resolvedSource`
+  `{ sourceKind: original|generated_vpm, artifactSha256, warehouseItemId(可空) }`
+  （形状与 §4 `resolvedSource` 一致；**转抄不校验语义**——选择语义归解析）；
+  对应向量（dry-run/实跑收据）已更新，6 消费测试全绿（356/0＋clippy 零告警，
+  本机）。
+
+**维持待审（非本表拦路）**：互审点 4（rejected 收据语义）已由产线在 009 内联
+自答（快照＋前置指纹是「执行了变更」的证据，条件按 status∈{succeeded,failed}
+收窄）——请核心随 W20 设计稿确认；互审点 5（restore 乐观锁）形状随 W22 Record
+草案（`recoveryPoints[]`），到时对齐。
+
+**边界重申**：jobs[].resolvedSource 的**选择语义**（generated_vpm 何时可被
+选中、fallback 落回）归 §5 Local Resolution（核心/数据）；Bridge 侧只照实
+转抄进收据（可审计），不判定选择是否正确。
 
 ## 表态（数据，2026-09-08）
 

@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 2,
+  "commandId": "restore-01",
+  "operation": "restore_project",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": false,
+  "expectedProjectFingerprint": "fp-after-job-0001",
+  "payload": {
+    "snapshotId": "snap-0001"
+  }
+}

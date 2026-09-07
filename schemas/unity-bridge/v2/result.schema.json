@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/unity-bridge/v2/result.schema.json",
+  "title": "VUA Unity bridge result v2 (DRAFT — mutual review before freeze, proposal 009)",
+  "description": "Versioned result returned by the VUA Unity middleware to AMF Production. v2 is a superset of v1: all v1 fields preserved; production-job receipts add explicit dry-run/real-run distinction (honesty rule: a dry-run receipt never poses as a real run), per-step plan lists (step-kind vocabulary owned by the plan schema, W20), the replay guard echo, and snapshot/restore identity per proposal 009 rulings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "commandId", "status", "changedPaths", "diagnostics"],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "commandId": { "type": "string", "minLength": 1 },
+    "operation": {
+      "enum": [
+        "inspect_project",
+        "import_unity_package",
+        "materialize_extracted_package",
+        "create_local_vpm_package",
+        "validate_asset_paths",
+        "identify_assets",
+        "install_outfit",
+        "create_toggle",
+        "validate_avatar",
+        "analyze_performance",
+        "execute_production_job",
+        "restore_project"
+      ]
+    },
+    "status": { "enum": ["succeeded", "failed", "rejected"] },
+    "changedPaths": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "severity": { "enum": ["info", "warning", "error"] },
+          "message": { "type": "string" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "projectFingerprint": { "type": "string" },
+        "projectFingerprintBefore": { "type": "string" },
+        "avatarName": { "type": "string" },
+        "outfitName": { "type": "string" },
+        "basis": { "enum": ["", "local_estimate"] },
+        "triangles": { "type": "integer", "minimum": 0 },
+        "materialSlots": { "type": "integer", "minimum": 0 },
+        "skinnedMeshRenderers": { "type": "integer", "minimum": 0 },
+        "bones": { "type": "integer", "minimum": 0 },
+        "recommendations": { "type": "array", "items": { "type": "string" } },
+        "importedAssetPaths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "packageRoot": { "type": "string" },
+        "loadedAssetPaths": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "commandFingerprint": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "replayed": { "type": "boolean" },
+        "dryRun": { "type": "boolean" },
+        "planHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "steps": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["kind", "status"],
+            "properties": {
+              "kind": { "type": "string", "minLength": 1 },
+              "status": { "enum": ["pending", "executed", "failed", "skipped"] },
+              "warning": { "type": "string" },
+              "resolvedSource": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["sourceKind", "artifactSha256"],
+                "properties": {
+                  "sourceKind": { "enum": ["original", "generated_vpm"] },
+                  "artifactSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+                  "warehouseItemId": { "type": ["string", "null"], "minLength": 1 }
+                }
+              }
+            }
+          }
+        },
+        "snapshotId": { "type": "string", "minLength": 1 },
+        "restoredFrom": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "execute_production_job" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "data": { "required": ["dryRun", "planHash", "steps"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": { "const": "execute_production_job" },
+          "status": { "enum": ["succeeded", "failed"] },
+          "data": {
+            "properties": { "dryRun": { "const": false } },
+            "required": ["dryRun"]
+          }
+        },
+        "required": ["operation", "status", "data"]
+      },
+      "then": {
+        "properties": {
+          "data": { "required": ["snapshotId", "projectFingerprintBefore"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "restore_project" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "data": { "required": ["restoredFrom"] }
+        }
+      }
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 proposal: 009
 title: Unity Bridge 操作扩展 v2（dry-run、幂等、恢复）——W21 契约设计骨架与核心对齐点
-status: 讨论（产线起草；核心已表态四问——引用不复制＋计划哈希锚、恢复点登记面方向、production-use-case v0.2 升版＋九态复用、定序双保险；三份契约草案互审后再各自冻结；数据/桌面知会中）
+status: 讨论（互审中——核心四问已表态、产线 v2 草案已就绪并知会〔见「草案就绪知会」节，5 个互审点待审〕；三份契约〔产线 v2↔核心 W20↔W22 Record〕互审收敛后各自冻结）
 author: wt-4（产线角色）
 date: 2026-09-08
 ---
@@ -104,6 +104,34 @@ Recipe/Assembly 侧（W20 计划形状会把「素材来源解析结果」作为
 2. C# 侧实现（BridgeCommandProcessor 分发扩展＋新操作 Editor 实现）与
    `crates/unity-bridge` 侧执行器；
 3. 真机验证归 W25 冒烟路径批（真机窗口已向操作者预约）。
+
+## 草案就绪知会（产线 → 互审各方，2026-09-08）
+
+v2 草案已落仓库，按核心表态第 3 条时序约定知会即开互审：
+
+- **位置**：`schemas/unity-bridge/v2/`（command.schema.json＋result.schema.json＋
+  examples/ 16 向量）＋消费测试 `crates/unity-bridge/tests/bridge_v2_vectors.rs`
+  （6 测试：正例双 Schema 校验、v1 超集兼容、命令负例×5、结果负例×2、
+  dry-run 诚实区分、计划哈希锚回显）。本机 cargo test --workspace 356 通过
+  0 失败＋clippy 零告警。
+- **设计要点**：v2＝v1 超集（同面升版，v1 操作与字段全保留）；新操作
+  `execute_production_job` / `restore_project`；作业输入＝计划引用三件
+  （planHash 锚＋planSchemaVersion 支持闭集＋planRef），不内联计划字段；
+  实跑（dryRun=false）强制 `expectedProjectFingerprint`（v1 变更操作纪律
+  复刻并扩展到新操作）；收据顶层回显 operation；dry-run 收据与实跑同
+  Schema 以显式 `dryRun` 字段区分（诚实纪律）。
+- **互审点清单（请重点审）**：
+  1. `planSchemaVersion` 支持闭集现为 `["0.3"]`——与 W20 计划 Schema 的版本
+     字符串对齐（W20 设计稿确认后如形状有变只改此枚举）；
+  2. `planRef` 引用形态现为 string——路径/ID 形态随 W20 计划 Schema 定；
+  3. `steps[].kind` 现为开放 string——词表归计划 Schema（W20）；互审决定
+     冻结版是否收窄为枚举引用；
+  4. **rejected 收据语义（草案阶段发现）**：计划版本不支持的拒绝收据未执行
+     任何变更，不携带快照/前置指纹——「快照＋前置指纹」是「执行了变更」的
+     证据而非「dryRun=false」的证据；Schema 条件按
+     `status ∈ {succeeded, failed}` 收窄，rejected 豁免。请确认此语义。
+  5. `restore_project` 实跑同样强制 `expectedProjectFingerprint`（乐观锁
+     扩展到恢复操作）——请确认符合任务面对恢复的预期。
 
 ## 表态（核心，2026-09-08）
 
