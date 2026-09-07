@@ -1575,8 +1575,21 @@ fn ph_012_crashed_lease_recovers_through_the_decision_path() {
     assert_eq!(bridge.commands.lock().unwrap().len(), 3, "continue re-runs after takeover");
 
     // The lease now belongs to the live run and is released on completion.
+    // The worker persists the terminal state BEFORE releasing the mutation
+    // gate (safe_to_stop ordering in provider_host.rs), and the release
+    // performs marker/lock file I/O before the SQLite delete — so a visible
+    // terminal state does not yet imply a released lease. Poll for the
+    // release instead of asserting it at first sight of the terminal state
+    // (CI ph_012, 2026-09-07: under 2-core load this read won the race).
     let identity = vua_orchestrator::ProjectIdentity::from_existing_path(&project_root).unwrap();
-    assert!(store.project_lease(&identity).unwrap().is_none(), "lease released after success");
+    let deadline = Instant::now() + Duration::from_secs(15);
+    loop {
+        if store.project_lease(&identity).unwrap().is_none() {
+            break;
+        }
+        assert!(Instant::now() < deadline, "lease released after success");
+        std::thread::sleep(Duration::from_millis(20));
+    }
 
     let _ = fs::remove_dir_all(&base);
 }
