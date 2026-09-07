@@ -56,7 +56,7 @@ Unknown format, lock, or capability means read-only inspection, conversion advic
 ## Build Record
 
 Each production run retains an immutable record linking the Recipe version and fingerprint, resolved
-  local assets and provenance, Unity/VPM package/tool versions, ProjectSpec, approved plan, initial/final project
+local assets and provenance, Unity/VPM package/tool versions, ProjectSpec, approved plan, initial/final project
 fingerprints, Bridge requests/results/warnings/inspection summary, and snapshots/recovery points. Its
 content is limited to reproducibility metadata and excludes session secrets, upload identity, and
 redistribution-restricted asset contents.
