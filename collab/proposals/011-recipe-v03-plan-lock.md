@@ -213,6 +213,65 @@ resolve 任务 Done → 工作台呈现解析摘要（目标、逐素材来源�
    证据条目模型的形状意向（evidenceId/kind 闭集/subject/…/evidenceIds 引用
    不复制）已由数据给出，W23 冻结时定 Schema＋向量＋消费测试。
 
+## 执行语义规格（核心，2026-09-08——回应产线 W21 执行内核接线前置请求；四计划 kind）
+
+四个计划 kind 的 Unity 执行语义（C# 执行内核实现规格）。词汇来源＝Recipe v0.2
+relations 操作集投影（011 §4）；每 kind 定型：输入字段（inputs 定型，含勘误补
+充）、Unity 行为、成功判定、失败判定。**与 v1 桥操作的映射**：material 线已
+真机验证的操作（import_unity_package/materialize_extracted_package/
+identify_assets/validate_asset_paths）为来源物进入项目的复用基座；四 kind 的
+编排语义是 v2 C# 新实现（产线诚实缺口的正主）。
+
+### kind 1: install_modular_asset（安装模组化素材）
+
+- **inputs（定型）**：`assetId`（Recipe 素材实例标识）＋`resolvedSource`
+  （必带，Local Resolution 结论：sourceKind/artifactSha256/warehouseItemId）；
+- **Unity 行为**：按 resolvedSource 取来源物——original 件（.unitypackage）走
+  `import_unity_package`→`materialize_extracted_package` 基座（v1 已真机验证）；
+  generated_vpm 副本走已物化副本路径（VPM 包内容直接可用）；来源物内容进入
+  项目后，实例化到目标 Avatar 实例之下（按 Recipe 的 instance 定义）；
+- **成功判定**：素材内容落项目（文件系统事实）＋实例根对象存在（收据携带实例
+  GlobalObjectId——BridgeData 增量字段，产线第一刀已预留）；
+- **失败判定**：来源物缺失/哈希不符（与 planHash 同级的来源完整性校验）/
+  导入错误/实例化失败——类型化失败，error code 闭集进 v2。
+
+### kind 2: attach_to_bone（挂载到人形骨骼）
+
+- **inputs（定型，勘误补充 localTransform）**：`selectorId`（挂载对象选择器）
+  ＋`bone`（humanoidBone 25 词闭集，v0.2 沿用）＋`localTransform`
+  （{position, rotation quaternion, scale}——挂载相对骨骼的局部变换；缺省
+  不允许，Recipe relations 侧为 required，计划投影如实携带）；
+- **Unity 行为**：解析 selectorId 到已实例化对象→定位 Avatar 人形骨骼
+  （Animator humanoid mapping）→建立父子关系→应用 localTransform；
+- **成功判定**：父子关系建立＋局部变换生效；
+- **失败判定**：挂载对象不存在（selector 无解）/骨骼不在 humanoid 映射/
+  Avatar 无 Animator。
+
+### kind 3: exclude_object（排除对象）
+
+- **inputs（定型，勘误补充 selector 两形态）**：`selector`（objectSelector
+  v0.2 形态：`selectorId`＋（`catalogEntryId` 或 `pathHint[]` 任一——anyOf））
+  ＋`targetInstanceId`（目标实例，排除动作的作用域）；
+- **Unity 行为**：解析 selector 定位对象→给对象写 VRChat 排除标记
+  （VRCMetaObject / offence-excluded 形态，构建时被排除）；
+- **成功判定**：排除标记存在（对象仍在场景，构建侧被排除）；
+- **失败判定**：selector 无解（catalog 无此条目且 pathHint 无命中）。
+
+### kind 4: set_object_active（设置对象激活态）
+
+- **inputs（定型）**：`selector`（同 kind 3 形态）＋`active`（boolean 目标态）；
+- **Unity 行为**：解析 selector→设置 GameObject.SetActive(active)；
+- **成功判定**：激活态与目标一致（activeSelf 事实）；
+- **失败判定**：selector 无解。
+
+### inputs 勘误补充（approved-plan.schema.json，随本规格同批）
+
+011 冻结的 `jobs[].inputs` 字段集不完备（attach 缺 localTransform、exclude/
+set_active 缺 selector 的 catalog/path 形态）——实现未消费前的冻结勘误，按
+产线 v2 草案互审修订先例同批补齐：`inputs.properties` 增 `localTransform`、
+`selector`（结构化两形态），既有字段不变（正例向量仍有效）；增补向量
+（attach 带 transform、exclude 带 pathHint 的正例）。
+
 ## 表态（产线，2026-09-08）
 
 **§4 互审：通过**（对照 `schemas/unity-bridge/v2/` 草案〔009 载体，随本表态同批
