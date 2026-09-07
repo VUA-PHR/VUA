@@ -2,9 +2,9 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.1.1
+> Document version: 1.2.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.1.1)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.2.0)
 > Scope: Entire VUA product
 > Updated: 2026-09-08
 > Normative effect: Yes
@@ -33,8 +33,11 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    local catalog, terms, compatibility, source, search, and mapping module.
 4. **Environment deployment:** prerequisite detection, guided deployment, and bounded recovery for
    hardware, VR, Unity, VRChat, and related tools without which play or Avatar production is blocked.
-5. **Project management:** VUA's `vrc-get`-based package manager plus capability-aware compatibility
-   with ALCOM-managed and VCC-managed projects.
+5. **Project management:** VUA's `vrc-get`-based package manager; **read-only compatibility**
+   with ALCOM/VCC-managed projects, whose only write path is the user-initiated "import as a
+   VUA-managed copy" (user ruling U3, 2026-09-08; allow/deny lists, copy spec, and tightening
+   clause under Explicit boundaries; write capability against original projects is uniformly
+   false within the `1.0.x` boundary).
 6. **Unity Bridge:** a versioned deterministic protocol whose production target is exactly global
    Unity `2022.3.22f1`; historical editor projects enter through the documented migration boundary.
 7. **Desktop overlay:** guidance, status, and runtime information through stable application
@@ -97,6 +100,24 @@ gate derives risk from declared capabilities and behavior.
   sole production target. `2019.4.31f1` and `2022.3.6f1` are migration sources. Other Unity versions
   report their exact difference from the production target while project files remain unchanged;
   Tuanjie Engine is currently unsupported.
+- **ALCOM/VCC project compatibility (user ruling U3, 2026-09-08, after third-party arbitration
+  review):** read-only against ALCOM/VCC-managed original projects. **Allowed:** discovery and
+  identification; reading version/package/SDK/compatibility/environment state; generating
+  diagnostics, plans, and handling suggestions; handing write operations off to the owning
+  manager; "import as a VUA-managed copy" after explicit user choice. **Denied:** installing or
+  removing packages inside the original project; modifying its manifest, project configuration,
+  assets, or `.vua` job files; writing ALCOM/VCC registries, databases, settings, or caches;
+  silently relabeling the original project as VUA-managed. **"Import as a VUA-managed copy"
+  spec:** new project path + new project identity; estimated disk usage shown up front; no
+  copying of regenerable directories or legacy task state; re-Inspect after import (the original
+  project's confirmations/snapshots are not inherited); the source relationship is kept so the
+  user can go back. **Rationale:** VUA's project lock coordinates VUA instances only — ALCOM/VCC
+  do not honor it, so "allow writes + warn about conflicts" would promise a safety that does not
+  exist; both sides understanding the VPM format does not mean they share compatible transaction
+  and recovery mechanics. **Tightening clause:** within the `1.0.x` boundary, write capability
+  against ALCOM/VCC-managed projects is uniformly false; it may only be opened later through a
+  **new user ruling** once the upstream offers verifiable transactions/locks/a supported write
+  interface — warnings alone are not sufficient.
 - Every optionally bundled component requires an individual license, redistribution, update, and
   signature review.
 - EAC process termination is an experimental high-risk recovery action, disabled by default and
@@ -118,6 +139,19 @@ remain release-engineering decisions.
 
 ## Document changelog
 
+- 1.2.0 (2026-09-08): U3 user ruling landed in the boundary (after third-party arbitration
+  review) — project-management item 5 becomes read-only compatibility with ALCOM/VCC-managed
+  projects plus the single write path "import as a VUA-managed copy"; a new Explicit-boundaries
+  clause adds the allow list (discovery/identification, reading version/package/SDK/
+  compatibility/environment state, diagnostics/plans/suggestions, write handoff, copy import),
+  the deny list (install/remove packages in the original project, modifying manifest/
+  configuration/assets/`.vua` job files, writing ALCOM/VCC registries/databases/settings/caches,
+  silent relabeling), the five-point copy-import spec (new path+identity, upfront disk estimate,
+  no copying of regenerable directories or legacy task state, re-Inspect without inheriting
+  confirmations/snapshots, source relationship kept), the rationale (VUA's project lock
+  coordinates VUA instances only; cross-tool locking is not feasible; "allow writes + warn" is
+  not a real guarantee), and the tightening clause (write capability uniformly false in `1.0.x`;
+  future opening only via a new user ruling). Mirrors the ZH edition.
 - 1.1.1 (2026-09-08): terminology fix (hard user ruling, 2026-09-08) — VPM = VRChat Package
   Manager (the manager), VPM package = the managed package; in the item-3 material-entry
   semantics, "generate VPM as a replacement" and "VPM generation results" became "generate a

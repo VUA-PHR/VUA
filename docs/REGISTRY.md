@@ -10,7 +10,7 @@
 | 路径 | 文档版本 | 状态 | 维护方 | 最近复核 |
 | --- | --- | --- | --- | --- |
 | AGENTS.md | 1.1.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/product-boundary_ZH.md | 1.1.0 | 已接受 | 集成 | 2026-09-07 |
+| docs/product-boundary_ZH.md | 1.2.0 | 已接受 | 集成 | 2026-09-08 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
