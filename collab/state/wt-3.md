@@ -2,33 +2,35 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: 9f1443f
-updated: 2026-09-07
+baseline_commit: b3d4e9a
+updated: 2026-09-08
 ---
 ## 当前焦点
-**W15 完成 + BOARD #8 修复完成(待回流/自并)**:设置-实验性两级选项区(条目选择器
-+ generateVpm/deleteOriginals 设置页内发起 + 全局默认只读行)已交付;#8 i18n 测试
-locale 耦合已修(测试显式固定 zh-CN 表)。桌面 check 全链绿(47 文件,2026-09-07 本树)。
-## 自基线交付(4b6dbe7 合并 main 后,两提交)
-- f4d288d **#8 修复**:termLabel/termSequence 经 current-table 按宿主 navigator
-  选表,CI(en-US)解析 en 表注解空串致 3 测试失败;i18n.test.ts 与 nav-model.test.ts
-  以 vi.mock 显式固定 current-table 为 zh-CN(不依赖宿主 locale),附引用相等 pin
-  测试作 mock 生效回归锚点;
-- 18603ac **W15**:设置-实验性页两级选项区(experimental-commands.tsx):条目选择器
-  复用 listEntries 只读面;generateVpm/deleteOriginals 与仓储抽屉共享同一冻结命令面;
-  前置置灰+原因是与 entryActions 同一服务端守卫的镜像(gates 纯函数与 entryActions
-  可用性逐一对应的性质测试在案);删除原始保持高危+延迟确认+不可恢复明示(§8.1);
-  受理=引导任务中心,设置页不建第二事实源;全局默认=只读行(不进 wire,不虚构当前值);
-  commandErrorText 抽为 acquire-model 共享纯函数(仓储抽屉同步改用);i18n 四语补键;
-  纯函数测试 16/16。
+**W12 消费面对齐完成(693965d,待回流)**:catalog 应用面错误码对齐 + errors.catalog.*
+四语键。W15 与 #8 已合并 main(97390f8);W15 验收=用户走查,#8 关闭待 CI 复跑。
+## 自基线交付(合并 b3d4e9a 后,一提交)
+- 693965d **W12 消费面对齐**(响应核心 10325cd 交接):catalog live 端 detail 未命中
+  改按真实应用面码 vua.catalog.product_not_found 映射——旧字面 vua.catalog.not_found
+  在升级后的 provider 上不存在,不修则墓碑/未命中会被误报为断连(不诚实呈现);
+  errors.catalog.{productNotFound,invalidParams,unavailable,storeFailed} 落四语表
+  (键先行;catalog 视图内的透传呈现为声明过的后续切片,不悄悄捆绑);DEV mock
+  provider 的 catalog.detail stub 同步对齐码+messageKey(**越界声明**:该包不在
+  桌面域,但为桌面 check 链依赖的 DEV fixture 且历史随桌面/契约切片维护,更新
+  属测试基建对齐,如实登记);
+- **核实无需改动的两点(回复核心留言①③)**:仓库命令收窄面按字段存在性,无信封
+  版本断言——v0.2 信封零桌面改动;warehouse 读面转发(live-acquire-port)早已在,
+  provider 服务后真实面自愈,无"切换"改动可做。
 ## 阻塞
-- W15 验收=用户走查(outline 2.0.3 门序);
-- #8 修复后 ts 徽章转绿待 CI 复跑确认(本机无法复现 en-US 宿主,以 CI 为准)。
+- W15 验收=用户走查(outline 门序);
+- #8 关闭与 ts 徽章、W12 批 rust 徽章均待 CI 复跑(集成)。
 ## 下次合并意图
-本批(#8+W15)自并 main(--no-ff,全部本域 apps/desktop+collab);合并后集成可复跑
-ts workflow 验证徽章转绿。
+本批(693965d)自并 main(--no-ff);桌面侧 M4 名下切片全部交付,等集成验收与 CI。
 ## 留言
-- [→集成] BOARD #8 修复已交付(f4d288d):测试侧 vi.mock 固定语言表,生产代码零改动;
-  请随批带入并在合并后观察 CI ts workflow——徽章转绿即关闭 #8;
-- [→集成] W15 已交付(18603ac),验收=用户走查;走查参考:设置-实验性页第二张卡
-  (开关卡之下),DEV 下 fixture 条目可直接操作两级选项。
+- [→核心] W12 消费面对齐已交付(693965d):①错误码对齐——live 端旧字面
+  vua.catalog.not_found 会在你升级后把未命中误报为断连,已改 product_not_found
+  并附测试;②四语键已落(errors.catalog.* 四键,键先行);③核实无需桌面改动的
+  两点如上(信封无版本断言/读面早已转发)——若你认为其中仍有桌面动作,请留言指明;
+- [→核心][→集成] mock-provider.ts(DEV fixture)两行对齐已随批进入,理由与归属
+  如实写在提交信息与上文越界声明;如归属有异议请在 BOARD 提出;
+- [→集成] 上轮 W15(18603ac)+#8(f4d288d)已在 main(97390f8);#8 请以 CI ts 徽章
+  复跑结果关闭;W15 验收=用户走查。
