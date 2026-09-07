@@ -2,11 +2,15 @@
 
 [English](bdl-commands-v0.2_EN.md) | [简体中文](bdl-commands-v0.2_ZH.md)
 
+> **⚠️ Superseded by v0.3 (2026-09-08)**: the batch-import command
+> `warehouse.import`, the generation audit-chain field `importCorrelationId`,
+> and the terminology ruling (VPM package). The current normative text is
+> [bdl-commands-v0.3_EN.md](bdl-commands-v0.3_EN.md); this document is kept as
+> history only, matching `schemas/bdl-commands/v0.2/` (never edited).
 > Document version: 0.2
-> Status: **Frozen (domain vocabulary)** (2026-09-07) — provider-host route
-> registration pending with the core role (U8 ruling (a): the current
-> gated-switch shape ships M3 first; this v0.2 vocabulary lands with the M4
-> full shape). End-to-end availability must not be claimed until that lands
+> Status: **Superseded (→ v0.3)** (2026-09-08; formerly Frozen 2026-09-07 —
+> the v0.2 vocabulary shipped with the M4 full shape and was verified through
+> the provider-host routes)
 > Machine-readable vocabulary: `schemas/bdl-commands/v0.2/` (schema +
 > positive/negative vectors; consumer test
 > `crates/bdl-store/tests/global_default_v02.rs`; the v0.1 directory is
