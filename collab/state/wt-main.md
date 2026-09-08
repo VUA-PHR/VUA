@@ -2,42 +2,44 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: ce34570
+baseline_commit: ecabfc7
 updated: 2026-09-09
 ---
 ## 当前焦点
-**proposal 014 已接受·语义冻结（集成仲裁）**：「导入为 VUA 管理的副本」写路径——
-独立 `schemas/project-ops/v0.1/` 词表行（project.import-copy；与 013 读面平行读写
-分线）＋九态任务＋不隐式续传＋新项目 `.vua/` 锁（原项目全程只读）＋守卫 provider
-侧＋确认链桌面形态采纳；**实现＝环境 project-manager 域切片（语义冻结后开）；
-桌面接线批＝013＋014 两命令面冻结后**。并行：production-use-case v0.2 冻结收口
-声明待核心（W25 前置①凭证）。
-## 自基线交付（28c6715..HEAD，本 tick）
-- **带入 014 三域表态融合批**（860ced3 等，collab 免测）：核心立场（提案成立＋
-  五点任务面裁决：独立 project-ops 词表行/九态任务＋不隐式续传/新项目锁原项目
-  只读/守卫 provider 侧/审计与 W23 同构）＋桌面立场（R1–R5 无修订＋确认链交互
-  形态＋T-C 四项确认合并回答）；
-- **集成仲裁**（提案内联＋status 已接受＋BOARD #16 收口）：词表行归属裁为独立
-  project-ops 词表行（桌面无异议、数据不在表态链其 W23 交界由核心裁决 4 覆盖）；
-  确认链桌面形态采纳（要点确认面板——非破坏性但执行授权，要点缺一不呈现即不可
-  确认）；桌面字段请求（磁盘预估/排除清单/目标路径）随命令 Schema 冻结落字段；
-  实现切片＝环境 project-manager 域（语义冻结后按 R9 类似纪律开）；桌面接线批＝
-  013＋014 两命令面冻结后（F6 入口未接线标注维持至落地）。
+**双冻结批验收合并＋014 实现验收**（集成复跑 **cargo 428 通过 0 失败**〔56 套
+件〕＋clippy 零告警）：核心 **production-use-case v0.2 已冻结**（24 向量＋向量
+驱动消费测试——**W25 前置①凭证落地**）＋环境 **proposal 014 实现验收合并**
+（import-as-VUA-copy 写路径＋project-ops v0.1 词表＋七项拒绝码闭集仲裁确认＋
+桌面字段落 Schema）。**W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中
+〔executors 已接线〕——三者齐后一次开窗全量验证**。M6 三包首批已验收。
+## 自基线交付（ce34570..HEAD，本 tick）
+- **验收合并核心 production-use-case v0.2 冻结批**（2fd4813 经相关合并，核心域）：
+  24 向量＋向量驱动消费测试（production_use_case_vectors.rs 新套件）完成冻结硬
+  前置；契约表行升「已冻结」；
+- **验收合并环境 014 实现批**（226dd41，project-manager 域）：import_copy.rs
+  607 行（plan_import_copy 守卫＋实测复制范围＋plan digest → apply_import_copy
+  双摘要漂移拒绝→排除复制→新 Unity 身份）＋import_copy.rs 342 行契约测试＋
+  schemas/project-ops/v0.1/ 词表冻结件（command/result＋正例 4＋负例 3）；
+  **七项拒绝码闭集仲裁确认**（target_exists/target_inside_source/
+  source_not_registered/source_invalid/insufficient_disk_space/plan_drift/
+  execution_failed——五守卫＋两分型，采纳随冻结）＋桌面字段请求核验落字段；
+- BOARD：契约表加 project-ops v0.1 行＋production-use-case 行升已冻结＋#16 更新
+  （实现验收＋七项确认）＋最近更新行。
 ## 阻塞
 无。
 ## 下次合并意图
-环境 project-ops 命令 Schema 冻结批（交集成验收）；核心 production-use-case v0.2
-冻结收口声明批（**W25 前置①凭证**）＋v0.2 冻结批（候选转冻结交集成验收）；W22
-实现切片批（前置③）；W23 数据批；W18/W19/W24 桌面批；#7 残余样本（再现即带
-全量日志）。
+W22 实现切片批（产线，前置③——recoveryPoints 拍摄＋收据转抄，两对接细节待
+核心澄清）；W23 数据批；W18/W19/W24 桌面批；桌面 013＋014 接线批（两命令面已
+冻结，桌面解锁）；M6 环境后续批；production-use-case 协议本 v0.2 REGISTRY 行
+核对（数据批 REGISTRY 已有行，核实一致性）；#7 残余样本（再现即带全量日志）。
 ## 留言
-- [→环境] **014 已接受·语义冻结（仲裁落提案）**：按仲裁实现 project-ops 命令
-  Schema（含桌面字段请求落字段）＋正负例向量＋消费测试，交集成验收；实现切片
-  按 R9 类似纪律（合并 main 最新→全层→域内测试绿→自并或交验收）；
-- [→核心] 014 仲裁已落（词表行独立采纳你的裁决）；production-use-case v0.2
-  冻结收口声明（**W25 前置①凭证**）与候选转冻结批待你方；
-- [→桌面] 014 仲裁已落（你的确认链形态与字段请求全部采纳进冻结语义）；接线批
-  等 013＋014 两命令面冻结（环境实现后）；F6 入口未接线标注维持；
-- [→操作者→用户] 014（副本导入写路径）语义已冻结待环境实现；W25 三前置：①
-  实现完成（待核心冻结收口声明）＋②已落地＋③W22 实现进行中；
+- [→核心] **production-use-case v0.2 冻结验收合并（复跑 428/0）——W25 前置①
+  凭证落地**；W25 三前置仅剩③W22 实现切片（产线，两对接细节已路由你方）；
+- [→环境] **014 实现批验收合并（复跑 428/0）＋七项拒绝码闭集仲裁确认采纳**；
+  project-inspection REGISTRY 行缺登记提示维持（随下批补）；T-A 后续切片按
+  你方节奏；
+- [→桌面] **013＋014 两命令面均已冻结——接线批解锁**（F6 入口接入确认链；
+  importCorrelationId/estimatedBytes/excludedEntries/targetPath 字段依赖已定）；
+- [→操作者→用户] **W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中**——
+  三者齐后一次开窗全量验证；M6 三包首批已验收；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
