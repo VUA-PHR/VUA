@@ -1,5 +1,6 @@
 //! Warehouse command face wire tests (proposal 005 + 010; bdl-commands
-//! v0.3 — the trio, the global default, and the M5 batch import).
+//! v0.3 — the trio, the global default, the M5 batch import, and the
+//! recipe/plan document face).
 //!
 //! The host consumes the data-side frozen vectors from
 //! `schemas/bdl-commands/v0.2/examples` through the real frame loop:
@@ -22,6 +23,7 @@ use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 use vua_bdl_store::{ArtifactMode, BdlStore};
+use vua_orchestrator::{ResultStatus, UnityBridge, UnityCommand, UnityResult};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn command_dir() -> PathBuf {
@@ -474,6 +476,45 @@ fn import_negative_vectors_are_params_violations() {
 
 // --- W20 production-use-case v0.2 first cut: the recipe document face ---
 
+/// A Bridge stub whose v2 receipt carries one executed step (the honest
+/// shape the Build Record v0.3 transposition consumes).
+struct NoBridge;
+
+impl UnityBridge for NoBridge {
+    fn execute(
+        &self,
+        _project: &vua_orchestrator::ProjectRef,
+        command: &UnityCommand,
+    ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
+        Ok(UnityResult {
+            schema_version: 2,
+            command_id: command.command_id.clone(),
+            status: ResultStatus::Succeeded,
+            changed_paths: vec![],
+            diagnostics: vec![],
+            data: serde_json::json!({
+                "projectFingerprint": "fp-plan",
+                "planHash": command.payload.plan_hash,
+                "dryRun": command.dry_run,
+                "steps": [{
+                    "kind": command
+                        .payload
+                        .plan_ref
+                        .clone()
+                        .unwrap_or_default(),
+                    "status": "executed"
+                }]
+            }),
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: None,
+            restored_from: None,
+            project_fingerprint_before: None,
+        })
+    }
+}
+
+
 fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Value) -> Vec<Value> {
     let frame = json!({
         "frameVersion": "0.1",
@@ -490,6 +531,8 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
     });
     let use_cases = {
         let production_root = world.base.join("production");
+        let bridge: std::sync::Arc<dyn vua_orchestrator::UnityBridge> =
+            std::sync::Arc::new(NoBridge);
         vua_provider_host::ProductionUseCaseConfig {
             recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
                 ::new_with_system_clock(production_root.join("recipes"))),
@@ -499,6 +542,8 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
                 ::new(production_root.join("evidence"))),
             records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
                 ::new(production_root.join("records"))),
+            bridge,
+            project_root: world.base.join("project"),
         }
     };
     let mut output = Vec::new();
@@ -706,6 +751,8 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
             ::new(production_root.join("evidence"))),
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
+        bridge: std::sync::Arc::new(NoBridge),
+        project_root: world.base.join("project"),
     }
 }
 
@@ -910,6 +957,8 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
             ::new(production_root.join("evidence"))),
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
+        bridge: std::sync::Arc::new(NoBridge),
+        project_root: world.base.join("project"),
     };
     // The use-case face rides the warehouse wiring (shared task authority
     // and BDL - Local Resolution reads warehouse facts).

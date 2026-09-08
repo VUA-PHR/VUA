@@ -76,7 +76,30 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     });
     // W20 production-use-case command face: the recipe document store lives
     // under the provider data root (AMF production-domain document store).
+    // W20 production-use-case command face (recipe/plan/job/record). The
+    // Bridge the orchestrated jobs execute through reuses the Unity editor
+    // path (VUA_UNITY_EDITOR); the target project root has its own variable.
     let use_cases = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
+        let bridge: std::sync::Arc<dyn vua_orchestrator::UnityBridge> = std::env::var_os(
+            "VUA_UNITY_EDITOR",
+        )
+        .map(|unity| {
+            std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
+                std::path::PathBuf::from(unity),
+            )) as std::sync::Arc<dyn vua_orchestrator::UnityBridge>
+        })
+        .unwrap_or_else(|| {
+            eprintln!("VUA provider: VUA_UNITY_EDITOR unset; job execution stays unavailable");
+            std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
+                std::path::PathBuf::new(),
+            ))
+        });
+        let project_root = std::env::var_os("VUA_PROJECT_ROOT")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                eprintln!("VUA provider: VUA_PROJECT_ROOT unset; job execution stays unavailable");
+                std::path::PathBuf::new()
+            });
         let production_root = std::path::Path::new(&data).join("production");
         vua_provider_host::ProductionUseCaseConfig {
             recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
@@ -87,6 +110,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ::new(production_root.join("evidence"))),
             records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
                 ::new(production_root.join("records"))),
+            bridge,
+            project_root,
         }
     });
     let input = stdin_reader();
