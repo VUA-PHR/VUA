@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.import-copy",
+  "params": {
+    "phase": "plan",
+    "sourcePath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "targetParentDirectory": "D:\\VUA Projects",
+    "targetProjectName": "Wrong Word List"
+  }
+}
