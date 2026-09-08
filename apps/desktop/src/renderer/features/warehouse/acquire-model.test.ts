@@ -315,3 +315,29 @@ test("inferGlobalDefaultMode: 无覆盖条目的生效模式即全局默认;不�
   // 空仓库:不可知
   assert.deepEqual(inferGlobalDefaultMode([]), { kind: "unknown" });
 });
+
+/* ---- W19 008 路径 a 接线:生成副本出现检测 ---- */
+
+import { generatedVpmEntryIds, newlyGeneratedEntryIds } from "./acquire-model.ts";
+
+test("generatedVpmEntryIds: 仅收集持有生成副本的条目身份", () => {
+  const ids = generatedVpmEntryIds([
+    withArtifacts({ warehouseItemId: "whentry-ga", effectiveArtifactMode: "generate_vpm" }, ["original"]),
+    withArtifacts({ warehouseItemId: "whentry-gb", effectiveArtifactMode: "generate_vpm" }, ["original", "generated_vpm"]),
+  ]);
+  assert.deepEqual([...ids].sort(), ["whentry-gb"]);
+});
+
+test("newlyGeneratedEntryIds: 只报两次快照之间新完成生成的条目", () => {
+  const before = generatedVpmEntryIds([
+    withArtifacts({ warehouseItemId: "whentry-n1" }, ["original", "generated_vpm"]),
+  ]);
+  const after = [
+    withArtifacts({ warehouseItemId: "whentry-n1" }, ["original", "generated_vpm"]),
+    withArtifacts({ warehouseItemId: "whentry-n2" }, ["original", "generated_vpm"]),
+  ];
+  assert.deepEqual(newlyGeneratedEntryIds(before, after), ["whentry-n2"]);
+  // 再一轮:无新增
+  const mid = generatedVpmEntryIds(after);
+  assert.deepEqual(newlyGeneratedEntryIds(mid, after), []);
+});

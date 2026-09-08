@@ -149,6 +149,24 @@ export function createFixtureWarehouseCommands(
       fixtureGlobalDefault = mode;
       return Promise.resolve({ ok: true, global: { globalDefaultMode: mode } });
     },
+    // W19 批量导入(bdl-commands v0.3,演示):逐 folder 落成条目并受理任务
+    importFolders: (sourceFolders) => {
+      const folders = [...sourceFolders].map((raw) => raw.trimEnd().replace(/[\/]+$/, ""));
+      if (folders.length === 0) {
+        return Promise.resolve(applicationError(
+          "vua.warehouse.invalid_params",
+          "errors.warehouse.invalidParams",
+        ));
+      }
+      const taskId = `task-wh-import-${Date.now()}`;
+      const correlationId = `corr-${taskId}`;
+      linkTask(taskId, taskTitles.importBatch);
+      setTimeout(() => {
+        for (const folder of folders) store.addImportedEntry(folder.split(/[\/]/).pop() ?? folder);
+        completeTask(taskId);
+      }, SETTLE_MS);
+      return Promise.resolve({ ok: true, accepted: { taskId, correlationId } });
+    },
 
     capability: () => Promise.resolve({ state: "ready" }),
   };

@@ -583,6 +583,12 @@ export interface WarehouseSetArtifactModeResultV01 {
 export interface WarehouseSetGlobalDefaultModeResultV02 {
   readonly globalDefaultMode: WarehouseArtifactModeV03;
 }
+/** warehouse.import 的受理载荷(bdl-commands v0.3,W19):folder 批导入任务
+ *  受理;逐 folder 进度与条目落成经任务面/读面,受理即任务身份 */
+export interface WarehouseImportAcceptedV03 {
+  readonly taskId: string;
+  readonly correlationId: string;
+}
 
 /** 任务化维护命令的受理载荷(generateVpm / deleteOriginals 共用) */
 export interface WarehouseMaintenanceAcceptedV01 {
@@ -642,6 +648,15 @@ export interface WarehouseSetGlobalDefaultModeCommandV02 extends ApplicationRequ
   readonly commandId: string;
   readonly params: { readonly mode: WarehouseArtifactModeV03 };
 }
+/** warehouse.import 批量导入命令(bdl-commands v0.3,W19):folder 批一次提交;
+ *  非空数组、绝对路径语义由服务端裁决;导入编排内的自动生成挂点在任务内
+ *  (010 路径 A) */
+export interface WarehouseImportCommandV03 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.import";
+  readonly commandId: string;
+  readonly params: { readonly sourceFolders: readonly string[] };
+}
 
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
@@ -666,6 +681,7 @@ export type ApplicationRequestV01 =
   | DownloadRetryCommandV03
   | WarehouseSetArtifactModeCommandV01
   | WarehouseSetGlobalDefaultModeCommandV02
+  | WarehouseImportCommandV03
   | WarehouseGenerateVpmCommandV01
   | WarehouseDeleteOriginalsCommandV01;
 
@@ -754,6 +770,7 @@ export type ApplicationSuccessValueV01 =
   | WarehouseEntryDetailResultV03
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
+  | WarehouseImportAcceptedV03
   | WarehouseMaintenanceAcceptedV01;
 
 export type ApplicationResponseV01 =
@@ -1050,6 +1067,16 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && hasExactKeys(value.params, ["mode"])
       && (value.params.mode === "use_original_unitypackage"
         || value.params.mode === "generate_vpm");
+  }
+  // bdl-commands v0.3 导入(W19):params 闭集 = sourceFolders,非空字符串数组
+  if (value.kind === "command" && value.method === "warehouse.import") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["sourceFolders"])
+      && Array.isArray(value.params.sourceFolders)
+      && value.params.sourceFolders.length > 0
+      && value.params.sourceFolders.every(
+        (folder: unknown) => typeof folder === "string" && folder.length > 0);
   }
   return false;
 }

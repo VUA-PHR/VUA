@@ -101,6 +101,7 @@ export const strings: Strings = {
     warehouseScan: "仓库素材扫描",
     generateVpm: "生成 VPM 包:{name}",
     deleteOriginals: "删除原始素材:{name}",
+    importBatch: "批量导入素材包",
   },
   taskCenter: {
     title: "通知中心",
@@ -893,6 +894,15 @@ rolled_back: "已回滚",
         vua_warehouse_maintenanceIoFailed: "维护操作遇到文件系统故障,可重试。",
         fallback: "操作未能完成。",
       },
+      importTitle: "导入素材包",
+      importPick: "选择文件夹",
+      importConfirmTitle: "确认导入以下文件夹",
+      importConfirmDesc: "每个文件夹将作为一个素材包条目导入仓库;导入完成后条目出现在本页。",
+      importAccepted: "已受理:导入任务已进入任务中心,完成后条目将出现在本页。",
+      importConfirmCta: "确认导入",
+      importCancel: "取消",
+      importRemove: "移除",
+      importEmptySelection: "未选择任何文件夹。",
       detailLoadFailed: "条目详情加载失败。",
       detailNotFound: "未找到该条目。它可能已被移除,或本地数据需要更新。",
       neverRunNote: "压缩包内的可执行内容绝不会被自动运行;已隔离素材不能被{recipe}引用。",
@@ -1372,9 +1382,8 @@ rolled_back: "已回滚",
   settings: {
     /** 实验性功能页(W15 重做形态,用户走查示意图 A/B):单卡=标题+副题+警示条
      *  +两行开关。行1「生成 VPM 包替代」=全局默认模式写面(bdl-commands v0.2 全局层
-     *  setGlobalDefaultMode);行2「生成后删除原始素材文件」=危险开关,未接线偏好
-     *  (全局自动删除超出已冻结条目级命令,协议面随 proposal 008 裁决),开启必经
-     *  危险确认对话框,恒挂未接线标注 */
+     *  setGlobalDefaultMode);行2「生成后删除原始素材文件」=危险开关,008 路径 a 接线(生成完成→逐条目
+     *  独立删除任务),开启必经危险确认对话框 */
     experimental: {
       title: "实验性功能",
       subtitle: "默认关闭,使用前请仔细阅读说明",
@@ -1383,11 +1392,9 @@ rolled_back: "已回滚",
       generateTitle: "生成 VPM 包替代",
       generateDesc: "素材导入时自动生成 VPM 包,替代原始 UnityPackage(实验性)。",
       globalReadUnknown: "当前全局默认值尚未读取;切换一次后以服务端回执为准。",
-      generateNotWired: "素材导入时的自动生成尚未接线:当前版本中,生成仍需在仓储条目中手动发起(发起后条目进入任务中心)。",
       deleteTitle: "生成后删除原始素材文件",
       deleteBadge: "危险",
       deleteDesc: "VPM 生成完成后删除原始 .unitypackage 文件。此操作不可逆,仅可在已确认生成质量后启用。需要「生成 VPM 包替代」先开启。",
-      notWired: "该功能尚未接线到服务端,开启仅记录意图(协议面随 proposal 008 裁决后实现)。",
       devPrototypeNote: "本原型不会真正删除任何文件。",
       dialogTitle: "危险操作确认",
       dialogBodyA: "启用「生成后删除原始素材文件」后,VPM 生成完成时将",

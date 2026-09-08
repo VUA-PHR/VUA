@@ -194,3 +194,32 @@ export function inferGlobalDefaultMode(
     ? { kind: "unknown" }
     : { kind: "known", mode: probe.effectiveArtifactMode };
 }
+
+/** 条目当前持有生成副本的身份集合(008 路径 a 接线的信号源) */
+export function generatedVpmEntryIds(entries: readonly WarehouseEntry[]): ReadonlySet<string> {
+  const ids = new Set<string>();
+  for (const entry of entries) {
+    if (entry.artifacts.some((artifact) => artifact.role === "generated_vpm")) {
+      ids.add(entry.warehouseItemId);
+    }
+  }
+  return ids;
+}
+
+/**
+ * 新完成生成的条目身份(008 路径 a 桌面接线,W19):当前快照持有生成副本、
+ * 而先前快照没有——即两次快照之间完成了生成。条目事实等价于生成 Done
+ * (任务面快照不携带条目身份,条目读面是域内可得的等价信号);删除的守卫
+ * 与审计仍在服务端,桌面只是发起时机。
+ */
+export function newlyGeneratedEntryIds(
+  previous: ReadonlySet<string>,
+  entries: readonly WarehouseEntry[],
+): readonly string[] {
+  const current = generatedVpmEntryIds(entries);
+  const fresh: string[] = [];
+  for (const id of current) {
+    if (!previous.has(id)) fresh.push(id);
+  }
+  return fresh;
+}

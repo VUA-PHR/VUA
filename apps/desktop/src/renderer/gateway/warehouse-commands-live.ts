@@ -140,6 +140,16 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
       });
       return response.ok ? narrowGlobalDefault(response.value) : outcomeFromClientError(response.error);
     },
+    // W19 批量导入(bdl-commands v0.3):受理即导入任务身份;进度经任务面
+    importFolders: async (sourceFolders) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.import",
+        params: { sourceFolders: [...sourceFolders], commandId: `whcmd-${crypto.randomUUID()}` },
+      });
+      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+    },
     capability: async () => {
       // 能力探测同 live-acquire 先例:读面探针(写面与读面同域,服务缺位时
       // 一并缺位);detailKey 与读取面一致,入口显隐由页面按 §2.6 裁决

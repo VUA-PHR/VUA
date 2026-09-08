@@ -59,6 +59,7 @@ import {
   downloadDiagnostics,
 } from "./features/settings/diagnostics.ts";
 import { ExperimentalCommands } from "./features/settings/experimental-commands.tsx";
+import { useAutoDeleteOriginals } from "./app/delete-originals-auto.ts";
 import { appMeta } from "./app/app-meta.ts";
 import { NavOverflowMenu } from "./app/NavOverflowMenu.tsx";
 import { openExternalUrl } from "./app/open-external.ts";
@@ -567,6 +568,8 @@ function AppShell({
   /** 壳层注入的动作(openPalette/navigate 由 AppShell 内部补齐,见 pageActions) */
   actions: Omit<PageActions, "openPalette" | "navigate">;
 }) {
+  // 008 路径 a 桌面接线(W19):删除偏好开启时,生成完成即逐条目发起独立删除任务
+  useAutoDeleteOriginals();
   // 主题(C-RESUME 工作区恢复):localStorage 持久化优先,?theme= 仅作走查覆盖
   const [themeOverrideFromUrl] = useState(() => {
     const value = new URLSearchParams(window.location.search).get("theme");
