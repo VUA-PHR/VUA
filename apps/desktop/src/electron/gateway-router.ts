@@ -202,6 +202,52 @@ function toApplicationRequest(
       return { ...base, kind: "command", method: "warehouse.setGlobalDefaultMode", commandId: request.params.commandId, params: { mode: request.params.mode } };
     case "warehouse.import":
       return { ...base, kind: "command", method: "warehouse.import", commandId: request.params.commandId, params: { sourceFolders: [...request.params.sourceFolders] } };
+
+    // production-use-case v0.2(W20 ten-method, W24 workbench): verbatim pass-through
+    case "recipe.save":
+      return {
+        ...base,
+        kind: "command",
+        method: "recipe.save",
+        commandId: `rec-${crypto.randomUUID()}`,
+        params: request.params,
+      };
+    case "recipe.resolve":
+      return {
+        ...base,
+        kind: "command",
+        method: "recipe.resolve",
+        commandId: `res-${crypto.randomUUID()}`,
+        params: request.params,
+      };
+    case "plan.approve":
+      return {
+        ...base,
+        kind: "command",
+        method: "plan.approve",
+        commandId: `apv-${crypto.randomUUID()}`,
+        params: request.params,
+      };
+    case "job.execute":
+      return {
+        ...base,
+        kind: "command",
+        method: "job.execute",
+        commandId: `job-${crypto.randomUUID()}`,
+        params: request.params,
+      };
+    case "recipe.get":
+      return { ...base, kind: "query", method: "recipe.get", params: { recipeId: request.params.recipeId } };
+    case "recipe.list":
+      return { ...base, kind: "query", method: "recipe.list", params: request.params };
+    case "plan.get":
+      return { ...base, kind: "query", method: "plan.get", params: { planId: request.params.planId } };
+    case "plan.list":
+      return { ...base, kind: "query", method: "plan.list", params: request.params };
+    case "record.get":
+      return { ...base, kind: "query", method: "record.get", params: { buildId: request.params.buildId } };
+    case "record.list":
+      return { ...base, kind: "query", method: "record.list", params: request.params };
   }
 }
 

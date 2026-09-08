@@ -658,6 +658,176 @@ export interface WarehouseImportCommandV03 extends ApplicationRequestBaseV01 {
   readonly params: { readonly sourceFolders: readonly string[] };
 }
 
+
+// ---- production-use-case v0.2(W20 十方法冻结件,核心 4849958;W24 工作台消费) ----
+// 命令/读面词表按冻结 Schema 镜像;文档本体(recipe/plan/record)在 TS 面以
+// Record<string, unknown> 承载(UI 内按需窄化,契约面不复制文档 Schema)。
+
+/** production 任务九态(v0.2 冻结枚举) */
+export type ProductionTaskStateV02 =
+  | "queued"
+  | "preparing"
+  | "running"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "inspect_required"
+  | "blocked"
+  | "rejected";
+
+export type PlanStatusV02 = "draft" | "approved" | "superseded";
+
+/** 分页/过滤闭集(011 section 7 收敛决议:catalog.list 先例;词表外 = invalid_params) */
+export interface ProductionListQueryV02 {
+  readonly text?: string;
+  readonly limit?: number;
+  readonly offset?: number;
+}
+
+export interface RecipeSaveCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "recipe.save";
+  readonly commandId: string;
+  readonly params: {
+    /** 整文档提交(011 桌面表态);baseRevision 乐观并发,stale = typed conflict */
+    readonly recipeDocument: Record<string, unknown>;
+    readonly baseRevision: number;
+  };
+}
+
+export interface RecipeSaveResultV02 {
+  readonly recipeId: string;
+  readonly revision: number;
+}
+
+export interface RecipeGetQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "recipe.get";
+  readonly params: { readonly recipeId: string };
+}
+
+export interface RecipeGetResultV02 {
+  readonly recipeId: string;
+  readonly revision: number;
+  readonly recipeDocument: Record<string, unknown>;
+  readonly updatedAt: string;
+}
+
+export interface RecipeListQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "recipe.list";
+  readonly params: ProductionListQueryV02;
+}
+
+export interface RecipeListEntryV02 {
+  readonly recipeId: string;
+  readonly revision: number;
+  readonly title: string;
+  readonly updatedAt: string;
+}
+
+export interface RecipeListResultV02 {
+  readonly total: number;
+  readonly entries: readonly RecipeListEntryV02[];
+}
+
+export interface RecipeResolveCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "recipe.resolve";
+  readonly commandId: string;
+  readonly params: { readonly recipeId: string; readonly revision?: number };
+}
+
+export interface ProductionTaskAcceptedV02 {
+  readonly taskId: string;
+  readonly correlationId: string;
+  readonly state: ProductionTaskStateV02;
+}
+
+export interface PlanApproveCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "plan.approve";
+  readonly commandId: string;
+  readonly params: { readonly planId: string };
+}
+
+export interface PlanApproveResultV02 {
+  readonly planId: string;
+  readonly planStatus: PlanStatusV02;
+}
+
+export interface PlanGetQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "plan.get";
+  readonly params: { readonly planId: string };
+}
+
+export interface PlanGetResultV02 {
+  readonly planId: string;
+  readonly planStatus: PlanStatusV02;
+  readonly planDocument: Record<string, unknown>;
+}
+
+export interface PlanListQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "plan.list";
+  readonly params: ProductionListQueryV02 & { readonly recipeId?: string };
+}
+
+export interface PlanListEntryV02 {
+  readonly planId: string;
+  readonly recipeId: string;
+  readonly status: PlanStatusV02;
+  readonly approvedAt: string;
+}
+
+export interface PlanListResultV02 {
+  readonly total: number;
+  readonly entries: readonly PlanListEntryV02[];
+}
+
+export interface JobExecuteCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "job.execute";
+  readonly commandId: string;
+  readonly params: { readonly planId: string };
+}
+
+export interface JobExecuteResultV02 {
+  readonly taskId: string;
+  readonly correlationId: string;
+  readonly state: ProductionTaskStateV02;
+}
+
+export interface RecordGetQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "record.get";
+  readonly params: { readonly buildId: string };
+}
+
+export interface RecordGetResultV02 {
+  readonly buildId: string;
+  readonly recordDocument: Record<string, unknown>;
+}
+
+export interface RecordListQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "record.list";
+  readonly params: ProductionListQueryV02 & { readonly recipeId?: string };
+}
+
+export interface RecordListEntryV02 {
+  readonly buildId: string;
+  readonly planId: string;
+  readonly status: string;
+  readonly finishedAt: string;
+}
+
+export interface RecordListResultV02 {
+  readonly total: number;
+  readonly entries: readonly RecordListEntryV02[];
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
@@ -677,11 +847,21 @@ export type ApplicationRequestV01 =
   | CatalogStatusQueryV03
   | WarehouseListEntriesQueryV03
   | WarehouseEntryDetailQueryV03
+  | RecipeGetQueryV02
+  | RecipeListQueryV02
+  | PlanGetQueryV02
+  | PlanListQueryV02
+  | RecordGetQueryV02
+  | RecordListQueryV02
   | DownloadIngestCommandV03
   | DownloadRetryCommandV03
   | WarehouseSetArtifactModeCommandV01
   | WarehouseSetGlobalDefaultModeCommandV02
   | WarehouseImportCommandV03
+  | RecipeSaveCommandV02
+  | RecipeResolveCommandV02
+  | PlanApproveCommandV02
+  | JobExecuteCommandV02
   | WarehouseGenerateVpmCommandV01
   | WarehouseDeleteOriginalsCommandV01;
 
@@ -771,6 +951,16 @@ export type ApplicationSuccessValueV01 =
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseImportAcceptedV03
+  | RecipeSaveResultV02
+  | RecipeGetResultV02
+  | RecipeListResultV02
+  | ProductionTaskAcceptedV02
+  | PlanApproveResultV02
+  | PlanGetResultV02
+  | PlanListResultV02
+  | JobExecuteResultV02
+  | RecordGetResultV02
+  | RecordListResultV02
   | WarehouseMaintenanceAcceptedV01;
 
 export type ApplicationResponseV01 =
@@ -1078,5 +1268,55 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && value.params.sourceFolders.every(
         (folder: unknown) => typeof folder === "string" && folder.length > 0);
   }
+  // production-use-case v0.2(W20 ten-method freeze): required-key closed sets
+  if (value.kind === "command" && value.method === "recipe.save") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["recipeDocument", "baseRevision"])
+      && typeof value.params.baseRevision === "number"
+      && typeof value.params.recipeDocument === "object"
+      && value.params.recipeDocument !== null;
+  }
+  if (value.kind === "command" && value.method === "recipe.resolve") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])) return false;
+      if (!isIdentifier(value.commandId)) return false;
+    const keys = Object.keys(value.params).sort();
+    if (keys.length !== 1 && keys.length !== 2) return false;
+    if (!keys.includes("recipeId") || typeof value.params.recipeId !== "string") return false;
+    if (keys.length === 2 && (keys[1] !== "revision" || typeof value.params.revision !== "number")) return false;
+    return true;
+  }
+  if (value.kind === "command" && (value.method === "plan.approve" || value.method === "job.execute")) {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["planId"])
+      && typeof value.params.planId === "string";
+  }
+  if (value.kind === "query" && (value.method === "recipe.get" || value.method === "plan.get")) {
+    const idKey = value.method === "recipe.get" ? "recipeId" : "planId";
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, [idKey])
+      && typeof (value.params as Record<string, unknown>)[idKey] === "string";
+  }
+  // production-use-case v0.2 读面闭集(011 section 7:catalog.list 先例)
+  if (value.kind === "query" && (value.method === "record.get")) {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["buildId"])
+      && typeof value.params.buildId === "string";
+  }
+  if (value.kind === "query" && (value.method === "recipe.list" || value.method === "plan.list" || value.method === "record.list")) {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])) return false;
+    const keys = Object.keys(value.params).sort();
+    const allowed = value.method === "recipe.list"
+      ? ["limit", "offset", "text"]
+      : ["limit", "offset", "recipeId", "text"];
+    for (const key of keys) {
+      if (!allowed.includes(key)) return false;
+      if ((key === "limit" || key === "offset") && typeof value.params[key] !== "number") return false;
+      if (key !== "limit" && key !== "offset" && typeof value.params[key] !== "string") return false;
+    }
+    return true;
+  }
+  return false;
   return false;
 }

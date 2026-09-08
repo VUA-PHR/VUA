@@ -14,6 +14,8 @@
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use vua_orchestrator::{UnityCommand, UnityOperation, UnityPayload};
+
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -67,6 +69,72 @@ pub fn stage_original_source(
 /// written into a job directory; the same closed set lives in the v2 command
 /// schema (`planSchemaVersion`).
 pub const SUPPORTED_PLAN_SCHEMA_VERSIONS: [&str; 1] = ["0.3"];
+
+/// Bridges the assembled v2 job into the core-owned envelope (`UnityCommand`
+/// with the 93f841c/36b14ff extensions) — a field copy of the same frozen
+/// shape. Cross-verified against [`build_job_command_json`] by test: the
+/// serialized envelope and the assembled document agree on every field.
+pub fn build_job_command(
+    command_id: &str,
+    project_id: &str,
+    dry_run: bool,
+    expected_project_fingerprint: Option<&str>,
+    plan: &PlanFile,
+    plan_schema_version: &str,
+) -> Result<UnityCommand, PlanFileError> {
+    // Reuse the shape-pinned assembly as the validator, then project.
+    build_job_command_json(
+        command_id,
+        project_id,
+        dry_run,
+        expected_project_fingerprint,
+        plan,
+        plan_schema_version,
+    )?;
+    Ok(UnityCommand {
+        schema_version: 2,
+        command_id: command_id.to_string(),
+        operation: UnityOperation::ExecuteProductionJob,
+        project_id: project_id.to_string(),
+        dry_run,
+        expected_project_fingerprint: expected_project_fingerprint.map(str::to_string),
+        payload: UnityPayload {
+            plan_hash: Some(plan.plan_hash.clone()),
+            plan_schema_version: Some(plan_schema_version.to_string()),
+            plan_ref: Some(plan.relative_ref.clone()),
+            ..UnityPayload::default()
+        },
+    })
+}
+
+/// Bridges the assembled v2 restore into the core-owned envelope.
+pub fn build_restore_command(
+    command_id: &str,
+    project_id: &str,
+    dry_run: bool,
+    expected_project_fingerprint: Option<&str>,
+    snapshot_id: &str,
+) -> Result<UnityCommand, PlanFileError> {
+    build_restore_command_json(
+        command_id,
+        project_id,
+        dry_run,
+        expected_project_fingerprint,
+        snapshot_id,
+    )?;
+    Ok(UnityCommand {
+        schema_version: 2,
+        command_id: command_id.to_string(),
+        operation: UnityOperation::RestoreProject,
+        project_id: project_id.to_string(),
+        dry_run,
+        expected_project_fingerprint: expected_project_fingerprint.map(str::to_string),
+        payload: UnityPayload {
+            snapshot_id: Some(snapshot_id.to_string()),
+            ..UnityPayload::default()
+        },
+    })
+}
 
 /// Assembles the v2 `execute_production_job` command document (frozen
 /// schema: schemas/unity-bridge/v2/command.schema.json). Deliberately
@@ -481,6 +549,73 @@ mod tests {
         assert!(
             build_restore_command_json("r", "proj", false, Some("fp"), "").is_err(),
             "a restore without a snapshot identity must be a typed error"
+        );
+    }
+
+    #[test]
+    fn w21_core_envelope_bridge_agrees_with_the_assembled_document() {
+        // The core-owned envelope bridge (field copy) and the shape-pinned
+        // JSON assembly must agree on every v2 field. Known cross-domain
+        // shape note (reported to core): the core UnityPayload serializes
+        // its v1 String fields as empty strings (no skip), while the frozen
+        // v2 schema gives them minLength 1 — harmless for the C# consumer
+        // (DTO fields default to empty) but a wire-schema strictness gap
+        // only the core can close.
+        let root = unique_root("bridge");
+        let plan = write_plan_file(&root, "job-run-01", PLAN).unwrap();
+        let envelope = build_job_command(
+            "job-run-01",
+            "proj",
+            false,
+            Some("fp-before"),
+            &plan,
+            "0.3",
+        )
+        .unwrap();
+        let document =
+            build_job_command_json("job-run-01", "proj", false, Some("fp-before"), &plan, "0.3")
+                .unwrap();
+        assert_eq!(envelope.schema_version, 2);
+        assert_eq!(envelope.command_id, "job-run-01");
+        assert_eq!(envelope.operation, UnityOperation::ExecuteProductionJob);
+        assert_eq!(envelope.project_id, "proj");
+        assert!(!envelope.dry_run);
+        assert_eq!(
+            envelope.expected_project_fingerprint.as_deref(),
+            Some("fp-before")
+        );
+        assert_eq!(
+            envelope.payload.plan_hash.as_deref(),
+            document["payload"]["planHash"].as_str()
+        );
+        assert_eq!(
+            envelope.payload.plan_schema_version.as_deref(),
+            document["payload"]["planSchemaVersion"].as_str()
+        );
+        assert_eq!(
+            envelope.payload.plan_ref.as_deref(),
+            document["payload"]["planRef"].as_str()
+        );
+
+        let restore = build_restore_command(
+            "restore-01",
+            "proj",
+            false,
+            Some("fp-current"),
+            "snap-0001",
+        )
+        .unwrap();
+        let restore_document =
+            build_restore_command_json("restore-01", "proj", false, Some("fp-current"), "snap-0001")
+                .unwrap();
+        assert_eq!(restore.operation, UnityOperation::RestoreProject);
+        assert_eq!(
+            restore.payload.snapshot_id.as_deref(),
+            restore_document["payload"]["snapshotId"].as_str()
+        );
+        assert_eq!(
+            restore.expected_project_fingerprint.as_deref(),
+            Some("fp-current")
         );
     }
 
