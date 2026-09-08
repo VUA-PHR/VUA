@@ -6,6 +6,7 @@ import type {
   ProductionModeV02,
   ProductionRiskChoiceV02,
   WarehouseArtifactModeV03,
+  ImportCopyPhaseV01,
 } from "./application-contract.js";
 
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
@@ -312,6 +313,19 @@ export interface RecordListRequestV1 {
   readonly method: "record.list";
   readonly params: ProductionListParamsV1 & { readonly recipeId?: string };
 }
+/** project.import-copy 副本导入入口(014 语义冻结;F6 确认链;plan/apply 两段) */
+export interface ProjectImportCopyRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.import-copy";
+  readonly params: {
+    readonly phase: ImportCopyPhaseV01;
+    readonly sourcePath: string;
+    readonly targetParentDirectory: string;
+    readonly targetProjectName: string;
+    readonly confirmedPlanDigest?: string;
+  };
+}
 /** warehouse.import 批量导入入口(bdl-commands v0.3,W19) */
 /** production-use-case v0.2 read-face pagination/filter closed set (011 section 7) */
 export interface ProductionListParamsV1 {
@@ -361,7 +375,8 @@ export type DesktopGatewayRequestV1 =
   | PlanListRequestV1
   | JobExecuteRequestV1
   | RecordGetRequestV1
-  | RecordListRequestV1;
+  | RecordListRequestV1
+  | ProjectImportCopyRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -399,6 +414,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "plan.list": "query",
   "record.get": "query",
   "record.list": "query",
+  "project.import-copy": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;

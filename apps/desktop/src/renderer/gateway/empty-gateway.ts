@@ -2,6 +2,7 @@ import { createInactiveTutorialPort } from "./tutorial-port.ts";
 import { createMemorySettingsPort } from "./settings-port.ts";
 import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire-port.ts";
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
+import { createEmptyProjectOps } from "./project-ops-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -182,6 +183,7 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     toolCatalog: createEmptyToolCatalog(),
     acquire: createEmptyAcquire(),
     warehouseCommands: createEmptyWarehouseCommands(),
+    projectOps: createEmptyProjectOps(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),
