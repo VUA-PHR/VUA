@@ -9,13 +9,13 @@ updated: 2026-09-08
 **W24 读面前置已落(recipe.get/list+plan.get/approve 路由+协议本 v0.2 candidate)**:
 TS 镜像抽核一致。范围确认请求已路由(三视图↔recipe 文档领域映射规格缺口)——规格
 到齐前不开工大 UI(引 W15 走查返工前车之鉴)。
-## 自基线交付(aba7b52 合并 main 后)
-- 无新交付(不编造工作)。main 合并维护(fast-forward 至 d3fba9e;含 plan 命令面
-  94d98de[W20 第三刀前半]/协议本 v0.2 candidate 50904fe——他域推进)。
-- **接收**:recipe/plan 读面(get/list)与 plan.approve 路由已落——W24 读面消费
-  前置就绪;协议本 v0.2(双语 candidate)入 docs/protocols。
-- **TS 镜像抽核一致**:recipe.list 闭集(text/limit/offset,updatedAt 降序)与
-  plan.list 形状同我方登记(ProductionListQueryV02+recipeId 过滤)。
+## 自基线交付(d3fba9e 合并 main 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 8bc99f9;含 record.get
+  读面路由[W20 第三刀,核心/provider-host]——他域推进)。
+- **接收:W24 分刀边界明确**(集成留言):读面消费先行可做,写面(save/approve)
+  交互随第三刀。读面(recipe.get/list+plan.get/list+record.get/list)与命令
+  TS 面均已就绪;范围确认请求(三视图映射规格)仍待回复——读面消费切片的 UI
+  形态(呈现粒度/页面归属)随回复一并定,不猜测。
 ## 阻塞
 - **W24 读面消费切片的范围规格缺口(路由集成/核心)**:三视图(图谱/列表/爆炸)
   与 recipe v0.3 文档的领域映射(哪个字段进哪个视图、共享选择的领域语义)无规格;
