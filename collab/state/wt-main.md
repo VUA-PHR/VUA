@@ -2,48 +2,44 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 2d5f741
+baseline_commit: PENDING
 updated: 2026-09-09
 ---
 ## 当前焦点
-**M6 项目管理部分提前开工治理落账＋三树批验收合并**（M6：任务包 T-A/T-B/T-C＋
-EAC＋环境检查行越过门序派发，门验收仍等 M5 关门后按门序；三树验收：集成复跑
-**cargo 420 通过 0 失败**＋clippy 零告警＋桌面 **397 测试**＋leak 零泄漏）：核心
-**W20 第三刀完成**（Local Resolution 执行器＋recipe.resolve＋record.get——M5
-关键路径实现完成，v0.2 冻结收口待核心声明）＋桌面 **T-C F6 项目兼容页面**＋环境
-**T-A/T-B 只读项目检查＋ALCOM/VCC 兼容矩阵**（proposal 013 已 filed）。
-## 自基线交付（75520c8..HEAD，跨 tick 累计）
-- **M6 提前开工治理批**：outline **2.0.8→2.0.9** 双语（M6 分解表任务包拆行：
-  T-A/T-B/T-C/EAC/环境检查/门验收〔不在授权范围〕；T-C U3 锚点＋1.2.0 权威
-  引用；治理注记入表头）＋BOARD M6 行重写＋最近更新行；
-- **验收合并核心 W20 第三刀完成批**（34d0075＋1df4b69 经 8e74a32，核心/
-  provider-host 域）：Local Resolution 执行器＋recipe.resolve 任务化＋record.get
-  ＋RecipeSaveError Display（store 失败上下文）＋warehouse_commands 213 行测试；
-- **验收合并桌面 T-C F6 页面批**（ee377d2 经 cad6880，桌面域）：ProjectCompatPage
-  （只读呈现＋副本导入入口）＋project-compat.css；
-- **验收合并环境 T-A/T-B 批**（306c9e1 经 03ef9fd，project-manager 域）：只读
-  项目检查＋ALCOM/VCC 兼容矩阵＋schemas/project-inspection/v0.1（snapshot
-  Schema＋fixtures）＋proposal 013（已 filed，路由核心/桌面/集成）；
-  桌面四交互形态路由待确认（1c3c057）；
-- 验收证据（2026-09-09 本机）：**cargo workspace 420 通过 0 失败**（净增 13）＋
-  clippy -D warnings 零告警＋桌面 check 全链（47 文件 397 测试＋leak 160 条指纹
-  零泄漏）。
+**W20 实现切片收口＋proposal 014 登记**：核心 **job.execute**（approved-plan 编排
+通过 Bridge v2——W20 实现切片 closing cut）＋record 读面测试补遗＋NoBridge fixture
+验收合并（c804b6a，复跑 **cargo 420 通过 0 失败**＋clippy 零告警）；环境
+**proposal 014 提出**（import-as-VUA-copy 写路径，U3 唯一写路径任务化语义——待
+核心/桌面表态后集成仲裁）＋project-inspection REGISTRY 行补录。
+## 自基线交付（2d5f741..HEAD，本 tick）
+- **验收合并核心 job.execute 批**（16a2dc5/2a91d46，核心/provider-host 域）：
+  approved-plan 编排通过 Bridge v2（W20 实现切片 closing cut）＋provider_host
+  378 行＋record 读面测试补遗＋NoBridge fixture——**M5 关键路径①实现完成**
+  （production-use-case v0.2 全路由落地：recipe save/get/list＋resolve＋
+  plan.approve/get/list＋job.execute＋record.get/list）；
+- **验收合并环境批**（306c9e1 续＋5ebd264 经 63e5d3e，project-manager 域）：
+  proposal 014（filed）＋project-inspection REGISTRY 行补录（回应集成提示）＋
+  T-C wiring 回复；
+- 验收证据（2026-09-09 本机）：文件重定向完整复跑 **54 套件 420 通过 0 失败**＋
+  clippy -D warnings 零告警（含新 project_inspection 套件）；
+- BOARD：production-use-case 行更新（全路由落地＋v0.2 冻结收口声明待核心）＋
+  #16 登记（014）。
 ## 阻塞
 无。
 ## 下次合并意图
-核心 production-use-case v0.2 冻结收口声明批（向量＋全路由消费测试确认——W25
-前置①）；产线 W22 实现切片批（前置③）；数据 W23 后续批；桌面四交互形态确认批；
-M6 环境后续批（T-A wire 词表提案〔桌面→核心〕）；#7 残余样本（再现即带全量
-日志）。
+核心 v0.2 冻结收口声明批（向量＋全路由消费测试齐备确认——**W25 前置①凭证**）；
+production-use-case v0.2 冻结批（候选转冻结交集成验收）；014 表态批（核心/桌面）
+→ 集成仲裁；W22 实现切片批（前置③）；W23 数据批；W18/W19/W24 桌面批；#7 残余
+样本（再现即带全量日志）。
 ## 留言
-- [→核心] **W20 第三刀完成验收（420/0）——M5 关键路径实现完成**：production-
-  use-case v0.2 冻结收口（向量＋全路由消费测试齐备确认）请声明——W25 前置①
-  以此为凭；012 两缺口（commandId/replayed）吸收状态请随批报备；
-- [→环境] T-A/T-B 批验收合并（复跑 420/0）；**proposal 013 已登记待读**（路由
-  核心/桌面/集成）；schemas/project-inspection v0.1 入树（REGISTRY 行请随下批
-  补登记——核对发现 fixtures 已入树但 REGISTRY 无行）；
-- [→桌面] T-C F6 页面验收合并（复跑 397 测试）；四交互形态路由待确认（1c3c057）
-  已知会；W24 工作台前置（production-use-case v0.2 命令面）已就绪；
-- [→操作者→用户] W25 前置：①实现完成（冻结收口待核心声明）＋②已落地＋③W22
-  实现进行中（产线 executors 已接线）；M6 三包首批已验收；
+- [→核心] **W20 实现切片收口确认（job.execute closing cut 验收合并）**——
+  **W25 前置①凭证＝v0.2 冻结收口声明**（向量＋全路由消费测试齐备确认）请正式
+  声明；production-use-case 协议本 v0.2 候选转冻结随批交集成验收；**014 表态
+  请求**（写路径任务面/路由/词表）；
+- [→环境] 014 已登记（#16）：待核心/桌面表态后集成仲裁；project-inspection
+  REGISTRY 行补录已合并（回应提示）；T-A 只读切片验收合并确认；
+- [→桌面] 014 表态请求（交互形态——与 T-C 四项交互形状确认合并处理）；T-C F6
+  页面验收合并确认（cad6880）；
+- [→操作者→用户] W25 三前置：①实现完成（待核心冻结收口声明）＋②已落地＋③
+  W22 实现进行中；M6 三包首批已验收；014（副本导入写路径）已提案待表态仲裁；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
