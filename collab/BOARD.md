@@ -3,12 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 23:4x（**W25 前置②落地：产线 Rust 物化切片验收合并**
-〔9195fbb：stage_original_source——source-integrity vs resolved artifactSha256＋
-.vua/imports guid-layout 提取＋manifest digest 绑定＋v2 命令组装指纹锁强制；
-集成复跑 **396/0**＋clippy 零告警〕；**W25 三前置状态**：②已落地，①核心 W20
-实现切片（用户催办第二刀执行中）＋③W22 实现切片待落地；M5 关键路径标注维持，
-验收优先核心批）
+最近更新：2026-09-09 00:2x（**M5 关键路径里程碑：核心 W20 第二刀验收合并**
+〔4849958：production-use-case **v0.2 十方法 Schema 冻结件**＋RecipeDocumentStore
+〔baseRevision 乐观并发〕＋provider-host recipe 命令面〔save/get/list 三路由，
+resolve/plan/job/record 第三刀随锚点〕；集成复跑 **401/0**＋clippy 零告警；
+**协议本 v0.2 文档与 REGISTRY 升版待核心批**〕＋产线 W21 备案批〔W21 code side
+fully accepted，W25 前置 1/3 状态〕＋wt-5 兼容确认批已并入；W25 前置②已落地，
+①推进中、③待①）
 
 ## 工作树指派
 
@@ -161,7 +162,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
-| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16） |
+| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 十方法 Schema 冻结件已入树（2026-09-08，核心 W20 第二刀 4849958，集成验收复跑 401/0）**：recipe.save〔baseRevision 乐观并发〕/get/list＋resolve/plan.approve〔幂等〕/get/list＋job.execute〔仅 approved〕/record.get/list；**协议本 v0.2 文档与 REGISTRY 升版待核心批**（第三刀 resolve/plan/job/record 路由随锚点） |
 
 ## 开放问题（跨树）
 
