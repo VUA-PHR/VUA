@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "vua.eac-terminate/v0.1",
+  "kind": "refused",
+  "pid": 41224,
+  "processName": "vrchat.exe",
+  "taskCorrelation": "cmd-w25-eac-terminate-02",
+  "verified": false,
+  "preCheck": {
+    "vrchatSessionActive": true,
+    "eacPresent": true
+  },
+  "guard": "active_vrchat_session",
+  "detail": "a running VRChat process is an active session — termination is refused (R4, from-wide)"
+}

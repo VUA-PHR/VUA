@@ -196,20 +196,24 @@ pub fn verify_candidate(
             false
         }
     };
-    // Check 3 (v0.1): signature unverified — honest refusal until the
-    // WinVerifyTrust binding lands with the termination slice.
-    let signature_state = SignatureState::Unverified;
+    // Check 3: the signature, re-verified via WinVerifyTrust (all-or-
+    // nothing, no UI, no revocation — the publisher evidence lives in the
+    // allowlist entry; this is the re-verification, R3).
+    let (signature_state, signature_detail) = match &image_path {
+        Some(path) => verify_signature_windows(path),
+        None => (
+            SignatureState::Unverified,
+            "no executable path to verify".to_owned(),
+        ),
+    };
+    let signature_passed = signature_state == SignatureState::Verified;
     checks.push(VerificationCheck {
         code: codes::SIGNATURE_UNVERIFIED,
-        passed: false,
-        detail: "signature verification is not wired in v0.1 — R3 refuses when any element cannot be verified".to_owned(),
+        passed: signature_passed,
+        detail: signature_detail,
     });
 
-    // v0.1: the signature state is always Unverified, so the designed
-    // verdict is Refused for every candidate — the WinVerifyTrust binding
-    // lands with the termination slice and flips the signature check only.
-    let signature_verified = signature_state != SignatureState::Unverified;
-    let verdict = if name_matched && path_matched && signature_verified {
+    let verdict = if name_matched && path_matched && signature_passed {
         Verdict::Verified
     } else {
         Verdict::Refused

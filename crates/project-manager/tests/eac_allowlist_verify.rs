@@ -180,7 +180,7 @@ fn snapshot_entry(pid: u32, name: &str, path: Option<&str>) -> vua_project_manag
 }
 
 #[test]
-fn verification_refuses_when_the_signature_check_fails() {
+fn an_embedded_signed_allowlisted_target_verifies() {
     let allowlist = load_allowlist(
         &serde_json::to_string(&json!({
             "schemaVersion": EAC_ALLOWLIST_SCHEMA_VERSION,
@@ -192,8 +192,11 @@ fn verification_refuses_when_the_signature_check_fails() {
     let entry = find_entry(&allowlist, "easyanticheat.exe").unwrap();
 
     // The candidate still exists, the name matches, and the snapshot
-    // carries the path (so no OS query is needed): name + path pass, but
-    // the v0.1 signature state is honestly Unverified → Refused.
+    // carries the EAC install path. When that file exists on the machine
+    // (embedded-signed EasyAntiCheat loader), all four elements verify and
+    // the verdict is Verified; when the file does not exist (e.g. CI),
+    // WinVerifyTrust honestly refuses and the verdict is Refused. Both
+    // branches are typed outcomes, never guesses.
     let source = FixtureSource {
         entries: vec![snapshot_entry(
             39_012,
@@ -202,25 +205,38 @@ fn verification_refuses_when_the_signature_check_fails() {
         )],
     };
     let report = verify_candidate(39_012, entry, &source);
-    assert_eq!(report.verdict, Verdict::Refused);
-    assert_eq!(report.signature_state, SignatureState::Unverified);
+
     let name_check = report
         .checks
         .iter()
         .find(|check| check.code == "vua.eac_verify.name_mismatch")
         .expect("the name check always reports");
     assert!(name_check.passed, "the name matches the entry");
-    assert!(report
-        .checks
-        .iter()
-        .any(|check| check.code == "vua.eac_verify.signature_unverified"
-            && !check.passed));
     let path_check = report
         .checks
         .iter()
         .find(|check| check.code == "vua.eac_verify.path_mismatch")
-        .unwrap();
+        .expect("the path check always reports");
     assert!(path_check.passed, "the path matches the entry pattern");
+    let signature_check = report
+        .checks
+        .iter()
+        .find(|check| check.code == "vua.eac_verify.signature_unverified")
+        .expect("the signature check always reports");
+
+    if Path::new("C:\\Program Files (x86)\\EasyAntiCheat\\EasyAntiCheat.exe").is_file() {
+        assert_eq!(report.signature_state, SignatureState::Verified);
+        assert!(
+            signature_check.passed,
+            "embedded-signed loader verifies: {}",
+            signature_check.detail
+        );
+        assert_eq!(report.verdict, Verdict::Verified);
+    } else {
+        assert_eq!(report.signature_state, SignatureState::Unverified);
+        assert!(!signature_check.passed);
+        assert_eq!(report.verdict, Verdict::Refused);
+    }
 
     cleanup(&unique_dir("unused"));
 }
