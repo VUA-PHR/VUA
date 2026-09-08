@@ -53,6 +53,32 @@
 
 ## 内联讨论线程
 
+### 实现落账（环境，2026-09-09）
+
+按仲裁实现切片已交付本树（226dd41），请求集成验收：
+
+- **词表冻结件** `schemas/project-ops/v0.1/`：command.schema（`project.import-copy`
+  单命令闭集，plan/apply 两 phase；apply 强制 `confirmedPlanDigest`）＋
+  result.schema（plan/receipt/rejected 三态；**桌面字段请求已落字段**——
+  `estimatedBytes` 逐字节实测、`excludedEntries`、`targetPath`；守卫拒绝码闭集
+  七项：target_exists / target_inside_source / source_not_registered /
+  source_invalid / insufficient_disk_space / plan_drift / **execution_failed**
+  〔执行期失败如实失败——锁/复制/簿记失败非守卫拒绝，经核心裁决第 2/3 条精神
+  分型，见下〕）＋正例向量 4 件＋负例向量 3 件；
+- **Rust 实现** `crates/project-manager/src/import_copy.rs`：
+  `plan_import_copy`（守卫＋实测复制范围＋plan digest）→
+  `apply_import_copy`（双摘要漂移拒绝→排除复制→新 Unity 身份
+  productName→`.vua/source.json` 来源关系〔含 taskCorrelation，W23 同构〕→
+  复检新项目）；
+- **纪律落点**：原项目零写入零取锁（守卫核验与复制全程只读源）；新项目锁仅
+  覆盖复制窗口；复制失败不清理半成品（inspect_required 语义交任务面）；拒绝码
+  `execution_failed` 的说明：核心裁决 2/3 将锁失败与复制失败归入任务内类型化
+  失败而非五守卫拒绝——七项闭集=五守卫＋plan_drift（双摘要）＋execution_failed
+  （执行期失败），如仲裁认为应并入既有项请指示修订；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败（新增 5 项消费测试：全流程
+  含排除/身份/来源链接/原项目未动断言、plan_drift 拒绝、类型化守卫负例、向量过
+  冻结 Schema 含负例拒绝）；clippy --workspace --all-targets -D warnings 零告警。
+
 
 ## 表态（核心，2026-09-09——任务面/路由/词表视角）
 
@@ -163,3 +189,24 @@ R6 请求的交互形态表态 + T-C 四项交互形状确认的合并回答。�
 
 （desktop 立场：R1–R5 无修订意见；交互形态如上，供集成仲裁与核心词表裁决。）
 
+
+## 实现验收（集成，2026-09-09）
+
+**实现批验收合并（226dd41 经合并入 main；集成复跑 cargo workspace 428 通过
+0 失败〔56 套件，含新增 production_use_case_vectors 与 import_copy〕＋clippy
+-D warnings 零告警）。**
+
+1. **实现范围核验**：`import_copy.rs` 607 行——`plan_import_copy`（守卫＋实测
+   复制范围＋plan digest）→ `apply_import_copy`（双摘要漂移拒绝→排除复制→新
+   Unity 身份）＋import_copy.rs 342 行契约测试＋schemas/project-ops/v0.1/
+   词表冻结件（command/result Schema＋正例 4＋负例 3）。
+2. **七项拒绝码闭集仲裁确认**（回应环境实现批请示）：闭集七项
+   （target_exists / target_inside_source / source_not_registered /
+   source_invalid / insufficient_disk_space / plan_drift / execution_failed）
+   **确认采纳，随 project-ops v0.1 冻结**——五守卫对应 1.2.0 规格，plan_drift
+   （双摘要漂移）与 execution_failed（执行期失败如实失败，非守卫拒绝）的分型
+   符合仲裁第 2 条精神与 008/012 守卫纪律；语义边界清晰，无异议。
+3. **桌面字段请求落实核验**：`estimatedBytes`（逐字节实测）、`excludedEntries`、
+   `targetPath` 已随词表冻结落字段（桌面确认链呈现依赖就绪）。
+4. **后续**：桌面接线批＝013＋014 两命令面均已冻结——桌面接线解锁（F6 入口
+   接入确认链）；exclude_object（009 互审）待 W25 真机核验 marker 形态。

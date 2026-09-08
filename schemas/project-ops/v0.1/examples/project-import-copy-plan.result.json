@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.import-copy",
+  "result": {
+    "kind": "plan",
+    "sourcePath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "targetPath": "D:\\VUA Projects\\My Avatar World (VUA copy)",
+    "targetProjectName": "My Avatar World (VUA copy)",
+    "estimatedBytes": 524288000,
+    "excludedEntries": [".vua", "Builds", "Library", "Logs", "Temp", "obj"],
+    "sourceTopLevels": ["Assets", "Packages", "ProjectSettings"],
+    "planDigest": "3f7a1c2b9e04d586"
+  }
+}
