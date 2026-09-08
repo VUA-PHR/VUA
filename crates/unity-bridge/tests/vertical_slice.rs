@@ -130,6 +130,11 @@ fn completes_the_guided_vertical_slice() {
                 changed_paths: Vec::new(),
                 diagnostics: Vec::new(),
                 data,
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
             })
             .unwrap();
     }
@@ -163,6 +168,11 @@ fn failed_mutation_enters_recovery_and_restores_snapshot() {
             message: "simulated failure".into(),
         }],
         data: serde_json::Value::Null,
+        steps: Vec::new(),
+        replayed: None,
+        snapshot_id: None,
+        restored_from: None,
+        project_fingerprint_before: None,
     });
     assert!(error.is_err());
     assert_eq!(workflow.stage(), WorkflowStage::Recover);

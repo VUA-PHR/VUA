@@ -47,6 +47,11 @@ impl UnityBridge for FakeBridge {
             status: vua_orchestrator::ResultStatus::Succeeded,
             changed_paths: vec![],
             diagnostics: vec![],
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
             data: serde_json::json!({
                 "projectFingerprint": format!("fp-{}", self.commands.lock().unwrap().len())
             }),
@@ -636,6 +641,11 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
                 changed_paths: vec![],
                 diagnostics: vec![],
                 data: serde_json::json!({"projectFingerprint": "fp-blocked"}),
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
             })
         }
     }
@@ -1121,6 +1131,11 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
                 changed_paths: vec![],
                 diagnostics: vec![],
                 data: serde_json::json!({"projectFingerprint": "fp-blocked"}),
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
             })
         }
     }

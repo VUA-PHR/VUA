@@ -40,6 +40,11 @@ impl UnityBridge for NoBridge {
             changed_paths: vec![],
             diagnostics: vec![],
             data: serde_json::json!({"projectFingerprint": "fp-vector"}),
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
         })
     }
 }

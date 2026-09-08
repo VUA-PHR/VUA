@@ -252,5 +252,7 @@ fn label(operation: UnityOperation) -> &'static str {
         UnityOperation::CreateToggle => "创建衣装菜单开关",
         UnityOperation::ValidateAvatar => "验证组装结果",
         UnityOperation::AnalyzePerformance => "生成性能报告",
+        UnityOperation::ExecuteProductionJob => "执行批准计划作业",
+        UnityOperation::RestoreProject => "恢复项目到恢复点",
     }
 }

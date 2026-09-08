@@ -46,6 +46,11 @@ pub enum UnityOperation {
     CreateToggle,
     ValidateAvatar,
     AnalyzePerformance,
+    /// M5 production job: execute an approved plan (Bridge v2; proposal 009).
+    ExecuteProductionJob,
+    /// M5 production recovery: restore the project to a registered recovery
+    /// point (Bridge v2; proposal 009 cross-review point 5).
+    RestoreProject,
 }
 
 impl UnityOperation {
@@ -57,6 +62,8 @@ impl UnityOperation {
                 | Self::CreateLocalVpmPackage
                 | Self::InstallOutfit
                 | Self::CreateToggle
+                | Self::ExecuteProductionJob
+                | Self::RestoreProject
         )
     }
 }
@@ -94,6 +101,20 @@ pub struct UnityPayload {
     pub staging_token: Option<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub expected_asset_paths: Vec<String>,
+    // --- Unity Bridge v2 fields (schemas/unity-bridge/v2; proposals 009/012) ---
+    /// Hash of the approved plan document (integrity and idempotency anchor).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_hash: Option<String>,
+    /// The approved-plan schema version this job consumes (compatibility gate).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_schema_version: Option<String>,
+    /// Job-directory file reference to the plan document (provider-written
+    /// projection; the Bridge verifies its local hash against planHash).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan_ref: Option<String>,
+    /// The pre-job snapshot taken before the first job executes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_id: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -143,6 +164,63 @@ pub struct UnityResult {
     pub diagnostics: Vec<Diagnostic>,
     #[serde(default)]
     pub data: serde_json::Value,
+    // --- Unity Bridge v2 receipt fields (schemas/unity-bridge/v2) ---
+    /// Per-plan-job receipts, transposed verbatim from the v2 receipt steps
+    /// (kind/status/warning/resolvedSource — the auditable "which copy was
+    /// actually used" record).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub steps: Vec<UnityStepReceipt>,
+    /// True when this receipt is an idempotent replay, not a first run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub replayed: Option<bool>,
+    /// The pre-job snapshot taken for this job (recovery-point identity).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub snapshot_id: Option<String>,
+    /// The recovery point this restore rolled back to (restore_project).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub restored_from: Option<String>,
+    /// The project fingerprint observed before any change (rejected
+    /// admissions carry none; succeeded/failed carry the pre-state).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub project_fingerprint_before: Option<String>,
+}
+
+/// One plan job's receipt line, transposed from the Unity Bridge v2
+/// `data.steps[]` items (schemas/unity-bridge/v2/result.schema.json).
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnityStepReceipt {
+    pub kind: String,
+    pub status: UnityStepStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resolved_source: Option<UnityResolvedSource>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnityStepStatus {
+    Pending,
+    Executed,
+    Failed,
+    Skipped,
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UnityResolvedSource {
+    pub source_kind: UnitySourceKind,
+    pub artifact_sha256: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warehouse_item_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum UnitySourceKind {
+    Original,
+    GeneratedVpm,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
