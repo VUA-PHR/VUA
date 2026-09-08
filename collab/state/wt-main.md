@@ -2,7 +2,7 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 628d4fc
+baseline_commit: 672ed9f
 updated: 2026-09-09
 ---
 ## 当前焦点
