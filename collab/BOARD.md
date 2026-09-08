@@ -3,12 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 07:4x（**执行序②核心半边验收合并**〔6b4f21a：warehouse.import
-wire 路由＋挂点精确设计交数据落实〔job 内联＋auto_generate spec＋import_correlation_id〕；
-集成复跑 **379/0**〕＋**四 plan-kind 执行语义冻结**〔471a4ee：approved-plan Schema
-细化＋2 例，回应产线 C# 切片 1〕＋产线 **W21 C# 切片 1 验收合并**〔06802b9：v2 协议层
-＋分发＋编排框架＋restore_project 完整；per-kind executors 诚实未接线〕——剩：数据
-挂点落实、W22 实现、③桌面呈现、production-use-case v0.2 冻结）
+最近更新：2026-09-08 08:0x（**执行序②收口：数据挂点落地**〔31cf558：import 编排
+自动生成挂点入 acquisition，010 路径 A 数据半边；与核心 wire 路由 6b4f21a 合并
+复跑 **387/0**〕＋产线 **W21 Rust executor prelude 验收合并**〔8fcff01：计划文件
+写入器（哈希锚＋读回校验）＋v2 作业收据类型化投影；**信封扩展
+（UnityOperation/UnityPayload）请求核心**——核心所有类型，待核心表态〕；W23 已
+冻结〔production-evidence v0.1〕；剩：production-use-case v0.2 冻结＋C# executors
+接线＋③桌面呈现）
 
 ## 工作树指派
 

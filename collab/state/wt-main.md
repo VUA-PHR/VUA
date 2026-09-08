@@ -2,47 +2,40 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 8cc8567
+baseline_commit: 984f6d4
 updated: 2026-09-08
 ---
 ## 当前焦点
-**执行序②核心半边验收合并＋产线 W21 C# 切片 1 验收合并**（集成复跑 **379 通过
-0 失败**＋clippy 零告警）。核心交付 warehouse.import wire 路由＋挂点精确设计
-（交数据落实：job 内联＋auto_generate spec＋import_correlation_id）＋四 plan-kind
-执行语义冻结（approved-plan Schema 细化）。剩：数据挂点落实、W22 实现、③桌面
-呈现、production-use-case v0.2 冻结。
-## 自基线交付（833b949..833b949＋三树合并，本 tick）
-- **合并尖验收（三树批）**：集成复跑＝**cargo workspace 379 通过 0 失败**（净增 3）＋
-  clippy -D warnings 零告警；
-- **核心执行序②半边**（6b4f21a，核心/provider-host 域）：warehouse.import wire
-  路由＋97 行 wire 测试＋010 内联挂点精确设计（job 内联〔host 层编排会在取消
-  批次时漏掉已落库条目，语义不符〕／WarehouseImportTaskSpec 扩展
-  auto_generate＋executor 注入／GenerateVpmTaskSpec.import_correlation_id〔v0.3
-  词表字段〕／六承诺对应）——交数据在 acquisition 落实；
-- **核心四 plan-kind 执行语义冻结**（471a4ee）：approved-plan Schema 细化
-  （257 行）＋example.plan-attach-transform/exclude-pathhint＋invalid
-  selector-no-target 负例＋测试——回应产线 C# 切片 1 的 job_kind_executor_missing；
-- **产线 W21 C# 切片 1**（06802b9，产线域）：v2 协议层（BridgeProtocol.cs）＋
-  分发＋生产作业编排框架＋restore_project 完整（快照）＋per-kind executors
-  **诚实未接线**（job_kind_executor_missing，等核心四语义——已到）；
-- **桌面 recovered 呈现表态批**（ce4a1e1，collab 免测）：已恢复≠未发生，独立
-  终态如实字段——012 桌面项关闭。
+**执行序②收口：数据挂点落地＋产线 executor prelude 验收合并**（集成复跑 **387
+通过 0 失败**＋clippy 零告警）。010 路径 A 全链就位：核心 wire 路由（6b4f21a）＋
+数据 job 内联挂点（31cf558）＋产线计划文件写入器/收据投影（8fcff01）。**信封扩展
+（UnityOperation/UnityPayload）请求核心**（产线提出，核心所有类型——待表态）。
+剩：production-use-case v0.2 冻结＋C# executors 接线＋③桌面呈现。
+## 自基线交付（8cc8567..984f6d4，本 tick）
+- **验收合并产线 W21 Rust executor prelude**（8fcff01，产线/unity-bridge 域）：
+  production_job.rs 320 行（计划文件写入器：哈希锚＋读回校验〔010/产线建议
+  兑现〕）＋v2 作业收据类型化投影；信封扩展请求核心（UnityOperation/UnityPayload
+  ——bridge 信封类型在核心域，产线不越界，正确路由）；
+- **验收合并数据挂点批**（31cf558，数据/acquisition 域）：import 编排自动生成
+  挂点入 acquisition（010 路径 A 数据半边：job 内联＋auto_generate spec＋
+  import_correlation_id，按核心精确设计）；import_contract_v03 测试同步；
+- 验收证据（2026-09-08 本机）：两批合并尖 **cargo workspace 387 通过 0 失败**
+  （净增 8）＋clippy -D warnings 零告警；BOARD 最近更新行刷新（8cc8567）。
 ## 阻塞
 无。
 ## 下次合并意图
-数据挂点落实批（acquisition，交集成验收——执行序②收口）；核心 W20 实现切片
-（production-use-case v0.2 命令面＋recipe/plan/record 记录面）；W22 实现切片
-（产线，per-kind executors 接线）；W18/W19 桌面呈现批（执行序③）；#7 残余样本
-（再现即带全量日志）。
+核心信封扩展表态批（UnityOperation/UnityPayload）；核心 production-use-case
+v0.2 冻结批＋W20 实现切片；W22 实现切片（产线 executors 接线——前置四语义已
+冻结）；W18/W19 桌面呈现批（执行序③）；#7 残余样本（再现即带全量日志）。
 ## 留言
-- [→数据] **挂点精确设计已交你域落实**（010 内联「接线设计」节）：job 内联＋
-  auto_generate spec＋import_correlation_id；落实后执行序②收口（交集成验收）；
-- [→核心] wire 路由验收合并；四语义冻结已入 approved-plan Schema——产线 C# 侧
-  executors 接线的前置已就绪；production-use-case v0.2 冻结（011 §7 词表）随
-  W20 实现切片；
-- [→产线] C# 切片 1 验收合并（诚实未接线标注正确——四语义已到，可接线）；
-  v2 冻结批契约表已升版（你方自更已核对）；W22 实现切片按你方节奏；
-- [→桌面] recovered 呈现表态已入 012 收敛（独立终态＋诚实字段）；呈现批（③）
-  等执行序②收口（数据挂点落实）后随批；
+- [→核心] **信封扩展请求路由**（产线 8fcff01 提出）：UnityOperation/UnityPayload
+  为核心所有类型，W21 executor prelude 需要扩展承载生产作业信封——请表态
+  （扩展形状与 production-use-case v0.2 词表的对齐关系一并考虑）；
+- [→数据] **挂点落地验收合并（执行序②数据半边完成）**——与核心 wire 路由合并
+  复跑 387/0；010 六承诺的实现核对建议随批声明（供验收档案）；
+- [→产线] executor prelude 验收合并；信封扩展已路由核心（表态后接线解锁）；
+  per-kind executors 接线的前置（四语义＋信封）就绪中；
+- [→桌面] 执行序②已收口——呈现批（③）解锁，等 production-use-case v0.2 词表
+  （核心 W20 实现切片）后随批；
 - [→操作者→用户] W25 真机窗口预约维持（等 W21 契约/实现就绪前确认即可）；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。

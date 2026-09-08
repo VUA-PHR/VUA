@@ -1,0 +1,320 @@
+//! v2 production-job executor prelude (unity-bridge v2, proposal 009 / W21).
+//!
+//! The approved plan travels as a job-directory file (009 ruling): the
+//! provider-side executor writes it next to the bridge request file and pins
+//! its SHA-256 into the command; the C# Bridge reads the file and verifies
+//! the hash locally before executing (integrity never rests on provider
+//! honesty alone).
+//!
+//! The command envelope itself (`UnityOperation` / `UnityPayload` /
+//! `UnityResult`) is core-owned: extending it with the v2 operations is
+//! coordinated with the core (see proposal 009 / wt-4 state file). This
+//! module ships the parts that do not depend on those types — the plan file
+//! + hash anchor and the typed projection of the v2 job receipt.
+
+use serde::Deserialize;
+use sha2::{Digest, Sha256};
+use std::fs;
+use std::path::{Path, PathBuf};
+
+/// The plan document must declare a supported schema version before it is
+/// written into a job directory; the same closed set lives in the v2 command
+/// schema (`planSchemaVersion`).
+pub const SUPPORTED_PLAN_SCHEMA_VERSIONS: [&str; 1] = ["0.3"];
+
+#[derive(Debug)]
+pub struct PlanFileError(pub String);
+
+impl std::fmt::Display for PlanFileError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+impl std::error::Error for PlanFileError {}
+
+/// The file anchor returned by [`write_plan_file`]: the job-directory
+/// relative reference to put into `payload.planRef` and the SHA-256 pin for
+/// `payload.planHash`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PlanFile {
+    pub relative_ref: String,
+    pub plan_hash: String,
+}
+
+fn bridge_dir(project_root: &Path) -> PathBuf {
+    project_root.join(".vua").join("bridge")
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    let digest = Sha256::digest(bytes);
+    let hex: String = digest.iter().map(|byte| format!("{:02x}", byte)).collect();
+    format!("sha256:{hex}")
+}
+
+/// Writes the plan document into the bridge job directory and returns the
+/// file anchor (relative ref + hash). `plan_json` must be the serialized
+/// approved-plan document (recipe v0.3) whose schema version is in
+/// [`SUPPORTED_PLAN_SCHEMA_VERSIONS`].
+pub fn write_plan_file(
+    project_root: &Path,
+    command_id: &str,
+    plan_json: &str,
+) -> Result<PlanFile, PlanFileError> {
+    if command_id.is_empty() {
+        return Err(PlanFileError("command_id is required".to_string()));
+    }
+    let plan: serde_json::Value = serde_json::from_str(plan_json)
+        .map_err(|error| PlanFileError(format!("计划文档不是合法 JSON：{error}")))?;
+    let schema_version = plan
+        .get("schemaVersion")
+        .and_then(|value| value.as_str())
+        .ok_or_else(|| PlanFileError("计划文档缺少 schemaVersion".to_string()))?;
+    if !SUPPORTED_PLAN_SCHEMA_VERSIONS.contains(&schema_version) {
+        return Err(PlanFileError(format!(
+            "计划 schemaVersion {schema_version} 不在支持集合内"
+        )));
+    }
+
+    let dir = bridge_dir(project_root);
+    fs::create_dir_all(&dir).map_err(|error| PlanFileError(format!("job 目录创建失败：{error}")))?;
+    let file_name = format!("plan-{command_id}.json");
+    let path = dir.join(&file_name);
+    // Atomic-ish write: temp file in the same directory, then rename, so a
+    // crashed write never leaves a half-written plan for the Bridge to hash.
+    let temp = dir.join(format!("{file_name}.tmp"));
+    fs::write(&temp, plan_json).map_err(|error| PlanFileError(format!("临时文件写入失败：{error}")))?;
+    fs::rename(&temp, &path).map_err(|error| PlanFileError(format!("计划文件落位失败：{error}")))?;
+
+    Ok(PlanFile {
+        relative_ref: format!(".vua/bridge/{file_name}"),
+        plan_hash: sha256_hex(plan_json.as_bytes()),
+    })
+}
+
+/// Reads back and re-verifies a plan file (the provider-side mirror of the
+/// Bridge's local hash check — the same file, the same anchor, verified
+/// before it is ever referenced by a command).
+pub fn read_plan_file(
+    project_root: &Path,
+    plan: &PlanFile,
+) -> Result<String, PlanFileError> {
+    let path = bridge_dir(project_root).join(
+        PathBuf::from(plan.relative_ref.clone())
+            .file_name()
+            .ok_or_else(|| PlanFileError("planRef 缺少文件名".to_string()))?,
+    );
+    let bytes =
+        fs::read(&path).map_err(|error| PlanFileError(format!("计划文件读取失败：{error}")))?;
+    let actual = sha256_hex(&bytes);
+    if actual != plan.plan_hash {
+        return Err(PlanFileError(format!(
+            "计划文件哈希漂移（期望 {expected}，实际 {actual}）",
+            expected = plan.plan_hash
+        )));
+    }
+    String::from_utf8(bytes).map_err(|error| PlanFileError(format!("计划文件不是 UTF-8：{error}")))
+}
+
+/// Typed projection of the v2 `execute_production_job` receipt (the Bridge's
+/// result document). Only the fields the provider consumes are mapped; the
+/// receipt schema (schemas/unity-bridge/v2/result.schema.json) stays the
+/// authority.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProductionJobReceipt {
+    #[allow(dead_code)]
+    pub schema_version: u8,
+    #[allow(dead_code)]
+    pub command_id: String,
+    pub status: String,
+    #[serde(default)]
+    pub data: ProductionJobReceiptData,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct ProductionJobReceiptData {
+    #[serde(default)]
+    pub dry_run: bool,
+    #[serde(default)]
+    pub replayed: bool,
+    #[serde(default)]
+    pub plan_hash: String,
+    #[serde(default)]
+    pub steps: Vec<ProductionJobStep>,
+    #[serde(default)]
+    pub snapshot_id: Option<String>,
+    #[serde(default)]
+    pub project_fingerprint_before: Option<String>,
+    #[serde(default)]
+    pub project_fingerprint: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProductionJobStep {
+    pub kind: String,
+    pub status: String,
+    #[serde(default)]
+    pub warning: String,
+    #[serde(default)]
+    pub resolved_source: Option<ProductionResolvedSource>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProductionResolvedSource {
+    pub source_kind: String,
+    pub artifact_sha256: String,
+    #[serde(default)]
+    pub warehouse_item_id: Option<String>,
+}
+
+impl ProductionJobReceipt {
+    /// Parses a raw v2 result document (as produced by the Bridge).
+    pub fn parse(result_json: &str) -> Result<ProductionJobReceipt, PlanFileError> {
+        let receipt: ProductionJobReceipt = serde_json::from_str(result_json)
+            .map_err(|error| PlanFileError(format!("作业收据解析失败：{error}")))?;
+        if receipt.schema_version != 2 {
+            return Err(PlanFileError(format!(
+                "作业收据 schemaVersion {} 不是 v2",
+                receipt.schema_version
+            )));
+        }
+        Ok(receipt)
+    }
+
+    /// True when the receipt represents an executed run (succeeded or failed)
+    /// — those carry the pre-job snapshot identity; a rejected receipt never
+    /// does (proposal 009 review point 4).
+    pub fn executed(&self) -> bool {
+        self.status == "succeeded" || self.status == "failed"
+    }
+
+    /// The plan hash echoed back by the Bridge; the caller pins it against
+    /// the submitted hash so a receipt can never be attached to a different
+    /// plan.
+    pub fn verified_plan_hash(&self, expected: &str) -> Result<(), PlanFileError> {
+        if self.data.plan_hash != expected {
+            return Err(PlanFileError(format!(
+                "收据 planHash {} 与提交 {} 不一致",
+                self.data.plan_hash, expected
+            )));
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn unique_root(label: &str) -> PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!("vua-prodjob-{label}-{nanos}"));
+        fs::create_dir_all(&root).unwrap();
+        root
+    }
+
+    const PLAN: &str = r#"{"schemaVersion":"0.3","planId":"018f0000-0000-7000-8000-000000000001","jobs":[{"jobId":"018f0000-0000-7000-8000-000000000002","kind":"install_modular_asset","inputs":{},"resolvedSource":{"sourceKind":"original","artifactSha256":"sha256:aa","warehouseItemId":"wi-1"}}]}"#;
+
+    #[test]
+    fn w21_plan_file_is_written_into_the_bridge_directory_with_hash_anchor() {
+        let root = unique_root("write");
+        let plan = write_plan_file(&root, "job-run-01", PLAN).unwrap();
+        assert_eq!(
+            plan.relative_ref,
+            ".vua/bridge/plan-job-run-01.json",
+            "planRef points at the job-directory file"
+        );
+        assert!(
+            plan.plan_hash.starts_with("sha256:") && plan.plan_hash.len() == 71,
+            "hash anchor is a pinned sha256"
+        );
+        let written = fs::read_to_string(
+            root.join(".vua").join("bridge").join("plan-job-run-01.json"),
+        )
+        .unwrap();
+        assert_eq!(written, PLAN, "plan content is byte-identical");
+    }
+
+    #[test]
+    fn w21_plan_hash_is_deterministic_and_the_readback_verifies_it() {
+        let root = unique_root("determinism");
+        let plan = write_plan_file(&root, "job-1", PLAN).unwrap();
+        let again = write_plan_file(&root, "job-1", PLAN).unwrap();
+        assert_eq!(plan.plan_hash, again.plan_hash, "same bytes, same anchor");
+        let read_back = read_plan_file(&root, &plan).unwrap();
+        assert_eq!(read_back, PLAN);
+        let tampered = PlanFile { plan_hash: "sha256:00".to_string(), ..plan };
+        assert!(
+            read_plan_file(&root, &tampered).is_err(),
+            "a drifting plan file must fail the read-back verification"
+        );
+    }
+
+    #[test]
+    fn w21_unsupported_plan_schema_version_is_rejected_before_writing() {
+        let root = unique_root("unsupported");
+        let plan = "{\"schemaVersion\":\"0.9\",\"jobs\":[]}";
+        assert!(write_plan_file(&root, "job-2", plan).is_err());
+        assert!(
+            !root.join(".vua").exists(),
+            "nothing is written for an unsupported plan version"
+        );
+    }
+
+    #[test]
+    fn w21_receipt_projection_parses_the_v2_shapes() {
+        let real_run = r#"{
+            "schemaVersion": 2, "commandId": "job-run-01", "operation": "execute_production_job",
+            "status": "succeeded", "changedPaths": ["Assets/a.prefab"], "diagnostics": [],
+            "data": {
+                "dryRun": false, "replayed": false,
+                "planHash": "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+                "steps": [
+                    {"kind": "install_modular_asset", "status": "executed",
+                     "resolvedSource": {"sourceKind": "original", "artifactSha256": "sha256:aa",
+                                        "warehouseItemId": "wi-1"}}
+                ],
+                "snapshotId": "snap-0001",
+                "projectFingerprintBefore": "fp-before",
+                "projectFingerprint": "fp-after"
+            }
+        }"#;
+        let receipt = ProductionJobReceipt::parse(real_run).unwrap();
+        assert!(receipt.executed());
+        receipt.verified_plan_hash(
+            "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809",
+        ).unwrap();
+        assert_eq!(receipt.data.snapshot_id.as_deref(), Some("snap-0001"));
+        assert_eq!(receipt.data.steps.len(), 1);
+        assert_eq!(
+            receipt.data.steps[0].resolved_source.as_ref().unwrap().source_kind,
+            "original"
+        );
+
+        let rejected = r#"{
+            "schemaVersion": 2, "commandId": "job-run-02", "operation": "execute_production_job",
+            "status": "rejected", "changedPaths": [], "diagnostics": []
+        }"#;
+        let receipt = ProductionJobReceipt::parse(rejected).unwrap();
+        assert!(!receipt.executed(), "a rejected receipt never claims execution");
+    }
+
+    #[test]
+    fn w21_receipt_plan_hash_mismatch_is_typed() {
+        let receipt_json = r#"{
+            "schemaVersion": 2, "commandId": "x", "operation": "execute_production_job",
+            "status": "succeeded", "changedPaths": [], "diagnostics": [],
+            "data": {"dryRun": false, "planHash": "sha256:bb", "steps": []}
+        }"#;
+        let receipt = ProductionJobReceipt::parse(receipt_json).unwrap();
+        assert!(receipt.verified_plan_hash("sha256:aa").is_err());
+    }
+}
