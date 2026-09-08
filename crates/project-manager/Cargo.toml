@@ -23,6 +23,7 @@ windows-sys = { version = "=0.61.2", features = [
     "Win32_Storage",
     "Win32_System_IO",
     "Win32_System_Diagnostics_ToolHelp",
+    "Win32_System_Threading",
 ] }
 
 [dev-dependencies]

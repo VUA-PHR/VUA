@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "vua.eac-allowlist/v0.1",
+  "entries": [
+    {
+      "processName": "easyanticheat.exe",
+      "expectedPathPattern": "C:\\Program Files (x86)\\EasyAntiCheat\\",
+      "publisherEvidence": "Signer: Easy Anti-Cheat Pty Ltd; certificate subject verified via WinVerifyTrust on the real machine (sha256 fingerprint recorded in the evidence pack)",
+      "reason": "User-mode EAC loader left running after VRChat exits; terminating it does not touch the EAC service, drivers, or game files (006 R7).",
+      "evidenceRef": "real-machine verification pack 2026-09-xx (window #, probe + verify + signature logs)",
+      "addedAt": "2026-09-xxT00:00:00.000Z",
+      "releaseNotes": "v0.8.0 release notes, EAC allowlist: first entry (easyanticheat.exe) from the real-machine verification window."
+    }
+  ]
+}
