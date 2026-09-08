@@ -45,6 +45,13 @@ export function ProjectCompatPage() {
 
           <section>
             <h3 className="vua-warehouse-detail__section-title">{copy.detectionTitle}</h3>
+            <p className="vua-caption vua-text-secondary">{copy.detectionSource}</p>
+            <p className="vua-caption vua-text-secondary">{copy.detectionItemsTitle}</p>
+            <ul className="vua-project-compat__specs">
+              {copy.detectionItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
             <p className="vua-caption vua-text-secondary" role="note">
               {copy.detectionNotWired}
             </p>
