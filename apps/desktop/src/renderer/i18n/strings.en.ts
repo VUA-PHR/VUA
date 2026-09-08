@@ -129,6 +129,7 @@ demoTaskTitle: "Demo task",
       warehouse: "Warehouse",
       workshop: "Workshop",
       packages: "Packages",
+      projectCompat: "Project compatibility",
     },
     pages: {
       home: "Hub",
@@ -151,6 +152,7 @@ demoTaskTitle: "Demo task",
       settingsAbout: "About",
       settingsDonate: "Donate",
       packages: "Package Manager",
+      projectCompat: "Project compatibility",
     },
   },
   /** Hub landing page (S-VFX-2): default entry */
@@ -1189,6 +1191,34 @@ rolled_back: "Rolled back",
    * 玩家语言,不暴露 semver 范围语法/仓库协议细节;版本状态词表
    * (states/sources)与端口类型一一对应,词表外取值由模型层回落,不猜测。
    */
+  /** Project compatibility page (F6, M6 T-C): ALCOM/VCC read-only presentation
+   *  and the "Import as a VUA-managed copy" entry; authority = product-boundary
+   *  1.2.0 (U3 ruling). The detection read face (env T-B) is unwired and shown
+   *  honestly unavailable; copy-import execution (env T-A) is unwired and the
+   *  entry permanently carries its note */
+  projectCompat: {
+    title: "Project compatibility",
+    subtitle: "ALCOM/VCC-managed projects are read-only; hand write operations to the owning manager.",
+    readOnlyTitle: "Read-only compatibility (boundary)",
+    readOnlyDesc: "VUA is read-only for ALCOM/VCC-managed projects: you can inspect and diagnose. VUA will not install or remove packages inside the original project, will not modify its manifest, project settings, assets or .vua job files, and will not write to ALCOM/VCC registries, databases, settings or caches.",
+    detectionTitle: "Project detection",
+    detectionNotWired: "The project detection read face is not wired yet: discovery and identification of ALCOM/VCC-managed projects will appear once the detection read face lands.",
+    envStatusTitle: "Environment status (VUA-side detection)",
+    envStatusSource: "Source: VUA environment detection, not ALCOM/VCC records; versions are authoritative in the owning manager.",
+    handoverTitle: "Hand over write operations",
+    handoverDesc: "Perform write operations on such a project (install/remove packages, change settings, etc.) with the owning ALCOM/VCC manager; VUA does not write to the original project.",
+    importTitle: "Import as a VUA-managed copy",
+    importSpecIntro: "The import will follow these specifications:",
+    importSpecs: [
+      "Import into a new project path with a new project identity;",
+      "Show the estimated disk usage before importing;",
+      "Do not copy regenerable directories (e.g. Library) or old task state;",
+      "Re-run inspection after import; confirmations and snapshots are not inherited;",
+      "Keep the link to the original project for easy return.",
+    ],
+    importCta: "Choose a project folder and import",
+    importNotWired: "Copy-import execution is not wired yet: it enables once the environment read/capability faces land.",
+  },
   packages: {
     subtitle:
       "Manually install, update and remove packages for each Unity project; assembling from a {recipe} remains the main path.",

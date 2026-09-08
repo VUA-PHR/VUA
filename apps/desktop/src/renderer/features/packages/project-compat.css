@@ -1,0 +1,16 @@
+/* 项目兼容页(F6,M6 T-C):只读兼容呈现与副本导入入口 */
+
+.vua-project-compat__env-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--vua-space-1);
+}
+
+.vua-project-compat__specs {
+  margin: 0;
+  padding-left: var(--vua-space-3);
+  display: grid;
+  gap: var(--vua-space-1);
+}
