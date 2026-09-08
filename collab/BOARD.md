@@ -3,11 +3,12 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 05:0x（**EAC R1a 只读探针验收合并**〔环境 c07ad47：eac_probe.rs
-309 行＋252 行测试＋schemas/eac-probe/v0.1（006 八点语义锚定）；集成复跑 **cargo
-437/0**〔58 套件〕＋clippy 零告警——M6 EAC 包 R9 执行序推进〕；M6 提前开工进度：
-T-A/T-B/T-C 首批＋EAC R1a 均已验收；并行：production-use-case v0.2 已冻结〔W25
-前置①凭证〕＋W22 实现进行中〔前置③〕＋013/014 接线完成）
+最近更新：2026-09-09 05:2x（**EAC R2/R3 批验收合并**〔环境 e08b287：allowlist
+数据面（起始为空＝八点语义第 2 点）＋候选再核验原语；eac_allowlist.rs 164 行＋
+eac_verify.rs 217 行＋296 行测试；集成复跑 **cargo 442/0**〔59 套件〕＋clippy
+零告警〕；M6 提前开工进度：T-A/T-B/T-C 首批＋EAC R1a/R2/R3 均已验收；并行：
+production-use-case v0.2 已冻结〔W25 前置①凭证〕＋W22 实现进行中〔前置③〕＋
+013/014 接线完成）
 
 ## 工作树指派
 
@@ -160,6 +161,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | project-inspection（schema） | v0.1 | 冻结（M6 T-A/T-B，2026-09-09，环境，集成验收复跑 420/0）——管理器注册项目只读检视聚合（关联/Unity 分类/VPM 声明面/VRChat SDK/未完成变更标记三态）；库级 payload 面；读面 wire 词表（command/result schema＋向量）随 013 冻结件入树（2026-09-09） |
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | eac-probe（schema） | v0.1 | **已冻结（M6 EAC R1a 实现，2026-09-09，环境，集成验收复跑 437/0）**——EAC 只读冲突探针（R1a：允许清单会话/残留快照两态 fixtures；006 八点语义锚定）；实现 eac_probe.rs 309 行＋252 行测试 |
+| eac-allowlist（schema） | v0.1 | **已冻结（M6 EAC R2/R3 实现，2026-09-09，环境，集成验收复跑 442/0）**——允许清单数据面（起始为空＝八点语义第 2 点：清单空期间终止能力显示未核验/不可用）＋候选再核验原语；实现 eac_allowlist.rs 164 行＋eac_verify.rs 217 行＋296 行测试 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | project-ops（schema / 词表） | v0.1 | **已冻结（014 实现，2026-09-09，环境，集成验收复跑 428/0）**——`project.import-copy` 写命令（plan/apply 两 phase，apply 强制 confirmedPlanDigest 双摘要）＋守卫拒绝码闭集七项（仲裁确认）＋桌面字段请求落字段（estimatedBytes/excludedEntries/targetPath）；与 013 project-inspection 读面平行读写分线；实现 import_copy.rs 607 行＋342 行测试 |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
