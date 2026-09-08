@@ -2,45 +2,44 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 02498e4
+baseline_commit: 648dcd9
 updated: 2026-09-08
 ---
 ## 当前焦点
-**信封扩展收口＋C# executors 接线验收**（集成复跑 **387 通过 0 失败**＋clippy
-零告警）：核心 UnityOperation/Payload/Result 增 Bridge v2 面（93f841c，请求 1
-兑现）＋产线 W21 C# executors 按四语义接线（aa2a9da）。**执行序②全链完成**
-（wire 路由＋挂点＋信封＋executors）。剩：W22 实现切片、production-use-case
-v0.2 冻结、③桌面呈现、W25 真机窗口（预约维持）。
-## 自基线交付（984f6d4..HEAD，本 tick 收尾轮）
-- **验收合并核心信封扩展批**（93f841c 经 386f1a8，核心/orchestrator 域）：
-  UnityOperation/UnityPayload/Result 增 Bridge v2 面（W21 Rust 侧收尾，产线
-  请求 1 兑现）＋model.rs 78 行＋跨测试适配（material_exec/material_task/
-  vertical_slice/m3_vectors/production_host/warehouse_maintenance）；36b14ff
-  fixture 补交；exclude_object marker 钉死（VRCMetaObject.excluded，W25 真机
-  核验义务，9b1539f）；
-- **验收合并产线 C# executors 接线批**（aa2a9da，产线域）：BridgeCommandProcessor
-  按四语义接线（install_modular_asset v1 materialize 基座＋instance 命名/
-  attach_to_bone 人形映射＋localTransform/set_object_active activeSelf 校验/
-  selector resolver pathHint＋selectorId 深搜）；exclude_object typed
-  exclude_marker_unavailable（marker 形态钉死后接线）；
-- **带入数据状态批**（63b5a6b，collab 免测）；
-- 验收证据（2026-09-08 本机）：合并尖 **cargo workspace 387 通过 0 失败**＋
-  clippy -D warnings 零告警（C# 批不在 cargo 链，Unity 侧随 W25 真机核验）。
+**用户裁决落账：W25 门序修正＋M5 关键路径标注＋三批验收合并**（集成复跑 cargo
+**395 通过 0 失败**＋clippy 零告警＋桌面 397 测试＋leak 零泄漏）。**W25＝一次
+全量验证**（前置＝W20 实现切片＋产线 Rust 物化＋W22 实现切片三件落地；就绪请求
+措辞作废）。**W20 实现切片＝M5 关键路径**（用户催办核心第二刀执行中，验收优先）。
+## 自基线交付（02498e4..HEAD，本 tick 收尾路由轮）
+- **带入三批**：核心 **W20 第一刀**（0cbafa7：production-evidence v0.1 store——
+  AMF 生产持久域证据文档库＋147 行测试，用户催办响应）；产线 **W21 接线批**
+  （e4183f4：v2 命令组装〔job/restore，冻结信封〕＋指纹锁强制＋C# exclude_object
+  反射 VRCMetaObject.excluded 接线〔W25 断言时钉 assembly〕）；数据 010 六承诺
+  符合性声明批（806298e，验收档案）；
+- **桌面 M5 呈现批自并确认**（1eae908 经 df32c8c，桌面域）：W18 导入 UI
+  （WarehouseAcquire＋acquire-model＋fixture/live 网关）＋W19 008 路径 a 接线
+  （delete-originals-auto）＋四语；
+- 验收证据（2026-09-08 本机）：**cargo workspace 395 通过 0 失败**（净增 25）＋
+  clippy -D warnings 零告警＋桌面 check 全链（47 文件 **397 测试**＋leak 160 条
+  指纹零泄漏）；
+- BOARD：W25 窗口语义修正块＋M5 关键路径标注＋最近更新行。
 ## 阻塞
 无。
 ## 下次合并意图
-W22 实现切片批（产线 executors 已接线，Record 消费对接）；production-use-case
-v0.2 冻结批（核心，011 §7 词表落地）；W18/W19 桌面呈现批（执行序③全链完成，
-桌面解锁）；exclude_object 接线批（marker 形态已钉）；#7 残余样本（再现即带
-全量日志）。
+核心 W20 第二刀（production-use-case v0.2 冻结切片＋命令面——**关键路径，验收
+优先**）；产线 Rust 物化下刀批；W22 实现切片批；W23/W24 后续批；#7 残余样本
+（再现即带全量日志）。
 ## 留言
-- [→核心] 信封扩展验收合并（93f841c，请求 1 兑现确认）；exclude_object marker
-  钉死（VRCMetaObject.excluded）备案——产线 typed exclude_marker_unavailable
-  已转待接线；
-- [→产线] C# executors 接线批验收合并（复跑 387/0；C# 侧 Unity 真机核验随 W25
-  窗口）；exclude_object 待接线（marker 形态核心已钉）；W22 实现切片按你方节奏；
-- [→桌面] 执行序②全链完成——呈现批（③）解锁（W24 工作台待 W20 实现，导入/
-  生成呈现随时可随批）；
-- [→操作者→用户] W25 真机窗口预约维持（C# executors 已接线，窗口核验内容含
-  三 executors＋exclude_object〔marker 形态已钉〕）；
+- [→核心] **用户已直接催办 W20 第二刀（production-use-case v0.2 冻结切片＋命令
+  面）——M5 关键路径，集成验收优先处理你的批**；第一刀（evidence store）已验收
+  合并（7e74fa0）；
+- [→产线] **W25 门序修正（用户裁决）**：一次全量验证，前置＝W20 实现切片＋你方
+  Rust 物化下刀＋W22 实现切片三者落地；此前「就绪请求」措辞作废；接线批已验收
+  合并（4f2a3e2）；
+- [→桌面] M5 呈现批（W18/W19）验收合并确认（df32c8c，复跑 397 测试＋leak 零
+  泄漏）；W24 待 W20 冻结切片后；
+- [→数据] 010 符合性声明已入验收档案（72d7f7c）；W23 已冻结（production-evidence
+  v0.1）；
+- [→操作者→用户] **W25 真机窗口等三前置落地后一次开窗**（不拆分）；M5 关键路径
+  ＝核心 W20 第二刀（执行中）；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
