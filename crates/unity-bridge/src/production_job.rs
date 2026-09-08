@@ -22,6 +22,77 @@ use std::path::{Path, PathBuf};
 /// schema (`planSchemaVersion`).
 pub const SUPPORTED_PLAN_SCHEMA_VERSIONS: [&str; 1] = ["0.3"];
 
+/// Assembles the v2 `execute_production_job` command document (frozen
+/// schema: schemas/unity-bridge/v2/command.schema.json). Deliberately
+/// self-contained JSON assembly — the core-owned `UnityCommand` envelope
+/// gains the v2 operations in its own change (93f841c, pending integration
+/// acceptance); once it lands, this document feeds the envelope by field
+/// copy (schema_version=2, operation, payload fields) without reshaping.
+pub fn build_job_command_json(
+    command_id: &str,
+    project_id: &str,
+    dry_run: bool,
+    expected_project_fingerprint: Option<&str>,
+    plan: &PlanFile,
+    plan_schema_version: &str,
+) -> Result<serde_json::Value, PlanFileError> {
+    if command_id.is_empty() || project_id.is_empty() {
+        return Err(PlanFileError("command_id/project_id 必填".to_string()));
+    }
+    if !SUPPORTED_PLAN_SCHEMA_VERSIONS.contains(&plan_schema_version) {
+        return Err(PlanFileError(format!(
+            "计划 schemaVersion {plan_schema_version} 不在支持集合内"
+        )));
+    }
+    let mut command = serde_json::json!({
+        "schemaVersion": 2,
+        "commandId": command_id,
+        "operation": "execute_production_job",
+        "projectId": project_id,
+        "dryRun": dry_run,
+        "payload": {
+            "planHash": plan.plan_hash,
+            "planSchemaVersion": plan_schema_version,
+            "planRef": plan.relative_ref
+        }
+    });
+    if !dry_run {
+        let fingerprint = expected_project_fingerprint.ok_or_else(|| {
+            PlanFileError("实跑必须提供 expectedProjectFingerprint（乐观锁）".to_string())
+        })?;
+        command["expectedProjectFingerprint"] = serde_json::Value::String(fingerprint.to_string());
+    }
+    Ok(command)
+}
+
+/// Assembles the v2 `restore_project` command document.
+pub fn build_restore_command_json(
+    command_id: &str,
+    project_id: &str,
+    dry_run: bool,
+    expected_project_fingerprint: Option<&str>,
+    snapshot_id: &str,
+) -> Result<serde_json::Value, PlanFileError> {
+    if command_id.is_empty() || project_id.is_empty() || snapshot_id.is_empty() {
+        return Err(PlanFileError("command_id/project_id/snapshot_id 必填".to_string()));
+    }
+    let mut command = serde_json::json!({
+        "schemaVersion": 2,
+        "commandId": command_id,
+        "operation": "restore_project",
+        "projectId": project_id,
+        "dryRun": dry_run,
+        "payload": { "snapshotId": snapshot_id }
+    });
+    if !dry_run {
+        let fingerprint = expected_project_fingerprint.ok_or_else(|| {
+            PlanFileError("实跑必须提供 expectedProjectFingerprint（乐观锁）".to_string())
+        })?;
+        command["expectedProjectFingerprint"] = serde_json::Value::String(fingerprint.to_string());
+    }
+    Ok(command)
+}
+
 #[derive(Debug)]
 pub struct PlanFileError(pub String);
 
@@ -316,5 +387,54 @@ mod tests {
         }"#;
         let receipt = ProductionJobReceipt::parse(receipt_json).unwrap();
         assert!(receipt.verified_plan_hash("sha256:aa").is_err());
+    }
+
+    #[test]
+    fn w21_job_command_json_matches_the_frozen_v2_envelope() {
+        let root = unique_root("cmd");
+        let plan = write_plan_file(&root, "job-run-01", PLAN).unwrap();
+        let command = build_job_command_json(
+            "job-run-01",
+            "proj",
+            false,
+            Some("fp-before"),
+            &plan,
+            "0.3",
+        )
+        .unwrap();
+        assert_eq!(command["schemaVersion"], serde_json::json!(2));
+        assert_eq!(command["operation"], serde_json::json!("execute_production_job"));
+        assert_eq!(command["expectedProjectFingerprint"], serde_json::json!("fp-before"));
+        assert_eq!(
+            command["payload"]["planRef"],
+            serde_json::json!(plan.relative_ref)
+        );
+        assert_eq!(command["payload"]["planHash"], serde_json::json!(plan.plan_hash));
+
+        // Real runs demand the fingerprint lock; dry-runs must not carry one.
+        let dry = build_job_command_json("d", "proj", true, None, &plan, "0.3").unwrap();
+        assert!(dry.get("expectedProjectFingerprint").is_none());
+        assert!(
+            build_job_command_json("r", "proj", false, None, &plan, "0.3").is_err(),
+            "a real run without the fingerprint lock must be a typed error"
+        );
+        assert!(
+            build_job_command_json("r", "proj", false, Some("fp"), &plan, "0.9").is_err(),
+            "unsupported plan schema versions are rejected at assembly"
+        );
+    }
+
+    #[test]
+    fn w21_restore_command_json_carries_the_snapshot_identity() {
+        let command =
+            build_restore_command_json("restore-01", "proj", false, Some("fp-current"), "snap-0001")
+                .unwrap();
+        assert_eq!(command["operation"], serde_json::json!("restore_project"));
+        assert_eq!(command["payload"]["snapshotId"], serde_json::json!("snap-0001"));
+        assert_eq!(command["expectedProjectFingerprint"], serde_json::json!("fp-current"));
+        assert!(
+            build_restore_command_json("r", "proj", false, Some("fp"), "").is_err(),
+            "a restore without a snapshot identity must be a typed error"
+        );
     }
 }
