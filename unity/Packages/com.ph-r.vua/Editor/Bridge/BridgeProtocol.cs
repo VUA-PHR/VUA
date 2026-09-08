@@ -42,6 +42,30 @@ namespace Vua.Editor.Bridge
         public string warehouseItemId = string.Empty; // empty = null (no warehouse item)
     }
 
+    // objectSelector v0.2 form: selectorId plus (catalogEntryId or pathHint).
+    [Serializable]
+    internal sealed class BridgeObjectSelector
+    {
+        public string selectorId = string.Empty;
+        public string catalogEntryId = string.Empty;
+        public List<string> pathHint = new List<string>();
+    }
+
+    [Serializable]
+    internal sealed class BridgeLocalTransform
+    {
+        public float px;
+        public float py;
+        public float pz;
+        public float qx;
+        public float qy;
+        public float qz;
+        public float qw = 1f;
+        public float sx = 1f;
+        public float sy = 1f;
+        public float sz = 1f;
+    }
+
     [Serializable]
     internal sealed class BridgeStep
     {
@@ -62,11 +86,13 @@ namespace Vua.Editor.Bridge
         public BridgeResolvedSource resolvedSource;
         // Flattened execution inputs (vocabulary follows kind); fields that do
         // not apply to a given kind stay empty and are ignored.
-        public string avatarGlobalObjectId = string.Empty;
-        public string avatarArmatureGlobalObjectId = string.Empty;
-        public string outfitGlobalObjectId = string.Empty;
-        public string outfitArmatureGlobalObjectId = string.Empty;
-        public string toggleName = string.Empty;
+        public string assetId = string.Empty;
+        public string selectorId = string.Empty;
+        public string bone = string.Empty;
+        public string objectPath = string.Empty;
+        public bool active;
+        public BridgeLocalTransform localTransform;
+        public BridgeObjectSelector selector;
         public string sourcePackagePath = string.Empty;
         public string sourcePackageSha256 = string.Empty;
         public string manifestSha256 = string.Empty;
@@ -74,10 +100,17 @@ namespace Vua.Editor.Bridge
     }
 
     [Serializable]
+    internal sealed class BridgePlanTarget
+    {
+        public string avatarInstanceId = string.Empty;
+    }
+
+    [Serializable]
     internal sealed class BridgePlanDocument
     {
         public string schemaVersion = string.Empty;
         public string planId = string.Empty;
+        public BridgePlanTarget target = new BridgePlanTarget();
         public List<BridgePlanJob> jobs = new List<BridgePlanJob>();
     }
 
@@ -131,6 +164,9 @@ namespace Vua.Editor.Bridge
         public List<BridgeStep> steps = new List<BridgeStep>();
         public string snapshotId = string.Empty;
         public string restoredFrom = string.Empty;
+        // v2: instantiated instance root of an install job (recipe assetId →
+        // scene instance), per the core execution-semantics spec.
+        public string instanceGlobalObjectId = string.Empty;
     }
 
     [Serializable]

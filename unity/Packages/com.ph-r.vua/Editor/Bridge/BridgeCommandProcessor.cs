@@ -621,17 +621,6 @@ namespace Vua.Editor.Bridge
 
         private static readonly string[] SupportedPlanSchemaVersions = { "0.3" };
 
-        // Job kinds frozen in the approved-plan schema (recipe v0.3). The
-        // Unity-side executors for these kinds are NOT wired yet (the
-        // execution semantics — e.g. how selectorId resolves to a scene
-        // object — are defined with the core W20 implementation slice);
-        // dispatching to them fails honestly with job_kind_executor_missing
-        // instead of guessing. Unknown kinds are contract errors.
-        private static readonly string[] KnownPlanJobKinds =
-        {
-            "install_modular_asset", "attach_to_bone", "exclude_object", "set_object_active"
-        };
-
         private static BridgeResult ExecuteProductionJob(BridgeCommand command)
         {
             if (string.IsNullOrWhiteSpace(command.payload.planHash) ||
@@ -729,24 +718,31 @@ namespace Vua.Editor.Bridge
             }
             receipt.data.snapshotId = snapshotId;
 
-            // Execute the ordered job sequence. The per-kind Unity executors
-            // are not wired yet (semantics pending the core W20 implementation
-            // slice) — every known kind fails honestly instead of guessing.
+            // Execute the ordered job sequence (proposal 011 execution-semantics
+            // spec, core 2026-09-08). Known-but-unimplementable kinds fail
+            // with typed codes that name exactly what is missing.
             for (var index = 0; index < plan.jobs.Count; index++)
             {
                 var job = plan.jobs[index];
-                if (Array.IndexOf(KnownPlanJobKinds, job.kind) < 0)
+                var (ok, errorCode, message) = job.kind switch
                 {
-                    steps[index].status = "failed";
-                    receipt.status = "failed";
-                    receipt.diagnostics.Add(BridgeDiagnostic.Error("job_kind_unknown",
-                        $"作业 {job.jobId} 的 kind「{job.kind}」不在计划词表内。"));
-                    break;
+                    "install_modular_asset" => ExecuteInstallModularAsset(job, plan, command),
+                    "attach_to_bone" => ExecuteAttachToBone(job, plan),
+                    "exclude_object" => ExecuteExcludeObject(job),
+                    "set_object_active" => ExecuteSetObjectActive(job),
+                    _ => (false, "job_kind_unknown",
+                        $"作业 {job.jobId} 的 kind「{job.kind}」不在计划词表内。")
+                };
+                if (ok)
+                {
+                    steps[index].status = "executed";
+                    if (!string.IsNullOrEmpty(message)) steps[index].warning = message;
+                    continue;
                 }
                 steps[index].status = "failed";
                 receipt.status = "failed";
-                receipt.diagnostics.Add(BridgeDiagnostic.Error("job_kind_executor_missing",
-                    $"作业 {job.jobId}（{job.kind}）的 Unity 执行器尚未接线（执行语义随核心 W20 实现切片定义）；未执行任何该作业副作用。"));
+                receipt.diagnostics.Add(BridgeDiagnostic.Error(errorCode,
+                    $"作业 {job.jobId}（{job.kind}）：{message}；序列已中断，未执行后续作业。"));
                 break;
             }
 
@@ -803,6 +799,228 @@ namespace Vua.Editor.Bridge
                     projectFingerprint = ProjectFingerprint.Compute()
                 }
             };
+        }
+
+        // ---- v2 job-kind executors (proposal 011 execution-semantics spec) ----
+
+        private static (bool ok, string errorCode, string message) ExecuteInstallModularAsset(
+            BridgePlanJob job, BridgePlanDocument plan, BridgeCommand command)
+        {
+            // The material enters the project through the v1-verified
+            // materialize base; the physical source must be staged into the
+            // job directory by the provider-side executor (Rust) before the
+            // command is sent — the Bridge cannot reach the warehouse.
+            if (string.IsNullOrWhiteSpace(job.sourcePackagePath) ||
+                string.IsNullOrWhiteSpace(job.manifestSha256))
+            {
+                return (false, "source_not_staged",
+                    "来源物未由 provider 物化到 job 目录（缺 sourcePackagePath/manifestSha256）。");
+            }
+            var sub = new BridgeCommand
+            {
+                schemaVersion = command.schemaVersion,
+                commandId = command.commandId,
+                operation = "materialize_extracted_package",
+                projectId = command.projectId,
+                dryRun = false,
+                payload =
+                {
+                    sourcePackagePath = job.sourcePackagePath,
+                    manifestSha256 = job.manifestSha256
+                }
+            };
+            var imported = MaterializeExtractedPackage(sub);
+            if (imported.status != "succeeded")
+            {
+                foreach (var diagnostic in imported.diagnostics)
+                {
+                    if (diagnostic.severity == "error")
+                    {
+                        return (false, diagnostic.code, diagnostic.message);
+                    }
+                }
+                return (false, "source_import_failed", "来源物物化未成功。");
+            }
+
+            // Instantiate the first new prefab as the instance root, named by
+            // the recipe assetId so later jobs can resolve it.
+            var prefabPath = imported.data.importedAssetPaths
+                .FirstOrDefault(path => path.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase));
+            if (prefabPath == null)
+            {
+                return (false, "instance_prefab_missing",
+                    "来源物内容已入项目，但未找到可实例化的 prefab 根。");
+            }
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                return (false, "instance_prefab_missing", "prefab 无法由 AssetDatabase 加载。");
+            }
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
+            if (instance == null)
+            {
+                return (false, "instance_failed", "prefab 实例化失败。");
+            }
+            instance.name = string.IsNullOrWhiteSpace(job.assetId) ? instance.name : job.assetId;
+            return (true, string.Empty, string.Empty);
+        }
+
+        private static (bool ok, string errorCode, string message) ExecuteAttachToBone(
+            BridgePlanJob job, BridgePlanDocument plan)
+        {
+            var target = FindSceneObjectBySelector(
+                new BridgeObjectSelector { selectorId = job.selectorId });
+            if (target == null)
+            {
+                return (false, "selector_unresolved",
+                    $"挂载对象 selectorId「{job.selectorId}」无解（场景中无同名对象）。");
+            }
+            var avatar = FindAvatarFromPlan(plan);
+            if (avatar == null)
+            {
+                return (false, "avatar_not_found", "目标 Avatar 实例不存在或缺少 Animator。");
+            }
+            if (!Enum.TryParse(job.bone, ignoreCase: true, out HumanBodyBones bone) ||
+                bone == HumanBodyBones.LastBone ||
+                avatar.GetBoneTransform(bone) == null)
+            {
+                return (false, "bone_not_in_humanoid_mapping",
+                    $"骨骼「{job.bone}」不在 Avatar 的 humanoid 映射内。");
+            }
+            var boneTransform = avatar.GetBoneTransform(bone);
+            target.transform.SetParent(boneTransform, false);
+            var transform = job.localTransform ?? new BridgeLocalTransform();
+            target.transform.localPosition = new Vector3(transform.px, transform.py, transform.pz);
+            target.transform.localRotation = new Quaternion(transform.qx, transform.qy, transform.qz, transform.qw);
+            target.transform.localScale = new Vector3(transform.sx, transform.sy, transform.sz);
+            return (true, string.Empty, string.Empty);
+        }
+
+        private static (bool ok, string errorCode, string message) ExecuteExcludeObject(
+            BridgePlanJob job)
+        {
+            var target = FindSceneObjectBySelector(job.selector);
+            if (target == null)
+            {
+                return (false, "selector_unresolved",
+                    "排除对象 selector 无解（目录条目不可达且 pathHint 无命中）。");
+            }
+            // The spec leaves the marker form open ("VRCMetaObject /
+            // offence-excluded 形态") and the VRCSDK assembly is not referenced
+            // by this package — writing a guess marker would be dishonest.
+            // The object is located; the marker write waits for the core to
+            // pin one component type (or a package-reference ruling).
+            return (false, "exclude_marker_unavailable",
+                "排除标记组件形态待核心钉死（VRCSDK 未被本包引用）；对象已定位但未被修改。");
+        }
+
+        private static (bool ok, string errorCode, string message) ExecuteSetObjectActive(
+            BridgePlanJob job)
+        {
+            var target = FindSceneObjectBySelector(job.selector);
+            if (target == null)
+            {
+                return (false, "selector_unresolved", "对象 selector 无解。");
+            }
+            target.SetActive(job.active);
+            if (target.activeSelf != job.active)
+            {
+                return (false, "active_state_mismatch", "激活态未按目标生效。");
+            }
+            return (true, string.Empty, string.Empty);
+        }
+
+        /// objectSelector resolution: pathHint (name chain from the scene
+        /// root, inactive included) is fully resolvable in-scene; a selector
+        /// with only a catalogEntryId has no in-Bridge catalog source and
+        /// fails honestly (the catalog lives in provider-side BDL).
+        private static GameObject FindSceneObjectBySelector(BridgeObjectSelector selector)
+        {
+            if (selector == null) return null;
+            if (selector.pathHint != null && selector.pathHint.Count > 0)
+            {
+                GameObject current = null;
+                foreach (var name in selector.pathHint)
+                {
+                    current = FindChildByName(current, name);
+                    if (current == null) return null;
+                }
+                return current;
+            }
+            if (!string.IsNullOrWhiteSpace(selector.selectorId))
+            {
+                return FindByNameDeep(null, selector.selectorId);
+            }
+            return null; // catalogEntryId-only: no in-Bridge catalog source
+        }
+
+        private static GameObject FindChildByName(GameObject parent, string name)
+        {
+            if (parent == null)
+            {
+                var scene = SceneManager.GetActiveScene();
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    if (root.name == name) return root;
+                    var deep = FindByNameDeep(root, name);
+                    if (deep != null) return deep;
+                }
+                return null;
+            }
+            return FindByNameDeep(parent, name);
+        }
+
+        private static GameObject FindByNameDeep(GameObject root, string name)
+        {
+            if (root != null && root.name == name) return root;
+            Transform start = root != null ? root.transform : null;
+            IEnumerable<GameObject> Iterate(Transform node)
+            {
+                for (var i = 0; i < node.childCount; i++) yield return node.GetChild(i).gameObject;
+            }
+            var queue = new Queue<Transform>();
+            if (start == null)
+            {
+                var scene = SceneManager.GetActiveScene();
+                foreach (var rootObject in scene.GetRootGameObjects())
+                {
+                    queue.Enqueue(rootObject.transform);
+                }
+            }
+            else
+            {
+                foreach (var child in Iterate(start)) queue.Enqueue(child.transform);
+            }
+            while (queue.Count > 0)
+            {
+                var node = queue.Dequeue();
+                if (node.name == name) return node.gameObject;
+                for (var i = 0; i < node.childCount; i++) queue.Enqueue(node.GetChild(i));
+            }
+            return null;
+        }
+
+        private static Animator FindAvatarFromPlan(BridgePlanDocument plan)
+        {
+            GameObject avatarRoot = null;
+            if (plan?.target != null && !string.IsNullOrWhiteSpace(plan.target.avatarInstanceId))
+            {
+                avatarRoot = FindByNameDeep(null, plan.target.avatarInstanceId);
+            }
+            if (avatarRoot == null)
+            {
+                var scene = SceneManager.GetActiveScene();
+                foreach (var rootObject in scene.GetRootGameObjects())
+                {
+                    var animator = rootObject.GetComponent<Animator>();
+                    if (animator != null && animator.isHuman)
+                    {
+                        avatarRoot = rootObject;
+                        break;
+                    }
+                }
+            }
+            return avatarRoot != null ? avatarRoot.GetComponent<Animator>() : null;
         }
 
         private static string ResolveJobFile(string planRef)
