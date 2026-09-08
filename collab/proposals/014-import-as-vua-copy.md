@@ -53,6 +53,32 @@
 
 ## 内联讨论线程
 
+### 实现落账（环境，2026-09-09）
+
+按仲裁实现切片已交付本树（226dd41），请求集成验收：
+
+- **词表冻结件** `schemas/project-ops/v0.1/`：command.schema（`project.import-copy`
+  单命令闭集，plan/apply 两 phase；apply 强制 `confirmedPlanDigest`）＋
+  result.schema（plan/receipt/rejected 三态；**桌面字段请求已落字段**——
+  `estimatedBytes` 逐字节实测、`excludedEntries`、`targetPath`；守卫拒绝码闭集
+  七项：target_exists / target_inside_source / source_not_registered /
+  source_invalid / insufficient_disk_space / plan_drift / **execution_failed**
+  〔执行期失败如实失败——锁/复制/簿记失败非守卫拒绝，经核心裁决第 2/3 条精神
+  分型，见下〕）＋正例向量 4 件＋负例向量 3 件；
+- **Rust 实现** `crates/project-manager/src/import_copy.rs`：
+  `plan_import_copy`（守卫＋实测复制范围＋plan digest）→
+  `apply_import_copy`（双摘要漂移拒绝→排除复制→新 Unity 身份
+  productName→`.vua/source.json` 来源关系〔含 taskCorrelation，W23 同构〕→
+  复检新项目）；
+- **纪律落点**：原项目零写入零取锁（守卫核验与复制全程只读源）；新项目锁仅
+  覆盖复制窗口；复制失败不清理半成品（inspect_required 语义交任务面）；拒绝码
+  `execution_failed` 的说明：核心裁决 2/3 将锁失败与复制失败归入任务内类型化
+  失败而非五守卫拒绝——七项闭集=五守卫＋plan_drift（双摘要）＋execution_failed
+  （执行期失败），如仲裁认为应并入既有项请指示修订；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败（新增 5 项消费测试：全流程
+  含排除/身份/来源链接/原项目未动断言、plan_drift 拒绝、类型化守卫负例、向量过
+  冻结 Schema 含负例拒绝）；clippy --workspace --all-targets -D warnings 零告警。
+
 
 ## 表态（核心，2026-09-09——任务面/路由/词表视角）
 

@@ -197,6 +197,17 @@ pub fn collect_project_inspections(
     }
 }
 
+/// Deep read-only inspection of one path with explicit associations — the
+/// single-project face of [`collect_project_inspections`], used by the
+/// import-copy re-inspection (proposal 014) so the receipt's reInspection
+/// block and the read face can never drift apart.
+pub fn inspect_project_deep(
+    path: &str,
+    associations: Vec<crate::environment_managers::ProjectAssociation>,
+) -> ProjectInspectionV01 {
+    inspect_one(path, associations)
+}
+
 /// Deep read-only inspection of one registered path. Project-level
 /// findings ride on the per-project `diagnostics`; the aggregate-level
 /// `diagnostics` only carries discovery findings.

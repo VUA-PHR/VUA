@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/project-ops/v0.1/command.schema.json",
+  "title": "VUA project-ops command v0.1",
+  "description": "Project-domain write commands (proposal 014, arbitrated 2026-09-09): project.import-copy is the single write path VUA has toward ALCOM/VCC-managed original projects (product-boundary 1.2.0, user ruling U3) — it creates a NEW project directory as a VUA-managed copy and never touches the original. Two phases in one closed command: phase=plan computes the copy scope (per-entry disk estimate, excluded entries, target path) and a plan digest; phase=apply re-computes the plan, refuses on drift, copies with the exclusions, gives the new project its own identity, records the source link, and re-inspects. Guards are server-side facts evaluated inside the task (target exists / target inside source / source not a registered project / source invalid / insufficient disk space / plan drift); the desktop may pre-hint but the authoritative verdict lives here. Nine-state task semantics (commandId idempotency, cancellable, no implicit resume — a crashed half-copy surfaces inspect_required and retry means the user-triggered clean-then-redo) ride the application-contract task surface, not this schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["project.import-copy"]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.import-copy" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "phase",
+              "sourcePath",
+              "targetParentDirectory",
+              "targetProjectName"
+            ],
+            "properties": {
+              "phase": {
+                "enum": ["plan", "apply"]
+              },
+              "sourcePath": { "type": "string", "minLength": 1 },
+              "targetParentDirectory": { "type": "string", "minLength": 1 },
+              "targetProjectName": { "type": "string", "minLength": 1 },
+              "confirmedPlanDigest": { "type": "string", "minLength": 1 }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "phase": { "const": "apply" } },
+                  "required": ["phase"]
+                },
+                "then": {
+                  "required": ["confirmedPlanDigest"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

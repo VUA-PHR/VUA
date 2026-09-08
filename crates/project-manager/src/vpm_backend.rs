@@ -934,43 +934,7 @@ pub fn create_from_template(
     // JSON 字符串也是合法 YAML 标量，借此保留 Unicode 并避免 `#` 等
     // 字符把项目名解释成注释或结构语法。
     let settings_path = target.join("ProjectSettings").join("ProjectSettings.asset");
-    if let Ok(content) = std::fs::read_to_string(&settings_path) {
-        let mut updated = String::with_capacity(content.len());
-        let mut replaced = false;
-        for line in content.lines() {
-            let trimmed = line.trim_start();
-            if trimmed.starts_with("productName:") {
-                let indentation = &line[..line.len() - trimmed.len()];
-                let escaped_name = serde_json::to_string(name).map_err(|error| {
-                    AppErrorV1::new(
-                        error_codes::TEMPLATE_MISSING,
-                        ErrorCategory::Internal,
-                        "errors.vpm.templateCopyFailed",
-                        "corr-vpm-create",
-                    )
-                    .with_param("reason", ParamValue::Text(error.to_string()))
-                })?;
-                updated.push_str(indentation);
-                updated.push_str("productName: ");
-                updated.push_str(&escaped_name);
-                replaced = true;
-            } else {
-                updated.push_str(line);
-            }
-            updated.push('\n');
-        }
-        if replaced {
-            std::fs::write(&settings_path, updated).map_err(|error| {
-                AppErrorV1::new(
-                    error_codes::TEMPLATE_MISSING,
-                    ErrorCategory::ExternalFailure,
-                    "errors.vpm.templateCopyFailed",
-                    "corr-vpm-create",
-                )
-                .with_param("reason", ParamValue::Text(error.to_string()))
-            })?;
-        }
-    }
+    set_product_name(&settings_path, name)?;
 
     if !target.join("ProjectSettings/ProjectVersion.txt").is_file() {
         return Err(AppErrorV1::new(
@@ -1021,6 +985,56 @@ fn validate_vpm_project_name(name: &str) -> Result<(), AppErrorV1> {
             "corr-vpm-create",
         )
         .with_param("name", ParamValue::Text(name.to_owned())));
+    }
+    Ok(())
+}
+
+/// Rewrites `productName` in an existing ProjectSettings.asset (YAML text
+/// with indentation). Shared by template-based creation and the import-copy
+/// write path (proposal 014): the copy takes the new project name as its
+/// Unity-facing identity. Best-effort by design — a missing or unreadable
+/// file, or a file without the field, is a silent no-op (identical to the
+/// original template-creation behavior); callers own the validation that
+/// the project is real.
+pub fn set_product_name(settings_path: &Path, name: &str) -> Result<(), AppErrorV1> {
+    let content = match std::fs::read_to_string(settings_path) {
+        Ok(content) => content,
+        Err(_) => return Ok(()),
+    };
+    let mut updated = String::with_capacity(content.len());
+    let mut replaced = false;
+    for line in content.lines() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("productName:") {
+            let indentation = &line[..line.len() - trimmed.len()];
+            let escaped_name = serde_json::to_string(name).map_err(|error| {
+                AppErrorV1::new(
+                    error_codes::TEMPLATE_MISSING,
+                    ErrorCategory::Internal,
+                    "errors.vpm.templateCopyFailed",
+                    "corr-vpm-create",
+                )
+                .with_param("reason", ParamValue::Text(error.to_string()))
+            })?;
+            updated.push_str(indentation);
+            updated.push_str("productName: ");
+            updated.push_str(&escaped_name);
+            replaced = true;
+        } else {
+            updated.push_str(line);
+        }
+        updated.push('\n');
+    }
+    if replaced {
+        std::fs::write(settings_path, updated).map_err(|error| {
+            AppErrorV1::new(
+                error_codes::TEMPLATE_MISSING,
+                ErrorCategory::ExternalFailure,
+                "errors.vpm.templateCopyFailed",
+                "corr-vpm-create",
+            )
+            .with_param("reason", ParamValue::Text(error.to_string()))
+        })?;
     }
     Ok(())
 }
