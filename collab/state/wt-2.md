@@ -6,6 +6,12 @@ baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
+**用户催办令：W20 实现切片已开工**——第一刀已交付（0cbafa7：production-
+evidence v0.1 存储面：EvidenceStore 文档库＋serde 类型＋冻结向量驱动 Schema
+校验测试＋exactly-once 硬链接发布〔rename 在 Windows 会静默替换，单测抓出后
+照 BuildRecordStore 先例改 hard_link〕）。**下一刀（下个工作时段立即继续）**：
+production-use-case v0.2 冻结切片（命令面 Schema＋向量＋provider-host
+recipe/plan/job/record 路由）。
 **W21 Rust 侧收口前置两件到位**：①UnityOperation/UnityPayload/UnityResult
 扩展交付（93f841c＋36b14ff 补遗——两 fixture 文件曾漏暂存已补；跨域测试构造
 机械跟随已声明）；②四计划 kind 执行语义规格（471a4ee，见下）。**执行序②核心
@@ -15,6 +21,14 @@ updated: 2026-09-08
 同批扩展（当前手动发起不带，行为诚实）。W20 实现切片（production-use-case
 v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
 ## 本轮追加交付（da76323 后，收尾时段安全收尾件）
+- **证据存储面第一刀（0cbafa7，核心域，用户催办令 W20 实现切片第一刀）**：
+  ProductionEvidenceV01 serde 类型（冻结 v0.1 形状：kind 四词闭集/subject/
+  sourceRef 二选一/resolution 显式 null）；EvidenceStore 文档库
+  （BuildRecordStore 先例：hard_link exactly-once——rename 在 Windows 会静默
+  替换，单测抓出后照先例修正）；消费测试 3 项（冻结正例 4/负例 3 真 Schema
+  校验、存储序列化过冻结 Schema、resolved 形态、exactly-once/忠实回读/
+  类型化非法 id/排序列表）；**证据（2026-09-08 本机）**：orchestrator lib 44
+  ＋evidence 3 绿＋workspace 全量绿＋clippy -D warnings 零告警；
 - **合并 main**（执行序②收口批：数据挂点落地＋387/0 复跑；产线 prelude 8fcff01
   ＋C# 第一刀批入树）——执行序②全链收口；
 - **两件表态（collab 内联）**：①信封扩展请求（产线 8fcff01）——**已由 93f841c
@@ -76,12 +90,18 @@ v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
 ## 阻塞
 无。
 ## 下次合并意图
-**UnityOperation 扩展批（93f841c＋36b14ff 补遗，含跨域机械跟随）＋执行语义
-规格与勘误批（471a4ee）＋exclude 钉死表态＋本状态批**请集成验收合并；W22
-冻结切片（c486318）同批。
+**证据存储面第一刀（0cbafa7，核心域）＋UnityOperation 扩展批（93f841c＋
+36b14ff 补遗，含跨域机械跟随）＋执行语义规格与勘误批（471a4ee）＋exclude
+钉死表态＋执行序②核心半边（6b4f21a）＋010 接线设计批＋本状态批**请集成验收
+合并；W22 冻结切片（c486318）同批。
 产线 C# 执行内核可按 011 执行语义规格节实现四 kind（exclude 已钉
-VRCMetaObject.excluded；诚实缺口的正主到位）。
+VRCMetaObject.excluded；诚实缺口的正主到位）。核心下一刀（下个工作时段）：
+production-use-case v0.2 冻结切片＋命令面。
 ## 留言
+- [→数据] W20 实现第一刀已交付：证据存储面＝AMF 生产持久域文档库
+  （EvidenceStore，BuildRecordStore 先例，hard_link exactly-once）——存储
+  形态按 011 收敛决议①落地（你的 §5 交核心定义权已行使）。W23 消费接口
+  （evidenceIds 身份）不变。
 - [→产线] exclude_object 形态已钉死（011 内联）：VRCMetaObject.excluded 主
   形态＋W25 真机实证义务（组件断言＋构建对比）；legacy「/」前缀不采用。
   信封扩展请求（8fcff01）已由 93f841c 交付待集成验收——接线解锁随验收。
