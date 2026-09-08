@@ -3,7 +3,9 @@
 use vua_unity_bridge::{
     MaterialCancelToken, MaterialExecutionStatus, MaterialExecutor, RollbackOutcome,
 };
-use vua_orchestrator::{MaterialEntryMode, RiskDecisionChoice, SourceFolderInspectionV01};
+use vua_orchestrator::{
+    MaterialEntryMode, RecipeDocumentStore, RiskDecisionChoice, SourceFolderInspectionV01,
+};
 use vua_unity_bridge::{
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
 };
@@ -110,6 +112,7 @@ struct HostState {
     production: Option<Arc<ProductionServices>>,
     downloads: Option<Arc<DownloadServices>>,
     warehouse: Option<Arc<WarehouseServices>>,
+    use_cases: Option<Arc<ProductionUseCaseServices>>,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -183,6 +186,19 @@ impl DownloadServices {
             .push(payload);
         seq
     }
+}
+
+/// W20 production-use-case v0.2 wiring (recipe/plan/job/record command
+/// face): when absent, every `recipe.*` method answers a typed
+/// `unavailable` error — honest absence, never a silent success. The
+/// recipe document store is the AMF production-domain document store
+/// (011 convergence decision 1; never BDL).
+pub struct ProductionUseCaseConfig {
+    pub recipes: Arc<RecipeDocumentStore>,
+}
+
+struct ProductionUseCaseServices {
+    recipes: Arc<RecipeDocumentStore>,
 }
 
 /// Production use-case wiring (production-use-case v0.1): when absent, every
@@ -259,7 +275,7 @@ pub fn run_provider_host_with_downloads(
     production: Option<ProductionConfig>,
     downloads: Option<DownloadConfig>,
 ) -> Result<(), ProviderHostError> {
-    run_provider_host_with_services(input, output, database_path, production, downloads, None)
+    run_provider_host_with_services(input, output, database_path, production, downloads, None, None)
 }
 
 /// The full entry: additionally wires the B4 warehouse command trio
@@ -273,6 +289,7 @@ pub fn run_provider_host_with_services(
     production: Option<ProductionConfig>,
     downloads: Option<DownloadConfig>,
     warehouse: Option<WarehouseConfig>,
+    use_cases: Option<ProductionUseCaseConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -355,9 +372,13 @@ pub fn run_provider_host_with_services(
             })
         })
         .transpose()?;
+    let use_cases = use_cases.map(|config| {
+        Arc::new(ProductionUseCaseServices { recipes: config.recipes })
+    });
     let mut state = HostState {
         store,
         provider_instance_id,
+        use_cases,
         recovered_nonterminal_tasks,
         production,
         downloads,
@@ -680,6 +701,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("catalog.") {
         return catalog_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("recipe.") {
+        return recipe_request(state, method, request, request_id, correlation_id);
+    }
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
     }
@@ -770,11 +794,17 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    let recipe_availability = if state.use_cases.is_some() {
+        "available"
+    } else {
+        "unavailable"
+    };
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "production.useCase", "availability": production_availability},
+        {"operationId": "production.recipes", "availability": recipe_availability},
         {
             "operationId": "desktop.remoteBrowser",
             "availability": "unavailable",
@@ -1414,6 +1444,215 @@ fn warehouse_submit_task(
         // (the guards themselves fire inside the task, not at admission).
         Err(_) => warehouse_store_failed(request_id, correlation_id),
     }
+}
+
+/// W20 production-use-case v0.2 command face (first cut): the recipe
+/// document face (save with baseRevision optimistic concurrency / get /
+/// list) over the AMF production-domain recipe document store. Absent
+/// wiring answers a typed unavailable; unknown params and stale bases are
+/// typed contract errors (011 section 7 convergence decisions, data stance).
+fn recipe_request(
+    state: &HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(use_cases) = state.use_cases.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.recipe.unavailable",
+            "errors.recipe.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "recipe.save" => recipe_save(use_cases, request, request_id, correlation_id),
+        "recipe.get" => recipe_get(use_cases, request, request_id, correlation_id),
+        "recipe.list" => recipe_list(use_cases, request, request_id, correlation_id),
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn recipe_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.recipe.invalid_params",
+        "errors.recipe.invalidParams",
+        "validation",
+    ))
+}
+
+fn recipe_store_failed(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.recipe.store_failed",
+        "errors.recipe.storeFailed",
+        "internal",
+    ))
+}
+
+fn recipe_not_found(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.recipe.not_found",
+        "errors.recipe.notFound",
+        "validation",
+    ))
+}
+
+fn recipe_save(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed set: { recipeDocument, baseRevision }.
+    let params = match request.get("params").and_then(Value::as_object) {
+        Some(params) => params,
+        None => return recipe_invalid_params(request_id, correlation_id),
+    };
+    if params.keys().any(|key| key != "recipeDocument" && key != "baseRevision") {
+        return recipe_invalid_params(request_id, correlation_id);
+    }
+    let Some(recipe_document) = params.get("recipeDocument").filter(|value| value.is_object()) else {
+        return recipe_invalid_params(request_id, correlation_id);
+    };
+    let Some(base_revision) = params.get("baseRevision").and_then(Value::as_u64) else {
+        return recipe_invalid_params(request_id, correlation_id);
+    };
+    // The document identity must come from the body (single source of identity).
+    let Some(recipe_id) =
+        recipe_document.get("recipeId").and_then(Value::as_str).map(str::to_owned)
+    else {
+        return recipe_invalid_params(request_id, correlation_id);
+    };
+    match use_cases.recipes.save(&recipe_id, recipe_document, base_revision) {
+        Ok(stored) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "recipeId": recipe_id,
+                "revision": stored.revision,
+                "updatedAt": stored.updated_at,
+            }),
+        )),
+        Err(vua_orchestrator::RecipeSaveError::RevisionConflict { current_revision }) => {
+            let mut envelope = application_error(
+                request_id,
+                correlation_id,
+                "vua.recipe.revision_conflict",
+                "errors.recipe.revisionConflict",
+                "conflict",
+            );
+            if let Some(error_object) = envelope.get_mut("error") {
+                error_object["currentRevision"] = json!(current_revision);
+            }
+            FrameOutcome::Response(envelope)
+        }
+        Err(_) => recipe_store_failed(request_id, correlation_id),
+    }
+}
+
+fn recipe_get(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let params = request.get("params").cloned().unwrap_or(json!({}));
+    if !params.as_object().map(|object| object.len()).map(|len| len == 1).unwrap_or(false) {
+        return recipe_invalid_params(request_id, correlation_id);
+    }
+    let Some(recipe_id) = params.get("recipeId").and_then(Value::as_str) else {
+        return recipe_invalid_params(request_id, correlation_id);
+    };
+    if recipe_id.is_empty() {
+        return recipe_invalid_params(request_id, correlation_id);
+    }
+    match use_cases.recipes.get(recipe_id) {
+        Ok(Some(stored)) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "recipeId": recipe_id,
+                "revision": stored.revision,
+                "updatedAt": stored.updated_at,
+                "recipeDocument": stored.recipe,
+            }),
+        )),
+        Ok(None) => recipe_not_found(request_id, correlation_id),
+        Err(_) => recipe_store_failed(request_id, correlation_id),
+    }
+}
+
+fn recipe_list(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed set (catalog.list precedent): text/limit/offset; unknown keys
+    // are contract errors (012 data stance).
+    if let Some(Value::Object(params)) = request.get("params") {
+        let allowed = ["text", "limit", "offset"];
+        if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+            return recipe_invalid_params(request_id, correlation_id);
+        }
+    }
+    let all = match use_cases.recipes.list() {
+        Ok(all) => all,
+        Err(_) => return recipe_store_failed(request_id, correlation_id),
+    };
+    let text_filter = request
+        .get("params")
+        .and_then(|params| params.get("text"))
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_lowercase();
+    let limit = request
+        .get("params")
+        .and_then(|params| params.get("limit"))
+        .and_then(Value::as_u64)
+        .unwrap_or(50)
+        .clamp(1, 200) as usize;
+    let offset = request
+        .get("params")
+        .and_then(|params| params.get("offset"))
+        .and_then(Value::as_u64)
+        .unwrap_or(0) as usize;
+    let filtered: Vec<_> = all
+        .into_iter()
+        .filter(|entry| {
+            text_filter.is_empty() || entry.title.to_lowercase().contains(&text_filter)
+        })
+        .collect();
+    let total = filtered.len();
+    let page: Vec<Value> = filtered
+        .into_iter()
+        .skip(offset)
+        .take(limit)
+        .map(|entry| {
+            json!({
+                "recipeId": entry.recipe_id,
+                "revision": entry.revision,
+                "title": entry.title,
+                "updatedAt": entry.updated_at,
+            })
+        })
+        .collect();
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({ "total": total, "entries": page }),
+    ))
 }
 
 /// W12 closeout: the catalog read face (bdl-queries v0.3) — the three
@@ -3928,6 +4167,7 @@ mod tests {
             production: None,
             downloads: None,
             warehouse: None,
+            use_cases: None,
         };
 
         let prepare = InboundFrame {

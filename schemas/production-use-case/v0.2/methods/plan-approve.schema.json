@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/plan-approve.schema.json",
+  "title": "VUA production.plan-approve (v0.2)",
+  "description": "Fixes the user approval: draft -> approved (idempotent). Fingerprint/version-lock prechecks apply again at job submission (009 stance 4).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "planId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "planStatus": {
+      "enum": [
+        "draft",
+        "approved",
+        "superseded"
+      ]
+    },
+    "plan-approveRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId"
+      ],
+      "properties": {
+        "planId": {
+          "$ref": "#/$defs/planId"
+        }
+      }
+    },
+    "plan-approveResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId",
+        "planStatus"
+      ],
+      "properties": {
+        "planId": {
+          "$ref": "#/$defs/planId"
+        },
+        "planStatus": {
+          "$ref": "#/$defs/planStatus"
+        }
+      }
+    }
+  }
+}

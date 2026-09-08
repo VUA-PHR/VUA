@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/plan-list.schema.json",
+  "title": "VUA production.plan-list (v0.2)",
+  "description": "Identity listing over approved plans.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recipeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "planStatus": {
+      "enum": [
+        "draft",
+        "approved",
+        "superseded"
+      ]
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId",
+        "recipeId",
+        "status",
+        "approvedAt"
+      ],
+      "properties": {
+        "planId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "recipeId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {
+          "enum": [
+            "draft",
+            "approved",
+            "superseded"
+          ]
+        },
+        "approvedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "plan-listRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        },
+        "planStatus": {
+          "$ref": "#/$defs/planStatus"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "limit": {
+          "$ref": "#/$defs/limit"
+        },
+        "offset": {
+          "$ref": "#/$defs/offset"
+        }
+      }
+    },
+    "plan-listResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "entries"
+      ],
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/total"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        }
+      }
+    }
+  }
+}

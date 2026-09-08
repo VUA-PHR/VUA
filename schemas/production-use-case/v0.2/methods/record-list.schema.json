@@ -1,0 +1,115 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/record-list.schema.json",
+  "title": "VUA production.record-list (v0.2)",
+  "description": "Identity listing over Build Records.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "recipeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "recordStatus": {
+      "enum": [
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled",
+        "rolled_back",
+        "recovered"
+      ]
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "buildId",
+        "planId",
+        "status",
+        "finishedAt"
+      ],
+      "properties": {
+        "buildId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "planId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "status": {
+          "enum": [
+            "succeeded",
+            "succeeded_with_warnings",
+            "failed",
+            "cancelled",
+            "rolled_back",
+            "recovered"
+          ]
+        },
+        "finishedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "record-listRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        },
+        "recordStatus": {
+          "$ref": "#/$defs/recordStatus"
+        },
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "limit": {
+          "$ref": "#/$defs/limit"
+        },
+        "offset": {
+          "$ref": "#/$defs/offset"
+        }
+      }
+    },
+    "record-listResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "entries"
+      ],
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/total"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        }
+      }
+    }
+  }
+}

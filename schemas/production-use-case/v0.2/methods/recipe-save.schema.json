@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/recipe-save.schema.json",
+  "title": "VUA production.recipe-save (v0.2)",
+  "description": "Whole-document save with optimistic concurrency: baseRevision must match the stored revision or the save is a typed conflict; each accepted save bumps revision (011 section 7, data stance).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "baseRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recipeDocument": {
+      "type": "object",
+      "required": [
+        "formatVersion",
+        "recipeId",
+        "revision",
+        "title"
+      ],
+      "properties": {
+        "formatVersion": {
+          "const": "0.3"
+        },
+        "recipeId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "recipeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recipe-saveRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeDocument",
+        "baseRevision"
+      ],
+      "properties": {
+        "recipeDocument": {
+          "$ref": "#/$defs/recipeDocument"
+        },
+        "baseRevision": {
+          "$ref": "#/$defs/baseRevision"
+        }
+      }
+    },
+    "recipe-saveResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId",
+        "revision"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        }
+      }
+    }
+  }
+}
