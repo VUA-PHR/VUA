@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "vua.eac-probe/v0.1",
+  "capturedAt": "2026-09-09T04:30:00.000Z",
+  "productionTarget": "2022.3.22f1",
+  "processes": [
+    {
+      "name": "vrchat.exe",
+      "pid": 41224,
+      "kind": "vrchat_game",
+      "path": null
+    },
+    {
+      "name": "easyanticheat.exe",
+      "pid": 39012,
+      "kind": "eac_loader",
+      "path": "C:\\Program Files (x86)\\EasyAntiCheat\\EasyAntiCheat.exe"
+    }
+  ],
+  "vrchatSessionActive": true,
+  "eacPresent": true,
+  "readiness": {
+    "conclusion": "eac_active_with_vrchat_session",
+    "guidanceCode": "vua.eac_probe.guidance_close_game_first"
+  },
+  "terminationCapability": {
+    "state": "unavailable",
+    "reason": "allowlist_empty_no_machine_evidence"
+  },
+  "diagnostics": []
+}
