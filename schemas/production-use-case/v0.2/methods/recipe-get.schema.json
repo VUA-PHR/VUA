@@ -39,7 +39,8 @@
         "recipeId",
         "revision",
         "recipeDocument",
-        "updatedAt"
+        "updatedAt",
+        "schemaVersion"
       ],
       "properties": {
         "recipeId": {
@@ -53,6 +54,9 @@
         },
         "updatedAt": {
           "$ref": "#/$defs/updatedAt"
+        },
+        "schemaVersion": {
+          "const": "0.2"
         }
       }
     }

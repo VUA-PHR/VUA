@@ -6,6 +6,8 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
+**production-use-case v0.2 已冻结（2fd4813：24 向量＋向量驱动消费测试 3 项＋
+协议本/REGISTRY 升冻结——W25 前置①凭证交付）**，交集成验收。
 **proposal 014 核心表态已交付（fc6f69e，内联）**：命令面裁独立 project-ops
 词表行（project.import-copy；与 013 检测读面读/写分线）＋九态任务＋服务端
 守卫——待桌面/集成。**M6 已开窗（环境 T-A/T-B＋ALCOM/VCC 兼容矩阵＋proposal 013 入树）**；W20
@@ -40,6 +42,18 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 - **合并 main**（M6 环境 T-A/T-B 批＋桌面 T-C 检测批＋proposal 013 入树）——
   baseline 追平；状态文件 consolidate（合并带入的 wt-2 状态与本轮条目冲突
   已融合）。
+## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
+- **production-use-case v0.2 冻结收口（2fd4813，回应集成 W25 前置①凭证）**：
+  **正负例向量 24 件**（schemas/production-use-case/v0.2/examples/：10 正例
+  请求＋10 正例结果＋4 负例〔缺 baseRevision/limit 越界/缺 planId/未知参数〕）
+  ＋**向量驱动消费测试**（crates/provider-host/tests/
+  production_use_case_vectors.rs 3 项：十方法 Request/Result defs 全冻结钉
+  死＋正例校验〔$defs 重挂解析嵌套 $ref〕＋负例拒绝）；**baseRevision
+  minimum 修正 0**（0＝创建，对齐 011 §7 创建语义）；**recipe-save/get
+  Result 补 schemaVersion/updatedAt**（信封一致性）；**协议本/REGISTRY 升
+  冻结**（状态候选→冻结，冻结硬前置全齐声明）；
+  **证据（2026-09-09 本机）**：向量测试 3/3＋workspace 55 套全绿＋clippy
+  -D warnings 零告警。
 ## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
 - **resolve 执行器＋record.get（34d0075，核心域 628 行）**：
   - **run_local_resolution**（011 §5 最小诚实语义）：读 Recipe 文档→composed
@@ -91,7 +105,8 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**W20 第三刀（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
+**production-use-case v0.2 冻结收口（2fd4813，W25 前置①凭证）＋W20 第三刀
+（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
 ＋证据存储面第一刀（0cbafa7）＋UnityOperation 扩展批（93f841c＋36b14ff）＋
 执行语义规格与勘误批（471a4ee）＋exclude 钉死表态＋执行序②核心半边
 （6b4f21a）＋010 接线设计批＋本状态批**请集成验收合并；W22 冻结切片

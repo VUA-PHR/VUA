@@ -3,7 +3,10 @@
 [English](production-use-case-v0.2_EN.md) | [简体中文](production-use-case-v0.2_ZH.md)
 
 > 文档版本：0.2
-> 状态：**候选（2026-09-09）**——十方法 Schema 已落 `methods/`；正负例向量与全路由消费测试随第三刀补齐后按硬前置冻结（v0.1 历史教训：不重复名不副实的冻结）
+> 状态：**已冻结（2026-09-09）**——冻结硬前置全齐：十方法 Schema（`methods/`）＋
+> 正负例向量 24 件（`examples/`：10 正例请求＋10 正例结果＋4 负例）＋向量驱动
+> 消费测试（`crates/provider-host/tests/production_use_case_vectors.rs`，3 项）。
+> v0.1 历史教训（不重复名不副实的冻结）经此兑现
 > 机器可读词表：`schemas/production-use-case/v0.2/methods/`（十方法 Schema）
 > 与 `schemas/recipe/v0.3/`（recipe / local-resolution / approved-plan /
 > build-record 四文档）

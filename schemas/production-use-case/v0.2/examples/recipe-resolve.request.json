@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.2",
+  "method": "recipe.resolve",
+  "params": {
+    "recipeId": "019e0000-0000-7000-8000-000000000001"
+  }
+}
