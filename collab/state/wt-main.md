@@ -2,44 +2,40 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 648dcd9
+baseline_commit: f38cbaa
 updated: 2026-09-08
 ---
 ## 当前焦点
-**用户裁决落账：W25 门序修正＋M5 关键路径标注＋三批验收合并**（集成复跑 cargo
-**395 通过 0 失败**＋clippy 零告警＋桌面 397 测试＋leak 零泄漏）。**W25＝一次
-全量验证**（前置＝W20 实现切片＋产线 Rust 物化＋W22 实现切片三件落地；就绪请求
-措辞作废）。**W20 实现切片＝M5 关键路径**（用户催办核心第二刀执行中，验收优先）。
-## 自基线交付（02498e4..HEAD，本 tick 收尾路由轮）
-- **带入三批**：核心 **W20 第一刀**（0cbafa7：production-evidence v0.1 store——
-  AMF 生产持久域证据文档库＋147 行测试，用户催办响应）；产线 **W21 接线批**
-  （e4183f4：v2 命令组装〔job/restore，冻结信封〕＋指纹锁强制＋C# exclude_object
-  反射 VRCMetaObject.excluded 接线〔W25 断言时钉 assembly〕）；数据 010 六承诺
-  符合性声明批（806298e，验收档案）；
-- **桌面 M5 呈现批自并确认**（1eae908 经 df32c8c，桌面域）：W18 导入 UI
-  （WarehouseAcquire＋acquire-model＋fixture/live 网关）＋W19 008 路径 a 接线
-  （delete-originals-auto）＋四语；
-- 验收证据（2026-09-08 本机）：**cargo workspace 395 通过 0 失败**（净增 25）＋
-  clippy -D warnings 零告警＋桌面 check 全链（47 文件 **397 测试**＋leak 160 条
-  指纹零泄漏）；
-- BOARD：W25 窗口语义修正块＋M5 关键路径标注＋最近更新行。
+**W25 前置②落地：产线 Rust 物化切片验收合并**（9195fbb：stage_original_source
+——source-integrity vs resolved artifactSha256＋.vua/imports guid-layout 提取＋
+manifest digest 绑定＋v2 命令组装指纹锁强制；集成复跑 **396 通过 0 失败**＋clippy
+零告警）。**W25 三前置状态**：②已落地；①核心 W20 实现切片（第二刀执行中，M5
+关键路径）；③W22 实现切片待①后开工。
+## 自基线交付（c8e034e..HEAD，本 tick）
+- **验收合并产线 W21 Rust 物化切片**（9195fbb，产线/unity-bridge 域）：
+  stage_original_source（source-integrity 对 resolved artifactSha256 校验＋
+  guid-layout 提取至 .vua/imports/prodjob-<command_id>/＋manifest 自身 digest
+  绑定）＋v2 命令组装函数（job/restore）指纹锁强制＋material_exec helpers
+  crate-visible；
+  验收证据（2026-09-08 本机）：合并尖 **cargo workspace 396 通过 0 失败**（净增
+  1）＋clippy -D warnings 零告警；
+- BOARD：W25 三前置进度注记＋最近更新行（各树状态批均已在上批或本批带入；
+  各树留言核对＝历史项均已处理）。
 ## 阻塞
 无。
 ## 下次合并意图
-核心 W20 第二刀（production-use-case v0.2 冻结切片＋命令面——**关键路径，验收
-优先**）；产线 Rust 物化下刀批；W22 实现切片批；W23/W24 后续批；#7 残余样本
-（再现即带全量日志）。
+核心 W20 第二刀批（production-use-case v0.2 冻结切片＋命令面——**关键路径，验收
+优先**）；W22 实现切片批（核心，①落地后开工＝前置③）；W23 数据批；W18/W19/
+W24 桌面批；exclude_object 接线批；#7 残余样本（再现即带全量日志）。
 ## 留言
-- [→核心] **用户已直接催办 W20 第二刀（production-use-case v0.2 冻结切片＋命令
-  面）——M5 关键路径，集成验收优先处理你的批**；第一刀（evidence store）已验收
-  合并（7e74fa0）；
-- [→产线] **W25 门序修正（用户裁决）**：一次全量验证，前置＝W20 实现切片＋你方
-  Rust 物化下刀＋W22 实现切片三者落地；此前「就绪请求」措辞作废；接线批已验收
-  合并（4f2a3e2）；
-- [→桌面] M5 呈现批（W18/W19）验收合并确认（df32c8c，复跑 397 测试＋leak 零
-  泄漏）；W24 待 W20 冻结切片后；
-- [→数据] 010 符合性声明已入验收档案（72d7f7c）；W23 已冻结（production-evidence
-  v0.1）；
-- [→操作者→用户] **W25 真机窗口等三前置落地后一次开窗**（不拆分）；M5 关键路径
-  ＝核心 W20 第二刀（执行中）；
+- [→核心] **W25 前置②已落地（产线物化切片验收合并）**——关键路径只剩你的
+  W20 第二刀（production-use-case v0.2 冻结切片＋命令面）与前置③（W22 实现
+  切片，待你①落地后开工）；验收优先承诺维持；
+- [→产线] 物化切片验收合并（复跑 396/0）——W25 前置②完成备案；W22 实现切片
+  与 exclude_object 接线按你方节奏（③待①后）；
+- [→数据] W23 已冻结（production-evidence v0.1）——010 挂点已落地（执行序②
+  收口），后续锚点随核心 W20 实现；
+- [→桌面] W18/W19 呈现批已验收（df32c8c）；W24 待 W20 冻结切片后；
+- [→操作者→用户] **W25 三前置进度：②已落地；①执行中（关键路径）；③待①**——
+  三者齐后一次开窗全量验证；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
