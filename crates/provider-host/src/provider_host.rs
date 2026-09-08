@@ -96,7 +96,7 @@ struct InboundFrame {
     payload: Value,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct OutboundFrame<'a> {
     frame_version: &'static str,
@@ -127,6 +127,7 @@ pub struct DownloadConfig {
 /// default mode are provider-side runtime configuration and never travel the
 /// wire; the wire params carry only the warehouse item id and (for
 /// setArtifactMode) the per-entry override.
+#[derive(Clone)]
 pub struct WarehouseConfig {
     /// The BDL local database the warehouse commands operate on.
     pub bdl: Arc<BdlStore>,
@@ -1501,6 +1502,340 @@ fn warehouse_submit_task(
     }
 }
 
+/// Generates a uuid-v7-shaped identity (unix-ts-ms ordering + in-process
+/// counter randomness; single-process uniqueness is what the stores need).
+fn uuid_v7_identity() -> String {
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id() as u64;
+    let unix_ts_ms = ms & 0x0000_ffff_ffff_ffff;
+    let ver_rand_a = 0x7000u32 | (((counter << 1) as u32) & 0x0fff);
+    let var_hi = 0x8000u16 | (((pid << 4) as u16) & 0x3fff);
+    let var_lo = (counter & 0xffff_ffff) | 0x0000_0001_0000_0000;
+    format!(
+        "{:08x}-{:04x}-4{:03x}-{:04x}-{:012x}",
+        (unix_ts_ms >> 16) as u32,
+        (unix_ts_ms & 0xffff) as u16,
+        ver_rand_a & 0x0fff,
+        var_hi,
+        var_lo & 0xffff_ffff_ffff,
+    )
+}
+
+/// Canonical plan-hash: SHA-256 over the serialization of the plan document
+/// with the `status` field removed (the lifecycle is not part of the
+/// authorized content) and `planHash` itself absent (it names this hash).
+fn plan_document_hash(document: &Value) -> String {
+    let mut canonical = document.clone();
+    if let Some(object) = canonical.as_object_mut() {
+        object.remove("status");
+        object.remove("planHash");
+    }
+    let serialized = serde_json::to_string(&canonical).unwrap_or_default();
+    let digest = sha2::Sha256::digest(serialized.as_bytes());
+    format!(
+        "sha256:{}",
+        digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+    )
+}
+
+/// Local Resolution over a Recipe v0.3 document (011 section 5, minimal
+/// honest semantics): warehouse-sourced assets resolve through the frozen
+/// entry detail query against the composed global default; provider-sourced
+/// assets have no import record on this machine and are honest
+/// missing-asset evidence. Every missing asset publishes its evidence
+/// (identity referenced, body in the W23 store); skipped relations are
+/// reported in the Done payload - the draft plan only carries executable
+/// jobs.
+fn run_local_resolution(
+    store: &BdlStore,
+    recipes: &RecipeDocumentStore,
+    plans: &vua_orchestrator::PlanDocumentStore,
+    evidence: &vua_orchestrator::EvidenceStore,
+    env_initial: ArtifactMode,
+    recipe_id: &str,
+    correlation_id: &str,
+) -> Result<Value, AppErrorV1> {
+    use vua_bdl_store::ArtifactInspectionVerdict;
+
+    let stored = recipes
+        .get(recipe_id)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.recipe.store_failed",
+                ErrorCategory::Internal,
+                "errors.recipe.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+        })?
+        .ok_or_else(|| {
+            AppErrorV1::new(
+                "vua.recipe.not_found",
+                ErrorCategory::Validation,
+                "errors.recipe.notFound",
+                correlation_id,
+            )
+        })?;
+    let recipe = &stored.recipe;
+    let composed = store.global_default_mode().unwrap_or(None).unwrap_or(env_initial);
+
+    let local_resolution_id = uuid_v7_identity();
+    let mut resolved_assets: std::collections::HashMap<String, Value> =
+        std::collections::HashMap::new();
+    let mut missing_count: usize = 0;
+    let mut evidence_ids: Vec<String> = Vec::new();
+    let mut skipped_job_ids: Vec<String> = Vec::new();
+
+    // resolve_one_asset: returns the resolvedSource value or None after
+    // publishing the honest missing evidence.
+    let resolve_one_asset = |asset: &Value,
+                             evidence_ids: &mut Vec<String>,
+                             missing_count: &mut usize,
+                             local_resolution_id: &str|
+     -> Option<Value> {
+        let source_ref = asset.get("sourceRef")?;
+        if let Some(warehouse_item_id) =
+            source_ref.get("warehouseItemId").and_then(Value::as_str)
+        {
+            let requested_role =
+                source_ref.get("role").and_then(Value::as_str).unwrap_or("original");
+            if let Ok(Some(detail)) =
+                store.warehouse_entry_detail(warehouse_item_id, composed)
+            {
+                // Source selection follows the entry's effective artifact
+                // mode (override ?? composed global, W14): generate_vpm
+                // prefers a CLEAN generated_vpm copy, anything else falls
+                // back to the original copy - the fallback is honest
+                // (fallbackUsed on the plan), never invented.
+                let original = detail.artifacts.iter().find(|fact| fact.role.name() == "original");
+                let clean_vpm = detail.artifacts.iter().find(|fact| {
+                    fact.role.name() == "generated_vpm"
+                        && matches!(fact.state, ArtifactInspectionVerdict::Clean)
+                });
+                let chosen = match detail.effective_artifact_mode {
+                    vua_bdl_store::ArtifactMode::GenerateVpm => clean_vpm
+                        .map(|fact| (fact, false))
+                        .or(original.map(|fact| (fact, true))),
+                    _ => original.map(|fact| (fact, false)),
+                };
+                if let Some((fact, fallback_used)) = chosen {
+                    return Some(serde_json::json!({
+                        "sourceKind": fact.role.name(),
+                        "artifactSha256": fact.artifact_sha256,
+                        "warehouseItemId": warehouse_item_id,
+                        "fallbackUsed": fallback_used,
+                    }));
+                }
+            }
+            let evidence_id = uuid_v7_identity();
+            let document = vua_orchestrator::ProductionEvidenceV01::new_unresolved(
+                evidence_id.clone(),
+                vua_orchestrator::EvidenceKind::MissingAsset,
+                vua_orchestrator::EvidenceSubject {
+                    ref_: format!("warehouse:{warehouse_item_id}"),
+                    label: None,
+                },
+                now_rfc3339(),
+                "Local Resolution found no entry or no clean artifact for this asset",
+                vua_orchestrator::EvidenceSourceRef::from_local_resolution(local_resolution_id),
+            );
+            if evidence.publish(&document).is_ok() {
+                evidence_ids.push(evidence_id.clone());
+                *missing_count += 1;
+            }
+            Some(serde_json::json!({
+                "sourceKind": requested_role,
+                "artifactSha256": Value::Null,
+                "warehouseItemId": warehouse_item_id,
+                "fallbackUsed": false,
+                "missing": true,
+                "evidenceId": evidence_id,
+            }))
+        } else {
+            // Provider-sourced asset: no import record exists on this
+            // machine - honest missing evidence (never invented paths).
+            let provider =
+                source_ref.get("provider").and_then(Value::as_str).unwrap_or("unknown");
+            let product =
+                source_ref.get("productId").and_then(Value::as_str).unwrap_or("unknown");
+            let evidence_id = uuid_v7_identity();
+            let document = vua_orchestrator::ProductionEvidenceV01::new_unresolved(
+                evidence_id.clone(),
+                vua_orchestrator::EvidenceKind::MissingAsset,
+                vua_orchestrator::EvidenceSubject {
+                    ref_: format!("provider:{provider}:{product}"),
+                    label: None,
+                },
+                now_rfc3339(),
+                "provider-sourced asset has no import record on this machine",
+                vua_orchestrator::EvidenceSourceRef::from_local_resolution(local_resolution_id),
+            );
+            if evidence.publish(&document).is_ok() {
+                evidence_ids.push(evidence_id.clone());
+                *missing_count += 1;
+            }
+            Some(serde_json::json!({
+                "sourceKind": "original",
+                "artifactSha256": Value::Null,
+                "warehouseItemId": Value::Null,
+                "fallbackUsed": false,
+                "missing": true,
+                "evidenceId": evidence_id,
+            }))
+        }
+    };
+
+    // Assets resolve first (instances reference them by assetId).
+    if let Some(assets) = recipe.get("assets").and_then(Value::as_array) {
+        for asset in assets {
+            let asset_id = asset.get("id").and_then(Value::as_str).unwrap_or_default();
+            if let Some(resolved_source) =
+                resolve_one_asset(asset, &mut evidence_ids, &mut missing_count, &local_resolution_id)
+            {
+                resolved_assets.insert(asset_id.to_owned(), resolved_source);
+            }
+        }
+    }
+
+    // Relations project to jobs (only jobs whose resolved source exists).
+    let mut jobs: Vec<Value> = Vec::new();
+    if let Some(relations) = recipe.get("relations").and_then(Value::as_array) {
+        for relation in relations {
+            let kind = relation.get("kind").and_then(Value::as_str).unwrap_or_default();
+            let relation_id =
+                relation.get("id").and_then(Value::as_str).unwrap_or_default();
+            let asset_instance_id = relation
+                .get("assetInstanceId")
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let instance = recipe
+                .get("instances")
+                .and_then(Value::as_array)
+                .and_then(|instances| {
+                    instances.iter().find(|instance| {
+                        instance.get("id").and_then(Value::as_str)
+                            == Some(asset_instance_id)
+                    })
+                });
+            let asset_id = instance
+                .and_then(|instance| instance.get("assetId"))
+                .and_then(Value::as_str)
+                .unwrap_or_default();
+            let Some(resolved_source) = resolved_assets.get(asset_id) else {
+                skipped_job_ids.push(relation_id.to_owned());
+                continue;
+            };
+            if resolved_source.get("missing").and_then(Value::as_bool) == Some(true) {
+                skipped_job_ids.push(relation_id.to_owned());
+                continue;
+            }
+            let mut inputs = serde_json::json!({
+                "assetId": asset_id,
+                "resolvedSource": resolved_source,
+            });
+            if kind == "attach_to_bone" {
+                if let Some(bone) = relation.get("bone") {
+                    inputs["bone"] = bone.clone();
+                }
+                if let Some(transform) = relation.get("localTransform") {
+                    inputs["localTransform"] = transform.clone();
+                }
+                if let Some(selector_id) = instance
+                    .and_then(|instance| instance.get("entrypoint"))
+                    .and_then(|entrypoint| entrypoint.get("selectorId"))
+                {
+                    inputs["selectorId"] = selector_id.clone();
+                }
+            } else if kind == "exclude_object" || kind == "set_object_active" {
+                if let Some(selector) = relation.get("selector") {
+                    inputs["selector"] = selector.clone();
+                }
+                if let Some(active) = relation.get("active") {
+                    inputs["active"] = active.clone();
+                }
+                if let Some(target) = relation.get("targetInstanceId") {
+                    inputs["targetInstanceId"] = target.clone();
+                }
+            }
+            jobs.push(serde_json::json!({
+                "jobId": uuid_v7_identity(),
+                "kind": kind,
+                "inputs": inputs,
+            }));
+        }
+    }
+
+    let target_resolved = recipe
+        .get("target")
+        .and_then(|target| target.get("avatarInstanceId"))
+        .and_then(Value::as_str)
+        .and_then(|avatar_instance_id| {
+            recipe
+                .get("instances")
+                .and_then(Value::as_array)
+                .and_then(|instances| {
+                    instances.iter().find(|instance| {
+                        instance.get("id").and_then(Value::as_str)
+                            == Some(avatar_instance_id)
+                    })
+                })
+        })
+        .and_then(|instance| instance.get("assetId"))
+        .and_then(Value::as_str)
+        .and_then(|asset_id| resolved_assets.get(asset_id))
+        .cloned();
+
+    let created_at = now_rfc3339();
+    let plan_id = uuid_v7_identity();
+    let mut plan = serde_json::json!({
+        "schemaVersion": "0.3",
+        "planId": plan_id,
+        "recipeId": recipe.get("recipeId").cloned().unwrap_or(serde_json::json!(recipe_id)),
+        "recipeRevision": recipe.get("revision").cloned().unwrap_or(serde_json::json!(1)),
+        "localResolutionId": local_resolution_id,
+        "environmentId": uuid_v7_identity(),
+        "createdAt": created_at,
+        "approvedAt": created_at,
+        "fingerprint": {"expectedProjectFingerprint": "not_verified_at_resolution"},
+        "target": {
+            "avatarInstanceId": recipe
+                .get("target")
+                .and_then(|target| target.get("avatarInstanceId"))
+                .cloned()
+                .unwrap_or(Value::Null),
+            "resolvedSource": target_resolved,
+        },
+        "jobs": jobs,
+        "status": "draft",
+    });
+    let plan_hash = plan_document_hash(&plan);
+    plan["planHash"] = serde_json::json!(plan_hash);
+    plans.publish_draft(&plan_id, &plan).map_err(|error| {
+        AppErrorV1::new(
+            "vua.plan.store_failed",
+            ErrorCategory::Internal,
+            "errors.plan.storeFailed",
+            correlation_id,
+        )
+        .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+    })?;
+
+    Ok(serde_json::json!({
+        "planId": plan_id,
+        "planStatus": "draft",
+        "localResolutionId": local_resolution_id,
+        "missingCount": missing_count,
+        "evidenceIds": evidence_ids,
+        "skippedJobIds": skipped_job_ids,
+    }))
+}
+
 /// W20 production-use-case v0.2 command face (first cut): the recipe
 /// document face (save with baseRevision optimistic concurrency / get /
 /// list) over the AMF production-domain recipe document store. Absent
@@ -1526,15 +1861,7 @@ fn recipe_request(
         "recipe.save" => recipe_save(use_cases, request, request_id, correlation_id),
         "recipe.get" => recipe_get(use_cases, request, request_id, correlation_id),
         "recipe.list" => recipe_list(use_cases, request, request_id, correlation_id),
-        // The Local Resolution executor arrives in the next cut; until then
-        // the frozen vocabulary answers a typed unavailable.
-        "recipe.resolve" => FrameOutcome::Response(application_error(
-            request_id,
-            correlation_id,
-            "vua.recipe.resolve_unavailable",
-            "errors.recipe.resolveUnavailable",
-            "unavailable",
-        )),
+        "recipe.resolve" => recipe_resolve(use_cases, request, request_id, correlation_id),
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -1759,6 +2086,84 @@ fn record_unavailable(request_id: &str, correlation_id: &str) -> FrameOutcome {
         "errors.record.unavailable",
         "unavailable",
     ))
+}
+
+/// `recipe.resolve`: submits the Local Resolution executor as a tasked
+/// operation (011 §7 — may be heavy). The Done payload carries the draft
+/// plan id, the missing-asset count and the evidence identities; the draft
+/// plan itself is read back through plan.get.
+fn recipe_resolve(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed set: { recipeId }.
+    let Some(recipe_id) = request
+        .get("params")
+        .and_then(|params| params.get("recipeId"))
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .map(str::to_owned)
+    else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.recipe.invalid_params",
+            "errors.recipe.invalidParams",
+            "validation",
+        ));
+    };
+    // The tasked half requires the shared task authority and BDL (warehouse
+    // wiring). Without them: typed unavailable, never a silent stub.
+    let (Some(runtime), Some(bdl)) = (use_cases.runtime.clone(), use_cases.bdl.clone()) else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.recipe.resolve_unavailable",
+            "errors.recipe.resolveUnavailable",
+            "unavailable",
+        ));
+    };
+    let recipes = use_cases.recipes.clone();
+    let plans = use_cases.plans.clone();
+    let evidence = use_cases.evidence.clone();
+    let env_initial = use_cases.env_initial.unwrap_or(ArtifactMode::UseOriginalUnitypackage);
+    let job_correlation = correlation_id.to_owned();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let payload = run_local_resolution(
+                &bdl,
+                &recipes,
+                &plans,
+                &evidence,
+                env_initial,
+                &recipe_id,
+                &job_correlation,
+            )?;
+            Ok(vua_orchestrator::TaskExit::Done(payload))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "operation": "recipe.resolve",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.recipe.store_failed",
+            "errors.recipe.storeFailed",
+            "internal",
+        )),
+    }
 }
 
 fn recipe_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
