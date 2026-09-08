@@ -2,38 +2,40 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 030f575
+baseline_commit: 75520c8
 updated: 2026-09-09
 ---
 ## 当前焦点
-**核心两批验收合并**（集成复跑 **407 通过 0 失败**＋clippy 零告警）：
-production-use-case v0.2 **协议本（候选）**双语入树＋REGISTRY 候选行（50904fe：
-冻结硬前置＝向量＋全路由消费测试随第三刀）＋**plan 命令面**（94d98de：approve
-幂等/get＋诚实缺路由——W20 第三刀前半）。W25 前置①推进中（第三刀后半＝
-resolve/job/record 路由）、②已落地、③待①。
-## 自基线交付（cdef41c..HEAD，本 tick）
-- **验收合并核心两批**（50904fe＋94d98de，核心/orchestrator/provider-host 域）：
-  production-use-case v0.2 双语协议本（候选——十方法 Schema 面对齐；baseRevision
-  乐观并发/plan.approve 幂等＋not_approvable 拒绝等关键语义入文）＋REGISTRY
-  候选行＋plan_documents.rs＋plan 命令面（approve 幂等/get＋诚实缺路由）；
-  验收证据（2026-09-09 本机）：合并尖 **cargo workspace 407 通过 0 失败**（净增
-  5）＋clippy -D warnings 零告警；
-- BOARD：契约表 production-use-case 行更新（v0.2 候选推进）＋最近更新行。
+**M6 项目管理部分提前开工治理落账**（用户裁决 2026-09-08 晚，操作者转达）：BOARD
+M6 行改提前开工（任务包 T-A/T-B/T-C＋EAC＋环境检查行派发环境/桌面，越过门序；
+门验收与发行仍等 M5 关门后按门序）；治理注记＝T-A wire 词表新协议面（桌面提案→
+核心裁决流程不变）＋early-open 授权记录；outline **2.0.9** 双语 M6 分解表拆行
+细化（含 U3 锚点与 product-boundary 1.2.0 权威引用）。并行：W25 前置②已落地、
+①第三刀推进中〔M5 关键路径，验收优先〕、③待①。
+## 自基线交付（030f575..HEAD，跨 tick 累计）
+- **M6 提前开工治理批**（本批）：outline **2.0.8→2.0.9** 双语（M6 分解表任务包
+  拆行：T-A/T-B/T-C/EAC/环境检查/门验收〔不在授权范围〕；T-C U3 锚点＋1.2.0
+  权威引用；治理注记入表头）＋BOARD M6 行重写＋最近更新行；
+- **验收合并批**（此前 tick 已录）：核心两批（production-use-case v0.2 协议本
+  候选/plan 命令面，051cddc，407/0）、record.get 读面（030f575，411/0 稳定复跑
+  注记）、桌面 recovered 表态批（ce4a1e1）等——明细见 git 与前状态版本；
+- W25 门序修正＋M5 关键路径标注（用户裁决）已落（648dcd9）。
 ## 阻塞
 无。
 ## 下次合并意图
-核心 W20 第三刀后半批（resolve/job/record 路由＋Local Resolution 执行器＋向量＋
-全路由消费测试——v0.2 冻结硬前置）；production-use-case v0.2 冻结批（候选转冻结
-交集成验收）；W22 实现切片批（前置③）；W23 数据批；W18/W19/W24 桌面批；#7 残余
-样本（再现即带全量日志）。
+核心 W20 第二刀后续批（第三刀后半＝resolve/job/record 路由＋向量＋全路由消费
+测试——v0.2 冻结硬前置）；production-use-case v0.2 冻结批（候选转冻结）；M6
+提前开工批（环境 T-A/T-B/EAC/环境检查；桌面 T-C——环境/桌面已派发，各树自并
+或交集成验收）；W22 实现切片批（前置③）；W23 数据批；#7 残余样本（再现即带
+全量日志）。
 ## 留言
-- [→核心] 两批验收合并（复跑 407/0 确认）；协议本候选状态与 REGISTRY 候选行
-  核对无误——**v0.2 冻结硬前置（向量＋全路由消费测试）随第三刀后半**，冻结批
-  届时交集成验收（候选转冻结）；
-- [→产线] plan 命令面（approve 幂等）已验收——C# executors 接线的 plan 侧
-  命令面前置就绪（recipe 侧前轮已落）；resolve/job/record 随核心第三刀后半；
-- [→桌面] recipe/plan 读面（get/list）已落——W24 工作台读面消费前置就绪；
-  写面（save/approve）交互随第三刀；
-- [→操作者→用户] W25 前置①推进中（第三刀后半＝resolve/job/record 路由）；
-  ②已落地；③待①；
+- [→环境][→桌面] **M6 提前开工授权已落账**（outline 2.0.9 任务包拆行＋BOARD M6
+  行）：T-A/T-B/EAC/环境检查（环境）与 T-C（桌面）按包开工；**T-A wire 词表为
+  新协议面——桌面提案→核心裁决流程不变**；切片完成域内自并或交集成验收（跨域
+  由集成验收）；门验收与发行仍等 M5 关门后按门序；
+- [→核心] M6 提前开工不改变 M5 关键路径（W20 第二刀后续＝第三刀后半＋
+  production-use-case v0.2 冻结仍为 W25 前置①，验收优先）；T-A 词表提案到达后
+  按裁决流程处理；
+- [→操作者→用户] M6 治理落账完成（outline 2.0.9＋BOARD M6 行＋early-open 授权
+  记录）；W25 三前置进度：②已落地、①第三刀推进中、③待①；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
