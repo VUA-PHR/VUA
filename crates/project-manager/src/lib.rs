@@ -6,17 +6,27 @@
 // the core contract; boxed errors would not change the wire surface.
 #![allow(clippy::result_large_err)]
 
+pub mod eac_allowlist;
 pub mod eac_probe;
+pub mod eac_verify;
 pub mod environment_managers;
 pub mod import_copy;
 pub mod project_inspection;
 pub mod project_lock;
 pub mod vpm_backend;
 
+pub use eac_allowlist::{
+    find_entry, load_allowlist, path_pattern_matches, AllowlistEntryV01, AllowlistLoadError,
+    AllowlistV01, EAC_ALLOWLIST_SCHEMA_VERSION,
+};
 pub use eac_probe::{
     probe_eac, EacProbeSnapshotV01, ProcessEntry, ProcessFinding, ProcessKind,
     ProcessSnapshotSource, Readiness, ReadinessConclusion, TerminationCapability,
     EAC_PROBE_SCHEMA_VERSION,
+};
+pub use eac_verify::{
+    verify_candidate, CandidateVerificationV01, SignatureState, VerificationCheck, Verdict,
+    EAC_VERIFY_SCHEMA_VERSION,
 };
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,

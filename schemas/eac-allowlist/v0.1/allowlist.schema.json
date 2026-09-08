@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/eac-allowlist/v0.1/allowlist.schema.json",
+  "title": "VUA EAC termination allowlist v0.1",
+  "description": "The termination allowlist data face (proposal 006 R2, accepted by user ruling U1). The list starts EMPTY and stays empty until real-machine verification evidence produces the first qualified entry (R2: entries come only from real-machine evidence — no self-attestation loop). Every entry carries the four required elements (R2): process name, expected path pattern, signature/publisher evidence, and the reason it was listed; plus the real-machine evidence reference and the release-notes marker requirement (R8: every list change goes into the release notes). Path patterns are prefix-or-literal matched case-insensitively; anything the loader cannot fully validate is a load error, never a weakened entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "entries"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "vua.eac-allowlist/v0.1" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/allowlistEntry" }
+    }
+  },
+  "$defs": {
+    "allowlistEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "processName",
+        "expectedPathPattern",
+        "publisherEvidence",
+        "reason",
+        "evidenceRef",
+        "addedAt",
+        "releaseNotes"
+      ],
+      "properties": {
+        "processName": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Executable image name, lower-case (e.g. easyanticheat.exe)."
+        },
+        "expectedPathPattern": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Case-insensitive prefix-or-literal pattern for the executable path (e.g. C:\\Program Files (x86)\\EasyAntiCheat\\)."
+        },
+        "publisherEvidence": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The signature/publisher evidence recorded when the entry was created (signer name and certificate subject as verified on the real machine)."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Why this process is safe to terminate as a VUA-managed step (R2 element 4)."
+        },
+        "evidenceRef": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Reference to the real-machine verification evidence that produced this entry (R2: entries come only from real-machine evidence)."
+        },
+        "addedAt": { "type": "string", "minLength": 1 },
+        "releaseNotes": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The release-notes entry that announced this change (R8: every list change goes into the release notes)."
+        }
+      }
+    }
+  }
+}
