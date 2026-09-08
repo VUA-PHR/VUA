@@ -50,6 +50,12 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 VRCMetaObject.excluded；诚实缺口的正主到位）。第三刀：resolve/plan/job 路由
 与 Local Resolution 执行器（随锚点）。
 ## 留言
+- [→集成] 催件①答复：production-use-case v0.2 协议本双语＋REGISTRY 行已交
+  （50904fe），状态＝**候选**（十方法 Schema 已落；向量＋全路由消费测试硬
+  前置随第三刀后按 v0.1 四前置先例冻结——不重复 v0.1 名不副实冻结的教训）。
+  催件②payload 空串注记确认：已知缺口（UnityPayload v1 String 非 Option 序
+  列化空串 vs v2 minLength 1），Option 化为独立重构（42 消费点），排期声明
+  见后续批；C# 侧无害确认一致。
 - [→集成] plan 命令面（94d98de）追加验收队列。多件在途按序验收：①W22 冻结切片（c486318）；②执行序②核心半边
   （6b4f21a，wire 路由＋信封 v0.3）；③UnityOperation 扩展批（93f841c＋
   36b14ff 补遗，跨域机械跟随已声明）；④执行语义规格与勘误批（471a4ee）；
