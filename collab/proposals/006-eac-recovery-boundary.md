@@ -121,4 +121,20 @@ M6 提前授权范围含本 EAC 包（outline 2.0.9 拆行，BOARD M6 行）。�
   pid 消失/名称不匹配候选）＋clippy -D warnings 零告警；真机再核验为
   #[ignore] 手动测试。
 
-（已接受；R1a 已验收合并 437/0，R2/R3 已实现待验收，R1b 终止原语＋确认链整合为下一切片。）
+### 实现落账（R3 签名核验补齐——R3 四要素完成，环境，2026-09-09）
+
+第三刀（667346e），请求集成验收：
+
+- **R3 四要素全部可核验**：签名核验接入真实 WinVerifyTrust
+  （GENERIC_VERIFY_V2、无 UI、无吊销检查、STATEACTION VERIFY＋CLOSE 释放）；
+  status 0＝Verified，无签名/提供者拒绝/其他失败＝类型化 Unverified（状态码进
+  detail）。R3 语义完整达成：名称＋路径＋签名（外加 pid 存活）在终止面前全部
+  再核验，任一不通过即拒绝；对已签名的在册二进制 Verified 可达；
+- 上一切片的「恒定 Refused」暂态行为被真实判定取代；测试更新（不存在的文件→
+  Unverified 带状态码；测试二进制自身→Unverified）＋Windows 测试钩子暴露签名
+  判定；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零
+  告警；签名通过路径的真机验证待窗口（#[ignore] 手动测试覆盖）。
+
+（已接受；R1a/R2/R3 已实现（R1a/R2 已验收 437/0、442/0），R3 签名核验待验收；
+R1b 终止原语＋确认链整合为下一切片。）
