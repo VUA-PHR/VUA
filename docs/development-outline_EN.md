@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.8
+> Document version: 2.0.9
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.8)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.9)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -300,16 +300,21 @@ then landed into the current window as W18–W26; the desktop M5 first batch is 
 - **Delivery:** report all three project paths honestly, and let a new user prepare a minimal
   production environment; update the version and release notes to `0.8.0`.
 
-Task breakdown:
+Task breakdown (**project-management portion opens early** — user ruling, late
+2026-09-08, relayed by the operator; Environment/Desktop already dispatched,
+**out of gate order** but gate acceptance and release still follow gate order
+after M5 closes. Governance note: the T-A project-management command wire
+vocabulary is a **new protocol face** — desktop proposal → core ruling flow
+unchanged; the early-open authorization is recorded on the BOARD M6 row):
 
-| Task | Owning role | Collaborators |
-| --- | --- | --- |
-| General `vrc-get` project and package-management path | Environment | Core |
-| ALCOM/VCC capability detection and compatibility matrix | Environment | Desktop |
-| Unity/VRChat/SteamVR environment checks; network/disk/residual-process failure handling | Environment | Core |
-| Experimental EAC recovery adapter (boundary ruling draft first) | Environment | Integration (ruling) |
-| F6 guidance/plan/confirmation pages with per-action warning consent (incl. the U3 read-only compatibility surface: write handoff and the "import as a VUA-managed copy" entry; see product-boundary 1.2.0) | Desktop | Environment |
-| Gate acceptance and release | Integration | All |
+| Package | Task | Owning role | Collaborators | Anchor / notes |
+| --- | --- | --- | --- | --- |
+| T-A | General `vrc-get` project and package-management path (incl. the project-management command wire vocabulary — new protocol face, desktop proposal → core ruling) | Environment | Core | governance note above; wire-vocabulary proposal drafted by Desktop, ruled by Core |
+| T-B | ALCOM/VCC capability detection and compatibility matrix | Environment | Desktop | U3 read-only compatibility semantics, authority = product-boundary 1.2.0 |
+| T-C | F6 guidance/plan/confirmation pages with per-action warning consent (incl. the U3 read-only compatibility surface: write handoff and the "import as a VUA-managed copy" entry) | Desktop | Environment | authority = product-boundary 1.2.0; W24 read-face prerequisite rides the M5 production-use-case v0.2 |
+| EAC | Experimental EAC recovery adapter (R1–R9 approved by the user, proposal 006 accepted; implementation slice opens per the R9 sequence) | Environment | Integration (ruling) | eight-point approval semantics in the 006 inline thread |
+| ENV | Unity/VRChat/SteamVR environment checks; network/disk/residual-process failure handling | Environment | Core | included in the early-open scope |
+| — | Gate acceptance and release (**not** in the early-open scope) | Integration | All | follows gate order after M5 closes |
 
 ### M7 — v0.9.0: Inspection, Release, and the desktop overlay
 
@@ -475,6 +480,15 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.9 (late 2026-09-08 / recorded early 09-09): **M6 project-management portion
+  opens early, landed** (user ruling, late 2026-09-08, relayed by the operator) —
+  the M6 task table is refined by package (T-A general vrc-get path / T-B
+  ALCOM/VCC capability detection / T-C F6 pages with the U3 anchor and the
+  product-boundary 1.2.0 authority reference / EAC adapter [R1–R9 approved] /
+  environment-check rows); governance note: the T-A wire vocabulary is a new
+  protocol face (desktop proposal → core ruling flow unchanged); gate acceptance
+  and release are not in the early-open scope (gate order after M5 closes);
+  bilingual sync.
 - 2.0.8 (2026-09-08): **M4 closure + M5 opening landed** — the current window is rewritten as
   M5 (W18–W26: desktop M5 first batch = 008 path-a wiring + import-time hook merged design;
   core Recipe v0.3/Local Resolution/version locks/full Build Record; production Bridge
