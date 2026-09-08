@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -905,13 +906,44 @@ namespace Vua.Editor.Bridge
                 return (false, "selector_unresolved",
                     "排除对象 selector 无解（目录条目不可达且 pathHint 无命中）。");
             }
-            // The spec leaves the marker form open ("VRCMetaObject /
-            // offence-excluded 形态") and the VRCSDK assembly is not referenced
-            // by this package — writing a guess marker would be dishonest.
-            // The object is located; the marker write waits for the core to
-            // pin one component type (or a package-reference ruling).
-            return (false, "exclude_marker_unavailable",
-                "排除标记组件形态待核心钉死（VRCSDK 未被本包引用）；对象已定位但未被修改。");
+            // Pinned marker form (core, 011 inline): VRCMetaObject.excluded.
+            // The VRCSDK assembly is not referenced by this package's asmdef;
+            // the type is resolved reflectively so the package keeps compiling
+            // in SDK-less checkouts (W25 real-machine assertion covers the
+            // exact assembly). A missing type is a typed honest failure.
+            var metaType = FindType("VRC.SDKVRCStripe.VRCMetaObject",
+                "VRC.SDK3A.VRCMetaObject", "VRC.SDKBase.VRCMetaObject");
+            if (metaType == null)
+            {
+                return (false, "exclude_marker_unavailable",
+                    "VRCMetaObject 类型未找到（VRCSDK 未在当前项目加载）；对象已定位但未被修改。");
+            }
+            var component = target.GetComponent(metaType) ??
+                            target.AddComponent(metaType);
+            var excludedMember = metaType.GetProperty("excluded") ??
+                                 (MemberInfo)metaType.GetField("excluded");
+            if (excludedMember == null)
+            {
+                return (false, "exclude_marker_unavailable",
+                    "VRCMetaObject 上找不到 excluded 成员（SDK 版本差异）；对象已定位但未被修改。");
+            }
+            var property = excludedMember as PropertyInfo;
+            if (property != null) property.SetValue(component, true, null);
+            else ((FieldInfo)excludedMember).SetValue(component, true);
+            return (true, string.Empty, string.Empty);
+        }
+
+        private static Type FindType(params string[] fullNames)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                foreach (var fullName in fullNames)
+                {
+                    var type = assembly.GetType(fullName, throwOnError: false);
+                    if (type != null) return type;
+                }
+            }
+            return null;
         }
 
         private static (bool ok, string errorCode, string message) ExecuteSetObjectActive(
