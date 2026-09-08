@@ -41,7 +41,12 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 本轮交付（c486318 后，本 tick 续）
 - **合并 main**（M6 环境 T-A/T-B 批＋桌面 T-C 检测批＋proposal 013 入树）——
   baseline 追平；状态文件 consolidate（合并带入的 wt-2 状态与本轮条目冲突
-  已融合）。
+  已融合）；
+- **plan.list / record.list 聚合路由（ca991e8，W20 命令面收官）**：十方法全部
+  真实现——两 list 走存储 list_documents（缺席根＝诚实空态），闭集
+  recipeId/status/text/limit/offset，词表外＝invalid_params；两存储补
+  list_documents（缺席根＝诚实空态）。**证据（2026-09-09 本机）**：
+  warehouse_commands 16/16＋workspace 全量绿＋clippy -D warnings 零告警。
 ## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
 - **production-use-case v0.2 冻结收口（2fd4813，回应集成 W25 前置①凭证）**：
   **正负例向量 24 件**（schemas/production-use-case/v0.2/examples/：10 正例

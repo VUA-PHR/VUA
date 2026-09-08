@@ -138,6 +138,22 @@ impl PlanDocumentStore {
         Ok(ids)
     }
 
+    /// Full listing (documents with their lifecycle statuses), sorted by
+    /// planId. An absent root is the honest empty state (no plans yet).
+    /// Filtering/pagination belongs to the application face.
+    pub fn list_documents(&self) -> io::Result<Vec<Value>> {
+        if !self.root.exists() {
+            return Ok(Vec::new());
+        }
+        let mut documents = Vec::new();
+        for id in self.list_ids()? {
+            if let Some(document) = self.get(&id)? {
+                documents.push(document);
+            }
+        }
+        Ok(documents)
+    }
+
     fn write_exactly_once(&self, plan_id: &str, document: &Value) -> io::Result<()> {
         let destination = self.path_for(plan_id)?;
         fs::create_dir_all(&self.root)?;
