@@ -192,6 +192,7 @@ fn import_vector_drives_the_real_batch_import_and_validates() {
             correlation_id: correlation_id.clone(),
             source_folders: folders.clone(),
             warehouse_root: unique_dir("wh"),
+            auto_generate: None,
         },
         None,
     )
