@@ -8,6 +8,7 @@ import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environm
 import type { VuaGateway } from "./gateway.ts";
 import { createLiveAcquire } from "./live-acquire-port.ts";
 import { createWarehouseCommands } from "./warehouse-commands-live.ts";
+import { createLiveProjectOps } from "./project-ops-port.ts";
 import { createLiveModelProduction } from "./live-production-port.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
@@ -192,6 +193,7 @@ export function createElectronGateway(
     settings: notRun.settings,
     acquire: liveAcquire,
     warehouseCommands: liveWarehouseCommands,
+    projectOps: createLiveProjectOps(client),
     packages: notRun.packages,
     dataSource: (): DataSource => "live",
   };

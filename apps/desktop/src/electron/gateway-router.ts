@@ -248,6 +248,14 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "record.get", params: { buildId: request.params.buildId } };
     case "record.list":
       return { ...base, kind: "query", method: "record.list", params: request.params };
+    case "project.import-copy":
+      return {
+        ...base,
+        kind: "command",
+        method: "project.import-copy",
+        commandId: `imp-${crypto.randomUUID()}`,
+        params: request.params,
+      };
   }
 }
 

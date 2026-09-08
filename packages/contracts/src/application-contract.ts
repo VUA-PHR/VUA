@@ -828,6 +828,108 @@ export interface RecordListResultV02 {
   readonly entries: readonly RecordListEntryV02[];
 }
 
+
+// ---- project-ops v0.1(014 语义冻结,环境实现;F6 副本导入确认链消费) ----
+// project.import-copy 是 VUA 对 ALCOM/VCC 管理的原项目的唯一写路径(1.2.0 U3):
+// plan/apply 两段一闭集命令;守卫(七项闭集)在服务端任务内评估;九态任务语义
+// 走应用契约任务面,不在本词表。
+
+export type ImportCopyPhaseV01 = "plan" | "apply";
+
+export type ImportCopyGuardV01 =
+  | "target_exists"
+  | "target_inside_source"
+  | "source_not_registered"
+  | "source_invalid"
+  | "insufficient_disk_space"
+  | "plan_drift"
+  | "execution_failed";
+
+export type UnityClassificationV01 =
+  | "production_target"
+  | "migration_source"
+  | "other_unity_version"
+  | "tuanjie_family";
+
+export type ProjectAssociationV01 = "vcc_registered" | "alcom_registered";
+
+export interface ImportCopyCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "project.import-copy";
+  readonly commandId: string;
+  readonly params: {
+    readonly phase: ImportCopyPhaseV01;
+    readonly sourcePath: string;
+    readonly targetParentDirectory: string;
+    readonly targetProjectName: string;
+    /** apply 段必填:plan 段回执的 planDigest,漂移即拒绝(plan_drift) */
+    readonly confirmedPlanDigest?: string;
+  };
+}
+
+export interface ImportCopyPlanV01 {
+  readonly kind: "plan";
+  readonly sourcePath: string;
+  readonly targetPath: string;
+  readonly targetProjectName: string;
+  readonly estimatedBytes: number;
+  readonly excludedEntries: readonly string[];
+  readonly sourceTopLevels: readonly string[];
+  readonly planDigest: string;
+}
+
+export interface ImportCopySourceLinkV01 {
+  readonly sourcePath: string;
+  readonly sourceAssociations: readonly ProjectAssociationV01[];
+  readonly importedAt: string;
+  readonly taskCorrelation: string;
+}
+
+export interface ImportCopyReInspectionV01 {
+  readonly unityVersion: string | null;
+  readonly unityClassification: UnityClassificationV01 | null;
+  readonly manifestPresent: boolean;
+  readonly manifestSchemaOk: boolean;
+}
+
+export interface ImportCopyReceiptV01 {
+  readonly kind: "receipt";
+  readonly sourcePath: string;
+  readonly targetPath: string;
+  readonly targetProjectName: string;
+  readonly copiedTopLevels: readonly string[];
+  readonly excludedEntries: readonly string[];
+  readonly bytesCopied: number;
+  readonly sourceLink: ImportCopySourceLinkV01;
+  readonly reInspection: ImportCopyReInspectionV01;
+}
+
+export interface ImportCopyRejectedV01 {
+  readonly kind: "rejected";
+  readonly guard: ImportCopyGuardV01;
+  /** vua.project.* 稳定码(七项闭集,冻结 Schema pattern) */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type ProjectImportCopyResultV01 =
+  | ImportCopyPlanV01
+  | ImportCopyReceiptV01
+  | ImportCopyRejectedV01;
+
+export interface ProjectImportCopyCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "project.import-copy";
+  readonly commandId: string;
+  readonly params: {
+    readonly phase: ImportCopyPhaseV01;
+    readonly sourcePath: string;
+    readonly targetParentDirectory: string;
+    readonly targetProjectName: string;
+    readonly confirmedPlanDigest?: string;
+  };
+}
+
 export type ApplicationRequestV01 =
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
@@ -859,6 +961,7 @@ export type ApplicationRequestV01 =
   | WarehouseSetGlobalDefaultModeCommandV02
   | WarehouseImportCommandV03
   | RecipeSaveCommandV02
+  | ProjectImportCopyCommandV01
   | RecipeResolveCommandV02
   | PlanApproveCommandV02
   | JobExecuteCommandV02
@@ -961,6 +1064,7 @@ export type ApplicationSuccessValueV01 =
   | JobExecuteResultV02
   | RecordGetResultV02
   | RecordListResultV02
+  | ProjectImportCopyResultV01
   | WarehouseMaintenanceAcceptedV01;
 
 export type ApplicationResponseV01 =
@@ -1297,6 +1401,23 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, [idKey])
       && typeof (value.params as Record<string, unknown>)[idKey] === "string";
+  }
+  // project-ops v0.1(014):plan/apply 两段闭集;apply 必带 confirmedPlanDigest
+  if (value.kind === "command" && value.method === "project.import-copy") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])) return false;
+      if (!isIdentifier(value.commandId)) return false;
+    const p = value.params as Record<string, unknown>;
+    const keys = Object.keys(p).sort();
+    if (!keys.includes("phase") || !keys.includes("sourcePath") || !keys.includes("targetParentDirectory") || !keys.includes("targetProjectName")) return false;
+    if (p.phase !== "plan" && p.phase !== "apply") return false;
+    if (typeof p.sourcePath !== "string" || p.sourcePath.length === 0) return false;
+    if (typeof p.targetParentDirectory !== "string" || p.targetParentDirectory.length === 0) return false;
+    if (typeof p.targetProjectName !== "string" || p.targetProjectName.length === 0) return false;
+    if (p.phase === "apply") {
+      if (keys.length !== 5 || !keys.includes("confirmedPlanDigest")) return false;
+      if (typeof p.confirmedPlanDigest !== "string" || p.confirmedPlanDigest.length === 0) return false;
+    } else if (keys.length !== 4) return false;
+    return true;
   }
   // production-use-case v0.2 读面闭集(011 section 7:catalog.list 先例)
   if (value.kind === "query" && (value.method === "record.get")) {

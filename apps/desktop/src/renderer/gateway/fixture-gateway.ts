@@ -10,6 +10,7 @@ import { fixtureRecipeGraph } from "./fixture-recipes.ts";
 import { fixtureReleaseWall } from "./fixture-release.ts";
 import { fixtureWorkshopReplay } from "./fixture-workshop.ts";
 import { createAcquireFixtureStore } from "./fixture-acquire.ts";
+import { createFixtureProjectOps } from "./fixture-project-ops.ts";
 import { createFixturePackages } from "./fixture-packages.ts";
 import { createFixtureWarehouseCommands } from "./fixture-warehouse-commands.ts";
 import { createSignal } from "./fixture-signal.ts";
@@ -590,6 +591,7 @@ export function fixtureGateway(
     toolCatalog: createFixtureToolCatalog(),
     acquire: acquireStore.port,
     warehouseCommands,
+    projectOps: createFixtureProjectOps(),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),
