@@ -240,7 +240,86 @@ export interface WarehouseSetGlobalDefaultModeRequestV1 {
   readonly method: "warehouse.setGlobalDefaultMode";
   readonly params: { readonly mode: WarehouseArtifactModeV03; readonly commandId: string };
 }
+// ---- production-use-case v0.2 (W20 ten-method freeze, W24 workbench; document
+// bodies carried as Record<string, unknown>, contract face does not duplicate
+// document schemas) ----
+export interface RecipeSaveRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "recipe.save";
+  readonly params: { readonly recipeDocument: Record<string, unknown>; readonly baseRevision: number };
+}
+
+export interface RecipeGetRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "recipe.get";
+  readonly params: { readonly recipeId: string };
+}
+
+export interface RecipeListRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "recipe.list";
+  readonly params: ProductionListParamsV1;
+}
+
+export interface RecipeResolveRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "recipe.resolve";
+  readonly params: { readonly recipeId: string; readonly revision?: number };
+}
+
+export interface PlanApproveRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "plan.approve";
+  readonly params: { readonly planId: string };
+}
+
+export interface PlanGetRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "plan.get";
+  readonly params: { readonly planId: string };
+}
+
+export interface PlanListRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "plan.list";
+  readonly params: ProductionListParamsV1 & { readonly recipeId?: string };
+}
+
+export interface JobExecuteRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "job.execute";
+  readonly params: { readonly planId: string };
+}
+
+export interface RecordGetRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "record.get";
+  readonly params: { readonly buildId: string };
+}
+
+export interface RecordListRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "record.list";
+  readonly params: ProductionListParamsV1 & { readonly recipeId?: string };
+}
 /** warehouse.import 批量导入入口(bdl-commands v0.3,W19) */
+/** production-use-case v0.2 read-face pagination/filter closed set (011 section 7) */
+export interface ProductionListParamsV1 {
+  readonly text?: string;
+  readonly limit?: number;
+  readonly offset?: number;
+  readonly recipeId?: string;
+}
 export interface WarehouseImportRequestV1 {
   readonly schemaVersion: 1;
   readonly requestId: string;
@@ -272,7 +351,17 @@ export type DesktopGatewayRequestV1 =
   | WarehouseGenerateVpmRequestV1
   | WarehouseDeleteOriginalsRequestV1
   | WarehouseSetGlobalDefaultModeRequestV1
-  | WarehouseImportRequestV1;
+  | WarehouseImportRequestV1
+  | RecipeSaveRequestV1
+  | RecipeGetRequestV1
+  | RecipeListRequestV1
+  | RecipeResolveRequestV1
+  | PlanApproveRequestV1
+  | PlanGetRequestV1
+  | PlanListRequestV1
+  | JobExecuteRequestV1
+  | RecordGetRequestV1
+  | RecordListRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -300,6 +389,16 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.deleteOriginals": "command",
   "warehouse.setGlobalDefaultMode": "command",
   "warehouse.import": "command",
+  "recipe.save": "command",
+  "recipe.resolve": "command",
+  "plan.approve": "command",
+  "job.execute": "command",
+  "recipe.get": "query",
+  "recipe.list": "query",
+  "plan.get": "query",
+  "plan.list": "query",
+  "record.get": "query",
+  "record.list": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
