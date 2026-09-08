@@ -3,13 +3,11 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 04:4x（**三批验收合并**：桌面 **F6 确认链接线批**〔c967ce6
-自并：project-ops v0.1 桌面面——ProjectCompatPage 确认链＋project-ops-port＋
-fixture；013＋014 双命令面接线完成〕＋核心 **plan.list/record.list 身份列表**
-〔ca991e8：W20 命令面完成〕＋环境 **013 读面词表冻结件**〔d253b8d：command/result
-Schema＋project_queries 测试＋REGISTRY rows〕——集成复跑 **cargo 432/0**〔57 套
-件〕＋clippy 零告警＋桌面 397 测试＋leak 零泄漏；**W25 三前置：①凭证落地＋②已
-落地＋③W22 实现进行中〔executors 已接线〕——三者齐后一次开窗全量验证**）
+最近更新：2026-09-09 05:0x（**EAC R1a 只读探针验收合并**〔环境 c07ad47：eac_probe.rs
+309 行＋252 行测试＋schemas/eac-probe/v0.1（006 八点语义锚定）；集成复跑 **cargo
+437/0**〔58 套件〕＋clippy 零告警——M6 EAC 包 R9 执行序推进〕；M6 提前开工进度：
+T-A/T-B/T-C 首批＋EAC R1a 均已验收；并行：production-use-case v0.2 已冻结〔W25
+前置①凭证〕＋W22 实现进行中〔前置③〕＋013/014 接线完成）
 
 ## 工作树指派
 
@@ -31,7 +29,7 @@ Schema＋project_queries 测试＋REGISTRY rows〕——集成复跑 **cargo 432
 | M0 / M1 / M2 | 已通过 | 2026-09-04 |
 | M3 | **已通过** | 2026-09-07——门项全完成（I-1 16/16 真机；三轮走查终验通过）；v0.5.0 已切，关门后推送 GitHub |
 | M4 | **已通过** | 2026-09-08——W12–W17 全链交付；W15 两轮走查收敛（复验通过＋两修正项回流 2fa260d＋用户确认）；v0.6.0 已切并推送 GitHub；M5（v0.7.0）随即开窗 |
-| M6 | **项目管理部分提前开工**（用户裁决 2026-09-08 晚，操作者转达；环境/桌面已同步派发）| 授权与范围：**越过门序**的任务包＝T-A 通用 vrc-get 路径（环境，核心协作；**wire 词表为新协议面——桌面提案→核心裁决流程不变**）＋T-B ALCOM/VCC 能力检测与兼容矩阵（环境，桌面协作）＋T-C F6 页面（桌面，环境协作；U3 只读兼容呈现＋「导入为 VUA 管理的副本」入口，权威＝product-boundary 1.2.0）＋EAC 适配器（环境，R1–R9 已批准按 R9 执行）＋Unity/VRChat/SteamVR 环境检查行；**门验收与发行不在提前授权范围**（等 M5 关门后按门序）；任务包拆行细化见 outline 2.0.9 M6 分解表；early-open 授权记录＝用户裁决 2026-09-08 晚（操作者转达） |
+| M6 | **项目管理部分提前开工**（用户裁决 2026-09-08 晚，操作者转达；环境/桌面已同步派发）| 授权与范围：**越过门序**的任务包＝T-A 通用 vrc-get 路径（环境，核心协作；**wire 词表为新协议面——桌面提案→核心裁决流程不变**）＋T-B ALCOM/VCC 能力检测与兼容矩阵（环境，桌面协作）＋T-C F6 页面（桌面，环境协作；U3 只读兼容呈现＋「导入为 VUA 管理的副本」入口，权威＝product-boundary 1.2.0）＋EAC 适配器（环境，R1–R9 已批准按 R9 执行）＋Unity/VRChat/SteamVR 环境检查行；**门验收与发行不在提前授权范围**（等 M5 关门后按门序）；任务包拆行细化见 outline 2.0.9 M6 分解表；early-open 授权记录＝用户裁决 2026-09-08 晚（操作者转达）。**进度（2026-09-09）**：T-A/T-B 只读检查＋兼容矩阵＋T-C F6 页面＋EAC R1a 只读探针（eac-probe v0.1）均已验收合并；T-A 写路径（proposal 014）语义已冻结、实现已验收（project-ops v0.1） |
 
 M3 进度：
 
@@ -161,6 +159,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | environment-managers（schema） | v0.1 | 冻结 |
 | project-inspection（schema） | v0.1 | 冻结（M6 T-A/T-B，2026-09-09，环境，集成验收复跑 420/0）——管理器注册项目只读检视聚合（关联/Unity 分类/VPM 声明面/VRChat SDK/未完成变更标记三态）；库级 payload 面；读面 wire 词表（command/result schema＋向量）随 013 冻结件入树（2026-09-09） |
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
+| eac-probe（schema） | v0.1 | **已冻结（M6 EAC R1a 实现，2026-09-09，环境，集成验收复跑 437/0）**——EAC 只读冲突探针（R1a：允许清单会话/残留快照两态 fixtures；006 八点语义锚定）；实现 eac_probe.rs 309 行＋252 行测试 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | project-ops（schema / 词表） | v0.1 | **已冻结（014 实现，2026-09-09，环境，集成验收复跑 428/0）**——`project.import-copy` 写命令（plan/apply 两 phase，apply 强制 confirmedPlanDigest 双摘要）＋守卫拒绝码闭集七项（仲裁确认）＋桌面字段请求落字段（estimatedBytes/excludedEntries/targetPath）；与 013 project-inspection 读面平行读写分线；实现 import_copy.rs 607 行＋342 行测试 |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
