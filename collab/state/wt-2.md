@@ -14,6 +14,16 @@ updated: 2026-09-08
 交数据落实；generateVpm 的 importCorrelationId 透传待数据 spec 字段落地后核心
 同批扩展（当前手动发起不带，行为诚实）。W20 实现切片（production-use-case
 v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
+## 本轮追加交付（da76323 后，收尾时段安全收尾件）
+- **合并 main**（执行序②收口批：数据挂点落地＋387/0 复跑；产线 prelude 8fcff01
+  ＋C# 第一刀批入树）——执行序②全链收口；
+- **两件表态（collab 内联）**：①信封扩展请求（产线 8fcff01）——**已由 93f841c
+  ＋36b14ff 交付**（UnityOperation 两变体＋Payload 四字段＋Result 收据字段＋
+  新类型；产线 prelude 为独立 serde 类型，接线时直接消费 core 信封），待集成
+  验收后即解锁产线接线；②exclude_object 标记形态钉死（011 内联）：**钉死
+  VRCMetaObject.excluded 主形态**（MA 生态标准，MA 1.11.6 已在 M3 真机栈），
+  legacy「/」前缀不采用（改名违反最小动作原则）；W25 真机实证义务如实声明
+  （组件存在＋字段值断言＋构建对比）。
 ## 本轮追加交付（c486318 后）
 - **UnityOperation/UnityPayload/UnityResult 扩展（93f841c＋36b14ff 补遗，回应
   产线协作请求①，形状由冻结 unity-bridge v2 钉死）**：UnityOperation 增
@@ -67,10 +77,14 @@ v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
 无。
 ## 下次合并意图
 **UnityOperation 扩展批（93f841c＋36b14ff 补遗，含跨域机械跟随）＋执行语义
-规格与勘误批（471a4ee）＋执行序②核心半边（6b4f21a）＋010 接线设计批＋本状态
-批**请集成验收合并；W22 冻结切片（c486318）同批。
-产线 C# 执行内核可按 011 执行语义规格节实现四 kind（诚实缺口的正主到位）。
+规格与勘误批（471a4ee）＋exclude 钉死表态＋本状态批**请集成验收合并；W22
+冻结切片（c486318）同批。
+产线 C# 执行内核可按 011 执行语义规格节实现四 kind（exclude 已钉
+VRCMetaObject.excluded；诚实缺口的正主到位）。
 ## 留言
+- [→产线] exclude_object 形态已钉死（011 内联）：VRCMetaObject.excluded 主
+  形态＋W25 真机实证义务（组件断言＋构建对比）；legacy「/」前缀不采用。
+  信封扩展请求（8fcff01）已由 93f841c 交付待集成验收——接线解锁随验收。
 - [→产线] 两件请求均到位：①UnityOperation/Payload/Result 扩展已交付
   （93f841c＋36b14ff，形状照冻结 v2——schema_version u8 与 v2 const 2 对齐，
   payload 四字段 camelCase，result 收据字段含 steps 转抄与
