@@ -338,6 +338,11 @@ pub struct GenerateVpmTaskSpec {
     pub warehouse_item_id: String,
     pub warehouse_root: PathBuf,
     pub global_default: ArtifactMode,
+    /// Present only when the generation was orchestrated by a batch import
+    /// (proposal 010 commitment 6): the audit-chain link back to the source
+    /// import task. A manually initiated generation leaves it None — the
+    /// wire field (bdl-commands v0.3) is optional for the same reason.
+    pub import_correlation_id: Option<String>,
 }
 
 /// Audit payload (Done exit).
@@ -349,6 +354,10 @@ pub struct GenerateVpmResult {
     pub package_id: String,
     pub archive_relative_path: String,
     pub archive_sha256: String,
+    /// Present only for import-orchestrated generations (the audit chain
+    /// back to the source import task); absent for manual generations.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub import_correlation_id: Option<String>,
 }
 
 fn generate_error_to_app(error: MaintenanceError, correlation_id: &str) -> vua_orchestrator::AppErrorV1 {
@@ -549,6 +558,7 @@ fn run_generate_vpm(
         package_id: generated.package_id.clone(),
         archive_relative_path: relative_path,
         archive_sha256: archive_sha,
+        import_correlation_id: spec.import_correlation_id.clone(),
     };
     let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
     ctx.emit_progress(payload.clone());
@@ -593,7 +603,11 @@ fn now_rfc3339() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use vua_bdl_store::bdl_store::NewLocalArtifact;
+    use crate::warehouse_import::{
+        submit_warehouse_import, submit_warehouse_import_auto, AutoGenerateSpec,
+        WarehouseImportTaskSpec,
+    };
+    use vua_bdl_store::bdl_store::{CopyRole, NewLocalArtifact};
     use vua_orchestrator::TaskState;
     use vua_orchestrator::TaskSnapshot;
     use vua_orchestrator::{FixedIdGenerator, SystemClock};
@@ -1054,6 +1068,7 @@ mod tests {
                 warehouse_item_id: world.entry_id.clone(),
                 warehouse_root: parent.clone(),
                 global_default: ArtifactMode::UseOriginalUnitypackage,
+                import_correlation_id: None,
             },
             Some(Duration::from_secs(120)),
         )
@@ -1145,6 +1160,7 @@ mod tests {
                 warehouse_item_id: world.entry_id.clone(),
                 warehouse_root: parent.clone(),
                 global_default: ArtifactMode::UseOriginalUnitypackage,
+                import_correlation_id: None,
             },
             None,
         )
@@ -1207,6 +1223,7 @@ mod tests {
                 warehouse_item_id: entry_id.clone(),
                 warehouse_root: parent.clone(),
                 global_default: ArtifactMode::UseOriginalUnitypackage,
+                import_correlation_id: None,
             },
             None,
         )
@@ -1234,6 +1251,7 @@ mod tests {
             warehouse_item_id: world.entry_id.clone(),
             warehouse_root: parent.clone(),
             global_default: ArtifactMode::UseOriginalUnitypackage,
+            import_correlation_id: None,
         };
         let first = submit_generate_vpm(
             &rt,
@@ -1293,6 +1311,7 @@ mod tests {
                 warehouse_item_id: "whi-nope".into(),
                 warehouse_root: parent.clone(),
                 global_default: ArtifactMode::GenerateVpm,
+                import_correlation_id: None,
             },
             None,
         )
@@ -1406,5 +1425,208 @@ mod tests {
             params.get("effectiveMode"),
             Some(&ParamValue::Text("use_original_unitypackage".into()))
         );
+    }
+
+    /// The import-orchestrated auto-generation hook (proposal 010 path A,
+    /// implemented in `warehouse_import`): a real batch import with the
+    /// hook on lands the entry, submits the generation with the audit
+    /// chain, and the generation runs to success on the fixture bridge.
+    #[test]
+    fn import_hook_submits_generation_with_the_audit_chain() {
+        let parent = unique_dir("hook-on");
+        let (world, executor, _bridge) = make_generate_setup(&parent);
+        // The persisted global default rules the hook (read per landing).
+        world
+            .store
+            .set_global_default_mode(ArtifactMode::GenerateVpm)
+            .unwrap();
+
+        let source = parent.join("incoming");
+        fs::create_dir_all(&source).unwrap();
+        write_synthetic_archive(&source.join("pack.unitypackage"), &["Assets/hook/asset.txt"]);
+
+        let (rt, journal) = generate_runtime();
+        let auto = AutoGenerateSpec {
+            env_initial: ArtifactMode::UseOriginalUnitypackage,
+            executor,
+        };
+        let accepted = submit_warehouse_import_auto(
+            rt.clone(),
+            world.store.clone(),
+            Arc::new(FixedClock::new(&["2026-09-08T07:00:00Z"])),
+            WarehouseImportTaskSpec {
+                correlation_id: "corr-import-1".into(),
+                source_folders: vec![source],
+                warehouse_root: parent.join("wh-hook"),
+                auto_generate: Some(auto.clone()),
+            },
+            Some(auto),
+            None,
+        )
+        .unwrap();
+
+        // The orchestrated generation appears with the derived correlation
+        // and runs to a terminal state on the fixture bridge.
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        let generation_correlation = loop {
+            let snapshots = rt.snapshot_all();
+            if let Some(live) = snapshots
+                .iter()
+                .find(|snapshot| snapshot.correlation_id.starts_with("corr-import-1-auto-"))
+            {
+                if live.state.is_terminal() {
+                    break live.correlation_id.clone();
+                }
+            }
+            assert!(std::time::Instant::now() < deadline, "generation did not finish");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        };
+
+        // The audit chain: the generation's journal completion carries the
+        // importCorrelationId back to this import task.
+        let snapshots = rt.snapshot_all();
+        let generation_task = snapshots
+            .iter()
+            .find(|snapshot| snapshot.correlation_id == generation_correlation)
+            .expect("the orchestrated generation is registered");
+        let payload = completed_payload(&journal, &generation_task.task_id);
+        match payload {
+            JournalPayload::Completed {
+                result: Some(done),
+                error: None,
+                ..
+            } => {
+                assert_eq!(done["importCorrelationId"], serde_json::json!("corr-import-1"));
+            }
+            other => panic!("expected a successful generation completion, got {other:?}"),
+        }
+
+        // The generated VPM package copy is real: the imported entry (not
+        // the fixture entry) carries it after the orchestrated generation.
+        let import_done = completed_payload(&journal, &accepted.task_id);
+        let imported_entry_id = match import_done {
+            JournalPayload::Completed {
+                result: Some(done),
+                error: None,
+                ..
+            } => done["reports"][0]["entry"]["warehouseItemId"]
+                .as_str()
+                .expect("the import report carries the created entry id")
+                .to_owned(),
+            other => panic!("expected a successful import completion, got {other:?}"),
+        };
+        let detail = world
+            .store
+            .warehouse_entry_detail(&imported_entry_id, ArtifactMode::GenerateVpm)
+            .unwrap()
+            .expect("the imported entry exists");
+        assert_eq!(detail.warehouse_item_id, imported_entry_id);
+        assert!(
+            detail
+                .artifacts
+                .iter()
+                .any(|artifact| artifact.role == CopyRole::GeneratedVpm),
+            "the orchestrated generation produced the VPM package copy"
+        );
+    }
+
+    /// The manual import face never orchestrates: same fixture, hook off.
+    #[test]
+    fn manual_import_face_never_submits_generation() {
+        let parent = unique_dir("hook-off");
+        let (world, _executor, _bridge) = make_generate_setup(&parent);
+        world
+            .store
+            .set_global_default_mode(ArtifactMode::GenerateVpm)
+            .unwrap();
+
+        let source = parent.join("incoming");
+        fs::create_dir_all(&source).unwrap();
+        write_synthetic_archive(&source.join("pack.unitypackage"), &["Assets/hook/asset.txt"]);
+
+        let (rt, _journal) = generate_runtime();
+        submit_warehouse_import(
+            &rt,
+            world.store.clone(),
+            Arc::new(FixedClock::new(&["2026-09-08T07:00:00Z"])),
+            WarehouseImportTaskSpec {
+                correlation_id: "corr-import-2".into(),
+                source_folders: vec![source],
+                warehouse_root: parent.join("wh-manual"),
+                auto_generate: None,
+            },
+            None,
+        )
+        .unwrap();
+
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        loop {
+            let snapshots = rt.snapshot_all();
+            if snapshots.iter().all(|snapshot| snapshot.state.is_terminal()) {
+                assert!(
+                    snapshots
+                        .iter()
+                        .all(|snapshot| !snapshot.correlation_id.contains("-auto-")),
+                    "the manual face must not orchestrate a generation"
+                );
+                break;
+            }
+            assert!(std::time::Instant::now() < deadline, "import did not finish");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
+    }
+
+    /// The persisted global default rules the hook even when it disagrees
+    /// with the injected initial (read-time evaluation, W14 semantics).
+    #[test]
+    fn persisted_original_rules_the_hook_over_the_injected_initial() {
+        let parent = unique_dir("hook-persisted");
+        let (world, executor, _bridge) = make_generate_setup(&parent);
+        world
+            .store
+            .set_global_default_mode(ArtifactMode::UseOriginalUnitypackage)
+            .unwrap();
+
+        let source = parent.join("incoming");
+        fs::create_dir_all(&source).unwrap();
+        write_synthetic_archive(&source.join("pack.unitypackage"), &["Assets/hook/asset.txt"]);
+
+        let (rt, _journal) = generate_runtime();
+        submit_warehouse_import_auto(
+            rt.clone(),
+            world.store.clone(),
+            Arc::new(FixedClock::new(&["2026-09-08T07:00:00Z"])),
+            WarehouseImportTaskSpec {
+                correlation_id: "corr-import-3".into(),
+                source_folders: vec![source],
+                warehouse_root: parent.join("wh-persisted"),
+                auto_generate: Some(AutoGenerateSpec {
+                    env_initial: ArtifactMode::GenerateVpm,
+                    executor: executor.clone(),
+                }),
+            },
+            Some(AutoGenerateSpec {
+                env_initial: ArtifactMode::GenerateVpm,
+                executor,
+            }),
+            None,
+        )
+        .unwrap();
+
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+        loop {
+            let snapshots = rt.snapshot_all();
+            if snapshots.iter().all(|snapshot| snapshot.state.is_terminal()) {
+                assert!(
+                    snapshots
+                        .iter()
+                        .all(|snapshot| !snapshot.correlation_id.contains("-auto-")),
+                    "composed=original must not orchestrate a generation"
+                );
+                break;
+            }
+            assert!(std::time::Instant::now() < deadline, "import did not finish");
+            std::thread::sleep(std::time::Duration::from_millis(10));
+        }
     }
 }

@@ -277,12 +277,16 @@ fn bdl_cmd_007_completion_payload_shapes_stay_camel_case() {
         keys
     }
 
+    // A manual generation carries no importCorrelationId (skip_serializing_if
+    // keeps the payload to the manual five keys — the audit-chain field only
+    // appears for import-orchestrated generations).
     let generation = serde_json::to_value(GenerateVpmResult {
         correlation_id: "corr".into(),
         warehouse_item_id: "whi-x".into(),
         package_id: "com.ph-r.vua.local.example_pack.0123456789ab".into(),
         archive_relative_path: "vpm/example-0.1.0.zip".into(),
         archive_sha256: "sha256:deadbeef".into(),
+        import_correlation_id: None,
     })
     .unwrap();
     assert_eq!(
@@ -291,6 +295,28 @@ fn bdl_cmd_007_completion_payload_shapes_stay_camel_case() {
             "archiveRelativePath",
             "archiveSha256",
             "correlationId",
+            "packageId",
+            "warehouseItemId"
+        ]
+    );
+    // An import-orchestrated generation carries the audit-chain link in the
+    // payload (camelCase), while a manual one omits the field entirely.
+    let orchestrated = serde_json::to_value(GenerateVpmResult {
+        correlation_id: "corr".into(),
+        warehouse_item_id: "whi-x".into(),
+        package_id: "pkg".into(),
+        archive_relative_path: "vpm/x.zip".into(),
+        archive_sha256: "sha256:deadbeef".into(),
+        import_correlation_id: Some("corr-import-1".into()),
+    })
+    .unwrap();
+    assert_eq!(
+        sorted_keys(&orchestrated),
+        vec![
+            "archiveRelativePath",
+            "archiveSha256",
+            "correlationId",
+            "importCorrelationId",
             "packageId",
             "warehouseItemId"
         ]
