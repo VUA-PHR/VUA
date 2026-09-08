@@ -198,11 +198,13 @@ pub struct ProductionUseCaseConfig {
     pub recipes: Arc<RecipeDocumentStore>,
     pub plans: Arc<vua_orchestrator::PlanDocumentStore>,
     pub evidence: Arc<vua_orchestrator::EvidenceStore>,
+    pub records: Arc<vua_orchestrator::RecipeRecordStore>,
 }
 
 struct ProductionUseCaseServices {
     recipes: Arc<RecipeDocumentStore>,
     plans: Arc<vua_orchestrator::PlanDocumentStore>,
+    records: Arc<vua_orchestrator::RecipeRecordStore>,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -406,6 +408,7 @@ pub fn run_provider_host_with_services(
         Arc::new(ProductionUseCaseServices {
             recipes: config.recipes,
             plans: config.plans,
+            records: config.records,
             evidence: config.evidence,
             bdl,
             runtime,
@@ -751,7 +754,10 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
         return job_unavailable(state, request_id, correlation_id);
     }
     if method.starts_with("record.") {
-        return record_unavailable(request_id, correlation_id);
+        let Some(use_cases) = state.use_cases.clone() else {
+            return record_unavailable(request_id, correlation_id);
+        };
+        return record_request(use_cases, method, request, request_id, correlation_id);
     }
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
@@ -1561,6 +1567,63 @@ fn plan_request(
             "vua.provider.unknown_method",
             "errors.provider.unknownMethod",
             "validation",
+        )),
+    }
+}
+
+fn record_request(
+    use_cases: Arc<ProductionUseCaseServices>,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let params = request.get("params").cloned().unwrap_or(json!({}));
+    let params_object = params.as_object().ok_or(());
+    let _ = params_object;
+    match method {
+        "record.get" => {
+            let Some(build_id) = params
+                .get("buildId")
+                .and_then(Value::as_str)
+                .filter(|id| !id.is_empty())
+            else {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.record.invalid_params",
+                    "errors.record.invalidParams",
+                    "validation",
+                ));
+            };
+            match use_cases.records.get(build_id) {
+                Ok(Some(record)) => FrameOutcome::Response(application_success(
+                    request_id,
+                    json!({ "buildId": build_id, "recordDocument": record }),
+                )),
+                Ok(None) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.record.not_found",
+                    "errors.record.notFound",
+                    "validation",
+                )),
+                Err(_) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.record.store_failed",
+                    "errors.record.storeFailed",
+                    "internal",
+                )),
+            }
+        }
+        // record.list 聚合面随第三刀收尾（身份列表已在存储侧就绪）。
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.record.unavailable",
+            "errors.record.unavailable",
+            "unavailable",
         )),
     }
 }

@@ -11,6 +11,7 @@ mod build_record;
 mod plan_documents;
 mod production_evidence;
 mod recipe_documents;
+mod recipe_records;
 mod capability;
 mod contracts;
 mod editor_targets;
@@ -41,6 +42,7 @@ pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
 pub use plan_documents::{ApproveOutcome, PlanDocumentStore, APPROVED_PLAN_SCHEMA_VERSION};
+pub use recipe_records::RecipeRecordStore;
 pub use recipe_documents::{RecipeDocumentStore, RecipeListEntry, RecipeSaveError, StoredRecipeDocument};
 pub use production_evidence::{
     EvidenceKind, EvidenceResolution, EvidenceSourceRef, EvidenceStore, EvidenceSubject,
