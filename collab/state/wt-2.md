@@ -6,7 +6,9 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
-**M6 已开窗（环境 T-A/T-B＋ALCOM/VCC 兼容矩阵＋proposal 013 入树）**；W20
+**proposal 014 核心表态已交付（fc6f69e，内联）**：命令面裁独立 project-ops
+词表行（project.import-copy；与 013 检测读面读/写分线）＋九态任务＋服务端
+守卫——待桌面/集成。**M6 已开窗（环境 T-A/T-B＋ALCOM/VCC 兼容矩阵＋proposal 013 入树）**；W20
 实现切片全部交付并经验收（第三刀 record 读面 16a2dc5 已合并）。核心 M6
 名下任务待锚点领取。#7 残余观察态维持。
 **W20 第三刀全部交付（34d0075：Local Resolution 执行器＋recipe.resolve 任务
@@ -22,6 +24,15 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 扩展 93f841c＋36b14ff 补遗；执行语义规格 471a4ee）；执行序②核心半边
 （6b4f21a）与 W22 冻结切片（c486318）、W20 冻结切片（0400bee）均已交/经集成
 验收。导入挂点（010 路径 A）设计已内联交数据落实。#7 残余观察态维持。
+## 本轮交付（2a91d46 后，本 tick 续）
+- **proposal 014 核心表态（fc6f69e，内联）**：①命令面＝独立
+  `schemas/project-ops/v0.1/`（project.import-copy 写命令；与 013 检测读面
+  读/写分线，词表不混素材域）＋冻结硬前置照惯例；②任务面＝九态复用＋
+  不隐式续传（残留半成品→inspect_required，重试＝用户显式清理后重来）＋
+  新项目 `.vua/` 锁（原项目只读不取锁）；③R3 五守卫全部服务端逐项核验
+  （拒绝码闭集随 Schema 冻结）；④审计面与 W23 evidenceIds 同构（sourceRef.
+  taskCorrelation 引用）；⑤桌面 T-C 接线待两命令面（013 检测＋014 写命令）
+  冻结。
 ## 本轮交付（c486318 后，本 tick 续）
 - **合并 main**（M6 环境 T-A/T-B 批＋桌面 T-C 检测批＋proposal 013 入树）——
   baseline 追平；状态文件 consolidate（合并带入的 wt-2 状态与本轮条目冲突
