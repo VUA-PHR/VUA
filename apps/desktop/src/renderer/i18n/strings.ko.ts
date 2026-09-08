@@ -120,6 +120,7 @@ demoTaskTitle: "데모 작업",
       warehouse: "창고",
       workshop: "작업장",
       packages: "패키지",
+      projectCompat: "프로젝트 호환",
     },
     pages: {
       home: "허브",
@@ -142,6 +143,7 @@ demoTaskTitle: "데모 작업",
       settingsAbout: "정보",
       settingsDonate: "후원",
       packages: "패키지 관리자",
+      projectCompat: "프로젝트 호환",
     },
   },
   /** 허브 랜딩 페이지(S-VFX-2): 기본 시작 페이지 */
@@ -1122,6 +1124,45 @@ rolled_back: "롤백됨",
     futureNote: "스냅샷 복원, 재파생, 업로드 인계는 이후 슬라이스에서 연결됩니다. 로그인과 업로드는 항상 VRChat 공식 SDK에서 직접 진행합니다.",
   },
   /** 패키지 관리(S-XVI): Recipe 외의 수동 VPM 작업면. 플레이어 언어를 사용하며 semver/프로토콜 세부는 노출하지 않음 */
+  /** 프로젝트 호환 페이지(F6, M6 T-C): ALCOM/VCC 관리 프로젝트의 읽기 전용 표시와
+   *  "VUA 관리 복사본으로 가져오기" 입구. 권위=product-boundary 1.2.0(U3 결정).
+   *  감지 읽기 면(환경 T-B)은 미연결로 정직하게 unavailable 표시, 복사 가져오기
+   *  실행(환경 T-A)도 미연결로 입구에 상시 주기 */
+  projectCompat: {
+    title: "프로젝트 호환",
+    subtitle: "ALCOM/VCC 관리 프로젝트는 읽기 전용입니다. 쓰기 작업은 해당 관리자에게 맡기세요.",
+    readOnlyTitle: "읽기 전용 호환(경계)",
+    readOnlyDesc: "VUA는 ALCOM/VCC 관리 프로젝트에 대해 읽기 전용입니다. 열람과 진단은 가능하지만, 원본 프로젝트 내 패키지 설치/제거, manifest·프로젝트 설정·애셋·.vua 작업 파일 변경, ALCOM/VCC의 레지스트리·데이터베이스·설정·캐시 쓰기는 하지 않습니다.",
+    detectionTitle: "프로젝트 감지(호환 매트릭스)",
+    detectionSource: "감지 항목과 표시 규칙은 ALCOM/VCC 프로젝트 호환 매트릭스 1.0.0(수락됨)을 따릅니다. 모두 읽기 전용입니다.",
+    detectionNotWired: "감지 데이터 가져오기는 아직 연결되지 않았습니다: wire 명령 면은 proposal 013 결정 후 활성화됩니다. 그 전까지 이 섹션은 계획 미리보기입니다.",
+    detectionItemsTitle: "감지 예정 항목(모두 읽기 전용):",
+    detectionItems: [
+      "관리자 재위(ALCOM/VCC 설정 경로)",
+      "프로젝트 발견(두 관리자 등록 경로의 합집합, 사용자 디렉터리는 절대 스캔하지 않음)",
+      "이중 관리자 연관(동일 경로의 다중 연관 중복 제거)",
+      "Unity 버전 및 분류(생산 대상/마이그레이션 원본/기타)",
+      "VPM 패키지 선언 면(dependencies와 locked)",
+      "VRChat SDK(com.vrchat.* 접두사 식별)",
+      "미완료 변경 표식(.vua/pending-mutation.json 읽기 전용 관찰)",
+      "레지스트리 삭제 항목(경고와 함께 보존, 조용히 버리지 않음)",
+    ],
+    envStatusTitle: "환경 상태(VUA 측 감지)",
+    envStatusSource: "데이터 출처: VUA 환경 감지(ALCOM/VCC 기록이 아님). 버전은 해당 관리자의 기록이 기준입니다.",
+    handoverTitle: "쓰기 작업 인계",
+    handoverDesc: "프로젝트에 대한 쓰기 작업(패키지 설치/제거, 설정 변경 등)은 해당 ALCOM/VCC 관리자로 수행하세요. VUA는 원본 프로젝트에 쓰지 않습니다.",
+    importTitle: "VUA 관리 복사본으로 가져오기",
+    importSpecIntro: "가져오기는 다음 사양으로 실행됩니다:",
+    importSpecs: [
+      "새 프로젝트 경로와 새 프로젝트 신원으로 가져옵니다;",
+      "가져오기 전에 예상 디스크 사용량을 표시합니다;",
+      "재생성 가능한 디렉터리(예: Library)와 이전 작업 상태는 복사하지 않습니다;",
+      "가져온 후 검사를 다시 실행하며 확인과 스냅샷은 상속하지 않습니다;",
+      "원본 프로젝트와의 연관을 유지해 쉽게 돌아갈 수 있게 합니다.",
+    ],
+    importCta: "프로젝트 폴더를 선택해 가져오기",
+    importNotWired: "복사 가져오기 실행은 아직 연결되지 않았습니다. 환경 읽기 면과 능력 면이 착지하면 활성화됩니다.",
+  },
   packages: {
     subtitle:
       "각 Unity 프로젝트의 패키지를 수동으로 설치·업데이트·제거합니다. {recipe}에서 조립하는 것이 기본 경로입니다.",

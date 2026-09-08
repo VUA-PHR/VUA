@@ -1,0 +1,35 @@
+{
+  "schemaVersion": "vua.project-inspection/v0.1",
+  "capturedAt": "2026-09-09T02:00:00.000Z",
+  "productionTarget": "2022.3.22f1",
+  "migrationSources": ["2019.4.31f1", "2022.3.6f1"],
+  "projects": [
+    {
+      "path": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+      "name": "My Avatar World",
+      "pathPresent": true,
+      "associations": ["vcc_registered", "alcom_registered"],
+      "unityVersion": "2022.3.22f1",
+      "unityClassification": "production_target",
+      "manifestPresent": true,
+      "manifestSchemaOk": true,
+      "dependencies": [
+        { "packageId": "com.vrchat.avatars", "version": "3.7.x" },
+        { "packageId": "com.vrchat.base", "version": "3.7.x" },
+        { "packageId": "dev.onevr.vrmtoolkit", "version": "3.x.x" }
+      ],
+      "locked": [
+        { "packageId": "com.vrchat.avatars", "version": "3.7.4" },
+        { "packageId": "com.vrchat.base", "version": "3.7.4" },
+        { "packageId": "dev.onevr.vrmtoolkit", "version": "3.4.2" }
+      ],
+      "vrchatSdks": [
+        { "packageId": "com.vrchat.avatars", "source": "locked", "version": "3.7.4" },
+        { "packageId": "com.vrchat.base", "source": "locked", "version": "3.7.4" }
+      ],
+      "mutationStatus": "none",
+      "diagnostics": []
+    }
+  ],
+  "diagnostics": []
+}

@@ -3,13 +3,14 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 02:0x（**M6 项目管理部分提前开工落账**〔用户裁决 2026-09-08
-晚：任务包 T-A/T-B/T-C＋EAC＋环境检查行派发环境/桌面，越过门序；门验收与发行仍
-等 M5 关门；治理注记＝T-A wire 词表新协议面流程不变；early-open 授权记录〕；
-outline **2.0.9** 双语 M6 分解表拆行细化。并行态势：W25 前置②已落地、①第三刀
-推进中〔M5 关键路径，record.get 已验收 411/0，剩 resolve/job＋向量＋全路由消费
-测试〕、③待①；production-use-case v0.2 协议本（候选）/plan 命令面已验收
-〔051cddc〕）
+最近更新：2026-09-09 02:2x（**三树批验收合并**：核心 **W20 第三刀完成**〔Local
+Resolution 执行器＋recipe.resolve 任务＋record.get＋RecipeSaveError Display，
+集成复跑 **cargo 420/0**＋clippy 零告警——M5 关键路径实现完成〕＋桌面 **T-C F6
+项目兼容页面**〔只读呈现＋副本导入入口＋schema/project-inspection v0.1 fixtures〕
+＋环境 **T-A/T-B 只读项目检查＋ALCOM/VCC 兼容矩阵**＋proposal 013〔ProjectCompatPage
+＋snapshot Schema〕——M6 提前开工三包首批验收；桌面四交互形态路由待确认〔1c3c057〕；
+**W25 前置①实现完成〔v0.2 冻结收口待核心声明〕；③W22 实现进行中〔产线 executors
+已接线〕**）
 
 ## 工作树指派
 
