@@ -853,3 +853,216 @@ fn record_get_reads_the_frozen_record_shape_over_the_wire() {
     let frames = run_plan_frames(&world, config, "req-record-noid", "record.get", json!({}));
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.record.invalid_params");
 }
+
+fn run_frames_with_use_cases(
+    world: &World,
+    use_cases: &vua_provider_host::ProductionUseCaseConfig,
+    warehouse: Option<&vua_provider_host::WarehouseConfig>,
+    correlation_id: &str,
+    commands: &[Value],
+) -> Vec<Value> {
+    let mut input = String::new();
+    for (index, command) in commands.iter().enumerate() {
+        let frame = json!({
+            "frameVersion": "0.1",
+            "frameId": format!("frame-{correlation_id}-{index}"),
+            "kind": "request",
+            "payload": {
+                "contractVersion": "0.1",
+                "requestId": format!("req-{correlation_id}-{index}"),
+                "correlationId": format!("corr-{correlation_id}-{index}"),
+                "kind": "command",
+                "method": command["operation"],
+                "params": command["params"],
+            },
+        });
+        input.push_str(&frame.to_string());
+        input.push('\n');
+    }
+    let mut output = Vec::new();
+    run_provider_host_with_services(
+        Cursor::new(input),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        warehouse.cloned(),
+        Some(use_cases.clone()),
+    )
+    .expect("the frame loop must stay alive");
+    String::from_utf8(output)
+        .expect("output is UTF-8")
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("output lines are frames"))
+        .collect()
+}
+
+#[test]
+fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
+    let world = make_world("resolve");
+    let production_root = world.base.join("production");
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
+            ::new_with_system_clock(production_root.join("recipes"))),
+        plans: std::sync::Arc::new(vua_orchestrator::PlanDocumentStore
+            ::new(production_root.join("plans"))),
+        evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
+            ::new(production_root.join("evidence"))),
+        records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
+            ::new(production_root.join("records"))),
+    };
+    // The use-case face rides the warehouse wiring (shared task authority
+    // and BDL - Local Resolution reads warehouse facts).
+    let warehouse = vua_provider_host::WarehouseConfig {
+        bdl: world.bdl.clone(),
+        warehouse_root: world.base.join("warehouse"),
+        global_default: ArtifactMode::UseOriginalUnitypackage,
+        executor: None,
+    };
+
+    // Seed: two imported folders as warehouse entries (the assets' source),
+    // through the acquisition import job (the real production path).
+    let folder_a = world.base.join("imports").join("pack-a");
+    let folder_b = world.base.join("imports").join("pack-b");
+    for folder in [&folder_a, &folder_b] {
+        fs::create_dir_all(folder).expect("source folder");
+        fs::write(folder.join("material-pack.unitypackage"), b"PK fixture").expect("package file");
+    }
+    let import_spec = vua_acquisition::WarehouseImportTaskSpec {
+        correlation_id: "corr-seed-import".into(),
+        source_folders: vec![folder_a.clone(), folder_b.clone()],
+        warehouse_root: world.base.join("warehouse"),
+        auto_generate: None,
+    };
+    let import_runtime = vua_orchestrator::TaskRuntime::with_sqlite(
+        std::sync::Arc::new(
+            vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap(),
+        ),
+        std::sync::Arc::new(vua_orchestrator::SystemClock),
+        std::sync::Arc::new(vua_orchestrator::NanosTaskIdGenerator::default()),
+    )
+    .expect("import runtime opens");
+    let import_accepted = vua_acquisition::submit_warehouse_import(
+        &import_runtime,
+        world.bdl.clone(),
+        std::sync::Arc::new(vua_orchestrator::SystemClock),
+        import_spec,
+        None,
+    )
+    .expect("seed import accepted");
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let import_done = loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(&import_accepted.task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "seed import did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let entry_ids: Vec<String> = import_done
+        .result
+        .as_ref()
+        .map(|payload| {
+            payload["reports"]
+                .as_array()
+                .expect("reports")
+                .iter()
+                .map(|report| {
+                    report["entry"]["warehouseItemId"]
+                        .as_str()
+                        .expect("entry warehouseItemId")
+                        .to_owned()
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    assert_eq!(entry_ids.len(), 2);
+
+    // The recipe references the imported entries (warehouse source form).
+    let recipe_id = "019e0000-0000-7000-8000-000000000001";
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": recipe_id,
+        "revision": 1,
+        "title": "Resolve Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "avatar_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}},
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[1], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "avatar_asset"},
+            {"id": "outfit_blue", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "outfit_blue"}
+        ]
+    });
+    let save_command = json!({
+        "operation": "recipe.save",
+        "params": {"recipeDocument": recipe_document, "baseRevision": 0}
+    });
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-recipe-save",
+        &[save_command],
+    );
+    assert_eq!(frames[0]["payload"]["ok"], true);
+
+    // recipe.resolve: the tasked Local Resolution over the saved recipe.
+    let resolve_command = json!({
+        "operation": "recipe.resolve",
+        "params": {"recipeId": recipe_id}
+    });
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-resolve",
+        &[resolve_command],
+    );
+    assert_eq!(frames[0]["payload"]["value"]["operation"], "recipe.resolve");
+    let task_id = frames[0]["payload"]["value"]["taskId"]
+        .as_str()
+        .expect("taskId")
+        .to_owned();
+
+    // The resolve task runs to Done; its payload carries the draft plan.
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let done_payload = loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(&task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            assert_eq!(
+                serde_json::to_value(task.state).unwrap(),
+                "succeeded",
+                "resolve payload: {:?}",
+                task.result
+            );
+            break task.result.expect("done payload");
+        }
+        assert!(Instant::now() < deadline, "resolve did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    let plan_id = done_payload["planId"].as_str().expect("planId").to_owned();
+    assert_eq!(done_payload["missingCount"], 0);
+
+    // The draft plan reads back through plan.get and approves cleanly.
+    let approve_command = json!({
+        "operation": "plan.approve",
+        "params": {"planId": plan_id}
+    });
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-approve",
+        &[approve_command],
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
+}
