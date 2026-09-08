@@ -102,4 +102,23 @@ M6 提前授权范围含本 EAC 包（outline 2.0.9 拆行，BOARD M6 行）。�
 - **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零告警；
   真机探测待窗口执行（#[ignore]）。
 
-（已接受；R1a 已实现待验收，R1b 终止面后续切片。）
+### 实现落账（R2/R3 数据面与核验原语切片，环境，2026-09-09）
+
+第二切片（e08b287），请求集成验收：
+
+- **R2 允许清单数据面**：`schemas/eac-allowlist/v0.1/allowlist.schema.json`
+  （清单起始为空——设计初态；条目四要素＋evidenceRef/addedAt/releaseNotes
+  出处字段；通配符拒绝）＋ `eac_allowlist.rs` 全校验加载器（**半有效条目=
+  加载错误，绝不弱化条目**）；fixtures＝空表＋带文档的示例条目；
+- **R3 核验原语**：`eac_verify.rs`（verify_candidate）——名称比对（pid 仍在
+  表且名称与条目一致）、可执行路径读取（OpenProcess 仅
+  PROCESS_QUERY_LIMITED_INFORMATION＋QueryFullProcessImageNameW，只读查询）
+  ＋大小写不敏感前缀模式匹配、签名 v0.1 如实 Unverified（R3：任一要素无法
+  核验即拒绝——**设计判定为 Refused**，WinVerifyTrust 绑定随终止切片落地）；
+  v0.1 不打开终止权限、不调用 TerminateProcess；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败（新增 5 项测试：fixtures
+  校验、类型化加载错误、模式匹配含形近前缀拒绝、核验报告含未核验签名拒绝、
+  pid 消失/名称不匹配候选）＋clippy -D warnings 零告警；真机再核验为
+  #[ignore] 手动测试。
+
+（已接受；R1a 已验收合并 437/0，R2/R3 已实现待验收，R1b 终止原语＋确认链整合为下一切片。）
