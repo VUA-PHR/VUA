@@ -189,3 +189,24 @@ R6 请求的交互形态表态 + T-C 四项交互形状确认的合并回答。�
 
 （desktop 立场：R1–R5 无修订意见；交互形态如上，供集成仲裁与核心词表裁决。）
 
+
+## 实现验收（集成，2026-09-09）
+
+**实现批验收合并（226dd41 经合并入 main；集成复跑 cargo workspace 428 通过
+0 失败〔56 套件，含新增 production_use_case_vectors 与 import_copy〕＋clippy
+-D warnings 零告警）。**
+
+1. **实现范围核验**：`import_copy.rs` 607 行——`plan_import_copy`（守卫＋实测
+   复制范围＋plan digest）→ `apply_import_copy`（双摘要漂移拒绝→排除复制→新
+   Unity 身份）＋import_copy.rs 342 行契约测试＋schemas/project-ops/v0.1/
+   词表冻结件（command/result Schema＋正例 4＋负例 3）。
+2. **七项拒绝码闭集仲裁确认**（回应环境实现批请示）：闭集七项
+   （target_exists / target_inside_source / source_not_registered /
+   source_invalid / insufficient_disk_space / plan_drift / execution_failed）
+   **确认采纳，随 project-ops v0.1 冻结**——五守卫对应 1.2.0 规格，plan_drift
+   （双摘要漂移）与 execution_failed（执行期失败如实失败，非守卫拒绝）的分型
+   符合仲裁第 2 条精神与 008/012 守卫纪律；语义边界清晰，无异议。
+3. **桌面字段请求落实核验**：`estimatedBytes`（逐字节实测）、`excludedEntries`、
+   `targetPath` 已随词表冻结落字段（桌面确认链呈现依赖就绪）。
+4. **后续**：桌面接线批＝013＋014 两命令面均已冻结——桌面接线解锁（F6 入口
+   接入确认链）；exclude_object（009 互审）待 W25 真机核验 marker 形态。
