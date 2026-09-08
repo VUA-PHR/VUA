@@ -133,6 +133,7 @@ demoTaskTitle: "演示任务",
       warehouse: "仓库",
       workshop: "车间",
       packages: "包管理",
+      projectCompat: "项目兼容",
     },
     pages: {
       home: "指挥台",
@@ -155,6 +156,7 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      projectCompat: "项目兼容",
     },
   },
   /** 指挥台首页(S-VFX-2):默认落地页 */
@@ -1196,6 +1198,32 @@ rolled_back: "已回滚",
     pedestalNote: "预览提取尚未接入:展台上的工艺品为示意渲染,不代表真实模型。",
     futureNote:
       "恢复快照、重新派生与上传交接将在后续切片接入;登录与上传始终在 VRChat 官方 SDK 中由你完成。",
+  },
+  /** 项目兼容页(F6,M6 T-C):ALCOM/VCC 只读兼容呈现与「导入为 VUA 管理的副本」
+   *  入口;语义权威=product-boundary 1.2.0(U3 裁决);检测读面(环境 T-B)未接线
+   *  段以能力不可用诚实呈现;副本导入执行(环境 T-A)未接线,入口恒挂标注 */
+  projectCompat: {
+    title: "项目兼容",
+    subtitle: "对 ALCOM/VCC 管理的项目只读;写操作请交接给对应管理器。",
+    readOnlyTitle: "只读兼容(边界)",
+    readOnlyDesc: "VUA 对 ALCOM/VCC 管理的项目只读:可以查看与诊断;不会在原项目内安装/移除包,不会修改 manifest、项目配置、素材或 .vua 作业文件,也不会写入 ALCOM/VCC 的注册表、数据库、设置或缓存。",
+    detectionTitle: "项目检测",
+    detectionNotWired: "项目检测读面尚未接线:ALCOM/VCC 项目的发现与识别将在环境检测读面接线后呈现。",
+    envStatusTitle: "环境状态(VUA 侧检测)",
+    envStatusSource: "数据来源:VUA 环境检测,非 ALCOM/VCC 记录;版本以对应管理器记录为准。",
+    handoverTitle: "写操作交接",
+    handoverDesc: "对该项目的写操作(安装/移除包、改配置等)请使用对应的 ALCOM/VCC 管理器执行;VUA 不写入原项目。",
+    importTitle: "导入为 VUA 管理的副本",
+    importSpecIntro: "导入将按以下规格执行:",
+    importSpecs: [
+      "导入到新项目路径,使用新的项目身份;",
+      "导入前明示预计磁盘占用;",
+      "不复制可再生目录(如 Library)与旧任务状态;",
+      "导入后重新执行检查,不继承原项目的确认与快照;",
+      "保留与原项目的来源关系,便于返回。",
+    ],
+    importCta: "选择项目文件夹并导入",
+    importNotWired: "副本导入执行尚未接线:等待环境读面与能力面落地后启用。",
   },
   /** 包管理(S-XVI):Recipe 之外的手动 VPM 操作面;玩家语言,不暴露 semver/协议细节 */
   packages: {

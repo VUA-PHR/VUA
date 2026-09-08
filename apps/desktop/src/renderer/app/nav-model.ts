@@ -38,6 +38,7 @@ export type PageId =
   | "release"
   | "workshop"
   | "packages"
+  | "project-compat"
   | "tools-discover"
   | "tools-devices"
   | "tools-calibration"
@@ -162,7 +163,10 @@ export const businessModules: readonly ModuleDef[] = [
       },
       {
         labelKey: "packages",
-        pages: [{ id: "packages", labelKey: "packages" }],
+        pages: [
+          { id: "packages", labelKey: "packages" },
+          { id: "project-compat", labelKey: "projectCompat" },
+        ],
       },
     ],
   },

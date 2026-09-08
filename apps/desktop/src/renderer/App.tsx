@@ -43,6 +43,7 @@ import type { GuidePageId } from "./features/guide/guide-content.ts";
 import { HomePage } from "./features/home/HomePage.tsx";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
+import { ProjectCompatPage } from "./features/packages/ProjectCompatPage.tsx";
 import { ProductionIntroOverlay } from "./features/production/ProductionIntroOverlay.tsx";
 import { RecipePage } from "./features/recipe/RecipePage.tsx";
 import { ReleasePage } from "./features/release/ReleasePage.tsx";
@@ -512,6 +513,8 @@ function renderPage(
       return <ReleasePage />;
     case "packages":
       return <PackagesPage />;
+    case "project-compat":
+      return <ProjectCompatPage />;
     case "workshop":
       return (
         <WorkshopPage
