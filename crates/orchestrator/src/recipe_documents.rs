@@ -27,6 +27,18 @@ pub enum RecipeSaveError {
     StoreIo { detail: String },
 }
 
+impl std::fmt::Display for RecipeSaveError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RevisionConflict { current_revision } => {
+                write!(formatter, "revision conflict: stored revision is {current_revision}")
+            }
+            Self::InvalidId => write!(formatter, "invalid recipe id"),
+            Self::StoreIo { detail } => write!(formatter, "recipe store io: {detail}"),
+        }
+    }
+}
+
 impl From<RecipeSaveError> for io::Error {
     fn from(error: RecipeSaveError) -> Self {
         match error {
