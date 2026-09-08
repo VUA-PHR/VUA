@@ -126,6 +126,7 @@ fn run_query(world: &World, request_id: &str, operation: &str, params: Value) ->
         None,
         None,
         Some(warehouse),
+        None,
     )
     .expect("the frame loop must stay alive for catalog vectors");
     String::from_utf8(output)
@@ -441,6 +442,7 @@ fn unknown_catalog_methods_and_unwired_bdl_answer_typed_errors() {
         Cursor::new(format!("{frame}\n")),
         &mut output,
         &world.database_path,
+        None,
         None,
         None,
         None,

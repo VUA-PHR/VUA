@@ -74,10 +74,20 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             executor: production.as_ref().map(|config| config.executor.clone()),
         })
     });
+    // W20 production-use-case command face: the recipe document store lives
+    // under the provider data root (AMF production-domain document store).
+    let use_cases = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
+        vua_provider_host::ProductionUseCaseConfig {
+            recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
+                ::new_with_system_clock(
+                    std::path::Path::new(&data).join("production").join("recipes"),
+                )),
+        }
+    });
     let input = stdin_reader();
     let output = std::io::stdout().lock();
     vua_provider_host::run_provider_host_with_services(
-        input, output, database_path, production, downloads, warehouse,
+        input, output, database_path, production, downloads, warehouse, use_cases,
     )?;
     Ok(())
 }

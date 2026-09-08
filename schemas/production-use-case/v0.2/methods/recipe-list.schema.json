@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/recipe-list.schema.json",
+  "title": "VUA production.recipe-list (v0.2)",
+  "description": "Identity listing (catalog.list precedent): pagination + title substring; unknown params are contract errors at the application face.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId",
+        "revision",
+        "title",
+        "updatedAt"
+      ],
+      "properties": {
+        "recipeId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+        },
+        "revision": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "title": {
+          "type": "string"
+        },
+        "updatedAt": {
+          "type": "string"
+        }
+      }
+    },
+    "recipe-listRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "text": {
+          "$ref": "#/$defs/text"
+        },
+        "limit": {
+          "$ref": "#/$defs/limit"
+        },
+        "offset": {
+          "$ref": "#/$defs/offset"
+        }
+      }
+    },
+    "recipe-listResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "entries"
+      ],
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/total"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        }
+      }
+    }
+  }
+}

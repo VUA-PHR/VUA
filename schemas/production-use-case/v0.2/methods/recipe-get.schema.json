@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/recipe-get.schema.json",
+  "title": "VUA production.recipe-get (v0.2)",
+  "description": "Reads one recipe document (latest revision).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "recipeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "recipeDocument": {
+      "type": "object"
+    },
+    "updatedAt": {
+      "type": "string"
+    },
+    "recipe-getRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        }
+      }
+    },
+    "recipe-getResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId",
+        "revision",
+        "recipeDocument",
+        "updatedAt"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        },
+        "recipeDocument": {
+          "$ref": "#/$defs/recipeDocument"
+        },
+        "updatedAt": {
+          "$ref": "#/$defs/updatedAt"
+        }
+      }
+    }
+  }
+}

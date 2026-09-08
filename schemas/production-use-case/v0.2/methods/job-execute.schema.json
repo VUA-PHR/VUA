@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/job-execute.schema.json",
+  "title": "VUA production.job-execute (v0.2)",
+  "description": "Submits the approved plan for execution (Bridge v2 execute_production_job inside the nine-state task; fingerprint/lock prechecks per 009 stance 4). Only approved plans execute.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "planId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correlationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "preparing",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "inspect_required",
+        "blocked",
+        "rejected"
+      ]
+    },
+    "job-executeRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "planId"
+      ],
+      "properties": {
+        "planId": {
+          "$ref": "#/$defs/planId"
+        }
+      }
+    },
+    "job-executeResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "correlationId",
+        "state"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "#/$defs/taskId"
+        },
+        "correlationId": {
+          "$ref": "#/$defs/correlationId"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        }
+      }
+    }
+  }
+}

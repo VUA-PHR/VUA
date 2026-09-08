@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/production-use-case/v0.2/methods/recipe-resolve.schema.json",
+  "title": "VUA production.recipe-resolve (v0.2)",
+  "description": "Runs Local Resolution as a tasked operation (may be heavy); the resolution document is read back through the plan/record read faces (011 section 7, desktop stance).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "recipeId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "revision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "taskId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "correlationId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "state": {
+      "enum": [
+        "queued",
+        "preparing",
+        "running",
+        "succeeded",
+        "failed",
+        "cancelled",
+        "inspect_required",
+        "blocked",
+        "rejected"
+      ]
+    },
+    "recipe-resolveRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recipeId"
+      ],
+      "properties": {
+        "recipeId": {
+          "$ref": "#/$defs/recipeId"
+        },
+        "revision": {
+          "$ref": "#/$defs/revision"
+        }
+      }
+    },
+    "recipe-resolveResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "taskId",
+        "correlationId",
+        "state"
+      ],
+      "properties": {
+        "taskId": {
+          "$ref": "#/$defs/taskId"
+        },
+        "correlationId": {
+          "$ref": "#/$defs/correlationId"
+        },
+        "state": {
+          "$ref": "#/$defs/state"
+        }
+      }
+    }
+  }
+}

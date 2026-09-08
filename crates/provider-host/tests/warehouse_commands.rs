@@ -111,6 +111,7 @@ fn run_frames(world: &World, correlation_id: &str, commands: &[Value]) -> Vec<Va
         None,
         None,
         Some(warehouse),
+        None,
     )
     .expect("the frame loop must stay alive for warehouse vectors");
     String::from_utf8(output)
@@ -274,6 +275,7 @@ fn warehouse_commands_are_unavailable_without_wiring() {
         None,
         None,
         None,
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
@@ -362,6 +364,7 @@ fn set_global_default_mode_rejects_null_missing_and_unknown_modes() {
             global_default: ArtifactMode::UseOriginalUnitypackage,
             executor: None,
         }),
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
@@ -467,4 +470,179 @@ fn import_negative_vectors_are_params_violations() {
     });
     let frames = run_frames(&world, "req-import-unknown", &[command]);
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.warehouse.invalid_params");
+}
+
+// --- W20 production-use-case v0.2 first cut: the recipe document face ---
+
+fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Value) -> Vec<Value> {
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": format!("frame-{request_id}"),
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": request_id,
+            "correlationId": format!("corr-{request_id}"),
+            "kind": "command",
+            "method": method,
+            "params": params,
+        },
+    });
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
+            ::new_with_system_clock(world.base.join("production").join("recipes"))),
+    };
+    let mut output = Vec::new();
+    vua_provider_host::run_provider_host_with_services(
+        Cursor::new(format!("{frame}
+")),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        None,
+        Some(use_cases),
+    )
+    .expect("frame loop runs");
+    String::from_utf8(output)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
+}
+
+#[test]
+fn recipe_save_get_list_drive_the_document_store_over_the_wire() {
+    let world = make_world("recipes");
+    let recipe_id = "019e0000-0000-7000-8000-000000000301";
+
+    // Create: base_revision 0 -> revision 1.
+    let save = json!({
+        "recipeDocument": {
+            "formatVersion": "0.3",
+            "recipeId": recipe_id,
+            "revision": 1,
+            "title": "Sailor Set"
+        },
+        "baseRevision": 0
+    });
+    let frames = run_recipe_frames(&world, "req-save", "recipe.save", save);
+    assert_eq!(frames[0]["payload"]["ok"], true);
+    assert_eq!(frames[0]["payload"]["value"]["revision"], 1);
+    assert_eq!(frames[0]["payload"]["value"]["recipeId"], recipe_id);
+
+    // get reads back the stored document.
+    let frames = run_recipe_frames(
+        &world,
+        "req-get",
+        "recipe.get",
+        json!({ "recipeId": recipe_id }),
+    );
+    let value = &frames[0]["payload"]["value"];
+    assert_eq!(value["recipeDocument"]["title"], "Sailor Set");
+    assert_eq!(value["revision"], 1);
+
+    // A stale base (the store is at revision 1; the request assumes 5) is a
+    // typed conflict that names the current revision.
+    let stale = json!({
+        "recipeDocument": {
+            "formatVersion": "0.3", "recipeId": recipe_id,
+            "revision": 6, "title": "Sailor Set v2"
+        },
+        "baseRevision": 5
+    });
+    let frames = run_recipe_frames(&world, "req-save2", "recipe.save", stale);
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.revision_conflict");
+    assert_eq!(frames[0]["payload"]["error"]["currentRevision"], 1);
+
+    // Matching base bumps the revision.
+    let newer = json!({
+        "recipeDocument": {
+            "formatVersion": "0.3", "recipeId": recipe_id,
+            "revision": 2, "title": "Sailor Set v2"
+        },
+        "baseRevision": 1
+    });
+    let frames = run_recipe_frames(&world, "req-save3", "recipe.save", newer);
+    assert_eq!(frames[0]["payload"]["value"]["revision"], 2);
+
+    // list: identity entries with pagination, newest update first.
+    let frames = run_recipe_frames(&world, "req-list", "recipe.list", json!({}));
+    let entries = &frames[0]["payload"]["value"]["entries"];
+    assert!(
+        entries.as_array().unwrap().iter().any(|e| e["recipeId"] == *recipe_id),
+        "{entries}"
+    );
+    assert_eq!(frames[0]["payload"]["value"]["total"], 1);
+}
+
+#[test]
+fn recipe_face_closed_set_and_absence_are_typed() {
+    let world = make_world("recipes-guards");
+
+    // Unknown params key is a contract error (closed set).
+    let frames = run_recipe_frames(
+        &world,
+        "req-save-unknown",
+        "recipe.save",
+        json!({
+            "recipeDocument": {"formatVersion": "0.3", "recipeId": "r1", "revision": 1, "title": "x"},
+            "baseRevision": 0,
+            "force": true
+        }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.invalid_params");
+
+    // Missing baseRevision is a params violation, not an implicit create.
+    let frames = run_recipe_frames(
+        &world,
+        "req-save-nobase",
+        "recipe.save",
+        json!({
+            "recipeDocument": {"formatVersion": "0.3", "recipeId": "r1", "revision": 1, "title": "x"}
+        }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.invalid_params");
+
+    // get of an absent recipe is the frozen not-found.
+    let frames = run_recipe_frames(
+        &world,
+        "req-get-miss",
+        "recipe.get",
+        json!({ "recipeId": "019e0000-0000-7000-8000-000000000fff" }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.not_found");
+
+    // Without the use-case wiring the face is honestly unavailable.
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": "frame-unwired",
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": "req-unwired",
+            "correlationId": "corr-unwired",
+            "kind": "command",
+            "method": "recipe.save",
+            "params": {}
+        }
+    });
+    let mut output = Vec::new();
+    run_provider_host_with_services(
+        Cursor::new(format!("{frame}
+")),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("frame loop runs");
+    let frames: Vec<Value> = String::from_utf8(output)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect();
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.unavailable");
 }
