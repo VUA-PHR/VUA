@@ -200,12 +200,19 @@ pub struct ProductionUseCaseConfig {
     pub plans: Arc<vua_orchestrator::PlanDocumentStore>,
     pub evidence: Arc<vua_orchestrator::EvidenceStore>,
     pub records: Arc<vua_orchestrator::RecipeRecordStore>,
+    /// The Bridge the orchestrated jobs execute through (the M5 smoke
+    /// target project is provider configuration, not wire state).
+    pub bridge: Arc<dyn vua_orchestrator::UnityBridge>,
+    /// The Unity project root the approved plan executes against.
+    pub project_root: PathBuf,
 }
 
 struct ProductionUseCaseServices {
     recipes: Arc<RecipeDocumentStore>,
     plans: Arc<vua_orchestrator::PlanDocumentStore>,
     records: Arc<vua_orchestrator::RecipeRecordStore>,
+    bridge: Arc<dyn vua_orchestrator::UnityBridge>,
+    project_root: PathBuf,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -411,6 +418,8 @@ pub fn run_provider_host_with_services(
             plans: config.plans,
             records: config.records,
             evidence: config.evidence,
+            bridge: config.bridge,
+            project_root: config.project_root,
             bdl,
             runtime,
             env_initial,
@@ -752,7 +761,13 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
         return plan_request(use_cases, method, request, request_id, correlation_id);
     }
     if method.starts_with("job.") {
-        return job_unavailable(state, request_id, correlation_id);
+        let Some(use_cases) = state.use_cases.clone() else {
+            return job_unavailable(state, request_id, correlation_id);
+        };
+        return match method {
+            "job.execute" => job_execute(use_cases, request, request_id, correlation_id),
+            _ => job_unavailable(state, request_id, correlation_id),
+        };
     }
     if method.starts_with("record.") {
         let Some(use_cases) = state.use_cases.clone() else {
@@ -1894,6 +1909,367 @@ fn plan_request(
             "vua.provider.unknown_method",
             "errors.provider.unknownMethod",
             "validation",
+        )),
+    }
+}
+
+/// One approved-plan execution: re-verify the plan hash and lifecycle,
+/// write the plan file into the job directory, assemble the Bridge v2
+/// command (fingerprint optimistic lock), execute it through the Bridge,
+/// and transpose the receipt into a Build Record v0.3 document (the
+/// receipt-bearing ordered prefix of the plan's jobs). Returns the Done
+/// payload (buildId + receipt summary).
+#[allow(clippy::too_many_arguments)]
+fn run_approved_plan_job(
+    plans: &vua_orchestrator::PlanDocumentStore,
+    records: &vua_orchestrator::RecipeRecordStore,
+    bridge: &Arc<dyn vua_orchestrator::UnityBridge>,
+    project_root: &Path,
+    env_initial: ArtifactMode,
+    plan_id: &str,
+    correlation_id: &str,
+) -> Result<Value, AppErrorV1> {
+    // Load + lifecycle gate: only approved plans execute.
+    let plan = plans
+        .get(plan_id)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.plan.store_failed",
+                ErrorCategory::Internal,
+                "errors.plan.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+        })?
+        .ok_or_else(|| {
+            AppErrorV1::new(
+                "vua.plan.not_found",
+                ErrorCategory::Validation,
+                "errors.plan.notFound",
+                correlation_id,
+            )
+        })?;
+    if plan.get("status").and_then(Value::as_str) != Some("approved") {
+        return Err(AppErrorV1::new(
+            "vua.plan.not_approved",
+            ErrorCategory::Conflict,
+            "errors.plan.notApproved",
+            correlation_id,
+        )
+        .with_param(
+            "status",
+            vua_orchestrator::ParamValue::Text(
+                plan.get("status").and_then(Value::as_str).unwrap_or("unknown").to_owned(),
+            ),
+        ));
+    }
+    // Integrity gate: the stored document must still hash to its planHash
+    // (canonical form without status/planHash - the authorization content).
+    let plan_hash = plan_document_hash(&plan);
+    if plan.get("planHash").and_then(Value::as_str) != Some(plan_hash.as_str()) {
+        return Err(AppErrorV1::new(
+            "vua.plan.hash_mismatch",
+            ErrorCategory::Conflict,
+            "errors.plan.hashMismatch",
+            correlation_id,
+        ));
+    }
+    let plan_schema_version = plan
+        .get("schemaVersion")
+        .and_then(Value::as_str)
+        .unwrap_or("0.3")
+        .to_owned();
+    let command_id = format!("job-{}", uuid_v7_identity());
+
+    // Plan file into the job directory (the Bridge reads the file and
+    // verifies its local hash against payload.planHash).
+    let plan_bytes = serde_json::to_vec_pretty(&plan).map_err(|error| {
+        AppErrorV1::new(
+            "vua.plan.store_failed",
+            ErrorCategory::Internal,
+            "errors.plan.storeFailed",
+            correlation_id,
+        )
+        .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+    })?;
+    let plan_file = vua_unity_bridge::write_plan_file(
+        project_root,
+        &command_id,
+        &serde_json::to_string(&plan_bytes).expect("plan bytes are UTF-8"),
+    )
+    .map_err(|error| {
+        AppErrorV1::new(
+            "vua.job.plan_file_failed",
+            ErrorCategory::Internal,
+            "errors.job.planFileFailed",
+            correlation_id,
+        )
+        .with_param("detail", vua_orchestrator::ParamValue::Text(error.0))
+    })?;
+
+    // Assemble the Bridge v2 command. payload.planHash carries the
+    // authorization hash (canonical, status-independent - the idempotency
+    // key); the file hash travels with the file for the Bridge's local
+    // verification.
+    let project = vua_orchestrator::ProjectRef {
+        id: plan
+            .get("recipeId")
+            .and_then(Value::as_str)
+            .unwrap_or("recipe")
+            .to_owned(),
+        root: project_root.to_path_buf(),
+    };
+    let expected_fingerprint = plan
+        .get("fingerprint")
+        .and_then(|fingerprint| fingerprint.get("expectedProjectFingerprint"))
+        .and_then(Value::as_str)
+        .map(str::to_owned);
+    let mut command = vua_unity_bridge::production_job::build_job_command(
+        &command_id,
+        project.id.as_str(),
+        false,
+        expected_fingerprint.as_deref(),
+        &plan_file,
+        &plan_schema_version,
+    )
+    .map_err(|error| {
+        AppErrorV1::new(
+            "vua.job.command_failed",
+            ErrorCategory::Internal,
+            "errors.job.commandFailed",
+            correlation_id,
+        )
+        .with_param("detail", vua_orchestrator::ParamValue::Text(error.0))
+    })?;
+    command.payload.plan_hash = Some(plan_hash.clone());
+
+    // Execute through the Bridge.
+    let result = bridge.execute(&project, &command).map_err(|error| {
+        AppErrorV1::new(
+            "vua.job.bridge_failed",
+            ErrorCategory::ExternalFailure,
+            "errors.job.bridgeFailed",
+            correlation_id,
+        )
+        .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+    })?;
+
+    // Top-level record status: succeeded (with/without warnings) or failed.
+    let status = match result.status {
+        vua_orchestrator::ResultStatus::Succeeded => {
+            if result.diagnostics.iter().any(|diagnostic| {
+                matches!(
+                    diagnostic.severity,
+                    vua_orchestrator::DiagnosticSeverity::Warning
+                )
+            }) {
+                "succeeded_with_warnings"
+            } else {
+                "succeeded"
+            }
+        }
+        vua_orchestrator::ResultStatus::Failed | vua_orchestrator::ResultStatus::Rejected => {
+            "failed"
+        }
+    };
+
+    // Transpose the receipt into a Build Record v0.3 document. jobs[] is
+    // the receipt-bearing ordered prefix: steps that produced a receipt
+    // (executed/failed) map to succeeded/failed; pre-receipt steps
+    // (pending/skipped after a fail-fast) stay out of the record.
+    let steps = result
+        .data
+        .get("steps")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let plan_jobs = plan
+        .get("jobs")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut record_jobs: Vec<Value> = Vec::new();
+    for (index, step) in steps.iter().enumerate() {
+        let step_status = step.get("status").and_then(Value::as_str).unwrap_or("");
+        let receipt_status = match step_status {
+            "executed" => "succeeded",
+            "failed" => "failed",
+            _ => continue,
+        };
+        let mut job = json!({
+            "jobId": plan_jobs
+                .get(index)
+                .and_then(|job| job.get("jobId"))
+                .cloned()
+                .unwrap_or(json!(format!("job-{index}"))),
+            "kind": plan_jobs
+                .get(index)
+                .and_then(|job| job.get("kind"))
+                .cloned()
+                .unwrap_or_else(|| {
+                    step.get("kind")
+                        .and_then(Value::as_str)
+                        .map(|kind| json!(kind))
+                        .unwrap_or(json!("unknown"))
+                }),
+            "commandId": command_id,
+            "planHash": plan_hash,
+            "dryRun": false,
+            "replayed": result
+                .data
+                .get("replayed")
+                .cloned()
+                .unwrap_or(json!(false)),
+            "status": receipt_status,
+            "resolvedSourceUsed": plan_jobs
+                .get(index)
+                .and_then(|job| job.get("inputs"))
+                .and_then(|inputs| inputs.get("resolvedSource"))
+                .cloned()
+                .unwrap_or(json!({
+                    "sourceKind": "original",
+                    "artifactSha256": Value::Null
+                })),
+            "changedPaths": result.changed_paths.clone(),
+            "diagnostics": step.get("diagnostics").cloned().unwrap_or(json!([])),
+        });
+        if receipt_status == "failed" {
+            job["rejectReason"] = step
+                .get("code")
+                .and_then(Value::as_str)
+                .map(|code| json!(code))
+                .unwrap_or(json!("unknown"));
+        }
+        record_jobs.push(job);
+    }
+
+    // The composed global default still governs what a re-resolution would
+    // pick (recorded for the audit chain, not consumed here).
+    let _ = env_initial;
+
+    let build_id = uuid_v7_identity();
+    let record = json!({
+        "schemaVersion": "0.3",
+        "buildId": build_id,
+        "recipeId": plan.get("recipeId").cloned().unwrap_or(Value::Null),
+        "recipeRevision": plan.get("recipeRevision").cloned().unwrap_or(json!(1)),
+        "planId": plan_id,
+        "planHash": plan_hash,
+        "planSchemaVersion": plan_schema_version,
+        "environmentId": plan.get("environmentId").cloned().unwrap_or(Value::Null),
+        "startedAt": plan.get("createdAt").cloned().unwrap_or(Value::Null),
+        "finishedAt": now_rfc3339(),
+        "status": status,
+        "inputs": {
+            "recipeDigest": Value::Null,
+            "localResolutionDigest": Value::Null,
+            "planHash": plan_hash,
+        },
+        "jobs": record_jobs,
+        "planDeviations": [],
+        "recoveryPoints": plan.get("recoveryPoints").cloned().unwrap_or(json!([])),
+        "evidenceSummary": plan
+            .get("evidenceIds")
+            .cloned()
+            .map(|ids| json!({"evidenceIds": ids}))
+            .unwrap_or(json!({"evidenceIds": []})),
+    });
+    records
+        .publish(&build_id, &record)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.record.store_failed",
+                ErrorCategory::Internal,
+                "errors.record.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+        })?;
+
+    Ok(json!({
+        "buildId": build_id,
+        "status": status,
+        "jobsRecorded": record_jobs.len(),
+    }))
+}
+
+/// `job.execute`: submits the APPROVED plan for orchestration. The tasked
+/// job re-verifies the plan hash and status, writes the plan file into the
+/// job directory, assembles the Bridge v2 `execute_production_job` command
+/// (fingerprint/lock prechecks per 009 stance 4), executes it through the
+/// Bridge, and transposes the receipt into a Build Record v0.3 document
+/// (jobs are the receipt-bearing ordered prefix of the plan's jobs).
+fn job_execute(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // The tasked half requires the shared task authority and BDL.
+    let (Some(runtime), _) = (use_cases.runtime.clone(), use_cases.bdl.clone()) else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.job.unavailable",
+            "errors.job.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(plan_id) = request
+        .get("params")
+        .and_then(|params| params.get("planId"))
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .map(str::to_owned)
+    else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.invalid_params",
+            "errors.plan.invalidParams",
+            "validation",
+        ));
+    };
+    let plans = use_cases.plans.clone();
+    let records = use_cases.records.clone();
+    let bridge = use_cases.bridge.clone();
+    let project_root = use_cases.project_root.clone();
+    let env_initial = use_cases
+        .env_initial
+        .unwrap_or(vua_bdl_store::ArtifactMode::UseOriginalUnitypackage);
+    let job_correlation = correlation_id.to_owned();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let payload = run_approved_plan_job(
+                &plans,
+                &records,
+                &bridge,
+                &project_root,
+                env_initial,
+                &plan_id,
+                &job_correlation,
+            )?;
+            Ok(vua_orchestrator::TaskExit::Done(payload))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "operation": "job.execute",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.store_failed",
+            "errors.plan.storeFailed",
+            "internal",
         )),
     }
 }
