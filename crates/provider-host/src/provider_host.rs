@@ -1379,6 +1379,9 @@ fn warehouse_submit_task(
                     warehouse_item_id,
                     warehouse_root: warehouse.warehouse_root.clone(),
                     global_default,
+                    // Manual wire initiation never carries the audit chain;
+                    // import orchestration fills it in acquisition (010).
+                    import_correlation_id: None,
                 },
                 None,
             )
@@ -1614,6 +1617,9 @@ fn warehouse_import_submit(
             correlation_id: correlation_id.to_owned(),
             source_folders,
             warehouse_root: warehouse.warehouse_root.clone(),
+            // The wire import face imports only; the auto-generation
+            // injection lands with the core orchestration follow-up (010).
+            auto_generate: None,
         },
         None,
     );

@@ -15,6 +15,7 @@
 //! name.
 
 use crate::artifact_inspection::{hex_lower, mechanical_rejection, sha256_file, InspectionPolicy};
+use crate::warehouse_maintenance::{submit_generate_vpm, GenerateVpmTaskSpec};
 use vua_bdl_store::bdl_store::{
     ArtifactInspectionState, ArtifactMode, ArtifactRecordingOutcome, BdlStore, BdlStoreError,
     CopyRole, NewLocalArtifact, WarehouseEntryDetail,
@@ -22,6 +23,8 @@ use vua_bdl_store::bdl_store::{
 use vua_orchestrator::Clock;
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+use vua_unity_bridge::MaterialExecutor;
 
 /// Entry kind for batch-imported folders. The full entry-kind vocabulary
 /// (imported vs generated-VPM siblings) belongs to the artifact-mode slice.
@@ -278,7 +281,6 @@ fn collect_files(
 
 use vua_orchestrator::{ErrorCategory, ParamValue};
 use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
-use std::sync::Arc;
 use std::time::Duration;
 
 /// One batch-import task binding. All folders are Kernel-resolved; the
@@ -289,6 +291,31 @@ pub struct WarehouseImportTaskSpec {
     pub correlation_id: String,
     pub source_folders: Vec<PathBuf>,
     pub warehouse_root: PathBuf,
+    /// Import-orchestrated auto-generation (proposal 010 path A): when
+    /// `Some`, every successfully landed entry triggers an orchestrated
+    /// generation task whenever the composed global default (persisted ??
+    /// `env_initial`, read per landing) is `generate_vpm`. `None` = the
+    /// manual import face: import only, no orchestration.
+    pub auto_generate: Option<AutoGenerateSpec>,
+}
+
+/// The orchestration context injected by the provider when the wire caller
+/// opted into import-time generation (proposal 010 path A): the composed
+/// global fallback (the provider's environment-injected initial default)
+/// and the Unity generation capability the orchestrated tasks run with.
+#[derive(Clone)]
+pub struct AutoGenerateSpec {
+    pub env_initial: ArtifactMode,
+    pub executor: Arc<MaterialExecutor>,
+}
+
+impl std::fmt::Debug for AutoGenerateSpec {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("AutoGenerateSpec")
+            .field("env_initial", &self.env_initial)
+            .finish_non_exhaustive()
+    }
 }
 
 /// Task-layer result payload (Done exit): per-folder reports in submission
@@ -331,9 +358,11 @@ fn import_error_to_app(
 /// folder boundary (Cancelled exit, no payload — the durable partial state
 /// is queryable through `warehouse.listEntries`).
 pub fn warehouse_import_job(
+    runtime: TaskRuntime,
     store: Arc<BdlStore>,
     clock: Arc<dyn Clock>,
-    spec: Arc<WarehouseImportTaskSpec>,
+    spec: WarehouseImportTaskSpec,
+    auto_generate: Option<AutoGenerateSpec>,
 ) -> TaskJob {
     Box::new(move |ctx| {
         let mut reports = Vec::new();
@@ -349,6 +378,65 @@ pub fn warehouse_import_job(
             let importer = WarehouseImporter::new(&store, &*clock, spec.warehouse_root.clone());
             match importer.import_folder(folder) {
                 Ok(report) => {
+                    // The hook (proposal 010 path A): the entry has just
+                    // landed — this is the landing instant. The composed
+                    // global default is evaluated here, per landing.
+                    if let Some(auto) = &auto_generate {
+                        let composed = match store.global_default_mode() {
+                            Ok(persisted) => persisted.unwrap_or(auto.env_initial),
+                            Err(error) => {
+                                // Commitment 1: an orchestration-side failure
+                                // never fails the import — typed note, manual
+                                // submission remains available.
+                                ctx.emit_progress(serde_json::json!({
+                                    "kind": "warehouse.import.generationSubmitFailed",
+                                    "warehouseItemId": report.entry.warehouse_item_id,
+                                    "reason": error.to_string(),
+                                }));
+                                reports.push(report);
+                                continue;
+                            }
+                        };
+                        if composed == ArtifactMode::GenerateVpm {
+                            // A deterministic, unique-per-entry correlation
+                            // derived from the import: the audit chain stays
+                            // traceable and a replayed import never collides.
+                            let generation_correlation = format!(
+                                "{}-auto-{}",
+                                spec.correlation_id, report.entry.warehouse_item_id
+                            );
+                            let submitted = submit_generate_vpm(
+                                &runtime,
+                                store.clone(),
+                                auto.executor.clone(),
+                                GenerateVpmTaskSpec {
+                                    correlation_id: generation_correlation,
+                                    warehouse_item_id: report.entry.warehouse_item_id.clone(),
+                                    warehouse_root: spec.warehouse_root.clone(),
+                                    global_default: composed,
+                                    import_correlation_id: Some(spec.correlation_id.clone()),
+                                },
+                                None,
+                            );
+                            if let Err(error) = submitted {
+                                // Commitment 1: the generation submission
+                                // failing never fails the import — a typed
+                                // note rides the progress stream, retriable
+                                // by manual submission.
+                                ctx.emit_progress(serde_json::json!({
+                                    "kind": "warehouse.import.generationSubmitFailed",
+                                    "warehouseItemId": report.entry.warehouse_item_id,
+                                    "reason": format!("{error:?}"),
+                                }));
+                            } else {
+                                ctx.emit_progress(serde_json::json!({
+                                    "kind": "warehouse.import.generationSubmitted",
+                                    "warehouseItemId": report.entry.warehouse_item_id,
+                                    "importCorrelationId": spec.correlation_id,
+                                }));
+                            }
+                        }
+                    }
                     ctx.emit_progress(serde_json::json!({
                         "kind": "warehouse.import.folderImported",
                         "folder": folder.to_string_lossy(),
@@ -374,6 +462,7 @@ pub fn warehouse_import_job(
 }
 
 /// Convenience submission: the correlation id binds the whole batch.
+/// Manual-import face — no orchestration (auto_generate is None).
 pub fn submit_warehouse_import(
     runtime: &TaskRuntime,
     store: Arc<BdlStore>,
@@ -381,11 +470,27 @@ pub fn submit_warehouse_import(
     spec: WarehouseImportTaskSpec,
     timeout: Option<Duration>,
 ) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
+    submit_warehouse_import_auto(runtime.clone(), store, clock, spec, None, timeout)
+}
+
+/// Submission with the import-orchestrated auto-generation context. The
+/// runtime is taken by value (cheap clone) so the job closure is self
+/// sufficient: the generation hook submits into the same runtime at the
+/// entry-landing instant (proposal 010 path A).
+pub fn submit_warehouse_import_auto(
+    runtime: TaskRuntime,
+    store: Arc<BdlStore>,
+    clock: Arc<dyn Clock>,
+    spec: WarehouseImportTaskSpec,
+    auto_generate: Option<AutoGenerateSpec>,
+    timeout: Option<Duration>,
+) -> Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1> {
     let correlation_id = spec.correlation_id.clone();
+    let job = warehouse_import_job(runtime.clone(), store, clock, spec, auto_generate);
     runtime.submit(SubmitRequest {
         correlation_id: Some(correlation_id),
         timeout,
-        job: warehouse_import_job(store, clock, Arc::new(spec)),
+        job,
     })
 }
 
@@ -615,8 +720,10 @@ mod tests {
                 store.clone(),
                 clock,
                 WarehouseImportTaskSpec {
-                    correlation_id: "corr-import-1".into(),                    source_folders: folders,
+                    correlation_id: "corr-import-1".into(),
+                    source_folders: folders,
                     warehouse_root: warehouse_root.clone(),
+                    auto_generate: None,
                 },
                 None,
             )
@@ -661,6 +768,7 @@ mod tests {
                     correlation_id: "corr-import-2".into(),
                     source_folders: vec![good, nested],
                     warehouse_root: warehouse_root.clone(),
+                    auto_generate: None,
                 },
                 None,
             )
@@ -695,6 +803,7 @@ mod tests {
                     correlation_id: "corr-import-3".into(),
                     source_folders: folders,
                     warehouse_root: warehouse_root.clone(),
+                    auto_generate: None,
                 },
                 None,
             )
