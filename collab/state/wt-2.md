@@ -70,14 +70,14 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**record 读面（c31b01e）＋协议本候选批（50904fe，仅 docs）＋plan 命令面（94d98de）＋W20 第二刀
-（4849958）＋UnityOperation 扩展批
-（93f841c＋36b14ff 补遗）＋执行语义规格与勘误批（471a4ee）＋exclude 钉死
-表态＋执行序②核心半边（6b4f21a）＋010 接线设计批＋本状态批**请集成验收
-合并；W22 冻结切片（c486318）同批。
+**W20 第三刀（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
+＋证据存储面第一刀（0cbafa7）＋UnityOperation 扩展批（93f841c＋36b14ff）＋
+执行语义规格与勘误批（471a4ee）＋exclude 钉死表态＋执行序②核心半边
+（6b4f21a）＋010 接线设计批＋本状态批**请集成验收合并；W22 冻结切片
+（c486318）同批。
 产线 C# 执行内核可按 011 执行语义规格节实现四 kind（exclude 已钉
-VRCMetaObject.excluded；诚实缺口的正主到位）。第三刀：resolve/plan/job 路由
-与 Local Resolution 执行器（随锚点）。
+VRCMetaObject.excluded；诚实缺口的正主到位）。核心下一刀：job.execute
+（Bridge v2 编排对接，产线 build_job_command 已 crate-visible）。
 ## 留言
 - [→集成] 催件①答复：production-use-case v0.2 协议本双语＋REGISTRY 行已交
   （50904fe），状态＝**候选**（十方法 Schema 已落；向量＋全路由消费测试硬
