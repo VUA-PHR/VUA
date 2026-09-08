@@ -1011,7 +1011,7 @@ impl MaterialExecutor {
 /// `asset.meta`, and `pathname`) verbatim into `extracted_root` and returns
 /// the logical asset paths (`Assets/…`) recorded by the pathname entries.
 /// Untrusted pathnames are skipped, not followed.
-fn extract_package_into_dir(
+pub(crate) fn extract_package_into_dir(
     archive_path: &Path,
     extracted_root: &Path,
 ) -> std::io::Result<Vec<String>> {
@@ -1118,7 +1118,7 @@ fn collect_package_files(
     walk(package_root, "", package_id, out)
 }
 
-fn sha256_file(path: &Path) -> std::io::Result<String> {
+pub(crate) fn sha256_file(path: &Path) -> std::io::Result<String> {
     let mut file = fs::File::open(path)?;
     let mut hasher = Sha256::new();
     let mut buffer = [0u8; 64 * 1024];

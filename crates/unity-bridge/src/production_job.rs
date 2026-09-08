@@ -17,6 +17,52 @@ use sha2::{Digest, Sha256};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// The staged material for one install job: the extracted guid layout plus
+/// its manifest digest, exactly what the C# `materialize_extracted_package`
+/// base consumes (v1-verified semantics).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StagedSource {
+    pub source_package_path: String,
+    pub manifest_sha256: String,
+}
+
+/// Stages an original-package source for one install job (009 execution
+/// spec, kind 1): verifies the archive against the plan's resolved
+/// `artifactSha256` (source integrity), extracts the guid layout under
+/// `.vua/imports/prodjob-<command_id>/`, and binds the manifest's own digest.
+/// The generated_vpm path copies the materialized copy directory instead —
+/// its Bridge-side consumption form is pending the core refinement and is
+/// NOT covered here (declared gap, see wt-4 state file).
+pub fn stage_original_source(
+    archive_path: &Path,
+    project_root: &Path,
+    command_id: &str,
+    expected_artifact_sha256: &str,
+) -> Result<StagedSource, PlanFileError> {
+    if command_id.is_empty() {
+        return Err(PlanFileError("command_id 必填".to_string()));
+    }
+    let archive_digest = crate::material_exec::sha256_file(archive_path)
+        .map_err(|error| PlanFileError(format!("来源物读取失败：{error}")))?;
+    if archive_digest != expected_artifact_sha256 {
+        return Err(PlanFileError(format!(
+            "来源物哈希漂移（期望 {expected_artifact_sha256}，实际 {archive_digest}）"
+        )));
+    }
+    let extracted_root = project_root
+        .join(".vua")
+        .join("imports")
+        .join(format!("prodjob-{command_id}"));
+    crate::material_exec::extract_package_into_dir(archive_path, &extracted_root)
+        .map_err(|error| PlanFileError(format!("来源物解包失败：{error}")))?;
+    let manifest_sha256 = crate::material_exec::sha256_file(&extracted_root.join("manifest.sha256"))
+        .map_err(|error| PlanFileError(format!("manifest 摘要计算失败：{error}")))?;
+    Ok(StagedSource {
+        source_package_path: extracted_root.to_string_lossy().into_owned(),
+        manifest_sha256,
+    })
+}
+
 /// The plan document must declare a supported schema version before it is
 /// written into a job directory; the same closed set lives in the v2 command
 /// schema (`planSchemaVersion`).
@@ -435,6 +481,53 @@ mod tests {
         assert!(
             build_restore_command_json("r", "proj", false, Some("fp"), "").is_err(),
             "a restore without a snapshot identity must be a typed error"
+        );
+    }
+
+    #[test]
+    fn w21_original_source_stages_the_guid_layout_with_manifest_digest() {
+        use flate2::write::GzEncoder;
+        use std::fs::File;
+        use tar::{Builder, Header};
+
+        let root = unique_root("stage");
+        let archive_path = root.join("pack.unitypackage");
+        // Build a minimal guid-layout package: <guid>/pathname + <guid>/asset.
+        let file = File::create(&archive_path).unwrap();
+        let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+        let append = |builder: &mut Builder<GzEncoder<fs::File>>, path: &str, bytes: &[u8]| {
+            let mut header = Header::new_gnu();
+            header.set_size(bytes.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder.append_data(&mut header, path, bytes).unwrap();
+        };
+        append(&mut builder, "a1b2c3d4eeee4aaa8bbbccccddddeeee/pathname", b"Assets/Outfit/root.prefab\n");
+        append(&mut builder, "a1b2c3d4eeee4aaa8bbbccccddddeeee/asset", b"synthetic asset bytes");
+        let gz_encoder = builder.into_inner().unwrap();
+        gz_encoder.finish().unwrap();
+
+        let archive_digest = crate::material_exec::sha256_file(&archive_path).unwrap();
+        let staged = stage_original_source(&archive_path, &root, "job-01", &archive_digest).unwrap();
+        assert!(
+            staged
+                .source_package_path
+                .replace('\\', "/")
+                .contains(".vua/imports/prodjob-job-01"),
+            "staged layout lives under .vua/imports/prodjob-<command_id>"
+        );
+        assert!(
+            staged.manifest_sha256.starts_with("sha256:"),
+            "manifest digest is bound for the C# materialize base"
+        );
+        let extracted = PathBuf::from(&staged.source_package_path);
+        assert!(extracted.join("manifest.sha256").exists());
+        assert!(extracted.join("a1b2c3d4eeee4aaa8bbbccccddddeeee").exists());
+
+        // Source drift: a different digest must refuse to stage.
+        assert!(
+            stage_original_source(&archive_path, &root, "job-02", "sha256:00").is_err(),
+            "a drifted source must be a typed refusal"
         );
     }
 }
