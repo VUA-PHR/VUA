@@ -83,6 +83,11 @@ fn succeeded_result(command_id: &str) -> UnityResult {
         changed_paths: Vec::new(),
         diagnostics: Vec::new(),
         data: serde_json::Value::Null,
+        steps: Vec::new(),
+        replayed: None,
+        snapshot_id: None,
+        restored_from: None,
+        project_fingerprint_before: None,
     }
 }
 
@@ -260,6 +265,11 @@ fn orc_wf_010_rejected_result_enters_recovery_with_first_diagnostic() {
                 message: "outfit mesh missing".into(),
             }],
             data: serde_json::Value::Null,
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: None,
+            restored_from: None,
+            project_fingerprint_before: None,
         })
         .expect_err("a rejected result must fail the workflow");
     assert_eq!(
