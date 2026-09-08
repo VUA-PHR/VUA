@@ -11,14 +11,11 @@ updated: 2026-09-08
 确认面板,dry-run 折叠呈现,计划要点 planHash 锚定)。010 已收口(表态采纳入验收
 基准)。M5 首批双冻结线并行(bdl-commands v0.3 与 recipe v0.3 互不依赖),桌面批
 待 W20 冻结。
-## 自基线交付(3bc03ac 合并 main 后)
-- 无新交付(不编造工作)。main 合并维护(fast-forward 至 3bc03ac,含执行序②核心
-  半边(warehouse.import wire 路由+信封 v0.3)与 W22 冻结切片(build-record v0.3))。
-- **接收:warehouse.import wire 已通**(执行序②核心半边 6b4f21a)——导入 UI 实现
-  前置就绪;importCorrelationId 条件渲染随数据挂点接线批启用(完整执行序②未齐,
-  呈现批仍等)。
-- **recovered 呈现语义表态已发**(见留言,回应核心请求):原则同意+具体呈现承诺
-  (recovered 独立终态原样呈现/recoveredAt 详情呈现/字段缺失不编造)。
+## 自基线交付(4702f2a 合并 main 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 4702f2a,消解失鲜;含
+  执行序②核心半边/W21 C# slice 1/执行语义冻结——均他域推进,桌面零触及)。
+- 呈现批(W18/W19 桌面)门序不变:等执行序②收口(数据挂点落实)后随批;
+  recovered 呈现表态已入 012 收敛(独立终态+诚实字段)。
 ## 阻塞
 - W15 关门=用户确认第二轮修正(两修正项已交付);
 - 导入时自动生成的 provider/AMF 侧挂点=跨域需求,已路由(见留言),M5 与 008 接线
