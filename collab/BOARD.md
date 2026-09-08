@@ -160,6 +160,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | bdl（schema） | v0.1 | 冻结 |
 | environment-managers（schema） | v0.1 | 冻结 |
 | project-inspection（schema） | v0.1 | 冻结（M6 T-A/T-B，2026-09-09，环境，集成验收复跑 420/0）——管理器注册项目只读检视聚合（关联/Unity 分类/VPM 声明面/VRChat SDK/未完成变更标记三态）；库级 payload 面，wire 命令词表在 proposal 013 待裁 |
+| project-ops（命令词表） | v0.1 | **语义冻结件已入树待验收（014 实现，2026-09-09，环境）**——`project.import-copy`（1.2.0/U3 唯一写路径）：plan/apply 两 phase＋桌面字段（磁盘实测/排除清单/目标路径）＋守卫拒绝码闭集七项＋正负例向量；读/写分线（013 读面平行）；接线批=013＋014 双冻结后 |
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
