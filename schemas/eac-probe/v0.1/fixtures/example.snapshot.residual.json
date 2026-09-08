@@ -1,0 +1,24 @@
+{
+  "schemaVersion": "vua.eac-probe/v0.1",
+  "capturedAt": "2026-09-09T04:30:00.000Z",
+  "productionTarget": "2022.3.22f1",
+  "processes": [
+    {
+      "name": "easyanticheat.exe",
+      "pid": 39012,
+      "kind": "eac_loader",
+      "path": null
+    }
+  ],
+  "vrchatSessionActive": false,
+  "eacPresent": true,
+  "readiness": {
+    "conclusion": "eac_residual_no_session",
+    "guidanceCode": "vua.eac_probe.guidance_allowlist_unavailable"
+  },
+  "terminationCapability": {
+    "state": "unavailable",
+    "reason": "allowlist_empty_no_machine_evidence"
+  },
+  "diagnostics": []
+}

@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/eac-probe/v0.1/probe.schema.json",
+  "title": "VUA EAC probe snapshot v0.1",
+  "description": "Read-only EAC conflict detection (proposal 006 R1a, accepted by user ruling U1 with the eight-point approval semantics): the DEFAULT and only capability of this face. One targeted pass over the process table — never a scan of user data, never a write. Findings: EAC-related processes (name/pid, path when readable), the VRChat runtime state (an active VRChat process IS an active session per R4 — terminate is refused in that state), the readiness conclusion with a guidance code (same discipline as the editor matrix), and the honest termination-capability face: with the allowlist empty and no real-machine evidence, termination is UNAVAILABLE (approval-semantics point 2 — 'unverified/unavailable', stronger than a mere closed switch; the closed set here has no other state in v0.1). Fields the probe could not read are null, never guessed. Termination itself is NOT part of this schema: it is a separately confirmed plan step (R1b/R5) with its own frozen face.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "capturedAt",
+    "processes",
+    "vrchatSessionActive",
+    "eacPresent",
+    "readiness",
+    "terminationCapability",
+    "diagnostics"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "vua.eac-probe/v0.1" },
+    "capturedAt": { "type": "string", "minLength": 1 },
+    "productionTarget": { "const": "2022.3.22f1" },
+    "processes": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/processFinding" }
+    },
+    "vrchatSessionActive": {
+      "type": "boolean",
+      "description": "R4 conservative rule: a running VRChat process means an active session — termination is refused in this state (from-wide refusal)."
+    },
+    "eacPresent": { "type": "boolean" },
+    "readiness": { "$ref": "#/$defs/readiness" },
+    "terminationCapability": { "$ref": "#/$defs/terminationCapability" },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    }
+  },
+  "$defs": {
+    "severity": {
+      "enum": ["info", "warning", "error"]
+    },
+    "processKind": {
+      "enum": ["eac_loader", "eac_service", "vrchat_game", "vrchat_overlay"]
+    },
+    "processFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "pid", "kind", "path"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "pid": { "type": "integer", "minimum": 0 },
+        "kind": { "$ref": "#/$defs/processKind" },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Executable path when the probe could read it; null when unreadable (permission/attribute) — never guessed."
+        }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conclusion", "guidanceCode"],
+      "properties": {
+        "conclusion": {
+          "enum": [
+            "no_eac_found",
+            "eac_active_with_vrchat_session",
+            "eac_residual_no_session"
+          ]
+        },
+        "guidanceCode": {
+          "type": "string",
+          "pattern": "^vua\\.eac_probe\\."
+        }
+      }
+    },
+    "terminationCapability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "reason"],
+      "properties": {
+        "state": {
+          "const": "unavailable"
+        },
+        "reason": {
+          "const": "allowlist_empty_no_machine_evidence",
+          "description": "Approval-semantics point 2: with the allowlist empty, termination shows unverified/unavailable. The state open set grows only when real-machine evidence produces the first qualified allowlist entry (R2) and the termination face (R1b) is implemented with its own confirmation chain."
+        }
+      }
+    },
+    "diagnostic": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "severity", "detail"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^vua\\.eac_probe\\."
+        },
+        "severity": { "$ref": "#/$defs/severity" },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

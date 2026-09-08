@@ -6,12 +6,18 @@
 // the core contract; boxed errors would not change the wire surface.
 #![allow(clippy::result_large_err)]
 
+pub mod eac_probe;
 pub mod environment_managers;
 pub mod import_copy;
 pub mod project_inspection;
 pub mod project_lock;
 pub mod vpm_backend;
 
+pub use eac_probe::{
+    probe_eac, EacProbeSnapshotV01, ProcessEntry, ProcessFinding, ProcessKind,
+    ProcessSnapshotSource, Readiness, ReadinessConclusion, TerminationCapability,
+    EAC_PROBE_SCHEMA_VERSION,
+};
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
     EnvironmentManagersSnapshotV01, ManagerRoots, ProjectAssociation, ProjectFinding,
