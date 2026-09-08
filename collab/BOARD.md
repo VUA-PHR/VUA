@@ -3,13 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 08:2x（**信封扩展收口＋C# executors 接线验收**：核心
-UnityOperation/Payload/Result 增 Bridge v2 面〔93f841c，请求 1 兑现〕＋产线
-W21 C# executors 按四语义接线〔aa2a9da：install_modular_asset/attach_to_bone/
-set_object_active/selector resolver；exclude_object 钉 VRCMetaObject.excluded
-待 W25 真机核验〕——集成复跑 **387/0**＋clippy 零告警；执行序②全链完成〔wire
-路由＋挂点＋信封＋executors〕；剩 W22 实现切片＋production-use-case v0.2 冻结
-＋③桌面呈现）
+最近更新：2026-09-08 08:3x（**三批验收合并＋W25 门序修正＋M5 关键路径标注**：核心
+**W20 第一刀** production-evidence store〔7e74fa0，用户催办响应〕＋产线 **W21 接线
+批**〔v2 命令组装＋指纹锁强制＋C# exclude_object 反射接线，4f2a3e2〕＋数据 010 六
+承诺符合性声明〔72d7f7c〕；桌面 M5 呈现批自并〔W18 导入 UI＋W19 008 接线，
+df32c8c〕；集成复跑 **cargo 395/0＋clippy 零告警＋桌面 397 测试＋leak 零泄漏**；
+**W25＝一次全量验证（三前置落地后开窗，就绪请求措辞作废）；W20 实现切片＝M5
+关键路径（用户催办核心第二刀执行中，验收优先）**）
 
 ## 工作树指派
 
@@ -108,7 +108,18 @@ orchestrator-provider 23＋cargo workspace 350 通过 0 失败。
 语义，与核心/数据合并设计）；核心 W20（Recipe v0.3/Local Resolution/版本锁）＋W22
 （完整 Build Record）；产线 W21（Bridge 操作扩展）＋W25（合法素材冒烟路径）；数据
 W23（兼容/缺失证据模型）；桌面 W24（Recipe/Assembly 工作台）；集成 W26（门验收与
-发行）。各角色按锚点领取，开工前先合并 main 最新。**W17 已入表**（outline 2.0.4）且 **✅ 全链交付**：桌面协作面（869519b 自并 c93ac5e：
+发行）。各角色按锚点领取，开工前先合并 main 最新。
+
+**W25 窗口语义修正（用户裁决，2026-09-08 操作者路由）**：W25 真机窗口改为**一次
+全量验证**（不拆分）——开窗前置＝①核心 W20 实现切片（production-use-case v0.2
+命令面）＋②产线 Rust 物化下刀＋③W22 实现切片**三者全部落地**；此前产线「就绪
+请求」措辞**作废**（窗口不再按「契约/实现就绪前确认」节奏单独开）。
+
+**M5 关键路径（用户裁决，2026-09-08）**：核心 **W20 实现切片**（production-use-case
+v0.2 冻结切片＋命令面）与 W25 开窗直接关联，为 **M5 关键路径**——用户已直接催办
+核心第二刀立即开工（正在执行）；**各批验收时集成优先处理核心批**。W20 第一刀
+（production-evidence v0.1 store，AMF 生产持久域证据文档库＋147 行测试）已验收
+合并（7e74fa0）。**W17 已入表**（outline 2.0.4）且 **✅ 全链交付**：桌面协作面（869519b 自并 c93ac5e：
 错误透传呈现白名单＋live-acquire entryDetail 旧码修复——live 面 miss 曾会误报断连；
 394 测试全绿＋CI ts 绿）＋数据写入面（eb899f1 验收合并 73cae1b：products 全列 upsert
 〔重放安全、无删除 API、墓碑保留〕＋bdl_meta.catalog_updated_seq 簿记〔v0.3 既有
