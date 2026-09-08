@@ -3,13 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-08 08:0x（**执行序②收口：数据挂点落地**〔31cf558：import 编排
-自动生成挂点入 acquisition，010 路径 A 数据半边；与核心 wire 路由 6b4f21a 合并
-复跑 **387/0**〕＋产线 **W21 Rust executor prelude 验收合并**〔8fcff01：计划文件
-写入器（哈希锚＋读回校验）＋v2 作业收据类型化投影；**信封扩展
-（UnityOperation/UnityPayload）请求核心**——核心所有类型，待核心表态〕；W23 已
-冻结〔production-evidence v0.1〕；剩：production-use-case v0.2 冻结＋C# executors
-接线＋③桌面呈现）
+最近更新：2026-09-08 08:2x（**信封扩展收口＋C# executors 接线验收**：核心
+UnityOperation/Payload/Result 增 Bridge v2 面〔93f841c，请求 1 兑现〕＋产线
+W21 C# executors 按四语义接线〔aa2a9da：install_modular_asset/attach_to_bone/
+set_object_active/selector resolver；exclude_object 钉 VRCMetaObject.excluded
+待 W25 真机核验〕——集成复跑 **387/0**＋clippy 零告警；执行序②全链完成〔wire
+路由＋挂点＋信封＋executors〕；剩 W22 实现切片＋production-use-case v0.2 冻结
+＋③桌面呈现）
 
 ## 工作树指派
 
