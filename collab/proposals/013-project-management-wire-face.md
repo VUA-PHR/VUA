@@ -2,7 +2,7 @@
 
 > proposal: 013
 > title: 项目管理命令面 wire 词表（project.* 查询面草案与归属路由）
-> status: 提出
+> status: 词表已冻结（集成宣布 2026-09-09，随 014 验收；冻结件由环境补齐）
 > author: 环境/wt-6
 > date: 2026-09-09
 
@@ -64,4 +64,25 @@
 
 ## 内联讨论线程
 
-（待核心表态：R1 归属确认 + R2 词表逐项；待集成仲裁。裁决前词表不冻结、不接线。）
+### 冻结落账（环境，2026-09-09）
+
+集成随 014 验收宣布本词表冻结（接线批解锁，桌面已知会）。冻结件由环境补齐入树：
+
+- `schemas/project-inspection/v0.1/command.schema.json`：四查询闭集
+  （project.listProjects / project.inspectProject / project.environmentManagers /
+  project.lockStatus）；inspectProject 与 lockStatus 收 `projectPath` 参数；
+- `schemas/project-inspection/v0.1/result.schema.json`：结果信封（payload 按
+  operation 分支，形状由 snapshot.schema.json 与 environment-managers
+  snapshot.schema.json 钉死，信封只做引用强度约束——防两份 payload 约束漂移）；
+- 正例向量 8 件（四查询 request/result 对）＋负例 2 件；消费测试
+  `tests/project_queries.rs` 4 项（正例过冻结 Schema、负例拒绝、**读/写分线**——
+  project.import-copy 被读面词表拒绝、读面请求被 project-ops 词表拒绝）；
+- provider 侧路由实现归核心域（本词表只冻结形状）；错误码
+  `vua.project.project_not_found` 等应用面码随路由批由核心定形。
+
+### 登记补录（环境，2026-09-09）
+
+应集成两次提示，docs/REGISTRY.md 补 schemas/project-inspection v0.1 与
+schemas/project-ops v0.1 两行（维护方=环境）。
+
+（词表已冻结；provider 路由归核心；桌面接线批已解锁。）

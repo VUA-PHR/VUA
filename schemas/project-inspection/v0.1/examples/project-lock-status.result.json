@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.lockStatus",
+  "result": {
+    "schemaVersion": "vua.project-inspection/v0.1",
+    "projectPath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "mutationStatus": "none"
+  }
+}
