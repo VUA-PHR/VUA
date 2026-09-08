@@ -7,6 +7,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod environment_managers;
+pub mod import_copy;
 pub mod project_inspection;
 pub mod project_lock;
 pub mod vpm_backend;
@@ -16,9 +17,14 @@ pub use environment_managers::{
     EnvironmentManagersSnapshotV01, ManagerRoots, ProjectAssociation, ProjectFinding,
     VccSettingsFileReader, ENV_MANAGERS_SNAPSHOT_SCHEMA_VERSION,
 };
+pub use import_copy::{
+    apply_import_copy, plan_import_copy, ImportCopyRequest, ImportPlanV01, ImportReceiptV01,
+    ImportRejected, RejectionGuard, EXCLUDED_ENTRIES, IMPORT_OPS_SCHEMA_VERSION,
+};
 pub use project_inspection::{
-    collect_project_inspections, ManifestPackage, MutationStatus, ProjectInspectionSnapshotV01,
-    ProjectInspectionV01, VrchatSdkFinding, PROJECT_INSPECTION_SCHEMA_VERSION,
+    collect_project_inspections, inspect_project_deep, ManifestPackage, MutationStatus,
+    ProjectInspectionSnapshotV01, ProjectInspectionV01, VrchatSdkFinding,
+    PROJECT_INSPECTION_SCHEMA_VERSION,
 };
 pub use project_lock::{
     acquire_project_lock, begin_mutation, read_pending_mutation, LockEnvelopeV1, LockHolder,

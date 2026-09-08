@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.delete-project",
+  "params": {
+    "projectPath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World"
+  }
+}

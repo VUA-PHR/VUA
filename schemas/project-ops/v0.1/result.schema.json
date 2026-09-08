@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/project-ops/v0.1/result.schema.json",
+  "title": "VUA project-ops result v0.1",
+  "description": "Result documents for project.import-copy (proposal 014, arbitrated 2026-09-09). kind=plan: the confirmation-face projection carrying exactly the desktop-requested fields — per-entry disk estimate (bytes actually measured over the copy scope), the excluded-entries list (regenerable Unity directories and the original .vua task state, per 1.2.0), the resolved target path, the source top-level entries in scope, and the planDigest the apply phase must confirm. kind=receipt: the completion face — actually copied top-level entries, bytes copied, the source link recorded into the new project's .vua (source path, manager associations, import timestamp, taskCorrelation), and the re-Inspection of the new project (never inheriting the original's confirmations or snapshots). kind=rejected: a typed guard refusal; the guard closed set is frozen here and codes follow the vua.project.* snake-case convention.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["project.import-copy"]
+    },
+    "result": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": {
+          "enum": ["plan", "receipt", "rejected"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "plan" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "$ref": "#/$defs/importPlan"
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "receipt" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "$ref": "#/$defs/importReceipt"
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "rejected" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "$ref": "#/$defs/importRejected"
+          }
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "editorClass": {
+      "enum": [
+        "production_target",
+        "migration_source",
+        "other_unity_version",
+        "tuanjie_family"
+      ]
+    },
+    "projectAssociation": {
+      "enum": ["vcc_registered", "alcom_registered"]
+    },
+    "guard": {
+      "enum": [
+        "target_exists",
+        "target_inside_source",
+        "source_not_registered",
+        "source_invalid",
+        "insufficient_disk_space",
+        "plan_drift",
+        "execution_failed"
+      ]
+    },
+    "importPlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourcePath",
+        "targetPath",
+        "targetProjectName",
+        "estimatedBytes",
+        "excludedEntries",
+        "sourceTopLevels",
+        "planDigest"
+      ],
+      "properties": {
+        "kind": { "const": "plan" },
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "targetPath": { "type": "string", "minLength": 1 },
+        "targetProjectName": { "type": "string", "minLength": 1 },
+        "estimatedBytes": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Bytes actually measured over the copy scope (source content minus the excluded entries) — measured, never guessed."
+        },
+        "excludedEntries": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "sourceTopLevels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Source top-level entries in copy scope (exclusions applied), sorted — the transparency face of what will be copied."
+        },
+        "planDigest": { "type": "string", "minLength": 1 }
+      }
+    },
+    "importReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "sourcePath",
+        "targetPath",
+        "targetProjectName",
+        "copiedTopLevels",
+        "excludedEntries",
+        "bytesCopied",
+        "sourceLink",
+        "reInspection"
+      ],
+      "properties": {
+        "kind": { "const": "receipt" },
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "targetPath": { "type": "string", "minLength": 1 },
+        "targetProjectName": { "type": "string", "minLength": 1 },
+        "copiedTopLevels": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "excludedEntries": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "bytesCopied": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "sourceLink": { "$ref": "#/$defs/sourceLink" },
+        "reInspection": { "$ref": "#/$defs/reInspection" }
+      }
+    },
+    "sourceLink": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "sourcePath",
+        "sourceAssociations",
+        "importedAt",
+        "taskCorrelation"
+      ],
+      "properties": {
+        "sourcePath": { "type": "string", "minLength": 1 },
+        "sourceAssociations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/projectAssociation" },
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "importedAt": { "type": "string", "minLength": 1 },
+        "taskCorrelation": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The originating task/command id — same-shape reference as the W23 evidence sourceRef.taskCorrelation."
+        }
+      }
+    },
+    "reInspection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "unityVersion",
+        "unityClassification",
+        "manifestPresent",
+        "manifestSchemaOk"
+      ],
+      "properties": {
+        "unityVersion": { "type": ["string", "null"] },
+        "unityClassification": {
+          "oneOf": [
+            { "$ref": "#/$defs/editorClass" },
+            { "type": "null" }
+          ]
+        },
+        "manifestPresent": { "type": "boolean" },
+        "manifestSchemaOk": { "type": "boolean" }
+      }
+    },
+    "importRejected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "guard", "code", "detail"],
+      "properties": {
+        "kind": { "const": "rejected" },
+        "guard": { "$ref": "#/$defs/guard" },
+        "code": {
+          "type": "string",
+          "pattern": "^vua\\.project\\."
+        },
+        "detail": { "type": "string" }
+      }
+    }
+  }
+}

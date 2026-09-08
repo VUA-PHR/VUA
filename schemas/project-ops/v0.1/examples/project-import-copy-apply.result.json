@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.import-copy",
+  "result": {
+    "kind": "receipt",
+    "sourcePath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "targetPath": "D:\\VUA Projects\\My Avatar World (VUA copy)",
+    "targetProjectName": "My Avatar World (VUA copy)",
+    "copiedTopLevels": ["Assets", "Packages", "ProjectSettings"],
+    "excludedEntries": [".vua", "Builds", "Library", "Logs", "Temp", "obj"],
+    "bytesCopied": 521338880,
+    "sourceLink": {
+      "sourcePath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+      "sourceAssociations": ["vcc_registered", "alcom_registered"],
+      "importedAt": "2026-09-09T03:40:00.000Z",
+      "taskCorrelation": "cmd-01j9x7k2-import-copy"
+    },
+    "reInspection": {
+      "unityVersion": "2022.3.22f1",
+      "unityClassification": "production_target",
+      "manifestPresent": true,
+      "manifestSchemaOk": true
+    }
+  }
+}
