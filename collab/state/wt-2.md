@@ -105,7 +105,8 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**W20 第三刀（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
+**production-use-case v0.2 冻结收口（2fd4813，W25 前置①凭证）＋W20 第三刀
+（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
 ＋证据存储面第一刀（0cbafa7）＋UnityOperation 扩展批（93f841c＋36b14ff）＋
 执行语义规格与勘误批（471a4ee）＋exclude 钉死表态＋执行序②核心半边
 （6b4f21a）＋010 接线设计批＋本状态批**请集成验收合并；W22 冻结切片
