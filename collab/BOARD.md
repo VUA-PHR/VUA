@@ -3,13 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 04:0x（**双冻结批验收合并·W25 前置①凭证落地**：核心
-**production-use-case v0.2 已冻结**〔24 向量＋向量驱动消费测试完成冻结硬前置；
-集成复跑 **cargo 428/0**〔56 套件〕＋clippy 零告警〕＋环境 **proposal 014 实现
-验收合并**〔import-as-VUA-copy 写路径＋project-ops v0.1 词表（七项拒绝码闭集
-仲裁确认：五守卫＋plan_drift＋execution_failed）；import_copy.rs 607 行＋342 行
-测试〕——**W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中〔executors 已
-接线〕——三者齐后一次开窗全量验证**）
+最近更新：2026-09-09 04:4x（**三批验收合并**：桌面 **F6 确认链接线批**〔c967ce6
+自并：project-ops v0.1 桌面面——ProjectCompatPage 确认链＋project-ops-port＋
+fixture；013＋014 双命令面接线完成〕＋核心 **plan.list/record.list 身份列表**
+〔ca991e8：W20 命令面完成〕＋环境 **013 读面词表冻结件**〔d253b8d：command/result
+Schema＋project_queries 测试＋REGISTRY rows〕——集成复跑 **cargo 432/0**〔57 套
+件〕＋clippy 零告警＋桌面 397 测试＋leak 零泄漏；**W25 三前置：①凭证落地＋②已
+落地＋③W22 实现进行中〔executors 已接线〕——三者齐后一次开窗全量验证**）
 
 ## 工作树指派
 

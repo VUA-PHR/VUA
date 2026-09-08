@@ -2,44 +2,42 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: ecabfc7
+baseline_commit: a6a838c
 updated: 2026-09-09
 ---
 ## 当前焦点
-**双冻结批验收合并＋014 实现验收**（集成复跑 **cargo 428 通过 0 失败**〔56 套
-件〕＋clippy 零告警）：核心 **production-use-case v0.2 已冻结**（24 向量＋向量
-驱动消费测试——**W25 前置①凭证落地**）＋环境 **proposal 014 实现验收合并**
-（import-as-VUA-copy 写路径＋project-ops v0.1 词表＋七项拒绝码闭集仲裁确认＋
-桌面字段落 Schema）。**W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中
-〔executors 已接线〕——三者齐后一次开窗全量验证**。M6 三包首批已验收。
-## 自基线交付（ce34570..HEAD，本 tick）
-- **验收合并核心 production-use-case v0.2 冻结批**（2fd4813 经相关合并，核心域）：
-  24 向量＋向量驱动消费测试（production_use_case_vectors.rs 新套件）完成冻结硬
-  前置；契约表行升「已冻结」；
-- **验收合并环境 014 实现批**（226dd41，project-manager 域）：import_copy.rs
-  607 行（plan_import_copy 守卫＋实测复制范围＋plan digest → apply_import_copy
-  双摘要漂移拒绝→排除复制→新 Unity 身份）＋import_copy.rs 342 行契约测试＋
-  schemas/project-ops/v0.1/ 词表冻结件（command/result＋正例 4＋负例 3）；
-  **七项拒绝码闭集仲裁确认**（target_exists/target_inside_source/
-  source_not_registered/source_invalid/insufficient_disk_space/plan_drift/
-  execution_failed——五守卫＋两分型，采纳随冻结）＋桌面字段请求核验落字段；
-- BOARD：契约表加 project-ops v0.1 行＋production-use-case 行升已冻结＋#16 更新
-  （实现验收＋七项确认）＋最近更新行。
+**三批验收合并**（集成复跑 **cargo 432 通过 0 失败**〔57 套件〕＋clippy 零告警
+＋桌面 **397 测试**＋leak 零泄漏）：桌面 **F6 确认链接线批**（c967ce6 自并：
+project-ops v0.1 桌面面——013＋014 双命令面接线完成）＋核心 **plan.list/
+record.list 身份列表**（ca991e8：W20 命令面完成）＋环境 **013 读面词表冻结件**
+（d253b8d：command/result Schema＋project_queries 测试＋REGISTRY rows）。
+**W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中〔executors 已接线〕**。
+## 自基线交付（ecabfc7..HEAD，本 tick）
+- **桌面 F6 确认链接线批自并确认**（c967ce6 经 db69789，桌面域）：ProjectCompatPage
+  确认链（＋242 行）＋project-ops-port.ts（235 行）＋四网关接线＋fixture-project-ops
+  ＋四语——013＋014 双命令面接线完成；
+- **验收合并核心 plan.list/record.list 批**（ca991e8，核心/provider-host 域）：
+  plan_documents/recipe_records 各＋16 行身份列表＋provider_host 173 行路由＋
+  warehouse_commands 测试——**W20 命令面完成**；
+- **验收合并环境 013 读面词表冻结件批**（d253b8d，project-manager 域）：
+  project-inspection command/result Schema＋project-lock-status 例＋
+  project_queries.rs 100 行测试＋REGISTRY rows＋013 内联（＋25 行）；
+- 验收证据（2026-09-09 本机）：**cargo workspace 432 通过 0 失败**（57 套件）＋
+  clippy -D warnings 零告警＋桌面 check 全链（47 文件 397 测试＋leak 零泄漏）。
 ## 阻塞
 无。
 ## 下次合并意图
-W22 实现切片批（产线，前置③——recoveryPoints 拍摄＋收据转抄，两对接细节待
-核心澄清）；W23 数据批；W18/W19/W24 桌面批；桌面 013＋014 接线批（两命令面已
-冻结，桌面解锁）；M6 环境后续批；production-use-case 协议本 v0.2 REGISTRY 行
-核对（数据批 REGISTRY 已有行，核实一致性）；#7 残余样本（再现即带全量日志）。
+核心 production-use-case v0.2 冻结收口声明批（**W25 前置①凭证已落地**——冻结
+批已验收，声明为形式收口）；W22 实现切片批（前置③——两对接细节待核心澄清）；
+W23 数据批；W24 工作台批（双端读面就绪）；#7 残余样本（再现即带全量日志）。
 ## 留言
-- [→核心] **production-use-case v0.2 冻结验收合并（复跑 428/0）——W25 前置①
-  凭证落地**；W25 三前置仅剩③W22 实现切片（产线，两对接细节已路由你方）；
-- [→环境] **014 实现批验收合并（复跑 428/0）＋七项拒绝码闭集仲裁确认采纳**；
-  project-inspection REGISTRY 行缺登记提示维持（随下批补）；T-A 后续切片按
-  你方节奏；
-- [→桌面] **013＋014 两命令面均已冻结——接线批解锁**（F6 入口接入确认链；
-  importCorrelationId/estimatedBytes/excludedEntries/targetPath 字段依赖已定）；
-- [→操作者→用户] **W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中**——
-  三者齐后一次开窗全量验证；M6 三包首批已验收；
+- [→核心] **W20 命令面完成验收（plan.list/record.list）**——production-use-case
+  v0.2 冻结批已验收（前置①凭证落地）；两对接细节（计划 JSON 序列化传入方/
+  ProductionJobReceipt→BuildRecord 关联面）与冻结收口声明待你方；
+- [→环境] 013 读面词表冻结件验收合并（复跑 432/0，project_queries 100 行入树）；
+  013＋014 双命令面接线完成——T-A 后续切片按你方节奏；
+- [→桌面] F6 确认链接线批验收合并（复跑 397 测试＋leak 零泄漏）；W24 工作台
+  双端读面就绪；
+- [→操作者→用户] W25 三前置：①凭证落地＋②已落地＋③W22 实现进行中——三者齐
+  后一次开窗全量验证；
 - [需用户] U5 维持暂缓（VUA-2/VUA-3 目录清理）。
