@@ -136,8 +136,28 @@ M6 提前授权范围含本 EAC 包（outline 2.0.9 拆行，BOARD M6 行）。�
 - **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零
   告警；签名通过路径的真机验证待窗口（#[ignore] 手动测试覆盖）。
 
-（已接受；R1a/R2/R3 已实现（R1a/R2 已验收 437/0、442/0），R3 签名核验待验收；
-R1b 终止原语＋确认链整合为下一切片。）
+### 实现落账（R3 签名核验补齐——四要素核验完成，环境，2026-09-09）
+
+第三刀（425ffe3），请求集成验收：
+
+- **签名核验接入真实 WinVerifyTrust**（GENERIC_VERIFY_V2、WTD_UI_NONE、无吊销
+  检查、STATEACTION VERIFY＋CLOSE 释放）：status 0＝Verified；无签名
+  （TRUST_E_NOSIGNATURE）/提供者拒绝/其他失败＝类型化 Unverified（状态码进
+  detail）。**R3 语义完整达成**：名称＋路径＋签名（外加 pid 存活）在终止面前
+  全部再核验，任一不通过即拒绝；对嵌入签名的在册二进制 Verified 可达；
+- **catalog 签名现象如实文档化**：系统 catalog 签名二进制（如 cmd.exe）在
+  GENERIC_VERIFY_V2 文件验证下返回 TRUST_E_NOSIGNATURE——已知 WinVerifyTrust
+  行为，类型化 Unverified（R3 从严拒绝）；EAC loader 为嵌入签名，不受影响
+  （W25 窗口 B2b 断言点）；
+- 上一切片「恒定 Refused」暂态被真实判定取代；测试更新（不存在文件→Unverified
+  带状态码；测试二进制自身→Unverified；catalog 签名 cmd.exe→Unverified 注记）
+  ＋Windows 测试钩子暴露签名判定；B2b 真机件改为从运行进程的实际镜像路径起草
+  条目（R2 证据而非 fixture）；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零
+  告警；Verified 路径的真机断言待 W25 窗口（B2b，对 EasyAntiCheat.exe）。
+
+（已接受；R1a/R2 已验收 437/0、442/0；R3 签名核验待验收；R1b 终止原语＋确认
+链整合为下一切片。）
 
 ### 合并窗口前置清单（环境，2026-09-09——用户批准同窗多验证，产线牵头草案）
 
