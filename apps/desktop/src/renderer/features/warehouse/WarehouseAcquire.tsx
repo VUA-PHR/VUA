@@ -371,10 +371,41 @@ function EntryDetail({ entryId }: { entryId: string }) {
 
 export function WarehouseAcquire() {
   const view = useAcquireView();
+  const gateway = useGateway();
   const [text, setText] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   /** 工件卡右键菜单(S-XII):仅真实动作——查看详情(条目) */
   const [cardMenu, setCardMenu] = useState<ContextMenuState | null>(null);
+  /** W18 导入流(010 表态,系统文件夹多选):拾取 → 确认列表 → 单命令 → 任务中心;
+   *  条目事实经 acquire 读面推送刷新,本页不建第二事实源 */
+  const [pendingFolders, setPendingFolders] = useState<readonly string[] | null>(null);
+  const [importBusy, setImportBusy] = useState(false);
+  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+
+  const startImport = () => {
+    setImportFeedback(null);
+    void window.vua?.dialog.pickWarehouseFolders().then((folders) => {
+      if (folders === null || folders.length === 0) {
+        setImportFeedback(folders === null ? null : copy.importEmptySelection);
+        return;
+      }
+      setPendingFolders(folders);
+    });
+  };
+
+  const submitImport = (folders: readonly string[]) => {
+    setImportBusy(true);
+    setImportFeedback(null);
+    void gateway.warehouseCommands.importFolders(folders).then((outcome) => {
+      setImportBusy(false);
+      if (outcome.ok) {
+        setPendingFolders(null);
+        setImportFeedback(copy.importAccepted);
+      } else {
+        setImportFeedback(commandErrorTextFor(outcome.error));
+      }
+    });
+  };
 
   // 指针聚光 + 微倾斜,与云端墙一致(非 animated 模式零开销)
   const [wallEl, setWallEl] = useState<HTMLDivElement | null>(null);
@@ -427,7 +458,46 @@ export function WarehouseAcquire() {
           <span className="vua-caption vua-text-secondary">
             {format(copy.entryCount, { count: view.entries.length })}
           </span>
+          <Button variant="default" onClick={startImport} disabled={importBusy}>
+            {copy.importTitle}
+          </Button>
         </div>
+
+        {/* W18 导入区(010 表态):确认列表 → 单命令 → 任务中心;条目事实经读面推送 */}
+        {importFeedback !== null ? (
+          <p className="vua-caption vua-text-secondary" role="status">
+            {importFeedback}
+          </p>
+        ) : null}
+        {pendingFolders !== null ? (
+          <div className="vua-warehouse__import-confirm" role="group" aria-label={copy.importConfirmTitle}>
+            <p className="vua-warehouse-detail__section-title">{copy.importConfirmTitle}</p>
+            <p className="vua-caption vua-text-secondary">{copy.importConfirmDesc}</p>
+            <ul className="vua-warehouse__import-list">
+              {pendingFolders.map((folder) => (
+                <li key={folder}>
+                  <span>{folder}</span>
+                  <Button
+                    variant="subtle"
+                    aria-label={`${copy.importRemove}: ${folder}`}
+                    disabled={importBusy}
+                    onClick={() => setPendingFolders(pendingFolders.filter((f) => f !== folder))}
+                  >
+                    ×
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            <div className="vua-warehouse__import-actions">
+              <Button variant="default" disabled={importBusy} onClick={() => setPendingFolders(null)}>
+                {copy.importCancel}
+              </Button>
+              <Button variant="primary" disabled={importBusy} onClick={() => submitImport(pendingFolders)}>
+                {copy.importConfirmCta}
+              </Button>
+            </div>
+          </div>
+        ) : null}
 
         <div className="vua-warehouse__wall-scroll" ref={setWallEl}>
           {view.entries.length === 0 ? (

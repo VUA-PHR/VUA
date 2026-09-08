@@ -649,3 +649,34 @@
   margin: 0 0 var(--vua-space-2);
   padding-left: var(--vua-space-4);
 }
+
+/* ---- W18 导入区(010 表态):确认列表 → 单命令 → 任务中心 ---- */
+.vua-warehouse__import-confirm {
+  display: grid;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-panel);
+}
+
+.vua-warehouse__import-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--vua-space-1);
+}
+
+.vua-warehouse__import-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-warehouse__import-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--vua-space-2);
+}

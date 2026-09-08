@@ -74,5 +74,11 @@ export interface WarehouseCommandsPort {
    * 回执为从 BDL 读回的持久事实,非回显;无 null——全局默认恒有值)
    */
   setGlobalDefaultMode(mode: WarehouseArtifactMode): Promise<WarehouseCommandOutcome>;
+  /**
+   * 批量导入素材文件夹(bdl-commands v0.3,W19):folder 批一次提交,
+   * 受理即导入任务身份;逐 folder 进度与条目落成经任务面/读面呈现;
+   * 导入编排内的自动生成挂点在任务内(010 路径 A,服务端)
+   */
+  importFolders(sourceFolders: readonly string[]): Promise<WarehouseCommandOutcome>;
   capability(): Promise<CapabilityReport>;
 }

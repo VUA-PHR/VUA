@@ -240,6 +240,13 @@ export interface WarehouseSetGlobalDefaultModeRequestV1 {
   readonly method: "warehouse.setGlobalDefaultMode";
   readonly params: { readonly mode: WarehouseArtifactModeV03; readonly commandId: string };
 }
+/** warehouse.import 批量导入入口(bdl-commands v0.3,W19) */
+export interface WarehouseImportRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.import";
+  readonly params: { readonly sourceFolders: readonly string[]; readonly commandId: string };
+}
 
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
@@ -264,7 +271,8 @@ export type DesktopGatewayRequestV1 =
   | WarehouseSetArtifactModeRequestV1
   | WarehouseGenerateVpmRequestV1
   | WarehouseDeleteOriginalsRequestV1
-  | WarehouseSetGlobalDefaultModeRequestV1;
+  | WarehouseSetGlobalDefaultModeRequestV1
+  | WarehouseImportRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -291,6 +299,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.generateVpm": "command",
   "warehouse.deleteOriginals": "command",
   "warehouse.setGlobalDefaultMode": "command",
+  "warehouse.import": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -360,6 +369,10 @@ export interface PickedMaterialSourceV1 {
 export interface DesktopDialogApiV1 {
   /** 用户取消或无宿主时返回 null */
   pickMaterialSource(intake: MaterialSourceIntakeV1): Promise<PickedMaterialSourceV1 | null>;
+  /** 仓储导入文件夹多选(W18,bdl-commands v0.3 warehouse.import 的本地拾取面):
+   *  openDirectory + multiSelections;用户取消或空选返回 null;本进程不做任何
+   *  文件操作,路径交渲染层经 warehouse.import 提交 */
+  pickWarehouseFolders(): Promise<readonly string[] | null>;
 }
 
 // ---- 远程内容窄面(F4 隔离浏览):Renderer 只发语义动作,不持任何 Electron

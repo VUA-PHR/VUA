@@ -180,6 +180,8 @@ export interface AcquireFixtureStore {
   addGeneratedVpm(warehouseItemId: string): boolean;
   /** 移除条目全部 original 工件(删除完成演示);false = 未知条目或无原始件 */
   removeOriginals(warehouseItemId: string): boolean;
+  /** 导入演示:按文件夹名落成新条目(单 original 工件);返回条目身份 */
+  addImportedEntry(folderName: string): string;
 }
 
 export function createAcquireFixtureStore(empty: boolean): AcquireFixtureStore {
@@ -253,6 +255,34 @@ export function createAcquireFixtureStore(empty: boolean): AcquireFixtureStore {
       });
       push();
       return true;
+    },
+    addImportedEntry: (folderName) => {
+      const warehouseItemId = `whentry-imported-${entries.length + 1}-${folderName
+        .replace(/[^a-zA-Z0-9_-]+/g, "-")
+        .slice(0, 32)}`;
+      const now = new Date().toISOString();
+      entries.push({
+        warehouseItemId,
+        folderName,
+        displayName: folderName,
+        kind: "imported_material",
+        createdAt: now,
+        artifactMode: null,
+        // 诚实缺省:fixture store 与命令层的演示全局默认分离;条目级覆盖可经
+        // setMode 演示,真实解析在服务端读回
+        effectiveArtifactMode: "use_original_unitypackage",
+        artifacts: [
+          {
+            artifactSha256: syntheticSha(`imported-${warehouseItemId}`),
+            relativePath: `${folderName}.unitypackage`,
+            state: "clean",
+            sizeBytes: 32_768,
+            role: "original",
+          },
+        ],
+      });
+      push();
+      return warehouseItemId;
     },
   };
   return store;

@@ -200,6 +200,8 @@ function toApplicationRequest(
       return { ...base, kind: "command", method: "warehouse.deleteOriginals", commandId: request.params.commandId, params: { warehouseItemId: request.params.warehouseItemId } };
     case "warehouse.setGlobalDefaultMode":
       return { ...base, kind: "command", method: "warehouse.setGlobalDefaultMode", commandId: request.params.commandId, params: { mode: request.params.mode } };
+    case "warehouse.import":
+      return { ...base, kind: "command", method: "warehouse.import", commandId: request.params.commandId, params: { sourceFolders: [...request.params.sourceFolders] } };
   }
 }
 

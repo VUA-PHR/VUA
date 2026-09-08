@@ -30,6 +30,7 @@ const api: VuaDesktopApiV1 = Object.freeze({
   dialog: Object.freeze({
     pickMaterialSource: (intake: "direct_unity_package" | "local_reusable_vpm") =>
       ipcRenderer.invoke("vua:dialog:pick-material-source", intake),
+    pickWarehouseFolders: () => ipcRenderer.invoke("vua:dialog:pick-warehouse-folders"),
   }),
   events: Object.freeze({
     subscribe: (listener: (event: ApplicationEventV01) => void) => {

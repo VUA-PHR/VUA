@@ -20,10 +20,9 @@ import { commandErrorText, inferGlobalDefaultMode, type GlobalDefaultInference }
  *   composed 全局默认),推断不出时如实标注 unknown;写回执为服务端持久事实,
  *   直接更新开关态(推断仅是初值);
  * - 行 2「生成后删除原始素材文件」= 危险开关,主开关关闭时置灰;开启必经
- *   危险确认对话框(示意图 B)。**未接线如实标注**:全局自动删除超出已冻结
- *   的条目级 deleteOriginals,协议面随 proposal 008 裁决——本偏好仅记录
- *   意图,不触发任何服务端行为;DEV/fixture 面加注「本原型不会真正删除任何
- *   文件」(mock/fixture 不出 DEV 纪律);
+ *   危险确认对话框(示意图 B)。008 路径 a 已接线(app 层 delete-originals-auto:
+ *   生成完成→逐条目独立删除任务,守卫与审计在服务端);DEV/fixture 面保留
+ *   「本原型不会真正删除任何文件」注记(mock/fixture 不出 DEV 纪律);
  * - 走查不通过重做:原 per-entry 条目选择器整组移除;007 的「生成 VPM 模式
  *   入口」偏好开关被全局开关语义取代(变更随 proposal 008 复核)。
  */
@@ -90,7 +89,6 @@ export function ExperimentalCommands() {
           {effective.kind === "unknown" ? (
             <p className="vua-caption vua-text-secondary">{copy.globalReadUnknown}</p>
           ) : null}
-          <p className="vua-caption vua-text-secondary">{copy.generateNotWired}</p>
           {feedback !== null ? (
             <p className="vua-caption vua-text-secondary" role="status">
               {feedback}
@@ -113,7 +111,6 @@ export function ExperimentalCommands() {
             <Badge tone="error">{copy.deleteBadge}</Badge>
           </p>
           <p className="vua-caption vua-text-secondary">{copy.deleteDesc}</p>
-          <p className="vua-caption vua-text-secondary">{copy.notWired}</p>
         </div>
         <Toggle
           on={deleteFlag}
@@ -150,7 +147,6 @@ export function ExperimentalCommands() {
         </p>
         <div className="vua-confirm-dialog__warning">
           <p>{copy.dialogWarning}</p>
-          <p>{copy.notWired}</p>
           {import.meta.env.DEV ? <p>{copy.devPrototypeNote}</p> : null}
         </div>
       </ConfirmDialog>

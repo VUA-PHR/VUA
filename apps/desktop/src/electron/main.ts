@@ -152,6 +152,19 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     return { refId, displayName };
   });
 
+  // 仓储导入文件夹多选(W18,bdl-commands v0.3 warehouse.import 的本地拾取面):
+  // openDirectory + multiSelections;取消或空选返回 null,路径交给渲染层经
+  // warehouse.import 提交(本进程不做任何文件操作)
+  ipcMain.handle("vua:dialog:pick-warehouse-folders", async (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    const result = await dialog.showOpenDialog({
+      title: "Import material packages",
+      properties: ["openDirectory", "multiSelections"] as ("openFile" | "openDirectory" | "multiSelections")[],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths;
+  });
+
   ipcMain.handle("vua:window:minimize", (event) => {
     assertLocalSender(senderFrameUrl(event));
     BrowserWindow.fromWebContents(event.sender)?.minimize();

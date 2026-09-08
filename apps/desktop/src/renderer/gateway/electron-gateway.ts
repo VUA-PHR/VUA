@@ -157,12 +157,14 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
   };
 }
 
-/** Kernel 宿主完整面:gateway/events 供 client,dialog 供素材来源选取 */
+/** Kernel 宿主完整面:gateway/events 供 client,dialog 供素材来源选取与仓储导入拾取 */
 export interface DesktopKernelHost extends DesktopGatewayHost {
   dialog?: {
     pickMaterialSource(
       intake: "direct_unity_package" | "local_reusable_vpm",
     ): Promise<{ refId: string; displayName: string } | null>;
+    /** 仓储导入文件夹多选(W18):取消或空选 null */
+    pickWarehouseFolders?(): Promise<readonly string[] | null>;
   };
 }
 
