@@ -193,12 +193,30 @@ impl DownloadServices {
 /// `unavailable` error — honest absence, never a silent success. The
 /// recipe document store is the AMF production-domain document store
 /// (011 convergence decision 1; never BDL).
+#[derive(Clone)]
 pub struct ProductionUseCaseConfig {
     pub recipes: Arc<RecipeDocumentStore>,
+    pub plans: Arc<vua_orchestrator::PlanDocumentStore>,
+    pub evidence: Arc<vua_orchestrator::EvidenceStore>,
 }
 
 struct ProductionUseCaseServices {
     recipes: Arc<RecipeDocumentStore>,
+    plans: Arc<vua_orchestrator::PlanDocumentStore>,
+    /// W23 production-evidence store — consumed by the Local Resolution
+    /// executor (next cut).
+    #[allow(dead_code)]
+    evidence: Arc<vua_orchestrator::EvidenceStore>,
+    /// The shared SQLite task authority and BDL come with the warehouse
+    /// wiring; the tasked half (recipe.resolve / job.execute) answers a
+    /// typed unavailable without them, while the document faces (save/get/
+    /// list/approve) work standalone. Consumed from the next cut on.
+    #[allow(dead_code)]
+    runtime: Option<TaskRuntime>,
+    #[allow(dead_code)]
+    bdl: Option<Arc<BdlStore>>,
+    #[allow(dead_code)]
+    env_initial: Option<ArtifactMode>,
 }
 
 /// Production use-case wiring (production-use-case v0.1): when absent, every
@@ -372,8 +390,27 @@ pub fn run_provider_host_with_services(
             })
         })
         .transpose()?;
+    // The use-case face reuses the warehouse task authority and BDL (Local
+    // Resolution reads warehouse facts) — both are required together.
     let use_cases = use_cases.map(|config| {
-        Arc::new(ProductionUseCaseServices { recipes: config.recipes })
+        let (bdl, runtime, env_initial) = warehouse
+            .as_ref()
+            .map(|warehouse| {
+                (
+                    Some(warehouse.bdl.clone()),
+                    Some(warehouse.runtime.clone()),
+                    Some(warehouse.global_default),
+                )
+            })
+            .unwrap_or((None, None, None));
+        Arc::new(ProductionUseCaseServices {
+            recipes: config.recipes,
+            plans: config.plans,
+            evidence: config.evidence,
+            bdl,
+            runtime,
+            env_initial,
+        })
     });
     let mut state = HostState {
         store,
@@ -703,6 +740,18 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     }
     if method.starts_with("recipe.") {
         return recipe_request(state, method, request, request_id, correlation_id);
+    }
+    if method.starts_with("plan.") {
+        let Some(use_cases) = state.use_cases.clone() else {
+            return plan_unavailable(request_id, correlation_id);
+        };
+        return plan_request(use_cases, method, request, request_id, correlation_id);
+    }
+    if method.starts_with("job.") {
+        return job_unavailable(state, request_id, correlation_id);
+    }
+    if method.starts_with("record.") {
+        return record_unavailable(request_id, correlation_id);
     }
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
@@ -1471,6 +1520,15 @@ fn recipe_request(
         "recipe.save" => recipe_save(use_cases, request, request_id, correlation_id),
         "recipe.get" => recipe_get(use_cases, request, request_id, correlation_id),
         "recipe.list" => recipe_list(use_cases, request, request_id, correlation_id),
+        // The Local Resolution executor arrives in the next cut; until then
+        // the frozen vocabulary answers a typed unavailable.
+        "recipe.resolve" => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.recipe.resolve_unavailable",
+            "errors.recipe.resolveUnavailable",
+            "unavailable",
+        )),
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -1479,6 +1537,165 @@ fn recipe_request(
             "validation",
         )),
     }
+}
+
+/// The plan approval/read face (011 section 4): draft -> approved is the
+/// user's explicit authorization act and is idempotent; approved plans are
+/// the only ones job.execute will accept.
+fn plan_request(
+    use_cases: Arc<ProductionUseCaseServices>,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    match method {
+        "plan.approve" => plan_approve(use_cases, request, request_id, correlation_id),
+        "plan.get" => plan_get(use_cases, request, request_id, correlation_id),
+        // plan.list 聚合面随第三刀（record 路由同批）——词表内缺席＝类型化
+        // unavailable，词表外才是 unknown_method。
+        "plan.list" => plan_unavailable(request_id, correlation_id),
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn plan_approve(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed set: { planId }.
+    let Some(plan_id) = request
+        .get("params")
+        .and_then(|params| params.get("planId"))
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+    else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.invalid_params",
+            "errors.plan.invalidParams",
+            "validation",
+        ));
+    };
+    match use_cases.plans.approve(plan_id) {
+        Ok(vua_orchestrator::ApproveOutcome::Approved) => {
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({ "planId": plan_id, "planStatus": "approved" }),
+            ))
+        }
+        Ok(vua_orchestrator::ApproveOutcome::AlreadyApproved) => {
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({ "planId": plan_id, "planStatus": "approved" }),
+            ))
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::InvalidInput => {
+            FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.plan.not_approvable",
+                "errors.plan.notApprovable",
+                "conflict",
+            ))
+        }
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.store_failed",
+            "errors.plan.storeFailed",
+            "internal",
+        )),
+    }
+}
+
+fn plan_get(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(plan_id) = request
+        .get("params")
+        .and_then(|params| params.get("planId"))
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+    else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.invalid_params",
+            "errors.plan.invalidParams",
+            "validation",
+        ));
+    };
+    match use_cases.plans.get(plan_id) {
+        Ok(Some(document)) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "planId": plan_id,
+                "planStatus": document.get("status").cloned().unwrap_or(Value::Null),
+                "planDocument": document,
+            }),
+        )),
+        Ok(None) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.not_found",
+            "errors.plan.notFound",
+            "validation",
+        )),
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.store_failed",
+            "errors.plan.storeFailed",
+            "internal",
+        )),
+    }
+}
+
+/// Honest absence helpers: the Local Resolution executor (recipe.resolve),
+/// the job orchestration (job.execute) and the Build Record read face
+/// (record.*) arrive in the next cut — the frozen vocabulary answers a
+/// typed unavailable, never a silent stub.
+fn plan_unavailable(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.plan.unavailable",
+        "errors.plan.unavailable",
+        "unavailable",
+    ))
+}
+
+fn job_unavailable(_state: &HostState, request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.job.unavailable",
+        "errors.job.unavailable",
+        "unavailable",
+    ))
+}
+
+fn record_unavailable(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.record.unavailable",
+        "errors.record.unavailable",
+        "unavailable",
+    ))
 }
 
 fn recipe_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {

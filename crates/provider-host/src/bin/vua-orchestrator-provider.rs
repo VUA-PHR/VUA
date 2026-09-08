@@ -77,11 +77,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // W20 production-use-case command face: the recipe document store lives
     // under the provider data root (AMF production-domain document store).
     let use_cases = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
+        let production_root = std::path::Path::new(&data).join("production");
         vua_provider_host::ProductionUseCaseConfig {
             recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
-                ::new_with_system_clock(
-                    std::path::Path::new(&data).join("production").join("recipes"),
-                )),
+                ::new_with_system_clock(production_root.join("recipes"))),
+            plans: std::sync::Arc::new(vua_orchestrator::PlanDocumentStore
+                ::new(production_root.join("plans"))),
+            evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
+                ::new(production_root.join("evidence"))),
         }
     });
     let input = stdin_reader();
