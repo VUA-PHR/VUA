@@ -214,7 +214,9 @@ fn collect_editors(editor_roots: &[PathBuf], diagnostics: &mut Vec<ManagerDiagno
 /// Reads the first existing VCC settings candidate. The concrete reader
 /// behind the core env engine's `VccSettingsReader` port (proposal 004):
 /// the engine keeps the check item and presence mapping, this side owns
-/// the file reading and schema handling.
+/// the file reading and schema handling. Also the discovery source for the
+/// project-inspection aggregate (M6 T-A), which shares the same union
+/// discipline.
 pub fn read_vcc_settings(
     candidates: &[PathBuf],
     diagnostics: &mut Vec<ManagerDiagnostic>,
@@ -354,7 +356,11 @@ fn top_level_keys(value: &Value) -> Vec<String> {
 
 // --- ALCOM (presence level only; schema is an open spike question) ---
 
-fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiagnostic>) -> AlcomCapability {
+/// Reads the first existing ALCOM settings candidate. Presence-level only:
+/// the settings schema is an open spike question, so the probe reports what
+/// it sees without inventing one. Also the discovery source for the
+/// project-inspection aggregate (M6 T-A).
+pub fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<ManagerDiagnostic>) -> AlcomCapability {
     for path in candidates {
         let metadata = match std::fs::metadata(path) {
             Ok(metadata) => metadata,

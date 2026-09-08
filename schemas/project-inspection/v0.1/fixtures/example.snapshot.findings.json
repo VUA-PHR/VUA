@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "vua.project-inspection/v0.1",
+  "capturedAt": "2026-09-09T02:00:00.000Z",
+  "productionTarget": "2022.3.22f1",
+  "migrationSources": ["2019.4.31f1", "2022.3.6f1"],
+  "projects": [
+    {
+      "path": "D:\\moved-away\\Old Project",
+      "name": "Old Project",
+      "pathPresent": false,
+      "associations": ["vcc_registered"],
+      "unityVersion": null,
+      "unityClassification": null,
+      "manifestPresent": false,
+      "manifestSchemaOk": false,
+      "dependencies": [],
+      "locked": [],
+      "vrchatSdks": [],
+      "mutationStatus": "none",
+      "diagnostics": [
+        {
+          "code": "vua.env_managers.project_path_missing",
+          "severity": "warning",
+          "detail": "D:\\moved-away\\Old Project: registered project path does not exist"
+        }
+      ]
+    },
+    {
+      "path": "C:\\Users\\demo\\VRChat Projects\\Broken Manifest",
+      "name": "Broken Manifest",
+      "pathPresent": true,
+      "associations": ["alcom_registered"],
+      "unityVersion": "2019.4.31f1",
+      "unityClassification": "migration_source",
+      "manifestPresent": true,
+      "manifestSchemaOk": false,
+      "dependencies": [],
+      "locked": [],
+      "vrchatSdks": [],
+      "mutationStatus": "leftover",
+      "diagnostics": [
+        {
+          "code": "vua.project_inspection.manifest_schema_unexpected",
+          "severity": "warning",
+          "detail": "C:\\Users\\demo\\VRChat Projects\\Broken Manifest\\Packages\\vpm-manifest.json: manifest is not valid JSON: expected value at line 1 column 1"
+        }
+      ]
+    }
+  ],
+  "diagnostics": []
+}
