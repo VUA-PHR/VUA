@@ -3,14 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 02:2x（**三树批验收合并**：核心 **W20 第三刀完成**〔Local
-Resolution 执行器＋recipe.resolve 任务＋record.get＋RecipeSaveError Display，
-集成复跑 **cargo 420/0**＋clippy 零告警——M5 关键路径实现完成〕＋桌面 **T-C F6
-项目兼容页面**〔只读呈现＋副本导入入口＋schema/project-inspection v0.1 fixtures〕
-＋环境 **T-A/T-B 只读项目检查＋ALCOM/VCC 兼容矩阵**＋proposal 013〔ProjectCompatPage
-＋snapshot Schema〕——M6 提前开工三包首批验收；桌面四交互形态路由待确认〔1c3c057〕；
-**W25 前置①实现完成〔v0.2 冻结收口待核心声明〕；③W22 实现进行中〔产线 executors
-已接线〕**）
+最近更新：2026-09-09 03:0x（**两批验收合并＋W20 实现切片收口**：核心 **job.execute**
+〔approved-plan 编排通过 Bridge v2——W20 实现切片 closing cut，16a2dc5/2a91d46
+合并 c804b6a〕＋环境 **proposal 014 提出**〔import-as-VUA-copy 写路径任务化语义，
+U3 唯一写路径；待核心/桌面表态→集成仲裁〕＋**project-inspection REGISTRY 行
+补录**〔回应集成提示〕＋record 读面测试补遗＋NoBridge fixture——M5 关键路径①
+**实现完成**〔v0.2 冻结收口声明待核心〕；**W25 三前置：①实现完成、②已落地、
+③W22 实现进行中〔executors 已接线〕**）
 
 ## 工作树指派
 
@@ -164,7 +163,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
-| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 候选推进中（2026-09-09）**：十方法 Schema 冻结件＋桌面 TS 面＋双语协议本（候选）＋**plan/record 读面已落**（ approve 幂等/get＋诚实缺路由/record.get——第三刀前半，集成验收复跑 407→411/0）均已入树；**v0.2 冻结硬前置＝向量＋resolve/job 路由＋全路由消费测试（随第三刀后半）** |
+| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 候选推进中（2026-09-09）**：十方法 Schema 冻结件＋桌面 TS 面＋双语协议本（候选）＋**全路由已落**（recipe save/get/list＋plan.approve/get/list＋**job.execute approved-plan 编排〔closing cut〕**＋record.get——第三刀完成，集成验收复跑 411→420/0）；**v0.2 冻结收口声明待核心**（向量＋全路由消费测试齐备确认——W25 前置①以此为凭） |
 
 ## 开放问题（跨树）
 
@@ -180,6 +179,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | 13 | proposal **011**（核心，W20 设计稿＝009 互审上游）：Recipe v0.3（locked 升格版本锁＋warehouse: 来源＋constraint/locked 分离）＋Local Resolution v0.3（effectiveArtifactMode 选择＋clean 守卫＋fallbackUsed 如实记录）＋**批准计划 approved-plan v0.3 ★新产物**（planHash 锚＋jobs[].resolvedSource＋fingerprint 预检＋无 executed 态）＋production-use-case v0.2 词表（§7 收敛决议：save 整文档＋读面闭集同构 catalog 先例） | 产线/数据/桌面 → 集成 | **✅ 收敛＋W20 冻结切片已验收合并（2026-09-08，0400bee：集成复跑 367/0＋clippy 零告警）**：三域表态齐；schemas/recipe/v0.3/ 三 Schema＋3 正例＋4 负例＋5 项消费测试入树；planRef 形态确认随冻结切片办理（#14 ①）——**W21/W24 实现的硬前置就绪** |
 | 14 | proposal **011** 收敛补记＋W20 冻结切片交付（核心，2026-09-08）：①互审收口——产线两件确认已核（planRef＝job 目录文件投影＋planHash 本地校验采纳；rejected 豁免确认，v2 侧无待审项）；②收敛决议——四产物存储面＝AMF 生产持久域文档库形态（BuildRecordStore 先例，SQLite 表族不扩）、baseRevision 乐观并发归 production-use-case v0.2 命令面、读面闭集定稿、W23 解锁（数据）；③**W20 冻结切片交付**：schemas/recipe/v0.3/（recipe〔sourceRef warehouse 形态＋vpm_copy 锁对象〕＋local-resolution〔sourceKind/fallbackUsed/evidenceIds〕＋**approved-plan 新增**〔planHash 锚＋jobs[].resolvedSource＋无 executed 态＋kind 闭集〕）＋3 正例＋4 负例＋消费测试 5 项（crates/orchestrator/tests/recipe_v03.rs） | 核心 → 集成 | **✅ 已验收合并（2026-09-08，0400bee：集成复跑 367/0＋clippy 零告警）**——W21/W24 硬前置就绪 |
 | 15 | proposal **012**（核心，W22 设计稿）：Build Record v0.3——★planId/planHash/planSchemaVersion 授权锚链＋★jobs[] 逐作业收据聚合（Bridge v2 转抄）＋★planDeviations 类型化计划偏差＋★recoveryPoints[]（互审点 5 兑现）＋recovery 段＋evidenceSummary（evidenceIds 引 W23，本体不内联）＋status 词表加 recovered；语义裁决四条（恢复点登记面/类型化偏差/转抄不解释/存储面沿 011 决议①） | 产线/数据/桌面 → 集成 | **✅ 已接受·W22 冻结切片验收合并（2026-09-08）**：产线三核验点全确认（两澄清照单：有序前缀/1:1 来源粒度）＋两缺口全部吸收——jobs[] 补 `commandId`（收据身份/比对键）＋`replayed`（重放误记可发现）；数据三点确认（evidenceIds 交界/Record 冻结不等 W23/evidenceSummary 最小形状）；集成验收复跑 **370/0**＋clippy 零告警——**recipe v0.3 套件收尾件落地，套件四件全冻结**；W22 实现切片（provider 侧记录面）按锚点后续；桌面 record 读面随 W24（recovered 呈现语义 W24 表态） |
+| 16 | proposal **014**（环境，M6 T-A 延伸）：**「导入为 VUA 管理的副本」写路径**任务化语义——R1 语义＝1.2.0 五项规格照录不扩展（新项目目录＋排除可再生目录与 `.vua/`＋完整 Inspect＋来源关系记录）；R2 确认链（计划含磁盘占用实际统计→用户显式确认→执行→复检）；R6 裁决流程＝核心（任务面/路由/词表）与桌面（交互形态——与 T-C 四项交互形状确认合并处理）表态 → 集成仲裁 → 语义冻结 → 环境实现 | 核心/桌面 → 集成 | **提出（2026-09-09）**：待核心/桌面表态后集成仲裁；裁决前不实现（提案自我约束）；命令面归属与词表路由核心（与 013 同框架） |
 
 ## 待用户裁决
 
