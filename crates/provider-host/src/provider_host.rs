@@ -1900,9 +1900,7 @@ fn plan_request(
     match method {
         "plan.approve" => plan_approve(use_cases, request, request_id, correlation_id),
         "plan.get" => plan_get(use_cases, request, request_id, correlation_id),
-        // plan.list 聚合面随第三刀（record 路由同批）——词表内缺席＝类型化
-        // unavailable，词表外才是 unknown_method。
-        "plan.list" => plan_unavailable(request_id, correlation_id),
+        "plan.list" => plan_list(use_cases, request, request_id, correlation_id),
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -2320,7 +2318,82 @@ fn record_request(
                 )),
             }
         }
-        // record.list 聚合面随第三刀收尾（身份列表已在存储侧就绪）。
+        "record.list" => {
+            let allowed = ["recipeId", "status", "text", "limit", "offset"];
+            let empty = serde_json::Map::new();
+            let params = request
+                .get("params")
+                .and_then(Value::as_object)
+                .unwrap_or(&empty);
+            if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.record.invalid_params",
+                    "errors.record.invalidParams",
+                    "validation",
+                ));
+            }
+            let limit = params
+                .get("limit")
+                .and_then(Value::as_u64)
+                .unwrap_or(50)
+                .clamp(1, 200) as usize;
+            let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+            let text_filter = params
+                .get("text")
+                .and_then(Value::as_str)
+                .unwrap_or_default()
+                .to_lowercase();
+            let recipe_filter = params.get("recipeId").and_then(Value::as_str);
+            let status_filter = params.get("status").and_then(Value::as_str);
+            let mut documents = match use_cases.records.list_documents() {
+                Ok(documents) => documents,
+                Err(_) => {
+                    return FrameOutcome::Response(application_error(
+                        request_id,
+                        correlation_id,
+                        "vua.record.store_failed",
+                        "errors.record.storeFailed",
+                        "internal",
+                    ))
+                }
+            };
+            documents.sort_by_key(|document| {
+                document.get("buildId").and_then(Value::as_str).unwrap_or("").to_owned()
+            });
+            let filtered: Vec<&Value> = documents
+                .iter()
+                .filter(|document| {
+                    let recipe_match = recipe_filter.is_none_or(|filter| {
+                        document.get("recipeId").and_then(Value::as_str) == Some(filter)
+                    });
+                    let status_match = status_filter.is_none_or(|filter| {
+                        document.get("status").and_then(Value::as_str) == Some(filter)
+                    });
+                    let text_match = text_filter.is_empty();
+                    recipe_match && status_match && text_match
+                })
+                .collect();
+            let total = filtered.len();
+            let entries: Vec<Value> = filtered
+                .iter()
+                .skip(offset)
+                .take(limit)
+                .map(|document| {
+                    json!({
+                        "buildId": document.get("buildId").cloned().unwrap_or(Value::Null),
+                        "planId": document.get("planId").cloned().unwrap_or(Value::Null),
+                        "status": document.get("status").cloned().unwrap_or(Value::Null),
+                        "finishedAt": document.get("finishedAt").cloned().unwrap_or(Value::Null),
+                    })
+                })
+                .collect();
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({ "total": total, "entries": entries }),
+            ))
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -2329,6 +2402,98 @@ fn record_request(
             "unavailable",
         )),
     }
+}
+
+/// plan.list: identity listing over stored plans. Closed param set
+/// (catalog.list precedent): recipeId/status/text/limit/offset; unknown
+/// keys are contract errors. Sorted by planId (identity-derived).
+#[allow(clippy::needless_option_as_deref)]
+fn plan_list(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let allowed = ["recipeId", "status", "text", "limit", "offset"];
+    let empty = serde_json::Map::new();
+    let params = request
+        .get("params")
+        .and_then(Value::as_object)
+        .unwrap_or(&empty);
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.plan.invalid_params",
+            "errors.plan.invalidParams",
+            "validation",
+        ));
+    }
+    let limit = params
+        .get("limit")
+        .and_then(Value::as_u64)
+        .unwrap_or(50)
+        .clamp(1, 200) as usize;
+    let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+    let text_filter = params
+        .get("text")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_lowercase();
+    let recipe_filter = params.get("recipeId").and_then(Value::as_str);
+    let status_filter = params.get("status").and_then(Value::as_str);
+
+    let mut documents = match use_cases.plans.list_documents() {
+        Ok(documents) => documents,
+        Err(_) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.plan.store_failed",
+                "errors.plan.storeFailed",
+                "internal",
+            ))
+        }
+    };
+    documents.sort_by_key(|document| {
+        document.get("planId").and_then(Value::as_str).unwrap_or("").to_owned()
+    });
+    let filtered: Vec<&Value> = documents
+        .iter()
+        .filter(|document| {
+            let recipe_match = recipe_filter.is_none_or(|filter| {
+                document.get("recipeId").and_then(Value::as_str) == Some(filter)
+            });
+            let status_match = status_filter.is_none_or(|filter| {
+                document.get("status").and_then(Value::as_str) == Some(filter)
+            });
+            let text_match = text_filter.is_empty()
+                || document
+                    .get("title")
+                    .and_then(Value::as_str)
+                    .map(|title| title.to_lowercase().contains(&text_filter))
+                    .unwrap_or(false);
+            recipe_match && status_match && text_match
+        })
+        .collect();
+    let total = filtered.len();
+    let entries: Vec<Value> = filtered
+        .iter()
+        .skip(offset)
+        .take(limit)
+        .map(|document| {
+            json!({
+                "planId": document.get("planId").cloned().unwrap_or(Value::Null),
+                "recipeId": document.get("recipeId").cloned().unwrap_or(Value::Null),
+                "status": document.get("status").cloned().unwrap_or(Value::Null),
+                "approvedAt": document.get("approvedAt").cloned().unwrap_or(Value::Null),
+            })
+        })
+        .collect();
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({ "total": total, "entries": entries }),
+    ))
 }
 
 fn plan_approve(

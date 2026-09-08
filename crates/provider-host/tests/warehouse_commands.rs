@@ -842,12 +842,14 @@ fn plan_face_without_wiring_and_unknown_methods_are_typed() {
     );
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.invalid_params");
 
-    // The Local Resolution executor arrives in the next cut: the frozen
-    // vocabulary answers a typed unavailable, never a silent stub.
+    // plan.list is served (the identity listing over stored plans); the
+    // Local Resolution executor arrives in the next cut and stays a typed
+    // unavailable via recipe.resolve.
     let frames = run_plan_frames(
         &world, use_cases, "req-plan-unwired", "plan.list", json!({}),
     );
-    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.unavailable");
+    assert_eq!(frames[0]["payload"]["value"]["total"], 0);
+    assert_eq!(frames[0]["payload"]["value"]["entries"], json!([]));
 }
 
 #[test]

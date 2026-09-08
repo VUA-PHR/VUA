@@ -101,6 +101,22 @@ impl RecipeRecordStore {
         ids.sort();
         Ok(ids)
     }
+
+    /// Full listing (documents), sorted by buildId. An absent root is the
+    /// honest empty state (no records yet). Filtering/pagination belongs to
+    /// the application face.
+    pub fn list_documents(&self) -> io::Result<Vec<Value>> {
+        if !self.root.exists() {
+            return Ok(Vec::new());
+        }
+        let mut documents = Vec::new();
+        for id in self.list_ids()? {
+            if let Some(document) = self.get(&id)? {
+                documents.push(document);
+            }
+        }
+        Ok(documents)
+    }
 }
 
 fn validate_id(value: &str) -> io::Result<()> {
