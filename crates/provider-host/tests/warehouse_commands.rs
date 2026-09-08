@@ -497,6 +497,8 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
                 ::new(production_root.join("plans"))),
             evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
                 ::new(production_root.join("evidence"))),
+            records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
+                ::new(production_root.join("records"))),
         }
     };
     let mut output = Vec::new();
@@ -702,6 +704,8 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
             ::new(production_root.join("plans"))),
         evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
             ::new(production_root.join("evidence"))),
+        records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
+            ::new(production_root.join("records"))),
     }
 }
 
@@ -797,4 +801,55 @@ fn plan_face_without_wiring_and_unknown_methods_are_typed() {
         &world, use_cases, "req-plan-unwired", "plan.list", json!({}),
     );
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.unavailable");
+}
+
+#[test]
+fn record_get_reads_the_frozen_record_shape_over_the_wire() {
+    let world = make_world("record-get");
+    let build_id = "019e0000-0000-7000-8000-000000000401";
+    let document = json!({
+        "schemaVersion": "0.3",
+        "buildId": build_id,
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "recipeRevision": 1,
+        "planId": "019e0000-0000-7000-8000-000000000201",
+        "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "planSchemaVersion": "0.3",
+        "environmentId": "019e0000-0000-7000-8000-000000000100",
+        "startedAt": "2026-09-09T00:30:00.000Z",
+        "finishedAt": "2026-09-09T00:31:00.000Z",
+        "status": "succeeded",
+        "inputs": {
+            "recipeDigest": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+            "localResolutionDigest": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+            "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        },
+        "jobs": [],
+        "recoveryPoints": [],
+        "evidenceSummary": {"evidenceIds": []}
+    });
+    let config = use_case_config(&world);
+    config.records.publish(build_id, &document).expect("record published");
+
+    // Positive: the stored record reads back under its identity.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-record-get", "record.get",
+        json!({ "buildId": build_id }),
+    );
+    assert_eq!(frames[0]["payload"]["value"]["buildId"], build_id);
+    assert_eq!(
+        frames[0]["payload"]["value"]["recordDocument"]["status"],
+        "succeeded"
+    );
+
+    // Absent records are the frozen not-found.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-record-miss", "record.get",
+        json!({ "buildId": "019e0000-0000-7000-8000-000000000fff" }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.record.not_found");
+
+    // Missing buildId is a params violation.
+    let frames = run_plan_frames(&world, config, "req-record-noid", "record.get", json!({}));
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.record.invalid_params");
 }

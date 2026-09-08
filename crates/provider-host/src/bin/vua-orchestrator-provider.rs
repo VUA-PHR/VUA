@@ -85,6 +85,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ::new(production_root.join("plans"))),
             evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
                 ::new(production_root.join("evidence"))),
+            records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
+                ::new(production_root.join("records"))),
         }
     });
     let input = stdin_reader();
