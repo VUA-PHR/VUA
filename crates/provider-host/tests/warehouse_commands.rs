@@ -488,9 +488,16 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
             "params": params,
         },
     });
-    let use_cases = vua_provider_host::ProductionUseCaseConfig {
-        recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
-            ::new_with_system_clock(world.base.join("production").join("recipes"))),
+    let use_cases = {
+        let production_root = world.base.join("production");
+        vua_provider_host::ProductionUseCaseConfig {
+            recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
+                ::new_with_system_clock(production_root.join("recipes"))),
+            plans: std::sync::Arc::new(vua_orchestrator::PlanDocumentStore
+                ::new(production_root.join("plans"))),
+            evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
+                ::new(production_root.join("evidence"))),
+        }
     };
     let mut output = Vec::new();
     vua_provider_host::run_provider_host_with_services(
@@ -645,4 +652,149 @@ fn recipe_face_closed_set_and_absence_are_typed() {
         .map(|line| serde_json::from_str(line).unwrap())
         .collect();
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.recipe.unavailable");
+}
+
+fn run_plan_frames(
+    world: &World,
+    use_cases: vua_provider_host::ProductionUseCaseConfig,
+    request_id: &str,
+    method: &str,
+    params: Value,
+) -> Vec<Value> {
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": format!("frame-{request_id}"),
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": request_id,
+            "correlationId": format!("corr-{request_id}"),
+            "kind": "command",
+            "method": method,
+            "params": params,
+        },
+    });
+    let mut output = Vec::new();
+    run_provider_host_with_services(
+        Cursor::new(format!("{frame}
+")),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        None,
+        Some(use_cases),
+    )
+    .expect("frame loop runs");
+    String::from_utf8(output)
+        .unwrap()
+        .lines()
+        .map(|line| serde_json::from_str(line).unwrap())
+        .collect()
+}
+
+fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig {
+    let production_root = world.base.join("production");
+    vua_provider_host::ProductionUseCaseConfig {
+        recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
+            ::new_with_system_clock(production_root.join("recipes"))),
+        plans: std::sync::Arc::new(vua_orchestrator::PlanDocumentStore
+            ::new(production_root.join("plans"))),
+        evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
+            ::new(production_root.join("evidence"))),
+    }
+}
+
+#[test]
+fn plan_approve_flow_is_idempotent_and_read_face_carries_the_status() {
+    let world = make_world("plan");
+    let config = use_case_config(&world);
+    let plan_id = "019e0000-0000-7000-8000-000000000301";
+
+    // Seed a draft plan directly into the plan store (the resolve executor
+    // arrives in the next cut; the approval face is independent of it).
+    config
+        .plans
+        .publish_draft(
+            plan_id,
+            &json!({
+                "schemaVersion": "0.3",
+                "planId": plan_id,
+                "recipeId": "019e0000-0000-7000-8000-000000000001",
+                "recipeRevision": 1,
+                "localResolutionId": "019e0000-0000-7000-8000-000000000202",
+                "environmentId": "019e0000-0000-7000-8000-000000000100",
+                "createdAt": "2026-09-09T00:30:00.000Z",
+                "approvedAt": "2026-09-09T00:30:00.000Z",
+                "planHash": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+                "fingerprint": {"expectedProjectFingerprint": "projfp-1"},
+                "target": {"avatarInstanceId": "avatar_root"},
+                "jobs": [{"jobId": "019e0000-0000-7000-8000-000000000210",
+                          "kind": "install_modular_asset", "inputs": {}}],
+                "status": "draft"
+            }),
+        )
+        .expect("draft published");
+
+    // plan.get carries the draft status.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-plan-get", "plan.get",
+        json!({ "planId": plan_id }),
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "draft");
+
+    // approve flips draft -> approved (the explicit user authorization act).
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-approve", "plan.approve",
+        json!({ "planId": plan_id }),
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
+
+    // Approving again is an idempotent success.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-approve-2", "plan.approve",
+        json!({ "planId": plan_id }),
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
+
+    // plan.get now carries the approved status.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-plan-get-2", "plan.get",
+        json!({ "planId": plan_id }),
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
+
+    // Unknown plan is the frozen not-found.
+    let frames = run_plan_frames(
+        &world, config.clone(), "req-plan-miss", "plan.get",
+        json!({ "planId": "019e0000-0000-7000-8000-000000000fff" }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.not_found");
+
+    // Superseded plans refuse approval with a typed conflict.
+    config.plans.supersede(plan_id).unwrap();
+    let frames = run_plan_frames(
+        &world, config, "req-approve-super", "plan.approve",
+        json!({ "planId": plan_id }),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.not_approvable");
+}
+
+#[test]
+fn plan_face_without_wiring_and_unknown_methods_are_typed() {
+    let world = make_world("plan-guards");
+    let use_cases = use_case_config(&world);
+
+    // Missing planId is a params violation.
+    let frames = run_plan_frames(
+        &world, use_cases.clone(), "req-plan-noid", "plan.approve", json!({}),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.invalid_params");
+
+    // The Local Resolution executor arrives in the next cut: the frozen
+    // vocabulary answers a typed unavailable, never a silent stub.
+    let frames = run_plan_frames(
+        &world, use_cases, "req-plan-unwired", "plan.list", json!({}),
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.plan.unavailable");
 }
