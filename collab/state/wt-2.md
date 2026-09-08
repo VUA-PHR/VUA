@@ -33,6 +33,9 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
   （拒绝码闭集随 Schema 冻结）；④审计面与 W23 evidenceIds 同构（sourceRef.
   taskCorrelation 引用）；⑤桌面 T-C 接线待两命令面（013 检测＋014 写命令）
   冻结。
+- **014 冲突融合（29152c2）**：核心表态与桌面表态双侧保留——014 三域表态齐
+  （待集成仲裁）；桌面字段请求（磁盘预估/排除清单/目标路径）已在核心表态
+  §1 落 Schema 确认。
 ## 本轮交付（c486318 后，本 tick 续）
 - **合并 main**（M6 环境 T-A/T-B 批＋桌面 T-C 检测批＋proposal 013 入树）——
   baseline 追平；状态文件 consolidate（合并带入的 wt-2 状态与本轮条目冲突
