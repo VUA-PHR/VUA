@@ -2,21 +2,23 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: c8e034e
-updated: 2026-09-08
+baseline_commit: e8e32a9
+updated: 2026-09-09
 ---
 ## 当前焦点
-待命（监视轮）。**W23 存储面已由核心落地**（W20 实现第一刀 0cbafa7：EvidenceStore
-文档库，AMF 生产持久域，BuildRecordStore 先例 hard_link exactly-once；serde 类型
-锚定我方冻结 Schema）——本树合并核实：全量 **396 通过 0 失败**＋clippy 零告警，
-追加只读语义（resolution 为独立后续事实不改写本体）与 W23 冻结语义一致，
-跨域消费兼容成立。数据 M5 行（W23）全链完成；下一切片待 M5 分配。
-## 自基线交付（6c4d989 后，十七 tick）
-- 无新代码交付（不编造工作）。维护+核实轮：合并 main（806298e 前身→c8e034e，
-  核心 W20 第一刀＋产线 W21 接线批＋桌面 M5 呈现批＋010 符合性声明入档案批）
-  追平；核实核心 EvidenceStore 锚定 W23 冻结 Schema（跨域消费兼容）。
-- 历史交付（已全部落账）：010 符合性声明（72d7f7c 入验收档案）、W23 冻结、
-  bdl-commands v0.3 冻结、挂点批、011/012 表态。
+待命（监视轮）。**M5 关键路径实现完成**：核心 W20 第三刀全部交付（Local
+Resolution 执行器＋recipe.resolve＋record.get，集成验收 420/0；production-use-
+case v0.2 冻结收口声明待核心）。**M6 提前开工首批已验收**（环境 T-A/T-B＋
+ALCOM/VCC 兼容矩阵＋project-inspection v0.1＋桌面 T-C F6 页面——无数据行；
+U3 配合点「保留来源关系」随 T-C 实现深化浮现）。数据 M5 行（W23）全链完成；
+数据下一切片待分配或配合点浮现。
+## 自基线交付（6c4d989 后，十八 tick）
+- 无新代码交付（不编造工作）。维护轮：合并 main（fd26b8e→e8e32a9，M6 三包
+  首批＋核心 W20 第三刀＋桌面 T-C 批）追平消解失鲜；合并后 cargo test --
+  workspace **420 通过 0 失败**（净增 13）＋clippy --all-targets -D warnings
+  零告警（2026-09-09 本机）。
+- 历史交付（已全部落账）：bdl-commands v0.3 冻结、W23 冻结＋核心存储实现、
+  010 挂点批＋六承诺符合性声明（72d7f7c 入验收档案）、011/012 表态。
 ## 阻塞
 - 无。
 ## 下次合并意图
