@@ -34,7 +34,8 @@
       "additionalProperties": false,
       "required": [
         "planId",
-        "planStatus"
+        "planStatus",
+        "schemaVersion"
       ],
       "properties": {
         "planId": {
@@ -42,6 +43,9 @@
         },
         "planStatus": {
           "$ref": "#/$defs/planStatus"
+        },
+        "schemaVersion": {
+          "const": "0.2"
         }
       }
     }

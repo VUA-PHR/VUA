@@ -3,10 +3,12 @@
 [简体中文](production-use-case-v0.2_ZH.md) | [English](production-use-case-v0.2_EN.md)
 
 > Document version: 0.2
-> Status: **Candidate** (2026-09-09) — the ten method schemas are in
-> `methods/`; the positive/negative vectors and the full-route consumer
-> tests complete the freeze prerequisites in the third cut (the v0.1
-> lesson: never repeat a freeze in name only)
+> Status: **Frozen** (2026-09-09) - the freeze hard-prerequisites are all
+> in place: ten method schemas (`methods/`), 24 positive/negative vectors
+> (`examples/`: 10 positive requests + 10 positive results + 4 negatives),
+> and vector-driven consumer tests
+> (`crates/provider-host/tests/production_use_case_vectors.rs`, 3 tests).
+> The v0.1 lesson (never repeat a freeze in name only) is honored here
 > Machine-readable vocabulary: `schemas/production-use-case/v0.2/methods/`
 > (ten method schemas) and `schemas/recipe/v0.3/` (recipe / local-resolution /
 > approved-plan / build-record documents)

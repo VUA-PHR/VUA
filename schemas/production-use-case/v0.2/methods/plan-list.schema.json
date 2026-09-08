@@ -91,7 +91,8 @@
       "additionalProperties": false,
       "required": [
         "total",
-        "entries"
+        "entries",
+        "schemaVersion"
       ],
       "properties": {
         "total": {
@@ -102,6 +103,9 @@
           "items": {
             "$ref": "#/$defs/entry"
           }
+        },
+        "schemaVersion": {
+          "const": "0.2"
         }
       }
     }

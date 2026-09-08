@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.2",
+  "buildId": "019e0000-0000-7000-8000-000000000401",
+  "recordDocument": {
+    "schemaVersion": "0.3",
+    "buildId": "019e0000-0000-7000-8000-000000000401",
+    "recipeId": "019e0000-0000-7000-8000-000000000001",
+    "recipeRevision": 1,
+    "planId": "019e0000-0000-7000-8000-000000000201",
+    "planHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "planSchemaVersion": "0.3",
+    "environmentId": "019e0000-0000-7000-8000-000000000100",
+    "startedAt": "2026-09-09T01:12:00.000Z",
+    "finishedAt": "2026-09-09T01:13:00.000Z",
+    "status": "succeeded",
+    "inputs": {
+      "planHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "jobs": [],
+    "recoveryPoints": [],
+    "evidenceSummary": {
+      "evidenceIds": []
+    }
+  }
+}

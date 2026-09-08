@@ -1,0 +1,31 @@
+{
+  "schemaVersion": "0.2",
+  "method": "recipe.save",
+  "params": {
+    "recipeDocument": {
+      "formatVersion": "0.3",
+      "recipeId": "019e0000-0000-7000-8000-000000000001",
+      "revision": 1,
+      "title": "Sailor Set",
+      "target": {
+        "avatarInstanceId": "avatar_root"
+      },
+      "assets": [
+        {
+          "id": "avatar_asset",
+          "sourceRef": {
+            "warehouseItemId": "019e0000-0000-7000-8000-000000000110",
+            "role": "original"
+          }
+        }
+      ],
+      "instances": [
+        {
+          "id": "avatar_root",
+          "assetId": "avatar_asset"
+        }
+      ],
+      "relations": []
+    }
+  }
+}

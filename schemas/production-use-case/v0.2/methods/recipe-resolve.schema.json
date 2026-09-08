@@ -56,7 +56,8 @@
       "required": [
         "taskId",
         "correlationId",
-        "state"
+        "state",
+        "schemaVersion"
       ],
       "properties": {
         "taskId": {
@@ -67,6 +68,9 @@
         },
         "state": {
           "$ref": "#/$defs/state"
+        },
+        "schemaVersion": {
+          "const": "0.2"
         }
       }
     }

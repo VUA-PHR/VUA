@@ -30,7 +30,8 @@
       "additionalProperties": false,
       "required": [
         "buildId",
-        "recordDocument"
+        "recordDocument",
+        "schemaVersion"
       ],
       "properties": {
         "buildId": {
@@ -38,6 +39,9 @@
         },
         "recordDocument": {
           "$ref": "#/$defs/recordDocument"
+        },
+        "schemaVersion": {
+          "const": "0.2"
         }
       }
     }
