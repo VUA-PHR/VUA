@@ -25,8 +25,8 @@ pub use eac_probe::{
     EAC_PROBE_SCHEMA_VERSION,
 };
 pub use eac_verify::{
-    verify_candidate, CandidateVerificationV01, SignatureState, VerificationCheck, Verdict,
-    EAC_VERIFY_SCHEMA_VERSION,
+    read_process_image_path_readonly, verify_candidate, CandidateVerificationV01,
+    SignatureState, VerificationCheck, Verdict, EAC_VERIFY_SCHEMA_VERSION,
 };
 #[cfg(windows)]
 pub use eac_verify::eac_verify_windows_signature_for_test;

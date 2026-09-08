@@ -76,7 +76,13 @@ pub struct CandidateVerificationV01 {
 pub const EAC_VERIFY_SCHEMA_VERSION: &str = "vua.eac_verify/v0.1";
 
 /// Reads the executable path of `pid` (read-only query). Windows-only;
-/// other targets report unreadable (the product is Windows-first).
+/// other targets report unreadable (the product is Windows-first). The
+/// public wrapper serves the W25 window's B2b run: the first real
+/// allowlist entry is drafted from this path (R2 — evidence, not fixture).
+pub fn read_process_image_path_readonly(pid: u32) -> Option<String> {
+    read_process_image_path(pid)
+}
+
 fn read_process_image_path(pid: u32) -> Option<String> {
     #[cfg(windows)]
     {
