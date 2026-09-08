@@ -6,8 +6,9 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
-**W20 第三刀 record 读面已交付（c31b01e：RecipeRecordStore＋record.get 路由）**；
-剩余＝recipe.resolve 执行器＋job.execute（Bridge v2 编排，产线冻结批对接）。
+**W20 第三刀全部交付（34d0075：Local Resolution 执行器＋recipe.resolve 任务
+＋record.get 读面）**，交集成验收。剩余＝job.execute（Bridge v2 编排对接，
+产线 v2 冻结批已就绪——build_job_command 组装函数 crate-visible）。
 **production-use-case v0.2 协议本双语交付（50904fe，候选态——回应集成催件
 ①）**：十方法 Schema 已落、双语协议本候选＋REGISTRY 行（候选——向量＋全
 路由消费测试硬前置随第三刀后冻结，不重复 v0.1 名不副实冻结的教训）。
@@ -18,6 +19,25 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 扩展 93f841c＋36b14ff 补遗；执行语义规格 471a4ee）；执行序②核心半边
 （6b4f21a）与 W22 冻结切片（c486318）、W20 冻结切片（0400bee）均已交/经集成
 验收。导入挂点（010 路径 A）设计已内联交数据落实。#7 残余观察态维持。
+## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
+- **resolve 执行器＋record.get（34d0075，核心域 628 行）**：
+  - **run_local_resolution**（011 §5 最小诚实语义）：读 Recipe 文档→composed
+    global 读时求值→逐 asset 解析（warehouse 来源走冻结 entry detail 查询；
+    effectiveArtifactMode=generate_vpm 优先 Clean 的 generated_vpm 副本，否则
+    回落 original 并标记 fallbackUsed；original 按在场解析〔检查是独立流程〕；
+    provider 来源无导入记录＝诚实 missing）→缺失资产发布 W23 证据（身份引用
+    ＋localResolutionId 链）→relations 投影 jobs（缺失源作业跳过并上报）→
+    生成 **approved-plan draft**（planId/planHash〔去 status/planHash 规范
+    SHA-256〕/jobs[].resolvedSource/status=draft）→PlanDocumentStore；
+  - **recipe.resolve 路由**：任务化提交（共享任务权威；缺任务权威＝
+    vua.recipe.resolve_unavailable 类型化缺席）；Done payload 携带
+    planId/missingCount/evidenceIds/skippedJobIds；
+  - **record.get**：RecipeRecordStore（build-record v0.3 不可变历史文档库，
+    hard_link exactly-once/身份版本校验）＋路由（正例/缺席/缺参类型化）；
+  - **消费测试**：resolve 垂直流（真实导入→解析→draft→批准全链，
+    warehouse_commands 16/16 全绿）；
+  - **证据（2026-09-09 本机）**：workspace 53 套全绿＋clippy -D warnings
+    零告警。
 ## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
 - **record 读面（c31b01e，本 tick 续）**：RecipeRecordStore（orchestrator，
   AMF 文档库——build-record v0.3 不可变历史：hard_link exactly-once/身份与
