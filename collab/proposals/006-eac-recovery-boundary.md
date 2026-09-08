@@ -83,4 +83,23 @@ R1–R9 逐项对照权威核对，**无修订，仲裁通过**：
 状态：**已接受（用户整体批准 R1–R9，无修订，2026-09-08）**。M6 窗口实现授权生效；
 实现切片开工前先合并 main 最新，按 R9 与上述八点语义执行。
 
-（已接受，M6 开窗后实现）
+### 实现落账（R1a 只读侦测切片，环境，2026-09-09）
+
+M6 提前授权范围含本 EAC 包（outline 2.0.9 拆行，BOARD M6 行）。按 R9 纪律交付第一
+切片（226dd41 后续批 c07ad47），请求集成验收：
+
+- **R1a 只读侦测已实现**：`crates/project-manager/src/eac_probe.rs`（probe_eac）＋
+  `schemas/eac-probe/v0.1/probe.schema.json`。进程表只读快照（Toolhelp32 注入源，
+  零写入零终止）；EAC/VRChat 进程分类（名称表大小写不敏感，无关进程永不成为
+  发现）；R4 活跃会话判定（VRChat 在列=活跃会话）；就绪结论三态＋guidance 码
+  （编辑器矩阵纪律）；**八点语义第 2 点落字段**——terminationCapability v0.1
+  冻结单态 unavailable（allowlist_empty_no_machine_evidence），比关闭更强；
+- **R8 纪律**：CI 合成进程夹具（5 项测试零真实 EAC 交互；枚举失败=类型化错误
+  非清洁账单；确定性断言）；真机探测为 #[ignore] 手动测试（输出进证据记录，
+  零写入零终止）；
+- **边界**：R1b 终止面（确认链/核验/终止原语/允许清单数据面）为独立后续切片；
+  路径核验（R3 的 QueryFullProcessImageName）属终止面职责，读面如实报 null；
+- **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零告警；
+  真机探测待窗口执行（#[ignore]）。
+
+（已接受；R1a 已实现待验收，R1b 终止面后续切片。）
