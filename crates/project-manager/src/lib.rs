@@ -28,6 +28,8 @@ pub use eac_verify::{
     verify_candidate, CandidateVerificationV01, SignatureState, VerificationCheck, Verdict,
     EAC_VERIFY_SCHEMA_VERSION,
 };
+#[cfg(windows)]
+pub use eac_verify::eac_verify_windows_signature_for_test;
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
     EnvironmentManagersSnapshotV01, ManagerRoots, ProjectAssociation, ProjectFinding,

@@ -38,8 +38,10 @@ pub mod codes {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum SignatureState {
-    /// v0.1 constant: the WinVerifyTrust binding is not wired yet; the
-    /// honest state for every candidate is unverified.
+    /// WinVerifyTrust accepted the file (status 0).
+    Verified,
+    /// No signature present, or the trust provider refused/failed — R3
+    /// treats this as "cannot be verified" and refuses.
     Unverified,
 }
 
@@ -214,4 +216,97 @@ pub fn verify_candidate(
         signature_state,
         checks,
     }
+}
+
+/// Test hook: exposes the Windows signature verdict for a path without
+/// the full candidate flow (used by the allowlist/verify tests).
+#[cfg(windows)]
+pub fn eac_verify_windows_signature_for_test(image_path: &str) -> (SignatureState, String) {
+    verify_signature_windows(image_path)
+}
+
+#[cfg(windows)]
+fn verify_signature_windows(image_path: &str) -> (SignatureState, String) {
+    use std::mem::size_of;
+    use windows_sys::Win32::Foundation::{CRYPT_E_SECURITY_SETTINGS,
+        TRUST_E_NOSIGNATURE, TRUST_E_PROVIDER_UNKNOWN};
+    use windows_sys::Win32::Security::WinTrust::{
+        WinVerifyTrust, WINTRUST_ACTION_GENERIC_VERIFY_V2, WINTRUST_DATA, WINTRUST_DATA_0,
+        WINTRUST_FILE_INFO, WTD_CHOICE_FILE, WTD_REVOKE_NONE, WTD_STATEACTION_CLOSE,
+        WTD_STATEACTION_VERIFY, WTD_UI_NONE,
+    };
+
+    let wide: Vec<u16> = image_path
+        .encode_utf16()
+        .chain(std::iter::once(0))
+        .collect();
+    let mut file_info = WINTRUST_FILE_INFO {
+        cbStruct: size_of::<WINTRUST_FILE_INFO>() as u32,
+        pcwszFilePath: wide.as_ptr(),
+        hFile: std::ptr::null_mut(),
+        pgKnownSubject: std::ptr::null_mut(),
+    };
+    let mut trust_data = WINTRUST_DATA {
+        cbStruct: size_of::<WINTRUST_DATA>() as u32,
+        pPolicyCallbackData: std::ptr::null_mut(),
+        pSIPClientData: std::ptr::null_mut(),
+        dwUIChoice: WTD_UI_NONE,
+        fdwRevocationChecks: WTD_REVOKE_NONE,
+        dwUnionChoice: WTD_CHOICE_FILE,
+        Anonymous: WINTRUST_DATA_0 {
+            pFile: &mut file_info as *mut WINTRUST_FILE_INFO,
+        },
+        dwStateAction: WTD_STATEACTION_VERIFY,
+        hWVTStateData: std::ptr::null_mut(),
+        pwszURLReference: std::ptr::null_mut(),
+        dwProvFlags: 0,
+        dwUIContext: 0,
+        pSignatureSettings: std::ptr::null_mut(),
+    };
+    let mut action = WINTRUST_ACTION_GENERIC_VERIFY_V2;
+
+    let status = unsafe {
+        WinVerifyTrust(
+            std::ptr::null_mut(),
+            &mut action as *mut _,
+            &mut trust_data as *mut WINTRUST_DATA as *mut core::ffi::c_void,
+        )
+    };
+    // Release any state the VERIFY step opened (required by the contract
+    // whenever dwStateAction is WTD_STATEACTION_VERIFY).
+    trust_data.dwStateAction = WTD_STATEACTION_CLOSE;
+    unsafe {
+        WinVerifyTrust(
+            std::ptr::null_mut(),
+            &mut action as *mut _,
+            &mut trust_data as *mut WINTRUST_DATA as *mut core::ffi::c_void,
+        )
+    };
+
+    match status {
+        0 => (
+            SignatureState::Verified,
+            format!("WinVerifyTrust accepted {image_path}"),
+        ),
+        TRUST_E_NOSIGNATURE => (
+            SignatureState::Unverified,
+            format!("no signature present: 0x{status:08X}"),
+        ),
+        TRUST_E_PROVIDER_UNKNOWN | CRYPT_E_SECURITY_SETTINGS => (
+            SignatureState::Unverified,
+            format!("trust provider/configuration refused: 0x{status:08X}"),
+        ),
+        other => (
+            SignatureState::Unverified,
+            format!("signature verification failed: 0x{other:08X}"),
+        ),
+    }
+}
+
+#[cfg(not(windows))]
+fn verify_signature_windows(image_path: &str) -> (SignatureState, String) {
+    (
+        SignatureState::Unverified,
+        format!("signature verification requires Windows: {image_path}"),
+    )
 }

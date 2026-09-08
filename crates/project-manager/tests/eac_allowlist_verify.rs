@@ -180,7 +180,7 @@ fn snapshot_entry(pid: u32, name: &str, path: Option<&str>) -> vua_project_manag
 }
 
 #[test]
-fn verification_reports_every_check_and_refuses_on_the_unverified_signature() {
+fn verification_refuses_when_the_signature_check_fails() {
     let allowlist = load_allowlist(
         &serde_json::to_string(&json!({
             "schemaVersion": EAC_ALLOWLIST_SCHEMA_VERSION,
@@ -258,6 +258,26 @@ fn verification_refuses_name_mismatch_and_vanished_candidates() {
         .any(|check| check.code == "vua.eac_verify.process_not_found"));
 
     cleanup(&unique_dir("unused"));
+}
+
+#[cfg(windows)]
+#[test]
+fn winverifytrust_refuses_an_unsigned_or_missing_file() {
+    // A nonexistent path must come back Unverified with a typed detail,
+    // never a guess or a panic.
+    let report = vua_project_manager::eac_verify_windows_signature_for_test(
+        r"C:\definitely\not\a\real\file.exe",
+    );
+    assert_eq!(report.0, SignatureState::Unverified);
+    assert!(report.1.contains("0x"), "detail carries the status code");
+
+    // The test executable itself is (typically) unsigned — still Unverified,
+    // still a clean typed result.
+    let self_path = std::env::current_exe().unwrap();
+    let report = vua_project_manager::eac_verify_windows_signature_for_test(
+        &self_path.to_string_lossy(),
+    );
+    assert_eq!(report.0, SignatureState::Unverified);
 }
 
 /// Real-machine re-verification (ignored): enumerate a real EAC/VRChat
