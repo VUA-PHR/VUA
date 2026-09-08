@@ -3,13 +3,12 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 00:2x（**M5 关键路径里程碑：核心 W20 第二刀验收合并**
-〔4849958：production-use-case **v0.2 十方法 Schema 冻结件**＋RecipeDocumentStore
-〔baseRevision 乐观并发〕＋provider-host recipe 命令面〔save/get/list 三路由，
-resolve/plan/job/record 第三刀随锚点〕；集成复跑 **401/0**＋clippy 零告警；
-**协议本 v0.2 文档与 REGISTRY 升版待核心批**〕＋产线 W21 备案批〔W21 code side
-fully accepted，W25 前置 1/3 状态〕＋wt-5 兼容确认批已并入；W25 前置②已落地，
-①推进中、③待①）
+最近更新：2026-09-09 00:4x（**production-use-case v0.2 双端就绪**：核心十方法
+Schema 冻结件〔4849958，401/0〕＋桌面十方法 TS 面自并〔099fbf0，桌面镜像登记，
+桌面 check 397 测试＋leak 零泄漏复跑确认〕＋产线 **W21 信封桥接验收合并**
+〔1438305：冻结 v2 形状投影 UnityCommand（93f841c 扩展）逐字段交叉验证；复跑
+**402/0**〕；**协议本 v0.2 文档与 REGISTRY 升版待核心批**；W25 前置①推进中
+〔第二刀已验收，第三刀随锚点〕、②已落地、③待①）
 
 ## 工作树指派
 
