@@ -8,6 +8,7 @@
 mod assembly;
 mod booth_extraction;
 mod build_record;
+mod production_evidence;
 mod capability;
 mod contracts;
 mod editor_targets;
@@ -36,6 +37,10 @@ pub use assembly::{
 };
 pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
+};
+pub use production_evidence::{
+    EvidenceKind, EvidenceResolution, EvidenceSourceRef, EvidenceStore, EvidenceSubject,
+    ProductionEvidenceV01, PRODUCTION_EVIDENCE_SCHEMA_VERSION,
 };
 pub use build_record::{
     wire_v02, BridgeJobEvidenceV01, BridgeSummary, BuildRecordStatus, BuildRecordStore,
