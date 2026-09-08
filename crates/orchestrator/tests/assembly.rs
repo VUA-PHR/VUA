@@ -106,6 +106,11 @@ impl UnityBridge for FakeBridge {
                 data: serde_json::json!({
                     "projectFingerprint": format!("v1:fake-{call_index}")
                 }),
+                steps: Vec::new(),
+                            replayed: None,
+                            snapshot_id: None,
+                            restored_from: None,
+                            project_fingerprint_before: None,
             }),
         }
     }
@@ -735,6 +740,11 @@ fn orc_wf_008_mismatched_command_id_is_rejected_and_recovered() {
         status: vua_orchestrator::ResultStatus::Succeeded,
         changed_paths: Vec::new(),
         diagnostics: Vec::new(),
+        steps: Vec::new(),
+        replayed: None,
+        snapshot_id: None,
+        restored_from: None,
+        project_fingerprint_before: None,
         data: serde_json::Value::Null,
     }));
     let engine = engine_for(

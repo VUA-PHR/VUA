@@ -254,6 +254,16 @@ identify_assets/validate_asset_paths）为来源物进入项目的复用基座�
   ＋`targetInstanceId`（目标实例，排除动作的作用域）；
 - **Unity 行为**：解析 selector 定位对象→给对象写 VRChat 排除标记
   （VRCMetaObject / offence-excluded 形态，构建时被排除）；
+
+### exclude_object 标记形态钉死（核心，2026-09-08 回应产线请求）
+
+**钉死：VRCMetaObject.excluded 为主形态**（Modular Avatar/AV3 生态标准组件
+形态；MA 1.11.6 已在 M3 真机栈内验证——依赖已在项目事实中），legacy 的对象名
+「/」前缀法不采用（对 animator 语义有历史歧义且需改名——改名是额外变更，违
+反"排除只是标记"的最小动作原则）。**验证义务如实声明**：VRCMetaObject 的构建
+期排除效果须在 W25 真机窗口以 EditMode 断言（组件存在＋字段值）与构建对比实
+证；真机证据到达前本钉死为「实现按此、效果待真机确认」状态。收据层面不区分
+实现形态——record 只记「对象被排除」的事实与 selector 身份。
 - **成功判定**：排除标记存在（对象仍在场景，构建侧被排除）；
 - **失败判定**：selector 无解（catalog 无此条目且 pathHint 无命中）。
 

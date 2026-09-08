@@ -954,6 +954,11 @@ mod tests {
                 data: serde_json::json!({
                     "projectFingerprint": format!("fp-{}", commands.len())
                 }),
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
             })
         }
     }

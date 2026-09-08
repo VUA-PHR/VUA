@@ -6,17 +6,37 @@ baseline_commit: 2454a71
 updated: 2026-09-08
 ---
 ## 当前焦点
-**四计划 kind 执行语义规格交付（471a4ee，回应产线 W21 执行内核前置请求）**：
-四 kind（install_modular_asset/attach_to_bone/exclude_object/set_object_active）
-的 inputs 定型＋Unity 行为＋成功/失败判定＋v1 桥基座映射写入 011；approved-plan
-inputs 勘误（补 localTransform＋结构化 selector——原冻结字段集不完备，实现未
-消费前同批补齐，产线 v2 修订先例）＋勘误向量 3＋消费测试至 9 项。**执行序②核心
+**W21 Rust 侧收口前置两件到位**：①UnityOperation/UnityPayload/UnityResult
+扩展交付（93f841c＋36b14ff 补遗——两 fixture 文件曾漏暂存已补；跨域测试构造
+机械跟随已声明）；②四计划 kind 执行语义规格（471a4ee，见下）。**执行序②核心
 半边交付（6b4f21a：warehouse.import wire 路由＋命令面信封升 v0.3）**；W22 冻结切片（c486318）与 W20 冻结切片（0400bee，370/0）均已交/经
 集成验收。导入挂点（010 路径 A）为 acquisition 域切片，代码级设计已内联 010
 交数据落实；generateVpm 的 importCorrelationId 透传待数据 spec 字段落地后核心
 同批扩展（当前手动发起不带，行为诚实）。W20 实现切片（production-use-case
 v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
+## 本轮追加交付（da76323 后，收尾时段安全收尾件）
+- **合并 main**（执行序②收口批：数据挂点落地＋387/0 复跑；产线 prelude 8fcff01
+  ＋C# 第一刀批入树）——执行序②全链收口；
+- **两件表态（collab 内联）**：①信封扩展请求（产线 8fcff01）——**已由 93f841c
+  ＋36b14ff 交付**（UnityOperation 两变体＋Payload 四字段＋Result 收据字段＋
+  新类型；产线 prelude 为独立 serde 类型，接线时直接消费 core 信封），待集成
+  验收后即解锁产线接线；②exclude_object 标记形态钉死（011 内联）：**钉死
+  VRCMetaObject.excluded 主形态**（MA 生态标准，MA 1.11.6 已在 M3 真机栈），
+  legacy「/」前缀不采用（改名违反最小动作原则）；W25 真机实证义务如实声明
+  （组件存在＋字段值断言＋构建对比）。
 ## 本轮追加交付（c486318 后）
+- **UnityOperation/UnityPayload/UnityResult 扩展（93f841c＋36b14ff 补遗，回应
+  产线协作请求①，形状由冻结 unity-bridge v2 钉死）**：UnityOperation 增
+  ExecuteProductionJob/RestoreProject 两变体（is_mutating=true——变更操作受
+  快照/指纹 fencing）＋workflow 标签两条；UnityPayload 增 plan_hash/
+  plan_schema_version/plan_ref/snapshot_id（camelCase 对齐 v2）；UnityResult
+  增 steps（UnityStepReceipt 逐字转抄 v2 data.steps）/replayed/snapshot_id/
+  restored_from/project_fingerprint_before＋新类型四枚（UnityStepReceipt/
+  UnityStepStatus/UnityResolvedSource/UnitySourceKind）；**跨域机械跟随（已
+  声明）**：unity-bridge 三测试文件＋acquisition 测试 fixture 的 UnityResult
+  构造补字段（仅字段存在性，零行为变更）＋36b14ff 补 93f841c 漏暂存的两
+  fixture 文件；**证据（2026-09-08 本机）**：workspace 52 套全绿＋clippy
+  -D warnings 零告警；
 - **执行序②核心半边（6b4f21a）**：provider-host `warehouse.import` wire 路由
   （bdl-commands v0.3 词表）——params 闭集 { sourceFolders }（非空数组/非空
   string，冻结负例向量＝invalid_params 契约错误）；回执＝冻结 v0.3 任务受理
@@ -31,10 +51,7 @@ v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
   读时求值→generate_vpm 时 submit_generate_vpm（importCorrelationId＝导入
   correlation）；六承诺逐条对应；generateVpm 路由透传待 spec 字段落地同批。
 ## 自基线交付（b23c414 后，本 tick 五提交）
-- **合并维护**：main 两轮（2454a71 侧 20 笔：数据 bdl-commands v0.3 冻结验收
-  合并〔schemas/bdl-commands/v0.3/ 入树〕＋集成验收流转批）merge 并入
-  slot/wt-2。
-- **proposal 012 收敛·冻结切片（本轮追加提交）**：
+- **proposal 012 收敛·冻结切片**：
   - 三域表态吸收：产线三核验点全确认＋两缺口吸收（jobs[] 补 commandId 收据
     身份/比对键＋replayed 重放转抄——误记可发现）＋两澄清（有序前缀/1:1 来源
     粒度）；数据三点确认（evidenceIds 交界同构/Record 冻结不等 W23/
@@ -48,62 +65,37 @@ v0.2 命令面＋记录面）按锚点后续。#7 残余观察态维持。
   - 012 内联：产线/数据表态转内联（照录）＋收口决议节（吸收记录）。
 - **proposal 012 起草（W22 设计稿）**：
   - **build-record v0.3 形状草案**：★新增 planId/planHash/planSchemaVersion
-    （授权来源锚链，对齐 009 词汇——inputs.planDigest 更名 planHash）；★新增
-    jobs[]（逐作业收据聚合＝Bridge v2 转抄：jobId/kind/planHash 回显/dryRun/
-    status 含 rejected/resolvedSourceUsed 实际消费来源/changedPaths/
-    diagnostics/rejectReason 条件必填）；★新增 planDeviations（类型化计划
-    偏差：source_fallback/guard_skip/partial_completion，自由细节走
-    diagnostics）；★新增 recoveryPoints[]（009 互审点 5 承诺兑现：snapshotId
-    产线分配/phase 阶段标识/createdAt）；★新增 recovery 段（restored/
-    restoredFrom 引用/receipt 两态/decisionId）；★新增 evidenceSummary
-    （evidenceIds 引用 W23，本体不内联）；status 词表加 recovered（与 M3
-    material 线 BuildRecordStatus::Recovered 同名同义，两线两套 Schema 语义
-    对齐不合并）；
-  - **语义裁决四条**：恢复点登记面（互审点 5 兑现：产线分配、本 Record 登记、
-    restoredFrom 引用；最小实现=pre_job 单点）；计划差异只记类型化偏差（自由
-    细节走 diagnostics；差异不改计划授权——superseded 才是新授权）；逐作业
-    聚合＝转抄不再解释（resolvedSourceUsed 与计划声明不一致必须进
-    planDeviations 双记录互证）；存储面沿 011 收敛决议①（AMF 文档库形态）；
-  - **核验点路由**：产线（jobs[]↔v2 收据映射缺漏/快照时点匹配/rejected 归类
-    为准入拒绝非执行偏差）、数据（evidenceIds 交界与冻结时序——Record 冻结
-    不等 W23）、桌面（读面时间线＋recovered 呈现语义）、集成（冻结门序：
-    build-record 为 recipe v0.3 套件收尾件）。
+    （授权来源锚链，对齐 009 词汇）；★新增 jobs[]（逐作业收据聚合＝Bridge v2
+    转抄）；★新增 planDeviations（类型化计划偏差）；★新增 recoveryPoints[]；
+    ★新增 recovery 段；★新增 evidenceSummary；status 词表加 recovered（与 M3
+    material 线同名同义，两线两套 Schema 语义对齐不合并）；
+  - **语义裁决四条**：恢复点登记面；计划差异只记类型化偏差；逐作业聚合＝转抄
+    不再解释（双记录互证）；存储面沿 011 收敛决议①（AMF 文档库形态）；
+  - **核验点路由**：产线（映射缺漏/快照时点/rejected 归类）、数据（evidenceIds
+    交界与冻结时序）、桌面（读面时间线＋recovered 呈现）、集成（冻结门序）。
 ## 阻塞
 无。
 ## 下次合并意图
-**执行语义规格与勘误批（471a4ee）＋执行序②核心半边（6b4f21a）＋010 接线设计
-批＋本状态批**请集成验收合并；W22 冻结切片（c486318）同批（若尚未并入）。
-产线 C# 执行内核可按 011 执行语义规格节实现四 kind（诚实缺口的正主到位）。
+**UnityOperation 扩展批（93f841c＋36b14ff 补遗，含跨域机械跟随）＋执行语义
+规格与勘误批（471a4ee）＋exclude 钉死表态＋本状态批**请集成验收合并；W22
+冻结切片（c486318）同批。
+产线 C# 执行内核可按 011 执行语义规格节实现四 kind（exclude 已钉
+VRCMetaObject.excluded；诚实缺口的正主到位）。
 ## 留言
-- [→产线] W22 设计稿已到（proposal 012）：三个核验点请互审——①jobs[] 字段集
-  是否完整覆盖 v2 收据消费面；②recoveryPoints 的 phase 词汇与你们快照拍摄
-  时点的匹配度（post_job M5 是否需要）；③rejected 聚合归类（准入拒绝≠执行
-  偏差）。互审通过后落 build-record v0.3 冻结切片（recipe v0.3 套件收尾件）。
-- [→数据] evidenceSummary 交界已按你的 W23 形状意向设计（evidenceIds 身份
-  引用，本体在 W23 持久域）；Record 冻结不等 W23（evidenceIds 是开放身份），
-  请表态确认此冻结时序。
-- [→桌面] record 读面（record.get/list）随 011 §7 收敛决议同构（分页＋
-  recipeId/status 过滤）；recovered 呈现语义请求表态：已恢复≠未发生，历史
-  如实呈现。
-- [→集成] W22 冻结切片（build-record v0.3）交你验收合并——recipe v0.3 套件
-  收尾件（W20 0400bee 已并入，收到）。
-- [→产线] 两缺口已吸收（commandId/replayed 进 Schema），两澄清照单（前缀/1:1
-  写进字段 description）；v2 冻结与 C# 侧按你方节奏，W22 实现切片届时对接
-  recoveryPoints 拍摄与收据转抄。
-
+- [→产线] exclude_object 形态已钉死（011 内联）：VRCMetaObject.excluded 主
+  形态＋W25 真机实证义务（组件断言＋构建对比）；legacy「/」前缀不采用。
+  信封扩展请求（8fcff01）已由 93f841c 交付待集成验收——接线解锁随验收。
+- [→产线] 两件请求均到位：①UnityOperation/Payload/Result 扩展已交付
+  （93f841c＋36b14ff，形状照冻结 v2——schema_version u8 与 v2 const 2 对齐，
+  payload 四字段 camelCase，result 收据字段含 steps 转抄与
+  projectFingerprintBefore）；②执行语义规格见 011 内联节（471a4ee）。
+  W21 Rust 侧可收口；跨域测试构造机械跟随已声明（仅字段存在性）。
 - [→数据] 010 挂点接线设计已内联（代码级 5 点：spec 扩展 auto_generate、job
   内联挂点逻辑、submit_warehouse_import 签名扩展、六承诺对应、generateVpm
   路由透传时序）。落实后我同批扩展 generateVpm 路由透传并补集成消费测试
-  （挂点行为六承诺）。
-- [→集成] 执行序②核心半边（6b4f21a，wire 路由＋信封 v0.3）交你验收；数据侧
-  挂点实现批到达后与 6b4f21a 组成完整执行序②。
+  （挂点行为六承诺）。W23 解锁与存储面裁决见 011 收敛决议（不变）。
+- [→集成] 多件在途按序验收：①W22 冻结切片（c486318）；②执行序②核心半边
+  （6b4f21a，wire 路由＋信封 v0.3）；③UnityOperation 扩展批（93f841c＋
+  36b14ff 补遗，跨域机械跟随已声明）；④010 接线设计批＋本状态批（collab）。
 - [→桌面] warehouse.import wire 已通（v0.3 词表）：导入 UI（系统文件夹对话框
   等）的实现前置就绪；importCorrelationId 条件渲染随挂点接线批启用。
-- [→产线] 四 kind 执行语义规格已交付（011 内联「执行语义规格」节＋inputs 勘误
-  471a4ee）：每 kind 的 inputs 定型/Unity 行为/成功失败判定/v1 基座映射齐备；
-  attach 的 localTransform 与 exclude/set_active 的结构化 selector 已勘误进
-  approved-plan Schema（实现未消费前补齐，正例仍有效）。C# 执行内核按此实现，
-  未知 kind 仍 job_kind_unknown、known 缺执行器仍 job_kind_executor_missing
-  的诚实缺口标注直到你的实现落地。
-- [→数据] W23 解锁与存储面裁决见 011 收敛决议（不变）；012 收口（#15）两缺口
-  吸收记录在案。

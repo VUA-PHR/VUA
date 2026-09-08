@@ -177,6 +177,11 @@ impl UnityBridge for FakeBridge {
                 status: ResultStatus::Succeeded,
                 changed_paths: vec![],
                 diagnostics: vec![],
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
                 data: serde_json::json!({
                     "projectFingerprint": format!("fp-{}", state.commands.len())
                 }),
@@ -416,6 +421,11 @@ fn b3_exec_004_bridge_rejection_restores_the_verified_snapshot() {
         changed_paths: vec![],
         diagnostics: vec![],
         data: serde_json::json!({}),
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: None,
+            restored_from: None,
+            project_fingerprint_before: None,
     })]);
     let executor = executor(&base, bridge, FakeVpm::new());
 
@@ -590,13 +600,18 @@ fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
 
     // Attempt 1: the real Bridge rejects the import; the receipt records
     // the failure.
-    let rejection = vec![Ok(UnityResult {
+    let rejection: Vec<Result<UnityResult, BridgeError>> = vec![Ok(UnityResult {
         schema_version: 1,
         command_id: "rejected".into(),
         status: ResultStatus::Rejected,
         changed_paths: vec![],
         diagnostics: vec![],
         data: serde_json::json!({}),
+        steps: Vec::new(),
+        replayed: None,
+        snapshot_id: None,
+        restored_from: None,
+        project_fingerprint_before: None,
     })];
     let bridge = FakeBridge::new(rejection);
     let first_executor = executor(&base, bridge.clone(), FakeVpm::new());
