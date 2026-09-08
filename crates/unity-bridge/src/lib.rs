@@ -14,6 +14,7 @@ pub mod material_intake;
 pub mod material_staging;
 pub mod material_task;
 pub mod production_documents;
+pub mod production_job;
 pub mod staging_scaffold;
 
 pub use bridge::UnityBatchBridge;
@@ -38,6 +39,11 @@ pub use material_task::{
 pub use production_documents::{
     build_inspection_document, build_plan_document, InspectionDocument, InspectionFinding,
     InspectionFindingKind, PlanDocument, Plannability,
+};
+pub use production_job::{
+    read_plan_file, write_plan_file, PlanFile, PlanFileError, ProductionJobReceipt,
+    ProductionJobReceiptData, ProductionJobStep, ProductionResolvedSource,
+    SUPPORTED_PLAN_SCHEMA_VERSIONS,
 };
 pub use staging_scaffold::{
     MA_STUB_ASMDEF, MA_STUB_COMPONENTS_CS, MA_STUB_PACKAGE_ID, MA_STUB_PACKAGE_JSON,
