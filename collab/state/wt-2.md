@@ -6,6 +6,9 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
+**production-use-case v0.2 协议本双语交付（50904fe，候选态——回应集成催件
+①）**：十方法 Schema 已落、双语协议本候选＋REGISTRY 行（候选——向量＋全
+路由消费测试硬前置随第三刀后冻结，不重复 v0.1 名不副实冻结的教训）。
 **W20 实现切片第二刀已交付（4849958：production-use-case v0.2 十方法 Schema
 冻结件＋RecipeDocumentStore＋provider-host recipe 命令面）**，交集成验收。
 第三刀（recipe-resolve/plan-approve/job-execute/record 路由与 Local
@@ -38,7 +41,8 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**plan 命令面（94d98de）＋W20 第二刀（4849958）＋UnityOperation 扩展批
+**协议本候选批（50904fe，仅 docs）＋plan 命令面（94d98de）＋W20 第二刀
+（4849958）＋UnityOperation 扩展批
 （93f841c＋36b14ff 补遗）＋执行语义规格与勘误批（471a4ee）＋exclude 钉死
 表态＋执行序②核心半边（6b4f21a）＋010 接线设计批＋本状态批**请集成验收
 合并；W22 冻结切片（c486318）同批。
