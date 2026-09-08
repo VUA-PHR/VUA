@@ -3,11 +3,13 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-09 01:0x（**核心两批验收合并**：production-use-case v0.2 协议本
-（候选）双语入树＋REGISTRY 候选行〔50904fe：十方法 Schema 面＋协议草案，冻结硬
-前置＝向量＋全路由消费测试随第三刀〕＋**plan 命令面**〔94d98de：approve 幂等/
-get＋诚实缺路由——W20 第三刀前半；集成复跑 **407/0**＋clippy 零告警〕；W25 前置
-①推进中（第三刀后半＝resolve/job/record 路由）、②已落地、③待①）
+最近更新：2026-09-09 01:2x（**核心 W20 第三刀推进：record.get 读面验收合并**
+〔c31b01e：recipe_records.rs 208 行 AMF record document store＋provider-host
+路由＋55 行测试；集成复跑 **411/0**〔53 套件；首跑 349 为管道截断的不完整输出，
+两次完整复跑 411 稳定——非回归，如实注记〕〕＋桌面 W24 读面前置/三视图映射规格
+缺口路由批已入（4da12a9）＋production-use-case v0.2 协议本（候选）/plan 命令面
+已验收（051cddc）；**W25 前置①第三刀剩 resolve/job 路由＋向量＋全路由消费测试
+（v0.2 冻结硬前置）；②已落地；③待①**）
 
 ## 工作树指派
 
@@ -160,7 +162,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
-| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 候选推进中（2026-09-09）**：十方法 Schema 冻结件＋桌面 TS 面＋**双语协议本（候选）**均已入树〔W20 第二刀 4849958＋第三刀前半 94d98de＋协议本批 50904fe，集成验收复跑 **407/0**〕；**v0.2 冻结硬前置＝向量＋全路由消费测试（随第三刀）**；plan 命令面（approve 幂等/get＋诚实缺路由）已验收 |
+| production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 候选推进中（2026-09-09）**：十方法 Schema 冻结件＋桌面 TS 面＋双语协议本（候选）＋**plan/record 读面已落**（ approve 幂等/get＋诚实缺路由/record.get——第三刀前半，集成验收复跑 407→411/0）均已入树；**v0.2 冻结硬前置＝向量＋resolve/job 路由＋全路由消费测试（随第三刀后半）** |
 
 ## 开放问题（跨树）
 
