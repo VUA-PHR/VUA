@@ -9,20 +9,14 @@ updated: 2026-09-08
 **M5 呈现批(W18/W19 桌面面)交付(1eae908,请求集成验收)**:W18 导入 UI(文件夹
 多选对话框+确认列表+单命令)+W19 008 路径 a 接线(生成完成检测→逐条目独立删除)
 +未接线标注移除(接线落地)。用户催办授权下完成(无视收尾窗口)。
-## 自基线交付(3bc03ac 合并 main 后,一提交)
-- 1eae908 **W18/W19 桌面呈现批**:①W18 导入 UI(010 表态形态):仓储获取区
-  「导入素材包」入口+系统文件夹多选对话框(新窄壳能力
-  vua:dialog:pick-warehouse-folders——只拾取,main 不做文件操作)+确认列表
-  (可移除)→单命令 warehouse.import(bdl-commands v0.3 TS 面登记:命令/受理/
-  narrow/方法表;router/live/fixture[逐 folder 落成演示]/empty 分支)→引导任务
-  中心;条目事实经读面推送,不建第二事实源;②W19 008 路径 a 接线:条目读面
-  差分检测生成完成(newlyGeneratedEntryIds——任务面快照不携带条目身份,条目
-  事实是域内等价信号;声明于提交信息),删除偏好开启时逐条目发起独立
-  deleteOriginals(守卫/审计在服务端,一次性不重试);generateNotWired/notWired
-  标注移除(接线落地),DEV fixture 注记保留;③importCorrelationId「来自导入」
-  标注:任务面快照不投影该字段→不渲染(010 表态预防条款,如实声明);
-  **跨域声明**:mock-provider 补 warehouse.import unavailable 分支(测试基建
-  惯例)。桌面 check 全链绿(47 文件,2026-09-08 本机)。
+## 自基线交付(be4cb7c 合并 main 后)
+- 无新交付(不编造工作)。main 合并维护(fast-forward 至 be4cb7c,消解失鲜;含
+  产线 W25 物化切片/W22 冻结/009 互审——均他域推进,桌面零触及)。
+- **W18/W19 呈现批验收确认**(df32c8c,集成)。
+- **W24 门序核实**:production-use-case v0.2 命令面(recipe.resolve/plan.approve/
+  job.execute 等词表路由)尚未冻结——W20 冻结切片落的是产物 Schema 四件套;
+  工作台无 wire 数据源,不提前开工(集成权威:等 W20 收口)。桌面批开窗条件=
+  命令面冻结+路由落地。
 ## 阻塞
 - W15 关门=用户确认(第二轮修正项已交付);
 - M5 呈现批验收=集成(1eae908)。
