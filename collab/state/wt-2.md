@@ -6,6 +6,8 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
+**W20 第三刀 record 读面已交付（c31b01e：RecipeRecordStore＋record.get 路由）**；
+剩余＝recipe.resolve 执行器＋job.execute（Bridge v2 编排，产线冻结批对接）。
 **production-use-case v0.2 协议本双语交付（50904fe，候选态——回应集成催件
 ①）**：十方法 Schema 已落、双语协议本候选＋REGISTRY 行（候选——向量＋全
 路由消费测试硬前置随第三刀后冻结，不重复 v0.1 名不副实冻结的教训）。
@@ -17,6 +19,13 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 （6b4f21a）与 W22 冻结切片（c486318）、W20 冻结切片（0400bee）均已交/经集成
 验收。导入挂点（010 路径 A）设计已内联交数据落实。#7 残余观察态维持。
 ## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
+- **record 读面（c31b01e，本 tick 续）**：RecipeRecordStore（orchestrator，
+  AMF 文档库——build-record v0.3 不可变历史：hard_link exactly-once/身份与
+  版本校验/排序列表）＋record.get 路由（正例读回/缺席 not_found/缺 buildId
+  invalid_params）＋bin 接线（production/records）；record.list 聚合与
+  job.execute 保持类型化 unavailable（后续刀）。**证据（2026-09-09 本机）**：
+  RecipeRecordStore 3/3＋warehouse_commands 15/15＋workspace 全量绿＋clippy
+  -D warnings 零告警。
 - **合并 main**（v2 冻结批 1a9cdf6＋W25 前置②产线物化切片 9195fbb＋wt-3
   刷新批入树，workspace 复跑绿）；
 - **W20 第二刀（4849958，核心域 1496 行）**：
@@ -41,7 +50,7 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**协议本候选批（50904fe，仅 docs）＋plan 命令面（94d98de）＋W20 第二刀
+**record 读面（c31b01e）＋协议本候选批（50904fe，仅 docs）＋plan 命令面（94d98de）＋W20 第二刀
 （4849958）＋UnityOperation 扩展批
 （93f841c＋36b14ff 补遗）＋执行语义规格与勘误批（471a4ee）＋exclude 钉死
 表态＋执行序②核心半边（6b4f21a）＋010 接线设计批＋本状态批**请集成验收
