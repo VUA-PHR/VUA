@@ -2,10 +2,10 @@
 
 [English](alcom-vcc_EN.md) | [简体中文](alcom-vcc_ZH.md)
 
-> 文档版本：1.0.0  
+> 文档版本：1.1.0  
 > 状态：已接受  
 > 范围：ALCOM/VCC 管理项目的只读兼容检测与能力矩阵  
-> 更新：2026-09-09  
+> 更新：2026-09-10  
 > 权威：`docs/product-boundary_ZH.md` 1.2.0（用户裁决 U3，2026-09-08）
 
 ## 权威与硬边界
@@ -36,6 +36,7 @@ ALCOM/VCC 的注册表/数据库/设置/缓存；静默把原项目改标为 VUA
 | VPM 包（声明面） | 支持 | 支持 | 读 `Packages/vpm-manifest.json` 的 `dependencies` 与 `locked` 映射 | 按 packageId 排序的声明/锁定版本；解析失败＝诚实警告＋空列表，永不虚构条目 |
 | VRChat SDK | 支持 | 支持 | 从上述映射中识别 `com.vrchat.*` 前缀包 | locked 优先于 dependencies；仅报告所见，不推断产品语义 |
 | 未完成变更标记 | `.vua/pending-mutation.json` | 同 | 只读观察（读取即诚实呈现，绝不获取锁——获取锁是写） | none / leftover / unreadable |
+| VUA 原生标识 | `.vua/project.json` | 同 | 只读观察（同上，绝不写入） | absent / present（标记时刻＋备注） / unreadable |
 | 注册表死条目 | 支持 | 支持 | 注册路径不存在 | 条目保留并带警告（`path_present: false`），不静默丢弃 |
 
 ## 能力结论的诚实呈现
@@ -47,10 +48,36 @@ ALCOM/VCC 的注册表/数据库/设置/缓存；静默把原项目改标为 VUA
 - 写操作一律交接：界面呈现「去 ALCOM/VCC 操作」或「导入为 VUA 管理的副本」，VUA 不
   代写原项目。
 
+## VUA 原生项目判定（1.1.0 新增）
+
+用户裁决（2026-09-09 项 7/9/12）：迁移/导入副本的文件夹携带 VUA 独有标识文件
+`.vua/project.json`，检测面据此报告 `vuaIdentity` 三态：
+
+- `absent`——无标识文件：非 VUA 原生项目（仅有锁人工制品的 `.vua/` 不构成原生
+  标记）；
+- `present`——VUA 原生声明，携 `markedAt`（RFC 3339）＋`note`（用户备注；
+  **只在项目列表显示**）；
+- `unreadable`——文件存在但不可解析：本身即证据，绝不静默报为 absent。
+
+备注依附 VUA 原生声明：无标识项目的备注写入被拒（`SetNoteError::NotVuaNative`）。
+标识文件的写入面＝project-ops 写命令（`project.import-copy` apply 落成点首标记）
+与未来迁移命令；检测面永不写入。
+
 ## 机器可读面
 
 - 检测快照：`EnvironmentManagersSnapshotV01`
   （`schemas/environment-managers/v0.1/snapshot.schema.json`）；
-- 项目检视：`ProjectInspectionSnapshotV01`
-  （`schemas/project-inspection/v0.1/snapshot.schema.json`，本矩阵的包/SDK/锁行）；
-- 命令面 wire 词表：见 `collab/proposals/013`（待核心裁决，裁决前不冻结不接线）。
+- 项目检视：`ProjectInspectionSnapshotV02`
+  （`schemas/project-inspection/v0.2/snapshot.schema.json`，本矩阵的包/SDK/锁行
+  ＋VUA 原生标识行；协议本
+  [project-inspection-v0.2](../protocols/project-inspection-v0.2_ZH.md)）；
+- 命令面 wire 词表：project-inspection v0.2（四查询读面）＋project-ops v0.1
+  （`project.import-copy`）均已冻结并接线
+  （[project-ops-v0.1](../protocols/project-ops-v0.1_ZH.md)）。
+
+## 文档变更日志
+
+- 1.1.0（2026-09-10）：新增「VUA 原生项目判定」节（`.vua/project.json` 三态；
+  用户裁决 7/9/12）＋检测矩阵 VUA 原生标识行；机器可读面刷新（project-inspection
+  v0.2、013/014 已冻结接线、协议本链接）。
+- 1.0.0（2026-09-09）：初版。

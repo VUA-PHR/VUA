@@ -12,7 +12,7 @@
 | AGENTS.md | 1.1.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/product-boundary_ZH.md | 1.3.0 | 已接受 | 集成 | 2026-09-09 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/compatibility/alcom-vcc_ZH.md | 1.0.0 | 已接受 | 环境 | 2026-09-09 |
+| docs/compatibility/alcom-vcc_ZH.md | 1.1.0 | 已接受 | 环境 | 2026-09-10 |
 | schemas/project-inspection/v0.1 | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
 | docs/protocols/project-inspection-v0.2_ZH.md | 0.2 | 已冻结 | 环境 | 2026-09-09 |
 | docs/protocols/project-ops-v0.1_ZH.md | 0.1 | 已冻结 | 环境 | 2026-09-09 |
