@@ -243,6 +243,31 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           vcc: {},
           alcom: {},
         });
+      case "project.listProjects":
+        // mock 无检测采集:诚实空列表(缺席语义=诚实空,不伪造条目)
+        return this.#success(request, {
+          schemaVersion: "vua.project-inspection/v0.2",
+          projects: [],
+          diagnostics: [],
+        });
+      case "project.inspectProject":
+        // 检测面注册表缺席语义:类型化缺席(照核心 5b65550 语义注记;
+        // category=validation 与核心 3484 行一致)
+        return this.#failure(request, this.#error(
+          "vua.project.project_not_found",
+          "validation",
+          "errors.project.projectNotFound",
+          request.correlationId,
+          false,
+          false,
+        ));
+      case "project.lockStatus":
+        // 纯观察三态:mock 无锁事实,诚实 none
+        return this.#success(request, {
+          schemaVersion: "vua.project-inspection/v0.2",
+          projectPath: (request.params as { projectPath: string }).projectPath,
+          mutationStatus: "none",
+        });
       case "downloads.listCompleted":
         // mock 无下载域:诚实空列表(bdl-queries v0.4 读面;桌面穷尽性
         // 机械跟随,业务语义归数据/核心)

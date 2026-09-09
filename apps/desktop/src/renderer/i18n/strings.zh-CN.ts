@@ -1726,5 +1726,9 @@ rolled_back: "已回滚",
       environmentCheckFailed:
         "环境检测本身失败(外部错误)。可以重试。",
     },
+    project: {
+      projectNotFound:
+        "该路径未注册为受管项目(VCC/ALCOM),此处没有可检视的内容。",
+    },
   },
 };

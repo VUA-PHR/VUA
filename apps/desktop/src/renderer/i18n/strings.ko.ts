@@ -1651,5 +1651,9 @@ rolled_back: "롤백됨",
       environmentCheckFailed:
         "환경 확인 자체가 실패했습니다(외부 오류). 다시 시도할 수 있습니다.",
     },
+    project: {
+      projectNotFound:
+        "이 경로는 관리 프로젝트(VCC/ALCOM)로 등록되어 있지 않아 여기서 볼 내용이 없습니다.",
+    },
   },
 };

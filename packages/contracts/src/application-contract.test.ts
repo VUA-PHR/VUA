@@ -252,6 +252,21 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(true);
   });
 
+  it("admits the 013 three-query read face with closed params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.listProjects", params: {},
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.inspectProject", params: { projectPath: "C:/proj" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.lockStatus", params: { projectPath: "C:/proj" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.inspectProject", params: {},
+    })).toBe(false);
+  });
+
   it("admits the 013 environmentManagers read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "project.environmentManagers", params: {},

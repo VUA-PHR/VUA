@@ -1656,5 +1656,9 @@ rolled_back: "ロールバック済み",
       environmentCheckFailed:
         "環境チェック自体が失敗しました(外部エラー)。再試行できます。",
     },
+    project: {
+      projectNotFound:
+        "このパスは管理対象プロジェクト(VCC/ALCOM)として登録されていないため、ここで参照できる内容はありません。",
+    },
   },
 };
