@@ -1113,6 +1113,12 @@ rolled_back: "已回滚",
   },
   /** Recipe 图谱页(C-RECIPE;步骤文案等负载不在本表,见 strings.fixtures) */
   recipe: {
+    libraryTitle: '配方文档库',
+    libraryReload: '刷新文档库',
+    libraryEmpty: '还没有配方文档。经生产链路保存的配方会出现在这里。',
+    libraryUnavailable: '配方文档库服务未连接。',
+    librarySelected: '已选中',
+    libraryMappingNote: '文档到工作台视图的映射尚未接线;以上条目事实原样呈现。',
     loadFailed: "配方图谱加载失败。",
     loadFailedDescription: "读取配方数据时出错。重试不会修改任何本地数据。",
     retry: "重试",

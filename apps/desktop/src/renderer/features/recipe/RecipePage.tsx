@@ -25,6 +25,11 @@ import {
   type RecipeGraphView,
 } from "../../gateway/index.ts";
 import {
+  narrowRecipeLibraryEntries,
+  selectLibraryRecipe,
+  type RecipeLibraryEntryNarrowed,
+} from "./recipe-model.ts";
+import {
   basePoints,
   layoutFromPoints,
   recipeLayerOrder,
@@ -514,6 +519,103 @@ function LayerList({
   );
 }
 
+/* ---- BG-1(W24 读面预备):recipe 文档库列表(production-use-case v0.2
+ * recipe.list 读面;三视图共享选择骨架——选中态提升至页面顶层,后续文档
+ * →视图映射接入时三视图同源消费;映射未接线=诚实标注,条目事实原样) ---- */
+
+function RecipeLibrarySection({
+  selectedId,
+  onSelect,
+}: {
+  selectedId: string | null;
+  onSelect: (recipeId: string) => void;
+}) {
+  const [state, setState] = useState<
+    | { readonly kind: "loading" }
+    | { readonly kind: "unavailable" }
+    | { readonly kind: "loaded"; readonly entries: readonly RecipeLibraryEntryNarrowed[] }
+  >({ kind: "loading" });
+  const [reloadNonce, setReloadNonce] = useState(0);
+
+  useEffect(() => {
+    let alive = true;
+    setState({ kind: "loading" });
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "recipe.list",
+        params: {},
+      })
+      .then((result) => {
+        if (!alive) return;
+        if (!result.ok) {
+          setState({ kind: "unavailable" });
+          return;
+        }
+        const entries = narrowRecipeLibraryEntries(
+          (result.value as { entries?: unknown }).entries,
+        );
+        setState({ kind: "loaded", entries });
+      });
+    return () => {
+      alive = false;
+    };
+  }, [reloadNonce]);
+
+  return (
+    <div className="vua-recipe-library">
+      <div className="vua-project-compat__row">
+        <Button variant="subtle" onClick={() => setReloadNonce((key) => key + 1)}>
+          {copy.libraryReload}
+        </Button>
+      </div>
+      {state.kind === "loading" ? (
+        <p className="vua-caption vua-text-secondary">{copy.libraryReload}…</p>
+      ) : null}
+      {state.kind === "unavailable" ? (
+        <p className="vua-caption vua-text-secondary" role="alert">
+          {copy.libraryUnavailable}
+        </p>
+      ) : null}
+      {state.kind === "loaded" && state.entries.length === 0 ? (
+        <EmptyState title={copy.libraryTitle} description={copy.libraryEmpty} />
+      ) : null}
+      {state.kind === "loaded" && state.entries.length > 0 ? (
+        <ul className="vua-project-compat__specs" role="listbox" aria-label={copy.libraryTitle}>
+          {state.entries.map((entry) => (
+            <li key={entry.recipeId}>
+              <button
+                type="button"
+                onClick={() => setQueueSelect(entry)}
+                style={{ all: "unset", cursor: "pointer" }}
+              >
+                <strong>{entry.title}</strong>{' '}
+                <span className="vua-caption vua-text-secondary">
+                  rev {entry.revision} · {entry.updatedAt}
+                </span>{' '}
+                {selectedId === entry.recipeId ? (
+                  <Badge tone="success">{copy.librarySelected}</Badge>
+                ) : null}
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {selectedId !== null ? (
+        <p className="vua-caption vua-text-secondary" role="note">
+          {copy.libraryMappingNote}
+        </p>
+      ) : null}
+    </div>
+  );
+
+  function setQueueSelect(entry: RecipeLibraryEntryNarrowed): void {
+    const next = selectLibraryRecipe(selectedId, entry.recipeId);
+    if (next !== null) onSelect(next);
+  }
+}
+
 export function RecipePage() {
   const gateway = useGateway();
   const isFixture = useDataSource() === "fixture";
@@ -707,6 +809,10 @@ export function RecipePage() {
     });
   };
 
+  // BG-1(W24 读面预备):文档库共享选择骨架——选中态提升至页面顶层,
+  // 三视图与文档库同源消费;文档→工作台视图映射未接线(诚实标注在库区)
+  const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
+
   return (
     <div className="vua-page">
       <section className="vua-page__hero">
@@ -753,6 +859,13 @@ export function RecipePage() {
           ) : null}
         </div>
       </section>
+
+      <Card>
+        <RecipeLibrarySection
+          selectedId={selectedLibraryRecipeId}
+          onSelect={setSelectedLibraryRecipeId}
+        />
+      </Card>
 
       {loadFailed ? (
         <Card>
