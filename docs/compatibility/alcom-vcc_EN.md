@@ -2,10 +2,10 @@
 
 [English](alcom-vcc_EN.md) | [简体中文](alcom-vcc_ZH.md)
 
-> Document version: 1.0.0  
+> Document version: 1.1.0  
 > Status: Accepted  
-> Scope: read-only compatibility detection and the capability matrix for ALCOM/VCC-managed projects  
-> Updated: 2026-09-09  
+> Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
+> Updated: 2026-09-10  
 > Authority: `docs/product-boundary_EN.md` 1.2.0 (user ruling U3, 2026-09-08)
 
 ## Authority and hard boundary
@@ -41,6 +41,7 @@ VUA-managed.
 | VPM packages (declared face) | Yes | Yes | Read the `dependencies` and `locked` maps of `Packages/vpm-manifest.json` | Declared/locked versions sorted by packageId; a parse failure is an honest warning + empty list, never an invented entry |
 | VRChat SDK | Yes | Yes | Spot `com.vrchat.*`-prefixed packages among those maps | `locked` wins over `dependencies`; report what is seen, no invented product semantics |
 | Pending-mutation marker | `.vua/pending-mutation.json` | Same | Read-only observation (report it honestly; never acquire the lock — acquiring is a write) | none / leftover / unreadable |
+| VUA-native identity | `.vua/project.json` | same | read-only observation (same discipline, never written) | absent / present (markedAt + note) / unreadable |
 | Stale registry entries | Yes | Yes | Registered path no longer exists | The entry stays visible with a warning (`path_present: false`), never silently dropped |
 
 ## Honest presentation of capability conclusions
@@ -55,12 +56,41 @@ VUA-managed.
 - Writes are always handed over: the UI offers "operate in ALCOM/VCC" or "import as a
   VUA-managed copy"; VUA never writes the original project.
 
+## VUA-native project finding (new in 1.1.0)
+
+User rulings (2026-09-09 items 7/9/12): a migrated/imported copy's folder carries
+the VUA-unique identity file `.vua/project.json`, and the inspection face reports
+the `vuaIdentity` tri-state:
+
+- `absent` — no identity file: not a VUA-native project (a `.vua/` holding only
+  lock artifacts does not constitute the native marker);
+- `present` — the VUA-native declaration, carrying `markedAt` (RFC 3339) and
+  `note` (user note; **project-list display only**);
+- `unreadable` — the file exists but cannot be parsed: itself evidence, never
+  silently reported as absent.
+
+Notes attach to the VUA-native declaration: setting a note on a project without
+an identity file is refused (`SetNoteError::NotVuaNative`). The write face of
+the identity file is the project-ops write command (`project.import-copy`
+first-marks at the apply completion point) and a future migration command; the
+inspection face never writes.
+
 ## Machine-readable faces
 
 - Detection snapshot: `EnvironmentManagersSnapshotV01`
   (`schemas/environment-managers/v0.1/snapshot.schema.json`);
-- Project inspection: `ProjectInspectionSnapshotV01`
-  (`schemas/project-inspection/v0.1/snapshot.schema.json` — the package/SDK/lock rows of
-  this matrix);
-- Command-face wire vocabulary: see `collab/proposals/013` (pending the core ruling;
-  unfrozen and unwired until then).
+- Project inspection: `ProjectInspectionSnapshotV02`
+  (`schemas/project-inspection/v0.2/snapshot.schema.json`, this matrix's
+  package/SDK/lock rows + the VUA-native identity row; protocol document
+  [project-inspection-v0.2](../protocols/project-inspection-v0.2_EN.md));
+- Command-face wire vocabularies: project-inspection v0.2 (four read queries) and
+  project-ops v0.1 (`project.import-copy`) are both frozen and wired
+  ([project-ops-v0.1](../protocols/project-ops-v0.1_EN.md)).
+
+## Document changelog
+
+- 1.1.0 (2026-09-10): the "VUA-native project finding" section added
+  (`.vua/project.json` tri-state; user rulings 7/9/12) + the detection-matrix
+  VUA-native identity row; machine-readable faces refreshed (project-inspection
+  v0.2, 013/014 frozen and wired, protocol-document links).
+- 1.0.0 (2026-09-09): initial version.
