@@ -1,10 +1,10 @@
-# VUA design standard v0.6.2
+# VUA design standard v0.7.0
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.6.3
+> Document version: 0.7.0
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.6.2)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.0)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-07  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -248,6 +248,21 @@ stable untilted cards.
   server; per-entry mode editing and generate/delete entries inside the warehouse entry details
   mirror the entry facts and carry the experimental badge; "Delete originals after generation"
   is an unwired preference (proposal 008), permanently labeled unwired.
+- Dedicated import tab (v0.7.0, proposal 015 reconciliation accepted; IMP-1): the
+  "one continuous acquisition path" lands as a dedicated "Import" page — a cloud
+  section (embedded browsing and catalog mode as parallel discovery entries, plus
+  a per-batch adopt-into-warehouse entry for completed downloads) above a local
+  section (system folder pick → confirmation list → single command → task center),
+  both landing in the same warehouse entry model; the warehouse page converges to
+  pure entry management (dual-track header removal rides the IMP-4 reorg batch;
+  status quo kept until then, no extra change surface); the embedded browse area
+  permanently shows the "VUA embedded browsing · Session isolated" badge, and the
+  isolation red lines (sandbox / no preload / separate partition / standard Web
+  APIs) remain untouched item by item; platform pages render as-is with zero
+  purchase-flow UI; the `desktop.remoteBrowser` capability is two-state — it flips
+  only when embedded browsing works end to end, and unwired entries stay
+  permanently labeled unavailable (honest degradation pointing to the system
+  browser).
 - **Recipe:** graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
@@ -310,6 +325,15 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.0 (2026-09-10)**: proposal 015 reconciliation accepted (IMP-1, handled by
+  integration) — §8 gains the dedicated import-tab semantics: the continuous
+  acquisition path lands as an "Import" page (cloud section = embedded browsing +
+  catalog mode + completed-download adoption; local section = W18 submission flow
+  migration); the warehouse page converges to pure entry management (dual-track
+  header removal rides IMP-4); permanent isolation badge and isolation red lines,
+  zero purchase-flow UI, and the remoteBrowser two-state flip criterion. Mirrors
+  the ZH edition (which also fixes the EN title lagging at v0.6.2).
 
 - **0.6.3 (2026-09-08)**: W15 failed-walkthrough rework landing sync - §6.2 experimental
   feature presentation becomes a two-state toggle model (frozen-protocol **server-behavior
