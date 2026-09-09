@@ -2,19 +2,28 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 0c282ed
+baseline_commit: 6256410
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第十二波（全 collab 收尾批）＋一次流程自纠**：①三树 collab 批合并
-（核心 018 §6 表态＋桌面 **proposal 018 开发模式基建草案**〔裁决 13 备稿，
-DEV-only per-port 连接目标〕＋桌面 13 项裁决全部关闭声明＋环境 counts-
-derived-quantity 表态）；②**流程自纠（如实）**：slot/wt-3 合并时因 shell
-链失误（分号连接）未解决冲突即提交，main 短暂带入含冲突标记的 018 文件
-（07f1f8a/0c282ed 两提交）——已立即修正（07f1f8a 后续修正提交，保留核心
-表态节删标记），全局扫描四提案与 collab/docs 全部 .md 零残留。**W25 三
-前置维持齐备**——开窗通知晨起 O-2。批量面板未触发；[需代裁] 零新增。
+**第十三波验收：018 批 1 实现交付**（200012d——开发模式 per-port 连接目标，
+裁决 13 备稿兑现＋两方表态齐）。**验收要点**：装配入口
+`!import.meta.env.DEV` 首行短路核验（生产构建静态剔除
+readDevPortSelection——leak devOnlyMarkers 撤回声明核可＝常量性误报修正，
+159 指纹主防线保留）；桌面 check 全链绿（**53 文件 432 测试**）。DevScenarioBar
+套装退役（C1 兑现）。**W25 三前置维持齐备**——开窗通知晨起 O-2。批量面板
+未触发；[需代裁] 零新增。前情：018 草案＋两方表态（0c282ed 世代）＋流程
+自纠（冲突标记失误已修正并全局扫描清零）。
 ## 自基线交付（89038f5 之后）
+- **第十三波验收（04:40–04:50）**：
+  - **6256410**：slot/wt-3 **018 批 1 实现验收合并**——200012d（dev-mode
+    per-port 连接目标：dev-port-selection 82 行〔十端口会话级、严格解析
+    回落 {}〕＋create.ts 混合装配＋设置页 DEV-only 区＋DevScenarioBar 套装
+    退役〔C1 兑现〕＋测试 3 项）。**验收记录**：装配入口 DEV 门控抽查核验
+    （`!import.meta.env.DEV` 首行短路＝生产构建静态剔除 readDevPortSelection，
+    撤回声明的「不读不写」成立）；leak devOnlyMarkers 撤回核可（常量性
+    误报修正、脚本内留备注、159 指纹主防线保留）；复跑桌面 check 全链绿
+    （**53 文件 432 测试**＋boundary＋i18n＋contrast＋leak 159 零命中）。
 - **第十二波合并＋自纠（04:20–04:30）**：
   - slot/wt-2：018 §6 核心表态（纯渲染层装配面确认：contracts/preload/Main
     零变更＋应用契约零变更＋provider 零耦合；诚实纪律核对通过；会话级
