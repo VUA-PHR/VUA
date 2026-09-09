@@ -12,9 +12,9 @@ use vua_unity_bridge::{
 use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
-    acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
-    MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
-    MARKER_FILE_NAME,
+    acquire_project_lock, apply_import_copy, begin_mutation, plan_import_copy, read_pending_mutation,
+    ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
+    ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
 };
 use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
@@ -113,6 +113,7 @@ struct HostState {
     downloads: Option<Arc<DownloadServices>>,
     warehouse: Option<Arc<WarehouseServices>>,
     use_cases: Option<Arc<ProductionUseCaseServices>>,
+    project_ops: Option<Arc<ProjectOpsServices>>,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -151,6 +152,27 @@ struct WarehouseServices {
     /// The tasked commands (generateVpm / deleteOriginals) run on the SQLite
     /// task authority: existing nonterminal tasks register for explicit
     /// Inspect/recovery and are never resumed implicitly.
+    runtime: TaskRuntime,
+}
+
+/// Project-domain write-command wiring (proposal 014, `project.import-copy`):
+/// the server-side guards read VCC/ALCOM registration facts through the
+/// environment-manager readers, the copy plan/apply run inside the
+/// project-manager library, and the tasked execution rides the shared SQLite
+/// task authority. Absent wiring answers a typed `vua.project.unavailable` —
+/// honest absence, never a silent success.
+#[derive(Clone)]
+pub struct ProjectOpsConfig {
+    /// VCC `settings.json` candidates in priority order (the
+    /// registered-project guard reads the association facts from these).
+    pub vcc_settings_candidates: Vec<PathBuf>,
+    /// Manager roots (ALCOM settings candidates) for the same guard face.
+    pub manager_roots: ManagerRoots,
+}
+
+struct ProjectOpsServices {
+    vcc_settings_candidates: Arc<Vec<PathBuf>>,
+    manager_roots: ManagerRoots,
     runtime: TaskRuntime,
 }
 
@@ -312,12 +334,38 @@ pub fn run_provider_host_with_downloads(
 /// commands run on the SQLite task authority over the same store.
 pub fn run_provider_host_with_services(
     input: impl BufRead + Send + 'static,
+    output: impl Write,
+    database_path: impl AsRef<Path>,
+    production: Option<ProductionConfig>,
+    downloads: Option<DownloadConfig>,
+    warehouse: Option<WarehouseConfig>,
+    use_cases: Option<ProductionUseCaseConfig>,
+) -> Result<(), ProviderHostError> {
+    run_provider_host_full(
+        input,
+        output,
+        database_path,
+        production,
+        downloads,
+        warehouse,
+        use_cases,
+        None,
+    )
+}
+
+/// The full entry: additionally wires the project-domain write command face
+/// (proposal 014, `project.import-copy`). When `project_ops` is absent the
+/// `project.*` methods answer a typed `vua.project.unavailable`.
+#[allow(clippy::too_many_arguments)]
+pub fn run_provider_host_full(
+    input: impl BufRead + Send + 'static,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
     production: Option<ProductionConfig>,
     downloads: Option<DownloadConfig>,
     warehouse: Option<WarehouseConfig>,
     use_cases: Option<ProductionUseCaseConfig>,
+    project_ops: Option<ProjectOpsConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -425,6 +473,22 @@ pub fn run_provider_host_with_services(
             env_initial,
         })
     });
+    let project_ops = project_ops
+        .map(|config| {
+            TaskRuntime::with_sqlite(
+                store.clone(),
+                Arc::new(SystemClock),
+                Arc::new(NanosTaskIdGenerator::default()),
+            )
+            .map(|runtime| {
+                Arc::new(ProjectOpsServices {
+                    vcc_settings_candidates: Arc::new(config.vcc_settings_candidates),
+                    manager_roots: config.manager_roots,
+                    runtime,
+                })
+            })
+        })
+        .transpose()?;
     let mut state = HostState {
         store,
         provider_instance_id,
@@ -433,6 +497,7 @@ pub fn run_provider_host_with_services(
         production,
         downloads,
         warehouse,
+        project_ops,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -778,6 +843,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("project.") {
+        return project_request(state, method, request, request_id, correlation_id);
+    }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
             "application.getSnapshot" => Ok(FrameOutcome::Response(application_success(
@@ -870,12 +938,18 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    let project_ops_availability = if state.project_ops.is_some() {
+        "available"
+    } else {
+        "unavailable"
+    };
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
+        {"operationId": "project.import-copy", "availability": project_ops_availability},
         {
             "operationId": "desktop.remoteBrowser",
             "availability": "unavailable",
@@ -1401,6 +1475,10 @@ fn warehouse_set_artifact_mode(
 /// default keep their shapes, and v0.3 adds `warehouse.import` — the
 /// M5 batch-import task, proposal 010).
 const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.3";
+
+/// project-ops v0.1 is the frozen write-command face `project.import-copy`
+/// travels as (proposal 014, arbitrated 2026-09-09).
+const PROJECT_OPS_SCHEMA_VERSION: &str = "0.1";
 
 /// `warehouse.setGlobalDefaultMode` (bdl-commands v0.2, U8 ruling): the
 /// synchronous write of the two-level options' GLOBAL level. The global
@@ -3321,6 +3399,163 @@ fn warehouse_import_submit(
         )),
         // Submission rejection is a persistence failure of the task authority.
         Err(_) => warehouse_store_failed(request_id, correlation_id),
+    }
+}
+
+/// The `vua.project.*` word list (proposal 013/014): the write face is
+/// `project.import-copy` alone. Absent wiring answers a typed unavailable —
+/// the frozen word list is never silently stubbed.
+fn project_request(
+    state: &mut HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.unavailable",
+            "errors.project.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "project.import-copy" => {
+            project_import_copy(project_ops, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn project_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.project.invalid_params",
+        "errors.project.invalidParams",
+        "validation",
+    ))
+}
+
+/// `project.import-copy` (proposal 014, arbitrated): both phases run inside
+/// the nine-state task — plan is the read-only confirmation face, apply
+/// re-verifies the plan digest and executes the copy. A typed guard refusal
+/// is a Done payload carrying the frozen `rejected` result document (the
+/// task completed; the import was refused — the same discipline as the
+/// warehouse generation guards), never a transport error.
+fn project_import_copy(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed param set (frozen project-ops v0.1 command schema).
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    let allowed = ["phase", "sourcePath", "targetParentDirectory", "targetProjectName", "confirmedPlanDigest"];
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return project_invalid_params(request_id, correlation_id);
+    }
+    let text_param = |key: &str| {
+        params
+            .get(key)
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+    };
+    let (Some(phase), Some(source_path), Some(target_parent), Some(name)) = (
+        params.get("phase").and_then(Value::as_str),
+        text_param("sourcePath"),
+        text_param("targetParentDirectory"),
+        text_param("targetProjectName"),
+    ) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    if phase != "plan" && phase != "apply" {
+        return project_invalid_params(request_id, correlation_id);
+    }
+    // apply must confirm the plan digest it executes; plan must not carry one.
+    let confirmed_plan_digest = text_param("confirmedPlanDigest");
+    if (phase == "apply" && confirmed_plan_digest.is_none())
+        || (phase == "plan" && confirmed_plan_digest.is_some())
+    {
+        return project_invalid_params(request_id, correlation_id);
+    }
+
+    let job_correlation = correlation_id.to_owned();
+    let is_apply = phase == "apply";
+    let runtime = project_ops.runtime.clone();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let import_request = ImportCopyRequest {
+                source: Path::new(&source_path),
+                target_parent: Path::new(&target_parent),
+                name: &name,
+                vcc_settings_candidates: &project_ops.vcc_settings_candidates,
+                roots: &project_ops.manager_roots,
+            };
+            // A guard refusal is a result document, not an error: the task
+            // honestly completed and its verdict is the frozen `rejected`
+            // face. Only an unexpected internal failure fails the task.
+            let result: Value = if is_apply {
+                match apply_import_copy(
+                    &import_request,
+                    &confirmed_plan_digest.expect("apply requires the digest (checked above)"),
+                    &job_correlation,
+                    &SystemClock,
+                ) {
+                    Ok(receipt) => serde_json::to_value(receipt).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                }
+            } else {
+                match plan_import_copy(&import_request) {
+                    Ok(plan) => serde_json::to_value(plan)
+                        .unwrap_or_else(|_| json!({"kind": "rejected", "guard": "execution_failed"})),
+                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.import-copy",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.import-copy",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority.
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.store_failed",
+            "errors.project.storeFailed",
+            "internal",
+        )),
     }
 }
 
@@ -5615,6 +5850,7 @@ mod tests {
             downloads: None,
             warehouse: None,
             use_cases: None,
+            project_ops: None,
         };
 
         let prepare = InboundFrame {
