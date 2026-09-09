@@ -43,6 +43,7 @@ import type { GuidePageId } from "./features/guide/guide-content.ts";
 import { HomePage } from "./features/home/HomePage.tsx";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { ImportPage } from "./features/import/ImportPage.tsx";
+import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
 import { ProjectCompatPage } from "./features/packages/ProjectCompatPage.tsx";
 import { ProductionIntroOverlay } from "./features/production/ProductionIntroOverlay.tsx";
@@ -1045,6 +1046,8 @@ function AppShell({
       </div>
       {/* 任务中心(ui-ux §4.2 底部入口):capability 非 ready 时组件自身不渲染 */}
       <Taskbar navigate={navigate} />
+      {/* 导航确认卡(015 §12,批 B-3):U9(1)/(3) 确认层的渲染层载体,全局一次挂载 */}
+      <NavigationConfirmOverlay />
       {paletteOpen ? (
         <CommandPalette commands={commands} onClose={() => setPaletteOpen(false)} />
       ) : null}

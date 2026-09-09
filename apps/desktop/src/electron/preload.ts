@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   ApplicationEventV01,
   DesktopGatewayRequestV1,
+  NavigationConfirmRequestV1,
   RemoteContentEventV1,
   VuaDesktopApiV1,
 } from "@vua/contracts";
@@ -20,6 +21,11 @@ const eventListeners = new WeakMap<
 const remoteContentListeners = new WeakMap<
   (event: RemoteContentEventV1) => void,
   (event: IpcRendererEvent, payload: RemoteContentEventV1) => void
+>();
+
+const navConfirmListeners = new WeakMap<
+  (request: NavigationConfirmRequestV1) => void,
+  (event: IpcRendererEvent, payload: NavigationConfirmRequestV1) => void
 >();
 
 const api: VuaDesktopApiV1 = Object.freeze({
@@ -74,6 +80,25 @@ const api: VuaDesktopApiV1 = Object.freeze({
   // 驱动(端到端可用才翻转呈现,desktop 架构 1.1.0)
   capabilities: Object.freeze({
     remoteBrowser: true,
+  }),
+  // 导航确认流(015 §12,批 B-3):Main 发确认请求,渲染层以 i18n 确认卡
+  // 作答;确认在前/逐次无记忆,用户不答=不执行
+  navigationConfirm: Object.freeze({
+    respond: (confirmId: string, approved: boolean) =>
+      ipcRenderer.invoke("vua:nav-confirm:respond", confirmId, approved),
+    events: Object.freeze({
+      subscribe: (listener: (request: NavigationConfirmRequestV1) => void) => {
+        const wrapped = (_event: IpcRendererEvent, payload: NavigationConfirmRequestV1) =>
+          listener(payload);
+        navConfirmListeners.set(listener, wrapped);
+        ipcRenderer.on("vua:nav-confirm:request", wrapped);
+        return () => {
+          const wrappedListener = navConfirmListeners.get(listener);
+          if (wrappedListener) ipcRenderer.removeListener("vua:nav-confirm:request", wrappedListener);
+          navConfirmListeners.delete(listener);
+        };
+      },
+    }),
   }),
 });
 

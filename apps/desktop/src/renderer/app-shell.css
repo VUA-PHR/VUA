@@ -518,3 +518,30 @@
 .vua-tutorial__titlebar button {
   -webkit-app-region: no-drag;
 }
+
+/* 导航确认卡(015 §12,批 B-3):模态确认层——逐次阻断式确认的呈现载体 */
+.vua-nav-confirm__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vua-space-5);
+  background: rgb(0 0 0 / 55%);
+}
+
+.vua-nav-confirm__backdrop > * {
+  max-width: 560px;
+}
+
+.vua-nav-confirm__url {
+  overflow-wrap: anywhere;
+  font-family: ui-monospace, monospace;
+}
+
+.vua-nav-confirm__actions {
+  display: flex;
+  gap: var(--vua-space-2);
+  justify-content: flex-end;
+}

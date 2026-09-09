@@ -1400,6 +1400,16 @@ rolled_back: "롤백됨",
     donateDescription: "후원 채널은 정식 버전 출시 전에 열립니다. 응원해 주셔서 감사합니다.",
     packagesDescription: "Unity 프로젝트의 패키지 설치, 업데이트, 마이그레이션, 백업은 후속 마일스톤에서 제공됩니다. ALCOM과 VCC의 상호작용을 참고해 초보자용으로 다시 구성합니다.",
   },
+  navConfirm: {
+    offAllowlistTitle: '허용 목록 외 페이지를 열까요?',
+    offAllowlistBody: '이 페이지는 브라우징 허용 목록 밖에 있으며, 확인 후 내장 뷰에서 열립니다.',
+    externalTitle: '외부 애플리케이션을 열까요?',
+    externalBody: '이 페이지가 외부 애플리케이션 실행을 요청했습니다. 신뢰할 때만 계속하세요.',
+    openCta: '열기',
+    cancelCta: '취소',
+    pendingCount: '{count}개의 확인이 대기 중입니다',
+  },
+
   productionIntro: {
     title: "아바타 생산",
     subtitle: "작업대를 준비하는 중…",

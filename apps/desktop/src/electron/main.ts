@@ -1,7 +1,13 @@
 import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
-import type { ApplicationEventV01, DownloadEventV01, DownloadIngestReceiptV03, RemoteContentEventV1 } from "@vua/contracts";
+import type {
+  ApplicationEventV01,
+  DownloadEventV01,
+  DownloadIngestReceiptV03,
+  NavigationConfirmRequestV1,
+  RemoteContentEventV1,
+} from "@vua/contracts";
 import { APPLICATION_CONTRACT_VERSION } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
@@ -204,36 +210,45 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     if (typeof viewId !== "string" || typeof visible !== "boolean") throw new Error("invalid remote content request");
     return remoteContent!.setVisible(viewId, visible);
   });
+
+  // 导航确认作答(015 §12):只受理本地来源;未知 confirmId/重复作答忽略
+  // (渲染层不能伪造未发出的确认);作答后 pending 移除,确认 Promise 落定
+  ipcMain.handle("vua:nav-confirm:respond", (event, confirmId: unknown, approved: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof confirmId !== "string" || typeof approved !== "boolean") {
+      throw new Error("invalid navigation confirm response");
+    }
+    const resolve = pendingNavConfirms.get(confirmId);
+    if (resolve === undefined) return;
+    pendingNavConfirms.delete(confirmId);
+    resolve(approved);
+  });
 }
 
 /**
- * U9(1)/U9(3) 导航确认层(Main 侧原生对话框):确认在前(A-1 逐次阻断式),
- * 显示完整目标 URL 与放行后果;每次确认,无任何免确认记忆(A-2)。
- * 文案缺口如实声明:Main 侧无 i18n(现状先例=main 内其他对话框),四语化
- * 归渲染层确认 UI 切片(IMP-2 呈现批);四分法本体语义(确认在前/逐次/
- * 放行转内嵌)已完整,不受呈现语言影响。
+ * U9(1)/U9(3) 导航确认层(015 §12,批 B-3:渲染层 i18n 确认流):确认在前
+ * (A-1 逐次阻断式),确认卡显示完整目标 URL 与放行后果;每次确认,无任何
+ * 免确认记忆(A-2)。用户不答=pending 保持=导航不执行(无超时,阻断式确认
+ * 的诚实形态);respond 校验 confirmId(渲染层不能伪造未发出的确认,双
+ * 作答只首次生效)。导航策略本体在 security.ts 分类与分流——本函数仅是
+ * 确认 UI 载体(原生英文对话框已移除,四语化由渲染层确认卡承载)。
  */
+const pendingNavConfirms = new Map<string, (approved: boolean) => void>();
+
 function confirmNavigation(
   url: string,
   reason: "origin_not_allowed" | "external_protocol",
 ): Promise<boolean> {
-  const external = reason === "external_protocol";
-  const message = external ? "Open external application?" : "Open off-allowlist page?";
-  const detail = external
-    ? `This page asked to open an external application:\n${url}\nOnly continue if you trust it.`
-    : `This page is outside the browsing allowlist and will open in the embedded view:\n${url}`;
-  const options = {
-    type: "warning" as const,
-    buttons: ["Cancel", "Open"],
-    defaultId: 0,
-    cancelId: 0,
-    message,
-    detail,
-  };
-  const parent = mainWindow ?? undefined;
-  const dialogPromise =
-    parent === undefined ? dialog.showMessageBox(options) : dialog.showMessageBox(parent, options);
-  return dialogPromise.then(({ response }) => response === 1);
+  const confirmId = crypto.randomUUID();
+  return new Promise<boolean>((resolve) => {
+    pendingNavConfirms.set(confirmId, resolve);
+    const request: NavigationConfirmRequestV1 = { confirmId, url, reason };
+    for (const window of BrowserWindow.getAllWindows()) {
+      if (isAllowedLocalSender(window.webContents.getURL(), rendererUrl)) {
+        window.webContents.send("vua:nav-confirm:request", request);
+      }
+    }
+  });
 }
 
 async function createWindow(): Promise<void> {

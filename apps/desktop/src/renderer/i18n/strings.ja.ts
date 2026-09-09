@@ -1404,6 +1404,16 @@ rolled_back: "ロールバック済み",
     donateDescription: "寄付チャンネルは正式版リリース前に開放します。応援ありがとうございます。",
     packagesDescription: "Unity プロジェクトのパッケージのインストール・更新・移行・バックアップは今後のマイルストーンで提供予定です。ALCOM と VCC の操作設計を参考に、初心者向けに再構成します。",
   },
+  navConfirm: {
+    offAllowlistTitle: '許可リスト外のページを開きますか?',
+    offAllowlistBody: 'このページはブラウズ許可リストの外にあります。確認後に埋め込みビューで開きます。',
+    externalTitle: '外部アプリケーションを開きますか?',
+    externalBody: 'このページは外部アプリケーションの起動を要求しています。信頼できる場合のみ続行してください。',
+    openCta: '開く',
+    cancelCta: 'キャンセル',
+    pendingCount: '他に {count} 件の確認が待機中です',
+  },
+
   productionIntro: {
     title: "アバター生産",
     subtitle: "ワークベンチを準備中…",

@@ -1468,6 +1468,16 @@ rolled_back: "Rolled back",
     donateDescription: "Donation channels open before the official release. Thank you for your support.",
     packagesDescription: "Package install, update, migration and backup for Unity projects arrive in a later milestone. Interaction borrows from ALCOM and VCC, repackaged for beginners.",
   },
+  navConfirm: {
+    offAllowlistTitle: 'Open off-allowlist page?',
+    offAllowlistBody: 'This page is outside the browsing allowlist and will open in the embedded view after you confirm.',
+    externalTitle: 'Open external application?',
+    externalBody: 'This page asked to open an external application. Only continue if you trust it.',
+    openCta: 'Open',
+    cancelCta: 'Cancel',
+    pendingCount: '{count} more confirmation(s) waiting',
+  },
+
   productionIntro: {
     title: "Avatar Production",
     subtitle: "Preparing the workbench…",

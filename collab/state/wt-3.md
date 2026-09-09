@@ -1,50 +1,54 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: d4732f7
+baseline_commit: 8a9cb1a
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**批 B-3 对接设计稿已出（015 §12,1c8ca5b）**:页内确认层 IPC 面（Main→渲染层
-确认请求事件＋渲染层 i18n 弹窗＋respond 回发;无超时=不答不执行）——待核心
-表态（通道形状）＋集成验收口径,实现随表态后下一刀。**批 B 其余项均已交付**:
-批 B-1 能力翻转（875c85a,已合并?待确认）＋批 B-2 列表与采纳（f5bb1f4）＋
-列表 wire（核心 389912e 待验收）。
-## 自基线交付(d4732f7 合并 main 后)
-- main 合并维护(fast-forward 至 d4732f7;带入核心 downloads.listCompleted
-  接线批等);
-- **1c8ca5b:015 §12 对接设计稿(纯文档,批 B-3)**:
-  - 通道=VuaDesktopApiV1 增 navigationConfirm 段(respond＋请求事件;
-    NavConfirmReasonV1 二值;请求载荷携带完整 URL——A-1 要素);
-  - Main 侧 confirmNavigation 重写为「广播＋pending 登记簿」:无超时
-    (用户不答=不执行,阻断式确认的诚实形态;逐次确认无堆积),原生 dialog
-    移除(单一事实源),respond 校验(渲染层不能伪造未发出的确认;双 respond
-    只首次生效);
-  - 渲染层 NavigationConfirmOverlay(App 全局挂载,队列逐条处理)＋四语文案;
-  - 语义不变锚(验收对照):A-1 确认在前/A-2 逐次无记忆/A-4 清单恰四项/
-    U9(2) 伪协议不经确认层/U9(4) 手势由确认承载/A-6 下载流不受影响;
-  - 安全自评:confirmId 由 Main 生成(渲染层只能回应已发出的确认,不能伪造
-    导航放行);全部策略逻辑留在 Main 策略面(security.ts 零变更,仅确认 UI
-    载体替换);
-  - 测试设计:PendingConfirmRegistry 纯类＋overlay 队列状态机纯函数。
-- 消化:核心 downloads.listCompleted 接线（389912e 待集成验收——批 B 列表
-  数据源正式就绪,批 B-2 的列表消费与此接线互为两翼）;数据 TS 镜像校对
-  无出入＋冻结节奏告知。
+**批 B-3 页内确认层已交付(81b8510,核心形状核可＋集成 §12.8 开工授权)**:
+navigationConfirm IPC 段＋Main 广播/pending 登记簿＋渲染层全局确认卡四语。
+**IMP-2 批 A/批 B-1/B-2/B-3 全部交付完毕**;B-3 实现验收口径=015 §12.4 锚
+＋桌面 check 全链(集成 §12.8 已核)。**后续**:各批请集成验收合并;真机内嵌
+浏览会话确认(用户裁量)待安排——桌面不自行宣称端到端。
+## 自基线交付(8a9cb1a 合并 main 后)
+- main 合并维护(两次 fast-forward:3aea128→d4732f7→8a9cb1a 世代;带入
+  §12 核心表态＋集成 §12.8 授权＋CI collab-registry workflow 等);
+- **81b8510:批 B-3 页内确认层(015 §12 实现)**:
+  - contracts:NavConfirmReasonV1＋NavigationConfirmRequestV1(载荷含完整
+    URL,A-1 要素)＋DesktopNavigationConfirmApiV1(respond＋request 事件)
+    挂 VuaDesktopApiV1——纯桌面域,应用契约 v0.1 与 provider 帧零触碰
+    (核心表态②:零耦合无配合项);
+  - preload:navigationConfirm 段(respond invoke＋事件订阅,照
+    remoteContent 段同构先例);
+  - main:confirmNavigation 重写为「广播本地来源窗口＋pending 登记簿」;
+    respond handler 校验本地来源/类型/未知 id/重复作答(渲染层不能伪造
+    未发出的确认);**无超时=用户不答即不执行**(阻断式确认的诚实形态);
+    原生英文对话框移除(单一事实源,四语化由渲染层确认卡承载——上一批
+    声明的缺口在此兑现);
+  - 渲染层:NavigationConfirmOverlay(App 全局挂载一次)＋队列状态机纯
+    函数(navConfirmEnqueue 按 confirmId 去重/navConfirmAnswer 只弹队首);
+    四语确认卡(reason 分支标题＋完整 URL＋打开/取消＋队列计数提示);
+  - 测试:队列状态机 3 项;验收锚=015 §12.4。
+- **证据(2026-09-10 本机)**:contracts build＋桌面 check 全链绿(typecheck＋
+  vitest 51 文件 423 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹
+  零命中)。**诚实声明**:确认流为代码级交付,未进行真实浏览会话验证
+  (真机确认会话归用户裁量安排);确认 UI 载体替换,策略逻辑(security.ts)
+  零变更。
 ## 阻塞
-- 批 B-3 实现待核心表态（通道形状——其留言③明示「等对接设计出稿后表态,
-  不猜测先行」,设计稿已出）。无其它桌面阻塞。
+- 无桌面阻塞。IMP-2 冲刺四批(批 A＋批 B-1/2/3)全部交付,余项均为验收侧。
 ## 下次合并意图
-1c8ca5b（collab-only 提案批）随轮带入免测。批 A/批 B-1/批 B-2 实质批
-（61f1024/875c85a/f5bb1f4）随集成节奏验收——分叉表显示均已并入 main
-（领先 0）,如未并入请集成核对。
+81b8510 请集成验收合并(contracts 桌面 API 面＋preload＋main＋渲染层
+overlay＋i18n;验收按 015 §12.4 锚＋check 全链——证据在案)。**批 B 全部
+完成后,IMP-2 交付面收口**;IMP-5(验收与文档同步:隔离冒烟/诚实空态/
+能力判定核验/文档落账)待集成排期——隔离冒烟含真机会话,归用户裁量。
 ## 留言
-- [→核心] **批 B-3 对接设计稿已出（015 §12）**:navigationConfirm IPC 段
-  ＋事件载荷形状见 §12.1,Main 侧 pending 登记簿语义见 §12.2——请表态
-  （通道形状）;表态后桌面即实现（批 B-3）。
-- [→集成] ①批 B-3 设计稿请一并核（§12.4 锚即验收口径）;②上批 f5bb1f4
-  待验收（downloads.listCompleted TS 面＋列表/采纳 UI＋router 清理）。
-- [→数据] TS 镜像校对无出入已知悉;列表消费已上线（f5bb1f4）,与贵方
-  389912e 接线互为两翼（集成验收后端到端链路闭合——届时是否由集成安排
-  一次真机确认会话,归集成/用户裁量,桌面不自行宣称端到端）。
-- (历史留言消化:批 A 验收＋清单照准、wt-5 节奏告知——均已闭环。)
+- [→集成] 批 B-3 交付请验收(81b8510;§12.8 授权已核,验收锚 §12.4＋check
+  全链)。至此批 A＋批 B-1/2/3 全部交付,IMP-2 交付面收口。**IMP-5 排期
+  请仲裁**:隔离冒烟与 BOOTH 下载域真机验证记录含真机会话(用户参与点),
+  桌面随时可备冒烟清单草案。
+- [→核心] §12 表态(形状核可＋零耦合)已知悉,实现照核可形状落地;无新增
+  配合项。
+- [→数据] 批 B-2 列表消费与你方 389912e 接线的端到端链路已闭合(代码级);
+  真机采纳会话验证待安排(不自行宣称)。
+- (历史留言消化:数据 TS 镜像校对无出入、节奏告知——均已闭环。)
