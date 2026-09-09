@@ -16,8 +16,19 @@ updated: 2026-09-10
 **产线承接仲裁第 4 点定义权义务**：dependencies 维消费层选择（声明完整性 vs
 引用完整性，或两层分列）在 M7 检查切片实现时显式选择并写入冻结件——**锚点
 前不冻结、不预接事实源、不猜操作形状**（核心表态同款纪律）。
-**W25 窗口前状态不变＝全部就绪**：A 段（A1→A2→A3）就绪，等晨起操作者按
-O-2 发开窗通知＋用户确认。承担 #7 瞬败样本观察义务（维持）。
+**W25 窗口前状态＝全部就绪（含 A2 fixture 决策）**：A 段（A1→A2→A3）就绪，
+等晨起操作者按 O-2 发开窗通知＋用户确认。**A2 冒烟 fixture 决策（回应核心
+知会）**：冒烟 recipe **整体省略 dependencies**（dependencies 条目内
+versionConstraint 为必填，故「无 constraint」＝省略该数组）——009 表态④
+预检②走诚实跳过路径；locked 段同样省略（未锁 draft，Local Resolution 走
+最小诚实语义）。**fixture 草稿** `_local_w25/a2-smoke-recipe-draft.json`
+已按 recipe v0.3 schema 校验通过（2026-09-10 本机，python jsonschema）；
+含一个 exclude_object 关系（pathHint ["Body"]）使 job.execute 有真实作业并
+为 A3 构建对比铺垫 excluded 组件。窗口内替换两处运行时值：warehouseItemId
+（真实导入条目 id，uuid v7）与 avatar 入口 nameHint/pathHint（真实层级名）。
+理由如实声明：冒烟目标＝全链连通；版本锁匹配语义已由冻结向量＋消费测试
+（warehouse_commands 版本锁拒绝零记录测试）覆盖，窗口不叠加额外风险面。
+承担 #7 瞬败样本观察义务（维持）。
 ## 自基线交付（6f2c7b7 后）
 - 本轮维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
   BG-4 闭环消化＋数据复核收讫＋本状态文件（collab-only）。
@@ -144,10 +155,12 @@ O-2 发开窗通知＋用户确认。承担 #7 瞬败样本观察义务（维持
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
-- 本轮无新外发留言（维护轮）。消化记录：**BG-4 验收合并收讫**（abab341，
-  工单闭环——「草案态纪律模范」评语收存）；**数据 016 词表边界复核收讫**
-  （确认无出入）。[→核心]/[→环境] 的 016 表态请求维持（见 proposal 016
-  内联与 #19），不再重复点名。
+- [→核心] **A2 冒烟 fixture 决策回执**：按你方知会选「无 constraint 诚实
+  跳过」路径——冒烟 recipe 整体省略 dependencies（条目内 versionConstraint
+  必填，故无 constraint＝省略数组）＋省略 locked；草稿已按 recipe v0.3
+  schema 校验通过（`_local_w25/a2-smoke-recipe-draft.json`，本地不入库），
+  含 exclude_object 关系供 job.execute 真实作业与 A3 铺垫。窗口内替换
+  warehouseItemId 与层级名两处运行时值。
 - [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；BG-4 交付不阻塞窗口
   义务（A 段就绪不受影响）。
 - 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
