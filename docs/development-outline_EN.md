@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.9
+> Document version: 2.0.11
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.9)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.11)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -249,7 +249,7 @@ before updating; settled at closure, 2026-09-08):
 
 | Task | Owning role | Collaborators | Status |
 | --- | --- | --- | --- |
-| Remote content / Session / download port and isolated browse UI | Desktop | — | ✅ Delivered (F4-2/3/4/6), walkthroughs closed (W6/W7) |
+| Remote content / Session / download port and isolated browse UI | Desktop | — | ✅ Delivered (F4-2/3/4/6), walkthroughs closed (W6/W7). **Honest-degradation note (2026-09-09 review M-1)**: the in-app browse window presentation was never migrated (currently honestly degraded to the system browser); wiring belongs to the import-page stage (**M6 IMP-2** — the addition is ruled (U7①, 2026-09-09) and the row is in the M6 table (2.0.11); navigation/new-window/external-protocol semantics authority = the user's "new windows / external protocols" four-way ruling (2026-09-09, BOARD U9)) — this does not change the acceptance conclusion of this row |
 | Warehouse list / filter / detail / inspection-state presentation | Desktop | Data | ✅ Delivered (F4-5/6), walkthrough closed; layout rework in W13 |
 | Minimal BDL persistence format and Warehouse mapping | Data | Core | ✅ Delivered (bdl/v0.1, bdl-queries v0.3) |
 | Download-event consumption, retry/recovery, and task closure | Data | Core | ✅ Delivered (incl. W4 test coverage) |
@@ -305,7 +305,16 @@ Task breakdown (**project-management portion opens early** — user ruling, late
 **out of gate order** but gate acceptance and release still follow gate order
 after M5 closes. Governance note: the T-A project-management command wire
 vocabulary is a **new protocol face** — desktop proposal → core ruling flow
-unchanged; the early-open authorization is recorded on the BOARD M6 row):
+unchanged; the early-open authorization is recorded on the BOARD M6 row.
+**IMP-1~5 material import-page package added** (user ruling 2026-09-09: U7①
+approved the addition, details may start coarse and be refined; U7③ the
+download-landing protocol face is Data-owned with a freeze-first hard
+prerequisite; IMP-2 navigation/new-window/external-protocol semantics
+authority = the user's "new windows / external protocols" four-way ruling
+(2026-09-09, "agree to proceed per this plan", BOARD U9); IMP gate acceptance
+**merges into** the M6 (v0.8.0) gate checklist — registered under the default
+reading, the user raised no objection; implementation opens 2026-09-09 23:00,
+led by Desktop)):
 
 | Package | Task | Owning role | Collaborators | Anchor / notes |
 | --- | --- | --- | --- | --- |
@@ -314,6 +323,11 @@ unchanged; the early-open authorization is recorded on the BOARD M6 row):
 | T-C | F6 guidance/plan/confirmation pages with per-action warning consent (incl. the U3 read-only compatibility surface: write handoff and the "import as a VUA-managed copy" entry) | Desktop | Environment | authority = product-boundary 1.2.0; W24 read-face prerequisite rides the M5 production-use-case v0.2 |
 | EAC | Experimental EAC recovery adapter (R1–R9 approved by the user, proposal 006 accepted; implementation slice opens per the R9 sequence) | Environment | Integration (ruling) | eight-point approval semantics in the 006 inline thread |
 | ENV | Unity/VRChat/SteamVR environment checks; network/disk/residual-process failure handling | Environment | Core | included in the early-open scope |
+| IMP-1 | Material import-page information architecture and presentation design: a dedicated import face (cloud download + local import); reconciliation with design-standard §8.3 "continuous acquisition path" (fate of the dual-track header, merge of the cloud-catalog track); isolated-session sign-in presentation and the "no purchase flow" semantics | Desktop | Integration (design-standard reconciliation and versioning), Data, Core | ruling prerequisites settled (U7① + U9); shares files with the W15 closing fix batch (warehouse/settings pages), scheduling owned by Integration |
+| IMP-2 | In-app web browse wiring: the renderer consumes the existing `RemoteContentApiV1` + Main base (remote-content/download-port in place); `desktop.remoteBrowser` capability detection flips with honest degradation retained while unwired; navigation policy flips to "in-list direct / out-of-list prompt-then-allow"; **new windows / external protocols / pseudo-protocols / the gesture requirement implemented per the U9 four-way ruling** (`setWindowOpenHandler` always denies native new windows); initial browse-allowlist proposal (committed text lists domains only); download host domains = real-machine verification → per-domain proposal → approval | Desktop | Core (contracts/capability face), Integration (security acceptance + product-boundary/desktop architecture landing) | hard prerequisite = the U9 ruling landed in managed docs before work starts; isolation red lines (sandbox / no preload / dedicated partition / standard Web APIs) untouched item by item; unverified download domains are always refused (honest failure) |
+| IMP-3 | Cloud download → warehouse-entry landing path (`downloaded_material`) — **contract first**: Data-owned bdl-commands family upgrade (Schema + positive/negative vectors + consumer tests + desktop TS registration + bilingual protocol + REGISTRY); implementation only after the freeze hard prerequisite | Data | Core (wire routes), Desktop (TS face and presentation) | hard prerequisite = the U7③ procedure; no parallel third path (only the bdl-commands family or its upgrade); contract design may start in parallel with IMP-1, outside gate order |
+| IMP-4 | Local-import presentation closure into the import page: reuse `warehouse.import` (bdl-commands v0.3) and the existing W18 submit flow (pick → confirm list → single command → task center) — an entry consolidation/regrouping of the existing import UI, zero new vocabulary, zero new paths | Desktop | Data | protocol and implementation already on main (v0.3 frozen + the W18 presentation batch); may share a batch with IMP-1 |
+| IMP-5 | Acceptance and documentation sync: isolation smoke (session isolation / permission refusals / out-of-list browse prompt / out-of-list download refusal / download takeover / new-window and external-protocol behavior per the U9 ruling), honest empty states, and capability-detection checks; product-boundary browse-allowlist policy landing / outline M6 table / design-standard / desktop architecture row updates | Desktop (documentation collaboration) | Integration (gate acceptance and documentation landing), Data, Core | evidence discipline: no end-to-end claim without real-machine evidence (the BOOTH download-domain real-machine record is an IMP-2 deliverable); IMP completion enters the v0.8.0 release conditions (merged reading) |
 | — | Gate acceptance and release (**not** in the early-open scope) | Integration | All | follows gate order after M5 closes |
 
 ### M7 — v0.9.0: Inspection, Release, and the desktop overlay
@@ -480,6 +494,24 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.11 (2026-09-09): **M6 gains the material import-page package IMP-1~5**
+  (user ruling 2026-09-09 approved the addition [U7①]: IMP-1 design / IMP-2
+  web browse wiring / IMP-3 cloud-download landing contract first [Data] /
+  IMP-4 local-import closure / IMP-5 acceptance and documentation; led by
+  Desktop with Data/Core collaborating and Integration accepting and landing
+  documents); governance note extended — IMP-2 navigation/new-window/
+  external-protocol semantics authority = the user's "new windows / external
+  protocols" four-way ruling (2026-09-09, "agree to proceed per this plan",
+  registered as BOARD U9); IMP gate acceptance merges into the M6 (v0.8.0)
+  gate checklist (default reading, the user raised no objection); the pending
+  condition (pending user ruling 2) of the "M6 IMP-2" forward reference in
+  the M4 remote-content row is resolved and the reference closes with this
+  batch; bilingual sync.
+- 2.0.10 (2026-09-09): review-report M-1 landed (honesty discipline) — the M4 table row
+  "Remote content / Session / download port and isolated browse UI" gains an inline note:
+  the in-app browse window presentation was never migrated (currently honestly degraded to
+  the system browser); wiring belongs to the import-page stage (M6 IMP-2, pending user
+  ruling 2) — this does not change the row's acceptance conclusion; bilingual sync.
 - 2.0.9 (late 2026-09-08 / recorded early 09-09): **M6 project-management portion
   opens early, landed** (user ruling, late 2026-09-08, relayed by the operator) —
   the M6 task table is refined by package (T-A general vrc-get path / T-B
