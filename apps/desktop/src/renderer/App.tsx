@@ -28,9 +28,16 @@ import {
 } from "./app/onboarding-model.ts";
 import { resourceSaverActive, resourceSaverSource } from "./app/resource-saver.ts";
 import { storageKeys } from "./app/storage-keys.ts";
+import {
+  isUiRootAvailable,
+  readUiRootSelection,
+  writeUiRootSelection,
+  type UiRootId,
+} from "./app/ui-registry.ts";
 import { Button } from "./components/primitives/Button.tsx";
 import { Card } from "./components/primitives/Card.tsx";
 import { EmptyState } from "./components/primitives/EmptyState.tsx";
+import { Badge } from "./components/primitives/Badge.tsx";
 import { Icon } from "@vua/design-system";
 import { format, strings, termLabel, termSequence, TERMS } from "./i18n/index.ts";
 import { currentLocale, localeRegistry } from "./i18n/index.ts";
@@ -181,7 +188,37 @@ function PlaceholderPage({ title, description }: { title: string; description: s
  * 「生成后删除原始素材文件」危险开关(未接线偏好,确认对话框,proposal 008)。
  * 007 的「生成 VPM 模式入口」偏好开关被全局开关语义取代(提案 008 复核)。
  */
-function ExperimentalSettingsPage() {
+/* 森林绿 UI 不可用根(批 D 前置):诚实不可用呈现＋返回现有 UI 入口;
+ * 共享容器(GatewayProvider/事件/状态)在此根下继续存在——仅 UI 树替换 */
+function ForestGreenUnavailableRoot({ onBackToCurrent }: { onBackToCurrent: () => void }) {
+  return (
+    <div className="vua-page">
+      <section className="vua-page__hero">
+        <h1 className="vua-title">{strings.dev.uiForestLabel}</h1>
+      </section>
+      <Card>
+        <EmptyState
+          title={strings.dev.uiForestUnavailable}
+          description={strings.dev.uiForestUnavailableDesc}
+          action={
+            <Button variant="primary" onClick={onBackToCurrent}>
+              {strings.dev.uiBackToCurrentCta}
+            </Button>
+          }
+        />
+      </Card>
+    </div>
+  );
+}
+
+function ExperimentalSettingsPage({
+  uiRoot,
+  onUiRootChange,
+}: {
+  uiRoot: UiRootId;
+  onUiRootChange: (root: UiRootId) => void;
+}) {
+  const forestAvailable = isUiRootAvailable("forest-green");
   return (
     <div className="vua-page">
       <section className="vua-page__hero">
@@ -193,9 +230,41 @@ function ExperimentalSettingsPage() {
       {/* 开发模式区(018 批 1,裁决 13 备稿授权):仅 DEV 构建渲染,
           生产构建零存在(leak 指纹扩展覆盖 per-port 选择键) */}
       {import.meta.env.DEV ? (
-        <Card>
-          <DevModeSection />
-        </Card>
+        <>
+          <Card>
+            <DevModeSection />
+          </Card>
+          <Card>
+            <div className="vua-page__stack">
+              <h3 className="vua-warehouse-detail__section-title">
+                {strings.dev.uiSwitchTitle}
+              </h3>
+              <p className="vua-caption vua-text-secondary">{strings.dev.uiSwitchDesc}</p>
+              <ul className="vua-project-compat__specs">
+                <li>
+                  <Button
+                    variant={uiRoot === "current" ? "primary" : "default"}
+                    onClick={() => onUiRootChange("current")}
+                  >
+                    {strings.dev.uiCurrentLabel}
+                  </Button>
+                </li>
+                <li>
+                  <Button
+                    variant={uiRoot === "forest-green" ? "primary" : "default"}
+                    disabled={!forestAvailable}
+                    onClick={() => onUiRootChange("forest-green")}
+                  >
+                    {strings.dev.uiForestLabel}
+                  </Button>{' '}
+                  {!forestAvailable ? (
+                    <Badge tone="neutral">{strings.dev.uiForestUnavailable}</Badge>
+                  ) : null}
+                </li>
+              </ul>
+            </div>
+          </Card>
+        </>
       ) : null}
     </div>
   );
@@ -494,6 +563,8 @@ function renderPage(
   creatorReady: boolean,
   actions: PageActions,
   prefs: PagePrefs,
+  uiRoot: UiRootId,
+  onUiRootChange: (root: UiRootId) => void,
 ) {
   switch (page) {
     case "home":
@@ -548,7 +619,12 @@ function renderPage(
     case "settings-version":
       return <VersionPage />;
     case "settings-experimental":
-      return <ExperimentalSettingsPage />;
+      return (
+        <ExperimentalSettingsPage
+          uiRoot={uiRoot}
+          onUiRootChange={onUiRootChange}
+        />
+      );
     case "settings-about":
       return <AboutPage />;
     case "settings-donate":
@@ -573,12 +649,17 @@ function AppShell({
   navigate,
   goals,
   actions,
+  uiRoot,
+  onUiRootChange,
 }: {
   page: PageId;
   navigate: (target: PageId) => void;
   goals: StoredGoalsV1 | null;
   /** 壳层注入的动作(openPalette/navigate 由 AppShell 内部补齐,见 pageActions) */
   actions: Omit<PageActions, "openPalette" | "navigate">;
+  /** 多套 UI 根(019 批 A):共享容器持有,切换不重建 Gateway */
+  uiRoot: UiRootId;
+  onUiRootChange: (root: UiRootId) => void;
 }) {
   // 008 路径 a 桌面接线(W19):删除偏好开启时,生成完成即逐条目发起独立删除任务
   useAutoDeleteOriginals();
@@ -1042,7 +1123,7 @@ function AppShell({
               saverAuto: effectsAuto,
               onSaverAutoChange: setEffectsAuto,
               steamVRRunning,
-            })}
+            }, uiRoot, onUiRootChange)}
           </div>
           {introPhase === "showing" ? (
             <ProductionIntroOverlay onDone={() => setIntroPhase("done")} />
@@ -1080,6 +1161,8 @@ export function App() {
   const [{ gateway, name }] = useState<{ gateway: VuaGateway; name: GatewayStateName }>(() =>
     createGatewayState(storedGoals),
   );
+  // 多套 UI 根选择(019 批 A):共享容器(GatewayProvider)不随切换重建
+  const [uiRoot, setUiRoot] = useState<UiRootId>(() => readUiRootSelection());
   // 启动入口决策:引导未完成时 vua-last-page 不能绕过(onboarding-model 测试覆盖)
   const [entry] = useState(() =>
     resolveEntry(storedGoals, override === null ? readStoredPage() : null),
@@ -1168,12 +1251,18 @@ export function App() {
 
   return (
     <GatewayProvider gateway={gateway}>
-      <AppShell
-        page={page}
-        navigate={navigate}
-        goals={storedGoals}
-        actions={actions}
-      />
+      {uiRoot === "forest-green" ? (
+        <ForestGreenUnavailableRoot onBackToCurrent={() => setUiRoot("current")} />
+      ) : (
+        <AppShell
+          page={page}
+          navigate={navigate}
+          goals={storedGoals}
+          actions={actions}
+          uiRoot={uiRoot}
+          onUiRootChange={setUiRoot}
+        />
+      )}
     </GatewayProvider>
   );
 }

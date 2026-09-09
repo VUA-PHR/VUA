@@ -38,4 +38,8 @@ export const storageKeys = {
    *  JSON 形态 { [DevPortId]: "live" | "fixture" };解析/校验见
    *  app/dev-port-selection.ts,生产构建恒无此键消费 */
   devPortSelection: "vua-dev-port-selection",
+  /** 多套 UI 根选择(019 批 A,需求 §2.1 首批开发设置入口):sessionStorage,
+   *  值 = ui-registry 的 UiRootId(current | forest-green);共享容器
+   *  (GatewayProvider)不随切换重建 */
+  uiRootSelection: "vua-ui-root-selection",
 } as const;
