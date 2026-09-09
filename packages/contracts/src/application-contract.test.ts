@@ -252,6 +252,16 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(true);
   });
 
+  it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "downloads.listCompleted", params: {},
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "downloads.listCompleted",
+      params: { downloadId: "dl-1" },
+    })).toBe(false);
+  });
+
   it("rejects download-adoption closed-set violations", () => {
     // 空数组、缺字段、非字符串元素、词表外字段、缺 commandId 一律拒绝
     expect(isApplicationRequestV01({

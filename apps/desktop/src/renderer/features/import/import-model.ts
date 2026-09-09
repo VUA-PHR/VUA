@@ -21,6 +21,22 @@ export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvaila
   return remoteBrowser === true ? { kind: "available" } : { kind: "unavailable" };
 }
 
+/** 字节 → 人读量级(1024 进位;B 档整数,KB 起一位小数去尾零)。
+ *  与 project-compat-model 同规则(单位错位缺陷修复的同一形态,各档边界
+ *  由彼处测试与本页 receivedBytes 呈现共用语义)。 */
+export function bytesText(bytes: number): string {
+  const units = ["B", "KB", "MB", "GB", "TB"];
+  let value = bytes;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  const rounded =
+    unit === 0 ? String(Math.round(value)) : String(Math.round(value * 10) / 10);
+  return `${rounded} ${units[unit]}`;
+}
+
 export interface EmbeddedBrowseState {
   /** 当前托管视图身份;null = 无打开视图 */
   readonly viewId: string | null;

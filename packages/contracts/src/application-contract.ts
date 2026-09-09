@@ -373,6 +373,33 @@ export interface WarehouseListEntriesQueryV03 extends ApplicationRequestBaseV01 
   readonly params: Readonly<Record<string, never>>;
 }
 
+/** downloads.listCompleted 查询(bdl-queries v0.4,015 §10 仲裁 A 形态):
+ *  可采纳的已完成交付(折叠于 TransferDone＋暂存文件在场且尺寸相符),
+ *  与 warehouse.importDownloads 采纳守卫同源同函数——行在列即可采纳 */
+export interface DownloadsListCompletedQueryV04 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "downloads.listCompleted";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+/** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
+ *  路径永不过 wire;renderer 从不由此推导产品身份 */
+export interface DownloadsListCompletedItemV04 {
+  readonly downloadId: string;
+  readonly sourceUrl: string;
+  /** 服务端建议/派生文件名;端口未报告时 null */
+  readonly suggestedFileName: string | null;
+  readonly receivedBytes: number;
+  readonly completedAt: string;
+  /** 内容关联本下载的仓储条目(空 = 尚未采纳;写面不阻止重复采纳,呈现
+   *  层以此标注已采纳) */
+  readonly adoptedWarehouseItemIds: readonly string[];
+}
+
+export interface DownloadsListCompletedResultV04 {
+  readonly downloads: readonly DownloadsListCompletedItemV04[];
+}
+
 export interface WarehouseEntryDetailQueryV03 extends ApplicationRequestBaseV01 {
   readonly kind: "query";
   readonly method: "warehouse.entryDetail";
@@ -972,6 +999,7 @@ export type ApplicationRequestV01 =
   | CatalogStatusQueryV03
   | WarehouseListEntriesQueryV03
   | WarehouseEntryDetailQueryV03
+  | DownloadsListCompletedQueryV04
   | RecipeGetQueryV02
   | RecipeListQueryV02
   | PlanGetQueryV02
@@ -1075,6 +1103,7 @@ export type ApplicationSuccessValueV01 =
   | CatalogStatusResultV03
   | WarehouseListEntriesResultV03
   | WarehouseEntryDetailResultV03
+  | DownloadsListCompletedResultV04
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseImportAcceptedV03
@@ -1339,6 +1368,11 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && hasExactKeys(value.params, []);
   }
   if (value.kind === "query" && value.method === "warehouse.listEntries") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  // bdl-queries v0.4(015 §10):可采纳已完成交付列表,params 闭集 = 空
+  if (value.kind === "query" && value.method === "downloads.listCompleted") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
   }

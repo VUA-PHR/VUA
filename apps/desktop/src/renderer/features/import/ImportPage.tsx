@@ -7,11 +7,13 @@ import {
   type WarehouseCommandOutcome,
 } from "../../gateway/index.ts";
 import { commandErrorText } from "../warehouse/acquire-model.ts";
-import { strings } from "../../i18n/index.ts";
+import { format, strings } from "../../i18n/index.ts";
+import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
   browseAvailability,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
+  bytesText,
   type EmbeddedBrowseAvailability,
   type EmbeddedBrowseState,
 } from "./import-model.ts";
@@ -202,6 +204,125 @@ function LocalImportSection() {
   );
 }
 
+/* ---- 云端段:已完成下载列表＋采纳入口(bdl-queries v0.4 + v0.4 写面) ---- */
+
+interface DownloadsViewState {
+  readonly kind: "loading" | "unavailable";
+}
+interface DownloadsViewLoaded {
+  readonly kind: "loaded";
+  readonly downloads: readonly DownloadsListCompletedItemV04[];
+}
+
+function CompletedDownloadsPanel() {
+  const gateway = useGateway();
+  const [state, setState] = useState<DownloadsViewState | DownloadsViewLoaded>({
+    kind: "loading",
+  });
+  const [reloadKey, setReloadKey] = useState(0);
+  const [adoptBusyId, setAdoptBusyId] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    setState({ kind: "loading" });
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "downloads.listCompleted",
+        params: {},
+      })
+      .then((result) => {
+        if (!active) return;
+        // 收窄纪律(与 warehouse-commands-live 同构):必需字段收不齐 =
+        // 提供方响应不可解释,如实 unavailable
+        const downloads =
+          result.ok
+            ? (result.value as { downloads?: unknown }).downloads
+            : undefined;
+        if (Array.isArray(downloads)) {
+          setState({ kind: "loaded", downloads: downloads as readonly DownloadsListCompletedItemV04[] });
+        } else {
+          setState({ kind: "unavailable" });
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const adopt = (downloadId: string) => {
+    setAdoptBusyId(downloadId);
+    setFeedback(null);
+    void gateway.warehouseCommands.importDownloads([downloadId]).then((outcome: WarehouseCommandOutcome) => {
+      setAdoptBusyId(null);
+      if (outcome.ok) {
+        setFeedback(copy.downloadAccepted);
+        setReloadKey((key) => key + 1);
+      } else {
+        setFeedback(
+          outcome.error.kind === "application"
+            ? `${commandErrorTextFor(outcome.error)}`
+            : acquireCopy.commandErrors.vua_warehouse_unavailable,
+        );
+      }
+    });
+  };
+
+  return (
+    <div className="vua-import__downloads">
+      {feedback !== null ? (
+        <p className="vua-caption vua-text-secondary" role="status">
+          {feedback}
+        </p>
+      ) : null}
+      {state.kind === "loading" ? (
+        <p className="vua-caption vua-text-secondary">{acquireCopy.importConfirmTitle}</p>
+      ) : null}
+      {state.kind === "unavailable" ? (
+        <p className="vua-caption vua-text-secondary" role="alert">
+          {acquireCopy.commandErrors.vua_warehouse_unavailable}
+        </p>
+      ) : null}
+      {state.kind === "loaded" && state.downloads.length === 0 ? (
+        <p className="vua-caption vua-text-secondary">{copy.downloadsEmpty}</p>
+      ) : null}
+      {state.kind === "loaded" && state.downloads.length > 0 ? (
+        <ul className="vua-project-compat__specs">
+          {state.downloads.map((download) => {
+            const adopted = download.adoptedWarehouseItemIds.length > 0;
+            const name = download.suggestedFileName ?? download.sourceUrl;
+            return (
+              <li key={download.downloadId}>
+                <strong>{name}</strong>{" "}
+                <span className="vua-caption vua-text-secondary">
+                  {format(copy.downloadSize, { size: bytesText(download.receivedBytes) })} ·{" "}
+                  {format(copy.downloadCompletedAt, { at: download.completedAt })}
+                </span>{" "}
+                {adopted ? (
+                  <Badge tone="success">{copy.downloadAdopted}</Badge>
+                ) : (
+                  <Button
+                    variant="default"
+                    disabled={adoptBusyId !== null}
+                    onClick={() => adopt(download.downloadId)}
+                  >
+                    {copy.downloadAdoptCta}
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+      <Button variant="subtle" onClick={() => setReloadKey((key) => key + 1)}>
+        {copy.downloadsReload}
+      </Button>
+    </div>
+  );
+}
+
 /* ---- 页面 ---- */
 
 export function ImportPage() {
@@ -225,6 +346,8 @@ export function ImportPage() {
           <section>
             <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
             <EmbeddedBrowsePanel availability={availability} />
+            <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
+            <CompletedDownloadsPanel />
           </section>
         </div>
       </Card>

@@ -349,6 +349,14 @@ export interface WarehouseImportDownloadsRequestV1 {
   readonly params: { readonly downloadIds: readonly string[]; readonly commandId: string };
 }
 
+/** downloads.listCompleted 可采纳下载列表查询(bdl-queries v0.4,IMP-2 批 B) */
+export interface DownloadsListCompletedRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "downloads.listCompleted";
+  readonly params: Readonly<Record<string, never>>;
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -375,6 +383,7 @@ export type DesktopGatewayRequestV1 =
   | WarehouseSetGlobalDefaultModeRequestV1
   | WarehouseImportRequestV1
   | WarehouseImportDownloadsRequestV1
+  | DownloadsListCompletedRequestV1
   | RecipeSaveRequestV1
   | RecipeGetRequestV1
   | RecipeListRequestV1
@@ -407,6 +416,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "catalog.status": "query",
   "warehouse.listEntries": "query",
   "warehouse.entryDetail": "query",
+  "downloads.listCompleted": "query",
   "download.retry": "command",
   "warehouse.setArtifactMode": "command",
   "warehouse.generateVpm": "command",
@@ -729,6 +739,7 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && /^booth:[0-9]+$/.test(value.params.productId);
     case "catalog.status":
     case "warehouse.listEntries":
+    case "downloads.listCompleted":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
