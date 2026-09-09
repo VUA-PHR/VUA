@@ -7,12 +7,18 @@
 #![allow(clippy::result_large_err)]
 
 pub mod artifact_inspection;
+pub mod warehouse_download_adopt;
 pub mod warehouse_import;
 pub mod warehouse_maintenance;
 
 pub use artifact_inspection::{
     ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
     InspectionPolicy, StagingRejection,
+};
+pub use warehouse_download_adopt::{
+    submit_warehouse_import_downloads, AdoptedDownload, DownloadAdoptError,
+    WarehouseDownloadAdoptTaskResult, WarehouseDownloadAdoptTaskSpec, DownloadAdopter,
+    DOWNLOADED_ENTRY_KIND,
 };
 pub use warehouse_import::{
     submit_warehouse_import, ImportedArtifact, ImportError as WarehouseImportError,
