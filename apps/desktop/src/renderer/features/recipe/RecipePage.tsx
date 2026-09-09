@@ -27,6 +27,7 @@ import {
 import {
   narrowRecipeDocumentFacts,
   narrowRecipeDocumentStructure,
+  recipeDocumentToGraphView,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
   type RecipeDocumentFacts,
@@ -528,10 +529,10 @@ function LayerList({
 
 function RecipeLibrarySection({
   selectedId,
-  onSelect,
+  onSelectDocument,
 }: {
   selectedId: string | null;
-  onSelect: (recipeId: string) => void;
+  onSelectDocument: (document: unknown) => void;
 }) {
   const [state, setState] = useState<
     | { readonly kind: "loading" }
@@ -675,7 +676,7 @@ function RecipeLibrarySection({
 
   function setQueueSelect(entry: RecipeLibraryEntryNarrowed): void {
     const next = selectLibraryRecipe(selectedId, entry.recipeId);
-    if (next !== null) onSelect(next);
+    if (next !== null) onSelectDocument(next);
   }
 }
 
@@ -872,9 +873,32 @@ export function RecipePage() {
     });
   };
 
-  // BG-1(W24 读面预备):文档库共享选择骨架——选中态提升至页面顶层,
-  // 三视图与文档库同源消费;文档→工作台视图映射未接线(诚实标注在库区)
+  // BG-1(W24 读面预备,A 路径已确认):文档库共享选择骨架——选中库文档即
+  // 经映射(recipeDocumentToGraphView)装载三视图,state=expected 期望态
+  // 词表(语义标注随视图呈现);清除选择回合成纵向(reloadNonce 重取)
   const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
+  const [documentMode, setDocumentMode] = useState(false);
+
+  const handleLibraryDocument = (document: unknown) => {
+    const view = recipeDocumentToGraphView(document);
+    if (view === null || view.kind !== "graph") return;
+    setDocumentMode(true);
+    setGraph(view);
+    const stored = loadRecipeLayouts();
+    layoutsRef.current = stored;
+    const bucket = stored.byRecipe[view.recipeId];
+    setPoints(
+      mergePoints(
+        basePoints(view),
+        bucket ? new Map(Object.entries(bucket)) : new Map<string, GraphPoint>(),
+      ),
+    );
+  };
+
+  const exitDocumentMode = () => {
+    setDocumentMode(false);
+    setReloadNonce((nonce) => nonce + 1);
+  };
 
   return (
     <div className="vua-page">
@@ -926,9 +950,20 @@ export function RecipePage() {
       <Card>
         <RecipeLibrarySection
           selectedId={selectedLibraryRecipeId}
-          onSelect={setSelectedLibraryRecipeId}
+          onSelectDocument={handleLibraryDocument}
         />
       </Card>
+
+      {documentMode ? (
+        <Card>
+          <p className="vua-caption vua-text-secondary" role="note">
+            {copy.documentModeNote}
+          </p>
+          <Button variant="default" onClick={exitDocumentMode}>
+            {copy.documentModeExit}
+          </Button>
+        </Card>
+      ) : null}
 
       {loadFailed ? (
         <Card>

@@ -20,8 +20,16 @@ export const CURRENT_RECIPE_ID = "current";
 /* ---- Recipe 图谱(冻结形状) ---- */
 
 /** 图谱节点状态:ready=素材齐备;conflict=与其他节点冲突;missing=本地缺失;
- *  unresolved=仅有商品引用、未解析出实体(显示卖家原文,见 displayFallback) */
-export type RecipeNodeState = "ready" | "conflict" | "missing" | "unresolved";
+ *  unresolved=仅有商品引用、未解析出实体(显示卖家原文,见 displayFallback);
+ *  expected=库文档期望态(BG-1,015 §13 语义约束:description 钉死「期望态
+ *  描述,非已验证的本地状态」——文档确定事实,非检查结果;呈现必须随附
+ *  该语义标注,检查事实产生后由服务侧投影演进替代) */
+export type RecipeNodeState =
+  | "ready"
+  | "conflict"
+  | "missing"
+  | "unresolved"
+  | "expected";
 
 /** 图谱节点(素材):asset 与 sourceRef 至少其一;
  *  仅 sourceRef 时 state 必为 unresolved,展示用 displayFallback 原文;

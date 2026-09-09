@@ -530,3 +530,39 @@ export function narrowRecipeDocumentStructure(
   const relationCount = Array.isArray(record.relations) ? record.relations.length : null;
   return { assets, instances, relationCount };
 }
+
+/** 文档 → 工作台图谱视图映射(BG-1 主切片,A 路径已获核心一票＋数据一票
+ *  ＋归属判定桌面 TS 面自决):assets→nodes(state=expected,期望态中性词表;
+ *  description 钉死「期望态描述,非已验证的本地状态」——015 §13 语义约束);
+ *  relations 结构映射未接入=edges 诚实空集(关系计数在文档事实清单呈现);
+ *  文档本体非对象 = null(不猜测)。呈现必须随附期望态语义标注。 */
+export function recipeDocumentToGraphView(document: unknown): RecipeGraphView | null {
+  if (document === null || typeof document !== "object" || Array.isArray(document)) return null;
+  const record = document as Record<string, unknown>;
+  const recipeId = record.recipeId;
+  if (typeof recipeId !== "string" || recipeId.length === 0) return null;
+  const nodes: RecipeGraphNode[] = [];
+  if (Array.isArray(record.assets)) {
+    for (const item of record.assets) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+      const asset = item as Record<string, unknown>;
+      if (typeof asset.id !== "string" || asset.id.length === 0) continue;
+      if (typeof asset.role !== "string" || asset.role.length === 0) continue;
+      nodes.push({
+        id: asset.id,
+        state: "expected",
+        role: asset.role,
+      });
+    }
+  }
+  return {
+    schemaVersion: 1,
+    kind: "graph",
+    recipeId,
+    nodes,
+    edges: [],
+    selectedNodeId: null,
+    conflicts: [],
+    missing: [],
+  };
+}
