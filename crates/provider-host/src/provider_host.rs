@@ -12,9 +12,9 @@ use vua_unity_bridge::{
 use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
-    acquire_project_lock, apply_import_copy, begin_mutation, plan_import_copy, read_pending_mutation,
-    ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
-    ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
+    acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
+    plan_import_copy, read_pending_mutation, ImportCopyRequest, LockHolder, ManagerRoots,
+    MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
 };
 use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
@@ -168,13 +168,22 @@ pub struct ProjectOpsConfig {
     pub vcc_settings_candidates: Vec<PathBuf>,
     /// Manager roots (ALCOM settings candidates) for the same guard face.
     pub manager_roots: ManagerRoots,
+    /// Unity Hub editor roots the environment-managers snapshot observes.
+    pub editor_roots: Vec<PathBuf>,
 }
 
 struct ProjectOpsServices {
     vcc_settings_candidates: Arc<Vec<PathBuf>>,
     manager_roots: ManagerRoots,
+    editor_roots: Arc<Vec<PathBuf>>,
     runtime: TaskRuntime,
 }
+
+/// project-inspection v0.1 is the frozen command face the project query
+/// word list travels as (the snapshot family itself is v0.2 per the core
+/// routing stance — the query envelope version and the snapshot family
+/// version are independent).
+const PROJECT_INSPECTION_SCHEMA_VERSION: &str = "0.1";
 
 struct DownloadServices {
     bdl: Arc<BdlStore>,
@@ -489,6 +498,7 @@ pub fn run_provider_host_full(
                 Arc::new(ProjectOpsServices {
                     vcc_settings_candidates: Arc::new(config.vcc_settings_candidates),
                     manager_roots: config.manager_roots,
+                    editor_roots: Arc::new(config.editor_roots),
                     runtime,
                 })
             })
@@ -3580,6 +3590,21 @@ fn project_request(
         "project.import-copy" => {
             project_import_copy(project_ops, request, request_id, correlation_id)
         }
+        // The frozen read face (proposal 013). Word-list entries that are
+        // not yet wired answer a typed unavailable — the frozen word list
+        // is never silently stubbed.
+        "project.environmentManagers" => {
+            project_environment_managers(project_ops, request, request_id, correlation_id)
+        }
+        "project.listProjects" | "project.inspectProject" | "project.lockStatus" => {
+            FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.project.unavailable",
+                "errors.project.unavailable",
+                "unavailable",
+            ))
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -3588,6 +3613,40 @@ fn project_request(
             "validation",
         )),
     }
+}
+
+/// `project.environmentManagers` (proposal 013, the read face): the
+/// read-only VCC/ALCOM/editors snapshot — every finding is deterministic
+/// for a given tree; paths to settings files travel as facts, the
+/// user's projects are represented by their registrations.
+fn project_environment_managers(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    if let Some(params) = request.get("params") {
+        let empty = params.as_object().map(|object| object.is_empty()).unwrap_or(false);
+        if !empty {
+            return project_invalid_params(request_id, correlation_id);
+        }
+    }
+    let snapshot = collect_environment_managers_snapshot(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &project_ops.editor_roots,
+        &SystemClock,
+    );
+    let result = serde_json::to_value(&snapshot)
+        .unwrap_or_else(|_| json!({"schemaVersion": "vua.environment-managers-snapshot/v0.1"}));
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PROJECT_INSPECTION_SCHEMA_VERSION,
+            "operation": "project.environmentManagers",
+            "result": result,
+        }),
+    ))
 }
 
 fn project_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {

@@ -6,8 +6,21 @@ baseline_commit: 6f2c7b7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**job.execute 环境预检半边已接线（2112f6c，2026-09-10 凌晨）——009 表态④
-受理预检序「版本锁→环境→指纹」自此全链**：recipe 声明
+**013 读面路由第一刀已交付（e720544，2026-09-10 凌晨）：project.environmentManagers live**——
+`project.*` 分派现承载冻结读面（project-inspection v0.1 命令词表）＋014 写
+面：environmentManagers 同步薄层（载荷＝环境侧 collector 原样——发现对给定
+树确定性、settings 路径按事实旅行；ProjectOpsServices 增 editor_roots）；
+**三未接线词表项（listProjects/inspectProject/lockStatus）＝类型化
+vua.project.unavailable**（冻结词表永不静默桩替——下刀按序接线）；
+未知方法＝unknown_method；无参查询带参数＝invalid_params。**消费测试 +2**：
+向量形状 over the wire（真 VCC 注册＋假 Hub 安装，schema 校验 against v0.2
+result——查询信封版本 0.1 与快照族 v0.2 独立，照核心路由表态）＋闭集/
+缺席/未知面。**证据（2026-09-10 本机）**：project_ops_wire 6/6＋workspace
+65 套件全绿＋clippy 零告警。交集成验收。**job.execute 环境预检接线已验收
+合并（07166b7）**。**在途下一刀**：listProjects/inspectProject/lockStatus
+三查询接线（本刀分刀声明）。#7 残余观察态维持。
+**前情：job.execute 环境预检半边已接线（2112f6c，009 表态④受理预检序
+「版本锁→环境→指纹」全链）**：recipe 声明
 `environment.unityVersionConstraint` 且可解析为 Unity 版本字符串时，配置的
 Unity Hub 编辑器根下必须存在精确匹配安装（major/minor/patch/release
 kind/number；China 后缀永不匹配纯版本——对齐不支持环境政策）；**诚实跳过
@@ -222,12 +235,18 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**环境预检批（2112f6c：预检序②接线＋constraint 精确匹配/诚实跳过/观察
-失败三态语义＋unity_editors_root 装配＋消费测试 +3）＋本状态批**请集成
-验收合并。**W25 相关**：预检②接线后窗口 A2 冒烟 recipe 若带 constraint
-需真机匹配安装（或无 constraint 诚实跳过）——语义已路由产线；新 messageKey
-两枚待桌面 i18n 登记。在途下一刀候选：013 检测读面路由＋BG-2/BG-6 评估。
+**013 读面第一刀（e720544：environmentManagers live＋三未接线项类型化
+缺席＋查询信封 0.1/快照族 v0.2 独立投影＋消费测试 +2）＋本状态批**请集成
+验收合并（桌面 T-B 读面翼第一步）。在途下一刀：listProjects/
+inspectProject/lockStatus 三查询接线。
 ## 留言
+- [→桌面] **013 读面翼第一步交付**（e720544）：environmentManagers live
+  （真 VCC/ALCOM/编辑器事实快照，向量形状）；listProjects/inspectProject/
+  lockStatus 类型化 unavailable（下刀接线）——T-B 接线可先消费
+  environmentManagers。查询信封版本 0.1 与快照族 v0.2 独立（照核心表态①）。
+- [→环境] 读面消费走你方 collect_environment_managers_snapshot 原样
+  （editor_roots 经 ProjectOpsConfig 注入，bin 侧待接 VUA 环境变量覆写——
+  下一刀随三查询同批）。
 - [→产线] **环境预检②已接线**（2112f6c，消费你方 f8fe114 事实源）——009
   表态④预检序全链：constraint 精确匹配（China 后缀永不匹配纯版本）＋无
   constraint/自由文本诚实跳过＋观察失败可恢复不冒充 unmet。**窗口 A2 语义
