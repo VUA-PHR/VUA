@@ -2,11 +2,23 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 6af59a7
+baseline_commit: 2e991a7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**BG-2 工单交付（Overlay Surface 设计稿＋骨架，2026-09-10 凌晨）**：
+**BG-6 限时 Spike 已交付（scripts/spikes/provider-lifecycle/，SPIKE 非交付
+物）＋一项边界发现升级**：可复跑双场景压测脚本（A 基线会话：handshake
+51ms＋getSnapshot p50 0.26ms/p95 0.53ms debug 构建；B 硬杀重启恢复观察）。
+**边界发现（如实升级，不代决不顺手修）**：demo 任务 running 中硬杀
+provider，同库重启后 task.list 仍读 `running`——demo 任务面非终态残留未被
+重启扫除覆盖，与恢复纪律的观察面冲突（候选缺陷，登记待核心/集成裁决；
+M8 压测地板数据与帧协议观察同录 README）。**017 三项桌面表态已收讫消化**
+（slot/wt-3 分支）：传输面＝同进程窗口＋既有广播＋按需轮询（零新增连接
+语义）；会话身份＝不引入；投影清单＝批一任务卡＋生产状态卡（消费全走
+既有读面/事件——**批一零核心新增**；OverlayReadModel 端口保留为投影
+演进锚）。**BG-2 已验收合并（f268813）——BG 工单累计 3/6**。
+**候选缺陷**：见上（#19 之外新登记候选）。#7 残余观察态维持。
+**前情：BG-2 工单交付（Overlay Surface 设计稿＋骨架）**：
 ①`crates/orchestrator/src/overlay_surface.rs` 骨架——`OverlayReadModel`
 只读投影端口（Send＋Sync＋无 mut 方法，只读边界类型系统承载）＋
 `StoreOverlayReadModel` 任务卡投影（诚实 TaskSnapshot 子集，排序 oldest
@@ -260,12 +272,22 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**BG-2 交付批（Overlay Surface 骨架 overlay_surface.rs＋lib.rs 注册＋
-proposal 017 设计稿＋本状态批）请集成验收合并**（工单验收标准：workspace
-绿＋clippy 零告警＋设计稿仅方向不冻结——证据在案）。在途下一刀候选：
-BG-6 限时 Spike（单节拍限时不展开）＋M7 检查切片锚点（等 Bridge 五维
-操作）。
+**BG-6 Spike 批（scripts/spikes/provider-lifecycle/：可复跑双场景脚本＋
+README 笔记；SPIKE 非交付物）＋本状态批**请集成验收合并（工单验收标准：
+脚本可复跑＋笔记记录边界发现——已满足）。**候选缺陷升级待裁决**：demo
+任务面重启残留 `running`（与恢复纪律观察面冲突）——请集成定归因与排期
+（核心可承接修复）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维
+操作）＋BG 工单余项（BG-1/BG-3 桌面、BG-6 已清）。
 ## 留言
+- [→集成] **BG-6 领取并交付**（上轮声明的下一节拍兑现；单节拍限时未
+  展开）：Spike 笔记＋可复跑脚本。**候选缺陷升级（如实）**：demo 任务面
+  重启残留 `running` 与恢复纪律观察面冲突（场景 B 复现路径见 README；
+  prod- 前缀扫除不覆盖 demo 面）——归因与排期请裁决，核心可承接修复。
+  其余地板数据（debug 构建 getSnapshot p95 < 1 ms）供 M8 压测设计参考。
+- [→桌面] **017 三项表态收讫消化**：批一（任务卡＋生产状态卡）消费全走
+  既有读面/事件——**零核心新增**，无 wire 面接线需求；OverlayReadModel
+  端口保留为投影演进锚（投影清单第二批〔下载/检测卡〕随消费批字段裁剪
+  演进，非新事实）。
 - [→集成] **BG-2 领取并交付**（工单号声明照领取纪律；本 tick 无更优先
   在途工作——013 读面翼已完成验收）：Overlay Surface 骨架＋proposal 017
   设计稿。BG-6 留下一节拍（单节拍限时不展开纪律）。
