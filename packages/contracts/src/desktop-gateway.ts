@@ -564,6 +564,26 @@ export interface DesktopCapabilitiesV1 {
   readonly remoteBrowser: boolean;
 }
 
+/** 导航确认缘由(U9 四分法):清单外 http/https 页(提示后放行转内嵌视图)
+ *  与外部协议(确认后交系统打开)——确认层唯一两个进入点 */
+export type NavConfirmReasonV1 = "origin_not_allowed" | "external_protocol";
+
+/** 导航确认请求(Main → 渲染层;U9(1)/(3) 确认前在,015 §12 对接设计):
+ *  confirmId 由 Main 生成,渲染层只能回应已发出的确认 */
+export interface NavigationConfirmRequestV1 {
+  readonly confirmId: string;
+  readonly url: string;
+  readonly reason: NavConfirmReasonV1;
+}
+
+export interface DesktopNavigationConfirmApiV1 {
+  /** 对已发出的确认作答;未知 confirmId 与重复作答被 Main 忽略 */
+  respond(confirmId: string, approved: boolean): Promise<void>;
+  events: {
+    subscribe(listener: (request: NavigationConfirmRequestV1) => void): () => void;
+  };
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
@@ -571,6 +591,7 @@ export interface VuaDesktopApiV1 {
   readonly window: DesktopWindowApiV1;
   readonly remoteContent: RemoteContentApiV1;
   readonly capabilities: DesktopCapabilitiesV1;
+  readonly navigationConfirm: DesktopNavigationConfirmApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

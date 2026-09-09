@@ -1469,6 +1469,16 @@ rolled_back: "已回滚",
     donateDescription: "捐赠渠道将在正式版上线前开放,感谢你的支持。",
     packagesDescription: "Unity 项目的包安装、更新、迁移与备份将在后续里程碑接入;交互设计借鉴 ALCOM 与 VCC,并为新手重新包装。",
   },
+  navConfirm: {
+    offAllowlistTitle: '打开清单外页面?',
+    offAllowlistBody: '该页面在浏览允许清单之外,确认后将在内嵌视图中打开。',
+    externalTitle: '打开外部应用?',
+    externalBody: '该页面请求打开外部应用。仅在信任时继续。',
+    openCta: '打开',
+    cancelCta: '取消',
+    pendingCount: '还有 {count} 条确认等待处理',
+  },
+
   /** 模型生产首次进入覆盖层(假加载页;槽位为最终交付预留,见 ProductionIntroOverlay) */
   productionIntro: {
     title: "模型生产",
