@@ -157,9 +157,26 @@ demoTaskTitle: "演示任务",
       settingsDonate: "捐赠",
       packages: "包管理器",
       projectCompat: "项目兼容",
+      importMaterial: "素材导入",
     },
   },
   /** 指挥台首页(S-VFX-2):默认落地页 */
+  /** 素材导入页(M6 IMP-2 批 A,proposal 015 对账):两段诚实呈现——云端
+   *  (内嵌浏览,能力两态门控)与本地(W18 提交流原样迁移,零新增词表)。 */
+  importPage: {
+    title: '素材导入',
+    subtitle: '云端下载与本地导入,同一条连续获取路径',
+    cloudTitle: '云端下载',
+    cloudBadge: 'VUA 内嵌浏览 · Session 隔离',
+    cloudUnavailable: '应用内内嵌浏览尚未启用。能力开启后此面板即可用;平台页面保持其自有购买流程,VUA 不提供任何购买流。',
+    addressAria: '内嵌页地址',
+    addressPlaceholder: 'https://booth.pm',
+    openCta: '打开',
+    closeCta: '关闭内嵌视图',
+    blockedTitle: '策略拦截(已上报,不静默)',
+    noView: '当前没有打开的内嵌视图。',
+    localTitle: '本地导入',
+  },
   home: {
     tagline: "VRChat 游玩与创作的指挥中心",
     commandCta: "搜索页面、功能与操作…",

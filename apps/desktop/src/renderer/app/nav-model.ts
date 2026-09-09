@@ -33,6 +33,7 @@ export type PageId =
   | "guide-safety"
   | "guide-devices"
   | "guide-tutorials"
+  | "import-material"
   | "warehouse"
   | "recipe"
   | "release"
@@ -150,6 +151,9 @@ export const businessModules: readonly ModuleDef[] = [
       {
         labelKey: "warehouse",
         pages: [
+          // 素材导入(设计标准 0.7.0 §8.3:连续素材获取路径的独立页,置于
+          // 仓储相邻位——先获取后管理)
+          { id: "import-material", labelKey: "importMaterial" },
           { id: "warehouse", labelKey: null, labelTerms: ["warehouse"] },
           { id: "recipe", labelKey: null, labelTerms: ["recipe"] },
           { id: "release", labelKey: null, labelTerms: ["release"] },
