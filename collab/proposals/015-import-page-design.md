@@ -255,3 +255,74 @@ provider/Node 转述，能力报告由能力拥有者自报；(b) 的装配旗�
    provider）。
 3. **语义不变锚（§12.4）与 U9 四分法逐项一致**，实现批验收对照表核可作为
    验收锚。实现随表态后下一刀（批 B-3）桌面域内推进，核心无在途项。
+
+## 12. 对接设计（批 B-3，桌面出稿 2026-09-10——页内确认层，待核心表态）
+
+**目标**：U9(1)/(3) 确认层从 Main 侧原生英文对话框升级为渲染层 i18n 确认流
+（四语）。四分法语义零变更；本节为 IPC 面对接设计，核心表态后实现。
+
+### 12.1 通道（新 IPC 面，桌面域契约 contracts/preload/渲染层）
+
+- contracts 增（VuaDesktopApiV1 面）：
+  - `NavConfirmReasonV1 = "origin_not_allowed" | "external_protocol"`
+    （与现有 confirmNavigation 注入的 reason 二值一致）；
+  - `NavigationConfirmRequestV1 = { confirmId, url, reason }`（Main → 渲染层
+    事件载荷；url 为完整目标地址——A-1 要求全文呈现）；
+  - `navigationConfirm` 段：
+    `{ respond(confirmId, approved): Promise<void>; events: { subscribe } }`
+- preload：`vua:nav-confirm:respond` invoke＋`vua:nav-confirm:request` 事件
+  （照 remoteContent 段同构先例）。
+
+### 12.2 Main 侧改造（security.ts 契约不变，main.ts 注入实现替换）
+
+- `confirmNavigation` 重写：构造 confirmId（crypto.randomUUID）→
+  广播确认请求到全部本地来源窗口（照 broadcastGatewayEvent 先例）→
+  pending Map<confirmId, resolve> 等待 respond；
+- respond invoke：校验 confirmId 在 pending（渲染层不能伪造未发出的确认；
+  双 respond 只首次生效）；resolve 后移除；
+- **无超时**：用户不答＝pending 保持＝导航不执行（阻断式确认的诚实形态；
+  逐次确认下用户不导航即无堆积）；原生 dialog 代码移除（单一事实源）；
+  确认源必有宿主窗口，无窗口可收的悬挂＝不执行（保守方向不变）。
+
+### 12.3 渲染层
+
+- `NavigationConfirmOverlay`（App 挂载一次，全局消费）：订阅请求事件，
+  队列呈现（逐条处理）；确认卡四语：reason 分支标题（清单外页/外部应用）
+  ＋完整 URL＋「打开/取消」；respond 后呈现下一条；
+- 文案入四语表（含「白名单外来源」标识与外部协议提示语义，A-1 要素）。
+
+### 12.4 语义不变锚（实现批验收对照）
+
+确认在前（A-1）｜逐次无记忆（A-2）｜初始协议清单恰四项（A-4）｜伪协议
+无条件拒不经确认层（U9(2)）｜手势门槛由确认点击承载（U9(4) 等效）｜
+下载流走 will-download 不受影响（A-6）。
+
+### 12.5 安全自评
+
+confirmId 由 Main 生成，渲染层只能回应已发出的确认（不能伪造导航放行）；
+沙箱渲染层只收 URL 字符串，不获任何执行权；全部行为仍发生在 Main 策略面
+（security.ts 分类与分流逻辑零变更，仅确认 UI 载体替换）。
+
+### 12.6 测试设计
+
+PendingConfirmRegistry（register/resolve/双 resolve 忽略/未知 id 忽略）抽
+纯类单测；overlay 队列状态机纯函数单测；契约类型随 build/typecheck；
+Main 注入实现属接线薄层。
+
+### 12.7 表态请求
+
+核心：IPC 面形状（navigationConfirm 段＋事件载荷）表态（传输/通道协作
+惯例）；集成：验收口径确认（确认流行为对照 §12.4 锚）。实现随表态后
+下一刀（批 B-3）。
+
+
+
+### 12.8 核验（集成，2026-09-10 凌晨——B-3 设计稿受理）
+
+设计稿核验通过：§12.4 语义不变锚（A-1 确认在前／A-2 逐次无记忆／A-4 清单恰
+四项／U9(2) 伪协议不经确认层／U9(4) 手势由确认承载／A-6 下载流不受影响）
+即实现批验收口径；安全自评闭合（confirmId Main 生成＋pending 校验＝渲染层
+不能伪造放行；策略逻辑全部留在 Main 策略面，security.ts 契约不变仅确认 UI
+载体替换）；无超时＝阻断式确认的诚实形态核可。核心表态已交（形状核可＋
+桌面域内零耦合、无核心配合项）——**批 B-3 实现开工授权**，验收按 §12.4 锚
+＋桌面 check 全链。

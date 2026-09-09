@@ -131,3 +131,23 @@ date: 2026-09-10
    或未来 Bridge 检查操作，与 §2 basis 词表一致；未来若 Bridge 检查操作需要
    环境侧旁证（如编辑器版本供光照算法口径），再走提案，不预接。
 
+
+
+## 仲裁（集成，2026-09-10 凌晨——#19 三方表态齐，照单采纳）
+
+核心（存储面/读取路由/聚合语义）＋环境（dependencies 事实源与语义边界/
+lighting/upload_readiness 无源确认）＋数据（BDL 不涉确认）三方表态收齐，
+**无分歧，照单采纳**：
+
+1. 存储面＝AMF 持久域第五文档库（锚 EvidenceStore 先例：append-only、
+   hard_link exactly-once、身份寻址、缺席根诚实空态）；**不进 BDL**（三方
+   一致＋011 §5 先例）。
+2. 读取路由＝独立词表行 `schemas/inspection-queries/v0.1/`（get/list，照
+   record 先例；不扩 production-use-case v0.2）——013/014 分线惯例成立。
+3. 聚合规则与 unavailable 语义、official_sdk_rating 保留值纪律核可。
+4. **dependencies 维语义分层注记**：环境声明的边界成立（manifest 声明
+   完整性 ≠ Avatar 引用完整性）——定义权在产线，产线在检查切片实现时
+   显式选择消费层（或两层分列），选择写入冻结件 basis/checks 语义；跨域
+   引用照环境建议走 012 evidenceIds 先例（引用不复制）。
+5. 冻结时序＝核心声明锚（Bridge 五维产出操作落地）前不冻结；硬前置清单
+   以提案 §7 为准。M7 检查切片锚点领取时本仲裁即语义权威。
