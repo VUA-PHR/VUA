@@ -2,10 +2,14 @@
 
 [English](bdl-commands-v0.3_EN.md) | [简体中文](bdl-commands-v0.3_ZH.md)
 
+> **⚠️ 已被 v0.4 取代（2026-09-09）**：下载落库命令 `warehouse.importDownloads`
+> （M6 增设，用户裁决 U7-③）。现行规范见
+> [bdl-commands-v0.4_ZH.md](bdl-commands-v0.4_ZH.md)；本文仅作历史保留，对应
+> `schemas/bdl-commands/v0.3/`（勿改）。
 > 文档版本：0.3
-> 状态：**已冻结（域内业务词表）**（2026-09-08）——provider-host `warehouse.import`
-> 路由与 `importCorrelationId` 编排接线待核心执行（proposal 010 仲裁：v0.3 冻结
-> 先行于 wire/挂点实现，M5 首批）；完成接线前导入命令不得声称端到端可用
+> 状态：**已取代（→ v0.4）**（2026-09-09；原状态：已冻结（域内业务词表）
+> 2026-09-08——provider-host `warehouse.import` 路由与 `importCorrelationId`
+> 编排接线已随执行序②收口落地；v0.3 词表完整并入 v0.4 闭集）
 > 机器可读词表：`schemas/bdl-commands/v0.3/`（Schema＋正负例向量；消费测试
 > `crates/acquisition/tests/import_contract_v03.rs`；v0.1/v0.2 目录保留勿改）
 > 范围：v0.2 五命令中的四命令（`warehouse.setArtifactMode` /
