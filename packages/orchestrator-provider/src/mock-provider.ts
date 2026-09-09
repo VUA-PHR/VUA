@@ -235,6 +235,10 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         });
       case "warehouse.listEntries":
         return this.#success(request, { entries: [] });
+      case "downloads.listCompleted":
+        // mock 无下载域:诚实空列表(bdl-queries v0.4 读面;桌面穷尽性
+        // 机械跟随,业务语义归数据/核心)
+        return this.#success(request, { downloads: [] });
       case "warehouse.entryDetail":
         // 同上对齐:真实 provider(10325cd)对 entryDetail 未命中回既有
         // 冻结码 vua.warehouse.entry_not_found / errors.warehouse.

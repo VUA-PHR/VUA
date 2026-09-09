@@ -300,6 +300,7 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "catalog.status": {},
     "warehouse.listEntries": {},
     "warehouse.entryDetail": { warehouseItemId: "wh-entry-1" },
+    "downloads.listCompleted": {},
     "download.retry": { taskId: "task-1", commandId: "cmd-5" },
     "warehouse.setArtifactMode": { warehouseItemId: "wh-entry-1", mode: null, commandId: "cmd-6" },
     "warehouse.generateVpm": { warehouseItemId: "wh-entry-1", commandId: "cmd-7" },

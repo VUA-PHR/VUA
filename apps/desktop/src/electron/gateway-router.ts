@@ -13,7 +13,6 @@ import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { isAllowedLocalSender } from "./security.js";
 
 const TASK_LIST_CAPABILITY = "task.list";
-const REMOTE_BROWSER_CAPABILITY = "desktop.remoteBrowser";
 
 /** 生产上下文四元组(amf-production v0.2:startInspection 一次性转交) */
 export interface ProductionContextV02 {
@@ -187,6 +186,9 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "catalog.status", params: {} };
     case "warehouse.listEntries":
       return { ...base, kind: "query", method: "warehouse.listEntries", params: {} };
+    // bdl-queries v0.4(015 §10):可采纳下载列表,空参数 verbatim
+    case "downloads.listCompleted":
+      return { ...base, kind: "query", method: "downloads.listCompleted", params: {} };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":
@@ -336,7 +338,11 @@ export async function routeDesktopGatewayInvoke(
           capabilities: {
             gateway: true,
             tasks: capabilityAvailable(providerResponse.value, TASK_LIST_CAPABILITY),
-            remoteBrowser: capabilityAvailable(providerResponse.value, REMOTE_BROWSER_CAPABILITY),
+            // §11 仲裁 (a):内嵌浏览能力归壳自报(preload capabilities),
+            // provider 不再报告也不转述;字段保留待核心处置 AppSnapshot 形状,
+            // 恒 false 反映「provider 无此 capability 行」的事实(渲染层已
+            // 不消费本字段)
+            remoteBrowser: false,
           },
         },
       };
