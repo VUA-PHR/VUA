@@ -2,12 +2,22 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 2e991a7
+baseline_commit: eadb487
 updated: 2026-09-10
 ---
 ## 当前焦点
-**BG-6 限时 Spike 已交付（scripts/spikes/provider-lifecycle/，SPIKE 非交付
-物）＋一项边界发现升级**：可复跑双场景压测脚本（A 基线会话：handshake
+**#20 修复小刀已交付（2026-09-10 凌晨，裁决排期「随下一工作窗口」即本
+窗口兑现）**：demo 任务面纳入重启扫除（prod- 扫除循环扩展 demo-——
+queued/preparing→cancelled 静默；running→failed＋可恢复
+vua.task.interrupted error）；**幂等重放永不复活已扫任务**（重放返回扫除
+后快照）；新 commandId 照常受理新任务（扫除 per-task 非锁定）。旧 demo
+生命周期测试按裁决语义重写（原模式依赖重启不扫 demo——与新裁决直接冲突，
+已锚定新语义）。**回归测试 lifecycle_recovery.rs**：双真实进程同库——
+A 会话受理 demo 任务等至 running→SIGKILL；B 会话 task.list 读诚实死后态
+（failed/cancelled），永不 running。**证据（2026-09-10 本机）**：
+lifecycle_recovery 1/1＋workspace 66 套件全绿＋clippy 零告警。交集成验收
+（#20 销账候选）。#7 残余观察态维持。
+**前情：BG-6 限时 Spike 已交付＋边界发现升级（#20 裁决成立）**：可复跑双场景压测脚本（A 基线会话：handshake
 51ms＋getSnapshot p50 0.26ms/p95 0.53ms debug 构建；B 硬杀重启恢复观察）。
 **边界发现（如实升级，不代决不顺手修）**：demo 任务 running 中硬杀
 provider，同库重启后 task.list 仍读 `running`——demo 任务面非终态残留未被
@@ -272,13 +282,15 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**BG-6 Spike 批（scripts/spikes/provider-lifecycle/：可复跑双场景脚本＋
-README 笔记；SPIKE 非交付物）＋本状态批**请集成验收合并（工单验收标准：
-脚本可复跑＋笔记记录边界发现——已满足）。**候选缺陷升级待裁决**：demo
-任务面重启残留 `running`（与恢复纪律观察面冲突）——请集成定归因与排期
-（核心可承接修复）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维
-操作）＋BG 工单余项（BG-1/BG-3 桌面、BG-6 已清）。
+**#20 修复小刀（demo 面纳入重启扫除＋幂等重放不复活＋旧测试按裁决语义
+重写＋双真实进程回归测试 lifecycle_recovery.rs）＋本状态批**请集成验收
+合并（#20 销账候选——验收锚＝BOARD #20 裁决行）。在途下一刀候选：M7
+检查切片锚点（等 Bridge 五维操作）＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→集成] **#20 修复小刀交付**（裁决排期兑现）：demo 面纳入重启扫除
+  （同纪律同语义）＋幂等重放不复活＋双真实进程回归测试。请随验收销账
+  BOARD #20。旧 demo 生命周期测试按裁决语义重写的说明见提交信息
+  （原测试模式与新裁决直接冲突——锚定新语义）。
 - [→集成] **BG-6 领取并交付**（上轮声明的下一节拍兑现；单节拍限时未
   展开）：Spike 笔记＋可复跑脚本。**候选缺陷升级（如实）**：demo 任务面
   重启残留 `running` 与恢复纪律观察面冲突（场景 B 复现路径见 README；
