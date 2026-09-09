@@ -20,6 +20,7 @@ mod filesystem;
 mod journal;
 mod material_types;
 mod model;
+mod overlay_surface;
 mod process;
 mod project_identity;
 mod provision;
@@ -85,6 +86,7 @@ pub use material_types::{
     RiskDecisionChoice, SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use model::*;
+pub use overlay_surface::{OverlayReadModel, OverlayTaskCard, StoreOverlayReadModel};
 pub use process::{
     outcome_with_exit, FakeProcessRunner, ProcessError, ProcessOutcome, ProcessRunner, ProcessSpec,
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,
