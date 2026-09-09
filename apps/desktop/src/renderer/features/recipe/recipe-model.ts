@@ -419,3 +419,49 @@ export function selectLibraryRecipe(
 ): string | null {
   return recipeId.length === 0 ? current : recipeId;
 }
+
+/* ---- 文档事实呈现(BG-1 主切片,诚实纪律):选中 recipe 文档的结构事实
+ * 清单——assets/instances/relations 计数与 locked 状态均为文档确定事实;
+ * **不推导检查态**(文档期望态→三视图检查事实词表的映射语义属跨源推导,
+ * 已路由核心/数据确认,确认前不做) ---- */
+
+export interface RecipeDocumentFacts {
+  readonly title: string;
+  readonly revision: number;
+  readonly updatedAt: string;
+  /** required 数组缺失 = null(不可解释,呈现为 —) */
+  readonly assetCount: number | null;
+  readonly instanceCount: number | null;
+  /** relations 为可选数组,缺失 = null(语义=零关系声明) */
+  readonly relationCount: number | null;
+  readonly locked: boolean | null;
+}
+
+/** recipe.get 文档 → 结构事实收窄(字段缺失 = null;不猜测) */
+export function narrowRecipeDocumentFacts(document: unknown): RecipeDocumentFacts | null {
+  if (document === null || typeof document !== "object" || Array.isArray(document)) return null;
+  const record = document as Record<string, unknown>;
+  const title = record.title;
+  const revision = record.revision;
+  const updatedAt = record.updatedAt;
+  if (typeof title !== "string" || typeof revision !== "number" || typeof updatedAt !== "string") {
+    return null;
+  }
+  const count = (value: unknown): number | null => (Array.isArray(value) ? value.length : null);
+  return {
+    title,
+    revision,
+    updatedAt,
+    assetCount: count(record.assets),
+    instanceCount: count(record.instances),
+    relationCount: count(record.relations),
+    locked:
+      record.locked === null
+        ? null
+        : typeof record.locked === "object" && record.locked !== null
+          ? true
+          : record.locked === undefined
+            ? null
+            : false,
+  };
+}
