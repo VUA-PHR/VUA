@@ -13,8 +13,8 @@
 | docs/product-boundary_ZH.md | 1.2.0 | 已接受 | 集成 | 2026-09-08 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/compatibility/alcom-vcc_ZH.md | 1.0.0 | 已接受 | 环境 | 2026-09-09 |
-| schemas/project-inspection/v0.1（snapshot + read command/result schema） | 0.1 | 已冻结 | 环境 | 2026-09-09 |
-| schemas/project-ops/v0.1（import-copy command/result schema） | 0.1 | 已冻结 | 环境 | 2026-09-09 |
+| schemas/project-inspection/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-09 |
+| schemas/project-ops/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-09 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/architecture/desktop_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |

@@ -216,6 +216,8 @@ function registryCheck() {
   }
   const normVer = (v) => String(v).trim().replace(/^[vV]/, '');
   const normStatus = (s) => String(s).trim().replace(/^[vV]/, '');
+  // Patch 级漂移容忍：REGISTRY 只随 Minor/Major 更新（治理规范 §2.3），故按 major.minor 比较
+  const majMin = (x) => normVer(x).split('.').slice(0, 2).join('.');
   const ok = [];
   const bad = [];
   let total = 0;
@@ -229,6 +231,24 @@ function registryCheck() {
     if (!regPath0 || regPath0 === '---') continue;
     total += 1;
     const full = path.join(repoRoot, regPath0);
+    // T2 Schema 目录行（schemas/<name>/<semVer>/）：版本载体＝路径尾段目录名
+    // （治理规范 §1 T2「各自独立版本」）；JSON 无 markdown 文档头，头部校验不适用，
+    // 改校验目录存在＋目录版本与 REGISTRY 版本 major.minor 一致。
+    if (regPath0.startsWith('schemas/')) {
+      const dirExists = existsSync(full);
+      const m = regPath0.match(/\/v(\d+\.\d+(?:\.\d+)?)\/?$/);
+      const dirVer = m ? m[1] : null;
+      const dirVerOk = dirVer !== null && majMin(dirVer) === majMin(regVer);
+      if (dirExists && dirVerOk) {
+        ok.push(regPath0);
+      } else {
+        const bits = [];
+        if (!dirExists) bits.push('目录缺失');
+        else if (!dirVerOk) bits.push(`版本 REGISTRY=${normVer(regVer)} vs 目录=${dirVer ?? '（路径尾段无 vX.Y）'}`);
+        bad.push(`✗ ${regPath0}：${bits.join('；')}`);
+      }
+      continue;
+    }
     let head = '';
     try {
       head = readFileSync(full, 'utf8').split(/\r?\n/).slice(0, 16).join('\n');
@@ -247,8 +267,7 @@ function registryCheck() {
     };
     const docStem = st ? stem(st[1]) : null;
     const regStem = stem(regStatus);
-    // Patch 级漂移容忍：REGISTRY 只随 Minor/Major 更新（治理规范 §2.3），故按 major.minor 比较
-    const majMin = (x) => normVer(x).split('.').slice(0, 2).join('.');
+    // Patch 级漂移容忍：比较逻辑用 majMin（定义见上）
     const verOk = docVer !== null && majMin(docVer) === majMin(regVer);
     const statusOk = docStem !== null && docStem === regStem;
     if (verOk && statusOk) {
