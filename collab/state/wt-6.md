@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 1c73437
+baseline_commit: 7c4353e
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -24,13 +24,12 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
 扫描草案）经桌面 §4 提案、集成照准落账，条目闭环。015 §7 明确「环境：无」，
 环境无动作面。
 ## 自基线交付（1c73437 之后）
-- **proposal 016 环境表态已交**（016 内联「表态（环境，2026-09-10 凌晨）」节，
-  回应产线 §6 两项请求）：①dependencies 维——project-inspection v0.2 声明面
-  事实源存在（形状冻结零漂移），语义边界声明权在产线（声明完整性≠引用
-  完整性）；引用形态建议照 evidenceIds 先例（引用不复制）；provider 路由
-  在途，接线前不得宣称已接环境事实源；②lighting/upload_readiness 确认无
-  环境事实源（环境检测面清单已列），basis 落 official_sdk_rating 或未来
-  Bridge 操作；
+- **proposal 016 环境表态已交并经仲裁采纳**（e27f042 验收合并；集成 7c4353e
+  仲裁＝#19 三方表态全票一致照单采纳＋dependencies 分层注记；冻结以核心
+  Bridge-ops 锚为门）——表态内容：①dependencies 维 project-inspection v0.2
+  声明面事实源（语义边界声明权在产线；引用不复制照 evidenceIds 先例；路由
+  在途接线前不宣称）；②lighting/upload_readiness 无环境事实源确认。016
+  环境侧无遗留。
 - 合并 main 追平（015 后续落账：桌面批 A 验收、批 B 第 1 项、核心
   remoteBrowser 行移除、浏览清单照准——均非环境动作面）。
 ## 在途/待他角色
