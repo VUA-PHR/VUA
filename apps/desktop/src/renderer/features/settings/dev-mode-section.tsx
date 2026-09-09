@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Button } from "../../components/primitives/Button.tsx";
 import { format, strings } from "../../i18n/index.ts";
 import {
+  allFixtureSelection,
+  allLiveSelection,
   devPortIds,
   readDevPortSelection,
   writeDevPortSelection,
   type DevPortId,
   fixtureTierOptions,
+  type DevPortSelection,
   type DevPortSelectionState,
   type DevPortTarget,
 } from "../../app/dev-port-selection.ts";
@@ -57,9 +60,28 @@ export function DevModeSection() {
     window.location.reload();
   };
 
+  const applyPreset = (preset: DevPortSelection) => {
+    const next: DevPortSelectionState = {
+      targets: { ...preset },
+      fixtureTier: state.fixtureTier,
+    };
+    setState(next);
+    writeDevPortSelection(next);
+    // 装配点在 Gateway 装配(createGatewayState):整页重载生效
+    window.location.reload();
+  };
+
   return (
     <div className="vua-page__stack">
       <p className="vua-caption vua-text-secondary">{copy.devModeDesc}</p>
+      <div className="vua-project-compat__row" role="group" aria-label={copy.presetsLabel}>
+        <Button variant="subtle" onClick={() => applyPreset(allLiveSelection())}>
+          {copy.presetAllLive}
+        </Button>
+        <Button variant="subtle" onClick={() => applyPreset(allFixtureSelection())}>
+          {copy.presetAllFixture}
+        </Button>
+      </div>
       <div className="vua-project-compat__row">
         <label>
           <span className="vua-caption vua-text-secondary">{copy.fixtureTierLabel}</span>{" "}

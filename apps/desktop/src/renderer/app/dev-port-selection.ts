@@ -100,3 +100,12 @@ export function writeDevPortSelection(state: DevPortSelectionState): void {
 export function anyFixturePort(targets: DevPortSelection): boolean {
   return Object.values(targets).some((target) => target === "fixture");
 }
+
+/** 常用组合预设(018 批 2):全真实连接(=空覆盖)与全演示(十端口全 fixture) */
+export function allLiveSelection(): DevPortSelection {
+  return {};
+}
+
+export function allFixtureSelection(): DevPortSelection {
+  return Object.fromEntries(devPortIds.map((port) => [port, "fixture" as const]));
+}
