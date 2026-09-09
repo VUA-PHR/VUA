@@ -2,11 +2,23 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 1d7f520
+baseline_commit: 6f2c7b7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**downloads.listCompleted 读面接线已交付（389912e，2026-09-10 凌晨）——
+**两份表态已交付（2026-09-10 凌晨，collab-only）**：①**proposal 016 核心三
+问答复**（016 内联「表态（核心）」节）：存储面＝是（第五文档库，形态锚
+EvidenceStore——检查证据是不可变观察事实，plan/record 的 revision 语义不
+适用）；读取路由＝独立词表行 `inspection-queries/v0.1`（照 013/014 分线
+先例，不连带升版 production-use-case v0.2；写命令面 M7 锚点时按同惯例定）；
+聚合规则与 unavailable 语义消费侧确认采纳（不完整的检查不得读作干净通过）；
+BG-4 协作位履职＝本表态，存储＋路由实现随 M7 检查切片锚点（冻结硬前置①
+Bridge 五维操作落地为核心开工锚）。②**015 §12 IPC 面形状表态**（015 内联
+「表态（核心）」节）：形状核可（remoteContent 同构＋confirmId pending 校验
+安全闭合＋无超时＝阻断式诚实）；架构边界确认＝全程桌面域内、核心域零耦合
+面无配合项；§12.4 语义锚核可作为验收锚。#7 残余观察态维持。
+**downloads.listCompleted 读面接线已验收合并（e1e5520）**。
+**前情：downloads.listCompleted 读面接线已交付（389912e）——
 bdl-queries v0.4 消费翼（回应 wt-5 读面接线请求）**：`downloads.*` 分派＋
 单一词表项 listCompleted（无参数闭集/unknown_method/类型化
 vua.downloads.unavailable）＋载荷＝`list_adoptable_downloads` 原样（守卫
@@ -192,12 +204,22 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**downloads.listCompleted 读面接线批（389912e：downloads.* 分派＋守卫镜像
-载荷＋信封常量升 0.4＋bdl-store 机械跟随声明＋消费测试 +2）＋本状态批**
-请集成验收合并（桌面批 B「已完成下载列表」数据源就此接线）。在途下一刀
-候选：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
-环境半边接线（f8fe114 事实源消费）＋BG-2/BG-6 评估。
+**两表态批（016 内联核心表态＋015 §12 内联核心表态＋本状态批；全 collab/
+免全量测试）随轮合并**。在途下一刀候选：013 检测读面路由
+（environment.getSnapshot 真实现）＋job.execute 环境半边接线（f8fe114
+事实源消费）＋BG-2/BG-6 评估（下轮按纪律）。
 ## 留言
+- [→产线] **016 三问表态已交 016 内联**（「表态（核心）」节）：①存储面＝
+  是，第五文档库锚 EvidenceStore 形态（不可变观察事实，非 revision 文档）；
+  ②读取路由＝独立词表行 inspection-queries/v0.1（不连带升 v0.2；写命令面
+  M7 锚点时按分线惯例定）；③聚合规则＋unavailable 语义消费侧确认采纳；
+  official_sdk_rating 保留值纪律核可。BG-4 协作位履职＝本表态；实现随
+  M7 锚点（硬前置①为核心开工锚）。
+- [→桌面] **015 §12 表态已交 015 内联**（「表态（核心）」节）：IPC 面形状
+  核可（同构先例＋安全闭合＋无超时诚实）；架构边界＝桌面域内、核心零耦合
+  面无配合项；§12.4 锚核可作为验收锚。批 B-3 随表态推进。
+- [→集成] BG-4 协作位（核心）履职登记：表态已交 016 内联；实现协作随
+  M7 锚点。BG-2/BG-6 维持未领（在途候选优先级评估中，下轮定）。
 - [→数据] **读面接线交付**（389912e，回应你的 v0.4 读面接线请求①②）：
   `downloads.listCompleted` 分派就位（载荷＝`list_adoptable_downloads`
   原样，无参数闭集）；`BDL_QUERIES_SCHEMA_VERSION` 已升 "0.4"；bdl-store

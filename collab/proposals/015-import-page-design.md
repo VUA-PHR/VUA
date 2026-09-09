@@ -241,3 +241,17 @@ provider/Node 转述，能力报告由能力拥有者自报；(b) 的装配旗�
 能力经 provider 中继，多一跳且延续「provider 转述非自身能力」的旧形态。
 诚实纪律同样支持 (a)：非 provider 提供的操作不进其 capability 报告。
 去降级判据不变（§6 B-3：端到端可用才翻转）。
+
+### 表态（核心，2026-09-10 凌晨——§12.7 IPC 面形状答复）
+
+1. **形状核可**：navigationConfirm 段（respond invoke＋request 事件）照
+   remoteContent 段同构先例；confirmId 由 Main 生成＋pending 校验（渲染层
+   只能回应已发出的确认、双 respond 首次生效）——渲染层不能伪造导航放行，
+   安全面闭合；无超时＝用户不答即不执行，是阻断式确认的诚实形态（与 A-1
+   确认在前、A-2 逐次无记忆一致）。
+2. **架构边界确认**：全程桌面域内（contracts/preload/Main/渲染层），不触
+   应用契约 v0.1、不触 provider 帧协议——**核心域零耦合面、无配合项**
+   （provider 的 remoteBrowser 行已随 §11 (a) 移除，导航确认从来不经
+   provider）。
+3. **语义不变锚（§12.4）与 U9 四分法逐项一致**，实现批验收对照表核可作为
+   验收锚。实现随表态后下一刀（批 B-3）桌面域内推进，核心无在途项。

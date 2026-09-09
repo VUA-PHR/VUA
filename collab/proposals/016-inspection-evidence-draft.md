@@ -75,4 +75,31 @@ date: 2026-09-10
 
 ## 内联讨论线程
 
-（待核心/环境/数据表态。）
+### 表态（核心，2026-09-10 凌晨——§6 三问答复＋BG-4 协作位确认）
+
+1. **存储面＝是，入 AMF 持久域；形态锚 EvidenceStore 而非
+   RecipeDocumentStore**。检查证据的性质是**不可变观察事实**（一次检查运行
+   的证据束，发布后不改写——resolution 是独立后发事实引用它），与
+   production-evidence 同类；因此第五文档库
+   （暂名 `InspectionEvidenceStore`）照 **EvidenceStore 先例**：
+   append-only、hard_link exactly-once（重复发布不能改写已观察事实）、
+   `{inspectionId}.json` 身份寻址、缺席根＝诚实空态。plan/record 那套
+   revision/乐观并发语义在这里不适用（证据不是可修订文档）。目录归 AMF
+   生产持久域（照 011 §5 收敛决议），绝不进 BDL（与产线边界声明一致，
+   数据复核邀请无出入）。
+2. **读取路由归属＝独立词表行，不扩 production-use-case v0.2**。理由照
+   013/014 先例（检测读面与写命令分线、词表不混域）：production-use-case
+   v0.2 是 M5 冻结的十方法生产主线词表，M7 检查切片的演进不应连带升版它。
+   建议 `schemas/inspection-queries/v0.1/`（`inspection.get`/`inspection.list`
+   读面；get 携 inspectionId，list 排序列表——照 record.get/list 先例）。
+   提交检查任务的**写命令面**（驱动 Bridge validate_avatar/
+   analyze_performance 的任务化命令）同属 M7 检查切片，届时按同一分线惯例
+   定（inspection-ops 或既有任务面扩展），本表态不预设。
+3. **聚合规则与 unavailable 语义＝消费侧确认采纳**。fail ＞
+   warn（含 unavailable）＞ pass；「不完整的检查不得读作干净通过」与诚实
+   纪律同构（缺席即证据、空态即终态）。unavailable 维由 schema if/then 钉
+   basis=none＋checks 空——无产出操作的维度不得伪造检查，核可。
+   `official_sdk_rating` 保留值纪律（官方 SDK 交接切片落地前向量禁用）核可。
+4. **BG-4 协作位履职与排期**：本表态即协作位第一项；存储＋读取路由实现随
+   M7 检查切片锚点交付（冻结硬前置①Bridge 五维产出操作落地为核心开工
+   锚——不前置空转、不猜操作形状）。冻结硬前置②由核心兑现，④⑤照惯例。
