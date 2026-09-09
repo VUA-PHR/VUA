@@ -2,11 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.2.1
+> Document version: 1.3.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.2.1)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.3.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-08
+> Updated: 2026-09-09
 > Normative effect: Yes
 
 ## Product definition
@@ -123,6 +123,25 @@ gate derives risk from declared capabilities and behavior.
   against ALCOM/VCC-managed projects is uniformly false; it may only be opened later through a
   **new user ruling** once the upstream offers verifiable transactions/locks/a supported write
   interface — warnings alone are not sufficient.
+- **Remote web browsing and window/protocol boundary (user rulings U7② + U9, 2026-09-09):**
+  Web browsing follows an **allowlist-first** policy — allowlisted domains browse directly;
+  non-allowlisted domains are **prompted but never blocked** (content stays reachable after
+  confirmation). **The purchase flow is out of scope for now** (not permanently; depends on
+  future contact with BOOTH officially); download host domains are **proposed and approved
+  domain by domain** after real-machine verification. New windows and external protocols
+  follow a **four-way split**: (1) web-class new windows (http/https) never open a separate
+  window — allowlisted targets open in the current embedded view, non-allowlisted targets
+  open in the current view after a confirm prompt; (2) pseudo-protocol windows
+  (`javascript:`/`data:`/`blob:`/`file:`) are rejected unconditionally with no override path;
+  (3) external protocols pass through a **dedicated confirmation layer**: non-allowlisted
+  http/https prompts first and then hands off to the system browser; explicit protocol lists
+  such as `mailto:`/`steam:`/`vrchat:`/`discord:` show a per-invocation confirmation dialog
+  with the full target and never offer a permanent skip; unknown protocols are denied by
+  default; (4) **gesture requirement:** protocol launches must originate from a user click;
+  page-triggered launches (script/meta refresh) never execute; native new-window creation is
+  denied unconditionally. **Rationale:** content reachability (prompt, don't block) and local
+  privilege isolation (no separate windows, no unconfirmed protocol launches) hold together;
+  remote content never gains local privilege (see "Extension and integration trust boundary").
 - Every optionally bundled component requires an individual license, redistribution, update, and
   signature review.
 - EAC process termination is an experimental high-risk recovery action, disabled by default and
@@ -143,6 +162,15 @@ contribution policy is defined in the root contribution guide. Release signing a
 remain release-engineering decisions.
 
 ## Document changelog
+
+- 1.3.0 (2026-09-09): U7② + U9 user rulings landed in the boundary — a new Explicit-boundaries
+  clause, **remote web browsing and window/protocol boundary**: allowlist-first browsing,
+  non-allowlisted domains prompted but not blocked; purchase flow out of scope for now (not
+  permanent); download host domains proposed and approved per domain after real-machine
+  verification; the four-way split for new windows/external protocols (web-class new windows
+  never open separate windows; pseudo-protocols rejected unconditionally; external protocols
+  via a dedicated per-invocation confirmation layer without permanent skip; gesture requirement
+  plus unconditional denial of native new-window creation). Mirrors the ZH edition.
 
 - 1.2.1 (2026-09-08): trigger-timing clarification (W15 second-round re-review fix item) — the
   target trigger timing of "generate a VPM package as a replacement" is **at material import**
