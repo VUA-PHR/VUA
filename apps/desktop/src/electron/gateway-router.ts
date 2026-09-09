@@ -189,6 +189,9 @@ function toApplicationRequest(
     // bdl-queries v0.4(015 §10):可采纳下载列表,空参数 verbatim
     case "downloads.listCompleted":
       return { ...base, kind: "query", method: "downloads.listCompleted", params: {} };
+    // 013 读面第一翼(核心 e720544):environmentManagers 快照,空参数 verbatim
+    case "project.environmentManagers":
+      return { ...base, kind: "query", method: "project.environmentManagers", params: {} };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":

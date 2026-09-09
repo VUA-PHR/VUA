@@ -357,6 +357,15 @@ export interface DownloadsListCompletedRequestV1 {
   readonly params: Readonly<Record<string, never>>;
 }
 
+/** project.environmentManagers 查询入口(013 读面第一翼,核心 e720544);
+ *  快照本体以 envelope 强度透传(UI 按需窄化) */
+export interface ProjectEnvironmentManagersRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.environmentManagers";
+  readonly params: Readonly<Record<string, never>>;
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -384,6 +393,7 @@ export type DesktopGatewayRequestV1 =
   | WarehouseImportRequestV1
   | WarehouseImportDownloadsRequestV1
   | DownloadsListCompletedRequestV1
+  | ProjectEnvironmentManagersRequestV1
   | RecipeSaveRequestV1
   | RecipeGetRequestV1
   | RecipeListRequestV1
@@ -417,6 +427,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.listEntries": "query",
   "warehouse.entryDetail": "query",
   "downloads.listCompleted": "query",
+  "project.environmentManagers": "query",
   "download.retry": "command",
   "warehouse.setArtifactMode": "command",
   "warehouse.generateVpm": "command",
@@ -761,6 +772,7 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "catalog.status":
     case "warehouse.listEntries":
     case "downloads.listCompleted":
+    case "project.environmentManagers":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)

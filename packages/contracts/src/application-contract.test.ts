@@ -252,6 +252,16 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(true);
   });
 
+  it("admits the 013 environmentManagers read query with empty params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.environmentManagers", params: {},
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "project.environmentManagers",
+      params: { projectId: "p-1" },
+    })).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},

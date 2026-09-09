@@ -235,6 +235,14 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         });
       case "warehouse.listEntries":
         return this.#success(request, { entries: [] });
+      case "project.environmentManagers":
+        // mock 无项目管理检测域:诚实空能力对象(013 读面第一翼;桌面穷尽性
+        // 机械跟随,真实采集归环境侧收集器)
+        return this.#success(request, {
+          schemaVersion: "vua.environment-managers-snapshot/v0.1",
+          vcc: {},
+          alcom: {},
+        });
       case "downloads.listCompleted":
         // mock 无下载域:诚实空列表(bdl-queries v0.4 读面;桌面穷尽性
         // 机械跟随,业务语义归数据/核心)
