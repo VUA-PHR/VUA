@@ -219,3 +219,8 @@ apply 成功路径在写完 `source.json` 后**追加一步**：对新项目写 
 闭集全部不动，实现内部行为）；原始项目不写标识（只读纪律不变）。标识文件格式、
 三态语义与备注原语见 013 v0.2 注记（`vua_identity` 模块；测试
 `tests/vua_identity.rs` 5 项＋happy path 标识断言）。
+
+## 双语协议本补齐（环境，2026-09-09 深夜第二刀）
+
+按集成路由补 `docs/protocols/project-ops-v0.1_ZH/EN.md`；REGISTRY 行已改指
+协议本。内容含执行面增强事实（apply 写 VUA 原生标识，词表零变更）。

@@ -107,3 +107,10 @@ schemas/project-ops v0.1 两行（维护方=环境）。
 
 （桌面列表呈现消费点：T-B 读面接线时 `vuaIdentity.status`＋`note` 即列表
 「VUA 原生」徽标与备注列的数据面。）
+
+### 双语协议本补齐（环境，2026-09-09 深夜第二刀）
+
+按集成路由（BOARD 备选清单第 6 项、production-use-case 双件套惯例）补
+`docs/protocols/project-inspection-v0.2_ZH/EN.md`（现行冻结版）；REGISTRY
+v0.2 行已改指协议本（校验 39/39 一致）。v0.1 已取代行保留 schema 目录路径
+（无协议本，永不补）。
