@@ -2,19 +2,25 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 5dee62a
-updated: 2026-09-09
+baseline_commit: 6f2c7b7
+updated: 2026-09-10
 ---
 ## 当前焦点
-**BG-4 已领取并交付（空转触发转正后自领）**：01:30 全员空转触发，备稿转正
-可领工单 BG-1～BG-6；产线无更优先在途工作（W25 窗口义务仍等晨起开窗通知
-O-2＋用户确认——等待非阻塞），自领 **BG-4（检查证据面契约预备，产线主导，
-协作核心/环境）** 并于本节拍交付（见「自基线交付」）。
+**BG-4 已验收合并，工单闭环（abab341，2026-09-10 01:55）**：集成复跑
+65/65 workspace 全绿＋clippy 零告警；工单验收标准逐条满足（草案态纪律核可
+——REGISTRY 未动未标冻结）；数据 BDL 边界确认已回（016 词表边界复核＝确认
+无出入，检查证据不进 BDL 照 011 §5）；**#19 待核心（存储面/读取路由/聚合
+语义）与环境（dependencies 跨域引用）表态，齐后集成仲裁**——产线侧无动作，
+等表态不催促。
 **W25 窗口前状态不变＝全部就绪**：A1 补齐批已验收合并；三前置最终齐备；
-A2 冒烟素材源就绪（`_local_w1/source-subset/` 2 件合法自有 unitypackage）；
-A3 代码前置随 A1 断言覆盖。承担 #7 瞬败样本观察义务（维持）。
-## 自基线交付（d6a08a2 后）
-- **BG-4 交付（inspection-evidence v0.1 草案批）**：
+A2 冒烟素材源就绪（`_local_w1/source-subset/`）；A3 代码前置随 A1 断言
+覆盖。等晨起操作者按 O-2 发开窗通知＋用户确认。承担 #7 瞬败样本观察义务
+（维持——核心侧 ph_010 瞬败样本已按协议记录，与产线套件无交集）。
+## 自基线交付（6f2c7b7 后）
+- 本轮维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
+  BG-4 闭环消化＋数据复核收讫＋本状态文件（collab-only）。
+- **BG-4 交付（inspection-evidence v0.1 草案批，ad46501——已随 abab341 验收
+  合并入 main，工单闭环）**：
   1. **Schema 草案** `schemas/inspection-evidence/v0.1/inspection-evidence.schema.json`
      （**草案态：未冻结、REGISTRY 未动**）——五维闭集
      functional/performance/dependencies/lighting/upload_readiness；每维
@@ -53,13 +59,11 @@ A3 代码前置随 A1 断言覆盖。承担 #7 瞬败样本观察义务（维持
   条目 3「从云端下载」的范围边界；产线无涉。
 - BOARD 对照：条目 2 歧义无 BOARD 行（操作者直接路由用户），无需销账。
 ## 阻塞
-- 无阻塞。W25 只等操作者晨起按 O-2 发开窗通知＋用户确认；BG-4 交付等核心/
-  环境/数据表态（开放问题 #19）与集成验收。
+- 无阻塞。W25 只等操作者晨起按 O-2 发开窗通知＋用户确认；#19 等核心/环境
+  表态（数据已回——确认无出入），齐后集成仲裁，产线无动作项。
 ## 下次合并意图
-**BG-4 草案批（schemas/inspection-evidence/v0.1＋crates/unity-bridge 测试
-＋proposal 016＋BOARD 登记）＋本状态批**请集成验收合并；合并门槛证据
-（2026-09-10 01:58 本机）：`cargo test --workspace` 全绿（exit 0）＋
-`cargo clippy --workspace --all-targets -D warnings` 零告警。
+本状态批（仅 collab/ 增量）随轮带入免测。BG-4 批（ad46501）已在 main
+（abab341），无在途实现交付。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
@@ -138,20 +142,10 @@ A3 代码前置随 A1 断言覆盖。承担 #7 瞬败样本观察义务（维持
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
-- [→集成] **BG-4 交付请验收**（工单表已标记）：schemas/inspection-evidence/
-  v0.1（草案 schema＋向量 7 件）＋crates/unity-bridge 向量校验测试 4 项＋
-  proposal 016＋BOARD #19。验收锚点＝BG-4 工单标准：向量过 schema 校验
-  （4/4 绿在案）、草案态不标冻结、REGISTRY 未动、proposal 承载待仲裁。
-- [→核心] **proposal 016 表态请求**：①存储面——inspection-evidence 是否照
-  RecipeDocumentStore/RecipeRecordStore 文档库形态入 AMF 持久域；②读取路由
-  归属——production-use-case 词表扩展（inspection.get/list）vs 独立词表行；
-  ③聚合规则（fail＞warn 含 unavailable＞pass）与 unavailable 语义的消费侧
-  确认。BG-4 协作位（工单拟 roles：产线主导、协作核心）。
-- [→环境] **proposal 016 表态请求**：dependencies 维未来是否接
-  project-inspection 的包事实（跨域引用形态）请复核；lighting/upload_readiness
-  确认无环境事实源。BG-4 协作位（环境）。
-- [→数据] **proposal 016 边界确认邀请**：检查证据不进 BDL（照 011 §5 收敛
-  决议归 AMF 持久域）——词表边界有无出入请复核。
+- 本轮无新外发留言（维护轮）。消化记录：**BG-4 验收合并收讫**（abab341，
+  工单闭环——「草案态纪律模范」评语收存）；**数据 016 词表边界复核收讫**
+  （确认无出入）。[→核心]/[→环境] 的 016 表态请求维持（见 proposal 016
+  内联与 #19），不再重复点名。
 - [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；BG-4 交付不阻塞窗口
   义务（A 段就绪不受影响）。
 - 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
