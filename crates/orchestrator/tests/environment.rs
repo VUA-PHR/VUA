@@ -12,10 +12,10 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    env_error_codes, env_managers_codes, outcome_with_exit, EnvironmentEngine, EnvironmentPresence,
-    EnvironmentRoots, FakeProcessRunner, FakeRegistrySource, FindingSeverity, FixedClock,
-    ManagerDiagnostic, ManagerPresence, ProcessOutcome, RegistryHive, VccCapability,
-    VccSettingsReader, Zone,
+    env_error_codes, env_managers_codes, installed_unity_editors, outcome_with_exit,
+    EditorInstallObservation, EnvironmentEngine, EnvironmentPresence, EnvironmentRoots,
+    FakeProcessRunner, FakeRegistrySource, FindingSeverity, FixedClock, ManagerDiagnostic,
+    ManagerPresence, ProcessOutcome, RegistryHive, VccCapability, VccSettingsReader, Zone,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -722,3 +722,58 @@ fn tree_fingerprint(root: &Path) -> Vec<(String, u64)> {
 // Moved to the project-manager suite with the VCC settings reader
 // (proposal 004):
 //   cargo test -p vua-project-manager --test environment_engine manual_real -- --ignored --nocapture
+
+#[test]
+fn installed_unity_editors_fact_source_mirrors_the_check_tri_state() {
+    // Detected: complete-version editor dirs, newest first, junk ignored.
+    let base = unique_dir("fact-source");
+    let editors_root = base.join("editors");
+    for version in ["2019.4.31f1", "2022.3.22f1", "not-a-version", "999.9"] {
+        fs::create_dir_all(editors_root.join(version).join("Editor")).unwrap();
+    }
+    match installed_unity_editors(&editors_root) {
+        EditorInstallObservation::Detected(editors) => {
+            assert_eq!(editors.len(), 2, "junk names are ignored");
+            assert_eq!(editors[0].parsed.display, "2022.3.22f1", "newest first");
+            assert_eq!(editors[1].parsed.display, "2019.4.31f1");
+            assert!(editors[0].path.join("Editor").is_dir());
+        }
+        other => panic!("expected Detected, got {other:?}"),
+    }
+
+    // NotDetected: a missing root and an empty root are both findings.
+    assert_eq!(
+        installed_unity_editors(&base.join("missing")),
+        EditorInstallObservation::NotDetected
+    );
+    let empty_root = base.join("empty-editors");
+    fs::create_dir_all(&empty_root).unwrap();
+    assert_eq!(
+        installed_unity_editors(&empty_root),
+        EditorInstallObservation::NotDetected
+    );
+
+    // DetectionFailed: the root is a file — the observation itself failed.
+    let base2 = unique_dir("fact-source-file");
+    fs::create_dir_all(&base2).unwrap();
+    fs::write(base2.join("editors"), "not a dir").unwrap();
+    match installed_unity_editors(&base2.join("editors")) {
+        EditorInstallObservation::DetectionFailed { .. } => {}
+        other => panic!("expected DetectionFailed, got {other:?}"),
+    }
+
+    // Agreement with the check face: the check's tri-state and editor list
+    // ride on the same observation (one fact source, two consumers).
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let check = find(&items, "unity_editors");
+    assert_eq!(check.presence, EnvironmentPresence::Detected);
+    assert_eq!(check.facts["editors"].as_array().unwrap().len(), 2);
+
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+    if base2.exists() {
+        fs::remove_dir_all(&base2).unwrap();
+    }
+}

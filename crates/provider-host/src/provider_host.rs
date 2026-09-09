@@ -12,9 +12,9 @@ use vua_unity_bridge::{
 use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
-    acquire_project_lock, begin_mutation, read_pending_mutation, LockHolder,
-    MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard,
-    MARKER_FILE_NAME,
+    acquire_project_lock, apply_import_copy, begin_mutation, plan_import_copy, read_pending_mutation,
+    ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
+    ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
 };
 use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
@@ -113,6 +113,7 @@ struct HostState {
     downloads: Option<Arc<DownloadServices>>,
     warehouse: Option<Arc<WarehouseServices>>,
     use_cases: Option<Arc<ProductionUseCaseServices>>,
+    project_ops: Option<Arc<ProjectOpsServices>>,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -151,6 +152,27 @@ struct WarehouseServices {
     /// The tasked commands (generateVpm / deleteOriginals) run on the SQLite
     /// task authority: existing nonterminal tasks register for explicit
     /// Inspect/recovery and are never resumed implicitly.
+    runtime: TaskRuntime,
+}
+
+/// Project-domain write-command wiring (proposal 014, `project.import-copy`):
+/// the server-side guards read VCC/ALCOM registration facts through the
+/// environment-manager readers, the copy plan/apply run inside the
+/// project-manager library, and the tasked execution rides the shared SQLite
+/// task authority. Absent wiring answers a typed `vua.project.unavailable` —
+/// honest absence, never a silent success.
+#[derive(Clone)]
+pub struct ProjectOpsConfig {
+    /// VCC `settings.json` candidates in priority order (the
+    /// registered-project guard reads the association facts from these).
+    pub vcc_settings_candidates: Vec<PathBuf>,
+    /// Manager roots (ALCOM settings candidates) for the same guard face.
+    pub manager_roots: ManagerRoots,
+}
+
+struct ProjectOpsServices {
+    vcc_settings_candidates: Arc<Vec<PathBuf>>,
+    manager_roots: ManagerRoots,
     runtime: TaskRuntime,
 }
 
@@ -312,12 +334,38 @@ pub fn run_provider_host_with_downloads(
 /// commands run on the SQLite task authority over the same store.
 pub fn run_provider_host_with_services(
     input: impl BufRead + Send + 'static,
+    output: impl Write,
+    database_path: impl AsRef<Path>,
+    production: Option<ProductionConfig>,
+    downloads: Option<DownloadConfig>,
+    warehouse: Option<WarehouseConfig>,
+    use_cases: Option<ProductionUseCaseConfig>,
+) -> Result<(), ProviderHostError> {
+    run_provider_host_full(
+        input,
+        output,
+        database_path,
+        production,
+        downloads,
+        warehouse,
+        use_cases,
+        None,
+    )
+}
+
+/// The full entry: additionally wires the project-domain write command face
+/// (proposal 014, `project.import-copy`). When `project_ops` is absent the
+/// `project.*` methods answer a typed `vua.project.unavailable`.
+#[allow(clippy::too_many_arguments)]
+pub fn run_provider_host_full(
+    input: impl BufRead + Send + 'static,
     mut output: impl Write,
     database_path: impl AsRef<Path>,
     production: Option<ProductionConfig>,
     downloads: Option<DownloadConfig>,
     warehouse: Option<WarehouseConfig>,
     use_cases: Option<ProductionUseCaseConfig>,
+    project_ops: Option<ProjectOpsConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -425,6 +473,22 @@ pub fn run_provider_host_with_services(
             env_initial,
         })
     });
+    let project_ops = project_ops
+        .map(|config| {
+            TaskRuntime::with_sqlite(
+                store.clone(),
+                Arc::new(SystemClock),
+                Arc::new(NanosTaskIdGenerator::default()),
+            )
+            .map(|runtime| {
+                Arc::new(ProjectOpsServices {
+                    vcc_settings_candidates: Arc::new(config.vcc_settings_candidates),
+                    manager_roots: config.manager_roots,
+                    runtime,
+                })
+            })
+        })
+        .transpose()?;
     let mut state = HostState {
         store,
         provider_instance_id,
@@ -433,6 +497,7 @@ pub fn run_provider_host_with_services(
         production,
         downloads,
         warehouse,
+        project_ops,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -778,6 +843,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("project.") {
+        return project_request(state, method, request, request_id, correlation_id);
+    }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
             "application.getSnapshot" => Ok(FrameOutcome::Response(application_success(
@@ -870,12 +938,18 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    let project_ops_availability = if state.project_ops.is_some() {
+        "available"
+    } else {
+        "unavailable"
+    };
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
+        {"operationId": "project.import-copy", "availability": project_ops_availability},
         {
             "operationId": "desktop.remoteBrowser",
             "availability": "unavailable",
@@ -1402,6 +1476,10 @@ fn warehouse_set_artifact_mode(
 /// M5 batch-import task, proposal 010).
 const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.3";
 
+/// project-ops v0.1 is the frozen write-command face `project.import-copy`
+/// travels as (proposal 014, arbitrated 2026-09-09).
+const PROJECT_OPS_SCHEMA_VERSION: &str = "0.1";
+
 /// `warehouse.setGlobalDefaultMode` (bdl-commands v0.2, U8 ruling): the
 /// synchronous write of the two-level options' GLOBAL level. The global
 /// default always has a value — a persisted fact once written, the
@@ -1519,6 +1597,9 @@ fn warehouse_submit_task(
 
 /// Generates a uuid-v7-shaped identity (unix-ts-ms ordering + in-process
 /// counter randomness; single-process uniqueness is what the stores need).
+/// The version nibble is `7` and the variant bits are `10xx` so every
+/// identity satisfies the frozen `uuidV7` pattern shared by the recipe
+/// v0.3 suite and the production-use-case v0.2 word list.
 fn uuid_v7_identity() -> String {
     use std::sync::atomic::{AtomicU64, Ordering};
     static COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -1533,7 +1614,7 @@ fn uuid_v7_identity() -> String {
     let var_hi = 0x8000u16 | (((pid << 4) as u16) & 0x3fff);
     let var_lo = (counter & 0xffff_ffff) | 0x0000_0001_0000_0000;
     format!(
-        "{:08x}-{:04x}-4{:03x}-{:04x}-{:012x}",
+        "{:08x}-{:04x}-7{:03x}-{:04x}-{:012x}",
         (unix_ts_ms >> 16) as u32,
         (unix_ts_ms & 0xffff) as u16,
         ver_rand_a & 0x0fff,
@@ -1812,7 +1893,12 @@ fn run_local_resolution(
         "schemaVersion": "0.3",
         "planId": plan_id,
         "recipeId": recipe.get("recipeId").cloned().unwrap_or(serde_json::json!(recipe_id)),
-        "recipeRevision": recipe.get("revision").cloned().unwrap_or(serde_json::json!(1)),
+        // The version-lock value is the store's optimistic-concurrency
+        // revision (the authority on "the document changed"), not the
+        // author-facing revision field inside the document body: job.execute
+        // rejects the plan when the store revision has moved past what this
+        // resolution was run against.
+        "recipeRevision": serde_json::json!(stored.revision),
         "localResolutionId": local_resolution_id,
         "environmentId": uuid_v7_identity(),
         "createdAt": created_at,
@@ -1911,19 +1997,64 @@ fn plan_request(
     }
 }
 
-/// One approved-plan execution: re-verify the plan hash and lifecycle,
-/// write the plan file into the job directory, assemble the Bridge v2
-/// command (fingerprint optimistic lock), execute it through the Bridge,
-/// and transpose the receipt into a Build Record v0.3 document (the
-/// receipt-bearing ordered prefix of the plan's jobs). Returns the Done
-/// payload (buildId + receipt summary).
+/// Canonical SHA-256 over a document's serde serialization (the same
+/// serialization rule the planHash anchor uses — insertion order, compact).
+/// This is the `recipeDigest` production rule: the whole stored document.
+fn document_sha256(document: &Value) -> String {
+    let serialized = serde_json::to_string(document).unwrap_or_default();
+    let digest = sha2::Sha256::digest(serialized.as_bytes());
+    format!(
+        "sha256:{}",
+        digest.iter().map(|byte| format!("{byte:02x}")).collect::<String>()
+    )
+}
+
+/// The `localResolutionDigest` production rule (declared here because no
+/// frozen schema pins the computation): SHA-256 over the canonical
+/// serialization of the resolution conclusions the approved plan carries —
+/// `{"jobs": [jobs[].inputs...], "target": target.resolvedSource}`. The
+/// plan's resolution face is the materialized Local Resolution fact of this
+/// implementation (011 section 5 minimal honest semantics), so hashing that
+/// face anchors the facts independently of the lifecycle fields.
+fn local_resolution_digest(plan: &Value) -> String {
+    let inputs: Vec<Value> = plan
+        .get("jobs")
+        .and_then(Value::as_array)
+        .map(|jobs| {
+            jobs.iter()
+                .map(|job| job.get("inputs").cloned().unwrap_or(Value::Null))
+                .collect()
+        })
+        .unwrap_or_default();
+    let projection = json!({
+        "jobs": inputs,
+        "target": plan.get("target")
+            .and_then(|target| target.get("resolvedSource"))
+            .cloned()
+            .unwrap_or(Value::Null),
+    });
+    document_sha256(&projection)
+}
+
+/// One approved-plan execution: re-verify the plan hash and lifecycle, run
+/// the receipt-side prechecks (version lock first, per 009 stance 4 as the
+/// v0.2 protocol restates it), write the plan file into the job directory,
+/// assemble the Bridge v2 command (fingerprint optimistic lock), execute it
+/// through the Bridge, and transpose the receipt into a Build Record v0.3
+/// document: jobs[] is the receipt-bearing ordered prefix of the plan's
+/// jobs, planDeviations carries the typed plan-vs-actual deviations
+/// (source_fallback / guard_skip / partial_completion), recoveryPoints
+/// register the receipt snapshot, and evidenceSummary references the
+/// evidence the resolution run published. Returns the Done payload
+/// (buildId + receipt summary).
 #[allow(clippy::too_many_arguments)]
 fn run_approved_plan_job(
+    recipes: &RecipeDocumentStore,
     plans: &vua_orchestrator::PlanDocumentStore,
     records: &vua_orchestrator::RecipeRecordStore,
+    evidence: &vua_orchestrator::EvidenceStore,
     bridge: &Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: &Path,
-    env_initial: ArtifactMode,
     plan_id: &str,
     correlation_id: &str,
 ) -> Result<Value, AppErrorV1> {
@@ -1972,12 +2103,59 @@ fn run_approved_plan_job(
             correlation_id,
         ));
     }
+    // Version lock precheck (009 stance 4, first in the precheck order): the
+    // recipe the plan was resolved from must still be at the planned
+    // revision. The optimistic-concurrency save guarantees that an unchanged
+    // revision means an unchanged document, so the digest computed here is
+    // the digest the approval was made against.
+    let recipe_id = plan
+        .get("recipeId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let planned_revision = plan
+        .get("recipeRevision")
+        .and_then(Value::as_u64)
+        .unwrap_or(1);
+    let stored_recipe = recipes
+        .get(&recipe_id)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.recipe.store_failed",
+                ErrorCategory::Internal,
+                "errors.recipe.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+        })?
+        .ok_or_else(|| {
+            AppErrorV1::new(
+                "vua.recipe.not_found",
+                ErrorCategory::Validation,
+                "errors.recipe.notFound",
+                correlation_id,
+            )
+        })?;
+    let current_revision = stored_recipe.revision;
+    if current_revision != planned_revision {
+        return Err(AppErrorV1::new(
+            "vua.recipe.revision_conflict",
+            ErrorCategory::Conflict,
+            "errors.recipe.revisionConflict",
+            correlation_id,
+        )
+        .with_param("currentRevision", vua_orchestrator::ParamValue::Number(current_revision as f64))
+        .with_param("expectedRevision", vua_orchestrator::ParamValue::Number(planned_revision as f64)));
+    }
+    let recipe_digest = document_sha256(&stored_recipe.recipe);
+    let local_resolution = local_resolution_digest(&plan);
     let plan_schema_version = plan
         .get("schemaVersion")
         .and_then(Value::as_str)
         .unwrap_or("0.3")
         .to_owned();
     let command_id = format!("job-{}", uuid_v7_identity());
+    let started_at = now_rfc3339();
 
     // Plan file into the job directory (the Bridge reads the file and
     // verifies its local hash against payload.planHash).
@@ -1993,7 +2171,7 @@ fn run_approved_plan_job(
     let plan_file = vua_unity_bridge::write_plan_file(
         project_root,
         &command_id,
-        &serde_json::to_string(&plan_bytes).expect("plan bytes are UTF-8"),
+        &String::from_utf8(plan_bytes).expect("plan bytes are UTF-8"),
     )
     .map_err(|error| {
         AppErrorV1::new(
@@ -2010,11 +2188,7 @@ fn run_approved_plan_job(
     // key); the file hash travels with the file for the Bridge's local
     // verification.
     let project = vua_orchestrator::ProjectRef {
-        id: plan
-            .get("recipeId")
-            .and_then(Value::as_str)
-            .unwrap_or("recipe")
-            .to_owned(),
+        id: recipe_id.clone(),
         root: project_root.to_path_buf(),
     };
     let expected_fingerprint = plan
@@ -2070,11 +2244,25 @@ fn run_approved_plan_job(
             "failed"
         }
     };
+    // The receipt diagnostics travel at the result level (v2 shape); the
+    // record transposes them verbatim instead of inventing per-step
+    // attribution.
+    let result_diagnostics = serde_json::to_value(&result.diagnostics)
+        .unwrap_or_else(|_| json!([]));
+    let first_error_code = result
+        .diagnostics
+        .iter()
+        .find(|diagnostic| {
+            matches!(
+                diagnostic.severity,
+                vua_orchestrator::DiagnosticSeverity::Error
+            )
+        })
+        .map(|diagnostic| diagnostic.code.clone());
 
-    // Transpose the receipt into a Build Record v0.3 document. jobs[] is
-    // the receipt-bearing ordered prefix: steps that produced a receipt
-    // (executed/failed) map to succeeded/failed; pre-receipt steps
-    // (pending/skipped after a fail-fast) stay out of the record.
+    // Receipt transposition. jobs[] is the receipt-bearing ordered prefix of
+    // the plan's jobs (1:1 with resolvedSource); typed deviations record
+    // every plan-vs-actual difference the prefix exposes.
     let steps = result
         .data
         .get("steps")
@@ -2087,64 +2275,178 @@ fn run_approved_plan_job(
         .cloned()
         .unwrap_or_default();
     let mut record_jobs: Vec<Value> = Vec::new();
+    let mut deviations: Vec<Value> = Vec::new();
+    let mut failure_seen = false;
     for (index, step) in steps.iter().enumerate() {
+        let Some(plan_job) = plan_jobs.get(index) else {
+            // The receipt outgrew the plan: no planned identity exists for
+            // the surplus steps, so they cannot be transposed into jobs[]
+            // (jobId/kind come from the plan vocabulary). The surplus is
+            // recorded as a partial-completion deviation detail instead of
+            // being silently dropped.
+            deviations.push(json!({
+                "jobId": plan_jobs.last().and_then(|job| job.get("jobId")).cloned()
+                    .unwrap_or(json!(uuid_v7_identity())),
+                "deviationKind": "partial_completion",
+                "detail": format!(
+                    "bridge returned {} steps but the plan declares {} jobs; surplus steps have no planned identity",
+                    steps.len(), plan_jobs.len()
+                ),
+            }));
+            break;
+        };
         let step_status = step.get("status").and_then(Value::as_str).unwrap_or("");
+        if matches!(step_status, "skipped" | "pending") {
+            if failure_seen {
+                // After a fail-fast these steps are interruption debris, not
+                // guard decisions - they stay out of jobs[] and out of the
+                // guard_skip vocabulary; the partial_completion deviation
+                // below carries the truncation.
+                continue;
+            }
+            // A guard skipped this job before execution: no receipt exists,
+            // so the job stays out of jobs[] and the skip is recorded as the
+            // typed guard_skip deviation (012 section 3).
+            deviations.push(json!({
+                "jobId": plan_job.get("jobId").cloned().unwrap_or(Value::Null),
+                "deviationKind": "guard_skip",
+                "detail": step
+                    .get("warning")
+                    .and_then(Value::as_str)
+                    .filter(|warning| !warning.is_empty())
+                    .unwrap_or("bridge skipped this job before execution"),
+            }));
+            continue;
+        }
         let receipt_status = match step_status {
             "executed" => "succeeded",
-            "failed" => "failed",
+            "failed" => {
+                failure_seen = true;
+                "failed"
+            }
             _ => continue,
         };
+        // resolvedSourceUsed: the receipt is authoritative; when the
+        // receipt's source differs from the plan's declaration the
+        // difference MUST appear as a source_fallback deviation (double
+        // -record cross-evidence, 012 section 3-3). Without a receipt source
+        // the plan declaration stands (nothing was observed to differ).
+        let planned_source = plan_job
+            .get("inputs")
+            .and_then(|inputs| inputs.get("resolvedSource"))
+            .cloned();
+        let mut resolved_source_used = planned_source.clone().unwrap_or(json!({
+            "sourceKind": "original",
+            "artifactSha256": Value::Null
+        }));
+        resolved_source_used
+            .as_object_mut()
+            .map(|source| source.remove("fallbackUsed"));
+        if let Some(receipt_source) = step.get("resolvedSource").filter(|value| !value.is_null())
+        {
+            let differs = match (&planned_source, receipt_source) {
+                (Some(planned), receipt) => {
+                    planned.get("sourceKind") != receipt.get("sourceKind")
+                        || planned.get("artifactSha256") != receipt.get("artifactSha256")
+                }
+                (None, _) => true,
+            };
+            if differs {
+                deviations.push(json!({
+                    "jobId": plan_job.get("jobId").cloned().unwrap_or(Value::Null),
+                    "deviationKind": "source_fallback",
+                    "detail": format!(
+                        "receipt consumed sourceKind={} artifactSha256={} but the plan declares {}",
+                        receipt_source.get("sourceKind").and_then(Value::as_str).unwrap_or("unknown"),
+                        receipt_source.get("artifactSha256").and_then(Value::as_str).unwrap_or("null"),
+                        planned_source.as_ref()
+                            .and_then(|source| source.get("sourceKind"))
+                            .and_then(Value::as_str)
+                            .unwrap_or("no declared source"),
+                    ),
+                }));
+            }
+            resolved_source_used = json!({
+                "sourceKind": receipt_source.get("sourceKind").cloned().unwrap_or(Value::Null),
+                "artifactSha256": receipt_source.get("artifactSha256").cloned().unwrap_or(Value::Null),
+                "warehouseItemId": receipt_source.get("warehouseItemId").cloned().unwrap_or(Value::Null),
+            });
+        }
         let mut job = json!({
-            "jobId": plan_jobs
-                .get(index)
-                .and_then(|job| job.get("jobId"))
-                .cloned()
-                .unwrap_or(json!(format!("job-{index}"))),
-            "kind": plan_jobs
-                .get(index)
-                .and_then(|job| job.get("kind"))
-                .cloned()
-                .unwrap_or_else(|| {
-                    step.get("kind")
-                        .and_then(Value::as_str)
-                        .map(|kind| json!(kind))
-                        .unwrap_or(json!("unknown"))
-                }),
+            "jobId": plan_job.get("jobId").cloned().unwrap_or(Value::Null),
+            "kind": plan_job.get("kind").cloned().unwrap_or(Value::Null),
             "commandId": command_id,
             "planHash": plan_hash,
             "dryRun": false,
-            "replayed": result
-                .data
-                .get("replayed")
-                .cloned()
-                .unwrap_or(json!(false)),
+            "replayed": result.replayed.unwrap_or(false),
             "status": receipt_status,
-            "resolvedSourceUsed": plan_jobs
-                .get(index)
-                .and_then(|job| job.get("inputs"))
-                .and_then(|inputs| inputs.get("resolvedSource"))
-                .cloned()
-                .unwrap_or(json!({
-                    "sourceKind": "original",
-                    "artifactSha256": Value::Null
-                })),
-            "changedPaths": result.changed_paths.clone(),
-            "diagnostics": step.get("diagnostics").cloned().unwrap_or(json!([])),
+            "resolvedSourceUsed": resolved_source_used,
+            "changedPaths": result.changed_paths,
+            "diagnostics": if receipt_status == "failed" {
+                result_diagnostics.clone()
+            } else {
+                json!([])
+            },
         });
         if receipt_status == "failed" {
-            job["rejectReason"] = step
-                .get("code")
-                .and_then(Value::as_str)
-                .map(|code| json!(code))
-                .unwrap_or(json!("unknown"));
+            job["rejectReason"] = json!(
+                first_error_code.clone().unwrap_or_else(|| "unknown".to_owned())
+            );
         }
         record_jobs.push(job);
     }
+    // A receipt prefix shorter than the plan means the batch partially
+    // completed (fail-fast) - the interruption is carried by the top-level
+    // status AND by one typed partial_completion deviation pointing at the
+    // first unexecuted plan job.
+    if record_jobs.len() < plan_jobs.len() {
+        if let Some(next_plan_job) = plan_jobs.get(record_jobs.len()) {
+            deviations.push(json!({
+                "jobId": next_plan_job.get("jobId").cloned().unwrap_or(Value::Null),
+                "deviationKind": "partial_completion",
+                "detail": format!(
+                    "receipt prefix covers {} of {} planned jobs (top-level status: {})",
+                    record_jobs.len(), plan_jobs.len(), status
+                ),
+            }));
+        }
+    }
 
-    // The composed global default still governs what a re-resolution would
-    // pick (recorded for the audit chain, not consumed here).
-    let _ = env_initial;
+    // Recovery points: the receipt's snapshot identity is registered as the
+    // pre-job recovery point (009 cross-review point 5). A rejected receipt
+    // carries no snapshot - nothing is invented.
+    let recovery_points = match &result.snapshot_id {
+        Some(snapshot_id) => json!([{
+            "snapshotId": snapshot_id,
+            "phase": "pre_job",
+            "createdAt": now_rfc3339(),
+        }]),
+        None => json!([]),
+    };
 
+    // Evidence summary: the evidence facts the resolution run published,
+    // found through their localResolutionId back-reference (identity
+    // references - the bodies stay in the evidence store).
+    let local_resolution_id = plan
+        .get("localResolutionId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let evidence_ids = evidence
+        .list_by_local_resolution(&local_resolution_id)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.record.store_failed",
+                ErrorCategory::Internal,
+                "errors.record.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(
+                format!("evidence listing failed: {error}"),
+            ))
+        })?;
+
+    let finished_at = now_rfc3339();
     let build_id = uuid_v7_identity();
     let record = json!({
         "schemaVersion": "0.3",
@@ -2155,22 +2457,18 @@ fn run_approved_plan_job(
         "planHash": plan_hash,
         "planSchemaVersion": plan_schema_version,
         "environmentId": plan.get("environmentId").cloned().unwrap_or(Value::Null),
-        "startedAt": plan.get("createdAt").cloned().unwrap_or(Value::Null),
-        "finishedAt": now_rfc3339(),
+        "startedAt": started_at,
+        "finishedAt": finished_at,
         "status": status,
         "inputs": {
-            "recipeDigest": Value::Null,
-            "localResolutionDigest": Value::Null,
+            "recipeDigest": recipe_digest,
+            "localResolutionDigest": local_resolution,
             "planHash": plan_hash,
         },
         "jobs": record_jobs,
-        "planDeviations": [],
-        "recoveryPoints": plan.get("recoveryPoints").cloned().unwrap_or(json!([])),
-        "evidenceSummary": plan
-            .get("evidenceIds")
-            .cloned()
-            .map(|ids| json!({"evidenceIds": ids}))
-            .unwrap_or(json!({"evidenceIds": []})),
+        "planDeviations": deviations,
+        "recoveryPoints": recovery_points,
+        "evidenceSummary": { "evidenceIds": evidence_ids },
     });
     records
         .publish(&build_id, &record)
@@ -2187,7 +2485,8 @@ fn run_approved_plan_job(
     Ok(json!({
         "buildId": build_id,
         "status": status,
-        "jobsRecorded": record_jobs.len(),
+        "jobsRecorded": record["jobs"].as_array().map(Vec::len).unwrap_or(0),
+        "deviationsRecorded": record["planDeviations"].as_array().map(Vec::len).unwrap_or(0),
     }))
 }
 
@@ -2230,22 +2529,22 @@ fn job_execute(
     };
     let plans = use_cases.plans.clone();
     let records = use_cases.records.clone();
+    let recipes = use_cases.recipes.clone();
+    let evidence = use_cases.evidence.clone();
     let bridge = use_cases.bridge.clone();
     let project_root = use_cases.project_root.clone();
-    let env_initial = use_cases
-        .env_initial
-        .unwrap_or(vua_bdl_store::ArtifactMode::UseOriginalUnitypackage);
     let job_correlation = correlation_id.to_owned();
     let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
         correlation_id: Some(correlation_id.to_owned()),
         timeout: None,
         job: Box::new(move |_| {
             let payload = run_approved_plan_job(
+                &recipes,
                 &plans,
                 &records,
+                &evidence,
                 &bridge,
                 &project_root,
-                env_initial,
                 &plan_id,
                 &job_correlation,
             )?;
@@ -3100,6 +3399,163 @@ fn warehouse_import_submit(
         )),
         // Submission rejection is a persistence failure of the task authority.
         Err(_) => warehouse_store_failed(request_id, correlation_id),
+    }
+}
+
+/// The `vua.project.*` word list (proposal 013/014): the write face is
+/// `project.import-copy` alone. Absent wiring answers a typed unavailable —
+/// the frozen word list is never silently stubbed.
+fn project_request(
+    state: &mut HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.unavailable",
+            "errors.project.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "project.import-copy" => {
+            project_import_copy(project_ops, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn project_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.project.invalid_params",
+        "errors.project.invalidParams",
+        "validation",
+    ))
+}
+
+/// `project.import-copy` (proposal 014, arbitrated): both phases run inside
+/// the nine-state task — plan is the read-only confirmation face, apply
+/// re-verifies the plan digest and executes the copy. A typed guard refusal
+/// is a Done payload carrying the frozen `rejected` result document (the
+/// task completed; the import was refused — the same discipline as the
+/// warehouse generation guards), never a transport error.
+fn project_import_copy(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed param set (frozen project-ops v0.1 command schema).
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    let allowed = ["phase", "sourcePath", "targetParentDirectory", "targetProjectName", "confirmedPlanDigest"];
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return project_invalid_params(request_id, correlation_id);
+    }
+    let text_param = |key: &str| {
+        params
+            .get(key)
+            .and_then(Value::as_str)
+            .filter(|value| !value.is_empty())
+            .map(str::to_owned)
+    };
+    let (Some(phase), Some(source_path), Some(target_parent), Some(name)) = (
+        params.get("phase").and_then(Value::as_str),
+        text_param("sourcePath"),
+        text_param("targetParentDirectory"),
+        text_param("targetProjectName"),
+    ) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    if phase != "plan" && phase != "apply" {
+        return project_invalid_params(request_id, correlation_id);
+    }
+    // apply must confirm the plan digest it executes; plan must not carry one.
+    let confirmed_plan_digest = text_param("confirmedPlanDigest");
+    if (phase == "apply" && confirmed_plan_digest.is_none())
+        || (phase == "plan" && confirmed_plan_digest.is_some())
+    {
+        return project_invalid_params(request_id, correlation_id);
+    }
+
+    let job_correlation = correlation_id.to_owned();
+    let is_apply = phase == "apply";
+    let runtime = project_ops.runtime.clone();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let import_request = ImportCopyRequest {
+                source: Path::new(&source_path),
+                target_parent: Path::new(&target_parent),
+                name: &name,
+                vcc_settings_candidates: &project_ops.vcc_settings_candidates,
+                roots: &project_ops.manager_roots,
+            };
+            // A guard refusal is a result document, not an error: the task
+            // honestly completed and its verdict is the frozen `rejected`
+            // face. Only an unexpected internal failure fails the task.
+            let result: Value = if is_apply {
+                match apply_import_copy(
+                    &import_request,
+                    &confirmed_plan_digest.expect("apply requires the digest (checked above)"),
+                    &job_correlation,
+                    &SystemClock,
+                ) {
+                    Ok(receipt) => serde_json::to_value(receipt).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                }
+            } else {
+                match plan_import_copy(&import_request) {
+                    Ok(plan) => serde_json::to_value(plan)
+                        .unwrap_or_else(|_| json!({"kind": "rejected", "guard": "execution_failed"})),
+                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
+                        json!({"kind": "rejected", "guard": "execution_failed"})
+                    }),
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.import-copy",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.import-copy",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority.
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.store_failed",
+            "errors.project.storeFailed",
+            "internal",
+        )),
     }
 }
 
@@ -5394,6 +5850,7 @@ mod tests {
             downloads: None,
             warehouse: None,
             use_cases: None,
+            project_ops: None,
         };
 
         let prepare = InboundFrame {

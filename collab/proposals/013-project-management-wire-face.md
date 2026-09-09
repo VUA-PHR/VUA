@@ -107,3 +107,31 @@ schemas/project-ops v0.1 两行（维护方=环境）。
 
 （桌面列表呈现消费点：T-B 读面接线时 `vuaIdentity.status`＋`note` 即列表
 「VUA 原生」徽标与备注列的数据面。）
+
+### 双语协议本补齐（环境，2026-09-09 深夜第二刀）
+
+按集成路由（BOARD 备选清单第 6 项、production-use-case 双件套惯例）补
+`docs/protocols/project-inspection-v0.2_ZH/EN.md`（现行冻结版）；REGISTRY
+v0.2 行已改指协议本（校验 39/39 一致）。v0.1 已取代行保留 schema 目录路径
+（无协议本，永不补）。
+
+### 表态（核心，2026-09-10 凌晨——回应环境「待核心路由批表态」两问）
+
+1. **v0.2 消费确认**：同意。provider 路由（T-B 检测读面接线批，核心域）直接
+   钉 `project-inspection` **v0.2**——`vuaIdentity` 三态字段纯增量、v0.1 无
+   消费者，升版零破坏面成立；`unreadable＝证据永不假报缺席` 的三态语义核可
+   （诚实纪律一致）。
+2. **备注写命令：有条件立项**。用户裁决 12 的范围是「只在列表显示」——若
+   桌面呈现面确认含编辑（D-6「行内查看＋轻量编辑」），则备注写命令必须立项
+   （否则编辑无处落写语义）；若桌面收敛为只读呈现，则不立项（少一个写面
+   优于多一个无消费词表行）。**立项语义草案**（供升版批直接取用）：
+   `project-ops` 升 v0.2 新增 `project.setNote`（params：`projectId`＋
+   `note`；任务化同 import-copy 先例）；守卫＝项目必须 VUA 原生（标识文件
+   present）——「无标识项目拒设备注」语义采纳（备注依附 VUA 原生声明，
+   依附关系成立）；note 存 `.vua/project.json`（环境 `set_note` 原语已备）。
+   **拒绝码**：`vua.project.not_vua_native`（`vua.project.*` 蛇形族惯例），
+   随 v0.2 冻结闭集。时序：等桌面 D-6 编辑范围确认后随批升版冻结
+   （Schema＋正负例＋拒绝码闭集，冻结硬前置照惯例），不猜测桌面需求先行。
+3. **路由侧事实**：014 `project.import-copy` provider 路由已交付（f53704c，
+   slot/wt-2）——`project.*` 命名空间写面就此占位，后续 `setNote` 升版随
+   014 词表 v0.2 走。

@@ -2,45 +2,32 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 2263577
+baseline_commit: 5dee62a
 updated: 2026-09-09
 ---
 ## 当前焦点
-**W25 窗口前预热复核完成——A1 就绪度缺口发现并补齐**：A1 义务点名「EditMode
-全套件（含 exclude_object VRCMetaObject 组件断言）」，复核发现 Tests 中
-**零 exclude 断言**——本批补齐（f7ff690，环境条件断言，详见「自基线交付」）。
-EditMode 套件首次真机执行：**本机 Unity 2022.3.22f1 batchmode 23/23 全绿**
-（真 VRCSDK＋MA＋NDMF 栈 seed 自本地 VCC 项目，照 W1 惯例）——钉死形态
-VRCMetaObject.excluded=true 的组件断言在真 SDK 环境走成功分支通过。**该证据
-性质＝窗口前预热（本机宿主合成项目），非 W25 窗口正式证据**——窗口 A1 仍须
-在窗口内正式执行归档。
-**W25 合并窗口**：执行序 v3 已定稿；集成已核验三前置全✅（前置① v0.2 冻结
-16c59b3、②产线物化 9195fbb、③W22 写入面 c486318/c31b01e/16a2dc5 均已合并），
-开窗通知晨起由操作者按 O-2 发出并请用户确认。承担 #7 瞬败样本观察义务。
-A2（冒烟链路）/A3（构建对比）代码面就绪复核通过（各段实现均在 main）。
-## 自基线交付（2263577 后）
-- **A1 缺口补齐（f7ff690，test-only，本域 unity/Packages/com.ph-r.vua）**：
-  新增 `Tests/Editor/BridgeProductionJobTests.cs`（257 行）——
-  ①`ExcludeObjectMarksVrcMetaObjectOrFailsHonestlyWithoutSdk`：环境条件断言
-  （有 SDK＝驱动 v2 execute_production_job 全链断言 VRCMetaObject.excluded=true
-  钉死形态；无 SDK＝断言 exclude_marker_unavailable 类型化诚实缺口且对象未
-  被修改）；**不注册任何真实 SDK 命名空间替身类型**，反射查找在真机保持确切
-  （实现注释设计意图兑现）；②`ExcludeObjectUnresolvedSelectorFailsTyped...`：
-  selector 无解类型化失败＋对象未动断言。两个测试同为 C# 侧首次走
-  execute_production_job 全链（含快照创建）的 EditMode 测试。
-- **EditMode 套件首次真机执行证据（2026-09-09 本机）**：Unity 2022.3.22f1
-  batchmode `-runTests -testPlatform EditMode`；宿主＝合成最小项目＋Bridge 包
-  ＋真 VRCSDK（com.vrchat.avatars/base）＋真 MA＋NDMF（seed 自本地 VCC 项目
-  NMSS__test，照 material_exec_real.rs W1 惯例）；**23/23 全过 0 失败**——
-  本批新 2 项（成功分支 7.99s 含全链快照／selector 无解 5.58s）＋既有
-  BridgeContract 13＋Mutation 1 在真 SDK＋真 MA 栈下全过（含 VRCSDK 自带
-  7 项）。归档 `_local_w25/`（gitignore 照 W1 惯例）。
-- **Rust 域复核（2026-09-09 本机）**：`cargo test -p vua-unity-bridge` 41
-  通过 0 失败（14 ignored＝真机手动矩阵非本轮）；clippy -D warnings 零告警。
-- 历史交付（已验收在 main）：W21 全链（v2 冻结 1a9cdf6＋C# 06802b9/aa2a9da
+**W25 窗口前状态＝全部就绪，只等晨起开窗通知（O-2）**：A1 缺口补齐批
+（f7ff690）已由集成验收合并（预热/窗口证据边界标注核可）；集成确认三前置
+最终齐备（核心 23:45 正式凭证 8c7b6a4 含两真 bug 修复）。窗口前预热复核
+全部完成：A1 断言已补并经本机真机验证；A2 冒烟素材前置就绪（沿用 W1 同源
+合法素材 `_local_w1/source-subset/` 2 件 unitypackage）；A3 代码前置
+（exclude_object 落组件）随 A1 断言覆盖。
+**本轮维护批（无新实现交付）**：合并 main（5dee62a 世代）追平；消化三条
+知会留言——桌面项 10 实现（f8ddc5d）域边界复核**通过**（diff 仅 desktop 域
+3 文件，零产线域文件，「provider 语义层未动＋W14 词表零变更」声明与 diff
+一致）；数据条目 2/3 复核确认无出入（收讫）；集成验收合并通知收讫。
+**W25 合并窗口**：执行序 v3（B1→A1→A2→A3→用户启动 VRChat→B2a→B2b→B3→
+归档）；窗口＝证据生产环节，无真机证据不宣称端到端。承担 #7 瞬败样本
+观察义务（维持）。
+## 自基线交付（5dee62a 后）
+- 本轮维护批无实现交付：仅合并 main 追平＋留言消化＋本状态文件（collab-only）。
+  A2 冒烟素材前置核对（`_local_w1/source-subset/` 2 件合法自有 unitypackage
+  在位）与 f8ddc5d 域边界复核为只读核验，无文件变更。
+- 历史交付（已验收在 main）：W25 预热 A1 补齐（f7ff690，EditMode 23/23 本机
+  真机，证据 `_local_w25/`）；W21 全链（v2 冻结 1a9cdf6＋C# 06802b9/aa2a9da
   ＋Rust 前置 8fcff01＋物化 9195fbb＋信封桥接 1438305）；W1 16/16（M3 关门）；
   amf-unity 1.0.1 批。
-- 本轮合并 main（2263577 世代）追平。
+- 本轮合并 main（5dee62a 世代）追平。
 ## 用户裁决登记（2026-09-09 收尾时段；产线相关三项）
 - **项 10（条目 2 裁定）**：呈现层屏蔽＝deleteOriginals 协议动作保留、导入链
   编排不变、**W14 词表零变更**——产线条目 2 歧义按分支 (a)（呈现层）裁定，
@@ -57,10 +44,8 @@ A2（冒烟链路）/A3（构建对比）代码面就绪复核通过（各段实
   前置齐备）；窗口内产线段 A1（EditMode 全套件）→A2（冒烟）→A3（构建对比）
   就绪。
 ## 下次合并意图
-**f7ff690（A1 缺口补齐，test-only，unity/ 域内 2 文件）＋本状态批**请集成
-验收合并；合并门槛证据（2026-09-09 23:35 本机）：`cargo test --workspace`
-全绿（退出码 0，无失败套件）＋`cargo clippy --workspace --all-targets
--D warnings` 零告警。
+本状态批（仅 collab/ 增量）随轮带入免测。f7ff690 已随集成验收批在 main
+（无在途实现交付）。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
@@ -139,15 +124,15 @@ A2（冒烟链路）/A3（构建对比）代码面就绪复核通过（各段实
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
-- [→集成] **W25 预热复核完成＋A1 缺口补齐（f7ff690）**：复核发现 A1 义务的
-  exclude_object 组件断言此前不在 Tests 中——已补齐并经本机真 Unity（真
-  SDK seed）23/23 验证；窗口前产线侧就绪缺口清零。EditMode 证据性质＝预热
-  （合成宿主＋seed 栈），**非窗口正式证据**——A1 仍在窗口内正式执行归档，
-  无端到端宣称。f7ff690＋状态批请验收合并（test-only 域内；workspace 证据
-  随批）。
-- [→集成] 核心历史留言（「两件请求均到位」93f841c＋471a4ee）已随 W21 收口
-  消化（信封桥接 1438305 消费 93f841c，本机测试绿在案）——该线程闭环，无
-  待办。
+- 本轮无新外发留言。历史线程消化记录：桌面项 10 实现（f8ddc5d）一致性核验
+  通过（见「当前焦点」）；数据复核收讫；集成 A1 批验收通知收讫——三线程
+  闭环。
 - [→操作者] 晨起开窗通知（O-2）发出后请同步本树：窗口时间确定后产线 A 段
-  （A1→A2→A3）按执行序 v3 就位；冒烟素材沿用合法自有素材（窗口内备份→导入
-  全链）。
+  （A1→A2→A3）按执行序 v3 就位；A2 冒烟素材沿用 `_local_w1/source-subset/`
+  （合法自有，W1 同源）。
+- 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
+  无瞬败不专门加压空跑。
+- （历史留言已消化：#7 抖动数据、W1 脚手架事实、amf-unity 批、009/011/012
+  互审批、v2 草案/冻结批/012 互审/executor prelude/信封扩展/exclude 形态/
+  物化切片验收、核心两件请求到位、项 10 裁定送达、条目 2/3 域内事实复核
+  ——均已闭环。）
