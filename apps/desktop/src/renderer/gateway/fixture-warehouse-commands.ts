@@ -168,6 +168,27 @@ export function createFixtureWarehouseCommands(
       return Promise.resolve({ ok: true, accepted: { taskId, correlationId } });
     },
 
+    // IMP-3 下载采纳(bdl-commands v0.4,演示):逐下载身份落成
+    // downloaded_material 条目并受理任务;守卫语义(仅已完成交付可采纳)
+    // 在服务端,演示不模拟下载事件日志
+    importDownloads: (downloadIds) => {
+      const ids = [...downloadIds];
+      if (ids.length === 0) {
+        return Promise.resolve(applicationError(
+          "vua.warehouse.invalid_params",
+          "errors.warehouse.invalidParams",
+        ));
+      }
+      const taskId = `task-wh-import-downloads-${Date.now()}`;
+      const correlationId = `corr-${taskId}`;
+      linkTask(taskId, taskTitles.importBatch);
+      setTimeout(() => {
+        for (const downloadId of ids) store.addDownloadedEntry(downloadId);
+        completeTask(taskId);
+      }, SETTLE_MS);
+      return Promise.resolve({ ok: true, accepted: { taskId, correlationId } });
+    },
+
     capability: () => Promise.resolve({ state: "ready" }),
   };
 }

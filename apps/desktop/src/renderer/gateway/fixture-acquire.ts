@@ -182,6 +182,9 @@ export interface AcquireFixtureStore {
   removeOriginals(warehouseItemId: string): boolean;
   /** 导入演示:按文件夹名落成新条目(单 original 工件);返回条目身份 */
   addImportedEntry(folderName: string): string;
+  /** 下载采纳演示(bdl-commands v0.4):按下载身份落成 downloaded_material
+   *  新条目(单 original 工件);返回条目身份 */
+  addDownloadedEntry(downloadId: string): string;
 }
 
 export function createAcquireFixtureStore(empty: boolean): AcquireFixtureStore {
@@ -275,6 +278,33 @@ export function createAcquireFixtureStore(empty: boolean): AcquireFixtureStore {
           {
             artifactSha256: syntheticSha(`imported-${warehouseItemId}`),
             relativePath: `${folderName}.unitypackage`,
+            state: "clean",
+            sizeBytes: 32_768,
+            role: "original",
+          },
+        ],
+      });
+      push();
+      return warehouseItemId;
+    },
+    addDownloadedEntry: (downloadId) => {
+      const warehouseItemId = `whentry-downloaded-${entries.length + 1}-${downloadId
+        .replace(/[^a-zA-Z0-9_-]+/g, "-")
+        .slice(0, 32)}`;
+      const now = new Date().toISOString();
+      entries.push({
+        warehouseItemId,
+        folderName: downloadId,
+        displayName: downloadId,
+        kind: "downloaded_material",
+        createdAt: now,
+        artifactMode: null,
+        // 与导入演示同一诚实缺省:真实解析在服务端读回
+        effectiveArtifactMode: "use_original_unitypackage",
+        artifacts: [
+          {
+            artifactSha256: syntheticSha(`downloaded-${warehouseItemId}`),
+            relativePath: `${downloadId}.unitypackage`,
             state: "clean",
             sizeBytes: 32_768,
             role: "original",

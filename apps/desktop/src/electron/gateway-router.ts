@@ -202,6 +202,9 @@ function toApplicationRequest(
       return { ...base, kind: "command", method: "warehouse.setGlobalDefaultMode", commandId: request.params.commandId, params: { mode: request.params.mode } };
     case "warehouse.import":
       return { ...base, kind: "command", method: "warehouse.import", commandId: request.params.commandId, params: { sourceFolders: [...request.params.sourceFolders] } };
+    // bdl-commands v0.4 下载采纳(IMP-3):仅身份请求原样映射
+    case "warehouse.importDownloads":
+      return { ...base, kind: "command", method: "warehouse.importDownloads", commandId: request.params.commandId, params: { downloadIds: [...request.params.downloadIds] } };
 
     // production-use-case v0.2(W20 ten-method, W24 workbench): verbatim pass-through
     case "recipe.save":
