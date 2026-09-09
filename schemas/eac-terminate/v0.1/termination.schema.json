@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/eac-terminate/v0.1/termination.schema.json",
+  "title": "VUA EAC termination receipt v0.1",
+  "description": "Receipt document for proposal 006 R1b — the termination step (R6: every termination is one plan step: evidence snapshot before, re-check after, failures reported as failures). kind=terminated: the four-element re-verification (name/path/signature/pid liveness) passed, the process was terminated, its exit was awaited, and the post-state re-check confirms it is gone. kind=refused: the re-verification refused (R3 — any element that cannot be verified refuses); nothing was opened with termination rights. kind=failed: the re-verification passed but the termination could not be completed (open/wait/timeout) — the half-state surfaces inspect_required to the task face (R6/R4: no retry, no implicit resume). The pre-state evidence snapshot (the full eac-probe snapshot taken before the step) travels beside this receipt. Termination is always the last-resort, individually confirmed plan step; the allowlist starts empty and grows only from real-machine evidence (R2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "kind",
+    "pid",
+    "processName",
+    "taskCorrelation",
+    "verified",
+    "preCheck"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "vua.eac-terminate/v0.1" },
+    "kind": {
+      "enum": ["terminated", "refused", "failed"]
+    },
+    "pid": { "type": "integer", "minimum": 0 },
+    "processName": { "type": "string", "minLength": 1 },
+    "taskCorrelation": { "type": "string", "minLength": 1 },
+    "verified": {
+      "type": "boolean",
+      "description": "True only when the R3 four-element re-verification returned Verified (name + path + signature + pid liveness)."
+    },
+    "preCheck": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["vrchatSessionActive", "eacPresent"],
+      "properties": {
+        "vrchatSessionActive": { "type": "boolean" },
+        "eacPresent": { "type": "boolean" }
+      },
+      "description": "The R4 guard re-checked inside the step: an active VRChat session refuses the termination (from-wide)."
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "kind": { "const": "terminated" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "terminatedAt": { "type": "string", "minLength": 1 },
+          "exitConfirmed": { "type": "boolean" },
+          "postCheck": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["pidGone"],
+            "properties": {
+              "pidGone": { "type": "boolean" }
+            }
+          }
+        },
+        "required": ["terminatedAt", "exitConfirmed", "postCheck"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "refused" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "guard": {
+            "enum": [
+              "verification_not_verified",
+              "active_vrchat_session",
+              "process_unopenable"
+            ]
+          },
+          "detail": { "type": "string", "minLength": 1 }
+        },
+        "required": ["guard", "detail"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "kind": { "const": "failed" } },
+        "required": ["kind"]
+      },
+      "then": {
+        "properties": {
+          "guard": {
+            "enum": ["open_failed", "terminate_failed", "exit_timeout", "postcheck_failed"]
+          },
+          "detail": { "type": "string", "minLength": 1 },
+          "inspectRequired": {
+            "const": true,
+            "description": "R6: a failed termination is never retried implicitly — the half-state waits for an explicit decision."
+          }
+        },
+        "required": ["guard", "detail", "inspectRequired"]
+      }
+    }
+  ]
+}

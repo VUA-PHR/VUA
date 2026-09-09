@@ -76,7 +76,13 @@ pub struct CandidateVerificationV01 {
 pub const EAC_VERIFY_SCHEMA_VERSION: &str = "vua.eac_verify/v0.1";
 
 /// Reads the executable path of `pid` (read-only query). Windows-only;
-/// other targets report unreadable (the product is Windows-first).
+/// other targets report unreadable (the product is Windows-first). The
+/// public wrapper serves the W25 window's B2b run: the first real
+/// allowlist entry is drafted from this path (R2 — evidence, not fixture).
+pub fn read_process_image_path_readonly(pid: u32) -> Option<String> {
+    read_process_image_path(pid)
+}
+
 fn read_process_image_path(pid: u32) -> Option<String> {
     #[cfg(windows)]
     {
@@ -190,20 +196,24 @@ pub fn verify_candidate(
             false
         }
     };
-    // Check 3 (v0.1): signature unverified — honest refusal until the
-    // WinVerifyTrust binding lands with the termination slice.
-    let signature_state = SignatureState::Unverified;
+    // Check 3: the signature, re-verified via WinVerifyTrust (all-or-
+    // nothing, no UI, no revocation — the publisher evidence lives in the
+    // allowlist entry; this is the re-verification, R3).
+    let (signature_state, signature_detail) = match &image_path {
+        Some(path) => verify_signature_windows(path),
+        None => (
+            SignatureState::Unverified,
+            "no executable path to verify".to_owned(),
+        ),
+    };
+    let signature_passed = signature_state == SignatureState::Verified;
     checks.push(VerificationCheck {
         code: codes::SIGNATURE_UNVERIFIED,
-        passed: false,
-        detail: "signature verification is not wired in v0.1 — R3 refuses when any element cannot be verified".to_owned(),
+        passed: signature_passed,
+        detail: signature_detail,
     });
 
-    // v0.1: the signature state is always Unverified, so the designed
-    // verdict is Refused for every candidate — the WinVerifyTrust binding
-    // lands with the termination slice and flips the signature check only.
-    let signature_verified = signature_state != SignatureState::Unverified;
-    let verdict = if name_matched && path_matched && signature_verified {
+    let verdict = if name_matched && path_matched && signature_passed {
         Verdict::Verified
     } else {
         Verdict::Refused

@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "vua.eac-terminate/v0.1",
+  "kind": "terminated",
+  "pid": 39012,
+  "processName": "easyanticheat.exe",
+  "taskCorrelation": "cmd-w25-eac-terminate-01",
+  "verified": true,
+  "preCheck": {
+    "vrchatSessionActive": false,
+    "eacPresent": true
+  },
+  "terminatedAt": "2026-09-09T07:30:00.000Z",
+  "exitConfirmed": true,
+  "postCheck": {
+    "pidGone": true
+  }
+}
