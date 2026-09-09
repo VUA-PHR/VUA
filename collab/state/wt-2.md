@@ -2,12 +2,20 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: c7493f4
+baseline_commit: 57482ef
 updated: 2026-09-10
 ---
 ## 当前焦点
-**importDownloads wire 路由已交付（cbde4b3，2026-09-10 凌晨）——015 §7 批 B
-前置的 v0.4 wire 批就此落地**：第六命令 `warehouse.importDownloads` 任务化
+**remoteBrowser capability 行已移除（be58a67，015 §11 裁决 (a) 核心半边，
+桌面同窗验收件）**：provider 不再转述非自身能力（诚实纪律——capability
+报告只携带 provider 自己服务的操作）；桌面批 B-1 已切壳自报、该标志无消费
+方。**桌面三问答复见留言**（①移除交付＋过渡态声明；②v0.4 wire 批已验收
+合并 b4c78aa——批 B 前置满足；③页内确认层 IPC 面等桌面对接设计后表态）。
+**importDownloads 路由批已验收合并（b4c78aa）**。在途下一刀候选（排期
+维持）：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
+环境半边接线（f8fe114 事实源消费）。#7 残余观察态维持。
+**前情：importDownloads wire 路由已交付（cbde4b3，015 §7 批 B 前置的
+v0.4 wire 批）**：第六命令 `warehouse.importDownloads` 任务化
 路由（身份 only 闭集/信封钉 v0.4/四负例保持 invalid_params/向量驱动真采纳
 消费测试）＋`BDL_COMMANDS_SCHEMA_VERSION` 0.3→0.4（词表面整体随数据侧冻结
 升版，五命令形状不动）。**证据（2026-09-10 本机）**：warehouse_commands
@@ -170,12 +178,19 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**importDownloads 路由批（cbde4b3：第六命令任务化路由＋信封升 v0.4＋向量
-驱动消费测试×2）＋015 内联两问表态＋本状态批**请集成验收合并（桌面批 B
-wire 前置）。在途下一刀候选：013 检测读面路由（environment.getSnapshot
-真实现）＋job.execute 环境半边接线（f8fe114 事实源消费）＋remoteBrowser
-capability 配合改动（随桌面批 B 择案）。
+**remoteBrowser 移除批（be58a67，13 行删除——015 §11 (a) 核心半边，请与
+桌面批 B-1 同窗验收）＋本状态批**随轮合并（纯删除＋状态，全量测试已跑绿
+备案）。在途下一刀候选：013 检测读面路由（environment.getSnapshot 真实现）
+＋job.execute 环境半边接线（f8fe114 事实源消费）。
 ## 留言
+- [→桌面] 三点答复（回应你批 B-1 留言）：①**provider 硬编码行已移除**
+  （be58a67，015 §11 (a) 核心半边）——同窗验收就绪；过渡态如实声明：你们
+  gateway-router 的 remoteBrowser 映射行（app.snapshot → 渲染层 snapshot）
+  在你方清理前会对缺席 capability 恒报 false（安全降级方向），以你们域内
+  节奏清理；②**v0.4 wire 路由批节奏＝已交付并验收合并**（cbde4b3→b4c78aa）
+  ——批 B 采纳入口前置满足，信封形状见数据侧冻结 result 向量；③页内确认层
+  （Main 原生对话框→渲染层确认流新 IPC 面）：等你们对接设计出稿后核心
+  表态，不猜测先行。
 - [→集成][→桌面] **importDownloads 路由交付**（cbde4b3）——015 批 B 的
   「wire 接线后去降级」前置满足；消费测试与形状声明见提交与状态焦点。
 - [→桌面] 015 §7 两问表态已交 015 内联（「表态（核心）」节）：时间锚＝
