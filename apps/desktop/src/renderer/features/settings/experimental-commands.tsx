@@ -9,7 +9,7 @@ import {
   type WarehouseCommandOutcome,
 } from "../../gateway/index.ts";
 import { strings } from "../../i18n/index.ts";
-import { useDeleteOriginalsAfterGenerate } from "../../app/delete-originals-flag.ts";
+import { useDeleteOriginalsAfterGenerate, shouldResetDeleteFlag } from "../../app/delete-originals-flag.ts";
 import { commandErrorText, inferGlobalDefaultMode, type GlobalDefaultInference } from "../warehouse/acquire-model.ts";
 
 /**
@@ -19,10 +19,12 @@ import { commandErrorText, inferGlobalDefaultMode, type GlobalDefaultInference }
  *   (bdl-commands v0.2 全局层);初值由条目读面推断(无覆盖条目的生效模式即
  *   composed 全局默认),推断不出时如实标注 unknown;写回执为服务端持久事实,
  *   直接更新开关态(推断仅是初值);
- * - 行 2「生成后删除原始素材文件」= 危险开关,主开关关闭时置灰;开启必经
- *   危险确认对话框(示意图 B)。008 路径 a 已接线(app 层 delete-originals-auto:
- *   生成完成→逐条目独立删除任务,守卫与审计在服务端);DEV/fixture 面保留
- *   「本原型不会真正删除任何文件」注记(mock/fixture 不出 DEV 纪律);
+ * - 行 2「生成后删除原始素材文件」= 危险开关,主开关关闭时置灰,且主开关
+ *   写回非 generate_vpm 时自动复位为关(裁决 11,A4 行 2 自动取消;清持久
+ *   偏好,不溯已受理删除任务);开启必经危险确认对话框(示意图 B)。008 路径
+ *   a 已接线(app 层 delete-originals-auto:生成完成→逐条目独立删除任务,
+ *   守卫与审计在服务端);DEV/fixture 面保留「本原型不会真正删除任何文件」
+ *   注记(mock/fixture 不出 DEV 纪律);
  * - 走查不通过重做:原 per-entry 条目选择器整组移除;007 的「生成 VPM 模式
  *   入口」偏好开关被全局开关语义取代(变更随 proposal 008 复核)。
  */
@@ -62,6 +64,12 @@ export function ExperimentalCommands() {
       setBusy(false);
       if (outcome.ok && "global" in outcome) {
         setPersisted({ kind: "known", mode: outcome.global.globalDefaultMode });
+        // 裁决 11(A4 行 2 自动取消):主开关关闭(写回非 generate_vpm)时,
+        // 行 2 偏好自动复位为关(清持久偏好;已受理删除任务不溯——服务端
+        // 独立审计,偏好只影响桌面发起时机)
+        if (shouldResetDeleteFlag(outcome.global.globalDefaultMode)) {
+          setDeleteFlag(false);
+        }
       } else if (!outcome.ok) {
         setFeedback(commandErrorText(outcome.error, commandErrorsTable()));
       }
