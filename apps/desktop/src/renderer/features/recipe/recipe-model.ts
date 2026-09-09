@@ -465,3 +465,68 @@ export function narrowRecipeDocumentFacts(document: unknown): RecipeDocumentFact
             : false,
   };
 }
+
+/* ---- 期望态结构清单(BG-1 主切片,核心裁定 A 路径预备):文档确定事实的
+ *  结构化呈现——assets/instances 字段收窄;**不含检查态语义**(state 词表
+ *  演进 expected 待数据/产线归属确认,B 服务投影为 M7 后正解) ---- */
+
+export interface RecipeAssetFact {
+  readonly id: string;
+  readonly role: string;
+  readonly label: string | null;
+  readonly hasSourceRef: boolean;
+}
+
+export interface RecipeInstanceFact {
+  readonly id: string;
+  readonly assetId: string;
+  readonly label: string | null;
+  readonly entrypoint: string;
+  readonly enabled: boolean | null;
+}
+
+export interface RecipeDocumentStructure {
+  readonly assets: readonly RecipeAssetFact[];
+  readonly instances: readonly RecipeInstanceFact[];
+  readonly relationCount: number | null;
+}
+
+/** recipe.get 文档 → 期望态结构收窄(字段缺失滤除;文档本体非对象 = null) */
+export function narrowRecipeDocumentStructure(
+  document: unknown,
+): RecipeDocumentStructure | null {
+  if (document === null || typeof document !== "object" || Array.isArray(document)) return null;
+  const record = document as Record<string, unknown>;
+  const assets: RecipeAssetFact[] = [];
+  if (Array.isArray(record.assets)) {
+    for (const item of record.assets) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+      const a = item as Record<string, unknown>;
+      if (typeof a.id !== "string" || a.id.length === 0 || typeof a.role !== "string") continue;
+      assets.push({
+        id: a.id,
+        role: a.role,
+        label: typeof a.label === "string" ? a.label : null,
+        hasSourceRef: a.sourceRef !== undefined && a.sourceRef !== null,
+      });
+    }
+  }
+  const instances: RecipeInstanceFact[] = [];
+  if (Array.isArray(record.instances)) {
+    for (const item of record.instances) {
+      if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+      const i = item as Record<string, unknown>;
+      if (typeof i.id !== "string" || i.id.length === 0) continue;
+      if (typeof i.assetId !== "string" || typeof i.entrypoint !== "string") continue;
+      instances.push({
+        id: i.id,
+        assetId: i.assetId,
+        label: typeof i.label === "string" ? i.label : null,
+        entrypoint: i.entrypoint,
+        enabled: typeof i.enabled === "boolean" ? i.enabled : null,
+      });
+    }
+  }
+  const relationCount = Array.isArray(record.relations) ? record.relations.length : null;
+  return { assets, instances, relationCount };
+}
