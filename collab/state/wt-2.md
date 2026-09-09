@@ -6,6 +6,9 @@ baseline_commit: 247c0fc
 updated: 2026-09-09
 ---
 ## 当前焦点
+**用户回传 W15 确认完成＋9 条走查问题——已按指令登记 BOARD（c2570e0，逐字
+9 条＋核心意图确认条目 6/9＋处置草案；禁改实现）**。核心可确认项已确认；两处
+歧义升 [需用户]（条目 6-a 迁移形态、条目 9-a/9-b 开发模式边界与粒度）。
 **production-use-case v0.2 已冻结（2fd4813：24 向量＋向量驱动消费测试 3 项＋
 协议本/REGISTRY 升冻结——W25 前置①凭证交付）**，交集成验收。
 **proposal 014 核心表态已交付（fc6f69e，内联）**：命令面裁独立 project-ops
@@ -47,6 +50,11 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
   recipeId/status/text/limit/offset，词表外＝invalid_params；两存储补
   list_documents（缺席根＝诚实空态）。**证据（2026-09-09 本机）**：
   warehouse_commands 16/16＋workspace 全量绿＋clippy -D warnings 零告警。
+## 本轮交付（c486318 后，本 tick 续）
+- **W15 走查 9 条登记（c2570e0，BOARD 新区块）**：逐字登记＋归属初判＋核心
+  意图确认（条目 6 迁移形态歧义、条目 9 开发模式边界歧义→[需用户]）＋处置
+  草案（禁改实现）；
+- **proposal 014 冲突融合收尾追认**（29152c2/d19ed2c 前轮已交）。
 ## 本轮交付（6d71eaf 后，新工作时段 23:53 起）
 - **production-use-case v0.2 冻结收口（2fd4813，回应集成 W25 前置①凭证）**：
   **正负例向量 24 件**（schemas/production-use-case/v0.2/examples/：10 正例
