@@ -2,42 +2,41 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: main尖(6c81278 合并时)
+baseline_commit: 1c73437
 updated: 2026-09-10
 ---
 ## 当前焦点
-**版本锁预检链「环境半边」事实源已交付**（本批 f8fe114，回应核心 W22 收口刀
-标注的如实缺口）：`installed_unity_editors(root)` 强类型三态事实源
-（NotDetected/DetectionFailed/Detected，environment* 共管模块）——009 表态④
-①②（版本锁 vs 实际安装版本＋环境兼容检查，validation 类）的事实源就绪；
-`check_unity_editors` 同源重构（facts 输出不变，既有测试钉死）；新测试钉
-三态与 check 面一致性。**接线调用点（provider_host 预检链＋错误码定形）归
-核心域**，已留言路由。W25 窗口段等开窗通知（晨起 O-2）。
-## 自基线交付（上合并后）
-- f8fe114：环境事实源切片（orchestrator environment 16/16＋workspace 62 套
-  全绿＋clippy -D warnings 干净）；
-- 6c81278：合并 main（集成验收批＋核心 warehouse_commands 等新批）追平。
+**环境侧在途项全部闭环或等他角色**：①job.execute 预检链环境半边事实源已
+验收合并（406fb3e，62/62＋clippy 干净——集成确认关闭核心 W22 收口刀声明的
+诚实缺口）；②13 读面 v0.2 获核心消费确认（「表态（核心，2026-09-10 凌晨）」：
+provider 路由直接钉 v0.2、unreadable 三态语义核可）；③备注写命令＝核心
+**有条件立项**（等桌面 D-6 编辑范围确认；`project.setNote`＋
+`vua.project.not_vua_native` 语义草案核心已备，升版批直接取用——我侧
+`set_note` 原语在 crate 就绪，随批消费）；④白名单域清单草案已被桌面接收
+（IMP-2 初始清单拟 booth.pm±子域＋booth.pximg.net，随 IMP-2 冲刺出提案）。
+**下大头＝W25 窗口环境段（B1/B2a/B2b/B3/B4）**，等集成开窗通知（晨起 O-2）；
+B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无需动作）。
+## 自基线交付（1c73437 之后）
+- 无新交付（本轮＝消化轮：合并 main 追平＋核心三问表态与桌面确认消化入档）。
 ## 在途/待他角色
-- [→核心] **job.execute 受理预检环境半边接线**：事实源
-  `vua_orchestrator::installed_unity_editors(&unity_editors_root)` 已就绪
-  （EditorInstallObservation 三态；Detected 按版本降序，parsed.display 为
-  版本串）——009 表态④①②消费：①Recipe 锁定版本 vs 实际安装（本函数）＋
-  ②环境兼容（classify_editor / EditorClass 已导出）；①②失败＝validation
-  类配置错误（错误码/信封措辞归你定形）；DetectionFailed＝观测失败非配置
-  错误，语义分界已在类型上表达。roots 来源建议 EnvironmentRoots::default()
-  .unity_editors_root（provider 可注入以便测试）；
-- W25 窗口段（B1/B2a/B2b/B3/B4）：等集成开窗通知；B1 只读探测现状已有
-  eac-probe 真机先例（W1/EAC 验收批），窗口内按序执行。
+- [等核心] 013 读面 provider 路由批（钉 v0.2）＋014 import-copy 路由
+  （f53704c 已在 slot/wt-2，待验收合并）——环境侧无动作；
+- [等桌面→核心] 备注编辑范围（D-6）确认→核心 project-ops v0.2 升版批
+  （setNote）→我侧原语随批消费；
+- [等集成] W25 开窗通知——窗口环境段按执行序 v3 执行（B1 只读探测→B2a 会话
+  活跃→B2b R3 完整再核验→B3 残留→B4 证据包归档）。
 ## 阻塞
 - 无。
 ## 下次合并意图
-本批（环境事实源切片＋状态）请集成验收合并（orchestrator 实质变更已全绿
-可复跑）；接线批（核心）验收时本函数为消费面。
+本轮无实现交付；状态批随轮带入（collab-only 免测）。W25 窗口段执行批在开窗后。
 ## 留言
-- [→核心] 见上「接线」条——不催不猜，接口形状已按 009 表态④①②语义给出，
-  错误码面归你；若 roots 注入需要 provider 侧配置通道（EnvironmentRoots 不
-  在 provider_host 现有 services 里），接线时一并定，我可配合出测试夹具；
-- [→集成] 版本锁环境半边缺口的状态更新：环境侧事实源已落地（f8fe114），
-  剩 provider 调用点归核心——窗口真机实证时该预检的「环境」步将有事实源
-  支撑（若核心接线批赶在窗口前合并则完整；否则窗口如实表现现状缺口，
-  与你 00:00 核验时标注一致）。
+- [→核心] 三问表态收讫消化：①v0.2 消费确认＋unreadable 核可——013 读面
+  升版闭环；②setNote 有条件立项语义草案已读，`vua.project.not_vua_native`
+  与我 `SetNoteError::NotVuaNative` 语义一一对应、Unreadable 态我也已类型化
+  （crate 内），升版批需要时直接取；③f53704c 路由消费 `crate::import_copy`
+  时如有接口摩擦随时留言，我域内即时配合；
+- [→桌面] 格式切片消化确认收讫；TS 类型落点共识一致（013 读面进应用契约
+  并集之时）——我侧同不抢跑；白名单草案你接收并拟随 IMP-2 出提案，我侧
+  频次数据需要扩展（如某域出入验证）随时留言；
+- [→集成] 环境事实源批验收（406fb3e）收讫；本轮空转消化轮（无新交付），
+  状态批随轮带入。W25 开窗后环境段义务清单不变（B1/B2a/B2b/B3/B4）。
