@@ -2,12 +2,25 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 6f2c7b7
+baseline_commit: 6af59a7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**013 读面路由完整交付（5b65550，2026-09-10 凌晨）——四查询全 live，读面
-不再有类型化缺席项**：`project.listProjects`（注册项目检测聚合 verbatim
+**BG-2 工单交付（Overlay Surface 设计稿＋骨架，2026-09-10 凌晨）**：
+①`crates/orchestrator/src/overlay_surface.rs` 骨架——`OverlayReadModel`
+只读投影端口（Send＋Sync＋无 mut 方法，只读边界类型系统承载）＋
+`StoreOverlayReadModel` 任务卡投影（诚实 TaskSnapshot 子集，排序 oldest
+first；revision/cancel 簿记留主线面）＋空态即终态＋纯函数纪律断言；
+传输/连接/订阅语义**有意缺席**（跨域接口待桌面表态）。②**proposal 017
+设计稿**（方向不冻结）：事实面零新增（overlay 消费既有冻结读面——投影
+而非聚合发明）；语义动作原则（经既有命令面受控动作，无 overlay 专有写
+词表）；故障隔离＝无状态只读；VR 出本门（用户裁决 2026-09-06）；§4 三项
+（传输面/会话身份/投影清单）待桌面表态，表态前核心不接 wire 面。**证据
+（2026-09-10 本机）**：overlay_surface 2/2＋workspace 65 套件全绿＋clippy
+零告警。交集成验收（BG-2 验收标准：workspace 绿＋clippy 零告警＋设计稿
+仅方向不冻结——已满足）。**BG-6 留下一节拍**（单节拍限时不展开纪律）。
+**013 读面完整批已验收合并（d24e5b7）**。#7 残余观察态维持。
+**前情：013 读面路由完整交付（5b65550）——四查询全 live**：`project.listProjects`（注册项目检测聚合 verbatim
 ——v0.2 快照族含 vuaIdentity 三态）；`project.inspectProject`（单项目面＝
 注册表内单查；未注册路径＝新定形类型化 `vua.project.project_not_found`；
 单项目 result 自携族版本 vua.project-inspection/v0.2 照冻结 def）；
@@ -247,11 +260,19 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**013 读面完整批（5b65550：三查询 live＋project_not_found 定形＋单路径
-闭集＋消费测试 +3）＋本状态批**请集成验收合并——013 读面翼完成（四查询
-全 live），桌面 T-B 全量接线解锁。在途下一刀候选：BG-2/BG-6 评估＋M6/M7
-后续锚点。
+**BG-2 交付批（Overlay Surface 骨架 overlay_surface.rs＋lib.rs 注册＋
+proposal 017 设计稿＋本状态批）请集成验收合并**（工单验收标准：workspace
+绿＋clippy 零告警＋设计稿仅方向不冻结——证据在案）。在途下一刀候选：
+BG-6 限时 Spike（单节拍限时不展开）＋M7 检查切片锚点（等 Bridge 五维
+操作）。
 ## 留言
+- [→集成] **BG-2 领取并交付**（工单号声明照领取纪律；本 tick 无更优先
+  在途工作——013 读面翼已完成验收）：Overlay Surface 骨架＋proposal 017
+  设计稿。BG-6 留下一节拍（单节拍限时不展开纪律）。
+- [→桌面] **proposal 017 三项跨域表态请求**（§4：overlay 传输/连接面、
+  会话身份、呈现投影清单）——表态前核心不接 wire 面（骨架停留在服务侧
+  投影）；overlay 语义动作原则＝经既有命令面（task.requestCancellation
+  先例），无专有写词表。
 - [→桌面] **013 读面翼完整交付**（5b65550）：四查询全 live
   （environmentManagers/listProjects/inspectProject/lockStatus）——T-B
   全量接线解锁。语义注记：inspectProject 只对管理器注册路径可查（未注册
