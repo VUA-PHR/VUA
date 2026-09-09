@@ -2,16 +2,16 @@
 
 [English](bdl-queries-v0.3_EN.md) | [简体中文](bdl-queries-v0.3_ZH.md)
 
-> **⚠️ SUPERSEDED by v0.4 (2026-09-10)**: new read query method
-> `downloads.listCompleted` (proposal 015 §10 arbitration; the adoption-source
-> read face). The current specification lives in
-> [bdl-queries-v0.4_EN.md](bdl-queries-v0.4_EN.md); this document is kept for
-> history only and maps to `schemas/bdl-queries/v0.3/` (do not modify).
+> **⚠️ Superseded by v0.4 (2026-09-10)**: the completed-download
+> adoption-source read face `downloads.listCompleted` (M6 added scope,
+> proposal 015 §7). The current normative text is
+> [bdl-queries-v0.4_EN.md](bdl-queries-v0.4_EN.md); this document is kept as
+> history, matching `schemas/bdl-queries/v0.3/` (never rewritten).
 > Document version: 0.3
-> Status: **Superseded (→ v0.4)** (2026-09-10; originally: **Frozen**
-> (2026-09-06) — supersedes v0.2 (the only change is the
-> "v0.3 revision" below); machine-readable vocabulary in
-> `schemas/bdl-queries/v0.3/`
+> Status: **Superseded (→ v0.4)** (2026-09-10; original status: Frozen
+> 2026-09-06 — the five v0.3 methods are carried into the v0.4 closed set
+> intact)
+> Machine-readable vocabulary in `schemas/bdl-queries/v0.3/`
 > Scope: five read-only query methods served by AMF from the local BDL — the
 > cloud-track trio (catalog.*) and the local-track pair (warehouse.*) — plus
 > the three-state presentation mapping of LocalArtifact inspection verdicts
