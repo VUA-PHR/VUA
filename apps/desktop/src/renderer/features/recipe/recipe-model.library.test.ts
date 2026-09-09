@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
   narrowRecipeDocumentFacts,
+  narrowRecipeDocumentStructure,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
 } from "./recipe-model.ts";
@@ -64,4 +65,31 @@ test("narrowRecipeDocumentFacts: 非对象/缺核心字段 = null(不猜测)", (
   assert.equal(narrowRecipeDocumentFacts(null), null);
   assert.equal(narrowRecipeDocumentFacts("doc"), null);
   assert.equal(narrowRecipeDocumentFacts({ title: "t" }), null);
+});
+
+test("narrowRecipeDocumentStructure: assets/instances 结构事实收窄,字段缺失滤除", () => {
+  const structure = narrowRecipeDocumentStructure({
+    assets: [
+      { id: "a1", role: "outfit", label: "夏季制服", sourceRef: { url: "https://booth.pm/x" } },
+      { id: "a2", role: "body" },
+      { role: "no-id" },
+    ],
+    instances: [
+      { id: "i1", assetId: "a1", entrypoint: "prefab", enabled: true },
+      { id: "i2" },
+    ],
+    relations: [{}, {}],
+  });
+  assert.equal(structure?.assets.length, 2);
+  assert.equal(structure?.assets[0]?.hasSourceRef, true);
+  assert.equal(structure?.assets[0]?.label, "夏季制服");
+  assert.equal(structure?.assets[1]?.hasSourceRef, false);
+  assert.equal(structure?.instances.length, 1);
+  assert.equal(structure?.instances[0]?.enabled, true);
+  assert.equal(structure?.relationCount, 2);
+});
+
+test("narrowRecipeDocumentStructure: 非对象 = null(不猜测)", () => {
+  assert.equal(narrowRecipeDocumentStructure(null), null);
+  assert.equal(narrowRecipeDocumentStructure("doc"), null);
 });

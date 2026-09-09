@@ -26,6 +26,7 @@ import {
 } from "../../gateway/index.ts";
 import {
   narrowRecipeDocumentFacts,
+  narrowRecipeDocumentStructure,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
   type RecipeDocumentFacts,
@@ -538,6 +539,7 @@ function RecipeLibrarySection({
     | { readonly kind: "loaded"; readonly entries: readonly RecipeLibraryEntryNarrowed[] }
   >({ kind: "loading" });
   const [facts, setFacts] = useState<RecipeDocumentFacts | null>(null);
+  const [structure, setStructure] = useState<ReturnType<typeof narrowRecipeDocumentStructure>>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
@@ -570,10 +572,12 @@ function RecipeLibrarySection({
   useEffect(() => {
     if (selectedId === null) {
       setFacts(null);
+      setStructure(null);
       return;
     }
     let alive = true;
     setFacts(null);
+    setStructure(null);
     void window.vua?.gateway
       .invoke({
         schemaVersion: 1,
@@ -587,9 +591,9 @@ function RecipeLibrarySection({
           setFacts(null);
           return;
         }
-        setFacts(narrowRecipeDocumentFacts(
-          (result.value as { recipe?: unknown }).recipe,
-        ));
+        const document = (result.value as { recipe?: unknown }).recipe;
+        setFacts(narrowRecipeDocumentFacts(document));
+        setStructure(narrowRecipeDocumentStructure(document));
       });
     return () => {
       alive = false;
@@ -638,7 +642,20 @@ function RecipeLibrarySection({
       {selectedId !== null ? (
         <div role="note">
           <p className="vua-caption vua-text-secondary">{copy.libraryMappingNote}</p>
-          {facts !== null ? (
+          {structure !== null && structure.assets.length > 0 ? (
+            <ul className="vua-project-compat__specs">
+              {structure.assets.map((asset) => (
+                <li key={asset.id}>
+                  <strong>{asset.label ?? asset.id}</strong>{' '}
+                  <span className="vua-caption vua-text-secondary">
+                    {asset.role}
+                    {asset.hasSourceRef ? ' · ' + copy.structureHasSource : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+                    {facts !== null ? (
             <ul className="vua-project-compat__specs">
               <li>
                 {format(copy.factsLine, {
