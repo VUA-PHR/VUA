@@ -15,6 +15,7 @@ pub mod import_copy;
 pub mod project_inspection;
 pub mod project_lock;
 pub mod vpm_backend;
+pub mod vua_identity;
 
 pub use eac_allowlist::{
     find_entry, load_allowlist, path_pattern_matches, AllowlistEntryV01, AllowlistLoadError,
@@ -48,7 +49,7 @@ pub use import_copy::{
 };
 pub use project_inspection::{
     collect_project_inspections, inspect_project_deep, ManifestPackage, MutationStatus,
-    ProjectInspectionSnapshotV01, ProjectInspectionV01, VrchatSdkFinding,
+    ProjectInspectionSnapshotV01, ProjectInspectionV01, VrchatSdkFinding, VuaIdentityFinding,
     PROJECT_INSPECTION_SCHEMA_VERSION,
 };
 pub use project_lock::{
@@ -58,3 +59,7 @@ pub use project_lock::{
     MARKER_FILE_NAME,
 };
 pub use vpm_backend::{backends_summary, create_from_template, VccCliBackend, VrcGetLibBackend};
+pub use vua_identity::{
+    mark_vua_native, read_identity, set_note, write_identity, SetNoteError, VuaIdentity,
+    VuaProjectIdentityV1, IDENTITY_FILE_NAME, IDENTITY_SCHEMA_VERSION,
+};

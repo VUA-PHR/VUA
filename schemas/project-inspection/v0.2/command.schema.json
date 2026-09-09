@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/project-inspection/v0.2/command.schema.json",
+  "title": "VUA project-inspection read command v0.2",
+  "description": "Read-face command word list of proposal 013 (word list frozen by the integration ruling announced 2026-09-09 alongside the 014 acceptance). Four read-only queries over the manager-registered project face: project.listProjects returns the full ProjectInspectionSnapshotV01 (discovery + per-project inspection); project.inspectProject returns one ProjectInspectionV01 for a registered path; project.environmentManagers returns the EnvironmentManagersSnapshotV01 (ALCOM/VCC manager capability face, proposal 004); project.lockStatus returns the pending-mutation marker tri-state for one path. Every query is read-only — the write path lives in schemas/project-ops/v0.2 (project.import-copy), read/write lines stay separate. Absence is honest: an unregistered path is a typed vua.project.project_not_found-style refusal carried by the application contract, never an invented entry.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": [
+        "project.listProjects",
+        "project.inspectProject",
+        "project.environmentManagers",
+        "project.lockStatus"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.inspectProject" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath"],
+            "properties": {
+              "projectPath": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.lockStatus" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath"],
+            "properties": {
+              "projectPath": { "type": "string", "minLength": 1 }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": ["project.listProjects", "project.environmentManagers"]
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {}
+          }
+        }
+      }
+    }
+  ]
+}

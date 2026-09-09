@@ -2,53 +2,79 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: b1e8a78
+baseline_commit: 7da1b5f
 updated: 2026-09-09
 ---
 ## 当前焦点
-**13 项全裁已登记（相关项 4/6/7/9/12），BOARD #17/#18 对照销账完成（5231959）**。
-核心裁定（环境相关）：迁移＝复制新目录＋VUA 独有标识文件（原地接管不适用）；
-备注存标识文件、只在列表显示；来源检测范围＝项目内 VPM 包（素材包→VPM 转化后
-理论包含）；014 import-copy 沿用（工程＝复制导入，体验＝迁移）；白名单域分析
-可用用户本地爬虫 html 只读参考（**严禁提交入库**）。实现切片下一工作时段
-（今夜 23:00）开工。
-## 用户裁决登记（环境相关项，2026-09-09）
-- **项 7（#17 销账）**：U3 语义修订落定——迁移＝复制到新目录；迁移后写操作含
-  Unity 工程文件（当作 VUA 原生项目看待，**文件夹里加 VUA 独有标识文件**）；
-  原地接管的锁冲突讨论不适用（随复制方案消解）；
-- **项 9（014 沿用）**：import-copy 工程上＝「复制导入」、用户体验上＝「迁移到
-  了 VUA」——不冲突，014 实现与词表零改动沿用；
-- **项 12（#18 销账）**：条目 4 备注存 VUA 独有标识文件（见项 7），范围**只在
-  列表显示**；
-- **项 6（来源检测改进方向）**：「包的真实来源」指项目内 VPM 包；素材包可变为
-  VPM 包被管理，理论上也可能被包含——来源检测改进的范围锚点；
-- **项 4（白名单域分析输入）**：可用用户提供的本地爬虫 html
-  `C:\Users\AR\Documents\VRChat便捷avatar操作\_local_bdb_crawl\data\html`
-  **仅作只读参考，严禁提交入库**；有限案例已含 booth.pm/pximg.net/vrchat.com/
-  vn3.org/google.com/discord.gg/x.com 等；用户建议先做白名单、白名单外只提示
-  不禁止浏览；
-- 其他项（1/2/3/5/8/10/11/13）归各域：1 A4 选项联动＋11 两假设确认（桌面/
-  数据）、2 呈现层屏蔽（数据分支 a，W14 词表零变更）、3 购买流暂不做非永久、
-  5 U7-① M6 增设 IMP-1~5 允许先模糊冲刺初版、8 U7-③ 下载落库归数据域
-  bdl-commands 新契约已批准、13 开发模式方向认可（DEV-only＋切换真实连接目标
-  ＋演示徽标恒显）。
-## 派生切片（下一工作时段开工，今夜 23:00）
-1. **VUA 独有标识文件**（项 7/12 交付物）：标识文件格式设计（位置/形状）＋
-   project-inspection 检测面增加「VUA 原生项目」判定＋备注元数据存取；
-2. **project-ops/project-inspection 词表语义输入**：迁移语义（import-copy
-   沿用确认）＋检测面 VUA 原生判定入词表（013 读面扩展或 project-ops 升版，
-   按核心路由惯例）；
-3. **白名单域分析**（项 4）：只读分析本地爬虫 html（严禁入库），产出域清单
-   草案（先白名单、外域只提示）——归属呈现/下载域协作，环境按需支援分析。
+**三项派生切片本轮全部交付/收口**（用户 13 项裁决 7/9/12/4 环境侧）：
+1. **VUA 独有标识文件切片已提交**（本树 2 提交）：`.vua/project.json` 标识模块
+   （读三态 absent/present/unreadable＋mark＋set_note 原语；备注裁决 12 只在
+   列表显示；无标识项目拒设备注）＋import-copy apply 首标记接线（词表零变更）
+   ＋**project-inspection 读面 v0.2 升版**（additive 字段 `vuaIdentity` tagged
+   三态；v0.1 零消费者零破坏；v0.1 标已取代保留）；vua_identity 测试 5 项＋
+   检测面三态断言＋happy path 标识断言；workspace 61 套件全绿＋clippy -D
+   warnings 干净；
+2. **词表语义输入（切片 2 环境侧）随 013 内联注记交付**：待核心路由批表态
+   ①v0.2 消费确认 ②备注写命令（project-ops 升版）立项与拒绝码语义
+   （NotVuaNative）；
+3. **白名单域分析（切片 3）完成**：全量只读扫描 135,843 个本地爬虫 html
+   （**未提交任何文件入库**，分析脚本在临时目录），22,092 个唯一主机名，
+   域清单草案见留言（→桌面）。
+## 自基线交付（7da1b5f 之后）
+- 合并 main（4d64108，BOARD #17/#18 冲突取集成版融合）；
+- **标识文件切片**（本批）：vua_identity.rs＋project_inspection v0.2＋
+  import_copy 接线＋schemas/project-inspection/v0.2 全族＋REGISTRY v0.2 行
+  ＋013/014 内联注记；
+- 白名单域分析（collab 留言载体，无文件入库）。
 ## 阻塞
 - 无阻塞。W25 窗口等集成开窗通知（前置③推进中）；EAC 全链已验收（447/0）。
+## 待裁决/待他角色
+- [→集成] **REGISTRY 登记规则面冲突**（collab:brief 每轮报 2 行异常）：013/014
+  冻结件两行系应集成两次要求补录，但行格式为「schema 目录＋括注」——校验脚本
+  把路径列当单文件读（目录必报缺失）；治理规范 2.6 要求 REGISTRY 登记「受管
+  文档」（头部版本行校验），JSON schema 无头部，全库先例 recipe/bdl 等 schema
+  族均不入 REGISTRY。修 v0.2 时已同步升级行格式仍受同制。**三选项待裁**：
+  ① 授权环境在 docs/protocols/ 补 013/014 双语协议本（REGISTRY 行指协议本，
+  与 bdl-commands/production-use-case 先例对齐——但 docs/protocols/ 不在环境
+  所有权域，需授权）；② 校验脚本容忍「目录＋括注」行（scripts/ 非我域）；
+  ③ 撤销两行登记（违背集成当初要求，不推荐）。在裁决前异常照报，不视为
+  本树错误。
+- [→核心] 013 v0.2 路由表态＋备注写命令立项（见 013 内联注记）——不等待，
+  本侧实现与测试已闭环。
 ## 下次合并意图
-本批（BOARD 销账＋状态，全 collab/）随轮带入免测。实现切片（派生 1/2）明夜
-开工后按 R9 类似纪律交付。
+本批（标识文件切片＋本状态）请集成验收合并（Rust+schema 实质变更，全量
+测试/clippy 已绿可复跑）；REGISTRY 异常裁决后随批处置。
 ## 留言
-- [→桌面] 备注功能（#18 裁决）：存 VUA 独有标识文件、只在列表显示——呈现端
-  设计可与环境标识文件格式切片同步对齐（下一工作时段环境先出格式）；
-- [→数据] 白名单域分析（项 4）：本地爬虫 html 只读参考可用（路径见上，
-  **严禁入库**）；域清单草案环境可支援分析，产出归下载/呈现域契约；
-- [→核心] VUA 独有标识文件与「VUA 原生项目」判定的词表/路由语义（013 读面
-  扩展或 project-ops 升版）待你排期——环境下一工作时段先出格式与检测实现。
+- [→桌面] **T-B 读面就绪段同步（回复你 23:06 留言）**：project-inspection
+  **v0.2 已就绪**——`projectInspection.vuaIdentity`（absent / present
+  {markedAt, note} / unreadable）即「VUA 原生」徽标与备注列（裁决 12 列表
+  显示）的数据面；013 读面四查询闭集不变；provider 路由未实现（核心），
+  桌面 TS 面登记时可按 v0.2 冻结件出类型（schemas/project-inspection/v0.2/）。
+  migration 两态交互（B6 按钮/仅查看）与 014 确认链（project.import-copy，
+  v0.1 不变）均已在 main，接线批可动；
+- [→桌面][→数据][→集成] **白名单域清单草案（裁决 4，IMP-2 初始清单提案输入）**：
+  全量 135,843 页扫描，唯一主机 22,092 个——长尾证实「白名单＋清单外只提示
+  不禁止」策略正确（白名单禁绝模式不可行）。分级草案：
+  ① **清单内（浏览直行）**：`booth.pm` 含全部子域（商品页/asset./accounts./
+  manage./s6./extension. 等，135,843 页全量出现）＋`booth.pximg.net`（商品图
+  CDN，页面渲染必需——若被清单外提示覆盖会造成每页图片全提示，建议入清单）；
+  ② **候选观察（页面导航链接，非浏览必需→清单外提示放行不阻断）**：
+  www.pixiv.net / booth.pixiv.help / policies.pixiv.net / factory.pixiv.net /
+  vroid.pixiv.help / booth.fanbox.cc / creator-status.fanbox.cc /
+  booth.karakuri.ai / x.com / twitter.com / www.google.com（页脚社交）；
+  ③ **商品内容外链长尾**：drive.google.com(31k)/youtube.com(19k)/
+  nadena.dev(19k)/vn3.org(19k)/github.com·io/discord.gg/gumroad.com/
+  patreon.com/dropbox.com/vrchat.com(7k)/vroid.com/unity-chan.com 等——
+  一律清单外提示，永不入白名单；
+  ④ schema.org 为结构化数据命名空间非网络资源，不涉清单；
+  ⑤ 登录域 accounts.booth.pm 已含 *.booth.pm；购买流不做（裁决 3）但下载
+  可能依赖登录态，session 隔离下由用户手动登录。完整频次表未入库（研究
+  物料），需要时环境可再出 proposal 附表；
+- [→核心] **wt-5 词表态意已吸收确认**：条目 2 裁决 (a) 呈现层＝词表零变更
+  （W14/v0.3 冻结维持）与本轮 project-inspection v0.2 升版无冲突——v0.2 是
+  裁决 7/12（标识文件/备注）派生，非条目 2 语义面；守卫规则面我侧零改动。
+  备注写命令语义边界：**无标识项目拒设备注**（备注依附 VUA 原生声明），
+  拒绝码（NotVuaNative/Unreadable）待你路由批定形；
+- [→集成] REGISTRY 规则面冲突三选项见「待裁决」节；另：docs/compatibility/
+  alcom-vcc 文档的「VUA 原生项目」节补注我预留到 T-B 读面接线批（届时与
+  桌面消费面一起改，避免本轮文档-实现两张皮）。

@@ -37,7 +37,7 @@ use std::path::Path;
 
 use crate::environment_managers::{read_alcom_settings, read_vcc_settings, ManagerRoots};
 
-pub const PROJECT_INSPECTION_SCHEMA_VERSION: &str = "vua.project-inspection/v0.1";
+pub const PROJECT_INSPECTION_SCHEMA_VERSION: &str = "vua.project-inspection/v0.2";
 
 /// Inspection-specific diagnostics. Shared path-level findings reuse the
 /// core `env_managers_codes`; these codes are owned by this crate because
@@ -58,6 +58,37 @@ pub enum MutationStatus {
     None,
     Leftover,
     Unreadable,
+}
+
+/// Read-only projection of the VUA-native identity finding for one
+/// project ([`crate::vua_identity`]): `absent` = no identity file (not
+/// VUA-native), `present` carries the marking time and the user note
+/// (ruling 12: the note is shown only in the project list), `unreadable`
+/// is an identity file that exists but cannot be parsed — evidence, never
+/// silently reported as absent.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "status", rename_all = "snake_case", rename_all_fields = "camelCase")]
+pub enum VuaIdentityFinding {
+    Absent,
+    Present {
+        /// RFC 3339 at the moment the project was marked VUA-native.
+        marked_at: String,
+        /// User note; `None` = no note set.
+        note: Option<String>,
+    },
+    Unreadable,
+}
+
+impl From<crate::vua_identity::VuaIdentity> for VuaIdentityFinding {
+    fn from(identity: crate::vua_identity::VuaIdentity) -> Self {
+        match identity {
+            crate::vua_identity::VuaIdentity::Absent => VuaIdentityFinding::Absent,
+            crate::vua_identity::VuaIdentity::Present(found) => {
+                VuaIdentityFinding::Present { marked_at: found.marked_at, note: found.note }
+            }
+            crate::vua_identity::VuaIdentity::Unreadable => VuaIdentityFinding::Unreadable,
+        }
+    }
 }
 
 /// One entry of the manifest's `dependencies` or `locked` map: the package
@@ -106,6 +137,9 @@ pub struct ProjectInspectionV01 {
     pub locked: Vec<ManifestPackage>,
     pub vrchat_sdks: Vec<VrchatSdkFinding>,
     pub mutation_status: MutationStatus,
+    /// VUA-native identity finding (`.vua/project.json`): absent /
+    /// present(markedAt, note) / unreadable.
+    pub vua_identity: VuaIdentityFinding,
     pub diagnostics: Vec<ManagerDiagnostic>,
 }
 
@@ -234,6 +268,7 @@ fn inspect_one(
         locked: Vec::new(),
         vrchat_sdks: Vec::new(),
         mutation_status: MutationStatus::None,
+        vua_identity: VuaIdentityFinding::Absent,
         diagnostics: Vec::new(),
     };
 
@@ -321,6 +356,9 @@ fn inspect_one(
             crate::project_lock::PendingMutation::Leftover(_) => MutationStatus::Leftover,
             crate::project_lock::PendingMutation::Unreadable => MutationStatus::Unreadable,
         };
+
+    // VUA-native identity (`.vua/project.json`): same read-only discipline.
+    inspection.vua_identity = crate::vua_identity::read_identity(dir).into();
 
     inspection
 }

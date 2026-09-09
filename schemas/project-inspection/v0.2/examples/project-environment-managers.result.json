@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.environmentManagers",
+  "result": {
+    "schemaVersion": "vua.environment-managers-snapshot/v0.1",
+    "capturedAt": "2026-09-09T04:20:00.000Z",
+    "productionTarget": "2022.3.22f1",
+    "migrationSources": ["2019.4.31f1", "2022.3.6f1"],
+    "editorRoots": [],
+    "editors": [],
+    "vcc": {
+      "presence": "not_found",
+      "settingsPath": null,
+      "projectsSource": null,
+      "userProjects": [],
+      "localProjectFolders": [],
+      "errorCode": null
+    },
+    "alcom": {
+      "presence": "not_found",
+      "settingsPath": null,
+      "topLevelKeys": [],
+      "userProjects": [],
+      "errorCode": null
+    },
+    "projects": [],
+    "diagnostics": []
+  }
+}

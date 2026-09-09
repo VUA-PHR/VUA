@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "project.inspectProject",
+  "result": {
+    "schemaVersion": "vua.project-inspection/v0.2",
+    "path": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "name": "My Avatar World",
+    "pathPresent": true,
+    "associations": [
+      "vcc_registered"
+    ],
+    "unityVersion": "2022.3.22f1",
+    "unityClassification": "production_target",
+    "manifestPresent": true,
+    "manifestSchemaOk": true,
+    "dependencies": [
+      {
+        "packageId": "com.vrchat.base",
+        "version": "3.7.x"
+      }
+    ],
+    "locked": [],
+    "vrchatSdks": [],
+    "mutationStatus": "leftover",
+    "diagnostics": [],
+    "vuaIdentity": {
+      "status": "present",
+      "markedAt": "2026-09-09T15:04:05Z",
+      "note": null
+    }
+  }
+}
