@@ -13,8 +13,10 @@ use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
-    plan_import_copy, read_pending_mutation, ImportCopyRequest, LockHolder, ManagerRoots,
-    MutationMarkerGuard, PendingMutation, ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
+    collect_project_inspections, plan_import_copy, read_pending_mutation,
+    ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
+    ProjectInspectionV01, ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
+    PROJECT_INSPECTION_SCHEMA_VERSION as PROJECT_INSPECTION_FAMILY_VERSION,
 };
 use vua_bdl_store::download_events::{
     fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer, DownloadEventV01,
@@ -3396,6 +3398,131 @@ fn downloads_list_completed(
     }
 }
 
+fn project_single_path_param(request: &Value) -> Option<std::collections::HashMap<&str, &str>> {
+    // Single-path queries carry exactly `{ projectPath }` (frozen v0.1).
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 1 {
+        return None;
+    }
+    let value = params.get("projectPath")?.as_str()?;
+    if value.is_empty() {
+        return None;
+    }
+    let mut map = std::collections::HashMap::new();
+    map.insert("projectPath", value);
+    Some(map)
+}
+
+fn project_single_query_result(
+    request_id: &str,
+    operation: &str,
+    result: Value,
+) -> FrameOutcome {
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PROJECT_INSPECTION_SCHEMA_VERSION,
+            "operation": operation,
+            "result": result,
+        }),
+    ))
+}
+
+/// `project.listProjects` (proposal 013 read face): the inspection
+/// aggregate over exactly the paths the managers registered — the
+/// v0.2 snapshot family (vuaIdentity tri-state included).
+fn project_list_projects(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    if let Some(params) = request.get("params") {
+        let empty = params.as_object().map(|object| object.is_empty()).unwrap_or(false);
+        if !empty {
+            return project_invalid_params(request_id, correlation_id);
+        }
+    }
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    let result = serde_json::to_value(&snapshot).unwrap_or_else(|_| json!({
+        "schemaVersion": PROJECT_INSPECTION_FAMILY_VERSION,
+    }));
+    project_single_query_result(request_id, "project.listProjects", result)
+}
+
+/// `project.inspectProject` (proposal 013 read face): the single-project
+/// face of the inspection aggregate — only paths some manager registers
+/// are inspectable (the detection face's registry is its world); an
+/// unregistered path answers the typed not-found.
+fn project_inspect_project(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(params) = project_single_path_param(request) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    let project_path = params["projectPath"];
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    let found: Option<&ProjectInspectionV01> = snapshot
+        .projects
+        .iter()
+        .find(|project| project.path == project_path);
+    let Some(project) = found else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    };
+    let mut result = serde_json::to_value(project).unwrap_or_else(|_| json!({}));
+    // The frozen single-project def carries the family version itself.
+    result["schemaVersion"] = json!(PROJECT_INSPECTION_FAMILY_VERSION);
+    project_single_query_result(request_id, "project.inspectProject", result)
+}
+
+/// `project.lockStatus` (proposal 013 read face): the read-only
+/// pending-mutation observation for one project path — never acquires the
+/// lock (an inspection never writes).
+fn project_lock_status(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let _ = &project_ops;
+    let Some(params) = project_single_path_param(request) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    let project_path = params["projectPath"];
+    let mutation_status =
+        match vua_project_manager::read_pending_mutation(std::path::Path::new(project_path)) {
+            vua_project_manager::PendingMutation::None => "none",
+            vua_project_manager::PendingMutation::Leftover(_) => "leftover",
+            vua_project_manager::PendingMutation::Unreadable => "unreadable",
+        };
+    project_single_query_result(
+        request_id,
+        "project.lockStatus",
+        json!({
+            "schemaVersion": PROJECT_INSPECTION_FAMILY_VERSION,
+            "projectPath": project_path,
+            "mutationStatus": mutation_status,
+        }),
+    )
+}
+
 fn catalog_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
     FrameOutcome::Response(application_error(
         request_id,
@@ -3596,14 +3723,14 @@ fn project_request(
         "project.environmentManagers" => {
             project_environment_managers(project_ops, request, request_id, correlation_id)
         }
-        "project.listProjects" | "project.inspectProject" | "project.lockStatus" => {
-            FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                "vua.project.unavailable",
-                "errors.project.unavailable",
-                "unavailable",
-            ))
+        "project.listProjects" => {
+            project_list_projects(project_ops, request, request_id, correlation_id)
+        }
+        "project.inspectProject" => {
+            project_inspect_project(project_ops, request, request_id, correlation_id)
+        }
+        "project.lockStatus" => {
+            project_lock_status(project_ops, request, request_id, correlation_id)
         }
         _ => FrameOutcome::Response(application_error(
             request_id,
