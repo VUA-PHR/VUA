@@ -5,6 +5,13 @@ import { Card } from "../../components/primitives/Card.tsx";
 import { useEnvironmentView, useGateway } from "../../gateway/index.ts";
 import { strings } from "../../i18n/index.ts";
 import type { ImportCopyPlanV01, ImportCopyReceiptV01 } from "@vua/contracts";
+import {
+  bytesText,
+  confirmChainDecision,
+  receiptLines,
+  type ConfirmChainTexts,
+  type GuardTextTable,
+} from "./project-compat-model.ts";
 import "./project-compat.css";
 
 /**
@@ -19,25 +26,37 @@ import "./project-compat.css";
  * - 副本导入确认链(014 语义冻结,已接线):源路径(检测读面接线前为文本
  *   输入,如实标注)→目标表单→plan 要点确认面板→apply→receipt 呈现;
  *   守卫拒绝(七项闭集)按 guard 原样映射文案与 detail。
+ *   确认链呈现决策与回执五项投影抽为纯函数(project-compat-model,裁决 1:
+ *   B8/B9 两呈现段的测试范围),本组件只做状态迁移与渲染。
  *
  * 写操作交接:呈现 1.2.0 禁止清单要点与「交接给对应管理器」引导;
  * 交接的具体交互形态(外部拉起等)待规格确认,本批不实现。
  */
 const copy = strings.projectCompat;
 
-/** 字节 → 人读量级(1 位小数去尾零) */
-function bytesText(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ["KB", "MB", "GB", "TB"];
-  let value = bytes;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  const rounded = Math.round(value * 10) / 10;
-  return `${rounded} ${units[unit]}`;
-}
+const guardTable: GuardTextTable = {
+  target_exists: copy.guardTargetExists,
+  target_inside_source: copy.guardTargetInsideSource,
+  source_not_registered: copy.guardSourceNotRegistered,
+  source_invalid: copy.guardSourceInvalid,
+  insufficient_disk_space: copy.guardInsufficientDiskSpace,
+  plan_drift: copy.guardPlanDrift,
+  execution_failed: copy.guardExecutionFailed,
+};
+
+const confirmTexts: ConfirmChainTexts = {
+  guardTable,
+  guardFallback: copy.guardFallback,
+  unavailable: copy.importUnavailable,
+};
+
+const receiptLabels = {
+  target: copy.importReceiptTarget,
+  bytes: copy.importReceiptBytes,
+  copied: copy.importReceiptCopied,
+  source: copy.importReceiptSource,
+  inspect: copy.importReceiptInspect,
+};
 
 type Flow =
   | { readonly kind: "idle" }
@@ -56,19 +75,6 @@ export function ProjectCompatPage() {
   const [parentDir, setParentDir] = useState("");
   const [projectName, setProjectName] = useState("");
 
-  const guardText = (guard: string): string => {
-    const table: Record<string, string> = {
-      target_exists: copy.guardTargetExists,
-      target_inside_source: copy.guardTargetInsideSource,
-      source_not_registered: copy.guardSourceNotRegistered,
-      source_invalid: copy.guardSourceInvalid,
-      insufficient_disk_space: copy.guardInsufficientDiskSpace,
-      plan_drift: copy.guardPlanDrift,
-      execution_failed: copy.guardExecutionFailed,
-    };
-    return table[guard] ?? copy.guardFallback;
-  };
-
   const startForm = () => {
     setFlow({ kind: "form" });
     setErrorFeedback(null);
@@ -78,6 +84,17 @@ export function ProjectCompatPage() {
     void window.vua?.dialog.pickWarehouseFolders().then((folders) => {
       if (folders !== null && folders.length > 0) setParentDir(folders[0]!);
     });
+  };
+
+  const applyDecision = (outcome: Parameters<typeof confirmChainDecision>[0]): void => {
+    const decision = confirmChainDecision(outcome, confirmTexts);
+    if (decision.kind === "plan") {
+      setFlow({ kind: "plan", plan: decision.plan });
+    } else if (decision.kind === "receipt") {
+      setFlow({ kind: "receipt", receipt: decision.receipt });
+    } else {
+      setErrorFeedback(decision.feedback);
+    }
   };
 
   const submitPlan = () => {
@@ -92,13 +109,7 @@ export function ProjectCompatPage() {
       })
       .then((outcome) => {
         setBusy(false);
-        if (outcome.ok && "plan" in outcome) {
-          setFlow({ kind: "plan", plan: outcome.plan });
-        } else if (outcome.ok && "rejected" in outcome) {
-          setErrorFeedback(`${guardText(outcome.rejected.guard)} (${outcome.rejected.code})`);
-        } else if (!outcome.ok) {
-          setErrorFeedback(copy.importUnavailable);
-        }
+        applyDecision(outcome);
       });
   };
 
@@ -115,13 +126,7 @@ export function ProjectCompatPage() {
       })
       .then((outcome) => {
         setBusy(false);
-        if (outcome.ok && "receipt" in outcome) {
-          setFlow({ kind: "receipt", receipt: outcome.receipt });
-        } else if (outcome.ok && "rejected" in outcome) {
-          setErrorFeedback(`${guardText(outcome.rejected.guard)} (${outcome.rejected.code})`);
-        } else if (!outcome.ok) {
-          setErrorFeedback(copy.importUnavailable);
-        }
+        applyDecision(outcome);
       });
   };
 
@@ -303,20 +308,14 @@ export function ProjectCompatPage() {
           {flow.kind === "receipt" ? (
             <div className="vua-project-compat__form" role="status">
               <h3 className="vua-warehouse-detail__section-title">{copy.importReceiptTitle}</h3>
+              {/* B8 呈现五项(裁决 1):新项目路径/已复制数据/已复制内容/来源
+                  关系已记录/重新检查完成——投影纯函数见 project-compat-model */}
               <ul className="vua-project-compat__specs">
-                <li>
-                  {copy.importReceiptTarget}: {flow.receipt.targetPath}
-                </li>
-                <li>
-                  {copy.importReceiptBytes}: {bytesText(flow.receipt.bytesCopied)}
-                </li>
-                <li>
-                  {copy.importReceiptCopied}: {flow.receipt.copiedTopLevels.join(", ")}
-                </li>
-                <li>{copy.importReceiptSource}</li>
-                <li>
-                  {copy.importReceiptInspect}: {flow.receipt.reInspection.unityVersion ?? "—"}
-                </li>
+                {receiptLines(flow.receipt, receiptLabels).map((line) => (
+                  <li key={line.label}>
+                    {line.value === "" ? line.label : `${line.label}: ${line.value}`}
+                  </li>
+                ))}
               </ul>
             </div>
           ) : null}
