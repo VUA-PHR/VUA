@@ -65,6 +65,82 @@ const PROBE_TIMEOUT: Duration = Duration::from_secs(30);
 const NETWORK_TIMEOUT: Duration = Duration::from_secs(3);
 const OUTPUT_LIMIT: usize = 64 * 1024;
 
+// --- Installed-editor fact source (job.execute admission prechecks) ---
+
+/// One installed Unity editor discovered under the Hub editors root
+/// ([`installed_unity_editors`]).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InstalledUnityEditor {
+    pub parsed: editor_targets::ParsedEditorVersion,
+    /// Editor directory path (the executable lives under `Editor/`).
+    pub path: PathBuf,
+}
+
+/// The editors-root observation, mirroring the presence model: "not
+/// installed" is a normal finding without a code; only a failed *observation*
+/// (root unreadable) is an error. This is the fact source for the
+/// `job.execute` admission prechecks (proposal 009 stance 4 ①②: the recipe
+/// version-lock check and the environment compatibility check are
+/// validation-class config errors consuming this source; the Bridge keeps
+/// the fingerprint lock as the final line).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EditorInstallObservation {
+    /// Root missing, or no complete-version editor directories under it.
+    NotDetected,
+    /// The root exists but cannot be read — the observation itself failed.
+    DetectionFailed { reason: String },
+    /// Installed editors, sorted newest first (major/minor/patch/release).
+    Detected(Vec<InstalledUnityEditor>),
+}
+
+/// Enumerates the Unity Hub editors under `unity_editors_root` — the same
+/// observation the `unity_editors` environment check reports, as a strongly
+/// typed fact source. Directories without a complete version name are
+/// ignored (matching Hub's own directory behavior); an entry counts only
+/// when it has an `Editor` subdirectory.
+pub fn installed_unity_editors(unity_editors_root: &Path) -> EditorInstallObservation {
+    let read_dir = match std::fs::read_dir(unity_editors_root) {
+        Ok(read_dir) => read_dir,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            return EditorInstallObservation::NotDetected;
+        }
+        Err(error) => {
+            return EditorInstallObservation::DetectionFailed { reason: error.to_string() };
+        }
+    };
+    let mut editors: Vec<InstalledUnityEditor> = Vec::new();
+    for entry in read_dir.flatten() {
+        let path = entry.path();
+        if !path.is_dir() || !path.join("Editor").is_dir() {
+            continue;
+        }
+        if let Some(parsed) =
+            editor_targets::parse_editor_version(&entry.file_name().to_string_lossy())
+        {
+            editors.push(InstalledUnityEditor { parsed, path });
+        }
+    }
+    if editors.is_empty() {
+        return EditorInstallObservation::NotDetected;
+    }
+    editors.sort_by(|left, right| {
+        let left = (
+            left.parsed.major,
+            left.parsed.minor,
+            left.parsed.patch,
+            left.parsed.release_number,
+        );
+        let right = (
+            right.parsed.major,
+            right.parsed.minor,
+            right.parsed.patch,
+            right.parsed.release_number,
+        );
+        right.cmp(&left)
+    });
+    EditorInstallObservation::Detected(editors)
+}
+
 const STEAM_REGISTRY_SUBKEY: &str = "SOFTWARE\\WOW6432Node\\Valve\\Steam";
 const OPENXR_REGISTRY_SUBKEY: &str = "SOFTWARE\\Khronos\\OpenXR\\1";
 const WINDOWS_CURRENT_VERSION_SUBKEY: &str = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
@@ -666,76 +742,48 @@ impl EnvironmentEngine {
 
     fn check_unity_editors(&self) -> EnvironmentCheckItemV1 {
         let root_display = self.roots.unity_editors_root.to_string_lossy().into_owned();
-        let read_dir = match std::fs::read_dir(&self.roots.unity_editors_root) {
-            Ok(read_dir) => read_dir,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                return item(
-                    "unity_editors",
-                    Zone::Create,
-                    EnvironmentPresence::NotDetected,
-                    None,
-                    json!({ "root": root_display }),
-                );
-            }
-            Err(error) => {
-                return item(
-                    "unity_editors",
-                    Zone::Create,
-                    EnvironmentPresence::DetectionFailed,
-                    Some(error_codes::READ_FAILED.to_owned()),
-                    json!({ "root": root_display, "reason": error.to_string() }),
-                );
-            }
-        };
-        let mut editors: Vec<(editor_targets::ParsedEditorVersion, PathBuf)> = Vec::new();
-        for entry in read_dir.flatten() {
-            let path = entry.path();
-            if !path.is_dir() || !path.join("Editor").is_dir() {
-                continue;
-            }
-            if let Some(parsed) =
-                editor_targets::parse_editor_version(&entry.file_name().to_string_lossy())
-            {
-                editors.push((parsed, path));
-            }
-        }
-        if editors.is_empty() {
-            return item(
+        match installed_unity_editors(&self.roots.unity_editors_root) {
+            EditorInstallObservation::NotDetected => item(
                 "unity_editors",
                 Zone::Create,
                 EnvironmentPresence::NotDetected,
                 None,
                 json!({ "root": root_display }),
-            );
+            ),
+            EditorInstallObservation::DetectionFailed { reason } => item(
+                "unity_editors",
+                Zone::Create,
+                EnvironmentPresence::DetectionFailed,
+                Some(error_codes::READ_FAILED.to_owned()),
+                json!({ "root": root_display, "reason": reason }),
+            ),
+            EditorInstallObservation::Detected(editors) => {
+                let listed: Vec<Value> = editors
+                    .iter()
+                    .map(|editor| {
+                        let (classification, guidance_code) =
+                            editor_targets::classify_editor(&editor.parsed);
+                        json!({
+                            "version": editor.parsed.display,
+                            "path": editor.path.to_string_lossy(),
+                            "classification": classification,
+                            "guidanceCode": guidance_code,
+                        })
+                    })
+                    .collect();
+                item(
+                    "unity_editors",
+                    Zone::Create,
+                    EnvironmentPresence::Detected,
+                    None,
+                    json!({
+                        "root": root_display,
+                        "productionTarget": editor_targets::PRODUCTION_TARGET,
+                        "editors": listed,
+                    }),
+                )
+            }
         }
-        editors.sort_by(|left, right| {
-            let left = (left.0.major, left.0.minor, left.0.patch, left.0.release_number);
-            let right = (right.0.major, right.0.minor, right.0.patch, right.0.release_number);
-            right.cmp(&left)
-        });
-        let listed: Vec<Value> = editors
-            .iter()
-            .map(|(parsed, path)| {
-                let (classification, guidance_code) = editor_targets::classify_editor(parsed);
-                json!({
-                    "version": parsed.display,
-                    "path": path.to_string_lossy(),
-                    "classification": classification,
-                    "guidanceCode": guidance_code,
-                })
-            })
-            .collect();
-        item(
-            "unity_editors",
-            Zone::Create,
-            EnvironmentPresence::Detected,
-            None,
-            json!({
-                "root": root_display,
-                "productionTarget": editor_targets::PRODUCTION_TARGET,
-                "editors": listed,
-            }),
-        )
     }
 
     fn check_vpm_cli(&self) -> EnvironmentCheckItemV1 {
