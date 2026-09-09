@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 31965f3
+baseline_commit: 6af59a7
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -24,6 +24,9 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
 扫描草案）经桌面 §4 提案、集成照准落账，条目闭环。015 §7 明确「环境：无」，
 环境无动作面。
 ## 自基线交付（1c73437 之后）
+- **alcom-vcc 兼容矩阵文档 1.0.0→1.1.0**（ebb7875，兑现 T-B 接线批文档预留）：
+  新增「VUA 原生项目判定」节＋检测矩阵标识行＋机器可读面刷新（v0.2/协议本
+  链接/已冻结接线现状）；REGISTRY 行刷新（校验 40/40）；
 - **proposal 016 环境表态已交并经仲裁采纳**（e27f042 验收合并；集成 7c4353e
   仲裁＝#19 三方表态全票一致照单采纳＋dependencies 分层注记；冻结以核心
   Bridge-ops 锚为门）——表态内容：①dependencies 维 project-inspection v0.2
@@ -33,11 +36,10 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
 - 合并 main 追平（015 后续落账：桌面批 A 验收、批 B 第 1 项、核心
   remoteBrowser 行移除、浏览清单照准——均非环境动作面）。
 ## 在途/待他角色
-- [等核心] 013 读面 provider 路由批剩余刀（environmentManagers 查询等三
-  查询同批；核心知会读面消费走 `collect_environment_managers_snapshot`
-  原样、editor_roots 经 ProjectOpsConfig 注入——零接口摩擦，bin 侧 VUA
-  环境变量覆写为核心下一刀）——014 import-copy 路由与 job.execute 环境
-  预检均已验收合并（07166b7 预检链三段完整，我方事实源在链上）；
+- **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
+  lockStatus 三查询全接线＋`vua.project.project_not_found` 定形；T-B 消费完全
+  解锁；桌面 TS 面第一刀 70f517d 同步）——环境侧全部词表族（013 v0.2 读面/
+  014 v0.1 写面）已冻结＋接线＋TS 面注册；
 - [知会留痕] 核心→产线窗口 A2 语义：冒烟 recipe 带 constraint 需真机匹配
   安装、不带则预检诚实跳过——A2 为产线段，环境 B 段义务不受影响；
 - [已闭环] 016 状态翻转为 accepted（485195f 随仲裁落账；集成确认 BG-4 环境
