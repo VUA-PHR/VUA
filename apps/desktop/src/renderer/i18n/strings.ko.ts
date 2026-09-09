@@ -144,9 +144,27 @@ demoTaskTitle: "데모 작업",
       settingsDonate: "후원",
       packages: "패키지 관리자",
       projectCompat: "프로젝트 호환",
+      importMaterial: "소재 가져오기",
     },
   },
   /** 허브 랜딩 페이지(S-VFX-2): 기본 시작 페이지 */
+  /** 소재 가져오기 페이지(M6 IMP-2 배치 A, proposal 015 정합): 두 개의
+   *  정직한 섹션 — 클라우드(내장 브라우징, 능력 이중 상태 게이트)와
+   *  로컬(W18 제출 흐름 그대로 이전, 어휘 추가 없음). */
+  importPage: {
+    title: '소재 가져오기',
+    subtitle: '클라우드 다운로드와 로컬 가져오기, 하나의 연속 경로',
+    cloudTitle: '클라우드 다운로드',
+    cloudBadge: 'VUA 내장 브라우징 · 세션 분리',
+    cloudUnavailable: '앱 내장 브라우징이 아직 활성화되지 않았습니다. 능력이 켜지면 이 패널을 사용할 수 있습니다. 플랫폼 페이지의 구매 흐름은 그대로 유지되며 VUA는 어떤 구매 흐름도 제공하지 않습니다.',
+    addressAria: '내장 페이지 주소',
+    addressPlaceholder: 'https://booth.pm',
+    openCta: '열기',
+    closeCta: '내장 뷰 닫기',
+    blockedTitle: '정책에 의해 차단됨(보고됨, 묵인 아님)',
+    noView: '열려 있는 내장 뷰가 없습니다.',
+    localTitle: '로컬 가져오기',
+  },
   home: {
     tagline: "VRChat 플레이와 창작의 커맨드 허브",
     commandCta: "페이지, 기능, 작업 검색…",

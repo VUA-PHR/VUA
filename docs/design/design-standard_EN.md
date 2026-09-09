@@ -1,10 +1,10 @@
-# VUA design standard v0.7.0
+# VUA design standard v0.7.1
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.0
+> Document version: 0.7.1
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.0)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.1)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-07  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -261,8 +261,9 @@ stable untilted cards.
   APIs) remain untouched item by item; platform pages render as-is with zero
   purchase-flow UI; the `desktop.remoteBrowser` capability is two-state — it flips
   only when embedded browsing works end to end, and unwired entries stay
-  permanently labeled unavailable (honest degradation pointing to the system
-  browser).
+  permanently labeled unavailable (a plain unavailable note with no alternative
+  action — under the U9 four-way split, http/https popups open in the current
+  embedded view, so no "hand off to the system browser" degradation path exists).
 - **Recipe:** graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
@@ -325,6 +326,12 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.1 (2026-09-10)**: §8.3 wording fix (drift flagged in the desktop batch-A
+  state) — "honest degradation pointing to the system browser" becomes "a plain
+  unavailable note with no alternative action": under the U9 four-way split,
+  http/https popups open in the current embedded view, so no "hand off to the
+  system browser" degradation path exists. Mirrors the ZH edition.
 
 - **0.7.0 (2026-09-10)**: proposal 015 reconciliation accepted (IMP-1, handled by
   integration) — §8 gains the dedicated import-tab semantics: the continuous

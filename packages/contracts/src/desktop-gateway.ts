@@ -545,12 +545,22 @@ export interface RemoteContentApiV1 {
   events: { subscribe(listener: (event: RemoteContentEventV1) => void): () => void };
 }
 
+/** 壳能力自报(桌面壳静态声明;proposal 015 §11 仲裁方案 a):能力拥有者
+ *  (Electron 壳)自报,不经 provider 转述——远程 web 内容隔离于桌面壳内,
+ *  其能力报告不属于 provider capability 面。 */
+export interface DesktopCapabilitiesV1 {
+  /** Main 基座(remote-content + U9 四分法导航策略)在位;内嵌浏览呈现
+   *  两态判据据此驱动(端到端可用才翻转呈现,desktop 架构 1.1.0) */
+  readonly remoteBrowser: boolean;
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
   readonly dialog: DesktopDialogApiV1;
   readonly window: DesktopWindowApiV1;
   readonly remoteContent: RemoteContentApiV1;
+  readonly capabilities: DesktopCapabilitiesV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
