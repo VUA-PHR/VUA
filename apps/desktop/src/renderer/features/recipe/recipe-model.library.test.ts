@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  recipeDocumentToGraphView,
   narrowRecipeDocumentFacts,
   narrowRecipeDocumentStructure,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
 } from "./recipe-model.ts";
+import type { RecipeGraphView } from "../../gateway/index.ts";
 
 /* BG-1(W24 读面预备):recipe 文档库列表窄化与共享选择骨架的纯函数覆盖。
  * 数据全部来自 production-use-case v0.2 recipe.list 读面;缺失字段滤除,
@@ -92,4 +94,32 @@ test("narrowRecipeDocumentStructure: assets/instances 结构事实收窄,字段�
 test("narrowRecipeDocumentStructure: 非对象 = null(不猜测)", () => {
   assert.equal(narrowRecipeDocumentStructure(null), null);
   assert.equal(narrowRecipeDocumentStructure("doc"), null);
+});
+
+test("recipeDocumentToGraphView: assets→nodes(state=expected 期望态中性词表),edges 诚实空集", () => {
+  const view: RecipeGraphView | null = recipeDocumentToGraphView({
+    recipeId: "01234567-89ab-7cde-89ab-0123456789ab",
+    title: "夏季制服",
+    assets: [
+      { id: "a1", role: "outfit", label: "夏季制服" },
+      { id: "a2", role: "body" },
+    ],
+    instances: [{ id: "i1", assetId: "a1", entrypoint: "prefab" }],
+    relations: [{}, {}],
+  });
+  assert.equal(view?.kind, "graph");
+  if (view?.kind !== "graph") return;
+  assert.equal(view.recipeId, "01234567-89ab-7cde-89ab-0123456789ab");
+  assert.equal(view.nodes.length, 2);
+  for (const node of view.nodes) assert.equal(node.state, "expected");
+  // relations 结构映射未接入:edges 诚实空集(关系计数在文档事实清单呈现)
+  assert.deepEqual(view.edges, []);
+  assert.deepEqual(view.missing, []);
+  assert.deepEqual(view.conflicts, []);
+});
+
+test("recipeDocumentToGraphView: 非对象/缺 recipeId = null(不猜测)", () => {
+  assert.equal(recipeDocumentToGraphView(null), null);
+  assert.equal(recipeDocumentToGraphView("doc"), null);
+  assert.equal(recipeDocumentToGraphView({ title: "t" }), null);
 });
