@@ -2,20 +2,31 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 396520c
+baseline_commit: 10b0af7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第十波验收＋BG-6 闭环＋#20 缺陷裁决**：①核心 **BG-6 Spike 交付验收**
-（22cdc1e——scripts/spikes/provider-lifecycle 265 行，SPIKE 非交付物标注；
-脚本实跑验证：握手 ok＋p50/p95 实测捕获；**边界发现如实升级**）；②桌面
-017 三项表态批（传输/会话/投影清单——批一零核心新增）合并；③**BOARD #20
-登记裁决**：候选缺陷成立（demo 任务重启残留 running——DEV-only 不豁免诚实
-呈现）；归因＝演示面未被重启扫除覆盖（产品任务 W22 恢复语义完好）；排期＝
-核心修复小刀随下一工作窗口，不阻塞任何门与 W25。**BG 工单 4/6 交付**
-（BG-2/4/5/6）。**W25 三前置维持齐备**——开窗通知晨起 O-2。批量面板未
-触发；[需代裁] 零新增。
+**第十一波验收两批＋#20 缺陷全闭环**：①核心 **#20 修复小刀**（2517dc8——
+demo 任务面纳入重启扫除；lifecycle_recovery 测试 189 行钉死「硬杀后重启
+永不读 running」；**裁决排期当轮兑现**）；②桌面 **013 消费 UI**（c443a89
+——F6 检测节 live 接线＋B6 identify 流消费已登记 TS 面；52 文件 429 测试
+全链绿）。**缺陷生命周期闭环示范**：Spike 发现→如实升级→集成裁决→修复
+→钉死测试→验收，全程 1 小时。**W25 三前置维持齐备**——开窗通知晨起
+O-2。批量面板未触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **第十一波验收两批（04:00–04:10）**：
+  - **7db13f3**：slot/wt-2 **#20 修复小刀验收合并**——2517dc8（demo 任务面
+    纳入重启扫除：provider_host 105 行重组＋lifecycle_recovery 测试 189 行，
+    钉死 `demo_task_walks_lifecycle_and_is_swept_on_restart_per_board_20`＋
+    「硬杀后重启永不读 running」）。**验收记录**：复跑 **66/66 workspace
+    全绿**（新增 lifecycle_recovery 套件）＋clippy 零告警；修复断言与裁决
+    语义一致；
+  - **10b0af7**：slot/wt-3 **013 消费 UI 验收合并**——c443a89（F6 检测节
+    live 接线＋B6 identify 流：ProjectCompatPage 222 行＋
+    project-detection-model 测试 60 行；措辞变更诚实声明）。**验收记录**：
+    桌面 check 全链复跑绿（**52 文件 429 测试**＋boundary＋i18n＋contrast＋
+    leak 159 零命中）——013 消费链（核心读面＋TS 面＋UI）全通；
+  - 五分支清零，40/40 一致。
 - **第十波验收＋#20 裁决（03:40–03:50）**：
   - **396520c**：slot/wt-2 **BG-6 Spike 交付验收合并**——22cdc1e
     （scripts/spikes/provider-lifecycle/ 265 行：双场景可复跑脚本＋README
