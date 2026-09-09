@@ -20,7 +20,7 @@
 use crate::bdl_queries::{
     availability_status, CatalogDetailResult, CatalogHealth, CatalogListParams, CatalogListResult,
     CatalogPrice, CatalogProductDetail, CatalogProductSummary, CatalogRevision,
-    CatalogStatusResult, CatalogSubproduct,
+    CatalogStatusResult, CatalogSubproduct, CompletedDownloadRow,
 };
 use crate::bdl_queries::ArtifactInspectionVerdict;
 use crate::download_events::{DownloadEventKind, DownloadEventV01, DownloadFailureKind};
@@ -1400,6 +1400,78 @@ impl BdlStore {
             cards.push(warehouse_card(item, global_default, artifacts));
         }
         Ok(cards)
+    }
+
+    /// The `downloads.listCompleted` read face (bdl-queries v0.4): the
+    /// adoptable completed deliveries. The membership predicate is the
+    /// SAME server-side fact the v0.4 adoption guard consumes —
+    /// `DownloadEventConsumer::staging_completion` (fold at a completed
+    /// delivery) plus the staging file being physically present at the
+    /// reported size — so the list is the guard's mirror: what the UI
+    /// shows is adoptable. Deliveries whose staging file is gone or
+    /// size-drifted are honestly absent, not listed. Each row carries the
+    /// warehouse entries adopted from that download's content (empty =
+    /// not yet adopted). Rows sort by completion time, oldest first.
+    /// Paths never appear in the rows.
+    pub fn list_adoptable_downloads(&self) -> Result<Vec<CompletedDownloadRow>, BdlStoreError> {
+        let consumer = crate::download_events::DownloadEventConsumer::new(self);
+        let mut rows = Vec::new();
+        for download_id in self.download_ids()? {
+            let completion = consumer
+                .staging_completion(&download_id)
+                .map_err(|error| match error {
+                    crate::download_events::ConsumerError::Store(store) => store,
+                    // Histories are ingest-gated: a fold failure here is
+                    // stored corruption, surfaced as such — never a silent
+                    // skip dressed as an empty list.
+                    other => BdlStoreError::CorruptValue {
+                        field: "download_events",
+                        value: other.to_string(),
+                    },
+                })?;
+            let Some(completion) = completion else {
+                continue;
+            };
+            let staging_metadata = std::fs::metadata(std::path::Path::new(&completion.stored_path));
+            match staging_metadata {
+                Ok(metadata) if metadata.len() == completion.reported_size_bytes => {}
+                // Absent or size-drifted staging: not adoptable, honestly
+                // absent from the adoptable list.
+                _ => continue,
+            }
+            let history = self.download_events(&download_id)?;
+            let Some(completed) = history
+                .iter()
+                .rev()
+                .find(|event| event.kind == DownloadEventKind::Completed)
+            else {
+                continue;
+            };
+            let connection = self.connection.lock().expect("SQLite connection poisoned");
+            let mut statement = connection.prepare(
+                "SELECT DISTINCT wi.warehouse_item_id
+                 FROM local_artifacts la
+                 JOIN artifact_copies ac ON ac.artifact_sha256 = la.artifact_sha256
+                 JOIN warehouse_items wi ON wi.warehouse_item_id = ac.warehouse_item_id
+                 WHERE la.download_id = ?1
+                 ORDER BY wi.warehouse_item_id",
+            )?;
+            let adopted = statement
+                .query_map(params![download_id], |row| row.get::<_, String>(0))?
+                .collect::<Result<Vec<_>, _>>()?;
+            drop(statement);
+            drop(connection);
+            rows.push(CompletedDownloadRow {
+                download_id,
+                source_url: completed.source_url.clone(),
+                suggested_file_name: completion.suggested_file_name,
+                received_bytes: completion.reported_size_bytes,
+                completed_at: completed.occurred_at.clone(),
+                adopted_warehouse_item_ids: adopted,
+            });
+        }
+        rows.sort_by(|a, b| a.completed_at.cmp(&b.completed_at));
+        Ok(rows)
     }
 
     /// The `warehouse.entryDetail` read face: per-artifact inspection facts

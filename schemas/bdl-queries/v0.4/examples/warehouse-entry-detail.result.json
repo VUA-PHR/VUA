@@ -1,0 +1,43 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "warehouse.entryDetail",
+  "result": {
+    "entry": {
+      "warehouseItemId": "whi-01hexample0000000000000a",
+      "folderName": "whi-01hexample0000000000000a",
+      "displayName": "Fixture Material Pack",
+      "kind": "imported_material",
+      "createdAt": "2026-09-06T08:20:00.000Z",
+      "artifacts": [
+        {
+          "relativePath": "original/material-pack.unitypackage",
+          "artifactSha256": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "state": "clean",
+          "sizeBytes": 183501824,
+          "suggestedFileName": "material-pack.unitypackage",
+          "inspectedAt": "2026-09-06T08:16:00.000Z",
+          "rejectionReason": null,
+          "sourceCorrelated": true,
+          "mappedProductIds": [
+            "booth:1000001"
+          ],
+          "role": "original"
+        },
+        {
+          "relativePath": "original/extra.zip",
+          "artifactSha256": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "state": "pending",
+          "sizeBytes": 4096,
+          "suggestedFileName": "extra.zip",
+          "inspectedAt": null,
+          "rejectionReason": null,
+          "sourceCorrelated": false,
+          "mappedProductIds": [],
+          "role": "original"
+        }
+      ],
+      "artifactMode": "generate_vpm",
+      "effectiveArtifactMode": "generate_vpm"
+    }
+  }
+}

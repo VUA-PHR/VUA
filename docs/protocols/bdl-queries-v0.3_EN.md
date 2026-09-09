@@ -2,8 +2,14 @@
 
 [English](bdl-queries-v0.3_EN.md) | [简体中文](bdl-queries-v0.3_ZH.md)
 
+> **⚠️ SUPERSEDED by v0.4 (2026-09-10)**: new read query method
+> `downloads.listCompleted` (proposal 015 §10 arbitration; the adoption-source
+> read face). The current specification lives in
+> [bdl-queries-v0.4_EN.md](bdl-queries-v0.4_EN.md); this document is kept for
+> history only and maps to `schemas/bdl-queries/v0.3/` (do not modify).
 > Document version: 0.3
-> Status: **Frozen** (2026-09-06) — supersedes v0.2 (the only change is the
+> Status: **Superseded (→ v0.4)** (2026-09-10; originally: **Frozen**
+> (2026-09-06) — supersedes v0.2 (the only change is the
 > "v0.3 revision" below); machine-readable vocabulary in
 > `schemas/bdl-queries/v0.3/`
 > Scope: five read-only query methods served by AMF from the local BDL — the

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "catalog.list",
+  "params": {
+    "text": "uniform",
+    "limit": 50,
+    "offset": 0,
+    "availabilityStatus": null
+  }
+}

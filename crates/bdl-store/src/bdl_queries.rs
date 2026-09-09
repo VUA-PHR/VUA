@@ -105,6 +105,32 @@ pub fn availability_status(raw: Option<&str>) -> AvailabilityStatus {
     }
 }
 
+// --- downloads serving-face types (v0.4; shape mirrors result.schema.json
+//     $defs/downloadsListCompletedResult exactly — a field here that the
+//     schema does not know is a contract break caught by the consumer
+//     tests) ---
+
+/// `downloads.listCompleted` row: one adoptable completed delivery. The
+/// membership predicate is the SAME server-side fact the v0.4 adoption
+/// guard consumes — event fold at a completed delivery with the staging
+/// file physically present at the reported size — so the list is the
+/// guard's mirror: what the UI shows is adoptable. Paths never appear in
+/// the row (storedPath semantics stop at AMF/BDL).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CompletedDownloadRow {
+    pub download_id: String,
+    pub source_url: String,
+    pub suggested_file_name: Option<String>,
+    pub received_bytes: u64,
+    pub completed_at: String,
+    /// Warehouse entries whose content rows carry this download
+    /// correlation (`local_artifacts.download_id`); empty = not yet
+    /// adopted. The write face does not prevent repeat adoption; the UI
+    /// marks adopted downloads from this field.
+    pub adopted_warehouse_item_ids: Vec<String>,
+}
+
 // --- catalog serving-face types (W12; shapes mirror result.schema.json
 //     $defs exactly — a field here that the schema does not know is a
 //     contract break caught by the consumer tests) ---

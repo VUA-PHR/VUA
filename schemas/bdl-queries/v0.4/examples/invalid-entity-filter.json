@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "catalog.list",
+  "params": {
+    "text": null,
+    "entityType": "avatar"
+  }
+}
