@@ -156,6 +156,7 @@ export type { DispatchResult, TutorialAction, TutorialPort, TutorialSnapshot } f
 export type { VuaGateway } from "./gateway.ts";
 export { emptyGateway } from "./empty-gateway.ts";
 export { createGatewayState } from "./create.ts";
+export type { GatewayStateName } from "./create.ts";
 export type { FixtureTaskPort } from "./fixture-gateway.ts";
 export {
   GatewayProvider,

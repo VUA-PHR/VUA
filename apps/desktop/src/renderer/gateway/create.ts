@@ -2,7 +2,11 @@ import { createElectronGateway } from "./electron-gateway.ts";
 import { emptyGateway } from "./empty-gateway.ts";
 import { fixtureGateway } from "./fixture-gateway.ts";
 import type { VuaGateway } from "./gateway.ts";
-import { readStoredScenario, resolveScenarioName, type ScenarioName } from "../app/resolve-scenario.ts";
+import {
+  anyFixturePort,
+  readDevPortSelection,
+  type DevPortSelection,
+} from "../app/dev-port-selection.ts";
 import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
 
 /**
@@ -12,11 +16,49 @@ import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
  *   not-run 状态;fixture-gateway 模块在此分支不可达,被 Rollup 剔除
  *   (check-leak 验证)。AMF 契约切片接入后,此处装配经 window.vua.gateway
  *   的 Electron live 实现,页面零重写;
- * - 开发构建:?scenario= 或 DevScenarioBar(sessionStorage)选择 fixture。
+ * - 开发构建(018 批 1,per-port 混合装配):live(真实 Electron 链路)为
+ *   基线;开发模式区(设置-实验性,会话级)可把任一端口切到 fixture——
+ *   任一 fixture 端口即「演示数据」徽标恒显(原则①聚合语义)。场景套装
+ *   切换(DevScenarioBar)退役(C1);fixture 数据档位由装配内固定档承载,
+ *   场景资产按端口拆档演进(018 §4.4)。
  */
+
+/** per-port 混合装配:selection 覆盖的端口取 fixture,其余取 live 基线。
+ *  live 基线在无 Electron 宿主时为 emptyGateway(not-run 诚实空态)——
+ *  「live 目标」在无宿主浏览器里诚实呈现不可用,不伪造。 */
+function assembleDevGateway(
+  selection: DevPortSelection,
+  initialGoals: StoredGoalsV1 | null,
+): VuaGateway {
+  const live =
+    window.vua === undefined
+      ? emptyGateway(initialGoals)
+      : createElectronGateway(window.vua, initialGoals);
+  const fixture = fixtureGateway("demo-mixed", initialGoals);
+  return {
+    environment: selection.environment === "fixture" ? fixture.environment : live.environment,
+    tutorial: selection.tutorial === "fixture" ? fixture.tutorial : live.tutorial,
+    modelProduction:
+      selection.modelProduction === "fixture" ? fixture.modelProduction : live.modelProduction,
+    toolCatalog: selection.toolCatalog === "fixture" ? fixture.toolCatalog : live.toolCatalog,
+    task: selection.task === "fixture" ? fixture.task : live.task,
+    settings: selection.settings === "fixture" ? fixture.settings : live.settings,
+    acquire: selection.acquire === "fixture" ? fixture.acquire : live.acquire,
+    warehouseCommands:
+      selection.warehouseCommands === "fixture"
+        ? fixture.warehouseCommands
+        : live.warehouseCommands,
+    projectOps: selection.projectOps === "fixture" ? fixture.projectOps : live.projectOps,
+    packages: selection.packages === "fixture" ? fixture.packages : live.packages,
+    dataSource: () => (anyFixturePort(selection) ? "fixture" : live.dataSource()),
+  };
+}
+
+export type GatewayStateName = "live" | "not-run" | "dev-mixed";
+
 export function createGatewayState(
   initialGoals: StoredGoalsV1 | null,
-): { gateway: VuaGateway; name: ScenarioName } {
+): { gateway: VuaGateway; name: GatewayStateName } {
   if (!import.meta.env.DEV) {
     // F2:Electron 宿主内走 live Gateway(任务/环境直达应用层);纯浏览器
     // 打开生产产物时无 preload,保持 not-run 诚实空态(check-leak 验证
@@ -29,11 +71,14 @@ export function createGatewayState(
       name: "not-run",
     };
   }
-  const params = new URLSearchParams(window.location.search);
-  const requested = params.get("scenario") ?? readStoredScenario();
-  const name = resolveScenarioName(true, requested);
-  return {
-    gateway: name === "not-run" ? emptyGateway(initialGoals) : fixtureGateway(name, initialGoals),
-    name,
-  };
+  // 018 批 1:per-port 混合装配(开发模式区选择;DevScenarioBar 套装退役)
+  const selection = readDevPortSelection();
+  if (Object.keys(selection).length === 0) {
+    // 无 per-port 覆盖:live 基线(无宿主=not-run 诚实空态)
+    if (window.vua === undefined) {
+      return { gateway: emptyGateway(initialGoals), name: "not-run" };
+    }
+    return { gateway: createElectronGateway(window.vua, initialGoals), name: "live" };
+  }
+  return { gateway: assembleDevGateway(selection, initialGoals), name: "dev-mixed" };
 }

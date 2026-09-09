@@ -1,5 +1,4 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
-import { DevScenarioBar } from "./app/DevScenarioBar.tsx";
 import { saveDebugMode, useDebugMode } from "./app/debug-mode.ts";
 import {
   businessModules,
@@ -27,7 +26,6 @@ import {
   type GoalId,
   type StoredGoalsV1,
 } from "./app/onboarding-model.ts";
-import type { ScenarioName } from "./app/resolve-scenario.ts";
 import { resourceSaverActive, resourceSaverSource } from "./app/resource-saver.ts";
 import { storageKeys } from "./app/storage-keys.ts";
 import { Button } from "./components/primitives/Button.tsx";
@@ -62,6 +60,7 @@ import {
   downloadDiagnostics,
 } from "./features/settings/diagnostics.ts";
 import { ExperimentalCommands } from "./features/settings/experimental-commands.tsx";
+import { DevModeSection } from "./features/settings/dev-mode-section.tsx";
 import { useAutoDeleteOriginals } from "./app/delete-originals-auto.ts";
 import { appMeta } from "./app/app-meta.ts";
 import { NavOverflowMenu } from "./app/NavOverflowMenu.tsx";
@@ -75,6 +74,7 @@ import type { CommandItem } from "./features/command-palette/command-palette-mod
 const NebulaCanvas = lazy(() => import("./components/three/NebulaCanvas.tsx"));
 import {
   createGatewayState,
+  type GatewayStateName,
   GatewayProvider,
   useDataSource,
   useEnvironmentView,
@@ -190,6 +190,13 @@ function ExperimentalSettingsPage() {
       <Card>
         <ExperimentalCommands />
       </Card>
+      {/* 开发模式区(018 批 1,裁决 13 备稿授权):仅 DEV 构建渲染,
+          生产构建零存在(leak 指纹扩展覆盖 per-port 选择键) */}
+      {import.meta.env.DEV ? (
+        <Card>
+          <DevModeSection />
+        </Card>
+      ) : null}
     </div>
   );
 }
@@ -564,13 +571,11 @@ type NavPhase = "expanded" | "collapsing" | "collapsed" | "expanding";
 function AppShell({
   page,
   navigate,
-  scenarioName,
   goals,
   actions,
 }: {
   page: PageId;
   navigate: (target: PageId) => void;
-  scenarioName: ScenarioName;
   goals: StoredGoalsV1 | null;
   /** 壳层注入的动作(openPalette/navigate 由 AppShell 内部补齐,见 pageActions) */
   actions: Omit<PageActions, "openPalette" | "navigate">;
@@ -1061,7 +1066,6 @@ function AppShell({
           onClose={() => setNavMenu(null)}
         />
       ) : null}
-      {import.meta.env.DEV ? <DevScenarioBar active={scenarioName} /> : null}
     </div>
   );
 }
@@ -1073,7 +1077,7 @@ export function App() {
   );
   // Gateway 装配(G3):生产构建恒为 emptyGateway(not-run);
   // fixture 仅 DEV 可达——硬防线在 gateway/create.ts
-  const [{ gateway, name }] = useState<{ gateway: VuaGateway; name: ScenarioName }>(() =>
+  const [{ gateway, name }] = useState<{ gateway: VuaGateway; name: GatewayStateName }>(() =>
     createGatewayState(storedGoals),
   );
   // 启动入口决策:引导未完成时 vua-last-page 不能绕过(onboarding-model 测试覆盖)
@@ -1167,7 +1171,6 @@ export function App() {
       <AppShell
         page={page}
         navigate={navigate}
-        scenarioName={name}
         goals={storedGoals}
         actions={actions}
       />

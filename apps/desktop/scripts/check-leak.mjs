@@ -72,6 +72,10 @@ const payloads = [
   (s) =>
     [...s].length >= MIN_PAYLOAD_LENGTH && !mainValues.some((m) => m.includes(s)),
 );
+// 018 备注:开发模式 per-port 选择(DEV-only)的存储键常量位于主模块
+// storage-keys.ts(键唯一来源纪律),其字符串随主包合法存在但生产构建
+// 不读不写(readDevPortSelection 仅在 import.meta.env.DEV 分支被调用,
+// 构建期被静态剔除)——故不纳入指纹集,避免常量性误报。
 
 if (payloads.length === 0) {
   console.error("check-leak: 未提取到任何指纹,扫描无效");
