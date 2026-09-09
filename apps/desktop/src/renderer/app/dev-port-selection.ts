@@ -1,3 +1,4 @@
+import { fixtureNames } from "./resolve-scenario.ts";
 import { storageKeys } from "./storage-keys.ts";
 
 /**
@@ -29,38 +30,57 @@ export type DevPortTarget = "live" | "fixture";
 
 export type DevPortSelection = Partial<Record<DevPortId, DevPortTarget>>;
 
+/** fixture 数据档位(场景资产按端口拆档的过渡形态:档位决定 fixture 端口
+ *  的数据形态,沿用既有场景资产;词表外忽略) */
+export type FixtureTier = (typeof fixtureNames)[number];
+
+export const fixtureTierOptions: readonly FixtureTier[] = [...fixtureNames];
+
+export interface DevPortSelectionState {
+  readonly targets: DevPortSelection;
+  readonly fixtureTier: FixtureTier;
+}
+
 /** 存储载荷解析:JSON 对象且键在端口词表、值在目标词表才收;其余忽略 */
-export function parseDevPortSelection(stored: string | null): DevPortSelection {
-  if (stored === null || stored === "") return {};
+export function parseDevPortSelection(stored: string | null): DevPortSelectionState {
+  if (stored === null || stored === "") return { targets: {}, fixtureTier: "demo-mixed" };
   let parsed: unknown;
   try {
     parsed = JSON.parse(stored);
   } catch {
-    return {};
+    return { targets: {}, fixtureTier: "demo-mixed" };
   }
-  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return {};
-  const selection: DevPortSelection = {};
-  for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+  if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return { targets: {}, fixtureTier: "demo-mixed" };
+  }
+  const record = parsed as Record<string, unknown>;
+  const targets: DevPortSelection = {};
+  for (const [key, value] of Object.entries(record)) {
     if (!(devPortIds as readonly string[]).includes(key)) continue;
     if (value !== "live" && value !== "fixture") continue;
-    selection[key as DevPortId] = value;
+    targets[key as DevPortId] = value;
   }
-  return selection;
+  const fixtureTier = (fixtureNames as readonly string[]).includes(
+    record.fixtureTier as string,
+  )
+    ? (record.fixtureTier as FixtureTier)
+    : "demo-mixed";
+  return { targets, fixtureTier };
 }
 
 /** 会话级读取;存储不可用 = {}(保守,全 live) */
-export function readDevPortSelection(): DevPortSelection {
+export function readDevPortSelection(): DevPortSelectionState {
   try {
     return parseDevPortSelection(sessionStorage.getItem(storageKeys.devPortSelection));
   } catch {
-    return {};
+    return { targets: {}, fixtureTier: "demo-mixed" };
   }
 }
 
 /** 会话级写入;空选择 = 移除键(回全 live) */
-export function writeDevPortSelection(selection: DevPortSelection): void {
+export function writeDevPortSelection(state: DevPortSelectionState): void {
   try {
-    const entries = Object.entries(selection).filter(
+    const entries = Object.entries(state.targets).filter(
       ([, target]) => target === "live" || target === "fixture",
     );
     if (entries.length === 0) {
@@ -69,7 +89,7 @@ export function writeDevPortSelection(selection: DevPortSelection): void {
     }
     sessionStorage.setItem(
       storageKeys.devPortSelection,
-      JSON.stringify(Object.fromEntries(entries)),
+      JSON.stringify({ ...Object.fromEntries(entries), fixtureTier: state.fixtureTier }),
     );
   } catch {
     /* 存储不可用:选择仅本次内存生效 */
@@ -77,6 +97,6 @@ export function writeDevPortSelection(selection: DevPortSelection): void {
 }
 
 /** 聚合语义(原则①):任一端口 fixture = 演示数据(徽标恒显依据) */
-export function anyFixturePort(selection: DevPortSelection): boolean {
-  return Object.values(selection).some((target) => target === "fixture");
+export function anyFixturePort(targets: DevPortSelection): boolean {
+  return Object.values(targets).some((target) => target === "fixture");
 }

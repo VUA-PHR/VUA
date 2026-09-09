@@ -6,7 +6,8 @@ import {
   readDevPortSelection,
   writeDevPortSelection,
   type DevPortId,
-  type DevPortSelection,
+  fixtureTierOptions,
+  type DevPortSelectionState,
   type DevPortTarget,
 } from "../../app/dev-port-selection.ts";
 
@@ -33,13 +34,24 @@ const portLabels: Record<DevPortId, string> = {
 };
 
 export function DevModeSection() {
-  const [selection, setSelection] = useState<DevPortSelection>(() => readDevPortSelection());
+  const [state, setState] = useState<DevPortSelectionState>(() => readDevPortSelection());
+  const selection = state.targets;
+  const setFixtureTier = (tier: DevPortSelectionState["fixtureTier"]) => {
+    const next: DevPortSelectionState = { ...state, fixtureTier: tier };
+    setState(next);
+    writeDevPortSelection(next);
+    // 装配点在 Gateway 装配(createGatewayState):整页重载生效
+    window.location.reload();
+  };
 
   const setTarget = (port: DevPortId, target: DevPortTarget) => {
-    const next: DevPortSelection = { ...selection };
-    if (target === "live") delete next[port];
-    else next[port] = target;
-    setSelection(next);
+    const next: DevPortSelectionState = {
+      targets: { ...state.targets },
+      fixtureTier: state.fixtureTier,
+    };
+    if (target === "live") delete next.targets[port];
+    else next.targets[port] = target;
+    setState(next);
     writeDevPortSelection(next);
     // 装配点在 Gateway 装配(createGatewayState):整页重载生效
     window.location.reload();
@@ -48,9 +60,25 @@ export function DevModeSection() {
   return (
     <div className="vua-page__stack">
       <p className="vua-caption vua-text-secondary">{copy.devModeDesc}</p>
+      <div className="vua-project-compat__row">
+        <label>
+          <span className="vua-caption vua-text-secondary">{copy.fixtureTierLabel}</span>{" "}
+          <select
+            value={state.fixtureTier}
+            aria-label={copy.fixtureTierLabel}
+            onChange={(event) => setFixtureTier(event.target.value as DevPortSelectionState["fixtureTier"])}
+          >
+            {fixtureTierOptions.map((tier) => (
+              <option key={tier} value={tier}>
+                {tier}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
       <ul className="vua-project-compat__specs">
         {devPortIds.map((port) => {
-          const target: DevPortTarget = selection[port] === "fixture" ? "fixture" : "live";
+          const target: DevPortTarget = state.targets[port] === "fixture" ? "fixture" : "live";
           return (
             <li key={port}>
               <strong>{portLabels[port]}</strong>{" "}
@@ -73,7 +101,7 @@ export function DevModeSection() {
         })}
       </ul>
       <p className="vua-caption vua-text-secondary">
-        {format(copy.devModeReloadNote, { count: String(Object.keys(selection).length) })}
+        {format(copy.devModeReloadNote, { count: String(Object.keys(state.targets).length) })}
       </p>
     </div>
   );

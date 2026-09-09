@@ -1527,6 +1527,7 @@ rolled_back: "롤백됨",
   dev: {
     devModeTitle: '개발 모드(포트별 연결 대상)',
     devModeDesc: '게이트웨이 포트별로 라이브 연결과 데모 픽스처 사이를 개별 전환합니다. 픽스처 포트가 있는 동안 데모 데이터 배지가 계속 표시됩니다. 세션 단위로 적용되며 변경 시 페이지를 다시 불러옵니다. 프로덕션 빌드에는 표시되지 않습니다.',
+    fixtureTierLabel: '픽스처 데이터 계층(fixture로 설정된 포트에 적용)',
     portEnvironment: '환경',    portTutorial: '가이드',    portModelProduction: '모델 제작',    portToolCatalog: '도구 카탈로그',    portTask: '작업',    portSettings: '설정',    portAcquire: '창고(읽기)',    portWarehouseCommands: '창고(쓰기)',    portProjectOps: '프로젝트 작업',    portPackages: '패키지',
     targetFixture: '데모 픽스처로 전환',
     targetLiveReset: '라이브로 재설정',

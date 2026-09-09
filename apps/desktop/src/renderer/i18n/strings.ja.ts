@@ -1532,6 +1532,7 @@ rolled_back: "ロールバック済み",
   dev: {
     devModeTitle: '開発モード(ポート別接続先)',
     devModeDesc: 'ゲートウェイの各ポートをライブ接続とデモフィクスチャの間で個別に切り替えます。いずれかのポートがフィクスチャの間はデモデータバッジが表示され続けます。セッション単位で有効。変更はページ再読み込みで適用されます。本番ビルドには決して表示されません。',
+    fixtureTierLabel: 'フィクスチャデータ層(フィクスチャ設定のポートに適用)',
     portEnvironment: '環境',    portTutorial: 'ガイド',    portModelProduction: 'モデル制作',    portToolCatalog: 'ツールカタログ',    portTask: 'タスク',    portSettings: '設定',    portAcquire: 'ウェアハウス(読み)',    portWarehouseCommands: 'ウェアハウス(書き)',    portProjectOps: 'プロジェクト操作',    portPackages: 'パッケージ',
     targetFixture: 'デモフィクスチャに切替',
     targetLiveReset: 'ライブに戻す',

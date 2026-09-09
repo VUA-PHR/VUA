@@ -5,7 +5,7 @@ import type { VuaGateway } from "./gateway.ts";
 import {
   anyFixturePort,
   readDevPortSelection,
-  type DevPortSelection,
+  type DevPortSelectionState,
 } from "../app/dev-port-selection.ts";
 import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
 
@@ -27,30 +27,34 @@ import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
  *  live 基线在无 Electron 宿主时为 emptyGateway(not-run 诚实空态)——
  *  「live 目标」在无宿主浏览器里诚实呈现不可用,不伪造。 */
 function assembleDevGateway(
-  selection: DevPortSelection,
+  selection: DevPortSelectionState,
   initialGoals: StoredGoalsV1 | null,
 ): VuaGateway {
   const live =
     window.vua === undefined
       ? emptyGateway(initialGoals)
       : createElectronGateway(window.vua, initialGoals);
-  const fixture = fixtureGateway("demo-mixed", initialGoals);
+  const fixture = fixtureGateway(selection.fixtureTier, initialGoals);
   return {
-    environment: selection.environment === "fixture" ? fixture.environment : live.environment,
-    tutorial: selection.tutorial === "fixture" ? fixture.tutorial : live.tutorial,
+    environment: selection.targets.environment === "fixture" ? fixture.environment : live.environment,
+    tutorial: selection.targets.tutorial === "fixture" ? fixture.tutorial : live.tutorial,
     modelProduction:
-      selection.modelProduction === "fixture" ? fixture.modelProduction : live.modelProduction,
-    toolCatalog: selection.toolCatalog === "fixture" ? fixture.toolCatalog : live.toolCatalog,
-    task: selection.task === "fixture" ? fixture.task : live.task,
-    settings: selection.settings === "fixture" ? fixture.settings : live.settings,
-    acquire: selection.acquire === "fixture" ? fixture.acquire : live.acquire,
+      selection.targets.modelProduction === "fixture"
+        ? fixture.modelProduction
+        : live.modelProduction,
+    toolCatalog:
+      selection.targets.toolCatalog === "fixture" ? fixture.toolCatalog : live.toolCatalog,
+    task: selection.targets.task === "fixture" ? fixture.task : live.task,
+    settings: selection.targets.settings === "fixture" ? fixture.settings : live.settings,
+    acquire: selection.targets.acquire === "fixture" ? fixture.acquire : live.acquire,
     warehouseCommands:
-      selection.warehouseCommands === "fixture"
+      selection.targets.warehouseCommands === "fixture"
         ? fixture.warehouseCommands
         : live.warehouseCommands,
-    projectOps: selection.projectOps === "fixture" ? fixture.projectOps : live.projectOps,
-    packages: selection.packages === "fixture" ? fixture.packages : live.packages,
-    dataSource: () => (anyFixturePort(selection) ? "fixture" : live.dataSource()),
+    projectOps:
+      selection.targets.projectOps === "fixture" ? fixture.projectOps : live.projectOps,
+    packages: selection.targets.packages === "fixture" ? fixture.packages : live.packages,
+    dataSource: () => (anyFixturePort(selection.targets) ? "fixture" : live.dataSource()),
   };
 }
 
@@ -73,7 +77,7 @@ export function createGatewayState(
   }
   // 018 批 1:per-port 混合装配(开发模式区选择;DevScenarioBar 套装退役)
   const selection = readDevPortSelection();
-  if (Object.keys(selection).length === 0) {
+  if (Object.keys(selection.targets).length === 0) {
     // 无 per-port 覆盖:live 基线(无宿主=not-run 诚实空态)
     if (window.vua === undefined) {
       return { gateway: emptyGateway(initialGoals), name: "not-run" };
