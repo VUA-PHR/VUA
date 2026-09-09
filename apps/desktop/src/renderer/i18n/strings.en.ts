@@ -153,7 +153,26 @@ demoTaskTitle: "Demo task",
       settingsDonate: "Donate",
       packages: "Package Manager",
       projectCompat: "Project compatibility",
+      importMaterial: "Material Import",
     },
+  },
+
+  /** Material import page (M6 IMP-2 batch A, proposal 015 reconciliation):
+   *  two honest sections - cloud (embedded browse, capability-gated) and
+   *  local (W18 submission flow migrated verbatim, zero new vocabulary). */
+  importPage: {
+    title: 'Material Import',
+    subtitle: 'Cloud download and local import on one continuous path',
+    cloudTitle: 'Cloud download',
+    cloudBadge: 'VUA embedded browse - session isolated',
+    cloudUnavailable: 'In-app embedded browsing is not enabled yet. This panel will come alive once the capability is turned on; platform pages keep their own purchase flow and VUA adds none.',
+    addressAria: 'Embedded page address',
+    addressPlaceholder: 'https://booth.pm',
+    openCta: 'Open',
+    closeCta: 'Close embedded view',
+    blockedTitle: 'Blocked by policy (reported, not silent)',
+    noView: 'No embedded view open.',
+    localTitle: 'Local import',
   },
   /** Hub landing page (S-VFX-2): default entry */
   home: {

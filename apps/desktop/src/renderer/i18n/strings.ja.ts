@@ -144,9 +144,27 @@ demoTaskTitle: "デモタスク",
       settingsDonate: "寄付",
       packages: "パッケージマネージャー",
       projectCompat: "プロジェクト互換",
+      importMaterial: "マテリアル取り込み",
     },
   },
   /** ハブ ランディングページ(S-VFX-2):既定の開始ページ */
+  /** マテリアル取り込みページ(M6 IMP-2 バッチ A、proposal 015 整合):
+   *  二つの誠実なセクション——クラウド(埋め込みブラウズ、能力二状態ゲート)
+   *  とローカル(W18 提出フローをそのまま移行、語彙追加ゼロ)。 */
+  importPage: {
+    title: 'マテリアル取り込み',
+    subtitle: 'クラウドダウンロードとローカル取り込みを一つの連続パスで',
+    cloudTitle: 'クラウドダウンロード',
+    cloudBadge: 'VUA 埋め込みブラウズ · Session 分離',
+    cloudUnavailable: 'アプリ内埋め込みブラウズはまだ有効化されていません。能力が有効になるとこのパネルが使えます。プラットフォームページの購入フローはそのまま保持され、VUA は一切提供しません。',
+    addressAria: '埋め込みページのアドレス',
+    addressPlaceholder: 'https://booth.pm',
+    openCta: '開く',
+    closeCta: '埋め込みビューを閉じる',
+    blockedTitle: 'ポリシーによりブロック(報告済み、非黙認)',
+    noView: '開いている埋め込みビューはありません。',
+    localTitle: 'ローカル取り込み',
+  },
   home: {
     tagline: "VRChat のプレイと創作のコマンドハブ",
     commandCta: "ページ・機能・操作を検索…",
