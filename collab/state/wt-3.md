@@ -1,48 +1,38 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 6af59a7
+baseline_commit: 2e991a7
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**013 读面四查询 TS 面登记完成(12ca99f)**:listProjects/inspectProject/
-lockStatus 补登记(第一翼 environmentManagers 已于 d4f781a)——013 读面
-TS 面全量就绪,消费 UI 批解锁(B6 迁移/仅查看交互＋T-C 检测段接线可开工)。
-errors.project.projectNotFound 四语随批登记(核心定形 messageKey)。
-## 自基线交付(6af59a7 合并 main 后)
-- main 合并维护(fast-forward 至 6af59a7;带入核心 013 读面翼完整交付
-  5b65550 等);
-- **12ca99f:013 三查询 TS 面补登记**:
-  - contracts:listProjects(空参)/inspectProject(projectPath)/
-    lockStatus(projectPath)三 Query＋信封强度 Result
-    (projects/diagnostics/associations 保持文档型数组不复制;lockStatus
-    mutationStatus 三态 none/leftover/unreadable 类型化)＋请求窄化守卫
-    ＋两 union;
-  - desktop-gateway:三 Request 接口＋METHOD_KINDS 三行＋守卫 case(穷举
-    回归表扩展);
-  - gateway-router:verbatim 映射(listProjects 空;两 path 查询透传);
-  - mock-provider:诚实空列表/类型化 project_not_found 缺席(category=
-    validation,照核心 provider_host.rs 3484)/lockStatus none(穷尽性
-    机械跟随,声明);
-  - **i18n:errors.project.projectNotFound 四语登记**(核心定形 messageKey
-    ——注册表缺席语义:未注册路径无可检视内容),消费批到达即用;
-- **证据(2026-09-10 本机)**:contracts build＋桌面 check 全链绿(typecheck＋
-  vitest 51 文件 424 测试＋build＋boundary＋i18n tables aligned＋contrast＋
-  leak 159 指纹零命中)＋orchestrator-provider check 绿(4 文件 23 测试)。
+**proposal 017 三项桌面表态已交(3b509f0,017 内联「表态（桌面）」)**:①传输
+面=同进程 preload 窄面复用（overlay=同进程独立 BrowserWindow,零新增连接
+语义;事件走既有广播,快照按需轮询）;②会话身份=不引入（本地来源窗口即身份;
+动作走既有命令面同审计）;③投影清单=任务卡（常驻主卡,OverlayReadModel 已
+落）＋生产状态卡首批,下载卡次之,检测卡不进首屏（BG-3 承载）。**核心可据
+此接 wire 面（§4 前置已清）**。013 消费 UI 批(B6 交互＋检测段)与裁决 13
+备稿仍在桌面队列。
+## 自基线交付(2e991a7 合并 main 后)
+- main 合并维护(fast-forward 至 2e991a7);
+- **3b509f0:017 桌面表态**(纯文档):§4 三项——传输/连接面（同进程窗口模型
+  两层故障隔离:受监督 provider 进程＋渲染进程模型;事件既有广播零新增;
+  轮询与纯函数纪律契合）、会话身份（不引入,同进程下本地来源窗口即身份,
+  动作同受理路径同审计;v1.1 VR/跨进程随该提案重议）、呈现投影清单（四卡
+  取舍表＋初版收窄:任务卡＋生产状态卡;检测卡不进首屏,BG-3 承载——引用
+  不复制）。VR 不进 M7/1.0.0 维持（2026-09-06 用户裁决）。
 ## 阻塞
-- 无桌面阻塞。013 消费 UI 批(B6 迁移/仅查看交互＋T-C 检测段接线)已解锁
-  ——下一刀候选;裁决 13 备稿排期在案。
+- 无桌面阻塞。017 wire 面核心接（表态后解锁）;overlay 窗口实现切片随 M7
+  排期（桌面域内）;013 消费 UI 待核心三查询接线（已 live——消费批可排）。
 ## 下次合并意图
-12ca99f 请集成验收合并(contracts＋orchestrator-provider 机械跟随＋
-gateway-router＋i18n 四表)。批 B-3(81b8510)/64d22a7/f0779b5 如未并入
-请一并核对。
+3b509f0(collab-only 表态批)随轮带入免测。12ca99f(013 读面 TS 全量)如未
+并入请一并核对。
 ## 留言
-- [→集成] 12ca99f 请验收(013 读面 TS 面全量就绪;envelope 强度承载——
-  文档型数组不复制进契约面)。
-- [→核心] 四查询 TS 面全量登记完成(12ca99f)——project_not_found 的
-  category=validation 照你方 provider_host.rs 3484 用法;messageKey
-  errors.project.projectNotFound 已四语登记(消费批到达即用)。
-- [→环境] 013 读面消费通道全量就绪(TS 面)——检测段 UI 呈现(B6 交互
-  ＋兼容矩阵检测项)随消费批接线,届时 vuaIdentity 三态随行呈现。
-- (历史留言消化:wt-5 TS 镜像校对/节奏告知——已闭环。)
+- [→核心] **017 §4 三项桌面表态已交（017 内联）**:传输面=同进程窗口模型
+  （无需独立连接实例;事件既有广播即达,快照按需轮询）;会话身份=不引入;
+  投影清单=四卡取舍（§表态节表格,初版收窄任务卡＋生产状态卡）。据此可接
+  wire 面;overlay 窗口实现切片（创建/置顶/显隐/入口形态）桌面域内随 M7
+  排期,与你的服务侧投影对接时请知会。
+- [→集成] 017 桌面表态已交（BG-2 协作闭环——核心骨架＋桌面三问表态）;
+  12ca99f(013 读面 TS 全量)如未并入请一并核对。
+- (历史留言消化:核心 messageKey 定形——已登记(64d22a7/12ca99f)。)
