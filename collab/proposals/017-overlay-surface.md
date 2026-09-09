@@ -81,3 +81,52 @@ inspection-evidence 冻结后，其读面（inspection-queries v0.1，已仲裁�
 本提案**不冻结任何面**。Overlay Surface 的冻结（若未来需要）硬前置＝
 §4 三项桌面表态齐＋跨域接口提案（传输面词表/连接语义）受理＋消费测试＋
 双语协议本。当前全部未发生。
+
+## 表态（桌面，2026-09-10——§4 三项）
+
+### 1. 传输/连接面：同进程 preload 窄面复用，零新增连接语义
+
+- **连接形态**：桌面 overlay = 同一 Electron 进程内的独立 BrowserWindow
+  （游戏时置顶），与主窗口共用同一 VuaDesktopApiV1 preload 契约面——
+  **不需要独立 Gateway 连接实例**：Gateway/Provider 本就是独立受监督进程
+  （故障隔离双保险的第一层），overlay 窗口渲染进程崩溃由 Electron 进程
+  模型天然隔离（第二层），不波及主线窗口与服务面；
+- **事件获取**：application events 的广播路径（broadcastGatewayEvent）
+  按 isAllowedLocalSender 投递**全部本地来源窗口**——overlay 窗口天然
+  在列，任务/生产事件零新增即达；**快照查询按需轮询**（overlay 显影时
+  拉取读面，不常驻订阅）——纯函数纪律（017 §2）与轮询天然契合；
+- **不引入订阅/推送新语义**：既有广播＋按需轮询已覆盖 overlay 一屏
+  所需；新增推送词表违反「事实面零新增」。VR 传输不假设（2026-09-06
+  用户裁决），v1.1 另议。
+
+### 2. overlay 会话身份：不引入
+
+- 同进程窗口模型下，身份即「本地来源窗口」（isAllowedLocalSender 已把守
+  事件与 IPC 两面）；overlay 提交的动作走既有命令面（同一受理路径/同一
+  九态纪律/同一审计 correlationId），服务端**无需区分**动作来自主线窗口
+  还是 overlay 窗口——同一用户同一意图；
+- 新增 overlay 会话身份＝新增契约面表达，违反事实面零新增；**若未来
+  VR/跨进程 overlay 出现（v1.1+），身份表达随该提案重议**——本表态
+  不预设其形态。
+
+### 3. 呈现投影清单（信息架构，桌面域；核心随清单演进字段裁剪）
+
+| 卡 | 内容（投影来源） | 呈现策略 |
+| --- | --- | --- |
+| 任务卡（常驻主卡） | 运行中/近期任务：taskId/state/correlationId（OverlayReadModel 任务卡投影，017 §2 已落） | 恒显；空任务＝诚实空态（017 §2 空态即终态） |
+| 生产状态卡 | 当前 plan 摘要/最近 Build Record 状态（production-use-case v0.2 plan/record 读面投影） | 生产会话相关时呈现 |
+| 下载/导入进度卡 | 下载事件/warehouse 任务投影（bdl-queries v0.4 downloads.listCompleted＋任务面） | 有进行中项时呈现 |
+| 检测/来源卡 | project-inspection 投影 | **不进 overlay 首屏**（低频信息，BG-3 Inspection/Release 页面承载——017 §5 引用不复制） |
+
+- 排布：单列纵向卡堆，最新活动优先；投影=字段裁剪与排序，不跨源推导
+  （017 §1 原则照录）；
+- 初版收窄：批一仅任务卡（OverlayReadModel 已落骨架）＋生产状态卡；
+  下载/检测卡随消费批演进（核心字段裁剪随清单，非新事实）。
+
+### 实现面备注（桌面域内，随 M7 排期）
+
+overlay 窗口创建/置顶/显隐（Electron BrowserWindow＋alwaysOnTop）与
+overlay 入口（DevScenario 之外的正式入口形态）＝桌面域实现切片；VR
+Dashboard/VR Overlay 不进 M7 与 1.0.0（用户裁决维持）。
+
+——以上三项为桌面域表态；核心可在本表态基础上接 wire 面（§4 前置已清）。
