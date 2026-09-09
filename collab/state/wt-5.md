@@ -2,182 +2,66 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 827b638
+baseline_commit: 7da1b5f
 updated: 2026-09-09
 ---
 ## 当前焦点
-**用户 13 项裁决已登记（U6/U7/U8 全部落账）**。数据相关五项裁定与后续：
-- **裁决 5（U7-③ 批准）＝IMP-3 契约先行开工依据**——下载落库归数据域
-  bdl-commands 新契约（协议面数据主导冻结硬前置）；**下一工作时段（今夜
-  23:00）开工 IMP-3 契约先行切片**。
-- **裁决 6（U8-①）**：「包的真实来源」＝项目内 VPM 包；素材包也可变为 VPM 包
-  被管理，理论上也可能被包含——kind 词表边界备案（missing_package 语义覆盖）。
-- **裁决 7/8（U8-②③）**：迁移＝复制到新目录（原地接管不适用，冲突③销账）；
-  迁移后写操作含 Unity 工程文件（当 VUA 原生项目看待＋文件夹加独有标识文件）
-  ——独有标识文件＝VUA 元数据存储面（裁决 12：范围只在列表显示）。
-- **裁决 10（U8-⑤）**：＝数据分支 (a)——**W14 词表零变更，bdl-commands v0.4
-  升版不启动**；条目 2 呈现层屏蔽（桌面）。
-- **裁决 4（U7-②）**：Web 白名单参考物料＝本地爬虫 html
-  （C:\Users\AR\Documents\VRChat便捷avatar操作\_local_bdb_crawl\data\html，
-  **只读参考，严禁提交入库**）——数据侧备案（IMP-1/2 域消费，非我域文件）。
-## 自基线交付（6c4d989 后，十八 tick）
-- 无新代码交付（收尾时段登记轮）。维护轮：合并 main（12e9c0d→827b638，U6/U7/
-  U8 裁决落账批＋产线 Rust 物化/信封桥接批）追平；BOARD U6/U7/U8 冲突融合（取
-  集成裁决落账版）。
-- 本批实质产出：13 项裁决登记＋数据相关五项后续确认（本批，collab-only）。
+**IMP-3 契约先行切片已交付（2688105，slot/wt-5）**：bdl-commands v0.4 新命令
+`warehouse.importDownloads`（下载落库）——Schema＋正负例向量＋acquisition
+采纳任务＋向量驱动消费测试＋双语协议本＋REGISTRY，冻结硬前置域内部分全齐。
+开工依据＝用户裁决 U7-③；分流照 C-1（域内命名/字段自决，wire 路由归核心，
+TS 面归桌面，跨域分歧集成仲裁）；host 无关照 C-3（域清单是运行时策略，
+绝不进契约）。**待集成验收合并**。
+## 自基线交付（6c4d989 后，十九 tick）
+- **v0.4 契约先行批（2688105）**：
+  - `schemas/bdl-commands/v0.4/`：闭集升六命令；`warehouse.importDownloads`
+    （任务化）params 仅 `{ downloadIds }`——暂存路径/大小/文件名是服务端事实
+    （从 BDL download_events 折叠 `staging_completion` 解析），客户端给路径
+    ＝契约错误（负例钉死）；正例 2＋负例 6（empty-ids/ids-type/missing-ids/
+    client-path/invalid-operation/v0.3 重放）＋v0.3 五命令全套向量随版升级；
+  - `crates/acquisition/src/warehouse_download_adopt.rs`：采纳任务
+    （copy-in 复制入库、暂存文件不动；条目 kind=`downloaded_material`〔BDL
+    v0.1 冻结词表已预留〕；内容关联经 `local_artifacts.download_id` 闭合；
+    fail-fast 保留已落库条目；下载边界取消；内容→产品映射刻意不进命令——
+    Boundary IN-4 归 AMF 来源解析）；**自动生成编排刻意缺席**（未裁决，
+    v0.4 不冻结，未来决策先升版）；新增错误码
+    `downloadNotCompleted`/`stagingFileMissing`/`adoptIoFailed`；
+  - 消费测试 `import_downloads_contract_v04.rs` 6/6（向量驱动真实两下载
+    批次受理验冻结 result schema＋存储持久效果断言＋fail-fast 保已落库）；
+  - 双语协议本 bdl-commands-v0.4（EN/ZH）＋REGISTRY 行（v0.3→已取代，
+    v0.4 已冻结，冻结注记诚实声明 wire/TS 面待接、未接线不得称端到端）；
+  - **证据（2026-09-09 本机）**：workspace 61 套全绿＋clippy -D warnings
+    零告警＋新消费测试 6/6。
 - 历史交付（已全部落账）：bdl-commands v0.3 冻结、W23 冻结＋核心存储实现、
-  010 挂点批＋六承诺符合性声明、011/012 表态。
+  010 挂点批＋六承诺符合性声明、011/012 表态、13 项裁决数据侧登记。
 ## 阻塞
 - 无。
 ## 下次合并意图
-**下一工作时段（今夜 23:00）开工：IMP-3 契约先行切片**（U7-③ 批准＝开工依据；
-下载落库归数据域 bdl-commands 新契约，协议面数据主导冻结硬前置）。本状态批
-（仅 collab/）随轮并入 main（免全量测试）。
-本状态批（仅 collab/）随轮并入 main（免全量测试）。数据下一切片＝W23/生产证据
-存储实现（随 W20 实现切片）或 M5 新分配。
+**v0.4 契约先行批（2688105）＋本状态批请集成验收合并**（我域文件＋文档；
+wire 路由与 TS 面登记是核心/桌面后续批，非本批内容）。合并后数据下一
+切片候补：①W23/生产证据存储实现（随 W20 实现切片）；②采纳任务与核心
+wire 路由对接批的配套（若核心路由批提出域内调整随动）。
 ## 留言
-- [→环境][→核心] **条目 2 守卫规则面的词表态意**（回应环境路由「归你方词表」；
-  收尾时段安全收尾，collab-only）：
-  1. **现状（数据面事实）**：产物模式守卫在生成任务内评估，语义＝W14 冻结
-     「全局默认恒有值，条目恒有生效模式（override ?? composed global）」——
-     用户期望的「本地素材无产物模式」状态在现语义下**不存在**（该分歧已提
-     BOARD U8 问⑤ [需用户]：呈现层 vs 语义变更）。
-  2. **词表态意（随 U8 问⑤裁决分支）**：
-     - 裁决 (a) 呈现层处理：**词表零变更**——守卫规则面维持 W14（守卫照常
-       按生效模式评估；「无产物模式」是 UI 呈现概念非数据概念，归桌面）；
-     - 裁决 (b) 语义变更（未开开关＝无产物模式）：需 **bdl-commands v0.4
-       重大升版**（全局默认 nullable 化或独立 gate 字段）＋数据面迁移＋生成
-       守卫重定义——数据主导，随 U6/U8 裁决立项。
-  3. **「导入时删除触发」**：删除编排已由 008 路径 a 裁定归桌面侧（生成 Done
-     后逐条目独立 deleteOriginals，守卫在服务端任务内）——词表 v0.3 已覆盖
-     删除命令本身，**无新词表需求**；「导入→生成→删除」三段链的编排窗口语义
-     归 010 脉络后续提案（同 U8 问④），非单方词表态意可定。
-  4. **结论**：守卫规则面维持 W14/v0.3 冻结不变（裁决前诚实声明）；词表动作
-     完全随 U6/U8 问⑤用户裁决分支，数据侧随时可启动 (b) 分支的 v0.4 升版。
-- [→核心] proposal 012 数据表态（提案入 main 后转内联「表态（数据）」节；三点已被核心收敛吸收为「数据三点确认」）：- [→全部][→集成] **W15 九条用户问题登记与意图确认**（用户指令：只确认意图不动
-  实现；本节为登记簿＋数据侧两项详析；BOARD U6 已提关键歧义裁决请求）：
-
-  **A组（设置-实验性交互）**
-  1. A4 联动取消（主开关取消→「生成后删除原始素材文件」自动取消；现状仅置灰）——
-     归桌面＋核心（联动语义），数据面无涉及（两开关均不写 BDL 数据，仅
-     setGlobalDefaultMode 词表交互）。
-  2. A7 本地素材产物模式呈现与用户期望冲突——**涉 W14 冻结语义，数据面事实**：
-     W14 冻结语义＝「全局默认恒有值」（use_original_unitypackage 也是一个值），
-     任何条目恒有 effectiveMode（override ?? 全局默认），因此「本地素材无产物
-     模式」这一状态在现语义下**不存在**；条目 2 的期望（未开开关＝无产物模式／
-     无条目动作）需要 either (a) 呈现层处理（守卫语义不变，UI 不呈现切换入口
-     ——桌面＋核心裁决）或 (b) W14 语义变更（全局默认 nullable 化——词表升版
-     ＋数据面迁移，重裁决）。**需用户澄清期望层级后核心/桌面表态**（已并入
-     BOARD U6 问⑤）。
-  3. 素材导入页面＋云端 Web 浏览缺口——归桌面＋审阅子代理＋集成（M6/M7 增设
-     阶段提案）；数据面相关：导入走 warehouse.import（v0.3 已冻结）、云端下载
-     走 download 管线（均已就绪，呈现层聚合是缺口）。
-  
-  **B组（项目兼容/迁移）——数据侧两项详析**
-  4. Unity 项目名亚洲字符限制→项目备注 feature——归项目域（环境 T-A 检查面
-     可加 displayName 备注；Unity 工程名本身不可改是 Unity 约束）。feature
-     提案需产品裁决，数据面无涉及。
-  5. **「项目/包真实来源」现状判定——数据侧事实与缺口**（用户问「存了什么、
-     缺什么」）：
-     - **项目来源判定（环境域 T-A，project-inspection v0.1）**：现状线索仅有
-       「管理器注册表登记」——VCC＝读 settings.json 的 userProjects（显式
-       路径清单）或 legacy localProjectFolders（注册文件夹下**扫描全部子
-       目录**）；ALCOM＝读其 settings 的 userProjects（vrc-get 兼容）。每个
-       命中路径登记 associations（vcc_registered/alcom_registered，可并列）。
-       **缺口**：① 判定依据是「工具声称管理它」，**零项目固有可能证据**
-       （未检测 .vcc 目录、vpm-manifest 结构特征等任何项目内指纹）；②
-       localProjectFolders 扫描会把注册文件夹下的手建项目/其他工具项目一律
-       标为 VCC 管理（误标源）；③ 两管理器都未注册的项目（associations 空）
-       被 Schema minItems=1 排除在快照外——「来源未知」类项目不可见；④
-       associations 可并列但桌面文案只有单句「VCC / vpm 管理」（多管理器、
-       ALCOM 实际项目都被同一句笼统覆盖）。→ 用户的「线索不能断言出处」
-       成立；处置草案见下 5-a。
-     - **素材包来源判定（数据面 BDL）**：下载素材有完整来源链
-       （download_events.source_url＋artifact_mappings 的 content→booth:product
-       映射）；**本地导入素材无来源记录**（import 语义本来如此——用户手持
-       folder，来源只有「用户提供的路径」）；条目的原始件/生成 VPM 包副本
-       区分是明确的（CopyRole::Original/GeneratedVpm）。→ 「包的真实来源」
-       若指**项目内 VPM 包**（manifest 依赖），现状只有 manifest 声明
-       （声明≠来源——任何工具/人都能写 manifest）；若指**仓储素材包**，
-       下载链有、导入链无。**歧义（BOARD U6 问①）：用户所指层级？**
-  6. **迁移语义（用户推翻只读定义）——意图复述、三处冲突与数据面评估**：
-     - 意图复述：迁移＝完全复制包清单→原项目**变为 VUA 原生项目可正常写**；
-       不迁移/迁移未完成＝只读。这推翻 product-boundary 1.2.0 的只读语义
-       （ALCOM/VCC 只读兼容＋`1.0.x` 写能力一律 false）。
-     - **冲突一（与 1.2.0 禁止清单）**：迁移接管后，原项目仍在 VCC/ALCOM
-       注册表内——用户再用原工具升级包会与 VUA 双写冲突。1.2.0 禁止清单
-       明确「写 ALCOM·VCC 注册表数据库设置缓存」（不可替用户解除注册）→
-       接管语义下只能**披露＋用户手动在原工具解除注册**；若要 VUA 代解除
-       注册，需推翻 1.2.0 禁止清单一项（用户裁决）。
-     - **冲突二（与 014 冻结语义的关系）**：014 import-copy＝复制内容到
-       **新 VUA 项目**（新路径新身份，原项目只读锁）；条目 6 migrate＝原项目
-       **就地接管转原生可写**。两者语义不同可并存（B6 草案「迁移/仅查看」
-       恰好对应两操作——「仅查看」=013 只读，「迁移」=6 接管；014 的副本
-       导入是否保留需用户/产品裁决——BOARD U6 问④）。
-     - **冲突三（原子性）**：「迁移未完成＝只读」要求迁移状态机：两阶段原子
-       （①完整复制包清单到 VUA 结构＋校验→②切换 native 可写标记），中断
-       保持在 read_only——设计可行，归环境/核心实现裁决。
-     - **数据面评估**：项目包清单是 Unity 项目文件（Packages/manifest.json
-       ＋packages-lock.json），**不在 BDL**；迁移不涉 BDL 变更。词表归属
-       按 014 先例＝project-ops 独立词表行新增 project.migrate 命令（归
-       环境/核心裁决）。若用户进一步要「迁移后项目内包在 VUA 仓库可见/
-       可管」＝新语义需求（项目包→BDL 仓储导入），需另立裁决（BOARD U6
-       问④附注）。
-  
-  **C组**
-  9. C1 状态来源可信度＋DEV 场景条取消＋开发模式单独切换——归桌面＋核心
-     （fixture/live 呈现与 provider 状态面）。数据面无涉及。
-
-  **处置草案（提案，待用户/各域裁决后立项，本轮未动任何实现）**
-  - 5-a 措辞层（桌面，立即可改）：按用户草案文案修正（「此项目看起来由其它
-    软件管理？接管它可能产生未知后果」＋迁移说明详细化）。
-  - 5-b 判定增强层（环境域 T-A 后续切片提案）：① 项目固有可能证据探测
-    （.vcc 目录、vpm-manifest 特征等）作为第二维度；② localProjectFolders
-    扫描命中降级为 weak association（「未确认」）；③ associations 空的项目
-    入快照＋「来源未知」诚实标记（需 Schema 升版）。
-  - 6-a 语义模型提案（需用户裁决后立项）：项目生命周期三态 unknown→
-    read_only→native（迁移完成才可写）；迁移两阶段原子；原注册表披露＋
-    用户手动解除（不写注册表）；project-ops 新增 project.migrate 命令
-    （环境/核心裁决归属）。
-  - 6-b 014/6 并存关系与 A7 W14 语义层级——并入 BOARD U6 请用户/核心/桌面
-    裁决。
-- [→集成] **010 六承诺实现核对声明**（挂点批 31cf558 已验收合并，本声明供验收
-  档案；实现位置＝crates/acquisition/src/warehouse_import.rs 挂点段＋
-  warehouse_maintenance.rs 审计链字段；钉死测试＝warehouse_maintenance.rs
-  tests 三项＋import_contract_v03.rs 六项）：
-  1. **独立性**：生成提交失败/composed 求值失败均走类型化进度注记
-     （generationSubmitFailed，携 warehouseItemId＋reason:{:?}），导入继续、
-     照常 Done——不回滚、不静默；挂点端到端测试断言导入条目落库与 Done。
-  2. **逐条目至多一生成**：挂点在每 folder 落成点至多提交一次；守卫照常在
-     生成任务内评估（重复导入→already_generated 拒绝＝该任务自身审计回执，
-     不回滚导入）。
-  3. **取消边界**：取消检查在下一 folder 开始前；已落库条目的生成任务已在
-     TaskRuntime 独立注册（不随导入取消而取消）；未落库 folder 不触发生成。
-  4. **恢复纪律**：挂点在导入任务执行内，导入重启→inspect_required 不自动
-     重跑→不重复提交；已提交生成任务按既有恢复语义（绝不隐式续跑）。
-  5. **读时求值**：composed＝store.global_default_mode()??env_initial 在每个
-     条目落成点读取；钉死测试＝persisted_original_rules_the_hook_over_
-     the_injected_initial（persisted=original 压过注入初值 generate_vpm）。
-  6. **审计链**：GenerateVpmTaskSpec.import_correlation_id＝导入 correlation
-     →GenerateVpmResult.importCorrelationId（journal 完成载荷，手动发起经
-     skip_serializing_if 不出现）；钉死测试＝import_hook_submits_generation_
-     with_the_audit_chain（派生 correlation「<导入corr>-auto-<条目>」＋载荷
-     断言）。
-- [→核心] proposal 012 数据表态（提案入 main 后转内联「表态（数据）」节；三点已被核心收敛吸收为「数据三点确认」）：- [→核心] proposal 012 数据表态（提案入 main 后转内联「表态（数据）」节；三点已被核心收敛吸收为「数据三点确认」）：
-  1. **evidenceSummary 交界确认**：evidenceIds 身份引用（与解析文档
-     evidenceIds 同构）、本体在 W23 持久域——与 W23 形状意向一致；W23 v0.1
-     草案已交付（production-evidence，evidenceId＝uuid v7 开放身份，生成语义
-     稳定），Record 词表只钉 evidenceIds[] 数组形状即可。
-  2. **Record 冻结不等 W23：确认**——evidenceIds 是开放身份引用，Record 词表
-     不消费 evidence 本体形状（kind/subject 等在 evidence 文档内部）；W23 冻结
-     只保证 evidence 侧自洽。时序成立，012 可按自身节奏收口冻结。
-  3. **最小形状建议**：evidenceSummary 保持 evidenceIds[] 即可——kind 计数等
-     派生量由消费端从 evidence 本体聚合，避免冗余漂移。
-- [→核心] proposal 011 三处表态已转提案内联（「表态（数据）」节，b46c3a9）：
-  §5 存储面＝四生产产物不进 BDL 归 AMF 生产持久域；§7 粒度＝整文档提交＋
-  baseRevision 乐观并发；W23 交界确认＋条目模型意向（草案已落地兑现）。
-- [→集成] 在途四批随轮验收带入：v0.3 冻结批（49586f3，你方已复跑验收——以
-  合并流转为准）＋W23 草案批（0ba3071）＋011 表态批（b46c3a9）＋本状态批。
-  W23 冻结随 011 收敛互审收口，不前置。
+- [→集成] **v0.4 验收请求**（2688105）：冻结硬前置域内部分齐（Schema＋
+  向量＋消费测试＋双语协议＋REGISTRY）；**TS 登记未齐**——冻结注记已按
+  v0.3 先例诚实声明「renderer TS 面待桌面登记；wire 路由待核心执行；完成
+  接线前不得声称端到端」。验收门槛照 F-2。
+- [→核心] **wire 路由请求**：provider-host `warehouse.importDownloads`
+  路由（照 `warehouse.import` 先例：任务化受理、信封 v0.3、词表外
+  invalid_params）；C-1 分流生效——命名/字段我域已自决（`downloadIds`
+  仅身份、无路径无产品断言），路由侧如需域内调整请走提案，分歧集成仲裁。
+  挂点接线设计留言（010 五点）已消化——挂点批已落地并交六承诺符合性
+  声明，无需后续动作。
+- [→桌面] **TS 面登记请求**：bdl-commands v0.4（六命令闭集；新命令
+  importDownloads 请求/受理形状见协议本 §命令语义 6）。登记完成前 v0.4
+  冻结注记保持「未接线不得称端到端」。wt-3 留言（U8 ⑤呈现层屏蔽＝桌面
+  切片、词表零变更）已消化——裁决 10 已落账，bdl-commands v0.4 升版与
+  U8 问⑤无关（本版是下载落库新命令，W14 语义未动）。
+- [→产线] 条目 2/3 域内事实复核：**确认无出入**——deleteOriginals 协议
+  动作在 v0.4 闭集内保留（导入链路消费不变）；本地导入协议已备
+  （warehouse.import v0.3→v0.4 语义未动）。
+- [→环境] 白名单域分析留言（项 4）已消化——本地爬虫 html 只读参考、严禁
+  入库已备案（裁决 4）；域清单产出归下载/呈现域契约，bdl-commands v0.4
+  已按 C-3 保持 host 无关（域清单永不进本契约）。
 - （历史留言已消化：跨域需求意向（009/010 吸收）、010 表态（已收口）、008
   全链、U3 边界知会、术语裁定承诺——均已闭环。）
