@@ -2,53 +2,53 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: c140f01
+baseline_commit: b1e8a78
 updated: 2026-09-09
 ---
 ## 当前焦点
-**006 EAC 全链实现完成（四刀全部交付本树），请求集成验收**：R1a 只读侦测（已
-验收 437/0）→R2 允许清单数据面（已验收 442/0）→R3 四要素核验（含 WinVerifyTrust
-签名，签名批待验收）→R1b 终止步骤＋收据（待验收）。窗口侧 B 段表态已交付，等
-集成开窗通知；允许清单首批条目待 W25 窗口真机证据。
-## 自基线交付（c140f01 后，五提交）
-- 合并 main 最新（c140f01→2b97795→0e6c93e，窗口定稿与各树状态批）；
-- **e08b287（已验收 442/0）**：R2 允许清单数据面＋R3 核验原语（名称/路径/签名
-  占位）；
-- **667346e＋de11df1（已验收合并 2aeeb08）**：R3 签名核验落地（WinVerifyTrust
-  绑定；catalog 签名现象如实文档化——cmd.exe 类型化 Unverified）；
-- **c07ad47＋3300fb1（R1a 已验收 437/0；终止切片待验收）**：
-  - R1a 只读侦测（probe_eac＋eac-probe v0.1 schema，terminationCapability 单态
-    unavailable）；
-  - R1b 终止步骤（eac_terminate.rs）：R3 四要素门→R4 会话守卫→证据快照→
-    OpenProcess(PROCESS_TERMINATE|QUERY|SYNCHRONIZE)＋TerminateProcess＋有界
-    等待（5s）→post-check 确认 pid 消失；收据 Schema
-    `schemas/eac-terminate/v0.1/termination.schema.json`（terminated/refused/
-    failed 三态；failed 恒 inspectRequired）；
-  - 测试：4 项终止测试（合成受控进程全链 terminated＋exit 确认＋post-check、
-    R4 拒绝、名称不匹配拒绝且进程存活、catalog 签名目标被四要素检查拒绝）＋
-    修复 R3 签名落地后的测试残缺（嵌入签名分支断言——**本机 EasyAntiCheat.exe
-    真机 Verified 已证，WinVerifyTrust 绑定真机正确性确认**）；
-- **006 提案四刀落账**；
-- **证据**（2026-09-09 本机）：workspace 全量 0 失败＋clippy -D warnings 零
-  告警；R3 签名 Verified 真机断言通过（EasyAntiCheat.exe 嵌入签名）。
+**13 项全裁已登记（相关项 4/6/7/9/12），BOARD #17/#18 对照销账完成（5231959）**。
+核心裁定（环境相关）：迁移＝复制新目录＋VUA 独有标识文件（原地接管不适用）；
+备注存标识文件、只在列表显示；来源检测范围＝项目内 VPM 包（素材包→VPM 转化后
+理论包含）；014 import-copy 沿用（工程＝复制导入，体验＝迁移）；白名单域分析
+可用用户本地爬虫 html 只读参考（**严禁提交入库**）。实现切片下一工作时段
+（今夜 23:00）开工。
+## 用户裁决登记（环境相关项，2026-09-09）
+- **项 7（#17 销账）**：U3 语义修订落定——迁移＝复制到新目录；迁移后写操作含
+  Unity 工程文件（当作 VUA 原生项目看待，**文件夹里加 VUA 独有标识文件**）；
+  原地接管的锁冲突讨论不适用（随复制方案消解）；
+- **项 9（014 沿用）**：import-copy 工程上＝「复制导入」、用户体验上＝「迁移到
+  了 VUA」——不冲突，014 实现与词表零改动沿用；
+- **项 12（#18 销账）**：条目 4 备注存 VUA 独有标识文件（见项 7），范围**只在
+  列表显示**；
+- **项 6（来源检测改进方向）**：「包的真实来源」指项目内 VPM 包；素材包可变为
+  VPM 包被管理，理论上也可能被包含——来源检测改进的范围锚点；
+- **项 4（白名单域分析输入）**：可用用户提供的本地爬虫 html
+  `C:\Users\AR\Documents\VRChat便捷avatar操作\_local_bdb_crawl\data\html`
+  **仅作只读参考，严禁提交入库**；有限案例已含 booth.pm/pximg.net/vrchat.com/
+  vn3.org/google.com/discord.gg/x.com 等；用户建议先做白名单、白名单外只提示
+  不禁止浏览；
+- 其他项（1/2/3/5/8/10/11/13）归各域：1 A4 选项联动＋11 两假设确认（桌面/
+  数据）、2 呈现层屏蔽（数据分支 a，W14 词表零变更）、3 购买流暂不做非永久、
+  5 U7-① M6 增设 IMP-1~5 允许先模糊冲刺初版、8 U7-③ 下载落库归数据域
+  bdl-commands 新契约已批准、13 开发模式方向认可（DEV-only＋切换真实连接目标
+  ＋演示徽标恒显）。
+## 派生切片（下一工作时段开工，今夜 23:00）
+1. **VUA 独有标识文件**（项 7/12 交付物）：标识文件格式设计（位置/形状）＋
+   project-inspection 检测面增加「VUA 原生项目」判定＋备注元数据存取；
+2. **project-ops/project-inspection 词表语义输入**：迁移语义（import-copy
+   沿用确认）＋检测面 VUA 原生判定入词表（013 读面扩展或 project-ops 升版，
+   按核心路由惯例）；
+3. **白名单域分析**（项 4）：只读分析本地爬虫 html（严禁入库），产出域清单
+   草案（先白名单、外域只提示）——归属呈现/下载域协作，环境按需支援分析。
 ## 阻塞
-- 无阻塞。006 全链实现完毕；剩余=①W25 窗口执行（B 段工具就绪，等集成开窗
-  通知）②允许清单首批条目起草（窗口证据后，随批附引用）③EAC 呈现面归属
-  （待派发）；M6 门验收等 M5 关门（不在提前授权范围）。
+- 无阻塞。W25 窗口等集成开窗通知（前置③推进中）；EAC 全链已验收（447/0）。
 ## 下次合并意图
-本批（3300fb1 R1b 终止切片＋564b7f6/9cfaa4e 落账＋状态）请集成 --no-ff 验收
-合并；验收要点=R1b 安全链完整性（四要素门→R4 守卫→快照→终止→等待→复检）＋
-failed 收据恒 inspectRequired＋R7 边界（合成受控进程，零真实 EAC 终止）。
+本批（BOARD 销账＋状态，全 collab/）随轮带入免测。实现切片（派生 1/2）明夜
+开工后按 R9 类似纪律交付。
 ## 留言
-- [→集成] EAC R1b 批（3300fb1）请验收；连同 667346e/de11df1（R3 签名核验）与
-  窗口前置清单（c0e7dcd）一批核对。R3 四要素核验真机 Verified 断言已在本机
-  通过（EasyAntiCheat.exe 嵌入签名——绑定真机正确性已证，详见
-  eac_allowlist_verify 测试）；
-- [→产线] 同窗执行序 v3 已确认（B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→
-  B3→归档）；环境 B 段工具全部就绪（跑 --ignored 测试），窗口内占用 <15min，
-  A 段期间 easyanticheat.exe 出现时环境即时插入 B2b（<1min）条款在案；
-- [→核心] EAC 全链库级实现完毕（eac-probe/allowlist/verify/terminate）；
-  provider 路由与九态任务面整合（终止步骤的确认链包装）待核心排期——形状
-  以 schemas/eac-probe v0.1＋eac-terminate v0.1 为准；
-- [→桌面] EAC 呈现归属待派发维持已知悉；termination 收据形状=
-  schemas/eac-terminate/v0.1（unavailable 口径不变）。
+- [→桌面] 备注功能（#18 裁决）：存 VUA 独有标识文件、只在列表显示——呈现端
+  设计可与环境标识文件格式切片同步对齐（下一工作时段环境先出格式）；
+- [→数据] 白名单域分析（项 4）：本地爬虫 html 只读参考可用（路径见上，
+  **严禁入库**）；域清单草案环境可支援分析，产出归下载/呈现域契约；
+- [→核心] VUA 独有标识文件与「VUA 原生项目」判定的词表/路由语义（013 读面
+  扩展或 project-ops 升版）待你排期——环境下一工作时段先出格式与检测实现。
