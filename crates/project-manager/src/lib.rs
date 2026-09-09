@@ -8,6 +8,7 @@
 
 pub mod eac_allowlist;
 pub mod eac_probe;
+pub mod eac_terminate;
 pub mod eac_verify;
 pub mod environment_managers;
 pub mod import_copy;
@@ -19,14 +20,20 @@ pub use eac_allowlist::{
     find_entry, load_allowlist, path_pattern_matches, AllowlistEntryV01, AllowlistLoadError,
     AllowlistV01, EAC_ALLOWLIST_SCHEMA_VERSION,
 };
+pub use eac_terminate::{
+    terminate_candidate, PreCheck, PostCheck, TerminationGuard, TerminationReceiptV01,
+    TerminationRequest, EAC_TERMINATE_SCHEMA_VERSION,
+};
+#[cfg(windows)]
+pub use eac_terminate::terminate_open_and_wait_for_test;
 pub use eac_probe::{
     probe_eac, EacProbeSnapshotV01, ProcessEntry, ProcessFinding, ProcessKind,
     ProcessSnapshotSource, Readiness, ReadinessConclusion, TerminationCapability,
     EAC_PROBE_SCHEMA_VERSION,
 };
 pub use eac_verify::{
-    verify_candidate, CandidateVerificationV01, SignatureState, VerificationCheck, Verdict,
-    EAC_VERIFY_SCHEMA_VERSION,
+    read_process_image_path_readonly, verify_candidate, CandidateVerificationV01,
+    SignatureState, VerificationCheck, Verdict, EAC_VERIFY_SCHEMA_VERSION,
 };
 #[cfg(windows)]
 pub use eac_verify::eac_verify_windows_signature_for_test;
