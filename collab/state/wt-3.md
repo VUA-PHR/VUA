@@ -1,46 +1,48 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: ea51147
+baseline_commit: 31965f3
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**IMP-5 非真机部分已交付(f0779b5)**:015 §13——代码级核验记录(诚实空态/
-能力两态/mock 不出 DEV/隔离红线静态核对/导航策略自动化盘点)＋真机冒烟
-清单草案(六项,W25 窗口用)。messageKey 两枚四语登记亦交付(64d22a7)。
-**桌面 IMP-1~5 全部可交付面已收口**;真机项归 W25 窗口统筹(用户参与点)。
-## 自基线交付(ea51147 合并 main 后)
-- main 合并维护(fast-forward 至 ea51147;带入批 B-3 验收合并 6cbcb26——
-  IMP-2 交付面完成确认＋IMP-5 排期表态＋§8.3 措辞修正[集成已办,桌面无需
-  重复]＋BG-5 CI 化);
-- **64d22a7:messageKey 两枚四语登记**(核心环境预检批机械跟随):
-  errors.job.environmentUnmet(环境未就绪,validation——装/选编辑器后重试)
-  ＋errors.job.environmentCheckFailed(环境检测本身失败,外部错误可重试;
-  语义照 provider_host.rs 2207-2213,不伪装成 unmet);消费批(任务中心
-  呈现)到达即用;
-- **f0779b5:015 §13 IMP-5 非真机部分**:
-  - A 代码级核验记录:诚实空态(下载列表三态/无视图态/入口收敛无残留)、
-    能力两态真值表、页面零 fixture(leak 佐证)、隔离红线静态核对
-    (remote-content.ts 实文,批 A/B 未触碰隔离面)、导航策略自动化盘点
-    (19＋3 项);
-  - B 真机冒烟清单草案(六项):内嵌会话/清单外确认卡/外部协议确认/下载
-    →采纳全链/隔离 Cookie 验证/域外诚实失败——执行归 W25 窗口(用户参与)。
-- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 51 文件
-  423 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹零命中)。
+**013 读面第一翼 TS 面登记已交付(d4f781a)**:project.environmentManagers
+(核心 e720544 live 查询)——envelope 强度承载(照 production-use-case 先例,
+快照本体不复制进契约面,UI 按需窄化)。**后续**:T-B 消费 UI(ProjectCompatPage
+检测段接线)待核心三查询(listProjects/inspectProject/lockStatus)接线刀——
+B6 迁移/仅查看交互与检测段 UI 同批收口;裁决 13 备稿(开发模式基建提案)
+排期在案。
+## 自基线交付(31965f3 合并 main 后)
+- main 合并维护(fast-forward 至 31965f3;带入核心 013 读面第一翼 e720544
+  等);
+- **d4f781a:project.environmentManagers TS 面登记**:
+  - contracts:Query(空参闭集)＋Result 信封(vcc/alcom 能力本体透传,字段
+    语义归 environment-managers v0.1 快照 Schema——文档型载荷不复制进契约
+    面,production-use-case 先例)＋请求窄化守卫＋两 union;
+  - desktop-gateway:Request 接口＋METHOD_KINDS query 行＋守卫 case(穷举
+    回归表扩展);
+  - gateway-router:空参 verbatim 映射;mock-provider 诚实空能力对象
+    (穷尽性机械跟随,声明);
+  - 剩余三查询(listProjects/inspectProject/lockStatus)核心今天类型化
+    unavailable——TS 面待其接线刀随批登记,不预登记死类型;
+  - 测试:contracts 正负例＋router 路由＋穷举表扩展。
+- **证据(2026-09-10 本机)**:contracts build＋桌面 check 全链绿(typecheck＋
+  vitest 51 文件 424 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹
+  零命中)＋orchestrator-provider check 绿(4 文件 23 测试)。
 ## 阻塞
-- 无桌面阻塞。IMP-5 真机项与文档终版落账(集成节奏)待 W25 窗口统筹;
-  013 读面消费(B6 迁移/仅查看交互)待核心路由排期(核心已声明)。
+- 无桌面阻塞。013 消费(B6 交互＋检测段 UI)待核心三查询接线刀;裁决 13
+  备稿自排(下一刀候选)。
 ## 下次合并意图
-64d22a7＋f0779b5 请集成验收合并(i18n 四表机械跟随＋collab 提案文档,
-前者随消费批消费、后者为 IMP-5 非真机交付物)。
+d4f781a 请集成验收合并(contracts＋orchestrator-provider 机械跟随＋
+gateway-router)。批 B-3(81b8510)与 messageKey(64d22a7)＋015 §13
+(f0779b5)如未并入请一并核对。
 ## 留言
-- [→集成] ①IMP-5 非真机部分交付(015 §13)——A 已完成(代码级,证据在案),
-  B 清单草案供 W25 窗口统筹;②messageKey 两枚已四语登记(64d22a7),消费批
-  到达即生效;③两批请验收合并。
-- [→核心] messageKey 两枚已四语登记(64d22a7)——语义照 provider_host.rs
-  实现(unmet=validation 不可重试暗示/checkFailed=external 可重试),如有
-  文案歧义请指正;013 检测读面路由排期维持你方声明,桌面 B6 迁移/仅查看
-  交互待路由后接线。
-- [→环境] 无新增请求(白名单清单已被 015 §4/批 A 采纳照准)。
-- (历史留言消化:批 B-3 验收确认、BG-5 CI 化知会——无需桌面动作。)
+- [→集成] d4f781a 请验收(envelope 强度登记——文档型载荷不复制进契约面,
+  production-use-case 先例;三未接线查询不预登记,待核心下刀随批)。
+- [→核心] ①environmentManagers TS 面已登记(envelope 强度;快照 Schema
+  语义归 environment-managers v0.1);②三查询(listProjects/inspectProject/
+  lockStatus)接线刀时请知会——桌面 TS 面随批登记,B6 迁移/仅查看交互与
+  T-C 检测段 UI 同批收口。
+- [→环境] environmentManagers 快照消费通道已就绪(TS 面);检测段 UI 呈现
+  待核心三查询接线后同批(B6 交互收口)。
+- (历史留言消化:数据 TS 镜像校对无出入——已闭环。)
