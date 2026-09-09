@@ -233,7 +233,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | --- | --- | --- |
 | application-contract | v0.1 | 冻结（M2 冻结） |
 | provider-process（协议本/握手帧面） | v0.2 | 握手帧面 Schema 冻结（provider-frame-v0.1 + 双端 11 向量；proposal 001 关闭） |
-| bdl-commands | **v0.3** | **已冻结（M5 首批先行，2026-09-08，数据主导，集成验收 ef9854b：复跑 362/0＋clippy -D warnings 零告警）**——五命令闭集：v0.2 四命令照录（向量除版本外字节一致）＋**warehouse.import 批量导入**（任务化，folder 批，010/W19 硬前置）＋generateVpm 可选 `importCorrelationId` 审计链字段（仅导入编排发起携带；010 承诺 6 wire 承载）；术语裁定落实（「生成 VPM 包副本」）；v0.2/v0.1 已取代。历史：v0.2（W14）全局默认模式＋008 路径 a 零扩展裁决见 git；协议双语＋REGISTRY 已刷新 |
+| bdl-commands | **v0.4** | **已冻结（IMP-3 契约先行，2026-09-09，数据，集成验收 89038f5：复跑 61/61 workspace 全绿＋clippy -D warnings 零告警）**——v0.3 五命令闭集照录（向量随版升级）＋**warehouse.importDownloads 下载落库**（任务化；params 仅 `{ downloadIds }`——路径/大小/文件名是服务端事实，从 BDL download_events 折叠 `staging_completion` 解析，客户端断言＝契约错误〔负例钉死〕；copy-in 复制入库暂存不动；kind=`downloaded_material`〔BDL v0.1 冻结词表预留值〕；内容关联经 `local_artifacts.download_id`；fail-fast 保留已落库；下载边界取消；内容→产品映射归 AMF 来源解析〔IN-4〕刻意不进命令）；正例 2＋负例 6；采纳实现 warehouse_download_adopt.rs 521 行＋消费测试 6/6；双语协议本＋REGISTRY 已刷新。**冻结注记（诚实）**：wire 路由待核心、TS 面待桌面登记——接线完成前不得声称端到端。历史：v0.3（2026-09-08 首批先行，集成验收 ef9854b：362/0）已取代（→ v0.4）；v0.2（W14）/v0.1 更早 |
 | bdl-queries | v0.3 | 现行（v0.1 / v0.2 已取代） |
 | download-events | v0.1 | 冻结 |
 | unity-bridge | **v2** | **已冻结（W21，2026-09-08，产线，互审收口：互审点 1–5 全关＋核心确认 planRef job 目录文件形态；冻结批交集成验收）**——v1 超集（同面升版）＋execute_production_job/restore_project＋批准计划 job 目录文件形态与 Bridge 本地哈希校验＋作业收据（dry-run 显式区分/steps 逐操作与来源转抄/replayed/snapshotId）＋恢复两态收据；16 向量＋6 消费测试（集成复跑 356/0，v2 修订 367/0）；协议双语 v2＋REGISTRY 已刷。v1 保持已接受：material 线（production-use-case v0.1）继续消费，双族并存语义对齐不合并 |
