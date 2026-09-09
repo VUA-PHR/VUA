@@ -2,19 +2,23 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 6256410
+baseline_commit: f227de3
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第十三波验收：018 批 1 实现交付**（200012d——开发模式 per-port 连接目标，
-裁决 13 备稿兑现＋两方表态齐）。**验收要点**：装配入口
-`!import.meta.env.DEV` 首行短路核验（生产构建静态剔除
-readDevPortSelection——leak devOnlyMarkers 撤回声明核可＝常量性误报修正，
-159 指纹主防线保留）；桌面 check 全链绿（**53 文件 432 测试**）。DevScenarioBar
-套装退役（C1 兑现）。**W25 三前置维持齐备**——开窗通知晨起 O-2。批量面板
-未触发；[需代裁] 零新增。前情：018 草案＋两方表态（0c282ed 世代）＋流程
-自纠（冲突标记失误已修正并全局扫描清零）。
+**第十四波验收：BG-1 工单交付**（eba88a7——W24 读面预备：recipe 文档库节
+＋共享选择骨架，消费 v0.2 recipe.list；54 文件 435 测试全链绿）。**BG 工单
+5/6 交付**（BG-1/2/4/5/6），仅余 BG-3（桌面 M7 Inspection/Release 信息
+架构）。**W25 三前置维持齐备**——开窗通知晨起 O-2。批量面板未触发；
+[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **第十四波验收（05:20–05:30）**：
+  - **f227de3**：slot/wt-3 **BG-1 工单交付验收合并**——eba88a7（W24 读面
+    预备：recipe 文档库节 RecipePage 113 行＋共享选择骨架 recipe-model
+    46 行＋library 测试 41 行＋四语 i18n；消费 v0.2 recipe.list）。**验收
+    记录**：桌面 check 全链复跑绿（**54 文件 435 测试**＋boundary＋i18n＋
+    contrast＋leak 159 零命中）；工单验收标准满足（数据全部来自 v0.2 十
+    方法读面、空态即终态、不宣称端到端）。**BG 工单 5/6 交付**，余 BG-3。
 - **第十三波验收（04:40–04:50）**：
   - **6256410**：slot/wt-3 **018 批 1 实现验收合并**——200012d（dev-mode
     per-port 连接目标：dev-port-selection 82 行〔十端口会话级、严格解析
