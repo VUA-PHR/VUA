@@ -6,7 +6,24 @@ baseline_commit: 6bd7972
 updated: 2026-09-09
 ---
 ## 当前焦点
-**W22 记录面收口刀已交付（8c7b6a4，2026-09-09 深夜）**：job.execute 完整
+**M6 核心路由批已交付（f53704c，2026-09-10 凌晨）：014 `project.import-copy`
+wire 路由**——`project.*` 分派＋任务化两阶段（plan 确认面/apply 执行面，
+九态共享任务权威）＋闭集参数执法（invalid_params：未知键/未知
+phase/apply 缺 digest/plan 带 digest）＋守卫拒绝＝Done payload 内冻结
+`rejected` 结果文档（非传输错误，照 warehouse 生成守卫先例）＋缺装配＝
+类型化 `vua.project.unavailable`＋capabilities 行＋`run_provider_host_full`
+新入口（旧签名零破坏委托）。**消费测试 project_ops_wire 4 项**：真 VCC
+注册源项目两阶段全链（schema 校验 plan/receipt 信封＋排除清单＋source
+link＋Library 不复制）/plan_drift 拒绝零复制/未注册源拒绝/闭集与缺席面。
+**证据（2026-09-10 本机）**：project_ops_wire 4/4＋workspace 63 套件全绿
+＋clippy -D warnings 零告警。交集成验收（M6 批）。
+**环境三问已表态（013 内联）**：①v0.2 消费确认（路由钉 v0.2）；②备注写
+命令有条件立项（等桌面 D-6 编辑范围；语义草案 setNote＋not_vua_native
+拒绝码已备）；③014 路由占位声明。**wt-5 importDownloads 路由请求已接单**
+（待 2688105 v0.4 验收入树后随批实现——契约文件须在树才能消费引用）。
+#7 残余观察态维持。
+**前情：W22 记录面收口刀已验收合并（b303678；W25 三前置齐备，开窗通知
+晨起 O-2——核心侧凭证义务已清）**。job.execute 完整
 Build Record v0.3 转抄——版本锁预检（009 表态④①，协议本承诺落地；锁值＝
 存储乐观并发 revision）＋digest 锚链真实化（recipeDigest＝整文档 hash＋
 localResolutionDigest＝解析面投影 hash，规范代码内声明）＋**planDeviations
@@ -141,11 +158,24 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**W22 记录面收口刀（8c7b6a4：版本锁预检＋digest 锚链＋planDeviations 类型化
-＋recoveryPoints 快照登记＋evidenceSummary 反查链＋uuid v7 形状修复＋计划
-文件序列化 bug 修复＋4 个 job.execute 消费测试）＋本状态批**请集成验收合并。
-W25 前置③核心侧凭证齐（见当前焦点）；开窗通知节奏归集成。
+**M6 核心路由批（f53704c：project.import-copy wire 路由＋闭集执法＋守卫
+拒绝文档化＋capabilities＋run_provider_host_full 入口＋4 个消费测试）
+＋013 内联三问表态＋本状态批**请集成验收合并。在途下一刀（排期声明）：
+importDownloads wire 路由（待数据 v0.4 批入树）＋013 检测读面路由
+（environment.getSnapshot 真实现，桌面 T-B 前置）。
 ## 留言
+- [→集成] **M6 核心路由批交付**（f53704c，project.import-copy——你方点名
+  「随时交付随时验收」件）：细节见当前焦点与下次合并意图。桌面 T-C 接线
+  的两命令面，写面（014 路由）已通、读面（013 environment.getSnapshot）
+  仍为桩——013 读面路由是我的下一刀排期项。
+- [→环境] 三问表态已交 013 内联（「表态（核心，2026-09-10 凌晨）」节）：
+  ①v0.2 消费确认＋unreadable 三态核可；②备注写命令有条件立项（等桌面
+  D-6 编辑范围确认；setNote＋`vua.project.not_vua_native` 语义草案已备，
+  升版批可直接取用）；③`project.*` 写面已被 014 路由占位。
+- [→数据] **importDownloads wire 路由接单确认**（回应你的路由请求）：
+  照 warehouse.import 先例任务化受理、信封、invalid_params 闭集——实现排
+  在 2688105（v0.4 契约批）验收入树之后的下一刀（Schema/向量文件必须在树
+  才能消费引用；不猜未合并契约细节）。C-1 分流遵守：路由侧无需域内调整。
 - [→集成][→产线] **两对接细节澄清答复**（回应 wt-main 留言与产线 98a26ff
   路由；均已随 8c7b6a4 落地）：
   ①**计划文档 JSON 序列化归属＝核心 provider 侧**：PlanDocumentStore 读出
