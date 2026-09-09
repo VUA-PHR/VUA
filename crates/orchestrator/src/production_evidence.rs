@@ -187,10 +187,17 @@ impl EvidenceStore {
 
     /// Lists every evidence id currently stored (identity listing only —
     /// bodies are read individually; kind/status aggregation belongs to the
-    /// consumer, per the 012 data stance on minimal summaries).
+    /// consumer, per the 012 data stance on minimal summaries). A store
+    /// that never published anything lists as empty — the absent directory
+    /// is the honest empty state, not an error.
     pub fn list_ids(&self) -> io::Result<Vec<String>> {
         let mut ids = Vec::new();
-        for entry in fs::read_dir(&self.root)? {
+        let entries = match fs::read_dir(&self.root) {
+            Ok(entries) => entries,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(ids),
+            Err(error) => return Err(error),
+        };
+        for entry in entries {
             let entry = entry?;
             let name = entry.file_name();
             let name = name.to_string_lossy();
@@ -201,6 +208,27 @@ impl EvidenceStore {
             }
         }
         ids.sort();
+        Ok(ids)
+    }
+
+    /// Lists the evidence ids published by one Local Resolution run (the
+    /// `sourceRef.localResolutionId` back-reference). The Build Record
+    /// evidence summary consumes this at execution time — the resolve Done
+    /// payload is long gone by then, while the evidence facts persist.
+    pub fn list_by_local_resolution(
+        &self,
+        local_resolution_id: &str,
+    ) -> io::Result<Vec<String>> {
+        let mut ids = Vec::new();
+        for id in self.list_ids()? {
+            if let Some(document) = self.read(&id)? {
+                if document.source_ref.local_resolution_id.as_deref()
+                    == Some(local_resolution_id)
+                {
+                    ids.push(id);
+                }
+            }
+        }
         Ok(ids)
     }
 }
@@ -289,5 +317,30 @@ mod tests {
                 "0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8c"
             ]
         );
+    }
+
+    #[test]
+    fn list_by_local_resolution_filters_on_the_source_back_reference() {
+        let store = EvidenceStore::new(unique_root("by-resolution"));
+        let resolution = "0198a7b3-9f8e-7d6c-5b4a-321098765432";
+        let mut mine = sample("0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8d");
+        mine.source_ref = EvidenceSourceRef::from_local_resolution(resolution);
+        let mut other = sample("0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8e");
+        other.source_ref = EvidenceSourceRef::from_local_resolution(
+            "0198a7b3-0000-7d6c-5b4a-321098765432",
+        );
+        let mut task_born = sample("0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8f");
+        task_born.source_ref = EvidenceSourceRef::from_task_correlation("corr-1");
+        for evidence in [mine, other, task_born] {
+            store.publish(&evidence).unwrap();
+        }
+        assert_eq!(
+            store.list_by_local_resolution(resolution).unwrap(),
+            ["0198a7b3-1c2d-7e4f-8a5b-3c2d1e0f9a8d"]
+        );
+        assert!(store
+            .list_by_local_resolution("0198a7b3-aaaa-7d6c-5b4a-321098765432")
+            .unwrap()
+            .is_empty());
     }
 }
