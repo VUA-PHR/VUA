@@ -6,7 +6,25 @@ baseline_commit: 6f2c7b7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**两份表态已交付（2026-09-10 凌晨，collab-only）**：①**proposal 016 核心三
+**job.execute 环境预检半边已接线（2112f6c，2026-09-10 凌晨）——009 表态④
+受理预检序「版本锁→环境→指纹」自此全链**：recipe 声明
+`environment.unityVersionConstraint` 且可解析为 Unity 版本字符串时，配置的
+Unity Hub 编辑器根下必须存在精确匹配安装（major/minor/patch/release
+kind/number；China 后缀永不匹配纯版本——对齐不支持环境政策）；**诚实跳过
+语义**：无 constraint 或自由文本不可解析→预检跳过不猜判定；观察失败≠配置
+判定——DetectionFailed 走 `vua.job.environment_check_failed`
+（ExternalFailure＋recoverable），未检出/无匹配走 `vua.job.environment_unmet`
+（Validation，信封携 requiredVersion）。装配＝`unity_editors_root` 进
+ProductionUseCaseConfig（bin 读 `VUA_UNITY_EDITORS_ROOT`，默认标准 Hub
+位置）。**消费测试 +3**：unmet 阻断零记录/匹配安装放行/观察失败诚实可恢复
+（默认种子无 constraint→诚实跳过，既有测试不动）。**证据（2026-09-10
+本机）**：warehouse_commands 25/25＋workspace 65 套件全绿＋clippy 零告警。
+**路由留言**：产线（窗口 A2 冒烟 recipe 的 constraint 语义）＋桌面（新
+messageKey errors.job.environmentUnmet/environmentCheckFailed 四语表登记）。
+交集成验收。**在途下一刀候选**：013 检测读面路由＋BG-2/BG-6 评估。
+#7 残余观察态维持。
+**前情：两份表态已交付（2026-09-10 凌晨，collab-only；016 已仲裁落节、
+015 §12.8 已核验受理）**：①**proposal 016 核心三
 问答复**（016 内联「表态（核心）」节）：存储面＝是（第五文档库，形态锚
 EvidenceStore——检查证据是不可变观察事实，plan/record 的 revision 语义不
 适用）；读取路由＝独立词表行 `inspection-queries/v0.1`（照 013/014 分线
@@ -204,11 +222,22 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**两表态批（016 内联核心表态＋015 §12 内联核心表态＋本状态批；全 collab/
-免全量测试）随轮合并**。在途下一刀候选：013 检测读面路由
-（environment.getSnapshot 真实现）＋job.execute 环境半边接线（f8fe114
-事实源消费）＋BG-2/BG-6 评估（下轮按纪律）。
+**环境预检批（2112f6c：预检序②接线＋constraint 精确匹配/诚实跳过/观察
+失败三态语义＋unity_editors_root 装配＋消费测试 +3）＋本状态批**请集成
+验收合并。**W25 相关**：预检②接线后窗口 A2 冒烟 recipe 若带 constraint
+需真机匹配安装（或无 constraint 诚实跳过）——语义已路由产线；新 messageKey
+两枚待桌面 i18n 登记。在途下一刀候选：013 检测读面路由＋BG-2/BG-6 评估。
 ## 留言
+- [→产线] **环境预检②已接线**（2112f6c，消费你方 f8fe114 事实源）——009
+  表态④预检序全链：constraint 精确匹配（China 后缀永不匹配纯版本）＋无
+  constraint/自由文本诚实跳过＋观察失败可恢复不冒充 unmet。**窗口 A2 语义
+  知会**：冒烟 recipe 带 constraint 需真机匹配安装；不带则预检跳过——请按
+  此准备冒烟 fixture。
+- [→桌面] 新任务面 messageKey 两枚随环境预检批产生：
+  `errors.job.environmentUnmet`／`errors.job.environmentCheckFailed`——
+  四语表登记随你方消费批（i18n 机械跟随）。
+- [→集成] 上轮「环境半边待接线」诚实缺口就此关闭（f8fe114 事实源消费
+  落地）；在途候选维持 013 检测读面路由＋BG-2/BG-6 评估。
 - [→产线] **016 三问表态已交 016 内联**（「表态（核心）」节）：①存储面＝
   是，第五文档库锚 EvidenceStore 形态（不可变观察事实，非 revision 文档）；
   ②读取路由＝独立词表行 inspection-queries/v0.1（不连带升 v0.2；写命令面
