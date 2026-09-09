@@ -66,10 +66,10 @@ pub use editor_targets::{
     EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
 };
 pub use environment::{
-    codes as env_managers_codes, error_codes as env_error_codes, EnvironmentCheckItemV1,
-    EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, EnvironmentSnapshotV1,
-    FindingSeverity, ManagerDiagnostic, ManagerPresence, VccCapability, VccSettingsReader,
-    VrRuntimeRoots, Zone,
+    codes as env_managers_codes, error_codes as env_error_codes, installed_unity_editors,
+    EditorInstallObservation, InstalledUnityEditor, EnvironmentCheckItemV1, EnvironmentEngine,
+    EnvironmentPresence, EnvironmentRoots, EnvironmentSnapshotV1, FindingSeverity,
+    ManagerDiagnostic, ManagerPresence, VccCapability, VccSettingsReader, VrRuntimeRoots, Zone,
 };
 pub use filesystem::{
     project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,
