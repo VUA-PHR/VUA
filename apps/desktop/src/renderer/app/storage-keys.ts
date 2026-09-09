@@ -34,4 +34,8 @@ export const storageKeys = {
    *  deleteOriginals,协议面随 proposal 008 裁决;开启仅记录意图,不触发任何
    *  服务端行为 */
   deleteOriginalsAfterGenerate: "vua-delete-originals-after-generate",
+  /** 开发模式 per-port 连接目标(018,裁决 13;DEV-only):sessionStorage,
+   *  JSON 形态 { [DevPortId]: "live" | "fixture" };解析/校验见
+   *  app/dev-port-selection.ts,生产构建恒无此键消费 */
+  devPortSelection: "vua-dev-port-selection",
 } as const;
