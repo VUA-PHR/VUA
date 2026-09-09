@@ -382,6 +382,27 @@ export interface DownloadsListCompletedQueryV04 extends ApplicationRequestBaseV0
   readonly params: Readonly<Record<string, never>>;
 }
 
+/** project.environmentManagers 查询(013 读面第一翼,核心 e720544):只读
+ *  VCC/ALCOM/编辑器检测快照(T-B 消费)。快照本体是文档型数据——照
+ *  production-use-case 先例以 envelope 强度承载(Record),UI 按需窄化,
+ *  契约面不复制快照 Schema(project-inspection v0.2 信封＋
+ *  environment-managers v0.1 本体);剩余三查询(listProjects/inspectProject/
+ *  lockStatus)待核心接线刀随批登记 */
+export interface ProjectEnvironmentManagersQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "project.environmentManagers";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+/** environmentManagers 结果信封(信封版本 0.1 与快照族 v0.2 独立,核心
+ *  表态①):vcc/alcom 能力本体 envelope 强度透传(字段语义归
+ *  environment-managers v0.1 快照 Schema,UI 按需窄化) */
+export interface ProjectEnvironmentManagersResultV01 {
+  readonly schemaVersion: "vua.environment-managers-snapshot/v0.1";
+  readonly vcc: Record<string, unknown>;
+  readonly alcom: Record<string, unknown>;
+}
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1000,6 +1021,7 @@ export type ApplicationRequestV01 =
   | WarehouseListEntriesQueryV03
   | WarehouseEntryDetailQueryV03
   | DownloadsListCompletedQueryV04
+  | ProjectEnvironmentManagersQueryV01
   | RecipeGetQueryV02
   | RecipeListQueryV02
   | PlanGetQueryV02
@@ -1104,6 +1126,7 @@ export type ApplicationSuccessValueV01 =
   | WarehouseListEntriesResultV03
   | WarehouseEntryDetailResultV03
   | DownloadsListCompletedResultV04
+  | ProjectEnvironmentManagersResultV01
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseImportAcceptedV03
@@ -1373,6 +1396,11 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
   }
   // bdl-queries v0.4(015 §10):可采纳已完成交付列表,params 闭集 = 空
   if (value.kind === "query" && value.method === "downloads.listCompleted") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  // 013 读面第一翼(核心 e720544):environmentManagers,params 闭集 = 空
+  if (value.kind === "query" && value.method === "project.environmentManagers") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
   }

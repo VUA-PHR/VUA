@@ -592,6 +592,39 @@ describe("bdl-commands v0.1 command routing", () => {
     expect(response).toMatchObject({ ok: true, value: { taskId: "task-1", correlationId: "corr-1" } });
   });
 
+  it("routes the 013 environmentManagers read query verbatim", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke").mockResolvedValue({
+      ok: true,
+      value: { schemaVersion: "vua.environment-managers-snapshot/v0.1" },
+    });
+    const context = { provider, productVersion: "0.4.2", platform: "win32" as const, rendererUrl };
+
+    const response = await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-proj-em",
+        method: "project.environmentManagers",
+        params: {},
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-proj-em",
+      correlationId: "desktop-proj-em",
+      kind: "query",
+      method: "project.environmentManagers",
+      params: {},
+    });
+    expect(response).toMatchObject({
+      ok: true,
+      value: { schemaVersion: "vua.environment-managers-snapshot/v0.1" },
+    });
+  });
+
   it("routes the v0.4 completed-downloads read query verbatim", async () => {
     const provider = new MockOrchestratorProviderV01();
     await provider.start();
