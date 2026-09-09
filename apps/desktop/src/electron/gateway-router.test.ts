@@ -559,4 +559,36 @@ describe("bdl-commands v0.1 command routing", () => {
       params: { warehouseItemId: "wh-1" },
     });
   });
+
+  it("routes the v0.4 download-adoption command with identity-only params", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke").mockResolvedValue({
+      ok: true,
+      value: { taskId: "task-1", correlationId: "corr-1" },
+    });
+    const context = { provider, productVersion: "0.4.2", platform: "win32" as const, rendererUrl };
+
+    const response = await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-wh-downloads",
+        method: "warehouse.importDownloads",
+        params: { downloadIds: ["dl-1", "dl-2"], commandId: "cmd-dl-1" },
+      },
+    );
+    // 仅身份透传(路径/大小/文件名是服务端事实,永不经渲染层)
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-wh-downloads",
+      correlationId: "desktop-wh-downloads",
+      kind: "command",
+      method: "warehouse.importDownloads",
+      commandId: "cmd-dl-1",
+      params: { downloadIds: ["dl-1", "dl-2"] },
+    });
+    expect(response).toMatchObject({ ok: true, value: { taskId: "task-1", correlationId: "corr-1" } });
+  });
 });

@@ -130,6 +130,11 @@ export type {
   WarehouseModeSetResult,
 } from "./warehouse-commands-port.ts";
 export type {
+  ProjectImportCopyParams,
+  ProjectOpsOutcome,
+  ProjectOpsPort,
+} from "./project-ops-port.ts";
+export type {
   ChangeRequest,
   PackageChangeItem,
   PackageChangeKind,

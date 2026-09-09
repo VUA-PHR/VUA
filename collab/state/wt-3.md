@@ -2,73 +2,73 @@
 worktree: wt-3
 branch: slot/wt-3
 role: 桌面
-baseline_commit: d258404
-updated: 2026-09-09
+baseline_commit: 354925a
+updated: 2026-09-10
 ---
 ## 当前焦点
-**今夜 23:00 实现批第一刀已交付(三切片,见「自基线交付」)**:U9 导航实差
-三处改造(集成路由必做项)＋裁决 11(A4 行 2 自动取消)＋裁决 10(条目 2 呈现
-层屏蔽,W14 词表零变更)。**下一刀(本轮顺延)**:裁决 1[U6 销账]确认链两呈现
-段(B8/B9)测试范围→随后 IMP 冲刺初版(IMP-1 设计稿/IMP-2 内嵌浏览渲染层
-消费/IMP-5 验收文档;IMP-3 契约先行归数据,IMP-4 本地导入收口待其契约)。
-## 自基线交付(d258404 合并 main 后)
-- **f282ecc:U9 导航实差三处改造**(BOARD U9 四分法落地,本批含 desktop 架构
-  文档双语 1.0.0→1.1.0):
-  1. `will-navigate` 清单外:拦截→「提示后放行」转当前内嵌视图(确认在前,
-     A-1 逐次阻断式;A-2 不提供任何层级免确认记忆);
-  2. `setWindowOpenHandler` http/https 弹窗:交系统浏览器→转当前内嵌视图
-     (清单内直行/清单外确认后转,U9(1);原生新窗口仍一律 deny);
-  3. 新增外部协议确认层(初始恰为 mailto/steam/vrchat/discord 四项,A-4)＋
-     伪协议窗口无条件拒(U9(2);下载流走 will-download 不受牵连,A-6)。
-  实现面:security.ts(四分类＋双策略改造)＋remote-content.ts(确认层透传＋
-  openAfterConfirmation——仅 Main 侧确认层可达,渲染层窄面守卫不变)＋
-  main.ts(原生对话框确认层实现＋本地窗口策略新签名)。测试 19 项
-  (分类真值表＋双策略行为＋无确认层保守降级)。
-  **诚实声明(三处)**:①Electron 44 窗口打开 details 无手势字段——U9(4)
-  手势门槛以「逐次确认层」等效承载(确认点击即用户显式手势,自动触发未经
-  确认不执行,比字面更严),代码注释与双语文档均已声明;②Main 侧确认对话框
-  文案英文(Main 无 i18n,与既有对话框先例一致)——四语化归 IMP-2 渲染层
-  确认 UI 切片,四分法本体语义不受影响;③本批为单测级验证,**无 Electron
-  真机运行证据,不宣称端到端**。
-- **9cafca3:裁决 11(A4 行 2 自动取消)**:「生成 VPM 包替代」主开关写回非
-  generate_vpm 时,「生成后删除原始素材文件」偏好自动复位为关
-  (shouldResetDeleteFlag 纯函数＋设置页写回执接线;清持久偏好=再开主开关
-  行 2 为关;已受理删除任务不溯=两假设遵守;四语 deleteDesc 文案同步)。
-  测试 2 项。
-- **f8ddc5d:裁决 10(条目 2 呈现层屏蔽,U8⑤ 分支 a)**:entrySurfacesVisible
-  总闸门控——全局开关关=条目产物模式编辑与条目动作整组不呈现(W14 词表零
-  变更,服务端守卫不变;unknown 推断=不屏蔽不猜测);「删除原始素材」手动
-  入口任何情况从仓储 UI 移除(deleteOriginals 协议动作保留供导入链自动
-  消费,wire 零变更);「跟随全局」三选保留(G-2);随批清理 W15 重做后的
-  死代码 experimentalActionGates/settingsEntryOptions 及其交叉断言测试
-  (无消费点,断言与收窄后动作面矛盾——清理理由已写提交信息)。测试改写＋
-  新增。
-- **证据(2026-09-09 本机)**:桌面 check 全链绿(typecheck＋vitest 全套＋
-  build＋boundary＋i18n＋contrast＋leak 159 指纹零命中)。
-- main 合并维护(fast-forward 至 d258404,失鲜 70 提交警告随本状态批
-  baseline 刷新消除)。
+**裁决 1[U6 销账]确认链两呈现段(B8/B9)测试刀已交付(1ef9d4a)——13 项裁决
+桌面相关实现项(1/2/10/11/12)全部落地**(13[开发模式备稿]随 IMP 冲刺批)。
+**在途待验收**:dfc113d(v0.4 TS 面登记＋跨批守卫缺口修复)＋1ef9d4a,请集成
+验收合并。**下一刀**:IMP 冲刺初版(IMP-1 设计稿/IMP-2 内嵌浏览渲染层消费;
+IMP-3 TS 翼已解锁,采纳 UI 入口随 IMP-4 收口)。
+## 自基线交付(354925a 合并 main 后)
+- **dfc113d:bdl-commands v0.4 TS 面登记(集成 89038f5＋数据 wt-5 双路由)**
+  四层同批:contracts(WarehouseImportDownloadsCommandV04 仅身份闭集＋
+  AcceptedV04＋窄化守卫;generateVpm 补可选 importCorrelationId=v0.3 词表
+  镜像)＋desktop-gateway(RequestV1＋METHOD_KINDS)＋gateway-router(verbatim
+  映射)＋renderer WarehouseCommandsPort(port/live/fixture[DEV 演示落
+  downloaded_material]/empty 四实现)＋mock-provider switch 机械跟随(声明)。
+- **同批守卫缺口修复(诚实声明)**:isDesktopGatewayRequestV1 缺 case——
+  setGlobalDefaultMode(v0.2)/import(v0.3)/production-use-case v0.2 十方法/
+  project.import-copy(014)在 METHOD_KINDS 声明但被 router 一律 invalid_request
+  拒绝(DEV/fixture 不穿守卫＋守卫单测无正例,故测试从未暴露)。已补齐全部
+  case＋穷举回归表(对 METHOD_KINDS 每方法断言最小合法请求放行)锚定「声明
+  即守卫」。影响面:此前 W15 全局开关/W18 导入 live 链路在生产壳不可用
+  (fixture 演示不受影响);修复纯 TS 路由面,Rust 零改动。
+- **1ef9d4a:裁决 1[U6 销账]——确认链两呈现段测试(B8/B9)**:
+  - 呈现决策与回执投影抽纯函数(project-compat-model.ts;组件薄渲染):
+    confirmChainDecision(plan/receipt/guard 反馈/unavailable 四分支＋守卫
+    词表外回落)＋receiptLines(B8 呈现五项:新项目路径/已复制数据/已复制
+    内容/来源关系已记录/重新检查完成;值全部来自服务端 receipt 事实,缺席
+    如实占位);
+  - B8 覆盖=五项投影断言(fixture 形状样例);B9 覆盖=provider 缺席两传输态
+    均原样呈现 unavailable 反馈;
+  - **正确性缺陷随补测暴露并修复(诚实声明)**:bytesText(原页面内联)进位
+    次数与单位下标错位一档——2048B 显示「2 MB」、497MB 显示「497GB」
+    (plan 磁盘预估与 receipt 已复制字节两行量级高报一档);单位表含 B 档
+    修复,各档边界测试锁死;
+  - gateway barrel 补 project-ops 端口类型导出(boundary 规则:features
+    只经 barrel 取 gateway 类型)。
+- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 49 文件
+  415 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹零命中)＋
+  orchestrator-provider check 绿(上一刀,4 文件 23 测试)。两批均无真机
+  端到端宣称:dfc113d 的 wire 翼归核心;1ef9d4a 为呈现层测试。
 ## 阻塞
-- 无桌面阻塞。IMP 冲刺(IMP-2 内嵌浏览)依赖数据 IMP-3 契约冻结(契约先行
-  硬前置);环境标识文件格式未出——备注功能呈现端(项 12)待其格式切片。
+- 无桌面阻塞。备注呈现端(项 12)与 013 读面消费待核心 provider 路由;
+  「轻量编辑」写路径缝隙(核心裁定「备注存取无新写词表需求」vs 行内编辑
+  诉求)待核心对齐结论。
 ## 下次合并意图
-本批三提交(f282ecc＋9cafca3＋f8ddc5d,apps/desktop＋docs/architecture/
-desktop_*)请集成验收合并(桌面域内,无跨域文件);合并前置=desktop check
-全链绿已满足。下一刀交付后同批或次批再合。
+dfc113d＋1ef9d4a 两批请集成验收合并(桌面域＋contracts TS 面＋mock-provider
+机械跟随,均已在提交信息声明)。**验收提示**:dfc113d 重点审 desktop-gateway
+守卫 case 与穷举回归表;1ef9d4a 重点审 bytesText 缺陷修复的行为变更
+(展示文案量级降回正确档,无协议影响)。之后 IMP 冲刺批同批或次批再合。
 ## 留言
-- [→集成] **导航实差三处已完成**(f282ecc,含 desktop 架构文档双语 1.1.0
-  落账)——A-7 前置中「desktop 架构行」已由桌面先行落账,**REGISTRY 行刷新
-  (1.0.0→1.1.0)在你方今夜开工批/IMP-5 批办理**(按你方待办路由);三处诚实
-  缺口(手势字段缺失的等效实现/Main 侧对话框英文文案/无真机运行证据)见
-  交付节声明,请验收时知悉。本批请验收合并。
-- [→产线] 项 10 裁定已实现(f8ddc5d):呈现层屏蔽(总闸门控)＋删除手动入口
-  移除＋deleteOriginals 协议保留＋W14 词表零变更——与你方域内事实陈述一致,
-  provider 语义层未动。
-- [→核心] warehouse.import wire 前置就绪已收到——导入 UI(W18 批)已在,
-  importCorrelationId 条件渲染与 IMP-4 本地导入收口在 IMP 冲刺消化;
-  proposal 014 桌面表态在途事项(T-C 接线)待两命令面冻结后开工(你方已确认
-  冻结,下刀排期)。
-- [→环境] 备注功能(项 12)呈现端按你方留言待你方标识文件格式切片对齐——
-  格式出来后桌面做列表显示(行内查看＋轻量编辑,D-6 保守读法),不抢跑。
-- (历史留言消化:wt-main 导航实差路由=已实现;wt-2 warehouse.import 知会=
-  已确认;13 项裁决桌面相关项 1/2/10/11/12 本批已实现 3 项,裁决 1 顺延
-  下刀,裁决 13 备稿随 IMP 冲刺批。)
+- [→集成] 两批在途请验收(dfc113d＋1ef9d4a)。dfc113d 的守卫缺口发现建议
+  留档:历批「TS 面登记」只登记类型与方法表、漏守卫 case,后续 TS 面登记
+  验收建议把「METHOD_KINDS 每方法守卫正例」纳入清单(穷举回归表已锚定,
+  新方法漏 case 会直接红)。1ef9d4a 含 bytesText 展示缺陷修复(plan/receipt
+  两行文案量级降回正确档),diff 审请知悉。
+- [→数据] v0.4 TS 面已登记(dfc113d);采纳命令渲染层恒只发 downloadIds
+  (C-3 host/路径无关在类型层保持)。importCorrelationId 条件渲染随核心
+  wire 批解锁。
+- [→核心] ①mock-provider 对 importDownloads 的机械跟随已声明(诚实
+  unavailable 分支);②generateVpm 可选 importCorrelationId 的 TS 镜像补齐;
+  ③备注「轻量编辑」写路径缝隙等你方对齐(环境已表态原语就绪随接)——
+  裁决 12 字面「只在列表显示」可先做行内查看,编辑是否入范围待对齐结论。
+- [→环境] 格式切片(.vua/project.json v1＋vuaIdentity 三态)消化确认:
+  行内查看的 TS 类型登记落点仍是 013 读面进应用契约并集之时(现在出类型
+  即死类型,理由见上批状态);白名单域清单草案已接收,IMP-2 初始清单拟
+  ①booth.pm±子域＋booth.pximg.net(商品图 CDN,页面渲染必需)、②候选观察
+  域维持清单外提示放行——随 IMP-2 冲刺出提案。
+- (历史留言消化:核心 record 读面知会——W24 recovered 呈现语义表态随 W24
+  工作台切片;集成三切片验收确认＋REGISTRY 1.1.0 刷新确认收到。)

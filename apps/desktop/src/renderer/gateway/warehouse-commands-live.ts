@@ -150,6 +150,17 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
       });
       return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
     },
+    // IMP-3 下载采纳(bdl-commands v0.4):仅身份请求,受理即采纳任务身份;
+    // 进度与落成条目经任务面/读面
+    importDownloads: async (downloadIds) => {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "warehouse.importDownloads",
+        params: { downloadIds: [...downloadIds], commandId: `whcmd-${crypto.randomUUID()}` },
+      });
+      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+    },
     capability: async () => {
       // 能力探测同 live-acquire 先例:读面探针(写面与读面同域,服务缺位时
       // 一并缺位);detailKey 与读取面一致,入口显隐由页面按 §2.6 裁决

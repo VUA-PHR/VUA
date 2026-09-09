@@ -264,6 +264,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "warehouse.deleteOriginals":
       case "warehouse.setGlobalDefaultMode":
       case "warehouse.import":
+      case "warehouse.importDownloads":
       case "recipe.save":
       case "recipe.resolve":
       case "plan.approve":

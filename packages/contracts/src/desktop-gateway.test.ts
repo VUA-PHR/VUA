@@ -274,3 +274,60 @@ describe("bdl-commands v0.1 gateway surface", () => {
     })).toBe(false);
   });
 });
+
+describe("gateway guard covers every declared method (regression: silent guard gaps)", () => {
+  // 回归锚(2026-09-09 发现):METHOD_KINDS 已登记而守卫 switch 缺 case 的
+  // 方法会被 router 以 invalid_request 拒绝——v0.2/v0.3/W20/014 各批共有
+  // 此缺口(setGlobalDefaultMode/import/十方法/import-copy),本表保证
+  // 「声明即守卫」不再漂移。新方法入 METHOD_KINDS 时必须同批补本表正例。
+  const base = { schemaVersion: 1, requestId: "r" } as const;
+  const minimalValidParams: Readonly<Record<string, Record<string, unknown>>> = {
+    "app.snapshot": {},
+    "task.list": {},
+    "task.get": { taskId: "task-1" },
+    "task.requestCancellation": { taskId: "task-1", commandId: "cancel-1" },
+    "environment.getSnapshot": {},
+    "task.startDemo": { commandId: "demo-1" },
+    "production.startInspection": { materialRefId: "mat-1", commandId: "cmd-1" },
+    "production.getInspection": { inspectionId: "ins-1" },
+    "production.requestPlan": { inspectionId: "ins-1", commandId: "cmd-2", mode: "direct_unity_package" },
+    "production.getPlan": { planId: "plan-1" },
+    "production.confirmPlan": { planId: "plan-1", commandId: "cmd-3", observedRevision: 2, riskChoice: "continue" },
+    "production.recover": { taskId: "task-1", commandId: "cmd-4", decision: "continue" },
+    "production.getBuildRecord": { buildRecordId: "br-1" },
+    "catalog.list": {},
+    "catalog.detail": { productId: "booth:1234567" },
+    "catalog.status": {},
+    "warehouse.listEntries": {},
+    "warehouse.entryDetail": { warehouseItemId: "wh-entry-1" },
+    "download.retry": { taskId: "task-1", commandId: "cmd-5" },
+    "warehouse.setArtifactMode": { warehouseItemId: "wh-entry-1", mode: null, commandId: "cmd-6" },
+    "warehouse.generateVpm": { warehouseItemId: "wh-entry-1", commandId: "cmd-7" },
+    "warehouse.deleteOriginals": { warehouseItemId: "wh-entry-1", commandId: "cmd-8" },
+    "warehouse.setGlobalDefaultMode": { mode: "generate_vpm", commandId: "cmd-9" },
+    "warehouse.import": { sourceFolders: ["C:/material"], commandId: "cmd-10" },
+    "warehouse.importDownloads": { downloadIds: ["dl-1"], commandId: "cmd-11" },
+    "recipe.save": { recipeDocument: { schemaVersion: "0.3" }, baseRevision: 0 },
+    "recipe.get": { recipeId: "recipe-1" },
+    "recipe.list": {},
+    "recipe.resolve": { recipeId: "recipe-1" },
+    "plan.approve": { planId: "plan-1" },
+    "plan.get": { planId: "plan-1" },
+    "plan.list": {},
+    "job.execute": { planId: "plan-1" },
+    "record.get": { buildId: "build-1" },
+    "record.list": {},
+    "project.import-copy": {
+      phase: "plan",
+      sourcePath: "C:/proj",
+      targetParentDirectory: "C:/vua",
+      targetProjectName: "copy",
+    },
+  };
+
+  it("admits a minimal well-formed request for every method in the kind table", () => {
+    for (const [method, params] of Object.entries(minimalValidParams)) {
+      expect(isDesktopGatewayRequestV1({ ...base, method, params }), method).toBe(true);
+    }
+  });
+});

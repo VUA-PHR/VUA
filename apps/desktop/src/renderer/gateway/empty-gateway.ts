@@ -80,6 +80,7 @@ function createEmptyWarehouseCommands(): WarehouseCommandsPort {
     deleteOriginals: () => Promise.resolve(unavailableOutcome),
     setGlobalDefaultMode: () => Promise.resolve(unavailableOutcome),
     importFolders: () => Promise.resolve(unavailableOutcome),
+    importDownloads: () => Promise.resolve(unavailableOutcome),
     capability: () => Promise.resolve(unavailable),
   };
 }

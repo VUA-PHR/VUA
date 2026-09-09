@@ -590,6 +590,13 @@ export interface WarehouseImportAcceptedV03 {
   readonly correlationId: string;
 }
 
+/** warehouse.importDownloads 的受理载荷(bdl-commands v0.4,IMP-3):下载
+ *  采纳任务受理;逐下载进度与 downloaded_material 条目身份经任务面/读面 */
+export interface WarehouseImportDownloadsAcceptedV04 {
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
 /** 任务化维护命令的受理载荷(generateVpm / deleteOriginals 共用) */
 export interface WarehouseMaintenanceAcceptedV01 {
   readonly taskId: string;
@@ -631,7 +638,12 @@ export interface WarehouseGenerateVpmCommandV01 extends ApplicationRequestBaseV0
   readonly kind: "command";
   readonly method: "warehouse.generateVpm";
   readonly commandId: string;
-  readonly params: { readonly warehouseItemId: string };
+  readonly params: {
+    readonly warehouseItemId: string;
+    /** v0.3 词表镜像(proposal 010 承诺 6):仅导入编排的自动生成携带;手动
+     *  发起恒不携带——渲染层面从不设置该字段,守卫接受 1~2 键 */
+    readonly importCorrelationId?: string;
+  };
 }
 
 export interface WarehouseDeleteOriginalsCommandV01 extends ApplicationRequestBaseV01 {
@@ -656,6 +668,17 @@ export interface WarehouseImportCommandV03 extends ApplicationRequestBaseV01 {
   readonly method: "warehouse.import";
   readonly commandId: string;
   readonly params: { readonly sourceFolders: readonly string[] };
+}
+
+/** warehouse.importDownloads 下载采纳命令(bdl-commands v0.4,IMP-3):只携
+ *  带端口下载身份——暂存路径/大小/文件名是 BDL 下载事件日志的服务端事实,
+ *  永不是请求字段或客户端断言;采纳=复制落库为 downloaded_material 条目,
+ *  非空数组;一次命令=一个采纳任务(逐下载进度) */
+export interface WarehouseImportDownloadsCommandV04 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "warehouse.importDownloads";
+  readonly commandId: string;
+  readonly params: { readonly downloadIds: readonly string[] };
 }
 
 
@@ -960,6 +983,7 @@ export type ApplicationRequestV01 =
   | WarehouseSetArtifactModeCommandV01
   | WarehouseSetGlobalDefaultModeCommandV02
   | WarehouseImportCommandV03
+  | WarehouseImportDownloadsCommandV04
   | RecipeSaveCommandV02
   | ProjectImportCopyCommandV01
   | RecipeResolveCommandV02
@@ -1348,11 +1372,24 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
         || value.params.mode === "use_original_unitypackage"
         || value.params.mode === "generate_vpm");
   }
-  if (value.kind === "command" && (value.method === "warehouse.generateVpm" || value.method === "warehouse.deleteOriginals")) {
+  if (value.kind === "command" && value.method === "warehouse.deleteOriginals") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, ["warehouseItemId"])
       && isIdentifier(value.params.warehouseItemId);
+  }
+  // generateVpm:v0.3 词表可选携带 importCorrelationId(导入编排自动生成;
+  // 手动发起恒不携带)——params 闭集 = warehouseItemId ± importCorrelationId
+  if (value.kind === "command" && value.method === "warehouse.generateVpm") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !isIdentifier(value.params.warehouseItemId)) return false;
+    const keys = Object.keys(value.params).sort();
+    return keys.length === 1
+      || (keys.length === 2
+        && keys.includes("importCorrelationId")
+        && typeof value.params.importCorrelationId === "string"
+        && value.params.importCorrelationId.length > 0);
   }
   // bdl-commands v0.2 全局层(W14):params 闭集 = mode,词表闭集无 null
   if (value.kind === "command" && value.method === "warehouse.setGlobalDefaultMode") {
@@ -1371,6 +1408,17 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && value.params.sourceFolders.length > 0
       && value.params.sourceFolders.every(
         (folder: unknown) => typeof folder === "string" && folder.length > 0);
+  }
+  // bdl-commands v0.4 下载采纳(IMP-3):params 闭集 = downloadIds,非空字符串
+  // 数组(仅身份——路径/大小/文件名是服务端事实,词表外字段即契约违反)
+  if (value.kind === "command" && value.method === "warehouse.importDownloads") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["downloadIds"])
+      && Array.isArray(value.params.downloadIds)
+      && value.params.downloadIds.length > 0
+      && value.params.downloadIds.every(
+        (downloadId: unknown) => typeof downloadId === "string" && downloadId.length > 0);
   }
   // production-use-case v0.2(W20 ten-method freeze): required-key closed sets
   if (value.kind === "command" && value.method === "recipe.save") {

@@ -80,5 +80,12 @@ export interface WarehouseCommandsPort {
    * 导入编排内的自动生成挂点在任务内(010 路径 A,服务端)
    */
   importFolders(sourceFolders: readonly string[]): Promise<WarehouseCommandOutcome>;
+  /**
+   * 采纳已完成下载为仓储条目(bdl-commands v0.4,IMP-3):只携带端口下载
+   * 身份——暂存路径/大小/文件名是 BDL 下载事件日志的服务端事实,永不是
+   * 请求字段或客户端断言;受理即采纳任务身份,逐下载进度经任务面呈现;
+   * 采纳=复制落库,暂存清理不是本命令语义
+   */
+  importDownloads(downloadIds: readonly string[]): Promise<WarehouseCommandOutcome>;
   capability(): Promise<CapabilityReport>;
 }

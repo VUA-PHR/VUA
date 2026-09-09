@@ -202,6 +202,11 @@ describe("bdl-commands v0.1 application surface", () => {
       ...base, commandId: "cmd-3", method: "warehouse.generateVpm",
       params: { warehouseItemId: "wh-entry-1" },
     })).toBe(true);
+    // v0.3 词表可选字段:导入编排自动生成携带 importCorrelationId(010 承诺 6)
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-3a", method: "warehouse.generateVpm",
+      params: { warehouseItemId: "wh-entry-1", importCorrelationId: "corr-import-1" },
+    })).toBe(true);
     expect(isApplicationRequestV01({
       ...base, commandId: "cmd-4", method: "warehouse.deleteOriginals",
       params: { warehouseItemId: "wh-entry-1" },
@@ -232,6 +237,43 @@ describe("bdl-commands v0.1 application surface", () => {
     expect(isApplicationRequestV01({
       ...base, commandId: "cmd-9", method: "warehouse.deleteOriginals",
       params: { warehouseItemId: "", mode: null },
+    })).toBe(false);
+  });
+
+  it("admits the v0.4 download-adoption command with identity-only closed params", () => {
+    // bdl-commands v0.4(IMP-3):只携带下载身份,非空数组
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-1", method: "warehouse.importDownloads",
+      params: { downloadIds: ["dl-01hexample0000000000000a", "dl-01hexample0000000000000b"] },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-2", method: "warehouse.importDownloads",
+      params: { downloadIds: ["dl-1"] },
+    })).toBe(true);
+  });
+
+  it("rejects download-adoption closed-set violations", () => {
+    // 空数组、缺字段、非字符串元素、词表外字段、缺 commandId 一律拒绝
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-3", method: "warehouse.importDownloads",
+      params: { downloadIds: [] },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-4", method: "warehouse.importDownloads",
+      params: {},
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-5", method: "warehouse.importDownloads",
+      params: { downloadIds: ["dl-1", 42] },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, commandId: "cmd-dl-6", method: "warehouse.importDownloads",
+      // 客户端断言(路径/大小)永不是请求字段(C-3:契约保持 host/路径无关)
+      params: { downloadIds: ["dl-1"], stagingPath: "C:/tmp/x" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "warehouse.importDownloads",
+      params: { downloadIds: ["dl-1"] },
     })).toBe(false);
   });
 });

@@ -341,6 +341,14 @@ export interface WarehouseImportRequestV1 {
   readonly params: { readonly sourceFolders: readonly string[]; readonly commandId: string };
 }
 
+/** warehouse.importDownloads 下载采纳入口(bdl-commands v0.4,IMP-3):仅身份 */
+export interface WarehouseImportDownloadsRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "warehouse.importDownloads";
+  readonly params: { readonly downloadIds: readonly string[]; readonly commandId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -366,6 +374,7 @@ export type DesktopGatewayRequestV1 =
   | WarehouseDeleteOriginalsRequestV1
   | WarehouseSetGlobalDefaultModeRequestV1
   | WarehouseImportRequestV1
+  | WarehouseImportDownloadsRequestV1
   | RecipeSaveRequestV1
   | RecipeGetRequestV1
   | RecipeListRequestV1
@@ -404,6 +413,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.deleteOriginals": "command",
   "warehouse.setGlobalDefaultMode": "command",
   "warehouse.import": "command",
+  "warehouse.importDownloads": "command",
   "recipe.save": "command",
   "recipe.resolve": "command",
   "plan.approve": "command",
@@ -545,6 +555,23 @@ export interface VuaDesktopApiV1 {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+/** production-use-case v0.2 列表参数闭集(011 §7:可选键 text/limit/offset/
+ *  recipeId;词表外键或类型不符 = invalid_params 同源判定) */
+function isProductionListParamsV1(params: Record<string, unknown>): boolean {
+  for (const key of Object.keys(params)) {
+    if (key === "text") {
+      if (typeof params.text !== "string") return false;
+    } else if (key === "limit" || key === "offset") {
+      if (typeof params[key] !== "number") return false;
+    } else if (key === "recipeId") {
+      if (typeof params.recipeId !== "string" || params.recipeId.length < 1) return false;
+    } else {
+      return false;
+    }
+  }
+  return true;
 }
 
 function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
@@ -716,6 +743,78 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["warehouseItemId", "commandId"])
         && isIdentifier(value.params.warehouseItemId)
         && isIdentifier(value.params.commandId);
+    // bdl-commands v0.2 全局层(W14):同步写面,回执为 BDL 读回事实
+    case "warehouse.setGlobalDefaultMode":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["mode", "commandId"])
+        && (value.params.mode === "use_original_unitypackage"
+          || value.params.mode === "generate_vpm")
+        && isIdentifier(value.params.commandId);
+    // bdl-commands v0.3 导入(W19):非空字符串数组
+    case "warehouse.import":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["sourceFolders", "commandId"])
+        && Array.isArray(value.params.sourceFolders)
+        && value.params.sourceFolders.length > 0
+        && value.params.sourceFolders.every(
+          (folder: unknown) => typeof folder === "string" && folder.length > 0)
+        && isIdentifier(value.params.commandId);
+    // bdl-commands v0.4 下载采纳(IMP-3):仅身份,非空字符串数组
+    case "warehouse.importDownloads":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["downloadIds", "commandId"])
+        && Array.isArray(value.params.downloadIds)
+        && value.params.downloadIds.length > 0
+        && value.params.downloadIds.every(
+          (downloadId: unknown) => typeof downloadId === "string" && downloadId.length > 0)
+        && isIdentifier(value.params.commandId);
+    // production-use-case v0.2(W20 十方法冻结件):文档本体以 object 承载,
+    // 词表闭集照冻结面
+    case "recipe.save":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["recipeDocument", "baseRevision"])
+        && typeof value.params.recipeDocument === "object"
+        && value.params.recipeDocument !== null
+        && typeof value.params.baseRevision === "number";
+    case "recipe.get":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["recipeId"])
+        && isIdentifier(value.params.recipeId);
+    case "recipe.list":
+    case "plan.list":
+    case "record.list":
+      return hasExactKeys(value, REQUEST_KEYS) && isProductionListParamsV1(value.params);
+    case "recipe.resolve":
+      if (!hasExactKeys(value, REQUEST_KEYS)) return false;
+      if (!hasExactKeys(value.params, ["recipeId"])) {
+        const keys = Object.keys(value.params).sort();
+        if (keys.length !== 2 || keys[1] !== "revision") return false;
+      }
+      return isIdentifier(value.params.recipeId)
+        && (value.params.revision === undefined || typeof value.params.revision === "number");
+    case "plan.approve":
+    case "plan.get":
+    case "job.execute":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["planId"])
+        && isIdentifier(value.params.planId);
+    case "record.get":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["buildId"])
+        && isIdentifier(value.params.buildId);
+    // 014 副本导入(F6 确认链;plan/apply 两段;apply 强制 confirmedPlanDigest)
+    case "project.import-copy":
+      if (!hasExactKeys(value, REQUEST_KEYS)) return false;
+      if (!hasExactKeys(value.params, ["phase", "sourcePath", "targetParentDirectory", "targetProjectName"])) {
+        const keys = Object.keys(value.params).sort();
+        if (keys.length !== 5 || keys[0] !== "confirmedPlanDigest") return false;
+      }
+      return (value.params.phase === "plan" || value.params.phase === "apply")
+        && isIdentifier(value.params.sourcePath)
+        && isIdentifier(value.params.targetParentDirectory)
+        && isIdentifier(value.params.targetProjectName)
+        && (value.params.confirmedPlanDigest === undefined
+          || isIdentifier(value.params.confirmedPlanDigest));
     default:
       return false;
   }
