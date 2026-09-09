@@ -1117,3 +1117,494 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
     );
     assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
 }
+
+
+// --- W22 record-face closeout: job.execute writes the full Build Record ---
+
+/// A scripted Bridge whose v2 receipt steps, status, diagnostics and
+/// snapshot identity are fixed by the test (the honest shape the record
+/// transposition consumes).
+struct ScriptedBridge {
+    status: ResultStatus,
+    steps: Vec<Value>,
+    diagnostics: Vec<vua_orchestrator::Diagnostic>,
+    snapshot_id: Option<String>,
+}
+
+impl UnityBridge for ScriptedBridge {
+    fn execute(
+        &self,
+        _project: &vua_orchestrator::ProjectRef,
+        command: &UnityCommand,
+    ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
+        Ok(UnityResult {
+            schema_version: 2,
+            command_id: command.command_id.clone(),
+            status: self.status,
+            changed_paths: vec![],
+            diagnostics: self.diagnostics.clone(),
+            data: json!({
+                "planHash": command.payload.plan_hash,
+                "dryRun": command.dry_run,
+                "steps": self.steps,
+            }),
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: self.snapshot_id.clone(),
+            restored_from: None,
+            project_fingerprint_before: None,
+        })
+    }
+}
+
+const UUID_V7_VERSION_NIBBLE: usize = 14;
+
+fn assert_uuid_v7(id: &str, label: &str) {
+    assert_eq!(id.len(), 36, "{label} must be a uuid: {id}");
+    assert_eq!(
+        &id[UUID_V7_VERSION_NIBBLE..UUID_V7_VERSION_NIBBLE + 1],
+        "7",
+        "{label} must carry the v7 version nibble: {id}"
+    );
+}
+
+/// Imports two real source folders through the acquisition import job and
+/// returns the landed warehouse entry ids (the production import path).
+fn seed_imported_entries(world: &World) -> Vec<String> {
+    let folder_a = world.base.join("imports").join("pack-a");
+    let folder_b = world.base.join("imports").join("pack-b");
+    for folder in [&folder_a, &folder_b] {
+        fs::create_dir_all(folder).expect("source folder");
+        fs::write(folder.join("material-pack.unitypackage"), b"PK fixture").expect("package file");
+    }
+    let import_spec = vua_acquisition::WarehouseImportTaskSpec {
+        correlation_id: "corr-seed-import".into(),
+        source_folders: vec![folder_a.clone(), folder_b.clone()],
+        warehouse_root: world.base.join("warehouse"),
+        auto_generate: None,
+    };
+    let import_runtime = vua_orchestrator::TaskRuntime::with_sqlite(
+        Arc::new(vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap()),
+        Arc::new(vua_orchestrator::SystemClock),
+        Arc::new(vua_orchestrator::NanosTaskIdGenerator::default()),
+    )
+    .expect("import runtime opens");
+    let import_accepted = vua_acquisition::submit_warehouse_import(
+        &import_runtime,
+        world.bdl.clone(),
+        Arc::new(vua_orchestrator::SystemClock),
+        import_spec,
+        None,
+    )
+    .expect("seed import accepted");
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let import_done = loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(&import_accepted.task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "seed import did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    import_done
+        .result
+        .as_ref()
+        .map(|payload| {
+            payload["reports"]
+                .as_array()
+                .expect("reports")
+                .iter()
+                .map(|report| {
+                    report["entry"]["warehouseItemId"]
+                        .as_str()
+                        .expect("entry warehouseItemId")
+                        .to_owned()
+                })
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+/// Saves the recipe and runs the tasked resolution; returns the resolve Done
+/// payload (planId / missingCount / evidenceIds / skippedJobIds).
+fn save_and_resolve(
+    world: &World,
+    use_cases: &vua_provider_host::ProductionUseCaseConfig,
+    warehouse: &WarehouseConfig,
+    recipe_document: Value,
+) -> Value {
+    let frames = run_frames_with_use_cases(
+        world,
+        use_cases,
+        Some(warehouse),
+        "corr-seed-save",
+        &[json!({
+            "operation": "recipe.save",
+            "params": {"recipeDocument": recipe_document, "baseRevision": 0}
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["ok"], true, "recipe save: {:?}", frames[0]);
+
+    let frames = run_frames_with_use_cases(
+        world,
+        use_cases,
+        Some(warehouse),
+        "corr-seed-resolve",
+        &[json!({
+            "operation": "recipe.resolve",
+            "params": {"recipeId": "019e0000-0000-7000-8000-000000000001"}
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["value"]["operation"], "recipe.resolve");
+    let task_id = frames[0]["payload"]["value"]["taskId"].as_str().expect("taskId").to_owned();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(&task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            assert_eq!(
+                serde_json::to_value(task.state).unwrap(),
+                "succeeded",
+                "resolve payload: {:?}",
+                task.result
+            );
+            return task.result.expect("resolve done payload");
+        }
+        assert!(Instant::now() < deadline, "resolve did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+/// Approves the plan and submits job.execute; returns the accepted taskId.
+fn approve_and_execute(
+    world: &World,
+    use_cases: &vua_provider_host::ProductionUseCaseConfig,
+    warehouse: &WarehouseConfig,
+    plan_id: &str,
+) -> String {
+    let frames = run_frames_with_use_cases(
+        world,
+        use_cases,
+        Some(warehouse),
+        "corr-seed-approve",
+        &[json!({"operation": "plan.approve", "params": {"planId": plan_id}})],
+    );
+    assert_eq!(frames[0]["payload"]["value"]["planStatus"], "approved");
+
+    let frames = run_frames_with_use_cases(
+        world,
+        use_cases,
+        Some(warehouse),
+        "corr-seed-execute",
+        &[json!({"operation": "job.execute", "params": {"planId": plan_id}})],
+    );
+    frames[0]["payload"]["value"]["taskId"]
+        .as_str()
+        .expect("execute accepts into a task")
+        .to_owned()
+}
+
+fn wait_terminal(world: &World, task_id: &str) -> vua_orchestrator::StoredTask {
+    let deadline = Instant::now() + Duration::from_secs(30);
+    loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            return task;
+        }
+        assert!(Instant::now() < deadline, "the execute task did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    }
+}
+
+fn seeded_production_world(
+    label: &str,
+) -> (World, vua_provider_host::ProductionUseCaseConfig, WarehouseConfig) {
+    let world = make_world(label);
+    let production_root = world.base.join("production");
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        recipes: Arc::new(vua_orchestrator::RecipeDocumentStore
+            ::new_with_system_clock(production_root.join("recipes"))),
+        plans: Arc::new(vua_orchestrator::PlanDocumentStore::new(production_root.join("plans"))),
+        evidence: Arc::new(vua_orchestrator::EvidenceStore::new(production_root.join("evidence"))),
+        records: Arc::new(vua_orchestrator::RecipeRecordStore::new(production_root.join("records"))),
+        bridge: Arc::new(NoBridge),
+        project_root: world.base.join("project"),
+    };
+    let warehouse = WarehouseConfig {
+        bdl: world.bdl.clone(),
+        warehouse_root: world.base.join("warehouse"),
+        global_default: ArtifactMode::UseOriginalUnitypackage,
+        executor: None,
+    };
+    (world, use_cases, warehouse)
+}
+
+#[test]
+fn job_execute_writes_the_full_schema_shaped_record() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-full");
+    let entry_ids = seed_imported_entries(&world);
+    assert_eq!(entry_ids.len(), 2);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Record Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "avatar_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}},
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[1], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "avatar_asset"},
+            {"id": "outfit_blue", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "outfit_blue"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+    assert_uuid_v7(&plan_id, "the resolve planId");
+    assert_eq!(done["missingCount"], 0);
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded");
+    let payload = task.result.expect("execute done payload");
+    assert_eq!(payload["status"], "succeeded");
+    assert_eq!(payload["jobsRecorded"], 1);
+    assert_eq!(payload["deviationsRecorded"], 0);
+    let build_id = payload["buildId"].as_str().expect("buildId").to_owned();
+
+    // The record reads back through the wire face with the full anchor
+    // chain: digests are real sha256 values, ids are v7-shaped, the
+    // receipt transposition carries the plan identity, and no deviation
+    // exists on a clean run.
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-seed-record",
+        &[json!({"operation": "record.get", "params": {"buildId": build_id}})],
+    );
+    let record = &frames[0]["payload"]["value"]["recordDocument"];
+    assert_eq!(record["schemaVersion"], "0.3");
+    assert_eq!(record["status"], "succeeded");
+    assert_eq!(record["planId"], json!(plan_id));
+    for digest_field in ["recipeDigest", "localResolutionDigest", "planHash"] {
+        let digest = record["inputs"][digest_field].as_str().unwrap_or_else(|| {
+            panic!("inputs.{digest_field} must be a real digest: {:?}", record["inputs"])
+        });
+        assert!(
+            digest.starts_with("sha256:") && digest.len() == "sha256:".len() + 64,
+            "inputs.{digest_field} must be a sha256 anchor: {digest}"
+        );
+    }
+    let jobs = record["jobs"].as_array().expect("record jobs");
+    assert_eq!(jobs.len(), 1);
+    let job_id = jobs[0]["jobId"].as_str().expect("jobId");
+    assert_uuid_v7(job_id, "the recorded jobId");
+    assert_eq!(jobs[0]["kind"], "install_modular_asset");
+    assert_eq!(jobs[0]["status"], "succeeded");
+    assert!(jobs[0]["commandId"].as_str().expect("commandId").starts_with("job-"));
+    assert_eq!(jobs[0]["resolvedSourceUsed"]["sourceKind"], "original");
+    assert_eq!(record["planDeviations"], json!([]));
+    assert_eq!(record["recoveryPoints"], json!([]));
+    assert_eq!(record["evidenceSummary"]["evidenceIds"], json!([]));
+}
+
+#[test]
+fn job_execute_records_typed_deviations_and_the_receipt_snapshot() {
+    let (world, mut use_cases, warehouse) = seeded_production_world("job-execute-deviations");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Deviation Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "avatar_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}},
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[1], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "avatar_asset"},
+            {"id": "outfit_blue", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "outfit_blue"},
+            {"id": "exclude_item", "kind": "exclude_object", "assetInstanceId": "avatar_root",
+             "selector": {"selectorId": "main_root"}}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    // The receipt: the first job was guard-skipped, the second executed
+    // against a generated_vpm copy instead of the planned original, and a
+    // pre-job snapshot was taken. Two planned jobs, one receipt.
+    let fallback_sha = format!("sha256:{}", "b".repeat(64));
+    use_cases.bridge = Arc::new(ScriptedBridge {
+        status: ResultStatus::Succeeded,
+        steps: vec![
+            json!({"kind": "install_modular_asset", "status": "skipped",
+                   "warning": "guard declined the install"}),
+            json!({"kind": "exclude_object", "status": "executed",
+                   "resolvedSource": {"sourceKind": "generated_vpm", "artifactSha256": fallback_sha}}),
+        ],
+        diagnostics: vec![],
+        snapshot_id: Some("01990000-0000-7000-8000-00000000abcd".to_owned()),
+    });
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded");
+    let build_id = task.result.expect("payload")["buildId"]
+        .as_str()
+        .expect("buildId")
+        .to_owned();
+
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-seed-record",
+        &[json!({"operation": "record.get", "params": {"buildId": build_id}})],
+    );
+    let record = &frames[0]["payload"]["value"]["recordDocument"];
+    // jobs[] is the receipt-bearing ordered prefix: only the executed step.
+    let jobs = record["jobs"].as_array().expect("record jobs");
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0]["status"], "succeeded");
+    assert_eq!(jobs[0]["kind"], "exclude_object");
+    // The receipt is the authoritative consumed source.
+    assert_eq!(jobs[0]["resolvedSourceUsed"]["sourceKind"], "generated_vpm");
+
+    let deviations = record["planDeviations"].as_array().expect("deviations");
+    let kinds: Vec<&str> = deviations
+        .iter()
+        .map(|deviation| deviation["deviationKind"].as_str().expect("deviationKind"))
+        .collect();
+    assert!(kinds.contains(&"guard_skip"), "guard skip must be typed: {deviations:?}");
+    assert!(kinds.contains(&"source_fallback"), "source fallback must be typed: {deviations:?}");
+    assert!(kinds.contains(&"partial_completion"), "the truncation must be typed: {deviations:?}");
+
+    let recovery_points = record["recoveryPoints"].as_array().expect("recovery points");
+    assert_eq!(recovery_points.len(), 1);
+    assert_eq!(recovery_points[0]["phase"], "pre_job");
+    assert_eq!(recovery_points[0]["snapshotId"], "01990000-0000-7000-8000-00000000abcd");
+}
+
+#[test]
+fn job_execute_enforces_the_version_lock_before_execution() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-lock");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Lock Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document.clone());
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    // The recipe is saved again after the plan was resolved: the store
+    // revision moves past the plan's lock value.
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-seed-resave",
+        &[json!({
+            "operation": "recipe.save",
+            "params": {"recipeDocument": recipe_document, "baseRevision": 1}
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["ok"], true, "re-save: {:?}", frames[0]);
+
+    // The Bridge must never be reached: the version lock refuses first.
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "failed");
+    let error = task.error.expect("the lock refusal is a typed error");
+    assert_eq!(error.code, "vua.recipe.revision_conflict");
+    // No record exists for the refused execution (nothing executed).
+    let records = vua_orchestrator::RecipeRecordStore::new(
+        world.base.join("production").join("records"),
+    );
+    assert_eq!(records.list_documents().expect("records readable").len(), 0);
+}
+
+#[test]
+fn job_execute_carries_the_resolution_evidence_chain() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-evidence");
+    // The recipe references an entry that was never imported: the
+    // resolution honestly misses it and publishes evidence.
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Evidence Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "ghost_asset",
+             "sourceRef": {"warehouseItemId": "019e0000-0000-7000-8000-00000000ffff",
+                           "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "ghost_asset"}
+        ],
+        "relations": [
+            {"id": "install_ghost", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    assert_eq!(done["missingCount"], 1);
+    assert_eq!(done["evidenceIds"].as_array().expect("evidence ids").len(), 1);
+    assert_eq!(done["skippedJobIds"].as_array().expect("skipped").len(), 1);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    // With every job skipped at resolution there is nothing to execute; the
+    // empty execution still records the resolution's evidence chain through
+    // the localResolutionId back-reference.
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded");
+    let build_id = task.result.expect("payload")["buildId"]
+        .as_str()
+        .expect("buildId")
+        .to_owned();
+
+    let frames = run_frames_with_use_cases(
+        &world,
+        &use_cases,
+        Some(&warehouse),
+        "corr-seed-record",
+        &[json!({"operation": "record.get", "params": {"buildId": build_id}})],
+    );
+    let record = &frames[0]["payload"]["value"]["recordDocument"];
+    assert_eq!(record["jobs"], json!([]));
+    assert_eq!(
+        record["evidenceSummary"]["evidenceIds"]
+            .as_array()
+            .expect("evidence summary")
+            .len(),
+        1,
+        "the resolution's missing-asset evidence must ride the record: {record}"
+    );
+}
