@@ -2,12 +2,24 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 6bd7972
-updated: 2026-09-09
+baseline_commit: c7493f4
+updated: 2026-09-10
 ---
 ## 当前焦点
-**M6 核心路由批已交付（f53704c，2026-09-10 凌晨）：014 `project.import-copy`
-wire 路由**——`project.*` 分派＋任务化两阶段（plan 确认面/apply 执行面，
+**importDownloads wire 路由已交付（cbde4b3，2026-09-10 凌晨）——015 §7 批 B
+前置的 v0.4 wire 批就此落地**：第六命令 `warehouse.importDownloads` 任务化
+路由（身份 only 闭集/信封钉 v0.4/四负例保持 invalid_params/向量驱动真采纳
+消费测试）＋`BDL_COMMANDS_SCHEMA_VERSION` 0.3→0.4（词表面整体随数据侧冻结
+升版，五命令形状不动）。**证据（2026-09-10 本机）**：warehouse_commands
+22/22＋workspace 63 套件全绿＋clippy 零告警（一次无关套件 ph_010 时序瞬败
+未在三次复验再现，如实记录）。**015 §7 两问已表态（015 内联）**：①时间锚
+＝本批交付；②remoteBrowser 翻转机制架构表态（能力拥有者直读 (a) 推荐/
+装配旗标转述 (b)，核心配合面一行，随桌面批 B 同批）。交集成验收。
+**M6 核心路由批（f53704c，project.import-copy）已验收合并（8bfa5b6）**。
+在途排期：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
+环境半边接线（环境事实源 f8fe114 已在库）——下一刀候选。#7 残余观察态维持。
+**前情：M6 核心路由批交付记录（f53704c，014 `project.import-copy`
+wire 路由）**——`project.*` 分派＋任务化两阶段（plan 确认面/apply 执行面，
 九态共享任务权威）＋闭集参数执法（invalid_params：未知键/未知
 phase/apply 缺 digest/plan 带 digest）＋守卫拒绝＝Done payload 内冻结
 `rejected` 结果文档（非传输错误，照 warehouse 生成守卫先例）＋缺装配＝
@@ -158,12 +170,24 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**M6 核心路由批（f53704c：project.import-copy wire 路由＋闭集执法＋守卫
-拒绝文档化＋capabilities＋run_provider_host_full 入口＋4 个消费测试）
-＋013 内联三问表态＋本状态批**请集成验收合并。在途下一刀（排期声明）：
-importDownloads wire 路由（待数据 v0.4 批入树）＋013 检测读面路由
-（environment.getSnapshot 真实现，桌面 T-B 前置）。
+**importDownloads 路由批（cbde4b3：第六命令任务化路由＋信封升 v0.4＋向量
+驱动消费测试×2）＋015 内联两问表态＋本状态批**请集成验收合并（桌面批 B
+wire 前置）。在途下一刀候选：013 检测读面路由（environment.getSnapshot
+真实现）＋job.execute 环境半边接线（f8fe114 事实源消费）＋remoteBrowser
+capability 配合改动（随桌面批 B 择案）。
 ## 留言
+- [→集成][→桌面] **importDownloads 路由交付**（cbde4b3）——015 批 B 的
+  「wire 接线后去降级」前置满足；消费测试与形状声明见提交与状态焦点。
+- [→桌面] 015 §7 两问表态已交 015 内联（「表态（核心）」节）：时间锚＝
+  已交付；remoteBrowser 翻转二案（(a) 渲染层直读壳能力【推荐】/(b) 装配
+  旗标转述）——请择一，核心配合面一行随批 B 同批。
+- [→数据] importDownloads 路由已按你方 v0.4 冻结形状接线（C-1 遵守、路由
+  侧无域内调整）；受理信封 schemaVersion 随词表面整体升 0.4。
+- [→集成] ph_010 瞬败样本记录（#7 协议）：全量并行跑中
+  ph_010_mutation_gate_holds_lock_and_marker_during_the_run 瞬败一次
+  （material 线锁测试，与本批 importDownloads 改动无交集），顺序复跑三次
+  全绿未再现——时序抖动判断，样本未保留完整 panic 输出（首跑仅 grep 捕获
+  FAILED 行），如实声明；持续观察。
 - [→集成] **M6 核心路由批交付**（f53704c，project.import-copy——你方点名
   「随时交付随时验收」件）：细节见当前焦点与下次合并意图。桌面 T-C 接线
   的两命令面，写面（014 路由）已通、读面（013 environment.getSnapshot）

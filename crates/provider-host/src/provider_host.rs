@@ -1273,6 +1273,9 @@ fn warehouse_request(
         "warehouse.import" => {
             warehouse_import_submit(warehouse, request, request_id, correlation_id)
         }
+        "warehouse.importDownloads" => {
+            warehouse_import_downloads_submit(warehouse, request, request_id, correlation_id)
+        }
         "warehouse.listEntries" => {
             warehouse_list_entries(warehouse, request, request_id, correlation_id)
         }
@@ -1470,11 +1473,12 @@ fn warehouse_set_artifact_mode(
     ))
 }
 
-/// bdl-commands v0.3 is the frozen command face all warehouse command
-/// acceptances travel as (v0.1/v0.2 superseded; the trio and the global
-/// default keep their shapes, and v0.3 adds `warehouse.import` — the
-/// M5 batch-import task, proposal 010).
-const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.3";
+/// bdl-commands v0.4 is the frozen command face all warehouse command
+/// acceptances travel as (v0.1/v0.2/v0.3 superseded; the trio, the global
+/// default and the M5 batch import keep their shapes; v0.4 adds
+/// `warehouse.importDownloads` — the M6 download-adoption task, IMP-3 /
+/// user ruling U7-3).
+const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.4";
 
 /// project-ops v0.1 is the frozen write-command face `project.import-copy`
 /// travels as (proposal 014, arbitrated 2026-09-09).
@@ -3556,6 +3560,64 @@ fn project_import_copy(
             "errors.project.storeFailed",
             "internal",
         )),
+    }
+}
+
+/// `warehouse.importDownloads` (bdl-commands v0.4, IMP-3): submits one
+/// download-adoption task over the given download ids. Identity only — the
+/// staging path, size and file name are server-side facts read from BDL's
+/// download-event log; a client-supplied path is a params violation by the
+/// frozen closed set. The acceptance envelope matches the frozen v0.4
+/// result vector shape.
+fn warehouse_import_downloads_submit(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let download_ids = match request.get("params") {
+        Some(Value::Object(params)) if params.keys().all(|key| key == "downloadIds") => {
+            match params.get("downloadIds") {
+                Some(Value::Array(ids)) if !ids.is_empty() => ids
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_str()
+                            .filter(|raw| !raw.is_empty())
+                            .map(str::to_owned)
+                    })
+                    .collect::<Option<Vec<String>>>(),
+                _ => None,
+            }
+        }
+        _ => None,
+    };
+    let Some(download_ids) = download_ids else {
+        return warehouse_invalid_params(request_id, correlation_id);
+    };
+    let accepted = vua_acquisition::submit_warehouse_import_downloads(
+        &warehouse.runtime,
+        warehouse.bdl.clone(),
+        Arc::new(SystemClock),
+        vua_acquisition::WarehouseDownloadAdoptTaskSpec {
+            correlation_id: correlation_id.to_owned(),
+            download_ids,
+            warehouse_root: warehouse.warehouse_root.clone(),
+        },
+        None,
+    );
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "operation": "warehouse.importDownloads",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority.
+        Err(_) => warehouse_store_failed(request_id, correlation_id),
     }
 }
 
