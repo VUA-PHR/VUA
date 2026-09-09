@@ -85,6 +85,7 @@ acquire / warehouseCommands / projectOps / packages——十端口逐一可选
   表态一致（017 §11 同型判断——连接目标属桌面域）；
 - **集成**：实现排期与验收口径（check 全链＋leak 专项）；
 - **数据/环境/产线**：无涉（渲染层装配面）。
+<<<<<<< HEAD
 
 ### 表态（核心，2026-09-10 凌晨——§6 确认）
 
@@ -106,3 +107,5 @@ acquire / warehouseCommands / projectOps / packages——十端口逐一可选
    与生产一致。
 
 核心域零在途项；实现批（桌面域内）无需核心配合。
+=======
+>>>>>>> slot/wt-3
