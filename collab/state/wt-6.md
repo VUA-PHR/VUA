@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 6cbcb26
+baseline_commit: main尖
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -33,10 +33,13 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
 - 合并 main 追平（015 后续落账：桌面批 A 验收、批 B 第 1 项、核心
   remoteBrowser 行移除、浏览清单照准——均非环境动作面）。
 ## 在途/待他角色
-- [等核心] 013 读面 provider 路由批（钉 v0.2）——014 import-copy 路由与
-  **job.execute 环境预检接线均已验收合并**（07166b7：009 表态④后半落地，
-  预检链三段 version-lock＋environment＋fingerprint 完整，我方事实源
-  `installed_unity_editors` 在链上）——环境侧待办清零；
+- [等核心] 013 读面 provider 路由批剩余刀（environmentManagers 查询等三
+  查询同批；核心知会读面消费走 `collect_environment_managers_snapshot`
+  原样、editor_roots 经 ProjectOpsConfig 注入——零接口摩擦，bin 侧 VUA
+  环境变量覆写为核心下一刀）——014 import-copy 路由与 job.execute 环境
+  预检均已验收合并（07166b7 预检链三段完整，我方事实源在链上）；
+- [知会留痕] 核心→产线窗口 A2 语义：冒烟 recipe 带 constraint 需真机匹配
+  安装、不带则预检诚实跳过——A2 为产线段，环境 B 段义务不受影响；
 - [已闭环] 016 状态翻转为 accepted（485195f 随仲裁落账；集成确认 BG-4 环境
   协作位履职完毕、无新请求）；
 - [等桌面→核心] 备注编辑范围（D-6）确认→核心 project-ops v0.2 升版批
