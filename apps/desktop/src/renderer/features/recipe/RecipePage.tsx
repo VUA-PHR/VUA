@@ -25,8 +25,10 @@ import {
   type RecipeGraphView,
 } from "../../gateway/index.ts";
 import {
+  narrowRecipeDocumentFacts,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
+  type RecipeDocumentFacts,
   type RecipeLibraryEntryNarrowed,
 } from "./recipe-model.ts";
 import {
@@ -535,11 +537,13 @@ function RecipeLibrarySection({
     | { readonly kind: "unavailable" }
     | { readonly kind: "loaded"; readonly entries: readonly RecipeLibraryEntryNarrowed[] }
   >({ kind: "loading" });
+  const [facts, setFacts] = useState<RecipeDocumentFacts | null>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
 
   useEffect(() => {
     let alive = true;
     setState({ kind: "loading" });
+    setFacts(null);
     void window.vua?.gateway
       .invoke({
         schemaVersion: 1,
@@ -562,6 +566,35 @@ function RecipeLibrarySection({
       alive = false;
     };
   }, [reloadNonce]);
+
+  useEffect(() => {
+    if (selectedId === null) {
+      setFacts(null);
+      return;
+    }
+    let alive = true;
+    setFacts(null);
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "recipe.get",
+        params: { recipeId: selectedId },
+      })
+      .then((result) => {
+        if (!alive) return;
+        if (!result.ok) {
+          setFacts(null);
+          return;
+        }
+        setFacts(narrowRecipeDocumentFacts(
+          (result.value as { recipe?: unknown }).recipe,
+        ));
+      });
+    return () => {
+      alive = false;
+    };
+  }, [selectedId]);
 
   return (
     <div className="vua-recipe-library">
@@ -603,9 +636,22 @@ function RecipeLibrarySection({
         </ul>
       ) : null}
       {selectedId !== null ? (
-        <p className="vua-caption vua-text-secondary" role="note">
-          {copy.libraryMappingNote}
-        </p>
+        <div role="note">
+          <p className="vua-caption vua-text-secondary">{copy.libraryMappingNote}</p>
+          {facts !== null ? (
+            <ul className="vua-project-compat__specs">
+              <li>
+                {format(copy.factsLine, {
+                  revision: String(facts.revision),
+                  assets: String(facts.assetCount),
+                  instances: String(facts.instanceCount),
+                  relations: String(facts.relationCount),
+                })}
+              </li>
+              <li>{facts.locked === true ? copy.factsLocked : copy.factsUnlocked}</li>
+            </ul>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

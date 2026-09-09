@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  narrowRecipeDocumentFacts,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
 } from "./recipe-model.ts";
@@ -38,4 +39,29 @@ test("selectLibraryRecipe: 选择共享骨架——选中 id,空 id 幂等保持
   assert.equal(selectLibraryRecipe(null, "recipe-1"), "recipe-1");
   assert.equal(selectLibraryRecipe("recipe-1", "recipe-2"), "recipe-2");
   assert.equal(selectLibraryRecipe("recipe-1", ""), "recipe-1");
+});
+
+test("narrowRecipeDocumentFacts: 结构事实收窄,relations 缺失=null(语义=零声明)", () => {
+  const facts = narrowRecipeDocumentFacts({
+    formatVersion: "0.3",
+    recipeId: "01234567-89ab-7cde-89ab-0123456789ab",
+    revision: 2,
+    title: "夏季制服",
+    updatedAt: "2026-09-10T03:00:00Z",
+    assets: [{ id: "a1", role: "outfit" }],
+    instances: [{ id: "i1", assetId: "a1", entrypoint: "prefab" }],
+    relations: [],
+    locked: { "x": 1 },
+  });
+  assert.equal(facts?.title, "夏季制服");
+  assert.equal(facts?.assetCount, 1);
+  assert.equal(facts?.instanceCount, 1);
+  assert.equal(facts?.relationCount, 0);
+  assert.equal(facts?.locked, true);
+});
+
+test("narrowRecipeDocumentFacts: 非对象/缺核心字段 = null(不猜测)", () => {
+  assert.equal(narrowRecipeDocumentFacts(null), null);
+  assert.equal(narrowRecipeDocumentFacts("doc"), null);
+  assert.equal(narrowRecipeDocumentFacts({ title: "t" }), null);
 });
