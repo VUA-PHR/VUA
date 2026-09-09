@@ -227,6 +227,9 @@ pub struct ProductionUseCaseConfig {
     pub bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     /// The Unity project root the approved plan executes against.
     pub project_root: PathBuf,
+    /// The Unity Hub editors root the job.execute environment precheck
+    /// observes (009 stance 4 ②: recipe constraint vs installed editors).
+    pub unity_editors_root: PathBuf,
 }
 
 struct ProductionUseCaseServices {
@@ -235,6 +238,7 @@ struct ProductionUseCaseServices {
     records: Arc<vua_orchestrator::RecipeRecordStore>,
     bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: PathBuf,
+    unity_editors_root: PathBuf,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -468,6 +472,7 @@ pub fn run_provider_host_full(
             evidence: config.evidence,
             bridge: config.bridge,
             project_root: config.project_root,
+            unity_editors_root: config.unity_editors_root,
             bdl,
             runtime,
             env_initial,
@@ -2049,6 +2054,7 @@ fn run_approved_plan_job(
     evidence: &vua_orchestrator::EvidenceStore,
     bridge: &Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: &Path,
+    unity_editors_root: &Path,
     plan_id: &str,
     correlation_id: &str,
 ) -> Result<Value, AppErrorV1> {
@@ -2140,6 +2146,84 @@ fn run_approved_plan_job(
         )
         .with_param("currentRevision", vua_orchestrator::ParamValue::Number(current_revision as f64))
         .with_param("expectedRevision", vua_orchestrator::ParamValue::Number(planned_revision as f64)));
+    }
+    // Environment precheck (009 stance 4 ②, second in the precheck order):
+    // when the recipe declares a machine-parseable Unity version constraint,
+    // a matching editor must be installed on this machine. The constraint is
+    // matched exactly (major/minor/patch/release kind/number — a China
+    // distribution suffix never matches the plain version, mirroring the
+    // unsupported-environment policy). A recipe without a constraint, or
+    // with a constraint that is not a parseable version string, skips this
+    // precheck honestly — the plan never invents a compatibility verdict.
+    if let Some(constraint) = stored_recipe
+        .recipe
+        .get("environment")
+        .and_then(|environment| environment.get("unityVersionConstraint"))
+        .and_then(Value::as_str)
+    {
+        if let Some(required) = vua_orchestrator::parse_editor_version(constraint) {
+            match vua_orchestrator::installed_unity_editors(unity_editors_root) {
+                vua_orchestrator::EditorInstallObservation::Detected(editors) => {
+                    let satisfied = editors.iter().any(|editor| {
+                        let version = &editor.parsed;
+                        version.major == required.major
+                            && version.minor == required.minor
+                            && version.patch == required.patch
+                            && version.release_kind == required.release_kind
+                            && version.release_number == required.release_number
+                            && version.china_suffix == required.china_suffix
+                    });
+                    if !satisfied {
+                        return Err(AppErrorV1::new(
+                            "vua.job.environment_unmet",
+                            ErrorCategory::Validation,
+                            "errors.job.environmentUnmet",
+                            correlation_id,
+                        )
+                        .with_param(
+                            "requiredVersion",
+                            vua_orchestrator::ParamValue::Text(required.display.clone()),
+                        ));
+                    }
+                }
+                vua_orchestrator::EditorInstallObservation::NotDetected => {
+                    return Err(AppErrorV1::new(
+                        "vua.job.environment_unmet",
+                        ErrorCategory::Validation,
+                        "errors.job.environmentUnmet",
+                        correlation_id,
+                    )
+                    .with_param(
+                        "requiredVersion",
+                        vua_orchestrator::ParamValue::Text(required.display.clone()),
+                    )
+                    .with_param(
+                        "detail",
+                        vua_orchestrator::ParamValue::Text(
+                            "no Unity editor installation detected on this machine".into(),
+                        ),
+                    ));
+                }
+                vua_orchestrator::EditorInstallObservation::DetectionFailed { reason } => {
+                    // The observation itself failed: an external failure, not
+                    // a config verdict — retryable, never dressed as "unmet".
+                    return Err(AppErrorV1::new(
+                        "vua.job.environment_check_failed",
+                        ErrorCategory::ExternalFailure,
+                        "errors.job.environmentCheckFailed",
+                        correlation_id,
+                    )
+                    .with_recoverable(true)
+                    .with_param(
+                        "detail",
+                        vua_orchestrator::ParamValue::Text(reason),
+                    ));
+                }
+            }
+        }
+        // A free-text constraint (parse_editor_version returning None) or a
+        // recipe without a constraint carries no machine-checkable
+        // semantics: the precheck skips it rather than guessing a verdict.
     }
     let recipe_digest = document_sha256(&stored_recipe.recipe);
     let local_resolution = local_resolution_digest(&plan);
@@ -2527,6 +2611,7 @@ fn job_execute(
     let evidence = use_cases.evidence.clone();
     let bridge = use_cases.bridge.clone();
     let project_root = use_cases.project_root.clone();
+    let unity_editors_root = use_cases.unity_editors_root.clone();
     let job_correlation = correlation_id.to_owned();
     let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
         correlation_id: Some(correlation_id.to_owned()),
@@ -2539,6 +2624,7 @@ fn job_execute(
                 &evidence,
                 &bridge,
                 &project_root,
+                &unity_editors_root,
                 &plan_id,
                 &job_correlation,
             )?;

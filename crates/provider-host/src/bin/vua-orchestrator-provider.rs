@@ -101,6 +101,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 std::path::PathBuf::new()
             });
         let production_root = std::path::Path::new(&data).join("production");
+        // The Unity Hub editors root the job.execute environment precheck
+        // observes (009 stance 4 ②); overridable for tests and non-Hub
+        // installs, defaulting to the standard Hub location.
+        let unity_editors_root = std::env::var_os("VUA_UNITY_EDITORS_ROOT")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::PathBuf::from("C:/Program Files/Unity/Hub/Editor")
+            });
         vua_provider_host::ProductionUseCaseConfig {
             recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
                 ::new_with_system_clock(production_root.join("recipes"))),
@@ -112,6 +120,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ::new(production_root.join("records"))),
             bridge,
             project_root,
+            unity_editors_root,
         }
     });
     let input = stdin_reader();

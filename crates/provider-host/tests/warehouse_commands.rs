@@ -544,6 +544,7 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
             records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
                 ::new(production_root.join("records"))),
             bridge,
+            unity_editors_root: world.base.join("unity-editors"),
             project_root: world.base.join("project"),
         }
     };
@@ -753,7 +754,8 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
         bridge: std::sync::Arc::new(NoBridge),
-        project_root: world.base.join("project"),
+        unity_editors_root: world.base.join("unity-editors"),
+            project_root: world.base.join("project"),
     }
 }
 
@@ -961,7 +963,8 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
         bridge: std::sync::Arc::new(NoBridge),
-        project_root: world.base.join("project"),
+        unity_editors_root: world.base.join("unity-editors"),
+            project_root: world.base.join("project"),
     };
     // The use-case face rides the warehouse wiring (shared task authority
     // and BDL - Local Resolution reads warehouse facts).
@@ -1230,6 +1233,116 @@ fn seed_imported_entries(world: &World) -> Vec<String> {
 
 /// Saves the recipe and runs the tasked resolution; returns the resolve Done
 /// payload (planId / missingCount / evidenceIds / skippedJobIds).
+/// Creates a fake Unity Hub editor install (`<root>/<version>/Editor`) so
+/// the environment precheck observes a Detected install.
+fn install_fake_editor(editors_root: &Path, version: &str) {
+    fs::create_dir_all(editors_root.join(version).join("Editor"))
+        .expect("fake editor layout");
+}
+
+#[test]
+fn job_execute_environment_precheck_blocks_without_a_matching_editor() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-unmet");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Env Fixture",
+        "environment": {"unityVersionConstraint": "2022.3.22f1"},
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    // The configured editors root stays empty: no editor is installed.
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "failed");
+    let error = task.error.expect("the environment refusal is a typed error");
+    assert_eq!(error.code, "vua.job.environment_unmet");
+    // No record exists for the refused execution (nothing executed).
+    let records = vua_orchestrator::RecipeRecordStore::new(
+        world.base.join("production").join("records"),
+    );
+    assert_eq!(records.list_documents().expect("records readable").len(), 0);
+}
+
+#[test]
+fn job_execute_environment_precheck_passes_on_a_matching_install() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-met");
+    install_fake_editor(&world.base.join("unity-editors"), "2022.3.22f1");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Env Match Fixture",
+        "environment": {"unityVersionConstraint": "2022.3.22f1"},
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded",
+        "a matching install satisfies the constraint: {:?}", task.error);
+}
+
+#[test]
+fn job_execute_environment_precheck_surfaces_observation_failure_honestly() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-failed");
+    // The editors root is a FILE: the observation itself fails (external
+    // failure), which must never be dressed as an "unmet" verdict.
+    fs::write(world.base.join("unity-editors"), b"not a directory").expect("root as file");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Env Broken Fixture",
+        "environment": {"unityVersionConstraint": "2022.3.22f1"},
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "failed");
+    let error = task.error.expect("the observation failure is a typed error");
+    assert_eq!(error.code, "vua.job.environment_check_failed");
+    assert!(error.recoverable, "an observation failure is retryable, not a config verdict");
+}
+
 fn save_and_resolve(
     world: &World,
     use_cases: &vua_provider_host::ProductionUseCaseConfig,
@@ -1334,7 +1447,8 @@ fn seeded_production_world(
         evidence: Arc::new(vua_orchestrator::EvidenceStore::new(production_root.join("evidence"))),
         records: Arc::new(vua_orchestrator::RecipeRecordStore::new(production_root.join("records"))),
         bridge: Arc::new(NoBridge),
-        project_root: world.base.join("project"),
+        unity_editors_root: world.base.join("unity-editors"),
+            project_root: world.base.join("project"),
     };
     let warehouse = WarehouseConfig {
         bdl: world.bdl.clone(),
