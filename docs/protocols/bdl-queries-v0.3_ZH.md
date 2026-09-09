@@ -2,8 +2,13 @@
 
 [English](bdl-queries-v0.3_EN.md) | [简体中文](bdl-queries-v0.3_ZH.md)
 
+> **⚠️ 已被 v0.4 取代（2026-09-10）**：已完成下载采纳源读面
+> `downloads.listCompleted`（M6 增设，proposal 015 §7）。现行规范见
+> [bdl-queries-v0.4_ZH.md](bdl-queries-v0.4_ZH.md)；本文仅作历史保留，对应
+> `schemas/bdl-queries/v0.3/`（勿改）。
 > 文档版本：0.3
-> 状态：**已冻结**（2026-09-06）——取代 v0.2（唯一变更见"v0.3 修订"）；
+> 状态：**已取代（→ v0.4）**（2026-09-10；原状态：已冻结 2026-09-06——
+> v0.3 五方法词表完整并入 v0.4 闭集）
 > 机器可读词表见 `schemas/bdl-queries/v0.3/`
 > 范围：AMF 从本地 BDL 出的五个只读查询方法——云端目录三方法（catalog.*）与
 > 本地轨两方法（warehouse.*）——及 LocalArtifact 检查结论的三态呈现映射
