@@ -76,90 +76,38 @@ export function entryModeLine(entry: WarehouseEntry): EntryModeLine {
   return { overridden: entry.artifactMode !== null, effective: entry.effectiveArtifactMode };
 }
 
-/* ---- F4-9 条目动作(bdl-commands v0.1 写命令的入口可见性) ----
- * 可见性是服务端守卫的镜像呈现,不是客户端守卫:动作发出后守卫事实仍归
- * 服务端(协议八码),这里的条件只决定"入口是否出现",与协议语义一致:
- * - 两组动作都只在生效模式为 generate_vpm 时出现;
- * - 生成入口:生效模式 generate_vpm + 持有原始素材 + 尚无生成副本
- *   (生成副本永不静默替换);
- * - 删除入口:生效模式 generate_vpm + 生成副本在场(审计性破坏操作的
- *   前置事实);删除动作以高危样式 + 二次确认呈现(UI 层纪律)。
+/* ---- F4-9 条目动作(呈现层,遵守 U8⑤ 裁决 2026-09-09) ----
+ * 「生成 VPM 包替代」全局开关(服务端全局默认模式)是条目级产物模式编辑与
+ * 条目动作的呈现总闸:关闭时整组不呈现(U8⑤ 分支 a 呈现层屏蔽,W14 词表零
+ * 变更,服务端守卫语义不变);开启时入口可见性回归条目事实镜像(生效模式与
+ * 工件条件,与协议语义一致)。
+ * 「删除原始素材」手动入口已按用户裁定从仓储条目 UI 移除——删除只由导入
+ * 链按「生成后删除原始素材文件」偏好触发(app 层 delete-originals-auto);
+ * 协议动作 deleteOriginals 保留(导入链自动消费),wire 词表零变更。
  */
 
-export type WarehouseEntryAction = "generateVpm" | "deleteOriginals";
+export type WarehouseEntryAction = "generateVpm";
 
-export function entryActions(entry: WarehouseEntry): readonly WarehouseEntryAction[] {
+/**
+ * 总闸呈现门控(U8⑤ 分支 a):全局默认模式为 use_original_unitypackage
+ * (即「生成 VPM 包替代」关)时,条目级产物模式编辑与条目动作整组不呈现。
+ * 全局状态推断不出(unknown)时不屏蔽——不猜测总闸状态,保持既有呈现。
+ */
+export function entrySurfacesVisible(globalDefault: GlobalDefaultInference): boolean {
+  return !(globalDefault.kind === "known" && globalDefault.mode !== "generate_vpm");
+}
+
+export function entryActions(
+  entry: WarehouseEntry,
+  globalDefault: GlobalDefaultInference = { kind: "unknown" },
+): readonly WarehouseEntryAction[] {
+  if (!entrySurfacesVisible(globalDefault)) return [];
   if (entry.effectiveArtifactMode !== "generate_vpm") return [];
   const hasOriginal = entry.artifacts.some((artifact) => artifact.role === "original");
   const hasGenerated = entry.artifacts.some((artifact) => artifact.role === "generated_vpm");
-  const actions: WarehouseEntryAction[] = [];
-  if (hasOriginal && !hasGenerated) actions.push("generateVpm");
-  if (hasGenerated) actions.push("deleteOriginals");
-  return actions;
-}
-
-/* ---- W15 设置-实验性两级选项(设置页内发起的条目级操作) ----
- * 与 entryActions 同一面服务端守卫的镜像,但呈现诉求不同:仓储抽屉是
- * "入口隐藏/出现",设置页是"置灰 + 原因"。守卫事实仍归服务端(协议
- * 八码),这里的条件只决定入口可用性与置灰原因文案,与协议语义一致。
- */
-
-/** 两级选项置灰原因(i18n 键,settings.experimental.gate*) */
-export type ExperimentalGateReason =
-  | "modeNotGenerateVpm"
-  | "noOriginal"
-  | "alreadyGenerated"
-  | "noGeneratedCopy";
-
-export interface ExperimentalGate {
-  readonly available: boolean;
-  /** available=false 时的置灰原因;available=true 恒为 null */
-  readonly reason: ExperimentalGateReason | null;
-}
-
-export interface ExperimentalActionGates {
-  readonly generateVpm: ExperimentalGate;
-  readonly deleteOriginals: ExperimentalGate;
-}
-
-/** 设置页两级选项前置镜像(条件与 entryActions 逐一对应) */
-export function experimentalActionGates(entry: WarehouseEntry): ExperimentalActionGates {
-  const modeOk = entry.effectiveArtifactMode === "generate_vpm";
-  const hasOriginal = entry.artifacts.some((artifact) => artifact.role === "original");
-  const hasGenerated = entry.artifacts.some((artifact) => artifact.role === "generated_vpm");
-  return {
-    // 生成 = 生效 generate_vpm + 有原始件 + 尚无生成副本(副本永不静默替换)
-    generateVpm: !modeOk
-      ? { available: false, reason: "modeNotGenerateVpm" }
-      : !hasOriginal
-        ? { available: false, reason: "noOriginal" }
-        : hasGenerated
-          ? { available: false, reason: "alreadyGenerated" }
-          : { available: true, reason: null },
-    // 删除原始 = 生效 generate_vpm + 生成副本在场(审计性破坏操作的前置事实)
-    deleteOriginals: !modeOk
-      ? { available: false, reason: "modeNotGenerateVpm" }
-      : !hasGenerated
-        ? { available: false, reason: "noGeneratedCopy" }
-        : { available: true, reason: null },
-  };
-}
-
-/** W15 条目选择器数据投影:值 = 条目身份,标签 = 显示名,副行 = 文件夹名 */
-export interface SettingsEntryOption {
-  readonly value: string;
-  readonly label: string;
-  readonly folderName: string;
-}
-
-export function settingsEntryOptions(
-  entries: readonly WarehouseEntry[],
-): readonly SettingsEntryOption[] {
-  return entries.map((entry) => ({
-    value: entry.warehouseItemId,
-    label: entry.displayName,
-    folderName: entry.folderName,
-  }));
+  // 生成入口:生效模式 generate_vpm + 持有原始素材 + 尚无生成副本
+  // (生成副本永不静默替换)
+  return hasOriginal && !hasGenerated ? ["generateVpm"] : [];
 }
 
 /**

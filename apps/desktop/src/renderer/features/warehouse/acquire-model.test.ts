@@ -6,8 +6,8 @@ import {
   commandErrorText,
   entryActions,
   entryModeLine,
-  experimentalActionGates,
-  settingsEntryOptions,
+  entrySurfacesVisible,
+  inferGlobalDefaultMode,
   sizeText,
   type AcquireArtifactCard,
 } from "./acquire-model.ts";
@@ -146,131 +146,86 @@ function withArtifacts(
   };
 }
 
-test("entryActions: 生效模式非 generate_vpm 时动作整组不出现", () => {
-  assert.deepEqual(entryActions(entryOf({ warehouseItemId: "whentry-x" })), []);
+test("entryActions: 总闸关(全局默认非 generate_vpm)时动作整组不呈现,U8⑤ 分支 a", () => {
+  // 生效模式本可使入口成立,但总闸关闭=呈现层屏蔽(词表零变更,守卫不变)
   assert.deepEqual(
-    entryActions(entryOf({
-      warehouseItemId: "whentry-y",
-      artifactMode: "generate_vpm",
-      effectiveArtifactMode: "use_original_unitypackage",
-    })),
-    [],
-  );
-});
-
-test("entryActions: 生成入口 = 生效 generate_vpm + 有原始件 + 无生成副本", () => {
-  assert.deepEqual(
-    entryActions(withArtifacts({
-      warehouseItemId: "whentry-gen",
-      effectiveArtifactMode: "generate_vpm",
-    }, ["original"])),
-    ["generateVpm"],
-  );
-  // 已有生成副本:生成入口消失(副本永不静默替换),删除入口出现
-  assert.deepEqual(
-    entryActions(withArtifacts({
-      warehouseItemId: "whentry-both",
-      effectiveArtifactMode: "generate_vpm",
-    }, ["original", "generated_vpm"])),
-    ["deleteOriginals"],
-  );
-});
-
-test("entryActions: 删除入口 = 生效 generate_vpm + 生成副本在场", () => {
-  assert.deepEqual(
-    entryActions(withArtifacts({
-      warehouseItemId: "whentry-del",
-      artifactMode: "generate_vpm",
-      effectiveArtifactMode: "generate_vpm",
-    }, ["generated_vpm"])),
-    ["deleteOriginals"],
-  );
-  // 生效 generate_vpm 但无生成副本:删除入口不出现(服务端守卫必拒)
-  assert.deepEqual(
-    entryActions(withArtifacts({
-      warehouseItemId: "whentry-none",
-      effectiveArtifactMode: "generate_vpm",
-    }, ["original"])),
-    ["generateVpm"],
-  );
-});
-
-/* ---- W15 设置-实验性两级选项(前置镜像 + 选择器投影 + 错误文案映射) ---- */
-
-test("experimentalActionGates: 生效 generate_vpm + 有原始件 + 无生成副本 = 生成可用,删除置灰", () => {
-  const gates = experimentalActionGates(
-    withArtifacts({ warehouseItemId: "whentry-g1", effectiveArtifactMode: "generate_vpm" }, [
-      "original",
-    ]),
-  );
-  assert.deepEqual(gates.generateVpm, { available: true, reason: null });
-  assert.deepEqual(gates.deleteOriginals, { available: false, reason: "noGeneratedCopy" });
-});
-
-test("experimentalActionGates: 已有生成副本 = 生成置灰(alreadyGenerated),删除可用", () => {
-  const gates = experimentalActionGates(
-    withArtifacts({ warehouseItemId: "whentry-g2", effectiveArtifactMode: "generate_vpm" }, [
-      "original",
-      "generated_vpm",
-    ]),
-  );
-  assert.deepEqual(gates.generateVpm, { available: false, reason: "alreadyGenerated" });
-  assert.deepEqual(gates.deleteOriginals, { available: true, reason: null });
-});
-
-test("experimentalActionGates: 生效模式非 generate_vpm = 两选项均置灰 modeNotGenerateVpm", () => {
-  const gates = experimentalActionGates(
-    withArtifacts(
-      {
-        warehouseItemId: "whentry-g4",
-        artifactMode: "generate_vpm",
-        effectiveArtifactMode: "use_original_unitypackage",
-      },
-      ["original", "generated_vpm"],
+    entryActions(
+      withArtifacts({ warehouseItemId: "whentry-gated", effectiveArtifactMode: "generate_vpm" }, [
+        "original",
+      ]),
+      { kind: "known", mode: "use_original_unitypackage" },
     ),
-  );
-  // 覆盖存在但生效模式由服务端读回解析:生效非 generate_vpm 时整组置灰
-  assert.deepEqual(gates.generateVpm, { available: false, reason: "modeNotGenerateVpm" });
-  assert.deepEqual(gates.deleteOriginals, { available: false, reason: "modeNotGenerateVpm" });
-});
-
-test("experimentalActionGates: 生效 generate_vpm 但无原始件 = 生成置灰 noOriginal", () => {
-  const gates = experimentalActionGates(
-    withArtifacts({ warehouseItemId: "whentry-g5", effectiveArtifactMode: "generate_vpm" }, [
-      "generated_vpm",
-    ]),
-  );
-  assert.deepEqual(gates.generateVpm, { available: false, reason: "noOriginal" });
-  assert.deepEqual(gates.deleteOriginals, { available: true, reason: null });
-});
-
-test("experimentalActionGates 与 entryActions 的可用性逐一对应", () => {
-  const samples: ReadonlyArray<ReadonlyArray<"original" | "generated_vpm">> = [
     [],
-    ["original"],
-    ["generated_vpm"],
-    ["original", "generated_vpm"],
-  ];
-  for (const roles of samples) {
-    for (const effective of ["use_original_unitypackage", "generate_vpm"] as const) {
-      const entry = withArtifacts({ warehouseItemId: "whentry-x", effectiveArtifactMode: effective }, roles);
-      const gates = experimentalActionGates(entry);
-      const actions = entryActions(entry);
-      assert.equal(gates.generateVpm.available, actions.includes("generateVpm"));
-      assert.equal(gates.deleteOriginals.available, actions.includes("deleteOriginals"));
-    }
-  }
+  );
 });
 
-test("settingsEntryOptions: 值=条目身份,标签=显示名,副行=文件夹名", () => {
-  const options = settingsEntryOptions([
-    entryOf({ warehouseItemId: "whentry-s1", displayName: "示例条目一" }),
-    entryOf({ warehouseItemId: "whentry-s2", displayName: "示例条目二" }),
-  ]);
-  assert.deepEqual(options, [
-    { value: "whentry-s1", label: "示例条目一", folderName: "whentry-s1" },
-    { value: "whentry-s2", label: "示例条目二", folderName: "whentry-s2" },
-  ]);
+test("entryActions: 总闸状态推断不出(unknown)时不屏蔽,入口回归条目事实镜像", () => {
+  assert.deepEqual(
+    entryActions(
+      withArtifacts({ warehouseItemId: "whentry-unk", effectiveArtifactMode: "generate_vpm" }, [
+        "original",
+      ]),
+      { kind: "unknown" },
+    ),
+    ["generateVpm"],
+  );
+  // 省略参数 = unknown(默认),与旧调用形态兼容
+  assert.deepEqual(
+    entryActions(
+      withArtifacts({ warehouseItemId: "whentry-def", effectiveArtifactMode: "generate_vpm" }, [
+        "original",
+      ]),
+    ),
+    ["generateVpm"],
+  );
+});
+
+test("entryActions: 生成入口 = 总闸开 + 生效 generate_vpm + 有原始件 + 无生成副本", () => {
+  assert.deepEqual(
+    entryActions(
+      withArtifacts({
+        warehouseItemId: "whentry-gen",
+        effectiveArtifactMode: "generate_vpm",
+      }, ["original"]),
+      { kind: "known", mode: "generate_vpm" },
+    ),
+    ["generateVpm"],
+  );
+  // 已有生成副本:生成入口消失(副本永不静默替换)
+  assert.deepEqual(
+    entryActions(
+      withArtifacts({
+        warehouseItemId: "whentry-both",
+        effectiveArtifactMode: "generate_vpm",
+      }, ["original", "generated_vpm"]),
+      { kind: "known", mode: "generate_vpm" },
+    ),
+    [],
+  );
+});
+
+test("entryActions: 删除入口已按用户裁定从仓储呈现移除(任何情况不出现)", () => {
+  // 条目 2 裁决(2026-09-09):「删除原始素材」按钮任何情况下不在本地仓库
+  // 出现;删除只由导入链按偏好触发,协议动作 deleteOriginals 保留(自动链
+  // 消费),wire 词表零变更
+  assert.deepEqual(
+    entryActions(
+      withArtifacts({
+        warehouseItemId: "whentry-del",
+        effectiveArtifactMode: "generate_vpm",
+      }, ["generated_vpm"]),
+      { kind: "known", mode: "generate_vpm" },
+    ),
+    [],
+  );
+});
+
+/* ---- U8⑤ 总闸呈现门控(entrySurfacesVisible) ---- */
+
+test("entrySurfacesVisible: 总闸关=不呈现,总闸开/推断不出=呈现", () => {
+  assert.equal(entrySurfacesVisible({ kind: "known", mode: "generate_vpm" }), true);
+  assert.equal(entrySurfacesVisible({ kind: "known", mode: "use_original_unitypackage" }), false);
+  assert.equal(entrySurfacesVisible({ kind: "unknown" }), true);
 });
 
 test("commandErrorText: 已知码查表,未知码回落 fallback,传输面回落服务未接入", () => {
@@ -295,8 +250,6 @@ test("commandErrorText: 已知码查表,未知码回落 fallback,传输面回落
 });
 
 /* ---- W15 重做:全局默认读面推断(设置页全局开关初值) ---- */
-
-import { inferGlobalDefaultMode } from "./acquire-model.ts";
 
 test("inferGlobalDefaultMode: 无覆盖条目的生效模式即全局默认;不可知如实 unknown", () => {
   // 无覆盖条目:生效模式 = composed 全局默认
