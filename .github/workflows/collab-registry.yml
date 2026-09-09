@@ -1,0 +1,46 @@
+# BG-5 (standby work order, 2026-09-10) — collab registry consistency check.
+#
+# Scope: docs/REGISTRY.md rows vs managed-document headers, enforced by
+# `scripts/collab-brief.mjs --registry-only` (exit 1 on any inconsistency).
+# Report-only for now (continue-on-error): the check surfaces drift without
+# blocking merges; promoting it to a required gate is a separate decision.
+# Needs full history: the brief reads other worktrees' state files via
+# `git show <branch>:<path>`.
+name: collab-registry
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/REGISTRY.md"
+      - "docs/**"
+      - "AGENTS.md"
+      - "schemas/**"
+      - "scripts/collab-brief.mjs"
+      - ".github/workflows/collab-registry.yml"
+  pull_request:
+    paths:
+      - "docs/REGISTRY.md"
+      - "docs/**"
+      - "AGENTS.md"
+      - "schemas/**"
+      - "scripts/collab-brief.mjs"
+      - ".github/workflows/collab-registry.yml"
+
+concurrency:
+  group: collab-registry-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    continue-on-error: true # report-only per BG-5 acceptance criteria
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: registry consistency check
+        run: node scripts/collab-brief.mjs --registry-only

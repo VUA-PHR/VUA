@@ -281,6 +281,16 @@ function registryCheck() {
   }
   for (const b of bad) line(b);
   line(`登记表校验：一致 ${ok.length} 项 / 异常 ${bad.length} 项（共 ${total} 行）。`);
+  return bad.length;
+}
+
+// ---------- registry-only 模式（BG-5 CI 入口）----------
+// 仅跑登记表校验并以其结果为退出码；不影响无参数时的完整简报行为。
+if (process.argv.includes('--registry-only')) {
+  line('【④ 登记表】（registry-only：docs/REGISTRY.md 与文档头部一致性）');
+  const registryBad = registryCheck();
+  process.exitCode = registryBad > 0 ? 1 : 0;
+  process.exit(0);
 }
 
 // ---------- 输出 ----------
