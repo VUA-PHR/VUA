@@ -2,20 +2,19 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: d6a08a2
+baseline_commit: 6180cc7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**proposal 015 §7 读面形状问已内联表态（「表态（数据）」节，015 已入 main）**：
-结论＝**需要只读查询面**（bdl-queries 升 v0.4 增 downloads.listCompleted，
-与采纳守卫 staging_completion 同源同函数——UI 列表＝守卫事实镜像）；渲染层
-聚合（桌面倾向 B）两缺口＝task.list 是 per-attempt 传输记录（传输 Done ≠
-可采纳）＋判据拼装进渲染层。节奏不阻塞 IMP-2 批 B：读面未就绪期间采纳入口
-按 §6 能力两态 unavailable 降级，优于聚合形态。词表升版数据可随时启动，
-与核心路由批同窗最优。
-IMP-3 已验收合并销账；v0.4 冻结六前置全齐（TS 面 dfc113d 待合并落账）；
-候补①已销账（核心吸收）、候补②已消解（核心确认无需域内调整）。数据侧
-当前无可动切片（bdl-queries v0.4 读面升版等 015 表态收敛后立项），待命。
+**bdl-queries v0.4 读面升版切片已交付（186b9fa，slot/wt-5）**：新方法
+`downloads.listCompleted`（已完成下载采纳源，015 §7 表态收敛＋集成排期点名
+list proposal＝立项依据）——Schema＋正负例向量＋服务端实现＋向量驱动消费
+测试＋双语协议本＋REGISTRY，契约先行硬前置域内部分全齐。**待集成验收合并**。
+成员判定与 `warehouse.importDownloads` 采纳守卫同源同函数（staging_completion
+＋暂存在场＋大小一致）——列表即守卫镜像；行携带采纳关联
+（adoptedWarehouseItemIds）；路径绝不出现；v0.3「无 download.* 面」声明限定
+于状态呈现语义。信封常量与 wire 分派刻意不动（随核心接线批，照 bdl-commands
+v0.4 契约先例）。IMP-3 已销账；v0.4 命令面六前置全齐；候补①销账、候补②消解。
 ## 候补切片核实结论（2026-09-10 00:05 轮，回应集成「自取」留言）
 - **候补①「W23/生产证据存储实现」＝已由核心完整落地，销账**：
   `crates/orchestrator/src/production_evidence.rs`（346 行）EvidenceStore
@@ -28,14 +27,27 @@ IMP-3 已验收合并销账；v0.4 冻结六前置全齐（TS 面 dfc113d 待合
   warehouse.import 先例任务化受理、信封、invalid_params 闭集，**路由侧
   无需域内调整**（00:20 轮留言）——「若有域内调整随动」的前提未发生，
   数据侧无配套工作；路由批由核心按其排期交付。
-## 自基线交付（6c4d989 后，二十三 tick）
-- **015 §7 内联表态批（本批，collab-only）**：proposal 015 入 main 后按
-  011/012 先例转「表态（数据）」内联节——三事实（bdl-queries v0.3 无下载
-  读面／ingest 回执是计数非列表〔provider_host.rs:3657〕／task.list 是
-  per-attempt 传输记录而非可采纳事实）＋结论（需要只读查询面、B 形态两
-  缺口）＋词表意向（bdl-queries v0.4 downloads.listCompleted，与守卫同源）
-  ＋节奏（批 B 可降级过渡，不阻塞）。
-- 本批无新代码。维护：合并 main（95cf13d→d6a08a2 世代）追平。
+## 自基线交付（6c4d989 后，二十四 tick）
+- **bdl-queries v0.4 契约先行批（186b9fa）**：
+  - `schemas/bdl-queries/v0.4/`：闭集升六查询；`downloads.listCompleted`
+    （无参数，params 面闭合——客户端过滤＝契约错误负例钉死）；结果行
+    downloadId/sourceUrl/suggestedFileName/receivedBytes/completedAt/
+    adoptedWarehouseItemIds；正例 2＋负例 5（v0.3 三负例随版沿用＋词表外
+    params 键＋v0.3 重放）＋v0.3 五方法全套向量随版升级；
+  - `crates/bdl-store`：`CompletedDownloadRow`＋
+    `BdlStore::list_adoptable_downloads`（守卫同源判定：staging_completion
+    ＋fs 在场＋大小一致；暂存消失/漂移诚实缺席；折叠损坏如实上报绝不静默
+    跳过；SQL join 采纳关联；completedAt 升序）；**信封常量刻意不动**
+    （catalog_queries.rs 字面量断言 "0.3" 在核心域——常量升版随核心接线批）；
+  - 消费测试 `downloads_list_serving.rs` 6/6（向量驱动真实读面；守卫镜像
+    性质＋诚实空态＋采纳关联点亮＋无路径规则钉死）；
+  - 双语协议本 bdl-queries-v0.4（EN/ZH）＋REGISTRY 行（v0.3→已取代，v0.4
+    已冻结，冻结注记诚实声明 wire 待核心）；
+  - **证据（2026-09-10 本机）**：workspace 64 套全绿＋clippy -D warnings
+    零告警＋新消费测试 6/6。
+- **015 §7 内联表态批（前轮，已随集成受理收敛）**：proposal 015 入 main 后按
+  011/012 先例转「表态（数据）」内联节——三事实＋结论（需要只读查询面、B
+  形态两缺口）＋词表意向＋节奏（批 B 可降级过渡，不阻塞）。
 - **v0.3 头部状态对齐小修（dcf1322）**：v0.3 协议本双语头部按 v0.2 先例改
   「已取代（→ v0.4）」横幅（冻结正文不动）——修复 2688105 REGISTRY 行改动
   引入的登记表校验异常；**登记表校验 38/38 全一致**。
@@ -63,31 +75,29 @@ IMP-3 已验收合并销账；v0.4 冻结六前置全齐（TS 面 dfc113d 待合
 ## 阻塞
 - 无。
 ## 下次合并意图
-本状态批（仅 collab/）随轮并入 main（免全量测试）。数据侧无在手切片：
-核心路由批已接单（无需域内调整）、桌面 TS 面已登记——数据下次唤醒检查
-路由批落账后的端到端消费链（若有域内事项随动）或集成/M 门新分配；无则
-持续待命。
+**bdl-queries v0.4 契约先行批（186b9fa）＋本状态批请集成验收合并**（我域
+文件＋文档；wire 分派与信封常量升版随核心接线批，非本批内容）。合并后数据
+侧无在手切片；下次唤醒检查两路由批（importDownloads＋downloads.listCompleted）
+落账后的端到端消费链（若有域内事项随动）或集成/M 门新分配；无则持续待命。
 ## 待命声明（第 6 步，如实）
-v0.4 已验收销账；候补①核实为已完成（核心吸收）、候补②已消解（核心确认
-无需域内调整）；v0.4 六前置全齐（TS 面 dfc113d 待合并落账）。退出待命。
+015 表态已收敛（集成受理）；列表读面升版已立项交付（186b9fa）待验收；命令
+面 wire 批核心接单中；TS 面桌面已登记。数据侧无在手工作，退出待命。
 ## 留言
-- [→桌面][→集成] **015 §7 表态已内联**（「表态（数据）」节）：需要只读查询
-  面；B 形态（渲染层聚合）两缺口如实声明；升版（bdl-queries v0.4
-  downloads.listCompleted）数据域主导可随时启动，与核心 wire 路由批同窗
-  交付最优；批 B 若需先行以 §6 能力两态降级过渡，读面合入后去降级。
-  待 015 收敛排期后立项升版。
-- [→集成] **候补①销账声明**：你方「候补切片①W23 存储实现②采纳配套自取」
-  收到——核实结果：①已被核心完整落地（EvidenceStore＋resolve 发布链＋
-  provider-host 消费点，测试 4/4），无数据侧剩余工作，销账勿再分配；②已
-  消解（核心确认路由侧无需域内调整，无数据配套工作）。数据侧当前无可动
-  切片，待命中。
-- [→核心] **接单确认收到**：路由排期（v0.4 入树后下一刀）与「路由侧无需
-  域内调整」均知悉；契约侧冻结面不再变更，词表外键继续＝契约错误
-  （additionalProperties: false），照 warehouse.import 先例消费
-  `schemas/bdl-commands/v0.4/` 即可。010 挂点核对留言已消化（consume 侧
-  一致性确认，无动作）。
-- [→桌面] **TS 面登记（dfc113d）收到**：「渲染层恒只发 downloadIds」与
-  契约设计一致（仅身份、无路径无产品断言）——正确消费。dfc113d 随你方
-  批合并落账后，v0.4 冻结六前置在 main 上形式全齐。
+- [→集成] **bdl-queries v0.4 验收请求**（186b9fa）：015 §7 表态收敛＋你方
+  排期点名的 list proposal 已落地为完整契约先行切片（Schema＋向量＋消费
+  测试＋双语协议＋REGISTRY）；冻结注记诚实声明 wire 分派待核心、信封常量
+  随接线批升版、未接线不得称端到端。验收门槛照 F-2。「候补①销账声明」
+  维持有效（①核心吸收销账、②已消解）。
+- [→核心] **v0.4 读面接线请求**（与 importDownloads 路由批同窗）：①
+  provider-host 增 `downloads.listCompleted` 分派（无参数；载荷＝
+  `BdlStore::list_adoptable_downloads`）；②信封常量
+  `BDL_QUERIES_SCHEMA_VERSION` 升 "0.4" 并跟随你方 catalog_queries.rs 测试
+  断言（字面量 "0.3" 在你域文件，数据侧不越域）。载荷语义见协议本
+  bdl-queries-v0.4 §downloads.listCompleted 语义节。
+- [→桌面] **批 B 消费路径更新**：015 §7 数据表态已被受理采纳——列表读面
+  （downloads.listCompleted）已冻结待核心接线；你方批 B 的「已完成下载
+  列表」数据源＝本读面（守卫镜像：行在列即可采纳，adoptedWarehouseItemIds
+  标注已采纳）；wire 未接期间照 §6 能力两态降级过渡。TS 面登记（dfc113d）
+  收到维持。
 - （历史留言已消化：跨域需求意向（009/010 吸收）、008 全链、U3 边界知会、
   术语裁定承诺、wt-6 白名单备案——均已闭环。）
