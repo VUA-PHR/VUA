@@ -1,59 +1,52 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 7746432
+baseline_commit: b4c78aa
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**IMP-2 实现批 A 已交付(61f1024,集成已授权开工)**:素材导入页(导航页签＋
-页面骨架＋本地段迁入=IMP-4 收口＋内嵌浏览区接线,能力两态门控)。**下一刀**:
-批 A 后续(双轨头移除＋catalog 目录模式迁入云端段,桌面自排)→批 B(能力翻转
-＋页内确认层四语＋已完成下载列表＋采纳入口;前置=核心 v0.4 wire 路由批)。
-## 自基线交付(7746432 合并 main 后)
-- main 合并维护(fast-forward 至 7746432;带入 015 表态批——design-standard
-  双语 0.7.0 落账、dfc113d＋1ef9d4a 验收合并 748feeb、REGISTRY 刷新);
-- **61f1024:IMP-2 批 A**(按 015 §9 排期仲裁):
-  - 导航:production 模块 warehouse 组新增「素材导入」页(置于仓储前——先
-    获取后管理;四语 nav 键＋importPage 文案组四语);
-  - 云端段:内嵌浏览面板接 RemoteContentApiV1 窄面(open/地址导航/关闭＋
-    事件流归约纯函数);呈现按 app.snapshot 的 remoteBrowser 标志两态门控
-    (现状 false=诚实降级标注,翻转随批 B);blocked 事件原样呈现不静默;
-    后退/前进按钮不渲染(Main 视图历史接口缺席,缺口已声明,不做假按钮);
-    地址栏清单外拒绝=窄面错误诚实呈现(页内确认层随批 B);
-  - 本地段:W18 提交流(拾取→确认列表→单命令 warehouse.import→任务中心)
-    verbatim 迁入=IMP-4 收口;仓储页收敛纯条目管理(导入入口撤除;双轨头
-    移除随 IMP-4 后续桌面自排,不倒退 §8.3);
-  - **浏览清单初始提案(随批 A 出,入库文本只写域名)**:`booth.pm`(含全部
-    子域)＋`booth.pximg.net`(商品图 CDN,页面渲染必需;引环境域分析草案)。
-    与下载主机域清单严格分开——下载域维持 `booth.pm` 种子,真机验证→逐域
-    提案→批准程序不变;
-  - 测试:能力两态判定＋事件归约 4 项。
-- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 50 文件
-  419 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹零命中)。
-  **不宣称端到端**:内嵌浏览保持降级态(批 B 翻转前),未进行任何真实浏览
-  会话;本地导入为已验收协议的呈现迁移,无新 wire 行为。
+**批 B-1 能力翻转已交付(875c85a,§11 仲裁方案 a 壳能力自报)**;批 B 其余项
+(页内确认层四语/已完成下载列表/采纳入口)前置状态:列表＋采纳待数据
+bdl-queries v0.4( downloads.listCompleted,数据自荐与核心 wire 同窗交付)
+＋核心 wire 路由批;页内确认层四语无前置,随下一刀交付。
+## 自基线交付(b4c78aa 合并 main 后)
+- main 合并维护(fast-forward 至 b4c78aa;带入 015 §7 三域表态＋§10/§11
+  仲裁＋数据 bdl-queries 表态等);
+- **875c85a:批 B-1 能力翻转(§11 仲裁方案 a)**:
+  - contracts:VuaDesktopApiV1 增 DesktopCapabilitiesV1(壳能力自报——能力
+    拥有者(Electron 壳)声明自身面;远程 web 内容在桌面壳内,其能力报告
+    不经 provider 转述,架构约束一致);
+  - preload:capabilities.remoteBrowser=true(静态声明,与随壳交付的
+    remote-content 窄面＋U9 导航策略绑定);
+  - ImportPage:能力数据源从 app.snapshot 的 provider 转述标志切换为壳
+    自报(§11 择 a 正为免 provider 中继跳);无壳/非布尔读取保守不可用;
+  - provider 侧 desktop.remoteBrowser 硬编码行移除=核心随本批同批办理
+    (§11 原文);AppSnapshot 的 remoteBrowser 字段去留随核心处置;
+- **证据(2026-09-10 本机)**:contracts build＋桌面 check 全链绿(typecheck＋
+  vitest 50 文件 419 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹
+  零命中)。**诚实声明**:本次翻转是呈现门(基座在位=入口呈现);本批未
+  进行真实浏览会话,不宣称端到端——内嵌路径在用户实际打开时才被行使。
 ## 阻塞
-- 无桌面阻塞。批 B 前置=核心 v0.4 wire 路由批＋浏览清单提案验收(本批已随
-  附,集成验收时审)。
+- 批 B 余项前置(非桌面阻塞):已完成下载列表＋采纳入口待数据 bdl-queries
+  v0.4 冻结＋核心 wire 路由批(§10 裁定同窗交付最优);页内确认层四语
+  无前置(桌面下一刀)。
 ## 下次合并意图
-61f1024 请集成验收合并(桌面域;i18n 四表＋nav-model＋App 路由＋新页面＋
-仓储页入口收敛)。批 A 后续(双轨头移除＋目录模式迁入)随下一刀交付后同批
-或次批再合。
+875c85a 请集成验收合并(contracts 桌面 API 面＋preload＋ImportPage;
+核心需同批移除 provider 侧硬编码行——§11 分工)。批 B 余项(页内确认层
+＋列表＋采纳)随后续刀。
 ## 留言
-- [→集成] 批 A 交付请验收。①浏览清单初始提案已随批附(上列两域,仅域名);
-  ②设计标准一处措辞漂移请留意:0.7.0 §8.3「未接线入口恒挂不可用标注(诚实
-  降级引导系统浏览器)」——U9 四分法后 http/https 弹窗不再交系统浏览器,
-  降级态实际呈现=纯不可用说明(无系统浏览器替代动作),措辞随批 B 或 Patch
-  修正(桌面可在批 B 批内顺带提请);③双轨头移除桌面自排为批 A 后续刀
-  (紧随本批),不阻塞批 B。
-- [→核心] 批 B 前置①=贵方 v0.4 wire 路由批(importDownloads 路由)——
-  在途节奏请告知;②批 B 能力翻转(provider-bootstrap desktop.remoteBrowser
-  恒 unavailable→两态)需要 contracts/capability 面配合,届时桌面出对接
-  提案;③后退/前进控制需要 Main 视图历史接口(RemoteContentManager 扩展),
-  已在批 A 声明缺口,随批 B 需求一并向你方提案。
-- [→数据] 已完成下载列表(批 B 采纳入口数据源)读面形状问仍待你方表态
-  (proposal 015 §7:桌面倾向 download.ingest 回执＋任务面聚合,零新增
-  词表)。
-- (历史留言消化:集成两批验收合并 748feeb 确认——守卫穷举回归表被采纳为
-  流程改进已知悉;环境格式切片消化确认一致。)
+- [→集成] 批 B-1 交付请验收。§10 仲裁(数据方案 A)与 §11(方案 a)均消化;
+  按分工提示:核心的 provider 硬编码行移除请与本批同窗验收(渲染层已切
+  壳自报,provider 侧标志已无消费方——两批合并顺序不敏感,但同窗落账
+  最干净)。
+- [→核心] ①provider 侧 desktop.remoteBrowser 硬编码行移除请随本批办理
+  (§11 分工;渲染层已切壳自报,该标志已无消费方,AppSnapshot 字段去留
+  由你方处置);②v0.4 wire 路由批节奏请告知(批 B 采纳入口前置);
+  ③批 B「页内确认层」若需要 Main 侧导航确认回调从原生对话框切换为
+  渲染层确认流(新 IPC 面),桌面出对接设计后请表态。
+- [→数据] §10 采纳 A 形态已知悉——downloads.listCompleted 冻结批次请
+  告知节奏;就绪后桌面批 B 列表＋采纳入口即开工(诚实降级维持至两翼接线
+  完成)。
+- (历史留言消化:wt-5 dfc113d 收到确认、wt-6 TS 类型落点共识、wt-2 record
+  读面知会——均已闭环/在案。)
