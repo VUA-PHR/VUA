@@ -403,6 +403,52 @@ export interface ProjectEnvironmentManagersResultV01 {
   readonly alcom: Record<string, unknown>;
 }
 
+/* ---- 013 读面三查询(核心 5b65550 四查询全 live;envelope 强度承载——
+ * projects/associations 本体是文档型数组,UI 按需窄化,契约面不复制
+ * 快照 Schema;vuaIdentity 三态随行) ---- */
+
+/** project.listProjects:管理器注册路径全量(缺席语义=诚实空数组) */
+export interface ProjectListProjectsQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "project.listProjects";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface ProjectListProjectsResultV01 {
+  readonly schemaVersion: "vua.project-inspection/v0.2";
+  readonly projects: readonly unknown[];
+  readonly diagnostics: readonly unknown[];
+}
+
+/** project.inspectProject:仅对管理器注册路径可查;未注册=
+ *  vua.project.project_not_found(messageKey errors.project.projectNotFound) */
+export interface ProjectInspectProjectQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "project.inspectProject";
+  readonly params: { readonly projectPath: string };
+}
+
+export interface ProjectInspectProjectResultV01 {
+  readonly schemaVersion: "vua.project-inspection/v0.2";
+  readonly path: string;
+  readonly associations: readonly unknown[];
+}
+
+/** project.lockStatus:锁残留三态纯观察(永不取锁) */
+export interface ProjectLockStatusQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "project.lockStatus";
+  readonly params: { readonly projectPath: string };
+}
+
+export type ProjectLockMutationStatusV01 = "none" | "leftover" | "unreadable";
+
+export interface ProjectLockStatusResultV01 {
+  readonly schemaVersion: "vua.project-inspection/v0.2";
+  readonly projectPath: string;
+  readonly mutationStatus: ProjectLockMutationStatusV01;
+}
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1022,6 +1068,9 @@ export type ApplicationRequestV01 =
   | WarehouseEntryDetailQueryV03
   | DownloadsListCompletedQueryV04
   | ProjectEnvironmentManagersQueryV01
+  | ProjectListProjectsQueryV01
+  | ProjectInspectProjectQueryV01
+  | ProjectLockStatusQueryV01
   | RecipeGetQueryV02
   | RecipeListQueryV02
   | PlanGetQueryV02
@@ -1127,6 +1176,9 @@ export type ApplicationSuccessValueV01 =
   | WarehouseEntryDetailResultV03
   | DownloadsListCompletedResultV04
   | ProjectEnvironmentManagersResultV01
+  | ProjectListProjectsResultV01
+  | ProjectInspectProjectResultV01
+  | ProjectLockStatusResultV01
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseImportAcceptedV03
@@ -1399,10 +1451,24 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
   }
-  // 013 读面第一翼(核心 e720544):environmentManagers,params 闭集 = 空
+  // 013 读面(核心 e720544/5b65550 四查询全 live):params 闭集照冻结面
   if (value.kind === "query" && value.method === "project.environmentManagers") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "query" && value.method === "project.listProjects") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "query" && value.method === "project.inspectProject") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["projectPath"])
+      && isIdentifier(value.params.projectPath);
+  }
+  if (value.kind === "query" && value.method === "project.lockStatus") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["projectPath"])
+      && isIdentifier(value.params.projectPath);
   }
   if (value.kind === "query" && value.method === "warehouse.entryDetail") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])

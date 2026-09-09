@@ -366,6 +366,27 @@ export interface ProjectEnvironmentManagersRequestV1 {
   readonly params: Readonly<Record<string, never>>;
 }
 
+export interface ProjectListProjectsRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.listProjects";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface ProjectInspectProjectRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.inspectProject";
+  readonly params: { readonly projectPath: string };
+}
+
+export interface ProjectLockStatusRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.lockStatus";
+  readonly params: { readonly projectPath: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -394,6 +415,9 @@ export type DesktopGatewayRequestV1 =
   | WarehouseImportDownloadsRequestV1
   | DownloadsListCompletedRequestV1
   | ProjectEnvironmentManagersRequestV1
+  | ProjectListProjectsRequestV1
+  | ProjectInspectProjectRequestV1
+  | ProjectLockStatusRequestV1
   | RecipeSaveRequestV1
   | RecipeGetRequestV1
   | RecipeListRequestV1
@@ -428,6 +452,9 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.entryDetail": "query",
   "downloads.listCompleted": "query",
   "project.environmentManagers": "query",
+  "project.listProjects": "query",
+  "project.inspectProject": "query",
+  "project.lockStatus": "query",
   "download.retry": "command",
   "warehouse.setArtifactMode": "command",
   "warehouse.generateVpm": "command",
@@ -774,6 +801,13 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "downloads.listCompleted":
     case "project.environmentManagers":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "project.listProjects":
+      return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "project.inspectProject":
+    case "project.lockStatus":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath"])
+        && isIdentifier(value.params.projectPath);
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

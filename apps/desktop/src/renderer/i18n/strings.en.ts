@@ -1726,6 +1726,10 @@ rolled_back: "Rolled back",
       environmentCheckFailed:
         "The environment check itself failed (external error). You can retry.",
     },
+    project: {
+      projectNotFound:
+        "This path is not registered with a managed project (VCC/ALCOM), so there is nothing to inspect here.",
+    },
   },
 };
 
