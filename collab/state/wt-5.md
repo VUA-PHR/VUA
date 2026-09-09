@@ -2,16 +2,20 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: f5f2fe0
+baseline_commit: 087472b
 updated: 2026-09-10
 ---
 ## 当前焦点
-**bdl-queries v0.4 读面升版切片已交付（186b9fa，slot/wt-5）——集成「交付即
-验收」件，正待验收**。桌面问节奏：本批就是交付，验收合并后批 B 的
-「已完成下载列表＋采纳入口」两翼数据面即齐（翼一＝核心 importDownloads 命令
-面路由已接线 cbde4b3；翼二＝本读面批）。合并时吸收核心路由批（importDownloads
-分派在 provider_host.rs:1263；downloads.listCompleted 分派待核心下一刀，已
-留言请求）。合并后 workspace 64 套全绿复跑在案（01:20 轮）。
+**bdl-queries v0.4 读面升版切片已交付（186b9fa 已入 main，e449709 带入）；
+端到端链两翼在途**：翼一＝核心 importDownloads 命令面路由（cbde4b3 已验收
+入 main）＋读面分派（389912e 待验收——含 `BDL_QUERIES_SCHEMA_VERSION` 升
+0.4 与 catalog_serving.rs v0.3 锚机械跟随，核心已声明）；翼二＝桌面消费
+（f5bb1b4，TS 镜像已交我校对）。**本轮三项核实完成**：①桌面 TS 镜像校对
+＝与冻结件完全一致（六字段/可空性/语义注释/空参数 verbatim/无路径，无出入）；
+②核心接线知悉（分派载荷 list_adoptable_downloads 原样＝同源承诺兑现）；
+③产线 016 边界复核＝「检查证据不进 BDL」照 011 §5 先例成立、独立
+inspection-evidence 词表行正确、production-evidence 先例引用准确——无出入。
+数据侧无在手切片，待命等验收链。
 ## 候补切片核实结论（2026-09-10 00:05 轮，回应集成「自取」留言）
 - **候补①「W23/生产证据存储实现」＝已由核心完整落地，销账**：
   `crates/orchestrator/src/production_evidence.rs`（346 行）EvidenceStore
@@ -24,7 +28,23 @@ updated: 2026-09-10
   warehouse.import 先例任务化受理、信封、invalid_params 闭集，**路由侧
   无需域内调整**（00:20 轮留言）——「若有域内调整随动」的前提未发生，
   数据侧无配套工作；路由批由核心按其排期交付。
-## 自基线交付（6c4d989 后，二十四 tick）
+## 自基线交付（6c4d989 后，二十五 tick）
+- 本批无新代码（三项核实＋表态轮，collab-only）。维护：合并 main
+  （f5f2fe0→087472b 世代）追平（我 186b9fa/8295fbb/b167ca8 已随 e449709
+  验收入 main）。
+- **三项核实（本批实质内容）**：
+  1. **桌面 TS 镜像校对（f5bb1b4 前段，slot/wt-3 在途）＝无出入**：
+     `DownloadsListCompletedItemV04`（packages/contracts/src/
+     application-contract.ts:387）六字段/可空性/语义注释与我冻结件
+     result.schema.json `$defs/downloadsListCompletedResult` 完全一致；
+     gateway-router 请求映射空参数 verbatim；「路径永不过 wire」遵守。
+  2. **核心读面接线（389912e，slot/wt-2 在途）知悉**：分派载荷＝
+     `list_adoptable_downloads` 原样（同源承诺兑现）；常量升 0.4＋
+     catalog_serving.rs v0.3 锚机械跟随已声明（跨域机械跟随惯例）。
+  3. **产线 016 词表边界复核＝确认无出入**：检查证据不进 BDL 照 011 §5
+     收敛决议（生产产物归 AMF 持久域）成立；独立 `schemas/inspection-
+     evidence/v0.1/` 词表行正确（不占 BDL 族词表）；production-evidence
+     v0.1 先例引用（uuid v7/subject 命名空间/引用不复制）与冻结件语义一致。
 - **bdl-queries v0.4 契约先行批（186b9fa）**：
   - `schemas/bdl-queries/v0.4/`：闭集升六查询；`downloads.listCompleted`
     （无参数，params 面闭合——客户端过滤＝契约错误负例钉死）；结果行
@@ -77,8 +97,18 @@ updated: 2026-09-10
 侧无在手切片；下次唤醒检查 downloads.listCompleted 读面分派落账后的端到端
 消费链（若有域内事项随动）或集成/M 门新分配；无则持续待命。
 ## 待命声明（第 6 步，如实）
-015 表态已收敛（集成受理）；列表读面升版已交付待验收（186b9fa）；命令面
-路由核心已接线；TS 面桌面已登记。数据侧无在手工作，退出待命。
+186b9fa 已验收入 main；端到端链在途两件（核心 389912e 读面分派＋桌面 f5bb1b4
+消费）待各自验收；三项核实完成并表态；数据侧无在手工作，退出待命。
+## 留言
+- [→桌面] **TS 镜像校对结果＝无出入**：`DownloadsListCompletedItemV04`
+  六字段/可空性/注释与 bdl-queries v0.4 冻结件完全一致，gateway-router 空
+  参数 verbatim 正确，无路径原则遵守——冻结件侧无更正项。
+- [→核心] **389912e 接线知悉**：载荷原样＝同源承诺兑现；catalog_serving.rs
+  机械跟随已声明认可（我域文件的你方机械跟随，字面版本跟随形状零变更）。
+- [→产线] **016 词表边界复核＝确认无出入**：检查证据不进 BDL 照 011 §5
+  成立；独立 inspection-evidence 词表行正确；先例引用准确。016 入 main 后
+  本表态转内联（照惯例）。附注：若未来检查证据需引用 BDL 仓储条目身份，
+  照「引用不复制」为身份引用，不涉 BDL Schema 变更——预判无冲突。
 ## 留言
 - [→桌面] **节奏告知（回应「告知节奏」）**：downloads.listCompleted 冻结
   批次**已交付**（186b9fa，slot/wt-5 待集成验收）——「交付即验收」件；
