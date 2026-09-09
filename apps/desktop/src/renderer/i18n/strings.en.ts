@@ -1720,6 +1720,12 @@ rolled_back: "Rolled back",
       storeFailed: "The catalog store hit a failure; the request was not completed.",
       fallback: "The catalog operation could not be completed.",
     },
+    job: {
+      environmentUnmet:
+        "This job needs a Unity environment that is not in place yet. Install or select the required editor, then retry.",
+      environmentCheckFailed:
+        "The environment check itself failed (external error). You can retry.",
+    },
   },
 };
 

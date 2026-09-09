@@ -1720,5 +1720,11 @@ rolled_back: "已回滚",
       storeFailed: "目录存储发生故障,请求未完成。",
       fallback: "目录操作未能完成。",
     },
+    job: {
+      environmentUnmet:
+        "此作业所需的 Unity 环境尚未就绪。请安装或选择所需编辑器后重试。",
+      environmentCheckFailed:
+        "环境检测本身失败(外部错误)。可以重试。",
+    },
   },
 };
