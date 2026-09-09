@@ -241,7 +241,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | material-intake | v0.1 | 冻结 |
 | bdl（schema） | v0.1 | 冻结 |
 | environment-managers（schema） | v0.1 | 冻结 |
-| project-inspection（schema） | v0.1 | 冻结（M6 T-A/T-B，2026-09-09，环境，集成验收复跑 420/0）——管理器注册项目只读检视聚合（关联/Unity 分类/VPM 声明面/VRChat SDK/未完成变更标记三态）；库级 payload 面；读面 wire 词表（command/result schema＋向量）随 013 冻结件入树（2026-09-09） |
+| project-inspection（schema） | **v0.2** | **已冻结（v0.1 增量族升版，2026-09-09，环境，集成验收 354925a：复跑 62/62＋clippy 零告警）**——新增逐项目 vuaIdentity 三态判定（absent/present〔markedAt,note〕/unreadable；不可读＝证据绝不静默缺席）；零消费声明如实（provider 路由未实现、TS 面未登记——接线前不得称端到端）；v0.1 已取代（→ v0.2），其内容（M6 T-A/T-B 检视聚合：关联/Unity 分类/VPM 声明面/VRChat SDK/未完成变更标记三态；库级 payload 面；013 读面 wire 词表）完整并入。配套：VUA 独有标识文件 `.vua/project.json`（vua_identity.rs 176 行＋5 测试；备注存取 VUA-native-only）；import-copy apply 落成点标记副本 VUA-native（裁决 9「迁移到了 VUA」；wire v0.1 词表零变更）；消费路由问题已留 013/014 内联待核心 |
 | amf-production（schema / 向量） | v0.2 | **已冻结（M3 验收，2026-09-07）**；协议本 production-use-case v0.1 同日冻结 |
 | eac-probe（schema） | v0.1 | **已冻结（M6 EAC R1a 实现，2026-09-09，环境，集成验收复跑 437/0）**——EAC 只读冲突探针（R1a：允许清单会话/残留快照两态 fixtures；006 八点语义锚定）；实现 eac_probe.rs 309 行＋252 行测试 |
 | eac-allowlist（schema） | v0.1 | **已冻结（M6 EAC R2/R3 实现，2026-09-09，环境，集成验收复跑 442/0）**——允许清单数据面（起始为空＝八点语义第 2 点：清单空期间终止能力显示未核验/不可用）＋候选再核验原语；实现 eac_allowlist.rs 164 行＋eac_verify.rs 217 行＋296 行测试。**R3 签名核验追加验收（同日，复跑 443/0）**——WinVerifyTrust 完成 006 R3 四件套核对（R1b groundwork） |
