@@ -950,19 +950,6 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
         {"operationId": "project.import-copy", "availability": project_ops_availability},
-        {
-            "operationId": "desktop.remoteBrowser",
-            "availability": "unavailable",
-            "reason": {
-                "contractVersion": APPLICATION_CONTRACT_VERSION,
-                "code": "vua.desktop.remote_browser_unavailable",
-                "category": "unavailable",
-                "messageKey": "errors.desktop.remoteBrowserUnavailable",
-                "recoverable": true,
-                "retryable": false,
-                "correlationId": "provider-capability",
-            },
-        },
     ])
 }
 
