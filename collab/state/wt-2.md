@@ -6,7 +6,19 @@ baseline_commit: 6f2c7b7
 updated: 2026-09-10
 ---
 ## 当前焦点
-**013 读面路由第一刀已交付（e720544，2026-09-10 凌晨）：project.environmentManagers live**——
+**013 读面路由完整交付（5b65550，2026-09-10 凌晨）——四查询全 live，读面
+不再有类型化缺席项**：`project.listProjects`（注册项目检测聚合 verbatim
+——v0.2 快照族含 vuaIdentity 三态）；`project.inspectProject`（单项目面＝
+注册表内单查；未注册路径＝新定形类型化 `vua.project.project_not_found`；
+单项目 result 自携族版本 vua.project-inspection/v0.2 照冻结 def）；
+`project.lockStatus`（只读 pending-mutation 观察 none|leftover|unreadable
+——检测永不取锁）；单路径查询闭集 `{projectPath}` 执法。**消费测试 +3**：
+聚合 over the wire（v0.2 三态校验）/单查与缺席面/干净锁观察。**证据
+（2026-09-10 本机）**：project_ops_wire 9/9＋workspace 65 套件全绿＋clippy
+零告警。交集成验收——**013 读面翼完整，桌面 T-B 全量接线解锁**。
+桌面 i18n 两 messageKey 已登记（64d22a7 收讫）；产线 A2 冒烟 fixture 决策
+（无 constraint 诚实跳过）收讫闭环。#7 残余观察态维持。
+**前情：013 读面路由第一刀已交付（e720544）：project.environmentManagers live**——
 `project.*` 分派现承载冻结读面（project-inspection v0.1 命令词表）＋014 写
 面：environmentManagers 同步薄层（载荷＝环境侧 collector 原样——发现对给定
 树确定性、settings 路径按事实旅行；ProjectOpsServices 增 editor_roots）；
@@ -235,11 +247,20 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**013 读面第一刀（e720544：environmentManagers live＋三未接线项类型化
-缺席＋查询信封 0.1/快照族 v0.2 独立投影＋消费测试 +2）＋本状态批**请集成
-验收合并（桌面 T-B 读面翼第一步）。在途下一刀：listProjects/
-inspectProject/lockStatus 三查询接线。
+**013 读面完整批（5b65550：三查询 live＋project_not_found 定形＋单路径
+闭集＋消费测试 +3）＋本状态批**请集成验收合并——013 读面翼完成（四查询
+全 live），桌面 T-B 全量接线解锁。在途下一刀候选：BG-2/BG-6 评估＋M6/M7
+后续锚点。
 ## 留言
+- [→桌面] **013 读面翼完整交付**（5b65550）：四查询全 live
+  （environmentManagers/listProjects/inspectProject/lockStatus）——T-B
+  全量接线解锁。语义注记：inspectProject 只对管理器注册路径可查（未注册
+  ＝vua.project.project_not_found）；lockStatus 永不取锁（纯观察）；
+  vuaIdentity 三态随 listProjects/inspectProject 行。
+- [→集成] 013 错误码定形（013 提案路由批授权核心）：`vua.project.not_found`
+  定形为 **`vua.project.project_not_found`**（messageKey
+  errors.project.projectNotFound——检测面注册表缺席语义；messageKey 新键
+  待桌面 i18n 随消费批登记）。
 - [→桌面] **013 读面翼第一步交付**（e720544）：environmentManagers live
   （真 VCC/ALCOM/编辑器事实快照，向量形状）；listProjects/inspectProject/
   lockStatus 类型化 unavailable（下刀接线）——T-B 接线可先消费

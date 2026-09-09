@@ -457,21 +457,6 @@ fn project_read_face_closed_set_and_absence_are_typed() {
     );
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.invalid_params");
 
-    // Frozen word-list entries that are not yet wired answer a typed
-    // unavailable — never a silent stub.
-    for method in ["project.listProjects", "project.inspectProject", "project.lockStatus"] {
-        let frames = run_frames(
-            &database,
-            Some(&config),
-            &[json!({"method": method, "params": {}})],
-        );
-        assert_eq!(
-            frames[0]["payload"]["error"]["code"],
-            "vua.project.unavailable",
-            "{method}"
-        );
-    }
-
     // An unknown project.* method is a contract error.
     let frames = run_frames(
         &database,
@@ -479,4 +464,117 @@ fn project_read_face_closed_set_and_absence_are_typed() {
         &[json!({"method": "project.frobnicate", "params": {}})],
     );
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.provider.unknown_method");
+}
+
+// --- proposal 013 read face: the three project queries ---
+
+fn v02_result_validator() -> jsonschema::Validator {
+    jsonschema::validator_for(&{
+        let bytes = fs::read(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../schemas/project-inspection/v0.2/result.schema.json"),
+        )
+        .expect("result schema exists");
+        serde_json::from_slice::<Value>(&bytes).expect("result schema is valid JSON")
+    })
+    .expect("frozen result schema must compile")
+}
+
+#[test]
+fn project_list_projects_serves_the_registered_inspection_aggregate() {
+    let validator = v02_result_validator();
+    let root = unique_root("list-projects");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({"method": "project.listProjects", "params": {}})],
+    );
+    let value = &frames[0]["payload"]["value"];
+    assert_eq!(value["schemaVersion"], "0.1");
+    assert_eq!(value["operation"], "project.listProjects");
+    assert!(validator.is_valid(value), "aggregate must match the frozen schema: {value}");
+    let projects = value["result"]["projects"].as_array().expect("projects");
+    assert_eq!(projects.len(), 1, "exactly the registered project lists");
+    let project = &projects[0];
+    assert_eq!(project["path"], json!(source.to_string_lossy()));
+    assert_eq!(project["name"], "source-project");
+    assert_eq!(project["associations"], json!(["vcc_registered"]));
+    assert_eq!(project["mutationStatus"], "none");
+    // The v0.2 tri-state: the fresh copy has no VUA identity yet.
+    assert_eq!(project["vuaIdentity"]["status"], "absent");
+}
+
+#[test]
+fn project_inspect_project_serves_one_and_refuses_unregistered() {
+    let validator = v02_result_validator();
+    let root = unique_root("inspect-one");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.inspectProject",
+            "params": {"projectPath": source.to_string_lossy()},
+        })],
+    );
+    let value = &frames[0]["payload"]["value"];
+    assert_eq!(value["operation"], "project.inspectProject");
+    assert!(validator.is_valid(value), "single inspection must match the frozen schema: {value}");
+    assert_eq!(value["result"]["path"], json!(source.to_string_lossy()));
+    assert_eq!(value["result"]["manifestPresent"], true);
+
+    // A path no manager registers is the typed not-found (the detection
+    // face's registry is its world).
+    let stranger = root.join("stranger-project");
+    fs::create_dir_all(&stranger).expect("stranger dir");
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.inspectProject",
+            "params": {"projectPath": stranger.to_string_lossy()},
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.project_not_found");
+
+    // Missing projectPath is a params violation (the frozen negative vector).
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({"method": "project.inspectProject", "params": {}})],
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.invalid_params");
+}
+
+#[test]
+fn project_lock_status_reports_the_marker_observation() {
+    let validator = v02_result_validator();
+    let root = unique_root("lock-status");
+    let (_source, target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    // A project directory with no marker observes "none".
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.lockStatus",
+            "params": {"projectPath": target_parent.to_string_lossy()},
+        })],
+    );
+    let value = &frames[0]["payload"]["value"];
+    assert!(validator.is_valid(value), "lock status must match the frozen schema: {value}");
+    assert_eq!(value["result"]["mutationStatus"], "none");
+    assert_eq!(
+        value["result"]["projectPath"],
+        json!(target_parent.to_string_lossy())
+    );
 }
