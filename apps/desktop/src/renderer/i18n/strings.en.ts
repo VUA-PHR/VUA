@@ -1603,6 +1603,7 @@ rolled_back: "Rolled back",
   dev: {
     devModeTitle: 'Development mode (per-port connection targets)',
     devModeDesc: 'Switch individual gateway ports between the live connection and demo fixtures. Any fixture port keeps the demo-data badge visible. Session-scoped; a page reload applies each change. Never shown in production builds.',
+    fixtureTierLabel: 'Fixture data tier (applies to ports set to fixture)',
     portEnvironment: 'Environment',    portTutorial: 'Tutorial',    portModelProduction: 'Model production',    portToolCatalog: 'Tool catalog',    portTask: 'Tasks',    portSettings: 'Settings',    portAcquire: 'Warehouse (read)',    portWarehouseCommands: 'Warehouse (write)',    portProjectOps: 'Project operations',    portPackages: 'Packages',
     targetFixture: 'Use demo fixture',
     targetLiveReset: 'Reset to live',

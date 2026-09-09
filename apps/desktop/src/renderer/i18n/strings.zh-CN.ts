@@ -1604,6 +1604,7 @@ rolled_back: "已回滚",
   dev: {
     devModeTitle: '开发模式(per-port 连接目标)',
     devModeDesc: '将各网关端口在真实连接与演示 fixture 间单独切换。任一端口为 fixture 时「演示数据」徽标恒显。会话级生效;每次变更经整页重载应用。生产构建中永不出现。',
+    fixtureTierLabel: 'fixture 数据档位(作用于设为 fixture 的端口)',
     portEnvironment: '环境',    portTutorial: '引导',    portModelProduction: '模型生产',    portToolCatalog: '工具合集',    portTask: '任务',    portSettings: '设置',    portAcquire: '仓库(读)',    portWarehouseCommands: '仓库(写)',    portProjectOps: '项目操作',    portPackages: '包管理',
     targetFixture: '切到演示 fixture',
     targetLiveReset: '复位为真实连接',
