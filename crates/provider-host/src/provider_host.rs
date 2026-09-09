@@ -816,6 +816,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("catalog.") {
         return catalog_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("downloads.") {
+        return downloads_query_request(state, method, request, request_id, correlation_id);
+    }
     if method.starts_with("recipe.") {
         return recipe_request(state, method, request, request_id, correlation_id);
     }
@@ -3220,6 +3223,81 @@ fn bdl_query_success(request_id: &str, operation: &str, result: Value) -> FrameO
             "result": result,
         }),
     ))
+}
+
+/// The `downloads.*` read face (bdl-queries v0.4): the adoptable
+/// completed-delivery listing. Absent wiring answers a typed unavailable —
+/// the frozen word list is never silently stubbed.
+fn downloads_query_request(
+    state: &HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse) = state.warehouse.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.downloads.unavailable",
+            "errors.downloads.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "downloads.listCompleted" => {
+            downloads_list_completed(warehouse, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+/// `downloads.listCompleted` (bdl-queries v0.4, proposal 015 section-7):
+/// the adoptable completed deliveries — the SAME server-side fact the
+/// adoption guard consumes (event fold at a completed delivery, staging
+/// file present at the reported size), so the list is the guard's mirror.
+/// No params; paths never appear in the rows.
+fn downloads_list_completed(
+    warehouse: Arc<WarehouseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    if let Some(params) = request.get("params") {
+        let empty = params.as_object().map(|object| object.is_empty()).unwrap_or(false);
+        if !empty {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.downloads.invalid_params",
+                "errors.downloads.invalidParams",
+                "validation",
+            ));
+        }
+    }
+    match warehouse.bdl.list_adoptable_downloads() {
+        Ok(rows) => {
+            let downloads = serde_json::to_value(&rows).unwrap_or_else(|_| json!([]));
+            bdl_query_success(
+                request_id,
+                "downloads.listCompleted",
+                json!({ "downloads": downloads }),
+            )
+        }
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.warehouse.store_failed",
+            "errors.warehouse.storeFailed",
+            "internal",
+        )),
+    }
 }
 
 fn catalog_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
