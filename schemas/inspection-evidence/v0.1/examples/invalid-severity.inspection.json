@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-a05f-7064-c3d8-9b2f17e80433",
+  "avatarRef": { "ref": "warehouse:wi-01j9c7d3e5fg7h2k", "label": "Meiyun" },
+  "performedAt": "2026-09-10T01:47:30Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "neg-02", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "functional",
+      "status": "fail",
+      "basis": "bridge_typed_checks",
+      "checks": [
+        {
+          "code": "validation.merge_missing",
+          "severity": "fatal",
+          "message": "衣装 Armature 缺少 MA Merge Armature。"
+        }
+      ]
+    }
+  ],
+  "overallStatus": "fail"
+}

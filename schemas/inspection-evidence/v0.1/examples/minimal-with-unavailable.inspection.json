@@ -1,0 +1,75 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-8c3d-7e42-a1b6-6f0d95c82e11",
+  "avatarRef": {
+    "ref": "scene:/Avatar",
+    "label": null
+  },
+  "performedAt": "2026-09-10T01:44:55Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "insp-min-01", "status": "succeeded" },
+      { "operation": "analyze_performance", "commandId": "insp-min-02", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "functional",
+      "status": "pass",
+      "basis": "bridge_typed_checks",
+      "checks": [
+        {
+          "code": "validation.passed",
+          "severity": "info",
+          "message": "衣装层级、Merge Armature 和选择引用检查通过。"
+        }
+      ]
+    },
+    {
+      "kind": "performance",
+      "status": "pass",
+      "basis": "bridge_local_estimate",
+      "checks": [
+        {
+          "code": "performance.estimated",
+          "severity": "info",
+          "message": "已生成本地结构估算；这不是 VRChat 官方性能等级。",
+          "metrics": {
+            "triangles": 41822,
+            "materialSlots": 5,
+            "skinnedMeshRenderers": 2,
+            "bones": 134
+          }
+        }
+      ]
+    },
+    {
+      "kind": "dependencies",
+      "status": "unavailable",
+      "basis": "none",
+      "checks": []
+    },
+    {
+      "kind": "lighting",
+      "status": "unavailable",
+      "basis": "none",
+      "checks": []
+    },
+    {
+      "kind": "upload_readiness",
+      "status": "warn",
+      "basis": "bridge_typed_checks",
+      "checks": [
+        {
+          "code": "upload.thumbnail_pipeline_pending",
+          "severity": "warning",
+          "message": "缩略图管线尚未为此条目配置，上传前需生成预览图。"
+        }
+      ]
+    }
+  ],
+  "overallStatus": "warn",
+  "notes": "依赖与光照两维在本次运行中不可观测（无对应产出操作），如实标 unavailable；缺失是证据的一部分。"
+}

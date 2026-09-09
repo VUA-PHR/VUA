@@ -1,0 +1,82 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-7a2b-7cd1-9f3a-4d8e21b90c54",
+  "avatarRef": {
+    "ref": "warehouse:wi-01j9c7d3e5fg7h2k",
+    "label": "Meiyun (Cineon outfit v1.00)"
+  },
+  "performedAt": "2026-09-10T01:40:12Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "insp-01-validate", "status": "succeeded" },
+      { "operation": "analyze_performance", "commandId": "insp-02-perf", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "functional",
+      "status": "pass",
+      "basis": "bridge_typed_checks",
+      "checks": [
+        {
+          "code": "validation.passed",
+          "severity": "info",
+          "message": "衣装层级、Merge Armature 和选择引用检查通过。"
+        }
+      ]
+    },
+    {
+      "kind": "performance",
+      "status": "warn",
+      "basis": "bridge_local_estimate",
+      "checks": [
+        {
+          "code": "performance.triangle_estimate_high",
+          "severity": "warning",
+          "message": "三角面较多，建议检查衣装遮挡区域与 LOD/网格合并方案。",
+          "metrics": {
+            "triangles": 92410,
+            "materialSlots": 12,
+            "skinnedMeshRenderers": 6,
+            "bones": 248
+          }
+        }
+      ]
+    },
+    {
+      "kind": "dependencies",
+      "status": "fail",
+      "basis": "static_analysis",
+      "checks": [
+        {
+          "code": "dependencies.package_missing",
+          "severity": "error",
+          "message": "衣装材质引用的 shader 包 lilToon 未在项目依赖中出现。",
+          "metrics": { "package": "jp.lilxyzw.liltoon" }
+        }
+      ]
+    },
+    {
+      "kind": "lighting",
+      "status": "pass",
+      "basis": "bridge_typed_checks",
+      "checks": []
+    },
+    {
+      "kind": "upload_readiness",
+      "status": "warn",
+      "basis": "bridge_typed_checks",
+      "checks": [
+        {
+          "code": "upload.thumbnail_pipeline_pending",
+          "severity": "warning",
+          "message": "缩略图管线尚未为此条目配置，上传前需生成预览图。"
+        }
+      ]
+    }
+  ],
+  "overallStatus": "fail",
+  "notes": "性能维为本地结构估算（bridge_local_estimate），不是 VRChat 官方性能等级；官方评级待官方 SDK 交接切片落地。"
+}
