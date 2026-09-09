@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import { useEnvironmentView, useGateway } from "../../gateway/index.ts";
-import { strings } from "../../i18n/index.ts";
+import { format, strings, termLabel } from "../../i18n/index.ts";
 import type { ImportCopyPlanV01, ImportCopyReceiptV01 } from "@vua/contracts";
 import {
-  bytesText,
   confirmChainDecision,
   receiptLines,
+  bytesText,
   type ConfirmChainTexts,
   type GuardTextTable,
 } from "./project-compat-model.ts";
+import {
+  associationLabel,
+  lockStatusKey,
+  narrowEnvironmentSnapshot,
+  narrowInspectAssociations,
+} from "./project-detection-model.ts";
 import "./project-compat.css";
 
 /**
@@ -63,6 +69,199 @@ type Flow =
   | { readonly kind: "form" }
   | { readonly kind: "plan"; readonly plan: ImportCopyPlanV01 }
   | { readonly kind: "receipt"; readonly receipt: ImportCopyReceiptV01 };
+
+/* ---- 检测段(013 读面消费,T-B):environmentManagers 快照呈现＋B6 识别流 ---- */
+
+type ManagerState =
+  | { readonly kind: "loading" }
+  | { readonly kind: "unavailable" }
+  | { readonly kind: "loaded"; readonly narrowed: ReturnType<typeof narrowEnvironmentSnapshot> };
+
+type IdentifyState =
+  | { readonly kind: "idle" }
+  | { readonly kind: "inspecting" }
+  | { readonly kind: "identified"; readonly path: string; readonly associations: readonly string[] }
+  | { readonly kind: "not-found" }
+  | { readonly kind: "unavailable" };
+
+function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string) => void }) {
+  const [managerState, setManagerState] = useState<ManagerState>({ kind: "loading" });
+  const [reloadKey, setReloadKey] = useState(0);
+  const [pickedPath, setPickedPath] = useState<string | null>(null);
+  const [identify, setIdentify] = useState<IdentifyState>({ kind: "idle" });
+  const [lockLine, setLockLine] = useState<string | null>(null);
+
+  const reloadManagers = () => setReloadKey((key) => key + 1);
+
+  useEffect(() => {
+    let active = true;
+    setManagerState({ kind: "loading" });
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.environmentManagers",
+        params: {},
+      })
+      .then((result) => {
+        if (!active) return;
+        if (!result.ok) {
+          setManagerState({ kind: "unavailable" });
+          return;
+        }
+        // wire 信封仅携带 vcc/alcom 能力本体(013 冻结面);editors/projects
+        // 计数不在信封顶层,narrow 呈现恒 "—"(诚实缺省)
+        setManagerState({ kind: "loaded", narrowed: narrowEnvironmentSnapshot(result.value) });
+      });
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const inspect = (projectPath: string) => {
+    setIdentify({ kind: "inspecting" });
+    setLockLine(null);
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.inspectProject",
+        params: { projectPath },
+      })
+      .then((result) => {
+        if (result.ok) {
+          const payload = result.value as { path?: unknown; associations?: unknown };
+          if (typeof payload.path === "string" && Array.isArray(payload.associations)) {
+            setIdentify({
+              kind: "identified",
+              path: payload.path,
+              associations: narrowInspectAssociations(payload.associations),
+            });
+            return;
+          }
+          setIdentify({ kind: "unavailable" });
+          return;
+        }
+        const applicationCode =
+          result.error.code === "application"
+            ? ((result.error as { application?: { code?: string } }).application?.code ?? "")
+            : "";
+        setIdentify(
+          applicationCode === "vua.project.project_not_found"
+            ? { kind: "not-found" }
+            : { kind: "unavailable" },
+        );
+      });
+  };
+
+  const pickAndInspect = () => {
+    void window.vua?.dialog.pickWarehouseFolders().then((folders) => {
+      const first = folders?.[0];
+      if (first === undefined) return;
+      setPickedPath(first);
+      inspect(first);
+    });
+  };
+
+  const viewOnly = (projectPath: string) => {
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.lockStatus",
+        params: { projectPath },
+      })
+      .then((result) => {
+        const mutationStatus = result.ok
+          ? (result.value as { mutationStatus?: unknown }).mutationStatus
+          : undefined;
+        const key = lockStatusKey(mutationStatus);
+        setLockLine(key === null ? copy.lockUnreadable : copy[key]);
+      });
+  };
+
+  const managerLine = (snapshot: ReturnType<typeof narrowEnvironmentSnapshot>): string => {
+    if (snapshot === null) return copy.detectionUnavailable;
+    const vcc = snapshot.vcc?.presence ?? "not_found";
+    const alcom = snapshot.alcom?.presence ?? "not_found";
+    return format(copy.detectionManagersLine, {
+      vcc: vcc === "found" ? copy.associationVcc : "—",
+      alcom: alcom === "found" ? copy.associationAlcom : "—",
+      editors: snapshot.editorsCount === null ? "—" : String(snapshot.editorsCount),
+      projects: snapshot.projectsCount === null ? "—" : String(snapshot.projectsCount),
+    });
+  };
+
+  return (
+    <div className="vua-project-compat__detection">
+      <p className="vua-caption vua-text-secondary">{copy.detectionWired}</p>
+      {managerState.kind === "loading" ? (
+        <p className="vua-caption vua-text-secondary">{copy.detectionUnavailable}</p>
+      ) : null}
+      {managerState.kind === "loaded" ? (
+        <ul className="vua-project-compat__specs">
+          <li>{managerLine(managerState.narrowed)}</li>
+        </ul>
+      ) : null}
+      <div className="vua-project-compat__row">
+        <Button variant="default" onClick={pickAndInspect}>
+          {copy.detectionPickCta}
+        </Button>
+        <Button variant="subtle" disabled={pickedPath === null} onClick={reloadManagers}>
+          {copy.detectionReload}
+        </Button>
+      </div>
+      <p className="vua-caption vua-text-secondary">{copy.detectionPickNote}</p>
+
+      {identify.kind === "inspecting" ? (
+        <p className="vua-caption vua-text-secondary">{copy.detectionInspectCta}…</p>
+      ) : null}
+      {identify.kind === "not-found" ? (
+        <p className="vua-caption vua-text-secondary" role="alert">
+          {copy.detectionNotFound}
+        </p>
+      ) : null}
+      {identify.kind === "unavailable" ? (
+        <p className="vua-caption vua-text-secondary" role="alert">
+          {copy.detectionUnavailable}
+        </p>
+      ) : null}
+      {identify.kind === "identified" ? (
+        <div
+          className="vua-project-compat__form"
+          role="group"
+          aria-label={copy.associationsTitle}
+        >
+          <p>
+            <strong>{identify.path}</strong>
+          </p>
+          <p className="vua-caption vua-text-secondary">{copy.associationsTitle}</p>
+          <ul className="vua-project-compat__specs">
+            {identify.associations.map((association) => (
+              <li key={association}>{associationLabel(association, {
+                vcc: copy.associationVcc,
+                alcom: copy.associationAlcom,
+              })}</li>
+            ))}
+          </ul>
+          {lockLine !== null ? (
+            <p className="vua-caption vua-text-secondary" role="status">
+              {lockLine}
+            </p>
+          ) : null}
+          <div className="vua-project-compat__row">
+            <Button variant="subtle" onClick={() => viewOnly(identify.path)}>
+              {copy.viewOnlyCta}
+            </Button>
+            <Button variant="primary" onClick={() => onMigrate(identify.path)}>
+              {copy.migrateCta}
+            </Button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function ProjectCompatPage() {
   const environment = useEnvironmentView();
@@ -148,16 +347,13 @@ export function ProjectCompatPage() {
 
           <section>
             <h3 className="vua-warehouse-detail__section-title">{copy.detectionTitle}</h3>
-            <p className="vua-caption vua-text-secondary">{copy.detectionSource}</p>
-            <p className="vua-caption vua-text-secondary">{copy.detectionItemsTitle}</p>
-            <ul className="vua-project-compat__specs">
-              {copy.detectionItems.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <p className="vua-caption vua-text-secondary" role="note">
-              {copy.detectionNotWired}
-            </p>
+            <ProjectDetectionSection
+              onMigrate={(sourcePath) => {
+                // B6 识别→迁移:预填确认链源路径(014 语义不变)
+                setSourcePath(sourcePath);
+                startForm();
+              }}
+            />
           </section>
 
           <section>
