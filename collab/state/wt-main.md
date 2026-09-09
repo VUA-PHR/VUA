@@ -2,19 +2,22 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 1360af1
+baseline_commit: a616c5a
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第十九波验收：019 批 A 交付**（0227640——共享容器保留＋UI 根切换骨架：
-ui-registry 两套可信随产品构建 UI〔current 第一套已接入；forest-green 批 D
-前置＝本批不可用态如实呈现〕；Gateway 生命周期高于 UI 根〔UI-01〕；会话级
-选择保守回落〔UI-05/08〕）。**批 A 完成条件结构性满足**（切换不重建
-Gateway——容器层持 createGatewayState，UI 根切换仅换 root 组件）；桌面
-check 全链绿（**55 文件 443 测试**）。019 批 B 前置已齐（核心 UI-03 评估
-＋批 A 骨架）。**W25 三前置维持齐备**——开窗通知晨起 O-2。批量面板未
-触发；[需代裁] 零新增。
+**第二十波验收：018 批 2 收口**（13764fa——常用组合预设 all-live/
+all-demo-fixture 入开发模式区；55 文件 443 测试全链绿）。018 批 2 完成
+（part 1 fixture 档位＋part 2 预设）；批 2 余项（场景资产按端口拆档）桌面
+自排。019 批 B 前置已齐。**W25 三前置维持齐备**——开窗通知晨起 O-2。
+批量面板未触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **第二十波验收（07:20–07:30）**：
+  - **a616c5a**：slot/wt-3 **018 批 2 part 2 验收合并**——13764fa（常用
+    组合预设 all-live/all-demo-fixture 入开发模式区：dev-port-selection
+    9 行＋dev-mode-section 22 行＋四语 i18n）。**验收记录**：桌面 check
+    全链复跑绿（55 文件 443 测试＋leak 159 零命中）。018 批 2 收口
+    （part 1 档位＋part 2 预设）。
 - **第十九波验收（07:00–07:10）**：
   - **1360af1**：slot/wt-3 **019 批 A 验收合并**——0227640（共享容器保留＋
     UI 根切换骨架：ui-registry 45 行〔两套可信随产品构建 UI；current 第一套
