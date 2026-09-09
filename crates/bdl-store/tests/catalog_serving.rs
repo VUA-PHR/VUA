@@ -1,5 +1,5 @@
 //! W12 consumer tests: the catalog serving face (catalog.list/detail/status)
-//! against the frozen `schemas/bdl-queries/v0.3` vocabulary.
+//! against the frozen `schemas/bdl-queries/v0.4` vocabulary.
 //!
 //! One end consumes the frozen vectors for real: positive request vectors
 //! drive the assembly, assembled results validate against the frozen result
@@ -18,7 +18,7 @@ use vua_bdl_store::{
 };
 
 fn schema_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.3")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.4")
 }
 
 fn read_json(relative: &str) -> Value {
@@ -286,6 +286,8 @@ fn w12_status_is_unknown_until_the_pipeline_counter_exists() {
 
 #[test]
 fn w12_schema_version_constant_matches_the_frozen_vocabulary() {
-    assert_eq!(BDL_QUERIES_SCHEMA_VERSION, "0.3");
+    // v0.4 is the current word list (the downloads.listCompleted read face
+    // landed); the envelope constant follows the frozen vocabulary.
+    assert_eq!(BDL_QUERIES_SCHEMA_VERSION, "0.4");
     let _ = json!({"anchor": true});
 }

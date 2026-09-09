@@ -1,7 +1,7 @@
-//! Catalog read-face wire tests (W12 closeout; bdl-queries v0.3).
+//! Catalog read-face wire tests (W12 closeout; bdl-queries v0.3 -> v0.4).
 //!
 //! The host consumes the data-side frozen vectors from
-//! `schemas/bdl-queries/v0.3/examples` through the real frame loop. The
+//! `schemas/bdl-queries/v0.4/examples` through the real frame loop. The
 //! assembly (bdl-store) produces the result payload; the wire face wraps it
 //! into the frozen `{ schemaVersion, operation, result }` document — so the
 //! wire answer must equal the direct store assembly for the same params
@@ -22,7 +22,7 @@ use vua_bdl_store::{ArtifactMode, BdlStore, CatalogListParams};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn schema_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.3")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.4")
 }
 
 fn read_json(relative: &str) -> Value {
@@ -160,7 +160,7 @@ fn empty_table_answers_the_honest_empty_state_over_the_wire() {
     let frames = run_query(&world, "req-list", "catalog.list", json!({}));
     let value = &frames[0]["payload"]["value"];
     assert!(validator.is_valid(value), "{value}");
-    assert_eq!(value["schemaVersion"], "0.3");
+    assert_eq!(value["schemaVersion"], "0.4");
     assert_eq!(value["operation"], "catalog.list");
     assert_eq!(value["result"]["total"], 0);
     assert_eq!(value["result"]["entries"], json!([]));
@@ -454,4 +454,133 @@ fn unknown_catalog_methods_and_unwired_bdl_answer_typed_errors() {
         .map(|line| serde_json::from_str(line).unwrap())
         .collect();
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.catalog.unavailable");
+}
+
+// --- bdl-queries v0.4: the download-adoption source listing face ---
+
+#[test]
+fn downloads_list_completed_is_the_adoption_guards_mirror() {
+    use vua_bdl_store::download_events::{DownloadEventConsumer, DownloadEventKind, DownloadEventV01};
+
+    let world = make_world("downloads-list");
+    let validator = result_validator();
+
+    // Two completed deliveries in BDL's own event log, backed by real
+    // staging files at the reported size.
+    let staging_dir = world.base.join("staging");
+    fs::create_dir_all(&staging_dir).expect("staging dir");
+    let consumer = DownloadEventConsumer::new(&world.bdl);
+    let mut ids = Vec::new();
+    for index in 0..2 {
+        let download_id = format!("dl-01htest{index:020}");
+        let staging_path = staging_dir.join(format!("{download_id}-material-pack.zip"));
+        fs::write(&staging_path, b"downloaded package bytes").expect("staging file");
+        let stored = staging_path.to_string_lossy().into_owned();
+        let received = b"downloaded package bytes".len() as u64;
+        for kind in [DownloadEventKind::Started, DownloadEventKind::Completed] {
+            consumer
+                .ingest(&DownloadEventV01 {
+                    schema_version: "0.1".into(),
+                    kind,
+                    download_id: download_id.clone(),
+                    attempt: 1,
+                    source_url: "https://booth.example.com/download/1000001/fixture".into(),
+                    initiated_from_page_url: None,
+                    url_chain: None,
+                    suggested_file_name: Some("material-pack.zip".into()),
+                    stored_path: Some(stored.clone()),
+                    expected_bytes: Some(received),
+                    received_bytes: Some(received),
+                    resumable: false,
+                    failure_kind: None,
+                    occurred_at: "2026-09-10T00:00:00.000Z".into(),
+                })
+                .expect("event ingests");
+        }
+        ids.push(download_id);
+    }
+
+    // Adopt the second download through the real write face, so the row
+    // carries its adoption link (the guard-mirror property).
+    let warehouse = WarehouseConfig {
+        bdl: world.bdl.clone(),
+        warehouse_root: world.base.join("warehouse"),
+        global_default: ArtifactMode::UseOriginalUnitypackage,
+        executor: None,
+    };
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": "frame-adopt",
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": "req-adopt",
+            "correlationId": "corr-adopt",
+            "kind": "command",
+            "method": "warehouse.importDownloads",
+            "params": {"downloadIds": [ids[1]]},
+        },
+    });
+    let mut output = Vec::new();
+    run_provider_host_with_services(
+        Cursor::new(format!("{frame}\n")),
+        &mut output,
+        &world.database_path,
+        None,
+        None,
+        Some(warehouse.clone()),
+        None,
+    )
+    .expect("adopt frame runs");
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(30);
+    loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).expect("store");
+        let running = store.tasks().expect("tasks").into_iter().any(|task| !task.state.is_terminal());
+        if !running {
+            break;
+        }
+        assert!(std::time::Instant::now() < deadline, "the adoption did not finish");
+        drop(store);
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+
+    // The read face: both deliveries list (staging present, size exact);
+    // the adopted one carries its warehouse entry link, the other empty.
+    let frames = run_query(&world, "req-downloads", "downloads.listCompleted", json!({}));
+    let value = &frames[0]["payload"]["value"];
+    assert!(validator.is_valid(value), "the listing must match the frozen v0.4 schema: {value}");
+    assert_eq!(value["schemaVersion"], "0.4");
+    assert_eq!(value["operation"], "downloads.listCompleted");
+    let rows = value["result"]["downloads"].as_array().expect("downloads rows");
+    assert_eq!(rows.len(), 2, "both adoptable deliveries list: {value}");
+    let by_id: std::collections::HashMap<&str, &Value> =
+        rows.iter().map(|row| (row["downloadId"].as_str().expect("id"), row)).collect();
+    let adopted = by_id.get(ids[1].as_str()).expect("adopted row");
+    assert_eq!(
+        adopted["adoptedWarehouseItemIds"].as_array().expect("links").len(),
+        1,
+        "the adopted download carries its entry link: {adopted}"
+    );
+    let unadopted = by_id.get(ids[0].as_str()).expect("unadopted row");
+    assert_eq!(unadopted["adoptedWarehouseItemIds"], json!([]));
+    for row in rows {
+        assert!(
+            row.get("storedPath").is_none(),
+            "paths never appear in the listing rows: {row}"
+        );
+    }
+}
+
+#[test]
+fn downloads_list_completed_rejects_params_and_answers_absence_honestly() {
+    let world = make_world("downloads-guards");
+
+    // The word-list entry is param-free: any params content is a contract
+    // error (the frozen negative vector pins the same).
+    let frames = run_query(&world, "req-downloads-params", "downloads.listCompleted", json!({"unexpected": true}));
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.downloads.invalid_params");
+
+    // An unknown downloads.* method is a contract error.
+    let frames = run_query(&world, "req-downloads-unknown", "downloads.adopt", json!({}));
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.provider.unknown_method");
 }

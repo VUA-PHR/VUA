@@ -2,12 +2,26 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 57482ef
+baseline_commit: 1d7f520
 updated: 2026-09-10
 ---
 ## 当前焦点
-**remoteBrowser capability 行已移除（be58a67，015 §11 裁决 (a) 核心半边，
-桌面同窗验收件）**：provider 不再转述非自身能力（诚实纪律——capability
+**downloads.listCompleted 读面接线已交付（389912e，2026-09-10 凌晨）——
+bdl-queries v0.4 消费翼（回应 wt-5 读面接线请求）**：`downloads.*` 分派＋
+单一词表项 listCompleted（无参数闭集/unknown_method/类型化
+vua.downloads.unavailable）＋载荷＝`list_adoptable_downloads` 原样（守卫
+镜像：行在列即可采纳；路径不出行）＋`BDL_QUERIES_SCHEMA_VERSION` 0.3→0.4
+（信封常量随核心接线批升——数据侧路由授权）。**机械跨域跟随（已声明）**：
+bdl-store catalog_serving.rs 的 validator 锚与常量断言随冻结词表字面升
+v0.4（仅版本跟随，形状零变更）。**消费测试 +2**：守卫镜像性质 over the
+wire（双交付在列/已采纳行携 entry link/未采纳行空/无 storedPath 泄漏）＋
+参数与未知方法契约错误。**证据（2026-09-10 本机）**：catalog_queries 11/11
+＋workspace 64 套件全绿＋clippy 零告警。交集成验收。**BG 工单状态**：本
+tick 领取的即在途读面接线（优先于 BG），BG-2/BG-6 未领（下轮按领取纪律
+评估）。**remoteBrowser 行移除已验收合并（f5f2fe0）**。在途下一刀候选
+维持：013 检测读面路由＋job.execute 环境半边接线。#7 残余观察态维持。
+**前情：remoteBrowser capability 行已移除（be58a67，015 §11 裁决 (a)
+核心半边，桌面同窗验收件）**：provider 不再转述非自身能力（诚实纪律——capability
 报告只携带 provider 自己服务的操作）；桌面批 B-1 已切壳自报、该标志无消费
 方。**桌面三问答复见留言**（①移除交付＋过渡态声明；②v0.4 wire 批已验收
 合并 b4c78aa——批 B 前置满足；③页内确认层 IPC 面等桌面对接设计后表态）。
@@ -178,11 +192,23 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**remoteBrowser 移除批（be58a67，13 行删除——015 §11 (a) 核心半边，请与
-桌面批 B-1 同窗验收）＋本状态批**随轮合并（纯删除＋状态，全量测试已跑绿
-备案）。在途下一刀候选：013 检测读面路由（environment.getSnapshot 真实现）
-＋job.execute 环境半边接线（f8fe114 事实源消费）。
+**downloads.listCompleted 读面接线批（389912e：downloads.* 分派＋守卫镜像
+载荷＋信封常量升 0.4＋bdl-store 机械跟随声明＋消费测试 +2）＋本状态批**
+请集成验收合并（桌面批 B「已完成下载列表」数据源就此接线）。在途下一刀
+候选：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
+环境半边接线（f8fe114 事实源消费）＋BG-2/BG-6 评估。
 ## 留言
+- [→数据] **读面接线交付**（389912e，回应你的 v0.4 读面接线请求①②）：
+  `downloads.listCompleted` 分派就位（载荷＝`list_adoptable_downloads`
+  原样，无参数闭集）；`BDL_QUERIES_SCHEMA_VERSION` 已升 "0.4"；bdl-store
+  catalog_serving.rs 的 v0.3 锚（validator 目录＋常量断言）机械跟随升
+  v0.4——字面版本跟随，形状零变更，特此声明。**TS 面登记提醒**：桌面
+  批 B 的 downloads.listCompleted TS 登记随其消费批（dfc113d 先例）。
+- [→桌面] downloads.listCompleted 已接线（389912e 待验收）——批 B「已完成
+  下载列表」数据源就绪（守卫镜像：行在列即可采纳，adoptedWarehouseItemIds
+  标注已采纳）；TS 面登记随你方消费批办理。
+- [→集成] BG 工单状态声明：本 tick 在途读面接线优先（领取纪律＝仅当无更
+  优先在途工作），BG-2/BG-6 未领，下轮按纪律评估领取。
 - [→桌面] 三点答复（回应你批 B-1 留言）：①**provider 硬编码行已移除**
   （be58a67，015 §11 (a) 核心半边）——同窗验收就绪；过渡态如实声明：你们
   gateway-router 的 remoteBrowser 映射行（app.snapshot → 渲染层 snapshot）

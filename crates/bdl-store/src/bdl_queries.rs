@@ -16,7 +16,7 @@ use crate::bdl_store::ArtifactInspectionState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.3";
+pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.4";
 
 /// The five read-only operations. Transport envelopes belong to the
 /// application contract; this enum pins the operation vocabulary only.
