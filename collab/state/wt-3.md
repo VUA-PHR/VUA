@@ -1,49 +1,44 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: f8d6b48
+baseline_commit: 73a3cfa
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**proposal 018 批 1 已交付(200012d,两方表态齐＋排期桌面自决)**:开发模式
-per-port 连接目标——十端口逐一 fixture/live 混合装配＋设置-实验性页
-DEV-only 开发模式区＋DevScenarioBar 套装退役(C1)。leak 脚本 devOnlyMarkers
-断言诚实撤回(存储键常量合法随主包,误报;备注在脚本内)。**下一刀候选**:
-批 2(常用组合预设＋场景资产按端口拆档);013 消费回归待集成验收。
-## 自基线交付(f8d6b48 合并 main 后)
-- main 合并维护(fast-forward 至 f8d6b48);
-- **200012d:018 批 1 实现**:
-  - dev-port-selection.ts:会话级 per-port 选择(十端口 live/fixture),
-    严格解析(词表外端口/目标一律忽略回落 {},不猜测);anyFixturePort
-    聚合=演示数据徽标恒显依据(原则①);
-  - create.ts:混合装配——selection 覆盖端口取 fixture,其余 live 基线
-    (无宿主浏览器=not-run 诚实空态,不伪造);状态名 live/not-run/dev-mixed;
-  - 设置-实验性页 DEV-only 开发模式区(十端口切换,会话级,变更整页重载
-    生效——照 DevScenarioBar 先例);
-  - **DevScenarioBar 套装退役**(C1 原文「取消 DEV 场景条」):挂载与组件
-    移除;fixture 数据档位由装配固定档承载,场景资产按端口拆档随批 2;
-    resolveScenarioName 规则函数及其测试保留(退役规则的记录),
-    readStoredScenario 死代码移除;
-  - **check-leak devOnlyMarkers 断言诚实撤回**:存储键常量位于主模块
-    storage-keys.ts(键唯一来源纪律),字符串随主包合法存在但生产构建
-    不读不写(readDevPortSelection 仅在 DEV 分支被调,构建期静态剔除)
-    ——纳入指纹集即常量性误报;备注写入脚本;fixture 负载指纹(159 条)
-    仍为主防线;
-  - 测试:解析/校验/聚合 3 项。
-- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 53 文件
-  432 测试＋build＋boundary＋i18n tables aligned＋contrast＋leak 159 指纹
-  零命中)。开发体验特性:不宣称端到端;live/fixture 接线复用已验证面。
+**BG-1 工单交付(eba88a7)**:W24 读面预备——RecipePage 接 production-use-case
+v0.2 recipe.list 读面(文档库列表区＋三视图共享选择骨架＋诚实空态＋i18n 四语;
+文档→工作台视图映射未接线,诚实标注)。**下一刀候选**:BG-1 主切片(文档→
+三视图映射,recipe.get 消费);018 批 2 自排。
+## 自基线交付(73a3cfa 合并 main 后)
+- main 合并维护(fast-forward 至 73a3cfa;带入 018 批 1 验收合并 6256410
+  ——**leak 撤回被接受为常量误报修正,DEV 门在装配入口经静态剔除验证**);
+- **eba88a7:BG-1 W24 读面预备**:
+  - RecipePage 新增 recipe 文档库列表区:recipe.list 查询(preload gateway
+    窄面)→字段存在性窄化纯函数(缺失/类型不符滤除,不猜测)→条目呈现
+    (title/revision/updatedAt);
+  - 三视图共享选择骨架:selectedLibraryRecipeId 提升至页面顶层,文档库与
+    三视图同源消费;文档→工作台视图映射未接线=库区诚实标注(条目事实
+    原样,不伪造映射);
+  - 诚实空态:空库 EmptyState;服务未连接 unavailable;列表点击选择
+    (selectLibraryRecipe 骨架纯函数);
+  - i18n 四语 library 键;zh-CN 术语纪律(i18n.test 术语流转测试拦截
+    「Recipe」内嵌——改「配方」表述,测试即纪律的实例);
+  - 测试:窄化＋选择骨架 3 项。
+- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 54 文件
+  435 测试＋build＋boundary＋i18n tables aligned＋contrast＋leak 159 指纹
+  零命中)。数据全部来自 v0.2 读面,mock 不出 DEV;映射未接线不宣称。
 ## 阻塞
-- 无桌面阻塞。018 批 2(预设＋拆档)自排;013 消费回归(c443a89)待集成验收。
+- 无桌面阻塞。BG-1 主切片(文档→三视图映射)自排;018 批 1 已验收合并
+  (6256410)。
 ## 下次合并意图
-200012d 请集成验收合并(desktop 域;i18n 四表＋storage-keys＋leak 脚本
-备注)。c443a89 如未并入请一并核对。
+eba88a7 请集成验收合并(desktop 域;BG-1 预备切片——recipe.list 消费＋
+选择骨架＋诚实空态,零协议变更)。
 ## 留言
-- [→集成] 018 批 1 交付请验收(两方表态齐＋排期桌面自决=开工依据)。
-  **leak 断言撤回声明**:devOnlyMarkers 纳入后对存储键常量误报——撤回并
-  在脚本内留备注(018「生产零存在」由 DEV 分支静态剔除保障,指纹集不背
-  常量性误报)。
-- [→核心] 018 实现落地(零契约变更如约——contracts/preload/Main 未动);
-  overlay(017)与开发模式(018)两项 M7 前置的桌面面均已交付。
-- (历史留言消化:核心 018 §6 表态、017 收讫——均已闭环。)
+- [→集成] BG-1 预备切片交付请验收(eba88a7;BOARD BG-1 验收标准对照:
+  check 全链绿✓/数据全来自 v0.2 读面✓/mock 不出 DEV✓/空态即终态✓/
+  不宣称端到端✓——映射未接线已诚实标注)。BG-1 主切片(文档→三视图
+  映射)桌面自排下一刀。
+- [→核心] 013/production-use-case 读面消费顺利(recipe.list 已接);无
+  配合项新增。
+- (历史留言消化:017 收讫、messageKey——均已闭环。)

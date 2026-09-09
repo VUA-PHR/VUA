@@ -373,3 +373,49 @@ export function layoutFromPoints(points: ReadonlyMap<string, GraphPoint>): Graph
 export function layoutGraph(graph: RecipeGraph): GraphLayout {
   return layoutFromPoints(basePoints(graph));
 }
+
+/* ---- BG-1(W24 读面预备):recipe 文档库列表窄化(production-use-case
+ * v0.2 recipe.list 读面,envelope 强度;缺失字段 = 不可解释,不猜测) ---- */
+
+export interface RecipeLibraryEntryNarrowed {
+  readonly recipeId: string;
+  readonly revision: number;
+  readonly title: string;
+  readonly updatedAt: string;
+}
+
+/** recipe.list result → 呈现条目收窄(非对象/缺必需字段 = 滤除,不猜测) */
+export function narrowRecipeLibraryEntries(raw: unknown): readonly RecipeLibraryEntryNarrowed[] {
+  if (!Array.isArray(raw)) return [];
+  const entries: RecipeLibraryEntryNarrowed[] = [];
+  for (const item of raw) {
+    if (item === null || typeof item !== "object" || Array.isArray(item)) continue;
+    const record = item as Record<string, unknown>;
+    const recipeId = record.recipeId;
+    const revision = record.revision;
+    const title = record.title;
+    const updatedAt = record.updatedAt;
+    if (
+      typeof recipeId !== "string" ||
+      recipeId.length === 0 ||
+      typeof revision !== "number" ||
+      !Number.isInteger(revision) ||
+      revision < 1 ||
+      typeof title !== "string" ||
+      typeof updatedAt !== "string" ||
+      updatedAt.length === 0
+    ) {
+      continue;
+    }
+    entries.push({ recipeId, revision, title, updatedAt });
+  }
+  return entries;
+}
+
+/** 共享选择骨架:文档库选择(三视图共享的选中态;同 id 幂等) */
+export function selectLibraryRecipe(
+  current: string | null,
+  recipeId: string,
+): string | null {
+  return recipeId.length === 0 ? current : recipeId;
+}
