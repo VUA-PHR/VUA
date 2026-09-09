@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "downloads.listCompleted",
+  "params": {
+    "downloadIds": [
+      "dl-01hexample0000000000000a"
+    ]
+  }
+}

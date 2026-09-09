@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "catalog.list",
+  "result": {
+    "total": 2,
+    "entries": [
+      {
+        "productId": "booth:1000001",
+        "title": "Synthetic Uniform Set for Fixture Testing",
+        "price": {
+          "amount": "2480",
+          "currency": "JPY"
+        },
+        "imageUrl": "https://booth.example.com/images/1000001/thumb.jpg",
+        "imageUrls": [
+          "https://booth.example.com/images/1000001/thumb.jpg",
+          "https://booth.example.com/images/1000001/preview-2.jpg"
+        ],
+        "entityCount": 0,
+        "entityTypes": [],
+        "availabilityRaw": "InStock",
+        "availabilityStatus": "available"
+      },
+      {
+        "productId": "booth:1000002",
+        "title": null,
+        "price": null,
+        "imageUrl": null,
+        "imageUrls": [],
+        "entityCount": 0,
+        "entityTypes": [],
+        "availabilityRaw": "PreOrder",
+        "availabilityStatus": "unknown"
+      }
+    ]
+  }
+}

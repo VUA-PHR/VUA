@@ -28,7 +28,8 @@
 | docs/protocols/application-contract-v0.1_ZH.md | 0.1 | 已冻结 | 核心 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.1_ZH.md | 0.1 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
-| docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已冻结 | 数据 | 2026-09-06 |
+| docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-06 |
+| docs/protocols/bdl-queries-v0.4_ZH.md | 0.4 | 已冻结（downloads.listCompleted 采纳源读面，2026-09-10：Schema＋向量＋消费测试；wire 待核心） | 数据 | 2026-09-10 |
 | docs/protocols/bdl-commands-v0.1_ZH.md | 0.1 | 已取代（→ v0.2） | 数据 | 2026-09-07 |
 | docs/protocols/bdl-commands-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |

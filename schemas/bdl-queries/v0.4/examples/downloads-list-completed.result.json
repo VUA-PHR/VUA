@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "downloads.listCompleted",
+  "result": {
+    "downloads": [
+      {
+        "downloadId": "dl-01hexample0000000000000a",
+        "sourceUrl": "https://booth.example.com/download/1000001/9ab8c7d6-e5f4-3a2b-1c0d-9e8f7a6b5c4d",
+        "suggestedFileName": "material-pack.zip",
+        "receivedBytes": 183501824,
+        "completedAt": "2026-09-06T08:16:40.000Z",
+        "adoptedWarehouseItemIds": []
+      }
+    ]
+  }
+}

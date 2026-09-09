@@ -1,0 +1,5 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "downloads.listCompleted",
+  "params": {}
+}
