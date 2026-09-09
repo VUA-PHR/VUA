@@ -5,6 +5,7 @@ import {
   installRemoteContentSessionPolicy,
   isAllowedRemoteOrigin,
   type ExternalUrlOpener,
+  type NavigationConfirmLayer,
   type RemoteContentViolationObserver,
 } from "./security.js";
 
@@ -28,6 +29,9 @@ export interface RemoteContentManagerOptions {
   readonly allowedOrigins: readonly string[];
   readonly openExternal: ExternalUrlOpener;
   readonly broadcast: (event: RemoteContentEventV1) => void;
+  /** U9(1)/U9(3) 确认层注入(存在时透传给每视图导航策略);缺失=清单外
+   *  与外部协议一律不放行(保守降级,违规照常上报) */
+  readonly confirmNavigation?: NavigationConfirmLayer;
   /** 下载接缝:存在时下载交由调用方端口接管(F4-3),缺失保持默认拒绝 */
   readonly willDownload?: (
     event: { readonly preventDefault: () => void },
@@ -71,6 +75,18 @@ export class RemoteContentManager {
     if (!isAllowedRemoteOrigin(url, this.#options.allowedOrigins)) {
       throw new Error("origin_not_allowed");
     }
+    return this.#createView(url);
+  }
+
+  /** U9(1) 确认放行专用入口:导航策略确认层在 Main 侧放行清单外目标时经此
+   *  入视图(用户显式确认是放行依据);渲染层窄面(vua:remote-content:open)
+   *  仍只允许清单内——两个入口的守卫差异是刻意的,不对外收敛。 */
+  openAfterConfirmation(url: string): RemoteContentViewStateV1 {
+    this.#assertUsable();
+    return this.#createView(url);
+  }
+
+  #createView(url: string): RemoteContentViewStateV1 {
     this.#sequence += 1;
     const viewId = `rc-${this.#sequence}-${crypto.randomUUID()}`;
     const view = new WebContentsView({
@@ -93,6 +109,9 @@ export class RemoteContentManager {
       allowedOrigins: this.#options.allowedOrigins,
       openExternal: this.#options.openExternal,
       onViolation,
+      ...(this.#options.confirmNavigation === undefined
+        ? {}
+        : { confirmNavigation: this.#options.confirmNavigation }),
     });
     view.webContents.on("did-navigate", () => this.#broadcastNavigated(managed));
     view.webContents.on("did-navigate-in-page", () => this.#broadcastNavigated(managed));
