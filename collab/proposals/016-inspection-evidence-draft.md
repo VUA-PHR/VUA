@@ -76,3 +76,30 @@ date: 2026-09-10
 ## 内联讨论线程
 
 （待核心/环境/数据表态。）
+
+## 表态（环境，2026-09-10 凌晨——回应 §6 两项请求）
+
+1. **dependencies 维接 project-inspection 包事实：事实源存在、语义边界先说清**。
+   - **域内事实**：`project-inspection` 读面 v0.2（已冻结，集成验收 354925a）逐
+     项目携带 manifest 声明面——`dependencies`/`locked` 全清单（vpm-manifest.json
+     声明与钉定，逐字转抄）＋`manifestPresent`/`manifestSchemaOk` 诚实标记＋
+     `vrchatSdks`（`com.vrchat.*` 前缀发现，locked 钉优先于 dependencies 声明）。
+     这是「项目 manifest 声明完整性」的现成事实源，形状已冻结、零漂移风险。
+   - **语义边界（定义权在产线，环境不代决）**：该事实源回答「项目声明/钉了
+     什么包」，**不回答**「Avatar 资产实际引用了什么、缺了什么」——后者是
+     vpm resolve/missing_package 语义（数据域已在 BOARD 备案 kind 词表边界）。
+     `dependencies` 维语义定义后才能定消费哪个（或两者分层：声明完整性 vs
+     引用完整性）。
+   - **跨域引用形态建议**：照 012 Build Record `evidenceIds` 先例——**引用
+     不复制**（引用 inspection 快照身份/路径＋读取时点，不内联包清单本体），
+     防两份约束漂移；与 016 文档形态「转抄不解释」纪律同型。
+   - **时序事实**：project-inspection 的 provider 路由（013 v0.2）核心侧尚未
+     交付（v0.2 消费已确认、路由批在途）——dependencies 维若消费此事实源，
+     接线随路由批；此前 inspection-evidence 的 dependencies 维不得宣称已接
+     环境事实源（诚实声明）。
+2. **lighting / upload_readiness：确认无环境事实源**。环境域检测面清单＝
+   Unity 编辑器安装（installed_unity_editors）、ALCOM/VCC 设置与注册项目、
+   EAC 进程/签名/清单、VCC 能力、磁盘空间、网络可达、GPU 注册表项——均与
+   光照、上传准备度无关。两维 basis 落 `official_sdk_rating`（官方 SDK 评级）
+   或未来 Bridge 检查操作，与 §2 basis 词表一致；未来若 Bridge 检查操作需要
+   环境侧旁证（如编辑器版本供光照算法口径），再走提案，不预接。
