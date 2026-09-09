@@ -90,9 +90,14 @@ fn seed_registered_source(root: &Path) -> (PathBuf, PathBuf, PathBuf) {
 }
 
 fn project_ops_config(vcc_settings: &Path) -> ProjectOpsConfig {
+    project_ops_config_with_editors(vcc_settings, &[])
+}
+
+fn project_ops_config_with_editors(vcc_settings: &Path, editor_roots: &[PathBuf]) -> ProjectOpsConfig {
     ProjectOpsConfig {
         vcc_settings_candidates: vec![vcc_settings.to_path_buf()],
         manager_roots: ManagerRoots { alcom_settings_candidates: Vec::new() },
+        editor_roots: editor_roots.to_vec(),
     }
 }
 
@@ -376,4 +381,102 @@ fn import_copy_wire_guards_and_honest_absence() {
         })],
     );
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.unavailable");
+}
+
+// --- proposal 013 read face: the environment-managers snapshot ---
+
+/// Creates a fake Unity Hub editor install (`<root>/<version>/Editor`).
+fn install_fake_editor(editors_root: &Path, version: &str) {
+    fs::create_dir_all(editors_root.join(version).join("Editor"))
+        .expect("fake editor layout");
+}
+
+#[test]
+fn environment_managers_snapshot_serves_over_the_wire() {
+    let validator = jsonschema::validator_for(&{
+        let bytes = fs::read(
+            PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+                .join("../../schemas/project-inspection/v0.2/result.schema.json"),
+        )
+        .expect("result schema exists");
+        serde_json::from_slice::<Value>(&bytes).expect("result schema is valid JSON")
+    })
+    .expect("frozen result schema must compile");
+    let root = unique_root("env-managers");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let editors_root = root.join("editors");
+    install_fake_editor(&editors_root, "2022.3.22f1");
+    let mut config = project_ops_config(&vcc_settings);
+    config.editor_roots = vec![editors_root];
+
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({"method": "project.environmentManagers", "params": {}})],
+    );
+    let value = &frames[0]["payload"]["value"];
+    assert_eq!(value["schemaVersion"], "0.1");
+    assert_eq!(value["operation"], "project.environmentManagers");
+    assert!(
+        validator.is_valid(value),
+        "the snapshot must match the frozen result schema: {value}"
+    );
+    let result = &value["result"];
+    assert_eq!(result["vcc"]["presence"], "found");
+    assert_eq!(result["vcc"]["projectsSource"], "userProjects");
+    let projects = result["projects"].as_array().expect("projects");
+    assert!(
+        projects
+            .iter()
+            .any(|project| project["path"].as_str() == Some(source.to_string_lossy().as_ref())),
+        "the registered source project must appear: {projects:?}"
+    );
+    let editors = result["editors"].as_array().expect("editors");
+    assert!(
+        editors.iter().any(|editor| editor["version"].as_str() == Some("2022.3.22f1")),
+        "the fake editor install must be observed: {editors:?}"
+    );
+}
+
+#[test]
+fn project_read_face_closed_set_and_absence_are_typed() {
+    let root = unique_root("read-face-guards");
+    let (_source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    // Params content on the param-free query is a contract error.
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.environmentManagers",
+            "params": {"unexpected": true},
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.invalid_params");
+
+    // Frozen word-list entries that are not yet wired answer a typed
+    // unavailable — never a silent stub.
+    for method in ["project.listProjects", "project.inspectProject", "project.lockStatus"] {
+        let frames = run_frames(
+            &database,
+            Some(&config),
+            &[json!({"method": method, "params": {}})],
+        );
+        assert_eq!(
+            frames[0]["payload"]["error"]["code"],
+            "vua.project.unavailable",
+            "{method}"
+        );
+    }
+
+    // An unknown project.* method is a contract error.
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({"method": "project.frobnicate", "params": {}})],
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.provider.unknown_method");
 }
