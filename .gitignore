@@ -75,3 +75,9 @@ Desktop.ini
 *.swp
 *.tmp
 *.bak
+
+# proposal 019 (user red line): forest-green UI local sources — never commit
+# Figma-generated sources live OUTSIDE the repo; any in-tree adaptation work
+# stays under this gitignored path only. Verify zero leakage before any
+# origin push (3-round reviewer gate includes this check).
+apps/desktop/src/ui-variants/forest/
