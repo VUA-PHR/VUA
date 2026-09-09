@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.9
+> Document version: 2.0.10
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.9)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.10)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -249,7 +249,7 @@ before updating; settled at closure, 2026-09-08):
 
 | Task | Owning role | Collaborators | Status |
 | --- | --- | --- | --- |
-| Remote content / Session / download port and isolated browse UI | Desktop | — | ✅ Delivered (F4-2/3/4/6), walkthroughs closed (W6/W7) |
+| Remote content / Session / download port and isolated browse UI | Desktop | — | ✅ Delivered (F4-2/3/4/6), walkthroughs closed (W6/W7). **Honest-degradation note (2026-09-09 review M-1)**: the in-app browse window presentation was never migrated (currently honestly degraded to the system browser); wiring belongs to the import-page stage (M6 IMP-2, pending user ruling 2) — this does not change the acceptance conclusion of this row |
 | Warehouse list / filter / detail / inspection-state presentation | Desktop | Data | ✅ Delivered (F4-5/6), walkthrough closed; layout rework in W13 |
 | Minimal BDL persistence format and Warehouse mapping | Data | Core | ✅ Delivered (bdl/v0.1, bdl-queries v0.3) |
 | Download-event consumption, retry/recovery, and task closure | Data | Core | ✅ Delivered (incl. W4 test coverage) |
@@ -480,6 +480,11 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.10 (2026-09-09): review-report M-1 landed (honesty discipline) — the M4 table row
+  "Remote content / Session / download port and isolated browse UI" gains an inline note:
+  the in-app browse window presentation was never migrated (currently honestly degraded to
+  the system browser); wiring belongs to the import-page stage (M6 IMP-2, pending user
+  ruling 2) — this does not change the row's acceptance conclusion; bilingual sync.
 - 2.0.9 (late 2026-09-08 / recorded early 09-09): **M6 project-management portion
   opens early, landed** (user ruling, late 2026-09-08, relayed by the operator) —
   the M6 task table is refined by package (T-A general vrc-get path / T-B
