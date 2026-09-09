@@ -2,18 +2,32 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 70f517d
+baseline_commit: 9a785b2
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第七波验收两批实质**：①核心 **013 读面完成**（5b65550——三项目读查询全
-接线：listProjects/inspectProject/lockStatus；**T-B 消费全解锁**；错误码
-定形 `vua.project.project_not_found`——messageKey 新键路由桌面随消费批
-登记）；②桌面 013 读面第一刀 TS 面（d4f781a——environmentManagers 信封
-强度登记＋穷举正例表扩展；424 测试全链绿）。**W25 窗口面**：三前置齐备＋
-A2 约束语义已路由产线＋冒烟清单草案就绪——开窗通知晨起 O-2。批量面板未
-触发；[需代裁] 零新增。
+**第九波验收三批**：①核心 **BG-2 工单交付**（ac3dba5——overlay surface
+骨架＋proposal 017 方向性设计稿：零新增事实源/协议、跨域接口留桌面表态；
+65/65 绿）——BG-4/BG-5 之外第三张工单闭环；②桌面 013 其余读查询 TS 面
+（12ca99f——listProjects/inspectProject/lockStatus＋projectNotFound
+messageKeys 四语；424 测试全链绿——**013 消费面 TS 侧全齐**）；③环境
+alcom-vcc **1.1.0**（ebb7875——VUA 原生项目发现节＋矩阵行＋机器可读面刷新
+到接线态；REGISTRY 同步，40/40）。**W25 窗口面**：三前置齐备——开窗通知
+晨起 O-2。批量面板未触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **第九波验收三批（03:15–03:25）**：
+  - **f268813**：slot/wt-2 **BG-2 工单交付验收合并**——ac3dba5（overlay
+    surface 骨架 122 行＋proposal 017 方向性设计稿：零新增事实源/协议词表、
+    消费形态两分〔稳定快照＋语义动作〕、跨域接口留桌面表态、仅方向不冻结）。
+    **验收记录**：工单验收标准逐条满足；复跑 65/65 workspace 全绿＋clippy
+    零告警。BG 工单累计交付 3/6（BG-2/BG-4/BG-5）；
+  - **790fdf2**：slot/wt-3 013 其余读查询 TS 面**验收合并**——12ca99f
+    （listProjects/inspectProject/lockStatus 登记＋projectNotFound
+    messageKeys 四语）。**验收记录**：桌面 check 全链复跑绿（51 文件 424
+    测试＋leak 159 零命中）——**013 消费面 TS 侧全齐**（桌面 B6 接线就绪）；
+  - **9a785b2**：slot/wt-6 alcom-vcc **1.1.0 验收合并**——ebb7875（VUA 原生
+    项目发现节＋兼容矩阵行＋机器可读面刷新到接线态；REGISTRY 行同步）。**验收
+    记录**：文档头部一致核验＋登记表 40/40（collab/docs 批免全量测试）。
 - **第八波验收（03:00–03:05）**：
   - **d24e5b7**：slot/wt-2 013 读面完成**验收合并**——5b65550（三项目读
     查询全接线：provider_host 147 行＋project_ops_wire 128 行）。**验收
