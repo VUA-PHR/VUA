@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1",
+  "avatarRef": { "ref": "warehouse:wi-01j9c7d3e5fg7h2k", "label": "Meiyun" },
+  "performedAt": "2026-09-10T01:48:30Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "neg-04", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "functional",
+      "status": "pass",
+      "basis": "bridge_typed_checks",
+      "checks": []
+    }
+  ],
+  "overallStatus": "pass"
+}

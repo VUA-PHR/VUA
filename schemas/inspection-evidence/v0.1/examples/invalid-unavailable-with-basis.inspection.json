@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-b160-7175-d4e9-ac30428f1554",
+  "avatarRef": { "ref": "warehouse:wi-01j9c7d3e5fg7h2k", "label": "Meiyun" },
+  "performedAt": "2026-09-10T01:48:00Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "neg-03", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "lighting",
+      "status": "unavailable",
+      "basis": "bridge_local_estimate",
+      "checks": [
+        {
+          "code": "lighting.guessed_facts",
+          "severity": "info",
+          "message": "无产出操作时不得携带检查发现（unavailable 维必须是空 checks 且 basis=none）。"
+        }
+      ]
+    }
+  ],
+  "overallStatus": "pass"
+}

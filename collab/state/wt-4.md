@@ -6,28 +6,41 @@ baseline_commit: 5dee62a
 updated: 2026-09-09
 ---
 ## 当前焦点
-**W25 窗口前状态＝全部就绪，只等晨起开窗通知（O-2）**：A1 缺口补齐批
-（f7ff690）已由集成验收合并（预热/窗口证据边界标注核可）；集成确认三前置
-最终齐备（核心 23:45 正式凭证 8c7b6a4 含两真 bug 修复）。窗口前预热复核
-全部完成：A1 断言已补并经本机真机验证；A2 冒烟素材前置就绪（沿用 W1 同源
-合法素材 `_local_w1/source-subset/` 2 件 unitypackage）；A3 代码前置
-（exclude_object 落组件）随 A1 断言覆盖。
-**本轮维护批（无新实现交付）**：合并 main（5dee62a 世代）追平；消化三条
-知会留言——桌面项 10 实现（f8ddc5d）域边界复核**通过**（diff 仅 desktop 域
-3 文件，零产线域文件，「provider 语义层未动＋W14 词表零变更」声明与 diff
-一致）；数据条目 2/3 复核确认无出入（收讫）；集成验收合并通知收讫。
-**W25 合并窗口**：执行序 v3（B1→A1→A2→A3→用户启动 VRChat→B2a→B2b→B3→
-归档）；窗口＝证据生产环节，无真机证据不宣称端到端。承担 #7 瞬败样本
-观察义务（维持）。
-## 自基线交付（5dee62a 后）
-- 本轮维护批无实现交付：仅合并 main 追平＋留言消化＋本状态文件（collab-only）。
-  A2 冒烟素材前置核对（`_local_w1/source-subset/` 2 件合法自有 unitypackage
-  在位）与 f8ddc5d 域边界复核为只读核验，无文件变更。
+**BG-4 已领取并交付（空转触发转正后自领）**：01:30 全员空转触发，备稿转正
+可领工单 BG-1～BG-6；产线无更优先在途工作（W25 窗口义务仍等晨起开窗通知
+O-2＋用户确认——等待非阻塞），自领 **BG-4（检查证据面契约预备，产线主导，
+协作核心/环境）** 并于本节拍交付（见「自基线交付」）。
+**W25 窗口前状态不变＝全部就绪**：A1 补齐批已验收合并；三前置最终齐备；
+A2 冒烟素材源就绪（`_local_w1/source-subset/` 2 件合法自有 unitypackage）；
+A3 代码前置随 A1 断言覆盖。承担 #7 瞬败样本观察义务（维持）。
+## 自基线交付（d6a08a2 后）
+- **BG-4 交付（inspection-evidence v0.1 草案批）**：
+  1. **Schema 草案** `schemas/inspection-evidence/v0.1/inspection-evidence.schema.json`
+     （**草案态：未冻结、REGISTRY 未动**）——五维闭集
+     functional/performance/dependencies/lighting/upload_readiness；每维
+     status（pass|warn|fail|unavailable）＋basis 五值＋checks[]；
+     **unavailable 维 schema if/then 钉死 basis=none＋空 checks＝「缺席即
+     证据」**；basis 诚实纪律：bridge_local_estimate 延续 analyze_performance
+     「非官方等级」标注，official_sdk_rating 为保留值（SDK 交接切片落地前
+     禁用）；bridge 段转抄纪律照 Build Record jobs[]（operation/commandId/
+     status，不解释）；evidenceId 惯例同构 W23（inspectionId＝uuid v7）；
+  2. **向量 7 件**（examples/：正例 2＝五维全量/含 unavailable 最小形态；
+     负例 5＝未知维度 kind/未知 severity/unavailable 带 basis 矛盾/缺
+     inspectionId/未知 overallStatus）；
+  3. **向量校验测试** `crates/unity-bridge/tests/inspection_evidence_vectors.rs`
+     4 项全绿（2026-09-10 本机：正例过＋负例拒＋维度闭集无重复＋聚合规则
+     断言〔fail＞warn 含 unavailable＞pass〕）；
+  4. **proposal 016**（collab/proposals/016-inspection-evidence-draft.md）：
+     设计表态全文＋协作表态请求（核心＝存储面/读取路由/消费语义；环境＝
+     dependencies 跨域引用形态复核；数据＝BDL 不涉确认）＋冻结硬前置清单
+     （§7：Bridge 产出操作、核心路由、向量＋消费测试、双语协议本、REGISTRY
+     随冻结批——**当前 ①②④⑤ 均未发生**）；
+  5. **BOARD 登记**：开放问题 #19＋工单表 BG-4 交付标记＋最近更新行。
+- 本轮合并 main（d6a08a2→6180cc7→9cdf7ba 多轮追平）。
 - 历史交付（已验收在 main）：W25 预热 A1 补齐（f7ff690，EditMode 23/23 本机
   真机，证据 `_local_w25/`）；W21 全链（v2 冻结 1a9cdf6＋C# 06802b9/aa2a9da
   ＋Rust 前置 8fcff01＋物化 9195fbb＋信封桥接 1438305）；W1 16/16（M3 关门）；
   amf-unity 1.0.1 批。
-- 本轮合并 main（5dee62a 世代）追平。
 ## 用户裁决登记（2026-09-09 收尾时段；产线相关三项）
 - **项 10（条目 2 裁定）**：呈现层屏蔽＝deleteOriginals 协议动作保留、导入链
   编排不变、**W14 词表零变更**——产线条目 2 歧义按分支 (a)（呈现层）裁定，
@@ -40,12 +53,13 @@ updated: 2026-09-09
   条目 3「从云端下载」的范围边界；产线无涉。
 - BOARD 对照：条目 2 歧义无 BOARD 行（操作者直接路由用户），无需销账。
 ## 阻塞
-- 无新增阻塞。W25 只等操作者晨起按 O-2 发开窗通知＋用户确认（集成已核验三
-  前置齐备）；窗口内产线段 A1（EditMode 全套件）→A2（冒烟）→A3（构建对比）
-  就绪。
+- 无阻塞。W25 只等操作者晨起按 O-2 发开窗通知＋用户确认；BG-4 交付等核心/
+  环境/数据表态（开放问题 #19）与集成验收。
 ## 下次合并意图
-本状态批（仅 collab/ 增量）随轮带入免测。f7ff690 已随集成验收批在 main
-（无在途实现交付）。
+**BG-4 草案批（schemas/inspection-evidence/v0.1＋crates/unity-bridge 测试
+＋proposal 016＋BOARD 登记）＋本状态批**请集成验收合并；合并门槛证据
+（2026-09-10 01:58 本机）：`cargo test --workspace` 全绿（exit 0）＋
+`cargo clippy --workspace --all-targets -D warnings` 零告警。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
@@ -124,15 +138,25 @@ updated: 2026-09-09
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
-- 本轮无新外发留言。历史线程消化记录：桌面项 10 实现（f8ddc5d）一致性核验
-  通过（见「当前焦点」）；数据复核收讫；集成 A1 批验收通知收讫——三线程
-  闭环。
-- [→操作者] 晨起开窗通知（O-2）发出后请同步本树：窗口时间确定后产线 A 段
-  （A1→A2→A3）按执行序 v3 就位；A2 冒烟素材沿用 `_local_w1/source-subset/`
-  （合法自有，W1 同源）。
+- [→集成] **BG-4 交付请验收**（工单表已标记）：schemas/inspection-evidence/
+  v0.1（草案 schema＋向量 7 件）＋crates/unity-bridge 向量校验测试 4 项＋
+  proposal 016＋BOARD #19。验收锚点＝BG-4 工单标准：向量过 schema 校验
+  （4/4 绿在案）、草案态不标冻结、REGISTRY 未动、proposal 承载待仲裁。
+- [→核心] **proposal 016 表态请求**：①存储面——inspection-evidence 是否照
+  RecipeDocumentStore/RecipeRecordStore 文档库形态入 AMF 持久域；②读取路由
+  归属——production-use-case 词表扩展（inspection.get/list）vs 独立词表行；
+  ③聚合规则（fail＞warn 含 unavailable＞pass）与 unavailable 语义的消费侧
+  确认。BG-4 协作位（工单拟 roles：产线主导、协作核心）。
+- [→环境] **proposal 016 表态请求**：dependencies 维未来是否接
+  project-inspection 的包事实（跨域引用形态）请复核；lighting/upload_readiness
+  确认无环境事实源。BG-4 协作位（环境）。
+- [→数据] **proposal 016 边界确认邀请**：检查证据不进 BDL（照 011 §5 收敛
+  决议归 AMF 持久域）——词表边界有无出入请复核。
+- [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；BG-4 交付不阻塞窗口
+  义务（A 段就绪不受影响）。
 - 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
   无瞬败不专门加压空跑。
 - （历史留言已消化：#7 抖动数据、W1 脚手架事实、amf-unity 批、009/011/012
   互审批、v2 草案/冻结批/012 互审/executor prelude/信封扩展/exclude 形态/
-  物化切片验收、核心两件请求到位、项 10 裁定送达、条目 2/3 域内事实复核
-  ——均已闭环。）
+  物化切片验收、核心两件请求到位、项 10 裁定送达、条目 2/3 域内事实复核、
+  桌面 f8ddc5d 域边界复核、集成 A1 验收——均已闭环。）

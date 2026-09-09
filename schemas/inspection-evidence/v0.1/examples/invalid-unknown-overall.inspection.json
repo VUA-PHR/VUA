@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-c271-7286-e5fa-bd4153092665",
+  "avatarRef": { "ref": "warehouse:wi-01j9c7d3e5fg7h2k", "label": "Meiyun" },
+  "performedAt": "2026-09-10T01:49:00Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "analyze_performance", "commandId": "neg-05", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "performance",
+      "status": "pass",
+      "basis": "bridge_local_estimate",
+      "checks": []
+    }
+  ],
+  "overallStatus": "excellent"
+}

@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.1",
+  "inspectionId": "019513e7-9d4e-7f53-b2c7-8a1e06d93f22",
+  "avatarRef": { "ref": "warehouse:wi-01j9c7d3e5fg7h2k", "label": "Meiyun" },
+  "performedAt": "2026-09-10T01:47:00Z",
+  "bridge": {
+    "editorVersion": "2022.3.22f1",
+    "bridgeSchemaVersion": 1,
+    "operations": [
+      { "operation": "validate_avatar", "commandId": "neg-01", "status": "succeeded" }
+    ]
+  },
+  "dimensions": [
+    {
+      "kind": "physics",
+      "status": "pass",
+      "basis": "bridge_typed_checks",
+      "checks": []
+    }
+  ],
+  "overallStatus": "pass"
+}
