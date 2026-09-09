@@ -205,33 +205,12 @@ function LocalImportSection() {
 /* ---- 页面 ---- */
 
 export function ImportPage() {
-  const [availability, setAvailability] = useState<EmbeddedBrowseAvailability>({
-    kind: "unavailable",
-  });
-  const [reloadKey, setReloadKey] = useState(0);
-
-  // 能力两态查询(app.snapshot;失败 = 保守不可用,不猜测)。查询走 preload
-  // 契约窄面(window.vua.gateway,与 dialog/remoteContent 同层):能力探测是
-  // 呈现层环境事实,不占领域端口;未来需要时可升为端口方法。
-  useEffect(() => {
-    let active = true;
-    void window.vua?.gateway
-      .invoke({ schemaVersion: 1, requestId: crypto.randomUUID(), method: "app.snapshot", params: {} })
-      .then((result) => {
-        if (!active) return;
-        const capabilities = result.ok
-          ? (result.value as { capabilities?: { remoteBrowser?: unknown } }).capabilities
-          : undefined;
-        setAvailability(browseAvailability(capabilities?.remoteBrowser));
-      });
-    return () => {
-      active = false;
-    };
-  }, [reloadKey]);
-
-  const cloudPanel = useMemo(
-    () => <EmbeddedBrowsePanel availability={availability} />,
-    [availability],
+  // 能力两态数据源 = 壳能力自报(proposal 015 §11 仲裁方案 a:能力拥有者
+  // (Electron 壳)经 preload 面静态自报,不经 provider 转述)。无壳环境
+  // (浏览器开发)保守不可用;非函数态读取同样保守不可用。
+  const availability = useMemo<EmbeddedBrowseAvailability>(
+    () => browseAvailability(window.vua?.capabilities?.remoteBrowser),
+    [],
   );
 
   return (
@@ -245,10 +224,7 @@ export function ImportPage() {
         <div className="vua-page__stack">
           <section>
             <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
-            {cloudPanel}
-            <Button variant="subtle" onClick={() => setReloadKey((key) => key + 1)}>
-              {strings.warehouse.detail.retry}
-            </Button>
+            <EmbeddedBrowsePanel availability={availability} />
           </section>
         </div>
       </Card>
