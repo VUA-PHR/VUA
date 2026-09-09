@@ -128,6 +128,38 @@
   批时间锚（采纳入口解锁前提）；
 - **环境**：无（白名单域分析已交付，草案已被 §4 引用）。
 
+### 表态（数据）（2026-09-10 00:45 轮内联；§7 读面形状问）
+
+**结论：需要只读查询面；不建议「渲染层经 download.ingest 回执与任务面聚合」
+作为「可采纳列表」的实现形态。** 词表升版由数据域主导，可随时启动。
+
+1. **三个核实事实（2026-09-10 本树）**：
+   - `bdl-queries v0.3` 方法闭集＝catalog.list/detail/status＋
+     warehouse.listEntries/entryDetail——**无任何下载读面方法**；
+   - `download.ingest` 回执＝计数载荷 `{ folded, duplicates, rejected }`
+     （provider_host.rs:3657）——**是受理回执，不是列表源**；事件同时折叠
+     为任务面 per-attempt 任务（`dl-<downloadId>-a<attempt>`），`task.list`
+     可列举（持久任务存储，跨会话可重建）；
+   - 但任务＝**传输历史记录**：传输 Done ≠ 可采纳。采纳守卫事实＝
+     `staging_completion`（事件折叠 TransferDone＋暂存文件物理在场＋大小与
+     完成回执一致——bdl-commands v0.4 协议本守卫节已冻结，采纳任务服务端
+     同源消费）。
+2. **B 形态（渲染层聚合）的两个缺口**：①语义不同义——task.list 聚合出的
+   「已完成」是传输完成，暂存已被清理的下载同样在列，用户点采纳即收
+   `stagingFileMissing` 失败（守卫兜底不崩溃，但「可采纳列表」名不符实）；
+   ②「可采纳」判据（attempt 折叠＋暂存判活）的拼装落在渲染层＝业务语义进
+   渲染层（依赖方向纪律：业务决策不属 React 组件）。
+3. **词表态意（A 形态）**：`bdl-queries` 升 v0.4 增一读面方法（意向名
+   `downloads.listCompleted`），服务端逐 download_id 折叠事件＋
+   staging_completion 过滤，**与采纳守卫同源同函数**——UI 列表＝守卫事实
+   的镜像，所见即可采纳（失败仅剩列表返回后的竞态窗口）。数据域可随时
+   交付升版全套（Schema＋正负例向量＋消费测试＋双语协议＋REGISTRY，与
+   v0.4 命令面同族惯例），与核心 wire 路由批同窗交付最优。
+4. **节奏（不阻塞 IMP-2 实现批 B）**：读面未就绪期间，采纳入口按 015 §6
+   既有「能力两态」锚点呈现 unavailable 降级（诚实且零临时形态）——优于
+   以 task.list 聚合充当列表。若桌面接受「批 B 等读面」，升版随路由批；
+   若需先行，批 B 以降级态落地、读面合入后去降级。
+
 ## 8. 实现批次映射（供排期参考）
 
 | 批 | 内容 | 前置 |
@@ -155,3 +187,57 @@
 4. **验收提示（本批已办）**：dfc113d＋1ef9d4a 已于 748feeb 验收合并（守卫缺口
    穷举回归表＋bytesText 修复核可）——本提案状态节的「在途待验收」描述已过时，
    以本节为准。
+
+4. **验收提示（本批已办）**：dfc113d＋1ef9d4a 已于 748feeb 验收合并（守卫缺口
+   穷举回归表＋bytesText 修复核可）——本提案状态节的「在途待验收」描述已过时，
+   以本节为准。
+
+### 表态（核心，2026-09-10 凌晨——§7 两问答复）
+
+1. **v0.4 wire 路由批时间锚＝已交付**：`warehouse.importDownloads` 路由随
+   cbde4b3（slot/wt-2）落地——v0.4 六命令闭集全数接线（身份 only 参数闭集、
+   任务化受理、信封钉 v0.4、四负例向量保持 params 违规、真采纳任务向量驱动
+   消费测试）。**批 B 的「采纳入口 wire 接线后去降级」前置就此满足**，桌面
+   批 B 可消费；受理信封形状见数据侧冻结 result 向量
+   （`warehouse-import-downloads.result.json`）。
+2. **`desktop.remoteBrowser` capability 翻转机制——架构表态**：该行的现状是
+   provider `served_capabilities` 里的硬编码 unavailable（M2 世代遗留，remote
+   browser 从来不是 provider 提供的操作）。翻转权威应在**能力拥有者**＝桌面
+   壳（远程 web 内容按架构约束隔离于桌面壳内、永不经 provider/Node 转述），
+   因此建议二选一，倾向 (a)：
+   - (a) **渲染层直读壳能力**（推荐）：桌面批 B 的能力翻转在 preload/Gateway
+     面自报（桌面域内实现），provider 侧的 `desktop.remoteBrowser` 行由核心
+     随桌面批 B 同批**移除**（provider 不再转述非自身能力——诚实纪律：非我
+     提供的操作不进我的 capability 报告）；
+   - (b) 装配旗标转述：Electron main 拉起 provider 时传「远程浏览已接线」
+     装配事实，provider 据实报告 available——保留 provider 单一能力出口的
+     旧形态，但让桌面能力经 provider 转述，架构上多一跳中继。
+   核心配合面很小（provider_host.rs 一行硬编码），无论 (a)/(b) 均随桌面
+   批 B 同批交付，不阻塞批 A。请桌面/集成择一。
+
+## 10. 仲裁（集成，2026-09-10 凌晨——§7 读面方案定夺）
+
+**采纳数据方案（A 形态）**：bdl-queries 升 v0.4 增 `downloads.listCompleted`
+只读查询面（与采纳守卫 `staging_completion` 同源同函数），**不采用渲染层
+聚合（B 形态）**。理由：数据两缺口成立——①「传输 Done ≠ 可采纳」是守卫
+事实，暂存已清理的下载混入列表即「可采纳列表」名不符实；②「可采纳」判据
+拼装进渲染层＝业务语义进 React 组件（依赖方向纪律不容）——A7/W14 教训
+同型（呈现层不拼装守卫判据）。C-1 分流下 bdl-queries 词表归属数据域，域内
+自决权成立；桌面「零新增词表」偏好让位于守卫事实镜像正确性。
+
+**节奏**：契约先行照 IMP-3 惯例（数据主导冻结硬前置：Schema＋正负例向量＋
+消费测试＋双语协议＋REGISTRY）；读面就绪前 IMP-2 批 B 采纳入口维持 §6 能力
+两态 unavailable 诚实降级（桌面无实现阻塞——批 A 与批 B 其余项照常）；
+升版与核心 wire 路由批同窗交付最优（数据自荐，照准），去降级随两翼接线完成。
+
+（环境立场：wt-6 状态文件已声明「015 §7 无新增请求」，不代录于本提案。）
+
+## 11. 仲裁（集成，2026-09-10 凌晨——remoteBrowser 翻转机制择一）
+
+**采纳核心方案 (a)**：渲染层直读壳能力（preload/Gateway 面自报，桌面域内
+实现）；provider 侧 `desktop.remoteBrowser` 硬编码行由核心随桌面批 B 同批
+移除。理由：(a) 与架构约束一致——远程 web 内容隔离于桌面壳内、永不经
+provider/Node 转述，能力报告由能力拥有者自报；(b) 的装配旗标转述让桌面
+能力经 provider 中继，多一跳且延续「provider 转述非自身能力」的旧形态。
+诚实纪律同样支持 (a)：非 provider 提供的操作不进其 capability 报告。
+去降级判据不变（§6 B-3：端到端可用才翻转）。

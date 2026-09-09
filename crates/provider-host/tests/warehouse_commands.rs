@@ -16,7 +16,7 @@
 
 use std::fs;
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
@@ -27,7 +27,7 @@ use vua_orchestrator::{ResultStatus, UnityBridge, UnityCommand, UnityResult};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn command_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.3")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-commands/v0.4")
 }
 
 fn read_json(relative: &str) -> Value {
@@ -148,6 +148,7 @@ fn warehouse_commands_match_the_frozen_operation_vocabulary() {
         json!("warehouse.deleteOriginals"),
         json!("warehouse.setGlobalDefaultMode"),
         json!("warehouse.import"),
+        json!("warehouse.importDownloads"),
     ];
     assert_eq!(operations, &routed);
 }
@@ -1607,4 +1608,143 @@ fn job_execute_carries_the_resolution_evidence_chain() {
         1,
         "the resolution's missing-asset evidence must ride the record: {record}"
     );
+}
+
+// --- bdl-commands v0.4: the download-adoption face (warehouse.importDownloads) ---
+
+/// Records one completed delivery in BDL's own event log, backed by a real
+/// staging file of exactly `body.len()` bytes (the production ingest path).
+fn stage_completed_download(
+    consumer: &vua_bdl_store::download_events::DownloadEventConsumer<'_>,
+    staging_dir: &Path,
+    download_id: &str,
+    body: &[u8],
+) -> PathBuf {
+    use vua_bdl_store::download_events::{DownloadEventKind, DownloadEventV01};
+    let staging_path = staging_dir.join(format!("{download_id}-material-pack.zip"));
+    fs::write(&staging_path, body).expect("staging file");
+    let stored = staging_path.to_string_lossy().into_owned();
+    let received = body.len() as u64;
+    for kind in [DownloadEventKind::Started, DownloadEventKind::Completed] {
+        consumer
+            .ingest(&DownloadEventV01 {
+                schema_version: "0.1".into(),
+                kind,
+                download_id: download_id.into(),
+                attempt: 1,
+                source_url: "https://booth.example.com/download/1000001/fixture".into(),
+                initiated_from_page_url: None,
+                url_chain: None,
+                suggested_file_name: Some("material-pack.zip".into()),
+                stored_path: Some(stored.clone()),
+                expected_bytes: Some(received),
+                received_bytes: Some(received),
+                resumable: false,
+                failure_kind: None,
+                occurred_at: "2026-09-10T00:00:00.000Z".into(),
+            })
+            .expect("event ingests");
+    }
+    staging_path
+}
+
+#[test]
+fn import_downloads_vector_drives_the_adoption_task_over_the_wire() {
+    let validator = result_validator();
+    let world = make_world("import-downloads");
+
+    // The frozen request vector: two port-assigned download identities.
+    let request = read_json("examples/warehouse-import-downloads.request.json");
+    let download_ids: Vec<String> = request["params"]["downloadIds"]
+        .as_array()
+        .expect("vector ids")
+        .iter()
+        .map(|value| value.as_str().expect("id string").to_owned())
+        .collect();
+    assert_eq!(download_ids.len(), 2, "the vector promises a two-download batch");
+
+    // Both deliveries exist in BDL's event log with real staging files.
+    let staging_dir = world.base.join("staging");
+    fs::create_dir_all(&staging_dir).expect("staging dir");
+    let consumer = vua_bdl_store::download_events::DownloadEventConsumer::new(&world.bdl);
+    for download_id in &download_ids {
+        stage_completed_download(&consumer, &staging_dir, download_id, b"downloaded package bytes");
+    }
+
+    let frames = run_frames(&world, "corr-import-downloads", &[json!({
+        "operation": "warehouse.importDownloads",
+        "params": request["params"].clone(),
+    })]);
+    let value = &frames[0]["payload"]["value"];
+    assert!(
+        validator.is_valid(value),
+        "the acceptance must match the frozen v0.4 result schema: {value}"
+    );
+    assert_eq!(value["operation"], "warehouse.importDownloads");
+    assert_eq!(value["schemaVersion"], "0.4");
+    assert_eq!(value["correlationId"], "corr-import-downloads");
+    let task_id = value["taskId"].as_str().expect("taskId").to_owned();
+
+    // The adoption task runs to Done; both downloads land as
+    // downloaded_material entries backed by real copied files.
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let done = loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).expect("store");
+        let task = store.task(&task_id).expect("readable").expect("durable");
+        if task.state.is_terminal() {
+            assert_eq!(
+                serde_json::to_value(task.state).unwrap(),
+                "succeeded",
+                "adoption payload: {:?}",
+                task.result
+            );
+            break task.result.expect("done payload");
+        }
+        assert!(Instant::now() < deadline, "the adoption task did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(done["downloadsRequested"], 2);
+    assert_eq!(done["downloadsAdopted"], 2);
+
+    let cards = world
+        .bdl
+        .warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage)
+        .expect("cards read");
+    let mut names: Vec<&str> = cards.iter().map(|card| card.display_name.as_str()).collect();
+    names.sort_unstable();
+    // make_world seeds one fixture entry besides the two adopted downloads.
+    // The adopter names entries after the suggested file name with the
+    // archive extension stripped.
+    assert_eq!(
+        names,
+        ["material-pack", "material-pack", "vector entry"],
+        "both downloads land as adopted entries"
+    );
+}
+
+#[test]
+fn import_downloads_negative_vectors_are_params_violations() {
+    let world = make_world("import-downloads-guards");
+
+    // The frozen negative vectors: empty ids, wrong id type, missing ids,
+    // and a client-asserted staging path (the path is a server-side fact).
+    for name in [
+        "examples/invalid-import-downloads-empty-ids.json",
+        "examples/invalid-import-downloads-ids-type.json",
+        "examples/invalid-import-downloads-missing-ids.json",
+        "examples/invalid-import-downloads-client-path.json",
+    ] {
+        let request = read_json(name);
+        let command = json!({
+            "operation": "warehouse.importDownloads",
+            "params": request["params"].clone(),
+        });
+        let frames = run_frames(&world, "req-import-downloads-invalid", &[command]);
+        assert_eq!(
+            frames[0]["payload"]["error"]["code"],
+            "vua.warehouse.invalid_params",
+            "{name}"
+        );
+    }
 }
