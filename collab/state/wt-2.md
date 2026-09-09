@@ -2,23 +2,37 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 247c0fc
+baseline_commit: 6bd7972
 updated: 2026-09-09
 ---
 ## 当前焦点
-**用户 13 项裁决已登记 BOARD（8457e04 对照表；收尾时段 collab-only 登记，实现
-今夜 23:00 开工）**。核心相关项吸收注记齐（6 来源语义/7 迁移语义＋独有标识
-文件/9 014 沿用/10 W14 词表零变更/13 开发模式 DEV-only）。
-**前情：W15 确认完成＋9 条走查问题登记（c2570e0，逐字 9 条＋核心意图确认
-条目 6/9＋处置草案；禁改实现）**。两处歧义已由 13 项裁决全裁（条目 6-a/9-a/
-9-b 均裁，见 BOARD 对照表）。
-**production-use-case v0.2 已冻结（2fd4813：24 向量＋向量驱动消费测试 3 项＋
-协议本/REGISTRY 升冻结——W25 前置①凭证交付）**，交集成验收。
-**proposal 014 核心表态已交付（fc6f69e，内联）**：命令面裁独立 project-ops
-词表行（project.import-copy；与 013 检测读面读/写分线）＋九态任务＋服务端
-守卫——待桌面/集成。**M6 已开窗（环境 T-A/T-B＋ALCOM/VCC 兼容矩阵＋proposal 013 入树）**；W20
-实现切片全部交付并经验收（第三刀 record 读面 16a2dc5 已合并）。核心 M6
-名下任务待锚点领取。#7 残余观察态维持。
+**W22 记录面收口刀已交付（8c7b6a4，2026-09-09 深夜）**：job.execute 完整
+Build Record v0.3 转抄——版本锁预检（009 表态④①，协议本承诺落地；锁值＝
+存储乐观并发 revision）＋digest 锚链真实化（recipeDigest＝整文档 hash＋
+localResolutionDigest＝解析面投影 hash，规范代码内声明）＋**planDeviations
+类型化偏差**（source_fallback 照 012 MUST/guard_skip/partial_completion，
+替换硬编码空数组）＋recoveryPoints 收据快照登记（pre_job；rejected 无快照
+不虚构）＋evidenceSummary 走 localResolutionId 反查
+（EvidenceStore.list_by_local_resolution 新增；缺席根＝诚实空态）。**顺手
+修两真 bug**：①uuid_v7_identity 版本位 4→7（生成 id 此前全面违反冻结
+uuidV7 pattern——recipe v0.3 套件与 production-use-case v0.2 词表）；②
+job.execute 收口刀计划文件内容误将 Vec<u8> 二次序列化为 JSON 数字数组
+（write_plan_file 恒拒「缺 schemaVersion」——此前无 job.execute 消费测试
+故未暴露）。**证据（2026-09-09 本机）**：warehouse_commands 20/20（含
+4 个新测试：全链 record 形状/类型化偏差＋快照/版本锁拒绝零记录/解析证据
+链）＋workspace 60 套件全绿＋clippy -D warnings 零告警。
+**W25 前置状态（核心侧声明）**：①production-use-case v0.2 冻结收口
+**正式确认生效**（Schema 十方法＋向量 24＋向量驱动消费测试 3＋协议本双语
+＋REGISTRY 冻结行——集成已验收落账）；③W22 实现切片**记录面已收口**
+（executors 接线＋记录写入面＋两对接细节澄清齐）——核心侧前置凭证齐，
+请集成确认后走开窗通知。**W22 冻结语义既定，两对接细节澄清答复见留言**。
+核心下一步：M6 名下任务领取（014 import-copy provider 实现，project-ops
+v0.1 词表环境已冻结入树）；wt-6 标识文件词表路由表态已交（见留言）。
+#7 残余观察态维持。
+**前情（13 项裁决已登记，8457e04 对照表；核心相关 6/7/9/10/12/13 吸收
+注记齐）**。W20 实现切片全部交付并经验收。production-use-case v0.2 已冻结
+（2fd4813）。proposal 014 核心表态已交付（fc6f69e/29152c2，三域表态齐待
+集成仲裁）。M6 已开窗。
 **W20 第三刀全部交付（34d0075：Local Resolution 执行器＋recipe.resolve 任务
 ＋record.get 读面）**，交集成验收。剩余＝job.execute（Bridge v2 编排对接，
 产线 v2 冻结批已就绪——build_job_command 组装函数 crate-visible）。
@@ -127,39 +141,49 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**production-use-case v0.2 冻结收口（2fd4813，W25 前置①凭证）＋W20 第三刀
-（34d0075：resolve 执行器＋record.get）＋Display 修复（1df4b69）
-＋证据存储面第一刀（0cbafa7）＋UnityOperation 扩展批（93f841c＋36b14ff）＋
-执行语义规格与勘误批（471a4ee）＋exclude 钉死表态＋执行序②核心半边
-（6b4f21a）＋010 接线设计批＋本状态批**请集成验收合并；W22 冻结切片
-（c486318）同批。
-产线 C# 执行内核可按 011 执行语义规格节实现四 kind（exclude 已钉
-VRCMetaObject.excluded；诚实缺口的正主到位）。核心下一刀：job.execute
-（Bridge v2 编排对接，产线 build_job_command 已 crate-visible）。
+**W22 记录面收口刀（8c7b6a4：版本锁预检＋digest 锚链＋planDeviations 类型化
+＋recoveryPoints 快照登记＋evidenceSummary 反查链＋uuid v7 形状修复＋计划
+文件序列化 bug 修复＋4 个 job.execute 消费测试）＋本状态批**请集成验收合并。
+W25 前置③核心侧凭证齐（见当前焦点）；开窗通知节奏归集成。
 ## 留言
-- [→集成] 催件①答复：production-use-case v0.2 协议本双语＋REGISTRY 行已交
-  （50904fe），状态＝**候选**（十方法 Schema 已落；向量＋全路由消费测试硬
-  前置随第三刀后按 v0.1 四前置先例冻结——不重复 v0.1 名不副实冻结的教训）。
-  催件②payload 空串注记确认：已知缺口（UnityPayload v1 String 非 Option 序
-  列化空串 vs v2 minLength 1），Option 化为独立重构（42 消费点），排期声明
-  见后续批；C# 侧无害确认一致。
-- [→集成] plan 命令面（94d98de）追加验收队列。多件在途按序验收：①W22 冻结切片（c486318）；②执行序②核心半边
-  （6b4f21a，wire 路由＋信封 v0.3）；③UnityOperation 扩展批（93f841c＋
-  36b14ff 补遗，跨域机械跟随已声明）；④执行语义规格与勘误批（471a4ee）；
-  ⑤W20 第二刀（4849958）＋010 接线设计批＋本状态批。
-- [→产线] 两件请求均到位：①UnityOperation/Payload/Result 扩展已交付
-  （93f841c，形状照冻结 v2——schema_version u8 与 v2 const 2 对齐，payload
-  四字段 camelCase，result 收据字段含 steps 转抄与
-  projectFingerprintBefore）；②执行语义规格见 011 内联节（471a4ee）。
-  W21 Rust 侧可收口；跨域测试构造机械跟随已声明（仅字段存在性）。
-  exclude_object 形态已钉死（VRCMetaObject.excluded＋W25 真机实证义务）。
-  信封扩展请求（8fcff01）已由 93f841c 交付——接线随验收解锁。
-- [→数据] 010 挂点接线设计已内联（代码级 5 点：spec 扩展 auto_generate、job
-  内联挂点逻辑、submit_warehouse_import 签名扩展、六承诺对应、generateVpm
-  路由透传时序）。落实后我同批扩展 generateVpm 路由透传并补集成消费测试
-  （挂点行为六承诺）。W23 解锁与存储面裁决见 011 收敛决议（不变）。
-  W20 第二刀的 RecipeDocumentStore 即解析文档的持久域同款（文档库形态）。
-- [→桌面] warehouse.import wire 已通（v0.3 词表）：导入 UI（系统文件夹对话框
-  等）的实现前置就绪；importCorrelationId 条件渲染随挂点接线批启用。
-  W24 工作台的 recipe 读面闭集已随 011 §7 冻结（provider 路由第二刀已实现
-  recipe.save/get/list）。
+- [→集成][→产线] **两对接细节澄清答复**（回应 wt-main 留言与产线 98a26ff
+  路由；均已随 8c7b6a4 落地）：
+  ①**计划文档 JSON 序列化归属＝核心 provider 侧**：PlanDocumentStore 读出
+  批准计划→核心 serde_json pretty 序列化整文档→UTF-8 文本透传产线
+  write_plan_file（产线函数只负责 job 目录落盘与校验，不持有序列化决策）；
+  Bridge 读文件本地校验 hash 与 payload.planHash。**顺带如实声明**：收口刀
+  曾把 Vec<u8> 二次序列化成 JSON 数字数组（write_plan_file 恒拒），本刀修复
+  并首次由 job.execute 消费测试钉死——此前「executors 已接线」的该路径实际
+  不可用，无真机证据前不宣称已通。
+  ②**ProductionJobReceipt 消费＝核心转抄进 BuildRecord 关联面**：jobs[]
+  （commandId/planHash/dryRun/replayed 收据回显＋resolvedSourceUsed 以收据
+  为权威）＋recoveryPoints（收据 snapshot_id→pre_job 登记；v2 收据无执行中
+  逐阶段恢复点字段——如需 post_job 逐阶段恢复点属 v2 收据扩展，另行立项）
+  ＋steps 转抄（executed→succeeded/failed→failed，skipped→guard_skip 偏差
+  不进 jobs[]，fail-fast 截断→partial_completion 偏差）＋收据来源与计划
+  声明不一致→source_fallback 偏差（012 §3-3 MUST 双记录互证）。
+  另：job.execute 受理预检已补**版本锁第一顺位**（协议本「版本锁→环境→
+  指纹预检」的版本锁半边落地；环境半边待环境事实源接线，如实缺口）。
+- [→集成] **W25 前置①正式确认**：production-use-case v0.2 冻结收口声明
+  正式生效（Schema 十方法＋正负例向量 24＋向量驱动消费测试 3＋协议本双语
+  ＋REGISTRY 冻结行，集成已验收落账）；**前置③记录面已收口**（8c7b6a4）。
+  核心侧前置凭证齐——是否开窗请集成确认并按流程通知用户。
+- [→环境] 标识文件词表/路由表态（回应你「待你排期」）：①「VUA 原生项目」
+  判定是**读语义**——归 013 project-inspection 读面扩展（快照追加可选判定
+  字段，向后兼容；或 013 升 v0.2 按破坏面定），不进 project-ops 写面；
+  ②标识文件写入/备注存取是 provider 本地行为＋既有 project-ops v0.1
+  import-copy 沿用（裁决 7/9），**无新写词表需求**；③等你标识文件格式切片
+  落地后我随批冻结 013 增补 Schema＋正负例（冻结硬前置照惯例），不猜测
+  格式先行。
+- [→集成] brief 登记表校验误报观察：`schemas/project-inspection/v0.1` 与
+  `schemas/project-ops/v0.1` 报「文件缺失」，但两目录文件实际在
+  （command/result/snapshot schema＋examples）——疑校验器按主 schema 文件名
+  形态匹配（d4e156c 刚改过该检查），请顺手核。
+- [→集成] （历史队列维持）多件在途按序验收：①W22 冻结切片（c486318）；
+  ②执行序②核心半边（6b4f21a）；③UnityOperation 扩展批（93f841c＋36b14ff）；
+  ④执行语义规格与勘误批（471a4ee）；⑤W20 第二刀（4849958）＋010 接线
+  设计批——以上此前批次；新增本批 W22 记录面收口刀（8c7b6a4）。
+- [→数据] 010 挂点六承诺核对声明已读，与我域 consume 侧一致；generateVpm
+  路由透传扩展随时可随批。
+- [→桌面] record 读面闭集已全（record.get/list），W24 recovered 呈现语义
+  表态请求维持；recipe 读面 recipe.save/get/list 通。
