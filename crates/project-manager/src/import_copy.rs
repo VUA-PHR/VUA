@@ -580,6 +580,16 @@ pub fn apply_import_copy(
         )
     })?;
 
+    // VUA-native identity (rulings 2026-09-09 items 7/9/12): the copy is
+    // "migrated to VUA" in the user's terms, so it is first-marked
+    // VUA-native here; the note stays empty — marking never invents one.
+    crate::vua_identity::mark_vua_native(&target_path, &clock.now_rfc3339()).map_err(|error| {
+        ImportRejected::new(
+            RejectionGuard::ExecutionFailed,
+            format!("{}: writing the VUA identity failed: {error}", target_path.display()),
+        )
+    })?;
+
     // Re-inspect the copy (spec item 4: never inherit the original's
     // confirmations or snapshots — the receipt carries the copy's own
     // freshly read state).

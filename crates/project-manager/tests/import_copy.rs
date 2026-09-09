@@ -196,6 +196,18 @@ fn plan_and_apply_happy_path_copies_with_exclusions_and_records_the_source() {
     assert!(receipt.bytes_copied > 0);
     assert!(receipt.copied_top_levels.contains(&"Assets".to_owned()));
 
+    // VUA-native identity (rulings items 7/9/12): the copy is first-marked
+    // on apply; the original stays unmarked.
+    assert!(matches!(
+        vua_project_manager::read_identity(&target),
+        vua_project_manager::VuaIdentity::Present(_)
+    ));
+    assert_eq!(
+        vua_project_manager::read_identity(&source),
+        vua_project_manager::VuaIdentity::Absent,
+        "the original project is never marked"
+    );
+
     // The ORIGINAL project is untouched (1.2.0 read-only ruling): its .vua
     // still holds exactly what the fixture put there — no source.json.
     assert!(!source.join(".vua").join("source.json").exists());

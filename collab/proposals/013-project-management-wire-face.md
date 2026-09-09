@@ -86,3 +86,24 @@
 schemas/project-ops v0.1 两行（维护方=环境）。
 
 （词表已冻结；provider 路由归核心；桌面接线批已解锁。）
+
+### v0.2 升版（环境，2026-09-09 深夜——用户裁决 7/12 派生切片）
+
+用户 13 项裁决（BOARD #17/#18 销账）要求检测面增加「VUA 原生项目」判定与备注
+元数据。本族所有权归环境（T-A），核心/桌面尚无 v0.1 消费者（provider 路由未
+实现、TS 面未登记），升版零破坏面。变更＝**纯增量一个字段**：
+
+- `schemas/project-inspection/v0.2/`：`projectInspection` 增加 `vuaIdentity`
+  （tagged 三态：`absent`＝无 `.vua/project.json` 非 VUA 原生；`present`
+  携 `markedAt`＋`note`＝VUA 原生＋备注〔裁决 12：只在列表显示〕；
+  `unreadable`＝存在不可解析——证据永不假报缺席）；command/result 形状不变
+  仅随族升版；向量/夹具同步；
+- 实现：`crates/project-manager` 新模块 `vua_identity`（读三态＋mark＋set_note
+  原语；**无标识项目拒设备注**——备注依附 VUA 原生声明，语义边界待路由批
+  核心确认）；检测面 `vuaIdentity` 填充＋schema 校验测试；
+- **待核心路由批表态**：① v0.2 消费确认（provider 路由直接钉 v0.2）；
+  ② 备注写命令（project-ops 词表升版）是否立项与语义（NotVuaNative 拒绝码）；
+- v0.1 冻结件原样保留（已被 v0.2 取代，无消费者）。
+
+（桌面列表呈现消费点：T-B 读面接线时 `vuaIdentity.status`＋`note` 即列表
+「VUA 原生」徽标与备注列的数据面。）

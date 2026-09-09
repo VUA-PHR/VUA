@@ -1,0 +1,114 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/project-inspection/v0.2/result.schema.json",
+  "title": "VUA project-inspection result envelope v0.2",
+  "description": "Result envelope for the four project-inspection read queries (proposal 013). The payload documents are pinned by their own schemas and are referenced here only at envelope strength: project.listProjects returns a full ProjectInspectionSnapshotV01 (schemas/project-inspection/v0.2/snapshot.schema.json); project.inspectProject returns one project finding of the same shape; project.environmentManagers returns an EnvironmentManagersSnapshotV01 (schemas/environment-managers/v0.1/snapshot.schema.json); project.lockStatus returns the marker tri-state inlined here. Payload-level honesty rules (deterministic findings, warnings instead of invented entries) live in the payload schemas and are unchanged by this envelope.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": [
+        "project.listProjects",
+        "project.inspectProject",
+        "project.environmentManagers",
+        "project.lockStatus"
+      ]
+    },
+    "result": {
+      "type": "object",
+      "required": ["schemaVersion"],
+      "properties": {
+        "schemaVersion": {
+          "enum": [
+            "vua.project-inspection/v0.2",
+            "vua.environment-managers-snapshot/v0.1"
+          ]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.listProjects" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "schemaVersion": { "const": "vua.project-inspection/v0.2" },
+              "projects": { "type": "array" },
+              "diagnostics": { "type": "array" }
+            },
+            "required": ["projects", "diagnostics"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.inspectProject" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "schemaVersion": { "const": "vua.project-inspection/v0.2" },
+              "path": { "type": "string", "minLength": 1 },
+              "associations": { "type": "array" }
+            },
+            "required": ["path", "associations"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.environmentManagers" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "schemaVersion": { "const": "vua.environment-managers-snapshot/v0.1" },
+              "vcc": { "type": "object" },
+              "alcom": { "type": "object" }
+            },
+            "required": ["vcc", "alcom"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.lockStatus" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["schemaVersion", "projectPath", "mutationStatus"],
+            "properties": {
+              "schemaVersion": { "const": "vua.project-inspection/v0.2" },
+              "projectPath": { "type": "string", "minLength": 1 },
+              "mutationStatus": {
+                "enum": ["none", "leftover", "unreadable"]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 //! M6 T-A (proposal 013) tests: the read-face command word list frozen in
-//! `schemas/project-inspection/v0.1/command.schema.json` + result envelope.
+//! `schemas/project-inspection/v0.2/command.schema.json` + result envelope.
 //! The frozen example vectors must validate, the negatives must be refused,
 //! and the envelope must not leak into the payload documents (whose shapes
 //! are pinned by their own schemas and tested in project_inspection.rs).
@@ -16,14 +16,14 @@ fn read_repo_json(relative: &str) -> Value {
 
 fn command_validator() -> jsonschema::Validator {
     jsonschema::validator_for(&read_repo_json(
-        "schemas/project-inspection/v0.1/command.schema.json",
+        "schemas/project-inspection/v0.2/command.schema.json",
     ))
     .unwrap()
 }
 
 fn result_validator() -> jsonschema::Validator {
     jsonschema::validator_for(&read_repo_json(
-        "schemas/project-inspection/v0.1/result.schema.json",
+        "schemas/project-inspection/v0.2/result.schema.json",
     ))
     .unwrap()
 }
@@ -43,7 +43,7 @@ fn all_positive_request_vectors_pass_the_command_schema() {
         "project-environment-managers.request.json",
         "project-lock-status.request.json",
     ] {
-        let vector = read_repo_json(&format!("schemas/project-inspection/v0.1/examples/{name}"));
+        let vector = read_repo_json(&format!("schemas/project-inspection/v0.2/examples/{name}"));
         let problems = violations(&command_validator(), &vector);
         assert!(problems.is_empty(), "{name}: {problems:#?}");
     }
@@ -57,7 +57,7 @@ fn all_positive_result_vectors_pass_the_result_envelope() {
         "project-environment-managers.result.json",
         "project-lock-status.result.json",
     ] {
-        let vector = read_repo_json(&format!("schemas/project-inspection/v0.1/examples/{name}"));
+        let vector = read_repo_json(&format!("schemas/project-inspection/v0.2/examples/{name}"));
         let problems = violations(&result_validator(), &vector);
         assert!(problems.is_empty(), "{name}: {problems:#?}");
     }
@@ -69,7 +69,7 @@ fn negative_vectors_are_refused_by_the_command_schema() {
         "invalid-inspect-missing-path.json",
         "invalid-read-face-operation.json",
     ] {
-        let vector = read_repo_json(&format!("schemas/project-inspection/v0.1/examples/{name}"));
+        let vector = read_repo_json(&format!("schemas/project-inspection/v0.2/examples/{name}"));
         let problems = violations(&command_validator(), &vector);
         assert!(
             !problems.is_empty(),
@@ -91,7 +91,7 @@ fn the_read_word_list_stays_separate_from_the_write_word_list() {
 
     // …and the read-face result payloads are not valid write-command
     // requests either.
-    let read_request = read_repo_json("schemas/project-inspection/v0.1/examples/project-lock-status.request.json");
+    let read_request = read_repo_json("schemas/project-inspection/v0.2/examples/project-lock-status.request.json");
     let ops_validator = jsonschema::validator_for(&read_repo_json(
         "schemas/project-ops/v0.1/command.schema.json",
     ))

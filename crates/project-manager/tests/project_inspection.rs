@@ -1,7 +1,7 @@
 //! M6 T-A/T-B tests: the read-only project-inspection aggregate. Everything
 //! runs against synthetic directory trees, so no test depends on this
 //! machine's real installs. The snapshot shape is pinned by
-//! `schemas/project-inspection/v0.1/snapshot.schema.json` and validated
+//! `schemas/project-inspection/v0.2/snapshot.schema.json` and validated
 //! here; the wire vocabulary that will expose the aggregate is proposed in
 //! `collab/proposals/013` and deliberately absent from this crate.
 
@@ -14,8 +14,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde_json::{json, Value};
 use vua_orchestrator::{FixedClock, ManagerPresence};
 use vua_project_manager::{
-    collect_project_inspections, MutationStatus, ProjectAssociation, ProjectInspectionSnapshotV01,
-    ManagerRoots, PROJECT_INSPECTION_SCHEMA_VERSION,
+    collect_project_inspections, mark_vua_native, set_note, MutationStatus, ProjectAssociation,
+    ProjectInspectionSnapshotV01, VuaIdentityFinding, ManagerRoots,
+    PROJECT_INSPECTION_SCHEMA_VERSION,
 };
 
 fn unique_dir(label: &str) -> PathBuf {
@@ -112,7 +113,7 @@ const HEALTHY_MANIFEST: &str = r#"{
 }"#;
 
 fn snapshot_validator() -> jsonschema::Validator {
-    let schema = read_repo_json("schemas/project-inspection/v0.1/snapshot.schema.json");
+    let schema = read_repo_json("schemas/project-inspection/v0.2/snapshot.schema.json");
     jsonschema::validator_for(&schema).unwrap()
 }
 
@@ -388,6 +389,43 @@ fn settings_findings_are_shared_not_duplicated() {
     // Silence a warning about the unused import path when the reader
     // presence enums are referenced through this test surface only.
     let _ = ManagerPresence::NotFound;
+
+    cleanup(&base);
+}
+
+#[test]
+fn vua_identity_finding_reflects_the_marker_file_states() {
+    let base = unique_dir("vua-identity");
+    let marked = install_vpm_project(&base, "Marked World", "2022.3.22f1", None);
+    let plain = install_vpm_project(&base, "Plain World", "2022.3.22f1", None);
+
+    // A marked (VUA-native) project reports present with its note.
+    mark_vua_native(&marked, "2026-09-09T15:04:05Z").unwrap();
+    set_note(&marked, Some("用户的迁移项目")).unwrap();
+
+    vcc_settings(&base, &[marked.clone(), plain]);
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.projects.len(), 2, "one path, one finding");
+    let mut findings = snapshot.projects.iter();
+
+    let marked_finding = findings.find(|f| f.name == "Marked World").unwrap();
+    assert_eq!(
+        marked_finding.vua_identity,
+        VuaIdentityFinding::Present {
+            marked_at: "2026-09-09T15:04:05Z".to_owned(),
+            note: Some("用户的迁移项目".to_owned()),
+        }
+    );
+
+    let plain_finding = findings.find(|f| f.name == "Plain World").unwrap();
+    assert_eq!(plain_finding.vua_identity, VuaIdentityFinding::Absent);
+
+    // The serialized snapshot still passes the pinned v0.2 schema
+    // (the tagged union shape is schema-pinned, not just the Rust type).
+    let instance = serde_json::to_value(&snapshot).unwrap();
+    let problems = violations(&snapshot_validator(), &instance);
+    assert!(problems.is_empty(), "schema violations: {problems:#?}");
 
     cleanup(&base);
 }
