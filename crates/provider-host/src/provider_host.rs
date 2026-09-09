@@ -394,11 +394,15 @@ pub fn run_provider_host_full(
         .collect();
     store.mark_other_owners_interrupted(&provider_instance_id, &now_rfc3339())?;
 
-    // A previous process may have died with production tasks mid-flight.
-    // They are failed as interrupted (recoverable) — never silently resumed;
-    // per the recovery discipline the next mutation must Inspect first.
+    // A previous process may have died with tasks mid-flight. They are
+    // failed as interrupted (recoverable) — never silently resumed; per
+    // the recovery discipline the next mutation must Inspect first. The
+    // sweep covers every tasked face the host runs (production tasks and
+    // the demo task face alike — BOARD #20: a DEV-only face is not exempt
+    // from honest state presentation; a dead process's task must never
+    // keep reading as running).
     for task in store.tasks()? {
-        if task.task_id.starts_with("prod-")
+        if (task.task_id.starts_with("prod-") || task.task_id.starts_with("demo-"))
             && !task.state.is_terminal()
             && recovered_nonterminal_tasks.contains(&task.task_id)
         {
@@ -6286,16 +6290,18 @@ mod tests {
     }
 
     #[test]
-    fn demo_task_walks_lifecycle_over_frames_and_replays_idempotently() {
+    fn demo_task_walks_lifecycle_and_is_swept_on_restart_per_board_20() {
         let path = database_path("demo-lifecycle");
 
-        // run 1: start -> accepted queued(事件),确定性 taskId
+        // run 1: start -> accepted queued (event), deterministic taskId.
         let start = request(
             "request-demo-1",
             "task.startDemo",
             json!({"commandId": "command-demo-1", "kind": "command"}),
         );
-        let input = [frame("frame-1", "request", start)].join("\n") + "\n";
+        let input = [frame("frame-1", "request", start)].join("
+") + "
+";
         let mut output = Vec::new();
         run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
         let frames = parse_frames(output);
@@ -6310,73 +6316,62 @@ mod tests {
         assert_eq!(frames[1]["kind"], "event");
         assert_eq!(frames[1]["payload"]["kind"], "task.accepted");
 
-        // run 2: 幂等重放返回既有任务(帧驱动推进一格:queued -> preparing);
-        // 取消 -> requested;能力表登记 demo.task
+        // run 2: BOARD #20 — a restart sweeps the non-terminal demo task to
+        // the interrupted semantics (queued -> cancelled, no error) instead
+        // of letting a dead process's task keep reading as live. The
+        // idempotent replay returns the swept snapshot: a replay never
+        // resurrects a swept task.
         let replay = request(
             "request-demo-2",
             "task.startDemo",
             json!({"commandId": "command-demo-1", "kind": "command"}),
         );
-        let cancel = request(
-            "request-cancel",
-            "task.requestCancellation",
-            json!({
-                "commandId": "command-cancel-1",
-                "kind": "command",
-                "params": {"taskId": task_id},
-            }),
+        let snapshot = request(
+            "request-snap",
+            "application.getSnapshot",
+            json!({}),
         );
         let input = [
             frame("frame-2", "request", replay),
-            frame("frame-3", "request", cancel),
-            frame(
-                "frame-4",
-                "request",
-                request("request-snap", "application.getSnapshot", json!({})),
-            ),
+            frame("frame-3", "request", snapshot),
         ]
-        .join("\n")
-            + "\n";
+        .join("
+")
+            + "
+";
         let mut output = Vec::new();
         run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
         let frames = parse_frames(output);
-        // frame-2: 推进事件(preparing) + 重放响应;frame-3: 推进事件(running) + requested + 取消事件;
-        // frame-4: 能力表响应
-        assert_eq!(frames.len(), 7);
-        assert_eq!(frames[0]["kind"], "event");
-        assert_eq!(frames[0]["payload"]["state"], "preparing");
-        assert_eq!(frames[1]["payload"]["value"]["task"]["state"], "preparing");
-        assert_eq!(frames[2]["kind"], "event");
-        assert_eq!(frames[2]["payload"]["state"], "running");
-        assert_eq!(frames[3]["payload"]["value"]["outcome"], "requested");
-        assert_eq!(frames[4]["kind"], "event");
-        assert_eq!(frames[4]["payload"]["kind"], "task.cancellationRequested");
-        let operations = &frames[6]["payload"]["value"]["capabilities"]["operations"];
+        let replayed_state = &frames[0]["payload"]["value"]["task"]["state"];
+        assert_eq!(replayed_state, "cancelled", "BOARD #20: the queued demo task is swept to cancelled on restart");
+        // The sweep produces no event frame for a queued task (cancelled
+        // quietly, no error) — the responses are replay + snapshot.
+        assert_eq!(frames.len(), 2, "{frames:?}");
+        let operations = &frames[1]["payload"]["value"]["capabilities"]["operations"];
         assert!(operations
             .as_array()
-            .expect("operations array")
+            .unwrap()
             .iter()
             .any(|operation| operation["operationId"] == "demo.task"));
 
-        // run 3: 重启后宿主推进取消中任务到 cancelled 终态(事件先于查询响应)
-        let input = [
-            frame(
-                "frame-5",
-                "request",
-                request("request-list", "task.list", json!({})),
-            ),
-        ]
-        .join("\n")
-            + "\n";
+        // run 3: a fresh command id accepts a NEW demo task (the sweep is
+        // per-task, not a lockout), which is again queued — and swept by
+        // the next restart the same way.
+        let start_again = request(
+            "request-demo-3",
+            "task.startDemo",
+            json!({"commandId": "command-demo-2", "kind": "command"}),
+        );
+        let input = [frame("frame-4", "request", start_again)].join("
+") + "
+";
         let mut output = Vec::new();
         run_provider_host(Cursor::new(input), &mut output, &path).unwrap();
         let frames = parse_frames(output);
-        // 取消在 run 2 的下一帧推进中已完成;重启宿主后终态如实持久
-        assert_eq!(frames.len(), 1);
-        assert_eq!(frames[0]["payload"]["value"]["tasks"][0]["state"], "cancelled");
-        assert_eq!(
-            frames[0]["payload"]["value"]["tasks"][0]["recoveryDisposition"],
-            "none"
-        );
+        assert_eq!(frames[0]["payload"]["value"]["task"]["state"], "queued");
+        let new_task_id = frames[0]["payload"]["value"]["task"]["taskId"]
+            .as_str()
+            .expect("new demo task id");
+        assert_ne!(new_task_id, task_id, "a fresh command id accepts a new task");
     }
 }
