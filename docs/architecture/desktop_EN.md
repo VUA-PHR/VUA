@@ -2,11 +2,11 @@
 
 [English](desktop_EN.md) | [简体中文](desktop_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors desktop_ZH.md at 1.0.0)
+> Authoritative language: 简体中文 (this English edition mirrors desktop_ZH.md at 1.1.0)
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-09-06
+> Updated: 2026-09-09
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -56,10 +56,25 @@ correlation, post-download inspection, and Warehouse/BDL decisions.
 ## Remote content isolation
 
 Remote content uses `nodeIntegration: false`, `contextIsolation: true`, sandboxing, an isolated
-session partition, origin-scoped permission grants, and allowlisted navigation, windows, downloads,
-and protocols. Its capability surface contains standard web APIs. AMF validates observed page data
-for type, size, and source before persistence. Main-managed `WebContentsView` is the remote-content
-surface.
+session partition, and origin-scoped permission grants. Navigation and new windows follow the U9
+four-way rule (user ruling 2026-09-09; browsing and downloads are separate tracks): navigation
+inside the browsing allowlist proceeds directly; off-allowlist http/https navigation shows a
+blocking confirmation first and then opens in the current embedded view (per-attempt confirmation,
+no exempt-from-confirmation memory at any level); new windows are always denied, with http/https
+popup targets redirected into the current embedded view (directly when allowlisted, after
+confirmation otherwise); pseudo-protocol (`javascript:`, `data:`, `blob:`, `file:`, …) windows are
+denied unconditionally; external protocols (initially exactly `mailto:`, `steam:`, `vrchat:`,
+`discord:`) go through a per-attempt dedicated confirmation before the system handler opens them —
+the window-open details expose no gesture field, so the confirmation click itself is the explicit
+user gesture and automatically triggered openings never execute without confirmation (a stricter
+equivalent of the literal rule) — and unknown schemes are denied by default. The browsing allowlist and the
+download host allowlist are strictly separate: browsing is lenient (off-allowlist content remains
+reachable after confirmation; the list width only affects prompt frequency), downloads are strict
+(download-host admission follows the "real-machine verification → per-domain proposal → user
+approval" procedure; the download port filters by origin, and size, type, and source validation
+belong to the AMF material-acquisition boundary). The capability surface contains standard web
+APIs. AMF validates observed page data for type, size, and source before persistence.
+Main-managed `WebContentsView` is the remote-content surface.
 
 ## React and release boundaries
 

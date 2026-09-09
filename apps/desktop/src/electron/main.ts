@@ -206,6 +206,36 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   });
 }
 
+/**
+ * U9(1)/U9(3) 导航确认层(Main 侧原生对话框):确认在前(A-1 逐次阻断式),
+ * 显示完整目标 URL 与放行后果;每次确认,无任何免确认记忆(A-2)。
+ * 文案缺口如实声明:Main 侧无 i18n(现状先例=main 内其他对话框),四语化
+ * 归渲染层确认 UI 切片(IMP-2 呈现批);四分法本体语义(确认在前/逐次/
+ * 放行转内嵌)已完整,不受呈现语言影响。
+ */
+function confirmNavigation(
+  url: string,
+  reason: "origin_not_allowed" | "external_protocol",
+): Promise<boolean> {
+  const external = reason === "external_protocol";
+  const message = external ? "Open external application?" : "Open off-allowlist page?";
+  const detail = external
+    ? `This page asked to open an external application:\n${url}\nOnly continue if you trust it.`
+    : `This page is outside the browsing allowlist and will open in the embedded view:\n${url}`;
+  const options = {
+    type: "warning" as const,
+    buttons: ["Cancel", "Open"],
+    defaultId: 0,
+    cancelId: 0,
+    message,
+    detail,
+  };
+  const parent = mainWindow ?? undefined;
+  const dialogPromise =
+    parent === undefined ? dialog.showMessageBox(options) : dialog.showMessageBox(parent, options);
+  return dialogPromise.then(({ response }) => response === 1);
+}
+
 async function createWindow(): Promise<void> {
   const preload = path.join(__dirname, "preload.js");
   mainWindow = new BrowserWindow({
@@ -219,7 +249,19 @@ async function createWindow(): Promise<void> {
     webPreferences: localWindowWebPreferences(preload),
   });
 
-  installLocalContentNavigationPolicy(mainWindow.webContents, rendererUrl, (url) => shell.openExternal(url));
+  // U9 四分法(本地壳窗口):http/https 弹窗不再交系统浏览器——清单内直行/
+  // 清单外确认后转当前内嵌视图(RemoteContentManager);外部协议手势+确认后
+  // 交系统;伪协议无条件拒。浏览允许清单与下载域清单严格分开(U9 双轨)
+  installLocalContentNavigationPolicy(mainWindow.webContents, {
+    rendererUrl,
+    allowedOrigins: ["https://booth.pm"],
+    // 延迟读取模块变量:弹窗发生时 remoteContent 已随窗口创建
+    navigateCurrentView: (url) => {
+      remoteContent?.openAfterConfirmation(url);
+    },
+    openExternal: (url) => void shell.openExternal(url),
+    confirmNavigation,
+  });
   mainWindow.once("ready-to-show", () => mainWindow?.show());
 
   // 下载端口(F4-3/F4-4):will-download 接管 + 冻结词表事件规范化。事件汇
@@ -287,12 +329,14 @@ async function createWindow(): Promise<void> {
   });
 
   // 远程内容管理器(F4-2):独立 partition Session;目录浏览域为种子允许清单,
-  // 真实值随 catalog 契约冻结(F4-1②)调整;违规事件广播到本地来源窗口
+  // 真实值随 catalog 契约冻结(F4-1②)调整;违规事件广播到本地来源窗口;
+  // 确认层注入使 U9(1) 清单外「提示后放行」与 U9(3) 外部协议确认在视图内生效
   remoteContent = new RemoteContentManager({
     partition: "persist:vua-remote",
     allowedOrigins: ["https://booth.pm"],
     openExternal: (url) => void shell.openExternal(url),
     broadcast: (event) => broadcastRemoteContentEvent(rendererUrl, event),
+    confirmNavigation,
     willDownload: (event, item, webContents) => downloadPort?.handleWillDownload(event, item, webContents),
   });
   remoteContent.setHostWindow(mainWindow);

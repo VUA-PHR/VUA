@@ -34,17 +34,137 @@ export function installPermissionDenyPolicy(
   });
 }
 
+/* ---- U9 四分法导航分类(2026-09-09 用户裁决,导航实差必做改造) ----
+ * 权威:BOARD U9(新窗口/外部协议四分法)＋outline 2.0.11 治理注记。
+ * 浏览宽(清单外 http/https 提示后放行转当前内嵌视图,内容可达性不受影响)、
+ * 下载严(域清单不放,download-port 管辖)双轨;外部协议逐次确认。 */
+
+/** U9(3) 外部协议显式清单:初始恰为用户点名四项(panel-prebatch A-4 保守
+ *  集合);清单是放行枚举,未知协议默认拒绝;无任何层级免确认记忆(A-2),
+ *  扩充走后续提案(逐项安全评估)。 */
+export const EXTERNAL_PROTOCOL_ALLOWLIST: readonly string[] = [
+  "mailto:",
+  "steam:",
+  "vrchat:",
+  "discord:",
+];
+
+export type NavigationTargetKind =
+  | { readonly kind: "web"; readonly allowed: boolean }
+  | { readonly kind: "external-protocol"; readonly protocol: string }
+  | { readonly kind: "pseudo-protocol" }
+  | { readonly kind: "unknown-scheme" };
+
+/** 导航/弹窗目标四分类:web(http/https,带清单判定)/外部协议(清单内,
+ *  确认后交系统打开)/伪协议(U9(2) 无条件拒)/未知协议(默认拒)。
+ *  解析失败保守归伪协议(拒绝向)。 */
+export function classifyNavigationTarget(
+  url: string,
+  allowedOrigins: readonly string[],
+): NavigationTargetKind {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return { kind: "pseudo-protocol" };
+  }
+  switch (parsed.protocol) {
+    case "https:":
+    case "http:":
+      return { kind: "web", allowed: isAllowedRemoteOrigin(url, allowedOrigins) };
+    case "javascript:":
+    case "data:":
+    case "blob:":
+    case "file:":
+    case "vbscript:":
+      // U9(2) 管辖面是窗口/导航目标;下载流走 will-download 由下载端口
+      // 策略管辖(域过滤照旧),不受此分类牵连(A-6)
+      return { kind: "pseudo-protocol" };
+    default:
+      if (EXTERNAL_PROTOCOL_ALLOWLIST.includes(parsed.protocol)) {
+        return { kind: "external-protocol", protocol: parsed.protocol };
+      }
+      // U9(3) 未知协议默认拒绝
+      return { kind: "unknown-scheme" };
+  }
+}
+
+/** 确认层注入(U9(1) 清单外「提示后放行」/U9(3) 外部协议确认):确认在前
+ *  (A-1 逐次阻断式),resolve(true)=用户确认放行;不提供免确认记忆(A-2)。 */
+export type NavigationConfirmLayer = (
+  url: string,
+  reason: "origin_not_allowed" | "external_protocol",
+) => Promise<boolean>;
+
+export interface LocalContentPolicyOptions {
+  readonly rendererUrl: string | undefined;
+  /** U9(1) 浏览允许清单(与下载域清单严格分开):清单内直行/清单外确认后
+   *  转,目标都是当前内嵌视图 */
+  readonly allowedOrigins: readonly string[];
+  /** http/https 目标转当前内嵌视图的注入(本地窗口=RemoteContentManager);
+   *  注入缺失时目标不放行(诚实降级,维持拒绝)。 */
+  readonly navigateCurrentView?: (url: string) => void;
+  readonly openExternal: ExternalUrlOpener;
+  readonly confirmNavigation?: NavigationConfirmLayer;
+}
+
+/** 本地壳窗口导航面:will-navigate 维持本地身份拦截(本地壳不导航,该面
+ *  不属 U9 域清单场景);弹窗按 U9 四分法分流——http/https 转当前内嵌
+ *  视图(不再交系统浏览器),外部协议确认后交系统,伪协议无条件拒。
+ *  U9(4) 手势门槛的等效实现:Electron 当前版本窗口打开 details 不提供
+ *  手势字段,协议启动一律经逐次确认层——用户确认点击即显式手势,页面
+ *  自动触发未经确认不执行(比字面更严,如实声明)。 */
 export function installLocalContentNavigationPolicy(
   webContents: WebContents,
-  rendererUrl: string | undefined,
-  openExternal: ExternalUrlOpener,
+  options: LocalContentPolicyOptions,
 ): void {
   webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith("https://") || url.startsWith("http://")) void openExternal(url);
+    const target = classifyNavigationTarget(url, options.allowedOrigins);
+    if (target.kind === "web") {
+      if (target.allowed) {
+        // 清单内直行:原生新窗口仍一律 deny,目标转当前内嵌视图(U9(1))
+        options.navigateCurrentView?.(url);
+      } else {
+        // 清单外:提示后放行转当前内嵌视图(确认在前)
+        void offerConfirmedView(options.confirmNavigation, options.navigateCurrentView, url);
+      }
+      return { action: "deny" };
+    }
+    if (target.kind === "external-protocol") {
+      // U9(3)/U9(4):确认层逐次确认后交系统打开;确认点击即用户显式手势,
+      // 自动触发未经确认不执行
+      void offerConfirmedExternal(options.confirmNavigation, options.openExternal, url);
+      return { action: "deny" };
+    }
+    // 伪协议窗口无条件拒(U9(2));未知协议默认拒绝(U9(3))
     return { action: "deny" };
   });
   webContents.on("will-navigate", (event, url) => {
-    if (!isAllowedLocalSender(url, rendererUrl)) event.preventDefault();
+    if (!isAllowedLocalSender(url, options.rendererUrl)) event.preventDefault();
+  });
+}
+
+/** 确认后转当前内嵌视图;确认层或视图注入缺失时不放行(保守降级)。 */
+function offerConfirmedView(
+  confirm: NavigationConfirmLayer | undefined,
+  navigate: ((url: string) => void) | undefined,
+  url: string,
+): void {
+  if (!confirm || !navigate) return;
+  void confirm(url, "origin_not_allowed").then((ok) => {
+    if (ok) navigate(url);
+  });
+}
+
+/** 确认后交系统打开外部协议;确认层缺失时不执行(保守降级)。 */
+function offerConfirmedExternal(
+  confirm: NavigationConfirmLayer | undefined,
+  openExternal: ExternalUrlOpener,
+  url: string,
+): void {
+  if (!confirm) return;
+  void confirm(url, "external_protocol").then((ok) => {
+    if (ok) void openExternal(url);
   });
 }
 
@@ -94,24 +214,76 @@ export interface RemoteContentPolicyOptions {
   readonly allowedOrigins: readonly string[];
   readonly openExternal: ExternalUrlOpener;
   readonly onViolation?: RemoteContentViolationObserver;
+  /** U9(1)/U9(3) 确认层注入;缺失=清单外与外部协议一律不放行(保守降级) */
+  readonly confirmNavigation?: NavigationConfirmLayer;
 }
 
-/** 单个远程视图的导航面:允许清单外导航阻止并上报;新窗口一律拒绝,
- *  http(s) 弹窗目标交系统浏览器(登录/购买交还官方工具的既有纪律) */
+/** 单个远程视图的导航面(U9 四分法):清单内导航/弹窗目标转当前视图;清单外
+ *  「提示后放行」转当前视图(确认在前);外部协议经确认层交系统打开(确认
+ *  点击即用户显式手势,页面自动触发未经确认不执行);伪协议窗口无条件拒;
+ *  原生新窗口一律 deny。违规透明上报不静默——导航拒绝报 origin_not_allowed、
+ *  弹窗拒绝报 popup_denied(沿用既有事件语义)。 */
 export function installRemoteContentNavigationPolicy(
   webContents: WebContents,
   options: RemoteContentPolicyOptions,
 ): void {
   webContents.setWindowOpenHandler(({ url }) => {
+    const target = classifyNavigationTarget(url, options.allowedOrigins);
+    if (target.kind === "web" && target.allowed) {
+      // 清单内直行:弹窗不创建,目标转当前内嵌视图(U9(1))
+      void webContents.loadURL(url);
+      return { action: "deny" };
+    }
+    if (target.kind === "web") {
+      options.onViolation?.(url, "origin_not_allowed");
+      // 清单外:提示后放行转当前内嵌视图(确认在前,A-1)
+      offerConfirmedNavigationToView(webContents, options, url);
+      return { action: "deny" };
+    }
+    if (target.kind === "external-protocol" && options.confirmNavigation) {
+      // U9(3)/U9(4):确认层逐次确认后交系统打开
+      void options.confirmNavigation(url, "external_protocol").then((ok) => {
+        if (ok) void options.openExternal(url);
+      });
+      return { action: "deny" };
+    }
+    // 伪协议无条件拒(U9(2));外部协议缺确认层注入不执行(保守降级);未知协议默认拒
     options.onViolation?.(url, "popup_denied");
-    if (url.startsWith("https://") || url.startsWith("http://")) void options.openExternal(url);
     return { action: "deny" };
   });
   webContents.on("will-navigate", (event, url) => {
-    if (!isAllowedRemoteOrigin(url, options.allowedOrigins)) {
-      event.preventDefault();
+    const target = classifyNavigationTarget(url, options.allowedOrigins);
+    if (target.kind === "web" && target.allowed) return;
+    event.preventDefault();
+    if (target.kind === "web") {
       options.onViolation?.(url, "origin_not_allowed");
+      // U9(1) 提示后放行:确认后在本视图导航(即转当前内嵌视图)。
+      // will-navigate 无手势字段,确认层本身即用户显式动作(等效手势门槛)
+      offerConfirmedNavigationToView(webContents, options, url);
+      return;
     }
+    if (target.kind === "external-protocol" && options.confirmNavigation) {
+      // U9(3):同窗口导航形态的外部协议链接,逐次确认后交系统打开
+      void options.confirmNavigation(url, "external_protocol").then((ok) => {
+        if (ok) void options.openExternal(url);
+      });
+      return;
+    }
+    // 伪协议/未知协议导航:拒,不提供确认(保守)
+    options.onViolation?.(url, "origin_not_allowed");
+  });
+}
+
+/** 清单外 http(s) 目标的确认放行:确认后在本视图导航(转当前内嵌视图);
+ *  确认层缺失时不放行(violation 已上报,诚实降级)。 */
+function offerConfirmedNavigationToView(
+  webContents: WebContents,
+  options: RemoteContentPolicyOptions,
+  url: string,
+): void {
+  if (!options.confirmNavigation) return;
+  void options.confirmNavigation(url, "origin_not_allowed").then((ok) => {
+    if (ok) void webContents.loadURL(url);
   });
 }
 
