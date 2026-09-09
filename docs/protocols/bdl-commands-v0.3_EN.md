@@ -2,12 +2,17 @@
 
 [English](bdl-commands-v0.3_EN.md) | [简体中文](bdl-commands-v0.3_ZH.md)
 
+> **⚠️ Superseded by v0.4 (2026-09-09)**: the download-adoption command
+> `warehouse.importDownloads` (M6 added scope, user ruling U7-③). The current
+> normative text is [bdl-commands-v0.4_EN.md](bdl-commands-v0.4_EN.md); this
+> document is kept as history, matching `schemas/bdl-commands/v0.3/`
+> (never rewritten).
 > Document version: 0.3
-> Status: **Frozen (domain business vocabulary)** (2026-09-08) — the provider-host
-> `warehouse.import` route and the `importCorrelationId` orchestration wiring are
-> pending core execution (proposal 010 ruling: the v0.3 freeze lands ahead of the
-> wire/hook implementation, M5 first batch); until wired, the import command must
-> not be claimed end-to-end
+> Status: **Superseded (→ v0.4)** (2026-09-09; original status: Frozen
+> (domain business vocabulary) 2026-09-08 — the provider-host
+> `warehouse.import` route and the `importCorrelationId` orchestration wiring
+> have since landed with execution phase ② closeout; the v0.3 vocabulary is
+> carried into the v0.4 closed set intact)
 > Machine-readable vocabulary: `schemas/bdl-commands/v0.3/` (schema + positive/
 > negative vectors; consumer test `crates/acquisition/tests/import_contract_v03.rs`;
 > the v0.1/v0.2 directories are kept, never rewritten)
