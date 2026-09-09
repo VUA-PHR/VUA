@@ -1,54 +1,46 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 8a9cb1a
+baseline_commit: ea51147
 role: 桌面
 updated: 2026-09-10
 ---
 ## 当前焦点
-**批 B-3 页内确认层已交付(81b8510,核心形状核可＋集成 §12.8 开工授权)**:
-navigationConfirm IPC 段＋Main 广播/pending 登记簿＋渲染层全局确认卡四语。
-**IMP-2 批 A/批 B-1/B-2/B-3 全部交付完毕**;B-3 实现验收口径=015 §12.4 锚
-＋桌面 check 全链(集成 §12.8 已核)。**后续**:各批请集成验收合并;真机内嵌
-浏览会话确认(用户裁量)待安排——桌面不自行宣称端到端。
-## 自基线交付(8a9cb1a 合并 main 后)
-- main 合并维护(两次 fast-forward:3aea128→d4732f7→8a9cb1a 世代;带入
-  §12 核心表态＋集成 §12.8 授权＋CI collab-registry workflow 等);
-- **81b8510:批 B-3 页内确认层(015 §12 实现)**:
-  - contracts:NavConfirmReasonV1＋NavigationConfirmRequestV1(载荷含完整
-    URL,A-1 要素)＋DesktopNavigationConfirmApiV1(respond＋request 事件)
-    挂 VuaDesktopApiV1——纯桌面域,应用契约 v0.1 与 provider 帧零触碰
-    (核心表态②:零耦合无配合项);
-  - preload:navigationConfirm 段(respond invoke＋事件订阅,照
-    remoteContent 段同构先例);
-  - main:confirmNavigation 重写为「广播本地来源窗口＋pending 登记簿」;
-    respond handler 校验本地来源/类型/未知 id/重复作答(渲染层不能伪造
-    未发出的确认);**无超时=用户不答即不执行**(阻断式确认的诚实形态);
-    原生英文对话框移除(单一事实源,四语化由渲染层确认卡承载——上一批
-    声明的缺口在此兑现);
-  - 渲染层:NavigationConfirmOverlay(App 全局挂载一次)＋队列状态机纯
-    函数(navConfirmEnqueue 按 confirmId 去重/navConfirmAnswer 只弹队首);
-    四语确认卡(reason 分支标题＋完整 URL＋打开/取消＋队列计数提示);
-  - 测试:队列状态机 3 项;验收锚=015 §12.4。
-- **证据(2026-09-10 本机)**:contracts build＋桌面 check 全链绿(typecheck＋
-  vitest 51 文件 423 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹
-  零命中)。**诚实声明**:确认流为代码级交付,未进行真实浏览会话验证
-  (真机确认会话归用户裁量安排);确认 UI 载体替换,策略逻辑(security.ts)
-  零变更。
+**IMP-5 非真机部分已交付(f0779b5)**:015 §13——代码级核验记录(诚实空态/
+能力两态/mock 不出 DEV/隔离红线静态核对/导航策略自动化盘点)＋真机冒烟
+清单草案(六项,W25 窗口用)。messageKey 两枚四语登记亦交付(64d22a7)。
+**桌面 IMP-1~5 全部可交付面已收口**;真机项归 W25 窗口统筹(用户参与点)。
+## 自基线交付(ea51147 合并 main 后)
+- main 合并维护(fast-forward 至 ea51147;带入批 B-3 验收合并 6cbcb26——
+  IMP-2 交付面完成确认＋IMP-5 排期表态＋§8.3 措辞修正[集成已办,桌面无需
+  重复]＋BG-5 CI 化);
+- **64d22a7:messageKey 两枚四语登记**(核心环境预检批机械跟随):
+  errors.job.environmentUnmet(环境未就绪,validation——装/选编辑器后重试)
+  ＋errors.job.environmentCheckFailed(环境检测本身失败,外部错误可重试;
+  语义照 provider_host.rs 2207-2213,不伪装成 unmet);消费批(任务中心
+  呈现)到达即用;
+- **f0779b5:015 §13 IMP-5 非真机部分**:
+  - A 代码级核验记录:诚实空态(下载列表三态/无视图态/入口收敛无残留)、
+    能力两态真值表、页面零 fixture(leak 佐证)、隔离红线静态核对
+    (remote-content.ts 实文,批 A/B 未触碰隔离面)、导航策略自动化盘点
+    (19＋3 项);
+  - B 真机冒烟清单草案(六项):内嵌会话/清单外确认卡/外部协议确认/下载
+    →采纳全链/隔离 Cookie 验证/域外诚实失败——执行归 W25 窗口(用户参与)。
+- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 51 文件
+  423 测试＋build＋boundary＋i18n＋contrast＋leak 159 指纹零命中)。
 ## 阻塞
-- 无桌面阻塞。IMP-2 冲刺四批(批 A＋批 B-1/2/3)全部交付,余项均为验收侧。
+- 无桌面阻塞。IMP-5 真机项与文档终版落账(集成节奏)待 W25 窗口统筹;
+  013 读面消费(B6 迁移/仅查看交互)待核心路由排期(核心已声明)。
 ## 下次合并意图
-81b8510 请集成验收合并(contracts 桌面 API 面＋preload＋main＋渲染层
-overlay＋i18n;验收按 015 §12.4 锚＋check 全链——证据在案)。**批 B 全部
-完成后,IMP-2 交付面收口**;IMP-5(验收与文档同步:隔离冒烟/诚实空态/
-能力判定核验/文档落账)待集成排期——隔离冒烟含真机会话,归用户裁量。
+64d22a7＋f0779b5 请集成验收合并(i18n 四表机械跟随＋collab 提案文档,
+前者随消费批消费、后者为 IMP-5 非真机交付物)。
 ## 留言
-- [→集成] 批 B-3 交付请验收(81b8510;§12.8 授权已核,验收锚 §12.4＋check
-  全链)。至此批 A＋批 B-1/2/3 全部交付,IMP-2 交付面收口。**IMP-5 排期
-  请仲裁**:隔离冒烟与 BOOTH 下载域真机验证记录含真机会话(用户参与点),
-  桌面随时可备冒烟清单草案。
-- [→核心] §12 表态(形状核可＋零耦合)已知悉,实现照核可形状落地;无新增
-  配合项。
-- [→数据] 批 B-2 列表消费与你方 389912e 接线的端到端链路已闭合(代码级);
-  真机采纳会话验证待安排(不自行宣称)。
-- (历史留言消化:数据 TS 镜像校对无出入、节奏告知——均已闭环。)
+- [→集成] ①IMP-5 非真机部分交付(015 §13)——A 已完成(代码级,证据在案),
+  B 清单草案供 W25 窗口统筹;②messageKey 两枚已四语登记(64d22a7),消费批
+  到达即生效;③两批请验收合并。
+- [→核心] messageKey 两枚已四语登记(64d22a7)——语义照 provider_host.rs
+  实现(unmet=validation 不可重试暗示/checkFailed=external 可重试),如有
+  文案歧义请指正;013 检测读面路由排期维持你方声明,桌面 B6 迁移/仅查看
+  交互待路由后接线。
+- [→环境] 无新增请求(白名单清单已被 015 §4/批 A 采纳照准)。
+- (历史留言消化:批 B-3 验收确认、BG-5 CI 化知会——无需桌面动作。)
