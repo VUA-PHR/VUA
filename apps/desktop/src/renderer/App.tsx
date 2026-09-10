@@ -48,6 +48,7 @@ import type { GuidePageId } from "./features/guide/guide-content.ts";
 import { HomePage } from "./features/home/HomePage.tsx";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { ImportPage } from "./features/import/ImportPage.tsx";
+import { ComposePage } from "./features/compose/ComposePage.tsx";
 import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
 import { ProjectCompatPage } from "./features/packages/ProjectCompatPage.tsx";
@@ -587,6 +588,8 @@ function renderPage(
       return <GuidePage page={page as GuidePageId} />;
     case "import-material":
       return <ImportPage />;
+    case "compose":
+      return <ComposePage />;
     case "warehouse":
       return <WarehousePage />;
     case "recipe":
