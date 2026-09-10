@@ -3,7 +3,9 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-10 01:55 第五批（**产线领取 BG-4 并交付**——proposal 016
+最近更新：2026-09-10 操作者批（**审阅立项工单 BG-7～BG-18 入工单节**——主会话三日
+审阅发现，全部无真机/无裁决前置，可直接领取；含 CI 假绿修复、REGISTRY 漏登记、
+overlay 排序吞错、EAC 安全面、M6 环境检查缺口等）。前录 2026-09-10 01:55 第五批（**产线领取 BG-4 并交付**——proposal 016
 检查证据面契约预备：inspection-evidence v0.1 草案＋向量 7 件＋校验测试 4/4
 绿；**草案态 REGISTRY 未动未标冻结**；开放问题 #19 登记待核心/环境/数据表态；
 工单表 BG-4 标记交付待验收）。前录 01:30 第四批（**全员空转触发登记＋备稿转正为可领工单
@@ -115,6 +117,26 @@ production-use-case v0.2 冻结＋W22 实现进行中＋013/014 接线完成。
   | BG-4 | **M7 可前置**：检查证据面（功能/性能/依赖/光照/上传准备度）契约预备 **【已领取·已交付（产线，2026-09-10 01:55）——proposal 016＋schemas/inspection-evidence/v0.1 草案＋向量 7 件＋校验测试 4/4 绿，待核心/环境/数据表态（开放问题 #19）】** | 产线主导（协作核心、环境——性能/依赖事实源与其域相关） | Schema 草案＋正负例向量（proposal 承载） | 向量过 schema 校验；**冻结硬前置齐前不得标冻结**（治理 §2.5）；入 proposal 待仲裁，不直接动 REGISTRY |
   | BG-5 | **文档/工具欠账**：collab:brief 校验 CI 化（治理 §3 预留方向） | 集成（自领） | CI workflow（registry 校验＋分叉统计，先报告性不设门禁） | CI 绿证据（run 号留档）；不改变本地 collab:brief 行为 |
   | BG-6 | **限时 Spike**：Provider 生命周期压测脚本预备（M8 性能基线前置探索） | 核心（协作产线） | Spike 笔记＋可复跑脚本，**不进产品代码** | 脚本可复跑＋笔记记录边界发现；标注「Spike，非交付物」；单节拍内限时不展开 |
+
+- **可领工单（BG-7～BG-18；2026-09-10 操作者审阅立项批——主会话三日审阅发现，全部
+  无真机前置、无用户裁决前置；W25 窗口义务与 [需用户] 项优先权不受影响）**：领取纪律
+  同 BG-1～BG-6（无更优先在途工作时经 collab:brief 自领，状态文件声明工单号，产出交
+  集成验收）。
+
+  | 工单 | 内容 | 拟 roles | 产出形态 | 验收标准 |
+  | --- | --- | --- | --- | --- |
+  | BG-7 | **CI 假绿修复**：`collab-brief --registry-only` 先设 exitCode 再 `process.exit(0)`，任何不一致都"通过"——改 `process.exit(registryBad > 0 ? 1 : 0)` | 核心 | `scripts/collab-brief.mjs` 修复 | 正例（当前 40/40）退出 0；人造不一致退出 1（实测两例留证后还原） |
+  | BG-8 | **REGISTRY 漏登记补齐＋漏检结构性修复**：(a) `schemas/recipe/v0.3` 四件套与 `schemas/eac-probe/eac-allowlist/eac-terminate` v0.1 按实际冻结状态入册；(b) brief ④ 新增"漏登记检测"——扫描 `schemas/*/`、`docs/protocols/*.md` 中未登记项并列出 | 数据 | `docs/REGISTRY.md` ＋ `scripts/collab-brief.mjs` | ④ 显示漏登记 0 项；能演示检出一个人造漏登记（还原后） |
+  | BG-9 | **schema-vectors CI 清单扩展**：workflow 清单停在 v0.3 时代，本窗口全部新契约锚点未入 | 集成（自领） | `.github/workflows/schema-vectors.yml` | 清单覆盖全部现行契约测试文件（inspection_evidence_vectors、downloads_list_serving、import_*_contract_v0*、recipe_v03、project_inspection、eac_*、project_ops_wire、catalog_queries 等）；推送后徽章语义恢复 |
+  | BG-10 | **overlay_surface 排序与吞错修复**："oldest first" 声明与实现不符（按 task_id 哈希字典序，demo-* 恒排 prod-* 前）；`tasks().unwrap_or_default()` 把存储故障折叠为空态 | 核心 | `crates/orchestrator/src/overlay_surface.rs` 修复＋测试 | 排序按真实时序（或改声明并给出理由）；存储故障呈故障态而非空态；新测试钉住两者；proposal 017 表述对齐 |
+  | BG-11 | **EAC 安全面收紧**：`terminate_open_and_wait_for_test` 等测试钩子以 `pub` 暴露在 crate 根（绕过 R3 安全闸）；`eac_terminate.rs` 默认 cargo test 真杀进程 | 环境 | `crates/project-manager` 修复 | 钩子收 feature 门或 `#[cfg(test)]`；eac_terminate 用例标 `#[ignore]`（与探针/白名单同策略）；默认构建不导出绕过原语；默认 cargo test 不触真实进程 |
+  | BG-12 | **序列化吞错惯例清理**：`provider_host.rs:3388` `to_value().unwrap_or_else(|_| json!([]))`、`warehouse_download_adopt.rs:392` 等 `unwrap_or(Value::Null)`；`adopt` 任务 `.expect` panic 路径 | 数据（协作核心） | 逐处改类型化错误或 `expect` 附不变量说明 | 相关测试绿；无新增吞错点；每处修改附一行不变量/理由注释 |
+  | BG-13 | **提案状态字段卫生**：009（已收口仍"讨论中"）、015（已仲裁已驱动 0.7.0 仍"草案待表决"）、011/012（已按冻结件验收仍"收敛"）头部状态与实际对齐 | 集成（自领） | `collab/proposals/` 头部修正 | 四份提案状态字段与 BOARD 记录一致 |
+  | BG-14 | **check-leak 注释对齐**：`App.tsx`/`dev-mode-section.tsx` 声称"指纹覆盖 per-port 选择键"，而 `check-leak.mjs:75-78` 实际排除该键 | 桌面 | 注释或装置二选一（自决并记录理由） | 注释与装置一致；check 全链绿 |
+  | BG-15 | **Inspection/Release 页面骨架**（原 BG-3 未交付项）：信息架构＋诚实空态；无事实源不渲染检查数据 | 桌面（协作产线） | 页面骨架切片 | 桌面 check 全链绿；空态即终态；不宣称可用；与 design-standard §8 对账不越界 |
+  | BG-16 | **M6 环境检查行**（审阅发现的交付缺口）：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统读取抽象注入、合成夹具单测 | 环境 | `crates/project-manager`＋核心 environment 切片 | 检查项带 fixture 测试；真机探测标 `#[ignore]`；cargo workspace 绿＋clippy 零告警；M6 关门对账可凭此行销账 |
+  | BG-17 | **downloads.listCompleted 排序断言**：`completed_at` 按字符串排序，格式漂移即退化 | 数据 | `bdl-store` 测试补断言 | ISO 排序断言钉死；格式漂移即测试失败 |
+  | BG-18 | **compose-draft-store 确定性修复**：`composeAddItem` 纯函数内 `new Date().toISOString()` 非确定；`composeUndo` 回空草稿仍 `dirty:true`；`addedAt` 无覆盖 | 桌面 | `apps/desktop` 修复＋测试 | 时钟参数化/注入；`addedAt` 与 undo-dirty 断言补齐；桌面 check 绿 |
 
 ## 工作树指派
 
