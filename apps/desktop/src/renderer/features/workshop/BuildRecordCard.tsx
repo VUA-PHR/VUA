@@ -79,7 +79,18 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
         <Badge tone={statusTone(displayStatus)}>
           {copy.status[displayStatus]}
         </Badge>
+        {/* W24 recovered 呈现语义:B 权威态 recovered(恢复突变成功后重新
+            完成)在显示投影中折叠为 completed(裁定投影),此处叠加语义
+            标注让用户能区分恢复后运行与普通完成——语义标注不改变投影 */}
+        {record.status === "recovered" ? (
+          <Badge tone="neutral">{copy.recovered_badge}</Badge>
+        ) : null}
       </div>
+      {record.status === "recovered" ? (
+        <p className="vua-caption vua-text-secondary" role="note">
+          {copy.recovered_note}
+        </p>
+      ) : null}
       <section>
         <h4 className="vua-caption vua-text-secondary">{copy.stagesTitle}</h4>
         <ol className="vua-flow__stages">

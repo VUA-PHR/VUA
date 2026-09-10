@@ -519,6 +519,8 @@ rolled_back: "ロールバック済み",
         },
       },
       finishedAt: "完了時刻 {time}",
+        recovered_badge: 'リカバリ済みの実行',
+        recovered_note: 'このレコードは、リカバリ変異が成功した後に再完了した実行のものです(権威ステータス:recovered)。',
     },
     phase: {
       inspecting: "検査中",
