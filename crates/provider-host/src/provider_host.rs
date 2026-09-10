@@ -23,7 +23,8 @@ use vua_bdl_store::download_events::{
     IngestOutcome, RetryDecision,
 };
 use vua_orchestrator::{
-    AppErrorV1, BuildRecordStore, ErrorCategory, IdempotentCancellation,
+    AppErrorV1, BuildRecordStore, EnvironmentEngine, EnvironmentRoots, ErrorCategory,
+    IdempotentCancellation,
     IdempotentTaskAcceptance, NanosTaskIdGenerator, NewTask, ProjectIdentity, SqliteStoreError,
     SqliteTaskStore, StoredTask, StoredTaskEvent, SystemClock, TaskEventKind, TaskMutation,
     TaskRuntime, TaskState,
@@ -116,6 +117,7 @@ struct HostState {
     warehouse: Option<Arc<WarehouseServices>>,
     use_cases: Option<Arc<ProductionUseCaseServices>>,
     project_ops: Option<Arc<ProjectOpsServices>>,
+    environment: Option<Arc<EnvironmentServices>>,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -163,6 +165,24 @@ struct WarehouseServices {
 /// project-manager library, and the tasked execution rides the shared SQLite
 /// task authority. Absent wiring answers a typed `vua.project.unavailable` —
 /// honest absence, never a silent success.
+/// Environment detection wiring (BG-16): the read-only
+/// `environment.getSnapshot` consumes `EnvironmentEngine::inspect_all()`
+/// through this configuration. `None` (the legacy entry) keeps the honest
+/// empty-items snapshot — "the detection face is not wired" is itself the
+/// honest empty, never a ready verdict.
+#[derive(Clone)]
+pub struct EnvironmentConfig {
+    /// Unity Hub editors root and the rest of the probe targets
+    /// (`EnvironmentRoots::default()` is the production shape).
+    pub roots: EnvironmentRoots,
+    /// VCC `settings.json` candidates the managers snapshot reads.
+    pub vcc_settings_candidates: Vec<std::path::PathBuf>,
+}
+
+struct EnvironmentServices {
+    engine: EnvironmentEngine,
+}
+
 #[derive(Clone)]
 pub struct ProjectOpsConfig {
     /// VCC `settings.json` candidates in priority order (the
@@ -365,6 +385,7 @@ pub fn run_provider_host_with_services(
         warehouse,
         use_cases,
         None,
+        None,
     )
 }
 
@@ -381,6 +402,7 @@ pub fn run_provider_host_full(
     warehouse: Option<WarehouseConfig>,
     use_cases: Option<ProductionUseCaseConfig>,
     project_ops: Option<ProjectOpsConfig>,
+    environment: Option<EnvironmentConfig>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -510,6 +532,16 @@ pub fn run_provider_host_full(
             })
         })
         .transpose()?;
+    let environment = environment.map(|config| {
+        Arc::new(EnvironmentServices {
+            engine: EnvironmentEngine::new(
+                Arc::new(vua_orchestrator::StdProcessRunner),
+                Arc::new(SystemClock),
+                config.roots,
+                Arc::new(vua_project_manager::VccSettingsFileReader),
+            ),
+        })
+    });
     let mut state = HostState {
         store,
         provider_instance_id,
@@ -519,6 +551,7 @@ pub fn run_provider_host_full(
         downloads,
         warehouse,
         project_ops,
+        environment,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -916,17 +949,7 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
                 }
             }
             "task.requestCancellation" => handle_cancellation(state, request, request_id),
-            "environment.getSnapshot" => Ok(FrameOutcome::Response(application_success(
-                request_id,
-                json!({
-                    "contractVersion": APPLICATION_CONTRACT_VERSION,
-                    "revision": state.store.application_revision()?,
-                    "capturedAt": now_rfc3339(),
-                    // presence vocabulary frozen by the B6 spike; real probes land
-                    // with F6/B6 - an empty list is an honest empty, not a ready verdict
-                    "items": [],
-                }),
-            ))),
+            "environment.getSnapshot" => environment_get_snapshot(state, request_id),
             "task.startDemo" => Ok(handle_start_demo(state, request, request_id, correlation_id)),
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
@@ -3283,6 +3306,37 @@ fn recipe_list(
 /// closed-set violations are contract errors, never silently empty answers;
 /// a detail miss (tombstones included — they are observation-side data and
 /// never catalog cards) is the application-face product_not_found.
+/// `environment.getSnapshot` (BG-16 wiring): with the environment
+/// configuration present the handler consumes
+/// `EnvironmentEngine::inspect_all()` verbatim — the items ARE the
+/// frozen check vocabulary (checkId/zone/presence/errorCode/facts), and
+/// `capturedAt` travels with them. Without the configuration the
+/// detection face is not wired: an empty items list is the honest empty
+/// (frozen by the B6 spike — an empty list is never a ready verdict),
+/// not a fabricated probe result.
+fn environment_get_snapshot(state: &mut HostState, request_id: &str) -> Result<FrameOutcome, SqliteStoreError> {
+    let revision = state.store.application_revision()?;
+    let snapshot = match state.environment.as_ref() {
+        Some(services) => services.engine.inspect_all(),
+        None => vua_orchestrator::EnvironmentSnapshotV1 {
+            schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
+            items: vec![],
+            captured_at: now_rfc3339(),
+        },
+    };
+    let items = serde_json::to_value(&snapshot.items)
+        .expect("EnvironmentCheckItemV01 serialization cannot fail");
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "revision": revision,
+            "capturedAt": snapshot.captured_at,
+            "items": items,
+        }),
+    )))
+}
+
 fn catalog_request(
     state: &HostState,
     method: &str,
@@ -6257,6 +6311,7 @@ mod tests {
             warehouse: None,
             use_cases: None,
             project_ops: None,
+            environment: None,
         };
 
         let prepare = InboundFrame {
