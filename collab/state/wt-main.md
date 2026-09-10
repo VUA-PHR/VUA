@@ -12,7 +12,32 @@ updated: 2026-09-11
 且不用模拟替代未完成接口（诚实降级照 UI-08），完成条件对照 AC-05/07/13。
 桌面已留言知会可开工。019 批 A/B 均已交付验收。**W25 用户延期维持**
 （O-2：开窗时间待定）。批量面板未触发；[需代裁] 零新增。
+---
+worktree: wt-main
+branch: main
+role: 集成
+baseline_commit: aa3e747
+updated: 2026-09-11
+---
+## 当前焦点
+**019 批 C 工单已签发**（桌面可开工）＋**两批新交付过验**：①核心 **BG-16
+接线刀**（0c72258——environment.getSnapshot 消费真实检测引擎；M6 环境检查
+行缺口工单兑现；新增 environment_snapshot_wire 套件）；②桌面 **W24
+recovered 呈现语义**（1c27f0d——构建记录卡 recovered 徽标与注释，消费
+v0.2 evidenceSummary 投影六态词表）。**W25 用户延期维持**（O-2：开窗时间
+待定）。批量面板未触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **第二十一/二波验收（09-11 04:00–04:20）**：
+  - **7a0a1ec**：slot/wt-2 **BG-16 接线刀验收合并**——0c72258（environment.
+    getSnapshot 消费真实检测引擎＝M6 环境检查行缺口工单兑现；诚实空态当
+    未接线；provider_host 79 行＋新增 environment_snapshot_wire 套件）。
+    **验收记录**：复跑 **67/67 workspace 全绿**（新增套件）＋clippy 零
+    告警。**登记备注**：首跑曾计 44 套＝合并文件写入与 cargo 启动的读取
+    竞态，稳定重跑两次 67 确认（已在提交信息声明）；
+  - **aa3e747**：slot/wt-3 **W24 recovered 呈现语义验收合并**——1c27f0d
+    （构建记录卡 recovered 徽标与注释，消费 v0.2 evidenceSummary 投影
+    六态词表；BuildRecordCard 11 行＋四语 i18n）。**验收记录**：桌面
+    check 全链复跑绿（56 文件 449 测试＋leak 159 零命中）。
 - **019 批 B 完成刀验收（09-11 02:50–03:10）**：
   - **68f3617**：slot/wt-3 **019 批 B 完成刀验收合并**——b243a1d（save
     chain＋nameHint 用户输入：compose-draft-store 12 行＋ComposePage 16 行＋
