@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 88dd71d
+baseline_commit: main尖(合并后)
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -22,8 +22,16 @@ ignored 计数变化如实报告（见下）。验收走集成。
   v0.2（354925a）、双协议本（171b00c）、环境预检事实源（406fb3e，核心接线
   07166b7 完成）、alcom-vcc 1.1.0（9a785b2）、016 环境表态（e27f042，#19
   仲裁采纳）＋各消化轮状态批；
-- **修复令批（dc6aa93）**：Cargo.toml 新增 `test-hooks` feature＋两钩子
-  cfg 门控＋tests 两文件门控/ignore；
+- **修复令批（dc6aa93）＋合取对齐补遗（本批）**：Cargo.toml `test-hooks`
+  feature＋两钩子 cfg 门控＋tests 两文件门控/ignore；补遗＝verify 钩子定义
+  与 lib re-export 统一 `all(windows, any(test, feature))`（原 lib 侧 any
+  裸门在非 windows cfg(test)/feature 构建下悬空——WinVerifyTrust 为
+  Windows-only；双态 clippy 零告警＋13 套件全绿复证）；
+- **O-2 现状知会（BOARD 补注消化）**：用户明示昨晚不便实机测试，W25 开窗
+  延期、时间待定——环境 B 段义务不变，继续等开窗通知；
+- **BG-9 CI 矩阵扩展消化**：schema-vectors 已含本域 eac 三件＋
+  project-inspection v0.2（vua_identity）＋project-ops——CI=windows-latest
+  默认集（feature 关闭）与本修复令的零真实进程终止纪律一致，无冲突。
 - 上批：baseline 刷新（失鲜修复）。
 
 ## 在途/待他角色
