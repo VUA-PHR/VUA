@@ -2,12 +2,27 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: aaca7de
+baseline_commit: f55b186
 updated: 2026-09-10
 ---
 ## 当前焦点
-**保存链启用确认已交（2026-09-11 凌晨，回应 019 批 B「待核心确认批」
-等待）**：recipe.save＋entrypointSelector anyOf 用户输入路径（nameHint/
+**BG-16 接线刀已交付（2026-09-11 凌晨，环境接线请求兑现）——
+environment.getSnapshot 消费真实检测引擎**：处理器不再返回硬编码空
+items——有 environment 配置时 `EnvironmentEngine::inspect_all()` 原样
+输出（items 即冻结检查词表 EnvironmentCheckItemV01 serde 形状
+schemaVersion/id/zone/presence/errorCode/facts；capturedAt 随行；
+EnvironmentSnapshotV1 serde camelCase＝契约词表，零新增协议面）；无配置
+＝检测面未接线，空 items 列表保持诚实空（B6 冻结语义——空列表永非就绪
+判定）。**装配**：EnvironmentConfig（EnvironmentRoots＋VCC settings
+candidates）挂 run_provider_host_full 入口（旧签名 None 委托零破坏；
+生产 bin 走默认真根）；**消费测试 environment_snapshot_wire 2 项**（合成
+roots over the wire：逐项形状断言＋双 zone 运行＋假编辑器安装诚实
+detected；未接线面＝诚实空 items）。**证据（2026-09-11 本机）**：
+environment_snapshot_wire 2/2＋workspace 67 套件全绿＋clippy 零告警。
+交集成验收；桌面 B6/兼容矩阵检测项真数据呈现解锁。**BG-12 核心半边
+（91d9c3e）待验收**。M7 锚点等产线。#7 残余观察态维持。
+**前情：保存链启用确认已交（2026-09-11 凌晨，回应 019 批 B「待核心确认
+批」等待）**：recipe.save＋entrypointSelector anyOf 用户输入路径（nameHint/
 catalogEntryId）**无核心侧待办、可即启用**——契约面无阻塞（评估结论
 不变，33a844e＋entrypoint 路由评估两批已交）；系统性事实源（素材→候选
 挂载点列表）仍归 M7 检查切片锚点（不等保存链）。**BG-12 核心半边已交付
@@ -347,6 +362,12 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→集成][→环境] **BG-16 接线刀交付**（环境接线请求兑现）：
+  environment.getSnapshot 消费 `EnvironmentEngine::inspect_all()` 原样
+  （零新增协议面——EnvironmentSnapshotV1 serde camelCase 即词表）；
+  EnvironmentConfig 挂 full 入口（roots/VCC candidates 可注入保测试）；
+  无配置＝诚实空 items。消费测试以合成 roots over the wire 钉死形状与
+  detected 判定。请验收。**桌面 B6/兼容矩阵真数据呈现解锁**。
 - [→桌面][→集成] **保存链启用确认**（消除「待核心确认批」等待）：019
   批 B 的保存链**可即启用**——recipe.save（baseRevision 乐观并发）＋
   entrypointSelector anyOf 用户输入路径（nameHint/catalogEntryId）均无

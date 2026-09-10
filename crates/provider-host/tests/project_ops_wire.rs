@@ -135,6 +135,7 @@ fn run_frames(
         None,
         None,
         config.cloned(),
+        None,
     )
     .expect("frame loop runs");
     String::from_utf8(output)
