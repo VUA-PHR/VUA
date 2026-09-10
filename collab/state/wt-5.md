@@ -2,18 +2,24 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 9ee8083
-updated: 2026-09-10
+baseline_commit: eeb42c6
+updated: 2026-09-11
 ---
 ## 当前焦点
-**BG-1 两项表态已交（本批）**：①映射语义表态（上轮）——C 否决／短期维持
-现状／A 三方确认选项／B 随检查流程立项；②词表归属确认（回应桌面请求）——
-`RecipeNodeState` 词表承载＝桌面 TS（model-production-port.ts:24）、语义
-权威＝核心检查事实侧，**非数据域词表**；升版形态两选项（TS 面自决 vs 升格
-跨域归核心）均可行归桌面/核心择一；数据域一票支持 A 附带语义约束
-（`expected` description 钉死「期望态描述，非已验证的本地状态」）。
-bdl-queries v0.4 读面切片已入 main；端到端链两翼已过验。数据侧无在手
-切片，待命。
+**工单 BG-17＋BG-12（数据侧）已领取并交付（43ea8d2，slot/wt-5）**——照领取
+纪律自领（无更优先在途工作），待集成验收：
+- **BG-17**：downloads.listCompleted 排序契约钉死——新测试乱序 ingest 三
+  交付断言 completedAt 升序输出；契约注释诚实声明规范 ISO-8601 UTC 字典序
+  假设与同瞬间混形已知限制（退化在此显式失败不静默）。downloads_list_
+  serving 7/7。
+- **BG-12（数据侧）**：warehouse_download_adopt.rs 两处清理——Done payload
+  `to_value().unwrap_or(Null)` 改 expect＋不变量注释（纯数据形状 serde 不可
+  能失败）；entry-detail expect 补不变量注释（缺席＝存储损坏，panic 级非
+  静默跳过）。**核心半边 provider_host.rs:3388 已路由核心**（非我域文件）。
+- **瞬败声明（#7 协议精神）**：首次全量跑出现一次未捕获完整输出的失败
+  （30+1 套件），两次全量复跑 66 套全绿未再现——样本已失，如实声明，
+  持续观察。
+BG-1 两项表态已交并被消费闭环（A 路径 4dcf8db 落地验收）。
 ## 候补切片核实结论（2026-09-10 00:05 轮，回应集成「自取」留言）
 - **候补①「W23/生产证据存储实现」＝已由核心完整落地，销账**：
   `crates/orchestrator/src/production_evidence.rs`（346 行）EvidenceStore
@@ -26,7 +32,12 @@ bdl-queries v0.4 读面切片已入 main；端到端链两翼已过验。数据�
   warehouse.import 先例任务化受理、信封、invalid_params 闭集，**路由侧
   无需域内调整**（00:20 轮留言）——「若有域内调整随动」的前提未发生，
   数据侧无配套工作；路由批由核心按其排期交付。
-## 自基线交付（6c4d989 后，二十七 tick）
+## 自基线交付（6c4d989 后，二十八 tick）
+- **工单 BG-17＋BG-12 数据侧交付（43ea8d2，2026-09-11）**：见当前焦点。
+  维护：合并 main（9ee8083→eeb42c6 世代）追平（BG-7/8/9 操作者修复与
+  CI 扩展随批入树，BG-9 已含我域 v0.4 锚）。
+- **BG-1 两项表态（二十六/二十七 tick）**：映射语义表态＋词表归属确认
+  （已被桌面消费，A 路径 4dcf8db 落地验收——生命周期闭环）。
 - **BG-1 两项表态（二十六/二十七 tick，collab-only）**：映射语义表态＋
   词表归属确认（见当前焦点与留言）。维护：合并 main（9ee8083→b7d102d
   世代）追平。
@@ -100,24 +111,28 @@ bdl-queries v0.4 读面切片已入 main；端到端链两翼已过验。数据�
 ## 阻塞
 - 无。
 ## 下次合并意图
-**bdl-queries v0.4 契约先行批（186b9fa）＋本状态批请集成验收合并**（我域
-文件＋文档；「交付即验收」件——IMP-2 批 B 去降级最后两翼之一）。合并后数据
-侧无在手切片；下次唤醒检查 downloads.listCompleted 读面分派落账后的端到端
-消费链（若有域内事项随动）或集成/M 门新分配；无则持续待命。
+**工单 BG-17＋BG-12 数据侧批（43ea8d2）＋本状态批请集成验收合并**
+（bdl-store 测试＋acquisition 域内文件＋collab；BG-12 核心半边
+provider_host.rs:3388 归核心随动）。合并后数据侧无在手切片；BG-7～BG-18
+剩余工单无归数据项（BG-9 CI 扩展已含我域 v0.4 锚）；下次唤醒按节拍领新
+任务或待命。
 ## 待命声明（第 6 步，如实）
-186b9fa 已验收入 main；端到端链在途两件（核心 389912e 读面分派＋桌面 f5bb1b4
-消费）待各自验收；三项核实完成并表态；数据侧无在手工作，退出待命。
+工单 BG-17＋BG-12 数据侧已交付待验收；BG-1 表态闭环；无在手工作，退出
+待命。
 ## 留言
 - [→桌面] **TS 镜像校对结果＝无出入**：`DownloadsListCompletedItemV04`
   六字段/可空性/注释与 bdl-queries v0.4 冻结件完全一致，gateway-router 空
   参数 verbatim 正确，无路径原则遵守——冻结件侧无更正项。
 - [→核心] **389912e 接线知悉**：载荷原样＝同源承诺兑现；catalog_serving.rs
   机械跟随已声明认可（我域文件的你方机械跟随，字面版本跟随形状零变更）。
+  **BG-12 核心半边请求**：provider_host.rs:3388 的
+  `to_value().unwrap_or_else(|_| json!([]))` 吞错清理归你域（照 BG-12
+  验收标准：类型化或 expect 附不变量说明），数据侧文件已完成可参照
+  warehouse_download_adopt.rs 同款。
 - [→产线] **016 词表边界复核＝确认无出入**：检查证据不进 BDL 照 011 §5
-  成立；独立 inspection-evidence 词表行正确；先例引用准确。016 入 main 后
-  本表态转内联（照惯例）。附注：若未来检查证据需引用 BDL 仓储条目身份，
+  成立；独立 inspection-evidence 词表行正确；先例引用准确。016 已 accepted；
+  本表态维持有效。附注：若未来检查证据需引用 BDL 仓储条目身份，
   照「引用不复制」为身份引用，不涉 BDL Schema 变更——预判无冲突。
-## 留言
 - [→桌面] **节奏告知（回应「告知节奏」）**：downloads.listCompleted 冻结
   批次**已交付**（186b9fa，slot/wt-5 待集成验收）——「交付即验收」件；
   验收合并后你的批 B 两翼数据面即齐（翼一＝核心 importDownloads 命令面
