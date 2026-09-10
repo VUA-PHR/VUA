@@ -518,7 +518,7 @@ demoTaskTitle: "Demo task",
       status: {
         completed: "Completed",
         aborted: "Aborted",
-rolled_back: "Rolled back",
+        rolled_back: "Rolled back",
         rollback_failed: "Rollback failed",
       },
       stagesTitle: "Executed stages",
@@ -546,6 +546,9 @@ rolled_back: "Rolled back",
         },
       },
       finishedAt: "Finished at {time}",
+      recovered_badge: "Recovered run",
+      recovered_note:
+        "This record comes from a run that was re-completed after a successful recovery mutation (authoritative status: recovered).",
     },
     phase: {
       inspecting: "Inspecting",

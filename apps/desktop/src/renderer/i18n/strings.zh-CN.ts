@@ -554,6 +554,8 @@ rolled_back: "已回滚",
         },
       },
       finishedAt: "完成于 {time}",
+        recovered_badge: '已恢复的运行',
+        recovered_note: '此记录来自恢复突变成功后重新完成的运行(权威状态:recovered)。',
     },
     /** 键与 production-flow-model.ts 的 ProductionFlowPhase 一一对应 */
     phase: {

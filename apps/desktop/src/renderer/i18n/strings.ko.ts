@@ -518,6 +518,8 @@ rolled_back: "롤백됨",
         },
       },
       finishedAt: "완료 시각 {time}",
+        recovered_badge: '복구된 실행',
+        recovered_note: '이 레코드는 복구 변이 성공 후 다시 완료된 실행의 것입니다(권위 상태:recovered).',
     },
     phase: {
       inspecting: "검사 중",
