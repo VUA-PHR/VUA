@@ -10,9 +10,10 @@ import { createSignal } from "../gateway/index.ts";
  *   recipe.save 管理,禁止散落 localStorage 充当生产文档库);保存后的
  *   权威事实在 recipe 文档库(recipe.list 读面);
  * - 撤销栈:撤销只回退本地未提交编辑,不反向执行已提交命令(UI-03);
- * - 保存入口:recipe.save 需要 entrypoint 选择器等素材实例化事实——
- *   事实源切片接入前保存不可用(诚实禁用,不伪造保存);
- * - 共享容器层 signal:跨 UI 根切换保留(UI 根切换不触碰本 store)。
+ * - 保存入口(批 B 保存链,core 路由裁定):挂载选择器按 recipe v0.3
+ *   entrypointSelector anyOf 由用户输入(catalogEntryId 引用目录条目或
+ *   nameHint 用户命名提示)——零词表扩展,recipe.save 原样承载;共享容器
+ *   层 signal:跨 UI 根切换保留(UI 根切换不触碰本 store)。
  */
 
 export interface ComposeDraftItem {
@@ -22,6 +23,8 @@ export interface ComposeDraftItem {
   readonly title: string;
   /** 素材角色(素材事实;无则 null) */
   readonly role: string | null;
+  /** 挂载选择器名称提示(recipe v0.3 anyOf 用户输入;null = 未指定) */
+  readonly nameHint: string | null;
   readonly addedAt: string;
 }
 
@@ -75,6 +78,82 @@ export function composeUndoAction(): void {
 
 export function composeSavedAction(revision: number): void {
   apply(composeSaved(draftSignal.get(), revision));
+}
+
+/* ---- 批 B 保存链:草稿 → recipe v0.3 文档映射(core 路由裁定零词表
+ * 扩展;recipe.save 原样承载)。entrypointSelector anyOf:nameHint 用户
+ * 命名提示(无目录条目事实时不虚构 catalogEntryId) ---- */
+
+export interface ComposeSaveDocument {
+  readonly formatVersion: "0.3";
+  readonly recipeId: string;
+  readonly baseRevision: number;
+  readonly title: string;
+  readonly createdAt: string;
+  readonly updatedAt: string;
+  readonly assets: readonly {
+    readonly id: string;
+    readonly role: string;
+    readonly label: string;
+    readonly sourceRef: { readonly warehouseItemId: string; readonly role: "original" };
+  }[];
+  readonly instances: readonly {
+    readonly id: string;
+    readonly assetId: string;
+    readonly entrypoint: {
+      readonly selectorId: string;
+      readonly kind: "user_named_entrypoint";
+      readonly nameHint: string;
+    };
+    readonly enabled: true;
+  }[];
+  readonly relations: readonly unknown[];
+}
+
+export interface ComposeSaveInput {
+  /** 已保存文档的 recipeId(再次保存沿用;首存 = null 由调用方生成) */
+  readonly savedRecipeId: string | null;
+  /** 已保存文档的 baseRevision(首存 = 0) */
+  readonly savedRevision: number;
+  readonly items: readonly ComposeDraftItem[];
+  readonly now: string;
+}
+
+/** 草稿 → recipe v0.3 保存文档(整文档提交;entrypoint=nameHint 用户
+ *  命名提示——无 entrypoint 事实时用户命名,系统不虚构);items 空 = null */
+export function composeDraftToSaveDocument(
+  input: ComposeSaveInput,
+): ComposeSaveDocument | null {
+  if (input.items.length === 0) return null;
+  const now = input.now;
+  const recipeId =
+    input.savedRecipeId ??
+    `0190${(now.replaceAll(/[-:TZ.]/g, "") + "000000").slice(0, 20)}f7`;
+  return {
+    formatVersion: "0.3",
+    recipeId,
+    baseRevision: input.savedRevision,
+    title: input.items.map((item) => item.title).join(" + "),
+    createdAt: now,
+    updatedAt: now,
+    assets: input.items.map((item) => ({
+      id: item.warehouseItemId,
+      role: item.role ?? "other",
+      label: item.title,
+      sourceRef: { warehouseItemId: item.warehouseItemId, role: "original" },
+    })),
+    instances: input.items.map((item, index) => ({
+      id: `${item.warehouseItemId}-instance-${index + 1}`,
+      assetId: item.warehouseItemId,
+      entrypoint: {
+        selectorId: `${item.warehouseItemId}-entrypoint`,
+        kind: "user_named_entrypoint",
+        nameHint: item.nameHint ?? item.title,
+      },
+      enabled: true,
+    })),
+    relations: [],
+  };
 }
 
 /** 加入素材(身份幂等:同素材重复加入为无操作) */

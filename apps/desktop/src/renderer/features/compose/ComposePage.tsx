@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
@@ -7,7 +7,9 @@ import { useAcquireView } from "../../gateway/index.ts";
 import { format, strings } from "../../i18n/index.ts";
 import {
   composeAddItemAction,
+  composeDraftToSaveDocument,
   composeRemoveItemAction,
+  composeSavedAction,
   composeUndoAction,
   useComposeDraft,
 } from "../../app/compose-draft-store.ts";
@@ -18,9 +20,10 @@ import {
  *
  * - 共享草稿状态在容器层(app/compose-draft-store signal),跨 UI 根切换
  *   保留;本页只是其呈现/操作面之一;
- * - 保存入口诚实禁用:recipe.save 需要 entrypoint 选择器等素材实例化
- *   事实——事实源切片接入前不伪造保存(UI-03「已保存」仅在持久化成功
- *   后显示;当前有草稿内容即未保存);
+ * - 保存链(批 B 保存链,core 路由裁定零词表扩展):挂载选择器按
+ *   entrypointSelector anyOf 由用户输入(nameHint 用户命名提示;首次保存
+ *   由 recipeId 生成,再保存沿用)——recipe.save 原样承载;「已保存」仅在
+ *   持久化回执后显示,失败保留内容并提供重试(UI-03/06);
  * - 撤销只回退本地未提交编辑,不反向执行已提交命令。
  */
 const copy = strings.compose;
@@ -29,10 +32,58 @@ export function ComposePage() {
   const view = useAcquireView();
   const draft = useComposeDraft();
   const [sourceIndex, setSourceIndex] = useState(0);
+  /** 已保存事实(recipeId/revision;null=本会话未成功保存) */
+  const [saved, setSaved] = useState<{ recipeId: string; revision: number } | null>(null);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
+  /** 保存过的文档身份(再次保存沿用 recipeId;baseRevision=服务端修订) */
+  const savedRef = useRef(saved);
+  savedRef.current = saved;
 
   const entries = view.kind === "entries" ? view.entries : [];
   const canUndo = draft.undoStack.length > 0;
   const source = entries[sourceIndex];
+
+  const saveDraft = () => {
+    if (saveState === "saving") return;
+    const now = new Date().toISOString();
+    const document = composeDraftToSaveDocument({
+      savedRecipeId: savedRef.current?.recipeId ?? null,
+      savedRevision: savedRef.current?.revision ?? 0,
+      items: draft.items,
+      now,
+    });
+    if (document === null) return;
+    setSaveState("saving");
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "recipe.save",
+        params: {
+          recipeDocument: document as unknown as Record<string, unknown>,
+          baseRevision: savedRef.current?.revision ?? 0,
+        },
+      })
+      .then((result) => {
+        if (!result.ok) {
+          // 失败如实呈现:保留内容与未保存标记,提供重试(UI-03/06);
+          // 超时不等于失败,不自动重试
+          setSaveState("failed");
+          return;
+        }
+        const payload = result.value as { recipeId?: unknown; revision?: unknown };
+        const recipeId = typeof payload.recipeId === "string" ? payload.recipeId : null;
+        const revision = typeof payload.revision === "number" ? payload.revision : null;
+        if (recipeId === null || revision === null) {
+          setSaveState("failed");
+          return;
+        }
+        setSaved({ recipeId, revision });
+        setSaveState("idle");
+        // 保存对齐:脏标记清除(撤销栈保留,本地编辑历史不丢)
+        composeSavedAction(revision);
+      });
+  };
 
   const sourceLines = useMemo(() => {
     if (view.kind !== "entries") return [];
@@ -79,11 +130,24 @@ export function ComposePage() {
               <Button variant="subtle" disabled={!canUndo} onClick={composeUndoAction}>
                 {copy.undoCta}
               </Button>
-              <Button variant="primary" disabled aria-disabled>
-                {copy.saveCta}
+              <Button
+                variant="primary"
+                disabled={draft.items.length === 0 || saveState === "saving"}
+                onClick={saveDraft}
+              >
+                {saveState === "saving" ? copy.savingCta : copy.saveCta}
               </Button>
-              <span className="vua-caption vua-text-secondary">{copy.saveDisabledNote}</span>
             </div>
+            {saveState === "failed" ? (
+              <p className="vua-caption vua-text-secondary" role="alert">
+                {copy.saveFailedNote}
+              </p>
+            ) : null}
+            {saved !== null ? (
+              <p className="vua-caption vua-text-secondary" role="status">
+                {format(copy.savedNote, { revision: String(saved.revision) })}
+              </p>
+            ) : null}
             {draft.dirty && draft.items.length > 0 ? (
               <p className="vua-caption vua-text-secondary" role="status">
                 {copy.unsavedNote}
@@ -120,6 +184,7 @@ export function ComposePage() {
                           warehouseItemId: line.id,
                           title: line.title,
                           role: null,
+                          nameHint: null,
                         })
                       }
                     >

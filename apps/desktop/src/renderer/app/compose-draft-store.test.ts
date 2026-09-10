@@ -1,6 +1,7 @@
 import { expect, test } from "vitest";
 import {
   composeAddItem,
+  composeDraftToSaveDocument,
   composeRemoveItem,
   composeSaved,
   composeUndo,
@@ -9,9 +10,16 @@ import {
 
 /* 搭配草稿共享状态(019 批 B,UI-03):加入/移除/撤销/保存对齐的纯函数
  * 覆盖。会话概念(不进 localStorage);撤销只回退本地编辑;保存对齐由
- * recipe.save 成功回执驱动(当前 entrypoint 事实源未接入,保存诚实禁用)。 */
+ * recipe.save 成功回执驱动(挂载选择器 nameHint=用户命名提示,core 路由
+ * 裁定零词表扩展)。 */
 
-const item = (id: string) => ({ warehouseItemId: id, title: `条目 ${id}`, role: null });
+const item = (id: string) => ({
+  warehouseItemId: id,
+  title: `条目 ${id}`,
+  role: null,
+  nameHint: null,
+});
+const itemWithHint = (id: string, hint: string | null) => ({ ...item(id), nameHint: hint });
 
 test("composeAddItem: 加入素材并压撤销栈;同身份幂等", () => {
   const s1 = composeAddItem(emptyComposeDraft, item("wh-1"));
@@ -55,4 +63,31 @@ test("composeSaved: 保存对齐清除脏标记(修订号由服务端回执承�
   const saved = composeSaved(s1, 7);
   expect(saved.dirty).toBe(false);
   expect(saved.items).toEqual(s1.items);
+});
+
+test("composeDraftToSaveDocument: 草稿→recipe v0.3 保存文档(entrypoint=nameHint 用户输入)", () => {
+  const now = "2026-09-10T08:00:00.000Z";
+  const doc = composeDraftToSaveDocument({
+    savedRecipeId: null,
+    savedRevision: 0,
+    items: [
+      { warehouseItemId: "wh-1", title: "夏季制服", role: "outfit", nameHint: null, addedAt: now },
+      { warehouseItemId: "wh-2", title: "发型", role: "hair", nameHint: "my-hair-entry", addedAt: now },
+    ],
+    now,
+  });
+  expect(doc).not.toBeNull();
+  expect(doc?.formatVersion).toBe("0.3");
+  expect(doc?.assets).toHaveLength(2);
+  expect(doc?.instances).toHaveLength(2);
+  expect(doc?.instances[0]?.entrypoint).toEqual({
+    selectorId: "wh-1-entrypoint",
+    kind: "user_named_entrypoint",
+    nameHint: "夏季制服",
+  });
+  expect(doc?.instances[1]?.entrypoint?.nameHint).toBe("my-hair-entry");
+});
+
+test("composeDraftToSaveDocument: 空草稿 = null(不伪造空文档)", () => {
+  expect(composeDraftToSaveDocument({ savedRecipeId: null, savedRevision: 0, items: [], now: "x" })).toBeNull();
 });
