@@ -57,12 +57,12 @@ test("composeUndo: 回退上一本地编辑;空栈无操作", () => {
   expect(undoneTwice.undoStack).toHaveLength(0);
 });
 
-test("composeSaved: 保存对齐清除脏标记(修订号由服务端回执承载)", () => {
+test("composeSaved: 保存对齐清除脏标记(saved 身份入状态)", () => {
   const s1 = composeAddItem(emptyComposeDraft, item("wh-1"));
   expect(s1.dirty).toBe(true);
-  const saved = composeSaved(s1, 7);
+  const saved = composeSaved(s1, "recipe-1", 7);
   expect(saved.dirty).toBe(false);
-  expect(saved.items).toEqual(s1.items);
+  expect(saved.saved).toEqual({ recipeId: "recipe-1", revision: 7 });
 });
 
 test("composeDraftToSaveDocument: 草稿→recipe v0.3 保存文档(entrypoint=nameHint 用户输入)", () => {
