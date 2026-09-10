@@ -4,6 +4,15 @@
 //! process — never against a real EAC/game process (R7/R8). The signature
 //! element is exercised for real (PowerShell carries a Microsoft embedded
 //! signature).
+//!
+//! 真机手动验证件（operator fix directive 2026-09-10）：every test in this
+//! file spawns a REAL PowerShell process, and the refused paths still end
+//! with a real taskkill cleanup — so the default test set carries zero real
+//! process termination (same-source discipline as 006 "CI 零真实 EAC 交互",
+//! W25 warmup #[ignore] convention). Run manually with:
+//!   cargo test -p vua-project-manager --test eac_terminate -- --ignored
+//! The primitive test additionally needs the gated hook:
+//!   --features test-hooks
 
 use std::path::PathBuf;
 use std::process::{Child, Command};
@@ -93,6 +102,7 @@ fn empty_vcc() -> Vec<PathBuf> {
 }
 
 #[test]
+#[ignore = "真机手动验证件: spawns and taskkills a real PowerShell process; the default set carries zero real process termination"]
 fn a_catalog_signed_target_is_refused_by_the_four_element_check() {
     let (_child, pid, name, path) = spawn_target();
     let base = unique_dir("happy");
@@ -146,7 +156,9 @@ fn a_catalog_signed_target_is_refused_by_the_four_element_check() {
     cleanup(&base);
 }
 
+#[cfg(feature = "test-hooks")]
 #[test]
+#[ignore = "真机手动验证件: REALLY terminates a real PowerShell process via TerminateProcess (the gated hook); the default set carries zero real process termination"]
 fn the_termination_primitive_terminates_and_confirms_exit_for_a_controlled_process() {
     // Direct test of the open→terminate→await→post-check primitive on a
     // fully controlled process (R8: synthetic target, no real EAC
@@ -183,6 +195,7 @@ fn the_termination_primitive_terminates_and_confirms_exit_for_a_controlled_proce
 }
 
 #[test]
+#[ignore = "真机手动验证件: spawns and taskkills a real PowerShell process; the default set carries zero real process termination"]
 fn an_active_vrchat_session_refuses_independently_of_the_allowlist() {
     let (_child, pid, name, path) = spawn_target();
     let base = unique_dir("r4");
@@ -233,6 +246,7 @@ fn an_active_vrchat_session_refuses_independently_of_the_allowlist() {
 }
 
 #[test]
+#[ignore = "真机手动验证件: spawns and taskkills a real PowerShell process; the default set carries zero real process termination"]
 fn a_verification_refusal_leaves_the_process_alive() {
     let (_child, pid, _name, path) = spawn_target();
     let base = unique_dir("unverified");

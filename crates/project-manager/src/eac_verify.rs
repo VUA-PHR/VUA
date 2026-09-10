@@ -231,6 +231,10 @@ pub fn verify_candidate(
 /// Test hook: exposes the Windows signature verdict for a path without
 /// the full candidate flow (used by the allowlist/verify tests).
 #[cfg(windows)]
+/// Test hook for the real WinVerifyTrust call. Gated behind `test-hooks`
+/// (or `cfg(test)`): a verification primitive must not sit on the default
+/// public surface.
+#[cfg(any(test, feature = "test-hooks"))]
 pub fn eac_verify_windows_signature_for_test(image_path: &str) -> (SignatureState, String) {
     verify_signature_windows(image_path)
 }

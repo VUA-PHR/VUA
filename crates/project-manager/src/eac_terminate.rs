@@ -211,7 +211,9 @@ pub fn terminate_candidate(
 /// exit, and re-check the table. Windows-only (the product platform).
 /// Test hook: the open→terminate→await→post-check primitive without the
 /// R3 gate (used to verify the primitive itself on a controlled process).
-#[cfg(windows)]
+/// Gated behind `test-hooks` (or `cfg(test)`): a termination primitive is
+/// a bypass face and must not sit on the default public surface.
+#[cfg(all(windows, any(test, feature = "test-hooks")))]
 pub fn terminate_open_and_wait_for_test(
     pid: u32,
     name: &str,
