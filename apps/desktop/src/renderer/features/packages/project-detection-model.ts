@@ -89,3 +89,4 @@ export function narrowInspectAssociations(
       typeof association === "string" && association.length > 0,
   );
 }
+
