@@ -14,6 +14,28 @@ compose-draft-store 122 行（共享容器层状态/会话持久/修订与脏跟
 019 批 B 桌面面推进中（保存链待核心确认批）。**W25 三前置维持齐备**——
 开窗通知晨起 O-2。批量面板未触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **操作者修复令批（08:20–08:35，用户裁定「先修再推」）**：
+  - **0b8bebb＝BG-7＋BG-8**：①CI 假绿修复（--registry-only 无条件
+    process.exit(0) 覆盖 exitCode——改一行语义；**双向验证**：正向 40/40
+    exit 0／临时破坏一行〔product-boundary 版本 9.9.9〕exit 1 并正确报出
+    异常行／复原 exit 0 干净）；⑤REGISTRY 补登 6 族（recipe v0.3 四件套/
+    eac-probe/allowlist/terminate v0.1/amf-production v0.2/environment-
+    managers v0.1——**反向检测发现 amf-production 与 environment-managers
+    为真漏登记**）＋**反向盲区检测**（扫描 schemas/ 族对照 REGISTRY 提及；
+    豁免 spike 三目录＋inspection-evidence 草案态＋orchestrator 两非标准
+    形态；**人造漏登记演示**：删 eac-terminate 行→检出并打印＋exit 1→
+    复原 exit 0）；
+  - **eeb42c6＝BG-9**：schema-vectors 清单扩展至全部现行契约锚点（16 个
+    测试目标逐一核对存在；**inspection_evidence_vectors 纳入＝仅草案漂移
+    保护，注明不暗示冻结**——按「草案不冻结不徽章」原则的边界判断）；
+  - **949ee30＝BG-13＋路径脱敏＋审阅归档＋对账**：009/011/012/015 头部
+    状态对齐（原注记保留）；collab/ 九处本机用户名路径脱敏（BOARD U7 行/
+    019 头部/审阅报告 r1×2 r2×2 r3×3；docs/plans 为 gitignore 本地
+    scratch 不处理）；**r1/r2/r3 推送审阅报告归档入库**（脱敏后）；
+    BOARD 对账（BG-7/8/9/13 标已交付引用哈希；BG-17/18 撞车待核销注；
+    **O-2 补注 W25 用户延期、时间待定**）；
+  - 同批验收：核心 save-chain 契约路由（6f7fec2）＋桌面 019 批 B 切片
+    （e611cf0，56/447 绿）。
 - **第二十一波验收（08:00–08:15）**：
   - **6f7fec2**：slot/wt-2 save-chain 契约路由批合并（c4cc749——无事实源
     ＝冻结 schema 设计〔编辑器输入＋anyOf catalogEntryId/nameHint〕；批 B
