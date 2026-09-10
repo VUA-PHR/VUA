@@ -2,33 +2,37 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 97efafc
+baseline_commit: e9ca149
 updated: 2026-09-10
 ---
 ## 当前焦点
-**环境侧在途项全部闭环或等他角色**：①job.execute 预检链环境半边事实源已
-验收合并（406fb3e，62/62＋clippy 干净——集成确认关闭核心 W22 收口刀声明的
-诚实缺口）；②13 读面 v0.2 获核心消费确认（「表态（核心，2026-09-10 凌晨）」：
-provider 路由直接钉 v0.2、unreadable 三态语义核可）；③备注写命令＝核心
-**有条件立项**（等桌面 D-6 编辑范围确认；`project.setNote`＋
-`vua.project.not_vua_native` 语义草案核心已备，升版批直接取用——我侧
-`set_note` 原语在 crate 就绪，随批消费）；④白名单域清单草案已被桌面接收
-（IMP-2 初始清单拟 booth.pm±子域＋booth.pximg.net，随 IMP-2 冲刺出提案）。
-**下大头＝W25 窗口环境段（B1/B2a/B2b/B3/B4）**，等集成开窗通知（晨起 O-2）；
-B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无需动作）。
-**proposal 015 已受理落账＋浏览清单提案已照准**（design-standard 0.7.0/0.7.1；
-批 A 验收合并〔导航页签＋骨架＋IMP-4 收口＋浏览区接线 capability 门控〕、批 B
-第 1 项〔能力翻转 via shell self-report〕已交付）：**浏览清单提案照准**
-（booth.pm 含全部子域＋booth.pximg.net 商品图 CDN；仅域名入库；与下载主机域
-清单严格分离——下载域真机验证程序不变）＝本域白名单分析（全量 135,843 页
-扫描草案）经桌面 §4 提案、集成照准落账，条目闭环。015 §7 明确「环境：无」，
-环境无动作面。
+## 当前焦点
+**操作者修复令已实施（dc6aa93，第三方审阅应修项·环境部分两项，用户裁定
+"先修再推"）**：①EAC 测试钩子 pub 暴露→`test-hooks` feature 门控（两钩子
+定义＋lib re-export 同 cfg；探针双态验证：feature 关闭引用即 E0425 编译失败
+＝公开面收窄生效，开启态 crate 外测试可用）；②终结测试真杀 PowerShell→
+tests/eac_terminate.rs 全部 4 件 `#[ignore = "真机手动验证件…"]`（W25 预热
+惯例），默认集零真实进程终止；真 TerminateProcess 原语件另需
+`--features test-hooks`。**验证**：默认 cargo test --workspace 66 套件全绿
+（feature 关闭＝公开面收窄态）；clippy -D warnings 双态（关/开）零告警；
+ignored 计数变化如实报告（见下）。验收走集成。
+## 自基线交付
 ## 自基线交付（1c73437 之后）
 - 夜间累计交付已全部验收合并入 main：VUA 独有标识文件＋project-inspection
   v0.2（354925a）、双协议本（171b00c）、环境预检事实源（406fb3e，核心接线
   07166b7 完成）、alcom-vcc 1.1.0（9a785b2）、016 环境表态（e27f042，#19
   仲裁采纳）＋各消化轮状态批；
-- 本批：baseline 刷新（失鲜修复，无新交付）。
+- **修复令批（dc6aa93）＋合取对齐补遗（本批）**：Cargo.toml `test-hooks`
+  feature＋两钩子 cfg 门控＋tests 两文件门控/ignore；补遗＝verify 钩子定义
+  与 lib re-export 统一 `all(windows, any(test, feature))`（原 lib 侧 any
+  裸门在非 windows cfg(test)/feature 构建下悬空——WinVerifyTrust 为
+  Windows-only；双态 clippy 零告警＋13 套件全绿复证）；
+- **O-2 现状知会（BOARD 补注消化）**：用户明示昨晚不便实机测试，W25 开窗
+  延期、时间待定——环境 B 段义务不变，继续等开窗通知；
+- **BG-9 CI 矩阵扩展消化**：schema-vectors 已含本域 eac 三件＋
+  project-inspection v0.2（vua_identity）＋project-ops——CI=windows-latest
+  默认集（feature 关闭）与本修复令的零真实进程终止纪律一致，无冲突。
+- 上批：baseline 刷新（失鲜修复）。
 
 ## 在途/待他角色
 - **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
@@ -47,6 +51,16 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
   交付链完整闭环，无遗留。）
 - [→产线] 016 表态已交 016 内联（见自基线节）——dependencies 维语义定义后
   若需环境侧第二事实源（引用完整性检测）另立提案，不预接。
+- [→操作者][→集成] **修复令完成知会（验收走集成）**：两项全落地
+  （dc6aa93）。①公开面收窄探针双态证明：feature 关闭引用钩子＝E0425 编译
+  失败（收窄生效）、`--features test-hooks` 开启态外部测试编译通过可用；
+  ②默认集零真实进程终止达成——eac_terminate 4 件全转 ignored 真机手动
+  验证件（拒绝路径 3 件＋真 TerminateProcess 原语 1 件；原语件另需
+  feature）。**ignored 计数变化（如实）**：project-manager 默认集 ignored
+  1→4（+3 终结件）；默认集测试总数 -2（winverifytrust 钩子件与原语件在
+  feature 关闭下不编译）；手动跑法：
+  `cargo test -p vua-project-manager --test eac_terminate -- --ignored
+  [--features test-hooks]`；
 - [→桌面] **计数议题表态（回应你「编辑器/项目计数信封未携带＝诚实 —」路由）**：
   快照事实核对——`EnvironmentManagersSnapshotV01` 顶层携带 `editors[]` 与
   `projects[]` 列表、无聚合计数字段（属实）。**表态：计数＝列表的纯派生量，

@@ -276,7 +276,7 @@ fn verification_refuses_name_mismatch_and_vanished_candidates() {
     cleanup(&unique_dir("unused"));
 }
 
-#[cfg(windows)]
+#[cfg(all(windows, feature = "test-hooks"))]
 #[test]
 fn winverifytrust_refuses_an_unsigned_or_missing_file() {
     // A nonexistent path must come back Unverified with a typed detail,

@@ -28,5 +28,13 @@ windows-sys = { version = "=0.61.2", features = [
     "Win32_System_Threading",
 ] }
 
+[features]
+# Gates the two real-machine test hooks (terminate_open_and_wait_for_test,
+# eac_verify_windows_signature_for_test) out of the default public surface:
+# they are termination/verification primitives and must not be importable by
+# a plain build. Integration tests that consume them compile only with
+# `--features test-hooks`.
+test-hooks = []
+
 [dev-dependencies]
 jsonschema = "0.52.1"

@@ -25,7 +25,7 @@ pub use eac_terminate::{
     terminate_candidate, PreCheck, PostCheck, TerminationGuard, TerminationReceiptV01,
     TerminationRequest, EAC_TERMINATE_SCHEMA_VERSION,
 };
-#[cfg(windows)]
+#[cfg(all(windows, any(test, feature = "test-hooks")))]
 pub use eac_terminate::terminate_open_and_wait_for_test;
 pub use eac_probe::{
     probe_eac, EacProbeSnapshotV01, ProcessEntry, ProcessFinding, ProcessKind,
@@ -36,7 +36,7 @@ pub use eac_verify::{
     read_process_image_path_readonly, verify_candidate, CandidateVerificationV01,
     SignatureState, VerificationCheck, Verdict, EAC_VERIFY_SCHEMA_VERSION,
 };
-#[cfg(windows)]
+#[cfg(all(windows, any(test, feature = "test-hooks")))]
 pub use eac_verify::eac_verify_windows_signature_for_test;
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
