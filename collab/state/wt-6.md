@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 10b0af7
+baseline_commit: 97efafc
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -24,17 +24,12 @@ B4 归档预备已核（根 .gitignore `/_local_*/` 覆盖 `_local_eac/`，无�
 扫描草案）经桌面 §4 提案、集成照准落账，条目闭环。015 §7 明确「环境：无」，
 环境无动作面。
 ## 自基线交付（1c73437 之后）
-- **alcom-vcc 兼容矩阵文档 1.0.0→1.1.0**（ebb7875，兑现 T-B 接线批文档预留）：
-  新增「VUA 原生项目判定」节＋检测矩阵标识行＋机器可读面刷新（v0.2/协议本
-  链接/已冻结接线现状）；REGISTRY 行刷新（校验 40/40）；
-- **proposal 016 环境表态已交并经仲裁采纳**（e27f042 验收合并；集成 7c4353e
-  仲裁＝#19 三方表态全票一致照单采纳＋dependencies 分层注记；冻结以核心
-  Bridge-ops 锚为门）——表态内容：①dependencies 维 project-inspection v0.2
-  声明面事实源（语义边界声明权在产线；引用不复制照 evidenceIds 先例；路由
-  在途接线前不宣称）；②lighting/upload_readiness 无环境事实源确认。016
-  环境侧无遗留。
-- 合并 main 追平（015 后续落账：桌面批 A 验收、批 B 第 1 项、核心
-  remoteBrowser 行移除、浏览清单照准——均非环境动作面）。
+- 夜间累计交付已全部验收合并入 main：VUA 独有标识文件＋project-inspection
+  v0.2（354925a）、双协议本（171b00c）、环境预检事实源（406fb3e，核心接线
+  07166b7 完成）、alcom-vcc 1.1.0（9a785b2）、016 环境表态（e27f042，#19
+  仲裁采纳）＋各消化轮状态批；
+- 本批：baseline 刷新（失鲜修复，无新交付）。
+
 ## 在途/待他角色
 - **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
   lockStatus 三查询全接线＋`vua.project.project_not_found` 定形；T-B 消费完全
