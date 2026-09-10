@@ -2,33 +2,27 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 6f2c7b7
-updated: 2026-09-10
+baseline_commit: e9ca149
+updated: 2026-09-11
 ---
 ## 当前焦点
-**proposal 016 全链闭环（BG-4 → 三方表态 → 仲裁照单采纳 → 提案已接受）**：
-核心表态（存储＝AMF 持久域第五文档库锚 EvidenceStore 先例；读取路由＝独立
-词表行 `schemas/inspection-queries/v0.1/` 不扩 production-use-case v0.2；
-聚合/unavailable/保留值纪律核可）＋环境表态（dependencies 事实源存在但语义
-边界＝manifest 声明完整性≠引用完整性，定义权在产线；lighting/upload_readiness
-确认无环境事实源）＋数据确认（BDL 不涉）→ **集成仲裁照单采纳、无分歧**。
-产线已按提案规则改 016 状态为「已接受」＋追加结论记录＋BOARD #19 标记。
-**产线承接仲裁第 4 点定义权义务**：dependencies 维消费层选择（声明完整性 vs
-引用完整性，或两层分列）在 M7 检查切片实现时显式选择并写入冻结件——**锚点
-前不冻结、不预接事实源、不猜操作形状**（核心表态同款纪律）。
-**W25 窗口前状态＝全部就绪（含 A2 fixture 决策）**：A 段（A1→A2→A3）就绪，
-等晨起操作者按 O-2 发开窗通知＋用户确认。**A2 冒烟 fixture 决策（回应核心
-知会）**：冒烟 recipe **整体省略 dependencies**（dependencies 条目内
-versionConstraint 为必填，故「无 constraint」＝省略该数组）——009 表态④
-预检②走诚实跳过路径；locked 段同样省略（未锁 draft，Local Resolution 走
-最小诚实语义）。**fixture 草稿** `_local_w25/a2-smoke-recipe-draft.json`
-已按 recipe v0.3 schema 校验通过（2026-09-10 本机，python jsonschema）；
-含一个 exclude_object 关系（pathHint ["Body"]）使 job.execute 有真实作业并
-为 A3 构建对比铺垫 excluded 组件。窗口内替换两处运行时值：warehouseItemId
-（真实导入条目 id，uuid v7）与 avatar 入口 nameHint/pathHint（真实层级名）。
-理由如实声明：冒烟目标＝全链连通；版本锁匹配语义已由冻结向量＋消费测试
-（warehouse_commands 版本锁拒绝零记录测试）覆盖，窗口不叠加额外风险面。
-承担 #7 瞬败样本观察义务（维持）。
+**W25 用户延期（O-2 补注消化）**：BOARD O-2 补注〔2026-09-10〕——用户明示
+不便实机测试，W25 开窗**延期、时间待定，当晚窗口无真机任务**。产线就绪状态
+**保持不撤**：A 段（A1 EditMode 全套件→A2 冒烟端到端→A3 构建排除对比）
+随时可执行；A2 fixture 草稿（无 constraint 诚实跳过路径，recipe v0.3
+schema-valid）与 A1 断言（f7ff690，本机真机 23/23）均在位；窗口重排后按
+执行序 v3 进入。**今夜产线无实现项**：BG 工单全部闭环（BG-7/8/9/13 由操作
+者修复令交付——其中 BG-8 补登含产线域 amf-production v0.2、BG-9 将
+inspection_evidence_vectors 纳入 schema-vectors 清单〔草案漂移保护，不暗示
+冻结〕，均知会消化）；BG-3 桌面主导；016 已接受（定义权义务在 M7 锚点兑现）。
+#7 瞬败样本观察义务维持。
+## 前情：proposal 016 全链闭环（2026-09-10 凌晨）
+BG-4 → 三方表态齐（核心＝存储第五文档库锚 EvidenceStore＋独立词表行
+inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源确认；数据
+＝BDL 不涉）→ 集成仲裁照单采纳 → 提案状态「已接受」。产线承接仲裁第 4 点
+定义权义务：dependencies 维消费层选择（声明完整性 vs 引用完整性，或两层
+分列）在 M7 检查切片实现时显式选择并写入冻结件——锚点前不冻结、不预接
+事实源、不猜操作形状。
 ## 自基线交付（6f2c7b7 后）
 - 本轮维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
   BG-4 闭环消化＋数据复核收讫＋本状态文件（collab-only）。
@@ -72,11 +66,11 @@ versionConstraint 为必填，故「无 constraint」＝省略该数组）——
   条目 3「从云端下载」的范围边界；产线无涉。
 - BOARD 对照：条目 2 歧义无 BOARD 行（操作者直接路由用户），无需销账。
 ## 阻塞
-- 无阻塞。W25 只等操作者晨起按 O-2 发开窗通知＋用户确认；#19 等核心/环境
-  表态（数据已回——确认无出入），齐后集成仲裁，产线无动作项。
+- 无阻塞。W25 用户延期、时间待定（O-2 补注）；产线无动作项，窗口重排通知
+  到达即进入 A 段。
 ## 下次合并意图
-本状态批（仅 collab/ 增量）随轮带入免测。BG-4 批（ad46501）已在 main
-（abab341），无在途实现交付。
+本状态批（仅 collab/ 增量）随轮带入免测。无在途实现交付（BG-4 批 ad46501
+已在 main）。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
