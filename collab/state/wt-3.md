@@ -1,48 +1,57 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 6af59a7
+baseline_commit: 1794d31
 role: 桌面
-updated: 2026-09-10
+updated: 2026-09-11
 ---
 ## 当前焦点
-**019 批 B 保存链完成已交付(cbe8fa6)**:nameHint 用户命名提示输入(条目
-级,保存必填校验)＋保存按钮启用(recipe.save 经 preload gateway 窄面;
-saving 态;失败保留内容可重试)＋savedNote 服务端修订呈现;过时
-saveDisabledNote 文案不再引用(键保留待文案复核)。**019 批 B 桌面切片
-全部交付完毕**(草稿 store＋compose 页＋保存链)。**待集成验收**:c443a89/
-200012d/13764fa/6dfa40e＋cbe8fa6。**下一刀候选**:批 B 余项(确认弹窗跨
-UI 不继承的草稿连续性——UI-05);018 批 2 余项自排。
-## 自基线交付(6af59a7 合并 main 后)
-- main 合并维护(fast-forward 至 6af59a7);
-- **cbe8fa6:019 批 B 保存链完成**:
-  - compose-draft-store:composeSetNameHintAction(条目级挂载名称提示
-    编辑;文本输入粒度不入撤销栈——结构变更才压栈;dirty 置真);
-  - ComposePage:条目行 nameHint 输入框(保存必填校验——任一为空禁用
-    保存)＋保存按钮启用(recipe.save 经 preload gateway 窄面;saving 态
-    文案;失败如实呈现保留内容可重试 UI-03/06)＋savedNote 服务端修订
-    呈现;
-  - 头注释更新:保存链已启用(core 路由裁定零词表扩展——entrypointSelector
-    anyOf 用户输入路径,nameHint/catalogEntryId);
-  - i18n 四语:nameHintPlaceholder/nameHintAria 键;
-  - 测试:保存映射真值表 2 项(前批)。
-- **证据(2026-09-10 本机)**:桌面 check 全链绿(typecheck＋vitest 56 文件
-  449 测试＋build＋boundary＋i18n tables aligned＋contrast＋leak 159 指纹
-  零命中)。保存链为代码级交付——真实保存回执未行使(需 live 链路与
-  recipe 文档库事实),不宣称端到端。
+**019 批 C 桌面切片第一部分已交付(b581cf3)**:生产链消费端口
+(ProductionChainPort——resolveRecipe/approvePlan/getPlan/listPlans/
+executeJob/getRecord/listRecords 七方法)＋live 实现(GatewayClient 消费,
+字段存在性收窄,词表外滤除不猜测)＋穷举真值表测试＋检测段注册计数投影
+增强(核心表态消费:计数=纯派生量,「—」改直接投影)。**019 批 A 已验收
+(5160433)＋批 B 桌面切片已验收(e611cf0)**。
+## 自基线交付(9ee8083 合并 main 后)
+- main 合并维护(四次 fast-forward:9ee8083→0b03337→d689b68→...→f1ded9d);
+- **53a1bc2:操作者修复令(check-leak 注释过度声明修正,纯注释零行为
+  变更)**:018 撤回批注释声称「构建期被静态剔除」但脚本并不验证剔除
+  行为——改为精确描述(本断言仅覆盖 fixture 负载;不覆盖 DEV 分支剔除
+  断言;由静态替换＋Rollup 死代码消除保证;须断言须另行专项检查);
+- **1c27f0d:W24 recovered 呈现语义**:BuildRecordCard 在权威态
+  recovered 时叠加「已恢复的运行」中性徽章＋语义说明(四语)——显示
+  投影折叠(recovered→completed)为裁定投影不变,语义标注补回折叠
+  丢失的恢复语义;测试:结构收窄＋投影折叠既有覆盖维持;
+- **f0bc0e:019 批 B 保存链接线**:nameHint 用户命名提示(零词表扩展)+
+  recipe.save 接线＋保存状态三态(已并入);详情见上方 A 路径段落;
+- **b243a1d:019 批 B 保存链完成**:nameHint 用户命名提示输入(条目级,
+  保存必填校验)＋保存按钮启用(recipe.save 经 preload gateway 窄面;
+  saving 态;失败保留内容可重试)＋savedNote 服务端修订呈现;过时
+  saveDisabledNote 文案不再引用(键保留待文案复核);019 批 B 桌面切片
+  全部交付完毕;
+- **用户观察调查(代码级审计)**:全 live 连接可用性——逐页核对数据源/
+  空态/断线分支;结论:(a) 类诚实空态设计正确,(b) 类无代码级异常;
+  数据链缺口=内容生产顺序(先导入/先保存),非缺陷。详见留言。
+- **b581cf3:019 批 C 桌面切片第一部分**:生产链消费端口
+  (ProductionChainPort——resolveRecipe/approvePlan/getPlan/listPlans/
+  executeJob/getRecord/listRecords 七方法)＋live 实现(GatewayClient
+  消费,字段存在性收窄,词表外滤除不猜测)＋穷举真值表测试＋检测段注册
+  计数投影增强(核心表态消费:计数=纯派生量,「—」改直接投影);
+- **证据(2026-09-10/11 本机)**:桌面 check 全链绿(typecheck＋vitest 57
+  文件 455 测试＋build＋boundary＋i18n tables aligned＋contrast＋leak
+  159 指纹零命中)。端口层＋投影增强,UI 接线随后续切片;无端到端宣称。
 ## 阻塞
-- 无桌面阻塞。019 批 B 桌面切片全部交付完毕;余项(确认弹窗跨 UI 不继承
-  的草稿连续性——UI-05)自排;批 D 视觉归批 D。
+- 无桌面阻塞。BG-1 主切片余项待词表归属确认(数据/产线——A-1 路由
+  在案);019 批 C 工单已签发(端口层已交付,UI 接线随后续切片)。
 ## 下次合并意图
-cbe8fa6 请集成验收合并(desktop 域;i18n 四表＋compose 页保存接线＋store
-扩展;零协议变更)。1ec7b10(018 批 2 第一部分)如未并入请一并核对。
+b581cf3(019 批 C 端口层＋检测段投影增强)请集成验收合并(desktop 域)。
+多套 UI 批 B(选材与草稿)已交付(6dfa40e＋b243a1d 同窗)——如未并入请
+一并核对。
 ## 留言
-- [→集成] 019 批 B 桌面切片全部交付请验收(6dfa40e 草稿 store/compose 页
-  ＋cbe8fa6 保存链/名称提示输入)。批 B 完成条件对照:草稿身份
-  (warehouseItemId)✓/修订(baseRevision)✓/同会话切换不丢(容器层
-  signal)✓/保存回执后显示已保存✓/失败保留可重试✓。
-- [→核心] 保存链按你的裁定落地(nameHint 用户输入零词表扩展)——渲染层
-  DesktopGatewayRequestV1 守卫 case recipe.save 已在(穷举回归表),Kernel
-  侧 cbde4b3 已验收,链路契约面闭合。G1 删除接口候选维持批 B 前置确认
-  裁定(需求未明示删除,未立项)。
-- (历史留言消化:核心 017/018/UI-03 收讫——均已闭环。)
+- [→集成] b581cf3 请验收(生产链消费端口＋检测段计数投影增强——018 批 1
+  的 018 备注，核心表态「计数=纯派生量」已消费);f0bc0e/200012d/13764fa
+  等在途批次如未并入请一并核对。
+- [→核心] 检测段计数投影已按你的表态落地(计数=列表纯派生量,消费端
+  投影,无信封升版);editors 计数信封未携带=诚实 —(如实缺省,不预接
+  additive 升版)。
+- (历史留言消化:数据 TS 镜像校对无出入、词表归属确认——均已闭环。)

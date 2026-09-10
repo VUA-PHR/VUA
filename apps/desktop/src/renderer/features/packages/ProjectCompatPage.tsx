@@ -182,13 +182,13 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
 
   const managerLine = (snapshot: ReturnType<typeof narrowEnvironmentSnapshot>): string => {
     if (snapshot === null) return copy.detectionUnavailable;
-    const vcc = snapshot.vcc?.presence ?? "not_found";
-    const alcom = snapshot.alcom?.presence ?? "not_found";
+    // 计数＝列表纯派生量(核心表态):vcc/alcom 的 userProjects.length
+    // 直接投影;信封未携带 editors 计数＝诚实缺省
+    const vccCount = snapshot.vcc?.userProjectsCount ?? null;
+    const alcomCount = snapshot.alcom?.userProjectsCount ?? null;
     return format(copy.detectionManagersLine, {
-      vcc: vcc === "found" ? copy.associationVcc : "—",
-      alcom: alcom === "found" ? copy.associationAlcom : "—",
-      editors: snapshot.editorsCount === null ? "—" : String(snapshot.editorsCount),
-      projects: snapshot.projectsCount === null ? "—" : String(snapshot.projectsCount),
+      vccN: vccCount === null ? "—" : String(vccCount),
+      alcomN: alcomCount === null ? "—" : String(alcomCount),
     });
   };
 
