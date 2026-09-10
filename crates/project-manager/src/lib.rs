@@ -36,7 +36,7 @@ pub use eac_verify::{
     read_process_image_path_readonly, verify_candidate, CandidateVerificationV01,
     SignatureState, VerificationCheck, Verdict, EAC_VERIFY_SCHEMA_VERSION,
 };
-#[cfg(any(test, feature = "test-hooks"))]
+#[cfg(all(windows, any(test, feature = "test-hooks")))]
 pub use eac_verify::eac_verify_windows_signature_for_test;
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
