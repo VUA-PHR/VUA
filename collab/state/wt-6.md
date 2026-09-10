@@ -34,6 +34,18 @@ ignored 计数变化如实报告（见下）。验收走集成。
   默认集（feature 关闭）与本修复令的零真实进程终止纪律一致，无冲突。
 - 上批：baseline 刷新（失鲜修复）。
 
+## BG-16 闭环（2026-09-11——核心接线已验收，环境确认）
+核心交付 BG-16 接线（7a0a1ec：`environment.getSnapshot` 消费
+`EnvironmentEngine::inspect_all()`；`EnvironmentConfig` 启动注入 roots；
+未配置＝诚实空 items 永不虚构探针结果）——**环境侧验收通过**，核验点：
+①词表一致＝items 直接 serde 序列化 `EnvironmentCheckItemV01`（camelCase：
+checkId/zone/presence/errorCode/facts）＋顶层 capturedAt，与 application-
+contract v0.1 冻结词表零漂移；②只读纪律＝引擎只读有树指纹测试背书，wire
+层无写路径；③合成 roots 全链 wire 测试（environment_snapshot_wire 新套件）
+不触真实机器；④`expect` 附「序列化不可失败」不变量注释（BG-12 纪律）。
+M6 环境检查行交付缺口就此关闭（实现＋接线＋测试＋文档 1.1.0 全链在 main）。
+（原始对账表见 git 历史 fee03a0 后版本；验收后本节收敛为闭环记录。）
+
 ## BG-16 领取与对账（2026-09-11，M6 环境检查行——环境工单）
 **工单**：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统
 读取抽象注入、合成夹具单测（验收：fixture 测试＋真机探测 #[ignore]＋workspace
@@ -54,13 +66,8 @@ ignored 计数变化如实报告（见下）。验收走集成。
 引擎从未被消费。该文件归核心域，本工单范围字面只到「核心 environment 切片」，
 **接线请求路由核心**（见留言）。环境侧实现零缺口。
 ## 在途/待他角色
-- **[→核心] BG-16 接线请求（唯一剩余缺口）**：`environment.getSnapshot` 处理
-  器消费 `EnvironmentEngine::inspect_all()` 输出真实 items——构造
-  `EnvironmentEngine::new(Arc<StdProcessRunner>, Arc<SystemClock>,
-  EnvironmentRoots::default(), Arc<VccSettingsFileReader>)`（Std 实现均已
-  pub；roots 可沿 ProjectOpsConfig 注入先例以保测试）；`EnvironmentSnapshotV1`
-  serde camelCase 即契约词表（items＋顶层 capturedAt），引擎只读有树指纹测试
-  背书。零核心新增协议面（形状冻结于 application-contract v0.1）；
+- [已闭环] **BG-16 接线验收通过**（核心 0c72258/7a0a1ec，67/67＋clippy 干净；
+  环境侧核验四点见上节）——M6 环境检查行全链关闭，环境侧零遗留；
 - **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
   lockStatus 三查询全接线＋`vua.project.project_not_found` 定形；T-B 消费完全
   解锁；桌面 TS 面第一刀 70f517d 同步）——环境侧全部词表族（013 v0.2 读面/
