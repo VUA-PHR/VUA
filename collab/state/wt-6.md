@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: e9ca149
+baseline_commit: 3fd243e
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -34,7 +34,33 @@ ignored 计数变化如实报告（见下）。验收走集成。
   默认集（feature 关闭）与本修复令的零真实进程终止纪律一致，无冲突。
 - 上批：baseline 刷新（失鲜修复）。
 
+## BG-16 领取与对账（2026-09-11，M6 环境检查行——环境工单）
+**工单**：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统
+读取抽象注入、合成夹具单测（验收：fixture 测试＋真机探测 #[ignore]＋workspace
+绿＋clippy 零告警＋M6 关门对账销账）。
+**交付事实盘点（逐项对照，全部已在 main）**：
+| M6 行要求 | 实现事实 |
+| --- | --- |
+| Unity 环境检查 | `unity_hub`＋`unity_editors`（Hub 编辑器枚举＋支持矩阵分类；orchestrator environment.rs Create 区） |
+| VRChat / SteamVR 检测 | `steam`（注册表 InstallPath→libraryfolders 全库根）→`vrchat`/`steamvr` 库根定点观测（Play 区） |
+| 网络检测 | `network`（vrchat.com:443 TCP 可达性，不发包不登录） |
+| 磁盘检测 | `disk_space`（kernel32 GetDiskFreeSpaceExW FFI，只报字节数） |
+| 残留进程失败处理 | EAC 残留探测（eac-probe v0.1，R1a 验收，B3 段语义）；观测失败＝`detection_failed` 类型化带码，缺失＝正常发现不带码 |
+| 注册表/文件系统读取抽象注入 | `EnvironmentRoots`（全路径注入）＋`RegistrySource` trait（Fake 合成）＋`ProcessRunner` trait（Fake runner） |
+| 合成夹具单测 | `crates/orchestrator/tests/environment.rs` 16 项（合成树＋合成注册表；只读性树指纹证明）＋project-manager `tests/environment_engine.rs`（含 `manual_real` 真机件已 `#[ignore]`） |
+| wire 词表一致性 | 契约明文「词表与 environment.rs 的 `EnvironmentSnapshotV1` 保持一致」（checkId/zone/presence/errorCode/facts＋顶层 capturedAt，serde camelCase） |
+**唯一缺口＝核心 provider 接线**：`provider_host.rs` 的 `environment.getSnapshot`
+处理器仍返回硬编码空 `items: []`（自注「real probes land with F6/B6」）——检测
+引擎从未被消费。该文件归核心域，本工单范围字面只到「核心 environment 切片」，
+**接线请求路由核心**（见留言）。环境侧实现零缺口。
 ## 在途/待他角色
+- **[→核心] BG-16 接线请求（唯一剩余缺口）**：`environment.getSnapshot` 处理
+  器消费 `EnvironmentEngine::inspect_all()` 输出真实 items——构造
+  `EnvironmentEngine::new(Arc<StdProcessRunner>, Arc<SystemClock>,
+  EnvironmentRoots::default(), Arc<VccSettingsFileReader>)`（Std 实现均已
+  pub；roots 可沿 ProjectOpsConfig 注入先例以保测试）；`EnvironmentSnapshotV1`
+  serde camelCase 即契约词表（items＋顶层 capturedAt），引擎只读有树指纹测试
+  背书。零核心新增协议面（形状冻结于 application-contract v0.1）；
 - **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
   lockStatus 三查询全接线＋`vua.project.project_not_found` 定形；T-B 消费完全
   解锁；桌面 TS 面第一刀 70f517d 同步）——环境侧全部词表族（013 v0.2 读面/
