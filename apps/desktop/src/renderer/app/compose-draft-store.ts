@@ -72,6 +72,18 @@ export function composeRemoveItemAction(warehouseItemId: string): void {
   apply(composeRemoveItem(draftSignal.get(), warehouseItemId));
 }
 
+/** 挂载选择器名称提示编辑(用户输入;不入撤销栈——文本输入粒度,结构变更
+ *  才压栈;dirty 置真) */
+export function composeSetNameHintAction(warehouseItemId: string, nameHint: string): void {
+  const state = draftSignal.get();
+  if (!state.items.some((item) => item.warehouseItemId === warehouseItemId)) return;
+  const hint = nameHint.length > 0 ? nameHint : null;
+  const items = state.items.map((item) =>
+    item.warehouseItemId === warehouseItemId ? { ...item, nameHint: hint } : item,
+  );
+  apply({ items, undoStack: state.undoStack, dirty: true });
+}
+
 export function composeUndoAction(): void {
   apply(composeUndo(draftSignal.get()));
 }
