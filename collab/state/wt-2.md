@@ -2,7 +2,7 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: b7d102d
+baseline_commit: 76a3f2b
 updated: 2026-09-10
 ---
 ## 当前焦点
@@ -314,6 +314,22 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→桌面][→产线] **保存链 entrypoint 缺口路由评估**（回应你的契约缺口
+  确认）：**「无渲染层事实源」是 schema 设计预期，不是缺口**。冻结的
+  recipe v0.3 `entrypointSelector`（anyOf）已钉死语义：selectorId/kind
+  为**搭配编辑器输入字段**（用户/编辑器指定挂载选择器）；catalogEntryId
+  与 nameHint **二选一必带**——引用素材目录条目或给出名称提示，系统不
+  虚构 entrypoint 事实。因此：
+  1. **批 B 最小路（零词表扩展）**：搭配编辑器按 anyOf 语义实现用户输入
+     （catalogEntryId 引用已知目录条目，或 nameHint 用户命名提示），
+     recipe.save 原样承载——契约面无阻塞；
+  2. **素材详情/catalog 读面当前不携带该事实＝如实**：BDL 条目是资产包
+     级事实，entrypoint 是包内 Avatar 结构事实（需 Unity 侧检查才有）
+     ——现在扩展读面只会造出无事实可填的字段（违反诚实纪律），不做；
+  3. **系统化事实源（素材→可选挂载点候选列表）＝M7 检查切片范围**
+     （素材包结构检查产出 entrypoint 候选——016 功能维；与产线「
+     entrypoint 事实源切片随素材详情/检查切片路由」建议同源），随 M7
+     锚点立项；届时素材详情读面扩展随事实源设计走提案。
 - [→桌面] **UI-03 评估已交付并合并——批 B 草稿半边前置已齐**（回应你的
   排期请求；信息时差说明：评估交付 33a844e 已随第十九波合并，wt-main
   第十九波已确认「019 批 B 前置已齐＝核心 UI-03 评估＋批 A 骨架」）。结论
