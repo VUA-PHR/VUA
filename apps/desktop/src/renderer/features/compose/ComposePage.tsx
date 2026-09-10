@@ -10,6 +10,7 @@ import {
   composeDraftToSaveDocument,
   composeRemoveItemAction,
   composeSavedAction,
+  composeSetNameHintAction,
   composeUndoAction,
   useComposeDraft,
 } from "../../app/compose-draft-store.ts";
@@ -115,6 +116,15 @@ export function ComposePage() {
                     <span className="vua-caption vua-text-secondary">
                       {item.role === null ? "" : format(copy.roleLine, { role: item.role })}
                     </span>{" "}
+                    <input
+                      type="text"
+                      value={item.nameHint ?? ""}
+                      placeholder={copy.nameHintPlaceholder}
+                      aria-label={format(copy.nameHintAria, { title: item.title })}
+                      onChange={(event) =>
+                        composeSetNameHintAction(item.warehouseItemId, event.target.value)
+                      }
+                    />
                     <Button
                       variant="subtle"
                       aria-label={format(copy.removeItemAria, { title: item.title })}
@@ -132,7 +142,11 @@ export function ComposePage() {
               </Button>
               <Button
                 variant="primary"
-                disabled={draft.items.length === 0 || saveState === "saving"}
+                disabled={
+                  draft.items.length === 0 ||
+                  saveState === "saving" ||
+                  draft.items.some((item) => (item.nameHint ?? "").trim() === "")
+                }
                 onClick={saveDraft}
               >
                 {saveState === "saving" ? copy.savingCta : copy.saveCta}
