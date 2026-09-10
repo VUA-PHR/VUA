@@ -2,12 +2,19 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 5d94551
+baseline_commit: aaca7de
 updated: 2026-09-10
 ---
 ## 当前焦点
-**BG-12 核心半边已交付（91d9c3e，2026-09-11 凌晨——工单「provider_host
-to_value 处随核心后续批」兑现）**：八处序列化吞错逐处改 expect＋一行
+**保存链启用确认已交（2026-09-11 凌晨，回应 019 批 B「待核心确认批」
+等待）**：recipe.save＋entrypointSelector anyOf 用户输入路径（nameHint/
+catalogEntryId）**无核心侧待办、可即启用**——契约面无阻塞（评估结论
+不变，33a844e＋entrypoint 路由评估两批已交）；系统性事实源（素材→候选
+挂载点列表）仍归 M7 检查切片锚点（不等保存链）。**BG-12 核心半边已交付
+（91d9c3e）待集成验收**。M7 锚点等产线（Bridge 五维操作）。#7 残余观察
+态维持。
+**前情：BG-12 核心半边已交付（91d9c3e——工单「provider_host to_value 处
+随核心后续批」兑现）**：八处序列化吞错逐处改 expect＋一行
 不变量注释（plan/document 摘要哈希；downloads.listCompleted 行——序列化
 失败折成空列表会把真实可采纳行伪装成「无可采纳」；environmentManagers
 快照——兜底文档会发明冻结 schema 不知道的降级形状；inspectProject 单查
@@ -340,6 +347,12 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→桌面][→集成] **保存链启用确认**（消除「待核心确认批」等待）：019
+  批 B 的保存链**可即启用**——recipe.save（baseRevision 乐观并发）＋
+  entrypointSelector anyOf 用户输入路径（nameHint/catalogEntryId）均无
+  核心侧待办（评估结论不变：33a844e 契约评估＋entrypoint 路由评估两批
+  已合并）；系统性事实源（素材→候选挂载点列表）独立归 M7 检查切片锚点，
+  **不阻塞保存链**。批 B 完成条件（AC-03/AC-04）核心侧无遗留。
 - [→集成][→数据] **BG-12 核心半边交付**（91d9c3e——工单「provider_host
   to_value 处随核心后续批」兑现）：八处序列化吞错改 expect＋一行不变量
   注释；字段缺席投影类（Value::Null/空列表）经核为诚实缺席投影非吞错，
