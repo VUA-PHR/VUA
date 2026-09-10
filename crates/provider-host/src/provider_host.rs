@@ -3860,20 +3860,23 @@ fn project_import_copy(
                     &job_correlation,
                     &SystemClock,
                 ) {
-                    Ok(receipt) => serde_json::to_value(receipt).unwrap_or_else(|_| {
-                        json!({"kind": "rejected", "guard": "execution_failed"})
-                    }),
-                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
-                        json!({"kind": "rejected", "guard": "execution_failed"})
-                    }),
+                    // Invariant: ImportReceiptV01/ImportRejected are plain
+                    // serde structs — serialization cannot fail; the old
+                    // fallback fabricated a fake "rejected" document, which
+                    // would have been a dishonest result.
+                    Ok(receipt) => serde_json::to_value(receipt)
+                        .expect("ImportReceiptV01 serialization cannot fail"),
+                    Err(rejected) => serde_json::to_value(rejected)
+                        .expect("ImportRejected serialization cannot fail"),
                 }
             } else {
                 match plan_import_copy(&import_request) {
+                    // Invariant: ImportPlanV01 is a plain serde struct —
+                    // serialization cannot fail.
                     Ok(plan) => serde_json::to_value(plan)
-                        .unwrap_or_else(|_| json!({"kind": "rejected", "guard": "execution_failed"})),
-                    Err(rejected) => serde_json::to_value(rejected).unwrap_or_else(|_| {
-                        json!({"kind": "rejected", "guard": "execution_failed"})
-                    }),
+                        .expect("ImportPlanV01 serialization cannot fail"),
+                    Err(rejected) => serde_json::to_value(rejected)
+                        .expect("ImportRejected serialization cannot fail"),
                 }
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
