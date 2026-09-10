@@ -16,6 +16,12 @@
 | schemas/project-inspection/v0.1 | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
 | docs/protocols/project-inspection-v0.2_ZH.md | 0.2 | 已冻结 | 环境 | 2026-09-09 |
 | docs/protocols/project-ops-v0.1_ZH.md | 0.1 | 已冻结 | 环境 | 2026-09-09 |
+| schemas/recipe/v0.3 | 0.3 | 已冻结（M5 产物链四件：recipe/local-resolution/approved-plan/build-record；W20＋W22，集成验收 0400bee/c486318 复跑 367/370/0） | 核心 | 2026-09-10 |
+| schemas/eac-probe/v0.1 | 0.1 | 已冻结（006 R1a，集成验收复跑 437/0） | 环境 | 2026-09-10 |
+| schemas/eac-allowlist/v0.1 | 0.1 | 已冻结（006 R2/R3，集成验收复跑 442-443/0） | 环境 | 2026-09-10 |
+| schemas/eac-terminate/v0.1 | 0.1 | 已冻结（006 R1b 全链收官，集成验收复跑 447/0） | 环境 | 2026-09-10 |
+| schemas/amf-production/v0.2 | 0.2 | 已冻结（M3 验收，2026-09-07；v0.1 历史保留） | 核心 | 2026-09-10 |
+| schemas/environment-managers/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-10 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/architecture/desktop_ZH.md | 1.1.0 | 已接受 | 桌面 | 2026-09-09 |

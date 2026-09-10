@@ -3,7 +3,9 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-10 01:55 第五批（**产线领取 BG-4 并交付**——proposal 016
+最近更新：2026-09-10 操作者批（**审阅立项工单 BG-7～BG-18 入工单节**——主会话三日
+审阅发现，全部无真机/无裁决前置，可直接领取；含 CI 假绿修复、REGISTRY 漏登记、
+overlay 排序吞错、EAC 安全面、M6 环境检查缺口等）。前录 2026-09-10 01:55 第五批（**产线领取 BG-4 并交付**——proposal 016
 检查证据面契约预备：inspection-evidence v0.1 草案＋向量 7 件＋校验测试 4/4
 绿；**草案态 REGISTRY 未动未标冻结**；开放问题 #19 登记待核心/环境/数据表态；
 工单表 BG-4 标记交付待验收）。前录 01:30 第四批（**全员空转触发登记＋备稿转正为可领工单
@@ -115,6 +117,26 @@ production-use-case v0.2 冻结＋W22 实现进行中＋013/014 接线完成。
   | BG-4 | **M7 可前置**：检查证据面（功能/性能/依赖/光照/上传准备度）契约预备 **【已领取·已交付（产线，2026-09-10 01:55）——proposal 016＋schemas/inspection-evidence/v0.1 草案＋向量 7 件＋校验测试 4/4 绿，待核心/环境/数据表态（开放问题 #19）】** | 产线主导（协作核心、环境——性能/依赖事实源与其域相关） | Schema 草案＋正负例向量（proposal 承载） | 向量过 schema 校验；**冻结硬前置齐前不得标冻结**（治理 §2.5）；入 proposal 待仲裁，不直接动 REGISTRY |
   | BG-5 | **文档/工具欠账**：collab:brief 校验 CI 化（治理 §3 预留方向） | 集成（自领） | CI workflow（registry 校验＋分叉统计，先报告性不设门禁） | CI 绿证据（run 号留档）；不改变本地 collab:brief 行为 |
   | BG-6 | **限时 Spike**：Provider 生命周期压测脚本预备（M8 性能基线前置探索） | 核心（协作产线） | Spike 笔记＋可复跑脚本，**不进产品代码** | 脚本可复跑＋笔记记录边界发现；标注「Spike，非交付物」；单节拍内限时不展开 |
+
+- **可领工单（BG-7～BG-18；2026-09-10 操作者审阅立项批——主会话三日审阅发现，全部
+  无真机前置、无用户裁决前置；W25 窗口义务与 [需用户] 项优先权不受影响）**：领取纪律
+  同 BG-1～BG-6（无更优先在途工作时经 collab:brief 自领，状态文件声明工单号，产出交
+  集成验收）。
+
+  | 工单 | 内容 | 拟 roles | 产出形态 | 验收标准 |
+  | --- | --- | --- | --- | --- |
+  | BG-7 | **CI 假绿修复**：`collab-brief --registry-only` 先设 exitCode 再 `process.exit(0)`，任何不一致都"通过"——改 `process.exit(registryBad > 0 ? 1 : 0)` | 核心 | `scripts/collab-brief.mjs` 修复 | 正例（当前 40/40）退出 0；人造不一致退出 1（实测两例留证后还原） |
+  | BG-8 | **REGISTRY 漏登记补齐＋漏检结构性修复**：(a) `schemas/recipe/v0.3` 四件套与 `schemas/eac-probe/eac-allowlist/eac-terminate` v0.1 按实际冻结状态入册；(b) brief ④ 新增"漏登记检测"——扫描 `schemas/*/`、`docs/protocols/*.md` 中未登记项并列出 | 数据 | `docs/REGISTRY.md` ＋ `scripts/collab-brief.mjs` | ④ 显示漏登记 0 项；能演示检出一个人造漏登记（还原后） ——**✅ 已由操作者修复令交付（集成，0b8bebb）：6 族补登（recipe v0.3/eac 三族/amf-production v0.2/environment-managers v0.1）＋反向漏登记检测（spike/草案豁免），46/46 一致；人造漏登记检出演示（exit 1 并打印缺失行）** |
+  | BG-9 | **schema-vectors CI 清单扩展**：workflow 清单停在 v0.3 时代，本窗口全部新契约锚点未入 | 集成（自领） | `.github/workflows/schema-vectors.yml` | 清单覆盖全部现行契约测试文件（inspection_evidence_vectors、downloads_list_serving、import_*_contract_v0*、recipe_v03、project_inspection、eac_*、project_ops_wire、catalog_queries 等）；推送后徽章语义恢复 ——**✅ 已由操作者修复令交付（集成，eeb42c6）：清单扩展至全部现行契约锚点（含 inspection_evidence_vectors 草案漂移保护，注明不暗示冻结）；目标名逐一核对存在** |
+  | BG-10 | **overlay_surface 排序与吞错修复**："oldest first" 声明与实现不符（按 task_id 哈希字典序，demo-* 恒排 prod-* 前）；`tasks().unwrap_or_default()` 把存储故障折叠为空态 | 核心 | `crates/orchestrator/src/overlay_surface.rs` 修复＋测试 | 排序按真实时序（或改声明并给出理由）；存储故障呈故障态而非空态；新测试钉住两者；proposal 017 表述对齐 |
+  | BG-11 | **EAC 安全面收紧**：`terminate_open_and_wait_for_test` 等测试钩子以 `pub` 暴露在 crate 根（绕过 R3 安全闸）；`eac_terminate.rs` 默认 cargo test 真杀进程 | 环境 | `crates/project-manager` 修复 | 钩子收 feature 门或 `#[cfg(test)]`；eac_terminate 用例标 `#[ignore]`（与探针/白名单同策略）；默认构建不导出绕过原语；默认 cargo test 不触真实进程 |
+  | BG-12 | **序列化吞错惯例清理**：`provider_host.rs:3388` `to_value().unwrap_or_else(|_| json!([]))`、`warehouse_download_adopt.rs:392` 等 `unwrap_or(Value::Null)`；`adopt` 任务 `.expect` panic 路径 | 数据（协作核心） | 逐处改类型化错误或 `expect` 附不变量说明 | 相关测试绿；无新增吞错点；每处修改附一行不变量/理由注释 |
+  | BG-13 | **提案状态字段卫生**：009（已收口仍"讨论中"）、015（已仲裁已驱动 0.7.0 仍"草案待表决"）、011/012（已按冻结件验收仍"收敛"）头部状态与实际对齐 | 集成（自领） | `collab/proposals/` 头部修正 | 四份提案状态字段与 BOARD 记录一致 ——**✅ 已交付（集成，随脱敏批提交）：009/011/012/015 头部状态对齐（原注记保留）** |
+  | BG-14 | **check-leak 注释对齐**：`App.tsx`/`dev-mode-section.tsx` 声称"指纹覆盖 per-port 选择键"，而 `check-leak.mjs:75-78` 实际排除该键 | 桌面 | 注释或装置二选一（自决并记录理由） | 注释与装置一致；check 全链绿 |
+  | BG-15 | **Inspection/Release 页面骨架**（原 BG-3 未交付项）：信息架构＋诚实空态；无事实源不渲染检查数据 | 桌面（协作产线） | 页面骨架切片 | 桌面 check 全链绿；空态即终态；不宣称可用；与 design-standard §8 对账不越界 |
+  | BG-16 | **M6 环境检查行**（审阅发现的交付缺口）：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统读取抽象注入、合成夹具单测 | 环境 | `crates/project-manager`＋核心 environment 切片 | 检查项带 fixture 测试；真机探测标 `#[ignore]`；cargo workspace 绿＋clippy 零告警；M6 关门对账可凭此行销账 |
+  | BG-17 | **downloads.listCompleted 排序断言**：`completed_at` 按字符串排序，格式漂移即退化 | 数据 | `bdl-store` 测试补断言 | ISO 排序断言钉死；格式漂移即测试失败——⏳ 开放（数据可领；与在途批撞车按实际核销） |
+  | BG-18 | **compose-draft-store 确定性修复**：`composeAddItem` 纯函数内 `new Date().toISOString()` 非确定；`composeUndo` 回空草稿仍 `dirty:true`；`addedAt` 无覆盖 | 桌面 | `apps/desktop` 修复＋测试 | 时钟参数化/注入；`addedAt` 与 undo-dirty 断言补齐；桌面 check 绿——⏳ 开放（桌面可领；与在途批撞车按实际核销） |
 
 ## 工作树指派
 
@@ -357,7 +379,7 @@ provider 自报）。用户设想＝逐 Provider 粒度切换前端各 Provider 
 | # | 事项 | 情况说明 | 操作步骤 | 成功/失败标准 |
 | --- | --- | --- | --- | --- |
 | O-1 | **W15 关门确认文档审阅**（**✅ 用户确认完成（2026-09-09 回传）；文档=`VUA-3 工作树 docs/plans/w15-close-user-confirmation_ZH.md`**） | W15 两修正项已回流验收（触发时机＝素材导入时语义＋「生成 VPM 包替代」术语）；**用户确认走查完成——M5 关门按门序的最后一项达成**；同时回传 9 条新发现问题（见下方「W15 确认后问题清单」块，已登记路由，不阻塞关门） | 走查已完成 | 成功（已达成）；9 条问题按组登记路由处置 |
-| O-2 | **W25 真机窗口确认**（开跑等前置齐备＋用户确认） | W25＝一次全量验证（不拆分）；三前置：①production-use-case v0.2 已冻结（凭证落地）✓＋②产线 Rust 物化切片已落地 ✓＋③W22 实现切片进行中（executors 已接线，两对接细节待核心澄清）——**③落地后即请用户确认开窗**；执行序定稿＝B1→A1→A2→A3→B2a→**用户启动 VRChat**→B2b→B3→归档；E2 运行中探测并入本窗口（环境对齐已确认） | 三前置齐备后操作者发出开窗通知（同步环境与用户）→ 用户确认开窗 → 窗口内按执行序推进，**A3/B2a 交接点用户启动 VRChat 客户端**配合 E2 段 | 成功＝窗口内全量验证通过（M5 各序列产出在真机一致表现＋E2 运行中探测按预期）；失败＝任一段失败即如实记录（不隐式重试），按程序处理后另行安排 |
+| O-2 | **W25 真机窗口确认**（开跑等前置齐备＋用户确认） | W25＝一次全量验证（不拆分）；三前置：①production-use-case v0.2 已冻结（凭证落地）✓＋②产线 Rust 物化切片已落地 ✓＋③W22 实现切片进行中（executors 已接线，两对接细节待核心澄清）——**③落地后即请用户确认开窗**；执行序定稿＝B1→A1→A2→A3→B2a→**用户启动 VRChat**→B2b→B3→归档；E2 运行中探测并入本窗口（环境对齐已确认） | 三前置齐备后操作者发出开窗通知（同步环境与用户）→ 用户确认开窗——**【2026-09-10 凌晨补注：用户明示今晚不便实机测试，W25 开窗延期，时间待定；今晚窗口无真机任务】** → 窗口内按执行序推进，**A3/B2a 交接点用户启动 VRChat 客户端**配合 E2 段 | 成功＝窗口内全量验证通过（M5 各序列产出在真机一致表现＋E2 运行中探测按预期）；失败＝任一段失败即如实记录（不隐式重试），按程序处理后另行安排 |
 | O-3 | U5 目录清理（维持暂缓） | VUA-2/VUA-3 内 `node_modules.pre-rename` 与 `target.pre-rename` 为旧时代遗留目录 | 用户方便时手动删除两目录 | 成功＝目录移除且两工作树后续构建正常；不处理也不阻塞进度 |
 
 **W15 确认后问题清单（2026-09-09 用户回传，9 条——登记与路由仲裁：集成；「先确认用户意图，不动手改文件」纪律执行中）**
@@ -381,7 +403,7 @@ provider 自报）。用户设想＝逐 Provider 粒度切换前端各 Provider 
 | 1 | U6 销账（B8/B9 指代） | B8/B9 指代＝VUA-3/docs/plans/w15-close-user-confirmation_ZH.md line80：B8「确认并开始导入（DEV fixture）完成呈现：新项目路径/已复制数据/已复制内容/来源关系已记录/重新检查完成」；B9「（真实 provider 场景）同一提交呈现『项目操作服务尚未接入或暂不可用』——合格态：provider 路由随 013 后落地，属接线前诚实反馈」 | B9 合格态与 record 读面诚实缺席纪律一致（provider 路由已随 013 落地） |
 | 2 | U7-①（M6 增设） | 同意 M6 增设（IMP-1~5）；细节写的不够清楚，但允许先不那么清楚，冲刺出初版，再改具体逻辑 | 实现下一工作时段（今夜 23:00）开工；细节迭代按冲刺节奏 |
 | 3 | U7-②（购买流） | 购买流目前不做，但不是永久不做，取决于未来和 BOOTH 官方取得的联系 | 非永久排除——排期记录保留 |
-| 4 | U7-②（Web 允许清单） | 允许清单要包含的很多。本地参考物（严禁提交入库）：C:/Users/AR/Documents/VRChat便捷avatar操作/_local_bdb_crawl/data/html（有限案例已含 booth.pm、pximg.net、vrchat.com、vn3.org、google.com、discord.gg、x.com 等）。建议：先做白名单，白名单外只做提示，不禁止浏览 | 白名单优先＋提示不禁止——桌面/数据域实现输入 |
+| 4 | U7-②（Web 允许清单） | 允许清单要包含的很多。本地参考物（严禁提交入库）：C:/Users/<本地用户>/Documents/VRChat便捷avatar操作/_local_bdb_crawl/data/html（有限案例已含 booth.pm、pximg.net、vrchat.com、vn3.org、google.com、discord.gg、x.com 等）。建议：先做白名单，白名单外只做提示，不禁止浏览 | 白名单优先＋提示不禁止——桌面/数据域实现输入 |
 | 5 | U7-③（下载落库） | 下载落库归数据域 bdl-commands 新契约——批准 | 数据域新契约切片授权 |
 | 6 | U8-①（来源语义） | 「包的真实来源」指项目内 VPM 包；但素材包也可变为 VPM 包被管理，理论上也可能被包含 | 来源判定语义输入：013 检测面与 U8 文案按此更新 |
 | 7 | U8-②（迁移语义） | 迁移＝复制到新目录；迁移后写操作含 Unity 工程文件（当作 VUA 原生项目看待，文件夹里加独有标识文件） | project-ops 词表语义输入（014 冻结件补充）：独有标识文件＝project-ops Schema 冻结时的字段输入 |

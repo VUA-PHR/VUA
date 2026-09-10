@@ -10,7 +10,7 @@
  * 所有 git 调用均用 execFileSync，cwd = 仓库根；任何单点失败降级为提示行，不中断。
  */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -281,6 +281,45 @@ function registryCheck() {
   }
   for (const b of bad) line(b);
   line(`登记表校验：一致 ${ok.length} 项 / 异常 ${bad.length} 项（共 ${total} 行）。`);
+
+  // ---------- 反向盲区检查（BG-8b）：schemas/ 词表族漏登记检测 ----------
+  // 正向校验只核对已存在的 REGISTRY 行，结构上发现不了「目录存在但未登记」；
+  // 此段反向扫描 schemas/ 目录补上该盲区。
+  // 豁免：spike 探索目录（治理不强制登记）；inspection-evidence（proposal
+  // 016 草案态，冻结时登记——016 §7 硬前置清单为准）；orchestrator（子目录
+  // 为 envelope-v1/provider-frame-v0.1 非标准版本形态，由 provider-process
+  // 协议本行覆盖）；orchestrator-task-store（由 task-store 协议本行覆盖，
+  // 目录名与词表行名不同缀）。
+  const SCHEMA_EXEMPT = new Set([
+    'bdl-spike',
+    'environment-spike',
+    'vpm-package-spike',
+    'inspection-evidence',
+    'orchestrator',
+    'orchestrator-task-store',
+  ]);
+  try {
+    const schemasDir = path.join(repoRoot, 'schemas');
+    const registryText = rows.join('\n');
+    const missed = [];
+    for (const fam of readdirSync(schemasDir)) {
+      if (SCHEMA_EXEMPT.has(fam)) continue;
+      // 已登记判定：REGISTRY 任一行提及 schemas/<fam> 路径、
+      // docs/protocols/<fam> 协议本、或「| <fam>（」括号路径形态。
+      const mentioned =
+        registryText.includes(`schemas/${fam}`) ||
+        registryText.includes(`docs/protocols/${fam}`) ||
+        registryText.includes(`| ${fam}（`);
+      if (!mentioned) missed.push(`schemas/${fam}/：目录存在但 REGISTRY 未登记（漏登记）`);
+    }
+    // 反向发现在正向打印循环之后，此处补打印（计入 bad 计数与退出码）
+    for (const m of missed) {
+      line(`✗ ${m}`);
+      bad.push(m);
+    }
+  } catch {
+    // schemas/ 目录读取失败不阻断正向校验结果
+  }
   return bad.length;
 }
 
@@ -289,8 +328,7 @@ function registryCheck() {
 if (process.argv.includes('--registry-only')) {
   line('【④ 登记表】（registry-only：docs/REGISTRY.md 与文档头部一致性）');
   const registryBad = registryCheck();
-  process.exitCode = registryBad > 0 ? 1 : 0;
-  process.exit(0);
+  process.exit(registryBad > 0 ? 1 : 0);
 }
 
 // ---------- 输出 ----------
