@@ -302,3 +302,54 @@ fn list_completed_mirrors_the_adoption_guard_predicate() {
         .collect();
     assert!(errors.is_empty(), "the assembled result must validate: {errors:?}");
 }
+
+/// BG-17: the face's ordering contract, pinned. Rows sort by `completedAt`
+/// ascending. The sort relies on completedAt values being canonical
+/// ISO-8601 UTC (`...Z`) strings, where lexicographic order equals
+/// chronological order — the port reports occurredAt verbatim and the
+/// frozen download-events shape is what the fold carries. Known limit,
+/// stated honestly: mixed-format timestamps of the same instant (e.g. with
+/// vs without milliseconds) would degrade to lexicographic order and this
+/// contract would surface it as a ordering failure here, not silently.
+#[test]
+fn list_completed_sorts_by_completed_at_ascending_even_from_unordered_ingest() {
+    let store = BdlStore::open_in_memory().unwrap();
+    let staging_dir = unique_dir("sort");
+    let consumer = DownloadEventConsumer::new(&store);
+
+    // Ingest deliberately out of chronological order: 10:00 first, then
+    // 08:00, then 09:00.
+    ingest_delivery(
+        &consumer,
+        Some((&staging_dir, b"PK third")),
+        "dl-third",
+        "2026-09-10T10:00:00.000Z",
+    );
+    ingest_delivery(
+        &consumer,
+        Some((&staging_dir, b"PK first")),
+        "dl-first",
+        "2026-09-10T08:00:00.000Z",
+    );
+    ingest_delivery(
+        &consumer,
+        Some((&staging_dir, b"PK second")),
+        "dl-second",
+        "2026-09-10T09:00:00.000Z",
+    );
+
+    let rows = store.list_adoptable_downloads().unwrap();
+    let completed_at: Vec<&str> = rows
+        .iter()
+        .map(|row| row.completed_at.as_str())
+        .collect();
+    assert_eq!(
+        completed_at,
+        vec![
+            "2026-09-10T08:00:00.000Z",
+            "2026-09-10T09:00:00.000Z",
+            "2026-09-10T10:00:00.000Z",
+        ],
+        "rows must come out in completedAt ascending order regardless of ingest order"
+    );
+}

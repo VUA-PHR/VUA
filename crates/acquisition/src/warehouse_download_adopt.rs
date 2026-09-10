@@ -278,6 +278,9 @@ impl<'a> DownloadAdopter<'a> {
             &now,
         )?;
 
+        // Invariant (BG-12): the entry was created by this same adoption a
+        // few lines above — the detail read can only be absent on store
+        // corruption, which is a panic-worthy break, never a silent skip.
         let entry = self
             .store
             .warehouse_entry_detail(&item.warehouse_item_id, ArtifactMode::UseOriginalUnitypackage)?
@@ -389,7 +392,12 @@ pub fn warehouse_download_adopt_job(
             downloads_adopted: adopted.len(),
             adopted,
         };
-        let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+        // Invariant (BG-12): WarehouseDownloadAdoptTaskResult contains only
+        // strings, counters and nested serializable structs — serde cannot
+        // fail on it; a serialization error would be an invariant break,
+        // surfaced as a panic instead of a silently null Done payload.
+        let payload = serde_json::to_value(&result)
+            .expect("task result serializes infallibly (plain data shapes only)");
         Ok(TaskExit::Done(payload))
     })
 }
