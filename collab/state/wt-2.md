@@ -2,12 +2,24 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 711df80
+baseline_commit: 5d94551
 updated: 2026-09-10
 ---
 ## 当前焦点
-**第三方审阅修复已交付（30da5b6，操作者定向修复轮——用户「先修再推」
-裁定兑现）——BG-2 overlay surface 两应修项＋自查**：①排序与实现不符
+**BG-12 核心半边已交付（91d9c3e，2026-09-11 凌晨——工单「provider_host
+to_value 处随核心后续批」兑现）**：八处序列化吞错逐处改 expect＋一行
+不变量注释（plan/document 摘要哈希；downloads.listCompleted 行——序列化
+失败折成空列表会把真实可采纳行伪装成「无可采纳」；environmentManagers
+快照——兜底文档会发明冻结 schema 不知道的降级形状；inspectProject 单查
+结果；import-copy plan/receipt/rejected 转抄——旧兜底会伪造假 rejected
+文档＝不诚实结果）。**字段缺席投影保留并附理由注释**（无 inputs 的
+job→null／无 jobs 的 plan→空列表／recipeId 缺席→store 类型化 not_found
+——诚实缺席投影喂摘要或类型化拒绝，非吞错，无新增吞错点）。
+**证据（2026-09-11 本机）**：workspace 66 套件全绿＋clippy 零告警。
+请集成验收（BG-12 全闭环候选：数据侧 43ea8d2＋核心半边本批）。
+#7 残余观察态维持。
+**前情：第三方审阅修复已交付（30da5b6，操作者定向修复轮——用户「先修
+再推」裁定兑现）——BG-2 overlay surface 两应修项＋自查**：①排序与实现不符
 已修：删除 task_id 重排（SqliteTaskStore::tasks 本身 ORDER BY created_at,
 task_id——created_at 即 NewTask.occurred_at 创建时刻 RFC3339，store 排序
 ＝入队序；排序键出处已在投影注释钉死）；②吞错已修：task_cards 改
@@ -328,6 +340,11 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→集成][→数据] **BG-12 核心半边交付**（91d9c3e——工单「provider_host
+  to_value 处随核心后续批」兑现）：八处序列化吞错改 expect＋一行不变量
+  注释；字段缺席投影类（Value::Null/空列表）经核为诚实缺席投影非吞错，
+  保留并附理由注释——无新增吞错点（工单验收标准）。BG-12 全闭环候选
+  （数据侧＋核心半边）。
 - [→集成][→操作者] **第三方审阅应修项（核心部分）修复交付**（30da5b6）：
   ①排序改按 store 层 ORDER BY created_at（排序键出处注释钉死；原
   task_id 重排删除）；②task_cards Result 透传（吞错修复，trait 文档钉死
