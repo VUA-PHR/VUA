@@ -39,11 +39,21 @@ pub struct OverlayTaskCard {
 /// (the SQLite task store today; the frozen document faces later) and
 /// must stay side-effect free: every call is a pure projection, so an
 /// overlay querying in a loop can never change what it observes.
+///
+/// Read failures are passed through as typed errors, never folded into
+/// an empty set — a store failure presented as "no tasks" would dress a
+/// failure up as the honest empty state (honesty rule: failures are
+/// presented as failures; the empty state is the final state only when
+/// the authority actually returned nothing).
 pub trait OverlayReadModel: Send + Sync {
     /// The task-surface cards, oldest first — the honest subset of
     /// `TaskSnapshot` an overlay renders (no revision bookkeeping, no
     /// cancel bookkeeping: those belong to the main-line surfaces).
-    fn task_cards(&self) -> Vec<OverlayTaskCard>;
+    ///
+    /// Errors: a store read failure propagates as
+    /// [`crate::SqliteStoreError`] — the consumer (the future overlay UI)
+    /// renders the empty state and the failure state distinctly.
+    fn task_cards(&self) -> Result<Vec<OverlayTaskCard>, crate::SqliteStoreError>;
 }
 
 /// The first concrete read model: projects the durable task store.
@@ -58,13 +68,16 @@ impl StoreOverlayReadModel {
 }
 
 impl OverlayReadModel for StoreOverlayReadModel {
-    fn task_cards(&self) -> Vec<OverlayTaskCard> {
-        let mut snapshots: Vec<crate::StoredTask> = self
-            .store
-            .tasks()
-            .unwrap_or_default();
-        snapshots.sort_by(|left, right| left.task_id.cmp(&right.task_id));
-        snapshots
+    fn task_cards(&self) -> Result<Vec<OverlayTaskCard>, crate::SqliteStoreError> {
+        // Ordering key provenance: `SqliteTaskStore::tasks` returns the
+        // rows `ORDER BY created_at, task_id` — `created_at` is the task's
+        // creation instant (an RFC 3339 timestamp written from
+        // `NewTask.occurred_at`), so the store's own ordering IS the
+        // enqueue order (oldest first). This projection adds no re-sorting
+        // of its own: re-sorting by task_id here would silently replace
+        // the enqueue order with hash-alphabetical order.
+        let snapshots = self.store.tasks()?;
+        Ok(snapshots
             .into_iter()
             .map(|snapshot| OverlayTaskCard {
                 task_id: snapshot.task_id,
@@ -74,7 +87,7 @@ impl OverlayReadModel for StoreOverlayReadModel {
                     .unwrap_or_else(|| "unknown".to_owned()),
                 correlation_id: snapshot.correlation_id,
             })
-            .collect()
+            .collect())
     }
 }
 
@@ -102,11 +115,55 @@ mod tests {
         let model = StoreOverlayReadModel::new(store);
 
         // 空态即终态: no tasks yet — the honest empty set, not an error.
-        assert!(model.task_cards().is_empty());
+        assert!(model.task_cards().unwrap().is_empty());
 
         // The projection is a pure function of the store: querying twice
         // without a mutation observes the same set (read-only discipline).
-        assert_eq!(model.task_cards(), model.task_cards());
+        assert_eq!(
+            model.task_cards().unwrap(),
+            model.task_cards().unwrap()
+        );
+    }
+
+    #[test]
+    fn task_cards_order_follows_the_enqueue_time_not_the_id() {
+        let database = unique_database("cards-order");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+
+        // Insert three tasks with DELIBERATELY out-of-order creation
+        // instants and out-of-order id alphabet, so an id-sort would read
+        // zulu / mike / alpha while the enqueue order is alpha / mike /
+        // zulu.
+        let seeds = [
+            ("zulu", "2026-09-10T03:00:00.000Z"),
+            ("mike", "2026-09-10T01:00:00.000Z"),
+            ("alpha", "2026-09-10T02:00:00.000Z"),
+        ];
+        for (index, (suffix, occurred_at)) in seeds.iter().enumerate() {
+            let new_task = crate::NewTask {
+                task_id: format!("task-{suffix}"),
+                correlation_id: format!("corr-{suffix}"),
+                occurred_at: occurred_at.to_string(),
+            };
+            store
+                .accept_idempotent_task(
+                    "task.startDemo",
+                    &format!("command-{suffix}"),
+                    &format!("fingerprint-{index}"),
+                    &new_task,
+                    &serde_json::json!({"demo": true}),
+                )
+                .unwrap();
+        }
+
+        let model = StoreOverlayReadModel::new(store);
+        let cards = model.task_cards().unwrap();
+        let ids: Vec<&str> = cards.iter().map(|card| card.task_id.as_str()).collect();
+        assert_eq!(
+            ids,
+            ["task-mike", "task-alpha", "task-zulu"],
+            "cards must follow the enqueue instant (created_at ascending), never the id alphabet"
+        );
     }
 
     #[test]

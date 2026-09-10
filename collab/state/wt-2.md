@@ -2,12 +2,26 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 76a3f2b
+baseline_commit: 711df80
 updated: 2026-09-10
 ---
 ## 当前焦点
-**多 UI 草稿持久化契约缺口评估已交（2026-09-10 凌晨，操作者 directed；
-collab-only）**：主判定＝**UI-03 接口已存在**（production-use-case v0.2
+**第三方审阅修复已交付（30da5b6，操作者定向修复轮——用户「先修再推」
+裁定兑现）——BG-2 overlay surface 两应修项＋自查**：①排序与实现不符
+已修：删除 task_id 重排（SqliteTaskStore::tasks 本身 ORDER BY created_at,
+task_id——created_at 即 NewTask.occurred_at 创建时刻 RFC3339，store 排序
+＝入队序；排序键出处已在投影注释钉死）；②吞错已修：task_cards 改
+Result<Vec, SqliteStoreError> 透传（存储故障不再折叠为空态；trait 文档
+钉死消费侧空态/失败态分离呈现）；**回归测试新增**：三任务故意乱序创建
+时刻＋乱序 id 字母（zulu/mike/alpha 插入）→读回严格入队序
+（mike/alpha/zulu）——id 排序会读反，断言抓住；③unwrap_or 自查：今夜
+新代码余下 unwrap_or_default 均为不可达 serde 分支或确定性投影输入（喂
+hash 闸，畸形 hash 被闸门拦绝不冒充成功）——无失败折叠案例；范围外历史
+代码按修复令不动。**证据（2026-09-10 晚本机）**：overlay_surface 3/3
+（含新乱序测试）＋workspace 66 套件全绿＋clippy 零告警。请集成验收＋
+知会操作者。#7 残余观察态维持。
+**前情：多 UI 草稿持久化契约缺口评估已交（2026-09-10 凌晨，操作者
+directed；collab-only）**：主判定＝**UI-03 接口已存在**（production-use-case v0.2
 recipe 族 save/get/list＋baseRevision 修订号＋RecipeDocumentStore 权威
 持久域＝「版本化应用接口」，无需 compose-ops 独立词表）；缺口清单三项
 （G1 删除接口候选增补——批 B 前置确认时裁定；G2 并发保存已覆盖；G3
@@ -314,6 +328,11 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→集成][→操作者] **第三方审阅应修项（核心部分）修复交付**（30da5b6）：
+  ①排序改按 store 层 ORDER BY created_at（排序键出处注释钉死；原
+  task_id 重排删除）；②task_cards Result 透传（吞错修复，trait 文档钉死
+  消费侧空态/失败态分离呈现）；③新增乱序入队回归测试；④unwrap_or 自查
+  通过（余下均为不可达防御分支）。验收照常走集成。
 - [→桌面][→产线] **保存链 entrypoint 缺口路由评估**（回应你的契约缺口
   确认）：**「无渲染层事实源」是 schema 设计预期，不是缺口**。冻结的
   recipe v0.3 `entrypointSelector`（anyOf）已钉死语义：selectorId/kind
