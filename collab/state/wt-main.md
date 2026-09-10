@@ -2,18 +2,33 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: e611cf0
-updated: 2026-09-10
+baseline_commit: 28d0c59
+updated: 2026-09-11
 ---
 ## 当前焦点
-**019 批 B 桌面切片交付**（6dfa40e 已验）：项目无关 composing draft——
-compose-draft-store 122 行（共享容器层状态/会话持久/修订与脏跟踪）＋compose
-页面＋warehouse 源；**save chain 诚实禁用**（契约缺口路由核心后启用——
-核心已路由：无事实源为冻结 schema 设计，批 B 最小路径零词表增长，系统性
-事实源路由 M7 inspection 锚）。桌面 check 全链绿（**56 文件 447 测试**）。
-019 批 B 桌面面推进中（保存链待核心确认批）。**W25 三前置维持齐备**——
-开窗通知晨起 O-2。批量面板未触发；[需代裁] 零新增。
+**新夜周期第一波：五树修复批全部验收合并（BG-10/11/12/14/17）＋BOARD 对账
+标注完成**。019 批 B 桌面切片（save chain 诚实禁用待核心确认批）。**W25
+用户延期维持**（O-2 补注：今晚无真机任务，开窗时间待定）。批量面板未
+触发；[需代裁] 零新增。
 ## 自基线交付（89038f5 之后）
+- **新夜周期第一波（09-11 01:40–02:00，五树修复批验收）**：
+  - **87ae6a9**：slot/wt-2 **BG-10 修复验收合并**——30da5b6（overlay 入队
+    顺序恢复与 oldest-first 声明一致＋存储故障穿透为故障态不折叠空态＋
+    乱序回归测试钉死＋unwrap_or 审计清零）。复跑 66/66＋clippy 零告警；
+  - **b75447e**：slot/wt-5 **BG-17＋BG-12 数据侧验收合并**——43ea8d2
+    （downloads_list_serving ISO 排序断言 51 行钉死格式漂移＝BG-17 核销；
+    warehouse_download_adopt 吞错修正＝BG-12 数据侧，核心半边路由）；
+    downloads_list_serving 7/7＋acquisition 6 套绿。瞬败按 #7 精神声明
+    知悉；
+  - **93d8c6a**：slot/wt-6 **BG-11 部分验收合并**——156640b（verify-hook
+    门对齐 windows conjunction；EAC 收紧工单余项随环境后续批）。project-
+    manager 13 套绿；
+  - **28d0c59**：slot/wt-3 **BG-14 验收合并**——53a1bc2（check-leak 过量
+    声明修正，comment-only）。桌面 check 全链绿（56 文件 449 测试）；
+  - wt-4 状态批随轮合并——五分支清零，46/46 一致；
+  - **BOARD 对账标注完成**（操作者对账指令）：BG-10/11（部分）/12（数据
+    侧）/14/17 标已交付引用哈希；BG-12 核心半边与 BG-11 余项随后续批；
+    BG-17 撞车已按实际核销（在途批未含该断言）。
 - **操作者修复令批（08:20–08:35，用户裁定「先修再推」）**：
   - **0b8bebb＝BG-7＋BG-8**：①CI 假绿修复（--registry-only 无条件
     process.exit(0) 覆盖 exitCode——改一行语义；**双向验证**：正向 40/40
