@@ -34,11 +34,11 @@ export function ComposePage() {
   const draft = useComposeDraft();
   const [sourceIndex, setSourceIndex] = useState(0);
   /** 已保存事实(recipeId/revision;null=本会话未成功保存) */
-  const [saved, setSaved] = useState<{ recipeId: string; revision: number } | null>(null);
+
   const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
   /** 保存过的文档身份(再次保存沿用 recipeId;baseRevision=服务端修订) */
-  const savedRef = useRef(saved);
-  savedRef.current = saved;
+  const savedRef = useRef<{ recipeId: string; revision: number } | null>(null);
+  savedRef.current = draft.saved;
 
   const entries = view.kind === "entries" ? view.entries : [];
   const canUndo = draft.undoStack.length > 0;
@@ -79,10 +79,9 @@ export function ComposePage() {
           setSaveState("failed");
           return;
         }
-        setSaved({ recipeId, revision });
         setSaveState("idle");
-        // 保存对齐:脏标记清除(撤销栈保留,本地编辑历史不丢)
-        composeSavedAction(revision);
+        // 保存对齐:脏标记清除＋saved 身份入容器层(请求解析入口据此启用)
+        composeSavedAction(recipeId, revision);
       });
   };
 
@@ -157,9 +156,9 @@ export function ComposePage() {
                 {copy.saveFailedNote}
               </p>
             ) : null}
-            {saved !== null ? (
+            {draft.saved !== null ? (
               <p className="vua-caption vua-text-secondary" role="status">
-                {format(copy.savedNote, { revision: String(saved.revision) })}
+                {format(copy.savedNote, { revision: String(draft.saved.revision) })}
               </p>
             ) : null}
             {draft.dirty && draft.items.length > 0 ? (

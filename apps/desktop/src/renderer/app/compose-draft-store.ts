@@ -35,12 +35,15 @@ export interface ComposeDraftState {
   readonly undoStack: readonly (readonly ComposeDraftItem[])[];
   /** 与最近一次保存的差异标记(会话内;保存接口接入前恒 true——有内容即未保存) */
   readonly dirty: boolean;
+  /** 最近一次成功保存的 recipe 身份与修订(UI-02 对象身份;跨 UI 根保留) */
+  readonly saved: { readonly recipeId: string; readonly revision: number } | null;
 }
 
 export const emptyComposeDraft: ComposeDraftState = {
   items: [],
   undoStack: [],
   dirty: false,
+  saved: null,
 };
 
 /** 共享容器层草稿 signal(UI 根切换不触碰) */
@@ -81,15 +84,17 @@ export function composeSetNameHintAction(warehouseItemId: string, nameHint: stri
   const items = state.items.map((item) =>
     item.warehouseItemId === warehouseItemId ? { ...item, nameHint: hint } : item,
   );
-  apply({ items, undoStack: state.undoStack, dirty: true });
+  apply({ items, undoStack: state.undoStack, dirty: true, saved: state.saved });
 }
 
 export function composeUndoAction(): void {
   apply(composeUndo(draftSignal.get()));
 }
 
-export function composeSavedAction(revision: number): void {
-  apply(composeSaved(draftSignal.get(), revision));
+/** 保存成功对齐(回执驱动;saved 身份/修订入容器层状态——跨 UI 根保留,
+ *  请求解析入口据此启用) */
+export function composeSavedAction(recipeId: string, revision: number): void {
+  apply(composeSaved(draftSignal.get(), recipeId, revision));
 }
 
 /* ---- 批 B 保存链:草稿 → recipe v0.3 文档映射(core 路由裁定零词表
@@ -180,6 +185,7 @@ export function composeAddItem(
     items: [...state.items, { ...item, addedAt: new Date().toISOString() }],
     undoStack: [...state.undoStack.slice(-49), state.items],
     dirty: true,
+    saved: state.saved,
   };
 }
 
@@ -192,6 +198,7 @@ export function composeRemoveItem(state: ComposeDraftState, warehouseItemId: str
     items: state.items.filter((existing) => existing.warehouseItemId !== warehouseItemId),
     undoStack: [...state.undoStack.slice(-49), state.items],
     dirty: true,
+    saved: state.saved,
   };
 }
 
@@ -203,11 +210,16 @@ export function composeUndo(state: ComposeDraftState): ComposeDraftState {
     items: previous,
     undoStack: state.undoStack.slice(0, -1),
     dirty: true,
+    saved: state.saved,
   };
 }
 
-/** 保存成功后的状态对齐(修订号来自服务端回执;脏标记清除) */
-export function composeSaved(state: ComposeDraftState, revision: number): ComposeDraftState {
-  void revision;
-  return { ...state, dirty: false };
+/** 保存成功后的状态对齐(修订号来自服务端回执;脏标记清除;saved 身份
+ *  入状态供请求解析入口使用) */
+export function composeSaved(
+  state: ComposeDraftState,
+  recipeId: string,
+  revision: number,
+): ComposeDraftState {
+  return { ...state, saved: { recipeId, revision }, dirty: false };
 }
