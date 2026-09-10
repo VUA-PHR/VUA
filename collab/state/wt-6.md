@@ -2,7 +2,7 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: main尖(合并后)
+baseline_commit: e9ca149
 updated: 2026-09-10
 ---
 ## 当前焦点
