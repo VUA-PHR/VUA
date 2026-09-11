@@ -29,6 +29,9 @@
 //! 做 TCP 探测，不发请求不登录）、`windows`（OS 版本注册表）、`gpu`
 //! （显示适配器类注册表 DriverDesc）。
 //!
+//! Play 辖区另含 `disk_space`（同一次磁盘观测在两辖区各报告一条——分配
+//! 2026-09-11 把 disk 列入 play 与 create 两清单；同一稳定 id，逐区条目）。
+//!
 //! Create 辖区 —— `unity_hub`（默认安装路径定点探测）、
 //! `unity_editors`（枚举 Unity Hub 编辑器目录并按支持矩阵分类
 //! production_target / migration_source / other_unity_version /
@@ -412,13 +415,17 @@ impl EnvironmentEngine {
                 self.check_network(),
                 self.check_windows(),
                 self.check_gpu(),
+                // Disk space serves both zones (assignment 2026-09-11 lists
+                // "disk" under play AND create): one observation, reported
+                // per zone — same stable id, per-zone entry.
+                self.check_disk_space(Zone::Play),
             ],
             Zone::Create => vec![
                 self.check_unity_hub(),
                 self.check_unity_editors(),
                 self.check_vpm_cli(),
                 self.check_vcc(),
-                self.check_disk_space(),
+                self.check_disk_space(Zone::Create),
             ],
         }
     }
@@ -878,12 +885,12 @@ impl EnvironmentEngine {
         )
     }
 
-    fn check_disk_space(&self) -> EnvironmentCheckItemV1 {
+    fn check_disk_space(&self, zone: Zone) -> EnvironmentCheckItemV1 {
         let target = self.roots.disk_target.to_string_lossy().into_owned();
         match free_disk_bytes(&self.roots.disk_target) {
             Ok((free, total)) => item(
                 "disk_space",
-                Zone::Create,
+                zone,
                 EnvironmentPresence::Detected,
                 None,
                 json!({
@@ -894,7 +901,7 @@ impl EnvironmentEngine {
             ),
             Err(code) => item(
                 "disk_space",
-                Zone::Create,
+                zone,
                 EnvironmentPresence::DetectionFailed,
                 Some(code.unwrap_or_else(|| error_codes::UNSUPPORTED_PLATFORM.to_owned())),
                 json!({ "target": target }),

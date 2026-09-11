@@ -579,6 +579,11 @@ fn orc_env_disk_space_reads_real_free_bytes_via_kernel32() {
     let items = engine.inspect_zone(Zone::Create);
     let disk = find(&items, "disk_space");
     assert_eq!(disk.presence, EnvironmentPresence::Detected);
+    // Per-zone reporting: the play zone carries the same stable id too
+    // (assignment 2026-09-11 lists disk under play AND create).
+    let play_items = engine.inspect_zone(Zone::Play);
+    let play_disk = find(&play_items, "disk_space");
+    assert_eq!(play_disk.presence, EnvironmentPresence::Detected);
     let free = disk.facts["freeBytes"].as_u64().expect("freeBytes fact");
     assert!(free > 0, "a normal machine has free space: {free}");
     assert!(disk.facts["totalBytes"].as_u64().unwrap() >= free);
@@ -596,6 +601,9 @@ fn orc_env_disk_space_reports_unsupported_platform_honestly() {
     let items = engine.inspect_zone(Zone::Create);
     let disk = find(&items, "disk_space");
     assert_eq!(disk.presence, EnvironmentPresence::DetectionFailed);
+    let play_items = engine.inspect_zone(Zone::Play);
+    let play_disk = find(&play_items, "disk_space");
+    assert_eq!(play_disk.presence, EnvironmentPresence::DetectionFailed);
     assert_eq!(
         disk.error_code.as_deref(),
         Some(env_error_codes::UNSUPPORTED_PLATFORM)
@@ -629,14 +637,16 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
             "network",
             "windows",
             "gpu",
+            "disk_space",
             "unity_hub",
             "unity_editors",
             "vpm_cli",
             "vcc",
             "disk_space"
-        ]
+        ],
+        "disk_space reports per zone (play tail + create tail); same stable id"
     );
-    for item in &snapshot.items {
+    for (index, item) in snapshot.items.iter().enumerate() {
         assert_eq!(item.schema_version, 1);
         // The detector carries no severity: every error_code rides on an
         // explicit detection failure only.
@@ -646,24 +656,16 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
             "{}: codes belong to failed observations only",
             item.id
         );
-        let expected_zone = matches!(
-            item.id.as_str(),
-            "steam" | "vrchat"
-                | "steamvr"
-                | "openxr_runtime"
-                | "oculus_runtime"
-                | "pico_runtime"
-                | "vive_runtime"
-                | "virtual_desktop"
-                | "alvr"
-                | "network"
-                | "windows"
-                | "gpu"
-        );
+        // Zone pairing by index (the ids sequence above is order-pinned):
+        // indices 0..=12 are the play zone (steam..gpu + disk_space at the
+        // play tail), indices 13..=17 are create (unity_hub..vcc +
+        // disk_space at the create tail). disk_space reports per zone
+        // (assignment 2026-09-11 lists disk under play AND create).
+        let expected_play = index <= 12;
         assert_eq!(
             item.zone == Zone::Play,
-            expected_zone,
-            "{} must sit in the right zone",
+            expected_play,
+            "{} (index {index}) must sit in the right zone",
             item.id
         );
     }
