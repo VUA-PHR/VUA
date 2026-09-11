@@ -654,4 +654,53 @@ describe("bdl-commands v0.1 command routing", () => {
     });
     expect(response).toMatchObject({ ok: true, value: { downloads: [] } });
   });
+
+  it("routes the v0.2 setNote command with a Kernel-generated commandId (guard positive example)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi
+      .spyOn(provider, "invoke")
+      .mockResolvedValue({ ok: true, value: { taskId: "t-1", correlationId: "c-1" } });
+    const context = { provider, productVersion: "0.4.2", platform: "win32" as const, rendererUrl };
+
+    const response = await routeDesktopGatewayInvoke(
+      context,
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-note-1",
+        method: "project.setNote",
+        params: { projectPath: "C:/projects/demo", note: "亚洲字符补位备注" },
+      },
+    );
+    const call = invoke.mock.calls[0]?.[0] as { commandId?: string; method?: string; kind?: string };
+    expect(call.method).toBe("project.setNote");
+    expect(call.kind).toBe("command");
+    // commandId 由 Kernel 生成(note- 前缀惯例),不透传渲染层值
+    expect(call.commandId).toMatch(/^note-/);
+    expect(invoke).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "command",
+        method: "project.setNote",
+        params: { projectPath: "C:/projects/demo", note: "亚洲字符补位备注" },
+      }),
+    );
+    expect(response).toMatchObject({ ok: true, value: { taskId: "t-1" } });
+
+    // 信封守卫负例:null 清除合法;换行 note / 空 note / 多余键拒绝
+    const invokeAgain = async (params: unknown) =>
+      routeDesktopGatewayInvoke(
+        context,
+        `${rendererUrl}/`,
+        { schemaVersion: 1, requestId: "desktop-note-2", method: "project.setNote", params },
+      );
+    const clearOk = await invokeAgain({ projectPath: "C:/projects/demo", note: null });
+    expect(clearOk.ok).toBe(true);
+    const newlineNote = await invokeAgain({ projectPath: "C:/projects/demo", note: "a\nb" });
+    expect(newlineNote.ok).toBe(false);
+    const emptyNote = await invokeAgain({ projectPath: "C:/projects/demo", note: "" });
+    expect(emptyNote.ok).toBe(false);
+    const extraKey = await invokeAgain({ projectPath: "C:/projects/demo", note: null, extra: 1 });
+    expect(extraKey.ok).toBe(false);
+  });
 });

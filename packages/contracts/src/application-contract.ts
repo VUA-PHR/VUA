@@ -1034,6 +1034,60 @@ export type ProjectImportCopyResultV01 =
   | ImportCopyReceiptV01
   | ImportCopyRejectedV01;
 
+// ---- project-ops v0.2(增量族升版,核心冻结批 0889a1b;D-6 桌面接线消费) ----
+// project.setNote:为单个 VUA 原生项目设置(或以 null 清除)用户备注(用户
+// 裁决 12:只在项目列表显示;D-6 裁定 A 增加列表行内编辑写路径)。参数身份
+// = projectPath(与 013 读面 inspectProject/lockStatus 同一注册路径身份,
+// 草案 projectId 在冻结时修正——本词表族无独立项目 id)。守卫闭集十项:
+// v0.1 七项 + setNote 三项(project_not_found/not_vua_native/identity_
+// unreadable);守卫为服务端任务内事实,拒绝以冻结 rejected 文档承载
+// (任务诚实完成,判定即拒绝)。命令为任务化受理:wire 回执携带 taskId/
+// correlationId,结果文档随任务 Done payload 走应用契约任务面。
+
+export type ProjectOpsGuardV02 =
+  | ImportCopyGuardV01
+  | "project_not_found"
+  | "not_vua_native"
+  | "identity_unreadable";
+
+export interface ProjectSetNoteCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "project.setNote";
+  readonly commandId: string;
+  readonly params: {
+    readonly projectPath: string;
+    /** null 清除既有备注;非空单行纯文本(冻结 Schema:1..2000 字符,无换行) */
+    readonly note: string | null;
+  };
+}
+
+/** 任务化受理回执 TS 镜像(wire 回执 value 形状;结果文档随 Done payload) */
+export interface ProjectTaskAcceptedV02 {
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
+/** kind=note 完成面:VUA 原生身份的存储后备注态(markedAt/note 字段名与
+ *  project-inspection v0.2 vuaIdentity present 投影一致;写备注永不改
+ *  markedAt) */
+export interface ProjectNoteStoredV02 {
+  readonly kind: "note";
+  readonly projectPath: string;
+  readonly markedAt: string;
+  readonly note: string | null;
+}
+
+/** kind=rejected 类型化守卫拒绝:guard 值 = code 后缀(v0.1 vua.project.*
+ *  映射保持) */
+export interface ProjectOpsRejectedV02 {
+  readonly kind: "rejected";
+  readonly guard: ProjectOpsGuardV02;
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type ProjectSetNoteResultV02 = ProjectNoteStoredV02 | ProjectOpsRejectedV02;
+
 export interface ProjectImportCopyCommandV01 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "project.import-copy";
@@ -1085,6 +1139,7 @@ export type ApplicationRequestV01 =
   | WarehouseImportDownloadsCommandV04
   | RecipeSaveCommandV02
   | ProjectImportCopyCommandV01
+  | ProjectSetNoteCommandV02
   | RecipeResolveCommandV02
   | PlanApproveCommandV02
   | JobExecuteCommandV02

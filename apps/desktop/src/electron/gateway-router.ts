@@ -270,6 +270,15 @@ function toApplicationRequest(
         commandId: `imp-${crypto.randomUUID()}`,
         params: request.params,
       };
+    // project-ops v0.2 setNote(D-6 接线):任务化受理,回执携带 taskId
+    case "project.setNote":
+      return {
+        ...base,
+        kind: "command",
+        method: "project.setNote",
+        commandId: `note-${crypto.randomUUID()}`,
+        params: request.params,
+      };
   }
 }
 

@@ -90,3 +90,30 @@ export function narrowInspectAssociations(
   );
 }
 
+/** vuaIdentity 三态(project-inspection v0.2 vuaIdentityFinding):absent /
+ *  present{markedAt,note} / unreadable。present 的 note 字段名与
+ *  project-ops v0.2 setNote 完成面一致(核心冻结注记);字段收不齐 =
+ *  null(不可解释,不猜测) */
+export interface VuaIdentityNarrowed {
+  readonly status: "absent" | "present" | "unreadable";
+  readonly markedAt: string | null;
+  readonly note: string | null;
+}
+
+export function narrowVuaIdentity(raw: unknown): VuaIdentityNarrowed | null {
+  if (raw === null || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const record = raw as Record<string, unknown>;
+  const status = record.status;
+  if (status === "absent" || status === "unreadable") {
+    return { status, markedAt: null, note: null };
+  }
+  if (status === "present") {
+    const markedAt = record.markedAt;
+    if (typeof markedAt !== "string" || markedAt.length === 0) return null;
+    const note = record.note;
+    if (note !== null && typeof note !== "string") return null;
+    return { status, markedAt, note };
+  }
+  return null;
+}
+

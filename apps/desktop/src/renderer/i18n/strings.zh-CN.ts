@@ -1382,6 +1382,28 @@ rolled_back: "已回滚",
     guardExecutionFailed: "导入执行失败。",
     guardFallback: "导入被拒绝。",
     importNotWired: "副本导入执行尚未接线:等待环境读面与能力面落地后启用。",
+    /** D-6 备注区(project-ops v0.2 setNote;裁定 A 行内查看+轻量编辑):
+     *  absent 不呈现入口;unreadable 只读;成功判定经读面刷新确认 */
+    note: {
+      title: "项目备注",
+      markedAt: "VUA 原生标记 {markedAt}",
+      empty: "无备注。",
+      placeholder: "单行备注,最多 2000 字符",
+      edit: "编辑备注",
+      clear: "清除备注",
+      save: "保存",
+      cancel: "取消",
+      saving: "正在保存…(任务 {taskId},完成后经项目检测读面确认)",
+      savedConfirmed: "备注已保存(经项目检测读面确认)。",
+      listOnly: "备注只在项目列表显示;内容为单行纯文本,保存在本项目的 VUA 身份文件中。",
+      rejectedNotFound: "保存未生效:该项目未在管理器注册(检测注册表即备注的可写范围)。",
+      rejectedAbsent: "保存未生效:该项目没有 VUA 身份文件(备注只属于 VUA 原生项目)。",
+      rejectedUnreadable: "保存未生效:VUA 身份文件不可读,原内容未被改写。",
+      unconfirmed: "保存结果暂未在读面确认,可重新检测查看。",
+      unavailable: "项目操作服务尚未接入或暂不可用。",
+      waitTimeout: "备注任务仍在进行,已停止等待;可重新检测查看结果。",
+      unreadableNote: "VUA 身份文件不可读:备注不可用。请先解决身份文件问题(只读呈现)。",
+    },
   },
   /** 包管理(S-XVI):Recipe 之外的手动 VPM 操作面;玩家语言,不暴露 semver/协议细节 */
   packages: {

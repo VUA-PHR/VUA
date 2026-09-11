@@ -3,6 +3,7 @@ import type {
   ImportCopyPlanV01,
   ImportCopyReceiptV01,
   ImportCopyRejectedV01,
+  ProjectTaskAcceptedV02,
 } from "@vua/contracts";
 import type { GatewayClient } from "./gateway-client.ts";
 
@@ -11,6 +12,7 @@ export type {
   ImportCopyPlanV01,
   ImportCopyReceiptV01,
   ImportCopyRejectedV01,
+  ProjectTaskAcceptedV02,
 } from "@vua/contracts";
 
 /**
@@ -41,7 +43,24 @@ export type ProjectOpsOutcome =
 export interface ProjectOpsPort {
   /** plan/apply 两段确认链(014 冻结词表 project.import-copy) */
   importCopy(params: ProjectImportCopyParams): Promise<ProjectOpsOutcome>;
+  /** 备注写(project-ops v0.2 project.setNote;任务化受理):回执携带
+   *  taskId,结果文档随任务完成面——调用方经任务中心等待终态后,以
+   *  inspectProject 读面刷新确认存储事实(诚实纪律:呈现只来自读面) */
+  setNote(params: ProjectSetNoteParams): Promise<ProjectSetNoteOutcome>;
 }
+
+export interface ProjectSetNoteParams {
+  readonly projectPath: string;
+  /** null 清除既有备注;非空单行纯文本(冻结 Schema 1..2000 字符无换行) */
+  readonly note: string | null;
+}
+
+export type ProjectSetNoteOutcome =
+  | { readonly ok: true; readonly accepted: ProjectTaskAcceptedV02 }
+  | {
+      readonly ok: false;
+      readonly error: { readonly kind: "unavailable" | "request_rejected" };
+    };
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -184,6 +203,24 @@ function narrowRejected(record: Record<string, unknown>): ImportCopyRejectedV01 
   };
 }
 
+/** setNote 受理回执窄化(taskId/correlationId 齐才可信;结果文档不经本
+ *  回执——诚实纪律:调用方以读面刷新确认存储事实) */
+function narrowTaskAccepted(value: unknown): ProjectTaskAcceptedV02 | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const taskId = record.taskId;
+  const correlationId = record.correlationId;
+  if (
+    typeof taskId !== "string" ||
+    taskId.length === 0 ||
+    typeof correlationId !== "string" ||
+    correlationId.length === 0
+  ) {
+    return null;
+  }
+  return { taskId, correlationId };
+}
+
 export function createLiveProjectOps(client: GatewayClient): ProjectOpsPort {
   return {
     async importCopy(params: ProjectImportCopyParams): Promise<ProjectOpsOutcome> {
@@ -223,6 +260,26 @@ export function createLiveProjectOps(client: GatewayClient): ProjectOpsPort {
       }
       return { ok: false, error: { kind: "unavailable" } };
     },
+    async setNote(params: ProjectSetNoteParams): Promise<ProjectSetNoteOutcome> {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.setNote",
+        params,
+      });
+      if (!response.ok) {
+        return {
+          ok: false,
+          error: {
+            kind: response.error.kind === "request_rejected" ? "request_rejected" : "unavailable",
+          },
+        };
+      }
+      const accepted = narrowTaskAccepted(response.value);
+      return accepted !== null
+        ? { ok: true, accepted }
+        : { ok: false, error: { kind: "unavailable" } };
+    },
   };
 }
 
@@ -230,6 +287,8 @@ export function createLiveProjectOps(client: GatewayClient): ProjectOpsPort {
 export function createEmptyProjectOps(): ProjectOpsPort {
   return {
     importCopy: () =>
+      Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
+    setNote: () =>
       Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
   };
 }

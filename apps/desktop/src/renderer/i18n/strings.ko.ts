@@ -1312,6 +1312,33 @@ rolled_back: "롤백됨",
     guardExecutionFailed: "가져오기 실행에 실패했습니다.",
     guardFallback: "가져오기가 거부되었습니다.",
     importNotWired: "복사 가져오기 실행은 아직 연결되지 않았습니다. 환경 읽기 면과 능력 면이 착지하면 활성화됩니다.",
+    /** D-6 메모 섹션(project-ops v0.2 setNote.裁定 A: 행 내 보기 + 가벼운 편집).
+     *  absent는 입구 미표시. unreadable은 읽기 전용. 성공은 읽기 면 재조회로 확인 */
+    note: {
+      title: "프로젝트 메모",
+      markedAt: "VUA 네이티브 등록 {markedAt}",
+      empty: "메모가 없습니다.",
+      placeholder: "한 줄 메모, 최대 2000자",
+      edit: "메모 편집",
+      clear: "메모 지우기",
+      save: "저장",
+      cancel: "취소",
+      saving: "저장 중…(작업 {taskId}. 완료 후 프로젝트 검출 읽기 면에서 확인)",
+      savedConfirmed: "메모가 저장되었습니다(프로젝트 검출 읽기 면에서 확인됨).",
+      listOnly:
+        "메모는 프로젝트 목록에만 표시됩니다. 한 줄 일반 텍스트이며 이 프로젝트의 VUA 식별 파일에 저장됩니다.",
+      rejectedNotFound:
+        "저장되지 않았습니다: 이 프로젝트는 어떤 관리자에도 등록되어 있지 않습니다(검출 레지스트리가 메모의 쓰기 대상 범위입니다).",
+      rejectedAbsent:
+        "저장되지 않았습니다: 이 프로젝트에는 VUA 식별 파일이 없습니다(메모는 VUA 네이티브 프로젝트만 대상입니다).",
+      rejectedUnreadable:
+        "저장되지 않았습니다: VUA 식별 파일을 읽을 수 없어 기존 내용은 변경되지 않았습니다.",
+      unconfirmed: "저장 결과가 아직 읽기 면에서 확인되지 않았습니다. 다시 검출하여 확인하세요.",
+      unavailable: "프로젝트 작업 서비스에 연결되지 않았거나 일시적으로 사용할 수 없습니다.",
+      waitTimeout: "메모 작업이 진행 중이지만 대기를 중지했습니다. 다시 검출하여 결과를 확인하세요.",
+      unreadableNote:
+        "VUA 식별 파일을 읽을 수 없습니다: 메모를 사용할 수 없습니다. 먼저 식별 파일 문제를 해결하세요(읽기 전용 표시).",
+    },
   },
   packages: {
     subtitle:
