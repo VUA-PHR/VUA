@@ -341,6 +341,29 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-12（06:5x–07:1x，第 6 代推送门）**：`92dea7f → d8efbe3`（9 提交
+  ／10 文件：wt-3 B5② 文案批 9710c18、wt-6 v0.2 引用跟随 c24355e、wt-4
+  状态批 f534b78、三验收合并 219f3e3/33f9060/fa86bb0＋簿记 d8efbe3）。
+  - **门证据（3/3，增量聚焦法）**：r1＝两实质批 diff 全文核＋collab 三件
+    （B5② 四语文案与用户裁决逐字对齐；v0.2 引用跟随核非放宽）；r2＝增量
+    机械核验（10 文件 +172/−153：零色值/CSS 变量新增；CJK 新增仅 ja/zh
+    两行＝B5② 裁决文案出处有据；check:leak 159 生产构建零命中——
+    **forest 全量指纹重提本轮不可执行**，草稿源不在本机任一 worktree，
+    方法边界如实声明）；r3＝桌面 check 全链 EXIT=0＋vitest 61 文件/486
+    ＋cargo 67 套件/501 通过/0 失败（隔离 CARGO_TARGET_DIR、pipefail
+    真实退出码）＋clippy -D warnings 零告警＋registry 49/49。
+  - **CI 回读（d8efbe3 世代三绿）**：rust 34655323316（6m18s）＋ts
+    34655323314（4m25s）＋schema-vectors 34655323504（4m21s）全绿；
+    collab-registry 未触发＝本批零 REGISTRY/docs 变更，paths 过滤正常。
+
+- **2026-09-12（05:3x–05:4x，第 5 代推送门；本节当轮漏登，随第 6 代补记）**：
+  `388d0d3 → bb49bc2`（2 提交：22ca5b9 D-6 验收合并＋bb49bc2 簿记）。门
+  证据（r1 17 文件逐文件审／r2 forest 增量扫描 364 指纹新增行零命中／r3
+  桌面 61/486＋contracts 35＋orchestrator-provider 23＋registry 49/49，
+  Rust 域零涉）与 CI 回读（ts 34648962676 绿；rust/schema-vectors/
+  collab-registry 未触发＝paths 过滤正常）全文见 `collab/state/wt-main.md`
+  92dea7f 世代记录。
+
 - **2026-09-12（04:5x–05:0x，第 4 代推送门）**：`origin/main=2de1755 →
   a8e0c5d 世代`（**29 提交／51 文件／+2532−602**：BG-21 校验器修复 b86a3db、
   #7 瞬败修复 d78c43b、project-ops v0.2 升版 10c0d68、桌面 P2 30e4f1a、
