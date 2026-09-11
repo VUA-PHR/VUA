@@ -21,7 +21,7 @@ const copy = strings.productionFlow;
 export type FlowPending = "pick" | "start" | "plan" | "confirm" | "recover";
 
 /**
- * F3 生产纵向流程段(寄宿车间页;production-use-case v0.1 草案 +
+ * F3 生产纵向流程段(寄宿车间页;production-use-case v0.1〔M3 冻结〕+
  * 设计规范 v0.6.1 §8.5:执行/等待/恢复是 Assembly 内的任务进展,不另设阶段页)。
  *
  * 诚实状态(原则①/§6.3):

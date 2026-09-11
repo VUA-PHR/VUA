@@ -520,9 +520,13 @@ export function WorkshopPage({
     };
   }, [gateway]);
 
-  /* ---- F3 生产纵向流程段(production-use-case v0.1 草案) ----
+  /* ---- F3 生产纵向流程段(production-use-case v0.1〔M3 冻结〕素材直产链;
+   * 与 M5 配方链 production-use-case v0.2 是不同的用例面)----
    * 能力未知(null)或非 ready 时整段隐藏(§2.6);读取失败走 EmptyState+重试,
-   * 重试只重拉能力报告,不修改任何本地数据。意图拒绝按 reason 行内呈现。 */
+   * 重试只重拉能力报告,不修改任何本地数据。意图拒绝按 reason 行内呈现。
+   * live 可用性门控:壳侧 VUA_UNITY_EDITOR 注入缺失 ⇒ provider 端
+   * production 服务不装配 ⇒ 本段恒诚实不可用(激活需 Unity 编辑器路径
+   * 配置面立项,见 collab/state/wt-3 评估)。 */
   const productionRun = useProductionRunView();
   const [productionCap, setProductionCap] = useState<CapabilityReport | null>(null);
   const [flowFailed, setFlowFailed] = useState(false);

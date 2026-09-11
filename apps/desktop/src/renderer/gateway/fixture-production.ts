@@ -25,7 +25,7 @@ import type {
 } from "./model-production-port.ts";
 
 /**
- * F3 生产纵向流程 fixture(仅 DEV 可达;production-use-case v0.1 草案
+ * F3 生产纵向流程 fixture(仅 DEV 可达;production-use-case v0.1〔M3 冻结〕
  * "模拟 Provider 必须能脚本化演示五种生命周期"在 renderer 侧的镜像)。
  *
  * 八个 production-* 场景共享同一段脚本化时间线,只改初始运行态与恢复结局:

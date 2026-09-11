@@ -135,11 +135,13 @@ export type ReleaseWallView =
   | { schemaVersion: 1; kind: "not-connected" }
   | { schemaVersion: 1; kind: "wall"; projects: readonly ReleaseProject[] };
 
-/* ---- F3 生产纵向流程(production-use-case v0.1 草案的渲染层先行面) ----
+/* ---- F3 生产纵向流程(production-use-case v0.1〔M3 冻结〕的渲染层端口面) ----
  *
- * 值语义镜像草案:判别联合 + schemaVersion: 1,查询面带 not-connected 退路;
- * 意图方法返回"已创建任务 + 当前快照"。草案冻结前字段级调整不升版本
- * (草案修订记录纪律),调整集中在本文档,视图与纯模型不动。
+ * 值语义:判别联合 + schemaVersion: 1,查询面带 not-connected 退路;
+ * 意图方法返回"已创建任务 + 当前快照"。v0.1 已随 M3 验收冻结(注意:现行的
+ * production-use-case v0.2 是 M5 配方链词表,与本文档消费的 M3 素材直产链
+ * 是不同的用例面);冻结面字段级调整走词表升版纪律,调整集中在本文档,
+ * 视图与纯模型不动。
  */
 
 /** 双素材入口(material-intake v0.1):.unitypackage 直接导入 / 本地 VPM 包经包管理器安装 */
