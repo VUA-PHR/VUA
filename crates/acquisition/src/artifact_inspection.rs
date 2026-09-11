@@ -363,6 +363,7 @@ pub(crate) fn hex_lower(bytes: &[u8]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::unique_dir;
     use vua_bdl_store::bdl_store::ArtifactInspectionState as StorageState;
     use vua_bdl_store::download_events::{
         DownloadEventKind, DownloadEventV01, DOWNLOAD_EVENT_SCHEMA_VERSION,
@@ -371,18 +372,6 @@ mod tests {
 
     fn clock(readings: &[&str]) -> FixedClock {
         FixedClock::new(readings)
-    }
-
-    fn unique_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "vua-inspect-{tag}-{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
     }
 
     fn complete_download(
@@ -441,7 +430,7 @@ mod tests {
         let clock = clock(&["2026-09-06T08:16:30.000Z"]);
         let inspector = ArtifactInspector::new(&store, &clock);
         let consumer = DownloadEventConsumer::new(&store);
-        let root = unique_dir("pass");
+        let root = unique_dir("vua-inspect", "pass");
         let contents = b"PK\x03\x04 synthetic material fixture, not real product content";
         let staged = root.join("dl-1-1-material-pack.zip");
         std::fs::write(&staged, contents).unwrap();
@@ -476,7 +465,7 @@ mod tests {
         };
         let inspector = ArtifactInspector::with_policy(&store, &clock, policy);
         let consumer = DownloadEventConsumer::new(&store);
-        let root = unique_dir("reject");
+        let root = unique_dir("vua-inspect", "reject");
         let staged = root.join("dl-1-1-material-pack.zip");
         std::fs::write(&staged, b"0123456789").unwrap();
         complete_download(&consumer, "dl-1", 1, &staged, 10);
@@ -527,7 +516,7 @@ mod tests {
         let clock = clock(&["2026-09-06T08:16:30.000Z"]);
         let inspector = ArtifactInspector::new(&store, &clock);
         let consumer = DownloadEventConsumer::new(&store);
-        let root = unique_dir("boundary");
+        let root = unique_dir("vua-inspect", "boundary");
         let inside = root.join("dl-1-1-material-pack.zip");
         std::fs::write(&inside, b"PK\x03\x04").unwrap();
         complete_download(&consumer, "dl-1", 1, &inside, 4);
@@ -546,7 +535,7 @@ mod tests {
 
         // A completed event pointing outside the injected root is refused
         // even though the file exists there.
-        let outside_dir = unique_dir("outside");
+        let outside_dir = unique_dir("vua-inspect", "outside");
         let outside = outside_dir.join("smuggled.zip");
         std::fs::write(&outside, b"PK\x03\x04").unwrap();
         complete_download(&consumer, "dl-2", 1, &outside, 4);
@@ -601,7 +590,7 @@ mod tests {
         let clock = clock(&["2026-09-06T08:16:30.000Z"]);
         let inspector = ArtifactInspector::new(&store, &clock);
         let consumer = DownloadEventConsumer::new(&store);
-        let root = unique_dir("idempotent");
+        let root = unique_dir("vua-inspect", "idempotent");
         let contents = b"PK\x03\x04 identical content, second download";
         let first = root.join("dl-1-1-first.zip");
         let second = root.join("dl-2-1-second.zip");
@@ -642,7 +631,7 @@ mod tests {
         let clock = clock(&["2026-09-06T08:16:30.000Z"]);
         let inspector = ArtifactInspector::new(&store, &clock);
         let consumer = DownloadEventConsumer::new(&store);
-        let root = unique_dir("vanished");
+        let root = unique_dir("vua-inspect", "vanished");
         let staged = root.join("dl-1-1-material-pack.zip");
         std::fs::write(&staged, b"PK\x03\x04").unwrap();
         complete_download(&consumer, "dl-1", 1, &staged, 4);
@@ -654,7 +643,7 @@ mod tests {
         ));
         std::fs::remove_dir_all(&root).ok();
 
-        let root2 = unique_dir("rootless");
+        let root2 = unique_dir("vua-inspect", "rootless");
         std::fs::write(root2.join("dl-2-1-material-pack.zip"), b"PK\x03\x04").unwrap();
         complete_download(&consumer, "dl-2", 1, &root2.join("dl-2-1-material-pack.zip"), 4);
         let grant = consumer.staging_completion("dl-2").unwrap().unwrap();

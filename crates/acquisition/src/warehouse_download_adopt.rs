@@ -422,20 +422,9 @@ pub fn submit_warehouse_import_downloads(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::unique_dir;
     use vua_bdl_store::download_events::DownloadEventV01;
     use vua_orchestrator::FixedClock;
-
-    fn unique_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "vua-adopt-{tag}-{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
-    }
 
     fn event(kind: vua_bdl_store::download_events::DownloadEventKind, download_id: &str, stored_path: Option<String>, received: Option<u64>) -> DownloadEventV01 {
         DownloadEventV01 {
@@ -459,7 +448,7 @@ mod tests {
     #[test]
     fn adoption_copies_a_completed_download_without_touching_staging() {
         let store = BdlStore::open_in_memory().unwrap();
-        let staging_dir = unique_dir("staging");
+        let staging_dir = unique_dir("vua-adopt", "staging");
         let staging = staging_dir.join("material-pack.zip");
         std::fs::write(&staging, b"PK download fixture").unwrap();
         let consumer = DownloadEventConsumer::new(&store);
@@ -480,7 +469,7 @@ mod tests {
             ))
             .unwrap();
 
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-adopt", "wh");
         let clock = FixedClock::new(&["2026-09-09T13:00:00.000Z"]);
         let adopter = DownloadAdopter::new(&store, &clock, &warehouse_root);
         let adopted = adopter.adopt_download("dl-1").unwrap();
@@ -510,7 +499,7 @@ mod tests {
                 None,
             ))
             .unwrap();
-        let adopter = DownloadAdopter::new(&store, &vua_orchestrator::SystemClock, unique_dir("wh"));
+        let adopter = DownloadAdopter::new(&store, &vua_orchestrator::SystemClock, unique_dir("vua-adopt", "wh"));
         match adopter.adopt_download("dl-2") {
             Err(DownloadAdoptError::DownloadNotCompleted { download_id, phase }) => {
                 assert_eq!(download_id, "dl-2");

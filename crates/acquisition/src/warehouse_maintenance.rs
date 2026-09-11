@@ -470,13 +470,19 @@ fn run_generate_vpm(
         })
         .collect();
 
+    // Board #7 hardening: same-tick timestamp reuse (item id + nanos alone)
+    // could alias two concurrent generate_vpm jobs onto one publish root;
+    // the pid + process-unique serial makes the name collision-free.
+    static GENPUB_SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let genpub_serial = GENPUB_SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let genpub_nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
     let publish_root = std::env::temp_dir().join(format!(
-        "vua-genpub-{}-{}",
+        "vua-genpub-{}-pid{}-t{genpub_nanos:016x}-{genpub_serial}",
         spec.warehouse_item_id,
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
+        std::process::id()
     ));
 
     let token = MaterialCancelToken::new();
@@ -603,6 +609,7 @@ fn now_rfc3339() -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::unique_dir;
     use crate::warehouse_import::{
         submit_warehouse_import, submit_warehouse_import_auto, AutoGenerateSpec,
         WarehouseImportTaskSpec,
@@ -613,18 +620,6 @@ mod tests {
     use vua_orchestrator::{FixedIdGenerator, SystemClock};
     use std::path::Path;
     use std::time::{Duration, Instant};
-
-    fn unique_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "vua-maint-{tag}-{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
-    }
 
     fn runtime() -> TaskRuntime {
         TaskRuntime::new(
@@ -744,7 +739,7 @@ mod tests {
 
     #[test]
     fn delete_originals_removes_only_originals_under_all_guards() {
-        let parent = unique_dir("happy");
+        let parent = unique_dir("vua-maint", "happy");
         let world = make_world(&parent, true);
         world
             .store
@@ -763,7 +758,7 @@ mod tests {
 
     #[test]
     fn guard_c_refuses_deletion_outside_the_generate_vpm_mode() {
-        let parent = unique_dir("guardc");
+        let parent = unique_dir("vua-maint", "guardc");
         let world = make_world(&parent, true);
         // No override, global default = use_original_unitypackage.
 
@@ -780,7 +775,7 @@ mod tests {
     #[test]
     fn guards_a_and_b_refuse_deletion_without_a_verified_generated_artifact() {
         // No generated copy at all.
-        let parent = unique_dir("guardab1");
+        let parent = unique_dir("vua-maint", "guardab1");
         let world = make_world(&parent, false);
         world
             .store
@@ -793,7 +788,7 @@ mod tests {
 
         // A generated copy whose content no longer matches its recorded
         // identity is tampering, not a deletable state.
-        let parent = unique_dir("guardab2");
+        let parent = unique_dir("vua-maint", "guardab2");
         let world = make_world(&parent, true);
         std::fs::write(&world.generated_path, b"tampered content").unwrap();
         world
@@ -1051,7 +1046,7 @@ mod tests {
 
     #[test]
     fn generate_vpm_happy_path_publishes_and_records_a_generated_copy() {
-        let parent = unique_dir("gen-happy");
+        let parent = unique_dir("vua-maint", "gen-happy");
         let (world, executor, bridge) = make_generate_setup(&parent);
         world
             .store
@@ -1146,7 +1141,7 @@ mod tests {
 
     #[test]
     fn generate_vpm_refuses_outside_the_generate_vpm_mode_with_the_conflict_code() {
-        let parent = unique_dir("gen-guard");
+        let parent = unique_dir("vua-maint", "gen-guard");
         let (world, executor, _bridge) = make_generate_setup(&parent);
         // No override: the global default (use_original_unitypackage) rules.
 
@@ -1190,7 +1185,7 @@ mod tests {
 
     #[test]
     fn generate_vpm_refuses_an_entry_without_original_material() {
-        let parent = unique_dir("gen-noorig");
+        let parent = unique_dir("vua-maint", "gen-noorig");
         let store = Arc::new(BdlStore::open_in_memory().unwrap());
         let entry_id = store
             .create_warehouse_item(
@@ -1238,7 +1233,7 @@ mod tests {
 
     #[test]
     fn generate_vpm_never_silently_replaces_an_existing_artifact() {
-        let parent = unique_dir("gen-twice");
+        let parent = unique_dir("vua-maint", "gen-twice");
         let (world, executor, _bridge) = make_generate_setup(&parent);
         world
             .store
@@ -1290,7 +1285,7 @@ mod tests {
 
     #[test]
     fn generate_vpm_unknown_entry_maps_to_entry_not_found() {
-        let parent = unique_dir("gen-unknown");
+        let parent = unique_dir("vua-maint", "gen-unknown");
         let store = Arc::new(BdlStore::open_in_memory().unwrap());
         let (rt, journal) = generate_runtime();
         let accepted = submit_generate_vpm(
@@ -1325,7 +1320,7 @@ mod tests {
 
     #[test]
     fn delete_originals_invalid_state_surfaces_the_conflict_code() {
-        let parent = unique_dir("del-code");
+        let parent = unique_dir("vua-maint", "del-code");
         let world = make_world(&parent, true);
         // No override: guard (c) must refuse with the stable conflict code.
 
@@ -1433,7 +1428,7 @@ mod tests {
     /// chain, and the generation runs to success on the fixture bridge.
     #[test]
     fn import_hook_submits_generation_with_the_audit_chain() {
-        let parent = unique_dir("hook-on");
+        let parent = unique_dir("vua-maint", "hook-on");
         let (world, executor, _bridge) = make_generate_setup(&parent);
         // The persisted global default rules the hook (read per landing).
         world
@@ -1533,7 +1528,7 @@ mod tests {
     /// The manual import face never orchestrates: same fixture, hook off.
     #[test]
     fn manual_import_face_never_submits_generation() {
-        let parent = unique_dir("hook-off");
+        let parent = unique_dir("vua-maint", "hook-off");
         let (world, _executor, _bridge) = make_generate_setup(&parent);
         world
             .store
@@ -1580,7 +1575,7 @@ mod tests {
     /// with the injected initial (read-time evaluation, W14 semantics).
     #[test]
     fn persisted_original_rules_the_hook_over_the_injected_initial() {
-        let parent = unique_dir("hook-persisted");
+        let parent = unique_dir("vua-maint", "hook-persisted");
         let (world, executor, _bridge) = make_generate_setup(&parent);
         world
             .store
