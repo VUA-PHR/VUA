@@ -2,128 +2,51 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: aaca7de
+baseline_commit: 26228a9
 updated: 2026-09-11
 ---
 ## 当前焦点
-**【非工作时段截断记录，2026-09-11 20:41】**：收到操作者预告——今晚任务分配
-文档 `collab/assignments/2026-09-11-night_ZH.md` 已在 main（环境检测接入＋
-生产模块接入两个方向；本批优先于 BG 填充工单）。当前 20:41 属非工作时段
-（工作时段＝23:00–次日 08:30），按 TICK 第 0 步强制截断：不合并 main、不
-领取、不开工。**下一工作时段（23:00）第一动作**＝合并 main → 读分配文档 →
-领取环境名下切片（优先于一切 BG 填充工单）。树净、与旧基线无未提交改动。
-## 当前焦点（上一工作时段收尾记录，待 23:00 覆盖）
-## 当前焦点
-**操作者修复令已实施（dc6aa93，第三方审阅应修项·环境部分两项，用户裁定
-"先修再推"）**：①EAC 测试钩子 pub 暴露→`test-hooks` feature 门控（两钩子
-定义＋lib re-export 同 cfg；探针双态验证：feature 关闭引用即 E0425 编译失败
-＝公开面收窄生效，开启态 crate 外测试可用）；②终结测试真杀 PowerShell→
-tests/eac_terminate.rs 全部 4 件 `#[ignore = "真机手动验证件…"]`（W25 预热
-惯例），默认集零真实进程终止；真 TerminateProcess 原语件另需
-`--features test-hooks`。**验证**：默认 cargo test --workspace 66 套件全绿
-（feature 关闭＝公开面收窄态）；clippy -D warnings 双态（关/开）零告警；
-ignored 计数变化如实报告（见下）。验收走集成。
-## 自基线交付
+**E2 交付（操作者立项任务一·环境切片，2026-09-11 23:0x 完成核对）**：检测项与
+两辖区映射核对完成——**零缺项**。逐项：play 区所需 steam/steamvr/vrchat/
+network/disk/gpu 六项全覆盖（engine Zone::Play：steam/vrchat/steamvr/
+openxr_runtime/头显五件/network/windows/gpu——后三类为既有合法超集项）；
+create 区所需 unity_hub/unity_editors/vpm_cli/vcc/disk 五项全覆盖（engine
+Zone::Create：unity_hub/unity_editors/vpm_cli/vcc/disk_space）。注入抽象
+（EnvironmentRoots/RegistrySource/ProcessRunner）＋合成夹具（orchestrator
+tests/environment.rs 16 项＋树指纹只读证明）＋真机件 #[ignore]
+（project-manager manual_real）全部在位——无缺项补齐动作。
+**命名注记**：分配文档写「disk」，引擎 id 实为 `disk_space`——桌面
+projectCheckItem 透传 checkId 无白名单过滤，不构成缺口；若未来按 id 白名单
+过滤则需命名对齐（记录在案）。**验证**：cargo workspace 67 套件全绿＋clippy
+-D warnings 零告警（orchestrator＋project-manager）。E2 完成；E4 已验收
+（f7cb3ab）；任务一全链闭环。任务二环境无涉（分工表「—」）。
 ## 自基线交付（1c73437 之后）
 - 夜间累计交付已全部验收合并入 main：VUA 独有标识文件＋project-inspection
-  v0.2（354925a）、双协议本（171b00c）、环境预检事实源（406fb3e，核心接线
-  07166b7 完成）、alcom-vcc 1.1.0（9a785b2）、016 环境表态（e27f042，#19
-  仲裁采纳）＋各消化轮状态批；
-- **修复令批（dc6aa93）＋合取对齐补遗（本批）**：Cargo.toml `test-hooks`
-  feature＋两钩子 cfg 门控＋tests 两文件门控/ignore；补遗＝verify 钩子定义
-  与 lib re-export 统一 `all(windows, any(test, feature))`（原 lib 侧 any
-  裸门在非 windows cfg(test)/feature 构建下悬空——WinVerifyTrust 为
-  Windows-only；双态 clippy 零告警＋13 套件全绿复证）；
-- **O-2 现状知会（BOARD 补注消化）**：用户明示昨晚不便实机测试，W25 开窗
-  延期、时间待定——环境 B 段义务不变，继续等开窗通知；
-- **BG-9 CI 矩阵扩展消化**：schema-vectors 已含本域 eac 三件＋
-  project-inspection v0.2（vua_identity）＋project-ops——CI=windows-latest
-  默认集（feature 关闭）与本修复令的零真实进程终止纪律一致，无冲突。
-- 上批：baseline 刷新（失鲜修复）。
-
-## BG-16 闭环（2026-09-11——核心接线已验收，环境确认）
-核心交付 BG-16 接线（7a0a1ec：`environment.getSnapshot` 消费
-`EnvironmentEngine::inspect_all()`；`EnvironmentConfig` 启动注入 roots；
-未配置＝诚实空 items 永不虚构探针结果）——**环境侧验收通过**，核验点：
-①词表一致＝items 直接 serde 序列化 `EnvironmentCheckItemV01`（camelCase：
-checkId/zone/presence/errorCode/facts）＋顶层 capturedAt，与 application-
-contract v0.1 冻结词表零漂移；②只读纪律＝引擎只读有树指纹测试背书，wire
-层无写路径；③合成 roots 全链 wire 测试（environment_snapshot_wire 新套件）
-不触真实机器；④`expect` 附「序列化不可失败」不变量注释（BG-12 纪律）。
-M6 环境检查行交付缺口就此关闭（实现＋接线＋测试＋文档 1.1.0 全链在 main）。
-（原始对账表见 git 历史 fee03a0 后版本；验收后本节收敛为闭环记录。）
-
-## BG-16 领取与对账（2026-09-11，M6 环境检查行——环境工单）
-**工单**：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统
-读取抽象注入、合成夹具单测（验收：fixture 测试＋真机探测 #[ignore]＋workspace
-绿＋clippy 零告警＋M6 关门对账销账）。
-**交付事实盘点（逐项对照，全部已在 main）**：
-| M6 行要求 | 实现事实 |
-| --- | --- |
-| Unity 环境检查 | `unity_hub`＋`unity_editors`（Hub 编辑器枚举＋支持矩阵分类；orchestrator environment.rs Create 区） |
-| VRChat / SteamVR 检测 | `steam`（注册表 InstallPath→libraryfolders 全库根）→`vrchat`/`steamvr` 库根定点观测（Play 区） |
-| 网络检测 | `network`（vrchat.com:443 TCP 可达性，不发包不登录） |
-| 磁盘检测 | `disk_space`（kernel32 GetDiskFreeSpaceExW FFI，只报字节数） |
-| 残留进程失败处理 | EAC 残留探测（eac-probe v0.1，R1a 验收，B3 段语义）；观测失败＝`detection_failed` 类型化带码，缺失＝正常发现不带码 |
-| 注册表/文件系统读取抽象注入 | `EnvironmentRoots`（全路径注入）＋`RegistrySource` trait（Fake 合成）＋`ProcessRunner` trait（Fake runner） |
-| 合成夹具单测 | `crates/orchestrator/tests/environment.rs` 16 项（合成树＋合成注册表；只读性树指纹证明）＋project-manager `tests/environment_engine.rs`（含 `manual_real` 真机件已 `#[ignore]`） |
-| wire 词表一致性 | 契约明文「词表与 environment.rs 的 `EnvironmentSnapshotV1` 保持一致」（checkId/zone/presence/errorCode/facts＋顶层 capturedAt，serde camelCase） |
-**唯一缺口＝核心 provider 接线**：`provider_host.rs` 的 `environment.getSnapshot`
-处理器仍返回硬编码空 `items: []`（自注「real probes land with F6/B6」）——检测
-引擎从未被消费。该文件归核心域，本工单范围字面只到「核心 environment 切片」，
-**接线请求路由核心**（见留言）。环境侧实现零缺口。
+  v0.2（354925a）、双协议本（171b00c）、环境预检事实源＋接线（406fb3e/
+  07166b7）、alcom-vcc 1.1.0（9a785b2）、016 表态（e27f042 仲裁采纳）、
+  BG-11 修复令（dc6aa93/156640b，操作者修复令）＋BG-16 接线验收（e51bdae
+  四点核验）＋各消化轮状态批；
+- **E2 核对批（本批，collab-only）**：映射核对结论＋disk/disk_space 命名
+  注记入状态文件；验证（workspace 67＋clippy 零告警）。
 ## 在途/待他角色
-- [已闭环] **BG-16 接线验收通过**（核心 0c72258/7a0a1ec，67/67＋clippy 干净；
-  环境侧核验四点见上节）——M6 环境检查行全链关闭，环境侧零遗留；
-- **[已闭环] 013 读面路由批完成验收**（d24e5b7：listProjects/inspectProject/
-  lockStatus 三查询全接线＋`vua.project.project_not_found` 定形；T-B 消费完全
-  解锁；桌面 TS 面第一刀 70f517d 同步）——环境侧全部词表族（013 v0.2 读面/
-  014 v0.1 写面）已冻结＋接线＋TS 面注册；
-- [知会留痕] 核心→产线窗口 A2 语义：冒烟 recipe 带 constraint 需真机匹配
-  安装、不带则预检诚实跳过——A2 为产线段，环境 B 段义务不受影响；
-- [已闭环] 016 状态翻转为 accepted（485195f 随仲裁落账；集成确认 BG-4 环境
-  协作位履职完毕、无新请求）；
+- [已闭环] BG-16 接线验收通过（核心 0c72258/7a0a1ec，67/67＋clippy 干净；
+  环境侧四点核验：词表一致/只读纪律/合成 wire 测试/expect 不变量注释）——
+  M6 环境检查行全链关闭；
+- [已闭环] BG-11 修复令（操作者修复令两项＋windows 合取对齐补遗）——集成
+  验收（93d3c6a）；
 - [等桌面→核心] 备注编辑范围（D-6）确认→核心 project-ops v0.2 升版批
   （setNote）→我侧原语随批消费；
-- [等集成] W25 开窗通知——窗口环境段按执行序 v3 执行（B1 只读探测→B2a 会话
-  活跃→B2b R3 完整再核验→B3 残留→B4 证据包归档）。
-- （已闭环：白名单草案→桌面 015 §4 提案→集成照准〔01:10 落账〕——本域分析
-  交付链完整闭环，无遗留。）
-- [→产线] 016 表态已交 016 内联（见自基线节）——dependencies 维语义定义后
-  若需环境侧第二事实源（引用完整性检测）另立提案，不预接。
-- [→操作者][→集成] **修复令完成知会（验收走集成）**：两项全落地
-  （dc6aa93）。①公开面收窄探针双态证明：feature 关闭引用钩子＝E0425 编译
-  失败（收窄生效）、`--features test-hooks` 开启态外部测试编译通过可用；
-  ②默认集零真实进程终止达成——eac_terminate 4 件全转 ignored 真机手动
-  验证件（拒绝路径 3 件＋真 TerminateProcess 原语 1 件；原语件另需
-  feature）。**ignored 计数变化（如实）**：project-manager 默认集 ignored
-  1→4（+3 终结件）；默认集测试总数 -2（winverifytrust 钩子件与原语件在
-  feature 关闭下不编译）；手动跑法：
-  `cargo test -p vua-project-manager --test eac_terminate -- --ignored
-  [--features test-hooks]`；
-- [→桌面] **计数议题表态（回应你「编辑器/项目计数信封未携带＝诚实 —」路由）**：
-  快照事实核对——`EnvironmentManagersSnapshotV01` 顶层携带 `editors[]` 与
-  `projects[]` 列表、无聚合计数字段（属实）。**表态：计数＝列表的纯派生量，
-  消费端投影即可（editors.length / projects.length），不需要信封升版**——
-  012 数据表态先例（kind 计数等派生量由消费端从本体聚合，避免冗余漂移）
-  适用；展示性 length 投影不是业务决策，不违反依赖方向。你当前「诚实 —」
-  的保守读法可按此替换为直接投影，无需等任何升版。若未来出现信封内聚计数
-  的真实需求（分页/跨快照对比口径），环境主导 additive 升版（v0.2）再议，
-  当前不预接。
+- [等集成/用户] W25 开窗通知——用户明示延期，时间待定；环境 B 段义务
+  （B1→B2a→B2b→B3→B4）清单不变。
 ## 阻塞
 - 无。
 ## 下次合并意图
-本轮无实现交付；状态批随轮带入（collab-only 免测）。W25 窗口段执行批在开窗后。
+本批（E2 核对结论，collab-only）随轮带入免测。
 ## 留言
-- [→核心] 三问表态收讫消化：①v0.2 消费确认＋unreadable 核可——013 读面
-  升版闭环；②setNote 有条件立项语义草案已读，`vua.project.not_vua_native`
-  与我 `SetNoteError::NotVuaNative` 语义一一对应、Unreadable 态我也已类型化
-  （crate 内），升版批需要时直接取；③f53704c 路由消费 `crate::import_copy`
-  时如有接口摩擦随时留言，我域内即时配合；
-- [→桌面] 格式切片消化确认收讫；TS 类型落点共识一致（013 读面进应用契约
-  并集之时）——我侧同不抢跑；白名单草案你接收并拟随 IMP-2 出提案，我侧
-  频次数据需要扩展（如某域出入验证）随时留言；
-- [→集成] 环境事实源批验收（406fb3e）收讫；本轮空转消化轮（无新交付），
-  状态批随轮带入。W25 开窗后环境段义务清单不变（B1/B2a/B2b/B3/B4）。
-- （消化记录 2026-09-10 00:46 轮：015 受理落账与 §4 引用、桌面「无新增请求」
-  知会——环境侧零动作面，仅留档；历史留言均已消化。）
+- [→集成] **E2 完成知会**：任务一环境切片（E2 检测项与辖区映射核对）交付
+  ——零缺项结论＋disk_space 命名注记（桌面透传语义下非缺口）入本状态文件；
+  E4 已验收，任务一全链闭环，无需额外验收批（纯 collab 核对结论）；
+- [→桌面] disk/disk_space 命名注记：当前透传语义无影响；若 deployer 页未来
+  按 id 白名单过滤检测项，需按引擎 id `disk_space` 对齐（本状态文件在案）；
+- （历史留言消化：016/BG-11/BG-16/双协议本/标识文件各验收知会——均已闭环
+  入档。）
