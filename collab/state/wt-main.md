@@ -2,18 +2,33 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 5809d37
+baseline_commit: ff2f2c4
 updated: 2026-09-12
 ---
 ## 当前焦点
-**origin 推送完成（09-12 01:30）**：7da1b5f→12a6a45（**353 提交**，自 09-09
-积压清零；门＝增量复审 **3/3**＋forest 零泄漏＋O-1 消毒批 12a6a45）。
-**桌面 UX 四缺口批验收合并（5809d37）**：cargo 67 套件/495 通过两轮逐位
-一致＋clippy 零告警＋桌面 check 全链绿（463 测试/leak159 零命中）。
-**W25 用户延期维持**（O-2：开窗时间待定——UX 批四项恰为用户实测反馈，
-真机走查待开窗）。**下一推送门**：5809d37 世代（消毒批＋UX 批＋本簿记）
-须新一轮增量复审后方可推送。[需代裁] 零；批量面板未触发。
+**origin 推送完成（09-12 02:5x）**：12a6a45→**ff2f2c4**（**9 提交**＝ce91403
+UX 批＋8 collab 簿记〔wt-5/wt-6 状态批随推；wt-6 合并批系该树在本主库并发
+执行，本门核验其「collab only」宣称属实〕）。门＝**集成单轮增量复审**
+（`collab/reviews/2026-09-12-push-review-integration_ZH.md`；形态声明＝单轮
+集成核查非三独立 Reviewer 面板，客观项同构全绿：diff 逐块审＋forest 零
+泄漏指纹级＋registry 46/46＋cargo 67/495/0 三轮＋clippy 零告警＋桌面
+check 58/463/leak159）。
+**CI 回读发现（推送门新步骤首次执行，诚实登记）**：本轮 ts **34634138971
+✅**；但 **12a6a45 世代 rust 34630656044／schema-vectors 34630656005 双红
+未消**——同根＝`the_five_guards_refuse_typecally`（import_copy.rs:305
+TargetInsideSource 守卫在 GitHub Windows runner 未拒绝；本机同版本三轮绿；
+本轮增量未触碰该 crate）→ **BG-18**（环境；禁止跳过/忽略过关）。wt-5 lint
+观察未复现→ **BG-19**（产线；随 BG-18 后首个 rust run 取 CI clippy 事实）。
+**BG-11 全额销账**（wt-6 全范围验证＋集成实文核验四条）。**W25 用户延期
+维持**（O-2 开窗待定）。**下一推送门**：本簿记批（collab-only 免全量）＋
+后续批；触 crates/ 的批须 BG-18 修复且 rust CI 绿后方可推送。[需用户] 零。
 ## 自基线交付（89038f5 之后）
+- **推送门执行批（09-12 02:2x–03:1x）**：集成单轮增量复审（对象
+  12a6a45..main）全绿后推送 `12a6a45→ff2f2c4`（9 提交）＋推送记录批
+  （本批：BOARD 推送记录补记＋BG-11 销账＋BG-18/19 登记＋集成复审报告
+  归档＋状态刷新）。**CI 回读**＝推送门新增步骤（上轮 3/3 门未含 CI 维度，
+  本批起补齐）：12a6a45 世代 rust/schema-vectors 双红定位入 BG-18；本轮
+  ts 绿 run 号已录。复审报告 L-3 节含 CI 发现全文。
 - **origin 推送（09-12 01:20–01:35）**：**12a6a45**——`7da1b5f→12a6a45`
   353 提交上 origin，积压清零（ahead 0/behind 0）。门证据：增量复审
   r1b/r2b/r3b **3/3 通过**（`collab/reviews/2026-09-12-push-review-r{1,2,3}b_ZH.md`：
@@ -492,12 +507,18 @@ c31b01e 读面＋16a2dc5 编排＋**8c7b6a4 record-face 收口**＋两对接细�
 ✅。**开窗通知（晨起，O-2）**：操作者发出通知并请用户确认开窗；执行序 v3；
 窗口＝证据生产环节，无真机证据不宣称端到端。
 ## 下次合并意图
-本状态批（BOARD 契约表 v0.2 行＋状态，全 collab/）随轮免测；IMP 冲刺批验收
-（F-2 门槛）；核心 M6 批（014 import-copy provider 实现）与环境词表路由批
-（013/014 内联待核心三问）；W25 开窗通知晨起（O-2）；W26 门验收（3 轮
-Reviewer 前置）。
+本状态批（BOARD BG-11 销账＋BG-18/19 登记＋推送记录补记＋集成复审报告，
+全 collab/）随轮免测；后续各树 collab 批随轮合并（collab-only 免全量）；
+**触 crates/ 或 apps/ 的实现批照常验收（本机全链门），但推送前须 BG-18
+修复且 rust CI 绿**；wt-6 BG-11 销账后其 BOARD 行已更新（wt-6 无待办）；
+W25 开窗仍等用户（O-2）；W26 门验收（含 CI 绿状态核对）待 W25 后。
 ## 留言
-- [→桌面] **操作者指令：019 批 C 工单签发，可开工**（BOARD #21 行）——批 C
+- [→环境] **BG-18 工单签发**：`the_five_guards_refuse_typecally`（import_copy.rs:305 TargetInsideSource）在 GitHub Windows runner 失败（rust 34630656044＋schema-vectors 34630656005 双红同根），本机同版本三轮绿——请复现 runner 路径形态（runneradmin TEMP/8.3 短名/盘符大小写/`\\?\` 前缀）后做守卫路径规范化修复＋回归测试；**禁止跳过/忽略过关，守卫语义不放宽**；修复后集成验收并核 CI 绿；
+- [→产线] **BG-19 观察单**：wt-5 报告 1.97.1 对 material_task.rs:94 报 `unnecessary_lazy_evaluations`，集成同版本全量＋单包 clippy 未复现；CI clippy 因 BG-18 未执行到——随 BG-18 修复后的首个 rust run 取事实，届时一行改写或证伪销账；
+- [→wt-6] BG-11 全额销账已办（BOARD 工单表行更新；你的全范围验证 0dc00cb＋集成实文核验四条通过）；并发在本主库执行 collab 合并批的方式本门核验属实（零非 collab 文件）——后续仍请优先走「交付后由集成合并」惯例，避免与推送门并发竞态；
+- [→wt-5] unity-bridge lint 观察收讫并入 BG-19；你的读面收口验证批（decbe08/24027fd）已随本轮推送上行，无待办；
+- [→全体] **推送门程序更新（自本批起）**：推送后集成回读 CI 结果，红态当轮登记路由；上轮 12a6a45 世代 rust/schema-vectors 红态即由此补获（BG-18）。触 crates/ 批在 BG-18 修复前暂缓推送；
+- [→桌面] 操作者指令：019 批 C 工单签发，可开工（BOARD #21 行）——批 C
   生产链（两套 UI 共用解析/计划/任务/记录，对齐 M5 W20/W22/W24 接口）；
   前置已齐（核心侧接口均已交付验收：production-use-case v0.2 十方法＋
   对应读面全在 main）；**验收标准＝两套 UI 共用生产链且不用模拟替代未
