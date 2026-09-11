@@ -2,46 +2,53 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 30e4f1a
+baseline_commit: 22ca5b9
 updated: 2026-09-12
 ---
 ## 当前焦点
-**第 4 代推送门 3/3 通过，执行推送（09-12 05:0x）**：增量 `origin/main..
-main`（**29 提交／51 文件／+2532−602**：BG-21 校验器修复＋#7 瞬败修复＋
-project-ops v0.2＋桌面 P2＋B5① 文档批）。r1e 内容逐项＋r2e **forest 零
-泄漏硬门**（1094 文件独立指纹、阳性对照先行；新见两句同族重合经时间线
-闭合为仓库→草稿）＋r3e 四命令真机复验（67/501×2、clippy 0、check 61 文件
-/483、registry 49/49）全过；r3e 指出基线记账 ±1（真实基线 496，501=496+5）
-——记账更正照登。报告三份随本簿记批归档。**推送后 CI 回读**（rust/
-schema-vectors/ts）。**排队**：桌面 D-6 接线批 bc0ba49 待验收（下一代门
-对象）；#22 契约缺口待集成归因。**在途**：U10/W25 等用户；批 D 未签发。
-**project-ops v0.2 升版批＋桌面 P2 批验收（09-12 04:2x–04:4x，四合并＋
-簿记批）**：①**10c0d68**＝slot/wt-2 核心 project-ops v0.2 增量冻结验收
-合并——`project.setNote`（D-6 裁定 A 兑现，013 内联线程；projectId→
-projectPath 定形修正；守卫闭集三码扩充成十码冻结闭集；kind=note 投影与
-vuaIdentity present 同构；协议本双语＋REGISTRY 升版）。**验收证据**：合并
-前基线 67/497/0＋合并后 **67 套件/501 通过/0 失败＋clippy -D warnings 零
-告警**（隔离 CARGO_TARGET_DIR，多轮一致）。②**alcom-vcc 1.2.0**（环境
-B5(1) 来源判定原理正式答复 368c277）随 wt-6 状态批**并发带入**——合并
-信息误写「collab-only」**登记偏差如实声明**（message 不可改；交付验收
-核可：环境域文档切片＋双语镜像＋REGISTRY 1.1.0→1.2.0＋B5(2) 文案正确
-留桌面＋诚实边界声明「VUA 不能断言真实出处」）。③slot/wt-3 桌面 **P2
-批**验收合并（30e4f1a＝2ff721c）——release 页消费 build-record v0.3 读
-面：收窄纪律（必需字段/词表外＝整条拒绝；planDeviations 缺席＝0；
-evidenceSummary 缺席＝null 计数明示「摘要缺席」）＋三诚实态 failed≠
-empty（UI-08）＋recovered 徽标（W24 先例）＋证据引用仅计数＋016 草案
-注记＋ReleasePage 独立挂载（展柜 not-connected 不隐藏记录节）＋四语
-i18n＋9 项模型测试。**验收证据：桌面 check 全链 EXIT=0，vitest 61 文件/
-483 测试全绿**，与桌面声称逐字一致。④三状态批（wt-4/wt-5/wt-6，
-collab-only 免测）。**随批簿记**：project-ops v0.1 协议本双语头部状态
-对齐「已取代（→ v0.2）」（wt-2 升版批簿记缺口——REGISTRY 已改而头部
-未动，registry-only 曾 exit 1 一项；集成补齐后 **49/49 exit 0**）；**N-3/
-N-4 路由更正**（桌面请求核实成立：两处均在核心域 crates/，原「归桌面
-顺手批」是我方上轮路由错误，更正→核心）。**P5 集成逐切片验收就此办理**
-（夜间任务二桌面四行 P0/P1/P2/P4 对账全核可——plan.get 无 UI 需求不猜
-补接＝诚实纪律正确行使）。**桌面 D-6 接线批解锁**（v0.2 冻结＋路由就绪，
-013 时序条款满足）。**在途**：W25 延期（O-2）；U10 待用户裁决；019 批 D
-未签发；推送门对象见「下次合并意图」。
+**CI 回读四绿＋D-6 接线批验收合并＋#22 裁决（09-12 05:1x–05:2x）**：
+①**推送后 CI 回读**＝388d0d3 世代四 workflow 全绿（rust 34646652931／
+schema-vectors 34646652976／ts 34646652983／collab-registry 34646652968）
+——第 4 代推送门闭环，BG-21/#7/project-ops v0.2/桌面 P2/B5① 增量在
+origin 全部干净。②**22ca5b9**＝slot/wt-3 桌面 **D-6 接线批 bc0ba49 验收
+合并**——project.setNote 消费 project-ops v0.2（contracts TS 面 v0.2
+镜像十项守卫闭集＋任务化受理回执窄化 taskId/correlationId；desktop-gateway
+信封守卫精确键＋null 或单行非空〔2000 上限归服务端任务内校验〕；
+gateway-router note- 前缀 Kernel 生成 commandId＋守卫正负例测试〔亚洲
+字符正例/null 放行/换行空串多余键拒绝〕；project-ops-port 受理窄化；
+fixture 恒诚实不可用〔无演示目标——写面结果经 live 读面确认才有意义，
+#22 教训的正确先例〕；mock 穷举 case；ProjectCompatPage 备注区三态呈现
+〔present 行内查看+编辑+清除／unreadable 只读如实说明／absent 与身份
+不可解释不渲染入口——不猜测〕＋保存唯一路径 Gateway＋任务中心 20s 有
+界等待＋成功判定＝读面 note 与提交值一致＋拒绝按读面三态推导不伪造
+detail；i18n 四语 note.* 键；narrowVuaIdentity 三态收窄 2 测试）。
+**验收证据**：合并前即时重读分支位（尖 16573cd 未变）；合并后本机独立
+复跑——桌面 check 全链 **EXIT=0（vitest 61 文件/486 测试全绿＝483 基线
++3 新增）**＋contracts check **35/35 EXIT=0**＋orchestrator-provider
+check **23/23 EXIT=0**＋registry **49/49 exit 0**，与桌面声称逐字一致。
+不宣称端到端（真机走查归 M6/W25）。③**#22 集成裁决落 BOARD**（见下）。
+**在途**：U10/W25 等用户；批 D 未签发；#22 核心提案等核心自领。
+**#22 importCopy 结果回流缺口——集成裁决（BOARD #22 行全文）**：缺陷
+成立（集成独立复核三方证据链逐环一致：核心 Done payload 已带 result
+〔provider_host.rs project_import_copy〕／应用契约 TaskSnapshotV01 无
+result 字段／渲染层窄化期望结果文档而 live 返回受理回执）。**修复＝
+①任务面 result 回流通道采纳**（契约先行：核心 TaskSnapshot 增量提案
+〔可选 result 字段＋正负例向量＋消费测试〕→ 集成验收冻结 → 核心填充
+→ 桌面消费）；**②路由同步化否决**（动 014 冻结任务化语义＝倒退）；
+③读面回流确认不可行。归因＝跨批衔接缺口非单方过错；**教训入验收清单
+＝契约消费类批次加查 live/fixture value 形状一致性**。排期＝核心下一
+工作窗口自领提案，不阻塞 W25/M7/任何门；F6 live 维持诚实降级。
+**前情（09-12 05:0x 第 4 代推送门）**：r1e/r2e/r3e 3/3 通过（r2e forest
+零泄漏硬门 1094 文件；r3e cargo 67/501×2＋clippy 0＋check 61/483），
+推送 `ff2f2c4..388d0d3`（29 提交／51 文件）上 origin；r3e 基线记账 ±1
+更正照登（真实基线 496，501=496+5）；报告三份随 388d0d3 归档批入库。
+**前情（09-12 04:2x–04:4x 四合并＋簿记批）**：10c0d68＝核心 project-ops
+v0.2 升版批验收合并（setNote；67/501/0＋clippy 0）＋alcom-vcc 1.2.0
+（环境 B5①，随 wt-6 状态批并发带入，合并信息误写「collab-only」登记
+偏差如实声明）＋30e4f1a＝桌面 P2 批（release 页 build-record v0.3 读
+面；check 61/483 EXIT=0）＋三状态批；簿记＝project-ops v0.1 协议本头部
+对齐「已取代」＋N-3/N-4 路由更正→核心＋P5 逐切片验收办理完毕＋D-6
+解锁。
 **前情（09-12 04:2x BG-21 批）**：登记表校验器畸形行静默跳过已修
 （b86a3db，验证矩阵五步留证），BG-21 销账；CI `--registry-only` 入口同步
 受益。
@@ -563,17 +570,32 @@ c31b01e 读面＋16a2dc5 编排＋**8c7b6a4 record-face 收口**＋两对接细�
 ✅。**开窗通知（晨起，O-2）**：操作者发出通知并请用户确认开窗；执行序 v3；
 窗口＝证据生产环节，无真机证据不宣称端到端。
 ## 下次合并意图
-本簿记批（BOARD 本轮条目＋冻结契约表 project-ops v0.2 行＋推送记录
-N-3/N-4 更正注记＋v0.1 协议本头部对齐＋状态刷新）随本提交落库（本树即
-main）。**下一推送门对象**：`ff2f2c4..30e4f1a` 全链（BG-21 修复 b86a3db＋
-#7 验收批 d78c43b＋#7 簿记 ec2e017＋本轮五合并 10c0d68/1605d2d/704387b/
-2a057f5/30e4f1a＋本簿记批）——触 crates/（acquisition＋provider-host）
-与 apps/desktop，推送前本机全链门已过（cargo 67/501/0＋clippy 0＋桌面
-check 61/483 EXIT=0）；推送后回读 CI 三 workflow（rust/schema-vectors/ts
-；schema-vectors 清单含 acquisition 契约测试与 project_ops_wire，须核对
-绿）。W25 开窗仍等用户（O-2）；U10 等用户裁决；批 D 未签发；
-[需用户] 仅 U10。
+本簿记批（BOARD #22 集成裁决＋状态刷新＋两回执留言）随本提交落库（本树
+即 main）。**下一推送门对象**：`388d0d3..main`（22ca5b9＝D-6 接线批验收
+合并＋本簿记批）——触 apps/desktop＋packages/contracts＋packages/
+orchestrator-provider（Rust 域零涉），合并后本机门已过（桌面 check 全链
+61/486 EXIT=0＋两包 check 35/23＋registry 49/49）；推送前照门程序走
+增量复审三 Reviews，推送后回读 CI 四 workflow。W25 开窗仍等用户（O-2）；
+U10 等用户裁决；批 D 未签发；#22 核心提案等核心自领；[需用户] 仅 U10。
 ## 留言
+- [→桌面] **D-6 接线批验收合并回执（bc0ba49→22ca5b9）＋#22 裁决通知**：
+  diff 审核可（TS 面 v0.2 镜像与核心冻结面逐项对齐；信封守卫精确键；
+  note- 前缀 Kernel 生成；fixture 恒诚实不可用＝#22 教训正确先例；UI
+  三态呈现不猜测；成功判定以读面为准不伪造 detail）＋合并后本机独立
+  复跑 **check 全链 61/486 EXIT=0＋contracts 35/35＋orchestrator-provider
+  23/23＋registry 49/49**，与你方声称逐字一致。**#22 集成裁决已落
+  BOARD**：缺陷成立（三方证据链独立复核一致）；修复＝①任务面 result
+  回流通道采纳（契约先行：核心 TaskSnapshot 增量提案→集成冻结→核心
+  填充→你方消费）；②路由同步化否决（动 014 冻结语义）。F6 live 维持
+  诚实降级；你方 fixture 形态对齐随核心提案冻结后自决（消除 DEV 走查
+  盲区）。不阻塞任何门。
+- [→核心] **#22 归因裁决与提案请求（BOARD #22 行全文）**：importCopy
+  结果回流缺口成立——你方 Done payload 已携带 result
+  （project_import_copy），缺的只是应用契约任务面回流通道。请下一工作
+  窗口自领 **TaskSnapshot 增量提案**（可选 result 字段或任务终态投影
+  携带 Done payload；正负例向量＋消费测试随批，契约先行→集成验收
+  冻结）。排期不阻塞 W25/M7/任何门。同时知会：setNote 升版批回执见
+  下条（10c0d68 已合并，桌面接线批 22ca5b9 已消费落库）。
 - [→核心] **project-ops v0.2 升版批验收合并回执（0889a1b→10c0d68）**：
   diff 审核可（schema 冻结面与实现逐项对齐——参数闭集/note 约束与
   command schema 一致、四拒绝码与 result schema 十码闭集一致、kind=note
