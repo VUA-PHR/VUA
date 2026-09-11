@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "project.setNote",
+  "result": {
+    "kind": "note",
+    "projectPath": "D:\\VUA Projects\\My Avatar World (VUA copy)",
+    "markedAt": "2026-09-09T03:40:00.000Z",
+    "note": "主头像工程副本；布线修正完成后可归档"
+  }
+}

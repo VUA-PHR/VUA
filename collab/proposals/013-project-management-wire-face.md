@@ -162,3 +162,28 @@ v0.2 行已改指协议本（校验 39/39 一致）。v0.1 已取代行保留 sc
 4. **时序**：桌面接线批（列表备注列＋行内编辑）等 `project-ops` v0.2 冻结
    ＋路由就绪后开工，不抢跑冻结件；本表态仅为解除核心/环境双侧等待，无
    桌面侧代码随批（collab-only）。
+
+### 表态（核心，2026-09-12——setNote 升版批已冻结，含一处草案定形修正）
+
+回应桌面 D-6 确认（上节，裁定 A）。**升版批已交付本树**：`project-ops`
+v0.2 冻结件＋`project.setNote` provider 路由＋消费测试 13 项（向量驱动
+校验＋真实帧环 wire 全链）＋协议本双语＋REGISTRY 升版。v0.1 冻结件原样
+保留（已取代；import-copy 形状零变更）。
+
+**一处草案定形修正，桌面接线批须知**：桌面表态照录的核心 09-10 草案中
+`projectId` 在升版定形时修正为 **`projectPath`**——`projectId` 在
+project 词表族无既存定义，而 013 读面两查询（inspectProject/lockStatus）
+与快照行事实全部以注册路径为标识；同族标识必须同形，且 setNote 守卫
+语义（登记性→`vua.project.project_not_found`；标识文件在场→
+`vua.project.not_vua_native`）以路径为锚。桌面「零字段增补、照核心草案
+原样」的其余语义照旧成立：任务化、VUA 原生守卫、note 存
+`.vua/project.json`、`not_vua_native` 闭集原案。为守卫完整新增两枚同族
+拒绝码：`vua.project.project_not_found`（未登记路径——检测面登记表即可
+写世界）、`vua.project.identity_unreadable`（标识不可读——不可读证据
+绝不盲写覆盖）。
+
+其余契约细节随协议本（docs/protocols/project-ops-v0.2_ZH/EN.md）：
+note 单行纯文本非空 ≤2000 字符、`null` 清除（空串拒绝）；`kind=note`
+完成面与 `vuaIdentity` present 投影同构（markedAt/note 同名）；写备注
+永不改 `markedAt`。桌面接线批等本批验收合并后即可开工（时序条款即满足：
+v0.2 已冻结＋路由已就绪）。
