@@ -7,7 +7,7 @@ import { workflowRunStates } from "./workflow.ts";
 import { projectBuildRecordDisplayStatus, type ModelProductionPort } from "./model-production-port.ts";
 
 /**
- * F3 生产纵向端口契约测试(production-use-case v0.1 草案;仿 ports.contract.test.ts):
+ * F3 生产纵向端口契约测试(production-use-case v0.1〔M3 冻结〕;仿 ports.contract.test.ts):
  * 同一组用例跑 empty / fixture 实现;未来的 live 实现(electron-gateway 接线后)
  * 必须通过同一契约,页面才能零重写切换。
  * fixture 用例经 fixtureGateway 装配(任务联动走真实 fixture 任务端口)。
