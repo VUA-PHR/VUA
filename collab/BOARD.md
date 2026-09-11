@@ -141,7 +141,7 @@ production-use-case v0.2 冻结＋W22 实现进行中＋013/014 接线完成。
   | BG-15 | **Inspection/Release 页面骨架**（原 BG-3 未交付项）：信息架构＋诚实空态；无事实源不渲染检查数据 | 桌面（协作产线） | 页面骨架切片 | 桌面 check 全链绿；空态即终态；不宣称可用；与 design-standard §8 对账不越界 |
   | BG-16 | **M6 环境检查行**（审阅发现的交付缺口）：Unity/VRChat/SteamVR 检测＋网络/磁盘/残留进程检查项，注册表/文件系统读取抽象注入、合成夹具单测 | 环境 | `crates/project-manager`＋核心 environment 切片 | 检查项带 fixture 测试；真机探测标 `#[ignore]`；cargo workspace 绿＋clippy 零告警；M6 关门对账可凭此行销账 |
   | BG-17 | **downloads.listCompleted 排序断言**：`completed_at` 按字符串排序，格式漂移即退化 | 数据 | `bdl-store` 测试补断言 | ISO 排序断言钉死；格式漂移即测试失败——**✅ 已交付并核销（数据，43ea8d2/b75447e：ISO 排序断言 51 行钉死，撞车已按实际核销——在途批未含该断言，无重复）** |
-  | BG-18 | **compose-draft-store 确定性修复**：`composeAddItem` 纯函数内 `new Date().toISOString()` 非确定；`composeUndo` 回空草稿仍 `dirty:true`；`addedAt` 无覆盖 | 桌面 | `apps/desktop` 修复＋测试 | 时钟参数化/注入；`addedAt` 与 undo-dirty 断言补齐；桌面 check 绿——⏳ 开放（桌面可领；与在途批撞车按实际核销） |
+  | BG-20 | **compose-draft-store 确定性修复**：`composeAddItem` 纯函数内 `new Date().toISOString()` 非确定；`composeUndo` 回空草稿仍 `dirty:true`；`addedAt` 无覆盖 | 桌面 | `apps/desktop` 修复＋测试 | 时钟参数化/注入；`addedAt` 与 undo-dirty 断言补齐；桌面 check 绿——⏳ 开放（桌面可领；与在途批撞车按实际核销）。**〔编号注 2026-09-12 集成：原误标 BG-18，与 CI 环境敏感失败工单重号；重编号为 BG-20——重编号时无任何树引用过该号〕** |
 
 ## 工作树指派
 
@@ -333,6 +333,16 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
     取 CI clippy 事实）。
   - 同窗备注：ff2f2c4 合并提交信息宣称「collab only, tests waived」经本门
     核验属实（07c31c5..ff2f2c4 零非 collab 文件）。
+  - **同窗三轮补充复审（集成并发轮，03:2x）**：`collab/reviews/2026-09-12-
+    push-review-r1c-r2c-r3c_ZH.md`——另一集成会话同窗独立执行 r1b/r2b/r3b
+    式三轮（对象同世代），与本单轮门互为补强：r1c **registry 负例验证**
+    （改坏 product-boundary 版本行→exit 1 定位行→复原干净；单轮门仅两轮
+    正例 46/46）＋UX 批五项宣称逐项 diff 对照；r2c 增量指纹复扫（命中全为
+    r2b 报告自引用，排除 collab/ 后零命中）＋O-1 关闭确认（fixture-release
+    本机路径已随 12a6a45 消毒清零）；r3c cargo 两轮**逐位一致 67/495/0/26**
+    ＋clippy 零告警（**BG-19 点位本机 rustc 1.97.1 未复现**，观察态维持）＋
+    桌面 check EXIT=0（vitest 58/463＋leak 159）。同批簿记：工单表第二行
+    BG-18（compose-draft-store）重编号 **BG-20**（消除与 CI 工单重号）。
 - **2026-09-12（01:20–01:35 工作时段）**：`7da1b5f → 12a6a45`——**353 提交**
   上 origin（自 09-09 起积压清零；推送后 ahead 0/behind 0）。
   - **门证据（3/3 全过）**：增量复审 `collab/reviews/2026-09-12-push-review-r1b/r2b/r3b_ZH.md`

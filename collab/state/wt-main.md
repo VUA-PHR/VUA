@@ -2,10 +2,21 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: ff2f2c4
+baseline_commit: 1f8098c
 updated: 2026-09-12
 ---
 ## 当前焦点
+**并发轮补充（09-12 03:2x，与本推送门单轮核查并发）**：①slot/wt-2
+processFactory 表态批（f864337，collab-only）验收合并 **725e8b5**（--no-ff
+免全量测试）；②**r1c/r2c/r3c 三轮补充复审**归档
+（`collab/reviews/2026-09-12-push-review-r1c-r2c-r3c_ZH.md`）——与单轮门
+互为补强：registry 负例验证（破坏→exit 1 定位→复原）、UX 批五项宣称
+逐项对照、增量指纹复扫（排除 collab/ 零命中；O-1 关闭确认）、cargo 两轮
+逐位一致 **67/495/0/26**＋clippy 零告警（**BG-19 点位本机未复现**）＋
+桌面 check 58/463/leak159；③BOARD 工单表第二行 BG-18 重编号 **BG-20**
+（消除重号）。**在途**：W25 用户延期维持（O-2）；BG-18（环境，CI 双红
+修复）/BG-19（产线）/BG-15/BG-20（桌面）按工单领取；触 crates/ 的推送批
+须 BG-18 修复且 rust CI 绿。
 **origin 推送完成（09-12 02:5x）**：12a6a45→**ff2f2c4**（**9 提交**＝ce91403
 UX 批＋8 collab 簿记〔wt-5/wt-6 状态批随推；wt-6 合并批系该树在本主库并发
 执行，本门核验其「collab only」宣称属实〕）。门＝**集成单轮增量复审**
