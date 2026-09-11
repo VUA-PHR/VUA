@@ -2,29 +2,34 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 1f8098c
+baseline_commit: 34eddaf
 updated: 2026-09-12
 ---
 ## 当前焦点
-**并发轮补充（09-12 03:2x，与本推送门单轮核查并发）**：①slot/wt-2
-processFactory 表态批（f864337，collab-only）验收合并 **725e8b5**（--no-ff
-免全量测试）；②**r1c/r2c/r3c 三轮补充复审**归档
-（`collab/reviews/2026-09-12-push-review-r1c-r2c-r3c_ZH.md`）——与单轮门
-互为补强：registry 负例验证（破坏→exit 1 定位→复原）、UX 批五项宣称
-逐项对照、增量指纹复扫（排除 collab/ 零命中；O-1 关闭确认）、cargo 两轮
-逐位一致 **67/495/0/26**＋clippy 零告警（**BG-19 点位本机未复现**）＋
-桌面 check 58/463/leak159；③BOARD 工单表第二行 BG-18 重编号 **BG-20**
-（消除重号）。**在途**：W25 用户延期维持（O-2）；BG-18（环境，CI 双红
-修复）/BG-19（产线）/BG-15/BG-20（桌面）按工单领取；触 crates/ 的推送批
-须 BG-18 修复且 rust CI 绿。
-**origin 推送完成（09-12 02:5x）**：12a6a45→**ff2f2c4**（**9 提交**＝ce91403
-UX 批＋8 collab 簿记〔wt-5/wt-6 状态批随推；wt-6 合并批系该树在本主库并发
-执行，本门核验其「collab only」宣称属实〕）。门＝**集成单轮增量复审**
-（`collab/reviews/2026-09-12-push-review-integration_ZH.md`；形态声明＝单轮
-集成核查非三独立 Reviewer 面板，客观项同构全绿：diff 逐块审＋forest 零
-泄漏指纹级＋registry 46/46＋cargo 67/495/0 三轮＋clippy 零告警＋桌面
-check 58/463/leak159）。
-**CI 回读发现（推送门新步骤首次执行，诚实登记）**：本轮 ts **34634138971
+**新一代推送门进行中（09-12 03:4x）**：增量 `bc59453..34eddaf`（20 提交，
+30 文件 +1466/−466）——桌面三交付批（019 批 C part 2＋BG-20＋BG-15）＋
+BG-19 一行修复＋**BG-18 修复**＋各树状态批。r1d/r2d/r3d 三路 Reviewer
+并行审阅中；**≥2 通过＋forest 零泄漏 → 推送 → 盯 CI rust/schema-vectors
+转绿 → BG-18/BG-19 销账**。**在途**：W25 用户延期维持（O-2）；BG-21 新票
+（登记表校验器健壮性，集成域）；批 D 未签发。
+**五批验收合并（09-12 03:3x–03:4x，全部过全量验证）**：
+- **8c799a5**＝slot/wt-3 桌面三交付（5328099 批 C part 2 生产链 UI 接线＋
+  80052d6 BG-20 确定性＋7a1af41 BG-15 Inspection 骨架）——合并后 cargo
+  67/495×2＋clippy 0＋桌面 check 全链 474 绿；
+- slot/wt-2 核心簿记（BG-7 复验三态证据＋BG-18 静态根因＋校验器观察）
+  合并（collab-only 免测）；
+- slot/wt-4 产线 **BG-19 一行修复**（b3b9833）合并——cargo 67/495×2＋
+  clippy -D warnings 0；
+- slot/wt-5 数据状态批合并（collab-only 免测）；
+- **34eddaf**＝slot/wt-6 环境 **BG-18 修复**（38dc36c：normalize() 最深
+  存在祖先 canonicalize 回拼＋盘符大写＋116 行回归测试＋windows-sys
+  dev-dep 备案；TDD 红绿链）——合并后 **67 套件/496 通过×2 逐位一致**
+  ＋clippy -D warnings 0。核心独立根因分析与环境实证一致（RUNNER~1 8.3
+  短名 vs 长名 starts_with 不命中）。
+**BOARD 簿记（随本批提交）**：BG-7 销账（核心复验＋集成 46/46 复核）；
+BG-15/BG-20 销账；BG-18/BG-19 进度注记（销账待 CI 转绿）；**BG-21 新票**
+（登记表校验器畸形行静默跳过，集成域）；#21 批 C 桌面切片完成注记。
+**CI 回读发现（推送门新步骤首次执行，诚实登记）**：ts **34634138971
 ✅**；但 **12a6a45 世代 rust 34630656044／schema-vectors 34630656005 双红
 未消**——同根＝`the_five_guards_refuse_typecally`（import_copy.rs:305
 TargetInsideSource 守卫在 GitHub Windows runner 未拒绝；本机同版本三轮绿；
