@@ -2,10 +2,10 @@
 
 [English](alcom-vcc_EN.md) | [简体中文](alcom-vcc_ZH.md)
 
-> Document version: 1.1.0  
+> Document version: 1.2.0  
 > Status: Accepted  
 > Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
-> Updated: 2026-09-10  
+> Updated: 2026-09-12  
 > Authority: `docs/product-boundary_EN.md` 1.2.0 (user ruling U3, 2026-09-08)
 
 ## Authority and hard boundary
@@ -56,6 +56,47 @@ VUA-managed.
 - Writes are always handed over: the UI offers "operate in ALCOM/VCC" or "import as a
   VUA-managed copy"; VUA never writes the original project.
 
+## Source-finding principles and capability boundary (new in 1.2.0)
+
+This section is the formal answer to walkthrough feedback B5① ("explain how the
+project and package origins are currently determined"): it states VUA's source
+finding basis honestly and pins down its capability boundary — **VUA cannot assert
+where a project or a package really came from**. That boundary is inherent to the
+detection face, not a defect awaiting a fix.
+
+### Project origin (manager association)
+
+- The only finding basis is the registry inside each manager's own settings file
+  (ALCOM `setting.json` `userProjects`; VCC `settings.json`
+  `userProjects`/`localProjectFolders`). "Managed by X" as reported by VUA means
+  exactly "X's settings file currently registers that path" — a registration fact,
+  not an assertion about who actually manages it.
+- Known boundary: the registry can be stale (entries whose path no longer exists
+  stay visible with a `path_present: false` warning); paths registered nowhere
+  (e.g. a project placed by hand) are invisible to VUA, and VUA never sweeps user
+  folders to guess.
+
+### Package origin (declared face)
+
+- VPM package information comes from the `dependencies`/`locked` maps of
+  `Packages/vpm-manifest.json`; the compatibility matrix and project inspection
+  present "what the project manifest declares".
+- Capability boundary: **VPM declarations carry no acquisition channel** — official
+  repository, community repository, local file install, and manual copy are
+  indistinguishable in the manifest. VUA therefore cannot, and does not claim to,
+  assert the real provenance of any package. The user observation "the current
+  clues cannot establish the project's origin" matches this: it is the inherent
+  boundary of read-only declared-face detection.
+
+### Presentation discipline
+
+- User-visible source wording uses uncertainty semantics ("this project looks like
+  it is managed by other software", "taking it over may have unknown consequences"),
+  never assertion semantics. The concrete copy belongs to the desktop presentation
+  domain (BOARD B5②); the factual basis is this section;
+- The detection face reports only what it sees; missing, failed, and unparseable
+  states are presented as typed states, never invented assertions.
+
 ## VUA-native project finding (new in 1.1.0)
 
 User rulings (2026-09-09 items 7/9/12): a migrated/imported copy's folder carries
@@ -89,6 +130,11 @@ inspection face never writes.
 
 ## Document changelog
 
+- 1.2.0 (2026-09-12): the "Source-finding principles and capability boundary"
+  section added (formal answer to BOARD B5①: project origin = manager registry
+  fact, package origin = VPM declared face; pins the "cannot assert real
+  provenance" capability boundary and the uncertainty presentation discipline;
+  factual basis for the B5② copy).
 - 1.1.0 (2026-09-10): the "VUA-native project finding" section added
   (`.vua/project.json` tri-state; user rulings 7/9/12) + the detection-matrix
   VUA-native identity row; machine-readable faces refreshed (project-inspection
