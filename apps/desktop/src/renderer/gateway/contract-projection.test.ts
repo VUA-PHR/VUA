@@ -118,6 +118,44 @@ describe("contract environment snapshot projection", () => {
     expect(unity).toMatchObject({ description: "vua.env.probe_failed" });
   });
 
+  it("projects known check ids to four-language card titles and passes unknown ids through", () => {
+    // 已注册 id:标题走消费侧文案注册表(disk_space 双区同 id 同题)
+    const view = projectEnvironmentSnapshot({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 1,
+      capturedAt: "2026-09-12T01:00:00.000Z",
+      items: [
+        { checkId: "steam", zone: "play" as const, presence: "detected" as const, facts: {} },
+        { checkId: "disk_space", zone: "play" as const, presence: "detected" as const, facts: {} },
+        { checkId: "disk_space", zone: "create" as const, presence: "detected" as const, facts: {} },
+        { checkId: "vcc", zone: "create" as const, presence: "detected" as const, facts: {} },
+        { checkId: "unity_editors", zone: "create" as const, presence: "detected" as const, facts: {} },
+      ],
+    });
+    const play = view.deployer.zones.play;
+    const create = view.deployer.zones.create;
+    if (play.kind !== "results" || create.kind !== "results") throw new Error("expected results phases");
+    expect(play.items.map((item) => item.title)).toEqual([
+      strings.deployer.checks.steam,
+      strings.deployer.checks.diskSpace,
+    ]);
+    expect(create.items.map((item) => item.title)).toEqual([
+      strings.deployer.checks.diskSpace,
+      strings.deployer.checks.vcc,
+      strings.deployer.checks.unityEditors,
+    ]);
+    // 未注册 id(引擎未来新增):标题如实透传 checkId,不猜测
+    const unknown = projectEnvironmentSnapshot({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 1,
+      capturedAt: "2026-09-12T01:00:00.000Z",
+      items: [{ checkId: "future_check", zone: "play" as const, presence: "detected" as const, facts: {} }],
+    });
+    const unknownPlay = unknown.deployer.zones.play;
+    if (unknownPlay.kind !== "results") throw new Error("expected a results phase");
+    expect(unknownPlay.items[0]?.title).toBe("future_check");
+  });
+
   it("keeps an empty zone as an honest empty result, not a ready verdict", () => {
     const view = projectEnvironmentSnapshot({
       contractVersion: APPLICATION_CONTRACT_VERSION,

@@ -23,7 +23,9 @@ export type IconName =
   | "avatar"
   | "outfit"
   | "anim"
-  | "shader";
+  | "shader"
+  | "refresh"
+  | "home";
 
 const paths: Record<IconName, string> = {
   check: "M5 12.5l4.5 4.5L19 7.5",
@@ -46,6 +48,9 @@ const paths: Record<IconName, string> = {
   outfit: "M10 3.8a2 2 0 1 1 2 2v1.7M12 7.5l8.3 9.2a1.4 1.4 0 0 1-1 2.3H4.7a1.4 1.4 0 0 1-1-2.3L12 7.5Z",
   anim: "M8 5.1v13.8c0 .8.9 1.3 1.6.9l11-6.9a1.04 1.04 0 0 0 0-1.8l-11-6.9c-.7-.4-1.6.1-1.6.9Z",
   shader: "M12 3.5 13.9 9.1l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.6L4.5 11l5.6-1.9L12 3.5Z",
+  // 内嵌浏览导航条(Fluent 风格描边):刷新 = 顺时针环形箭头,回首页 = 屋形
+  refresh: "M20 12a8 8 0 1 1-2.34-5.66M20 4.5v4h-4",
+  home: "M4 11l8-7 8 7M6.5 9.5V20h11V9.5",
 };
 
 export interface IconProps {

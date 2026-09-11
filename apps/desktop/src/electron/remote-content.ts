@@ -1,6 +1,7 @@
 import { WebContentsView, session, type BrowserWindow, type Rectangle, type Session } from "electron";
 import type { RemoteContentEventV1, RemoteContentViewStateV1 } from "@vua/contracts";
 import {
+  installCookiePersistencePolicy,
   installRemoteContentNavigationPolicy,
   installRemoteContentSessionPolicy,
   isAllowedRemoteOrigin,
@@ -10,17 +11,27 @@ import {
 } from "./security.js";
 
 /**
+ * 内嵌视图顶部预留条高度(px):视图不覆盖宿主窗口整窗,顶部留给渲染层
+ * 固定导航条(后退/前进/刷新/回首页/URL/关闭——用户实测缺口修复,否则
+ * 全屏视图盖死壳界面无法退出)。渲染层侧等高条在 ImportPage 浏览面板;
+ * 两处以同一常量语义对齐,改动必须同批。
+ */
+export const REMOTE_VIEW_NAV_STRIP_PX = 44;
+
+/**
  * 远程内容管理器(F4 隔离基座):Main 持有的 `WebContentsView` 生命周期与
  * 隔离边界(docs/architecture/desktop_ZH:独立 partition Session 保存独立远程
  * 存储;远程页面无 preload、无 Node、能力面只含标准 Web API)。
  *
- * - Renderer 只经窄面发语义动作(open/navigate/close/setVisible),任何
- *   Electron 对象、Cookie、下载令牌都不过 IPC;
+ * - Renderer 只经窄面发语义动作(open/navigate/goBack/goForward/reload/
+ *   close/setVisible),任何 Electron 对象、Cookie、下载令牌都不过 IPC;
  * - 允许清单外的导航与打开动作在 Main 拒绝(打开动作以错误 reject,视图内
  *   用户点击以 blocked 事件透明上报);
  * - 下载默认拒绝(F4-3 下载端口接管后替换 session 钩子);
- * - 视图占满宿主窗口内容区是骨架行为:标题栏让位与画中画式布局由表现层
- *   切片(F4-5)经 setBounds 区域化,本模块只提供窗口尺寸跟随。
+ * - 登录会话存活:允许清单来源的会话 Cookie 补有界持久到期(安全.ts 策略),
+ *   Cookie 数据只落本机分区,永不离开本机;
+ * - 视图占满宿主窗口内容区并预留顶部导航条:导航条布局由表现层承载,本
+ *   模块只负责让位(上缘 = REMOTE_VIEW_NAV_STRIP_PX)。
  */
 
 export interface RemoteContentManagerOptions {
@@ -64,6 +75,9 @@ export class RemoteContentManager {
       onViolation,
       ...(options.willDownload === undefined ? {} : { willDownload: options.willDownload }),
     });
+    // 登录会话存活(隔离边界内):允许清单来源的会话 Cookie 补持久到期,
+    // 数据只落本机分区存储(见类注释红线节)
+    installCookiePersistencePolicy(this.#session, options.allowedOrigins);
   }
 
   setHostWindow(window: BrowserWindow | null): void {
@@ -135,6 +149,34 @@ export class RemoteContentManager {
     return this.#stateOf(managed);
   }
 
+  /* ---- 视图内导航历史(固定导航条动作面):历史成员在产生时已过导航
+   *  策略,这里只做身份与可走性守卫,不做二次来源裁决 ---- */
+
+  goBack(viewId: string): RemoteContentViewStateV1 {
+    this.#assertUsable();
+    const managed = this.#requireView(viewId);
+    if (managed.view.webContents.navigationHistory.canGoBack()) {
+      managed.view.webContents.navigationHistory.goBack();
+    }
+    return this.#stateOf(managed);
+  }
+
+  goForward(viewId: string): RemoteContentViewStateV1 {
+    this.#assertUsable();
+    const managed = this.#requireView(viewId);
+    if (managed.view.webContents.navigationHistory.canGoForward()) {
+      managed.view.webContents.navigationHistory.goForward();
+    }
+    return this.#stateOf(managed);
+  }
+
+  reload(viewId: string): RemoteContentViewStateV1 {
+    this.#assertUsable();
+    const managed = this.#requireView(viewId);
+    managed.view.webContents.reload();
+    return this.#stateOf(managed);
+  }
+
   close(viewId: string): void {
     this.#requireView(viewId);
     this.#broadcast({ kind: "view-closed", viewId });
@@ -172,7 +214,15 @@ export class RemoteContentManager {
   #applyBounds(managed: ManagedView): void {
     const window = this.#requireHost();
     const bounds: Rectangle = window.getContentBounds();
-    managed.view.setBounds({ x: 0, y: 0, width: bounds.width, height: bounds.height });
+    // 顶部让位给渲染层固定导航条(高度见 REMOTE_VIEW_NAV_STRIP_PX 注释);
+    // 窗口过矮时条高吃满则视图不显示(诚实让位,不产生负高度)
+    const height = Math.max(bounds.height - REMOTE_VIEW_NAV_STRIP_PX, 0);
+    managed.view.setBounds({
+      x: 0,
+      y: REMOTE_VIEW_NAV_STRIP_PX,
+      width: bounds.width,
+      height,
+    });
   }
 
   #requireHost(): BrowserWindow {

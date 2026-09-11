@@ -16,6 +16,22 @@ export type EmbeddedBrowseAvailability =
   | { readonly kind: "available" }
   | { readonly kind: "unavailable" };
 
+/** 云端段默认首页(用户实测缺口修复 2026-09-12):booth.pm 在浏览允许清单
+ *  内(U9 双轨:浏览清单与下载域清单分开);面板首开自动导航至此,后续
+ *  导航历史照常保留,「回首页」按钮同址。 */
+export const BOOTH_HOME_URL = "https://booth.pm/";
+
+/** 地址脱敏显示(导航条只读位):origin + 路径,弃查询串与片段——登录态
+ *  令牌/追踪参数不展示;解析失败如实回显原文(不猜测) */
+export function displayUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    return `${parsed.origin}${parsed.pathname}`;
+  } catch {
+    return url;
+  }
+}
+
 /** app.snapshot 的能力标志 → 面板两态(未知快照 = 保守不可用,不猜测) */
 export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvailability {
   return remoteBrowser === true ? { kind: "available" } : { kind: "unavailable" };
@@ -42,6 +58,9 @@ export interface EmbeddedBrowseState {
   readonly viewId: string | null;
   /** 视图当前地址(navigated 事件同步;用户输入草稿不入此状态) */
   readonly currentUrl: string | null;
+  /** 导航历史可走性(navigated 事件同步;导航条后退/前进按钮禁用判据) */
+  readonly canGoBack: boolean;
+  readonly canGoForward: boolean;
   /** 最近一次策略拦截目标(诚实呈现;null = 无) */
   readonly lastBlocked: string | null;
 }
@@ -49,6 +68,8 @@ export interface EmbeddedBrowseState {
 export const initialEmbeddedBrowseState: EmbeddedBrowseState = {
   viewId: null,
   currentUrl: null,
+  canGoBack: false,
+  canGoForward: false,
   lastBlocked: null,
 };
 
@@ -59,14 +80,19 @@ export function embeddedBrowseReducer(
   event: RemoteContentEventV1,
 ): EmbeddedBrowseState {
   if (event.kind === "view-opened") {
-    return { viewId: event.viewId, currentUrl: event.url, lastBlocked: null };
+    return { viewId: event.viewId, currentUrl: event.url, canGoBack: false, canGoForward: false, lastBlocked: null };
   }
   if (event.kind === "navigated" && state.viewId !== null && event.viewId === state.viewId) {
-    return { ...state, currentUrl: event.url };
+    return {
+      ...state,
+      currentUrl: event.url,
+      canGoBack: event.canGoBack,
+      canGoForward: event.canGoForward,
+    };
   }
   if (event.kind === "view-closed") {
     if (event.viewId === "" || event.viewId === state.viewId) {
-      return { ...state, viewId: null, currentUrl: null };
+      return { ...state, viewId: null, currentUrl: null, canGoBack: false, canGoForward: false };
     }
     return state;
   }
