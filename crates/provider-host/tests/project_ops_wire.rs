@@ -1,10 +1,12 @@
-//! Project-ops wire tests (proposal 014, `project.import-copy` v0.1): the
-//! tasked two-phase import rides the real frame loop over the frozen
-//! project-ops word list — plan/apply against a real VCC-registered source
-//! project, typed guard refusals as Done-payload result documents, and the
-//! closed-set/unavailable faces. The consumer consumes the environment-side
-//! frozen schemas from `schemas/project-ops/v0.1`; changing that word list
-//! without this consumer fails here first.
+//! Project-ops wire tests (proposal 014, the project-ops v0.2 write face):
+//! the tasked two-phase import and the setNote note task ride the real
+//! frame loop over the frozen project-ops word list — plan/apply against a
+//! real VCC-registered source project, typed guard refusals as Done-payload
+//! result documents, and the closed-set/unavailable faces. The consumer
+//! consumes the environment-side frozen schemas from
+//! `schemas/project-ops/v0.2`; changing that word list without this
+//! consumer fails here first. The v0.2 vectors (import-copy carried plus
+//! the setNote set) drive JSON-Schema validation directly.
 
 use std::fs;
 use std::io::Cursor;
@@ -18,7 +20,7 @@ use vua_project_manager::ManagerRoots;
 use vua_provider_host::{run_provider_host_full, ProjectOpsConfig};
 
 fn command_dir() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/project-ops/v0.1")
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/project-ops/v0.2")
 }
 
 fn result_validator() -> jsonschema::Validator {
@@ -178,7 +180,7 @@ fn import_copy_plan_and_apply_run_the_full_two_phase_chain() {
 
     // The command we send must match the frozen command schema.
     let plan_command = json!({
-        "schemaVersion": "0.1",
+        "schemaVersion": "0.2",
         "operation": "project.import-copy",
         "params": {
             "phase": "plan",
@@ -203,7 +205,7 @@ fn import_copy_plan_and_apply_run_the_full_two_phase_chain() {
 
     // The plan face: measured bytes, exclusions, transparency list, digest.
     let payload = wait_done(&database, &task_id);
-    assert_eq!(payload["schemaVersion"], "0.1");
+    assert_eq!(payload["schemaVersion"], "0.2");
     // The frozen result schema describes the whole envelope
     // (schemaVersion/operation/result) — exactly the Done payload.
     assert!(validator.is_valid(&payload), "plan must match the frozen result schema: {payload}");
@@ -359,7 +361,7 @@ fn import_copy_wire_guards_and_honest_absence() {
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.invalid_params");
 
     // An unknown project.* method is a contract error (the write word list
-    // is project.import-copy alone).
+    // is project.import-copy plus project.setNote — nothing else).
     let frames = run_frames(
         &database,
         Some(&config),
@@ -579,3 +581,271 @@ fn project_lock_status_reports_the_marker_observation() {
         json!(target_parent.to_string_lossy())
     );
 }
+
+// --- project-ops v0.2: the setNote note task (D-6 confirmation) ---
+
+/// The frozen v0.2 vectors drive schema validation: every positive
+/// request/result validates, every negative request vector is rejected,
+/// and the guard-refusal result vector is a legal result shape.
+#[test]
+fn set_note_vectors_validate_against_the_frozen_schemas() {
+    let command_validator = command_validator();
+    let result_validator = result_validator();
+
+    let positive_requests = [
+        "project-set-note.request.json",
+        "project-set-note-clear.request.json",
+    ];
+    for name in positive_requests {
+        let vector: Value = serde_json::from_slice(
+            &fs::read(command_dir().join("examples").join(name)).expect("vector exists"),
+        )
+        .expect("valid JSON");
+        assert!(
+            command_validator.is_valid(&vector),
+            "positive request vector {name} must validate: {vector}"
+        );
+    }
+
+    let positive_results = [
+        "project-import-copy-plan.result.json",
+        "project-import-copy-apply.result.json",
+        "project-set-note.result.json",
+        "project-set-note-clear.result.json",
+    ];
+    for name in positive_results {
+        let vector: Value = serde_json::from_slice(
+            &fs::read(command_dir().join("examples").join(name)).expect("vector exists"),
+        )
+        .expect("valid JSON");
+        assert!(
+            result_validator.is_valid(&vector),
+            "positive result vector {name} must validate: {vector}"
+        );
+    }
+
+    let negative_requests = [
+        "invalid-operation.json",
+        "invalid-phase.json",
+        "invalid-set-note-missing-project-path.request.json",
+        "invalid-set-note-empty-note.request.json",
+        "invalid-set-note-multiline.request.json",
+    ];
+    for name in negative_requests {
+        let vector: Value = serde_json::from_slice(
+            &fs::read(command_dir().join("examples").join(name)).expect("vector exists"),
+        )
+        .expect("valid JSON");
+        assert!(
+            !command_validator.is_valid(&vector),
+            "negative request vector {name} must be rejected: {vector}"
+        );
+    }
+
+    let refusal: Value = serde_json::from_slice(
+        &fs::read(
+            command_dir()
+                .join("examples")
+                .join("set-note-rejected-not-vua-native.result.json"),
+        )
+        .expect("vector exists"),
+    )
+    .expect("valid JSON");
+    assert!(
+        result_validator.is_valid(&refusal),
+        "the guard-refusal vector must be a legal result: {refusal}"
+    );
+}
+
+/// Marks a registered project VUA-native with the environment-side
+/// first-marking primitive (import-copy completion does the same).
+fn mark_source_vua_native(source: &Path) {
+    vua_project_manager::mark_vua_native(source, "2026-09-12T04:10:00.000Z")
+        .expect("identity marked");
+}
+
+#[test]
+fn set_note_stores_and_clears_over_the_wire() {
+    let validator = result_validator();
+    let command_validator = command_validator();
+    let root = unique_root("set-note");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    mark_source_vua_native(&source);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    // The command we send must match the frozen command schema.
+    let note_command = json!({
+        "schemaVersion": "0.2",
+        "operation": "project.setNote",
+        "params": {
+            "projectPath": source.to_string_lossy(),
+            "note": "fixture note",
+        }
+    });
+    assert!(
+        command_validator.is_valid(&note_command),
+        "the request must match the frozen command schema: {note_command}"
+    );
+
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.setNote",
+            "params": note_command["params"].clone(),
+        })],
+    );
+    let acceptance = &frames[0]["payload"]["value"];
+    assert_eq!(acceptance["schemaVersion"], "0.2");
+    assert_eq!(acceptance["operation"], "project.setNote");
+    let task_id = acceptance["taskId"].as_str().expect("taskId").to_owned();
+
+    // The Done payload carries the frozen note result: the stored state,
+    // projected with the vuaIdentity present-face field names.
+    let payload = wait_done(&database, &task_id);
+    assert!(
+        validator.is_valid(&payload),
+        "note result must match the frozen schema: {payload}"
+    );
+    let note = &payload["result"];
+    assert_eq!(note["kind"], "note");
+    assert_eq!(note["note"], json!("fixture note"));
+    assert_eq!(
+        note["markedAt"],
+        json!("2026-09-12T04:10:00.000Z"),
+        "setting a note never re-marks the project"
+    );
+    // The note really landed in the identity file.
+    let identity = vua_project_manager::read_identity(&source);
+    assert_eq!(identity.note(), Some("fixture note"));
+
+    // null clears; markedAt stays.
+    let frames = run_frames(
+        &database,
+        Some(&config),
+        &[json!({
+            "method": "project.setNote",
+            "params": {"projectPath": source.to_string_lossy(), "note": null},
+        })],
+    );
+    let task_id = frames[0]["payload"]["value"]["taskId"].as_str().expect("taskId").to_owned();
+    let payload = wait_done(&database, &task_id);
+    assert!(
+        validator.is_valid(&payload),
+        "cleared note must match the frozen schema: {payload}"
+    );
+    assert_eq!(payload["result"]["kind"], "note");
+    assert_eq!(payload["result"]["note"], json!(null));
+    assert_eq!(
+        vua_project_manager::read_identity(&source).note(),
+        None,
+        "the cleared note is really gone"
+    );
+}
+
+#[test]
+fn set_note_guards_refuse_typecally_inside_the_task() {
+    let validator = result_validator();
+    let root = unique_root("set-note-guards");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    let submit_note = |database_path: &Path,
+                       config: Option<&ProjectOpsConfig>,
+                       project_path: String| {
+        run_frames(
+            database_path,
+            config,
+            &[json!({
+                "method": "project.setNote",
+                "params": {"projectPath": project_path, "note": "fixture note"},
+            })],
+        )
+    };
+
+    // A registered project with no identity file: not_vua_native — the
+    // note presupposes the VUA-native declaration.
+    let frames = submit_note(&database, Some(&config), source.to_string_lossy().into_owned());
+    let task_id = frames[0]["payload"]["value"]["taskId"].as_str().expect("taskId").to_owned();
+    let payload = wait_done(&database, &task_id);
+    assert!(validator.is_valid(&payload), "refusal must match the frozen schema: {payload}");
+    assert_eq!(payload["result"]["kind"], "rejected");
+    assert_eq!(payload["result"]["guard"], "not_vua_native");
+    assert_eq!(payload["result"]["code"], "vua.project.not_vua_native");
+    // The refusal is honest on disk too: no identity file was invented.
+    assert!(!source.join(".vua").join("project.json").exists());
+
+    // A path no manager registers: project_not_found (the detection
+    // face's registry is the writable world).
+    let stranger = root.join("stranger-project");
+    fs::create_dir_all(&stranger).expect("stranger dir");
+    let frames = submit_note(&database, Some(&config), stranger.to_string_lossy().into_owned());
+    let task_id = frames[0]["payload"]["value"]["taskId"].as_str().expect("taskId").to_owned();
+    let payload = wait_done(&database, &task_id);
+    assert!(validator.is_valid(&payload), "refusal must match the frozen schema: {payload}");
+    assert_eq!(payload["result"]["guard"], "project_not_found");
+    assert_eq!(payload["result"]["code"], "vua.project.project_not_found");
+
+    // An unreadable identity is evidence: refused, never overwritten by
+    // a blind rewrite.
+    fs::create_dir_all(source.join(".vua")).expect(".vua dir");
+    fs::write(source.join(".vua").join("project.json"), b"{ not json").expect("garbage identity");
+    let frames = submit_note(&database, Some(&config), source.to_string_lossy().into_owned());
+    let task_id = frames[0]["payload"]["value"]["taskId"].as_str().expect("taskId").to_owned();
+    let payload = wait_done(&database, &task_id);
+    assert!(validator.is_valid(&payload), "refusal must match the frozen schema: {payload}");
+    assert_eq!(payload["result"]["guard"], "identity_unreadable");
+    assert_eq!(payload["result"]["code"], "vua.project.identity_unreadable");
+    // The unreadable evidence is untouched.
+    assert_eq!(
+        fs::read(source.join(".vua").join("project.json")).expect("identity intact"),
+        b"{ not json"
+    );
+}
+
+#[test]
+fn set_note_params_are_a_frozen_closed_set() {
+    let root = unique_root("set-note-params");
+    let (source, _target_parent, vcc_settings) = seed_registered_source(&root);
+    mark_source_vua_native(&source);
+    let database = root.join("tasks.sqlite");
+    let config = project_ops_config(&vcc_settings);
+
+    let expect_invalid_params = |params: Value| {
+        let frames = run_frames(
+            &database,
+            Some(&config),
+            &[json!({"method": "project.setNote", "params": params})],
+        );
+        assert_eq!(
+            frames[0]["payload"]["error"]["code"],
+            "vua.project.invalid_params",
+            "params must be refused: {params}"
+        );
+    };
+
+    // Missing note.
+    expect_invalid_params(json!({"projectPath": source.to_string_lossy()}));
+    // Missing projectPath.
+    expect_invalid_params(json!({"note": "fixture note"}));
+    // An empty note is not a note: clearing uses null.
+    expect_invalid_params(json!({"projectPath": source.to_string_lossy(), "note": ""}));
+    // Single-line plain text only.
+    expect_invalid_params(json!({"projectPath": source.to_string_lossy(), "note": "a\nb"}));
+    // Unknown key: a contract error, never ignored.
+    expect_invalid_params(json!({"projectPath": source.to_string_lossy(), "note": "n", "extra": 1}));
+
+    // Without the project-ops wiring the face is honestly unavailable.
+    let frames = run_frames(
+        &database,
+        None,
+        &[json!({
+            "method": "project.setNote",
+            "params": {"projectPath": source.to_string_lossy(), "note": "fixture note"},
+        })],
+    );
+    assert_eq!(frames[0]["payload"]["error"]["code"], "vua.project.unavailable");
+}
+

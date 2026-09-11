@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "project.setNote",
+  "result": {
+    "kind": "rejected",
+    "guard": "not_vua_native",
+    "code": "vua.project.not_vua_native",
+    "detail": "project has no VUA identity file; notes attach to VUA-native projects only"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/project-ops/v0.2/command.schema.json",
+  "title": "VUA project-ops command v0.2",
+  "description": "Project-domain write commands (proposal 014 arbitrated 2026-09-09; v0.2 adds project.setNote per the D-6 desktop confirmation, proposal 013 inline thread, core upgrade batch 2026-09-12). project.import-copy is the single write path VUA has toward ALCOM/VCC-managed original projects (product-boundary 1.2.0, user ruling U3) — it creates a NEW project directory as a VUA-managed copy and never touches the original. Two phases in one closed command: phase=plan computes the copy scope (per-entry disk estimate, excluded entries, target path) and a plan digest; phase=apply re-computes the plan, refuses on drift, copies with the exclusions, gives the new project its own identity, records the source link, and re-inspects. project.setNote sets (or clears, with null) the user note of one VUA-native project (user ruling 12: the note is displayed only in the project list; the D-6 ruling A adds the list inline-edit write path). The note attaches to the VUA-native declaration only — a project without a readable identity file is refused (guards project_not_found / not_vua_native / identity_unreadable, frozen in the v0.2 result schema); guards are server-side facts evaluated inside the task. projectPath is the same registered-path identity the proposal-013 read face uses (inspectProject/lockStatus); no separate project id exists in this word-list family. Single-line plain text: a note carries no line breaks; clearing uses null, not an empty string. Nine-state task semantics (commandId idempotency, no implicit resume) ride the application-contract task surface, not this schema; the note task is a short single-file rewrite and completes immediately after acceptance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "operation": {
+      "enum": ["project.import-copy", "project.setNote"]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.import-copy" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "phase",
+              "sourcePath",
+              "targetParentDirectory",
+              "targetProjectName"
+            ],
+            "properties": {
+              "phase": {
+                "enum": ["plan", "apply"]
+              },
+              "sourcePath": { "type": "string", "minLength": 1 },
+              "targetParentDirectory": { "type": "string", "minLength": 1 },
+              "targetProjectName": { "type": "string", "minLength": 1 },
+              "confirmedPlanDigest": { "type": "string", "minLength": 1 }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": { "phase": { "const": "apply" } },
+                  "required": ["phase"]
+                },
+                "then": {
+                  "required": ["confirmedPlanDigest"]
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "project.setNote" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "projectPath",
+              "note"
+            ],
+            "properties": {
+              "projectPath": { "type": "string", "minLength": 1 },
+              "note": {
+                "type": ["string", "null"],
+                "minLength": 1,
+                "maxLength": 2000,
+                "pattern": "^[^\\r\\n]*$",
+                "description": "The user note (single-line plain text, ruling 12: list display only). null clears an existing note; an empty string is not a note and is refused."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

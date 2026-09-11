@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "project.setNote",
+  "params": {
+    "projectPath": "D:\\VUA Projects\\My Avatar World (VUA copy)",
+    "note": ""
+  }
+}
