@@ -2,45 +2,41 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 07c31c5
+baseline_commit: ff2f2c4
 updated: 2026-09-12
 ---
 ## 当前焦点
-**BG-11 全额核验完成（2026-09-12 凌晨，声明性核验＋复跑证据；无新代码）**：
-BOARD 行标注「部分交付……其余收紧项随环境后续批」滞后于代码现实——四点
-验收标准逐项对照当前 main 全部满足，主收紧 dc6aa93（操作者修复令批）早已
-入 main（全分支包含）：
-1. **钩子收 feature 门** ✅——`terminate_open_and_wait_for_test` 与
-   `eac_verify_windows_signature_for_test` 的定义＋lib.rs re-export 均
-   `#[cfg(all(windows, any(test, feature = "test-hooks")))]`（dc6aa93 收门；
-   156640b 对齐 windows 合取）；`Cargo.toml [features] test-hooks = []` 登记；
-2. **eac_terminate 用例标 #[ignore]** ✅——4/4 全 ignore（其一在
-   test-hooks 门内，默认构建不编译；默认集 3 ignored）；
-3. **默认构建不导出绕过原语** ✅——test-hooks 未开时引用钩子即编译失败
-   （dc6aa93 提交信息双向探针：feature off → E0425；on → 编译通过）；
-4. **默认 cargo test 不触真实进程** ✅——本轮复跑 project-manager 13 套件
-   全绿 0 失败（2026-09-12 本机）：eac_terminate 0 跑/3 ignored；
-   eac_probe 5 跑全合成 fixtures＋1 真机 ignored；eac_allowlist_verify
-   5 跑全合成＋1 真机 ignored（WinVerifyTrust 用例在 test-hooks 门内且只读）。
-**请集成核验后把 BOARD BG-11 行「部分交付」更新为全额交付销账**（锚点
-dc6aa93＋156640b＋验收合并 93d8c6a）。环境侧无剩余收紧项。
-**前情：E2 交付＋缺项补齐已验收合并（3489276——15fa959 disk_space 双辖区
-呈现；含诚实修正声明）**。任务一 E1/E2/E3/E4 全链闭环（真机走查留 W25 窗口）。
-## 自基线交付（1c73437 之后）
-- 夜间累计交付已全部验收合并入 main：VUA 独有标识文件＋project-inspection
-  v0.2（354925a）、双协议本（171b00c）、环境预检事实源＋接线（406fb3e/
-  07166b7）、alcom-vcc 1.1.0（9a785b2）、016 表态（e27f042 仲裁采纳）、
-  BG-11 修复令（dc6aa93/156640b）＋BG-16 接线验收（e51bdae 四点核验）、
-  E2 disk_space 双辖区补齐（15fa959→3489276）＋各消化轮状态批；
-- **BG-11 全额核验（本批，collab-only）**：见当前焦点——四点标准逐项对照
-  ＋13 套件复跑证据；无代码变更。
+**BG-18 修复交付（38dc36c，slot/wt-6，待集成验收）**——工单兑现：CI
+rust 34630656044／schema-vectors 34630656005 双红同根
+（`the_five_guards_refuse_typecally`，import_copy.rs:305
+TargetInsideSource 在 GitHub Windows runner 未拒绝）已定位并修复：
+- **根因（CI 日志＋本机红跑双证）**：runner 的 `temp_dir()` 为 8.3 短名
+  形态（`C:\Users\RUNNER~1\...`）。`normalize()` 对存在的源路径
+  canonicalize 成长名，对尚不存在的目标路径回退调用方字面拼写——
+  `starts_with` 拿 `RUNNER~1` 对比 `runneradmin`，前缀落空，守卫漏过。
+  本机同根复现红：`VU0EB0~3`／`GUARDE~1` 短名拼写同样击穿守卫（修复前
+  红跑已录于会话）。
+- **修复面**：`normalize()` 在路径不存在时改为对最深存在祖先
+  canonicalize 后回拼缺失尾部，Windows 盘符统一大写对齐 canonical 形态。
+  守卫语义只收紧不放宽：凡解析后落入源树的目标在任何拼写下都被拒绝。
+- **回归测试**：`target_inside_source_guard_survives_runner_path_spellings`
+  钉死控制组＋盘符大小写＋verbatim `\\?\` 前缀＋8.3 短名四形态（短名经
+  GetShortPathNameW 能力检测，卷不支持时该拼写不适用而非跳过守卫；
+  大小写/verbatim 钉子仍然必跑）。windows-sys 以 windows-only
+  dev-dependency 引入（仅测试用、既有锁定版本、可随测试移除）。
+- **证据**：修复前红跑（本机）→修复后 `cargo test --workspace`
+  **496 通过 / 0 失败**（495 基线＋新增回归 1）＋clippy
+  `--workspace --all-targets` 零告警（2026-09-12 本机）。runner 等效
+  复核待合并后首个 rust CI run（届时 BG-19 的 clippy 观察一并取事实）。
+**前情**：BG-11 全额销账已办（集成 0dc00cb 实文核验）；E2/E1 全链闭环。
+## 自基线交付（ff2f2c4 之后）
+- **BG-18 修复（38dc36c）**：见当前焦点。改动仅 crates/project-manager
+  三文件（src/import_copy.rs 修复＋tests/import_copy.rs 回归＋Cargo.toml
+  windows dev-dep），Cargo.lock 零变化，未越所有权域。
 ## 在途/待他角色
-- [已闭环] BG-16 接线验收通过（核心 0c72258/7a0a1ec，67/67＋clippy 干净；
-  环境侧四点核验：词表一致／只读纪律／合成 wire 测试／expect 不变量注释）
-  ——M6 环境检查行全链关闭；
-- [已闭环] BG-11 修复令（操作者修复令两项＋windows 合取对齐补遗）——集成
-  验收（**93d8c6a**；前档「93d3c6a」为笔误，本批更正）；全额核验见当前
-  焦点，BOARD 行销账待集成；
+- [待集成] BG-18 验收合并：slot/wt-6 38dc36c（Rust＋测试同批）——请
+  验收后合并并核合并后首个 rust CI run 转绿（推送门 BG-18 红态销账）；
+- [已闭环] BG-11 全额销账（BOARD 行已更新，集成 0dc00cb＋实文四条核验）；
 - [等桌面→核心] 备注编辑范围（D-6）确认→核心 project-ops v0.2 升版批
   （setNote）→我侧原语随批消费；
 - [等集成/用户] W25 开窗通知——用户明示延期，时间待定；环境 B 段义务
@@ -48,20 +44,23 @@ dc6aa93＋156640b＋验收合并 93d8c6a）。环境侧无剩余收紧项。
 ## 阻塞
 - 无。
 ## 下次合并意图
-本状态批（仅 collab/，BG-11 核验声明＋笔误更正）随轮免测并入 main。
+slot/wt-6 两笔：03d75d3（main 基线追平合并）＋38dc36c（BG-18 修复），
+另本状态批——均由集成验收后合并（遵守「交付后由集成合并」惯例，不在
+本树并发执行 main 合并批）；触 crates/ 批，验收需全量测试＋clippy 门。
 ## 留言
-- [→集成] **BG-11 全额核验销账请求**：BOARD 工单表 BG-11 行请从「部分交付
-  ……其余收紧项随环境后续批」更新为全额交付——四点验收标准（钩子收门/
-  ignore 化/默认构建不导出/默认测试不触真实进程）已逐项对照当前 main 满足，
-  主收紧在 dc6aa93（09-10 修复令批，早已入 main），windows 合取补遗
-  156640b（93d8c6a 验收）。本轮复跑证据：project-manager 13 套件全绿
-  0 失败（2026-09-12 本机），默认集真实进程触碰为零。核验明细见本状态
-  文件当前焦点节；
-- [→集成] 备案：016 表态收讫、双协议本验收（171b00c）、标识文件批验收
-  （354925a）三条知悉；**REGISTRY 行路径列不混入括号描述**的纪律要求知悉
-  并遵守（描述进状态列或 commit message）；
-- [→桌面] 卡片标题四语文案随批交付收讫（消费侧注册表＋未知 id 透传）——
-  环境卡片标题链闭环；
-- （历史留言消化：wt-2 E1 快照核对与 disk_space 归属差异——已由 E2 补齐批
-  15fa959 处理并经 3489276 验收闭环；013/014 内联核心三问表态与 v0.2 消费
-  路由——均已落账。）
+- [→集成] **BG-18 修复交付请验收**：38dc36c。要点①根因＝runner TEMP
+  8.3 短名使 normalize 回退字面与 canonical 形态不一致，守卫
+  `starts_with` 落空；②修复＝不存在路径走最深存在祖先 canonicalize＋
+  尾部回拼＋盘符大写统一，语义只收紧（任何拼写落入源树均拒绝）；
+  ③回归四形态钉死、短名系能力检测非忽略过关（合规工单红线）；
+  ④本机证据 496/0＋clippy 零告警，修复前本机红跑与 CI 双红同根
+  （VU0EB0~3/GUARDE~1 对 RUNNER~1）；⑤合并后请核首个 rust CI run
+  转绿再销 BG-18，BG-19 的 clippy 事实随该 run 一并取回；
+- [→集成] windows-sys dev-dep 备案：owner＝vua-project-manager、
+  purpose＝BG-18 回归测试 GetShortPathNameW 取 8.3 短名、license＝
+  MIT/Apache 双许可（微软官方 crate、既有锁定 =0.61.2）、removal path＝
+  随拼写回归测试移除；仅测试构建图，库面与普通构建零新增；
+- [→wt-2] 读面消费走 collect_environment_managers_snapshot 原样的留言
+  收讫——读面接口本轮零变化，BG-18 修复不触快照形状（E1 交付不受影响）；
+- （历史留言消化：BG-11 销账回执、016/双协议本/标识文件三批验收知悉——
+  均已落账，REGISTRY 纪律遵守中。）
