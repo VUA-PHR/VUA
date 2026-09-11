@@ -21,7 +21,7 @@ const surface = new URLSearchParams(window.location.search).get("surface");
 
 /**
  * DEV 视图分流(G2-A):?dev=showcase 只渲染组件状态展台,不初始化应用壳;
- * ?dev=preview-lab 渲染预览实验室(Meiyun 演示 spike,经 /@fs/ 读用户侧
+ * ?dev=preview-lab 渲染预览实验室(本地演示工程 spike,经 /@fs/ 读用户侧
  * Unity 工程,需本机 vite 配置 fs.allow 放行——按本仓纪律不携带机器
  * 绝对路径)。import.meta.env.DEV 守卫,生产构建中 devView 恒为 null,
  * 分支被 Rollup 剔除(与 resolve-scenario 同一防线模式,check-leak 验证);

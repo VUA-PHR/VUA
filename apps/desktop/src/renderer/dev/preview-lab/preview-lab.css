@@ -1,4 +1,4 @@
-/* 预览实验室样式(Meiyun Tenshi 演示 spike,DEV-only ?dev=preview-lab)。
+/* 预览实验室样式(本地演示工程 spike,DEV-only ?dev=preview-lab)。
  * 纪律与 showcase.css 一致:布局与视觉值只引用 Token,不引入新视觉值;
  * 状态灯颜色:loading=info、ready=accent、failed=error(success/warning
  * 依 token 注释仅限环境部署模块,此处不用)。 */

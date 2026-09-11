@@ -8,9 +8,9 @@ import type { ReleaseWallView } from "./model-production-port.ts";
  * 时间戳为固定值,保证演示数据可复现。
  *
  * bakePreview(T2 烘焙转盘,DEV 接线):指向本机 Unity 演示工程的
- * build_preview 产物(Meiyun / NMSS 两工程,见 docs/research/
- * release-avatar-preview-design.md);路径是本机绝对路径,仅 DEV 经
- * vite /@fs/ 读取,正式实现由资产协议替换寻址。
+ * build_preview 产物(两个本地演示工程,工程名与路径均为合成占位,
+ * 方法锚点见 docs/research/release-avatar-preview-design.md);仅 DEV
+ * 经 vite /@fs/ 读取,正式实现由资产协议替换寻址。
  */
 export function fixtureReleaseWall(): ReleaseWallView {
   const copy = fixtureStrings.release.projects;
@@ -31,7 +31,7 @@ export function fixtureReleaseWall(): ReleaseWallView {
         snapshotCount: 3,
         updatedAt: "2026-08-26T15:30:00Z",
         bakePreview: {
-          projectRoot: "C:/Users/AR/Desktop/UP/Meiyun__Tenshi",
+          projectRoot: "C:/Users/demo/Desktop/UP/SyntheticAvatarA",
           commandId: "preview-demo-01",
         },
       },
@@ -47,8 +47,8 @@ export function fixtureReleaseWall(): ReleaseWallView {
         snapshotCount: 1,
         updatedAt: "2026-08-25T11:00:00Z",
         bakePreview: {
-          projectRoot: "C:/Users/AR/Desktop/UP/NMSS_SchoolUniform",
-          commandId: "nmss-demo-01",
+          projectRoot: "C:/Users/demo/Desktop/UP/SyntheticOutfitB",
+          commandId: "demo-outfit-01",
         },
       },
       {

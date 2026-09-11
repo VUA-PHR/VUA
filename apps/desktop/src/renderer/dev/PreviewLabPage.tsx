@@ -9,7 +9,7 @@ import { TurntablePlayer } from "../components/preview/TurntablePlayer.tsx";
 import "./preview-lab/preview-lab.css";
 
 /**
- * 预览实验室(Meiyun Tenshi 演示 spike,DEV-only ?dev=preview-lab):
+ * 预览实验室(本地演示工程 spike,DEV-only ?dev=preview-lab):
  * T1 webview 直渲素材 与 T2 Unity 烘焙成品 分节对照。
  *
  * 数据全部来自用户侧 Unity 工程的 .vrcua/bridge/demo-lab.json,经 vite
