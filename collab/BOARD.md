@@ -303,6 +303,33 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
 | production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 已冻结（2026-09-09，核心，集成验收复跑 428/0）**——24 向量＋向量驱动消费测试完成冻结硬前置（**W25 前置①凭证落地**）：十方法 Schema＋桌面 TS 面＋双语协议本＋全路由（recipe save/get/list＋resolve＋plan.approve/get/list＋**job.execute approved-plan 编排〔closing cut〕**＋record.get） |
 
+## origin 推送记录
+
+- **2026-09-12（01:20–01:35 工作时段）**：`7da1b5f → 12a6a45`——**353 提交**
+  上 origin（自 09-09 起积压清零；推送后 ahead 0/behind 0）。
+  - **门证据（3/3 全过）**：增量复审 `collab/reviews/2026-09-12-push-review-r1b/r2b/r3b_ZH.md`
+    ——r1b：内容逐项与提交宣称一致、诚实纪律（016 草案标注、official_sdk_rating
+    零消费）、registry 负例独立验证（改坏一行→exit 1 定位到行）；r2b：
+    **forest 零泄漏硬门通过**（草稿 22 CSS 变量＋15 组件类型＋48 图标名＋
+    24 数据串等指纹集，对全部 **1057 个被跟踪文件**零命中）＋敏感信息扫描
+    无阻断；r3b：cargo workspace **67 套件/495 通过/0 失败两轮逐位一致**
+    ＋clippy 零告警＋桌面 check EXIT=0（隔离 CARGO_TARGET_DIR 避让运行中
+    的桌面应用——N-1 经验）。
+  - **O-1 消毒批（12a6a45，推送前最后提交）**：`fixture-release.ts` 两处
+    projectRoot＋`nmss-demo-01`＋三处 DEV 注释的真实工程名（Meiyun/NMSS）
+    →合成占位（`C:/Users/demo/.../SyntheticAvatarA|SyntheticOutfitB`、
+    `demo-outfit-01`）——按 AGENTS「付费资产/用户工程内容不出本地」红线，
+    r1b/r2b 共同建议、操作者裁量执行；`docs/research/` 公开 BOOTH 商品锚点
+    属许可类保留（r2b O-3 备忘维持）。两份复审报告中的路径引用字面值已
+    同步脱敏（集成注记）。
+  - **遗留观察（不阻断，后续批处理）**：r1b L-1/r2b O-2——`.zcode/agents/`×7
+    已入库且含本机路径，集成评估按 BG-13 方式消毒或改 .gitignore（需一次
+    有意决策）；r3b N-2 默认测试集已零真实 EAC 交互（M 门真机清单在册）；
+    N-3 ipc_002 顺序护栏、N-4 尾随逗号外观项归桌面顺手批。
+  - **同窗验收（推送后合并，未含于本次推送）**：桌面 UX 四缺口批
+    ce91403 验收合并 **5809d37**（证据：cargo 67/495 两轮一致＋clippy 0＋
+    桌面 check 463/leak159 绿）——**下一推送门对象**。
+
 ## 开放问题（跨树）
 
 | # | 问题 | 归属 | 载体 |

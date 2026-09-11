@@ -2,17 +2,41 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 3489276
-updated: 2026-09-11
+baseline_commit: 5809d37
+updated: 2026-09-12
 ---
 ## 当前焦点
-**09-11 夜间任务分配推进**：E1/E2 审计闭环＋**E2 disk_space 双辖区缺口
-补齐**（15fa959/3489276——按 E1 审计路由修复，环境诚实更正前次零缺口
-声明；67/67 绿）＋E3 交付＋E4 验收完成（任务一仅余真机走查）；P3 数据
-侧交付（P0/P1/P2/P4 桌面推进中）。BG-13＋路径脱敏＋审阅归档完成（949
-ee30 世代）。**W25 用户延期维持**（O-2：开窗时间待定）。批量面板未触发；
-[需代裁] 零新增。
+**origin 推送完成（09-12 01:30）**：7da1b5f→12a6a45（**353 提交**，自 09-09
+积压清零；门＝增量复审 **3/3**＋forest 零泄漏＋O-1 消毒批 12a6a45）。
+**桌面 UX 四缺口批验收合并（5809d37）**：cargo 67 套件/495 通过两轮逐位
+一致＋clippy 零告警＋桌面 check 全链绿（463 测试/leak159 零命中）。
+**W25 用户延期维持**（O-2：开窗时间待定——UX 批四项恰为用户实测反馈，
+真机走查待开窗）。**下一推送门**：5809d37 世代（消毒批＋UX 批＋本簿记）
+须新一轮增量复审后方可推送。[需代裁] 零；批量面板未触发。
 ## 自基线交付（89038f5 之后）
+- **origin 推送（09-12 01:20–01:35）**：**12a6a45**——`7da1b5f→12a6a45`
+  353 提交上 origin，积压清零（ahead 0/behind 0）。门证据：增量复审
+  r1b/r2b/r3b **3/3 通过**（`collab/reviews/2026-09-12-push-review-r{1,2,3}b_ZH.md`：
+  r1b 内容/纪律/registry 负例验证 exit code 修复成立；r2b **forest 零泄漏
+  硬门**——草稿指纹集对全部 1057 个被跟踪文件零命中＋敏感信息扫描无阻断；
+  r3b cargo **67 套件/495 通过两轮逐位一致**＋clippy 零告警＋桌面 check
+  EXIT=0〔隔离 CARGO_TARGET_DIR 避让运行中应用〕）＋**O-1 消毒批
+  12a6a45**（fixture-release.ts＋三处 DEV 注释真实工程名 Meiyun/NMSS→
+  合成名 SyntheticAvatarA/SyntheticOutfitB——按 AGENTS「付费资产/用户工程
+  不出本地」红线，两位审阅者共同建议、操作者裁量执行；docs/research 公开
+  BOOTH 锚点属许可类保留）。遗留观察（.zcode/agents 消毒评估、门类运行
+  避让应用时段等）入 BOARD 推送记录节。
+- **桌面 UX 四缺口批验收合并（09-12 01:40）**：**5809d37**——slot/wt-3
+  ce91403＋5236af0（操作者工单「下一工作窗口优先修复」兑现）：
+  ①本地导入「仓库服务尚未接入」＝**真实装配断点**（壳 providerEnvironment
+  清洗剥除 VUA_PROVIDER_DATA/VUA_WAREHOUSE_ROOT→仓储服务面恒未装配），
+  修复＝壳经 processFactory 注入三确定性根（核心域零改动，凭据变量仍剥离）；
+  ②内嵌浏览首开自动导航 booth.pm；③Booth 会话 Cookie 有界持久化策略
+  （persist 分区、仅本机、永不入库）；④远程视图 44px 导航条＋additive
+  goBack/goForward/reload（U9 零改动）；⑤环境卡片标题注册表 11 项四语。
+  **验收证据**：合并后 cargo workspace 两轮 **67/495/0/26 逐位一致**＋
+  clippy 零告警＋桌面 check 全链绿（vitest 463、boundary、i18n 三表、
+  contrast、leak 159 零命中）。无端到端宣称（真机走查待 W25/用户实测）。
 - **E2 缺口补齐验收（09-11 23:40–23:50）**：
   - **3489276**：slot/wt-6 **E2 disk_space 双辖区缺口补齐验收合并**——
     15fa959（disk_space 按 play AND create 双辖区上报＝E1 审计路由的归属
