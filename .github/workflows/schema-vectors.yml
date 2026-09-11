@@ -41,6 +41,7 @@ jobs:
       # Contract anchor per crate (tests that read schemas/ for real):
       # - vua-acquisition:    bdl_commands_contract           (bdl-commands v0.1)
       #                       import_downloads_contract_v04   (bdl-commands v0.4)
+      #                       import_contract_v03             (bdl-commands v0.3)
       #                       production_evidence_contract    (production-evidence v0.1)
       # - vua-bdl-store:      catalog_serving                 (bdl-queries v0.3)
       #                       downloads_list_serving          (bdl-queries v0.4)
@@ -60,10 +61,11 @@ jobs:
       #                       project_ops_wire                (project-ops v0.1/v0.2 + 013 read face)
       #                       task_snapshot_wire              (application-contract v0.1 / proposal 020)
       # - vua-unity-bridge:   material_intake                 (material-intake v0.1)
+      #                       bridge_v2_vectors               (unity-bridge v2 frozen)
       #                       inspection_evidence_vectors     (inspection-evidence v0.1 DRAFT —
       #                        run for drift protection only; draft state does not imply freeze)
       - name: vua-acquisition
-        run: cargo test -p vua-acquisition --test bdl_commands_contract --test import_downloads_contract_v04 --test production_evidence_contract
+        run: cargo test -p vua-acquisition --test bdl_commands_contract --test import_downloads_contract_v04 --test import_contract_v03 --test production_evidence_contract
       - name: vua-bdl-store
         run: cargo test -p vua-bdl-store --test catalog_serving --test downloads_list_serving --test global_default_v02
       - name: vua-orchestrator
@@ -73,4 +75,4 @@ jobs:
       - name: vua-provider-host
         run: cargo test -p vua-provider-host --test m3_vectors --test provider_frame_handshake --test warehouse_commands --test catalog_queries --test production_use_case_vectors --test project_ops_wire --test task_snapshot_wire
       - name: vua-unity-bridge
-        run: cargo test -p vua-unity-bridge --test material_intake --test inspection_evidence_vectors
+        run: cargo test -p vua-unity-bridge --test material_intake --test bridge_v2_vectors --test inspection_evidence_vectors
