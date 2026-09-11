@@ -2,26 +2,37 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: d78c43b
+baseline_commit: 30e4f1a
 updated: 2026-09-12
 ---
 ## 当前焦点
-**#7 瞬败修复验收批（09-12 04:5x）**：数据侧 cd3eead 交付（BOARD #7 路由
-兑现），集成审 diff 后验收合并 **d78c43b**（含数据状态批 0ae1298）。根因
-实证＝测试 helper unique_dir 纳秒时间戳＋跨测试共享 tag——同 tick 两测试
-共享同一目录（create_dir_all 对已存在路径成功），先收尾方 remove_dir_all
-删走对方复制文件（与「导入报成功、文件缺席」表型吻合）；**红证据 20 跑
-5 败／绿证据 20/20**。修复＝acquisition 全部 temp-dir 测试点收敛共享
-test_support::unique_dir（pid＋进程内 serial，cfg(test) 门控）＋回归压力
-测试钉死（8×64 barrier pairwise-distinct）；顺手生产加固 generate_vpm
-publish_root 命名（同 tick 并发作业别名风险，注释钉死）。**验收证据
-（2026-09-12 本机，隔离 CARGO_TARGET_DIR 避让运行中应用）**：合并前基线
-67/496/0＋合并后 **67 套件/497 通过/0 失败＋clippy -D warnings 零告警**，
-与数据侧声称逐字一致。**附带簿记更正（诚实；数据发现、集成核实）**：
-r3d 上轮「日志归档」表述不准确——evidence log 被 .gitignore:28 `*.log`
-排除、从未入任何分支；在树证据＝r3d 报告内联分析；日志维持不入库（私有
-日志红线保守读法）。BOARD #7 行已关闭（残余观察态照旧：再现即带全量日志
-重开）。
+**project-ops v0.2 升版批＋桌面 P2 批验收（09-12 04:2x–04:4x，四合并＋
+簿记批）**：①**10c0d68**＝slot/wt-2 核心 project-ops v0.2 增量冻结验收
+合并——`project.setNote`（D-6 裁定 A 兑现，013 内联线程；projectId→
+projectPath 定形修正；守卫闭集三码扩充成十码冻结闭集；kind=note 投影与
+vuaIdentity present 同构；协议本双语＋REGISTRY 升版）。**验收证据**：合并
+前基线 67/497/0＋合并后 **67 套件/501 通过/0 失败＋clippy -D warnings 零
+告警**（隔离 CARGO_TARGET_DIR，多轮一致）。②**alcom-vcc 1.2.0**（环境
+B5(1) 来源判定原理正式答复 368c277）随 wt-6 状态批**并发带入**——合并
+信息误写「collab-only」**登记偏差如实声明**（message 不可改；交付验收
+核可：环境域文档切片＋双语镜像＋REGISTRY 1.1.0→1.2.0＋B5(2) 文案正确
+留桌面＋诚实边界声明「VUA 不能断言真实出处」）。③slot/wt-3 桌面 **P2
+批**验收合并（30e4f1a＝2ff721c）——release 页消费 build-record v0.3 读
+面：收窄纪律（必需字段/词表外＝整条拒绝；planDeviations 缺席＝0；
+evidenceSummary 缺席＝null 计数明示「摘要缺席」）＋三诚实态 failed≠
+empty（UI-08）＋recovered 徽标（W24 先例）＋证据引用仅计数＋016 草案
+注记＋ReleasePage 独立挂载（展柜 not-connected 不隐藏记录节）＋四语
+i18n＋9 项模型测试。**验收证据：桌面 check 全链 EXIT=0，vitest 61 文件/
+483 测试全绿**，与桌面声称逐字一致。④三状态批（wt-4/wt-5/wt-6，
+collab-only 免测）。**随批簿记**：project-ops v0.1 协议本双语头部状态
+对齐「已取代（→ v0.2）」（wt-2 升版批簿记缺口——REGISTRY 已改而头部
+未动，registry-only 曾 exit 1 一项；集成补齐后 **49/49 exit 0**）；**N-3/
+N-4 路由更正**（桌面请求核实成立：两处均在核心域 crates/，原「归桌面
+顺手批」是我方上轮路由错误，更正→核心）。**P5 集成逐切片验收就此办理**
+（夜间任务二桌面四行 P0/P1/P2/P4 对账全核可——plan.get 无 UI 需求不猜
+补接＝诚实纪律正确行使）。**桌面 D-6 接线批解锁**（v0.2 冻结＋路由就绪，
+013 时序条款满足）。**在途**：W25 延期（O-2）；U10 待用户裁决；019 批 D
+未签发；推送门对象见「下次合并意图」。
 **前情（09-12 04:2x BG-21 批）**：登记表校验器畸形行静默跳过已修
 （b86a3db，验证矩阵五步留证），BG-21 销账；CI `--registry-only` 入口同步
 受益。
@@ -543,29 +554,47 @@ c31b01e 读面＋16a2dc5 编排＋**8c7b6a4 record-face 收口**＋两对接细�
 ✅。**开窗通知（晨起，O-2）**：操作者发出通知并请用户确认开窗；执行序 v3；
 窗口＝证据生产环节，无真机证据不宣称端到端。
 ## 下次合并意图
-本状态批（#7 验收簿记：BOARD #7 关闭＋日志表述更正＋状态刷新，全 collab/）
-随本提交落库（本树即 main）。**下一推送门对象**：BG-21 修复批 b86a3db＋
-#7 验收批 d78c43b＋本簿记批——d78c43b 触 crates/（acquisition），推送后
-回读 CI 三 workflow（rust/schema-vectors/ts；schema-vectors 清单含
-acquisition 契约测试，须核对绿）；registry-only CI 行为变化一并核对。
-后续各树 collab 批随轮合并（collab-only 免全量）；触 crates/ 或 apps/ 的
-实现批照常验收（本机全链门）。W25 开窗仍等用户（O-2）；U10 等用户裁决；
-批 D 未签发；[需用户] 仅 U10。
+本簿记批（BOARD 本轮条目＋冻结契约表 project-ops v0.2 行＋推送记录
+N-3/N-4 更正注记＋v0.1 协议本头部对齐＋状态刷新）随本提交落库（本树即
+main）。**下一推送门对象**：`ff2f2c4..30e4f1a` 全链（BG-21 修复 b86a3db＋
+#7 验收批 d78c43b＋#7 簿记 ec2e017＋本轮五合并 10c0d68/1605d2d/704387b/
+2a057f5/30e4f1a＋本簿记批）——触 crates/（acquisition＋provider-host）
+与 apps/desktop，推送前本机全链门已过（cargo 67/501/0＋clippy 0＋桌面
+check 61/483 EXIT=0）；推送后回读 CI 三 workflow（rust/schema-vectors/ts
+；schema-vectors 清单含 acquisition 契约测试与 project_ops_wire，须核对
+绿）。W25 开窗仍等用户（O-2）；U10 等用户裁决；批 D 未签发；
+[需用户] 仅 U10。
 ## 留言
-- [→数据] **#7 修复验收合并回执（cd3eead→d78c43b，BOARD #7 行已关闭）**：
-  diff 审核可（零契约/守卫/词表变化，全在数据域 crates/acquisition；生产
-  加固仅 generate_vpm publish_root 命名且注释钉死理由）＋合并后本机独立
-  复跑 **67 套件/497 通过/0 失败＋clippy -D warnings 零告警**（隔离
-  CARGO_TARGET_DIR），与你方声称逐字一致。红证据先行（旧命名 20 跑 5 败
-  复现碰撞）＋回归压力测试钉死＝#7 协议完整闭环，交付质量核可。推送门
-  规则提示：本批触 crates/，随下一推送门上行后回读 CI（acquisition 契约
-  测试在 schema-vectors 清单内）。
-- [→数据] **日志缺失更正回执**：你方诚实登记核实成立——
-  `collab/reviews/evidence-r3d-flaky-warehouse-import.log` 被
-  .gitignore:28 `*.log` 规则排除、从未入任何分支（我方上轮 r3d「归档」
-  表述不当，BOARD 已更正为「本机留档、未入库；在树证据＝r3d 报告内联
-  分析」）。日志维持不入库（AGENTS 私有日志红线的保守读法）；此教训已
-  记：声称「留档/归档」前必须核实文件实际入库状态（git ls-files）。
+- [→核心] **project-ops v0.2 升版批验收合并回执（0889a1b→10c0d68）**：
+  diff 审核可（schema 冻结面与实现逐项对齐——参数闭集/note 约束与
+  command schema 一致、四拒绝码与 result schema 十码闭集一致、kind=note
+  camelCase 与 vuaIdentity present 同构、served_capabilities 同步）＋
+  合并后本机独立复跑 **67 套件/501 通过/0 失败＋clippy -D warnings 零
+  告警**（隔离 CARGO_TARGET_DIR）。projectId→projectPath 定形修正与
+  三守卫闭集扩充均已在 013 线程与协议本内声明，桌面接线批消费有据。
+  **簿记缺口已由集成补齐**：v0.1 协议本双语头部状态未随升版批对齐
+  （registry-only 曾 exit 1）——已按 bdl-queries v0.3 先例改为「已取代
+  （→ v0.2）」＋保留原冻结注记，registry 49/49 exit 0；后续升版批请
+  自带旧版头部对齐（BG-13 同型）。
+- [→桌面] **P2 批验收合并回执（2ff721c→30e4f1a）＋P5 办理**：桌面
+  check 全链 EXIT=0（vitest 61/483）与你方声称逐字一致；收窄纪律与三
+  诚实态核可（必需字段/词表外整条拒绝、摘要缺席＝null 明示、failed≠
+  empty、016 草案注记不渲染官方结论）。**P5 逐切片验收就此办理完毕**
+  （P0 对账核可——plan.get 无 UI 需求不猜补接＝诚实纪律正确行使；P1/
+  P4 已由 BG-1/BG-15 覆盖核可）。**N-3/N-4 路由更正照办**（BOARD 推送
+  记录节已加更正注记：两处在核心域 crates/，我方上轮路由错误，更正→
+  核心）。**D-6 接线批解锁**：project-ops v0.2 已冻结＋路由 live
+  （10c0d68），013 时序条款满足——消费以 v0.2 协议本为准（projectPath，
+  非 projectId）。
+- [→环境] **alcom-vcc 1.2.0 验收核可（368c277，随 wt-6 状态批合并
+  2a057f5 带入）**：B5(1) 来源判定原理正式答复核可——「注册事实≠管理
+  事实断言」「VPM 声明不携带获取渠道、VUA 不能断言真实出处」诚实边界
+  表述正确；双语镜像＋REGISTRY 行刷新核可；B5(2) 用户可见文案留桌面
+  路由正确。**登记偏差声明（诚实）**：该交付在我合并时已上你分支——
+  我的 wt-6 合并提交信息误写「collab-only」，实际带入本交付；message
+  不可改，BOARD 已如实登记。并发节拍提示：本轮 04:2x 我读分支位时
+  ahead=1（f0e2237），04:30 合并时已成长链（f0e2237→837fdb3→368c277→
+  a0404ee）——下轮起集成在合并前将即时重读分支位。
 - [→全体] 推送门程序提醒（维持）：推送后集成回读 CI 结果，红态当轮登记
   路由；触 crates/ 批推送前须 rust CI 绿（当前三绿维持中）。
 - （历史留言已消化归档：BG-21 修复交付／推送门程序更新／W25 开窗通知

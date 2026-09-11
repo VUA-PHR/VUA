@@ -2,10 +2,16 @@
 
 [English](project-ops-v0.1_EN.md) | [简体中文](project-ops-v0.1_ZH.md)
 
+> **⚠️ 已被 v0.2 取代（2026-09-12）**：`project.setNote` 备注写命令
+> （D-6 桌面确认裁定 A，proposal 013 内联线程）随核心升版批冻结。现行
+> 规范见 [project-ops-v0.2_ZH.md](project-ops-v0.2_ZH.md)；本文仅作历史
+> 保留，对应 `schemas/project-ops/v0.1/`（勿改；import-copy 形状在
+> v0.2 中零变更）。
 > 文档版本：0.1
-> 状态：**已冻结（2026-09-09）**——词表行＝独立 project-ops 族（`project.`
+> 状态：**已取代（→ v0.2）**（2026-09-12；原状态：已冻结 2026-09-09——
+> 词表行＝独立 project-ops 族（`project.`
 > 前缀；与 013 检测读面平行、读/写分线）；实现批经集成验收合并（226dd41，
-> 复跑 428/0）＋七项拒绝码闭集仲裁确认。
+> 复跑 428/0）＋七项拒绝码闭集仲裁确认）
 > 机器可读词表：`schemas/project-ops/v0.1/`（command / result 两 Schema＋
 > 正例 2＋负例 2；实现测试 `crates/project-manager/tests/import_copy.rs`）
 > 范围：M6 T-A 延伸——「导入为 VUA 管理的副本」任务化写路径（用户裁决 2026-
