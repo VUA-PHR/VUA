@@ -14,6 +14,8 @@ import {
   composeUndoAction,
   useComposeDraft,
 } from "../../app/compose-draft-store.ts";
+import { productionChainRecipeSavedAction } from "../../app/production-chain-store.ts";
+import { ProductionChainSection } from "./ProductionChainSection.tsx";
 
 /**
  * 搭配草稿页(019 批 B,桌面切片):项目无关的素材搭配草稿——从素材库
@@ -82,6 +84,8 @@ export function ComposePage() {
         setSaveState("idle");
         // 保存对齐:脏标记清除＋saved 身份入容器层(请求解析入口据此启用)
         composeSavedAction(recipeId, revision);
+        // 019 批 C:配方身份同步入生产链(链推进入口据此启用)
+        productionChainRecipeSavedAction(recipeId, revision);
       });
   };
 
@@ -210,6 +214,10 @@ export function ComposePage() {
           </section>
         </div>
       </Card>
+
+      {/* 019 批 C:生产链段(保存后推进——解析/计划/任务/记录;无保存事实时
+          自行不渲染);身份与请求状态在共享容器层,跨 UI 根保留 */}
+      <ProductionChainSection />
     </div>
   );
 }

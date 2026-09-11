@@ -18,6 +18,7 @@ import { createFixtureProduction, type ProductionTaskLink } from "./fixture-prod
 import type { EnvironmentPort, EnvironmentView, FixPlanResult } from "./environment-port.ts";
 import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
 import type { ModelProductionPort, ModelProductionView } from "./model-production-port.ts";
+import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import type { PackagesPort, PackagesView } from "./packages-port.ts";
 import type { TaskItem, TaskPort } from "./task-port.ts";
 import type { TaskCenterView } from "./task-port.ts";
@@ -592,6 +593,9 @@ export function fixtureGateway(
     acquire: acquireStore.port,
     warehouseCommands,
     projectOps: createFixtureProjectOps(),
+    // 019 批 C:fixture 不模拟生产链(验收标准——无模拟替代未完成接口);
+    // 任何场景下生产链端口都诚实不可用,DEV 切档不产生演示生产数据
+    productionChain: createUnavailableProductionChainPort(),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),

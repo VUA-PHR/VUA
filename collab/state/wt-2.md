@@ -2,286 +2,43 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: ff2f2c4
+baseline_commit: bc59453
 updated: 2026-09-12
 ---
 ## 当前焦点
-**processFactory 注入点表态已交（2026-09-12 凌晨，回应 wt-3 知会）＋合并
-main 追平（664135e→ff2f2c4）**：桌面壳经 SupervisedProcessProviderV01
-processFactory 公开注入点补 Provider 运行时三根（VUA_PROVIDER_DATA/
-VUA_WAREHOUSE_ROOT/VUA_PROJECT_ROOT，非凭据）——核心表态＝**维持 env
-注入形态，无需 Provider 侧配置文件提案**（四点理由见留言；核心域清洗层
-与全部文件零改动，与桌面声明一致）。本批 collab-only 无新代码；在途等待
-不变：M7 检查切片锚点等产线（Bridge 五维操作）、setNote 升版等桌面
-D-6 编辑范围确认、019 批 C 桌面牵头（核心接口已交付）。#7 残余观察态
-维持。
-**前情：E1 快照形状核对已交付（2026-09-11 夜，夜间任务分配核心切片）——
-无缺失检测项，一项辖区归属差异列清单交环境**：引擎 17 检测项全清单
-（Play 12＋Create 5）对照 deployer 两辖区所需 10 项全部覆盖（steam/
-steamvr/vrchat/network/gpu 在 Play；unity_hub/unity_editors/vpm_cli/vcc/
-disk_space 在 Create）；**唯一差异＝disk_space 归属 Create 区**（play
-辖区若按 zone 过滤消费则不含 disk——桌面 E3 已按 checkId 全局查找无
-影响）；**快照形状覆盖确认**（EnvironmentCheckItemV01 id/zone/presence/
-errorCode/facts 对在场事实需要全覆盖，NotDetected 与 DetectionFailed
-两态分立＝坑 6 一致）。缺口清单交环境 E2 核对辖区映射（本核无异议，不
-动冻结面、无需升版）。**BG-12 核心半边待集成验收（91d9c3e）**。#7 残余
-观察态维持。
-**前情：BG-16 接线刀已交付（2026-09-11 凌晨，环境接线请求兑现）——
-environment.getSnapshot 消费真实检测引擎**：处理器不再返回硬编码空
-items——有 environment 配置时 `EnvironmentEngine::inspect_all()` 原样
-输出（items 即冻结检查词表 EnvironmentCheckItemV01 serde 形状
-schemaVersion/id/zone/presence/errorCode/facts；capturedAt 随行；
-EnvironmentSnapshotV1 serde camelCase＝契约词表，零新增协议面）；无配置
-＝检测面未接线，空 items 列表保持诚实空（B6 冻结语义——空列表永非就绪
-判定）。**装配**：EnvironmentConfig（EnvironmentRoots＋VCC settings
-candidates）挂 run_provider_host_full 入口（旧签名 None 委托零破坏；
-生产 bin 走默认真根）；**消费测试 environment_snapshot_wire 2 项**（合成
-roots over the wire：逐项形状断言＋双 zone 运行＋假编辑器安装诚实
-detected；未接线面＝诚实空 items）。**证据（2026-09-11 本机）**：
-environment_snapshot_wire 2/2＋workspace 67 套件全绿＋clippy 零告警。
-交集成验收；桌面 B6/兼容矩阵检测项真数据呈现解锁。**BG-12 核心半边
-（91d9c3e）待验收**。M7 锚点等产线。#7 残余观察态维持。
-**前情：保存链启用确认已交（2026-09-11 凌晨，回应 019 批 B「待核心确认
-批」等待）**：recipe.save＋entrypointSelector anyOf 用户输入路径（nameHint/
-catalogEntryId）**无核心侧待办、可即启用**——契约面无阻塞（评估结论
-不变，33a844e＋entrypoint 路由评估两批已交）；系统性事实源（素材→候选
-挂载点列表）仍归 M7 检查切片锚点（不等保存链）。**BG-12 核心半边已交付
-（91d9c3e）待集成验收**。M7 锚点等产线（Bridge 五维操作）。#7 残余观察
-态维持。
-**前情：BG-12 核心半边已交付（91d9c3e——工单「provider_host to_value 处
-随核心后续批」兑现）**：八处序列化吞错逐处改 expect＋一行
-不变量注释（plan/document 摘要哈希；downloads.listCompleted 行——序列化
-失败折成空列表会把真实可采纳行伪装成「无可采纳」；environmentManagers
-快照——兜底文档会发明冻结 schema 不知道的降级形状；inspectProject 单查
-结果；import-copy plan/receipt/rejected 转抄——旧兜底会伪造假 rejected
-文档＝不诚实结果）。**字段缺席投影保留并附理由注释**（无 inputs 的
-job→null／无 jobs 的 plan→空列表／recipeId 缺席→store 类型化 not_found
-——诚实缺席投影喂摘要或类型化拒绝，非吞错，无新增吞错点）。
-**证据（2026-09-11 本机）**：workspace 66 套件全绿＋clippy 零告警。
-请集成验收（BG-12 全闭环候选：数据侧 43ea8d2＋核心半边本批）。
+**BG-7 复验留证＋BG-18 根因协作分析已交（2026-09-12 凌晨，collab-only 簿记批）**：
+①**BG-7 复验两例留证**（collab-brief --registry-only 退出码缺陷已由操作者修复令
+交付 0b8bebb——非本树改动，如实声明）：正例 exit 0；负例（REGISTRY 行版本格
+1.3.0→9.9.9）报告异常 1 项 exit 1；还原后 exit 0——BOARD BG-7 行请集成核销。
+②**附带观察（非阻塞）**：REGISTRY 畸形行（列数不足——负例试验中曾把五列行
+意外截成两列）被校验器静默跳过（行计数 46→45 无检测、exit 0）——校验器健壮性
+增强建议（畸形行报异常）交集成，不指派。
+③**BG-18 静态根因分析**（环境主责；本核协作分析，未代做、未经 runner 复现）：
+TargetInsideSource 守卫 runner 失败机制＝target 路径不存在时 canonicalize 失败
+走 normalize 的 unwrap_or_else 回退保留原始形态（import_copy.rs:192），GitHub
+runner TEMP 为 8.3 短名形态 `C:\Users\RUNNER~1\AppData\Local\Temp`，回退侧
+短名未展开，与 source 侧 canonicalize 展开后的长名 `C:\Users\runneradmin\...`
+starts_with 字节比较不命中→守卫不拒绝→plan Ok；本机（用户名 AR 无短名差异）
+两侧形态一致→三轮绿，与 CI 表型完全吻合。**修复方向建议（环境裁量）**：对
+target 最近现存祖先 canonicalize 再拼尾段（标准库内完成、不引依赖；守卫语义与
+014 拒绝码闭集不变，符合 BG-18「守卫语义不放宽」红线）。
+④**核心域同型排查（已完成，无缺陷）**：canonicalize 唯一使用点
+project_identity.rs `from_existing_path` 只对存在路径 canonicalize、失败走类型化
+Resolve 错误、无回退伪造路径——无 BG-18 同型缺陷。
+**在途等待不变**：M7 检查切片锚点等产线（Bridge 五维操作）、setNote 升版等桌面
+D-6 编辑范围确认、019 批 C 桌面牵头（核心接口已交付，消费 v0.2 七方法知会收讫）、
+BG-2 批一桌面消费零核心新增。W25 用户延期维持（O-2 开窗待定）。
 #7 残余观察态维持。
-**前情：第三方审阅修复已交付（30da5b6，操作者定向修复轮——用户「先修
-再推」裁定兑现）——BG-2 overlay surface 两应修项＋自查**：①排序与实现不符
-已修：删除 task_id 重排（SqliteTaskStore::tasks 本身 ORDER BY created_at,
-task_id——created_at 即 NewTask.occurred_at 创建时刻 RFC3339，store 排序
-＝入队序；排序键出处已在投影注释钉死）；②吞错已修：task_cards 改
-Result<Vec, SqliteStoreError> 透传（存储故障不再折叠为空态；trait 文档
-钉死消费侧空态/失败态分离呈现）；**回归测试新增**：三任务故意乱序创建
-时刻＋乱序 id 字母（zulu/mike/alpha 插入）→读回严格入队序
-（mike/alpha/zulu）——id 排序会读反，断言抓住；③unwrap_or 自查：今夜
-新代码余下 unwrap_or_default 均为不可达 serde 分支或确定性投影输入（喂
-hash 闸，畸形 hash 被闸门拦绝不冒充成功）——无失败折叠案例；范围外历史
-代码按修复令不动。**证据（2026-09-10 晚本机）**：overlay_surface 3/3
-（含新乱序测试）＋workspace 66 套件全绿＋clippy 零告警。请集成验收＋
-知会操作者。#7 残余观察态维持。
-**前情：多 UI 草稿持久化契约缺口评估已交（2026-09-10 凌晨，操作者
-directed；collab-only）**：主判定＝**UI-03 接口已存在**（production-use-case v0.2
-recipe 族 save/get/list＋baseRevision 修订号＋RecipeDocumentStore 权威
-持久域＝「版本化应用接口」，无需 compose-ops 独立词表）；缺口清单三项
-（G1 删除接口候选增补——批 B 前置确认时裁定；G2 并发保存已覆盖；G3
-分组非 wire 协议声明）＋018 延伸确认（UI 选择偏好会话级，无异议）＋诚实
-边界三条确认。详见留言。**BG-1 映射规则三方表态齐（集成可仲裁）**：核心票
-（A 认可/C 否决/B=M7 锚点正解，0bddf98）＋数据表态（C 否决一致/A「中性
-态＝期望非检查」语义无异议/B 随检查流程立项/短期维持现状＝诚实终态）
-＋桌面（A 路径预备已落地〔结构清单〕，expected 词表渲染随时可做——一处
-narrow 函数扩展）。**无分歧**；剩余开放＝state 词表所有权归属（数据/产线
-确认请求已路由）。018 批 1 落地与 013 读面消费顺利均已收讫（桌面域）。
-#7 残余观察态维持。
-**前情：BG-1 映射语义确认已表态（回应 wt-3 卡点）**：三选项
-裁定＝**A 路线认可（中性态词表演进，走三方确认；核心一票支持）／B 路线
-＝M7 检查切片锚点后的正解（016 检查证据＋inspection-queries 读面提供
-事实源后方可投影事实态）／C 否决同意（在场≠通过检查）**；**现状（三视图
-对库文档不做 state 渲染）＝诚实可维持，BG-1 主切片不被卡死**——可按
-「期望态文档清单」形态交付，state 列等 A 或 B 任一落地后再渲染。详细
-语义见留言。#7 残余观察态维持。
-**proposal 018 §6 核心表态已交（2026-09-10 凌晨，collab-only）**：确认
-纯渲染层装配面成立（017 §11 同型判断——连接目标选择权归桌面壳）：
-contracts/preload/Main＋应用契约＋provider 三层零变更、核心域零耦合无
-配合项；诚实纪律核对通过（徽标聚合语义＋连接目标选择器定位＝纪律读法）；
-会话级选择不进持久域；provider 恒真话不受影响。018 文件基于桌面分支版
-落本树（表态节待集成分支合并时融合）。**#20 修复小刀已验收合并
-（7db13f3）——缺陷生命周期闭环**。在途下一刀候选：M7 检查切片锚点
-（等 Bridge 五维操作）＋BG 工单余项（BG-1/BG-3 桌面）。#7 残余观察态维持。
-**前情：#20 修复小刀已交付（裁决排期「随下一工作窗口」即当轮兑现）**：demo 任务面纳入重启扫除（prod- 扫除循环扩展 demo-——
-queued/preparing→cancelled 静默；running→failed＋可恢复
-vua.task.interrupted error）；**幂等重放永不复活已扫任务**（重放返回扫除
-后快照）；新 commandId 照常受理新任务（扫除 per-task 非锁定）。旧 demo
-生命周期测试按裁决语义重写（原模式依赖重启不扫 demo——与新裁决直接冲突，
-已锚定新语义）。**回归测试 lifecycle_recovery.rs**：双真实进程同库——
-A 会话受理 demo 任务等至 running→SIGKILL；B 会话 task.list 读诚实死后态
-（failed/cancelled），永不 running。**证据（2026-09-10 本机）**：
-lifecycle_recovery 1/1＋workspace 66 套件全绿＋clippy 零告警。交集成验收
-（#20 销账候选）。#7 残余观察态维持。
-**前情：BG-6 限时 Spike 已交付＋边界发现升级（#20 裁决成立）**：可复跑双场景压测脚本（A 基线会话：handshake
-51ms＋getSnapshot p50 0.26ms/p95 0.53ms debug 构建；B 硬杀重启恢复观察）。
-**边界发现（如实升级，不代决不顺手修）**：demo 任务 running 中硬杀
-provider，同库重启后 task.list 仍读 `running`——demo 任务面非终态残留未被
-重启扫除覆盖，与恢复纪律的观察面冲突（候选缺陷，登记待核心/集成裁决；
-M8 压测地板数据与帧协议观察同录 README）。**017 三项桌面表态已收讫消化**
-（slot/wt-3 分支）：传输面＝同进程窗口＋既有广播＋按需轮询（零新增连接
-语义）；会话身份＝不引入；投影清单＝批一任务卡＋生产状态卡（消费全走
-既有读面/事件——**批一零核心新增**；OverlayReadModel 端口保留为投影
-演进锚）。**BG-2 已验收合并（f268813）——BG 工单累计 3/6**。
-**候选缺陷**：见上（#19 之外新登记候选）。#7 残余观察态维持。
-**前情：BG-2 工单交付（Overlay Surface 设计稿＋骨架）**：
-①`crates/orchestrator/src/overlay_surface.rs` 骨架——`OverlayReadModel`
-只读投影端口（Send＋Sync＋无 mut 方法，只读边界类型系统承载）＋
-`StoreOverlayReadModel` 任务卡投影（诚实 TaskSnapshot 子集，排序 oldest
-first；revision/cancel 簿记留主线面）＋空态即终态＋纯函数纪律断言；
-传输/连接/订阅语义**有意缺席**（跨域接口待桌面表态）。②**proposal 017
-设计稿**（方向不冻结）：事实面零新增（overlay 消费既有冻结读面——投影
-而非聚合发明）；语义动作原则（经既有命令面受控动作，无 overlay 专有写
-词表）；故障隔离＝无状态只读；VR 出本门（用户裁决 2026-09-06）；§4 三项
-（传输面/会话身份/投影清单）待桌面表态，表态前核心不接 wire 面。**证据
-（2026-09-10 本机）**：overlay_surface 2/2＋workspace 65 套件全绿＋clippy
-零告警。交集成验收（BG-2 验收标准：workspace 绿＋clippy 零告警＋设计稿
-仅方向不冻结——已满足）。**BG-6 留下一节拍**（单节拍限时不展开纪律）。
-**013 读面完整批已验收合并（d24e5b7）**。#7 残余观察态维持。
-**前情：013 读面路由完整交付（5b65550）——四查询全 live**：`project.listProjects`（注册项目检测聚合 verbatim
-——v0.2 快照族含 vuaIdentity 三态）；`project.inspectProject`（单项目面＝
-注册表内单查；未注册路径＝新定形类型化 `vua.project.project_not_found`；
-单项目 result 自携族版本 vua.project-inspection/v0.2 照冻结 def）；
-`project.lockStatus`（只读 pending-mutation 观察 none|leftover|unreadable
-——检测永不取锁）；单路径查询闭集 `{projectPath}` 执法。**消费测试 +3**：
-聚合 over the wire（v0.2 三态校验）/单查与缺席面/干净锁观察。**证据
-（2026-09-10 本机）**：project_ops_wire 9/9＋workspace 65 套件全绿＋clippy
-零告警。交集成验收——**013 读面翼完整，桌面 T-B 全量接线解锁**。
-桌面 i18n 两 messageKey 已登记（64d22a7 收讫）；产线 A2 冒烟 fixture 决策
-（无 constraint 诚实跳过）收讫闭环。#7 残余观察态维持。
-**前情：013 读面路由第一刀已交付（e720544）：project.environmentManagers live**——
-`project.*` 分派现承载冻结读面（project-inspection v0.1 命令词表）＋014 写
-面：environmentManagers 同步薄层（载荷＝环境侧 collector 原样——发现对给定
-树确定性、settings 路径按事实旅行；ProjectOpsServices 增 editor_roots）；
-**三未接线词表项（listProjects/inspectProject/lockStatus）＝类型化
-vua.project.unavailable**（冻结词表永不静默桩替——下刀按序接线）；
-未知方法＝unknown_method；无参查询带参数＝invalid_params。**消费测试 +2**：
-向量形状 over the wire（真 VCC 注册＋假 Hub 安装，schema 校验 against v0.2
-result——查询信封版本 0.1 与快照族 v0.2 独立，照核心路由表态）＋闭集/
-缺席/未知面。**证据（2026-09-10 本机）**：project_ops_wire 6/6＋workspace
-65 套件全绿＋clippy 零告警。交集成验收。**job.execute 环境预检接线已验收
-合并（07166b7）**。**在途下一刀**：listProjects/inspectProject/lockStatus
-三查询接线（本刀分刀声明）。#7 残余观察态维持。
-**前情：job.execute 环境预检半边已接线（2112f6c，009 表态④受理预检序
-「版本锁→环境→指纹」全链）**：recipe 声明
-`environment.unityVersionConstraint` 且可解析为 Unity 版本字符串时，配置的
-Unity Hub 编辑器根下必须存在精确匹配安装（major/minor/patch/release
-kind/number；China 后缀永不匹配纯版本——对齐不支持环境政策）；**诚实跳过
-语义**：无 constraint 或自由文本不可解析→预检跳过不猜判定；观察失败≠配置
-判定——DetectionFailed 走 `vua.job.environment_check_failed`
-（ExternalFailure＋recoverable），未检出/无匹配走 `vua.job.environment_unmet`
-（Validation，信封携 requiredVersion）。装配＝`unity_editors_root` 进
-ProductionUseCaseConfig（bin 读 `VUA_UNITY_EDITORS_ROOT`，默认标准 Hub
-位置）。**消费测试 +3**：unmet 阻断零记录/匹配安装放行/观察失败诚实可恢复
-（默认种子无 constraint→诚实跳过，既有测试不动）。**证据（2026-09-10
-本机）**：warehouse_commands 25/25＋workspace 65 套件全绿＋clippy 零告警。
-**路由留言**：产线（窗口 A2 冒烟 recipe 的 constraint 语义）＋桌面（新
-messageKey errors.job.environmentUnmet/environmentCheckFailed 四语表登记）。
-交集成验收。**在途下一刀候选**：013 检测读面路由＋BG-2/BG-6 评估。
-#7 残余观察态维持。
-**前情：两份表态已交付（2026-09-10 凌晨，collab-only；016 已仲裁落节、
-015 §12.8 已核验受理）**：①**proposal 016 核心三
-问答复**（016 内联「表态（核心）」节）：存储面＝是（第五文档库，形态锚
-EvidenceStore——检查证据是不可变观察事实，plan/record 的 revision 语义不
-适用）；读取路由＝独立词表行 `inspection-queries/v0.1`（照 013/014 分线
-先例，不连带升版 production-use-case v0.2；写命令面 M7 锚点时按同惯例定）；
-聚合规则与 unavailable 语义消费侧确认采纳（不完整的检查不得读作干净通过）；
-BG-4 协作位履职＝本表态，存储＋路由实现随 M7 检查切片锚点（冻结硬前置①
-Bridge 五维操作落地为核心开工锚）。②**015 §12 IPC 面形状表态**（015 内联
-「表态（核心）」节）：形状核可（remoteContent 同构＋confirmId pending 校验
-安全闭合＋无超时＝阻断式诚实）；架构边界确认＝全程桌面域内、核心域零耦合
-面无配合项；§12.4 语义锚核可作为验收锚。#7 残余观察态维持。
-**downloads.listCompleted 读面接线已验收合并（e1e5520）**。
-**前情：downloads.listCompleted 读面接线已交付（389912e）——
-bdl-queries v0.4 消费翼（回应 wt-5 读面接线请求）**：`downloads.*` 分派＋
-单一词表项 listCompleted（无参数闭集/unknown_method/类型化
-vua.downloads.unavailable）＋载荷＝`list_adoptable_downloads` 原样（守卫
-镜像：行在列即可采纳；路径不出行）＋`BDL_QUERIES_SCHEMA_VERSION` 0.3→0.4
-（信封常量随核心接线批升——数据侧路由授权）。**机械跨域跟随（已声明）**：
-bdl-store catalog_serving.rs 的 validator 锚与常量断言随冻结词表字面升
-v0.4（仅版本跟随，形状零变更）。**消费测试 +2**：守卫镜像性质 over the
-wire（双交付在列/已采纳行携 entry link/未采纳行空/无 storedPath 泄漏）＋
-参数与未知方法契约错误。**证据（2026-09-10 本机）**：catalog_queries 11/11
-＋workspace 64 套件全绿＋clippy 零告警。交集成验收。**BG 工单状态**：本
-tick 领取的即在途读面接线（优先于 BG），BG-2/BG-6 未领（下轮按领取纪律
-评估）。**remoteBrowser 行移除已验收合并（f5f2fe0）**。在途下一刀候选
-维持：013 检测读面路由＋job.execute 环境半边接线。#7 残余观察态维持。
-**前情：remoteBrowser capability 行已移除（be58a67，015 §11 裁决 (a)
-核心半边，桌面同窗验收件）**：provider 不再转述非自身能力（诚实纪律——capability
-报告只携带 provider 自己服务的操作）；桌面批 B-1 已切壳自报、该标志无消费
-方。**桌面三问答复见留言**（①移除交付＋过渡态声明；②v0.4 wire 批已验收
-合并 b4c78aa——批 B 前置满足；③页内确认层 IPC 面等桌面对接设计后表态）。
-**importDownloads 路由批已验收合并（b4c78aa）**。在途下一刀候选（排期
-维持）：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
-环境半边接线（f8fe114 事实源消费）。#7 残余观察态维持。
-**前情：importDownloads wire 路由已交付（cbde4b3，015 §7 批 B 前置的
-v0.4 wire 批）**：第六命令 `warehouse.importDownloads` 任务化
-路由（身份 only 闭集/信封钉 v0.4/四负例保持 invalid_params/向量驱动真采纳
-消费测试）＋`BDL_COMMANDS_SCHEMA_VERSION` 0.3→0.4（词表面整体随数据侧冻结
-升版，五命令形状不动）。**证据（2026-09-10 本机）**：warehouse_commands
-22/22＋workspace 63 套件全绿＋clippy 零告警（一次无关套件 ph_010 时序瞬败
-未在三次复验再现，如实记录）。**015 §7 两问已表态（015 内联）**：①时间锚
-＝本批交付；②remoteBrowser 翻转机制架构表态（能力拥有者直读 (a) 推荐/
-装配旗标转述 (b)，核心配合面一行，随桌面批 B 同批）。交集成验收。
-**M6 核心路由批（f53704c，project.import-copy）已验收合并（8bfa5b6）**。
-在途排期：013 检测读面路由（environment.getSnapshot 真实现）＋job.execute
-环境半边接线（环境事实源 f8fe114 已在库）——下一刀候选。#7 残余观察态维持。
-**前情：M6 核心路由批交付记录（f53704c，014 `project.import-copy`
-wire 路由）**——`project.*` 分派＋任务化两阶段（plan 确认面/apply 执行面，
-九态共享任务权威）＋闭集参数执法（invalid_params：未知键/未知
-phase/apply 缺 digest/plan 带 digest）＋守卫拒绝＝Done payload 内冻结
-`rejected` 结果文档（非传输错误，照 warehouse 生成守卫先例）＋缺装配＝
-类型化 `vua.project.unavailable`＋capabilities 行＋`run_provider_host_full`
-新入口（旧签名零破坏委托）。**消费测试 project_ops_wire 4 项**：真 VCC
-注册源项目两阶段全链（schema 校验 plan/receipt 信封＋排除清单＋source
-link＋Library 不复制）/plan_drift 拒绝零复制/未注册源拒绝/闭集与缺席面。
-**证据（2026-09-10 本机）**：project_ops_wire 4/4＋workspace 63 套件全绿
-＋clippy -D warnings 零告警。交集成验收（M6 批）。
-**环境三问已表态（013 内联）**：①v0.2 消费确认（路由钉 v0.2）；②备注写
-命令有条件立项（等桌面 D-6 编辑范围；语义草案 setNote＋not_vua_native
-拒绝码已备）；③014 路由占位声明。**wt-5 importDownloads 路由请求已接单**
-（待 2688105 v0.4 验收入树后随批实现——契约文件须在树才能消费引用）。
-#7 残余观察态维持。
-**前情：W22 记录面收口刀已验收合并（b303678；W25 三前置齐备，开窗通知
-晨起 O-2——核心侧凭证义务已清）**。job.execute 完整
-Build Record v0.3 转抄——版本锁预检（009 表态④①，协议本承诺落地；锁值＝
-存储乐观并发 revision）＋digest 锚链真实化（recipeDigest＝整文档 hash＋
-localResolutionDigest＝解析面投影 hash，规范代码内声明）＋**planDeviations
-类型化偏差**（source_fallback 照 012 MUST/guard_skip/partial_completion，
-替换硬编码空数组）＋recoveryPoints 收据快照登记（pre_job；rejected 无快照
-不虚构）＋evidenceSummary 走 localResolutionId 反查
-（EvidenceStore.list_by_local_resolution 新增；缺席根＝诚实空态）。**顺手
-修两真 bug**：①uuid_v7_identity 版本位 4→7（生成 id 此前全面违反冻结
-uuidV7 pattern——recipe v0.3 套件与 production-use-case v0.2 词表）；②
-job.execute 收口刀计划文件内容误将 Vec<u8> 二次序列化为 JSON 数字数组
-（write_plan_file 恒拒「缺 schemaVersion」——此前无 job.execute 消费测试
-故未暴露）。**证据（2026-09-09 本机）**：warehouse_commands 20/20（含
-4 个新测试：全链 record 形状/类型化偏差＋快照/版本锁拒绝零记录/解析证据
-链）＋workspace 60 套件全绿＋clippy -D warnings 零告警。
-**W25 前置状态（核心侧声明）**：①production-use-case v0.2 冻结收口
-**正式确认生效**（Schema 十方法＋向量 24＋向量驱动消费测试 3＋协议本双语
-＋REGISTRY 冻结行——集成已验收落账）；③W22 实现切片**记录面已收口**
-（executors 接线＋记录写入面＋两对接细节澄清齐）——核心侧前置凭证齐，
-请集成确认后走开窗通知。**W22 冻结语义既定，两对接细节澄清答复见留言**。
-核心下一步：M6 名下任务领取（014 import-copy provider 实现，project-ops
-v0.1 词表环境已冻结入树）；wt-6 标识文件词表路由表态已交（见留言）。
-#7 残余观察态维持。
-**前情（13 项裁决已登记，8457e04 对照表；核心相关 6/7/9/10/12/13 吸收
-注记齐）**。W20 实现切片全部交付并经验收。production-use-case v0.2 已冻结
-（2fd4813）。proposal 014 核心表态已交付（fc6f69e/29152c2，三域表态齐待
-集成仲裁）。M6 已开窗。
-**W20 第三刀全部交付（34d0075：Local Resolution 执行器＋recipe.resolve 任务
-＋record.get 读面）**，交集成验收。剩余＝job.execute（Bridge v2 编排对接，
-产线 v2 冻结批已就绪——build_job_command 组装函数 crate-visible）。
-**production-use-case v0.2 协议本双语交付（50904fe，候选态——回应集成催件
-①）**：十方法 Schema 已落、双语协议本候选＋REGISTRY 行（候选——向量＋全
-路由消费测试硬前置随第三刀后冻结，不重复 v0.1 名不副实冻结的教训）。
-**W20 实现切片第二刀已交付（4849958：production-use-case v0.2 十方法 Schema
-冻结件＋RecipeDocumentStore＋provider-host recipe 命令面）**，交集成验收。
-第三刀（recipe-resolve/plan-approve/job-execute/record 路由与 Local
-Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（UnityOperation
-扩展 93f841c＋36b14ff 补遗；执行语义规格 471a4ee）；执行序②核心半边
-（6b4f21a）与 W22 冻结切片（c486318）、W20 冻结切片（0400bee）均已交/经集成
-验收。导入挂点（010 路径 A）设计已内联交数据落实。#7 残余观察态维持。
+**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：已验收合并核心批——W20
+三刀（production-use-case v0.2 十方法冻结＋resolve/record 读面＋聚合路由收官）、
+W22 记录面收口（b303678）、013 读面翼完整（e720544→5b65550）、014 import-copy
+路由（f53704c）、importDownloads wire＋remoteBrowser 行移除（cbde4b3/be58a67）、
+环境预检接线（2112f6c）、BG-16 检测引擎接线（0c72258）、BG-12 核心半边
+（91d9c3e）、BG-10 修复（30da5b6）、#20 demo 扫除修复（7db13f3）、BG-2 骨架＋
+proposal 017、BG-6 Spike、BG-1/UI-03/016/015/018 各表态；processFactory 注入点
+表态已交并收讫（维持 env 注入形态，725e8b5）。E1 快照形状核对交付（disk_space
+归属差异已由环境 E2 补齐批闭环）。
+
 ## 本轮交付（2a91d46 后，本 tick 续）
 - **proposal 014 核心表态（fc6f69e，内联）**：①命令面＝独立
   `schemas/project-ops/v0.1/`（project.import-copy 写命令；与 013 检测读面
@@ -377,9 +134,9 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**本状态批（processFactory 表态＋baseline 追平记录；全 collab/ 免全量
-测试）随轮合并**。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
-＋BG 工单余项（BG-1/BG-3 桌面）。
+**本状态批（BG-7 复验留证＋BG-18 协作分析＋畸形行观察＋baseline 追平至
+bc59453；全 collab/ 免全量测试）随轮合并**。在途下一刀候选：M7 检查切片
+锚点（等 Bridge 五维操作）＋BG 工单余项（BG-3/BG-15 桌面；BG-18 环境主责）。
 ## 留言
 - [→桌面] **processFactory 注入点表态**（回应你的知会——两形态询问）：
   **维持 env 注入形态，无需 Provider 侧配置文件提案**。理由四点：
@@ -671,3 +428,19 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
   路由透传扩展随时可随批。
 - [→桌面] record 读面闭集已全（record.get/list），W24 recovered 呈现语义
   表态请求维持；recipe 读面 recipe.save/get/list 通。
+- [→集成] **BG-7 复验留证，请核销 BOARD 行**：0b8bebb（操作者修复令）在
+  本树复验两例——正例 exit 0；负例（REGISTRY 行版本格 1.3.0→9.9.9）报告
+  「异常 1 项」exit 1；还原后 exit 0。BOARD BG-7 行尚未标 ✅，请核销。
+  **附带观察（非阻塞，不指派）**：校验器对畸形行（列数不足）静默跳过——
+  负例试验中曾意外把某行截成两列，结果「共 46→45 行、异常 0、exit 0」，
+  行计数漂移未检测；建议后续增强（畸形行计异常），节奏你定。
+- [→环境][→集成] **BG-18 静态根因分析**（协作位履职；主责归环境，本核未代做、
+  未经 runner 复现——静态分析，环境复现确认后为准）：机制＝normalize 的
+  unwrap_or_else 回退（import_copy.rs:192）使不存在的 target 保留 runner TEMP
+  8.3 短名形态 `RUNNER~1`，与 source 侧 canonicalize 展开长名 starts_with
+  字节比较不命中→TargetInsideSource 不拒绝→plan Ok（与本机绿/CI 红表型
+  吻合）。修复方向建议＝target 最近现存祖先 canonicalize 再拼尾段（标准库内；
+  守卫语义与 014 拒绝码闭集不变——「守卫语义不放宽」红线满足）。**核心域
+  同型排查无缺陷**（project_identity.rs from_existing_path 只对存在路径
+  canonicalize、失败走类型化 Resolve、无回退）。014 冻结件语义零涉变更，
+  无需核心再表态。

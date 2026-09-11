@@ -91,7 +91,7 @@ pub fn material_intake_job(
             build_record_id: report.build_record_id.clone(),
             replayed: report.replayed,
         };
-        let payload = serde_json::to_value(&result).unwrap_or_else(|_| serde_json::Value::Null);
+        let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
         let plan_id = result.plan_id.clone();
 
         match report.status {
