@@ -326,6 +326,18 @@ export interface ProjectImportCopyRequestV1 {
     readonly confirmedPlanDigest?: string;
   };
 }
+/** project.setNote 备注写入口(project-ops v0.2,D-6 桌面接线;任务化受理:
+ *  wire 回执携带 taskId,结果文档随应用契约任务面) */
+export interface ProjectSetNoteRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "project.setNote";
+  readonly params: {
+    readonly projectPath: string;
+    /** null 清除;非空单行纯文本(冻结 Schema:1..2000 字符,无换行) */
+    readonly note: string | null;
+  };
+}
 /** warehouse.import 批量导入入口(bdl-commands v0.3,W19) */
 /** production-use-case v0.2 read-face pagination/filter closed set (011 section 7) */
 export interface ProductionListParamsV1 {
@@ -428,7 +440,8 @@ export type DesktopGatewayRequestV1 =
   | JobExecuteRequestV1
   | RecordGetRequestV1
   | RecordListRequestV1
-  | ProjectImportCopyRequestV1;
+  | ProjectImportCopyRequestV1
+  | ProjectSetNoteRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -473,6 +486,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "record.get": "query",
   "record.list": "query",
   "project.import-copy": "command",
+  "project.setNote": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -909,6 +923,17 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isIdentifier(value.params.targetProjectName)
         && (value.params.confirmedPlanDigest === undefined
           || isIdentifier(value.params.confirmedPlanDigest));
+    // project-ops v0.2 setNote(D-6 接线):projectPath 身份 + note 单行
+    // 非空或 null(冻结 Schema:1..2000 字符无换行;长度上限由服务端任务内
+    // 校验,信封守卫钉键形与空值形态)
+    case "project.setNote":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "note"])
+        && isIdentifier(value.params.projectPath)
+        && (value.params.note === null
+          || (typeof value.params.note === "string"
+            && value.params.note.length > 0
+            && !/[\r\n]/.test(value.params.note)));
     default:
       return false;
   }

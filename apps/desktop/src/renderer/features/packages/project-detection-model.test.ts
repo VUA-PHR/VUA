@@ -6,6 +6,7 @@ import {
   narrowEnvironmentSnapshot,
   narrowInspectAssociations,
   narrowManagerCapability,
+  narrowVuaIdentity,
 } from "./project-detection-model.ts";
 
 /* 013 读面消费(T-B)的呈现窄化纯函数:envelope 强度承载下按字段存在性
@@ -57,4 +58,35 @@ test("lockStatusKey: 三态映射,词表外=null", () => {
 test("narrowInspectAssociations: 仅保留非空字符串关联", () => {
   assert.deepEqual(narrowInspectAssociations(["vcc_registered", "", 42]), ["vcc_registered"]);
   assert.deepEqual(narrowInspectAssociations([]), []);
+});
+
+test("narrowVuaIdentity: 三态收窄(present 携带 markedAt/note)", () => {
+  assert.deepEqual(narrowVuaIdentity({ status: "absent" }), {
+    status: "absent",
+    markedAt: null,
+    note: null,
+  });
+  assert.deepEqual(
+    narrowVuaIdentity({ status: "present", markedAt: "2026-09-12T00:00:00Z", note: "亚洲字符补位" }),
+    { status: "present", markedAt: "2026-09-12T00:00:00Z", note: "亚洲字符补位" },
+  );
+  // note = null 是合法存储态(无备注的 VUA 原生项目)
+  assert.deepEqual(
+    narrowVuaIdentity({ status: "present", markedAt: "2026-09-12T00:00:00Z", note: null }),
+    { status: "present", markedAt: "2026-09-12T00:00:00Z", note: null },
+  );
+  assert.deepEqual(narrowVuaIdentity({ status: "unreadable" }), {
+    status: "unreadable",
+    markedAt: null,
+    note: null,
+  });
+});
+
+test("narrowVuaIdentity: 不可解释 = null(缺字段/词表外/非对象,不猜测)", () => {
+  assert.equal(narrowVuaIdentity(null), null);
+  assert.equal(narrowVuaIdentity("x"), null);
+  assert.equal(narrowVuaIdentity({ status: "present" }), null);
+  assert.equal(narrowVuaIdentity({ status: "present", markedAt: "", note: null }), null);
+  assert.equal(narrowVuaIdentity({ status: "present", markedAt: "t", note: 42 }), null);
+  assert.equal(narrowVuaIdentity({ status: "locked" }), null);
 });

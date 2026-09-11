@@ -1382,6 +1382,33 @@ demoTaskTitle: "Demo task",
     guardExecutionFailed: "The import execution failed.",
     guardFallback: "The import was rejected.",
     importNotWired: "Copy-import execution is not wired yet: it enables once the environment read/capability faces land.",
+    /** D-6 note section (project-ops v0.2 setNote; ruling A inline view + light edit):
+     *  no entry on absent; read-only on unreadable; success confirmed via read-face refresh */
+    note: {
+      title: "Project note",
+      markedAt: "VUA-native since {markedAt}",
+      empty: "No note yet.",
+      placeholder: "Single-line note, up to 2000 characters",
+      edit: "Edit note",
+      clear: "Clear note",
+      save: "Save",
+      cancel: "Cancel",
+      saving: "Saving… (task {taskId}, confirmed via the project detection read face once done)",
+      savedConfirmed: "Note saved (confirmed via the project detection read face).",
+      listOnly:
+        "The note appears only in the project list; it is single-line plain text stored in this project's VUA identity file.",
+      rejectedNotFound:
+        "Not saved: the project is not registered with any manager (the detection registry is the writable world for notes).",
+      rejectedAbsent:
+        "Not saved: the project has no VUA identity file (notes belong to VUA-native projects only).",
+      rejectedUnreadable:
+        "Not saved: the VUA identity file is unreadable; the stored content was left untouched.",
+      unconfirmed: "The save result is not confirmed on the read face yet; re-inspect to check.",
+      unavailable: "The project operation service is not connected or temporarily unavailable.",
+      waitTimeout: "The note task is still running; waiting stopped. Re-inspect to check the result.",
+      unreadableNote:
+        "The VUA identity file is unreadable: notes are unavailable. Resolve the identity file issue first (read-only presentation).",
+    },
   },
   packages: {
     subtitle:

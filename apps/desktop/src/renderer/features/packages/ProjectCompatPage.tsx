@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
-import { useEnvironmentView, useGateway } from "../../gateway/index.ts";
+import { useEnvironmentView, useGateway, useTaskCenter } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import type { ImportCopyPlanV01, ImportCopyReceiptV01 } from "@vua/contracts";
 import {
@@ -17,6 +17,8 @@ import {
   lockStatusKey,
   narrowEnvironmentSnapshot,
   narrowInspectAssociations,
+  narrowVuaIdentity,
+  type VuaIdentityNarrowed,
 } from "./project-detection-model.ts";
 import "./project-compat.css";
 
@@ -80,9 +82,20 @@ type ManagerState =
 type IdentifyState =
   | { readonly kind: "idle" }
   | { readonly kind: "inspecting" }
-  | { readonly kind: "identified"; readonly path: string; readonly associations: readonly string[] }
+  | {
+      readonly kind: "identified";
+      readonly path: string;
+      readonly associations: readonly string[];
+      readonly identity: VuaIdentityNarrowed | null;
+    }
   | { readonly kind: "not-found" }
   | { readonly kind: "unavailable" };
+
+/** 备注流状态(D-6):查看 / 编辑草稿 / 已受理等待任务终态(任务中心权威) */
+type NoteFlow =
+  | { readonly kind: "view" }
+  | { readonly kind: "editing"; readonly draft: string }
+  | { readonly kind: "waiting"; readonly taskId: string; readonly path: string; readonly startedAt: number };
 
 function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string) => void }) {
   const [managerState, setManagerState] = useState<ManagerState>({ kind: "loading" });
@@ -90,6 +103,20 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
   const [pickedPath, setPickedPath] = useState<string | null>(null);
   const [identify, setIdentify] = useState<IdentifyState>({ kind: "idle" });
   const [lockLine, setLockLine] = useState<string | null>(null);
+
+  /* ---- D-6 备注区(project-ops v0.2 setNote;裁定 A:行内查看+轻量编辑) ----
+   * 诚实纪律:保存经 Gateway 命令唯一路径;任务化受理后等任务终态,再以
+   * inspectProject 读面刷新确认存储事实——成功判定 = 读面 note 与提交值
+   * 一致;拒绝按读面三态推导呈现(任务面不携带拒绝 detail,不猜测)。
+   * absent 不呈现备注入口;unreadable 只读+如实说明;identity 收窄失败
+   * (null,不可解释)同 absent 不呈现——不猜测。 */
+  const noteCopy = copy.note;
+  const gateway = useGateway();
+  const taskCenter = useTaskCenter();
+  const [noteFlow, setNoteFlow] = useState<NoteFlow>({ kind: "view" });
+  const [noteLine, setNoteLine] = useState<string | null>(null);
+  /** 等待读面确认的提交值(null = 无在途提交) */
+  const notePendingRef = useRef<string | null>(null);
 
   const reloadManagers = () => setReloadKey((key) => key + 1);
 
@@ -130,12 +157,19 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
       })
       .then((result) => {
         if (result.ok) {
-          const payload = result.value as { path?: unknown; associations?: unknown };
+          const payload = result.value as {
+            path?: unknown;
+            associations?: unknown;
+            vuaIdentity?: unknown;
+          };
           if (typeof payload.path === "string" && Array.isArray(payload.associations)) {
             setIdentify({
               kind: "identified",
               path: payload.path,
               associations: narrowInspectAssociations(payload.associations),
+              // vuaIdentity 三态(D-6 备注写读面);字段收不齐 = null(不可
+              // 解释,不猜测——备注区不呈现编辑入口)
+              identity: narrowVuaIdentity(payload.vuaIdentity),
             });
             return;
           }
@@ -179,6 +213,112 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
         setLockLine(key === null ? copy.lockUnreadable : copy[key]);
       });
   };
+
+  /** inspect 结果窄化复用(初次识别与备注保存后的读面刷新同源) */
+  const narrowIdentified = (payload: {
+    path?: unknown;
+    associations?: unknown;
+    vuaIdentity?: unknown;
+  }): IdentifyState | null => {
+    if (typeof payload.path !== "string" || !Array.isArray(payload.associations)) return null;
+    return {
+      kind: "identified",
+      path: payload.path,
+      associations: narrowInspectAssociations(payload.associations),
+      identity: narrowVuaIdentity(payload.vuaIdentity),
+    };
+  };
+
+  const refreshAfterNote = (path: string) => {
+    void window.vua?.gateway
+      .invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.inspectProject",
+        params: { projectPath: path },
+      })
+      .then((result) => {
+        if (!result.ok) {
+          const applicationCode =
+            result.error.code === "application"
+              ? ((result.error as { application?: { code?: string } }).application?.code ?? "")
+              : "";
+          if (applicationCode === "vua.project.project_not_found") {
+            setIdentify({ kind: "not-found" });
+            setNoteLine(noteCopy.rejectedNotFound);
+          } else {
+            setNoteLine(noteCopy.unconfirmed);
+          }
+          notePendingRef.current = null;
+          setNoteFlow({ kind: "view" });
+          return;
+        }
+        const identified = narrowIdentified(
+          result.value as { path?: unknown; associations?: unknown; vuaIdentity?: unknown },
+        );
+        if (identified === null || identified.kind !== "identified") {
+          setNoteLine(noteCopy.unconfirmed);
+          notePendingRef.current = null;
+          setNoteFlow({ kind: "view" });
+          return;
+        }
+        setIdentify(identified);
+        const fresh = identified.identity;
+        if (
+          fresh !== null &&
+          fresh.status === "present" &&
+          fresh.note === notePendingRef.current
+        ) {
+          setNoteLine(noteCopy.savedConfirmed);
+        } else if (fresh !== null && fresh.status === "absent") {
+          setNoteLine(noteCopy.rejectedAbsent);
+        } else if (fresh !== null && fresh.status === "unreadable") {
+          setNoteLine(noteCopy.rejectedUnreadable);
+        } else {
+          setNoteLine(noteCopy.unconfirmed);
+        }
+        notePendingRef.current = null;
+        setNoteFlow({ kind: "view" });
+      });
+  };
+
+  // 备注任务终态等待(任务中心权威,AC-07 同款):终态或有界超时后经读面
+  // 刷新确认;呈现不以受理回执或本地推断伪造
+  useEffect(() => {
+    if (noteFlow.kind !== "waiting") return;
+    const item = taskCenter.tasks.find((entry) => entry.id === noteFlow.taskId);
+    const settled =
+      item !== undefined &&
+      (item.status === "completed" ||
+        item.status === "completedWithWarnings" ||
+        item.status === "failed" ||
+        item.status === "cancelled");
+    const timedOut = Date.now() - noteFlow.startedAt > 20_000;
+    if (settled || timedOut) {
+      if (timedOut && !settled) setNoteLine(noteCopy.waitTimeout);
+      refreshAfterNote(noteFlow.path);
+    }
+    // 刷新依据 noteFlow/taskCenter 快照;refreshAfterNote 为稳定闭包
+  }, [noteFlow, taskCenter.tasks]);
+
+  const saveNote = (note: string | null) => {
+    if (identify.kind !== "identified") return;
+    setNoteLine(null);
+    void gateway.projectOps.setNote({ projectPath: identify.path, note }).then((outcome) => {
+      if (!outcome.ok) {
+        setNoteLine(noteCopy.unavailable);
+        return;
+      }
+      notePendingRef.current = note;
+      setNoteFlow({
+        kind: "waiting",
+        taskId: outcome.accepted.taskId,
+        path: identify.path,
+        startedAt: Date.now(),
+      });
+    });
+  };
+
 
   const managerLine = (snapshot: ReturnType<typeof narrowEnvironmentSnapshot>): string => {
     if (snapshot === null) return copy.detectionUnavailable;
@@ -249,6 +389,78 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
               {lockLine}
             </p>
           ) : null}
+          {identify.identity !== null && identify.identity.status === "present" ? (
+            /* D-6 备注区(present 态):行内查看+轻量编辑;保存唯一路径 =
+             * project.setNote,任务化受理+读面刷新确认 */
+            <div className="vua-project-compat__form" role="group" aria-label={noteCopy.title}>
+              <p className="vua-caption vua-text-secondary">
+                {noteCopy.title}
+                {identify.identity.markedAt !== null
+                  ? ` · ${format(noteCopy.markedAt, { markedAt: identify.identity.markedAt })}`
+                  : ""}
+              </p>
+              {noteFlow.kind === "waiting" ? (
+                <p className="vua-caption vua-text-secondary" role="status">
+                  {format(noteCopy.saving, { taskId: noteFlow.taskId })}
+                </p>
+              ) : noteFlow.kind === "editing" ? (
+                <>
+                  <input
+                    type="text"
+                    value={noteFlow.draft}
+                    maxLength={2000}
+                    placeholder={noteCopy.placeholder}
+                    onChange={(event) =>
+                      setNoteFlow({ kind: "editing", draft: event.target.value })
+                    }
+                  />
+                  <div className="vua-project-compat__row">
+                    <Button variant="default" onClick={() => setNoteFlow({ kind: "view" })}>
+                      {noteCopy.cancel}
+                    </Button>
+                    <Button
+                      variant="primary"
+                      disabled={noteFlow.draft.trim() === ""}
+                      onClick={() => saveNote(noteFlow.draft)}
+                    >
+                      {noteCopy.save}
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p>{identify.identity.note !== null ? identify.identity.note : noteCopy.empty}</p>
+                  <div className="vua-project-compat__row">
+                    <Button
+                      variant="subtle"
+                      onClick={() =>
+                        setNoteFlow({ kind: "editing", draft: identify.identity?.note ?? "" })
+                      }
+                    >
+                      {noteCopy.edit}
+                    </Button>
+                    {identify.identity.note !== null ? (
+                      <Button variant="subtle" onClick={() => saveNote(null)}>
+                        {noteCopy.clear}
+                      </Button>
+                    ) : null}
+                  </div>
+                </>
+              )}
+              {noteLine !== null ? (
+                <p className="vua-caption vua-text-secondary" role="status">
+                  {noteLine}
+                </p>
+              ) : null}
+              <p className="vua-caption vua-text-secondary">{noteCopy.listOnly}</p>
+            </div>
+          ) : identify.identity !== null && identify.identity.status === "unreadable" ? (
+            <p className="vua-caption vua-text-secondary" role="note">
+              {noteCopy.unreadableNote}
+            </p>
+          ) : null}
+          {/* identity.absent / identity = null(不可解释):不呈现备注入口——
+              备注只属于可读的 VUA 原生身份,不猜测 */}
           <div className="vua-project-compat__row">
             <Button variant="subtle" onClick={() => viewOnly(identify.path)}>
               {copy.viewOnlyCta}
