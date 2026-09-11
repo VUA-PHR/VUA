@@ -3,7 +3,10 @@
 //! projects (product-boundary 1.2.0, user ruling U3).
 //!
 //! Two phases behind one closed command (`project.import-copy`, word list
-//! frozen in `schemas/project-ops/v0.1/`):
+//! frozen in `schemas/project-ops/v0.2/`; the v0.2 elevation (the setNote
+//! family, core 0889a1b) kept every import-copy shape byte-identical to
+//! v0.1 — this module's payloads validate under the current frozen version
+//! unchanged):
 //!
 //! - [`plan_import_copy`] — the confirmation face: the five guards run here
 //!   first (target exists / target inside source / source not a registered
@@ -38,7 +41,12 @@ use crate::environment_managers::{
     read_alcom_settings, read_vcc_settings, ManagerRoots, ProjectAssociation,
 };
 
-pub const IMPORT_OPS_SCHEMA_VERSION: &str = "0.1";
+/// The project-ops wire version this library face targets. v0.2 is the
+/// current frozen word list; the import-copy shapes it froze are identical
+/// to v0.1 (the elevation only added the setNote family), so no payload
+/// change accompanies this bump. The envelope `schemaVersion` itself is
+/// assembled by the provider route (core/provider-host), not here.
+pub const IMPORT_OPS_SCHEMA_VERSION: &str = "0.2";
 
 /// Regenerable Unity directories and the original project's VUA task state
 /// — the 1.2.0 exclusion semantics, listed verbatim in every plan and
@@ -51,8 +59,12 @@ pub const EXCLUDED_ENTRIES: [&str; 6] = ["Library", "Temp", "Logs", "obj", "Buil
 const DISK_HEADROOM_BYTES: u64 = 64 * 1024 * 1024;
 
 /// Which guard refused the import. The closed set is frozen in
-/// `schemas/project-ops/v0.1/result.schema.json`; codes follow the
-/// `vua.project.*` convention.
+/// `schemas/project-ops/v0.2/result.schema.json`; codes follow the
+/// `vua.project.*` convention. These seven are the import-copy subset of
+/// the v0.2 ten-guard closed set (the three additions —
+/// `project_not_found` / `not_vua_native` / `identity_unreadable` —
+/// belong to the setNote route, which maps this crate's `SetNoteError`
+/// three-state onto them).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RejectionGuard {

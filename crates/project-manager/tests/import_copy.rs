@@ -1,8 +1,10 @@
 //! M6 T-A (proposal 014) tests: the import-as-VUA-copy write path. The
 //! five guards, the double-summary discipline, the exclusion list, the
 //! source link, and the re-inspection all run against synthetic trees; the
-//! wire shapes are the frozen `schemas/project-ops/v0.1/` schemas, which
+//! wire shapes are the frozen `schemas/project-ops/v0.2/` schemas, which
 //! the positive/negative example vectors are validated against here.
+//! (Followed the v0.2 elevation in place: the import-copy shapes it froze
+//! are identical to v0.1, so these assertions read as before.)
 
 #![allow(clippy::result_large_err)]
 
@@ -116,11 +118,11 @@ fn read_repo_json(relative: &str) -> Value {
 }
 
 fn result_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_repo_json("schemas/project-ops/v0.1/result.schema.json")).unwrap()
+    jsonschema::validator_for(&read_repo_json("schemas/project-ops/v0.2/result.schema.json")).unwrap()
 }
 
 fn command_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_repo_json("schemas/project-ops/v0.1/command.schema.json")).unwrap()
+    jsonschema::validator_for(&read_repo_json("schemas/project-ops/v0.2/command.schema.json")).unwrap()
 }
 
 fn violations(validator: &jsonschema::Validator, instance: &Value) -> Vec<String> {
@@ -224,7 +226,7 @@ fn plan_and_apply_happy_path_copies_with_exclusions_and_records_the_source() {
 /// project-ops result envelope, exactly as the provider face will.
 fn enveloped(result: Value) -> Value {
     json!({
-        "schemaVersion": "0.1",
+        "schemaVersion": "0.2",
         "operation": "project.import-copy",
         "result": result,
     })
@@ -316,22 +318,30 @@ fn the_five_guards_refuse_typecally() {
 #[test]
 fn example_vectors_match_the_frozen_schemas() {
     // Positive vectors validate.
-    let command = read_repo_json("schemas/project-ops/v0.1/examples/project-import-copy-plan.request.json");
+    let command = read_repo_json("schemas/project-ops/v0.2/examples/project-import-copy-plan.request.json");
     assert!(violations(&command_validator(), &command).is_empty());
-    let command = read_repo_json("schemas/project-ops/v0.1/examples/project-import-copy-apply.request.json");
+    let command = read_repo_json("schemas/project-ops/v0.2/examples/project-import-copy-apply.request.json");
     assert!(violations(&command_validator(), &command).is_empty());
 
-    let plan = read_repo_json("schemas/project-ops/v0.1/examples/project-import-copy-plan.result.json");
+    let plan = read_repo_json("schemas/project-ops/v0.2/examples/project-import-copy-plan.result.json");
     assert!(violations(&result_validator(), &plan).is_empty());
-    let receipt = read_repo_json("schemas/project-ops/v0.1/examples/project-import-copy-apply.result.json");
+    let receipt = read_repo_json("schemas/project-ops/v0.2/examples/project-import-copy-apply.result.json");
     assert!(violations(&result_validator(), &receipt).is_empty());
 
     // Negative vectors are refused by the command schema.
-    let bad_phase = read_repo_json("schemas/project-ops/v0.1/examples/invalid-phase.json");
+    let bad_phase = read_repo_json("schemas/project-ops/v0.2/examples/invalid-phase.json");
     assert!(!violations(&command_validator(), &bad_phase).is_empty());
-    let missing_digest = read_repo_json("schemas/project-ops/v0.1/examples/apply-missing-digest.json");
+    // The "apply without confirmedPlanDigest" negative was not re-issued
+    // with the v0.2 vectors; construct it here from the v0.2 apply vector
+    // so the required-field refusal stays pinned against the current
+    // frozen command schema.
+    let mut missing_digest = read_repo_json("schemas/project-ops/v0.2/examples/project-import-copy-apply.request.json");
+    missing_digest["params"]
+        .as_object_mut()
+        .expect("apply params object")
+        .remove("confirmedPlanDigest");
     assert!(!violations(&command_validator(), &missing_digest).is_empty());
-    let bad_operation = read_repo_json("schemas/project-ops/v0.1/examples/invalid-operation.json");
+    let bad_operation = read_repo_json("schemas/project-ops/v0.2/examples/invalid-operation.json");
     assert!(!violations(&command_validator(), &bad_operation).is_empty());
 }
 
@@ -460,7 +470,7 @@ fn rejected_documents_validate_with_the_frozen_guard_closed_set() {
         detail: "demo".to_owned(),
     };
     let enveloped = json!({
-        "schemaVersion": "0.1",
+        "schemaVersion": "0.2",
         "operation": "project.import-copy",
         "result": rejection,
     });
