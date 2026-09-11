@@ -335,6 +335,122 @@ fn example_vectors_match_the_frozen_schemas() {
     assert!(!violations(&command_validator(), &bad_operation).is_empty());
 }
 
+/// BG-18 regression (CI rust 34630656044 / schema-vectors 34630656005):
+/// the GitHub Windows runner's `temp_dir()` is the 8.3 short form
+/// (`C:\Users\RUNNER~1\...`). The source (which exists on disk)
+/// canonicalizes to the long name, while the not-yet-existing target
+/// fell back to the caller's literal spelling — so the prefix comparison
+/// compared `RUNNER~1` against `runneradmin` and the TargetInsideSource
+/// guard let the plan through. The guard must refuse the target regardless
+/// of how the caller spells the path (drive-letter case, verbatim `\\?\`
+/// prefix, 8.3 short names).
+#[test]
+fn target_inside_source_guard_survives_runner_path_spellings() {
+    let base = unique_dir("guards-spellings");
+    let source = install_source(&base, "GuardedSpelled");
+    let target_parent = base.join("imports");
+    fs::create_dir_all(&target_parent).unwrap();
+    let vcc = vcc_candidates(&base);
+    let manager_roots = roots(&base);
+    let inside = source.join("nested");
+    fs::create_dir_all(&inside).unwrap();
+
+    // Control: the plain spelling is refused.
+    let rejected =
+        plan_import_copy(&request(&source, &inside, "Nested Copy", &vcc, &manager_roots))
+            .expect_err("a target inside the source must be refused");
+    assert_eq!(rejected.guard, RejectionGuard::TargetInsideSource);
+
+    #[cfg(windows)]
+    {
+        // Drive-letter case drift must not defeat the guard.
+        let lowered = with_drive_letter_case(&inside, false);
+        if lowered != inside.as_os_str() {
+            let rejected = plan_import_copy(&request(
+                &source,
+                Path::new(&lowered),
+                "Nested Copy",
+                &vcc,
+                &manager_roots,
+            ))
+            .expect_err("a lower-case drive spelling must still be refused");
+            assert_eq!(rejected.guard, RejectionGuard::TargetInsideSource);
+        }
+
+        // The verbatim `\\?\` prefix must not defeat the guard.
+        let verbatim = PathBuf::from(format!(r"\\?\{}", inside.display()));
+        let rejected = plan_import_copy(&request(
+            &source,
+            &verbatim,
+            "Nested Copy",
+            &vcc,
+            &manager_roots,
+        ))
+        .expect_err("a verbatim-prefix spelling must still be refused");
+        assert_eq!(rejected.guard, RejectionGuard::TargetInsideSource);
+
+        // The 8.3 short-name form — the runner's actual TEMP shape — must
+        // not defeat the guard. Short names only exist when the volume
+        // tracks them: GetShortPathNameW then returns the input unchanged
+        // and this spelling is not applicable here (capability detection,
+        // not a skipped guard — the case-drift and verbatim spellings above
+        // still exercise the guard on such volumes).
+        if let Some(short) = short_path(&inside) {
+            if short != *inside.as_os_str() {
+                let rejected = plan_import_copy(&request(
+                    &source,
+                    Path::new(&short),
+                    "Nested Copy",
+                    &vcc,
+                    &manager_roots,
+                ))
+                .expect_err("an 8.3 short-name spelling must still be refused");
+                assert_eq!(rejected.guard, RejectionGuard::TargetInsideSource);
+            }
+        }
+    }
+
+    cleanup(&base);
+}
+
+#[cfg(windows)]
+fn with_drive_letter_case(path: &Path, upper: bool) -> std::ffi::OsString {
+    let mut text = path.as_os_str().to_string_lossy().into_owned();
+    let bytes = text.as_bytes();
+    if bytes.len() >= 2 && bytes[1] == b':' {
+        let first = bytes[0];
+        let replaced = if upper {
+            first.to_ascii_uppercase()
+        } else {
+            first.to_ascii_lowercase()
+        };
+        if replaced != first {
+            text.replace_range(0..1, &(replaced as char).to_string());
+        }
+    }
+    text.into()
+}
+
+/// Returns the 8.3 short form of `path`, or `None` when the Win32 call
+/// fails (the path does not exist or the call is unavailable).
+#[cfg(windows)]
+fn short_path(path: &Path) -> Option<std::ffi::OsString> {
+    use std::os::windows::ffi::{OsStrExt, OsStringExt};
+    use windows_sys::Win32::Storage::FileSystem::GetShortPathNameW;
+
+    let wide: Vec<u16> = path.as_os_str().encode_wide().chain(Some(0)).collect();
+    let needed = unsafe { GetShortPathNameW(wide.as_ptr(), std::ptr::null_mut(), 0) };
+    if needed == 0 {
+        return None;
+    }
+    let mut buffer = vec![0u16; needed as usize];
+    let written = unsafe { GetShortPathNameW(wide.as_ptr(), buffer.as_mut_ptr(), needed) };
+    if written == 0 {
+        return None;
+    }
+    Some(std::ffi::OsString::from_wide(&buffer[..written as usize]))
+}
+
 #[test]
 fn rejected_documents_validate_with_the_frozen_guard_closed_set() {
     let rejection = ImportRejected {

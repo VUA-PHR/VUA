@@ -38,3 +38,13 @@ test-hooks = []
 
 [dev-dependencies]
 jsonschema = "0.52.1"
+
+# BG-18 regression only: the guard test reproduces the GitHub Windows
+# runner's 8.3 short-name TEMP spelling via GetShortPathNameW. Dev-only so
+# the library surface and normal builds carry no extra API; remove with the
+# spelling test if it is ever retired.
+[target.'cfg(windows)'.dev-dependencies]
+windows-sys = { version = "=0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_Storage_FileSystem",
+] }
