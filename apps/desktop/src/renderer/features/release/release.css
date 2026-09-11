@@ -203,3 +203,35 @@
 .vua-release-detail__row dd {
   margin: 0;
 }
+
+/* 构建记录列表(P2,record.list 读面):行式按钮列表,选中态随卡片惯例 */
+.vua-release-records__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-release-records__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--vua-space-2) var(--vua-space-3);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  cursor: pointer;
+}
+
+.vua-release-records__row[data-selected] {
+  border-color: var(--vua-border-strong);
+}
+
+.vua-release-records__cell {
+  font: var(--vua-font-caption);
+  overflow-wrap: anywhere;
+}

@@ -1188,6 +1188,45 @@ rolled_back: "ロールバック済み",
     },
     pedestalNote: "プレビュー抽出は未接続です。台座の造形物はイメージレンダリングであり、実際のモデルではありません。",
     futureNote: "スナップショット復旧・再派生・アップロード引き継ぎは今後のスライスで接続されます。ログインとアップロードは常に VRChat 公式 SDK であなた自身が行います。",
+    /** ビルド記録セクション(夜間タスク P2):record.list/record.get 読面。失敗≠空。証拠参照は計数のみ */
+    records: {
+      title: "ビルド記録",
+      subtitle:
+        "制作実行の履歴(build-record v0.3 読面)。データはサーバー照会によるもので、読み取り失敗と空リストは分けて表示されます。",
+      reload: "再読み込み",
+      failedTitle: "ビルド記録の読み取りに失敗しました",
+      failedDescription:
+        "記録サービスに接続されていないか、応答が解釈できません。これは空リストではありません。再試行できます。",
+      emptyTitle: "ビルド記録はまだありません",
+      emptyDescription: "制作実行が完了すると、記録がここに表示されます。",
+      status: {
+        succeeded: "成功",
+        succeeded_with_warnings: "成功(警告あり)",
+        failed: "失敗",
+        cancelled: "キャンセル済み",
+        rolled_back: "ロールバック済み",
+        recovered: "復旧済み",
+      },
+      detailTitle: "記録の詳細",
+      detailBuildLine: "ビルド {buildId}",
+      detailRecipeLine: "レシピ {recipeId} · リビジョン {revision}",
+      detailPlanLine: "プラン {planId}",
+      startedAt: "開始",
+      jobsTitle: "ジョブ受領書",
+      jobsLine: "計 {total} 件:{succeeded} 成功 / {failed} 失敗 / {rejected} 拒否",
+      deviationsTitle: "プラン逸脱",
+      deviationsLine: "型付き逸脱 {count} 件",
+      evidenceTitle: "証拠参照",
+      evidenceLine:
+        "証拠参照 {count} 件(本体は制作証拠ストアにあります。検査証拠面はドラフトのため、ここで公式の結論は表示されません)",
+      evidenceAbsent: "証拠サマリーが存在しません(不在も証拠としてそのまま表示)",
+      recoveredBadge: "復旧済み",
+      recoveredNote:
+        "復旧セマンティクス:この記録は復旧ミューテーション成功後に再度完了しました(recovered)。",
+      detailFailed: "記録の詳細の読み取りに失敗しました。",
+      detailUnexplainable:
+        "記録ドキュメントを解釈できません:必須事実の欠落または語彙外です。推測せず、正直に表示を拒否しました。",
+    },
   },
   /** パッケージ管理(S-XVI):Recipe 外の手動 VPM 操作面。用語はプレイヤー語彙で、semver/プロトコル詳細は出さない */
   /** プロジェクト互換ページ(F6, M6 T-C): ALCOM/VCC 管理プロジェクトの読み取り専用表示と

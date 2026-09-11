@@ -1261,6 +1261,42 @@ rolled_back: "已回滚",
     pedestalNote: "预览提取尚未接入:展台上的工艺品为示意渲染,不代表真实模型。",
     futureNote:
       "恢复快照、重新派生与上传交接将在后续切片接入;登录与上传始终在 VRChat 官方 SDK 中由你完成。",
+    /** 构建记录节(P2,夜间任务):record.list/record.get 读面;失败≠空,证据引用只计数不渲染结论 */
+    records: {
+      title: "构建记录",
+      subtitle:
+        "生产执行的历史记录(build-record v0.3 读面)。数据来自服务端查询,读取失败与空列表分开呈现。",
+      reload: "刷新",
+      failedTitle: "构建记录读取失败",
+      failedDescription: "记录服务未连接或响应不可解释。这不是空列表,可重试。",
+      emptyTitle: "尚无构建记录",
+      emptyDescription: "完成一次生产执行后,记录会出现在这里。",
+      status: {
+        succeeded: "成功",
+        succeeded_with_warnings: "成功(有警告)",
+        failed: "失败",
+        cancelled: "已取消",
+        rolled_back: "已回滚",
+        recovered: "已恢复",
+      },
+      detailTitle: "记录详情",
+      detailBuildLine: "构建 {buildId}",
+      detailRecipeLine: "配方 {recipeId} · 修订 {revision}",
+      detailPlanLine: "计划 {planId}",
+      startedAt: "开始",
+      jobsTitle: "作业收据",
+      jobsLine: "共 {total} 个:{succeeded} 成功 / {failed} 失败 / {rejected} 拒收",
+      deviationsTitle: "计划偏差",
+      deviationsLine: "{count} 项类型化偏差",
+      evidenceTitle: "证据引用",
+      evidenceLine:
+        "{count} 条证据引用(证据本体在生产证据库;检查证据面为草案,此处不渲染官方结论)",
+      evidenceAbsent: "证据摘要缺席(缺席即证据,如实呈现)",
+      recoveredBadge: "已恢复",
+      recoveredNote: "恢复语义:本记录在恢复突变成功后重新完成(recovered)。",
+      detailFailed: "记录详情读取失败。",
+      detailUnexplainable: "记录文档不可解释:必需事实缺失或词表外。已如实拒绝呈现,不猜测内容。",
+    },
   },
   /** 项目兼容页(F6,M6 T-C):ALCOM/VCC 只读兼容呈现与「导入为 VUA 管理的副本」
    *  入口;语义权威=product-boundary 1.2.0(U3 裁决);检测读面(环境 T-B)未接线

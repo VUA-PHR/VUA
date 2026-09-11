@@ -22,6 +22,7 @@ import {
 } from "../../gateway/index.ts";
 import type { PedestalMood } from "../../components/three/scenes/pedestal.ts";
 import { useConveyor } from "./use-conveyor.ts";
+import { ReleaseRecordsSection } from "./release-records-section.tsx";
 import "./release.css";
 
 /* 展台(S-IX-2):three.js 装饰层懒加载,不挡展柜首屏 */
@@ -357,6 +358,9 @@ export function ReleasePage() {
           </div>
         </>
       )}
+      {/* 构建记录节(P2,record.list/record.get 读面):独立于展柜数据源
+       *  (releaseWall 与生产链读面端口不同),四态外始终渲染;失败≠空 */}
+      <ReleaseRecordsSection />
       {cardMenu !== null ? <ContextMenu menu={cardMenu} onClose={() => setCardMenu(null)} /> : null}
     </div>
   );
