@@ -53,6 +53,9 @@ function assembleDevGateway(
         : live.warehouseCommands,
     projectOps:
       selection.targets.projectOps === "fixture" ? fixture.projectOps : live.projectOps,
+    // 019 批 C:生产链无 fixture 目标(禁模拟替代未完成接口)——恒 live
+    // 基线(无宿主时为 not-run 诚实不可用),开发切档不产生演示生产数据
+    productionChain: live.productionChain,
     packages: selection.targets.packages === "fixture" ? fixture.packages : live.packages,
     dataSource: () => (anyFixturePort(selection.targets) ? "fixture" : live.dataSource()),
   };

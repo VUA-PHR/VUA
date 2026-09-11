@@ -8,6 +8,7 @@ import type { ToolCatalogPort } from "./tool-catalog-port.ts";
 import type { TutorialPort } from "./tutorial-port.ts";
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import type { ProjectOpsPort } from "./project-ops-port.ts";
+import type { ProductionChainPort } from "./production-chain-port.ts";
 import type { DataSource } from "./types.ts";
 
 /**
@@ -27,6 +28,8 @@ export interface VuaGateway {
   readonly warehouseCommands: WarehouseCommandsPort;
   /** F6/014:项目操作写面(project.import-copy 副本导入确认链) */
   readonly projectOps: ProjectOpsPort;
+  /** 019 批 C:生产链共享端口(解析/计划/任务/记录;两套 UI 共用) */
+  readonly productionChain: ProductionChainPort;
   readonly packages: PackagesPort;
   /** 数据来源标识:驱动"演示数据"徽标(原则①) */
   dataSource(): DataSource;
