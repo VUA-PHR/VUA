@@ -2,19 +2,39 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: f7cb3ab
-updated: 2026-09-11
+baseline_commit: ff2f2c4
+updated: 2026-09-12
 ---
 ## 当前焦点
-**09-11 夜间任务分配消化（`collab/assignments/2026-09-11-night_ZH.md`）**：
-角色分工总表中产线两个主任务（环境检测接入 E1–E4／生产模块接入 P0–P5）
-**均为「—」——本夜无产线步骤切片**。产线位＝空转填充（BG 工单＋
-inspection-evidence M7 预备）：BG 工单已全部闭环或归桌面/环境（BG-15/BG-18
-桌面开放项非产线可领；BG-15 产线协作位＝草案语义咨询，被动待命不越域）；
-inspection-evidence M7 预备已交付（016 已接受，定义权义务在 M7 锚点兑现）。
-**W25 用户延期维持**（O-2：开窗时间待定）——A 段就绪状态不撤（A1 断言、
-A2 fixture 无 constraint 诚实跳过路径、A3 前置全部在位），窗口重排通知到达
-即进入。#7 瞬败样本观察义务维持。
+**lint 修复切片已交付（2026-09-12 凌晨，b3b9833；回应 wt-5 数据路由）**：
+本机 rustc 1.97.1 clippy 对 `crates/unity-bridge/src/material_task.rs:94`
+报 `unnecessary_lazy_evaluations`（该行自 843e2fb crate 拆分即存在，非新
+引入——与集成 09-12「clippy 零告警」结论的差异指向工具链版本差）；
+acquisition 依赖 unity-bridge，`-p vua-acquisition` 的 clippy 门连带失败。
+**机械一行修复**（`unwrap_or_else(|_| Value::Null)`→`unwrap_or(Value::Null)`，
+clippy 建议原样；行为零变化——MaterialTaskResult 全 String/bool 字段，
+缺席投影语义不在 lint 修复中扩大）。**证据（2026-09-12 本机，隔离
+CARGO_TARGET_DIR 避让运行中应用）**：修复前复现 `-p vua-acquisition`
+clippy 报错；修复后 cargo test --workspace **495 通过/0 失败**＋clippy
+--workspace --all-targets -D warnings 零告警。请集成验收合并（代码变更
+非 collab-only；合并即恢复数据侧 acquisition clippy 门）。临时隔离
+target 目录已清理，未入库。
+**基线追平（合并 main→ff2f2c4，落后 10/实质 3 清零）**。留言消化：
+**#19 仲裁已落**（016 内联「仲裁（集成）」节——三方表态照单采纳；
+dependencies 定义权义务在我：M7 检查切片实现时显式选择声明 vs 引用
+完整性消费层并写入冻结件；冻结锚＝Bridge 五维产出操作，开工锚不变）；
+**A1 补齐批已验收**＋W25 窗口前三前置齐备（等用户确认开窗，O-2 延期
+维持）；**环境预检②已接线**（wt-2 消费 f8fe114 事实源——009 表态④
+预检序全链闭环，知悉；A2 冒烟 recipe「无 constraint 诚实跳过」路径与
+其语义兼容，无需改动）；016 三问表态知悉（已随仲裁消化）。
+
+**前情（09-11 夜间任务分配消化，`collab/assignments/2026-09-11-night_ZH.md`）**：
+产线两个主任务（环境检测接入 E1–E4／生产模块接入 P0–P5）均为「—」
+——本夜无产线步骤切片；产线位＝空转填充（BG 工单已全部闭环或归
+桌面/环境；inspection-evidence M7 预备已交付，016 已接受，定义权义务
+在 M7 锚点兑现）。**W25 用户延期维持**（O-2：开窗时间待定）——A 段
+就绪状态不撤（A1 断言、A2 fixture 无 constraint 诚实跳过路径、A3 前置
+全部在位），窗口重排通知到达即进入。#7 瞬败样本观察义务维持。
 ## 前情：proposal 016 全链闭环（2026-09-10 凌晨）
 BG-4 → 三方表态齐（核心＝存储第五文档库锚 EvidenceStore＋独立词表行
 inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源确认；数据
@@ -22,9 +42,15 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
 定义权义务：dependencies 维消费层选择（声明完整性 vs 引用完整性，或两层
 分列）在 M7 检查切片实现时显式选择并写入冻结件——锚点前不冻结、不预接
 事实源、不猜操作形状。
-## 自基线交付（6f2c7b7 后）
-- 本轮维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
-  BG-4 闭环消化＋数据复核收讫＋本状态文件（collab-only）。
+## 自基线交付（ff2f2c4 后）
+- **lint 修复切片（b3b9833，产线域 crates/unity-bridge）**：见当前焦点——
+  material_task.rs:94 `unnecessary_lazy_evaluations` 机械一行修复；
+  workspace 495/0＋clippy 零告警（隔离 target 复现修复前失败）。
+- 本轮合并 main 追平（f7cb3ab→ff2f2c4 世代，随合并带入 origin 推送
+  12a6a45／桌面 UX 四缺口批 5809d37／E2 disk_space 双辖区 3489276 等）。
+## 前情交付（6f2c7b7 世代）
+- 维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
+  BG-4 闭环消化＋数据复核收讫＋状态文件（collab-only）。
 - **BG-4 交付（inspection-evidence v0.1 草案批，ad46501——已随 abab341 验收
   合并入 main，工单闭环）**：
   1. **Schema 草案** `schemas/inspection-evidence/v0.1/inspection-evidence.schema.json`
@@ -68,8 +94,10 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
 - 无阻塞。W25 用户延期、时间待定（O-2 补注）；产线无动作项，窗口重排通知
   到达即进入 A 段。
 ## 下次合并意图
-本状态批（仅 collab/ 增量）随轮带入免测。无在途实现交付（BG-4 批 ad46501
-已在 main）。
+**lint 修复切片 b3b9833（crates/unity-bridge 一行）请集成验收合并**——
+代码变更已随批全量验证（workspace 495/0＋clippy --workspace 零告警），
+合并即恢复数据侧 `-p vua-acquisition` clippy 门；本状态批（仅 collab/）
+随轮免测。此外无在途实现交付（BG-4 批 ad46501 已在 main）。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
@@ -148,12 +176,21 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
+- [→集成] **lint 修复切片 b3b9833 请验收合并**（wt-5 路由的产线域一行
+  修复）：修复前本机复现 `-p vua-acquisition` clippy
+  `unnecessary_lazy_evaluations` 报错（material_task.rs:94）；修复后
+  workspace 495 通过/0 失败＋clippy --workspace --all-targets -D warnings
+  零告警（隔离 CARGO_TARGET_DIR）。机械修复零语义变化，声明如实。
+- [→数据] 你路由的 material_task.rs:94 lint 已修复（b3b9833，clippy
+  建议原样一行）——`-p vua-acquisition` 的 clippy 门待合并后即恢复；
+  门类工具链一致性观察（集成侧）维持你方留言建议。
 - [→核心] **A2 冒烟 fixture 决策回执**：按你方知会选「无 constraint 诚实
   跳过」路径——冒烟 recipe 整体省略 dependencies（条目内 versionConstraint
   必填，故无 constraint＝省略数组）＋省略 locked；草稿已按 recipe v0.3
   schema 校验通过（`_local_w25/a2-smoke-recipe-draft.json`，本地不入库），
   含 exclude_object 关系供 job.execute 真实作业与 A3 铺垫。窗口内替换
-  warehouseItemId 与层级名两处运行时值。
+  warehouseItemId 与层级名两处运行时值。（补充：你方环境预检②接线
+  2112f6c 的跳过语义与本 fixture 决策兼容，知悉。）
 - [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；BG-4 交付不阻塞窗口
   义务（A 段就绪不受影响）。
 - 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
