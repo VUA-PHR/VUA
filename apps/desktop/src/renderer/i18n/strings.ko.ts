@@ -1186,6 +1186,45 @@ rolled_back: "롤백됨",
     },
     pedestalNote: "미리보기 추출은 아직 연결되지 않았습니다. 받침대 위의 조형물은 실제 모델이 아닌 시각적 예시입니다.",
     futureNote: "스냅샷 복원, 재파생, 업로드 인계는 이후 슬라이스에서 연결됩니다. 로그인과 업로드는 항상 VRChat 공식 SDK에서 직접 진행합니다.",
+    /** 빌드 기록 섹션(야간 작업 P2): record.list/record.get 읽기면. 실패≠빈 목록. 증거 참조는 계수만 표시 */
+    records: {
+      title: "빌드 기록",
+      subtitle:
+        "제작 실행의 이력(build-record v0.3 읽기면). 데이터는 서버 조회에서 오며, 읽기 실패와 빈 목록은 구분하여 표시됩니다.",
+      reload: "새로 고침",
+      failedTitle: "빌드 기록을 불러오지 못했습니다",
+      failedDescription:
+        "기록 서비스에 연결되지 않았거나 응답을 해석할 수 없습니다. 빈 목록이 아니며 다시 시도할 수 있습니다.",
+      emptyTitle: "아직 빌드 기록이 없습니다",
+      emptyDescription: "제작 실행이 완료되면 기록이 여기에 표시됩니다.",
+      status: {
+        succeeded: "성공",
+        succeeded_with_warnings: "성공(경고 있음)",
+        failed: "실패",
+        cancelled: "취소됨",
+        rolled_back: "롤백됨",
+        recovered: "복구됨",
+      },
+      detailTitle: "기록 세부 정보",
+      detailBuildLine: "빌드 {buildId}",
+      detailRecipeLine: "레시피 {recipeId} · 리비전 {revision}",
+      detailPlanLine: "플랜 {planId}",
+      startedAt: "시작",
+      jobsTitle: "작업 접수증",
+      jobsLine: "총 {total}건: {succeeded} 성공 / {failed} 실패 / {rejected} 거부",
+      deviationsTitle: "플랜 편차",
+      deviationsLine: "유형화된 편차 {count}건",
+      evidenceTitle: "증거 참조",
+      evidenceLine:
+        "증거 참조 {count}건(본체는 제작 증거 스토어에 있습니다. 검사 증거 면은 초안이므로 여기서 공식 결론을 표시하지 않습니다)",
+      evidenceAbsent: "증거 요약 없음(부재도 증거로 그대로 표시)",
+      recoveredBadge: "복구됨",
+      recoveredNote:
+        "복구 시맨틱: 이 기록은 복구 뮤테이션 성공 후 다시 완료되었습니다(recovered).",
+      detailFailed: "기록 세부 정보를 불러오지 못했습니다.",
+      detailUnexplainable:
+        "기록 문서를 해석할 수 없습니다: 필수 사실 누락 또는 어휘 밖입니다. 추측하지 않고 정직하게 표시를 거부했습니다.",
+    },
   },
   /** 패키지 관리(S-XVI): Recipe 외의 수동 VPM 작업면. 플레이어 언어를 사용하며 semver/프로토콜 세부는 노출하지 않음 */
   /** 프로젝트 호환 페이지(F6, M6 T-C): ALCOM/VCC 관리 프로젝트의 읽기 전용 표시와

@@ -1251,6 +1251,45 @@ demoTaskTitle: "Demo task",
     pedestalNote: "Preview extraction is not wired up yet: the artifact on the pedestal is a symbolic render, not the real model.",
     futureNote:
       "Snapshot restore, re-derivation and upload handover arrive in later slices; sign-in and upload always happen in the official VRChat SDK, done by you.",
+    /** Build records section (night task P2): record.list/record.get reads; failure ≠ empty; evidence refs counted only */
+    records: {
+      title: "Build records",
+      subtitle:
+        "History of production executions (build-record v0.3 read face). Data comes from server queries; read failures and empty lists are presented separately.",
+      reload: "Reload",
+      failedTitle: "Failed to load build records",
+      failedDescription:
+        "The record service is not connected or responded unintelligibly. This is not an empty list; you can retry.",
+      emptyTitle: "No build records yet",
+      emptyDescription: "Records appear here after a production execution completes.",
+      status: {
+        succeeded: "Succeeded",
+        succeeded_with_warnings: "Succeeded (with warnings)",
+        failed: "Failed",
+        cancelled: "Cancelled",
+        rolled_back: "Rolled back",
+        recovered: "Recovered",
+      },
+      detailTitle: "Record details",
+      detailBuildLine: "Build {buildId}",
+      detailRecipeLine: "Recipe {recipeId} · revision {revision}",
+      detailPlanLine: "Plan {planId}",
+      startedAt: "Started",
+      jobsTitle: "Job receipts",
+      jobsLine: "{total} total: {succeeded} succeeded / {failed} failed / {rejected} rejected",
+      deviationsTitle: "Plan deviations",
+      deviationsLine: "{count} typed deviation(s)",
+      evidenceTitle: "Evidence references",
+      evidenceLine:
+        "{count} evidence reference(s) (bodies live in the production evidence store; the inspection evidence face is a draft — no official conclusions are rendered here)",
+      evidenceAbsent: "Evidence summary absent (absence is evidence, presented as-is)",
+      recoveredBadge: "Recovered",
+      recoveredNote:
+        "Recovery semantics: this record completed again after a successful recovery mutation (recovered).",
+      detailFailed: "Failed to load record details.",
+      detailUnexplainable:
+        "The record document is unintelligible: required facts missing or out of vocabulary. Presentation refused honestly; content is not guessed.",
+    },
   },
   /**
    * 包管理(S-XVI):Recipe 之外的手动 VPM 操作面。

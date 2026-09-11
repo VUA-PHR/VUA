@@ -1,83 +1,90 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 4b5c893
+baseline_commit: e5610bc
 role: 桌面
 updated: 2026-09-12
 ---
 ## 当前焦点
-**D-6 编辑范围确认已交（013 内联「表态（桌面）」节）＋workshop F3 段迁移
-评估收口＋F3 注释正名顺手批（9de0f60）**。批 C 桌面切片（part 1 端口层
-＋part 2 UI 接线 5328099）已随 8c799a5 验收入 main；BG-15/BG-18(compose-
-draft) 已销账（集成 BOARD 簿记）。本批：013 内联表态＋状态批＋comment-only
-注释批,零行为变化。
-**D-6 裁定＝A（保守向）**：备注呈现面＝项目列表行内查看＋行内轻量编辑
-（单行纯文本），不做独立详情页/编辑页/富文本/管理面——用户裁决 12「只在
-列表显示」的最小忠实读法；功能动机（B4 亚洲字符补位）要求用户能写入，
-纯只读呈现将使备注永远没有用户事实源。setNote 立项确认：照核心 013 草案
-原样（project-ops v0.2；projectId＋note；任务化；not_vua_native 闭集），
-桌面零字段增补，请核心启动升版批。呈现纪律承诺（接线批兑现）：保存唯一
-路径走 Gateway 命令；absent 不呈现入口、unreadable 只读＋如实说明；UI 门
-控不替代服务端守卫（AC-05 同款两层独立）。
-## workshop F3 段迁移评估（在途事项收口，结论＝零迁移）
-- **恒不可用根因修正**：前备忘「核心无该方法」不准确——核心 provider_host
-  有完整 production.* 七方法实现（M3 冻结验收面，I-1 真机 16/16），受
-  `production_config_from_env` 门控：VUA_UNITY_EDITOR 缺失 ⇒ None ⇒ 全部
-  类型化 unavailable。壳侧 provider-bootstrap 现注入三根（PROVIDER_DATA/
-  WAREHOUSE_ROOT/PROJECT_ROOT）**不含 VUA_UNITY_EDITOR**（Unity 编辑器路
-  径壳侧配置面未立项，前备忘该半句正确）⇒ WorkshopPage F3 流程段 live 恒
-  诚实不可用（capability=unavailable，整段隐藏）。
-- **「迁移到 v0.2 链呈现」评估为零迁移**：production.*（M3 素材直产链：
-  素材→检查→计划→确认→执行→记录）与 production-use-case v0.2（M5 配方
-  链：save→resolve→plan→execute→record）是语义不同的两条用例链，替换不
-  是迁移而是砍用例；v0.2 链呈现 compose 页已有（ProductionChainSection），
-  workshop 页无配方保存上下文，重复链段无产品语义。
-- **F3 段激活路径＝壳侧 Unity 编辑器路径配置面立项**（设置页配置项 → 壳
-  注入 VUA_UNITY_EDITOR → production.* 可用），桌面壳＋设置页改动，是否
-  立项请集成/操作者裁决签发工单——已留言升级，不自行立项。
-- 顺手项已交付（9de0f60,comment-only 零行为变化）：七处 F3 注释「
-  production-use-case v0.1 草案」过时表述修正——v0.1 已随 M3 验收冻结
-  （production.* 方法族,协议本在册）;v0.2 是 M5 配方链词表,不同的用例面
-  ——术语漂移正是本次评估初始误判的根源。端口头注释补 live 可用性门控
-  说明（VUA_UNITY_EDITOR）。**证据（2026-09-12 本机）**：桌面 check 全链
-  绿——typecheck 两配置零错;vitest 60 文件 474 测试全绿;build 绿;
-  boundary OK;i18n tables aligned;contrast 全达标;check:leak 159 指纹
-  零命中。
+**夜间任务二 P 系列对账＋P2 交付（2ff721c，2026-09-12 04:2x 工作时段）**。
+按 `collab/assignments/2026-09-11-night_ZH.md` 领任务链（优先于 BG 填充工
+单）逐行核对桌面四行（P0/P1/P2/P4），发现 P2 为未交付项并当场交付；P0/
+P1/P4 对账结论如下。
+**P0 盘点（缺口清单，落账于本节）**：production-use-case v0.2 十方法 vs
+桌面消费面——①recipe.save＝ComposePage 直接 invoke（019 批 B save chain）；
+②recipe.get／③recipe.list＝RecipePage 直接 invoke（554/586 行，BG-1 四段
+交付）；④recipe.resolve／⑤plan.approve／⑥plan.list／⑦job.execute＝
+ProductionChainSection 消费（019 批 C）；⑧record.list＝ProductionChain
+Section 消费＋本批新增 ReleaseRecordsSection（release 页）；⑨record.get＝
+此前无 UI 消费点（端口方法在）——本批 release 页补上（P2）；⑩plan.get＝
+端口方法在、UI 无单读消费点（呈现面当前经 listPlans 覆盖，无产品需求，
+不猜测补接）。**结论：十方法 TS 面（production-chain-port 七方法＋save/
+get/list 直接 invoke）全登记，UI 消费除 plan.get（无需求）外全接通**。
+**P1 对账＝已由 BG-1 覆盖**：夜间盘点「未接真实读面」与代码现实不符——
+RecipePage 文档库节自 BG-1 四段（eba88a7/29aa537/2e4dc2d/4dcf8db）起直
+接消费 v0.2 recipe.list/get 冻结读面并已验收入 main；P1 验收标准（check
+绿＋数据全来自冻结读面）已满足。**P4 对账＝已由 BG-15 覆盖**：inspection
+页骨架（7a1af41）即诚实空态形态；inspection-queries 只读面不存在（M7
+锚点未到、核心未冻结路由，016 仲裁语义权威未生效），无事实源可接——
+「空态即终态；不宣称可用」达成。**P5（集成逐切片验收）待集成办理**。
+**P2 交付（2ff721c）**：release 页接 build-record 读面——
+- `release-records-model.ts`：build-record v0.3 recordDocument 呈现事实
+  收窄（身份/六态闭集/jobs 三态收据计数/类型化偏差计数/证据引用计数）。
+  纪律：必需事实缺失或 status/jobs 词表外＝整条拒绝呈现（不可解释，不猜
+  测、不低估计数）；planDeviations 可选缺席＝0；evidenceSummary 必填缺
+  席＝null 计数＋UI 明示「摘要缺席」（缺席即证据）；
+- `release-records-section.tsx`：消费 production-chain-port listRecords/
+  getRecord（live 端口，核心路由已交付验收）。三态诚实：读取失败≠空列
+  表（UI-08）；空列表＝缺席根真实空态；选中详情带 recovered 语义标注
+  （W24 投影先例）；证据引用只呈现计数＋草案面注记（inspection-evidence
+  v0.1 为草案，016——不渲染官方结论、不以演示替代，AC-13 同款）；不宣
+  称端到端（真机数据流随 W25 窗口）；
+- ReleasePage 独立挂载该节（与展柜 releaseWall 数据源不同，展柜
+  not-connected 不隐藏记录节）；i18n 四语 records.* 键（fixtures 表为演
+  示数据文案非镜像，未动）。
+**证据（2026-09-12 本机）**：桌面 check 全链绿——typecheck 两配置零错;
+vitest 61 文件 483 测试全绿（60/474 基线＋1/9 新增，逐位吻合）;build 绿;
+boundary OK;i18n 无中文字面量＋3 交付语言表对齐;contrast 全达标;
+check:leak 159 指纹零命中。
+**D-6 前情（维持）**：编辑范围裁定＝A（列表行内查看＋行内轻量编辑），
+setNote 立项确认已交 013 内联，等核心 project-ops v0.2 升版批。workshop
+F3 段评估收口＝零迁移（9de0f60 注释正名已随 c973048 入 main）。
 ## 待办队列
 - 批 D（019 视觉与交付）未签发等工单；W25 真机窗口用户延期维持（O-2）。
 - D-6 后续：核心 project-ops v0.2 升版批（核心域）→ 桌面接线批（列表备注
   列＋行内编辑，含本表态§3 纪律）。
-- workshop F3 段：等壳侧 Unity 编辑器配置面工单（已升级，见上）。
+- workshop F3 段：等壳侧 Unity 编辑器配置面工单（U10 待用户裁决，跳过）。
 ## 阻塞
 - 无桌面阻塞。备忘维持：generateVpm 执行器诚实 unavailable（依赖同一
   Unity 环境配置面）。
 ## 下次合并意图
-64390be（collab-only：013 内联「表态（桌面）」节＋状态批）＋9de0f60
-（comment-only 七文件注释修正,零行为变化,桌面 check 全链绿 474 测试证据
-随提交信息）——请集成验收合并;9de0f60 触 apps/desktop 文件,合并前全量
-证据已在本机执行完毕。
+2ff721c（apps/desktop：P2 切片 9 文件——release 读面模型＋组件＋四语＋
+测试 9 项；check 全链绿 61/483 证据随提交信息）＋本状态批——请集成验收
+合并;触 apps/desktop 文件,合并前全量证据已在本机执行完毕。
 ## 留言
-- [→集成] 9de0f60 知会：F3 注释七处修正（comment-only,零行为）——v0.1
-  草案→M3 冻结正名＋v0.2 配方链区分＋端口头 live 门控说明;check 全链绿
-  （60 文件 474 测试＋leak 159 零命中）。与 64390be 一并验收合并即可。
-- [→核心] **D-6 编辑范围确认已交 013 内联**（回应你「有条件立项」问）：
-  裁定＝A（列表行内查看＋轻量编辑，无独立页面/富文本）⇒ setNote 立项正支
-  ——照你方草案原样冻结（project-ops v0.2；projectId＋note；任务化同
-  import-copy；守卫 VUA 原生；note 存 .vua/project.json；拒绝码
-  vua.project.not_vua_native），桌面零字段增补。请启动升版批；接线批等你
-  冻结＋路由就绪后开工（本表态无桌面代码随批）。
-- [→环境] D-6 表态知会：013 线程桌面半边已补齐，你方 vua_identity
-  set_note 原语将被核心升版批消费；备注行内编辑入口在 vuaIdentity
-  absent/unreadable 两态的呈现纪律见 013 表态§3。
-- [→集成][→环境] **workshop F3 段评估结论＋立项建议**：恒不可用根因＝
-  VUA_UNITY_EDITOR 壳侧配置面未立项（核心 production.* 面完整且 env 门控
-  ——非「核心无方法」）；「迁移到 v0.2 链呈现」评估为零迁移（M3 素材直产
-  链与 M5 配方链语义不同，并存各有用例）。F3 段激活需壳侧 Unity 编辑器路
-  径配置面（设置页配置项＋壳注入），桌面可承接，**是否立项请裁决/签发工
-  单**；裁决前维持诚实不可用现状。
-- 留言消化：①wt-2 messageKey 两枚（errors.job.environmentUnmet/
-  environmentCheckFailed）已随 64d22a7 四语登记——你方请求已闭环；②wt-2
-  BG-1 映射语义表态收讫——BG-1 三段（29aa537/2e4dc2d/4dcf8db）均已验收
-  入 main，A 路线已落地，无余项；③wt-main 批 C 完成注记与 BG-15/BG-20
-  销账收讫（80052d6 即我树 BG-18(compose-draft) 交付，票号以你方簿记为
-  准，无分歧）。
+- [→集成] **P2 交付请验收合并（2ff721c）＋P 系列对账落账**：P0 缺口清单
+  已入本状态文件当前焦点（十方法消费面全对账;plan.get 无 UI 需求不猜补
+  接）;P1＝BG-1 已覆盖（夜间盘点「未接真实读面」与代码现实不符，以现实
+  为准——RecipePage 消费 v0.2 冻结读面在树）;P4＝BG-15 已覆盖（诚实空
+  态;inspection-queries 无事实源）。夜间任务二桌面四行就此全部闭环，P5
+  逐切片验收请随本批办理。
+- [→集成] **BOARD 推送记录 N-3/N-4 路由更正请求**：origin 推送记录
+  （2026-09-12 01:20 批）写「N-3 ipc_002 顺序护栏、N-4 尾随逗号外观项归
+  桌面顺手批」——两文件实为 `crates/orchestrator/tests/`（ipc_002）与
+  `crates/provider-host/tests/environment_snapshot_wire.rs`（N-4），核心
+  所有权域,桌面无权修改;且 r3b 原报告标注两者「非阻断/可接受/无害」。
+  请更正路由（→核心，随手批节奏自决）——桌面不代做、不越权。
+- [→核心] processFactory 注入点表态收讫（维持 env 注入形态）——与我树
+  5809d37 批实现一致（壳经 env 注入三确定性根），无分歧，零后续动作。
+- 留言消化（wt-2 [→桌面] 十五条批量核对，均闭环无未决桌面配合项）：①
+  processFactory 表态（见上）;②保存链启用确认——批 B 已交付验收
+  （b243a1d 入 main）;③entrypoint 缺口路由评估——批 B 最小路已兑现
+  （nameHint 用户输入）;④UI-03 评估——批 B 前置已消费;⑤⑥018 §6/批 1
+  ——批 1 已落地（200012d 入 main）;⑦017 三项表态——3b509f0 已交，
+  wire 面核心已接;⑧⑨013 读面翼——消费 UI 已验收（c443a89 入 main）;
+  ⑩messageKey 两枚——64d22a7 四语已登记（前批已消化）;⑪015 §12 表态
+  ——批 B-3 已实现验收（6cbcb26）;⑫downloads.listCompleted——TS 面随
+  dfc113d 已登记;⑬三点答复——provider 行清理随 f5bb1f4 已办、v0.4 已
+  接、页内确认层即批 B-3 已实现;⑭015 §7 两问——(a) 方案已实现
+  （875c85a）;⑮record 读面闭集——W24 recovered 呈现已交付（aa3e747）。
+  核心侧无需再回应本条（纯收讫归档）。
