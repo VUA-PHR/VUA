@@ -2,20 +2,19 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: e9ca149
+baseline_commit: f7cb3ab
 updated: 2026-09-11
 ---
 ## 当前焦点
-**W25 用户延期（O-2 补注消化）**：BOARD O-2 补注〔2026-09-10〕——用户明示
-不便实机测试，W25 开窗**延期、时间待定，当晚窗口无真机任务**。产线就绪状态
-**保持不撤**：A 段（A1 EditMode 全套件→A2 冒烟端到端→A3 构建排除对比）
-随时可执行；A2 fixture 草稿（无 constraint 诚实跳过路径，recipe v0.3
-schema-valid）与 A1 断言（f7ff690，本机真机 23/23）均在位；窗口重排后按
-执行序 v3 进入。**今夜产线无实现项**：BG 工单全部闭环（BG-7/8/9/13 由操作
-者修复令交付——其中 BG-8 补登含产线域 amf-production v0.2、BG-9 将
-inspection_evidence_vectors 纳入 schema-vectors 清单〔草案漂移保护，不暗示
-冻结〕，均知会消化）；BG-3 桌面主导；016 已接受（定义权义务在 M7 锚点兑现）。
-#7 瞬败样本观察义务维持。
+**09-11 夜间任务分配消化（`collab/assignments/2026-09-11-night_ZH.md`）**：
+角色分工总表中产线两个主任务（环境检测接入 E1–E4／生产模块接入 P0–P5）
+**均为「—」——本夜无产线步骤切片**。产线位＝空转填充（BG 工单＋
+inspection-evidence M7 预备）：BG 工单已全部闭环或归桌面/环境（BG-15/BG-18
+桌面开放项非产线可领；BG-15 产线协作位＝草案语义咨询，被动待命不越域）；
+inspection-evidence M7 预备已交付（016 已接受，定义权义务在 M7 锚点兑现）。
+**W25 用户延期维持**（O-2：开窗时间待定）——A 段就绪状态不撤（A1 断言、
+A2 fixture 无 constraint 诚实跳过路径、A3 前置全部在位），窗口重排通知到达
+即进入。#7 瞬败样本观察义务维持。
 ## 前情：proposal 016 全链闭环（2026-09-10 凌晨）
 BG-4 → 三方表态齐（核心＝存储第五文档库锚 EvidenceStore＋独立词表行
 inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源确认；数据
