@@ -2,11 +2,36 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: d8efbe3
+baseline_commit: 9186785
 updated: 2026-09-12
 ---
 ## 当前焦点
-**第 6 代推送门 3/3 通过并推送＋CI 回读闭环（09-12 06:5x–07:1x）**：
+**第二波验收：#22 兑现批冻结（09-12 07:2x–07:5x）**：CI 回读等待期间
+各树继续推进产生新交付（上段「无待验收队列」表述在书写时为真，随即
+过时——如实更正），当轮续验收：
+①**0866908**＝slot/wt-2 核心 **#22 兑现批 d02bd09 验收合并（proposal
+020 随批）**——TaskSnapshotV01 可选 result 字段增量冻结：schema 机器面
+（if/then 钉死七非完成态 result 缺席＋failed 必带 error＋result 恒对象
+null 缺席投影）＋六向量 3 正 3 负＋provider_host 投影按态收窄＋demo
+取消诚实写 None（死数据修复）＋TS 面 `result?: TaskDonePayloadV01`＋
+task_snapshot_wire 4 测试（真实帧环）＋协议双语修订记录＋REGISTRY
+application-contract v0.1 冻结行。**版本策略核可**＝协议本「版本与演进」
+条款内增量登记＋修订记录＋向后兼容声明，版本号不动成立（旧合法快照仍
+合法）。**验收证据**：合并后本机独立复跑 **cargo test --workspace
+68 套件/505 通过/0 失败**（隔离 CARGO_TARGET_DIR、pipefail 真实退出码
+0）＋clippy -D warnings 零告警＋@vua/contracts check **38/38 EXIT=0**
+＋registry **50/50**，与核心声称逐字一致；桌面代码零变更（消费批待
+冻结后桌面自排），桌面全链免跑如实声明。**proposal 020 状态已翻转
+「讨论中」→「已接受（集成验收冻结）」并落验收节**（016 先例）。**#22
+链下一步＝桌面消费批**（fixture 形态对齐桌面自决）；两通道（快照/事件）
+同源同值缺口就此关闭。不宣称端到端。
+②**fa87b8d**＝slot/wt-3 状态批（B5② 消化＋#22 候命，collab-only 免测）
+；③**9186785**＝slot/wt-6 状态批（回执消化＋追平，collab-only 免测）。
+**第二波 r2 增量机械核验**：18 文件 +999/−132，零色值/CSS 变量新增，
+CJK 新增均为提案/协议/注释类文档中文（非泄漏类）。**在途**：U10/W25
+（O-2）等用户；批 D 未签发；核心＝填充已随批落地，M7 锚点等产线；
+[需用户] 仅 U10。
+**前情（09-12 06:5x–07:1x 第 6 代推送门 3/3 通过并推送＋CI 回读闭环）**：
 推送 `92dea7f..d8efbe3`（9 提交／10 文件：三验收合并 219f3e3/33f9060/
 fa86bb0＋簿记 d8efbe3 及各 slot 实质提交）上 origin，积压清零。门证据
 （增量聚焦法，全文见 BOARD 推送记录节）：**r1**＝两实质批 diff 全文核
@@ -624,16 +649,34 @@ c31b01e 读面＋16a2dc5 编排＋**8c7b6a4 record-face 收口**＋两对接细�
 ✅。**开窗通知（晨起，O-2）**：操作者发出通知并请用户确认开窗；执行序 v3；
 窗口＝证据生产环节，无真机证据不宣称端到端。
 ## 下次合并意图
-**推送积压清零（main＝origin/main＝d8efbe3），无待验收队列**（slot/wt-2
-…wt-6 分支领先内容本 tick 已全部合并或本无）。下一推送门对象＝新交付
-形成增量后按门程序（r1 逐文件＋r2 forest 零泄漏〔草稿源在场时恢复全量
-指纹重提〕＋r3 构建测试复验＋推送后 CI 回读）；触 crates/ 批推送前须
-rust CI 绿（d8efbe3 世代三绿为当前有效基线）。各树在途：核心＝#22
-TaskSnapshot 增量提案自领候选＋M7 锚点等产线；桌面候命；产线/数据/环境
-待命；W25 开窗等用户（O-2）；U10 等用户裁决；批 D 未签发；[需用户]
-仅 U10。**本状态批（第 6 代推送记录＋CI 回读闭环）随本提交落库，随下批
-一并推送或按需单独推送。**
+**第二波簿记批（#22 冻结记录＋proposal 020 验收翻转）落库后即执行第 7 代
+推送门并推送**：r1 完成（d02bd09 全文核：schema 冻结件/六向量/provider_host
+35 行/TS 面/协议修订/REGISTRY 行/proposal 020＋两 collab 状态批）；r2 完成
+（18 文件增量机械核验：零色值/CSS 变量；CJK 新增均文档类）；r3 完成
+（cargo 68/505/0＋clippy 0＋contracts 38/38＋registry 50/50；桌面零变更
+免跑声明）。本批触 crates/ 与 schemas/——推送前 rust CI 绿前置满足
+（d8efbe3 世代 rust 34655323316 绿）；推送后 CI 回读（rust/schema-vectors
+将触发，collab-registry 因 proposal/REGISTRY 变更可能触发）。推送积压
+随本批清零后，下一门对象＝新交付增量。各树在途：桌面＝#22 消费批自排
+（冻结已达成）＋B5 链闭环；核心＝M7 锚点等产线；产线/数据/环境待命；
+W25 开窗等用户（O-2）；U10 等用户裁决；批 D 未签发；[需用户] 仅 U10。
+**本状态批随本提交落库并随第二波批一并推送。**
 ## 留言
+- [→核心] **#22 兑现批验收合并回执（d02bd09→0866908）＋proposal 020
+  验收冻结确认**：diff 审核可（schema if/then 不变量与投影实现逐项一致；
+  demo 取消死数据修复＝诚实写 None 非投影遮盖；版本策略按协议本演进
+  条款成立）＋合并后本机独立复跑 **cargo 68 套件/505 通过/0 失败＋
+  clippy 零告警＋contracts 38/38＋registry 50/50**，与你方声称逐字一致
+  （隔离 CARGO_TARGET_DIR、pipefail 真实退出码）。proposal 020 状态已
+  由我方翻转「已接受（集成验收冻结）」并落验收节。**填充已随批落地——
+  #22 修复链只剩桌面消费批**；实现期发现（job.execute 失败任务回滚观察
+  载荷留存储面、投影按态收窄）处置核可。
+- [→桌面] **#22 冻结达成——消费批解锁**：proposal 020 已验收冻结
+  （TaskSnapshotV01 可选 result：仅 succeeded/succeeded_with_warnings
+  携带、恒对象、null 缺席投影、形状归操作词表自描述）。你方消费批可
+  自排：TS 面已含 `result?: TaskDonePayloadV01`，fixture 形态对齐按
+  020 验收节自决（消除 DEV 走查盲区＝#22 教训兑现）；F6 live 确认链
+  届时以 live 读面真值验证，仍不宣称端到端。
 - [→桌面] **B5② 文案批验收合并回执（9710c18→219f3e3）＋B5 行销账**：
   diff 审核可（zh-CN 与用户裁决原文逐字一致；en/ja/ko 不确定性语义等价；
   旧强断言废除；`migration.note` 未动）＋合并后本机独立复跑桌面 check
