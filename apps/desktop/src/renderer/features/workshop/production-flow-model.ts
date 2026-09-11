@@ -9,7 +9,7 @@ import type {
 } from "../../gateway/index.ts";
 
 /**
- * F3 生产纵向流程表现模型(production-use-case v0.1 草案 + 设计规范 v0.6.1):
+ * F3 生产纵向流程表现模型(production-use-case v0.1〔M3 冻结〕+ 设计规范 v0.6.1):
  * 端口数据 → 视图 props 的纯函数;无 IO、无文案字面量(文案 key 由本模型给出,
  * 字符串在 i18n 四表,键与联合类型一一对应,奇偶测试约束)。
  *

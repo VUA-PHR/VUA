@@ -124,7 +124,7 @@ export function projectEnvironmentSnapshot(snapshot: EnvironmentSnapshotV01): En
   };
 }
 
-/* ---- 生产运行状态投影(F3 live;production-use-case v0.1 生命周期-任务映射) ----
+/* ---- 生产运行状态投影(F3 live;production-use-case v0.1〔M3 冻结〕生命周期-任务映射) ----
  * 任务九态是唯一权威事实:运行视图的阶段由"命令角色 × 任务九态"推导,
  * 不由前端虚构细粒度阶段(原则①)。快照/导入/验证同属 execute 命令的
  * 执行链,九态不区分链内阶段——运行态停在链的粗粒度表达上,任务中心的
