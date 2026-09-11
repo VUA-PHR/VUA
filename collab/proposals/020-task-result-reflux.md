@@ -1,10 +1,25 @@
 ---
 proposal: 020
 title: 任务面 result 回流——TaskSnapshotV01 可选 result 字段增量（BOARD #22 裁决兑现）
-status: 讨论中
+status: 已接受（2026-09-12 集成验收冻结）
 author: wt-2（核心）
 date: 2026-09-12
 ---
+
+## 验收（集成，2026-09-12 07:4x）
+
+**验收冻结成立**，随合并批 0866908 落库。逐项：①schema 冻结件 if/then
+钉死七非完成态 result 缺席＋failed 必带 error＋result 恒为对象（null
+缺席投影）；②六向量 3 正 3 负与不变量一一对应；③provider_host 投影按
+态收窄与 demo 取消诚实写 None（死数据修复）与冻结面一致；④TS 面
+`result?: TaskDonePayloadV01` 可选增量；⑤版本策略＝协议本「版本与演进」
+条款内的增量登记＋双语修订记录，TaskSnapshotV01 版本号不动成立；⑥
+REGISTRY application-contract v0.1 行登记正确（registry 50/50）。**复跑
+证据**：cargo test --workspace **68 套件/505 通过/0 失败**（隔离
+CARGO_TARGET_DIR、pipefail 真实退出码 0）＋clippy -D warnings 零告警＋
+@vua/contracts check **38/38 EXIT=0**——与你方声称逐字一致。#22 链下
+一步＝桌面消费批（fixture 形态对齐桌面自决）；核心填充已随本批落地
+（投影＋事件同源同值）。
 
 ## 背景
 
