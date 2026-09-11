@@ -208,9 +208,29 @@ function narrowRecordList(value: unknown): RecordListResultV02 | null {
   return { total, entries };
 }
 
+/** 诚实不可用实现(019 批 C 验收:fixture 不模拟生产链——无演示目标):
+ *  全部方法返回 null(不可用),由调用方如实呈现;not-run 与 fixture 装配
+ *  共用此实现,DEV 切档也不产生演示生产数据。 */
+export function createUnavailableProductionChainPort(): ProductionChainPort {
+  const unavailable = async (): Promise<null> => null;
+  return {
+    resolveRecipe: unavailable,
+    approvePlan: unavailable,
+    getPlan: unavailable,
+    listPlans: unavailable,
+    executeJob: unavailable,
+    getRecord: unavailable,
+    listRecords: unavailable,
+    capability: async () => ({ state: "unavailable", detailKey: "detectorsMissing" }),
+  };
+}
+
 /** live 实现:经 GatewayClient 消费 Kernel(字段存在性收窄,收不齐=不可
- *  解释,如实 null——照 warehouse-commands live 先例) */
-export function createLiveProductionChainPort(host: DesktopGatewayHost): ProductionChainPort {
+ *  解释,如实 null——照 warehouse-commands live 先例)。host 为 undefined
+ *  (无 Electron 宿主)时 client 诚实不可用。 */
+export function createLiveProductionChainPort(
+  host: DesktopGatewayHost | undefined,
+): ProductionChainPort {
   const client: GatewayClient = createGatewayClient(host);
   const invoke = async (
     method: Parameters<GatewayClient["invoke"]>[0]["method"],

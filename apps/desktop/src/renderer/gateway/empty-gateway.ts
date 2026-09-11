@@ -3,6 +3,7 @@ import { createMemorySettingsPort } from "./settings-port.ts";
 import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire-port.ts";
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import { createEmptyProjectOps } from "./project-ops-port.ts";
+import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -185,6 +186,8 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     acquire: createEmptyAcquire(),
     warehouseCommands: createEmptyWarehouseCommands(),
     projectOps: createEmptyProjectOps(),
+    // 019 批 C:not-run 时生产链诚实不可用(不渲染虚构推进入口)
+    productionChain: createUnavailableProductionChainPort(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),

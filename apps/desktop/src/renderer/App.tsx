@@ -55,6 +55,7 @@ import { ProjectCompatPage } from "./features/packages/ProjectCompatPage.tsx";
 import { ProductionIntroOverlay } from "./features/production/ProductionIntroOverlay.tsx";
 import { RecipePage } from "./features/recipe/RecipePage.tsx";
 import { ReleasePage } from "./features/release/ReleasePage.tsx";
+import { InspectionPage } from "./features/inspection/InspectionPage.tsx";
 import {
   nextIntroPhase,
   type ProductionIntroPhase,
@@ -594,6 +595,8 @@ function renderPage(
       return <WarehousePage />;
     case "recipe":
       return <RecipePage />;
+    case "inspection":
+      return <InspectionPage />;
     case "release":
       return <ReleasePage />;
     case "packages":

@@ -37,6 +37,7 @@ export type PageId =
   | "compose"
   | "warehouse"
   | "recipe"
+  | "inspection"
   | "release"
   | "workshop"
   | "packages"
@@ -159,6 +160,9 @@ export const businessModules: readonly ModuleDef[] = [
           { id: "compose", labelKey: "composePage" },
           { id: "warehouse", labelKey: null, labelTerms: ["warehouse"] },
           { id: "recipe", labelKey: null, labelTerms: ["recipe"] },
+          // 检查页(BG-15,设计标准 §8.6):报告/证据/下一步;置于出厂前——
+          // 主流程「装配 → 检测 → SDK 交接」的检测落点
+          { id: "inspection", labelKey: null, labelTerms: ["inspection"] },
           { id: "release", labelKey: null, labelTerms: ["release"] },
         ],
       },
