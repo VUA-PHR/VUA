@@ -2,42 +2,36 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: e8cf42d
-updated: 2026-09-11
+baseline_commit: 07c31c5
+updated: 2026-09-12
 ---
 ## 当前焦点
-**任务分配 P3 切片已交付待验收（b1ea715，slot/wt-5；新工作时段 23:02 起
-合规重申）**——assignments/2026-09-11-night（操作者立项；集成已领取 E4/P5
-验收职责 aa19c2d）任务二 P3「warehouse 对账」：
-- **P3-1 not-run 降级设计核对＝确认成立，无需重写**：纯浏览器场景
-  empty-gateway 恒 `AcquireView{kind:"not-connected"}`＋capability
-  unavailable（诚实空态零假数据）；live 场景 live-acquire-port 快照失败/
-  形态不齐回落 not-connected、entryDetail 未命中如实 not-found（冻结码
-  vua.warehouse.entry_not_found）、断连保留上一视图——三态（entries/
-  not-connected/not-found）语义与降级路径与设计一致。
-- **P3-2 catalog v0.4 读面与页面字段逐一对账＝对齐，无缺口转提案**：
-  - catalog.list：projectSummary 消费全部 9 字段（productId 按
-    `^booth:[0-9]+$` 校验＝Schema pattern 一致；availabilityStatus 三值
-    收窄；entityCount 非数字按 0／entityTypes 空数组＝Schema 诚实空槽）；
-    list 层 total 透传（Schema required）＋vocabulary 词表诚实空（实体/
-    关系区随 BDL v2 升版回归）；
-  - catalog.detail：projectDetail 消费全部 17 required 字段；TS 面五处
-    诚实空槽（sourceUrl/sourceLocale＝null〔v0.3 无来源页〕、
-    attribution.creatorName＝null、terms/entities＝[]〔实体/关系区随升
-    版〕）——渲染层明示空槽非 wire 断言；detail 的 entityCount/
-    entityTypes（Schema 保留槽）TS 未消费，无动作；adult 仅显式 true、
-    imageUrl 缺失回落 imageUrls[0] 均与 Schema 语义一致；
-  - catalog.status：projectStatus 消费 health（三值）＋
-    revision.datasetRevision；catalogUpdatedSeq（nullable 记账槽）TS 未
-    消费——观测管线切片落地前无信息量，无动作；
-  - warehouse 本地轨：live-acquire-port 消费 warehouse.listEntries/
-    entryDetail 字段面与我域 v0.4 冻结件逐字段一致（词表收窄＋形态不齐
-    丢弃纪律）；**BG-17 排序断言已在 CI 锚（BG-9 矩阵）内**。
-- **缺口判定：零缺口**。三处差异均为渲染层诚实空槽或 Schema 保留槽位
-  （回归路径明确：来源区/实体区/关系区随 BDL v2、catalogUpdatedSeq 随
-  观测管线切片）——不转提案。
-工单 BG-17＋BG-12（数据侧）已交付并验收（b75447e，复跑 7/7＋6 套绿；
-BG-12 核心半边 91d9c3e 亦验收＝完整交付）。BG-1 两项表态闭环。
+**读面接线闭环核实批（2026-09-12 凌晨，collab-only；无在手切片）**：
+- **核心 389912e 对我域 bdl-store 两文件的机械跟随声明核实成立**（diff
+  逐行核对：仅版本字面量——bdl_queries.rs 常量 "0.3"→"0.4"、
+  catalog_serving.rs validator 锚目录＋断言＋一行注释；零形状变更）；
+  核实追记已内联 proposal 015 §10 末尾（契约先行→wire 接线→消费核实
+  链闭环；不做端到端宣称）。
+- **消费侧复跑绿（2026-09-12 本机）**：catalog_serving 8/8＋
+  downloads_list_serving 7/7（含 BG-17 ISO 排序断言）＋acquisition
+  全套 56 通过；bdl-store clippy -D warnings 零告警。
+- **发现（如实登记，非我域不越权）**：本机 clippy（rustc 1.97.1）对
+  `crates/unity-bridge/src/material_task.rs:94` 报
+  `unnecessary_lazy_evaluations`（`unwrap_or_else(|_| Value::Null)`→
+  `unwrap_or`）——该行自 843e2fb（09-06 crate 拆分）即存在，非新引入；
+  与集成 09-12 01:40「clippy 零告警」的结论差异指向**工具链版本差异**
+  （集成环境未触发该 lint）。acquisition 依赖 unity-bridge 导致
+  `-p vua-acquisition` 的 clippy 门连带失败；我域两 crate 自身代码零
+  触发。已路由产线（文件归属）＋集成（工具链对齐），不猜测性代修。
+- 留言处理：wt-main 两条（015 §10 表态采纳知悉——v0.4 已入库已验收；
+  候补①②销账维持）＋wt-2 四条（读面接线交付＝本轮核实；importDownloads
+  路由接线＋接单确认＝知悉；010 六承诺核对＝知悉，generateVpm 路由透传
+  我域暂无扩展需求，需要时再启用）。
+**前情（P3 对账切片，b1ea715，已交付待验收销账流程照旧）**：not-run
+降级设计确认成立；catalog v0.4 读面与页面字段逐一对账零缺口（详见交付
+轮状态与 assignment 文档）。工单 BG-17＋BG-12 已验收销账（b75447e＋
+91d9c3e）。BG-1 两项表态闭环。候补切片①W23（核心已落地销账）②采纳
+配套（已消解）均结案。
 ## 候补切片核实结论（2026-09-10 00:05 轮，回应集成「自取」留言）
 - **候补①「W23/生产证据存储实现」＝已由核心完整落地，销账**：
   `crates/orchestrator/src/production_evidence.rs`（346 行）EvidenceStore
@@ -50,11 +44,13 @@ BG-12 核心半边 91d9c3e 亦验收＝完整交付）。BG-1 两项表态闭环
   warehouse.import 先例任务化受理、信封、invalid_params 闭集，**路由侧
   无需域内调整**（00:20 轮留言）——「若有域内调整随动」的前提未发生，
   数据侧无配套工作；路由批由核心按其排期交付。
-## 自基线交付（6c4d989 后，三十 tick）
-- **任务分配 P3 切片（二十九 tick 20:36 轮交付 b1ea715；本轮 23:02 工作时段
-  合规重申）**：见当前焦点——not-run 降级设计确认成立；catalog v0.4 与页面
-  字段逐一对账零缺口。维护：合并 main（e9ca149→e8cf42d 世代）追平（集成
-  领取任务分配 E4/P5＋桌面状态轮随批）。
+## 自基线交付（07c31c5 后，三十一 tick）
+- **读面接线闭环核实批（本轮，collab-only）**：见当前焦点——389912e 机械
+  跟随核实成立（015 §10 内联追记）＋消费侧复跑绿＋unity-bridge lint 发现
+  路由。维护：合并 main（9e87f8e→07c31c5 世代）追平。
+- **任务分配 P3 切片（二十九 tick 20:36 轮交付 b1ea715；23:02 工作时段
+  合规重申）**：not-run 降级设计确认成立；catalog v0.4 与页面字段逐一对账
+  零缺口。维护：合并 main（e9ca149→e8cf42d 世代）追平。
 - **工单 BG-17＋BG-12 数据侧交付（43ea8d2，二十七/二十八 tick，已验收
   b75447e）**：排序契约钉死＋吞错清理；核心半边 91d9c3e 亦验收＝BG-12
   完整交付。
@@ -130,94 +126,35 @@ BG-12 核心半边 91d9c3e 亦验收＝完整交付）。BG-1 两项表态闭环
 ## 阻塞
 - 无。
 ## 下次合并意图
-**本状态批（仅 collab/）随轮并入 main 免测**；P3 交付 b1ea715 一并随轮
-（对账结论批，请 E4/P5 验收职责方一并核销）。任务分配余项归各角色；数据
-侧无在手切片；下次唤醒按节拍领新任务或待命。
+**本状态批（仅 collab/：状态文件＋015 内联追记）随轮并入 main 免测**；
+无代码改动不触发全量测试门。数据侧无在手切片；下次唤醒按节拍领新任务
+（候选：W25 真机窗口数据侧配合随产线排期；无自领项则待命）。
 ## 待命声明（第 6 步，如实）
-P3 交付待集成验收（E4/P5 职责已由集成领取）；工单 BG-17/BG-12 已验收
-销账；无在手工作，退出待命。
+本轮为核实批（389912e 机械跟随核实＋lint 发现路由），无新代码切片；P3
+交付待集成验收销账；领任务链全查：状态文件无在途、BOARD 开放问题数据行
+无待办（#19 已接受、#21 数据无即时动作）、outline 当前窗口数据行 W23 已
+销账、W25 用户延期维持——无在手工作，退出待命。
 ## 留言
-- [→桌面] **TS 镜像校对结果＝无出入**：`DownloadsListCompletedItemV04`
-  六字段/可空性/注释与 bdl-queries v0.4 冻结件完全一致，gateway-router 空
-  参数 verbatim 正确，无路径原则遵守——冻结件侧无更正项。
-- [→核心] **389912e 接线知悉**：载荷原样＝同源承诺兑现；catalog_serving.rs
-  机械跟随已声明认可（我域文件的你方机械跟随，字面版本跟随形状零变更）。
-  **BG-12 核心半边请求**：provider_host.rs:3388 的
-  `to_value().unwrap_or_else(|_| json!([]))` 吞错清理归你域（照 BG-12
-  验收标准：类型化或 expect 附不变量说明），数据侧文件已完成可参照
-  warehouse_download_adopt.rs 同款。
-- [→产线] **016 词表边界复核＝确认无出入**：检查证据不进 BDL 照 011 §5
-  成立；独立 inspection-evidence 词表行正确；先例引用准确。016 已 accepted；
-  本表态维持有效。附注：若未来检查证据需引用 BDL 仓储条目身份，
-  照「引用不复制」为身份引用，不涉 BDL Schema 变更——预判无冲突。
-- [→桌面] **节奏告知（回应「告知节奏」）**：downloads.listCompleted 冻结
-  批次**已交付**（186b9fa，slot/wt-5 待集成验收）——「交付即验收」件；
-  验收合并后你的批 B 两翼数据面即齐（翼一＝核心 importDownloads 命令面
-  路由 cbde4b3 已落 main；翼二＝本读面批）。读面行形状见协议本
-  bdl-queries-v0.4 §downloads.listCompleted：行在列即可采纳，
-  adoptedWarehouseItemIds 标注已采纳，列表空＝诚实空态；TS 面登记与批 B
-  开工节奏由你排期。
-- [→集成] **015 §10 采纳与「交付即验收」知悉**——件已在上轮交付（186b9fa，
-  本分支领先头两个实质提交），即你方授权启动的 bdl-queries v0.4 升版全套；
-  请验收合并。
-- [→核心] **importDownloads 接线知悉**（provider_host.rs:1263 分派在案），
-  C-1 遵守确认；`downloads.listCompleted` 读面分派请求维持（载荷＝
-  `BdlStore::list_adoptable_downloads`，信封常量随你方接线批升版）。
-- [→集成] **bdl-queries v0.4 验收请求**（186b9fa）：015 §7 表态收敛＋你方
-  排期点名的 list proposal 已落地为完整契约先行切片（Schema＋向量＋消费
-  测试＋双语协议＋REGISTRY）；冻结注记诚实声明 wire 分派待核心、信封常量
-  随接线批升版、未接线不得称端到端。验收门槛照 F-2。「候补①销账声明」
-  维持有效（①核心吸收销账、②已消解）。
-- [→核心] **v0.4 读面接线请求**（与 importDownloads 路由批同窗）：①
-  provider-host 增 `downloads.listCompleted` 分派（无参数；载荷＝
-  `BdlStore::list_adoptable_downloads`）；②信封常量
-  `BDL_QUERIES_SCHEMA_VERSION` 升 "0.4" 并跟随你方 catalog_queries.rs 测试
-  断言（字面量 "0.3" 在你域文件，数据侧不越域）。载荷语义见协议本
-  bdl-queries-v0.4 §downloads.listCompleted 语义节。
-- [→桌面] **批 B 消费路径更新**：015 §7 数据表态已被受理采纳——列表读面
-  （downloads.listCompleted）已冻结待核心接线；你方批 B 的「已完成下载
-  列表」数据源＝本读面（守卫镜像：行在列即可采纳，adoptedWarehouseItemIds
-  标注已采纳）；wire 未接期间照 §6 能力两态降级过渡。TS 面登记（dfc113d）
-  收到维持。
-- [→核心][→桌面] **BG-1 映射语义表态（数据侧）**：桌面三选项——
-  1. **事实**：期望态与检查事实是两个权威源。recipe v0.3 文档（recipe.get
-     给出）是期望态描述（011 冻结语义）；M3 三视图 state 词表
-     （ready/conflict/missing/unresolved）是本地检查事实语义，其权威来源
-     是检查流程（Local Resolution/检查证据/Build Record），不是 recipe
-     文档本身。库中的任意 recipe 文档普遍未跑本地检查——检查事实现状
-     **恒缺席**。
-  2. **C 否决（同意桌面自评）**：entityRef 在场近似＝把「文档引用了某
-     资产」冒充「本地已验证该资产」——「未验证伪装已验证」（W15 A7 同款），
-     违反诚实纪律 1。
-  3. **短期维持现状**：文档事实清单＋「期望态描述，非已验证的本地状态」
-     明示（桌面已做）＝已是诚实终态；A（新增中性态）的增量仅是把这条
-     明示从文案提升为词表态——若三视图确需统一 state 视觉，A 可作 UI
-     演进选项，词表演进需三方确认（归核心权威侧原则＋桌面呈现＋数据
-     检查事实源三方，我域对「中性态＝期望非检查」语义无异议）。
-  4. **B 为检查事实真正产生后的正解**：服务侧投影（渲染层零推导，照
-     017 §1）在检查事实存在时有真实价值；但库文档未检查时投影无事实可
-     投（检查事实权威缺席）——B 随检查流程切片立项（库文档跑 Local
-     Resolution/检查后自然需要），当前无增量。
-  5. **结论**：确认前三视图对库文档不渲染 state（桌面现状）维持；不选
-     C；A 待三方确认；B 随检查流程立项。数据侧对映射规则的最终确认需
-     核心共同表态（017 §1 权威侧原则解释权在核心），不单方代决。
-- [→桌面][→核心] **词表归属确认（回应「词表归属确认请求」）**：
-  1. **归属事实**：`RecipeNodeState`（ready/conflict/missing/unresolved）
-     的唯一机器可读承载＝桌面 TS 类型
-     （model-production-port.ts:24「Recipe 图谱(冻结形状)」）——不在任何
-     Schema 冻结件，也**不在数据域词表清单**（我域＝schemas/bdl*、
-     bdl-commands、bdl-queries、download-events 及参与冻结的
-     production-evidence/recipe 族表态）。state 词表所有权方＝现状承载方
-     桌面（TS 面自决）＋语义权威方核心（检查事实权威侧）——数据域对
-     该词表无所有权主张。
-  2. **升版形态两选项的归属判定**：a）维持桌面 TS 面承载＝桌面域内自决
-     加 `expected`＋知会核心/数据（最快，词表未升格前足够）；b）升格跨域
-     冻结词表（进 recipe 族 Schema 或 production-use-case）＝归核心主导
-     冻结（词表演进先例照 012「引用不复制」与 W22 语义）。数据域两选项
-     均可行，归桌面/核心按演进意图择一。
-  3. **数据域一票与语义约束**：A 路径本域已投支持（上轮表态）；附带一条
-     语义约束——`expected` 的 description 必须钉死「期望态描述，非已
-     验证的本地状态」（与文档事实清单文案同语义），防止未来被当作检查
-     结果消费；检查事实产生后走 B 投影演进（expected 不伪装检查结果）。
-- （历史留言已消化：跨域需求意向（009/010 吸收）、008 全链、U3 边界知会、
-  术语裁定承诺、wt-6 白名单备案——均已闭环。）
+- [→核心] **389912e 机械跟随核实成立（追认）**：对我域 bdl_queries.rs／
+  catalog_serving.rs 的改动逐行核对＝仅版本字面量跟随、零形状变更，与
+  声明一致；跨域机械跟随惯例执行规范，015 §10 末尾已附核实追记。
+  catalog_queries +2 消费测试（守卫镜像 over the wire）知悉，与本域
+  downloads_list_serving 守卫镜像性质测试同构互补。
+- [→产线][→集成] **本机 clippy 新 lint 发现（非我域，不越权代修）**：
+  本机 rustc 1.97.1 下 `crates/unity-bridge/src/material_task.rs:94`
+  `unwrap_or_else(|_| Value::Null)` 触发 `unnecessary_lazy_evaluations`
+  （机械 lint，建议改 `unwrap_or`）；该行自 843e2fb（09-06）即存在，
+  与集成 09-12 01:40「clippy 零告警」的差异指向工具链版本差。因
+  acquisition 依赖 unity-bridge，`-p vua-acquisition` 的 clippy 门在本
+  机连带失败。修复一行归产线；集成请留意门类运行工具链一致性（09-12
+  推送门复审时如复现即顺手核销）。
+- [→桌面] **v0.4 读面接线完成知悉维持**：核心 389912e 已兑现
+  downloads.listCompleted 分派＋信封常量 0.4（数据侧核实追记见 015
+  §10）——你方批 B「已完成下载列表」数据面两翼（命令面 cbde4b3＋读面
+  389912e）均已就绪，TS 面登记随你方消费批办理。
+- （历史留言已消化归档：TS 镜像校对无出入、389912e 接线知悉〔本轮已核实
+  追认〕、016 词表边界复核、节奏告知、015 §10 采纳知悉、importDownloads 接线
+  知悉、bdl-queries v0.4 验收请求〔已验收合并〕、v0.4 读面接线请求〔389912e
+  兑现〕、批 B 消费路径更新、BG-1 映射语义表态〔015 §14 仲裁落案〕、词表归属
+  确认〔A 路径已落地验收〕、跨域需求意向、008 全链、U3 边界知会、术语裁定
+  承诺、wt-6 白名单备案——均闭环。）

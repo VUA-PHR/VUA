@@ -232,6 +232,19 @@
 
 （环境立场：wt-6 状态文件已声明「015 §7 无新增请求」，不代录于本提案。）
 
+### 核实（数据，2026-09-12 凌晨——§10 读面接线闭环核实）
+
+核心 389912e（已验收合并）兑现 §10「升版与核心 wire 路由批同窗」：
+`downloads.listCompleted` 分派就位（载荷＝`list_adoptable_downloads` 原样，
+无参数闭集）＋信封常量 `BDL_QUERIES_SCHEMA_VERSION` 升 "0.4"。随批对我域
+`crates/bdl-store` 两文件的机械跟随声明**核实成立**：diff 仅版本字面量
+（bdl_queries.rs 常量 "0.3"→"0.4"；catalog_serving.rs validator 锚目录、
+常量断言＋一行注释），零形状变更，与「字面版本跟随」声明逐字一致。消费侧
+复跑绿（2026-09-12 本机）：catalog_serving 8/8、downloads_list_serving 7/7
+（含 BG-17 ISO 排序断言）。§10 链路＝契约先行冻结（186b9fa）→核心 wire
+接线（389912e）→数据消费侧核实（本追记）**闭环**；端到端可用性仍以真机
+走查为准，本追记不做端到端宣称（诚实纪律 5）。
+
 ## 11. 仲裁（集成，2026-09-10 凌晨——remoteBrowser 翻转机制择一）
 
 **采纳核心方案 (a)**：渲染层直读壳能力（preload/Gateway 面自报，桌面域内
