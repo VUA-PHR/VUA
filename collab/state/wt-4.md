@@ -2,31 +2,37 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: ff2f2c4
+baseline_commit: e5610bc
 updated: 2026-09-12
 ---
 ## 当前焦点
-**lint 修复切片已交付（2026-09-12 凌晨，b3b9833；回应 wt-5 数据路由）**：
-本机 rustc 1.97.1 clippy 对 `crates/unity-bridge/src/material_task.rs:94`
-报 `unnecessary_lazy_evaluations`（该行自 843e2fb crate 拆分即存在，非新
-引入——与集成 09-12「clippy 零告警」结论的差异指向工具链版本差）；
-acquisition 依赖 unity-bridge，`-p vua-acquisition` 的 clippy 门连带失败。
-**机械一行修复**（`unwrap_or_else(|_| Value::Null)`→`unwrap_or(Value::Null)`，
-clippy 建议原样；行为零变化——MaterialTaskResult 全 String/bool 字段，
-缺席投影语义不在 lint 修复中扩大）。**证据（2026-09-12 本机，隔离
-CARGO_TARGET_DIR 避让运行中应用）**：修复前复现 `-p vua-acquisition`
-clippy 报错；修复后 cargo test --workspace **495 通过/0 失败**＋clippy
---workspace --all-targets -D warnings 零告警。请集成验收合并（代码变更
-非 collab-only；合并即恢复数据侧 acquisition clippy 门）。临时隔离
-target 目录已清理，未入库。
-**基线追平（合并 main→ff2f2c4，落后 10/实质 3 清零）**。留言消化：
-**#19 仲裁已落**（016 内联「仲裁（集成）」节——三方表态照单采纳；
-dependencies 定义权义务在我：M7 检查切片实现时显式选择声明 vs 引用
-完整性消费层并写入冻结件；冻结锚＝Bridge 五维产出操作，开工锚不变）；
-**A1 补齐批已验收**＋W25 窗口前三前置齐备（等用户确认开窗，O-2 延期
-维持）；**环境预检②已接线**（wt-2 消费 f8fe114 事实源——009 表态④
-预检序全链闭环，知悉；A2 冒烟 recipe「无 constraint 诚实跳过」路径与
-其语义兼容，无需改动）；016 三问表态知悉（已随仲裁消化）。
+**维护轮（09-12 04:0x，无新切片）**：合并 main 追平（1911c90→e5610bc，
+落后 37/实质 8 清零；带入桌面批 C part 2＋BG-15/BG-18/BG-20 修复＋
+project-manager 守卫修复——均集成已在 main 全量验收〔cargo 67/496×2＋
+clippy 0〕，diff 未触碰产线域文件）＋状态固化。**在途闭环消化**：
+- **lint 修复切片 b3b9833 已验收入 main**（a71bf91 合并批）＋**BG-19 已
+  销账**（CI rust 34638793810＋schema-vectors 34638793850＋ts 三绿，
+  1a4e0e4）——原「请验收合并」请求闭环，`-p vua-acquisition` clippy 门
+  恢复经数据侧消费复核确认（f9daa6e）；
+- **#7 消化**：acquisition 瞬败再现已捕获（warehouse_import 疑似
+  unique_dir 碰撞，日志已路由数据）——定位与修复归数据；产线 #7 瞬败
+  样本观察义务维持（遇套件瞬败保留完整 panic 输出回传核心）；
+- **U10 知悉**：Unity 编辑器路径配置面立项升级待用户裁决（选项 A/B/C
+  已入 BOARD）——[需用户]，产线跳过不代决；裁决前 M3 直产链激活面
+  维持现状；
+- 019 批 C 桌面切片完成、批 D 未签发；D-6 裁定 A（核心 project-ops
+  v0.2 升版批启动）——均产线无即时动作。
+
+**领任务链全查（本轮）**：①本树在途＝无实现项（lint 修复已闭环；W25
+等用户开窗）；②BOARD 产线行＝#19 已接受但语义权威自 M7 检查切片锚点
+领取时生效（未到锚点，dependencies 定义权义务待锚点兑现）；#21 批 C
+数据/产线无即时动作；U10 [需用户]；③outline M5 产线行＝W21 已交付
+（历史验收在 main）、W25 等用户开窗（O-2 延期维持）；④下一 M 门
+（W26 门验收）无产线行。**无可领新切片，本轮维护＋待命。**
+
+**W25 前情（09-11 夜间任务分配消化）**：产线两个主任务均为「—」；
+A 段就绪状态不撤（A1 断言、A2 fixture 无 constraint 诚实跳过路径、A3
+前置全部在位），窗口重排通知到达即进入。
 
 **前情（09-11 夜间任务分配消化，`collab/assignments/2026-09-11-night_ZH.md`）**：
 产线两个主任务（环境检测接入 E1–E4／生产模块接入 P0–P5）均为「—」
@@ -42,12 +48,17 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
 定义权义务：dependencies 维消费层选择（声明完整性 vs 引用完整性，或两层
 分列）在 M7 检查切片实现时显式选择并写入冻结件——锚点前不冻结、不预接
 事实源、不猜操作形状。
-## 自基线交付（ff2f2c4 后）
-- **lint 修复切片（b3b9833，产线域 crates/unity-bridge）**：见当前焦点——
-  material_task.rs:94 `unnecessary_lazy_evaluations` 机械一行修复；
-  workspace 495/0＋clippy 零告警（隔离 target 复现修复前失败）。
-- 本轮合并 main 追平（f7cb3ab→ff2f2c4 世代，随合并带入 origin 推送
-  12a6a45／桌面 UX 四缺口批 5809d37／E2 disk_space 双辖区 3489276 等）。
+## 自基线交付（e5610bc 后）
+- 本轮维护批（collab-only）：合并 main 追平（1911c90→e5610bc）＋状态
+  固化（在途闭环消化：b3b9833 入 main／BG-19 销账／#7 瞬败再现归数据／
+  U10 待用户）。无新代码切片。
+### 前基线（ff2f2c4 世代）交付
+- **lint 修复切片（b3b9833，产线域 crates/unity-bridge）——已验收入
+  main（a71bf91），BG-19 已销账（CI 三绿）**：material_task.rs:94
+  `unnecessary_lazy_evaluations` 机械一行修复；修复前本机复现
+  `-p vua-acquisition` clippy 报错，修复后 workspace 495/0＋clippy
+  --workspace --all-targets -D warnings 零告警（隔离 CARGO_TARGET_DIR）。
+- 前轮合并 main 追平（f7cb3ab→ff2f2c4 世代）。
 ## 前情交付（6f2c7b7 世代）
 - 维护批无新交付：合并 main 追平（ad46501 已随 abab341 入 main）＋
   BG-4 闭环消化＋数据复核收讫＋状态文件（collab-only）。
@@ -94,10 +105,9 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
 - 无阻塞。W25 用户延期、时间待定（O-2 补注）；产线无动作项，窗口重排通知
   到达即进入 A 段。
 ## 下次合并意图
-**lint 修复切片 b3b9833（crates/unity-bridge 一行）请集成验收合并**——
-代码变更已随批全量验证（workspace 495/0＋clippy --workspace 零告警），
-合并即恢复数据侧 `-p vua-acquisition` clippy 门；本状态批（仅 collab/）
-随轮免测。此外无在途实现交付（BG-4 批 ad46501 已在 main）。
+**本状态批（仅 collab/state/wt-4.md）请集成随轮验收合并（--no-ff 免全量
+测试）**。此外无在途实现交付（b3b9833 已入 main；BG-4 批 ad46501 已在
+main）。产线无在手切片：W25 等用户开窗（O-2），M7 锚点未到。
 ## W25 窗口执行顺序草案（v3 定稿——用户裁量确认 E2 在窗，环境已确认）
 
 **执行序：B1→A1→A2→A3→〔用户启动 VRChat〕→B2a→B2b→B3→归档**（E2 运行中
@@ -176,26 +186,12 @@ inspection-queries/v0.1；环境＝dependencies 事实源边界声明＋无源�
    负责桌面、协作数据（词表已备）；排期归集成/操作者。
 
 ## 留言
-- [→集成] **lint 修复切片 b3b9833 请验收合并**（wt-5 路由的产线域一行
-  修复）：修复前本机复现 `-p vua-acquisition` clippy
-  `unnecessary_lazy_evaluations` 报错（material_task.rs:94）；修复后
-  workspace 495 通过/0 失败＋clippy --workspace --all-targets -D warnings
-  零告警（隔离 CARGO_TARGET_DIR）。机械修复零语义变化，声明如实。
-- [→数据] 你路由的 material_task.rs:94 lint 已修复（b3b9833，clippy
-  建议原样一行）——`-p vua-acquisition` 的 clippy 门待合并后即恢复；
-  门类工具链一致性观察（集成侧）维持你方留言建议。
-- [→核心] **A2 冒烟 fixture 决策回执**：按你方知会选「无 constraint 诚实
-  跳过」路径——冒烟 recipe 整体省略 dependencies（条目内 versionConstraint
-  必填，故无 constraint＝省略数组）＋省略 locked；草稿已按 recipe v0.3
-  schema 校验通过（`_local_w25/a2-smoke-recipe-draft.json`，本地不入库），
-  含 exclude_object 关系供 job.execute 真实作业与 A3 铺垫。窗口内替换
-  warehouseItemId 与层级名两处运行时值。（补充：你方环境预检②接线
-  2112f6c 的跳过语义与本 fixture 决策兼容，知悉。）
-- [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；BG-4 交付不阻塞窗口
-  义务（A 段就绪不受影响）。
+- [→操作者] W25 开窗通知（晨起 O-2）发出后请同步本树；A 段就绪不受影响，
+  窗口重排通知到达即进入。
 - 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
   无瞬败不专门加压空跑。
-- （历史留言已消化：#7 抖动数据、W1 脚手架事实、amf-unity 批、009/011/012
-  互审批、v2 草案/冻结批/012 互审/executor prelude/信封扩展/exclude 形态/
-  物化切片验收、核心两件请求到位、项 10 裁定送达、条目 2/3 域内事实复核、
-  桌面 f8ddc5d 域边界复核、集成 A1 验收——均已闭环。）
+- （历史留言已消化归档 git 历史：lint 修复 b3b9833 验收请求〔已入 main，
+  BG-19 已销账 CI 三绿〕、→数据 clippy 门恢复通知〔数据侧消费复核确认
+  f9daa6e〕、A2 冒烟 fixture 决策回执〔核心环境预检②接线消化，语义兼容〕、
+  009/011/012 互审批、016 全链、项 10 裁定、条目 2/3 域内事实复核、W21
+  全链与 W1 等历史交付——均已闭环。在途事项以当前焦点与 BOARD 为准。）
