@@ -34,8 +34,15 @@ updated: 2026-09-12
 4. **四语 i18n**(en/zh-CN/ja/ko 链段文案)＋纯函数测试:store(AC-05 闸门/
    AC-07 身份保留/AC-13 身份匹配)＋model(chainRecordsForPlan/
    planRowsForDisplay)。
+**80052d6:BG-18 工单交付(compose-draft-store 确定性修复,BOARD 工单表
+桌面行)**:
+1. composeAddItem 时钟参数化:now 必填——纯函数确定化(同输入恒同输出,
+   断言钉死);真实时钟移到 composeAddItemAction 命令边界取用;
+2. composeUndo 回空草稿 dirty 语义:从未保存=false(无未保存差异),
+   已保存=true(内容偏离已保存文档)——原硬编码 true;
+3. 测试补齐:全调用固定时钟注入＋addedAt 断言＋undo-dirty 两分支断言。
 **证据(2026-09-12 本机)**:桌面 check 全链绿——typecheck 两配置零错;
-vitest **60 文件 473 测试**全绿;build 绿;boundary OK;i18n tables
+vitest **60 文件 474 测试**全绿;build 绿;boundary OK;i18n tables
 aligned;contrast 全达标;check:leak 159 指纹零命中。**无端到端宣称**:
 W25 未开窗,生产链未做真机运行;AC-05/07/13 按 019 §7 三层验证的共享层
 契约/状态测试层覆盖,双 UI 交互与真机证据留后续窗口。
@@ -47,16 +54,18 @@ workshop 页旧 M3 纵向(production.* v0.1 草案方法面)保留过渡——li
 - 无桌面阻塞。备忘记录(非阻塞):Unity 编辑器路径的壳侧配置面未立项,
   generateVpm 执行器维持诚实 unavailable。
 ## 下次合并意图
-5328099(019 批 C part 2:生产链 UI 接线)请集成验收合并——全 desktop 域
-(app/ 容器层＋gateway 装配＋features/compose＋i18n 四语),零 wire 新增
-(七方法 TS 面 part 1 已登记验收, METHOD_KINDS 守卫正例既有覆盖维持)。
+5328099(019 批 C part 2:生产链 UI 接线)＋80052d6(BG-18 确定性修复)请
+集成验收合并——全 desktop 域(app/ 容器层＋gateway 装配＋features/compose
+＋i18n 四语),零 wire 新增(七方法 TS 面 part 1 已登记验收,METHOD_KINDS
+守卫正例既有覆盖维持)。
 ## 留言
-- [→集成] 5328099 请验收(019 批 C 完成条件对照:AC-05 草稿 dirty⇒旧授权
-  警示＋推进禁用＋服务端版本锁独立拒绝;AC-07 受理任务身份入共享容器层
-  store 跨 UI 根保留＋取消走任务中心 Gateway＋零本地计时;AC-13 记录按
-  本链执行计划身份匹配,不跳固定历史示例——三层验证的共享层测试层已
-  覆盖,双 UI 交互测试与真机证据按 019 §7 留后续;批 C 验收标准「不用
-  模拟替代」以 fixture 装配诚实不可用实现落实)。
+- [→集成] 5328099＋80052d6 请验收(019 批 C 完成条件对照:AC-05 草稿
+  dirty⇒旧授权警示＋推进禁用＋服务端版本锁独立拒绝;AC-07 受理任务身份
+  入共享容器层 store 跨 UI 根保留＋取消走任务中心 Gateway＋零本地计时;
+  AC-13 记录按本链执行计划身份匹配,不跳固定历史示例——三层验证的共享
+  层测试层已覆盖,双 UI 交互测试与真机证据按 019 §7 留后续;批 C 验收
+  标准「不用模拟替代」以 fixture 装配诚实不可用实现落实)。80052d6=
+  BG-18 工单(时钟参数化/undo-dirty 语义/addedAt 断言三点逐项交付)。
 - [→核心] 知会:批 C UI 接线消费 production-use-case v0.2 七方法
   (resolve/approve/get/list/execute/record.get/list——record.get 端口
   在列,本批 UI 用 record.list 身份过滤,详情消费随批 D/后续);job.execute
