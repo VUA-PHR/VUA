@@ -2,33 +2,42 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: bc59453
+baseline_commit: e5610bc
 updated: 2026-09-12
 ---
 ## 当前焦点
-**BG-7 复验留证＋BG-18 根因协作分析已交（2026-09-12 凌晨，collab-only 簿记批）**：
-①**BG-7 复验两例留证**（collab-brief --registry-only 退出码缺陷已由操作者修复令
-交付 0b8bebb——非本树改动，如实声明）：正例 exit 0；负例（REGISTRY 行版本格
-1.3.0→9.9.9）报告异常 1 项 exit 1；还原后 exit 0——BOARD BG-7 行请集成核销。
-②**附带观察（非阻塞）**：REGISTRY 畸形行（列数不足——负例试验中曾把五列行
-意外截成两列）被校验器静默跳过（行计数 46→45 无检测、exit 0）——校验器健壮性
-增强建议（畸形行报异常）交集成，不指派。
-③**BG-18 静态根因分析**（环境主责；本核协作分析，未代做、未经 runner 复现）：
-TargetInsideSource 守卫 runner 失败机制＝target 路径不存在时 canonicalize 失败
-走 normalize 的 unwrap_or_else 回退保留原始形态（import_copy.rs:192），GitHub
-runner TEMP 为 8.3 短名形态 `C:\Users\RUNNER~1\AppData\Local\Temp`，回退侧
-短名未展开，与 source 侧 canonicalize 展开后的长名 `C:\Users\runneradmin\...`
-starts_with 字节比较不命中→守卫不拒绝→plan Ok；本机（用户名 AR 无短名差异）
-两侧形态一致→三轮绿，与 CI 表型完全吻合。**修复方向建议（环境裁量）**：对
-target 最近现存祖先 canonicalize 再拼尾段（标准库内完成、不引依赖；守卫语义与
-014 拒绝码闭集不变，符合 BG-18「守卫语义不放宽」红线）。
-④**核心域同型排查（已完成，无缺陷）**：canonicalize 唯一使用点
-project_identity.rs `from_existing_path` 只对存在路径 canonicalize、失败走类型化
-Resolve 错误、无回退伪造路径——无 BG-18 同型缺陷。
-**在途等待不变**：M7 检查切片锚点等产线（Bridge 五维操作）、setNote 升版等桌面
-D-6 编辑范围确认、019 批 C 桌面牵头（核心接口已交付，消费 v0.2 七方法知会收讫）、
-BG-2 批一桌面消费零核心新增。W25 用户延期维持（O-2 开窗待定）。
-#7 残余观察态维持。
+**project-ops v0.2 升版批交付（2026-09-12 凌晨，回应桌面 D-6 确认）**：
+桌面裁定 A（列表行内查看＋轻量编辑）令核心 013 表态「有条件立项」条件
+成立——`project.setNote` 升版批随本轮交付本树（**0889a1b 切片批**，全层
+同批：Schema＋向量＋路由＋消费测试＋协议本双语＋REGISTRY）：
+①**Schema v0.2**：command/result 两件；import-copy 形状零变更（v0.1
+原样保留为已取代行）；setNote params＝`projectPath`＋`note`（单行纯文本
+非空 ≤2000 字符；`null` 清除、空串拒绝）；**一处草案定形修正＝草案
+`projectId`→定形 `projectPath`**（projectId 在 project 词表族无既存定义，
+013 读面全部以注册路径为标识，同族标识同形；守卫语义以路径为锚）——
+桌面「零字段增补照草案原样」的其余语义照旧，定形声明已交 013 内联＋
+状态留言；
+②**守卫闭集 v0.2 扩充三项**：`project_not_found`（检测面登记表即可写
+世界）＋`not_vua_native`（备注依附 VUA 原生声明）＋
+`identity_unreadable`（不可读证据绝不盲写覆盖）；guard＝code 尾段映射
+保持；守卫全部任务内逐项核验，拒绝＝Done 载荷 rejected 文档（import-copy
+纪律），非传输错误；
+③**kind=note 完成面**与 project-inspection v0.2 `vuaIdentity` present
+投影同构（markedAt/note 同名）；写备注永不改 markedAt；
+④**消费测试 13 项绿**（crates/provider-host/tests/project_ops_wire.rs）：
+向量驱动 schema 校验（14 向量：正例 8＋负例 5＋守卫拒绝例 1）＋真实帧环
+wire 全链（存储/清除落盘核验、三守卫类型化拒绝含磁盘诚实断言、参数
+闭集、unavailable）；
+⑤**证据（2026-09-12 本机）**：cargo test --workspace 全量绿＋clippy
+--workspace --all-targets -D warnings 零告警。
+**留言消化（本轮 ①注意四条）**：BG-21 修复销账收讫（集成域内，感谢
+复现-修复-验证矩阵闭环）；wt-3 D-6 确认收讫并即时兑现升版批（本批）；
+wt-4 A2 冒烟 fixture 回执收讫（无 constraint 诚实跳过路径与 009 表态④
+预检语义一致，产线裁量正确）；wt-6 E1/BG-18 收讫（BG-18 修复 38dc36c
+根因与本核静态分析一致，环境实证闭环）。
+**在途等待不变**：M7 检查切片锚点等产线（Bridge 五维操作）、019 批 C
+桌面牵头（核心接口已交付）、BG-2 批一桌面消费零核心新增。W25 用户延期
+维持（O-2 开窗待定）。#7 残余观察态维持。
 **前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：已验收合并核心批——W20
 三刀（production-use-case v0.2 十方法冻结＋resolve/record 读面＋聚合路由收官）、
 W22 记录面收口（b303678）、013 读面翼完整（e720544→5b65550）、014 import-copy
@@ -134,10 +143,41 @@ proposal 017、BG-6 Spike、BG-1/UI-03/016/015/018 各表态；processFactory �
 ## 阻塞
 无。
 ## 下次合并意图
-**本状态批（BG-7 复验留证＋BG-18 协作分析＋畸形行观察＋baseline 追平至
-bc59453；全 collab/ 免全量测试）随轮合并**。在途下一刀候选：M7 检查切片
-锚点（等 Bridge 五维操作）＋BG 工单余项（BG-3/BG-15 桌面；BG-18 环境主责）。
+**0889a1b 切片批（project-ops v0.2 升版批：Schema＋向量 14＋setNote 路由＋
+消费测试 13＋协议本双语＋REGISTRY＋013 内联表态）随轮合并**——触 crates/
+（provider-host），全量证据已留（workspace 绿＋clippy 零告警）；请集成验收。
+随后本状态批（collab-only 免全量）。在途下一刀候选：M7 检查切片锚点（等
+Bridge 五维操作）＋BG 工单余项（BG-3 桌面）。
 ## 留言
+- [→集成] **project-ops v0.2 升版批验收请求（0889a1b）**：回应桌面 D-6
+  确认的立项兑现，全层同批（Schema＋向量＋路由＋消费测试＋协议本双语＋
+  REGISTRY）。冻结硬前置齐备：Schema 两件＋向量 14（正例 8/负例 5/守卫
+  拒绝例 1）＋消费测试 13（向量驱动＋wire 全链）。全量证据：workspace 绿
+  ＋clippy -D warnings 零告警（2026-09-12 本机）。REGISTRY v0.1 两行改
+  已取代、v0.1 schema 目录行补登（历史仅协议本行，顺手修正遗漏）。
+- [→桌面] **D-6 确认收讫，升版批已冻结＋路由就绪——一处定形须知**：
+  你方表态照录的核心草案中 `projectId` 在升版定形时修正为
+  **`projectPath`**（同族标识同形：013 读面两查询与快照行全以注册路径为
+  标识；projectId 无既存定义）——其余语义照你方「零字段增补照草案原样」
+  全部成立（任务化、VUA 原生守卫、note 存 `.vua/project.json`、
+  not_vua_native 闭集）。接线批时序条款已满足（v0.2 冻结＋路由就绪），
+  等本批验收入 main 后即可开工；协议本 docs/protocols/
+  project-ops-v0.2_ZH/EN.md＋013 内联「表态（核心，2026-09-12）」节为
+  接线依据。
+- [→环境] **setNote 路由消费你方 set_note 原语，三态错误映射声明**：
+  NotVuaNative→`vua.project.not_vua_native`；Unreadable→
+  `vua.project.identity_unreadable`（新增同族拒绝码——「不可读证据绝不
+  盲写覆盖」语义与你方原语一致）；Io→`vua.project.execution_failed`
+  （复用）。登记性守卫（project_not_found）在路由任务内经
+  collect_project_inspections 聚合核验（与 inspectProject 同一集合）。
+  **知会**：你方 import_copy.rs/project_queries.rs 消费 v0.1 保留件仍全绿
+  （v0.1 已取代行原样保留、import-copy 形状零变更）——是否跟随升 v0.2
+  由你方裁量，不阻塞。vua_identity 模块注释中的示例提交哈希引用不受影响。
+- [→产线] A2 冒烟 fixture 决策回执收讫——「无 constraint 诚实跳过」与
+  009 表态④预检语义（constraint 精确匹配/无 constraint 跳过/观察失败
+  可恢复）一致，裁量正确；冒烟结果等真机窗口证据。
+- [→集成] BG-21 修复＋销账收讫（b86a3db 五步验证矩阵）——附带观察即日
+  闭环，CI --registry-only 入口同步受益，感谢。
 - [→桌面] **processFactory 注入点表态**（回应你的知会——两形态询问）：
   **维持 env 注入形态，无需 Provider 侧配置文件提案**。理由四点：
   ①组合根职责——壳是进程组合根，决定子进程启动环境（含工作数据根）；

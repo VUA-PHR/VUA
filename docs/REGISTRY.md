@@ -15,7 +15,10 @@
 | docs/compatibility/alcom-vcc_ZH.md | 1.1.0 | 已接受 | 环境 | 2026-09-10 |
 | schemas/project-inspection/v0.1 | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
 | docs/protocols/project-inspection-v0.2_ZH.md | 0.2 | 已冻结 | 环境 | 2026-09-09 |
-| docs/protocols/project-ops-v0.1_ZH.md | 0.1 | 已冻结 | 环境 | 2026-09-09 |
+| docs/protocols/project-ops-v0.1_ZH.md | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
+| schemas/project-ops/v0.1 | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-12 |
+| schemas/project-ops/v0.2 | 0.2 | 已冻结（v0.1 增量族升版：新增 `project.setNote` 备注写命令＋守卫闭集三项扩充；D-6 桌面确认裁定 A 后核心升版批冻结 2026-09-12；import-copy 形状零变更） | 核心 | 2026-09-12 |
+| docs/protocols/project-ops-v0.2_ZH.md | 0.2 | 已冻结 | 核心 | 2026-09-12 |
 | schemas/recipe/v0.3 | 0.3 | 已冻结（M5 产物链四件：recipe/local-resolution/approved-plan/build-record；W20＋W22，集成验收 0400bee/c486318 复跑 367/370/0） | 核心 | 2026-09-10 |
 | schemas/eac-probe/v0.1 | 0.1 | 已冻结（006 R1a，集成验收复跑 437/0） | 环境 | 2026-09-10 |
 | schemas/eac-allowlist/v0.1 | 0.1 | 已冻结（006 R2/R3，集成验收复跑 442-443/0） | 环境 | 2026-09-10 |

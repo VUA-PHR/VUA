@@ -13,9 +13,9 @@ use vua_unity_bridge::MaterialTaskResult;
 use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
-    collect_project_inspections, plan_import_copy, read_pending_mutation,
+    collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
     ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
-    ProjectInspectionV01, ProjectLockError, ProjectLockGuard, MARKER_FILE_NAME,
+    ProjectInspectionV01, ProjectLockError, ProjectLockGuard, SetNoteError, MARKER_FILE_NAME,
     PROJECT_INSPECTION_SCHEMA_VERSION as PROJECT_INSPECTION_FAMILY_VERSION,
 };
 use vua_bdl_store::download_events::{
@@ -997,6 +997,7 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
         {"operationId": "project.import-copy", "availability": project_ops_availability},
+        {"operationId": "project.setNote", "availability": project_ops_availability},
     ])
 }
 
@@ -1514,9 +1515,12 @@ fn warehouse_set_artifact_mode(
 /// user ruling U7-3).
 const BDL_COMMANDS_SCHEMA_VERSION: &str = "0.4";
 
-/// project-ops v0.1 is the frozen write-command face `project.import-copy`
-/// travels as (proposal 014, arbitrated 2026-09-09).
-const PROJECT_OPS_SCHEMA_VERSION: &str = "0.1";
+/// project-ops v0.2 is the frozen write-command face `project.import-copy`
+/// and `project.setNote` travel as (proposal 014, arbitrated 2026-09-09;
+/// v0.2 adds the setNote note task per the D-6 desktop confirmation,
+/// proposal 013 inline thread). v0.1 stays archived as the superseded
+/// import-copy-only face.
+const PROJECT_OPS_SCHEMA_VERSION: &str = "0.2";
 
 /// `warehouse.setGlobalDefaultMode` (bdl-commands v0.2, U8 ruling): the
 /// synchronous write of the two-level options' GLOBAL level. The global
@@ -3752,9 +3756,10 @@ fn warehouse_import_submit(
     }
 }
 
-/// The `vua.project.*` word list (proposal 013/014): the write face is
-/// `project.import-copy` alone. Absent wiring answers a typed unavailable —
-/// the frozen word list is never silently stubbed.
+/// The `vua.project.*` word list (proposal 013/014; the write face is
+/// `project.import-copy` plus `project.setNote` since project-ops v0.2).
+/// Absent wiring answers a typed unavailable — the frozen word list is
+/// never silently stubbed.
 fn project_request(
     state: &mut HostState,
     method: &str,
@@ -3775,6 +3780,7 @@ fn project_request(
         "project.import-copy" => {
             project_import_copy(project_ops, request, request_id, correlation_id)
         }
+        "project.setNote" => project_set_note(project_ops, request, request_id, correlation_id),
         // The frozen read face (proposal 013). Word-list entries that are
         // not yet wired answer a typed unavailable — the frozen word list
         // is never silently stubbed.
@@ -3959,6 +3965,156 @@ fn project_import_copy(
             "internal",
         )),
     }
+}
+
+/// `project.setNote` (project-ops v0.2, the D-6 desktop confirmation):
+/// sets (or clears, with a null note) the user note of one VUA-native
+/// project inside the nine-state task. Guards are server-side facts
+/// evaluated inside the task and travel as the frozen `rejected` result
+/// document — the task honestly completed and its verdict is the refusal
+/// (the same discipline as import-copy): project_not_found when no
+/// registered manager lists the path (the detection face's registry is
+/// its world — the same set inspectProject answers over), not_vua_native
+/// when no identity file exists (the note presupposes the VUA-native
+/// declaration), identity_unreadable when the identity evidence cannot
+/// be parsed (unreadable evidence is never overwritten by a blind
+/// rewrite), execution_failed on the identity write itself. Only an
+/// unexpected internal failure fails the task.
+fn project_set_note(
+    project_ops: Arc<ProjectOpsServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // Closed param set (frozen project-ops v0.2 command schema).
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    let allowed = ["projectPath", "note"];
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return project_invalid_params(request_id, correlation_id);
+    }
+    let Some(project_path) = params
+        .get("projectPath")
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+    else {
+        return project_invalid_params(request_id, correlation_id);
+    };
+    // null clears; a note is non-empty single-line plain text within the
+    // frozen bound (characters, matching the JSON Schema maxLength).
+    let note: Option<String> = match params.get("note") {
+        Some(Value::Null) => None,
+        Some(Value::String(text))
+            if !text.is_empty()
+                && text.chars().count() <= 2000
+                && !text.contains('\n')
+                && !text.contains('\r') =>
+        {
+            Some(text.clone())
+        }
+        _ => return project_invalid_params(request_id, correlation_id),
+    };
+
+    let runtime = project_ops.runtime.clone();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            // Guard 1 — registration: the detection face's registry is the
+            // setNote world (the same aggregate inspectProject answers over).
+            let snapshot = collect_project_inspections(
+                &project_ops.vcc_settings_candidates,
+                &project_ops.manager_roots,
+                &SystemClock,
+            );
+            let registered = snapshot
+                .projects
+                .iter()
+                .any(|project| project.path == project_path);
+            // Invariant: the result documents below are plain serde shapes
+            // (json object / flat struct) — serialization cannot fail; a
+            // fabricated fallback would be a dishonest result.
+            let result: Value = if !registered {
+                note_rejected(
+                    "project_not_found",
+                    "no registered manager lists this path; the detection registry is the writable world",
+                )
+            } else {
+                match set_note(Path::new(&project_path), note.as_deref()) {
+                    Ok(identity) => serde_json::to_value(NoteStoredV01 {
+                        kind: "note",
+                        project_path: project_path.clone(),
+                        marked_at: identity.marked_at,
+                        note: identity.note,
+                    })
+                    .expect("NoteStoredV01 serialization cannot fail"),
+                    Err(error) => match error {
+                        SetNoteError::NotVuaNative => note_rejected(
+                            "not_vua_native",
+                            "project has no VUA identity file; notes attach to VUA-native projects only",
+                        ),
+                        SetNoteError::Unreadable => note_rejected(
+                            "identity_unreadable",
+                            "VUA identity file is unreadable; resolve it before editing the note",
+                        ),
+                        SetNoteError::Io(io_error) => note_rejected(
+                            "execution_failed",
+                            format!("identity write failed: {io_error}"),
+                        ),
+                    },
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.setNote",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PROJECT_OPS_SCHEMA_VERSION,
+                "operation": "project.setNote",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task authority.
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.store_failed",
+            "errors.project.storeFailed",
+            "internal",
+        )),
+    }
+}
+
+/// The frozen setNote `rejected` result document: guard value = code
+/// suffix (the v0.1 `vua.project.*` mapping kept).
+fn note_rejected(guard: &'static str, detail: impl Into<String>) -> Value {
+    json!({
+        "kind": "rejected",
+        "guard": guard,
+        "code": format!("vua.project.{guard}"),
+        "detail": detail.into(),
+    })
+}
+
+/// The setNote completion face: the stored note state of the VUA-native
+/// identity, projected with the same markedAt/note field names the
+/// project-inspection v0.2 vuaIdentity present face uses.
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct NoteStoredV01 {
+    kind: &'static str,
+    project_path: String,
+    marked_at: String,
+    note: Option<String>,
 }
 
 /// `warehouse.importDownloads` (bdl-commands v0.4, IMP-3): submits one

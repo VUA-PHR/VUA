@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "project.import-copy",
+  "params": {
+    "phase": "apply",
+    "sourcePath": "C:\\Users\\demo\\VRChat Projects\\My Avatar World",
+    "targetParentDirectory": "D:\\VUA Projects",
+    "targetProjectName": "My Avatar World (VUA copy)",
+    "confirmedPlanDigest": "3f7a1c2b9e04d586"
+  }
+}
