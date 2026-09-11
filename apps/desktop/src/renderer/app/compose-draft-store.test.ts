@@ -20,24 +20,30 @@ const item = (id: string) => ({
   nameHint: null,
 });
 const itemWithHint = (id: string, hint: string | null) => ({ ...item(id), nameHint: hint });
+/** 固定时钟(BG-18 确定性):纯函数同输入恒同输出 */
+const T0 = "2026-09-12T02:00:00.000Z";
+const T1 = "2026-09-12T03:00:00.000Z";
 
-test("composeAddItem: 加入素材并压撤销栈;同身份幂等", () => {
-  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"));
+test("composeAddItem: 加入素材并压撤销栈;同身份幂等;addedAt=注入时钟", () => {
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
   expect(s1.items).toHaveLength(1);
+  expect(s1.items[0]?.addedAt).toBe(T0);
   expect(s1.dirty).toBe(true);
   expect(s1.undoStack).toHaveLength(1);
   // 幂等:同素材重复加入无操作、无栈增长
-  const s2 = composeAddItem(s1, item("wh-1"));
+  const s2 = composeAddItem(s1, item("wh-1"), T1);
   expect(s2.items).toHaveLength(1);
   expect(s2.undoStack).toHaveLength(1);
   // 不同素材正常加入
-  const s3 = composeAddItem(s1, item("wh-2"));
+  const s3 = composeAddItem(s1, item("wh-2"), T1);
   expect(s3.items).toHaveLength(2);
   expect(s3.undoStack).toHaveLength(2);
+  // 确定性(BG-18):同输入恒同输出
+  expect(composeAddItem(emptyComposeDraft, item("wh-1"), T0)).toEqual(s1);
 });
 
 test("composeRemoveItem: 按身份移除并压栈;未知身份无操作", () => {
-  const s1 = composeAddItem(composeAddItem(emptyComposeDraft, item("wh-1")), item("wh-2"));
+  const s1 = composeAddItem(composeAddItem(emptyComposeDraft, item("wh-1"), T0), item("wh-2"), T1);
   const s2 = composeRemoveItem(s1, "wh-1");
   expect(s2.items.map((i) => i.warehouseItemId)).toEqual(["wh-2"]);
   // 栈深度=历史编辑次数(两次加入＋一次移除)
@@ -48,8 +54,8 @@ test("composeRemoveItem: 按身份移除并压栈;未知身份无操作", () => 
 
 test("composeUndo: 回退上一本地编辑;空栈无操作", () => {
   expect(composeUndo(emptyComposeDraft)).toBe(emptyComposeDraft);
-  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"));
-  const s2 = composeAddItem(s1, item("wh-2"));
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
+  const s2 = composeAddItem(s1, item("wh-2"), T1);
   const undone = composeUndo(s2);
   expect(undone.items).toHaveLength(1);
   const undoneTwice = composeUndo(undone);
@@ -57,8 +63,22 @@ test("composeUndo: 回退上一本地编辑;空栈无操作", () => {
   expect(undoneTwice.undoStack).toHaveLength(0);
 });
 
+test("composeUndo: 回到空草稿的 dirty 语义(BG-18)——从未保存=false,已保存=true", () => {
+  // 从未保存:回空草稿 = 无未保存差异
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
+  const undoneToEmpty = composeUndo(s1);
+  expect(undoneToEmpty.items).toHaveLength(0);
+  expect(undoneToEmpty.dirty).toBe(false);
+  // 已保存:回空草稿 = 内容偏离已保存文档,仍是未保存差异
+  const saved = composeSaved(s1, "recipe-1", 1);
+  const grown = composeAddItem(saved, item("wh-2"), T1);
+  const undone = composeUndo(grown);
+  expect(undone.dirty).toBe(true);
+  expect(undone.saved).toEqual({ recipeId: "recipe-1", revision: 1 });
+});
+
 test("composeSaved: 保存对齐清除脏标记(saved 身份入状态)", () => {
-  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"));
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
   expect(s1.dirty).toBe(true);
   const saved = composeSaved(s1, "recipe-1", 7);
   expect(saved.dirty).toBe(false);

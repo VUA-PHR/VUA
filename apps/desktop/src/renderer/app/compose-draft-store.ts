@@ -68,7 +68,8 @@ export function useComposeDraft(): ComposeDraftState {
 export function composeAddItemAction(
   item: Omit<ComposeDraftItem, "addedAt">,
 ): void {
-  apply(composeAddItem(draftSignal.get(), item));
+  // 时钟注入(BG-18):真实时钟只在命令边界取用,纯函数保持确定
+  apply(composeAddItem(draftSignal.get(), item, new Date().toISOString()));
 }
 
 export function composeRemoveItemAction(warehouseItemId: string): void {
@@ -173,16 +174,18 @@ export function composeDraftToSaveDocument(
   };
 }
 
-/** 加入素材(身份幂等:同素材重复加入为无操作) */
+/** 加入素材(身份幂等:同素材重复加入为无操作)。时钟注入(BG-18):now
+ *  必填——纯函数确定化,真实时钟由 action 层(命令边界)取用 */
 export function composeAddItem(
   state: ComposeDraftState,
   item: Omit<ComposeDraftItem, "addedAt">,
+  now: string,
 ): ComposeDraftState {
   if (state.items.some((existing) => existing.warehouseItemId === item.warehouseItemId)) {
     return state;
   }
   return {
-    items: [...state.items, { ...item, addedAt: new Date().toISOString() }],
+    items: [...state.items, { ...item, addedAt: now }],
     undoStack: [...state.undoStack.slice(-49), state.items],
     dirty: true,
     saved: state.saved,
@@ -202,14 +205,16 @@ export function composeRemoveItem(state: ComposeDraftState, warehouseItemId: str
   };
 }
 
-/** 撤销:回退到上一本地编辑前状态;空栈 = 无操作 */
+/** 撤销:回退到上一本地编辑前状态;空栈 = 无操作。dirty 语义(BG-18):
+ *  回到空草稿且从未保存 = 无未保存差异(dirty:false);已保存后回空 =
+ *  内容偏离已保存文档(dirty:true) */
 export function composeUndo(state: ComposeDraftState): ComposeDraftState {
   const previous = state.undoStack[state.undoStack.length - 1];
   if (previous === undefined) return state;
   return {
     items: previous,
     undoStack: state.undoStack.slice(0, -1),
-    dirty: true,
+    dirty: previous.length > 0 || state.saved !== null,
     saved: state.saved,
   };
 }
