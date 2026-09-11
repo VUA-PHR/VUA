@@ -132,7 +132,9 @@ production-use-case v0.2 冻结＋W22 实现进行中＋013/014 接线完成。
   | BG-8 | **REGISTRY 漏登记补齐＋漏检结构性修复**：(a) `schemas/recipe/v0.3` 四件套与 `schemas/eac-probe/eac-allowlist/eac-terminate` v0.1 按实际冻结状态入册；(b) brief ④ 新增"漏登记检测"——扫描 `schemas/*/`、`docs/protocols/*.md` 中未登记项并列出 | 数据 | `docs/REGISTRY.md` ＋ `scripts/collab-brief.mjs` | ④ 显示漏登记 0 项；能演示检出一个人造漏登记（还原后） ——**✅ 已由操作者修复令交付（集成，0b8bebb）：6 族补登（recipe v0.3/eac 三族/amf-production v0.2/environment-managers v0.1）＋反向漏登记检测（spike/草案豁免），46/46 一致；人造漏登记检出演示（exit 1 并打印缺失行）** |
   | BG-9 | **schema-vectors CI 清单扩展**：workflow 清单停在 v0.3 时代，本窗口全部新契约锚点未入 | 集成（自领） | `.github/workflows/schema-vectors.yml` | 清单覆盖全部现行契约测试文件（inspection_evidence_vectors、downloads_list_serving、import_*_contract_v0*、recipe_v03、project_inspection、eac_*、project_ops_wire、catalog_queries 等）；推送后徽章语义恢复 ——**✅ 已由操作者修复令交付（集成，eeb42c6）：清单扩展至全部现行契约锚点（含 inspection_evidence_vectors 草案漂移保护，注明不暗示冻结）；目标名逐一核对存在** |
   | BG-10 | **overlay_surface 排序与吞错修复**："oldest first" 声明与实现不符（按 task_id 哈希字典序，demo-* 恒排 prod-* 前）；`tasks().unwrap_or_default()` 把存储故障折叠为空态 | 核心 | `crates/orchestrator/src/overlay_surface.rs` 修复＋测试 | 排序按真实时序（或改声明并给出理由）；存储故障呈故障态而非空态；新测试钉住两者；proposal 017 表述对齐——**✅ 已由操作者修复令交付（核心，30da5b6/87ae6a9：入队顺序恢复与声明一致＋存储故障穿透为故障态＋乱序回归测试钉死＋unwrap_or 审计清零；66/66 绿）** |
-  | BG-11 | **EAC 安全面收紧**：`terminate_open_and_wait_for_test` 等测试钩子以 `pub` 暴露在 crate 根（绕过 R3 安全闸）；`eac_terminate.rs` 默认 cargo test 真杀进程 | 环境 | `crates/project-manager` 修复 | 钩子收 feature 门或 `#[cfg(test)]`；eac_terminate 用例标 `#[ignore]`（与探针/白名单同策略）；默认构建不导出绕过原语；默认 cargo test 不触真实进程——**✅ 部分交付（环境，156640b/b75447e：verify-hook 门对齐 windows conjunction 语义已验收；其余收紧项随环境后续批）** |
+  | BG-11 | **EAC 安全面收紧**：`terminate_open_and_wait_for_test` 等测试钩子以 `pub` 暴露在 crate 根（绕过 R3 安全闸）；`eac_terminate.rs` 默认 cargo test 真杀进程 | 环境 | `crates/project-manager` 修复 | 钩子收 feature 门或 `#[cfg(test)]`；eac_terminate 用例标 `#[ignore]`（与探针/白名单同策略）；默认构建不导出绕过原语；默认 cargo test 不触真实进程——**✅ 全额交付销账（环境 156640b/b75447e＋dc6aa93/93d8c6a；集成实文核验 2026-09-12：lib.rs:28/39 cfg(all(windows, any(test, feature="test-hooks"))) 双门＋eac_terminate 真机件 #[ignore]＋默认构建不导出＋wt-6 全范围验证四条全过〔project-manager 13 套件复跑绿，含集成 67/495 三轮〕；环境侧声明无剩余收紧项）** |
+  | BG-18 | **CI 环境敏感失败修复**：`the_five_guards_refuse_typecally`（`crates/project-manager/tests/import_copy.rs:305`）在 GitHub Windows runner 的 `cargo test` 失败——`TargetInsideSource` 守卫对 runner 路径形态未拒绝（`plan_import_copy` 返回 Ok）；**本机同 Windows、同 rustc 1.97.1 三轮全绿**，代码自 014 世代未变。上轮推送（12a6a45 世代）rust 34630656044＋schema-vectors 34630656005 双红同根 | 环境（project-manager 所有权；协作核心如守卫语义涉 014 冻结件） | 复现 runner 路径形态（`runneradmin` TEMP/8.3 短名/盘符大小写/`\\?\` canonicalize 前缀逐一排查）→ 守卫路径规范化修复＋回归测试钉死 | CI rust 与 schema-vectors run 全绿；本机保持绿；**禁止以跳过/忽略该测试方式过关**（诚实纪律）；守卫语义不放宽（014 冻结拒绝码闭集不变） |
+  | BG-19 | **unity-bridge clippy lint 观察核实**（wt-5 登记，未复现）：wt-5 本机 rustc 1.97.1 对 `crates/unity-bridge/src/material_task.rs:94` 报 `unnecessary_lazy_evaluations`（`unwrap_or_else` 闭包返回常量 `Value::Null`，建议 `unwrap_or`；该行自 843e2fb 即在）；集成同版本全量＋单包 clippy `-D warnings` 均 EXIT=0 未复现；CI clippy step 因 test 失败（BG-18）未执行到 | 产线（unity-bridge 所有权） | 在可复现环境确认后一行改写（不改语义）或证伪并记录分歧来源 | CI clippy 实际运行事实（随 BG-18 修复后的首个 rust run 判定）；证伪则记录工具链分歧结论后销账 |
   | BG-12 | **序列化吞错惯例清理**：`provider_host.rs:3388` `to_value().unwrap_or_else(|_| json!([]))`、`warehouse_download_adopt.rs:392` 等 `unwrap_or(Value::Null)`；`adopt` 任务 `.expect` panic 路径 | 数据（协作核心） | 逐处改类型化错误或 `expect` 附不变量说明 | 相关测试绿；无新增吞错点；每处修改附一行不变量/理由注释——**✅ 全额交付（数据侧 43ea8d2/b75447e＋核心半边 91d9c3e/bc93d98：provider_host 八处序列化吞错改 expect 附不变量注释，虚假 rejected 文档伪造消除；66/66 绿）** |
   | BG-13 | **提案状态字段卫生**：009（已收口仍"讨论中"）、015（已仲裁已驱动 0.7.0 仍"草案待表决"）、011/012（已按冻结件验收仍"收敛"）头部状态与实际对齐 | 集成（自领） | `collab/proposals/` 头部修正 | 四份提案状态字段与 BOARD 记录一致 ——**✅ 已交付（集成，随脱敏批提交）：009/011/012/015 头部状态对齐（原注记保留）** |
   | BG-14 | **check-leak 注释对齐**：`App.tsx`/`dev-mode-section.tsx` 声称"指纹覆盖 per-port 选择键"，而 `check-leak.mjs:75-78` 实际排除该键 | 桌面 | 注释或装置二选一（自决并记录理由） | 注释与装置一致；check 全链绿——**✅ 已由操作者修复令交付（桌面，53a1bc2/28d0c59：过量声明修正为与 check-leak.mjs 排除一致，理由记录；56/449 绿）** |
@@ -305,6 +307,32 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-12（02:5x 工作时段）**：`12a6a45 → ff2f2c4`——**9 提交**上 origin
+  （实质仅 ce91403 桌面 UX 四缺口批〔5809d37 验收合并〕；其余 8 提交为
+  collab/ 簿记，含 wt-5/wt-6 状态批随推——wt-6 合并批由该树在本主库并发
+  执行〔collab-only 免测惯例〕，推送时随本门一并上行）。
+  - **门证据（集成单轮增量复审）**：`collab/reviews/2026-09-12-push-review-
+    integration_ZH.md`——**形态声明：本轮为集成单轮核查，非 r1b/r2b/r3b
+    式三独立 Reviewer 面板**；客观项覆盖同构：增量 diff 逐块审（Cookie
+    持久化有界 180 天/清单内/本机分区/不循环；环境注入清洗后补三根、凭据
+    仍剥离；IPC 守卫齐；契约 additive）＋forest 零泄漏硬门（指纹全项对
+    1061 被跟踪文件零命中）＋敏感信息扫描零阻断＋registry 46/46 两轮
+    exit 0＋cargo 67/495/0 三轮一致＋clippy -D warnings 零告警＋桌面 check
+    EXIT=0（58/463＋leak 159 零命中）。L 级观察 2 项不阻断（r*b 报告内
+    路径字样属审阅记录文本；.zcode/agents 消毒评估维持挂起）。
+  - **CI 事实（诚实补记）**：本轮推送触发 ts **34634138971 ✅**（4m41s）；
+    rust/schema-vectors 因 paths 过滤未触发——但其 **12a6a45 世代 run 双红
+    未消**：rust 34630656044 ✗＋schema-vectors 34630656005 ✗，同根失败＝
+    `the_five_guards_refuse_typecally`（import_copy.rs:305 `TargetInsideSource`
+    守卫在 CI runner 未拒绝；本机三轮绿；本轮增量未触碰该 crate）→
+    **BG-18**。**流程更正（如实）**：上轮推送记录的「门证据 3/3＋本机全绿」
+    未含 CI 结果回读维度（run 在推送后才出）；自本批起推送门包含「推送后
+    CI 回读＋红态登记」步骤。
+  - **BG-11 全额销账**（wt-6 全范围验证 0dc00cb＋集成实文核验，见工单表）；
+    wt-5 lint 观察登记为 **BG-19**（未复现，随 BG-18 修复后的首个 rust run
+    取 CI clippy 事实）。
+  - 同窗备注：ff2f2c4 合并提交信息宣称「collab only, tests waived」经本门
+    核验属实（07c31c5..ff2f2c4 零非 collab 文件）。
 - **2026-09-12（01:20–01:35 工作时段）**：`7da1b5f → 12a6a45`——**353 提交**
   上 origin（自 09-09 起积压清零；推送后 ahead 0/behind 0）。
   - **门证据（3/3 全过）**：增量复审 `collab/reviews/2026-09-12-push-review-r1b/r2b/r3b_ZH.md`
