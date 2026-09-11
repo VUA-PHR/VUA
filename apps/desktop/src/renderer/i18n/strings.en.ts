@@ -1470,7 +1470,7 @@ demoTaskTitle: "Demo task",
     migration: {
       summaries: {
         vpmProject:
-          "This project looks managed by VCC / vpm. VUA can adopt its package list without touching any files.",
+          "This project appears to be managed by other software. Adopting it may have unknown consequences.",
       },
       note: "Migration runs once the package engine is connected; nothing changes automatically.",
     },
