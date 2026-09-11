@@ -341,6 +341,23 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-12（07:5x，第 7 代推送门）**：`27418e9 → 29b6f03`（7 提交：
+  wt-2 #22 兑现批 d02bd09＋三合并 0866908/fa87b8d/9186785＋簿记 29b6f03
+  及 slot collab 件）。
+  - **门证据（3/3）**：r1＝d02bd09 全文核（schema 冻结件 if/then 不变量
+    ／六向量 3 正 3 负／provider_host 35 行／TS 面／协议双语修订／
+    REGISTRY 行／proposal 020）＋两 collab 状态批；r2＝18 文件 +999/−132
+    增量机械核验（零色值/CSS 变量；CJK 新增均文档类）；r3＝cargo
+    **68 套件/505 通过/0 失败**（隔离 CARGO_TARGET_DIR、pipefail 真实
+    退出码）＋clippy -D warnings 零告警＋@vua/contracts **38/38**＋
+    registry **50/50**（application-contract 新行核验）；桌面零变更免跑
+    如实声明。
+  - **CI 回读（29b6f03 世代四绿）**：rust 34656656801（5m55s）＋ts
+    34656656755（3m51s）＋schema-vectors 34656656811（4m32s）＋
+    collab-registry 34656656853（20s，REGISTRY/proposal 变更触发）。
+  - **#22 链**：冻结达成＋核心填充落地，余桌面消费批（保持开放至消费
+    批验收）。
+
 - **2026-09-12（06:5x–07:1x，第 6 代推送门）**：`92dea7f → d8efbe3`（9 提交
   ／10 文件：wt-3 B5② 文案批 9710c18、wt-6 v0.2 引用跟随 c24355e、wt-4
   状态批 f534b78、三验收合并 219f3e3/33f9060/fa86bb0＋簿记 d8efbe3）。
