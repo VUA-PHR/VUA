@@ -134,7 +134,9 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
         });
       });
     },
-    // 检测执行命令属 F6/B6;能力不可用时入口不出现,此处只返回当前快照
+    // 检测执行命令属 F6/B6;能力不可用时入口不出现。live 数据源=真实检测
+    // 快照(E3 切片):runCheck=触发刷新(重取快照;C-ENV 状态机语义保留,
+    // 只换数据源——fixture 的模拟 running→results 迁移不在 live 复制)
     runCheck: () =>
       fetchView().catch(() => ({
         schemaVersion: 1,
