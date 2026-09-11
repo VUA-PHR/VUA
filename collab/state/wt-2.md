@@ -2,11 +2,22 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: f55b186
+baseline_commit: 664135e
 updated: 2026-09-10
 ---
 ## 当前焦点
-**BG-16 接线刀已交付（2026-09-11 凌晨，环境接线请求兑现）——
+**E1 快照形状核对已交付（2026-09-11 夜，夜间任务分配核心切片）——
+无缺失检测项，一项辖区归属差异列清单交环境**：引擎 17 检测项全清单
+（Play 12＋Create 5）对照 deployer 两辖区所需 10 项全部覆盖（steam/
+steamvr/vrchat/network/gpu 在 Play；unity_hub/unity_editors/vpm_cli/vcc/
+disk_space 在 Create）；**唯一差异＝disk_space 归属 Create 区**（play
+辖区若按 zone 过滤消费则不含 disk——桌面 E3 已按 checkId 全局查找无
+影响）；**快照形状覆盖确认**（EnvironmentCheckItemV01 id/zone/presence/
+errorCode/facts 对在场事实需要全覆盖，NotDetected 与 DetectionFailed
+两态分立＝坑 6 一致）。缺口清单交环境 E2 核对辖区映射（本核无异议，不
+动冻结面、无需升版）。**BG-12 核心半边待集成验收（91d9c3e）**。#7 残余
+观察态维持。
+**前情：BG-16 接线刀已交付（2026-09-11 凌晨，环境接线请求兑现）——
 environment.getSnapshot 消费真实检测引擎**：处理器不再返回硬编码空
 items——有 environment 配置时 `EnvironmentEngine::inspect_all()` 原样
 输出（items 即冻结检查词表 EnvironmentCheckItemV01 serde 形状
@@ -362,6 +373,20 @@ collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合�
 015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→环境][→集成] **E1 快照形状核对交付（夜间任务分配核心切片）**：
+  `environment.getSnapshot`（已接线 inspect_all）对 deployer 两辖区所需
+  项覆盖核对完成——**引擎 17 检测项（Play 12：steam/vrchat/steamvr/
+  openxr_runtime/oculus_runtime/pico_runtime/vive_runtime/virtual_desktop/
+  alvr/network/windows/gpu；Create 5：unity_hub/unity_editors/vpm_cli/
+  vcc/disk_space）对所需 10 项（play=steam/steamvr/vrchat/network/disk/
+  gpu；create=unity_hub/unity_editors/vpm_cli/vcc/disk）全部覆盖，无缺失
+  检测项**。唯一差异＝**disk_space 归属 Create 区**（不在 Play 子集）——
+  桌面 E3（已验收）按 checkId 全局查找消费，无影响；若 deployer play
+  辖区需 zone 过滤取 disk，归属调整归 E2 辖区映射核对（核心无异议，
+  快照形状冻结面不动、无需升版）。快照形状覆盖确认：EnvironmentCheckItem
+  V01（id/zone/presence/errorCode/facts）对在场事实需要全覆盖，
+  NotDetected/DetectionFailed 两态分立与坑 6（empty/failed 不折叠）一致。
+  E1 验收标准（缺口清单入状态文件）已满足。
 - [→集成][→环境] **BG-16 接线刀交付**（环境接线请求兑现）：
   environment.getSnapshot 消费 `EnvironmentEngine::inspect_all()` 原样
   （零新增协议面——EnvironmentSnapshotV1 serde camelCase 即词表）；
