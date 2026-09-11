@@ -224,7 +224,23 @@ function registryCheck() {
   for (const l of rows.slice(headIdx + 1)) {
     const c = cells(l);
     const need = Math.max(col.p, col.v, col.s);
-    if (c.length <= need || c.every((x) => /^:?-{2,}:?$/.test(x))) continue; // 残行/分隔行
+    if (c.length > 0 && c.every((x) => /^:?-{2,}:?$/.test(x))) continue; // 分隔行
+    // 表格数据行必以「|」开头；正文行/空行不参与登记表校验。
+    if (!l.trim().startsWith('|')) continue;
+    // BG-21：表格行结构校验。旧逻辑把列数不足的行静默 continue——截断行被整行
+    // 吞掉（行计数漂移无检测、坏行绕过版本/状态校验，畸形负例曾报「45/45 全一致
+    // exit 0」）。列数不足或必填格（路径/版本/状态）为空都计异常，不再静默。
+    if (c.length <= need) {
+      total += 1;
+      bad.push(`✗ REGISTRY 畸形行（列数 ${c.length}，需 ≥${need + 1}）：${l.trim().slice(0, 80)}`);
+      continue;
+    }
+    const emptyRequired = [col.p, col.v, col.s].filter((i) => !c[i]).length;
+    if (emptyRequired > 0) {
+      total += 1;
+      bad.push(`✗ REGISTRY 畸形行（必填格空 ${emptyRequired} 处）：${l.trim().slice(0, 80)}`);
+      continue;
+    }
     const regPath0 = c[col.p].replace(/^\[([^\]]+)\]\(([^)]+)\)$/, '$2').replace(/^`|`$/g, '');
     const regVer = c[col.v];
     const regStatus = c[col.s];
