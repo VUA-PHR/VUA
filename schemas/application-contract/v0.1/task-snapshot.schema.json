@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/application-contract/v0.1/task-snapshot.schema.json",
+  "title": "VUA application-contract task snapshot v0.1",
+  "description": "Authoritative task snapshot shape for the application-contract v0.1 task face (task.get / task.list values and the task object embedded in task.startDemo responses). This machine-readable face freezes the snapshot increment registered by the BOARD #22 result-reflux ruling (core proposal 020, 2026-09-12): an OPTIONAL result field carries the task's Done payload on the snapshot channel with the same value the task.completed event publishes — both project the single stored task result, so the snapshot and event channels can never disagree. Invariants frozen here: (1) result appears only on succeeded / succeeded_with_warnings snapshots — failed and cancelled snapshots never carry a result (the failure fact travels the error field), and non-terminal snapshots never carry one; (2) result is an object — a null result is an honest absence and is projected as field-absent, never as null; (3) the snapshot face makes no structural promise about the payload's internal shape — the shape is owned by the word list of the operation that produced the task (project-ops payloads self-describe via schemaVersion/operation; production-family payloads follow the production-use-case word list), so this face and the operation word lists evolve independently. The field is additive and backward compatible: every snapshot valid before the increment remains valid.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "taskId",
+    "revision",
+    "correlationId",
+    "state",
+    "cancellationRequested",
+    "recoveryDisposition",
+    "updatedAt"
+  ],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "taskId": { "type": "string", "minLength": 1 },
+    "revision": { "type": "integer", "minimum": 1 },
+    "correlationId": { "type": "string", "minLength": 1 },
+    "state": {
+      "enum": [
+        "queued",
+        "preparing",
+        "running",
+        "waiting_for_input",
+        "paused",
+        "succeeded",
+        "succeeded_with_warnings",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "cancellationRequested": { "type": "boolean" },
+    "recoveryDisposition": { "enum": ["none", "inspect_required"] },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "error": {
+      "type": "object",
+      "description": "Structured failure fact (AppErrorV01); present only where the runtime recorded one.",
+      "required": ["code", "category", "messageKey", "correlationId", "recoverable", "retryable"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "messageKey": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string" },
+        "recoverable": { "type": "boolean" },
+        "retryable": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "result": {
+      "type": "object",
+      "description": "The task's Done payload, verbatim; shape owned by the producing operation's word list. Only succeeded / succeeded_with_warnings snapshots may carry it.",
+      "propertyNames": { "type": "string", "minLength": 1 }
+    }
+  },
+  "allOf": [
+    {
+      "$comment": "Frozen invariant: a result reflux requires an honestly completed task. failed/cancelled snapshots carry the failure face (error), never a result; non-terminal snapshots carry neither.",
+      "if": {
+        "properties": {
+          "state": {
+            "enum": [
+              "queued",
+              "preparing",
+              "running",
+              "waiting_for_input",
+              "paused",
+              "failed",
+              "cancelled"
+            ]
+          }
+        },
+        "required": ["state"]
+      },
+      "then": {
+        "not": { "required": ["result"] }
+      }
+    },
+    {
+      "$comment": "Frozen invariant: failed tasks surface the failure fact through the error field.",
+      "if": {
+        "properties": { "state": { "const": "failed" } },
+        "required": ["state"]
+      },
+      "then": { "required": ["error"] }
+    }
+  ]
+}

@@ -78,6 +78,17 @@
 最后真实状态并标为 `inspect_required`——它不表示仍在执行，必须先重新 Inspect 外部项目，
 再由恢复用例决定继续或回滚。
 
+任务正常完成（`succeeded` / `succeeded_with_warnings`）时，快照携带可选 `result` 字段：
+任务实际交回的 Done payload **原样**，与 `task.completed` 事件的 `payload` 同源同值（两者
+投影同一份任务存储结果，快照与事件两个通道永不相互矛盾）。冻结不变量：`failed` /
+`cancelled` / 非终态 / `inspect_required` 快照**恒不带** `result`（失败事实走 `error`
+字段）；`result` 恒为对象，null 结果按字段缺席投影，绝不投影为 `null` 值。快照面对
+`result` 内部形状零承诺——形状由产出该任务的操作词表定义并随其演进（`project-ops` 族
+载荷自描述 `schemaVersion`/`operation`；production 族载荷形状归生产用例词表），因此本面
+与各操作词表演进解耦。该字段为向后兼容增量（2026-09-12，BOARD #22 result 回流裁决、
+提案 020）；机器可读面与正负例向量见
+`schemas/application-contract/v0.1/`。
+
 `task.requestCancellation` 绑定 `taskId` 与 `commandId`，可携带用户点击时看到的
 `observedRevision`（仅用于诊断；正常进度造成的 revision 变化不拒绝取消）。响应区分
 `requested` / `already_requested` / `already_terminal`。请求取消不等于已经取消：只有任务
@@ -145,3 +156,10 @@ Provider 的具体托管形态、握手封帧、崩溃监督与进程树策略�
   状态、五项交付证据）后提升为稳定 Gateway v1；`production.*` 面仍为 B3/F3 候选草案。
 - 2026-09-04：登记生产用例面（B3/F3 候选草案）。`production.*` 七方法，生命周期、双素材
   入口与值语义见[生产用例契约 v0.1](production-use-case-v0.1_ZH.md)。
+- 2026-09-12：任务快照 `result` 回流增量（BOARD #22 归因裁决采纳方案①；提案 020）。
+  任务快照新增**可选** `result` 字段：任务正常完成时在快照通道回流 Done payload 原样，
+  与 `task.completed` 事件 payload 同源同值；失败/取消/非终态快照恒不带。向后兼容增量：
+  冻结快照形状、不变量与正负例向量（`schemas/application-contract/v0.1/`，六向量）由
+  核心随批冻结；`task.get`/`task.list` 投影消费测试与演示任务取消负例随批（provider-host
+  `task_snapshot_wire`）。背景：import-copy 渲染层窄化期望结果文档而 live wire 只见受理
+  回执——结果文档无通道到渲染层（跨批衔接缺口，F6 live 诚实降级）。

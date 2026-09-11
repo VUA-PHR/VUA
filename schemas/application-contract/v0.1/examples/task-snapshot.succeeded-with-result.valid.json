@@ -1,0 +1,20 @@
+{
+  "contractVersion": "0.1",
+  "taskId": "proj-20260912-a1b2c3",
+  "revision": 4,
+  "correlationId": "corr-import-1",
+  "state": "succeeded",
+  "cancellationRequested": false,
+  "recoveryDisposition": "none",
+  "updatedAt": "2026-09-12T05:30:00Z",
+  "result": {
+    "schemaVersion": "0.2",
+    "operation": "project.import-copy",
+    "result": {
+      "kind": "receipt",
+      "sourcePath": "C:/Vault/Outfits/SyntheticOutfitB",
+      "copiedEntries": ["Assets", "Packages"],
+      "planDigest": "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08"
+    }
+  }
+}

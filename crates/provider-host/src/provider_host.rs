@@ -1109,10 +1109,14 @@ fn advance_demo_tasks(
         };
         let Some(target) = target else { continue };
         let mutation = if target.is_terminal() {
+            // A cancelled demo task hands back no result document (BOARD #22
+            // frozen invariant: cancelled snapshots never carry a result —
+            // the pre-reflux Some({"demo":true}) here was dead data from the
+            // era when result had no read face).
             TaskMutation::Complete {
                 state: target,
                 error: None,
-                result: Some(json!({"demo": true})),
+                result: None,
             }
         } else {
             TaskMutation::Transition {
@@ -1227,6 +1231,35 @@ fn task_snapshot(state: &HostState, task: &StoredTask) -> Value {
                 "error".into(),
                 serde_json::to_value(error).expect("error serializes"),
             );
+    }
+    // Result reflux (BOARD #22): the task face carries the Done payload on
+    // the snapshot channel with the same value the task.completed event
+    // publishes (both project the single StoredTask.result). The frozen
+    // invariant is state-scoped: only an honestly completed task refluxes a
+    // result — failed/cancelled/non-terminal snapshots never carry one (the
+    // failure fact travels the error field, the completed-event payload is
+    // the serialized error on that face), and a null result is an honest
+    // absence, not a value (BG-12 absence-projection precedent). This also
+    // covers recovery-observation payloads persisted on failed tasks
+    // (job.execute rollback receipts): they stay storage-face facts for the
+    // recovery flow, which reads the store directly, and never surface as a
+    // snapshot "result". The payload's internal shape is owned by the word
+    // list of the operation that produced it (project-ops payloads
+    // self-describe via schemaVersion/operation); the snapshot face makes no
+    // structural promise.
+    let completed = matches!(
+        task.state,
+        TaskState::Succeeded | TaskState::SucceededWithWarnings
+    );
+    if completed {
+        if let Some(result) = &task.result {
+            if !result.is_null() {
+                snapshot
+                    .as_object_mut()
+                    .expect("snapshot is an object")
+                    .insert("result".into(), result.clone());
+            }
+        }
     }
     snapshot
 }

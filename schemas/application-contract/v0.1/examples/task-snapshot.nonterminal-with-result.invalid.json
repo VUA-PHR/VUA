@@ -1,0 +1,15 @@
+{
+  "contractVersion": "0.1",
+  "taskId": "task-bad-3",
+  "revision": 1,
+  "correlationId": "corr-bad-3",
+  "state": "running",
+  "cancellationRequested": false,
+  "recoveryDisposition": "none",
+  "updatedAt": "2026-09-12T05:35:00Z",
+  "result": {
+    "schemaVersion": "0.2",
+    "operation": "project.import-copy",
+    "result": { "kind": "plan" }
+  }
+}

@@ -89,6 +89,19 @@ by a process restart keeps its last real state and is marked `inspect_required` 
 is still executing. Inspect the external project again first, then let the recovery use case decide
 whether to continue or roll back.
 
+When a task completes normally (`succeeded` / `succeeded_with_warnings`), the snapshot carries an
+optional `result` field: the Done payload the task actually handed back, **verbatim**, with the same
+value the `task.completed` event publishes (both project the single stored task result, so the snapshot
+and event channels can never disagree). Frozen invariants: `failed` / `cancelled` / non-terminal /
+`inspect_required` snapshots **never** carry a `result` (the failure fact travels the `error` field);
+`result` is always an object — a null result is projected as field-absent, never as a `null` value.
+The snapshot face makes no structural promise about the payload's internal shape — the shape is owned
+by the word list of the operation that produced the task (`project-ops` payloads self-describe via
+`schemaVersion`/`operation`; production-family payloads follow the production use-case word list), so
+this face and the operation word lists evolve independently. The field is a backward-compatible,
+additive increment (2026-09-12, BOARD #22 result-reflux ruling, proposal 020); the machine-readable
+face and positive/negative vectors live in `schemas/application-contract/v0.1/`.
+
 `task.requestCancellation` binds `taskId` and `commandId` and may carry the `observedRevision` the user
 saw when clicking (diagnostic only; normal progress that changed the revision does not reject the
 cancellation). The response distinguishes `requested` / `already_requested` / `already_terminal`.
@@ -170,3 +183,13 @@ caches, display, and diagnostics always reference the original contract values.
 - 2026-09-04: Registered the production use-case surface (B3/F3 candidate draft). The seven
   `production.*` methods; lifecycle, dual material intake, and value semantics live in the
   [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md).
+- 2026-09-12: Task-snapshot `result` reflux increment (BOARD #22 attribution ruling, option 1
+  adopted; proposal 020). The task snapshot gains an **optional** `result` field: on normal completion
+  the snapshot channel refluxes the Done payload verbatim, same-source and same-value as the
+  `task.completed` event payload; failed / cancelled / non-terminal snapshots never carry it.
+  Backward-compatible increment: the frozen snapshot shape, invariants, and the six positive/negative
+  vectors (`schemas/application-contract/v0.1/`) are frozen by Core with this batch; the
+  `task.get`/`task.list` projection consumer tests and the demo-task cancellation negative ride the
+  same batch (provider-host `task_snapshot_wire`). Background: the import-copy renderer narrowed
+  result-document shapes while the live wire only ever showed the task acceptance receipt — the result
+  document had no channel to the renderer (a cross-batch seam; F6 live degrades honestly).

@@ -2,44 +2,45 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: e5610bc
+baseline_commit: fa86bb0
 updated: 2026-09-12
 ---
 ## 当前焦点
-**project-ops v0.2 升版批交付（2026-09-12 凌晨，回应桌面 D-6 确认）**：
-桌面裁定 A（列表行内查看＋轻量编辑）令核心 013 表态「有条件立项」条件
-成立——`project.setNote` 升版批随本轮交付本树（**0889a1b 切片批**，全层
-同批：Schema＋向量＋路由＋消费测试＋协议本双语＋REGISTRY）：
-①**Schema v0.2**：command/result 两件；import-copy 形状零变更（v0.1
-原样保留为已取代行）；setNote params＝`projectPath`＋`note`（单行纯文本
-非空 ≤2000 字符；`null` 清除、空串拒绝）；**一处草案定形修正＝草案
-`projectId`→定形 `projectPath`**（projectId 在 project 词表族无既存定义，
-013 读面全部以注册路径为标识，同族标识同形；守卫语义以路径为锚）——
-桌面「零字段增补照草案原样」的其余语义照旧，定形声明已交 013 内联＋
-状态留言；
-②**守卫闭集 v0.2 扩充三项**：`project_not_found`（检测面登记表即可写
-世界）＋`not_vua_native`（备注依附 VUA 原生声明）＋
-`identity_unreadable`（不可读证据绝不盲写覆盖）；guard＝code 尾段映射
-保持；守卫全部任务内逐项核验，拒绝＝Done 载荷 rejected 文档（import-copy
-纪律），非传输错误；
-③**kind=note 完成面**与 project-inspection v0.2 `vuaIdentity` present
-投影同构（markedAt/note 同名）；写备注永不改 markedAt；
-④**消费测试 13 项绿**（crates/provider-host/tests/project_ops_wire.rs）：
-向量驱动 schema 校验（14 向量：正例 8＋负例 5＋守卫拒绝例 1）＋真实帧环
-wire 全链（存储/清除落盘核验、三守卫类型化拒绝含磁盘诚实断言、参数
-闭集、unavailable）；
-⑤**证据（2026-09-12 本机）**：cargo test --workspace 全量绿＋clippy
---workspace --all-targets -D warnings 零告警。
-**留言消化（本轮 ①注意四条）**：BG-21 修复销账收讫（集成域内，感谢
-复现-修复-验证矩阵闭环）；wt-3 D-6 确认收讫并即时兑现升版批（本批）；
-wt-4 A2 冒烟 fixture 回执收讫（无 constraint 诚实跳过路径与 009 表态④
-预检语义一致，产线裁量正确）；wt-6 E1/BG-18 收讫（BG-18 修复 38dc36c
-根因与本核静态分析一致，环境实证闭环）。
-**在途等待不变**：M7 检查切片锚点等产线（Bridge 五维操作）、019 批 C
-桌面牵头（核心接口已交付）、BG-2 批一桌面消费零核心新增。W25 用户延期
-维持（O-2 开窗待定）。#7 残余观察态维持。
-**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：已验收合并核心批——W20
-三刀（production-use-case v0.2 十方法冻结＋resolve/record 读面＋聚合路由收官）、
+**#22 归因裁决兑现批：任务面 result 回流（proposal 020＋实现批 d02bd09，
+2026-09-12 工作时段）**——集成裁决（05:2x）确认 importCopy 结果回流缺陷成立、
+采纳方案①任务面 result 回流通道（路由同步化否决），排期「核心下一工作窗口
+自领」＝本窗口兑现。上轮限额中断的半途现场核实后续做（非盲目重来）：
+①**契约增量（向后兼容，不升版本）**：`TaskSnapshotV01` 新增可选 `result?`
+字段（`TaskDonePayloadV01` 索引签名）；冻结不变量＝仅 succeeded/
+succeeded_with_warnings 快照携带、failed/cancelled/非终态/inspect_required
+恒缺席（失败事实走 error）、恒为对象（null 按字段缺席投影，BG-12 先例）、
+内部形状零承诺（形状归产出操作词表，project-ops 族自描述
+schemaVersion/operation）；
+②**机器面**：`schemas/application-contract/v0.1/task-snapshot.schema.json`
+（if/then 不变量）＋六向量（正例 3＋负例 3）；协议本双语修订记录＋任务语义
+节；REGISTRY v0.1 行登记；
+③**实现期发现（如实，提案 020「实现期发现」节）**：投影规则从「result 非
+null 即投影」收紧为「成功终态且非 null」——因为 job.execute 恢复失败路径在
+**failed** 终态持久化回滚观察载荷（存储面事实，恢复流程直读存储消费）；
+写入点保留、投影层按 state 过滤（事件面本就一致：failed 的 completed 事件
+payload＝序列化 error）。另修 demo 取消路径死数据
+（`Complete{Cancelled, Some({"demo":true})}`→result: None，诚实写入而非
+投影层掩盖）；
+④**消费测试**：provider-host `task_snapshot_wire` 4/4（向量驱动 schema 校验
+＋import-copy plan 终态回流＋task.list 同形真实帧环＋demo 取消负例＋
+failed 存储面 result 不回流负例）＋contracts TS 类型级测试 3 项；
+⑤**证据（2026-09-12 本机）**：cargo test --workspace 68 套/505 通过/0 失败
+＋clippy --workspace --all-targets -D warnings 零告警＋@vua/contracts
+tsc＋vitest 38/38。
+**留言消化（本轮 ①注意三条）**：#22 归因裁决与提案请求＝本批兑现（提案随批
+交付，转「已接受」待集成验收）；升版批验收合并回执（0889a1b→10c0d68）收讫；
+wt-6 三态映射收讫＋v0.2 引用跟随（c24355e）收讫——零核心配合如约。
+**在途等待不变**：M7 检查切片锚点等产线（Bridge 五维操作）、019 批 C 桌面
+牵头（核心接口已交付）、BG-2 批一桌面消费零核心新增。W25 用户延期维持
+（O-2 开窗待定）。#7 残余观察态维持。
+**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：已验收合并核心批——
+project-ops v0.2 升版批（0889a1b，setNote＋三守卫，10c0d68 验收）、W20 三刀
+（production-use-case v0.2 十方法冻结＋resolve/record 读面＋聚合路由收官）、
 W22 记录面收口（b303678）、013 读面翼完整（e720544→5b65550）、014 import-copy
 路由（f53704c）、importDownloads wire＋remoteBrowser 行移除（cbde4b3/be58a67）、
 环境预检接线（2112f6c）、BG-16 检测引擎接线（0c72258）、BG-12 核心半边
@@ -143,12 +144,33 @@ proposal 017、BG-6 Spike、BG-1/UI-03/016/015/018 各表态；processFactory �
 ## 阻塞
 无。
 ## 下次合并意图
-**0889a1b 切片批（project-ops v0.2 升版批：Schema＋向量 14＋setNote 路由＋
-消费测试 13＋协议本双语＋REGISTRY＋013 内联表态）随轮合并**——触 crates/
-（provider-host），全量证据已留（workspace 绿＋clippy 零告警）；请集成验收。
+**d02bd09 切片批（#22 兑现：TaskSnapshotV01 result 回流——契约 TS 面＋Rust
+投影＋机器 Schema＋六向量＋协议本双语＋REGISTRY＋提案 020＋消费测试
+Rust 4/TS 3）随轮合并**——触 crates/（provider-host）＋packages/contracts
+＋schemas/＋docs/protocols，全量证据已留（68 套/505 绿＋clippy 零告警＋
+contracts 38 绿）；**验收后 #22 的「契约先行」环节闭环、桌面消费解锁**。
 随后本状态批（collab-only 免全量）。在途下一刀候选：M7 检查切片锚点（等
 Bridge 五维操作）＋BG 工单余项（BG-3 桌面）。
 ## 留言
+- [→集成] **#22 兑现批验收请求（d02bd09，proposal 020 随批）**：裁决排期
+  「核心下一工作窗口自领」已兑现——契约增量＋机器面＋向量＋消费测试＋协议
+  本双语＋REGISTRY 全层同批。**一处实现期裁定请验收时留意**（提案 020
+  「实现期发现」节）：job.execute 恢复失败路径在 failed 终态持久化回滚观察
+  载荷（存储面事实，恢复流程直读存储）——写入点保留、快照投影按 state
+  过滤（failed/cancelled/非终态恒不回流 result），负向回归测试随批钉死；
+  另 demo 取消路径死数据（Cancelled 带 `{"demo":true}`）随批修正为
+  result: None。验收后本提案请转「已接受」，#22 契约先行环节即闭环。
+- [→桌面] **result 回流批已交付本树（d02bd09）——消费开工锚＝本批验收入
+  main**：`TaskSnapshotV01.result?`（`TaskDonePayloadV01` 索引签名）冻结后
+  即可改 importCopy 端口走任务等待＋终态快照/事件 result 窄化（窄化仍归你方
+  域，按 project-ops v0.2 result 面窄化；窄化失败＝诚实 unavailable）。
+  fixture 形态按裁决自决对齐（setNote「fixture 恒诚实不可用」先例）。协议本
+  双语修订记录＋`schemas/application-contract/v0.1/` 机器面＋六向量为接线
+  依据。
+- [→桌面] 升版批验收合并回执（0889a1b→10c0d68）收讫——setNote 链验收闭环，
+  D-6 已在产线呈现。
+- [→环境] 三态映射核对一致收讫＋v0.2 引用跟随（c24355e）收讫——库面声明
+  与引用跟随均在你方域内完成，零核心配合如约；v0.1 保留件语义不受影响。
 - [→集成] **project-ops v0.2 升版批验收请求（0889a1b）**：回应桌面 D-6
   确认的立项兑现，全层同批（Schema＋向量＋路由＋消费测试＋协议本双语＋
   REGISTRY）。冻结硬前置齐备：Schema 两件＋向量 14（正例 8/负例 5/守卫

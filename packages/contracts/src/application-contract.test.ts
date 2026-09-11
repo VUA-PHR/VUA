@@ -4,6 +4,8 @@ import {
   isApplicationRequestV01,
   isTerminalTaskStateV01,
   type CatalogProductDetailV03,
+  type TaskDonePayloadV01,
+  type TaskSnapshotV01,
 } from "./application-contract.js";
 
 describe("application contract v0.1", () => {
@@ -406,5 +408,59 @@ describe("amf-production v0.2 application surface", () => {
     expect(command("production.recover", "command-9", {
       taskId: "task-1", decision: "restart", decisionId: "udid-1",
     })).toBe(false);
+  });
+});
+
+describe("task snapshot result reflux (BOARD #22, proposal 020)", () => {
+  const baseSnapshot = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    taskId: "proj-1",
+    revision: 4,
+    correlationId: "corr-1",
+    state: "succeeded",
+    cancellationRequested: false,
+    recoveryDisposition: "none",
+    updatedAt: "2026-09-12T05:30:00Z",
+  } satisfies TaskSnapshotV01;
+
+  it("carries the Done payload verbatim on succeeded snapshots", () => {
+    // project-ops 族载荷自描述 schemaVersion/operation；快照面对内部形状零承诺。
+    const donePayload = {
+      schemaVersion: "0.2",
+      operation: "project.import-copy",
+      result: { kind: "receipt", copiedEntries: ["Assets"] },
+    } satisfies TaskDonePayloadV01;
+    const snapshot: TaskSnapshotV01 = { ...baseSnapshot, result: donePayload };
+    expect(snapshot.result?.["operation"]).toBe("project.import-copy");
+  });
+
+  it("treats result as optional and absent on failure faces", () => {
+    const failed: TaskSnapshotV01 = {
+      ...baseSnapshot,
+      state: "failed",
+      error: {
+        code: "vua.task.timeout",
+        category: "timeout",
+        messageKey: "errors.task.timeout",
+        correlationId: "corr-1",
+        recoverable: true,
+        retryable: true,
+      },
+    };
+    expect(Object.prototype.hasOwnProperty.call(failed, "result")).toBe(false);
+    // 失败事实走 error 字段，绝不伪装成结果文档。
+    expect(failed.error?.code).toBe("vua.task.timeout");
+  });
+
+  it("lets TaskDonePayloadV01 absorb any operation word list shape", () => {
+    // production 族载荷（resolve/job.execute）无自描述键——快照面同样承载，
+    // 形状归 production-use-case 词表，本面不窄化。
+    const payload: TaskDonePayloadV01 = {
+      planId: "plan-00000000000000001",
+      planStatus: "draft",
+      missingCount: 0,
+    };
+    const snapshot: TaskSnapshotV01 = { ...baseSnapshot, result: payload };
+    expect(snapshot.result?.["planStatus"]).toBe("draft");
   });
 });
