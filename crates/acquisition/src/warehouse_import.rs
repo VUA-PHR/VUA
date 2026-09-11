@@ -497,28 +497,17 @@ pub fn submit_warehouse_import_auto(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_support::unique_dir;
     use vua_bdl_store::bdl_queries::ArtifactInspectionVerdict;
     use vua_orchestrator::FixedClock;
-
-    fn unique_dir(tag: &str) -> PathBuf {
-        let dir = std::env::temp_dir().join(format!(
-            "vua-import-{tag}-{}",
-            std::time::SystemTime::now()
-                .duration_since(std::time::UNIX_EPOCH)
-                .unwrap()
-                .as_nanos()
-        ));
-        std::fs::create_dir_all(&dir).unwrap();
-        dir
-    }
 
     #[test]
     fn import_copies_a_folder_into_an_entry_without_touching_originals() {
         let store = BdlStore::open_in_memory().unwrap();
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-import", "wh");
         let clock = FixedClock::new(&["2026-09-06T09:00:00.000Z"]);
         let importer = WarehouseImporter::new(&store, &clock, &warehouse_root);
-        let parent = unique_dir("parent");
+        let parent = unique_dir("vua-import", "parent");
         let source = parent.join("src");
         std::fs::create_dir_all(&source).unwrap();
         std::fs::write(source.join("material-pack.unitypackage"), b"PK unity fixture").unwrap();
@@ -558,7 +547,7 @@ mod tests {
     #[test]
     fn mechanical_skips_are_reported_and_never_copied() {
         let store = BdlStore::open_in_memory().unwrap();
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-import", "wh");
         let policy = InspectionPolicy {
             max_bytes: 4,
             ..InspectionPolicy::default()
@@ -570,7 +559,7 @@ mod tests {
             &warehouse_root,
             policy,
         );
-        let source = unique_dir("src");
+        let source = unique_dir("vua-import", "src");
         std::fs::write(source.join("README"), b"doc").unwrap();
         std::fs::write(source.join("big.zip"), b"0123456789").unwrap();
         std::fs::write(source.join("setup.exe"), b"tiny").unwrap();
@@ -610,10 +599,10 @@ mod tests {
     #[test]
     fn re_importing_content_duplicates_entries_never_inspection_facts() {
         let store = BdlStore::open_in_memory().unwrap();
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-import", "wh");
         let clock = FixedClock::new(&["2026-09-06T09:00:00.000Z"]);
         let importer = WarehouseImporter::new(&store, &clock, &warehouse_root);
-        let source = unique_dir("src");
+        let source = unique_dir("vua-import", "src");
         std::fs::write(source.join("pack.unitypackage"), b"PK identical content").unwrap();
 
         let first = importer.import_folder(&source).unwrap();
@@ -636,10 +625,10 @@ mod tests {
     #[test]
     fn an_empty_folder_still_becomes_an_honest_empty_entry() {
         let store = BdlStore::open_in_memory().unwrap();
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-import", "wh");
         let clock = FixedClock::new(&["2026-09-06T09:00:00.000Z"]);
         let importer = WarehouseImporter::new(&store, &clock, &warehouse_root);
-        let source = unique_dir("empty-src");
+        let source = unique_dir("vua-import", "empty-src");
 
         let report = importer.import_folder(&source).unwrap();
         assert!(report.imported.is_empty());
@@ -653,7 +642,7 @@ mod tests {
     #[test]
     fn a_source_inside_the_warehouse_is_refused() {
         let store = BdlStore::open_in_memory().unwrap();
-        let warehouse_root = unique_dir("wh");
+        let warehouse_root = unique_dir("vua-import", "wh");
         let clock = FixedClock::new(&["2026-09-06T09:00:00.000Z"]);
         let importer = WarehouseImporter::new(&store, &clock, &warehouse_root);
         let nested = warehouse_root.join("whi-nested-source");
@@ -706,9 +695,9 @@ mod tests {
         #[test]
         fn import_task_runs_folders_in_order_and_reports_each() {
             let store = Arc::new(BdlStore::open_in_memory().unwrap());
-            let warehouse_root = unique_dir("wh");
+            let warehouse_root = unique_dir("vua-import", "wh");
             let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
-            let parent = unique_dir("parent");
+            let parent = unique_dir("vua-import", "parent");
             let folders = vec![
                 make_folder(&parent, "alpha", b"PK alpha"),
                 make_folder(&parent, "beta", b"PK beta"),
@@ -751,9 +740,9 @@ mod tests {
         #[test]
         fn import_task_fails_fast_and_keeps_already_imported_entries() {
             let store = Arc::new(BdlStore::open_in_memory().unwrap());
-            let warehouse_root = unique_dir("wh");
+            let warehouse_root = unique_dir("vua-import", "wh");
             let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
-            let parent = unique_dir("parent");
+            let parent = unique_dir("vua-import", "parent");
             let good = make_folder(&parent, "good", b"PK good");
             // The second folder lives inside the warehouse root: invalid.
             let nested = warehouse_root.join("nested-source");
@@ -787,9 +776,9 @@ mod tests {
         #[test]
         fn cancellation_takes_effect_at_folder_boundaries() {
             let store = Arc::new(BdlStore::open_in_memory().unwrap());
-            let warehouse_root = unique_dir("wh");
+            let warehouse_root = unique_dir("vua-import", "wh");
             let clock: Arc<dyn Clock> = Arc::new(FixedClock::new(&["2026-09-06T09:00:00.000Z"]));
-            let parent = unique_dir("parent");
+            let parent = unique_dir("vua-import", "parent");
             let folders: Vec<PathBuf> = (0..40)
                 .map(|index| make_folder(&parent, &format!("f{index:03}"), b"PK"))
                 .collect();

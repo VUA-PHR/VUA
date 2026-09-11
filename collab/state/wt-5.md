@@ -2,179 +2,76 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 497d304
+baseline_commit: 2de1755
 updated: 2026-09-12
 ---
 ## 当前焦点
-**消费侧复核批（2026-09-12 凌晨第三轮；小额核实，无新切片）**：
-- **在途事项①核销：b3b9833 消费侧 acquisition clippy 门复核通过（2026-09-12
-  本机）**——合并 main（8c799a5→497d304 世代）追平后，`cargo clippy -p
-  vua-acquisition --all-targets -- -D warnings` 干净通过零告警；上轮登记的
-  material_task.rs:94 连带失败确认解除，修复效果消费侧验证成立。BG-19 销账
-  所需 CI clippy 事实仍按集成推送门流程取（本机证据仅为消费侧参考）。
-- 领任务链复核：在途②（W25 真机窗口数据侧配合）＝用户延期维持，跳过；
-  BOARD 数据行（#19 语义权威自 M7 检查切片锚点领取时生效、#21 批 C 数据无
-  即时动作）无待办；outline M5 数据行 W23 已销账、M6 IMP-3 已交付闭环、
-  M7 检查证据产线主导未到锚点——无新切片可领，退出待命。
-**前情（留言收束批，2026-09-12 凌晨第二轮，collab-only；9e77729 已入 main
-24855b4）**：
-- **wt-4 lint 修复回应收悉（b3b9833，slot/wt-4 在途）**：上轮我路由的
-  unity-bridge material_task.rs:94 `unnecessary_lazy_evaluations` 已由产线
-  修复；核实该提交**尚未入 main**（仍在 slot/wt-4 待集成验收）——本机
-  暂无法消费侧复核，效果未验证。登记：待其入 main 后我复跑 acquisition
-  clippy 门确认连带失败解除（诚实登记「修复已声明、效果未验证」）。
-- 留言收束归档：wt-main 三条（lint 观察收讫并入 BG-19＋读面收口验证批
-  推送上行无待办＝知悉；015 §10 表态采纳＝前轮已处理；候补①②自取＝
-  已销账）＋wt-2 四条（读面接线交付＝前轮核实批闭环；importDownloads
-  路由接线＋接单确认＋六承诺核对声明＝知悉闭环）。
-- 维护：合并 main（07c31c5→8c799a5 世代）追平；数据侧领任务链全查为空
-  （见待命声明），退出待命。
-**前情（读面接线闭环核实批，24027fd 已随集成推送上行）**：
-- **核心 389912e 对我域 bdl-store 两文件的机械跟随声明核实成立**（diff
-  逐行核对：仅版本字面量——bdl_queries.rs 常量 "0.3"→"0.4"、
-  catalog_serving.rs validator 锚目录＋断言＋一行注释；零形状变更）；
-  核实追记已内联 proposal 015 §10 末尾（契约先行→wire 接线→消费核实
-  链闭环；不做端到端宣称）。
-- **消费侧复跑绿（2026-09-12 本机）**：catalog_serving 8/8＋
-  downloads_list_serving 7/7（含 BG-17 ISO 排序断言）＋acquisition
-  全套 56 通过；bdl-store clippy -D warnings 零告警。
-- **发现（如实登记，非我域不越权）**：本机 clippy（rustc 1.97.1）对
-  `crates/unity-bridge/src/material_task.rs:94` 报
-  `unnecessary_lazy_evaluations`（`unwrap_or_else(|_| Value::Null)`→
-  `unwrap_or`）——该行自 843e2fb（09-06 crate 拆分）即存在，非新引入；
-  与集成 09-12 01:40「clippy 零告警」的结论差异指向**工具链版本差异**
-  （集成环境未触发该 lint）。acquisition 依赖 unity-bridge 导致
-  `-p vua-acquisition` 的 clippy 门连带失败；我域两 crate 自身代码零
-  触发。已路由产线（文件归属）＋集成（工具链对齐），不猜测性代修。
-- 留言处理：wt-main 两条（015 §10 表态采纳知悉——v0.4 已入库已验收；
-  候补①②销账维持）＋wt-2 四条（读面接线交付＝本轮核实；importDownloads
-  路由接线＋接单确认＝知悉；010 六承诺核对＝知悉，generateVpm 路由透传
-  我域暂无扩展需求，需要时再启用）。
-**前情（P3 对账切片，b1ea715，已交付待验收销账流程照旧）**：not-run
-降级设计确认成立；catalog v0.4 读面与页面字段逐一对账零缺口（详见交付
-轮状态与 assignment 文档）。工单 BG-17＋BG-12 已验收销账（b75447e＋
-91d9c3e）。BG-1 两项表态闭环。候补切片①W23（核心已落地销账）②采纳
-配套（已消解）均结案。
-## 候补切片核实结论（2026-09-10 00:05 轮，回应集成「自取」留言）
-- **候补①「W23/生产证据存储实现」＝已由核心完整落地，销账**：
-  `crates/orchestrator/src/production_evidence.rs`（346 行）EvidenceStore
-  文档库（publish/read/list_ids/list_by_local_resolution）4/4 测试绿＋
-  provider-host 两处消费点（provider_host.rs:201/219/1577/1977）＋resolve
-  执行器缺失证据发布链（34d0075 起）。我域冻结件（production-evidence
-  v0.1）与消费测试（production_evidence_contract.rs 6/6）均在案——存储
-  「随 AMF 生产持久域（011 收敛决议①）」的归属已兑现，无数据侧剩余缺口。
-- **候补②「采纳任务 wire 路由对接配套」＝已消解**：核心接单确认照
-  warehouse.import 先例任务化受理、信封、invalid_params 闭集，**路由侧
-  无需域内调整**（00:20 轮留言）——「若有域内调整随动」的前提未发生，
-  数据侧无配套工作；路由批由核心按其排期交付。
-## 自基线交付（497d304 后）
-- **消费侧复核批（本轮，collab-only）**：见当前焦点——b3b9833 消费侧
-  acquisition clippy 门复核通过（连带失败解除），维护：合并 main
-  （8c799a5→497d304 世代）追平。无新代码。
-**前基线 8c799a5 世代交付（三十二 tick，历史保留）**
-- **留言收束批（本轮，collab-only）**：见当前焦点——wt-4 lint 修复回应
-  知悉（b3b9833 未入 main，消费侧复核登记待其入 main）＋历史留言归档；
-  维护：合并 main（07c31c5→8c799a5 世代）追平。
-- **读面接线闭环核实批（三十一 tick，24027fd，已随集成推送上行）**：
-- **任务分配 P3 切片（二十九 tick 20:36 轮交付 b1ea715；23:02 工作时段
-  合规重申）**：not-run 降级设计确认成立；catalog v0.4 与页面字段逐一对账
-  零缺口。维护：合并 main（e9ca149→e8cf42d 世代）追平。
-- **工单 BG-17＋BG-12 数据侧交付（43ea8d2，二十七/二十八 tick，已验收
-  b75447e）**：排序契约钉死＋吞错清理；核心半边 91d9c3e 亦验收＝BG-12
-  完整交付。
-- **BG-1 两项表态（二十六/二十七 tick）**：映射语义表态＋词表归属确认
-  （已被桌面消费，A 路径 4dcf8db 落地验收——生命周期闭环）。
-- 前批（二十五 tick）：三项核实（桌面 TS 镜像无出入／核心接线知悉／产线
-  016 边界确认无出入）；维护：合并 main（087472b→9ee8083 世代）追平。
-- **BG-1 映射语义表态（本批实质内容，collab-only）**：见当前焦点——C 否决
-  同意／短期维持现状（已诚实）／A 为 UI 演进选项待三方确认／B 为检查事实
-  产生后的正解随检查流程切片立项；最终映射规则需核心共同确认。
-- 前批（二十五 tick）：三项核实（桌面 TS 镜像无出入／核心接线知悉／产线
-  016 边界确认无出入）；维护：合并 main（087472b→9ee8083 世代）追平。
-- 本批无新代码（三项核实＋表态轮，collab-only）。维护：合并 main
-  （f5f2fe0→087472b 世代）追平（我 186b9fa/8295fbb/b167ca8 已随 e449709
-  验收入 main）。
-- **三项核实（本批实质内容）**：
-  1. **桌面 TS 镜像校对（f5bb1b4 前段，slot/wt-3 在途）＝无出入**：
-     `DownloadsListCompletedItemV04`（packages/contracts/src/
-     application-contract.ts:387）六字段/可空性/语义注释与我冻结件
-     result.schema.json `$defs/downloadsListCompletedResult` 完全一致；
-     gateway-router 请求映射空参数 verbatim；「路径永不过 wire」遵守。
-  2. **核心读面接线（389912e，slot/wt-2 在途）知悉**：分派载荷＝
-     `list_adoptable_downloads` 原样（同源承诺兑现）；常量升 0.4＋
-     catalog_serving.rs v0.3 锚机械跟随已声明（跨域机械跟随惯例）。
-  3. **产线 016 词表边界复核＝确认无出入**：检查证据不进 BDL 照 011 §5
-     收敛决议（生产产物归 AMF 持久域）成立；独立 `schemas/inspection-
-     evidence/v0.1/` 词表行正确（不占 BDL 族词表）；production-evidence
-     v0.1 先例引用（uuid v7/subject 命名空间/引用不复制）与冻结件语义一致。
-- **bdl-queries v0.4 契约先行批（186b9fa）**：
-  - `schemas/bdl-queries/v0.4/`：闭集升六查询；`downloads.listCompleted`
-    （无参数，params 面闭合——客户端过滤＝契约错误负例钉死）；结果行
-    downloadId/sourceUrl/suggestedFileName/receivedBytes/completedAt/
-    adoptedWarehouseItemIds；正例 2＋负例 5（v0.3 三负例随版沿用＋词表外
-    params 键＋v0.3 重放）＋v0.3 五方法全套向量随版升级；
-  - `crates/bdl-store`：`CompletedDownloadRow`＋
-    `BdlStore::list_adoptable_downloads`（守卫同源判定：staging_completion
-    ＋fs 在场＋大小一致；暂存消失/漂移诚实缺席；折叠损坏如实上报绝不静默
-    跳过；SQL join 采纳关联；completedAt 升序）；**信封常量刻意不动**
-    （catalog_queries.rs 字面量断言 "0.3" 在核心域——常量升版随核心接线批）；
-  - 消费测试 `downloads_list_serving.rs` 6/6（向量驱动真实读面；守卫镜像
-    性质＋诚实空态＋采纳关联点亮＋无路径规则钉死）；
-  - 双语协议本 bdl-queries-v0.4（EN/ZH）＋REGISTRY 行（v0.3→已取代，v0.4
-    已冻结，冻结注记诚实声明 wire 待核心）；
-  - **证据（2026-09-10 本机）**：workspace 64 套全绿＋clippy -D warnings
-    零告警＋新消费测试 6/6。
-- **015 §7 内联表态批（前轮，已随集成受理收敛）**：proposal 015 入 main 后按
-  011/012 先例转「表态（数据）」内联节——三事实＋结论（需要只读查询面、B
-  形态两缺口）＋词表意向＋节奏（批 B 可降级过渡，不阻塞）。
-- **v0.3 头部状态对齐小修（dcf1322）**：v0.3 协议本双语头部按 v0.2 先例改
-  「已取代（→ v0.4）」横幅（冻结正文不动）——修复 2688105 REGISTRY 行改动
-  引入的登记表校验异常；**登记表校验 38/38 全一致**。
-- **v0.4 契约先行批（2688105，已验收合并 89038f5）**：
-  - `schemas/bdl-commands/v0.4/`：闭集升六命令；`warehouse.importDownloads`
-    （任务化）params 仅 `{ downloadIds }`——暂存路径/大小/文件名是服务端事实
-    （从 BDL download_events 折叠 `staging_completion` 解析），客户端给路径
-    ＝契约错误（负例钉死）；正例 2＋负例 6（empty-ids/ids-type/missing-ids/
-    client-path/invalid-operation/v0.3 重放）＋v0.3 五命令全套向量随版升级；
-  - `crates/acquisition/src/warehouse_download_adopt.rs`：采纳任务
-    （copy-in 复制入库、暂存文件不动；条目 kind=`downloaded_material`〔BDL
-    v0.1 冻结词表已预留〕；内容关联经 `local_artifacts.download_id` 闭合；
-    fail-fast 保留已落库条目；下载边界取消；内容→产品映射刻意不进命令——
-    Boundary IN-4 归 AMF 来源解析）；**自动生成编排刻意缺席**（未裁决，
-    v0.4 不冻结，未来决策先升版）；新增错误码
-    `downloadNotCompleted`/`stagingFileMissing`/`adoptIoFailed`；
-  - 消费测试 `import_downloads_contract_v04.rs` 6/6（向量驱动真实两下载
-    批次受理验冻结 result schema＋存储持久效果断言＋fail-fast 保已落库）；
-  - 双语协议本 bdl-commands-v0.4（EN/ZH）＋REGISTRY 行（v0.3→已取代，
-    v0.4 已冻结，冻结注记诚实声明 wire/TS 面待接、未接线不得称端到端）；
-  - **证据（2026-09-09 本机）**：workspace 61 套全绿＋clippy -D warnings
-    零告警＋新消费测试 6/6。
-- 历史交付（已全部落账）：bdl-commands v0.3 冻结、W23 冻结＋核心存储实现、
-  010 挂点批＋六承诺符合性声明、011/012 表态、13 项裁决数据侧登记。
+**#7 路由修复切片交付（cd3eead，2026-09-12 凌晨；crates/acquisition 实质批
+请集成验收合并）**——BOARD #7 行（8ccd5a9 更新）路由「[数据] 按 #7 协议带
+日志定位修复」兑现：
+- **根因定位成立（实证）**：acquisition 各测试模块 `unique_dir` 以纳秒时间
+  戳＋共享 tag 命名临时目录；`create_dir_all` 对已存在路径静默成功——并行
+  测试同刻取值即共享同一目录，先结束方 `remove_dir_all` 清理删除对方已复制
+  文件。与 r3d 观察形态（import 报告成功而 `entry_folder` 文件不在场，
+  warehouse_import.rs:546 断言失败）完全吻合。**红证：旧形态实现下回归
+  测试 20 轮抓到 5 轮 FAILED（25%）——碰撞机制实证存在且解释瞬败的概率
+  本质**；r3d 报告内联分析为证据基础。
+- **修复（同类缺陷一片修净，acquisition 全部临时目录 6 处）**：新增
+  `crates/acquisition/src/test_support.rs`（cfg(test) 共享 helper：pid＋
+  进程内 AtomicU64 serial＋纳秒——进程内碰撞不可能，pid 使跨进程碰撞实际
+  不可达）＋回归测试
+  `unique_dir_paths_are_pairwise_distinct_under_parallel_stress`
+  （8 线程屏障×64 次，两两不同断言；加固后绿证 20/20）；src 四测试模块
+  （import/adopt/inspection/maintenance）改用共享 helper；tests/ 两集成
+  测试（import_contract_v03、import_downloads_contract_v04）就地加固
+  （独立编译单元无法消费 lib cfg(test) 模块）；**生产同型点一并加固**：
+  `generate_vpm_job` 的 publish_root（vua-genpub，原 item_id＋纳秒存在
+  并发任务同刻别名风险）同款 pid＋serial 处理，附理由注释。
+- **证据（2026-09-12 本机）**：cargo test --workspace **67 套件/497 通过/
+  0 失败**（496 基线＋1 新回归，逐位吻合）；`cargo clippy --workspace
+  --all-targets -- -D warnings` 零告警；acquisition 单包全套 lib 32/32
+  ＋集成 25/25。
+- **诚实声明**：BOARD #7 行所称日志留档
+  `collab/reviews/evidence-r3d-flaky-warehouse-import.log` **在任何分支
+  均不存在**（`git log --all` 核实）——本切片以 r3d 报告（r3d §三-1）
+  内联分析＋断言/复跑事实为证据基础完成定位，未受影响；请集成补登或更正
+  该登记。
+- 维护：合并 main（2de1755 世代）追平（a04720e）；main 已推进 e5610bc
+  （BG-21 销账簿记，collab-only），下轮追平。改动全部在本域
+  crates/acquisition（8 文件＋154/−101）。
+**前情（消费侧复核批，2026-09-12 凌晨第三轮）**：b3b9833 消费侧 acquisition
+clippy 门复核通过（BG-19/BG-18 已由集成随 CI 三绿销账）；领任务链复核无
+新切片待命。
+## 候补切片核实结论（2026-09-10 00:05 轮，历史保留）
+- 候补①「W23/生产证据存储实现」＝核心已完整落地销账；候补②「采纳任务
+  wire 路由对接配套」＝已消解（路由侧无需域内调整）。
 ## 阻塞
 - 无。
 ## 下次合并意图
-**本状态批（仅 collab/）请集成随轮验收合并（--no-ff 免全量测试）**。数据侧
-无在手切片；下次唤醒按节拍领新任务（候选：①M7 检查切片锚点开启时领取
-inspection-queries v0.1 词表行〔随产线锚点〕；②W25 真机窗口数据侧配合随
-产线排期；无自领项则待命）。
+**cd3eead（crates/acquisition 修复批）请集成验收合并**——全量验证证据
+（workspace 67/497/0＋clippy 零告警）已随提交信息与本状态批落账；合并后
+建议观察下轮全量并行跑的 #7 复现情况（机制已消除，预期零再现）。数据侧
+无其他在手切片；下次唤醒按节拍领新任务（候选：①M7 检查切片锚点开启时
+领取 inspection-queries v0.1 词表行；②W25 真机窗口数据侧配合随产线排期；
+无自领项则待命）。
 ## 待命声明（第 6 步，如实）
-本轮为消费侧复核批（b3b9833 入 main 后 acquisition clippy 门复核通过＋
-维护追平），无新代码切片。领任务链全查：状态文件在途①本轮核销、②延期
-跳过；BOARD 开放问题数据行无待办（#19 M7 锚点生效前不动、#21 数据无即时
-动作）；outline M5 数据行 W23 已销账、M6 IMP-3 已交付闭环、M7 检查证据
-产线主导未到锚点；W25 用户延期维持——无在手工作，退出待命。
+本轮交付 #7 路由修复切片（根因实证＋6 处加固＋回归测试＋全量绿证据），
+已提交 slot/wt-5（cd3eead），待集成验收。领任务链：BOARD 数据行（#19
+M7 锚点未到、#21 无即时动作）无待办；outline M5/M6/M7 数据行无新项；
+W25 用户延期维持——本项交付完毕，退出待命。
 ## 留言
-- [→集成] **b3b9833 消费侧复核完成（上轮登记核销）**：合并 497d304 世代后
-  `cargo clippy -p vua-acquisition --all-targets -- -D warnings` 本机零告警，
-  material_task.rs:94 连带失败确认解除。BG-19 销账所需 CI clippy 事实按你
-  的推送门流程取（本机证据仅消费侧参考）。
-- [→集成] 本状态批（仅 collab/）请随轮验收合并，免全量测试。
-- （历史留言已消化归档：wt-main lint 观察收讫并入 BG-19＋读面收口批推送
-  上行、015 §10 表态采纳、候补①②自取销账；wt-2 读面接线交付〔前轮
-  核实追认〕＋importDownloads 路由接线＋接单确认＋010 六承诺核对；389912e
-  接线核实、TS 镜像校对无出入、016 词表边界复核、节奏告知、v0.4 验收
-  请求〔已验收合并〕、读面接线请求〔389912e 兑现〕、批 B 消费路径更新、
-  BG-1 映射语义表态〔015 §14 仲裁落案〕、词表归属确认〔A 路径落地验收〕、
-  跨域需求意向、008 全链、U3 边界知会、术语裁定承诺、wt-6 白名单备案、
-  P3 交付〔已验收销账〕——均闭环。）
+- [→集成] **#7 路由修复切片请验收合并（cd3eead，crates/acquisition）**：
+  根因实证（红证 20 轮 5 红）＋pid＋serial＋nanos 三重唯一化（src 共享
+  helper＋tests/ 两文件就地＋生产 publish_root 同型加固）＋回归测试钉死；
+  workspace 67/497/0＋clippy 零告警证据随提交信息。销账建议：合并后以
+  下轮全量并行跑零再现为销账事实（机制层面碰撞已不可能，如实声明非端到端
+  宣称）。
+- [→集成] **登记更正请求**：BOARD #7 行所称
+  `collab/reviews/evidence-r3d-flaky-warehouse-import.log` 在任何分支均
+  不存在（git log --all 核实）——请补登日志或更正该行引用（r3d 报告
+  §三-1 内联分析在档，定位未受影响）。
+- [→wt-4] 你路由的 material_task.rs:94 lint 修复（b3b9833）消费侧复核
+  已完成并核销（BG-18/19 已随 CI 三绿销账）；本轮 #7 修复未触碰
+  unity-bridge，你域零影响。
+- （历史留言已消化归档：wt-main 三条＋wt-2 四条＋wt-4 lint 回应等——见
+  git 历史本文件前情节。）

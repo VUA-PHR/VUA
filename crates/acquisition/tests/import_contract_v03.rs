@@ -43,12 +43,18 @@ const IMPORT_NEGATIVES: &[&str] = &[
 ];
 
 fn unique_dir(tag: &str) -> PathBuf {
+    // Board #7 hardening: a process-unique serial (plus pid) keeps parallel
+    // tests from sharing a same-tick timestamp directory whose teardown
+    // would delete another test's files.
+    static SERIAL: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+    let serial = SERIAL.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
     let dir = std::env::temp_dir().join(format!(
-        "vua-import-v03-{tag}-{}",
-        std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap()
-            .as_nanos()
+        "vua-import-v03-{tag}-pid{}-t{nanos:016x}-{serial}",
+        std::process::id()
     ));
     std::fs::create_dir_all(&dir).unwrap();
     dir
