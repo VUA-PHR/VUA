@@ -185,13 +185,61 @@ fn validated_project_name(name: &str) -> Result<(), ImportRejected> {
     }
 }
 
-/// Canonicalizes when possible; falls back to the literal path when the
-/// target does not exist yet (canonicalize fails on non-existent paths).
-/// The Windows verbatim prefix (`\\?\`) is stripped so literal and
-/// canonicalized paths compare equal.
+/// Canonicalizes when possible; when the path does not exist yet (the
+/// usual case for a fresh copy target, where canonicalize fails), the
+/// deepest existing ancestor is canonicalized and the missing tail is
+/// re-appended, so the existing prefix normalizes to the same face as a
+/// canonicalized twin — 8.3 short names (`RUNNER~1`), drive-letter case,
+/// and verbatim `\\?\` prefixes all collapse (BG-18). On Windows the
+/// drive letter is finally upper-cased to match the canonical face.
 fn normalize(path: &Path) -> PathBuf {
-    let canonical = path.canonicalize().unwrap_or_else(|_| path.to_path_buf());
-    strip_verbatim(canonical)
+    if let Ok(canonical) = path.canonicalize() {
+        return strip_verbatim(canonical);
+    }
+    let mut tail: Vec<std::ffi::OsString> = Vec::new();
+    let mut prefix = path.to_path_buf();
+    while !prefix.exists() {
+        match (prefix.file_name(), prefix.parent()) {
+            (Some(name), Some(parent)) => {
+                tail.insert(0, name.to_os_string());
+                prefix = parent.to_path_buf();
+            }
+            _ => break,
+        }
+    }
+    let mut normalized = prefix.canonicalize().unwrap_or(prefix);
+    for name in tail {
+        normalized.push(name);
+    }
+    uppercase_drive_letter(strip_verbatim(normalized))
+}
+
+/// Windows canonical paths always carry an upper-case drive letter
+/// (`\\?\C:\...`); a literal fallback keeps the caller's spelling, so the
+/// drive letter is upper-cased to keep both faces identical for prefix
+/// comparison.
+#[cfg(windows)]
+fn uppercase_drive_letter(path: PathBuf) -> PathBuf {
+    let text = path.as_os_str().to_string_lossy().into_owned();
+    let bytes = text.as_bytes();
+    let drive = if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+        Some(bytes[0].to_ascii_uppercase())
+    } else {
+        None
+    };
+    match drive {
+        Some(drive) if drive != bytes[0] => {
+            let mut normalized = text;
+            normalized.replace_range(0..1, &(drive as char).to_string());
+            PathBuf::from(normalized)
+        }
+        _ => PathBuf::from(text),
+    }
+}
+
+#[cfg(not(windows))]
+fn uppercase_drive_letter(path: PathBuf) -> PathBuf {
+    path
 }
 
 #[cfg(windows)]
