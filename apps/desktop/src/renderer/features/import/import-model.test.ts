@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  BOOTH_HOME_URL,
   browseAvailability,
+  displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
   type EmbeddedBrowseState,
@@ -10,7 +12,9 @@ import type { RemoteContentEventV1 } from "@vua/contracts";
 
 /* 素材导入页云端段(M6 IMP-2 批 A,proposal 015 对账):能力两态判定与内嵌
  * 视图事件归约的纯函数覆盖。能力翻转(provider-bootstrap)随批 B;本测试
- * 锁定两态判据与事件语义,组件为薄渲染。 */
+ * 锁定两态判据与事件语义,组件为薄渲染。
+ * 用户实测缺口修复(2026-09-12):默认首页常量、导航历史可走性同步与
+ * 地址脱敏显示在本文件补齐锁定。 */
 
 test("browseAvailability: 两态开关——仅显式 true 可用,未知/缺失保守不可用", () => {
   assert.deepEqual(browseAvailability(true), { kind: "available" });
@@ -19,11 +23,28 @@ test("browseAvailability: 两态开关——仅显式 true 可用,未知/缺失�
   assert.deepEqual(browseAvailability("yes"), { kind: "unavailable" });
 });
 
+test("BOOTH_HOME_URL: 默认首页在浏览允许清单内(booth.pm)", () => {
+  assert.equal(BOOTH_HOME_URL, "https://booth.pm/");
+});
+
+test("displayUrl: origin+路径显示,弃查询串与片段;解析失败如实回显原文", () => {
+  assert.equal(displayUrl("https://booth.pm/items/1234"), "https://booth.pm/items/1234");
+  assert.equal(
+    displayUrl("https://booth.pm/search?q=avatar&token=secret#results"),
+    "https://booth.pm/search",
+  );
+  assert.equal(
+    displayUrl("https://accounts.booth.pm/login?next=%2F"),
+    "https://accounts.booth.pm/login",
+  );
+  assert.equal(displayUrl("not a url"), "not a url");
+});
+
 function reduce(state: EmbeddedBrowseState, event: RemoteContentEventV1): EmbeddedBrowseState {
   return embeddedBrowseReducer(state, event);
 }
 
-test("embeddedBrowseReducer: view-opened 打开跟踪,navigated 同步当前地址", () => {
+test("embeddedBrowseReducer: view-opened 打开跟踪(历史可走性复位),navigated 同步当前地址与历史", () => {
   const opened = reduce(initialEmbeddedBrowseState, {
     kind: "view-opened",
     viewId: "rc-1",
@@ -32,6 +53,8 @@ test("embeddedBrowseReducer: view-opened 打开跟踪,navigated 同步当前地�
   assert.deepEqual(opened, {
     viewId: "rc-1",
     currentUrl: "https://booth.pm/",
+    canGoBack: false,
+    canGoForward: false,
     lastBlocked: null,
   });
   const navigated = reduce(opened, {
@@ -43,19 +66,44 @@ test("embeddedBrowseReducer: view-opened 打开跟踪,navigated 同步当前地�
   });
   assert.equal(navigated.currentUrl, "https://booth.pm/items/1");
   assert.equal(navigated.viewId, "rc-1");
+  // 导航条后退/前进按钮禁用判据:navigated 事件同步可走性
+  assert.equal(navigated.canGoBack, true);
+  assert.equal(navigated.canGoForward, false);
+  const forward = reduce(navigated, {
+    kind: "navigated",
+    viewId: "rc-1",
+    url: "https://booth.pm/items/2",
+    canGoBack: true,
+    canGoForward: true,
+  });
+  assert.equal(forward.canGoBack, true);
+  assert.equal(forward.canGoForward, true);
 });
 
-test("embeddedBrowseReducer: view-closed 清空跟踪;他视图关闭不影响当前", () => {
+test("embeddedBrowseReducer: view-closed 清空跟踪(含历史可走性);他视图关闭不影响当前", () => {
   const opened = reduce(initialEmbeddedBrowseState, {
     kind: "view-opened",
     viewId: "rc-1",
     url: "https://booth.pm/",
   });
+  const navigated = reduce(opened, {
+    kind: "navigated",
+    viewId: "rc-1",
+    url: "https://booth.pm/items/1",
+    canGoBack: true,
+    canGoForward: true,
+  });
   // 空 viewId = session 级事件,不清当前视图跟踪
-  const otherClosed = reduce(opened, { kind: "view-closed", viewId: "rc-other" });
+  const otherClosed = reduce(navigated, { kind: "view-closed", viewId: "rc-other" });
   assert.equal(otherClosed.viewId, "rc-1");
-  const closed = reduce(opened, { kind: "view-closed", viewId: "rc-1" });
-  assert.deepEqual(closed, { viewId: null, currentUrl: null, lastBlocked: null });
+  const closed = reduce(navigated, { kind: "view-closed", viewId: "rc-1" });
+  assert.deepEqual(closed, {
+    viewId: null,
+    currentUrl: null,
+    canGoBack: false,
+    canGoForward: false,
+    lastBlocked: null,
+  });
 });
 
 test("embeddedBrowseReducer: blocked 留痕呈现(诚实上报,不静默)", () => {

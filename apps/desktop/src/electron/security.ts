@@ -315,3 +315,74 @@ export function installRemoteContentSessionPolicy(
     });
   }
 }
+
+/* ---- 登录会话存活(用户实测缺口修复 2026-09-12):persist 分区让持久
+ * Cookie 落盘,但 Chromium 把无到期时间的「会话 Cookie」只存内存——应用
+ * 一退就丢,用户每次重启都要重登。策略:允许清单来源的会话 Cookie 在写入
+ * 时补一个有界的持久到期(不改值/不改域),登录态跨重启携带。Cookie 只落
+ * 本机分区存储:不进渲染层、不经 IPC、不随任何提交离开本机(隔离红线)。 ---- */
+
+/** 补持久窗口(天):与常见站点「记住登录」量级一致,有界而非永久 */
+export const COOKIE_PERSIST_DAYS = 180;
+
+/** 会话 Cookie 的域是否落在允许清单内(点前缀=域 Cookie,子域语义与
+ *  isAllowedRemoteOrigin 一致)。非 https/http 语义的域一律拒绝。 */
+export function isCookieDomainAllowed(
+  domain: string | undefined,
+  allowedOrigins: readonly string[],
+): boolean {
+  if (domain === undefined) return false;
+  const host = domain.replace(/^\./, "").toLowerCase();
+  if (host === "") return false;
+  return isAllowedRemoteOrigin(`https://${host}/`, allowedOrigins);
+}
+
+/** 会话 Cookie → 持久化重写参数;清单外或缺域/路径或非会话 Cookie 返回
+ *  null(不动) */
+export function sessionCookiePersistence(
+  cookie: {
+    readonly domain?: string;
+    readonly path?: string;
+    readonly name: string;
+    readonly session?: boolean;
+    readonly secure?: boolean;
+  },
+  allowedOrigins: readonly string[],
+  nowSeconds: number,
+): { readonly url: string; readonly expirationDate: number } | null {
+  if (cookie.session !== true) return null;
+  if (!isCookieDomainAllowed(cookie.domain, allowedOrigins)) return null;
+  if (cookie.path === undefined) return null;
+  const host = cookie.domain!.replace(/^\./, "");
+  return {
+    url: `${cookie.secure === false ? "http" : "https"}://${host}${cookie.path}`,
+    expirationDate: nowSeconds + COOKIE_PERSIST_DAYS * 24 * 60 * 60,
+  };
+}
+
+/** 允许清单来源的会话 Cookie 补持久到期(登录会话跨重启存活):
+ *  重写只补 expirationDate,值/域/路径/安全旗标原样保留;重写产生的
+ *  changed 事件携带非会话 Cookie,自然终止不循环。 */
+export function installCookiePersistencePolicy(
+  targetSession: Session,
+  allowedOrigins: readonly string[],
+  now: () => number = () => Date.now() / 1000,
+): void {
+  targetSession.cookies.on("changed", (_event, cookie, _cause, removed) => {
+    if (removed) return;
+    const persistence = sessionCookiePersistence(cookie, allowedOrigins, Math.floor(now()));
+    if (persistence === null) return;
+    const details: import("electron").CookiesSetDetails = {
+      url: persistence.url,
+      name: cookie.name,
+      value: cookie.value,
+      expirationDate: persistence.expirationDate,
+      ...(cookie.domain === undefined ? {} : { domain: cookie.domain }),
+      ...(cookie.path === undefined ? {} : { path: cookie.path }),
+      ...(cookie.secure === undefined ? {} : { secure: cookie.secure }),
+      ...(cookie.httpOnly === undefined ? {} : { httpOnly: cookie.httpOnly }),
+      ...(cookie.sameSite === undefined ? {} : { sameSite: cookie.sameSite }),
+    };
+    void targetSession.cookies.set(details);
+  });
+}

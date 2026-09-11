@@ -59,6 +59,9 @@ const api: VuaDesktopApiV1 = Object.freeze({
   remoteContent: Object.freeze({
     open: (request: { readonly url: string }) => ipcRenderer.invoke("vua:remote-content:open", request),
     navigate: (viewId: string, url: string) => ipcRenderer.invoke("vua:remote-content:navigate", viewId, url),
+    goBack: (viewId: string) => ipcRenderer.invoke("vua:remote-content:go-back", viewId),
+    goForward: (viewId: string) => ipcRenderer.invoke("vua:remote-content:go-forward", viewId),
+    reload: (viewId: string) => ipcRenderer.invoke("vua:remote-content:reload", viewId),
     close: (viewId: string) => ipcRenderer.invoke("vua:remote-content:close", viewId),
     setVisible: (viewId: string, visible: boolean) =>
       ipcRenderer.invoke("vua:remote-content:set-visible", viewId, visible),

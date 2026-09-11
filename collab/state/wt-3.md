@@ -1,74 +1,74 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 1794d31
+baseline_commit: 9e87f8e
 role: 桌面
-updated: 2026-09-11
+updated: 2026-09-12
 ---
 ## 当前焦点
-**用户实际使用反馈:四项 UX 缺口已登记待办队列(操作者指令:只登记不实施,
-非工作时间暂缓,下一工作窗口优先修复)**——详见下方「待办队列」节。
-**019 批 C 桌面切片第一部分已交付(b581cf3)**:生产链消费端口
-(ProductionChainPort——resolveRecipe/approvePlan/getPlan/listPlans/
-executeJob/getRecord/listRecords 七方法)＋live 实现(GatewayClient 消费,
-字段存在性收窄,词表外滤除不猜测)＋穷举真值表测试＋检测段注册计数投影
-增强(核心表态消费:计数=纯派生量,「—」改直接投影)。**019 批 A 已验收
-(5160433)＋批 B 桌面切片已验收(e611cf0)**。
+**用户实测四项 UX 缺口修复批已交付(ce91403)+ 随批环境卡片标题四语文案**——
+操作者启动令(本窗口优先修复)已执行,详情见「自基线交付」;019 批 C 第二
+部分(UI 接线)按工单降位,待本批验收后接续。
+## 自基线交付(9e87f8e 之后)
+**ce91403:用户实测 UX 缺口批(四缺口 + 随批一项)**:
+1. **本地素材导入「仓库服务尚未接入」= 假说 (a) live 链断点,已修**:
+   - **诊断**:renderer→GatewayClient→gateway-router→provider-host 分派
+     (warehouse_import_submit)全链在位;断点在壳→Provider 进程环境交接——
+     基座清洗(providerEnvironment,核心域)只放行系统变量是正确安全默认,
+     但 Provider bin 按约定从环境读运行时配置(proposal 005「仓储根不进
+     wire」),VUA_PROVIDER_DATA/VUA_WAREHOUSE_ROOT 从未抵达子进程→仓储/
+     下载/生产用例服务面恒未装配→每条 warehouse 命令如实回答
+     vua.warehouse.unavailable(文案诚实,装配断)。用户实际运行即此态。
+   - **修复**:壳作为组合根,经 SupervisedProcessProviderV01 公开注入点
+     (processFactory 第二参)显式补齐三个确定性根:VUA_PROVIDER_DATA=
+     userData、VUA_WAREHOUSE_ROOT=userData/warehouse、VUA_PROJECT_ROOT=
+     生产合成项目根(与 resolveProductionContext 四元组同源);除此之外
+     不透传任何宿主变量,凭据形变量仍被清洗层剥离(测试钉死环境键集)。
+     核心域文件零改动;VUA_UNITY_EDITOR 不注入(编辑器路径属用户机事实,
+     配置面未立项——generateVpm 执行器诚实 unavailable,其余仓储面全可用)。
+2. **云端下载手动输网址 = 已修**:内嵌面板首开自动导航 booth.pm(浏览允许
+   清单内,BOOTH_HOME_URL 常量);用户关闭视图后不强行重开,后续导航历史
+   照常保留;地址栏手动导航保留。
+3. **Booth 登录 Cookie 持久化 = 已修**:persist:vua-remote 分区本就落盘
+   持久 Cookie;断点语义是 Chromium 会话 Cookie(无到期)只存内存,应用一退
+   即失。新增 installCookiePersistencePolicy:允许清单来源的会话 Cookie
+   写入时补有界持久到期(180 天),值/域/旗标原样保留;重写事件自然终止
+   不循环;Cookie 只落本机分区,不进渲染层、不经 IPC、永不提交(隔离红线
+   维持;真机登录持久性验证留窗口,不宣称端到端)。
+4. **Booth 全屏不能退出 = 已修**:WebContentsView 上缘让位 44px 条带
+   (REMOTE_VIEW_NAV_STRIP_PX 导出常量);渲染层固定导航条:后退/前进/刷新/
+   回首页/URL 脱敏显示(origin+路径,弃查询串与片段)/关闭回 VUA+窗口控制
+   三钮;条内空白可拖拽窗口。窄面 additive 扩展 remoteContent.goBack/
+   goForward/reload(contracts TS 面登记 + preload + IPC + 管理器方法);
+   U9 四分法策略零改动,历史成员产生时已过导航策略,历史动作不二次裁决。
+5. **随批(环境侧 wt-6 留言)**:环境检测卡片标题消费侧文案注册表——覆盖
+   引擎 id 闭集 steam/vrchat/steamvr/openxr_runtime/network/windows/
+   disk_space(双区同 id)/unity_hub/unity_editors/vpm_cli/vcc,四语齐;
+   引擎未来新增 id 如实透传 checkId,不猜测。
+**证据(2026-09-12 本机)**:桌面 check 全链绿——typecheck 两配置零错;
+vitest **58 文件 463 测试**全绿(新增:provider-bootstrap 环境注入、Cookie
+持久化策略、displayUrl+历史可走性、检查标题投影);build 绿;boundary 绿;
+i18n tables aligned(3 交付语言表与源表对齐);contrast 全达标;check:leak
+159 指纹零命中。**无端到端宣称**:W25 未开窗,本窗口未做真机走查;缺口
+修复的实际体验验证待用户/走查窗口。
 ## 待办队列
-**用户实际使用反馈·四项 UX 缺口(2026-09-11 用户实际运行桌面 app 发现;
-操作者指令:只登记不实施,非工作时间暂缓,下一工作窗口优先修复)**:
-1. **本地素材导入显示「仓库服务尚未接入」**:排查 (a) live 链断点
-   (warehouse.import 命令面已接——create.ts 空 provider/not-run 时
-   emptyGateway 全端口 unavailable→ImportPage 如实呈现) 或 (b) 空态
-   文案误导(实际已接入但文案写「未接入」);修复并确保本地导入全链可用;
-2. **云端下载需手动输网址**:内嵌浏览降级态无默认首页——首开自动导航
-   booth.pm(白名单内),后续保留历史;
-3. **Booth 登录界面与 Cookie 持久化**:隔离 partition(persist:vua-remote)
-   登录后 Cookie 自动携带——用户无需每次重登(隔离边界维持,不推送);
-4. **Booth 链接全屏不能退出**:内嵌视图缺导航 UI——加固定导航条
-   (后退/前进/刷新/回首页/URL 脱敏显示/关闭回 VUA);
-   优先级高于批 C UI 接线;属 IMP 页面真实可用性修复(UI-10 不退化＋
-   UI-05 切换不丢状态延伸)。
-## 自基线交付(9ee8083 合并 main 后)
-- main 合并维护(四次 fast-forward:9ee8083→0b03337→d689b68→...→f1ded9d);
-- **53a1bc2:操作者修复令(check-leak 注释过度声明修正,纯注释零行为
-  变更)**:018 撤回批注释声称「构建期被静态剔除」但脚本并不验证剔除
-  行为——改为精确描述(本断言仅覆盖 fixture 负载;不覆盖 DEV 分支剔除
-  断言;由静态替换＋Rollup 死代码消除保证;须断言须另行专项检查);
-- **1c27f0d:W24 recovered 呈现语义**:BuildRecordCard 在权威态
-  recovered 时叠加「已恢复的运行」中性徽章＋语义说明(四语)——显示
-  投影折叠(recovered→completed)为裁定投影不变,语义标注补回折叠
-  丢失的恢复语义;测试:结构收窄＋投影折叠既有覆盖维持;
-- **f0bc0e:019 批 B 保存链接线**:nameHint 用户命名提示(零词表扩展)+
-  recipe.save 接线＋保存状态三态(已并入);详情见上方 A 路径段落;
-- **b243a1d:019 批 B 保存链完成**:nameHint 用户命名提示输入(条目级,
-  保存必填校验)＋保存按钮启用(recipe.save 经 preload gateway 窄面;
-  saving 态;失败保留内容可重试)＋savedNote 服务端修订呈现;过时
-  saveDisabledNote 文案不再引用(键保留待文案复核);019 批 B 桌面切片
-  全部交付完毕;
-- **用户观察调查(代码级审计)**:全 live 连接可用性——逐页核对数据源/
-  空态/断线分支;结论:(a) 类诚实空态设计正确,(b) 类无代码级异常;
-  数据链缺口=内容生产顺序(先导入/先保存),非缺陷。详见留言。
-- **b581cf3:019 批 C 桌面切片第一部分**:生产链消费端口
-  (ProductionChainPort——resolveRecipe/approvePlan/getPlan/listPlans/
-  executeJob/getRecord/listRecords 七方法)＋live 实现(GatewayClient
-  消费,字段存在性收窄,词表外滤除不猜测)＋穷举真值表测试＋检测段注册
-  计数投影增强(核心表态消费:计数=纯派生量,「—」改直接投影);
-- **证据(2026-09-10/11 本机)**:桌面 check 全链绿(typecheck＋vitest 57
-  文件 455 测试＋build＋boundary＋i18n tables aligned＋contrast＋leak
-  159 指纹零命中)。端口层＋投影增强,UI 接线随后续切片;无端到端宣称。
+四项 UX 缺口已全部交付(见上),本节队列清零;真机走查回执待窗口。
+019 批 C 第二部分(UI 接线)待接续——工单优先级已让位于本缺口批。
 ## 阻塞
-- 无桌面阻塞。BG-1 主切片余项待词表归属确认(数据/产线——A-1 路由
-  在案);019 批 C 工单已签发(端口层已交付,UI 接线随后续切片)。
+- 无桌面阻塞。备忘记录(非阻塞):Unity 编辑器路径的壳侧配置面未立项,
+  generateVpm 执行器维持诚实 unavailable;若用户需要生成链可用,建议后续
+  工单(环境检测已能观测编辑器存在,配置面归属需裁决)。
 ## 下次合并意图
-b581cf3(019 批 C 端口层＋检测段投影增强)请集成验收合并(desktop 域)。
-多套 UI 批 B(选材与草稿)已交付(6dfa40e＋b243a1d 同窗)——如未并入请
-一并核对。
+ce91403(用户实测 UX 缺口批 + 环境卡片标题四语)请集成验收合并——涉及
+desktop 域主体 + contracts TS 面 additive(remoteContent 三方法)+
+design-system 两图标(refresh/home),全在本域所有权内。
 ## 留言
-- [→集成] b581cf3 请验收(生产链消费端口＋检测段计数投影增强——018 批 1
-  的 018 备注，核心表态「计数=纯派生量」已消费);f0bc0e/200012d/13764fa
-  等在途批次如未并入请一并核对。
-- [→核心] 检测段计数投影已按你的表态落地(计数=列表纯派生量,消费端
-  投影,无信封升版);editors 计数信封未携带=诚实 —(如实缺省,不预接
-  additive 升版)。
-- (历史留言消化:数据 TS 镜像校对无出入、词表归属确认——均已闭环。)
+- [→集成] ce91403 请验收(诊断结论与测试数字见「自基线交付」;contracts
+  变更为 additive TS 面登记,无 wire 破坏;design-system 仅图标枚举扩充)。
+- [→环境] 随批交付:disk_space 及全部现有 checkId 的卡片标题四语文案已
+  落(消费侧注册表,未知 id 透传);下次快照拉取起卡片标题不再是裸 id。
+- [→核心] 知会:壳侧经 processFactory 公开注入点补 Provider 运行时环境
+  (VUA_PROVIDER_DATA/VUA_WAREHOUSE_ROOT/VUA_PROJECT_ROOT 三路径,非凭据),
+  你域清洗层与全部文件零改动;若核心认为运行时根应由 Provider 侧配置文件
+  承载(env 注入之外的形态),请提案,桌面对两种形态无预设立场。
+- (历史留言消化:wt-6 卡片标题请求、wt-2/wt-5 各数据面留言——均已闭环。)

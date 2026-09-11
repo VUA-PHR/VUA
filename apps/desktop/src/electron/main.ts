@@ -89,9 +89,20 @@ function broadcastRemoteContentEvent(rendererUrl: string | undefined, event: Rem
  * - 可执行文件:VUA_PROVIDER_EXECUTABLE 覆盖,否则取仓库构建产物
  *   (dist/electron 相对仓库根上溯四级);文件缺失即启动失败——
  *   诚实失败优于静默回落 Mock;
- * - 任务库:用户数据目录,跨重启持久(重启恢复验收的权威来源)。
+ * - 任务库:用户数据目录,跨重启持久(重启恢复验收的权威来源);
+ * - Provider 运行时根(用户实测缺口修复 2026-09-12):数据根=用户数据目录
+ *   本身(BDL/记录/temp/生产用例文档按 bin 约定落 bdl/records/temp/production
+ *   子目录,与壳内 resolveProductionContext 的 production 布局同源);仓储根
+ *   与生产作业项目根为确定性路径。缺失即仓储/下载/生产用例面诚实不可用,
+ *   Provider 正常运行(渲染层呈现诚实空态),此处保证服务面在场。
  */
-function resolveProviderEndpoint(): { executablePath: string; databasePath: string } {
+function resolveProviderEndpoint(): {
+  executablePath: string;
+  databasePath: string;
+  providerDataRoot: string;
+  warehouseRoot: string;
+  projectRoot: string;
+} {
   const platformSuffix = process.platform === "win32" ? ".exe" : "";
   const executablePath = process.env.VUA_PROVIDER_EXECUTABLE
     ?? path.join(
@@ -109,8 +120,17 @@ function resolveProviderEndpoint(): { executablePath: string; databasePath: stri
       `Provider executable is missing: ${executablePath} (build it with: cargo build --release -p vua-provider-host --bin vua-orchestrator-provider)`,
     );
   }
-  const databasePath = path.join(app.getPath("userData"), "orchestrator", "provider.db");
-  return { executablePath, databasePath };
+  const userData = app.getPath("userData");
+  const providerDataRoot = userData;
+  const warehouseRoot = path.join(userData, "warehouse");
+  const projectRoot = path.join(userData, "production", "synthetic-avatar-project");
+  // 目录创建防首次运行失败:Provider 侧 SQLite/文档存储期望根已存在
+  // (mkdir recursive 对已存在目录是幂等 no-op)
+  for (const dir of [warehouseRoot, projectRoot]) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  const databasePath = path.join(userData, "orchestrator", "provider.db");
+  return { executablePath, databasePath, providerDataRoot, warehouseRoot, projectRoot };
 }
 
 function registerIpc(provider: OrchestratorProviderV01): void {
@@ -199,6 +219,22 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     assertLocalSender(senderFrameUrl(event));
     if (typeof viewId !== "string" || typeof url !== "string") throw new Error("invalid remote content request");
     return remoteContent!.navigate(viewId, url);
+  });
+  // 视图内导航历史(固定导航条动作面):身份守卫在管理器,本地来源守卫在此
+  ipcMain.handle("vua:remote-content:go-back", (event, viewId: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string") throw new Error("invalid remote content request");
+    return remoteContent!.goBack(viewId);
+  });
+  ipcMain.handle("vua:remote-content:go-forward", (event, viewId: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string") throw new Error("invalid remote content request");
+    return remoteContent!.goForward(viewId);
+  });
+  ipcMain.handle("vua:remote-content:reload", (event, viewId: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof viewId !== "string") throw new Error("invalid remote content request");
+    return remoteContent!.reload(viewId);
   });
   ipcMain.handle("vua:remote-content:close", (event, viewId: unknown) => {
     assertLocalSender(senderFrameUrl(event));

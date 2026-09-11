@@ -71,10 +71,37 @@ function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
   return {
     id: item.checkId,
     zone: item.zone,
-    title: item.checkId,
+    title: checkTitle(item.checkId),
     status: PRESENCE_SEVERITY[item.presence],
     description: item.errorCode ?? item.presence,
   };
+}
+
+/* ---- 检查项卡片标题(用户实测缺口修复 2026-09-12,环境侧 wt-6 留言:
+ *  disk_space 双区呈现后卡片 title 原为 checkId 透传)。消费侧文案注册表:
+ *  键覆盖引擎当前 id 闭集(engine environment.rs,disk_space 双区同 id);
+ *  引擎新增 id 而本表未收录时如实透传 checkId——不猜测、不伪造标题。 ---- */
+
+/** 检查 id → 四语文案键(strings.deployer.checks.*) */
+const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
+  steam: "steam",
+  vrchat: "vrchat",
+  steamvr: "steamvr",
+  openxr_runtime: "openxrRuntime",
+  network: "network",
+  windows: "windows",
+  disk_space: "diskSpace",
+  unity_hub: "unityHub",
+  unity_editors: "unityEditors",
+  vpm_cli: "vpmCli",
+  vcc: "vcc",
+};
+
+function checkTitle(checkId: string): string {
+  const key = CHECK_TITLE_KEYS[checkId];
+  const checks = strings.deployer.checks as unknown as Readonly<Record<string, string>>;
+  const localized = key === undefined ? undefined : checks[key];
+  return localized ?? checkId;
 }
 
 /**

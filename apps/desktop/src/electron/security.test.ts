@@ -1,12 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   classifyNavigationTarget,
+  installCookiePersistencePolicy,
   installLocalContentNavigationPolicy,
   installRemoteContentNavigationPolicy,
   installRemoteContentSessionPolicy,
   isAllowedLocalSender,
   isAllowedRemoteOrigin,
+  isCookieDomainAllowed,
   localWindowWebPreferences,
+  sessionCookiePersistence,
 } from "./security.js";
 
 describe("Electron local window security", () => {
@@ -375,5 +378,87 @@ describe("remote content session policy (F4-2)", () => {
     downloadHandler!({ preventDefault }, { getURL: () => "https://booth.pm/file.zip" });
     expect(preventDefault).toHaveBeenCalled();
     expect(onViolation).toHaveBeenCalledWith("https://booth.pm/file.zip", "download_denied");
+  });
+});
+
+describe("cookie persistence policy (login session survival, isolated partition)", () => {
+  const allowed = ["https://booth.pm"];
+  const nowSeconds = 1_700_000_000;
+
+  it("admits allowlisted hosts (dot-domain subdomain semantics) and rejects foreign hosts", () => {
+    expect(isCookieDomainAllowed("booth.pm", allowed)).toBe(true);
+    expect(isCookieDomainAllowed(".accounts.booth.pm", allowed)).toBe(true);
+    expect(isCookieDomainAllowed("booth.pm.evil.test", allowed)).toBe(false);
+    expect(isCookieDomainAllowed("", allowed)).toBe(false);
+  });
+
+  it("builds bounded persistence only for allowlisted session cookies", () => {
+    // 会话 Cookie:补 180 天到期,url 按安全旗标选择协议
+    expect(
+      sessionCookiePersistence(
+        { domain: ".booth.pm", path: "/", name: "session", session: true, secure: true },
+        allowed,
+        nowSeconds,
+      ),
+    ).toEqual({ url: "https://booth.pm/", expirationDate: nowSeconds + 180 * 24 * 60 * 60 });
+    // 已持久 Cookie:不动
+    expect(
+      sessionCookiePersistence(
+        { domain: "booth.pm", path: "/", name: "kept", session: false, secure: true },
+        allowed,
+        nowSeconds,
+      ),
+    ).toBeNull();
+    // 清单外来源:不动
+    expect(
+      sessionCookiePersistence(
+        { domain: "tracker.example", path: "/", name: "t", session: true, secure: true },
+        allowed,
+        nowSeconds,
+      ),
+    ).toBeNull();
+  });
+
+  it("rewrites allowlisted session cookies through the session API and ignores the rest", () => {
+    let changedHandler: ((event: unknown, cookie: Record<string, unknown>, cause: string, removed: boolean) => void) | null = null;
+    const set = vi.fn(() => Promise.resolve());
+    const fakeSession = {
+      cookies: {
+        on: vi.fn((_eventName: string, handler: never) => {
+          changedHandler = handler;
+        }),
+        set,
+      },
+    };
+    installCookiePersistencePolicy(fakeSession as never, allowed, () => nowSeconds);
+
+    // 清单内会话 Cookie:按原旗标重写 + 有界到期
+    changedHandler!(
+      {},
+      {
+        name: "session", value: "token", domain: ".booth.pm", path: "/",
+        session: true, secure: true, httpOnly: true, sameSite: "lax",
+      },
+      "explicit",
+      false,
+    );
+    expect(set).toHaveBeenCalledWith({
+      url: "https://booth.pm/",
+      name: "session",
+      value: "token",
+      domain: ".booth.pm",
+      path: "/",
+      secure: true,
+      httpOnly: true,
+      sameSite: "lax",
+      expirationDate: nowSeconds + 180 * 24 * 60 * 60,
+    });
+
+    // 移除事件/已持久 Cookie/清单外来源:不重写
+    set.mockClear();
+    changedHandler!({}, { name: "x", domain: "booth.pm", path: "/", session: true }, "expired", true);
+    changedHandler!({}, { name: "x", domain: "booth.pm", path: "/", session: false }, "overwrite", false);
+    changedHandler!({}, { name: "x", domain: "evil.test", path: "/", session: true }, "explicit", false);
+    expect(set).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
+import { Icon } from "@vua/design-system";
 import {
   useGateway,
   type WarehouseCommandOutcome,
@@ -10,7 +11,9 @@ import { commandErrorText } from "../warehouse/acquire-model.ts";
 import { format, strings } from "../../i18n/index.ts";
 import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
+  BOOTH_HOME_URL,
   browseAvailability,
+  displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
   bytesText,
@@ -23,13 +26,15 @@ import "./import-page.css";
  * 素材导入页(M6 IMP-2 批 A;proposal 015 对账受理,design-standard 0.7.0
  * §8.3「素材导入独立页签」):连续素材获取路径的独立页,两段诚实呈现——
  *
- * - 云端段:内嵌浏览面板。能力两态(desktop 架构 1.1.0):app.snapshot 的
- *   remoteBrowser 标志驱动——false = 未接线诚实降级(不可用标注,无替代
- *   假动作;现状即此态,翻转随批 B);true = 面板可用(打开/地址导航/关闭
- *   视图;后退/前进需 Main 视图历史接口,本批不呈现假按钮——缺口已声明)。
+ * - 云端段:内嵌浏览面板。能力两态(desktop 架构 1.1.0):壳能力自报驱动——
+ *   false = 未接线诚实降级(不可用标注,无替代假动作);true = 面板可用。
+ *   首开自动导航默认首页 booth.pm(允许清单内;用户实测缺口修复),用户
+ *   关闭后不强行重开,后续导航历史照常保留;地址栏手动导航保留。视图
+ *   打开时呈现固定导航条(后退/前进/刷新/回首页/URL 脱敏显示/关闭回
+ *   VUA+窗口控制;用户实测缺口修复——全屏视图原盖死壳界面无法退出),
+ *   Main 侧视图上缘让位同高条带(remote-content REMOTE_VIEW_NAV_STRIP_PX)。
  *   U9 四分法导航在 Main 侧生效,本页不做第二次分流;blocked 事件诚实呈现。
- *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排)、
- *   已完成下载采纳入口(批 B,wire 接线前诚实降级);
+ *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
  * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
    任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
  */
@@ -62,8 +67,7 @@ function EmbeddedBrowsePanel({
     });
   }, []);
 
-  const openAddress = () => {
-    const url = address.trim();
+  const openAddress = (url: string) => {
     setOpenFailed(false);
     void window.vua?.remoteContent?.open({ url }).catch(() => {
       // 窄面拒绝(清单外来源):诚实呈现,不放行不猜测(Main 确认层语义
@@ -72,10 +76,26 @@ function EmbeddedBrowsePanel({
     });
   };
 
+  // 首开自动导航默认首页(booth.pm,允许清单内;用户实测缺口修复):
+  // 仅面板挂载且无打开视图时执行一次——用户关闭视图后不强行重开,
+  // 后续导航历史照常保留
+  useEffect(() => {
+    if (availability.kind !== "available") return;
+    if (window.vua?.remoteContent === undefined) return;
+    openAddress(BOOTH_HOME_URL);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载一次性动作
+  }, [availability.kind]);
+
   const viewId = browse.viewId;
   const closeView = () => {
     if (viewId === null) return;
     void window.vua?.remoteContent?.close(viewId);
+  };
+  const historyAction = (action: "goBack" | "goForward" | "reload") => {
+    if (viewId === null) return;
+    void window.vua?.remoteContent?.[action](viewId).catch(() => {
+      // 未知视图(已被关闭等):视图关闭事件会同步状态,这里不猜测
+    });
   };
 
   if (availability.kind === "unavailable") {
@@ -97,7 +117,11 @@ function EmbeddedBrowsePanel({
           placeholder={copy.addressPlaceholder}
           onChange={(event) => setAddress(event.target.value)}
         />
-        <Button variant="default" disabled={address.trim() === ""} onClick={openAddress}>
+        <Button
+          variant="default"
+          disabled={address.trim() === ""}
+          onClick={() => openAddress(address.trim())}
+        >
           {copy.openCta}
         </Button>
         {viewId !== null ? (
@@ -122,6 +146,88 @@ function EmbeddedBrowsePanel({
         <div role="alert">
           <p className="vua-caption vua-text-secondary">{copy.blockedTitle}</p>
           <p className="vua-caption vua-text-secondary">{browse.lastBlocked}</p>
+        </div>
+      ) : null}
+      {viewId !== null ? (
+        <div className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={copy.navBack}
+            title={copy.navBack}
+            disabled={!browse.canGoBack}
+            onClick={() => historyAction("goBack")}
+          >
+            <Icon name="arrow-left" size={16} />
+          </button>
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={copy.navForward}
+            title={copy.navForward}
+            disabled={!browse.canGoForward}
+            onClick={() => historyAction("goForward")}
+          >
+            <Icon name="arrow-right" size={16} />
+          </button>
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={copy.navReload}
+            title={copy.navReload}
+            onClick={() => historyAction("reload")}
+          >
+            <Icon name="refresh" size={16} />
+          </button>
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={copy.navHome}
+            title={copy.navHome}
+            onClick={() => void window.vua?.remoteContent?.navigate(viewId, BOOTH_HOME_URL)}
+          >
+            <Icon name="home" size={16} />
+          </button>
+          <span className="vua-import__browse-url" title={browse.currentUrl ?? undefined}>
+            {displayUrl(browse.currentUrl ?? "")}
+          </span>
+          <button
+            type="button"
+            className="vua-import__browse-button vua-import__browse-button--close"
+            aria-label={copy.navClose}
+            title={copy.navClose}
+            onClick={closeView}
+          >
+            <Icon name="close" size={16} />
+          </button>
+          <span className="vua-import__browse-separator" aria-hidden="true" />
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={strings.app.windowMinimize}
+            title={strings.app.windowMinimize}
+            onClick={() => void window.vua?.window.minimize()}
+          >
+            <Icon name="minimize" size={16} />
+          </button>
+          <button
+            type="button"
+            className="vua-import__browse-button"
+            aria-label={strings.app.windowMaximize}
+            title={strings.app.windowMaximize}
+            onClick={() => void window.vua?.window.toggleMaximize()}
+          >
+            <Icon name="maximize" size={16} />
+          </button>
+          <button
+            type="button"
+            className="vua-import__browse-button vua-import__browse-button--close"
+            aria-label={strings.app.windowClose}
+            title={strings.app.windowClose}
+            onClick={() => void window.vua?.window.close()}
+          >
+            <Icon name="close" size={16} />
+          </button>
         </div>
       ) : null}
     </div>

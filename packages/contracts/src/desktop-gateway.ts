@@ -588,6 +588,12 @@ export interface RemoteContentApiV1 {
   /** 打开远程视图并加载 URL;来源不在允许清单时以错误拒绝 */
   open(request: { readonly url: string }): Promise<RemoteContentViewStateV1>;
   navigate(viewId: string, url: string): Promise<RemoteContentViewStateV1>;
+  /** 视图内导航历史动作(内嵌固定导航条;未知视图以错误拒绝):后退/前进
+   *  仅在历史可走时移动,刷新重载当前地址。历史成员在此前导航时已经过
+   *  Main 侧导航策略,本面不做二次来源裁决 */
+  goBack(viewId: string): Promise<RemoteContentViewStateV1>;
+  goForward(viewId: string): Promise<RemoteContentViewStateV1>;
+  reload(viewId: string): Promise<RemoteContentViewStateV1>;
   close(viewId: string): Promise<void>;
   setVisible(viewId: string, visible: boolean): Promise<RemoteContentViewStateV1>;
   events: { subscribe(listener: (event: RemoteContentEventV1) => void): () => void };
