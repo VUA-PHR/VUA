@@ -11,6 +11,9 @@ pub mod warehouse_download_adopt;
 pub mod warehouse_import;
 pub mod warehouse_maintenance;
 
+#[cfg(test)]
+mod test_support;
+
 pub use artifact_inspection::{
     ArtifactInspector, DownloadInspectionOutcome, DownloadInspectionRequest, InspectionError,
     InspectionPolicy, StagingRejection,
