@@ -1,0 +1,11 @@
+{
+  "contractVersion": "0.1",
+  "taskId": "task-bad-2",
+  "revision": 2,
+  "correlationId": "corr-bad-2",
+  "state": "succeeded",
+  "cancellationRequested": false,
+  "recoveryDisposition": "none",
+  "updatedAt": "2026-09-12T05:34:00Z",
+  "result": null
+}

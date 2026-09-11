@@ -76,6 +76,20 @@ export interface ApplicationSnapshotV01 {
   readonly capabilities: CapabilitySnapshotV01;
 }
 
+/**
+ * 任务终态结果载荷（BOARD #22 result 回流增量，2026-09-12）：任务正常完成
+ * （succeeded / succeeded_with_warnings）时任务实际交回的 Done payload 原样。
+ * 快照面对其内部形状零承诺——形状由产出该任务的操作词表定义并随其演进
+ * （project-ops 族载荷自描述 schemaVersion/operation；production 族载荷形状
+ * 归 production-use-case 词表），快照面演进与操作词表演进解耦。
+ * 与 `task.completed` 事件的 `payload` 同源同值（同一任务存储投影）；
+ * failed / cancelled / 非终态 / inspect_required 快照恒不带本字段，
+ * 失败事实走既有 `error` 字段。
+ */
+export interface TaskDonePayloadV01 {
+  readonly [key: string]: unknown;
+}
+
 export interface TaskSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
   readonly taskId: string;
@@ -86,6 +100,7 @@ export interface TaskSnapshotV01 {
   readonly recoveryDisposition: TaskRecoveryDispositionV01;
   readonly updatedAt: string;
   readonly error?: AppErrorV01;
+  readonly result?: TaskDonePayloadV01;
 }
 
 interface ApplicationRequestBaseV01 {
