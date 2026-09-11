@@ -2,12 +2,19 @@
 
 [English](project-ops-v0.1_EN.md) | [简体中文](project-ops-v0.1_ZH.md)
 
+> **⚠️ Superseded by v0.2 (2026-09-12)**: the `project.setNote` note write
+> command (D-6 desktop confirmation ruling A, proposal 013 inline thread)
+> was frozen with the core upgrade batch. The current specification is
+> [project-ops-v0.2_EN.md](project-ops-v0.2_EN.md); this document is kept
+> for history only and maps to `schemas/project-ops/v0.1/` (do not edit;
+> the import-copy shape is unchanged in v0.2).
 > Document version: 0.1
-> Status: **Frozen (2026-09-09)** — the vocabulary row is the standalone
+> Status: **Superseded (→ v0.2)** (2026-09-12; previously: Frozen
+> 2026-09-09 — the vocabulary row is the standalone
 > project-ops family (`project.` prefix; parallel to the proposal 013
 > inspection read face, read/write lines separate); the implementation batch
 > was accepted and merged by integration (226dd41, rerun 428/0) plus the
-> seven-refusal-code closed-set arbitration confirmation.
+> seven-refusal-code closed-set arbitration confirmation).
 > Machine-readable vocabulary: `schemas/project-ops/v0.1/` (command / result
 > schemas + 2 positive + 2 negative vectors; implementation tests
 > `crates/project-manager/tests/import_copy.rs`)

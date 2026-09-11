@@ -3,7 +3,32 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-12 集成 **#7 瞬败修复验收批**（数据 cd3eead 交付、集成验收
+最近更新：2026-09-12 集成 **project-ops v0.2 升版批＋桌面 P2 批验收（四合并）**：
+①**10c0d68**＝slot/wt-2 核心 **project-ops v0.2 增量冻结**验收合并——
+`project.setNote` 写命令（D-6 桌面确认裁定 A 兑现，013 内联线程）＋
+`projectId→projectPath` 定形修正（同族标识同形）＋守卫闭集三码扩充
+（project_not_found／not_vua_native／identity_unreadable，十码闭集冻结）＋
+kind=note 投影与 vuaIdentity present 同构＋协议本双语＋REGISTRY 升版；
+**验收证据**：合并前基线 67/497/0＋合并后 **67 套件/501 通过/0 失败＋
+clippy -D warnings 零告警**（隔离 CARGO_TARGET_DIR，多轮一致）。②
+**alcom-vcc 1.2.0**（环境 B5(1) 来源判定原理正式答复，368c277）随 wt-6
+状态批**并发带入**——合并信息误写「collab-only」**登记偏差如实声明**
+（message 已不可改；交付本身验收核可：环境域内文档切片、双语镜像、
+REGISTRY 1.1.0→1.2.0、B5(2) 文案正确留桌面、诚实边界声明「VUA 不能断言
+真实出处」核可）。③slot/wt-3 桌面 **P2 批**验收合并——release 页消费
+build-record v0.3 读面（2ff721c：收窄纪律＝必需字段/词表外整条拒绝、
+planDeviations 缺席＝0、evidenceSummary 缺席＝null 计数明示；三诚实态
+failed≠empty；recovered 徽标 W24 先例；证据引用仅计数＋016 草案注记；
+**验收证据：桌面 check 全链 EXIT=0，vitest 61 文件/483 测试全绿**，与桌面
+声称逐字一致）＋P0/P1/P4 对账核可（**P5 集成逐切片验收就此办理**：夜间
+任务二桌面四行全闭环）。④三状态批（wt-4/wt-5/wt-6，collab-only 免测）。
+**随批簿记**：project-ops v0.1 协议本双语头部状态对齐（已取代（→ v0.2），
+升版批簿记缺口由集成补齐，registry 49/49 exit 0）；**N-3/N-4 路由更正**
+（桌面请求核实成立：两处均在核心域 crates/——ipc_002 测试在
+crates/orchestrator/tests/、尾随逗号在 crates/provider-host/tests/
+environment_snapshot_wire.rs；原「归桌面顺手批」路由错误，更正→核心）。
+**桌面接线批解锁**（project-ops v0.2 冻结＋路由就绪，D-6 时序条款满足）。
+前录 2026-09-12 集成 **#7 瞬败修复验收批**（数据 cd3eead 交付、集成验收
 合并 d78c43b——根因实证＋红绿证据闭环＋回归压力测试钉死；开放问题 #7 本例
 关闭；附带簿记更正：r3d「日志归档」实为 *.log gitignore 排除未入库）。前录
 2026-09-12 集成 BG-21 批（**登记表校验器畸形行静默跳过修复交付**
@@ -310,7 +335,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | eac-allowlist（schema） | v0.1 | **已冻结（M6 EAC R2/R3 实现，2026-09-09，环境，集成验收复跑 442/0）**——允许清单数据面（起始为空＝八点语义第 2 点：清单空期间终止能力显示未核验/不可用）＋候选再核验原语；实现 eac_allowlist.rs 164 行＋eac_verify.rs 217 行＋296 行测试。**R3 签名核验追加验收（同日，复跑 443/0）**——WinVerifyTrust 完成 006 R3 四件套核对（R1b groundwork） |
 | eac-terminate（schema） | v0.1 | **已冻结（M6 EAC R1b 实现，2026-09-09，环境，集成验收复跑 447/0）**——EAC 终止步骤（R1b：006 全链 R1a/R2/R3/R1b 交付收官）；termination.schema.json（101 行）＋fixtures 两件（terminated/refused）＋实现 eac_terminate.rs 346 行＋296 行测试＋测试残留修复 |
 | production-evidence（schema） | v0.1 | **已冻结（W23，2026-09-08，数据，集成验收复跑 376/0）**——兼容/缺失证据条目模型（evidenceId/kind 闭集/subject/observedAt/detail/sourceRef/resolution）；跨词表引用消费 recipe v0.3 套件（解析文档 evidenceIds 引用不复制）；存储随 AMF 生产持久域（011 收敛决议①） |
-| project-ops（schema / 词表） | v0.1 | **已冻结（014 实现，2026-09-09，环境，集成验收复跑 428/0）**——`project.import-copy` 写命令（plan/apply 两 phase，apply 强制 confirmedPlanDigest 双摘要）＋守卫拒绝码闭集七项（仲裁确认）＋桌面字段请求落字段（estimatedBytes/excludedEntries/targetPath）；与 013 project-inspection 读面平行读写分线；实现 import_copy.rs 607 行＋342 行测试 |
+| project-ops（schema / 词表） | **v0.2** | **已冻结（v0.1 增量族升版，2026-09-12，核心，集成验收合并 10c0d68：合并后复跑 67/501/0＋clippy 零告警）**——新增 `project.setNote` 备注写命令（D-6 桌面确认裁定 A「列表行内查看＋行内轻量编辑」，proposal 013 内联线程；`projectPath` 为本词表族唯一标识形态〔`projectId` 草案定形修正〕；note 单行非空 ≤2000 字符、null 清除；守卫闭集三码扩充：project_not_found／not_vua_native／identity_unreadable，与 v0.1 七码合成十码冻结闭集；kind=note 完成面与 project-inspection v0.2 vuaIdentity present 投影同构，写备注不改 markedAt）；import-copy 形状零变更；协议本双语 v0.2＋REGISTRY 已刷；v0.1 已取代（→ v0.2，头部已对齐）。**接线注记**：provider 路由已 live（served_capabilities 含 project.setNote）；TS 面与列表行内编辑归桌面接线批（已解锁）；接线前不得称端到端。历史：v0.1（014 实现，2026-09-09，集成验收复跑 428/0，import_copy.rs 607 行＋342 行测试）已取代 |
 | recipe 套件（recipe / local-resolution / **approved-plan** / **build-record**） | **v0.3** | **已冻结·全四件（2026-09-08）**：W20 前三件（集成验收 0400bee，复跑 367/0）＋W22 收尾件 build-record（proposal 012 收敛：产线互审三核验点确认＋两缺口〔commandId/replayed〕吸收，集成验收复跑 **370/0**＋clippy 零告警）——M5 生产主线产物链（意图/事实/授权/历史，引用不复制）；v0.2 整体废弃不建迁移器 |
 | production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 已冻结（2026-09-09，核心，集成验收复跑 428/0）**——24 向量＋向量驱动消费测试完成冻结硬前置（**W25 前置①凭证落地**）：十方法 Schema＋桌面 TS 面＋双语协议本＋全路由（recipe save/get/list＋resolve＋plan.approve/get/list＋**job.execute approved-plan 编排〔closing cut〕**＋record.get） |
 
@@ -373,6 +398,12 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
     已入库且含本机路径，集成评估按 BG-13 方式消毒或改 .gitignore（需一次
     有意决策）；r3b N-2 默认测试集已零真实 EAC 交互（M 门真机清单在册）；
     N-3 ipc_002 顺序护栏、N-4 尾随逗号外观项归桌面顺手批。
+    **【路由更正（2026-09-12 集成，桌面请求核实成立）】**：N-3/N-4 两处
+    实为**核心所有权域**——`orc_ipc_002_*` 测试在
+    `crates/orchestrator/tests/`（environment.rs/runtime.rs）、尾随逗号在
+    `crates/provider-host/tests/environment_snapshot_wire.rs`；原「归桌面
+    顺手批」路由错误，更正→核心（随手批节奏自决；r3b 原报告维持
+    「非阻断/可接受/无害」定性）。桌面不代做、不越权。
   - **同窗验收（推送后合并，未含于本次推送）**：桌面 UX 四缺口批
     ce91403 验收合并 **5809d37**（证据：cargo 67/495 两轮一致＋clippy 0＋
     桌面 check 463/leak159 绿）——**下一推送门对象**。
