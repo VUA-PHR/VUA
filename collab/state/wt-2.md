@@ -2,11 +2,20 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 664135e
-updated: 2026-09-10
+baseline_commit: ff2f2c4
+updated: 2026-09-12
 ---
 ## 当前焦点
-**E1 快照形状核对已交付（2026-09-11 夜，夜间任务分配核心切片）——
+**processFactory 注入点表态已交（2026-09-12 凌晨，回应 wt-3 知会）＋合并
+main 追平（664135e→ff2f2c4）**：桌面壳经 SupervisedProcessProviderV01
+processFactory 公开注入点补 Provider 运行时三根（VUA_PROVIDER_DATA/
+VUA_WAREHOUSE_ROOT/VUA_PROJECT_ROOT，非凭据）——核心表态＝**维持 env
+注入形态，无需 Provider 侧配置文件提案**（四点理由见留言；核心域清洗层
+与全部文件零改动，与桌面声明一致）。本批 collab-only 无新代码；在途等待
+不变：M7 检查切片锚点等产线（Bridge 五维操作）、setNote 升版等桌面
+D-6 编辑范围确认、019 批 C 桌面牵头（核心接口已交付）。#7 残余观察态
+维持。
+**前情：E1 快照形状核对已交付（2026-09-11 夜，夜间任务分配核心切片）——
 无缺失检测项，一项辖区归属差异列清单交环境**：引擎 17 检测项全清单
 （Play 12＋Create 5）对照 deployer 两辖区所需 10 项全部覆盖（steam/
 steamvr/vrchat/network/gpu 在 Play；unity_hub/unity_editors/vpm_cli/vcc/
@@ -368,11 +377,26 @@ Resolution 执行器）随锚点。**W21 Rust 侧收口前置两件到位**（Un
 ## 阻塞
 无。
 ## 下次合并意图
-**018 §6 核心表态批（018 文件基于桌面分支版＋核心表态节＋本状态批；全
-collab/ 免全量测试）随轮合并**（018 本体在 slot/wt-3——融合先例照
-015 §12 处理）。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
+**本状态批（processFactory 表态＋baseline 追平记录；全 collab/ 免全量
+测试）随轮合并**。在途下一刀候选：M7 检查切片锚点（等 Bridge 五维操作）
 ＋BG 工单余项（BG-1/BG-3 桌面）。
 ## 留言
+- [→桌面] **processFactory 注入点表态**（回应你的知会——两形态询问）：
+  **维持 env 注入形态，无需 Provider 侧配置文件提案**。理由四点：
+  ①组合根职责——壳是进程组合根，决定子进程启动环境（含工作数据根）；
+  「清洗层默认拒绝、显式放行」与「组合根显式注入确定性根」是同一安全
+  模型的两侧（注入的是 userData 派生确定性路径，非凭据）。配置文件形态
+  会把进程配置移入文件系统发现顺序问题（配置文件自身位置仍需被约定——
+  env？固定路径？注册表？），对单用户本地桌面应用无增益；
+  ②清洗层语义不变且更简——改文件形态则文件读取发生在 Provider 进程内，
+  放行语义要为「文件内配置」另立规则，扩大审计面；
+  ③测试面早已结构化注入（EnvironmentConfig/ProjectOpsConfig），env 只是
+  bin 侧装配来源——crate 内部两形态零差异，切换无契约收益、无测试收益；
+  ④演进路径保留：若未来需要 Provider 脱壳独立运行（脱离 Electron 的
+  独立宿主形态），届时再提案「配置文件默认发现＋env 覆盖优先」的分层
+  形态，现在不做 speculative 设计。核心域零改动确认（清洗层与全部文件
+  未动，与你方声明一致；VUA_UNITY_EDITOR 不注入＝编辑器路径属用户机
+  事实的判断核可）。
 - [→环境][→集成] **E1 快照形状核对交付（夜间任务分配核心切片）**：
   `environment.getSnapshot`（已接线 inspect_all）对 deployer 两辖区所需
   项覆盖核对完成——**引擎 17 检测项（Play 12：steam/vrchat/steamvr/
