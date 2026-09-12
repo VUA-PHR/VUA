@@ -20,8 +20,9 @@
 //! The verified branch is exercised through an injected deterministic
 //! verifier (the wire face under test is the mapping, not the PE resource
 //! reader); the refused branch additionally runs through the real system
-//! wiring against a nonexistent path, which refuses deterministically on
-//! every platform (target_missing, located before any identity read).
+//! wiring against a nonexistent path, which refuses deterministically
+//! (target_missing on Windows; on non-Windows the system wiring itself
+//! refuses with unsupported_platform before any path work).
 
 use std::fs;
 use std::io::Cursor;
@@ -33,7 +34,8 @@ use serde_json::{json, Value};
 use vua_orchestrator::editor_target_codes;
 use vua_project_manager::{EditorPathIdentity, EditorPathRefusal, EditorPathVerdict};
 use vua_provider_host::{
-    run_provider_host_full, EditorPathVerifier, ENVIRONMENT_VERIFY_UNAVAILABLE,
+    run_provider_host_full, EditorPathVerifier, EDITOR_VERIFY_SCHEMA_VERSION,
+    ENVIRONMENT_VERIFY_UNAVAILABLE,
 };
 
 fn schemas_dir() -> PathBuf {
@@ -176,16 +178,18 @@ fn verified_verdict_maps_to_the_frozen_result_shape() {
     assert_eq!(result["classification"], "production_target");
     assert_eq!(result["guidanceCode"], "vua.env_managers.editor_production_target");
     assert_eq!(result["chinaDistribution"], false);
-    assert_eq!(result["schemaVersion"], "0.1");
+    // Nail 3 keyed on the core-owned constant (never a private literal).
+    assert_eq!(result["schemaVersion"], EDITOR_VERIFY_SCHEMA_VERSION);
     let _ = fs::remove_dir_all(&root);
 }
 
 #[test]
 fn refusal_is_a_result_state_never_an_error_envelope() {
     // Nail 1 through the REAL system wiring: a nonexistent path refuses
-    // deterministically (target_missing) on every platform, before any
-    // identity read — and the refusal must arrive as ok:true +
-    // verdict:"refused", never as an application error envelope.
+    // deterministically — on Windows before any identity read
+    // (target_missing); on non-Windows the system wiring itself refuses
+    // (unsupported_platform). Either way the refusal must arrive as
+    // ok:true + verdict:"refused", never as an application error envelope.
     let root = unique_root("refused");
     let database = root.join("tasks.sqlite");
     let missing = root.join("nowhere").display().to_string();
@@ -200,9 +204,13 @@ fn refusal_is_a_result_state_never_an_error_envelope() {
         .collect();
     assert!(errors.is_empty(), "refused result violates the frozen schema: {errors:?}");
     assert_eq!(result["verdict"], "refused");
+    #[cfg(windows)]
     assert_eq!(result["code"], "vua.editor_verify.target_missing");
+    #[cfg(not(windows))]
+    assert_eq!(result["code"], "vua.editor_verify.unsupported_platform");
     assert_eq!(result["exePath"], Value::Null);
-    assert_eq!(result["schemaVersion"], "0.1");
+    // Nail 3 keyed on the core-owned constant (never a private literal).
+    assert_eq!(result["schemaVersion"], EDITOR_VERIFY_SCHEMA_VERSION);
     let _ = fs::remove_dir_all(&root);
 }
 
@@ -330,5 +338,66 @@ fn absence_code_is_never_a_refusal_code() {
             "refusal codes stay in the primitive's closed family: {emitted}"
         );
     }
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn envelope_const_is_the_core_owned_row_version() {
+    // Nail 3 anchor: the published constant IS the frozen draft schema's
+    // envelope const — the constant and the schema cannot drift apart
+    // silently (the result validators above enforce the schema face; this
+    // pins the constant face).
+    assert_eq!(EDITOR_VERIFY_SCHEMA_VERSION, "0.1");
+}
+
+#[test]
+fn capability_row_declares_the_route_available() {
+    // The vocabulary row face: the route is always wired (stateless direct
+    // primitive, no service composition), so the capability row is
+    // unconditionally available.
+    let root = unique_root("caps");
+    let database = root.join("tasks.sqlite");
+    let frame = json!({
+        "frameVersion": "0.1",
+        "frameId": "frame-caps",
+        "kind": "request",
+        "payload": {
+            "contractVersion": "0.1",
+            "requestId": "req-caps",
+            "correlationId": "corr-caps",
+            "kind": "query",
+            "method": "application.getSnapshot",
+            "params": {},
+        },
+    });
+    let mut output = Vec::new();
+    run_provider_host_full(
+        Cursor::new(format!("{frame}\n")),
+        &mut output,
+        &database,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
+    .expect("frame loop runs");
+    let frames: Vec<Value> = String::from_utf8(output)
+        .expect("output is UTF-8")
+        .lines()
+        .map(|line| serde_json::from_str(line).expect("output lines are frames"))
+        .collect();
+    let operations = frames[0]["payload"]["value"]["capabilities"]["operations"]
+        .as_array()
+        .expect("operations array");
+    assert!(
+        operations.contains(&json!({
+            "operationId": "environment.verifyEditor",
+            "availability": "available"
+        })),
+        "capability row missing: {operations:?}"
+    );
     let _ = fs::remove_dir_all(&root);
 }
