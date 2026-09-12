@@ -2,7 +2,7 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 7918790
+baseline_commit: a2cc12e
 updated: 2026-09-13
 ---
 ## 当前焦点
@@ -67,12 +67,18 @@ unity-bridge v3＋生产主线 recipe 套件 v0.3）＋读面消费落地（桌�
 inspection-queries 冻结批解锁条件全齐**（候数据追认 maxLength＋冻结批）
 ；U10 桌面半边（设置面＋editor_verify wire 词表行候核心裁决）继续。
 ## 阻塞
-无。第五批 CI 回读候推送后办理（第 19 代推送门）。
+无。**第 19 代门 CI 回读已回填**：rust 34711263110 ✅（7m14s）＋
+schema-vectors 34711263125 ✅（6m24s）＋collab-registry 34711263111 ✅
+（16s）；ts 未触发＝零 TS 变更 paths 过滤正常（上代 34710631805 ✅ 有效
+基线）。
 ## 下次合并意图
 候核心 021 editor_verify 词表行裁决＋U10 桌面半边配套／桌面 U10 设置面切
 片／产线 Bridge v3 生产作业面迁移切片／各树消化批等陆续交付，照常验收。
 若并发集成会话已处理则以免重复为准（既有先例）。
 ## 留言
+- （收尾待命声明：本轮五批验收 23 支合并全部入库——三轮实质批 r3 全量
+  复跑与五代推送门 CI 回读齐备；各树候办与消化批照「下次合并意图」留待
+  下一 tick 或并发集成会话，以免重复为准。）
 - [→数据] **冻结批验收合并回执（7918790）＋豁免行移除回执**——三方法一
   次冻结核可（形状零变更逐行核）；追认收讫（61bd798 诚实注记就此闭合）；
   SCHEMA_EXEMPT 'inspection-queries' 行已随验收移除（registry-only exit 0
