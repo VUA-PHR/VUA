@@ -3,7 +3,22 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-13 0:1x（工作时段）集成 **overlay 置顶窗先行切片验收合并＋数据状态批合并**：
+最近更新：2026-09-13 0:5x（工作时段）集成 **五笔验收合并——overlay wire 批 1 冻结入库＋U10 环境半边原语＋M7 锚点 Bridge v3 落地**：
+①**1d3509b**＝slot/wt-2 核心 **713329f overlay wire 面批 1 验收合并并冻结**（017 批 1：`overlay.getSnapshot`
+按需轮询＋production_card 纯函数投影＋诚实 unavailable＋schema 六向量＋TS 面 42/42＋协议双语＋REGISTRY）；
+②**33c4912**＝slot/wt-6 环境 **3eef4e4 editor_verify v0.1＋proposal 021＋BOARD #23**（U10 环境半边，门①②
+事实原语，无 wire 面）；③**7d63abe**＝slot/wt-4 产线 **c33adb3 M7 锚点实现切片 Bridge v3**（v2 冻结超集
+同面升版：三只读检查操作 dryRun 强制＋类型化诊断不冒充官方评级＋011 漂移合法化声明＋dependencies 单层
+裁决行使＋inspection-evidence 草案态维持；**C# EditMode 已落地未运行验证如实申报，真机归 W25，零端到端
+宣称**）；④**c6284f4**/⑤**3881cfa**＝wt-5/wt-6 collab-only 状态批（免测）。**无合并动作两项（如实）**：
+slot/wt-2（c17ffe6）／slot/wt-3（cb31dfe）纯追平零自有内容。**验收证据**：r1 三实现批 diff 全文核（域
+纪律/冻结件零触碰/诚实边界逐项）；r2 全增量机械核验（零色值/零 CSS；代码区新增中文仅 Bridge C# 诊断消息
+照 v1/v2 既有惯例）；r3 合并后本机独立复跑两轮 pipefail 严格退出码：**cargo workspace 522/0/27（＋环境 9）
+→528/0/27（＋bridge_v3_vectors 6）＋clippy -D warnings 0＋contracts 42/42**，与各树声称逐字一致。
+**M7 链状态**：**硬前置①（Bridge 五维产出操作）落地并验收**——核心冻结解除候办（016 仲裁第 5 点）；数据
+inspection-queries v0.1 到序可领；桌面消费接线候追平（其追平尖 cb31dfe 不含 1d3509b，接线前须再追平）。
+**登记尾随项 [→产线]**：REGISTRY unity-bridge 行仍为 v2、协议本无 v3 节——v3 冻结登记请随下批补齐或声明
+冻结边界。前录 2026-09-13 0:1x（工作时段）集成 **overlay 置顶窗先行切片验收合并＋数据状态批合并**：
 ①**d706beb**＝slot/wt-3 桌面 **12b5592 overlay 置顶窗先行切片验收合并**（017 §4 桌面表态落地，
 M7 桌面行「桌面 Overlay 收尾」域内先行部分）——窗口创建/置顶/显隐（决策面纯函数＋5 新测试，
 F7a spike 形态参数钉死）＋正式入口（i18n 四语）＋contracts TS 面 additive（窗口族动作**非 wire
@@ -422,6 +437,26 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-13（0:5x，第 13 代推送门，实质批）**：`d6646c5 → <簿记尖>`
+  （约 20 提交：五笔验收合并 1d3509b/33c4912/7d63abe/c6284f4/3881cfa＋本簿
+  记——三实现批 wt-2 overlay wire／wt-6 editor_verify／wt-4 Bridge v3＋两
+  collab 状态批）。
+  - **门证据（r1/r2/r3 增量聚焦法）**：r1＝三实现批 diff 全文核（域纪律：
+    零跨域文件；v2 冻结件零触碰；诚实边界——vua.overlay.unavailable／
+    拒绝码闭集／C# EditMode 未运行验证申报——逐项在位）；r2＝全增量机械
+    核验（零 hex 色值、零 CSS 文件；代码区新增中文仅 Bridge C# 诊断消息，
+    照该文件 v1/v2 既有惯例且自带「不是官方评级/判定」诚实措辞）；r3＝合
+    并后本机独立复跑两轮（pipefail 真实退出码）**cargo workspace 522/0/27
+    →528/0/27＋clippy --workspace --all-targets -D warnings EXIT=0＋
+    @vua/contracts check 42/42 EXIT=0**，与三树声称逐字一致；registry
+    51/51 exit 0。
+  - **方法学更正（如实）**：本轮首次后台复跑的退出码经管道被 tail 吞掉
+    （CARGO_TEST_EXIT 实为 tail 退出码）——发现后即以 `set -o pipefail`
+    严格重跑全部三项取代之；上表证据均取自严格重跑，首次弱证据不作数。
+  - **CI 回读**：待回填（推送后回读，下轮簿记补记；本轮预期 ts＋rust＋
+    schema-vectors＋collab-registry 均触发——crates/schemas/REGISTRY/
+    packages 均有变更）。
+
 - **2026-09-13（0:1x，第 12 代推送门，实质批）**：`877d4f1 → <簿记尖>`
   （3 提交：wt-5 状态批验收合并 8aabf6d＋**wt-3 overlay 切片验收合并
   d706beb**＋本簿记）。
@@ -652,7 +687,7 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | 16 | proposal **014**（环境，M6 T-A 延伸）：**「导入为 VUA 管理的副本」写路径**任务化语义——R1 语义＝1.2.0 五项规格照录不扩展（新项目目录＋排除可再生目录与 `.vua/`＋完整 Inspect＋来源关系记录）；R2 确认链（计划含磁盘占用实际统计→用户显式确认→执行→复检）；R6 裁决流程＝核心（任务面/路由/词表）与桌面（交互形态——与 T-C 四项交互形状确认合并处理）表态 → 集成仲裁 → 语义冻结 → 环境实现 | 核心/桌面 → 集成 | **✅ 已接受·语义冻结＋实现验收合并（2026-09-09）**：词表行＝独立 `schemas/project-ops/v0.1/`（project. 前缀，写命令 `project.import-copy`；与 013 读面平行读写分线）；九态任务＋**不隐式续传**（半成品 inspect_required，清理/放弃均用户显式触发）＋新项目 `.vua/` 锁（原项目全程只读）＋守卫 provider 侧任务内；确认链＝要点确认面板（桌面形态采纳）＋桌面字段请求已落字段（estimatedBytes/excludedEntries/targetPath）；审计收据与 W23 证据引用同构；**实现批验收合并（226dd41：import_copy.rs 607 行＋342 行测试＋词表冻结件＋向量 7 件；集成复跑 428/0）＋七项拒绝码闭集仲裁确认**——桌面接线批解锁（013＋014 两命令面均冻结） |
 | 17 | U3 语义修订（环境登记，M6 提前开工批衍生的 [需用户] 项——B5 来源判定说明/B6 迁移两态与原项目只读边界） | 环境 | **✅ 用户已裁决（2026-09-09 13 项全裁，U8 ①②③覆盖）**：来源＝项目内 VPM 包（素材包转 VPM 也可含）；迁移＝复制到新目录（原地接管不适用）；迁移后副本为 VUA 原生项目可写、未迁移/迁移中＝只读；注册表披露＋用户手动解除的边界随 U8 ③方案自然消解。→ 已销账，语义随 014 实现与 M6 T-B 落地 |
 | 18 | Unity 项目备注功能（环境登记 [需用户]——B4：Unity ≥2022 项目名不支持亚洲字符的补位设计） | 环境 | **✅ 用户已裁决（2026-09-09 13 项全裁，裁决 12）**：批准项目备注功能——VUA 元数据存于独有标识文件（见 U8 ②方案），**范围只在列表显示**。→ 转已裁决待办：随 M6 环境实现切片落地 |
-| 19 | proposal **016**（产线，BG-4 工单交付，2026-09-10）：**检查证据面契约预备**——inspection-evidence v0.1 **草案**（schemas/inspection-evidence/v0.1/：五维闭集 functional/performance/dependencies/lighting/upload_readiness；unavailable 维 schema if/then 钉死 basis=none＋空 checks＝「缺席即证据」；basis 诚实纪律〔bridge_local_estimate 非官方等级；official_sdk_rating 为保留值，SDK 交接切片落地前禁用〕；聚合规则 fail＞warn〔含 unavailable〕＞pass）；向量 7 件（正 2＋负 5）＋校验测试 4 项全绿（2026-09-10 本机）；**草案态：REGISTRY 未动、未标冻结**（冻结硬前置清单见提案 §7）；锚定现有事实源（v1 validate_avatar 类型化检查＋analyze_performance 本地估算；依赖/光照/上传准备度无产出操作＝诚实缺口） | 产线 → 核心/环境/数据（表态）→ 集成（仲裁） | **✅ 已接受（2026-09-10 凌晨仲裁照单采纳，三方表态齐无分歧；提案状态改已接受，结论记录见 016 末尾）**：存储＝AMF 持久域第五文档库（锚 EvidenceStore：append-only/hard_link exactly-once/身份寻址/缺席根空态，不进 BDL）；读取路由＝独立词表行 `schemas/inspection-queries/v0.1/`（get/list 照 record 先例，不扩 production-use-case v0.2）；聚合/unavailable/official_sdk_rating 保留值纪律核可；**dependencies 维定义权在产线**（manifest 声明完整性 vs 引用完整性消费层选择，检查切片实现时写入冻结件；跨域引用照 012 evidenceIds 先例）。**语义权威自 M7 检查切片锚点领取时生效**；冻结硬前置照 §7（核心声明锚前不冻结）。→ 保留本行供 M7 引用 |
+| 19 | proposal **016**（产线，BG-4 工单交付，2026-09-10）：**检查证据面契约预备**——inspection-evidence v0.1 **草案**（schemas/inspection-evidence/v0.1/：五维闭集 functional/performance/dependencies/lighting/upload_readiness；unavailable 维 schema if/then 钉死 basis=none＋空 checks＝「缺席即证据」；basis 诚实纪律〔bridge_local_estimate 非官方等级；official_sdk_rating 为保留值，SDK 交接切片落地前禁用〕；聚合规则 fail＞warn〔含 unavailable〕＞pass）；向量 7 件（正 2＋负 5）＋校验测试 4 项全绿（2026-09-10 本机）；**草案态：REGISTRY 未动、未标冻结**（冻结硬前置清单见提案 §7）；锚定现有事实源（v1 validate_avatar 类型化检查＋analyze_performance 本地估算；依赖/光照/上传准备度无产出操作＝诚实缺口） | 产线 → 核心/环境/数据（表态）→ 集成（仲裁） | **✅ 已接受（2026-09-10 凌晨仲裁照单采纳，三方表态齐无分歧；提案状态改已接受，结论记录见 016 末尾）**：存储＝AMF 持久域第五文档库（锚 EvidenceStore：append-only/hard_link exactly-once/身份寻址/缺席根空态，不进 BDL）；读取路由＝独立词表行 `schemas/inspection-queries/v0.1/`（get/list 照 record 先例，不扩 production-use-case v0.2）；聚合/unavailable/official_sdk_rating 保留值纪律核可；**dependencies 维定义权在产线**（manifest 声明完整性 vs 引用完整性消费层选择，检查切片实现时写入冻结件；跨域引用照 012 evidenceIds 先例）。**语义权威自 M7 检查切片锚点领取时生效**；冻结硬前置照 §7（核心声明锚前不冻结）。→ **进度（2026-09-13 0:5x 集成）：硬前置①落地并验收（7d63abe，Bridge v3 三只读检查操作：references/lighting/upload_readiness）**——「锚前不冻结」解除（016 仲裁第 5 点）；dependencies 单层裁决行使（仲裁第 4 点授权：Avatar 资产引用完整性＝Bridge 产出层，manifest 声明完整性维持 project-inspection v0.2 承载面，消费侧并读引用不复制）；inspection-evidence 草案随批更新（enum [1,2,3]＋操作 +3）**仍不冻结**（硬前置②③④⑤未齐）；C# EditMode 落地未运行验证（真机归 W25）。保留本行供 M7 引用 |
 | 20 | **BG-6 Spike 边界发现：demo 任务重启残留 `running`（候选缺陷，核心如实升级 2026-09-10 03:38）**——BG-6 Provider 生命周期 Spike（22cdc1e，scripts/spikes/provider-lifecycle/，SPIKE 非交付物）硬杀场景观察：demo 任务 running 中硬杀 provider，同库重启后 task.list 仍读 `running`——demo 任务面非终态残留未被重启扫除覆盖，与恢复纪律的观察面冲突（诚实纪律 3：非终态残留应 surface 为 inspect_required 等待显式决策，绝不静默） | 核心（Spike 升级）→ 集成（归因与排期裁决） | **✅ 集成裁决（2026-09-10 凌晨）**：**候选缺陷成立**——demo 任务虽属 DEV-only 演示面，重启后呈现 `running` 即呈现非事实状态，与「失败/残留如实呈现」同构，不因 DEV-only 豁免。**归因**＝demo 任务面未被纳入重启扫除覆盖（产品任务扫除已按 W22 恢复语义实现，本例是演示面的覆盖缺口，非恢复语义本身缺陷）。**排期裁决**：核心修复小刀（demo 任务纳入重启扫除——映射 inspect_required 或按演示语义终止标记，实现细节核心自决），随下一工作窗口交付，不阻塞任何当前门与 W25 窗口（demo 面不出 DEV，生产构建无此面）；修复前 Spike README 已如实记录该行为。**#7 残余观察态不受影响** |
 | 21 | **proposal 019：多套 UI 共用应用能力**（用户直接指令，2026-09-10 凌晨登记——「把之前说过的这个需求做一下」＝方向批准并下令实施；**M6 伴随项，不改变 W25/W26 排期**）：同一 Electron 会话两套可信随产品构建 UI（现有 UI＋森林绿新版搭配 UI）复用同一共享应用层与 Gateway——切换不重建 Gateway/Provider、不丢草稿、不重复命令（AC-01～AC-13 十三项验收）。**批次路由**：批 A 共享基础（应用容器/订阅与切换骨架/现有 UI 接入；完成条件＝切换不重建 Gateway）→桌面牵头；批 B 选材与草稿（UI-03 项目无关草稿；**UI-03 正式持久化接口如缺失，核心先补契约，禁止 localStorage 充当生产文档库**）→桌面＋核心（契约缺口评估）；批 C 生产链（对齐 M5 W20/W22/W24 接口，不得模拟替代）→桌面＋核心；批 D 视觉与交付（预览/动效/窄窗/验收）→桌面。数据/产线＝素材证据与 Unity 执行能力（§6 原文）。**红线**：森林绿 Figma 源码在仓库外，任何适配不得复制入 git；树内新 UI 代码仅限 gitignore 已登记的 `apps/desktop/src/ui-variants/forest/`；**推送 origin 前 3 轮 Reviewer 审阅必须含 forest 零泄漏核查**。BG 工单余项（BG-3）与 M7 锚点顺位不变 | 操作者/用户 → 桌面（牵头）＋核心（契约/持久化）＋集成（验收/排期守门） | **📋 已接受·登记完成（019 全文照录，状态=已接受）**；**进度：批 A 共享基础已交付验收（1360af1）＋批 B 选材与草稿已交付验收（68f3617，UI-03 评估核心已交）＋批 C 生产链工单已签发（见后）**；数据/产线无即时动作；**【2026-09-11 凌晨工单签发：批 C 生产链开工授权】**——前置已齐（核心侧解析/计划/任务/记录接口均已交付验收：production-use-case v0.2 十方法＋W20/W22/W24 对应读面全在 main）；路由＝桌面牵头，消费核心已交付接口；**验收标准＝两套 UI 共用解析/计划/任务/记录且不用模拟替代未完成接口（诚实降级照 UI-08）**；完成条件对照 AC-05/AC-07/AC-13；**批 C 桌面切片全部交付验收（2026-09-12：part 2＝5328099 UI 接线合并 8c799a5——共享链身份 store〔AC-05 闸门纯派生/AC-07 任务中心权威/AC-13 记录身份匹配〕＋诚实端口装配〔fixture 无生产链演示目标，不用模拟替代〕＋搭配页链段＋四语 i18n；独立桌面实例复跑 473 绿＋集成合并后 474 绿；批 D 未签发不开工）** |
 | 22 | **importCopy 结果回流契约缺口（候选缺陷，桌面如实升级 2026-09-12 04:5x，照 #20 先例）**：渲染层 importCopy 窄化期望 plan/receipt/rejected 结果文档形态（contracts `ProjectImportCopyResultV01` 已在 ApplicationSuccessValueV01 联合），但 provider（project_import_copy）实际返回任务化受理回执 `{schemaVersion,operation,taskId,correlationId}`——结果文档在任务 Done payload，而**应用契约任务面（TaskSnapshotV01/task.completed）无 result 字段**：结果文档无通道回流渲染层。后果＝F6 确认链 live 链路 plan/apply 恒「不可用」诚实降级（不伪造不崩溃）；fixture 直接返回结果文档→live/fixture value 形状不一致，DEV 走查无法暴露（核心消费测试经 wait_done 直读任务存储，未覆盖渲染层可见面——「real frame-loop wire」声明属实，缺口在渲染层可见面） | 桌面（升级）→ 集成（归因与排期裁决）＋核心（配合） | **✅ 集成裁决（2026-09-12 05:2x）——缺陷成立，集成独立复核三方证据链逐环一致**：核心路由 Done payload 已携带 `result` 字段（provider_host.rs `project_import_copy`：`TaskExit::Done({schemaVersion,operation,result})`），应用契约 `TaskSnapshotV01` 无 result 字段（application-contract.ts），渲染层窄化期望 kind=plan/receipt/rejected 而 live wire 成功值＝受理回执——结果文档无通道到渲染层。**修复裁决：①采纳＝任务面 result 回流通道**（核心 Done payload 已带 result，增量最小＝应用契约任务面演进：TaskSnapshotV01 增量可选 result 字段或任务终态投影携带 Done payload；可选字段向后兼容，结果文档自描述 schemaVersion/operation）。**契约先行**：核心出 TaskSnapshot 增量提案（正负例向量＋消费测试随批）→ 集成验收冻结 → 核心填充 → 桌面消费。**②否决**——路由同步化动 014 冻结任务化语义；长时文件操作任务化（可受理/可观察/可恢复）是正确架构，同步化是倒退。③确认不可行（planDigest 不在任何读面）。**归因＝跨批衔接缺口，非单方过错**：014 核心路由批与桌面 T-C 接线各自按己方冻结面交付（核心消费测试 wait_done 直读任务存储——覆盖 Done payload、未覆盖渲染层可见通道；桌面 fixture 直接返回结果文档——未与 live wire 形状对齐）。**教训入验收清单**：TS 面/契约消费类批次验收加查「live/fixture value 形状一致性」。**排期**：核心 TaskSnapshot 增量提案＝下一工作窗口自领（不阻塞 W25/M7 锚点/任何门）；F6 live 维持诚实降级（现状，不伪造）；桌面 fixture 形态随核心提案冻结后自决对齐（消除 DEV 走查盲区；setNote「fixture 恒诚实不可用」即先例）。setNote 不受此缺口影响（读面确认模式 bc0ba49 核可）。**→ 进度（2026-09-12 07:4x 集成）：①冻结达成**——核心兑现批 d02bd09 验收合并（0866908）：TaskSnapshotV01 可选 result 冻结（schema＋六向量＋协议双语修订＋REGISTRY application-contract v0.1 行＋proposal 020 状态翻转已接受），复跑 cargo 68/505/0＋clippy 0＋contracts 38/38＋registry 50/50 全绿；**核心填充已随批落地**（投影按态收窄＋demo 取消死数据诚实修复，两通道同源同值）；**②消费批验收合并（2026-09-12 07:5x，b4dbba0）——#22 链全环闭合，行关闭**：桌面 867ccda 任务化消费（受理→终态快照等待〔首取＋事件驱动重取〕→Done payload result 窄化，ProjectOpsOutcome 形状零改动）＋fixture 恒诚实不可用（020 自决，双形状温床消除——验清单项「live/fixture value 形状一致性」首批适用并闭合）＋13 例测试；集成复跑桌面 check 全链 EXIT=0＋vitest 62 文件/499 测试＋contracts EXIT=0；live 键面与 provider_host.rs Done payload/TaskSnapshotV01 冻结面逐键对齐。L 级观察（不阻断）：isTaskSnapshot 未检 contractVersion（信封守卫已验，桌面随手批可补）。不宣称端到端（live 走查归 W25） |
