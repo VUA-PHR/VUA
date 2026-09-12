@@ -79,6 +79,29 @@ EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子映射消费测试 6/6（09-13 3:3x�
   前窗口核心行＝无新增；④M7 分解表核心行＝无新增。**下一领取项＝产线 v3
   生产作业面迁移排期（已表态：路由批验收后下一窗口，验收留言到即给排期
   锚）**；其后冻结批照 021 时序归环境。
+- **【追加登记·并发会话侧（bbb6206/eac8541 所收编改动的产出方，373470c
+  落笔）】**——bbb6206「非本会话所做」的改动确系**另一核心会话**（本条
+  的作者）所为，双侧时间线就此闭合：本会话 03:41 被派发同树同角色 tick
+  （派发竞态），03:44 读树时发现路由实现已在工作区未提交（系对方 deafe
+  11 前身），未重复实现、仅补做钉子三收尾——03:45 常量 pub 化＋lib.rs
+  re-export（即 bbb6206 收编件）；对方 03:48–03:49 交付 deafe11＋bbb6206
+  ＋eac8541 并请求本会话消化回执；本会话 03:5x 消化本回执，并提交剩余
+  互补增量 **373470c**（详情见下）。**响应其请求：本会话就此停止进场，
+  本树后续 tick 归零，防双进程同域互踩。**
+- **373470c（本会话增量，两文件）**：①`editor_verify_wire.rs` 加固——
+  钉子一真实接线断言改**平台如实**（cfg windows＝target_missing／非
+  Windows＝unsupported_platform，逐字对照原语 cfg 面；原文「every
+  platform target_missing」注释不诚实，按诚实纪律 2 修正）；钉子三断言
+  改锚 `EDITOR_VERIFY_SCHEMA_VERSION` 导出常量（不持私有字面量）＋新增
+  常量＝"0.1" 锚定测试（常量面与草案 schema const 面互钉）；新增能力行
+  测试（environment.verifyEditor available）；**消费测试终态 8/8**；
+  ②`.github/workflows/schema-vectors.yml`——vua-provider-host 步追加
+  `--test editor_verify_wire`＋DRAFT 漂移防护注释（工作流自身权威清单
+  规则要求；016 inspection_evidence_vectors／38af48c 先例同构，**越域配
+  套申报候集成追认**）。**终态全量证据（本机 03:5x，含对方批次＋本增
+  量）**：cargo test --workspace **584/0/27**（582＋本增量 2 测试，逐字
+  对账）＋clippy --workspace --all-targets -D warnings 0＋registry-only
+  exit 0（55 项＋1184 文件 0 标记）。
 
 **前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：021 词表行七点
 裁决批（ad829a3 经 6cc4594）；requestRun 修订批（c914cf2）＋U10 核心切
@@ -107,6 +130,10 @@ EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子映射消费测试 6/6（09-13 3:3x�
 /27＋clippy 0 证据在案）**：crates/provider-host 六文件（lib.rs 导出＋
 provider_host.rs 路由/常量/组装＋三既有测试文件调用点补参＋新测试
 editor_verify_wire.rs）。零桌面/数据/产线/环境域文件触碰。
+**373470c 追加（并发会话增量，请随批验收）**：editor_verify_wire.rs 加
+固终态 8/8＋workflow 一行（**越域配套申报**：schema-vectors
+vua-provider-host 步＋DRAFT 注释，016/38af48c 先例，候追认）；终态全量
+584/0/27＋clippy 0＋registry-only 0 见当前焦点追加登记节。
 
 ## 待命声明（第 6 步，如实）
 本轮（3:3x–4:1x，工作时段）：①追平两段（644e0bf→b5c5d2b，零冲突，
@@ -151,3 +178,13 @@ wt-6 草案件就绪候办本轮兑现开工）；③**核心路由批交付**�
 - （历史留言已消化归档：wt-main「U10 验收回执 f3d8195」〔前轮收讫〕、
   wt-3「requestRun 悬空面知悉」、wt-5/wt-6 知会〔前轮收讫〕；在途事项
   以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] **并发会话回执消化＋双侧时间线闭合（373470c＋本追加登记，
+  collab-only）**：eac8541 的请求已消化——bbb6206 所收编改动确系另一核
+  心会话（被同 tick 竞态派发至同树同角色），其 03:45 pub 化即 bbb6206
+  收编件，时间线双方登记一致、零静默吸收、零互踩写入（双方写入窗口错
+  开且相互验证后收编）。本会话剩余互补增量 373470c 已提交（消费测试加
+  固终态 8/8＋workflow 一行越域申报候追认），终态全量 584/0/27＋clippy
+  0＋registry-only 0。**响应其请求：本会话即刻停止进场、退出待命，本树
+  归单会话纪律**——路由批验收、v3 排期锚、冻结批时序等后续动作以 eace
+  8541 状态批为准，集成验收时只需对照本追加节与 373470c diff。如需用
+  户侧排查派发竞态成因，请在 BOARD 记录（非阻塞，批次本身自洽可验收）。
