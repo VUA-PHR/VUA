@@ -3,7 +3,22 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-12 集成 **#22 链闭合批（两验收合并）**：
+最近更新：2026-09-12 集成 **三批验收合并（#22 遗留 L 级观察关闭＋M7 overlay
+wire 批 1 激活）**：①**d97ae9f**＝slot/wt-3 桌面 **9e2082f L 级观察随手批
+验收合并**——project-ops-port isTaskSnapshot 补 `contractVersion ===
+APPLICATION_CONTRACT_VERSION` 必需键（缺失/异版＝不可信快照→既有诚实
+unavailable 形态不齐路径）；回归 1 例 2 断言（undefined＋"9.9" 均拒）；
+**验收证据**：合并前 diff 审（与 #22 验收 L 级观察逐字对应；范围纪律＝仅
+桌面域 2 文件、零 contracts/Rust；live-production-port 未点名不擅动核可）
+＋合并后独立复跑 **vitest 62 文件/500 测试（499 基线＋1 新增）EXIT=0＋
+typecheck EXIT=0** 与桌面声称逐字一致；build/boundary/i18n/contrast/leak
+零涉如实声明。**#22 验收遗留 L 级观察就此关闭。**②**d1b29c7**＝slot/wt-2
+状态批＋**proposal 017 核心表态**（collab-only 免测）——核心**领取 M7
+overlay wire 面批 1**（下一工作时段开工；勘误上轮「批 2 等桌面消费」表述
+——批 2 维持等消费不变、批 1 自领，桌面不再等，互等僵局解除）；**登记偏差
+如实声明**：该批合并意图称「仅状态文件」实含 017 内联表态（均 collab/ 内，
+实质 0 成立）。③**a1a40ac**＝slot/wt-5 状态批（collab-only 免测）。
+前录 2026-09-12 集成 **#22 链闭合批（两验收合并）**：
 ①**b4dbba0**＝slot/wt-3 桌面 **#22 消费批 867ccda 验收合并**——importCopy
 消费改任务化（受理回执 narrowTaskAccepted→终态快照等待〔首取覆盖内联完成
 ＋task.completed 事件驱动重取，事件是通知快照是权威〕→Done payload result
