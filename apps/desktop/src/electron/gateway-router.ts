@@ -101,6 +101,11 @@ function toApplicationRequest(
       };
     case "environment.getSnapshot":
       return { ...base, kind: "query", method: "environment.getSnapshot", params: {} };
+    // 021 词表行(核心七点裁决):手选路径三形态 verbatim 透传,桌面零本地
+    // 归一化(归一化是原语职责);拒绝走 result 内态,信封错误只留给
+    // transport/未接线缺席,本路由原样透传
+    case "environment.verifyEditor":
+      return { ...base, kind: "query", method: "environment.verifyEditor", params: { path: request.params.path } };
     // 017 overlay 表面批 1 消费接线:按需轮询读面,空参数 verbatim(桌面
     // 表态 1/2:按需轮询＋零会话身份;生产读面未接线=provider 回类型化
     // vua.overlay.unavailable,本路由原样透传)

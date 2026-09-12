@@ -47,6 +47,7 @@ export type PageId =
   | "tools-calibration"
   | "tools-installed"
   | "settings-goals"
+  | "settings-environment"
   | "settings-language"
   | "settings-theme"
   | "settings-version"
@@ -192,6 +193,7 @@ export const settingsModule: ModuleDef = {
     {
       pages: [
         { id: "settings-goals", labelKey: "settingsGoals" },
+        { id: "settings-environment", labelKey: "settingsEnvironment" },
         { id: "settings-language", labelKey: "settingsLanguage" },
         { id: "settings-theme", labelKey: "settingsTheme" },
         { id: "settings-version", labelKey: "settingsVersion" },

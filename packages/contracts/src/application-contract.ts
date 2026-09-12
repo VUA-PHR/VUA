@@ -409,14 +409,93 @@ export interface ProjectEnvironmentManagersQueryV01 extends ApplicationRequestBa
   readonly params: Readonly<Record<string, never>>;
 }
 
-/** environmentManagers 结果信封(信封版本 0.1 与快照族 v0.2 独立,核心
- *  表态①):vcc/alcom 能力本体 envelope 强度透传(字段语义归
- *  environment-managers v0.1 快照 Schema,UI 按需窄化) */
+/** environmentManagers 结果信封(021 桌面接线批对齐 wire 实际形态,零协议
+ *  变更):外层 = project-inspection 查询信封(schemaVersion "0.1" +
+ *  operation),内层 result 才是 environment-managers v0.1 快照本体——
+ *  envelope 强度透传(字段语义归快照 Schema,UI 按需窄化;桌面此前误读
+ *  信封顶层致 editors 呈现恒 '—',021 收敛点 1 如实修正) */
 export interface ProjectEnvironmentManagersResultV01 {
-  readonly schemaVersion: "vua.environment-managers-snapshot/v0.1";
-  readonly vcc: Record<string, unknown>;
-  readonly alcom: Record<string, unknown>;
+  readonly schemaVersion: "0.1";
+  readonly operation: "project.environmentManagers";
+  readonly result: Record<string, unknown>;
 }
+
+/* ---- environment.verifyEditor(021 词表行,核心七点裁决 2026-09-13,
+ *    schemas/editor-verify/v0.1,DRAFT 漂移由向量对表测试把守) ----
+ * 分型 query(裁决②):带参只读验证,零状态变更、零任务化、同步请求-响应。
+ * params 单字段闭集 {path}(裁决③):用户手选路径三形态(exe 文件本身 /
+ * 版本化根 / Editor 目录)verbatim 透传,明示不设 maxLength;归一化是
+ * 原语(editor_verify)职责,桌面层零本地归一化。 */
+
+/** 信封 schemaVersion(钉子三:const "0.1",照 inspection-get 先例;核心域
+ *  自有常量 EDITOR_VERIFY_SCHEMA_VERSION 的 TS 对应面,消费守卫以此钉死) */
+export type EditorVerifySchemaVersionV01 = "0.1";
+
+/** 分类四值闭集(核心 EditorClass serde snake_case,与 environment-managers
+ *  v0.1 冻结 editorClass 枚举逐字同构,零新发明) */
+export type EditorClassV01 =
+  | "production_target"
+  | "migration_source"
+  | "other_unity_version"
+  | "tuanjie_family";
+
+/** 拒绝码闭集五码(vua.editor_verify.* 族,原语 codes 模块逐字)。拒绝 =
+ *  正常发现,走 result 内态,绝不上浮应用错误信封(钉子一) */
+export type EditorVerifyRefusalCodeV01 =
+  | "vua.editor_verify.target_missing"
+  | "vua.editor_verify.exe_missing"
+  | "vua.editor_verify.identity_unreadable"
+  | "vua.editor_verify.not_an_editor"
+  | "vua.editor_verify.unsupported_platform";
+
+/** 拒绝码闭集运行时面(渲染层收窄与消费测试按此数组对表,不自持字面量) */
+export const EDITOR_REFUSAL_CODES_V01: readonly EditorVerifyRefusalCodeV01[] = [
+  "vua.editor_verify.target_missing",
+  "vua.editor_verify.exe_missing",
+  "vua.editor_verify.identity_unreadable",
+  "vua.editor_verify.not_an_editor",
+  "vua.editor_verify.unsupported_platform",
+];
+
+/** 诚实缺席码(裁决⑤):仅路由未接线/原语不可达,绝不复用为验证拒绝。
+ *  锚定核心域 pub 常量 ENVIRONMENT_VERIFY_UNAVAILABLE(provider-host 导出),
+ *  TS 面以同名常量消费,不自持第二语义 */
+export const ENVIRONMENT_VERIFY_UNAVAILABLE = "vua.environment.verify_unavailable";
+
+export interface EnvironmentVerifyEditorQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "environment.verifyEditor";
+  readonly params: { readonly path: string };
+}
+
+/** verdict:"verified" 分支(与原语 EditorPathIdentity 逐字同构 camelCase):
+ *  身份来自可执行文件自身版本资源(门①:绝不信任路径名),editorRoot 仅为
+ *  信息性记录 */
+export interface EditorVerifyVerifiedV01 {
+  readonly verdict: "verified";
+  readonly editorRoot: string;
+  readonly exePath: string;
+  readonly version: string;
+  readonly classification: EditorClassV01;
+  readonly guidanceCode: string;
+  readonly chinaDistribution: boolean;
+  readonly schemaVersion: EditorVerifySchemaVersionV01;
+}
+
+/** verdict:"refused" 分支(与原语 EditorPathRefusal 逐字同构):detail 资源
+ *  原文透传不解释(钉子二:wire 与桌面层均零加工,呈现原语发现) */
+export interface EditorVerifyRefusedV01 {
+  readonly verdict: "refused";
+  readonly exePath: string | null;
+  readonly code: EditorVerifyRefusalCodeV01;
+  readonly detail: string;
+  readonly schemaVersion: EditorVerifySchemaVersionV01;
+}
+
+/** 两态 tagged union(verdict 判别,裁决④) */
+export type EnvironmentVerifyEditorResultV01 =
+  | EditorVerifyVerifiedV01
+  | EditorVerifyRefusedV01;
 
 /* ---- 013 读面三查询(核心 5b65550 四查询全 live;envelope 强度承载——
  * projects/associations 本体是文档型数组,UI 按需窄化,契约面不复制
@@ -1314,6 +1393,7 @@ export type ApplicationRequestV01 =
   | WarehouseListEntriesQueryV03
   | WarehouseEntryDetailQueryV03
   | DownloadsListCompletedQueryV04
+  | EnvironmentVerifyEditorQueryV01
   | ProjectEnvironmentManagersQueryV01
   | ProjectListProjectsQueryV01
   | ProjectInspectProjectQueryV01
@@ -1427,6 +1507,7 @@ export type ApplicationSuccessValueV01 =
   | WarehouseListEntriesResultV03
   | WarehouseEntryDetailResultV03
   | DownloadsListCompletedResultV04
+  | EnvironmentVerifyEditorResultV01
   | ProjectEnvironmentManagersResultV01
   | ProjectListProjectsResultV01
   | ProjectInspectProjectResultV01
@@ -1592,6 +1673,12 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
   if (value.kind === "query" && value.method === "environment.getSnapshot") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
+  }
+  // 021 词表行(核心七点裁决):单字段闭集 {path},minLength 1,词表外键拒绝
+  if (value.kind === "query" && value.method === "environment.verifyEditor") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["path"])
+      && isNonEmptyText(value.params.path);
   }
   if (value.kind === "command" && value.method === "task.startDemo") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
