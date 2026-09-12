@@ -342,6 +342,7 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "task.get": { taskId: "task-1" },
     "task.requestCancellation": { taskId: "task-1", commandId: "cancel-1" },
     "environment.getSnapshot": {},
+    "environment.verifyEditor": { path: "C:\\Editors\\2022.3.22f1\\Editor\\Unity.exe" },
     "task.startDemo": { commandId: "demo-1" },
     "production.startInspection": { materialRefId: "mat-1", commandId: "cmd-1" },
     "production.getInspection": { inspectionId: "ins-1" },
@@ -391,5 +392,23 @@ describe("gateway guard covers every declared method (regression: silent guard g
     for (const [method, params] of Object.entries(minimalValidParams)) {
       expect(isDesktopGatewayRequestV1({ ...base, method, params }), method).toBe(true);
     }
+  });
+
+  it("environment.verifyEditor: params closed single-key {path} minLength 1 (021 ruling 3)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-40",
+      method: "environment.verifyEditor" as const,
+      params: { path: "C:\\Editors\\2022.3.22f1" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串/投机字段/错型:一律拒绝(形状违反 ≠ 验证拒绝)
+    expect(isDesktopGatewayRequestV1({ ...request, params: {} })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { path: "" } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { path: "C:\\x", follow: true } }),
+    ).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { path: 7 } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: "C:\\x" })).toBe(false);
   });
 });

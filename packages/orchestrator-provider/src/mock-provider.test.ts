@@ -534,3 +534,58 @@ describe("mock provider production surface (amf-production v0.2)", () => {
     expect(recovered.value.task.taskId).not.toBe("task-failed-1");
   });
 });
+
+describe("mock environment.verifyEditor (021 desktop consumption batch)", () => {
+  const verifyRequest = request({
+    kind: "query",
+    method: "environment.verifyEditor",
+    params: { path: "C:\Editors\2022.3.22f1\Editor\Unity.exe" },
+  } as Parameters<typeof request>[0]);
+
+  it("answers the honest absence code when no verdict source is wired (ruling 5)", async () => {
+    // DEV 模拟面无验证原语可达:缺席码只表达「原语不可达」,category
+    // unavailable——绝不冒充验证拒绝(拒绝是 result 内态,钉子一)
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(verifyRequest);
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.environment.verify_unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.environment.verifyUnavailable");
+  });
+
+  it("replays injected verdicts verbatim and passes the picked path through unnormalized", async () => {
+    const seen: string[] = [];
+    const provider = new MockOrchestratorProviderV01({
+      environmentVerifyEditor: (pickedPath) => {
+        seen.push(pickedPath);
+        return {
+          verdict: "verified",
+          editorRoot: "C:\Editors\2022.3.22f1",
+          exePath: pickedPath,
+          version: "2022.3.22f1",
+          classification: "production_target",
+          guidanceCode: "vua.env_managers.editor_production_target",
+          chinaDistribution: false,
+          schemaVersion: "0.1",
+        };
+      },
+    });
+    await provider.start();
+    const response = await provider.invoke(verifyRequest);
+    expect(response.ok).toBe(true);
+    if (!response.ok) throw new Error("expected success");
+    expect(seen).toEqual(["C:\Editors\2022.3.22f1\Editor\Unity.exe"]);
+    expect(response.value).toEqual({
+      verdict: "verified",
+      editorRoot: "C:\Editors\2022.3.22f1",
+      exePath: "C:\Editors\2022.3.22f1\Editor\Unity.exe",
+      version: "2022.3.22f1",
+      classification: "production_target",
+      guidanceCode: "vua.env_managers.editor_production_target",
+      chinaDistribution: false,
+      schemaVersion: "0.1",
+    });
+  });
+});

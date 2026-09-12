@@ -72,6 +72,19 @@ export interface GatewayEnvironmentSnapshotRequestV1 {
   readonly params: Record<string, never>;
 }
 
+// ---- environment.verifyEditor(021 词表行,核心七点裁决 2026-09-13:分型
+// query,params 单字段闭集 {path} minLength 1 三形态 verbatim 透传;词表
+// 已由信封守卫验证,原样映射 Kernel) ----
+
+export interface GatewayEnvironmentVerifyEditorRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "environment.verifyEditor";
+  readonly params: {
+    readonly path: string;
+  };
+}
+
 // ---- overlay.getSnapshot(017 表面批 1 消费接线:桌面 Gateway 词表行随冻结
 // 应用契约面登记;params 闭集为空,查询语义 verbatim 透传 Kernel) ----
 
@@ -445,6 +458,7 @@ export type DesktopGatewayRequestV1 =
   | GatewayTaskGetRequestV1
   | GatewayTaskCancellationRequestV1
   | GatewayEnvironmentSnapshotRequestV1
+  | GatewayEnvironmentVerifyEditorRequestV1
   | GatewayOverlaySnapshotRequestV1
   | GatewayDemoTaskRequestV1
   | ProductionStartInspectionRequestV1
@@ -493,6 +507,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "task.get": "query",
   "task.requestCancellation": "command",
   "environment.getSnapshot": "query",
+  "environment.verifyEditor": "query",
   "overlay.getSnapshot": "query",
   "task.startDemo": "command",
   "production.startInspection": "command",
@@ -619,6 +634,12 @@ export interface DesktopDialogApiV1 {
    *  openDirectory + multiSelections;用户取消或空选返回 null;本进程不做任何
    *  文件操作,路径交渲染层经 warehouse.import 提交 */
   pickWarehouseFolders(): Promise<readonly string[] | null>;
+  /** U10 手选编辑器路径(021 收敛点 4:单一「浏览」入口 openFile +
+   *  openDirectory 双态):pickEditorExecutable 选 exe 文件本身,
+   *  pickEditorDirectory 选版本化根/Editor 目录;取消返回 null。路径原样
+   *  交渲染层经 environment.verifyEditor 透传验证,本进程不做归一化 */
+  pickEditorExecutable(): Promise<string | null>;
+  pickEditorDirectory(): Promise<string | null>;
 }
 
 // ---- 远程内容窄面(F4 隔离浏览):Renderer 只发语义动作,不持任何 Electron
@@ -701,6 +722,31 @@ export interface DesktopNavigationConfirmApiV1 {
   };
 }
 
+// ---- 壳编辑器设置(U10 门③留痕,021 仲裁:信任呈现＋首次确认 UI＋留痕 =
+// 桌面设置面承载;手选值物理持久化归桌面机器级 settings,核心经
+// VUA_UNITY_EDITOR 注入消费,核心不另建机器设置文档库) ----
+
+/** 已确认手选编辑器(一次选择一条留痕;选择变更 = 新选择,首次确认重新起算) */
+export interface ConfirmedEditorV1 {
+  readonly path: string;
+  /** 验证到的完整版本串(来自 environment.verifyEditor verified 分支) */
+  readonly version: string;
+  /** 门③确认时刻(RFC 3339,壳写入时的机器事实) */
+  readonly confirmedAt: string;
+}
+
+export interface EditorSettingsV1 {
+  readonly schemaVersion: 1;
+  /** null = 无已确认手选(诚实缺席;探测候选不进此留痕) */
+  readonly confirmedEditor: ConfirmedEditorV1 | null;
+}
+
+export interface DesktopEditorSettingsApiV1 {
+  read(): Promise<EditorSettingsV1>;
+  /** 全量覆写保存(渲染层持完整状态);形状非法时 Main 侧拒绝并回当前落盘值 */
+  save(settings: EditorSettingsV1): Promise<EditorSettingsV1>;
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
@@ -709,6 +755,7 @@ export interface VuaDesktopApiV1 {
   readonly remoteContent: RemoteContentApiV1;
   readonly capabilities: DesktopCapabilitiesV1;
   readonly navigationConfirm: DesktopNavigationConfirmApiV1;
+  readonly editorSettings: DesktopEditorSettingsApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -805,6 +852,13 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "environment.getSnapshot":
     case "overlay.getSnapshot":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "environment.verifyEditor":
+      // 021 词表行:params 单字段闭集 {path} minLength 1(裁决③ verbatim
+      // 纪律,不设 maxLength);词表外键拒绝
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["path"])
+        && typeof value.params.path === "string"
+        && value.params.path.length >= 1;
     case "task.get":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["taskId"])
