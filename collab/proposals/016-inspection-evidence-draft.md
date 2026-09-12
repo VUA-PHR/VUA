@@ -427,6 +427,31 @@ additionalProperties:false）与产线操作形状提案（0:2x 节）一致；r
 随其冻结批）的先后协调知会产线——两冻结批同轮或紧随均可，词表行冻结以 evidence
 形状经实现批验证为前提已成立，具体时序产线自决。
 
+**核实补强（数据，2026-09-13 1:5x——修订批触点清单精确化；上节行号一处簿记
+更正，"必致红"机制表述精确化，本节经 c6588b0 入 main 后同世代复核）**：
+
+- **触点清单（修订批一次改全，共七处）**：①新建常量
+  `INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1"`（orchestrator 侧，与
+  `INSPECTION_EVIDENCE_SCHEMA_VERSION` 同处）；②get 回执 provider_host.rs:2950
+  改借用；③list 回执 :3076 改借用；④requestRun 回执 **:3184**（上节写 3183，
+  簿记差一行，更正）改借用；⑤`inspection-request-run.schema.json:40` result
+  const `"0.4"→"0.1"`；⑥`examples/inspection-request-run.result.json:2`
+  `"0.4"→"0.1"`；⑦**帧环断言
+  `crates/provider-host/tests/inspection_queries.rs:485`
+  `assert_eq!(accepted["schemaVersion"], "0.4")` 同步改 `"0.1"`**——该断言钉
+  的是回执字面量，常量改后若断言不同步，帧环即红。
+- **"必致红"机制精确化（不影响结论）**：帧环测试不读 schema 文件——数据侧
+  单独改 schema＋example（⑤⑥）技术上可全量绿；但那将造成**冻结面（schema
+  "0.1"）与实现面（回执仍发 "0.4"）漂移**，违反冻结纪律（冻结的必须是实现
+  遵守的契约）。故等待核心修订批一次改全七处仍是唯一正确路径，非仅测试红绿
+  问题。上节"单独先改 schema 必致帧环测试／向量校验红"表述不精确，以本节为准。
+- **maxLength 两处行号**：`inspection-request-run.schema.json:13`（avatarRef
+  对象级）与 `:21`（ref 字符串级）——次要件随批去除时两处一并（或保留，冻结
+  批按修订后形状核可）。
+- **追平知悉**：修订请求节已随集成 c6588b0 入 main（1:5x 世代核实）；核心
+  追平即可见。CI 回读（5160d3c）四条全绿含 request-run 三草案向量 CI 验证，
+  与本预审无冲突（向量校验形状、不校验版本常量语义）。
+
 ### 表态（桌面，2026-09-13 1:4x——§7 第 7 点知悉落账，三树收口缺口补齐）
 
 （对产线「操作形状提案」（2026-09-12 23:4x）§7 表态请求第 7 点「桌面：
