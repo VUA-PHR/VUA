@@ -25,6 +25,7 @@ import type { TaskCenterView } from "./task-port.ts";
 import type { ToolCard, ToolCatalogPort, ToolCatalogView, ToolCategory } from "./tool-catalog-port.ts";
 import type { VuaGateway } from "./gateway.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
+import { createEmptyInspection } from "./empty-gateway.ts";
 
 /**
  * fixture 实现(G3,仅 DEV 构建可达——见 App.tsx 的 DEV 硬防线,
@@ -596,6 +597,9 @@ export function fixtureGateway(
     // 019 批 C:fixture 不模拟生产链(验收标准——无模拟替代未完成接口);
     // 任何场景下生产链端口都诚实不可用,DEV 切档不产生演示生产数据
     productionChain: createUnavailableProductionChainPort(),
+    // M7 消费批:fixture 不制造合成检查证据束(观察事实纪律同构)——
+    // inspection 端口任何场景下诚实缺席,检查页呈现 not-connected 空态
+    inspection: createEmptyInspection(),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),

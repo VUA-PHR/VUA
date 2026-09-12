@@ -56,6 +56,9 @@ function assembleDevGateway(
     // 019 批 C:生产链无 fixture 目标(禁模拟替代未完成接口)——恒 live
     // 基线(无宿主时为 not-run 诚实不可用),开发切档不产生演示生产数据
     productionChain: live.productionChain,
+    // M7 消费批:检查读面同 productionChain 纪律(观察事实不模拟)——恒
+    // live 基线,无宿主时诚实缺席
+    inspection: live.inspection,
     packages: selection.targets.packages === "fixture" ? fixture.packages : live.packages,
     dataSource: () => (anyFixturePort(selection.targets) ? "fixture" : live.dataSource()),
   };

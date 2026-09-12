@@ -490,3 +490,13 @@ test("fixture(F4-9): 生成受理 → 任务中心九态 + 完成后条目出现
   );
   assert.equal(done?.status, "completed");
 });
+
+for (const { label, make } of implementations) {
+  test(`${label}: inspection 读面端口诚实缺席(not-connected,不伪装空证据)`, async () => {
+    const gateway = make();
+    const list = await gateway.inspection.list();
+    const detail = await gateway.inspection.get("01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21");
+    assert.equal(list.kind, "not-connected");
+    assert.equal(detail.kind, "not-connected");
+  });
+}

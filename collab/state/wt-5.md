@@ -2,91 +2,107 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: c659646
+baseline_commit: 353f471
 updated: 2026-09-13
 ---
 ## 当前焦点
-**核心实现批入 main 消化＋requestRun 预审修订请求（016 终版）＋追平（2026-09-13
-1:2x–1:3x 工作时段轮，collab-only）**：
-- **【① 注意】消化**：①wt-2 **「实现批已落地（硬前置②兑现）」**——核心 M7
-  检查切片实现批（e3ce569）读路由 get/list 照本树草案逐字实现＋另出
-  requestRun 草案 schema（同目录不同文件）——**本轮实质消化＝词表行 owner
-  域内预审**（见下）；②wt-main 验收回执＋022 落地回执、wt-4 表态收讫——
-  上轮已消化（本树上轮状态批 5d8a4e2 本轮已随集成 50689f8 入 main，回执
-  闭环）。
-- **并发事实（brief 后集成验收，追平带入）**：核心实现批经 **7a262b8**、
-  桌面 overlay 接线批经 **af87747** 入 main；**词表行冻结批触发条件（数据批
-  f209182＋核心批双落 main）就此满足**。
-- **requestRun 预审（本轮实质，main 面 c659646 逐处实证，意见全文落 016
-  内联「修订意见（数据，1:2x）」节）**：
-  - **实质一件＝词表行版本常量缺失**：result schemaVersion 惯例＝词表行族
-    自己的版本（production-use-case v0.2 全方法 "0.2"、bdl-commands v0.4
-    全方法 "0.4"、本族 get/list "0.1"）；main 实证 requestRun schema const
-    与回执（provider_host.rs:3183）借用 `BDL_COMMANDS_SCHEMA_VERSION`
-    （"0.4"），get/list 回执（:2950/:3076）借用
-    `INSPECTION_EVIDENCE_SCHEMA_VERSION`（数值碰巧 "0.1"、语义错锚）——
-    同族两版本值＋三处锚定对象互不相同且均非本族。**修订请求**：核心修订批
-    建 `INSPECTION_QUERIES_SCHEMA_VERSION="0.1"`，三回执＋schema const＋
-    example 同批统一；**数据预授权核心修订批触碰 requestRun schema＋example
-    两件的版本值**（仅字面量零形状变更；单独先改 schema 必致帧环/向量校验
-    红，同批为唯一全量绿路径），随批数据追认。TS 侧宽类型无需跟随。
-  - **次要一件＝avatarRef.ref 自加 maxLength 512** 与 evidence 本体
-    （minLength 1 无上限）不一致、读写不对称——建议随同批去除，保留亦可
-    （冻结批按修订后形状核可）。
-  - 其余核可：request 双键闭集照产线操作形状提案、回执四键照 job.execute
-    形态、$id 族内同构、DRAFT 纪律照 BG-4、get/list 路由行为照草案逐字。
-- **冻结时序（表态①维持＋触发更新）**：核心修订批验收入 main 后数据开
-  **冻结批**（REGISTRY 登记＋协议本双语＋三方法一次冻结；SCHEMA_EXEMPT
-  'inspection-queries' 行候集成随冻结批移除＝022 同构反操作）；与 evidence
-  本体冻结批（产线义务）先后协调知会产线，时序产线自决。
-- **baseline 追平（本批）**：slot/wt-5 合并 main（e3b109a 尖时点入手→**c659646**
-  世代，--no-ff，零冲突）；inbound＝核心实现批＋桌面 overlay 接线批＋四树
-  collab 批，diff 核验 inspection-queries 目录增核心 requestRun 草案四件
-  （016 仲裁协作面）＋**数据所有权域（bdl-store/acquisition/bdl*/bdl-queries/
-  download-events/bdl_* 文档）零触碰**。
-- **领任务链四环核查（本轮）**：①本树在途＝无（上轮批已验收 50689f8）；
-  ②BOARD 数据行＝#24 已关闭、#19/#23 无数据动作、[需用户] 项跳过；③outline
-  数据行＝W23 已交付；④M7 分解表无数据行——**可领项＝冻结批，候核心修订批
-  （外部依赖，意见已落 016 不等待）；无其它可领新项。**
+**inspection-queries v0.1 词表行冻结批交付（三方法一次冻结＋修订批追认；
+2026-09-13 2:0x–2:2x 工作时段轮，实现批）**：
+- **【① 注意】消化**：①wt-main **「修订批验收合并回执（61bd798，核心
+  c914cf2）＋冻结批解锁」**——收讫即本轮触发：核心照数据 016 触点清单
+  一处不差兑现（自有常量＋三回执＋schema const＋example＋帧环断言 :485
+  全改 0.1；avatarRef.ref 去 maxLength 512），其 maxLength 一项超出字面
+  预授权、候数据追认——**本轮批内追认落账（016 内联「追认与冻结收口」
+  节）**，冻结批解锁条件全部成立即开工；②wt-main「修订请求收讫入库回执
+  （c6588b0）」与 wt-2「实现批已落地」——上轮已消化；③wt-4「时序协调
+  知会收讫——时序自决：evidence 本体冻结批先行已交（75f9d15 候验收）」
+  ——收讫，两冻结批互不阻塞维持。
+- **baseline 追平**：slot/wt-5 合并 main（61866c8 尖入手→**353f471** 世
+  代，--no-ff，零冲突；inbound＝c914cf2 核心修订批实质＋2ae285d CI 回读
+  ＋61bd798 验收合并＋004e797 集成簿记）。**修订批逐处核实（本树 diff
+  核验）**：常量 `INSPECTION_QUERIES_SCHEMA_VERSION="0.1"` 新建于
+  provider_host.rs:212；get :2953 / list :3079 / requestRun :3187 三回执
+  改锚；帧环断言 inspection_queries.rs:485 改 "0.1"；request-run
+  schema:40 const 与 example:2 改 "0.1"；avatarRef.ref :21 去 maxLength
+  （:13 对象级原无，schema 端仅 :21 一处，预审行号按对象/字符串两级
+  计）；avatarGlobalObjectId 512 命令载荷上限保留未动——**与本 016 七处
+  触点清单逐处一致，一处不差**。
+- **冻结批交付（本批实质）**——016 §7 硬前置①②③以 main 面验收为准
+  （7d63abe＋7a262b8＋c914cf2），④⑤随本批：
+  ①**三方法 schema 一次冻结**（get/list/requestRun）：description
+  DRAFT 声明→冻结声明（逐条列出硬前置收口证据），**形状零变更**
+  （闭集/枚举/pattern/const 原样，向量与测试零影响）；
+  ②**向量契约锚测试头**（`crates/acquisition/tests/
+  inspection_queries_contract.rs`，数据域）draft→冻结措辞，零行为
+  变更；
+  ③**协议本双语** `docs/protocols/inspection-queries-v0.1_ZH/EN.md`
+  （冻结收口五项逐项记录＋冻结范围与分工＋两读一写方法面＋requestRun
+  参数语义＋依赖方向＋机器可读词表＋开放项；正例 3 对＋负例 3——get
+  与 requestRun 词表外参数＋list limit 越界 201——如实计数）；
+  ④**REGISTRY 两行**（schema 目录行＋协议本行，数据维护方）；
+  ⑤**BOARD 冻结契约表** inspection-queries 行（接线注记：requestRun
+  wire 已 live，桌面页面消费候接线，接线前不得称端到端）；
+  ⑥**016 内联「追认与冻结收口（数据，2:2x）」节**（maxLength 追认＋
+  冻结收口记录＋SCHEMA_EXEMPT 移除请求＋诚实边界）。
+- **诚实边界**：requestRun wire 已 live（帧环测试为证）；桌面页面消费候
+  接线（BG-15 骨架在库）、真机走查归 W25——完成前不得声称端到端。与
+  evidence 本体冻结批（产线域）解耦：本体升版不自动带动本词表行。
+- **SCHEMA_EXEMPT 'inspection-queries' 行移除**＝集成域动作
+  （scripts/collab-brief.mjs），数据不越域动手，请集成随验收批办理（022
+  同构反操作；未移除期间零带红窗口——豁免行为跳过检测）。
+- **测试证据（本机 2026-09-13，本树，追平后 353f471 世代，pipefail 严格
+  退出码）**：cargo test --workspace **557 通过/0 失败/27 忽略 EXIT=0**
+  （与集成 r3 基线逐字一致；ignored 27 逐行合计核实）＋clippy --workspace
+  --all-targets -D warnings **EXIT=0**＋collab-brief --registry-only
+  **exit 0**（53 项一致，新增 2 行）。TS 域零涉（桌面链免跑如实声明）。
+- **领任务链四环核查（本轮）**：①本树在途＝冻结批候集成验收（本批）；
+  ②BOARD 数据行＝无开放项（#24 已关闭，[需用户] 项跳过）；③outline 数
+  据行＝W23 已交付；④M7 分解表无数据行——**除本批外无可领新项。**
 
-**前情（1:0x 轮）**：双验收闭环消化＋追平 e68a1fe 世代（bb71429）＋领任务链
-空转确认。细节见本文件 git 历史（5d8a4e2 版本）。
+**前情（1:2x–1:5x 轮）**：requestRun 预审＋修订请求落 016 内联＋触点清
+单七处精确化（核实补强节）＋追平 61866c8 世代。细节见本文件 git 历史
+（9906196 版本）。
 
 ## 阻塞
-无。requestRun 修订＝等待项（候核心修订批）非阻塞；冻结批触发条件已满足、
-执行顺序候修订批。
+无。集成验收＝等待项非阻塞。
 ## 下次合并意图
-**本批（仅 collab/：状态文件＋016 修订意见节，collab-only 免全量测试）请
-集成随轮验收合并（--no-ff）。**数据下一实质动作＝核心修订批落地后的
-inspection-queries 词表行冻结批（REGISTRY＋协议本双语＋三方法冻结；届时
-SCHEMA_EXEMPT 移除请集成随批办理）。
+**本冻结批（实现批级验收，非 collab-only——全量证据已附提交信息：
+557/0/27＋clippy 0＋registry-only 0）＋本状态批（collab-only 免全量）
+请集成随轮验收合并（--no-ff），并请随批办理 SCHEMA_EXEMPT
+'inspection-queries' 行移除。**批涉文件：schemas/inspection-queries
+（016 仲裁词表行，数据冻结职责）＋crates/acquisition 测试头（数据域）＋
+docs/protocols＋docs/REGISTRY＋BOARD＋016；核心域文件零触碰。数据下一
+实质动作候验收回执或新留言。
 ## 待命声明（第 6 步，如实）
-本轮（1:2x–1:3x，工作时段）：①【① 注意】消化（wt-2 实现批留言实质消化＝
-域内预审；wt-main/wt-4 上轮已消化）；②requestRun 预审——main 面实证词表行
-版本常量缺失（三回执借用外部族常量、族内 "0.1"/"0.4" 漂移）＋maxLength 不
-齐，修订请求＋跨文件预授权落 016 内联终版；③追平 c659646 世代（零冲突，
-数据域零未协调 inbound）；④领任务链核查——冻结批触发条件已满足、执行顺序
-候核心修订批，无其它可领项。退出待命，候核心修订批、产线 evidence 冻结时序
-回应、下轮 brief 或新留言；在手无半途切片。
+本轮（2:0x–2:2x，工作时段）：①【① 注意】消化——修订批验收回执收讫即
+触发，maxLength 追认落账，冻结批开工；②追平 353f471 世代（零冲突）＋
+修订批七处触点逐处核实一致；③**冻结批交付**（三方法 schema 一次冻结零
+形状变更＋向量锚头注释放行＋协议本双语＋REGISTRY 两行＋BOARD 契约表行
+＋016 追认与收口节）；④全量 557/0/27＋clippy 0＋registry-only 0；⑤领
+任务链四环核查无其它可领项。退出待命，候集成验收、SCHEMA_EXEMPT 移除
+回执、下轮 brief 或新留言；在手无半途切片。
 ## 留言
-- [→集成] 本批（仅 collab/ 两件，collab-only 免全量）请随轮验收合并。两件
-  知会：①核心实现批 7a262b8 与桌面 af87747 验收已随追平消化，词表行冻结批
-  触发条件（双落 main）满足；②数据冻结批办理 REGISTRY 登记时，scripts/
-  collab-brief.mjs SCHEMA_EXEMPT 的 'inspection-queries' 行需同步移除
-  （集成域动作，022 同构反操作，候冻结批随批办理勿遗忘）。
-- [→核心] **requestRun 修订请求（016 内联「修订意见（数据，1:2x）」节全文）**：
-  词表行版本常量缺失——requestRun schema const＋回执（provider_host.rs:3183）
-  现借用 `BDL_COMMANDS_SCHEMA_VERSION`（"0.4"）、get/list 回执
-  （:2950/:3076）借用 `INSPECTION_EVIDENCE_SCHEMA_VERSION`（语义错锚）——
-  请修订批建 `INSPECTION_QUERIES_SCHEMA_VERSION="0.1"` 四处统一（含 schema
-  const＋example，**该两件数据预授权你批触碰版本值**、零形状变更，随批我树
-  追认）；次要件 avatarRef.maxLength 512 随批去除或保留自决。修订批验收后
-  我即开冻结批（REGISTRY＋协议本双语＋三方法一次冻结，照你 0:0x 表态②时序）。
-- [→产线] evidence 本体冻结批时序协调知会：硬前置①②③已达成（7d63abe＋
-  7a262b8＋向量全绿），④⑤随你冻结批；数据词表行冻结批候核心修订批后办理，
-  与你 evidence 冻结批同轮或紧随均可（数据表态①「一并办理」以形状经实现批
-  验证为前提已成立，先后由你自决）——如你 evidence 冻结批先行，知会一声即
-  可，两批互不阻塞。
-- （历史留言已消化归档：wt-2 实现批已落地〔本轮预审批消化〕、wt-main 验收
-  ＋022 回执与 wt-4 表态收讫〔上轮消化、回执随 50689f8 闭环〕；在途事项以
-  BOARD、016/022〔已接受〕与本状态文件当前焦点为准。）
+- [→集成] **冻结批请随轮验收合并（实现批级，证据在批内提交信息）＋随批
+  办理 SCHEMA_EXEMPT 'inspection-queries' 行移除**（022 同构反操作；未
+  移除期间零带红窗口）。合并范围申报：schemas/inspection-queries＋
+  crates/acquisition 测试头（数据域）＋docs/protocols 两新件＋REGISTRY
+  ＋BOARD＋016——核心域文件零触碰；REGISTRY 短暂双行并存窗口如实申报
+  （'inspection-evidence' 豁免行在产线冻结批验收时同样候移除，两行移除
+  均系集成域动作）。
+- [→核心] **修订批追认落账（016 内联「追认与冻结收口（数据，2:2x）」
+  节）**：c914cf2 全部七处触点逐处核实一致、一处不差；maxLength 去除在
+  字面预授权之外、同节明确建议范围内——**追认**。词表行冻结批已随之交
+  付（三方法一次冻结，形状零变更）；你 M7 检查切片 wire/TS 面消费的词
+  表行自此为冻结面，后续变更须升版。
+- [→产线] 词表行冻结批已交（候集成验收）——两冻结批（你 evidence 本体
+  75f9d15＋数据词表行本批）先后落地互不阻塞如前知会；evidence 本体冻结
+  后两族语义对齐点（verbatim 承载的 avatarRef 同形、overallStatus 聚合
+  规则）已在双方冻结面钉死。
+- [→桌面] inspection 读面/写面 wire 自本批起为冻结 v0.1 面（TS 类型＋
+  守卫在 @vua/contracts 已备）；M7「Inspection/Release 页面与官方 SDK
+  交接」桌面半边消费排期自领维持（BG-15 骨架在库），接线后本行
+  「桌面页面消费候接线」注记请随你消费批刷新。
+- （历史留言已消化归档：wt-main 修订批验收回执＋冻结批解锁〔本轮触发并
+  兑现〕、修订请求收讫回执〔上轮消化〕、wt-2 实现批已落地〔上轮消化〕、
+  wt-4 时序自决知会〔本轮收讫维持〕；在途事项以 BOARD、016/022〔已接
+  受〕与本状态文件当前焦点为准。）
