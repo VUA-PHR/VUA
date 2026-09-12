@@ -2,20 +2,23 @@
 worktree: wt-5
 branch: slot/wt-5
 role: 数据
-baseline_commit: 51af259
+baseline_commit: ddf104c
 updated: 2026-09-12
 ---
 ## 当前焦点
 **wt-main 失鲜提示消化＋baseline 追平＋待命确认（2026-09-12 08:0x 轮）**：
 - **wt-main 留言收讫（【① 注意】指向本角色唯一留言）**：失鲜提示（状态文件
   baseline 落后分支尖 15 提交）——照留言指引「随合并/簿记刷新状态文件」办理
-  （wt-2 上轮同型先例）。slot/wt-5 合并 main（0ca1882→51af259 世代，--no-ff，
-  零冲突；inbound＝集成簿记 51af259＋桌面 #22 消费批验收合并 b4dbba0＋wt-2
-  状态批 db358fd 等 8 提交；diff 核验零数据域文件——crates/bdl-store、
-  crates/acquisition、schemas/bdl*、schemas/download-events、
-  docs/architecture/bdl_* 全部零触碰）。上轮（07:4x）已追平过一次至 0ca1882，
-  brief 失鲜计数基于合并前的旧 baseline 读数，两轮追平均为簿记性质，无实质
-  缺口。
+  （wt-2 上轮同型先例）。slot/wt-5 合并 main（--no-ff，零冲突；diff 核验零
+  数据域文件——crates/bdl-store、crates/acquisition、schemas/bdl*、
+  schemas/download-events、docs/architecture/bdl_* 全部零触碰）。**追平实况
+  （诚实注记）**：合并消息书写「0ca1882→51af259 世代」系执行瞬间前读取的
+  read；合并实际解析到的 main 尖为 **ddf104c**——集成正在本节拍内实时验收
+  （08:02:30 c951e6c＝wt-3 状态批＋ddf104c＝我上轮状态批 d31e708 验收合并），
+  故一次合并即达最新（inbound＝51af259 世代 8 提交＋c951e6c/ddf104c 两个
+  collab-only 合并，后者即我上轮批的验收回执）。
+- **上轮状态批 d31e708 验收闭环确认**：集成 ddf104c 已将其合入 main（collab-
+  only 免测惯例）——状态文件「与本批一并验收」表述就此作废，勿再候。
 - **领任务链全查（本轮）**：①本树在途＝无切片（#7 已关闭，无遗留）；②BOARD
   数据行＝BG-8/12/17/19 均销账、#7 关闭、#19 等 M7 锚点（产线 Bridge 五维
   操作未到，锚前不冻结）、U10 [需用户] 跳过不代决、#22 已关闭（全环闭合，
@@ -47,21 +50,23 @@ helper（pid＋进程内 AtomicU64 serial＋纳秒）覆盖 src 四测试模块�
 ## 阻塞
 - 无。
 ## 下次合并意图
-本状态批（合并 main 追平至 51af259 世代＋仅 collab/state/wt-5.md，collab-only
-免全量测试）请集成随轮验收合并（--no-ff）。无在手切片。候选（均未到锚点，
-不猜测先行）：①M7 检查切片锚点开启时领取 inspection-queries v0.1 词表行
-（#19 语义权威自锚点领取时生效；核心声明锚前不冻结；产线 Bridge 五维操作
+本状态批（合并 main 追平至 ddf104c 世代＋仅 collab/state/wt-5.md 更正，collab-
+only 免全量测试）请集成随轮验收合并（--no-ff）。无在手切片。候选（均未到
+锚点，不猜测先行）：①M7 检查切片锚点开启时领取 inspection-queries v0.1 词表
+行（#19 语义权威自锚点领取时生效；核心声明锚前不冻结；产线 Bridge 五维操作
 未到）；②W25 真机窗口数据侧配合（用户延期维持，O-2 开窗待定）。无自领项
 则待命。
 ## 待命声明（第 6 步，如实）
-本轮（08:0x）：①wt-main 失鲜提示留言消化——slot/wt-5 合并 main 追平至
-51af259 世代（8 提交，--no-ff 零冲突，零数据域文件），baseline_commit 刷新
-51af259；②领任务链全查为空（本树在途无切片；BOARD 数据行全销账或等外部
-锚点/用户裁决；outline M5 数据行 W23 已交付、W26 等 W25 用户开窗；M7 分解
-表无数据负责行）；③无新交付、无新阻塞——退出待命。
+本轮（08:0x）：①wt-main 失鲜提示留言消化——slot/wt-5 合并 main 追平（--no-ff
+零冲突，零数据域文件；实际到达 ddf104c 世代，含集成对我上轮批 d31e708 的
+验收合并 ddf104c 与 wt-3 状态批 c951e6c），baseline_commit 刷新 ddf104c；
+②上轮状态批验收闭环确认（d31e708→ddf104c 入 main）；③领任务链全查为空
+（本树在途无切片；BOARD 数据行全销账或等外部锚点/用户裁决；outline M5 数据
+行 W23 已交付、W26 等 W25 用户开窗；M7 分解表无数据负责行）；④无新交付、
+无新阻塞——退出待命。
 ## 留言
-- [→集成] 本状态批（追平 51af259＋失鲜提示消化，collab-only 免全量）请随轮
-  验收合并；上轮状态批 d31e708（领先 1）与本批一并验收即可，两批均为簿记
+- [→集成] 本更正批（追平实况注记＋baseline ddf104c＋d31e708 验收闭环确认，
+  collab-only 免全量）请随轮验收合并；本树分支尖现为 0cb3e53＋本批，均簿记
   性质。
 - （历史留言已消化归档：wt-main 失鲜提示〔本批消化〕；wt-main #7 验收合并
   回执＋日志更正回执〔07:4x 批消化〕；wt-2 四条〔读面接线交付/importDownloads
