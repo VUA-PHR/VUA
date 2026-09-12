@@ -2,75 +2,103 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 89e53cf
+baseline_commit: c33adb3
 updated: 2026-09-12
 ---
 ## 当前焦点
-**锚点领取批入库闭环确认＋两条留言消化＋追平＋待命（09-12 08:5x 收尾时段轮，collab-only）**：
-- **M7 锚点领取批入库闭环（本轮首要项，上轮在途解除）**：git 核验
-  `merge-base --is-ancestor`＝**2389127 与 4d346f8 均已在 origin/main**
-  ——经集成验收合并 b01246e（三提交 2389127/3512ce0/4d346f8 全部带入，
-  与 wt-main 登记备注「尖漂移无遗漏」一致），随 16592e8 推送，CI 回读
-  零触发（paths 过滤，符合 collab-only 预期）。上轮「尚未入 main、再提
-  请验收」事项就此解除；核心/桌面/数据三树引用的「产线已领取」自本确认
-  起读自 main 侧 016 内联表态，依据链闭环。
-- **【① 注意】两条指向产线留言消化（均收悉型）**：
-  ①wt-main **016 锚点领取表态·状态批验收合并回执（b01246e）**收悉——
-  即上述入库闭环；「领取≠冻结、解锁以 Bridge 五维落地经集成在 main 验
-  收为准」时序勘核双方一致，无误读残留；②wt-2 **M7 锚点领取知悉收悉**
-  收悉——核心立场与我方一致（核心冻结以硬前置①落地并验收为准），
-  「dependencies 维末费层选择随产线切片写入冻结件、核心无异议」已记
-  录，实现切片按此执行。
-- **baseline 追平**：slot/wt-4 合并 main（4d346f8→89e53cf --no-ff 落后
-  15/实质 0 清零，零冲突；inbound 6 文件全 collab/＝BOARD＋wt-2/3/5/6/
-  main 状态文件，diff --name-only 核验产线域文件〔crates/unity-bridge、
-  unity/、schemas/unity-bridge、schemas/amf-production、
-  docs/architecture/amf-unity_*〕零触碰）。无本域冲突面。
-- **排期（维持）**：实现切片 2026-09-12 23:00 工作时段开工（本轮收尾时段
-  边界不开实现切片）；开工前先合并 main 最新；按 009 契约先行惯例出操作
-  形状提案（新增/扩展操作名、wire 面、版本策略），交核心/桌面/数据表态。
-- **领任务链全查（本轮）**：①本树在途＝M7 锚点实现切片（已排期 23:00）；
-  上轮「领取批入库等待」已闭环解除；②BOARD 产线行＝#19 锚点已领取且表
-  态已入库、#21 批 C 已完成批 D 未签发（无产线动作）、U10 [需用户] 跳过
-  不代决；③outline 当前窗口产线行＝W21 已交付、W25 等用户开窗（O-2 延
-  期维持）；④W26 门验收无产线行。除在途切片外无可领新项。
+**M7 检查切片锚点实现批交付（c33adb3，09-12 23:1x–00:3x 工作时段轮）**：
+- **交付＝016 §7 硬前置① Bridge 五维产出操作落地**：unity-bridge **v3**
+  （v2 冻结超集同面升版，T2 纪律——v2 文件零改动）＋三新只读检查操作
+  `inspect_avatar_references`（dependencies 维产出层）／`inspect_lighting`
+  ／`inspect_upload_readiness`；全部 dryRun 恒 true、payload 仅
+  avatarGlobalObjectId、发现走 diagnostics 类型化码
+  （references.*/lighting.*/upload_readiness.*，不冒充官方评级）；
+  succeeded 检查收据钉「≥1 条 diagnostics＋零 changedPaths」（诚实钉）。
+  schema 两文件＋向量 11 件（正 7 负 4）＋Rust 消费测试
+  `crates/unity-bridge/tests/bridge_v3_vectors.rs` 6/6。**操作形状提案
+  （009 惯例）已落 016 内联**，核心/桌面/数据表态随验收批入线程可修订。
+- **dependencies 维单层裁决（仲裁第 4 点定义权行使）**：本维语义＝
+  Avatar 资产引用完整性（Bridge 产出层，basis=bridge_typed_checks）；
+  manifest 声明完整性**不并入**——project-inspection v0.2 为其承载面
+  （本轮已核实 provider 路由批已在 main：crates/project-manager/src/
+  project_inspection.rs，环境表态时「路由在途」时序事实已消解）；消费
+  侧并读走 012 evidenceIds 先例（引用不复制）。裁决已写入草案语义。
+- **011 遗留缺陷兑现修复（随批，如实登记）**：`BridgeData.
+  instanceGlobalObjectId`（011 成功判定预留字段）自 aa2a9da 起零赋值且
+  不在 v2 result schema 内——JsonUtility 把空串字段漏进所有 v2 收据，
+  与 v2 schema additionalProperties:false 冲突（Rust 侧宽松反序列化不受
+  影响）。处置：①兑现——install_modular_asset 收据写入实例根
+  GlobalObjectId（011 成功判定落地）；②合法化——v3 result.data 增该
+  字段（v3 超集合规）；③漂移声明——v2 冻结 schema 与 C# 单实现的事实
+  漂移随提案登记，provider 生产作业面随 v3 迁移即规避，不用「原地改
+  v2」或「按版本裁剪序列化」两种更大代价方案。
+- **inspection-evidence v0.1 草案随批更新（BG-4 产线主导产出物）**：
+  bridgeSchemaVersion enum [1,2,3]＋bridge.operations enum +3＋单层裁决
+  语义入 description；向量重跑 4/4 绿；**草案态不变**（硬前置②③④⑤
+  未齐，不冻结、不登记 REGISTRY）。
+- **证据与验证状态（诚实声明）**：cargo test --workspace 全绿＋clippy
+  零告警（2026-09-12 本机）；bridge_v3_vectors 6/6；evidence 向量 4/4。
+  **C# EditMode 测试已落码但未在本机运行验证**——Unity batchmode 六种
+  调用形态（含复刻 09-09 A1 先例的临时工程流程）均报「couldn't set
+  project path」（同机 09-09 成功、今日行为不同，原因未定，疑环境级
+  拦截但未经证实，不断言）；不宣称 C# 面已运行验证，真机验证归 W25
+  窗口（既有计划）。C# 侧静态正确性措施：v3 门照 v1 拒 v2 先例、只读
+  dryRun 强制走既有通用校验、新增 BridgeDiagnostic.Warning 工厂、
+  011 字段存在性守护测试随批。
+- **baseline 追平**：slot/wt-4 合并 main（36d7d7f→877d4f1 --no-ff，
+  落后 7/实质 1 清零，零冲突；inbound＝U10 裁决 ADR 双语 698e738＋U10
+  登记路由 11745df＋集成簿记，diff 核验产线域文件零触碰）。U10 已裁
+  决知悉（ADR path-configuration）——本切片无 Unity 编辑器路径面触碰，
+  无产线动作项。
+- **【① 注意】两条指向产线留言消化（均收悉型）**：wt-main 状态批验收
+  合并回执（fb3c796）收悉——锚点入库闭环确认、双方依据链闭合；wt-2
+  M7 锚点领取知悉收讫收悉——「请勿提前冻结」与核心立场一致，本批即
+  硬前置①交付，核心冻结候集成在 main 验收后解锁。
+- **跨域请求（随批）**：核心域 `UnityOperation`/`UnityPayload` 扩展
+  （三新操作变体；payload 零新增——复用 avatar_global_object_id）请
+  核心随其 M7 检查切片跟进（照 93f841c「W21 Rust-side closeout,
+  request 1」先例：wire 批先行、核心 Rust 面随核心批）。UnityResult.
+  data 为 serde_json::Value 宽松透传，收据零障碍。
 
-**W25 真机窗口（维持等用户，O-2）**：A 段就绪状态不撤（A1 EditMode 断言、
-A2 冒烟 fixture 无 constraint 诚实跳过、A3 构建对比），窗口重排通知到达即进入；
-执行序 v3＝B1→A1→A2→A3→用户启动 VRChat→B2a→B2b→B3→归档（全文见本文件
-git 历史 f534b78 版本；窗口义务交叉确认：产线 A 段零 EAC 面触碰、零清单写入）。
-M7 实现切片与 W25 窗口互不阻塞（契约/本机测试先行，真机证据归窗口）。
+**W25 真机窗口（维持等用户，O-2）**：A 段就绪状态不撤；本批三操作与
+C# 面运行验证一并归窗口冒烟（执行序 v3 不变，见本文件 git 历史
+f534b78）。M7 实现批与 W25 窗口互不阻塞。
 
-## 历史交付（已验收在 main，细节见 git 历史与 016/BOARD）
-- W21 全链（Bridge v2 冻结 1a9cdf6＋C#＋Rust 物化 9195fbb＋信封桥接）；W1
-  16/16（M3 关门）；amf-unity 1.0.1；BG-4 批（inspection-evidence v0.1 草案
-  ＋向量 7 件＋校验测试 4/4＋proposal 016，ad46501）；lint 修复 b3b9833
-  （BG-19 销账）；W25 预热 A1（f7ff690，EditMode 23/23 本机真机，证据
-  `_local_w25/`）。
 ## 阻塞
-- 无阻塞。W25 用户延期（O-2）、U10 [需用户] 均为等待项非阻塞。
+- 无阻塞。W25 用户延期（O-2）为等待项非阻塞。
 ## 下次合并意图
-**本状态批＋追平合并（仅 collab/，collab-only 免全量测试）请集成随轮验收
-合并（--no-ff）。**实现切片今晚 23:00 开工，另批交付（实现批走全量测试
-证据）。
+**本实现批（c33adb3）请集成随轮验收合并（--no-ff）。**实现批走全量测
+试证据：cargo test --workspace 全绿＋clippy 零告警已随批如实登记
+（C# EditMode 运行验证缺口如实声明，见上）。合并回执后核心冻结时序
+解锁（硬前置①达成裁定点＝本批验收）。
 ## 待命声明（第 6 步，如实）
-本轮（08:5x，收尾时段）：①锚点领取批入库闭环确认（2389127/4d346f8 已在
-origin/main，经 b01246e 合并＋16592e8 推送），上轮在途解除；②两条【① 注意】
-留言消化（wt-main 验收合并回执、wt-2 知悉收悉，均收悉型无动作项）；③追平
-89e53cf（落后 15/实质 0 清零，零冲突，inbound 全 collab/）；④无代码交付、
-无新阻塞（收尾时段不开新切片，实现切片维持 23:00 开工）。退出待命至 23:00
-工作时段。
+本轮（23:1x–00:3x，工作时段）：①实现切片开工（23:00 排期兑现）——
+v3 schema＋向量＋Rust 消费测试＋C# 三操作实现＋EditMode 测试＋evidence
+草案更新＋016 操作形状提案，c33adb3 交付；②追平 877d4f1＋两条收悉型
+留言消化；③011 遗留字段缺陷兑现修复＋漂移声明；④C# EditMode 运行
+验证缺口如实声明（六形态尝试未果，不断言原因）；⑤无新阻塞。候集成
+验收与三树表态期间退出待命。
 ## 留言
-- [→集成] **锚点领取批入库闭环确认回执**——2389127/4d346f8 已核实为
-  origin/main 祖先（b01246e 带入＋16592e8 推送，CI 零触发符合预期），
-  上轮「请优先入库」请求就此闭环。本批（追平 89e53cf＋闭环确认＋两条留
-  言消化，collab-only 免全量）请随轮验收合并。实现切片今晚 23:00 开工，
-  交付时按 009 惯例先出操作形状提案交你处随实现批验收。
-- [→核心] **dependencies 维无异议收悉**——锚点切片今晚 23:00 开工，
-  dependencies 维消费层选择将随切片写入冻结件；冻结时序维持「以硬前置①
-  Bridge 五维落地并经集成在 main 验收为准」，我方表态不变。
-- 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传 [→核心]；
-  无瞬败不专门加压空跑。
-- （历史留言已消化归档 git 历史 4d346f8 版本：M7 锚点已领取对核心/桌面/
-  数据三知会〔均已收悉，见各树状态批〕、016 内联表态全文等——均已闭环。
-  在途事项以 BOARD、016 与本状态文件当前焦点为准。）
+- [→集成] **M7 锚点实现批验收请求（c33adb3）**——016 §7 硬前置①交付：
+  Bridge v3（v2 冻结超集）＋三新只读检查操作＋向量与消费测试＋C# 实现
+  ＋016 内联操作形状提案。全量测试证据：cargo test --workspace 全绿＋
+  clippy 零告警；C# EditMode 已落码未运行验证（环境事实如实声明，归
+  W25）。批内含 011 遗留字段兑现修复＋v2 漂移声明（提案 §5）。验收即
+  硬前置①达成裁定点，核心冻结时序随之解锁。
+- [→核心] **三问表态请求＋跨域跟批请求**：①三新操作形状（016 内联
+  「操作形状提案」）表态——任务化驱动与存储路由消费新操作的时序；
+  ②UnityOperation/UnityPayload 扩展随你 M7 检查切片跟进（93f841c 先例，
+  payload 零新增）；③dependencies 单层裁决（引用完整性＝Bridge 层；
+  manifest 声明完整性留 project-inspection，消费侧引用不复制）对
+  inspection-queries v0.1 词表行形状无影响的确认。011 字段兑现与 v2
+  漂移声明请一并知悉。
+- [→桌面] 知会：三新操作为 Bridge 检查读面，桌面无直接 wire 消费
+  （evidence 读面经核心 inspection-queries 路由）；C# EditMode 运行
+  验证缺口归 W25，桌面域无动作项。表态邀约开放，无意见即随轮知悉。
+- [→数据] 表态请求：dependencies 单层裁决与 inspection-queries v0.1
+  词表行时序（候本批验收后领取，序不变）；016 内联操作形状提案§7。
+- 备忘（维持）：#7 样本协议——遇套件瞬败保留完整 panic 输出回传
+  [→核心]；无瞬败不专门加压空跑。
+- （历史留言已消化归档 git 历史 36d7d7f 版本：锚点领取批闭环确认、
+  wt-main/wt-2 收悉型回执等。在途事项以 BOARD、016 与本状态文件当前
+  焦点为准。）

@@ -187,3 +187,77 @@ lighting/upload_readiness 无源确认）＋数据（BDL 不涉确认）三方�
   产出操作则维持诚实 unavailable（缺席即证据，schema if/then 已钉），若设计
   新增操作则在切片提案内一并提出；
 - 跨域引用照 012 `evidenceIds` 先例（引用不复制）。
+
+### 操作形状提案（产线，2026-09-12 23:4x——009 契约先行惯例，交核心/桌面/数据表态）
+
+锚点实现切片开工批。§7 硬前置①的产出操作形状如下；schema（v3）＋C# 实现＋
+向量与消费测试随本切片同批落仓库，**表态意见在实现批验收前可入内联线程修订**。
+
+1. **操作名（三个新只读检查操作，closure of §7 硬前置①）**：
+   - `inspect_avatar_references`——dependencies 维产出层。Avatar 层级内资产
+     引用完整性的确定性 Unity 观察：丢失网格、丢失材质槽、缺脚本组件
+     （`m_Script` 空引用）。发现走收据 diagnostics 类型化码
+     （`references.missing_mesh|missing_material|missing_script`＝error，
+     `references.clean`＝info）。
+   - `inspect_lighting`——lighting 维产出层。活动场景光照事实的确定性枚举：
+     实时（未烘焙）光源存在性、烘焙状态、反射探针存在性。检查码只陈述观察
+     事实（`lighting.realtime_lights_present`＝warning、
+     `lighting.baked_only`／`lighting.reflection_probe_present`＝info、
+     `lighting.clean`＝info），**不发明主观好坏阈值、不冒充官方光照评级**。
+   - `inspect_upload_readiness`——upload_readiness 维产出层。SDK 上传前置的
+     Unity 侧可观察项：Avatar Descriptor 存在性（`upload_readiness.descriptor_missing`
+     ＝error）、VRChat SDK 前置组件（反射探测，SDK 未导入时
+     `upload_readiness.sdk_absent`＝warning 如实告知，不伪造就绪）、构建
+     目标平台事实转抄（`upload_readiness.build_target`＝info）。全部为
+     **前置观察，非官方 SDK 判定**——`official_sdk_rating` 保留值纪律不变。
+2. **wire 面（最小变更）**：三操作均为只读（`dryRun` 恒 `true`，照 v1 检查
+   操作先例），payload 均仅 `avatarGlobalObjectId`（照 `analyze_performance`
+   先例）。收据发现全部走 diagnostics（severity 闭集 info|warning|error 已
+   有；inspection-evidence 的 checks[] 形状即与 diagnostics 同构——016 §2
+   明言「code 点分命名空间、同 Bridge diagnostics 惯例」）。**result data
+   零新字段**——v3 与 v2 的 schema diff 仅为：command 侧 `schemaVersion`
+   const 3＋operation 枚举 +3＋一条 allOf（三新操作 dryRun 恒 true＋payload
+   required）；result 侧 `schemaVersion` const 3＋operation 枚举 +3。
+3. **版本策略**：**unity-bridge v3＝v2 同面超集**（v1→v2 先例复刻；T2 纪律
+   「只升版不原地改」——v2 已冻结，新操作枚举值不允许原地写入 v2 文件）。
+   v1/v2 文件零改动、全部向量保持有效。`inspection-evidence` 草案（BG-4，
+   产线主导产出物）随批更新两处枚举以转抄新操作：`bridge.bridgeSchemaVersion`
+   enum `[1,2]`→`[1,2,3]`、`bridge.operations[].operation` enum +3；草案态
+   不变（硬前置②③④⑤未齐，仍不冻结、不登记 REGISTRY），向量测试重跑全绿。
+4. **dependencies 维消费层裁决（仲裁第 4 点定义权行使，写入冻结件语义）**：
+   **单层＝Avatar 资产引用完整性**（`inspect_avatar_references` 产出，
+   basis=`bridge_typed_checks`）。**manifest 声明完整性不并入**本维——它是
+   项目级事实而非 Avatar 检查事实，project-inspection v0.2 读面（已冻结，
+   本轮已核实其 provider 路由批已在 main：`crates/project-manager/src/
+   project_inspection.rs`）是该事实的承载面；inspection-queries 消费侧如需
+   并读走 012 `evidenceIds` 先例（引用不复制），evidence 文档不重复项目级
+   清单。环境表态的语义边界（声明完整性 ≠ 引用完整性）由此裁决落地。
+5. **C# 实现与测试**：`BridgeCommandProcessor` 扩展（schemaVersion 闭集
+   {1,2,3}；v1/v2 拒绝三新操作照 v1 拒 v2 操作先例；IsAllowed +3；只读
+   dryRun 强制走既有通用校验）；EditMode 合同测试随批（有发现/无发现/
+   对象失效 rejected 三态）。**顺带兑现并修复一处本域遗留缺陷（011
+   收据字段漂移）**：`BridgeData.instanceGlobalObjectId`（011 §成功判定
+   「收据携带实例 GlobalObjectId——产线第一刀已预留」的预留字段）自
+   aa2a9da 引入起零赋值——011 成功判定从未真正兑现；且该字段不在 v2
+   result schema 内，JsonUtility 会把它（空串）序列化进所有 v2 收据，
+   与 v2 schema `additionalProperties:false` 冲突（Rust 侧
+   `UnityResult` 反序列化宽松不受影响；炸点＝用 v2 schema 严格校验
+   真实收据的场景）。处置三件：①兑现——`execute_production_job` 的
+   install_modular_asset 收据写入实例根 GlobalObjectId（011 成功判定
+   落地，空串占位变事实转抄）；②合法化——v3 result schema data 增加
+   `instanceGlobalObjectId`（v3＝v2 超集，加字段合规；v2 文件零改动）；
+   ③漂移声明——v2 冻结 schema 与 C# 单实现的事实漂移（v2 命令收据
+   带此字段）随本提案登记知会，provider 生产作业面随 v3 迁移即规避；
+   不以「原地改 v2」或「按版本裁剪序列化」两种更大代价方案处理。
+6. **Rust 侧与跨域请求**：`crates/unity-bridge/tests/bridge_v3_vectors.rs`
+   照 v2 先例对 schema 校验向量（不依赖核心域枚举）。核心域
+   `UnityOperation`/`UnityPayload` 扩展（三新操作变体＋payload 零新增——
+   复用 `avatar_global_object_id`）**请核心随其 M7 检查切片跟进**（照
+   93f841c「W21 Rust-side closeout, request 1」先例：wire 批先行、核心
+   Rust 面随核心批）。`UnityResult.data` 为 `serde_json::Value` 宽松透传，
+   收据零障碍。
+7. **表态请求**：核心（任务化驱动与存储路由消费新操作时序；UnityOperation
+   扩展跟批确认）；桌面（无直接 wire 消费——evidence 读面经核心路由，知悉
+   即可）；数据（inspection-queries v0.1 词表行候本切片落地验收后领取的
+   时序确认；§4 单层裁决对读面形状无影响的复核邀请）。集成：本切片验收
+   即 §7 硬前置①达成的裁定点。

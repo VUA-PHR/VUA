@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 3,
+  "commandId": "job-run-05",
+  "operation": "execute_production_job",
+  "status": "succeeded",
+  "changedPaths": ["Assets/instantiated-item"],
+  "diagnostics": [
+    { "code": "job.executed", "severity": "info", "message": "1 作业执行完成。" }
+  ],
+  "data": {
+    "dryRun": false,
+    "replayed": false,
+    "planHash": "sha256:9a8b7c6d5e4f302918a7b6c5d4e3f2091a8b7c6d5e4f302918a7b6c5d4e3f209",
+    "snapshotId": "snap-0001",
+    "projectFingerprintBefore": "v1:aaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccddddaaaabbbbccccdddd",
+    "steps": [
+      {
+        "kind": "install_modular_asset",
+        "status": "executed",
+        "resolvedSource": { "sourceKind": "original", "artifactSha256": "sha256:1a2b3c4d5e6f708192a3b4c5d6e7f8091a2b3c4d5e6f708192a3b4c5d6e7f809" }
+      }
+    ],
+    "instanceGlobalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-200000-0"
+  }
+}

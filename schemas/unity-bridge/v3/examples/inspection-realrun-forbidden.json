@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-bad-02",
+  "operation": "inspect_lighting",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": false,
+  "payload": {
+    "avatarGlobalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-100000-0"
+  }
+}

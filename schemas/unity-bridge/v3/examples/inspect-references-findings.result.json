@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-refs-02",
+  "operation": "inspect_avatar_references",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [
+    { "code": "references.missing_material", "severity": "error", "message": "SkinnedMeshRenderer「Body」材质槽 1 引用丢失。" },
+    { "code": "references.missing_script", "severity": "error", "message": "对象「Hair」上的组件脚本缺失（m_Script 空引用）。" }
+  ],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}

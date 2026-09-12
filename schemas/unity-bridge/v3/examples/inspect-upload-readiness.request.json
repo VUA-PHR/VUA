@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-ready-01",
+  "operation": "inspect_upload_readiness",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": true,
+  "payload": {
+    "avatarGlobalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-100000-0"
+  }
+}

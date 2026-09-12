@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-bad-04",
+  "operation": "inspect_lighting",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}

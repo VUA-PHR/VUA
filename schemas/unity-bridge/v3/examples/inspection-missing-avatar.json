@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-bad-03",
+  "operation": "inspect_avatar_references",
+  "projectId": "proj-recipe-smoke",
+  "dryRun": true,
+  "payload": {}
+}
