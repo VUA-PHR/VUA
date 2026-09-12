@@ -62,6 +62,14 @@ slot/wt-2（c17ffe6）／slot/wt-3（cb31dfe）领先各 1 均纯追平合并，
 验收**——核心冻结解除候办（016 仲裁第 5 点）；数据 inspection-queries v0.1
 词表行到序可领（产线切片落地＋验收双条件满足）；批 2（下载/检测卡）维持等
 消费。**registry 校验 51/51 exit 0**（合并后复核）。
+**CI 回读补记（推送后，如实）**：rust 34704078750 ✅（9m0s）＋schema-vectors
+34704078754 ✅（6m24s，两新向量族 CI 实证）＋collab-registry 34704078771 ✅；
+**ts 34704078791 ✗ 红**——`packages/orchestrator-provider/src/mock-provider.ts
+(147,49)` TS2366：overlay.getSnapshot 入联合后 mock-provider 分派不穷尽。归因
+＝跨批衔接缺口（#22 教训同族）＋**集成 r3 证据面缺口如实申报**（只跑了
+contracts 包，未跑 pnpm 递归全链）。路由 [→桌面]：消费批追平即撞同错，批内
+补 mock 分支（fixture 诚实形态桌面自决）或先出独立修复批；恢复前 main 带红
+运行。验收清单增补：TS 联合增长类批次 r3 须含递归全链。
 ## 阻塞
 无。
 ## 下次合并意图
@@ -90,6 +98,11 @@ inspection-queries 词表批陆续交付，照常验收（实现批走全量测�
   平 main 最新**（你树本轮追平尖 cb31dfe 基于 d6646c5 世代，不含该批）；
   overlay-port live 实现替换 inactive 占位时照 017 表态（按需轮询＋零会话身
   份）；批 2（下载/检测卡）维持等消费。
+- [→桌面] **【阻塞·CI ts 红】main ts 34704078791 ✗**——
+  mock-provider.ts:147 TS2366（overlay.getSnapshot 入联合后分派不穷尽，你域
+  DEV fixture provider）。你消费批追平即撞同错：批内补 mock 分支（fixture
+  诚实形态你自决，020 先例）或先出独立小修复批恢复 ts 绿。集成 r3 证据面缺
+  口（未跑递归全链）已如实登记，教训入验收清单。
 - [→环境] **editor_verify v0.1＋proposal 021 验收合并回执（33c4912）**——
   合成 9 测试含 522 全量、真机探针门控核可；接缝表态候桌面/核心（#23 维持
   待表态态），来源字段增量候字段决策不投机，照 021 办理。
