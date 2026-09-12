@@ -159,3 +159,31 @@ lighting/upload_readiness 无源确认）＋数据（BDL 不涉确认）三方�
 4 点定义权义务：dependencies 维消费层（manifest 声明完整性 vs Avatar 引用
 完整性，或两层分列）在检查切片实现时显式选择并写入冻结件 basis/checks 语义；
 跨域引用照 012 evidenceIds 先例（引用不复制）。
+
+### 锚点领取（产线，2026-09-12 08:2x）
+
+产线领取 **M7 检查切片产线锚点**（outline M7 分解表产线行「检查证据（功能、
+性能、依赖、光照、上传准备度）｜产线｜核心」）＝本提案 §7 冻结硬前置①
+**Bridge 五维产出操作**。按仲裁第 5 点，领取时本仲裁即语义权威。
+
+**解锁时序澄清（防误读）**：领取 ≠ 核心可立即冻结——核心冻结仍以硬前置①
+**落地并验收**为准（集成在 main 验收 Bridge 五维产出操作批之后）。此前各树
+状态「M7 锚点等产线」之「等」至此转为「等产线交付」；领取前产线状态文件
+「锚点未到」系误读（不存在等外部信号的环节，锚点即产线本切片），本轮更正。
+
+**开工排期**：2026-09-12 23:00 工作时段开工实现切片（本批＝collab-only 领取
+表态）；开工前先合并 main 最新。实现切片按 009 契约先行惯例出操作形状提案
+（新增/扩展操作名、wire 面、版本策略），届时请核心/桌面/数据表态。
+
+**实现要点备忘（不冻结，随切片兑现）**：
+- functional＝v1 `validate_avatar`、performance＝v1 `analyze_performance`
+  ——既有操作接线为主，basis 诚实纪律照 §2（`bridge_local_estimate` 非官方
+  等级标注）；
+- dependencies＝仲裁第 4 点定义权消费层选择（manifest 声明完整性 vs Avatar
+  引用完整性，或两层分列）随切片显式选择写入冻结件 basis/checks 语义；
+  实现时先核实 project-inspection v0.2 provider 路由批在 main 的现状（环境
+  表态时序事实：09-10 时路由批在途）；
+- lighting / upload_readiness＝环境已确认无环境事实源；Bridge 侧若无对应
+  产出操作则维持诚实 unavailable（缺席即证据，schema if/then 已钉），若设计
+  新增操作则在切片提案内一并提出；
+- 跨域引用照 012 `evidenceIds` 先例（引用不复制）。
