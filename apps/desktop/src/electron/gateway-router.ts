@@ -101,6 +101,11 @@ function toApplicationRequest(
       };
     case "environment.getSnapshot":
       return { ...base, kind: "query", method: "environment.getSnapshot", params: {} };
+    // 017 overlay 表面批 1 消费接线:按需轮询读面,空参数 verbatim(桌面
+    // 表态 1/2:按需轮询＋零会话身份;生产读面未接线=provider 回类型化
+    // vua.overlay.unavailable,本路由原样透传)
+    case "overlay.getSnapshot":
+      return { ...base, kind: "query", method: "overlay.getSnapshot", params: {} };
     case "task.startDemo":
       return {
         ...base,
