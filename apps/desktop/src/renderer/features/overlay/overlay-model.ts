@@ -1,7 +1,14 @@
 /**
- * Overlay 双表面表现模型(切片五 F7a,设计规范 v0.6.1 §8.8):
+ * Overlay 双表面表现模型(v2,017 表面批 1 wire 消费;设计规范 §8.8):
  * 快照 + 输入形态 → 视图 props 的纯函数;无 IO、无文案字面量(文案 key 由
  * 本模型给出,字符串在 i18n 四表,枚举键与 TS 联合一一对应,测试约束)。
+ *
+ * v2 与 v1 的差异:事实面 = overlay.getSnapshot 冻结投影(任务卡列表＋生产
+ * 状态卡)。tone/状态概括由本模型从冻结词表事实推导(呈现映射,非跨源
+ * 推导):词表用 @vua/contracts 导出的九态/五态冻结常量判断,词表外值原样
+ * 透传显示、不参与推导(不猜测)。wire 批 1 无环境/进度/动作权限事实——
+ * 环境摘要恒缺席(批 2),取消动作可见性只按冻结终态词表判断,守卫在
+ * 服务权威侧(017 §3)。
  *
  * 色彩纪律(§8.8 + §7.3 延伸,Overlay 不用红绿灯):
  * - accent(辖区色,Overlay 属 VUA 紫)= 进行中;
@@ -11,15 +18,16 @@
  *
  * 形态差异(桌面=键鼠,VR=激光点按):
  * - open_on_desktop 只在 VR 表面出现(桌面窗口自身即落点,同教程表面纪律);
- * - request_cancel_task 桌面常驻(不可用时禁用并给出原因键),
- *   VR 仅在有任务时出现(更少的元素、更大的目标);
- * - 环境摘要桌面 ≤4 行、VR ≤3 行(§8.8:不用长列表),超出以计数折叠;
- * - 主操作每表面至多一个:桌面 = dismiss,VR = open_on_desktop(桌面回退始终可见)。
+ * - request_cancel_task:有非终态任务卡时呈现(每卡一个取消目标);
+ * - 主操作每表面至多一个:桌面 = dismiss,VR = open_on_desktop。
  */
-import type { WorkflowStage } from "../../gateway/index.ts";
+import {
+  TERMINAL_TASK_STATES_V01,
+  type OverlayProductionCardV01,
+  type OverlayTaskCardV01,
+} from "@vua/contracts";
 import type {
   OverlayAction,
-  OverlayEnvironmentItemV1,
   OverlaySnapshot,
   OverlayStatusTone,
 } from "./overlay-contract.ts";
@@ -28,56 +36,68 @@ export type OverlayInputMode = "desktop" | "vr";
 
 export type OverlayVisualTone = "neutral" | "accent" | "amber" | "error";
 
-/** 动作禁用原因(§5:禁用关键动作必须给出可发现原因);
- *  键与 strings.overlay.disabledReasons 一一对应 */
-export type OverlayDisabledReason = "notAllowed" | "noTask" | "notCancellable";
+export type OverlayViewState = "inactive" | "ready";
 
-export const overlayDisabledReasons: readonly OverlayDisabledReason[] = [
-  "notAllowed",
-  "noTask",
-  "notCancellable",
+/** 状态概括文案键(strings.overlay.statusTitles 一一对应) */
+export type OverlayStatusTitleKey = "active" | "recent" | "idle";
+
+export const overlayStatusTitleKeys: readonly OverlayStatusTitleKey[] = [
+  "active",
+  "recent",
+  "idle",
 ];
 
-export type OverlayActionAvailability =
-  | { readonly enabled: true }
-  | { readonly enabled: false; readonly reason: OverlayDisabledReason };
+/** 任务卡视图:state 文案在九态词表内取 strings.taskStatus,词表外原词透传 */
+export interface OverlayTaskCardView {
+  readonly taskId: string;
+  readonly stateLabel: string;
+  readonly stateRaw: string;
+  /** 非终态 = 取消动作目标(冻结终态词表判断;守卫仍在服务权威侧) */
+  readonly cancellable: boolean;
+}
+
+/** 生产状态卡视图(planStatus 五态/记录 status 词表内取文案,词表外原词) */
+export interface OverlayProductionCardView {
+  readonly currentPlan: {
+    readonly planId: string;
+    readonly statusLabel: string;
+    readonly createdAt: string;
+    readonly recipeId: string;
+  } | null;
+  readonly latestRecord: {
+    readonly buildId: string;
+    readonly planId: string;
+    readonly statusLabel: string;
+    readonly finishedAt: string;
+  } | null;
+}
 
 export interface OverlayActionView {
   readonly action: OverlayAction;
   readonly visible: boolean;
-  readonly availability: OverlayActionAvailability;
   readonly primary: boolean;
 }
-
-export interface OverlayTaskView {
-  readonly title: string;
-  /** 阶段词表键(strings.workflowStage[stage]);原样透传冻结词表,不自造枚举 */
-  readonly stage: WorkflowStage;
-  /** null = 没有真实总量:表面只显示阶段,不注水进度 */
-  readonly progress: { readonly done: number; readonly total: number } | null;
-}
-
-export type OverlayViewState = "inactive" | "ready";
 
 export interface OverlayViewModel {
   readonly state: OverlayViewState;
   readonly tone: OverlayVisualTone;
   readonly statusTone: OverlayStatusTone;
-  readonly statusTitle: string;
-  readonly statusDetail: string | null;
-  readonly task: OverlayTaskView | null;
-  readonly environment: readonly OverlayEnvironmentItemV1[];
-  /** 超出本形态行数上限而被折叠的环境行数(0 = 无折叠) */
-  readonly hiddenEnvironmentCount: number;
+  readonly statusTitleKey: OverlayStatusTitleKey;
+  readonly taskCards: readonly OverlayTaskCardView[];
+  readonly productionCard: OverlayProductionCardView;
   readonly actions: readonly OverlayActionView[];
   readonly textScale: number;
   readonly reducedMotion: boolean;
 }
 
-const DESKTOP_ENVIRONMENT_LIMIT = 4;
-const VR_ENVIRONMENT_LIMIT = 3;
+const TERMINAL_STATES: readonly string[] = TERMINAL_TASK_STATES_V01;
 
-/** status.tone → 视觉基调(switch 穷尽,新增基调不映射即编译错误) */
+/** 冻结九态词表内 = 终态判断可信;词表外值既非可取消也非已结束(未知) */
+function isKnownTerminal(state: string): boolean {
+  return TERMINAL_STATES.includes(state);
+}
+
+/** status.title → 视觉基调(v2 由事实推导后落入四基调;switch 穷尽) */
 export function toneForStatus(tone: OverlayStatusTone): OverlayVisualTone {
   switch (tone) {
     case "inactive":
@@ -91,84 +111,104 @@ export function toneForStatus(tone: OverlayStatusTone): OverlayVisualTone {
   }
 }
 
+function projectTaskCard(card: OverlayTaskCardV01): OverlayTaskCardView {
+  return {
+    taskId: card.taskId,
+    stateLabel: card.state,
+    stateRaw: card.state,
+    cancellable: !isKnownTerminal(card.state),
+  };
+}
+
+function projectProductionCard(card: OverlayProductionCardV01): OverlayProductionCardView {
+  return {
+    currentPlan: card.currentPlan === null
+      ? null
+      : {
+          planId: card.currentPlan.planId,
+          statusLabel: card.currentPlan.planStatus,
+          createdAt: card.currentPlan.createdAt,
+          recipeId: card.currentPlan.recipeId,
+        },
+    latestRecord: card.latestRecord === null
+      ? null
+      : {
+          buildId: card.latestRecord.buildId,
+          planId: card.latestRecord.planId,
+          statusLabel: card.latestRecord.status,
+          finishedAt: card.latestRecord.finishedAt,
+        },
+  };
+}
+
 export function overlayViewModel(
   snapshot: OverlaySnapshot,
   mode: OverlayInputMode,
 ): OverlayViewModel {
-  const { task, allowedActions } = snapshot;
-  const allowed = (action: OverlayAction) => allowedActions.includes(action);
+  const presentation = snapshot.presentation;
 
-  const cancelAvailability: OverlayActionAvailability = !allowed("request_cancel_task")
-    ? { enabled: false, reason: "notAllowed" }
-    : task === null
-      ? { enabled: false, reason: "noTask" }
-      : task.cancellable
-        ? { enabled: true }
-        : { enabled: false, reason: "notCancellable" };
+  if (snapshot.availability === "unavailable") {
+    // 诚实缺席:生产读面未接线 → 与无活动同形的缺席空态,不伪装成空数据
+    return {
+      state: "inactive",
+      tone: "neutral",
+      statusTone: "inactive",
+      statusTitleKey: "idle",
+      taskCards: [],
+      productionCard: { currentPlan: null, latestRecord: null },
+      actions: [
+        { action: "open_on_desktop", visible: false, primary: false },
+        { action: "request_cancel_task", visible: false, primary: false },
+        { action: "dismiss", visible: true, primary: mode === "desktop" },
+      ],
+      textScale: presentation.textScale,
+      reducedMotion: presentation.reducedMotion,
+    };
+  }
 
-  const openOnDesktopAvailability: OverlayActionAvailability = allowed("open_on_desktop")
-    ? { enabled: true }
-    : { enabled: false, reason: "notAllowed" };
+  const taskCards = snapshot.tasks.map(projectTaskCard);
+  const productionCard = projectProductionCard(snapshot.productionCard);
 
-  const dismissAvailability: OverlayActionAvailability = allowed("dismiss")
-    ? { enabled: true }
-    : { enabled: false, reason: "notAllowed" };
+  // tone 推导(呈现映射,冻结词表):有非终态任务 → active;无进行中但有
+  // failed → blocked;否则 inactive。词表外 state 不参与推导(不猜测)。
+  const hasOpenTask = snapshot.tasks.some((card) => !isKnownTerminal(card.state));
+  const hasFailedTask = snapshot.tasks.some((card) => card.state === "failed");
+  const hasContent = taskCards.length > 0
+    || productionCard.currentPlan !== null
+    || productionCard.latestRecord !== null;
+  const statusTone: OverlayStatusTone = hasOpenTask
+    ? "active"
+    : hasFailedTask
+      ? "blocked"
+      : "inactive";
+  const statusTitleKey: OverlayStatusTitleKey = hasOpenTask
+    ? "active"
+    : hasContent
+      ? "recent"
+      : "idle";
 
   const openOnDesktopVisible = mode === "vr";
-  const cancelVisible = mode === "desktop" || task !== null;
+  const cancelVisible = hasOpenTask;
 
-  // 主操作:VR 的桌面回退优先;不可用时退到 dismiss;桌面恒为 dismiss
-  const primary: OverlayAction | null =
-    mode === "vr"
-      ? openOnDesktopAvailability.enabled
-        ? "open_on_desktop"
-        : dismissAvailability.enabled
-          ? "dismiss"
-          : null
-      : dismissAvailability.enabled
-        ? "dismiss"
-        : null;
+  const primary: OverlayAction | null = mode === "vr"
+    ? "open_on_desktop"
+    : "dismiss";
 
   const actions: readonly OverlayActionView[] = [
-    {
-      action: "open_on_desktop",
-      visible: openOnDesktopVisible,
-      availability: openOnDesktopAvailability,
-      primary: primary === "open_on_desktop",
-    },
-    {
-      action: "request_cancel_task",
-      visible: cancelVisible,
-      availability: cancelAvailability,
-      // 主操作恒为 dismiss(desktop)/ open_on_desktop(vr),取消不成为主操作
-      primary: false,
-    },
-    {
-      action: "dismiss",
-      visible: true,
-      availability: dismissAvailability,
-      primary: primary === "dismiss",
-    },
+    { action: "open_on_desktop", visible: openOnDesktopVisible, primary: primary === "open_on_desktop" },
+    { action: "request_cancel_task", visible: cancelVisible, primary: false },
+    { action: "dismiss", visible: true, primary: primary === "dismiss" },
   ];
 
-  const environmentLimit = mode === "vr" ? VR_ENVIRONMENT_LIMIT : DESKTOP_ENVIRONMENT_LIMIT;
-
   return {
-    // inactive = 无任务、无可用动作、无环境摘要(与未接入占位/dismiss 后同形);
-    // 取消后的会话仍带 dismiss/open_on_desktop 动作与环境摘要,不算 inactive
-    state:
-      task === null && allowedActions.length === 0 && snapshot.environment.length === 0
-        ? "inactive"
-        : "ready",
-    tone: toneForStatus(snapshot.status.tone),
-    statusTone: snapshot.status.tone,
-    statusTitle: snapshot.status.title,
-    statusDetail: snapshot.status.detail ?? null,
-    task: task === null ? null : { title: task.title, stage: task.stage, progress: task.progress },
-    environment: snapshot.environment.slice(0, environmentLimit),
-    hiddenEnvironmentCount: Math.max(0, snapshot.environment.length - environmentLimit),
+    state: hasContent ? "ready" : "inactive",
+    tone: toneForStatus(statusTone),
+    statusTone,
+    statusTitleKey,
+    taskCards,
+    productionCard,
     actions,
-    textScale: snapshot.presentation.textScale,
-    reducedMotion: snapshot.presentation.reducedMotion,
+    textScale: presentation.textScale,
+    reducedMotion: presentation.reducedMotion,
   };
 }

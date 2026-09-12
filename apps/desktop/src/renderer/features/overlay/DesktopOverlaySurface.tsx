@@ -3,12 +3,17 @@
  * 经 ?surface=overlay-desktop 在应用初始化最早阶段分流渲染:不初始化主壳
  * Gateway、DEV scenario、路由与业务 store;只挂 Overlay 表面端口。
  *
+ * 017 表面批 1 消费接线:快照 = overlay.getSnapshot 冻结投影(任务卡列表＋
+ * 生产状态卡);状态概括与基调由表现模型从冻结词表事实推导;unavailable
+ * 为诚实缺席空态;传输失败为失败+重试态。环境摘要属批 2,本表面不渲染
+ * (wire 批 1 无此事实)。
+ *
  * 交互规格(键鼠):紧凑面板 + 拖拽区标题栏 + 关闭 chrome;Tab/Shift+Tab
  * 焦点环(base.css 全局 :focus-visible)、Enter/Space 激活(原生 button)、
  * Esc 关闭;hover 态;目标 32–40px;单主操作(dismiss)。取消用 DelayedButton
- * 延迟确认原语(§8.1 危险操作纪律)。
+ * 延迟确认原语(§8.1 危险操作纪律),目标由任务卡 taskId 携带。
  *
- * 诚实四态:首帧骨架 / 失败+重试 / inactive 空态 / 正常;关闭永远可用
+ * 诚实四态:首帧骨架 / 失败+重试 / 缺席或空态 / 正常;关闭永远可用
  * (后端不可达时退化 nativeWindow?.close())。
  */
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
@@ -16,7 +21,7 @@ import { Icon } from "@vua/design-system";
 import { overlayPort } from "./overlay-port-instance.ts";
 import type {
   OverlayAction,
-  OverlayEnvironmentState,
+  OverlayActionPayload,
   OverlaySnapshot,
 } from "./overlay-contract.ts";
 import {
@@ -58,21 +63,12 @@ function badgeTone(tone: OverlayVisualTone): "neutral" | "brand" | "warning" | "
   }
 }
 
-function environmentBadgeTone(state: OverlayEnvironmentState): "success" | "brand" | "neutral" {
-  switch (state) {
-    case "ready":
-      return "success";
-    case "running":
-      return "brand";
-    case "missing":
-      return "neutral";
-  }
-}
-
-function environmentName(id: string): string {
-  return id in copy.environmentNames
-    ? copy.environmentNames[id as keyof typeof copy.environmentNames]
-    : id;
+/** 任务态文案:九态冻结词表内取任务中心同表文案,词表外原词透传(不猜测) */
+const TASK_STATE_KEYS = strings.taskStatus;
+function taskStateLabel(state: string): string {
+  return state in TASK_STATE_KEYS
+    ? TASK_STATE_KEYS[state as keyof typeof TASK_STATE_KEYS]
+    : state;
 }
 
 export function DesktopOverlaySurface() {
@@ -134,9 +130,9 @@ export function DesktopOverlaySurface() {
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [closeSurface]);
 
-  const dispatch = useCallback((action: OverlayAction) => {
-    // stale / rejected 都携带最新快照,以其为准重新同步
-    void overlayPort.dispatch(action).then((result) => setSnapshot(result.snapshot));
+  const dispatch = useCallback((action: OverlayAction, payload?: OverlayActionPayload) => {
+    // rejected 携带最新快照,以其为准重新同步
+    void overlayPort.dispatch(action, payload).then((result) => setSnapshot(result.snapshot));
   }, []);
 
   const retrySnapshot = useCallback(() => {
@@ -147,8 +143,24 @@ export function DesktopOverlaySurface() {
 
   const model = snapshot === null ? null : overlayViewModel(snapshot, "desktop");
 
-  const disabledReason = (action: OverlayActionView): string | null =>
-    !action.availability.enabled ? copy.disabledReasons[action.availability.reason] : null;
+  const renderActionsRow = (actions: readonly OverlayActionView[]) => (
+    <div className="vua-overlay__actions-row">
+      {actions.filter((action) => action.visible).map((action) => {
+        if (action.action === "dismiss") {
+          return (
+            <Button
+              key={action.action}
+              variant={action.primary ? "primary" : "default"}
+              onClick={closeSurface}
+            >
+              {copy.actions.dismiss}
+            </Button>
+          );
+        }
+        return null;
+      })}
+    </div>
+  );
 
   return (
     <div
@@ -204,97 +216,78 @@ export function DesktopOverlaySurface() {
               <div>
                 <Badge tone={badgeTone(model.tone)}>{copy.statusTones[model.statusTone]}</Badge>
               </div>
-              <h1 className="vua-overlay__status-title">{model.statusTitle}</h1>
-              {model.statusDetail !== null ? (
-                <p className="vua-overlay__status-detail">{model.statusDetail}</p>
-              ) : null}
+              <h1 className="vua-overlay__status-title">
+                {format(copy.statusTitles[model.statusTitleKey], {
+                  count: model.taskCards.length,
+                })}
+              </h1>
             </section>
 
-            {model.task !== null ? (
-              <Card className="vua-overlay__task">
+            {model.taskCards.length > 0 ? (
+              <section aria-label={copy.taskSectionLabel}>
                 <p className="vua-overlay__section-label">{copy.taskSectionLabel}</p>
-                <h2 className="vua-overlay__task-title">{model.task.title}</h2>
-                <p className="vua-overlay__task-meta">
-                  {strings.workflowStage[model.task.stage]}
-                  {model.task.progress !== null
-                    ? ` · ${format(copy.progress, model.task.progress)}`
-                    : ""}
-                </p>
-              </Card>
-            ) : null}
-
-            {model.environment.length > 0 ? (
-              <section aria-label={copy.environmentSectionLabel}>
-                <p className="vua-overlay__section-label">{copy.environmentSectionLabel}</p>
-                <ul className="vua-overlay__environment">
-                  {model.environment.map((item) => (
-                    <li key={item.id} className="vua-overlay__environment-row">
-                      <span className="vua-overlay__environment-name">
-                        {environmentName(item.id)}
-                      </span>
-                      <Badge tone={environmentBadgeTone(item.state)}>
-                        {copy.environmentStates[item.state]}
-                      </Badge>
+                <ul className="vua-overlay__task-list">
+                  {model.taskCards.map((card) => (
+                    <li key={card.taskId}>
+                      <Card className="vua-overlay__task">
+                        <h2 className="vua-overlay__task-title">{card.taskId}</h2>
+                        <p className="vua-overlay__task-meta">
+                          <Badge tone={card.cancellable ? "brand" : "neutral"}>
+                            {taskStateLabel(card.stateRaw)}
+                          </Badge>
+                        </p>
+                        {card.cancellable ? (
+                          <div className="vua-overlay__task-cancel">
+                            <DelayedButton
+                              variant="default"
+                              delayMs={CANCEL_DELAY_MS}
+                              title={copy.cancelHint}
+                              onClick={() => dispatch("request_cancel_task", { taskId: card.taskId })}
+                            >
+                              {copy.actions.requestCancel}
+                            </DelayedButton>
+                          </div>
+                        ) : null}
+                      </Card>
                     </li>
                   ))}
                 </ul>
-                {model.hiddenEnvironmentCount > 0 ? (
-                  <p className="vua-overlay__more">
-                    {format(copy.moreEnvironments, { count: model.hiddenEnvironmentCount })}
-                  </p>
+              </section>
+            ) : null}
+
+            {model.productionCard.currentPlan !== null || model.productionCard.latestRecord !== null ? (
+              <section aria-label={copy.productionSectionLabel}>
+                <p className="vua-overlay__section-label">{copy.productionSectionLabel}</p>
+                {model.productionCard.currentPlan !== null ? (
+                  <Card className="vua-overlay__production">
+                    <p className="vua-overlay__production-line">
+                      {format(copy.productionPlan, { planId: model.productionCard.currentPlan.planId })}
+                    </p>
+                    <p className="vua-overlay__production-meta">
+                      {copy.productionPlanStatuses[model.productionCard.currentPlan.statusLabel as keyof typeof copy.productionPlanStatuses]
+                        ?? model.productionCard.currentPlan.statusLabel}
+                      {" · "}
+                      {model.productionCard.currentPlan.recipeId}
+                    </p>
+                  </Card>
+                ) : null}
+                {model.productionCard.latestRecord !== null ? (
+                  <Card className="vua-overlay__production">
+                    <p className="vua-overlay__production-line">
+                      {format(copy.productionRecord, { buildId: model.productionCard.latestRecord.buildId })}
+                    </p>
+                    <p className="vua-overlay__production-meta">
+                      {copy.productionRecordStatuses[model.productionCard.latestRecord.statusLabel as keyof typeof copy.productionRecordStatuses]
+                        ?? model.productionCard.latestRecord.statusLabel}
+                      {" · "}
+                      {model.productionCard.latestRecord.finishedAt}
+                    </p>
+                  </Card>
                 ) : null}
               </section>
             ) : null}
 
-            <div className="vua-overlay__actions">
-              {model.actions.filter((action) => action.visible).map((action) => {
-                if (action.action === "request_cancel_task") {
-                  const reason = disabledReason(action);
-                  return (
-                    <p key={action.action} className="vua-overlay__hint">
-                      {reason ?? copy.cancelHint}
-                    </p>
-                  );
-                }
-                return null;
-              })}
-              <div className="vua-overlay__actions-row">
-                {model.actions
-                  .filter((action) => action.visible)
-                  .map((action) => {
-                    if (action.action === "request_cancel_task") {
-                      const reason = disabledReason(action);
-                      return (
-                        <DelayedButton
-                          key={action.action}
-                          variant="default"
-                          delayMs={CANCEL_DELAY_MS}
-                          disabled={!action.availability.enabled}
-                          title={reason ?? copy.cancelHint}
-                          onClick={() => dispatch("request_cancel_task")}
-                        >
-                          {copy.actions.requestCancel}
-                        </DelayedButton>
-                      );
-                    }
-                    if (action.action === "dismiss") {
-                      const reason = disabledReason(action);
-                      return (
-                        <Button
-                          key={action.action}
-                          variant={action.primary ? "primary" : "default"}
-                          disabled={!action.availability.enabled}
-                          title={reason ?? undefined}
-                          onClick={closeSurface}
-                        >
-                          {copy.actions.dismiss}
-                        </Button>
-                      );
-                    }
-                    return null;
-                  })}
-              </div>
-            </div>
+            {renderActionsRow(model.actions)}
           </>
         )}
       </main>

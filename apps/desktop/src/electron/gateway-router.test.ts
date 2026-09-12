@@ -211,6 +211,39 @@ describe("Electron Desktop Gateway routing", () => {
       throw new Error("expected an environment snapshot");
     }
   });
+
+  it("routes overlay.getSnapshot verbatim and passes the typed absence through (017 batch 1)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // mock 未接线 overlay 生产读面:诚实不可用照原样透传(不折叠不伪装)
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-8", method: "overlay.getSnapshot", params: {} },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-8",
+      correlationId: "desktop-request-8",
+      kind: "query",
+      method: "overlay.getSnapshot",
+      params: {},
+    });
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.overlay.unavailable" } },
+    });
+
+    // 非空 params 在信封守卫即拒(闭集空)
+    const invalidParams = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-9", method: "overlay.getSnapshot", params: { taskId: "x" } },
+    );
+    expect(invalidParams).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+  });
 });
 
 describe("bdl-queries v0.2 routing", () => {

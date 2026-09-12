@@ -155,6 +155,8 @@ export type { CancelTaskResult, TaskCenterView, TaskItem, TaskPort } from "./tas
 export { createInactiveTutorialPort } from "./tutorial-port.ts";
 export type { DispatchResult, TutorialAction, TutorialPort, TutorialSnapshot } from "./tutorial-port.ts";
 export type { VuaGateway } from "./gateway.ts";
+export type { GatewayClient } from "./gateway-client.ts";
+export { createGatewayClient } from "./gateway-client.ts";
 export { emptyGateway } from "./empty-gateway.ts";
 export { createGatewayState } from "./create.ts";
 export type { GatewayStateName } from "./create.ts";

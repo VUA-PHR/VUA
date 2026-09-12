@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/inspection-queries/v0.1/methods/inspection-request-run.schema.json",
+  "title": "VUA inspection.requestRun (v0.1)",
+  "description": "Write-command face of the M7 inspection slice (proposal 016, hard precondition 2): the tasked command that drives the five Bridge producing operations (v1 validate_avatar and analyze_performance typed checks, v3 read-only inspection operations inspect_avatar_references / inspect_lighting / inspect_upload_readiness) and publishes exactly one inspection-evidence document per run under a fresh AMF-generated uuid-v7 inspectionId. DRAFT (core implementation batch 2026-09-13, same inspection-queries family as the data-role get/list row; NOT frozen, not registered: the freeze lands with the implementation batch acceptance). The acceptance reply follows the tasked-command face (job.execute precedent): the caller polls the application task face by taskId; the task result payload carries the inspectionId and the aggregated overallStatus. avatarRef is the verbatim identity of the inspected avatar (namespaced identity or explicit scene path, never a guess); avatarGlobalObjectId is the Unity scene target the producing operations inspect. Params are a closed two-key set; paths are provider-bound configuration and never travel the wire (M3/T1 ruling).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "avatarGlobalObjectId": {
+      "description": "The Unity scene object identity the inspection operations target (payload of every producing command, closed single payload shape per the 016 operation-shape proposal).",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "avatarRef": {
+      "description": "Verbatim identity of the inspected avatar, carried into the evidence body unchanged (ref required; label is the observed display name when one exists, never invented).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ref"],
+      "properties": {
+        "ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "label": { "type": ["string", "null"] }
+      }
+    },
+    "inspection-requestRunRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["avatarGlobalObjectId", "avatarRef"],
+      "properties": {
+        "avatarGlobalObjectId": { "$ref": "#/$defs/avatarGlobalObjectId" },
+        "avatarRef": { "$ref": "#/$defs/avatarRef" }
+      }
+    },
+    "inspection-requestRunResult": {
+      "description": "Tasked-command acceptance (job.execute reply shape): poll the application task face by taskId; do not poll this method again.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "operation", "taskId", "correlationId"],
+      "properties": {
+        "schemaVersion": { "const": "0.4" },
+        "operation": { "const": "inspection.requestRun" },
+        "taskId": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

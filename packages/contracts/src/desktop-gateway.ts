@@ -72,6 +72,16 @@ export interface GatewayEnvironmentSnapshotRequestV1 {
   readonly params: Record<string, never>;
 }
 
+// ---- overlay.getSnapshot(017 表面批 1 消费接线:桌面 Gateway 词表行随冻结
+// 应用契约面登记;params 闭集为空,查询语义 verbatim 透传 Kernel) ----
+
+export interface GatewayOverlaySnapshotRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "overlay.getSnapshot";
+  readonly params: Record<string, never>;
+}
+
 export interface GatewayDemoTaskRequestV1 {
   readonly schemaVersion: 1;
   readonly requestId: string;
@@ -405,6 +415,7 @@ export type DesktopGatewayRequestV1 =
   | GatewayTaskGetRequestV1
   | GatewayTaskCancellationRequestV1
   | GatewayEnvironmentSnapshotRequestV1
+  | GatewayOverlaySnapshotRequestV1
   | GatewayDemoTaskRequestV1
   | ProductionStartInspectionRequestV1
   | ProductionGetInspectionRequestV1
@@ -450,6 +461,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "task.get": "query",
   "task.requestCancellation": "command",
   "environment.getSnapshot": "query",
+  "overlay.getSnapshot": "query",
   "task.startDemo": "command",
   "production.startInspection": "command",
   "production.getInspection": "query",
@@ -730,6 +742,7 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "app.snapshot":
     case "task.list":
     case "environment.getSnapshot":
+    case "overlay.getSnapshot":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
     case "task.get":
       return hasExactKeys(value, REQUEST_KEYS)
