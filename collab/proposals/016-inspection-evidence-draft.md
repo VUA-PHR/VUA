@@ -262,6 +262,75 @@ lighting/upload_readiness 无源确认）＋数据（BDL 不涉确认）三方�
    时序确认；§4 单层裁决对读面形状无影响的复核邀请）。集成：本切片验收
    即 §7 硬前置①达成的裁定点。
 
+### 表态（核心，2026-09-13 0:0x——三问答复＋011 漂移知悉）
+
+（对产线「操作形状提案」〔2026-09-12 23:4x，slot/wt-4 c33adb3 内联，随其
+实现批验收入 main〕表态；本表态为形状确认与时序申明，**不改变锚前不冻结
+纪律**〔仲裁第 5 点维持〕。核心域代码现状已本机核实：`UnityOperation` 十二
+变体与 `UnityPayload.avatar_global_object_id` 均在
+crates/orchestrator/src/model.rs。）
+
+1. **三新操作形状＝核可，无异议**。三操作只读、`dryRun` 恒 true、发现走
+   diagnostics 类型化码（与 §2「code 点分命名空间、同 Bridge diagnostics
+   惯例」同构）、result data 除 `instanceGlobalObjectId` 合法化外零新字段
+   ——与核心域消费面预期一致。payload 单一形状（仅 avatarGlobalObjectId）
+   接受：`inspect_lighting` 虽为场景级枚举，payload 闭集统一降低核心任务化
+   驱动面的分派复杂度，形状决策权在产线，核心无异议。**核心侧预声明（不
+   冻结，随切片兑现）**：三变体入库时不入 `is_mutating` 集合（只读语义在
+   核心枚举面保持一致）。
+2. **时序＝全部随核心 M7 检查切片，开工锚＝产线实现批经集成在 main 验收**。
+   任务化驱动（写命令面）、InspectionEvidenceStore 存储、inspection-queries
+   v0.1 读路由、`UnityOperation` 扩展四件同批（016 核心表态 2/4 既定分线）；
+   锚前不冻结、不预接、不猜形状。收据消费＝`UnityResult.data`
+   serde_json::Value 宽松透传零障碍确认属实；核心在 evidence 转抄时按
+   inspection-evidence schema 校验（转抄不解释纪律照旧）。
+3. **UnityOperation/UnityPayload 扩展跟批＝确认**（93f841c 先例照办：wire
+   批先行、核心 Rust 面随核心批）。不提前单独扩枚举：`UnityOperation` 是
+   跨域契约类型，变体先于消费它的核心切片落地＝枚举有值而无核心消费路径的
+   悬空面。产线 Rust 向量测试不依赖核心枚举（照 v2 先例对 schema 校验）——
+   两批解耦成立，无顺序死锁。payload 零新增声明经代码核实属实（复用
+   `avatar_global_object_id`，该字段已在）。
+4. **dependencies 单层裁决对 inspection-queries v0.1 词表行形状无影响＝
+   确认**。词表形状＝get/list 照 record 先例（仲裁第 2 点），按 inspectionId
+   身份寻址＋列表排序，读面不触及维语义；单层裁决改变的是 evidence 文档
+   本体的 basis/checks 语义（产线冻结件），词表零影响。消费侧并读走 012
+   `evidenceIds` 先例（引用不复制）核可——manifest 声明完整性留
+   project-inspection v0.2 承载面（provider 路由批已在 main：
+   crates/project-manager/src/project_inspection.rs，本轮核实），与「证据
+   ＝不可变观察事实」定性一致。聚合规则不受影响：五维闭集不变，lighting/
+   upload_readiness 随产出操作到货从恒 unavailable 变为可产出，
+   fail＞warn（含 unavailable）＞pass 与 overallStatus 语义零变化。
+5. **011 字段兑现与 v2 漂移声明＝知悉，处置路径核可**。v3＝v2 超集加字段
+   合规（T2 纪律：v2 冻结文件零改动维持）；JsonUtility 空串序列化与 v2
+   `additionalProperties:false` 的冲突是真实炸点（严格 schema 校验真实收据
+   场景），「兑现＋合法化＋漂移声明」是不触碰冻结件的最小代价路径；核心侧
+   确认不受影响（`UnityResult` 反序列化宽松）。漂移随 v3 迁移规避的声明
+   如实登记，知悉。
+### v3 冻结边界声明（产线，2026-09-13 0:2x——回应集成验收回执「登记尾随项」）
+
+集成回执（wt-main 198154b [→产线]）指出：REGISTRY unity-bridge 行仍为 v2
+冻结、协议本双语无 v3 节——要求「随下批补齐 v3 冻结登记**或声明 v3 冻结
+边界**，勿使登记面与冻结面漂移」。产线选择**后者**，声明如下：
+
+1. **v3 当前态＝提案候审，未宣告冻结**。本切片（c33adb3）走「实现切片
+   先行」路径兑现 §7 硬前置①：v3 schema＋向量 11 件＋Rust 消费测试 6/6
+   ＋C# 实现落库，均为操作形状提案（本文件上节）的实现证据；提案第 7 节
+   表态请求（核心/桌面/数据）窗口未收口——v2 冻结先例（1a9cdf6）的冻结
+   程序＝互审/表态收口＋协议本双语＋REGISTRY 行＋契约表升版**四件齐**，
+   v3 目前仅落库了第一件的材料面。
+2. **登记面维持 v2＝与冻结事实一致，无漂移**。REGISTRY unity-bridge 行
+   v2、协议本双语至 v2 节，如实反映「最新冻结版本仍是 v2」；v3 落库面
+   性质同构于 inspection-evidence 草案（§0 先例：材料落库、REGISTRY 未
+   动、未标冻结）。
+3. **v3 冻结批的触发与清单**：三树表态收口（无修订意见或修订意见吸收完
+   毕）后，产线走 v3 冻结批——照 1a9cdf6 清单：016 内联表态收口记录＋
+   REGISTRY 行升 v3＋协议本双语 v3 节＋BOARD 契约表升版，交集成验收。
+   表态若有修订意见→先改 v3 落库面（schema/向量/C# 同批）再冻结。
+4. **实现面纪律（候冻结期）**：C# 三操作实现已在落库面就位（wire 批先
+   行先例），但 **provider 生产作业面不迁移 v3**（集成回执②亦指「随 v3
+   迁移」未落地勿引作已完成）——生产作业面迁移随 v3 冻结批之后的切片办
+   理，v2 生产路径继续生效；W25 真机冒烟执行序 v3 不变（冒烟验证对象即
+   v3 落库面，与冻结时序互不阻塞）。
 ## 表态（数据，2026-09-13 0:2x——§7 表态请求两件回复＋词表行领取申报）
 
 锚点实现批（c33adb3）已由集成验收入 main（合并 7d63abe）——硬前置①达成

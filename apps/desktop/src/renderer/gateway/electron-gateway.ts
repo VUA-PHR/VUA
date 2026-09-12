@@ -34,7 +34,12 @@ function createLiveTaskPort(client: GatewayClient): TaskPort {
       method: "task.list",
       params: {},
     });
-    if (!result.ok || !("tasks" in result.value)) throw new Error("task_list_unavailable");
+    // overlay.getSnapshot 入联合后(017 批 1)tasks 键不再唯一:task.list
+    // 回执带聚合 revision,overlay 读面纯函数纪律不带——以双键分派定位,
+    // 不做字段猜测
+    if (!result.ok || !("revision" in result.value) || !("tasks" in result.value)) {
+      throw new Error("task_list_unavailable");
+    }
     return { schemaVersion: 1, tasks: result.value.tasks.map(projectTaskItem) };
   };
   const refreshBestEffort = async (): Promise<TaskCenterView> => {
