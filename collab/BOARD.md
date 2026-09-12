@@ -659,6 +659,8 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 | 23 | **proposal 021（环境，2026-09-12 23:xx，U10 裁决后环境半边·契约先行）**：①**editor_verify v0.1 原语入库申报**——ADR 门①②检测域事实原语（手选路径三形态归一化；身份读 PE 版本资源**不信任路径名**；分类复用核心 editor_targets 单一权威＋引导码只渲染不晋升；拒绝码闭集 5 码 `vua.editor_verify.*`；合成 9 测试绿＋真机探针 `#[ignore]` 门控〔2026-09-12 本机 3 真实编辑器 Verified，资源身份与目录名逐一一致〕；windows-sys 既有 `=0.61.2` 依赖增 `Win32_Storage_FileSystem` feature 已声明）；无 wire 面，传输接缝未决前不接路由不称端到端。②**接缝表态请求**：桌面＝设置面预填消费哪条检测面＋所需字段＋三形态入口呈现；核心＝验证路由面＋VUA_UNITY_EDITOR 注入消费与零配置直用策略＋「按机器存储」用户手选持久化归属；数据＝无义务知会。③**来源字段增量候决**——environment-managers v0.1→v0.2（EditorFinding＋source）候桌面/核心字段决策后起草，防投机 schema 变更。边界：门③信任呈现＋留痕＝桌面/持久化归属方，环境不建模 | 环境 → 桌面/核心（表态）→ 集成（仲裁） | proposal 021（`collab/proposals/021-u10-environment-detection-half.md`，状态=提出）；**待桌面/核心表态 → 集成仲裁**；语义权威＝ADR path-configuration 已裁决，本提案仅定接缝与原语入库 |
 
+| 24 | **proposal 022（数据，2026-09-13 00:2x）：inspection-queries 词表行草案期 REGISTRY 反向检测豁免**——数据上轮交付 `schemas/inspection-queries/v0.1` 词表行草案（2e3db58 候集成验收；016 仲裁第 2 点独立词表行，照 BG-4 先例草案态不动 REGISTRY、协议本随冻结批），与 inspection-evidence 同构草案处置；但 BG-8 (b) 反向漏登记检测的 `SCHEMA_EXEMPT` 豁免清单（`scripts/collab-brief.mjs:309`）起草于该目录存在之前，只豁免了 inspection-evidence——本树 brief ④ 已报「schemas/inspection-queries/ 漏登记」，且 **CI 影响**＝`collab-registry` workflow 跑 `--registry-only`（反向扫描计入退出码），实现批 2e3db58 合入 main 后该 job 必红。提案＝`SCHEMA_EXEMPT` 增 `'inspection-queries'` 一行（豁免理由与 inspection-evidence 同构：016 草案态冻结时随冻结批登记），**随 2e3db58 验收批一并办理**避免 main 带红窗口；备选（REGISTRY 草案行登记）不推荐，理由见提案 §4 | 数据（提出）→ 集成（落地裁决；`scripts/` 非数据所有权域，数据不越域动手） | proposal 022（`collab/proposals/022-inspection-queries-registry-exempt.md`，状态=提出）；**待集成表态＋落地时序裁决** |
+
 ## W15 用户走查问题清单（2026-09-09 用户回传 9 条；指令＝先确认意图，禁改实现）
 
 > 用户原文逐字登记（A/B/C 三组 9 条）。处置流程：①登记（本节）②逐条意图确认
