@@ -259,6 +259,23 @@ describe("importCopy task-based consumption (proposal 020 result reflux)", () =>
     unavailable(await port.importCopy(PLAN_PARAMS));
   });
 
+  it("returns unavailable when the snapshot contractVersion is missing or foreign", async () => {
+    // 快照必需键 contractVersion 缺失/异版 = 不可信快照(形态不齐路径;
+    // 集成 #22 验收 L 级观察随手批回归钉死)
+    const missing = taskSnapshot({
+      contractVersion: undefined,
+      state: "succeeded",
+      result: donePayload(PLAN_DOCUMENT),
+    });
+    unavailable(await createLiveProjectOps(scriptedClient([missing])).importCopy(PLAN_PARAMS));
+    const foreign = taskSnapshot({
+      contractVersion: "9.9",
+      state: "succeeded",
+      result: donePayload(PLAN_DOCUMENT),
+    });
+    unavailable(await createLiveProjectOps(scriptedClient([foreign])).importCopy(PLAN_PARAMS));
+  });
+
   it("returns unavailable when the result document is missing required fields", async () => {
     const client = scriptedClient([
       taskSnapshot({
