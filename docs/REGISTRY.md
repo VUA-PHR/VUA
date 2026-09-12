@@ -46,6 +46,7 @@
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.4_ZH.md | 0.4 | 已冻结（IMP-3 契约先行，2026-09-09：Schema＋正负例向量＋消费测试） | 数据 | 2026-09-09 |
 | docs/protocols/production-evidence-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-08 |
+| docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | 已冻结（M3 验收） | 核心 | 2026-09-07 |
@@ -54,6 +55,7 @@
 | docs/protocols/task-store-v0.1_ZH.md | 0.1 | 已冻结 | 核心 | 2026-09-06 |
 | docs/protocols/unity-bridge-v1_ZH.md | v1 | 已接受 | 产线 | 2026-09-06 |
 | docs/protocols/unity-bridge-v2_ZH.md | v2 | 已冻结 | 产线 | 2026-09-08 |
+| docs/protocols/unity-bridge-v3_ZH.md | v3 | 已冻结（M7，2026-09-13：proposal 016 三树表态收口〔核心 0:0x／数据 0:2x／桌面 1:4x，零修订意见〕；v2 同面超集＋三只读检查操作＋instanceGlobalObjectId 合法化；落库面随 7d63abe 先行，本批为契约面冻结；生产作业面迁移归后续切片，v2 生产路径继续生效） | 产线 | 2026-09-13 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/design/design-standard_ZH.md | 0.7.0 | 已接受 | 桌面 | 2026-09-10 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |
