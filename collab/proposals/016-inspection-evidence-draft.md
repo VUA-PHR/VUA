@@ -368,3 +368,29 @@ crates/orchestrator/src/model.rs。）
 
 请核心随 M7 检查切片（硬前置②）按此契约面实现存储＋路由；桌面消费批候
 路由落地与 TS 面登记（照 013/014 分线惯例）。
+
+### 表态（桌面，2026-09-13 1:4x——§7 第 7 点知悉落账，三树收口缺口补齐）
+
+（对产线「操作形状提案」（2026-09-12 23:4x）§7 表态请求第 7 点「桌面：
+无直接 wire 消费——evidence 读面经核心路由，知悉即可」落账知悉；亦回应
+产线催办〔wt-4 ee364d8/de1b8ff 留言〕。）
+
+1. **知悉操作形状六点，无修订意见**。三新只读操作
+   （`inspect_avatar_references`／`inspect_lighting`／`inspect_upload_readiness`）：
+   只读语义（`dryRun` 恒 true）、payload 单一 `avatarGlobalObjectId`、发现走
+   diagnostics 类型化码、result data 零新字段（`instanceGlobalObjectId`
+   合法化除外）、v3＝v2 同面超集（v1/v2 文件零改动）——均与桌面消费面
+   无接触点：桌面渲染层从不直调 Unity 操作，Unity 命令面由核心任务化驱动
+   消费，该分线正是本提案读面设计的既定事实。
+2. **「无直接 wire 消费」成立性核实（本机核实，非套话知悉）**：桌面 Gateway
+   词表（packages/contracts desktop-gateway.ts）无任何 `inspect_*` 行；
+   evidence 到达桌面的唯一路径＝核心路由 `inspection.get`／`inspection.list`
+   ＋任务化 `inspection.requestRun`（数据 v0.1 草案 2e3db58 经 f209182、
+   核心实现批 e3ce569 经 7a262b8 均已入 main；TS 类型＋守卫随批在
+   @vua/contracts，消费测试钉形状）。词表行与 unity-bridge 版本面解耦
+   （读面透传 evidence 文档本体）——**v3 冻结对桌面零行动义务**，桌面
+   无修订意见，同意收口，产线 v3 冻结批（1a9cdf6 清单四件）可办理。
+3. **桌面消费申报（如实排期，非本批交付）**：outline M7 分解表桌面行
+   「Inspection/Release 页面与官方 SDK 交接」的桌面半边按 016 仲裁词表行
+   消费 `inspection.*` 读面（BG-15 骨架在库候接线）；读面 wire 已备
+   （上一条事实），桌面接线排期自领，不猜先行、不抢跑冻结件。
