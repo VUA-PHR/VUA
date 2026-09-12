@@ -1,0 +1,23 @@
+{
+  "contractVersion": "0.1",
+  "taskId": "task-bad-1",
+  "revision": 3,
+  "correlationId": "corr-bad-1",
+  "state": "failed",
+  "cancellationRequested": false,
+  "recoveryDisposition": "none",
+  "updatedAt": "2026-09-12T05:33:00Z",
+  "error": {
+    "code": "vua.task.timeout",
+    "category": "timeout",
+    "messageKey": "errors.task.timeout",
+    "correlationId": "corr-bad-1",
+    "recoverable": true,
+    "retryable": true
+  },
+  "result": {
+    "schemaVersion": "0.2",
+    "operation": "project.import-copy",
+    "result": { "kind": "receipt" }
+  }
+}
