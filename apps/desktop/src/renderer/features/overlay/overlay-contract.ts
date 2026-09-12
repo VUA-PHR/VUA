@@ -1,23 +1,33 @@
 /**
- * Overlay 表面契约的渲染层本地镜像(v1,切片五/F7a)。
+ * Overlay 表面契约的渲染层本地镜像(v2,017 表面批 1 wire 消费接线)。
  *
- * 语义来源:docs/architecture/integrations-and-overlays_ZH.md §Overlay——桌面与
- * VR Overlay 共享同一展示状态,经窄化 Surface Port 获取版本化快照并只回语义
- * 动作;docs/design/design-standard_ZH.md §8.8——Overlay 只展示稳定快照
- * 和语义动作。正式版本化契约随 Kernel/VR helper 接线切片进入 packages/contracts;
- * 此前本镜像是唯一事实来源,接入时必须以此对齐,不得另造第二套词表。
+ * 语义来源:packages/contracts 的 OverlaySnapshotResultV01 冻结面(应用契约
+ * 017 批 1,main 1d3509b 入库)+ docs/architecture/integrations-and-overlays_ZH.md
+ * §Overlay。v1 镜像(切片五)预设的 revision/allowedActions/environment 与
+ * stage/progress 字段在冻结 wire 面不存在——纯函数纪律不带聚合 revision,
+ * 动作权限守卫在服务权威侧(017 §3),环境/下载卡属批 2 未投影——v2 以
+ * wire 冻结面为准对齐,不另造第二套词表:任务卡与生产卡类型直接复用
+ * @vua/contracts,原样透传。
  */
 
-import type { WorkflowStage } from "../../gateway/index.ts";
+import type {
+  OverlayProductionCardV01,
+  OverlayTaskCardV01,
+} from "@vua/contracts";
+
+export type { OverlayProductionCardV01, OverlayTaskCardV01 } from "@vua/contracts";
 
 /** 三个语义动作:Overlay 表面(桌面置顶窗 / VR Dashboard)只发送这些 */
 export type OverlayAction = "open_on_desktop" | "dismiss" | "request_cancel_task";
 
-/** 状态基调(展示语义;视觉映射由表现模型负责,契约不带颜色词):
- * - inactive:无活动(未接入/空会话),表面呈现诚实空态;
- * - active:有进行中工作;
- * - waiting:等待用户确认/处理;
- * - blocked:阻断或失败(唯一允许红色语义的基调)。 */
+/** request_cancel_task 的目标载荷(wire 任务卡事实 taskId);其余动作无载荷 */
+export interface OverlayActionPayload {
+  readonly taskId?: string;
+}
+
+/** 状态基调(展示语义;视觉映射由表现模型负责,契约不带颜色词)。
+ *  v2 中 tone 由渲染层从冻结词表事实推导(见 overlay-model),waiting 在
+ *  wire 批 1 无事实源,类型保留供批 2 演进。 */
 export type OverlayStatusTone = "inactive" | "active" | "waiting" | "blocked";
 
 export const overlayStatusTones: readonly OverlayStatusTone[] = [
@@ -27,65 +37,42 @@ export const overlayStatusTones: readonly OverlayStatusTone[] = [
   "blocked",
 ];
 
-/** 环境摘要项的运行状态词表(与 strings.overlay.environmentStates 一一对应) */
-export type OverlayEnvironmentState = "ready" | "running" | "missing";
-
-export const overlayEnvironmentStates: readonly OverlayEnvironmentState[] = [
-  "ready",
-  "running",
-  "missing",
-];
-
-/** 环境摘要行(只读):id 是不透明标识,展示名与环境状态文案在字符串表 */
-export interface OverlayEnvironmentItemV1 {
-  readonly id: string;
-  readonly state: OverlayEnvironmentState;
-}
-
-/** 当前任务卡;progress 为 null 表示没有真实总量——表面只显示阶段,不注水 */
-export interface OverlayTaskV1 {
-  readonly title: string;
-  readonly stage: WorkflowStage;
-  readonly progress: { readonly done: number; readonly total: number } | null;
-  /** request_cancel_task 的前置条件之一(另需动作在 allowedActions 中) */
-  readonly cancellable: boolean;
-}
-
-export interface OverlayStatusV1 {
-  readonly tone: OverlayStatusTone;
-  /** 数据负载文案(随快照下发,非界面字符串) */
-  readonly title: string;
-  readonly detail?: string;
-}
-
+/** 呈现偏好(壳侧:渲染进程本地,非 wire 事实) */
 export interface OverlayPresentationV1 {
   readonly locale: string;
   readonly textScale: number;
   readonly reducedMotion: boolean;
 }
 
-export interface OverlaySnapshotV1 {
-  readonly schemaVersion: 1;
-  /** 单调递增;动作携带 expectedRevision 的裁决语义同教程端口(stale 回最新快照) */
-  readonly revision: number;
-  readonly presentation: OverlayPresentationV1;
-  readonly status: OverlayStatusV1;
-  readonly task: OverlayTaskV1 | null;
-  /** 环境摘要(只读,≤ 数行;长列表属桌面主窗,不进 Overlay) */
-  readonly environment: readonly OverlayEnvironmentItemV1[];
-  /** 服务端按状态下发的合法动作集合 */
-  readonly allowedActions: readonly OverlayAction[];
-}
+/**
+ * Overlay 快照 v2:两态判别。
+ * - available:overlay.getSnapshot 冻结投影原样透传(任务卡列表＋生产状态
+ *   卡两半独立可空);
+ * - unavailable:生产读面未接线的诚实缺席(vua.overlay.unavailable)——
+ *   绝不以空快照伪装(017 批 1 冻结语义),呈现缺席空态而非空数据。
+ */
+export type OverlaySnapshotV2 =
+  | {
+      readonly schemaVersion: 2;
+      readonly availability: "available";
+      readonly presentation: OverlayPresentationV1;
+      readonly tasks: readonly OverlayTaskCardV01[];
+      readonly productionCard: OverlayProductionCardV01;
+    }
+  | {
+      readonly schemaVersion: 2;
+      readonly availability: "unavailable";
+      readonly presentation: OverlayPresentationV1;
+    };
 
-export type OverlayDispatchResultV1 =
-  | { readonly kind: "ok"; readonly snapshot: OverlaySnapshotV1 }
-  | { readonly kind: "stale"; readonly snapshot: OverlaySnapshotV1 }
+export type OverlayDispatchResultV2 =
+  | { readonly kind: "ok"; readonly snapshot: OverlaySnapshotV2 }
   | {
       readonly kind: "rejected";
       readonly reason: "unknown_action" | "action_not_allowed";
-      readonly snapshot: OverlaySnapshotV1;
+      readonly snapshot: OverlaySnapshotV2;
     };
 
-/** 端口侧惯用短名(与 V1 类型一一对应;同 tutorial-contract 惯例) */
-export type OverlaySnapshot = OverlaySnapshotV1;
-export type OverlayDispatchResult = OverlayDispatchResultV1;
+/** 端口侧惯用短名(v2 当前代;同 tutorial-contract 惯例) */
+export type OverlaySnapshot = OverlaySnapshotV2;
+export type OverlayDispatchResult = OverlayDispatchResultV2;

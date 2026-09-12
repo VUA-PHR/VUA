@@ -1077,14 +1077,35 @@ demoTaskTitle: "Demo task",
       },
     },
   },
-  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
-   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  /** Overlay dual surfaces(§8.8): copy for the desktop/VR overlay surfaces;
+   *  v2(017 surface batch 1 wire consumption): status titles + production
+   *  card copy added; environment/progress/disabled-reason keys removed —
+   *  wire batch 1 carries no such facts (batch 2 may reintroduce them with
+   *  their wire projection). planStatus/recordStatus word tables mirror the
+   *  frozen PlanStatusV02/BuildRecordStatusV02 enums. */
   overlay: {
     surfaceTitle: "VUA Overlay",
-    taskSectionLabel: "Current task",
-    environmentSectionLabel: "Environment",
-    progress: "{done} / {total}",
-    moreEnvironments: "+{count} more",
+    taskSectionLabel: "Tasks",
+    productionSectionLabel: "Production",
+    productionPlan: "Plan {planId}",
+    productionRecord: "Record {buildId}",
+    productionPlanStatuses: {
+      draft: "Awaiting approval",
+      approved: "Approved",
+      superseded: "Superseded",
+    },
+    productionRecordStatuses: {
+      succeeded: "Succeeded",
+      succeeded_with_warnings: "Succeeded with warnings",
+      failed: "Failed",
+      cancelled: "Cancelled",
+      recovered: "Recovered",
+    },
+    statusTitles: {
+      active: "{count} in progress",
+      recent: "Recent activity",
+      idle: "Nothing in progress",
+    },
     actions: {
       openOnDesktop: "Open on desktop",
       dismiss: "Dismiss overlay",
@@ -1107,22 +1128,6 @@ demoTaskTitle: "Demo task",
       active: "In progress",
       waiting: "Waiting",
       blocked: "Blocked",
-    },
-    disabledReasons: {
-      notAllowed: "Not available in the current state",
-      noTask: "No task in progress",
-      notCancellable: "This task cannot be cancelled right now",
-    },
-    environmentStates: {
-      ready: "Ready",
-      running: "Running",
-      missing: "Not detected",
-    },
-    environmentNames: {
-      steamvr: "SteamVR",
-      unity: "Unity Editor",
-      vrchat: "VRChat",
-      vpm: "VPM",
     },
   },
   media: {

@@ -1,53 +1,67 @@
 /**
- * Overlay 表现模型测试(切片五 F7a):
- * - 有/无任务 × desktop/vr × inactive/失败态的矩阵覆盖;
- * - 色彩纪律映射(进行=accent、等待=amber、阻断=error、inactive=neutral);
- * - 动作可用性与禁用原因键、形态差异(open_on_desktop 仅 VR、环境截断);
- * - 枚举奇偶:disabledReasons/environmentStates/statusTones 键与 TS 联合一一对应。
+ * Overlay 表现模型测试(v2,017 表面批 1 wire 消费):
+ * - unavailable 缺席两态与空集快照的诚实呈现;
+ * - tone 推导(冻结九态词表:非终态=accent、failed=error、终态=neutral);
+ * - 任务卡投影(词表内/词表外 state 透传、终态无取消目标);
+ * - 生产状态卡两半独立可空投影;
+ * - 形态差异(open_on_desktop 仅 VR、主操作纪律);
+ * - 枚举奇偶:statusTitles/statusTones 键与 TS 联合一一对应。
  */
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import { strings } from "../../i18n/index.ts";
 import {
-  overlayEnvironmentStates,
   overlayStatusTones,
   type OverlaySnapshot,
 } from "./overlay-contract.ts";
 import {
-  overlayDisabledReasons,
+  overlayStatusTitleKeys,
   overlayViewModel,
   toneForStatus,
 } from "./overlay-model.ts";
 
-function makeSnapshot(overrides: Partial<OverlaySnapshot> = {}): OverlaySnapshot {
+const presentation = { locale: "zh-CN", textScale: 1, reducedMotion: false };
+
+function makeAvailableSnapshot(
+  overrides: {
+    cards?: Array<{ taskId: string; state: string; correlationId: string }>;
+    productionCard?: Partial<{
+      currentPlan: {
+        planId: string;
+        planStatus: string;
+        createdAt: string;
+        recipeId: string;
+      } | null;
+      latestRecord: {
+        buildId: string;
+        planId: string;
+        status: string;
+        finishedAt: string;
+      } | null;
+    }>;
+  } = {},
+): Extract<OverlaySnapshot, { availability: "available" }> {
   return {
-    schemaVersion: 1,
-    revision: 1,
-    presentation: { locale: "zh-CN", textScale: 1, reducedMotion: false },
-    status: { tone: "active", title: "demo status" },
-    task: {
-      title: "demo task",
-      stage: "execute",
-      progress: { done: 3, total: 6 },
-      cancellable: true,
+    schemaVersion: 2,
+    availability: "available",
+    presentation,
+    tasks: overrides.cards ?? [],
+    productionCard: {
+      currentPlan: null,
+      latestRecord: null,
+      ...overrides.productionCard,
     },
-    environment: [
-      { id: "steamvr", state: "running" },
-      { id: "unity", state: "ready" },
-      { id: "vrchat", state: "running" },
-      { id: "vpm", state: "ready" },
-    ],
-    allowedActions: ["open_on_desktop", "dismiss", "request_cancel_task"],
-    ...overrides,
   };
 }
 
-const inactiveSnapshot = makeSnapshot({
-  status: { tone: "inactive", title: "" },
-  task: null,
-  environment: [],
-  allowedActions: [],
-});
+const unavailableSnapshot: OverlaySnapshot = {
+  schemaVersion: 2,
+  availability: "unavailable",
+  presentation,
+};
+
+const runningCard = { taskId: "task-2", state: "running", correlationId: "c2" };
+const queuedCard = { taskId: "task-1", state: "queued", correlationId: "c1" };
 
 function actionView(model: ReturnType<typeof overlayViewModel>, action: string) {
   const view = model.actions.find((entry) => entry.action === action);
@@ -62,158 +76,142 @@ test("tone 映射穷尽:进行=accent、等待=amber、阻断=error、inactive=n
   assert.equal(toneForStatus("inactive"), "neutral");
 });
 
-test("inactive 占位快照(未接入/dismiss 后):两形态均为 inactive,区块全隐", () => {
+test("unavailable 缺席快照:两形态均 inactive 空态,不伪装成空数据快照", () => {
   for (const mode of ["desktop", "vr"] as const) {
-    const model = overlayViewModel(inactiveSnapshot, mode);
+    const model = overlayViewModel(unavailableSnapshot, mode);
     assert.equal(model.state, "inactive");
     assert.equal(model.tone, "neutral");
-    assert.equal(model.task, null);
-    assert.equal(model.environment.length, 0);
-    for (const action of model.actions) {
-      assert.equal(action.availability.enabled, false);
-      assert.equal(action.primary, false);
-    }
+    assert.equal(model.taskCards.length, 0);
+    assert.equal(model.productionCard.currentPlan, null);
+    assert.equal(model.productionCard.latestRecord, null);
+    assert.equal(actionView(model, "request_cancel_task").visible, false);
+    assert.equal(actionView(model, "dismiss").visible, true);
   }
 });
 
-test("进行中任务 × desktop:任务卡/环境(≤4)可见,open_on_desktop 不出现,主操作=dismiss", () => {
-  const model = overlayViewModel(makeSnapshot(), "desktop");
-  assert.equal(model.state, "ready");
-  assert.equal(model.tone, "accent");
-  assert.deepEqual(model.task, {
-    title: "demo task",
-    stage: "execute",
-    progress: { done: 3, total: 6 },
-  });
-  assert.equal(model.environment.length, 4);
-  assert.equal(model.hiddenEnvironmentCount, 0);
-  assert.equal(actionView(model, "open_on_desktop").visible, false);
-  assert.equal(actionView(model, "request_cancel_task").visible, true);
-  assert.equal(actionView(model, "request_cancel_task").availability.enabled, true);
-  const dismiss = actionView(model, "dismiss");
-  assert.equal(dismiss.visible, true);
-  assert.equal(dismiss.availability.enabled, true);
-  assert.equal(dismiss.primary, true);
-});
-
-test("进行中任务 × vr:环境截断 ≤3 且计数折叠,open_on_desktop 可见且为主操作", () => {
-  const model = overlayViewModel(makeSnapshot(), "vr");
-  assert.equal(model.state, "ready");
-  assert.equal(model.environment.length, 3);
-  assert.equal(model.hiddenEnvironmentCount, 1);
-  const open = actionView(model, "open_on_desktop");
-  assert.equal(open.visible, true);
-  assert.equal(open.availability.enabled, true);
-  assert.equal(open.primary, true);
-  assert.equal(actionView(model, "request_cancel_task").visible, true);
-  assert.equal(actionView(model, "dismiss").primary, false);
-});
-
-test("无真实总量不注水:progress=null 原样透传,表面只显示阶段", () => {
-  const snapshot = makeSnapshot({
-    task: { title: "demo task", stage: "validate", progress: null, cancellable: true },
-  });
+test("非终态任务(queued/running):tone=accent、state=ready、取消目标可见", () => {
   for (const mode of ["desktop", "vr"] as const) {
-    const model = overlayViewModel(snapshot, mode);
-    assert.equal(model.task?.stage, "validate");
-    assert.equal(model.task?.progress, null);
+    const model = overlayViewModel(
+      makeAvailableSnapshot({ cards: [queuedCard, runningCard] }),
+      mode,
+    );
+    assert.equal(model.state, "ready");
+    assert.equal(model.tone, "accent");
+    assert.equal(model.statusTone, "active");
+    assert.equal(model.taskCards.length, 2);
+    assert.deepEqual(
+      model.taskCards.map((card) => card.cancellable),
+      [true, true],
+    );
+    assert.equal(actionView(model, "request_cancel_task").visible, true);
   }
 });
 
-test("取消后的会话(任务空、动作仍在)不是 inactive,基调 neutral", () => {
-  const snapshot = makeSnapshot({
-    status: { tone: "inactive", title: "cancelled" },
-    task: null,
-    allowedActions: ["open_on_desktop", "dismiss"],
+test("主操作纪律:desktop 主操作=dismiss,open_on_desktop 不出现;vr 相反", () => {
+  const snapshot = makeAvailableSnapshot({ cards: [runningCard] });
+  const desktop = overlayViewModel(snapshot, "desktop");
+  assert.equal(actionView(desktop, "open_on_desktop").visible, false);
+  assert.equal(actionView(desktop, "dismiss").primary, true);
+  const vr = overlayViewModel(snapshot, "vr");
+  assert.equal(actionView(vr, "open_on_desktop").visible, true);
+  assert.equal(actionView(vr, "open_on_desktop").primary, true);
+  assert.equal(actionView(vr, "dismiss").primary, false);
+});
+
+test("全部终态任务:tone=neutral,取消目标收起,快照仍为 ready(近期活动)", () => {
+  const snapshot = makeAvailableSnapshot({
+    cards: [
+      { taskId: "task-3", state: "succeeded", correlationId: "c3" },
+      { taskId: "task-4", state: "cancelled", correlationId: "c4" },
+    ],
   });
   const model = overlayViewModel(snapshot, "desktop");
   assert.equal(model.state, "ready");
   assert.equal(model.tone, "neutral");
-  assert.equal(model.task, null);
-  const cancel = actionView(model, "request_cancel_task");
-  assert.equal(cancel.visible, true);
-  assert.deepEqual(cancel.availability, { enabled: false, reason: "notAllowed" });
-});
-
-test("等待与阻断基调:amber / error 双形态一致", () => {
-  for (const mode of ["desktop", "vr"] as const) {
-    assert.equal(
-      overlayViewModel(makeSnapshot({ status: { tone: "waiting", title: "w" } }), mode).tone,
-      "amber",
-    );
-    assert.equal(
-      overlayViewModel(makeSnapshot({ status: { tone: "blocked", title: "b" } }), mode).tone,
-      "error",
-    );
+  assert.equal(model.statusTone, "inactive");
+  assert.equal(model.statusTitleKey, "recent");
+  for (const card of model.taskCards) {
+    assert.equal(card.cancellable, false);
   }
+  assert.equal(actionView(model, "request_cancel_task").visible, false);
 });
 
-test("request_cancel_task:任务不可取消时禁用原因 notCancellable", () => {
-  const snapshot = makeSnapshot({
-    task: { title: "demo task", stage: "execute", progress: null, cancellable: false },
+test("无进行中但有 failed 任务:tone=error(唯一允许红色语义的基调)", () => {
+  const snapshot = makeAvailableSnapshot({
+    cards: [{ taskId: "task-5", state: "failed", correlationId: "c5" }],
   });
   const model = overlayViewModel(snapshot, "desktop");
-  assert.deepEqual(actionView(model, "request_cancel_task").availability, {
-    enabled: false,
-    reason: "notCancellable",
-  });
+  assert.equal(model.tone, "error");
+  assert.equal(model.statusTone, "blocked");
+  // failed 是冻结终态:不再提供取消目标
+  assert.equal(model.taskCards[0]?.cancellable, false);
 });
 
-test("request_cancel_task:任务在但动作未下发时禁用原因 notAllowed", () => {
-  const snapshot = makeSnapshot({ allowedActions: ["open_on_desktop", "dismiss"] });
+test("空集+生产卡两半空:available 快照呈 inactive 空态(空态即终态,非错误)", () => {
+  const model = overlayViewModel(makeAvailableSnapshot(), "desktop");
+  assert.equal(model.state, "inactive");
+  assert.equal(model.statusTitleKey, "idle");
+});
+
+test("生产状态卡两半独立可空投影:字段原样透传,无合成行", () => {
+  const snapshot = makeAvailableSnapshot({
+    productionCard: {
+      currentPlan: {
+        planId: "plan-a",
+        planStatus: "approved",
+        createdAt: "2026-09-13T00:00:00.000Z",
+        recipeId: "recipe-a",
+      },
+      latestRecord: null,
+    },
+  });
+  const model = overlayViewModel(snapshot, "desktop");
+  assert.deepEqual(model.productionCard.currentPlan, {
+    planId: "plan-a",
+    statusLabel: "approved",
+    createdAt: "2026-09-13T00:00:00.000Z",
+    recipeId: "recipe-a",
+  });
+  assert.equal(model.productionCard.latestRecord, null);
+});
+
+test("仅最近记录半存在:state=ready 且标题=recent,plan 半保持 null", () => {
+  const snapshot = makeAvailableSnapshot({
+    productionCard: {
+      latestRecord: {
+        buildId: "record-a",
+        planId: "plan-a",
+        status: "succeeded",
+        finishedAt: "2026-09-13T00:05:00.000Z",
+      },
+    },
+  });
   const model = overlayViewModel(snapshot, "vr");
-  assert.deepEqual(actionView(model, "request_cancel_task").availability, {
-    enabled: false,
-    reason: "notAllowed",
-  });
+  assert.equal(model.state, "ready");
+  assert.equal(model.statusTitleKey, "recent");
+  assert.equal(model.productionCard.currentPlan, null);
+  assert.equal(model.productionCard.latestRecord?.buildId, "record-a");
 });
 
-test("VR 无任务时收起 cancel 按钮(更少元素),桌面常驻禁用 + noTask 原因", () => {
-  const snapshot = makeSnapshot({
-    task: null,
-    allowedActions: ["open_on_desktop", "dismiss", "request_cancel_task"],
+test("词表外任务态:stateLabel/stateRaw 原词透传,不猜测九态语义(保守可取消)", () => {
+  const snapshot = makeAvailableSnapshot({
+    cards: [{ taskId: "task-9", state: "mystery_state", correlationId: "c9" }],
   });
-  const vr = overlayViewModel(snapshot, "vr");
-  assert.equal(actionView(vr, "request_cancel_task").visible, false);
-  const desktop = overlayViewModel(snapshot, "desktop");
-  const cancel = actionView(desktop, "request_cancel_task");
-  assert.equal(cancel.visible, true);
-  assert.deepEqual(cancel.availability, { enabled: false, reason: "noTask" });
-});
-
-test("dismiss 未下发时禁用且主操作为空(desktop)/回退(vr)", () => {
-  const snapshot = makeSnapshot({ allowedActions: ["request_cancel_task"] });
-  const desktop = overlayViewModel(snapshot, "desktop");
-  assert.deepEqual(actionView(desktop, "dismiss").availability, {
-    enabled: false,
-    reason: "notAllowed",
-  });
-  assert.equal(desktop.actions.every((a) => !a.primary), true);
-  const vr = overlayViewModel(snapshot, "vr");
-  assert.equal(vr.actions.every((a) => !a.primary), true);
-});
-
-test("环境摘要行数上限:desktop 4 行、vr 3 行,超出计数", () => {
-  const five = [
-    { id: "a", state: "ready" as const },
-    { id: "b", state: "running" as const },
-    { id: "c", state: "missing" as const },
-    { id: "d", state: "ready" as const },
-    { id: "e", state: "ready" as const },
-  ];
-  const snapshot = makeSnapshot({ environment: five });
-  const desktop = overlayViewModel(snapshot, "desktop");
-  assert.equal(desktop.environment.length, 4);
-  assert.equal(desktop.hiddenEnvironmentCount, 1);
-  const vr = overlayViewModel(snapshot, "vr");
-  assert.equal(vr.environment.length, 3);
-  assert.equal(vr.hiddenEnvironmentCount, 2);
+  const model = overlayViewModel(snapshot, "desktop");
+  const card = model.taskCards[0];
+  assert.ok(card);
+  assert.equal(card.stateRaw, "mystery_state");
+  assert.equal(card.stateLabel, "mystery_state");
 });
 
 test("textScale 与 reducedMotion 从 presentation 透传", () => {
-  const snapshot = makeSnapshot({
+  const snapshot: OverlaySnapshot = {
+    schemaVersion: 2,
+    availability: "available",
     presentation: { locale: "zh-CN", textScale: 1.25, reducedMotion: true },
-  });
+    tasks: [],
+    productionCard: { currentPlan: null, latestRecord: null },
+  };
   const model = overlayViewModel(snapshot, "vr");
   assert.equal(model.textScale, 1.25);
   assert.equal(model.reducedMotion, true);
@@ -221,15 +219,20 @@ test("textScale 与 reducedMotion 从 presentation 透传", () => {
 
 test("枚举奇偶:模型联合与字符串表键一一对应", () => {
   assert.deepEqual(
-    Object.keys(strings.overlay.disabledReasons).sort(),
-    [...overlayDisabledReasons].sort(),
-  );
-  assert.deepEqual(
-    Object.keys(strings.overlay.environmentStates).sort(),
-    [...overlayEnvironmentStates].sort(),
+    Object.keys(strings.overlay.statusTitles).sort(),
+    [...overlayStatusTitleKeys].sort(),
   );
   assert.deepEqual(
     Object.keys(strings.overlay.statusTones).sort(),
     [...overlayStatusTones].sort(),
+  );
+  // 词表镜像:planStatuses/recordStatuses 键与冻结枚举一一对应
+  assert.deepEqual(
+    Object.keys(strings.overlay.productionPlanStatuses).sort(),
+    ["approved", "draft", "superseded"],
+  );
+  assert.deepEqual(
+    Object.keys(strings.overlay.productionRecordStatuses).sort(),
+    ["cancelled", "failed", "recovered", "succeeded", "succeeded_with_warnings"],
   );
 });
