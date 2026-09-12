@@ -36,7 +36,10 @@ exit 0**；Rust 域零涉（增量无 crates/schemas 文件）免跑如实声明
 **推送门（r1/r2/r3 增量聚焦法，实质批）——已完成**：r1＝上项 diff 全文
 核；r2＝增量机械核验（15 文件 +401/−113：零 hex 色值新增、零 CSS 文件、
 零 forest 引用〔019 红线顺带覆盖〕、新增中文全在注释与 i18n 键值内）；
-r3＝上项全量复跑。**CI 回读见推送记录（本文件末节与 BOARD）**。
+r3＝上项全量复跑。**CI 回读（第 12 代推送门，d6cfb93 世代）**：ts
+**34702364089 ✅**（check 4m8s）＋collab-registry **34702364112 ✅**
+（17s，REGISTRY 触发）；rust/schema-vectors 未触发＝零 crates/schemas
+变更，paths 过滤正常。本地与 origin 同步（ahead 0）。
 **在途（今晚三树实现切片互不阻塞）**：核心＝overlay wire 批 1（017 内联
 领取，桌面消费半边候此到货）；产线＝M7 锚点实现切片（操作形状提案先行，
 交核心/桌面/数据表态）；数据＝候产线 Bridge 五维落地（inspection-queries

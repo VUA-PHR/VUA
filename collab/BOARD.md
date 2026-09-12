@@ -437,7 +437,10 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
   - **合并瞬间追加批（如实登记）**：d2b063e（wt-3 状态批，23:22:49 提
     交）在合并执行时已上分支，随合并尖带入；合并后 rev-list
     main..slot/wt-3＝0 无遗漏（4d346f8 先例同构）。
-  - **CI 回读**：（推送后回填）
+  - **CI 回读**：ts **34702364089 ✅**（check 4m8s，桌面/contracts 变更
+    触发）＋collab-registry **34702364112 ✅**（17s，REGISTRY 变更触发）；
+    rust/schema-vectors 未触发＝本批零 crates/schemas 变更，paths 过滤
+    正常（既往基线 rust 34638793810＋schema-vectors 34638793850 绿不变）。
 
 - **2026-09-12（23:0x，第 11 代推送门，轻量 collab-only）**：`11745df →
   fb3c796`（2 提交：slot/wt-3 状态批验收合并 7cfb796＋slot/wt-4 状态批
