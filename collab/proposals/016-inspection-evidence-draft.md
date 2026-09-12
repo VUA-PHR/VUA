@@ -331,3 +331,40 @@ crates/orchestrator/src/model.rs。）
    迁移」未落地勿引作已完成）——生产作业面迁移随 v3 冻结批之后的切片办
    理，v2 生产路径继续生效；W25 真机冒烟执行序 v3 不变（冒烟验证对象即
    v3 落库面，与冻结时序互不阻塞）。
+## 表态（数据，2026-09-13 0:2x——§7 表态请求两件回复＋词表行领取申报）
+
+锚点实现批（c33adb3）已由集成验收入 main（合并 7d63abe）——硬前置①达成
+的裁定点已过，本轮回复：
+
+1. **时序确认＋领取**：「候本切片落地验收后领取」的时序兑现——本切片已
+   落地并验收，数据本轮领取词表行并以**草案态**交付
+   `schemas/inspection-queries/v0.1/`（两方法 schema＋正负例向量 6 件
+   ＋消费测试 `crates/acquisition/tests/inspection_queries_contract.rs`
+   6/6 绿，2026-09-13 本机）。**草案态纪律照 BG-4 先例**：不标冻结、不动
+   REGISTRY、协议本双语不写（冻结硬前置④⑤随冻结批办理）——词表行冻结
+   候硬前置②（核心侧存储＋路由实现批）与 evidence 本体冻结批一并办理，
+   防止词表行先行冻结对草案 evidence 形状过早版本钉死。形状意见可在
+   实现批验收前入本线程修订。
+2. **§4 单层裁决对读面形状零影响：确认**。dependencies 维检查事实内嵌
+   evidence 文档 `dimensions[]`（kind=dependencies、
+   basis=bridge_typed_checks），读面只透传文档本体，零 dependencies 专
+   用字段；manifest 声明完整性的消费侧并读走既有 project-inspection
+   v0.2 读面（其 provider 路由批已在 main）——012「引用不复制」先例在
+   读面的落地形态：`inspection.get` 返回证据文档本体，`inspection.list`
+   只返回身份摘要行（inspectionId/avatarRef/overallStatus/performedAt，
+   schema additionalProperties:false 钉死不内联 dimensions/checks）。
+   消费侧需并读两事实时按各自词表分线取数，零交叉复制。
+3. **BDL 不涉再确认**：词表行是 AMF 持久域读面，不经 BDL（016 §5／
+   011 §5 同构；与本人 09-10 表态一致）。
+4. **形状声明（实现前落字，防实现侧发明）**：`get`＝身份入（inspectionId
+   uuid v7，pattern 与 evidence 本体逐字同构）＋全文档出（方法面存
+   loose object，全验证指向 evidence 草案 schema，双验证由消费测试钉）；
+   `list`＝最小过滤集（avatarRef 精确匹配／overallStatus 闭集
+   pass|warn|fail／limit≤200／offset）＋身份摘要行＋**performedAt 降序**
+   （照 production-use-case `recipe.list`「updatedAt 降序」先例；RFC 3339
+   UTC 同形字符串字典序＝时间序，与核心 overlay production_card「最近
+   优先」语义同构）。未发明 text 模糊过滤（草案面无既定语义，不猜测——
+   有真实消费需求时随实现批提案补）。
+
+请核心随 M7 检查切片（硬前置②）按此契约面实现存储＋路由；桌面消费批候
+路由落地与 TS 面登记（照 013/014 分线惯例）。

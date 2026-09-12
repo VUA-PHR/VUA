@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/inspection-queries/v0.1/methods/inspection-list.schema.json",
+  "title": "VUA inspection.list (v0.1)",
+  "description": "Identity listing over inspection evidence runs, newest first: entries are ordered by performedAt descending (RFC 3339 UTC same-shape strings order lexicographically = chronologically; the declared-before-implementation discipline, same face as production-use-case recipe.list 'updatedAt descending' and the core overlay production_card newest-first precedent). DRAFT (proposal 016 arbitration point 2: independent vocabulary row, get/list after the record.get/list precedent; delivered by the data role 2026-09-13 — NOT frozen, not registered: the freeze lands with hard precondition 2, the core storage+routing implementation batch). Filters stay minimal and honest: exact-match avatarRef (the namespaced identity or explicit scene path carried by the evidence body — no fuzzy text filter is invented for a draft face), overallStatus closed set, offset paging with a bounded limit. Entries are identity summary rows: the dimensions and checks stay in the evidence body — the list never inlines them (reference, do not copy, 012 evidenceIds discipline).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "inspectionId": {
+      "description": "VUA-generated inspection identity (uuid v7), same identity convention as the inspection-evidence body schema.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "avatarRef": {
+      "description": "Exact-match filter on the evidence body's avatarRef.ref value (a namespaced identity such as warehouse:<itemId>, a project-scoped avatar id, or an explicit scene path — verbatim identity, never a guess).",
+      "type": "string",
+      "minLength": 1
+    },
+    "overallStatus": {
+      "description": "Filter on the aggregated status carried by the evidence body (proposal 016 §4 rule: fail > warn [including unavailable] > pass).",
+      "enum": ["pass", "warn", "fail"]
+    },
+    "limit": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 200
+    },
+    "offset": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "entry": {
+      "description": "Identity summary row. Deliberately narrow: no dimensions, no checks — the honest detail lives in the evidence body, reachable via inspection.get.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inspectionId",
+        "avatarRef",
+        "overallStatus",
+        "performedAt"
+      ],
+      "properties": {
+        "inspectionId": {
+          "$ref": "#/$defs/inspectionId"
+        },
+        "avatarRef": {
+          "description": "The evidence body's avatarRef, transcribed verbatim (ref required, label optional — same shape as the body schema).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["ref"],
+          "properties": {
+            "ref": { "type": "string", "minLength": 1 },
+            "label": { "type": ["string", "null"] }
+          }
+        },
+        "overallStatus": {
+          "enum": ["pass", "warn", "fail"]
+        },
+        "performedAt": {
+          "description": "When the inspection run was executed (RFC 3339, transcribed from the evidence body). The list ordering key.",
+          "type": "string"
+        }
+      }
+    },
+    "inspection-listRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "avatarRef": {
+          "$ref": "#/$defs/avatarRef"
+        },
+        "overallStatus": {
+          "$ref": "#/$defs/overallStatus"
+        },
+        "limit": {
+          "$ref": "#/$defs/limit"
+        },
+        "offset": {
+          "$ref": "#/$defs/offset"
+        }
+      }
+    },
+    "inspection-listResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "entries",
+        "schemaVersion"
+      ],
+      "properties": {
+        "total": {
+          "$ref": "#/$defs/total"
+        },
+        "entries": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/entry"
+          }
+        },
+        "schemaVersion": {
+          "const": "0.1"
+        }
+      }
+    }
+  }
+}

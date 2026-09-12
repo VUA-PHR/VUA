@@ -1,0 +1,15 @@
+{
+  "total": 1,
+  "entries": [
+    {
+      "inspectionId": "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21",
+      "avatarRef": {
+        "ref": "warehouse:booth-item-1001",
+        "label": "Synthetic Avatar A"
+      },
+      "overallStatus": "fail",
+      "performedAt": "2026-09-13T00:20:00Z"
+    }
+  ],
+  "schemaVersion": "0.1"
+}
