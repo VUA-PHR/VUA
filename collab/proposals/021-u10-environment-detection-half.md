@@ -280,3 +280,76 @@ date: 2026-09-12
    确认此归属**；持久化归属候核心表态，桌面服从裁决后接线。
 
 U10 桌面半边切片候三方收敛＋集成仲裁后开工，不代决。
+
+### 词表行提案（桌面，2026-09-13 1:4x——editor_verify wire 词表行起草，候核心裁决）
+
+（兑现本树排期声明「下一工作时段先出 editor_verify wire 词表行提案批」；
+流程照集成仲裁后续工作面①＝桌面提案→核心裁决，T-A 先例 013。原语事实
+已本机核实：crates/project-manager/src/editor_verify.rs（3eef4e4 入库）公共
+面＝`verify_editor_path(input: &Path) -> EditorPathVerdict`；核心分类闭集
+crates/orchestrator/src/editor_targets.rs `EditorClass` 四变体。环境侧输入
+（三形态形状＋拒绝码语义）即原语已交付面，未另行请求。）
+
+**锚定事实（提案全部锚定于此，不发明）**：
+- 原语输入一路径三形态（exe 文件本身／版本化根 `<root>`／Editor 目录），
+  输出二态判别 `EditorPathVerdict`＝
+  `Verified(EditorPathIdentity{ editor_root, exe_path, version,
+  classification, guidance_code, china_distribution })` |
+  `Refused(EditorPathRefusal{ exe_path: Option<String>, code, detail })`；
+- 拒绝码闭集 5 码（原语 `codes` 模块逐字）：`vua.editor_verify.target_missing`
+  ／`exe_missing`／`identity_unreadable`／`not_an_editor`／
+  `unsupported_platform`——拒绝＝正常发现，不是应用错误；
+- `classification` 复用核心 `EditorClass` 四值闭集（production_target /
+  migration_source / other_unity_version / tuanjie_family），与已冻结的
+  environment-managers v0.1 `editorClass` 枚举逐字同构；
+  `guidanceCode` 形态同 environment-managers `editorFinding.guidanceCode`
+  （pattern `^vua\.env_managers\.`）——**分类与引导码字段面直接对齐已冻结
+  形状，零新发明**；
+- 021 收敛点 4（三方收敛）：桌面单一「浏览」入口 openFile＋openDirectory
+  双态，三形态原样透传，桌面零本地归一化（归一化是原语职责）。
+
+**提案七点（候核心裁决，桌面两案均可执行、不预设裁决结果）**：
+
+1. **词表行名推荐＝`environment.verifyEditor`**：与
+   `environment.getSnapshot` 同 `environment.*` 族（检测域事实面），分型
+   照核心表态 1（带参验证动作 ≠ 无参探测枚举，读面/动作分线照 013/014
+   惯例——分线指语义不混面，族名仍同检测域）。备选行名
+   `editor_verify.verify`（与拒绝码族同名，可追溯原语）。桌面推荐前者，
+   核心裁决定一行。
+2. **应用分型＝`query`（带参只读查询）**：验证零状态变更、零任务化、
+   同步请求-响应（无 commandId、无 taskId 轮询）——照
+   `project.inspectProject`（params `projectPath`）带参查询先例，非
+   `job.execute` 任务化先例。
+3. **params 闭集＝单字段 `{ path: string minLength 1 }`**：用户手选路径
+   原样透传；无其它字段（防投机字段纪律）；Windows 路径原样
+   （VUA Windows-first）。
+4. **result 两态判别（tagged union，`verdict` 判别字段）＋信封
+   `schemaVersion` const `"0.1"`（照 inspection-get 信封先例）**：
+   - `verdict:"verified"` 分支六字段与 `EditorPathIdentity` 逐字同构：
+     `editorRoot`／`exePath`／`version`（minLength 1）／`classification`
+     （4 值闭集）／`guidanceCode`（pattern `^vua\.env_managers\.`）／
+     `chinaDistribution`（boolean）；
+   - `verdict:"refused"` 分支三字段与 `EditorPathRefusal` 逐字同构：
+     `exePath`（string|null）／`code`（5 码闭集 enum）／`detail`
+     （string，资源原文字符串引用不解释，原样透传）；
+   - 拒绝走 result 内 refused 态而非应用错误信封——「拒绝＝正常发现」
+     的协议化表达（照原语文档纪律）。
+5. **未接线语义＝诚实缺席码**（候核心定形）：路由未接线时类型化拒绝，
+   推荐码 `vua.environment.verify_unavailable`（照 `vua.overlay.unavailable`
+   ／`vua.inspection.unavailable` 诚实缺席先例；族前缀随裁决行名走）。
+6. **向量清单（候冻结件，原语域落库）**：正例 2（生产目标 exe 直选＋
+   版本化根目录形态）＋负例 3（`target_missing`／`not_an_editor`——
+   目录名声称 2022.3.22f1 但身份不符的门①反例／`exe_missing`）；形状
+   锚定原语既有 9 项合成测试先例（含真机探针交叉断言分叉即败的纪律）。
+   schema 文件组织推荐照 inspection-queries `methods/` 惯例（每方法一件），
+   目录 `schemas/editor-verify/v0.1/`；草案态可先落（照 016 数据先例：
+   不冻结、不登记、协议本双语随冻结批），落库域归环境（原语产出方；
+   桌面所有权域不含 schemas/，本提案零 schema 文件落库）。
+7. **桌面消费纪律承诺（U10 接线批兑现，非本批交付）**：TS 面登记
+   （contracts 词表行＋联合＋守卫＋正反例测试）候核心路由批落地后随批
+   办理（照 #22/020/overlay 批 1 桌面 TS 面登记先例）；设置面「浏览」→
+   原样透传→就地形呈现 Verified/拒绝码，`vua.editor_verify.*` 拒绝码
+   i18n 四语映射，拒绝不隐藏不猜测；门③信任呈现＋首次确认＋留痕照
+   集成仲裁归桌面设置面；无真机不宣称端到端（真机走查候 W25，证据要求
+   不放宽）。U10 桌面实现切片时序＝词表冻结＋核心路由就绪后开工
+   （照 013 桌面表态 4 时序条款惯例），不抢跑冻结件。
