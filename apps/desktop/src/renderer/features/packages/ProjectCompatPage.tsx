@@ -140,9 +140,12 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
           setManagerState({ kind: "unavailable" });
           return;
         }
-        // wire 信封仅携带 vcc/alcom 能力本体(013 冻结面);editors/projects
-        // 计数不在信封顶层,narrow 呈现恒 "—"(诚实缺省)
-        setManagerState({ kind: "loaded", narrowed: narrowEnvironmentSnapshot(result.value) });
+        // 021 接线批修正(收敛点 1):wire 值 = project-inspection 查询信封
+        // {schemaVersion, operation, result},environment-managers 快照本体在
+        // 内层 result——此前误读信封顶层,editors 计数呈现恒 '—'。先解包
+        // 再 narrow,零协议变更
+        const envelope = result.value as { result?: unknown };
+        setManagerState({ kind: "loaded", narrowed: narrowEnvironmentSnapshot(envelope.result) });
       });
     return () => {
       active = false;
@@ -326,8 +329,8 @@ function ProjectDetectionSection({ onMigrate }: { onMigrate: (sourcePath: string
 
   const managerLine = (snapshot: ReturnType<typeof narrowEnvironmentSnapshot>): string => {
     if (snapshot === null) return copy.detectionUnavailable;
-    // 计数＝列表纯派生量(核心表态):vcc/alcom 的 userProjects.length
-    // 直接投影;信封未携带 editors 计数＝诚实缺省
+    // 计数＝列表纯派生量(核心表态):vcc/alcom 的 userProjects.length 与
+    // editors/projects 计数直接投影(021 接线批解包修正后可用;缺失仍诚实 '—')
     const vccCount = snapshot.vcc?.userProjectsCount ?? null;
     const alcomCount = snapshot.alcom?.userProjectsCount ?? null;
     return format(copy.detectionManagersLine, {
