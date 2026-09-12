@@ -1,0 +1,7 @@
+{
+  "verdict": "refused",
+  "exePath": null,
+  "code": "vua.editor_verify.exe_missing",
+  "detail": "no Unity.exe under C:\\Tools\\Blender (tried Editor/Unity.exe, Unity.exe)",
+  "schemaVersion": "0.1"
+}

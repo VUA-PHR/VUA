@@ -304,13 +304,15 @@ function registryCheck() {
   // 豁免：spike 探索目录（治理不强制登记）；orchestrator（子目录
   // 为 envelope-v1/provider-frame-v0.1 非标准版本形态，由 provider-process
   // 协议本行覆盖）；orchestrator-task-store（由 task-store 协议本行覆盖，
-  // 目录名与词表行名不同缀）。
+  // 目录名与词表行名不同缀）；editor-verify（021 词表行草案态——016
+  // inspection-evidence 草案豁免同构：冻结批验收时由集成移除本行）。
   const SCHEMA_EXEMPT = new Set([
     'bdl-spike',
     'environment-spike',
     'vpm-package-spike',
     'orchestrator',
     'orchestrator-task-store',
+    'editor-verify',
   ]);
   try {
     const schemasDir = path.join(repoRoot, 'schemas');
