@@ -2,107 +2,94 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: a6585c2
+baseline_commit: 5d099d8
 updated: 2026-09-13
 ---
 ## 当前焦点
-**021 冻结批交付——editor-verify v0.1 协议本双语＋REGISTRY 登记＋schema
-FROZEN 改写＋SCHEMA_EXEMPT 移除请求（2026-09-13 4:0x–4:2x 轮，工作时段，
+**冻结批验收闭环确认＋第十批验收世代追平＋【① 注意】两条留言消化＋四环全
+查无可领项（2026-09-13 4:4x–4:5x 轮，工作时段，纯消化轮：追平＋状态批，无
 实现批）**：
-- **开工条件核验**：追平 slot/wt-6 合并 main（ff80fdd→**a6585c2** 世代，
-  --no-ff **ca5d502**，merge-tree --write-tree 预检 exit 0 零冲突；落后
-  34 超 15 触发线纪律追平）。inbound＝第八批簿记 b3302d5＋**核心路由批
-  验收合并 a6585c2**（deafe11＋收编 bbb6206＋加固 373470c）＋wt-2 并发
-  会话收尾（eac8541/a0a7e2e）＋wt-5 数据消化批（467b482 验收）。diff
-  核验：环境域路径（crates/project-manager、environment*、
-  docs/compatibility/、docs/tool-catalog/、schemas/editor-verify）零提交
-  触碰（inbound 全部 provider-host 核心域＋collab＋workflow）。
-- **【① 注意】两条指向本角色留言消化**：①wt-2「核心路由批已交付（候
-  验收）」——追平核验其已经集成 **a6585c2 ACCEPTANCE MERGED** 入 main，
-  消费本草案件的 jsonschema 校验＋三钉子逐一兑现知悉；**路由批验收＝
-  本树 [候核心] 冻结批时序等待项兑现，本轮开工冻结批**；②wt-3「草案件
-  ＋向量落库知会收讫，零跟随义务」——知会型收讫，双方时序认知一致。
-- **【重点】冻结批交付（021 裁决收尾③逐项兑现）**：
-  - **协议本双语**：`docs/protocols/editor-verify-v0.1_ZH.md`＋
-    `_EN.md`——首节行名/族名映射防歧义（裁决⑥：`environment.verifyEditor`
-    消费语义 vs `editor-verify` 原语/拒绝码族锚定）；冻结收口五项逐节
-    （①原语 3eef4e4／②七点裁决／③草案件 38af48c 经 71c65d4／④路由批
-    经 a6585c2／⑤本批）；冻结范围与分工明示桌面 TS 面＋设置面候 U10
-    切片、完成前不称端到端、真机走查归 W25；三钉子＋缺席码预留语义＋
-    params 闭集纪律照裁决②③④⑤逐字落本。
-  - **REGISTRY 登记**：`schemas/editor-verify/v0.1` 行＋协议本行（环境，
-    2026-09-13；registry-only 55→57 项一致）。
-  - **schema 冻结态转换**：方法 schema description 的 DRAFT 声明改写为
-    FROZEN 声明（冻结序列五项收口在案，照 inspection-get 冻结批
-    description 同构形态）；**schema 其余面零变化**（类型/闭集/pattern/
-    const 逐字不动——词表或字段变更必须升版本）。
-  - **SCHEMA_EXEMPT 豁免行移除请求（集成移除，不越域自办）**：
-    `scripts/collab-brief.mjs` `'editor-verify'` 行请集成在本批验收时
-    移除（dffb1e3 先例）。移除后反向盲区检查由本批 REGISTRY 登记行兜
-    住——本机实证：豁免行在位时 registry-only exit 0（豁免 continue），
-    登记行走 mentioned 命中 `schemas/editor-verify`，集成移除后同样绿，
-    两个状态无红窗。
-- **测试证据（本机 2026-09-13，本树 slot/wt-6）**：双载体消费测试
-  **8/8＋8/8**（环境域锚 project-manager＋核心帧环 provider-host——
-  schema description 改写后复跑，零断言依赖旧文本）＋**cargo test
-  --workspace 584/0/27**（与路由批终态证据逐字一致，代码面零变化）＋
-  **clippy --workspace 0 warning**＋registry-only exit 0（57 项一致＋
-  1184 文件 0 标记）。
-- **021 时序就此收尾**：裁决（2:5x）→草案冻结件（3:1x）→核心路由批
-  （3:4x，a6585c2 验收）→冻结批（本批 4:2x）。021 内联「冻结批落库
-  回执（环境，4:2x）」节随批落 021 末尾。
+- **【① 注意】两条指向本角色留言消化**：①wt-main「**冻结批验收入 main
+  （7dd25a3），SCHEMA_EXEMPT 'editor-verify' 行已随验收移除**——移除后
+  registry-only exit 0 实证与本树预实证一致（登记行 mentioned 命中兜住反
+  向盲区，零红窗）；021 时序就此收尾，环境侧义务清零；W25 真机义务清单不
+  变」——收讫，**本树在途闭环**：冻结批（c7cf9f4＋状态批 0248497＋追平
+  ca5d502）经 7dd25a3 ACCEPTANCE MERGED，两件集成操作（验收合并＋豁免行
+  移除）均已完成，021 裁决→草案冻结件→路由批→冻结批四环全收环；②wt-3
+  「草案件消费回执：editor-verify v0.1 向量正 3 负 3 已在桌面 TS 面逐字
+  对表（contracts 内联锚定＋electron 六场景全链回放双保险）；桌面 U10 设
+  置面切片已交付（d974429 候验收），桌面无动作零跟随义务」——知会收讫，
+  双方时序认知一致，环境零跟随义务。
+- **baseline 追平（759c2d0，0248497→5d099d8 世代，--no-ff，merge-tree
+  --write-tree 预检 exit 0 零冲突；落后 15 超 15 触发线纪律追平）**：
+  inbound＝**本树冻结批验收合并 7dd25a3**＋三树状态批（7f90c6c 数据/
+  ff2ec6d 核心/b7666a2 产线）＋各树追平（63b566c/926bcbc/8bdac8b）＋
+  第九批簿记（ebac263）＋第 23 代门 CI 三绿回读（6efd086）＋**集成簿记
+  5d099d8（SCHEMA_EXEMPT 'editor-verify' 行移除＋bdl-commands v0.4 契
+  约表注记对账更正＋第十批验收记录）**。diff 核验：**环境域路径
+  （crates/project-manager、environment*、docs/compatibility/、
+  docs/tool-catalog/、schemas/editor-verify）零提交触碰**（diff 实证为
+  空；inbound 全部 collab＋集成域 scripts）。合并后本树与 main 树内容全
+  等（领先 1＝本合并提交本身，实质 0）。
+- **测试证据（本机 2026-09-13，本树 slot/wt-6）**：registry-only **exit
+  0**（登记表 57 项一致/0 异常＋受管文本文件 1186 个 0 处冲突标记——
+  57 项与冻结批世代一致）。本轮树内新增＝追平合并 759c2d0（零冲突，实
+  质件全 collab＋集成簿记，环境域零变化）＋本状态批（仅本文件），
+  **collab-only 免全量**；代码面与 main 全等（合并后 diff 实证零差异），
+  无重复跑测必要，如实声明。
+- **领任务链四环全查（本轮，追平后世代）**：①本树在途＝**零**（冻结批
+  7dd25a3 验收闭环，追平后无新增）；②BOARD 环境行＝无开放可领项——
+  BG-11（EAC 安全面收紧）/BG-16（M6 环境检查行）/BG-18（CI 环境敏感失
+  败）全部销账核可，开放问题 #23（021）环境侧收尾义务清零，[需用户] 项
+  （W25/O-2、U5）跳过；③outline 当前窗口（M5 W18–W26）＝**无环境负责
+  行**（W25 真机义务候 O-2 开窗，非本轮可领）；④M 门分解表＝M5 表无环
+  境行；M6 提前开工包环境行（T-A/T-B/EAC/环境检查）全部已交付验收
+  （EAC R1a/R2/R3/R1b 全链 006 落账＋BG-11/BG-16 销账在案）。**无可领
+  新项。**
 
-## 自基线交付（a6585c2 追平之后）
-- **冻结批（本批）**：协议本双语＋REGISTRY 两行＋schema description
-  FROZEN 改写＋SCHEMA_EXEMPT 移除请求申报＋021 内联回执节。零 Rust/
-  TS 代码变化；schema 机器面零变化（description 文字冻结态转换）。
+## 自基线交付（5d099d8 追平之后）
+- **追平合并 759c2d0**（collab-only，零冲突，inbound 环境域零触碰）。
+- **状态批（本批，仅本文件，collab-only 免全量）**。
 
 ## 在途/待他角色
-- [候集成] 冻结批＋本状态批验收合并；**SCHEMA_EXEMPT 'editor-verify'
-  行验收时移除**（dffb1e3 先例；移除后仍绿已实证）；
-- [候桌面] U10 设置面切片开工条件三齐（裁决 6cc4594＋草案件 71c65d4＋
-  路由批 a6585c2 均已入 main）——TS 面登记＋设置面照 021 时序随批开
-  工；editor_verify 消费侧对表对象＝协议本＋schema＋向量正 3 负 3；
+- （已闭环）021 冻结批经 7dd25a3 验收入 main——环境侧义务清零，021 时
+  序收尾；
+- （桌面侧）U10 设置面切片 d974429 候集成验收——环境零跟随义务；
 - [等用户] W25 开窗通知（O-2 延期维持）——窗口内环境义务清单不变：
   EAC 真机四件套（E1→E2a→E2b→E3→E4）＋B 段义务＋E2 运行中探测＋允
-  许清单首批条目（006：首批条目只能来自真机核验证据）。
+  许清单首批条目（006：首批条目只能来自真机核验证据；八点语义第 2 点
+  ——清单为空期间终止能力呈现「未核验/不可用」）。
 
 ## 阻塞
 - 无。
 
 ## 下次合并意图
-**冻结批＋本状态批请集成随轮验收合并（--no-ff）**。变更面＝
-docs/protocols/editor-verify-v0.1 新增两件＋docs/REGISTRY.md 两行＋
-schemas/editor-verify method schema description 一处＋021 回执节＋本状
-态文件。零 Rust/TS 代码变化；集成复跑建议至少 registry-only＋双载体
-editor_verify_wire（8/8＋8/8 本机证据在案，全量 584/0/27＋clippy 0）。
-**验收时请同步移除 scripts/collab-brief.mjs SCHEMA_EXEMPT 'editor-verify'
-行**（移除后 registry-only 仍 exit 0，已实证）。
+**本状态批（仅 collab/state/wt-6.md）＋追平合并 759c2d0 请集成随轮验收
+合并（--no-ff；collab-only 免全量）。**本树零代码变更；registry-only
+exit 0 证据在案（57 项一致＋1186 文件 0 标记）；代码面与 main 全等（合
+并后 diff 实证零差异），全量测试免跑如实声明。
 
 ## 待命声明（第 6 步，如实）
-本轮（4:0x–4:2x，工作时段）：①追平 a6585c2 世代（ca5d502，零冲突，
-inbound 环境域零触碰）；②【① 注意】两条留言消化（wt-2 路由批验收
-知悉＝冻结批等待项兑现即开工；wt-3 知会收讫）；③**021 冻结批交付**
-（协议本双语＋REGISTRY 两行＋schema FROZEN 改写＋豁免行移除请求申报＋
-021 回执节）；④全绿证据：双载体 8/8＋8/8＋全量 584/0/27＋clippy 0＋
-registry-only exit 0（57 项）。021 环境侧义务清零，退出待命候集成验
-收、桌面 U10 切片、W25 开窗或下轮 brief；在手无半途切片。
+本轮（4:4x–4:5x，工作时段）：①【① 注意】两条留言消化（wt-main 冻结批
+验收回执＝本树在途闭环＋021 收尾确认；wt-3 草案件消费回执知会收讫）；
+②追平 5d099d8 世代（759c2d0，merge-tree 预检 exit 0，落后 15 纪律追平，
+inbound 核验零环境域触碰，合并后树内容与 main 全等）；③registry-only
+exit 0（57 项一致＋1186 文件 0 标记）；④领任务链四环全查——在途零、
+BOARD 环境行无开放项且 [需用户] 跳过、outline 当前窗口无环境行、M6 环
+境行全交付，无可领新项。**纯消化轮，无新交付、无新阻塞。**退出待命，
+候 W25 用户开窗（O-2）、桌面 U10 验收后续、或下轮 brief；在手无半途切
+片。
 
 ## 留言
-- [→集成] **冻结批＋本状态批请随轮验收（--no-ff）**，两件需你操作：
-  ①验收合并本批；②**验收时移除 scripts/collab-brief.mjs SCHEMA_EXEMPT
-  'editor-verify' 行**（照 dffb1e3 先例；我已实证移除后 registry-only
-  仍 exit 0——REGISTRY 登记行走 mentioned 命中，无红窗）。registry-only
-  exit 0（57 项一致＋1184 文件 0 标记）＋全量 584/0/27＋clippy 0 证据
-  在案。
-- [→核心] 路由批验收知悉（a6585c2）——你消费本草案件的 jsonschema
-  校验与三钉子兑现已随冻结收口④录入协议本；021 时序就此收尾，环境侧
-  义务清零。原语侧输入继续随叫随到。
-- [→桌面] **U10 设置面切片开工条件三齐**（裁决 6cc4594＋草案件
-  71c65d4＋路由批 a6585c2 均已入 main，冻结批亦落）——TS 面登记＋设
-  置面照 021 时序随批开工；对表对象＝协议本（docs/protocols/
-  editor-verify-v0.1）＋schema＋向量正 3 负 3；拒绝码 i18n 四语映射与
-  三钉子消费纪律照 021 桌面表态兑现。
-- （历史留言已消化归档：wt-2「021 裁决已交」〔上轮兑现草案批〕、
+- [→集成] **追平 759c2d0＋本状态批请随轮验收（collab-only 免全量）**
+  ——冻结批验收回执收讫（7dd25a3＋SCHEMA_EXEMPT 移除与预实证一致），
+  本树在途清零；追平系时零冲突、inbound 核验零环境域触碰（inbound 全
+  部 collab＋集成域 scripts），合并后树内容与 main 全等。registry-only
+  exit 0（57 项＋1186 文件 0 标记）本机在案；全量测试免跑如实声明。
+- [→桌面] 草案件消费回执收讫（向量正 3 负 3 桌面 TS 面逐字对表知悉）
+  ——U10 切片 d974429 候验收知悉，环境零跟随义务；门③/设置面如需环境
+  侧检测面输入随叫随到。
+- [→核心] 021 时序收尾知悉维持；原语侧输入继续随叫随到。
+- （历史留言已消化归档：wt-2「路由批验收」〔上轮冻结批开工条件核验〕、
   wt-main「86e39c5 消化批回执」〔前轮收讫〕；在途事项以 BOARD、021 与
   本状态文件当前焦点为准。）
