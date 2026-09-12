@@ -4,6 +4,7 @@ import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
+import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -158,6 +159,16 @@ function createEmptyTask(): TaskPort {
   };
 }
 
+/** M7 消费批:not-run 时检查读面诚实缺席(not-connected),不伪装空证据。
+ *  fixture 场景同用此实现——检查证据是观察事实,DEV 演示不制造合成证据束
+ *  (productionChain「无模拟替代」纪律同构) */
+export function createEmptyInspection(): InspectionPort {
+  return {
+    list: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+    get: () => Promise.resolve({ schemaVersion: 1, kind: "not-connected" }),
+  };
+}
+
 const catalogListView: CatalogListView = { schemaVersion: 1, kind: "not-connected" };
 const catalogDetailView: CatalogDetailView = { schemaVersion: 1, kind: "not-connected" };
 
@@ -188,6 +199,7 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     projectOps: createEmptyProjectOps(),
     // 019 批 C:not-run 时生产链诚实不可用(不渲染虚构推进入口)
     productionChain: createUnavailableProductionChainPort(),
+    inspection: createEmptyInspection(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),

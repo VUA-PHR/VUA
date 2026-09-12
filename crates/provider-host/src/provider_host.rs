@@ -273,9 +273,15 @@ pub struct ProductionUseCaseConfig {
     pub bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     /// The Unity project root the approved plan executes against.
     pub project_root: PathBuf,
-    /// The Unity Hub editors root the job.execute environment precheck
-    /// observes (009 stance 4 ②: recipe constraint vs installed editors).
-    pub unity_editors_root: PathBuf,
+    /// The assembly-face editor selection (U10 slice, proposal 021 stance
+    /// 2 + 4): what this provider will ACTUALLY use. The explicit
+    /// injection releases execution; the auto-selected production target
+    /// is presentation + precheck observation only until the desktop
+    /// gate-3 first-use confirmation exists. The job.execute environment
+    /// precheck consumes this decision instead of re-enumerating the Hub
+    /// root — the Hub enumeration stays the environment-snapshot fact
+    /// source (009 stance 4 ② semantics preserved through the selection).
+    pub editor_selection: vua_orchestrator::EditorSelection,
 }
 
 struct ProductionUseCaseServices {
@@ -286,7 +292,7 @@ struct ProductionUseCaseServices {
     editor_version: String,
     bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: PathBuf,
-    unity_editors_root: PathBuf,
+    editor_selection: vua_orchestrator::EditorSelection,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -528,7 +534,7 @@ pub fn run_provider_host_full(
             evidence: config.evidence,
             bridge: config.bridge,
             project_root: config.project_root,
-            unity_editors_root: config.unity_editors_root,
+            editor_selection: config.editor_selection,
             bdl,
             runtime,
             env_initial,
@@ -2165,6 +2171,22 @@ fn local_resolution_digest(plan: &Value) -> String {
 /// register the receipt snapshot, and evidenceSummary references the
 /// evidence the resolution run published. Returns the Done payload
 /// (buildId + receipt summary).
+/// Exact version equality for the environment precheck (009 stance 4 ②):
+/// major/minor/patch/release kind/number plus the China distribution
+/// suffix — a suffixed install never matches the plain version (the
+/// unsupported-environment policy).
+fn editor_version_matches(
+    observed: &vua_orchestrator::ParsedEditorVersion,
+    required: &vua_orchestrator::ParsedEditorVersion,
+) -> bool {
+    observed.major == required.major
+        && observed.minor == required.minor
+        && observed.patch == required.patch
+        && observed.release_kind == required.release_kind
+        && observed.release_number == required.release_number
+        && observed.china_suffix == required.china_suffix
+}
+
 #[allow(clippy::too_many_arguments)]
 fn run_approved_plan_job(
     recipes: &RecipeDocumentStore,
@@ -2173,7 +2195,7 @@ fn run_approved_plan_job(
     evidence: &vua_orchestrator::EvidenceStore,
     bridge: &Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: &Path,
-    unity_editors_root: &Path,
+    editor_selection: &vua_orchestrator::EditorSelection,
     plan_id: &str,
     correlation_id: &str,
 ) -> Result<Value, AppErrorV1> {
@@ -2268,12 +2290,19 @@ fn run_approved_plan_job(
     }
     // Environment precheck (009 stance 4 ②, second in the precheck order):
     // when the recipe declares a machine-parseable Unity version constraint,
-    // a matching editor must be installed on this machine. The constraint is
-    // matched exactly (major/minor/patch/release kind/number — a China
-    // distribution suffix never matches the plain version, mirroring the
-    // unsupported-environment policy). A recipe without a constraint, or
-    // with a constraint that is not a parseable version string, skips this
-    // precheck honestly — the plan never invents a compatibility verdict.
+    // the editor this job will ACTUALLY use — the assembly-face selection
+    // (U10 slice, proposal 021 stance 4) — must satisfy it. Sources weigh
+    // the same (a confirmed manual pick or the detected production target):
+    // the version must match exactly (major/minor/patch/release
+    // kind/number — a China distribution suffix never matches the plain
+    // version, mirroring the unsupported-environment policy); an
+    // off-target or version-unobservable editor refuses with guidance and
+    // never silently executes. An auto-selected candidate is presentation
+    // only until the gate-3 first-use confirmation exists (desktop
+    // settings face), so it cannot carry a job yet. A recipe without a
+    // constraint, or with a constraint that is not a parseable version
+    // string, skips this precheck honestly — the plan never invents a
+    // compatibility verdict.
     if let Some(constraint) = stored_recipe
         .recipe
         .get("environment")
@@ -2281,63 +2310,90 @@ fn run_approved_plan_job(
         .and_then(Value::as_str)
     {
         if let Some(required) = vua_orchestrator::parse_editor_version(constraint) {
-            match vua_orchestrator::installed_unity_editors(unity_editors_root) {
-                vua_orchestrator::EditorInstallObservation::Detected(editors) => {
-                    let satisfied = editors.iter().any(|editor| {
-                        let version = &editor.parsed;
-                        version.major == required.major
-                            && version.minor == required.minor
-                            && version.patch == required.patch
-                            && version.release_kind == required.release_kind
-                            && version.release_number == required.release_number
-                            && version.china_suffix == required.china_suffix
-                    });
-                    if !satisfied {
-                        return Err(AppErrorV1::new(
-                            "vua.job.environment_unmet",
-                            ErrorCategory::Validation,
-                            "errors.job.environmentUnmet",
-                            correlation_id,
-                        )
-                        .with_param(
-                            "requiredVersion",
-                            vua_orchestrator::ParamValue::Text(required.display.clone()),
-                        ));
+            let unmet = |detail: String| {
+                AppErrorV1::new(
+                    "vua.job.environment_unmet",
+                    ErrorCategory::Validation,
+                    "errors.job.environmentUnmet",
+                    correlation_id,
+                )
+                .with_param(
+                    "requiredVersion",
+                    vua_orchestrator::ParamValue::Text(required.display.clone()),
+                )
+                .with_param("detail", vua_orchestrator::ParamValue::Text(detail))
+            };
+            match editor_selection {
+                vua_orchestrator::EditorSelection::Explicit { path } => {
+                    // The confirmed editor this job will execute through:
+                    // observe the version its path declares. No parseable
+                    // version means the precheck cannot verify the
+                    // constraint — refuse rather than guess (the manual
+                    // path keeps the Hub layout so verification can run).
+                    let observed = vua_orchestrator::editor_version_from_path(path)
+                        .and_then(|display| vua_orchestrator::parse_editor_version(&display));
+                    match observed {
+                        Some(version) if editor_version_matches(&version, &required) => {}
+                        Some(version) => {
+                            return Err(unmet(format!(
+                                "the confirmed editor carries version {}, but the recipe requires {}",
+                                version.display, required.display
+                            )));
+                        }
+                        None => {
+                            return Err(unmet(
+                                "the confirmed editor path carries no parseable Unity \
+                                 version; the constraint cannot be verified and the \
+                                 editor is never silently used"
+                                    .into(),
+                            ));
+                        }
                     }
                 }
-                vua_orchestrator::EditorInstallObservation::NotDetected => {
-                    return Err(AppErrorV1::new(
-                        "vua.job.environment_unmet",
-                        ErrorCategory::Validation,
-                        "errors.job.environmentUnmet",
-                        correlation_id,
-                    )
-                    .with_param(
-                        "requiredVersion",
-                        vua_orchestrator::ParamValue::Text(required.display.clone()),
-                    )
-                    .with_param(
-                        "detail",
-                        vua_orchestrator::ParamValue::Text(
+                vua_orchestrator::EditorSelection::AutoSelected { editor } => {
+                    // The selection layer resolved a production-target
+                    // candidate, but the gate-3 first-use confirmation
+                    // (desktop settings face) has not released it: no
+                    // editor is confirmed for production work yet.
+                    return Err(unmet(format!(
+                        "the detected production-target editor ({}) awaits the \
+                         first-use confirmation in setup; production execution \
+                         stays unavailable",
+                        editor.parsed.display
+                    )));
+                }
+                vua_orchestrator::EditorSelection::Unavailable { reason } => match reason {
+                    vua_orchestrator::EditorSelectionGap::NotDetected => {
+                        return Err(unmet(
                             "no Unity editor installation detected on this machine".into(),
-                        ),
-                    ));
-                }
-                vua_orchestrator::EditorInstallObservation::DetectionFailed { reason } => {
-                    // The observation itself failed: an external failure, not
-                    // a config verdict — retryable, never dressed as "unmet".
-                    return Err(AppErrorV1::new(
-                        "vua.job.environment_check_failed",
-                        ErrorCategory::ExternalFailure,
-                        "errors.job.environmentCheckFailed",
-                        correlation_id,
-                    )
-                    .with_recoverable(true)
-                    .with_param(
-                        "detail",
-                        vua_orchestrator::ParamValue::Text(reason),
-                    ));
-                }
+                        ));
+                    }
+                    vua_orchestrator::EditorSelectionGap::NoProductionTarget {
+                        observed_versions,
+                    } => {
+                        return Err(unmet(format!(
+                            "the detected editors are off target: {}; install the \
+                             production target or confirm a verified editor in setup",
+                            observed_versions.join(", ")
+                        )));
+                    }
+                    vua_orchestrator::EditorSelectionGap::DetectionFailed { reason } => {
+                        // The observation itself failed: an external
+                        // failure, not a config verdict — retryable, never
+                        // dressed as "unmet".
+                        return Err(AppErrorV1::new(
+                            "vua.job.environment_check_failed",
+                            ErrorCategory::ExternalFailure,
+                            "errors.job.environmentCheckFailed",
+                            correlation_id,
+                        )
+                        .with_recoverable(true)
+                        .with_param(
+                            "detail",
+                            vua_orchestrator::ParamValue::Text(reason.clone()),
+                        ));
+                    }
+                },
             }
         }
         // A free-text constraint (parse_editor_version returning None) or a
@@ -2730,7 +2786,7 @@ fn job_execute(
     let evidence = use_cases.evidence.clone();
     let bridge = use_cases.bridge.clone();
     let project_root = use_cases.project_root.clone();
-    let unity_editors_root = use_cases.unity_editors_root.clone();
+    let editor_selection = use_cases.editor_selection.clone();
     let job_correlation = correlation_id.to_owned();
     let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
         correlation_id: Some(correlation_id.to_owned()),
@@ -2743,7 +2799,7 @@ fn job_execute(
                 &evidence,
                 &bridge,
                 &project_root,
-                &unity_editors_root,
+                &editor_selection,
                 &plan_id,
                 &job_correlation,
             )?;

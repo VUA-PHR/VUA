@@ -77,23 +77,60 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     // W20 production-use-case command face: the recipe document store lives
     // under the provider data root (AMF production-domain document store).
     // W20 production-use-case command face (recipe/plan/job/record). The
-    // Bridge the orchestrated jobs execute through reuses the Unity editor
-    // path (VUA_UNITY_EDITOR); the target project root has its own variable.
+    // Bridge the orchestrated jobs execute through reuses the editor the
+    // assembly face selects (U10 slice); the target project root has its
+    // own variable.
     let use_cases = std::env::var("VUA_PROVIDER_DATA").ok().map(|data| {
-        let bridge: std::sync::Arc<dyn vua_orchestrator::UnityBridge> = std::env::var_os(
-            "VUA_UNITY_EDITOR",
-        )
-        .map(|unity| {
-            std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
-                std::path::PathBuf::from(unity),
-            )) as std::sync::Arc<dyn vua_orchestrator::UnityBridge>
-        })
-        .unwrap_or_else(|| {
-            eprintln!("VUA provider: VUA_UNITY_EDITOR unset; job execution stays unavailable");
-            std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
-                std::path::PathBuf::new(),
-            ))
-        });
+        // U10 editor selection (proposal 021 stance 2 + integration ruling):
+        // explicit injection > production-target auto-selection > none. The
+        // explicit injection (the shell-injected, verified manual pick)
+        // releases execution; an auto-selected candidate is resolved for
+        // presentation and the job precheck only — the gate-3 first-use
+        // confirmation lives on the desktop settings face, so the
+        // transition period keeps job execution honestly unavailable.
+        let explicit_editor = std::env::var_os("VUA_UNITY_EDITOR")
+            .map(std::path::PathBuf::from);
+        // The Hub editors root the selection enumerates when no explicit
+        // injection is set; overridable for tests and non-Hub installs,
+        // defaulting to the standard Hub location.
+        let unity_editors_root = std::env::var_os("VUA_UNITY_EDITORS_ROOT")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| {
+                std::path::PathBuf::from("C:/Program Files/Unity/Hub/Editor")
+            });
+        let editor_selection = vua_orchestrator::select_editor(
+            explicit_editor,
+            &vua_orchestrator::installed_unity_editors(&unity_editors_root),
+        );
+        let bridge: std::sync::Arc<dyn vua_orchestrator::UnityBridge> =
+            if editor_selection.releases_execution() {
+                std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
+                    editor_selection
+                        .path()
+                        .expect("a released selection carries its editor path")
+                        .to_path_buf(),
+                )) as std::sync::Arc<dyn vua_orchestrator::UnityBridge>
+            } else {
+                match &editor_selection {
+                    vua_orchestrator::EditorSelection::AutoSelected { editor } => eprintln!(
+                        "VUA provider: production-target editor detected at {} ({}); \
+                         job execution waits for the first-use confirmation in setup \
+                         and stays unavailable",
+                        editor.path.display(),
+                        editor.parsed.display,
+                    ),
+                    vua_orchestrator::EditorSelection::Unavailable { reason } => eprintln!(
+                        "VUA provider: no usable editor selection ({reason:?}); \
+                         job execution stays unavailable"
+                    ),
+                    vua_orchestrator::EditorSelection::Explicit { .. } => unreachable!(
+                        "a released selection takes the executing bridge branch"
+                    ),
+                }
+                std::sync::Arc::new(vua_unity_bridge::UnityBatchBridge::new(
+                    std::path::PathBuf::new(),
+                ))
+            };
         let project_root = std::env::var_os("VUA_PROJECT_ROOT")
             .map(std::path::PathBuf::from)
             .unwrap_or_else(|| {
@@ -101,14 +138,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 std::path::PathBuf::new()
             });
         let production_root = std::path::Path::new(&data).join("production");
-        // The Unity Hub editors root the job.execute environment precheck
-        // observes (009 stance 4 ②); overridable for tests and non-Hub
-        // installs, defaulting to the standard Hub location.
-        let unity_editors_root = std::env::var_os("VUA_UNITY_EDITORS_ROOT")
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| {
-                std::path::PathBuf::from("C:/Program Files/Unity/Hub/Editor")
-            });
         vua_provider_host::ProductionUseCaseConfig {
             recipes: std::sync::Arc::new(vua_orchestrator::RecipeDocumentStore
                 ::new_with_system_clock(production_root.join("recipes"))),
@@ -118,23 +147,21 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ::new(production_root.join("evidence"))),
         // M7 inspection slice: the evidence store lives beside the other AMF
         // production-domain document stores; the editor version is observed
-        // from the configured editor path ("unknown" when the path states
+        // from the selected editor path ("unknown" when the path states
         // none — the evidence never invents one).
         inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore
             ::new(production_root.join("inspections"))),
-        editor_version: std::env::var_os("VUA_UNITY_EDITOR")
-            .map(|unity| {
-                vua_orchestrator::editor_version_from_path(
-                    std::path::Path::new(&unity),
-                )
+        editor_version: editor_selection
+            .path()
+            .and_then(|path| {
+                vua_orchestrator::editor_version_from_path(path)
             })
-            .unwrap_or(None)
             .unwrap_or_else(|| "unknown".to_owned()),
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
         bridge,
         project_root,
-        unity_editors_root,
+        editor_selection,
     }
     });
     let input = stdin_reader();

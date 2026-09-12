@@ -94,6 +94,51 @@ describe("desktop Gateway v1", () => {
       schemaVersion: 1, requestId: "request-17", method: "overlay.getSnapshot", params: { taskId: "task-1" },
     })).toBe(false);
   });
+
+  // M7 检查切片消费批(inspection-queries v0.1;016 仲裁独立词表行):读面
+  // get/list 入桌面词表。requestRun 任务化写命令不入——avatarGlobalObjectId
+  // 无桌面事实源,登记而不消费即悬空面(016 核心表态 3 同构纪律)。
+  const INSP_ID = "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21";
+
+  it("accepts inspection.get with the single identity param and rejects extras/fuzz (M7)", () => {
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-1", method: "inspection.get",
+      params: { inspectionId: INSP_ID },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-2", method: "inspection.get", params: {},
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-3", method: "inspection.get",
+      params: { inspectionId: INSP_ID, text: "fuzzy" },
+    })).toBe(false);
+  });
+
+  it("accepts inspection.list with the closed optional set and rejects unknown keys (M7)", () => {
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-4", method: "inspection.list", params: {},
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-5", method: "inspection.list",
+      params: { avatarRef: "warehouse:booth-item-1001", overallStatus: "fail", limit: 50, offset: 0 },
+    })).toBe(true);
+    // unavailable 是维状态非聚合输出——不进过滤闭集(016 §4 聚合规则)。
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-6", method: "inspection.list",
+      params: { overallStatus: "unavailable" },
+    })).toBe(false);
+    // limit 有界 1..200(数据草案 schema minimum 1 / maximum 200)。
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-7", method: "inspection.list", params: { limit: 201 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-8", method: "inspection.list", params: { limit: 0 },
+    })).toBe(false);
+    // 词表外 text 模糊过滤拒绝(草案面无此语义,不发明)。
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-insp-9", method: "inspection.list", params: { text: "fuzzy" },
+    })).toBe(false);
+  });
 });
 
 describe("production.* v0.2 方法守卫", () => {
@@ -338,6 +383,8 @@ describe("gateway guard covers every declared method (regression: silent guard g
       targetParentDirectory: "C:/vua",
       targetProjectName: "copy",
     },
+    "inspection.get": { inspectionId: "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21" },
+    "inspection.list": {},
   };
 
   it("admits a minimal well-formed request for every method in the kind table", () => {

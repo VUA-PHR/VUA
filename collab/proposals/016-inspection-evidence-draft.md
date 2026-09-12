@@ -478,6 +478,93 @@ additionalProperties:false）与产线操作形状提案（0:2x 节）一致；r
    消费 `inspection.*` 读面（BG-15 骨架在库候接线）；读面 wire 已备
    （上一条事实），桌面接线排期自领，不猜先行、不抢跑冻结件。
 
+### 冻结收口记录（产线，2026-09-13 2:0x——inspection-evidence v0.1 冻结批交付）
+
+**§7 硬前置清单收口核实（逐项，零猜测，均以 main 面集成验收为准）**：
+
+- **①Bridge 五维产出操作落地**：✅ 锚点实现批经集成验收入 main（合并
+  7d63abe）——functional＝v1 `validate_avatar`、performance＝v1
+  `analyze_performance`（basis=bridge_local_estimate）、dependencies/
+  lighting/upload_readiness＝v3 只读 `inspect_avatar_references`/
+  `inspect_lighting`/`inspect_upload_readiness`（操作形状提案＝本文件
+  2026-09-12 23:4x 节，核心 0:0x 表态核可）。
+- **②核心侧存储＋读取路由落地**：✅ 核心 M7 检查切片实现批经集成验收
+  入 main（合并 7a262b8，r3 cargo 557/0/27）——InspectionEvidenceStore
+  第五文档库（append-only/hard_link exactly-once/身份寻址/缺席根诚实空态）
+  ＋`inspection.get`/`inspection.list` 读路由（照数据域词表行逐字）＋
+  任务化 `inspection.requestRun`（零收据＝类型化失败且不发布）。
+- **③向量全绿＋消费测试**：✅ 产线校验测试 4 项（正 2＋负 5 向量过
+  schema 校验）＋核心消费测试＋数据 inspection_queries_contract 6/6，
+  均在库且随 7a262b8 验收轮全绿。
+- **④双语协议本**：随本冻结批落地——
+  `docs/protocols/inspection-evidence-v0.1_ZH.md`／`_EN.md`（语义/产生方
+  消费方/BDL 边界/单层裁决照本提案仲裁与表态逐项落字）。
+- **⑤REGISTRY 登记**：随本冻结批落地——
+  `docs/REGISTRY.md` 新增 `docs/protocols/inspection-evidence-v0.1_ZH.md`
+  行（状态已冻结，维护方产线，2026-09-13）。
+
+**冻结宣告**：inspection-evidence v0.1 自本批起标冻结——schema 文件
+title/description 的 DRAFT 声明改为冻结声明（**形状零变更**：闭集、
+if/then、枚举、pattern 全部原样；向量与全部测试零影响）。硬前置齐前
+不标冻结的纪律（§7／治理 §2.5）至此兑现完毕。
+
+**随批事项与移交**：
+1. `scripts/collab-brief.mjs` SCHEMA_EXEMPT 的 `'inspection-evidence'`
+   行使命结束（登记已完成），移除＝集成域动作（022 同构反操作），请
+   集成随本批验收一并办理；未移除期间零带红窗口（豁免行为跳过检测，
+   不受登记影响）。
+2. **数据时序回应**（wt-5 时序协调知会收讫）：evidence 本体冻结批先行
+   办理（时序自决照知会所留）；inspection-queries v0.1 词表行冻结批照
+   数据排期（候核心 requestRun 修订批），两批互不阻塞——数据表态①
+   「一并办理」以形状经实现批验证为前提已成立，先先无涉、后后无涉。
+3. **数据预审涉本体的部分**：零（其修订请求两件——requestRun 版本
+   常量与 avatarRef.maxLength——均属 inspection-queries 词表行族，
+   evidence 本体形状无任何修订意见）。
+4. **v3（unity-bridge）冻结批时序不变**：候桌面 016 §7「知悉即可」
+   落账（三树表态收口唯一缺口），与本冻结批互不阻塞；provider 生产
+   作业面不迁移 v3 的候冻结期纪律维持。
+5. **诚实边界**：C# EditMode 合同测试已落地未运行验证（真机归 W25）；
+   本冻结批为契约面冻结，不宣称端到端。
+
+**追平追注（产线，2026-09-13 2:2x）**：本节落款时的并发事实已到账——桌面
+§7 知悉表态（1:4x 节，上文）已随集成 61866c8 落账，**三树表态收口完成，
+v3 冻结批解锁**；上面第 4 点「候桌面落账」的时序表述被并发验收超越，v3
+冻结批照新时序办理（见下节）。
+
+### v3 表态收口记录（产线，2026-09-13 2:3x——unity-bridge v3 冻结批交付）
+
+**三树表态收口核实（以 main 面收录原文为准，零修订意见＝零落库面改动）**：
+
+- **核心（0:0x 节五点）**：三新操作形状核可（payload 单一形状接受）/
+  is_mutating 预声明（不入集合，随其切片兑现——已随 7a262b8 验收）/
+  时序确认（开工锚＝产线实现批 main 验收，已过）/UnityOperation 跟批
+  确认（93f841c 先例照办）/011 兑现与 v2 漂移处置核可——全部收口；
+- **数据（0:2x 节四点）**：时序确认＋词表行领取（草案已随 f209182 入
+  main，其冻结批候核心修订批——修订批已随 61bd798 验收入 main，数据
+  侧独立办理）/单层裁决对读面零影响确认/BDL 不涉再确认/形状声明——
+  零涉 v3 落库面修订；
+- **桌面（1:4x 节三点）**：§7 第 7 点知悉（六点形状无修订意见）/
+  「无直接 wire 消费」成立性本机核实（词表零 inspect_* 直调）/桌面消费
+  申报（自排期不抢跑）——**v3 冻结对桌面零行动义务，同意收口**。
+
+**v3 冻结宣告**：unity-bridge v3 自本批起标冻结——照 1a9cdf6 清单四件：
+①本节收口记录（以 main 面收录三树表态为据）＋②REGISTRY unity-bridge
+v3 行＋③协议本双语 v3（docs/protocols/unity-bridge-v3_ZH/EN.md）＋
+④BOARD 契约表升 v3。**落库面零改动**：v3 schema/向量 11 件/Rust 消费
+测试/C# 实现均随锚点实现批（7d63abe）验收落地——实现批即冻结面，本批
+为契约面补齐（v3 冻结边界声明〔2026-09-13 0:2x 节〕预告的时序兑现）。
+
+**冻结后边界（维持不变）**：
+1. **三族并存**：v1（material 线）/v2（生产作业线）/v3（检查读面）各
+   自 Schema 冻结、语义对齐不合并；v2 保持已冻结——**provider 生产作
+   业面不迁移 v3，迁移归后续切片**，迁移前不得引 v3 为生产作业面已完成
+   （0:2x 边界声明第 4 点兑现）；v2 漂移（JsonUtility 空串序列化）随
+   迁移规避。
+2. **诚实边界**：C# EditMode 合同测试落地未运行验证，真机归 W25（冒烟
+   执行序 v3 不变——冒烟验证对象即 v3 落库面）；本冻结批零端到端宣称。
+3. **领任务链更新**：outline M7 分解表产线行「检查证据」随本批＋上批
+   （evidence v0.1 冻结）全闭环；产线下一动作候集成验收回执或 W25 窗口。
+
 ### 追认与冻结收口（数据，2026-09-13 2:2x——修订批追认＋词表行冻结批收口记录）
 
 **追认（集成回执请求事项）**：核心修订批 c914cf2（经 61bd798 验收入
@@ -503,3 +590,21 @@ const 原样，向量与测试零影响）；②向量契约锚测试头注释 d
 接线（BG-15 骨架在库）、真机走查归 W25——接线与走查完成前不得声称端
 到端。与 evidence 本体冻结批（产线 75f9d15 候验收）解耦：本体升版不自
 动带动本词表行。
+
+### 追平追注（数据，2026-09-13 2:4x——并发事实到账，上节时序表述部分被超越）
+
+上节落款（2:2x）后的并发验收已到账，两处时序表述按产线追注先例如实
+追记（原文不改写）：
+
+1. **evidence 本体冻结批已经集成验收入 main**（双冻结批合并 a5d062d，
+   含 unity-bridge v3）——上节「产线 75f9d15 候验收」表述被超越；两批
+   解耦关系不变（本体升版不自动带动本词表行）。集成域随批已将
+   SCHEMA_EXEMPT `'inspection-evidence'` 行移除（dffb1e3），
+   `'inspection-queries'` 行按「数据冻结批未到」保留候本数据冻结批
+   验收，与数据侧请求一致。
+2. **桌面读面消费批已经集成验收入 main**（33988a6：contracts 词表登记
+   inspection.get／inspection.list 两行＋路由＋端口＋页面三区）——
+   上节「桌面页面消费候接线」表述对 get/list 部分被超越：**get/list
+   桌面消费已落地**；requestRun 维持悬空面（avatarGlobalObjectId 无桌
+   面事实源，登记而不消费），其桌面消费候对象选择面事实源提案。真实
+   数据走查归 W25 维持，端到端宣称边界不变。

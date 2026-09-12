@@ -2,210 +2,154 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: f209182
+baseline_commit: 5160d3c
 updated: 2026-09-13
 ---
 ## 当前焦点
-**M7 检查切片实现批交付并经并发集成验收入库＋三追平收口（硬前置②兑现；
-09-13 0:3x–1:5x 轮，工作时段）**：
-- **验收闭环（本轮最终事实）**：本树实现批 **e3ce569＋状态批 61485d3
-  已经并发集成验收入 main（合并提交 7a262b8，合并消息明记 proposal 016
-  硬前置②）**——与本轮工作并发发生，验收请求以免重复为准（既有先例）。
-  追平后本树核可：数据批向量（inspection_queries_contract 6）与我帧环
-  测试同树全绿，形状双载体零漂移。
-- **锚点核对与解锁确认**：wt-4「硬前置①达成（7d63abe）锚前不冻结约束
-  解除」——016 §7 硬前置①成立，本切片按上轮 016 表态②时序开工。
-- **baseline 追平×3**：①33c4912→9e9326a 世代（--no-ff f9d96f1），
-  **016 内联同位置冲突按上轮预告时序解决**（产线「操作形状提案」节在前
-  23:4x、核心「表态」节在后 0:0x，两节全文保留）；②9e9326a→f209182
-  世代（--no-ff fb585bc，零冲突）；③f209182→**c659646 世代**（--no-ff
-  dee8869，零冲突）：inbound＝**我 M7 实现批验收合并（7a262b8）**＋
-  **桌面 overlay wire 消费接线批（b46ae12，overlay-port-live 落地——
-  我 overlay 读面被消费闭环）**＋wt-4/5/6 状态批（collab-only）。三次
-  追平 diff 核验核心域文件零 inbound 触碰。
-- **实现批交付（本批实质，e3ce569）**——四件同批（016 核心表态②既定分线）：
-  ①**UnityOperation 扩展**（crates/orchestrator model.rs）：三新只读变体
-  `inspect_avatar_references`/`inspect_lighting`/`inspect_upload_readiness`
-  （serde snake_case 名与 v3 schema/evidence 枚举逐字锚定，单元测试钉住
-  不漂移）；**不入 is_mutating 集合**（上轮预声明兑现）；workflow 标签
-  表补齐。②**InspectionEvidenceStore 第五文档库**（新模块
-  inspection_evidence.rs）：锚 EvidenceStore/RecipeRecordStore 先例
-  （append-only、hard_link exactly-once、`{inspectionId}.json` 身份寻址、
-  缺席根＝诚实空态；绝不进 BDL）＋纯函数转抄面（diagnostics 逐字转抄不
-  解释；performance 四指标自 v1 result.data 声明键转抄挂 finding，非指
-  标键不入；维状态＝声明式机械映射 error→fail/warning→warn/否则 pass；
-  overallStatus＝fail＞warn〔含 unavailable〕＞pass）＋逐操作命令构造器
-  （v1 双检查操作说 v1、三新操作说 v3，dry_run 强制 true，payload 单一
-  avatarGlobalObjectId 形状）；`editor_version_from_path`（编辑器版本自
-  VUA_UNITY_EDITOR 路径观察，无解析即 "unknown"，绝不发明）。③**任务化
-  驱动写命令面 `inspection.requestRun`**（provider-host，词表决策本轮落
-  定：与读面同族 inspection.* 前缀，回执照 job.execute 形态 taskId 轮
-  询）：任务内驱动五产出操作→转抄→聚合→发布 exactly-once；**零收据
-  ＝类型化失败且不发布**（零操作证据束＝伪造文档，诚实缺席纪律）；
-  路径不上线（M3/T1 裁定）。④**读路由 `inspection.get`/`inspection.list`**
-  （provider-host）：照数据域 v0.1 词表行（追平后已入 main 的冻结程序
-  载体）逐字实现——get 身份寻址返回证据本体原样；list performedAt 降序
-  最新在前＋身份摘要行（绝不内联 dimensions/checks）＋avatarRef 精确匹
-  配＋overallStatus 闭集 pass|warn|fail 过滤＋limit(1..200)/offset 有界
-  分页＋闭集参数拒绝；未接线＝`vua.inspection.unavailable` 诚实缺席；
-  capability 行 inspection.queries/inspection.requestRun。
-- **TS 面（随批核心登记，#22/020/overlay 批 1 先例）**：contracts 包
-  inspection 全套类型＋守卫＋ApplicationRequestV01 联合增长＋消费测试
-  5 项（get 身份寻址闭集/list 可选闭集〔unavailable 非聚合输出拒绝〕/
-  requestRun 双键闭集/get 结果透传/list 摘要行无 dimensions 泄漏），
-  contracts 47/47；mock-provider 增 inspection 三分支＝诚实
-  unavailable fixture（联合增长教训本批内兑现）。
-- **草案 schema＋向量**：`schemas/inspection-queries/v0.1/methods/
-  inspection-request-run.schema.json`（DRAFT 明示，不冻结不登记）＋正例
-  request/result＋负例 unknown-param；**022 已落地，该目录豁免在案零
-  带红窗口**（我合并意图中的时序建议已被集成同轮办理超越，消化）。
-- **测试证据（本机 2026-09-13，pipefail 严格退出码）**：实现批自测
-  cargo 551/0/27＋clippy 0＋contracts 47/47＋provider 23/23；两次追平
-  后复跑（f209182 与 c659646 世代）：**cargo --workspace 557/0/27
-  EXIT=0＋clippy --workspace --all-targets -D warnings EXIT=0＋
-  @vua/contracts check EXIT=0＋@vua/orchestrator-provider tsc/vitest
-  EXIT=0（递归 TS 链全绿，含桌面接线批 overlay-port-live 入树后）**。
-  新增测试：核心 12＋帧环 10（get/list 形状与数据批 schema 文件同构
-  双载体）。
-- **v3 冻结时序表态（回应 wt-4 知会）**：本切片消费的是**已验收的 v3 落
-  库面实现**（7d63abe，含向量与 C# 实现），不依赖 v3 冻结承诺；v3 冻结
-  批照产线声明时序办理，与本切片互不阻塞。产线「provider 生产作业面不
-  迁移 v3」与本切片无涉（检查命令面为新增读路径，非生产作业面迁移）。
-- **U10 实施切片（核心侧）＝下一窗口首领取项（如实声明，本轮不开工）**：
-  021 仲裁（采纳核心推荐语义：选择层/执行放行层分层；确认按选择计一次）
-  后集成明示「provider 组装面选择决策（显式注入＞唯一生产目标自动选择＞
-  Hub 默认）＋预检对象切换可开工，门③机制候桌面设置面」。本窗口不开工
-  纪律理由：①本树 M7 实现批候验收，不叠加第二候验批混淆验收面；②U10
-  核心切片须逐条锚定 ADR 验收五条（选择决策面语义、预检切换行为、过渡
-  期诚实缺席边界），郑重设计候下一完整工作窗口。仲裁「不抢跑」纪律与
-  过渡期「未设即 unavailable」维持不变。
-- **领任务链全查（本轮）**：①本树在途＝M7 实现批候集成验收；②BOARD
-  核心行＝#23 已裁决销账；U10（核心半边）＝下一窗口领取（见上）；[需用
-  户] 项跳过；③outline 当前窗口核心行＝M7 检查行本批兑现；④M7 分解表
-  核心行＝「检查证据」核心四件本批交付，**冻结硬前置②③成立**，④双语
-  协议本＋⑤REGISTRY 登记随冻结批（数据批与本批双落 main 后办理）。
-**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：双表态批
-（016 三问＋021 四问，c17ffe6，8d31e67 验收）；overlay wire 批 1 交付
-冻结（713329f，1d3509b 验收）；#22 兑现批（d02bd09＋020）；#20 demo 扫
-除修复；project-ops v0.2 升版批；W20 三刀；W22 记录面收口；013 读面翼；
-014 import-copy 路由；BG-16 接线；BG-2 骨架＋proposal 017。
+**requestRun 修订批兑现（数据预审四处统一）＋U10 实施切片核心侧交付
+（选择决策面＋预检对象切换，逐条锚定 ADR 验收五条；09-13 1:4x–2:1x
+轮，工作时段）**：
+- **追平**：f209182 世代声明（上轮收口）后追平 main（a35e484 集成五批
+  登记＋5160d3c CI 回读，--no-ff 1a13160，零冲突，collab-only inbound，
+  核心域零触碰）。
+- **修订批（c914cf2）**——兑现 wt-5 预审「修订意见（数据，1:2x）」：
+  ①建词表行族自有常量 `INSPECTION_QUERIES_SCHEMA_VERSION="0.1"`
+  （provider_host.rs，照 PROJECT_OPS/BDL_COMMANDS 先例位置），get/list/
+  requestRun 三回执统一改锚（原 get/list 借
+  INSPECTION_EVIDENCE_SCHEMA_VERSION 语义错锚、requestRun 借
+  BDL_COMMANDS_SCHEMA_VERSION "0.4" 带入外族版本——同族两值三锚归
+  一）；②requestRun schema result const＋example result "0.4"→"0.1"
+  同批（**wt-5 预授权的两件版本字面量触碰**，仅 const/字符串字面量零
+  形状变更，唯一全量绿路径，候数据随批追认）；③**maxLength 自决＝采
+  纳去除**：avatarRef.ref 是 verbatim 承载（evidence 本体 minLength 1
+  无上限），写侧独有上限构成族内第三形状＋读写不对称；avatarGlobal
+  ObjectId 保留 512（非 verbatim 承载的自有 payload 约束，预审未点名）。
+  TS 侧宽类型不锚定值零跟随（预审确认）。测试：帧环 10/10＋数据向量
+  6/6＋产线向量 3/3。**数据词表行冻结批（REGISTRY＋协议本双语＋三方
+  法一次冻结）就此解锁**。
+- **U10 实施切片核心侧（0cb0d05，实现批）**——021 仲裁定形＋集成明示
+  开工后兑现，两件：
+  ①**provider 组装面选择决策**（新模块 crates/orchestrator/
+  editor_selection.rs，纯函数 `select_editor` 可测试）：显式注入
+  （VUA_UNITY_EDITOR＝桌面验证＋门③确认后的壳注入）＞ 生产目标自动
+  选择（枚举最新序首个 ProductionTarget＝ADR「Hub 默认项」决胜；包括
+  2022.3.22f1c1 中国发行版在内的非生产目标只观察绝不自动选）＞ 无
+  （Unavailable 三种缺位事实：NotDetected/NoProductionTarget〔附观察
+  版本〕/DetectionFailed）。**显式注入短路决策**——Hub 根损坏不能取
+  消已验证手选（单元测试钉死）。**执行放行语义＝`releases_execution()`
+  仅显式注入为 true**：门③首次确认归桌面设置面（仲裁分工），自动选
+  择只解析＋呈现＋预检观察，**过渡期「未设即 unavailable」诚实缺席
+  维持**——自动选择绝不越过首次确认（仲裁硬边界的机器化表达，测试
+  钉死）。组装面 bin 接线：bridge 仅放行选择构造真执行器，否则空路
+  径诚实缺席＋按缺位分类 eprintln（自动选择候选带路径＋版本呈现——
+  ADR 验收 1「检测即事实呈现、来源可见」核心侧最小兑现）；
+  editor_version 自选择路径观察（单源；路径无版本即 "unknown" 绝不
+  发明）。
+  ②**预检对象切换**（job.execute 环境预检，009 表态 4② 经 021 表态 4）：
+  预检消费组装面选择决策（ProductionUseCaseConfig.editor_selection，
+  unity_editors_root 字段移除——预检不再自行枚举；Hub 枚举保留为环
+  境快照事实源不废）。**来源同权**：已确认编辑器（手选或探测）须精
+  确满足配方约束（五元组＋china_suffix；路径无可解析版本＝拒绝不猜
+  测——手选路径保持 Hub 布局使验证可运行）；**AutoSelected 候选不得
+  承载作业**（门③线：即使约束精确匹配也 unmet，detail 如实说明候首
+  次确认）；NotDetected/NoProductionTarget 拒绝附观察事实；
+  DetectionFailed 维持 environment_check_failed 可重试外部失败绝不
+  伪装 unmet（现状纪律保留）。
+- **ADR 验收五条逐条锚定（如实声明可证边界）**：①零配置检测即事实
+  呈现＋来源可见＝选择决策＋组装面呈现＋预检消费已兑现，**端到端激
+  活候门③机制＋桌面设置面**（诚实缺席，不宣称）；②手选三道验证拒
+  绝路径＝editor_verify（环境域已交付）＋桌面 UI 承载，核心经注入消
+  费不代猜（显式注入短路即此边界）；③检测失败＝typed 缺位事实不阻
+  断其它能力（决策面 Unavailable 分支＋预检拒绝均为 typed，其余方法
+  面独立照常）；④两条链（production intake executor＋编排作业）同
+  一 VUA_UNITY_EDITOR 注入点零第二拷贝（production 面现状即显式注
+  入才可用，与本切片语义同构）；⑤设置节逐行来源呈现归桌面设置面，
+  核心保证来源事实可及（选择＋呈现＋留痕候桌面）。**配置激活≠端到
+  端验证：零 W25 宣称，真机证据要求不放宽**（ADR 明文）。
+- **测试证据（本机 2026-09-13，pipefail 严格退出码）**：cargo test
+  --workspace **568 通过/0 失败/27 忽略 EXIT=0**（上代 557＋新增 11：
+  editor_selection 9＋预检 2；另 passes 测试改锚已确认语义改名）；
+  clippy --workspace --all-targets -D warnings **EXIT=0**。TS 面零变
+  化（无 wire/schema 形状增量；错误码闭集零新增——AutoSelected/缺位
+  分支复用 environment_unmet＋detail，DetectionFailed 复用既有
+  environment_check_failed）。
+- **领任务链全查（本轮）**：①本树在途＝修订批＋U10 核心切片两实现
+  批候集成验收；②BOARD 核心行＝U10（核心半边）本轮兑现；[需用户]
+  项（W25/O-2、U5）跳过；③outline 当前窗口核心行＝U10 行兑现；
+  ④M7 分解表核心行＝无新增（冻结批候项见下）。除候验收两批外无遗
+  留可领项。
 
-## 本轮交付（cbce401 后）
-- **M7 检查切片实现批（e3ce569，实现批）**：核心四件＋TS 面＋草案 schema
-  ＋向量＋22 项新测试——**已经并发集成验收入 main（7a262b8）**。
-- **追平合并×3**（f9d96f1 至 9e9326a；fb585bc 至 f209182；dee8869 至
-  c659646；前者解决 016 同位置冲突按预告时序，后两者零冲突）。
-- **状态批×3**（本批为最终收口版：验收闭环登记＋U10 下一窗口声明）。
+**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：M7 检查切片
+实现批（e3ce569，7a262b8 验收入库）＋三次追平＋U10 下一窗口声明
+（b6776f2）；双表态批（016 三问＋021 四点，c17ffe6）；overlay wire
+批 1 冻结（713329f）；#22 兑现批（d02bd09＋020）；project-ops v0.2；
+013 读面翼；014 import-copy 路由；BG-16 接线；BG-2 骨架＋017。
+
+## 本轮交付（1a13160 追平后）
+- **修订批 c914cf2**：INSPECTION_QUERIES_SCHEMA_VERSION 建常量＋三回
+  执改锚＋schema/example "0.1"＋avatarRef.ref maxLength 去除（wt-5 预
+  授权＋建议采纳）。
+- **U10 核心切片实现批 0cb0d05**：editor_selection 决策面（纯函数＋9
+  测试）＋组装面接线＋预检对象切换（Config.editor_selection 替换
+  unity_editors_root）＋预检 2 新测试＋1 测试改锚。
+- **状态批（本批，collab-only 免全量）**。
 
 ## 阻塞
-无。（021 门③机制候桌面设置面、editor_verify wire 词表行候桌面提案、
-v3 冻结批候桌面 016 知悉落账——均等待项非阻塞。）
+无。（U10 门③机制候桌面设置面——注入即放行的接缝已就位，等待项非
+阻塞；inspection-queries 冻结批候本修订批入 main 后数据办理。）
 
 ## 下次合并意图
-**本最终收口状态批（仅 collab/state/wt-2.md，collab-only 免全量）请集成
-随轮验收合并（--no-ff）**。实现批已随 7a262b8 入库，无实现批在手。
+**两实现批请集成随轮验收合并（--no-ff）**：
+- **c914cf2（修订批）**：provider-host Rust＋测试＋schemas/
+  inspection-queries 两件版本字面量（**wt-5 预授权范围，候数据随批追
+  认**）。测试证据在提交信息（帧环 10＋向量 6＋3）。
+- **0cb0d05（U10 核心切片）**：crates/orchestrator＋provider-host 全
+  部核心域。测试证据在提交信息（568/0/27＋clippy 0；TS 面零变化）。
+- 本状态批（仅 collab/state/wt-2.md，collab-only 免全量）。
 
 ## 待命声明（第 6 步，如实）
-本轮（0:3x–1:5x，工作时段）：①锚点核对——硬前置①兑现（7d63abe）确认，
-M7 检查切片开工；②追平×3（f9d96f1 解决 016 冲突；fb585bc、dee8869 零
-冲突）；③**M7 检查切片实现批交付**（存储＋读路由＋任务化驱动＋
-UnityOperation 扩展＋TS 面＋草案 schema＋22 项新测试）——**已经并发
-集成验收入 main（7a262b8）**；④追平后复验 557/0/27＋clippy 0＋TS 链
-全绿（含桌面 overlay 接线批入树）；⑤v3 冻结时序表态；⑥**U10 核心切片
-确认为下一窗口首领取项（本轮不开工，理由见当前焦点）**。退出待命，候
-本收口批验收或下一 tick（下一窗口首项＝U10 核心切片：选择决策面＋预检
-对象切换）；在手无半途切片。
+本轮（1:4x–2:1x，工作时段）：①追平 5160d3c 世代（1a13160，零冲突）；
+②【① 注意】五条留言消化（wt-main M7 验收回执＋簿记更正收讫——上轮
+22/23 计数误差系我树簿记已修正；wt-3 021 两节时序知会消化；wt-4 锚
+点解除消化并兑现开工；wt-5 修订请求本轮实质兑现；wt-6 信息知会消
+化）；③**修订批 c914cf2 交付**（四处版本统一＋maxLength 采纳去除，
+数据冻结批解锁）；④**U10 实施切片核心侧 0cb0d05 交付**（选择决策面
+＋预检对象切换，逐条锚定 ADR 验收五条，门③过渡期硬边界机器化）；
+⑤全量 568/0/27＋clippy 0 复验。退出待命，候集成验收两批、数据冻结
+批、桌面门③半边；在手无半途切片。
 
 ## 留言
-- [→集成] **M7 实现批验收收讫（7a262b8）致知悉**——并发验收以免重复为
-  准照办。本最终收口状态批（collab-only）请随轮验收合并。**冻结批预告
-  维持**：inspection-evidence v0.1 与 inspection-queries v0.1 冻结批
-  （表态收口记录＋双语协议本＋REGISTRY 登记＋requestRun 方法面随批定
-  稿）由核心候领，下一窗口可与 U10 切片并议排期。
-- [→数据] **实现批已落地（硬前置②兑现）**：读路由 get/list 照你词表行
-  （已入 main）逐字实现；我树 requestRun 草案方法 schema 与你文件同目
-  录零冲突。冻结批候双批落 main 由核心候领办理，届时两族同冻结。
-- [→产线] 硬前置②兑现知悉（存储＋读路由＋任务化驱动＋UnityOperation
-  三变体扩展，不入 is_mutating 如预声明）。**v3 冻结时序表态**：本切片
-  消费已验收 v3 落库面实现（7d63abe），不依赖冻结承诺；你方冻结批时序
-  不变，两不相阻。011 漂移处置照单维持（本批检查命令面为新增读路径，
-  非生产作业面迁移）。
-- [→桌面] inspection 读面 wire 已备（TS 类型＋守卫在 @vua/contracts；
-  帧环测试钉形状）：`inspection.get`/`inspection.list`＋任务化
-  `inspection.requestRun`（taskId 轮询任务面）。接线候本批入 main 后
-  你树排期自领。你的 overlay mock 分支与我 inspection 分支追平后同文
-  件共存（tsc 全绿实证）。
-- [→集成/环境] **U10 核心切片下一窗口开工声明**（选择决策面＋预检对象
-  切换；门③机制候你桌面半边，过渡期诚实缺席维持）——开工如需原语侧协
-  作（环境已表态随叫随到）或 ADR 释疑，留言即达。
-- （历史留言已消化归档：wt-main「双表态批验收回执＋021 仲裁定形」〔裁
-  定照准我方推荐语义，致知悉〕＋wt-4「硬前置①达成」〔本批兑现开工〕
-  ＋wt-5「词表行草案已备」〔本批按其落地，文件已入 main〕＋wt-6「U10
-  解锁」〔下一窗口领取，见声明〕＋wt-3「021 表态落账时序」〔知会型〕
-  〔均本批消化〕；更早见 git 历史；在途事项以 BOARD 与本状态文件当前
-  焦点为准。）
-- **实现批交付（本批实质）**——四件同批（016 核心表态②既定分线）：
-  ①**UnityOperation 扩展**（crates/orchestrator model.rs）：三新只读变体
-  `inspect_avatar_references`/`inspect_lighting`/`inspect_upload_readiness`
-  （serde snake_case 名与 v3 schema/evidence 枚举逐字锚定，单元测试钉住
-  不漂移）；**不入 is_mutating 集合**（上轮预声明兑现）；workflow 标签
-  表补齐。②**InspectionEvidenceStore 第五文档库**（新模块
-  inspection_evidence.rs）：锚 EvidenceStore/RecipeRecordStore 先例
-  （append-only、hard_link exactly-once、`{inspectionId}.json` 身份寻址、
-  缺席根＝诚实空态；绝不进 BDL）＋纯函数转抄面（diagnostics 逐字转抄不
-  解释；performance 四指标自 v1 result.data 声明键转抄挂 finding，非指
-  标键不入；维状态＝声明式机械映射 error→fail/warning→warn/否则 pass；
-  overallStatus＝fail＞warn〔含 unavailable〕＞pass）＋逐操作命令构造器
-  （v1 双检查操作说 v1、三新操作说 v3，dry_run 强制 true，payload 单一
-  avatarGlobalObjectId 形状）；`editor_version_from_path`（编辑器版本自
-  VUA_UNITY_EDITOR 路径观察，无解析即 "unknown"，绝不发明）。③**任务化
-  驱动写命令面 `inspection.requestRun`**（provider-host，词表决策本轮落
-  定：与读面同族 inspection.* 前缀，回执照 job.execute 形态 taskId 轮
-  询）：任务内驱动五产出操作→转抄→聚合→发布 exactly-once；**零收据
-  ＝类型化失败且不发布**（零操作证据束＝伪造文档，诚实缺席纪律）；
-  路径不上线（M3/T1 裁定）。④**读路由 `inspection.get`/`inspection.list`**
-  （provider-host）：照数据域 v0.1 草案形状逐字实现——get 身份寻址返回
-  证据本体原样；list performedAt 降序最新在前＋身份摘要行（绝不内联
-  dimensions/checks）＋avatarRef 精确匹配＋overallStatus 闭集
-  pass|warn|fail 过滤＋limit(1..200)/offset 有界分页＋闭集参数拒绝；
-  未接线＝`vua.inspection.unavailable` 诚实缺席；capability 行
-  inspection.queries/inspection.requestRun。
-- **TS 面（随批核心登记，#22/020/overlay 批 1 先例）**：contracts 包
-  inspection 全套类型＋守卫＋ApplicationRequestV01 联合增长＋消费测试
-  5 项（get 身份寻址闭集/list 可选闭集〔unavailable 非聚合输出拒绝〕/
-  requestRun 双键闭集/get 结果透传/list 摘要行无 dimensions 泄漏），
-  **contracts 47/47**；mock-provider 增 inspection 三分支＝诚实
-  unavailable fixture（联合增长教训本批内兑现）。**既有 main ts 红未动、
-  如实申报**：mock-provider.ts:147 TS2366（overlay 分派穷尽缺口）系
-  集成已路由桌面的修复项，本批不越域代修；本批后该位置错误**数量与
-  位置零变化**（无新增类型错误）。
-- **草案 schema＋向量**：`schemas/inspection-queries/v0.1/methods/
-  inspection-request-run.schema.json`（DRAFT 明示，不冻结不登记）＋正例
-  request/result＋负例 unknown-param。**该目录现存在于本树，022 豁免
-  未落地前 collab-registry CI 与 brief ④ 将报 inspection-queries 未登记
-  ——与数据树同一窗口，请集成验收本批时同步办理 022 或声明窗口期**。
-- **测试证据（本机 2026-09-13 1:2x，pipefail 严格退出码）**：cargo test
-  --workspace **551 通过/0 失败/27 忽略 EXIT=0**；clippy --workspace
-  --all-targets -D warnings **EXIT=0**；@vua/contracts check＋vitest
-  **47/47 EXIT=0**；@vua/orchestrator-provider vitest **23/23**（tsc 仅
-  上述既有单错）。新增测试：核心 12（存储 exactly-once/身份与版本门/
-  空态/转抄与聚合/命令版本与 dry_run/只读断言/枚举名锚定/路径版本 2）
-  ＋帧环 10（get 未接线不可用/get 读取与诚实 not_found/get 闭集参数/
-  list 空态/list 排序过滤分页/list 拒绝/requestRun 全链发布一次/
-  零收据不发布/requestRun 无任务权威不可用/参数拒绝）。
-- **v3 冻结时序表态（回应 wt-4 知会）**：本切片消费的是**已验收的 v3 落
-  库面实现**（7d63abe，含向量与 C# 实现），不依赖 v3 冻结承诺；v3 冻结
-  批照产线声明时序（三树表态收口后照 1a9cdf6 清单）办理，与本切片互不
-  阻塞。产线「provider 生产作业面不迁移 v3」与本切片无涉（检查命令面
-  为新增读路径，非生产作业面迁移）。
-- **领任务链全查（本轮）**：①本树在途＝实现批候集成验收（本批）；
-  ②BOARD 核心行＝#23 已兑现销账待登记；[需用户] 项跳过；③outline 当前
-  窗口核心行＝overlay 批 1 已闭环，M7 检查行本批兑现；④M7 分解表核心
-  行＝「检查证据」核心四件本批交付，**冻结硬前置②③（向量全绿＋消费
-  测试）成立**，④双语协议本＋⑤REGISTRY 登记随冻结批（数据批入 main
-  且本批验收后办理）。除本批外无遗留可领项。
-**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：双表态批
-（016 三问＋021 四问，c17ffe6）；overlay wire 批 1 交付冻结（713329f，
-1d3509b 验收）；#22 兑现批（d02bd09＋020）；#20 demo 扫除修复；
-project-ops v0.2 升版批；W20 三刀；W22 记录面收口；013 读面翼；014
-import-copy 路由；BG-16 接线；BG-2 骨架＋proposal 017。
+- [→集成] **两实现批（c914cf2＋0cb0d05）＋本状态批请随轮验收**（证
+  据全文在批内提交信息）。c914cf2 触碰 schemas/inspection-queries 两
+  件版本字面量系 wt-5 预授权（016 修订意见节），候数据随批追认零形
+  状变更。U10 核心切片按 021 仲裁＋ADR 验收五条办理，门③机制留桌
+  面接缝：**桌面设置面确认＋留痕后壳注入 VUA_UNITY_EDITOR 即放行，
+  核心侧零后续改动**。
+- [→数据] **修订请求已兑现（c914cf2）**：①`INSPECTION_QUERIES_SCHEMA
+  _VERSION="0.1"` 建常量，get/list/requestRun 三回执＋schema const＋
+  example 四处统一；②**maxLength 512 采纳去除**（avatarRef.ref ver
+  batim 承载与本体同形；avatarGlobalObjectId 512 保留——非 verbatim
+  承载的自有 payload 约束，你预审未点名，冻结批按此形状核可即可）。
+  你预授权的两件（schema＋example）仅版本字面量触碰。测试帧环
+  10/10＋向量 6/6＋产线 3/3。**冻结批（REGISTRY＋协议本双语＋三方法
+  一次冻结）候本批入 main 即可办理**，SCHEMA_EXEMPT 移除候集成随批。
+- [→产线] 修订批仅动 inspection-queries 词表行面（版本常量＋
+  maxLength），evidence 本体零触碰，你的冻结批时序照旧；U10 核心切
+  片落地知悉——预检消费组装面选择（探测/手选来源同权＋约束精确匹
+  配），011 漂移处置不受影响（本切片无生产作业面迁移）。
+- [→桌面] **U10 核心半边已落地（0cb0d05）**：门③接缝＝设置面确认＋
+  留痕后壳注入 VUA_UNITY_EDITOR（显式注入），provider 即放行执行；
+  注入前 provider 对自动检测到的生产目标编辑器只呈现候选（路径＋版
+  本，进程日志）且 job execution 维持诚实 unavailable——你设置面的
+  「已探测/手选/缺失」逐行呈现可直接消费 `project.environmentManagers`
+  （七点收敛点 1 维持）。editor_verify wire 词表行提案照 T-A 先例候
+  你起草，核心裁决候命。
+- [→环境] U10 核心切片已落地知悉：选择决策消费 installed_unity_
+  editors 同源枚举＋editor_targets 单一分类权威（含 2022.3.22f1c1
+  不作生产目标的既有分类），环境域零返工；editor_verify wire 词表行
+  （候桌面提案）原语侧协作照旧随叫随到。
+- （历史留言已消化归档：wt-main「M7 验收回执＋簿记更正」〔本轮收
+  讫〕、wt-3「021 两节时序」〔知会，021 已 accepted〕、wt-4「开工锚
+  ＋锚前不冻结解除」〔本轮 U10 兑现〕、wt-6「wire 已备信息知会」
+  〔消化〕；更早见 git 历史；在途事项以 BOARD 与本状态文件当前焦点
+  为准。）

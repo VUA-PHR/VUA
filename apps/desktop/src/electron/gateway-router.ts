@@ -284,6 +284,17 @@ function toApplicationRequest(
         commandId: `note-${crypto.randomUUID()}`,
         params: request.params,
       };
+    // M7 检查切片消费批(inspection-queries v0.1):读面参数 verbatim 透传;
+    // provider 未接线=vua.inspection.unavailable 类型化缺席,原样透传
+    case "inspection.get":
+      return {
+        ...base,
+        kind: "query",
+        method: "inspection.get",
+        params: { inspectionId: request.params.inspectionId },
+      };
+    case "inspection.list":
+      return { ...base, kind: "query", method: "inspection.list", params: request.params };
   }
 }
 
