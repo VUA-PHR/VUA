@@ -311,6 +311,9 @@ function registryCheck() {
     'environment-spike',
     'vpm-package-spike',
     'inspection-evidence',
+    // proposal 016 草案态（仲裁第 2 点词表行），冻结时随冻结批登记——
+    // 016 §7 硬前置清单为准（proposal 022，集成落地 2026-09-13）。
+    'inspection-queries',
     'orchestrator',
     'orchestrator-task-store',
   ]);
