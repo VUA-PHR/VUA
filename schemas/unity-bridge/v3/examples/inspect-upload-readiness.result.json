@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-ready-04",
+  "operation": "inspect_upload_readiness",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [
+    { "code": "upload_readiness.sdk_absent", "severity": "warning", "message": "本项目未检测到 VRChat Avatar SDK 前置组件；上传前置未就绪。这是前置观察，不是官方 SDK 判定。" },
+    { "code": "upload_readiness.build_target", "severity": "info", "message": "活动构建目标：StandaloneWindows64。" }
+  ],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}

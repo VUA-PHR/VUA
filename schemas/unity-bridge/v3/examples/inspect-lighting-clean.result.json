@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 3,
+  "commandId": "inspect-light-03",
+  "operation": "inspect_lighting",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [
+    { "code": "lighting.clean", "severity": "info", "message": "活动场景无实时（未烘焙）光源；观察到 1 个烘焙光源与 1 个反射探针。本操作报告观察事实，不是官方光照评级。" }
+  ],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+  }
+}

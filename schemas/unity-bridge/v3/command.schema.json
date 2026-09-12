@@ -1,0 +1,298 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/unity-bridge/v3/command.schema.json",
+  "title": "VUA Unity bridge command v3",
+  "description": "Versioned command sent by AMF Production to the VUA Unity middleware. v3 is a frozen superset of v2 (same-face upgrade, v1->v2 precedent): all v2 operations and fields are preserved unchanged. v3 adds the three M7 inspection read operations (proposal 016 hard precondition 1, inspection-evidence five dimensions): inspect_avatar_references (dependencies dimension producing layer), inspect_lighting (lighting dimension), and inspect_upload_readiness (upload-readiness dimension). All three are read-only (dryRun forced true, like the v1 check operations), their payload requires only avatarGlobalObjectId (analyze_performance precedent), and findings travel in receipt diagnostics typed codes. On the receipt side v3 also legalizes the proposal-011 instanceGlobalObjectId data field (see result.schema.json). Read-only observation discipline: these operations report deterministic Unity-observed facts and never pose as official VRChat ratings (official_sdk_rating stays reserved).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "commandId", "operation", "projectId", "dryRun", "payload"],
+  "properties": {
+    "schemaVersion": { "const": 3 },
+    "commandId": { "type": "string", "minLength": 1 },
+    "operation": {
+      "enum": [
+        "inspect_project",
+        "import_unity_package",
+        "materialize_extracted_package",
+        "create_local_vpm_package",
+        "validate_asset_paths",
+        "identify_assets",
+        "install_outfit",
+        "create_toggle",
+        "validate_avatar",
+        "analyze_performance",
+        "execute_production_job",
+        "restore_project",
+        "inspect_avatar_references",
+        "inspect_lighting",
+        "inspect_upload_readiness"
+      ]
+    },
+    "projectId": { "type": "string", "minLength": 1 },
+    "dryRun": { "type": "boolean" },
+    "expectedProjectFingerprint": { "type": "string", "minLength": 1 },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "avatarGlobalObjectId": { "type": "string", "minLength": 1 },
+        "avatarArmatureGlobalObjectId": { "type": "string", "minLength": 1 },
+        "outfitGlobalObjectId": { "type": "string", "minLength": 1 },
+        "outfitArmatureGlobalObjectId": { "type": "string", "minLength": 1 },
+        "toggleName": { "type": "string", "minLength": 1 },
+        "sourcePackagePath": { "type": "string", "minLength": 1 },
+        "sourcePackageSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "manifestSha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "packageId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]{2,127}$" },
+        "packageDisplayName": { "type": "string", "minLength": 1 },
+        "packageVersion": { "type": "string", "minLength": 1 },
+        "packageDependencies": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageId", "version"],
+            "properties": {
+              "packageId": { "type": "string", "minLength": 1 },
+              "version": { "type": "string", "minLength": 1 }
+            }
+          }
+        },
+        "stagingToken": { "type": "string", "minLength": 1 },
+        "expectedAssetPaths": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "planHash": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "planSchemaVersion": { "enum": ["0.3"] },
+        "planRef": { "type": "string", "minLength": 1 },
+        "snapshotId": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": [
+              "inspect_project",
+              "identify_assets",
+              "validate_avatar",
+              "analyze_performance",
+              "inspect_avatar_references",
+              "inspect_lighting",
+              "inspect_upload_readiness"
+            ]
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "dryRun": { "const": true }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": [
+              "inspect_avatar_references",
+              "inspect_lighting",
+              "inspect_upload_readiness"
+            ]
+          }
+        },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "required": ["avatarGlobalObjectId"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "validate_asset_paths" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "dryRun": { "const": true },
+          "payload": { "required": ["expectedAssetPaths"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "import_unity_package" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "required": ["sourcePackagePath", "sourcePackageSha256"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "materialize_extracted_package" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": { "required": ["sourcePackagePath", "sourcePackageSha256", "manifestSha256"] }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "create_local_vpm_package" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["packageId", "packageDisplayName", "packageVersion", "packageDependencies", "stagingToken"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "identify_assets" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["avatarGlobalObjectId", "outfitGlobalObjectId"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "install_outfit" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "avatarArmatureGlobalObjectId",
+              "outfitGlobalObjectId",
+              "outfitArmatureGlobalObjectId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "create_toggle" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "outfitGlobalObjectId",
+              "toggleName"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "validate_avatar" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": [
+              "avatarGlobalObjectId",
+              "outfitGlobalObjectId",
+              "outfitArmatureGlobalObjectId"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "analyze_performance" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["avatarGlobalObjectId"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": ["import_unity_package", "materialize_extracted_package", "create_local_vpm_package", "install_outfit", "create_toggle"]
+          },
+          "dryRun": { "const": false }
+        },
+        "required": ["operation", "dryRun"]
+      },
+      "then": {
+        "required": ["expectedProjectFingerprint"]
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "execute_production_job" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["planHash", "planSchemaVersion", "planRef"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "restore_project" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "required": ["snapshotId"]
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "operation": {
+            "enum": ["execute_production_job", "restore_project"]
+          },
+          "dryRun": { "const": false }
+        },
+        "required": ["operation", "dryRun"]
+      },
+      "then": {
+        "required": ["expectedProjectFingerprint"]
+      }
+    }
+  ]
+}
