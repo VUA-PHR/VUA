@@ -2484,7 +2484,9 @@ fn run_approved_plan_job(
         .with_param("detail", vua_orchestrator::ParamValue::Text(error.0))
     })?;
 
-    // Assemble the Bridge v2 command. payload.planHash carries the
+    // Assemble the Bridge v3 command (the unity-bridge production face
+    // migrated 2→3; the production fields are byte-identical).
+    // payload.planHash carries the
     // authorization hash (canonical, status-independent - the idempotency
     // key); the file hash travels with the file for the Bridge's local
     // verification.
@@ -2793,7 +2795,7 @@ fn run_approved_plan_job(
 
 /// `job.execute`: submits the APPROVED plan for orchestration. The tasked
 /// job re-verifies the plan hash and status, writes the plan file into the
-/// job directory, assembles the Bridge v2 `execute_production_job` command
+/// job directory, assembles the Bridge v3 `execute_production_job` command
 /// (fingerprint/lock prechecks per 009 stance 4), executes it through the
 /// Bridge, and transposes the receipt into a Build Record v0.3 document
 /// (jobs are the receipt-bearing ordered prefix of the plan's jobs).
