@@ -62,6 +62,8 @@ jobs:
       #                       production_use_case_vectors     (production-use-case v0.2)
       #                       project_ops_wire                (project-ops v0.1/v0.2 + 013 read face)
       #                       task_snapshot_wire              (application-contract v0.1 / proposal 020)
+      #                       editor_verify_wire              (editor-verify v0.1 DRAFT —
+      #                        run for drift protection only; draft state does not imply freeze)
       # - vua-unity-bridge:   material_intake                 (material-intake v0.1)
       #                       bridge_v2_vectors               (unity-bridge v2 frozen)
       #                       inspection_evidence_vectors     (inspection-evidence v0.1 DRAFT —
@@ -75,6 +77,6 @@ jobs:
       - name: vua-project-manager
         run: cargo test -p vua-project-manager --test environment_managers --test editor_verify_wire --test eac_probe --test eac_allowlist_verify --test eac_terminate --test import_copy --test project_inspection --test project_queries --test vua_identity
       - name: vua-provider-host
-        run: cargo test -p vua-provider-host --test m3_vectors --test provider_frame_handshake --test warehouse_commands --test catalog_queries --test production_use_case_vectors --test project_ops_wire --test task_snapshot_wire
+        run: cargo test -p vua-provider-host --test m3_vectors --test provider_frame_handshake --test warehouse_commands --test catalog_queries --test production_use_case_vectors --test project_ops_wire --test task_snapshot_wire --test editor_verify_wire
       - name: vua-unity-bridge
         run: cargo test -p vua-unity-bridge --test material_intake --test bridge_v2_vectors --test inspection_evidence_vectors

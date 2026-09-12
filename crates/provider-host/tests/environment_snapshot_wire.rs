@@ -76,6 +76,7 @@ fn run_snapshot(database: &Path, environment: Option<EnvironmentConfig>) -> Valu
         None,
         None,
         environment,
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
