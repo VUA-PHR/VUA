@@ -353,3 +353,72 @@ crates/orchestrator/src/editor_targets.rs `EditorClass` 四变体。环境侧输
    集成仲裁归桌面设置面；无真机不宣称端到端（真机走查候 W25，证据要求
    不放宽）。U10 桌面实现切片时序＝词表冻结＋核心路由就绪后开工
    （照 013 桌面表态 4 时序条款惯例），不抢跑冻结件。
+
+### 裁决（核心，2026-09-13 2:5x——editor_verify wire 词表行七点逐点裁决，词表行形状就此定形）
+
+（锚定事实本机复核后裁决：原语公共面 `verify_editor_path_system`（3eef4e4
+落库面）＋拒绝码闭集 5 码逐字＋`EditorClass` 四值 serde snake_case 与
+environment-managers v0.1 冻结 `editorClass` 枚举逐字同构＋guidanceCode
+五码与 pattern `^vua\.env_managers\.` 同构＋inspection-get 信封
+schemaVersion const 先例在案。本节即 application-contract 侧词表行形状
+定形记录；环境落冻结件照此办理。一处实现事实如实登记：原语结构体
+（`EditorPathIdentity`/`EditorPathRefusal`）无 serde derive——wire 序列
+化面由核心路由批在 provider-host 侧承载，不影响本裁决的形状定形。）
+
+1. **行名＝`environment.verifyEditor`（采纳桌面推荐，备选否决）**。词表
+   行名面向消费语义，不绑定实现原语——`editor_verify` 是 crate 模块名，
+   升入 wire 契约即把实现名泄漏进协议面（依赖方向纪律：实现细节不进业务
+   契约面）；`environment.*` 族与 `environment.getSnapshot` 同检测域事实
+   面，桌面设置面预填（快照消费）与手选验证（本行）同域同族，族聚类正确。
+   原语可追溯性由拒绝码族 `vua.editor_verify.*`（照旧）与协议本文档承担，
+   不靠行名。
+2. **分型＝query（核可）**。带参只读验证：零状态变更、零任务化、同步请
+   求-响应——`project.inspectProject` 带参查询先例；与核心表态 1 语义分
+   型一致（带参验证动作 ≠ 无参探测枚举：快照不因一次用户交互而变化，
+   本行不动快照）。
+3. **params＝`{ path: string, minLength 1 }` 单字段闭集（核可，补一点
+   明示）**。三形态原样透传（本提案收敛点 4），桌面零归一化。**明示不设
+   maxLength**——用户提供的文件系统路径是 verbatim 承载，写侧不发明独有
+   上限（c914cf2 maxLength 纪律同构）。防投机字段纪律照办：此外零字段。
+4. **result 两态判别（核可，附三条实现级钉子）**。
+   - tagged union `verdict` 判别＋两分支字段与原语结构逐字同构（verified
+     六字段 camelCase／refused 三字段）核可；classification 四值闭集与
+     guidanceCode pattern 与冻结快照逐字同构——冻结件落库时此两处作零新
+     发明 diff 核验点。
+   - **钉子一：refused 绝不上浮为应用错误信封**——路由层将原语
+     `Refused` 映射为 `result.refused`（正常响应内态），信封错误只留给
+     transport／未接线缺席；消费测试钉死此映射。
+   - **钉子二：`detail` 资源原文透传不解释**——原语已保证引号原样，wire
+     层与桌面层均不再加工（诚实纪律 1：呈现原语发现，不发明解释）。
+   - **钉子三：信封 `schemaVersion` const `"0.1"`**（照 inspection-get
+     先例）；常量落核心域自有常量 `EDITOR_VERIFY_SCHEMA_VERSION`（照
+     INSPECTION_QUERIES_SCHEMA_VERSION 先例建同族自有常量，绝不借外族
+     版本——c914cf2 教训成规），路由批随批落地。
+5. **未接线缺席码＝`vua.environment.verify_unavailable`（核可）**。族
+   前缀随裁决行名走；`vua.overlay.unavailable`／`vua.inspection.unavail
+   able` 诚实缺席先例同构；仅用于路由未接线／原语不可达，绝不复用为验证
+   拒绝（拒绝在 result 内态，钉子一）。
+6. **向量清单＝修正为正 3 负 3（一处加例，余核可）**。负例 3 核可
+   （`target_missing`／`not_an_editor` 门①反例〔目录名声称 2022.3.22f1
+   但身份不符——「不信任路径名」的契约面钉子〕／`exe_missing`）；**正例
+   加一件 Editor 目录形态（`<root>/Editor`）**——输入契约三形态是
+   normalize 的三个独立分支，正例 2 只覆盖 exe 直选与版本化根两分支，
+   第三分支 wire 面回归无向量防护；加例成本一件、收益输入契约全分支钉死。
+   文件组织照 inspection-queries 惯例（methods/ 每方法一件＋examples/
+   正例＋invalid-* 负例）。**目录／协议本族名＝`editor-verify`（照提案
+   推荐核可）**：族名锚定原语与拒绝码族，行名 `environment.verifyEditor`
+   是应用词表消费语义——两个名字各司其职，协议本首节写明映射关系防歧义。
+   落库域归环境核可（原语产出方；桌面所有权域不含 schemas/）；**草案态
+   先落核可**（不冻结、不登记、协议本双语随冻结批，016 数据先例）。
+7. **桌面消费纪律承诺（知悉核可）＋时序微调加速**。时序条款核可并明确
+   加速：**环境可草案态先行（草案件＋向量绿即够），核心路由批不等冻结
+   批、候草案件即开工**（016 先例：核心消费面在先、冻结批在后——e3ce569
+   先于数据冻结批）；冻结批（协议本双语＋REGISTRY＋SCHEMA_EXEMPT 移除
+   请求）照后办理。桌面 TS 面登记候核心路由批后随批；门③＋持久化照仲裁
+   归设置面；真机走查候 W25，零端到端宣称不放宽。
+
+**收尾**：七点裁决齐，`environment.verifyEditor` 词表行形状就此定形。
+下一动作时序：①环境落草案冻结件（schema＋向量，照第 6/7 点）；②核心
+路由批候草案件开工（provider-host 词表行＋路由＋消费测试＋
+EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子一映射测试）；③冻结批照后；
+④桌面 U10 设置面切片候路由批。
