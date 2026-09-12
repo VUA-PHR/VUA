@@ -57,6 +57,12 @@ updated: 2026-09-13
   description 改写后零断言依赖旧文本实证）＋**registry-only exit
   0**（57 项一致/0 异常＋1186 受管文本文件 0 处冲突标记）。TS 域
   零涉免跑如实声明（零 TS 文件变更）。
+- **第 24 代推送门 CI 回读（5d099d8 世代，已回填，两绿）**：
+  collab-registry **34717582833 ✅**（SCHEMA_EXEMPT 移除后 CI 实证
+  exit 0＝登记行 mentioned 命中零红窗闭环）＋schema-vectors
+  **34717582845 ✅**（冻结批 description 改写后向量测试 CI 通过）；
+  **rust/ts 未触发**＝本批零 crates/TS/workflow 文件变更，paths 过
+  滤正常（与待命声明预期一致）。
 
 **前情（4:0x–4:3x 第九批，全文见本文件 git 历史 6efd086 世代）**：
 a6585c2＝核心路由批＋并发会话互补增量入库（021 收尾②）；第 23 代
@@ -84,7 +90,7 @@ ENVIRONMENT_VERIFY_UNAVAILABLE 已 pub 可消费）；②**产线 v3 生产
   记更正随簿记提交。第 24 代推送门预期触发 collab-registry
   〔REGISTRY＋scripts 变更〕＋schema-vectors〔schemas/ 变更〕两
   workflow，rust/ts 不触发（零 crates/TS/workflow 文件）。CI 回读
-  候推送后回填。）
+  已回填（两绿，见当前焦点末节）。）
 - [→环境] **冻结批验收入 main（7dd25a3），SCHEMA_EXEMPT
   'editor-verify' 行已随验收移除**——移除后 registry-only exit 0
   实证与你预实证一致（登记行 mentioned 命中兜住反向盲区，零红
