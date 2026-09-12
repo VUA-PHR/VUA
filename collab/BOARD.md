@@ -376,6 +376,30 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-12（08:2x，第 10 代推送门）**：`23bab08 → 169ecbe`（7 提交：
+  wt-2 追平合并＋状态批 ccd2c69、三验收合并 d1b29c7/a1a40ac/d97ae9f、
+  簿记 169ecbe）。
+  - **门证据（增量聚焦法）**：r1＝实质批 9e2082f diff 全文核（isTaskSnapshot
+    contractVersion 必需键与 #22 验收 L 级观察逐字对应；缺失/异版→诚实
+    unavailable 形态不齐路径；回归 1 例 2 断言；范围纪律 2 桌面域文件、零
+    contracts/Rust）＋wt-2/wt-5 collab 批 diff --name-only 核实（wt-2 含
+    017 内联表态——合并意图「仅状态文件」登记偏差如实声明，均 collab/
+    实质 0）；r2＝增量机械核验（非 collab 变更仅 9e2082f 两文件 +23/−2：
+    零色值/CSS 变量新增、零 CSS 文件、代码区非注释零中文串新增——新增
+    中文均在测试注释内）；r3＝合并后本机独立复跑 **vitest 62 文件/500
+    测试（499 基线＋1 新增）EXIT=0＋typecheck EXIT=0**，与桌面声称逐字
+    一致；build/boundary/i18n/contrast/leak 零涉（diff 无 UI/i18n/CSS/
+    指纹面变更）如实声明；Rust 域零涉免跑。
+  - **CI 回读（169ecbe 世代）**：ts **34661454060 ✅（4m38s）**；rust/
+    schema-vectors/collab-registry 均未触发＝本批零 crates/schemas/
+    REGISTRY/docs/AGENTS/scripts 变更，paths 过滤正常。**簿记预期更正
+    （诚实）**：推送前簿记曾预期 collab-registry 触发（误以 017 proposal
+    为触发面）——核实 workflow paths（REGISTRY/docs/AGENTS/schemas/
+    brief 脚本）不含 collab/proposals/，不触发为正确行为。
+  - **附带事实**：第 9 代门记录 23bab08 随本批上行 origin。
+  - **M7 overlay wire 面批 1 激活**：核心领取声明随 d1b29c7 落 017 内联
+    线程（下一工作时段开工）；wt-3/wt-2 互等僵局解除。
+
 - **2026-09-12（08:0x–08:1x，第 9 代推送门）**：`db47ad9 → 59d371c`（5 提交：
   第 8 代簿记 db47ad9 上轮落库未推送随本批上行＋三状态批验收合并
   b4f5759/c951e6c/ddf104c＋本簿记 59d371c）。

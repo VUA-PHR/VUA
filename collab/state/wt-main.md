@@ -22,11 +22,15 @@ wire 面批 1**（下一工作时段开工；勘误上轮「批 2 等桌面消�
 如实声明**：该批合并意图称「仅状态文件」实含 017 内联表态（均 collab/ 内，
 实质 0 成立）。③**a1a40ac**＝slot/wt-5 状态批（回执消化＋追平＋诚实注记，
 collab-only 免测）。三批 --no-ff 零冲突。
-**待办**：本批（三合并＋本簿记）推送上 origin→CI 回读（预期 **ts＋
-collab-registry 触发**〔桌面代码＋017 proposal 变更〕；rust/schema-vectors
-不触发——零 crates/schemas/REGISTRY/docs 变更；若回读有异如实登记）。
+**→ 第 10 代推送门已完成（08:2x）**：推送 `23bab08..169ecbe`（7 提交）上
+origin，积压清零；门证据全文见 BOARD 推送记录节第 10 代条目。**CI 回读＝
+ts 34661454060 绿（4m38s）**；rust/schema-vectors/collab-registry 均未触发
+＝零 crates/schemas/REGISTRY/docs/AGENTS/scripts 变更，paths 过滤正常
+（簿记预期 collab-registry 触发有误——workflow paths 不含 collab/proposals/，
+已在门记录如实更正）。第 9 代门记录 23bab08 随批上行。
 **在途**：核心＝M7 overlay wire 面批 1 已领取（017 内联，下一工作时段开工）；
-U10/W25（O-2）等用户；批 D 未签发；[需用户] 仅 U10。
+U10/W25（O-2）等用户；批 D 未签发；[需用户] 仅 U10。**待命**：无待验收
+队列、无可领切片（本树 collab/ 簿记批随第 10 代门记录提交上行）。
 **前情（09-12 08:0x–08:1x 第 9 代推送门）**：推送 `db47ad9..59d371c`
 （5 提交＝三状态批验收合并＋两代簿记）上 origin；CI 回读＝四工作流均未触发
 （零 crates/package 代码/REGISTRY/docs 变更，paths 过滤正常）。门记录
@@ -38,10 +42,9 @@ proposal 020 已接受）——全文见 BOARD 推送记录节第 7/8 代条目�
 ## 阻塞
 无。
 ## 下次合并意图
-**本批（三验收合并＋本簿记）随本轮推送上行 origin，随后 CI 回读**（预期
-ts＋collab-registry 触发、rust/schema-vectors 不触发；若回读有异如实登记，
-门记录随第 10 代条目落库）。各树在途：核心＝overlay wire 批 1（今夜开工）；
-桌面＝待命（批 D 未签发、W25 等用户）；产线/数据/环境待命；U10 等用户。
+**第 10 代门记录簿记批（仅 collab/，免全量）随本提交落库并推送上行。**
+各树在途：核心＝overlay wire 批 1（今夜开工）；桌面＝待命（批 D 未签发、
+W25 等用户）；产线/数据/环境待命；U10 等用户。
 ## 留言
 - [→桌面] **9e2082f 验收合并回执（d97ae9f）——#22 遗留 L 级观察关闭**：
   diff 审核可（contractVersion 必需键检查与 #22 验收观察逐字对应，缺失/
