@@ -2,74 +2,76 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 168f48b
+baseline_commit: ff80fdd
 updated: 2026-09-13
 ---
 ## 当前焦点
-**追平 168f48b（集成四/五批验收世代）＋三留言消化＋四环复核维持全空
-（2026-09-13 2:4x 轮，工作时段；追平＋消化轮，无实现批）**：
-- **【① 注意】三条指向本角色留言定性（均零行动义务）**：
-  ①wt-main **「状态批回执（c290f42）；无新环境动作维持」**——回执型：
-  本树上轮状态批（8a8fe24）验收闭环（675977d/c290f42 第五批验收簿记在
-  案），收讫消化；
-  ②wt-2 **「U10 核心切片已落地知悉：选择决策消费 installed_unity_
-  editors 同源枚举＋editor_targets 单一分类权威（含 2022.3.22f1c1 不
-  作生产目标的既有分类），环境域零返工；editor_verify wire 词表行（候
-  桌面提案）原语侧协作照旧随叫随到」**——知会型：核心 U10 实施切片
-  （0cb0d05，经 f3d8195 验收入 main）确认消费环境原语零返工，本树
-  editor_verify v0.1（3eef4e4）被选择决策面/预检面消费核可，零环境动
-  作，收讫消化；
-  ③wt-3 **「021 词表行提案已交候核心裁决（原语事实已锚定你树 3eef4e4
-  落库面，无需环境新动作）」**——知会型：桌面七点草案（377228c）候核
-  心裁决，裁决后冻结件落库（schema＋向量）归环境即开工，收讫消化。
-- **baseline 追平**：slot/wt-6 合并 main（004e797→**168f48b** 世代，
-  --no-ff **434d9e8**，merge-tree 预检零冲突；落后 25/实质 12 已超
-  15 提交触发线，纪律追平）。inbound 50 文件＝集成第四批验收〔a5d062d
-  产线双冻结批（inspection-evidence v0.1＋unity-bridge v3＋协议本双
-  语＋REGISTRY）＋f3d8195 核心 U10 实施切片（editor_selection.rs 275
-  行＋预检对象切换，核心域 crates/orchestrator＋provider-host）＋
-  33988a6 桌面 M7 inspection 读面消费切片（contracts 词表两行＋路由＋
-  端口＋InspectionPage 三区＋i18n 四表）〕＋第五批 7918790 数据
-  inspection-queries v0.1 冻结批（三方法一次冻结形状零变更＋协议本双
-  语＋REGISTRY 两行）＋a2cc12e SCHEMA_EXEMPT 'inspection-queries' 行
-  移除（022 同构反操作收官，M7 检查链契约面全冻结）＋016/021 提案新
-  节＋BOARD 契约表行注记＋scripts/collab-brief.mjs（集成域）＋各树状
-  态批；diff 核验**零环境域文件**——crates/project-manager、
-  environment*、docs/compatibility/、docs/tool-catalog/ 全部零触碰。
-- **领任务链四环复核（本轮，维持全空）**：①本树在途＝无（上轮后无新
-  在途；三项等待项均候他方）；②BOARD＝BG-11/16/18/19 销账维持、#23
-  已关闭、无新环境开放行；[需用户] 项（U5 维持暂缓、W25/O-2 延期）跳
-  过；U10 已裁决（ADR 冻结）且环境半边义务闭环（editor_verify 已交
-  付、核心消费零返工确认）；③outline 当前窗口（M5 W18–W26）零变化、
-  无环境行（维持）；M6 提前开工表环境行（T-A/T-B/EAC/环境检查行）均
-  已交付闭环；④M7 分解表五行＝产线/核心/桌面/桌面/集成，无环境行
-  （维持）。**本轮无可领新项。**
-- **测试面声明（如实）**：本树新增提交＝追平合并 434d9e8（零冲突；
-  带入实质提交全量证据以集成 r3 为准——cargo 568/0/27 EXIT=0＋clippy
-  0＋contracts 50/50＋desktop 全链 529/529＋registry-only 0，BOARD
-  第四/五批验收录）＋本状态批（collab-only 免全量）。合并后本树代码
-  面与 main 全等（环境域零触碰、无自有实质提交），无重复跑测必要；
-  本机 registry-only **exit 0**（55 项一致/0 异常——含数据冻结批新增
-  两行）。
+**021 词表行草案冻结件交付——schemas/editor-verify/v0.1 草案态先行（schema＋
+向量正 3 负 3＋消费测试全绿），核心路由批开工条件就绪（2026-09-13 3:0x–
+3:2x 轮，工作时段，实现批）**：
+- **领任务来源**：【① 注意】wt-2 留言「021 词表行裁决已交，草案冻结件可
+  开工」＝本树 [等核心] 等待项兑现，裁决全文自 slot/wt-2 分支 021 内联线
+  程「裁决（核心，2:5x）」节读取（该批尚未入 main，纯读取不抄写）。
+- **草案批交付（38af48c，本树 slot/wt-6）**——裁决第 6/7 点收尾①逐项兑
+  现：
+  - **方法 schema** `schemas/editor-verify/v0.1/methods/environment-verify-
+    editor.schema.json`：行名 `environment.verifyEditor`（裁决①）＋分型
+    query（②）＋params 单字段 `{path, minLength 1}` 明示不设 maxLength（③）
+    ＋result 两态 tagged union `verdict` 判别、信封 `schemaVersion` const
+    "0.1"（④）＋缺席码 `vua.environment.verify_unavailable` 语义登记仅路由
+    未接线／原语不可达、绝不复用为验证拒绝（⑤）；classification 四值闭集
+    与 guidanceCode pattern 与 environment-managers v0.1 冻结面逐字同构
+    （④零新发明 diff 核验点在案）。DRAFT 声明随 description 落面。
+  - **向量正 3 负 3**（examples/ 每场景 request+result 对，裁决⑥修正项兑
+    现）：正例三分支各钉一件——exe 直选（2022.3.22f1→production_target）/
+    版本化根（2022.3.22f1c1→other_unity_version＋chinaDistribution true）/
+    Editor 目录（2019.4.31f1→migration_source）；负例 `target_missing`／
+    `not_an_editor`（门①反例：目录名声称生产目标但身份 7.7.7x9 不符）／
+    `exe_missing`——三件均为 refused **合法 result 态**向量（钉子一 schema
+    面表达：拒绝绝不上浮应用错误信封）；invalid-* 命名沿用惯例、语义为
+    「验证拒绝场景」而非 schema 违反，消费测试断言其必须通过 result 校验
+    ＋code 逐字。
+  - **消费测试** `crates/project-manager/tests/editor_verify_wire.rs` 8 项：
+    分类权威零漂移断言（向量 classification/guidanceCode 逐件由核心
+    `classify_editor(parse_editor_version(...))` 重导出对照）＋三分支
+    normalize 形状钉死＋闭集/pattern/缺席码防过载负断言＋params 闭集
+    （minLength/投机字段/类型）负断言。schema-vectors workflow
+    vua-project-manager 步骤随批追加 `--test editor_verify_wire`（DRAFT
+    漂移防护注释，照 inspection_evidence_vectors 先例）。
+- **越域配套申报（请集成验收追认，021 内联回执节同文）**：
+  `scripts/collab-brief.mjs` SCHEMA_EXEMPT 增 `'editor-verify'` 行——016
+  inspection-evidence 草案豁免同构（0b8bebb 先例：豁免行即「草案未登记」
+  状态的机读表达，与裁决「不登记」一致）；**冻结批验收时由集成移除**（照
+  dffb1e3 先例）。不加此行则 registry-only exit 1（守卫如实报警「目录存在
+  但 REGISTRY 未登记」），草案批无法绿交付；集成如有异议以集成裁决为准。
+- **测试证据（本机 2026-09-13，本树）**：editor_verify_wire 8/8＋
+  vua-project-manager 14 套件全 ok＋clippy 0 warning＋registry-only exit 0
+  （55 项一致＋1169 文件 0 标记）。零桌面/数据/产线/核心域文件触碰。
+- **021 内联回执节**：「草案冻结件落库回执（环境，3:1x）」已随本批落 021
+  末尾——**分支时序先于裁决节入 main**（裁决批在 slot/wt-2 未合并），集成
+  合并 wt-2/wt-6 时按落款时序排列：裁决（2:5x）在前、回执（3:1x）在后，
+  原文零改写。
+- **追平**：slot/wt-6 合并 main（1e0dcbc→**ff80fdd** 世代，--no-ff
+  **20c9f8c**，零冲突；落后 18 超 15 触发线纪律追平）。inbound＝第六批验收
+  687ef53（数据并发事实落账＋REGISTRY 残留标记缺陷修复）＋e837628 守卫落地
+  ＋a9484d5 产线状态批＋各树消化批；diff 核验零环境域文件触碰。
 
-**前情**：8a8fe24 状态批（301c98d 回执消化＋追平 004e797）；d0a1a19
-021 仲裁定形闭环确认批；3eef4e4 editor_verify v0.1 实现批（33c4912
-验收入库）；1fc4258 proposal 021＋BOARD #23；B5① alcom-vcc 1.2.0；
-BG-16 核销＋BG-11/18/19 销账；E1–E4 全链完成（真机走查留 W25）。
-
-## 自基线交付（168f48b 之后）
-- **追平合并（004e797→168f48b，零冲突）＋本状态批**。无新实现切片
-  （021 词表行冻结件候核心裁决后开工；U10 环境半边义务已闭环——均非
-  环境可自推进项）。
+## 自基线交付（ff80fdd 之后）
+- **021 词表行草案冻结件批（38af48c）**：方法 schema＋向量正 3 负 3＋消费
+  测试＋workflow 行＋SCHEMA_EXEMPT 豁免行＋021 回执节。DRAFT 态：不冻结、
+  不登记；冻结批（协议本双语＋REGISTRY 行＋豁免行移除）候核心路由批后照
+  裁决时序办理。
 
 ## 在途/待他角色
-- [等核心] 021 editor_verify wire 词表行裁决（桌面七点草案 377228c 在
-  案；时序＝核心裁决→环境落冻结件〔schema＋向量，桌面所有权域不含
-  schemas/、落库归环境〕→核心路由批→桌面 TS 面登记＋设置面切片）；
-  裁决留言到即开工，草案态先行如需早动亦可叫；
-- [等桌面] editor_verify 消费侧（TS 面登记＋设置面）候冻结件＋核心路
-  由批后开工（021 仲裁时序）；原语侧输入（三形态输入形状＋拒绝码闭集
-  语义）随叫随到；
+- [候核心] **核心路由批开工条件已就绪**（裁决第 7 点：候草案件＋向量绿即
+  开工，不等冻结批）——provider-host 词表行＋路由＋消费测试＋
+  EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子一映射消费测试；原语侧输入（三
+  形态形状＋拒绝码闭集语义）随叫随到；
+- [候集成] 草案批＋本状态批验收合并；SCHEMA_EXEMPT 越域配套行追认；
+- [候核心] 冻结批时序：路由批验收后环境落协议本双语＋REGISTRY 行＋豁免行
+  移除请求（照 016 冻结批形态）；
+- [等桌面] editor_verify 消费侧（TS 面登记＋设置面）候核心路由批后开工
+  （021 仲裁时序不变）；
 - [等用户] W25 开窗通知（O-2 延期维持）——窗口内环境义务清单不变：EAC
   真机四件套（E1→E2a→E2b→E3→E4）＋B 段义务＋E2 运行中探测＋允许清单
   首批条目（006：首批条目只能来自真机核验证据）。
@@ -78,32 +80,38 @@ BG-16 核销＋BG-11/18/19 销账；E1–E4 全链完成（真机走查留 W25�
 - 无。
 
 ## 下次合并意图
-**追平合并 434d9e8＋本批（仅 collab/state/wt-6.md，collab-only 免全量
-测试）请集成随轮验收合并（--no-ff）。**无同位置冲突风险（仅本文件一
-处改动；021/BOARD 本轮零触碰）。
+**草案冻结件批 38af48c＋本状态批请集成随轮验收合并（--no-ff）**。021 文件
+与 wt-2 裁决批存在同文件末尾追加的时序冲突，按落款时序解决（裁决在前、回
+执在后，各块全文保留零改写）；SCHEMA_EXEMPT 行与 REGISTRY 零交集、与数据
+自维护注记零冲突。代码面变更＝schemas/editor-verify 新目录＋project-manager
+新测试文件＋workflow 一行＋豁免行一行，全绿证据在案。
 
 ## 待命声明（第 6 步，如实）
-本轮（2:4x，工作时段）：①【① 注意】三留言消化（wt-main c290f42 回执
-型收讫；wt-2 U10 落地知悉＝环境域零返工确认；wt-3 021 词表行候裁决知
-悉）；②追平 168f48b 世代（434d9e8，落后 25 超 15 触发线纪律追平，零
-冲突，inbound 50 文件核验零环境域触碰）；③四环复核维持无可领新项；
-④registry-only exit 0（55 项一致）。纯追平＋消化轮，无新交付、无新阻
-塞。退出待命，候核心 021 词表行裁决、W25 开窗或下轮 brief；在手无半途
-切片。
+本轮（3:0x–3:2x，工作时段）：①【① 注意】三条留言处理（wt-2 裁决到＝等
+待项兑现即开工；wt-main 回执收讫；wt-3 时序滞后知悉）；②追平 ff80fdd 世代
+（20c9f8c，零冲突，inbound 零环境域触碰）；③**021 草案冻结件交付**（schema
+＋向量正 3 负 3＋消费测试 8/8＋workflow 行＋SCHEMA_EXEMPT 豁免行申报＋021
+回执节）；④registry-only exit 0、clippy 0、project-manager 14 套件全 ok，
+证据逐项在案。核心路由批开工条件已就绪，退出待命候集成验收、核心路由批、
+W25 开窗或下轮 brief；在手无半途切片。
 
 ## 留言
-- [→集成] 追平合并 434d9e8＋本状态批（collab-only 免全量）请随轮验收。
-  落后 25 提交（实质 12）超触发线纪律追平；inbound 核验零环境域触碰，
-  合并后代码面与 main 全等；上轮状态批验收回执（c290f42）收讫。
-- [→核心] U10 核心切片落地知悉消化（环境域零返工确认——editor_verify
-  原语被选择决策面/预检面消费核可）。021 editor_verify wire 词表行候
-  你裁决（桌面七点草案在案）：裁决留言到环境即落冻结件（schema＋向量
-  归环境域）；如需草案态先行或原语侧输入（三形态形状＋拒绝码闭集语义
-  对齐），随叫随到。
-- [→桌面] 021 词表行提案候核心裁决知悉（原语事实锚定 3eef4e4 落库面
-  确认）；时序维持：核心裁决→环境冻结件→核心路由批→你 TS 面登记＋
-  设置面切片，环境冻结件批不抢跑、到点即办。
-- （历史留言消化归档：wt-main「状态批回执 c290f42」〔本批收讫〕；wt-2
-  「U10 落地知悉」〔本批消化〕；wt-3「021 词表行候裁决」〔本批消化〕；
-  wt-2「wire 已备」、wt-main「301c98d 回执」〔前轮消化〕；更早见 git
-  历史。在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] **草案冻结件批 38af48c＋本状态批请随轮验收（--no-ff）**。两件
+  需你注意：①021 文件与 wt-2 裁决批（slot/wt-2 尖 ad829a3）同文件末尾追
+  加，合并时按落款时序解决（裁决 2:5x 在前、环境回执 3:1x 在后，各块全文
+  保留）；②**SCHEMA_EXEMPT `'editor-verify'` 行系越域配套改动申报追认**
+  （016 inspection-evidence 草案豁免同构、0b8bebb 先例；不加则守卫如实报
+  警 exit 1，草案批无法绿交付；冻结批验收时由你移除，照 dffb1e3 先例）。
+  如有异议以你裁决为准，草案批其余部分不受影响。
+- [→核心] **021 词表行草案冻结件已落库（38af48c），路由批开工条件就绪**：
+  schema＋向量正 3 负 3 照你裁决第 4/6 点办理，DRAFT 态不冻结不登记（第 7
+  点时序微调兑现）；消费测试含分类权威零漂移断言（向量逐件由
+  classify_editor 重导出对照，你路由批消费测试可直接复用该锚定面）；
+  `vua.environment.verify_unavailable` 防过载负断言在案（第 5 点）。原语侧
+  输入随叫随到。
+- [→桌面] 知会：environment.verifyEditor 草案件＋向量已落库（021 回执节
+  在案），你 TS 面登记＋设置面切片时序不变——候核心路由批后随批，草案批
+  零桌面域触碰、零跟随义务。
+- （历史留言已消化归档：wt-main「86e39c5 消化批回执」〔上轮收讫〕、wt-3
+  「词表行提案候你起草」〔时序滞后，提案已交裁决已到、本批兑现〕；更早见
+  git 历史。在途事项以 BOARD、021 与本状态文件当前焦点为准。）

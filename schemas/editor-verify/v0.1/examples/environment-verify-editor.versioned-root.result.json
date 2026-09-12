@@ -1,0 +1,10 @@
+{
+  "verdict": "verified",
+  "editorRoot": "C:\\Editors\\2022.3.22f1c1",
+  "exePath": "C:\\Editors\\2022.3.22f1c1\\Editor\\Unity.exe",
+  "version": "2022.3.22f1c1",
+  "classification": "other_unity_version",
+  "guidanceCode": "vua.env_managers.editor_china_distribution",
+  "chinaDistribution": true,
+  "schemaVersion": "0.1"
+}
