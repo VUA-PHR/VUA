@@ -3,7 +3,24 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-12 集成 **三批验收合并（#22 遗留 L 级观察关闭＋M7 overlay
+最近更新：2026-09-12 08:3x（收尾时段）集成 **三状态批验收合并＋M7 检查链
+产线锚点激活**：①**909b132**＝slot/wt-3 状态批（overlay 桌面域内先行
+切片领取——窗口创建/置顶/显隐＋正式入口形态，wire 词表不预接，23:00
+开工）；②**b01246e**＝slot/wt-4 **016 内联产线锚点领取表态＋状态批**
+——产线领取 M7 检查切片锚点（016 §7 硬前置① Bridge 五维产出操作；领取
+即语义权威〔016 仲裁第 5 点〕，**核心冻结仍以 Bridge 五维落地并验收为
+准，领取≠冻结**）；合并瞬间 wt-4 追加提交 4d346f8 已随合并尖带入无遗漏
+（如实登记）；③**3126132**＝slot/wt-6 状态批（追平＋#22 闭环确认＋B4
+落地核实）。三批 --no-ff 零冲突，全 collab-only 免全量。**无合并动作
+（如实）**：slot/wt-2 f1ca4cd 树内容与 main 零差异（017 表态已随
+d1b29c7 入 main）；slot/wt-5 领先 0（a1a40ac 上轮已合并）。〔并发更正〕
+该两项系 08:31 检查时点裁定；其后 wt-2 新批 08e17d0／wt-5 新批 44cf3fa
+已由**并发集成会话**随 e8e091e／07782a5 合并入 main（均 collab-only 单
+状态文件，零覆盖冲突已核实，对方已推 origin）——两树最终以该两合并为准。
+**M7 现状**：
+产线锚点／核心 overlay wire 批 1／桌面域内先行切片三树今晚 23:00 各自
+开工互不阻塞；M7 读面（inspection-queries）候产线 Bridge 五维落地。
+前录 2026-09-12 集成 **三批验收合并（#22 遗留 L 级观察关闭＋M7 overlay
 wire 批 1 激活）**：①**d97ae9f**＝slot/wt-3 桌面 **9e2082f L 级观察随手批
 验收合并**——project-ops-port isTaskSnapshot 补 `contractVersion ===
 APPLICATION_CONTRACT_VERSION` 必需键（缺失/异版＝不可信快照→既有诚实
@@ -375,6 +392,30 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 | production-use-case | v0.1 | **已冻结（M3 验收，2026-09-07）**——四项前置交付核实（T1 Schema/向量、双端契约测试、I-1 真机 16/16）。**v0.2 已冻结（2026-09-09，核心，集成验收复跑 428/0）**——24 向量＋向量驱动消费测试完成冻结硬前置（**W25 前置①凭证落地**）：十方法 Schema＋桌面 TS 面＋双语协议本＋全路由（recipe save/get/list＋resolve＋plan.approve/get/list＋**job.execute approved-plan 编排〔closing cut〕**＋record.get） |
 
 ## origin 推送记录
+
+- **2026-09-12（08:2x，第 10 代推送门）**：`23bab08 → 169ecbe`（7 提交：
+  wt-2 追平合并＋状态批 ccd2c69、三验收合并 d1b29c7/a1a40ac/d97ae9f、
+  簿记 169ecbe）。
+  - **门证据（增量聚焦法）**：r1＝实质批 9e2082f diff 全文核（isTaskSnapshot
+    contractVersion 必需键与 #22 验收 L 级观察逐字对应；缺失/异版→诚实
+    unavailable 形态不齐路径；回归 1 例 2 断言；范围纪律 2 桌面域文件、零
+    contracts/Rust）＋wt-2/wt-5 collab 批 diff --name-only 核实（wt-2 含
+    017 内联表态——合并意图「仅状态文件」登记偏差如实声明，均 collab/
+    实质 0）；r2＝增量机械核验（非 collab 变更仅 9e2082f 两文件 +23/−2：
+    零色值/CSS 变量新增、零 CSS 文件、代码区非注释零中文串新增——新增
+    中文均在测试注释内）；r3＝合并后本机独立复跑 **vitest 62 文件/500
+    测试（499 基线＋1 新增）EXIT=0＋typecheck EXIT=0**，与桌面声称逐字
+    一致；build/boundary/i18n/contrast/leak 零涉（diff 无 UI/i18n/CSS/
+    指纹面变更）如实声明；Rust 域零涉免跑。
+  - **CI 回读（169ecbe 世代）**：ts **34661454060 ✅（4m38s）**；rust/
+    schema-vectors/collab-registry 均未触发＝本批零 crates/schemas/
+    REGISTRY/docs/AGENTS/scripts 变更，paths 过滤正常。**簿记预期更正
+    （诚实）**：推送前簿记曾预期 collab-registry 触发（误以 017 proposal
+    为触发面）——核实 workflow paths（REGISTRY/docs/AGENTS/schemas/
+    brief 脚本）不含 collab/proposals/，不触发为正确行为。
+  - **附带事实**：第 9 代门记录 23bab08 随本批上行 origin。
+  - **M7 overlay wire 面批 1 激活**：核心领取声明随 d1b29c7 落 017 内联
+    线程（下一工作时段开工）；wt-3/wt-2 互等僵局解除。
 
 - **2026-09-12（08:0x–08:1x，第 9 代推送门）**：`db47ad9 → 59d371c`（5 提交：
   第 8 代簿记 db47ad9 上轮落库未推送随本批上行＋三状态批验收合并
