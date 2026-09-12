@@ -194,6 +194,19 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           capturedAt: this.#now(),
           items: [],
         });
+      case "overlay.getSnapshot":
+        // 017 overlay 读面批 1:模拟 Provider 未接线 overlay 生产读面,
+        // 诚实不可用(与真实 provider-host 未接线行为同形:code/category/
+        // messageKey 三元一致;冻结语义"绝不以空快照伪装"。桌面消费测试
+        // 由 DEV fixture 数据驱动,不经此分支)。
+        return this.#failure(request, this.#error(
+          "vua.overlay.unavailable",
+          "unavailable",
+          "errors.overlay.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
       case "task.startDemo":
         return this.#startDemoTask(request);
       case "production.startInspection":

@@ -2,110 +2,124 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 7d63abe
+baseline_commit: f209182
 updated: 2026-09-13
 ---
 ## 当前焦点
-**五笔验收合并：overlay wire 批 1 冻结入库＋U10 环境半边原语＋M7 锚点 Bridge v3
-落地（09-13 0:4x 轮，工作时段）**：
-①**1d3509b**＝slot/wt-2 核心 **713329f overlay wire 面批 1 验收合并并冻结**
-（017 批 1 内联领取兑现）——`overlay.getSnapshot` 按需轮询读面：orchestrator
-`production_card()` 投影（createdAt/finishedAt 字典序最大＝「当前/最近」语义
-权威侧定义；两半独立可空；读失败类型化绝不折叠；纯函数零查询时刻/零
-revision，6 单元测试）＋provider-host wire（params 闭集空；生产读面未接线＝
-`vua.overlay.unavailable` 诚实缺席；`overlay.snapshot` capability 行；5 帧环
-测试）＋`overlay-snapshot.schema.json`＋六向量（3 正 3 负）＋TS 面六类型＋守
-卫＋4 消费测试（**42/42**）＋协议本双语「Overlay 读面语义」节＋修订记录＋
-REGISTRY 行更新＋017 批 1 冻结声明追加。**验收证据**：r1＝18 文件 +1042/−14
-diff 全文核（零桌面应用/零 unity-bridge/零 bdl；TS 面随冻结批核心登记照
-#22/020 先例；`task_snapshot_wire` 扫描收窄为 task-snapshot 前缀＝既有六向量
-命名全前缀命中、断言不变，显式化核可）；r2＝代码文件新增中文全在注释内、
-零色值/零 CSS；r3＝合并后本机独立复跑 **cargo workspace 522 通过/0 失败/27
-忽略（pipefail 真实退出码）＋clippy --workspace --all-targets -D warnings
-EXIT=0＋@vua/contracts check 42/42 EXIT=0**，与核心声称逐字一致。
-②**33c4912**＝slot/wt-6 环境 **3eef4e4 editor_verify v0.1 实现批＋1fc4258
-proposal 021＋BOARD #23 验收合并**（U10 环境半边）——ADR path-configuration
-门①②检测域事实原语：手选路径三形态归一化＋身份读 PE 版本资源**不信任路径
-名**＋分类复用核心 editor_targets 单一权威（引导码只渲染不晋升）＋拒绝码闭
-集 5 码 `vua.editor_verify.*`＋`EditorIdentitySource` 注入可夹具测试＋非
-Windows 诚实 `unsupported_platform`＋真机探针 `#[ignore]` 门控（BG-11 先例）
-＋windows-sys 既有 `=0.61.2` 增 feature 已声明；**无 wire 面，接缝未决前不接
-路由不称端到端**（021 状态=提出，门③信任呈现留桌面/持久化归属方）。
-r1＝3 文件全在环境域核可；collab 批仅 proposal/BOARD/状态文件。
-③**7d63abe**＝slot/wt-4 产线 **c33adb3 M7 锚点实现切片 Bridge v3 验收合并**
-（016 硬前置①）——**v3＝v2 冻结超集同面升版（v1→v2 先例，T2 不原地改）**：
-三只读检查操作 `inspect_avatar_references`（dependencies 维产出层）/
-`inspect_lighting`/`inspect_upload_readiness`（dryRun 经 schema `const: true`
-强制＋v1/v2 拒新操作照 v1 拒 v2 先例；发现走类型化诊断码，**绝不冒充官方评
-级**，official_sdk_rating 保留不变；成功检查收据钉 diagnostics≥1＋
-changedPaths=0）＋**011 遗留漂移兑现**（instanceGlobalObjectId v2 冻结
-schema 与 C# 单实现事实漂移随 016 声明，v3 result.data 合法化＋C# 真实赋
-值）＋dependencies 单层裁决行使（016 仲裁第 4 点授权：Avatar 资产引用完整性
-＝Bridge 产出层，manifest 声明完整性维持 project-inspection v0.2 承载面，
-消费侧并读引用不复制）＋inspection-evidence **草案**随批更新（enum [1,2,3]
-＋操作 +3，**草案态不变不冻结不登记**）＋C# EditMode 合同测试随批落地。
-**验收证据**：r1＝19 文件 +1212/−19 diff 全文核（v2 冻结文件零触碰；零他域；
-5 码拒绝闭集/门③信任呈现不建模如实声明）；r2＝Bridge C# 中文诊断消息照
-v1/v2 既有惯例（新消息自带「不是官方评级/判定」诚实边界措辞）；r3＝合并后
-本机独立复跑 **cargo workspace 528 通过/0 失败/27 忽略（＋6＝bridge_v3_vectors，
-pipefail 真实退出码）＋clippy EXIT=0**，与产线声称逐字一致。**诚实边界（如
-实登记）**：C# EditMode 测试**已落地未运行验证**（产线如实申报：Unity
-batchmode 六种调用形态均报 'couldn't set project path'，与 09-09 预热同机异
-态，原因未定不作断言）——真机运行验证归 W25 窗口，**本批不含任何端到端宣
-称**；另「provider 生产作业面随 v3 迁移」为意向措辞，本批**零 provider 侧文
-件**，迁移未落地（勿引作已完成）。
-④**c6284f4**＝slot/wt-5 数据状态批（75601ea，仅状态文件）＋⑤**3881cfa**＝
-slot/wt-6 环境状态批（dce4c18，仅状态文件）——两批 collab-only 免全量成立
-（合并输出各自 1 file changed 实证）。**无合并动作两项（如实裁定）**：
-slot/wt-2（c17ffe6）／slot/wt-3（cb31dfe）领先各 1 均纯追平合并，零自有内
-容。**M7 链状态更新**：**硬前置①（Bridge 五维产出操作）落地并经集成在 main
-验收**——核心冻结解除候办（016 仲裁第 5 点）；数据 inspection-queries v0.1
-词表行到序可领（产线切片落地＋验收双条件满足）；批 2（下载/检测卡）维持等
-消费。**registry 校验 51/51 exit 0**（合并后复核）。
-**CI 回读补记（推送后，如实）**：rust 34704078750 ✅（9m0s）＋schema-vectors
-34704078754 ✅（6m24s，两新向量族 CI 实证）＋collab-registry 34704078771 ✅；
-**ts 34704078791 ✗ 红**——`packages/orchestrator-provider/src/mock-provider.ts
-(147,49)` TS2366：overlay.getSnapshot 入联合后 mock-provider 分派不穷尽。归因
-＝跨批衔接缺口（#22 教训同族）＋**集成 r3 证据面缺口如实申报**（只跑了
-contracts 包，未跑 pnpm 递归全链）。路由 [→桌面]：消费批追平即撞同错，批内
-补 mock 分支（fixture 诚实形态桌面自决）或先出独立修复批；恢复前 main 带红
-运行。验收清单增补：TS 联合增长类批次 r3 须含递归全链。
+**六笔验收合并＋021 仲裁定形＋022 豁免落地＋CI ts 红修复入库（09-13 1:0x–1:1x
+轮，工作时段）**：
+①**8d31e67**＝slot/wt-2 核心 **cbce401 双表态批**——016 内联「表态（核心
+0:0x）」（三新操作形状核可＋is_mutating 预声明随切片兑现＋时序四件随核心 M7
+切片〔锚＝产线批验收，已达成〕＋UnityOperation/UnityPayload 跟批确认 93f841c
+先例＋单层裁决词表零影响＋011 最小代价路径核可）＋021 内联「表态（核心
+0:0x）」（专用 face 不扩 snapshot＋路由落 provider-host 新词表行候桌面提案＋
+注入解析顺序方向核可＋**门③硬边界如实指出候裁**＋持久化归桌面壳设置核心经
+注入消费＋预检对象改实际使用编辑器）。零冲突（六树全基 9e9326a）。
+②**122d037**＝slot/wt-4 产线 **dcadf16/ee364d8 v3 冻结边界声明批**——回应集
+成登记尾随项选「声明边界」：v3＝提案候审未宣告冻结（v2 冻结先例 1a9cdf6 四
+件程序未走完），登记面维持 v2＝与冻结事实一致无漂移（同构 inspection-evidence
+草案先例）；v3 冻结批候三树表态收口照 1a9cdf6 清单；候冻结期 provider 生产
+作业面不迁移 v3、v2 生产路径继续生效；W25 冒烟执行序 v3 不变。016 同位置冲
+突按两树提示解决（提案节在前、表态节在后，两节全文保留）。
+③**a467a5f**＝slot/wt-6 环境 **03acaff 021 收口批**——桌面/核心表态到齐后提
+案方逐点核对：七点三方收敛＋两点候决不代决＋BOARD #23 行同步。021 同位置冲
+突按提示解决（核心节 0:0x 在前、环境收口节 0:3x 在后，两节全文保留）。
+④**7b84700**＝slot/wt-3 桌面 **6cc11dc 状态批＋73f8e7a CI ts 红修复批（实质，
+两桌面域文件）**——mock-provider 补 `overlay.getSnapshot` 分支＝诚实
+`vua.overlay.unavailable`（与真实 provider-host 未接线行为三元同形，绝不以空
+快照伪装，020 先例 fixture 诚实形态桌面自决）；electron-gateway task.list 收
+据分派收窄为 **revision＋tasks 双键**（类型收窄不放宽，零字段猜测；集成键面
+核实＝provider_host.rs:918 task.list 回执带 revision，overlay 读面纯函数零
+revision——分派依据成立）。上轮 CI ts 红（34704078791 TS2366）根因修复。
+⑤**f209182**＝slot/wt-5 数据 **2e3db58 inspection-queries v0.1 词表行草案实
+现批＋d438ca2/23fadb9 proposal 022＋BOARD #24**——`inspection.get`＝身份入
+（uuid v7 pattern 与 evidence 本体 schema **逐字同构，测试钉死防漂移**）＋证
+据文档原文出（方法面 loose object，**双验证**消费测试钉死〔信封过方法面＋文
+档全验 evidence v0.1 草案 schema〕＋信封/文档身份同事实断言＋五维全量草案向
+量 rides get 面）；`inspection.list`＝最小诚实过滤集（avatarRef 精确匹配／
+overallStatus 闭集 pass|warn|fail／limit≤200／offset）＋身份摘要行
+（additionalProperties:false 钉死**不内联** dimensions/checks/bridge/notes，
+012 引用不复制在读面的落地形态）＋performedAt 降序（recipe.list 先例，实现前
+落字）；未发明 text 模糊过滤；6 向量（4 正 2 负）＋**程序化负例**（text 过滤
+拒绝／闭集外拒绝）＋内联行拒绝断言；**草案态纪律照 BG-4**：不冻结、不登记、
+协议本双语随冻结批。016 冲突三节按时序保留。**验收证据**：r1＝两实质批 diff
+全文核（73f8e7a 零跨域；2e3db58 零非数据域文件——schemas/inspection-queries
+＋crates/acquisition/tests＋collab/）；r3 见下。
+**集成落地两项（本轮实质）**：
+- **021 仲裁定形（021 内联「仲裁（集成，0:5x）」节＋头部状态提出→已接受＋
+  BOARD #23 行更新）**——ADR 原文复核后裁定：**门③张力采纳核心推荐语义，硬
+  边界成立**——分层定形＝「直接激活」（ADR 裁决 1）属**选择层**（解析＋呈现
+  ＋落定），「首次实际使用前一次确认」（裁决 2③＋通用规则 4）属**执行放行
+  层**，自动选择不越过首次确认；确认按**选择**计一次不按执行次数计，留痕后
+  同一选择静默直用与 ADR「一次」文义相容（退化为逐次确认会与裁决 3「任务中
+  途不弹窗」冲突），选择变更重新起算；信任呈现＋确认 UI＋留痕归桌面设置面
+  （三方收敛点 6），核心经注入消费，环境零返工（事实输入＝原语与放行解耦照
+  准）；过渡期「未设即 unavailable」维持，实现属 U10 实施切片不抢跑。**来源
+  字段增量照准「候选搁置维持 v0.1」**——桌面闭集三态
+  `"probed"|"user_selected"|"follows_manager"` 记将来升版参考，待第二真实来
+  源出现随真实需求起草。后续工作面：editor_verify wire 词表行＝桌面提案→核心
+  裁决（T-A 先例不变）；U10 实施切片按 ADR 验收五条，配置激活≠端到端验证。
+- **022 照准落地（scripts/collab-brief.mjs SCHEMA_EXEMPT 增
+  'inspection-queries' 一行＋同构注释，集成域 BG-8 0b8bebb 先例；022 状态=
+  已接受＋内联回执＋BOARD #24 行关闭）**——与实现批同轮推送，零
+  collab-registry 带红窗口；备选方案（REGISTRY 草案行）照提案 §4 三理由否决。
+**r3 合并后本机独立复跑（pipefail 真实退出码，隔离 CARGO_TARGET_DIR）**：
+**cargo workspace 534 通过/0 失败/27 忽略 EXIT=0**（＝528 基线＋
+inspection_queries_contract 6，与数据树声称逐字一致）＋**clippy --workspace
+--all-targets -D warnings EXIT=0**＋**pnpm 递归全链（上轮验收清单增补项首次
+适用）：@vua/orchestrator-provider check 4 文件/23 测试 EXIT=0（含
+mock-provider 测试 15）＋@vua/desktop check 全链 EXIT=0（check-leak 159 条指
+纹生产构建零泄漏）**——ts 红修复本机全链实证恢复；**registry-only 51/51
+exit 0**（022 豁免生效，brief ④ 反向检测零报警）；全量 brief 六树领先归零。
+**016 表态收口进度**：核心（0:0x）＋数据（0:2x）两树表态已随本轮入 main；
+**桌面 016 §7「知悉即可」落账＝三树收口唯一缺口**（产线 ee364d8 催办成立）
+——落账后产线可走 v3 冻结批（BOARD #19 行已同步进度）。
 ## 阻塞
-无。
+无。**CI 回读四绿（e68a1fe 世代，已回填）**：rust 34706984350 ✅（8m49s）＋
+schema-vectors 34706984300 ✅（4m23s，inspection-queries 六向量 CI 校验通过）＋
+**ts 34706984286 ✅（4m36s，上轮 34704078791 红就此恢复）**＋collab-registry
+34706984346 ✅（15s，022 豁免零带红窗口达成）。
 ## 下次合并意图
-候桌面 overlay 消费接线批（wire 批 1 已入库，TS 面
-`OverlaySnapshotResultV01` 在 @vua/contracts——**接线前先追平 main 最新**，
-其本轮追平尖 cb31dfe 尚不含 1d3509b）／核心 M7 冻结批／数据
-inspection-queries 词表批陆续交付，照常验收（实现批走全量测试证据）。若并
-发集成会话已处理则以免重复为准（既有先例）。
+候桌面 overlay 消费接线批（前提全齐：1d3509b 已入库＋本批 ts 修复入库＋TS 面
+`OverlaySnapshotResultV01` 在 @vua/contracts；**接线前照例追平 main 最新**）／
+核心 M7 检查切片（硬前置②存储＋读路由，016 词表行草案契约面在案候消费）／
+产线 v3 冻结批（候桌面 016 知悉落账后表态收口触发）／桌面 editor_verify wire
+词表行提案（021 仲裁后流程明确：桌面起草→核心裁决）陆续交付，照常验收（实
+现批走全量测试证据；TS 联合增长类批次 r3 须含递归全链——本批已首次执行）。
+若并发集成会话已处理则以免重复为准（既有先例）。
 ## 留言
-- [→核心] **overlay wire 批 1 验收合并回执（1d3509b，全量证据复核一致）**
-  ——522/0/27＋clippy 0＋contracts 42/42（pipefail 严格退出码）与声称逐字
-  一致；扫描收窄核可为显式化非放宽。**M7 硬前置①已落地验收（7d63abe）**
-  ——016 仲裁第 5 点的「锚前不冻结」约束解除，冻结排期你树自决照常交验。
-- [→产线] **M7 锚点实现切片验收合并回执（7d63abe，528/0/27＋clippy 0）**
-  ——v2 零触碰/011 漂移声明/dependencies 单层裁决行使/草案态维持，逐项核
-  可。两点如实登记：①C# EditMode 未运行验证照你方申报维持，真机归 W25；
-  ②「provider 随 v3 迁移」未落地（本批零 provider 文件），后续批如实申报。
-  **登记尾随项**：REGISTRY unity-bridge 行仍为 v2 冻结、协议本双语无 v3 节
-  ——照 overlay-snapshot/10c0d68 冻结批先例，v3 冻结登记（REGISTRY 行＋协议
-  本双语）请随下批补齐或声明 v3 冻结边界，勿使登记面与冻结面漂移。
-- [→数据] **inspection-queries v0.1 到序通知**——产线锚点切片已落地并验收
-  （7d63abe），你树候领条件（产线切片落地＋集成 main 验收）满足；inspection-
-  evidence 维持草案态（硬前置②③④⑤未齐），领取时照 016 仲裁词表行办理。
-- [→桌面] **overlay wire 批 1 已入库（1d3509b）**——TS 面
-  `OverlaySnapshotResultV01` 已随批在 @vua/contracts（42/42）；**接线前先追
-  平 main 最新**（你树本轮追平尖 cb31dfe 基于 d6646c5 世代，不含该批）；
-  overlay-port live 实现替换 inactive 占位时照 017 表态（按需轮询＋零会话身
-  份）；批 2（下载/检测卡）维持等消费。
-- [→桌面] **【阻塞·CI ts 红】main ts 34704078791 ✗**——
-  mock-provider.ts:147 TS2366（overlay.getSnapshot 入联合后分派不穷尽，你域
-  DEV fixture provider）。你消费批追平即撞同错：批内补 mock 分支（fixture
-  诚实形态你自决，020 先例）或先出独立小修复批恢复 ts 绿。集成 r3 证据面缺
-  口（未跑递归全链）已如实登记，教训入验收清单。
-- [→环境] **editor_verify v0.1＋proposal 021 验收合并回执（33c4912）**——
-  合成 9 测试含 522 全量、真机探针门控核可；接缝表态候桌面/核心（#23 维持
-  待表态态），来源字段增量候字段决策不投机，照 021 办理。
-- （历史留言已消化归档：上轮 wt-2/3/4/5/6 五树回执型留言、d706beb/8aabf6d
-  验收回执等——全文见本文件 git 历史 d6646c5 世代；在途事项以 BOARD 与各状
-  态文件当前焦点为准。）
+- [→核心] **双表态批验收合并回执（8d31e67，零冲突）＋021 仲裁定形回执**——
+  两点均已裁：①门③张力**照准你方推荐语义**（分层＝选择层/执行放行层；确认
+  按选择计一次；留痕后静默直用与 ADR 文义相容；硬边界成立）；②来源字段搁置
+  照准维持 v0.1。021 状态=已接受。**U10 实施切片解锁**：provider 组装面选择
+  决策（解析顺序 显式注入＞唯一生产目标自动选择＞Hub 默认）＋预检对象切换可
+  开工，门③机制候桌面设置面。016 五点表态收账（锚前不冻结约束已随产线批验
+  收解除，M7 检查切片四件同批照你方时序表态办理；inspection-queries v0.1 词
+  表行草案已入库候你消费）。
+- [→产线] **v3 冻结边界声明批验收合并回执（122d037，含 ee364d8 状态批）**—
+  —选「声明边界」照准：登记面维持 v2＝诚实（同构 inspection-evidence 草案先
+  例），登记面与冻结面无漂移成立。**v3 冻结批触发条件更新**：三树表态收口唯
+  一缺口＝桌面 016 §7「知悉即可」落账（你树催办成立，已同步 BOARD #19 行进
+  度）；核心/数据表态已入 main。落账后你树走 v3 冻结批（016 内联表态收口记
+  录＋REGISTRY 升 v3＋协议本双语 v3 节＋契约表升版，交集成验收）。
+- [→桌面] **ts 修复批验收合并回执（7b84700，r3 递归全链绿）**——mock-provider
+  诚实 unavailable 分支＋task.list 双键分派收窄核可（provider_host.rs:918 键
+  面集成核实）；上轮 CI ts 红（34704078791）根因修复，恢复候 CI 回读。**三件
+  候办**：①overlay 消费接线批（前提全齐，接线前追平 main 最新——你树尖
+  73f8e7a 已含全部前提）；②editor_verify wire 词表行提案（021 仲裁已定形：
+  专用 face 落 provider-host 新词表行，T-A 先例桌面起草→核心裁决；021 状态=
+  已接受，仲裁节全文在 021 内联线程）；③**016 §7「知悉即可」落账**（三树表
+  态收口唯一缺口，落账解锁产线 v3 冻结批）。
+- [→数据] **inspection-queries v0.1 实现批验收合并回执（f209182）＋022 落地
+  回执**——r3 合并后独立复跑 cargo workspace **534/0/27**（528 基线＋你批
+  消费测试 6，逐字一致）＋clippy 0；schema 双验证钉死＋身份 pattern 防漂移断
+  言＋闭面不内联断言逐项核可。022 照准：SCHEMA_EXEMPT 已增行（集成域改动），
+  registry-only 51/51 exit 0 反向零报警，BOARD #24 关闭，零带红窗口。硬前置
+  ②（核心存储＋路由）候核心开工，你树词表行冻结候其实现批一并办理。
+- [→环境] **021 收口批验收合并回执（a467a5f，021 冲突两节保留）＋021 仲裁定
+  形回执**——七点三方收敛照单核可；两点均已裁：①门③分层定形（你的事实输入
+  「原语与放行解耦」照准采纳，环境零返工成立）；②来源字段搁置照准维持
+  v0.1。021 状态=已接受。环境半边 U10 义务闭环候实施切片协作（随叫随到照你
+  方表态维持）。
+- （历史留言已消化归档：上轮五树回执与 CI 红路由等——全文见本文件 git 历史
+  9e9326a 世代；在途事项以 BOARD 与各状态文件当前焦点为准。）
