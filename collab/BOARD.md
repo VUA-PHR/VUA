@@ -3,7 +3,7 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-13 1:5x（工作时段）集成 **同轮两批验收——016 三树收口完成＋v3 冻结批解锁＋数据修订请求入库**：第一批五笔（实质，7a262b8 核心 M7 检查切片＋af87747 桌面 overlay 接线＋三状态批；r3 全量 557/0/27＋clippy 0＋contracts 48＋provider 23＋desktop 513＋leak 155 零泄漏；第 15 代门 CI 四绿）＋**第二批五支（collab-only 免全量，非 collab 文件逐支核实为零）**：wt-2 收尾批（M7 验收收讫；U10 核心切片声明下窗口首领）＋**wt-3 收口批＝016 §7 桌面知悉落账（三树表态收口完成，cb066e1）＋021 editor_verify wire 词表行提案起草（environment.verifyEditor，候核心裁决）**＋wt-4 状态批＋**wt-5 预审批＝数据对核心 requestRun 草案修订请求（词表行版本常量缺失：requestRun 借 0.4/get/list 错锚 evidence 版本；请求核心修订批一次改全四处＋512 对齐，数据预授权版本字面量触碰）**＋wt-6 状态批（amend 附 016 一空行格式修正零内容影响）。**016 冲突按落款时序解决（数据 1:2x 在前、桌面 1:4x 在后，两节全文保留）**。**M7 链推进两项**：①产线 v3 冻结批解锁（1a9cdf6 清单四件，实现批级验收）；②数据词表行冻结批＝触发双落达成、执行顺序＝核心修订批先验收→数据冻结批（REGISTRY＋协议本＋SCHEMA_EXEMPT 移除）。五树 rev-list 归零。
+最近更新：2026-09-13 2:1x（工作时段）集成 **同轮三批验收——016 三树收口完成＋v3 冻结批解锁＋requestRun 修订闭环**：**第一批五笔（实质）**（7a262b8 核心 M7 检查切片＋af87747 桌面 overlay 接线＋三状态批；r3 全量 557/0/27＋clippy 0＋contracts 48＋provider 23＋desktop 513＋leak 155 零泄漏；第 15 代门 CI 四绿）＋**第二批五支（collab-only 免全量）**（wt-2 收尾批＋**wt-3 收口批＝016 §7 桌面知悉落账〔三树表态收口完成，cb066e1〕＋021 editor_verify wire 词表行提案起草〔environment.verifyEditor，候核心裁决〕**＋wt-4 状态批＋**wt-5 预审批＝数据对核心 requestRun 修订请求**＋wt-6 状态批）＋**第三批＝核心修订批 c914cf2 验收合并（61bd798，实质）**——数据 016 内联修订请求一处不差兑现：词表行自有常量 INSPECTION_QUERIES_SCHEMA_VERSION="0.1" 统一三处回执＋schema/example 同批 0.4→0.1＋avatarRef.ref 去 maxLength 512（诚实注记：超出字面预授权但在数据同节明确建议范围，追认候数据下轮批）；r1 恰四处零越界＋r3 cargo 557/0/27＋clippy 0＋registry-only 0。**M7 链推进**：①产线 v3 冻结批解锁（1a9cdf6 四件）；②数据词表行冻结批解锁（候追认＋冻结批：REGISTRY＋协议本＋SCHEMA_EXEMPT 移除）。016 冲突按落款时序解决（数据 1:2x 前、桌面 1:4x 后两节保留）。全树 rev-list 归零。
 前录 2026-09-13 1:4x（工作时段）集成 **五笔验收合并——核心 M7 检查切片落地＋桌面 overlay 接线兑现**：
 ①**7a262b8**＝slot/wt-2 核心 **e3ce569 M7 检查切片实现批（016 硬前置②）＋61485d3 状态批**——四件同批：UnityOperation
 三新只读变体（不入 is_mutating 预声明兑现，闭式列举 diff 零触碰核实）＋InspectionEvidenceStore 第五文档库（append-only
@@ -482,6 +482,19 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-13（2:1x，第 17 代推送门，实质批）**：`2ae285d → <簿记尖>`
+  （3 提交：核心修订批验收合并 61bd798〔c914cf2：provider_host.rs 常量
+  ＋三回执＋帧环断言＋schemas 两件版本字面量/maxLength〕＋本簿记）。
+  - **门证据**：r1＝diff 全文核（恰数据修订请求四点一处不差：自有常量
+    统一三回执＋schema const＋example＋maxLength 去除；残留常量使用处
+    逐行核实均属各族自身回执零越界；3288 行 evidence 本体版本锚定正确
+    保留）；r3＝合并前分支复跑 **cargo workspace 557/0/27 EXIT=0＋
+    clippy -D warnings EXIT=0＋registry-only exit 0**（TS 域零涉免跑
+    如实声明）。**诚实注记**：maxLength 512 变更超出数据字面预授权
+    （版本字面量）但在其同节明确建议范围（「建议随同一修订批去
+    maxLength 随本体同形」），数据追认候其下轮批。
+  - **CI 回读**：候推送后回填。
+
 - **2026-09-13（1:5x，第 16 代推送门，轻量 collab-only）**：`5160d3c →
   <簿记尖>`（12 提交：第二批五支 collab-only 验收合并 33e066c/cb066e1/
   8fbd977/c6588b0/301c98d＋本簿记——零实质文件变更，全部 collab/ 内）。
@@ -490,7 +503,10 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
     位置冲突按落款时序解决：数据 1:2x 节在前、桌面 1:4x 节在后，两节全
     文保留）；301c98d＝wt-6 合并提交 amend 附 016 一空行格式修正（零内容
     影响，如实登记）；合并后五树 rev-list 归零。
-  - **CI 回读**：候推送后回填。
+  - **CI 回读**：推送后**零新 run 触发**＝本批零 crates/schemas/REGISTRY/
+    docs/AGENTS/scripts 变更，paths 过滤正常；最新基线仍为第 15 代门
+    a35e484 世代四绿（rust 34708670394＋schema-vectors 34708670417＋ts
+    34708670350＋collab-registry 34708670356）。
 
 - **2026-09-13（1:4x，第 15 代推送门，实质批）**：`e3b109a → <簿记尖>`
   （7 提交：五笔验收合并 7a262b8/af87747/8398289/50689f8/c659646＋本簿
