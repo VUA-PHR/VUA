@@ -1,0 +1,19 @@
+{
+  "contractVersion": "0.1",
+  "tasks": [
+    {
+      "taskId": "task-019e0000-0000-7000-8000-000000000103",
+      "state": "failed",
+      "correlationId": "corr-019e0000-0000-7000-8000-000000000003"
+    }
+  ],
+  "productionCard": {
+    "currentPlan": {
+      "planId": "019e0000-0000-7000-8000-000000000302",
+      "planStatus": "draft",
+      "createdAt": "2026-09-12T03:00:00.000Z",
+      "recipeId": "019e0000-0000-7000-8000-000000000001"
+    },
+    "latestRecord": null
+  }
+}
