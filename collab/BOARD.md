@@ -492,6 +492,27 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-13（5:1x–5:2x，第 25 代推送门，实质批）**：`f3cd123 →
+  e928e08`（7 提交：第十一批验收五支合并 916c5e0/6660d72/9f4cfcc/
+  cf22a6e/cc6b6dd＋簿记 e928e08——两实质批＝产线迁移 4 代码文件＋
+  桌面 U10 21 代码文件〔含越域追认 2〕，其余 collab/）。
+  - **门证据**：r1＝两实质批 diff 全文核/抽查（产线 4 文件全产线域
+    ＋契约面零触碰；桌面词表行形状逐字＋壳链路纪律；越域追认计核心
+    域意见 ab2a816）；r3＝合并后本机独立复跑（pipefail 严格退出码）
+    **cargo workspace 587/0/27 EXIT=0＋clippy --workspace
+    --all-targets -D warnings EXIT=0＋contracts 56/56＋desktop
+    541/541＋orchestrator-provider 25/25＋desktop check 全链 EXIT=0
+    （check:leak 155 零泄漏）＋registry-only exit 0（57 项＋1192
+    文件 0 标记）**，与两树声称逐字一致。
+  - **CI 回读（e928e08 世代，已回填，两绿）**：rust **34719353867
+    ✅**（7m51s，v3 迁移切片 CI 实证，与本地 587/0/27＋clippy 0 一
+    致）＋**ts 34719353850 ✅**（4m42s，U10 切片 CI 实证）；
+    **collab-registry/schema-vectors 未触发**＝本批零 REGISTRY/
+    docs/AGENTS/scripts/schemas 变更，paths 过滤正常。**簿记预期更
+    正（诚实）**：wt-main 状态批留言曾预期 collab-registry 触发
+    （误以 BOARD 为触发面）——核实其 workflow paths 不含 collab/，
+    不触发为正确行为（第 10 代门先例同构）。
+
 - **2026-09-13（2:4x，第 19 代推送门，实质批）**：`c691f5c → <簿记尖>`
   （3 提交：数据冻结批验收合并 7918790〔f84b397：schemas 三方法声明＋
   REGISTRY 两行＋协议本双语＋acquisition 测试头〕＋集成 SCHEMA_EXEMPT

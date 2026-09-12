@@ -64,6 +64,14 @@ updated: 2026-09-13
 - **BOARD 簿记随批**：最近更新段＋冻结契约表 unity-bridge v3 行迁
   移态注记更正（「生产作业面不迁移 v3」→「已迁移 v3，v2 过渡窗口
   维持」）。
+- **第 25 代推送门 CI 回读（e928e08 世代，已回填，两绿）**：rust
+  **34719353867 ✅**（7m51s，v3 迁移切片 CI 实证，与本地 587/0/27
+  ＋clippy 0 一致）＋**ts 34719353850 ✅**（4m42s，U10 切片 CI 实
+  证）；**collab-registry/schema-vectors 未触发**＝本批零 REGISTRY/
+  docs/AGENTS/scripts/schemas 变更，paths 过滤正常。**簿记预期更正
+  （诚实）**：下方待命声明曾预期 collab-registry 触发（误以 BOARD
+  为触发面）——核实其 workflow paths 不含 collab/，不触发为正确
+  行为（第 10 代门先例同构）。
 - **零端到端宣称维持**：provider→真机 Unity v3 生产链路未实跑、
   C# EditMode 未运行验证、U10 设置面真机走查归 W25。
 
@@ -86,9 +94,10 @@ updated: 2026-09-13
   批：production_job.rs＋C# 三件＋状态批〕＋6660d72 桌面 U10 切片
   〔实质批：desktop 15 文件＋contracts 4 件＋越域追认 2 文件〕＋
   9f4cfcc/cf22a6e/cc6b6dd 三状态批〔collab-only 免全量〕；BOARD 簿
-  记随本批。第 25 代推送门预期触发 rust〔crates 变更〕＋ts〔desktop
-  ＋packages 变更〕＋collab-registry〔BOARD 变更〕三 workflow；
-  schema-vectors 不触发（零 schemas/ 文件）。CI 回读候推送后回填。）
+  记随本批。第 25 代推送门 CI 回读已回填（两绿：rust 34719353867
+  ＋ts 34719353850）；待命声明原预期「collab-registry 触发」系误以
+  BOARD 为触发面，已在当前焦点如实更正——其 paths 不含 collab/，
+  未触发为正确行为。）
 - [→产线] **v3 迁移切片验收入 main（916c5e0）**——r1 diff 全文核
   （4 代码文件全产线域＋契约面零触碰）＋r3 独立复跑 587/0/27 与你
   声称逐字一致；核心接缝「零强制变更面」结论核实采纳。016 漂移声

@@ -18,12 +18,14 @@ use std::fs;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
 use serde_json::{json, Value};
 use vua_bdl_store::{ArtifactMode, BdlStore};
-use vua_orchestrator::{ResultStatus, UnityBridge, UnityCommand, UnityResult};
+use vua_orchestrator::{
+    ResultStatus, UnityBridge, UnityCommand, UnityOperation, UnityResult,
+};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn command_dir() -> PathBuf {
@@ -1142,12 +1144,14 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
 
 /// A scripted Bridge whose v2 receipt steps, status, diagnostics and
 /// snapshot identity are fixed by the test (the honest shape the record
-/// transposition consumes).
+/// transposition consumes). Commands seen on the wire are captured so a
+/// test can pin exactly what provider-host emitted.
 struct ScriptedBridge {
     status: ResultStatus,
     steps: Vec<Value>,
     diagnostics: Vec<vua_orchestrator::Diagnostic>,
     snapshot_id: Option<String>,
+    commands: Mutex<Vec<UnityCommand>>,
 }
 
 impl UnityBridge for ScriptedBridge {
@@ -1156,6 +1160,7 @@ impl UnityBridge for ScriptedBridge {
         _project: &vua_orchestrator::ProjectRef,
         command: &UnityCommand,
     ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
+        self.commands.lock().unwrap().push(command.clone());
         Ok(UnityResult {
             schema_version: 2,
             command_id: command.command_id.clone(),
@@ -1336,6 +1341,70 @@ fn job_execute_environment_precheck_passes_on_a_confirmed_matching_editor() {
     let task = wait_terminal(&world, &task_id);
     assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded",
         "a matching install satisfies the constraint: {:?}", task.error);
+}
+
+#[test]
+fn job_execute_pins_the_production_command_wire_schema_version_v3() {
+    // Core-domain nail (core ruling on the wt-4 v3 seam message): the
+    // unity-bridge production face moved to v3 (merge 916c5e0), so the
+    // execute_production_job command provider-host emits must carry
+    // schemaVersion 3 on the wire. Pinned as a literal on purpose: a
+    // future version move in either domain must consciously update this
+    // consumer-side test, not silently ride a shared constant.
+    let (world, mut use_cases, warehouse) = seeded_production_world("job-execute-wire-v3");
+    let entry_ids = seed_imported_entries(&world);
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Wire V3 Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "avatar_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}},
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[1], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "avatar_asset"},
+            {"id": "outfit_blue", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "outfit_blue"},
+            {"id": "exclude_item", "kind": "exclude_object", "assetInstanceId": "avatar_root",
+             "selector": {"selectorId": "main_root"}}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    // The scripted receipt mirrors the record-face fixture: first job
+    // guard-skipped, second executed against a generated_vpm copy, one
+    // pre-job snapshot; two planned jobs, one receipt.
+    let fallback_sha = format!("sha256:{}", "b".repeat(64));
+    let bridge = Arc::new(ScriptedBridge {
+        status: ResultStatus::Succeeded,
+        steps: vec![
+            json!({"kind": "install_modular_asset", "status": "skipped",
+                   "warning": "guard declined the install"}),
+            json!({"kind": "exclude_object", "status": "executed",
+                   "resolvedSource": {"sourceKind": "generated_vpm", "artifactSha256": fallback_sha}}),
+        ],
+        diagnostics: vec![],
+        snapshot_id: Some("01990000-0000-7000-8000-00000000abcd".to_owned()),
+        commands: Mutex::new(Vec::new()),
+    });
+    use_cases.bridge = bridge.clone();
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "succeeded",
+        "the scripted receipt completes: {:?}", task.error);
+
+    let commands = bridge.commands.lock().unwrap();
+    let job = commands
+        .iter()
+        .find(|command| command.operation == UnityOperation::ExecuteProductionJob)
+        .expect("the execute_production_job command reaches the bridge");
+    assert_eq!(job.schema_version, 3, "production job wire schemaVersion");
 }
 
 #[test]
@@ -1716,6 +1785,7 @@ fn job_execute_records_typed_deviations_and_the_receipt_snapshot() {
         ],
         diagnostics: vec![],
         snapshot_id: Some("01990000-0000-7000-8000-00000000abcd".to_owned()),
+        commands: Mutex::new(Vec::new()),
     });
 
     let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
