@@ -453,9 +453,22 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
   - **方法学更正（如实）**：本轮首次后台复跑的退出码经管道被 tail 吞掉
     （CARGO_TEST_EXIT 实为 tail 退出码）——发现后即以 `set -o pipefail`
     严格重跑全部三项取代之；上表证据均取自严格重跑，首次弱证据不作数。
-  - **CI 回读**：待回填（推送后回读，下轮簿记补记；本轮预期 ts＋rust＋
-    schema-vectors＋collab-registry 均触发——crates/schemas/REGISTRY/
-    packages 均有变更）。
+  - **CI 回读（198154b 世代，已回填）**：rust **34704078750 ✅**（9m0s，合
+    并后 Rust 全量 CI 实证，与本地 528/0/27 一致）＋schema-vectors
+    **34704078754 ✅**（6m24s，overlay-snapshot 六向量＋unity-bridge v3 十一
+    向量 CI 校验通过）＋collab-registry **34704078771 ✅**（15s）；**ts
+    34704078791 ✗ 红——如实登记**：`packages/orchestrator-provider/src/
+    mock-provider.ts(147,49)` TS2366（函数缺结束 return）——overlay.getSnapshot
+    加入 @vua/contracts 请求联合后 mock-provider 方法分派不再穷尽。**归因＝
+    跨批衔接缺口（#22「live/fixture value 形状一致性」教训同族）**：核心批
+    增联合成员、mock-provider（DEV fixture provider，近期全为桌面作者）未随
+    批增分支；**集成验收证据面缺口如实申报**：r3 只复跑了 @vua/contracts 包
+    （42/42），未跑 pnpm 递归全链（orchestrator-provider 包检查在其内）。
+    **路由 [→桌面]**：消费接线批（在途）追平 main 即会撞同一错误——批内补
+    `overlay.getSnapshot` 分支（fixture 诚实形态桌面自决，020 先例）或先出
+    独立小修复批，恢复 ts 绿前 main 视为带红运行。**验收清单增补（集成自
+    检）**：contracts TS 面联合增长类批次，验收 r3 须含 pnpm 递归全链（至
+    少 orchestrator-provider＋desktop check），与 #22 教训并档。
 
 - **2026-09-13（0:1x，第 12 代推送门，实质批）**：`877d4f1 → <簿记尖>`
   （3 提交：wt-5 状态批验收合并 8aabf6d＋**wt-3 overlay 切片验收合并
