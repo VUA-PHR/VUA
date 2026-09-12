@@ -5,6 +5,7 @@ import type {
   ApplicationEventV01,
   DownloadEventV01,
   DownloadIngestReceiptV03,
+  EditorSettingsV1,
   NavigationConfirmRequestV1,
   RemoteContentEventV1,
 } from "@vua/contracts";
@@ -14,6 +15,11 @@ import { routeDesktopGatewayInvoke } from "./gateway-router.js";
 import { DownloadPort } from "./download-port.js";
 import { RemoteContentManager } from "./remote-content.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
+import {
+  isEditorSettingsV1,
+  readEditorSettingsFromFile,
+  writeEditorSettingsToFile,
+} from "./editor-settings.js";
 import {
   OVERLAY_SURFACE_PARAM,
   OVERLAY_WINDOW_HEIGHT,
@@ -105,12 +111,21 @@ function broadcastRemoteContentEvent(rendererUrl: string | undefined, event: Rem
  *   与生产作业项目根为确定性路径。缺失即仓储/下载/生产用例面诚实不可用,
  *   Provider 正常运行(渲染层呈现诚实空态),此处保证服务面在场。
  */
+/** 壳编辑器设置落盘路径(U10 门③留痕,机器级 settings) */
+function editorSettingsPath(): string {
+  return path.join(app.getPath("userData"), "editor-settings.json");
+}
+
 function resolveProviderEndpoint(): {
   executablePath: string;
   databasePath: string;
   providerDataRoot: string;
   warehouseRoot: string;
   projectRoot: string;
+  /** 门③已确认手选编辑器(null = 无手选):经 VUA_UNITY_EDITOR 注入消费;
+   *  读取于 provider 启动时刻,确认留痕后的注入生效时机 = 下次进程启动,
+   *  设置面如实标注(诚实纪律:不宣称即时生效) */
+  unityEditorPath: string | null;
 } {
   const platformSuffix = process.platform === "win32" ? ".exe" : "";
   const executablePath = process.env.VUA_PROVIDER_EXECUTABLE
@@ -133,13 +148,17 @@ function resolveProviderEndpoint(): {
   const providerDataRoot = userData;
   const warehouseRoot = path.join(userData, "warehouse");
   const projectRoot = path.join(userData, "production", "synthetic-avatar-project");
+  // U10 手选注入:门③确认留痕在位才注入(无手选 = null,零配置直用策略
+  // 由核心组装面决策,壳只透传显式手选——021 核心表态 2)
+  const editorSettings = readEditorSettingsFromFile(editorSettingsPath());
+  const unityEditorPath = editorSettings.confirmedEditor?.path ?? null;
   // 目录创建防首次运行失败:Provider 侧 SQLite/文档存储期望根已存在
   // (mkdir recursive 对已存在目录是幂等 no-op)
   for (const dir of [warehouseRoot, projectRoot]) {
     fs.mkdirSync(dir, { recursive: true });
   }
   const databasePath = path.join(userData, "orchestrator", "provider.db");
-  return { executablePath, databasePath, providerDataRoot, warehouseRoot, projectRoot };
+  return { executablePath, databasePath, providerDataRoot, warehouseRoot, projectRoot, unityEditorPath };
 }
 
 function registerIpc(provider: OrchestratorProviderV01): void {
@@ -198,6 +217,47 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths;
+  });
+
+  // U10 手选编辑器路径(021 收敛点 4:单一「浏览」入口双态):exe 文件本身
+  // 或目录(版本化根/Editor 目录);取消返回 null。路径原样交渲染层经
+  // environment.verifyEditor 透传验证,本进程不做归一化
+  ipcMain.handle("vua:dialog:pick-editor-path", async (event, mode: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (mode !== "executable" && mode !== "directory") {
+      throw new Error("invalid editor path mode");
+    }
+    const options =
+      mode === "executable"
+        ? {
+            title: "Unity editor executable",
+            filters: [{ name: "Unity", extensions: ["exe"] }],
+            properties: ["openFile"] as ("openFile" | "openDirectory")[],
+          }
+        : {
+            title: "Unity editor directory",
+            filters: [] as { name: string; extensions: string[] }[],
+            properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
+          };
+    const result =
+      mainWindow === null
+        ? await dialog.showOpenDialog(options)
+        : await dialog.showOpenDialog(mainWindow, options);
+    if (result.canceled || result.filePaths.length !== 1) return null;
+    return result.filePaths[0]!;
+  });
+
+  // 壳编辑器设置读写(U10 门③留痕):读取按落盘事实;保存校验形状,词表外
+  // 内容拒绝并回当前落盘值(不猜测、不修复)
+  ipcMain.handle("vua:editor-settings:read", async (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    return readEditorSettingsFromFile(editorSettingsPath());
+  });
+  ipcMain.handle("vua:editor-settings:save", async (event, settings: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    const current = readEditorSettingsFromFile(editorSettingsPath());
+    if (!isEditorSettingsV1(settings)) return current;
+    return writeEditorSettingsToFile(editorSettingsPath(), settings as EditorSettingsV1);
   });
 
   ipcMain.handle("vua:window:minimize", (event) => {
