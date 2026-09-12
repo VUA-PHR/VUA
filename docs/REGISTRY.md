@@ -34,6 +34,7 @@
 | docs/decisions/orchestrator-supervised-provider_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
 | docs/decisions/vua-instance-identity_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
 | docs/decisions/warehouse-layout_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
+| docs/decisions/path-configuration_ZH.md | ADR | 已接受 | 集成 | 2026-09-12 |
 | docs/protocols/application-contract-v0.1_ZH.md | 0.1 | 已冻结 | 核心 | 2026-09-06 |
 | schemas/application-contract/v0.1 | 0.1 | 已冻结（任务快照形状机器面＋六向量：BOARD #22 result 回流增量——可选 `result` 字段携带 Done payload 原样、两通道同源同值、失败/取消/非终态恒缺席；提案 020，向后兼容增量，协议本同日修订记录） | 核心 | 2026-09-12 |
 | docs/protocols/bdl-queries-v0.1_ZH.md | 0.1 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
