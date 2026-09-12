@@ -160,14 +160,6 @@ export const fixtureStrings = {
       },
     ],
   },
-  /** Overlay 双表面演示负载(切片五 F7a;标题/详情为数据负载,词表键由代码承载;
-   *  任务标题复用 tasks.assembly,同一演示任务在任务中心与 Overlay 一致) */
-  overlay: {
-    statusTitle: "装配进行中(演示)",
-    statusDetail: "桌面与 VR 覆盖层共享同一份演示快照,动作在两侧同步生效。",
-    cancelledTitle: "任务已取消(演示)",
-    cancelledDetail: "取消请求已接受,流程在安全边界结束,未留下半成品。",
-  },
   /** 版本轨道演示负载(S-XV;轨道名为数据负载,版本号/时间戳/结论在代码侧) */
   versions: {
     vrchat: "VRChat 客户端",

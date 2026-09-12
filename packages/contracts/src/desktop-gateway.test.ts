@@ -84,6 +84,16 @@ describe("desktop Gateway v1", () => {
       schemaVersion: 1, requestId: "request-15", method: "app.snapshot", params: { extra: 1 },
     })).toBe(false);
   });
+
+  // 017 overlay 表面批 1 消费接线:查询闭集为空,空参 verbatim 透传 Kernel
+  it("accepts overlay.getSnapshot with empty params and rejects extras (017 batch 1)", () => {
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-16", method: "overlay.getSnapshot", params: {},
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      schemaVersion: 1, requestId: "request-17", method: "overlay.getSnapshot", params: { taskId: "task-1" },
+    })).toBe(false);
+  });
 });
 
 describe("production.* v0.2 方法守卫", () => {

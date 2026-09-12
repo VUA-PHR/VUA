@@ -3,14 +3,17 @@
  * 经 ?surface=overlay-vr 在应用初始化最早阶段分流渲染;与桌面 Overlay 共享
  * 同一 OverlaySnapshot 端口,只回语义动作。
  *
+ * 017 表面批 1 消费接线:快照 = overlay.getSnapshot 冻结投影(任务卡列表＋
+ * 生产状态卡);环境摘要属批 2,本表面不渲染(wire 批 1 无此事实)。
+ * VR Dashboard/VR Overlay 不进 M7 与 1.0.0(用户裁决 2026-09-06),本表面
+ * 为双表面共享层的形态跟随(渲染路径未发布)。
+ *
  * 交互规格(触摸/激光):固定 1024×768 设计预算;无 hover 依赖——按下即
  * :active 反馈;操作目标 ≥56px;一层平面面板(不嵌套卡);动作 ≤3 个大按钮;
- * 无滚动长列表(环境摘要在模型侧截断 ≤3)。
+ * 无滚动长列表(任务卡超出以计数折叠)。
  *
- * 取消确认形态的选择:DelayedButton 是"挂载后延迟可点"语义,激光点按下
- * 等待期间无任何反馈会被读作失灵,故 VR 端改用两步确认——点一次进入确认态
- * (confirm/keep 双按钮 + 提示),再点确认;超时(CONFIRM_TIMEOUT_MS)或快照
- * 推进自动还原。
+ * 取消确认形态:两步确认——点一次进入确认态(confirm/keep 双按钮 + 提示),
+ * 再点确认;超时或快照推进自动还原;确认态目标由任务卡 taskId 携带。
  *
  * 诚实四态与桌面一致;关闭永远可用(后端不可达退化 nativeWindow?.close())。
  * VR 表面不做装饰动画(§8.8 + reduced-motion 纪律)。
@@ -20,12 +23,11 @@ import { Icon } from "@vua/design-system";
 import { overlayPort } from "./overlay-port-instance.ts";
 import type {
   OverlayAction,
-  OverlayEnvironmentState,
+  OverlayActionPayload,
   OverlaySnapshot,
 } from "./overlay-contract.ts";
 import {
   overlayViewModel,
-  type OverlayActionView,
   type OverlayVisualTone,
 } from "./overlay-model.ts";
 import { Badge } from "../../components/primitives/Badge.tsx";
@@ -56,27 +58,18 @@ function badgeTone(tone: OverlayVisualTone): "neutral" | "brand" | "warning" | "
   }
 }
 
-function environmentBadgeTone(state: OverlayEnvironmentState): "success" | "brand" | "neutral" {
-  switch (state) {
-    case "ready":
-      return "success";
-    case "running":
-      return "brand";
-    case "missing":
-      return "neutral";
-  }
-}
-
-function environmentName(id: string): string {
-  return id in copy.environmentNames
-    ? copy.environmentNames[id as keyof typeof copy.environmentNames]
-    : id;
+/** 任务态文案:九态冻结词表内取任务中心同表文案,词表外原词透传(不猜测) */
+const TASK_STATE_KEYS = strings.taskStatus;
+function taskStateLabel(state: string): string {
+  return state in TASK_STATE_KEYS
+    ? TASK_STATE_KEYS[state as keyof typeof TASK_STATE_KEYS]
+    : state;
 }
 
 export function VrOverlaySurface() {
   const [snapshot, setSnapshot] = useState<OverlaySnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [cancelArmed, setCancelArmed] = useState(false);
+  const [cancelTarget, setCancelTarget] = useState<string | null>(null);
 
   const loadSnapshot = useCallback((onFailure: () => void) => {
     const timeout = new Promise<null>((resolve) => {
@@ -121,8 +114,8 @@ export function VrOverlaySurface() {
       .catch(nativeClose);
   }, []);
 
-  const dispatch = useCallback((action: OverlayAction) => {
-    void overlayPort.dispatch(action).then((result) => setSnapshot(result.snapshot));
+  const dispatch = useCallback((action: OverlayAction, payload?: OverlayActionPayload) => {
+    void overlayPort.dispatch(action, payload).then((result) => setSnapshot(result.snapshot));
   }, []);
 
   const retrySnapshot = useCallback(() => {
@@ -132,35 +125,21 @@ export function VrOverlaySurface() {
   }, [loadSnapshot]);
 
   // 快照推进(含取消生效)即解除确认态,不留悬挂
-  const revision = snapshot?.revision;
+  const snapshotKey = snapshot === null ? "none" : JSON.stringify(snapshot);
   useEffect(() => {
-    setCancelArmed(false);
-  }, [revision]);
+    setCancelTarget(null);
+  }, [snapshotKey]);
 
   // 确认态超时自动还原
   useEffect(() => {
-    if (!cancelArmed) return;
-    const timer = setTimeout(() => setCancelArmed(false), CONFIRM_TIMEOUT_MS);
+    if (cancelTarget === null) return;
+    const timer = setTimeout(() => setCancelTarget(null), CONFIRM_TIMEOUT_MS);
     return () => clearTimeout(timer);
-  }, [cancelArmed]);
+  }, [cancelTarget]);
 
   const model = snapshot === null ? null : overlayViewModel(snapshot, "vr");
-
-  const actionOf = (action: OverlayAction): OverlayActionView =>
-    model?.actions.find((entry) => entry.action === action) ?? {
-      action,
-      visible: false,
-      availability: { enabled: false, reason: "notAllowed" },
-      primary: false,
-    };
-
-  const cancel = actionOf("request_cancel_task");
-  const openOnDesktop = actionOf("open_on_desktop");
-  const dismiss = actionOf("dismiss");
-  const cancelReason =
-    !cancel.availability.enabled && cancel.visible
-      ? copy.disabledReasons[cancel.availability.reason]
-      : null;
+  const openOnDesktop = model?.actions.find((action) => action.action === "open_on_desktop");
+  const dismiss = model?.actions.find((action) => action.action === "dismiss");
 
   return (
     <div
@@ -215,103 +194,98 @@ export function VrOverlaySurface() {
               <div>
                 <Badge tone={badgeTone(model.tone)}>{copy.statusTones[model.statusTone]}</Badge>
               </div>
-              <h1 className="vua-overlay__status-title">{model.statusTitle}</h1>
-              {model.statusDetail !== null ? (
-                <p className="vua-overlay__status-detail">{model.statusDetail}</p>
-              ) : null}
+              <h1 className="vua-overlay__status-title">
+                {format(copy.statusTitles[model.statusTitleKey], {
+                  count: model.taskCards.length,
+                })}
+              </h1>
             </section>
 
-            {model.task !== null ? (
+            {model.taskCards.length > 0 ? (
               <section className="vua-overlay__task" aria-label={copy.taskSectionLabel}>
-                <h2 className="vua-overlay__task-title">{model.task.title}</h2>
-                <p className="vua-overlay__task-meta">
-                  {strings.workflowStage[model.task.stage]}
-                  {model.task.progress !== null
-                    ? ` · ${format(copy.progress, model.task.progress)}`
-                    : ""}
-                </p>
+                {model.taskCards.map((card) => (
+                  <div key={card.taskId} className="vua-overlay__task-row">
+                    {cancelTarget === card.taskId ? (
+                      // 确认态下只留确认/返回两个目标(动作 ≤3,确认语境不混排)
+                      <>
+                        <Button
+                          className="vua-overlay__button--danger"
+                          onClick={() => {
+                            setCancelTarget(null);
+                            dispatch("request_cancel_task", { taskId: card.taskId });
+                          }}
+                        >
+                          {copy.actions.cancelConfirm}
+                        </Button>
+                        <Button variant="default" onClick={() => setCancelTarget(null)}>
+                          {copy.actions.cancelKeep}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <h2 className="vua-overlay__task-title">{card.taskId}</h2>
+                        <p className="vua-overlay__task-meta">
+                          <Badge tone={card.cancellable ? "brand" : "neutral"}>
+                            {taskStateLabel(card.stateRaw)}
+                          </Badge>
+                        </p>
+                        {card.cancellable ? (
+                          <Button variant="default" onClick={() => setCancelTarget(card.taskId)}>
+                            {copy.actions.requestCancel}
+                          </Button>
+                        ) : null}
+                      </>
+                    )}
+                  </div>
+                ))}
+                {cancelTarget !== null ? (
+                  <p className="vua-overlay__hint">{copy.cancelArmedHint}</p>
+                ) : (
+                  <p className="vua-overlay__hint">{copy.cancelHint}</p>
+                )}
               </section>
             ) : null}
 
-            {model.environment.length > 0 ? (
-              <>
-                <ul className="vua-overlay__environment" aria-label={copy.environmentSectionLabel}>
-                  {model.environment.map((item) => (
-                    <li key={item.id} className="vua-overlay__environment-row">
-                      <span className="vua-overlay__environment-name">
-                        {environmentName(item.id)}
-                      </span>
-                      <Badge tone={environmentBadgeTone(item.state)}>
-                        {copy.environmentStates[item.state]}
-                      </Badge>
-                    </li>
-                  ))}
-                </ul>
-                {model.hiddenEnvironmentCount > 0 ? (
-                  <p className="vua-overlay__more">
-                    {format(copy.moreEnvironments, { count: model.hiddenEnvironmentCount })}
+            {model.productionCard.currentPlan !== null || model.productionCard.latestRecord !== null ? (
+              <section aria-label={copy.productionSectionLabel}>
+                {model.productionCard.currentPlan !== null ? (
+                  <p className="vua-overlay__task-meta">
+                    {format(copy.productionPlan, { planId: model.productionCard.currentPlan.planId })}
+                    {" · "}
+                    {copy.productionPlanStatuses[model.productionCard.currentPlan.statusLabel as keyof typeof copy.productionPlanStatuses]
+                      ?? model.productionCard.currentPlan.statusLabel}
                   </p>
                 ) : null}
-              </>
+                {model.productionCard.latestRecord !== null ? (
+                  <p className="vua-overlay__task-meta">
+                    {format(copy.productionRecord, { buildId: model.productionCard.latestRecord.buildId })}
+                    {" · "}
+                    {copy.productionRecordStatuses[model.productionCard.latestRecord.statusLabel as keyof typeof copy.productionRecordStatuses]
+                      ?? model.productionCard.latestRecord.statusLabel}
+                  </p>
+                ) : null}
+              </section>
             ) : null}
 
             <div className="vua-overlay__actions">
               <div className="vua-overlay__actions-row">
-                {cancel.visible && cancelArmed ? (
-                  // 确认态下只留确认/返回两个目标(动作 ≤3,确认语境不混排)
-                  <>
-                    <Button
-                      className="vua-overlay__button--danger"
-                      onClick={() => {
-                        setCancelArmed(false);
-                        dispatch("request_cancel_task");
-                      }}
-                    >
-                      {copy.actions.cancelConfirm}
-                    </Button>
-                    <Button variant="default" onClick={() => setCancelArmed(false)}>
-                      {copy.actions.cancelKeep}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    {openOnDesktop.visible ? (
-                      <Button
-                        variant={openOnDesktop.primary ? "primary" : "default"}
-                        disabled={!openOnDesktop.availability.enabled}
-                        onClick={() => dispatch("open_on_desktop")}
-                      >
-                        {copy.actions.openOnDesktop}
-                      </Button>
-                    ) : null}
-                    {cancel.visible ? (
-                      <Button
-                        variant="default"
-                        disabled={!cancel.availability.enabled}
-                        onClick={() => setCancelArmed(true)}
-                      >
-                        {copy.actions.requestCancel}
-                      </Button>
-                    ) : null}
-                    {dismiss.visible ? (
-                      <Button
-                        variant={dismiss.primary ? "primary" : "default"}
-                        disabled={!dismiss.availability.enabled}
-                        onClick={closeSurface}
-                      >
-                        {copy.actions.dismiss}
-                      </Button>
-                    ) : null}
-                  </>
-                )}
+                {openOnDesktop?.visible ? (
+                  <Button
+                    variant={openOnDesktop.primary ? "primary" : "default"}
+                    onClick={() => dispatch("open_on_desktop")}
+                  >
+                    {copy.actions.openOnDesktop}
+                  </Button>
+                ) : null}
+                {dismiss?.visible ? (
+                  <Button
+                    variant={dismiss.primary ? "primary" : "default"}
+                    onClick={closeSurface}
+                  >
+                    {copy.actions.dismiss}
+                  </Button>
+                ) : null}
               </div>
-              {cancelArmed ? (
-                <p className="vua-overlay__hint">{copy.cancelArmedHint}</p>
-              ) : cancelReason !== null ? (
-                <p className="vua-overlay__reason">{cancelReason}</p>
-              ) : cancel.visible && cancel.availability.enabled ? (
-                <p className="vua-overlay__hint">{copy.cancelHint}</p>
-              ) : null}
             </div>
           </>
         )}
