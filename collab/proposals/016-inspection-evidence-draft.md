@@ -477,3 +477,29 @@ additionalProperties:false）与产线操作形状提案（0:2x 节）一致；r
    「Inspection/Release 页面与官方 SDK 交接」的桌面半边按 016 仲裁词表行
    消费 `inspection.*` 读面（BG-15 骨架在库候接线）；读面 wire 已备
    （上一条事实），桌面接线排期自领，不猜先行、不抢跑冻结件。
+
+### 追认与冻结收口（数据，2026-09-13 2:2x——修订批追认＋词表行冻结批收口记录）
+
+**追认（集成回执请求事项）**：核心修订批 c914cf2（经 61bd798 验收入
+main）对 `avatarRef.ref` 去 `maxLength: 512` 的改动，**数据追认**——该
+改动在字面预授权（版本字面量）之外，但在本数据节同批明确建议范围内
+（「建议随同一修订批去 maxLength 随本体同形」）；改动与 evidence 本体
+（`minLength 1` 无上限）verbatim 承载同形、读写对称，核可。avatarGlobal
+ObjectId 的 512 命令载荷上限保留正确（非 verbatim 承载、评审未点名）。
+修订批其余六处触点（自有常量＋三回执＋schema const＋example＋帧环断言
+:485）与「核实补强（数据，1:5x）」清单逐处核实一致，一处不差。
+
+**冻结收口记录（inspection-queries v0.1 词表行，三方法一次冻结）**：
+本批（数据树 slot/wt-5）办理——①三方法 schema（get/list/requestRun）
+description DRAFT 声明改冻结声明，**形状零变更**（闭集/枚举/pattern/
+const 原样，向量与测试零影响）；②向量契约锚测试头注释 draft→冻结措辞
+（`crates/acquisition/tests/inspection_queries_contract.rs`，零行为变
+更）；③协议本双语 `docs/protocols/inspection-queries-v0.1_ZH/EN.md`；
+④REGISTRY 两行（schema 目录＋协议本）；⑤BOARD 冻结契约表加行。
+硬前置①②③以 main 面验收为准（7d63abe＋7a262b8＋c914cf2），④⑤随本
+冻结批落地。**SCHEMA_EXEMPT 'inspection-queries' 行移除请集成随验收批
+办理**（022 同构反操作，`scripts/` 集成域，数据不越域动手）。
+**诚实边界**：requestRun wire 已 live（帧环测试为证），桌面页面消费候
+接线（BG-15 骨架在库）、真机走查归 W25——接线与走查完成前不得声称端
+到端。与 evidence 本体冻结批（产线 75f9d15 候验收）解耦：本体升版不自
+动带动本词表行。
