@@ -849,9 +849,16 @@ namespace Vua.Editor.Bridge
                 });
             }
 
+            // Receipt version echoes the command's protocol version (v3
+            // production-face migration, proposal 016): a v3 command gets a
+            // v3 receipt, whose data legally carries instanceGlobalObjectId
+            // (proposal 011). A v2-labeled receipt can only occur for a v2
+            // command from a pre-migration provider — the declared v2
+            // transition drift (JsonUtility serializes the field into v2
+            // receipts too), never a v3 claim on a v2 label.
             var receipt = new BridgeResult
             {
-                schemaVersion = 2,
+                schemaVersion = command.schemaVersion,
                 commandId = command.commandId,
                 operation = command.operation,
                 status = "succeeded",
@@ -942,9 +949,11 @@ namespace Vua.Editor.Bridge
             }
             if (command.dryRun)
             {
+                // Receipt version echoes the command protocol version (v3
+                // production-face migration, proposal 016).
                 return new BridgeResult
                 {
-                    schemaVersion = 2,
+                    schemaVersion = command.schemaVersion,
                     commandId = command.commandId,
                     operation = command.operation,
                     status = "succeeded",
@@ -965,7 +974,7 @@ namespace Vua.Editor.Bridge
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
             return new BridgeResult
             {
-                schemaVersion = 2,
+                schemaVersion = command.schemaVersion,
                 commandId = command.commandId,
                 operation = command.operation,
                 status = "succeeded",
