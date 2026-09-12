@@ -10,6 +10,7 @@ pub mod eac_allowlist;
 pub mod eac_probe;
 pub mod eac_terminate;
 pub mod eac_verify;
+pub mod editor_verify;
 pub mod environment_managers;
 pub mod import_copy;
 pub mod project_inspection;
@@ -38,6 +39,12 @@ pub use eac_verify::{
 };
 #[cfg(all(windows, any(test, feature = "test-hooks")))]
 pub use eac_verify::eac_verify_windows_signature_for_test;
+pub use editor_verify::{
+    verify_editor_path, verify_editor_path_system, EditorPathIdentity, EditorPathRefusal,
+    EditorPathVerdict,
+};
+#[cfg(windows)]
+pub use editor_verify::WindowsVersionResourceSource;
 pub use environment_managers::{
     collect_environment_managers_snapshot, AlcomCapability, EditorFinding,
     EnvironmentManagersSnapshotV01, ManagerRoots, ProjectAssociation, ProjectFinding,

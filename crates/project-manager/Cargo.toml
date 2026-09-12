@@ -21,6 +21,9 @@ vua-orchestrator = { path = "../orchestrator" }
 windows-sys = { version = "=0.61.2", features = [
     "Win32_Foundation",
     "Win32_Storage",
+    # Editor identity reads (editor_verify, U10 ADR gate 1): PE version
+    # resource via version.dll (GetFileVersionInfo*/VerQueryValue).
+    "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_Security_Cryptography",
     "Win32_Security_WinTrust",
