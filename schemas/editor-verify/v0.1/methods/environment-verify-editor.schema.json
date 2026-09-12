@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/editor-verify/v0.1/methods/environment-verify-editor.schema.json",
+  "title": "VUA environment.verifyEditor (v0.1)",
+  "description": "Query face for verifying one user-picked Unity editor path (proposal 021 vocabulary row, core ruling 2026-09-13 seven points). DRAFT — this draft state does not imply freeze (proposal 016 data-side precedent): the freeze batch lands later with the bilingual protocol document, the docs/REGISTRY.md row, and the SCHEMA_EXEMPT removal request; until then this face is drift-protected by the in-tree consumer test only. Line name environment.verifyEditor (ruling point 1: consumer semantics, same detection-domain fact family as environment.getSnapshot; the directory/family name editor-verify anchors the primitive and the refusal-code family vua.editor_verify.* — the mapping is stated in the protocol document's first section with the freeze batch). Application kind: query (ruling point 2) — a parameterized read-only verification with zero state change, zero tasking, synchronous request/response (project.inspectProject precedent; the snapshot is never mutated by this call). Params are a closed single-key set {path} (ruling point 3): the user-picked path travels verbatim in all three accepted layouts (the executable itself, the versioned Hub root, or the Editor directory); no maxLength is set on purpose — a user-supplied filesystem path is verbatim carry and the write side invents no exclusive bound (c914cf2 discipline). The result is a two-state tagged union discriminated by verdict (ruling point 4), with the three implementation nails: (1) a refusal NEVER surfaces as an application error envelope — refused is a normal result state, because a refusal is a finding, not a failure; (2) detail carries the primitive's raw resource text verbatim and is never re-interpreted downstream; (3) the envelope schemaVersion is the const \"0.1\". classification and guidanceCode are byte-identical to the frozen environment-managers v0.1 editorClass enum and guidance pattern (zero-invention diff-check points for the freeze batch). Routing-not-wired semantics (ruling point 5): the honest absence code vua.environment.verify_unavailable is reserved for the unwired route / unreachable primitive only and is never reused as a verification refusal. Primitive of record: crates/project-manager/src/editor_verify.rs verify_editor_path (3eef4e4); the wire serialization face itself is carried by the core routing batch (provider-host).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "path": {
+      "description": "User-picked path, carried verbatim (no normalization on the wire; normalization is the primitive's job). Closed single-key params: minLength 1, and deliberately no maxLength.",
+      "type": "string",
+      "minLength": 1
+    },
+    "editorClass": {
+      "description": "Core classification closed set (EditorClass, serde snake_case), byte-identical to the frozen environment-managers v0.1 editorClass enum.",
+      "enum": [
+        "production_target",
+        "migration_source",
+        "other_unity_version",
+        "tuanjie_family"
+      ]
+    },
+    "guidanceCode": {
+      "description": "Compatibility-policy guidance code from the core classifier; render it, never promote an off-target verdict.",
+      "type": "string",
+      "pattern": "^vua\\.env_managers\\."
+    },
+    "refusalCode": {
+      "description": "Closed five-code refusal set from the primitive's codes module (vua.editor_verify.* family). A refusal is a normal finding, never an application error.",
+      "enum": [
+        "vua.editor_verify.target_missing",
+        "vua.editor_verify.exe_missing",
+        "vua.editor_verify.identity_unreadable",
+        "vua.editor_verify.not_an_editor",
+        "vua.editor_verify.unsupported_platform"
+      ]
+    },
+    "schemaVersion": {
+      "const": "0.1"
+    },
+    "environment-verifyEditorRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path"],
+      "properties": {
+        "path": { "$ref": "#/$defs/path" }
+      }
+    },
+    "environment-verifyEditorResult": {
+      "description": "Two-state tagged union discriminated by verdict. verified: identity established by reading the executable's own version resource (gate 1: never the directory name), classified per the support matrix (gate 2). refused: a normal in-result finding with a closed code — never an application error envelope (nail 1).",
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verdict",
+            "editorRoot",
+            "exePath",
+            "version",
+            "classification",
+            "guidanceCode",
+            "chinaDistribution",
+            "schemaVersion"
+          ],
+          "properties": {
+            "verdict": { "const": "verified" },
+            "editorRoot": {
+              "description": "Hub-layout versioned root when the picked path follows that layout, otherwise the executable's immediate directory. Informational only — identity comes from the version string, never this name.",
+              "type": "string",
+              "minLength": 1
+            },
+            "exePath": {
+              "description": "The executable the identity read targeted.",
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "description": "Complete version string as parsed (display form).",
+              "type": "string",
+              "minLength": 1
+            },
+            "classification": { "$ref": "#/$defs/editorClass" },
+            "guidanceCode": { "$ref": "#/$defs/guidanceCode" },
+            "chinaDistribution": {
+              "description": "Unity China distribution build (c<n> suffix); receives unsupported-environment diagnosis, never silently used as the production editor.",
+              "type": "boolean"
+            },
+            "schemaVersion": { "$ref": "#/$defs/schemaVersion" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "verdict",
+            "exePath",
+            "code",
+            "detail",
+            "schemaVersion"
+          ],
+          "properties": {
+            "verdict": { "const": "refused" },
+            "exePath": {
+              "description": "The executable the read targeted, when one was located.",
+              "type": ["string", "null"],
+              "minLength": 1
+            },
+            "code": { "$ref": "#/$defs/refusalCode" },
+            "detail": {
+              "description": "Human-readable diagnosis from the primitive; raw resource strings are quoted verbatim, never interpreted (nail 2: carried unchanged by the wire and desktop layers).",
+              "type": "string",
+              "minLength": 1
+            },
+            "schemaVersion": { "$ref": "#/$defs/schemaVersion" }
+          }
+        }
+      ]
+    }
+  }
+}

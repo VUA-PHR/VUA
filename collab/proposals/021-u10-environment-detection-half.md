@@ -422,3 +422,48 @@ schemaVersion const 先例在案。本节即 application-contract 侧词表行�
 路由批候草案件开工（provider-host 词表行＋路由＋消费测试＋
 EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子一映射测试）；③冻结批照后；
 ④桌面 U10 设置面切片候路由批。
+
+### 草案冻结件落库回执（环境，2026-09-13 3:1x——schemas/editor-verify/v0.1 草案态先行，候路由批开工）
+
+（兑现裁决收尾①与第 6/7 点时序微调；本节落在分支时序上先于裁决节入
+main——集成合并 wt-2/wt-6 时按落款时序排列：裁决（2:5x）在前、本节在
+后，原文零改写。）
+
+**已交付（本树 slot/wt-6 草案批）**：
+- **方法 schema**：`schemas/editor-verify/v0.1/methods/environment-verify-
+  editor.schema.json`——行名 `environment.verifyEditor`、分型 query、
+  params 单字段 `{path, minLength 1}` 明示不设 maxLength、result 两态
+  tagged union（`verdict` 判别）、信封 `schemaVersion` const "0.1"；
+  classification 四值闭集与 guidanceCode pattern 与 environment-managers
+  v0.1 冻结面逐字同构（裁决第 4 点两处零新发明 diff 核验点在案）；
+  缺席码 `vua.environment.verify_unavailable` 语义登记于 description
+  （第 5 点：仅路由未接线／原语不可达，绝不复用为验证拒绝）。DRAFT
+  声明随 description 落面（草案态不冻结、不登记，016 先例）。
+- **向量正 3 负 3**（examples/，每场景 request+result 对）：正例＝
+  exe 直选（2022.3.22f1→production_target）／版本化根（2022.3.22f1c1
+  →other_unity_version＋chinaDistribution true）／Editor 目录
+  （2019.4.31f1→migration_source）——三分支各钉一件（第 6 点修正项兑
+  现）；负例＝`target_missing`／`not_an_editor`（门①反例：目录名声称
+  2022.3.22f1 但身份 7.7.7x9 不符）／`exe_missing`——三件均为 refused
+  **合法 result 态**向量（钉子一的 schema 面表达：拒绝绝不上浮应用错
+  误信封），invalid-* 命名沿用惯例、语义为「验证拒绝场景」而非 schema
+  违反，消费测试断言其必须通过 result 校验＋code 逐字。
+- **消费测试**：`crates/project-manager/tests/editor_verify_wire.rs`
+  8 项全绿——含分类权威零漂移断言（向量 classification/guidanceCode
+  逐件由核心 `classify_editor(parse_editor_version(...))` 重导出对照）
+  ＋三分支 normalize 形状钉死＋闭集/pattern/缺席码防过载负断言。
+  schema-vectors workflow vua-project-manager 步骤随批追加
+  `--test editor_verify_wire`（DRAFT 漂移防护注释，照
+  inspection_evidence_vectors 先例）。
+- **测试证据（本机 2026-09-13，本树）**：editor_verify_wire 8/8＋
+  vua-project-manager 14 套件全 ok＋clippy 0 warning＋registry-only
+  exit 0（55 项一致）。
+- **越域配套申报（请集成验收追认）**：`scripts/collab-brief.mjs`
+  SCHEMA_EXEMPT 增 `'editor-verify'` 行——016 inspection-evidence 草案
+  豁免同构（0b8bebb 先例）；该行即「草案未登记」状态的机读表达，与裁
+  决「不登记」一致；**冻结批验收时由集成移除**（照 dffb1e3 先例）。
+  集成如有异议以集成裁决为准。
+
+**时序确认**：草案件＋向量绿已落，**核心路由批即具备开工条件**（裁决
+第 7 点：候草案件即开工，不等冻结批）；冻结批（协议本双语＋REGISTRY 行
+＋豁免行移除）照后办理；桌面 TS 面登记候路由批后随批不变。

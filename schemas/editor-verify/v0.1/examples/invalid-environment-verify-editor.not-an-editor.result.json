@@ -1,0 +1,7 @@
+{
+  "verdict": "refused",
+  "exePath": "C:\\Editors\\2022.3.22f1\\Editor\\Unity.exe",
+  "code": "vua.editor_verify.not_an_editor",
+  "detail": "version resource readable but no complete Unity editor version in: 7.7.7x9",
+  "schemaVersion": "0.1"
+}
