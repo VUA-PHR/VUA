@@ -53,11 +53,20 @@ updated: 2026-09-13
   r2＝机械核验——推送面非 collab 恰 provider-host 2 文件（Rust 侧），
   桌面/TS 域零变化（origin/main 已含 U10 设置面世代，leak 155 零泄漏
   在案），冲突标记 0 经 registry-only 实证；
-  r3＝CI 回读——推送后 rust workflow 触发（provider-host 变化命中
-  paths 过滤），结果候回填；collab-registry 不触发系 workflow paths
-  排除 collab/ 的正确行为（20c07e4 簿记先例）。
-  ≥2 通过前置满足（r1/r2 实证在案），推送随本簿记批执行。
+  r3＝CI 回读——**三绿回填完成**：rust **34725627987 success 6.9min**
+  （test-and-clippy：d396908 钉子批独立 CI 环境实证 588/0＋clippy 面）
+  ＋ts **34725627975 success 3.7min**＋schema-vectors **34725627932
+  success 4.5min**；collab-registry 未触发系 workflow paths 排除
+  collab/ 正常行为（20c07e4 先例）。**推送门三轮全过闭环，origin/main
+  ＝3e734cd，推送债清零。**
 - **BOARD 簿记随批**：最近更新段写入第十六批，第十五批降前录。
+- **候验收队列（本批合并后并发到达，照 3cf5d40 先例候下轮随轮验收不
+  追赶）**：slot/wt-2 领先 3（**fdf2398 N-3/N-4 核心顺手批实质件**——
+  恰 2 测试文件全核心域：orc_ipc_002 zone 配对表驱动＋snapshot_wire
+  尾随逗号，自申报 environment 16/0＋snapshot_wire 2/0＋clippy 两
+  crate exit 0，验收时 r1 diff 核＋相关测试复跑）＋14d77e6 追平＋
+  4624e87 状态批；slot/wt-4 领先 2／slot/wt-5 领先 2／slot/wt-6 领
+  先 1 均纯消化（追平＋状态批）。
 - **时序现状不变**：021 全闭环；真机义务（provider→真机 Unity v3 生产
   链路实跑、C# EditMode 运行验证、U10 设置面真机走查）归 W25，零端到
   端宣称维持。
@@ -70,20 +79,24 @@ b157faa／1a4fc4e／94e9ea6／a288b67 四树状态批入库；wt-4 重显不重�
 无。
 
 ## 下次合并意图
-各树下轮追平＋消化批照常验收（候验收队列现空）。**等待项**：W25/O-2
-用户开窗；requestRun 对象选择面事实源提案（核心/产线起草义务在案）；
-桌面 #21 批 D 签发；**本轮推送 CI 回读结果回填**（候下轮或本轮内
-等待）。
+**候验收四支随轮验收**（wt-2 实质顺手批 r1 diff 核＋测试复跑；wt-4/
+5/6 collab-only 照常）。**等待项**：W25/O-2 用户开窗；requestRun 对
+象选择面事实源提案（核心/产线起草义务在案）；桌面 #21 批 D 签发。
+（推送债已清零，无推送等待项。）
 
 ## 留言
 - （收尾待命声明：本轮 f4fc5bf＝wt-3 状态批入库〔树内追平 c3e70d5 自
   然收编〕＋BOARD W15 历史行 A1/A2/B7/C1 销账补记〔集成独立实证〕＋
-  推送门 r1/r2 实证后推送执行（CI 回读候回填）。collab-only 免全量
-  如实声明；registry-only exit 0 在案。无剩余可领项，退出待命候 CI
-  回读或下轮 brief。）
+  推送门三轮全过闭环〔r1 构成审阅＋r2 机械核验＋r3 CI 回读三绿：
+  rust 34725627987／ts 34725627975／schema-vectors 34725627932〕，
+  推送 20c07e4..3e734cd 共 52 提交，**推送债清零**。collab-only 免全
+  量如实声明；registry-only exit 0 在案。候验收四支照 3cf5d40 先例
+  候下轮，退出待命候下轮 brief。）
 - [→桌面] 状态批验收合并回执（f4fc5bf）——927fb6e＋树内追平合并
   c3e70d5 全收讫；A1/A2/B7/C1 销账补记已办理（BOARD 行内 ✅，集成独
   立实证后登记），对账一致。
+- [→核心] 钉子批 0167285（d396908）随第 26 代推送门推送，CI rust
+  34725627987 独立环境三绿实证——推送债中最后一支实质批就此落远端。
 - （wt-2/wt-4/wt-5/wt-6 四条重显留言照先例不逐条回执，避免乒乓；各
   批回执已在第十五批留言段发出。）
 - （历史留言已消化归档：第十五批回执见 git 历史 0c3a81b 世代；在途事
