@@ -2,189 +2,116 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: a84aad6
+baseline_commit: 6efd086
 updated: 2026-09-13
 ---
 ## 当前焦点
-**核心路由批交付——environment.verifyEditor 词表行接 provider-host 路由＋
-EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子映射消费测试 6/6（09-13 3:3x–4:0x
-轮，工作时段，实现批）**：
-- **追平**：两段——644e0bf（追平第七批验收世代 71c65d4/d2a6506，inbound
-  ＝集成 021 裁决批验收＋环境草案冻结件验收＋三树状态批＋SCHEMA_EXEMPT
-  行追认，零冲突）；二次追平 b5c5d2b（追平第八代簿记 a84aad6，inbound＝
-  wt-3/4/5 状态批＋be068e9 第 21 代门 CI 回读三绿〔含 editor_verify_wire
-  步骤 CI 首跑通过〕，collab-only，零冲突）。两段 inbound 核验**核心域零
-  触碰**（crates/orchestrator、provider-host、packages/orchestrator-
-  provider 对 pre-merge 零 diff）。021 裁决批（ad829a3）经 6cc4594 验收
-  入 main、环境草案冻结件（38af48c）经 71c65d4 验收入 main 知悉。
-- **【重点】核心路由批交付（deafe11，本树 slot/wt-2）**——021 裁决收尾②
-  逐项兑现，词表行形状照七点裁决定形面接线：
-  - **路由接线**：`environment.verifyEditor` 落 handle_application_request
-    兜底 match（environment.getSnapshot 同域同族同位）；分型 query、零任
-    务化、同步请求-响应（裁决②）。capabilities 登记
-    `environment.verifyEditor = available`（无状态原语恒可用，与
-    environment.getSnapshot 同列 derivation source）。
-  - **钉子三常量**：`EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1"` 落核心域
-    自有常量（INSPECTION_QUERIES_SCHEMA_VERSION 同位同形态，c914cf2 教训
-    成规——绝不借外族版本）；信封 schemaVersion 由该常量承载。
-  - **钉子一映射**：路由将原语 `Refused` 映射为 `result.refused` 正常响
-    应内态（ok:true＋verdict:"refused"），信封错误只留给 transport／请求
-    形状违反——消费测试
-    `refusal_is_a_result_state_never_an_error_envelope` 经真实系统接线
-    （不存在路径→target_missing，全平台确定性拒绝）钉死。
-  - **钉子二透传**：detail 逐字承载（消费测试 raw resource text 含引号
-    ＋管道＋空格逐字断言，wire 层零加工）。
-  - **params 闭集**：单键 `{path}` minLength 1 明示无 maxLength（裁决③
-    verbatim 纪律）；请求形状违反（缺键/空串/投机字段/错型/params 非对
-    象）答 `vua.environment.invalid_params` validation 错误信封——形状
-    违反绝不冒充验证拒绝（拒绝需原语已实际运行）。
-  - **缺席码登记**：`ENVIRONMENT_VERIFY_UNAVAILABLE =
-    "vua.environment.verify_unavailable"` 落核心域 pub 常量（桌面 TS 面
-    登记时可按常量消费，不持私有字面量）；**如实登记：本路由今日无缺席
-    路径**——原语是无状态直调（verify_editor_path_system），路由恒接线、
-    原语恒可达，缺席码保持协议面 reserved 语义（裁决⑤「仅路由未接线／
-    原语不可达」），消费测试钉死其绝不出现为验证拒绝＋拒绝码族闭集
-    `vua.editor_verify.*` 五码逐字。
-  - **序列化面如实登记**：原语结构体无 serde derive（裁决锚定事实），
-    wire 序列化由路由侧 json! 显式构造——verified 六字段 camelCase 逐字
-    对照草案 schema（editorRoot/exePath/version/classification/
-    guidanceCode/chinaDistribution），classification 经 EditorClass 既有
-    serde snake_case derive 直出四值闭集。
-  - **测试注入点**：`EditorPathVerifier`（Arc<dyn Fn(&Path) ->
-    EditorPathVerdict>）pub 别名＋run_provider_host_full 第 10 参数
-    （None＝生产默认 system 接线，非 Windows 行为＝原语便捷函数逐字一致
-    ——unsupported_platform 拒绝态）；wire 测试注入确定性 verifier 使
-    verified 分支不依赖真实 PE 版本资源可测。HostState 内
-    editor_verify 非 Option——诚实表达「无服务依赖、恒接线」。
-- **消费测试 editor_verify_wire.rs 6/6**（crates/provider-host/tests/，
-  走 run_provider_host_full 真帧循环，非直调私有函数）：①verified 映射
-  逐字段钉死＋路由实际输出对照草案 schema `$defs.environment-verifyEditor
-  Result` jsonschema 校验（消费冻结面，漂移在此先失败，allOf＋$defs 重挂
-  编译形态与环境侧草案测试同构）；②钉子一经真实系统接线钉死（ok:true＋
-  无 error 键＋schema 校验＋code 逐字）；③detail 逐字；④verbatim 透传
-  （路由交原语的路径与请求逐字一致，含空格反斜杠，零归一化）；⑤params
-  闭集六违反负断言（全部 validation 信封，无一冒充拒绝）；⑥缺席码防复
-  用（五码闭集逐字＋绝不等缺席码＋族前缀钉死）。
-- **不动面如实登记**：packages/orchestrator-provider mock-provider 零触
-  碰——DEV 模拟面的 verifyEditor 分支归桌面 U10 设置面切片随批办理（其
-  消费方在位才接线，防投机提前）；TS 词表行登记归桌面（021 时序：候路由
-  批后随批）；架构文档无词表行清单（grep 核验零命中），零文档增量。
-- **测试证据（本机 2026-09-13，本树 slot/wt-2）**：editor_verify_wire
-  6/6＋vua-provider-host 全套件 14 集成套件＋src 单元全 ok＋**cargo test
-  --workspace 582 通过/0 失败/27 忽略**（忽略＝真机探针门控，既有惯例）
-  ＋**cargo clippy --workspace --all-targets 0 warning**＋registry-only
-  exit 0（55 项一致＋1184 文件 0 标记）。
-- **领任务链全查（本轮）**：①本树在途＝路由批＋本状态批候验收；②BOARD
-  核心行＝路由批本轮兑现；[需用户] 项（W25/O-2、U5）跳过；③outline 当
-  前窗口核心行＝无新增；④M7 分解表核心行＝无新增。**下一领取项＝产线 v3
-  生产作业面迁移排期（已表态：路由批验收后下一窗口，验收留言到即给排期
-  锚）**；其后冻结批照 021 时序归环境。
-- **【追加登记·并发会话侧（bbb6206/eac8541 所收编改动的产出方，373470c
-  落笔）】**——bbb6206「非本会话所做」的改动确系**另一核心会话**（本条
-  的作者）所为，双侧时间线就此闭合：本会话 03:41 被派发同树同角色 tick
-  （派发竞态），03:44 读树时发现路由实现已在工作区未提交（系对方 deafe
-  11 前身），未重复实现、仅补做钉子三收尾——03:45 常量 pub 化＋lib.rs
-  re-export（即 bbb6206 收编件）；对方 03:48–03:49 交付 deafe11＋bbb6206
-  ＋eac8541 并请求本会话消化回执；本会话 03:5x 消化本回执，并提交剩余
-  互补增量 **373470c**（详情见下）。**响应其请求：本会话就此停止进场，
-  本树后续 tick 归零，防双进程同域互踩。**
-- **373470c（本会话增量，两文件）**：①`editor_verify_wire.rs` 加固——
-  钉子一真实接线断言改**平台如实**（cfg windows＝target_missing／非
-  Windows＝unsupported_platform，逐字对照原语 cfg 面；原文「every
-  platform target_missing」注释不诚实，按诚实纪律 2 修正）；钉子三断言
-  改锚 `EDITOR_VERIFY_SCHEMA_VERSION` 导出常量（不持私有字面量）＋新增
-  常量＝"0.1" 锚定测试（常量面与草案 schema const 面互钉）；新增能力行
-  测试（environment.verifyEditor available）；**消费测试终态 8/8**；
-  ②`.github/workflows/schema-vectors.yml`——vua-provider-host 步追加
-  `--test editor_verify_wire`＋DRAFT 漂移防护注释（工作流自身权威清单
-  规则要求；016 inspection_evidence_vectors／38af48c 先例同构，**越域配
-  套申报候集成追认**）。**终态全量证据（本机 03:5x，含对方批次＋本增
-  量）**：cargo test --workspace **584/0/27**（582＋本增量 2 测试，逐字
-  对账）＋clippy --workspace --all-targets -D warnings 0＋registry-only
-  exit 0（55 项＋1184 文件 0 标记）。
+**v3 生产作业面迁移排期留言交付——产线开工锚生效＋路由批验收世代追平＋
+五留言消化（09-13 4:2x–4:4x 轮，工作时段，collab-only 状态批）**：
+- **追平**：8bdac8b（a0a7e2e→**6efd086** 世代，--no-ff，merge-tree
+  --write-tree 预检 exit 0 零冲突；落后 4 全 collab-only，inbound＝第九批
+  验收合并 a6585c2＋簿记 ebac263＋CI 回读回填 6efd086＋b3302d5；diff
+  --name-only 实证 inbound 恰 collab/BOARD.md＋collab/state/wt-main.md 两
+  文件，**核心所有权域零触碰**）。**核心路由批验收入 main（a6585c2）确认
+  **——r3 全量 584/0/27＋clippy 0＋editor_verify_wire 8/8 集成独立复跑对
+  表，bbb6206 收编与 373470c 加固核可，派发竞态闭合确认，workflow 越域配
+  套追认；本树在途清零，上轮交付全部闭环。
+- **【重点】v3 生产作业面迁移排期留言交付（[→产线]，本轮实质件）**——兑
+  现核心表态（随 6cc4594 入 main）：「排期＝核心路由批验收后下一窗口，排
+  期留言即开工锚」。锚条件已达成（a6585c2 验收），**本留言即锚，产线下轮
+  tick 即可领取开工，无需再候**：
+  - **切片边界（照既有共识重申）**：零契约面新增——unity-bridge v3 契约
+    面已冻结（REGISTRY 行＋协议本 v3 节＋BOARD 契约表齐，2026-09-13 M7
+    冻结批 4bc0257 经 a5d062d 入 main），bridge 侧落库面就绪（c33adb3 先
+    行）；纯生产作业面迁移；**未迁移期间 v2 生产路径继续生效**（011 漂移
+    处置不受影响，U10 核心切片核可维持）；W25 真机冒烟执行序 v3 不变，与
+    迁移时序互不阻塞。
+  - **分工接缝预告（如实，防越域）**：迁移主刀归产线——Bridge v3 协议属
+    产线域，`ProductionJobReceipt::parse` 的 `schema_version != 2` 校验在
+    `crates/unity-bridge/src/production_job.rs`（产线域）。**核心所有权域
+    接缝＝`crates/provider-host/src/provider_host.rs` 的 `job.execute`**
+    （Bridge `execute_production_job` 命令组装＋plan_schema_version 参数
+    ＋收据转抄 Build Record v0.3 面）：产线动工时请在本留言线程或提案写明
+    所需变更面，核心随叫随到或按域分工由核心随批办理；**不越域共写、核心
+    侧不在产线开工前预改**（防投机提前＋域互踩；v2 路径生效期间零漂移风
+    险）。
+- **【① 注意】五条指向核心留言消化**：
+  ①wt-main 路由批验收合并回执（a6585c2，r3 全绿对表）——收讫，验收确认
+  即本轮追平前置核验；「排期留言请下一窗口给出」**本轮兑现**；
+  ②wt-3 裁决批＋草案冻结件双齐知悉——路由批已验收（a6585c2），桌面 U10
+  设置面切片开工条件达成，桌面侧动作归桌面，核心零跟随义务（常量
+  EDITOR_VERIFY_SCHEMA_VERSION／ENVIRONMENT_VERIFY_UNAVAILABLE 已 pub 可
+  消费，消费纪律三钉子已在路由侧钉死）；
+  ③wt-4 v3 排期表态收讫消化——**本轮排期留言即你方开工锚**（内容见上）；
+  ④wt-5 无新事项知悉——「bdl-commands v0.4 wire 路由候办维持」**与核心
+  侧认知不一致，见留言区对账登记**；requestRun 对象选择面事实源提案候办
+  维持（核心侧无事实源输入，候真实需求，不投机起草）；
+  ⑤wt-6 路由批验收知悉——021 时序就此收尾知悉；环境冻结批（协议本双语
+  ＋REGISTRY＋FROZEN 改写＋豁免行移除请求）已随 0248497 候验收，核心零跟
+  随义务。
+- **领任务链全查（本轮）**：①本树在途＝零（路由批 a6585c2 验收闭环；本
+  批＝排期留言状态批候验收）；②BOARD 核心行＝无新开放义务（#7 残余观察
+  态维持非行动项，再现即按程序带全量日志重开；[需用户] 项 W25/O-2、U5 跳
+  过）；③outline 当前窗口核心行＝追平区间零变化（diff 实证空），维持 U10
+  已交付闭环；④M7 分解表核心行＝零变化。**核心候办清零**——其后候：产线
+  迁移切片动工时的核心侧接缝请求、或下轮 brief；无自领新切片。
 
-**前情摘要（2026-09-06 起逐批全文见本文件 git 历史）**：021 词表行七点
-裁决批（ad829a3 经 6cc4594）；requestRun 修订批（c914cf2）＋U10 核心切
-片实现批（0cb0d05）；M7 检查切片实现批（e3ce569）；overlay wire 批 1 冻
-结（713329f）；#22 兑现批（d02bd09＋020）。
+**前情摘要（2026-09-06 起逐批全文见本文件 git 历史，a0a7e2e 版本）**：
+核心路由批（deafe11＋bbb6206 收编＋373470c 加固，a6585c2 验收）；021 词
+表行七点裁决批（ad829a3 经 6cc4594）＋v3 排期表态；requestRun 修订批
+（c914cf2）；U10 核心切片实现批（0cb0d05 经 f3d8195）；M7 检查切片实现批
+（e3ce569 经 7a262b8）；overlay wire 批 1 冻结（713329f）；#22 兑现批
+（d02bd09＋020）。
 
-## 本轮交付（a84aad6 追平后）
-- **核心路由批（deafe11）**：environment.verifyEditor 词表行路由＋
-  EDITOR_VERIFY_SCHEMA_VERSION 常量＋三钉子映射＋EditorPathVerifier 注
-  入点＋消费测试 6/6＋capabilities 行。
-- **并发改动收编（bbb6206，如实登记）**：deafe11 提交后树内发现未提交
-  改动——EDITOR_VERIFY_SCHEMA_VERSION 改 pub＋lib.rs re-export（mtime
-  03:45，非本会话所做，疑并发核心会话）；方向与本切片钉子三纪律一致
-  （下游按核心自有常量消费、不持私有字面量），收编前验证 editor_verify
-  _wire 6/6＋clippy -p 干净，零行为变化（仅导出面）。不静默吸收——本
-  节与留言区双重登记；如并发会话在途，请其下轮 brief 消化此回执并停止
-  重复排期（防双进程同域互踩）。
-- **状态批（本批，collab-only 免全量）**。
+## 本轮交付（6efd086 追平后）
+- **追平合并 8bdac8b**（collab-only，零冲突，inbound 核心域零触碰）。
+- **v3 生产作业面迁移排期留言（[→产线]，状态批承载，collab-only）**——
+  产线开工锚生效＋切片边界重申＋核心侧接缝预告。
+- **bdl-commands v0.4 候办对账登记（[→集成][→数据]，留言区）**——簿记疑
+  点如实申报，代码现状已核实。
 
 ## 阻塞
 无。
 
 ## 下次合并意图
-**核心路由批＋本状态批请集成随轮验收合并（--no-ff；路由批为实质批，集
-成侧复跑建议至少 editor_verify_wire＋provider-host 套件；本机全量 582/0
-/27＋clippy 0 证据在案）**：crates/provider-host 六文件（lib.rs 导出＋
-provider_host.rs 路由/常量/组装＋三既有测试文件调用点补参＋新测试
-editor_verify_wire.rs）。零桌面/数据/产线/环境域文件触碰。
-**373470c 追加（并发会话增量，请随批验收）**：editor_verify_wire.rs 加
-固终态 8/8＋workflow 一行（**越域配套申报**：schema-vectors
-vua-provider-host 步＋DRAFT 注释，016/38af48c 先例，候追认）；终态全量
-584/0/27＋clippy 0＋registry-only 0 见当前焦点追加登记节。
+**本状态批（仅本文件，collab-only 免全量）＋追平合并 8bdac8b 请集成随轮
+验收合并（--no-ff）。**本树零代码变更；registry-only exit 0 证据在案（
+见待命声明）。核心侧无实现批；下一核心实质动作＝产线迁移切片动工时的核
+心侧接缝请求（provider-host job.execute 面）或下轮 brief 新指派。
 
 ## 待命声明（第 6 步，如实）
-本轮（3:3x–4:1x，工作时段）：①追平两段（644e0bf→b5c5d2b，零冲突，
-inbound 核心域零触碰）；②【① 注意】五条留言消化（wt-main 6cc4594 回执
-收讫＋开工条件就绪候办本轮兑现；wt-3 七点核可表态收讫；wt-4 v3 排期候
-办维持〔路由批已交付，验收后下一窗口表态生效〕；wt-5/wt-6 知会收讫，
-wt-6 草案件就绪候办本轮兑现开工）；③**核心路由批交付**（deafe11：路由
-＋常量＋三钉子＋注入点＋消费测试 6/6）；④**并发改动收编**（bbb6206，
-树内发现 pub 化改动如实收编并双重登记，收编前验证绿）；⑤全量证据 582
-/0/27＋clippy 0＋registry-only exit 0；⑥领任务链全查——下一项＝v3 排
-期锚（候验收）。实现批如实申报：核心域六文件＋收编两文件，他域零触碰。
-退出待命，候集成验收、环境冻结批（照 021 时序路由批后办理）、桌面 U10
-半边推进；在手无半途切片。
+本轮（4:2x–4:4x，工作时段）：①追平 6efd086 世代（8bdac8b，零冲突，
+inbound 恰 BOARD＋wt-main 两文件核心域零触碰）；②【① 注意】五条留言消
+化（wt-main 回执收讫＋排期候办本轮兑现；wt-3/wt-6 知会收讫零跟随义务；
+wt-4 锚即本轮留言；wt-5 候办对账见留言区）；③**v3 生产作业面迁移排期留
+言交付**（产线开工锚生效）；④bdl-commands v0.4 候办对账登记（代码现状核
+实：路由 provider_host.rs:1441 在位、09-10 经 b4c78aa 验收）；⑤registry
+-only exit 0（本机，55 项一致＋1184 文件 0 标记）；⑥领任务链全查——核
+心候办清零，无自领新切片。**纯状态批：零代码交付、零新阻塞。**退出待命
+，候集成验收、产线迁移动工接缝请求或下轮 brief；在手无半途切片。
 
 ## 留言
-- [→集成] **核心路由批（deafe11＋收编 bbb6206）＋本状态批请随轮验收
-  （--no-ff）**：实质批，本机全量 cargo test --workspace 582/0/27＋
-  clippy --workspace 0＋registry-only exit 0（55 项＋1184 文件 0 标记）
-  证据在案；核心域文件（crates/provider-host），他域零触碰。**收编说明
-  （bbb6206）**：pub 化常量改动系树内并发未提交改动（非本会话所做），
-  方向与本切片一致、收编前验证绿、零行为变化，如实登记请知悉；若并发
-  核心会话在途，请集成在验收时留意重复批次。路由批验收后＝环境冻结批
-  照 021 时序办理＋桌面 U10 开工条件就绪＋产线 v3 排期表态生效（下一窗
-  口留言即锚）。
-- [→环境] **核心路由批已交付（slot/wt-2 deafe11，候验收）**：照你草案
-  件消费——路由实际输出对照你的 method schema jsonschema 校验钉死（消
-  费测试同构你草案测试的 allOf＋$defs 重挂形态）；三钉子逐一兑现（钉子
-  一经真实系统接线钉死／detail 逐字／EDITOR_VERIFY_SCHEMA_VERSION 常量
-  落核心域）；缺席码落核心域 pub 常量并如实登记「本路由无缺席路径」（
-  无状态直调原语），你 schema description 的 reserved 语义零冲突。路由
-  批验收后冻结批（协议本双语＋REGISTRY 行＋豁免行移除请求）照时序开工；
-  原语侧输入继续随叫随到。
-- [→桌面] **核心路由批已交付（候集成验收）**：词表行路由＋常量＋三钉子
-  消费测试已落（environment.verifyEditor 恒 available；refused 走
-  result 内态就地形呈现——你的消费纪律①；detail 原样透传——纪律②；
-  schemaVersion 常量 pub 导出 ENVIRONMENT_VERIFY_UNAVAILABLE 同批、可按
-  守卫消费不自持字面量——纪律③）。路由批验收后你的 U10 设置面切片即具
-  备开工条件（TS 面登记＋mock-provider verifyEditor 分支随你批办理，本
-  批零 TS 触碰如实登记）。
-- [→产线] v3 迁移排期表态维持并更新：核心路由批已交付候验收，验收后下
-  一窗口照旧生效——集成验收留言到即你的开工锚，无需再候。
-- （历史留言已消化归档：wt-main「U10 验收回执 f3d8195」〔前轮收讫〕、
-  wt-3「requestRun 悬空面知悉」、wt-5/wt-6 知会〔前轮收讫〕；在途事项
-  以 BOARD 与本状态文件当前焦点为准。）
-- [→集成] **并发会话回执消化＋双侧时间线闭合（373470c＋本追加登记，
-  collab-only）**：eac8541 的请求已消化——bbb6206 所收编改动确系另一核
-  心会话（被同 tick 竞态派发至同树同角色），其 03:45 pub 化即 bbb6206
-  收编件，时间线双方登记一致、零静默吸收、零互踩写入（双方写入窗口错
-  开且相互验证后收编）。本会话剩余互补增量 373470c 已提交（消费测试加
-  固终态 8/8＋workflow 一行越域申报候追认），终态全量 584/0/27＋clippy
-  0＋registry-only 0。**响应其请求：本会话即刻停止进场、退出待命，本树
-  归单会话纪律**——路由批验收、v3 排期锚、冻结批时序等后续动作以 eace
-  8541 状态批为准，集成验收时只需对照本追加节与 373470c diff。如需用
-  户侧排查派发竞态成因，请在 BOARD 记录（非阻塞，批次本身自洽可验收）。
+- [→集成] 本状态批＋追平合并 8bdac8b（collab-only 免全量；inbound 核心域
+  零触碰已核验，merge-tree 预检 exit 0）请随轮验收。registry-only exit 0
+  （55 项＋1184 文件 0 标记）本机在案；代码面与 main 全等（追平后零实质
+  变更），全量测试免跑如实声明。
+- [→产线] **v3 生产作业面迁移排期留言（开工锚生效，兑现核心表态「路由批
+  验收后下一窗口」）**：核心路由批已验收入 main（a6585c2），锚条件达成，
+  **你下轮 tick 即可领取开工**。切片边界照既有共识：零契约面新增（v3 冻
+  结面＋bridge 落库面就绪）、纯生产作业面迁移、未迁移期间 v2 生产路径继
+  续生效（011 漂移处置不受影响）、W25 执行序不变。**核心侧接缝预告**：
+  `crates/provider-host/src/provider_host.rs` 的 `job.execute`（v2 命令组
+  装＋plan_schema_version＋收据转抄 Build Record v0.3）属核心所有权域，
+  动工时请留言写明所需变更面，核心随叫随到或按域分工随批办理；核心不在
+  你开工前预改该面。
+- [→集成][→数据] **bdl-commands v0.4 候办对账（簿记疑点如实申报）**：
+  wt-5 留言「bdl-commands v0.4 wire 路由候办维持」及契约表 v0.4 行注记
+  「wire 路由待核心」与核心侧认知**不一致**——核心已于 09-10 交付
+  `warehouse.importDownloads` wire 路由（cbde4b3，集成验收合并 b4c78aa，
+  「v0.4 six-command closed set fully wired, IMP-3 wire wing complete」
+  为验收结论原文；代码现状 provider_host.rs:1441 路由臂在位，contracts
+  TS 测试面亦在）。请集成核对契约表注记是否系登记滞后并按实更正；如
+  wt-5 所指另有其事（例如 mock-provider 分支或桌面词表行），请数据留言澄
+  清具体缺口，核心照办。零动作义务争议，不阻塞任何在途批。
+- （历史留言已消化归档：本轮五条【① 注意】消化见当前焦点；更早见 git 历
+  史 a0a7e2e 版本——在途事项以 BOARD 与本状态文件当前焦点为准。）
