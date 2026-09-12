@@ -96,6 +96,15 @@ namespace Vua.Editor.Bridge
                     case "restore_project":
                         result = RestoreProject(command);
                         break;
+                    case "inspect_avatar_references":
+                        result = InspectAvatarReferences(command);
+                        break;
+                    case "inspect_lighting":
+                        result = InspectLighting(command);
+                        break;
+                    case "inspect_upload_readiness":
+                        result = InspectUploadReadiness(command);
+                        break;
                     default:
                         return BridgeResult.Reject(command, "bridge.operation_not_allowed", "该操作不在允许列表中。");
                 }
@@ -136,6 +145,13 @@ namespace Vua.Editor.Bridge
                    operation == "create_local_vpm_package" ||
                    operation == "install_outfit" || operation == "create_toggle" ||
                    operation == "execute_production_job" || operation == "restore_project";
+        }
+
+        private static bool IsInspection(string operation)
+        {
+            return operation == "inspect_avatar_references" ||
+                   operation == "inspect_lighting" ||
+                   operation == "inspect_upload_readiness";
         }
 
         private static BridgeResult ImportUnityPackage(BridgeCommand command)
@@ -618,6 +634,157 @@ namespace Vua.Editor.Bridge
             return result;
         }
 
+        // ---- v3: M7 inspection read operations (proposal 016 hard
+        // precondition 1). Read-only: dryRun is forced true by the envelope
+        // gate, findings travel as typed diagnostics codes, and the receipt
+        // carries no data fields of its own. These operations report
+        // deterministic Unity-observed facts only — never official VRChat
+        // ratings (official_sdk_rating stays reserved until the SDK-handoff
+        // slice). ----
+
+        private static BridgeResult InspectAvatarReferences(BridgeCommand command)
+        {
+            if (!TryResolve(command.payload.avatarGlobalObjectId, out var avatar))
+            {
+                return BridgeResult.Reject(command, "validation.avatar_not_found", "找不到要检查的 Avatar。");
+            }
+            var result = BridgeResult.Success(command);
+            var findings = 0;
+            foreach (var renderer in avatar.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer is SkinnedMeshRenderer skinned && skinned.sharedMesh == null)
+                {
+                    findings++;
+                    result.diagnostics.Add(BridgeDiagnostic.Error("references.missing_mesh",
+                        $"SkinnedMeshRenderer「{renderer.name}」的网格引用丢失。"));
+                }
+                var materials = renderer.sharedMaterials;
+                for (var slot = 0; slot < materials.Length; slot++)
+                {
+                    if (materials[slot] != null) continue;
+                    findings++;
+                    result.diagnostics.Add(BridgeDiagnostic.Error("references.missing_material",
+                        $"Renderer「{renderer.name}」材质槽 {slot} 引用丢失。"));
+                }
+            }
+            foreach (var component in avatar.GetComponentsInChildren<Component>(true))
+            {
+                if (component != null) continue;
+                findings++;
+                result.diagnostics.Add(BridgeDiagnostic.Error("references.missing_script",
+                    "层级中存在脚本缺失的组件（m_Script 空引用）。"));
+            }
+            if (findings == 0)
+            {
+                result.diagnostics.Add(BridgeDiagnostic.Info("references.clean",
+                    "Avatar 层级内网格、材质槽与脚本引用完整。"));
+            }
+            return result;
+        }
+
+        private static BridgeResult InspectLighting(BridgeCommand command)
+        {
+            if (!TryResolve(command.payload.avatarGlobalObjectId, out var avatar))
+            {
+                return BridgeResult.Reject(command, "validation.avatar_not_found", "找不到要检查的 Avatar。");
+            }
+            var scene = avatar.gameObject.scene.IsValid()
+                ? avatar.gameObject.scene
+                : SceneManager.GetActiveScene();
+            if (!scene.IsValid())
+            {
+                return BridgeResult.Reject(command, "lighting.scene_invalid", "没有可检查的有效场景。");
+            }
+            var result = BridgeResult.Success(command);
+            var lights = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<Light>(true))
+                .ToList();
+            var baked = lights.Count(light => light.lightmapBakeType == LightmapBakeType.Baked);
+            var realtime = lights.Count - baked;
+            var probes = scene.GetRootGameObjects()
+                .SelectMany(root => root.GetComponentsInChildren<ReflectionProbe>(true))
+                .Count();
+            if (realtime > 0)
+            {
+                result.diagnostics.Add(BridgeDiagnostic.Warning("lighting.realtime_lights_present",
+                    $"场景存在 {realtime} 个非纯烘焙光源（实时/混合）；光照烘焙状态可能影响观感一致性。本操作报告观察事实，不是官方光照评级。"));
+            }
+            else if (baked > 0)
+            {
+                result.diagnostics.Add(BridgeDiagnostic.Info("lighting.baked_only",
+                    $"场景 {baked} 个光源均为纯烘焙；另观察到 {probes} 个反射探针。本操作报告观察事实，不是官方光照评级。"));
+            }
+            else
+            {
+                result.diagnostics.Add(BridgeDiagnostic.Info("lighting.clean",
+                    $"场景无光源；观察到 {probes} 个反射探针。本操作报告观察事实，不是官方光照评级。"));
+            }
+            return result;
+        }
+
+        private static BridgeResult InspectUploadReadiness(BridgeCommand command)
+        {
+            if (!TryResolve(command.payload.avatarGlobalObjectId, out var avatar))
+            {
+                return BridgeResult.Reject(command, "validation.avatar_not_found", "找不到要检查的 Avatar。");
+            }
+            var result = BridgeResult.Success(command);
+            // SDK 前置组件以公开组件名做确定性查找；SDK 未导入的项目里这些
+            // 类型不存在——如实告知「前置未就绪」，不伪造就绪，也不代官方
+            // SDK 下判定。
+            var descriptorType = FindType("VRC.SDK3.Avatars.Components.VRCAvatarDescriptor");
+            if (descriptorType == null)
+            {
+                result.diagnostics.Add(BridgeDiagnostic.Warning("upload_readiness.sdk_absent",
+                    "本项目未检测到 VRChat Avatar SDK 前置组件；上传前置未就绪。这是前置观察，不是官方 SDK 判定。"));
+            }
+            else
+            {
+                var descriptor = avatar.GetComponent(descriptorType);
+                if (descriptor == null)
+                {
+                    result.diagnostics.Add(BridgeDiagnostic.Error("upload_readiness.descriptor_missing",
+                        "Avatar 上缺少 VRCAvatarDescriptor 组件。"));
+                }
+                else
+                {
+                    var hasPipeline = avatar.GetComponents<Component>()
+                        .Any(component => component != null && component.GetType().Name == "PipelineManager");
+                    if (!hasPipeline)
+                    {
+                        result.diagnostics.Add(BridgeDiagnostic.Warning("upload_readiness.pipeline_missing",
+                            "Avatar 上缺少 PipelineManager 组件（SDK 上传管道前置）。"));
+                    }
+                    else
+                    {
+                        result.diagnostics.Add(BridgeDiagnostic.Info("upload_readiness.clean",
+                            "Avatar Descriptor 与 PipelineManager 前置组件在位。这是前置观察，不是官方 SDK 判定。"));
+                    }
+                }
+            }
+            result.diagnostics.Add(BridgeDiagnostic.Info("upload_readiness.build_target",
+                $"活动构建目标：{EditorUserBuildSettings.activeBuildTarget}。"));
+            return result;
+        }
+
+        private static Type FindType(string fullName)
+        {
+            foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+            {
+                Type type = null;
+                try
+                {
+                    type = assembly.GetType(fullName, false);
+                }
+                catch (Exception)
+                {
+                    type = null;
+                }
+                if (type != null) return type;
+            }
+            return null;
+        }
+
         // ---- v2: production jobs and restore (unity-bridge v2, proposal 009) ----
 
         private static readonly string[] SupportedPlanSchemaVersions = { "0.3" };
@@ -721,23 +888,33 @@ namespace Vua.Editor.Bridge
 
             // Execute the ordered job sequence (proposal 011 execution-semantics
             // spec, core 2026-09-08). Known-but-unimplementable kinds fail
-            // with typed codes that name exactly what is missing.
+            // with typed codes that name exactly what is missing. An
+            // install_modular_asset success carries the instance-root
+            // GlobalObjectId (proposal 011 success criterion — the receipt
+            // carries the instance identity; single-material plans are the
+            // primary form, and for multi-install plans the FIRST successful
+            // instance is kept as the receipt's instance identity).
             for (var index = 0; index < plan.jobs.Count; index++)
             {
                 var job = plan.jobs[index];
-                var (ok, errorCode, message) = job.kind switch
+                var (ok, errorCode, message, instanceGlobalObjectId) = job.kind switch
                 {
                     "install_modular_asset" => ExecuteInstallModularAsset(job, plan, command),
                     "attach_to_bone" => ExecuteAttachToBone(job, plan),
                     "exclude_object" => ExecuteExcludeObject(job),
                     "set_object_active" => ExecuteSetObjectActive(job),
                     _ => (false, "job_kind_unknown",
-                        $"作业 {job.jobId} 的 kind「{job.kind}」不在计划词表内。")
+                        $"作业 {job.jobId} 的 kind「{job.kind}」不在计划词表内。", string.Empty)
                 };
                 if (ok)
                 {
                     steps[index].status = "executed";
                     if (!string.IsNullOrEmpty(message)) steps[index].warning = message;
+                    if (!string.IsNullOrEmpty(instanceGlobalObjectId) &&
+                        string.IsNullOrEmpty(receipt.data.instanceGlobalObjectId))
+                    {
+                        receipt.data.instanceGlobalObjectId = instanceGlobalObjectId;
+                    }
                     continue;
                 }
                 steps[index].status = "failed";
@@ -804,7 +981,7 @@ namespace Vua.Editor.Bridge
 
         // ---- v2 job-kind executors (proposal 011 execution-semantics spec) ----
 
-        private static (bool ok, string errorCode, string message) ExecuteInstallModularAsset(
+        private static (bool ok, string errorCode, string message, string instanceGlobalObjectId) ExecuteInstallModularAsset(
             BridgePlanJob job, BridgePlanDocument plan, BridgeCommand command)
         {
             // The material enters the project through the v1-verified
@@ -815,7 +992,7 @@ namespace Vua.Editor.Bridge
                 string.IsNullOrWhiteSpace(job.manifestSha256))
             {
                 return (false, "source_not_staged",
-                    "来源物未由 provider 物化到 job 目录（缺 sourcePackagePath/manifestSha256）。");
+                    "来源物未由 provider 物化到 job 目录（缺 sourcePackagePath/manifestSha256）。", string.Empty);
             }
             var sub = new BridgeCommand
             {
@@ -837,10 +1014,10 @@ namespace Vua.Editor.Bridge
                 {
                     if (diagnostic.severity == "error")
                     {
-                        return (false, diagnostic.code, diagnostic.message);
+                        return (false, diagnostic.code, diagnostic.message, string.Empty);
                     }
                 }
-                return (false, "source_import_failed", "来源物物化未成功。");
+                return (false, "source_import_failed", "来源物物化未成功。", string.Empty);
             }
 
             // Instantiate the first new prefab as the instance root, named by
@@ -850,20 +1027,23 @@ namespace Vua.Editor.Bridge
             if (prefabPath == null)
             {
                 return (false, "instance_prefab_missing",
-                    "来源物内容已入项目，但未找到可实例化的 prefab 根。");
+                    "来源物内容已入项目，但未找到可实例化的 prefab 根。", string.Empty);
             }
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             if (prefab == null)
             {
-                return (false, "instance_prefab_missing", "prefab 无法由 AssetDatabase 加载。");
+                return (false, "instance_prefab_missing", "prefab 无法由 AssetDatabase 加载。", string.Empty);
             }
             var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab);
             if (instance == null)
             {
-                return (false, "instance_failed", "prefab 实例化失败。");
+                return (false, "instance_failed", "prefab 实例化失败。", string.Empty);
             }
             instance.name = string.IsNullOrWhiteSpace(job.assetId) ? instance.name : job.assetId;
-            return (true, string.Empty, string.Empty);
+            // Proposal 011 success criterion: the receipt carries the
+            // instance-root identity as a GlobalObjectId string.
+            var instanceId = GlobalObjectId.GetGlobalObjectIdFor(instance).ToString();
+            return (true, string.Empty, string.Empty, instanceId);
         }
 
         private static (bool ok, string errorCode, string message) ExecuteAttachToBone(
@@ -1173,10 +1353,14 @@ namespace Vua.Editor.Bridge
         private static BridgeResult ValidateEnvelope(BridgeCommand command)
         {
             if (command == null) return BridgeResult.Reject(null, "bridge.invalid_json", "命令 JSON 无法解析。");
-            if (command.schemaVersion != 1 && command.schemaVersion != 2) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
+            if (command.schemaVersion != 1 && command.schemaVersion != 2 && command.schemaVersion != 3) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
             if (command.schemaVersion == 1 && (command.operation == "execute_production_job" || command.operation == "restore_project"))
             {
                 return BridgeResult.Reject(command, "bridge.unsupported_schema", "生产作业与恢复操作需要协议 v2。");
+            }
+            if (command.schemaVersion < 3 && IsInspection(command.operation))
+            {
+                return BridgeResult.Reject(command, "bridge.unsupported_schema", "检查读面操作需要协议 v3。");
             }
             if (string.IsNullOrWhiteSpace(command.commandId) ||
                 !Regex.IsMatch(command.commandId, "^[A-Za-z0-9_-]{1,128}$", RegexOptions.CultureInvariant))
@@ -1208,7 +1392,10 @@ namespace Vua.Editor.Bridge
                    operation == "validate_avatar" ||
                    operation == "analyze_performance" ||
                    operation == "execute_production_job" ||
-                   operation == "restore_project";
+                   operation == "restore_project" ||
+                   operation == "inspect_avatar_references" ||
+                   operation == "inspect_lighting" ||
+                   operation == "inspect_upload_readiness";
         }
 
         private static bool TryResolve(string serializedId, out GameObject gameObject)

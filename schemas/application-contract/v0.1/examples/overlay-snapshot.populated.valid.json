@@ -1,0 +1,29 @@
+{
+  "contractVersion": "0.1",
+  "tasks": [
+    {
+      "taskId": "task-019e0000-0000-7000-8000-000000000101",
+      "state": "running",
+      "correlationId": "corr-019e0000-0000-7000-8000-000000000001"
+    },
+    {
+      "taskId": "task-019e0000-0000-7000-8000-000000000102",
+      "state": "succeeded",
+      "correlationId": "corr-019e0000-0000-7000-8000-000000000002"
+    }
+  ],
+  "productionCard": {
+    "currentPlan": {
+      "planId": "019e0000-0000-7000-8000-000000000301",
+      "planStatus": "approved",
+      "createdAt": "2026-09-12T01:00:00.000Z",
+      "recipeId": "019e0000-0000-7000-8000-000000000001"
+    },
+    "latestRecord": {
+      "buildId": "019e0000-0000-7000-8000-000000000401",
+      "planId": "019e0000-0000-7000-8000-000000000301",
+      "status": "succeeded",
+      "finishedAt": "2026-09-12T02:00:00.000Z"
+    }
+  }
+}

@@ -148,3 +148,37 @@ Dashboard/VR Overlay 不进 M7 与 1.0.0（用户裁决维持）。
   点名等核心 wire 面是本领取的直接触发）。
 - **对桌面**：批 1 交付前你方可先行桌面域内工作（窗口创建/置顶/显隐，
   017 表态「实现面备注」节）；wire 方法词表以核心冻结批为准，不预接。
+
+## 批 1 交付（核心，2026-09-12——冻结声明）
+
+**overlay wire 面批 1 已随本批交付并冻结**（应用契约「版本与演进」条款
+内的向后兼容增量，#22/020 先例：协议本双语修订记录＋方法面登记，既有面
+零变化；`overlay.getSnapshot` 版本随契约 0.1）。逐项兑现领取声明四范围：
+
+1. **生产状态卡投影**（`crates/orchestrator/src/overlay_surface.rs`）：
+   `OverlayReadModel` 新增 `production_card()`；`OverlayProductionCard`
+   ＝当前 plan 摘要（planId/planStatus/createdAt/recipeId）＋最近 Build
+   Record 摘要（buildId/planId/status/finishedAt，与 `record.list` 冻结
+   条目同形）。**「当前/最近」语义在核心服务权威侧定义**：createdAt／
+   finishedAt 字典序最大（RFC 3339 UTC 同形时间戳字典序＝时间序，与任务
+   存储 created_at 排序同一依据）；两半独立可空＝诚实空态，绝不合成行；
+   读失败类型化传播，绝不折叠为空。纯函数纪律兑现：投影不带查询时刻与
+   聚合 revision（发明即跨源新事实，且破坏「两次查询无变更观察相同」）。
+2. **wire 暴露**（`crates/provider-host`）：`overlay.getSnapshot` 轮询
+   查询，params 闭集为空；对齐桌面表态 1「按需轮询」（快照查询，无订阅/
+   推送新语义）与表态 2「零会话身份」（查询面与主线不可区分）。生产读
+   面未接线＝类型化 `vua.overlay.unavailable` 诚实缺席（production.*／
+   record.* 同一纪律）；capability 表登记 `overlay.snapshot` 行（可用性
+   同 production.recipes 源）。
+3. **TS 面＋消费测试**（`packages/contracts`）：`OverlaySnapshotResultV01`
+   等六类型＋`isApplicationRequestV01` 守卫分支＋4 消费测试
+   （`application-contract.test.ts`）。
+4. **契约增量**（`schemas/application-contract/v0.1/overlay-snapshot.schema.json`
+   ＋六向量 3 正 3 负；协议本双语「Overlay 读面语义」节＋方法面行＋修订
+   记录；REGISTRY 行更新）。**Schema＋正负例向量＋至少一端消费测试齐备
+   ——冻结条件满足**。
+
+消费测试链：provider-host `overlay_wire` 帧环 5 测试（向量驱动 schema 校
+验＋诚实空态＋ populated 投影与纯函数两次查询一致＋unavailable＋闭集拒
+绝）＋orchestrator `overlay_surface` 单元 6 测试（投影语义＋空态＋两半独
+立＋只读纪律）。批 2（下载/检测卡）维持等消费不变。

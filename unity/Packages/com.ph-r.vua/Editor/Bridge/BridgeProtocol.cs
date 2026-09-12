@@ -136,6 +136,9 @@ namespace Vua.Editor.Bridge
         public static BridgeDiagnostic Info(string code, string message) =>
             new BridgeDiagnostic { code = code, message = message };
 
+        public static BridgeDiagnostic Warning(string code, string message) =>
+            new BridgeDiagnostic { code = code, severity = "warning", message = message };
+
         public static BridgeDiagnostic Error(string code, string message) =>
             new BridgeDiagnostic { code = code, severity = "error", message = message };
     }
@@ -164,8 +167,12 @@ namespace Vua.Editor.Bridge
         public List<BridgeStep> steps = new List<BridgeStep>();
         public string snapshotId = string.Empty;
         public string restoredFrom = string.Empty;
-        // v2: instantiated instance root of an install job (recipe assetId →
-        // scene instance), per the core execution-semantics spec.
+        // 011 §成功判定: the receipt of an install_modular_asset job carries
+        // the GlobalObjectId of the instantiated instance root. Reserved at
+        // aa2a9da but only wired for real in the M7 inspection slice (v3):
+        // JsonUtility emits every public field, so this field must exist in
+        // the wire schema (added in unity-bridge v3 result.data; the frozen
+        // v2 schema does not carry it — known drift, see proposal 016).
         public string instanceGlobalObjectId = string.Empty;
     }
 

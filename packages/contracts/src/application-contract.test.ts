@@ -4,6 +4,7 @@ import {
   isApplicationRequestV01,
   isTerminalTaskStateV01,
   type CatalogProductDetailV03,
+  type OverlaySnapshotResultV01,
   type TaskDonePayloadV01,
   type TaskSnapshotV01,
 } from "./application-contract.js";
@@ -462,5 +463,82 @@ describe("task snapshot result reflux (BOARD #22, proposal 020)", () => {
     };
     const snapshot: TaskSnapshotV01 = { ...baseSnapshot, result: payload };
     expect(snapshot.result?.["planStatus"]).toBe("draft");
+  });
+});
+
+describe("overlay read face (017 batch 1)", () => {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: "req-1",
+    correlationId: "corr-1",
+  };
+
+  it("admits the polling query with an empty closed param set", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "overlay.getSnapshot", params: {},
+    })).toBe(true);
+    // 词表外参数拒绝——闭集即契约。
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "overlay.getSnapshot", params: { watch: "all" },
+    })).toBe(false);
+  });
+
+  it("renders the honest empty state: empty tasks and both-null halves", () => {
+    // 空态即终态：权威面无事实即 null/空数组，绝不合成行。
+    const result: OverlaySnapshotResultV01 = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      tasks: [],
+      productionCard: { currentPlan: null, latestRecord: null },
+    };
+    expect(result.tasks).toHaveLength(0);
+    expect(result.productionCard.currentPlan).toBeNull();
+    expect(result.productionCard.latestRecord).toBeNull();
+  });
+
+  it("projects the populated cards with field-trimmed verbatim values", () => {
+    // 任务卡 state / plan 态 / record 态为属主冻结面原词，本面不重列词表。
+    const result: OverlaySnapshotResultV01 = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      tasks: [
+        { taskId: "task-1", state: "running", correlationId: "corr-1" },
+        { taskId: "task-2", state: "succeeded", correlationId: "corr-2" },
+      ],
+      productionCard: {
+        currentPlan: {
+          planId: "plan-1",
+          planStatus: "approved",
+          createdAt: "2026-09-12T01:00:00.000Z",
+          recipeId: "recipe-1",
+        },
+        latestRecord: {
+          buildId: "build-1",
+          planId: "plan-1",
+          status: "succeeded",
+          finishedAt: "2026-09-12T02:00:00.000Z",
+        },
+      },
+    };
+    expect(result.tasks[0].state).toBe("running");
+    expect(result.productionCard.currentPlan?.planStatus).toBe("approved");
+    expect(result.productionCard.latestRecord?.status).toBe("succeeded");
+  });
+
+  it("keeps the production card halves independently empty", () => {
+    // 计划了但从未构建：plan 半填充，record 半诚实空。
+    const planned: OverlaySnapshotResultV01 = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      tasks: [],
+      productionCard: {
+        currentPlan: {
+          planId: "plan-2",
+          planStatus: "draft",
+          createdAt: "2026-09-12T03:00:00.000Z",
+          recipeId: "recipe-1",
+        },
+        latestRecord: null,
+      },
+    };
+    expect(planned.productionCard.currentPlan).not.toBeNull();
+    expect(planned.productionCard.latestRecord).toBeNull();
   });
 });
