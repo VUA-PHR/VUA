@@ -1016,14 +1016,34 @@ rolled_back: "롤백됨",
       },
     },
   },
-  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
-   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  /** Overlay 双表面(§8.8;v2=017 표면 배치 1 wire 소비):상태 요약과 프로덕션
+   *  카드 문구 추가. 환경/진행/비활성 사유 키 삭제——wire 배치 1에는 이러한
+   *  사실이 없음(배치 2에서投影과 함께 재도입 가능).
+   *  planStatus/recordStatus 어휘는 동결된 PlanStatusV02/
+   *  BuildRecordStatusV02 열거형을 미러링. */
   overlay: {
     surfaceTitle: "VUA 오버레이",
-    taskSectionLabel: "현재 작업",
-    environmentSectionLabel: "환경",
-    progress: "{done} / {total}",
-    moreEnvironments: "외 {count}개",
+    taskSectionLabel: "작업",
+    productionSectionLabel: "프로덕션",
+    productionPlan: "플랜 {planId}",
+    productionRecord: "레코드 {buildId}",
+    productionPlanStatuses: {
+      draft: "승인 대기",
+      approved: "승인됨",
+      superseded: "대체됨",
+    },
+    productionRecordStatuses: {
+      succeeded: "성공",
+      succeeded_with_warnings: "성공(경고 있음)",
+      failed: "실패",
+      cancelled: "취소됨",
+      recovered: "복구됨",
+    },
+    statusTitles: {
+      active: "{count}건 진행 중",
+      recent: "최근 활동",
+      idle: "진행 중인 작업 없음",
+    },
     actions: {
       openOnDesktop: "데스크톱에서 열기",
       dismiss: "오버레이 닫기",
@@ -1045,22 +1065,6 @@ rolled_back: "롤백됨",
       active: "진행 중",
       waiting: "확인 대기",
       blocked: "차단됨",
-    },
-    disabledReasons: {
-      notAllowed: "현재 상태에서는 사용할 수 없습니다",
-      noTask: "진행 중인 작업이 없습니다",
-      notCancellable: "이 작업은 지금 취소할 수 없습니다",
-    },
-    environmentStates: {
-      ready: "준비됨",
-      running: "실행 중",
-      missing: "감지되지 않음",
-    },
-    environmentNames: {
-      steamvr: "SteamVR",
-      unity: "Unity 에디터",
-      vrchat: "VRChat",
-      vpm: "VPM",
     },
   },
   media: {

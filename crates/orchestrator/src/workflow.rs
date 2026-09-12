@@ -254,5 +254,8 @@ fn label(operation: UnityOperation) -> &'static str {
         UnityOperation::AnalyzePerformance => "生成性能报告",
         UnityOperation::ExecuteProductionJob => "执行批准计划作业",
         UnityOperation::RestoreProject => "恢复项目到恢复点",
+        UnityOperation::InspectAvatarReferences => "检查 Avatar 资产引用完整性",
+        UnityOperation::InspectLighting => "检查场景光照事实",
+        UnityOperation::InspectUploadReadiness => "检查上传准备度前置项",
     }
 }
