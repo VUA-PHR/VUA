@@ -55,9 +55,13 @@ collab-registry 34711263111 三绿，ts 未触发＝paths 过滤正常）。**M7
 套件 v0.3；桌面检查页接 live 读面；真机走查归 W25，零端到端宣称。
 
 ## 阻塞
-无。**第 20 代推送门 CI 回读 pending**（本批推送后回填，如实登记——
-本批零 TS 变更，ts 工作流预计 paths 过滤不触发；rust/schema-vectors
-预计不触发或空转绿＝零代码变更，以实际回读为准不预填结论）。
+无。**第 20 代推送门 CI 回读已回填**：collab-registry 34712786316 ✅
+（16s）——**该工作流即跑 `collab-brief.mjs --registry-only` 且 paths 监
+听 scripts/collab-brief.mjs，本次绿＝新冲突标记守卫 CI 实证通过**（55
+项一致＋1169 文件 0 标记）；rust/schema-vectors/ts 未触发＝零代码变更
+paths 过滤正常（上代 34711263110/34711263125/34710631805 绿基线维持有
+效）。回填提交本身若再触发 collab-registry，读数归下一轮登记，不回填
+自身（防无限递归，既有惯例）。
 
 ## 下次合并意图
 候核心 021 editor_verify wire 词表行裁决（桌面提案 cb066e1/377228c 在
