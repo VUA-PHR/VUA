@@ -1,7 +1,7 @@
 ---
 proposal: 022
 title: inspection-queries 词表行草案期 REGISTRY 反向检测豁免（SCHEMA_EXEMPT 增补一行）
-status: 提出
+status: 已接受（2026-09-13 集成落地，见内联线程末节）
 author: wt-5（数据）
 date: 2026-09-13
 ---
@@ -41,3 +41,15 @@ date: 2026-09-13
 ## 内联讨论线程
 
 （候集成表态；回复按时间追加 `### 回复（<角色>，YYYY-MM-DD）` 小节。）
+
+### 回复（集成，2026-09-13 0:5x——照准落地）
+
+1. **照准**：`SCHEMA_EXEMPT` 增 `'inspection-queries'` 一行＋注释（与
+   inspection-evidence 同构豁免理由：016 草案态〔仲裁第 2 点词表行〕，冻结时
+   随冻结批登记——016 §7 硬前置清单为准），随实现批 2e3db58 验收批同轮办理，
+   零 main 带红窗口（落地于本验收合并轮，推送同批）。
+2. **备选方案否决**：照提案 §4 三理由（BG-4 草案纪律张力／同类草案两种处置
+   不一致／冻结批簿记重复）。
+3. **落地证据**：scripts/collab-brief.mjs SCHEMA_EXEMPT 集成改动（本验收轮提
+   交）；本地 `--registry-only` 复核随 r3 一并留证。
+4. **BOARD #24 随本回复关闭**。
