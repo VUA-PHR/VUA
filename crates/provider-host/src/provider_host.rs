@@ -209,6 +209,12 @@ struct ProjectOpsServices {
 /// version are independent).
 const PROJECT_INSPECTION_SCHEMA_VERSION: &str = "0.1";
 
+/// inspection-queries v0.1 word-list-row family version (proposal 016 data
+/// review 2026-09-13): every reply of the family (get/list/requestRun) cites
+/// its own row version, never the evidence-body version it reads nor the
+/// bdl-commands family the tasked-command reply shape is borrowed from.
+const INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1";
+
 struct DownloadServices {
     bdl: Arc<BdlStore>,
     /// Per-download monotonic intent sequence (AMF-issued, Main-side dedup
@@ -2947,7 +2953,7 @@ fn inspection_request(
                     json!({
                         "inspectionId": inspection_id,
                         "inspectionDocument": document,
-                        "schemaVersion": vua_orchestrator::INSPECTION_EVIDENCE_SCHEMA_VERSION,
+                        "schemaVersion": INSPECTION_QUERIES_SCHEMA_VERSION,
                     }),
                 )),
                 Ok(None) => FrameOutcome::Response(application_error(
@@ -3073,7 +3079,7 @@ fn inspection_request(
                 json!({
                     "total": total,
                     "entries": entries,
-                    "schemaVersion": vua_orchestrator::INSPECTION_EVIDENCE_SCHEMA_VERSION,
+                    "schemaVersion": INSPECTION_QUERIES_SCHEMA_VERSION,
                 }),
             ))
         }
@@ -3181,7 +3187,7 @@ fn inspection_request_run(
         Ok(accepted) => FrameOutcome::Response(application_success(
             request_id,
             json!({
-                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "schemaVersion": INSPECTION_QUERIES_SCHEMA_VERSION,
                 "operation": "inspection.requestRun",
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,

@@ -18,7 +18,7 @@
       "additionalProperties": false,
       "required": ["ref"],
       "properties": {
-        "ref": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "ref": { "type": "string", "minLength": 1 },
         "label": { "type": ["string", "null"] }
       }
     },
@@ -37,7 +37,7 @@
       "additionalProperties": false,
       "required": ["schemaVersion", "operation", "taskId", "correlationId"],
       "properties": {
-        "schemaVersion": { "const": "0.4" },
+        "schemaVersion": { "const": "0.1" },
         "operation": { "const": "inspection.requestRun" },
         "taskId": { "type": "string", "minLength": 1 },
         "correlationId": { "type": "string", "minLength": 1 }

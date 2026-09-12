@@ -1,5 +1,5 @@
 {
-  "schemaVersion": "0.4",
+  "schemaVersion": "0.1",
   "operation": "inspection.requestRun",
   "taskId": "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
   "correlationId": "corr-inspection-0"
