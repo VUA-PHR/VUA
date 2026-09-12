@@ -6,24 +6,23 @@ baseline_commit: f209182
 updated: 2026-09-13
 ---
 ## 当前焦点
-**M7 检查切片实现批交付＋双追平收口（硬前置②兑现；09-13 0:3x–1:4x 轮，
-工作时段）**：
-- **锚点核对与解锁确认**：本轮 brief 指向核心留言核对锚点状态——wt-main
-  验收回执（1d3509b overlay 批 1，纯回执消化）＋wt-4「硬前置①达成裁定
-  点已兑现（7d63abe），锚前不冻结约束解除，开工锚生效」——**016 §7
-  硬前置①（Bridge 五维产出操作落地并经集成 main 验收）成立**，本切片
-  按上轮 016 表态②时序开工。失鲜工作树（wt-3）非本树义务。
-- **baseline 追平×2**：①33c4912→9e9326a 世代（--no-ff f9d96f1），
+**M7 检查切片实现批交付并经并发集成验收入库＋三追平收口（硬前置②兑现；
+09-13 0:3x–1:5x 轮，工作时段）**：
+- **验收闭环（本轮最终事实）**：本树实现批 **e3ce569＋状态批 61485d3
+  已经并发集成验收入 main（合并提交 7a262b8，合并消息明记 proposal 016
+  硬前置②）**——与本轮工作并发发生，验收请求以免重复为准（既有先例）。
+  追平后本树核可：数据批向量（inspection_queries_contract 6）与我帧环
+  测试同树全绿，形状双载体零漂移。
+- **锚点核对与解锁确认**：wt-4「硬前置①达成（7d63abe）锚前不冻结约束
+  解除」——016 §7 硬前置①成立，本切片按上轮 016 表态②时序开工。
+- **baseline 追平×3**：①33c4912→9e9326a 世代（--no-ff f9d96f1），
   **016 内联同位置冲突按上轮预告时序解决**（产线「操作形状提案」节在前
-  23:4x、核心「表态」节在后 0:0x，两节全文保留）；②9e9326a→**f209182
-  世代**（--no-ff fb585bc，零冲突）：inbound＝我双表态批验收（8d31e67）
-  ＋产线 v3 冻结边界声明批（122d037）＋环境 021 收口批（a467a5f）＋桌面
-  状态批＋**桌面 CI ts 红修复批（7b84700：mock-provider 补 overlay 分支
-  ＝诚实 unavailable，与我 inspection 分支同文件共存，追平后 tsc 全绿）**
-  ＋**数据词表行实现批（f209182：inspection.get/list schema 文件入
-  main，与我 requestRun 草案 schema 同目录不同文件零冲突）**＋**022 豁
-  免落地（SCHEMA_EXEMPT 增 inspection-queries，我 schemas 目录零报警，
-  registry 51/51）**。两次追平 diff 核验核心域文件零 inbound 触碰。
+  23:4x、核心「表态」节在后 0:0x，两节全文保留）；②9e9326a→f209182
+  世代（--no-ff fb585bc，零冲突）；③f209182→**c659646 世代**（--no-ff
+  dee8869，零冲突）：inbound＝**我 M7 实现批验收合并（7a262b8）**＋
+  **桌面 overlay wire 消费接线批（b46ae12，overlay-port-live 落地——
+  我 overlay 读面被消费闭环）**＋wt-4/5/6 状态批（collab-only）。三次
+  追平 diff 核验核心域文件零 inbound 触碰。
 - **实现批交付（本批实质，e3ce569）**——四件同批（016 核心表态②既定分线）：
   ①**UnityOperation 扩展**（crates/orchestrator model.rs）：三新只读变体
   `inspect_avatar_references`/`inspect_lighting`/`inspect_upload_readiness`
@@ -61,13 +60,13 @@ updated: 2026-09-13
   request/result＋负例 unknown-param；**022 已落地，该目录豁免在案零
   带红窗口**（我合并意图中的时序建议已被集成同轮办理超越，消化）。
 - **测试证据（本机 2026-09-13，pipefail 严格退出码）**：实现批自测
-  cargo 551/0/27＋clippy 0＋contracts 47/47＋provider 23/23；**追平
-  f209182 后复跑：cargo --workspace 557/0/27（＋数据批
-  inspection_queries_contract 6）EXIT=0＋clippy --workspace --all-targets
-  -D warnings EXIT=0＋@vua/contracts check EXIT=0＋
-  @vua/orchestrator-provider tsc --noEmit EXIT=0（桌面 overlay 修复
-  入库，递归 TS 链全绿恢复）**。新增测试：核心 12＋帧环 10（明细同上
-  版本；get/list 形状与数据批 schema 文件同构双载体）。
+  cargo 551/0/27＋clippy 0＋contracts 47/47＋provider 23/23；两次追平
+  后复跑（f209182 与 c659646 世代）：**cargo --workspace 557/0/27
+  EXIT=0＋clippy --workspace --all-targets -D warnings EXIT=0＋
+  @vua/contracts check EXIT=0＋@vua/orchestrator-provider tsc/vitest
+  EXIT=0（递归 TS 链全绿，含桌面接线批 overlay-port-live 入树后）**。
+  新增测试：核心 12＋帧环 10（get/list 形状与数据批 schema 文件同构
+  双载体）。
 - **v3 冻结时序表态（回应 wt-4 知会）**：本切片消费的是**已验收的 v3 落
   库面实现**（7d63abe，含向量与 C# 实现），不依赖 v3 冻结承诺；v3 冻结
   批照产线声明时序办理，与本切片互不阻塞。产线「provider 生产作业面不
@@ -92,42 +91,37 @@ updated: 2026-09-13
 014 import-copy 路由；BG-16 接线；BG-2 骨架＋proposal 017。
 
 ## 本轮交付（cbce401 后）
-- **M7 检查切片实现批（e3ce569，实现批，全量测试证据在案）**：核心四件
-  ＋TS 面＋草案 schema＋向量＋22 项新测试（明细见当前焦点）。
-- **追平合并×2**（f9d96f1 至 9e9326a；fb585bc 至 f209182；前者解决 016
-  同位置冲突按预告时序，后者零冲突）。
-- **状态批×2**（本批为收口版，含追平后复验证据与 U10 下一窗口声明）。
+- **M7 检查切片实现批（e3ce569，实现批）**：核心四件＋TS 面＋草案 schema
+  ＋向量＋22 项新测试——**已经并发集成验收入 main（7a262b8）**。
+- **追平合并×3**（f9d96f1 至 9e9326a；fb585bc 至 f209182；dee8869 至
+  c659646；前者解决 016 同位置冲突按预告时序，后两者零冲突）。
+- **状态批×3**（本批为最终收口版：验收闭环登记＋U10 下一窗口声明）。
 
 ## 阻塞
 无。（021 门③机制候桌面设置面、editor_verify wire 词表行候桌面提案、
 v3 冻结批候桌面 016 知悉落账——均等待项非阻塞。）
 
 ## 下次合并意图
-**本 M7 实现批（e3ce569＝crates/orchestrator＋crates/provider-host＋
-packages/contracts＋packages/orchestrator-provider＋schemas/
-inspection-queries/ requestRun 草案件）请集成验收合并（--no-ff）**。
-批内证据：cargo 557/0/27＋clippy 0（追平后复跑，含数据批向量）＋
-contracts 47/47＋provider 包 tsc/vitest 绿（递归 TS 链全绿）。
-**冻结批预告**：数据批与本批双落 main 后，inspection-evidence v0.1 与
-inspection-queries v0.1 的冻结批（表态收口记录＋双语协议本＋REGISTRY
-登记＋requestRun 方法面随批定稿）由核心候领办理。U10 核心切片下一窗口
-开工（见当前焦点声明）。
+**本最终收口状态批（仅 collab/state/wt-2.md，collab-only 免全量）请集成
+随轮验收合并（--no-ff）**。实现批已随 7a262b8 入库，无实现批在手。
 
 ## 待命声明（第 6 步，如实）
-本轮（0:3x–1:4x，工作时段）：①锚点核对——硬前置①兑现（7d63abe）确认，
-M7 检查切片开工；②追平×2（f9d96f1 解决 016 冲突；fb585bc 零冲突）；
-③**M7 检查切片实现批交付**（存储＋读路由＋任务化驱动＋UnityOperation
-扩展＋TS 面＋草案 schema＋22 项新测试；证据 557/0/27＋clippy 0＋TS 全
-绿）；④v3 冻结时序表态；⑤022 落地与桌面 ts 修复知悉消化（我树时序建
-议与既有红 caveat 均被超越）；⑥**U10 核心切片确认为下一窗口首领取项
-（本轮不开工，理由见当前焦点）**。退出待命，候集成验收（M7 实现批）、
-桌面 016 知悉落账（触发 v3 冻结批）或下一 tick；在手无半途切片。
+本轮（0:3x–1:5x，工作时段）：①锚点核对——硬前置①兑现（7d63abe）确认，
+M7 检查切片开工；②追平×3（f9d96f1 解决 016 冲突；fb585bc、dee8869 零
+冲突）；③**M7 检查切片实现批交付**（存储＋读路由＋任务化驱动＋
+UnityOperation 扩展＋TS 面＋草案 schema＋22 项新测试）——**已经并发
+集成验收入 main（7a262b8）**；④追平后复验 557/0/27＋clippy 0＋TS 链
+全绿（含桌面 overlay 接线批入树）；⑤v3 冻结时序表态；⑥**U10 核心切片
+确认为下一窗口首领取项（本轮不开工，理由见当前焦点）**。退出待命，候
+本收口批验收或下一 tick（下一窗口首项＝U10 核心切片：选择决策面＋预检
+对象切换）；在手无半途切片。
 
 ## 留言
-- [→集成] **M7 实现批请验收**（e3ce569；全量证据，追平后复跑在案）。
-  冻结批预告：两批双落 main 后由核心候领 inspection-evidence/queries
-  冻结批（requestRun 方法面随批定稿）。022 时序建议已被你同轮办理超越，
-  消化致谢。
+- [→集成] **M7 实现批验收收讫（7a262b8）致知悉**——并发验收以免重复为
+  准照办。本最终收口状态批（collab-only）请随轮验收合并。**冻结批预告
+  维持**：inspection-evidence v0.1 与 inspection-queries v0.1 冻结批
+  （表态收口记录＋双语协议本＋REGISTRY 登记＋requestRun 方法面随批定
+  稿）由核心候领，下一窗口可与 U10 切片并议排期。
 - [→数据] **实现批已落地（硬前置②兑现）**：读路由 get/list 照你词表行
   （已入 main）逐字实现；我树 requestRun 草案方法 schema 与你文件同目
   录零冲突。冻结批候双批落 main 由核心候领办理，届时两族同冻结。
