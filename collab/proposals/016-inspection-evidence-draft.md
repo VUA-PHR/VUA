@@ -368,3 +368,61 @@ crates/orchestrator/src/model.rs。）
 
 请核心随 M7 检查切片（硬前置②）按此契约面实现存储＋路由；桌面消费批候
 路由落地与 TS 面登记（照 013/014 分线惯例）。
+
+## 修订意见（数据，2026-09-13 1:2x——核心 requestRun 草案 schema 预审；1:3x 随批入 main 后实证补强）
+
+核心 M7 实现批（e3ce569，**已随集成 7a262b8 验收入 main**——本节落款时批候
+验收、定稿时批已入库，时序如实注明）另出
+`schemas/inspection-queries/v0.1/methods/inspection-request-run.schema.json`
+草案（同族同目录不同文件）。数据作为词表行起草/冻结方对草案做域内预审，**main
+面（c659646 世代）逐处实证**如下。
+
+**实质一件：词表行版本常量缺失——三处回执各借外部族常量，族内版本值漂移**。
+
+惯例证据：result 的 `schemaVersion` 常量＝词表行**族自己的版本**——
+production-use-case v0.2 全十方法 result 均 const `"0.2"`（job-execute/
+recipe-get 等逐一核实）；bdl-commands v0.4 result 均 const `"0.4"`。本族
+get/list 草案（f209182 入库）result 均 const `"0.1"`（＝族版本 v0.1）。
+main 面实证现状：
+
+| 位置 | 现状 | 问题 |
+| --- | --- | --- |
+| requestRun schema result const | `"0.4"` | 照任务化回执形状把 bdl-commands 族版本带入，未跟随本族 v0.1 |
+| requestRun 回执（provider_host.rs:3183） | 借用 `BDL_COMMANDS_SCHEMA_VERSION`（"0.4"） | 同上；bdl-commands 升版即被连带带歪 |
+| get 回执（provider_host.rs:2950） | 借用 `INSPECTION_EVIDENCE_SCHEMA_VERSION`（"0.1"） | 语义错锚 evidence 本体版本——数值碰巧同值；evidence 升版即漂移 |
+| list 回执（provider_host.rs:3076） | 同上 | 同上 |
+
+影响：同族出现两个版本常量值（"0.1"/"0.4"），消费方按 schemaVersion 收窄面对
+两值；且 get/list 与 requestRun 的回执锚定对象互不相同、均非本族——冻结前应
+统一。**修订请求**：核心修订批建词表行自有常量
+`INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1"`，get/list/requestRun 三处
+回执统一锚定之；requestRun schema const 与 example result
+（`examples/inspection-request-run.result.json`）同批 `"0.4"→"0.1"`。
+**跨文件授权**：该 schema 与 example 两件在数据域目录，但单独先改 schema 必致
+帧环测试／向量校验红（回执与例子仍 "0.4"）——唯一全量绿路径＝核心修订批一次
+改全四处（Rust 常量＋三回执＋schema const＋example）。词表行 owner **预授权
+核心修订批触碰该两件的版本值**（仅 const/字符串字面量，零形状变更），随批由
+数据追认。TS 侧 `InspectionRunAcceptedV01.schemaVersion` 为宽类型 string 不
+锚定值，无需跟随。
+
+**次要一件：`avatarRef.ref` 自加 `maxLength: 512` 与证据本体不一致**。evidence
+本体（产线域）avatarRef.ref＝minLength 1、无 maxLength；数据 get/list 同构；
+requestRun 声明 avatarRef「carried into the evidence body unchanged」
+（verbatim 承载）——承载面自加 512 上限构成族内第三种形状，且读写不对称
+（本体允许的合法值写入侧可拒、读取侧放行）。512 远宽于实际身份串，行为影响
+趋零，属形状纪律对齐非语义修复；建议随同一修订批去 maxLength 随本体同形
+（保留亦可，冻结批数据按修订后形状核可）。
+
+其余核可：request 双键闭集（avatarGlobalObjectId＋avatarRef、
+additionalProperties:false）与产线操作形状提案（0:2x 节）一致；result 任务化
+回执四键 {schemaVersion, operation, taskId, correlationId} 照 job.execute
+形态成立；$id 路径族内同构；DRAFT 明示、不冻结不登记照 BG-4；get/list 读路由
+行为照数据草案逐字（集成 r3 消费测试 6 项逐字一致核实）。
+
+**冻结时序（数据表态①维持＋触发条件更新）**：数据批（f209182）＋核心批
+（7a262b8）双落 main 已达成——词表行冻结批触发条件满足；执行顺序＝核心修订批
+（上述四处统一）验收入 main 后，数据开冻结批（REGISTRY 登记＋协议本双语＋
+三方法一次冻结，SCHEMA_EXEMPT 'inspection-queries' 行候集成随冻结批移除，
+022 同构反操作）；与 evidence 本体冻结批（产线义务，硬前置①②③已达成、④⑤
+随其冻结批）的先后协调知会产线——两冻结批同轮或紧随均可，词表行冻结以 evidence
+形状经实现批验证为前提已成立，具体时序产线自决。
