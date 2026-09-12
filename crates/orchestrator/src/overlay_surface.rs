@@ -21,6 +21,8 @@
 //! payloads verbatim — a field here that a frozen schema does not know
 //! is a contract break.
 
+use serde_json::Value;
+
 
 /// The minimal read model an overlay renders for the task surface: the
 /// same durable snapshots the desktop main line already sees
@@ -35,10 +37,73 @@ pub struct OverlayTaskCard {
     pub correlation_id: String,
 }
 
+/// One production-status card half: the field-trimmed summary of the
+/// *current* plan (proposal 017 batch 1). Every field is copied verbatim
+/// from the stored plan document (production-use-case v0.2 plan face,
+/// approved-plan 0.3 shape) — a field here the document does not carry is
+/// a contract break; a field the document carries but this summary drops
+/// is the intended trim (overlay renders a glance, not the document).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayPlanSummary {
+    pub plan_id: String,
+    /// The plan's own lifecycle word (`draft` / `approved` / `superseded`),
+    /// passed through verbatim — the vocabulary belongs to the plan face,
+    /// never re-derived here.
+    pub plan_status: String,
+    pub created_at: String,
+    pub recipe_id: String,
+}
+
+/// The other production-status card half: the field-trimmed summary of
+/// the *latest* build record. Same shape discipline as
+/// [`OverlayPlanSummary`]; the four fields mirror the frozen
+/// `record.list` entry exactly (buildId/planId/status/finishedAt), and
+/// `status` passes the record face's own vocabulary through verbatim.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayRecordSummary {
+    pub build_id: String,
+    pub plan_id: String,
+    pub status: String,
+    pub finished_at: String,
+}
+
+/// The production-status card (017 desktop stance 3, batch 1): the
+/// current-plan summary plus the latest build-record status. Both halves
+/// are independent `None`s — a fresh environment has no plans and no
+/// records, a planned-but-unbuilt one has only the plan; the honest empty
+/// state is "the authority holds nothing", never a synthesized row.
+///
+/// "Current" and "latest" are defined HERE, on the service authority
+/// side (017 batch-1 stance: the semantics are not derived across
+/// sources by the consumer):
+/// - **current plan** = the stored plan document with the
+///   lexicographically greatest `createdAt`. Plan documents carry one
+///   same-shaped RFC 3339 UTC timestamp, so string order IS time order —
+///   the same ordering provenance the task store's `created_at` column
+///   uses. The newest document is the newest planning activity, whatever
+///   its lifecycle stage (`draft` included): the overlay renders activity,
+///   and the lifecycle word travels alongside so the consumer never has
+///   to guess;
+/// - **latest record** = the stored record document with the
+///   lexicographically greatest `finishedAt`, same timestamp provenance.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayProductionCard {
+    pub current_plan: Option<OverlayPlanSummary>,
+    pub latest_record: Option<OverlayRecordSummary>,
+}
+
 /// The read-only overlay service. Implementations wrap the authorities
-/// (the SQLite task store today; the frozen document faces later) and
-/// must stay side-effect free: every call is a pure projection, so an
-/// overlay querying in a loop can never change what it observes.
+/// (the SQLite task store and the production document stores today; the
+/// frozen document faces later) and must stay side-effect free: every
+/// call is a pure projection, so an overlay querying in a loop can never
+/// change what it observes. The projection consequently carries **no
+/// query instant and no aggregate revision** — a captured-at stamp or an
+/// invented revision counter would make two unchanged queries observe
+/// different payloads, breaking the pure-function discipline the
+/// polling overlay depends on.
 ///
 /// Read failures are passed through as typed errors, never folded into
 /// an empty set — a store failure presented as "no tasks" would dress a
@@ -51,19 +116,34 @@ pub trait OverlayReadModel: Send + Sync {
     /// cancel bookkeeping: those belong to the main-line surfaces).
     ///
     /// Errors: a store read failure propagates as
-    /// [`crate::SqliteStoreError`] — the consumer (the future overlay UI)
+    /// [`crate::SqliteStoreError`] — the consumer (the overlay UI)
     /// renders the empty state and the failure state distinctly.
     fn task_cards(&self) -> Result<Vec<OverlayTaskCard>, crate::SqliteStoreError>;
+
+    /// The production-status card (017 batch 1). Always returns a card:
+    /// the card's two halves are `None` when the production authorities
+    /// genuinely hold nothing, so only a *read failure* is an error.
+    ///
+    /// Errors: a document-store read failure propagates as
+    /// [`std::io::Error`] — never folded into "no production activity".
+    fn production_card(&self) -> Result<OverlayProductionCard, std::io::Error>;
 }
 
-/// The first concrete read model: projects the durable task store.
+/// The first concrete read model: projects the durable task store plus
+/// the production document stores (017 batch 1).
 pub struct StoreOverlayReadModel {
     store: std::sync::Arc<crate::SqliteTaskStore>,
+    plans: std::sync::Arc<crate::PlanDocumentStore>,
+    records: std::sync::Arc<crate::RecipeRecordStore>,
 }
 
 impl StoreOverlayReadModel {
-    pub fn new(store: std::sync::Arc<crate::SqliteTaskStore>) -> Self {
-        Self { store }
+    pub fn new(
+        store: std::sync::Arc<crate::SqliteTaskStore>,
+        plans: std::sync::Arc<crate::PlanDocumentStore>,
+        records: std::sync::Arc<crate::RecipeRecordStore>,
+    ) -> Self {
+        Self { store, plans, records }
     }
 }
 
@@ -89,11 +169,61 @@ impl OverlayReadModel for StoreOverlayReadModel {
             })
             .collect())
     }
+
+    fn production_card(&self) -> Result<OverlayProductionCard, std::io::Error> {
+        // Both authorities list whole documents; the projection picks the
+        // current/latest by the timestamps the documents themselves carry
+        // (see the struct doc: RFC 3339 UTC same-shape strings, so
+        // lexicographic max = temporal max) and trims the rest. No
+        // cross-source derivation happens: plan facts come from the plan
+        // document, record facts from the record document.
+        let plans = self.plans.list_documents()?;
+        let current_plan = plans
+            .into_iter()
+            .max_by(|left, right| {
+                let left_key = left.get("createdAt").and_then(Value::as_str).unwrap_or("");
+                let right_key = right.get("createdAt").and_then(Value::as_str).unwrap_or("");
+                left_key.cmp(right_key)
+            })
+            .map(|document| OverlayPlanSummary {
+                plan_id: text_of(&document, "planId"),
+                plan_status: text_of(&document, "status"),
+                created_at: text_of(&document, "createdAt"),
+                recipe_id: text_of(&document, "recipeId"),
+            });
+        let records = self.records.list_documents()?;
+        let latest_record = records
+            .into_iter()
+            .max_by(|left, right| {
+                let left_key = left.get("finishedAt").and_then(Value::as_str).unwrap_or("");
+                let right_key = right.get("finishedAt").and_then(Value::as_str).unwrap_or("");
+                left_key.cmp(right_key)
+            })
+            .map(|document| OverlayRecordSummary {
+                build_id: text_of(&document, "buildId"),
+                plan_id: text_of(&document, "planId"),
+                status: text_of(&document, "status"),
+                finished_at: text_of(&document, "finishedAt"),
+            });
+        Ok(OverlayProductionCard { current_plan, latest_record })
+    }
+}
+
+/// Reads one document field as text; an absent or non-text field projects
+/// as the empty string rather than being invented. The overlay face trims,
+/// it never fabricates.
+fn text_of(document: &serde_json::Value, field: &str) -> String {
+    document
+        .get(field)
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serde_json::json;
 
     fn unique_database(tag: &str) -> std::path::PathBuf {
         let nanos = std::time::SystemTime::now()
@@ -108,11 +238,60 @@ mod tests {
         dir.join("tasks.sqlite")
     }
 
+    fn unique_root(tag: &str) -> std::path::PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let dir = std::env::temp_dir().join(format!(
+            "vua-overlay-production-{tag}-{}-{nanos}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    /// A minimal stored plan document (approved-plan 0.3 face subset —
+    /// exactly the fields the projection trims from). Published status is
+    /// always `draft`; lifecycle acts (approve/supersede) flip it in store.
+    fn plan_document(plan_id: &str, created_at: &str) -> Value {
+        json!({
+            "schemaVersion": "0.3",
+            "planId": plan_id,
+            "recipeId": "019e0000-0000-7000-8000-000000000001",
+            "recipeRevision": 1,
+            "createdAt": created_at,
+            "approvedAt": "2026-09-12T00:00:00.000Z",
+            "planHash": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "jobs": [],
+            "status": "draft",
+        })
+    }
+
+    /// A minimal stored record document (production-use-case v0.2 record
+    /// face subset).
+    fn record_document(build_id: &str, finished_at: &str, status: &str) -> Value {
+        json!({
+            "schemaVersion": "0.3",
+            "buildId": build_id,
+            "recipeId": "019e0000-0000-7000-8000-000000000001",
+            "planId": "019e0000-0000-7000-8000-000000000301",
+            "startedAt": "2026-09-12T00:00:00.000Z",
+            "finishedAt": finished_at,
+            "status": status,
+            "jobs": [],
+        })
+    }
+
     #[test]
     fn task_cards_project_the_durable_snapshots_sorted_oldest_first() {
         let database = unique_database("cards");
         let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
-        let model = StoreOverlayReadModel::new(store);
+        let model = StoreOverlayReadModel::new(
+            store,
+            std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("cards-plans"))),
+            std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("cards-records"))),
+        );
 
         // 空态即终态: no tasks yet — the honest empty set, not an error.
         assert!(model.task_cards().unwrap().is_empty());
@@ -156,7 +335,11 @@ mod tests {
                 .unwrap();
         }
 
-        let model = StoreOverlayReadModel::new(store);
+        let model = StoreOverlayReadModel::new(
+            store,
+            std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("order-plans"))),
+            std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("order-records"))),
+        );
         let cards = model.task_cards().unwrap();
         let ids: Vec<&str> = cards.iter().map(|card| card.task_id.as_str()).collect();
         assert_eq!(
@@ -175,5 +358,94 @@ mod tests {
         // semantics belong to the cross-domain proposal.
         fn assert_read_only<T: OverlayReadModel + ?Sized>() {}
         assert_read_only::<dyn OverlayReadModel>();
+    }
+
+    #[test]
+    fn production_card_empty_authorities_are_the_honest_empty_card() {
+        let database = unique_database("production-empty");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+        let model = StoreOverlayReadModel::new(
+            store,
+            std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("empty-plans"))),
+            std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("empty-records"))),
+        );
+
+        // 空态即终态: no plans, no records — both halves are None, never
+        // synthesized rows; the card itself still renders.
+        let card = model.production_card().unwrap();
+        assert_eq!(card.current_plan, None);
+        assert_eq!(card.latest_record, None);
+
+        // Pure function: two unchanged queries observe the same card.
+        assert_eq!(model.production_card().unwrap(), card);
+    }
+
+    #[test]
+    fn production_card_picks_current_plan_and_latest_record_by_their_own_timestamps() {
+        let database = unique_database("production-pick");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+        let plans_root = unique_root("pick-plans");
+        let records_root = unique_root("pick-records");
+        let plans = std::sync::Arc::new(crate::PlanDocumentStore::new(&plans_root));
+        let records = std::sync::Arc::new(crate::RecipeRecordStore::new(&records_root));
+
+        // Three plans with deliberately out-of-order storage order and
+        // ids: the newest createdAt must win regardless of either. Plans
+        // are published as drafts (the store's discipline) and flipped
+        // through their real lifecycle acts.
+        plans
+            .publish_draft("plan-b-older", &plan_document("plan-b-older", "2026-09-12T01:00:00.000Z"))
+            .unwrap();
+        plans.supersede("plan-b-older").unwrap();
+        plans
+            .publish_draft("plan-c-newest", &plan_document("plan-c-newest", "2026-09-12T03:00:00.000Z"))
+            .unwrap();
+        plans.approve("plan-c-newest").unwrap();
+        plans
+            .publish_draft("plan-a-oldest", &plan_document("plan-a-oldest", "2026-09-12T00:00:00.000Z"))
+            .unwrap();
+        // Three records likewise; finishedAt — not buildId — decides.
+        for (build_id, finished_at, status) in [
+            ("build-z-mid", "2026-09-12T02:00:00.000Z", "succeeded"),
+            ("build-a-newest", "2026-09-12T04:00:00.000Z", "failed"),
+            ("build-m-old", "2026-09-12T00:30:00.000Z", "cancelled"),
+        ] {
+            records.publish(build_id, &record_document(build_id, finished_at, status)).unwrap();
+        }
+
+        let model = StoreOverlayReadModel::new(store, plans, records);
+        let card = model.production_card().unwrap();
+
+        let current = card.current_plan.as_ref().expect("a current plan exists");
+        assert_eq!(current.plan_id, "plan-c-newest");
+        assert_eq!(current.plan_status, "approved");
+        assert_eq!(current.created_at, "2026-09-12T03:00:00.000Z");
+        assert_eq!(current.recipe_id, "019e0000-0000-7000-8000-000000000001");
+
+        let latest = card.latest_record.as_ref().expect("a latest record exists");
+        assert_eq!(latest.build_id, "build-a-newest");
+        assert_eq!(latest.status, "failed");
+        assert_eq!(latest.finished_at, "2026-09-12T04:00:00.000Z");
+
+        // Pure function: two unchanged queries observe the same card.
+        assert_eq!(model.production_card().unwrap(), card);
+    }
+
+    #[test]
+    fn production_card_halves_are_independent() {
+        let database = unique_database("production-halves");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+        let plans = std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("halves-plans")));
+        let records = std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("halves-records")));
+
+        // Planned but never built: the plan half fills, the record half
+        // stays honestly empty.
+        plans
+            .publish_draft("plan-only", &plan_document("plan-only", "2026-09-12T05:00:00.000Z"))
+            .unwrap();
+        let model = StoreOverlayReadModel::new(store, plans, records);
+        let card = model.production_card().unwrap();
+        assert_eq!(card.current_plan.as_ref().expect("plan half").plan_id, "plan-only");
+        assert_eq!(card.latest_record, None, "no records is an honest empty half");
     }
 }

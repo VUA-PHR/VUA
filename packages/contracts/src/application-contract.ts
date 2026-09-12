@@ -961,6 +961,58 @@ export interface RecordListResultV02 {
 }
 
 
+// ---- overlay.*(017 overlay 表面批 1,核心冻结批:任务卡＋生产状态卡的
+// 按需轮询读面。一次查询返回 overlay 一屏所需只读投影——对权威面的字段
+// 裁剪,不跨源推导;载荷不带查询时刻与聚合 revision——两次查询无变更则
+// 观察相同(纯函数纪律)。词表(任务态/plan 态/record 态)从其属主冻结面
+// 原样透传,本面刻意不重列。零 overlay 会话身份:查询面与主线不可区分,
+// 语义动作走既有命令面(017 §3)。生产读面未接线 = vua.overlay.unavailable
+// 诚实缺席,绝不以空快照伪装) ----
+
+/** 任务卡(常驻主卡):任务存储投影,最旧优先;state 为任务面九态原词 */
+export interface OverlayTaskCardV01 {
+  readonly taskId: string;
+  readonly state: string;
+  readonly correlationId: string;
+}
+
+/** 当前 plan 摘要(createdAt 最新者;planId/planStatus/createdAt/recipeId
+ *  裁剪自 plan 文档,原样透传) */
+export interface OverlayPlanSummaryV01 {
+  readonly planId: string;
+  readonly planStatus: string;
+  readonly createdAt: string;
+  readonly recipeId: string;
+}
+
+/** 最近 Build Record 摘要(finishedAt 最新者;四字段与 record.list 冻结
+ *  条目同形) */
+export interface OverlayRecordSummaryV01 {
+  readonly buildId: string;
+  readonly planId: string;
+  readonly status: string;
+  readonly finishedAt: string;
+}
+
+/** 生产状态卡:两半独立可空——权威面无该事实即 null(空态即终态),
+ *  绝不合成行 */
+export interface OverlayProductionCardV01 {
+  readonly currentPlan: OverlayPlanSummaryV01 | null;
+  readonly latestRecord: OverlayRecordSummaryV01 | null;
+}
+
+export interface OverlayGetSnapshotQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "overlay.getSnapshot";
+  readonly params: Readonly<Record<string, never>>;
+}
+
+export interface OverlaySnapshotResultV01 {
+  readonly contractVersion: ApplicationContractVersion;
+  readonly tasks: readonly OverlayTaskCardV01[];
+  readonly productionCard: OverlayProductionCardV01;
+}
+
 // ---- project-ops v0.1(014 语义冻结,环境实现;F6 副本导入确认链消费) ----
 // project.import-copy 是 VUA 对 ALCOM/VCC 管理的原项目的唯一写路径(1.2.0 U3):
 // plan/apply 两段一闭集命令;守卫(七项闭集)在服务端任务内评估;九态任务语义
@@ -1140,6 +1192,7 @@ export type ApplicationRequestV01 =
   | ProjectListProjectsQueryV01
   | ProjectInspectProjectQueryV01
   | ProjectLockStatusQueryV01
+  | OverlayGetSnapshotQueryV01
   | RecipeGetQueryV02
   | RecipeListQueryV02
   | PlanGetQueryV02
@@ -1249,6 +1302,7 @@ export type ApplicationSuccessValueV01 =
   | ProjectListProjectsResultV01
   | ProjectInspectProjectResultV01
   | ProjectLockStatusResultV01
+  | OverlaySnapshotResultV01
   | WarehouseSetArtifactModeResultV01
   | WarehouseSetGlobalDefaultModeResultV02
   | WarehouseImportAcceptedV03
@@ -1539,6 +1593,11 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["projectPath"])
       && isIdentifier(value.params.projectPath);
+  }
+  // 017 overlay 读面批 1:params 闭集 = 空
+  if (value.kind === "query" && value.method === "overlay.getSnapshot") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
   }
   if (value.kind === "query" && value.method === "warehouse.entryDetail") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])

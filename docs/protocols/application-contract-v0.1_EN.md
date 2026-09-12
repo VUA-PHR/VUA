@@ -45,6 +45,7 @@ statement.
 | Command | `production.confirmPlan` | Confirms the plan and enters the snapshot → execute → validate chain | B3/F3 |
 | Command | `production.recover` | Recovers a failed/expired outcome (continue / rollback) | B3/F3 |
 | Query | `production.getBuildRecord` | Reads the minimal Build Record | B3/F3 |
+| Query | `overlay.getSnapshot` | Returns the overlay's one-glance read-only snapshot: task cards plus the production-status card projection | M7 |
 
 The seven `production.*` methods are the registered surface of the
 [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md) (B3 candidate draft):
@@ -123,6 +124,28 @@ severity it is presented, is decided by the consumer (presentation layer, fix pl
 stays aligned with the B6 environment detection spike (`EnvironmentSnapshotV1` in
 `crates/orchestrator/src/environment.rs`).
 
+## Overlay read-face semantics
+
+`overlay.getSnapshot` (M7, proposal 017 batch 1) is the desktop overlay's on-demand polling
+query: one call returns the read-only projections an overlay's one-glance surface renders —
+the **task cards** (a projection of the task store, oldest first: taskId/state/correlationId)
+and the **production-status card** (a field-trimmed projection of the production-use-case
+v0.2 plan/record faces: the current plan is the document with the newest `createdAt`, the
+latest Build Record is the document with the newest `finishedAt`; the "current/latest"
+semantics are defined on the core service-authority side, and the two halves are
+independently nullable — when the authority holds no fact the half is `null`, never a
+synthesized row). The projection is a pure function: it carries **no query instant and no
+aggregate revision** — two unchanged queries observe the same payload, and polling never
+changes what it observes. Card vocabularies (the nine task states, the plan lifecycle, the
+record statuses) pass through verbatim from their owning frozen faces and are deliberately
+not re-enumerated here. The overlay carries **zero session identity**: its queries are
+indistinguishable from the main line's; semantic actions travel the existing command face
+(the same acceptance path and the same nine-state discipline) — no overlay-specific write
+vocabulary is added. When the production read face is not wired, the method answers a typed
+`vua.overlay.unavailable` — honest absence, never a silent empty snapshot. The
+machine-readable face and the positive/negative vectors live in
+`schemas/application-contract/v0.1/overlay-snapshot.schema.json`.
+
 ## Operation-level capability
 
 Capability reports `available` / `unavailable` per operation under a stable `operationId`, with a
@@ -193,3 +216,12 @@ caches, display, and diagnostics always reference the original contract values.
   same batch (provider-host `task_snapshot_wire`). Background: the import-copy renderer narrowed
   result-document shapes while the live wire only ever showed the task acceptance receipt — the result
   document had no channel to the renderer (a cross-batch seam; F6 live degrades honestly).
+- 2026-09-12: Registered the overlay read face (M7, proposal 017 batch 1, claimed by Core once the
+  desktop §4 three-stance set landed). New `overlay.getSnapshot` query: an on-demand polling, read-only
+  projection of the task cards plus the production-status card — a pure-function face (no query instant,
+  no aggregate revision), zero overlay session identity, semantic actions stay on the existing command
+  face; an unwired production face answers a typed `vua.overlay.unavailable` (honest absence).
+  Backward-compatible increment (new-method registration, existing faces unchanged): the machine-readable
+  face and the six vectors (`overlay-snapshot.schema.json`, 3 valid + 3 invalid) are frozen by Core with
+  this batch; consumer tests ride the same batch (provider-host `overlay_wire` frame loop +
+  `@vua/contracts` guards).

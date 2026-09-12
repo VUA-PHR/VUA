@@ -27,7 +27,7 @@
 | schemas/environment-managers/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-10 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
-| docs/architecture/desktop_ZH.md | 1.1.0 | 已接受 | 桌面 | 2026-09-09 |
+| docs/architecture/desktop_ZH.md | 1.2.0 | 已接受 | 桌面 | 2026-09-12 |
 | docs/architecture/bdl_ZH.md | 1.1.0 | 已接受 | 数据 | 2026-09-08 |
 | docs/architecture/amf-unity_ZH.md | 1.0.0 | 已接受 | 产线 | 2026-09-06 |
 | docs/architecture/integrations-and-overlays_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
@@ -36,7 +36,7 @@
 | docs/decisions/warehouse-layout_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
 | docs/decisions/path-configuration_ZH.md | ADR | 已接受 | 集成 | 2026-09-12 |
 | docs/protocols/application-contract-v0.1_ZH.md | 0.1 | 已冻结 | 核心 | 2026-09-06 |
-| schemas/application-contract/v0.1 | 0.1 | 已冻结（任务快照形状机器面＋六向量：BOARD #22 result 回流增量——可选 `result` 字段携带 Done payload 原样、两通道同源同值、失败/取消/非终态恒缺席；提案 020，向后兼容增量，协议本同日修订记录） | 核心 | 2026-09-12 |
+| schemas/application-contract/v0.1 | 0.1 | 已冻结（任务快照形状机器面＋六向量：BOARD #22 result 回流增量——可选 `result` 字段携带 Done payload 原样、两通道同源同值、失败/取消/非终态恒缺席；提案 020，向后兼容增量，协议本同日修订记录。＋overlay 快照机器面＋六向量：`overlay.getSnapshot` 任务卡＋生产状态卡轮询读面——纯函数投影、零会话身份、诚实缺席语义；提案 017 批 1，向后兼容增量，协议本同日修订记录） | 核心 | 2026-09-12 |
 | docs/protocols/bdl-queries-v0.1_ZH.md | 0.1 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-06 |

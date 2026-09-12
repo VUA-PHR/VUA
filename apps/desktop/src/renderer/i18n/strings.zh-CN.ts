@@ -213,6 +213,7 @@ demoTaskTitle: "演示任务",
     windowMinimize: "最小化",
     windowMaximize: "最大化/还原",
     windowClose: "关闭",
+    overlayToggle: "悬浮窗",
   },
   /** 首次目标引导(美术方案 v0.3.3 §2.2 / §4.3) */
   onboarding: {
