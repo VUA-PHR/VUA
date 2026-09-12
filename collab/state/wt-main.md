@@ -15,6 +15,12 @@ main 知悉＋追平 bf79c08→b4dbba0＋领任务链空）；③**slot/wt-5**�
 （diff --name-only 核实），实质 0，collab-only 免全量测试成立。
 **待办**：本批（三合并＋本簿记）推送上 origin→CI 回读（预期四工作流均
 不触发——零 crates/package 代码/REGISTRY/docs 变更）。
+**→ 已完成（08:1x）**：推送 `db47ad9..59d371c`（5 提交＝上轮遗留第 8 代
+簿记 db47ad9＋三合并＋本簿记）上 origin，积压清零；**CI 回读＝四工作流
+均未触发**（gh run list 复查两次，最新 run 仍为 51af259 世代 ts
+34659753558 绿）＝零 crates/package 代码/REGISTRY/docs 变更，paths 过滤
+正常。BOARD 推送记录节第 9 代条目随收尾簿记落库。**待命**：无待验收
+队列、无可领切片（在途全为等用户/等产线锚点）。
 **前情（09-12 07:4x–07:5x #22 链闭合批＋第 8 代推送门）**：
 ①**b4dbba0**＝slot/wt-3 桌面 **#22 消费批 867ccda 验收合并**——importCopy
 消费改任务化（受理回执 narrowTaskAccepted→终态快照等待〔首取覆盖内联完成
