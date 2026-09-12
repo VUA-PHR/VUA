@@ -1,4 +1,6 @@
-//! v2 production-job executor prelude (unity-bridge v2, proposal 009 / W21).
+//! Production-job executor prelude (unity-bridge v2 proposal 009 / W21;
+//! **production face migrated to v3** in the 2026-09-13 production-face
+//! migration slice).
 //!
 //! The approved plan travels as a job-directory file (009 ruling): the
 //! provider-side executor writes it next to the bridge request file and pins
@@ -6,11 +8,19 @@
 //! the hash locally before executing (integrity never rests on provider
 //! honesty alone).
 //!
+//! v3 is a frozen same-face superset of v2 (proposal 016): the production
+//! operations (`execute_production_job` / `restore_project`) keep every
+//! field, constraint, and receipt semantic — only `schemaVersion` moves 2→3,
+//! which also legalizes `data.instanceGlobalObjectId` (proposal 011 success
+//! criterion) and retires the JsonUtility empty-string drift into frozen v2
+//! receipts. The v2 face stays frozen with all its vectors valid; the
+//! receipt parser keeps accepting v2 documents for the transition window and
+//! rejects everything else.
+//!
 //! The command envelope itself (`UnityOperation` / `UnityPayload` /
-//! `UnityResult`) is core-owned: extending it with the v2 operations is
-//! coordinated with the core (see proposal 009 / wt-4 state file). This
-//! module ships the parts that do not depend on those types — the plan file
-//! + hash anchor and the typed projection of the v2 job receipt.
+//! `UnityResult`) is core-owned; this module ships the parts that do not
+//! depend on those types — the plan file + hash anchor and the typed
+//! projection of the job receipt.
 
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
@@ -66,11 +76,16 @@ pub fn stage_original_source(
 }
 
 /// The plan document must declare a supported schema version before it is
-/// written into a job directory; the same closed set lives in the v2 command
-/// schema (`planSchemaVersion`).
+/// written into a job directory; the same closed set lives in the frozen
+/// command schemas (`planSchemaVersion` enum, v2 and v3 alike).
 pub const SUPPORTED_PLAN_SCHEMA_VERSIONS: [&str; 1] = ["0.3"];
 
-/// Bridges the assembled v2 job into the core-owned envelope (`UnityCommand`
+/// The bridge protocol version the production face emits. v3 = frozen v2
+/// superset (proposal 016); the receipt parser accepts v2 for the transition
+/// window ([`ProductionJobReceipt::parse`]).
+pub const PRODUCTION_FACE_SCHEMA_VERSION: u8 = 3;
+
+/// Bridges the assembled v3 job into the core-owned envelope (`UnityCommand`
 /// with the 93f841c/36b14ff extensions) — a field copy of the same frozen
 /// shape. Cross-verified against [`build_job_command_json`] by test: the
 /// serialized envelope and the assembled document agree on every field.
@@ -92,7 +107,7 @@ pub fn build_job_command(
         plan_schema_version,
     )?;
     Ok(UnityCommand {
-        schema_version: 2,
+        schema_version: PRODUCTION_FACE_SCHEMA_VERSION,
         command_id: command_id.to_string(),
         operation: UnityOperation::ExecuteProductionJob,
         project_id: project_id.to_string(),
@@ -107,7 +122,7 @@ pub fn build_job_command(
     })
 }
 
-/// Bridges the assembled v2 restore into the core-owned envelope.
+/// Bridges the assembled v3 restore into the core-owned envelope.
 pub fn build_restore_command(
     command_id: &str,
     project_id: &str,
@@ -123,7 +138,7 @@ pub fn build_restore_command(
         snapshot_id,
     )?;
     Ok(UnityCommand {
-        schema_version: 2,
+        schema_version: PRODUCTION_FACE_SCHEMA_VERSION,
         command_id: command_id.to_string(),
         operation: UnityOperation::RestoreProject,
         project_id: project_id.to_string(),
@@ -136,12 +151,13 @@ pub fn build_restore_command(
     })
 }
 
-/// Assembles the v2 `execute_production_job` command document (frozen
-/// schema: schemas/unity-bridge/v2/command.schema.json). Deliberately
-/// self-contained JSON assembly — the core-owned `UnityCommand` envelope
-/// gains the v2 operations in its own change (93f841c, pending integration
-/// acceptance); once it lands, this document feeds the envelope by field
-/// copy (schema_version=2, operation, payload fields) without reshaping.
+/// Assembles the v3 `execute_production_job` command document (frozen
+/// schema: schemas/unity-bridge/v3/command.schema.json — the v2 same-face
+/// superset; the production fields are byte-identical, only `schemaVersion`
+/// moved 2→3). Deliberately self-contained JSON assembly — the core-owned
+/// `UnityCommand` envelope gains the production operations in its own change
+/// (93f841c); this document feeds the envelope by field copy
+/// (schema_version=3, operation, payload fields) without reshaping.
 pub fn build_job_command_json(
     command_id: &str,
     project_id: &str,
@@ -159,7 +175,7 @@ pub fn build_job_command_json(
         )));
     }
     let mut command = serde_json::json!({
-        "schemaVersion": 2,
+        "schemaVersion": PRODUCTION_FACE_SCHEMA_VERSION,
         "commandId": command_id,
         "operation": "execute_production_job",
         "projectId": project_id,
@@ -179,7 +195,8 @@ pub fn build_job_command_json(
     Ok(command)
 }
 
-/// Assembles the v2 `restore_project` command document.
+/// Assembles the v3 `restore_project` command document (frozen schema:
+/// schemas/unity-bridge/v3/command.schema.json; v2 same-face superset).
 pub fn build_restore_command_json(
     command_id: &str,
     project_id: &str,
@@ -191,7 +208,7 @@ pub fn build_restore_command_json(
         return Err(PlanFileError("command_id/project_id/snapshot_id 必填".to_string()));
     }
     let mut command = serde_json::json!({
-        "schemaVersion": 2,
+        "schemaVersion": PRODUCTION_FACE_SCHEMA_VERSION,
         "commandId": command_id,
         "operation": "restore_project",
         "projectId": project_id,
@@ -301,10 +318,10 @@ pub fn read_plan_file(
     String::from_utf8(bytes).map_err(|error| PlanFileError(format!("计划文件不是 UTF-8：{error}")))
 }
 
-/// Typed projection of the v2 `execute_production_job` receipt (the Bridge's
+/// Typed projection of the `execute_production_job` receipt (the Bridge's
 /// result document). Only the fields the provider consumes are mapped; the
-/// receipt schema (schemas/unity-bridge/v2/result.schema.json) stays the
-/// authority.
+/// receipt schema (schemas/unity-bridge/v3/result.schema.json, the v2
+/// same-face superset) stays the authority.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ProductionJobReceipt {
@@ -334,6 +351,12 @@ pub struct ProductionJobReceiptData {
     pub project_fingerprint_before: Option<String>,
     #[serde(default)]
     pub project_fingerprint: Option<String>,
+    /// Legalized in v3 (proposal 016): the receipt of an
+    /// `install_modular_asset` job carries the instance-root GlobalObjectId
+    /// (proposal 011 success criterion). Absent (not merely empty) in v2
+    /// receipts; empty when the plan ran no successful install.
+    #[serde(default)]
+    pub instance_global_object_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -357,13 +380,17 @@ pub struct ProductionResolvedSource {
 }
 
 impl ProductionJobReceipt {
-    /// Parses a raw v2 result document (as produced by the Bridge).
+    /// Parses a raw production-face result document (as produced by the
+    /// Bridge). v3 is the migrated production face; v2 receipts stay valid
+    /// for the transition window (the v2 face is frozen with all its
+    /// vectors — a v2-labeled receipt only occurs for a v2 command from a
+    /// pre-migration provider). Anything else is a typed refusal.
     pub fn parse(result_json: &str) -> Result<ProductionJobReceipt, PlanFileError> {
         let receipt: ProductionJobReceipt = serde_json::from_str(result_json)
             .map_err(|error| PlanFileError(format!("作业收据解析失败：{error}")))?;
-        if receipt.schema_version != 2 {
+        if receipt.schema_version != 2 && receipt.schema_version != 3 {
             return Err(PlanFileError(format!(
-                "作业收据 schemaVersion {} 不是 v2",
+                "作业收据 schemaVersion {} 不在 v2/v3 接受集合内",
                 receipt.schema_version
             )));
         }
@@ -456,6 +483,9 @@ mod tests {
 
     #[test]
     fn w21_receipt_projection_parses_the_v2_shapes() {
+        // Kept green through the v3 migration: the v2 face is frozen with
+        // all its vectors valid, and [`ProductionJobReceipt::parse`] keeps
+        // accepting v2 documents for the transition window.
         let real_run = r#"{
             "schemaVersion": 2, "commandId": "job-run-01", "operation": "execute_production_job",
             "status": "succeeded", "changedPaths": ["Assets/a.prefab"], "diagnostics": [],
@@ -504,7 +534,57 @@ mod tests {
     }
 
     #[test]
-    fn w21_job_command_json_matches_the_frozen_v2_envelope() {
+    fn production_receipt_parse_consumes_the_frozen_v3_vector() {
+        // The migrated production face consumes the frozen machine face
+        // directly: the v3 example vector (schemas/unity-bridge/
+        // v3/examples/production-job-run-instance.result.json) parses into
+        // the typed projection, including the legalized proposal-011
+        // instance identity.
+        let vector = std::fs::read_to_string(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../schemas/unity-bridge/v3/examples/production-job-run-instance.result.json"
+        ))
+        .expect("frozen v3 receipt vector must exist");
+        let receipt = ProductionJobReceipt::parse(&vector).unwrap();
+        assert_eq!(receipt.schema_version, 3);
+        assert!(receipt.executed());
+        receipt
+            .verified_plan_hash("sha256:9a8b7c6d5e4f302918a7b6c5d4e3f2091a8b7c6d5e4f302918a7b6c5d4e3f209")
+            .unwrap();
+        assert_eq!(receipt.data.steps.len(), 1);
+        assert_eq!(
+            receipt.data.instance_global_object_id.as_deref(),
+            Some("GlobalObjectId_V1-2-00000000000000000000000000000000-200000-0"),
+            "the legalized proposal-011 instance identity must survive the projection"
+        );
+    }
+
+    #[test]
+    fn production_receipt_parse_rejects_versions_outside_the_v2_v3_set() {
+        for version in [1u8, 4] {
+            let receipt_json = format!(
+                r#"{{
+                    "schemaVersion": {version}, "commandId": "x",
+                    "operation": "execute_production_job",
+                    "status": "succeeded", "changedPaths": [], "diagnostics": [],
+                    "data": {{"dryRun": false, "planHash": "sha256:bb", "steps": []}}
+                }}"#
+            );
+            let error = ProductionJobReceipt::parse(&receipt_json)
+                .expect_err("a receipt outside the v2/v3 acceptance set must be a typed refusal");
+            assert!(
+                error.0.contains("不在 v2/v3 接受集合内"),
+                "the refusal must name the acceptance set: {}",
+                error.0
+            );
+        }
+    }
+
+    #[test]
+    fn w21_job_command_json_matches_the_frozen_v3_envelope() {
+        // Production face migrated to v3 (2026-09-13 slice): the assembled
+        // document carries schemaVersion 3 under the frozen v3 schema (the
+        // v2 same-face superset) — every production field is unchanged.
         let root = unique_root("cmd");
         let plan = write_plan_file(&root, "job-run-01", PLAN).unwrap();
         let command = build_job_command_json(
@@ -516,7 +596,7 @@ mod tests {
             "0.3",
         )
         .unwrap();
-        assert_eq!(command["schemaVersion"], serde_json::json!(2));
+        assert_eq!(command["schemaVersion"], serde_json::json!(3));
         assert_eq!(command["operation"], serde_json::json!("execute_production_job"));
         assert_eq!(command["expectedProjectFingerprint"], serde_json::json!("fp-before"));
         assert_eq!(
@@ -539,10 +619,50 @@ mod tests {
     }
 
     #[test]
+    fn production_face_v3_documents_validate_against_the_frozen_v3_schema() {
+        // The migrated emitter is consumed against the frozen machine face:
+        // both production documents must validate under
+        // schemas/unity-bridge/v3/command.schema.json exactly as emitted.
+        let validator = jsonschema::validator_for(&serde_json::from_slice(
+            &std::fs::read(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../schemas/unity-bridge/v3/command.schema.json"
+            ))
+            .expect("frozen v3 command schema must exist"),
+        )
+        .expect("frozen v3 command schema must be valid JSON"))
+        .expect("frozen v3 command schema must compile");
+
+        let root = unique_root("v3schema");
+        let plan = write_plan_file(&root, "job-run-v3", PLAN).unwrap();
+        let job = build_job_command_json(
+            "job-run-v3",
+            "proj",
+            false,
+            Some("fp-before"),
+            &plan,
+            "0.3",
+        )
+        .unwrap();
+        assert!(
+            validator.is_valid(&job),
+            "assembled v3 execute_production_job must validate against the frozen v3 schema: {job}"
+        );
+        let restore =
+            build_restore_command_json("restore-v3", "proj", false, Some("fp-current"), "snap-1")
+                .unwrap();
+        assert!(
+            validator.is_valid(&restore),
+            "assembled v3 restore_project must validate against the frozen v3 schema: {restore}"
+        );
+    }
+
+    #[test]
     fn w21_restore_command_json_carries_the_snapshot_identity() {
         let command =
             build_restore_command_json("restore-01", "proj", false, Some("fp-current"), "snap-0001")
                 .unwrap();
+        assert_eq!(command["schemaVersion"], serde_json::json!(3));
         assert_eq!(command["operation"], serde_json::json!("restore_project"));
         assert_eq!(command["payload"]["snapshotId"], serde_json::json!("snap-0001"));
         assert_eq!(command["expectedProjectFingerprint"], serde_json::json!("fp-current"));
@@ -555,7 +675,8 @@ mod tests {
     #[test]
     fn w21_core_envelope_bridge_agrees_with_the_assembled_document() {
         // The core-owned envelope bridge (field copy) and the shape-pinned
-        // JSON assembly must agree on every v2 field. Known cross-domain
+        // JSON assembly must agree on every production field (v3 face after
+        // the migration). Known cross-domain
         // shape note (reported to core): the core UnityPayload serializes
         // its v1 String fields as empty strings (no skip), while the frozen
         // v2 schema gives them minLength 1 — harmless for the C# consumer
@@ -575,7 +696,7 @@ mod tests {
         let document =
             build_job_command_json("job-run-01", "proj", false, Some("fp-before"), &plan, "0.3")
                 .unwrap();
-        assert_eq!(envelope.schema_version, 2);
+        assert_eq!(envelope.schema_version, PRODUCTION_FACE_SCHEMA_VERSION);
         assert_eq!(envelope.command_id, "job-run-01");
         assert_eq!(envelope.operation, UnityOperation::ExecuteProductionJob);
         assert_eq!(envelope.project_id, "proj");
