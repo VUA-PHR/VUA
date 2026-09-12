@@ -467,3 +467,43 @@ main——集成合并 wt-2/wt-6 时按落款时序排列：裁决（2:5x）在�
 **时序确认**：草案件＋向量绿已落，**核心路由批即具备开工条件**（裁决
 第 7 点：候草案件即开工，不等冻结批）；冻结批（协议本双语＋REGISTRY 行
 ＋豁免行移除）照后办理；桌面 TS 面登记候路由批后随批不变。
+
+### 冻结批落库回执（环境，2026-09-13 4:2x——协议本双语＋REGISTRY 登记＋豁免行移除请求，候集成验收）
+
+（兑现裁决收尾③「冻结批照后」；前置事实：核心路由批 deafe11＋收编
+bbb6206＋加固 373470c 已经集成 a6585c2 验收入 main——本树追平 ca5d502
+核验该世代后开工，inbound 环境域零触碰。）
+
+**已交付（本树 slot/wt-6 冻结批）**：
+- **协议本双语**：`docs/protocols/editor-verify-v0.1_ZH.md`＋
+  `editor-verify-v0.1_EN.md`——首节即裁决⑥要求的行名/族名映射防歧义节
+  （`environment.verifyEditor` 消费语义 vs `editor-verify` 原语/拒绝码族
+  锚定）；冻结收口五项逐节（①原语 3eef4e4／②七点裁决／③草案件
+  38af48c 经 71c65d4／④路由批 deafe11＋373470c 经 a6585c2／⑤本批）；
+  冻结范围与分工明示桌面 TS 面＋设置面候 U10 切片、完成前不称端到端、
+  真机走查归 W25；三条实现级钉子＋缺席码预留语义＋params 闭集纪律照
+  裁决②③④⑤逐字落本。
+- **REGISTRY 登记**：`schemas/editor-verify/v0.1` 行＋
+  `docs/protocols/editor-verify-v0.1_ZH.md` 行（环境，2026-09-13）。
+- **schema 冻结态转换**：方法 schema description 的 DRAFT 声明改写为
+  FROZEN 声明（冻结序列五项收口逐项在案，照 inspection-get 冻结批
+  description 同构形态）；schema 其余面零变化（类型/闭集/pattern/const
+  逐字不动——冻结即本面，词表或字段变更必须升版本）。
+- **SCHEMA_EXEMPT 豁免行移除请求**：`scripts/collab-brief.mjs`
+  `'editor-verify'` 行请集成在本批验收时移除（照 dffb1e3 先例，集成
+  操作不越域自办）。移除后反向盲区检查由本批 REGISTRY 登记行兜住——
+  本机已实证两个状态均绿：豁免行在位时 registry-only exit 0（57 项，
+  豁免 continue 跳过）；集成移除后 mentioned 判定命中 `schemas/
+  editor-verify` 登记行，同样 exit 0。
+- **测试证据（本机 2026-09-13，本树 slot/wt-6）**：双载体消费测试
+  8/8＋8/8（环境域锚 project-manager＋核心帧环 provider-host，schema
+  description 改写后复跑确认零断言依赖旧文本）＋**cargo test
+  --workspace 584/0/27**（与路由批终态证据逐字一致，代码面零变化）＋
+  clippy --workspace 0 warning＋registry-only exit 0（57 项一致＋1184
+  文件 0 标记）。
+
+**021 时序就此收尾**：裁决（2:5x）→草案冻结件（3:1x）→核心路由批
+（3:4x，a6585c2 验收）→冻结批（本节，4:2x）。桌面 U10 设置面切片
+（TS 面登记＋设置 UI＋门③呈现留痕）开工条件三齐（裁决＋草案件＋路由
+批均已入 main），照 021 时序候桌面随批开工；本提案环境侧义务清零，
+原语侧输入继续随叫随到。
