@@ -211,6 +211,7 @@ demoTaskTitle: "Demo task",
     windowMinimize: "Minimize",
     windowMaximize: "Maximize/Restore",
     windowClose: "Close",
+    overlayToggle: "Overlay",
   },
   onboarding: {
     steps: {

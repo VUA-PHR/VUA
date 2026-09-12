@@ -2,11 +2,11 @@
 
 [English](desktop_EN.md) | [简体中文](desktop_ZH.md)
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors desktop_ZH.md at 1.1.0)
+> Authoritative language: 简体中文 (this English edition mirrors desktop_ZH.md at 1.2.0)
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-09-09
+> Updated: 2026-09-12
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -76,6 +76,35 @@ belong to the AMF material-acquisition boundary). The capability surface contain
 APIs. AMF validates observed page data for type, size, and source before persistence.
 Main-managed `WebContentsView` is the remote-content surface.
 
+## Overlay always-on-top window
+
+The desktop Overlay is a separate `BrowserWindow` inside the same Electron process (frameless,
+transparent, absent from the taskbar, pinned at the `screen-saver` level; shape parameters come from
+the slice-five spike conclusions). It shares the same `VuaDesktopApiV1` preload contract face with
+the main window and, via the surface-routing parameter (`?surface=overlay-desktop`), renders only
+the Overlay surface at the earliest application-initialization stage, without bootstrapping the main
+shell Gateway, DEV scenario, or business stores. Failure isolation is carried by two layers: the
+Orchestrator Provider is an independent supervised process, and an Overlay renderer crash is
+isolated by the Electron process model — no separate Gateway connection instance is needed
+(proposal 017 §4 desktop statement).
+
+- Zero new event surface: application events broadcast to every locally-originated window by local
+  origin checks, and Overlay windows are naturally on that list; snapshots are read by on-demand
+  polling with no new subscribe/push semantics;
+- No Overlay session identity: actions submitted from Overlay go through the existing command face
+  with the same acceptance path and nine-state discipline; the service side does not distinguish
+  whether an action came from the main window or an Overlay window;
+- The entry is the formal main-window top-bar action (outside DevScenario); show/hide toggling is
+  arbitrated by Main (the decision face is a pure, testable function in `overlay-window.ts`);
+  showing never steals focus; closing the Overlay window itself only clears the reference (the next
+  toggle recreates it), and closing the main window destroys the Overlay — main-window close keeps
+  its application-exit semantics;
+- Overlay only consumes stable snapshots and semantic actions and never becomes a business-logic
+  host (AGENTS architecture constraints; the consumption split is in the M7 breakdown-table desktop
+  row), and Overlay failures never block the desktop mainline (M7 gate delivery definition). The
+  Overlay read-face wire vocabulary lands with the core freeze batch; until then the rendered
+  surface shows an honest empty state and never fabricates a session.
+
 ## React and release boundaries
 
 React implements workbenches, guidance, cards, Recipe editing, feedback, and accessibility while
@@ -91,5 +120,8 @@ rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
 
+- 1.2.0 (2026-09-12): added the "Overlay always-on-top window" section — Overlay window
+  creation/pinning/show-hide and the formal entry shape (proposal 017 §4 desktop statement landed;
+  desktop-domain advance slice); the wire read face is honestly declared as not yet connected.
 - 1.0.0 (2026-09-06): entered version management; header normalized and conformance-review date
   added. Content reviewed against reality with no change.
