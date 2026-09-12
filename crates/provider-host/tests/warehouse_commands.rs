@@ -547,7 +547,9 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
             ::new(production_root.join("inspections"))),
         editor_version: "2022.3.22f1".to_owned(),
             bridge,
-            unity_editors_root: world.base.join("unity-editors"),
+            editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+                reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+            },
             project_root: world.base.join("project"),
         }
     };
@@ -760,7 +762,9 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
             ::new(production_root.join("inspections"))),
         editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
-        unity_editors_root: world.base.join("unity-editors"),
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+        },
             project_root: world.base.join("project"),
     }
 }
@@ -972,7 +976,9 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
             ::new(production_root.join("inspections"))),
         editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
-        unity_editors_root: world.base.join("unity-editors"),
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+        },
             project_root: world.base.join("project"),
     };
     // The use-case face rides the warehouse wiring (shared task authority
@@ -1273,7 +1279,8 @@ fn job_execute_environment_precheck_blocks_without_a_matching_editor() {
     let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
     let plan_id = done["planId"].as_str().expect("planId").to_owned();
 
-    // The configured editors root stays empty: no editor is installed.
+    // The selection resolved nothing (no injection, nothing detected): the
+    // honest absence the precheck observes.
     let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
     let task = wait_terminal(&world, &task_id);
     assert_eq!(serde_json::to_value(task.state).unwrap(), "failed");
@@ -1287,9 +1294,23 @@ fn job_execute_environment_precheck_blocks_without_a_matching_editor() {
 }
 
 #[test]
-fn job_execute_environment_precheck_passes_on_a_matching_install() {
+fn job_execute_environment_precheck_passes_on_a_confirmed_matching_editor() {
     let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-met");
     install_fake_editor(&world.base.join("unity-editors"), "2022.3.22f1");
+    // U10: the precheck observes the editor this job will ACTUALLY use —
+    // the confirmed explicit injection, laid out so the version is
+    // observable (Hub layout: <root>/<version>/Editor/Unity.exe).
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        editor_selection: vua_orchestrator::EditorSelection::Explicit {
+            path: world
+                .base
+                .join("unity-editors")
+                .join("2022.3.22f1")
+                .join("Editor")
+                .join("Unity.exe"),
+        },
+        ..use_cases.clone()
+    };
     let entry_ids = seed_imported_entries(&world);
     let recipe_document = json!({
         "formatVersion": "0.3",
@@ -1320,9 +1341,18 @@ fn job_execute_environment_precheck_passes_on_a_matching_install() {
 #[test]
 fn job_execute_environment_precheck_surfaces_observation_failure_honestly() {
     let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-failed");
-    // The editors root is a FILE: the observation itself fails (external
-    // failure), which must never be dressed as an "unmet" verdict.
+    // The assembly-face observation of the Hub root failed (the root is a
+    // FILE): the selection carries the failure as an external fact, and the
+    // precheck must keep it a retryable failure — never an "unmet" verdict.
     fs::write(world.base.join("unity-editors"), b"not a directory").expect("root as file");
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::DetectionFailed {
+                reason: "not a directory".into(),
+            },
+        },
+        ..use_cases.clone()
+    };
     let entry_ids = seed_imported_entries(&world);
     let recipe_document = json!({
         "formatVersion": "0.3",
@@ -1350,6 +1380,103 @@ fn job_execute_environment_precheck_surfaces_observation_failure_honestly() {
     let error = task.error.expect("the observation failure is a typed error");
     assert_eq!(error.code, "vua.job.environment_check_failed");
     assert!(error.recoverable, "an observation failure is retryable, not a config verdict");
+}
+
+#[test]
+fn job_execute_precheck_holds_the_gate3_line_on_an_auto_selected_candidate() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-gate3");
+    let entry_ids = seed_imported_entries(&world);
+    // A production-target editor was DETECTED and the recipe constraint
+    // matches it exactly — still no execution: the selection layer only
+    // resolves + presents; the first-use confirmation (desktop settings
+    // face) releases execution, and auto-selection never crosses it.
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        editor_selection: vua_orchestrator::EditorSelection::AutoSelected {
+            editor: vua_orchestrator::InstalledUnityEditor {
+                parsed: vua_orchestrator::parse_editor_version("2022.3.22f1")
+                    .expect("fixture version parses"),
+                path: world
+                    .base
+                    .join("unity-editors")
+                    .join("2022.3.22f1")
+                    .join("Editor")
+                    .join("Unity.exe"),
+            },
+        },
+        ..use_cases.clone()
+    };
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Gate3 Fixture",
+        "environment": {"unityVersionConstraint": "2022.3.22f1"},
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "failed",
+        "a detected candidate without the first-use confirmation never executes");
+    let error = task.error.expect("the gate-3 refusal is a typed error");
+    assert_eq!(error.code, "vua.job.environment_unmet");
+}
+
+#[test]
+fn job_execute_precheck_refuses_a_confirmed_editor_that_misses_the_constraint() {
+    let (world, use_cases, warehouse) = seeded_production_world("job-execute-env-offtarget");
+    let entry_ids = seed_imported_entries(&world);
+    // Sources weigh the same: a confirmed manual pick must satisfy the
+    // constraint exactly — an off-target confirmed editor refuses with the
+    // observed fact, never a silent use (compatibility policy).
+    let use_cases = vua_provider_host::ProductionUseCaseConfig {
+        editor_selection: vua_orchestrator::EditorSelection::Explicit {
+            path: world
+                .base
+                .join("unity-editors")
+                .join("2019.4.31f1")
+                .join("Editor")
+                .join("Unity.exe"),
+        },
+        ..use_cases.clone()
+    };
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": "019e0000-0000-7000-8000-000000000001",
+        "revision": 1,
+        "title": "Off-target Fixture",
+        "environment": {"unityVersionConstraint": "2022.3.22f1"},
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": entry_ids[0], "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let done = save_and_resolve(&world, &use_cases, &warehouse, recipe_document);
+    let plan_id = done["planId"].as_str().expect("planId").to_owned();
+
+    let task_id = approve_and_execute(&world, &use_cases, &warehouse, &plan_id);
+    let task = wait_terminal(&world, &task_id);
+    assert_eq!(serde_json::to_value(task.state).unwrap(), "failed",
+        "a confirmed off-target editor never silently executes");
+    let error = task.error.expect("the refusal is a typed error");
+    assert_eq!(error.code, "vua.job.environment_unmet");
 }
 
 fn save_and_resolve(
@@ -1460,7 +1587,9 @@ fn seeded_production_world(
         )),
         editor_version: "2022.3.22f1".to_owned(),
         bridge: Arc::new(NoBridge),
-        unity_editors_root: world.base.join("unity-editors"),
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+        },
             project_root: world.base.join("project"),
     };
     let warehouse = WarehouseConfig {
