@@ -129,6 +129,104 @@ namespace Vua.Editor.Bridge.Tests
             Assert.Throws<UnauthorizedAccessException>(() => BridgeEntryPoint.SafeBridgePath(rejected));
         }
 
+        // ---- v3: M7 inspection read operations (proposal 016) ----
+
+        [Test]
+        public void InspectionOperationsRequireProtocolV3()
+        {
+            var v1 = Command("inspect_lighting", true);
+            var result1 = BridgeCommandProcessor.Process(v1);
+            Assert.That(result1.status, Is.EqualTo("rejected"));
+            Assert.That(result1.diagnostics[0].code, Is.EqualTo("bridge.unsupported_schema"));
+
+            var v2 = Command("inspect_avatar_references", true);
+            v2.schemaVersion = 2;
+            var result2 = BridgeCommandProcessor.Process(v2);
+            Assert.That(result2.status, Is.EqualTo("rejected"));
+            Assert.That(result2.diagnostics[0].code, Is.EqualTo("bridge.unsupported_schema"));
+        }
+
+        [Test]
+        public void InspectionOperationWithoutDryRunIsRejected()
+        {
+            var command = Command("inspect_upload_readiness", false);
+            command.schemaVersion = 3;
+
+            var result = BridgeCommandProcessor.Process(command);
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("bridge.dry_run_required"));
+        }
+
+        [Test]
+        public void InspectionRejectsUnresolvableAvatarReference()
+        {
+            var command = Command("inspect_avatar_references", true);
+            command.schemaVersion = 3;
+            command.payload.avatarGlobalObjectId = "not-a-global-object-id";
+
+            var result = BridgeCommandProcessor.Process(command);
+
+            Assert.That(result.status, Is.EqualTo("rejected"));
+            Assert.That(result.diagnostics[0].code, Is.EqualTo("validation.avatar_not_found"));
+        }
+
+        [Test]
+        public void InspectionOfCleanAvatarSucceedsWithTypedFindings()
+        {
+            var avatar = new GameObject("vua-inspect-clean-avatar");
+            avatar.AddComponent<Animator>();
+            try
+            {
+                var command = Command("inspect_avatar_references", true);
+                command.schemaVersion = 3;
+                command.payload.avatarGlobalObjectId =
+                    GlobalObjectId.GetGlobalObjectIdFor(avatar).ToString();
+
+                var result = BridgeCommandProcessor.Process(command);
+
+                Assert.That(result.status, Is.EqualTo("succeeded"));
+                Assert.That(result.changedPaths, Is.Empty);
+                Assert.That(result.diagnostics, Has.Count.EqualTo(1));
+                Assert.That(result.diagnostics[0].code, Is.EqualTo("references.clean"));
+                Assert.That(result.diagnostics[0].severity, Is.EqualTo("info"));
+
+                var lighting = Command("inspect_lighting", true);
+                lighting.schemaVersion = 3;
+                lighting.payload.avatarGlobalObjectId = command.payload.avatarGlobalObjectId;
+                var lightingResult = BridgeCommandProcessor.Process(lighting);
+                Assert.That(lightingResult.status, Is.EqualTo("succeeded"));
+                Assert.That(lightingResult.diagnostics, Is.Not.Empty);
+                Assert.That(lightingResult.diagnostics[0].code,
+                        Does.StartWith("lighting."));
+
+                var readiness = Command("inspect_upload_readiness", true);
+                readiness.schemaVersion = 3;
+                readiness.payload.avatarGlobalObjectId = command.payload.avatarGlobalObjectId;
+                var readinessResult = BridgeCommandProcessor.Process(readiness);
+                Assert.That(readinessResult.status, Is.EqualTo("succeeded"));
+                Assert.That(readinessResult.diagnostics, Is.Not.Empty);
+                Assert.That(readinessResult.diagnostics[0].code,
+                        Does.StartWith("upload_readiness."));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(avatar);
+            }
+        }
+
+        [Test]
+        public void ReceiptDataCarriesTheProposal011InstanceIdentityField()
+        {
+            // proposal 011 success criterion: install receipts carry the
+            // instance-root GlobalObjectId. The C# data face must keep the
+            // field (legalized on the wire in unity-bridge v3); JsonUtility
+            // serializes every public field, so its presence here is also a
+            // wire-schema conformance fact.
+            var json = JsonUtility.ToJson(new BridgeData());
+            Assert.That(json, Does.Contain("instanceGlobalObjectId"));
+        }
+
         private static BridgeCommand Command(string operation, bool dryRun)
         {
             return new BridgeCommand

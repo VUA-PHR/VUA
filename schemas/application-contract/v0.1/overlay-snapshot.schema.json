@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/application-contract/v0.1/overlay-snapshot.schema.json",
+  "title": "VUA overlay.getSnapshot result (v0.1)",
+  "description": "The overlay read face (proposal 017 batch 1): one polling query returning the task cards plus the production-status card — pure projections of the authorities (task store, plan/record document stores). No query instant and no aggregate revision by design: two unchanged queries observe the same payload (the pure-function discipline). The card word lists (task state, plan status, record status) are passed through verbatim from their owning frozen faces and are deliberately not re-enumerated here — the projection trims fields, it never re-speaks vocabulary.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "taskCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "state", "correlationId"],
+      "properties": {
+        "taskId": { "type": "string", "minLength": 1 },
+        "state": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "planSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["planId", "planStatus", "createdAt", "recipeId"],
+      "properties": {
+        "planId": { "type": "string", "minLength": 1 },
+        "planStatus": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string", "minLength": 1 },
+        "recipeId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "recordSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["buildId", "planId", "status", "finishedAt"],
+      "properties": {
+        "buildId": { "type": "string", "minLength": 1 },
+        "planId": { "type": "string", "minLength": 1 },
+        "status": { "type": "string", "minLength": 1 },
+        "finishedAt": { "type": "string", "minLength": 1 }
+      }
+    },
+    "productionCard": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currentPlan", "latestRecord"],
+      "properties": {
+        "currentPlan": {
+          "oneOf": [
+            { "$ref": "#/$defs/planSummary" },
+            { "type": "null" }
+          ]
+        },
+        "latestRecord": {
+          "oneOf": [
+            { "$ref": "#/$defs/recordSummary" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  },
+  "required": ["contractVersion", "tasks", "productionCard"],
+  "properties": {
+    "contractVersion": { "const": "0.1" },
+    "tasks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/taskCard" }
+    },
+    "productionCard": { "$ref": "#/$defs/productionCard" }
+  }
+}

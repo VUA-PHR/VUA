@@ -25,8 +25,10 @@ use vua_bdl_store::download_events::{
 use vua_orchestrator::{
     AppErrorV1, BuildRecordStore, EnvironmentEngine, EnvironmentRoots, ErrorCategory,
     IdempotentCancellation,
-    IdempotentTaskAcceptance, NanosTaskIdGenerator, NewTask, ProjectIdentity, SqliteStoreError,
-    SqliteTaskStore, StoredTask, StoredTaskEvent, SystemClock, TaskEventKind, TaskMutation,
+    IdempotentTaskAcceptance, NanosTaskIdGenerator, NewTask, OverlayReadModel, ProjectIdentity,
+    SqliteStoreError,
+    SqliteTaskStore, StoredTask, StoredTaskEvent, StoreOverlayReadModel, SystemClock,
+    TaskEventKind, TaskMutation,
     TaskRuntime, TaskState,
 };
 use vua_bdl_store::{
@@ -951,6 +953,7 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             "task.requestCancellation" => handle_cancellation(state, request, request_id),
             "environment.getSnapshot" => environment_get_snapshot(state, request_id),
             "task.startDemo" => Ok(handle_start_demo(state, request, request_id, correlation_id)),
+            "overlay.getSnapshot" => overlay_get_snapshot(state, request, request_id, correlation_id),
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
                 correlation_id,
@@ -990,10 +993,12 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    let overlay_availability = recipe_availability;
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
+        {"operationId": "overlay.snapshot", "availability": overlay_availability},
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
         {"operationId": "project.import-copy", "availability": project_ops_availability},
@@ -3370,6 +3375,85 @@ fn environment_get_snapshot(state: &mut HostState, request_id: &str) -> Result<F
             "revision": revision,
             "capturedAt": snapshot.captured_at,
             "items": items,
+        }),
+    )))
+}
+
+/// The overlay read face (proposal 017 batch 1, `overlay.getSnapshot`):
+/// one polling query serving the overlay's one-glance surface — the task
+/// cards plus the production-status card, both pure projections of the
+/// authorities (017 §2: querying never changes what is observed, so the
+/// payload carries no query instant and no aggregate revision — an
+/// invented one would be a cross-source fact and would break the
+/// pure-function discipline the polling overlay depends on; the desktop
+/// stances 1–2 are honored by construction: the overlay polls on demand
+/// over the same provider connection and carries no overlay session
+/// identity — the query face is indistinguishable from the main line's).
+///
+/// Availability follows the production use-case wiring (the very stores
+/// the plan/record faces serve): when absent, the method answers a typed
+/// `vua.overlay.unavailable` — honest absence, never a silent success
+/// (the same discipline as `production.*` / `record.*`). Params are a
+/// closed empty set; unknown keys are contract errors.
+fn overlay_get_snapshot(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let params_is_open = request
+        .get("params")
+        .and_then(Value::as_object)
+        .map(|params| !params.is_empty())
+        .unwrap_or(false);
+    if params_is_open {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.overlay.invalid_params",
+            "errors.overlay.invalidParams",
+            "validation",
+        )));
+    }
+    let Some(use_cases) = state.use_cases.clone() else {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.overlay.unavailable",
+            "errors.overlay.unavailable",
+            "unavailable",
+        )));
+    };
+    let model = StoreOverlayReadModel::new(
+        state.store.clone(),
+        use_cases.plans.clone(),
+        use_cases.records.clone(),
+    );
+    // A task-store read failure propagates as the store error (the same
+    // face task.list answers through); a production document-store read
+    // failure is its own typed contract error — never folded into an
+    // empty card (failures are presented as failures).
+    let tasks = model.task_cards()?;
+    let production = match model.production_card() {
+        Ok(card) => card,
+        Err(_) => {
+            return Ok(FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.overlay.store_failed",
+                "errors.overlay.storeFailed",
+                "internal",
+            )))
+        }
+    };
+    Ok(FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "contractVersion": APPLICATION_CONTRACT_VERSION,
+            "tasks": serde_json::to_value(&tasks)
+                .expect("OverlayTaskCard serialization cannot fail"),
+            "productionCard": serde_json::to_value(&production)
+                .expect("OverlayProductionCard serialization cannot fail"),
         }),
     )))
 }
