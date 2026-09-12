@@ -44,6 +44,11 @@ export interface DesktopProviderEndpoint {
   readonly warehouseRoot: string;
   /** 生产用例作业目标项目根(VUA_PROJECT_ROOT,与壳内四元组同源,绝对路径) */
   readonly projectRoot: string;
+  /** 门③已确认手选编辑器(U10,null = 无手选):经 VUA_UNITY_EDITOR 显式
+   *  注入,核心组装面按「显式注入＞自动选择＞无」消费(0cb0d05);壳只
+   *  透传手选值,零选择逻辑(021 核心表态 2)。生效时机 = provider 进程
+   *  启动,设置面如实标注 */
+  readonly unityEditorPath?: string | null;
 }
 
 /**
@@ -57,7 +62,10 @@ export interface DesktopProviderEndpoint {
  * 数据目录布局,不是机密。
  */
 export function desktopProviderProcessFactory(
-  endpoint: Pick<DesktopProviderEndpoint, "providerDataRoot" | "warehouseRoot" | "projectRoot">,
+  endpoint: Pick<
+    DesktopProviderEndpoint,
+    "providerDataRoot" | "warehouseRoot" | "projectRoot" | "unityEditorPath"
+  >,
 ): ProviderProcessFactoryV01 {
   return (executablePath, databasePath) =>
     spawn(executablePath, ["--database", databasePath], {
@@ -67,6 +75,9 @@ export function desktopProviderProcessFactory(
         VUA_PROVIDER_DATA: endpoint.providerDataRoot,
         VUA_WAREHOUSE_ROOT: endpoint.warehouseRoot,
         VUA_PROJECT_ROOT: endpoint.projectRoot,
+        // 门③已确认手选才注入(空串都不给——显式注入是用户决定的留痕,
+        // 无手选 = 键缺席,核心组装面走自己的零配置策略)
+        ...(endpoint.unityEditorPath ? { VUA_UNITY_EDITOR: endpoint.unityEditorPath } : {}),
       },
       shell: false,
       stdio: ["pipe", "pipe", "pipe"],

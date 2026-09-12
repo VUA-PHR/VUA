@@ -1,9 +1,13 @@
 import { describe, expect, it } from "vitest";
 import {
   APPLICATION_CONTRACT_VERSION,
+  EDITOR_REFUSAL_CODES_V01,
+  ENVIRONMENT_VERIFY_UNAVAILABLE,
   isApplicationRequestV01,
   isTerminalTaskStateV01,
   type CatalogProductDetailV03,
+  type EditorVerifyRefusedV01,
+  type EnvironmentVerifyEditorResultV01,
   type InspectionEvidenceDocumentV01,
   type InspectionGetResultV01,
   type InspectionListResultV01,
@@ -666,5 +670,123 @@ describe("inspection-queries v0.1 (M7 检查切片,016 仲裁;数据草案面+�
     const row: Record<string, unknown> = result.entries[0];
     expect("dimensions" in row).toBe(false);
     expect("checks" in row).toBe(false);
+  });
+});
+
+describe("environment.verifyEditor vocabulary row (021, core seven-point ruling)", () => {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: "request-90",
+    correlationId: "correlation-90",
+    kind: "query",
+    method: "environment.verifyEditor",
+  } as const;
+
+  it("accepts the closed single-key params {path} with minLength 1", () => {
+    expect(
+      isApplicationRequestV01({ ...base, params: { path: "C:\\Editors\\2022.3.22f1\\Editor\\Unity.exe" } }),
+    ).toBe(true);
+    expect(isApplicationRequestV01({ ...base, params: { path: "C:\\Editors\\2022.3.22f1" } })).toBe(true);
+    expect(isApplicationRequestV01({ ...base, params: { path: "C:\\Editors\\2022.3.22f1\\Editor" } })).toBe(true);
+  });
+
+  it("rejects missing/empty path, speculative fields, wrong types, and non-object params", () => {
+    // 形状违反走 invalid_params,绝不冒充验证拒绝(拒绝需原语已实际运行)
+    expect(isApplicationRequestV01({ ...base, params: {} })).toBe(false);
+    expect(isApplicationRequestV01({ ...base, params: { path: "" } })).toBe(false);
+    expect(
+      isApplicationRequestV01({ ...base, params: { path: "C:\\x", layout: "exe" } }),
+    ).toBe(false);
+    expect(isApplicationRequestV01({ ...base, params: { path: null } })).toBe(false);
+    expect(isApplicationRequestV01({ ...base, params: "C:\\x" })).toBe(false);
+  });
+
+  it("pins the two-state tagged union against the frozen vector examples (positive 3)", () => {
+    // 向量对表:schemas/editor-verify/v0.1/examples 正 3 场景逐字锚定
+    // (exe 直选 production_target / 版本化根 other_unity_version+china /
+    // Editor 目录 migration_source);漂移在此先失败
+    const exeDirect = {
+      verdict: "verified",
+      editorRoot: "C:\\Editors\\2022.3.22f1",
+      exePath: "C:\\Editors\\2022.3.22f1\\Editor\\Unity.exe",
+      version: "2022.3.22f1",
+      classification: "production_target",
+      guidanceCode: "vua.env_managers.editor_production_target",
+      chinaDistribution: false,
+      schemaVersion: "0.1",
+    } as const;
+    const verified: EnvironmentVerifyEditorResultV01 = exeDirect;
+    expect(verified.verdict).toBe("verified");
+    expect(verified.schemaVersion).toBe("0.1");
+    expect(exeDirect.classification).toBe("production_target");
+
+    const versionedRoot: EnvironmentVerifyEditorResultV01 = {
+      verdict: "verified",
+      editorRoot: "C:\\Editors\\2022.3.6f1c1",
+      exePath: "C:\\Editors\\2022.3.6f1c1\\Editor\\Unity.exe",
+      version: "2022.3.6f1c1",
+      classification: "other_unity_version",
+      guidanceCode: "vua.env_managers.editor_other_version",
+      chinaDistribution: true,
+      schemaVersion: "0.1",
+    };
+    expect(versionedRoot.chinaDistribution).toBe(true);
+
+    const editorDirectory: EnvironmentVerifyEditorResultV01 = {
+      verdict: "verified",
+      editorRoot: "C:\\Editors\\2019.4.31f1",
+      exePath: "C:\\Editors\\2019.4.31f1\\Editor\\Unity.exe",
+      version: "2019.4.31f1",
+      classification: "migration_source",
+      guidanceCode: "vua.env_managers.editor_migration_source",
+      chinaDistribution: false,
+      schemaVersion: "0.1",
+    };
+    expect(editorDirectory.classification).toBe("migration_source");
+  });
+
+  it("pins refused as a normal result state with the closed five-code set (nail 1)", () => {
+    // 负 3 场景均为 refused 合法 result 态(绝不上浮应用错误信封)
+    const refusals: readonly EditorVerifyRefusedV01[] = [
+      {
+        verdict: "refused",
+        exePath: null,
+        code: "vua.editor_verify.target_missing",
+        detail: "no such path",
+        schemaVersion: "0.1",
+      },
+      {
+        verdict: "refused",
+        exePath: "C:\\Fake\\2022.3.22f1\\Editor\\Unity.exe",
+        code: "vua.editor_verify.not_an_editor",
+        detail: "FileVersion \"7.7.7777\" does not match a Unity editor",
+        schemaVersion: "0.1",
+      },
+      {
+        verdict: "refused",
+        exePath: "C:\\Editors\\2019.4.31f1\\Editor\\Unity.exe",
+        code: "vua.editor_verify.exe_missing",
+        detail: "Unity.exe not found under the Editor directory",
+        schemaVersion: "0.1",
+      },
+    ];
+    for (const refusal of refusals) {
+      expect(refusal.verdict).toBe("refused");
+      expect(EDITOR_REFUSAL_CODES_V01).toContain(refusal.code);
+    }
+    // 闭集五码逐字
+    expect(EDITOR_REFUSAL_CODES_V01).toEqual([
+      "vua.editor_verify.target_missing",
+      "vua.editor_verify.exe_missing",
+      "vua.editor_verify.identity_unreadable",
+      "vua.editor_verify.not_an_editor",
+      "vua.editor_verify.unsupported_platform",
+    ]);
+  });
+
+  it("keeps the absence code out of the refusal family (ruling 5)", () => {
+    // 缺席码仅路由未接线/原语不可达,绝不在拒绝码闭集内
+    expect(EDITOR_REFUSAL_CODES_V01).not.toContain(ENVIRONMENT_VERIFY_UNAVAILABLE);
+    expect(ENVIRONMENT_VERIFY_UNAVAILABLE).toBe("vua.environment.verify_unavailable");
   });
 });

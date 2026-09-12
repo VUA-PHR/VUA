@@ -1,6 +1,8 @@
 import {
   type DemoTaskStartedV01,
   type EnvironmentSnapshotV01,
+  type EnvironmentVerifyEditorResultV01,
+  ENVIRONMENT_VERIFY_UNAVAILABLE,
   APPLICATION_CONTRACT_VERSION,
   isTerminalTaskStateV01,
   type AppErrorV01,
@@ -37,6 +39,14 @@ export interface MockProviderOptionsV01 {
   readonly tasks?: readonly TaskSnapshotV01[];
   readonly mutatingTaskIds?: readonly string[];
   readonly environment?: EnvironmentSnapshotV01;
+  /**
+   * U10 设置面 DEV 走查注入(021 词表行,桌面消费批):给定手选路径返回
+   * 确定性两态 result(向量形状)。默认 undefined:mock 无验证原语可达,
+   * 按裁决⑤诚实缺席语义回 vua.environment.verify_unavailable——缺席码仅
+   * 表达「原语不可达」,绝不冒充验证拒绝(拒绝是 result 内态,钉子一)。
+   * 注入面仅供 DEV fixture/测试,生产构建经 leak 扫描把守不出 DEV。
+   */
+  readonly environmentVerifyEditor?: (path: string) => EnvironmentVerifyEditorResultV01;
   /**
    * confirmPlan/recover 受理后立即完成(镜像真实 worker 驱动到终态的语义,
    * 供向量回放的 waitTerminal 使用)。默认 false:任务保持 queued,由调用方
@@ -101,6 +111,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   #buildRecords = new Map<string, BuildRecordDocumentV02>();
   readonly #capabilities: readonly CapabilityOperationV01[];
   readonly #environment: EnvironmentSnapshotV01 | undefined;
+  readonly #environmentVerifyEditor: ((path: string) => EnvironmentVerifyEditorResultV01) | undefined;
   readonly #productionAutoComplete: boolean;
   #demoTaskSequence = 0;
   #state: ProviderStatusV01["state"] = "stopped";
@@ -117,6 +128,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
     for (const task of options.tasks ?? []) this.#tasks.set(task.taskId, task);
     for (const taskId of options.mutatingTaskIds ?? []) this.#mutatingTaskIds.add(taskId);
     this.#environment = options.environment;
+    this.#environmentVerifyEditor = options.environmentVerifyEditor;
     this.#productionAutoComplete = options.productionAutoComplete ?? false;
   }
 
@@ -194,6 +206,22 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           capturedAt: this.#now(),
           items: [],
         });
+      case "environment.verifyEditor":
+        // U10 设置面 DEV 消费分支(021 词表行):桌面消费批随批接线。无注入
+        // = DEV 模拟面无验证原语可达,诚实缺席(与裁决⑤缺席码语义同形);
+        // 有注入 = 确定性两态 result(路径 verbatim 交注入面,零本地归一化)。
+        // 真实验证事实仅出自 provider-host 路由背后的 Rust 原语。
+        if (this.#environmentVerifyEditor === undefined) {
+          return this.#failure(request, this.#error(
+            ENVIRONMENT_VERIFY_UNAVAILABLE,
+            "unavailable",
+            "errors.environment.verifyUnavailable",
+            request.correlationId,
+            true,
+            false,
+          ));
+        }
+        return this.#success(request, this.#environmentVerifyEditor(request.params.path));
       case "overlay.getSnapshot":
         // 017 overlay 读面批 1:模拟 Provider 未接线 overlay 生产读面,
         // 诚实不可用(与真实 provider-host 未接线行为同形:code/category/
@@ -249,12 +277,20 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "warehouse.listEntries":
         return this.#success(request, { entries: [] });
       case "project.environmentManagers":
-        // mock 无项目管理检测域:诚实空能力对象(013 读面第一翼;桌面穷尽性
-        // 机械跟随,真实采集归环境侧收集器)
+        // mock 无项目管理检测域:诚实空(013 读面第一翼;形态对齐 wire 实际
+        // 信封 = project-inspection 信封 + 内层 result 快照本体,桌面 021
+        // 接线批对齐;真实采集归环境侧收集器)
         return this.#success(request, {
-          schemaVersion: "vua.environment-managers-snapshot/v0.1",
-          vcc: {},
-          alcom: {},
+          schemaVersion: "0.1",
+          operation: "project.environmentManagers",
+          result: {
+            schemaVersion: "vua.environment-managers-snapshot/v0.1",
+            capturedAt: this.#now(),
+            vcc: { presence: "not_found" },
+            alcom: { presence: "not_found" },
+            editors: [],
+            projects: [],
+          },
         });
       case "project.listProjects":
         // mock 无检测采集:诚实空列表(缺席语义=诚实空,不伪造条目)

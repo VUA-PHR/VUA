@@ -169,10 +169,14 @@ namespace Vua.Editor.Bridge
         public string restoredFrom = string.Empty;
         // 011 §成功判定: the receipt of an install_modular_asset job carries
         // the GlobalObjectId of the instantiated instance root. Reserved at
-        // aa2a9da but only wired for real in the M7 inspection slice (v3):
-        // JsonUtility emits every public field, so this field must exist in
-        // the wire schema (added in unity-bridge v3 result.data; the frozen
-        // v2 schema does not carry it — known drift, see proposal 016).
+        // aa2a9da, wired for real in the M7 inspection slice (v3), and
+        // legalized in the unity-bridge v3 result.data (proposal 016). The
+        // production face migrated to v3 (receipt version echoes the command
+        // version), so v3 receipts carry the field legally; a v2-labeled
+        // receipt only occurs for a v2 command from a pre-migration provider
+        // (declared v2 transition drift — JsonUtility emits every public
+        // field; the frozen v2 schema does not carry this field, see
+        // proposal 016).
         public string instanceGlobalObjectId = string.Empty;
     }
 
