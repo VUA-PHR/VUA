@@ -368,3 +368,51 @@ crates/orchestrator/src/model.rs。）
 
 请核心随 M7 检查切片（硬前置②）按此契约面实现存储＋路由；桌面消费批候
 路由落地与 TS 面登记（照 013/014 分线惯例）。
+
+### 冻结收口记录（产线，2026-09-13 2:0x——inspection-evidence v0.1 冻结批交付）
+
+**§7 硬前置清单收口核实（逐项，零猜测，均以 main 面集成验收为准）**：
+
+- **①Bridge 五维产出操作落地**：✅ 锚点实现批经集成验收入 main（合并
+  7d63abe）——functional＝v1 `validate_avatar`、performance＝v1
+  `analyze_performance`（basis=bridge_local_estimate）、dependencies/
+  lighting/upload_readiness＝v3 只读 `inspect_avatar_references`/
+  `inspect_lighting`/`inspect_upload_readiness`（操作形状提案＝本文件
+  2026-09-12 23:4x 节，核心 0:0x 表态核可）。
+- **②核心侧存储＋读取路由落地**：✅ 核心 M7 检查切片实现批经集成验收
+  入 main（合并 7a262b8，r3 cargo 557/0/27）——InspectionEvidenceStore
+  第五文档库（append-only/hard_link exactly-once/身份寻址/缺席根诚实空态）
+  ＋`inspection.get`/`inspection.list` 读路由（照数据域词表行逐字）＋
+  任务化 `inspection.requestRun`（零收据＝类型化失败且不发布）。
+- **③向量全绿＋消费测试**：✅ 产线校验测试 4 项（正 2＋负 5 向量过
+  schema 校验）＋核心消费测试＋数据 inspection_queries_contract 6/6，
+  均在库且随 7a262b8 验收轮全绿。
+- **④双语协议本**：随本冻结批落地——
+  `docs/protocols/inspection-evidence-v0.1_ZH.md`／`_EN.md`（语义/产生方
+  消费方/BDL 边界/单层裁决照本提案仲裁与表态逐项落字）。
+- **⑤REGISTRY 登记**：随本冻结批落地——
+  `docs/REGISTRY.md` 新增 `docs/protocols/inspection-evidence-v0.1_ZH.md`
+  行（状态已冻结，维护方产线，2026-09-13）。
+
+**冻结宣告**：inspection-evidence v0.1 自本批起标冻结——schema 文件
+title/description 的 DRAFT 声明改为冻结声明（**形状零变更**：闭集、
+if/then、枚举、pattern 全部原样；向量与全部测试零影响）。硬前置齐前
+不标冻结的纪律（§7／治理 §2.5）至此兑现完毕。
+
+**随批事项与移交**：
+1. `scripts/collab-brief.mjs` SCHEMA_EXEMPT 的 `'inspection-evidence'`
+   行使命结束（登记已完成），移除＝集成域动作（022 同构反操作），请
+   集成随本批验收一并办理；未移除期间零带红窗口（豁免行为跳过检测，
+   不受登记影响）。
+2. **数据时序回应**（wt-5 时序协调知会收讫）：evidence 本体冻结批先行
+   办理（时序自决照知会所留）；inspection-queries v0.1 词表行冻结批照
+   数据排期（候核心 requestRun 修订批），两批互不阻塞——数据表态①
+   「一并办理」以形状经实现批验证为前提已成立，先先无涉、后后无涉。
+3. **数据预审涉本体的部分**：零（其修订请求两件——requestRun 版本
+   常量与 avatarRef.maxLength——均属 inspection-queries 词表行族，
+   evidence 本体形状无任何修订意见）。
+4. **v3（unity-bridge）冻结批时序不变**：候桌面 016 §7「知悉即可」
+   落账（三树表态收口唯一缺口），与本冻结批互不阻塞；provider 生产
+   作业面不迁移 v3 的候冻结期纪律维持。
+5. **诚实边界**：C# EditMode 合同测试已落地未运行验证（真机归 W25）；
+   本冻结批为契约面冻结，不宣称端到端。

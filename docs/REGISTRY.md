@@ -46,6 +46,7 @@
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.4_ZH.md | 0.4 | 已冻结（IMP-3 契约先行，2026-09-09：Schema＋正负例向量＋消费测试） | 数据 | 2026-09-09 |
 | docs/protocols/production-evidence-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-08 |
+| docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | 已冻结（M3 验收） | 核心 | 2026-09-07 |
