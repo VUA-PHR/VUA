@@ -255,6 +255,13 @@ pub struct ProductionUseCaseConfig {
     pub plans: Arc<vua_orchestrator::PlanDocumentStore>,
     pub evidence: Arc<vua_orchestrator::EvidenceStore>,
     pub records: Arc<vua_orchestrator::RecipeRecordStore>,
+    /// M7 inspection slice (proposal 016, hard precondition 2): the AMF
+    /// production-domain store for inspection-evidence documents (never
+    /// BDL) and the editor version the configured Bridge executable
+    /// declares (path-observed, "unknown" when the path carries none — the
+    /// evidence states what ran, it never invents).
+    pub inspections: Arc<vua_orchestrator::InspectionEvidenceStore>,
+    pub editor_version: String,
     /// The Bridge the orchestrated jobs execute through (the M5 smoke
     /// target project is provider configuration, not wire state).
     pub bridge: Arc<dyn vua_orchestrator::UnityBridge>,
@@ -269,6 +276,8 @@ struct ProductionUseCaseServices {
     recipes: Arc<RecipeDocumentStore>,
     plans: Arc<vua_orchestrator::PlanDocumentStore>,
     records: Arc<vua_orchestrator::RecipeRecordStore>,
+    inspections: Arc<vua_orchestrator::InspectionEvidenceStore>,
+    editor_version: String,
     bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: PathBuf,
     unity_editors_root: PathBuf,
@@ -508,6 +517,8 @@ pub fn run_provider_host_full(
             recipes: config.recipes,
             plans: config.plans,
             records: config.records,
+            inspections: config.inspections,
+            editor_version: config.editor_version,
             evidence: config.evidence,
             bridge: config.bridge,
             project_root: config.project_root,
@@ -899,6 +910,18 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
         };
         return record_request(use_cases, method, request, request_id, correlation_id);
     }
+    if method.starts_with("inspection.") {
+        let Some(use_cases) = state.use_cases.clone() else {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.inspection.unavailable",
+                "errors.inspection.unavailable",
+                "unavailable",
+            ));
+        };
+        return inspection_request(use_cases, method, request, request_id, correlation_id);
+    }
     if method.starts_with("warehouse.") {
         return warehouse_request(state, method, request, request_id, correlation_id);
     }
@@ -994,11 +1017,20 @@ fn served_capabilities(state: &HostState) -> Value {
         "unavailable"
     };
     let overlay_availability = recipe_availability;
+    // M7 inspection slice: the query face rides the use-case wiring; the
+    // tasked run face additionally requires the shared task authority.
+    let inspection_queries_availability = recipe_availability;
+    let inspection_run_availability = match state.use_cases.as_ref() {
+        Some(use_cases) if use_cases.runtime.is_some() => "available",
+        _ => "unavailable",
+    };
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "overlay.snapshot", "availability": overlay_availability},
+        {"operationId": "inspection.queries", "availability": inspection_queries_availability},
+        {"operationId": "inspection.requestRun", "availability": inspection_run_availability},
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
         {"operationId": "project.import-copy", "availability": project_ops_availability},
@@ -2862,6 +2894,420 @@ fn record_request(
             "unavailable",
         )),
     }
+}
+
+/// M7 inspection slice (proposal 016, hard precondition 2): the
+/// `inspection.*` word-list face. Read half = `inspection.get` /
+/// `inspection.list` over the inspection-evidence store (data-role v0.1
+/// draft shapes; newest-first by performedAt, identity summary rows — the
+/// honest detail stays in the evidence body). Write half =
+/// `inspection.requestRun`, the tasked command that drives the Bridge
+/// producing operations and publishes the evidence bundle. Unwired faces
+/// answer typed `vua.inspection.unavailable` — honest absence.
+fn inspection_request(
+    use_cases: Arc<ProductionUseCaseServices>,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    match method {
+        "inspection.get" => {
+            let empty = serde_json::Map::new();
+            let params = request
+                .get("params")
+                .and_then(Value::as_object)
+                .unwrap_or(&empty);
+            let allowed = ["inspectionId"];
+            if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.invalid_params",
+                    "errors.inspection.invalidParams",
+                    "validation",
+                ));
+            }
+            let Some(inspection_id) = params
+                .get("inspectionId")
+                .and_then(Value::as_str)
+                .filter(|id| !id.is_empty())
+            else {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.invalid_params",
+                    "errors.inspection.invalidParams",
+                    "validation",
+                ));
+            };
+            match use_cases.inspections.get(inspection_id) {
+                Ok(Some(document)) => FrameOutcome::Response(application_success(
+                    request_id,
+                    json!({
+                        "inspectionId": inspection_id,
+                        "inspectionDocument": document,
+                        "schemaVersion": vua_orchestrator::INSPECTION_EVIDENCE_SCHEMA_VERSION,
+                    }),
+                )),
+                Ok(None) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.not_found",
+                    "errors.inspection.notFound",
+                    "validation",
+                )),
+                Err(_) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.store_failed",
+                    "errors.inspection.storeFailed",
+                    "internal",
+                )),
+            }
+        }
+        "inspection.list" => {
+            let allowed = ["avatarRef", "overallStatus", "limit", "offset"];
+            let empty = serde_json::Map::new();
+            let params = request
+                .get("params")
+                .and_then(Value::as_object)
+                .unwrap_or(&empty);
+            if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.invalid_params",
+                    "errors.inspection.invalidParams",
+                    "validation",
+                ));
+            }
+            if let Some(status) = params.get("overallStatus").and_then(Value::as_str) {
+                if !matches!(status, "pass" | "warn" | "fail") {
+                    return FrameOutcome::Response(application_error(
+                        request_id,
+                        correlation_id,
+                        "vua.inspection.invalid_params",
+                        "errors.inspection.invalidParams",
+                        "validation",
+                    ));
+                }
+            }
+            if params
+                .get("avatarRef")
+                .is_some_and(|value| !value.is_string())
+            {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.inspection.invalid_params",
+                    "errors.inspection.invalidParams",
+                    "validation",
+                ));
+            }
+            let limit = params
+                .get("limit")
+                .and_then(Value::as_u64)
+                .unwrap_or(50)
+                .clamp(1, 200) as usize;
+            let offset = params.get("offset").and_then(Value::as_u64).unwrap_or(0) as usize;
+            let avatar_filter = params.get("avatarRef").and_then(Value::as_str);
+            let status_filter = params.get("overallStatus").and_then(Value::as_str);
+            let mut documents = match use_cases.inspections.list_documents() {
+                Ok(documents) => documents,
+                Err(_) => {
+                    return FrameOutcome::Response(application_error(
+                        request_id,
+                        correlation_id,
+                        "vua.inspection.store_failed",
+                        "errors.inspection.storeFailed",
+                        "internal",
+                    ))
+                }
+            };
+            // Newest first: performedAt is an RFC 3339 UTC string, so
+            // lexicographic order IS chronological order (same declared
+            // face as the production_card newest-first semantics).
+            documents.sort_by(|left, right| {
+                let left_key = left.get("performedAt").and_then(Value::as_str).unwrap_or("");
+                let right_key = right.get("performedAt").and_then(Value::as_str).unwrap_or("");
+                right_key.cmp(left_key).then_with(|| {
+                    // Stable tie-break on identity so equal timestamps stay
+                    // deterministically ordered.
+                    let left_id = left.get("inspectionId").and_then(Value::as_str).unwrap_or("");
+                    let right_id = right.get("inspectionId").and_then(Value::as_str).unwrap_or("");
+                    right_id.cmp(left_id)
+                })
+            });
+            let filtered: Vec<&Value> = documents
+                .iter()
+                .filter(|document| {
+                    let avatar_match = avatar_filter.is_none_or(|filter| {
+                        document
+                            .pointer("/avatarRef/ref")
+                            .and_then(Value::as_str)
+                            == Some(filter)
+                    });
+                    let status_match = status_filter.is_none_or(|filter| {
+                        document.get("overallStatus").and_then(Value::as_str) == Some(filter)
+                    });
+                    avatar_match && status_match
+                })
+                .collect();
+            let total = filtered.len();
+            let entries: Vec<Value> = filtered
+                .iter()
+                .skip(offset)
+                .take(limit)
+                .map(|document| {
+                    json!({
+                        "inspectionId": document.get("inspectionId").cloned().unwrap_or(Value::Null),
+                        "avatarRef": document.get("avatarRef").cloned().unwrap_or(Value::Null),
+                        "overallStatus": document.get("overallStatus").cloned().unwrap_or(Value::Null),
+                        "performedAt": document.get("performedAt").cloned().unwrap_or(Value::Null),
+                    })
+                })
+                .collect();
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({
+                    "total": total,
+                    "entries": entries,
+                    "schemaVersion": vua_orchestrator::INSPECTION_EVIDENCE_SCHEMA_VERSION,
+                }),
+            ))
+        }
+        "inspection.requestRun" => inspection_request_run(
+            use_cases,
+            request,
+            request_id,
+            correlation_id,
+        ),
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.inspection.unavailable",
+            "errors.inspection.unavailable",
+            "unavailable",
+        )),
+    }
+}
+
+/// `inspection.requestRun`: accepts an inspection task idempotently-free
+/// (each run is a new observation with a fresh uuid-v7 identity, exactly
+/// like job.execute) and drives the Bridge producing operations on the
+/// shared task authority. Unwired task authority answers a typed
+/// unavailable — honest absence, never a silent success.
+fn inspection_request_run(
+    use_cases: Arc<ProductionUseCaseServices>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(runtime) = use_cases.runtime.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.inspection.unavailable",
+            "errors.inspection.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(params) = request.get("params") else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.inspection.invalid_params",
+            "errors.inspection.invalidParams",
+            "validation",
+        ));
+    };
+    let allowed = ["avatarRef", "avatarGlobalObjectId"];
+    let unknown_param = params
+        .as_object()
+        .is_some_and(|object| object.keys().any(|key| !allowed.contains(&key.as_str())));
+    let avatar_global_object_id = params
+        .pointer("/avatarGlobalObjectId")
+        .and_then(Value::as_str)
+        .filter(|id| !id.is_empty())
+        .map(str::to_owned);
+    let avatar_ref = params.get("avatarRef");
+    let avatar_ref_valid = avatar_ref
+        .map(|reference| {
+            reference.is_object()
+                && reference
+                    .pointer("/ref")
+                    .and_then(Value::as_str)
+                    .is_some_and(|reference_value| !reference_value.is_empty())
+                && reference
+                    .pointer("/label")
+                    .map(|label| label.is_string() || label.is_null())
+                    .unwrap_or(true)
+        })
+        .unwrap_or(false);
+    if unknown_param || avatar_global_object_id.is_none() || !avatar_ref_valid {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.inspection.invalid_params",
+            "errors.inspection.invalidParams",
+            "validation",
+        ));
+    }
+    let inspections = use_cases.inspections.clone();
+    let bridge = use_cases.bridge.clone();
+    let project_root = use_cases.project_root.clone();
+    let editor_version = use_cases.editor_version.clone();
+    let avatar_ref = avatar_ref.cloned().unwrap_or(Value::Null);
+    let avatar_global_object_id = avatar_global_object_id.unwrap_or_default();
+    let run_correlation = correlation_id.to_owned();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let payload = run_inspection_job(
+                &inspections,
+                &bridge,
+                &project_root,
+                &editor_version,
+                &avatar_ref,
+                &avatar_global_object_id,
+                &run_correlation,
+            )?;
+            Ok(vua_orchestrator::TaskExit::Done(payload))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": BDL_COMMANDS_SCHEMA_VERSION,
+                "operation": "inspection.requestRun",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.inspection.store_failed",
+            "errors.inspection.storeFailed",
+            "internal",
+        )),
+    }
+}
+
+/// The inspection run executor (task job): drives the five producing
+/// operations (two v1 typed checks, three v3 read-only inspection
+/// operations — the v3 operations are the accepted Bridge v3 superset face;
+/// the production job face stays on v2 untouched), transcribes each receipt
+/// into its dimension (转抄不解释), aggregates the declared rule, and
+/// publishes the evidence bundle exactly once. A run in which the Bridge
+/// produced no receipt at all fails with a typed error and publishes
+/// nothing — an evidence bundle with zero observed operations would be a
+/// fabricated document.
+#[allow(clippy::too_many_arguments)]
+fn run_inspection_job(
+    inspections: &vua_orchestrator::InspectionEvidenceStore,
+    bridge: &Arc<dyn vua_orchestrator::UnityBridge>,
+    project_root: &std::path::Path,
+    editor_version: &str,
+    avatar_ref: &Value,
+    avatar_global_object_id: &str,
+    correlation_id: &str,
+) -> Result<Value, AppErrorV1> {
+    let inspection_id = uuid_v7_identity();
+    let project = vua_orchestrator::ProjectRef {
+        // Run-scope correlation identity (the production job precedent
+        // passes the driving workflow's id, not a filesystem-derived one).
+        id: format!("inspection-{inspection_id}"),
+        root: project_root.to_path_buf(),
+    };
+    let producing = vua_orchestrator::producing_operations();
+    let mut operations: Vec<Value> = Vec::new();
+    let mut dimensions: Vec<Value> = Vec::new();
+    let mut unavailable: Vec<&'static str> = Vec::new();
+    for (index, (dimension, operation, schema_version, basis)) in producing.iter().enumerate() {
+        let command_id = format!("{inspection_id}-{index:02}");
+        let command = vua_orchestrator::build_inspection_command(
+            &command_id,
+            &project.id,
+            *operation,
+            avatar_global_object_id,
+        );
+        debug_assert_eq!(command.schema_version, *schema_version);
+        match bridge.execute(&project, &command) {
+            Ok(result) => {
+                operations.push(json!({
+                    "operation": serde_json::to_value(operation).unwrap_or(Value::Null),
+                    "commandId": result.command_id,
+                    "status": vua_orchestrator::operation_status(result.status),
+                }));
+                let receipt = serde_json::to_value(&result).unwrap_or(Value::Null);
+                dimensions.push(vua_orchestrator::transcribe_dimension(
+                    *dimension,
+                    basis,
+                    Some(&receipt),
+                ));
+            }
+            Err(_) => {
+                // No receipt exists: the dimension is honestly absent. The
+                // operation contributes no evidence-operations entry.
+                unavailable.push(dimension.kind());
+                dimensions.push(vua_orchestrator::transcribe_dimension(
+                    *dimension,
+                    basis,
+                    None,
+                ));
+            }
+        }
+    }
+    if operations.is_empty() {
+        return Err(AppErrorV1::new(
+            "vua.inspection.bridge_failed",
+            ErrorCategory::ExternalFailure,
+            "errors.inspection.bridgeFailed",
+            correlation_id,
+        ));
+    }
+    let overall_status = vua_orchestrator::aggregate_overall_status(&dimensions);
+    let mut notes = "性能维 basis=bridge_local_estimate 为本地结构估算，不是 VRChat 官方性能等级。".to_owned();
+    if !unavailable.is_empty() {
+        notes.push_str(&format!(
+            "本次未观测维度（{}）以 unavailable 如实缺席。",
+            unavailable.join("、")
+        ));
+    }
+    let document = json!({
+        "schemaVersion": vua_orchestrator::INSPECTION_EVIDENCE_SCHEMA_VERSION,
+        "inspectionId": inspection_id,
+        "avatarRef": avatar_ref,
+        "performedAt": now_rfc3339(),
+        "bridge": {
+            "editorVersion": editor_version,
+            "bridgeSchemaVersion": 3,
+            "operations": operations,
+        },
+        "dimensions": dimensions,
+        "overallStatus": overall_status,
+        "notes": notes,
+    });
+    inspections
+        .publish(&inspection_id, &document)
+        .map_err(|error| {
+            AppErrorV1::new(
+                "vua.inspection.store_failed",
+                ErrorCategory::Internal,
+                "errors.inspection.storeFailed",
+                correlation_id,
+            )
+            .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+        })?;
+    Ok(json!({
+        "kind": "inspection.requestRun",
+        "inspectionId": inspection_id,
+        "overallStatus": overall_status,
+    }))
 }
 
 /// plan.list: identity listing over stored plans. Closed param set

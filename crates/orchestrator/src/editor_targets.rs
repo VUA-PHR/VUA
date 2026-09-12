@@ -138,3 +138,40 @@ pub fn classify_editor(version: &ParsedEditorVersion) -> (EditorClass, &'static 
 pub fn classify_version_string(raw: &str) -> Option<(EditorClass, &'static str)> {
     parse_editor_version(raw).map(|parsed| classify_editor(&parsed))
 }
+
+/// Extracts the editor version an editor executable path declares, by
+/// walking its ancestor directory names for one that parses as a complete
+/// Unity version (Hub layout: `.../2022.3.22f1/Editor/Unity.exe`). This is
+/// an observation of the configured path, never a guess: no parseable
+/// ancestor → `None`, and the caller states the version as unknown instead
+/// of inventing one. Deepest match wins (a nested version directory is more
+/// specific than an outer one).
+pub fn editor_version_from_path(path: &std::path::Path) -> Option<String> {
+    path.ancestors()
+        .filter_map(|ancestor| ancestor.file_name())
+        .filter_map(|name| name.to_str())
+        .find_map(|name| parse_editor_version(name).map(|parsed| parsed.display))
+}
+
+#[cfg(test)]
+mod editor_version_path_tests {
+    use super::*;
+
+    #[test]
+    fn hub_layout_yields_the_version_directory() {
+        let path = std::path::Path::new("C:/Program Files/Unity/Hub/Editor/2022.3.22f1/Editor/Unity.exe");
+        assert_eq!(
+            editor_version_from_path(path).as_deref(),
+            Some("2022.3.22f1")
+        );
+    }
+
+    #[test]
+    fn unparseable_paths_state_no_version_instead_of_guessing() {
+        assert_eq!(
+            editor_version_from_path(std::path::Path::new("D:/tools/unity-editor.exe")),
+            None
+        );
+        assert_eq!(editor_version_from_path(std::path::Path::new("")), None);
+    }
+}

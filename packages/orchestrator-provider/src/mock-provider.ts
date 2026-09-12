@@ -324,6 +324,20 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "inspection.get":
+      case "inspection.list":
+      case "inspection.requestRun":
+        // M7 检查切片(016):模拟 Provider 未配置检查域(无证据库、无
+        // 任务化驱动):诚实不可用,镜像 provider-host 的
+        // vua.inspection.unavailable 缺席语义——不伪造检查结果
+        return this.#failure(request, this.#error(
+          "vua.inspection.unavailable",
+          "unavailable",
+          "errors.inspection.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
     }
   }
 
