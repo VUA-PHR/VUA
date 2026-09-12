@@ -51,6 +51,20 @@ pub enum UnityOperation {
     /// M5 production recovery: restore the project to a registered recovery
     /// point (Bridge v2; proposal 009 cross-review point 5).
     RestoreProject,
+    /// M7 inspection slice: Avatar asset reference integrity — the producing
+    /// layer of the dependencies dimension (Bridge v3; proposal 016
+    /// operation-shape proposal, dependencies single-layer ruling). Read-only.
+    InspectAvatarReferences,
+    /// M7 inspection slice: active-scene lighting facts (realtime lights,
+    /// bake state, reflection probes) — the producing layer of the lighting
+    /// dimension (Bridge v3). Read-only; observes facts, never an official
+    /// lighting rating.
+    InspectLighting,
+    /// M7 inspection slice: SDK upload-preparation observations (descriptor
+    /// presence, SDK component reflection, build target facts) — the
+    /// producing layer of the upload_readiness dimension (Bridge v3).
+    /// Read-only; never an official SDK verdict.
+    InspectUploadReadiness,
 }
 
 impl UnityOperation {

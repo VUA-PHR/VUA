@@ -1084,14 +1084,33 @@ rolled_back: "已回滚",
       },
     },
   },
-  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
-   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  /** Overlay 双表面(§8.8;v2=017 表面批 1 wire 消费):状态概括与生产卡文案
+   *  新增;环境/进度/禁用原因键删除——wire 批 1 无此事实(批 2 随其投影
+   *  再引入)。planStatus/recordStatus 词表镜像冻结 PlanStatusV02/
+   *  BuildRecordStatusV02 枚举。 */
   overlay: {
     surfaceTitle: "VUA 覆盖层",
-    taskSectionLabel: "当前任务",
-    environmentSectionLabel: "环境",
-    progress: "{done} / {total}",
-    moreEnvironments: "还有 {count} 项",
+    taskSectionLabel: "任务",
+    productionSectionLabel: "生产",
+    productionPlan: "计划 {planId}",
+    productionRecord: "记录 {buildId}",
+    productionPlanStatuses: {
+      draft: "待批准",
+      approved: "已批准",
+      superseded: "已被取代",
+    },
+    productionRecordStatuses: {
+      succeeded: "已完成",
+      succeeded_with_warnings: "完成(有警告)",
+      failed: "已失败",
+      cancelled: "已取消",
+      recovered: "已恢复",
+    },
+    statusTitles: {
+      active: "{count} 项进行中",
+      recent: "近期活动",
+      idle: "没有进行中的内容",
+    },
     actions: {
       openOnDesktop: "在桌面打开",
       dismiss: "关闭覆盖层",
@@ -1112,22 +1131,6 @@ rolled_back: "已回滚",
       active: "进行中",
       waiting: "待确认",
       blocked: "已阻断",
-    },
-    disabledReasons: {
-      notAllowed: "当前状态下不可用",
-      noTask: "没有进行中的任务",
-      notCancellable: "该任务当前不可取消",
-    },
-    environmentStates: {
-      ready: "就绪",
-      running: "运行中",
-      missing: "未检测到",
-    },
-    environmentNames: {
-      steamvr: "SteamVR",
-      unity: "Unity 编辑器",
-      vrchat: "VRChat",
-      vpm: "VPM",
     },
   },
   /** MediaSlot 媒体槽:加载失败语义(ui-ux §2.8) */

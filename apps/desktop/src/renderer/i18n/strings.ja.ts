@@ -1017,14 +1017,34 @@ rolled_back: "ロールバック済み",
       },
     },
   },
-  /** Overlay 双表面(切片五 F7a,§8.8):桌面/VR 覆盖层的全部界面文案;
-   *  枚举键(disabledReasons/environmentStates/statusTones)与 TS 联合一一对应 */
+  /** Overlay 双表面(§8.8;v2=017 表面批 1 wire 消費):状態サマリとプロダクション
+   *  カードのコピーを追加。環境/進捗/無効理由キーは削除——wire バッチ 1 に
+   *  これらの事実はない(バッチ 2 で投影とともに再導入可)。
+   *  planStatus/recordStatus 語彙は凍結された PlanStatusV02/
+   *  BuildRecordStatusV02 列挙をミラー。 */
   overlay: {
     surfaceTitle: "VUA オーバーレイ",
-    taskSectionLabel: "現在のタスク",
-    environmentSectionLabel: "環境",
-    progress: "{done} / {total}",
-    moreEnvironments: "ほか {count} 件",
+    taskSectionLabel: "タスク",
+    productionSectionLabel: "プロダクション",
+    productionPlan: "プラン {planId}",
+    productionRecord: "レコード {buildId}",
+    productionPlanStatuses: {
+      draft: "承認待ち",
+      approved: "承認済み",
+      superseded: "置き換え済み",
+    },
+    productionRecordStatuses: {
+      succeeded: "成功",
+      succeeded_with_warnings: "成功(警告あり)",
+      failed: "失敗",
+      cancelled: "キャンセル済み",
+      recovered: "回復済み",
+    },
+    statusTitles: {
+      active: "{count} 件が進行中",
+      recent: "最近のアクティビティ",
+      idle: "進行中のものはありません",
+    },
     actions: {
       openOnDesktop: "デスクトップで開く",
       dismiss: "オーバーレイを閉じる",
@@ -1047,22 +1067,6 @@ rolled_back: "ロールバック済み",
       active: "進行中",
       waiting: "確認待ち",
       blocked: "ブロック中",
-    },
-    disabledReasons: {
-      notAllowed: "現在の状態では使用できません",
-      noTask: "進行中のタスクがありません",
-      notCancellable: "このタスクは現在キャンセルできません",
-    },
-    environmentStates: {
-      ready: "準備完了",
-      running: "実行中",
-      missing: "未検出",
-    },
-    environmentNames: {
-      steamvr: "SteamVR",
-      unity: "Unity エディター",
-      vrchat: "VRChat",
-      vpm: "VPM",
     },
   },
   media: {

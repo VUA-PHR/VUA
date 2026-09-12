@@ -157,7 +157,8 @@ body:has(.vua-overlay) {
   padding: var(--vua-space-3);
 }
 
-.vua-overlay__environment {
+/* v2(017 批 1):任务卡列表(每卡 taskId + 状态 + 取消目标) */
+.vua-overlay__task-list {
   display: flex;
   flex-direction: column;
   gap: var(--vua-space-2);
@@ -166,21 +167,33 @@ body:has(.vua-overlay) {
   list-style: none;
 }
 
-.vua-overlay__environment-row {
+.vua-overlay__task-cancel {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--vua-space-3);
-  min-height: 32px;
+  justify-content: flex-end;
 }
 
-.vua-overlay__environment-name {
-  font-size: 0.93em;
+/* v2:生产状态卡(plan 摘要/最近记录摘要,两半独立可空) */
+.vua-overlay__production {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  padding: var(--vua-space-3);
+  margin-top: var(--vua-space-2);
 }
 
-.vua-overlay__more {
+.vua-overlay__production:first-of-type {
+  margin-top: 0;
+}
+
+.vua-overlay__production-line {
   margin: 0;
-  font-size: 0.86em;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.vua-overlay__production-meta {
+  margin: 0;
+  font-size: 0.93em;
   color: var(--vua-text-secondary);
 }
 
@@ -251,17 +264,21 @@ body:has(.vua-overlay) {
   font-size: 1.3em;
 }
 
-.vua-overlay--vr .vua-overlay__task {
-  padding: var(--vua-space-4) 0 0;
+.vua-overlay--vr .vua-overlay__task-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-4) 0;
   border-top: 1px solid var(--vua-border);
+}
+
+.vua-overlay--vr .vua-overlay__task-row:first-child {
+  border-top: none;
+  padding-top: 0;
 }
 
 .vua-overlay--vr .vua-overlay__task-title {
   font-size: 1.1em;
-}
-
-.vua-overlay--vr .vua-overlay__environment-row {
-  min-height: 48px;
 }
 
 .vua-overlay--vr .vua-overlay__actions-row {
