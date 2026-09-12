@@ -1,0 +1,7 @@
+{
+  "verdict": "refused",
+  "exePath": null,
+  "code": "vua.editor_verify.target_missing",
+  "detail": "C:\\Editors\\no-such-version does not exist",
+  "schemaVersion": "0.1"
+}

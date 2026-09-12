@@ -50,6 +50,8 @@ jobs:
       #                       recipe, recipe_v03, vpm_spike_contract
       #                       production_evidence             (production-evidence consumer)
       # - vua-project-manager: environment_managers           (environment-managers v0.1)
+      #                       editor_verify_wire              (editor-verify v0.1 DRAFT —
+      #                        run for drift protection only; draft state does not imply freeze)
       #                       eac_probe / eac_allowlist_verify / eac_terminate (006 v0.1 x3)
       #                       import_copy                     (project-ops v0.1/v0.2)
       #                       project_inspection / project_queries / vua_identity (project-inspection v0.1/v0.2)
@@ -71,7 +73,7 @@ jobs:
       - name: vua-orchestrator
         run: cargo test -p vua-orchestrator --test assembly --test build_record --test contracts --test recipe --test recipe_v03 --test production_evidence --test vpm_spike_contract
       - name: vua-project-manager
-        run: cargo test -p vua-project-manager --test environment_managers --test eac_probe --test eac_allowlist_verify --test eac_terminate --test import_copy --test project_inspection --test project_queries --test vua_identity
+        run: cargo test -p vua-project-manager --test environment_managers --test editor_verify_wire --test eac_probe --test eac_allowlist_verify --test eac_terminate --test import_copy --test project_inspection --test project_queries --test vua_identity
       - name: vua-provider-host
         run: cargo test -p vua-provider-host --test m3_vectors --test provider_frame_handshake --test warehouse_commands --test catalog_queries --test production_use_case_vectors --test project_ops_wire --test task_snapshot_wire
       - name: vua-unity-bridge
