@@ -116,12 +116,26 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 ::new(production_root.join("plans"))),
             evidence: std::sync::Arc::new(vua_orchestrator::EvidenceStore
                 ::new(production_root.join("evidence"))),
-            records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
-                ::new(production_root.join("records"))),
-            bridge,
-            project_root,
-            unity_editors_root,
-        }
+        // M7 inspection slice: the evidence store lives beside the other AMF
+        // production-domain document stores; the editor version is observed
+        // from the configured editor path ("unknown" when the path states
+        // none — the evidence never invents one).
+        inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore
+            ::new(production_root.join("inspections"))),
+        editor_version: std::env::var_os("VUA_UNITY_EDITOR")
+            .map(|unity| {
+                vua_orchestrator::editor_version_from_path(
+                    std::path::Path::new(&unity),
+                )
+            })
+            .unwrap_or(None)
+            .unwrap_or_else(|| "unknown".to_owned()),
+        records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
+            ::new(production_root.join("records"))),
+        bridge,
+        project_root,
+        unity_editors_root,
+    }
     });
     let input = stdin_reader();
     let output = std::io::stdout().lock();

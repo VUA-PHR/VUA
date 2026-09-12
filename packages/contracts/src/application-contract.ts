@@ -1013,6 +1013,132 @@ export interface OverlaySnapshotResultV01 {
   readonly productionCard: OverlayProductionCardV01;
 }
 
+// ---- inspection-queries v0.1（M7 检查切片；016 仲裁第 2 点独立词表行；
+//      数据域草案面＋核心存储/路由实现批——草案态，冻结随实现批验收办理） ----
+// 读面 get/list 照 record 先例：get 携 inspectionId 身份寻址、返回证据束
+// 文档本体原样透传（细节在文档内，引用不复制）；list 为身份摘要行
+// （performedAt 降序＝最新在前，条目绝不内联 dimensions/checks）。
+// 写面 requestRun 为任务化驱动命令（回执照 job.execute 形态，taskId 轮询
+// 任务面）。聚合规则（fail > warn[含 unavailable] > pass）在
+// schemas/inspection-evidence/v0.1 草案内声明。
+
+export type InspectionDimensionKindV01 =
+  | "functional"
+  | "performance"
+  | "dependencies"
+  | "lighting"
+  | "upload_readiness";
+
+export type InspectionDimensionStatusV01 = "pass" | "warn" | "fail" | "unavailable";
+
+export type InspectionBasisV01 =
+  | "bridge_typed_checks"
+  | "bridge_local_estimate"
+  | "official_sdk_rating"
+  | "static_analysis"
+  | "none";
+
+export type InspectionCheckSeverityV01 = "error" | "warning" | "info";
+
+/** 单条发现：code 点分命名空间（同 Bridge diagnostics 惯例）；metrics 为
+ *  转抄数值（如本地估算四指标），绝不推导 */
+export interface InspectionCheckV01 {
+  readonly code: string;
+  readonly severity: InspectionCheckSeverityV01;
+  readonly message: string;
+  readonly metrics?: Readonly<Record<string, number | string | boolean | null>>;
+}
+
+export interface InspectionDimensionV01 {
+  readonly kind: InspectionDimensionKindV01;
+  readonly status: InspectionDimensionStatusV01;
+  readonly basis: InspectionBasisV01;
+  readonly checks: readonly InspectionCheckV01[];
+}
+
+export interface InspectionBridgeOperationV01 {
+  readonly operation: string;
+  readonly commandId: string;
+  readonly status: "succeeded" | "failed" | "rejected";
+}
+
+export interface InspectionBridgeContextV01 {
+  readonly editorVersion: string;
+  readonly bridgeSchemaVersion: number;
+  readonly operations: readonly InspectionBridgeOperationV01[];
+}
+
+/** 检查证据束文档本体（schemas/inspection-evidence/v0.1 草案；读面原样
+ *  透传，转抄不解释） */
+export interface InspectionEvidenceDocumentV01 {
+  readonly schemaVersion: "0.1";
+  readonly inspectionId: string;
+  readonly avatarRef: { readonly ref: string; readonly label?: string | null };
+  readonly performedAt: string;
+  readonly bridge: InspectionBridgeContextV01;
+  readonly dimensions: readonly InspectionDimensionV01[];
+  readonly overallStatus: "pass" | "warn" | "fail";
+  readonly notes?: string;
+}
+
+export interface InspectionGetQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "inspection.get";
+  readonly params: {
+    readonly inspectionId: string;
+  };
+}
+
+export interface InspectionGetResultV01 {
+  readonly inspectionId: string;
+  readonly inspectionDocument: InspectionEvidenceDocumentV01;
+  readonly schemaVersion: "0.1";
+}
+
+export interface InspectionListQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "inspection.list";
+  readonly params: {
+    readonly avatarRef?: string;
+    readonly overallStatus?: "pass" | "warn" | "fail";
+    readonly limit?: number;
+    readonly offset?: number;
+  };
+}
+
+/** 身份摘要行：刻意窄——无 dimensions、无 checks，细节经 inspection.get
+ *  到证据本体（引用不复制，012 evidenceIds 纪律） */
+export interface InspectionListEntryV01 {
+  readonly inspectionId: string;
+  readonly avatarRef: { readonly ref: string; readonly label?: string | null };
+  readonly overallStatus: "pass" | "warn" | "fail";
+  readonly performedAt: string;
+}
+
+export interface InspectionListResultV01 {
+  readonly total: number;
+  readonly entries: readonly InspectionListEntryV01[];
+  readonly schemaVersion: "0.1";
+}
+
+/** 检查运行写命令面：驱动 Bridge 五维产出操作（v1 双检查＋v3 三只读检查
+ *  操作）并发布证据束；每次运行＝新 uuid-v7 inspectionId＝新观察事实 */
+export interface InspectionRunCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "inspection.requestRun";
+  readonly params: {
+    readonly avatarGlobalObjectId: string;
+    readonly avatarRef: { readonly ref: string; readonly label?: string | null };
+  };
+}
+
+export interface InspectionRunAcceptedV01 {
+  readonly schemaVersion: string;
+  readonly operation: "inspection.requestRun";
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
 // ---- project-ops v0.1(014 语义冻结,环境实现;F6 副本导入确认链消费) ----
 // project.import-copy 是 VUA 对 ALCOM/VCC 管理的原项目的唯一写路径(1.2.0 U3):
 // plan/apply 两段一闭集命令;守卫(七项闭集)在服务端任务内评估;九态任务语义
@@ -1193,6 +1319,9 @@ export type ApplicationRequestV01 =
   | ProjectInspectProjectQueryV01
   | ProjectLockStatusQueryV01
   | OverlayGetSnapshotQueryV01
+  | InspectionGetQueryV01
+  | InspectionListQueryV01
+  | InspectionRunCommandV01
   | RecipeGetQueryV02
   | RecipeListQueryV02
   | PlanGetQueryV02
@@ -1598,6 +1727,44 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
+  }
+  // M7 检查切片:inspection.get(身份寻址,闭集单键)/inspection.list
+  // (闭集可选键:avatarRef 精确匹配、overallStatus 三值闭集、有界分页)/
+  // inspection.requestRun(任务化驱动写命令)
+  if (value.kind === "query" && value.method === "inspection.get") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["inspectionId"])
+      && isIdentifier(value.params.inspectionId);
+  }
+  if (value.kind === "query" && value.method === "inspection.list") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])) return false;
+    for (const key of Object.keys(value.params)) {
+      switch (key) {
+        case "avatarRef":
+          if (typeof value.params[key] !== "string" || (value.params[key] as string).length === 0) return false;
+          break;
+        case "overallStatus":
+          if (value.params[key] !== "pass" && value.params[key] !== "warn" && value.params[key] !== "fail") return false;
+          break;
+        case "limit":
+        case "offset":
+          if (typeof value.params[key] !== "number" || !Number.isInteger(value.params[key])) return false;
+          break;
+        default:
+          return false;
+      }
+    }
+    return true;
+  }
+  if (value.kind === "command" && value.method === "inspection.requestRun") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      || !hasExactKeys(value.params, ["avatarGlobalObjectId", "avatarRef"])) {
+      return false;
+    }
+    if (!isIdentifier(value.params.avatarGlobalObjectId)) return false;
+    const avatarRef = value.params.avatarRef as { ref?: unknown; label?: unknown };
+    if (!isRecord(avatarRef) || typeof avatarRef.ref !== "string" || avatarRef.ref.length === 0) return false;
+    return avatarRef.label === undefined || avatarRef.label === null || typeof avatarRef.label === "string";
   }
   if (value.kind === "query" && value.method === "warehouse.entryDetail") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])

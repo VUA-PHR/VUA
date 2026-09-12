@@ -70,6 +70,10 @@ fn use_case_config(root: &std::path::Path) -> ProductionUseCaseConfig {
         plans: std::sync::Arc::new(PlanDocumentStore::new(production_root.join("plans"))),
         evidence: std::sync::Arc::new(EvidenceStore::new(production_root.join("evidence"))),
         records: std::sync::Arc::new(RecipeRecordStore::new(production_root.join("records"))),
+        inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore::new(
+            production_root.join("inspections"),
+        )),
+        editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
         project_root: root.join("project"),
         unity_editors_root: root.join("unity-editors"),
