@@ -337,12 +337,57 @@ function registryCheck() {
   return bad.length;
 }
 
+// ---------- 冲突标记扫描（7918790 REGISTRY 残留事故守卫） ----------
+// 背景：合并 7918790 的 docs/REGISTRY.md 冲突解决留下一条 `>>>>>>> slot/wt-5`
+// 残留行，三代提交（7918790/a2cc12e/168f48b）期间 registry-only 校验与
+// collab-registry CI 均未察觉——两类校验都不扫描冲突标记。本扫描对全部受管
+// 文本文件检查未解决合并冲突标记，fail-loud：发现即非零退出。
+function conflictMarkerCheck() {
+  const files = runGit(['ls-files', '-z']);
+  if (files === null) {
+    line('提示：git ls-files 失败，冲突标记扫描跳过（不计异常）。');
+    return 0;
+  }
+  const textExt =
+    /\.(md|markdown|txt|ts|tsx|js|cjs|mjs|rs|json|yml|yaml|toml|css|scss|html|sh|ps1|cmd|bat)$/i;
+  const hit = (l) => /^<{7} |^>{7} |^\|{7} |^={7}$/.test(l);
+  const bad = [];
+  const tracked = files.split('\0').filter(Boolean);
+  for (const f of tracked) {
+    if (/(^|\/)(package-lock\.json|pnpm-lock\.yaml)$/.test(f)) continue;
+    if (!textExt.test(f)) continue;
+    let content;
+    try {
+      content = readFileSync(path.join(repoRoot, f), 'utf8');
+    } catch {
+      continue; // 索引在而工作区缺文件等，跳过
+    }
+    const lines = content.split(/\r?\n/);
+    for (let i = 0; i < lines.length; i += 1) {
+      if (hit(lines[i])) {
+        bad.push(`✗ ${f}:${i + 1}：${lines[i].trim().slice(0, 60)}`);
+        break; // 每文件报首处即可
+      }
+    }
+  }
+  if (bad.length === 0) {
+    line(`冲突标记扫描：受管文本文件 ${tracked.length} 个中 0 处未解决冲突标记。`);
+  } else {
+    line(`冲突标记扫描：${bad.length} 个文件含未解决冲突标记：`);
+    bad.forEach((x) => line(`  ${x}`));
+  }
+  return bad.length;
+}
+
 // ---------- registry-only 模式（BG-5 CI 入口）----------
-// 仅跑登记表校验并以其结果为退出码；不影响无参数时的完整简报行为。
+// 仅跑登记表校验与冲突标记扫描并以其结果为退出码；不影响无参数时的完整简报行为。
 if (process.argv.includes('--registry-only')) {
   line('【④ 登记表】（registry-only：docs/REGISTRY.md 与文档头部一致性）');
-  const registryBad = registryCheck();
-  process.exit(registryBad > 0 ? 1 : 0);
+  const registryBad = registryCheck() || 0;
+  line();
+  line('【⑤ 冲突标记】（registry-only：全树未解决合并冲突标记扫描）');
+  const markerBad = conflictMarkerCheck();
+  process.exit(registryBad + markerBad > 0 ? 1 : 0);
 }
 
 // ---------- 输出 ----------
@@ -402,3 +447,7 @@ for (const b of branchList) {
 line();
 line('【④ 登记表】（docs/REGISTRY.md 与文档头部 文档版本/状态 一致性）');
 registryCheck();
+
+line();
+line('【⑤ 冲突标记】（全树未解决合并冲突标记扫描；7918790 REGISTRY 残留事故守卫）');
+conflictMarkerCheck();
