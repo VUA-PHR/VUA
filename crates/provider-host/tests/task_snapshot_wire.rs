@@ -176,7 +176,10 @@ fn vectors_drive_the_frozen_task_snapshot_schema() {
     for entry in fs::read_dir(&dir).expect("examples dir") {
         let path = entry.expect("entry").path();
         let name = path.file_name().expect("name").to_string_lossy().to_string();
-        if !name.ends_with(".json") {
+        // The examples dir hosts sibling vector families too (e.g. the
+        // 017 overlay-snapshot vectors with their own schema + driver);
+        // this driver owns only the task-snapshot family.
+        if !name.starts_with("task-snapshot.") || !name.ends_with(".json") {
             continue;
         }
         let bytes = fs::read(&path).expect("vector readable");
