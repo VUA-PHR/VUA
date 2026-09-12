@@ -149,7 +149,7 @@ fn environment_snapshot_without_wiring_is_the_honest_empty() {
     // wired: the empty items list is the honest empty (frozen by the B6
     // spike — an empty list is never a ready verdict), never a fabricated
     // probe result.
-    let payload = run_snapshot(&database, None, );
+    let payload = run_snapshot(&database, None);
     assert_eq!(payload["contractVersion"], "0.1");
     assert_eq!(payload["items"], json!([]));
     assert!(payload["capturedAt"].is_string());
