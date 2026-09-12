@@ -201,6 +201,7 @@ demoTaskTitle: "데모 작업",
     windowMinimize: "최소화",
     windowMaximize: "최대화/복원",
     windowClose: "닫기",
+    overlayToggle: "오버레이",
   },
   onboarding: {
     steps: {
