@@ -3,7 +3,8 @@
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
-最近更新：2026-09-13 2:3x（工作时段）集成 **第四批验收——M7 冻结里程碑＋U10 核心切片＋桌面检查页消费**：①**a5d062d**＝slot/wt-4 产线 **双冻结批（75f9d15 inspection-evidence v0.1＋4bc0257 unity-bridge v3）**——016 §7 五件收口＋三树表态收口登记：schema 声明变更**形状零变更逐行核实**；协议本双语×2＋REGISTRY 两行（_ZH 承载惯例）＋契约表升版；生产作业面不迁移 v3、v2 生产路径继续生效；**集成域跟随：SCHEMA_EXEMPT 移除 'inspection-evidence' 行（'inspection-queries' 保留候数据冻结批），registry-only exit 0 实证**＋②**f3d8195**＝slot/wt-2 核心 **0cb0d05 U10 实施切片**（组装面编辑器选择照 021 仲裁分层：显式注入＞自动选择＞无；自动选择仅呈现＋预检，过渡期执行诚实 unavailable 不抢跑门③；cargo 568/0/27＝557＋11 新逐字一致）＋③**33988a6**＝slot/wt-3 桌面 **5a87574 inspection 读面消费切片**（get/list 词表行登记；**requestRun 悬空面不登记**＝016 核心表态③同构；表现模型 official_sdk_rating 保留值纪律；InspectionPage 三区诚实状态；contracts 50/50＋desktop 529/529＋leak 155 零泄漏逐字一致）＋④⑤wt-5/wt-6 状态批。**r3**：cargo 568/0/27＋clippy 0＋contracts 50＋provider 23＋desktop 全链 529/529＋registry-only 0。**M7 检查链契约面全部冻结**（inspection-evidence v0.1＋unity-bridge v3＋recipe 套件 v0.3），桌面检查页接 live 读面（生产构建诚实空态候数据供给）；数据冻结批解锁条件全齐（候追认）。
+最近更新：2026-09-13 2:4x（工作时段）集成 **第五批验收——inspection-queries v0.1 冻结：M7 检查链契约面全闭环**：**7918790**＝slot/wt-5 数据 **f84b397 冻结批（get/list/requestRun 三方法一次冻结）**——schema description DRAFT→FROZEN 声明变更形状零变更逐行核＋追认落 016 内联（61bd798 诚实注记正式闭合）＋协议本双语＋REGISTRY 两行＋acquisition 测试头对齐；016/REGISTRY 两处同位置冲突按落账时序解决（产线冻结收口 2:0x／数据追认收口 2:2x 两节保留；unity-bridge-v3 行与 inspection-queries 两行并存）。**集成域跟随：SCHEMA_EXEMPT 移除 'inspection-queries' 行（022 同构反操作收官），registry-only exit 0 零报警实证**。**r3：cargo 568/0/27 EXIT=0（零测试数变化＝形状零变更实证）＋clippy 0**（TS 域零涉免跑如实声明）。**M7 检查链契约面全部冻结**：inspection-evidence v0.1＋inspection-queries v0.1＋unity-bridge v3＋recipe 套件 v0.3；桌面检查页已接 live 读面（生产构建诚实空态候数据供给）；requestRun wire 已 live；真机走查归 W25 零端到端宣称。
+前录 2026-09-13 2:3x（工作时段）集成 **第四批验收——M7 冻结里程碑＋U10 核心切片＋桌面检查页消费**：①**a5d062d**＝slot/wt-4 产线 **双冻结批（75f9d15 inspection-evidence v0.1＋4bc0257 unity-bridge v3）**——016 §7 五件收口＋三树表态收口登记：schema 声明变更**形状零变更逐行核实**；协议本双语×2＋REGISTRY 两行（_ZH 承载惯例）＋契约表升版；生产作业面不迁移 v3、v2 生产路径继续生效；**集成域跟随：SCHEMA_EXEMPT 移除 'inspection-evidence' 行（'inspection-queries' 保留候数据冻结批），registry-only exit 0 实证**＋②**f3d8195**＝slot/wt-2 核心 **0cb0d05 U10 实施切片**（组装面编辑器选择照 021 仲裁分层：显式注入＞自动选择＞无；自动选择仅呈现＋预检，过渡期执行诚实 unavailable 不抢跑门③；cargo 568/0/27＝557＋11 新逐字一致）＋③**33988a6**＝slot/wt-3 桌面 **5a87574 inspection 读面消费切片**（get/list 词表行登记；**requestRun 悬空面不登记**＝016 核心表态③同构；表现模型 official_sdk_rating 保留值纪律；InspectionPage 三区诚实状态；contracts 50/50＋desktop 529/529＋leak 155 零泄漏逐字一致）＋④⑤wt-5/wt-6 状态批。**r3**：cargo 568/0/27＋clippy 0＋contracts 50＋provider 23＋desktop 全链 529/529＋registry-only 0。**M7 检查链契约面全部冻结**（inspection-evidence v0.1＋unity-bridge v3＋recipe 套件 v0.3），桌面检查页接 live 读面（生产构建诚实空态候数据供给）；数据冻结批解锁条件全齐（候追认）。
 前录 2026-09-13 2:1x（工作时段）集成 **同轮三批验收——016 三树收口完成＋v3 冻结批解锁＋requestRun 修订闭环**：**第一批五笔（实质）**（7a262b8 核心 M7 检查切片＋af87747 桌面 overlay 接线＋三状态批；r3 全量 557/0/27＋clippy 0＋contracts 48＋provider 23＋desktop 513＋leak 155 零泄漏；第 15 代门 CI 四绿）＋**第二批五支（collab-only 免全量）**（wt-2 收尾批＋**wt-3 收口批＝016 §7 桌面知悉落账〔三树表态收口完成，cb066e1〕＋021 editor_verify wire 词表行提案起草〔environment.verifyEditor，候核心裁决〕**＋wt-4 状态批＋**wt-5 预审批＝数据对核心 requestRun 修订请求**＋wt-6 状态批）＋**第三批＝核心修订批 c914cf2 验收合并（61bd798，实质）**——数据 016 内联修订请求一处不差兑现：词表行自有常量 INSPECTION_QUERIES_SCHEMA_VERSION="0.1" 统一三处回执＋schema/example 同批 0.4→0.1＋avatarRef.ref 去 maxLength 512（诚实注记：超出字面预授权但在数据同节明确建议范围，追认候数据下轮批）；r1 恰四处零越界＋r3 cargo 557/0/27＋clippy 0＋registry-only 0。**M7 链推进**：①产线 v3 冻结批解锁（1a9cdf6 四件）；②数据词表行冻结批解锁（候追认＋冻结批：REGISTRY＋协议本＋SCHEMA_EXEMPT 移除）。016 冲突按落款时序解决（数据 1:2x 前、桌面 1:4x 后两节保留）。全树 rev-list 归零。
 前录 2026-09-13 1:4x（工作时段）集成 **五笔验收合并——核心 M7 检查切片落地＋桌面 overlay 接线兑现**：
 ①**7a262b8**＝slot/wt-2 核心 **e3ce569 M7 检查切片实现批（016 硬前置②）＋61485d3 状态批**——四件同批：UnityOperation
@@ -485,6 +486,21 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-13（2:4x，第 19 代推送门，实质批）**：`c691f5c → <簿记尖>`
+  （3 提交：数据冻结批验收合并 7918790〔f84b397：schemas 三方法声明＋
+  REGISTRY 两行＋协议本双语＋acquisition 测试头〕＋集成 SCHEMA_EXEMPT
+  移除＋本簿记）。
+  - **门证据**：r1＝冻结批 diff 全文核（声明变更形状零变更逐行核；两处
+    同位置冲突按落账时序解决）；r3＝合并后本机独立复跑 **cargo workspace
+    568/0/27 EXIT=0（零测试数变化＝形状零变更实证）＋clippy -D warnings
+    EXIT=0＋registry-only exit 0（豁免移除后零报警）**（TS 域零涉免跑
+    如实声明）。
+  - **CI 回读（a2cc12e 世代，已回填）**：rust **34711263110 ✅**（7m14s
+    ＝冻结批 CI 实证）＋schema-vectors **34711263125 ✅**（6m24s，冻结面
+    向量 CI 校验通过）＋collab-registry **34711263111 ✅**（16s，豁免移除
+    后零报警 CI 实证）；**ts 未触发**＝本批零 TS 文件变更 paths 过滤正
+    常（上代 ts 34710631805 ✅ 绿为有效基线）。
+
 - **2026-09-13（2:3x，第 18 代推送门，实质批）**：`025e92b → <簿记尖>`
   （8 提交：第四批五支验收合并 a5d062d/f3d8195/33988a6/675977d/c290f42
   ＋本簿记——三实质批＝产线双冻结 7 文件＋核心 U10 7 文件＋桌面消费
@@ -497,7 +513,12 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
     contracts 50/50＋orchestrator-provider 23/23＋desktop check 全链
     EXIT=0（66 文件/529 测试＋leak 155 零泄漏）＋registry-only exit 0**
     与两树声称逐字一致。
-  - **CI 回读**：候推送后回填。
+  - **CI 回读（dffb1e3 世代，已回填，四绿）**：rust **34710631818 ✅**
+    （8m48s，冻结＋U10＋消费三批 CI 实证，与本地 568/0/27 一致）＋
+    schema-vectors **34710631845 ✅**（4m26s，冻结向量＋消费批 CI 校验
+    通过）＋**ts 34710631805 ✅**（4m26s，desktop-gateway 词表行 CI 实
+    证）＋collab-registry **34710631804 ✅**（18s，SCHEMA_EXEMPT 移除后
+    零报警 CI 实证）。
 
 - **2026-09-13（2:1x，第 17 代推送门，实质批）**：`2ae285d → <簿记尖>`
   （3 提交：核心修订批验收合并 61bd798〔c914cf2：provider_host.rs 常量

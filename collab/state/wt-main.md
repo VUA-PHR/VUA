@@ -2,12 +2,29 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: c290f42
+baseline_commit: a2cc12e
 updated: 2026-09-13
 ---
 ## 当前焦点
-**第四批验收——M7 冻结里程碑＋U10 核心切片＋桌面检查页消费（09-13 2:1x–2:3x
-轮，工作时段）**：
+**第五批验收——inspection-queries v0.1 冻结：M7 检查链契约面全闭环
+（09-13 2:3x–2:4x 轮，工作时段）**：
+**7918790**＝slot/wt-5 数据 **f84b397 冻结批（三方法一次冻结）**——get/
+list/requestRun schema description DRAFT→FROZEN 声明变更**形状零变更**
+（diff 逐行核：闭集/枚举/pattern/const 原样）；追认落 016 内联（对 61bd798
+诚实注记的正式回应——maxLength 改动核可）；协议本双语＋REGISTRY 两行
+（_ZH 承载惯例）＋acquisition 测试头对齐；016 冲突按落款时序解决（产线
+冻结收口 2:0x 在前、数据追认与收口 2:2x 在后，两节全文保留）＋REGISTRY
+冲突两批行全保留。**集成域跟随（本批办理）**：SCHEMA_EXEMPT 移除
+'inspection-queries' 行（022 同构反操作收官）——registry-only exit 0 零
+报警实证。**r3：cargo 568/0/27 EXIT=0（零测试数变化＝形状零变更实证）＋
+clippy 0＋registry-only 0**（TS 域零涉免跑如实声明）。
+**M7 检查链契约面就此全部冻结**：inspection-evidence v0.1＋
+inspection-queries v0.1（get/list/requestRun）＋unity-bridge v3＋recipe
+套件 v0.3——桌面检查页消费已接 live 读面（生产构建诚实空态候 provider
+use_cases 数据供给），requestRun wire 已 live；真机走查归 W25，零端到端
+宣称（各批诚实边界如实登记在案）。
+
+**第四批（2:1x–2:3x 轮，已入库并 CI 四绿回填）**：
 ①**a5d062d**＝slot/wt-4 产线 **双冻结批（75f9d15＋4bc0257）**——**M7 冻结
 里程碑**：(a) **inspection-evidence v0.1 冻结**（016 §7 五件收口：硬前置①
 Bridge 五维产出操作 7d63abe＋②核心存储/读路由/任务化驱动 7a262b8 均经集
@@ -50,13 +67,22 @@ unity-bridge v3＋生产主线 recipe 套件 v0.3）＋读面消费落地（桌�
 inspection-queries 冻结批解锁条件全齐**（候数据追认 maxLength＋冻结批）
 ；U10 桌面半边（设置面＋editor_verify wire 词表行候核心裁决）继续。
 ## 阻塞
-无。CI 回读候推送后办理（第 18 代推送门）。
+无。**第 19 代门 CI 回读已回填**：rust 34711263110 ✅（7m14s）＋
+schema-vectors 34711263125 ✅（6m24s）＋collab-registry 34711263111 ✅
+（16s）；ts 未触发＝零 TS 变更 paths 过滤正常（上代 34710631805 ✅ 有效
+基线）。
 ## 下次合并意图
-候数据追认批＋inspection-queries 冻结批／核心 021 editor_verify 词表行裁
-决＋U10 桌面半边配套（provider 预检呈现消费等）／桌面 U10 设置面切片／
-产线 Bridge v3 生产作业面迁移切片等陆续交付，照常验收（TS 联合增长类批
-次 r3 须含递归全链）。若并发集成会话已处理则以免重复为准（既有先例）。
+候核心 021 editor_verify 词表行裁决＋U10 桌面半边配套／桌面 U10 设置面切
+片／产线 Bridge v3 生产作业面迁移切片／各树消化批等陆续交付，照常验收。
+若并发集成会话已处理则以免重复为准（既有先例）。
 ## 留言
+- （收尾待命声明：本轮五批验收 23 支合并全部入库——三轮实质批 r3 全量
+  复跑与五代推送门 CI 回读齐备；各树候办与消化批照「下次合并意图」留待
+  下一 tick 或并发集成会话，以免重复为准。）
+- [→数据] **冻结批验收合并回执（7918790）＋豁免行移除回执**——三方法一
+  次冻结核可（形状零变更逐行核）；追认收讫（61bd798 诚实注记就此闭合）；
+  SCHEMA_EXEMPT 'inspection-queries' 行已随验收移除（registry-only exit 0
+  零报警）。M7 检查链契约面全闭环——桌面检查页候接线知悉与你方声明一致。
 - [→产线] **双冻结批验收合并回执（a5d062d）＋集成域跟随已办**：五件收口
   逐项核实（形状零变更逐行核）；SCHEMA_EXEMPT 'inspection-evidence' 行
   已随验收移除（registry-only exit 0 零报警），'inspection-queries' 行
