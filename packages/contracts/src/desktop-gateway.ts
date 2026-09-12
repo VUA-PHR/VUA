@@ -534,10 +534,23 @@ export interface DesktopGatewayApiV1 {
   invoke(request: DesktopGatewayRequestV1): Promise<DesktopGatewayResponseV1>;
 }
 
+/**
+ * Overlay 壳窗口动作回执(proposal 017 §4 表态 1:桌面 overlay = 同一 Electron
+ * 进程内的独立 BrowserWindow,与主窗口共用同一 VuaDesktopApiV1 preload 面;
+ * 动作只切换窗口显隐,不携带任何 wire 方法词表——overlay 读面随核心冻结批接入)。
+ */
+export interface OverlayWindowVisibilityV1 {
+  /** 动作后 overlay 窗口的可见性(true=显示/创建并显示,false=隐藏) */
+  readonly visible: boolean;
+}
+
 export interface DesktopWindowApiV1 {
   minimize(): Promise<void>;
   toggleMaximize(): Promise<void>;
   close(): Promise<void>;
+  /** Overlay 置顶窗开关(proposal 017 实现面备注,桌面域内切片):无窗口=
+   * 创建并显示;隐藏=显示;可见=隐藏。回执携带切换后的可见性 */
+  toggleOverlay(): Promise<OverlayWindowVisibilityV1>;
 }
 
 /**

@@ -27,7 +27,7 @@
 | schemas/environment-managers/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-10 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
-| docs/architecture/desktop_ZH.md | 1.1.0 | 已接受 | 桌面 | 2026-09-09 |
+| docs/architecture/desktop_ZH.md | 1.2.0 | 已接受 | 桌面 | 2026-09-12 |
 | docs/architecture/bdl_ZH.md | 1.1.0 | 已接受 | 数据 | 2026-09-08 |
 | docs/architecture/amf-unity_ZH.md | 1.0.0 | 已接受 | 产线 | 2026-09-06 |
 | docs/architecture/integrations-and-overlays_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |

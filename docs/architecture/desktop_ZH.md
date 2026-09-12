@@ -2,11 +2,11 @@
 
 [English](desktop_EN.md) | [简体中文](desktop_ZH.md)
 
-> 文档版本：1.1.0
+> 文档版本：1.2.0
 > 状态：已接受
-> 权威语言：简体中文（EN 为镜像，同步至 1.1.0）
+> 权威语言：简体中文（EN 为镜像，同步至 1.2.0）
 > 范围：`apps/desktop`、`packages/design-system`、前端 Gateway
-> 更新：2026-09-09
+> 更新：2026-09-12
 > 最近符合性复核：2026-09-06
 > 规范效力：有
 
@@ -82,6 +82,26 @@ BOOTH 和其他远程页面必须满足：
 
 远程内容统一使用 Main 管理的 `WebContentsView`。
 
+## Overlay 置顶窗
+
+桌面 Overlay 是同一 Electron 进程内的独立 `BrowserWindow`（无边框、透明、不进任务栏、
+`screen-saver` 级置顶；形态参数源自切片五 spike 验证结论），与主窗口共用同一
+`VuaDesktopApiV1` preload 契约面，经表面分流参数（`?surface=overlay-desktop`）在应用
+初始化最早阶段只渲染 Overlay 表面，不初始化主壳 Gateway、DEV scenario 与业务 store。
+故障隔离双层承载：Orchestrator Provider 是独立受监督进程，overlay 渲染进程崩溃由
+Electron 进程模型隔离——不需要独立 Gateway 连接实例（proposal 017 §4 桌面表态）。
+
+- 事件面零新增：应用事件广播按本地来源判定投递全部本地来源窗口，overlay 窗口天然在
+  清单内；快照读取为按需轮询，不引入订阅/推送新语义；
+- overlay 会话身份不引入：overlay 提交的动作走既有命令面，同一受理路径与九态纪律，
+  服务端不区分动作来自主窗口还是 overlay 窗口；
+- 入口为主窗口顶栏正式动作（DevScenario 之外），显隐切换经 Main 裁决（决策面纯函数
+  可测，`overlay-window.ts`）；显隐用不夺焦显示；overlay 窗口自身关闭只清引用（下次
+  开关重建），主窗口关闭时 overlay 随之销毁——主窗口关闭＝应用退出的语义不变；
+- Overlay 只消费稳定快照与语义动作、永不成为业务逻辑宿主（AGENTS 架构约束；消费两分
+  见 M7 分解表桌面行），overlay 故障不阻断桌面主线（M7 门交付定义）；overlay 读面
+  wire 词表随核心冻结批接入，接入前渲染面呈现诚实空态，不伪造会话。
+
 ## React 边界
 
 React 负责复杂工作台、引导页、素材卡片、Recipe 编辑、任务反馈和可访问性。状态管理、路由、
@@ -104,4 +124,6 @@ Electron、Chromium、Node.js、Forge/Vite、受监督 Orchestrator Provider 及
 
 ## 文档变更日志
 
+- 1.2.0（2026-09-12）：新增「Overlay 置顶窗」节——overlay 窗口创建/置顶/显隐与正式入口
+  形态（proposal 017 §4 桌面表态落地，桌面域内先行切片）；wire 读面维持未接入如实声明。
 - 1.0.0（2026-09-06）：纳入版本管理；头部规范化并补充符合性复核日期，内容对照实态复核无变更。
