@@ -227,7 +227,9 @@ const INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1";
 /// its own row version as the envelope const — never the primitive's crate
 /// version, never another family's version (the c914cf2 lesson, now a
 /// standing rule: every wire row carries a version constant of its own).
-const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
+/// Published so wire consumers key on the core-owned constant, never a
+/// private literal.
+pub const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
 
 /// The honest absence code reserved by ruling point 5 for an unwired route
 /// / unreachable primitive ONLY. The verifyEditor route calls a stateless
