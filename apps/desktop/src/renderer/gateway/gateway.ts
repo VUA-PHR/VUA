@@ -9,6 +9,7 @@ import type { TutorialPort } from "./tutorial-port.ts";
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import type { ProjectOpsPort } from "./project-ops-port.ts";
 import type { ProductionChainPort } from "./production-chain-port.ts";
+import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { DataSource } from "./types.ts";
 
 /**
@@ -30,6 +31,9 @@ export interface VuaGateway {
   readonly projectOps: ProjectOpsPort;
   /** 019 批 C:生产链共享端口(解析/计划/任务/记录;两套 UI 共用) */
   readonly productionChain: ProductionChainPort;
+  /** M7 检查切片消费批:检查读面端口(inspection.get/list;016 仲裁
+   *  独立词表行) */
+  readonly inspection: InspectionPort;
   readonly packages: PackagesPort;
   /** 数据来源标识:驱动"演示数据"徽标(原则①) */
   dataSource(): DataSource;
