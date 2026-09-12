@@ -496,7 +496,12 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
     contracts 50/50＋orchestrator-provider 23/23＋desktop check 全链
     EXIT=0（66 文件/529 测试＋leak 155 零泄漏）＋registry-only exit 0**
     与两树声称逐字一致。
-  - **CI 回读**：候推送后回填。
+  - **CI 回读（dffb1e3 世代，已回填，四绿）**：rust **34710631818 ✅**
+    （8m48s，冻结＋U10＋消费三批 CI 实证，与本地 568/0/27 一致）＋
+    schema-vectors **34710631845 ✅**（4m26s，冻结向量＋消费批 CI 校验
+    通过）＋**ts 34710631805 ✅**（4m26s，desktop-gateway 词表行 CI 实
+    证）＋collab-registry **34710631804 ✅**（18s，SCHEMA_EXEMPT 移除后
+    零报警 CI 实证）。
 
 - **2026-09-13（2:1x，第 17 代推送门，实质批）**：`2ae285d → <簿记尖>`
   （3 提交：核心修订批验收合并 61bd798〔c914cf2：provider_host.rs 常量
