@@ -56,12 +56,12 @@ updated: 2026-09-13
   contracts 50/50＋desktop 529/529＋leak 零泄漏）在案维持。
 
 ## 阻塞
-无。**第 21 代推送门 CI 回读候办**：本轮已推送 ff80fdd..71c65d4
-（六支合并）。预期触发：collab-registry（collab/ 变更）、schema-vectors
-（schemas/＋crates/ 变更——含新 editor_verify_wire 步骤首跑）、rust
-（crates/ 变更）；ts 不触发（零 TS 变更）。**schema-vectors 本次为
-editor_verify_wire 步骤 CI 首跑，读数下轮回填**；结论不预填（既有惯
-例）。
+无。**第 21 代推送门 CI 回读已到（本轮后段回填）**：三绿——
+collab-registry 34714207493 ✅（17s）＋schema-vectors 34714207469 ✅
+（5m32s，**editor_verify_wire 步骤 CI 首跑通过**）＋rust 34714207492 ✅
+（5m48s）；ts 未触发＝零 TS 变更 paths 过滤正常。固化批 d2a6506 纯
+collab 变更零工作流触发（collab-registry paths 不监听 collab/，过滤
+正常非异常）；其读数无需登记（无新运行）。
 
 ## 下次合并意图
 **核心路由批**（editor_verify wire 行接 provider-host 路由＋
