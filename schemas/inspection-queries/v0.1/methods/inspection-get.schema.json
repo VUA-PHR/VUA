@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/inspection-queries/v0.1/methods/inspection-get.schema.json",
+  "title": "VUA inspection.get (v0.1)",
+  "description": "Reads one inspection evidence document by identity (full validation in schemas/inspection-evidence/v0.1/inspection-evidence.schema.json). DRAFT (proposal 016 arbitration point 2: independent vocabulary row, get/list after the record.get/list precedent; delivered by the data role 2026-09-13 after the production M7 anchor slice c33adb3 was accepted into main — NOT frozen, not registered: the freeze lands with hard precondition 2, the core storage+routing implementation batch, together with the inspection-evidence body freeze). The read face returns the evidence body verbatim — the honest detail lives in the document (referenced, never inlined, never re-derived). The document itself is AMF production persistence domain; it never passes through BDL (proposal 016 §5, proposal 011 §5).",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "inspectionId": {
+      "description": "VUA-generated inspection identity (uuid v7), same identity convention as the production-evidence entry (W23) and the inspection-evidence body schema. Consumers reference it, never re-derive it.",
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "inspectionDocument": {
+      "description": "The inspection evidence document body, validated in full by schemas/inspection-evidence/v0.1/inspection-evidence.schema.json (kept as a loose object here so the method face does not pin a draft sibling's revision detail; the consumer test anchors the double validation).",
+      "type": "object"
+    },
+    "inspection-getRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inspectionId"
+      ],
+      "properties": {
+        "inspectionId": {
+          "$ref": "#/$defs/inspectionId"
+        }
+      }
+    },
+    "inspection-getResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "inspectionId",
+        "inspectionDocument",
+        "schemaVersion"
+      ],
+      "properties": {
+        "inspectionId": {
+          "$ref": "#/$defs/inspectionId"
+        },
+        "inspectionDocument": {
+          "$ref": "#/$defs/inspectionDocument"
+        },
+        "schemaVersion": {
+          "const": "0.1"
+        }
+      }
+    }
+  }
+}

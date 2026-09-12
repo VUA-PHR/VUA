@@ -1,0 +1,67 @@
+{
+  "inspectionId": "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21",
+  "inspectionDocument": {
+    "schemaVersion": "0.1",
+    "inspectionId": "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21",
+    "avatarRef": {
+      "ref": "warehouse:booth-item-1001",
+      "label": "Synthetic Avatar A"
+    },
+    "performedAt": "2026-09-13T00:20:00Z",
+    "bridge": {
+      "editorVersion": "2022.3.22f1",
+      "bridgeSchemaVersion": 3,
+      "operations": [
+        { "operation": "inspect_avatar_references", "commandId": "insp-vec-01", "status": "succeeded" },
+        { "operation": "validate_avatar", "commandId": "insp-vec-02", "status": "succeeded" }
+      ]
+    },
+    "dimensions": [
+      {
+        "kind": "functional",
+        "status": "pass",
+        "basis": "bridge_typed_checks",
+        "checks": [
+          {
+            "code": "validation.passed",
+            "severity": "info",
+            "message": "衣装层级、Merge Armature 和选择引用检查通过。"
+          }
+        ]
+      },
+      {
+        "kind": "dependencies",
+        "status": "fail",
+        "basis": "bridge_typed_checks",
+        "checks": [
+          {
+            "code": "references.missing_material",
+            "severity": "error",
+            "message": "检测到丢失的材质槽引用（合成检查向量）。"
+          }
+        ]
+      },
+      {
+        "kind": "performance",
+        "status": "unavailable",
+        "basis": "none",
+        "checks": []
+      },
+      {
+        "kind": "lighting",
+        "status": "unavailable",
+        "basis": "none",
+        "checks": []
+      },
+      {
+        "kind": "upload_readiness",
+        "status": "unavailable",
+        "basis": "none",
+        "checks": []
+      }
+    ],
+    "overallStatus": "fail",
+    "notes": "合成向量：dependencies 维由 v3 inspect_avatar_references 产出（单层裁决＝Avatar 资产引用完整性）；其余维本次未观测，如实标 unavailable。"
+  },
+  "schemaVersion": "0.1"
+}
