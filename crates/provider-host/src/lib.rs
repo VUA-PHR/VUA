@@ -13,8 +13,9 @@ pub mod provider_job;
 pub use provider_host::{
     production_config_from_env, run_provider_host, run_provider_host_full,
     run_provider_host_with, run_provider_host_with_downloads, run_provider_host_with_services,
-    DownloadConfig, EnvironmentConfig, ProductionConfig, ProductionUseCaseConfig,
-    ProjectOpsConfig, ProviderHostError, WarehouseConfig, PROVIDER_FRAME_VERSION,
+    DownloadConfig, EditorPathVerifier, EnvironmentConfig, ENVIRONMENT_VERIFY_UNAVAILABLE,
+    ProductionConfig, ProductionUseCaseConfig, ProjectOpsConfig, ProviderHostError,
+    WarehouseConfig, PROVIDER_FRAME_VERSION,
 };
 #[cfg(windows)]
 pub use provider_job::ProviderJobGuard;

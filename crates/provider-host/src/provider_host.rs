@@ -14,8 +14,9 @@ use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
     collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
-    ImportCopyRequest, LockHolder, ManagerRoots, MutationMarkerGuard, PendingMutation,
-    ProjectInspectionV01, ProjectLockError, ProjectLockGuard, SetNoteError, MARKER_FILE_NAME,
+    verify_editor_path_system, EditorPathVerdict, ImportCopyRequest, LockHolder, ManagerRoots,
+    MutationMarkerGuard, PendingMutation, ProjectInspectionV01, ProjectLockError, ProjectLockGuard,
+    SetNoteError, MARKER_FILE_NAME,
     PROJECT_INSPECTION_SCHEMA_VERSION as PROJECT_INSPECTION_FAMILY_VERSION,
 };
 use vua_bdl_store::download_events::{
@@ -120,6 +121,12 @@ struct HostState {
     use_cases: Option<Arc<ProductionUseCaseServices>>,
     project_ops: Option<Arc<ProjectOpsServices>>,
     environment: Option<Arc<EnvironmentServices>>,
+    /// The `environment.verifyEditor` verification face (proposal 021
+    /// routing batch). Not an Option: the primitive is a stateless direct
+    /// call with no service dependency, so the route is always wired —
+    /// there is no honest absence path and the absence code stays
+    /// reserved (see ENVIRONMENT_VERIFY_UNAVAILABLE).
+    editor_verify: EditorPathVerifier,
 }
 
 /// B4/F4-4 download acquisition wiring. When absent, every `download.*`
@@ -214,6 +221,30 @@ const PROJECT_INSPECTION_SCHEMA_VERSION: &str = "0.1";
 /// its own row version, never the evidence-body version it reads nor the
 /// bdl-commands family the tasked-command reply shape is borrowed from.
 const INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1";
+
+/// editor-verify v0.1 word-list-row family version (proposal 021 core
+/// ruling 2026-09-13, nail 3): the `environment.verifyEditor` reply cites
+/// its own row version as the envelope const — never the primitive's crate
+/// version, never another family's version (the c914cf2 lesson, now a
+/// standing rule: every wire row carries a version constant of its own).
+const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
+
+/// The honest absence code reserved by ruling point 5 for an unwired route
+/// / unreachable primitive ONLY. The verifyEditor route calls a stateless
+/// direct primitive, so this route has no absence path today; the code
+/// stays a protocol-face registration — published so consumers key on the
+/// core-owned constant instead of a private literal — and is never reused
+/// as a verification refusal (refusals travel the result state, nail 1).
+pub const ENVIRONMENT_VERIFY_UNAVAILABLE: &str = "vua.environment.verify_unavailable";
+
+/// Injectable verification face for the `environment.verifyEditor` route:
+/// the production composition defaults to the primitive's system wiring
+/// (`verify_editor_path_system`, whose non-Windows behavior is the
+/// `unsupported_platform` refusal); wire tests inject a deterministic
+/// identity source so the verified branch is testable without a real PE
+/// version resource. The route itself carries zero verification logic —
+/// it maps the verdict onto the frozen two-state result, nothing else.
+pub type EditorPathVerifier = Arc<dyn Fn(&Path) -> EditorPathVerdict + Send + Sync>;
 
 struct DownloadServices {
     bdl: Arc<BdlStore>,
@@ -409,12 +440,15 @@ pub fn run_provider_host_with_services(
         use_cases,
         None,
         None,
+        None,
     )
 }
 
 /// The full entry: additionally wires the project-domain write command face
 /// (proposal 014, `project.import-copy`). When `project_ops` is absent the
-/// `project.*` methods answer a typed `vua.project.unavailable`.
+/// `project.*` methods answer a typed `vua.project.unavailable`. When
+/// `editor_verifier` is absent the `environment.verifyEditor` route uses the
+/// primitive's system wiring (`verify_editor_path_system`).
 #[allow(clippy::too_many_arguments)]
 pub fn run_provider_host_full(
     input: impl BufRead + Send + 'static,
@@ -426,6 +460,7 @@ pub fn run_provider_host_full(
     use_cases: Option<ProductionUseCaseConfig>,
     project_ops: Option<ProjectOpsConfig>,
     environment: Option<EnvironmentConfig>,
+    editor_verifier: Option<EditorPathVerifier>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -567,6 +602,12 @@ pub fn run_provider_host_full(
             ),
         })
     });
+    // Proposal 021 routing batch: the default verification face is the
+    // primitive's own system wiring — the route adds the wire mapping
+    // only, never verification logic of its own.
+    let editor_verify: EditorPathVerifier = editor_verifier.unwrap_or_else(|| {
+        Arc::new(|input: &Path| verify_editor_path_system(input))
+    });
     let mut state = HostState {
         store,
         provider_instance_id,
@@ -577,6 +618,7 @@ pub fn run_provider_host_full(
         warehouse,
         project_ops,
         environment,
+        editor_verify,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -987,6 +1029,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             }
             "task.requestCancellation" => handle_cancellation(state, request, request_id),
             "environment.getSnapshot" => environment_get_snapshot(state, request_id),
+            "environment.verifyEditor" => {
+                environment_verify_editor(state, request, request_id, correlation_id)
+            }
             "task.startDemo" => Ok(handle_start_demo(state, request, request_id, correlation_id)),
             "overlay.getSnapshot" => overlay_get_snapshot(state, request, request_id, correlation_id),
             _ => Ok(FrameOutcome::Response(application_error(
@@ -1039,6 +1084,7 @@ fn served_capabilities(state: &HostState) -> Value {
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
+        {"operationId": "environment.verifyEditor", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "overlay.snapshot", "availability": overlay_availability},
         {"operationId": "inspection.queries", "availability": inspection_queries_availability},
@@ -3885,6 +3931,78 @@ fn environment_get_snapshot(state: &mut HostState, request_id: &str) -> Result<F
             "items": items,
         }),
     )))
+}
+
+/// The `environment.verifyEditor` query face (proposal 021 vocabulary row,
+/// core ruling 2026-09-13 seven points): verifies ONE user-picked Unity
+/// editor path through the detection-domain primitive of record
+/// (`verify_editor_path_system`, project-manager) and maps the verdict onto
+/// the frozen two-state result — the route carries the wire mapping only,
+/// zero verification logic of its own.
+///
+/// The three implementation nails (ruling point 4):
+/// - **Nail 1**: a refusal NEVER surfaces as an application error envelope —
+///   refused is a normal in-result finding (`verdict:"refused"`), because a
+///   refusal is a finding, not a failure. The envelope error face stays
+///   reserved for transport / request-shape violations.
+/// - **Nail 2**: the refusal `detail` carries the primitive's raw resource
+///   text verbatim — the wire layer re-interprets nothing.
+/// - **Nail 3**: the envelope `schemaVersion` is this row's own
+///   [`EDITOR_VERIFY_SCHEMA_VERSION`] const, never a borrowed family
+///   version.
+///
+/// Params are the closed single-key set `{path}` (ruling point 3): the
+/// user-picked path travels verbatim in all three accepted layouts — the
+/// route normalizes nothing (normalization is the primitive's job) and
+/// sets no maxLength on purpose. Request-shape violations answer a typed
+/// validation error; they are never verification refusals.
+fn environment_verify_editor(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let invalid_params = || {
+        FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.environment.invalid_params",
+            "errors.environment.invalidParams",
+            "validation",
+        ))
+    };
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return Ok(invalid_params());
+    };
+    if params.len() != 1 {
+        return Ok(invalid_params());
+    }
+    let Some(path) = params.get("path").and_then(Value::as_str) else {
+        return Ok(invalid_params());
+    };
+    if path.is_empty() {
+        return Ok(invalid_params());
+    }
+    let result = match (state.editor_verify)(Path::new(path)) {
+        EditorPathVerdict::Verified(identity) => json!({
+            "verdict": "verified",
+            "editorRoot": identity.editor_root,
+            "exePath": identity.exe_path,
+            "version": identity.version,
+            "classification": identity.classification,
+            "guidanceCode": identity.guidance_code,
+            "chinaDistribution": identity.china_distribution,
+            "schemaVersion": EDITOR_VERIFY_SCHEMA_VERSION,
+        }),
+        EditorPathVerdict::Refused(refusal) => json!({
+            "verdict": "refused",
+            "exePath": refusal.exe_path,
+            "code": refusal.code,
+            "detail": refusal.detail,
+            "schemaVersion": EDITOR_VERIFY_SCHEMA_VERSION,
+        }),
+    };
+    Ok(FrameOutcome::Response(application_success(request_id, result)))
 }
 
 /// The overlay read face (proposal 017 batch 1, `overlay.getSnapshot`):
@@ -7093,6 +7211,7 @@ mod tests {
             use_cases: None,
             project_ops: None,
             environment: None,
+            editor_verify: Arc::new(verify_editor_path_system),
         };
 
         let prepare = InboundFrame {
