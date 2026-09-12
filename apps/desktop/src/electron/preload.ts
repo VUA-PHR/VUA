@@ -54,6 +54,9 @@ const api: VuaDesktopApiV1 = Object.freeze({
     minimize: () => ipcRenderer.invoke("vua:window:minimize"),
     toggleMaximize: () => ipcRenderer.invoke("vua:window:toggle-maximize"),
     close: () => ipcRenderer.invoke("vua:window:close"),
+    // Overlay 置顶窗开关(proposal 017 实现面备注):同一 preload 契约面对
+    // 主窗口与 overlay 窗口共用,零新增连接语义
+    toggleOverlay: () => ipcRenderer.invoke("vua:overlay:toggle"),
   }),
   // 远程内容窄面(F4-2):只发语义动作;远程页面本身无 preload、无本面
   remoteContent: Object.freeze({

@@ -201,6 +201,7 @@ demoTaskTitle: "デモタスク",
     windowMinimize: "最小化",
     windowMaximize: "最大化/元に戻す",
     windowClose: "閉じる",
+    overlayToggle: "オーバーレイ",
   },
   onboarding: {
     steps: {

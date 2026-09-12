@@ -15,6 +15,14 @@ import { DownloadPort } from "./download-port.js";
 import { RemoteContentManager } from "./remote-content.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
 import {
+  OVERLAY_SURFACE_PARAM,
+  OVERLAY_WINDOW_HEIGHT,
+  OVERLAY_WINDOW_LEVEL,
+  OVERLAY_WINDOW_WIDTH,
+  decideOverlayWindowAction,
+  overlayVisibilityAfterDecision,
+} from "./overlay-window.js";
+import {
   installLocalContentNavigationPolicy,
   installPermissionDenyPolicy,
   isAllowedLocalSender,
@@ -23,6 +31,7 @@ import {
 
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
+let overlayWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
 let remoteContent: RemoteContentManager | null = null;
 let downloadPort: DownloadPort | null = null;
@@ -206,6 +215,13 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     BrowserWindow.fromWebContents(event.sender)?.close();
   });
 
+  // Overlay 置顶窗开关(proposal 017 实现面备注,正式入口形态):只受理本地
+  // 来源窗口;动作与回执语义在 overlay-window.ts 决策面(纯函数可测)
+  ipcMain.handle("vua:overlay:toggle", (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    return toggleOverlayWindow();
+  });
+
   // 远程内容窄面(F4-2 隔离基座):Renderer 只发语义动作;来源允许清单在
   // Main 侧裁决,视图内违规以事件透明上报。种子允许清单只含目录浏览域,
   // 真实值随 catalog 契约冻结(F4-1②)调整
@@ -285,6 +301,64 @@ function confirmNavigation(
       }
     }
   });
+}
+
+/**
+ * Overlay 置顶窗(proposal 017 §4 桌面表态:同一 Electron 进程内的独立
+ * BrowserWindow,与主窗口共用同一 VuaDesktopApiV1 preload 面;故障隔离由
+ * Provider 独立进程＋渲染进程模型双层承载,不需要独立 Gateway 连接)。
+ *
+ * - 形态参数(F7a spike 结论):transparent + frameless + skipTaskbar +
+ *   hasShadow:false,460×640,alwaysOnTop("screen-saver" 级);渲染面加载
+ *   ?surface=overlay-desktop(main.tsx 表面路由既有分流,不初始化主壳);
+ * - 显隐以 showInactive 执行:悬浮窗出现不夺焦点(VRChat 全屏时不打断);
+ * - 事件面零新增:broadcastGatewayEvent/isAllowedLocalSender 对 ?surface=
+ *   参数 URL 天然放行(前缀/路径匹配),overlay 窗口天然在广播清单内;
+ * - 读面 wire 词表不预接(候选核心批 1,017 内联领取声明):渲染面生产
+ *   路径恒为诚实 inactive 空态,本窗口层不含任何快照语义;
+ * - 生命周期:显隐切换不销毁(hide 保状态);窗口自身关闭(closed)清引用,
+ *   下次 toggle 重建;主窗口关闭(closed)销毁 overlay——主窗口关闭＝应用
+ *   退出语义不变(window-all-closed 行为不被悬浮窗拖住)。
+ */
+function createOverlayWindow(): void {
+  const preload = path.join(__dirname, "preload.js");
+  const win = new BrowserWindow({
+    width: OVERLAY_WINDOW_WIDTH,
+    height: OVERLAY_WINDOW_HEIGHT,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    hasShadow: false,
+    webPreferences: localWindowWebPreferences(preload),
+  });
+  win.setAlwaysOnTop(true, OVERLAY_WINDOW_LEVEL);
+  overlayWindow = win;
+  win.once("ready-to-show", () => {
+    if (!win.isDestroyed()) win.showInactive();
+  });
+  win.on("closed", () => {
+    if (overlayWindow === win) overlayWindow = null;
+  });
+  if (rendererUrl) void win.loadURL(`${rendererUrl}?surface=${OVERLAY_SURFACE_PARAM}`);
+  else {
+    void win.loadFile(path.join(__dirname, "../renderer/index.html"), {
+      search: `surface=${OVERLAY_SURFACE_PARAM}`,
+    });
+  }
+}
+
+function toggleOverlayWindow(): { readonly visible: boolean } {
+  const exists = overlayWindow !== null && !overlayWindow.isDestroyed();
+  const decision = decideOverlayWindowAction({
+    exists,
+    visible: exists && overlayWindow!.isVisible(),
+  });
+  if (decision === "create") createOverlayWindow();
+  else if (decision === "show") overlayWindow!.showInactive();
+  else overlayWindow!.hide();
+  return { visible: overlayVisibilityAfterDecision(decision) };
 }
 
 async function createWindow(): Promise<void> {
@@ -396,6 +470,9 @@ async function createWindow(): Promise<void> {
     remoteContent?.dispose();
     remoteContent = null;
     mainWindow = null;
+    // 主窗口关闭＝应用退出语义:悬浮窗不拖住 window-all-closed(overlay
+    // 窗口随主窗口生命周期销毁,closed 处理器自行清引用)
+    overlayWindow?.destroy();
   });
 
   if (rendererUrl) await mainWindow.loadURL(rendererUrl);

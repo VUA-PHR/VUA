@@ -1063,6 +1063,17 @@ function AppShell({
         >
           {theme === "dark" ? strings.app.themeToLight : strings.app.themeToDark}
         </button>
+        {/* Overlay 置顶窗正式入口(proposal 017 实现面备注,DevScenario 之外):
+         *  显隐切换经 Main 裁决(overlay-window 决策面);无 preload 环境
+         *  (浏览器直开主壳)可选链安全退化为无动作 */}
+        <button
+          type="button"
+          className="vua-shell__theme-toggle vua-caption"
+          title={strings.app.overlayToggle}
+          onClick={() => void window.vua?.window.toggleOverlay()}
+        >
+          {strings.app.overlayToggle}
+        </button>
         {inShell ? (
           <div className="vua-shell__window-controls">
             <button
