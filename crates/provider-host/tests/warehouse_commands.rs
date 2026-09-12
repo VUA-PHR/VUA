@@ -543,6 +543,9 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
                 ::new(production_root.join("evidence"))),
             records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
                 ::new(production_root.join("records"))),
+        inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore
+            ::new(production_root.join("inspections"))),
+        editor_version: "2022.3.22f1".to_owned(),
             bridge,
             unity_editors_root: world.base.join("unity-editors"),
             project_root: world.base.join("project"),
@@ -753,6 +756,9 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
             ::new(production_root.join("evidence"))),
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
+        inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore
+            ::new(production_root.join("inspections"))),
+        editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
         unity_editors_root: world.base.join("unity-editors"),
             project_root: world.base.join("project"),
@@ -962,6 +968,9 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
             ::new(production_root.join("evidence"))),
         records: std::sync::Arc::new(vua_orchestrator::RecipeRecordStore
             ::new(production_root.join("records"))),
+        inspections: std::sync::Arc::new(vua_orchestrator::InspectionEvidenceStore
+            ::new(production_root.join("inspections"))),
+        editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
         unity_editors_root: world.base.join("unity-editors"),
             project_root: world.base.join("project"),
@@ -1446,6 +1455,10 @@ fn seeded_production_world(
         plans: Arc::new(vua_orchestrator::PlanDocumentStore::new(production_root.join("plans"))),
         evidence: Arc::new(vua_orchestrator::EvidenceStore::new(production_root.join("evidence"))),
         records: Arc::new(vua_orchestrator::RecipeRecordStore::new(production_root.join("records"))),
+        inspections: Arc::new(vua_orchestrator::InspectionEvidenceStore::new(
+            production_root.join("inspections"),
+        )),
+        editor_version: "2022.3.22f1".to_owned(),
         bridge: Arc::new(NoBridge),
         unity_editors_root: world.base.join("unity-editors"),
             project_root: world.base.join("project"),

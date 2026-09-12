@@ -4,6 +4,9 @@ import {
   isApplicationRequestV01,
   isTerminalTaskStateV01,
   type CatalogProductDetailV03,
+  type InspectionEvidenceDocumentV01,
+  type InspectionGetResultV01,
+  type InspectionListResultV01,
   type OverlaySnapshotResultV01,
   type TaskDonePayloadV01,
   type TaskSnapshotV01,
@@ -540,5 +543,128 @@ describe("overlay read face (017 batch 1)", () => {
     };
     expect(planned.productionCard.currentPlan).not.toBeNull();
     expect(planned.productionCard.latestRecord).toBeNull();
+  });
+});
+
+describe("inspection-queries v0.1 (M7 检查切片,016 仲裁;数据草案面+核心实现批)", () => {
+  const base = {
+    contractVersion: APPLICATION_CONTRACT_VERSION,
+    requestId: "req-insp-1",
+    correlationId: "corr-insp-1",
+  };
+  const INSPECTION_ID = "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21";
+
+  const evidenceDocument: InspectionEvidenceDocumentV01 = {
+    schemaVersion: "0.1",
+    inspectionId: INSPECTION_ID,
+    avatarRef: { ref: "warehouse:booth-item-1001", label: "Synthetic Avatar A" },
+    performedAt: "2026-09-13T00:20:00Z",
+    bridge: {
+      editorVersion: "2022.3.22f1",
+      bridgeSchemaVersion: 3,
+      operations: [
+        { operation: "inspect_avatar_references", commandId: "insp-01", status: "succeeded" },
+      ],
+    },
+    dimensions: [
+      {
+        kind: "dependencies",
+        status: "fail",
+        basis: "bridge_typed_checks",
+        checks: [
+          {
+            code: "references.missing_material",
+            severity: "error",
+            message: "检测到丢失的材质槽引用。",
+          },
+        ],
+      },
+      { kind: "functional", status: "unavailable", basis: "none", checks: [] },
+    ],
+    overallStatus: "fail",
+    notes: "合成消费测试。",
+  };
+
+  it("admits inspection.get with the single identity param and rejects extras", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.get",
+      params: { inspectionId: INSPECTION_ID },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.get", params: {},
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.get",
+      params: { inspectionId: INSPECTION_ID, text: "fuzzy" },
+    })).toBe(false);
+  });
+
+  it("admits inspection.list with the closed optional param set", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.list", params: {},
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.list",
+      params: { avatarRef: "warehouse:booth-item-1001", overallStatus: "fail", limit: 50, offset: 0 },
+    })).toBe(true);
+    // unavailable 不是聚合输出(聚合仅 pass|warn|fail)——拒绝。
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.list",
+      params: { overallStatus: "unavailable" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "inspection.list", params: { text: "fuzzy" },
+    })).toBe(false);
+  });
+
+  it("admits inspection.requestRun with the two-key closed param set", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "inspection.requestRun",
+      params: {
+        avatarGlobalObjectId: "scene:0x1",
+        avatarRef: { ref: "warehouse:booth-item-1001", label: "Synthetic Avatar A" },
+      },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "inspection.requestRun",
+      params: { avatarGlobalObjectId: "scene:0x1" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "inspection.requestRun",
+      params: { avatarGlobalObjectId: "scene:0x1", avatarRef: { label: "no ref" } },
+    })).toBe(false);
+  });
+
+  it("consumes the get result as the verbatim evidence document", () => {
+    // 读面细节在证据本体(引用不复制);get 原样透传 schemaVersion 钉 0.1。
+    const result: InspectionGetResultV01 = {
+      inspectionId: INSPECTION_ID,
+      inspectionDocument: evidenceDocument,
+      schemaVersion: "0.1",
+    };
+    expect(result.inspectionDocument.overallStatus).toBe("fail");
+    expect(result.inspectionDocument.dimensions[0].checks[0].code).toBe("references.missing_material");
+    expect(result.inspectionDocument.bridge.bridgeSchemaVersion).toBe(3);
+  });
+
+  it("consumes list entries as identity rows without dimension leakage", () => {
+    // 身份摘要行刻意窄:无 dimensions/checks,细节经 get 到证据本体。
+    const result: InspectionListResultV01 = {
+      total: 1,
+      entries: [
+        {
+          inspectionId: INSPECTION_ID,
+          avatarRef: { ref: "warehouse:booth-item-1001", label: "Synthetic Avatar A" },
+          overallStatus: "fail",
+          performedAt: "2026-09-13T00:20:00Z",
+        },
+      ],
+      schemaVersion: "0.1",
+    };
+    expect(result.total).toBe(1);
+    expect(result.entries[0].overallStatus).toBe("fail");
+    const row: Record<string, unknown> = result.entries[0];
+    expect("dimensions" in row).toBe(false);
+    expect("checks" in row).toBe(false);
   });
 });

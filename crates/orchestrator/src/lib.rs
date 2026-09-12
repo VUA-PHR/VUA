@@ -8,6 +8,7 @@
 mod assembly;
 mod booth_extraction;
 mod build_record;
+mod inspection_evidence;
 mod plan_documents;
 mod production_evidence;
 mod recipe_documents;
@@ -43,6 +44,11 @@ pub use booth_extraction::{
     extract_product_page, ExtractedProduct, ExtractedSubproduct, ExtractionError,
 };
 pub use plan_documents::{ApproveOutcome, PlanDocumentStore, APPROVED_PLAN_SCHEMA_VERSION};
+pub use inspection_evidence::{
+    aggregate_overall_status, build_inspection_command, operation_status, producing_operations,
+    transcribe_dimension, InspectionDimension, InspectionEvidenceStore,
+    INSPECTION_EVIDENCE_SCHEMA_VERSION,
+};
 pub use recipe_records::RecipeRecordStore;
 pub use recipe_documents::{RecipeDocumentStore, RecipeListEntry, RecipeSaveError, StoredRecipeDocument};
 pub use production_evidence::{
@@ -63,8 +69,8 @@ pub use contracts::{
     TaskState, ENVELOPE_SCHEMA_VERSION,
 };
 pub use editor_targets::{
-    classify_editor, classify_version_string, codes as editor_target_codes, parse_editor_version,
-    EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
+    classify_editor, classify_version_string, codes as editor_target_codes, editor_version_from_path,
+    parse_editor_version, EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
 };
 pub use environment::{
     codes as env_managers_codes, error_codes as env_error_codes, installed_unity_editors,
