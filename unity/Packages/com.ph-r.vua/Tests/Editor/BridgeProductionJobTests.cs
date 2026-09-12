@@ -198,6 +198,64 @@ namespace Vua.Editor.Bridge.Tests
                 "selector 无解时对象必须保持未被修改。");
         }
 
+        [Test]
+        public void ProductionReceiptVersionEchoesTheCommandProtocolVersion()
+        {
+            // v3 production-face migration (proposal 016): a v3
+            // execute_production_job gets a v3 receipt, whose data legally
+            // carries instanceGlobalObjectId (proposal 011); a v2 command
+            // keeps receiving a v2 receipt during the transition window.
+            // Dry-run only: no snapshot, no scene mutation, no SDK
+            // dependency.
+            var avatar = new GameObject("Avatar");
+            Child(avatar, "Outfit");
+            Assert.That(EditorSceneManager.SaveScene(SceneManager.GetActiveScene(), scenePath), Is.True);
+
+            foreach (var protocolVersion in new[] { 3, 2 })
+            {
+                var commandId = $"prodjob-{Guid.NewGuid():N}";
+                WritePlanFile(commandId, new BridgePlanDocument
+                {
+                    schemaVersion = "0.3",
+                    planId = $"plan-{commandId}",
+                    target = new BridgePlanTarget { avatarInstanceId = "Avatar" },
+                    jobs =
+                    {
+                        new BridgePlanJob
+                        {
+                            jobId = "job-1",
+                            kind = "set_object_active",
+                            selector = new BridgeObjectSelector { pathHint = { "Avatar" } },
+                            active = true
+                        }
+                    }
+                });
+
+                var result = BridgeCommandProcessor.Process(new BridgeCommand
+                {
+                    schemaVersion = protocolVersion,
+                    commandId = commandId,
+                    operation = "execute_production_job",
+                    projectId = "synthetic-project",
+                    dryRun = true,
+                    payload = new BridgePayload
+                    {
+                        planHash = Sha256Of(File.ReadAllText(planPath)),
+                        planSchemaVersion = "0.3",
+                        planRef = $".vua/bridge/plan-{commandId}.json"
+                    }
+                });
+
+                Assert.That(result.status, Is.EqualTo("succeeded"),
+                    "dry-run 计划校验必须成功，才能钉住收据版本回显。");
+                Assert.That(result.schemaVersion, Is.EqualTo(protocolVersion),
+                    "收据版本必须回显命令协议版本（v3 命令＝v3 收据；v2 命令＝v2 收据）。");
+                Assert.That(result.data.dryRun, Is.True, "dry-run 收据不得冒充实跑。");
+                Assert.That(result.data.steps[0].status, Is.EqualTo("pending"),
+                    "dry-run 只做计划校验，作业序列保持未执行。");
+            }
+        }
+
         private void WritePlanFile(string commandId, BridgePlanDocument plan)
         {
             var bridgeDir = Path.Combine(projectRoot, ".vua", "bridge");
