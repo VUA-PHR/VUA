@@ -301,8 +301,7 @@ function registryCheck() {
   // ---------- 反向盲区检查（BG-8b）：schemas/ 词表族漏登记检测 ----------
   // 正向校验只核对已存在的 REGISTRY 行，结构上发现不了「目录存在但未登记」；
   // 此段反向扫描 schemas/ 目录补上该盲区。
-  // 豁免：spike 探索目录（治理不强制登记）；inspection-evidence（proposal
-  // 016 草案态，冻结时登记——016 §7 硬前置清单为准）；orchestrator（子目录
+  // 豁免：spike 探索目录（治理不强制登记）；orchestrator（子目录
   // 为 envelope-v1/provider-frame-v0.1 非标准版本形态，由 provider-process
   // 协议本行覆盖）；orchestrator-task-store（由 task-store 协议本行覆盖，
   // 目录名与词表行名不同缀）。
@@ -310,10 +309,6 @@ function registryCheck() {
     'bdl-spike',
     'environment-spike',
     'vpm-package-spike',
-    'inspection-evidence',
-    // proposal 016 草案态（仲裁第 2 点词表行），冻结时随冻结批登记——
-    // 016 §7 硬前置清单为准（proposal 022，集成落地 2026-09-13）。
-    'inspection-queries',
     'orchestrator',
     'orchestrator-task-store',
   ]);

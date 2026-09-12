@@ -246,6 +246,67 @@ describe("Electron Desktop Gateway routing", () => {
   });
 });
 
+describe("inspection-queries v0.1 routing (M7 消费批)", () => {
+  const INSP_ID = "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21";
+
+  it("routes inspection.get with the identity param and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // mock 未配置检查域:诚实不可用照原样透传(不折叠不伪装)
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-insp-1", method: "inspection.get", params: { inspectionId: INSP_ID } },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-insp-1",
+      correlationId: "desktop-request-insp-1",
+      kind: "query",
+      method: "inspection.get",
+      params: { inspectionId: INSP_ID },
+    });
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.inspection.unavailable" } },
+    });
+  });
+
+  it("routes inspection.list with verbatim optional params and rejects unknown keys at the guard", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-insp-2",
+        method: "inspection.list",
+        params: { avatarRef: "warehouse:booth-item-1001", overallStatus: "fail", limit: 50, offset: 0 },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith(
+      expect.objectContaining({ kind: "query", method: "inspection.list" }),
+    );
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.inspection.unavailable" } },
+    });
+
+    // 词表外过滤键在信封守卫即拒(闭集:avatarRef/overallStatus/limit/offset)
+    const invalidParams = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-insp-3", method: "inspection.list", params: { text: "fuzzy" } },
+    );
+    expect(invalidParams).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+  });
+});
+
 describe("bdl-queries v0.2 routing", () => {
   it("routes the five read-only queries through to the provider verbatim", async () => {
     const provider = new MockOrchestratorProviderV01();

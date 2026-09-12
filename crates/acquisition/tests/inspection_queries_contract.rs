@@ -2,15 +2,20 @@
 //! arbitration point 2 — the independent inspection read vocabulary row,
 //! get/list after the record.get/list precedent).
 //!
-//! DRAFT (2026-09-13, data role): delivered after the production M7 anchor
-//! slice (Bridge v3 five-dimension producing operations, c33adb3) was
-//! accepted into main — the 016 §7 hard precondition 1. NOT frozen, not
-//! registered: the freeze lands with hard precondition 2 (the core
-//! storage+routing implementation batch) together with the
-//! inspection-evidence body freeze. The vocabulary face is AMF production
-//! persistence domain; it never passes through BDL (proposal 016 §5,
-//! proposal 011 §5). The ownership chain is the accepted 016 thread plus
-//! the wt-4 stance request naming the data role as the taker.
+//! FROZEN v0.1 (freeze batch 2026-09-13, data role): the freeze
+//! hard-preconditions are closed — (1) the production M7 anchor slice
+//! (Bridge v3 five-dimension producing operations, c33adb3 → 7d63abe);
+//! (2) the core storage+routing implementation batch (merge 7a262b8) plus
+//! the data-review revision batch (c914cf2: family-owned
+//! INSPECTION_QUERIES_SCHEMA_VERSION unifies the three family replies,
+//! avatarRef.ref maxLength dropped to match the evidence body verbatim
+//! carry — ratified by the data role); (3) these vectors plus consumer
+//! tests green in-tree; (4) the bilingual protocol document and (5) the
+//! docs/REGISTRY.md row land with the freeze batch. The vocabulary face is
+//! AMF production persistence domain; it never passes through BDL
+//! (proposal 016 §5, proposal 011 §5). The ownership chain is the accepted
+//! 016 thread plus the wt-4 stance request naming the data role as the
+//! taker.
 
 use jsonschema::Validator;
 use serde_json::{json, Value};
