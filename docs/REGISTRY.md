@@ -58,6 +58,8 @@
 | docs/protocols/unity-bridge-v3_ZH.md | v3 | 已冻结（M7，2026-09-13：proposal 016 三树表态收口〔核心 0:0x／数据 0:2x／桌面 1:4x，零修订意见〕；v2 同面超集＋三只读检查操作＋instanceGlobalObjectId 合法化；落库面随 7d63abe 先行，本批为契约面冻结；生产作业面迁移归后续切片，v2 生产路径继续生效） | 产线 | 2026-09-13 |
 | schemas/inspection-queries/v0.1 | 0.1 | 已冻结（检查读面词表行 get/list/requestRun 三方法一次冻结，2026-09-13：Schema＋正例 3 对＋负例 3＋双载体消费测试；016 §7 硬前置①②③已验收入库〔7d63abe＋7a262b8＋修订批 c914cf2 族常量统一，数据追认〕；get/list 桌面消费已落地入 main〔33988a6〕，requestRun 悬空面维持——avatarGlobalObjectId 无桌面事实源，登记而不消费；真实数据走查归 W25） | 数据 | 2026-09-13 |
 | docs/protocols/inspection-queries-v0.1_ZH.md | 0.1 | 已冻结（检查读面词表行，2026-09-13：三方法一次冻结，硬前置④⑤随冻结批） | 数据 | 2026-09-13 |
+| schemas/editor-verify/v0.1 | 0.1 | 已冻结（U10 手选编辑器路径验证词表行 environment.verifyEditor，2026-09-13：proposal 021 七点裁决定形；Schema＋正例 3 对＋负例 3＋双载体消费测试〔环境域锚 editor_verify_wire 8/8＋provider-host 帧环 8/8〕；核心路由批 deafe11＋373470c 经 a6585c2 验收入 main；桌面 TS 面与设置面候 U10 切片随批，真机走查归 W25） | 环境 | 2026-09-13 |
+| docs/protocols/editor-verify-v0.1_ZH.md | 0.1 | 已冻结（手选编辑器路径验证词表行，2026-09-13：单方法一次冻结，硬前置⑤协议本双语＋本行＋SCHEMA_EXEMPT 豁免行移除请求随本冻结批，豁免行候集成验收移除） | 环境 | 2026-09-13 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/design/design-standard_ZH.md | 0.7.0 | 已接受 | 桌面 | 2026-09-10 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |
