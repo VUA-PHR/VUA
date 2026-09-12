@@ -86,7 +86,10 @@ pub use material_types::{
     RiskDecisionChoice, SourceFolderInspectionV01, SourcePackageEvidenceV01,
 };
 pub use model::*;
-pub use overlay_surface::{OverlayReadModel, OverlayTaskCard, StoreOverlayReadModel};
+pub use overlay_surface::{
+    OverlayPlanSummary, OverlayProductionCard, OverlayReadModel, OverlayRecordSummary,
+    OverlayTaskCard, StoreOverlayReadModel,
+};
 pub use process::{
     outcome_with_exit, FakeProcessRunner, ProcessError, ProcessOutcome, ProcessRunner, ProcessSpec,
     StdProcessRunner, CREDENTIAL_ENV_REMOVALS,

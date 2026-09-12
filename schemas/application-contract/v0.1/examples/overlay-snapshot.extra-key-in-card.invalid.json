@@ -1,0 +1,9 @@
+{
+  "contractVersion": "0.1",
+  "tasks": [],
+  "productionCard": {
+    "currentPlan": null,
+    "latestRecord": null,
+    "progressPercent": 42
+  }
+}
