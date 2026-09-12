@@ -1,0 +1,10 @@
+{
+  "verdict": "verified",
+  "editorRoot": "C:\\Editors\\2019.4.31f1",
+  "exePath": "C:\\Editors\\2019.4.31f1\\Editor\\Unity.exe",
+  "version": "2019.4.31f1",
+  "classification": "migration_source",
+  "guidanceCode": "vua.env_managers.editor_migration_source",
+  "chinaDistribution": false,
+  "schemaVersion": "0.1"
+}
