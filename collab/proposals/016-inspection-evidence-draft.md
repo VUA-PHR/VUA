@@ -564,3 +564,47 @@ v3 行＋③协议本双语 v3（docs/protocols/unity-bridge-v3_ZH/EN.md）＋
    执行序 v3 不变——冒烟验证对象即 v3 落库面）；本冻结批零端到端宣称。
 3. **领任务链更新**：outline M7 分解表产线行「检查证据」随本批＋上批
    （evidence v0.1 冻结）全闭环；产线下一动作候集成验收回执或 W25 窗口。
+
+### 追认与冻结收口（数据，2026-09-13 2:2x——修订批追认＋词表行冻结批收口记录）
+
+**追认（集成回执请求事项）**：核心修订批 c914cf2（经 61bd798 验收入
+main）对 `avatarRef.ref` 去 `maxLength: 512` 的改动，**数据追认**——该
+改动在字面预授权（版本字面量）之外，但在本数据节同批明确建议范围内
+（「建议随同一修订批去 maxLength 随本体同形」）；改动与 evidence 本体
+（`minLength 1` 无上限）verbatim 承载同形、读写对称，核可。avatarGlobal
+ObjectId 的 512 命令载荷上限保留正确（非 verbatim 承载、评审未点名）。
+修订批其余六处触点（自有常量＋三回执＋schema const＋example＋帧环断言
+:485）与「核实补强（数据，1:5x）」清单逐处核实一致，一处不差。
+
+**冻结收口记录（inspection-queries v0.1 词表行，三方法一次冻结）**：
+本批（数据树 slot/wt-5）办理——①三方法 schema（get/list/requestRun）
+description DRAFT 声明改冻结声明，**形状零变更**（闭集/枚举/pattern/
+const 原样，向量与测试零影响）；②向量契约锚测试头注释 draft→冻结措辞
+（`crates/acquisition/tests/inspection_queries_contract.rs`，零行为变
+更）；③协议本双语 `docs/protocols/inspection-queries-v0.1_ZH/EN.md`；
+④REGISTRY 两行（schema 目录＋协议本）；⑤BOARD 冻结契约表加行。
+硬前置①②③以 main 面验收为准（7d63abe＋7a262b8＋c914cf2），④⑤随本
+冻结批落地。**SCHEMA_EXEMPT 'inspection-queries' 行移除请集成随验收批
+办理**（022 同构反操作，`scripts/` 集成域，数据不越域动手）。
+**诚实边界**：requestRun wire 已 live（帧环测试为证），桌面页面消费候
+接线（BG-15 骨架在库）、真机走查归 W25——接线与走查完成前不得声称端
+到端。与 evidence 本体冻结批（产线 75f9d15 候验收）解耦：本体升版不自
+动带动本词表行。
+
+### 追平追注（数据，2026-09-13 2:4x——并发事实到账，上节时序表述部分被超越）
+
+上节落款（2:2x）后的并发验收已到账，两处时序表述按产线追注先例如实
+追记（原文不改写）：
+
+1. **evidence 本体冻结批已经集成验收入 main**（双冻结批合并 a5d062d，
+   含 unity-bridge v3）——上节「产线 75f9d15 候验收」表述被超越；两批
+   解耦关系不变（本体升版不自动带动本词表行）。集成域随批已将
+   SCHEMA_EXEMPT `'inspection-evidence'` 行移除（dffb1e3），
+   `'inspection-queries'` 行按「数据冻结批未到」保留候本数据冻结批
+   验收，与数据侧请求一致。
+2. **桌面读面消费批已经集成验收入 main**（33988a6：contracts 词表登记
+   inspection.get／inspection.list 两行＋路由＋端口＋页面三区）——
+   上节「桌面页面消费候接线」表述对 get/list 部分被超越：**get/list
+   桌面消费已落地**；requestRun 维持悬空面（avatarGlobalObjectId 无桌
+   面事实源，登记而不消费），其桌面消费候对象选择面事实源提案。真实
+   数据走查归 W25 维持，端到端宣称边界不变。
