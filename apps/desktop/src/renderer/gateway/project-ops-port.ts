@@ -1,4 +1,5 @@
 import {
+  APPLICATION_CONTRACT_VERSION,
   isTerminalTaskStateV01,
   type ImportCopyPhaseV01,
   type ImportCopyPlanV01,
@@ -241,12 +242,15 @@ function narrowTaskAccepted(value: unknown): ProjectTaskAcceptedV02 | null {
 const IMPORT_COPY_TASK_WAIT_MS = 120_000;
 
 /** task.get 权威快照形态收窄(client 纪律:字段存在性;必需键收不齐 =
- *  不可信快照,与词表外取值同按不可用处理)。result 为可选增量(020
- *  冻结面:仅成功终态出现),本函数不深检——消费处按操作词表窄化。 */
+ *  不可信快照,与词表外取值同按不可用处理)。contractVersion 必检——
+ *  陌生契约版本的快照按冻结面不可信(集成 #22 验收 L 级观察随手批补齐)。
+ *  result 为可选增量(020 冻结面:仅成功终态出现),本函数不深检——消费处
+ *  按操作词表窄化。 */
 function isTaskSnapshot(value: unknown): value is TaskSnapshotV01 {
   if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
   const record = value as Record<string, unknown>;
   return (
+    record.contractVersion === APPLICATION_CONTRACT_VERSION &&
     typeof record.taskId === "string" &&
     record.taskId.length > 0 &&
     typeof record.correlationId === "string" &&
