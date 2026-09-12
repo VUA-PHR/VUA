@@ -361,6 +361,41 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-12（08:0x–08:1x，第 9 代推送门）**：`db47ad9 → 59d371c`（5 提交：
+  第 8 代簿记 db47ad9 上轮落库未推送随本批上行＋三状态批验收合并
+  b4f5759/c951e6c/ddf104c＋本簿记 59d371c）。
+  - **内容**：slot/wt-2（领先 2＝追平合并 b6e9972＋状态批 40684cd）、
+    slot/wt-3（1aab54d）、slot/wt-5（d31e708）三状态批 --no-ff 验收合并，
+    零冲突；合并前核对三分支领先内容均仅各自状态文件
+    （diff --name-only），实质 0，collab-only 免全量测试成立。
+  - **CI 回读（59d371c 世代）**：**四工作流均未触发**（gh run list 复查
+    两次，最新 run 仍为 51af259 世代 ts 34659753558 绿）＝本批零 crates/
+    package 代码/REGISTRY/docs 变更，paths 过滤正常；51af259 世代 ts 绿
+    ＋0ca1882 世代 schema-vectors 34659100916 绿为未变更面有效基线。
+
+- **2026-09-12（07:5x–08:0x，第 8 代推送门）**：`0ca1882 → 51af259`（3 提交：
+  wt-2 状态批＋追平合并、**b4dbba0＝#22 桌面消费批 867ccda 验收合并**、
+  簿记 51af259）。
+  - **门证据（3/3，增量聚焦法）**：r1＝867ccda 全文核（端口任务化消费
+    逐键对齐 provider_host.rs Done payload {schemaVersion,operation,result}
+    ＋TaskSnapshotV01 冻结面；诚实 unavailable 映射完备；fixture 恒诚实
+    不可用＝020 授权）＋wt-2 collab 批（仅状态文件）＋簿记批；r2＝增量
+    机械核验（6 文件 +591/−617：零色值/CSS 变量新增、零 CSS 文件、代码
+    区非注释零中文串新增；check:leak 159 生产构建零命中随全链）；r3＝
+    **桌面 check 全链 EXIT=0**（typecheck＋vitest＋build＋boundary＋i18n
+    ＋contrast＋leak）＋**vitest 单独 pipefail 复跑 62 文件/499 测试
+    （486 基线＋13 新增）EXIT=0**＋contracts check EXIT=0；Rust 域零涉
+    （增量无 crates/schemas 文件）免跑如实声明。L 级观察（不阻断）：
+    isTaskSnapshot 未检 contractVersion（信封守卫已验）——登记入验收
+    记录，桌面随手批可补。
+  - **CI 回读（51af259 世代）**：ts **34659753558 ✅**（check 作业绿）；
+    rust/schema-vectors/collab-registry 未触发＝本批零 crates/schemas/
+    REGISTRY/docs 变更，paths 过滤正常（29b6f03 世代四绿＋0ca1882 世代
+    schema-vectors 34659100916 绿为未变更面有效基线）。
+  - **#22 链全环闭合**（裁决→核心提案冻结 0866908→核心填充→桌面消费
+    b4dbba0），开放问题 #22 行关闭。不宣称端到端（live 走查归 W25
+    用户延期窗口）。
+
 - **2026-09-12（07:5x，第 7 代推送门）**：`27418e9 → 29b6f03`（7 提交：
   wt-2 #22 兑现批 d02bd09＋三合并 0866908/fa87b8d/9186785＋簿记 29b6f03
   及 slot collab 件）。
