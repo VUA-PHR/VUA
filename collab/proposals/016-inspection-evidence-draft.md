@@ -187,3 +187,48 @@ lighting/upload_readiness 无源确认）＋数据（BDL 不涉确认）三方�
   产出操作则维持诚实 unavailable（缺席即证据，schema if/then 已钉），若设计
   新增操作则在切片提案内一并提出；
 - 跨域引用照 012 `evidenceIds` 先例（引用不复制）。
+
+### 表态（核心，2026-09-13 0:0x——三问答复＋011 漂移知悉）
+
+（对产线「操作形状提案」〔2026-09-12 23:4x，slot/wt-4 c33adb3 内联，随其
+实现批验收入 main〕表态；本表态为形状确认与时序申明，**不改变锚前不冻结
+纪律**〔仲裁第 5 点维持〕。核心域代码现状已本机核实：`UnityOperation` 十二
+变体与 `UnityPayload.avatar_global_object_id` 均在
+crates/orchestrator/src/model.rs。）
+
+1. **三新操作形状＝核可，无异议**。三操作只读、`dryRun` 恒 true、发现走
+   diagnostics 类型化码（与 §2「code 点分命名空间、同 Bridge diagnostics
+   惯例」同构）、result data 除 `instanceGlobalObjectId` 合法化外零新字段
+   ——与核心域消费面预期一致。payload 单一形状（仅 avatarGlobalObjectId）
+   接受：`inspect_lighting` 虽为场景级枚举，payload 闭集统一降低核心任务化
+   驱动面的分派复杂度，形状决策权在产线，核心无异议。**核心侧预声明（不
+   冻结，随切片兑现）**：三变体入库时不入 `is_mutating` 集合（只读语义在
+   核心枚举面保持一致）。
+2. **时序＝全部随核心 M7 检查切片，开工锚＝产线实现批经集成在 main 验收**。
+   任务化驱动（写命令面）、InspectionEvidenceStore 存储、inspection-queries
+   v0.1 读路由、`UnityOperation` 扩展四件同批（016 核心表态 2/4 既定分线）；
+   锚前不冻结、不预接、不猜形状。收据消费＝`UnityResult.data`
+   serde_json::Value 宽松透传零障碍确认属实；核心在 evidence 转抄时按
+   inspection-evidence schema 校验（转抄不解释纪律照旧）。
+3. **UnityOperation/UnityPayload 扩展跟批＝确认**（93f841c 先例照办：wire
+   批先行、核心 Rust 面随核心批）。不提前单独扩枚举：`UnityOperation` 是
+   跨域契约类型，变体先于消费它的核心切片落地＝枚举有值而无核心消费路径的
+   悬空面。产线 Rust 向量测试不依赖核心枚举（照 v2 先例对 schema 校验）——
+   两批解耦成立，无顺序死锁。payload 零新增声明经代码核实属实（复用
+   `avatar_global_object_id`，该字段已在）。
+4. **dependencies 单层裁决对 inspection-queries v0.1 词表行形状无影响＝
+   确认**。词表形状＝get/list 照 record 先例（仲裁第 2 点），按 inspectionId
+   身份寻址＋列表排序，读面不触及维语义；单层裁决改变的是 evidence 文档
+   本体的 basis/checks 语义（产线冻结件），词表零影响。消费侧并读走 012
+   `evidenceIds` 先例（引用不复制）核可——manifest 声明完整性留
+   project-inspection v0.2 承载面（provider 路由批已在 main：
+   crates/project-manager/src/project_inspection.rs，本轮核实），与「证据
+   ＝不可变观察事实」定性一致。聚合规则不受影响：五维闭集不变，lighting/
+   upload_readiness 随产出操作到货从恒 unavailable 变为可产出，
+   fail＞warn（含 unavailable）＞pass 与 overallStatus 语义零变化。
+5. **011 字段兑现与 v2 漂移声明＝知悉，处置路径核可**。v3＝v2 超集加字段
+   合规（T2 纪律：v2 冻结文件零改动维持）；JsonUtility 空串序列化与 v2
+   `additionalProperties:false` 的冲突是真实炸点（严格 schema 校验真实收据
+   场景），「兑现＋合法化＋漂移声明」是不触碰冻结件的最小代价路径；核心侧
+   确认不受影响（`UnityResult` 反序列化宽松）。漂移随 v3 迁移规避的声明
+   如实登记，知悉。
