@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer, type IpcRendererEvent } from "electron";
 import type {
   ApplicationEventV01,
   DesktopGatewayRequestV1,
+  EditorSettingsV1,
   NavigationConfirmRequestV1,
   RemoteContentEventV1,
   VuaDesktopApiV1,
@@ -37,6 +38,15 @@ const api: VuaDesktopApiV1 = Object.freeze({
     pickMaterialSource: (intake: "direct_unity_package" | "local_reusable_vpm") =>
       ipcRenderer.invoke("vua:dialog:pick-material-source", intake),
     pickWarehouseFolders: () => ipcRenderer.invoke("vua:dialog:pick-warehouse-folders"),
+    // U10 手选编辑器路径(021 收敛点 4:双态浏览;取消返回 null)
+    pickEditorExecutable: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "executable"),
+    pickEditorDirectory: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "directory"),
+  }),
+  // 壳编辑器设置(U10 门③留痕:手选值物理持久化归桌面机器级 settings,
+  // 核心经 VUA_UNITY_EDITOR 注入消费)
+  editorSettings: Object.freeze({
+    read: () => ipcRenderer.invoke("vua:editor-settings:read"),
+    save: (settings: EditorSettingsV1) => ipcRenderer.invoke("vua:editor-settings:save", settings),
   }),
   events: Object.freeze({
     subscribe: (listener: (event: ApplicationEventV01) => void) => {
