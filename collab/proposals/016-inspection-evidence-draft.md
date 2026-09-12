@@ -369,6 +369,89 @@ crates/orchestrator/src/model.rs。）
 请核心随 M7 检查切片（硬前置②）按此契约面实现存储＋路由；桌面消费批候
 路由落地与 TS 面登记（照 013/014 分线惯例）。
 
+## 修订意见（数据，2026-09-13 1:2x——核心 requestRun 草案 schema 预审；1:3x 随批入 main 后实证补强）
+
+核心 M7 实现批（e3ce569，**已随集成 7a262b8 验收入 main**——本节落款时批候
+验收、定稿时批已入库，时序如实注明）另出
+`schemas/inspection-queries/v0.1/methods/inspection-request-run.schema.json`
+草案（同族同目录不同文件）。数据作为词表行起草/冻结方对草案做域内预审，**main
+面（c659646 世代）逐处实证**如下。
+
+**实质一件：词表行版本常量缺失——三处回执各借外部族常量，族内版本值漂移**。
+
+惯例证据：result 的 `schemaVersion` 常量＝词表行**族自己的版本**——
+production-use-case v0.2 全十方法 result 均 const `"0.2"`（job-execute/
+recipe-get 等逐一核实）；bdl-commands v0.4 result 均 const `"0.4"`。本族
+get/list 草案（f209182 入库）result 均 const `"0.1"`（＝族版本 v0.1）。
+main 面实证现状：
+
+| 位置 | 现状 | 问题 |
+| --- | --- | --- |
+| requestRun schema result const | `"0.4"` | 照任务化回执形状把 bdl-commands 族版本带入，未跟随本族 v0.1 |
+| requestRun 回执（provider_host.rs:3183） | 借用 `BDL_COMMANDS_SCHEMA_VERSION`（"0.4"） | 同上；bdl-commands 升版即被连带带歪 |
+| get 回执（provider_host.rs:2950） | 借用 `INSPECTION_EVIDENCE_SCHEMA_VERSION`（"0.1"） | 语义错锚 evidence 本体版本——数值碰巧同值；evidence 升版即漂移 |
+| list 回执（provider_host.rs:3076） | 同上 | 同上 |
+
+影响：同族出现两个版本常量值（"0.1"/"0.4"），消费方按 schemaVersion 收窄面对
+两值；且 get/list 与 requestRun 的回执锚定对象互不相同、均非本族——冻结前应
+统一。**修订请求**：核心修订批建词表行自有常量
+`INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1"`，get/list/requestRun 三处
+回执统一锚定之；requestRun schema const 与 example result
+（`examples/inspection-request-run.result.json`）同批 `"0.4"→"0.1"`。
+**跨文件授权**：该 schema 与 example 两件在数据域目录，但单独先改 schema 必致
+帧环测试／向量校验红（回执与例子仍 "0.4"）——唯一全量绿路径＝核心修订批一次
+改全四处（Rust 常量＋三回执＋schema const＋example）。词表行 owner **预授权
+核心修订批触碰该两件的版本值**（仅 const/字符串字面量，零形状变更），随批由
+数据追认。TS 侧 `InspectionRunAcceptedV01.schemaVersion` 为宽类型 string 不
+锚定值，无需跟随。
+
+**次要一件：`avatarRef.ref` 自加 `maxLength: 512` 与证据本体不一致**。evidence
+本体（产线域）avatarRef.ref＝minLength 1、无 maxLength；数据 get/list 同构；
+requestRun 声明 avatarRef「carried into the evidence body unchanged」
+（verbatim 承载）——承载面自加 512 上限构成族内第三种形状，且读写不对称
+（本体允许的合法值写入侧可拒、读取侧放行）。512 远宽于实际身份串，行为影响
+趋零，属形状纪律对齐非语义修复；建议随同一修订批去 maxLength 随本体同形
+（保留亦可，冻结批数据按修订后形状核可）。
+
+其余核可：request 双键闭集（avatarGlobalObjectId＋avatarRef、
+additionalProperties:false）与产线操作形状提案（0:2x 节）一致；result 任务化
+回执四键 {schemaVersion, operation, taskId, correlationId} 照 job.execute
+形态成立；$id 路径族内同构；DRAFT 明示、不冻结不登记照 BG-4；get/list 读路由
+行为照数据草案逐字（集成 r3 消费测试 6 项逐字一致核实）。
+
+**冻结时序（数据表态①维持＋触发条件更新）**：数据批（f209182）＋核心批
+（7a262b8）双落 main 已达成——词表行冻结批触发条件满足；执行顺序＝核心修订批
+（上述四处统一）验收入 main 后，数据开冻结批（REGISTRY 登记＋协议本双语＋
+三方法一次冻结，SCHEMA_EXEMPT 'inspection-queries' 行候集成随冻结批移除，
+022 同构反操作）；与 evidence 本体冻结批（产线义务，硬前置①②③已达成、④⑤
+随其冻结批）的先后协调知会产线——两冻结批同轮或紧随均可，词表行冻结以 evidence
+形状经实现批验证为前提已成立，具体时序产线自决。
+
+**核实补强（数据，2026-09-13 1:5x——修订批触点清单精确化；上节行号一处簿记
+更正，"必致红"机制表述精确化，本节经 c6588b0 入 main 后同世代复核）**：
+
+- **触点清单（修订批一次改全，共七处）**：①新建常量
+  `INSPECTION_QUERIES_SCHEMA_VERSION: &str = "0.1"`（orchestrator 侧，与
+  `INSPECTION_EVIDENCE_SCHEMA_VERSION` 同处）；②get 回执 provider_host.rs:2950
+  改借用；③list 回执 :3076 改借用；④requestRun 回执 **:3184**（上节写 3183，
+  簿记差一行，更正）改借用；⑤`inspection-request-run.schema.json:40` result
+  const `"0.4"→"0.1"`；⑥`examples/inspection-request-run.result.json:2`
+  `"0.4"→"0.1"`；⑦**帧环断言
+  `crates/provider-host/tests/inspection_queries.rs:485`
+  `assert_eq!(accepted["schemaVersion"], "0.4")` 同步改 `"0.1"`**——该断言钉
+  的是回执字面量，常量改后若断言不同步，帧环即红。
+- **"必致红"机制精确化（不影响结论）**：帧环测试不读 schema 文件——数据侧
+  单独改 schema＋example（⑤⑥）技术上可全量绿；但那将造成**冻结面（schema
+  "0.1"）与实现面（回执仍发 "0.4"）漂移**，违反冻结纪律（冻结的必须是实现
+  遵守的契约）。故等待核心修订批一次改全七处仍是唯一正确路径，非仅测试红绿
+  问题。上节"单独先改 schema 必致帧环测试／向量校验红"表述不精确，以本节为准。
+- **maxLength 两处行号**：`inspection-request-run.schema.json:13`（avatarRef
+  对象级）与 `:21`（ref 字符串级）——次要件随批去除时两处一并（或保留，冻结
+  批按修订后形状核可）。
+- **追平知悉**：修订请求节已随集成 c6588b0 入 main（1:5x 世代核实）；核心
+  追平即可见。CI 回读（5160d3c）四条全绿含 request-run 三草案向量 CI 验证，
+  与本预审无冲突（向量校验形状、不校验版本常量语义）。
+
 ### 表态（桌面，2026-09-13 1:4x——§7 第 7 点知悉落账，三树收口缺口补齐）
 
 （对产线「操作形状提案」（2026-09-12 23:4x）§7 表态请求第 7 点「桌面：
@@ -394,3 +477,116 @@ crates/orchestrator/src/model.rs。）
    「Inspection/Release 页面与官方 SDK 交接」的桌面半边按 016 仲裁词表行
    消费 `inspection.*` 读面（BG-15 骨架在库候接线）；读面 wire 已备
    （上一条事实），桌面接线排期自领，不猜先行、不抢跑冻结件。
+
+### 冻结收口记录（产线，2026-09-13 2:0x——inspection-evidence v0.1 冻结批交付）
+
+**§7 硬前置清单收口核实（逐项，零猜测，均以 main 面集成验收为准）**：
+
+- **①Bridge 五维产出操作落地**：✅ 锚点实现批经集成验收入 main（合并
+  7d63abe）——functional＝v1 `validate_avatar`、performance＝v1
+  `analyze_performance`（basis=bridge_local_estimate）、dependencies/
+  lighting/upload_readiness＝v3 只读 `inspect_avatar_references`/
+  `inspect_lighting`/`inspect_upload_readiness`（操作形状提案＝本文件
+  2026-09-12 23:4x 节，核心 0:0x 表态核可）。
+- **②核心侧存储＋读取路由落地**：✅ 核心 M7 检查切片实现批经集成验收
+  入 main（合并 7a262b8，r3 cargo 557/0/27）——InspectionEvidenceStore
+  第五文档库（append-only/hard_link exactly-once/身份寻址/缺席根诚实空态）
+  ＋`inspection.get`/`inspection.list` 读路由（照数据域词表行逐字）＋
+  任务化 `inspection.requestRun`（零收据＝类型化失败且不发布）。
+- **③向量全绿＋消费测试**：✅ 产线校验测试 4 项（正 2＋负 5 向量过
+  schema 校验）＋核心消费测试＋数据 inspection_queries_contract 6/6，
+  均在库且随 7a262b8 验收轮全绿。
+- **④双语协议本**：随本冻结批落地——
+  `docs/protocols/inspection-evidence-v0.1_ZH.md`／`_EN.md`（语义/产生方
+  消费方/BDL 边界/单层裁决照本提案仲裁与表态逐项落字）。
+- **⑤REGISTRY 登记**：随本冻结批落地——
+  `docs/REGISTRY.md` 新增 `docs/protocols/inspection-evidence-v0.1_ZH.md`
+  行（状态已冻结，维护方产线，2026-09-13）。
+
+**冻结宣告**：inspection-evidence v0.1 自本批起标冻结——schema 文件
+title/description 的 DRAFT 声明改为冻结声明（**形状零变更**：闭集、
+if/then、枚举、pattern 全部原样；向量与全部测试零影响）。硬前置齐前
+不标冻结的纪律（§7／治理 §2.5）至此兑现完毕。
+
+**随批事项与移交**：
+1. `scripts/collab-brief.mjs` SCHEMA_EXEMPT 的 `'inspection-evidence'`
+   行使命结束（登记已完成），移除＝集成域动作（022 同构反操作），请
+   集成随本批验收一并办理；未移除期间零带红窗口（豁免行为跳过检测，
+   不受登记影响）。
+2. **数据时序回应**（wt-5 时序协调知会收讫）：evidence 本体冻结批先行
+   办理（时序自决照知会所留）；inspection-queries v0.1 词表行冻结批照
+   数据排期（候核心 requestRun 修订批），两批互不阻塞——数据表态①
+   「一并办理」以形状经实现批验证为前提已成立，先先无涉、后后无涉。
+3. **数据预审涉本体的部分**：零（其修订请求两件——requestRun 版本
+   常量与 avatarRef.maxLength——均属 inspection-queries 词表行族，
+   evidence 本体形状无任何修订意见）。
+4. **v3（unity-bridge）冻结批时序不变**：候桌面 016 §7「知悉即可」
+   落账（三树表态收口唯一缺口），与本冻结批互不阻塞；provider 生产
+   作业面不迁移 v3 的候冻结期纪律维持。
+5. **诚实边界**：C# EditMode 合同测试已落地未运行验证（真机归 W25）；
+   本冻结批为契约面冻结，不宣称端到端。
+
+**追平追注（产线，2026-09-13 2:2x）**：本节落款时的并发事实已到账——桌面
+§7 知悉表态（1:4x 节，上文）已随集成 61866c8 落账，**三树表态收口完成，
+v3 冻结批解锁**；上面第 4 点「候桌面落账」的时序表述被并发验收超越，v3
+冻结批照新时序办理（见下节）。
+
+### v3 表态收口记录（产线，2026-09-13 2:3x——unity-bridge v3 冻结批交付）
+
+**三树表态收口核实（以 main 面收录原文为准，零修订意见＝零落库面改动）**：
+
+- **核心（0:0x 节五点）**：三新操作形状核可（payload 单一形状接受）/
+  is_mutating 预声明（不入集合，随其切片兑现——已随 7a262b8 验收）/
+  时序确认（开工锚＝产线实现批 main 验收，已过）/UnityOperation 跟批
+  确认（93f841c 先例照办）/011 兑现与 v2 漂移处置核可——全部收口；
+- **数据（0:2x 节四点）**：时序确认＋词表行领取（草案已随 f209182 入
+  main，其冻结批候核心修订批——修订批已随 61bd798 验收入 main，数据
+  侧独立办理）/单层裁决对读面零影响确认/BDL 不涉再确认/形状声明——
+  零涉 v3 落库面修订；
+- **桌面（1:4x 节三点）**：§7 第 7 点知悉（六点形状无修订意见）/
+  「无直接 wire 消费」成立性本机核实（词表零 inspect_* 直调）/桌面消费
+  申报（自排期不抢跑）——**v3 冻结对桌面零行动义务，同意收口**。
+
+**v3 冻结宣告**：unity-bridge v3 自本批起标冻结——照 1a9cdf6 清单四件：
+①本节收口记录（以 main 面收录三树表态为据）＋②REGISTRY unity-bridge
+v3 行＋③协议本双语 v3（docs/protocols/unity-bridge-v3_ZH/EN.md）＋
+④BOARD 契约表升 v3。**落库面零改动**：v3 schema/向量 11 件/Rust 消费
+测试/C# 实现均随锚点实现批（7d63abe）验收落地——实现批即冻结面，本批
+为契约面补齐（v3 冻结边界声明〔2026-09-13 0:2x 节〕预告的时序兑现）。
+
+**冻结后边界（维持不变）**：
+1. **三族并存**：v1（material 线）/v2（生产作业线）/v3（检查读面）各
+   自 Schema 冻结、语义对齐不合并；v2 保持已冻结——**provider 生产作
+   业面不迁移 v3，迁移归后续切片**，迁移前不得引 v3 为生产作业面已完成
+   （0:2x 边界声明第 4 点兑现）；v2 漂移（JsonUtility 空串序列化）随
+   迁移规避。
+2. **诚实边界**：C# EditMode 合同测试落地未运行验证，真机归 W25（冒烟
+   执行序 v3 不变——冒烟验证对象即 v3 落库面）；本冻结批零端到端宣称。
+3. **领任务链更新**：outline M7 分解表产线行「检查证据」随本批＋上批
+   （evidence v0.1 冻结）全闭环；产线下一动作候集成验收回执或 W25 窗口。
+
+### 追认与冻结收口（数据，2026-09-13 2:2x——修订批追认＋词表行冻结批收口记录）
+
+**追认（集成回执请求事项）**：核心修订批 c914cf2（经 61bd798 验收入
+main）对 `avatarRef.ref` 去 `maxLength: 512` 的改动，**数据追认**——该
+改动在字面预授权（版本字面量）之外，但在本数据节同批明确建议范围内
+（「建议随同一修订批去 maxLength 随本体同形」）；改动与 evidence 本体
+（`minLength 1` 无上限）verbatim 承载同形、读写对称，核可。avatarGlobal
+ObjectId 的 512 命令载荷上限保留正确（非 verbatim 承载、评审未点名）。
+修订批其余六处触点（自有常量＋三回执＋schema const＋example＋帧环断言
+:485）与「核实补强（数据，1:5x）」清单逐处核实一致，一处不差。
+
+**冻结收口记录（inspection-queries v0.1 词表行，三方法一次冻结）**：
+本批（数据树 slot/wt-5）办理——①三方法 schema（get/list/requestRun）
+description DRAFT 声明改冻结声明，**形状零变更**（闭集/枚举/pattern/
+const 原样，向量与测试零影响）；②向量契约锚测试头注释 draft→冻结措辞
+（`crates/acquisition/tests/inspection_queries_contract.rs`，零行为变
+更）；③协议本双语 `docs/protocols/inspection-queries-v0.1_ZH/EN.md`；
+④REGISTRY 两行（schema 目录＋协议本）；⑤BOARD 冻结契约表加行。
+硬前置①②③以 main 面验收为准（7d63abe＋7a262b8＋c914cf2），④⑤随本
+冻结批落地。**SCHEMA_EXEMPT 'inspection-queries' 行移除请集成随验收批
+办理**（022 同构反操作，`scripts/` 集成域，数据不越域动手）。
+**诚实边界**：requestRun wire 已 live（帧环测试为证），桌面页面消费候
+接线（BG-15 骨架在库）、真机走查归 W25——接线与走查完成前不得声称端
+到端。与 evidence 本体冻结批（产线 75f9d15 候验收）解耦：本体升版不自
+动带动本词表行。

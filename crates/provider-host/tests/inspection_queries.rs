@@ -164,7 +164,9 @@ fn use_case_config(root: &std::path::Path, bridge: std::sync::Arc<dyn UnityBridg
         editor_version: "2022.3.22f1".to_owned(),
         bridge,
         project_root: root.join("project"),
-        unity_editors_root: root.join("unity-editors"),
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+        },
     }
 }
 
@@ -482,7 +484,7 @@ fn request_run_drives_the_five_producing_operations_and_publishes_once() {
     let accepted = &payload["value"];
     assert_eq!(accepted["operation"], "inspection.requestRun");
     assert!(accepted["taskId"].is_string(), "the acceptance carries the task identity");
-    assert_eq!(accepted["schemaVersion"], "0.4");
+    assert_eq!(accepted["schemaVersion"], "0.1");
 
     // The worker runs detached: poll until the evidence bundle publishes.
     let documents = wait_for_documents(&root, 1);

@@ -1,11 +1,14 @@
-//! BG-4 draft vector tests: the inspection-evidence v0.1 DRAFT vectors
+//! inspection-evidence v0.1 vector tests (FROZEN): the frozen vectors
 //! (`schemas/inspection-evidence/v0.1/examples/`) drive JSON-Schema
-//! validation over the draft schema. Positive vectors validate; negative
-//! vectors (unknown dimension kind, unknown severity, unavailable-with-basis
-//! contradiction, missing inspectionId, unknown overallStatus) are rejected.
-//! The schema itself stays a DRAFT (proposal 016): these tests prove vector/
-//! schema coherence only — no producer or consumer route exists yet, so no
-//! freeze is claimed (BOARD ticket BG-4 acceptance criteria).
+//! validation over the frozen v0.1 schema. Positive vectors validate;
+//! negative vectors (unknown dimension kind, unknown severity,
+//! unavailable-with-basis contradiction, missing inspectionId, unknown
+//! overallStatus) are rejected. Frozen 2026-09-13 with the proposal 016 §7
+//! freeze batch (shape unchanged from the reviewed draft): producing Bridge
+//! operations accepted (7d63abe), core store/read routes/task-driven
+//! requestRun accepted (7a262b8), bilingual protocol + REGISTRY row landed
+//! with the freeze batch. These tests keep pinning vector/schema coherence
+//! and the closed-vocabulary consumer convention (BOARD ticket BG-4).
 
 use jsonschema::Validator;
 use serde_json::Value;
@@ -32,9 +35,9 @@ fn violations(validator: &Validator, instance: &Value) -> Vec<String> {
         .collect()
 }
 
-fn draft_validator() -> Validator {
+fn frozen_validator() -> Validator {
     let schema = read_json(&schema_path());
-    jsonschema::validator_for(&schema).expect("draft schema compiles")
+    jsonschema::validator_for(&schema).expect("frozen schema compiles")
 }
 
 const POSITIVE: [&str; 2] = [
@@ -51,36 +54,37 @@ const NEGATIVE: [&str; 5] = [
 ];
 
 #[test]
-fn positive_draft_vectors_validate() {
-    let validator = draft_validator();
+fn positive_vectors_validate() {
+    let validator = frozen_validator();
     for name in POSITIVE {
         let instance = read_json(&examples_dir().join(name));
         let errors = violations(&validator, &instance);
         assert!(
             errors.is_empty(),
-            "positive vector {name} must validate against the draft schema, got: {errors:?}"
+            "positive vector {name} must validate against the frozen v0.1 schema, got: {errors:?}"
         );
     }
 }
 
 #[test]
-fn negative_draft_vectors_are_rejected() {
-    let validator = draft_validator();
+fn negative_vectors_are_rejected() {
+    let validator = frozen_validator();
     for name in NEGATIVE {
         let instance = read_json(&examples_dir().join(name));
         let errors = violations(&validator, &instance);
         assert!(
             !errors.is_empty(),
-            "negative vector {name} must be rejected by the draft schema"
+            "negative vector {name} must be rejected by the frozen v0.1 schema"
         );
     }
 }
 
 #[test]
-fn draft_vector_dimensions_use_the_closed_vocabulary_without_duplicates() {
+fn vector_dimensions_use_the_closed_vocabulary_without_duplicates() {
     // JSON Schema cannot enforce uniqueness by key across the dimensions
-    // array; the vector suite carries that consumer convention until a
-    // consuming route lands (M7 slice).
+    // array; the vector suite carries that consumer convention (the
+    // consuming route landed with 7a262b8 and relies on the same closed
+    // vocabulary).
     let kinds = [
         "functional",
         "performance",
@@ -88,7 +92,7 @@ fn draft_vector_dimensions_use_the_closed_vocabulary_without_duplicates() {
         "lighting",
         "upload_readiness",
     ];
-    let validator = draft_validator();
+    let validator = frozen_validator();
     for name in POSITIVE {
         let instance = read_json(&examples_dir().join(name));
         assert!(

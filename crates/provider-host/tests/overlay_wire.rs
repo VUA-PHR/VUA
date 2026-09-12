@@ -76,7 +76,9 @@ fn use_case_config(root: &std::path::Path) -> ProductionUseCaseConfig {
         editor_version: "2022.3.22f1".to_owned(),
         bridge: std::sync::Arc::new(NoBridge),
         project_root: root.join("project"),
-        unity_editors_root: root.join("unity-editors"),
+        editor_selection: vua_orchestrator::EditorSelection::Unavailable {
+            reason: vua_orchestrator::EditorSelectionGap::NotDetected,
+        },
     }
 }
 
