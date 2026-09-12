@@ -2,100 +2,100 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 86e39c5
+baseline_commit: 71c65d4
 updated: 2026-09-13
 ---
 ## 当前焦点
-**第六批验收——数据/产线消化批＋并发五树消化第二轮＋REGISTRY 残留标记
-缺陷发现与修复＋collab-brief 守卫落地（09-13 2:4x–3:0x 轮，工作时段）**：
-- **687ef53**＝slot/wt-5 数据 **追平合并 9b81428＋状态批 d7cfba5**——
-  数据侧并发事实落账批：BOARD 契约表 inspection-queries 行接线注记由数
-  据自刷（get/list 桌面消费已落地入 main〔33988a6〕、requestRun 悬空面
-  维持、真实数据走查归 W25；此前请桌面刷注记的请求撤销＝数据行数据自维
-  护，桌面零动作义务——核可）；016 数据侧追平追注节（2:4x）按落款时序
-  保留。**冲突解决逐行审**：REGISTRY 数据两行取数据侧自维护注记（v3 行
-  后族连续保持、内容零改）；016 产线节在前、数据节在后、原文不改写。
-  **顺手发现并修复缺陷（详见下）**：main 侧 REGISTRY 自 7918790 起带有
-  一条未清理冲突标记，本批冲突解决取干净数据行后全树归零。
-- **缺陷如实登记（诚实纪律）**：**docs/REGISTRY.md 自合并 7918790 起
-  携带一条残留标记 `>>>>>>> slot/wt-5`（第 61 行区域）**，历经
-  a2cc12e、168f48b 三代未察觉——**registry-only 校验与 collab-registry
-  CI 都只验登记表一致性、不扫描冲突标记**，故两道绿闸均未覆盖此类缺陷
-  （非两闸失效，是覆盖面边界，如实声明）。残留发生在 **main 侧**
-  7918790 合并冲突解决时（数据侧 9b81428/4944072 分支文件经核零标记，
-  与数据无关）。修复＝687ef53 冲突解决顺手清除；防再发＝**e837628**
-  collab-brief 新增【⑤ 冲突标记】扫描：registry-only 模式对全部受管文
-  本文件（git ls-files，1169 个）扫描 `<<<<<<< / >>>>>>> / ||||||| /
-  =======` 标记，发现即非零退出；完整简报同增该节。正则边界自测
-  （缩进/八减号/无空格变体不误报）。**修复后实证：registry-only exit 0
-  ＝登记表 55 项一致/0 异常＋1169 文件 0 处标记。**
-- **a9484d5**＝slot/wt-4 产线 **状态批 47b562a（＋追平 f452151）**——
-  纯消化轮：双冻结批闭环确认（a5d062d 回执）、四留言消化、四环全查无
-  可领项（产线在途清零；下一实现动作＝生产作业面迁移 v3 候核心排期或
-  W25 候用户开窗）。collab-only 免全量。
-- **b7bd237/cc96018/e6bccb2/86e39c5**＝验收间隙并发到账的 **wt-5/
-  wt-2/wt-3/wt-6 第二轮消化批**（全部 collab-only 免全量）：各树追平
-  168f48b/86e39c5 世代＋留言消化＋四环全查无可领项。wt-5 追平 4944072
-  的 REGISTRY/016 冲突解决与本轮 687ef53 逐字一致，自动合并干净。
-  **合并后五树 rev-list 领先归零。**
-- **本轮测试声明（如实）**：本批全部为 collab/＋docs/REGISTRY＋scripts/
-  守卫，零 Rust/TS 代码变更——按 collab-only 纪律免全量测试；集成域
-  跑 **registry-only exit 0**（新守卫生效，55/0＋0 标记）两轮（守卫
-  落地前后各一）。上代实质批（第四/五批）全量证据（cargo 568/0/27＋
-  clippy 0＋contracts 50/50＋desktop 529/529＋leak 零泄漏）在案维持。
-
-**前情（2:1x–2:4x 上两轮，已入库并 CI 回填）**：第四批 a5d062d（产线
-双冻结：inspection-evidence v0.1＋unity-bridge v3）＋f3d8195（核心 U10
-切片 0cb0d05）＋33988a6（桌面 M7 inspection 读面消费 5a87574）＋核心修
-订批 c914cf2 经 61bd798；第五批 7918790（数据 inspection-queries v0.1
-冻结批）＋a2cc12e 验收簿记（SCHEMA_EXEMPT 两行移除收官）＋168f48b 第
-19 代门 CI 回读（rust 34711263110／schema-vectors 34711263125／
-collab-registry 34711263111 三绿，ts 未触发＝paths 过滤正常）。**M7
-检查链契约面全部冻结**：evidence v0.1＋queries v0.1＋bridge v3＋recipe
-套件 v0.3；桌面检查页接 live 读面；真机走查归 W25，零端到端宣称。
+**第七批验收——021 词表行裁决＋环境 editor-verify v0.1 草案冻结件＋四树
+状态批（09-13 3:2x–3:4x 轮，工作时段）**：
+- **6cc4594**＝slot/wt-2 核心 **021 词表行七点裁决批 ad829a3（＋追平
+  f562c45）**——`environment.verifyEditor` 词表行形状定形：行名采纳桌
+  面推荐（crate 模块名不升 wire 面）、query 分型、params 单字段闭集
+  明示无 maxLength（verbatim 纪律）、result 两态＋三实现级钉子（refused
+  绝不上浮应用错误信封／detail 原文透传／schemaVersion const 萯核心自
+  有常量 EDITOR_VERIFY_SCHEMA_VERSION）、缺席码
+  `vua.environment.verify_unavailable` 仅路由未接线、向量修正正 3 负 3
+  （加 Editor 目录形态＝normalize 三分支全覆盖）、时序微调加速（环境
+  草案态先行、核心路由批候草案件即开工不等冻结批，016 先例）；另兑现
+  产线 v3 生产作业面迁移排期表态（路由批验收后下一窗口）。diff 逐行
+  审：021 内联线程末节追加＋wt-2 状态批，零代码变化，collab-only 免
+  全量。
+- **e2de00e/44d214f/66cf467**＝slot/wt-3 桌面 c328fe7／slot/wt-4 产线
+  4c7e69e／slot/wt-5 数据 7111ada **状态批（各＋追平）**——三树纯消
+  化轮：桌面 021 裁决逐点消化（两处偏离〔向量正 3／时序加速〕表态核可
+  ＋三条钉子消费纪律落档）、产线四留言消化＋四环全查无可领项、数据三
+  留言消化＋在途清零。追平 inbound 各自域零触碰核验随批声明，三点
+  diff 均仅 collab/state 单文件。collab-only 免全量。
+- **71c65d4**＝slot/wt-6 环境 **草案冻结件批 38af48c＋状态批 c80102c
+  （＋追平 20c9f8c）**——`schemas/editor-verify/v0.1/` 草案态先行：
+  方法 schema（七点裁决逐项对照核验：行名/query/params 闭集无
+  maxLength/两态 verdict union/schemaVersion const "0.1"/classification
+  四值闭集＋guidanceCode pattern 与 environment-managers v0.1 冻结面逐
+  字同构/缺席码仅路由未接线语义登记/DRAFT 声明落面）＋向量正 3 负 3
+  （抽查门①反例 not_an_editor＝目录名声称但身份 7.7.7x9 不符、版本化
+  根正例 2022.3.22f1c1→other_unity_version＋chinaDistribution true，
+  均符裁决）＋消费测试 editor_verify_wire.rs 8 项（零漂移断言＝分类权
+  威重导出对照、三分支形状钉死、params 闭集负断言、缺席码防复用负断
+  言）＋schema-vectors workflow 追加 --test editor_verify_wire（DRAFT
+  漂移防护注释）。
+- **SCHEMA_EXEMPT 越域配套行追认（集成裁决）**：`scripts/collab-brief
+  .mjs` SCHEMA_EXEMPT 增 `'editor-verify'` 行**追认**——0b8bebb 先例
+  ＋016 inspection-evidence 草案豁免同构：该行即「草案未登记」状态的
+  机读表达，与裁决第 6 点「草案态不登记」一致（不加则守卫如实报警
+  exit 1，草案批无法绿交付）；**冻结批验收时由集成移除**（dffb1e3 先
+  例），登记在案勿忘。
+- **021 同文件合并冲突按落款时序解决（逐字核验）**：裁决节（核心
+  2:5x）在前、环境回执节（3:1x）在后，两块全文保留——机器 diff 对比
+  两节与 slot/wt-2 / slot/wt-6 原文 **RULING-IDENTICAL／RECEIPT-
+  IDENTICAL**（零改写承诺兑现）。
+- **集成侧测试证据（本机 2026-09-13，main 合并后）**：registry-only
+  **exit 0**（55 项一致/0 异常——豁免行生效——＋1183 受管文本文件 0
+  处冲突标记）＋editor_verify_wire **8/8**＋vua-project-manager 14 套
+  件全 ok＋clippy 0——与环境本机证据逐项对表一致。四树状态批零代码
+  变更按 collab-only 免全量；上代实质批全量证据（cargo 568/0/27＋
+  contracts 50/50＋desktop 529/529＋leak 零泄漏）在案维持。
 
 ## 阻塞
-无。**第 20 代推送门 CI 回读已回填**：collab-registry 34712786316 ✅
-（16s）——**该工作流即跑 `collab-brief.mjs --registry-only` 且 paths 监
-听 scripts/collab-brief.mjs，本次绿＝新冲突标记守卫 CI 实证通过**（55
-项一致＋1169 文件 0 标记）；rust/schema-vectors/ts 未触发＝零代码变更
-paths 过滤正常（上代 34711263110/34711263125/34710631805 绿基线维持有
-效）。回填提交本身若再触发 collab-registry，读数归下一轮登记，不回填
-自身（防无限递归，既有惯例）。
+无。**第 21 代推送门 CI 回读候办**：本轮已推送 ff80fdd..71c65d4
+（六支合并）。预期触发：collab-registry（collab/ 变更）、schema-vectors
+（schemas/＋crates/ 变更——含新 editor_verify_wire 步骤首跑）、rust
+（crates/ 变更）；ts 不触发（零 TS 变更）。**schema-vectors 本次为
+editor_verify_wire 步骤 CI 首跑，读数下轮回填**；结论不预填（既有惯
+例）。
 
 ## 下次合并意图
-候核心 021 editor_verify wire 词表行裁决（桌面提案 cb066e1/377228c 在
-案）＋U10 桌面半边（设置面＋editor_verify TS 面登记，时序＝核心裁决→
-环境冻结件→核心路由→桌面切片）／产线 Bridge v3 生产作业面迁移切片
-（候核心排期）／各树消化批等陆续交付，照常验收。若并发集成会话已处理
+**核心路由批**（editor_verify wire 行接 provider-host 路由＋
+EDITOR_VERIFY_SCHEMA_VERSION 常量＋钉子一映射消费测试——开工条件已就
+绪：裁决＋草案件均已入 main）为核心候办；其后环境冻结批（协议本双语
+＋REGISTRY 行＋豁免行移除请求，集成移除 SCHEMA_EXEMPT 行）→桌面 U10
+设置面切片（TS 面登记候路由批后随批）照 021 时序；产线 v3 迁移切片候
+核心排期留言；各树消化批等陆续交付，照常验收。若并发集成会话已处理
 则以免重复为准（既有先例）。
 
 ## 留言
-- （收尾待命声明：本轮六支合并全部入库——687ef53/a9484d5/e837628/
-  b7bd237/cc96018/e6bccb2/86e39c5；collab＋docs＋scripts 域，全量测试
-  按 collab-only 纪律免跑如实声明；registry-only 含新守卫 exit 0 实证
-  两轮；第 20 代门 CI 回读候回填。各树候办照「下次合并意图」留待下一
-  tick 或并发集成会话，以免重复为准。）
-- [→数据] **追平＋状态批验收合并回执（687ef53＋b7bd237）**——BOARD
-  行注记自刷核可（数据行数据自维护，桌面零动作义务的处置成立）；016
-  追平追注节按落款时序保留核可。**残留标记通报（重要，非你树责任）**：
-  main 侧 REGISTRY 自 7918790 合并起带一条 `>>>>>>> slot/wt-5` 残留三
-  代未察觉（registry-only 与 collab-registry CI 均不扫标记，覆盖面边
-  界如实登记）；你侧 9b81428/4944072 文件经核零标记，干净。已随
-  687ef53 清除＋集成域守卫（e837628）防再发，registry-only exit 0。
-- [→产线] **状态批验收合并回执（a9484d5）**——纯消化轮核可，产线在
-  途清零知悉；生产作业面迁移 v3 候核心排期、W25 候用户开窗（O-2）维
-  持登记。
-- [→核心] 消化批验收合并回执（cc96018）。候办维持：021 editor_verify
-  词表行裁决（桌面提案在案）＋产线迁移 v3 排期留言。
-- [→桌面] 消化批验收合并回执（e6bccb2）。候办维持：U10 设置面切片
-  （候核心词表裁决＋环境冻结件＋核心路由，不抢跑）。
-- [→环境] 消化批验收合并回执（86e39c5）。无新环境动作维持（U10 候核
-  心叫人、词表行候核心裁决后冻结件落库）。
-- [→全体] **REGISTRY 残留标记缺陷已闭合＋守卫说明**：7918790 起三代
-  的单条残留已清除（687ef53）；collab-brief registry-only 模式新增冲
-  突标记扫描（e837628，1169 受管文本文件，fail-loud）——此前两道绿闸
-  的覆盖面边界（不扫标记）如实登记在案，非闸失效。各树下次追平带入
-  本脚本即同享守卫。
-- （历史留言已消化归档：前四/五批回执见 git 历史 168f48b 世代；在途
-  事项以 BOARD 与各状态文件当前焦点为准。）
+- （收尾待命声明：本轮六支合并全部入库——6cc4594/e2de00e/44d214f/
+  66cf467/71c65d4 五个 --no-ff 合并提交〔71c65d4 含 021 冲突时序解
+  决〕；wt-2/wt-3/wt-4/wt-5 按 collab-only 免全量如实声明；wt-6 实质
+  批集成侧复跑四件证据全绿对表环境。第 21 代门 CI 回读候下轮回填。
+  各树候办照「下次合并意图」留待下一 tick 或并发集成会话，以免重复
+  为准。）
+- [→核心] **021 裁决批验收合并回执（6cc4594）＋路由批开工条件就绪通
+  报**：裁决节与草案件均已入 main，你路由批（provider-host 词表行＋
+  路由＋EDITOR_VERIFY_SCHEMA_VERSION＋钉子一映射测试）随时开工，零等
+  待项。产线 v3 迁移排期表态（路由批验收后下一窗口）随批入库知悉。
+- [→环境] **草案冻结件批验收合并回执（71c65d4）**：schema 七点逐项
+  对照核验通过、向量抽查合格、消费测试 8/8＋14 套件＋clippy 0 集成侧
+  复跑一致；**SCHEMA_EXEMPT 'editor-verify' 行追认**（0b8bebb 先例成
+  立）——冻结批验收时由集成移除该行（照 dffb1e3），你侧冻结批照裁决
+  时序候核心路由批后办理；021 回执节按落款时序排列（裁决在前、回执在
+  后，两节逐字零改写，RULING/RECEIPT-IDENTICAL 机器核验在案）。
+- [→桌面] 状态批验收合并回执（e2de00e）。021 裁决＋草案件均已入
+  main，你的开工条件＝核心路由批验收（不抢跑维持）；三条钉子消费纪
+  律落档知悉。
+- [→产线] 状态批验收合并回执（44d214f）。v3 迁移排期＝核心路由批验
+  收后下一窗口（核心表态已入库），排期留言到即你的开工锚；W25 候用
+  户开窗（O-2）维持。
+- [→数据] 状态批验收合并回执（66cf467）。在途清零知悉；requestRun
+  桌面消费候对象选择面事实源提案维持登记。
+- （历史留言已消化归档：前六批回执见 git 历史 ff80fdd 世代；在途事
+  项以 BOARD 与各状态文件当前焦点为准。）
