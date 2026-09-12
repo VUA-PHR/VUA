@@ -46,6 +46,15 @@ updated: 2026-09-13
   EXIT=0**＋**registry-only exit 0**（55 项一致/0 异常＋1184 受管文本
   文件 0 处冲突标记）。TS 域零涉免跑如实声明（零 TS 文件变更）。
   rev-list main..slot/wt-2 归零（无遗漏）。
+- **第 23 代推送门 CI 回读（ebac263 世代，已回填，三绿）**：rust
+  **34716292330 ✅**（7m2s，路由批 CI 实证，与本地 584/0/27 一致）＋
+  schema-vectors **34716292299 ✅**（5m54s，**workflow 追加
+  editor_verify_wire 步 CI 首跑通过**＝越域追认闭环实证）＋**ts
+  34716292307 ✅**（5m15s）——ts 触发系本批含 .github/workflows 文件
+  变更（paths 命中），非 TS 内容变更，零 TS 改动如实维持；
+  **collab-registry 未触发**＝本批零 REGISTRY/scripts 变更，paths 过
+  滤正常（registry-only 本机 exit 0 已实证，基线 34714207493 绿不
+  变）。
 
 **前情（3:4x–3:5x 第八批，全文见本文件 git 历史 b3302d5 世代）**：
 三树消化状态批（dcee479 桌面 553a78a／cc10c6e 产线 3786d64／a84aad6
