@@ -135,6 +135,12 @@ export type {
   ProjectOpsPort,
 } from "./project-ops-port.ts";
 export type {
+  InspectionDetailView,
+  InspectionListQuery,
+  InspectionListView,
+  InspectionPort,
+} from "../features/inspection/inspection-port.ts";
+export type {
   ChangeRequest,
   PackageChangeItem,
   PackageChangeKind,

@@ -11,6 +11,7 @@ import { createWarehouseCommands } from "./warehouse-commands-live.ts";
 import { createLiveProjectOps } from "./project-ops-port.ts";
 import { createLiveModelProduction } from "./live-production-port.ts";
 import { createLiveProductionChainPort } from "./production-chain-port.ts";
+import { createLiveInspectionPort } from "../features/inspection/inspection-port-live.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
 
@@ -204,6 +205,9 @@ export function createElectronGateway(
     projectOps: createLiveProjectOps(client),
     // 019 批 C:生产链七方法 live 消费(解析/计划/任务/记录;两套 UI 共用)
     productionChain: createLiveProductionChainPort(host),
+    // M7 检查切片消费批:inspection.get/list 读面经 Kernel 直达 provider;
+    // 未接线=vua.inspection.unavailable 诚实缺席
+    inspection: createLiveInspectionPort(client),
     packages: notRun.packages,
     dataSource: (): DataSource => "live",
   };

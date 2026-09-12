@@ -409,6 +409,36 @@ export interface ProjectLockStatusRequestV1 {
   readonly params: { readonly projectPath: string };
 }
 
+// ---- inspection.get / inspection.list(inspection-queries v0.1,M7 检查切片,
+// 016 仲裁独立词表行;数据草案面＋核心实现批已入 main。读面消费:检查页
+// 证据链。requestRun 任务化写命令不入桌面词表——avatarGlobalObjectId 无
+// 桌面事实源(Unity 场景内对象身份),登记而不消费即悬空面,候对象选择面
+// 事实源提案后随真实消费批办理) ----
+
+/** inspection.get 身份寻址查询:返回证据束文档本体原样(细节在文档内,
+ * 引用不复制,012 evidenceIds 纪律) */
+export interface InspectionGetRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "inspection.get";
+  readonly params: { readonly inspectionId: string };
+}
+
+/** inspection.list 身份摘要行列表(performedAt 降序最新在前;可选闭集过滤:
+ * avatarRef 精确匹配/overallStatus 聚合闭集 pass|warn|fail[unavailable 是
+ * 维状态非聚合输出]/limit 1..200/offset≥0;摘要行绝不内联 dimensions/checks) */
+export interface InspectionListRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "inspection.list";
+  readonly params: {
+    readonly avatarRef?: string;
+    readonly overallStatus?: "pass" | "warn" | "fail";
+    readonly limit?: number;
+    readonly offset?: number;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -452,7 +482,9 @@ export type DesktopGatewayRequestV1 =
   | RecordGetRequestV1
   | RecordListRequestV1
   | ProjectImportCopyRequestV1
-  | ProjectSetNoteRequestV1;
+  | ProjectSetNoteRequestV1
+  | InspectionGetRequestV1
+  | InspectionListRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -499,6 +531,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "record.list": "query",
   "project.import-copy": "command",
   "project.setNote": "command",
+  "inspection.get": "query",
+  "inspection.list": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -698,6 +732,33 @@ function isProductionListParamsV1(params: Record<string, unknown>): boolean {
   return true;
 }
 
+/** inspection.list 可选参数闭集(inspection-queries v0.1 数据草案面:可选键
+ * avatarRef/overallStatus/limit/offset;overallStatus 聚合闭集 pass|warn|fail
+ * ——unavailable 是维状态非聚合输出;limit 1..200/offset≥0 有界分页;
+ * 词表外键或类型不符 = 同源判定拒绝) */
+function isInspectionListParams(params: Record<string, unknown>): boolean {
+  for (const key of Object.keys(params)) {
+    if (key === "avatarRef") {
+      if (typeof params.avatarRef !== "string" || params.avatarRef.length < 1) return false;
+    } else if (key === "overallStatus") {
+      if (!(["pass", "warn", "fail"] as readonly string[]).includes(params.overallStatus as string)) {
+        return false;
+      }
+    } else if (key === "limit") {
+      if (typeof params.limit !== "number" || !Number.isSafeInteger(params.limit) || params.limit < 1 || params.limit > 200) {
+        return false;
+      }
+    } else if (key === "offset") {
+      if (typeof params.offset !== "number" || !Number.isSafeInteger(params.offset) || params.offset < 0) {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  }
+  return true;
+}
+
 function hasExactKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   const actual = Object.keys(value).sort();
   const expected = [...keys].sort();
@@ -854,6 +915,14 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["projectPath"])
         && isIdentifier(value.params.projectPath);
+    // inspection-queries v0.1(M7 检查切片):get 身份寻址单参必填;list
+    // 可选闭集过滤
+    case "inspection.get":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["inspectionId"])
+        && isIdentifier(value.params.inspectionId);
+    case "inspection.list":
+      return hasExactKeys(value, REQUEST_KEYS) && isInspectionListParams(value.params);
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])
