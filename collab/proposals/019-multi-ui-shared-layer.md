@@ -306,3 +306,38 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   义务归 W25）；AC-10 双 UI 键盘可达走查随 D-4。
 - **批 D 剩余切片更新**：D-3＝搭配流适配；D-4＝动效/减少动效/窄窗
   （AC-10/AC-11 走查）；D-5＝AC 全表回归收口。
+
+## 进展注（桌面，2026-09-14 02:3x 工作时段，D-3 切片）
+
+- **D-3 切片已交付（slot/wt-3 491ffe6，候集成随轮验收）**：
+  ①**保存链共享化**：自现有 UI 搭配页原样提取保存链至容器层
+  `app/compose-save-chain.ts`——`useComposeSave()` 同线形状（recipe.save
+  v1）、同忙碌守卫（防重复提交，UI-06/AC-06）、同回执对齐
+  （composeSavedAction＋productionChainRecipeSavedAction）；纯函数面受测：
+  `composeSaveBlocked`（nameHint 空白规则两 UI 共用）＋
+  `classifyComposeSaveResult`（诚实回执边界——不可解释载荷如实 failed，
+  不猜测）。**行为差一处如实声明**：传输异常（promise 拒绝）现落诚实
+  failed 态，不再以未处理拒绝悬挂「保存中」（UI-06/08；原实现该路径
+  未处理）。
+  ②**选材投影纯函数**：`compose-source-model.ts`
+  `composeSourceLines(view, draftItems)`——warehouse 条目读面 × 共享草稿
+  身份投影；非 entries 视图投影空列表，语义不折叠（呈现层按视图种类
+  如实决定空态/断线）。
+  ③**ComposePage 改接共享链**：行为保持（同词表、同禁用规则、同调用
+  形状）；现有 UI 与森林 UI 消费同一保存链实例逻辑（AC-01/AC-04 一致
+  事实面）。
+  ④**骨架搭配流（gitignored 本地，永不入库，check:forest-leak 守卫）**：
+  选材卡（加入草稿；not-connected/空仓库按 Gateway 视图事实分别如实
+  呈现）＋草稿卡（nameHint 编辑/移除/撤销/保存走共享链）＋生产链段
+  原样复用 `ProductionChainSection`（同一 store 同一 Gateway 端口；无
+  保存事实不渲染）。**零模拟替代**：数据只来自 Gateway 读面与共享
+  store，空态即真实状态（UI-08/AC-12）；`ForestUiRootProps` 契约不变
+  （骨架直用容器层 hooks，入库边界零漂移）。
+- **证据（本机 2026-09-14 02:2x–02:3x，slot/wt-3）**：pnpm check 全链
+  **exit 0**——typecheck 双 tsconfig（含本机骨架）＋vitest 73 文件 567
+  测试〔较 D-2 世代 +2 文件 +14 测试＝save-chain 11＋source-model 3〕
+  ＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋forest-leak
+  绿。零端到端宣称维持（真机义务归 W25）；AC-10 双 UI 键盘可达走查
+  随 D-4。
+- **批 D 剩余切片更新**：D-4＝动效/减少动效/窄窗（AC-10/AC-11 走查，
+  960×600 与 1440×900）；D-5＝AC 全表（AC-01～13）回归收口。

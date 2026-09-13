@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
@@ -7,14 +7,13 @@ import { useAcquireView } from "../../gateway/index.ts";
 import { format, strings } from "../../i18n/index.ts";
 import {
   composeAddItemAction,
-  composeDraftToSaveDocument,
   composeRemoveItemAction,
-  composeSavedAction,
   composeSetNameHintAction,
   composeUndoAction,
   useComposeDraft,
 } from "../../app/compose-draft-store.ts";
-import { productionChainRecipeSavedAction } from "../../app/production-chain-store.ts";
+import { composeSaveBlocked, useComposeSave } from "../../app/compose-save-chain.ts";
+import { composeSourceLines } from "./compose-source-model.ts";
 import { ProductionChainSection } from "./ProductionChainSection.tsx";
 
 /**
@@ -23,10 +22,10 @@ import { ProductionChainSection } from "./ProductionChainSection.tsx";
  *
  * - 共享草稿状态在容器层(app/compose-draft-store signal),跨 UI 根切换
  *   保留;本页只是其呈现/操作面之一;
- * - 保存链(批 B 保存链,core 路由裁定零词表扩展):挂载选择器按
- *   entrypointSelector anyOf 由用户输入(nameHint 用户命名提示;首次保存
- *   由 recipeId 生成,再保存沿用)——recipe.save 原样承载;「已保存」仅在
- *   持久化回执后显示,失败保留内容并提供重试(UI-03/06);
+ * - 保存链(批 B 保存链;D-3 起为容器层共享 hook app/compose-save-chain):
+ *   两套 UI 消费同一保存链——同一线形状(recipe.save v1)、同一守卫、
+ *   同一回执对齐;「已保存」仅在持久化回执后显示,失败保留内容并提供
+ *   重试(UI-03/06);
  * - 撤销只回退本地未提交编辑,不反向执行已提交命令。
  */
 const copy = strings.compose;
@@ -35,68 +34,17 @@ export function ComposePage() {
   const view = useAcquireView();
   const draft = useComposeDraft();
   const [sourceIndex, setSourceIndex] = useState(0);
-  /** 已保存事实(recipeId/revision;null=本会话未成功保存) */
-
-  const [saveState, setSaveState] = useState<"idle" | "saving" | "failed">("idle");
-  /** 保存过的文档身份(再次保存沿用 recipeId;baseRevision=服务端修订) */
-  const savedRef = useRef<{ recipeId: string; revision: number } | null>(null);
-  savedRef.current = draft.saved;
+  // 保存链:容器层共享 hook(D-3 提取;recipe.save 线形状与回执对齐不变)
+  const { saveState, saveDraft } = useComposeSave();
 
   const entries = view.kind === "entries" ? view.entries : [];
   const canUndo = draft.undoStack.length > 0;
   const source = entries[sourceIndex];
 
-  const saveDraft = () => {
-    if (saveState === "saving") return;
-    const now = new Date().toISOString();
-    const document = composeDraftToSaveDocument({
-      savedRecipeId: savedRef.current?.recipeId ?? null,
-      savedRevision: savedRef.current?.revision ?? 0,
-      items: draft.items,
-      now,
-    });
-    if (document === null) return;
-    setSaveState("saving");
-    void window.vua?.gateway
-      .invoke({
-        schemaVersion: 1,
-        requestId: crypto.randomUUID(),
-        method: "recipe.save",
-        params: {
-          recipeDocument: document as unknown as Record<string, unknown>,
-          baseRevision: savedRef.current?.revision ?? 0,
-        },
-      })
-      .then((result) => {
-        if (!result.ok) {
-          // 失败如实呈现:保留内容与未保存标记,提供重试(UI-03/06);
-          // 超时不等于失败,不自动重试
-          setSaveState("failed");
-          return;
-        }
-        const payload = result.value as { recipeId?: unknown; revision?: unknown };
-        const recipeId = typeof payload.recipeId === "string" ? payload.recipeId : null;
-        const revision = typeof payload.revision === "number" ? payload.revision : null;
-        if (recipeId === null || revision === null) {
-          setSaveState("failed");
-          return;
-        }
-        setSaveState("idle");
-        // 保存对齐:脏标记清除＋saved 身份入容器层(请求解析入口据此启用)
-        composeSavedAction(recipeId, revision);
-        // 019 批 C:配方身份同步入生产链(链推进入口据此启用)
-        productionChainRecipeSavedAction(recipeId, revision);
-      });
-  };
-
-  const sourceLines = useMemo(() => {
-    if (view.kind !== "entries") return [];
-    return view.entries.map((entry) => ({
-      id: entry.warehouseItemId,
-      title: entry.displayName,
-      added: draft.items.some((item) => item.warehouseItemId === entry.warehouseItemId),
-    }));
-  }, [view, draft.items]);
+  const sourceLines = useMemo(
+    () => composeSourceLines(view, draft.items),
+    [view, draft.items],
+  );
 
   return (
     <div className="vua-page">
@@ -146,9 +94,7 @@ export function ComposePage() {
               <Button
                 variant="primary"
                 disabled={
-                  draft.items.length === 0 ||
-                  saveState === "saving" ||
-                  draft.items.some((item) => (item.nameHint ?? "").trim() === "")
+                  draft.items.length === 0 || saveState === "saving" || composeSaveBlocked(draft.items)
                 }
                 onClick={saveDraft}
               >
