@@ -45,6 +45,15 @@ let providerHandshake: Awaited<ReturnType<OrchestratorProviderV01["start"]>> | n
 const lastAppliedIntentSeq = new Map<string, number>();
 let shutdownStarted = false;
 
+// #26 防弹兜底(用户实测退出弹「Uncaught Exception」原生框):意外异常改为
+// 诊断通道 stderr 全文留痕,不弹系统错误框——失败仍如实呈现(留痕可查),
+// 但退出路径不再被原生弹窗打断。放在模块顶层,窗口创建前即生效
+process.on("uncaughtException", (error) => {
+  process.stderr.write(
+    `${JSON.stringify({ channel: "uncaught-exception", message: error?.stack ?? String(error) })}\n`,
+  );
+});
+
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
  *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组 */
 const materialSources = new Map<string, { path: string; displayName: string }>();
@@ -526,9 +535,17 @@ async function createWindow(): Promise<void> {
   });
   remoteContent.setHostWindow(mainWindow);
   mainWindow.on("resize", () => remoteContent?.refreshBounds());
-  mainWindow.on("closed", () => {
+  // #26 用户实测退出崩溃修复:内嵌视图清理前移到 close(窗口仍存活,
+  // contentView 可安全操作);closed 在窗口销毁之后触发,原在此处 dispose
+  // 会经 #destroyView 访问已销毁 hostWindow 抛「Object has been destroyed」。
+  // closed 只做引用清理与 overlay 销毁,不再触任何 remoteContent 原生面。
+  // close 无取消路径(壳内关闭不经 beforeinput 拦截),dispose 幂等,重复
+  // 触发安全
+  mainWindow.on("close", () => {
     remoteContent?.dispose();
     remoteContent = null;
+  });
+  mainWindow.on("closed", () => {
     mainWindow = null;
     // 主窗口关闭＝应用退出语义:悬浮窗不拖住 window-all-closed(overlay
     // 窗口随主窗口生命周期销毁,closed 处理器自行清引用)
