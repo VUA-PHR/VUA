@@ -47,12 +47,15 @@ updated: 2026-09-14
 无。
 
 ## 下次合并意图
-**推送门 r1/r2/r3 闭环（本批全 collab-only 零实质面）**：r1＝推送批
-构成审阅（推送范围＝两合并＋BOARD 批 D 签发簿记＋本状态批，全
-collab-only，实质面 diff 排除 collab 实证为零）；r2＝机械核验（非
-collab 变更面空 pathspec 实证＝0 文件＋registry-only exit 0）；r3＝
-CI 回读**零触发**（无新 run，最新三绿 rust 34727220431＋ts
-34767379133＋schema-vectors 34727220450）——推送后推送债清零。
+**推送门 r1/r2/r3 闭环（本批全 collab-only 零实质面）——已执行**：
+r1＝推送批构成审阅（推送范围 39bde45..625d103 共 8 提交＝两合并
+00aa5ed/6953080＋分支历史收编 5〔7f56438/dc7df3a/a1ab7d9/8f50cf8/
+3224fe4〕＋簿记 625d103 全 collab-only，实质面 diff 排除 collab 实
+证为零）；r2＝机械核验（非 collab 变更面空 pathspec 实证＝0 文件＋
+registry-only exit 0）；r3＝CI 回读**零触发**（推送全 collab-only
+无新 run，最新三绿维持 rust 34727220431＋ts 34767379133＋
+schema-vectors 34727220450，paths 过滤先例 20c07e4/fb3c796）——
+**推送 39bde45..625d103，origin/main＝625d103，推送债清零**。
 **等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun 对象选
 择面事实源提案（核心/产线起草义务在案）；桌面批 D 领取与交付
 （工单已签发，候桌面切片验收）。
