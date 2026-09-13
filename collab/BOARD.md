@@ -513,6 +513,24 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-14（05:1x–05:2x，第卅四批推送门，实质批）**：`3a7b854 →
+  ab5156d`（18 提交：四支验收合并 7b4d846〔wt-3 D-6 切片〕/02816cd
+  〔wt-6 状态批〕/297d2ef〔wt-2 状态批〕/13769bb〔wt-4 状态批〕＋
+  分支历史收编 13〔b3e35b2 D-6 切片本体＋019 进展注＋追平合并与
+  状态批等〕＋簿记 ab5156d——非 collab 实质面恰 D-6 八桌面文件
+  〔entry-preview.ts/.test.ts 新增＋WarehouseAcquire/index/i18n 四
+  语修改〕已本轮验收，其余 collab/）。
+  - **门证据**：r1＝推送批构成审阅（非 collab 文件面恰已验收 D-6
+    八文件 pathspec 实证＝零未验收实质内容）；r2＝机械核验
+    （registry-only exit 0 57 项＋1206 文件 0 标记；**集成 detached
+    b3e35b2 独立重跑桌面 check 全链 exit 0**：vitest 75 文件 584
+    测试＋leak 155 指纹零泄漏＋contrast 达标＋forest-leak 绿，本机
+    05:0x）。
+  - **CI 回读（ab5156d 世代，已回填）**：ts **34782977007 ✅
+    success**（D-6 桌面切片独立 CI 环境实证）；**rust/
+    schema-vectors 未触发**＝本批零 Rust/schemas 变更，paths 过滤
+    正常（20c07e4/fb3c796 先例）。
+
 - **2026-09-13（5:1x–5:2x，第 25 代推送门，实质批）**：`f3cd123 →
   e928e08`（7 提交：第十一批验收五支合并 916c5e0/6660d72/9f4cfcc/
   cf22a6e/cc6b6dd＋簿记 e928e08——两实质批＝产线迁移 4 代码文件＋
