@@ -1,8 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockOrchestratorProviderV01, type OrchestratorProviderV01 } from "@vua/orchestrator-provider";
-import type { ApplicationEventV01, CapabilityOperationV01 } from "@vua/contracts";
+import type { ApplicationEventV01, CapabilityOperationV01, DesktopGatewaySuccessValueV1 } from "@vua/contracts";
 import { routeDesktopGatewayInvoke } from "../../electron/gateway-router.js";
 import { createElectronGateway, type DesktopKernelHost } from "./electron-gateway.js";
+import type { GatewayClient } from "./gateway-client.js";
+import { createLiveModelProduction } from "./live-production-port.js";
 import type { ModelProductionPort, ModelProductionView } from "./model-production-port.js";
 
 /**
@@ -384,5 +386,54 @@ describe("live modelProduction wiring (electron gateway)", () => {
       workshop: { kind: "idle" },
     });
     expect(gateway.dataSource()).toBe("live");
+  });
+});
+
+describe("task snapshot narrowing requires the contract version (L-level observation follow-up)", () => {
+  /** 最小脚本化 client:只服务命令回执注入(不走 Kernel 路由;收窄行为的
+   *  单元面,与 project-ops-port.test.ts 的 scriptedClient 同法)。 */
+  function scriptedClient(values: DesktopGatewaySuccessValueV1[]): GatewayClient {
+    const queue = [...values];
+    return {
+      async invoke() {
+        const value = queue.shift();
+        return value === undefined
+          ? { ok: false as const, error: { kind: "unavailable" as const } }
+          : { ok: true as const, value };
+      },
+      subscribe: () => () => {},
+    };
+  }
+
+  const source = {
+    materialId: "mat-1",
+    intake: "direct_unity_package",
+    displayName: "closet.unitypackage",
+  } as const;
+
+  function portWithReceipt(value: DesktopGatewaySuccessValueV1): ModelProductionPort {
+    return createLiveModelProduction(scriptedClient([value]), undefined, {} as unknown as ModelProductionPort);
+  }
+
+  it("degrades the command receipt to unavailable when its snapshot is missing or carries a foreign contractVersion", async () => {
+    // 快照必需键 contractVersion 缺失/异版 = 不可信快照 → 命令回执诚实
+    // 降级 unavailable(集成 #22 验收 L 级观察随手批回归钉死;
+    // project-ops-port 先例 9e2082f 同线形)。
+    // 补齐前的宽松守卫(taskId/state/revision 三键)会放行以下两形状。
+    const missing = { taskId: "t-1", revision: 1, state: "succeeded" };
+    await expect(portWithReceipt(missing as DesktopGatewaySuccessValueV1).startInspection(source))
+      .resolves.toEqual({ kind: "unavailable" });
+    const foreign = {
+      contractVersion: "9.9",
+      taskId: "t-1",
+      revision: 1,
+      correlationId: "c-1",
+      state: "succeeded",
+      cancellationRequested: false,
+      recoveryDisposition: "none",
+      updatedAt: "2026-09-14T00:00:00.000Z",
+    };
+    await expect(portWithReceipt(foreign as DesktopGatewaySuccessValueV1).startInspection(source))
+      .resolves.toEqual({ kind: "unavailable" });
   });
 });
