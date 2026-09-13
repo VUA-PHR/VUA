@@ -1,4 +1,5 @@
 import {
+  APPLICATION_CONTRACT_VERSION,
   type DesktopGatewayRequestV1,
   type DesktopGatewaySuccessValueV1,
   type TaskSnapshotV01,
@@ -88,11 +89,27 @@ interface RunRecord {
 
 const notConnectedRun: ProductionRunView = { schemaVersion: 1, kind: "not-connected" };
 
+/** task.get/命令回执任务快照形态收窄(client 纪律:contractVersion + 消费必
+ *  需键;陌生契约版本的快照按冻结面不可信——集成 #22 验收 L 级观察随手批
+ *  补齐,与 project-ops-port 同一线形)。收不齐 = 不可信快照:refreshTask
+ *  保留上一视图、命令回执按 unavailable 诚实降级,绝不猜测。cancellation-
+ *  Requested/recoveryDisposition 非本端口消费键,不作收窄条件(020 冻结面)。 */
 function isTaskSnapshot(value: unknown): value is TaskSnapshotV01 {
-  return value !== null && typeof value === "object"
-    && typeof (value as { taskId?: unknown }).taskId === "string"
-    && typeof (value as { state?: unknown }).state === "string"
-    && typeof (value as { revision?: unknown }).revision === "number";
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return false;
+  const record = value as Record<string, unknown>;
+  return (
+    record.contractVersion === APPLICATION_CONTRACT_VERSION &&
+    typeof record.taskId === "string" &&
+    record.taskId.length > 0 &&
+    typeof record.correlationId === "string" &&
+    record.correlationId.length > 0 &&
+    typeof record.revision === "number" &&
+    Number.isSafeInteger(record.revision) &&
+    typeof record.state === "string" &&
+    record.state.length > 0 &&
+    typeof record.updatedAt === "string" &&
+    record.updatedAt.length > 0
+  );
 }
 
 /** 命令成功值收敛:{ contractVersion, task } 包装(B 线/DemoTaskStarted 同形)或裸任务快照 */
