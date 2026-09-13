@@ -240,8 +240,17 @@ export class RemoteContentManager {
     const managed = this.#views.get(viewId);
     if (managed === undefined) return;
     this.#views.delete(viewId);
-    this.#hostWindow?.contentView.removeChildView(managed.view);
-    managed.view.webContents.close();
+    // #26 用户实测退出崩溃修复(isDestroyed 双护栏):宿主窗口 close→closed
+    // 时序中清理可能晚于窗口销毁,已销毁对象的 contentView/webContents 访问
+    // 抛「Object has been destroyed」;销毁面跳过对应原生调用,视图登记照常
+    // 移除(视图层语义不因护栏改变)。webContents 随视图 GC 兜底,不再显式
+    // close 的场合只发生在其已销毁时——无泄漏新增面
+    if (this.#hostWindow !== null && !this.#hostWindow.isDestroyed()) {
+      this.#hostWindow.contentView.removeChildView(managed.view);
+    }
+    if (!managed.view.webContents.isDestroyed()) {
+      managed.view.webContents.close();
+    }
   }
 
   #broadcastNavigated(managed: ManagedView): void {
