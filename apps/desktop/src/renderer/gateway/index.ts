@@ -129,6 +129,14 @@ export type {
   WarehouseMaintenanceAcceptance,
   WarehouseModeSetResult,
 } from "./warehouse-commands-port.ts";
+export {
+  entryPreviewProductIds,
+  readEntryPreview,
+} from "./entry-preview.ts";
+export type {
+  EntryPreviewAlbum,
+  EntryPreviewView,
+} from "./entry-preview.ts";
 export type {
   ProjectImportCopyParams,
   ProjectOpsOutcome,
