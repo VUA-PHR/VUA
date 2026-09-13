@@ -2,115 +2,84 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 3a7b854
+baseline_commit: 0cb2303
 updated: 2026-09-14
 ---
 ## 当前焦点
-**第卅四批验收——wt-3 桌面批 D D-6 切片（实质）＋wt-6/wt-2/wt-4
-三支 collab-only 状态批（并发到达当轮处理照 3cf5d40 先例，四支
---no-ff 入库）（09-14 04:5x–05:1x 工作时段轮，同轮第卅三批后续）**：
-- **一支 --no-ff 入库 7b4d846**＝slot/wt-3 桌面 **D-6 切片
-  b3e35b2**（D-6 裁决经数据知情表态 fc34e8f 生效后桌面开工交
-  付）：**条目详情预览组合读（核心裁决方案 c）**——
-  `entry-preview.ts` 的 `entryPreviewProductIds`
-  （artifacts[].mappedProductIds 去重保首现顺序，纯函数不查询）
-  ＋`readEntryPreview`（catalog.detail 逐品定向查询，**永不
-  reject**，单品失败按该品无图吸收）；**诚实三态（AC-12 同
-  规）**＝no-association（零关联＝关联事实本身，非错误）／
-  no-images（有关联但无一可显示：媒体空/目录 miss/not-found/
-  not-connected/单品传输失败归并为面态陈述，不猜测不编造占
-  位）／loaded（仅含 Gateway 真实返回图的相册）；渲染面
-  WarehouseAcquire EntryDetail 经既有 DetailAlbum＋
-  catalogImageUrl 同线（loading 骨架＋多来源标题标注＋单来源
-  干净）；**列表卡面边界保持**（warehouseArtifactRef 无关联身
-  份，裁决边界不隐式扩张）；i18n 四语 +2 键；零 schema 变更零
-  wire 扩展；13 用例测试锚定去重/顺序/诚实空态。
-- **集成独立核实（不赖声明）**：三点 diff 恰 8 个 apps/desktop
-  文件（features/warehouse 1＋gateway 3＋i18n 4）＋019＋wt-3.md
-  零越域 pathspec 实证；merge-tree 预检 exit 0 零冲突；
-  **detached b3e35b2 独立重跑桌面 check 全链 exit 0**（typecheck
-  双 tsconfig＋vitest 75 文件 584 测试＝D-5 世代 74/571 +1 文件
-  +13 测试＋build＋boundary＋i18n＋contrast 全部达标＋leak 155
-  指纹零泄漏＋forest-leak 绿；本机 05:0x）；依赖面核实＝
-  catalog-browser-instance 既有装配点（无 preload 宿主退
-  not-connected 诚实空态）＋DetailAlbum 既有组件。追平
-  0633966/2d99bff（含 019 尾部追加冲突预解决）随分支历史自然
-  收编。**批 D 桌面可独立推进面 D-1..D-6 全部交付完毕**；剩余
-  ＝W25 真机义务（AC 真机确认＋Electron 真机生产链第三层验
-  证），**不宣称 AC 全表验收、零端到端宣称维持**。
-- **一支 --no-ff 入库 02816cd**＝slot/wt-6 环境 **状态批**（纯消
-  化轮：追平 0a8c64c 3a7b854 世代落后 20 达线零自有内容 inbound
-  非 collab 面空 pathspec 实证＋四环全查无可领项＋领先计数诚实
-  更正 3→4）；实质恰 collab/state/wt-6.md 单文件。
-- **并发到达照 3cf5d40 先例随轮验收**：**wt-2 状态批 e12b827
-  （经 297d2ef）**＝纯消化轮（追平 b58585e 3a7b854 世代落后 16
-  达线零自有内容＋两条回执消化零待办＋#20 闭环代码级复验＝
-  restart 扫除测试在树 provider_host.rs:7255 实证）；**wt-4 状
-  态批 af9b2f2（经 13769bb）**＝纯消化轮（追平 fc57e21 3a7b854
-  世代落后 25 达线，inbound 非 collab 面恰已验收 D-5 四 gateway
-  文件＝零未验收实质，产线域零触碰 pathspec 实证）；两支实质
-  恰各单状态文件 collab-only。
-- **验收证据（集成独立核实）**：四支 merge-tree 预检全 exit 0
-  零冲突；合并后五树领先归零 rev-list 实证；**registry-only
-  exit 0（57 项一致＋1206 文件 0 冲突标记，+2＝D-6 新增两受管
-  文件）**；wt-3 实质面已由独立复跑覆盖，三支 collab-only 免全
-  量如实声明。
-- **领任务链四环（本轮独立核实）**：①本树在途＝零（第卅一至卅
-  四批验收义务均兑现）；②BOARD 集成行＝#25 候用户复验（[需用户]
-  跳过）、U5 暂缓（跳过）、#21 批 D **桌面可独立推进面
-  D-1..D-6 全部交付**（剩余 W25 真机义务）；③outline 当前窗口
-  集成行＝W26 门验收与发行——**硬前置 W25 真机冒烟未跑（O-2
-  用户延期）不开工**（诚实纪律 5，无真机证据不宣称）；④M6 剩
-  余行候 M5 关门门序，M8 未开窗。
+**第卅六批验收——slot/wt-3 桌面 L 级观察同线形随手批 5aa6c4e（实质）
+＋状态批 d9a50ef＋诚实更正 986a0ad，--no-ff 入库 0cb2303；推送门随
+轮执行（09-14 06:3x–06:5x 工作时段轮，第卅五批后续）**：
+- **验收合并 0cb2303（--no-ff）**：**live-production-port
+  isTaskSnapshot 守卫收窄 5aa6c4e**（+25/−4，要求
+  contractVersion===APPLICATION_CONTRACT_VERSION＋冻结面消费必需键）
+  ＋**回归测试续完**（+53/−1，1 例 2 断言：缺 contractVersion 旧三
+  键形状＋异版 "9.9" 冻结面完整快照均诚实降级 unavailable）全桌面
+  所有权域恰 2 文件 pathspec 实证；分支历史收编 5 提交＝两笔纯追平
+  （6238091 536e5e7 世代＋2e19e65 cac6357 尖世代，inbound 非 collab
+  面空实证，零自有内容照第 13 代门先例）＋切片＋状态批＋诚实更正
+  （领先数 3→4 rev-list 修正照 wt-6 83c3e53 先例）。
+- **来源三重证据独立核实（不赖桌面审读，不赖已死亡实例）**：BOARD
+  #22 验收 L 级观察在案（「isTaskSnapshot 未检 contractVersion（信
+  封守卫已验）——桌面随手批可补」）＋先例 9e2082f（经 d97ae9f，
+  2026-09-12）只补 project-ops-port 且集成当时明示范围纪律
+  「live-production-port 未点名不擅动核可」（BOARD 前录在案）——
+  本批即该点名面的同线形补齐，非误改非可弃；遗留未提交改动来源申
+  报（前例实例已死亡）如实采信，续完处置（守卫原样保留＋补回归测
+  试）核可。
+- **技术自洽独立核实**：守卫键集与 TaskSnapshotV01 冻结面必需键逐
+  字对照（application-contract.ts:93：contractVersion/taskId/
+  correlationId/revision/state/updatedAt 全必需，error/result 可
+  选）；不检 cancellationRequested/recoveryDisposition 有据＝本端
+  口零出现 grep 实证（020 冻结面不消费该两键），消费键（taskId/
+  state/revision/updatedAt/correlationId）全部在收窄范围；诚实降
+  级路径与 project-ops-port 先例同形（refreshTask 保留上一视图／
+  命令回执 unavailable，绝不猜测）。
+- **集成独立重跑（detached 5aa6c4e，本机 06:4x）**：桌面 check 全
+  链 exit 0（typecheck 双 tsconfig＋vitest 75 文件 585 测试＝D-6
+  世代 75/584 +1 恰新回归用例，Tests 585 行 grep 复证＋build＋
+  boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋forest-leak 绿）；
+  merge-tree --write-tree 预检 exit 0 零冲突；合并后 wt-3 领先归
+  零 rev-list 实证。
+- **验收证据**：registry-only exit 0（57 项一致＋1206 文件 0 冲突
+  标记，合并后本机复跑）。
+- **领任务链四环（本轮核实）**：BOARD/outline 自上轮零实质变化
+  （cac6357 簿记仅「最近更新」行轮换＋前录追加，diff 实证；outline
+  零触碰）——①本树在途＝本轮验收批闭环归零；②BOARD 集成行＝#25
+  候用户复验（[需用户] 跳过）、U5 暂缓（跳过）、#21 批 D 维持（剩
+  余 W25 真机义务）；③outline 当前窗口集成行＝W26 门验收与发行
+  ——**硬前置 W25 真机冒烟未跑（O-2 用户延期）不开工**（诚实纪律
+  5，无真机证据不宣称）；④M6 剩余行候 M5 关门门序，M8 未开窗。
+  无可领新项。
 
-**前情（04:2x–04:5x 第卅三批，全文见本文件 git 历史 3a7b854 世
-代）**：wt-2 D-6 裁决批 34c9cc4 入库（287fc70）＋wt-4 状态批
-95e0b5d 入库（f22ff25）＋wt-5 知情表态批 fc34e8f 入库（787f054，
-019 双追加保留）＋wt-5 对账批 3b98ad2 入库（9197daf）＋D-6 裁决
-正式生效＋推送门 r1/r2/r3 闭环＋推送 937bb0b..9197daf＋回填
-3a7b854。
+**前情（05:2x–06:2x 第卅五批，全文见本文件 git 历史 e156939 世代）**：
+wt-2/wt-4/wt-6 三支 collab-only 状态批并发集成会话入库（50ff730/
+7e368b5/03eb8fe，本会话独立核实追认）＋推送门 r1/r2/r3 闭环＋推送
+536e5e7..cac6357＋回填 e156939（origin/main＝回填尖）。
 
 ## 阻塞
 无。
 
 ## 下次合并意图
-**推送门 r1/r2/r3（第卅四批推送，已闭环）**：
-r1＝推送批构成审阅（**实测推送范围 3a7b854..ab5156d 共 18 提交**
-＝验收合并 7b4d846〔wt-3 D-6 切片〕＋02816cd〔wt-6 状态批〕＋
-297d2ef〔wt-2 状态批〕＋13769bb〔wt-4 状态批〕＋分支历史收编
-b3e35b2/0a0a2ab/2d99bff/0633966/0a8c64c/d6b0b98/83c3e53/
-e12b827/b58585e/af9b2f2/fc57e21＋簿记 ab5156d；非 collab 文件面
-恰 D-6 八桌面文件已本轮验收＝零未验收实质内容）；r2＝机械核验
-（registry-only exit 0 57 项＋1206 文件 0 标记＋leak 155 零泄漏
-＋forest-leak 绿均独立复跑在案）；r3＝CI 回读（**ts 34782977007
-success on ab5156d**〔D-6 桌面切片独立 CI 环境实证〕；rust/
-schema-vectors **零触发**＝零 Rust/schemas 变化 paths 过滤照
-20c07e4/fb3c796 先例）——**推送 3a7b854..ab5156d 执行完毕（本
-回填随 r3 再推），origin/main＝回填尖，推送债清零**。
-**等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun 对
-象选择面事实源提案（核心/产线起草义务在案）；批 D 桌面独立面
-已全交付，剩余真机义务归 W25。
+**推送门 r1/r2/r3（第卅六批推送）**：
+r1＝推送批构成审阅（实测推送范围 e156939..簿记尖＝验收合并
+0cb2303〔分支历史收编 986a0ad/d9a50ef/5aa6c4e/2e19e65/6238091〕＋
+簿记尖；非 collab 文件面恰已验收 live-production-port 2 桌面文件
+pathspec 实证）；r2＝机械核验（registry-only exit 0 57 项＋1206
+文件 0 标记独立复跑在案）；r3＝CI 回读（本批含桌面实质代码，ts 预
+期触发，rust/schema-vectors 预期 paths-filter 不触发照
+20c07e4/fb3c796 先例）——推送后按实测回填。
+**等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun 对象选
+择面事实源提案（核心/产线起草义务在案）；批 D 桌面独立面已全交付，
+剩余真机义务归 W25。
 
 ## 留言
-- [→桌面] **D-6 切片 b3e35b2 验收合并回执（经 7b4d846 入库）**：
-  集成对切片全部技术事实独立核实成立（三点 diff 恰 8 桌面文件
-  零越域／组合读永不 reject／诚实三态 AC-12／列表卡边界保持／
-  13 用例／detached 独立重跑 check 全链 exit 0 vitest 75/584，
-  见当前焦点）。**批 D 桌面可独立推进面 D-1..D-6 全部交付登记
-  BOARD #21；剩余真机义务归 W25。**追平与 019 冲突预解决随分支
-  历史自然收编。回执不回执，避免乒乓。
-- [→环境] **状态批验收入库回执（经 02816cd，并发到达照 3cf5d40
-  先例当轮处理）**：追平＋状态批＋诚实更正批三点 diff 恰单状态
-  文件 collab-only 实证；合并后领先归零。回执不回执，避免乒乓。
-- [→核心] **状态批 e12b827 验收合并回执（经 297d2ef）**：纯消
-  化批恰单状态文件实证；#20 代码级复验结论（扫除测试在树）随批
-  入库登记。回执不回执，避免乒乓。
-- [→产线] **状态批 af9b2f2 验收合并回执（经 13769bb，并发到达
-  照 3cf5d40 先例当轮处理）**：纯消化批恰单状态文件实证；合并
-  后领先归零。回执不回执，避免乒乓。
-- （待命声明：本轮 wt-3 D-6 切片＋wt-6/wt-2/wt-4 三状态批四支
-  验收入库＋批 D 桌面独立面 D-1..D-6 全交付登记＋registry-only
-  exit 0 在案；候 #25 用户复验、W25/O-2 开窗、requestRun 事实
-  源提案或下轮 brief；在手无半途切片。）
-- （历史留言已消化归档：第卅三批回执见 git 历史 3a7b854 世代；
+- [→桌面] **L 级观察同线形随手批 5aa6c4e 验收合并回执（经 0cb2303
+  入库）**：来源三重证据独立核实通过（#22 L 级观察＋9e2082f 先例
+  范围纪律＋冻结面必需键对照）；守卫原样保留＋回归续完处置核可；
+  独立重跑 exit 0（vitest 75/585）本机 06:4x 在案。回执不回执，
+  避免乒乓。
+- （待命声明：本轮第卅六批验收合并＋推送门执行在案；候 #25 用户复
+  验、W25/O-2 开窗、requestRun 事实源提案或下轮 brief；在手无半途
+  切片。）
+- （历史留言已消化归档：第卅五批回执见本文件 git 历史 e156939 世代；
   在途事项以 BOARD 与各状态文件当前焦点为准。）
