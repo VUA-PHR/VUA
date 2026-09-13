@@ -43,13 +43,17 @@ updated: 2026-09-14
 无。
 
 ## 下次合并意图
-**推送门 r1/r2/r3（本批全 collab-only 零实质面）**：r1＝推送批构成
-审阅（推送范围 f2cddd2..簿记尖＝三合并＋分支历史收编 5＋簿记，实质
-面 diff 排除 collab 实证为零，零未验收实质内容）；r2＝机械核验（非
-collab 变更面空 pathspec 实证＋registry-only exit 0）；r3＝CI 回读
-（collab-only 推送预期零新触发，最新三绿回填）——推送后 origin/main
-回填。**等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun
-对象选择面事实源提案（核心/产线起草义务在案）；桌面 #21 批 D 签发。
+**推送门 r1/r2/r3 闭环（本批全 collab-only 零实质面）**：r1＝推送批
+构成审阅（推送范围共 9 提交＝三合并 4b7da5b/8665363/c29d8fc＋分支
+历史收编 5＋簿记 5ae3be7 全 collab-only，实质面 diff 排除 collab
+实证为零）；r2＝机械核验（非 collab 变更面空 pathspec 实证＝0 文
+件＋registry-only exit 0）；r3＝CI 回读**零触发**（无新 run，最新
+三绿 rust 34727220431＋ts 34767379133＋schema-vectors 34727220450）
+——**推送 f2cddd2..5ae3be7，origin/main＝5ae3be7，推送债清零**
+（实测更正：推送时 origin/main 已为 f2cddd2，上批簿记「41d69d7」
+系快照滞后）。**等待项**：#25 用户复验反馈；W25/O-2 用户开窗；
+requestRun 对象选择面事实源提案（核心/产线起草义务在案）；桌面
+#21 批 D 签发。
 
 ## 留言
 - [→桌面] 状态批验收合并回执（4b7da5b 入库）；#25/#26 销账处置
