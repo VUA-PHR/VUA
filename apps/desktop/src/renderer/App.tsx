@@ -28,6 +28,8 @@ import {
 } from "./app/onboarding-model.ts";
 import { resourceSaverActive, resourceSaverSource } from "./app/resource-saver.ts";
 import { storageKeys } from "./app/storage-keys.ts";
+import { useComposeDraft } from "./app/compose-draft-store.ts";
+import { uiSwitchSummary } from "./app/ui-switch-summary.ts";
 import {
   isUiRootAvailable,
   readUiRootSelection,
@@ -192,8 +194,12 @@ function PlaceholderPage({ title, description }: { title: string; description: s
  * 007 的「生成 VPM 模式入口」偏好开关被全局开关语义取代(提案 008 复核)。
  */
 /* 森林绿 UI 不可用根(批 D 前置):诚实不可用呈现＋返回现有 UI 入口;
- * 共享容器(GatewayProvider/事件/状态)在此根下继续存在——仅 UI 树替换 */
+ * 共享容器(GatewayProvider/事件/状态)在此根下继续存在——仅 UI 树替换。
+ * 019 批 D(UI-05/AC-09):目标 UI 不支持当前编辑字段时,共享草稿以只读
+ * 摘要呈现(字段保留＋未保存/已保存状态),数据全部来自共享容器草稿
+ * store,不发明内容;返回入口保留迁移退路。 */
 function ForestGreenUnavailableRoot({ onBackToCurrent }: { onBackToCurrent: () => void }) {
+  const summary = uiSwitchSummary(useComposeDraft());
   return (
     <div className="vua-page">
       <section className="vua-page__hero">
@@ -210,6 +216,41 @@ function ForestGreenUnavailableRoot({ onBackToCurrent }: { onBackToCurrent: () =
           }
         />
       </Card>
+      {summary.hasDraft ? (
+        <Card>
+          <div className="vua-page__stack">
+            <h3 className="vua-warehouse-detail__section-title">
+              {strings.dev.uiSwitchSummaryTitle}
+            </h3>
+            <p className="vua-caption vua-text-secondary">{strings.dev.uiSwitchSummaryNote}</p>
+            <ul className="vua-project-compat__specs">
+              {summary.items.map((item) => (
+                <li key={item.warehouseItemId}>
+                  <strong>{item.title}</strong>
+                  {item.nameHint !== null ? (
+                    <span className="vua-caption vua-text-secondary">
+                      {" "}
+                      {format(strings.dev.uiSwitchSummaryHintLine, { hint: item.nameHint })}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+            {summary.dirty ? (
+              <p className="vua-caption vua-text-secondary" role="status">
+                {strings.dev.uiSwitchSummaryDirty}
+              </p>
+            ) : null}
+            {summary.saved !== null ? (
+              <p className="vua-caption vua-text-secondary" role="status">
+                {format(strings.dev.uiSwitchSummarySaved, {
+                  revision: String(summary.saved.revision),
+                })}
+              </p>
+            ) : null}
+          </div>
+        </Card>
+      ) : null}
     </div>
   );
 }

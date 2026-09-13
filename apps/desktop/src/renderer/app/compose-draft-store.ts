@@ -76,16 +76,24 @@ export function composeRemoveItemAction(warehouseItemId: string): void {
   apply(composeRemoveItem(draftSignal.get(), warehouseItemId));
 }
 
-/** 挂载选择器名称提示编辑(用户输入;不入撤销栈——文本输入粒度,结构变更
+/** 挂载选择器名称提示编辑(纯函数;不入撤销栈——文本输入粒度,结构变更
  *  才压栈;dirty 置真) */
-export function composeSetNameHintAction(warehouseItemId: string, nameHint: string): void {
-  const state = draftSignal.get();
-  if (!state.items.some((item) => item.warehouseItemId === warehouseItemId)) return;
+export function composeSetNameHint(
+  state: ComposeDraftState,
+  warehouseItemId: string,
+  nameHint: string,
+): ComposeDraftState {
+  if (!state.items.some((item) => item.warehouseItemId === warehouseItemId)) return state;
   const hint = nameHint.length > 0 ? nameHint : null;
   const items = state.items.map((item) =>
     item.warehouseItemId === warehouseItemId ? { ...item, nameHint: hint } : item,
   );
-  apply({ items, undoStack: state.undoStack, dirty: true, saved: state.saved });
+  return { items, undoStack: state.undoStack, dirty: true, saved: state.saved };
+}
+
+/** 挂载选择器名称提示编辑(用户输入;action 层经纯函数落共享 signal) */
+export function composeSetNameHintAction(warehouseItemId: string, nameHint: string): void {
+  apply(composeSetNameHint(draftSignal.get(), warehouseItemId, nameHint));
 }
 
 export function composeUndoAction(): void {
