@@ -68,16 +68,18 @@ updated: 2026-09-14
 无。
 
 ## 下次合并意图
-**推送门 r1/r2——已完成；r3 CI 回读——进行中**：
-r1＝推送批构成审阅（**实测推送范围 origin/main..main 共 15 提交**
-＝四验收合并 0875ee1/a9d8c34/a4153cd/ed20d08＋分支历史收编 11
-〔四树追平/状态批/簿记〕；非 collab 文件面三点 diff pathspec 实
-证恰 D-2 十一文件全桌面所有权域＝已验收范围一致，零未验收实质内
-容）；r2＝机械核验（registry-only exit 0 57 项＋1198 文件 0 标
-记＋019 forest 机械守卫复核＝ui-variants/ 零已跟踪文件＋gitignore
-登记有效；leak 155 指纹零泄漏在 check 全链独立重跑覆盖）；r3＝
-CI 回读——**本批含 D-2 实质代码（apps/desktop）将触发 ts run，
-rust/schema-vectors 应零触发**，回读结果随回填簿记登记。
+**推送门 r1/r2/r3——全部闭环**：
+r1＝推送批构成审阅（**实测推送范围 6e6c216..d248131 共 16 提交**
+＝四验收合并 0875ee1/a9d8c34/a4153cd/ed20d08＋簿记 d248131＋分支
+历史收编 11；非 collab 文件面三点 diff pathspec 实证恰 D-2 十一
+文件全桌面所有权域＝已验收范围一致，零未验收实质内容）；r2＝机
+械核验（registry-only exit 0 57 项＋1198 文件 0 标记＋019 forest
+机械守卫复核＝ui-variants/ 零已跟踪文件＋gitignore 登记有效；leak
+155 指纹零泄漏在 check 全链独立重跑覆盖）；r3＝CI 回读——**ts
+34773964950 success on d248131**（D-2 独立 CI 环境实证）；rust/
+schema-vectors 零触发＝零 Rust/schemas 变化 paths 过滤正常
+（20c07e4/fb3c796 先例）——**推送 6e6c216..d248131 已执行（本回
+填随 r3 再推），origin/main＝回填尖，推送债清零**。
 **等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun 对象
 选择面事实源提案（核心/产线起草义务在案）；批 D D-3..D-5 桌面续
 作（候桌面切片验收）。
