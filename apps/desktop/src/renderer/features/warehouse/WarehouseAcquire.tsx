@@ -1,4 +1,5 @@
 import { useEffect, useState, type MouseEvent as ReactMouseEvent } from "react";
+import { catalogBrowser } from "../../app/catalog-browser-instance.ts";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { EmptyState } from "../../components/primitives/EmptyState.tsx";
@@ -8,14 +9,16 @@ import {
 } from "../../components/primitives/ContextMenu.tsx";
 import { Skeleton } from "../../components/primitives/Skeleton.tsx";
 import {
+  readEntryPreview,
   useAcquireView,
   useGateway,
   type AcquireEntryDetailView,
+  type EntryPreviewView,
   type WarehouseArtifact,
   type WarehouseArtifactMode,
   type WarehouseArtifactState,
   type WarehouseCommandOutcome,
-  type WarehouseEntry,
+  type WarehouseEntryDetail,
 } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import {
@@ -31,6 +34,7 @@ import {
   type GlobalDefaultInference,
 } from "./acquire-model.ts";
 import { useCardSpotlight } from "./use-card-spotlight.ts";
+import { DetailAlbum } from "./WarehouseAlbum.tsx";
 
 const copy = strings.warehouse.acquire;
 const cloudCopy = strings.warehouse;
@@ -40,10 +44,12 @@ const cloudCopy = strings.warehouse;
  * - 数据来源:仓库素材包条目(WarehouseEntry × WarehouseArtifact);先检查
  *   再使用,检出可执行内容即隔离(红色左边线),绝不提供任何"运行"入口;
  * - 卡片墙/详情抽屉复用云端浏览的组件与色彩纪律(徽标中性灰,橙仅选中描边):
- *   卡片 = 条目 × 工件展开,带状态与副本角色徽标;预览提取未接入,媒体区
- *   渲染诚实空槽,不伪造缩略图;
+ *   卡片 = 条目 × 工件展开,带状态与副本角色徽标;列表卡面无关联身份
+ *   (warehouseArtifactRef,裁决边界),媒体区渲染诚实空槽,不伪造缩略图;
  * - 详情抽屉 = 条目详情(entryDetail 读取面):模式行(覆盖 or 跟随全局,
  *   F4-9 的编辑展示位)+ 工件清单;quarantined 的诚实拒绝理由在此呈现;
+ *   预览区 = D-6 目录来源组合读(mappedProductIds → catalog.detail,核心
+ *   裁决方案 c),无关联/关联无图按 AC-12 同规诚实空态;
  * - 搜索为显示名/文件夹名/相对路径客户端过滤(fixture 规模);真实实现
  *   移交端口查询时 UI 不重写。
  */
@@ -127,6 +133,11 @@ type DetailState =
 
 type ModeDraft = "follow" | WarehouseArtifactMode;
 
+/** D-6 预览面:条目事实到达前的 loading 与组合读完成后的三态视图 */
+type PreviewState =
+  | { kind: "loading" }
+  | { kind: "done"; view: EntryPreviewView };
+
 /* 走查 3c 裁决(2026-09-07)+演进(2026-09-09):模式编辑与生成动作的入口
  * 可见性=条目事实镜像(生效模式与工件条件),并受「生成 VPM 包替代」全局
  * 开关呈现总闸门控(U8⑤ 分支 a 呈现层屏蔽:总闸关=无产物模式编辑、无条目
@@ -154,6 +165,7 @@ function EntryDetail({
   const [state, setState] = useState<DetailState>({ kind: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [modeDraft, setModeDraft] = useState<ModeDraft>("follow");
+  const [preview, setPreview] = useState<PreviewState>({ kind: "loading" });
   const [busy, setBusy] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
 
@@ -173,12 +185,31 @@ function EntryDetail({
     };
   }, [gateway, entryId, reloadKey]);
 
-  const loadedEntry: WarehouseEntry | null =
+  // 事实层类型(entryDetail 读取面):D-6 预览组合读消费 artifacts[].mappedProductIds
+  const loadedEntry: WarehouseEntryDetail | null =
     state.kind === "loaded" && state.view.kind === "detail" ? state.view.entry : null;
 
   // 重载/切换条目后草稿跟随服务端事实(覆盖值;null = 跟随全局)
   useEffect(() => {
     if (loadedEntry !== null) setModeDraft(loadedEntry.artifactMode ?? "follow");
+  }, [loadedEntry]);
+
+  // D-6 预览组合读:条目事实到达后按 mappedProductIds 定向查目录(方案 c);
+  // 重载(reloadKey → entryDetail 重取 → loadedEntry 换引用)即随事实重查。
+  // readEntryPreview 永不 reject,失败已按裁决归并为诚实空态视图。
+  useEffect(() => {
+    if (loadedEntry === null) {
+      setPreview({ kind: "loading" });
+      return;
+    }
+    let active = true;
+    setPreview({ kind: "loading" });
+    void readEntryPreview(catalogBrowser, loadedEntry).then((view) => {
+      if (active) setPreview({ kind: "done", view });
+    });
+    return () => {
+      active = false;
+    };
   }, [loadedEntry]);
 
   async function runCommand(run: () => Promise<WarehouseCommandOutcome>): Promise<void> {
@@ -225,12 +256,38 @@ function EntryDetail({
 
   const entry = state.view.entry;
   const mode = entryModeLine(entry);
+  const previewAlbums = preview.kind === "done" && preview.view.kind === "loaded"
+    ? preview.view.albums
+    : null;
+  const multipleSources = previewAlbums !== null && previewAlbums.length > 1;
   return (
     <div className="vua-warehouse-detail__content">
-      {/* 预览提取未接入:诚实空槽(与卡片媒体区同一纪律) */}
-      <div className="vua-warehouse-detail__preview3d">
-        <span className="vua-caption vua-text-secondary">{copy.previewEmpty}</span>
-      </div>
+      {/* D-6 条目详情预览(核心裁决方案 c 组合读):目录来源相册经
+          catalogImageUrl/DetailAlbum 同线渲染;取数中呈现骨架;无关联/
+          关联无图(媒体空/目录 miss)按 AC-12 同规诚实空态,不猜测 */}
+      {preview.kind === "loading" ? (
+        <div className="vua-warehouse-detail__preview3d">
+          <Skeleton width="100%" height={96} />
+        </div>
+      ) : previewAlbums === null ? (
+        <div className="vua-warehouse-detail__preview3d">
+          <span className="vua-caption vua-text-secondary">
+            {preview.view.kind === "no-association"
+              ? copy.previewNoAssociation
+              : copy.previewNoImages}
+          </span>
+        </div>
+      ) : (
+        previewAlbums.map((album) => (
+          <div key={album.productId}>
+            {/* 多来源时标注各相册归属(Gateway 返回的标题/身份事实) */}
+            {multipleSources ? (
+              <p className="vua-caption vua-text-secondary">{album.title}</p>
+            ) : null}
+            <DetailAlbum imageUrls={album.imageUrls} title={album.title} />
+          </div>
+        ))
+      )}
       <div className="vua-warehouse-detail__badges">
         <Badge tone="neutral">{copy.kind[entry.kind]}</Badge>
         {/* 模式行(F4-9):生效模式 + 覆盖 or 跟随全局;编辑区见下方产物模式组 */}
