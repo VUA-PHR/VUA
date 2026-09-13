@@ -16,9 +16,15 @@ export const uiRootIds = ["current", "forest-green"] as const;
 
 export type UiRootId = (typeof uiRootIds)[number];
 
-/** 目标 UI 可用性(诚实纪律 UI-08):森林绿未接入=不可用,如实呈现 */
-export function isUiRootAvailable(root: UiRootId): boolean {
-  return root === "current";
+/**
+ * 目标 UI 可用性(诚实纪律 UI-08):现有 UI 恒可用;森林绿可用性来自
+ * 构建期变体发现(019 批 D D-2,ui-variant-discovery)——本构建包含其
+ * gitignored 本地源码时可用,否则如实呈现不可用。可用性是发现事实,
+ * 不是硬编码开关。
+ */
+export function isUiRootAvailable(root: UiRootId, forestVariantPresent: boolean): boolean {
+  if (root === "current") return true;
+  return forestVariantPresent;
 }
 
 /** 存储载荷解析:词表外回落 current(现有 UI 为第一套与回落缺省) */
