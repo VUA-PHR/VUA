@@ -133,7 +133,8 @@ export function ComposePage() {
                 <li key={line.id}>
                   <button
                     type="button"
-                    style={{ all: "unset", cursor: index === sourceIndex ? "default" : "pointer" }}
+                    className="vua-select-row__trigger"
+                    aria-pressed={index === sourceIndex}
                     onClick={() => setSourceIndex(index)}
                   >
                     <strong>{line.title}</strong>
