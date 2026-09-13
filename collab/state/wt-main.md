@@ -66,17 +66,19 @@ ed20d08）＋推送门 r1/r2/r3 闭环＋推送 6e6c216..d248131。
 无。
 
 ## 下次合并意图
-**推送门 r1/r2/r3（本轮执行）**：
-r1＝推送批构成审阅（实测推送范围 05517e1..簿记尖，构成＝五支验收
-合并 e988c0c/7a39820/7f0f0c7/e4b2c72/5953996＋分支历史收编〔
-49fe894/491ffe6/19ec306/5e7d9c6/7b1adb4/83a9258/b77e8d3/696891e/
-5fd0a65/8fb9666 等〕＋BOARD/wt-main 簿记；非 collab 文件面三点
-diff pathspec 实证恰 D-3 五文件全桌面所有权域＝已验收范围一致，
-零未验收实质内容）；r2＝机械核验（registry-only exit 0＋019
-forest 机械守卫复核＝check:forest-leak 绿＋check:leak 155 指纹
-零泄漏在 check 全链独立重跑覆盖）；r3＝CI 回读（ts run 候推送后
-回填；rust/schema-vectors 零 Rust/schemas 变化预期零触发，
-20c07e4/fb3c796 先例）。
+**推送门 r1/r2/r3——全部闭环**：
+r1＝推送批构成审阅（**实测推送范围 05517e1..1298bf8 共 18 提交**
+＝五支验收合并 e988c0c/7a39820/7f0f0c7/e4b2c72/5953996＋簿记
+1298bf8＋分支历史收编 12；非 collab 文件面三点 diff pathspec 实
+证恰 D-3 五文件全桌面所有权域＝已验收范围一致，零未验收实质内
+容）；r2＝机械核验（registry-only exit 0 57 项＋1202 文件 0 标
+记＋019 forest 机械守卫复核＝check:forest-leak 绿 ui-variants/
+零已跟踪文件＋gitignore 登记有效；leak 155 指纹零泄漏在 check
+全链独立重跑覆盖）；r3＝CI 回读——**ts 34776016353 success on
+1298bf8**（D-3 独立 CI 环境实证）；rust/schema-vectors 零触发＝
+零 Rust/schemas 变化 paths 过滤正常（20c07e4/fb3c796 先例）——
+**推送 05517e1..1298bf8 已执行（本回填随 r3 再推），origin/main
+＝回填尖，推送债清零**。
 **等待项**：#25 用户复验反馈；W25/O-2 用户开窗；requestRun 对象
 选择面事实源提案（核心/产线起草义务在案）；批 D D-4..D-5 桌面续
 作（候桌面切片验收）。
