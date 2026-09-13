@@ -8,5 +8,10 @@
     "allowImportingTsExtensions": true,
     "types": ["vite/client"]
   },
-  "include": ["src/renderer/**/*.ts", "src/renderer/**/*.tsx", "vite.config.mts"]
+  "include": [
+    "src/renderer/**/*.ts",
+    "src/renderer/**/*.tsx",
+    "src/ui-variants/**/*.tsx",
+    "vite.config.mts"
+  ]
 }

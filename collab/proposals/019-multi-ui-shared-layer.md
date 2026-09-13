@@ -274,3 +274,35 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   对比/特效偏好跨 UI 根切换持续有效已在共享层结构性成立（localStorage
   持久化＋document dataset 存活 AppShell 重挂载），双 UI 键盘可达核查
   随 D-2 起实际走查。零端到端宣称维持（真机义务归 W25）。
+
+## 进展注（桌面，2026-09-14 01:5x 工作时段，D-2 切片）
+
+- **D-2 切片已交付（slot/wt-3 37cf157，候集成随轮验收）**：
+  ①**动态发现接线**：`ui-variant-discovery.ts` 以 Vite `import.meta.glob`
+  在构建期发现 `src/ui-variants/forest/root.tsx`——干净检出（目录缺席）
+  glob 解析空表，构建/typecheck/测试恒安全（已做物理模拟验证：临时移除
+  目录后 typecheck 绿＋discovery/registry 测试 9/9 绿＋vite build 绿，
+  骨架恢复后 check 全链复绿）；`resolveForestVariant` 纯函数三态语义：
+  absent／目录半写（有杂文件无 root.tsx）仍 absent（不挑选替身入口）／
+  present（load 透传，加载错误永不吞）；`ForestUiRootProps` 为入库契约，
+  gitignored 骨架实现之。②**接线组件**：`ForestVariantRoot.tsx`——
+  absent 分支＝D-1 不可用根原样搬迁（字段保留＋只读摘要＋返回现有界面
+  迁移退路）；present 分支＝懒加载状态机（loading/failed/ready），失败
+  如实呈现（UI-06/UI-08；细节仅进控制台诊断，不静默回退不可用、不猜测
+  重试）；共享容器在一切分支外存活，仅 UI 树替换（UI-01）。③**可用性
+  事实化**：`isUiRootAvailable(root, forestVariantPresent)`——可用性来自
+  构建期发现事实，不再是硬编码开关；current 恒可用。④**词表 ×4**：
+  `uiSwitchDesc` 改为如实描述动态可用性；`uiForestUnavailableDesc` 改述
+  「本构建不含其源码」（非「待交付」语义）；新增 uiForestLoading／
+  uiForestLoadFailed／uiForestLoadFailedDesc／uiForestSkeletonDesc 四键
+  四语。⑤**骨架本体**：`src/ui-variants/forest/root.tsx`（gitignored，
+  永不入库，check:forest-leak 门守卫）——诚实空态骨架：仅证明「发现→
+  加载→渲染」链路成立，业务能力面随 D-3 起接入，零模拟数据零演示执行；
+  tsconfig include 扩展使本机 typecheck 覆盖骨架（干净检出零匹配安全）。
+- **证据（本机 2026-09-14 01:4x，slot/wt-3）**：pnpm check 全链 exit 0
+  ——typecheck（含骨架）＋vitest 71 文件 553 测试〔较 D-1 世代 +1 文件
+  +7 测试〕＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋
+  forest-leak 绿；干净检出模拟验证三件套如上。零端到端宣称维持（真机
+  义务归 W25）；AC-10 双 UI 键盘可达走查随 D-4。
+- **批 D 剩余切片更新**：D-3＝搭配流适配；D-4＝动效/减少动效/窄窗
+  （AC-10/AC-11 走查）；D-5＝AC 全表回归收口。
