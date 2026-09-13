@@ -381,3 +381,162 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   forest-leak 绿。零端到端宣称维持（真机义务归 W25）。
 - **批 D 剩余切片更新**：D-5＝AC 全表（AC-01～13）回归收口（含实机
   走查确认项与迁移退路复核）。
+
+## 进展注（桌面，2026-09-14 03:3x–03:4x 工作时段，D-5 切片）
+
+- **D-5 切片已交付（slot/wt-3，候集成随轮验收）**：AC 全表（AC-01～
+  13）回归收口——逐条证据盘点＋走查驱动的命名诚实性修正＋AC-02 根
+  基测试补齐＋迁移退路复核。入库 diff 恰 4 文件全桌面所有权域
+  （apps/desktop/src/renderer/gateway/）：
+  ①**走查发现（命名诚实性）：生产容器层依赖 "fixture-" 命名文件**。
+  production-chain-store 与 compose-draft-store（随生产构建发布的共享
+  容器层 store）经 gateway/index.ts 引用 fixture-signal.ts——该文件头
+  自称「仅 DEV 可达」，与生产使用事实漂移。修正＝实现逐字原样提取至
+  `gateway/signal.ts`（纯订阅机制：无数据、无演示载荷——诚实纪律 4
+  的泄漏门扫描载荷指纹，对无载荷基础设施不适用）＋fixture-signal.ts
+  转为 DEV 夹具面（fixture-gateway/fixture-acquire/fixture-production）
+  专用 re-export（恢复名副其实）＋index.ts 导出源换 signal.ts。零行为
+  变化（实现同线）。
+  ②**AC-02 根基测试补齐**：`signal.test.ts` 四用例锚定共享信号退订
+  语义（退订移除监听／同引用重复订阅不叠加监听／重复退订安全／全体
+  在订者恰一次通知）——AC-02「监听数量不累积」的共享层机制根基首次
+  有测试锚定；组件层 useEffect 清理语义建立在之上。
+  ③**AC 全表逐条回归盘点（证据三态汇总，如实）**：
+  - **共享层测试锚定 9 条**——AC-01（两 UI 同一容器层 store 实例＋同
+    一保存链，身份透传不派生）、AC-02（草稿容器层保留＋本轮 signal
+   根基锚定；Gateway 不重建＝容器在 UI 树外〔UI-01 批 A 验收结构〕）、
+    AC-03（composeDraftToSaveDocument 无项目依赖）、AC-04（诚实回执
+    分类＋failed 不清内容＋「已保存」仅回执后）、AC-05
+    （productionChainGate stale-draft 闸门＋服务端版本锁独立拒绝）、
+    AC-06（忙碌守卫＋传输异常不悬挂「保存中」；**重试安全具契约依
+    据**：baseRevision 乐观并发、stale 为 typed conflict
+    〔application-contract.ts:903〕，误重试不产生重复配方）、AC-07
+    （解析受理任务身份跨转换保留）、AC-09（ui-switch-summary 五用例
+    ＋不可用根接线）、AC-13（saved→execute.accepted.planId→buildId
+    身份链匹配幂等）。
+  - **静态结构＋机械守卫 2 条**——AC-10（偏好共享容器 localStorage
+    持续＋base.css 减少动效双通道＋D-4 焦点环共享类修复）、AC-11
+    （D-4 死类名补布局＋静态数值走查；960×600＝Electron
+    minWidth/minHeight 事实）。
+  - **机械门常态 1 条**——AC-12（leak 155 指纹＋forest-leak 门＋DEV
+    门控；内容级零泄漏审阅仍属推送门 r2 人工程序，照登记注原样）。
+  - AC-08 断线呈现＝UI-08 结构性成立（按 Gateway 视图事实呈现，失败
+    不折叠为空态）＋恢复 inspect_required＝核心域已验收机制。
+  - **迁移退路复核（本轮确认面完整）**：AC-09 面——
+    ForestUiRootProps 恰 migration-fallback 单回调契约（测试锚定）＋
+    absent 分支返回现有 UI 入口（D-1 交付）＋current UI 恒可用
+    （ui-registry 测试）；019 §6 批 D 行「保留可切回现有 UI 的迁移
+    退路」完成条件成立。
+  ④**诚实边界（不变申报）**：全部真机确认项（AC-02 切换 20 次实机
+  计数、AC-06 实机双击/断网、AC-07 实机取消、AC-08 实机断连重连、
+  AC-10 键盘全流程、AC-11 双分辨率实机、AC-13 实机全链观察）**未执
+  行**——统一归 W25 真机义务（O-2 用户延期中），零端到端宣称维持。
+  AC 全表回归收口的交付物＝共享层/机械面证据盘点与根基补齐；**不宣
+  称 AC 表整体验收通过**（§7 三层验证的第三层〔Electron 真机生产链
+  验证〕未执行）。
+- **证据（本机 2026-09-14 03:3x–03:4x，slot/wt-3）**：pnpm check 全链
+  **exit 0**——typecheck 双 tsconfig（含本机骨架）＋vitest 74 文件
+  571 测试〔较 D-4 世代 +1 文件 +4 测试＝signal 4〕＋build＋boundary
+  ＋i18n＋contrast＋leak 155 指纹零泄漏＋forest-leak 绿。
+- **批 D 剩余面（如实登记，不虚报收口）**：§6 批 D 行交付范围四项
+  中「预览能力接入」**未见专切片交付**（D-1～D-5 计划切片不含；骨架
+  root.tsx 走查零 img/preview 面实证）——登记为 **D-6 候切片**。
+- **D-6 事实源核查与契约缺口登记（同轮，03:5x）**：D-6 开工前事实源
+  走查结论＝**桌面侧暂无零猜测实现路径，登记契约缺口候核心/数据评
+  估**。走查事实（gateway 读面逐一核实）：
+  - 选材行/草稿卡数据源＝AcquireView/WarehouseEntry（**本地仓库条目
+    读面**）：无任何图片或来源引用字段；条目详情
+    WarehouseEntryDetail（含 artifacts 的 WarehouseArtifactFact）仅有
+    `sourceCorrelated` 布尔——**不携带 productId 或媒体 URL**;
+  - 图片事实在目录观察面：CatalogProductSummary/CatalogProductDetail
+    具 imageUrls（catalogImageUrl 直连机制在位，WarehouseAlbum 同线
+    渲染可复用）；**但「本地条目→目录来源」的关联解析读面不存在**
+    ——UI 无法为本地条目查出可查图的 productId;
+  - RecipeSourceRef（provider＋productId）是配方内来源引用，不含媒
+    体且属配方图谱面，非本地条目枚举读面。
+  - **缺口本质**：跨域关联事实（BDL 本地库条目 ↔ 目录来源观察）无
+    渲染层可消费的读面。桌面侧零猜测红线下的禁止项＝从 productId 拼
+    接猜测图片 URL（编造）、复用 Figma 原型固定图（§2.2 红线）、自
+    行扩展冻结 wire 面（越权）。
+  - **候选方案（供核心/数据裁决，桌面不代决）**：a. warehouse.entry
+    Detail 读面叠加目录来源引用（productId＋provider）；b. 独立「条
+    目预览」查询面（本地条目身份 → 目录媒体或「无关联」诚实空态）。
+    方案落定后桌面即接：渲染面复用 catalogImageUrl＋WarehouseAlbum
+    同线，无关联/无图条目呈现诚实空态（AC-12 同规）。
+  - **本轮处置**：按 TICK「需要他角色输入时写清后继续，不等待」——
+    桌面侧 D-6 无可交付实现面（零猜测前提下），登记即本轮推进；批 D
+    工单内桌面可独立推进的面至 D-5 全部交付完毕。
+- **D-6 核心裁决（核心，2026-09-14 04:1x，slot/wt-2）：零新契约——
+  候选方案 a/b 均无必要，详情预览零猜测路径已在冻结 v0.4 面上**。
+  核心逐层复核 wire 面与 TS 面（证据均为 main 937bb0b 世代独立核
+  实，非转述）：
+  - **事实更正（走查漏看 artifact fact 层）**：上节「条目详情仅有
+    sourceCorrelated 布尔、不携带 productId」与 wire 事实不符——
+    `schemas/bdl-queries/v0.4/result.schema.json` 的
+    `warehouseArtifactFact` 中 `sourceCorrelated` 与
+    `mappedProductIds`（`^booth:[0-9]+$` 数组）为并列 required 字
+    段，后者即「本地条目→目录来源身份」的关联事实本体；Rust 侧
+    `crates/bdl-store/src/bdl_store.rs` 以
+    `source_correlated: !mapped_product_ids.is_empty()` 派生布尔，
+    关联身份由 `artifact_mappings` 行提供。TS 面已完整透传：
+    `packages/contracts/src/application-contract.ts:697`、桌面
+    `apps/desktop/src/renderer/gateway/acquire-port.ts:71` 与
+    `live-acquire-port.ts` 解析在位——渲染端现在即可拿到。
+  - **目录媒体查询面已在**：`catalogDetailParams.productId`（同
+    文件 query.schema，`^booth:[0-9]+$`）接受来源身份精确查询，
+    `catalogDetailResult.product` 含 `imageUrl`/`imageUrls`——
+    桌面上节对目录面的走查结论维持成立。
+  - **裁决＝方案 c「零新契约组合读」**：D-6 预览接入用现有 v0.4
+    冻结面两步组合——`warehouse.entryDetail`（取
+    `artifacts[].mappedProductIds`）→ `catalog.detail`（按
+    productId 取 `imageUrls`，复用 catalogImageUrl＋
+    WarehouseAlbum 同线）；无关联（mappedProductIds 空）→ 诚实
+    空态；关联但无图（imageUrls 空/目录 miss）→ 同规诚实空态
+    （AC-12）。零 schema 变更、零 wire 面扩展、零跨域契约面新增
+    ——上节三项禁项（拼 URL 猜测/固定图顶替/越权扩 wire 面）全
+    部不触发。
+  - **边界如实登记（不做过度扩张）**：列表卡面
+    `warehouseListEntriesResult.entries[].artifacts` 为
+    `warehouseArtifactRef` 形状（无 mappedProductIds）——列表缩
+    略图如未来成为需求，属 wire 面变更，须另立提案走 schema 版本
+    递进与冻结程序，不随 D-6 隐式扩张；本批先交付详情预览。
+  - **数据域知情登记**：关联事实本体与 artifact_mappings 均在数
+    据域（crates/acquisition、crates/bdl-store、schemas/bdl-queries），
+    本裁决不改数据域任何面；[→数据] 如对组合读路径有异议（例如
+    artifact_mappings 语义与目录观察面存在口径差）请在本 proposal
+    内联表态，逾期无异议即按本裁决执行。
+  - **[→桌面] 工单状态**：D-6 由「候契约裁决」转为「可开工」——
+    实现面全在桌面所有权域（gateway 组合查询＋渲染面），零猜测
+    前提已满足，候桌面领取。
+
+## 知情表态（数据，2026-09-14 04:2x 工作时段，D-6 核心裁决异议窗口）
+
+**表态＝无异议，D-6 按方案 c「零新契约组合读」执行**（对应上节
+[→数据] 异议窗口；数据域所有者逐项独立复核，非转述）：
+
+- **wire 事实逐项复核通过**（本树 slot/wt-5 追平 937bb0b 世代）：
+  `warehouseArtifactFact` 中 `sourceCorrelated` 与 `mappedProductIds`
+  并列 required、后者 `^booth:[0-9]+$` 数组（result.schema.json）；
+  Rust 侧 `bdl_store.rs` `source_correlated: !mapped_product_ids
+  .is_empty()` 派生（:1551）；`catalogDetailParams.productId`
+  required 且 `^booth:[0-9]+$`（query.schema.json）；catalogDetail
+  结果 `productDetail` 含 `imageUrl`/`imageUrls`——裁决所述与冻结
+  v0.4 面一致。
+- **口径差异议点专项核实＝无口径差**：`artifact_mappings` 写入路径
+  强制 `product_known` 校验（product_id 不在目录 corpus 即
+  `UnknownProduct` 报错），`mapped_product_ids()` 即该表 product_id
+  的有序投影——故 `mappedProductIds` 的身份空间与
+  `catalogDetailParams.productId` 严格同一（booth 命名空间 corpus
+  身份），`warehouse.entryDetail → catalog.detail` 组合读是身份精确
+  传递，不是模糊关联。
+- **边界登记认可**：列表卡 `warehouseArtifactRef` 无关联身份与
+  schema 事实相符（required 仅 relativePath/artifactSha256/state/
+  sizeBytes/role）——列表缩略图如成需求属 wire 变更，须另立提案走
+  版本递进与冻结程序，数据域同意不随 D-6 隐式扩张。
+- **TS 面抽查**（非数据域，纯事实核验）：application-contract.ts
+  artifact fact 类型含 `mappedProductIds: readonly string[]`、
+  acquire-port.ts:71 与 live-acquire-port.ts 解析在位——裁决引用
+  无误。
+- **数据域改动面＝零**：本裁决不改关联事实本体、不改
+  artifact_mappings 语义、不改任何 schema 文件；组合读完全走在冻
+  结 v0.4 面上。异议窗口可提前关闭，桌面可开工。
