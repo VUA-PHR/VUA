@@ -3,8 +3,10 @@
 // 1. 远程页面无 preload/Node(window.vua、require、process 不可见);
 // 2. 独立 partition Session;权限请求全拒绝且违规上报;
 // 3. 允许清单外导航被阻止且违规上报;下载默认拒绝(F4-3 前的安全默认);
-// 4. 新窗口一律拒绝,http(s) 目标交系统浏览器;API 打开/导航的来源裁决;
-// 5. 生命周期事件(opened/navigated/closed)对渲染层窄面如实可见。
+// 4. 弹窗不创建(U9 四分法):清单内转当前内嵌视图;伪协议一律拒并上报
+//    popup_denied;清单外与外部协议走确认层(本 smoke 无注入=保守拒绝);
+// 5. 生命周期事件(opened/navigated/closed)对渲染层窄面如实可见;
+// 6. 退出路径(#26,2026-09-13):宿主窗口销毁后 dispose 不访问已销毁对象。
 // 证据写入 _local_m4/v<版本>/remote-content-smoke.json(.gitignore 排除)。
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -146,11 +148,18 @@ async function run() {
     assert.equal(view.webContents.getURL(), `${origin}/`);
     log("navigation.blocked.passed");
 
-    // 新窗口:一律拒绝,http(s) 目标交系统浏览器
+    // U9 语义对齐(存量脱节修正 2026-09-13,f282ecc 后 smoke 未同步):
+    // 清单内弹窗不创建新窗口,目标转当前内嵌视图;伪协议弹窗无条件拒并
+    // 上报 popup_denied(shell handoff 仅存在于外部协议+确认层注入形态,
+    // 本 smoke 无确认层=保守拒绝,不产生 handoff)
+    const viewsBeforePopup = hostWindow.contentView.children.length;
     await view.webContents.executeJavaScript(`window.open("${origin}/popup-target"); true`);
+    await waitFor(() => events.some((event) => event.kind === "navigated" && event.url === `${origin}/popup-target`), "in-view popup navigation");
+    assert.equal(hostWindow.contentView.children.length, viewsBeforePopup, "popup must not create a new native view");
+    log("popup.in-view.passed");
+    await view.webContents.executeJavaScript(`window.open("vua://blocked"); true`);
     await waitFor(() => events.some((event) => event.kind === "blocked" && event.reason === "popup_denied"), "popup denial");
-    await waitFor(() => openExternalCalls.length === 1, "shell handoff");
-    log("popup.denied.passed", { handoff: openExternalCalls[0] });
+    log("popup.denied.passed");
 
     // 下载:默认拒绝(F4-3 下载端口接管后替换)
     await view.webContents.executeJavaScript(
@@ -181,6 +190,20 @@ async function run() {
     await waitFor(() => events.some((event) => event.kind === "view-closed" && event.viewId === state.viewId), "view closed");
     assert.throws(() => manager.setVisible(state.viewId, true), /unknown_remote_view/);
     log("lifecycle.passed");
+
+    // #26 退出路径回归(用户实测退出崩溃修复,2026-09-13):宿主窗口销毁
+    // 之后的清理路径不得访问已销毁对象——旧实现 dispose() 经 #destroyView
+    // 访问已销毁 hostWindow 抛「TypeError: Object has been destroyed」;
+    // 修复后 #destroyView isDestroyed 双护栏跳过销毁面,dispose 幂等安全。
+    // 真壳事件序:close(视图清理)→closed(引用清理);此处直接取「窗口已
+    // 销毁才清理」的最坏时序做断言
+    const exitView = manager.open(`${origin}/page2`);
+    await waitFor(() => events.some((event) => event.kind === "navigated" && event.url === `${origin}/page2`), "exit view navigated");
+    hostWindow.destroy();
+    manager.dispose();
+    log("exit-path.dispose-after-destroy.passed");
+    assert.throws(() => manager.open(`${origin}/`), /disposed/);
+    log("exit-path.disposed-rejects.passed");
 
     evidence = {
       schemaVersion: 1,
