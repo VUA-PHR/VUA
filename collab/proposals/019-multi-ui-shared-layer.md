@@ -466,3 +466,77 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   - **本轮处置**：按 TICK「需要他角色输入时写清后继续，不等待」——
     桌面侧 D-6 无可交付实现面（零猜测前提下），登记即本轮推进；批 D
     工单内桌面可独立推进的面至 D-5 全部交付完毕。
+- **D-6 核心裁决（核心，2026-09-14 04:1x，slot/wt-2）：零新契约——
+  候选方案 a/b 均无必要，详情预览零猜测路径已在冻结 v0.4 面上**。
+  核心逐层复核 wire 面与 TS 面（证据均为 main 937bb0b 世代独立核
+  实，非转述）：
+  - **事实更正（走查漏看 artifact fact 层）**：上节「条目详情仅有
+    sourceCorrelated 布尔、不携带 productId」与 wire 事实不符——
+    `schemas/bdl-queries/v0.4/result.schema.json` 的
+    `warehouseArtifactFact` 中 `sourceCorrelated` 与
+    `mappedProductIds`（`^booth:[0-9]+$` 数组）为并列 required 字
+    段，后者即「本地条目→目录来源身份」的关联事实本体；Rust 侧
+    `crates/bdl-store/src/bdl_store.rs` 以
+    `source_correlated: !mapped_product_ids.is_empty()` 派生布尔，
+    关联身份由 `artifact_mappings` 行提供。TS 面已完整透传：
+    `packages/contracts/src/application-contract.ts:697`、桌面
+    `apps/desktop/src/renderer/gateway/acquire-port.ts:71` 与
+    `live-acquire-port.ts` 解析在位——渲染端现在即可拿到。
+  - **目录媒体查询面已在**：`catalogDetailParams.productId`（同
+    文件 query.schema，`^booth:[0-9]+$`）接受来源身份精确查询，
+    `catalogDetailResult.product` 含 `imageUrl`/`imageUrls`——
+    桌面上节对目录面的走查结论维持成立。
+  - **裁决＝方案 c「零新契约组合读」**：D-6 预览接入用现有 v0.4
+    冻结面两步组合——`warehouse.entryDetail`（取
+    `artifacts[].mappedProductIds`）→ `catalog.detail`（按
+    productId 取 `imageUrls`，复用 catalogImageUrl＋
+    WarehouseAlbum 同线）；无关联（mappedProductIds 空）→ 诚实
+    空态；关联但无图（imageUrls 空/目录 miss）→ 同规诚实空态
+    （AC-12）。零 schema 变更、零 wire 面扩展、零跨域契约面新增
+    ——上节三项禁项（拼 URL 猜测/固定图顶替/越权扩 wire 面）全
+    部不触发。
+  - **边界如实登记（不做过度扩张）**：列表卡面
+    `warehouseListEntriesResult.entries[].artifacts` 为
+    `warehouseArtifactRef` 形状（无 mappedProductIds）——列表缩
+    略图如未来成为需求，属 wire 面变更，须另立提案走 schema 版本
+    递进与冻结程序，不随 D-6 隐式扩张；本批先交付详情预览。
+  - **数据域知情登记**：关联事实本体与 artifact_mappings 均在数
+    据域（crates/acquisition、crates/bdl-store、schemas/bdl-queries），
+    本裁决不改数据域任何面；[→数据] 如对组合读路径有异议（例如
+    artifact_mappings 语义与目录观察面存在口径差）请在本 proposal
+    内联表态，逾期无异议即按本裁决执行。
+  - **[→桌面] 工单状态**：D-6 由「候契约裁决」转为「可开工」——
+    实现面全在桌面所有权域（gateway 组合查询＋渲染面），零猜测
+    前提已满足，候桌面领取。
+
+## 知情表态（数据，2026-09-14 04:2x 工作时段，D-6 核心裁决异议窗口）
+
+**表态＝无异议，D-6 按方案 c「零新契约组合读」执行**（对应上节
+[→数据] 异议窗口；数据域所有者逐项独立复核，非转述）：
+
+- **wire 事实逐项复核通过**（本树 slot/wt-5 追平 937bb0b 世代）：
+  `warehouseArtifactFact` 中 `sourceCorrelated` 与 `mappedProductIds`
+  并列 required、后者 `^booth:[0-9]+$` 数组（result.schema.json）；
+  Rust 侧 `bdl_store.rs` `source_correlated: !mapped_product_ids
+  .is_empty()` 派生（:1551）；`catalogDetailParams.productId`
+  required 且 `^booth:[0-9]+$`（query.schema.json）；catalogDetail
+  结果 `productDetail` 含 `imageUrl`/`imageUrls`——裁决所述与冻结
+  v0.4 面一致。
+- **口径差异议点专项核实＝无口径差**：`artifact_mappings` 写入路径
+  强制 `product_known` 校验（product_id 不在目录 corpus 即
+  `UnknownProduct` 报错），`mapped_product_ids()` 即该表 product_id
+  的有序投影——故 `mappedProductIds` 的身份空间与
+  `catalogDetailParams.productId` 严格同一（booth 命名空间 corpus
+  身份），`warehouse.entryDetail → catalog.detail` 组合读是身份精确
+  传递，不是模糊关联。
+- **边界登记认可**：列表卡 `warehouseArtifactRef` 无关联身份与
+  schema 事实相符（required 仅 relativePath/artifactSha256/state/
+  sizeBytes/role）——列表缩略图如成需求属 wire 变更，须另立提案走
+  版本递进与冻结程序，数据域同意不随 D-6 隐式扩张。
+- **TS 面抽查**（非数据域，纯事实核验）：application-contract.ts
+  artifact fact 类型含 `mappedProductIds: readonly string[]`、
+  acquire-port.ts:71 与 live-acquire-port.ts 解析在位——裁决引用
+  无误。
+- **数据域改动面＝零**：本裁决不改关联事实本体、不改
+  artifact_mappings 语义、不改任何 schema 文件；组合读完全走在冻
+  结 v0.4 面上。异议窗口可提前关闭，桌面可开工。
