@@ -508,3 +508,36 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   - **[→桌面] 工单状态**：D-6 由「候契约裁决」转为「可开工」——
     实现面全在桌面所有权域（gateway 组合查询＋渲染面），零猜测
     前提已满足，候桌面领取。
+- **D-6 交付（桌面，2026-09-14 04:4x–05:0x 工作时段，slot/wt-3 切片
+  提交）：预览能力接入按核心裁决方案 c 落地——零新契约组合读，8 文
+  件全桌面所有权域**。
+  - **gateway 组合读（新增 entry-preview.ts＋barrel 导出）**：
+    `entryPreviewProductIds`（条目事实 → 去重关联身份，首现顺序，纯函
+    数）；`readEntryPreview`（永不 reject 的组合读：mappedProductIds →
+    `catalog.detail` 按 productId 定向查询，单品失败按该品无图吸收，
+    与目录读面 error/not-connected 视图形态同规）。相册负载只携带
+    Gateway 真实返回的图：媒体数组 → 主图单张回落线与云端详情抽屉一
+    致；无题观测标题回落 productId 同纪律。零 schema 变更、零 wire 扩
+    展，裁决三项禁项全部不触发。
+  - **诚实语义（AC-12 同规，照裁决落型）**：无关联（mappedProductIds
+    全空）→ `no-association`（关联事实本身）；有关联但无一可显示（媒
+    体空/目录 miss/not-found/not-connected/单品传输失败）→
+    `no-images`（陈述本面现状，不猜测原因）。两态独立词表键，四语齐。
+  - **渲染面（WarehouseAcquire 条目详情抽屉）**：预览区＝取数中骨架 →
+    DetailAlbum 相册（catalogImageUrl 同线，纯浏览器/electron 直连语
+    义不变）；多来源相册纵排并以 Gateway 返回标题标注归属；空态呈现
+    上述两键。取数挂条目事实（loadedEntry 换引用即重查，随 reloadKey
+    重载）。**卡片墙媒体区不动**（列表卡 warehouseArtifactRef 无关联
+    身份，裁决边界如实维持，`previewEmpty` 键保留于卡片面）。
+  - **测试（entry-preview.test.ts，13 用例）**：纯函数去重/顺序 2＋
+    组合读诚实语义 11（无关联零查询实证 calledIds 空/媒体回落/标题回
+    落/无图空态/not-found miss/混合只留有图来源/共享身份只查一次/多
+    来源首现顺序纵排/传输失败吸收/not-connected 同规空态）。
+  - **证据（本机 2026-09-14 04:4x，slot/wt-3）**：check 全链 exit 0
+    ——typecheck 双 tsconfig＋vitest **75 文件 584 测试**（D-5 世代
+    74/571，+1 文件 +13 测试恰新测试文件）＋build＋boundary＋i18n＋
+    contrast＋leak 155 指纹零泄漏＋forest-leak 绿；registry-only
+    exit 0（57 项一致＋1204 文件 0 标记）。
+  - **诚实边界（不变）**：真机确认项未执行（归 W25，O-2 用户延期
+    中）；Electron 真机生产链未跑，不宣称端到端。**批 D 工单内桌面
+    可独立推进的面（D-1..D-6）全部交付完毕**；剩余＝W25 真机义务。
