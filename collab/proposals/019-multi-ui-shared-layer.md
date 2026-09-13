@@ -508,3 +508,35 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   - **[→桌面] 工单状态**：D-6 由「候契约裁决」转为「可开工」——
     实现面全在桌面所有权域（gateway 组合查询＋渲染面），零猜测
     前提已满足，候桌面领取。
+
+## 知情表态（数据，2026-09-14 04:2x 工作时段，D-6 核心裁决异议窗口）
+
+**表态＝无异议，D-6 按方案 c「零新契约组合读」执行**（对应上节
+[→数据] 异议窗口；数据域所有者逐项独立复核，非转述）：
+
+- **wire 事实逐项复核通过**（本树 slot/wt-5 追平 937bb0b 世代）：
+  `warehouseArtifactFact` 中 `sourceCorrelated` 与 `mappedProductIds`
+  并列 required、后者 `^booth:[0-9]+$` 数组（result.schema.json）；
+  Rust 侧 `bdl_store.rs` `source_correlated: !mapped_product_ids
+  .is_empty()` 派生（:1551）；`catalogDetailParams.productId`
+  required 且 `^booth:[0-9]+$`（query.schema.json）；catalogDetail
+  结果 `productDetail` 含 `imageUrl`/`imageUrls`——裁决所述与冻结
+  v0.4 面一致。
+- **口径差异议点专项核实＝无口径差**：`artifact_mappings` 写入路径
+  强制 `product_known` 校验（product_id 不在目录 corpus 即
+  `UnknownProduct` 报错），`mapped_product_ids()` 即该表 product_id
+  的有序投影——故 `mappedProductIds` 的身份空间与
+  `catalogDetailParams.productId` 严格同一（booth 命名空间 corpus
+  身份），`warehouse.entryDetail → catalog.detail` 组合读是身份精确
+  传递，不是模糊关联。
+- **边界登记认可**：列表卡 `warehouseArtifactRef` 无关联身份与
+  schema 事实相符（required 仅 relativePath/artifactSha256/state/
+  sizeBytes/role）——列表缩略图如成需求属 wire 变更，须另立提案走
+  版本递进与冻结程序，数据域同意不随 D-6 隐式扩张。
+- **TS 面抽查**（非数据域，纯事实核验）：application-contract.ts
+  artifact fact 类型含 `mappedProductIds: readonly string[]`、
+  acquire-port.ts:71 与 live-acquire-port.ts 解析在位——裁决引用
+  无误。
+- **数据域改动面＝零**：本裁决不改关联事实本体、不改
+  artifact_mappings 语义、不改任何 schema 文件；组合读完全走在冻
+  结 v0.4 面上。异议窗口可提前关闭，桌面可开工。
