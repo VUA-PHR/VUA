@@ -621,52 +621,47 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
     assert_eq!(snapshot.schema_version, 1);
     assert_eq!(snapshot.captured_at, "2026-08-30T09:00:00.000Z");
 
-    let ids: Vec<&str> = snapshot.items.iter().map(|item| item.id.as_str()).collect();
+    // Single expectation table (push-review r3b N-3): id order AND zone
+    // pairing live in this one list, so adding or removing a check edits
+    // exactly one place — the previous ids-assertion + index-range pairing
+    // (`expected_play = index <= 12`) silently desynced whenever the check
+    // set changed. disk_space reports per zone (assignment 2026-09-11
+    // lists disk under play AND create; same stable id at both tails).
+    let expected: [(&str, Zone); 18] = [
+        ("steam", Zone::Play),
+        ("vrchat", Zone::Play),
+        ("steamvr", Zone::Play),
+        ("openxr_runtime", Zone::Play),
+        ("oculus_runtime", Zone::Play),
+        ("pico_runtime", Zone::Play),
+        ("vive_runtime", Zone::Play),
+        ("virtual_desktop", Zone::Play),
+        ("alvr", Zone::Play),
+        ("network", Zone::Play),
+        ("windows", Zone::Play),
+        ("gpu", Zone::Play),
+        ("disk_space", Zone::Play),
+        ("unity_hub", Zone::Create),
+        ("unity_editors", Zone::Create),
+        ("vpm_cli", Zone::Create),
+        ("vcc", Zone::Create),
+        ("disk_space", Zone::Create),
+    ];
     assert_eq!(
-        ids,
-        vec![
-            "steam",
-            "vrchat",
-            "steamvr",
-            "openxr_runtime",
-            "oculus_runtime",
-            "pico_runtime",
-            "vive_runtime",
-            "virtual_desktop",
-            "alvr",
-            "network",
-            "windows",
-            "gpu",
-            "disk_space",
-            "unity_hub",
-            "unity_editors",
-            "vpm_cli",
-            "vcc",
-            "disk_space"
-        ],
-        "disk_space reports per zone (play tail + create tail); same stable id"
+        snapshot.items.len(),
+        expected.len(),
+        "snapshot must contain exactly the checks in the expectation table"
     );
-    for (index, item) in snapshot.items.iter().enumerate() {
+    for (item, (id, zone)) in snapshot.items.iter().zip(expected) {
         assert_eq!(item.schema_version, 1);
+        assert_eq!(item.id, id, "check ids/order must match the table");
+        assert_eq!(item.zone, zone, "{id} must sit in the right zone");
         // The detector carries no severity: every error_code rides on an
         // explicit detection failure only.
         assert_eq!(
             item.error_code.is_some(),
             item.presence == EnvironmentPresence::DetectionFailed,
-            "{}: codes belong to failed observations only",
-            item.id
-        );
-        // Zone pairing by index (the ids sequence above is order-pinned):
-        // indices 0..=12 are the play zone (steam..gpu + disk_space at the
-        // play tail), indices 13..=17 are create (unity_hub..vcc +
-        // disk_space at the create tail). disk_space reports per zone
-        // (assignment 2026-09-11 lists disk under play AND create).
-        let expected_play = index <= 12;
-        assert_eq!(
-            item.zone == Zone::Play,
-            expected_play,
-            "{} (index {index}) must sit in the right zone",
-            item.id
+            "{id}: codes belong to failed observations only"
         );
     }
     if base.exists() {
