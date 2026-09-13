@@ -341,3 +341,128 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   随 D-4。
 - **批 D 剩余切片更新**：D-4＝动效/减少动效/窄窗（AC-10/AC-11 走查，
   960×600 与 1440×900）；D-5＝AC 全表（AC-01～13）回归收口。
+
+## 进展注（桌面，2026-09-14 03:0x 工作时段，D-4 切片）
+
+- **D-4 切片已交付（slot/wt-3 d3e23c4，候集成随轮验收）**：动效/减少
+  动效/窄窗走查（AC-10/AC-11，960×600 与 1440×900）——走查驱动的共享
+  面修复，入库 diff 恰 2 文件全桌面所有权域：
+  ①**走查发现一（AC-11 窄窗）：`vua-project-compat__row` 死类名**。
+  现有搭配页与森林绿骨架共用的主操作行（撤销/保存）类名在任何 CSS 中
+  均无定义（019 批 D 静态走查发现），按钮仅靠 inline 流排列。修复＝
+  `project-compat.css` 补定义：flex＋wrap＋Token 间距——最小窗口
+  （960×600，即 Electron `minWidth`/`minHeight` 事实）下主操作不溢出、
+  不裁切。
+  ②**走查发现二（AC-10 键盘可达）：内联 `all:unset` 压掉焦点环**。
+  两套 UI 的选材行触发器（ComposePage 与骨架同构）均以内联 style 写
+  `all:unset`——内联声明级联优先级高于任何选择器（含 base.css 全局
+  `:focus-visible` 轮廓规则），键盘 Tab 聚焦时**无可见焦点指示**。
+  修复＝新增共享类 `vua-select-row__trigger`（`all:unset` 语义保留，
+  类内 `:focus-visible` 显式恢复与全局同形状的焦点环；选中态 cursor
+  经 `[aria-pressed="true"]` 表达）＋ComposePage 与骨架（gitignored
+  本地，不在 diff 面）改接该类并加 `aria-pressed`——行为保持（cursor
+  语义同前），新增焦点环与按压语义即 AC-10 修复本体。
+  ③**走查结论面（结构性成立项，如实登记）**：主题/语言/高对比/特效
+  偏好持续有效（AC-10 前半）＝结构性成立——偏好全部持久化于共享容器
+  层 localStorage（storage-keys 契约），UI 根切换仅替换 UI 子树
+  （UI-01 已验收），切换写入面恰 `writeUiRootSelection` 单键；减少动效
+  ＝base.css 全局压平双通道（`prefers-reduced-motion`＋
+  `[data-effects="off"]`，通配选择器）自动覆盖两套 UI，骨架零自定义
+  动画；窄窗＝壳层侧栏固定 232px＋主区弹性、页面单列滚动、详情抽屉
+  自适应高＋Escape/autoFocus 可关闭（现有组件已备）、specs 网格行自然
+  换行、Mascot 角色区无固定尺寸——静态数值走查无挤压/裁切风险项。
+  **诚实边界**：本轮静态走查＋机械守卫复用；**实机交互窗口走查未执行**
+  （AC-10/AC-11 的真机确认项不宣称完成，随 D-5 AC 全表回归收口与
+  W25 真机义务兑现）。
+- **证据（本机 2026-09-14 02:5x–03:0x，slot/wt-3）**：pnpm check 全链
+  **exit 0**——typecheck 双 tsconfig（含本机骨架）＋vitest 73 文件 567
+  测试（与 D-3 世代持平：CSS＋组件小改，无新纯函数面＝无新测试文件，
+  如实声明）＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋
+  forest-leak 绿。零端到端宣称维持（真机义务归 W25）。
+- **批 D 剩余切片更新**：D-5＝AC 全表（AC-01～13）回归收口（含实机
+  走查确认项与迁移退路复核）。
+
+## 进展注（桌面，2026-09-14 03:3x–03:4x 工作时段，D-5 切片）
+
+- **D-5 切片已交付（slot/wt-3，候集成随轮验收）**：AC 全表（AC-01～
+  13）回归收口——逐条证据盘点＋走查驱动的命名诚实性修正＋AC-02 根
+  基测试补齐＋迁移退路复核。入库 diff 恰 4 文件全桌面所有权域
+  （apps/desktop/src/renderer/gateway/）：
+  ①**走查发现（命名诚实性）：生产容器层依赖 "fixture-" 命名文件**。
+  production-chain-store 与 compose-draft-store（随生产构建发布的共享
+  容器层 store）经 gateway/index.ts 引用 fixture-signal.ts——该文件头
+  自称「仅 DEV 可达」，与生产使用事实漂移。修正＝实现逐字原样提取至
+  `gateway/signal.ts`（纯订阅机制：无数据、无演示载荷——诚实纪律 4
+  的泄漏门扫描载荷指纹，对无载荷基础设施不适用）＋fixture-signal.ts
+  转为 DEV 夹具面（fixture-gateway/fixture-acquire/fixture-production）
+  专用 re-export（恢复名副其实）＋index.ts 导出源换 signal.ts。零行为
+  变化（实现同线）。
+  ②**AC-02 根基测试补齐**：`signal.test.ts` 四用例锚定共享信号退订
+  语义（退订移除监听／同引用重复订阅不叠加监听／重复退订安全／全体
+  在订者恰一次通知）——AC-02「监听数量不累积」的共享层机制根基首次
+  有测试锚定；组件层 useEffect 清理语义建立在之上。
+  ③**AC 全表逐条回归盘点（证据三态汇总，如实）**：
+  - **共享层测试锚定 9 条**——AC-01（两 UI 同一容器层 store 实例＋同
+    一保存链，身份透传不派生）、AC-02（草稿容器层保留＋本轮 signal
+   根基锚定；Gateway 不重建＝容器在 UI 树外〔UI-01 批 A 验收结构〕）、
+    AC-03（composeDraftToSaveDocument 无项目依赖）、AC-04（诚实回执
+    分类＋failed 不清内容＋「已保存」仅回执后）、AC-05
+    （productionChainGate stale-draft 闸门＋服务端版本锁独立拒绝）、
+    AC-06（忙碌守卫＋传输异常不悬挂「保存中」；**重试安全具契约依
+    据**：baseRevision 乐观并发、stale 为 typed conflict
+    〔application-contract.ts:903〕，误重试不产生重复配方）、AC-07
+    （解析受理任务身份跨转换保留）、AC-09（ui-switch-summary 五用例
+    ＋不可用根接线）、AC-13（saved→execute.accepted.planId→buildId
+    身份链匹配幂等）。
+  - **静态结构＋机械守卫 2 条**——AC-10（偏好共享容器 localStorage
+    持续＋base.css 减少动效双通道＋D-4 焦点环共享类修复）、AC-11
+    （D-4 死类名补布局＋静态数值走查；960×600＝Electron
+    minWidth/minHeight 事实）。
+  - **机械门常态 1 条**——AC-12（leak 155 指纹＋forest-leak 门＋DEV
+    门控；内容级零泄漏审阅仍属推送门 r2 人工程序，照登记注原样）。
+  - AC-08 断线呈现＝UI-08 结构性成立（按 Gateway 视图事实呈现，失败
+    不折叠为空态）＋恢复 inspect_required＝核心域已验收机制。
+  - **迁移退路复核（本轮确认面完整）**：AC-09 面——
+    ForestUiRootProps 恰 migration-fallback 单回调契约（测试锚定）＋
+    absent 分支返回现有 UI 入口（D-1 交付）＋current UI 恒可用
+    （ui-registry 测试）；019 §6 批 D 行「保留可切回现有 UI 的迁移
+    退路」完成条件成立。
+  ④**诚实边界（不变申报）**：全部真机确认项（AC-02 切换 20 次实机
+  计数、AC-06 实机双击/断网、AC-07 实机取消、AC-08 实机断连重连、
+  AC-10 键盘全流程、AC-11 双分辨率实机、AC-13 实机全链观察）**未执
+  行**——统一归 W25 真机义务（O-2 用户延期中），零端到端宣称维持。
+  AC 全表回归收口的交付物＝共享层/机械面证据盘点与根基补齐；**不宣
+  称 AC 表整体验收通过**（§7 三层验证的第三层〔Electron 真机生产链
+  验证〕未执行）。
+- **证据（本机 2026-09-14 03:3x–03:4x，slot/wt-3）**：pnpm check 全链
+  **exit 0**——typecheck 双 tsconfig（含本机骨架）＋vitest 74 文件
+  571 测试〔较 D-4 世代 +1 文件 +4 测试＝signal 4〕＋build＋boundary
+  ＋i18n＋contrast＋leak 155 指纹零泄漏＋forest-leak 绿。
+- **批 D 剩余面（如实登记，不虚报收口）**：§6 批 D 行交付范围四项
+  中「预览能力接入」**未见专切片交付**（D-1～D-5 计划切片不含；骨架
+  root.tsx 走查零 img/preview 面实证）——登记为 **D-6 候切片**。
+- **D-6 事实源核查与契约缺口登记（同轮，03:5x）**：D-6 开工前事实源
+  走查结论＝**桌面侧暂无零猜测实现路径，登记契约缺口候核心/数据评
+  估**。走查事实（gateway 读面逐一核实）：
+  - 选材行/草稿卡数据源＝AcquireView/WarehouseEntry（**本地仓库条目
+    读面**）：无任何图片或来源引用字段；条目详情
+    WarehouseEntryDetail（含 artifacts 的 WarehouseArtifactFact）仅有
+    `sourceCorrelated` 布尔——**不携带 productId 或媒体 URL**;
+  - 图片事实在目录观察面：CatalogProductSummary/CatalogProductDetail
+    具 imageUrls（catalogImageUrl 直连机制在位，WarehouseAlbum 同线
+    渲染可复用）；**但「本地条目→目录来源」的关联解析读面不存在**
+    ——UI 无法为本地条目查出可查图的 productId;
+  - RecipeSourceRef（provider＋productId）是配方内来源引用，不含媒
+    体且属配方图谱面，非本地条目枚举读面。
+  - **缺口本质**：跨域关联事实（BDL 本地库条目 ↔ 目录来源观察）无
+    渲染层可消费的读面。桌面侧零猜测红线下的禁止项＝从 productId 拼
+    接猜测图片 URL（编造）、复用 Figma 原型固定图（§2.2 红线）、自
+    行扩展冻结 wire 面（越权）。
+  - **候选方案（供核心/数据裁决，桌面不代决）**：a. warehouse.entry
+    Detail 读面叠加目录来源引用（productId＋provider）；b. 独立「条
+    目预览」查询面（本地条目身份 → 目录媒体或「无关联」诚实空态）。
+    方案落定后桌面即接：渲染面复用 catalogImageUrl＋WarehouseAlbum
+    同线，无关联/无图条目呈现诚实空态（AC-12 同规）。
+  - **本轮处置**：按 TICK「需要他角色输入时写清后继续，不等待」——
+    桌面侧 D-6 无可交付实现面（零猜测前提下），登记即本轮推进；批 D
+    工单内桌面可独立推进的面至 D-5 全部交付完毕。

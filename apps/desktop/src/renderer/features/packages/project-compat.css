@@ -14,3 +14,39 @@
   display: grid;
   gap: var(--vua-space-1);
 }
+
+/*
+ * 主操作行(019 批 D D-4):现有搭配页与森林绿骨架共用的操作行
+ * (撤销/保存等)。此前该类名无任何定义(死类名,019 批 D 窄窗走查
+ * AC-11 发现),按钮仅靠 inline 流排列;补 flex + wrap 布局——
+ * 最小窗口(960×600,Electron minWidth/minHeight)下操作不溢出、
+ * 不裁切,间距走 Token。
+ */
+.vua-project-compat__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+/*
+ * 选材行内嵌文本触发器(019 批 D D-4,AC-10 键盘可达):行内文本式
+ * 按钮,`all: unset` 去按钮铬保留文本语义。此前两套 UI 均以内联 style
+ * 写 all:unset——内联声明级联优先级高于任何选择器(含 base.css 的
+ * 全局 :focus-visible 规则),键盘 Tab 聚焦时无可见焦点环;样式必须
+ * 走类,由本类的 :focus-visible 显式恢复焦点环(与全局轮廓同形状)。
+ */
+.vua-select-row__trigger {
+  all: unset;
+  cursor: pointer;
+}
+
+.vua-select-row__trigger[aria-pressed="true"] {
+  cursor: default;
+}
+
+.vua-select-row__trigger:focus-visible {
+  outline: 2px solid var(--vua-border-focus);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--vua-accent) 30%, transparent);
+}
