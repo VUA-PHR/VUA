@@ -341,3 +341,43 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   随 D-4。
 - **批 D 剩余切片更新**：D-4＝动效/减少动效/窄窗（AC-10/AC-11 走查，
   960×600 与 1440×900）；D-5＝AC 全表（AC-01～13）回归收口。
+
+## 进展注（桌面，2026-09-14 03:0x 工作时段，D-4 切片）
+
+- **D-4 切片已交付（slot/wt-3 d3e23c4，候集成随轮验收）**：动效/减少
+  动效/窄窗走查（AC-10/AC-11，960×600 与 1440×900）——走查驱动的共享
+  面修复，入库 diff 恰 2 文件全桌面所有权域：
+  ①**走查发现一（AC-11 窄窗）：`vua-project-compat__row` 死类名**。
+  现有搭配页与森林绿骨架共用的主操作行（撤销/保存）类名在任何 CSS 中
+  均无定义（019 批 D 静态走查发现），按钮仅靠 inline 流排列。修复＝
+  `project-compat.css` 补定义：flex＋wrap＋Token 间距——最小窗口
+  （960×600，即 Electron `minWidth`/`minHeight` 事实）下主操作不溢出、
+  不裁切。
+  ②**走查发现二（AC-10 键盘可达）：内联 `all:unset` 压掉焦点环**。
+  两套 UI 的选材行触发器（ComposePage 与骨架同构）均以内联 style 写
+  `all:unset`——内联声明级联优先级高于任何选择器（含 base.css 全局
+  `:focus-visible` 轮廓规则），键盘 Tab 聚焦时**无可见焦点指示**。
+  修复＝新增共享类 `vua-select-row__trigger`（`all:unset` 语义保留，
+  类内 `:focus-visible` 显式恢复与全局同形状的焦点环；选中态 cursor
+  经 `[aria-pressed="true"]` 表达）＋ComposePage 与骨架（gitignored
+  本地，不在 diff 面）改接该类并加 `aria-pressed`——行为保持（cursor
+  语义同前），新增焦点环与按压语义即 AC-10 修复本体。
+  ③**走查结论面（结构性成立项，如实登记）**：主题/语言/高对比/特效
+  偏好持续有效（AC-10 前半）＝结构性成立——偏好全部持久化于共享容器
+  层 localStorage（storage-keys 契约），UI 根切换仅替换 UI 子树
+  （UI-01 已验收），切换写入面恰 `writeUiRootSelection` 单键；减少动效
+  ＝base.css 全局压平双通道（`prefers-reduced-motion`＋
+  `[data-effects="off"]`，通配选择器）自动覆盖两套 UI，骨架零自定义
+  动画；窄窗＝壳层侧栏固定 232px＋主区弹性、页面单列滚动、详情抽屉
+  自适应高＋Escape/autoFocus 可关闭（现有组件已备）、specs 网格行自然
+  换行、Mascot 角色区无固定尺寸——静态数值走查无挤压/裁切风险项。
+  **诚实边界**：本轮静态走查＋机械守卫复用；**实机交互窗口走查未执行**
+  （AC-10/AC-11 的真机确认项不宣称完成，随 D-5 AC 全表回归收口与
+  W25 真机义务兑现）。
+- **证据（本机 2026-09-14 02:5x–03:0x，slot/wt-3）**：pnpm check 全链
+  **exit 0**——typecheck 双 tsconfig（含本机骨架）＋vitest 73 文件 567
+  测试（与 D-3 世代持平：CSS＋组件小改，无新纯函数面＝无新测试文件，
+  如实声明）＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋
+  forest-leak 绿。零端到端宣称维持（真机义务归 W25）。
+- **批 D 剩余切片更新**：D-5＝AC 全表（AC-01～13）回归收口（含实机
+  走查确认项与迁移退路复核）。
