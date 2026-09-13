@@ -1,105 +1,125 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 625d103
+baseline_commit: f3caa7c
 role: 桌面
 updated: 2026-09-14
 ---
 ## 当前焦点
-**#21 批 D 工单领取开工——D-1 共享层验收面交付＋快照事实源定位＋纪律追平
-（2026-09-14 00:4x–01:1x 工作时段轮，批 D 首切片）**：
+**批 D D-2 切片交付——forest 变体动态发现接线＋诚实空态/失败态＋骨架
+（gitignored 本地）（2026-09-14 01:2x–01:5x 工作时段轮，批 D 第二切片）**：
 
-- **【① 注意】消化**：唯一指向本树项＝集成「#21 批 D 工单已签发」（第
-  二十四批簿记）——「批 D 未签发不开工」等待项就此解除，本轮领取开工。
-- **追平（625d103 世代，ae077b2 --no-ff）**：落后 21 达 15 触发线纪律追
-  平，merge-tree 预检 exit 0 零冲突；inbound 21 提交实际触碰文件面全
-  collab，唯一非 collab 提交 004137a 系本树已交付 #25/#26 修复批
-  89aea5a 的收编合并（`git diff --name-only HEAD..main -- . ':!collab'`
-  实证为空＝实质落后 0）；桌面所有权域 inbound 零触碰 pathspec 精确核
-  验实证为空；批 A 1360af1＋批 B 68f3617＋批 C 5328099/8c799a5
-  merge-base --is-ancestor 实证均在本树（工单前置已在位）。该追平已经
-  集成第二十五批簿记登记「纯追平零自有内容」，照第 13 代门先例随分支
-  历史自然收编，不单独请求。
-- **D-1 切片交付（dadd2fe，10 文件全桌面所有权域）**：批 D 共享层验收
-  面——①**AC-09 只读摘要模型**（`ui-switch-summary.ts` 纯投影：身份/
-  呈现名/nameHint 编辑字段逐字保留、dirty/saved 透传、空草稿＝诚实空
-  态、派生不回写共享状态＝「不静默覆盖」模型钉子；compose-draft-store
-  补纯函数 composeSetNameHint 与既有纯/action 分工对齐）＋不可用根接线
-  （字段保留＋只读摘要＋返回现有界面入口＝迁移退路；数据全部来自共享
-  容器草稿 store）＋四语词表 5 键；②**AC-12 前置机械门**
-  `check:forest-leak`（019 红线机械部分固化：ui-variants/ 下零已跟踪
-  文件＋gitignore 登记有效，干净检出恒绿；入 check 全链；内容级零泄漏
-  审阅仍属推送门 r2 人工程序不替代）；③AC-10 结构性成立登记（主题/HC
-  /特效偏好 localStorage 持久化＋document dataset 存活 AppShell 重挂
-  载，切换 UI 根不撤销；双 UI 键盘可达核查随 D-2 起走查）。**AC-11 与
-  森林绿视觉本体属 D-2+ 剩余切片，本轮不宣称。**
-- **快照事实源定位（019 §9 参考基线，在案事实更新）**：原型快照在用户
-  侧桌面 `VUA — 创作工作室 · 全新交互原型.zip`（2026-09-08，含
-  .figma/make 元数据，与本节 VUA-Figma-v2-2026-09-08 引用吻合；推送门
-  「draft source absent from all local worktrees」旧声明仍真——快照从
-  未入任何工作树）；已解压至仓库外
-  `C:/Users/AR/Documents/VUA-Figma-v2-2026-09-08/`（永不入库，git 层面
-  由 check:forest-leak 门守卫）；`src/data.ts` 固定演示数据在案确认＝
-  §8「托管脚本、固定数据及独立应用状态不直接替换 Electron 工程基础」
-  适配约束成立。
-- **批 D 剩余切片登记（同分支续作，纯桌面域无外部等待项）**：D-2＝
-  forest 变体骨架（gitignored 本地目录）＋动态发现接线（干净检出构建
-  安全）＋诚实空态＋迁移退路；D-3＝搭配流适配（共享草稿/保存链/生产链
-  store 复用，零模拟替代，剥除固定数据）；D-4＝动效/减少动效/窄窗
-  （AC-10/AC-11 两档尺寸走查）；D-5＝AC 全表（AC-01～13）回归收口。
-  019 内联进展注已落账（本轮状态批同文件批）。
-- **测试证据（本机 2026-09-14 01:0x，本树 slot/wt-3）**：桌面 check 全
-  链 **exit 0**（typecheck＋vitest 70 文件 546 测试〔上代 541，+5 模型
-  测试〕＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋
-  forest-leak 新门绿）；collab-brief --registry-only **exit 0**（57 项
-  一致＋1195 文件 0 冲突标记）。
-- **领任务链四环全查（本轮 git 实测独立核实）**：①本树在途＝批 D 剩
-  余切片（本轮登记自领，D-1 完整交付、D-2 未开工无半成品）；②BOARD 桌
-  面行＝#21 批 D 已领取开工（本轮 D-1）；#25 候用户更新构建复验（[需用
-  户] 跳过不代决）；#26 已关闭候销账（处置归集成）；③outline 当前窗口
-  桌面行＝W18/W19/W24 已交付维持（inbound 非 collab 文件面为空＝零变
-  化实证）；④M5 表 W24 行闭环维持；M6 提前开工包桌面余项候 W25 与门
-  序；M7/M8 未开窗不开工。
+- **【① 注意】消化**：唯一指向本树项＝集成 [→桌面] 回执「纯追平
+  ae077b2 照先例不合并下轮自然对齐；状态批 7f56438 已随 00aa5ed 在库；
+  #21 批 D 工单签发维持」——回执性质零待办；且**该回执已被第 26 批
+  超越**：D-1 切片 dadd2fe＋状态批 8760b24 已经 **f3caa7c**（第 26 批，
+  01:28）--no-ff 验收入 main，回执不回执不重发。零失鲜工作树。
+- **追平（f3caa7c 世代，本轮 --no-ff；merge-tree 预检 exit 0 零冲突）**：
+  落后 11 提交全 collab（第 25 批簿记 c725e1b/f628403/c663971＋
+  wt-4/wt-6 状态批收编 b7105ac/319b91e＋分支历史收编 dde4abc/3393c3d
+  ＋第 26 批 D-1 验收合并 f3caa7c），`git diff --name-only HEAD..main
+  -- . ':!collab'` 实证非 collab 文件面为空＝实质落后 0；桌面所有权域
+  （apps/desktop、packages/design-system、packages/contracts、
+  docs/design、docs/architecture/desktop_*）inbound 零触碰 pathspec
+  精确核验证实为空；追平后树内容与 main 全等。开工前追平系提交纪律
+  （未达 15 触发线，非纪律追平性质）。
+- **D-2 切片交付（37cf157，11 文件全桌面所有权域）**：①**动态发现
+  接线**——`ui-variant-discovery.ts` 以 Vite `import.meta.glob` 构建
+  期发现 `src/ui-variants/forest/root.tsx`；干净检出（目录缺席）glob
+  解析空表，构建/typecheck/测试恒安全（**物理模拟验证**：临时移除目录
+  后 typecheck 绿＋discovery/registry 测试 9/9 绿＋vite build 绿，骨架
+  恢复后 check 全链复绿）；`resolveForestVariant` 纯函数三态语义：
+  absent／目录半写（有杂文件无 root.tsx）仍 absent（不挑选替身入口）／
+  present（load 透传，加载错误永不吞）；`ForestUiRootProps`＝接线层与
+  gitignored 骨架间的入库契约。②**接线组件**——`ForestVariantRoot.tsx`：
+  absent 分支＝D-1 不可用根原样搬迁（字段保留＋只读摘要＋返回现有界面
+  迁移退路）；present 分支＝懒加载状态机（loading/failed/ready），失败
+  如实呈现（UI-06/UI-08，细节仅进控制台诊断；不静默回退不可用、不猜测
+  重试）；共享容器在一切分支外存活，仅 UI 树替换（UI-01）。③**可用性
+  事实化**——`isUiRootAvailable(root, forestVariantPresent)`：可用性
+  来自构建期发现事实，不再是硬编码开关；current 恒可用。④**词表 ×4**：
+  uiSwitchDesc 如实描述动态可用性；uiForestUnavailableDesc 改述「本
+  构建不含其源码」（非「待交付」）；新增 uiForestLoading/
+  uiForestLoadFailed/uiForestLoadFailedDesc/uiForestSkeletonDesc 四键
+  四语。⑤**骨架本体**——`src/ui-variants/forest/root.tsx`（gitignored
+  本地路径，永不入库，check:forest-leak 门守卫；019 红线）：诚实空态
+  骨架，仅证明「发现→加载→渲染」链路成立，业务能力面随 D-3 起接入，
+  零模拟数据零演示执行零 Figma 固定作品复制；tsconfig include 扩展
+  `src/ui-variants/**/*.tsx` 使本机 typecheck 覆盖骨架（干净检出零
+  匹配安全，renderer 模式恒有匹配无 ts18003 风险）。
+- **测试证据（本机 2026-09-14 01:4x–01:47，本树 slot/wt-3）**：桌面
+  check 全链 **exit 0**（typecheck 双 tsconfig 含骨架＋vitest 71 文件
+  553 测试〔较 D-1 世代 70/546：+1 文件 +7 测试＝discovery 6＋
+  contract 1，ui-registry 2→3〕＋build＋boundary＋i18n＋contrast＋
+  leak 155 指纹零泄漏＋forest-leak 绿）；干净检出模拟验证三件套如上；
+  collab-brief --registry-only **exit 0**（57 项一致＋1195 文件 0 冲
+  突标记，brief 时点在案）。
+- **分叉实测更正（修订批，诚实纪律）**：状态批首稿「落后 main 0」系
+  簿记时快照滞后——状态批提交时点实测 main 已并发前进 6 提交＝第 26
+  批 BOARD 记录＋wt-main 状态批 1b6ab6b（D-1 验收录账＋#21 行追加
+  D-2..D-5 剩余进展注）＋推送门 r3 回填 4ac3013＋第 27 批 wt-2 状态批
+  4247714（经 6f1f5b5 合并）＋两代纯追平收编 1ee2a82/f95b89d，**全
+  collab**＝实质落后 0，桌面所有权域 inbound 零触碰；未达 15 触发线
+  照 wt-2/wt-4/wt-5 先例登记不追平，下轮追平自然对齐。本树领先 3 不变
+  （追平合并＋D-2 切片＋状态批，修订批并入后为 4）。
+- **领任务链四环全查（本轮 git 实测独立核实）**：①本树在途＝批 D
+  D-3 起剩余切片（本轮 D-2 完整交付无半成品，D-3 未开工）；②BOARD
+  桌面行＝#21 批 D 执行中（本轮 D-2）；#25 候用户更新构建复验
+  （[需用户] 跳过不代决）；#26 已关闭；其余无桌面开放项（本轮读表
+  复核成立）；③outline 当前窗口桌面行＝W18/W19/W24 已交付维持
+  （inbound 非 collab 文件面为空＝outline 零变化实证）；④M 门分解
+  表——M5 表 W24 行闭环维持；M6 提前开工包桌面余项（批 D 即 M6 伴随
+  项本体）执行中；M7/M8 未开窗不开工。
 
-## 自基线交付（625d103 基线世代）
-- **D-1 切片 dadd2fe**（批 D 共享层验收面：AC-09 摘要模型＋接线＋四语
-  词表＋forest 零泄漏机械门；10 文件全桌面所有权域）。
+## 自基线交付（f3caa7c 基线世代）
+- **追平合并（f3caa7c 世代，落后 11 全 collab 实质 0，桌面所有权域
+  inbound 零触碰实证；开工前纪律，非达线追平）**。
+- **D-2 切片 37cf157**（批 D 第二切片：动态发现接线＋三态诚实语义＋
+  加载状态机＋可用性事实化＋四语词表＋tsconfig 覆盖；骨架本体
+  gitignored 不入库；11 文件全桌面所有权域）。
 - 本批：**状态批（019 进展注＋本文件，全 collab 免全量）**。
 
 ## 阻塞
-- 无桌面阻塞。D-2 起视觉主体切片事实源已定位（本机），无外部等待项。
+- 无桌面阻塞。D-3 起切片事实源已定位（本机仓库外快照），无外部等待项。
 
 ## 下次合并意图
-**本状态批（019 进展注＋wt-3.md，全 collab 免全量）＋D-1 切片 dadd2fe
-请集成随轮验收合并（--no-ff）。**本树领先 main 3 提交＝ae077b2（纯追
-平零自有内容，照先例随分支历史自然收编）＋dadd2fe（D-1 实质切片）＋本
-状态批；实质 diff＝恰 D-1 十文件（全桌面所有权域）零冲突。落后 main
-10 提交全 collab（实质落后 0，非 collab 差异面恰本树 D-1 文件实证）未
-达 15 触发线不追平，下轮自然对齐。check 全链绿＋registry-only exit 0
-证据本机在案；零端到端宣称维持，真机义务归 W25。
+**本状态批＋本修订批（恰 019 进展注＋wt-3.md，全 collab 免全量）＋
+D-2 切片 37cf157 请集成随轮验收合并（--no-ff）。**本树领先 main 4 提交
+＝本轮追平合并（零自有内容）＋37cf157（D-2 实质切片）＋状态批＋本修
+订批；实质 diff＝恰 D-2 11 文件（全桌面所有权域；骨架 root.tsx 系
+gitignored 本地文件不在 diff 面）零冲突。落后 main 6 提交全 collab
+（1b6ab6b/4ac3013/6f1f5b5/4247714＋两代纯追平收编；实质落后 0，桌面
+所有权域 inbound 零触碰）未达 15 触发线登记不追平，下轮自然对齐。
+check 全链绿＋registry-only exit 0 证据本机在案；零端到端宣称维持，
+真机义务归 W25。
 
 ## 待命声明（第 6 步，如实）
-本轮（00:4x–01:1x，工作时段）：①【① 注意】消化——批 D 工单领取开工；
-②追平 625d103 世代（ae077b2，落后 21 达线，实质落后 0，桌面所有权域
-inbound 零触碰 pathspec 实证，已随第二十五批簿记登记不重发）；③**D-1
-切片交付**（AC-09 共享层验收面＋AC-12 前置机械门，check 全链 exit 0：
-vitest 70/546＋leak 155 零泄漏＋forest-leak 绿）；④快照事实源定位落账
-（桌面 zip→仓库外解压，019 §9 吻合，data.ts 固定数据确认）；⑤四环全
-查——在途＝批 D D-2 起剩余切片（纯桌面域，无外部等待），BOARD/outline
-/M 门无其它新可领项。退出待命，候下轮 brief 续作 D-2（forest 变体骨架
-＋动态发现接线＋诚实空态）；在手 D-1 完整交付无半成品，D-2 未开工。
+本轮（01:2x–01:5x，工作时段）：①【① 注意】消化——集成回执零待办且
+已被第 26 批（f3caa7c）超越，D-1 验收确认，不回执不重发；②追平
+f3caa7c 世代（落后 11 全 collab、实质 0、桌面所有权域 inbound 零触碰
+pathspec 实证；开工前纪律追平）；③**D-2 切片交付**（动态发现接线＋
+三态诚实语义＋加载状态机＋可用性事实化＋四语词表；骨架 gitignored
+不入库由 forest-leak 门守卫；check 全链 exit 0：vitest 71/553＋leak
+155 零泄漏＋forest-leak 绿＋干净检出模拟验证三件套）；④四环全查——
+在途＝批 D D-3 起剩余切片，BOARD/outline/M 门无其它新可领项。退出
+待命，候下轮 brief 续作 D-3（搭配流适配：共享草稿/保存链/生产链
+store 复用，零模拟替代）；在手 D-2 完整交付无半成品，D-3 未开工。
 
 ## 留言
-- [→集成] **本状态批（019 进展注＋wt-3.md，collab-only 免全量）＋D-1
-  切片 dadd2fe 请随轮验收（--no-ff）**——本树领先 3（追平已随第二十五
-  批簿记登记，实质内容＝dadd2fe 十文件全桌面所有权域）；实质 diff 零冲
-  突；check 全链 exit 0（vitest 70 文件 546 测试＋leak 155 指纹零泄漏
-  ＋forest-leak 新门绿）本机 2026-09-14 01:0x 在案；registry-only exit
-  0（57 项＋1195 文件 0 标记）。
-- [→集成] **019 §9 快照事实源定位回执**：原型快照＝用户桌面
-  `VUA — 创作工作室 · 全新交互原型.zip`（2026-09-08），已解压仓库外
-  `C:/Users/AR/Documents/VUA-Figma-v2-2026-09-08/`；「absent from all
-  local worktrees」旧声明就此有解，D-2 起无事实源阻塞；详情见 019 进
-  展注（随本批入库）。
-- （历史留言已消化归档：第二十三/二十四批兑现消化见本文件 git 历史
-  7f56438 世代；在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] **本状态批＋修订批（恰 019 进展注＋wt-3.md，collab-only 免
+  全量）＋D-2 切片 37cf157 请随轮验收（--no-ff）**——本树领先 4（追
+  平零自有内容＋D-2 实质切片＋状态批＋修订批）；实质 diff＝恰 D-2
+  十一文件全桌面所有权域（骨架 root.tsx gitignored 不在 diff 面）；
+  check 全链 exit 0（vitest 71 文件 553 测试＋leak 155 指纹零泄漏＋
+  forest-leak 绿＋干净检出模拟验证：移除目录后 typecheck/测试 9/9/
+  vite build 三绿）本机 2026-09-14 01:4x–01:47 在案。
+- [→集成] **分叉计数修订（诚实更正）**：状态批首稿「落后 main 0」系
+  簿记时快照滞后，实测状态批提交时点落后 6 提交全 collab（第 26 批
+  簿记 1b6ab6b/4ac3013＋第 27 批 wt-2 状态批 4247714 经 6f1f5b5＋两
+  代纯追平收编），实质落后 0、桌面所有权域 inbound 零触碰，照第
+  21/23 批口径先例登记不追平。
+- [→集成] **上批回执已被第 26 批超越知悉**：[→桌面]「纯追平 ae077b2
+  不合并」留言发出时点早于第 26 批验收合并 f3caa7c（01:28）——D-1
+  ＋状态批 8760b24 已入库确认，无需任何补救动作，仅登记时序防乒乓。
+- （历史留言已消化归档：D-1 批次回执与第 23/24 批兑现见本文件 git
+  历史 8760b24 世代；在途事项以 BOARD 与本状态文件当前焦点为准。）

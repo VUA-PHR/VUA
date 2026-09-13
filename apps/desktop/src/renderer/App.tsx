@@ -28,18 +28,23 @@ import {
 } from "./app/onboarding-model.ts";
 import { resourceSaverActive, resourceSaverSource } from "./app/resource-saver.ts";
 import { storageKeys } from "./app/storage-keys.ts";
-import { useComposeDraft } from "./app/compose-draft-store.ts";
-import { uiSwitchSummary } from "./app/ui-switch-summary.ts";
 import {
   isUiRootAvailable,
   readUiRootSelection,
   writeUiRootSelection,
   type UiRootId,
 } from "./app/ui-registry.ts";
+import {
+  ForestAvailabilityBadge,
+  ForestVariantRoot,
+} from "./app/ForestVariantRoot.tsx";
+import {
+  forestVariantEntries,
+  resolveForestVariant,
+} from "./app/ui-variant-discovery.ts";
 import { Button } from "./components/primitives/Button.tsx";
 import { Card } from "./components/primitives/Card.tsx";
 import { EmptyState } from "./components/primitives/EmptyState.tsx";
-import { Badge } from "./components/primitives/Badge.tsx";
 import { Icon } from "@vua/design-system";
 import { format, strings, termLabel, termSequence, TERMS } from "./i18n/index.ts";
 import { currentLocale, localeRegistry } from "./i18n/index.ts";
@@ -193,67 +198,10 @@ function PlaceholderPage({ title, description }: { title: string; description: s
  * 「生成后删除原始素材文件」危险开关(未接线偏好,确认对话框,proposal 008)。
  * 007 的「生成 VPM 模式入口」偏好开关被全局开关语义取代(提案 008 复核)。
  */
-/* 森林绿 UI 不可用根(批 D 前置):诚实不可用呈现＋返回现有 UI 入口;
- * 共享容器(GatewayProvider/事件/状态)在此根下继续存在——仅 UI 树替换。
- * 019 批 D(UI-05/AC-09):目标 UI 不支持当前编辑字段时,共享草稿以只读
- * 摘要呈现(字段保留＋未保存/已保存状态),数据全部来自共享容器草稿
- * store,不发明内容;返回入口保留迁移退路。 */
-function ForestGreenUnavailableRoot({ onBackToCurrent }: { onBackToCurrent: () => void }) {
-  const summary = uiSwitchSummary(useComposeDraft());
-  return (
-    <div className="vua-page">
-      <section className="vua-page__hero">
-        <h1 className="vua-title">{strings.dev.uiForestLabel}</h1>
-      </section>
-      <Card>
-        <EmptyState
-          title={strings.dev.uiForestUnavailable}
-          description={strings.dev.uiForestUnavailableDesc}
-          action={
-            <Button variant="primary" onClick={onBackToCurrent}>
-              {strings.dev.uiBackToCurrentCta}
-            </Button>
-          }
-        />
-      </Card>
-      {summary.hasDraft ? (
-        <Card>
-          <div className="vua-page__stack">
-            <h3 className="vua-warehouse-detail__section-title">
-              {strings.dev.uiSwitchSummaryTitle}
-            </h3>
-            <p className="vua-caption vua-text-secondary">{strings.dev.uiSwitchSummaryNote}</p>
-            <ul className="vua-project-compat__specs">
-              {summary.items.map((item) => (
-                <li key={item.warehouseItemId}>
-                  <strong>{item.title}</strong>
-                  {item.nameHint !== null ? (
-                    <span className="vua-caption vua-text-secondary">
-                      {" "}
-                      {format(strings.dev.uiSwitchSummaryHintLine, { hint: item.nameHint })}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-            {summary.dirty ? (
-              <p className="vua-caption vua-text-secondary" role="status">
-                {strings.dev.uiSwitchSummaryDirty}
-              </p>
-            ) : null}
-            {summary.saved !== null ? (
-              <p className="vua-caption vua-text-secondary" role="status">
-                {format(strings.dev.uiSwitchSummarySaved, {
-                  revision: String(summary.saved.revision),
-                })}
-              </p>
-            ) : null}
-          </div>
-        </Card>
-      ) : null}
-    </div>
-  );
-}
+/* 森林绿 UI 根接线(019 批 D D-2)已迁至 app/ForestVariantRoot.tsx:
+ * absent = 诚实不可用呈现(字段保留＋只读摘要＋返回现有界面入口);
+ * present = 构建期发现的变体入口按需加载,失败如实呈现。共享容器
+ * (GatewayProvider/事件/状态)在任何分支下继续存在——仅 UI 树替换。 */
 
 function ExperimentalSettingsPage({
   uiRoot,
@@ -262,7 +210,10 @@ function ExperimentalSettingsPage({
   uiRoot: UiRootId;
   onUiRootChange: (root: UiRootId) => void;
 }) {
-  const forestAvailable = isUiRootAvailable("forest-green");
+  const forestAvailable = isUiRootAvailable(
+    "forest-green",
+    resolveForestVariant(forestVariantEntries).status === "present",
+  );
   return (
     <div className="vua-page">
       <section className="vua-page__hero">
@@ -302,7 +253,7 @@ function ExperimentalSettingsPage({
                     {strings.dev.uiForestLabel}
                   </Button>{' '}
                   {!forestAvailable ? (
-                    <Badge tone="neutral">{strings.dev.uiForestUnavailable}</Badge>
+                    <ForestAvailabilityBadge available={false} />
                   ) : null}
                 </li>
               </ul>
@@ -1313,7 +1264,7 @@ export function App() {
   return (
     <GatewayProvider gateway={gateway}>
       {uiRoot === "forest-green" ? (
-        <ForestGreenUnavailableRoot onBackToCurrent={() => setUiRoot("current")} />
+        <ForestVariantRoot onBackToCurrent={() => setUiRoot("current")} />
       ) : (
         <AppShell
           page={page}
