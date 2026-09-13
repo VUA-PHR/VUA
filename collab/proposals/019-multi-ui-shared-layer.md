@@ -247,3 +247,62 @@ Figma 第二版尚存在内存草稿伪保存提示、完成后回到固定作�
   审阅必须包含「forest 目录零泄漏」核查项。
 - 文档地位：本提案内容为需求登记（T5 计划/协作层），不自动成为受管文档；
   实施过程中形成的正式契约/文档按文档治理另行升版、双语与登记。
+## 进展注（桌面，2026-09-14 01:1x 工作时段，批 D 工单签发后首切片）
+
+- **批 D 共享层验收面已交付（slot/wt-3 dadd2fe，候集成随轮验收）**：
+  ①AC-09 只读摘要模型（`ui-switch-summary.ts` 纯投影：身份/呈现名/
+  nameHint 编辑字段逐字保留、dirty/saved 透传、空草稿＝诚实空态、派生
+  不回写共享状态＝「不静默覆盖」模型钉子）＋不可用根接线（字段保留＋
+  只读摘要＋返回现有 UI 入口＝迁移退路；数据全部来自共享容器草稿
+  store）＋四语词表；②AC-12 前置机械门：`check:forest-leak` 常驻检查
+  把红线机械部分固化（ui-variants/ 下零已跟踪文件＋gitignore 登记有效，
+  干净检出恒绿）；内容级零泄漏审阅仍属推送门 r2 人工程序，本门不替代。
+  证据：桌面 check 全链 exit 0（vitest 70 文件 546 测试〔+5〕＋boundary
+  ＋i18n＋contrast＋leak 155 指纹零泄漏＋forest-leak 新门绿）。
+- **§9 参考基线事实源定位（在案事实更新）**：原型快照在用户侧桌面
+  `VUA — 创作工作室 · 全新交互原型.zip`（2026-09-08，含 .figma/make
+  元数据，与本节 VUA-Figma-v2-2026-09-08 引用吻合）；已解压至仓库外
+  `C:/Users/AR/Documents/VUA-Figma-v2-2026-09-08/`（永不入库；git 层面
+  由 check:forest-leak 门守卫）。`src/data.ts` 固定演示数据在案确认——
+  §8 所列「托管脚本、固定数据及独立应用状态不直接替换 Electron 工程
+  基础」适配约束成立，D-2 起剥除固定数据、全部走 Gateway 诚实空态。
+- **批 D 剩余切片登记（D-2 起，同分支续作）**：D-2＝forest 变体骨架
+  （gitignored 本地目录）＋动态发现接线（干净检出构建安全）＋诚实空态
+  ＋迁移退路；D-3＝搭配流适配（共享草稿/保存链/生产链 store 复用，零
+  模拟替代）；D-4＝动效/减少动效/窄窗（AC-10/AC-11，960×600 与
+  1440×900 走查）；D-5＝AC 全表（AC-01～13）回归收口。AC-10 主题/高
+  对比/特效偏好跨 UI 根切换持续有效已在共享层结构性成立（localStorage
+  持久化＋document dataset 存活 AppShell 重挂载），双 UI 键盘可达核查
+  随 D-2 起实际走查。零端到端宣称维持（真机义务归 W25）。
+
+## 进展注（桌面，2026-09-14 01:5x 工作时段，D-2 切片）
+
+- **D-2 切片已交付（slot/wt-3 37cf157，候集成随轮验收）**：
+  ①**动态发现接线**：`ui-variant-discovery.ts` 以 Vite `import.meta.glob`
+  在构建期发现 `src/ui-variants/forest/root.tsx`——干净检出（目录缺席）
+  glob 解析空表，构建/typecheck/测试恒安全（已做物理模拟验证：临时移除
+  目录后 typecheck 绿＋discovery/registry 测试 9/9 绿＋vite build 绿，
+  骨架恢复后 check 全链复绿）；`resolveForestVariant` 纯函数三态语义：
+  absent／目录半写（有杂文件无 root.tsx）仍 absent（不挑选替身入口）／
+  present（load 透传，加载错误永不吞）；`ForestUiRootProps` 为入库契约，
+  gitignored 骨架实现之。②**接线组件**：`ForestVariantRoot.tsx`——
+  absent 分支＝D-1 不可用根原样搬迁（字段保留＋只读摘要＋返回现有界面
+  迁移退路）；present 分支＝懒加载状态机（loading/failed/ready），失败
+  如实呈现（UI-06/UI-08；细节仅进控制台诊断，不静默回退不可用、不猜测
+  重试）；共享容器在一切分支外存活，仅 UI 树替换（UI-01）。③**可用性
+  事实化**：`isUiRootAvailable(root, forestVariantPresent)`——可用性来自
+  构建期发现事实，不再是硬编码开关；current 恒可用。④**词表 ×4**：
+  `uiSwitchDesc` 改为如实描述动态可用性；`uiForestUnavailableDesc` 改述
+  「本构建不含其源码」（非「待交付」语义）；新增 uiForestLoading／
+  uiForestLoadFailed／uiForestLoadFailedDesc／uiForestSkeletonDesc 四键
+  四语。⑤**骨架本体**：`src/ui-variants/forest/root.tsx`（gitignored，
+  永不入库，check:forest-leak 门守卫）——诚实空态骨架：仅证明「发现→
+  加载→渲染」链路成立，业务能力面随 D-3 起接入，零模拟数据零演示执行；
+  tsconfig include 扩展使本机 typecheck 覆盖骨架（干净检出零匹配安全）。
+- **证据（本机 2026-09-14 01:4x，slot/wt-3）**：pnpm check 全链 exit 0
+  ——typecheck（含骨架）＋vitest 71 文件 553 测试〔较 D-1 世代 +1 文件
+  +7 测试〕＋build＋boundary＋i18n＋contrast＋leak 155 指纹零泄漏＋
+  forest-leak 绿；干净检出模拟验证三件套如上。零端到端宣称维持（真机
+  义务归 W25）；AC-10 双 UI 键盘可达走查随 D-4。
+- **批 D 剩余切片更新**：D-3＝搭配流适配；D-4＝动效/减少动效/窄窗
+  （AC-10/AC-11 走查）；D-5＝AC 全表回归收口。
