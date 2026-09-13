@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
@@ -33,7 +33,10 @@ import "./import-page.css";
  *   打开时呈现固定导航条(后退/前进/刷新/回首页/URL 脱敏显示/关闭回
  *   VUA+窗口控制;用户实测缺口修复——全屏视图原盖死壳界面无法退出),
  *   Main 侧视图上缘让位同高条带(remote-content REMOTE_VIEW_NAV_STRIP_PX)。
- *   U9 四分法导航在 Main 侧生效,本页不做第二次分流;blocked 事件诚实呈现。
+ *   视图生命周期随页面(#25 定性修复 2026-09-13):面板卸载(切页)即关闭
+ *   在途视图——页面是视图唯一控制面,卸载不关会留下无导航条、不可控的
+ *   全屏视图与重开泄漏;U9 四分法导航在 Main 侧生效,本页不做第二次分流;
+ *   blocked 事件诚实呈现。
  *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
  * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
    任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
@@ -58,6 +61,13 @@ function EmbeddedBrowsePanel({
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
   const [address, setAddress] = useState("");
   const [openFailed, setOpenFailed] = useState(false);
+  // #25 定性修复(视图生命周期随页面):Main 侧视图在壳导航切页后仍存续,
+  // 而导航条/视图状态随本面板卸载——失联视图既无导航条也不可控(渲染层
+  // viewId 判空,关闭入口缺席),重挂载首开还会叠加无人能关的泄漏视图。
+  // 卸载标记＋在途视图 ref 支撑「卸载即关」;open 在卸载后才 resolve 的
+  // 竞态由 then 内卸载检查兜底,不残留失联视图
+  const disposedRef = useRef(false);
+  const viewIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const remote = window.vua?.remoteContent;
@@ -67,12 +77,38 @@ function EmbeddedBrowsePanel({
     });
   }, []);
 
+  // viewId 同步进 ref:卸载清理闭包读 state 不保新值
+  useEffect(() => {
+    viewIdRef.current = browse.viewId;
+  }, [browse.viewId]);
+
+  // 卸载即关(#25 定性修复):素材导入页是视图的唯一控制面(固定导航条随
+  // 页面渲染,壳导航常驻面没有第二套视图控制),带着视图切页＝留下无导航
+  // 条的全屏视图;页面卸载时显式关闭,重挂载首开不叠加泄漏视图
+  useEffect(
+    () => () => {
+      disposedRef.current = true;
+      const current = viewIdRef.current;
+      if (current !== null) {
+        void window.vua?.remoteContent?.close(current).catch(() => {
+          /* 视图已被关闭(重复清理/竞态):诚实忽略,无状态可猜 */
+        });
+      }
+    },
+    [],
+  );
+
   const openAddress = (url: string) => {
     setOpenFailed(false);
-    void window.vua?.remoteContent?.open({ url }).catch(() => {
+    void window.vua?.remoteContent?.open({ url }).then((state) => {
+      // 卸载后 open 才落定的竞态:视图随即关闭,不留失联视图
+      if (disposedRef.current) {
+        void window.vua?.remoteContent?.close(state.viewId).catch(() => {});
+      }
+    }).catch(() => {
       // 窄面拒绝(清单外来源):诚实呈现,不放行不猜测(Main 确认层语义
       // 属导航策略面,页内确认层随批 B)
-      setOpenFailed(true);
+      if (!disposedRef.current) setOpenFailed(true);
     });
   };
 
@@ -89,7 +125,9 @@ function EmbeddedBrowsePanel({
   const viewId = browse.viewId;
   const closeView = () => {
     if (viewId === null) return;
-    void window.vua?.remoteContent?.close(viewId);
+    void window.vua?.remoteContent?.close(viewId).catch(() => {
+      // 未知视图(已被关闭等):视图关闭事件会同步状态,这里不猜测
+    });
   };
   const historyAction = (action: "goBack" | "goForward" | "reload") => {
     if (viewId === null) return;
