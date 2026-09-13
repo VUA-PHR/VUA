@@ -1,19 +1,9 @@
 /**
- * fixture 共享信号(仅 DEV 可达):端口快照 + 订阅的最小实现。
- * fixture-gateway 与 fixture-production 共用,避免环形引用。
+ * DEV fixture 面信号入口(实现见 ./signal.ts):
+ * 本模块只服务 fixture-gateway / fixture-acquire / fixture-production
+ * 等 DEV 夹具面;共享容器层(生产 store)与 gateway/index.ts 的导出源
+ * 是 ./signal.ts(D-5 回归走查更正:此前本文件头自称「仅 DEV 可达」但
+ * 生产容器层经 index.ts 同样引用本实现,命名与事实漂移——实现提入
+ * signal.ts 后本文件恢复名副其实,夹具数据守卫仍按载荷指纹照常生效)。
  */
-export function createSignal<T>(initial: T) {
-  let current = initial;
-  const listeners = new Set<(value: T) => void>();
-  return {
-    get: () => current,
-    set: (next: T) => {
-      current = next;
-      for (const callback of listeners) callback(current);
-    },
-    subscribe: (callback: (value: T) => void) => {
-      listeners.add(callback);
-      return () => listeners.delete(callback);
-    },
-  };
-}
+export { createSignal } from "./signal.ts";

@@ -156,7 +156,7 @@ export type {
   RepoInfo,
 } from "./packages-port.ts";
 export type { SettingsPort, SettingsView } from "./settings-port.ts";
-export { createSignal } from "./fixture-signal.ts";
+export { createSignal } from "./signal.ts";
 export type { CancelTaskResult, TaskCenterView, TaskItem, TaskPort } from "./task-port.ts";
 export { createInactiveTutorialPort } from "./tutorial-port.ts";
 export type { DispatchResult, TutorialAction, TutorialPort, TutorialSnapshot } from "./tutorial-port.ts";
