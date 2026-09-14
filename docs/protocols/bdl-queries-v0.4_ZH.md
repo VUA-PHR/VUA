@@ -4,9 +4,13 @@
 
 > 文档版本：0.4
 > 状态：**已冻结（域内业务词表）**（2026-09-10）——provider-host
-> `downloads.listCompleted` 路由待核心执行（与 bdl-commands v0.4 相同的
-> 契约先行分工：数据角色先于 wire 批冻结域内词表；信封版本常量随核心接线
-> 批升版）。完成接线前本方法不得声称端到端可用
+> `downloads.listCompleted` 路由已落（2026-09-10 核心 wire 批 389912e：
+> 路由臂＋信封版本常量 BDL_QUERIES_SCHEMA_VERSION 0.3→0.4＋消费测试；
+> TS 面词表行/守卫/路由在位；证据链见 BOARD 冻结契约表行与 REGISTRY
+> 第 43 行。2026-09-15 头部注记刷新，数据域协议本维护批）。
+> 契约先行分工留档：数据角色先于 wire 批冻结域内词表，信封版本常量随
+> 核心接线批升版（均已兑现）。端到端可用宣称仍需真机证据——wire 落地
+> 不构成端到端验证
 > 机器可读词表：`schemas/bdl-queries/v0.4/`（Schema＋正负例向量；消费测试
 > `crates/bdl-store/tests/downloads_list_serving.rs`；v0.1–v0.3 目录保留
 > 勿改）
@@ -16,7 +20,8 @@
 > 所有权边界：`docs/architecture/bdl_ZH.md`（BDL 是 AMF 私有本地模块；只存
 > AMF 认可的数据，仅经 AMF 窄应用服务面暴露）；`docs/architecture/desktop_ZH.md`
 > （渲染层不持有 Electron 或 BDL 对象）
-> 更新：2026-09-10（v0.4：新增已完成下载采纳源查询）
+> 更新：2026-09-10（v0.4：新增已完成下载采纳源查询）；2026-09-15 头部
+> 状态注记刷新（路由已落核实，协议本本体零变更）
 
 ## v0.4 修订（相对 v0.3）
 
