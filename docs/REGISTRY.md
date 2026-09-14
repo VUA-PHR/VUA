@@ -40,7 +40,7 @@
 | docs/protocols/bdl-queries-v0.1_ZH.md | 0.1 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-06 |
-| docs/protocols/bdl-queries-v0.4_ZH.md | 0.4 | 已冻结（downloads.listCompleted 采纳源读面，2026-09-10：Schema＋向量＋消费测试；wire 待核心） | 数据 | 2026-09-10 |
+| docs/protocols/bdl-queries-v0.4_ZH.md | 0.4 | 已冻结（downloads.listCompleted 采纳源读面，2026-09-10：Schema＋向量＋消费测试）；wire 已落（2026-09-10 核心 389912e：路由臂＋信封版本常量 0.3→0.4＋消费测试；TS 面在位。2026-09-15 注记刷新，wt-5 c749d22 登记请求，集成独立核实） | 数据 | 2026-09-15 |
 | docs/protocols/bdl-commands-v0.1_ZH.md | 0.1 | 已取代（→ v0.2） | 数据 | 2026-09-07 |
 | docs/protocols/bdl-commands-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |
