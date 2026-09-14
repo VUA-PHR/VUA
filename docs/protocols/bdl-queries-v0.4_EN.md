@@ -4,11 +4,16 @@
 
 > Document version: 0.4
 > Status: **Frozen (domain business vocabulary)** (2026-09-10) — the
-> provider-host `downloads.listCompleted` route is pending core execution
-> (the same contract-first split as bdl-commands v0.4: the data role freezes
-> the domain vocabulary ahead of the wire batch; the envelope version
-> constant rises with the core wiring batch). Until wired, the method must
-> not be claimed end-to-end
+> provider-host `downloads.listCompleted` route has landed (2026-09-10
+> core wire batch 389912e: route arm + envelope version constant
+> BDL_QUERIES_SCHEMA_VERSION 0.3→0.4 + consumer tests; TS-face vocabulary
+> rows/guards/routing in place; evidence chain in the BOARD frozen-contract
+> row and REGISTRY line 43. Header note refreshed 2026-09-15, data-role
+> protocol maintenance batch).
+> Contract-first split on record: the data role froze the domain vocabulary
+> ahead of the wire batch, and the envelope version constant rose with the
+> core wiring batch (both fulfilled). End-to-end claims still require
+> real-machine evidence — a landed wire is not an end-to-end verification
 > Machine-readable vocabulary: `schemas/bdl-queries/v0.4/` (schema + positive/
 > negative vectors; consumer test
 > `crates/bdl-store/tests/downloads_list_serving.rs`; the v0.1–v0.3
@@ -21,7 +26,9 @@
 > local module; it stores only AMF-approved data and is exposed only through
 > the narrow AMF application-service surface); `docs/architecture/desktop_EN.md`
 > (the renderer never holds Electron or BDL objects)
-> Updated: 2026-09-10 (v0.4: completed-download adoption-source query added)
+> Updated: 2026-09-10 (v0.4: completed-download adoption-source query
+> added); 2026-09-15 header status-note refresh (route-landed verification,
+> protocol body unchanged)
 
 ## v0.4 revision (relative to v0.3)
 
