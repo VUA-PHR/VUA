@@ -13,12 +13,20 @@
 > Scope: `release.openForHandoff` (tasked handoff command: buildId → task
 > nine states → handoff fact document)
 > Ownership boundary: the handoff implementation domain = the process/window
-> face (production-domain port) plus the core use case (a later slice); this
-> batch freezes the vocabulary-row CONTRACT face — the method vocabulary, the
-> params closed set, the acceptance-receipt and handoff-fact shapes, the
-> error-code closed set, and the honest-absence semantics
+> face (production-domain port) plus the core use case (core domain) — the
+> core use case is WIRED (023 follow-up slice 2, 2026-09-16: task
+> orchestration + handshake completion judgment + editor identity resolution
+> + the `ReleaseHandoffPort` contract); the production-domain process/window
+> adapter is a production-domain slice, and the default assembly keeps the
+> honest absence. This batch froze the vocabulary-row CONTRACT face — the
+> method vocabulary, the params closed set, the acceptance-receipt and
+> handoff-fact shapes, the error-code closed set, and the honest-absence
+> semantics
 > Updated: 2026-09-16 (v0.1 freeze batch: bilingual protocol document +
-> docs/REGISTRY.md registration)
+> docs/REGISTRY.md registration); 2026-09-16 (core use-case wiring batch:
+> implementation-domain status refresh — the route wires by port injection,
+> the default-assembly absence semantics unchanged, vocabulary/shapes/
+> error-code closed set untouched)
 
 ## Handoff semantics (product boundary restated)
 
@@ -95,14 +103,16 @@ to guess at (honesty rules 1/2).
    naturally holds only the buildId. Disagreement reopens the 023 thread
    (registering the ruling here does not soften the freeze; changes go
    through a version bump).
-5. **Editor identity resolution order** (semantic face; implementation lands
-   in a later slice): explicit injection (the 021 assembly-face selection
-   authority, the `VUA_UNITY_EDITOR` manual channel) > the build record's
-   carried identity (`unityEditorVersion`/`projectId` — the production
-   stance's default adopted: take the build-time editor identity by default,
-   guarding against version-mismatch upgrade side effects) > the typed error
-   `vua.release_handoff.editor_unresolved` (whose diagnosis reuses the
-   `environment.verifyEditor` semantics, never a new vocabulary).
+5. **Editor identity resolution order** (semantic face; wired with the 023
+   follow-up slice 2, 2026-09-16): explicit injection (the 021 assembly-face
+   selection authority, the `VUA_UNITY_EDITOR` manual channel, its identity
+   established through the editor-verify face; a refusal there reports the
+   typed unresolved and is never silently downgraded to a lower tier) > the
+   build record's carried identity (`unityEditorVersion`/`projectId` — the
+   production stance's default adopted: take the build-time editor identity
+   by default, guarding against version-mismatch upgrade side effects) > the
+   typed error `vua.release_handoff.editor_unresolved` (whose diagnosis
+   reuses the `environment.verifyEditor` semantics, never a new vocabulary).
 
 ## Method face
 
@@ -144,11 +154,16 @@ Closed four codes (the `vua.release_handoff.*` family):
 | `vua.release_handoff.editor_unresolved` | dependency | Editor identity failed to resolve (diagnosis reuses the environment.verifyEditor semantics) |
 
 Task-run failures (a handshake timeout and the like) travel the ordinary task
-nine-state semantics, not this set. At this time the implementation domain is
-unwired: the route answers the honest absence `unavailable` (the wire test
-pins that the absence never carries a task/acceptance shape); once the
-desktop/production implementation slices land, the absence path collapses to
-the exceptional path.
+nine-state semantics, not this set. Implementation-domain status (2026-09-16
+wiring batch): **the core use case is wired** — with a port injected, the
+route admits the task through the admission flow (params validation →
+build-record existence → editor identity resolution) and the task nine states
+carry the launch + handshake wait; **the production-domain process/window
+adapter has not landed, so the default assembly (no port) keeps the honest
+absence `unavailable`** (the wire tests pin both that the absence never
+carries a task/acceptance shape and that a wired route without a record
+answers build_unknown without admitting); once the production adapter slice
+lands, the absence path collapses to the exceptional path.
 
 ## Real-machine precondition and verification boundary
 
@@ -167,10 +182,14 @@ React View (Release page Build Record row "handoff" action, desktop slice
   → typed feature/Gateway
   → Electron preload and main-process adapter
   → versioned application contract (release.openForHandoff row)
-  → provider-host route (core domain, wired this batch = honest absence)
-  → production-domain process/window port (production domain, later slice)
-  → core use case (handoff task orchestration + handshake completion
-    judgment, later slice)
+  → provider-host route (core domain, wired: port absent = honest absence)
+  → core use case (core domain, landed with 023 follow-up slice 2:
+    admission checks + task orchestration + handshake completion judgment +
+    editor identity resolution)
+  → ReleaseHandoffPort (the process/window-face trait contract frozen in
+    the core domain)
+  → production-domain process/window adapter (production-domain slice:
+    Unity.exe launch / OS focus + the handshake wait)
 ```
 
 ## Machine-readable vocabulary
@@ -182,21 +201,27 @@ the request's closed single key / the accepted receipt / the handoff fact;
 of params) / a handoff fact carrying an upload state (honesty rules 1/2
 pinned by shape) / an out-of-set error code (upload-class error codes never
 enter this vocabulary)). Consumer tests in two carriers:
-`crates/provider-host/tests/release_handoff_wire.rs` (real frame loop: the
-absence-code triple assertion + the absence never fabricating an acceptance
-shape + four params violations) + `packages/contracts/src/
+`crates/provider-host/tests/release_handoff_wire.rs` (real frame loop, 12
+cases: the absence-code triple assertion + the absence never fabricating an
+acceptance shape + four params violations + the WIRED face — a fake-port
+full flow (acceptance receipt → the succeeded snapshot's result carrying the
+five-key fact → the port receiving the resolved identity), the handshake
+timeout failing honestly with no result, a port launch failure traveling the
+job-family code, build_unknown without admission, the editor_unresolved
+dependency class, the default no-port absence kept, the explicit injection
+short-circuit reaching the port) + `packages/contracts/src/
 application-contract.test.ts` (TS guard closed-set positive/negative cases +
 the fact runtime guard + the error-code closed-set table) +
 `packages/orchestrator-provider/src/mock-provider.test.ts` (the mock
-absence branch shaped identically to the real route). Vocabulary or field
-changes must bump the version, never rewrite in place.
+absence branch shaped identically to the real default assembly). Vocabulary
+or field changes must bump the version, never rewrite in place.
 
 ## Open items
 
-- The production-domain process/window port + the core use case (handoff
-  task orchestration, handshake completion judgment, build_record/editor
-  identity resolution wiring): a later slice; the production collaboration
-  face is on call (ruling 15 local-first);
+- The production-domain process/window adapter (the real `ReleaseHandoffPort`
+  implementation: the `Unity.exe -projectPath` launch / the already-open OS
+  focus + the handshake wait): a production-domain slice, ruling-15
+  local-first, the collaboration face on call;
 - The desktop Release-page consumption slice (the Build Record row "handoff"
   primary action + the "handed off" fact + the upload_readiness evidence
   summary + the honest "final upload completes in the official SDK"

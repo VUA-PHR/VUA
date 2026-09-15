@@ -14,7 +14,8 @@ use vua_orchestrator::ProjectRef;
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
     collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
-    verify_editor_path_system, EditorPathVerdict, ImportCopyRequest, LockHolder, ManagerRoots,
+    verify_editor_path_system, EditorPathRefusal, EditorPathVerdict, ImportCopyRequest, LockHolder,
+    ManagerRoots,
     MutationMarkerGuard, PendingMutation, ProjectInspectionV01, ProjectLockError, ProjectLockGuard,
     SetNoteError, MARKER_FILE_NAME,
     PROJECT_INSPECTION_SCHEMA_VERSION as PROJECT_INSPECTION_FAMILY_VERSION,
@@ -331,6 +332,14 @@ pub struct ProductionUseCaseConfig {
     /// root — the Hub enumeration stays the environment-snapshot fact
     /// source (009 stance 4 ② semantics preserved through the selection).
     pub editor_selection: vua_orchestrator::EditorSelection,
+    /// The production-domain process/window port for the official-SDK
+    /// upload handoff (proposal 023 follow-up slice 1's contract, frozen
+    /// as the core `ReleaseHandoffPort` trait). Absent = the route keeps
+    /// answering the frozen honest absence `vua.release_handoff.
+    /// unavailable` — the real adapter lands with the production-domain
+    /// slice; nothing here fabricates an acceptance receipt, a task
+    /// snapshot, or a handoff fact.
+    pub handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
 }
 
 struct ProductionUseCaseServices {
@@ -342,6 +351,10 @@ struct ProductionUseCaseServices {
     bridge: Arc<dyn vua_orchestrator::UnityBridge>,
     project_root: PathBuf,
     editor_selection: vua_orchestrator::EditorSelection,
+    /// Proposal 023 follow-up slice 1's contract (the core
+    /// `ReleaseHandoffPort` trait). Absent = the route answers the frozen
+    /// honest absence — never a fabricated handoff.
+    handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -588,6 +601,7 @@ pub fn run_provider_host_full(
             bridge: config.bridge,
             project_root: config.project_root,
             editor_selection: config.editor_selection,
+            handoff: config.handoff,
             bdl,
             runtime,
             env_initial,
@@ -4111,29 +4125,34 @@ fn overlay_get_snapshot(
 }
 
 /// The `release.openForHandoff` route (proposal 023 freeze batch,
-/// 2026-09-16): the tasked command that hands the user to the START of the
-/// official SDK upload flow. Handoff semantics per the product boundary: the
-/// upload itself never enters VUA; the succeeded task snapshot's result
-/// carries the handoff fact document — a shape with no upload-status field
-/// at all, so honesty rules 1/2 hold by construction (the negative vector
-/// pins it).
+/// 2026-09-16; implementation wiring = follow-up slice 2, this batch).
+/// The tasked command that hands the user to the START of the official SDK
+/// upload flow. Handoff semantics per the product boundary: the upload
+/// itself never enters VUA; the succeeded task snapshot's result carries
+/// the handoff fact document — a shape with no upload-status field at all,
+/// so honesty rules 1/2 hold by construction (the negative vector pins
+/// it).
 ///
-/// Implementation domain (production stance, five points on record): the
-/// Bridge command face presumes an already-open project, so the handoff is
-/// editor-process lifecycle management living in the process/window domain —
-/// unity-bridge v3 gains zero operations. The production-domain port and the
-/// core use case land in a LATER slice; until then this route answers the
-/// honest absence `vua.release_handoff.unavailable` and NEVER fabricates an
-/// acceptance receipt, a task snapshot, or a handoff fact.
-///
-/// Validation ordering: the params closed set `{buildId}` is checked FIRST —
-/// a closed-set violation answers `vua.release_handoff.invalid_params`
-/// (a shape violation never masquerades as an absence, same discipline as
-/// the overlay face). Params are validated even though the capability is
-/// unwired, so desktop-side integration sees the real wire contract while
-/// the honest absence keeps the unfrozen capability from lying.
+/// Admission flow (validation ordering preserved): the params closed set
+/// `{buildId}` is checked FIRST — a closed-set violation answers
+/// `vua.release_handoff.invalid_params` (a shape violation never
+/// masquerades as an absence). Then the unwired faces answer the honest
+/// absence: no task runtime, or no production-domain port (the real
+/// process/window adapter lands with the production-domain slice — until
+/// then the default assembly carries NO port, so production behavior is
+/// unchanged and honest). With the port wired, admission validates the
+/// build-record identity: an unknown buildId answers
+/// `vua.release_handoff.build_unknown` (admission-time validation — no
+/// task is accepted for a record that does not exist), a record-store
+/// read failure answers `unavailable` (the existence could not be
+/// determined — retryable, never dressed as "unknown"), and an
+/// unresolvable editor identity answers
+/// `vua.release_handoff.editor_unresolved` (ruling 5; diagnosis reuses
+/// the verifyEditor semantics). Only then is the task accepted — the
+/// task nine states carry ONLY the long-running part (launch + handshake
+/// wait), never the admission checks.
 fn release_open_for_handoff(
-    _state: &HostState,
+    state: &HostState,
     request: &Value,
     request_id: &str,
     correlation_id: &str,
@@ -4159,16 +4178,228 @@ fn release_open_for_handoff(
             "validation",
         )));
     }
-    // The production-domain process/window port and the core use case are
-    // not wired in this slice: honest absence (category unavailable,
-    // recoverable) — never a silent success, never a guessed handoff fact.
-    Ok(FrameOutcome::Response(application_error(
-        request_id,
-        correlation_id,
-        RELEASE_HANDOFF_UNAVAILABLE,
-        "errors.releaseHandoff.unavailable",
-        "unavailable",
-    )))
+    let Some(use_cases) = state.use_cases.clone() else {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            RELEASE_HANDOFF_UNAVAILABLE,
+            "errors.releaseHandoff.unavailable",
+            "unavailable",
+        )));
+    };
+    let Some(runtime) = use_cases.runtime.clone() else {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            RELEASE_HANDOFF_UNAVAILABLE,
+            "errors.releaseHandoff.unavailable",
+            "unavailable",
+        )));
+    };
+    let Some(port) = use_cases.handoff.clone() else {
+        // The production-domain process/window adapter is not wired:
+        // honest absence (category unavailable, recoverable) — never a
+        // silent success, never a guessed handoff fact.
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            RELEASE_HANDOFF_UNAVAILABLE,
+            "errors.releaseHandoff.unavailable",
+            "unavailable",
+        )));
+    };
+    let build_id = request
+        .pointer("/params/buildId")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    // Admission-time record validation: the build record is the
+    // authoritative project identity (ruling 4) and the editor-identity
+    // source (ruling 5 tier 2). A read failure means the existence could
+    // not be determined — unavailable, retryable, never "unknown".
+    let record = match use_cases.records.get(&build_id) {
+        Ok(Some(record)) => record,
+        Ok(None) => {
+            return Ok(FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.release_handoff.build_unknown",
+                "errors.releaseHandoff.buildUnknown",
+                "validation",
+            )));
+        }
+        Err(_) => {
+            return Ok(FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                RELEASE_HANDOFF_UNAVAILABLE,
+                "errors.releaseHandoff.unavailable",
+                "unavailable",
+            )));
+        }
+    };
+    // A schema-valid v0.3 record always carries both identities; a record
+    // missing them cannot establish the handoff identity, so the route
+    // answers the same typed unresolved (the closed set has no separate
+    // "incomplete record" code — this IS an identity-resolution failure).
+    let record_version = vua_orchestrator::record_editor_version(&record).unwrap_or_default();
+    let Some(record_project_id) = vua_orchestrator::record_project_id(&record) else {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.release_handoff.editor_unresolved",
+            "errors.releaseHandoff.editorUnresolved",
+            "dependency",
+        )));
+    };
+    // Editor-identity resolution (ruling 5): explicit injection > the
+    // record's carried version matched against observed candidates >
+    // typed unresolved. Candidates come from the 021 selection decision
+    // this provider was assembled with — the explicit injection passes
+    // through the editor-verify face (identity from the executable, never
+    // the directory name); a refusal there short-circuits into the same
+    // typed unresolved (the explicit injection is the authority — it is
+    // never silently downgraded to the record tier). The error envelope
+    // carries no diagnostic params (the frozen error shape); the
+    // resolution reason stays a core-side fact.
+    let candidates = match handoff_editor_candidates(state) {
+        Ok(candidates) => candidates,
+        Err(_) => {
+            return Ok(FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.release_handoff.editor_unresolved",
+                "errors.releaseHandoff.editorUnresolved",
+                "dependency",
+            )));
+        }
+    };
+    let resolved = match vua_orchestrator::resolve_handoff_editor(&candidates, record_version) {
+        Ok(resolved) => resolved,
+        Err(_) => {
+            return Ok(FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                "vua.release_handoff.editor_unresolved",
+                "errors.releaseHandoff.editorUnresolved",
+                "dependency",
+            )));
+        }
+    };
+    // Task acceptance: the nine states carry ONLY the long-running part.
+    // Completion = Bridge handshake arrival (ruling 3) — the port owns the
+    // wait; "process started" never completes the task; OS focus enters
+    // neither the judgment nor the fact.
+    let launch = vua_orchestrator::HandoffLaunch {
+        build_id: build_id.clone(),
+        project_id: record_project_id.to_owned(),
+        project_root: use_cases.project_root.clone(),
+        editor_exe: resolved.exe_path.clone(),
+        editor_version: resolved.version.clone(),
+    };
+    let run_correlation = correlation_id.to_owned();
+    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |context| {
+            if context.check_cancel() {
+                return Ok(vua_orchestrator::TaskExit::Cancelled);
+            }
+            match port.open_for_handoff(&launch) {
+                Ok(vua_orchestrator::HandoffOutcome::HandshakeArrived) => {
+                    Ok(vua_orchestrator::TaskExit::Done(
+                        vua_orchestrator::build_handoff_fact(
+                            &launch.build_id,
+                            &launch.project_id,
+                            &launch.editor_exe.to_string_lossy(),
+                            &launch.editor_version,
+                            &now_rfc3339(),
+                        ),
+                    ))
+                }
+                Ok(vua_orchestrator::HandoffOutcome::HandshakeTimeout) => {
+                    // The wait ran and no handshake arrived: an honest
+                    // failure (ruling 3 — never a guessed success), and
+                    // retryable (the editor may simply still be loading).
+                    Err(AppErrorV1::new(
+                        "vua.task.timeout",
+                        ErrorCategory::ExternalFailure,
+                        "errors.releaseHandoff.handshakeTimeout",
+                        &run_correlation,
+                    )
+                    .with_recoverable(true))
+                }
+                Err(error) => Err(AppErrorV1::new(
+                    "vua.job.handoff_launch_failed",
+                    ErrorCategory::ExternalFailure,
+                    "errors.releaseHandoff.launchFailed",
+                    &run_correlation,
+                )
+                .with_recoverable(true)
+                .with_param(
+                    "detail",
+                    vua_orchestrator::ParamValue::Text(error.detail),
+                )),
+            }
+        }),
+    });
+    match accepted {
+        Ok(accepted) => Ok(FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": RELEASE_HANDOFF_SCHEMA_VERSION,
+                "operation": "release.openForHandoff",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        ))),
+        Err(_) => Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            RELEASE_HANDOFF_UNAVAILABLE,
+            "errors.releaseHandoff.unavailable",
+            "unavailable",
+        ))),
+    }
+}
+
+/// Assembles the editor-identity candidates for handoff resolution from
+/// the assembly-face selection this provider was configured with (021):
+/// the explicit injection becomes a candidate only when the editor-verify
+/// face can establish its identity right now; a refusal there is
+/// `Err` — the explicit injection is the resolution authority (ruling 5
+/// tier 1), so it short-circuits into the typed unresolved instead of
+/// being silently downgraded to the record tier. The auto-selected
+/// production target enters as an observed candidate; an unavailable
+/// selection yields no candidates (an honest unresolved).
+fn handoff_editor_candidates(
+    state: &HostState,
+) -> Result<Vec<vua_orchestrator::HandoffEditorCandidate>, EditorPathRefusal> {
+    let Some(use_cases) = state.use_cases.as_ref() else {
+        return Ok(Vec::new());
+    };
+    match &use_cases.editor_selection {
+        vua_orchestrator::EditorSelection::Explicit { path } => {
+            match (state.editor_verify)(path) {
+                EditorPathVerdict::Verified(identity) => {
+                    Ok(vec![vua_orchestrator::HandoffEditorCandidate {
+                        source: vua_orchestrator::HandoffEditorSource::ExplicitInjection,
+                        exe_path: PathBuf::from(&identity.exe_path),
+                        version: identity.version.clone(),
+                    }])
+                }
+                EditorPathVerdict::Refused(refusal) => Err(refusal),
+            }
+        }
+        vua_orchestrator::EditorSelection::AutoSelected { editor } => {
+            Ok(vec![vua_orchestrator::HandoffEditorCandidate {
+                source: vua_orchestrator::HandoffEditorSource::ProductionTarget,
+                exe_path: editor.path.clone(),
+                version: editor.parsed.display.clone(),
+            }])
+        }
+        vua_orchestrator::EditorSelection::Unavailable { .. } => Ok(Vec::new()),
+    }
 }
 
 fn catalog_request(

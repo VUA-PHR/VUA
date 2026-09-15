@@ -285,3 +285,37 @@ params 恒答 `vua.release_handoff.unavailable`（unavailable 类），
 Release 页消费切片（Build Record 行「交接」主操作＋「已交接」事实＋
 upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
 SDK 中完成」如实说明，绝不渲染上传进度/结果）。
+
+## 切片②交付（2026-09-16，核心 use case 接线批）
+
+后续切片②（核心 use case）本批落地，词表/形状/错误码闭集零变化：
+
+- **核心域**：`crates/orchestrator/src/release_handoff.rs`——①
+  `ReleaseHandoffPort` trait＝产线进程/窗口面的冻结跨域契约（两路径
+  ＋handshake 等待归 port 实现；`HandshakeArrived` 为唯一完成事实，
+  `HandshakeTimeout` 为诚实结果枚举，启动失败为类型化错误）；②身份
+  解析 `resolve_handoff_editor`（裁决⑤三级：显式注入短路＞构建记录
+  版本对观测候选匹配＞类型化 unresolved；版本不匹配绝不取「最近似」
+  ——防升级副作用）；③fact 组装 `build_handoff_fact`（五键闭集，
+  无上传状态字段由构造钉死）。单元测试 9 例。
+- **provider-host**：`ProductionUseCaseConfig/Services` 新增
+  `handoff` port 注入（缺省 `None`＝生产装配维持诚实缺席）；路由按
+  受理流接线——params 校验（不变，最前）→runtime/port 缺席检查
+  （缺席语义维持）→构建记录存在性（`build_unknown` validation；读
+  失败答 unavailable 不冒充 unknown）→editor 身份解析（显式注入经
+  editor-verify 面确立身份，验证拒绝如实 unresolved 绝不降级；
+  `editor_unresolved` category＝dependency，照协议本冻结错误码表）
+  →任务受理（九态只承载启动＋handshake 等待；handshake 超时答
+  `vua.task.timeout` 如实失败可重试，port 启动失败答
+  `vua.job.handoff_launch_failed` 执行族码——两者均不进
+  release_handoff 词表闭集）；受理回执照 `inspection.requestRun`
+  形状；succeeded 快照 result 经 #22/020 reflux 通道携带 fact。
+- **测试**：wire 帧环 12 例（缺席 5 例维持＋接线 7 例：fake port 全
+  流转/超时/启动失败/build_unknown 不受理/unresolved/缺省缺席维持/
+  显式注入短路直达 port——裁决 15 本地先行，fake port 驱动，真机
+  证据归 W25）＋核心 9 例。
+- **边界如实声明**：身份解析第二级的候选枚举面本批取 021 装配期
+  选择决策携带的事实（显式注入或单一自动选择目标）；多编辑器 Hub
+  根枚举接入候产线/环境协作切片，解析不出即如实
+  `editor_unresolved` 不猜。工程路径仅作为受信侧内部事实进 port
+  （`HandoffLaunch.project_root`），永不入 wire（边界 6）。
