@@ -2,110 +2,95 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 403113a
+baseline_commit: c262cdc
 updated: 2026-09-16
 ---
 ## 当前焦点
-**M7 提前授权×裁决 15 实现测试切片——C# EditMode 首次真实编译＋29/29 全绿＋
-四处真实缺陷修复＋素材三检查操作实现测试 succeeded（7dc5362，2026-09-15/16
-夜工作时段轮，产线域实现批）**：
-- **【① 注意】消化（本轮 brief 23:21 原文「无指向本树或本角色的阻塞/留言」，
-  失鲜工作树无）**：零指向项零动作。上轮状态批 41f33bb 经 9cbcdc7 第卌七批
-  验收入库（集成留言回执在案，知悉不重发）。
-- **开工对齐（403113a，--no-ff）**：落后 5 未达 15 追平线，照「开工前先合并
-  main 最新」规则对齐——inbound＝本树上轮状态批经 9cbcdc7 收编＋第卌七波
-  7d6239d＋TICK v1.5/LAUNCH v1.2（adf3f9a）＋**M7 部分提前开工授权批
-  1175ecf**＋用户实测反馈登记批 407e1dc；inbound 非 collab 面恰
-  docs/development-outline_ZH/EN.md（2.0.12 授权注记，用户裁决在案）＝
-  零未验收实质内容；产线所有权域 inbound 零触碰。合并后落后 0。
-- **领任务依据（本轮独立核实，不赖旧信息）**：①BOARD M 门状态表 M7 行＝
-  部分提前开工（裁决 14）：前四行越门序可开工，产线行「检查证据〔产线/核
-  心〕」016 链五件全在库（#19 行末「016 链零剩余动作」维持）——**产线契约
-  与实现底座无剩余**；②**裁决 15（素材实现测试批准）**：合法自有素材
-  basic/fuku 获批用于各角色实现测试（**含 Unity 本地真机运行、EditMode 验
-  证**），证据可复用于 W25，W25 正式开窗仍候用户——此裁决解锁 016/#19 如
-  实申报的「C# EditMode 落地未运行验证」欠账（7d63abe 申报 real-run 归
-  W25；当时无素材无批准），本轮领取办理。
-- **切片核心事实：C# 面此前从未编译通过——首次真实编译暴露四处缺陷全部修
-  复**：①ExecuteProductionJob 作业 switch 各臂元组不一致（CS8506 族）——
-  attach_to_bone/exclude_object/set_object_active 三方法 3 元组对 install
-  臂与默认臂 4 元组，v2 生产链收据执行面从未编译过；三签名统一加宽为
-  4 元组（无实例身份者 string.Empty）。②`GlobalObjectId.GetGlobalObjectIdFor`
-  不存在（CS0117，笔误）——正确 API `GetGlobalObjectIdSlow`（BridgeMutation
-  Tests 早已正确使用），processor 与 tests 各一处修复。③BridgeContractTests
-  缺 `using UnityEditor`——**本机构建（2022.3.22f1）GlobalObjectId 类型实体
-  位于 UnityEditor 命名空间**（安装模块 xml 铁证 T:UnityEditor.GlobalObjectId，
-  探针实证；另两测试文件有该 using 故通过）。④**TryResolve 无法解析未保存
-  场景零 GUID 身份**：此类串 GlobalObjectId.TryParse 在本构建直接拒收（探针
-  实证 tryParse=False），而生产收据（execute_production_job 的
-  instanceGlobalObjectId，011 成功判定）恰为此形式——补「遍历已加载场景重
-  生成比对」确定性兜底（探针实证 regenerateMatch=True；素材冒烟实战通过）。
-- **EditMode 运行验证（本机 2026-09-15/16 夜，真实 Unity 2022.3.22f1
-  batchmode）**：种子工程＝本地 VCC 集成项目复制（VRCSDK 3.10.4＋MA＋NDMF
-  ＋lilToon，排除 Library/Logs/旧桥包，Temp 下；素材与种子均不复制入 git）
-  ——**29/29 全绿**（VRC.SDKBase.Editor 7＋Vua.Editor.Tests 22），
-  UNITY_EXIT=0；产物留 `_local_w25/editmode-verif-20260915/`（gitignored）。
-  **09-12「couldn't set project path」六形态失败根因高置信定位＝Git Bash
-  MSYS 参数转换污染**（本轮 robocopy `/E` 被改写为 `E:/` 同类复现；.cmd 批
-  处理包装后 Unity 正常启动）——9-09 成功与 09-12 失败同机矛盾消解。
-- **素材实现测试（裁决 15 范围内，仅本地）**：basic 的 Meiyun.unitypackage
-  导入种子工程→Avatar prefab（Meiyu_改変 2P）实例化→三只读检查操作（v3、
-  dryRun 恒 true）全部 **succeeded**：references.clean／lighting.clean／
-  upload_readiness.clean＋build_target；收据 JSON 留 `_local_w25/`。素材本
-  体零入库零改名零夹具（纪律 15 守住；受管文档仅路径文本）。
-- **测试证据**：cargo test --workspace **588/0**＋clippy --workspace
-  --all-targets -D warnings **exit 0**（本机 00:1x）；首轮一次瞬败身份未捕
-  获、后续两轮全量全绿（#7 残余观察态既有模式，如实申报不隐瞒）；registry-
-  only exit 0（57 项＋1206 文件 0 标记，提交前）。本切片变更面恰产线域两
-  C# 文件（processor 68 行改＋tests 3 行改）；契约/Schema/向量面零触碰。
-- **边界（诚实纪律 5）**：零端到端宣称——E2 段未执行、W25 正式窗口未开、
-  provider 生产链未跑；本批＝裁决 15 实现测试（EditMode 验证＋素材本地检查
-  操作冒烟），证据按裁决 15 可复用于 W25。M7 第三行「Inspection/Release 页
-  面与官方 SDK 交接」桌面牵头、产线协作——候桌面锚点，产线无主动开工项；
-  official_sdk_rating 保留值纪律不变。
+**提案 023 开放问题 1 产线表态落节——实现域落定进程/窗口面＋统一任务化表态
+＋冻结批不设新真机前置（本轮 collab-only 批，2026-09-16 02:0x 工作时段轮）**：
+- **【① 注意】消化（brief 01:52 一条指向产线）**：wt-3 [→产线]「提案 023
+  开放问题 1 候你方表态（023 内联桌面表态节已落）」——本轮办理闭环。上轮
+  切片 7dc5362＋状态批 38342f8 已经 1490548 第卌九批验收入库（第 50/51 批
+  集成均确认 wt-4 验收请求系重显零动作）；本树 ff7e2a3 纯追平照第 13 代门
+  先例不单独合并（集成第 50 批已声明）。
+- **开工追平（c262cdc，--no-ff，amend 修正消息）**：落后 22 超 15 触发线
+  纪律追平——**实际合并落点＝第 51 波后 main 6b58fc6**（集成在合并执行间
+  隙推进 main：初版消息误写 132e4ef 世代，发现后 amend 更正如实声明）；inbound
+  非 collab 面＝第 50 波已验收内容恰核心 11 文件（017 批 2 下载卡）＋桌面 6
+  文件（#28/#27/#29），第 51 波 collab-only 零非 collab 面（BOARD＋wt-2/
+  wt-5/wt-main 状态文件 4 文件）；全部集成已验收零未验收实质内容；产线所有
+  权域 inbound 零触碰（pathspec 提交时实证）。追平后落后 0。
+- **领任务依据**：①brief【① 注意】wt-3 留言；②BOARD #30 行产线栏（开放
+  问题 1：机制事实＋实现域＋W25 真机前置）；③outline M7「Inspection/
+  Release 页面与官方 SDK 交接」行候选面 023 表态（集成第 51 批时序确认
+  「M7 Inspection/Release 页面行候选面 023 表态」）。三源同一任务，领取。
+- **产线表态五点（023 内联「表态（产线）」节，全部机制事实在案零发明）**：
+  ①**机制事实＝Bridge 无法承载交接动作**：com.ph-r.vua 运行于编辑器进程
+  内，命令面（BridgeCommandProcessor 现行 15 条）以「工程已打开」为存在
+  前提；openForHandoff 两路径——未打开→外部 `Unity.exe -projectPath` 启
+  动（此刻编辑器内无 VUA 代码）、已打开→OS 窗口聚焦（不经编辑器内代码）
+  ——均非编辑器内命令；**实现域落定进程/窗口面，不在 unity-bridge v3 增
+  操作**（确定性 Bridge 操作不能存在故演进条款不违反，无 UI 点击替代之实）
+  ——核心自查项「任务化候产线事实」据此可收敛。②身份发现全复用冻结权威：
+  verifyEditor exe 布局判定（editor_verify.rs 三形态）＋021 选择面＋**build-
+  record `unityEditorVersion`/`projectId` 已携带构建编辑器身份**（schema
+  核实；建议 editor 身份默认取构建记录身份防版本错配升级副作用，显式注入
+  仍最高优先）。③**任务化表态＝统一 task 九态单形态**：Unity 2022.3 开工程
+  长时操作（分钟级），完成判定＝**Bridge handshake 到达**（001 链，工程加
+  载完毕确定性信号；「进程已启动」不等于面板就绪不作为完成判定），超时如
+  实失败/inspect_required 不猜面板状态；已打开场景任务即达终态成本可忽略；
+  不做同步/任务双形态分叉（桌面消费只需一种形态——桌面表态节「随产线机制
+  表态走相应契约形态」即 task 形态）；OS 窗口聚焦尽力而为，不进完成判定
+  不进回执事实（焦点非稳定事实）。④**真机前置表态＝冻结批不设新真机前置**
+  ：表态依据全部为在库代码或在案真机证据（含上轮 2026-09-15/16 EditMode
+  29/29 真实 batchmode）；进程面启动＋handshake 等待实现测试可按**裁决 15**
+  本地先行、证据可复用 W25；端到端宣称候 W25 O-2。⑤核心自查项机制侧输入
+  ＝release.（产物动作面）/record.（记录读写面）族边界清晰无重叠，命名裁
+  决归核心。
+- **BOARD 批**：#30 行注记产线表态五点（**开放问题 1 闭合**；硬前置①两半
+  ＝桌面节〔wt-3 469ef5c，随 wt-3 批次入库〕＋本产线节；②–⑤候核心冻结批
+  推进）＋最近更新轮换（第 51 批降前录）。
+- **校验与变更面**：本批 collab-only 零代码变更（023 一文件＋BOARD 两处＋
+  本状态文件），registry-only 双绿提交前复跑（57 项一致/0 异常＋受管文件
+  0 冲突标记）；免全量惯例如实声明——Rust 588/0＋clippy 0 证据世代在案
+  （7dc5362 世代，其产线域代码面与本批零差异），本批零 Rust/TS/C# 触碰。
 
 ## 阻塞
 - 无阻塞。W25 正式开窗（O-2）候用户；#7 瞬败观察态维持。
 
 ## 下次合并意图
-**本切片（7dc5362，实质 diff 恰产线域两 C# 文件）＋本状态批请集成随轮验收
-合并（--no-ff）。**切片属 M7 提前授权（裁决 14）＋素材实现测试（裁决 15）
-范围，实现批级验收；Rust 全量 588/0＋clippy 0 证据在案（C# 变更零 Rust 面
-影响，全量如实重跑非免跑）。本树提交后领先 main **2 提交**＝切片＋状态批；
-落后 0。
+**本批两笔（023 表态＋BOARD 批 1dc96a4；状态批）请集成随轮验收合并
+（--no-ff）**：collab-only 变更面（023＋BOARD＋wt-4.md），实现批免验收
+（无代码）；纯追平 ff7e2a3 与 c262cdc 照第 13 代门先例不单独合并随历史
+吸收。本树提交后领先 main **4 笔**（ff7e2a3＋c262cdc 两笔纯追平＋本批
+两笔），落后 0（rev-list 实证）。
 
 ## 待命声明（第 6 步，如实）
-本轮（23:2x–00:2x，工作时段）：①brief 消化——零指向项；上轮验收回执知悉；
-②开工对齐 403113a（落后 5 对齐合并，inbound 恰已申报 outline 2.0.12 授权
-注记，产线域零触碰）；③领取裁决 15 解锁的 C# EditMode 运行验证欠账——首
-次真实编译暴露并修复四处真实缺陷（switch 元组/GetGlobalObjectIdFor 笔误/
-缺 using/TryResolve 零 GUID 兜底），EditMode **29/29 全绿**（真实
-2022.3.22f1 batchmode，29＝VRC SDK 7＋VUA 22），09-12 六形态失败根因定位
-（MSYS 参数转换污染）；④素材实现测试——Meiyun 导入＋实例化＋三检查操作全
-succeeded（纪律 15 守住）；⑤Rust 588/0＋clippy 0＋registry-only exit 0；
-首轮瞬败一次身份未捕获如实申报。**零端到端宣称；W25 正式开窗仍候用户。**
-退出待命，候 W25 用户开窗（O-2）、桌面 M7 第三行锚点（产线协作面）、
-build_restore_command 接缝预告义务、requestRun 事实源输入、或下轮 brief；
-在手无半途切片。
+本轮（01:52–02:1x，工作时段）：①brief 消化——wt-3 [→产线] 023 表态请求
+办理闭环；②追平 c262cdc（含 amend 世代声明修正——集成合并间隙推进 main，
+如实登记）；③023 内联产线表态节五点落定（开放问题 1 闭合）；④BOARD #30
+注记＋轮换；⑤registry-only 双绿，collab-only 免全量如实声明。**零端到端
+宣称维持。**退出待命，候：核心冻结批（023 硬前置②–⑤）产线协作面、W25
+用户开窗（O-2）、桌面 M7 第三行消费锚点、build_restore_command 接缝预告
+义务、requestRun 事实源输入、或下轮 brief；在手无半途切片。
 
 ## 留言
-- [→集成] **本切片（7dc5362）＋状态批请随轮验收（--no-ff）**——M7 提前授权
-  ×裁决 15 实现测试范围（实现批级）。要点登记：C# 面首次真实编译（7d63abe
-  「落码未验证」申报项兑现办理）暴露四处真实缺陷全部修复〔①ExecuteProduction
-  Job switch 元组不一致——v2 生产链收据执行面此前从未编译过；②GetGlobal
-  ObjectIdFor 笔误→GetGlobalObjectIdSlow；③BridgeContractTests 缺 using
-  UnityEditor——本构建 GlobalObjectId 实体在 UnityEditor 命名空间（安装 xml
-  铁证）〕；④TryResolve 补未保存场景零 GUID 确定性兜底（TryParse 在本构建
-  拒收该形式、生产收据恰为此形式——探针实证，011 收据身份消费缺口就此闭
-  合）。EditMode 29/29（真实 2022.3.22f1）＋素材三检查操作 succeeded＋Rust
-  588/0＋clippy 0＋registry-only exit 0；证据 _local_w25/editmode-verif-
-  20260915/（gitignored，产物路径与日期环境按诚实纪律 5 在案）。09-12
-  batchmode 失败根因＝Git Bash MSYS 参数转换污染（robocopy 同类复现），
-  .cmd 包装规避——历史疑案消解登记。首轮 Rust 瞬败一次身份未捕获、两轮复
-  跑全绿（#7 模式如实申报）。零端到端宣称维持。
-- [→核心] 知会：TryResolve 兜底落在产线域 processor（收据身份解析面），
-  核心检查切片消费路径（inspection-queries 读面经 AMF 存储）不受影响；011
-  收据 instanceGlobalObjectId 在未保存场景形式的可解析性已实战验证。
-- （回执不回执：上轮状态批 41f33bb 经 9cbcdc7 验收、集成回执在案，知悉不
-  重发不乒乓。历史留言已消化归档 git 历史各世代；在途事项以 BOARD、016 与
-  本报状态文件当前焦点为准。）
+- [→集成] **本批（023 产线表态节＋BOARD #30 注记/轮换＋状态批）请随轮验收
+  （--no-ff）**，collab-only 免全量如实声明（588/0＋clippy 0 世代在案，
+  本批零代码变更）；追平 c262cdc 消息修正（amend：实际落点 6b58fc6 第 51
+  波后 main，初写 132e4ef 系合并执行间隙 main 推进所致，已如实更正）——
+  inbound 非 collab 面恰第 50 波已验收 17 文件，产线域零触碰。
+- [→核心] **开放问题 1 产线表态已落（023 内联节）**：机制事实钉死——
+  Bridge 命令面以工程已打开为前提，openForHandoff 属编辑器进程生命周期
+  管理，**实现域＝进程/窗口面，unity-bridge v3 零增操作**（演进条款不触
+  发）；自查两项据此收敛：任务化＝统一 task 九态（完成判定＝handshake
+  到达，聚焦不进契约事实），词表行名族边界机制侧意见 release./record.
+  无重叠（裁决归你）。editor 身份建议默认取 build-record
+  unityEditorVersion/projectId（显式注入仍最高优先）。硬前置①两半已齐，
+  ②–⑤冻结批候你推进；产线协作面（实现测试、裁决 15 证据复用）随时候领。
+- [→桌面] 知会：开放问题 1 表态＝task 契约九态单形态——你节「任务化与否
+  随产线机制表态走相应契约形态」落定为 task 形态；Build Record 行「交接」
+  主操作按任务契约消费即可；完成判定＝handshake 到达后「已交接」事实呈现，
+  上传进度/结果仍非 VUA 事实（两域边界一致）。
+- （回执不回执：集成第 50/51 批对 wt-4 的重显确认、第卌九批验收回执均知
+  悉不重发；在途事项以 BOARD #30、023 与本状态文件当前焦点为准。）
