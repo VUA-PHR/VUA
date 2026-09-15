@@ -29,7 +29,7 @@
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/architecture/desktop_ZH.md | 1.2.0 | 已接受 | 桌面 | 2026-09-12 |
 | docs/architecture/bdl_ZH.md | 1.1.0 | 已接受 | 数据 | 2026-09-08 |
-| docs/architecture/amf-unity_ZH.md | 1.0.0 | 已接受 | 产线 | 2026-09-06 |
+| docs/architecture/amf-unity_ZH.md | 1.1.0 | 已接受（1.1.0，2026-09-16：新增「交接进程面（Release Handoff）」节——023 产线实现域切片〔桥握手信号 EditorHandshake＋Rust 进程/窗口面 port handoff 模块＋schemas/unity-bridge/handshake/v1.0/〕；Bridge 命令面零变化） | 产线 | 2026-09-16 |
 | docs/architecture/integrations-and-overlays_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
 | docs/decisions/orchestrator-supervised-provider_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
 | docs/decisions/vua-instance-identity_ZH.md | ADR | 已接受 | 集成 | 2026-09-06 |
@@ -56,6 +56,7 @@
 | docs/protocols/unity-bridge-v1_ZH.md | v1 | 已接受 | 产线 | 2026-09-06 |
 | docs/protocols/unity-bridge-v2_ZH.md | v2 | 已冻结 | 产线 | 2026-09-08 |
 | docs/protocols/unity-bridge-v3_ZH.md | v3 | 已冻结（M7，2026-09-13：proposal 016 三树表态收口〔核心 0:0x／数据 0:2x／桌面 1:4x，零修订意见〕；v2 同面超集＋三只读检查操作＋instanceGlobalObjectId 合法化；落库面随 7d63abe 先行，本批为契约面冻结；生产作业面迁移归后续切片，v2 生产路径继续生效） | 产线 | 2026-09-13 |
+| schemas/unity-bridge/handshake/v1.0 | 1.0 | 已冻结（编辑器握手文件面，2026-09-16：proposal 023 产线实现域切片①——桥包工程加载完成时写 `.vua/bridge/handshake.json`〔闭集四键 schemaVersion/pid/editorVersion/occurredAt，additionalProperties false＝无上传状态无工程明文路径，诚实纪律形状钉死〕；「Bridge handshake 到达」完成判定信号的承载落地，命令面 v3 零增操作；Schema＋正例 1＋负例 3＋双端消费测试〔Rust handoff jsonschema 向量校验＋C# EditorHandshakeTests 真机 EditMode 32/32〕；023 内联「落地（产线切片①）」节在案） | 产线 | 2026-09-16 |
 | schemas/inspection-queries/v0.1 | 0.1 | 已冻结（检查读面词表行 get/list/requestRun 三方法一次冻结，2026-09-13：Schema＋正例 3 对＋负例 3＋双载体消费测试；016 §7 硬前置①②③已验收入库〔7d63abe＋7a262b8＋修订批 c914cf2 族常量统一，数据追认〕；get/list 桌面消费已落地入 main〔33988a6〕，requestRun 悬空面维持——avatarGlobalObjectId 无桌面事实源，登记而不消费；真实数据走查归 W25） | 数据 | 2026-09-13 |
 | docs/protocols/inspection-queries-v0.1_ZH.md | 0.1 | 已冻结（检查读面词表行，2026-09-13：三方法一次冻结，硬前置④⑤随冻结批） | 数据 | 2026-09-13 |
 | schemas/editor-verify/v0.1 | 0.1 | 已冻结（U10 手选编辑器路径验证词表行 environment.verifyEditor，2026-09-13：proposal 021 七点裁决定形；Schema＋正例 3 对＋负例 3＋双载体消费测试〔环境域锚 editor_verify_wire 8/8＋provider-host 帧环 8/8〕；核心路由批 deafe11＋373470c 经 a6585c2 验收入 main；桌面 TS 面与设置面候 U10 切片随批，真机走查归 W25） | 环境 | 2026-09-13 |

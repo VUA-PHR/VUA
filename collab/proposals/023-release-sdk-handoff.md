@@ -437,3 +437,33 @@ upload_readiness 摘要来自 inspection.get（M7 证据束）——指向无误
   ＋inspection-queries v0.1）均零改动——①消费面经既有
   inspection.get 即可读；②零动作；③正当形态前置在他域。现行消费
   切片（不呈现摘要）与数据冻结件零冲突。
+## 落地（产线切片①，2026-09-16 产线 wt-4——进程/窗口面 port）
+
+后续切片①产线半边交付（切片②核心 use case、③桌面消费不在本批）：
+
+- **机制承载如实声明**：本提案表态所称「确定性就绪信号（Bridge
+  handshake，工程加载完成后桥主动握手）」在切片前**代码中无承载**（桥
+  包此前仅有 batchmode 一次性执行器，无常驻握手通道；001 链 handshake
+  系 provider 进程握手，非编辑器内信号）——本切片落地其承载，不属发明：
+  `EditorHandshake.cs`（`InitializeOnLoadMethod`，工程加载完成时原子写
+  `<project>/.vua/bridge/handshake.json`）即「桥主动握手」的字面实现，
+  词表行契约语义零变化（完成判定仍＝handshake 到达），且**命令面零增
+  操作**（BridgeCommandProcessor v3 词表 15 条未动，硬前置⑤轮空结论不
+  变）。
+- **握手文件 v1.0**：`schemas/unity-bridge/handshake/v1.0/`（独立版本族，
+  不占 v3 命令面）——schema＋正例 1＋负例 3（缺 pid／闭集外键
+  `projectPath`＝工程明文路径永不进握手事实〔文件位置即工程绑定〕／
+  schemaVersion 闭集外）；两端消费＝Rust 读取端（`tests/handoff.rs`
+  jsonschema 向量校验）＋C# 写入端（EditMode `EditorHandshakeTests`）。
+- **Rust port**：`crates/unity-bridge` `handoff` 模块——`EditorHandoff
+  Port`（probe／launch／await_handshake／focus 四机制原语；探测＝握手踪
+  迹＋pid 活性，踪迹缺失/损坏/版本不认识/进程已死一律如实 Closed；分离
+  式启动凭据剥离与 batchmode 链同基线；等待预算内轮询超时类型化；聚焦
+  独立结果不传染）。任务编排/九态映射/身份解析接线仍归核心切片②。
+- **证据（裁决 15 本地先行，证据可复用 W25）**：真机 EditMode
+  **32/32 全绿**（Unity 2022.3.22f1 batchmode，2026-09-16，含新增
+  EditorHandshakeTests 3 例；上轮 29 例回归保持）；**真机握手自证**＝
+  batchmode 测试编辑器加载工程时 InitializeOnLoad 实际写出的
+  handshake.json（形状与 schema v1 一致）；Rust `handoff` 12/12。
+  启动→等待→聚焦的进程链真机端到端走查仍候 W25（O-2）——零端到端
+  宣称维持。
