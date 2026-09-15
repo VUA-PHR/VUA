@@ -548,6 +548,33 @@ describe("overlay read face (017 batch 1)", () => {
     expect(planned.productionCard.currentPlan).not.toBeNull();
     expect(planned.productionCard.latestRecord).toBeNull();
   });
+
+  it("carries the batch-2 download card with in-flight attempts only", () => {
+    // 下载卡（017 批 2）：仅进行中尝试；state 为任务九态原词；无字节
+    // 进度（进度在任务事件通道，快照不发明）。downloadCard 为向后兼容
+    // 可选增量——缺省即批 1 世代快照仍有效。
+    const withDownloads: OverlaySnapshotResultV01 = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      tasks: [],
+      productionCard: { currentPlan: null, latestRecord: null },
+      downloadCard: {
+        activeDownloads: [
+          { downloadId: "dl-1", state: "running", updatedAt: "2026-09-15T01:30:00.000Z" },
+          { downloadId: "dl-2", state: "queued", updatedAt: "2026-09-15T01:31:00.000Z" },
+        ],
+      },
+    };
+    expect(withDownloads.downloadCard?.activeDownloads).toHaveLength(2);
+    expect(withDownloads.downloadCard?.activeDownloads[0].state).toBe("running");
+
+    // 批 1 世代快照（无 downloadCard）类型面仍成立——向后兼容。
+    const legacy: OverlaySnapshotResultV01 = {
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      tasks: [],
+      productionCard: { currentPlan: null, latestRecord: null },
+    };
+    expect(legacy.downloadCard).toBeUndefined();
+  });
 });
 
 describe("inspection-queries v0.1 (M7 检查切片,016 仲裁;数据草案面+核心实现批)", () => {

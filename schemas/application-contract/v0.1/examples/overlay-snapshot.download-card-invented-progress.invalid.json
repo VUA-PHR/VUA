@@ -1,0 +1,19 @@
+{
+  "contractVersion": "0.1",
+  "tasks": [],
+  "productionCard": {
+    "currentPlan": null,
+    "latestRecord": null
+  },
+  "downloadCard": {
+    "activeDownloads": [
+      {
+        "downloadId": "019e0000-0000-7000-8000-000000000601",
+        "state": "running",
+        "updatedAt": "2026-09-12T01:30:00.000Z",
+        "receivedBytes": 4096,
+        "expectedBytes": 8192
+      }
+    ]
+  }
+}

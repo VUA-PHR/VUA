@@ -1,0 +1,28 @@
+{
+  "contractVersion": "0.1",
+  "tasks": [
+    {
+      "taskId": "task-019e0000-0000-7000-8000-000000000101",
+      "state": "running",
+      "correlationId": "corr-019e0000-0000-7000-8000-000000000001"
+    }
+  ],
+  "productionCard": {
+    "currentPlan": null,
+    "latestRecord": null
+  },
+  "downloadCard": {
+    "activeDownloads": [
+      {
+        "downloadId": "019e0000-0000-7000-8000-000000000601",
+        "state": "running",
+        "updatedAt": "2026-09-12T01:30:00.000Z"
+      },
+      {
+        "downloadId": "019e0000-0000-7000-8000-000000000602",
+        "state": "queued",
+        "updatedAt": "2026-09-12T01:31:00.000Z"
+      }
+    ]
+  }
+}

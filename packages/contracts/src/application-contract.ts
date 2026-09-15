@@ -1040,11 +1040,11 @@ export interface RecordListResultV02 {
 }
 
 
-// ---- overlay.*(017 overlay 表面批 1,核心冻结批:任务卡＋生产状态卡的
-// 按需轮询读面。一次查询返回 overlay 一屏所需只读投影——对权威面的字段
-// 裁剪,不跨源推导;载荷不带查询时刻与聚合 revision——两次查询无变更则
-// 观察相同(纯函数纪律)。词表(任务态/plan 态/record 态)从其属主冻结面
-// 原样透传,本面刻意不重列。零 overlay 会话身份:查询面与主线不可区分,
+// ---- overlay.*(017 overlay 表面批 1–2,核心冻结批:任务卡＋生产状态卡＋
+// 下载卡的按需轮询读面。一次查询返回 overlay 一屏所需只读投影——对权威面的
+// 字段裁剪,不跨源推导;载荷不带查询时刻与聚合 revision——两次查询无变更则
+// 观察相同(纯函数纪律)。词表(任务态/plan 态/record 态/下载尝试态)从其属主
+// 冻结面原样透传,本面刻意不重列。零 overlay 会话身份:查询面与主线不可区分,
 // 语义动作走既有命令面(017 §3)。生产读面未接线 = vua.overlay.unavailable
 // 诚实缺席,绝不以空快照伪装) ----
 
@@ -1080,6 +1080,23 @@ export interface OverlayProductionCardV01 {
   readonly latestRecord: OverlayRecordSummaryV01 | null;
 }
 
+/** 进行中下载行(017 批 2):dl- 前缀非终态尝试的字段裁剪投影——
+ *  downloadId 即任务面 correlationId(port 分配身份),state 为任务九态
+ *  原词,updatedAt 为任务行自身时间戳;无字节进度(进度在任务事件通道,
+ *  快照不发明,主线 TaskSnapshot 同基准) */
+export interface OverlayDownloadProgressV01 {
+  readonly downloadId: string;
+  readonly state: string;
+  readonly updatedAt: string;
+}
+
+/** 下载/导入进度卡(017 批 2,向后兼容可选增量):仅承载进行中下载尝试
+ *  (呈现策略=有进行中项时呈现,017 表态 3);完成交付保留其权威消费面
+ *  downloads.listCompleted(导入页),不进 overlay 一眼面 */
+export interface OverlayDownloadCardV01 {
+  readonly activeDownloads: readonly OverlayDownloadProgressV01[];
+}
+
 export interface OverlayGetSnapshotQueryV01 extends ApplicationRequestBaseV01 {
   readonly kind: "query";
   readonly method: "overlay.getSnapshot";
@@ -1090,6 +1107,8 @@ export interface OverlaySnapshotResultV01 {
   readonly contractVersion: ApplicationContractVersion;
   readonly tasks: readonly OverlayTaskCardV01[];
   readonly productionCard: OverlayProductionCardV01;
+  /** 017 批 2 增量:批 1 世代的快照无此字段仍有效(向后兼容) */
+  readonly downloadCard?: OverlayDownloadCardV01;
 }
 
 // ---- inspection-queries v0.1（M7 检查切片；016 仲裁第 2 点独立词表行；
