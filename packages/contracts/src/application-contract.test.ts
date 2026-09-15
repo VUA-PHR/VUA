@@ -4,7 +4,9 @@ import {
   EDITOR_REFUSAL_CODES_V01,
   ENVIRONMENT_VERIFY_UNAVAILABLE,
   isApplicationRequestV01,
+  isReleaseHandoffFactV01,
   isTerminalTaskStateV01,
+  RELEASE_HANDOFF_ERROR_CODES_V01,
   type CatalogProductDetailV03,
   type EditorVerifyRefusedV01,
   type EnvironmentVerifyEditorResultV01,
@@ -12,6 +14,7 @@ import {
   type InspectionGetResultV01,
   type InspectionListResultV01,
   type OverlaySnapshotResultV01,
+  type ReleaseHandoffFactV01,
   type TaskDonePayloadV01,
   type TaskSnapshotV01,
 } from "./application-contract.js";
@@ -815,5 +818,93 @@ describe("environment.verifyEditor vocabulary row (021, core seven-point ruling)
     // 缺席码仅路由未接线/原语不可达,绝不在拒绝码闭集内
     expect(EDITOR_REFUSAL_CODES_V01).not.toContain(ENVIRONMENT_VERIFY_UNAVAILABLE);
     expect(ENVIRONMENT_VERIFY_UNAVAILABLE).toBe("vua.environment.verify_unavailable");
+  });
+});
+
+describe("release.openForHandoff vocabulary row (023, core freeze batch 2026-09-16)", () => {
+  it("accepts the closed single-key params {buildId} and rejects extras", () => {
+    // 核心冻结裁决:params 闭集修订 023 §3 草案——工程身份权威在
+    // build-record 面,params 重复携带=双源对账零增益
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-handoff-1",
+      correlationId: "correlation-handoff-1",
+      commandId: "handoff-1",
+      kind: "command",
+      method: "release.openForHandoff",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    })).toBe(true);
+
+    // 词表外键拒绝(projectPath 之类工程身份字段不进 params——闭集)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-handoff-2",
+      correlationId: "correlation-handoff-2",
+      commandId: "handoff-2",
+      kind: "command",
+      method: "release.openForHandoff",
+      params: {
+        buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
+        projectPath: "C:/Projects/SyntheticAvatarA",
+      },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+
+    // 空 buildId 拒绝(minLength 1)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-handoff-3",
+      correlationId: "correlation-handoff-3",
+      commandId: "handoff-3",
+      kind: "command",
+      method: "release.openForHandoff",
+      params: { buildId: "" },
+    })).toBe(false);
+
+    // kind 冒充 query 拒绝(命令分型)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-handoff-4",
+      correlationId: "correlation-handoff-4",
+      kind: "query",
+      method: "release.openForHandoff",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
+  it("pins the typed error-code closed set at four codes (vua.release_handoff.*)", () => {
+    // 闭集四码逐字:unavailable/invalid_params/build_unknown/editor_unresolved
+    expect(RELEASE_HANDOFF_ERROR_CODES_V01).toEqual([
+      "vua.release_handoff.unavailable",
+      "vua.release_handoff.invalid_params",
+      "vua.release_handoff.build_unknown",
+      "vua.release_handoff.editor_unresolved",
+    ]);
+  });
+
+  it("admits the handoff fact document and rejects any upload-status field by shape", () => {
+    // 正例:VUA 侧终态事实(形状即诚实纪律)
+    const fact: ReleaseHandoffFactV01 = {
+      schemaVersion: "0.1",
+      buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
+      projectId: "proj-synthetic-avatar-a",
+      editor: { exePath: "C:/Unity/2022.3.22f1/Editor/Unity.exe", version: "2022.3.22f1" },
+      occurredAt: "2026-09-16T02:30:00Z",
+    };
+    expect(isReleaseHandoffFactV01(fact)).toBe(true);
+
+    // 诚实纪律 1/2 负例:携带上传状态字段=形状拒绝(想猜也无从猜起)
+    const withUploadState = { ...fact, uploadState: "uploading" };
+    expect(isReleaseHandoffFactV01(withUploadState)).toBe(false);
+
+    // 缺字段拒绝
+    const { occurredAt, ...incomplete } = fact;
+    void occurredAt;
+    expect(isReleaseHandoffFactV01(incomplete)).toBe(false);
+
+    // editor 子对象闭集拒绝
+    expect(isReleaseHandoffFactV01({
+      ...fact,
+      editor: { ...fact.editor, editorRoot: "C:/Unity/2022.3.22f1" },
+    })).toBe(false);
   });
 });
