@@ -162,10 +162,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         bridge,
         project_root,
         editor_selection,
-        // The production-domain process/window adapter lands with the
-        // production slice; until then the handoff route keeps answering
-        // the frozen honest absence.
-        handoff: None,
+        // Proposal 023 assembly slice (BOARD #30): the default assembly
+        // wires the REAL process/window adapter (EditorHandoffPort ->
+        // ReleaseHandoffPort). The frozen honest-absence answer
+        // `vua.release_handoff.unavailable` stops being the default face of
+        // an unwired port and converges to the explicitly port-less
+        // assembly's exception path; the route now runs the full admission
+        // flow (build_unknown / editor_unresolved / task acceptance).
+        // Real-machine end-to-end evidence belongs to the W25 window — no
+        // end-to-end claim is made here.
+        handoff: Some(std::sync::Arc::new(
+            vua_provider_host::EditorHandoffAdapter::new(),
+        )),
     }
     });
     let input = stdin_reader();
