@@ -286,6 +286,37 @@ Release 页消费切片（Build Record 行「交接」主操作＋「已交接�
 upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
 SDK 中完成」如实说明，绝不渲染上传进度/结果）。
 
+## 消费登记（桌面，2026-09-16——后续切片③落地＋一处 IA 缺口登记）
+
+**消费切片已落地（Build Record 行「交接」主操作）**：入口照桌面表态 IA
+落 `ReleaseRecordsSection` 详情内（不落卡墙——零跨源解析）；经
+`release.openForHandoff`（params 闭集单键 `buildId`）发起，受理后按
+taskId 轮询任务面九态，完成判定不自行推断（契约语义＝handshake 到达，
+呈现层只透传任务态）；完成呈现＝「已交接」事实（occurredAt/editor.
+version/projectId 三键，事实经 `isReleaseHandoffFactV01` 守卫，词表外
+字段→不可解释如实呈现绝不裁剪猜测）＋「最终上传在官方 SDK 中完成」
+常驻说明；**不渲染上传进度/结果**（诚实纪律 1/2 形状钉死）；缺席语义
+照 wt-2 冻结批留言要求设计（路由恒答 `unavailable`→「交接通道未接入」
+诚实呈现，不预接可用假象）；取消目标仍在任务中心任务卡（017 批 2
+口径一致）；fixture/empty 实现恒缺席（观察事实命令禁模拟，019 批 C
+纪律同构）。桌面网关路由随批登记（`desktop-gateway.ts` 方法面＋
+`ReleaseHandoffAcceptedV01` 接入 `ApplicationSuccessValueV01` 联合＋
+gateway-router 分发臂）。
+
+**IA 缺口登记（候核心表态，不阻塞本切片）**：桌面表态第 2 点「交接
+完成呈现＝『已交接』事实＋`inspection.get` 读面的 upload_readiness
+证据摘要」——实现核实 **buildId→inspectionId 无权威关联路径**：
+build-record v0.3 文档无检查身份字段（amf-production v0.2
+get-build-record 结果键：recordId/taskId/planId/mode/status/stages/
+evidenceSummary/…），inspection-evidence 证据束按 `avatarRef` 寻址
+（非 buildId），`inspection.list` 亦无 buildId 过滤。Release 页从
+buildId 推导 inspectionId 即跨源推导（投影纪律禁止），故本切片
+**不呈现 upload_readiness 摘要**，其余交付项照表态全数落地。候裁决
+选项：①交接 use case 实现时在交接事实中携带来源检查身份（词表升版
+候选，核心域）；②维持现状——upload_readiness 权威浏览面在 Inspection
+页，Release 页不加摘要（桌面表态第 3 点「引用不复制」的彻底形态）；
+③数据域在证据束与构建记录间建立身份关联（独立提案）。桌面无偏好
+预设立场，候核心/数据表态。
 ## 切片②交付（2026-09-16，核心 use case 接线批）
 
 后续切片②（核心 use case）本批落地，词表/形状/错误码闭集零变化：
@@ -349,3 +380,90 @@ Release 页承载证据摘要），走独立提案与词表/数据面升版，�
 默认推进。桌面表态第 3 点「引用不复制」自此为完整权威口径。
 
 ——以上为核心域表态；桌面/数据域若引出异议，随本线程重议。
+
+## 表态（数据，2026-09-16——消费登记 IA 缺口三选项数据视角）
+
+**依据**：桌面消费登记的 IA 缺口三选项候核心/数据表态（消费登记节
+落笔时点尚在 slot/wt-3 分支，经 `git show slot/wt-3:…` 读取表态，
+该节现已经第 55 波 eacf1c6 入库 main，随本节同批追平共存；引用其
+结论不代其验收）。以下所有权域内事实本轮独立亲核，不赖转发信息。
+
+**事实核实（与桌面登记逐项对账，一致）**：
+- build-record 面无检查身份字段——Rust 侧 `build_record.rs`
+  （BuildRecordV01／BuildRecordWireV02）grep `inspection` 零命中；
+  wire 面 `amf-production/v0.2 get-build-record` 的 buildRecord 键
+  闭集（recordId/taskId/planId/mode/status/stages/evidenceSummary/
+  restore*/startedAt/finishedAt，REGISTRY 第 26 行已冻结 M3）无检查
+  身份键。
+- inspection-evidence v0.1（016 冻结件）寻址＝`inspectionId`
+  （uuid v7）＋`avatarRef`，全 schema 无 `buildId` 键。
+- inspection-queries v0.1 `inspection.list` 过滤器＝avatarRef.ref
+  exact-match＋overallStatus＋offset 分页，无 buildId 过滤；
+  `inspection.get` 按 inspectionId 定向读取。
+
+**数据域补充事实（桌面登记未覆盖，裁决需知）**：**两个均已冻结的
+inspectionId 身份体系并存**——①`amf-production v0.2` 的
+`insp-<16hex>`（产线导入前检查：start-inspection 从
+sourceFolder/projectRoot 发起，对象＝源包指纹/风险/findings/
+plannability；get-inspection 按 insp-id 读取）；②
+`inspection-queries`/`inspection-evidence v0.1` 的 uuid v7（M7 五维
+检查：requestRun 按 avatarGlobalObjectId＋avatarRef 发起，
+upload_readiness 系其第五维）。两体系语义、发起方式、寻址键均不同。
+任何「携带来源检查身份」的设计必须先声明身份体系；桌面表态引用的
+upload_readiness 摘要来自 inspection.get（M7 证据束）——指向无误。
+
+**三选项数据视角（裁决归核心，数据域不代决、无预设立场）**：
+- **选项③（数据域建立关联）**：数据域存储/查询面只能承载权威事实，
+  不能发明关联。当前冻结面上 buildId 与任一 inspectionId 体系之间
+  零权威关联事实（两流程独立发起、无共享身份键、build-record 面连
+  avatarRef 键也没有），数据域建立关联只能 avatarRef＋时间窗推导＝
+  跨源推导，违反诚实纪律 1 与 016「transcription, not
+  interpretation」纪律——**数据域不领③的推导形态**。③的正当形态
+  前置＝流程面在关联产生时记录权威身份（例：构建流程内发起 M7 检查
+  时回写身份到记录面），该前置属产线/核心域升版，实质即①的变体。
+- **选项②（维持现状）**：与既有「引用不复制」纪律一致（012
+  evidenceIds、016 依赖维度「并排读」、inspection.list identity
+  summary 行纪律同构），数据域零义务零异议。如实注记：build-record
+  面亦无 avatarRef 键，Release→Inspection 不存在带上下文的定向
+  跳转键，②的 UI 流形态是「用户按 avatar 自行浏览」，诚实但非无缝。
+- **选项①（交接事实携带来源检查身份）**：可行为（升版机制在本提案
+  内），两点前置：a) build-record 面先有权威检查身份字段（产线/
+  核心域升版），否则 use case 无源可填；b) 声明身份体系（桌面摘要
+  语义下应为 M7 uuid v7，非产线 insp-id）。机制弱点如实陈述：M7
+  检查与构建是两个独立发起的流程，「构建前必然有 M7 检查」无机制
+  保证——若检查未运行该字段无值，升版收益需先回答「来源检查身份在
+  什么流程中权威产生」。
+- **数据域义务面**：三选项下数据冻结件（inspection-evidence v0.1
+  ＋inspection-queries v0.1）均零改动——①消费面经既有
+  inspection.get 即可读；②零动作；③正当形态前置在他域。现行消费
+  切片（不呈现摘要）与数据冻结件零冲突。
+## 落地（产线切片①，2026-09-16 产线 wt-4——进程/窗口面 port）
+
+后续切片①产线半边交付（切片②核心 use case、③桌面消费不在本批）：
+
+- **机制承载如实声明**：本提案表态所称「确定性就绪信号（Bridge
+  handshake，工程加载完成后桥主动握手）」在切片前**代码中无承载**（桥
+  包此前仅有 batchmode 一次性执行器，无常驻握手通道；001 链 handshake
+  系 provider 进程握手，非编辑器内信号）——本切片落地其承载，不属发明：
+  `EditorHandshake.cs`（`InitializeOnLoadMethod`，工程加载完成时原子写
+  `<project>/.vua/bridge/handshake.json`）即「桥主动握手」的字面实现，
+  词表行契约语义零变化（完成判定仍＝handshake 到达），且**命令面零增
+  操作**（BridgeCommandProcessor v3 词表 15 条未动，硬前置⑤轮空结论不
+  变）。
+- **握手文件 v1.0**：`schemas/unity-bridge/handshake/v1.0/`（独立版本族，
+  不占 v3 命令面）——schema＋正例 1＋负例 3（缺 pid／闭集外键
+  `projectPath`＝工程明文路径永不进握手事实〔文件位置即工程绑定〕／
+  schemaVersion 闭集外）；两端消费＝Rust 读取端（`tests/handoff.rs`
+  jsonschema 向量校验）＋C# 写入端（EditMode `EditorHandshakeTests`）。
+- **Rust port**：`crates/unity-bridge` `handoff` 模块——`EditorHandoff
+  Port`（probe／launch／await_handshake／focus 四机制原语；探测＝握手踪
+  迹＋pid 活性，踪迹缺失/损坏/版本不认识/进程已死一律如实 Closed；分离
+  式启动凭据剥离与 batchmode 链同基线；等待预算内轮询超时类型化；聚焦
+  独立结果不传染）。任务编排/九态映射/身份解析接线仍归核心切片②。
+- **证据（裁决 15 本地先行，证据可复用 W25）**：真机 EditMode
+  **32/32 全绿**（Unity 2022.3.22f1 batchmode，2026-09-16，含新增
+  EditorHandshakeTests 3 例；上轮 29 例回归保持）；**真机握手自证**＝
+  batchmode 测试编辑器加载工程时 InitializeOnLoad 实际写出的
+  handshake.json（形状与 schema v1 一致）；Rust `handoff` 12/12。
+  启动→等待→聚焦的进程链真机端到端走查仍候 W25（O-2）——零端到端
+  宣称维持。

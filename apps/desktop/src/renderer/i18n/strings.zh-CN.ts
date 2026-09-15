@@ -1305,6 +1305,37 @@ rolled_back: "已回滚",
       recoveredNote: "恢复语义:本记录在恢复突变成功后重新完成(recovered)。",
       detailFailed: "记录详情读取失败。",
       detailUnexplainable: "记录文档不可解释:必需事实缺失或词表外。已如实拒绝呈现,不猜测内容。",
+      /* 023 消费切片:release.openForHandoff(v0.1 冻结)——构建记录行「交接」
+       * 主操作。缺席语义:实现域切片落地前路由恒答 unavailable;绝不渲染
+       * 上传进度/结果(交接事实文档无上传状态字段,形状钉死)。
+       * upload_readiness 证据摘要不在此呈现:buildId→inspectionId 无权威
+       * 关联(缺口已登记 proposal 023)。 */
+      handoff: {
+        action: "交接",
+        actionNote: "打开或聚焦该构建对应工程的 Unity 编辑器,使官方 SDK 上传面板就绪。",
+        runningNote: "交接任务进行中;可在任务中心跟进。",
+        readFailedNote: "任务状态读取失败,正在重试。",
+        succeededTitle: "已交接",
+        succeededLine: "编辑器 {editorVersion} · {occurredAt}",
+        projectLine: "工程 {projectId}",
+        sdkNote: "最终上传在官方 SDK 中完成;VUA 不呈现上传进度或结果。",
+        inspectNote: "检查证据请到 {page}（权威浏览面）查看。",
+        gotoInspection: "前往 {page}",
+        cancelledNote: "交接任务已取消。",
+        factUnexplainableTitle: "交接事实不可解释",
+        factUnexplainable: "任务已成功完成,但交接事实缺失或形状不符。已如实呈现,不猜测内容。",
+        absentTitle: "交接通道未接入",
+        absentNote: "交接服务尚未接线;实现切片落地前此入口如实呈现不可用。",
+        failedTitle: "交接请求被拒",
+        failedUnknown: "交接请求被拒,未携带应用错误码。",
+        failedWithCode: "交接请求被拒:{code}",
+        codeInvalidParams: "请求参数被拒(buildId 形状违反)。",
+        codeBuildUnknown: "该 buildId 无对应的构建记录。",
+        codeEditorUnresolved: "编辑器身份未能解析;请先在环境页验证编辑器。",
+        retry: "重试",
+        taskErrorLine: "任务错误:{code}",
+        taskFailedNote: "交接任务失败。",
+      },
     },
   },
   /** 项目兼容页(F6,M6 T-C):ALCOM/VCC 只读兼容呈现与「导入为 VUA 管理的副本」

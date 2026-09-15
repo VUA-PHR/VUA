@@ -2906,6 +2906,7 @@ dependencies = [
  "tar",
  "vua-orchestrator",
  "vua-project-manager",
+ "windows-sys 0.61.2",
  "zip",
 ]
 

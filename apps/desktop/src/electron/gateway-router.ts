@@ -300,6 +300,11 @@ function toApplicationRequest(
       };
     case "inspection.list":
       return { ...base, kind: "query", method: "inspection.list", params: request.params };
+    // 023 消费切片:交接命令 verbatim 透传(params 闭集单键 buildId,信封
+    // 校验已在 isDesktopGatewayRequestV1);实现域未接线=Provider 回类型化
+    // vua.release_handoff.unavailable,本路由原样透传(缺席语义不折叠)
+    case "release.openForHandoff":
+      return { ...base, kind: "command", method: "release.openForHandoff", commandId: request.requestId, params: request.params };
   }
 }
 

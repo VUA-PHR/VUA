@@ -5,6 +5,7 @@ import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
+import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -169,6 +170,16 @@ export function createEmptyInspection(): InspectionPort {
   };
 }
 
+/** M7 消费切片:not-run 时交接命令诚实缺席(缺席语义,绝不伪造受理)。
+ *  fixture 场景同用此实现——交接是观察事实命令,DEV 演示不制造合成受理
+ *  (productionChain「无模拟替代」纪律同构) */
+export function createAbsentReleaseHandoffPort(): ReleaseHandoffPort {
+  return {
+    openForHandoff: () => Promise.resolve({ kind: "absent" }),
+    taskSnapshot: () => Promise.resolve(null),
+  };
+}
+
 const catalogListView: CatalogListView = { schemaVersion: 1, kind: "not-connected" };
 const catalogDetailView: CatalogDetailView = { schemaVersion: 1, kind: "not-connected" };
 
@@ -200,6 +211,8 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     // 019 批 C:not-run 时生产链诚实不可用(不渲染虚构推进入口)
     productionChain: createUnavailableProductionChainPort(),
     inspection: createEmptyInspection(),
+    // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
+    releaseHandoff: createAbsentReleaseHandoffPort(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),
