@@ -5,8 +5,13 @@
  *
  * 017 表面批 1 消费接线:快照 = overlay.getSnapshot 冻结投影(任务卡列表＋
  * 生产状态卡);状态概括与基调由表现模型从冻结词表事实推导;unavailable
- * 为诚实缺席空态;传输失败为失败+重试态。环境摘要属批 2,本表面不渲染
- * (wire 批 1 无此事实)。
+ * 为诚实缺席空态;传输失败为失败+重试态。
+ *
+ * 017 批 2 消费:下载/导入进度卡 = downloadCard 可选增量(仅进行中下载
+ * 尝试行:downloadId/state/updatedAt,无字节进度——进度在任务事件通道,
+ * 快照不发明);呈现策略「有进行中项时呈现」,缺席/空集不渲染。取消目标
+ * 仍由任务卡承载(downloadId 是 correlationId 非 taskId,不做行内猜测);
+ * 环境摘要属批 2 未投影,本表面不渲染。
  *
  * 交互规格(键鼠):紧凑面板 + 拖拽区标题栏 + 关闭 chrome;Tab/Shift+Tab
  * 焦点环(base.css 全局 :focus-visible)、Enter/Space 激活(原生 button)、
@@ -284,6 +289,26 @@ export function DesktopOverlaySurface() {
                     </p>
                   </Card>
                 ) : null}
+              </section>
+            ) : null}
+
+            {model.downloadCard !== null ? (
+              <section aria-label={copy.downloadSectionLabel}>
+                <p className="vua-overlay__section-label">{copy.downloadSectionLabel}</p>
+                <ul className="vua-overlay__task-list">
+                  {model.downloadCard.activeDownloads.map((row) => (
+                    <li key={row.downloadId}>
+                      <Card className="vua-overlay__task">
+                        <h2 className="vua-overlay__task-title">{row.downloadId}</h2>
+                        <p className="vua-overlay__task-meta">
+                          <Badge tone="brand">{taskStateLabel(row.stateRaw)}</Badge>
+                          {" · "}
+                          {row.updatedAt}
+                        </p>
+                      </Card>
+                    </li>
+                  ))}
+                </ul>
               </section>
             ) : null}
 
