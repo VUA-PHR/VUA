@@ -1051,11 +1051,15 @@ namespace Vua.Editor.Bridge
             instance.name = string.IsNullOrWhiteSpace(job.assetId) ? instance.name : job.assetId;
             // Proposal 011 success criterion: the receipt carries the
             // instance-root identity as a GlobalObjectId string.
-            var instanceId = GlobalObjectId.GetGlobalObjectIdFor(instance).ToString();
+            // GetGlobalObjectIdSlow is the always-correct Unity 2022.3 API
+            // (GetGlobalObjectIdFor does not exist — compile error caught by
+            // the first real EditMode compilation, W25-adjacent verification
+            // slice 2026-09-15).
+            var instanceId = GlobalObjectId.GetGlobalObjectIdSlow(instance).ToString();
             return (true, string.Empty, string.Empty, instanceId);
         }
 
-        private static (bool ok, string errorCode, string message) ExecuteAttachToBone(
+        private static (bool ok, string errorCode, string message, string instanceGlobalObjectId) ExecuteAttachToBone(
             BridgePlanJob job, BridgePlanDocument plan)
         {
             var target = FindSceneObjectBySelector(
@@ -1063,19 +1067,19 @@ namespace Vua.Editor.Bridge
             if (target == null)
             {
                 return (false, "selector_unresolved",
-                    $"挂载对象 selectorId「{job.selectorId}」无解（场景中无同名对象）。");
+                    $"挂载对象 selectorId「{job.selectorId}」无解（场景中无同名对象）。", string.Empty);
             }
             var avatar = FindAvatarFromPlan(plan);
             if (avatar == null)
             {
-                return (false, "avatar_not_found", "目标 Avatar 实例不存在或缺少 Animator。");
+                return (false, "avatar_not_found", "目标 Avatar 实例不存在或缺少 Animator。", string.Empty);
             }
             if (!Enum.TryParse(job.bone, ignoreCase: true, out HumanBodyBones bone) ||
                 bone == HumanBodyBones.LastBone ||
                 avatar.GetBoneTransform(bone) == null)
             {
                 return (false, "bone_not_in_humanoid_mapping",
-                    $"骨骼「{job.bone}」不在 Avatar 的 humanoid 映射内。");
+                    $"骨骼「{job.bone}」不在 Avatar 的 humanoid 映射内。", string.Empty);
             }
             var boneTransform = avatar.GetBoneTransform(bone);
             target.transform.SetParent(boneTransform, false);
@@ -1083,17 +1087,17 @@ namespace Vua.Editor.Bridge
             target.transform.localPosition = new Vector3(transform.px, transform.py, transform.pz);
             target.transform.localRotation = new Quaternion(transform.qx, transform.qy, transform.qz, transform.qw);
             target.transform.localScale = new Vector3(transform.sx, transform.sy, transform.sz);
-            return (true, string.Empty, string.Empty);
+            return (true, string.Empty, string.Empty, string.Empty);
         }
 
-        private static (bool ok, string errorCode, string message) ExecuteExcludeObject(
+        private static (bool ok, string errorCode, string message, string instanceGlobalObjectId) ExecuteExcludeObject(
             BridgePlanJob job)
         {
             var target = FindSceneObjectBySelector(job.selector);
             if (target == null)
             {
                 return (false, "selector_unresolved",
-                    "排除对象 selector 无解（目录条目不可达且 pathHint 无命中）。");
+                    "排除对象 selector 无解（目录条目不可达且 pathHint 无命中）。", string.Empty);
             }
             // Pinned marker form (core, 011 inline): VRCMetaObject.excluded.
             // The VRCSDK assembly is not referenced by this package's asmdef;
@@ -1105,7 +1109,7 @@ namespace Vua.Editor.Bridge
             if (metaType == null)
             {
                 return (false, "exclude_marker_unavailable",
-                    "VRCMetaObject 类型未找到（VRCSDK 未在当前项目加载）；对象已定位但未被修改。");
+                    "VRCMetaObject 类型未找到（VRCSDK 未在当前项目加载）；对象已定位但未被修改。", string.Empty);
             }
             var component = target.GetComponent(metaType) ??
                             target.AddComponent(metaType);
@@ -1114,12 +1118,12 @@ namespace Vua.Editor.Bridge
             if (excludedMember == null)
             {
                 return (false, "exclude_marker_unavailable",
-                    "VRCMetaObject 上找不到 excluded 成员（SDK 版本差异）；对象已定位但未被修改。");
+                    "VRCMetaObject 上找不到 excluded 成员（SDK 版本差异）；对象已定位但未被修改。", string.Empty);
             }
             var property = excludedMember as PropertyInfo;
             if (property != null) property.SetValue(component, true, null);
             else ((FieldInfo)excludedMember).SetValue(component, true);
-            return (true, string.Empty, string.Empty);
+            return (true, string.Empty, string.Empty, string.Empty);
         }
 
         private static Type FindType(params string[] fullNames)
@@ -1135,20 +1139,20 @@ namespace Vua.Editor.Bridge
             return null;
         }
 
-        private static (bool ok, string errorCode, string message) ExecuteSetObjectActive(
+        private static (bool ok, string errorCode, string message, string instanceGlobalObjectId) ExecuteSetObjectActive(
             BridgePlanJob job)
         {
             var target = FindSceneObjectBySelector(job.selector);
             if (target == null)
             {
-                return (false, "selector_unresolved", "对象 selector 无解。");
+                return (false, "selector_unresolved", "对象 selector 无解。", string.Empty);
             }
             target.SetActive(job.active);
             if (target.activeSelf != job.active)
             {
-                return (false, "active_state_mismatch", "激活态未按目标生效。");
+                return (false, "active_state_mismatch", "激活态未按目标生效。", string.Empty);
             }
-            return (true, string.Empty, string.Empty);
+            return (true, string.Empty, string.Empty, string.Empty);
         }
 
         /// objectSelector resolution: pathHint (name chain from the scene
@@ -1410,9 +1414,37 @@ namespace Vua.Editor.Bridge
         private static bool TryResolve(string serializedId, out GameObject gameObject)
         {
             gameObject = null;
-            if (string.IsNullOrWhiteSpace(serializedId) || !GlobalObjectId.TryParse(serializedId, out var id)) return false;
-            gameObject = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) as GameObject;
-            return gameObject != null;
+            if (string.IsNullOrWhiteSpace(serializedId)) return false;
+            if (GlobalObjectId.TryParse(serializedId, out var id))
+            {
+                gameObject = GlobalObjectId.GlobalObjectIdentifierToObjectSlow(id) as GameObject;
+                if (gameObject != null) return true;
+            }
+            // Unsaved-scene instances serialize with a zero scene GUID, a form
+            // GlobalObjectId.TryParse rejects on this editor build (2022.3.22f1,
+            // probe-verified 2026-09-15). Production receipts (execute_production_job
+            // instanceGlobalObjectId) carry exactly this form, so inspection
+            // resolution falls back to regenerating identifiers over every loaded
+            // scene and comparing — deterministic, no guessing.
+            for (var sceneIndex = 0; sceneIndex < SceneManager.sceneCount; sceneIndex++)
+            {
+                var scene = SceneManager.GetSceneAt(sceneIndex);
+                if (!scene.IsValid() || !scene.isLoaded) continue;
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    foreach (var candidate in root.GetComponentsInChildren<Transform>(true))
+                    {
+                        var candidateObject = candidate.gameObject;
+                        if (GlobalObjectId.GetGlobalObjectIdSlow(candidateObject).ToString() != serializedId)
+                        {
+                            continue;
+                        }
+                        gameObject = candidateObject;
+                        return true;
+                    }
+                }
+            }
+            return false;
         }
 
         private static T EnsureComponent<T>(GameObject target) where T : Component
