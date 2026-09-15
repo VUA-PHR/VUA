@@ -593,7 +593,7 @@ function renderPage(
     case "inspection":
       return <InspectionPage />;
     case "release":
-      return <ReleasePage />;
+      return <ReleasePage onNavigate={actions.navigate} />;
     case "packages":
       return <PackagesPage />;
     case "project-compat":

@@ -3,7 +3,8 @@ import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import type { ReleaseHandoffFactV01 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
-import { format, strings } from "../../i18n/index.ts";
+import { format, strings, termLabel } from "../../i18n/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
 import { isReleaseHandoffErrorCode, taskStateLabelKey } from "./release-handoff-model.ts";
 
 const copy = strings.release.records.handoff;
@@ -20,7 +21,10 @@ const copy = strings.release.records.handoff;
  * - 取消不经本面板:取消目标在任务中心任务卡(017 批 2 验收口径一致);
  * - upload_readiness 证据摘要不在本面板呈现:buildId→inspectionId 无权威
  *   关联路径(build-record 文档无检查身份,证据束按 avatarRef 寻址),跨源
- *   推导为投影纪律禁止——缺口已登记 proposal 023 线程候核心表态。
+ *   推导为投影纪律禁止——核心表态已裁选项②维持现状(023 线程):权威
+ *   浏览面在检查页,本页不呈现摘要即最终形态;完成态仅按核心表态第 4 点
+ *   以纯导航 IA 手段指引(不带任何检查身份,零跨源推导),onNavigate 未传
+ *   时不渲染按钮(零死按钮)。
  */
 
 /** 轮询间隔(ms):任务面权威快照 task.get;非终态继续,终态即停 */
@@ -47,7 +51,13 @@ function intentErrorText(code: string | null): string {
   return format(copy.failedWithCode, { code });
 }
 
-export function HandoffPanel({ buildId }: { buildId: string }) {
+export function HandoffPanel({
+  buildId,
+  onNavigate,
+}: {
+  buildId: string;
+  onNavigate?: ((target: PageId) => void) | undefined;
+}) {
   const gateway = useGateway();
   const [phase, setPhase] = useState<HandoffPhase>({ kind: "idle" });
   const [readFailed, setReadFailed] = useState(false);
@@ -194,6 +204,19 @@ export function HandoffPanel({ buildId }: { buildId: string }) {
           {format(copy.projectLine, { projectId: phase.fact.projectId })}
         </p>
         <p className="vua-caption vua-text-secondary">{copy.sdkNote}</p>
+        {/* 检查证据指引(023 核心表态第 4 点:导航是 IA 问题不是数据问题):
+         *  纯页面级导航,不携带检查身份,零跨源推导;回调未接不渲染按钮;
+         *  术语经 termLabel 流动,不硬编码进文案(术语守卫) */}
+        <p className="vua-caption vua-text-secondary">
+          {format(copy.inspectNote, { page: termLabel("inspection") })}
+        </p>
+        {onNavigate !== undefined ? (
+          <div className="vua-page__actions">
+            <Button variant="subtle" onClick={() => onNavigate("inspection")}>
+              {format(copy.gotoInspection, { page: termLabel("inspection") })}
+            </Button>
+          </div>
+        ) : null}
       </div>
     );
   }

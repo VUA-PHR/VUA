@@ -1318,6 +1318,9 @@ demoTaskTitle: "Demo task",
         projectLine: "Project {projectId}",
         sdkNote:
           "The final upload is completed in the official SDK; VUA renders no upload progress or result.",
+        inspectNote:
+          "Evidence is browsed on the {page} page, the authoritative surface.",
+        gotoInspection: "Open {page}",
         cancelledNote: "The handoff task was cancelled.",
         factUnexplainableTitle: "Handoff fact unexplainable",
         factUnexplainable:
