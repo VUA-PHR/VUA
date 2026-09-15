@@ -11,6 +11,9 @@
  *   失败+重试)。
  */
 import type {
+  OverlayDownloadCardV01,
+} from "@vua/contracts";
+import type {
   OverlayAction,
   OverlayActionPayload,
   OverlayDispatchResult,
@@ -44,6 +47,7 @@ function unavailableSnapshot(): OverlaySnapshot {
 function isOverlayResult(value: object): value is {
   readonly tasks: readonly unknown[];
   readonly productionCard: unknown;
+  readonly downloadCard?: OverlayDownloadCardV01;
 } {
   return "tasks" in value && "productionCard" in value;
 }
@@ -75,6 +79,10 @@ export function createLiveOverlayPort(client: GatewayClient): OverlaySurfacePort
       presentation: localPresentation(),
       tasks: result.value.tasks,
       productionCard: result.value.productionCard,
+      // 017 批 2 可选增量原样透传:批 1 世代快照无此字段即缺席(不合成空卡)
+      ...(result.value.downloadCard === undefined
+        ? {}
+        : { downloadCard: result.value.downloadCard }),
     };
   };
 
