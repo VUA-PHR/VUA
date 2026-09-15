@@ -11,9 +11,11 @@ import {
   modules,
   NAV_LEVEL_BUFFER_PX,
   navLevelNext,
+  navMeasureChanged,
   resolveTabLanding,
   settingsModule,
   type ModuleDef,
+  type NavMeasureSnapshot,
   type SidebarPage,
 } from "./nav-model.ts";
 
@@ -191,6 +193,31 @@ test("nav ladder: 间隙不足先藏副标题,真溢出才折叠,回扩带余量
     }),
     2,
   );
+});
+
+test("nav measure snapshot: 外部事实未变即自反馈,判定跳过(#28 抖动修复)", () => {
+  const snapshot: NavMeasureSnapshot = {
+    windowWidth: 1000,
+    required: 600,
+    subtitleSaving: 120,
+  };
+  // 首次判定:无前值必判
+  assert.equal(navMeasureChanged(null, snapshot), true);
+  // 完全相同的快照(同窗宽/同量尺/同探针):折叠动作引起的轨道宽自反馈,
+  // 必须跳过——这是 #28 临界振荡(1↔2 反复切换)的断链点
+  assert.equal(navMeasureChanged(snapshot, { ...snapshot }), false);
+  // 窗口宽变化(用户改窗/DevTools 开合):必须重判
+  assert.equal(navMeasureChanged(snapshot, { ...snapshot, windowWidth: 1001 }), true);
+  // 量尺行变化(语言切换/字体加载):必须重判
+  assert.equal(navMeasureChanged(snapshot, { ...snapshot, required: 601 }), true);
+  // 探针变化(文案/字号):必须重判
+  assert.equal(navMeasureChanged(snapshot, { ...snapshot, subtitleSaving: 121 }), true);
+  // 回归场景:#28 报告的振荡序列——折叠(available 变小)→布局回流(available
+  // 变大)交替触发,窗口宽与两把量尺恒定,每次都判 false 即断开循环
+  const afterCollapse: NavMeasureSnapshot = { ...snapshot };
+  const afterExpand: NavMeasureSnapshot = { ...snapshot };
+  assert.equal(navMeasureChanged(snapshot, afterCollapse), false);
+  assert.equal(navMeasureChanged(afterCollapse, afterExpand), false);
 });
 
 test("default landing is the hub home page", () => {
