@@ -239,6 +239,22 @@ pub const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
 /// as a verification refusal (refusals travel the result state, nail 1).
 pub const ENVIRONMENT_VERIFY_UNAVAILABLE: &str = "vua.environment.verify_unavailable";
 
+/// The `release.openForHandoff` family version constant (proposal 023 freeze
+/// batch 2026-09-16; the c914cf2 standing rule — every wire row carries a
+/// version constant of its own). Published so wire consumers key on the
+/// core-owned constant, never a private literal.
+pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.1";
+
+/// The honest absence code for the `release.openForHandoff` route while the
+/// production-domain process/window port and the core use case are unwired
+/// (a later slice). Unlike verifyEditor this route has a REAL absence path
+/// today: params are validated first (a closed-set violation answers
+/// `vua.release_handoff.invalid_params` — a shape violation never masquerades
+/// as an absence), then the unwired capability answers this code. It never
+/// folds into a fabricated acceptance, task snapshot, or handoff fact (the
+/// upload happens in the official SDK and is never a VUA fact to guess at).
+pub const RELEASE_HANDOFF_UNAVAILABLE: &str = "vua.release_handoff.unavailable";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1036,6 +1052,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             }
             "task.startDemo" => Ok(handle_start_demo(state, request, request_id, correlation_id)),
             "overlay.getSnapshot" => overlay_get_snapshot(state, request, request_id, correlation_id),
+            "release.openForHandoff" => {
+                release_open_for_handoff(state, request, request_id, correlation_id)
+            }
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
                 correlation_id,
@@ -4088,6 +4107,67 @@ fn overlay_get_snapshot(
             "downloadCard": serde_json::to_value(&downloads)
                 .expect("OverlayDownloadCard serialization cannot fail"),
         }),
+    )))
+}
+
+/// The `release.openForHandoff` route (proposal 023 freeze batch,
+/// 2026-09-16): the tasked command that hands the user to the START of the
+/// official SDK upload flow. Handoff semantics per the product boundary: the
+/// upload itself never enters VUA; the succeeded task snapshot's result
+/// carries the handoff fact document — a shape with no upload-status field
+/// at all, so honesty rules 1/2 hold by construction (the negative vector
+/// pins it).
+///
+/// Implementation domain (production stance, five points on record): the
+/// Bridge command face presumes an already-open project, so the handoff is
+/// editor-process lifecycle management living in the process/window domain —
+/// unity-bridge v3 gains zero operations. The production-domain port and the
+/// core use case land in a LATER slice; until then this route answers the
+/// honest absence `vua.release_handoff.unavailable` and NEVER fabricates an
+/// acceptance receipt, a task snapshot, or a handoff fact.
+///
+/// Validation ordering: the params closed set `{buildId}` is checked FIRST —
+/// a closed-set violation answers `vua.release_handoff.invalid_params`
+/// (a shape violation never masquerades as an absence, same discipline as
+/// the overlay face). Params are validated even though the capability is
+/// unwired, so desktop-side integration sees the real wire contract while
+/// the honest absence keeps the unfrozen capability from lying.
+fn release_open_for_handoff(
+    _state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let params_ok = request
+        .get("params")
+        .and_then(Value::as_object)
+        .map(|params| {
+            params.len() == 1
+                && params
+                    .get("buildId")
+                    .and_then(Value::as_str)
+                    .map(|build_id| !build_id.is_empty())
+                    .unwrap_or(false)
+        })
+        .unwrap_or(false);
+    if !params_ok {
+        return Ok(FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.release_handoff.invalid_params",
+            "errors.releaseHandoff.invalidParams",
+            "validation",
+        )));
+    }
+    // The production-domain process/window port and the core use case are
+    // not wired in this slice: honest absence (category unavailable,
+    // recoverable) — never a silent success, never a guessed handoff fact.
+    Ok(FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        RELEASE_HANDOFF_UNAVAILABLE,
+        "errors.releaseHandoff.unavailable",
+        "unavailable",
     )))
 }
 

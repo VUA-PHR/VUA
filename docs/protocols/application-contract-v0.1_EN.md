@@ -46,6 +46,7 @@ statement.
 | Command | `production.recover` | Recovers a failed/expired outcome (continue / rollback) | B3/F3 |
 | Query | `production.getBuildRecord` | Reads the minimal Build Record | B3/F3 |
 | Query | `overlay.getSnapshot` | Returns the overlay's one-glance read-only snapshot: task cards plus the production-status and download card projections | M7 |
+| Command | `release.openForHandoff` | Official-SDK upload handoff (tasked): buildId → task nine states → handoff fact document (no upload-status field) | M7 |
 
 The seven `production.*` methods are the registered surface of the
 [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md) (B3 candidate draft):
@@ -249,3 +250,26 @@ caches, display, and diagnostics always reference the original contract values.
   (provider-host `overlay_wire` frame loop + `@vua/contracts` guards). The inspection card stays off
   the overlay first screen per the desktop stance (017 §5 reference-not-copy) and is not delivered in
   this batch.
+- 2026-09-16: registered `release.openForHandoff` (M7, proposal 023 core freeze batch; hard
+  precondition 1 closed with both halves on record — the desktop stance 469ef5c via the 52nd
+  wave + the production stance's five points (landing with the wt-4 batch), ②③④ with this
+  batch, ⑤ vacuous — the Bridge command face presumes an already-open project, so the handoff
+  is editor-process lifecycle management, implementation domain = the process/window face,
+  unity-bridge v3 gains zero operations). The official-SDK upload handoff tasked command:
+  params closed single key `{buildId}` (core ruling amending the 023 section-3 draft — the
+  project identity's authority lives on the build-record face, repeating it in params creates
+  a dual-source reconciliation face with zero gain); the acceptance reply follows the
+  `inspection.requestRun` shape; the completion judgment = the Bridge handshake arrival (the
+  001 chain), focus never enters the contract facts, the unified task nine-state single form;
+  the succeeded snapshot's result carries the handoff fact document (closed five keys
+  schemaVersion/buildId/projectId/editor/occurredAt, **no upload-status field** — honesty
+  rules 1/2 pinned by shape, guarded by the negative vector); closed four-code error set
+  `vua.release_handoff.*` (unavailable/invalid_params/build_unknown/editor_unresolved).
+  Backward-compatible increment (a new method registration, the existing face zero-changed):
+  the machine-readable face and six vectors (`schemas/release-handoff/v0.1/`, 3 positive
+  3 negative) are frozen by Core with this batch; consumer tests ride the same batch
+  (provider-host `release_handoff_wire` frame loop + `@vua/contracts` guards + the mock
+  absence branch). Unwired route = the `vua.release_handoff.unavailable` honest absence (the
+  implementation domain — production port + core use case — lands in a later slice), never a
+  fabricated acceptance/handoff fact. Vocabulary in the
+  [release-handoff protocol v0.1](release-handoff-v0.1_EN.md).
