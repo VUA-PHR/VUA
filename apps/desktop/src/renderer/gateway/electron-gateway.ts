@@ -12,6 +12,7 @@ import { createLiveProjectOps } from "./project-ops-port.ts";
 import { createLiveModelProduction } from "./live-production-port.ts";
 import { createLiveProductionChainPort } from "./production-chain-port.ts";
 import { createLiveInspectionPort } from "../features/inspection/inspection-port-live.ts";
+import { createLiveReleaseHandoffPort } from "../features/release/release-handoff-port-live.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
 
@@ -208,6 +209,9 @@ export function createElectronGateway(
     // M7 检查切片消费批:inspection.get/list 读面经 Kernel 直达 provider;
     // 未接线=vua.inspection.unavailable 诚实缺席
     inspection: createLiveInspectionPort(client),
+    // 023 消费切片:release.openForHandoff 经 Kernel 直达 provider;实现域
+    // 未接线=路由恒答 vua.release_handoff.unavailable 诚实缺席
+    releaseHandoff: createLiveReleaseHandoffPort(client),
     packages: notRun.packages,
     dataSource: (): DataSource => "live",
   };
