@@ -1233,6 +1233,39 @@ rolled_back: "롤백됨",
       detailFailed: "기록 세부 정보를 불러오지 못했습니다.",
       detailUnexplainable:
         "기록 문서를 해석할 수 없습니다: 필수 사실 누락 또는 어휘 밖입니다. 추측하지 않고 정직하게 표시를 거부했습니다.",
+      /* 023 소비 슬라이스: release.openForHandoff(v0.1 동결) — 빌드 기록 행의
+       * "인도" 기본 작업. 부재 시맨틱스: 구현 슬라이스 착지 전까지 경로는 항상
+       * unavailable 응답. 업로드 진행률/결과는 표시하지 않음(인도 사실 문서에는
+       * 업로드 상태 필드가 존재하지 않음). */
+      handoff: {
+        action: "인도",
+        actionNote:
+          "이 빌드의 프로젝트에 대해 Unity 에디터를 열거나 포커스하여 공식 SDK 업로드 화면을 준비합니다.",
+        runningNote: "인도 작업 진행 중입니다. 작업 센터에서 확인할 수 있습니다.",
+        readFailedNote: "작업 상태 읽기에 실패했습니다. 재시도 중입니다.",
+        succeededTitle: "인도됨",
+        succeededLine: "에디터 {editorVersion} · {occurredAt}",
+        projectLine: "프로젝트 {projectId}",
+        sdkNote:
+          "최종 업로드는 공식 SDK에서 완료됩니다. VUA는 업로드 진행률이나 결과를 표시하지 않습니다.",
+        cancelledNote: "인도 작업이 취소되었습니다.",
+        factUnexplainableTitle: "인도 사실을 해석할 수 없음",
+        factUnexplainable:
+          "작업은 성공했지만 인도 사실이 누락되었거나 형식이 잘못되었습니다. 추측하지 않고 그대로 표시합니다.",
+        absentTitle: "인도 채널 미연결",
+        absentNote:
+          "인도 서비스가 아직 연결되지 않았습니다. 구현 슬라이스가 착지할 때까지 이 입구는 정직하게 사용 불가로 표시됩니다.",
+        failedTitle: "인도 요청이 거부되었습니다",
+        failedUnknown: "애플리케이션 오류 코드 없이 인도 요청이 거부되었습니다.",
+        failedWithCode: "인도 요청이 거부되었습니다: {code}",
+        codeInvalidParams: "요청 매개변수가 거부되었습니다(buildId 형식 위반).",
+        codeBuildUnknown: "이 buildId 에 해당하는 빌드 기록이 없습니다.",
+        codeEditorUnresolved:
+          "에디터 식별 정보를 해결하지 못했습니다. 먼저 환경 페이지에서 에디터를 검증하세요.",
+        retry: "재시도",
+        taskErrorLine: "작업 오류: {code}",
+        taskFailedNote: "인도 작업이 실패했습니다.",
+      },
     },
   },
   /** 패키지 관리(S-XVI): Recipe 외의 수동 VPM 작업면. 플레이어 언어를 사용하며 semver/프로토콜 세부는 노출하지 않음 */

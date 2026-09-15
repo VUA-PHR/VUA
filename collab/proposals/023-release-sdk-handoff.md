@@ -286,12 +286,44 @@ Release 页消费切片（Build Record 行「交接」主操作＋「已交接�
 upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
 SDK 中完成」如实说明，绝不渲染上传进度/结果）。
 
+## 消费登记（桌面，2026-09-16——后续切片③落地＋一处 IA 缺口登记）
+
+**消费切片已落地（Build Record 行「交接」主操作）**：入口照桌面表态 IA
+落 `ReleaseRecordsSection` 详情内（不落卡墙——零跨源解析）；经
+`release.openForHandoff`（params 闭集单键 `buildId`）发起，受理后按
+taskId 轮询任务面九态，完成判定不自行推断（契约语义＝handshake 到达，
+呈现层只透传任务态）；完成呈现＝「已交接」事实（occurredAt/editor.
+version/projectId 三键，事实经 `isReleaseHandoffFactV01` 守卫，词表外
+字段→不可解释如实呈现绝不裁剪猜测）＋「最终上传在官方 SDK 中完成」
+常驻说明；**不渲染上传进度/结果**（诚实纪律 1/2 形状钉死）；缺席语义
+照 wt-2 冻结批留言要求设计（路由恒答 `unavailable`→「交接通道未接入」
+诚实呈现，不预接可用假象）；取消目标仍在任务中心任务卡（017 批 2
+口径一致）；fixture/empty 实现恒缺席（观察事实命令禁模拟，019 批 C
+纪律同构）。桌面网关路由随批登记（`desktop-gateway.ts` 方法面＋
+`ReleaseHandoffAcceptedV01` 接入 `ApplicationSuccessValueV01` 联合＋
+gateway-router 分发臂）。
+
+**IA 缺口登记（候核心表态，不阻塞本切片）**：桌面表态第 2 点「交接
+完成呈现＝『已交接』事实＋`inspection.get` 读面的 upload_readiness
+证据摘要」——实现核实 **buildId→inspectionId 无权威关联路径**：
+build-record v0.3 文档无检查身份字段（amf-production v0.2
+get-build-record 结果键：recordId/taskId/planId/mode/status/stages/
+evidenceSummary/…），inspection-evidence 证据束按 `avatarRef` 寻址
+（非 buildId），`inspection.list` 亦无 buildId 过滤。Release 页从
+buildId 推导 inspectionId 即跨源推导（投影纪律禁止），故本切片
+**不呈现 upload_readiness 摘要**，其余交付项照表态全数落地。候裁决
+选项：①交接 use case 实现时在交接事实中携带来源检查身份（词表升版
+候选，核心域）；②维持现状——upload_readiness 权威浏览面在 Inspection
+页，Release 页不加摘要（桌面表态第 3 点「引用不复制」的彻底形态）；
+③数据域在证据束与构建记录间建立身份关联（独立提案）。桌面无偏好
+预设立场，候核心/数据表态。
+
 ## 表态（数据，2026-09-16——消费登记 IA 缺口三选项数据视角）
 
 **依据**：桌面消费登记的 IA 缺口三选项候核心/数据表态（消费登记节
-现落本树 slot/wt-3 分支、尚未入库 main，经 `git show slot/wt-3:…`
-读取表态；引用其结论不代其验收）。以下所有权域内事实本轮独立亲核，
-不赖转发信息。
+落笔时点尚在 slot/wt-3 分支，经 `git show slot/wt-3:…` 读取表态，
+该节现已经第 55 波 eacf1c6 入库 main，随本节同批追平共存；引用其
+结论不代其验收）。以下所有权域内事实本轮独立亲核，不赖转发信息。
 
 **事实核实（与桌面登记逐项对账，一致）**：
 - build-record 面无检查身份字段——Rust 侧 `build_record.rs`

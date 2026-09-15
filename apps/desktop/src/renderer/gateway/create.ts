@@ -59,6 +59,8 @@ function assembleDevGateway(
     // M7 消费批:检查读面同 productionChain 纪律(观察事实不模拟)——恒
     // live 基线,无宿主时诚实缺席
     inspection: live.inspection,
+    // 023 消费切片:交接命令同纪律——恒 live 基线,无宿主时诚实缺席
+    releaseHandoff: live.releaseHandoff,
     packages: selection.targets.packages === "fixture" ? fixture.packages : live.packages,
     dataSource: () => (anyFixturePort(selection.targets) ? "fixture" : live.dataSource()),
   };

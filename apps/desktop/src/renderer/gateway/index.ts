@@ -149,6 +149,11 @@ export type {
   InspectionPort,
 } from "../features/inspection/inspection-port.ts";
 export type {
+  HandoffTaskView,
+  ReleaseHandoffIntent,
+  ReleaseHandoffPort,
+} from "../features/release/release-handoff-port.ts";
+export type {
   ChangeRequest,
   PackageChangeItem,
   PackageChangeKind,
