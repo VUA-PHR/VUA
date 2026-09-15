@@ -45,7 +45,7 @@ statement.
 | Command | `production.confirmPlan` | Confirms the plan and enters the snapshot → execute → validate chain | B3/F3 |
 | Command | `production.recover` | Recovers a failed/expired outcome (continue / rollback) | B3/F3 |
 | Query | `production.getBuildRecord` | Reads the minimal Build Record | B3/F3 |
-| Query | `overlay.getSnapshot` | Returns the overlay's one-glance read-only snapshot: task cards plus the production-status card projection | M7 |
+| Query | `overlay.getSnapshot` | Returns the overlay's one-glance read-only snapshot: task cards plus the production-status and download card projections | M7 |
 
 The seven `production.*` methods are the registered surface of the
 [Production Use-Case Contract v0.1](production-use-case-v0.1_EN.md) (B3 candidate draft):
@@ -126,19 +126,29 @@ stays aligned with the B6 environment detection spike (`EnvironmentSnapshotV1` i
 
 ## Overlay read-face semantics
 
-`overlay.getSnapshot` (M7, proposal 017 batch 1) is the desktop overlay's on-demand polling
+`overlay.getSnapshot` (M7, proposal 017 batches 1–2) is the desktop overlay's on-demand polling
 query: one call returns the read-only projections an overlay's one-glance surface renders —
-the **task cards** (a projection of the task store, oldest first: taskId/state/correlationId)
-and the **production-status card** (a field-trimmed projection of the production-use-case
+the **task cards** (a projection of the task store, oldest first: taskId/state/correlationId),
+the **production-status card** (a field-trimmed projection of the production-use-case
 v0.2 plan/record faces: the current plan is the document with the newest `createdAt`, the
 latest Build Record is the document with the newest `finishedAt`; the "current/latest"
 semantics are defined on the core service-authority side, and the two halves are
 independently nullable — when the authority holds no fact the half is `null`, never a
-synthesized row). The projection is a pure function: it carries **no query instant and no
+synthesized row), and the **download card** (batch 2: a field-trimmed projection of the
+non-terminal `dl-` prefixed attempts in the task store — downloadId/state/updatedAt,
+enqueue order; the presentation stance is "rendered while items are in flight", an empty
+set is the honest empty card; no byte progress — progress travels the task-event channel
+and the snapshot never invents it, the same baseline as the main-line TaskSnapshot;
+completed deliveries keep their authoritative consumer, the import page's
+`downloads.listCompleted` face, and stay off the overlay glance). The projection is a pure
+function: it carries **no query instant and no
 aggregate revision** — two unchanged queries observe the same payload, and polling never
 changes what it observes. Card vocabularies (the nine task states, the plan lifecycle, the
-record statuses) pass through verbatim from their owning frozen faces and are deliberately
-not re-enumerated here. The overlay carries **zero session identity**: its queries are
+record statuses, the download attempt states) pass through verbatim from their owning frozen
+faces and are deliberately
+not re-enumerated here. `downloadCard` is a backward-compatible optional increment (a
+batch-1-generation snapshot without the field stays valid). The overlay carries **zero
+session identity**: its queries are
 indistinguishable from the main line's; semantic actions travel the existing command face
 (the same acceptance path and the same nine-state discipline) — no overlay-specific write
 vocabulary is added. When the production read face is not wired, the method answers a typed
@@ -225,3 +235,17 @@ caches, display, and diagnostics always reference the original contract values.
   face and the six vectors (`overlay-snapshot.schema.json`, 3 valid + 3 invalid) are frozen by Core with
   this batch; consumer tests ride the same batch (provider-host `overlay_wire` frame loop +
   `@vua/contracts` guards).
+- 2026-09-15: Overlay read face batch 2 (M7, proposal 017 batch 2; trigger = the desktop consuming
+  batch 1 is on record — DesktopOverlaySurface consumes `overlay.getSnapshot`, so the 017
+  "await-consumption" condition is cleared). The `overlay.getSnapshot` result face gains an
+  **optional** `downloadCard` field: a field-trimmed projection of the non-terminal `dl-` prefixed
+  attempts in the task store (downloadId/state/updatedAt, enqueue order), presentation stance =
+  "rendered while items are in flight"; no byte progress (progress travels the task-event channel and
+  the snapshot never invents it — pinned by a negative vector); completed deliveries keep their
+  authoritative consumer `downloads.listCompleted` (the import page) and stay off the overlay glance.
+  Backward-compatible increment (existing faces unchanged; a batch-1-generation snapshot without the
+  field stays valid): the machine-readable face and the eight vectors (`overlay-snapshot.schema.json`,
+  4 valid + 4 invalid) are frozen by Core with this batch; consumer tests ride the same batch
+  (provider-host `overlay_wire` frame loop + `@vua/contracts` guards). The inspection card stays off
+  the overlay first screen per the desktop stance (017 §5 reference-not-copy) and is not delivered in
+  this batch.

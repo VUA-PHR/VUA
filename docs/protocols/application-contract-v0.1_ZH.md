@@ -42,7 +42,7 @@
 | Command | `production.confirmPlan` | 确认计划，进入 snapshot → execute → validate 执行链 | B3/F3 |
 | Command | `production.recover` | 对失败/过期结果执行恢复（continue / rollback） | B3/F3 |
 | Query | `production.getBuildRecord` | 读取最小 Build Record | B3/F3 |
-| Query | `overlay.getSnapshot` | 返回 overlay 一屏的只读读面快照：任务卡＋生产状态卡投影 | M7 |
+| Query | `overlay.getSnapshot` | 返回 overlay 一屏的只读读面快照：任务卡＋生产状态卡＋下载卡投影 | M7 |
 
 `production.*` 七方法是[生产用例契约 v0.1](production-use-case-v0.1_ZH.md)（B3 候选草案）的
 登记面：生命周期-任务映射、双素材入口、确认与恢复纪律、值语义种子以该文档为准；经 B3
@@ -109,14 +109,19 @@
 
 ## Overlay 读面语义
 
-`overlay.getSnapshot`（M7，提案 017 批 1）是桌面 overlay 的按需轮询查询：一次返回
+`overlay.getSnapshot`（M7，提案 017 批 1–2）是桌面 overlay 的按需轮询查询：一次返回
 overlay 一屏所需的只读投影——**任务卡**（任务存储投影，最旧优先：taskId/state/
-correlationId）与**生产状态卡**（production-use-case v0.2 plan/record 读面字段裁剪：
+correlationId）、**生产状态卡**（production-use-case v0.2 plan/record 读面字段裁剪：
 当前 plan＝`createdAt` 最新文档、最近 Build Record＝`finishedAt` 最新文档，「当前/最近」
-语义由核心服务权威侧定义，两半独立可空，权威面无事实即 `null`，绝不合成行）。投影
+语义由核心服务权威侧定义，两半独立可空，权威面无事实即 `null`，绝不合成行）与
+**下载卡**（017 批 2：任务存储中 `dl-` 前缀**非终态**尝试的字段裁剪投影
+downloadId/state/updatedAt，入队顺序；呈现策略＝「有进行中项时呈现」，空集＝诚实空卡；
+无字节进度——进度在任务事件通道，快照不发明，与主线 TaskSnapshot 同基准；完成交付
+保留其权威消费面 `downloads.listCompleted`〔导入页〕，不进 overlay 一眼面）。投影
 是纯函数：**不带查询时刻与聚合 revision**——两次无变更的查询观察同一载荷，轮询永不
-改变它观察到的东西。卡片词表（任务九态、plan 生命周期、record 状态）从其属主冻结面
-原样透传，本面不重列。overlay 携带**零会话身份**：查询与主线不可区分；语义动作走
+改变它观察到的东西。卡片词表（任务九态、plan 生命周期、record 状态、下载尝试态）从
+其属主冻结面原样透传，本面不重列。`downloadCard` 为向后兼容可选增量（批 1 世代快照
+无此字段仍有效）。overlay 携带**零会话身份**：查询与主线不可区分；语义动作走
 既有命令面（同一受理路径、同一九态纪律），不新增 overlay 专有写词表。生产读面未接线
 时该方法回答类型化 `vua.overlay.unavailable`——诚实缺席，绝不以空快照伪装。机器可读
 面与正负例向量见 `schemas/application-contract/v0.1/overlay-snapshot.schema.json`。
@@ -184,3 +189,13 @@ Provider 的具体托管形态、握手封帧、崩溃监督与进程树策略�
   未接线＝类型化 `vua.overlay.unavailable` 诚实缺席。向后兼容增量（新方法登记，既有
   面零变化）：机器可读面与六向量（`overlay-snapshot.schema.json`，3 正 3 负）由核心
   随批冻结；消费测试随批（provider-host `overlay_wire` 帧环＋`@vua/contracts` 守卫）。
+- 2026-09-15：overlay 读面批 2（M7，提案 017 批 2；触发＝桌面消费批 1 已落地
+  （DesktopOverlaySurface 消费 `overlay.getSnapshot`），017「维持等消费」条件清除）。
+  `overlay.getSnapshot` 返回面新增**可选** `downloadCard` 字段：任务存储中 `dl-`
+  前缀非终态尝试的字段裁剪投影（downloadId/state/updatedAt，入队顺序），呈现策略
+  ＝「有进行中项时呈现」；无字节进度（进度在任务事件通道，快照不发明——负例向量
+  钉死）；完成交付保留权威消费面 `downloads.listCompleted`（导入页），不进 overlay
+  一眼面。向后兼容增量（既有面零变化，批 1 世代快照无此字段仍有效）：机器可读面与
+  八向量（`overlay-snapshot.schema.json`，4 正 4 负）由核心随批冻结；消费测试随批
+  （provider-host `overlay_wire` 帧环＋`@vua/contracts` 守卫）。检测卡照桌面表态
+  不进 overlay 首屏（017 §5 引用不复制），本批不落。

@@ -182,3 +182,43 @@ Dashboard/VR Overlay 不进 M7 与 1.0.0（用户裁决维持）。
 验＋诚实空态＋ populated 投影与纯函数两次查询一致＋unavailable＋闭集拒
 绝）＋orchestrator `overlay_surface` 单元 6 测试（投影语义＋空态＋两半独
 立＋只读纪律）。批 2（下载/检测卡）维持等消费不变。
+
+## 批 2 交付（核心，2026-09-15——下载卡）
+
+**overlay 投影批 2 已随本批交付**（应用契约「版本与演进」条款内向后兼容
+增量：`overlay.getSnapshot` 返回面新增**可选** `downloadCard` 字段，批 1
+世代快照无此字段仍有效；协议本双语修订记录＋机器可读面八向量 4 正 4 负
+＋REGISTRY 行更新）。**触发条件核实**：本表态原批 2「维持等消费」的等
+待对象＝桌面第 4 行消费批 1；桌面消费批 1 已在 main（`DesktopOverlay
+Surface.tsx` 消费 `overlay.getSnapshot` 冻结投影，wt-3 2026-09-15 23:0x
+状态批申报＋git 实证），条件清除，照本提案表态 3「核心在投影类型上随桌
+面清单演进（字段裁剪，非新事实）」办理——桌面无需再确认，投影落地即接
+消费。
+
+1. **投影语义**（`crates/orchestrator/src/overlay_surface.rs`）：
+   `OverlayReadModel` 新增 `download_card()`；`OverlayDownloadCard`＝
+   `activeDownloads` 行列表；行 `OverlayDownloadProgress`＝任务存储中
+   `dl-<downloadId>-a<attempt>` 前缀**非终态**任务（九态 `is_terminal`
+   判定）的字段裁剪：`downloadId`（即任务行 correlationId，port 分配身
+   份）＋`state`（任务九态原词直通）＋`updatedAt`（任务行自身 RFC 3339
+   时间戳）。排序＝任务存储自身 enqueue 顺序（与 `task_cards` 同一排序
+   出处，投影不重排）。空集＝诚实空卡（无进行中下载），绝非错误。
+2. **无字节进度——不发明**：received/expected 字节在任务**事件**通道
+   （`task.progressed` payload），不在任务行上；主线 `TaskSnapshot` 同样
+   不携带。投影若伸手事件流合成进度数字即从「裁剪」越入「发明」——负例
+   向量 `overlay-snapshot.download-card-invented-progress.invalid.json`
+   钉死（行携带进度键即拒）。
+3. **完成交付裁剪（如实申报，桌面消费时对账点）**：017 表态 3 下载卡行
+   列举的投影来源含 `downloads.listCompleted`；本批裁剪之——呈现策略
+   「有进行中项时呈现」的存在性判据只依赖进行中项；完成交付的权威消费面
+   ＝导入页 `downloads.listCompleted`（IMP-2 批 B 已接）；overlay 进度卡
+   语义不承载采纳入口；且 orchestrator 投影层注入 BDL 读面会破坏批 1 建
+   立的投影分层（`overlay_surface` 只触 orchestrator 权威）。若桌面消费
+   批 2 时确需完成半，走投影演进（字段裁剪随清单，非新事实）。
+4. **检测卡不落**：照桌面表态「不进 overlay 首屏」（017 §5 引用不复
+   制），本批不落、不预留。
+5. **消费测试链**：provider-host `overlay_wire` 帧环 6 测试（+1：进行中
+   尝试入卡、终态与外族任务不入卡、无发明进度、向量驱动 schema 校验全
+   绿）＋orchestrator `overlay_surface` 单元 8 测试（+2：空态与纯函数、
+   非终态筛选与字段裁剪）＋`@vua/contracts` 守卫面（`OverlayDownload
+   CardV01` 等 TS 类型＋消费测试，批 1 世代快照向后兼容锚）。

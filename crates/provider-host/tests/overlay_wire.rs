@@ -168,7 +168,7 @@ fn vectors_drive_the_frozen_overlay_snapshot_schema() {
         }
         seen += 1;
     }
-    assert_eq!(seen, 6, "the frozen overlay vector set is exactly six files");
+    assert_eq!(seen, 8, "the frozen overlay vector set is exactly eight files");
 }
 
 #[test]
@@ -191,6 +191,9 @@ fn overlay_snapshot_serves_the_honest_empty_state() {
         value["productionCard"],
         json!({ "currentPlan": null, "latestRecord": null })
     );
+    // Batch 2: nothing in flight is the honest empty download card — never
+    // an error, never a synthesized row.
+    assert_eq!(value["downloadCard"], json!({ "activeDownloads": [] }));
     assert!(validator.is_valid(value), "the empty snapshot matches the frozen face: {value}");
 }
 
@@ -264,6 +267,90 @@ fn overlay_snapshot_projects_tasks_and_the_production_card() {
     // payload (no query instant, no aggregate revision is invented).
     let again = run_overlay_frame(&database, Some(use_case_config(&root)), json!({}));
     assert_eq!(again[0]["payload"]["value"], *value, "polling never changes what it observes");
+}
+
+#[test]
+fn overlay_snapshot_carries_the_download_card_for_in_flight_attempts() {
+    let validator = overlay_validator();
+    let root = unique_root("downloads");
+    let database = root.join("tasks.sqlite");
+    let store = SqliteTaskStore::open(&database).expect("store opens");
+
+    // Seed the authorities directly: two in-flight download attempts plus
+    // one terminal attempt and one foreign (demo) task. Only the in-flight
+    // `dl-` rows may enter the card — the stance is "while items are in
+    // flight" (017 stance 3), a finished attempt leaves the card.
+    let attempts = [
+        ("dl-019e0000-0000-7000-8000-000000000601-a1", "019e0000-0000-7000-8000-000000000601"),
+        ("dl-019e0000-0000-7000-8000-000000000602-a1", "019e0000-0000-7000-8000-000000000602"),
+        ("dl-019e0000-0000-7000-8000-000000000603-a1", "019e0000-0000-7000-8000-000000000603"),
+    ];
+    for (index, (task_id, download_id)) in attempts.iter().enumerate() {
+        store
+            .accept_task(&NewTask {
+                task_id: (*task_id).to_owned(),
+                correlation_id: (*download_id).to_owned(),
+                occurred_at: format!("2026-09-12T0{}:00:00.000Z", index + 1),
+            })
+            .expect("download attempt accepted");
+    }
+    store
+        .accept_task(&NewTask {
+            task_id: "demo-019e0000-0000-7000-8000-000000000604".to_owned(),
+            correlation_id: "corr-demo".to_owned(),
+            occurred_at: "2026-09-12T04:00:00.000Z".to_owned(),
+        })
+        .expect("demo task accepted");
+    // Walk one attempt through the real nine-state path to `succeeded`.
+    for state in [vua_orchestrator::TaskState::Preparing, vua_orchestrator::TaskState::Running] {
+        let current = store
+            .task("dl-019e0000-0000-7000-8000-000000000603-a1")
+            .expect("task readable")
+            .expect("attempt exists");
+        store
+            .mutate_task(
+                &current.task_id,
+                current.revision,
+                "2026-09-12T03:10:00.000Z",
+                vua_orchestrator::TaskMutation::Transition {
+                    state,
+                    payload: json!({ "receivedBytes": 1, "expectedBytes": 2 }),
+                },
+            )
+            .expect("transition lands");
+    }
+    let finished = store
+        .task("dl-019e0000-0000-7000-8000-000000000603-a1")
+        .expect("task readable")
+        .expect("attempt exists");
+    store
+        .mutate_task(
+            &finished.task_id,
+            finished.revision,
+            "2026-09-12T03:30:00.000Z",
+            vua_orchestrator::TaskMutation::Complete {
+                state: vua_orchestrator::TaskState::Succeeded,
+                error: None,
+                result: Some(json!({ "downloadId": "019e0000-0000-7000-8000-000000000603" })),
+            },
+        )
+        .expect("completion lands");
+
+    let frames = run_overlay_frame(&database, Some(use_case_config(&root)), json!({}));
+    let value = &frames[0]["payload"]["value"];
+    assert!(frames[0]["payload"]["ok"].as_bool().expect("ok flag"), "{frames:?}");
+    assert!(validator.is_valid(value), "the snapshot matches the frozen face: {value}");
+
+    // The download card holds exactly the in-flight attempts, trimmed to
+    // their own identity facts — no byte progress is invented (progress
+    // travels the task-event channel).
+    let card = &value["downloadCard"];
+    let rows = card["activeDownloads"].as_array().expect("rows array");
+    assert_eq!(rows.len(), 2, "terminal attempt and foreign task stay out: {card}");
+    assert_eq!(rows[0]["downloadId"], "019e0000-0000-7000-8000-000000000601");
+    assert_eq!(rows[0]["state"], "queued");
+    assert_eq!(rows[1]["downloadId"], "019e0000-0000-7000-8000-000000000602");
+    assert!(rows[0].get("receivedBytes").is_none(), "no invented progress on the snapshot face");
 }
 
 #[test]
