@@ -281,3 +281,29 @@ export function navLevelNext(input: NavLevelInput): NavLevel {
   }
   return required <= available - NAV_LEVEL_BUFFER_PX ? 1 : 2;
 }
+
+/**
+ * 判定输入快照(#28 顶栏抖动修复):决定分级的外部事实只有三样——窗口宽、
+ * 全量 Tab 自然宽(量尺行)、副标题收益(探针)。折叠/展开动作本身会改变
+ * 轨道内容盒宽(滚动条出现消失、布局回流),ResizeObserver 据此再次触发
+ * 判定即在临界宽度下形成 1↔2 自反馈振荡;快照未变则该次触发必是自反馈,
+ * 判定跳过——观察者仍监听窗口/量尺/探针,语言切换与用户改窗照常重判。
+ */
+export interface NavMeasureSnapshot {
+  /** 视口宽(window.innerWidth,含滚动条):不随折叠/展开动作变化 */
+  readonly windowWidth: number;
+  /** 全量 Tab 自然宽(量尺行实测) */
+  readonly required: number;
+  /** 副标题收益(探针实测) */
+  readonly subtitleSaving: number;
+}
+
+export function navMeasureChanged(
+  prev: NavMeasureSnapshot | null,
+  next: NavMeasureSnapshot,
+): boolean {
+  if (prev === null) return true;
+  return prev.windowWidth !== next.windowWidth
+    || prev.required !== next.required
+    || prev.subtitleSaving !== next.subtitleSaving;
+}
