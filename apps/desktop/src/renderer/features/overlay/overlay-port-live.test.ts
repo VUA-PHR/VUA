@@ -1,7 +1,8 @@
 /**
- * Overlay live 端口测试(017 表面批 1 消费接线):以假 GatewayClient 驱动
- * 四类事实:
- * - ok 回执 → available 快照原样透传(任务卡/生产卡);
+ * Overlay live 端口测试(017 表面批 1 消费接线;批 2 下载卡增量):以假
+ * GatewayClient 驱动四类事实:
+ * - ok 回执 → available 快照原样透传(任务卡/生产卡;downloadCard 携带则
+ *   透传、批 1 世代缺席则向后兼容);
  * - vua.overlay.unavailable → unavailable 缺席快照(不伪装空数据);
  * - 其它应用错误/信封失败 → reject(表面呈现失败+重试);
  * - dispatch(request_cancel_task) → 走既有命令面 task.requestCancellation,
@@ -96,6 +97,21 @@ const overlayResult: DesktopGatewaySuccessValueV1 = {
   },
 };
 
+/** 017 批 2:wire 快照带 downloadCard 的世代 */
+const overlayResultWithDownloadCard: DesktopGatewaySuccessValueV1 = {
+  contractVersion: "0.1",
+  tasks: [
+    { taskId: "task-1", state: "running", correlationId: "c1" },
+    { taskId: "dl-019e-a1", state: "running", correlationId: "c2" },
+  ],
+  productionCard: { currentPlan: null, latestRecord: null },
+  downloadCard: {
+    activeDownloads: [
+      { downloadId: "dl-019e-a1", state: "running", updatedAt: "2026-09-16T01:30:00.000Z" },
+    ],
+  },
+};
+
 function makeEvent(kind: ApplicationEventV01["kind"]): ApplicationEventV01 {
   return {
     contractVersion: "0.1",
@@ -126,6 +142,26 @@ describe("overlay live 端口(017 批 1 消费)", () => {
     assert.equal(requests.length, 1);
     assert.equal(requests[0]?.method, "overlay.getSnapshot");
     assert.deepEqual(requests[0]?.params, {});
+  });
+
+  test("017 批 2 downloadCard:wire 携带则原样透传;批 1 世代无此字段则缺席(向后兼容)", async () => {
+    const { host } = makeHost({
+      "overlay.getSnapshot": [
+        { value: overlayResultWithDownloadCard },
+        { value: overlayResult },
+      ],
+    });
+    const port = createLiveOverlayPort(clientOf(host));
+    const withCard = await port.snapshot();
+    assert.ok(withCard.availability === "available");
+    assert.deepEqual(withCard.downloadCard, {
+      activeDownloads: [
+        { downloadId: "dl-019e-a1", state: "running", updatedAt: "2026-09-16T01:30:00.000Z" },
+      ],
+    });
+    const legacy = await port.snapshot();
+    assert.ok(legacy.availability === "available");
+    assert.equal(legacy.downloadCard, undefined);
   });
 
   test("vua.overlay.unavailable → unavailable 缺席快照(诚实缺席,不 reject)", async () => {

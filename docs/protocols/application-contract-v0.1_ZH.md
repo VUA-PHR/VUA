@@ -43,6 +43,7 @@
 | Command | `production.recover` | 对失败/过期结果执行恢复（continue / rollback） | B3/F3 |
 | Query | `production.getBuildRecord` | 读取最小 Build Record | B3/F3 |
 | Query | `overlay.getSnapshot` | 返回 overlay 一屏的只读读面快照：任务卡＋生产状态卡＋下载卡投影 | M7 |
+| Command | `release.openForHandoff` | 官方 SDK 上传交接（tasked）：buildId → 任务九态 → 交接事实文档（无上传状态字段） | M7 |
 
 `production.*` 七方法是[生产用例契约 v0.1](production-use-case-v0.1_ZH.md)（B3 候选草案）的
 登记面：生命周期-任务映射、双素材入口、确认与恢复纪律、值语义种子以该文档为准；经 B3
@@ -199,3 +200,19 @@ Provider 的具体托管形态、握手封帧、崩溃监督与进程树策略�
   八向量（`overlay-snapshot.schema.json`，4 正 4 负）由核心随批冻结；消费测试随批
   （provider-host `overlay_wire` 帧环＋`@vua/contracts` 守卫）。检测卡照桌面表态
   不进 overlay 首屏（017 §5 引用不复制），本批不落。
+- 2026-09-16：登记 `release.openForHandoff`（M7，提案 023 核心冻结批；硬前置①两半
+  已齐——桌面表态 469ef5c 经第 52 波入库＋产线表态五点〔wt-4 批随其入库〕，②③④随
+  本批，⑤轮空——Bridge 命令面以工程已打开为前提，交接属编辑器进程生命周期管理，
+  实现域＝进程/窗口面，unity-bridge v3 零增操作）。官方 SDK 上传交接 tasked 命令：
+  params 闭集单键 `{buildId}`（核心裁决修订 023 §3 草案——工程身份权威在 build-record
+  面，params 重复携带＝双源对账零增益）；受理回执照 `inspection.requestRun` 形状；
+  完成判定＝Bridge handshake 到达（001 链），聚焦不进契约事实，统一 task 九态单形态；
+  succeeded 快照 result 携带交接事实文档（schemaVersion/buildId/projectId/editor/
+  occurredAt 五键闭集，**无上传状态字段**——诚实纪律 1/2 由形状钉死，负例向量把守）；
+  错误码闭集四码 `vua.release_handoff.*`（unavailable/invalid_params/build_unknown/
+  editor_unresolved）。向后兼容增量（新方法登记，既有面零变化）：机器可读面与六向量
+  （`schemas/release-handoff/v0.1/`，3 正 3 负）由核心随批冻结；消费测试随批
+  （provider-host `release_handoff_wire` 帧环＋`@vua/contracts` 守卫＋mock 缺席分支）。
+  路由未接线＝`vua.release_handoff.unavailable` 诚实缺席（实现域〔产线 port＋核心
+  use case〕归后续切片），绝不伪造受理/交接事实。词表详见
+  [release-handoff 协议 v0.1](release-handoff-v0.1_ZH.md)。

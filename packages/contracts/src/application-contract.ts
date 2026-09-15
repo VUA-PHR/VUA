@@ -1040,6 +1040,77 @@ export interface RecordListResultV02 {
 }
 
 
+// ---- release.openForHandoff(023 词表行,核心冻结批 2026-09-16:官方 SDK
+// 上传交接的 tasked 命令面。交接语义=把用户送到官方 SDK 流程起点——上传
+// 本身永不进 VUA(产品边界);桌面表态:方向 a 动作权威,b 回执形状并入结果
+// 文档;产线表态:Bridge 命令面以工程已打开为前提,实现域=进程/窗口面,
+// unity-bridge v3 零增操作,任务化=统一 task 九态单形态,完成判定=
+// Bridge handshake 到达(001 链),聚焦不进契约事实,冻结批不设新真机前置。
+// 机器可读面 schemas/release-handoff/v0.1,DRAFT 漂移由向量对表测试把守) ----
+
+/** 词表行信封 schemaVersion(族自有常量,照 editor-verify/inspection-queries
+ *  先例;绝不借外族版本) */
+export type ReleaseHandoffSchemaVersionV01 = "0.1";
+
+/** 类型化错误码闭集四码(vua.release_handoff.* 族):unavailable=路由/产线
+ *  进程窗口 port 未接线(诚实缺席,绝不折叠成伪造受理);invalid_params=
+ *  params 闭集违反(形状违反绝不冒充缺席);build_unknown=buildId 无对应
+ *  构建记录(受理期校验);editor_unresolved=编辑器身份解析失败(诊断复用
+ *  environment.verifyEditor 语义,不另造词)。任务运行期失败(handshake
+ *  超时等)走任务面九态,不进本闭集 */
+export type ReleaseHandoffErrorCodeV01 =
+  | "vua.release_handoff.unavailable"
+  | "vua.release_handoff.invalid_params"
+  | "vua.release_handoff.build_unknown"
+  | "vua.release_handoff.editor_unresolved";
+
+/** 错误码闭集运行时面(渲染层收窄与消费测试按此数组对表,不自持字面量) */
+export const RELEASE_HANDOFF_ERROR_CODES_V01: readonly ReleaseHandoffErrorCodeV01[] = [
+  "vua.release_handoff.unavailable",
+  "vua.release_handoff.invalid_params",
+  "vua.release_handoff.build_unknown",
+  "vua.release_handoff.editor_unresolved",
+];
+
+/** params 单字段闭集 {buildId}(核心冻结裁决,修订 023 §3 草案「buildId＋
+ *  工程身份」:工程身份权威在 build-record 面——projectId 已随冻结记录
+ *  携带,params 重复携带=双源对账零增益;桌面表态「权威身份在 build-record
+ *  面」的最彻底落实。异议随 023 线程重议) */
+export interface ReleaseOpenForHandoffCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "release.openForHandoff";
+  readonly commandId: string;
+  readonly params: { readonly buildId: string };
+}
+
+/** 受理回执(tasked 命令 inspection.requestRun 回执形状先例):按 taskId
+ *  轮询应用任务面,不再轮询本方法;succeeded 快照 result 携带交接事实
+ *  文档(#22/020 result 回流通道) */
+export interface ReleaseHandoffAcceptedV01 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV01;
+  readonly operation: "release.openForHandoff";
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
+/** 编辑器身份事实(exePath 属 editor-verify v0.1 冻结事实族——身份而非
+ *  存储路径;storedPath 纪律:产物物理路径永不出现) */
+export interface ReleaseHandoffEditorFactV01 {
+  readonly exePath: string;
+  readonly version: string;
+}
+
+/** 交接事实文档(succeeded 快照 result payload):VUA 侧终态事实。
+ *  additionalProperties false 由形状钉死诚实纪律 1/2——无上传状态字段,
+ *  上传在官方 SDK 中完成,绝非 VUA 可猜事实(负例向量钉死) */
+export interface ReleaseHandoffFactV01 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV01;
+  readonly buildId: string;
+  readonly projectId: string;
+  readonly editor: ReleaseHandoffEditorFactV01;
+  readonly occurredAt: string;
+}
+
 // ---- overlay.*(017 overlay 表面批 1–2,核心冻结批:任务卡＋生产状态卡＋
 // 下载卡的按需轮询读面。一次查询返回 overlay 一屏所需只读投影——对权威面的
 // 字段裁剪,不跨源推导;载荷不带查询时刻与聚合 revision——两次查询无变更则
@@ -1440,7 +1511,8 @@ export type ApplicationRequestV01 =
   | PlanApproveCommandV02
   | JobExecuteCommandV02
   | WarehouseGenerateVpmCommandV01
-  | WarehouseDeleteOriginalsCommandV01;
+  | WarehouseDeleteOriginalsCommandV01
+  | ReleaseOpenForHandoffCommandV01;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -2016,6 +2088,28 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     }
     return true;
   }
+  // 023 词表行(核心冻结批 2026-09-16):params 单字段闭集 {buildId},
+  // 词表外键拒绝(形状违反=invalid_params,绝不冒充缺席)
+  if (value.kind === "command" && value.method === "release.openForHandoff") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["buildId"])
+      && isNonEmptyText(value.params.buildId);
+  }
   return false;
-  return false;
+}
+
+/** 交接事实文档运行时守卫(023 冻结批):形状即诚实纪律——闭集键外任何
+ *  字段(尤其上传状态类)拒绝;消费测试负例钉死 */
+export function isReleaseHandoffFactV01(value: unknown): value is ReleaseHandoffFactV01 {
+  if (!isRecord(value)) return false;
+  if (!hasExactKeys(value, ["schemaVersion", "buildId", "projectId", "editor", "occurredAt"])) return false;
+  if (value.schemaVersion !== "0.1") return false;
+  if (!isNonEmptyText(value.buildId) || !isNonEmptyText(value.projectId) || !isNonEmptyText(value.occurredAt)) {
+    return false;
+  }
+  if (!isRecord(value.editor)) return false;
+  return hasExactKeys(value.editor, ["exePath", "version"])
+    && isNonEmptyText(value.editor.exePath)
+    && isNonEmptyText(value.editor.version);
 }
