@@ -167,6 +167,7 @@ fn use_case_config(root: &std::path::Path, bridge: std::sync::Arc<dyn UnityBridg
         editor_selection: vua_orchestrator::EditorSelection::Unavailable {
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
+        handoff: None,
     }
 }
 

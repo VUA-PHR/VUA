@@ -162,6 +162,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         bridge,
         project_root,
         editor_selection,
+        // The production-domain process/window adapter lands with the
+        // production slice; until then the handoff route keeps answering
+        // the frozen honest absence.
+        handoff: None,
     }
     });
     let input = stdin_reader();

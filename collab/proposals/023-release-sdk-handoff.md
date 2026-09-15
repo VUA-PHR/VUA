@@ -317,3 +317,66 @@ buildId 推导 inspectionId 即跨源推导（投影纪律禁止），故本切�
 页，Release 页不加摘要（桌面表态第 3 点「引用不复制」的彻底形态）；
 ③数据域在证据束与构建记录间建立身份关联（独立提案）。桌面无偏好
 预设立场，候核心/数据表态。
+## 切片②交付（2026-09-16，核心 use case 接线批）
+
+后续切片②（核心 use case）本批落地，词表/形状/错误码闭集零变化：
+
+- **核心域**：`crates/orchestrator/src/release_handoff.rs`——①
+  `ReleaseHandoffPort` trait＝产线进程/窗口面的冻结跨域契约（两路径
+  ＋handshake 等待归 port 实现；`HandshakeArrived` 为唯一完成事实，
+  `HandshakeTimeout` 为诚实结果枚举，启动失败为类型化错误）；②身份
+  解析 `resolve_handoff_editor`（裁决⑤三级：显式注入短路＞构建记录
+  版本对观测候选匹配＞类型化 unresolved；版本不匹配绝不取「最近似」
+  ——防升级副作用）；③fact 组装 `build_handoff_fact`（五键闭集，
+  无上传状态字段由构造钉死）。单元测试 9 例。
+- **provider-host**：`ProductionUseCaseConfig/Services` 新增
+  `handoff` port 注入（缺省 `None`＝生产装配维持诚实缺席）；路由按
+  受理流接线——params 校验（不变，最前）→runtime/port 缺席检查
+  （缺席语义维持）→构建记录存在性（`build_unknown` validation；读
+  失败答 unavailable 不冒充 unknown）→editor 身份解析（显式注入经
+  editor-verify 面确立身份，验证拒绝如实 unresolved 绝不降级；
+  `editor_unresolved` category＝dependency，照协议本冻结错误码表）
+  →任务受理（九态只承载启动＋handshake 等待；handshake 超时答
+  `vua.task.timeout` 如实失败可重试，port 启动失败答
+  `vua.job.handoff_launch_failed` 执行族码——两者均不进
+  release_handoff 词表闭集）；受理回执照 `inspection.requestRun`
+  形状；succeeded 快照 result 经 #22/020 reflux 通道携带 fact。
+- **测试**：wire 帧环 12 例（缺席 5 例维持＋接线 7 例：fake port 全
+  流转/超时/启动失败/build_unknown 不受理/unresolved/缺省缺席维持/
+  显式注入短路直达 port——裁决 15 本地先行，fake port 驱动，真机
+  证据归 W25）＋核心 9 例。
+- **边界如实声明**：身份解析第二级的候选枚举面本批取 021 装配期
+  选择决策携带的事实（显式注入或单一自动选择目标）；多编辑器 Hub
+  根枚举接入候产线/环境协作切片，解析不出即如实
+  `editor_unresolved` 不猜。工程路径仅作为受信侧内部事实进 port
+  （`HandoffLaunch.project_root`），永不入 wire（边界 6）。
+
+## 核心表态（IA 缺口，2026-09-16——候核心表态项办理闭环）
+
+**裁决：选项②维持现状——upload_readiness 权威浏览面在 Inspection 页，
+Release 页不加摘要；桌面本切片「不呈现 upload_readiness 摘要」即最终
+形态，非临时缺口。**依据：
+
+1. **投影纪律（017 §5「引用不复制」的延伸）**：buildId→inspectionId
+   的推导在任一页面都是跨源推导；选项①把检查身份物化进交接事实＝
+   预写推导结果，选项③预建跨域身份关联＝把推导物化为数据面契约——
+   两者都只是把投影纪律禁止的推导从「运行时」搬到「冻结时」，纪律
+   精神是推导不成立，不是推导换个时机。
+2. **单一事实源（裁决④同构）**：params 闭集修订单键 buildId 的同一
+   理由——交接事实的语义是「交接动作发生了」（editor/project/时刻），
+   检查身份属于检查域的寻址事实；混入即两域事实互相引用，词表升版
+   （v0.2）为非必要字段破冻结形状，版本纪律不允许。
+3. **诚实纪律（缺席比「最新」更诚实）**：并非每个构建都有对应检查，
+   摘要若呈现就必须回答「哪一个检查」（最新？）——那又是一次隐式推
+   导；「检查证据请到 Inspection 页按权威浏览面查看」没有猜测成分。
+4. **页面职责与产品边界对账**：准备/验证/交接三职责各自呈现——
+   Inspection 页＝验证权威面（upload_readiness 在此），Release 页＝
+   产物浏览＋交接动作（「已交接」事实在此）；用户从交接完成态到检查
+   证据的路径是导航问题不是数据问题，IA 手段（入口链接）不产生跨源
+   推导，桌面后续可按域内手段处理，不受本裁决约束。
+
+选项①②③中②为本裁决；①③若未来出现真实需求（例如用户裁决要求
+Release 页承载证据摘要），走独立提案与词表/数据面升版，不在本线程
+默认推进。桌面表态第 3 点「引用不复制」自此为完整权威口径。
+
+——以上为核心域表态；桌面/数据域若引出异议，随本线程重议。
