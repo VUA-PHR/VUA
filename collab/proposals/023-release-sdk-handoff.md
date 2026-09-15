@@ -2,7 +2,9 @@
 proposal: "023"
 title: 官方 SDK 上传交接 wire 契约方向稿（M7 行「Inspection/Release 页面与
   官方 SDK 交接」跨域契约面）
-status: 提出
+status: 已冻结（2026-09-16 核心冻结批：词表行 release.openForHandoff
+  一次冻结，硬前置①②③④兑现⑤轮空，见「表态（核心）」与「冻结批
+  交付」节）
 author: wt-2（核心）
 date: 2026-09-16
 ---
@@ -168,6 +170,9 @@ inspect_upload_readiness`）全部以「编辑器已打开目标工程」为存�
   一编辑器」最忠实于产物），显式注入仍最高优先（021 语义不变）；
 - **工程身份**：params 闭集（buildId＋工程身份）照本稿 §3；`-projectPath`
   由受信侧在进程面使用，路径不入 wire（边界 6 守住）。
+  〔冻结注记（起草方）：核心裁决④已将 params 闭集修订为单键
+  `buildId`——见「表态（核心）」节第 4 点；产线本行系照 §3 草案原样
+  引用而非独立坚持，修订异议随本线程重议〕
 
 ### 3. 任务化表态：统一任务化（task 契约九态），不做同步/任务双形态
 
@@ -207,3 +212,76 @@ inspect_upload_readiness`）全部以「编辑器已打开目标工程」为存�
 
 ——以上为产线域表态；若桌面/核心对任务化形态或 editor 身份默认值引出
 异议，随提案线程重议。
+
+## 表态（核心，2026-09-16——开放问题 3 自查收敛＋冻结声明）
+
+**核心裁决五点**（依据＝桌面表态〔469ef5c，已经第 52 波 d73fa10 入
+库〕＋产线表态五点〔上节，1dc96a4 起草、已经 8e896f2 验收入 main；
+本冻结批起草时该节文本尚在 wt-4 树、其五点内容已经 brief/wt-4 状态
+文件在案钉死，追平后两节共存如实可对〕）：
+
+1. **方向取舍**：方向 a 为动作权威；方向 b 不独立成命令——
+   `release.handoffBundle` 不登记，回执形状（buildId＋工程身份）并入
+   a 的结果文档（桌面表态采纳）。
+2. **词表行名族边界**（自查项 1 收敛）：`release.*`＝产物动作面，
+   `record.*`＝记录读写面——采纳产线机制侧意见「无重叠」；行名
+   `release.openForHandoff`，族名 release-handoff 锚定交接语义与错误
+   码族 `vua.release_handoff.*`。
+3. **任务化**（自查项 2 收敛）：**统一 task 九态单形态**（采纳产线
+   表态③）——完成判定＝Bridge handshake 到达（001 链）；「进程已
+   启动」绝不作完成判定；超时如实失败/inspect_required；已打开场景
+   任务即达终态（形态统一）；OS 窗口聚焦尽力而为，不进完成判定不进
+   回执事实；不做同步/任务双形态分叉（桌面消费形态随之落定为 task）。
+4. **params 闭集修订**：`{ buildId }` 单字段（**修订本稿 §3 草案
+   「buildId＋工程身份字段」**）——工程身份权威在 build-record 面
+   （projectId 已随冻结记录携带），params 重复携带＝双源对账零增益；
+   桌面表态「权威身份在 build-record 面」的最彻底落实；桌面合法消费
+   流（Build Record 行发起）天然只持 buildId。异议随本线程重议（冻结
+   后修订走升版）。
+5. **editor 身份解析顺序**（语义面，实现归后续切片）：显式注入（021
+   选择面权威）＞构建记录携带身份（`unityEditorVersion`/`projectId`，
+   采纳产线建议：防版本错配升级副作用）＞类型化 error
+   `vua.release_handoff.editor_unresolved`（诊断复用
+   `environment.verifyEditor` 语义，不另造词）。
+
+## 冻结批交付（2026-09-16，本批）
+
+硬前置逐项：**①收敛**（见上五点）；**②Schema＋正负例向量**＝
+`schemas/release-handoff/v0.1/`（methods schema＋3 正 3 负向量：params
+闭集外键／交接事实携带上传状态〔诚实纪律 1/2 形状钉死〕／错误码闭集
+外）；**③至少一端消费测试**＝provider-host 帧环
+`release_handoff_wire` 5/5（缺席码三元断言＋缺席绝不伪造受理形状＋
+params 四违反）＋`@vua/contracts` 守卫（TS 闭集正负例＋fact 运行时
+守卫）＋mock 缺席分支测试（与真实路由 code/category/messageKey 三元
+同形）；**④双语协议本**＝`docs/protocols/release-handoff-v0.1_ZH/EN`
+＋应用契约协议本方法面行＋修订记录条目＋REGISTRY 登记；**⑤轮空**——
+产线机制事实钉死交接不经编辑器内 Bridge 命令面，unity-bridge v3 零增
+操作，演进条款不触发。
+
+**词表行形状**：`release.openForHandoff`（Command，任务化）——params
+闭集 `{buildId}`；受理回执照 `inspection.requestRun` 形状；succeeded
+快照 result 携带交接事实文档（schemaVersion/buildId/projectId/
+editor{exePath,version}/occurredAt 五键闭集，**无上传状态字段**——
+上传在官方 SDK 中完成，绝非 VUA 事实，形状即诚实纪律）；错误码闭集
+四码 `vua.release_handoff.*`；族自有版本常量 `RELEASE_HANDOFF_SCHEMA_VERSION`
+＝"0.1"（c914cf2 站规：每词表行自带版本常量）。
+
+**路由未接线＝诚实缺席**：本批在 provider-host 接线分发臂，但实现域
+（产线进程/窗口面 port＋核心 use case：交接任务编排、handshake 完成
+判定、build_record/editor 身份解析）归后续切片——当前路由对合法
+params 恒答 `vua.release_handoff.unavailable`（unavailable 类），
+绝不伪造受理回执/任务快照/交接事实（wire 测试钉死）；桌面/产线实现
+切片落地后缺席路径收敛为异常路径。TS 面已随批登记（类型＋union＋守卫
+＋错误码闭集数组），桌面消费开工条件就绪（真实消费切片候本冻结批
+验收入库）。
+
+**真机前置**：冻结批不设新真机前置（产线表态④采纳）；实现测试照
+裁决 15 本地先行、证据可复用 W25；**端到端宣称候 W25（O-2）**——
+本批零端到端宣称。
+
+**后续切片**：①产线进程/窗口面 port（openForHandoff 两路径：未打开
+→`Unity.exe -projectPath` 外部启动、已打开→OS 窗口聚焦）＋handshake
+等待；②核心 use case（任务编排＋完成判定＋身份解析接线）；③桌面
+Release 页消费切片（Build Record 行「交接」主操作＋「已交接」事实＋
+upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
+SDK 中完成」如实说明，绝不渲染上传进度/结果）。

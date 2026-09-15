@@ -589,3 +589,24 @@ describe("mock environment.verifyEditor (021 desktop consumption batch)", () => 
     });
   });
 });
+
+describe("mock release.openForHandoff (023 core freeze batch)", () => {
+  it("answers the honest absence code while the production-domain port is unwired", async () => {
+    // 023 词表行:交接实现域=产线进程/窗口面 port＋核心 use case,后续
+    // 切片落地;模拟面与真实 provider-host 未接线行为同形(code/category/
+    // messageKey 三元一致)——诚实缺席,绝不伪造受理回执/交接事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "command",
+      method: "release.openForHandoff",
+      commandId: "handoff-1",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.release_handoff.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.releaseHandoff.unavailable");
+  });
+});
