@@ -15,6 +15,7 @@ import {
   sortRecordRowsByFinishedAtDesc,
   type BuildRecordFacts,
 } from "./release-records-model.ts";
+import { HandoffPanel } from "./release-handoff-panel.tsx";
 
 const copy = strings.release.records;
 
@@ -209,6 +210,10 @@ export function ReleaseRecordsSection() {
                         </dd>
                       </div>
                     </dl>
+                    {/* 交接主操作(023 消费切片):入口落 Build Record 行(桌面
+                     *  表态 IA;不落卡墙——身份权威在 build-record 面);key=
+                     *  buildId 切换行时重置面板状态 */}
+                    <HandoffPanel key={detail.facts.buildId} buildId={detail.facts.buildId} />
                   </div>
                 )}
               </section>

@@ -1618,7 +1618,8 @@ export type ApplicationSuccessValueV01 =
   | RecordGetResultV02
   | RecordListResultV02
   | ProjectImportCopyResultV01
-  | WarehouseMaintenanceAcceptedV01;
+  | WarehouseMaintenanceAcceptedV01
+  | ReleaseHandoffAcceptedV01;
 
 export type ApplicationResponseV01 =
   | {

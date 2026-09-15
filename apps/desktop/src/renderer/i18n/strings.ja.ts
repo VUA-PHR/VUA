@@ -1235,6 +1235,39 @@ rolled_back: "ロールバック済み",
       detailFailed: "記録の詳細の読み取りに失敗しました。",
       detailUnexplainable:
         "記録ドキュメントを解釈できません:必須事実の欠落または語彙外です。推測せず、正直に表示を拒否しました。",
+      /* 023 消費スライス:release.openForHandoff(v0.1 凍結)——ビルド記録行の
+       * 「引き渡し」主操作。不在セマンティクス:実装スライス着地まで経路は
+       * 常に unavailable を返す。アップロード進捗/結果は決して表示しない
+       * (引き渡し事実ドキュメントにアップロード状態フィールドは存在しない)。 */
+      handoff: {
+        action: "引き渡し",
+        actionNote:
+          "このビルドのプロジェクトで Unity エディターを開く/フォーカスし、公式 SDK のアップロード画面を準備します。",
+        runningNote: "引き渡しタスクを実行中です。タスクセンターで経過を確認できます。",
+        readFailedNote: "タスク状態の読み取りに失敗しました。再試行中です。",
+        succeededTitle: "引き渡し済み",
+        succeededLine: "エディター {editorVersion} · {occurredAt}",
+        projectLine: "プロジェクト {projectId}",
+        sdkNote:
+          "最終アップロードは公式 SDK で完了します。VUA はアップロードの進捗や結果を表示しません。",
+        cancelledNote: "引き渡しタスクはキャンセルされました。",
+        factUnexplainableTitle: "引き渡し事実を解釈できません",
+        factUnexplainable:
+          "タスクは成功しましたが、引き渡し事実が欠落しているか形状が不正です。推測せず、そのまま表示します。",
+        absentTitle: "引き渡し経路未接続",
+        absentNote:
+          "引き渡しサービスはまだ接続されていません。実装スライスが着地するまで、この入口は正直に利用不可と表示されます。",
+        failedTitle: "引き渡し要求が拒否されました",
+        failedUnknown: "アプリケーションエラーコードなしで引き渡し要求が拒否されました。",
+        failedWithCode: "引き渡し要求が拒否されました:{code}",
+        codeInvalidParams: "要求パラメータが拒否されました(buildId 形状違反)。",
+        codeBuildUnknown: "この buildId に対応するビルド記録がありません。",
+        codeEditorUnresolved:
+          "エディターの識別情報を解決できませんでした。先に環境ページでエディターを検証してください。",
+        retry: "再試行",
+        taskErrorLine: "タスクエラー:{code}",
+        taskFailedNote: "引き渡しタスクが失敗しました。",
+      },
     },
   },
   /** パッケージ管理(S-XVI):Recipe 外の手動 VPM 操作面。用語はプレイヤー語彙で、semver/プロトコル詳細は出さない */

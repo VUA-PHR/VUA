@@ -452,6 +452,22 @@ export interface InspectionListRequestV1 {
   };
 }
 
+// ---- release.openForHandoff(release-handoff v0.1,023 词表行,核心冻结批
+// 2026-09-16 经第 53 波入库;M7 消费切片桌面登记。tasked 交接命令:受理回执
+// 按 taskId 轮询任务面;实现域未接线=路由恒答 vua.release_handoff.unavailable
+// 诚实缺席。params 闭集单键 {buildId},词表外键拒绝〔核心裁决④〕) ----
+
+/** release.openForHandoff 交接命令:按已验证编辑器身份请求打开/聚焦目标
+ * Unity 编辑器至目标工程;受理回执照 inspection.requestRun 形状
+ * (ReleaseHandoffAcceptedV01)。缺席语义由 wire 测试钉死:缺席绝不携带
+ * 受理形状 */
+export interface ReleaseOpenForHandoffRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "release.openForHandoff";
+  readonly params: { readonly buildId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -498,7 +514,8 @@ export type DesktopGatewayRequestV1 =
   | ProjectImportCopyRequestV1
   | ProjectSetNoteRequestV1
   | InspectionGetRequestV1
-  | InspectionListRequestV1;
+  | InspectionListRequestV1
+  | ReleaseOpenForHandoffRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -548,6 +565,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "project.setNote": "command",
   "inspection.get": "query",
   "inspection.list": "query",
+  "release.openForHandoff": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -977,6 +995,13 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isIdentifier(value.params.inspectionId);
     case "inspection.list":
       return hasExactKeys(value, REQUEST_KEYS) && isInspectionListParams(value.params);
+    // release-handoff v0.1(023 消费切片):params 闭集单键 {buildId}
+    // minLength 1(词表外键拒绝,与 schema additionalProperties:false 同形)
+    case "release.openForHandoff":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["buildId"])
+        && typeof value.params.buildId === "string"
+        && value.params.buildId.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])
