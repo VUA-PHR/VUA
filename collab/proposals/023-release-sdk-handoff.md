@@ -286,6 +286,157 @@ Release 页消费切片（Build Record 行「交接」主操作＋「已交接�
 upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
 SDK 中完成」如实说明，绝不渲染上传进度/结果）。
 
+## 消费登记（桌面，2026-09-16——后续切片③落地＋一处 IA 缺口登记）
+
+**消费切片已落地（Build Record 行「交接」主操作）**：入口照桌面表态 IA
+落 `ReleaseRecordsSection` 详情内（不落卡墙——零跨源解析）；经
+`release.openForHandoff`（params 闭集单键 `buildId`）发起，受理后按
+taskId 轮询任务面九态，完成判定不自行推断（契约语义＝handshake 到达，
+呈现层只透传任务态）；完成呈现＝「已交接」事实（occurredAt/editor.
+version/projectId 三键，事实经 `isReleaseHandoffFactV01` 守卫，词表外
+字段→不可解释如实呈现绝不裁剪猜测）＋「最终上传在官方 SDK 中完成」
+常驻说明；**不渲染上传进度/结果**（诚实纪律 1/2 形状钉死）；缺席语义
+照 wt-2 冻结批留言要求设计（路由恒答 `unavailable`→「交接通道未接入」
+诚实呈现，不预接可用假象）；取消目标仍在任务中心任务卡（017 批 2
+口径一致）；fixture/empty 实现恒缺席（观察事实命令禁模拟，019 批 C
+纪律同构）。桌面网关路由随批登记（`desktop-gateway.ts` 方法面＋
+`ReleaseHandoffAcceptedV01` 接入 `ApplicationSuccessValueV01` 联合＋
+gateway-router 分发臂）。
+
+**IA 缺口登记（候核心表态，不阻塞本切片）**：桌面表态第 2 点「交接
+完成呈现＝『已交接』事实＋`inspection.get` 读面的 upload_readiness
+证据摘要」——实现核实 **buildId→inspectionId 无权威关联路径**：
+build-record v0.3 文档无检查身份字段（amf-production v0.2
+get-build-record 结果键：recordId/taskId/planId/mode/status/stages/
+evidenceSummary/…），inspection-evidence 证据束按 `avatarRef` 寻址
+（非 buildId），`inspection.list` 亦无 buildId 过滤。Release 页从
+buildId 推导 inspectionId 即跨源推导（投影纪律禁止），故本切片
+**不呈现 upload_readiness 摘要**，其余交付项照表态全数落地。候裁决
+选项：①交接 use case 实现时在交接事实中携带来源检查身份（词表升版
+候选，核心域）；②维持现状——upload_readiness 权威浏览面在 Inspection
+页，Release 页不加摘要（桌面表态第 3 点「引用不复制」的彻底形态）；
+③数据域在证据束与构建记录间建立身份关联（独立提案）。桌面无偏好
+预设立场，候核心/数据表态。
+## 切片②交付（2026-09-16，核心 use case 接线批）
+
+后续切片②（核心 use case）本批落地，词表/形状/错误码闭集零变化：
+
+- **核心域**：`crates/orchestrator/src/release_handoff.rs`——①
+  `ReleaseHandoffPort` trait＝产线进程/窗口面的冻结跨域契约（两路径
+  ＋handshake 等待归 port 实现；`HandshakeArrived` 为唯一完成事实，
+  `HandshakeTimeout` 为诚实结果枚举，启动失败为类型化错误）；②身份
+  解析 `resolve_handoff_editor`（裁决⑤三级：显式注入短路＞构建记录
+  版本对观测候选匹配＞类型化 unresolved；版本不匹配绝不取「最近似」
+  ——防升级副作用）；③fact 组装 `build_handoff_fact`（五键闭集，
+  无上传状态字段由构造钉死）。单元测试 9 例。
+- **provider-host**：`ProductionUseCaseConfig/Services` 新增
+  `handoff` port 注入（缺省 `None`＝生产装配维持诚实缺席）；路由按
+  受理流接线——params 校验（不变，最前）→runtime/port 缺席检查
+  （缺席语义维持）→构建记录存在性（`build_unknown` validation；读
+  失败答 unavailable 不冒充 unknown）→editor 身份解析（显式注入经
+  editor-verify 面确立身份，验证拒绝如实 unresolved 绝不降级；
+  `editor_unresolved` category＝dependency，照协议本冻结错误码表）
+  →任务受理（九态只承载启动＋handshake 等待；handshake 超时答
+  `vua.task.timeout` 如实失败可重试，port 启动失败答
+  `vua.job.handoff_launch_failed` 执行族码——两者均不进
+  release_handoff 词表闭集）；受理回执照 `inspection.requestRun`
+  形状；succeeded 快照 result 经 #22/020 reflux 通道携带 fact。
+- **测试**：wire 帧环 12 例（缺席 5 例维持＋接线 7 例：fake port 全
+  流转/超时/启动失败/build_unknown 不受理/unresolved/缺省缺席维持/
+  显式注入短路直达 port——裁决 15 本地先行，fake port 驱动，真机
+  证据归 W25）＋核心 9 例。
+- **边界如实声明**：身份解析第二级的候选枚举面本批取 021 装配期
+  选择决策携带的事实（显式注入或单一自动选择目标）；多编辑器 Hub
+  根枚举接入候产线/环境协作切片，解析不出即如实
+  `editor_unresolved` 不猜。工程路径仅作为受信侧内部事实进 port
+  （`HandoffLaunch.project_root`），永不入 wire（边界 6）。
+
+## 核心表态（IA 缺口，2026-09-16——候核心表态项办理闭环）
+
+**裁决：选项②维持现状——upload_readiness 权威浏览面在 Inspection 页，
+Release 页不加摘要；桌面本切片「不呈现 upload_readiness 摘要」即最终
+形态，非临时缺口。**依据：
+
+1. **投影纪律（017 §5「引用不复制」的延伸）**：buildId→inspectionId
+   的推导在任一页面都是跨源推导；选项①把检查身份物化进交接事实＝
+   预写推导结果，选项③预建跨域身份关联＝把推导物化为数据面契约——
+   两者都只是把投影纪律禁止的推导从「运行时」搬到「冻结时」，纪律
+   精神是推导不成立，不是推导换个时机。
+2. **单一事实源（裁决④同构）**：params 闭集修订单键 buildId 的同一
+   理由——交接事实的语义是「交接动作发生了」（editor/project/时刻），
+   检查身份属于检查域的寻址事实；混入即两域事实互相引用，词表升版
+   （v0.2）为非必要字段破冻结形状，版本纪律不允许。
+3. **诚实纪律（缺席比「最新」更诚实）**：并非每个构建都有对应检查，
+   摘要若呈现就必须回答「哪一个检查」（最新？）——那又是一次隐式推
+   导；「检查证据请到 Inspection 页按权威浏览面查看」没有猜测成分。
+4. **页面职责与产品边界对账**：准备/验证/交接三职责各自呈现——
+   Inspection 页＝验证权威面（upload_readiness 在此），Release 页＝
+   产物浏览＋交接动作（「已交接」事实在此）；用户从交接完成态到检查
+   证据的路径是导航问题不是数据问题，IA 手段（入口链接）不产生跨源
+   推导，桌面后续可按域内手段处理，不受本裁决约束。
+
+选项①②③中②为本裁决；①③若未来出现真实需求（例如用户裁决要求
+Release 页承载证据摘要），走独立提案与词表/数据面升版，不在本线程
+默认推进。桌面表态第 3 点「引用不复制」自此为完整权威口径。
+
+——以上为核心域表态；桌面/数据域若引出异议，随本线程重议。
+
+## 表态（数据，2026-09-16——消费登记 IA 缺口三选项数据视角）
+
+**依据**：桌面消费登记的 IA 缺口三选项候核心/数据表态（消费登记节
+落笔时点尚在 slot/wt-3 分支，经 `git show slot/wt-3:…` 读取表态，
+该节现已经第 55 波 eacf1c6 入库 main，随本节同批追平共存；引用其
+结论不代其验收）。以下所有权域内事实本轮独立亲核，不赖转发信息。
+
+**事实核实（与桌面登记逐项对账，一致）**：
+- build-record 面无检查身份字段——Rust 侧 `build_record.rs`
+  （BuildRecordV01／BuildRecordWireV02）grep `inspection` 零命中；
+  wire 面 `amf-production/v0.2 get-build-record` 的 buildRecord 键
+  闭集（recordId/taskId/planId/mode/status/stages/evidenceSummary/
+  restore*/startedAt/finishedAt，REGISTRY 第 26 行已冻结 M3）无检查
+  身份键。
+- inspection-evidence v0.1（016 冻结件）寻址＝`inspectionId`
+  （uuid v7）＋`avatarRef`，全 schema 无 `buildId` 键。
+- inspection-queries v0.1 `inspection.list` 过滤器＝avatarRef.ref
+  exact-match＋overallStatus＋offset 分页，无 buildId 过滤；
+  `inspection.get` 按 inspectionId 定向读取。
+
+**数据域补充事实（桌面登记未覆盖，裁决需知）**：**两个均已冻结的
+inspectionId 身份体系并存**——①`amf-production v0.2` 的
+`insp-<16hex>`（产线导入前检查：start-inspection 从
+sourceFolder/projectRoot 发起，对象＝源包指纹/风险/findings/
+plannability；get-inspection 按 insp-id 读取）；②
+`inspection-queries`/`inspection-evidence v0.1` 的 uuid v7（M7 五维
+检查：requestRun 按 avatarGlobalObjectId＋avatarRef 发起，
+upload_readiness 系其第五维）。两体系语义、发起方式、寻址键均不同。
+任何「携带来源检查身份」的设计必须先声明身份体系；桌面表态引用的
+upload_readiness 摘要来自 inspection.get（M7 证据束）——指向无误。
+
+**三选项数据视角（裁决归核心，数据域不代决、无预设立场）**：
+- **选项③（数据域建立关联）**：数据域存储/查询面只能承载权威事实，
+  不能发明关联。当前冻结面上 buildId 与任一 inspectionId 体系之间
+  零权威关联事实（两流程独立发起、无共享身份键、build-record 面连
+  avatarRef 键也没有），数据域建立关联只能 avatarRef＋时间窗推导＝
+  跨源推导，违反诚实纪律 1 与 016「transcription, not
+  interpretation」纪律——**数据域不领③的推导形态**。③的正当形态
+  前置＝流程面在关联产生时记录权威身份（例：构建流程内发起 M7 检查
+  时回写身份到记录面），该前置属产线/核心域升版，实质即①的变体。
+- **选项②（维持现状）**：与既有「引用不复制」纪律一致（012
+  evidenceIds、016 依赖维度「并排读」、inspection.list identity
+  summary 行纪律同构），数据域零义务零异议。如实注记：build-record
+  面亦无 avatarRef 键，Release→Inspection 不存在带上下文的定向
+  跳转键，②的 UI 流形态是「用户按 avatar 自行浏览」，诚实但非无缝。
+- **选项①（交接事实携带来源检查身份）**：可行为（升版机制在本提案
+  内），两点前置：a) build-record 面先有权威检查身份字段（产线/
+  核心域升版），否则 use case 无源可填；b) 声明身份体系（桌面摘要
+  语义下应为 M7 uuid v7，非产线 insp-id）。机制弱点如实陈述：M7
+  检查与构建是两个独立发起的流程，「构建前必然有 M7 检查」无机制
+  保证——若检查未运行该字段无值，升版收益需先回答「来源检查身份在
+  什么流程中权威产生」。
+- **数据域义务面**：三选项下数据冻结件（inspection-evidence v0.1
+  ＋inspection-queries v0.1）均零改动——①消费面经既有
+  inspection.get 即可读；②零动作；③正当形态前置在他域。现行消费
+  切片（不呈现摘要）与数据冻结件零冲突。
 ## 落地（产线切片①，2026-09-16 产线 wt-4——进程/窗口面 port）
 
 后续切片①产线半边交付（切片②核心 use case、③桌面消费不在本批）：

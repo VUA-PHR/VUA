@@ -1300,6 +1300,45 @@ demoTaskTitle: "Demo task",
       detailFailed: "Failed to load record details.",
       detailUnexplainable:
         "The record document is unintelligible: required facts missing or out of vocabulary. Presentation refused honestly; content is not guessed.",
+      /* 023 consumer slice: release.openForHandoff (v0.1 frozen) — "hand off"
+       * primary action on the build-record row. Absence semantics: the route
+       * answers vua.release_handoff.unavailable until the implementation
+       * slice lands; no upload progress/result is ever rendered (the fact
+       * document has no upload-status field by shape). upload_readiness
+       * evidence summary is NOT rendered here: no authoritative
+       * buildId→inspectionId association exists (registered on proposal 023). */
+      handoff: {
+        action: "Hand off",
+        actionNote:
+          "Opens or focuses the Unity editor for this build's project so the official SDK upload panel is ready.",
+        runningNote: "Handoff task in progress; you can follow it in the task center.",
+        readFailedNote: "Task status read failed; retrying.",
+        succeededTitle: "Handed off",
+        succeededLine: "Editor {editorVersion} at {occurredAt}",
+        projectLine: "Project {projectId}",
+        sdkNote:
+          "The final upload is completed in the official SDK; VUA renders no upload progress or result.",
+        inspectNote:
+          "Evidence is browsed on the {page} page, the authoritative surface.",
+        gotoInspection: "Open {page}",
+        cancelledNote: "The handoff task was cancelled.",
+        factUnexplainableTitle: "Handoff fact unexplainable",
+        factUnexplainable:
+          "The task finished successfully but the handoff fact is missing or malformed. Presented as-is; nothing is guessed.",
+        absentTitle: "Handoff channel not wired",
+        absentNote:
+          "The handoff service is not connected yet. This entry stays honestly unavailable until the implementation slice lands.",
+        failedTitle: "Handoff request rejected",
+        failedUnknown: "The handoff request was rejected without an application error code.",
+        failedWithCode: "The handoff request was rejected: {code}",
+        codeInvalidParams: "Request parameters were rejected (invalid buildId).",
+        codeBuildUnknown: "No build record matches this buildId.",
+        codeEditorUnresolved:
+          "Editor identity could not be resolved; verify an editor in the environment page first.",
+        retry: "Retry",
+        taskErrorLine: "Task error: {code}",
+        taskFailedNote: "The handoff task failed.",
+      },
     },
   },
   /**
