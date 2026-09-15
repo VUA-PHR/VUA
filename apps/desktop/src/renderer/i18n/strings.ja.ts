@@ -1029,6 +1029,7 @@ rolled_back: "ロールバック済み",
     surfaceTitle: "VUA オーバーレイ",
     taskSectionLabel: "タスク",
     productionSectionLabel: "プロダクション",
+    downloadSectionLabel: "ダウンロード",
     productionPlan: "プラン {planId}",
     productionRecord: "レコード {buildId}",
     productionPlanStatuses: {

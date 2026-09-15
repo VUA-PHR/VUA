@@ -1096,6 +1096,7 @@ rolled_back: "已回滚",
     surfaceTitle: "VUA 覆盖层",
     taskSectionLabel: "任务",
     productionSectionLabel: "生产",
+    downloadSectionLabel: "下载",
     productionPlan: "计划 {planId}",
     productionRecord: "记录 {buildId}",
     productionPlanStatuses: {

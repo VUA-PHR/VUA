@@ -1028,6 +1028,7 @@ rolled_back: "롤백됨",
     surfaceTitle: "VUA 오버레이",
     taskSectionLabel: "작업",
     productionSectionLabel: "프로덕션",
+    downloadSectionLabel: "다운로드",
     productionPlan: "플랜 {planId}",
     productionRecord: "레코드 {buildId}",
     productionPlanStatuses: {
