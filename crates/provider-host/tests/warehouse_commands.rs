@@ -553,6 +553,7 @@ fn run_recipe_frames(world: &World, request_id: &str, method: &str, params: Valu
                 reason: vua_orchestrator::EditorSelectionGap::NotDetected,
             },
             project_root: world.base.join("project"),
+            handoff: None,
         }
     };
     let mut output = Vec::new();
@@ -768,6 +769,7 @@ fn use_case_config(world: &World) -> vua_provider_host::ProductionUseCaseConfig 
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
             project_root: world.base.join("project"),
+            handoff: None,
     }
 }
 
@@ -982,6 +984,7 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
             project_root: world.base.join("project"),
+            handoff: None,
     };
     // The use-case face rides the warehouse wiring (shared task authority
     // and BDL - Local Resolution reads warehouse facts).
@@ -1660,6 +1663,7 @@ fn seeded_production_world(
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
             project_root: world.base.join("project"),
+            handoff: None,
     };
     let warehouse = WarehouseConfig {
         bdl: world.bdl.clone(),
