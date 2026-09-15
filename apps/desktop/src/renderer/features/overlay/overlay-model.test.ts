@@ -1,9 +1,10 @@
 /**
- * Overlay 表现模型测试(v2,017 表面批 1 wire 消费):
+ * Overlay 表现模型测试(v2,017 表面批 1 wire 消费;批 2 下载卡增量):
  * - unavailable 缺席两态与空集快照的诚实呈现;
  * - tone 推导(冻结九态词表:非终态=accent、failed=error、终态=neutral);
  * - 任务卡投影(词表内/词表外 state 透传、终态无取消目标);
  * - 生产状态卡两半独立可空投影;
+ * - 下载卡投影(字段透传;缺席/空集不呈现——呈现策略 017 表态 3);
  * - 形态差异(open_on_desktop 仅 VR、主操作纪律);
  * - 枚举奇偶:statusTitles/statusTones 键与 TS 联合一一对应。
  */
@@ -39,6 +40,14 @@ function makeAvailableSnapshot(
         finishedAt: string;
       } | null;
     }>;
+    /** 017 批 2:未传 = 字段缺席(批 1 世代快照形态) */
+    downloadCard?: {
+      activeDownloads: readonly {
+        downloadId: string;
+        state: string;
+        updatedAt: string;
+      }[];
+    };
   } = {},
 ): Extract<OverlaySnapshot, { availability: "available" }> {
   return {
@@ -51,6 +60,7 @@ function makeAvailableSnapshot(
       latestRecord: null,
       ...overrides.productionCard,
     },
+    ...(overrides.downloadCard === undefined ? {} : { downloadCard: overrides.downloadCard }),
   };
 }
 
@@ -84,6 +94,7 @@ test("unavailable 缺席快照:两形态均 inactive 空态,不伪装成空数�
     assert.equal(model.taskCards.length, 0);
     assert.equal(model.productionCard.currentPlan, null);
     assert.equal(model.productionCard.latestRecord, null);
+    assert.equal(model.downloadCard, null);
     assert.equal(actionView(model, "request_cancel_task").visible, false);
     assert.equal(actionView(model, "dismiss").visible, true);
   }
@@ -217,7 +228,40 @@ test("textScale 与 reducedMotion 从 presentation 透传", () => {
   assert.equal(model.reducedMotion, true);
 });
 
-test("枚举奇偶:模型联合与字符串表键一一对应", () => {
+test("017 批 2 下载卡:进行中行字段原样透传(state 词表外值也透传)", () => {
+  const snapshot = makeAvailableSnapshot({
+    downloadCard: {
+      activeDownloads: [
+        { downloadId: "dl-019e-a1", state: "running", updatedAt: "2026-09-16T01:30:00.000Z" },
+        { downloadId: "dl-019e-b1", state: "queued", updatedAt: "2026-09-16T01:31:00.000Z" },
+      ],
+    },
+  });
+  const model = overlayViewModel(snapshot, "desktop");
+  assert.ok(model.downloadCard !== null);
+  assert.equal(model.downloadCard.activeDownloads.length, 2);
+  assert.deepEqual(model.downloadCard.activeDownloads[0], {
+    downloadId: "dl-019e-a1",
+    stateLabel: "running",
+    stateRaw: "running",
+    updatedAt: "2026-09-16T01:30:00.000Z",
+  });
+  assert.equal(model.downloadCard.activeDownloads[1]?.stateRaw, "queued");
+});
+
+test("017 批 2 下载卡呈现策略:字段缺席(批 1 世代)或空集(诚实空卡)一律 null 不渲染", () => {
+  // 批 1 世代快照:无 downloadCard 字段
+  const legacy = overlayViewModel(makeAvailableSnapshot(), "desktop");
+  assert.equal(legacy.downloadCard, null);
+  // 批 2 快照:downloadCard 在但 activeDownloads 为空 = 诚实空卡,不呈现
+  const emptyCard = overlayViewModel(
+    makeAvailableSnapshot({ downloadCard: { activeDownloads: [] } }),
+    "desktop",
+  );
+  assert.equal(emptyCard.downloadCard, null);
+});
+
+test("017 批 2 下载卡呈现策略:字段缺席(批 1 世代)或空集(诚实空卡)一律 null 不渲染", () => {
   assert.deepEqual(
     Object.keys(strings.overlay.statusTitles).sort(),
     [...overlayStatusTitleKeys].sort(),

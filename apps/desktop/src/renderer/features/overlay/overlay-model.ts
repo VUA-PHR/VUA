@@ -4,11 +4,13 @@
  * 本模型给出,字符串在 i18n 四表,枚举键与 TS 联合一一对应,测试约束)。
  *
  * v2 与 v1 的差异:事实面 = overlay.getSnapshot 冻结投影(任务卡列表＋生产
- * 状态卡)。tone/状态概括由本模型从冻结词表事实推导(呈现映射,非跨源
- * 推导):词表用 @vua/contracts 导出的九态/五态冻结常量判断,词表外值原样
- * 透传显示、不参与推导(不猜测)。wire 批 1 无环境/进度/动作权限事实——
- * 环境摘要恒缺席(批 2),取消动作可见性只按冻结终态词表判断,守卫在
- * 服务权威侧(017 §3)。
+ * 状态卡;017 批 2 起下载/导入进度卡可选增量)。tone/状态概括由本模型从冻
+ * 结词表事实推导(呈现映射,非跨源推导):词表用 @vua/contracts 导出的九态/
+ * 五态冻结常量判断,词表外值原样透传显示、不参与推导(不猜测)。下载卡呈现
+ * 策略 = 有进行中项时呈现(017 表态 3),缺席/空集一律不呈现;其 tone/标题
+ * 推导以任务面为准(下载尝试行本身在任务面内,推导已覆盖)。环境摘要恒缺席
+ * (批 2 未投影),取消动作可见性只按冻结终态词表判断,守卫在服务权威侧
+ * (017 §3)。
  *
  * 色彩纪律(§8.8 + §7.3 延伸,Overlay 不用红绿灯):
  * - accent(辖区色,Overlay 属 VUA 紫)= 进行中;
@@ -23,6 +25,7 @@
  */
 import {
   TERMINAL_TASK_STATES_V01,
+  type OverlayDownloadCardV01,
   type OverlayProductionCardV01,
   type OverlayTaskCardV01,
 } from "@vua/contracts";
@@ -72,6 +75,18 @@ export interface OverlayProductionCardView {
   } | null;
 }
 
+/** 下载/导入进度卡视图(017 批 2):行字段裁剪原样透传——downloadId/state/
+ *  updatedAt,无字节进度(进度在任务事件通道,快照不发明);state 文案由
+ *  表面按任务九态同表映射,词表外原词透传 */
+export interface OverlayDownloadCardView {
+  readonly activeDownloads: readonly {
+    readonly downloadId: string;
+    readonly stateLabel: string;
+    readonly stateRaw: string;
+    readonly updatedAt: string;
+  }[];
+}
+
 export interface OverlayActionView {
   readonly action: OverlayAction;
   readonly visible: boolean;
@@ -85,6 +100,9 @@ export interface OverlayViewModel {
   readonly statusTitleKey: OverlayStatusTitleKey;
   readonly taskCards: readonly OverlayTaskCardView[];
   readonly productionCard: OverlayProductionCardView;
+  /** 下载/导入进度卡:null = 不呈现(字段缺席〔批 1 世代快照〕或空集〔诚实
+   *  空卡〕——呈现策略「有进行中项时呈现」,017 表态 3/批 2 交付节) */
+  readonly downloadCard: OverlayDownloadCardView | null;
   readonly actions: readonly OverlayActionView[];
   readonly textScale: number;
   readonly reducedMotion: boolean;
@@ -141,6 +159,22 @@ function projectProductionCard(card: OverlayProductionCardV01): OverlayProductio
   };
 }
 
+/** 呈现策略「有进行中项时呈现」(017 表态 3):字段缺席(批 1 世代快照)或
+ *  空集(诚实空卡=无进行中下载)一律 null,绝不渲染空卡 */
+function projectDownloadCard(
+  card: OverlayDownloadCardV01 | undefined,
+): OverlayDownloadCardView | null {
+  if (card === undefined || card.activeDownloads.length === 0) return null;
+  return {
+    activeDownloads: card.activeDownloads.map((row) => ({
+      downloadId: row.downloadId,
+      stateLabel: row.state,
+      stateRaw: row.state,
+      updatedAt: row.updatedAt,
+    })),
+  };
+}
+
 export function overlayViewModel(
   snapshot: OverlaySnapshot,
   mode: OverlayInputMode,
@@ -156,6 +190,7 @@ export function overlayViewModel(
       statusTitleKey: "idle",
       taskCards: [],
       productionCard: { currentPlan: null, latestRecord: null },
+      downloadCard: null,
       actions: [
         { action: "open_on_desktop", visible: false, primary: false },
         { action: "request_cancel_task", visible: false, primary: false },
@@ -168,6 +203,7 @@ export function overlayViewModel(
 
   const taskCards = snapshot.tasks.map(projectTaskCard);
   const productionCard = projectProductionCard(snapshot.productionCard);
+  const downloadCard = projectDownloadCard(snapshot.downloadCard);
 
   // tone 推导(呈现映射,冻结词表):有非终态任务 → active;无进行中但有
   // failed → blocked;否则 inactive。词表外 state 不参与推导(不猜测)。
@@ -207,6 +243,7 @@ export function overlayViewModel(
     statusTitleKey,
     taskCards,
     productionCard,
+    downloadCard,
     actions,
     textScale: presentation.textScale,
     reducedMotion: presentation.reducedMotion,
