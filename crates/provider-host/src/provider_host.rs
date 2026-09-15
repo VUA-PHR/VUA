@@ -334,10 +334,13 @@ pub struct ProductionUseCaseConfig {
     pub editor_selection: vua_orchestrator::EditorSelection,
     /// The production-domain process/window port for the official-SDK
     /// upload handoff (proposal 023 follow-up slice 1's contract, frozen
-    /// as the core `ReleaseHandoffPort` trait). Absent = the route keeps
-    /// answering the frozen honest absence `vua.release_handoff.
-    /// unavailable` — the real adapter lands with the production-domain
-    /// slice; nothing here fabricates an acceptance receipt, a task
+    /// as the core `ReleaseHandoffPort` trait). Since the 023 assembly
+    /// slice the default provider assembly wires the REAL adapter
+    /// (`EditorHandoffAdapter`: probe/launch/handshake-wait/focus over the
+    /// production-domain `EditorHandoffPort`), so `vua.release_handoff.
+    /// unavailable` converges to the explicitly port-less assembly's
+    /// exception path. Absent = the route answers the frozen honest
+    /// absence — nothing here fabricates an acceptance receipt, a task
     /// snapshot, or a handoff fact.
     pub handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
 }
@@ -353,7 +356,9 @@ struct ProductionUseCaseServices {
     editor_selection: vua_orchestrator::EditorSelection,
     /// Proposal 023 follow-up slice 1's contract (the core
     /// `ReleaseHandoffPort` trait). Absent = the route answers the frozen
-    /// honest absence — never a fabricated handoff.
+    /// honest absence — never a fabricated handoff. The default assembly
+    /// (provider binary) wires the real `EditorHandoffAdapter` since the
+    /// 023 assembly slice.
     handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
@@ -4137,10 +4142,12 @@ fn overlay_get_snapshot(
 /// `{buildId}` is checked FIRST — a closed-set violation answers
 /// `vua.release_handoff.invalid_params` (a shape violation never
 /// masquerades as an absence). Then the unwired faces answer the honest
-/// absence: no task runtime, or no production-domain port (the real
-/// process/window adapter lands with the production-domain slice — until
-/// then the default assembly carries NO port, so production behavior is
-/// unchanged and honest). With the port wired, admission validates the
+/// absence: no task runtime, or an explicitly port-less assembly (since
+/// the 023 assembly slice the DEFAULT assembly wires the real
+/// process/window adapter `EditorHandoffAdapter`, so the port-less
+/// `unavailable` answer is the exception path of assemblies that choose
+/// absence, not the production default). With the port wired, admission
+/// validates the
 /// build-record identity: an unknown buildId answers
 /// `vua.release_handoff.build_unknown` (admission-time validation — no
 /// task is accepted for a record that does not exist), a record-store

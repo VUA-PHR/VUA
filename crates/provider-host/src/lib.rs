@@ -6,10 +6,12 @@
 // errors would leak through serde shapes for no wire benefit.
 #![allow(clippy::result_large_err)]
 
+pub mod handoff_adapter;
 pub mod provider_host;
 #[cfg(windows)]
 pub mod provider_job;
 
+pub use handoff_adapter::EditorHandoffAdapter;
 pub use provider_host::{
     production_config_from_env, run_provider_host, run_provider_host_full,
     run_provider_host_with, run_provider_host_with_downloads, run_provider_host_with_services,

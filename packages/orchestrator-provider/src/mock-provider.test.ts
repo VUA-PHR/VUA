@@ -591,11 +591,11 @@ describe("mock environment.verifyEditor (021 desktop consumption batch)", () => 
 });
 
 describe("mock release.openForHandoff (023 core freeze batch)", () => {
-  it("answers the honest absence code while the production-domain port is unwired", async () => {
-    // 023 词表行:核心 use case 已落(023 后续切片②),真实 provider-host
-    // 路由按产线 port 注入接线、缺省装配仍缺席;模拟面与真实缺省装配
-    // 行为同形(code/category/messageKey 三元一致)——诚实缺席,绝不伪造
-    // 受理回执/交接事实
+  it("answers the honest absence code — the simulation carries no build-record or process face", async () => {
+    // 023 词表行:核心 use case 已落(023 后续切片②);装配切片后真实
+    // provider-host 缺省装配携带真适配器,缺席收敛为显式不装配的异常路径。
+    // 模拟面无构建记录面与产线进程/窗口面,恒答诚实缺席(三元与真实缺席
+    // 分支一致)——绝不伪造受理回执/交接事实
     const provider = new MockOrchestratorProviderV01();
     await provider.start();
     const response = await provider.invoke(request({
