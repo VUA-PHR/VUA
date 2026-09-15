@@ -17,8 +17,13 @@
 > core use case is WIRED (023 follow-up slice 2, 2026-09-16: task
 > orchestration + handshake completion judgment + editor identity resolution
 > + the `ReleaseHandoffPort` contract); the production-domain process/window
-> adapter is a production-domain slice, and the default assembly keeps the
-> honest absence. This batch froze the vocabulary-row CONTRACT face — the
+> mechanism port has LANDED (production-domain slice 1, the `EditorHandoffPort`
+> four primitives + the handshake trail v1.0); the core assembly adapter has
+> LANDED (023 assembly slice, 2026-09-16: `EditorHandoffAdapter` mechanically
+> translates the mechanism port to the use-case port, and the provider
+> default assembly carries the real adapter — the absence semantics converge
+> to the explicitly port-less assembly's exception path). This batch froze
+> the vocabulary-row CONTRACT face — the
 > method vocabulary, the params closed set, the acceptance-receipt and
 > handoff-fact shapes, the error-code closed set, and the honest-absence
 > semantics
@@ -26,7 +31,9 @@
 > docs/REGISTRY.md registration); 2026-09-16 (core use-case wiring batch:
 > implementation-domain status refresh — the route wires by port injection,
 > the default-assembly absence semantics unchanged, vocabulary/shapes/
-> error-code closed set untouched)
+> error-code closed set untouched); 2026-09-16 (core assembly slice: the
+> default assembly carries the real adapter, absence converges to the
+> exception path — vocabulary/shapes/error-code closed set untouched)
 
 ## Handoff semantics (product boundary restated)
 
@@ -155,15 +162,22 @@ Closed four codes (the `vua.release_handoff.*` family):
 
 Task-run failures (a handshake timeout and the like) travel the ordinary task
 nine-state semantics, not this set. Implementation-domain status (2026-09-16
-wiring batch): **the core use case is wired** — with a port injected, the
-route admits the task through the admission flow (params validation →
-build-record existence → editor identity resolution) and the task nine states
-carry the launch + handshake wait; **the production-domain process/window
-adapter has not landed, so the default assembly (no port) keeps the honest
-absence `unavailable`** (the wire tests pin both that the absence never
-carries a task/acceptance shape and that a wired route without a record
-answers build_unknown without admitting); once the production adapter slice
-lands, the absence path collapses to the exceptional path.
+assembly slice): **the full implementation domain has landed** — the core use
+case is wired (slice 2), the production mechanism port has landed (slice 1),
+and the core assembly adapter `EditorHandoffAdapter` has landed, wiring the
+provider default assembly to the real adapter; `unavailable` is no longer the
+default assembly's standing answer and converges to the **explicitly
+port-less** assembly's (tests / hosted embeddings that choose absence)
+exception path. The assembly semantics are a mechanical translation of the
+two paths: a valid trail on probe (already open) = the completion fact is
+already there (ruling 3) plus a best-effort focus; a closed probe = launch
+(`-projectPath`) + a budgeted handshake wait (budget exhausted = the honest
+timeout outcome, never a guessed success); a mechanism error is reported as
+`Err` with the real cause. The wire tests pin three faces — the absence never
+carrying a task/acceptance shape, a wired route without a record answering
+build_unknown without admitting, and the explicit no-port absence kept; the
+adapter's path translation is pinned by the `handoff_adapter` tests (6
+cases).
 
 ## Real-machine precondition and verification boundary
 
@@ -178,18 +192,23 @@ end-to-end verification.
 
 ```text
 React View (Release page Build Record row "handoff" action, desktop slice
-  awaits this freeze batch)
+  landed)
   → typed feature/Gateway
   → Electron preload and main-process adapter
   → versioned application contract (release.openForHandoff row)
-  → provider-host route (core domain, wired: port absent = honest absence)
+  → provider-host route (core domain, wired: admission flow + task
+    orchestration)
   → core use case (core domain, landed with 023 follow-up slice 2:
     admission checks + task orchestration + handshake completion judgment +
     editor identity resolution)
   → ReleaseHandoffPort (the process/window-face trait contract frozen in
     the core domain)
-  → production-domain process/window adapter (production-domain slice:
-    Unity.exe launch / OS focus + the handshake wait)
+  → EditorHandoffAdapter (core assembly slice, inside provider-host: a
+    mechanical translation from the mechanism port to the use-case port;
+    carried by the provider default assembly)
+  → EditorHandoffPort (production-domain slice 1 mechanism primitives:
+    detached launch / pid-liveness probe / budgeted handshake wait /
+    best-effort OS focus)
 ```
 
 ## Machine-readable vocabulary
@@ -212,21 +231,21 @@ dependency class, the default no-port absence kept, the explicit injection
 short-circuit reaching the port) + `packages/contracts/src/
 application-contract.test.ts` (TS guard closed-set positive/negative cases +
 the fact runtime guard + the error-code closed-set table) +
-`packages/orchestrator-provider/src/mock-provider.test.ts` (the mock
-absence branch shaped identically to the real default assembly). Vocabulary
+`packages/orchestrator-provider/src/mock-provider.test.ts` (the mock's
+standing absence branch — the simulation carries no build-record or
+process/window face, so absence IS the simulation's honest semantics) +
+`crates/provider-host/tests/handoff_adapter.rs` (6 assembly-adapter cases:
+closed → launch → arrival + focus on the trail's pid / already-open arriving
+without a second launch / a launch failure as `Err` with the real cause /
+budget exhaustion as the honest timeout / a probe I/O failure reported and
+never folded into the launch path / a dead trail honestly routing to the
+launch path). Vocabulary
 or field changes must bump the version, never rewrite in place.
 
 ## Open items
 
-- The production-domain process/window adapter (the real `ReleaseHandoffPort`
-  implementation: the `Unity.exe -projectPath` launch / the already-open OS
-  focus + the handshake wait): a production-domain slice, ruling-15
-  local-first, the collaboration face on call;
-- The desktop Release-page consumption slice (the Build Record row "handoff"
-  primary action + the "handed off" fact + the upload_readiness evidence
-  summary + the honest "final upload completes in the official SDK"
-  statement): awaits this freeze batch's acceptance into main + the TS face
-  (landed with this batch);
-- The end-to-end real-machine walkthrough: belongs to the W25 real-machine
-  window (O-2 awaits the user opening it), evidence requirements not
-  relaxed.
+- The end-to-end real-machine walkthrough (including the real provider chain
+  after the assembly slice: admission → real launch → handshake → fact
+  reflux): belongs to the W25 real-machine window (O-2 awaits the user
+  opening it), evidence requirements not relaxed — the assembly slice claims
+  zero end-to-end verification.
