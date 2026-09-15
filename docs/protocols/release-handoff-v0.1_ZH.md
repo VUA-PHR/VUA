@@ -12,9 +12,14 @@
 > 范围：`release.openForHandoff`（tasked 交接命令：buildId → 任务九态 →
 > 交接事实文档）
 > 所有权边界：交接实现域＝进程/窗口面（产线域 port）＋核心 use case
-> （后续切片）；本批冻结的是**词表行契约面**——方法词汇、params 闭集、
-> 受理回执与交接事实形状、错误码闭集、诚实缺席语义
-> 更新：2026-09-16（v0.1 冻结批：协议本双语＋REGISTRY 登记）
+> （核心域）——核心 use case 已接线（023 后续切片②，2026-09-16：任务
+> 编排＋handshake 完成判定＋editor 身份解析＋port 契约
+> `ReleaseHandoffPort`）；产线进程/窗口面适配器为产线域切片，缺省装配
+> 下路由维持诚实缺席。本批冻结的是**词表行契约面**——方法词汇、params
+> 闭集、受理回执与交接事实形状、错误码闭集、诚实缺席语义
+> 更新：2026-09-16（v0.1 冻结批：协议本双语＋REGISTRY 登记）；2026-09-16
+> （核心 use case 接线批：实现域状态刷新——wire 面按 port 注入接线，
+> 缺省装配缺席语义不变，词表/形状/错误码闭集零变化）
 
 ## 交接语义（产品边界重申）
 
@@ -71,10 +76,12 @@
    桌面表态「权威身份在 build-record 面」的最彻底落实；Release 页
    Build Record 行发起的合法消费流天然只持 buildId。异议随 023 线程
    重议（协议本登记不影响词表行冻结效力，修订走升版）。
-5. **editor 身份解析顺序**（语义面，实现归后续切片）：显式注入
-   （021 组装面选择权威，`VUA_UNITY_EDITOR` 手选通道）＞构建记录携带
-   身份（`unityEditorVersion`/`projectId`——产线建议采纳：默认取构建
-   时编辑器身份，防版本错配升级副作用）＞类型化 error
+5. **editor 身份解析顺序**（语义面；实现已随 023 后续切片②接线，
+   2026-09-16）：显式注入（021 组装面选择权威，`VUA_UNITY_EDITOR` 手选
+   通道，经 editor-verify 面确立身份；验证拒绝即如实 unresolved，绝不
+   静默降级到下级）＞构建记录携带身份（`unityEditorVersion`/
+   `projectId`——产线建议采纳：默认取构建时编辑器身份，防版本错配
+   升级副作用）＞类型化 error
    `vua.release_handoff.editor_unresolved`（诊断复用
    `environment.verifyEditor` 语义，不另造词）。
 
@@ -114,9 +121,12 @@ params 闭集单键：`buildId`（`minLength 1`；关联 build-record v0.3 冻�
 | `vua.release_handoff.editor_unresolved` | dependency | 编辑器身份解析失败（诊断复用 environment.verifyEditor 语义） |
 
 任务运行期失败（handshake 超时等）走任务面九态通用语义，不进本闭集。
-当前时点：实现域未接线，路由恒答 `unavailable` 诚实缺席（wire 测试钉
-死「缺席绝不携带 task/受理形状」）；桌面/产线实现切片落地后缺席路径
-收敛为异常路径。
+实现域时点（2026-09-16 接线批）：**核心 use case 已接线**——port 注入
+后路由按受理流（params 校验→构建记录存在性→editor 身份解析）受理任务，
+任务九态承载启动＋handshake 等待；**产线进程/窗口面适配器未落，缺省
+装配（无 port）维持 `unavailable` 诚实缺席**（wire 测试钉死「缺席绝不
+携带 task/受理形状」与「有 port 无记录答 build_unknown 而不受理」两
+面）；产线适配器切片落地后缺席路径收敛为异常路径。
 
 ## 真机前置与验证边界
 
@@ -131,9 +141,12 @@ React View（Release 页 Build Record 行「交接」操作，桌面切片候冻
   → 类型化 feature/Gateway
   → Electron preload 与主进程适配器
   → 版本化应用契约（release.openForHandoff 词表行）
-  → provider-host 路由（核心域，本批接线＝诚实缺席）
-  → 产线进程/窗口面 port（产线域，后续切片）
-  → 核心 use case（交接任务编排＋handshake 完成判定，后续切片）
+  → provider-host 路由（核心域，已接线：port 缺省＝诚实缺席）
+  → 核心 use case（核心域，023 后续切片②已落：受理校验＋任务编排＋
+    handshake 完成判定＋editor 身份解析）
+  → ReleaseHandoffPort（核心域冻结的进程/窗口面 trait 契约）
+  → 产线进程/窗口面适配器（产线域切片：Unity.exe 启动／OS 聚焦＋
+    handshake 等待）
 ```
 
 ## 机器可读词表
@@ -143,18 +156,22 @@ React View（Release 页 Build Record 行「交接」操作，桌面切片候冻
 事实；负例 3——params 闭集外键〔工程身份字段不进 params〕／交接事实
 携带上传状态〔诚实纪律 1/2 形状钉死〕／错误码闭集外〔上传类错误码永不
 进入本词表〕）。消费测试双载体：`crates/provider-host/tests/
-release_handoff_wire.rs`（帧环真接线：缺席码三元断言＋缺席绝不伪造
-受理形状＋params 四违反）＋`packages/contracts/src/
-application-contract.test.ts`（TS 守卫闭集正负例＋fact 运行时守卫＋
-错误码闭集对表）＋`packages/orchestrator-provider/src/mock-provider.test.ts`
-（模拟面缺席分支与真实路由同形）。词表或字段变更必须升版本，绝不原地
-改写。
+release_handoff_wire.rs`（帧环真接线 12 例：缺席码三元断言＋缺席绝不
+伪造受理形状＋params 四违反＋**接线面**——fake port 全流转〔受理回执
+→succeeded 快照 result 携带 fact 五键→port 收到已解析身份〕、handshake
+超时如实失败无 result、port 启动失败走执行族码、build_unknown 不受理、
+editor_unresolved 依赖类、port 缺省缺席维持、显式注入短路直达 port）＋
+`packages/contracts/src/application-contract.test.ts`（TS 守卫闭集正负
+例＋fact 运行时守卫＋错误码闭集对表）＋
+`packages/orchestrator-provider/src/mock-provider.test.ts`
+（模拟面缺席分支与真实缺省装配同形）。词表或字段变更必须升版本，绝不
+原地改写。
 
 ## 开放项
 
-- 产线进程/窗口面 port＋核心 use case（交接任务编排、handshake 完成判定、
-  build_record/editor 身份解析接线）：后续切片，产线协作面随时候领
-  （裁决 15 本地先行）；
+- 产线进程/窗口面适配器（`ReleaseHandoffPort` 的真实实现：Unity.exe
+  `-projectPath` 启动／已打开 OS 聚焦＋handshake 等待）：产线域切片，
+  裁决 15 本地先行，协作面随时候领；
 - 桌面 Release 页消费切片（Build Record 行「交接」主操作＋「已交接」
   事实＋upload_readiness 证据摘要＋「最终上传在官方 SDK 中完成」如实
   说明）：候本冻结批验收入库＋TS 面就绪（已随批）；
