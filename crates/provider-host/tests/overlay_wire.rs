@@ -79,6 +79,7 @@ fn use_case_config(root: &std::path::Path) -> ProductionUseCaseConfig {
         editor_selection: vua_orchestrator::EditorSelection::Unavailable {
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
+        handoff: None,
     }
 }
 

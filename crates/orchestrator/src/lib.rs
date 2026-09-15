@@ -27,6 +27,7 @@ mod process;
 mod project_identity;
 mod provision;
 mod recipe;
+mod release_handoff;
 mod runtime;
 mod sqlite_task_store;
 mod state_file;
@@ -51,6 +52,11 @@ pub use inspection_evidence::{
     INSPECTION_EVIDENCE_SCHEMA_VERSION,
 };
 pub use recipe_records::RecipeRecordStore;
+pub use release_handoff::{
+    build_handoff_fact, record_editor_version, record_project_id, resolve_handoff_editor,
+    HandoffEditorCandidate, HandoffEditorSource, HandoffEditorUnresolved, HandoffLaunch,
+    HandoffOutcome, HandoffPortError, ReleaseHandoffPort, RELEASE_HANDOFF_SCHEMA_VERSION,
+};
 pub use recipe_documents::{RecipeDocumentStore, RecipeListEntry, RecipeSaveError, StoredRecipeDocument};
 pub use production_evidence::{
     EvidenceKind, EvidenceResolution, EvidenceSourceRef, EvidenceStore, EvidenceSubject,

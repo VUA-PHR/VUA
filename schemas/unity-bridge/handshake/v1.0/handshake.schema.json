@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ph-r.com/vua/schemas/unity-bridge/handshake/v1.0/handshake.schema.json",
+  "title": "VUA Unity editor handshake v1",
+  "description": "Handshake trail written by the com.ph-r.vua package when an editor finishes loading a project (InitializeOnLoad). This is the deterministic project-loaded signal that proposal 023 (release.openForHandoff) names as the task completion verdict: the production-domain port waits for this file (proposal-023 'Bridge handshake arrival'), never for 'process started'. The file lives at <project>/.vua/bridge/handshake.json, so its location binds it to the project; no project path or identity field is carried in the payload (clear paths never enter handshake facts). Written by the editor lifecycle, never by the Bridge command face: the v3 command vocabulary (BridgeCommandProcessor) stays untouched, honoring the production stance that openForHandoff takes ZERO new bridge command operations. Additional properties are forbidden so no upload state or progress guess can ever ride along (honesty discipline 1/2).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "pid", "editorVersion", "occurredAt"],
+  "properties": {
+    "schemaVersion": { "const": "1.0" },
+    "pid": { "type": "integer", "minimum": 1 },
+    "editorVersion": { "type": "string", "minLength": 1 },
+    "occurredAt": { "type": "string", "format": "date-time" }
+  }
+}

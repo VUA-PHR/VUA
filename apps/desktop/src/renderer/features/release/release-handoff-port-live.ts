@@ -1,0 +1,81 @@
+import type { GatewayClient } from "../../gateway/index.ts";
+import type {
+  HandoffTaskView,
+  ReleaseHandoffIntent,
+  ReleaseHandoffPort,
+} from "./release-handoff-port.ts";
+import { projectHandoffTask } from "./release-handoff-model.ts";
+
+/**
+ * release.openForHandoff live 端口(023 消费切片):经 Desktop Gateway 消费
+ * release-handoff v0.1 词表行。消费纪律:
+ * - 受理回执收窄:schemaVersion==="0.1"＋operation==="release.openForHandoff"
+ *   ＋taskId/correlationId 非空串四键组合才可信(联合中唯一属于本族面);
+ *   形状不符如实 failed(响应不可解释≠缺席,不折叠);
+ * - 诚实缺席:vua.release_handoff.unavailable(实现域未接线,路由恒答)与
+ *   宿主不可达(gateway unavailable)同呈 absent——缺席语义,绝无受理假象;
+ * - 其余应用错误码原样透传(invalid_params/build_unknown/editor_unresolved
+ *   及未来闭集演化),不猜测映射;request_rejected 无应用码,code=null;
+ * - 任务快照经 task.get 重取权威状态(轮询由调用方驱动),投影见
+ *   projectHandoffTask;读取失败返回 null,调用方保持上一视图。
+ */
+export function createLiveReleaseHandoffPort(client: GatewayClient): ReleaseHandoffPort {
+  const openForHandoff = async (buildId: string): Promise<ReleaseHandoffIntent> => {
+    const result = await client.invoke({
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "release.openForHandoff",
+      params: { buildId },
+    });
+    if (!result.ok) {
+      if (result.error.kind === "application") {
+        const { code } = result.error.error;
+        return code === "vua.release_handoff.unavailable"
+          ? { kind: "absent" }
+          : { kind: "failed", code };
+      }
+      // unavailable=宿主/Provider 不可达(缺席语义);request_rejected=信封级
+      // 拒绝(无应用码)——两者都无受理发生,如实呈现
+      return result.error.kind === "unavailable"
+        ? { kind: "absent" }
+        : { kind: "failed", code: null };
+    }
+    const value = result.value;
+    // 字段存在性逐键核验(in/typeof):运行时形状可能不符(类型面由 Kernel
+    // 路由保证,此处防御性核验照端口收窄纪律,不可省略)
+    if (
+      typeof value !== "object" ||
+      value === null ||
+      !("operation" in value) ||
+      value.operation !== "release.openForHandoff" ||
+      !("schemaVersion" in value) ||
+      value.schemaVersion !== "0.1" ||
+      !("taskId" in value) ||
+      typeof value.taskId !== "string" ||
+      value.taskId.length === 0 ||
+      !("correlationId" in value) ||
+      typeof value.correlationId !== "string" ||
+      value.correlationId.length === 0
+    ) {
+      return { kind: "failed", code: null };
+    }
+    return {
+      kind: "accepted",
+      taskId: value.taskId,
+      correlationId: value.correlationId,
+    };
+  };
+
+  const taskSnapshot = async (taskId: string): Promise<HandoffTaskView | null> => {
+    const result = await client.invoke({
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "task.get",
+      params: { taskId },
+    });
+    if (!result.ok) return null;
+    return projectHandoffTask(result.value);
+  };
+
+  return { openForHandoff, taskSnapshot };
+}
