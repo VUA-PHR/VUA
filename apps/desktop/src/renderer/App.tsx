@@ -8,10 +8,12 @@ import {
   moduleOf,
   modules,
   navLevelNext,
+  navMeasureChanged,
   resolveTabLanding,
   type AppSectionId,
   type ModuleDef,
   type NavLevel,
+  type NavMeasureSnapshot,
   type PageId,
   type SidebarGroup,
   type SidebarPage,
@@ -714,12 +716,25 @@ function AppShell({
   const subtitleMeasureRef = useRef<HTMLSpanElement | null>(null);
   const navToggleRef = useRef<HTMLButtonElement | null>(null);
   const navMeasuredRef = useRef(false);
+  /** 上次判定的输入快照(#28 抖动修复):折叠/展开动作改变轨道内容盒宽
+   *  (滚动条出现消失、布局回流),ResizeObserver 因自反馈再次触发时,
+   *  快照未变即跳过判定,断开临界宽度下的 1↔2 振荡环 */
+  const lastMeasureRef = useRef<NavMeasureSnapshot | null>(null);
   useEffect(() => {
     const nav = tabsRef.current;
     const measure = tabsMeasureRef.current;
     const subtitleProbe = subtitleMeasureRef.current;
     if (!nav || !measure || !subtitleProbe) return;
     const update = () => {
+      // #28 自反馈断链:决定分级的外部事实(窗口宽/量尺行/探针)未变时,
+      // 本次 resize 必由折叠动作自身引起,不喂回判定
+      const snapshot: NavMeasureSnapshot = {
+        windowWidth: window.innerWidth,
+        required: measure.offsetWidth,
+        subtitleSaving: subtitleProbe.offsetWidth,
+      };
+      if (!navMeasureChanged(lastMeasureRef.current, snapshot)) return;
+      lastMeasureRef.current = snapshot;
       const style = getComputedStyle(nav);
       const available =
         nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
