@@ -2,11 +2,11 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> 文档版本：1.0.1
+> 文档版本：1.1.0
 > 状态：已接受
-> 权威语言：简体中文（EN 为镜像，同步至 1.0.1）
+> 权威语言：简体中文（EN 为镜像，同步至 1.1.0）
 > 范围：AMF 应用服务、Recipe、Build Record、`unity/`
-> 更新：2026-09-08
+> 更新：2026-09-16
 > 最近符合性复核：2026-09-06
 > 规范效力：有
 
@@ -90,6 +90,27 @@ Unity Bridge 是 Unity `2022.3.22f1` Editor Package，通过版本化作业协�
 用户旅程、Recipe、下载、凭据、批准流程和项目历史由 AMF 与 Orchestrator 管理。最终登录与上传
 保留在 VRChat 官方 SDK Panel。
 
+## 交接进程面（Release Handoff）
+
+官方 SDK 上传交接（`release.openForHandoff`，release-handoff 协议 v0.1）的执行域是
+**编辑器进程生命周期管理**，不在 Bridge 命令面（proposal 023 产线表态：两路径均不是编辑器
+内命令，unity-bridge v3 命令词表零增操作）：
+
+- **握手信号**：桥包在工程加载完成时（`InitializeOnLoadMethod`）向
+  `<project>/.vua/bridge/handshake.json` 原子写入握手事实（闭集四键：
+  `schemaVersion`/`pid`/`editorVersion`/`occurredAt`，schema 见
+  `schemas/unity-bridge/handshake/v1.0/`）。这是「工程加载完毕」的确定性信号——交接任务的
+  完成判定＝该握手到达；「进程已启动」绝不作为完成事实，超时如实失败，不猜面板状态。
+  载荷永不携带工程明文路径（文件位置即工程绑定）与上传状态（诚实纪律由形状钉死）；写入
+  尽力而为，失败不打断编辑器，等待方如实超时。
+- **打开/聚焦**：Rust 产线 port（`crates/unity-bridge` `handoff` 模块）提供机制原语——
+  探测（握手踪迹＋pid 活性＝已打开事实；踪迹缺失/损坏/版本不认识/进程已死一律如实视作未
+  打开）、分离式启动（`Unity.exe -projectPath`，凭据剥离基线与 batchmode 链同一来源）、
+  握手等待（预算内轮询，超时类型化上报）、OS 窗口聚焦（尽力而为，不进完成判定不进回执
+  事实——焦点非稳定事实）。
+- **任务编排**（buildId→编辑器身份解析、打开/聚焦路径选择、任务九态映射）归核心 use
+  case 切片；本 port 只提供机制事实与机制原语。
+
 ## 作业与安全
 
 - 请求和结果使用版本化 Schema，写入项目内受控 `.vua` 作业目录；
@@ -103,6 +124,9 @@ Unity Bridge 是 Unity `2022.3.22f1` Editor Package，通过版本化作业协�
 
 ## 文档变更日志
 
+- 1.1.0（2026-09-16）：新增「交接进程面（Release Handoff）」节——023 产线实现域切片
+  （桥握手信号 `EditorHandshake`＋Rust 进程/窗口面 port `handoff` 模块＋
+  `schemas/unity-bridge/handshake/v1.0/`）；Bridge 命令面零变化。
 - 1.0.1（2026-09-08）：勘误轮——EN 镜像 "Unity/VPM/tool versions" 与权威中文
   「Unity、VPM 包与工具版本」不一致（EN 缺 package），按 BOARD #9 术语裁定
   （VPM 包 = VPM package）补齐；中文正文无变更。
