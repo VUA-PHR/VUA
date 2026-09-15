@@ -1091,6 +1091,7 @@ demoTaskTitle: "Demo task",
     surfaceTitle: "VUA Overlay",
     taskSectionLabel: "Tasks",
     productionSectionLabel: "Production",
+    downloadSectionLabel: "Downloads",
     productionPlan: "Plan {planId}",
     productionRecord: "Record {buildId}",
     productionPlanStatuses: {

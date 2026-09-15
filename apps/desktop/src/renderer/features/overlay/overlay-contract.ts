@@ -11,11 +11,16 @@
  */
 
 import type {
+  OverlayDownloadCardV01,
   OverlayProductionCardV01,
   OverlayTaskCardV01,
 } from "@vua/contracts";
 
-export type { OverlayProductionCardV01, OverlayTaskCardV01 } from "@vua/contracts";
+export type {
+  OverlayDownloadCardV01,
+  OverlayProductionCardV01,
+  OverlayTaskCardV01,
+} from "@vua/contracts";
 
 /** 三个语义动作:Overlay 表面(桌面置顶窗 / VR Dashboard)只发送这些 */
 export type OverlayAction = "open_on_desktop" | "dismiss" | "request_cancel_task";
@@ -47,7 +52,8 @@ export interface OverlayPresentationV1 {
 /**
  * Overlay 快照 v2:两态判别。
  * - available:overlay.getSnapshot 冻结投影原样透传(任务卡列表＋生产状态
- *   卡两半独立可空);
+ *   卡两半独立可空;017 批 2 起新增可选 downloadCard——批 1 世代快照无此
+ *   字段仍有效,向后兼容);
  * - unavailable:生产读面未接线的诚实缺席(vua.overlay.unavailable)——
  *   绝不以空快照伪装(017 批 1 冻结语义),呈现缺席空态而非空数据。
  */
@@ -58,6 +64,8 @@ export type OverlaySnapshotV2 =
       readonly presentation: OverlayPresentationV1;
       readonly tasks: readonly OverlayTaskCardV01[];
       readonly productionCard: OverlayProductionCardV01;
+      /** 017 批 2 可选增量:仅承载进行中下载尝试;缺席 = 批 1 世代快照 */
+      readonly downloadCard?: OverlayDownloadCardV01;
     }
   | {
       readonly schemaVersion: 2;
