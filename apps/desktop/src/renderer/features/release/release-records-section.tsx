@@ -7,6 +7,7 @@ import { Skeleton } from "../../components/primitives/Skeleton.tsx";
 import type { RecordListEntryV02 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
 import { format, strings } from "../../i18n/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
 import {
   narrowBuildRecordFacts,
   recordListStatusLabel,
@@ -42,7 +43,11 @@ type DetailState =
   | { kind: "unexplainable" }
   | { kind: "ok"; facts: BuildRecordFacts };
 
-export function ReleaseRecordsSection() {
+export function ReleaseRecordsSection({
+  onNavigate,
+}: {
+  onNavigate?: ((target: PageId) => void) | undefined;
+}) {
   const gateway = useGateway();
   const [list, setList] = useState<ListState>({ kind: "loading" });
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -213,7 +218,11 @@ export function ReleaseRecordsSection() {
                     {/* 交接主操作(023 消费切片):入口落 Build Record 行(桌面
                      *  表态 IA;不落卡墙——身份权威在 build-record 面);key=
                      *  buildId 切换行时重置面板状态 */}
-                    <HandoffPanel key={detail.facts.buildId} buildId={detail.facts.buildId} />
+                    <HandoffPanel
+                      key={detail.facts.buildId}
+                      buildId={detail.facts.buildId}
+                      onNavigate={onNavigate}
+                    />
                   </div>
                 )}
               </section>

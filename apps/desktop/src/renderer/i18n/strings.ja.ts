@@ -1250,6 +1250,9 @@ rolled_back: "ロールバック済み",
         projectLine: "プロジェクト {projectId}",
         sdkNote:
           "最終アップロードは公式 SDK で完了します。VUA はアップロードの進捗や結果を表示しません。",
+        inspectNote:
+          "検査エビデンスは、権威ある閲覧面である {page} で確認できます。",
+        gotoInspection: "{page} を開く",
         cancelledNote: "引き渡しタスクはキャンセルされました。",
         factUnexplainableTitle: "引き渡し事実を解釈できません",
         factUnexplainable:

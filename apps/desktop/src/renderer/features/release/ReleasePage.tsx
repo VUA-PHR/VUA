@@ -14,6 +14,7 @@ import {
   type TurntableStatus,
 } from "../../components/preview/TurntablePlayer.tsx";
 import { format, strings, termLabel } from "../../i18n/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
 import {
   useDataSource,
   useGateway,
@@ -198,7 +199,11 @@ function pedestalMoodOf(project: ReleaseProject | null): PedestalMood {
   return project.health === "healthy" ? "healthy" : "attention";
 }
 
-export function ReleasePage() {
+export function ReleasePage({
+  onNavigate,
+}: {
+  onNavigate?: ((target: PageId) => void) | undefined;
+}) {
   const gateway = useGateway();
   const isFixture = useDataSource() === "fixture";
   const [wall, setWall] = useState<ReleaseWallView | null>(null);
@@ -360,7 +365,7 @@ export function ReleasePage() {
       )}
       {/* 构建记录节(P2,record.list/record.get 读面):独立于展柜数据源
        *  (releaseWall 与生产链读面端口不同),四态外始终渲染;失败≠空 */}
-      <ReleaseRecordsSection />
+      <ReleaseRecordsSection onNavigate={onNavigate} />
       {cardMenu !== null ? <ContextMenu menu={cardMenu} onClose={() => setCardMenu(null)} /> : null}
     </div>
   );

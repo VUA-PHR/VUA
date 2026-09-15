@@ -1248,6 +1248,9 @@ rolled_back: "롤백됨",
         projectLine: "프로젝트 {projectId}",
         sdkNote:
           "최종 업로드는 공식 SDK에서 완료됩니다. VUA는 업로드 진행률이나 결과를 표시하지 않습니다.",
+        inspectNote:
+          "검사 증거는 권위 열람면인 {page}에서 확인할 수 있습니다.",
+        gotoInspection: "{page} 열기",
         cancelledNote: "인도 작업이 취소되었습니다.",
         factUnexplainableTitle: "인도 사실을 해석할 수 없음",
         factUnexplainable:
