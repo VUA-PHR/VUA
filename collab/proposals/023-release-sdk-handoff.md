@@ -285,3 +285,60 @@ params 恒答 `vua.release_handoff.unavailable`（unavailable 类），
 Release 页消费切片（Build Record 行「交接」主操作＋「已交接」事实＋
 upload_readiness 证据摘要〔inspection.get 读面〕＋「最终上传在官方
 SDK 中完成」如实说明，绝不渲染上传进度/结果）。
+
+## 表态（数据，2026-09-16——消费登记 IA 缺口三选项数据视角）
+
+**依据**：桌面消费登记的 IA 缺口三选项候核心/数据表态（消费登记节
+现落本树 slot/wt-3 分支、尚未入库 main，经 `git show slot/wt-3:…`
+读取表态；引用其结论不代其验收）。以下所有权域内事实本轮独立亲核，
+不赖转发信息。
+
+**事实核实（与桌面登记逐项对账，一致）**：
+- build-record 面无检查身份字段——Rust 侧 `build_record.rs`
+  （BuildRecordV01／BuildRecordWireV02）grep `inspection` 零命中；
+  wire 面 `amf-production/v0.2 get-build-record` 的 buildRecord 键
+  闭集（recordId/taskId/planId/mode/status/stages/evidenceSummary/
+  restore*/startedAt/finishedAt，REGISTRY 第 26 行已冻结 M3）无检查
+  身份键。
+- inspection-evidence v0.1（016 冻结件）寻址＝`inspectionId`
+  （uuid v7）＋`avatarRef`，全 schema 无 `buildId` 键。
+- inspection-queries v0.1 `inspection.list` 过滤器＝avatarRef.ref
+  exact-match＋overallStatus＋offset 分页，无 buildId 过滤；
+  `inspection.get` 按 inspectionId 定向读取。
+
+**数据域补充事实（桌面登记未覆盖，裁决需知）**：**两个均已冻结的
+inspectionId 身份体系并存**——①`amf-production v0.2` 的
+`insp-<16hex>`（产线导入前检查：start-inspection 从
+sourceFolder/projectRoot 发起，对象＝源包指纹/风险/findings/
+plannability；get-inspection 按 insp-id 读取）；②
+`inspection-queries`/`inspection-evidence v0.1` 的 uuid v7（M7 五维
+检查：requestRun 按 avatarGlobalObjectId＋avatarRef 发起，
+upload_readiness 系其第五维）。两体系语义、发起方式、寻址键均不同。
+任何「携带来源检查身份」的设计必须先声明身份体系；桌面表态引用的
+upload_readiness 摘要来自 inspection.get（M7 证据束）——指向无误。
+
+**三选项数据视角（裁决归核心，数据域不代决、无预设立场）**：
+- **选项③（数据域建立关联）**：数据域存储/查询面只能承载权威事实，
+  不能发明关联。当前冻结面上 buildId 与任一 inspectionId 体系之间
+  零权威关联事实（两流程独立发起、无共享身份键、build-record 面连
+  avatarRef 键也没有），数据域建立关联只能 avatarRef＋时间窗推导＝
+  跨源推导，违反诚实纪律 1 与 016「transcription, not
+  interpretation」纪律——**数据域不领③的推导形态**。③的正当形态
+  前置＝流程面在关联产生时记录权威身份（例：构建流程内发起 M7 检查
+  时回写身份到记录面），该前置属产线/核心域升版，实质即①的变体。
+- **选项②（维持现状）**：与既有「引用不复制」纪律一致（012
+  evidenceIds、016 依赖维度「并排读」、inspection.list identity
+  summary 行纪律同构），数据域零义务零异议。如实注记：build-record
+  面亦无 avatarRef 键，Release→Inspection 不存在带上下文的定向
+  跳转键，②的 UI 流形态是「用户按 avatar 自行浏览」，诚实但非无缝。
+- **选项①（交接事实携带来源检查身份）**：可行为（升版机制在本提案
+  内），两点前置：a) build-record 面先有权威检查身份字段（产线/
+  核心域升版），否则 use case 无源可填；b) 声明身份体系（桌面摘要
+  语义下应为 M7 uuid v7，非产线 insp-id）。机制弱点如实陈述：M7
+  检查与构建是两个独立发起的流程，「构建前必然有 M7 检查」无机制
+  保证——若检查未运行该字段无值，升版收益需先回答「来源检查身份在
+  什么流程中权威产生」。
+- **数据域义务面**：三选项下数据冻结件（inspection-evidence v0.1
+  ＋inspection-queries v0.1）均零改动——①消费面经既有
+  inspection.get 即可读；②零动作；③正当形态前置在他域。现行消费
+  切片（不呈现摘要）与数据冻结件零冲突。
