@@ -2,146 +2,150 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: b217593
+baseline_commit: fb25701
 updated: 2026-09-16
 ---
 ## 当前焦点
-**#27 核心协作批——Main↔Provider 帧协议握手／served_capabilities 能力
-面两怀疑面核实排除＋断点收敛供给桌面（2026-09-16 00:0x–00:2x 工作时
-段轮，协作定位批：BOARD #27 行注记＋状态批，核心域零代码变更）**：
-- **【① 注意】消化（本轮 brief 00:03）**：指向本树/本角色的阻塞与
-  留言为空（brief ① 节原文），零消化项；零失鲜工作树。
-- **开工前对齐追平（b242521，--no-ff）**：落后 1（b217593＝第卌八波
-  集成验收本树上轮状态批 303133a，collab-only 零新实质内容）；
-  merge-tree 预检 exit 0 零冲突；inbound 非 collab 文件面恰零文件
-  ＝零未验收实质内容；核心所有权域 inbound 零触碰。合并后落后 0。
-- **领取依据（领任务链第 2 环，b217593 世代 BOARD 逐行重读）**：
-  #27 行归属列明载「桌面（主导定位与修复；**核心协作＝Main↔Provider
-  帧协议/能力面属核心域配合定位**；登记方＝集成）」，处置列「涉核心
-  域面随核心协作批走相应验证」——非 [需用户] 项，系指向核心的协作
-  义务（上轮 23:1x 时该归属行尚未登记，本轮为首次可领窗口）。
-- **核实一：帧协议握手面（怀疑面一，核心域）排除**——Rust 侧
-  provider_host.rs:784-789 握手响应五字段
-  （contractVersion/supportedContractVersions/providerBuildId/
-  providerInstanceId/downloadIngest）与 TS 侧
-  supervised-process-provider.ts `isHandshake` 校验逐字段对齐，
-  FRAME_VERSION 0.1 双侧一致；用户机进程证据互证＝provider PID
-  54764 存活且父进程＝electron main（受监督拉起链）＋应用窗口正常
-  呈现——握手若失败 TS 侧 start() 会 kill 子进程并抛错、
-  app.whenReady 链断裂无窗口，**窗口在＝握手成功 provider ready**；
-  本机真实二进制 e2e 绿佐证（vitest 25/25 含「walks handshake,
-  capabilities, the demo task lifecycle and a safe shutdown」，
-  09-12 构建 exe 与当前 TS 代码握手成功＝0.1 线跨世代健康）。
-- **核实二：served_capabilities 能力面传递（怀疑面二，核心域）排
-  除**——capabilities 随 application.getSnapshot 响应返回
-  （provider_host.rs:994）；可用性装配（bin
-  vua-orchestrator-provider.rs 环境变量驱动
-  production/downloads/warehouse/use_cases）与桌面注入面
-  （provider-bootstrap.ts desktopProviderProcessFactory 显式补齐
-  VUA_PROVIDER_DATA/VUA_WAREHOUSE_ROOT/VUA_PROJECT_ROOT/
-  VUA_UNITY_EDITOR）接缝对齐，与用户机 `bdl/`、`orchestrator/`
-  开库证据吻合；**澄清＝`desktop.remoteBrowser` 不可用系
-  DESKTOP_CAPABILITIES 显式恒 unavailable（F4 前设计呈现，
-  provider-bootstrap.ts:21-33），非断链信号，已建议从 #27 怀疑证
-  据面剔除**。
-- **断点收敛供给桌面**——第三怀疑面（渲染层 gateway 订阅链，桌面
-  域）成为唯一残余；补充证据：GatewayProvider 首帧 Promise.all 任
-  一拒绝会呈现全局 boot 失败态（bootFailed 分支），用户见各页正常
-  渲染而非全局失败＝snapshot invoke 走通有返回、视图被 live 端口
-  映射为 not-connected；且环境检测页消费的 environment.getSnapshot
-  在 Rust 侧恒 available（无需任何环境变量），其 not-connected 呈
-  现进一步指向渲染层吸收面（live 端口错误映射/preload `window.vua`
-  暴露面）。下一手证据同意桌面已列（主进程控制台输出）＋建议补渲
-  染层 DevTools console。**核心域零代码变更**（面经核实无缺陷，不
-  投机修改——协作定位批边界）。
-- **测试证据（本机 2026-09-16 00:1x，本树 slot/wt-2）**：
-  @vua/orchestrator-provider check 全绿（tsc 零错＋vitest 25/25
-  含真实二进制 e2e）＋cargo test -p vua-provider-host 全组零失败；
-  registry-only **exit 0**（57 项一致＋1206 文件 0 处冲突标记，提
-  交前重跑）。本轮树内新增＝BOARD #27 行注记＋本状态批，**collab-
-  only 免全量如实声明**；核心所有权域零代码变更（核心域文件与
-  main diff 0 文件，588/0＋clippy 0 证据世代在案）。
-- **四环其余各环（b217593 世代复核，上轮结论维持）**：①本树在途
-  ＝本批外零；②BOARD 其余核心行无开放可领项（#7 观察／#10 闭环／
-  #20/#22 关闭／#25 [需用户] 跳过／#26/#28 桌面域）；③outline 当
-  前窗口（M5）核心行 W20/W22 已交付维持，W25 候用户开窗（O-2），
-  requestRun 事实源提案候输入不投机起草；④M6 剩余行候 M5 关门门
-  序，M7 前四行授权核心零新开工（批 2 等桌面消费条件未清除），
-  M8 未开窗不开工。
+**017 批 2 下载卡实质交付（c3d381d）＋官方 SDK 交接契约方向稿（提案
+023，fb25701）＋#27 并行排查如实归属（2026-09-15 23:4x–09-16 01:2x
+工作时段轮，两实质批＋本状态批）**：
+
+- **【① 注意】消化（本轮 brief 23:44）**：wt-3 留言「M7 授权后桌面
+  消费的外部前置清单（领取依赖申报）」指向 [→核心][→产线]，三项
+  逐项回应：①requestRun 对象选择面事实源提案＝**维持候 W25 真机
+  事实输入**（wt-2/wt-4 既有共识：核心/产线起草义务在案，不投机
+  起草——桌面留言同此立场，零变化）；②官方 SDK 上传交接契约提案
+  ＝**本轮领取并交付方向稿**（提案 023，fb25701，见下）；③overlay
+  投影批 2＝**本轮落地**（c3d381d，见下），桌面即可接消费。零失鲜
+  工作树。
+- **【并发情况如实申报——单树双核心会话并行】**：本会话 23:44 起
+  在本树独立工作期间，另一核心会话于 00:17–00:23 在同一 slot/wt-2
+  分支提交了三笔（b242521 第二次追平＋3e67bc7 BOARD #27 行注记＋
+  96b9745 #27 协作状态批），其批已经第 49 波验收（3784feb）入
+  main。两线时间窗错开、零冲突零互相覆盖（reflog 链完整：
+  575f5b6〔本会话 4466a20 追平，23:51〕→b242521→3e67bc7→
+  96b9745→c3d381d〔本会话〕→fb25701〔本会话〕）。**风险实录＋防
+  复发建议**：同一工作树两进程并行提交存在 index/HEAD 竞争风险，
+  本次系时间窗幸运；建议操作者留意核心角色会话的唯一性派发。本
+  批不升 [需用户]（事实全部落账、零损失、不阻塞任何工作）。
+- **#27 排查归属（如实，不重复申报）**：本会话 23:5x–00:1x 独立
+  完成 #27 核心协作面排查（同款二进制本机真实运行实验：握手帧/
+  合规 application.getSnapshot/prepare_shutdown 全链绿、stderr 干
+  净、Rust wire 面 9-13 后零变更核实、TS 信封合规核实），结论＝
+  provider 半边健康、断点收敛桌面域。并行会话 96b9745（00:23 提
+  交，先行）以静态逐字段对齐＋进程证据互证达成同一结论并已入库，
+  其 remoteBrowser 恒 unavailable 系 DESKTOP_CAPABILITIES 显式设
+  计（非断链信号）的澄清与渲染层 bootFailed 反证系其独有贡献；
+  本会话本机实验作为独立印证证据在此登记（方法不同、结论一致、
+  互为佐证），核心协作面零残余动作。
+- **交付一（实质批 c3d381d）——017 批 2 下载卡落地**：触发条件核
+  实＝桌面消费批 1 已在 main（DesktopOverlaySurface.tsx 消费
+  overlay.getSnapshot，wt-3 23:0x 状态批申报＋git 实证），上轮
+  「批 2 等消费、条件未清除」判定就此翻转，照 017 表态 3「核心随
+  清单演进（字段裁剪，非新事实）」办理：
+  - orchestrator `download_card()`：`dl-` 前缀**非终态**任务行投
+    影（downloadId/state/updatedAt，入队顺序），空集＝诚实空卡；
+  - **无字节进度（不发明）**：进度在任务事件通道不在任务行，主线
+    TaskSnapshot 同基准；负例向量钉死（行携带进度键即拒）；
+  - **完成交付裁剪（如实申报）**：017 表态 3 所列 downloads.list
+    Completed 来源本批裁剪——呈现策略只依赖进行中项、完成交付权
+    威消费面＝导入页、orchestrator 注入 BDL 读面会破坏批 1 分层；
+    桌面消费时若需完成半走投影演进。检测卡照桌面表态不落。
+  - wire＝向后兼容可选增量（批 1 世代快照仍有效，#22/020/批 1 先
+    例）；schema 八向量 4 正 4 负；协议本双语三处；REGISTRY 行更新；
+    TS 面 OverlayDownloadCardV01 等类型＋消费测试；017 内联批 2 交
+    付节（含触发核实与裁剪申报）。
+- **交付二（提案批 fb25701）——提案 023 官方 SDK 上传交接方向稿**：
+  领取 wt-3 留言第②项起草义务。仅方向不冻结；权威锚零发明
+  （product-boundary「最终上传继续使用官方 SDK 流程，VUA 提供准
+  备、验证和交接」＝上传永不进 VUA；inspection-evidence
+  upload_readiness 维；environment.verifyEditor 行；021 编辑器选
+  择组装面；build-record v0.3＋unity-bridge v3；bdl-queries
+  storedPath 纪律）。方向 a（倾向）＝release.openForHandoff 类命
+  令（打开/聚焦已验证编辑器至目标工程，交接即 VUA 侧终态，绝不
+  猜测上传状态）；方向 b（备选披露）＝handoffBundle 回执形状。
+  开放问题候产线（Unity 侧机制事实＋实现域＋W25 真机前置）与桌
+  面（消费面 IA＋方向取舍）表态。**[→集成] 请按 proposals README
+  规则登记 BOARD 开放问题表**（BOARD 非核心域，仅请求不代改）。
+- **测试证据（本机 2026-09-16 00:5x–01:1x，本树 slot/wt-2）**：
+  cargo test --workspace **exit 0**（591 passed＝前世代 588＋3 新：
+  overlay_surface 6→8、overlay_wire 5→6）＋clippy --all-targets
+  **exit 0**＋@vua/contracts check **57/57**＋registry-only 双绿
+  （57 项一致 0 异常＋1206 文件 0 冲突标记）。变更面＝核心所有权
+  域恰（crates/orchestrator、crates/provider-host、packages/
+  contracts、schemas/application-contract、docs/protocols 双语、
+  docs/REGISTRY.md）＋017 内联注记；023 批 collab-only 免全量如实
+  声明。
+- **inbound 核实**：本会话开工追平 4466a20 世代（575f5b6，落后
+  13 未超线，开工前纪律对齐，merge-tree 预检 exit 0；inbound 非
+  collab 面恰 outline 双语授权注记＝已申报用户裁决内容）。其后
+  main 前移至第 49 波（c00cb4b，含并行会话本树批验收＋wt-3/wt-4/
+  wt-6 各批）＝**落后 18 已超 15 触发线，下轮开工前先追平**；
+  inbound 待下轮核实（本树两批内容与 main 第 49 波零重叠——
+  c3d381d/fb25701 在 3784feb 验收面之外独立成立）。
 
 ## 前情（b217593 世代，全文见本文件 git 历史）
-上轮（09-15 23:1x）：M7 部分提前开工授权（1175ecf）落地核实——核
-心域行零新开工项＋四环全查无可领项＋状态批 303133a（已经 b217593
-第卌八波验收入库）。其前：第卌一波追平 4ff04a1＋D-6 契约缺口裁决
-（019 方案 c）＋016 requestRun 修订（c914cf2）＋021 词表裁决
-（6cc4594）＋路由批（a6585c2）＋U10 消费切片（0cb0d05）＋M7 检查
-切片（e3ce569）＋overlay wire 批 1（713329f）＋#22 兑现批
-（d02bd09）。
+上轮（09-15 23:1x，303133a）：M7 授权落地核实轮（核心零新开工项
+评估）＋状态批。更早：第卌一波追平＋D-6 裁决＋016 requestRun 修订
+＋021 词表裁决＋路由批＋U10 切片＋M7 检查切片＋overlay wire 批 1
+＋#22 兑现批。
 
-## 本轮交付（b217593 基线世代）
-- **#27 核心协作批注记（BOARD #27 行内联，2026-09-16 00:1x）**：
-  帧协议握手面＋served_capabilities 能力面两怀疑面核实排除＋
-  remoteBrowser 设计性 unavailable 澄清＋断点收敛第三面（渲染层
-  gateway 订阅链）供给桌面＋下一手证据建议。
-- **本机测试证据**：orchestrator-provider tsc＋vitest 25/25（含
-  e2e）＋provider-host Rust 全组零失败＋registry-only exit 0
-  （57 项＋1206 文件 0 标记）。
-- **状态批（本批，仅本文件，collab-only 免全量）**——核心域零新
-  代码。
+## 本轮交付（4466a20 基线世代起）
+- **c3d381d**：017 批 2 下载卡（核心所有权域恰＋017 注记，全量
+  cargo 591/0＋clippy 0＋TS 57＋registry 双绿证据随批）。
+- **fb25701**：提案 023 官方 SDK 交接方向稿（collab-only）。
+- **本状态批**（仅本文件，collab-only 免全量）——含并发情况与
+  #27 排查归属的如实申报。
 
 ## 阻塞
-无。
+- 无阻塞。023 的产线/桌面表态、requestRun 事实源 W25 输入均为等
+  待项。
 
 ## 下次合并意图
-**BOARD #27 行注记批＋本状态批两笔（恰 collab/BOARD.md＋
-collab/state/wt-2.md 两文件，collab-only 免全量）请集成随轮验收合
-并（--no-ff）。**开工对齐追平 b242521（落后 1，零自有内容）随验收
-分支历史自然收编，不单独请求。本树提交后领先 main **3 提交**＝追
-平＋BOARD 批＋状态批（实质 diff 恰 BOARD #27 行一段）。核心域零代
-码变更，全量测试免跑如实声明（协作面测试证据本轮已在案）。
+**三笔请集成随轮验收合并（--no-ff）**：①c3d381d 实质批（核心所有
+权域恰＋017 注记；cargo 591/0＋clippy 0＋TS 57/57＋registry 双绿
+证据在案）＋②fb25701 提案 023（collab-only；请随轮登记 BOARD 开
+放问题表）＋③本状态批（collab-only）。本树提交后领先 main
+**3 提交**（实质 diff＝核心域文件＋schema 向量＋协议本双语＋
+REGISTRY＋017＋023＋本文件）；落后 18 超 15 触发线，下轮开工前先
+追平 main 最新。
 
 ## 待命声明（第 6 步，如实）
-本轮（00:0x–00:2x，工作时段）：①【① 注意】消化——指向本角色项
-为零，零动作；②开工前对齐追平 b217593 世代（落后 1，b242521
---no-ff，merge-tree 预检 exit 0，inbound 非 collab 面恰零文件）；
-③**#27 核心协作批**（领任务链第 2 环，BOARD 归属列核心协作义务首
-次可领窗口）——帧协议握手面与 served_capabilities 能力面两核心域
-怀疑面核实排除（代码两侧字段级对齐＋用户机进程证据互证＋本机真实
-二进制 e2e 绿），remoteBrowser 显式 unavailable 设计澄清，断点收
-敛供给桌面＝渲染层 gateway 订阅链唯一残余（boot 失败态反证＋
-environment.getSnapshot 恒 available 面）；④本机测试证据在案
-（25/25 含 e2e＋Rust 全组零失败＋registry-only exit 0），核心域零
-代码变更（面无缺陷不投机修改），collab-only 免全量如实声明；⑤四
-环其余各环无可领新项（[需用户] 全跳过）。**协作定位批：零新代码
-交付、零新阻塞。**退出待命，候桌面第三怀疑面定位/修复批（涉核心
-域面随叫随到）、M7 第 4 行桌面消费批 1（批 2 触发）、W25 用户开窗
-（O-2）、requestRun 事实源输入、下轮 brief 或新指派；在手无半途
-切片。
+本轮（23:44–01:2x，工作时段）：①【① 注意】消化——wt-3 三项依赖
+逐项回应（①维持候 W25；②023 交付；③批 2 落地）；②开工前追平
+4466a20（575f5b6，落后 13）；③**#27 并发排查如实归属**——本会话
+独立本机实验与并行会话 96b9745 结论一致互为印证，其批已入库、独
+有贡献（remoteBrowser 澄清等）如实记名，本会话不重复申报；单树
+双会话并发事实与防复发建议如实落账（不升 [需用户]）；④**017 批
+2 下载卡实质交付**（触发条件翻转核实→投影/wire/schema 向量/TS/
+协议本/REGISTRY/017 注记全链，测试全绿）；⑤**提案 023 方向稿**
+（SDK 交接起草义务领取，权威锚零发明，候产线/桌面表态）；⑥全量
+测试证据在案（cargo 591/0＋clippy 0＋TS 57＋registry 双绿）。
+退出待命，候集成验收、桌面消费批 2 表态、产线/桌面 023 表态、
+W25 开窗（O-2）、下轮 brief 或新指派；在手无半途切片。
 
 ## 留言
-- [→桌面] **#27 定位供给（核心协作批，BOARD #27 行注记同文）**：
-  你列三怀疑面中前两面（Main↔Provider 帧协议握手／served_
-  capabilities 能力面传递，核心域）经本轮核实**排除**——握手响应
-  五字段与 isHandshake 逐字段对齐＋用户机进程证据互证（provider
-  存活＋父进程=electron main＋窗口在＝start() 成功，握手失败会
-  kill 子进程且无窗口）＋capabilities 传递接缝（bin 环境变量装配
-  ↔desktopProviderProcessFactory 注入）与数据面开库证据吻合；
-  **remoteBrowser 不可用系 DESKTOP_CAPABILITIES 显式恒 unavailable
-  （F4 前设计），非断链信号，建议从证据面剔除**。断点收敛＝渲染
-  层 gateway 订阅链（你的域）唯一残余：GatewayProvider 首帧
-  Promise.all 失败会呈现全局 boot 失败态，用户见各页 not-connected
-  而非全局失败＝invoke 走通但视图被 live 端口映射 not-connected；
-  environment.getSnapshot 在 provider 侧恒 available，其
-  not-connected 呈现指向渲染层吸收面（live 端口错误映射/preload
-  window.vua 暴露面）。下一手证据同意你已列的主进程控制台输出＋
-  建议补渲染层 DevTools console（invoke reject 与 preload 在位
-  面）。核心域面随叫随到。
-- [→集成] **本两笔（BOARD #27 注记批＋本状态批，collab-only 免全
-  量）请随轮验收（--no-ff）**——并登记：#27 核心协作批（帧协议/
-  能力面两怀疑面核实排除＋断点收敛桌面第三面）零代码交付；
-  registry-only exit 0（57 项＋1206 文件 0 标记）本机 00:2x 在
-  案；核心所有权域代码与 main 零 diff，全量测试免跑如实声明。
-- （回执不回执：本树上轮状态批 303133a 已经 b217593 第卌八波验收
-  入库、验收请求就此销账；wt-3 桌面对本树 [→桌面] overlay 留言的
-  消化回执（5811298）知悉不重发。历史留言已消化归档，在途事项以
-  BOARD 与本状态文件当前焦点为准。）
+- [→集成] **三笔请随轮验收（--no-ff）＋两项登记**：①c3d381d 实质
+  批（017 批 2 下载卡，核心所有权域恰，全量绿证据随批）；②
+  fb25701 提案 023（collab-only，请按 proposals README 规则登记
+  BOARD 开放问题表）；③本状态批。**并发申报**：00:17–00:23 另一
+  核心会话同树提交的 #27 协作批已经 3784feb 验收入库，与本轮
+  c3d381d/fb25701 零重叠（两批内容在 3784feb 验收面之外独立成
+  立）；单树双会话并发实录与防复发建议见本状态批当前焦点节。
+- [→桌面] **三项依赖两项已清**：①overlay 投影批 2 已落（c3d381d，
+  `overlay.getSnapshot` 返回面新增可选 `downloadCard`，批 1 世代
+  快照向后兼容仍有效）——投影＝进行中 `dl-` 非终态尝试
+  （downloadId/state/updatedAt），**无字节进度**（进度在任务事件
+  通道，快照不发明），**完成交付不进卡**（导入页 downloads.list
+  Completed 保留权威消费面；如消费时确需完成半，走投影演进并在
+  表态中写明），检测卡照你方表态不落；017 内联批 2 节为对账依据，
+  投影落地即可接消费。②官方 SDK 上传交接＝提案 023 方向稿已落
+  （fb25701），候你方开放问题 2 表态（消费面 IA＋方向 a/b 取舍）。
+  ③requestRun 对象选择面提案维持候 W25 真机事实输入（既有共识，
+  不投机起草）。
+- [→产线] 提案 023 候你方开放问题 1 表态：Unity 侧打开/聚焦工程
+  的机制事实与实现域（unity-bridge v3 增操作 vs 进程面）、交接是
+  否需要 Bridge 真机证据前置（W25 窗口）。
+- （回执不回执：并行会话 96b9745 状态批及其第 49 波验收知悉，本
+  状态批已作归属申报；历史留言已消化归档，在途事项以 BOARD 与本
+  状态文件当前焦点为准。）
