@@ -60,6 +60,8 @@
 | docs/protocols/inspection-queries-v0.1_ZH.md | 0.1 | 已冻结（检查读面词表行，2026-09-13：三方法一次冻结，硬前置④⑤随冻结批） | 数据 | 2026-09-13 |
 | schemas/editor-verify/v0.1 | 0.1 | 已冻结（U10 手选编辑器路径验证词表行 environment.verifyEditor，2026-09-13：proposal 021 七点裁决定形；Schema＋正例 3 对＋负例 3＋双载体消费测试〔环境域锚 editor_verify_wire 8/8＋provider-host 帧环 8/8〕；核心路由批 deafe11＋373470c 经 a6585c2 验收入 main；桌面 TS 面与设置面候 U10 切片随批，真机走查归 W25） | 环境 | 2026-09-13 |
 | docs/protocols/editor-verify-v0.1_ZH.md | 0.1 | 已冻结（手选编辑器路径验证词表行，2026-09-13：单方法一次冻结，硬前置⑤协议本双语＋本行＋SCHEMA_EXEMPT 豁免行移除请求随本冻结批，豁免行候集成验收移除） | 环境 | 2026-09-13 |
+| schemas/release-handoff/v0.1 | 0.1 | 已冻结（官方 SDK 上传交接词表行 release.openForHandoff，2026-09-16：proposal 023 核心冻结批——硬前置①两半已齐〔桌面表态 469ef5c 经第 52 波入库＋产线表态五点 wt-4 随其批次入库〕②③随本批〔Schema＋3 正 3 负向量＋provider-host 帧环 5/5＋@vua/contracts 守卫＋mock 缺席分支〕④随本批〔协议本双语〕⑤轮空〔产线钉死实现域＝进程/窗口面，unity-bridge v3 零增操作〕；params 闭集修订为单键 buildId〔工程身份权威在 build-record 面〕；路由未接线＝诚实缺席，实现域〔产线 port＋核心 use case〕与桌面消费候后续切片，端到端候 W25） | 核心 | 2026-09-16 |
+| docs/protocols/release-handoff-v0.1_ZH.md | 0.1 | 已冻结（官方 SDK 上传交接词表行，2026-09-16：单方法一次冻结，硬前置④双语协议本＋应用契约方法面行＋修订记录条目随本冻结批） | 核心 | 2026-09-16 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/design/design-standard_ZH.md | 0.7.0 | 已接受 | 桌面 | 2026-09-10 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |

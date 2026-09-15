@@ -261,7 +261,7 @@ test("017 批 2 下载卡呈现策略:字段缺席(批 1 世代)或空集(诚实
   assert.equal(emptyCard.downloadCard, null);
 });
 
-test("017 批 2 下载卡呈现策略:字段缺席(批 1 世代)或空集(诚实空卡)一律 null 不渲染", () => {
+test("枚举奇偶:模型联合与字符串表键一一对应", () => {
   assert.deepEqual(
     Object.keys(strings.overlay.statusTitles).sort(),
     [...overlayStatusTitleKeys].sort(),
