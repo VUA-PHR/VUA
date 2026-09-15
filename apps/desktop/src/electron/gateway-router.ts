@@ -393,7 +393,18 @@ export async function routeDesktopGatewayInvoke(
       ok: true,
       value: providerResponse.value,
     };
-  } catch {
+  } catch (error) {
+    // #27 诊断留痕(诚实失败可查):调用链异常(Provider 不可达/帧协议错误/
+    // 路由失败)先落诊断通道再返回统一 unavailable——主进程控制台
+    // (dev 链 stdio inherit)直接可见具体断点,不再静默吞错
+    process.stderr.write(
+      `${JSON.stringify({
+        channel: "gateway-invoke",
+        method: request.method,
+        requestId: request.requestId,
+        error: error instanceof Error ? (error.stack ?? error.message) : String(error),
+      })}\n`,
+    );
     return failure(request.requestId, "internal", "errors.gateway.providerUnavailable");
   }
 }
