@@ -69,6 +69,42 @@ pub struct OverlayRecordSummary {
     pub finished_at: String,
 }
 
+/// One in-flight download row on the overlay download card (017 desktop
+/// stance 3, batch 2). Every field is copied verbatim from the durable
+/// task row (`dl-<downloadId>-a<attempt>`, the nine-state per-attempt task
+/// the download face drives): `downloadId` is the task's own
+/// `correlationId` (the port-assigned download identity), `state` passes
+/// the task face's nine-state word through untouched, `updatedAt` is the
+/// row's own RFC 3339 timestamp. The row deliberately carries **no byte
+/// progress**: received/expected bytes live in the task *events* (the
+/// `task.progressed` payload), not on the task row — the main-line
+/// `TaskSnapshot` does not carry them either, and a projection that
+/// reaches into the event stream to synthesize a progress figure would
+/// cross from trimming into invention (the schema's `synthesized-progress`
+/// negative vector pins the same discipline for the batch-1 card).
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayDownloadProgress {
+    pub download_id: String,
+    pub state: String,
+    pub updated_at: String,
+}
+
+/// The download/import progress card (017 desktop stance 3, batch 2). The
+/// card holds the in-flight download attempts only — the presentation
+/// stance is "rendered while items are in flight" (017 stance 3), so the
+/// projection serves exactly the rows that decision consumes. Completed
+/// deliveries stay off this card by the same stance: their authoritative
+/// consumer is the import page's `downloads.listCompleted` read face, and
+/// projecting them here would graft a second authority's read face onto
+/// the overlay glance instead of trimming one. An empty `active_downloads`
+/// is the honest empty card (no in-flight downloads), never an error.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OverlayDownloadCard {
+    pub active_downloads: Vec<OverlayDownloadProgress>,
+}
+
 /// The production-status card (017 desktop stance 3, batch 1): the
 /// current-plan summary plus the latest build-record status. Both halves
 /// are independent `None`s — a fresh environment has no plans and no
@@ -127,6 +163,16 @@ pub trait OverlayReadModel: Send + Sync {
     /// Errors: a document-store read failure propagates as
     /// [`std::io::Error`] — never folded into "no production activity".
     fn production_card(&self) -> Result<OverlayProductionCard, std::io::Error>;
+
+    /// The download/import progress card (017 batch 2): the in-flight
+    /// download attempts (`dl-` prefixed non-terminal tasks), oldest
+    /// first. Always returns a card: an empty `active_downloads` is the
+    /// honest "nothing in flight" state, so only a *read failure* is an
+    /// error.
+    ///
+    /// Errors: a store read failure propagates as
+    /// [`crate::SqliteStoreError`] — never folded into an empty card.
+    fn download_card(&self) -> Result<OverlayDownloadCard, crate::SqliteStoreError>;
 }
 
 /// The first concrete read model: projects the durable task store plus
@@ -206,6 +252,33 @@ impl OverlayReadModel for StoreOverlayReadModel {
                 finished_at: text_of(&document, "finishedAt"),
             });
         Ok(OverlayProductionCard { current_plan, latest_record })
+    }
+
+    fn download_card(&self) -> Result<OverlayDownloadCard, crate::SqliteStoreError> {
+        // Same store, same ordering provenance as `task_cards`: the rows
+        // arrive `ORDER BY created_at, task_id` (enqueue order, oldest
+        // first) and the projection adds no re-sorting of its own. The
+        // selection is the per-attempt download identity only — `dl-` is
+        // the prefix the download face mints (`dl-<downloadId>-a<attempt>`)
+        // — kept non-terminal, so a finished attempt leaves the card the
+        // moment its terminal state lands (the presentation stance is
+        // "while items are in flight", 017 stance 3). No cross-source
+        // derivation: every field is the row's own.
+        let active = self
+            .store
+            .tasks()?
+            .into_iter()
+            .filter(|task| task.task_id.starts_with("dl-") && !task.state.is_terminal())
+            .map(|task| OverlayDownloadProgress {
+                download_id: task.correlation_id,
+                state: serde_json::to_value(task.state)
+                    .ok()
+                    .and_then(|value| value.as_str().map(str::to_owned))
+                    .unwrap_or_else(|| "unknown".to_owned()),
+                updated_at: task.updated_at,
+            })
+            .collect::<Vec<_>>();
+        Ok(OverlayDownloadCard { active_downloads: active })
     }
 }
 
@@ -447,5 +520,126 @@ mod tests {
         let card = model.production_card().unwrap();
         assert_eq!(card.current_plan.as_ref().expect("plan half").plan_id, "plan-only");
         assert_eq!(card.latest_record, None, "no records is an honest empty half");
+    }
+
+    /// Accepts a task row directly on the store (the download face mints
+    /// `dl-<downloadId>-a<attempt>` rows through the same primitive).
+    fn seed_task(store: &crate::SqliteTaskStore, task_id: &str, correlation_id: &str, occurred_at: &str) {
+        store
+            .accept_task(&crate::NewTask {
+                task_id: task_id.to_owned(),
+                correlation_id: correlation_id.to_owned(),
+                occurred_at: occurred_at.to_owned(),
+            })
+            .unwrap();
+    }
+
+    #[test]
+    fn download_card_empty_authority_is_the_honest_empty_card() {
+        let database = unique_database("download-empty");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+        let model = StoreOverlayReadModel::new(
+            store,
+            std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("dl-empty-plans"))),
+            std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("dl-empty-records"))),
+        );
+
+        // 空态即终态: nothing in flight — the honest empty card, not an
+        // error; two unchanged queries observe the same card (read-only
+        // discipline).
+        let card = model.download_card().unwrap();
+        assert!(card.active_downloads.is_empty());
+        assert_eq!(model.download_card().unwrap(), card);
+    }
+
+    #[test]
+    fn download_card_holds_only_non_terminal_dl_attempts_with_their_own_fields() {
+        let database = unique_database("download-select");
+        let store = std::sync::Arc::new(crate::SqliteTaskStore::open(&database).unwrap());
+
+        // Two in-flight download attempts, one terminal download attempt,
+        // and two foreign tasks (demo + production prefixes): only the
+        // in-flight `dl-` rows may enter the card.
+        seed_task(
+            &store,
+            "dl-019e0000-0000-7000-8000-000000000601-a1",
+            "019e0000-0000-7000-8000-000000000601",
+            "2026-09-12T01:00:00.000Z",
+        );
+        seed_task(
+            &store,
+            "dl-019e0000-0000-7000-8000-000000000602-a1",
+            "019e0000-0000-7000-8000-000000000602",
+            "2026-09-12T02:00:00.000Z",
+        );
+        seed_task(
+            &store,
+            "dl-019e0000-0000-7000-8000-000000000603-a1",
+            "019e0000-0000-7000-8000-000000000603",
+            "2026-09-12T03:00:00.000Z",
+        );
+        seed_task(
+            &store,
+            "demo-019e0000-0000-7000-8000-000000000604",
+            "corr-demo",
+            "2026-09-12T04:00:00.000Z",
+        );
+        seed_task(
+            &store,
+            "prod-019e0000-0000-7000-8000-000000000605",
+            "corr-prod",
+            "2026-09-12T05:00:00.000Z",
+        );
+        // Walk one attempt to a terminal state (succeeded) through the
+        // real nine-state path: it must leave the card — the stance is
+        // "while items are in flight".
+        for (state, at) in [
+            (crate::TaskState::Preparing, "2026-09-12T03:05:00.000Z"),
+            (crate::TaskState::Running, "2026-09-12T03:10:00.000Z"),
+        ] {
+            let current = store.task("dl-019e0000-0000-7000-8000-000000000603-a1").unwrap().unwrap();
+            store
+                .mutate_task(
+                    &current.task_id,
+                    current.revision,
+                    at,
+                    crate::TaskMutation::Transition {
+                        state,
+                        payload: json!({"receivedBytes": 1, "expectedBytes": 2}),
+                    },
+                )
+                .unwrap();
+        }
+        let terminal = store.task("dl-019e0000-0000-7000-8000-000000000603-a1").unwrap().unwrap();
+        store
+            .mutate_task(
+                &terminal.task_id,
+                terminal.revision,
+                "2026-09-12T03:30:00.000Z",
+                crate::TaskMutation::Complete {
+                    state: crate::TaskState::Succeeded,
+                    error: None,
+                    result: Some(json!({"downloadId": "019e0000-0000-7000-8000-000000000603"})),
+                },
+            )
+            .unwrap();
+
+        let model = StoreOverlayReadModel::new(
+            store,
+            std::sync::Arc::new(crate::PlanDocumentStore::new(unique_root("dl-select-plans"))),
+            std::sync::Arc::new(crate::RecipeRecordStore::new(unique_root("dl-select-records"))),
+        );
+        let card = model.download_card().unwrap();
+
+        assert_eq!(card.active_downloads.len(), 2, "terminal attempt and foreign tasks stay out");
+        let first = &card.active_downloads[0];
+        assert_eq!(first.download_id, "019e0000-0000-7000-8000-000000000601");
+        assert_eq!(first.state, "queued", "the nine-state word passes through verbatim");
+        assert_eq!(first.updated_at, "2026-09-12T01:00:00.000Z");
+        // Enqueue order (created_at ascending), never the id alphabet.
+        assert_eq!(
+            card.active_downloads[1].download_id,
+            "019e0000-0000-7000-8000-000000000602"
+        );
     }
 }

@@ -4064,6 +4064,7 @@ fn overlay_get_snapshot(
     // failure is its own typed contract error — never folded into an
     // empty card (failures are presented as failures).
     let tasks = model.task_cards()?;
+    let downloads = model.download_card()?;
     let production = match model.production_card() {
         Ok(card) => card,
         Err(_) => {
@@ -4084,6 +4085,8 @@ fn overlay_get_snapshot(
                 .expect("OverlayTaskCard serialization cannot fail"),
             "productionCard": serde_json::to_value(&production)
                 .expect("OverlayProductionCard serialization cannot fail"),
+            "downloadCard": serde_json::to_value(&downloads)
+                .expect("OverlayDownloadCard serialization cannot fail"),
         }),
     )))
 }
