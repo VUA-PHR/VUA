@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.11
+> Document version: 2.0.12
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.11)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.12)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -344,7 +344,18 @@ led by Desktop)):
 The VR Dashboard/VR Overlay does not enter this gate or `1.0.0` (user ruling, 2026-09-06); see the
 v1.1 anchor in "After `1.0.0`".
 
-Task breakdown:
+Task breakdown (**opens early in part** — user ruling 2026-09-15, relayed by
+the operator; following the M6 precedent: the first four task rows
+[inspection evidence / reports, snapshots, and read-only services /
+Inspection-Release pages and official SDK handoff / desktop-overlay closure]
+may start **out of gate order**; **gate acceptance and release are not in the
+early-open scope** and still follow gate order after M5 closes. Existing
+contract prerequisites are already landed = the four-piece 016 chain
+[inspection-evidence v0.1 frozen + unity-bridge v3 frozen incl. the
+three-read-only-inspection-operations anchor implementation 7d63abe + the
+core inspection-slice implementation batch 7a262b8 + inspection-queries v0.1
+frozen]; the early-open authorization is recorded on the BOARD M7 row. Each
+role picks up rows by anchor and merges the latest main before starting):
 
 | Task | Owning role | Collaborators |
 | --- | --- | --- |
@@ -352,7 +363,7 @@ Task breakdown:
 | Reports, snapshots, and read-only services (desktop Overlay surface) | Core | Desktop |
 | Inspection/Release pages and official SDK handoff | Desktop | Production |
 | Desktop-overlay closure (consumes stable snapshots and semantic actions only) | Desktop | Core |
-| Gate acceptance and release | Integration | All |
+| Gate acceptance and release (**not** in the early-open scope) | Integration | All |
 
 ### M8 — v0.10.0: Beta 1 feature and contract freeze
 
@@ -494,6 +505,19 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.12 (2026-09-15): **M7 (v0.9.0) task-table early-open authorization note for
+  the first four rows** (user ruling 2026-09-15, relayed by the operator) —
+  following the M6 precedent: the first four rows [inspection evidence /
+  reports, snapshots, and read-only services / Inspection-Release pages and
+  official SDK handoff / desktop-overlay closure] may start out of gate order;
+  gate acceptance and release are not in the early-open scope and follow gate
+  order after M5 closes; existing contract prerequisites already landed = the
+  four-piece 016 chain (inspection-evidence v0.1 frozen + unity-bridge v3
+  frozen incl. the three-read-only-inspection-operations anchor implementation
+  7d63abe + the core inspection-slice implementation batch 7a262b8 +
+  inspection-queries v0.1 frozen); each role picks up rows by anchor and merges
+  the latest main before starting; the authorization is recorded on the BOARD
+  M7 row; bilingual sync.
 - 2.0.11 (2026-09-09): **M6 gains the material import-page package IMP-1~5**
   (user ruling 2026-09-09 approved the addition [U7①]: IMP-1 design / IMP-2
   web browse wiring / IMP-3 cloud-download landing contract first [Data] /
