@@ -467,3 +467,40 @@ upload_readiness 摘要来自 inspection.get（M7 证据束）——指向无误
   handshake.json（形状与 schema v1 一致）；Rust `handoff` 12/12。
   启动→等待→聚焦的进程链真机端到端走查仍候 W25（O-2）——零端到端
   宣称维持。
+
+## 落地（核心装配切片，2026-09-16 核心 wt-2——机制 port 到 use case port 的装配）
+
+#30 实现域三切片齐后的收口切片（产线切片①＋核心切片②＋桌面切片③均已
+入库）本批落地，词表/形状/错误码闭集零变化：
+
+- **适配器**：`crates/provider-host` 域内新模块 `handoff_adapter.rs`——
+  `EditorHandoffAdapter` 实现 `ReleaseHandoffPort`，内部委托产线域
+  `EditorHandoffPort`，**机械直译两路径零新判定语义**：probe 有效踪迹
+  （已打开）＝完成事实已在（裁决③），尽力而为聚焦（不进判定不进事实，
+  绝不对活会话二次启动）；probe 关闭＝窗口化 `-projectPath` 启动＋预算
+  内 handshake 等待（`DEFAULT_HANDSHAKE_BUDGET`，产线域常数）——到达＝
+  聚焦＋完成，预算耗尽＝诚实超时结果（绝不猜成功），机制错误如实
+  `Err` 携真实原因（detail 走任务面 `vua.job.handoff_launch_failed` 的
+  detail 参数）。
+- **装配点**：provider 宿主二进制缺省装配 `handoff: None` →
+  `Some(EditorHandoffAdapter::new())`——`vua.release_handoff.unavailable`
+  由缺席常态收敛为显式不装配（测试/宿主自选缺席）的异常路径；缺席语义
+  本身零变化（wire 测试「显式无 port 缺席维持」面继续把守）。已打开
+  路径的版本一致性说明：防版本错配升级副作用由受理期身份解析（裁决⑤，
+  选启动 exe）承担；已打开编辑器是既成事实，VUA 绝不重启/代判用户的
+  运行中编辑器。
+- **mock 面如实刷新**：`packages/orchestrator-provider` 注释与测试描述
+  更新——模拟面恒缺席（无构建记录面与进程/窗口面，缺席即模拟面的诚实
+  语义），「与真实缺省装配同形」声明随装配落地废止；行为零变化。
+- **协议本双语**：release-handoff v0.1 ZH/EN 实现域状态刷新（所有权
+  边界、错误码缺席语义节、依赖方向图、消费测试清单、开放项），版本
+  0.1 不变（词表/形状/错误码闭集零变化，接线批先例同型）；开放项收拢
+  为端到端真机走查一项（W25/O-2）。
+- **证据（本机 2026-09-16 05:4x–06:0x 世代）**：适配器测试
+  `handoff_adapter` 6/6（closed→launch→到达＋聚焦踪迹 pid／已打开零
+  启动直达完成事实／启动失败 Err 携真实原因／预算耗尽诚实超时／probe
+  I/O 错误如实上报绝不折叠进启动路径／死踪迹如实走启动路径并聚焦新踪
+  迹 pid）；provider-host 全套件 19 套件全绿（含 wire 12 例回归）；
+  clippy `-D warnings` exit 0；全量 cargo/contracts/desktop 证据见本树
+  状态批。**零端到端宣称维持**：真 provider 链路（受理→真启动→
+  handshake→事实回流）的真机走查归 W25（O-2）——装配切片零真机宣称。

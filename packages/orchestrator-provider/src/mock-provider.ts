@@ -388,12 +388,12 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           false,
         ));
       case "release.openForHandoff":
-        // 023 词表行(核心冻结批 2026-09-16;后续切片②核心 use case 已落,
-        // 2026-09-16:真实 provider-host 路由按产线 port 注入接线,缺省
-        // 装配仍答缺席)。模拟 Provider 无构建记录面与产线进程/窗口面,
-        // 与真实缺省装配行为同形(code/category/messageKey 三元一致)
-        // ——诚实缺席,绝不伪造受理回执/任务快照/交接事实(上传状态
-        // 永不进入 VUA 事实,形状钉死)
+        // 023 词表行(核心冻结批 2026-09-16;后续切片②核心 use case 已落;
+        // 装配切片 2026-09-16:真实 provider-host 缺省装配已带真适配器,
+        // 缺席收敛为显式不装配的异常路径)。模拟 Provider 无构建记录面
+        // 与产线进程/窗口面,恒答诚实缺席(code/category/messageKey 三元
+        // 与真实缺席分支一致)——绝不伪造受理回执/任务快照/交接事实
+        // (上传状态永不进入 VUA 事实,形状钉死)
         return this.#failure(request, this.#error(
           "vua.release_handoff.unavailable",
           "unavailable",
