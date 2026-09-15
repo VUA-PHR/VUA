@@ -69,6 +69,15 @@ export type GatewayStateName = "live" | "not-run" | "dev-mixed";
 export function createGatewayState(
   initialGoals: StoredGoalsV1 | null,
 ): { gateway: VuaGateway; name: GatewayStateName } {
+  // #27 诊断自检(仅 DEV,生产构建随 DEV 门控剔除):Electron 宿主内壳 API
+  // 缺失 = preload 未注入(加载失败/路径错误),此时整壳呈 not-run「未接入」
+  // 且内嵌浏览器回退——四症状同源。显式 console.warn 让 DevTools 一眼定位,
+  // 不改变任何呈现语义(页面仍诚实 not-run)
+  if (import.meta.env.DEV && window.vua === undefined && /Electron/i.test(navigator.userAgent)) {
+    console.warn(
+      "[vua] Electron host detected but window.vua is undefined - preload script did not inject (load failure? path wrong? sandbox require rejected?).",
+    );
+  }
   if (!import.meta.env.DEV) {
     // F2:Electron 宿主内走 live Gateway(任务/环境直达应用层);纯浏览器
     // 打开生产产物时无 preload,保持 not-run 诚实空态(check-leak 验证

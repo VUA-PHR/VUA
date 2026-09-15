@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace Vua.Editor.Bridge.Tests
@@ -181,7 +182,7 @@ namespace Vua.Editor.Bridge.Tests
                 var command = Command("inspect_avatar_references", true);
                 command.schemaVersion = 3;
                 command.payload.avatarGlobalObjectId =
-                    GlobalObjectId.GetGlobalObjectIdFor(avatar).ToString();
+                    GlobalObjectId.GetGlobalObjectIdSlow(avatar).ToString();
 
                 var result = BridgeCommandProcessor.Process(command);
 
