@@ -7,6 +7,7 @@
 #![allow(clippy::result_large_err)]
 
 pub mod bridge;
+pub mod handoff;
 pub mod local_vpm_artifact;
 pub mod material_exec;
 pub mod material_identity;
@@ -18,6 +19,12 @@ pub mod production_job;
 pub mod staging_scaffold;
 
 pub use bridge::UnityBatchBridge;
+pub use handoff::{
+    handshake_path, DefaultEditorHandoff, DefaultProcessLiveness, DetachedEditorSpawner,
+    EditorHandoffPort, EditorHandshake, EditorLaunched, EditorOpenState, FocusOutcome,
+    HandoffError, HandoffWait, OsWindowFocus, ProcessLiveness, SystemWait, WindowFocus,
+    EditorSpawner, DEFAULT_HANDSHAKE_BUDGET, HANDSHAKE_POLL_INTERVAL, HANDSHAKE_SCHEMA_VERSION,
+};
 pub use local_vpm_artifact::{publish_local_vpm_artifact, PublishedLocalVpmArtifact};
 pub use material_exec::{
     error_codes as material_exec_error_codes, GenerateSourcePackage, MaterialCancelToken,

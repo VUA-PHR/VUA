@@ -2,11 +2,11 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Document version: 1.0.1
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.0.1)
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.1.0)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-08
+> Updated: 2026-09-16
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -85,8 +85,37 @@ equivalent synthetic projects and assets without real product or user content. D
 lawfully obtained assets for local Unity integration and smoke validation; the assets, projects,
 configuration, and outputs remain local. Deterministic operations use defined Bridge commands.
 
+## Release handoff process face
+
+The execution domain of the official SDK upload handoff (`release.openForHandoff`, release-handoff
+protocol v0.1) is **editor process lifecycle management**, not the Bridge command face (proposal 023
+production stance: both paths are not editor-internal commands; the unity-bridge v3 command
+vocabulary takes zero new operations):
+
+- **Handshake signal**: when a project finishes loading, the bridge package atomically writes a
+  handshake fact to `<project>/.vua/bridge/handshake.json` (`InitializeOnLoadMethod`; closed set of
+  four keys `schemaVersion`/`pid`/`editorVersion`/`occurredAt`, schema under
+  `schemas/unity-bridge/handshake/v1.0/`). This is the deterministic project-loaded signal — the
+  handoff task's completion verdict = this handshake arriving; "process started" is never a
+  completion fact, timeouts fail honestly, and panel state is never guessed. The payload never
+  carries the project's clear path (the file location binds it to the project) nor any upload state
+  (honesty discipline pinned by shape); writing is best-effort — a failure never interrupts the
+  editor, and the waiter reports an honest timeout.
+- **Open/focus**: the Rust production port (`crates/unity-bridge` `handoff` module) provides the
+  mechanism primitives — probing (handshake trail + pid liveness = the open fact; a missing,
+  corrupt, unknown-version, or dead-pid trail is honestly reported as not open), detached launch
+  (`Unity.exe -projectPath`, same credential-stripping baseline as the batchmode chain), handshake
+  wait (budgeted polling with typed timeout), and OS window focus (best-effort, never part of the
+  completion verdict nor of receipt facts — focus is not a stable fact).
+- **Task orchestration** (buildId → editor identity resolution, open/focus path selection, task
+  nine-state mapping) belongs to the core use case slice; this port provides mechanism facts and
+  mechanism primitives only.
+
 ## Document changelog
 
+- 1.1.0 (2026-09-16): added the "Release handoff process face" section — proposal 023 production
+  implementation slice (bridge handshake signal `EditorHandshake` + Rust process/window-face port
+  `handoff` module + `schemas/unity-bridge/handshake/v1.0/`); the Bridge command face is unchanged.
 - 1.0.1 (2026-09-08): mirror fix — "Unity/VPM/tool versions" aligned with the authoritative ZH
   wording ("Unity、VPM 包与工具版本"); per BOARD #9 terminology, VPM 包 = VPM package.
 - 1.0.0 (2026-09-06): entered version management; header normalized and conformance-review date
