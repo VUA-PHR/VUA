@@ -307,6 +307,58 @@ describe("inspection-queries v0.1 routing (M7 消费批)", () => {
   });
 });
 
+describe("packages-query v0.1 routing (024 P1 消费批)", () => {
+  it("routes packages.listInstalled verbatim and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // mock 未装配包引擎:vua.packages.unavailable 诚实缺席照原样透传
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-1",
+        method: "packages.listInstalled",
+        params: { projectPath: "C:/VRChat/Projects/Chiffon" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-pkg-1",
+      correlationId: "desktop-request-pkg-1",
+      kind: "query",
+      method: "packages.listInstalled",
+      params: { projectPath: "C:/VRChat/Projects/Chiffon" },
+    });
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.packages.unavailable" } },
+    });
+  });
+
+  it("rejects word-list-escape params at the envelope guard (closed single key)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // 词表外键在信封守卫即拒(闭集单键 projectPath;投机 projectId 拒绝)
+    const invalidParams = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-2",
+        method: "packages.listInstalled",
+        params: { projectPath: "C:/x", projectId: "p-1" },
+      },
+    );
+    expect(invalidParams).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
 describe("bdl-queries v0.2 routing", () => {
   it("routes the five read-only queries through to the provider verbatim", async () => {
     const provider = new MockOrchestratorProviderV01();

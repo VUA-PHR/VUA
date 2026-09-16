@@ -386,6 +386,8 @@ describe("gateway guard covers every declared method (regression: silent guard g
     },
     "inspection.get": { inspectionId: "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21" },
     "inspection.list": {},
+    "release.openForHandoff": { buildId: "build-1" },
+    "packages.listInstalled": { projectPath: "C:/proj" },
   };
 
   it("admits a minimal well-formed request for every method in the kind table", () => {
@@ -410,5 +412,23 @@ describe("gateway guard covers every declared method (regression: silent guard g
     ).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: { path: 7 } })).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: "C:\\x" })).toBe(false);
+  });
+
+  it("packages.listInstalled: params closed single-key {projectPath} minLength 1 (024 P1 freeze; envelope guard matches schema additionalProperties:false)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-41",
+      method: "packages.listInstalled" as const,
+      params: { projectPath: "C:\\VRChat\\Projects" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串/投机字段/错型/多键:一律拒绝(形状违反 ≠ 服务端 typed 拒绝)
+    expect(isDesktopGatewayRequestV1({ ...request, params: {} })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "" } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/x", projectId: "p-1" } }),
+    ).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: 7 } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { path: "C:/x" } })).toBe(false);
   });
 });

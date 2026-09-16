@@ -533,6 +533,7 @@ function createStubPackages(): PackagesPort {
     snapshot: () => Promise.resolve(stubPackagesView),
     subscribe: () => () => {},
     selectProject: () => Promise.resolve(stubPackagesView),
+    listInstalled: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),

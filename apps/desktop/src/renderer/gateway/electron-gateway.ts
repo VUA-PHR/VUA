@@ -11,6 +11,7 @@ import { createWarehouseCommands } from "./warehouse-commands-live.ts";
 import { createLiveProjectOps } from "./project-ops-port.ts";
 import { createLiveModelProduction } from "./live-production-port.ts";
 import { createLiveProductionChainPort } from "./production-chain-port.ts";
+import { createLivePackages } from "./packages-live.ts";
 import { createLiveInspectionPort } from "../features/inspection/inspection-port-live.ts";
 import { createLiveReleaseHandoffPort } from "../features/release/release-handoff-port-live.ts";
 import type { TaskCenterView, TaskPort } from "./task-port.ts";
@@ -212,7 +213,10 @@ export function createElectronGateway(
     // 023 消费切片:release.openForHandoff 经 Kernel 直达 provider;实现域
     // 未接线=路由恒答 vua.release_handoff.unavailable 诚实缺席
     releaseHandoff: createLiveReleaseHandoffPort(client),
-    packages: notRun.packages,
+    // 024 P1 中间诚实态消费批:packages.listInstalled 经 Kernel 直达
+    // provider;引擎未装配/实现域未接线 = vua.packages.unavailable 诚实
+    // 缺席(notRun 空态维持),repos/变更面 P1 无词表维持不可渲染
+    packages: createLivePackages(client),
     dataSource: (): DataSource => "live",
   };
 }

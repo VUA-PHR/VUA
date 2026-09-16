@@ -15,6 +15,11 @@ import type { CapabilityReport, Unsubscribe } from "./types.ts";
  * - 真实引擎(orchestrator 侧)接入路由见 collab/proposals/024-packages-wire-face.md
  *   (packages.* wire 面 P1/P2/P3 分期方向稿;原锚 GitHub issue #25 经核实不存在,
  *   2026-09-17 更正,wt-2 gh 核实照录);本契约即其前端边界。
+ * - P1 中间诚实态(024 冻结批消费批,2026-09-17):词面单方法
+ *   packages.listInstalled 已消费(ready-p1 视图变体,区块可用性标注的
+ *   权威事实源 = served_capabilities 的 packages.query 能力行);P2 仓库
+ *   /目录面与 P3 变更面无词表无事实源,repos/changes 区块在 ready-p1
+ *   下类型级恒 false,对应 UI 不渲染,不显示不可用入口。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -69,6 +74,26 @@ export interface RepoInfo {
   readonly packageCount?: number;
 }
 
+/**
+ * P1 已装包行(packages-query v0.1 冻结词面三键,镜像 @vua/contracts
+ * PackagesInstalledItemV01;字段闭集 = 虚假断言防线:updateAvailable/
+ * source/versions 等 P2 事实字段在词面不存在,消费层不发明)。
+ */
+export interface InstalledPackageRowV01 {
+  readonly packageId: string;
+  readonly version: string;
+  readonly dependencies: readonly string[];
+}
+
+/**
+ * P1 读取失败形态:typed 错误码照原词呈现(工程事实,不猜测映射;
+ * 复用码 vua.project.project_not_found = 选中项目已从 013 注册面消失,
+ * 与「零已装包」的合法空数组严格区分——诚实纪律 2,失败不冒充空态)。
+ */
+export interface PackagesP1LoadError {
+  readonly code: string;
+}
+
 export type PackagesView =
   | { schemaVersion: 1; kind: "not-connected" }
   | {
@@ -83,6 +108,29 @@ export type PackagesView =
         readonly kind: "vpm" | "unity2022";
         readonly summaryKey: string;
       };
+    }
+  /**
+   * P1 中间诚实态(024 冻结批;「已安装可看、变更面不可用」):
+   * - blocks 是区块可用性标注,权威事实源 = served_capabilities 的
+   *   packages.query 能力行;repos/changes 在 P1 词面无对应方法行,
+   *   类型级恒 false(词表落地前不可能为 true,渲染层据此不渲染
+   *   仓库分区与一切变更/写入入口);
+   * - installedPackages 按 packageId 升序(冻结的确定性呈现事实),
+   *   空数组 = 诚实零已装包;
+   * - loadError = 最近一次 listInstalled 的 typed 失败(错误码原词),
+   *   存在时表格区呈现失败而非空态。
+   */
+  | {
+      schemaVersion: 1;
+      kind: "ready-p1";
+      readonly blocks: {
+        readonly installed: boolean;
+        readonly repos: false;
+        readonly changes: false;
+      };
+      readonly projectPath: string | null;
+      readonly installedPackages: readonly InstalledPackageRowV01[];
+      readonly loadError?: PackagesP1LoadError;
     };
 
 /** 变更预览条目种类:大版本升级与降级在确认对话框中带警告条 */
@@ -132,6 +180,19 @@ export interface PackagesPort {
   snapshot(): Promise<PackagesView>;
   subscribe(callback: (view: PackagesView) => void): Unsubscribe;
   selectProject(projectId: string): Promise<PackagesView>;
+  /**
+   * P1 词面消费(packages.listInstalled,024 冻结批):单个已注册项目的
+   * 已装包集合;projectId 参数即 013 注册路径(P1 视图无第二项目身份)。
+   * unavailable = 引擎缺席/未接线;failed 携带 typed 错误码原词
+   * (vua.project.project_not_found 等),不折叠为空态。
+   */
+  listInstalled(
+    projectPath: string,
+  ): Promise<
+    | { readonly kind: "ok"; readonly result: readonly InstalledPackageRowV01[] }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
   /** 添加既有 Unity 项目文件夹(VUA 的项目创建走 Recipe-first,此处仅登记既有项目) */
   addProject(): Promise<PackageEntryResult>;
   /** 导入本地包(文件夹/压缩包):Recipe 之外的手动入口 */

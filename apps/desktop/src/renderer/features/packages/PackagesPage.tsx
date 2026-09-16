@@ -12,11 +12,13 @@ import {
   usePackagesView,
   type CapabilityReport,
   type ChangeRequest,
+  type InstalledPackageRowV01,
   type PackageChangePreview,
   type PackageEntryResult,
   type PackageProject,
   type PackageRow,
   type PackageSource,
+  type RegisteredProjectRow,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
 import { PackageDetailDrawer } from "./PackageDetailDrawer.tsx";
@@ -45,6 +47,8 @@ const copy = strings.packages;
  * - capability 查询中 → 骨架;unavailable/error → 整页诚实未接入空态
  *   (detailKey 文案来自 strings.capability.details);
  * - 视图 not-connected → EmptyState;无项目 → 空态 + 添加按钮(capability 门控);
+ * - 视图 ready-p1(024 P1 中间诚实态)→ 项目选择器(013 注册清单)+
+ *   已装包简表;repos/变更面无词表事实源,分区与写入口不渲染;
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - 所有变更两阶段:previewChanges → ChangesDialog 确认 → applyChanges;
@@ -198,6 +202,132 @@ function PackageToolbar({
   );
 }
 
+/* ---- P1 中间诚实态(024 冻结批消费批):「已安装可看、变更面不可用」。
+ * 区块可用性标注(ready-p1 blocks)驱动渲染:repos/changes 类型级恒 false
+ * = 无词表无事实源,分区切换器与一切写入口不渲染;包行三键
+ * packageId/version/dependencies 照实显示,更新语义列与版本枚举 UI 无
+ * 事实源不渲染(虚假断言防线);displayName 无生产者字段,以 packageId
+ * 兼任显示(024 核心裁决 3,桌面表态既定走向)。 ---- */
+
+function P1Notice() {
+  return (
+    <div className="vua-packages__migration">
+      <Icon name="question" size={16} />
+      <p>{copy.p1.notice}</p>
+    </div>
+  );
+}
+
+/** P1 项目选择器:清单来自 013 project.listProjects(同一注册事实,无第二
+ * 项目身份,path 即词面 projectPath);登记路径缺失的行禁用可见,形状不
+ * 符行以计数如实呈现(诚实纪律:缺席可见,不猜测内容)。 */
+function P1ProjectPicker({
+  projects,
+  unreadable,
+  selectedProjectPath,
+  onSelect,
+}: {
+  projects: readonly RegisteredProjectRow[];
+  unreadable: number | null;
+  selectedProjectPath: string | null;
+  onSelect: (projectPath: string) => void;
+}) {
+  const ordered = [...projects].sort((a, b) => a.name.localeCompare(b.name));
+  return (
+    <div className="vua-packages__main">
+      <div className="vua-packages__project-header">
+        <select
+          className="vua-packages__project-select"
+          aria-label={copy.projects.selectorAria}
+          value={selectedProjectPath ?? ""}
+          onChange={(event) => onSelect(event.target.value)}
+        >
+          {selectedProjectPath === null ? (
+            <option value="" disabled>
+              {copy.projects.selectorAria}
+            </option>
+          ) : null}
+          {ordered.map((project) => (
+            <option key={project.path} value={project.path} disabled={!project.pathPresent}>
+              {project.unityVersion !== null
+                ? `${project.name} · Unity ${project.unityVersion}`
+                : project.name}
+            </option>
+          ))}
+        </select>
+      </div>
+      {unreadable !== null && unreadable > 0 ? (
+        <ul className="vua-packages__invalid-projects">
+          <li>
+            <Icon name="warning" size={16} />
+            <span className="vua-caption">{format(copy.p1.unreadableProjects, { count: unreadable })}</span>
+          </li>
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+/** P1 已装包简表:loadError 存在时呈现 typed 失败(错误码原词),绝不以
+ * 空态冒充;零已装包 = 合法空数组的诚实空态(两种形态严格区分)。 */
+function P1InstalledTable({
+  rows,
+  loadErrorCode,
+}: {
+  rows: readonly InstalledPackageRowV01[];
+  loadErrorCode: string | null;
+}) {
+  if (loadErrorCode !== null) {
+    return (
+      <EmptyState
+        title={copy.p1.loadFailedTitle}
+        description={format(copy.p1.loadFailed, { code: loadErrorCode })}
+      />
+    );
+  }
+  if (rows.length === 0) {
+    return (
+      <EmptyState
+        title={copy.empty.noPackagesTitle}
+        description={copy.p1.emptyInstalledDescription}
+      />
+    );
+  }
+  return (
+    <div className="vua-packages__table-scroll">
+      <table className="vua-packages__table">
+        <thead>
+          <tr>
+            <th scope="col">{copy.columns.name}</th>
+            <th scope="col">{copy.columns.installed}</th>
+            <th scope="col">{copy.p1.dependenciesColumn}</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.packageId}>
+              <td data-column={copy.columns.name}>
+                <div className="vua-packages__name">
+                  <span className="vua-packages__name-title" title={row.packageId}>
+                    {row.packageId}
+                  </span>
+                </div>
+              </td>
+              <td data-column={copy.columns.installed}>{row.version}</td>
+              <td
+                data-column={copy.p1.dependenciesColumn}
+                title={row.dependencies.length > 0 ? row.dependencies.join(", ") : undefined}
+              >
+                {format(copy.p1.dependenciesCount, { count: row.dependencies.length })}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 /* ---- 页面 ---- */
 
 export function PackagesPage() {
@@ -256,23 +386,59 @@ export function PackagesPage() {
   }, [toast]);
 
   const ready = view.kind === "ready" ? view : null;
+  const p1 = view.kind === "ready-p1" ? view : null;
   const selectedProjectId = ready?.selectedProjectId ?? null;
 
+  // P1 注册项目清单(013 聚合,packages.listInstalled 的同一注册事实):
+  // 进入 P1 模式时加载;清单不可用 = null(诚实注记),形状不符行计数上呈
+  const [registeredProjects, setRegisteredProjects] = useState<readonly RegisteredProjectRow[] | null>(null);
+  const [p1Unreadable, setP1Unreadable] = useState<number | null>(null);
+  const p1AutoSelected = useRef(false);
+
+  useEffect(() => {
+    if (view.kind !== "ready-p1") return;
+    let active = true;
+    void gateway.projectOps.listProjects().then((outcome) => {
+      if (!active) return;
+      if (outcome.ok) {
+        setRegisteredProjects(outcome.projects);
+        setP1Unreadable(outcome.unreadable);
+      } else {
+        setRegisteredProjects(null);
+        setP1Unreadable(null);
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [gateway, view.kind]);
+
+  // P1 自动初始选择:清单首个可用项目(一次;此后尊重用户显式选择)
+  useEffect(() => {
+    if (view.kind !== "ready-p1" || registeredProjects === null || p1AutoSelected.current) return;
+    const firstUsable = registeredProjects.find((project) => project.pathPresent);
+    if (firstUsable !== undefined) {
+      p1AutoSelected.current = true;
+      void gateway.packages.selectProject(firstUsable.path);
+    }
+  }, [gateway, view.kind, registeredProjects]);
+
   // 项目切换收敛(render 期调整,React 推荐模式):清空选择/锚点/抽屉;
-  // 订阅广播到达后解除切换中骨架
-  const [lastProjectId, setLastProjectId] = useState(selectedProjectId);
-  if (selectedProjectId !== lastProjectId) {
-    setLastProjectId(selectedProjectId);
+  // 订阅广播到达后解除切换中骨架。ready 身份 = projectId,P1 身份 = 路径
+  const selectedIdentity = ready?.selectedProjectId ?? p1?.projectPath ?? null;
+  const [lastProjectId, setLastProjectId] = useState(selectedIdentity);
+  if (selectedIdentity !== lastProjectId) {
+    setLastProjectId(selectedIdentity);
     setSelectedIds([]);
     setAnchorId(null);
     setDetailId(null);
   }
-  if (pendingProjectId !== null && pendingProjectId === selectedProjectId) {
+  if (pendingProjectId !== null && pendingProjectId === selectedIdentity) {
     setPendingProjectId(null);
   }
 
   const capable = capability?.state === "ready";
-  const switching = pendingProjectId !== null && pendingProjectId !== selectedProjectId;
+  const switching = pendingProjectId !== null && pendingProjectId !== selectedIdentity;
 
   const visibleRows = useMemo(
     () =>
@@ -285,6 +451,15 @@ export function PackagesPage() {
       ),
     [ready?.packages, debouncedText, sourceFilter, showPrereleases],
   );
+
+  // P1 过滤:仅按 packageId 本地搜索;行序保持服务端 packageId 升序
+  // (冻结的确定性呈现事实,客户端不重排)
+  const p1Rows = useMemo(() => {
+    if (p1 === null) return [] as readonly InstalledPackageRowV01[];
+    const text = debouncedText.trim().toLowerCase();
+    if (text === "") return p1.installedPackages;
+    return p1.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
+  }, [p1, debouncedText]);
 
   const showToast = (text: string) => {
     toastSeq.current += 1;
@@ -353,7 +528,10 @@ export function PackagesPage() {
   };
 
   const chooseProject = (projectId: string) => {
-    if (ready === null || projectId === selectedProjectId) return;
+    // P1 视图的项目身份 = 013 注册路径(projectPath);两种模式同一选择通道
+    const currentSelected = ready?.selectedProjectId ?? p1?.projectPath ?? null;
+    if (ready === null && p1 === null) return;
+    if (projectId === currentSelected) return;
     setPendingProjectId(projectId);
     void gateway.packages.selectProject(projectId).then(
       () => setPendingProjectId(null),
@@ -433,6 +611,71 @@ export function PackagesPage() {
               : strings.capability.states[capability.state]
           }
         />
+      ) : p1 !== null ? (
+        /* P1 中间诚实态(024):区块标注 repos/changes 恒 false——分区切换
+         * 器与一切写入口不渲染;清单来自 013 注册面,包行三键照实显示 */
+        <>
+          {p1.blocks.installed ? (
+            <>
+              <P1Notice />
+              <P1ProjectPicker
+                projects={registeredProjects ?? []}
+                unreadable={p1Unreadable}
+                selectedProjectPath={p1.projectPath}
+                onSelect={chooseProject}
+              />
+              {registeredProjects !== null && registeredProjects.length === 0 ? (
+                <EmptyState
+                  title={copy.empty.noProjectsTitle}
+                  description={copy.p1.noProjectsDescription}
+                />
+              ) : registeredProjects === null ? (
+                <EmptyState
+                  title={copy.empty.noProjectsTitle}
+                  description={copy.p1.projectsUnavailable}
+                />
+              ) : p1.projectPath === null ? (
+                <EmptyState
+                  title={copy.empty.noSelectionTitle}
+                  description={copy.empty.noSelectionDescription}
+                />
+              ) : (
+                <div className="vua-packages__main">
+                  <div className="vua-packages__toolbar" role="search">
+                    <input
+                      type="search"
+                      className="vua-packages__search"
+                      placeholder={copy.toolbar.searchPlaceholder}
+                      aria-label={copy.toolbar.searchAria}
+                      value={searchText}
+                      onChange={(event) => setSearchText(event.target.value)}
+                    />
+                  </div>
+                  {switching ? (
+                    <Card>
+                      <div className="vua-page__stack">
+                        <Skeleton width="55%" />
+                        <Skeleton width="80%" />
+                        <Skeleton width="45%" />
+                      </div>
+                    </Card>
+                  ) : (
+                    <P1InstalledTable
+                      rows={p1Rows}
+                      loadErrorCode={p1.loadError?.code ?? null}
+                    />
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* 能力行存在但不可用:已安装区块诚实不可渲染 */
+            <EmptyState
+              title={copy.empty.engineTitle}
+              description={strings.capability.details.packagesEngineMissing}
+            />
+          )}
+        </>
       ) : ready === null ? (
         <EmptyState
           title={copy.empty.notConnectedTitle}

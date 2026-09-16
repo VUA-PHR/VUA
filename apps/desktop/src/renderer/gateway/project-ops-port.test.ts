@@ -342,4 +342,65 @@ describe("importCopy task-based consumption (proposal 020 result reflux)", () =>
     const outcome = await port.setNote({ projectPath: "C:/projects/copy", note: "hi" });
     expect(outcome).toEqual({ ok: true, accepted: { taskId: "task-1", correlationId: "corr-1" } });
   });
+
+  describe("listProjects narrow projection (024 P1 consumption batch)", () => {
+    // wire 帧原形:project-inspection 信封包裹 + 聚合本体(camelCase 行)
+    function listFrame(rows: unknown[]): DesktopGatewaySuccessValueV1 {
+      return asWire({
+        schemaVersion: "vua.project-inspection/v0.2",
+        operation: "project.listProjects",
+        result: {
+          schemaVersion: "vua.project-inspection/v0.2",
+          capturedAt: "2026-09-17T00:00:00Z",
+          projects: rows,
+          diagnostics: [],
+        },
+      });
+    }
+
+    it("narrows the four selector keys and counts unreadable rows honestly", async () => {
+      const client = fakeClient({
+        invoke: async (request) => {
+          expect(request.method).toBe("project.listProjects");
+          return {
+            ok: true,
+            value: listFrame([
+              { path: "C:/p/a", name: "a", pathPresent: true, unityVersion: "2022.3.22f1", extra: "ignored" },
+              { path: "C:/p/b", name: "b", pathPresent: false, unityVersion: null },
+              // 形状不符行:pathPresent 缺失 = 必需键收不齐 → 如实计数,不投影
+              { path: "C:/p/c", name: "c" },
+              "not-an-object",
+            ]),
+          };
+        },
+      });
+      const port = createLiveProjectOps(client);
+      const outcome = await port.listProjects();
+      expect(outcome.ok).toBe(true);
+      if (!outcome.ok) return;
+      expect(outcome.projects).toEqual([
+        { path: "C:/p/a", name: "a", pathPresent: true, unityVersion: "2022.3.22f1" },
+        { path: "C:/p/b", name: "b", pathPresent: false, unityVersion: null },
+      ]);
+      expect(outcome.unreadable).toBe(2);
+    });
+
+    it("answers unavailable on envelope mismatch and transport failure (no half-trusted rows)", async () => {
+      const mismatch = createLiveProjectOps(
+        fakeClient({
+          invoke: async () => ({
+            ok: true,
+            value: asWire({ schemaVersion: "vua.project-inspection/v0.1", projects: [] }),
+          }),
+        }),
+      );
+      expect((await mismatch.listProjects()).ok).toBe(false);
+
+      const failed = createLiveProjectOps(
+        fakeClient({ invoke: async () => ({ ok: false, error: { kind: "unavailable" } as const }) }),
+      );
+      const outcome = await failed.listProjects();
+      expect(outcome).toEqual({ ok: false, error: { kind: "unavailable" } });
+    });
+  });
 });
