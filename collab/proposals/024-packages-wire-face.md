@@ -2,8 +2,9 @@
 proposal: "024"
 title: 包管理器 wire 契约方向稿（#33 核心协作面——包管理器页引擎接入的
   跨域契约方向）
-status: 方向稿——仅方向不冻结（环境/集成表态已落，见内联线程表态
-  收编节；桌面表态候落；三域收敛前核心不接词表冻结与 wire 实现）
+status: P1 已冻结（packages-query v0.1，2026-09-17 三域表态收敛后核心
+  冻结批；P2 候环境后端扩展提案、P3 照 013 R5 逐面独立提案；
+  wire 路由＋能力行＋bin 装配候实现切片紧随，桌面消费批候其后）
 author: wt-2（核心）
 date: 2026-09-17
 ---
@@ -315,3 +316,52 @@ date: 2026-09-17
   题 1 表态＋头注修复）。三域二落一候；表态程序＝三域收敛后核心
   起草冻结批——核心不冻结、不接 wire 实现，notRun 诚实呈现维持
   不变。
+
+## P1 冻结批（packages-query v0.1，2026-09-17 核心冻结批——三域表态收敛后起草）
+
+三域表态收敛确认：桌面（slot/wt-3 ab02215 内联节＋追平后补充第 6 条——
+991e065 世代）、环境（62b4989 经 0f82da3 入库＋内联节移录）、集成
+（ae6eca6 第 70 批）。本批硬前置逐项：①表态收敛（上列）；②Schema＋
+正负例向量＝`schemas/packages-query/v0.1/`（command＋result 双 Schema
+＋正例 3＋负例 3——负例含包行发明字段 `updateAvailable` 的虚假断言
+防线钉死）；③至少一端消费测试＝核心域消费测试 `crates/provider-host/tests/
+packages_query_consumer.rs`（4 例：冻结向量驱动双 Schema＋库投影对照 result
+Schema＋诚实空清单＋坏清单 typed 失败 `vua.vpm.project_load_failed`）
+＋TS 守卫（`@vua/contracts` 闭集正负例）；④双语协议本＝
+`docs/protocols/packages-query-v0.1_ZH.md`＋`_EN.md`；⑤REGISTRY 两行。
+
+**词表最终形状（冻结面）**：单方法 `packages.listInstalled`（Query），
+params 闭集单键 `projectPath`（013 注册身份）；result 信封 const "0.1"
+＋result 本体族 const `vua.packages-installed/v0.1`（两版本独立，照
+c914cf2 常设规则）；包行闭集三键 `packageId`/`version`/`dependencies`
+（packageId 升序＝冻结的确定性呈现事实）；错误码闭集五码：
+`vua.packages.unavailable`（缺席臂）＋`vua.packages.invalid_params`
+（参数臂）＋复用 `vua.project.project_not_found`（注册校验，013 聚合
+语义）＋`vua.vpm.capability_missing`（端口既有）＋
+`vua.vpm.project_load_failed`（端口既有）。
+
+**核心裁决四点（开放问题终局收敛）**：
+1. 项目清单不设第二词表（复用 013 聚合），projectPath 校验与
+   inspectProject 同口径；vcc.liteDb-only 不可见风险照环境表态如实
+   登记（协议本「P1 读面语义」节），真机分叉核对候 W25，收敛归 013
+   升版独立提案不搭 P1 车。
+2. 错误码复用 vua.project.project_not_found（同事实同码）；packages
+   特有事实码归 P2/P3 随其冻结批立（桌面表态采纳）。
+3. P1 词面零 P2 事实字段（source/versions/compatible/updateAvailable/
+   latestVersion/changelogUrl/displayName 全不带）：displayName 事实虽
+   在包目录 package.json，但端口投影类型（核心域）与生产者实现（环境
+   域 project-manager）分属两权属域，P1 不预留无生产者字段（ORC-DEV-004
+   字段面类比）；桌面 P1 消费以 packageId 兼任显示名（其表态读法
+   自洽）。
+4. 诚实空清单：零已装包＝空数组合法应答；坏清单＝typed 失败绝不以空
+   冒充（库级测试第 3/4 例钉死）。
+
+**实现切片边界（紧随本批，核心域）**：provider-host 路由
+（`packages.` 前缀分派＋`packages.listInstalled` 臂）＋HostState 增
+`VpmBackend` 注入位＋`served_capabilities` 增 `packages.query` 行
+（availability 随装配 VpmBackend 实例翻转）＋bin 装配点显式注入由核
+心候选推导的环境根（内联线程核心自查第一笔取向）＋wire 帧环测试
+（缺席臂／params 臂／not_found 复用臂／fake backend 全流转）。桌面消
+费批（PackagesPort P1 投影＋PackagesView 区块可用性标注形状核可）候
+实现切片；环境域 list_packages 投影增量（displayName 如 P2 需要）随
+PackageCollection 端口升版。

@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-query/v0.1/command.schema.json",
+  "title": "VUA packages-query command v0.1",
+  "description": "The packages read-face command (proposal 024 P1 freeze batch, 2026-09-17; three-domain stance converged: desktop ab02215, environment 62b4989, integration 70th batch ae6eca6). v0.1 carries exactly one method, packages.listInstalled: the installed package set of ONE registered project, read from its VPM manifest and lock by the wired VpmBackend (E-VPM-DUAL). projectPath is the same registered-path identity the proposal-013 read face uses; there is no separate packages-side project id, and an unregistered path answers the REUSED typed not-found vua.project.project_not_found (same fact, same code — the validation face is the 013 inspection aggregate, the same semantics as project.inspectProject; a path registered only in vcc.liteDb may be invisible to that aggregate — the known liteDb-only invisibility risk is honestly registered in proposal 024 and re-checked against the real machine in W25). P1 is read-only by design: no write method exists in this family yet, write faces follow proposal 013 R5 as separate per-face proposals (P3). Known absent on purpose (P2 facts, never invented here): source, versions/compatible/yanked, updateAvailable, latestVersion, changelogUrl, displayName — the VPM-manifest projection carries no display-name fact, so the frozen word list does not reserve one (ORC-DEV-004: no implementation, no reserved field).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listInstalled"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The registered project path (proposal-013 identity). Exactly one key is accepted; any extra key is a vua.packages.invalid_params shape violation, never a default."
+        }
+      }
+    }
+  }
+}
