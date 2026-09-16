@@ -15,8 +15,8 @@ use vua_orchestrator::vpm_backend_error_codes as error_codes;
 use vua_orchestrator::{
     AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
     ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
-    PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisteredProjectV1, RepoInfoV01,
-    VpmBackend, VpmCapabilities,
+    PackageCatalogV02, PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef,
+    RegisteredProjectV1, RepoInfoV01, VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -210,29 +210,72 @@ fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
 }
 
 /// The `compatible` judgment (025 freeze batch: evaluated against the
-/// selected project's Unity version). A package's `unity` field is the VPM
-/// spec's MINIMUM Unity constraint, so compatibility = the project version
-/// is at least that major.minor; no `unity` field satisfies every version.
-/// This mirrors the general branch of vrc-get's `unity_compatible`
-/// (lib.rs:208, private fn). Its VRCSDK-for-2019 special case is an
-/// install-selection guard, not a compatibility fact of this word face, and
-/// is deliberately not duplicated here (declared in proposal 025 inline).
+/// selected project's Unity version). This re-creates vrc-get's
+/// `unity_compatible` (lib.rs:208, private fn, dependency locked =0.0.16)
+/// in FULL — all four arms, including the VRCSDK-for-2019, the
+/// resolver-for-2019, and the VRCSDK exact-major.minor special cases.
+/// Core stance on proposal 025 (inline thread) adopted the duplicate with
+/// the general-branch-only landing rejected: `update_available` in the
+/// same response already walks `VersionSelector::latest_for` whose
+/// `satisfies` chain (version_selector.rs:83) runs the full
+/// `unity_compatible` semantics, so one catalog response must carry one
+/// compatibility definition, and the wire fact must mean what the
+/// behavioral authority (vrc-get) will actually do — e.g. VRCSDK 3.5+
+/// against a Unity 6000 project is library-incompatible while the general
+/// branch alone would call it compatible.
 fn catalog_compatible(
     package: &vrc_get_vpm::PackageManifest,
     unity: vrc_get_vpm::version::UnityVersion,
 ) -> bool {
-    match package.unity() {
-        Some(min_unity) => {
-            unity
-                >= vrc_get_vpm::version::UnityVersion::new(
-                    min_unity.major(),
-                    min_unity.minor(),
-                    0,
-                    vrc_get_vpm::version::ReleaseType::Alpha,
-                    0,
-                )
+    // Verbatim from vrc-get-vpm 0.0.16 lib.rs:210–218.
+    fn is_vrcsdk_for_2019(version: &vrc_get_vpm::version::Version) -> bool {
+        version.major == 3 && version.minor <= 4
+    }
+
+    fn is_resolver_for_2019(version: &vrc_get_vpm::version::Version) -> bool {
+        version.major == 0 && version.minor == 1 && version.patch <= 26
+    }
+
+    match package.name() {
+        "com.vrchat.avatars" | "com.vrchat.worlds" | "com.vrchat.base"
+            if is_vrcsdk_for_2019(package.version()) =>
+        {
+            // This VRCSDK generation is Unity-2019-only; every other Unity
+            // major is unsatisfied (library lib.rs:220–224).
+            unity.major() == 2019
         }
-        None => true,
+        "com.vrchat.core.vpm-resolver" if is_resolver_for_2019(package.version()) => {
+            // Resolver ≤0.1.26 is Unity-2019-only (library lib.rs:225–228).
+            unity.major() == 2019
+        }
+        "com.vrchat.avatars" | "com.vrchat.worlds" | "com.vrchat.base"
+            if let Some(target_unity) = package.unity() =>
+        {
+            // VRCSDK enforces exact major.minor matching. NOT part of the
+            // VPM specification; prevents incorrectly treating VRCSDK for
+            // 2022 as compatible with Unity 6000 series (library
+            // lib.rs:229–236).
+            target_unity.major() == unity.major() && target_unity.minor() == unity.minor()
+        }
+        _ => {
+            // Otherwise the package's `unity` field is the VPM spec's
+            // MINIMUM Unity constraint: compatible = the project version is
+            // at least that major.minor; no `unity` field satisfies every
+            // version (library lib.rs:237–255).
+            match package.unity() {
+                Some(min_unity) => {
+                    unity
+                        >= vrc_get_vpm::version::UnityVersion::new(
+                            min_unity.major(),
+                            min_unity.minor(),
+                            0,
+                            vrc_get_vpm::version::ReleaseType::Alpha,
+                            0,
+                        )
+                }
+                None => true,
+            }
+        }
     }
 }
 
@@ -457,127 +500,28 @@ impl VpmBackend for VrcGetLibBackend {
         project: &ProjectRef,
         package_id: &str,
     ) -> Result<PackageCatalogV01, AppErrorV1> {
-        let environment_root = self.environment_root.clone();
-        let offline = self.offline;
-        let project_root = project.root.clone();
-        let package_id = package_id.to_owned();
-        let http = self.http.clone();
-        self.runtime.block_on(async move {
-            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
-                environment_root.into_boxed_path(),
-            );
-            let settings = vrc_get_vpm::environment::Settings::load(&io)
-                .await
-                .map_err(map_environment_io("loading VPM settings"))?;
-            // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006；preview_install
-            // 同构先例）。缓存来源的 stale wire 标注候词面升版（提案 025 内联
-            // 线程），v0.1 闭集内不发明字段。
-            let collection = if offline {
-                vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
-                    .await
-                    .map_err(map_environment_io("loading package cache"))?
-            } else {
-                match vrc_get_vpm::environment::PackageCollection::load(
-                    &settings,
-                    &io,
-                    Some(&http),
-                )
-                .await
-                {
-                    Ok(collection) => collection,
-                    Err(_) => {
-                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
-                            .await
-                            .map_err(map_environment_io("loading package cache"))?
-                    }
-                }
-            };
-            let project_path = project_root.to_string_lossy().into_owned();
-            let project_io =
-                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
-            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
-                .await
-                .map_err(map_project_load("loading project"))?;
-            // 工程加载成功即携带 Unity 版本（m_EditorVersion 解析失败＝load
-            // Err→project_load_failed），compatible/updateAvailable 判定有据。
-            let unity = unity_project.unity_version();
-            let installed_manifest = unity_project.get_installed_package(&package_id);
-            let installed = installed_manifest.is_some();
-            let installed_version = installed_manifest.map(|manifest| manifest.version().clone());
+        Ok(self.package_catalog_impl(project, package_id)?.0)
+    }
 
-            use vrc_get_vpm::PackageCollection as _;
-            let mut repo_versions: Vec<vrc_get_vpm::PackageInfo> = Vec::new();
-            let mut local_info: Option<vrc_get_vpm::PackageInfo> = None;
-            for info in collection.find_packages(&package_id) {
-                if info.repo().is_some() {
-                    repo_versions.push(info);
-                } else {
-                    local_info = Some(info);
-                }
-            }
-            if repo_versions.is_empty() && local_info.is_none() {
-                // 词表外包（025 冻结批裁决 2）：仓库缓存与本地集合均无此包，
-                // 复用码、独立空态（消费端呈现为空态非错误页）。
-                return Err(AppErrorV1::new(
-                    error_codes::NO_MATCHING_PACKAGE,
-                    ErrorCategory::Dependency,
-                    "errors.vpm.noMatchingPackage",
-                    "corr-vpm-catalog",
-                )
-                .with_param("package", ParamValue::Text(package_id)));
-            }
-            repo_versions.sort_by(|left, right| left.version().cmp(right.version()));
-            let versions: Vec<CatalogVersionV01> = repo_versions
-                .iter()
-                .map(|info| CatalogVersionV01 {
-                    version: info.version().to_string(),
-                    yanked: info.package_json().is_yanked(),
-                    compatible: Some(catalog_compatible(info.package_json(), unity)),
-                })
-                .collect();
-            // updateAvailable 判定（025 冻结批裁决 3 冻结口径）：已装版本 vs
-            // latest_for(工程 Unity 版本, 用户 prerelease 设置) 的比较结论
-            // 「存在严格更新的兼容版本」，本域内完成、wire 只出结论；未安装
-            // ＝判定未执行（None→null，缺席不是「无更新」）。prerelease 读
-            // 用户 show_prerelease_packages 设置，零 wire 开关。
-            let update_available = if installed {
-                let selector = vrc_get_vpm::VersionSelector::latest_for(
-                    Some(unity),
-                    settings.show_prerelease_packages(),
-                );
-                let has_newer = collection
-                    .find_package_by_name(&package_id, selector)
-                    .and_then(|latest| {
-                        installed_version
-                            .as_ref()
-                            .map(|installed| latest.version() > installed)
-                    })
-                    .unwrap_or(false);
-                Some(has_newer)
-            } else {
-                None
-            };
-            // displayName：repo 来源取缓存最高版本的 manifest；local 来源取
-            // 本地包 manifest；None 如实投影（消费端以 packageId 兼任显示名，
-            // P1 裁决 3 延续）。
-            let display_name = repo_versions
-                .last()
-                .map(|info| info.package_json())
-                .or(local_info.map(|info| info.package_json()))
-                .and_then(|manifest| manifest.display_name().map(str::to_owned));
-            Ok(PackageCatalogV01 {
-                project_path,
-                package_id,
-                display_name,
-                source: if repo_versions.is_empty() {
-                    PackageSourceV01::Local
-                } else {
-                    PackageSourceV01::Repo
-                },
-                installed,
-                update_available,
-                versions,
-            })
+    fn catalog_v02(&self) -> bool {
+        true
+    }
+
+    fn package_catalog_v02(
+        &self,
+        project: &ProjectRef,
+        package_id: &str,
+    ) -> Result<PackageCatalogV02, AppErrorV1> {
+        let (catalog, cache_sourced) = self.package_catalog_impl(project, package_id)?;
+        Ok(PackageCatalogV02 {
+            project_path: catalog.project_path,
+            package_id: catalog.package_id,
+            display_name: catalog.display_name,
+            source: catalog.source,
+            installed: catalog.installed,
+            update_available: catalog.update_available,
+            versions: catalog.versions,
+            cache_sourced,
         })
     }
 
@@ -1002,6 +946,152 @@ impl VccCliBackend {
                 .collect(),
             ..Default::default()
         }
+    }
+}
+
+impl VrcGetLibBackend {
+    /// Shared body of the package-catalog read face, returning the frozen
+    /// v0.1 facts plus the cacheSourced disclosure fact (025 inline ruling
+    /// 6 / packages-catalog v0.2 freeze batch): true = THIS result was
+    /// served through the cache-degradation path (offline → load_cache, or
+    /// an online load failed and degraded — ORC-ADP-006 isomorphic); false
+    /// = served from an online-refreshed load. Cache sourcing is not an
+    /// error. The v0.1 word face projects the facts without the disclosure
+    /// (frozen v0.1 stays field-less); the v0.2 face carries it.
+    fn package_catalog_impl(
+        &self,
+        project: &ProjectRef,
+        package_id: &str,
+    ) -> Result<(PackageCatalogV01, bool), AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let offline = self.offline;
+        let project_root = project.root.clone();
+        let package_id = package_id.to_owned();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006；preview_install
+            // 同构先例）。降级事实如实上贡 v0.2 cacheSourced（信息性标注、非
+            // 失败态）；v0.1 冻结词面无此字段、不发明。
+            let (collection, cache_sourced) = if offline {
+                (
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        .await
+                        .map_err(map_environment_io("loading package cache"))?,
+                    true,
+                )
+            } else {
+                match vrc_get_vpm::environment::PackageCollection::load(
+                    &settings,
+                    &io,
+                    Some(&http),
+                )
+                .await
+                {
+                    Ok(collection) => (collection, false),
+                    Err(_) => (
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                            .await
+                            .map_err(map_environment_io("loading package cache"))?,
+                        true,
+                    ),
+                }
+            };
+            let project_path = project_root.to_string_lossy().into_owned();
+            let project_io =
+                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            // 工程加载成功即携带 Unity 版本（m_EditorVersion 解析失败＝load
+            // Err→project_load_failed），compatible/updateAvailable 判定有据。
+            let unity = unity_project.unity_version();
+            let installed_manifest = unity_project.get_installed_package(&package_id);
+            let installed = installed_manifest.is_some();
+            let installed_version = installed_manifest.map(|manifest| manifest.version().clone());
+
+            use vrc_get_vpm::PackageCollection as _;
+            let mut repo_versions: Vec<vrc_get_vpm::PackageInfo> = Vec::new();
+            let mut local_info: Option<vrc_get_vpm::PackageInfo> = None;
+            for info in collection.find_packages(&package_id) {
+                if info.repo().is_some() {
+                    repo_versions.push(info);
+                } else {
+                    local_info = Some(info);
+                }
+            }
+            if repo_versions.is_empty() && local_info.is_none() {
+                // 词表外包（025 冻结批裁决 2）：仓库缓存与本地集合均无此包，
+                // 复用码、独立空态（消费端呈现为空态非错误页）。
+                return Err(AppErrorV1::new(
+                    error_codes::NO_MATCHING_PACKAGE,
+                    ErrorCategory::Dependency,
+                    "errors.vpm.noMatchingPackage",
+                    "corr-vpm-catalog",
+                )
+                .with_param("package", ParamValue::Text(package_id)));
+            }
+            repo_versions.sort_by(|left, right| left.version().cmp(right.version()));
+            let versions: Vec<CatalogVersionV01> = repo_versions
+                .iter()
+                .map(|info| CatalogVersionV01 {
+                    version: info.version().to_string(),
+                    yanked: info.package_json().is_yanked(),
+                    compatible: Some(catalog_compatible(info.package_json(), unity)),
+                })
+                .collect();
+            // updateAvailable 判定（025 冻结批裁决 3 冻结口径）：已装版本 vs
+            // latest_for(工程 Unity 版本, 用户 prerelease 设置) 的比较结论
+            // 「存在严格更新的兼容版本」，本域内完成、wire 只出结论；未安装
+            // ＝判定未执行（None→null，缺席不是「无更新」）。prerelease 读
+            // 用户 show_prerelease_packages 设置，零 wire 开关。
+            let update_available = if installed {
+                let selector = vrc_get_vpm::VersionSelector::latest_for(
+                    Some(unity),
+                    settings.show_prerelease_packages(),
+                );
+                let has_newer = collection
+                    .find_package_by_name(&package_id, selector)
+                    .and_then(|latest| {
+                        installed_version
+                            .as_ref()
+                            .map(|installed| latest.version() > installed)
+                    })
+                    .unwrap_or(false);
+                Some(has_newer)
+            } else {
+                None
+            };
+            // displayName：repo 来源取缓存最高版本的 manifest；local 来源取
+            // 本地包 manifest；None 如实投影（消费端以 packageId 兼任显示名，
+            // P1 裁决 3 延续）。
+            let display_name = repo_versions
+                .last()
+                .map(|info| info.package_json())
+                .or(local_info.map(|info| info.package_json()))
+                .and_then(|manifest| manifest.display_name().map(str::to_owned));
+            Ok((
+                PackageCatalogV01 {
+                    project_path,
+                    package_id,
+                    display_name,
+                    source: if repo_versions.is_empty() {
+                        PackageSourceV01::Local
+                    } else {
+                        PackageSourceV01::Repo
+                    },
+                    installed,
+                    update_available,
+                    versions,
+                },
+                cache_sourced,
+            ))
+        })
     }
 }
 

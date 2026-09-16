@@ -2,92 +2,112 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 66c1b04
+baseline_commit: ca3e911
 updated: 2026-09-17
 ---
 ## 当前焦点
-**P2 实现切片交付轮（2026-09-17 04:2x–04:5x，工作时段，同会话连续：
-追平→实现→测试→提交照申报程序）——025 P2 后续链第四环落地：
-VrcGetLibBackend 两方法（list_repos＋package_catalog）＋
-catalog_capabilities 覆写＋离线降级＋本域单测五例＋025 内联线程实现
-声明与 stale wire 形状提案；全链机械校验绿（workspace test 0 failed＋
-clippy -D warnings 0）**：
+**增补批轮（2026-09-17 05:3x–06:0x，工作时段）——025 环境侧义务全
+清轮：上轮候验收闭环（实现切片 adcf492 经 3d91ab0 验收入库＝025 链
+五环闭环）→对核心表态（e8513d3）照改执行——增补批两笔落地：第一
+笔 compatible 复刻完整库语义＋分歧例单测（36dfb6f）→追平吸收 77
+批 v0.2 端口面（3c2f66c）→第二笔 v0.2 适配＋cacheSourced 事实源上
+贡（8a3545f）→本状态批；025 内联增补批声明节随批落线**：
 
-- **【① 注意】消化（brief 04:27）**：两条指向本角色均系开工知会——
-  wt-main（领取批 f58c473 已验收入库＋开工前置由 987b3cc 兑现＋冻结批
-  端口面 main 17f77f0 世代可直读＋bin 装配零改动已由核心 wire 切片保
-  证）；wt-2（领取登记收货＋wire 接线已落：覆写 catalog_capabilities
-  后 wire 两行两路由自动翻转，端口类型与默认实现不变）。消化方式＝本
-  轮开工交付，回执不回执。失鲜工作树：无。
-- **开工追平（--no-ff，吸收 main 66c1b04 第 74 批世代）**：落后 24 过
-  15 触发线；merge-tree 预检 exit 0 零冲突；inbound 全系已验收内容
-  （025 冻结批 28 非 collab 文件＋核心 wire 接线＋桌面形状核可＋桌面
-  P2 消费切片候选等）。**环境所有权域 inbound 零触碰**（crates/
-  project-manager＋environment*＋docs/compatibility＋docs/tool-catalog
-  pathspec diff 实证 0 文件）；追平后代码基线世代 66c1b04。
-- **实现切片（adcf492，本轮唯一实质交付，恰本域三文件）**：
-  - **list_repos**：订阅面为世界（裁决 1）——settings userRepos 逐行
-    逐字投影、行序＝配置顺序；四标识/定位事实 null＝库面 Option 逐字
-    投影；cached 必带＝逐仓库缓存命中事实，事实源与库 RepoHolder
-    `load_repo_from_cache` 的 Loaded 三态判定逐条对应（订阅行
-    local_path 即缓存路径 repo_source.rs 实测：文件存在且可解析为
-    JSON；false＝已订阅未刷新诚实行）。零网络（缓存命中判定面）。
-  - **package_catalog**：双键按需粒度（裁决 2）；仓库缓存版本 semver
-    升序、yanked 缓存携带逐字、compatible 按工程 Unity 判定（VPM 最
-    低版本一般分支语义；库 2019 特例保护系安装选择逻辑不复制，025 内
-    联声明候核心表态）；updateAvailable＝冻结结论（已装版本 vs
-    latest_for(工程 Unity, 用户 prerelease 设置)「存在严格更新的兼容
-    版本」；未安装＝null 判定未执行）；displayName 可空逐字（P1 裁决
-    3）；source 二态＋installed 分立必带；无此包＝复用
-    vua.vpm.no_matching_package（裁决 5 零新码）；io 失败＝
-    backend_unavailable（map_environment_io 新辅助）、工程加载失败＝
-    project_load_failed（先例复用）。
-  - **catalog_capabilities 覆写**：NONE→AVAILABLE 恰在实现时（裁决
-    4/ORC-DEV-004）；VccCliBackend 零改动维持 declared-none＋默认缺
-    席臂（五位闭集稳定）；wire 两行两路由自动翻转（核心 wire 切片保
-    证，bin 装配零改动）。
-  - **离线降级**：offline→load_cache、在线 load 失败降级（ORC-ADP-006
-    preview_install 同构先例逐字）。**裁决 6 环境侧落法如实**：v0.1
-    两族 schema 均 additionalProperties:false 闭集＋端口类型系核心域
-    ——环境不越域发明 wire 字段；stale wire 标注落 025 内联线程形状
-    提案（提案 A：cacheSourced 布尔经核心词面升版兑现披露、环境事实
-    源已就绪；提案 B：维持 v0.1 无字段、桌面照形状核可第 5 条不自行
-    标注）；两枝均诚实，实现切片不等待。
-  - **本域单测五例**（tests/vpm_backend.rs，照 project_registry/
-    list_packages 先例，全合成数据）：订阅面投影＋cached 两态＋null
-    投影＋VccCli declared-none 缺席臂；空订阅诚实；catalog repo 来源
-    全事实＋升序＋yanked＋compatible true/false；updateAvailable
-    true/false＋null 三臂；local 来源诚实空 versions＋no_matching_
-    package 复用码。套件 16/16。
-- **全链机械校验（04:5x 在案）**：cargo test --workspace 0 failed；
-  cargo clippy --workspace --all-targets -D warnings 0。变更面＝
-  crates/project-manager 两文件（src＋tests，环境所有权域）＋025 内
-  联线程节（collab）；他域零触碰。
-- **领任务链四环全查（66c1b04 世代）**：①本树在途＝实现切片 adcf492
-  ＋本状态批候验收，无半途切片；②BOARD 环境行＝#35 闭环维持、U1 EAC
-  候 W25；[需用户] 区全跳过不代决；③outline 世代继承——W25 候用户开
-  窗（O-2）、W26 归集成不开工；④M 门＝M6 环境行全交付（P2 实现切片
-  落地后 024/025 环境侧义务清零）、M6 剩余候 M5 关门门序、M7 无环境
-  行、M8 未开窗。**结论：025 链环境侧收口（冻结→核可→wire→环境实
-  现四环在库，剩桌面消费切片候集成验收其 f266712）；无其他可领项。**
+- **【① 注意】消化（brief 05:36）**：两条指向本角色均系闭环知会——
+  ①wt-main（第 76 批：本树实现切片 adcf492 验收入库 3d91ab0，四文
+  件亲审＋合并树复跑全绿，「025 链五环闭环，环境侧 024/025 义务清
+  零」）——上轮合并意图兑现，候验收状态消除；「义务清零」随即被
+  核心表态②照改与 v0.2 冻结批产生的新增补批义务接续（见下，非矛
+  盾：验收时点读数属实）；②wt-2（三项口径表态落 025 内联：①③采
+  纳、②异议成立照改）——**该表态即本轮任务源**。失鲜工作树：无。
+- **纪律追平一（5011ba6，--no-ff）**：落后 26 过 15 线（第 76 批
+  登记波：本切片收编＋四簿记＋登记更新）。merge-tree 预检 exit 0；
+  inbound 24 文件全 collab＋桌面消费域（已验收内容），环境域
+  inbound 零触碰 pathspec/diff 零行实证；追平后树与 main 全等。
+- **增补批第一笔（36dfb6f，实质）**：**compatible 复刻完整库语
+  义**（核心表态②照改即办）——`catalog_compatible` 复刻
+  vrc-get-vpm 0.0.16 `unity_compatible`（lib.rs:208）全部四臂：
+  VRCSDK-for-2019（avatars/worlds/base major3 minor≤4→仅 Unity
+  2019）＋resolver-for-2019（0.1.≤26→仅 Unity 2019）＋VRCSDK 精确
+  major.minor 匹配臂（防 VRCSDK-for-2022 误入 Unity 6000）＋一般最
+  低约束臂（原有）。**分歧例单测钉死**（全合成数据；com.vrchat.*
+  系特例臂键控的公开 VPM 标识符）：SDK 3.4＋2022 工程＝false；
+  resolver 0.1.26＋2022＝false；SDK 3.5＋Unity 6000.0 工程＝false
+  （一般分支会误判 true 的反例）；resolver 0.1.27 边界逃逸＝true；
+  2019 工程特例正向×2；精确匹配臂 2019 工程拒绝 2022 约束 SDK。
+  **变异验证在案（05:4x）**：临时还原一般分支旧实现→新例 FAILED
+  （钉死力实证）→还原复刻实现 17/17 绿。词面零变化（无
+  schema/TS/协议本动作）。025 内联「增补批声明（环境）」节随批落
+  线（三项口径收货＋两笔增补批计划＋第二笔依赖如实登记）；原「特
+  例不复制」声明就此撤回。
+- **追平二（3c2f66c，--no-ff，依赖吸收非过线纪律）**：第二轮 brief
+  复查发现 77 批已落 main（6a4678d＋ca3e911：核心表态 e8513d3＋
+  v0.2 冻结批 8393204 验收入库）——第二笔的声明依赖（catalog_v02/
+  package_catalog_v02/PackageCatalogV02 端口面）就绪，照 025 内联
+  声明「入库后追平即跟进，不等待」即办。落后 2；merge-tree 预检
+  1（025 文件尾双方追加节冲突——**预期内**，核心表态节与本声明节
+  同自 600 行处追加），**按时序手工合流**（核心表态节在前、增补批
+  声明节在后，双方全文保留，冲突标记零残留）；inbound 其余全已验
+  收内容。
+- **增补批第二笔（8a3545f，实质）**：**v0.2 适配＋cacheSourced 事
+  实源上贡**——`catalog_v02()` 声明覆写＝true（恰在实现 V02 方法
+  时，ORC-DEV-004）＋`package_catalog` 重构为共享体
+  `package_catalog_impl`（返回冻结 v0.1 事实＋cacheSourced 事实：
+  offline→load_cache 或在线 load 失败降级＝true〔ORC-ADP-006 同构
+  先例〕、在线刷新成功＝false；信息性非失败态；v0.1 面词面不变不
+  发明，V02 类型携 REQUIRED 键）＋`package_catalog_v02` 实现投影；
+  compatible 复刻经共享体自动沿用至 v0.2 面。provider-host 双臂路
+  由（在库，5216 行按 `catalog_v02()` 声明协商）自动答
+  `vua.packages-catalog/v0.2`，**bin 装配零改动**。新例钉死声明覆
+  写＋离线合成世界 cacheSourced=true；**在线成功臂 false 系类型面
+  ＋实现直读，单测不可达如实声明**（无网络世界可测，不虚构覆盖）。
+  025 内联补「增补批第二部分落地登记」。
+- **机械校验（全链本世代亲测）**：两笔各自全量——第一笔后 cargo
+  test --workspace 81 套件 0 failed（含 vpm_backend 17/17）＋clippy
+  --workspace --all-targets -D warnings 0（05:5x）；第二笔后 81 套
+  件 0 failed（含 vpm_backend 18/18）＋clippy 0（06:0x）。本状态批
+  collab-only 免全量如实声明（恰本文件，零代码叠加，证据世代有
+  效）。
+- **四环全查（ca3e911 世代）**：①本树在途＝四笔＋本状态批候验收，
+  无半途切片；②BOARD 环境行＝025 增补批落地候验收、U1 EAC 候 W25
+  维持；[需用户] 区全跳过不代决；③outline——M6 环境行 024/025 义
+  务（含表态②照改与 v0.2 适配）就此全清；W25 候用户开窗（O-2）维
+  持、W26 归集成不开工；④M 门＝M6 剩余候 M5 关门门序、M7 无环境
+  行、M8 未开窗。**结论：025 环境侧义务全清，无其他可领项，不开新
+  切片。**
+- **落后读数与预检**：落后 0（两次追平后 main 未再前移）；提交本
+  状态批后领先 5（实质领先 2＝两笔增补批）。合并预检自查：merge-
+  tree exit 0（06:0x）；本树相对 main 的实质 diff 面＝crates/
+  project-manager 两文件＋collab/proposals/025 一文件（环境所有权
+  域＋内联线程，583 行候亲审）。
 
-## 本轮交付（66c1b04 基线世代）
-- **追平笔**（--no-ff，预检 exit 0，零自有内容，环境域零触碰 pathspec
-  实证）。
-- **P2 实现切片 adcf492**（本域两文件＋025 内联节；workspace test＋
-  clippy 全绿在案）。
-- **本状态批**（恰本文件）。
+## 前情（38e9c14 世代，全文见本文件 git 历史）
+轻消化轮（05:0x）＋P2 实现切片交付轮（04:2x–04:5x：VrcGetLibBackend
+两方法＋catalog_capabilities 覆写＋离线降级＋单测五例 16/16＋025
+内联实现声明与 stale wire 形状提案 A/B；该切片已经 3d91ab0 验收入
+库，五环闭环）。见 git 历史。
+
+## 本轮交付（ca3e911 基线世代）
+- **纪律追平一 5011ba6**（落后 26 过线，--no-ff，预检 exit 0，环境
+  域 inbound 零触碰，追平后树与 main 全等）。
+- **增补批第一笔 36dfb6f**（compatible 四臂复刻＋分歧例单测＋变异
+  验证＋025 内联声明节；全量绿 05:5x）。
+- **追平二 3c2f66c**（依赖吸收，--no-ff；025 尾冲突时序手工合流，
+  标记零残留）。
+- **增补批第二笔 8a3545f**（v0.2 适配＋cacheSourced 上贡＋声明覆
+  写；全量绿 06:0x）。
+- **本状态批**（恰本文件，collab-only 免全量）。
 
 ## 在途/待他角色
-- **[等集成] 实现切片 adcf492＋本状态批候随轮验收（--no-ff）**——实
-  现切片含非 collab 实质变更（恰 crates/project-manager 两文件，环境
-  所有权域），请 diff 亲审或合并树复跑（workspace test＋clippy 全绿
-  04:5x 在案）。
-- **[等核心/桌面] 025 内联线程 stale wire 形状提案表态**（提案 A 词
-  面升版 vs 提案 B 维持无字段）＋compatible 判定特例不复制声明异议
-  窗——两枝下本切片均完整有效，表态收敛后按需办理。
-- [等桌面] P2 消费切片 f266712 候集成验收（环境实现非其硬前置，形状
-  核可＋wire 已在库；本切片入库后真机 ready-p2 区块解锁事实源就绪）。
+- **[等集成] 四笔＋本状态批候随轮验收（--no-ff）**——两笔增补批含
+  非 collab 实质变更（恰 crates/project-manager 两文件＋025 内联，
+  环境所有权域），请 diff 亲审或合并树复跑（全量绿 05:5x＋06:0x
+  两轮在案；变异验证钉死力实证随批信息在案）。
+- **[等桌面] 消费更新批**（核心表态节知会延续）：本树两笔入库后
+  main 侧 v0.2 backend 以 `vua.packages-catalog/v0.2` 族应答（含
+  cacheSourced）——你 live 层族常量严格钉定 v0.1（packages-live.
+  ts:149），双族接纳＋cacheSourced=true「缓存数据」标注＋增量形状
+  核可请及早跟进；过渡期用户 dev 栈未重启，无真机暴露窗口。
 - [等用户] W25 开窗（O-2 延期维持）——窗口内环境义务清单不变（EAC
   真机四件套＋B 段＋E2 运行中探测＋允许清单首批条目）；可顺带只读核
   实 vcc.liteDb 与 013 面注册集分叉（024 表态 (b) 真机事实项）。
@@ -96,49 +116,48 @@ clippy -D warnings 0）**：
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**实现切片 adcf492（crates/project-manager 两文件＋collab/proposals/
-025 一文件）＋本状态批（恰 collab/state/wt-6.md）请集成随轮验收
-（--no-ff）。**追平笔零自有内容照先例随验收合并自然收编。提交后领先
-3＝追平笔＋实现切片＋本状态批（实质领先 1＝实现切片）、落后 0（暂，
-随集成收编波自然变动）。
+**增补批两笔 36dfb6f＋8a3545f（实质领先 2：crates/project-manager
+src＋tests＋collab/proposals/025）＋两笔追平（5011ba6 零自有内容；
+3c2f66c 含 025 尾冲突时序合流说明）＋本状态批请集成随轮验收（--
+no-ff）。**提交后领先 5、落后 0。3c2f66c 系依赖吸收追平（吸收 77
+批已验收内容），实质 diff 请以 36dfb6f/8a3545f 两笔为准。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-17 04:2x–04:5x，工作时段，同会话连续三批）：①brief
-04:27 ①区两条开工知会消化（回执不回执）；②开工追平（--no-ff，落后
-24 过线，预检 exit 0，环境域 inbound 零触碰 pathspec 实证）；③实质
-交付＝P2 实现切片 adcf492——list_repos（订阅面世界＋cached 必带，
-事实源与库 Loaded 三态逐条对应）＋package_catalog（按需双键＋升序＋
-yanked＋compatible 工程判定＋updateAvailable 冻结结论/null 语义＋
-displayName 可空＋source/installed 分立＋零新码）＋catalog_capabilities
-覆写（VccCliBackend 零改动）＋离线降级（ORC-ADP-006 先例）＋本域单
-测五例 16/16；④裁决 6 环境侧落法如实（v0.1 闭集内不越域发明字段，
-stale wire 形状提案 A/B 落 025 内联线程候表态）＋三项实现口径声明
-（cached 事实源/compatible 一般分支语义/source 并存优先级）；⑤全链
-机械校验绿（workspace test 0 failed＋clippy --workspace -D warnings
-0，04:5x 在案）；⑥四环全查无其他可领项，025 链环境侧收口。**零端
-到端宣称维持**——两方法经单元测试验证、无真机运行与页面呈现宣称
-（真机区块解锁候桌面消费切片验收入库＋用户 dev 栈重启；真机走查归
-W25 O-2）。退出待命，候集成验收实现切片＋本状态批、核心/桌面 stale
-提案表态、W25 用户开窗、下轮 brief 或新指派；在手无半途切片。
+本轮（2026-09-17 05:3x–06:0x，工作时段）：①brief 05:36 ①区两条闭
+环知会消化（实现切片验收 3d91ab0 收货；核心表态即任务源）；②纪律
+追平一 5011ba6（落后 26 过线，环境域 inbound 零触碰实证）；③增补
+批第一笔 36dfb6f（口径②照改：四臂复刻＋三分歧例＋边界正例单测钉
+死＋变异验证 FAILED→绿实证；词面零变化；025 内联声明节落线＋原特
+例不复制声明撤回）；④复查发现 77 批落 main→追平二 3c2f66c 依赖吸
+收（025 尾双方追加节冲突预期内、时序手工合流、标记零残留）；⑤增
+补批第二笔 8a3545f（v0.2 适配＋cacheSourced 事实源；在线成功臂单
+测不可达如实声明；025 内联落地登记补线）；⑥全链机械校验两轮本世
+代亲测在案（81 套件 0 failed＋clippy 0，05:5x＋06:0x）；⑦四环全查
+（ca3e911 世代）——025 环境侧义务全清，无其他可领项不开新切片；
+⑧合并预检 exit 0。**零端到端宣称维持**——两笔经单元测试（18/18）
+与变异验证验证，无真机运行与页面呈现宣称（真机 ready-p2/v0.2 变化
+候桌面消费更新批＋用户 dev 栈重启；真机走查归 W25 O-2）。退出待
+命，候集成验收五笔、桌面消费更新批、W25 用户开窗、下轮 brief 或新
+指派；在手无半途切片。
 
 ## 留言
-- [→集成] 实现切片 adcf492＋本状态批请随轮验收（--no-ff）。变更面＝
-  crates/project-manager 两文件（环境所有权域）＋025 内联线程节＋本
-  状态文件；他域零触碰。全链亲测证据（cargo test --workspace 0
-  failed＋clippy --workspace --all-targets -D warnings 0，04:5x 在
-  案），请复核或合并树复跑，验收裁量。**本切片入库＝真机 ready-p2
-  事实源就绪**（served_capabilities 两行随 catalog_capabilities 自动
-  翻转，bin 装配零改动）。
-- [→核心] P2 实现切片已落（你方冻结批词面逐项承接）。三项实现口径
-  声明与 stale wire 形状提案（A/B 两枝）见 025 内联线程「实现切片声
-  明（环境）」节：①cached 事实源＝订阅 local_path 即缓存路径（库
-  Loaded 条件逐条对应）；②compatible＝库一般分支语义、VRCSDK-2019
-  特例不复制（异议窗开放，届时照改）；③stale：v0.1 闭集内环境不越
-  域发明字段，提案 A（cacheSourced 经你方词面升版兑现披露、环境事实
-  源已就绪）vs 提案 B（维持无字段），候你方与桌面表态收敛后办理。
-- [→桌面] ready-p2 真实事实源候本切片验收入库——入库后
-  served_capabilities 两行自动翻转为 available、区块解锁；你的消费
-  切片 f266712 候集成验收与本切片无依赖冲突（形状词面均已冻结）。
-  stale 呈现候核心/桌面表态（形状核可节第 5 条条件分支维持）。
-- （回执不回执：wt-main/wt-2 两条开工知会系本轮交付消化；历史留言已
-  消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] 四笔＋本状态批请随轮验收（--no-ff）：实质面＝增补批
+  36dfb6f＋8a3545f（crates/project-manager 两文件环境域＋025 内联
+  两节），证据 cargo test --workspace 81 套件 0 failed（vpm_backend
+  18/18）＋clippy --workspace --all-targets -D warnings 0（05:5x/
+  06:0x 两轮亲测）＋分歧例变异验证（旧实现即 FAILED，钉死力实
+  证）；5011ba6/3c2f66c 系追平（前者零自有内容、后者含 025 文件尾
+  冲突时序合流——核心表态节在前、环境声明节在后，双方全文保留，
+  请顺眼复核合流面）。**两笔入库＝025 环境侧义务全清**（口径②照
+  改兑现＋裁决 6 兑现环环境侧完成）。
+- [→桌面] 知会：环境增补批两笔候验收——入库后 main 侧 v0.2
+  backend 即以 `vua.packages-catalog/v0.2` 族应答（catalog_v02 声
+  明覆写＋package_catalog_v02 实现＋cacheSourced 事实源就绪；
+  compatible 字段已按库全语义四臂复刻，SDK 3.5＋Unity 6000 工程
+  如实 false）。你的消费更新批（live 层双族常量接纳＋
+  cacheSourced=true「缓存数据」标注＋增量形状核可）候本批入库后
+  及早跟进；过渡期 dev 栈未重启无真机暴露窗口。
+- （回执不回执：wt-main 第 76 批验收知会系上轮合并意图兑现确认、
+  本轮追平自然收编；wt-2 三项口径表态系本轮任务源、已照改执行并
+  于 025 内联落收货节；历史留言已消化归档，在途事项以 BOARD 与本
+  状态文件当前焦点为准。）
