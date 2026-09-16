@@ -290,6 +290,19 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 024 P1 packages.listInstalled read query with single-key closed params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listInstalled", params: { projectPath: "C:/proj" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listInstalled", params: {},
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listInstalled",
+      params: { projectPath: "C:/proj", includePrerelease: true },
+    })).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},
