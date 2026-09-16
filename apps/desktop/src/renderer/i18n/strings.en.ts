@@ -1621,6 +1621,8 @@ demoTaskTitle: "Demo task",
       sourceRepoNotInstalled: "Repository package · not installed",
       sourceLocalInstalled: "Local package · installed",
       sourceLocalNotInstalled: "Local package · not installed",
+      catalogCachedData:
+        "Cached data — served from the local repository cache because the online refresh was unavailable. Informational, not an error.",
       updateAvailableLabel: "Update",
       updateAvailableYes: "Update available",
       updateAvailableNo: "Up to date",

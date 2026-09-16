@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.packageCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-catalog/v0.2",
+    "projectPath": "C:\\VRChat\\Projects\\Demo",
+    "packageId": "com.vrchat.worlds",
+    "displayName": "VRChat SDK Worlds",
+    "source": "repo",
+    "installed": false,
+    "updateAvailable": null,
+    "versions": [
+      {
+        "version": "3.7.2",
+        "yanked": false,
+        "compatible": true
+      }
+    ],
+    "cacheSourced": false
+  }
+}

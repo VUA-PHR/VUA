@@ -1,9 +1,11 @@
 /**
  * Packages 读面 live 端口(024 P1 中间诚实态消费批,2026-09-17;025 P2
- * 读面消费批,2026-09-17):经 Desktop Gateway 消费 packages-query v0.1
- * (单方法只读 packages.listInstalled)与 025 P2 双族 v0.1
- * (packages.listRepos 仓库订阅清单 + packages.packageCatalog 单包目录
- * 按需查询)冻结词面。消费纪律:
+ * 读面消费批,2026-09-17;025 v0.2 增量消费更新批,2026-09-17):经
+ * Desktop Gateway 消费 packages-query v0.1(单方法只读
+ * packages.listInstalled)与 025 P2 双族 v0.1(packages.listRepos 仓库
+ * 订阅清单 + packages.packageCatalog 单包目录按需查询)冻结词面;目录
+ * 族纯增量双版本协商——backend 未声明 v0.2 前以 v0.1 族应答(七键),
+ * 声明后以 v0.2 族应答(冻结七键恰加必带 cacheSourced 披露)。消费纪律:
  * - 诚实缺席:引擎未装配/实现域未接线(vua.packages.unavailable)映射为
  *   not-connected 形态,绝不以空清单伪装(空态即终态);
  * - typed 失败照原词呈现:复用码 vua.project.project_not_found(选中项目
@@ -29,6 +31,7 @@ import type {
 import type { GatewayClient } from "./gateway-client.ts";
 import type {
   CatalogPackageFactsV01,
+  CatalogPackageFactsV02,
   CatalogVersionRowV01,
   InstalledPackageRowV01,
   PackagesPort,
@@ -124,6 +127,37 @@ function isCatalogPackageFacts(value: unknown): value is CatalogPackageFactsV01 
     && value.versions.every(isCatalogVersionRow);
 }
 
+/** P2 v0.2 目录事实八键闭集 = 冻结七键恰加必带 cacheSourced(025 v0.2
+ * 增量冻结批):缺键(七键盖 v0.2 戳)或多余键均形状不符诚实失败——
+ * 版本世代由盖戳族常量钉死,消费端永不猜测 */
+function isCatalogPackageFactsV02(value: unknown): value is CatalogPackageFactsV02 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = [
+    "cacheSourced",
+    "displayName",
+    "installed",
+    "packageId",
+    "projectPath",
+    "source",
+    "updateAvailable",
+    "versions",
+  ];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.cacheSourced === "boolean" && isCatalogPackageFacts({
+    displayName: value.displayName,
+    installed: value.installed,
+    packageId: value.packageId,
+    projectPath: value.projectPath,
+    source: value.source,
+    updateAvailable: value.updateAvailable,
+    versions: value.versions,
+  });
+}
+
 function isPackagesWireEnvelope(value: unknown, operation: string): value is PackagesWireEnvelope {
   return isRecord(value)
     && value.schemaVersion === "0.1"
@@ -144,11 +178,27 @@ function isPackagesReposResult(value: Record<string, unknown>): boolean {
   return Array.isArray(value.repos) && value.repos.every(isRepoInfoRow);
 }
 
-/** result 本体:schemaVersion 族常量 + 冻结七键目录事实 */
-function isPackagesCatalogResult(value: Record<string, unknown>): boolean {
+/** result 本体:schemaVersion 族常量 + 冻结七键目录事实(v0.1 冻结词面,
+ * backend 未声明 v0.2 前的应答族) */
+function isPackagesCatalogResultV01(value: Record<string, unknown>): boolean {
   if (value.schemaVersion !== "vua.packages-catalog/v0.1") return false;
   const { schemaVersion: _familyConst, ...facts } = value;
   return isCatalogPackageFacts(facts);
+}
+
+/** result 本体:schemaVersion 族常量 + 八键目录事实(冻结七键恰加必带
+ * cacheSourced;声明 v0.2 的 backend 应答族)。双族协商:读盖戳族常量
+ * 按对应词面窄化,零字段猜测;两族盖戳不匹配各自键闭集 = 形状不符 */
+function isPackagesCatalogResultV02(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-catalog/v0.2") return false;
+  const { schemaVersion: _familyConst, ...facts } = value;
+  return isCatalogPackageFactsV02(facts);
+}
+
+/** 目录族组合校验:盖戳族常量决定按 v0.1 或 v0.2 词面窄化(纯增量双
+ * 版本协商);未知族常量 = 形状不符(消费端永不猜测词面) */
+function isPackagesCatalogResult(value: Record<string, unknown>): boolean {
+  return isPackagesCatalogResultV01(value) || isPackagesCatalogResultV02(value);
 }
 
 type TypedOutcome<T> =
@@ -247,8 +297,9 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
   };
 
   /** P2 目录事实:按需查询(双键闭集);typed 码照原词(no_matching_package
-   * = 独立空态呈现,页面处理);族常量在窄化校验时消费,返回七键事实 */
-  const packageCatalogRaw = async (projectPath: string, packageId: string): Promise<TypedOutcome<CatalogPackageFactsV01>> => {
+   * = 独立空态呈现,页面处理);族常量在窄化校验时消费并决定返回词面
+   * (v0.1 七键 / v0.2 八键含 cacheSourced 披露),盖戳辨族永不猜测 */
+  const packageCatalogRaw = async (projectPath: string, packageId: string): Promise<TypedOutcome<CatalogPackageFactsV01 | CatalogPackageFactsV02>> => {
     const request: PackagesPackageCatalogRequestV1 = {
       schemaVersion: 1,
       requestId: crypto.randomUUID(),
@@ -257,8 +308,12 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     };
     const outcome = await invokeTyped(request, "packages.packageCatalog", isPackagesCatalogResult);
     if (outcome.kind !== "ok") return outcome;
-    const { schemaVersion: _familyConst, ...facts } = outcome.result;
-    return { kind: "ok", result: facts as unknown as CatalogPackageFactsV01 };
+    const { schemaVersion: familyConst, ...facts } = outcome.result;
+    // 组合校验已按族通过:剥信封键后按盖戳族断言对应词面事实
+    const typedFacts = familyConst === "vua.packages-catalog/v0.2"
+      ? (facts as unknown as CatalogPackageFactsV02)
+      : (facts as unknown as CatalogPackageFactsV01);
+    return { kind: "ok", result: typedFacts };
   };
 
   // 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.packageCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-catalog/v0.2",
+    "projectPath": "C:\\VRChat\\Projects\\Demo",
+    "packageId": "dev.local.team-prefs",
+    "displayName": null,
+    "source": "local",
+    "installed": true,
+    "updateAvailable": null,
+    "versions": [],
+    "cacheSourced": false
+  }
+}

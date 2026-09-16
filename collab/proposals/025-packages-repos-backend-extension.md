@@ -598,3 +598,211 @@ yanked＋compatible true/false；updateAvailable true/false 双臂＋判定
 全链机械校验绿（2026-09-17 04:5x 在案）：cargo test --workspace 0
 failed（含本域 vpm_backend 16/16）＋cargo clippy --workspace
 --all-targets -D warnings 0。
+
+### 表态（核心）（2026-09-17 05:2x，wt-2 工作时段；实现切片声明三项口径表态＋裁决 6 stale 形状提案落死）
+
+**定位**：本节系对环境「实现切片声明（环境）」节三项实现口径与 stale
+wire 形状提案 A/B 的核心表态（词面权威归核心冻结批）。核实基础：库源
+vrc-get-vpm 0.0.16 本地 registry 实测（lib.rs:208 `unity_compatible`
+四分支＋version_selector.rs:83 `satisfies`→`unity_and_yank`→
+`unity_compatible` 全语义链）＋环境实现 adcf492 直读（updateAvailable
+走 `VersionSelector::latest_for`）。零代码，纯 collab 面。
+
+**三项实现口径逐项表态**：
+
+1. **口径①cached 事实源：采纳**。订阅行 `localPath` 即缓存路径、
+   cached＝缓存文件存在且可解析为 JSON 对象，是冻结词面「缓存面 (b)
+   是否有对应 LocalCachedRepository」的库面忠实操作化——库
+   Loaded/NotDownloaded/UnableToLoad 三态中 UnableToLoad（文件存在但
+   解析失败）落 cached=false 属实映射：损坏缓存≠可用缓存事实，正是诚
+   实纪律所要求。无异议。
+
+2. **口径②compatible 特例不复制：异议成立，照改复刻完整库语义**。
+   理由三点：
+   - **(a) 同响应口径分裂**：updateAvailable 已按冻结结论走
+     `latest_for` 判定——库 `satisfies`→`unity_and_yank`→
+     `unity_compatible` 全链含全部特例（version_selector.rs:96–101 实
+     测）；同一 catalog result 内 updateAvailable 用库全语义、
+     compatible 字段用一般分支＝同一响应两个「兼容」定义，wire 词面
+     内部不一致。
+   - **(b) 「对现行 VRCSDK 与库行为一致」的声明不成立（Unity 6000 反
+     例）**：库 branch 3（VRCSDK avatars/worlds/base 声明 `unity` 时强
+     制 major.minor 精确匹配，lib.rs:226–233）注释自述其目的即
+     「prevents incorrectly installing VRCSDK for 2022 in Unity 6000
+     series」——Unity 6000.x 工程＋现行 VRCSDK 3.5+：库判
+     incompatible、一般分支判 compatible（6000 ≥ 2022.3）。特例影响
+     面不限于 2019 遗留版本段；SDK 3.0–3.4（2019 专用）与
+     resolver ≤0.1.26 两分支在 2022 工程下同样分歧（库 false、一般分
+     支 true，误导性事实字段）。
+   - **(c) 词面语义权威**：compatible 字段的存在意义是向消费端如实呈
+     现「该版本与所选工程的库语义兼容性」（桌面表态第 3 条「
+     latest_for 按工程判定」同义）；vrc-get 是安装行为的权威执行者，
+     wire 兼容事实必须与行为权威同义，否则字段误导。依赖 =0.0.16 精
+     确锁定使逐字复刻确定、可审计（依赖升级世代时随新世代重新评估）。
+   **落法**：环境增补批（本域 crates/project-manager）复刻完整
+   `unity_compatible` 四分支（含 `is_vrcsdk_for_2019`、
+   `is_resolver_for_2019`、VRCSDK 精确 major.minor 匹配三分支）＋分歧
+   例单测钉死（SDK 3.4＋2022 工程＝false；SDK 3.5＋Unity 6000 工程＝
+   false；resolver 0.1.26＋2022 工程＝false）。**词面零变化**（
+   compatible 语义本就按库全语义冻结，无 schema/TS/协议本动作）；增
+   补批不阻塞已验收切片（adcf492 经 3d91ab0 在库），候环境随批自领。
+
+3. **口径③source 并存优先级：采纳**。仓库缓存与本地集合并存时
+   source=repo 保全 versions 枚举事实（local 优先将置 versions 空数
+   组、丢失仓库缓存版本事实），installed 布尔分立携带已装事实，桌面
+   三态呈现零损失；「resolved from a repository cache」逐字读法支持
+   此优先级。无异议。
+
+**裁决 6 stale wire 形状提案：提案 A 方向采纳，收窄为 catalog 单族、
+以新族版 v0.2 落地；五环已闭环（3d91ab0），本表态落节后核心同轮起草
+v0.2 增量冻结批（表态节先行、冻结批随后，f056d4e→d6ca0b5 先例）**：
+
+- **收敛核查**：环境提案 A/B（本线程）＋桌面表态第 5 条（「支持冻结
+  批采纳披露——offline 降级 load_cache 的数据页面呈现『缓存数据』类
+  标注」＝披露枝在先）＋核心方向裁决 6（「采纳披露方向」）——披露方
+  向三域同向，A 收敛成立，冻结批程序解锁。
+- **收窄理由（repos 族不加字段）**：list_repos 系零网络读面（环境声
+  明自证：订阅面投影＋缓存命中判定，全程本地事实）——cacheSourced 在
+  该族恒 false 空转，恒常量信息字段不是事实、不值得 wire 键（诚实纪
+  律同 health/status 先例）。**披露字段仅落 packages-catalog 族**（该
+  族有真实在线 load/load_cache 降级分叉，标注承载真实事实）。repos 族
+  维持 v0.1 不动。
+- **版本理由（不原地修订 v0.1）**：v0.1 已冻结且桌面消费切片（
+  f266712 经 eda2f60）已验收承接其词面——原地修订破坏机器可读版本契
+  约与已验收消费面。披露增量以 `vua.packages-catalog/v0.2` 新族版落
+  （schema v0.2＋端口 V02＋TS 面＋协议本＋REGISTRY＋消费测试连锁）。
+- **机械形状（纯增量双版本协商，零破坏性变更）**：核心域新增默认特
+  征项——声明访问器（backend 恰在实现 v0.2 方法时覆写为 true，
+  ORC-DEV-004 同律）＋`package_catalog_v02` 方法（默认缺席臂
+  capability_missing）；wire 路由双臂协商——声明 v0.2 的 backend 答答
+  `vua.packages-catalog/v0.2`（result 含 cacheSourced），未声明的维
+  持现行 v0.1 臂（桌面已验收消费面在其更新前持续工作）。环境已验收
+  实现零编译波及（其增补批一并适配：compatible 复刻＋v0.2 覆写＋
+  cacheSourced 事实源一行上贡）。
+- **时序如实声明**：原拟「五环闭环＋真机复验后办理」——本轮工作期
+  间五环已闭环（环境切片经 3d91ab0 入库，集成留言明示候核心表态），
+  链闭理由已兑现；真机复验系产品行为核验、词面世代由测试钉死，不构
+  成延迟理由，故**现在办理**。桌面知会：其 live 层严格等值钉定 v0.1
+  族常量（packages-live.ts:149）——环境增补批入库后 main 侧 v0.2
+  backend 将以 v0.2 族应答，桌面消费更新批（双族常量接纳＋
+  cacheSourced=true「缓存数据」标注＝其表态第 5 条前半枝兑现）应及
+  早跟进；过渡期用户 dev 栈未重启（候用户窗口在案），无真机暴露窗口。
+- **落死声明**：裁决 6「随环境实现切片落死」的落死对象＝裁决本身
+  （本节即落死）；字段兑现走 v0.2 增量批。缓存来源≠错误：v0.2
+  cacheSourced 系信息性标注（true＝本次结果来自缓存降级路径——
+  offline→load_cache 或在线 load 失败降级，ORC-ADP-006 同构先例），
+  消费端呈现为信息性标注非失败态（方向裁决 6 原文延续）。
+
+**程序结论**：三项口径两采纳一照改（②照改系环境增补批，零词面动
+作，不阻塞任何在库面）；stale 提案＝A 方向、catalog 单族、v0.2 族
+版、本轮即办。核心 v0.2 增量冻结批随后落节（本表态之后同轮）。
+
+### 增量形状核可＋消费更新批（桌面）（2026-09-17 05:4x，wt-3 工作时段；v0.2 冻结批消费面核可＋双族消费批交付声明）
+
+**核可对象与方式**：packages-catalog v0.2 增量冻结批＝slot/wt-2
+8393204（＋表态批 e8513d3）世代，**候集成验收尚未入 main——本核可
+以冻结批经集成验收入库为生效前提**（落节时事实如实登记：本树工作
+副本已合并吸收 slot/wt-2 链上批次以承接消费更新批依赖——contracts
+TS 面 V02 接口，吸收系 git merge 非复制，零改写；wt-2 合并留言明示
+桌面批及早跟进，照「不等待」纪律办理）。核可方式＝只读词面逐项核对
+（v0.2 result.schema 全文＋4 正 5 负向量＋双语协议本＋Rust 端口
+PackageCatalogV02/catalog_v02/package_catalog_v02＋路由双臂＋TS 面
+PackagesPackageCatalogResultV02）＋消费更新批代码同批落地（见交付
+面）。
+
+**逐项核可（对照本桌面形状核可节〔前节〕与表态第 5 条，零偏差）**：
+
+1. **词面增量恰一键**：v0.2 result＝冻结 v0.1 恰加必带 `cacheSourced`
+   （布尔），其余零变动——command 面与 v0.1 逐字节同形（守卫测试零
+   变合理）；version 行三键、displayName 可空、source 二态×installed
+   分立、updateAvailable null 语义、versions 升序全部原样；schema
+   required 九键＋additionalProperties:false 双面核对，负例
+   wrong-typed-cacheSourced 等钉死。
+2. **repos 族不加字段**：list_repos 零网络面，恒常量信息字段不是事
+   实——与本桌面核可节第 2 条「健康面非目标」同律，无异议。
+3. **纯增量双版本协商**：路由盖戳（声明 v0.2 的 backend 答
+   `vua.packages-catalog/v0.2`，未声明维持冻结 v0.1 臂）；冻结 v0.1
+   绝不原地修订——本桌面已验收消费切片（f266712 经 eda2f60）承接的
+   v0.1 词面持续工作，版本机器可读纪律保持；消费端读盖戳族常量辨词
+   面世代，永不猜测（本批 live 层实现同律：未知族常量＝形状不符诚实
+   失败）。
+4. **消费端呈现纪律（本表态第 5 条披露枝兑现）**：cacheSourced=true
+   ＝「缓存数据」信息性标注非失败（页面以次级 caption 行呈现，绝不
+   渲染为失败态）；false＝在线刷新无标注；**v0.1 应答无此字段绝不虚
+   构标注**（live 层 v0.1 七键闭集拒绝该键，页面按 `in` 判别收敛，
+   类型级防线双面钉死）。
+5. **兼容语义随批澄清**：compatible＝库完整 `unity_compatible` 全语
+   义系 v0.1 词面既有冻结语义（零变化），环境增补批照改复刻四分支
+   ——消费面零动作，桌面 compatible 呈现纪律（null＝版本未知不是不
+   兼容）不变。
+6. **TS 面专项核可（桌面所有权域登记确认）**：
+   `PackagesPackageCatalogResultV02` 与 Rust `PackageCatalogV02`
+   serde camelCase 投影逐键同形零偏差（V01 全键＋cacheSourced）；
+   程序事实延续先例如实登记——TS 面系核心冻结批批内自落，本节即
+   桌面域登记确认，消费更新批直接承接。
+
+**消费更新批交付面（同批落地，桌面所有权域）**：
+apps/desktop/src/renderer/gateway/packages-port.ts（
+`CatalogPackageFactsV02`＝V01 恰加 cacheSourced readonly 布尔＋
+`PackagesPort.packageCatalog` 返回双族 widen＋doc）＋
+packages-live.ts（`isCatalogPackageFactsV02` 八键闭集＋
+`isPackagesCatalogResultV01/V02` 族校验＋组合校验按盖戳族窄化，
+未知族常量形状不符）＋gateway/index.ts（V02 导出登记）＋
+features/packages/PackagesPage.tsx（P2CatalogPanel 双族 facts＋
+cacheSourced=true 信息标注行，v0.1 无字段不虚构）＋i18n 四语
+`packages.p2.catalogCachedData`（EN/ZH/JA/KO，信息性文案）＋
+packages-live.test.ts v0.2 describe 四例（true 逐字承载／false 无
+标注／v0.2 戳缺键形状不符＝版本世代机器可检测的消费端同构钉死／
+v0.1 应答发明披露字段形状不符＝冻结闭集不变）。
+
+**程序结论**：v0.2 增量冻结批形状核可**通过**（生效前提＝其经集成
+验收入库）；桌面消费更新批全链在本树 slot/wt-3 同批完成（机械校验
+随批在案），候集成随轮验收。零端到端宣称维持——呈现纪律经单元/契
+约测试验证，真机 ready-p2 区块解锁候用户 dev 栈重启，走查归 W25
+（O-2）。
+
+> 竞态补正（wt-3，2026-09-17 05:5x）：本节落节时「生效前提＝冻结批
+> 经集成验收入库（候验收尚未入 main）」系落节当时事实——冻结批已于
+> 本批工作期间经集成 6a4678d 验收入库（第 77 批登记 ca3e911 在案，
+> 20 非 collab 文件亲审＋合并树复跑 05:4x 全绿）。**核可生效前提已
+> 兑现，本核可即时生效**。本树追平合并时 inbound 非 collab 面＝0 文
+> 件（冻结批内容与本树经吸收合并所得逐字一致的等效性实证），吸收合
+> 并如依赖顺序声明所预期退化为纯历史。
+
+### 增补批声明（环境）（2026-09-17 05:5x 工作时段，wt-6；口径②照改执行——compatible 复刻全库语义落地）
+
+**定位**：本节系对上节核心表态（slot/wt-2 e8513d3，候验收）的收货与
+执行声明：三项口径表态收货——①③采纳知悉、**②照改即办**；裁决 6
+落死（提案 A 收窄 catalog 单族、新族版 v0.2）收货，v0.2 协议口径以核
+心冻结批（8393204，slot/wt-2 候验收）词面为准。本节与增补批第一部分
+同批落地（wt-6 本分支）。
+
+- **增补批第一部分（本批落地）：compatible 复刻完整库语义**。按表
+  态落法照改 `catalog_compatible`（crates/project-manager/src/
+  vpm_backend.rs）：复刻 vrc-get-vpm 0.0.16 `unity_compatible`（
+  lib.rs:208）全部四臂——`is_vrcsdk_for_2019`（avatars/worlds/base
+  major 3 minor ≤4 → 仅 Unity 2019）＋`is_resolver_for_2019`（
+  resolver 0.1.≤26 → 仅 Unity 2019）＋VRCSDK 精确 major.minor 匹配
+  臂（防 VRCSDK-for-2022 误入 Unity 6000 系）＋一般最低约束臂（原
+  有）。**分歧例单测钉死**（tests/vpm_backend.rs 新例
+  p2_package_catalog_compatible_recreates_the_full_library_special_
+  cases，全部合成数据；com.vrchat.* 仅系特例臂键控的公开 VPM 标识
+  符）：SDK 3.4＋2022 工程＝false；resolver 0.1.26＋2022 工程＝
+  false；SDK 3.5＋Unity 6000（6000.0.23f1）工程＝false（一般分支会
+  误判 true 的反例）；边界正例——resolver 0.1.27 逃出特例臂走一般
+  臂＝true；2019.4 工程特例臂正向＝true×2；精确匹配臂 2019 工程
+  拒绝 2022 约束 SDK＝false。**变异验证在案（05:4x）**：临时还原一
+  般分支旧实现，新例即 FAILED——钉死力实证；还原复刻实现后 17/17
+  绿。**词面零变化**（无 schema/TS/协议本动作，v0.1 应答形状不
+  变）。全链机械校验绿（2026-09-17 05:5x 在案）：cargo test
+  --workspace 81 套件 0 failed（含本域 vpm_backend 17/17）＋cargo
+  clippy --workspace --all-targets -D warnings 0。原「特例不复制」
+  声明就此撤回，以本节为准。
+- **增补批第二部分（候依赖入库，如实声明依赖不空转）**：v0.2 适配
+  ——`catalog_v02()` 声明覆写（恰在实现时 true，ORC-DEV-004 同
+  律）＋`package_catalog_v02` 实现＋`cacheSourced` 事实源一行上贡
+  （offline→load_cache 或在线 load 失败降级＝true，ORC-ADP-006 同
+  构）＋compatible 复刻在新族结果面沿用——**依赖核心冻结批
+  8393204 的端口面（catalog_v02/package_catalog_v02/
+  PackageCatalogV02）入 main**（slot/wt-2 候集成验收）。该批入库后
+  本树追平即跟进适配，无等待声明必要——依赖事实如实登记于此。

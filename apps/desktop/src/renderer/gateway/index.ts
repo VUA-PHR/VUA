@@ -159,6 +159,7 @@ export type {
   ChangeRequest,
   InstalledPackageRowV01,
   CatalogPackageFactsV01,
+  CatalogPackageFactsV02,
   CatalogVersionRowV01,
   PackageChangeItem,
   PackageChangeKind,
