@@ -2,8 +2,8 @@
 proposal: "024"
 title: 包管理器 wire 契约方向稿（#33 核心协作面——包管理器页引擎接入的
   跨域契约方向）
-status: 方向稿——仅方向不冻结（候桌面/环境表态、集成门序确认；表态前
-  核心不接词表冻结与 wire 实现）
+status: 方向稿——仅方向不冻结（环境/集成表态已落，见内联线程表态
+  收编节；桌面表态候落；三域收敛前核心不接词表冻结与 wire 实现）
 author: wt-2（核心）
 date: 2026-09-17
 ---
@@ -188,3 +188,79 @@ date: 2026-09-17
   对清单外路径按同一面判定 not_found，或清单与判定都取库面。此裁决
   候环境表态（开放问题 2）＋桌面表态（开放问题 1 映射面）收敛，
   核心不代决；表态前核心不接词表冻结。
+
+### [表态收编] 环境＋集成表态落节记录（2026-09-17 01:1x 核心收编自
+### main；两表态原文分别落 wt-6 状态批 62b4989 与集成第 70 批登记
+### ae6eca6，均已入 main；按环境落点说明「024 由核心在自己分支上
+### 改，无冲突面」由核心收编进本内联线程）
+
+**环境表态（wt-6 62b4989，开放问题 2）**：
+
+- (a) **P2 仓库/目录面后端扩展：可行，环境域可承接实现**。库面证据
+  （vrc-get-vpm 0.0.16，Cargo.toml 锁 `=0.0.16`）：①仓库订阅面＝
+  `Settings::load` → `VpmSettings::user_repos() -> &[UserRepoSetting]`
+  （`url()/id()/name()/get_versions_of()/get_packages()`，RepoInfo
+  与每仓库版本枚举的库面基础已暴露）；②包集合面＝
+  `PackageCollection::load`（在线）/`load_cache`（仅本地缓存＝离线
+  路）两路齐备；③`VrcGetLibBackend` preview_install 已在用同族
+  API——P2 属既有依赖 API 面展开，**零新依赖**。形态建议：端口升
+  版核心主导（新协议面，与 P2 定性一致），project-manager 实现照
+  `project_registry` 先例（trait 默认 unsupported err 保持
+  VccCliBackend 编译兼容）；`VpmCapabilities` 新能力位**按后端分
+  声明**（VccCliBackend 不声明仓库能力，ORC-DEV-004）；离线退化走
+  既有 `offline` 字段（ORC-ADP-006）。排期候核心 P2 冻结批；表态
+  前后端端口面零触碰维持。
+- (b) **注册库同一性：不是同一存储源**——「同一 settings 源则 P1
+  零新增项目事实」的乐观假设不成立。代码事实：`project_registry`
+  读 **`vcc.liteDb`**（VccDatabaseConnection，litedb feature）；
+  013 `collect_project_inspections` 读 **VCC settings.json**
+  （`userProjects`/`localProjectFolders`）＋**ALCOM settings**——
+  同一环境根下**不同文件**，注册集可能不一致；vrc-get 0.0.16 源注
+  （vpm_settings.rs:25–33）明示新版下 settings.json `userProjects`
+  键将消失、vcc.liteDb 成主要项目存储。哪些机器实际分叉属真机
+  事实，候 W25 只读核实，不臆断本机状态。
+- **环境 P1 读法建议**：项目清单仍复用 013 面（VCC＋ALCOM 并集覆
+  盖更广、带 associations、schema 已冻结）；
+  `packages.listInstalled` 的 projectPath 校验与
+  `project.inspectProject` 同口径（013 聚合面为世界，未注册＝
+  typed not-found）。**已知边界如实登记**：仅注册在 vcc.liteDb 的
+  路径在 013 面可能不可见。如真机证实分叉需收敛：环境域独立小提
+  案把 vcc.liteDb 读补进 013 聚合面（013 读面升版程序，**不搭
+  P1 的车**）。环境根对齐：`with_environment_root` 注入已支持，
+  §3「与 project_ops 面共读单一事实源」方向环境侧确认可行
+  （proposal 004 决议序），装配对齐归核心装配切片。
+
+**集成表态（第 70 批登记 ae6eca6，开放问题 3＋死锚裁决）**：
+
+- **门序确认**：本提案切片在 M6 T-A vrc-get 路径 early-open 授权
+  范围内（用户裁决 2026-09-08；014 先例——冻结＋验收先于 M6 门）；
+  M6 门验收/发行**不在** early-open 范围，仍候 M5 关门门序。P1 验
+  收路径＝冻结程序前置齐（Schema＋正负例向量＋至少一端消费测试＋
+  contracts TS 面＋双语协议本＋REGISTRY）→ 集成验收；P2 候环境
+  后端扩展提案；P3 照 013 R5 逐面。
+- **登记联动**：BOARD #33 行＋本提案双向引用即为登记面（无第三
+  面；方向稿阶段无 REGISTRY 登记，023 先例）。
+- **死锚裁决**：GitHub issue #25 **不补建**（用户可推翻）：协调权
+  威在 collab/ 机制，本库 issues 系统未在协作中使用，补建将制造
+  collab/ 之外的第二登记权威面。引擎面权威锚＝本提案＋BOARD #33
+  行。桌面 packages-port.ts 头注锚点修改归桌面域内小改，候桌面自
+  领，不阻塞表态。
+
+**核心注记（收编时点）**：
+
+- 环境 P1 读法建议与本内联线程「权威源裁决两案」的**候选读法 1**
+  （清单复用 013 面）一致——两案并读下环境已选案 1；`project_
+  not_found` 判定口径环境亦已给向（inspectProject 同口径）。剩余
+  收敛项归桌面表态（开放问题 1：分期读法、listInstalled 对
+  PackagesPort 的映射、错误码族归属）；映射面若采纳环境建议口径，
+  桌面表态焦点实际收窄至分期读法＋错误码族＋PackageRow P1 降级呈
+  现。
+- `vcc.liteDb`-only 路径不可见风险列入**冻结批诚实登记项**（随
+  Schema 边界节落，照环境建议原文）。
+- P2 环境侧可行性证据与形态建议由核心在 P2 冻结批起草时按端口面
+  职责复核（跨域事实信任域主核实，冻结批核心侧只做端口/协议面复
+  核，不重复环境域库面考证）。
+- **桌面表态：未落**（wt-3 追平笔 04e85de 注明 next＝本提案开放问
+  题 1 表态＋头注修复）。三域二落一候；表态程序＝三域收敛后核心
+  起草冻结批——核心不冻结、不接 wire 实现，notRun 诚实呈现维持
+  不变。
