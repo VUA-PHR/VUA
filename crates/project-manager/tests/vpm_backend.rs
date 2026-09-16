@@ -10,8 +10,8 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use vua_orchestrator::{
-    FakeProcessRunner, FixedClock, PackageRequestV1, ProcessOutcome, ProjectRef, VpmBackend,
-    CREDENTIAL_ENV_REMOVALS,
+    FakeProcessRunner, FixedClock, PackageRequestV1, PackageSourceV01, ProcessOutcome,
+    ProjectRef, VpmBackend, CREDENTIAL_ENV_REMOVALS,
 };
 use vua_project_manager::{VccCliBackend, VrcGetLibBackend};
 
@@ -401,3 +401,313 @@ fn b6_project_registry_reports_vcc_compatible_registrations() {
     assert_eq!(registered[0].name, "managed-project");
     fs::remove_dir_all(&base).ok();
 }
+
+// --- 025 P2 read faces: subscription world + per-package catalog ---
+
+/// Writes a synthetic repository-cache file (the flat LocalCachedRepository
+/// JSON shape vrc-get itself persists) with three versions of one synthetic
+/// package: a yanked 0.9.0, a compatible 1.0.0, and a 2.0.0 whose minimum
+/// Unity (2022.4) exceeds the 2022.3 test project. All data synthetic.
+fn synthetic_repo_cache(cache_path: &std::path::Path) {
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    // The LocalCachedRepository file wraps the repository document in a
+    // `repo` key (the shape vrc-get itself persists).
+    let cache = serde_json::json!({
+        "repo": {
+            "name": "Synthetic Repo",
+            "id": "com.vua.test.repo.synthetic",
+            "url": "https://example.invalid/vua/synthetic-repo.json",
+            "packages": {
+            "com.vua.test.catalog.synthetic": {
+                "versions": {
+                    "0.9.0": {
+                        "name": "com.vua.test.catalog.synthetic",
+                        "displayName": "Synthetic Catalog",
+                        "version": "0.9.0",
+                        "unity": "2022.3",
+                        "vpmDependencies": {},
+                        "vrc-get": { "yanked": true }
+                    },
+                    "1.0.0": {
+                        "name": "com.vua.test.catalog.synthetic",
+                        "displayName": "Synthetic Catalog",
+                        "version": "1.0.0",
+                        "unity": "2022.3",
+                        "vpmDependencies": {}
+                    },
+                    "2.0.0": {
+                        "name": "com.vua.test.catalog.synthetic",
+                        "displayName": "Synthetic Catalog",
+                        "version": "2.0.0",
+                        "unity": "2022.4",
+                        "vpmDependencies": {}
+                    }
+                }
+            }
+            }
+        }
+    });
+    fs::write(cache_path, cache.to_string()).unwrap();
+}
+
+/// Writes a minimal VCC-shaped settings.json carrying exactly the given
+/// userRepos entries (the subscription face is the world).
+fn synthetic_settings(environment_root: &std::path::Path, user_repos: serde_json::Value) {
+    fs::create_dir_all(environment_root).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": user_repos }).to_string(),
+    )
+    .unwrap();
+}
+
+fn p2_repo_world(label: &str) -> (VrcGetLibBackend, ProjectRef, std::path::PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    let cached_repo = environment_root.join("Repos").join("synthetic-repo.json");
+    synthetic_repo_cache(&cached_repo);
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": cached_repo.display().to_string(),
+            "url": "https://example.invalid/vua/synthetic-repo.json"
+        }]),
+    );
+    let project = minimal_vpm_project(&base.join("managed-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    (backend, project, base)
+}
+
+#[test]
+fn p2_list_repos_projects_the_subscription_face_with_per_repo_cache_facts() {
+    let base = unique_dir("p2-repos");
+    let environment_root = base.join("isolated-vpm-environment");
+    let cached_repo = environment_root.join("Repos").join("synthetic-repo.json");
+    synthetic_repo_cache(&cached_repo);
+    let never_refreshed = environment_root.join("Repos").join("never-refreshed.json");
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([
+            {
+                "localPath": cached_repo.display().to_string(),
+                "name": "Synthetic Repo",
+                "id": "com.vua.test.repo.synthetic",
+                "url": "https://example.invalid/vua/synthetic-repo.json"
+            },
+            {
+                "localPath": never_refreshed.display().to_string(),
+                "url": "https://example.invalid/vua/never-refreshed.json"
+            },
+            {
+                "localPath": base.join("local-directory-repo").display().to_string()
+            }
+        ]),
+    );
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    // The capability is declared exactly now that the faces are implemented.
+    assert!(backend.catalog_capabilities().catalog);
+
+    let rows = backend.list_repos().unwrap();
+    assert_eq!(rows.len(), 3, "row order = subscription order, nothing dropped");
+    let cached = &rows[0];
+    assert_eq!(
+        cached.repo_id.as_deref(),
+        Some("com.vua.test.repo.synthetic")
+    );
+    assert_eq!(cached.name.as_deref(), Some("Synthetic Repo"));
+    assert_eq!(
+        cached.url.as_deref(),
+        Some("https://example.invalid/vua/synthetic-repo.json")
+    );
+    assert!(cached.cached, "the refreshed cache file exists");
+
+    let stale = &rows[1];
+    assert!(!stale.cached, "subscribed-but-never-refreshed is its own honest listed state");
+    assert_eq!(stale.name.as_deref(), None, "absent facts project as null");
+    assert_eq!(stale.repo_id.as_deref(), None);
+
+    let local_dir = &rows[2];
+    assert_eq!(
+        local_dir.url.as_deref(),
+        None,
+        "a local-directory repo carries no url (honest null)"
+    );
+    assert!(!local_dir.cached, "its repo.json was never established");
+
+    // VccCliBackend stays declared-none with the default absence arm (zero
+    // change to the five-bit closed set or its backend).
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(!cli.catalog_capabilities().catalog);
+    let error = cli.list_repos().unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn p2_list_repos_answers_an_honest_empty_subscription() {
+    let base = unique_dir("p2-repos-empty");
+    let environment_root = base.join("isolated-vpm-environment");
+    synthetic_settings(&environment_root, serde_json::json!([]));
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let rows = backend.list_repos().unwrap();
+    assert!(
+        rows.is_empty(),
+        "zero subscriptions is a valid, honest answer"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn p2_package_catalog_reports_repo_versions_with_judgment_facts() {
+    let (backend, project, base) = p2_repo_world("p2-catalog");
+
+    let catalog = backend
+        .package_catalog(&project, "com.vua.test.catalog.synthetic")
+        .unwrap();
+    assert_eq!(
+        catalog.source,
+        PackageSourceV01::Repo,
+        "the package resolves from a repository cache"
+    );
+    assert_eq!(
+        catalog.project_path,
+        project.root.to_string_lossy().into_owned()
+    );
+    assert_eq!(catalog.package_id, "com.vua.test.catalog.synthetic");
+    assert_eq!(catalog.display_name.as_deref(), Some("Synthetic Catalog"));
+    assert!(!catalog.installed);
+    assert_eq!(
+        catalog.update_available, None,
+        "not installed = judgment not executed (null), never \"no update\""
+    );
+    let versions: Vec<&str> = catalog
+        .versions
+        .iter()
+        .map(|row| row.version.as_str())
+        .collect();
+    assert_eq!(versions, vec!["0.9.0", "1.0.0", "2.0.0"], "semver ascending");
+    assert!(
+        catalog.versions[0].yanked,
+        "the repo-cache yank fact carries verbatim"
+    );
+    assert!(!catalog.versions[1].yanked);
+    assert_eq!(
+        catalog.versions[0].compatible, Some(true),
+        "a 2022.3 minimum is satisfied by the 2022.3 project"
+    );
+    assert_eq!(catalog.versions[1].compatible, Some(true));
+    assert_eq!(
+        catalog.versions[2].compatible, Some(false),
+        "2.0.0 requires a newer Unity — false, not null"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn p2_package_catalog_judges_update_available_against_the_installed_version() {
+    let (backend, project, base) = p2_repo_world("p2-update");
+    let manifest_path = project.root.join("Packages/vpm-manifest.json");
+
+    // Installed 0.9.0 (the yanked one): a strictly newer compatible version
+    // (1.0.0) exists, so the frozen judgment answers true. Yanked candidates
+    // and versions beyond the project's Unity are excluded by the selector.
+    // Installed = the package folder under Packages/ PLUS the locked entry.
+    let install = |version: &str| {
+        let package_dir = project
+            .root
+            .join("Packages")
+            .join("com.vua.test.catalog.synthetic");
+        fs::create_dir_all(&package_dir).unwrap();
+        fs::write(
+            package_dir.join("package.json"),
+            format!(
+                r#"{{"name":"com.vua.test.catalog.synthetic","displayName":"Synthetic Catalog","version":"{version}","unity":"2022.3","vpmDependencies":{{}}}}"#
+            ),
+        )
+        .unwrap();
+        fs::write(
+            &manifest_path,
+            format!(
+                r#"{{"dependencies":{{"com.vua.test.catalog.synthetic":{{"version":"{version}"}}}},"locked":{{"com.vua.test.catalog.synthetic":{{"version":"{version}","dependencies":{{}}}}}}}}"#
+            ),
+        )
+        .unwrap();
+    };
+    install("0.9.0");
+    let catalog = backend
+        .package_catalog(&project, "com.vua.test.catalog.synthetic")
+        .unwrap();
+    assert!(catalog.installed);
+    assert_eq!(
+        catalog.update_available,
+        Some(true),
+        "a strictly newer compatible version exists"
+    );
+
+    // Installed 1.0.0 is already the latest compatible version: an honest
+    // false conclusion, never null.
+    install("1.0.0");
+    let catalog = backend
+        .package_catalog(&project, "com.vua.test.catalog.synthetic")
+        .unwrap();
+    assert_eq!(catalog.update_available, Some(false));
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn p2_package_catalog_local_source_is_honest_and_an_absent_package_is_typed() {
+    // Register-only world: the package exists in the environment's local set
+    // but is NOT installed in the project (no apply step).
+    let base = unique_dir("p2-local");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("managed-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+
+    let catalog = backend
+        .package_catalog(&project, "com.ph-r.vua.local.synthetic")
+        .unwrap();
+    assert_eq!(
+        catalog.source,
+        PackageSourceV01::Local,
+        "registered in the environment without any repository"
+    );
+    assert!(
+        catalog.versions.is_empty(),
+        "a local-source package honestly carries no repo versions"
+    );
+    assert!(
+        !catalog.installed,
+        "registered in the environment is not installed in this project"
+    );
+    assert_eq!(catalog.update_available, None);
+    assert_eq!(catalog.display_name.as_deref(), Some("Synthetic"));
+
+    let error = backend
+        .package_catalog(&project, "com.example.absent")
+        .unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.no_matching_package",
+        "absent from both repo caches and the local set is the reused typed code"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
