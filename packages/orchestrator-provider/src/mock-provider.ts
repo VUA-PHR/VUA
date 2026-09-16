@@ -402,6 +402,19 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "packages.listInstalled":
+        // 024 P1 词表行(核心冻结批 2026-09-17):模拟 Provider 无 VpmBackend
+        // 引擎面,恒答诚实缺席(code/category/messageKey 三元与真实
+        // provider-host 未装配分支一致)——绝不伪造包清单或空数组冒充
+        // (诚实空清单只属于真实后端的合法事实)
+        return this.#failure(request, this.#error(
+          "vua.packages.unavailable",
+          "unavailable",
+          "errors.packages.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
     }
   }
 

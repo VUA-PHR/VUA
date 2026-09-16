@@ -63,6 +63,8 @@
 | docs/protocols/editor-verify-v0.1_ZH.md | 0.1 | 已冻结（手选编辑器路径验证词表行，2026-09-13：单方法一次冻结，硬前置⑤协议本双语＋本行＋SCHEMA_EXEMPT 豁免行移除请求随本冻结批，豁免行候集成验收移除） | 环境 | 2026-09-13 |
 | schemas/release-handoff/v0.1 | 0.1 | 已冻结（官方 SDK 上传交接词表行 release.openForHandoff，2026-09-16：proposal 023 核心冻结批——硬前置①两半已齐〔桌面表态 469ef5c 经第 52 波入库＋产线表态五点 wt-4 随其批次入库〕②③随本批〔Schema＋3 正 3 负向量＋provider-host 帧环 5/5＋@vua/contracts 守卫＋mock 缺席分支〕④随本批〔协议本双语〕⑤轮空〔产线钉死实现域＝进程/窗口面，unity-bridge v3 零增操作〕；params 闭集修订为单键 buildId〔工程身份权威在 build-record 面〕；路由未接线＝诚实缺席，实现域〔产线 port＋核心 use case〕与桌面消费候后续切片，端到端候 W25） | 核心 | 2026-09-16 |
 | docs/protocols/release-handoff-v0.1_ZH.md | 0.1 | 已冻结（官方 SDK 上传交接词表行，2026-09-16：单方法一次冻结，硬前置④双语协议本＋应用契约方法面行＋修订记录条目随本冻结批） | 核心 | 2026-09-16 |
+| schemas/packages-query/v0.1 | 0.1 | 已冻结（包管理 P1 只读词表行 packages.listInstalled，2026-09-17：proposal 024 P1 核心冻结批——三域表态收敛〔桌面 ab02215 分期读法/降级投影/错误码复用＋环境 62b4989 P2 可行/注册库非同一存储/清单复用 013 聚合＋集成第 70 批门序 T-A 授权/死锚不补建〕；Schema＋3 正 3 负向量＋核心域消费测试 4 例 packages_query_consumer＋@vua/contracts 守卫＋TS 面；核心裁决＝projectPath 未注册复用 vua.project.project_not_found 同事实同码＋P1 词面零 P2 事实字段〔含 displayName 不预留无生产者字段〕＋诚实空清单；vcc.liteDb-only 不可见风险如实登记候 W25；wire 路由＋能力行＋bin 装配候实现切片紧随，桌面消费批候其后） | 核心 | 2026-09-17 |
+| docs/protocols/packages-query-v0.1_ZH.md | 0.1 | 已冻结（包管理 P1 只读词表行，2026-09-17：单方法一次冻结，双语协议本＋REGISTRY 登记随本冻结批） | 核心 | 2026-09-17 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/design/design-standard_ZH.md | 0.7.0 | 已接受 | 桌面 | 2026-09-10 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |

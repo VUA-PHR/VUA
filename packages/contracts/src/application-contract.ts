@@ -543,6 +543,36 @@ export interface ProjectLockStatusResultV01 {
   readonly mutationStatus: ProjectLockMutationStatusV01;
 }
 
+/* ---- 024 P1 读面(packages-query v0.1,核心冻结批 2026-09-17;三域表态
+ *  收敛:桌面 ab02215／环境 62b4989／集成第 70 批)。单方法只读:
+ *  packages.listInstalled——已注册项目的已装包集合(VPM manifest＋lock
+ *  投影)。projectPath 复用 013 注册身份,未注册 = 复用
+ *  vua.project.project_not_found(同事实同码);P1 词面按三域表态刻意
+ *  不带 P2 事实字段(source/versions/updateAvailable/latestVersion/
+ *  changelogUrl/displayName),降级投影细则归桌面消费批 */
+
+/** packages.listInstalled:单项目已装包清单(诚实空数组=零已装包) */
+export interface PackagesListInstalledQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.listInstalled";
+  readonly params: { readonly projectPath: string };
+}
+
+/** 已装包行:仅 P1 事实源四字段中的三个(id/版本/直接依赖);字段闭集
+ *  = 虚假断言防线(updateAvailable 等发明字段在 schema 即非法) */
+export interface PackagesInstalledItemV01 {
+  readonly packageId: string;
+  readonly version: string;
+  readonly dependencies: readonly string[];
+}
+
+export interface PackagesListInstalledResultV01 {
+  readonly schemaVersion: "vua.packages-installed/v0.1";
+  readonly projectPath: string;
+  /** packageId 升序(冻结的确定性呈现事实);空数组 = 诚实空清单 */
+  readonly packages: readonly PackagesInstalledItemV01[];
+}
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1488,6 +1518,7 @@ export type ApplicationRequestV01 =
   | ProjectListProjectsQueryV01
   | ProjectInspectProjectQueryV01
   | ProjectLockStatusQueryV01
+  | PackagesListInstalledQueryV01
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -1898,6 +1929,12 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && isIdentifier(value.params.projectPath);
   }
   if (value.kind === "query" && value.method === "project.lockStatus") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["projectPath"])
+      && isIdentifier(value.params.projectPath);
+  }
+  // 024 P1 读面(核心冻结批 2026-09-17):params 闭集 = 单键 projectPath
+  if (value.kind === "query" && value.method === "packages.listInstalled") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["projectPath"])
       && isIdentifier(value.params.projectPath);

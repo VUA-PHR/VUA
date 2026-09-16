@@ -2,8 +2,9 @@
 proposal: "024"
 title: 包管理器 wire 契约方向稿（#33 核心协作面——包管理器页引擎接入的
   跨域契约方向）
-status: 方向稿——仅方向不冻结（环境/集成表态已落，见内联线程表态
-  收编节；桌面表态候落；三域收敛前核心不接词表冻结与 wire 实现）
+status: P1 已冻结（packages-query v0.1，2026-09-17 三域表态收敛后核心
+  冻结批；P2 候环境后端扩展提案、P3 照 013 R5 逐面独立提案；
+  wire 路由＋能力行＋bin 装配候实现切片紧随，桌面消费批候其后）
 author: wt-2（核心）
 date: 2026-09-17
 ---
@@ -467,3 +468,101 @@ date: 2026-09-17
    ＝62b4989；问题 3 集成＝上节），候核心按「表态与冻结程序」起草
    P1 冻结批；冻结批内 PackagesView 区块可用性标注形状（本节第 1
    条条件）候桌面核可。
+
+## P1 冻结批（packages-query v0.1，2026-09-17 核心冻结批——三域表态收敛后起草）
+
+三域表态收敛确认：桌面（slot/wt-3 ab02215 内联节＋追平后补充第 6 条——
+991e065 世代）、环境（62b4989 经 0f82da3 入库＋内联节移录）、集成
+（ae6eca6 第 70 批）。本批硬前置逐项：①表态收敛（上列）；②Schema＋
+正负例向量＝`schemas/packages-query/v0.1/`（command＋result 双 Schema
+＋正例 3＋负例 3——负例含包行发明字段 `updateAvailable` 的虚假断言
+防线钉死）；③至少一端消费测试＝核心域消费测试 `crates/provider-host/tests/
+packages_query_consumer.rs`（4 例：冻结向量驱动双 Schema＋库投影对照 result
+Schema＋诚实空清单＋坏清单 typed 失败 `vua.vpm.project_load_failed`）
+＋TS 守卫（`@vua/contracts` 闭集正负例）；④双语协议本＝
+`docs/protocols/packages-query-v0.1_ZH.md`＋`_EN.md`；⑤REGISTRY 两行。
+
+**词表最终形状（冻结面）**：单方法 `packages.listInstalled`（Query），
+params 闭集单键 `projectPath`（013 注册身份）；result 信封 const "0.1"
+＋result 本体族 const `vua.packages-installed/v0.1`（两版本独立，照
+c914cf2 常设规则）；包行闭集三键 `packageId`/`version`/`dependencies`
+（packageId 升序＝冻结的确定性呈现事实）；错误码闭集五码：
+`vua.packages.unavailable`（缺席臂）＋`vua.packages.invalid_params`
+（参数臂）＋复用 `vua.project.project_not_found`（注册校验，013 聚合
+语义）＋`vua.vpm.capability_missing`（端口既有）＋
+`vua.vpm.project_load_failed`（端口既有）。
+
+**核心裁决四点（开放问题终局收敛）**：
+1. 项目清单不设第二词表（复用 013 聚合），projectPath 校验与
+   inspectProject 同口径；vcc.liteDb-only 不可见风险照环境表态如实
+   登记（协议本「P1 读面语义」节），真机分叉核对候 W25，收敛归 013
+   升版独立提案不搭 P1 车。
+2. 错误码复用 vua.project.project_not_found（同事实同码）；packages
+   特有事实码归 P2/P3 随其冻结批立（桌面表态采纳）。
+3. P1 词面零 P2 事实字段（source/versions/compatible/updateAvailable/
+   latestVersion/changelogUrl/displayName 全不带）：displayName 事实虽
+   在包目录 package.json，但端口投影类型（核心域）与生产者实现（环境
+   域 project-manager）分属两权属域，P1 不预留无生产者字段（ORC-DEV-004
+   字段面类比）；桌面 P1 消费以 packageId 兼任显示名（其表态读法
+   自洽）。
+4. 诚实空清单：零已装包＝空数组合法应答；坏清单＝typed 失败绝不以空
+   冒充（库级测试第 3/4 例钉死）。
+
+**实现切片边界（紧随本批，核心域）**：provider-host 路由
+（`packages.` 前缀分派＋`packages.listInstalled` 臂）＋HostState 增
+`VpmBackend` 注入位＋`served_capabilities` 增 `packages.query` 行
+（availability 随装配 VpmBackend 实例翻转）＋bin 装配点显式注入由核
+心候选推导的环境根（内联线程核心自查第一笔取向）＋wire 帧环测试
+（缺席臂／params 臂／not_found 复用臂／fake backend 全流转）。桌面消
+费批（PackagesPort P1 投影＋PackagesView 区块可用性标注形状核可）候
+实现切片；环境域 list_packages 投影增量（displayName 如 P2 需要）随
+PackageCollection 端口升版。
+
+## 桌面冻结批形状核可（开放问题 1 表态程序收尾；wt-3，2026-09-17
+## 02:2x 工作时段——直读 slot/wt-2 d6ca0b5 冻结批〔候集成验收〕，
+## 零代码变更）
+
+**核可对象**：slot/wt-2 d6ca0b5（packages-query v0.1 冻结批：双
+Schema＋3 正 3 负向量＋核心域消费测试 4 例＋`@vua/contracts` TS 面
+三类型＋union 并入＋双语协议本＋REGISTRY 两行）与 9a13b02（实现切
+片：`packages.` 前缀路由＋`packages.query` 能力行＋bin 装配＋wire
+帧环测试 6 例）——本树按 `git show slot/wt-2` 直读核实（照 wt-2
+消化桌面表态同先例；两笔候集成验收，**本核可以 main 落地版为生效
+前提，验收时形状若有变即重开**）。跨分支不预合、不手抄（merge 纪
+律），桌面消费批代码候两笔入 main 后自领。
+
+**逐项核对（桌面表态三项 ↔ 冻结形状）——全部一致，核可成立**：
+
+1. **P1 中间诚实态＋区块可用性标注**：冻结词表＝单方法只读
+   `packages.listInstalled`（params 闭集单键 `projectPath`）；
+   view 级区块标注权威事实源＝`served_capabilities` 的
+   `packages.query` 行（available＝已安装区块可渲染；repos／变更面
+   P1 无对应能力行即诚实不可渲染，写入口维持未接入呈现）——与表
+   态第 1 条「P1 ready 投影须带区块可用性标注」条件一致，核可。
+2. **降级投影＋虚假断言防线**：包行闭集三键
+   `packageId`/`version`/`dependencies`＋Schema
+   `additionalProperties:false`（负例向量钉死发明字段
+   `updateAvailable` 非法）＝表态第 2 条防线的更强兑现——词面根本
+   无 `updateAvailable`/`source`/`versions` 键，消费批按表态执行：
+   已装版本号照实显示、更新语义列与批量更新入口不渲染、source 列
+   与筛选隐藏、版本枚举 UI 不渲染；**一处表态后收敛差异如实记录**：
+   表态原文设想「versions 投影空数组」，冻结批裁决为 P1 词面零
+   versions 字段（无字段比空数组防线更硬，连投影占位都不存在），
+   与表态「不发明 compatible 事实」的精神完全一致，桌面核可此收敛；
+   displayName 核心裁决＝P1 不预留（无生产者字段），消费以
+   `packageId` 兼任显示名＝表态「无则以 id 兼任」既定走向（表态已
+   预留词表裁量权归核心），自洽成立。
+3. **错误码**：五码闭集含复用 `vua.project.project_not_found`
+   （013 聚合 inspectProject 同口径注册校验）＝表态第 3 条逐字兑
+   现，核可。
+4. **诚实空清单**：零已装包＝空数组合法应答、坏清单＝typed 失败
+   绝不以空冒充（核心域消费测试第 3/4 例钉死）＝诚实纪律 1/2 兑
+   现，核可。
+
+**消费批排期（桌面自领承诺）**：两笔入 main 后桌面消费批开工——
+PackagesPort S-XVI 词面扩展消费（`PackagesListInstalledQueryV01`/
+`PackagesListInstalledResultV01`/`PackagesInstalledItemV01`＋查询
+union）＋PackagesView 区块可用性标注（事实源＝`packages.query` 能
+力行）＋降级呈现渲染（本节第 2 条细则）＋诚实空态；P1 中间诚实态
+上线前后维持 notRun 诚实呈现不变，零端到端宣称维持（页面呈现复验
+候用户 dev 栈重启）。
