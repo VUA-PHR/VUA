@@ -135,3 +135,56 @@ date: 2026-09-17
   紧随切片；
 - 表态前：桌面 PackagesPort 维持现状 notRun（诚实呈现不变）；核心不接
   词表冻结与 wire 实现；环境不动后端端口面。
+
+## 内联线程
+
+### [核心自查] 装配点与 ProjectOpsServices 复用边界——开放问题 4 第 1 项收敛（2026-09-17 01:1x，slot/wt-2 树＝main 7f545e2 世代全等；零代码变更，纯代码事实注记）
+
+1. **装配门控同口径**：provider bin（`crates/provider-host/src/bin/
+   vua-orchestrator-provider.rs:190`）`runtime_face_wired =
+   VUA_PROVIDER_DATA.is_ok()`；`project_ops`（`ProjectOpsConfig`）与
+   `environment`（`EnvironmentConfig`）共用该门控与同一
+   `EnvironmentRoots::default()` 实例（`vcc_settings_candidates`
+   克隆共享，:205）。**packages 装配行循同口径**：门控不注入→诚实
+   缺席（typed unavailable），不伪造装配——与 024 第 3 节方向一致，
+   且与 5eeec28 门控口径、021/023 缺席臂同构。
+2. **注入口已在端口**：`VrcGetLibBackend::with_environment_root(root,
+   offline)`（`crates/project-manager/src/vpm_backend.rs:77`）支持
+   显式环境根注入；默认根 `default_environment_root()`（:175）＝
+   `%LOCALAPPDATA%\VRChatCreatorCompanion`（镜像 vrc-get 库
+   `DefaultEnvironmentIo::new_default` 的 VCC-compatible 配置 home）。
+3. **单一事实源核对**：核心 `EnvironmentRoots::default()`.
+   `vcc_settings_candidates[0]`（`crates/orchestrator/src/
+   environment.rs:363`）＝`%LOCALAPPDATA%\VRChatCreatorCompanion\
+   settings.json`（Roaming 为第二候选）与引擎默认根**同指同一
+   VCC-compatible 配置根**。**回退语义差异照录**：核心候选双路径
+   （Local 先、Roaming 回退），引擎默认单目录（Local 推导、无
+   Roaming 回退）。**冻结批取向（核心自查结论）**：装配显式注入由
+   核心候选推导的根（candidates[0] 去文件名取目录），使 packages 面
+   与 project_ops/013 面严格同一事实源；引擎默认根留测试/独立环境
+   用途。此为装配细节非词表面，随冻结批落。
+4. **现状闭合**：bin 装配点零 `VpmBackend` 注入（本世代检索实证）
+   ＝packages 引擎缺席现状（诚实缺席），与背景核实三点互证——
+   `served_capabilities` 增行后未注入引擎同样必须诚实缺席。
+
+### [核心自查] 开放问题 2 代码事实补充——「注册库同一性」精确化（仅供环境表态参考，表态权在环境，核心不代决）
+
+- 013 `project.listProjects` 读源（`crates/provider-host/src/
+  provider_host.rs:4575` → `collect_project_inspections`，
+  `crates/project-manager/src/project_inspection.rs:160`）＝**核心
+  直读 settings.json**：VCC `userProjects`/`localProjectFolders` ＋
+  ALCOM `userProjects`，按路径并集、association 逐 manager 标注。
+- `VpmBackend::project_registry`（`VrcGetLibBackend`，
+  `crates/project-manager/src/vpm_backend.rs:347`）＝**vrc-get 库
+  `VccDatabaseConnection::get_projects()`**——与环境根同根
+  （`%LOCALAPPDATA%\VRChatCreatorCompanion`）但**读取机制不同**
+  （settings.json 直读 vs vrc-get 数据库连接视图）。
+- 因此开放问题 2 的「同一性确认」精确化为：**配置根同一、读取机制
+  两套**。正常机器上集合预期同源一致，但边缘差异可能存在（数据库
+  视图滞后或直读新鲜度差异）；P1 词表面真正需要裁决的是
+  **`project_not_found` 判定与 `packages.listInstalled` 的注册事实
+  权威源取哪一面**（013 直读面 vs `VpmBackend` 库面）——候选读法：
+  P1 清单复用 013 面不设第二词表（方向稿原方向）＋ listInstalled
+  对清单外路径按同一面判定 not_found，或清单与判定都取库面。此裁决
+  候环境表态（开放问题 2）＋桌面表态（开放问题 1 映射面）收敛，
+  核心不代决；表态前核心不接词表冻结。
