@@ -73,14 +73,29 @@ function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
     zone: item.zone,
     title: checkTitle(item.checkId),
     status: PRESENCE_SEVERITY[item.presence],
-    description: item.errorCode ?? item.presence,
+    // 状态词本地化(用户实测缺口 #31 修复 2026-09-16):presence 投影为
+    // 四语状态词;error_code 仅 DetectionFailed 携带(引擎契约),属工程
+    // 事实码照原词呈现(词表外码不猜测,诚实纪律)。
+    description: item.errorCode ?? presenceText(item.presence),
   };
 }
 
+/** presence 三词闭集 → 四语状态词(strings.deployer.presence.*) */
+function presenceText(presence: EnvironmentPresenceV01): string {
+  const copy = strings.deployer.presence;
+  switch (presence) {
+    case "detected": return copy.detected;
+    case "not_detected": return copy.notDetected;
+    case "detection_failed": return copy.detectionFailed;
+  }
+}
+
 /* ---- 检查项卡片标题(用户实测缺口修复 2026-09-12,环境侧 wt-6 留言:
- *  disk_space 双区呈现后卡片 title 原为 checkId 透传)。消费侧文案注册表:
- *  键覆盖引擎当前 id 闭集(engine environment.rs,disk_space 双区同 id);
- *  引擎新增 id 而本表未收录时如实透传 checkId——不猜测、不伪造标题。 ---- */
+ *  disk_space 双区呈现后卡片 title 原为 checkId 透传;2026-09-16 #31 补齐
+ *  引擎 id 闭集其余 6 项——brand runtime 五项＋gpu)。消费侧文案注册表:
+ *  键覆盖引擎当前 id 闭集(engine environment.rs inspect_zone,disk_space
+ *  双区同 id);引擎新增 id 而本表未收录时如实透传 checkId——不猜测、
+ *  不伪造标题。 ---- */
 
 /** 检查 id → 四语文案键(strings.deployer.checks.*) */
 const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
@@ -88,6 +103,12 @@ const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   vrchat: "vrchat",
   steamvr: "steamvr",
   openxr_runtime: "openxrRuntime",
+  oculus_runtime: "oculusRuntime",
+  pico_runtime: "picoRuntime",
+  vive_runtime: "viveRuntime",
+  virtual_desktop: "virtualDesktop",
+  alvr: "alvr",
+  gpu: "gpu",
   network: "network",
   windows: "windows",
   disk_space: "diskSpace",

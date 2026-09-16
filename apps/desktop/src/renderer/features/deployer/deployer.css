@@ -4,6 +4,13 @@
   gap: var(--vua-space-5);
   max-width: 960px;
   margin: 0 auto;
+  /* 页面级滚动(用户实测缺口 #32 修复 2026-09-16):本页根类不是 .vua-page,
+   * 父链 .vua-shell__main overflow:hidden——无此三件套时内容超出视口即被
+   * 截断、底部条目不可达。与 .vua-page 同构:flex 撑满＋min-height:0 允许
+   * 收缩＋自身滚动,顶栏/侧栏/任务栏保持常驻 */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* 英雄区:状态灯 + 一句话结论 + 主按钮,高度按窗口自适应(v0.3.3 §4.1) */
