@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-catalog/v0.2/command.schema.json",
+  "title": "VUA packages-catalog command v0.2",
+  "description": "The packages package-catalog read-face command (proposal 025 P2 freeze batch 2026-09-17; stance program converged: environment proposal 64bfe58, integration stances 7a50ce9, desktop stance 0031004, core rulings bf78368). v0.2 carries exactly one method, packages.packageCatalog: the on-demand per-package catalog facts for ONE package viewed in ONE registered project's context. The COMMAND face is byte-for-byte the frozen v0.1 command face (proposal 025 inline ruling 2026-09-17: the v0.2 increment versions the RESULT family only — the two-key closed params set, granularity ruling, error codes, and identity semantics are unchanged and remain governed by the v0.1 freeze text). Granularity ruling: per-query on demand — there is deliberately NO full-catalog projection and NO pagination semantics (thousands-scale caches never ride this face; a consumer wanting more packages issues more queries). projectPath is the same registered-path identity the proposal-013 read face and the P1 packages.listInstalled face use; an unregistered path answers the REUSED typed not-found vua.project.project_not_found. packageId selects the catalog subject; a package present in neither the repository caches nor the local package set answers the REUSED typed vua.vpm.no_matching_package, which the consumer renders as its own empty state, not an error page (desktop stance). compatible judgments are bound to the selected project's Unity version (never a cross-project assertion); prerelease inclusion follows the user's show_prerelease_packages setting — a server-side behavior with NO wire switch (no invented preference field). Write faces (install/update/remove) do not exist in this family: read-only by design, writes follow the proposal-013 R5 per-face independent-proposal path.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.packageCatalog"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "packageId"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The registered project path (proposal-013 identity). The compatible judgment context: never a cross-project assertion."
+        },
+        "packageId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The VPM package identifier (the manifest name) whose catalog facts are queried. Exactly these two keys are accepted; any extra key is a vua.packages.invalid_params shape violation, never a default."
+        }
+      }
+    }
+  }
+}

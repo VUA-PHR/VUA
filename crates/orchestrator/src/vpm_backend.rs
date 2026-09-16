@@ -187,6 +187,29 @@ pub struct PackageCatalogV01 {
     pub versions: Vec<CatalogVersionV01>,
 }
 
+/// P2 v0.2 increment (proposal 025 inline ruling, 2026-09-17): the catalog
+/// facts of `PackageCatalogV01` plus the REQUIRED informational
+/// `cache_sourced` disclosure fact. true = THIS result was served through
+/// the cache-degradation path (offline → load_cache, or an online load
+/// failed and degraded — the ORC-ADP-006 isomorphic precedent); false =
+/// served from an online-refreshed load. Cache sourcing is not an error:
+/// consumers render it as an informational "cached data" annotation, never
+/// a failure. The `packages-repos` family has NO such field: `list_repos`
+/// is a zero-network face, where the fact would be a permanent constant —
+/// a constant informational field is not a fact and gets no wire key.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageCatalogV02 {
+    pub project_path: String,
+    pub package_id: String,
+    pub display_name: Option<String>,
+    pub source: PackageSourceV01,
+    pub installed: bool,
+    pub update_available: Option<bool>,
+    pub versions: Vec<CatalogVersionV01>,
+    pub cache_sourced: bool,
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -276,6 +299,27 @@ pub trait VpmBackend: Send + Sync {
         _package_id: &str,
     ) -> Result<PackageCatalogV01, AppErrorV1> {
         Err(unsupported("package_catalog"))
+    }
+    /// P2 v0.2 increment (proposal 025 inline ruling): declaration that
+    /// this backend serves the catalog face at the v0.2 word face (the
+    /// result carries the `cacheSourced` disclosure). The default is
+    /// false — the frozen v0.1 word face stays served; a backend overrides
+    /// this exactly when it implements `package_catalog_v02`
+    /// (ORC-DEV-004: no implementation, no reservation).
+    fn catalog_v02(&self) -> bool {
+        false
+    }
+    /// P2 v0.2 increment (proposal 025 inline ruling): the catalog facts
+    /// at the v0.2 word face — same shape as `package_catalog` plus the
+    /// REQUIRED `cache_sourced` disclosure fact. Backends keep serving
+    /// v0.1 through `package_catalog` until they adopt this; the wire
+    /// route negotiates the family version by `catalog_v02`.
+    fn package_catalog_v02(
+        &self,
+        _project: &ProjectRef,
+        _package_id: &str,
+    ) -> Result<PackageCatalogV02, AppErrorV1> {
+        Err(unsupported("package_catalog_v02"))
     }
     /// Creates a project from a template; backends without the capability
     /// return a `capability_missing` error.
