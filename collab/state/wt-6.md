@@ -6,88 +6,63 @@ baseline_commit: 66c1b04
 updated: 2026-09-17
 ---
 ## 当前焦点
-**P2 实现切片交付轮（2026-09-17 04:2x–04:5x，工作时段，同会话连续：
-追平→实现→测试→提交照申报程序）——025 P2 后续链第四环落地：
-VrcGetLibBackend 两方法（list_repos＋package_catalog）＋
-catalog_capabilities 覆写＋离线降级＋本域单测五例＋025 内联线程实现
-声明与 stale wire 形状提案；全链机械校验绿（workspace test 0 failed＋
-clippy -D warnings 0）**：
+**轻消化轮（2026-09-17 05:0x，工作时段）——brief 05:03 ①区两条进度
+知会消化（回执不回执）＋025 链现状刷新＋四环全查（00dcbb4 世代）无
+可领新项；在途不变（实现切片 adcf492＋上轮状态批候集成验收）；零新
+交付、零新阻塞、零代码变更，状态批恰本文件**：
 
-- **【① 注意】消化（brief 04:27）**：两条指向本角色均系开工知会——
-  wt-main（领取批 f58c473 已验收入库＋开工前置由 987b3cc 兑现＋冻结批
-  端口面 main 17f77f0 世代可直读＋bin 装配零改动已由核心 wire 切片保
-  证）；wt-2（领取登记收货＋wire 接线已落：覆写 catalog_capabilities
-  后 wire 两行两路由自动翻转，端口类型与默认实现不变）。消化方式＝本
-  轮开工交付，回执不回执。失鲜工作树：无。
-- **开工追平（--no-ff，吸收 main 66c1b04 第 74 批世代）**：落后 24 过
-  15 触发线；merge-tree 预检 exit 0 零冲突；inbound 全系已验收内容
-  （025 冻结批 28 非 collab 文件＋核心 wire 接线＋桌面形状核可＋桌面
-  P2 消费切片候选等）。**环境所有权域 inbound 零触碰**（crates/
-  project-manager＋environment*＋docs/compatibility＋docs/tool-catalog
-  pathspec diff 实证 0 文件）；追平后代码基线世代 66c1b04。
-- **实现切片（adcf492，本轮唯一实质交付，恰本域三文件）**：
-  - **list_repos**：订阅面为世界（裁决 1）——settings userRepos 逐行
-    逐字投影、行序＝配置顺序；四标识/定位事实 null＝库面 Option 逐字
-    投影；cached 必带＝逐仓库缓存命中事实，事实源与库 RepoHolder
-    `load_repo_from_cache` 的 Loaded 三态判定逐条对应（订阅行
-    local_path 即缓存路径 repo_source.rs 实测：文件存在且可解析为
-    JSON；false＝已订阅未刷新诚实行）。零网络（缓存命中判定面）。
-  - **package_catalog**：双键按需粒度（裁决 2）；仓库缓存版本 semver
-    升序、yanked 缓存携带逐字、compatible 按工程 Unity 判定（VPM 最
-    低版本一般分支语义；库 2019 特例保护系安装选择逻辑不复制，025 内
-    联声明候核心表态）；updateAvailable＝冻结结论（已装版本 vs
-    latest_for(工程 Unity, 用户 prerelease 设置)「存在严格更新的兼容
-    版本」；未安装＝null 判定未执行）；displayName 可空逐字（P1 裁决
-    3）；source 二态＋installed 分立必带；无此包＝复用
-    vua.vpm.no_matching_package（裁决 5 零新码）；io 失败＝
-    backend_unavailable（map_environment_io 新辅助）、工程加载失败＝
-    project_load_failed（先例复用）。
-  - **catalog_capabilities 覆写**：NONE→AVAILABLE 恰在实现时（裁决
-    4/ORC-DEV-004）；VccCliBackend 零改动维持 declared-none＋默认缺
-    席臂（五位闭集稳定）；wire 两行两路由自动翻转（核心 wire 切片保
-    证，bin 装配零改动）。
-  - **离线降级**：offline→load_cache、在线 load 失败降级（ORC-ADP-006
-    preview_install 同构先例逐字）。**裁决 6 环境侧落法如实**：v0.1
-    两族 schema 均 additionalProperties:false 闭集＋端口类型系核心域
-    ——环境不越域发明 wire 字段；stale wire 标注落 025 内联线程形状
-    提案（提案 A：cacheSourced 布尔经核心词面升版兑现披露、环境事实
-    源已就绪；提案 B：维持 v0.1 无字段、桌面照形状核可第 5 条不自行
-    标注）；两枝均诚实，实现切片不等待。
-  - **本域单测五例**（tests/vpm_backend.rs，照 project_registry/
-    list_packages 先例，全合成数据）：订阅面投影＋cached 两态＋null
-    投影＋VccCli declared-none 缺席臂；空订阅诚实；catalog repo 来源
-    全事实＋升序＋yanked＋compatible true/false；updateAvailable
-    true/false＋null 三臂；local 来源诚实空 versions＋no_matching_
-    package 复用码。套件 16/16。
-- **全链机械校验（04:5x 在案）**：cargo test --workspace 0 failed；
-  cargo clippy --workspace --all-targets -D warnings 0。变更面＝
-  crates/project-manager 两文件（src＋tests，环境所有权域）＋025 内
-  联线程节（collab）；他域零触碰。
-- **领任务链四环全查（66c1b04 世代）**：①本树在途＝实现切片 adcf492
-  ＋本状态批候验收，无半途切片；②BOARD 环境行＝#35 闭环维持、U1 EAC
-  候 W25；[需用户] 区全跳过不代决；③outline 世代继承——W25 候用户开
-  窗（O-2）、W26 归集成不开工；④M 门＝M6 环境行全交付（P2 实现切片
-  落地后 024/025 环境侧义务清零）、M6 剩余候 M5 关门门序、M7 无环境
-  行、M8 未开窗。**结论：025 链环境侧收口（冻结→核可→wire→环境实
-  现四环在库，剩桌面消费切片候集成验收其 f266712）；无其他可领项。**
+- **【① 注意】消化（brief 05:03）**：两条指向本角色均系进度知会——
+  ①wt-main（第 75 批：桌面 P2 消费切片 f266712 验收入库 eda2f60，
+  「025 链只剩你这一环」）——该留言发出窗口（04:2x–04:4x）与本树实
+  现切片提交（04:5x）**竞态相遇：其期待物已在途候验收**，信息随集成
+  验收自然消除，零动作；②wt-2（开工知会收货确认）。均回执不回执。
+  失鲜工作树：无。
+- **025 链现状刷新（00dcbb4 世代本地核实）**：冻结→桌面核可→wire
+  接线→**桌面 P2 消费（eda2f60，第 75 批入库）**四环全在库；**剩环＝
+  本树实现切片 adcf492 候集成验收**（上轮 04:5x 落地，含 025 内联
+  「实现切片声明（环境）」节＋stale wire 形状提案 A/B——随验收入
+  main 后核心/桌面方可见并表态）。上轮状态文件「[等桌面] f266712 候
+  验收」条目就此闭环。
+- **四环全查（00dcbb4 世代）**：①本树在途＝实现切片 adcf492＋上轮
+  状态批＋本状态批候验收，无半途切片；②BOARD 环境行＝#35 环境环已
+  落地候验收、U1 EAC 候 W25 维持（无新输入不翻案）；[需用户] 区全跳
+  过不代决；③outline 世代继承——W25 候用户开窗（O-2）、W26 归集成
+  不开工，M6 环境行 024/025 义务清零维持；④M 门＝M6 剩余候 M5 关门
+  门序、M7 无环境行、M8 未开窗。**结论：无其他可领项，不开新切片。**
+- **落后读数（brief 05:03）**：落后 13（全 collab 簿记）未过 15 线
+  不强制追平，留待集成验收合并自然收编；领先 2（实现切片＋上轮状态
+  批）。**合并预检自查（本地，05:0x）**：merge-tree exit 0 零冲突；
+  main 相对 5a1e500 在 collab/state/wt-6.md＋crates/project-manager
+  ＋collab/proposals/025 三面 diff 零行＝零重叠面实证。
+- **机械校验（collab-only 免全量如实声明）**：本批零代码变更（恰本
+  文件一 collab 文件）；全量证据沿用上轮 04:5x 本世代亲测（cargo
+  test --workspace 0 failed＋clippy --workspace --all-targets -D
+  warnings 0，adcf492 树）——本批在其上零代码叠加，证据世代有效。
+
+## 前情（0a9cae8 世代，全文见本文件 git 历史）
+P2 实现切片交付轮（04:2x–04:5x，同会话连续：追平 5a1e500→实现
+adcf492→测试→提交）：VrcGetLibBackend 两方法（list_repos 订阅面世
+界＋cached 必带；package_catalog 按需双键＋升序＋yanked＋compatible
+工程判定＋updateAvailable 冻结结论/null 语义＋displayName 可空＋
+source/installed 分立＋零新码）＋catalog_capabilities 覆写（NONE→
+AVAILABLE，VccCliBackend 零改动）＋离线降级（ORC-ADP-006 先例）＋
+本域单测五例 16/16＋025 内联线程实现声明与 stale wire 形状提案 A/B；
+workspace test＋clippy 全绿 04:5x 在案；三项实现口径声明见 025 内联。
 
 ## 本轮交付（66c1b04 基线世代）
-- **追平笔**（--no-ff，预检 exit 0，零自有内容，环境域零触碰 pathspec
-  实证）。
-- **P2 实现切片 adcf492**（本域两文件＋025 内联节；workspace test＋
-  clippy 全绿在案）。
-- **本状态批**（恰本文件）。
+- **本状态批**（恰本文件，collab-only 免全量）：brief 05:03 两条进
+  度知会消化＋025 链现状刷新（桌面消费环已入库，剩环＝本树在途）＋
+  四环全查（00dcbb4 世代）无可领新项。零代码变更。
 
 ## 在途/待他角色
-- **[等集成] 实现切片 adcf492＋本状态批候随轮验收（--no-ff）**——实
-  现切片含非 collab 实质变更（恰 crates/project-manager 两文件，环境
-  所有权域），请 diff 亲审或合并树复跑（workspace test＋clippy 全绿
-  04:5x 在案）。
+- **[等集成] 实现切片 adcf492＋上轮状态批 0a9cae8＋本状态批候随轮验
+  收（--no-ff）**——实现切片含非 collab 实质变更（恰 crates/
+  project-manager 两文件，环境所有权域），请 diff 亲审或合并树复跑
+  （workspace test＋clippy 全绿 04:5x 在案）。
 - **[等核心/桌面] 025 内联线程 stale wire 形状提案表态**（提案 A 词
   面升版 vs 提案 B 维持无字段）＋compatible 判定特例不复制声明异议
-  窗——两枝下本切片均完整有效，表态收敛后按需办理。
-- [等桌面] P2 消费切片 f266712 候集成验收（环境实现非其硬前置，形状
-  核可＋wire 已在库；本切片入库后真机 ready-p2 区块解锁事实源就绪）。
+  窗——随实现切片入 main 后可见；两枝下本切片均完整有效，表态收敛
+  后按需办理。
 - [等用户] W25 开窗（O-2 延期维持）——窗口内环境义务清单不变（EAC
   真机四件套＋B 段＋E2 运行中探测＋允许清单首批条目）；可顺带只读核
   实 vcc.liteDb 与 013 面注册集分叉（024 表态 (b) 真机事实项）。
@@ -97,48 +72,36 @@ clippy -D warnings 0）**：
 
 ## 下次合并意图
 **实现切片 adcf492（crates/project-manager 两文件＋collab/proposals/
-025 一文件）＋本状态批（恰 collab/state/wt-6.md）请集成随轮验收
-（--no-ff）。**追平笔零自有内容照先例随验收合并自然收编。提交后领先
-3＝追平笔＋实现切片＋本状态批（实质领先 1＝实现切片）、落后 0（暂，
-随集成收编波自然变动）。
+025 一文件）＋上轮状态批 0a9cae8＋本状态批（恰 collab/state/wt-6.md）
+请集成随轮验收（--no-ff）。**追平笔 5a1e500 零自有内容已经 6ecc039
+收编入库。提交后领先 3＝实现切片（实质领先 1）＋上轮状态批＋本状态
+批、落后 13（全 collab 簿记，未过线留待验收合并自然收编）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-17 04:2x–04:5x，工作时段，同会话连续三批）：①brief
-04:27 ①区两条开工知会消化（回执不回执）；②开工追平（--no-ff，落后
-24 过线，预检 exit 0，环境域 inbound 零触碰 pathspec 实证）；③实质
-交付＝P2 实现切片 adcf492——list_repos（订阅面世界＋cached 必带，
-事实源与库 Loaded 三态逐条对应）＋package_catalog（按需双键＋升序＋
-yanked＋compatible 工程判定＋updateAvailable 冻结结论/null 语义＋
-displayName 可空＋source/installed 分立＋零新码）＋catalog_capabilities
-覆写（VccCliBackend 零改动）＋离线降级（ORC-ADP-006 先例）＋本域单
-测五例 16/16；④裁决 6 环境侧落法如实（v0.1 闭集内不越域发明字段，
-stale wire 形状提案 A/B 落 025 内联线程候表态）＋三项实现口径声明
-（cached 事实源/compatible 一般分支语义/source 并存优先级）；⑤全链
-机械校验绿（workspace test 0 failed＋clippy --workspace -D warnings
-0，04:5x 在案）；⑥四环全查无其他可领项，025 链环境侧收口。**零端
-到端宣称维持**——两方法经单元测试验证、无真机运行与页面呈现宣称
-（真机区块解锁候桌面消费切片验收入库＋用户 dev 栈重启；真机走查归
-W25 O-2）。退出待命，候集成验收实现切片＋本状态批、核心/桌面 stale
-提案表态、W25 用户开窗、下轮 brief 或新指派；在手无半途切片。
+本轮（2026-09-17 05:0x，工作时段）：①brief 05:03 ①区两条进度知会
+消化——wt-main 第 75 批桌面消费入库知会与本树实现切片 04:5x 提交竞
+态相遇（其期待物已在途，零动作）＋wt-2 收货确认（回执不回执）；②
+025 链现状刷新（四环在库，剩环＝本树实现切片候验收；上轮 [等桌面]
+条目闭环）；③四环全查（00dcbb4 世代）无可领新项——本树在途候验收、
+BOARD #35 环境环已落地候验收、U1 EAC 候 W25 维持、outline 环境行义
+务清零、M 门不变，不开新切片；④落后 13 未过线不追平；⑤本地合并预
+检自查（merge-tree exit 0＋三面零重叠 pathspec/diff 实证）；⑥状态
+批 collab-only 免全量如实声明（零代码变更，证据沿用上轮 04:5x 本世
+代亲测）。**零端到端宣称维持**——两方法经单元测试验证、无真机运行
+与页面呈现宣称（真机区块解锁候本切片验收入库＋用户 dev 栈重启；真
+机走查归 W25 O-2）。退出待命，候集成验收三笔、核心/桌面 stale 表态、
+W25 用户开窗、下轮 brief 或新指派；在手无半途切片。
 
 ## 留言
-- [→集成] 实现切片 adcf492＋本状态批请随轮验收（--no-ff）。变更面＝
-  crates/project-manager 两文件（环境所有权域）＋025 内联线程节＋本
-  状态文件；他域零触碰。全链亲测证据（cargo test --workspace 0
-  failed＋clippy --workspace --all-targets -D warnings 0，04:5x 在
-  案），请复核或合并树复跑，验收裁量。**本切片入库＝真机 ready-p2
-  事实源就绪**（served_capabilities 两行随 catalog_capabilities 自动
-  翻转，bin 装配零改动）。
-- [→核心] P2 实现切片已落（你方冻结批词面逐项承接）。三项实现口径
-  声明与 stale wire 形状提案（A/B 两枝）见 025 内联线程「实现切片声
-  明（环境）」节：①cached 事实源＝订阅 local_path 即缓存路径（库
-  Loaded 条件逐条对应）；②compatible＝库一般分支语义、VRCSDK-2019
-  特例不复制（异议窗开放，届时照改）；③stale：v0.1 闭集内环境不越
-  域发明字段，提案 A（cacheSourced 经你方词面升版兑现披露、环境事实
-  源已就绪）vs 提案 B（维持无字段），候你方与桌面表态收敛后办理。
-- [→桌面] ready-p2 真实事实源候本切片验收入库——入库后
-  served_capabilities 两行自动翻转为 available、区块解锁；你的消费
-  切片 f266712 候集成验收与本切片无依赖冲突（形状词面均已冻结）。
-  stale 呈现候核心/桌面表态（形状核可节第 5 条条件分支维持）。
-- （回执不回执：wt-main/wt-2 两条开工知会系本轮交付消化；历史留言已
-  消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] 本状态批（恰本文件一 collab 文件，collab-only 免全量）与
+  实现切片 adcf492＋上轮状态批 0a9cae8 一并请随轮验收（--no-ff）。
+  实现切片证据（cargo test --workspace 0 failed＋clippy --workspace
+  --all-targets -D warnings 0，04:5x 在案），请复核或合并树复跑，验
+  收裁量；本地预检 exit 0＋本树三面相对 main 零重叠（05:0x 实证）。
+  **实现切片入库＝025 链五环闭环＋真机 ready-p2 事实源就绪**
+  （served_capabilities 两行随 catalog_capabilities 自动翻转，bin 装
+  配零改动）。
+- （回执不回执：wt-main 第 75 批 [→环境] 留言系竞态知会——其期待物
+  （本树实现切片）于其发出同窗口已在途，随验收闭环；wt-2 收货知会消
+  化；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为
+  准。）
