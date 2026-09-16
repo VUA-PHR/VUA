@@ -415,6 +415,20 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "packages.listRepos":
+      case "packages.packageCatalog":
+        // 025 P2 词表行(核心冻结批 2026-09-17):同 P1 纪律——模拟
+        // Provider 无 VpmBackend 引擎面,恒答诚实缺席,绝不伪造仓库
+        // 订阅清单/包目录事实或空数组冒充(诚实空清单/空 versions 只
+        // 属于真实后端的合法事实)
+        return this.#failure(request, this.#error(
+          "vua.packages.unavailable",
+          "unavailable",
+          "errors.packages.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
     }
   }
 

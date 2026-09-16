@@ -573,6 +573,75 @@ export interface PackagesListInstalledResultV01 {
   readonly packages: readonly PackagesInstalledItemV01[];
 }
 
+/* ---- 025 P2 读面(packages-repos＋packages-catalog v0.1,核心冻结批
+ *  2026-09-17;表态程序收敛:环境提案 64bfe58／集成 7a50ce9／桌面
+ *  0031004／核心裁决 bf78368)。两方法只读,按需查询粒度,零分页语义;
+ *  全部错误码复用既有闭集,词面零新码。健康面 = P2 非目标(库面无事
+ *  实载体);写面(启停/增删/刷新)归 013 R5 逐面独立提案不在此族 */
+
+/** packages.listRepos:仓库订阅清单读面(订阅面为世界 = 用户配置事实,
+ *  settings userRepos 数组顺序照实投影)。params 空闭集(全局配置面,
+ *  非 per-project) */
+export interface PackagesListReposQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.listRepos";
+  readonly params: Record<string, never>;
+}
+
+/** 订阅行:四标识/定位事实为可空字符串(null = 库面 Option 如实投影,
+ *  本地目录仓库 url=null);cached 必带 = 逐仓库缓存命中事实(false =
+ *  已订阅未刷新,其自身诚实状态,不隐藏不伪造成空目录)。行闭集 =
+ *  虚假断言防线(health/status/lastRefreshed 等发明字段在 schema 即
+ *  非法——健康面 P2 非目标) */
+export interface PackagesRepoInfoV01 {
+  readonly repoId: string | null;
+  readonly name: string | null;
+  readonly url: string | null;
+  readonly localPath: string | null;
+  readonly cached: boolean;
+}
+
+export interface PackagesListReposResultV01 {
+  readonly schemaVersion: "vua.packages-repos/v0.1";
+  /** 订阅面自身顺序 = 冻结的确定性呈现事实;空数组 = 诚实零订阅 */
+  readonly repos: readonly PackagesRepoInfoV01[];
+}
+
+/** packages.packageCatalog:单包目录事实按需查询(选中工程上下文绑定;
+ *  无全量目录投影、无分页语义)。packageId 词表外包 = 复用
+ *  vua.vpm.no_matching_package(消费端呈现为独立空态非错误页) */
+export interface PackagesPackageCatalogQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.packageCatalog";
+  readonly params: { readonly projectPath: string; readonly packageId: string };
+}
+
+/** 目录版本行:yanked = 仓库缓存携带事实(compatible = 按选中工程
+ *  Unity 版本判定,null = 工程版本未知——null 不是不兼容) */
+export interface PackagesCatalogVersionV01 {
+  readonly version: string;
+  readonly yanked: boolean;
+  readonly compatible: boolean | null;
+}
+
+export interface PackagesPackageCatalogResultV01 {
+  readonly schemaVersion: "vua.packages-catalog/v0.1";
+  readonly projectPath: string;
+  readonly packageId: string;
+  /** null 呈现 = packageId 兼任显示名(P1 裁决 3),不冒充字段事实 */
+  readonly displayName: string | null;
+  /** 二态来源事实;桌面「已装」第三态 = 与 installed 组合,词面不合
+   *  并来源与安装两事实 */
+  readonly source: "repo" | "local";
+  readonly installed: boolean;
+  /** 冻结判定结论(存在严格更新的兼容版本);null = 判定未执行(本工
+   *  程未安装或工程 Unity 版本未知)——缺席不是「无更新」,null 时消
+   *  费端维持 P1 防线(更新 UI 不渲染,不以默认值填充) */
+  readonly updateAvailable: boolean | null;
+  /** 仓库缓存版本升序;local 来源 = 空数组(诚实空,非错误) */
+  readonly versions: readonly PackagesCatalogVersionV01[];
+}
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1519,6 +1588,8 @@ export type ApplicationRequestV01 =
   | ProjectInspectProjectQueryV01
   | ProjectLockStatusQueryV01
   | PackagesListInstalledQueryV01
+  | PackagesListReposQueryV01
+  | PackagesPackageCatalogQueryV01
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -1938,6 +2009,18 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, ["projectPath"])
       && isIdentifier(value.params.projectPath);
+  }
+  // 025 P2 读面(核心冻结批 2026-09-17):listRepos = 空闭集(全局配置
+  // 面);packageCatalog = 双键闭集(projectPath 013 身份 + packageId)
+  if (value.kind === "query" && value.method === "packages.listRepos") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
+  }
+  if (value.kind === "query" && value.method === "packages.packageCatalog") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["projectPath", "packageId"])
+      && isIdentifier(value.params.projectPath)
+      && isIdentifier(value.params.packageId);
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {

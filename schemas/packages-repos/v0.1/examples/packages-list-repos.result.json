@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listRepos",
+  "result": {
+    "schemaVersion": "vua.packages-repos/v0.1",
+    "repos": [
+      {
+        "repoId": "official",
+        "name": "Official",
+        "url": "https://vpm.vrczh.org/vpm.json",
+        "localPath": "C:\\Users\\demo\\AppData\\Local\\VRChatCreatorCompanion\\vpm-repos\\official.json",
+        "cached": true
+      },
+      {
+        "repoId": "curated",
+        "name": "Curated",
+        "url": "https://vpm.vrczh.org/vpm-curated.json",
+        "localPath": null,
+        "cached": false
+      },
+      {
+        "repoId": "local-tools",
+        "name": "Local tools",
+        "url": null,
+        "localPath": "D:\\vpm-local\\repo.json",
+        "cached": true
+      }
+    ]
+  }
+}

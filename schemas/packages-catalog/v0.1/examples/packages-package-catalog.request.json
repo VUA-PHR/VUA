@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.packageCatalog",
+  "params": {
+    "projectPath": "C:\\VRChat\\Projects\\Demo",
+    "packageId": "com.anatawa12.avatar-optimizer"
+  }
+}
