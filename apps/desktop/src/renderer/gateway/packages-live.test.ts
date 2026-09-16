@@ -9,12 +9,14 @@ import type { GatewayClient, GatewayResult } from "./gateway-client.ts";
 
 /**
  * packages 读面 live 端口测试(024 P1 中间诚实态消费批;025 P2 读面消费
- * 批):fake GatewayClient 编排 app.snapshot 能力行与 packages.* wire 帧,
- * 钉死消费纪律——诚实缺席(not-connected)、typed 失败照原词(不折叠空
- * 态)、帧窄化(行闭集,形状不符诚实失败)、区块可用性标注随能力行翻转
- * (installed = packages.query;repos = packages.listRepos;catalog =
- * packages.packageCatalog)、订阅行 cached=false 诚实承载、目录按需查询
- * no_matching_package 独立空态码照原词上呈。
+ * 批;025 v0.2 增量消费更新批):fake GatewayClient 编排 app.snapshot
+ * 能力行与 packages.* wire 帧,钉死消费纪律——诚实缺席(not-connected)、
+ * typed 失败照原词(不折叠空态)、帧窄化(行闭集,形状不符诚实失败)、
+ * 区块可用性标注随能力行翻转(installed = packages.query;repos =
+ * packages.listRepos;catalog = packages.packageCatalog)、订阅行
+ * cached=false 诚实承载、目录按需查询 no_matching_package 独立空态码照
+ * 原词上呈;目录族双版协商(v0.1 七键/v0.2 八键 cacheSourced 披露,盖
+ * 戳族常量辨词面,缺键/发明键均形状不符)。
  */
 
 type InvokeHandler = (
@@ -387,6 +389,94 @@ describe("packages live port (025 P2 consumption)", () => {
       clientWith({ snapshot: P2_AVAILABLE, catalogResult: UNAVAILABLE_ERROR }),
     );
     expect(await port.packageCatalog("C:/proj", "com.x")).toEqual({ kind: "unavailable" });
+  });
+});
+
+describe("packages live port (025 v0.2 increment consumption update)", () => {
+  /** v0.2 = 冻结 v0.1 七键恰加必带 cacheSourced(025 v0.2 增量冻结批词面) */
+  const VALID_CATALOG_FACTS_V02 = {
+    projectPath: "C:/proj",
+    packageId: "com.anatawa12.avatar-optimizer",
+    displayName: "Avatar Optimizer",
+    source: "repo",
+    installed: true,
+    updateAvailable: null,
+    versions: [
+      { version: "1.8.0", yanked: false, compatible: true },
+      { version: "1.9.0", yanked: false, compatible: null },
+    ],
+    cacheSourced: true,
+  };
+
+  it("accepts a v0.2-stamped eight-key answer and carries the cacheSourced disclosure verbatim (true = served via cache degradation)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        snapshot: P2_AVAILABLE,
+        catalogResult: {
+          ok: true,
+          value: catalogFrame({ schemaVersion: "vua.packages-catalog/v0.2", ...VALID_CATALOG_FACTS_V02 }),
+        },
+      }),
+    );
+    const outcome = await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer");
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect(outcome.result).toEqual(VALID_CATALOG_FACTS_V02);
+    // 族判别:结果携带披露事实,页面据此呈现「缓存数据」信息标注(非失败)
+    expect("cacheSourced" in outcome.result && outcome.result.cacheSourced).toBe(true);
+  });
+
+  it("accepts a v0.2 answer with cacheSourced=false (online-refreshed, no annotation)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        snapshot: P2_AVAILABLE,
+        catalogResult: {
+          ok: true,
+          value: catalogFrame({
+            schemaVersion: "vua.packages-catalog/v0.2",
+            ...VALID_CATALOG_FACTS_V02,
+            cacheSourced: false,
+          }),
+        },
+      }),
+    );
+    const outcome = await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer");
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect("cacheSourced" in outcome.result && outcome.result.cacheSourced).toBe(false);
+  });
+
+  it("answers shape violation for a v0.2 stamp without the required cacheSourced key (version generation is pinned by the family constant, never guessed)", async () => {
+    const { cacheSourced: _omitted, ...sevenKeyFacts } = VALID_CATALOG_FACTS_V02;
+    const port = createLivePackages(
+      clientWith({
+        snapshot: P2_AVAILABLE,
+        catalogResult: {
+          ok: true,
+          value: catalogFrame({ schemaVersion: "vua.packages-catalog/v0.2", ...sevenKeyFacts }),
+        },
+      }),
+    );
+    expect(await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer")).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+  });
+
+  it("answers shape violation for a v0.1 answer inventing the disclosure field (frozen v0.1 closed set unchanged — no fabricated annotation source)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        snapshot: P2_AVAILABLE,
+        catalogResult: {
+          ok: true,
+          value: catalogFrame({ schemaVersion: "vua.packages-catalog/v0.1", ...VALID_CATALOG_FACTS, cacheSourced: false }),
+        },
+      }),
+    );
+    expect(await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer")).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
   });
 });
 

@@ -642,6 +642,34 @@ export interface PackagesPackageCatalogResultV01 {
   readonly versions: readonly PackagesCatalogVersionV01[];
 }
 
+/* ---- 025 v0.2 增量(内联裁决 2026-09-17:stale/cacheSourced 披露增
+ *  量;收敛面 = 环境形状提案 A＋桌面表态第 5 条披露枝＋核心方向裁决 6)。
+ *  v0.2 = 冻结 v0.1 result 恰加一个必带键 cacheSourced,其余零变动;冻
+ *  结的 v0.1 词面绝不原地修订——backend 未采纳 v0.2 前继续应答 v0.1 族,
+ *  盖戳族常量告知消费端应答的是哪个词面,永不猜测。command 面与 v0.1
+ *  逐字节同形(PackagesPackageCatalogQueryV01 不变)。repos 族刻意无此
+ *  字段:list_repos 零网络面,该事实恒为常量——恒常量信息字段不是事实,
+ *  不设 wire 键 */
+export interface PackagesPackageCatalogResultV02 {
+  readonly schemaVersion: "vua.packages-catalog/v0.2";
+  readonly projectPath: string;
+  readonly packageId: string;
+  /** null 呈现 = packageId 兼任显示名(P1 裁决 3),不冒充字段事实 */
+  readonly displayName: string | null;
+  /** 二态来源事实;桌面「已装」第三态 = 与 installed 组合 */
+  readonly source: "repo" | "local";
+  readonly installed: boolean;
+  /** 冻结判定结论;null = 判定未执行——缺席不是「无更新」 */
+  readonly updateAvailable: boolean | null;
+  /** 仓库缓存版本升序;local 来源 = 空数组(诚实空,非错误) */
+  readonly versions: readonly PackagesCatalogVersionV01[];
+  /** 必带信息性降级披露事实:true = 本次结果经缓存降级路径(offline→
+   *  load_cache,或在线 load 失败降级);false = 在线刷新 load 所得。
+   *  信息性非失败:消费端呈现「缓存数据」标注,绝不渲染为失败,也绝不
+   *  为无此字段的 v0.1 应答虚构标注 */
+  readonly cacheSourced: boolean;
+}
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {

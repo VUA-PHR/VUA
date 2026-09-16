@@ -12,6 +12,7 @@ import {
   usePackagesView,
   type CapabilityReport,
   type CatalogPackageFactsV01,
+  type CatalogPackageFactsV02,
   type ChangeRequest,
   type InstalledPackageRowV01,
   type PackageChangePreview,
@@ -55,7 +56,8 @@ const copy = strings.packages;
  *   解锁,cached=false「已订阅·缓存未建立」诚实态,零健康拟态词)+
  *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
  *   渲染入口;no_matching_package = 独立空态;updateAvailable null =
- *   更新行不渲染);变更面仍无词表,写入口不渲染;
+ *   更新行不渲染;v0.2 cacheSourced=true =「缓存数据」信息标注,v0.1
+ *   无字段不虚构);变更面仍无词表,写入口不渲染;
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - 所有变更两阶段:previewChanges → ChangesDialog 确认 → applyChanges;
@@ -419,10 +421,12 @@ function P2ReposSection({
   );
 }
 
-/** P2 目录事实面板:挂载即按需查询(双键闭集);四种形态严格区分——
+/** P2 目录事实面板:挂载即按需查询(双键闭集);五种形态严格区分——
  * 加载骨架 / typed 失败(码原词) / no_matching_package 独立空态 /
  * 目录事实行闭集呈现(displayName null 以 packageId 兼任;source 二态
- * × installed 组合呈现;updateAvailable null 时更新行不渲染)。 */
+ * × installed 组合呈现;updateAvailable null 时更新行不渲染) /
+ * v0.2 cacheSourced=true「缓存数据」信息性标注(非失败;v0.1 应答无
+ * 此字段不虚构标注——双族协商,盖戳族常量辨词面永不猜测)。 */
 function P2CatalogPanel({
   projectPath,
   packageId,
@@ -436,7 +440,7 @@ function P2CatalogPanel({
 }) {
   const [outcome, setOutcome] = useState<
     | { kind: "loading" }
-    | { kind: "ok"; facts: CatalogPackageFactsV01 }
+    | { kind: "ok"; facts: CatalogPackageFactsV01 | CatalogPackageFactsV02 }
     | { kind: "failed"; code: string }
     | { kind: "unavailable" }
   >({ kind: "loading" });
@@ -457,6 +461,12 @@ function P2CatalogPanel({
 
   const facts = outcome.kind === "ok" ? outcome.facts : null;
   const displayName = facts === null ? null : (facts.displayName ?? facts.packageId);
+  // v0.2 披露标注:仅盖戳 v0.2 且 cacheSourced=true 时呈现「缓存数据」
+  // 信息标注(信息性非失败);v0.1 应答无此字段,绝不虚构标注(双族协商)
+  const cacheSourcedLine =
+    facts === null || !("cacheSourced" in facts) || !facts.cacheSourced
+      ? null
+      : copy.p2.catalogCachedData;
   const updateLine =
     facts === null || facts.updateAvailable === null
       ? null
@@ -516,6 +526,11 @@ function P2CatalogPanel({
             <span className="vua-caption vua-text-secondary">{copy.p2.sourceLabel}: </span>
             {sourceLine}
           </p>
+          {cacheSourcedLine !== null ? (
+            <p className="vua-caption vua-text-secondary">
+              <Icon name="question" size={16} /> {cacheSourcedLine}
+            </p>
+          ) : null}
           {updateLine !== null ? (
             <p>
               <span className="vua-caption vua-text-secondary">{copy.p2.updateAvailableLabel}: </span>
