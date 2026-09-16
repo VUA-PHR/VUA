@@ -13,9 +13,10 @@
 
 use vua_orchestrator::vpm_backend_error_codes as error_codes;
 use vua_orchestrator::{
-    AppErrorV1, ChangeItemV1, ChangeKindV1, ChangePreviewV1, ErrorCategory,
-    FileSystemProjectStore, InstalledPackageV1, PackageRequestV1, ParamValue, ProjectRef,
-    RegisteredProjectV1, VpmBackend, VpmCapabilities,
+    AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
+    ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
+    PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisteredProjectV1, RepoInfoV01,
+    VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -172,6 +173,69 @@ fn map_local_package_io(context: &'static str) -> impl Fn(std::io::Error) -> App
     }
 }
 
+/// P2 读面的环境/缓存 io 失败映射：复用 `backend_unavailable`（025 冻结批
+/// 裁决 5 复用清单），不发明新码。
+fn map_environment_io(context: &'static str) -> impl Fn(std::io::Error) -> AppErrorV1 {
+    move |error| {
+        AppErrorV1::new(
+            error_codes::BACKEND_UNAVAILABLE,
+            ErrorCategory::Unavailable,
+            "errors.vpm.backendUnavailable",
+            "corr-vpm-catalog",
+        )
+        .with_param("reason", ParamValue::Text(format!("{context}: {error}")))
+    }
+}
+
+/// One subscription row projected verbatim (025 freeze batch `RepoInfoV01`):
+/// the four identifier/location facts are the library Options projected as
+/// null (a local-directory repo has no url); `cached` is the REQUIRED
+/// per-repo cache-hit fact, derived exactly where the library derives its
+/// own Loaded/NotDownloaded state (repo_holder.rs `load_repo_from_cache`:
+/// the subscription's `local_path` IS the cache path — repo_source.rs — so
+/// cached = that file exists and parses as a JSON object). false = subscribed
+/// but never refreshed: its own honest listed state, never an empty catalog.
+fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
+    let cached = std::fs::read(repo.local_path())
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+        .is_some_and(|value| value.is_object());
+    RepoInfoV01 {
+        repo_id: repo.id().map(str::to_owned),
+        name: repo.name().map(str::to_owned),
+        url: repo.url().map(|url| url.to_string()),
+        local_path: Some(repo.local_path().to_string_lossy().into_owned()),
+        cached,
+    }
+}
+
+/// The `compatible` judgment (025 freeze batch: evaluated against the
+/// selected project's Unity version). A package's `unity` field is the VPM
+/// spec's MINIMUM Unity constraint, so compatibility = the project version
+/// is at least that major.minor; no `unity` field satisfies every version.
+/// This mirrors the general branch of vrc-get's `unity_compatible`
+/// (lib.rs:208, private fn). Its VRCSDK-for-2019 special case is an
+/// install-selection guard, not a compatibility fact of this word face, and
+/// is deliberately not duplicated here (declared in proposal 025 inline).
+fn catalog_compatible(
+    package: &vrc_get_vpm::PackageManifest,
+    unity: vrc_get_vpm::version::UnityVersion,
+) -> bool {
+    match package.unity() {
+        Some(min_unity) => {
+            unity
+                >= vrc_get_vpm::version::UnityVersion::new(
+                    min_unity.major(),
+                    min_unity.minor(),
+                    0,
+                    vrc_get_vpm::version::ReleaseType::Alpha,
+                    0,
+                )
+        }
+        None => true,
+    }
+}
+
 fn default_environment_root() -> PathBuf {
     // Mirrors DefaultEnvironmentIo::new_default: the VRChat CreatorCompanion
     // directory is the shared, VCC-compatible configuration home.
@@ -198,6 +262,13 @@ impl VpmBackend for VrcGetLibBackend {
             remove_packages: true,
             project_registry: true,
         }
+    }
+
+    fn catalog_capabilities(&self) -> CatalogCapabilities {
+        // 025 冻结批裁决 4：恰在实现 `list_repos`/`package_catalog` 时覆写
+        // 默认 declared-none（ORC-DEV-004 无实现不预留）。`VccCliBackend`
+        // 不覆写——不声明，五位 `VpmCapabilities` 闭集与其默认缺席臂零改动。
+        CatalogCapabilities { catalog: true }
     }
 
     fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
@@ -362,6 +433,151 @@ impl VpmBackend for VrcGetLibBackend {
                     Some(RegisteredProjectV1 { path, name })
                 })
                 .collect())
+        })
+    }
+
+    fn list_repos(&self) -> Result<Vec<RepoInfoV01>, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 订阅面为世界（025 冻结批裁决 1）：settings userRepos 数组逐行
+            // 逐字投影，行序＝配置顺序（不发明排序键）；逐行携带 cached 缓存
+            // 命中事实。本面只读缓存、零网络（缓存命中判定），无在线刷新分支。
+            Ok(settings.get_user_repos().iter().map(repo_info_row).collect())
+        })
+    }
+
+    fn package_catalog(
+        &self,
+        project: &ProjectRef,
+        package_id: &str,
+    ) -> Result<PackageCatalogV01, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let offline = self.offline;
+        let project_root = project.root.clone();
+        let package_id = package_id.to_owned();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006；preview_install
+            // 同构先例）。缓存来源的 stale wire 标注候词面升版（提案 025 内联
+            // 线程），v0.1 闭集内不发明字段。
+            let collection = if offline {
+                vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                    .await
+                    .map_err(map_environment_io("loading package cache"))?
+            } else {
+                match vrc_get_vpm::environment::PackageCollection::load(
+                    &settings,
+                    &io,
+                    Some(&http),
+                )
+                .await
+                {
+                    Ok(collection) => collection,
+                    Err(_) => {
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                            .await
+                            .map_err(map_environment_io("loading package cache"))?
+                    }
+                }
+            };
+            let project_path = project_root.to_string_lossy().into_owned();
+            let project_io =
+                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            // 工程加载成功即携带 Unity 版本（m_EditorVersion 解析失败＝load
+            // Err→project_load_failed），compatible/updateAvailable 判定有据。
+            let unity = unity_project.unity_version();
+            let installed_manifest = unity_project.get_installed_package(&package_id);
+            let installed = installed_manifest.is_some();
+            let installed_version = installed_manifest.map(|manifest| manifest.version().clone());
+
+            use vrc_get_vpm::PackageCollection as _;
+            let mut repo_versions: Vec<vrc_get_vpm::PackageInfo> = Vec::new();
+            let mut local_info: Option<vrc_get_vpm::PackageInfo> = None;
+            for info in collection.find_packages(&package_id) {
+                if info.repo().is_some() {
+                    repo_versions.push(info);
+                } else {
+                    local_info = Some(info);
+                }
+            }
+            if repo_versions.is_empty() && local_info.is_none() {
+                // 词表外包（025 冻结批裁决 2）：仓库缓存与本地集合均无此包，
+                // 复用码、独立空态（消费端呈现为空态非错误页）。
+                return Err(AppErrorV1::new(
+                    error_codes::NO_MATCHING_PACKAGE,
+                    ErrorCategory::Dependency,
+                    "errors.vpm.noMatchingPackage",
+                    "corr-vpm-catalog",
+                )
+                .with_param("package", ParamValue::Text(package_id)));
+            }
+            repo_versions.sort_by(|left, right| left.version().cmp(right.version()));
+            let versions: Vec<CatalogVersionV01> = repo_versions
+                .iter()
+                .map(|info| CatalogVersionV01 {
+                    version: info.version().to_string(),
+                    yanked: info.package_json().is_yanked(),
+                    compatible: Some(catalog_compatible(info.package_json(), unity)),
+                })
+                .collect();
+            // updateAvailable 判定（025 冻结批裁决 3 冻结口径）：已装版本 vs
+            // latest_for(工程 Unity 版本, 用户 prerelease 设置) 的比较结论
+            // 「存在严格更新的兼容版本」，本域内完成、wire 只出结论；未安装
+            // ＝判定未执行（None→null，缺席不是「无更新」）。prerelease 读
+            // 用户 show_prerelease_packages 设置，零 wire 开关。
+            let update_available = if installed {
+                let selector = vrc_get_vpm::VersionSelector::latest_for(
+                    Some(unity),
+                    settings.show_prerelease_packages(),
+                );
+                let has_newer = collection
+                    .find_package_by_name(&package_id, selector)
+                    .and_then(|latest| {
+                        installed_version
+                            .as_ref()
+                            .map(|installed| latest.version() > installed)
+                    })
+                    .unwrap_or(false);
+                Some(has_newer)
+            } else {
+                None
+            };
+            // displayName：repo 来源取缓存最高版本的 manifest；local 来源取
+            // 本地包 manifest；None 如实投影（消费端以 packageId 兼任显示名，
+            // P1 裁决 3 延续）。
+            let display_name = repo_versions
+                .last()
+                .map(|info| info.package_json())
+                .or(local_info.map(|info| info.package_json()))
+                .and_then(|manifest| manifest.display_name().map(str::to_owned));
+            Ok(PackageCatalogV01 {
+                project_path,
+                package_id,
+                display_name,
+                source: if repo_versions.is_empty() {
+                    PackageSourceV01::Local
+                } else {
+                    PackageSourceV01::Repo
+                },
+                installed,
+                update_available,
+                versions,
+            })
         })
     }
 
