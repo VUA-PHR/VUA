@@ -23,7 +23,9 @@ import type { CapabilityReport, Unsubscribe } from "./types.ts";
  *   (订阅清单,ready-p2 repos 行承载)+ packages.packageCatalog(单
  *   包目录按需查询)已消费;blocks.repos/catalog 权威事实源 =
  *   served_capabilities 对应能力行(随引擎 catalog_capabilities 声明
- *   翻转,未实现即诚实不可渲染),健康面非目标零拟态词。
+ *   翻转,未实现即诚实不可渲染),健康面非目标零拟态词。v0.2 增量批
+ *   (2026-09-17)消费更新:packageCatalog 双族协商(v0.1 七键/v0.2
+ *   八键 cacheSourced 披露),盖戳族常量辨词面永不猜测。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -138,6 +140,20 @@ export interface CatalogPackageFactsV01 {
   readonly installed: boolean;
   readonly updateAvailable: boolean | null;
   readonly versions: readonly CatalogVersionRowV01[];
+}
+
+/**
+ * P2 单包目录事实 v0.2(025 v0.2 增量冻结批词面,镜像 @vua/contracts
+ * PackagesPackageCatalogResultV02 去 schemaVersion 信封键):冻结 v0.1
+ * 七键恰加必带 cacheSourced,其余零变动。纯增量双版本协商:backend 未
+ * 声明 v0.2 前以 v0.1 族应答(七键,消费端不虚构标注);盖戳族常量告知
+ * 应答词面世代,客户端读戳辨族永不猜测。
+ */
+export interface CatalogPackageFactsV02 extends CatalogPackageFactsV01 {
+  /** 信息性降级披露:true = 本次结果经缓存降级路径(offline→load_cache
+   *  或在线 load 失败降级),呈现「缓存数据」标注——信息性非失败,绝不
+   *  渲染为失败态;false = 在线刷新所得,无标注 */
+  readonly cacheSourced: boolean;
 }
 
 /**
@@ -289,18 +305,21 @@ export interface PackagesPort {
     | { readonly kind: "unavailable" }
   >;
   /**
-   * P2 词面消费(packages.packageCatalog,025 冻结批):单包目录事实按
-   * 需查询——双键闭集 {projectPath(013 注册路径), packageId},无全
-   * 量投影无分页;调用方必须持有工程上下文(compatible 判定绑定选中
-   * 工程,无工程上下文不发起查询)。unavailable = 引擎缺席/未接线;
-   * failed 携带 typed 错误码原词(vua.vpm.no_matching_package = 词表
-   * 外无此包,呈现为独立空态非错误页),不折叠不猜测。
+   * P2 词面消费(packages.packageCatalog,025 冻结批＋v0.2 增量批):单包
+   * 目录事实按需查询——双键闭集 {projectPath(013 注册路径), packageId},
+   * 无全量投影无分页;调用方必须持有工程上下文(compatible 判定绑定选中
+   * 工程,无工程上下文不发起查询)。双族协商:v0.1 应答 = 七键事实(无
+   * 披露字段,消费端不自行标注缓存来源);v0.2 应答 = 八键事实(含
+   * cacheSourced 披露,true 时页面呈现「缓存数据」信息标注非失败)。
+   * unavailable = 引擎缺席/未接线;failed 携带 typed 错误码原词
+   * (vua.vpm.no_matching_package = 词表外无此包,呈现为独立空态非错误
+   * 页),不折叠不猜测。
    */
   packageCatalog(
     projectPath: string,
     packageId: string,
   ): Promise<
-    | { readonly kind: "ok"; readonly result: CatalogPackageFactsV01 }
+    | { readonly kind: "ok"; readonly result: CatalogPackageFactsV01 | CatalogPackageFactsV02 }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;

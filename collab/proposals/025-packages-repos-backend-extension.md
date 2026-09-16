@@ -696,6 +696,79 @@ v0.2 增量冻结批（表态节先行、冻结批随后，f056d4e→d6ca0b5 先
 **程序结论**：三项口径两采纳一照改（②照改系环境增补批，零词面动
 作，不阻塞任何在库面）；stale 提案＝A 方向、catalog 单族、v0.2 族
 版、本轮即办。核心 v0.2 增量冻结批随后落节（本表态之后同轮）。
+
+### 增量形状核可＋消费更新批（桌面）（2026-09-17 05:4x，wt-3 工作时段；v0.2 冻结批消费面核可＋双族消费批交付声明）
+
+**核可对象与方式**：packages-catalog v0.2 增量冻结批＝slot/wt-2
+8393204（＋表态批 e8513d3）世代，**候集成验收尚未入 main——本核可
+以冻结批经集成验收入库为生效前提**（落节时事实如实登记：本树工作
+副本已合并吸收 slot/wt-2 链上批次以承接消费更新批依赖——contracts
+TS 面 V02 接口，吸收系 git merge 非复制，零改写；wt-2 合并留言明示
+桌面批及早跟进，照「不等待」纪律办理）。核可方式＝只读词面逐项核对
+（v0.2 result.schema 全文＋4 正 5 负向量＋双语协议本＋Rust 端口
+PackageCatalogV02/catalog_v02/package_catalog_v02＋路由双臂＋TS 面
+PackagesPackageCatalogResultV02）＋消费更新批代码同批落地（见交付
+面）。
+
+**逐项核可（对照本桌面形状核可节〔前节〕与表态第 5 条，零偏差）**：
+
+1. **词面增量恰一键**：v0.2 result＝冻结 v0.1 恰加必带 `cacheSourced`
+   （布尔），其余零变动——command 面与 v0.1 逐字节同形（守卫测试零
+   变合理）；version 行三键、displayName 可空、source 二态×installed
+   分立、updateAvailable null 语义、versions 升序全部原样；schema
+   required 九键＋additionalProperties:false 双面核对，负例
+   wrong-typed-cacheSourced 等钉死。
+2. **repos 族不加字段**：list_repos 零网络面，恒常量信息字段不是事
+   实——与本桌面核可节第 2 条「健康面非目标」同律，无异议。
+3. **纯增量双版本协商**：路由盖戳（声明 v0.2 的 backend 答
+   `vua.packages-catalog/v0.2`，未声明维持冻结 v0.1 臂）；冻结 v0.1
+   绝不原地修订——本桌面已验收消费切片（f266712 经 eda2f60）承接的
+   v0.1 词面持续工作，版本机器可读纪律保持；消费端读盖戳族常量辨词
+   面世代，永不猜测（本批 live 层实现同律：未知族常量＝形状不符诚实
+   失败）。
+4. **消费端呈现纪律（本表态第 5 条披露枝兑现）**：cacheSourced=true
+   ＝「缓存数据」信息性标注非失败（页面以次级 caption 行呈现，绝不
+   渲染为失败态）；false＝在线刷新无标注；**v0.1 应答无此字段绝不虚
+   构标注**（live 层 v0.1 七键闭集拒绝该键，页面按 `in` 判别收敛，
+   类型级防线双面钉死）。
+5. **兼容语义随批澄清**：compatible＝库完整 `unity_compatible` 全语
+   义系 v0.1 词面既有冻结语义（零变化），环境增补批照改复刻四分支
+   ——消费面零动作，桌面 compatible 呈现纪律（null＝版本未知不是不
+   兼容）不变。
+6. **TS 面专项核可（桌面所有权域登记确认）**：
+   `PackagesPackageCatalogResultV02` 与 Rust `PackageCatalogV02`
+   serde camelCase 投影逐键同形零偏差（V01 全键＋cacheSourced）；
+   程序事实延续先例如实登记——TS 面系核心冻结批批内自落，本节即
+   桌面域登记确认，消费更新批直接承接。
+
+**消费更新批交付面（同批落地，桌面所有权域）**：
+apps/desktop/src/renderer/gateway/packages-port.ts（
+`CatalogPackageFactsV02`＝V01 恰加 cacheSourced readonly 布尔＋
+`PackagesPort.packageCatalog` 返回双族 widen＋doc）＋
+packages-live.ts（`isCatalogPackageFactsV02` 八键闭集＋
+`isPackagesCatalogResultV01/V02` 族校验＋组合校验按盖戳族窄化，
+未知族常量形状不符）＋gateway/index.ts（V02 导出登记）＋
+features/packages/PackagesPage.tsx（P2CatalogPanel 双族 facts＋
+cacheSourced=true 信息标注行，v0.1 无字段不虚构）＋i18n 四语
+`packages.p2.catalogCachedData`（EN/ZH/JA/KO，信息性文案）＋
+packages-live.test.ts v0.2 describe 四例（true 逐字承载／false 无
+标注／v0.2 戳缺键形状不符＝版本世代机器可检测的消费端同构钉死／
+v0.1 应答发明披露字段形状不符＝冻结闭集不变）。
+
+**程序结论**：v0.2 增量冻结批形状核可**通过**（生效前提＝其经集成
+验收入库）；桌面消费更新批全链在本树 slot/wt-3 同批完成（机械校验
+随批在案），候集成随轮验收。零端到端宣称维持——呈现纪律经单元/契
+约测试验证，真机 ready-p2 区块解锁候用户 dev 栈重启，走查归 W25
+（O-2）。
+
+> 竞态补正（wt-3，2026-09-17 05:5x）：本节落节时「生效前提＝冻结批
+> 经集成验收入库（候验收尚未入 main）」系落节当时事实——冻结批已于
+> 本批工作期间经集成 6a4678d 验收入库（第 77 批登记 ca3e911 在案，
+> 20 非 collab 文件亲审＋合并树复跑 05:4x 全绿）。**核可生效前提已
+> 兑现，本核可即时生效**。本树追平合并时 inbound 非 collab 面＝0 文
+> 件（冻结批内容与本树经吸收合并所得逐字一致的等效性实证），吸收合
+> 并如依赖顺序声明所预期退化为纯历史。
+
 ### 增补批声明（环境）（2026-09-17 05:5x 工作时段，wt-6；口径②照改执行——compatible 复刻全库语义落地）
 
 **定位**：本节系对上节核心表态（slot/wt-2 e8513d3，候验收）的收货与
