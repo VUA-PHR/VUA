@@ -806,3 +806,20 @@ v0.1 应答发明披露字段形状不符＝冻结闭集不变）。
   8393204 的端口面（catalog_v02/package_catalog_v02/
   PackageCatalogV02）入 main**（slot/wt-2 候集成验收）。该批入库后
   本树追平即跟进适配，无等待声明必要——依赖事实如实登记于此。
+
+**增补批第二部分落地登记（同轮 06:0x，wt-6）**：追平吸收 77 批
+（6a4678d＋ca3e911，含 e8513d3＋8393204 入库；025 文件尾双方追加节
+冲突按时序手工合流——核心表态节在前、本声明节在后）后即办：
+`catalog_v02()` 声明覆写＝true（恰在实现 V02 方法时，ORC-DEV-004）
+＋`package_catalog_v02` 实现（共享体 `package_catalog_impl` 返回冻结
+v0.1 事实＋cacheSourced 事实——offline→load_cache 或在线 load 失败
+降级＝true〔ORC-ADP-006 同构〕、在线刷新成功＝false；信息性非失
+败；v0.1 面词面不变不发明）＋compatible 复刻经共享体自动沿用至
+v0.2 面。provider-host 双臂路由（在库）按声明自动答
+`vua.packages-catalog/v0.2`，bin 装配零改动。新例钉死声明＋
+cacheSourced=true（离线合成世界）；**在线成功臂 false 系类型面＋实
+现直读，单测不可达如实声明**（无网络世界可测，不虚构覆盖）。全链
+机械校验绿（06:0x 在案）：cargo test --workspace 81 套件 0 failed
+（含 vpm_backend 18/18）＋clippy --workspace --all-targets -D
+warnings 0。**025 环境侧义务就此全清**；剩余链＝桌面消费更新批（双
+族接纳＋cacheSourced 标注）→用户 dev 栈重启真机复验→W25（O-2）。

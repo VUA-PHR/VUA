@@ -755,6 +755,38 @@ fn p2_package_catalog_compatible_recreates_the_full_library_special_cases() {
     fs::remove_dir_all(&base).ok();
 }
 
+/// 025 inline ruling 6 / packages-catalog v0.2 freeze batch: the backend
+/// declares the v0.2 word face exactly when it implements the V02 method
+/// (ORC-DEV-004: no implementation, no reservation), and the v0.2 result
+/// carries the REQUIRED cacheSourced disclosure fact (informational, never
+/// an error). In this offline synthetic world every catalog answer is
+/// served through the cache-degradation path, so the fact reads true; the
+/// v0.1 face keeps serving the field-less frozen shape (its type has no
+/// such key, so a fabricated annotation is unrepresentable there).
+#[test]
+fn p2_package_catalog_v02_declares_and_discloses_the_cache_sourced_fact() {
+    let (backend, project, base) = p2_repo_world("p2-catalog-v02");
+
+    assert!(
+        backend.catalog_v02(),
+        "the backend declares v0.2 exactly when it implements package_catalog_v02"
+    );
+
+    let catalog = backend
+        .package_catalog_v02(&project, "com.vua.test.catalog.synthetic")
+        .unwrap();
+    assert!(
+        catalog.cache_sourced,
+        "offline world = this result was served through the cache-degradation path"
+    );
+    // The v0.2 facts are the frozen v0.1 facts verbatim plus the disclosure.
+    assert_eq!(catalog.package_id, "com.vua.test.catalog.synthetic");
+    assert_eq!(catalog.project_path, project.root.to_string_lossy());
+    assert_eq!(catalog.versions.len(), 3, "same enumerated facts");
+    assert_eq!(catalog.versions[1].compatible, Some(true));
+    fs::remove_dir_all(&base).ok();
+}
+
 #[test]
 fn p2_package_catalog_judges_update_available_against_the_installed_version() {
     let (backend, project, base) = p2_repo_world("p2-update");
