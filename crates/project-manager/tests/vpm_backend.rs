@@ -44,6 +44,10 @@ fn success(outcome_stdout: &str) -> ProcessOutcome {
 }
 
 fn minimal_vpm_project(root: &std::path::Path) -> ProjectRef {
+    minimal_vpm_project_at(root, "2022.3.22f1")
+}
+
+fn minimal_vpm_project_at(root: &std::path::Path, editor_version: &str) -> ProjectRef {
     fs::create_dir_all(root.join("Packages")).unwrap();
     fs::create_dir_all(root.join("ProjectSettings")).unwrap();
     fs::write(
@@ -58,7 +62,7 @@ fn minimal_vpm_project(root: &std::path::Path) -> ProjectRef {
     .unwrap();
     fs::write(
         root.join("ProjectSettings/ProjectVersion.txt"),
-        "m_EditorVersion: 2022.3.22f1\n",
+        format!("m_EditorVersion: {editor_version}\n"),
     )
     .unwrap();
     ProjectRef {
@@ -604,6 +608,150 @@ fn p2_package_catalog_reports_repo_versions_with_judgment_facts() {
         catalog.versions[2].compatible, Some(false),
         "2.0.0 requires a newer Unity — false, not null"
     );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// Synthetic repository cache for the 025 inline special-case pins: the
+/// public VPM package identifiers the library's special cases key on,
+/// with fully synthetic versions and unity constraints.
+fn special_case_repo_cache(cache_path: &std::path::Path) {
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    let cache = serde_json::json!({
+        "repo": {
+            "name": "Synthetic SpecialCase Repo",
+            "id": "com.vua.test.repo.specialcase",
+            "url": "https://example.invalid/vua/specialcase-repo.json",
+            "packages": {
+                "com.vrchat.avatars": {
+                    "versions": {
+                        "3.4.0": {
+                            "name": "com.vrchat.avatars",
+                            "version": "3.4.0",
+                            "unity": "2019.4",
+                            "vpmDependencies": {}
+                        },
+                        "3.5.0": {
+                            "name": "com.vrchat.avatars",
+                            "version": "3.5.0",
+                            "unity": "2022.3",
+                            "vpmDependencies": {}
+                        }
+                    }
+                },
+                "com.vrchat.core.vpm-resolver": {
+                    "versions": {
+                        "0.1.26": {
+                            "name": "com.vrchat.core.vpm-resolver",
+                            "version": "0.1.26",
+                            "unity": "2019.4",
+                            "vpmDependencies": {}
+                        },
+                        "0.1.27": {
+                            "name": "com.vrchat.core.vpm-resolver",
+                            "version": "0.1.27",
+                            "unity": "2022.3",
+                            "vpmDependencies": {}
+                        }
+                    }
+                }
+            }
+        }
+    });
+    fs::write(cache_path, cache.to_string()).unwrap();
+}
+
+/// 025 inline thread (core stance on implementation-stance item 2: the
+/// general-branch-only landing was rejected — the field must re-create the
+/// FULL library `unity_compatible` semantics). Each divergence example
+/// below is a case the general minimum-constraint branch alone would get
+/// WRONG (it would answer true where the library answers false, or miss
+/// the exact-match arm), so these pins prove the special cases are live:
+/// VRCSDK 3.4 (2019-only SDK) and resolver ≤0.1.26 against a 2022 project
+/// judge false; VRCSDK 3.5+ against a Unity 6000 project judges false
+/// (the exact-major.minor arm exists precisely to prevent treating
+/// VRCSDK-for-2022 as Unity-6000-compatible); the 2019 project keeps the
+/// special-case positives; resolver 0.1.27 escapes the special case into
+/// the general branch. Synthetic data only; the com.vrchat.* identifiers
+/// are the public names the special cases key on.
+#[test]
+fn p2_package_catalog_compatible_recreates_the_full_library_special_cases() {
+    let base = unique_dir("p2-specialcase");
+    let environment_root = base.join("isolated-vpm-environment");
+    let cached_repo = environment_root.join("Repos").join("specialcase-repo.json");
+    special_case_repo_cache(&cached_repo);
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": cached_repo.display().to_string(),
+            "url": "https://example.invalid/vua/specialcase-repo.json"
+        }]),
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let project_2022 = minimal_vpm_project(&base.join("proj-2022"));
+    let project_6000 = minimal_vpm_project_at(&base.join("proj-6000"), "6000.0.23f1");
+    let project_2019 = minimal_vpm_project_at(&base.join("proj-2019"), "2019.4.31f1");
+
+    let compatible_of = |project: &ProjectRef, package: &str, version: &str| {
+        let catalog = backend.package_catalog(project, package).unwrap();
+        catalog
+            .versions
+            .iter()
+            .find(|row| row.version == version)
+            .unwrap_or_else(|| panic!("version {version} of {package} must be enumerated"))
+            .compatible
+    };
+
+    // 2022.3 project: the 2019-only special cases judge false exactly where
+    // the general branch would answer true.
+    assert_eq!(
+        compatible_of(&project_2022, "com.vrchat.avatars", "3.4.0"),
+        Some(false),
+        "VRCSDK 3.4 is 2019-only: false on a 2022 project (general branch would say true)"
+    );
+    assert_eq!(
+        compatible_of(&project_2022, "com.vrchat.core.vpm-resolver", "0.1.26"),
+        Some(false),
+        "resolver ≤0.1.26 is 2019-only: false on a 2022 project (general branch would say true)"
+    );
+    assert_eq!(
+        compatible_of(&project_2022, "com.vrchat.core.vpm-resolver", "0.1.27"),
+        Some(true),
+        "resolver 0.1.27 escapes the special case into the general branch"
+    );
+    assert_eq!(
+        compatible_of(&project_2022, "com.vrchat.avatars", "3.5.0"),
+        Some(true),
+        "VRCSDK 3.5 with a 2022.3 constraint on a 2022.3 project: exact match holds"
+    );
+
+    // Unity 6000 project + VRCSDK 3.5+ (the divergence that motivated the
+    // library's exact-match arm): library false, general branch would say
+    // true (6000 >= 2022.3).
+    assert_eq!(
+        compatible_of(&project_6000, "com.vrchat.avatars", "3.5.0"),
+        Some(false),
+        "VRCSDK-for-2022 must NOT read compatible against a Unity 6000 project"
+    );
+
+    // 2019.4 project: the special-case positives hold...
+    assert_eq!(
+        compatible_of(&project_2019, "com.vrchat.avatars", "3.4.0"),
+        Some(true),
+        "VRCSDK 3.4 on its 2019 home: true"
+    );
+    assert_eq!(
+        compatible_of(&project_2019, "com.vrchat.core.vpm-resolver", "0.1.26"),
+        Some(true),
+        "resolver 0.1.26 on its 2019 home: true"
+    );
+    // ...and the exact-match arm still rejects a 2022-constrained SDK.
+    assert_eq!(
+        compatible_of(&project_2019, "com.vrchat.avatars", "3.5.0"),
+        Some(false),
+        "VRCSDK 3.5 (2022.3 constraint) on a 2019.4 project: exact match fails"
+    );
+
     fs::remove_dir_all(&base).ok();
 }
 
