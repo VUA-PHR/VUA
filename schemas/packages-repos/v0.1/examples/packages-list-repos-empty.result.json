@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listRepos",
+  "result": {
+    "schemaVersion": "vua.packages-repos/v0.1",
+    "repos": []
+  }
+}
