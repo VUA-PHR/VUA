@@ -271,6 +271,17 @@ pub const PACKAGES_QUERY_SCHEMA_VERSION: &str = "0.1";
 /// padded listing — an empty array is a real backend fact only.
 pub const PACKAGES_UNAVAILABLE: &str = "vua.packages.unavailable";
 
+/// The `packages-repos` v0.1 result family constant (proposal 025 P2 freeze
+/// batch 2026-09-17; the c914cf2 standing rule — every wire row carries a
+/// version constant of its own, independent of the envelope const). The
+/// route stamps it at envelope assembly, never the backend.
+pub const PACKAGES_REPOS_SCHEMA_VERSION: &str = "vua.packages-repos/v0.1";
+
+/// The `packages-catalog` v0.1 result family constant (proposal 025 P2
+/// freeze batch 2026-09-17; the c914cf2 standing rule). The route stamps it
+/// at envelope assembly, never the backend.
+pub const PACKAGES_CATALOG_SCHEMA_VERSION: &str = "vua.packages-catalog/v0.1";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1143,6 +1154,15 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    // Proposal 025 P2: the catalog read faces ride the SAME VpmBackend
+    // wiring but the SEPARATE catalog capability declaration (default
+    // declared-none) — an engine wired without the P2 implementation keeps
+    // both rows honestly unavailable until its backend overrides
+    // `catalog_capabilities` (the environment implementation slice).
+    let packages_catalog_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.catalog_capabilities().catalog => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1164,6 +1184,8 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "project.import-copy", "availability": project_ops_availability},
         {"operationId": "project.setNote", "availability": project_ops_availability},
         {"operationId": "packages.query", "availability": packages_availability},
+        {"operationId": "packages.listRepos", "availability": packages_catalog_availability},
+        {"operationId": "packages.packageCatalog", "availability": packages_catalog_availability},
     ])
 }
 
@@ -4929,6 +4951,10 @@ fn packages_request(
         "packages.listInstalled" => {
             packages_list_installed(state, vpm, request, request_id, correlation_id)
         }
+        "packages.listRepos" => packages_list_repos(vpm, request, request_id, correlation_id),
+        "packages.packageCatalog" => {
+            packages_package_catalog(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5034,6 +5060,168 @@ fn packages_list_installed(
                 "projectPath": project_path,
                 "packages": rows,
             },
+        }),
+    ))
+}
+
+/// `packages.listRepos` (proposal 025 P2 freeze batch): the repository
+/// subscription list — the subscription face is the world (the user's
+/// configuration fact). A GLOBAL configuration face: no 013 registration
+/// binding and no project context, and the frozen command schema admits an
+/// EMPTY params object only — any key (or an absent params) is a shape
+/// violation, never a default. The backend capability is the separate
+/// catalog declaration (`catalog_capabilities`, default declared-none): an
+/// engine wired without the P2 implementation answers
+/// `vua.vpm.capability_missing`, never a fabricated or padded list. Rows
+/// project the backend's `RepoInfoV01` facts verbatim (serde camelCase,
+/// nulls preserved as honest absences); row order is the backend's
+/// subscription-face order — the route invents no sort key.
+fn packages_list_repos(
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let empty_params = request
+        .get("params")
+        .and_then(Value::as_object)
+        .is_some_and(|object| object.is_empty());
+    if !empty_params {
+        return packages_invalid_params(request_id, correlation_id);
+    }
+    if !vpm.catalog_capabilities().catalog {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let repos = match vpm.list_repos() {
+        Ok(repos) => repos,
+        Err(error) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                &error.code,
+                &error.message_key,
+                app_error_category(error.category),
+            ));
+        }
+    };
+    let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+            "operation": "packages.listRepos",
+            "result": {
+                "schemaVersion": PACKAGES_REPOS_SCHEMA_VERSION,
+                "repos": rows,
+            },
+        }),
+    ))
+}
+
+/// `packages.packageCatalog` (proposal 025 P2 freeze batch): the on-demand
+/// per-package catalog facts for ONE package in ONE registered project's
+/// context. projectPath is validated against the SAME 013 inspection
+/// aggregate the P1 face uses (same fact, same code:
+/// `vua.project.project_not_found` — an off-aggregate path never reaches
+/// the backend); params are the frozen two-key closed set {projectPath,
+/// packageId}, both non-empty strings — an extra key, a missing key, or an
+/// empty value is a shape violation, never a default. The catalog
+/// capability is the separate declaration (`catalog_capabilities`); the
+/// backend's typed errors (`vua.vpm.no_matching_package` among them)
+/// travel verbatim — an unknown package is its own honest answer, never an
+/// empty masquerade.
+fn packages_package_catalog(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // The registration-validation face is unwired: without the 013
+        // aggregate the not-found calibration does not exist, so the whole
+        // face stays honestly absent (the P1 same-face discipline).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    let path_value = params.get("projectPath").and_then(Value::as_str);
+    let id_value = params.get("packageId").and_then(Value::as_str);
+    let (project_path, package_id) = match (path_value, id_value) {
+        (Some(path), Some(id)) if !path.is_empty() && !id.is_empty() && params.len() == 2 => {
+            (path, id)
+        }
+        _ => return packages_invalid_params(request_id, correlation_id),
+    };
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    let registered = snapshot
+        .projects
+        .iter()
+        .any(|project| project.path == project_path);
+    if !registered {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.catalog_capabilities().catalog {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let catalog = vpm.package_catalog(
+        &ProjectRef {
+            id: project_path.to_string(),
+            root: PathBuf::from(project_path),
+        },
+        package_id,
+    );
+    let catalog = match catalog {
+        Ok(catalog) => catalog,
+        Err(error) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                &error.code,
+                &error.message_key,
+                app_error_category(error.category),
+            ));
+        }
+    };
+    // The family const is an envelope-assembly fact (P1 discipline): the
+    // route stamps it, the backend facts stay verbatim.
+    let mut result = serde_json::to_value(&catalog).unwrap_or_else(|_| json!({}));
+    result["schemaVersion"] = json!(PACKAGES_CATALOG_SCHEMA_VERSION);
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+            "operation": "packages.packageCatalog",
+            "result": result,
         }),
     ))
 }

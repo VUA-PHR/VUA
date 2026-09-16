@@ -303,6 +303,31 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 025 P2 packages.listRepos read query with empty closed params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listRepos", params: {},
+    })).toBe(true);
+    // 全局配置面:任何参数键都是词表外形状违反,不是默认
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listRepos", params: { projectPath: "C:/proj" },
+    })).toBe(false);
+  });
+
+  it("admits the 025 P2 packages.packageCatalog read query with two-key closed params", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.packageCatalog",
+      params: { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.packageCatalog",
+      params: { projectPath: "C:/proj" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.packageCatalog",
+      params: { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer", offset: 0 },
+    })).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},

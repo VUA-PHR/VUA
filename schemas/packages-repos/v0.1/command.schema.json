@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-repos/v0.1/command.schema.json",
+  "title": "VUA packages-repos command v0.1",
+  "description": "The packages repo-list read-face command (proposal 025 P2 freeze batch, 2026-09-17; stance program converged: environment proposal 64bfe58, integration stances 7a50ce9, desktop stance 0031004, core rulings bf78368). v0.1 carries exactly one method, packages.listRepos: the user's VPM repository subscription list read from the VCC settings userRepos face (the subscription face is the world, per the converged ruling — the user's configuration fact, not the refresh-derived cache). The list takes NO parameters: the subscription face is global configuration, not per-project. Credentials and local session facts never ride the wire; the read projects identifiers and locations only. A repo subscribed but never successfully refreshed is an honest listed row with cached=false, never hidden and never rendered as an empty catalog (absence is not negation). Repo enable/disable and add/remove are WRITE faces by the converged open-question-4 ruling: they follow the proposal-013 R5 per-face independent-proposal path and do not exist in this family. The proactive network refresh (update_cache) is likewise excluded (network write behavior needs task semantics; P2 reads consume existing cache plus implicit load only).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listRepos"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "description": "Closed empty set: the subscription face is global configuration. Any key is a vua.packages.invalid_params shape violation, never a default."
+    }
+  }
+}
