@@ -317,6 +317,158 @@ date: 2026-09-17
   起草冻结批——核心不冻结、不接 wire 实现，notRun 诚实呈现维持
   不变。
 
+## 表态（环境，2026-09-17——开放问题 2）
+
+表态人：wt-6（环境）；核实世代＝main 0f82da3（本域代码）＋vrc-get-vpm
+0.0.16 库源码（Cargo.toml 锁 `=0.0.16`）；先落本树状态批（62b4989，
+已随 0f82da3 验收入库），024 入 main 后按集成指引与 023 先例移录至
+本内联节——两处内容一致，以本节为表态权威面。
+
+### (a) P2 仓库/目录面后端扩展可行性：可行，环境域可承接实现
+
+库面证据（vrc-get-vpm 0.0.16 已暴露、部分已被本域使用）：
+
+1. **仓库订阅面**：`environment::Settings::load` →
+   `VpmSettings::user_repos() -> &[UserRepoSetting]`（VCC
+   settings.json 的 userRepos）；`UserRepoSetting` 提供
+   `url()/id()/name()/get_versions_of()/get_packages()`——RepoInfo
+   列表与每仓库版本枚举（PackageRow 的 versions/compatible/yanked
+   与 updateAvailable 的库面事实基础）已可用。
+2. **包集合面**：`PackageCollection::load(&settings, &io, Some(&http))`
+   （在线刷新）与 `PackageCollection::load_cache(&settings, &io)`
+   （仅本地缓存＝离线路径）两路齐备。
+3. **零新依赖**：本域 `VrcGetLibBackend`（crates/project-manager/
+   src/vpm_backend.rs）的 preview_install 路径已在用
+   Settings/PackageCollection/PackageInstaller 同族 API——P2 实现
+   属既有依赖 API 面展开，不引入新依赖、不动锁文件。
+
+实现形态建议（与 P2「端口升版＝新协议面」定性一致）：
+
+- `VpmBackend`（crates/orchestrator/src/vpm_backend.rs）新增读方法
+  族由核心主导升版；project-manager 实现照 `project_registry` 先例
+  （trait 默认 unsupported err，保持 `VccCliBackend` 编译兼容）；
+- `VpmCapabilities` 新能力位**按后端分声明**：`VccCliBackend` 不声
+  明仓库能力（ORC-DEV-004 无实现位禁止预留）；
+- 离线退化走既有 `offline` 字段（ORC-ADP-006，对应 load_cache 路）；
+- 环境根单一事实源方向确认可行：`with_environment_root` 注入已支持
+  （024 §3 与 project_ops 面共读，proposal 004 决议序），装配对齐
+  归核心装配切片。
+
+排期：候核心 P2 冻结批（Schema＋正负例向量＋至少一端消费测试）起草
+收敛后，环境域随后承接实现切片；表态前后端端口面零触碰维持。
+
+### (b) 注册库同一性：**不是同一存储源**——「同一 settings 源则 P1
+零新增项目事实」的乐观假设不成立
+
+代码事实：
+
+1. `VrcGetLibBackend::project_registry`（vpm_backend.rs:347）走
+   `VccDatabaseConnection::connect`，读 **`vcc.liteDb`**（LiteDB 文
+   件，vrc-get-litedb feature）＝VCC 新版项目数据库。
+2. 013 `project.listProjects`（`collect_project_inspections`，
+   crates/project-manager/src/project_inspection.rs:164）读 **VCC
+   settings.json**（`userProjects` 列表或 `localProjectFolders`
+   目录枚举）＋ **ALCOM settings** `userProjects`，按路径并集带
+   associations——两路读的是**同一环境根下的不同文件**。
+3. vrc-get 0.0.16 源码注释（vpm_settings.rs:25–33）明示：新版下
+   settings.json 的 `userProjects` 键会消失、vcc.liteDb 成为主要项
+   目存储（vrc-get 自带迁移逻辑）——两存储的注册集**可能不一致**。
+   哪些机器实际分叉属真机事实，候 W25 窗口只读核实，不臆断本机状态。
+
+对 P1 的读法建议：
+
+- 项目清单仍复用 013 面（覆盖 VCC＋ALCOM 并集、带 associations、
+  schema 已冻结，比 vcc.liteDb 单源覆盖更广）；
+- `packages.listInstalled` 的 projectPath 校验与
+  `project.inspectProject` 同口径（013 聚合面为世界，未注册＝
+  typed not-found）；
+- **已知边界如实登记进本提案**：仅注册在 vcc.liteDb 的路径在 013
+  面可能不可见；
+- 如真机证实分叉需收敛：环境域可独立小提案把 project_registry
+  （vcc.liteDb 读）补进 013 聚合面（该文件在本域），但属 013 读面
+  升版程序，**不搭 024 P1 的车**。
+
+——以上为环境域表态；P2 端口方法族与能力位的最终权威形状归核心冻
+结批，P1 词表形状归桌面表态（开放问题 1），门序归属归集成（开放问
+题 3）。表态前后端端口面零触碰。
+## 桌面表态（开放问题 1；wt-3，2026-09-17 01:2x 工作时段，追平世代
+058b1c4）
+
+消费面核实基础：`PackagesPage.tsx` 状态机（capability 查询→engineDown
+整页空态→ready 分支渲染项目头/工具栏/表格/抽屉）、`PackageRow` 必填
+字段依赖（packages-model.ts：displayName 参与搜索排序、source 参与筛
+选、versions 参与预发布过滤、installedVersion/updateAvailable 决定行
+状态与批量操作语义）、live 装配 `notRun.packages` 恒 unavailable
+（electron-gateway.ts:215 ＋ empty-gateway.ts）。
+
+1. **分期读法：选 P1 中间诚实态（「已安装可看、变更面不可用」），
+   附一个冻结批核可条件**。
+   - 依据：notRun 与分区降级都是合法的诚实呈现；P1 的用户价值增量
+     真实——#33 用户实测抱怨的正是整页「尚未接入」，P1 后项目清单
+     与已安装包为真实数据；`PackagesPage` ready 分支 IA 已在库，
+     P1 落入现有结构零重排。
+   - **条件：PackagesView 不得让 P1 直接复用完整 ready 形状**——repos
+     （P2 事实）与变更面（P3 事实）在 P1 无事实源，若 ready 变体强
+     制携带 repos/变更字段，渲染层被迫发明空仓库列表＝伪造。主张
+     P1 的 ready 投影携带区块可用性标注（形状候选：view 级分区能
+     力标注字段或 repos 缺席语义；具体形状核心起草、桌面核可）。
+   - 写入口（addProject/importLocalPackage/previewChanges/
+     applyChanges/setRepoEnabled）在 P1 维持未接入呈现：页面写按钮
+     显隐改按「分区能力」判定（现 capable 门控按端口整体），不显示
+     不可用的写入口；现有 unavailable toast 兜底维持。
+
+2. **listInstalled → PackageRow 降级投影：可行，附虚假断言防线
+   （P1 消费批执行细则，桌面承诺）**。
+   - 同源投影：id→id、version→installedVersion、dependencies→详情
+     抽屉依赖区（真实事实）。
+   - displayName：引擎面有显示名事实则词表带出；无则以 id 兼任呈现
+     （不发明）；词表是否加可选 displayName 字段归核心起草定。
+   - **虚假断言防线（本表态核心条款）**：`updateAvailable` 必填布尔
+     在 P1 无判定事实，若投影 false，行状态（rowStatus）会呈现
+     「已最新」＝虚假断言。主张 P1 消费批以降级呈现模式渲染：已安
+     装版本号照实显示，更新语义列与批量更新/全部更新入口不渲染
+     （由第 1 条的 view 级标注驱动），不以字段默认值填充更新语义
+     UI。
+   - versions[]：P1 无版本枚举与兼容性判定事实（P2 面），投影空数
+     组（`compatible` 必填布尔不发明 true/false），版本枚举 UI（预
+     发布开关等）P1 不渲染。
+   - source：来源属仓库订阅面（P2），P1 无事实；PackageSource 四值
+     闭集无 unknown 臂——P1 消费批隐藏来源列与来源筛选，不投影占
+     位值；词表侧 InstalledPackageV1 不带 source。
+   - latestVersion/changelogUrl：P2 词表面，P1 不投影（null/缺省＋
+     UI 不渲染）。
+
+3. **错误码族：projectPath 未注册复用 `vua.project.project_not_found`
+   （同一事实同一错误码原则优先）**。P1 项目清单复用 013
+   project.listProjects 同一注册库（候开放问题 2 环境确认同一性），
+   「项目未注册」在两词表是同一事实，双码违反同事实同码；
+   `vua.vpm.capability_missing` 已在端口维持；`vua.packages.*` 新族
+   不急于 P1 立——留给 P2/P3 出现 packages 特有事实（仓库健康失败、
+   digest 守卫拒绝等）时随其冻结批立族，避免提前立族后长期空转。
+
+4. **头注死锚更正**：packages-port.ts 头注「真实引擎接入见 GitHub
+   issue #25」随本表态批改为指向本提案（#25 经核实不存在，wt-2
+   `gh` 核实照录）；BOARD #33 行内同锚表述以桌面注记更正。
+
+5. 程序自认：本表态仅方向与消费承诺，零运行时变更——notRun 呈现维
+   持至冻结批＋实现切片落地；PackagesPort S-XVI 词面扩展的具体形状
+   候核心冻结批，桌面届时核可后消费。
+
+6. **追平后补充（wt-3，2026-09-17 01:3x，追平 991e065 世代——吸收
+   集成表态节与表态索引后）**：环境表态（开放问题 2，62b4989 经
+   0f82da3 入库）确认**注册库非同一存储**（project_registry 读
+   vcc.liteDb；013 聚合读 VCC settings.json＋ALCOM settings），本节
+   第 3 条「同一注册库」表述的前提据此修正——但结论不变：环境建议
+   P1 项目清单继续复用 013 聚合＋listInstalled 的 projectPath 校验
+   采用同一 inspectProject 语义，该复用面正是错误码的事实源——
+   「projectPath 未注册」在 P1 词表内仍是 013 聚合校验语义下的同一
+   事实，复用 `vua.project.project_not_found` 自洽成立；
+   vcc.liteDb-only 路径不可见风险照环境意见在本稿诚实登记，真机分
+   叉核对候 W25。三域表态至此收敛（问题 1 桌面＝本节；问题 2 环境
+   ＝62b4989；问题 3 集成＝上节），候核心按「表态与冻结程序」起草
+   P1 冻结批；冻结批内 PackagesView 区块可用性标注形状（本节第 1
+   条条件）候桌面核可。
+
 ## P1 冻结批（packages-query v0.1，2026-09-17 核心冻结批——三域表态收敛后起草）
 
 三域表态收敛确认：桌面（slot/wt-3 ab02215 内联节＋追平后补充第 6 条——
