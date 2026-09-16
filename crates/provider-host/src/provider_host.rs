@@ -282,6 +282,14 @@ pub const PACKAGES_REPOS_SCHEMA_VERSION: &str = "vua.packages-repos/v0.1";
 /// at envelope assembly, never the backend.
 pub const PACKAGES_CATALOG_SCHEMA_VERSION: &str = "vua.packages-catalog/v0.1";
 
+/// The `packages-catalog` v0.2 result family constant (proposal 025 inline
+/// ruling 2026-09-17: the cacheSourced disclosure increment, new family
+/// version — the frozen v0.1 word face is never revised in place). The
+/// route serves this family exactly when the backend declares `catalog_v02`
+/// (additive dual-version negotiation: backends that have not adopted v0.2
+/// keep answering the frozen v0.1 family below).
+pub const PACKAGES_CATALOG_SCHEMA_VERSION_V02: &str = "vua.packages-catalog/v0.2";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -5135,7 +5143,12 @@ fn packages_list_repos(
 /// capability is the separate declaration (`catalog_capabilities`); the
 /// backend's typed errors (`vua.vpm.no_matching_package` among them)
 /// travel verbatim — an unknown package is its own honest answer, never an
-/// empty masquerade.
+/// empty masquerade. The RESULT family is negotiated additively (proposal
+/// 025 inline ruling): a backend declaring `catalog_v02` answers
+/// `vua.packages-catalog/v0.2` (result carries the REQUIRED cacheSourced
+/// disclosure); any other backend keeps answering the frozen
+/// `vua.packages-catalog/v0.1` family — the stamped const tells the
+/// consumer which word face answered, never a guess.
 fn packages_package_catalog(
     state: &HostState,
     vpm: Arc<dyn VpmBackend>,
@@ -5193,29 +5206,56 @@ fn packages_package_catalog(
             "unavailable",
         ));
     }
-    let catalog = vpm.package_catalog(
-        &ProjectRef {
-            id: project_path.to_string(),
-            root: PathBuf::from(project_path),
-        },
-        package_id,
-    );
-    let catalog = match catalog {
-        Ok(catalog) => catalog,
-        Err(error) => {
-            return FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                &error.code,
-                &error.message_key,
-                app_error_category(error.category),
-            ));
+    // Additive dual-version negotiation (proposal 025 inline ruling): a
+    // backend that declares `catalog_v02` answers the v0.2 result family
+    // (with the REQUIRED cacheSourced disclosure fact); every other backend
+    // keeps answering the frozen v0.1 family. The family const is an
+    // envelope-assembly fact (P1 discipline): the route stamps it, the
+    // backend facts stay verbatim — the consumer reads the const, never
+    // guesses the word face.
+    let (result_value, family_const) = if vpm.catalog_v02() {
+        let catalog = vpm.package_catalog_v02(
+            &ProjectRef {
+                id: project_path.to_string(),
+                root: PathBuf::from(project_path),
+            },
+            package_id,
+        );
+        match catalog {
+            Ok(catalog) => (serde_json::to_value(&catalog).unwrap_or_else(|_| json!({})), PACKAGES_CATALOG_SCHEMA_VERSION_V02),
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
+        }
+    } else {
+        let catalog = vpm.package_catalog(
+            &ProjectRef {
+                id: project_path.to_string(),
+                root: PathBuf::from(project_path),
+            },
+            package_id,
+        );
+        match catalog {
+            Ok(catalog) => (serde_json::to_value(&catalog).unwrap_or_else(|_| json!({})), PACKAGES_CATALOG_SCHEMA_VERSION),
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
         }
     };
-    // The family const is an envelope-assembly fact (P1 discipline): the
-    // route stamps it, the backend facts stay verbatim.
-    let mut result = serde_json::to_value(&catalog).unwrap_or_else(|_| json!({}));
-    result["schemaVersion"] = json!(PACKAGES_CATALOG_SCHEMA_VERSION);
+    let mut result = result_value;
+    result["schemaVersion"] = json!(family_const);
     FrameOutcome::Response(application_success(
         request_id,
         json!({
