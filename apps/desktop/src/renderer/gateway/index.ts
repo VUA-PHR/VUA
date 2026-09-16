@@ -158,6 +158,8 @@ export type {
 export type {
   ChangeRequest,
   InstalledPackageRowV01,
+  CatalogPackageFactsV01,
+  CatalogVersionRowV01,
   PackageChangeItem,
   PackageChangeKind,
   PackageChangePreview,
@@ -165,12 +167,14 @@ export type {
   PackageProject,
   PackageRow,
   PackagesP1LoadError,
+  PackagesP2LoadError,
   PackagesPort,
   PackagesView,
   PackageSource,
   PackageVersionEntry,
   RepoHealth,
   RepoInfo,
+  RepoInfoRowV01,
 } from "./packages-port.ts";
 export type { SettingsPort, SettingsView } from "./settings-port.ts";
 export { createSignal } from "./signal.ts";

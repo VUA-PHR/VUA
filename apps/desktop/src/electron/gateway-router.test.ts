@@ -357,6 +357,94 @@ describe("packages-query v0.1 routing (024 P1 消费批)", () => {
     expect(invalidParams).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).not.toHaveBeenCalled();
   });
+
+  it("routes the 025 P2 read faces verbatim and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // listRepos:空闭集 params verbatim(mock 无 VpmBackend →
+    // vua.packages.unavailable 诚实缺席照原样透传)
+    const repos = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-3",
+        method: "packages.listRepos",
+        params: {},
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-pkg-3",
+      correlationId: "desktop-request-pkg-3",
+      kind: "query",
+      method: "packages.listRepos",
+      params: {},
+    });
+    expect(repos).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.packages.unavailable" } },
+    });
+
+    // packageCatalog:双键闭集 verbatim
+    const catalog = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-4",
+        method: "packages.packageCatalog",
+        params: { projectPath: "C:/VRChat/Projects/Chiffon", packageId: "com.anatawa12.avatar-optimizer" },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-pkg-4",
+      correlationId: "desktop-request-pkg-4",
+      kind: "query",
+      method: "packages.packageCatalog",
+      params: { projectPath: "C:/VRChat/Projects/Chiffon", packageId: "com.anatawa12.avatar-optimizer" },
+    });
+    expect(catalog).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.packages.unavailable" } },
+    });
+  });
+
+  it("rejects 025 P2 word-list-escape params at the envelope guard (empty closed set / two-key closed set)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // listRepos:全局配置面,任何键在信封守卫即拒
+    const reposExtraKey = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-5",
+        method: "packages.listRepos",
+        params: { projectPath: "C:/x" },
+      },
+    );
+    expect(reposExtraKey).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+
+    // packageCatalog:投机 includePrerelease(词面外零 wire 开关)拒绝
+    const catalogExtraKey = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-6",
+        method: "packages.packageCatalog",
+        params: { projectPath: "C:/x", packageId: "com.a.b", includePrerelease: true },
+      },
+    );
+    expect(catalogExtraKey).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
 });
 
 describe("bdl-queries v0.2 routing", () => {

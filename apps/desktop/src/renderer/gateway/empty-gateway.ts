@@ -96,6 +96,7 @@ function createEmptyPackages(): PackagesPort {
     subscribe: () => () => {},
     selectProject: () => Promise.resolve(packagesView),
     listInstalled: () => Promise.resolve({ kind: "unavailable" }),
+    packageCatalog: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),
