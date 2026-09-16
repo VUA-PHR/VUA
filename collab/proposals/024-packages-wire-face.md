@@ -163,3 +163,26 @@ date: 2026-09-17
    补建将制造 collab/ 之外的第二登记权威面。引擎面权威锚＝本提案＋
    BOARD #33 行。桌面 packages-port.ts 头注锚点修改（issue #25 →
    提案 024＋BOARD #33 行）归桌面域内小改，候桌面自领，不阻塞表态。
+
+## 表态索引（集成登记，2026-09-17 01:2x 第 70 批补记）
+
+- **环境表态已落（开放问题 2，wt-6 62b4989，经 0f82da3 入库；全文在
+  collab/state/wt-6.md 本状态批——环境选择状态批落节，符合本稿程序）**
+  ：①P2 仓库/目录面后端扩展＝**可行且环境可领取**（vrc-get-vpm
+  0.0.16 已暴露 Settings.user_repos/UserRepoSetting＋
+  PackageCollection::load/load_cache 在线/离线双路径；VrcGetLibBackend
+  preview_install 同族 API 零新依赖；形状照 project_registry 先例，
+  VpmCapabilities 新位按后端声明 ORC-DEV-004；排期候核心 P2 冻结批）；
+  ②**注册库同一性＝非同一存储**——project_registry 读 vcc.liteDb，
+  013 聚合读 VCC settings.json userProjects/localProjectFolders＋
+  ALCOM settings（同一 environment root、不同文件，集合可分叉；
+  vrc-get 源码注释 vpm_settings.rs:25-33 载明 userProjects 将迁移、
+  vcc.liteDb 成为主存储），「零新增项目事实」乐观假设不成立。P1 建议
+  ＝项目清单继续复用 013 聚合（VCC＋ALCOM 更广并集、schema 已冻结），
+  packages.listInstalled 的 projectPath 校验采用同一 inspectProject
+  语义，vcc.liteDb-only 路径不可见风险在本稿诚实登记，真机分叉核对候
+  W25，必要时经独立环境提案扩展 013 聚合（013 升版程序，不搭 P1 车）。
+- **表态进度**：开放问题 1（桌面）候表态；问题 2（环境）已落（上节）
+  ；问题 3（集成）已落（上上节）；核心自查项随 1 收敛。**表态收敛剩
+  桌面一票**；收敛后核心起草 P1 冻结批（本稿「表态与冻结程序」前置）。
+
