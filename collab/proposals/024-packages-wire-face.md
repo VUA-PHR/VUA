@@ -136,6 +136,57 @@ date: 2026-09-17
 - 表态前：桌面 PackagesPort 维持现状 notRun（诚实呈现不变）；核心不接
   词表冻结与 wire 实现；环境不动后端端口面。
 
+## 表态（集成）（2026-09-17 01:1x，第 70 批验收轮——开放问题 3 全项办理）
+
+1. **门序归属确认**：本提案各期切片属 M6 T-A「通用 vrc-get 路径」提前
+   开工授权范围（用户裁决 2026-09-08 晚，越门序；BOARD M6 行权威记录
+   ：「wire 词表为新协议面——桌面提案→核心裁决流程不变」）——P1 契约
+   冻结批与实现切片（路由＋能力行＋装配）可在 M6 门开窗前按 T-A 授权
+   开工与入库，先例＝T-A 写路径 proposal 014（语义冻结＋实现验收合并
+   2026-09-09，先于 M6 门）。**M6 门验收与发行不在提前授权范围**，仍候
+   M5 关门后按门序办理（M5 关门候 W25 真机走查，候用户开窗 O-2）。
+   验收路径：P1 冻结批按本稿「表态与冻结程序」前置齐备（桌面/环境表态
+   收敛＋Schema＋正负例向量＋至少一端消费测试＋contracts TS 面＋双语
+   协议本＋REGISTRY）后由集成验收；实现切片随冻结批或紧随切片，逐批
+   集成验收（相关测试全绿＋diff 审核为合并前置）；页面呈现复验候用户
+   dev 栈重启，零端到端宣称维持。P2 系新协议面（VpmBackend 端口升版
+   ），候环境后端扩展提案独立起草后同径办理；P3 照 013 R5 逐面独立
+   提案、逐面验收，不搭车。
+2. **关联登记方式**：BOARD #33 行＝用户缺陷跟踪与引擎面排期行（候
+   用户复验＋核心协作跟踪）；本提案＝契约方向权威锚。双向引用已随
+   本批自然形成（#33 行核心注记引 070e771，本稿背景节引 #33），不设
+   第三登记面；024 方向稿阶段不申请 REGISTRY 登记（023 先例：方向稿
+   仅方向不冻结，登记入 BOARD 行即其登记面动作；冻结批按程序登记）。
+3. **死锚裁量（集成裁决，用户可否决）**：GitHub issue #25 **不补建**
+   ——本协作机制协调权威在 collab/（state/proposals/BOARD，AGENTS.md
+   协作纪律），本库 issues 系统未在协作中使用（库内 issues 为空）；
+   补建将制造 collab/ 之外的第二登记权威面。引擎面权威锚＝本提案＋
+   BOARD #33 行。桌面 packages-port.ts 头注锚点修改（issue #25 →
+   提案 024＋BOARD #33 行）归桌面域内小改，候桌面自领，不阻塞表态。
+
+## 表态索引（集成登记，2026-09-17 01:2x 第 70 批补记）
+
+- **环境表态已落（开放问题 2，wt-6 62b4989，经 0f82da3 入库；全文在
+  collab/state/wt-6.md 本状态批——环境选择状态批落节，符合本稿程序）**
+  ：①P2 仓库/目录面后端扩展＝**可行且环境可领取**（vrc-get-vpm
+  0.0.16 已暴露 Settings.user_repos/UserRepoSetting＋
+  PackageCollection::load/load_cache 在线/离线双路径；VrcGetLibBackend
+  preview_install 同族 API 零新依赖；形状照 project_registry 先例，
+  VpmCapabilities 新位按后端声明 ORC-DEV-004；排期候核心 P2 冻结批）；
+  ②**注册库同一性＝非同一存储**——project_registry 读 vcc.liteDb，
+  013 聚合读 VCC settings.json userProjects/localProjectFolders＋
+  ALCOM settings（同一 environment root、不同文件，集合可分叉；
+  vrc-get 源码注释 vpm_settings.rs:25-33 载明 userProjects 将迁移、
+  vcc.liteDb 成为主存储），「零新增项目事实」乐观假设不成立。P1 建议
+  ＝项目清单继续复用 013 聚合（VCC＋ALCOM 更广并集、schema 已冻结），
+  packages.listInstalled 的 projectPath 校验采用同一 inspectProject
+  语义，vcc.liteDb-only 路径不可见风险在本稿诚实登记，真机分叉核对候
+  W25，必要时经独立环境提案扩展 013 聚合（013 升版程序，不搭 P1 车）。
+- **表态进度**：开放问题 1（桌面）候表态；问题 2（环境）已落（上节）
+  ；问题 3（集成）已落（上上节）；核心自查项随 1 收敛。**表态收敛剩
+  桌面一票**；收敛后核心起草 P1 冻结批（本稿「表态与冻结程序」前置）。
+
+
 ## 内联线程
 
 ### [核心自查] 装配点与 ProjectOpsServices 复用边界——开放问题 4 第 1 项收敛（2026-09-17 01:1x，slot/wt-2 树＝main 7f545e2 世代全等；零代码变更，纯代码事实注记）
