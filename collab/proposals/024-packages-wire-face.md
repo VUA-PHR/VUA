@@ -315,3 +315,78 @@ date: 2026-09-17
   题 1 表态＋头注修复）。三域二落一候；表态程序＝三域收敛后核心
   起草冻结批——核心不冻结、不接 wire 实现，notRun 诚实呈现维持
   不变。
+
+## 表态（环境，2026-09-17——开放问题 2）
+
+表态人：wt-6（环境）；核实世代＝main 0f82da3（本域代码）＋vrc-get-vpm
+0.0.16 库源码（Cargo.toml 锁 `=0.0.16`）；先落本树状态批（62b4989，
+已随 0f82da3 验收入库），024 入 main 后按集成指引与 023 先例移录至
+本内联节——两处内容一致，以本节为表态权威面。
+
+### (a) P2 仓库/目录面后端扩展可行性：可行，环境域可承接实现
+
+库面证据（vrc-get-vpm 0.0.16 已暴露、部分已被本域使用）：
+
+1. **仓库订阅面**：`environment::Settings::load` →
+   `VpmSettings::user_repos() -> &[UserRepoSetting]`（VCC
+   settings.json 的 userRepos）；`UserRepoSetting` 提供
+   `url()/id()/name()/get_versions_of()/get_packages()`——RepoInfo
+   列表与每仓库版本枚举（PackageRow 的 versions/compatible/yanked
+   与 updateAvailable 的库面事实基础）已可用。
+2. **包集合面**：`PackageCollection::load(&settings, &io, Some(&http))`
+   （在线刷新）与 `PackageCollection::load_cache(&settings, &io)`
+   （仅本地缓存＝离线路径）两路齐备。
+3. **零新依赖**：本域 `VrcGetLibBackend`（crates/project-manager/
+   src/vpm_backend.rs）的 preview_install 路径已在用
+   Settings/PackageCollection/PackageInstaller 同族 API——P2 实现
+   属既有依赖 API 面展开，不引入新依赖、不动锁文件。
+
+实现形态建议（与 P2「端口升版＝新协议面」定性一致）：
+
+- `VpmBackend`（crates/orchestrator/src/vpm_backend.rs）新增读方法
+  族由核心主导升版；project-manager 实现照 `project_registry` 先例
+  （trait 默认 unsupported err，保持 `VccCliBackend` 编译兼容）；
+- `VpmCapabilities` 新能力位**按后端分声明**：`VccCliBackend` 不声
+  明仓库能力（ORC-DEV-004 无实现位禁止预留）；
+- 离线退化走既有 `offline` 字段（ORC-ADP-006，对应 load_cache 路）；
+- 环境根单一事实源方向确认可行：`with_environment_root` 注入已支持
+  （024 §3 与 project_ops 面共读，proposal 004 决议序），装配对齐
+  归核心装配切片。
+
+排期：候核心 P2 冻结批（Schema＋正负例向量＋至少一端消费测试）起草
+收敛后，环境域随后承接实现切片；表态前后端端口面零触碰维持。
+
+### (b) 注册库同一性：**不是同一存储源**——「同一 settings 源则 P1
+零新增项目事实」的乐观假设不成立
+
+代码事实：
+
+1. `VrcGetLibBackend::project_registry`（vpm_backend.rs:347）走
+   `VccDatabaseConnection::connect`，读 **`vcc.liteDb`**（LiteDB 文
+   件，vrc-get-litedb feature）＝VCC 新版项目数据库。
+2. 013 `project.listProjects`（`collect_project_inspections`，
+   crates/project-manager/src/project_inspection.rs:164）读 **VCC
+   settings.json**（`userProjects` 列表或 `localProjectFolders`
+   目录枚举）＋ **ALCOM settings** `userProjects`，按路径并集带
+   associations——两路读的是**同一环境根下的不同文件**。
+3. vrc-get 0.0.16 源码注释（vpm_settings.rs:25–33）明示：新版下
+   settings.json 的 `userProjects` 键会消失、vcc.liteDb 成为主要项
+   目存储（vrc-get 自带迁移逻辑）——两存储的注册集**可能不一致**。
+   哪些机器实际分叉属真机事实，候 W25 窗口只读核实，不臆断本机状态。
+
+对 P1 的读法建议：
+
+- 项目清单仍复用 013 面（覆盖 VCC＋ALCOM 并集、带 associations、
+  schema 已冻结，比 vcc.liteDb 单源覆盖更广）；
+- `packages.listInstalled` 的 projectPath 校验与
+  `project.inspectProject` 同口径（013 聚合面为世界，未注册＝
+  typed not-found）；
+- **已知边界如实登记进本提案**：仅注册在 vcc.liteDb 的路径在 013
+  面可能不可见；
+- 如真机证实分叉需收敛：环境域可独立小提案把 project_registry
+  （vcc.liteDb 读）补进 013 聚合面（该文件在本域），但属 013 读面
+  升版程序，**不搭 024 P1 的车**。
+
+——以上为环境域表态；P2 端口方法族与能力位的最终权威形状归核心冻
+结批，P1 词表形状归桌面表态（开放问题 1），门序归属归集成（开放问
+题 3）。表态前后端端口面零触碰。
