@@ -631,3 +631,26 @@ describe("mock packages.listInstalled (024 P1 core freeze batch)", () => {
     expect(response.error.messageKey).toBe("errors.packages.unavailable");
   });
 });
+
+describe("mock packages P2 read faces (025 core freeze batch)", () => {
+  it.each([
+    ["packages.listRepos", {}],
+    ["packages.packageCatalog", { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" }],
+  ] as const)("answers %s with the honest absence code — never a fabricated listing or an empty array posing as a fact", async (method, params) => {
+    // 025 P2 词表行:模拟面无 VpmBackend,恒答诚实缺席(与 P1 同纪律)
+    // ——绝不伪造仓库订阅清单/包目录事实;诚实空清单/空 versions 只属
+    // 于真实后端的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "query",
+      method,
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});

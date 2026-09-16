@@ -384,3 +384,74 @@ crates/orchestrator/src/vpm_backend.rs 11 码族＋VpmCapabilities 五位
 > 273efaf 先行入库且在本节之前。**就此开放问题 4 四票全部同向收敛
 > （环境倾向＋集成票＋桌面交叉表态＋核心票）即闭；开放问题 2 桌面已
 > 落。025 表态程序收敛达成，核心 P2 冻结批起草解锁。**
+
+### 冻结批（核心）（2026-09-17 03:1x–03:3x，slot/wt-2；P2 词面权威落死）
+
+**定位**：表态程序收敛（环境提案 64bfe58＋集成表态 7a50ce9＋桌面表
+态 0031004＋核心裁决 bf78368，开放问题 1–4 全闭）后，照 024 同径落
+死 P2 权威词面。本批零运行时行为变化（wire 路由/bin 装配归核心实现
+切片，库面实现归环境实现切片，均随后续批）。
+
+**词面权威形状（与方向裁决的差异逐项如实声明）**：
+
+- **双方法两族一次冻结**：`packages.listRepos`（仓库订阅清单读面，
+  result 族 `vua.packages-repos/v0.1`）＋`packages.packageCatalog`
+  （单包目录事实按需查询，result 族 `vua.packages-catalog/v0.1`）。
+  信封照常设形状（envelope const "0.1"＋operation＋result），两族版
+  本独立（c914cf2 常设规矩）。
+- **裁决 1 落死**：订阅面为世界；行闭集五键＝四标识/定位事实（可空
+  字符串，null＝库面 Option 逐字投影）＋**cached 必带布尔**（桌面表
+  态要求的逐仓库缓存命中事实；false＝已订阅未刷新，诚实清单行）。
+  行序＝订阅面自身顺序（settings userRepos 数组顺序＝用户配置事实
+  ——较裁决节新定：不发明排序键，配置顺序即事实顺序）。空 repos
+  数组＝诚实零订阅。健康面非目标落死：发明 health/status 字段在
+  schema 即非法（虚假断言防线）。
+- **裁决 2 落死**：catalog 双键闭集 { projectPath, packageId }；无全
+  量投影、无分页语义；词表外包（仓库缓存与本地集合均无此包）答复用
+  `vua.vpm.no_matching_package`（复用，桌面表态的独立空态呈现落此
+  码）。
+- **裁决 3 落死**：updateAvailable 结论布尔或 null（null＝判定未执
+  行：本工程未安装或工程 Unity 版本未知；缺席不是「无更新」）；
+  compatible 逐版本布尔或 null（工程版本未知＝null，null 不是不兼
+  容）；yanked 布尔（仓库缓存携带事实；local 来源包 versions 空数
+  组故无 yanked 语义产生——桌面「缺席≠未 yanked」纪律由空数组承
+  载）；prerelease 读用户设置零 wire 字段。
+- **新增落实（桌面表态 3 承接，方向裁决节的自然延伸）**：source 二
+  态（"repo"|"local"）＋installed 布尔分立必带——桌面三态呈现由两
+  事实组合，词面不合并来源与安装（024 P1「不发明合并事实」同律）；
+  displayName 可空（null 以 packageId 兼任，P1 裁决 3 延续）。
+- **裁决 4 落死（形状微调如实声明）**：能力声明落为**独立默认访问
+  器** `VpmBackend::catalog_capabilities() -> CatalogCapabilities`
+  （默认 declared-none）而非 `VpmCapabilities` 加位——五位闭集保持
+  稳定且未实现后端零编译波及（ORC-DEV-004 同律：恰在实现时覆写；
+  与既有 trait 默认 unsupported 先例同族）。wire
+  served_capabilities 增 `packages.listRepos`/`packages.packageCatalog`
+  两行，随装配与该声明翻转。
+- **裁决 5 落死（零新码）**：错误码全复用——
+  vua.project.project_not_found（未注册路径）、
+  vua.vpm.no_matching_package（无此包）、vua.vpm.project_load_failed、
+  vua.vpm.capability_missing、vua.vpm.backend_unavailable、
+  vua.packages.invalid_params、vua.packages.unavailable。
+- **裁决 6 落死**：stale/缓存来源 wire 标注随环境实现切片落死，本词
+  面不预留字段。
+- **裁决 7/8 维持**：健康面非目标；update_cache 不纳入。
+
+**交付面（本批文件）**：schemas/packages-repos/v0.1/（command＋
+result＋3 正 3 负向量）＋schemas/packages-catalog/v0.1/（command＋
+result＋4 正 4 负向量）＋端口面（crates/orchestrator/src/
+vpm_backend.rs：CatalogCapabilities/RepoInfoV01/PackageSourceV01/
+CatalogVersionV01/PackageCatalogV01＋trait 三方法默认实现＋lib.rs 导
+出）＋核心消费测试（crates/provider-host/tests/
+packages_p2_consumer.rs 4 例：Schema 向量验证＋端口→wire 投影闭环＋
+trait 默认缺席臂）＋TS 面（packages/contracts/src/
+application-contract.ts 六接口＋union＋守卫两 case＋test 三例）＋
+mock 恒缺席臂（packages/orchestrator-provider 两方法同 P1 纪律＋测
+试）＋双语协议本（docs/protocols/packages-repos-catalog-v0.1_EN/ZH）
+＋REGISTRY 三行。
+
+**后续批次（照 024 链）**：环境实现切片（VrcGetLibBackend 实现两方
+法＋catalog_capabilities 覆写＋离线降级分支＋stale 标注落死＋本域
+单测）→ 核心 wire 接线切片（provider-host 路由两方法＋
+served_capabilities 两行＋bin 装配）→ 桌面形状核可＋P2 消费切片。
+**零端到端宣称维持**：页面呈现候桌面消费批＋用户 dev 栈重启；真机
+走查归 W25（O-2）。
