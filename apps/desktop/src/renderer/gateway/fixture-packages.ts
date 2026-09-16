@@ -472,6 +472,9 @@ export function createFixturePackages(): PackagesPort {
     // 不模拟 wire 词面回执——如实 unavailable(演示数据走既有 ready 完整
     // IA 视图,P1 中间诚实态只有 live 装配提供,mock 不冒充真实引擎)
     listInstalled: () => Promise.resolve({ kind: "unavailable" } as const),
+    // P2 词面(packages.listRepos/packageCatalog,025 消费批):同纪律恒
+    // 诚实 unavailable,演示订阅/目录数据只存在于既有 ready 视图
+    packageCatalog: () => Promise.resolve({ kind: "unavailable" } as const),
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
 }

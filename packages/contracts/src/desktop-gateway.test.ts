@@ -388,6 +388,8 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "inspection.list": {},
     "release.openForHandoff": { buildId: "build-1" },
     "packages.listInstalled": { projectPath: "C:/proj" },
+    "packages.listRepos": {},
+    "packages.packageCatalog": { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" },
   };
 
   it("admits a minimal well-formed request for every method in the kind table", () => {
@@ -430,5 +432,38 @@ describe("gateway guard covers every declared method (regression: silent guard g
     ).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: 7 } })).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: { path: "C:/x" } })).toBe(false);
+  });
+
+  it("packages.listRepos: params empty closed set — any key rejected (025 P2 freeze; global configuration face)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-42",
+      method: "packages.listRepos" as const,
+      params: {},
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 全局配置面:任何参数键(含投机 projectPath)都是词表外形状违反,不是默认
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { foo: 1 } })).toBe(false);
+  });
+
+  it("packages.packageCatalog: two-key closed params {projectPath, packageId} minLength 1 (025 P2 freeze; envelope guard matches schema additionalProperties:false)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-43",
+      method: "packages.packageCatalog" as const,
+      params: { projectPath: "C:\\VRChat\\Projects", packageId: "com.anatawa12.avatar-optimizer" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串/投机键(includePrerelease 词面外零 wire 开关)/多键:一律拒绝
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { packageId: "com.a.b" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "", packageId: "com.a.b" } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packageId: "com.a.b", includePrerelease: true },
+      }),
+    ).toBe(false);
   });
 });

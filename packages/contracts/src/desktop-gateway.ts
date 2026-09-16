@@ -486,6 +486,34 @@ export interface PackagesListInstalledRequestV1 {
   readonly params: { readonly projectPath: string };
 }
 
+// ---- 025 P2 读面(packages-repos＋packages-catalog v0.1,核心冻结批
+// 9ab1b11 经 987b3cc 入库;wire 接线切片 4631a0f 经 4bad84e 入库;桌面
+// P2 消费批登记。只读两方法:仓库订阅清单(订阅面为世界,params 空闭集
+// ——全局配置面,任何键或缺席 = vua.packages.invalid_params 形状违反)
+// 与单包目录事实(按需查询,双键闭集 {projectPath, packageId};同一 013
+// 聚合注册校验,未注册 = 复用 vua.project.project_not_found;词表外无
+// 此包 = 复用 vua.vpm.no_matching_package,消费端呈现独立空态非错误
+// 页)。能力未声明 = vua.vpm.capability_missing;served_capabilities 两
+// 行(packages.listRepos/packages.packageCatalog)为区块标注权威事实源 ----
+
+/** packages.listRepos 只读查询:仓库订阅清单(订阅面为世界 = 用户配置
+ * 事实);params 空闭集(全局配置面,非 per-project) */
+export interface PackagesListReposRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.listRepos";
+  readonly params: Record<string, never>;
+}
+
+/** packages.packageCatalog 只读查询:单包目录事实按需查询(选中工程上
+ * 下文绑定;无全量目录投影、无分页语义) */
+export interface PackagesPackageCatalogRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.packageCatalog";
+  readonly params: { readonly projectPath: string; readonly packageId: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -534,7 +562,9 @@ export type DesktopGatewayRequestV1 =
   | InspectionGetRequestV1
   | InspectionListRequestV1
   | ReleaseOpenForHandoffRequestV1
-  | PackagesListInstalledRequestV1;
+  | PackagesListInstalledRequestV1
+  | PackagesListReposRequestV1
+  | PackagesPackageCatalogRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -586,6 +616,9 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "inspection.list": "query",
   "release.openForHandoff": "command",
   "packages.listInstalled": "query",
+  // 025 P2 读面(桌面 P2 消费批):两方法只读同族
+  "packages.listRepos": "query",
+  "packages.packageCatalog": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1029,6 +1062,18 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["projectPath"])
         && typeof value.params.projectPath === "string"
         && value.params.projectPath.length >= 1;
+    // 025 P2 读面(桌面 P2 消费批):listRepos 空闭集(全局配置面,任何
+    // 键 = 词表外形状违反);packageCatalog 双键闭集(projectPath 013 身
+    // 份 + packageId,均 minLength 1 与 Schema 同形)
+    case "packages.listRepos":
+      return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "packages.packageCatalog":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "packageId"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1
+        && typeof value.params.packageId === "string"
+        && value.params.packageId.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])
