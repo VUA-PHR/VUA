@@ -1506,6 +1506,20 @@ rolled_back: "롤백됨",
       checkedDaysAgo: "{count}일 전 확인",
       packageCount: "패키지 {count}개",
     },
+    p1: {
+      notice:
+        "저장소와 변경 관리는 아직 연결되지 않았습니다. 설치된 패키지는 현재 읽기 전용입니다.",
+      noProjectsDescription:
+        "VCC 또는 ALCOM에 등록된 프로젝트가 감지되면 여기에 표시됩니다.",
+      projectsUnavailable: "등록된 프로젝트 목록을 현재 읽을 수 없습니다.",
+      unreadableProjects: "읽을 수 없는 등록 프로젝트 항목이 {count}개 있습니다.",
+      dependenciesColumn: "의존성",
+      dependenciesCount: "직접 의존성 {count}개",
+      loadFailedTitle: "설치된 패키지를 읽을 수 없습니다",
+      loadFailed: "패키지 엔진이 오류를 반환했습니다({code}).",
+      emptyInstalledDescription:
+        "이 프로젝트에는 아직 설치된 패키지가 없습니다. {recipe}에서 프로젝트를 조립하면 추가됩니다.",
+    },
     empty: {
       engineTitle: "패키지 관리가 아직 연결되지 않았습니다",
       notConnectedTitle: "패키지 데이터가 아직 연결되지 않았습니다",

@@ -1509,6 +1509,20 @@ rolled_back: "ロールバック済み",
       checkedDaysAgo: "{count} 日前に確認",
       packageCount: "{count} 件のパッケージ",
     },
+    p1: {
+      notice:
+        "リポジトリと変更管理はまだ未接続です。インストール済みパッケージは現在表示のみ可能です。",
+      noProjectsDescription:
+        "VCC または ALCOM に登録されたプロジェクトが検出されると、ここに表示されます。",
+      projectsUnavailable: "登録済みプロジェクト一覧を現在読み込めません。",
+      unreadableProjects: "読み取れない登録プロジェクト項目が {count} 件あります。",
+      dependenciesColumn: "依存関係",
+      dependenciesCount: "直接依存 {count} 件",
+      loadFailedTitle: "インストール済みパッケージを読み取れません",
+      loadFailed: "パッケージエンジンがエラーを返しました（{code}）。",
+      emptyInstalledDescription:
+        "このプロジェクトにはまだインストール済みパッケージがありません。{recipe}から組み立てると追加されます。",
+    },
     empty: {
       engineTitle: "パッケージ管理は未接続です",
       notConnectedTitle: "パッケージデータは未接続です",
