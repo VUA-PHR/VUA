@@ -598,3 +598,41 @@ yanked＋compatible true/false；updateAvailable true/false 双臂＋判定
 全链机械校验绿（2026-09-17 04:5x 在案）：cargo test --workspace 0
 failed（含本域 vpm_backend 16/16）＋cargo clippy --workspace
 --all-targets -D warnings 0。
+
+### 增补批声明（环境）（2026-09-17 05:5x 工作时段，wt-6；口径②照改执行——compatible 复刻全库语义落地）
+
+**定位**：本节系对上节核心表态（slot/wt-2 e8513d3，候验收）的收货与
+执行声明：三项口径表态收货——①③采纳知悉、**②照改即办**；裁决 6
+落死（提案 A 收窄 catalog 单族、新族版 v0.2）收货，v0.2 协议口径以核
+心冻结批（8393204，slot/wt-2 候验收）词面为准。本节与增补批第一部分
+同批落地（wt-6 本分支）。
+
+- **增补批第一部分（本批落地）：compatible 复刻完整库语义**。按表
+  态落法照改 `catalog_compatible`（crates/project-manager/src/
+  vpm_backend.rs）：复刻 vrc-get-vpm 0.0.16 `unity_compatible`（
+  lib.rs:208）全部四臂——`is_vrcsdk_for_2019`（avatars/worlds/base
+  major 3 minor ≤4 → 仅 Unity 2019）＋`is_resolver_for_2019`（
+  resolver 0.1.≤26 → 仅 Unity 2019）＋VRCSDK 精确 major.minor 匹配
+  臂（防 VRCSDK-for-2022 误入 Unity 6000 系）＋一般最低约束臂（原
+  有）。**分歧例单测钉死**（tests/vpm_backend.rs 新例
+  p2_package_catalog_compatible_recreates_the_full_library_special_
+  cases，全部合成数据；com.vrchat.* 仅系特例臂键控的公开 VPM 标识
+  符）：SDK 3.4＋2022 工程＝false；resolver 0.1.26＋2022 工程＝
+  false；SDK 3.5＋Unity 6000（6000.0.23f1）工程＝false（一般分支会
+  误判 true 的反例）；边界正例——resolver 0.1.27 逃出特例臂走一般
+  臂＝true；2019.4 工程特例臂正向＝true×2；精确匹配臂 2019 工程
+  拒绝 2022 约束 SDK＝false。**变异验证在案（05:4x）**：临时还原一
+  般分支旧实现，新例即 FAILED——钉死力实证；还原复刻实现后 17/17
+  绿。**词面零变化**（无 schema/TS/协议本动作，v0.1 应答形状不
+  变）。全链机械校验绿（2026-09-17 05:5x 在案）：cargo test
+  --workspace 81 套件 0 failed（含本域 vpm_backend 17/17）＋cargo
+  clippy --workspace --all-targets -D warnings 0。原「特例不复制」
+  声明就此撤回，以本节为准。
+- **增补批第二部分（候依赖入库，如实声明依赖不空转）**：v0.2 适配
+  ——`catalog_v02()` 声明覆写（恰在实现时 true，ORC-DEV-004 同
+  律）＋`package_catalog_v02` 实现＋`cacheSourced` 事实源一行上贡
+  （offline→load_cache 或在线 load 失败降级＝true，ORC-ADP-006 同
+  构）＋compatible 复刻在新族结果面沿用——**依赖核心冻结批
+  8393204 的端口面（catalog_v02/package_catalog_v02/
+  PackageCatalogV02）入 main**（slot/wt-2 候集成验收）。该批入库后
+  本树追平即跟进适配，无等待声明必要——依赖事实如实登记于此。

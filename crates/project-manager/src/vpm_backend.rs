@@ -210,29 +210,72 @@ fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
 }
 
 /// The `compatible` judgment (025 freeze batch: evaluated against the
-/// selected project's Unity version). A package's `unity` field is the VPM
-/// spec's MINIMUM Unity constraint, so compatibility = the project version
-/// is at least that major.minor; no `unity` field satisfies every version.
-/// This mirrors the general branch of vrc-get's `unity_compatible`
-/// (lib.rs:208, private fn). Its VRCSDK-for-2019 special case is an
-/// install-selection guard, not a compatibility fact of this word face, and
-/// is deliberately not duplicated here (declared in proposal 025 inline).
+/// selected project's Unity version). This re-creates vrc-get's
+/// `unity_compatible` (lib.rs:208, private fn, dependency locked =0.0.16)
+/// in FULL — all four arms, including the VRCSDK-for-2019, the
+/// resolver-for-2019, and the VRCSDK exact-major.minor special cases.
+/// Core stance on proposal 025 (inline thread) adopted the duplicate with
+/// the general-branch-only landing rejected: `update_available` in the
+/// same response already walks `VersionSelector::latest_for` whose
+/// `satisfies` chain (version_selector.rs:83) runs the full
+/// `unity_compatible` semantics, so one catalog response must carry one
+/// compatibility definition, and the wire fact must mean what the
+/// behavioral authority (vrc-get) will actually do — e.g. VRCSDK 3.5+
+/// against a Unity 6000 project is library-incompatible while the general
+/// branch alone would call it compatible.
 fn catalog_compatible(
     package: &vrc_get_vpm::PackageManifest,
     unity: vrc_get_vpm::version::UnityVersion,
 ) -> bool {
-    match package.unity() {
-        Some(min_unity) => {
-            unity
-                >= vrc_get_vpm::version::UnityVersion::new(
-                    min_unity.major(),
-                    min_unity.minor(),
-                    0,
-                    vrc_get_vpm::version::ReleaseType::Alpha,
-                    0,
-                )
+    // Verbatim from vrc-get-vpm 0.0.16 lib.rs:210–218.
+    fn is_vrcsdk_for_2019(version: &vrc_get_vpm::version::Version) -> bool {
+        version.major == 3 && version.minor <= 4
+    }
+
+    fn is_resolver_for_2019(version: &vrc_get_vpm::version::Version) -> bool {
+        version.major == 0 && version.minor == 1 && version.patch <= 26
+    }
+
+    match package.name() {
+        "com.vrchat.avatars" | "com.vrchat.worlds" | "com.vrchat.base"
+            if is_vrcsdk_for_2019(package.version()) =>
+        {
+            // This VRCSDK generation is Unity-2019-only; every other Unity
+            // major is unsatisfied (library lib.rs:220–224).
+            unity.major() == 2019
         }
-        None => true,
+        "com.vrchat.core.vpm-resolver" if is_resolver_for_2019(package.version()) => {
+            // Resolver ≤0.1.26 is Unity-2019-only (library lib.rs:225–228).
+            unity.major() == 2019
+        }
+        "com.vrchat.avatars" | "com.vrchat.worlds" | "com.vrchat.base"
+            if let Some(target_unity) = package.unity() =>
+        {
+            // VRCSDK enforces exact major.minor matching. NOT part of the
+            // VPM specification; prevents incorrectly treating VRCSDK for
+            // 2022 as compatible with Unity 6000 series (library
+            // lib.rs:229–236).
+            target_unity.major() == unity.major() && target_unity.minor() == unity.minor()
+        }
+        _ => {
+            // Otherwise the package's `unity` field is the VPM spec's
+            // MINIMUM Unity constraint: compatible = the project version is
+            // at least that major.minor; no `unity` field satisfies every
+            // version (library lib.rs:237–255).
+            match package.unity() {
+                Some(min_unity) => {
+                    unity
+                        >= vrc_get_vpm::version::UnityVersion::new(
+                            min_unity.major(),
+                            min_unity.minor(),
+                            0,
+                            vrc_get_vpm::version::ReleaseType::Alpha,
+                            0,
+                        )
+                }
+                None => true,
+            }
+        }
     }
 }
 
