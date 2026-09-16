@@ -114,6 +114,7 @@ fn run_verify_frame(
         None,
         None,
         verifier,
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
@@ -375,6 +376,7 @@ fn capability_row_declares_the_route_available() {
         Cursor::new(format!("{frame}\n")),
         &mut output,
         &database,
+        None,
         None,
         None,
         None,

@@ -84,6 +84,7 @@ fn run_handoff_frame(database: &Path, params: Value) -> Value {
         None,
         None,
         None,
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
@@ -395,6 +396,7 @@ fn run_handoff_frame_wired(
         None,
         None,
         None,
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
@@ -656,6 +658,7 @@ fn explicit_injection_short_circuits_and_reaches_the_port() {
         None,
         None,
         Some(verifier),
+        None,
     )
     .expect("frame loop runs");
     let frames: Vec<Value> = String::from_utf8(output)
