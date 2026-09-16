@@ -2,18 +2,19 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 9d43587
+baseline_commit: 5a4b3dd
 updated: 2026-09-17
 ---
 ## 当前焦点
-**第 68 批验收（2026-09-17 00:0x–00:3x，工作时段）——五树追平＋状态批＋wt-3 三缺陷修复批第 68 波五支（2a5c381/0cf149f/a8c835b/291693b/faa8b0f）＋wt-3 状态批 9d43587 共六支 --no-ff 入库＋#31/#32 修复切片实质验收（集成合并树桌面全链复跑绿）＋#33 桌面自查收口核可＋deadline 未兑现事实如实闭环登记**：
+**第 68 批验收（2026-09-17 00:0x–00:3x，工作时段）——五树追平＋状态批＋wt-3 三缺陷修复批第 68 波五支（2a5c381/0cf149f/a8c835b/291693b/faa8b0f）＋wt-3 状态批 9d43587＋wt-4 两支 5a4b3dd 共八支 --no-ff 入库＋#31/#32 修复切片实质验收（集成合并树桌面全链复跑绿）＋#33 桌面自查收口核可＋deadline 未兑现事实如实闭环登记**：
 
 - **六支核验入库（merge-tree 预检各 exit 0 零冲突）**：
   - wt-3 开工前追平 91cf077（落后 11 全 collab 零自有内容，2a5c381＝第 68 波 part 1）；
   - wt-5 超线追平 7ab1ca0（落后 22 过 15 线）＋状态批 a21fc92（0cf149f＝part 2）；
   - wt-6 超线追平 e9efae3（落后 17 过线）＋状态批 959fa40（a8c835b＝part 3）；
   - wt-2 超线追平 a3eab41（落后 55 过线）＋状态批 12e563c（291693b＝part 4）；
-  - **wt-3 修复切片 f1f9b7b（faa8b0f＝part 5，桌面所有权域 7 文件 149+/7-）＋状态批 c1544d4（9d43587＝第 69 波 part 1，恰 wt-3.md 134+/104- collab-only，本轮补收编）**。
+  - **wt-3 修复切片 f1f9b7b（faa8b0f＝part 5，桌面所有权域 7 文件 149+/7-）＋状态批 c1544d4（9d43587＝第 69 波 part 1，恰 wt-3.md 134+/104- collab-only，本轮补收编）**；
+  - wt-4 超线追平 e35d6b5（落后 30 过线，零自有内容，inbound 非 collab 恰 f1f9b7b 已验收内容，产线域零触碰）＋状态批 1b86f25（5a4b3dd＝第 69 波 part 2，恰 wt-4.md 127+/83- collab-only，登记批后补收编；合并后 brief 复跑六树领先 0 全收编＋双绿维持）。
 - **#31+#32 修复切片实质验收（f1f9b7b）**：#31＝CHECK_TITLE_KEYS 注册表补齐引擎 id 闭集剩余 6 项（照 environment.rs inspect_zone 闭集）＋四语 strings.deployer.checks 词条＋presence 三词闭集投影四语状态词（errorCode 照原词呈现仅 detection_failed 携带＝工程事实不猜测映射）＋新增闭集标题投影测试（17 id 全本地化）；#32＝.vua-deployer 页面根补滚动三件套（与 .vua-page 同构，根因＝父链 overflow:hidden 截断）。
 - **集成合并树桌面全链复跑（faa8b0f 合并消息承诺事项兑现，本机 00:3x）**：`pnpm --filter @vua/desktop check` 全链绿——typecheck 双 tsconfig＋vitest 77 文件/614 测试（与桌面自测数字一致）＋build（cargo release＋tsc electron＋vite build）＋boundary＋i18n 双检＋contrast 全部达标＋leak 155 指纹零泄漏＋forest-leak。
 - **#33 桌面自查收口核可**：包管理器「尚未接入」＝契约面事实非 gate 缺陷（wire 无 packages.* 方法＋live 装配恒 notRun＝引擎未实现诚实投影；真实引擎接入既有路由＝packages-port.ts 头注归 GitHub issue #25）；「gate 数据源 vs live 端口状态机」疑点排除；素材导入 unavailable＝旧 provider 世代时刻诚实呈现（世代核对：16:41 构建＝45716 含 5eeec28；用户实例 23:5x 全部退出、两 provider 并存消散）；修复归属＝核心/引擎域，行维持开放候用户复验。
