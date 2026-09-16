@@ -468,6 +468,10 @@ export function createFixturePackages(): PackagesPort {
       broadcast();
       return Promise.resolve(toView(state));
     },
+    // P1 词面(packages.listInstalled,024 消费批):fixture 是 DEV 演示面,
+    // 不模拟 wire 词面回执——如实 unavailable(演示数据走既有 ready 完整
+    // IA 视图,P1 中间诚实态只有 live 装配提供,mock 不冒充真实引擎)
+    listInstalled: () => Promise.resolve({ kind: "unavailable" } as const),
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
 }

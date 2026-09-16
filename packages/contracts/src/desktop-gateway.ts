@@ -468,6 +468,24 @@ export interface ReleaseOpenForHandoffRequestV1 {
   readonly params: { readonly buildId: string };
 }
 
+// ---- packages.listInstalled(packages-query v0.1,024 P1 冻结批 2026-09-17
+// 经第 72 波入库;P1 中间诚实态消费批桌面登记。只读单方法:已注册项目的
+// 已装包集合;projectPath 复用 013 注册身份,未注册 = 复用
+// vua.project.project_not_found(同事实同码);实现域未接线 = 路由答
+// vua.packages.unavailable 诚实缺席。params 闭集单键 {projectPath}
+// minLength 1(词表外键拒绝,与 schema additionalProperties:false 同形)) ----
+
+/** packages.listInstalled 只读查询:单个已注册项目的已装包清单;成功值
+ * 为 wire 帧 { schemaVersion:"0.1", operation, result } 包裹(result 本体
+ * 见 schemas/packages-query/v0.1/result.schema.json),桌面守卫按三键
+ * 组合窄化,零字段猜测 */
+export interface PackagesListInstalledRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.listInstalled";
+  readonly params: { readonly projectPath: string };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -515,7 +533,8 @@ export type DesktopGatewayRequestV1 =
   | ProjectSetNoteRequestV1
   | InspectionGetRequestV1
   | InspectionListRequestV1
-  | ReleaseOpenForHandoffRequestV1;
+  | ReleaseOpenForHandoffRequestV1
+  | PackagesListInstalledRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -566,6 +585,7 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "inspection.get": "query",
   "inspection.list": "query",
   "release.openForHandoff": "command",
+  "packages.listInstalled": "query",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1002,6 +1022,13 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["buildId"])
         && typeof value.params.buildId === "string"
         && value.params.buildId.length >= 1;
+    // packages-query v0.1(024 P1 消费批):params 闭集单键 {projectPath}
+    // minLength 1(冻结 Schema 口径,不发明长度上限;词表外键拒绝)
+    case "packages.listInstalled":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])
