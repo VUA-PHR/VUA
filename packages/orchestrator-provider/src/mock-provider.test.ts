@@ -611,3 +611,23 @@ describe("mock release.openForHandoff (023 core freeze batch)", () => {
     expect(response.error.messageKey).toBe("errors.releaseHandoff.unavailable");
   });
 });
+
+describe("mock packages.listInstalled (024 P1 core freeze batch)", () => {
+  it("answers the honest absence code — the simulation carries no VpmBackend engine face", async () => {
+    // 024 P1 词表行:模拟面无 VpmBackend,恒答诚实缺席(三元与真实
+    // provider-host 未装配分支一致)——绝不伪造包清单,也不以空数组冒充
+    // (诚实空清单只属于真实后端的合法事实)
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "query",
+      method: "packages.listInstalled",
+      params: { projectPath: "C:/proj" },
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});

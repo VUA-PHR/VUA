@@ -2,152 +2,166 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 7f545e2
+baseline_commit: f2fec29
 updated: 2026-09-17
 ---
 ## 当前焦点
-**#33/024 核心自查收敛＋表态收编轮（2026-09-17 01:0x–01:2x 工作时
-段轮，两笔）——第一笔 f056d4e＝024 内联线程两节核心自查（开放问
-题 4 第 1 项装配边界收敛＋开放问题 2 代码事实精确化：013 面与
-project_registry 同根不同读取机制）；期间环境（62b4989）与集成
-（ae6eca6 第 70 批）表态落 main、上轮三支已经 0bf483b 验收入库；
-第二笔（本批）＝环境＋集成表态收编进 024 内联线程（环境落点说明
-指定程序：024 由核心在自己分支上改，无冲突面）＋front-matter 状
-态更新；零运行时代码变更，核心所有权域零代码触碰**：
+**024 P1 冻结批＋实现切片轮（2026-09-17 01:2x–02:1x 工作时段轮，两笔
+实质交付）——三域表态收敛确认后核心起草 packages-query v0.1 冻结批
+（d6ca0b5：Schema＋3 正 3 负向量＋核心域消费测试＋TS 面＋mock 缺席臂
+＋双语协议本＋REGISTRY＋024 升格＋BOARD 注记）＋P1 实现切片
+（9a13b02：wire 路由＋packages.query 能力行＋bin 装配真引擎注入＋
+wire 帧环测试 6 例）；期间第 71 波（f2fec29）收编上轮三笔
+（f056d4e＋d18898e＋竞态吸收的 757eb7c 追平笔），合并意图闭环**：
 
-- **【① 注意】消化（brief 01:01）**：①区两条 [→核心]（wt-main
-  知会＋wt-3 自查知会）与上轮已办理的同批，零新增指向本角色事项。
-  失鲜工作树：无。期间新落 main 的环境表态候「核心收编进 024 内联
-  线程」——本批办理。
-- **分支现状（本批提交时点实证）**：上轮三支（070e771＋9ef89c0）
-  已经 0bf483b 被集成验收入库（--no-ff，上上轮合并意图闭环）；
-  main 复进各树簿记与表态批至 0f82da3（本树落后 12，全 collab，
-  照先例随验收合并自然收编）；本批提交后 slot/wt-2 领先 2
-  （f056d4e 自查收敛批＋本表态收编批）、落后 12。
-- **第一笔交付＝024 内联线程两节（f056d4e）**：
-  ①**开放问题 4 第 1 项（装配点与 ProjectOpsServices 复用边界）
-  收敛**——代码事实四点：装配门控同口径（bin :190
-  `runtime_face_wired = VUA_PROVIDER_DATA.is_ok()`，project_ops
-  与 environment 共用同一 `EnvironmentRoots::default()` 实例）；
-  注入口已在端口（`VrcGetLibBackend::with_environment_root`，
-  vpm_backend.rs:77）；单一事实源同根（核心 candidates[0]＝
-  `%LOCALAPPDATA%\VRChatCreatorCompanion\settings.json` 与引擎默
-  认根同指同目录，回退语义差异照录：核心双候选 Local→Roaming、
-  引擎单目录无 Roaming 回退）；bin 装配点零 VpmBackend 注入＝诚
-  实缺席现状闭合。冻结批取向：显式注入核心候选推导根。
-  ②**开放问题 2 代码事实精确化**——「注册库同一性」精确化：013
-  `project.listProjects`＝核心直读 settings.json（VCC
-  userProjects/localProjectFolders＋ALCOM userProjects 并集）；
-  `VpmBackend::project_registry`＝vrc-get 库
-  `VccDatabaseConnection::get_projects()`——同根不同读取机制。
-  P1 真正裁决项＝注册事实权威源（两案并列）。
-- **第二笔交付＝表态收编（本批）**：
-  - **环境表态收编（wt-6 62b4989，开放问题 2）**：(a) P2 可行环
-    境域可承接（vrc-get-vpm 0.0.16 库面三点证据：user_repos/
-    UserRepoSetting 订阅面、PackageCollection::load/load_cache 两
-    路、preview_install 已用同族 API 零新依赖；形态＝端口升版核
-    心主导＋trait 默认 unsupported 先例＋能力位按后端分声明＋
-    offline 既有字段；排期候核心 P2 冻结批）；(b) 注册库**不是同
-    一存储源**（vcc.liteDb vs settings.json；vrc-get 0.0.16 源注
-    userProjects 将消失、liteDb 成主要存储；实际分叉候 W25 真机
-    核实）；P1 读法建议＝清单复用 013 面＋listInstalled 校验与
-    inspectProject 同口径（013 聚合面为世界，未注册 typed
-    not-found）＋liteDb-only 路径不可见风险如实登记；如需收敛＝
-    环境域独立小提案补 013 聚合面（013 升版程序，不搭 P1 车）；
-    环境根对齐确认可行（与我第一笔自查互证）。
-  - **集成表态收编（第 70 批 ae6eca6，开放问题 3＋死锚）**：门序
-    确认——024 切片在 M6 T-A vrc-get 路径 early-open 授权内（用
-    户裁决 2026-09-08），M6 门验收/发行仍候 M5 门序；P1 验收路径
-    ＝冻结程序前置齐→集成验收；登记联动＝BOARD #33＋本提案双向
-    引用（无第三面）；死锚裁决＝GitHub issue #25 不补建（避免第
-    二登记权威面，用户可推翻），引擎面权威锚＝024＋BOARD #33 行，
-    桌面头注修复自领。
-  - **核心收编注记**：环境 P1 读法建议＝内联线程「权威源裁决两
-    案」候选读法 1——两案并读下环境已选案 1，剩余收敛归桌面（分
-    期读法＋错误码族＋PackageRow P1 降级呈现；映射焦点实际收
-    窄）；liteDb-only 不可见风险列入冻结批诚实登记项；P2 环境库
-    面证据冻结批起草时按端口面职责复核（不重复环境域考证）。
-  - **024 front-matter status 更新**：环境/集成表态已落见内联线
-    程；桌面表态候落；三域收敛前核心不接词表冻结与 wire 实现。
-- **表态进度**：三域二落一候（桌面未落，其 04e85de 注明 next＝
-  024 开放问题 1 表态＋头注修复）。表态程序＝三域收敛后核心起草
-  冻结批——核心不冻结、不接 wire 实现，notRun 诚实呈现维持。
-- **领任务链四环全查（7f545e2 世代）**：①本树在途＝两笔候集成验
-  收（两笔均为完整交付单元，无半途切片）；②BOARD 核心行＝#33 引
-  擎面已领取且 024 已入 main（0bf483b）＋双向引用已由集成建立；
-  #30 剩余＝W25 真机走查（候用户开窗 O-2 跳过）；[需用户] 区与
-  「待用户操作」全跳过不代决；③outline 当前窗口＝2.0.12 维持，
-  M5 核心行交付实证维持，M7 四行实现面在库，W25 候开窗、W26 归集
-  成不开工；④M 门＝集成已确认 024 在 M6 early-open 授权内、M6 门
-  验收仍候 M5 门序（不在本树授权范围）；M8 未开窗不开工。
-- **机械校验**：两笔变更面均恰 collab 两文件内（第一笔＝024＋状
-  态文件；本批＝024＋状态文件），**collab-only 免全量如实声明**：
-  核心所有权域（crates/orchestrator、crates/provider-host、
-  packages/orchestrator-provider、docs/architecture/*）零变更
-  pathspec 实证，代码面与 main 全等；全量证据沿用集成第 65 批合
-  并树亲测世代（cargo 630/0＋clippy 0，09-16 16:3x 在案）。
+- **【① 注意】消化（brief 01:24）**：①区三条 [→核心]（wt-main 表
+  态进度知会＋wt-3 桌面表态落节＋wt-6 环境移录权威面）——桌面/环境
+  表态内容经 `git show slot/wt-3` 直读核实，三域收敛成立，本批即
+  表态程序承诺的「核心起草 P1 冻结批」。失鲜工作树：无。
+- **三域表态收敛确认（冻结前置①）**：桌面（ab02215 内联节＋追平后
+  补充第 6 条：P1 中间诚实态＋降级投影虚假断言防线＋错误码复用）；
+  环境（62b4989＋内联节：P2 可行可承接＋注册库非同一存储＋清单复用
+  013 聚合＋liteDb-only 风险登记）；集成（ae6eca6：门序 T-A 授权内
+  先行＋双向引用登记面＋死锚 #25 不补建）。
+- **交付一（d6ca0b5）＝packages-query v0.1 冻结批**：
+  - 词表＝单方法 `packages.listInstalled`（Query），params 闭集单键
+    `projectPath`（013 注册身份）；envelope const "0.1"＋result 族
+    const `vua.packages-installed/v0.1`（两版本独立，c914cf2 常设规
+    则）；包行三键 packageId/version/dependencies（packageId 升序＝
+    冻结的确定性呈现事实）；
+  - 错误码闭集五码：`vua.packages.unavailable`（缺席臂）＋
+    `vua.packages.invalid_params`（参数臂）＋**复用
+    `vua.project.project_not_found`**（注册校验＝013 聚合
+    inspectProject 同口径，同事实同码）＋`vua.vpm.capability_missing`
+    ＋`vua.vpm.project_load_failed`（端口既有码维持）；
+  - **核心裁决四点**：①清单不设第二词表（复用 013 聚合）＋
+    liteDb-only 不可见风险照环境表态如实登记（真机分叉候 W25，收敛
+    归 013 升版独立提案不搭 P1 车）；②错误码复用（桌面表态采纳），
+    packages 特有事实码归 P2/P3 随其冻结批立；③**P1 词面零 P2 事实
+    字段**（source/versions/compatible/updateAvailable/latestVersion/
+    changelogUrl/displayName 全不带）——displayName 事实虽在包目录
+    package.json，但投影类型（核心域）与生产者实现（环境域
+    project-manager）分属两权属域，P1 不预留无生产者字段
+    （ORC-DEV-004 字段面类比），桌面以 packageId 兼任呈现（其表态读
+    法自洽）；包行 `additionalProperties:false`＝虚假断言防线（发明
+    字段按 Schema 即非法，负例向量钉死）；④诚实空清单（零已装包＝
+    空数组合法应答；坏清单＝typed 失败绝不空冒充）；
+  - 交付件：`schemas/packages-query/v0.1/`（双 Schema＋3 正 3 负）＋
+    `crates/provider-host/tests/packages_query_consumer.rs`（4 例消
+    费测试）＋`@vua/contracts` TS 面（查询/结果/行三类型＋union＋守
+    卫＋闭集正负例）＋mock-provider 恒缺席臂（023 先例，三元与真实
+    未装配分支一致）＋其测试＋`docs/protocols/packages-query-v0.1_
+    {ZH,EN}.md`＋REGISTRY 两行＋024 front-matter 升格 P1 已冻结＋冻
+    结批节＋BOARD #33 注记。
+- **交付二（9a13b02）＝P1 实现切片**：`packages.` 前缀分派＋
+  `packages.listInstalled` 臂（参数校验→013 聚合注册校验→能力位检
+  查→backend 调用→frozen envelope 投影）；HostState 增
+  `vpm: Option<Arc<dyn VpmBackend>>`（run_provider_host_full 第 11
+  参数，旧调用点全部 None 更新）；`served_capabilities` 增
+  `packages.query` 行（availability 随装配实例翻转，5eeec28 口径）；
+  **bin 装配注入真 `VrcGetLibBackend`**（runtime_face_wired 门控内，
+  环境根＝核心候选 candidates[0] 去文件名取目录——与 project_ops/
+  013 面严格同一事实源，即内联线程核心自查第一笔取向；引擎默认根留
+  测试/独立环境；backend 初始化失败降级 typed 缺席＋stderr 如实）；
+  wire 帧环测试 `packages_wire.rs` 6 例（缺席臂＋能力行 unavailable/
+  available 两态＋fake 引擎全流转＋not_found 复用臂＋params 三违反
+  ＋capability_missing＋typed backend 失败透传）。
+- **消费测试落位说明（跨域安排，如实）**：冻结前置③「至少一端消费
+  测试」落 `crates/provider-host`（核心域）——orchestrator 不反向依
+  赖 project-manager、provider-host 已依赖之且属核心所有权域；环境
+  域目录零触碰（曾起草于 project-manager tests 即刻移正）。
+- **上轮合并意图闭环（第 71 波 f2fec29 实证）**：f056d4e＋d18898e
+  （7a23e89）＋757eb7c 竞态吸收追平笔（集成如实登记两起竞态：
+  wt-2 757eb7c 01:27 与 wt-4 3966949 01:28 落于 brief 与合并执行之
+  间）——候验收状态消除。本轮开工追平即 757eb7c（024 冲突两侧保留
+  逐字不改写照 wt-3 991e065 先例：main 侧集成表态＋表态索引在前，
+  本树内联线程随后）。
+- **领任务链四环全查（f2fec29 世代）**：①本树在途＝两笔实质批＋本
+  状态批，无半途切片；②BOARD 核心行＝#33 引擎面冻结批＋实现切片本
+  轮交付（候集成验收＋桌面消费批）；#30 剩余 W25 候用户开窗（O-2）
+  跳过；[需用户] 区全跳过不代决；③outline 当前窗口＝M6 T-A 授权内
+  （集成 ae6eca6 门序确认＋014 先例），M6 门验收候 M5 关门门序不在
+  授权范围；M7 实现面在库；M8 未开窗；④M 门核对同上。桌面消费批
+  （PackagesPort P1 投影＋PackagesView 区块标注形状核可）候桌面自
+  领；P2 候环境后端扩展提案（环境已表态可承接）。
+- **机械校验（针对性全套亲测，01:4x–02:1x 在案）**：本批变更面＝核
+  心所有权域（crates/provider-host 7 文件＋schemas/packages-query 新
+  族＋docs/protocols 双语＋REGISTRY）＋packages 两包（contracts TS
+  面随冻结批、023 先例）＋collab 三文件——**非 collab 实质变更批，
+  不作免全量声明**：`cargo test -p vua-provider-host` 全套件绿（含
+  packages_wire 6/6＋packages_query_consumer 4/4；首跑 15 例套件一
+  例瞬败为并跑资源冲突、复跑三次均绿未再现）＋
+  `cargo clippy -p vua-provider-host --all-targets -D warnings` 0＋
+  `cargo clippy -p vua-project-manager --all-targets -D warnings` 0
+  ＋`pnpm --filter @vua/contracts check` 61/61＋
+  `pnpm --filter @vua/orchestrator-provider check` 27/27；
+  workspace 全量与全树 clippy 候集成验收合并树复跑（或采信本批针对
+  性证据，验收裁量）。
 
-## 本轮交付（7f545e2 基线世代）
-- **f056d4e**：024 内联线程两节（装配边界自查收敛＋权威源精确化
-  两案并列）＋状态批。
-- **本批**：024 内联线程表态收编节（环境 62b4989＋集成 ae6eca6
-  表态忠实转写＋核心收编注记）＋024 front-matter 状态更新＋状态
-  批。
-- 上轮三支已经 0bf483b 验收入库——候验收状态消除，合并意图闭环。
+## 本轮交付（f2fec29 基线世代）
+- **d6ca0b5**：024 P1 冻结批（packages-query v0.1 全前置件＋024/
+  BOARD 更新）。
+- **9a13b02**：024 P1 实现切片（wire 路由＋能力行＋bin 装配＋wire
+  测试）。
+- **本状态批（本批，恰本文件，collab-only 免全量）**。
 
 ## 在途/待他角色
-- [等集成] 本轮两笔（f056d4e＋本批，全 collab）随轮验收（--no-ff）。
-- [等桌面] 024 开放问题 1 表态（分期读法／listInstalled 映射／错
-  误码族）——环境已给映射事实口径（inspectProject 同语义）与
-  P1 清单读法，桌面表态焦点收窄但裁决权在其；表态前 PackagesPort
-  维持 notRun 诚实呈现；头注死锚修复（issue #25→024）已获集成裁
-  示归桌面自领。
-- [等环境] P2 后端扩展实现切片候核心 P2 冻结批（表态已落，无其
-  他等待项）。
-- [等用户] #33 复验（含 5eeec28＋f1f9b7b 构建重启 dev 栈）；W25
-  开窗（O-2，含 liteDb/013 面注册集分叉只读核实）；#27 一手证据；
-  #28/#29 复验。
+- [等集成] 本轮两笔（d6ca0b5＋9a13b02，**含核心域非 collab 实质变
+  更**）＋本状态批随轮验收（--no-ff）；验收测试证据见机械校验节。
+- [等桌面] P1 消费批（PackagesPort S-XVI 词面扩展消费＋PackagesView
+  区块可用性标注形状核可——冻结批已给 view 级标注的权威事实源
+  ＝packages.query 能力行）。
+- [等环境] P2 仓库/目录面后端扩展提案＋实现切片（环境表态已确认可
+  承接；displayName 如 P2 需要随 PackageCollection 端口升版正式入
+  场）；list_packages 投影如需增量归环境域。
+- [等用户] W25 开窗（O-2，含 liteDb/013 注册集分叉只读核实）；#33
+  页面复验（P1 实现切片入库后页面呈现变化候桌面消费批＋用户重启
+  dev 栈）。
 
 ## 阻塞
-- 无阻塞。桌面 024 表态为等待项非阻塞（方向稿仅方向，二落一候，
-  无争议事实）。
+- 无阻塞。
 
 ## 下次合并意图
-**本轮两笔请集成随轮验收合并（--no-ff）：f056d4e（024 内联线程自
-查两节＋状态批）＋本批（024 表态收编＋状态更新），恰 024＋本状态
-文件两 collab 文件面，全 collab 免全量如实声明（核心域零代码变更
-pathspec 实证）。**提交后 slot/wt-2 领先 2、落后 12（落后笔全
-collab 簿记与表态批随验收自然收编）。
+**本轮三笔请集成随轮验收合并（--no-ff）：冻结批 d6ca0b5＋实现切片
+9a13b02＋本状态批。本批含核心所有权域非 collab 实质变更
+（provider-host 源码＋新 schema 族＋docs＋packages TS 面），验收请
+复核针对性测试证据（provider-host 全套件＋clippy 0＋contracts
+61/61＋orchestrator-provider 27/27，01:4x–02:1x 在案）或合并树复
+跑。落后 15 全 collab 簿记随验收自然收编；slot/wt-2 的 024 与 main
+上桌面/环境内联节同面追加，追平时预计冲突——照 991e065 先例两侧
+保留即可。**
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-17 01:0x–01:2x，工作时段）：①brief 01:01 ①区两条
-[→核心] 与上轮已办理同批，零新增指向本角色事项；②四环全查除
-024 自查收敛与表态收编外无可领新项（#30 候 W25 O-2、[需用户] 全
-跳过、M6 门验收候 M5 门序不在授权、M8 未开窗）；③实质交付两笔＝
-核心自查收敛（装配边界四点代码事实＋权威源两案）＋环境/集成表态
-收编进 024（环境落点说明指定程序）＋front-matter 状态更新；④
-collab-only 免全量如实声明（核心所有权域零变更 pathspec 实证，
-全量证据第 65 批世代在案）。**零端到端宣称维持**——本轮纯 collab
-注记，零运行时行为变化，包管理器页维持诚实「尚未接入」。退出待
-命，候集成验收两笔、桌面 024 表态（收敛后核心起草冻结批）、用户
-复验回填、下轮 brief 或新指派；在手无半途切片。
+本轮（2026-09-17 01:2x–02:1x，工作时段）：①brief 01:24 ①区三条
+[→核心] 全部办理（三域收敛确认→冻结批起草→实现切片）；②实质交付
+两笔＝024 P1 冻结批（硬前置①–⑤逐项齐备）＋P1 实现切片（路由＋能
+力行＋装配＋wire 测试）；③测试证据如实列明（针对性全套亲测在案，
+workspace 全量候集成验收合并树，不作免全量声明——本批有核心域代
+码变更）；④零端到端宣称维持——页面呈现变化候桌面消费批＋用户实例
+重启，包管理器页 notRun 诚实呈现维持至桌面消费批落地。退出待命，候
+集成验收三笔、桌面 P1 消费批、环境 P2 提案、用户复验回填、下轮
+brief 或新指派；在手无半途切片。
 
 ## 留言
-- [→集成] 本轮两笔（f056d4e＋表态收编批，全 collab）请随轮验收
-  （--no-ff，免全量——核心域零代码变更 pathspec 实证）；落后 12
-  簿记自然收编即可。你方表态（门序＋死锚＋登记联动）已收编 024
-  内联线程，双向引用面就此闭合。
-- [→桌面] 024 三域表态二落一候：环境已选「清单复用 013 面＋
-  listInstalled 校验与 inspectProject 同口径」读法（62b4989，已
-  收编 024 内联线程），集成已确认门序与登记面（ae6eca6）——你
-  的开放问题 1 表态焦点收窄至：分期读法（P1 中间诚实态 vs 整页
-  notRun 至 P2/P3）、PackageRow 在 P1 的降级呈现、错误码族归属
-  （复用 vua.project.* vs 新族）。表态收敛后核心即起草冻结批。
-  另：packages-port.ts 头注死锚修复（issue #25→提案 024＋BOARD
-  #33 行）集成已裁示归你自领。表态前 notRun 诚实呈现维持不变。
-- [→环境] 你的表态（62b4989）已按落点说明由核心收编进 024 内联
-  线程（本批）；P2 冻结批候桌面表态收敛后核心起草，届时端口升版
-  提案面由核心主导，环境承接实现切片；liteDb 分叉真机核实候 W25。
-- （回执不回执：0bf483b 对上轮三支的验收入库系合并意图闭环确认，
-  不另发回执；历史留言已消化归档，在途事项以 BOARD 与本状态文件
-  当前焦点为准。）
+- [→集成] 本轮两笔实质批（d6ca0b5 冻结批＋9a13b02 实现切片，核心
+  域非 collab 变更：crates/provider-host 7 文件＋schemas/packages-
+  query 新族＋docs/protocols 双语＋REGISTRY＋packages/contracts＋
+  mock-provider）＋本状态批请随轮验收（--no-ff）。测试证据：provider-
+  host 全套件绿＋clippy 0＋contracts 61/61＋orchestrator-provider
+  27/27（01:4x–02:1x 亲测在案），请复核或合并树复跑，验收裁量。
+- [→桌面] 024 P1 冻结批与实现切片已落：词表面＝packages.listInstalled
+  （包行三键 packageId/version/dependencies，displayName 按 ORC-DEV-004
+  字段面类比不预留——你的 P1 降级投影「id 兼任」读法即为权威消费路
+  径）；view 级区块标注权威事实源＝served_capabilities 的
+  packages.query 行（available＝已安装区块可渲染，repos/变更面无行
+  即诚实不可渲染）；错误码复用 vua.project.project_not_found 已随
+  路由落地。PackagesPort 消费批候你自领（词面扩展具体形状以
+  schemas/packages-query/v0.1＋TS 面为准，核可后消费）。
+- [→环境] 冻结批与实现切片零触碰环境域文件（消费测试落位 provider-
+  host 核心域，曾起草于 project-manager tests 即刻移正，如实声明）；
+  P1 裁决③ displayName 不预留无生产者字段——如 P2 需要，随
+  PackageCollection 端口升版正式入场；P2 冻结批候你后端扩展提案，
+  你表态中的 P2 可行性三点已在 024 冻结批节收录。
+- （回执不回执：上轮三支经第 71 波 7a23e89 入库系合并意图闭环确认，
+  不另发回执；历史留言已消化归档，在途事项以 BOARD 与本状态文件当
+  前焦点为准。）
