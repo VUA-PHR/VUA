@@ -74,6 +74,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             executor: production.as_ref().map(|config| config.executor.clone()),
         })
     });
+    // The Hub editors root the selection enumerates when no explicit
+    // injection is set; overridable for tests and non-Hub installs,
+    // defaulting to the standard Hub location. The editor selection, the
+    // project-domain editor snapshot, and the environment detection all
+    // observe the same root.
+    let editors_root_override =
+        std::env::var_os("VUA_UNITY_EDITORS_ROOT").map(std::path::PathBuf::from);
+    let unity_editors_root = editors_root_override
+        .clone()
+        .unwrap_or_else(|| {
+            std::path::PathBuf::from("C:/Program Files/Unity/Hub/Editor")
+        });
     // W20 production-use-case command face: the recipe document store lives
     // under the provider data root (AMF production-domain document store).
     // W20 production-use-case command face (recipe/plan/job/record). The
@@ -90,14 +102,6 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         // transition period keeps job execution honestly unavailable.
         let explicit_editor = std::env::var_os("VUA_UNITY_EDITOR")
             .map(std::path::PathBuf::from);
-        // The Hub editors root the selection enumerates when no explicit
-        // injection is set; overridable for tests and non-Hub installs,
-        // defaulting to the standard Hub location.
-        let unity_editors_root = std::env::var_os("VUA_UNITY_EDITORS_ROOT")
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| {
-                std::path::PathBuf::from("C:/Program Files/Unity/Hub/Editor")
-            });
         let editor_selection = vua_orchestrator::select_editor(
             explicit_editor,
             &vua_orchestrator::installed_unity_editors(&unity_editors_root),
@@ -176,10 +180,61 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         )),
     }
     });
+    // Project-domain command face (proposals 013/014) + environment
+    // detection (BG-16): both ride the same desktop-injected runtime
+    // composition the download and use-case faces ride — VUA_PROVIDER_DATA
+    // marks the shell-injected runtime root. Without the injection they
+    // keep their typed unavailable answers (`vua.project.unavailable` /
+    // the honest empty snapshot) — honest absence, never a fabricated
+    // wiring.
+    let runtime_face_wired = std::env::var("VUA_PROVIDER_DATA").is_ok();
+    // Proposal 004: the VCC settings resolution order is single-sourced in
+    // the core `EnvironmentRoots::default()` (LOCALAPPDATA first, legacy
+    // Roaming fallback); the registered-project guard and the environment
+    // detection consume the same candidates. The default is the documented
+    // production shape; the one intentional deviation is the editors-root
+    // override (tests / non-Hub installs), kept consistent with the
+    // selection face above.
+    let environment_roots = {
+        let mut roots = vua_orchestrator::EnvironmentRoots::default();
+        if let Some(root) = editors_root_override {
+            roots.unity_editors_root = root;
+        }
+        roots
+    };
+    let vcc_settings_candidates = environment_roots.vcc_settings_candidates.clone();
+    let project_ops = if runtime_face_wired {
+        Some(vua_provider_host::ProjectOpsConfig {
+            vcc_settings_candidates: vcc_settings_candidates.clone(),
+            manager_roots: vua_project_manager::ManagerRoots::default(),
+            editor_roots: vec![unity_editors_root],
+        })
+    } else {
+        eprintln!(
+            "VUA provider: VUA_PROVIDER_DATA unset; project command face stays unavailable"
+        );
+        None
+    };
+    let environment = if runtime_face_wired {
+        Some(vua_provider_host::EnvironmentConfig {
+            roots: environment_roots,
+            vcc_settings_candidates,
+        })
+    } else {
+        eprintln!(
+            "VUA provider: VUA_PROVIDER_DATA unset; environment detection stays unavailable"
+        );
+        None
+    };
     let input = stdin_reader();
     let output = std::io::stdout().lock();
-    vua_provider_host::run_provider_host_with_services(
+    vua_provider_host::run_provider_host_full(
         input, output, database_path, production, downloads, warehouse, use_cases,
+        project_ops, environment,
+        // Proposal 021 routing: no injected verifier — the route falls
+        // back to the primitive's system wiring, the full entry's
+        // documented default (`verify_editor_path_system`).
+        None,
     )?;
     Ok(())
 }
