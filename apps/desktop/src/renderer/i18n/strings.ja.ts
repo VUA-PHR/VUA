@@ -1549,6 +1549,8 @@ rolled_back: "ロールバック済み",
       sourceRepoNotInstalled: "リポジトリパッケージ · 未インストール",
       sourceLocalInstalled: "ローカルパッケージ · インストール済み",
       sourceLocalNotInstalled: "ローカルパッケージ · 未インストール",
+      catalogCachedData:
+        "キャッシュデータ — オンライン更新が利用できなかったため、ローカルリポジトリキャッシュから提供されました。情報表示でありエラーではありません。",
       updateAvailableLabel: "更新",
       updateAvailableYes: "更新あり",
       updateAvailableNo: "最新です",
