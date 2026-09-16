@@ -1,32 +1,45 @@
 /**
- * Packages 读面 live 端口(024 P1 中间诚实态消费批,2026-09-17):经
- * Desktop Gateway 消费 packages-query v0.1 冻结词面(单方法只读
- * packages.listInstalled)。消费纪律:
+ * Packages 读面 live 端口(024 P1 中间诚实态消费批,2026-09-17;025 P2
+ * 读面消费批,2026-09-17):经 Desktop Gateway 消费 packages-query v0.1
+ * (单方法只读 packages.listInstalled)与 025 P2 双族 v0.1
+ * (packages.listRepos 仓库订阅清单 + packages.packageCatalog 单包目录
+ * 按需查询)冻结词面。消费纪律:
  * - 诚实缺席:引擎未装配/实现域未接线(vua.packages.unavailable)映射为
  *   not-connected 形态,绝不以空清单伪装(空态即终态);
  * - typed 失败照原词呈现:复用码 vua.project.project_not_found(选中项目
- *   已从 013 注册面消失)与合法空数组严格区分——失败不冒充空态
- *   (诚实纪律 2);
- * - 区块可用性标注权威事实源 = served_capabilities 的 packages.query
- *   能力行(app.snapshot operations);available = 已安装区块可渲染,
- *   repos/变更面 P1 无词表行即诚实不可渲染(ready-p1 blocks 类型级恒
- *   false),不显示不可用入口;
- * - 响应窄化按三键纪律:schemaVersion==="0.1" + operation ===
- *   "packages.listInstalled" + result(本体 schemaVersion
- *   "vua.packages-installed/v0.1")组合定位,零字段猜测,形状不符诚实
- *   失败;包行只认冻结三键 packageId/version/dependencies,升序为
- *   服务端冻结事实,客户端不重排不猜测。
+ *   已从 013 注册面消失)与合法空数组严格区分;vua.vpm.no_matching_package
+ *   (词表外无此包)= 独立空态非错误页;失败不冒充空态(诚实纪律 2);
+ * - 区块可用性标注权威事实源 = served_capabilities 能力行(app.snapshot
+ *   operations):installed = packages.query 行;repos = packages.listRepos
+ *   行;catalog = packages.packageCatalog 行(均随引擎后端
+ *   catalog_capabilities 声明翻转,未实现即诚实不可渲染);changes 面无
+ *   词表行,类型级恒 false,写入口不渲染;
+ * - 响应窄化按三键纪律:schemaVersion==="0.1" + operation + result(本体
+ *   族常量 vua.packages-installed/v0.1、vua.packages-repos/v0.1、
+ *   vua.packages-catalog/v0.1)组合定位,零字段猜测,行闭集校验(多余
+ *   键/缺键/类型不符 = 形状不符诚实失败);行序为服务端冻结事实
+ *   (installed 按 packageId 升序、repos 按订阅面自身顺序),客户端不重
+ *   排不猜测。
  */
-import type { PackagesListInstalledRequestV1 } from "@vua/contracts";
+import type {
+  PackagesListInstalledRequestV1,
+  PackagesListReposRequestV1,
+  PackagesPackageCatalogRequestV1,
+} from "@vua/contracts";
 import type { GatewayClient } from "./gateway-client.ts";
 import type {
+  CatalogPackageFactsV01,
+  CatalogVersionRowV01,
   InstalledPackageRowV01,
   PackagesPort,
   PackagesView,
+  RepoInfoRowV01,
 } from "./packages-port.ts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
 
 const PACKAGES_OPERATION_ID = "packages.query";
+const LIST_REPOS_OPERATION_ID = "packages.listRepos";
+const CATALOG_OPERATION_ID = "packages.packageCatalog";
 
 /** wire 成功帧三键包裹:schemaVersion(信封 "0.1")+ operation + result */
 interface PackagesWireEnvelope {
@@ -37,6 +50,11 @@ interface PackagesWireEnvelope {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** 词面可空字符串:null = 库面 Option 如实投影;非 null 空串非法(Schema minLength 1) */
+function isNullableNonEmptyString(value: unknown): value is string | null {
+  return value === null || (typeof value === "string" && value.length > 0);
 }
 
 /** 冻结包行三键闭集:多余键/缺键/类型不符即整行形状不符(诚实失败,不猜测) */
@@ -54,10 +72,62 @@ function isInstalledPackageRow(value: unknown): value is InstalledPackageRowV01 
     && value.dependencies.every((dependency) => typeof dependency === "string");
 }
 
-function isPackagesWireEnvelope(value: unknown): value is PackagesWireEnvelope {
+/** P2 仓库订阅行五键闭集(025 冻结词面;health/status 等发明字段 = 形状违规) */
+function isRepoInfoRow(value: unknown): value is RepoInfoRowV01 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["cached", "localPath", "name", "repoId", "url"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.cached === "boolean"
+    && isNullableNonEmptyString(value.repoId)
+    && isNullableNonEmptyString(value.name)
+    && isNullableNonEmptyString(value.url)
+    && isNullableNonEmptyString(value.localPath);
+}
+
+/** P2 目录版本行三键闭集(compatible boolean|null,null = 工程版本未知) */
+function isCatalogVersionRow(value: unknown): value is CatalogVersionRowV01 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["compatible", "version", "yanked"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.version === "string"
+    && value.version.length > 0
+    && typeof value.yanked === "boolean"
+    && (typeof value.compatible === "boolean" || value.compatible === null);
+}
+
+/** P2 单包目录事实七键闭集(source 词表 repo|local;updateAvailable boolean|null) */
+function isCatalogPackageFacts(value: unknown): value is CatalogPackageFactsV01 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["displayName", "installed", "packageId", "projectPath", "source", "updateAvailable", "versions"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.projectPath === "string"
+    && value.projectPath.length > 0
+    && typeof value.packageId === "string"
+    && value.packageId.length > 0
+    && isNullableNonEmptyString(value.displayName)
+    && (value.source === "repo" || value.source === "local")
+    && typeof value.installed === "boolean"
+    && (typeof value.updateAvailable === "boolean" || value.updateAvailable === null)
+    && Array.isArray(value.versions)
+    && value.versions.every(isCatalogVersionRow);
+}
+
+function isPackagesWireEnvelope(value: unknown, operation: string): value is PackagesWireEnvelope {
   return isRecord(value)
     && value.schemaVersion === "0.1"
-    && value.operation === "packages.listInstalled"
+    && value.operation === operation
     && isRecord(value.result);
 }
 
@@ -68,45 +138,72 @@ function isPackagesInstalledResult(value: Record<string, unknown>): boolean {
   return Array.isArray(value.packages) && value.packages.every(isInstalledPackageRow);
 }
 
+/** result 本体:schemaVersion 族常量 + repos 行数组(空数组 = 诚实零订阅) */
+function isPackagesReposResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-repos/v0.1") return false;
+  return Array.isArray(value.repos) && value.repos.every(isRepoInfoRow);
+}
+
+/** result 本体:schemaVersion 族常量 + 冻结七键目录事实 */
+function isPackagesCatalogResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-catalog/v0.1") return false;
+  const { schemaVersion: _familyConst, ...facts } = value;
+  return isCatalogPackageFacts(facts);
+}
+
+type TypedOutcome<T> =
+  | { readonly kind: "ok"; readonly result: T }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
 export function createLivePackages(client: GatewayClient): PackagesPort {
-  /** packages.query 能力行可用性:区块标注的权威事实源 */
-  const queryAvailability = async (): Promise<boolean> => {
+  /**
+   * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
+   * 一次取三行——packages.query(installed)/packages.listRepos(repos)/
+   * packages.packageCatalog(catalog);行缺席或 availability 非
+   * available = 该区块诚实不可渲染(渲染层不伪造)。
+   */
+  const readCapabilityRows = async (): Promise<{
+    installed: boolean;
+    repos: boolean;
+    catalog: boolean;
+  }> => {
     const result = await client.invoke({
       schemaVersion: 1,
       requestId: crypto.randomUUID(),
       method: "app.snapshot",
       params: {},
     });
-    if (!result.ok || !isRecord(result.value)) return false;
-    const capabilities = result.value.capabilities;
-    if (!isRecord(capabilities) || !Array.isArray(capabilities.operations)) return false;
-    return capabilities.operations.some(
-      (operation) =>
-        isRecord(operation)
-        && operation.operationId === PACKAGES_OPERATION_ID
-        && operation.availability === "available",
-    );
+    const availability = (operationId: string): boolean => {
+      if (!result.ok || !isRecord(result.value)) return false;
+      const capabilities = result.value.capabilities;
+      if (!isRecord(capabilities) || !Array.isArray(capabilities.operations)) return false;
+      return capabilities.operations.some(
+        (operation) =>
+          isRecord(operation)
+          && operation.operationId === operationId
+          && operation.availability === "available",
+      );
+    };
+    return {
+      installed: availability(PACKAGES_OPERATION_ID),
+      repos: availability(LIST_REPOS_OPERATION_ID),
+      catalog: availability(CATALOG_OPERATION_ID),
+    };
   };
 
-  const listInstalledRaw = async (
-    projectPath: string,
-  ): Promise<
-    | { readonly kind: "ok"; readonly result: readonly InstalledPackageRowV01[] }
-    | { readonly kind: "failed"; readonly code: string }
-    | { readonly kind: "unavailable" }
-  > => {
-    const request: PackagesListInstalledRequestV1 = {
-      schemaVersion: 1,
-      requestId: crypto.randomUUID(),
-      method: "packages.listInstalled",
-      params: { projectPath },
-    };
+  const invokeTyped = async (
+    request: PackagesListInstalledRequestV1 | PackagesListReposRequestV1 | PackagesPackageCatalogRequestV1,
+    operation: string,
+    validateResult: (value: Record<string, unknown>) => boolean,
+  ): Promise<TypedOutcome<Record<string, unknown>>> => {
     const result = await client.invoke(request);
     if (!result.ok) {
       if (result.error.kind === "application") {
         // 缺席臂(vua.packages.unavailable)= 引擎未装配,诚实 unavailable;
-        // 其余 typed 码(project_not_found 复用码/capability_missing/
-        // project_load_failed)照原词上呈,不折叠为空态
+        // 其余 typed 码(project_not_found/no_matching_package/
+        // capability_missing/project_load_failed/invalid_params)照原词
+        // 上呈,不折叠为空态
         if (result.error.error.code === "vua.packages.unavailable") {
           return { kind: "unavailable" };
         }
@@ -114,30 +211,89 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       }
       return { kind: "unavailable" };
     }
-    if (!isPackagesWireEnvelope(result.value)) {
+    if (!isPackagesWireEnvelope(result.value, operation)) {
       return { kind: "failed", code: "packages_shape_violation" };
     }
     const resultBody = result.value.result;
-    if (!isPackagesInstalledResult(resultBody)) {
+    if (!validateResult(resultBody)) {
       return { kind: "failed", code: "packages_shape_violation" };
     }
-    return { kind: "ok", result: resultBody.packages as readonly InstalledPackageRowV01[] };
+    return { kind: "ok", result: resultBody };
   };
 
-  // P1 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动
+  const listInstalledRaw = async (projectPath: string): Promise<TypedOutcome<readonly InstalledPackageRowV01[]>> => {
+    const request: PackagesListInstalledRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.listInstalled",
+      params: { projectPath },
+    };
+    const outcome = await invokeTyped(request, "packages.listInstalled", isPackagesInstalledResult);
+    if (outcome.kind !== "ok") return outcome;
+    return { kind: "ok", result: (outcome.result as { packages: readonly InstalledPackageRowV01[] }).packages };
+  };
+
+  /** P2 订阅清单:行序 = 订阅面自身顺序(配置事实),空数组 = 诚实零订阅 */
+  const listReposRaw = async (): Promise<TypedOutcome<readonly RepoInfoRowV01[]>> => {
+    const request: PackagesListReposRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.listRepos",
+      params: {},
+    };
+    const outcome = await invokeTyped(request, "packages.listRepos", isPackagesReposResult);
+    if (outcome.kind !== "ok") return outcome;
+    return { kind: "ok", result: (outcome.result as { repos: readonly RepoInfoRowV01[] }).repos };
+  };
+
+  /** P2 目录事实:按需查询(双键闭集);typed 码照原词(no_matching_package
+   * = 独立空态呈现,页面处理);族常量在窄化校验时消费,返回七键事实 */
+  const packageCatalogRaw = async (projectPath: string, packageId: string): Promise<TypedOutcome<CatalogPackageFactsV01>> => {
+    const request: PackagesPackageCatalogRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.packageCatalog",
+      params: { projectPath, packageId },
+    };
+    const outcome = await invokeTyped(request, "packages.packageCatalog", isPackagesCatalogResult);
+    if (outcome.kind !== "ok") return outcome;
+    const { schemaVersion: _familyConst, ...facts } = outcome.result;
+    return { kind: "ok", result: facts as unknown as CatalogPackageFactsV01 };
+  };
+
+  // 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动
   // 重取),订阅仅作能力行翻转的通知通道
   let selectedProjectPath: string | null = null;
 
+  /** repos 面装配:能力行 false = 区块不渲染(repos: []);调用 unavailable
+   * = 引擎缺席/断连(与 installed 同源)→ 整页 not-connected;typed 失败
+   * = reposError 照原词(失败不冒充空态) */
   const fetchView = async (): Promise<PackagesView> => {
-    const available = await queryAvailability();
-    if (!available) return { schemaVersion: 1, kind: "not-connected" };
+    const capabilityRows = await readCapabilityRows();
+    if (!capabilityRows.installed) return { schemaVersion: 1, kind: "not-connected" };
+    const reposOutcome = capabilityRows.repos ? await listReposRaw() : null;
+    if (reposOutcome !== null && reposOutcome.kind === "unavailable") {
+      return { schemaVersion: 1, kind: "not-connected" };
+    }
+    const reposFace: { repos: readonly RepoInfoRowV01[] } & { reposError?: { code: string } } =
+      reposOutcome === null
+        ? { repos: [] }
+        : reposOutcome.kind === "ok"
+          ? { repos: reposOutcome.result }
+          : { repos: [], reposError: { code: reposOutcome.code } };
     if (selectedProjectPath === null) {
       return {
         schemaVersion: 1,
-        kind: "ready-p1",
-        blocks: { installed: true, repos: false, changes: false },
+        kind: "ready-p2",
+        blocks: {
+          installed: true,
+          repos: capabilityRows.repos,
+          catalog: capabilityRows.catalog,
+          changes: false,
+        },
         projectPath: null,
         installedPackages: [],
+        ...reposFace,
       };
     }
     const outcome = await listInstalledRaw(selectedProjectPath);
@@ -146,11 +302,17 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     }
     return {
       schemaVersion: 1,
-      kind: "ready-p1",
-      blocks: { installed: true, repos: false, changes: false },
+      kind: "ready-p2",
+      blocks: {
+        installed: true,
+        repos: capabilityRows.repos,
+        catalog: capabilityRows.catalog,
+        changes: false,
+      },
       projectPath: selectedProjectPath,
       installedPackages: outcome.kind === "ok" ? outcome.result : [],
       ...(outcome.kind === "failed" ? { loadError: { code: outcome.code } } : {}),
+      ...reposFace,
     };
   };
 
@@ -175,14 +337,16 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       }) as Unsubscribe;
     },
     async selectProject(projectPath) {
-      // P1 视图的项目身份 = 013 注册路径;能力行不可用时保持 not-connected
-      if (await queryAvailability()) {
+      // 视图的项目身份 = 013 注册路径;能力行不可用时保持 not-connected
+      const capabilityRows = await readCapabilityRows();
+      if (capabilityRows.installed) {
         selectedProjectPath = projectPath;
         broadcast();
       }
       return fetchView();
     },
     listInstalled: listInstalledRaw,
+    packageCatalog: packageCatalogRaw,
     async addProject() {
       return { kind: "unavailable" };
     },
@@ -199,7 +363,8 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       return fetchView();
     },
     async capability(): Promise<CapabilityReport> {
-      return (await queryAvailability())
+      const capabilityRows = await readCapabilityRows();
+      return capabilityRows.installed
         ? { state: "ready" }
         : { state: "unavailable", detailKey: "packagesEngineMissing" };
     },
