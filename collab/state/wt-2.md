@@ -2,151 +2,136 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 19b842f
+baseline_commit: 66c1b04
 updated: 2026-09-17
 ---
 ## 当前焦点
-**wire 接线切片轮（2026-09-17 03:4x–03:5x 工作时段，同轮第四批）——
-【① 注意】两条 [→核心] 消化（均系滞后/知会，回执不回执）＋实质交
-付＝**025 P2 wire 接线切片（4631a0f）**：provider-host 路由两方法
-＋served_capabilities 两行＋wire 测试 8 例；bin 装配零改动；全链亲
-测绿；状态批恰本文件**：
+**过线追平轮（2026-09-17 04:2x–04:3x 工作时段）——【① 注意】三条
+[→核心] 留言消化（均系验收知会/滞后，回执不回执）＋实质动作＝落
+后 20 过 15 线纪律追平（7759fe6，--no-ff，零自有内容，核心所有权
+域 inbound 零触碰 pathspec 实证）＋四环全查（66c1b04 世代）核心
+侧无可领实质任务；状态批恰本文件**：
 
-- **【① 注意】消化（brief 03:45）**：wt-main 留言（025 提案验收入
-  库 a6d22de＋「开放问题 4 就剩你一票」＋四项候冻结批裁决）系消息
-  滞后——核心票 bf78368 已经 85117c3 收编入 main（上批竞态补正
-  b50242f 的 is-ancestor 实证维持），表态程序在 main 形式闭环先于
-  冻结批起草；四项裁决（健康面非目标/订阅面世界/updateAvailable
-  结论口径/stale 披露）已在冻结批 9ab1b11 全部落死。wt-6 留言
-  （025 提案已落）同已消化。packages_shape_violation 观察无新动作
-  ——冻结批零新错误码，wire 闭集不变。失鲜工作树：无。
-- **025 P2 wire 接线切片（4631a0f，本轮实质交付）**：
-  - **路由两方法**（crates/provider-host/src/provider_host.rs）：
-    `packages.listRepos`（**全局面**：params 空闭集——缺席或任何
-    键＝invalid_params；无 013 注册绑定、无 project_ops 依赖）＋
-    `packages.packageCatalog`（双键闭集校验〔projectPath/packageId
-    均非空、零多余键〕→**同一 013 聚合注册校验**〔P1 同律，复用
-    vua.project.project_not_found〕→能力位→后端调用）。
-  - **served_capabilities 两行**：operationId＝
-    `packages.listRepos`/`packages.packageCatalog`（照双语协议本
-    方法名词面）；availability 随 `catalog_capabilities().catalog`
-    翻转。**与 P1 行为差异如实登记**：P1 行随 vpm.is_some() 翻转，
-    P2 行随独立目录能力声明翻转——引擎已装配但 P2 未实现时两行保
-    持 unavailable（诚实缺席，不因装配而宣告可用）。
-  - **族常量发布**：PACKAGES_REPOS_SCHEMA_VERSION＝
-    vua.packages-repos/v0.1、PACKAGES_CATALOG_SCHEMA_VERSION＝
-    vua.packages-catalog/v0.1（信封组装层事实，路由盖戳，后端事实
-    逐字；c914cf2 常在规则）。信封 schemaVersion "0.1" 复用 P1 的
-    PACKAGES_QUERY_SCHEMA_VERSION（同族信封同版）。
-  - **零新错误码**：capability_missing／vua.packages.unavailable／
-    vua.packages.invalid_params／vua.project.project_not_found／后
-    端 typed（no_matching_package 等）全复用，词表闭集不变。
-  - **bin 装配零改动**：能力位经 trait `catalog_capabilities()` 运
-    行时读取；VrcGetLibBackend 未覆写前两行两路由诚实缺席（
-    unavailable 行＋capability_missing）；环境实现切片覆写后自动
-    翻转，装配点无需再动。
-  - **wire 测试 8 例**（crates/provider-host/tests/
-    packages_p2_wire.rs，程序照 packages_wire.rs P1 先例）：缺席接
-    线＋两行 unavailable／冻结信封投影（nullable 逐字/cached 必带/
-    订阅序保持/null-compatible 判定）／空订阅诚实答案／全局面免
-    013 接线／未声明能力＝capability_missing＋行 unavailable／未注
-    册路径＝013 not-found／参数闭集违规（缺席/缺键/空串/多余键）/
-    typed 失败逐字透传（backend_unavailable＋no_matching_package）。
-  - **全链亲测绿（03:5x 在案）**：cargo test -p vua-provider-host
-    全套件 0 failed（含 packages_p2_wire 8/8＋P1 packages_wire
-    6/6）；cargo test -p vua-orchestrator 226/0；cargo clippy 双
-    crate --all-targets -D warnings 0；pnpm --filter @vua/contracts
-    check 64/64＋@vua/orchestrator-provider check 29/29（TS 面零改
-    动，零波及确认）。
-- **领任务链四环全查（19b842f 世代）**：①本树在途＝追平 4992b2b＋
-  冻结批 9ab1b11＋状态批 b50242f＋wire 切片 4631a0f＋本状态批，无
-  半途切片；②BOARD 核心行＝#33 剩余候用户复验；[需用户] 区全跳
-  过；③outline＝2.0.12 世代继承，P2 属 M6 T-A 授权；M6 门验收候
-  M5 关门门序；M7 实现面在库；M8 未开窗；④M 门同上。**后续链推
-  进：环境实现切片（候环境领取）→核心 wire 接线（本轮完成）→桌
-  面 P2 形状核可＋消费切片（硬前置已备齐，候桌面自领）。**
-- **机械校验**：本批变更面＝crates/provider-host 两文件（src＋新
-  tests）＋本状态文件；schemas/协议本/REGISTRY/orchestrator 端口面
-  零触碰（冻结批词面原样消费）；他域零触碰。**wire 切片自身全量
-  证据在案（上列全链亲测）；本状态批 collab-only 免全量如实声
-  明**（证据沿用 wire 切片 03:5x 亲测世代）。
+- **【① 注意】消化（brief 04:27）**：三条 [→核心] 全部消化——
+  ①wt-main：冻结批（987b3cc）与 wire 接线切片（4bad84e）验收入
+  库知会＋后续链只剩环境实现→桌面消费两环＋
+  packages_shape_violation 观察维持第 73 批结论（本地码非 wire 闭
+  集，现状正确）——闭环验收知会收货，零动作；②wt-3：025 P2 消
+  费切片已落（slot/wt-3 f266712，desktop 18 文件＋contracts TS
+  面，候集成验收）——知会消化：ready-p2 诚实态随
+  served_capabilities 三行翻转、能力行 unavailable 时区块隐藏，
+  repos 行承载＋cached 诚实态＋目录按需查询＋no_matching_package
+  独立空态＋updateAvailable null 防线均照冻结词面，桌面侧 P2 链
+  面收口，剩环境实现覆写 catalog_capabilities 后真机区块解锁——
+  与核心 wire 词面消费方向一致零异议；③wt-6：P2 实现切片已领取
+  知会——系滞后（领取批 b6159b9 已 f58c473 在库，环境申报同会话
+  连续开工）。失鲜工作树：无。
+- **纪律追平（7759fe6，--no-ff）**：slot/wt-2 落后 20 过 15 触发
+  线（第 74 批验收波 987b3cc/107cac6/4bad84e/f58c473/451b55f/
+  e849dec/60549c6/17f77f0＋登记批 66c1b04＋各树簿记累积）；本树
+  HEAD（3b7730a）系 main 严格祖先（领先 0）纯追平；
+  merge-tree 预检 exit 0 零冲突。**inbound 非 collab diff＝0 文
+  件**（pathspec `-- . ':!collab'` 实证——本树本系冻结批/wire 切
+  片产地，验收波内容全在本地祖先）＋**核心所有权域 inbound 零触
+  碰**（crates/orchestrator＋crates/provider-host＋
+  packages/orchestrator-provider＋docs/architecture/orchestrator_*
+  ＋docs/architecture/system_* pathspec 实证 0 文件）；inbound 变
+  更面＝BOARD＋025 提案＋五树状态文件恰 7 collab 文件。追平后树
+  与 main 66c1b04 全等，代码基线世代刷新 66c1b04。
+- **领任务链四环全查（66c1b04 世代）**：①本树在途＝追平笔＋本状
+  态批，无半途切片；上批 wire 切片 4631a0f＋补正批 6d12db3/
+  3b7730a 均已经 4bad84e/60549c6 验收入库（is-ancestor 实证，候
+  验收清零）；②BOARD 核心行：#33 包管理器页修复归引擎域＝
+  024/025 链推进中（冻结→桌面核可→wire 接线三环在库，剩环境实
+  现→桌面消费候验收），核心侧无新动作；#35 025 链登记同面；
+  [需用户] 区（条目 6-a、O-2 W25、U5 等）全跳过不代决；③outline
+  当前窗口：W20/W22 核心行历史交付在库；M7 核心行实现面在库
+  （016 链四件含核心检查切片 7a262b8），提前开工授权（用户裁决
+  14）下核心无新增可领面；M8 未开窗；④M 门：M6/M7 门验收候 M5
+  关门门序，M8 未开窗。**结论：核心侧无可领实质任务。**
+- **后续链等待现状（如实）**：环境实现切片（wt-6 进行中，VrcGet
+  LibBackend 两方法＋catalog_capabilities 覆写＋离线降级＋stale
+  标注＋本域单测）落地后 wire 两行两路由**自动翻转**——bin 装配
+  零改动（trait 运行时读取，核心无动作需求）；桌面消费切片
+  f266712 候集成验收；真机区块解锁候环境落地＋用户 W25（O-2）。
+- **机械校验**：本批变更面＝追平笔 7759fe6（inbound 全 collab，
+  零自有内容）＋本状态批（恰本文件）。**状态批 collab-only 免全
+  量如实声明**：本树代码与 main 66c1b04 全等（追平后零 diff 实
+  证），零代码变更；全量证据沿用第 74 批集成合并树复跑世代
+  （66c1b04 消息登记在案：provider-host 全套件＋orchestrator 16
+  套件＋clippy 0＋contracts 64/64）＋核心 wire 切片 03:5x 全链
+  亲测世代。
 
-## 前情（b50242f 世代，全文见本文件 git 历史）
-同轮第三批（03:1x–03:3x）：025 P2 冻结批 9ab1b11（双 Schema＋7 正
-7 负向量＋端口面升版＋核心消费测试 4 例＋TS 面＋mock 缺席臂＋双语
-协议本＋REGISTRY 三行）＋追平 4992b2b（实际吸收 19b842f，竞态补正
-b50242f）＋状态批。更早：fae1195 消费批词面预核对轮、bf78368 核心
-表态批、024 P1 全链。见 git 历史。
+## 前情（3b7730a 世代，全文见本文件 git 历史）
+wire 接线轮（03:4x–04:0x）：025 P2 wire 接线切片 4631a0f（
+provider-host 路由两方法＋served_capabilities 两行随独立
+catalog_capabilities 翻转＋族常量两枚＋wire 测试 8 例；bin 装配
+零改动；全链亲测绿）＋竞态补正批（上批三笔已经 987b3cc 入库、桌
+面核可 107cac6、环境领取 f58c473 同波闭环消化）。更早：025 P2 冻
+结批 9ab1b11（双 Schema＋14 向量＋端口面五类型三默认方法＋核心消
+费测试＋TS 面＋mock 缺席臂＋双语协议本＋REGISTRY）、核心表态批
+bf78368、024 P1 全链。见 git 历史。
 
-## 本轮交付（19b842f 基线世代）
-- **wire 接线切片 4631a0f**（provider-host 路由两方法＋能力两行＋
-  族常量发布＋wire 测试 8 例；全链亲测绿在案）。
-- **状态批（本批，恰本文件）**：【① 注意】消化＋wire 切片登记＋
-  四环全查＋后续链排期更新。
+## 本轮交付（66c1b04 基线世代）
+- **追平笔 7759fe6**（--no-ff，预检 exit 0，落后 20 过线纪律行
+  动，零自有内容，inbound 非 collab 0 文件＋核心域零触碰
+  pathspec 实证，追平后树与 main 全等）。
+- **本状态批**（恰本文件，collab-only 免全量）：三条 [→核心] 留
+  言消化＋追平登记＋四环全查（66c1b04 世代）＋后续链等待现状。
 
 ## 在途/待他角色
-- 追平 4992b2b＋冻结批 9ab1b11＋状态批 b50242f＋wire 切片 4631a0f
-  ＋本状态批候集成随轮验收（--no-ff）——**含非 collab 实质变更**
-  （冻结批 25 文件＋wire 切片 2 文件，均核心所有权域），请 diff
-  亲审或合并树复跑（证据见当前焦点节两批全链亲测）。
-- **[等环境] P2 实现切片**（VrcGetLibBackend 实现 list_repos/
-  package_catalog＋catalog_capabilities 覆写〔NONE→AVAILABLE〕＋离
-  线降级分支＋stale 标注落死＋本域单测）——落地后 wire 两行两路由
-  自动翻转，零装配改动需求。
-- [等桌面] P2 形状核可＋消费切片（照 P1 全链程序；**硬前置 wire 接
-  线已备齐**——注意环境实现落地前能力行诚实 unavailable，桌面 P2
-  入口的 ready-p2 呈现候真实事实源）。
-- [等用户] W25 开窗（O-2）；#33 页面复验候用户重启 dev 栈。
+- 本状态批候集成随轮验收（--no-ff）——追平笔照先例随验收合并自
+  然收编，本树无其它在途。
+- **[等环境] P2 实现切片**（wt-6 进行中）——落地后 wire 两行两
+  路由自动翻转，零装配改动、零核心动作需求；实现中发现冻结词面
+  歧义照其申报走 025 内联线程，核心即答。
+- [等集成] 桌面消费切片 f266712 验收（slot/wt-3，候随轮）。
+- [等用户] W25 开窗（O-2）；#33 页面复验候用户以含最新构建重启
+  dev 栈。
 
 ## 阻塞
-- 无阻塞。等待项均非阻塞。
+- 无阻塞。等待项均非阻塞（集成常驻验收节奏＋环境连续开工在案，
+  未触发两轮无进展升级线）。
 
 ## 下次合并意图
-**冻结批 9ab1b11＋wire 切片 4631a0f＋本状态批（连同在途追平
-4992b2b＋状态批 b50242f）请集成随轮验收（--no-ff）。**变更面＝核
-心所有权域（crates/orchestrator、crates/provider-host、
-packages/orchestrator-provider、schemas/packages-repos、
-schemas/packages-catalog、docs/protocols、docs/REGISTRY）＋collab
-面（025 文件＋本状态文件）；他域零触碰。提交后领先 5 落后 0（实质
-领先 2＝冻结批＋wire 切片，余为状态/追平簿记）。
+**本状态批（恰 collab/state/wt-2.md 一文件，collab-only 免全量）
+请集成随轮验收（--no-ff）。**追平笔 7759fe6（零自有内容，树与
+main 66c1b04 全等）照先例随验收合并自然收编。提交后领先 2＝合并
+笔 7759fe6（零自有内容）＋本状态批（实质 diff 恰本文件），落后
+0。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-17 03:4x–03:5x，工作时段，同轮第四批）：①【① 注意】
-两条 [→核心] 消化——wt-main 留言系滞后（核心票 bf78368 已经
-85117c3 在 main，四项裁决已在冻结批落死），wt-6 知会消化，回执不
-回执；②**实质交付＝025 P2 wire 接线切片 4631a0f**——路由两方法
-（全局面免注册绑定＋目录面双键闭集＋同一 013 聚合）＋能力两行照协
-议本方法名随 catalog_capabilities 翻转（P2/P1 行为差异如实登记）＋
-族常量发布＋bin 装配零改动（trait 运行时读取，环境覆写后自动翻
-转）＋wire 测试 8 例；③全链亲测绿在案（provider-host 全套件 0
-failed＋orchestrator 226/0＋clippy 双 0＋contracts 64/64＋
-orchestrator-provider 29/29）；④四环全查（19b842f）——后续链环节
-二（wire 接线）完成，环境实现切片候环境、桌面核可消费候桌面；W25
-跳过；⑤本状态批 collab-only 免全量如实声明。**零端到端宣称维
-持**——wire 路由系测试验证，无真机走查；包管理器页维持 P1 中间诚
-实态（P2 呈现候桌面消费批＋环境实现落地）；真机走查归 W25（O-2）。
-退出待命，候集成验收在途五笔、环境实现切片领取、桌面 025 核可、
-用户复验回填、下轮 brief 或新指派；在手无半途切片。
+本轮（2026-09-17 04:2x–04:3x，工作时段）：①brief 04:27 ①区三条
+[→核心] 留言消化——wt-main 验收知会收货（packages_shape_
+violation 维持第 73 批结论零动作）、wt-3 消费切片已落知会消化
+（词面消费方向零异议）、wt-6 领取知会系滞后消化；②**实质动作＝
+落后 20 过 15 线纪律追平 7759fe6**（--no-ff，预检 exit 0，零自有
+内容，inbound 非 collab 0 文件＋核心所有权域零触碰 pathspec 实
+证，树与 main 66c1b04 全等）；③四环全查（66c1b04 世代）——本树
+在途仅本状态批、上批候验收清零（4bad84e/60549c6 is-ancestor 实
+证），BOARD 核心行无新可领项，outline/M 门核心行实现面均在库无
+新增可领面，[需用户] 区全跳过；④状态批 collab-only 免全量如实声
+明（零代码变更，证据沿用 66c1b04 集成复跑世代＋wire 03:5x 亲测
+世代）。**零端到端宣称维持**——P2 链系契约＋路由＋测试验证，无
+真机走查；包管理器页 ready-p2 区块解锁候环境实现落地＋桌面消费
+验收＋用户复验；真机走查归 W25（O-2）。退出待命，候集成验收本状
+态批＋桌面消费切片、环境实现切片落地、W25 用户开窗、用户复验回
+填、下轮 brief 或新指派；在手无半途切片。
 
 ## 留言
-- [→集成] 在途五笔（追平 4992b2b＋冻结批 9ab1b11＋状态批 b50242f
-  ＋wire 切片 4631a0f＋本状态批）请随轮验收（--no-ff）。实质变更
-  两批：冻结批（25 文件，上批登记证据不变）＋wire 切片（恰
-  crates/provider-host 两文件，全链亲测 03:5x 在案：provider-host
-  全套件 0 failed＋orchestrator 226/0＋clippy 双 0＋contracts
-  64/64＋orchestrator-provider 29/29），请复核或合并树复跑，验收裁
-  量。领先 5 落后 0（实质领先 2）。
-- [→环境] **wire 接线已落（4631a0f）**：路由两方法＋能力两行在库
-  ——你的实现切片覆写 `catalog_capabilities`（NONE→AVAILABLE）后
-  wire 两行两路由**自动翻转，零装配改动需求**（bin 装配本轮零改
-  动）。你落地前的行为如实声明：引擎装配但 P2 未覆写时路由答
-  capability_missing、能力行 unavailable（测试钉死该诚实缺席态）。
-  端口类型与默认实现不变，照冻结批节领取即可。
-- [→桌面] **P2 消费硬前置（wire 接线）已备齐**：served_capabilities
-  两行 operationId＝packages.listRepos/packages.packageCatalog（协
-  议本方法名词面），availability 随目录能力声明翻转——环境实现落
-  地前两行诚实 unavailable（你的 ready-p2 呈现候选真实事实源，P1
-  中间诚实态维持）。形状核可＋消费切片照 P1 程序候你自领。
-- （回执不回执：wt-main/wt-6 两条 [→核心] 留言均系滞后/知会，本批
-  登记消化不另发回执；历史留言已消化归档，在途事项以 BOARD 与本状
-  态文件当前焦点为准。）
+- [→集成] 本状态批（恰本文件一 collab 文件，collab-only 免全量）
+  请随轮验收（--no-ff）；追平笔 7759fe6 零自有内容照先例自然收
+  编。知会：本树代码基线已刷新 66c1b04 世代（与 main 全等），
+  核心侧在途清零；025 后续链核心侧三环（表态→冻结→wire 接线）
+  全部闭环，剩环境实现（wt-6 进行中）→桌面消费（f266712 候验
+  收）两环候他角色。
+- [→环境] 开工知会收货（滞后消化，领取批已在库）。上轮留言维持：
+  你的实现切片覆写 `catalog_capabilities`（NONE→AVAILABLE）后
+  wire 两行两路由自动翻转，bin 装配零改动、零核心侧动作需求；你
+  落地前路由答 capability_missing、能力行 unavailable（wire 测
+  试钉死该诚实缺席态）。实现中若发现冻结词面歧义照你申报走 025
+  内联线程提问，核心即答，不自行发明。
+- （回执不回执：wt-main/wt-3/wt-6 三条 [→核心] 留言均系验收知会
+  /滞后消化；上批 wire 切片＋补正批验收 4bad84e/60549c6 系本树合
+  并意图兑现确认，收货不另发回执；历史留言已消化归档，在途事项
+  以 BOARD 与本状态文件当前焦点为准。）
