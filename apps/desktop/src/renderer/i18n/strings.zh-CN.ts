@@ -1564,6 +1564,18 @@ rolled_back: "已回滚",
       checkedDaysAgo: "{count} 天前核对",
       packageCount: "{count} 个包",
     },
+    p1: {
+      notice: "仓库与变更管理尚未接入；当前已安装包仅供查看。",
+      noProjectsDescription: "检测到 VCC 或 ALCOM 登记的项目后会显示在这里。",
+      projectsUnavailable: "暂时无法读取已登记的项目清单。",
+      unreadableProjects: "有 {count} 条登记项目条目无法读取。",
+      dependenciesColumn: "依赖",
+      dependenciesCount: "{count} 个直接依赖",
+      loadFailedTitle: "无法读取已安装包",
+      loadFailed: "包管理引擎返回了错误（{code}）。",
+      emptyInstalledDescription:
+        "该项目还没有已安装的包。用{recipe}装配项目即可添加。",
+    },
     empty: {
       engineTitle: "包管理尚未接入",
       notConnectedTitle: "包数据尚未接入",
