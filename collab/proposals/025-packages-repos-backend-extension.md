@@ -455,3 +455,82 @@ mock 恒缺席臂（packages/orchestrator-provider 两方法同 P1 纪律＋测
 served_capabilities 两行＋bin 装配）→ 桌面形状核可＋P2 消费切片。
 **零端到端宣称维持**：页面呈现候桌面消费批＋用户 dev 栈重启；真机
 走查归 W25（O-2）。
+### 形状核可（桌面）（2026-09-17 03:4x，wt-3 工作时段；P2 冻结批消费面核可）
+
+**核可对象与方式**：P2 冻结批词面＝slot/wt-2 9ab1b11（＋状态批
+b50242f）世代，**候集成验收尚未入 main——本核可以冻结批经集成验收
+入库为生效前提**。核可方式＝只读词面逐项核对（本树工作副本追平
+e7f1e31 后，对 slot/wt-2 分支词面直读：两族 schema 全文＋7 负例向量＋
+TS 面六接口/守卫/测试＋mock 缺席臂＋Rust 端口面五类型/trait 三方法），
+零代码零运行时变更。
+
+**逐项核可（对照桌面表态节〔0031004〕条款，零偏差）**：
+
+1. **repos 区块解锁条件**：`packages.listRepos` 词面＋能力位就位——
+   能力声明经 `VpmBackend::catalog_capabilities()`；消费端区块标注
+   权威事实源仍是 wire served_capabilities 能力行（两行随装配翻转），
+   P1 机制不变；ready-p1 `repos:false` 类型级恒假升级 RepoInfo 行承
+   载变体的形状走向与 `PackagesRepoInfoV01` 吻合。
+2. **仓库清单呈现**：订阅面为世界（裁决 1）；四标识/定位可空字符串
+   （repoId/name/url/localPath，null＝库面 Option 逐字投影；
+   localPath 承载本地目录仓库定位，与「url 缺席如实空值呈现」吻合）；
+   **cached 必带**（false＝已订阅未刷新诚实清单行，绝不呈现为空目录
+   ——schema description 与负例 invalid-repo-row-missing-cached 双
+   面钉死）；行序＝订阅面自身顺序。**健康面非目标**：负例
+   invalid-repo-row-health-field 钉死 health/status 字段 schema 即
+   非法——页面零健康拟态词（本表态第 2 条「列非目标则健康语义列整
+   体不渲染」承接）。
+3. **PackageRow P2 升级投影逐项**：updateAvailable 结论布尔或 null
+   （null＝判定未执行，缺席不是「无更新」；schema 与 TS 注释双面钉
+   死「null 时更新 UI 不渲染、不以默认值填充」＝P1 防线延续）；
+   yanked 仓库缓存携带（local 来源 versions 空数组承载「缺席≠未
+   yanked」，schema 明写消费者绝不把无缓存事实渲染为未 yanked）；
+   compatible 逐版本布尔或 null（params.projectPath 必带＝判定绑定
+   选中工程，无工程上下文不发起查询；null＝版本未知不是不兼容；
+   prerelease 读用户设置零 wire 字段——负例 invalid-catalog-extra-
+   param 钉死 includePrerelease 非法）；displayName 可空（null 以
+   packageId 兼任，P1 裁决 3）；source 二态＋installed 分立必带（三
+   态＝组合呈现；负例 invalid-catalog-source-word-outside 钉死
+   source:"installed" 词表外——「不合并来源与安装」落死）。
+4. **粒度**：按需查询双键闭集 {projectPath, packageId}；无全量投影
+   无分页（页面零分页拟态，符合表态第 4 条「不静默全量拉取」）；词
+   表外无此包＝`vua.vpm.no_matching_package` 复用码独立空态（非错误
+   页，本表态第 6 条落此码）。
+5. **stale 披露时序（如实登记，非偏差）**：裁决 6＝披露字段随环境实
+   现切片落死，本词面不预留——照表态第 5 条条件分支，P2 消费批时
+   wire 若尚无披露字段则页面不自行标注缓存来源，候实现切片入库后再
+   核可呈现。
+6. **空态/失败**：零新码全复用（七码闭集）；零订阅＝空 repos 诚实；
+   mock 缺席臂两方法恒答 `vua.packages.unavailable` 绝不伪造清单或
+   以空数组冒充事实（P1 纪律同型，mock-provider 测试在案）。
+
+**TS 面专项核可（桌面所有权域登记确认）**：六接口
+（PackagesListReposQueryV01/PackagesRepoInfoV01/
+PackagesListReposResultV01/PackagesPackageCatalogQueryV01/
+PackagesCatalogVersionV01/PackagesPackageCatalogResultV01）与 Rust
+端口面（RepoInfoV01/PackageSourceV01/CatalogVersionV01/
+PackageCatalogV01）serde camelCase/snake_case 投影逐键同形零偏差；
+守卫两 case 与 schema 闭集同形（listRepos 空闭集 ↔
+additionalProperties:false＋properties:{}；catalog 双键＋isIdentifier
+↔ minLength 1）；族常量两族独立（vua.packages-repos/v0.1、
+vua.packages-catalog/v0.1，c914cf2 规矩）；union 两臂＋contracts 守
+卫测试（正例＋多余键拒＋缺键拒）在案。**程序事实如实登记**：TS 面
+系核心冻结批批内自落（024 P1 先例系桌面消费切片落 TS 面 2 文件）
+——本节即桌面域 TS 面登记确认，同形零偏差，消费切片直接承接不再重
+复登记。
+
+**收敛差清单（冻结批 vs 方向裁决/桌面表态，全部零冲突如实记录）**：
+①能力位形状微调——方向裁决 4「VpmCapabilities 加位」落为独立默认
+访问器 `catalog_capabilities()`（五位闭集稳定＋未实现后端零编译波
+及，核心如实声明理由）；消费面影响零——wire 能力行机制不变。②错
+误码零新码——方向裁决 5 预留「新码闭集候冻结批立」落死为全复用（超
+预期收敛），复用码与 P1 词表同族、照码原词呈现机制不变。③行序新定
+——订阅面自身顺序（配置事实即顺序，不发明排序键），桌面表态未预设
+排序零冲突。④四键超集——repoId/name/url 之外增 localPath（本地目
+录仓库定位承载），与表态「本地目录仓库 url 缺席如实空值呈现」吻合。
+
+**程序结论**：P2 冻结批形状核可**通过**。桌面 P2 消费切片硬前置三
+项中「词面冻结＋TS 面登记＋形状核可」就位；**开工候最后前置＝核心
+wire 接线切片落地（provider-host 路由两方法＋served_capabilities 两
+行＋bin 装配，ready-p2 才有真实事实源）**，届时照 024 P1 全链程序自
+领；包管理器页维持 P1 中间诚实态不变，零端到端宣称维持。
