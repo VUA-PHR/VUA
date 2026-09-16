@@ -1580,6 +1580,21 @@ demoTaskTitle: "Demo task",
       checkedDaysAgo: "Checked {count} days ago",
       packageCount: "{count} packages",
     },
+    p1: {
+      notice:
+        "Repository and change management are not connected yet; installed packages are read-only for now.",
+      noProjectsDescription:
+        "Projects registered in VCC or ALCOM will appear here once detected.",
+      projectsUnavailable:
+        "The registered project list could not be read right now.",
+      unreadableProjects: "{count} registered project entries could not be read.",
+      dependenciesColumn: "Dependencies",
+      dependenciesCount: "{count} direct",
+      loadFailedTitle: "Could not read the installed packages",
+      loadFailed: "The package engine answered with an error ({code}).",
+      emptyInstalledDescription:
+        "No packages are installed in this project yet. Assemble the project from a {recipe} to add some.",
+    },
     empty: {
       engineTitle: "Package management is not connected yet",
       notConnectedTitle: "Package data is not connected yet",

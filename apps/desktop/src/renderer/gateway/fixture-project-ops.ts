@@ -22,5 +22,9 @@ export function createFixtureProjectOps(): ProjectOpsPort {
       Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
     importCopy: (_params: ProjectImportCopyParams): Promise<ProjectOpsOutcome> =>
       Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
+    // 013 清单读面同裁定:清单由 live 聚合读出才有意义,fixture 不伪造
+    // 注册项目行(024 P1 消费批)。
+    listProjects: () =>
+      Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
   };
 }

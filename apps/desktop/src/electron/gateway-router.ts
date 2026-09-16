@@ -208,6 +208,11 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "project.inspectProject", params: { projectPath: request.params.projectPath } };
     case "project.lockStatus":
       return { ...base, kind: "query", method: "project.lockStatus", params: { projectPath: request.params.projectPath } };
+    // packages-query v0.1(024 P1 冻结批,P1 中间诚实态消费批):只读单方法
+    // verbatim 透传;实现域未接线 = provider 答 vua.packages.unavailable
+    // 诚实缺席,未注册路径 = 复用 vua.project.project_not_found 原样透传
+    case "packages.listInstalled":
+      return { ...base, kind: "query", method: "packages.listInstalled", params: { projectPath: request.params.projectPath } };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":

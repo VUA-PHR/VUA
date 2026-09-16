@@ -10,7 +10,7 @@ use vua_unity_bridge::{
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
 };
 use vua_unity_bridge::MaterialTaskResult;
-use vua_orchestrator::ProjectRef;
+use vua_orchestrator::{ProjectRef, VpmBackend};
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
     collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
@@ -122,6 +122,10 @@ struct HostState {
     use_cases: Option<Arc<ProductionUseCaseServices>>,
     project_ops: Option<Arc<ProjectOpsServices>>,
     environment: Option<Arc<EnvironmentServices>>,
+    /// The VPM engine face (proposal 024 P1, `packages.listInstalled`).
+    /// Absent wiring answers a typed `vua.packages.unavailable` — honest
+    /// absence, never a fabricated or padded listing.
+    vpm: Option<Arc<dyn VpmBackend>>,
     /// The `environment.verifyEditor` verification face (proposal 021
     /// routing batch). Not an Option: the primitive is a stateless direct
     /// call with no service dependency, so the route is always wired —
@@ -255,6 +259,17 @@ pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.1";
 /// folds into a fabricated acceptance, task snapshot, or handoff fact (the
 /// upload happens in the official SDK and is never a VUA fact to guess at).
 pub const RELEASE_HANDOFF_UNAVAILABLE: &str = "vua.release_handoff.unavailable";
+
+/// The `packages.query` word-list-row family version constant (proposal 024
+/// P1 freeze batch 2026-09-17; the c914cf2 standing rule — every wire row
+/// carries a version constant of its own). Published so wire consumers key
+/// on the core-owned constant, never a private literal.
+pub const PACKAGES_QUERY_SCHEMA_VERSION: &str = "0.1";
+
+/// The honest absence code for the `packages.*` routes while no `VpmBackend`
+/// is assembled (proposal 024 P1). It never folds into a fabricated or
+/// padded listing — an empty array is a real backend fact only.
+pub const PACKAGES_UNAVAILABLE: &str = "vua.packages.unavailable";
 
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
@@ -477,6 +492,7 @@ pub fn run_provider_host_with_services(
         None,
         None,
         None,
+        None,
     )
 }
 
@@ -484,7 +500,9 @@ pub fn run_provider_host_with_services(
 /// (proposal 014, `project.import-copy`). When `project_ops` is absent the
 /// `project.*` methods answer a typed `vua.project.unavailable`. When
 /// `editor_verifier` is absent the `environment.verifyEditor` route uses the
-/// primitive's system wiring (`verify_editor_path_system`).
+/// primitive's system wiring (`verify_editor_path_system`). When `vpm` is
+/// absent the `packages.*` methods answer a typed `vua.packages.unavailable`
+/// (proposal 024 P1) — honest absence, never a fabricated listing.
 #[allow(clippy::too_many_arguments)]
 pub fn run_provider_host_full(
     input: impl BufRead + Send + 'static,
@@ -497,6 +515,7 @@ pub fn run_provider_host_full(
     project_ops: Option<ProjectOpsConfig>,
     environment: Option<EnvironmentConfig>,
     editor_verifier: Option<EditorPathVerifier>,
+    vpm: Option<Arc<dyn VpmBackend>>,
 ) -> Result<(), ProviderHostError> {
     let database_path = database_path.as_ref();
     let _instance_lock = ProviderInstanceLock::acquire(database_path)?;
@@ -656,6 +675,7 @@ pub fn run_provider_host_full(
         project_ops,
         environment,
         editor_verify,
+        vpm,
     };
 
     // The reader runs on its own thread so the host can wake up between
@@ -1019,6 +1039,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("project.") {
         return project_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("packages.") {
+        return packages_request(state, method, request, request_id, correlation_id);
+    }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
             "application.getSnapshot" => Ok(FrameOutcome::Response(application_success(
@@ -1113,6 +1136,13 @@ fn served_capabilities(state: &HostState) -> Value {
     } else {
         "unavailable"
     };
+    // Proposal 024 P1: the packages read face rides the VpmBackend wiring —
+    // honest absence when the assembly injects no engine.
+    let packages_availability = if state.vpm.is_some() {
+        "available"
+    } else {
+        "unavailable"
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1133,6 +1163,7 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "production.recipes", "availability": recipe_availability},
         {"operationId": "project.import-copy", "availability": project_ops_availability},
         {"operationId": "project.setNote", "availability": project_ops_availability},
+        {"operationId": "packages.query", "availability": packages_availability},
     ])
 }
 
@@ -4874,6 +4905,153 @@ fn project_request(
     }
 }
 
+/// The `vua.packages.*` word list (proposal 024 P1, packages-query v0.1):
+/// one read method over the wired `VpmBackend`. Absent wiring answers a
+/// typed `vua.packages.unavailable` — the frozen word list is never
+/// silently stubbed, and absence never folds into a fabricated listing.
+fn packages_request(
+    state: &HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(vpm) = state.vpm.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    match method {
+        "packages.listInstalled" => {
+            packages_list_installed(state, vpm, request, request_id, correlation_id)
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+fn packages_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.packages.invalid_params",
+        "errors.packages.invalidParams",
+        "validation",
+    ))
+}
+
+/// `packages.listInstalled` (proposal 024 P1): the installed package set of
+/// ONE registered project. Registration is validated against the SAME 013
+/// inspection aggregate `project.inspectProject` uses (same fact, same
+/// code: `vua.project.project_not_found` — the frozen reuse ruling); an
+/// off-aggregate path never reaches the backend. The listing itself is the
+/// backend's manifest+lock projection; an empty lock is an honest empty
+/// array, and a load failure is the backend's typed error — never an empty
+/// masquerade.
+fn packages_list_installed(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // The registration-validation face is unwired: without the 013
+        // aggregate the not-found calibration does not exist, so the whole
+        // face stays honestly absent (never "everything is registered").
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(params) = project_single_path_param(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    let project_path = params["projectPath"];
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    let registered = snapshot
+        .projects
+        .iter()
+        .any(|project| project.path == project_path);
+    if !registered {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.capabilities().list_packages {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let listing = vpm.list_packages(&ProjectRef {
+        id: project_path.to_string(),
+        root: PathBuf::from(project_path),
+    });
+    let packages = match listing {
+        Ok(packages) => packages,
+        Err(error) => {
+            return FrameOutcome::Response(application_error(
+                request_id,
+                correlation_id,
+                &error.code,
+                &error.message_key,
+                app_error_category(error.category),
+            ));
+        }
+    };
+    let rows = serde_json::to_value(&packages).unwrap_or_else(|_| json!([]));
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+            "operation": "packages.listInstalled",
+            "result": {
+                "schemaVersion": "vua.packages-installed/v0.1",
+                "projectPath": project_path,
+                "packages": rows,
+            },
+        }),
+    ))
+}
+
+fn app_error_category(category: ErrorCategory) -> &'static str {
+    match category {
+        ErrorCategory::Validation => "validation",
+        ErrorCategory::Conflict => "conflict",
+        ErrorCategory::Permission => "permission",
+        ErrorCategory::Dependency => "dependency",
+        ErrorCategory::Unavailable => "unavailable",
+        ErrorCategory::Timeout => "timeout",
+        ErrorCategory::Cancelled => "cancelled",
+        ErrorCategory::ExternalFailure => "external_failure",
+        ErrorCategory::Internal => "internal",
+    }
+}
+
 /// `project.environmentManagers` (proposal 013, the read face): the
 /// read-only VCC/ALCOM/editors snapshot — every finding is deterministic
 /// for a given tree; paths to settings files travel as facts, the
@@ -7537,6 +7715,7 @@ mod tests {
             project_ops: None,
             environment: None,
             editor_verify: Arc::new(verify_editor_path_system),
+            vpm: None,
         };
 
         let prepare = InboundFrame {

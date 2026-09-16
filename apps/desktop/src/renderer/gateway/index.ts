@@ -141,6 +141,8 @@ export type {
   ProjectImportCopyParams,
   ProjectOpsOutcome,
   ProjectOpsPort,
+  ProjectListProjectsOutcome,
+  RegisteredProjectRow,
 } from "./project-ops-port.ts";
 export type {
   InspectionDetailView,
@@ -155,12 +157,14 @@ export type {
 } from "../features/release/release-handoff-port.ts";
 export type {
   ChangeRequest,
+  InstalledPackageRowV01,
   PackageChangeItem,
   PackageChangeKind,
   PackageChangePreview,
   PackageEntryResult,
   PackageProject,
   PackageRow,
+  PackagesP1LoadError,
   PackagesPort,
   PackagesView,
   PackageSource,

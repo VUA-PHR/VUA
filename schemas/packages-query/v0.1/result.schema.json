@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-query/v0.1/result.schema.json",
+  "title": "VUA packages-query result v0.1",
+  "description": "Result documents for the packages-query v0.1 read face (proposal 024 P1 freeze batch 2026-09-17). The envelope mirrors the standing wire shape (schemaVersion/operation/result, same as project-inspection and project-ops): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-installed/v0.1 — the two versions are independent (the c914cf2 standing rule: every wire row cites a version constant of its own). The result of packages.listInstalled is the honest projection of one project's installed package set as resolved from its VPM manifest and lock: packageId, version, and the direct dependencies the package declares, sorted by packageId ascending (the order is a frozen presentation fact the consumer may rely on; it is deterministic, not semantic). An EMPTY packages array is a valid, honest answer (a registered project with zero installed packages) — absence is never padded with guesses. additionalProperties:false on the package row is the false-assertion guard: P2 facts (updateAvailable, versions, source, latestVersion, changelogUrl) have no P1 fact source and a result carrying them is INVALID by schema, not merely discouraged. displayName is likewise absent by ruling: the fact lives in each package's package.json (P2 package-collection territory), the P1 projection type carries no such field, so the word list reserves none (ORC-DEV-004: no implementation, no reserved field; desktop renders the packageId as the display name per its P1 degraded-projection stance).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listInstalled"]
+    },
+    "result": { "$ref": "#/$defs/listInstalledResult" }
+  },
+  "$defs": {
+    "listInstalledResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "projectPath", "packages"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-installed/v0.1" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "packages": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/installedPackage" }
+        }
+      }
+    },
+    "installedPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "version", "dependencies"],
+      "properties": {
+        "packageId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Direct dependencies the installed package declares (sorted, deduplicated by the source manifest semantics)."
+        }
+      }
+    }
+  }
+}

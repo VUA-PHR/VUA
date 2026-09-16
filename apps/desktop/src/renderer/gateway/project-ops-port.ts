@@ -58,7 +58,32 @@ export interface ProjectOpsPort {
    *  taskId,结果文档随任务完成面——调用方经任务中心等待终态后,以
    *  inspectProject 读面刷新确认存储事实(诚实纪律:呈现只来自读面) */
   setNote(params: ProjectSetNoteParams): Promise<ProjectSetNoteOutcome>;
+  /**
+   * 注册项目清单(project.listProjects,013 聚合读面;024 P1 中间诚实态
+   * 消费批:包管理页项目选择器复用同一注册事实,不设第二词表)。
+   * 窄投影只取选择器需要的四键;形状不符的行不静默丢弃,以 unreadable
+   * 计数如实呈现(诚实纪律:缺席可见,不猜测内容)。
+   */
+  listProjects(): Promise<ProjectListProjectsOutcome>;
 }
+
+/** 013 注册行窄投影(包管理页选择器消费;path 即 P1 词面的项目身份) */
+export interface RegisteredProjectRow {
+  readonly path: string;
+  readonly name: string;
+  /** false = 登记路径不存在(陈旧登记保留可见,禁用选择,不静默丢弃) */
+  readonly pathPresent: boolean;
+  readonly unityVersion: string | null;
+}
+
+export type ProjectListProjectsOutcome =
+  | {
+      readonly ok: true;
+      readonly projects: readonly RegisteredProjectRow[];
+      /** 行形状不符(必需键缺失)被如实计数的行数,绝不混入投影 */
+      readonly unreadable: number;
+    }
+  | { readonly ok: false; readonly error: { readonly kind: "unavailable" | "request_rejected" } };
 
 export interface ProjectSetNoteParams {
   readonly projectPath: string;
@@ -78,6 +103,54 @@ function asRecord(value: unknown): Record<string, unknown> | null {
     ? (value as Record<string, unknown>)
     : null;
 }
+
+/* ---- 013 project.listProjects 窄投影(024 P1 消费批) ----
+ * wire 成功帧三键包裹(schemaVersion "vua.project-inspection/v0.2" +
+ * operation "project.listProjects" + result 本体);行形状按 013 聚合
+ * ProjectInspectionV01 camelCase 序列化,选择器只取 path/name/
+ * pathPresent/unityVersion 四键——必需键收不齐的行按 unreadable 如实
+ * 计数,不猜测、不渲染半可信行(诚实纪律 1)。 */
+
+const PROJECT_INSPECTION_SCHEMA_VERSION = "vua.project-inspection/v0.2";
+
+function narrowRegisteredProjectRow(value: unknown): RegisteredProjectRow | null {
+  const record = asRecord(value);
+  if (record === null) return null;
+  const path = asString(record.path);
+  const name = asString(record.name);
+  if (path === null || name === null || typeof record.pathPresent !== "boolean") {
+    return null;
+  }
+  const unityVersion =
+    record.unityVersion === null || typeof record.unityVersion === "string"
+      ? (record.unityVersion as string | null)
+      : null;
+  return { path, name, pathPresent: record.pathPresent, unityVersion };
+}
+
+function narrowListProjectsValue(
+  value: unknown,
+): { readonly projects: readonly RegisteredProjectRow[]; readonly unreadable: number } | null {
+  const envelope = asRecord(value);
+  if (
+    envelope === null ||
+    envelope.schemaVersion !== PROJECT_INSPECTION_SCHEMA_VERSION ||
+    envelope.operation !== "project.listProjects"
+  ) {
+    return null;
+  }
+  const body = asRecord(envelope.result);
+  if (body === null || !Array.isArray(body.projects)) return null;
+  const projects: RegisteredProjectRow[] = [];
+  let unreadable = 0;
+  for (const row of body.projects) {
+    const narrowed = narrowRegisteredProjectRow(row);
+    if (narrowed === null) unreadable += 1;
+    else projects.push(narrowed);
+  }
+  return { projects, unreadable };
+}
+
 
 function asString(value: unknown): string | null {
   return typeof value === "string" && value.length > 0 ? value : null;
@@ -396,6 +469,26 @@ export function createLiveProjectOps(
         ? { ok: true, accepted }
         : { ok: false, error: { kind: "unavailable" } };
     },
+    async listProjects(): Promise<ProjectListProjectsOutcome> {
+      const response = await client.invoke({
+        schemaVersion: 1,
+        requestId: crypto.randomUUID(),
+        method: "project.listProjects",
+        params: {},
+      });
+      if (!response.ok) {
+        return {
+          ok: false,
+          error: {
+            kind: response.error.kind === "request_rejected" ? "request_rejected" : "unavailable",
+          },
+        };
+      }
+      const snapshot = narrowListProjectsValue(response.value);
+      return snapshot !== null
+        ? { ok: true, projects: snapshot.projects, unreadable: snapshot.unreadable }
+        : { ok: false, error: { kind: "unavailable" } };
+    },
   };
 }
 
@@ -405,6 +498,8 @@ export function createEmptyProjectOps(): ProjectOpsPort {
     importCopy: () =>
       Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
     setNote: () =>
+      Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
+    listProjects: () =>
       Promise.resolve({ ok: false, error: { kind: "unavailable" } as const }),
   };
 }

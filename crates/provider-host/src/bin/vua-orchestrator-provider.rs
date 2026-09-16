@@ -215,6 +215,47 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         );
         None
     };
+    // Proposal 024 P1 (packages-query v0.1): the packages read face rides a
+    // real VrcGetLibBackend injected at assembly, sharing the SAME
+    // environment-root fact source the project_ops / 013 aggregate reads
+    // (the core `EnvironmentRoots::default()` candidates[0] directory — the
+    // core self-audit convergence in proposal 024's inline thread). Without
+    // the injection the face keeps its typed honest absence; the engine's
+    // own default root stays reserved for tests / standalone environments.
+    let vpm = if runtime_face_wired {
+        let environment_root = vcc_settings_candidates
+            .first()
+            .and_then(|candidate| candidate.parent())
+            .map(|directory| directory.to_path_buf());
+        match environment_root {
+            Some(directory) => match vua_project_manager::VrcGetLibBackend::with_environment_root(
+                directory, false,
+            ) {
+                Ok(backend) => Some(
+                    std::sync::Arc::new(backend)
+                        as std::sync::Arc<dyn vua_orchestrator::VpmBackend>,
+                ),
+                Err(error) => {
+                    eprintln!(
+                        "VUA provider: vrc-get backend failed to initialize ({}); packages face stays unavailable",
+                        error.code,
+                    );
+                    None
+                }
+            },
+            None => {
+                eprintln!(
+                    "VUA provider: no VCC settings candidate resolved; packages face stays unavailable"
+                );
+                None
+            }
+        }
+    } else {
+        eprintln!(
+            "VUA provider: VUA_PROVIDER_DATA unset; packages face stays unavailable"
+        );
+        None
+    };
     let environment = if runtime_face_wired {
         Some(vua_provider_host::EnvironmentConfig {
             roots: environment_roots,
@@ -235,6 +276,9 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         // back to the primitive's system wiring, the full entry's
         // documented default (`verify_editor_path_system`).
         None,
+        // Proposal 024 P1: the real vrc-get-lib engine, sharing the 013
+        // aggregate's environment-root fact source.
+        vpm,
     )?;
     Ok(())
 }
