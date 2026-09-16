@@ -1546,6 +1546,8 @@ rolled_back: "롤백됨",
       sourceRepoNotInstalled: "리포지토리 패키지 · 미설치",
       sourceLocalInstalled: "로컬 패키지 · 설치됨",
       sourceLocalNotInstalled: "로컬 패키지 · 미설치",
+      catalogCachedData:
+        "캐시 데이터 — 온라인 새로 고침을 사용할 수 없어 로컬 저장소 캐시에서 제공되었습니다. 정보성 표시이며 오류가 아닙니다.",
       updateAvailableLabel: "업데이트",
       updateAvailableYes: "업데이트 있음",
       updateAvailableNo: "최신 상태",
