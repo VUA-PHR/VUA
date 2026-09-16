@@ -12,7 +12,9 @@ import type { CapabilityReport, Unsubscribe } from "./types.ts";
  *   not-connected,不编造包清单。
  * - 变更一律两阶段:先 previewChanges 拿分类预览(含冲突与 legacy 移除
  *   清单),用户确认后 applyChanges 才落地;破坏性预览由表现层延迟确认。
- * - 真实引擎(orchestrator 侧)接入见 GitHub issue #25;本契约即其前端边界。
+ * - 真实引擎(orchestrator 侧)接入路由见 collab/proposals/024-packages-wire-face.md
+ *   (packages.* wire 面 P1/P2/P3 分期方向稿;原锚 GitHub issue #25 经核实不存在,
+ *   2026-09-17 更正,wt-2 gh 核实照录);本契约即其前端边界。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
