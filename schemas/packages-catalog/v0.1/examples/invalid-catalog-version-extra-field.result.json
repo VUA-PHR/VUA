@@ -1,0 +1,21 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.packageCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-catalog/v0.1",
+    "projectPath": "C:\\VRChat\\Projects\\Demo",
+    "packageId": "com.anatawa12.avatar-optimizer",
+    "displayName": null,
+    "source": "repo",
+    "installed": false,
+    "updateAvailable": null,
+    "versions": [
+      {
+        "version": "1.8.0",
+        "yanked": false,
+        "compatible": true,
+        "changelogUrl": "https://example.invalid/changelog"
+      }
+    ]
+  }
+}

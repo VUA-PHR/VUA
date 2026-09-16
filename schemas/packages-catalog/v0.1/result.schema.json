@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-catalog/v0.1/result.schema.json",
+  "title": "VUA packages-catalog result v0.1",
+  "description": "Result documents for the packages-catalog v0.1 read face (proposal 025 P2 freeze batch 2026-09-17). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-catalog/v0.1 — two independent versions (the c914cf2 standing rule). The result projects the catalog facts of ONE package in ONE project's context. source is the resolved two-state origin fact of the package entity — \"repo\" (resolved from a repository cache) or \"local\" (user-local package, no repository) — and installed is the separate required project-context fact (present in this project's installed set); the desktop three-state presentation (repo / local / installed) composes these two facts, the word face never merges them. updateAvailable is the CONCLUSION of the frozen judgment (this project's installed version vs the latest compatible version by the frozen selector — a strictly newer compatible version exists); it is nullable: null means the judgment was NOT executed (the package is not installed in this project, or the project's Unity version is unknown) — absence is not \"no update\", and the consumer keeps the P1 defense (no update UI rendered on null, never a default false). displayName is nullable per the library's Option; null renders the packageId as the display name (P1 ruling 3), never posing as field fact. versions enumerates the repository-cache versions of the package ascending by semver; a LOCAL-source package carries an EMPTY versions array (no repository versions exist — an honest empty, not an error). Each version row: version verbatim; yanked is the repo-cache-carried yank fact (boolean; local packages have no version rows so no yank semantics arise — absence of a cache fact is never rendered as not-yanked by the consumer); compatible is nullable — boolean when evaluated against the selected project's Unity version, null when that version is unknown (null is not incompatibility). additionalProperties:false on every object is the false-assertion guard: invented catalog facts (changelogUrl, latestVersion, downloadCount, health, ...) are INVALID by schema, not merely discouraged (P1 discipline; ORC-DEV-004: no implementation, no reserved field).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.packageCatalog"]
+    },
+    "result": { "$ref": "#/$defs/packageCatalogResult" }
+  },
+  "$defs": {
+    "packageCatalogResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "projectPath",
+        "packageId",
+        "displayName",
+        "source",
+        "installed",
+        "updateAvailable",
+        "versions"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-catalog/v0.1" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "packageId": { "type": "string", "minLength": 1 },
+        "displayName": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "The package's display-name fact; null renders packageId as the display name (P1 ruling 3), never posing as field fact."
+        },
+        "source": {
+          "enum": ["repo", "local"],
+          "description": "Two-state resolved origin: repo = resolved from a repository cache; local = user-local package (no repository). The desktop installed/not-installed third state composes with the separate installed fact."
+        },
+        "installed": {
+          "type": "boolean",
+          "description": "Project-context fact: the package is present in this project's installed set."
+        },
+        "updateAvailable": {
+          "type": ["boolean", "null"],
+          "description": "Frozen judgment conclusion: a strictly newer compatible version exists vs this project's installed version. null = judgment not executed (not installed here, or project Unity version unknown) — absence is not \"no update\"."
+        },
+        "versions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/catalogVersion" },
+          "description": "Repository-cache versions ascending by semver; EMPTY for a local-source package (honest empty, not an error)."
+        }
+      }
+    },
+    "catalogVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "yanked", "compatible"],
+      "properties": {
+        "version": { "type": "string", "minLength": 1 },
+        "yanked": {
+          "type": "boolean",
+          "description": "Repo-cache-carried yank fact; consumers never render absence-of-cache-fact as not-yanked."
+        },
+        "compatible": {
+          "type": ["boolean", "null"],
+          "description": "Evaluated against the selected project's Unity version; null = that version is unknown (null is not incompatibility)."
+        }
+      }
+    }
+  }
+}

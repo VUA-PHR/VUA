@@ -384,3 +384,162 @@ crates/orchestrator/src/vpm_backend.rs 11 码族＋VpmCapabilities 五位
 > 273efaf 先行入库且在本节之前。**就此开放问题 4 四票全部同向收敛
 > （环境倾向＋集成票＋桌面交叉表态＋核心票）即闭；开放问题 2 桌面已
 > 落。025 表态程序收敛达成，核心 P2 冻结批起草解锁。**
+
+### 冻结批（核心）（2026-09-17 03:1x–03:3x，slot/wt-2；P2 词面权威落死）
+
+**定位**：表态程序收敛（环境提案 64bfe58＋集成表态 7a50ce9＋桌面表
+态 0031004＋核心裁决 bf78368，开放问题 1–4 全闭）后，照 024 同径落
+死 P2 权威词面。本批零运行时行为变化（wire 路由/bin 装配归核心实现
+切片，库面实现归环境实现切片，均随后续批）。
+
+**词面权威形状（与方向裁决的差异逐项如实声明）**：
+
+- **双方法两族一次冻结**：`packages.listRepos`（仓库订阅清单读面，
+  result 族 `vua.packages-repos/v0.1`）＋`packages.packageCatalog`
+  （单包目录事实按需查询，result 族 `vua.packages-catalog/v0.1`）。
+  信封照常设形状（envelope const "0.1"＋operation＋result），两族版
+  本独立（c914cf2 常设规矩）。
+- **裁决 1 落死**：订阅面为世界；行闭集五键＝四标识/定位事实（可空
+  字符串，null＝库面 Option 逐字投影）＋**cached 必带布尔**（桌面表
+  态要求的逐仓库缓存命中事实；false＝已订阅未刷新，诚实清单行）。
+  行序＝订阅面自身顺序（settings userRepos 数组顺序＝用户配置事实
+  ——较裁决节新定：不发明排序键，配置顺序即事实顺序）。空 repos
+  数组＝诚实零订阅。健康面非目标落死：发明 health/status 字段在
+  schema 即非法（虚假断言防线）。
+- **裁决 2 落死**：catalog 双键闭集 { projectPath, packageId }；无全
+  量投影、无分页语义；词表外包（仓库缓存与本地集合均无此包）答复用
+  `vua.vpm.no_matching_package`（复用，桌面表态的独立空态呈现落此
+  码）。
+- **裁决 3 落死**：updateAvailable 结论布尔或 null（null＝判定未执
+  行：本工程未安装或工程 Unity 版本未知；缺席不是「无更新」）；
+  compatible 逐版本布尔或 null（工程版本未知＝null，null 不是不兼
+  容）；yanked 布尔（仓库缓存携带事实；local 来源包 versions 空数
+  组故无 yanked 语义产生——桌面「缺席≠未 yanked」纪律由空数组承
+  载）；prerelease 读用户设置零 wire 字段。
+- **新增落实（桌面表态 3 承接，方向裁决节的自然延伸）**：source 二
+  态（"repo"|"local"）＋installed 布尔分立必带——桌面三态呈现由两
+  事实组合，词面不合并来源与安装（024 P1「不发明合并事实」同律）；
+  displayName 可空（null 以 packageId 兼任，P1 裁决 3 延续）。
+- **裁决 4 落死（形状微调如实声明）**：能力声明落为**独立默认访问
+  器** `VpmBackend::catalog_capabilities() -> CatalogCapabilities`
+  （默认 declared-none）而非 `VpmCapabilities` 加位——五位闭集保持
+  稳定且未实现后端零编译波及（ORC-DEV-004 同律：恰在实现时覆写；
+  与既有 trait 默认 unsupported 先例同族）。wire
+  served_capabilities 增 `packages.listRepos`/`packages.packageCatalog`
+  两行，随装配与该声明翻转。
+- **裁决 5 落死（零新码）**：错误码全复用——
+  vua.project.project_not_found（未注册路径）、
+  vua.vpm.no_matching_package（无此包）、vua.vpm.project_load_failed、
+  vua.vpm.capability_missing、vua.vpm.backend_unavailable、
+  vua.packages.invalid_params、vua.packages.unavailable。
+- **裁决 6 落死**：stale/缓存来源 wire 标注随环境实现切片落死，本词
+  面不预留字段。
+- **裁决 7/8 维持**：健康面非目标；update_cache 不纳入。
+
+**交付面（本批文件）**：schemas/packages-repos/v0.1/（command＋
+result＋3 正 3 负向量）＋schemas/packages-catalog/v0.1/（command＋
+result＋4 正 4 负向量）＋端口面（crates/orchestrator/src/
+vpm_backend.rs：CatalogCapabilities/RepoInfoV01/PackageSourceV01/
+CatalogVersionV01/PackageCatalogV01＋trait 三方法默认实现＋lib.rs 导
+出）＋核心消费测试（crates/provider-host/tests/
+packages_p2_consumer.rs 4 例：Schema 向量验证＋端口→wire 投影闭环＋
+trait 默认缺席臂）＋TS 面（packages/contracts/src/
+application-contract.ts 六接口＋union＋守卫两 case＋test 三例）＋
+mock 恒缺席臂（packages/orchestrator-provider 两方法同 P1 纪律＋测
+试）＋双语协议本（docs/protocols/packages-repos-catalog-v0.1_EN/ZH）
+＋REGISTRY 三行。
+
+**后续批次（照 024 链）**：环境实现切片（VrcGetLibBackend 实现两方
+法＋catalog_capabilities 覆写＋离线降级分支＋stale 标注落死＋本域
+单测）→ 核心 wire 接线切片（provider-host 路由两方法＋
+served_capabilities 两行＋bin 装配）→ 桌面形状核可＋P2 消费切片。
+**零端到端宣称维持**：页面呈现候桌面消费批＋用户 dev 栈重启；真机
+走查归 W25（O-2）。
+
+### 形状核可（桌面）（2026-09-17 03:4x，wt-3 工作时段；P2 冻结批消费面核可）
+
+**核可对象与方式**：P2 冻结批词面＝slot/wt-2 9ab1b11（＋状态批
+b50242f）世代，**候集成验收尚未入 main——本核可以冻结批经集成验收
+入库为生效前提**。核可方式＝只读词面逐项核对（本树工作副本追平
+e7f1e31 后，对 slot/wt-2 分支词面直读：两族 schema 全文＋7 负例向量＋
+TS 面六接口/守卫/测试＋mock 缺席臂＋Rust 端口面五类型/trait 三方法），
+零代码零运行时变更。
+
+**逐项核可（对照桌面表态节〔0031004〕条款，零偏差）**：
+
+1. **repos 区块解锁条件**：`packages.listRepos` 词面＋能力位就位——
+   能力声明经 `VpmBackend::catalog_capabilities()`；消费端区块标注
+   权威事实源仍是 wire served_capabilities 能力行（两行随装配翻转），
+   P1 机制不变；ready-p1 `repos:false` 类型级恒假升级 RepoInfo 行承
+   载变体的形状走向与 `PackagesRepoInfoV01` 吻合。
+2. **仓库清单呈现**：订阅面为世界（裁决 1）；四标识/定位可空字符串
+   （repoId/name/url/localPath，null＝库面 Option 逐字投影；
+   localPath 承载本地目录仓库定位，与「url 缺席如实空值呈现」吻合）；
+   **cached 必带**（false＝已订阅未刷新诚实清单行，绝不呈现为空目录
+   ——schema description 与负例 invalid-repo-row-missing-cached 双
+   面钉死）；行序＝订阅面自身顺序。**健康面非目标**：负例
+   invalid-repo-row-health-field 钉死 health/status 字段 schema 即
+   非法——页面零健康拟态词（本表态第 2 条「列非目标则健康语义列整
+   体不渲染」承接）。
+3. **PackageRow P2 升级投影逐项**：updateAvailable 结论布尔或 null
+   （null＝判定未执行，缺席不是「无更新」；schema 与 TS 注释双面钉
+   死「null 时更新 UI 不渲染、不以默认值填充」＝P1 防线延续）；
+   yanked 仓库缓存携带（local 来源 versions 空数组承载「缺席≠未
+   yanked」，schema 明写消费者绝不把无缓存事实渲染为未 yanked）；
+   compatible 逐版本布尔或 null（params.projectPath 必带＝判定绑定
+   选中工程，无工程上下文不发起查询；null＝版本未知不是不兼容；
+   prerelease 读用户设置零 wire 字段——负例 invalid-catalog-extra-
+   param 钉死 includePrerelease 非法）；displayName 可空（null 以
+   packageId 兼任，P1 裁决 3）；source 二态＋installed 分立必带（三
+   态＝组合呈现；负例 invalid-catalog-source-word-outside 钉死
+   source:"installed" 词表外——「不合并来源与安装」落死）。
+4. **粒度**：按需查询双键闭集 {projectPath, packageId}；无全量投影
+   无分页（页面零分页拟态，符合表态第 4 条「不静默全量拉取」）；词
+   表外无此包＝`vua.vpm.no_matching_package` 复用码独立空态（非错误
+   页，本表态第 6 条落此码）。
+5. **stale 披露时序（如实登记，非偏差）**：裁决 6＝披露字段随环境实
+   现切片落死，本词面不预留——照表态第 5 条条件分支，P2 消费批时
+   wire 若尚无披露字段则页面不自行标注缓存来源，候实现切片入库后再
+   核可呈现。
+6. **空态/失败**：零新码全复用（七码闭集）；零订阅＝空 repos 诚实；
+   mock 缺席臂两方法恒答 `vua.packages.unavailable` 绝不伪造清单或
+   以空数组冒充事实（P1 纪律同型，mock-provider 测试在案）。
+
+**TS 面专项核可（桌面所有权域登记确认）**：六接口
+（PackagesListReposQueryV01/PackagesRepoInfoV01/
+PackagesListReposResultV01/PackagesPackageCatalogQueryV01/
+PackagesCatalogVersionV01/PackagesPackageCatalogResultV01）与 Rust
+端口面（RepoInfoV01/PackageSourceV01/CatalogVersionV01/
+PackageCatalogV01）serde camelCase/snake_case 投影逐键同形零偏差；
+守卫两 case 与 schema 闭集同形（listRepos 空闭集 ↔
+additionalProperties:false＋properties:{}；catalog 双键＋isIdentifier
+↔ minLength 1）；族常量两族独立（vua.packages-repos/v0.1、
+vua.packages-catalog/v0.1，c914cf2 规矩）；union 两臂＋contracts 守
+卫测试（正例＋多余键拒＋缺键拒）在案。**程序事实如实登记**：TS 面
+系核心冻结批批内自落（024 P1 先例系桌面消费切片落 TS 面 2 文件）
+——本节即桌面域 TS 面登记确认，同形零偏差，消费切片直接承接不再重
+复登记。
+
+**收敛差清单（冻结批 vs 方向裁决/桌面表态，全部零冲突如实记录）**：
+①能力位形状微调——方向裁决 4「VpmCapabilities 加位」落为独立默认
+访问器 `catalog_capabilities()`（五位闭集稳定＋未实现后端零编译波
+及，核心如实声明理由）；消费面影响零——wire 能力行机制不变。②错
+误码零新码——方向裁决 5 预留「新码闭集候冻结批立」落死为全复用（超
+预期收敛），复用码与 P1 词表同族、照码原词呈现机制不变。③行序新定
+——订阅面自身顺序（配置事实即顺序，不发明排序键），桌面表态未预设
+排序零冲突。④四键超集——repoId/name/url 之外增 localPath（本地目
+录仓库定位承载），与表态「本地目录仓库 url 缺席如实空值呈现」吻合。
+
+**程序结论**：P2 冻结批形状核可**通过**。桌面 P2 消费切片硬前置三
+项中「词面冻结＋TS 面登记＋形状核可」就位；**开工候最后前置＝核心
+wire 接线切片落地（provider-host 路由两方法＋served_capabilities 两
+行＋bin 装配，ready-p2 才有真实事实源）**，届时照 024 P1 全链程序自
+领；包管理器页维持 P1 中间诚实态不变，零端到端宣称维持。
+
+> 竞态补正（wt-3，2026-09-17 03:5x 追平轮）：形状核可节落节时「候集
+> 成验收尚未入 main」系落节当时事实——冻结批已于本轮工作期间经集成
+> 987b3cc 验收入库（9ab1b11＋b50242f is-ancestor 双实证，集成 diff
+> 亲审 28 非 collab 文件与冻结词面逐项吻合）。**核可生效前提已兑现，
+> 本核可即时生效**。追平合并（73e3f0e）时 025 文件同位追加冲突照
+> 991e065 先例两侧保留逐字不改写：冻结批节在前、形状核可节随后，
+> 程序时间序排列。

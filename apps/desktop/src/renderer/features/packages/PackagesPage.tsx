@@ -11,6 +11,7 @@ import {
   useGateway,
   usePackagesView,
   type CapabilityReport,
+  type CatalogPackageFactsV01,
   type ChangeRequest,
   type InstalledPackageRowV01,
   type PackageChangePreview,
@@ -19,6 +20,7 @@ import {
   type PackageRow,
   type PackageSource,
   type RegisteredProjectRow,
+  type RepoInfoRowV01,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
 import { PackageDetailDrawer } from "./PackageDetailDrawer.tsx";
@@ -49,6 +51,11 @@ const copy = strings.packages;
  * - 视图 not-connected → EmptyState;无项目 → 空态 + 添加按钮(capability 门控);
  * - 视图 ready-p1(024 P1 中间诚实态)→ 项目选择器(013 注册清单)+
  *   已装包简表;repos/变更面无词表事实源,分区与写入口不渲染;
+ * - 视图 ready-p2(025 P2 读面消费批)→ P1 布局 + 仓库订阅区块(能力行
+ *   解锁,cached=false「已订阅·缓存未建立」诚实态,零健康拟态词)+
+ *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
+ *   渲染入口;no_matching_package = 独立空态;updateAvailable null =
+ *   更新行不渲染);变更面仍无词表,写入口不渲染;
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - 所有变更两阶段:previewChanges → ChangesDialog 确认 → applyChanges;
@@ -218,6 +225,15 @@ function P1Notice() {
   );
 }
 
+function P2Notice() {
+  return (
+    <div className="vua-packages__migration">
+      <Icon name="question" size={16} />
+      <p>{copy.p2.notice}</p>
+    </div>
+  );
+}
+
 /** P1 项目选择器:清单来自 013 project.listProjects(同一注册事实,无第二
  * 项目身份,path 即词面 projectPath);登记路径缺失的行禁用可见,形状不
  * 符行以计数如实呈现(诚实纪律:缺席可见,不猜测内容)。 */
@@ -269,13 +285,17 @@ function P1ProjectPicker({
 }
 
 /** P1 已装包简表:loadError 存在时呈现 typed 失败(错误码原词),绝不以
- * 空态冒充;零已装包 = 合法空数组的诚实空态(两种形态严格区分)。 */
+ * 空态冒充;零已装包 = 合法空数组的诚实空态(两种形态严格区分)。
+ * onShowCatalog 仅 P2 分支传入:目录事实(catalog)区块可用时行内提供
+ * 按需目录查询入口,无工程上下文不由本表控制(页面级门控)。 */
 function P1InstalledTable({
   rows,
   loadErrorCode,
+  onShowCatalog,
 }: {
   rows: readonly InstalledPackageRowV01[];
   loadErrorCode: string | null;
+  onShowCatalog?: (packageId: string) => void;
 }) {
   if (loadErrorCode !== null) {
     return (
@@ -301,6 +321,7 @@ function P1InstalledTable({
             <th scope="col">{copy.columns.name}</th>
             <th scope="col">{copy.columns.installed}</th>
             <th scope="col">{copy.p1.dependenciesColumn}</th>
+            {onShowCatalog ? <th scope="col">{copy.p2.catalogColumn}</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -320,11 +341,208 @@ function P1InstalledTable({
               >
                 {format(copy.p1.dependenciesCount, { count: row.dependencies.length })}
               </td>
+              {onShowCatalog ? (
+                <td data-column={copy.p2.catalogColumn}>
+                  <Button variant="subtle" onClick={() => onShowCatalog(row.packageId)}>
+                    {copy.p2.catalogColumn}
+                  </Button>
+                </td>
+              ) : null}
             </tr>
           ))}
         </tbody>
       </table>
     </div>
+  );
+}
+
+/* ---- P2 读面(025 冻结批消费批):仓库订阅清单 + 单包目录按需查询。
+ * 健康面 = 词面非目标,零健康拟态词;cached=false =「已订阅·缓存未建
+ * 立」独立诚实态(绝不呈现为空目录);目录查询需工程上下文(compatible
+ * 绑定选中工程),无工程上下文不渲染入口;no_matching_package = 独立
+ * 空态非错误页;updateAvailable null = 判定未执行,更新行不渲染不以
+ * 默认值填充(P1 防线);yanked 事实仅版本行携带,本地包(versions 空
+ * 数组)无 yanked 断言。 ---- */
+
+/** P2 仓库订阅清单:行序 = 订阅面自身顺序(配置事实,不重排);
+ * reposError = typed 失败照原词呈现,与空数组零订阅严格区分。 */
+function P2ReposSection({
+  repos,
+  reposErrorCode,
+}: {
+  repos: readonly RepoInfoRowV01[];
+  reposErrorCode: string | null;
+}) {
+  if (reposErrorCode !== null) {
+    return (
+      <EmptyState
+        title={copy.p2.reposLoadFailedTitle}
+        description={format(copy.p2.reposLoadFailed, { code: reposErrorCode })}
+      />
+    );
+  }
+  if (repos.length === 0) {
+    return (
+      <EmptyState
+        title={copy.p2.reposEmptyTitle}
+        description={copy.p2.reposEmptyDescription}
+      />
+    );
+  }
+  return (
+    <Card>
+      <h2 className="vua-packages__section-title">{copy.p2.reposTitle}</h2>
+      <ul className="vua-packages__repo-list">
+        {repos.map((repo, index) => {
+          const title = repo.name ?? repo.repoId ?? copy.p2.repoNoIdentifier;
+          const location = repo.url ?? repo.localPath;
+          return (
+            <li key={`${repo.repoId ?? "repo"}-${index}`} className="vua-packages__repo-row">
+              <div className="vua-packages__repo-main">
+                <span className="vua-packages__name-title" title={repo.repoId ?? undefined}>
+                  {title}
+                </span>
+                <Badge tone={repo.cached ? "neutral" : "warning"}>
+                  {repo.cached ? copy.p2.repoCached : copy.p2.repoNotCached}
+                </Badge>
+              </div>
+              {location !== null && location !== undefined ? (
+                <span className="vua-caption vua-text-secondary" title={location}>
+                  {repo.url !== null ? `${copy.p2.repoUrlLabel}: ${repo.url}` : `${copy.p2.repoLocalPathLabel}: ${repo.localPath}`}
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
+/** P2 目录事实面板:挂载即按需查询(双键闭集);四种形态严格区分——
+ * 加载骨架 / typed 失败(码原词) / no_matching_package 独立空态 /
+ * 目录事实行闭集呈现(displayName null 以 packageId 兼任;source 二态
+ * × installed 组合呈现;updateAvailable null 时更新行不渲染)。 */
+function P2CatalogPanel({
+  projectPath,
+  packageId,
+  gateway,
+  onClose,
+}: {
+  projectPath: string;
+  packageId: string;
+  gateway: ReturnType<typeof useGateway>;
+  onClose: () => void;
+}) {
+  const [outcome, setOutcome] = useState<
+    | { kind: "loading" }
+    | { kind: "ok"; facts: CatalogPackageFactsV01 }
+    | { kind: "failed"; code: string }
+    | { kind: "unavailable" }
+  >({ kind: "loading" });
+
+  useEffect(() => {
+    let active = true;
+    setOutcome({ kind: "loading" });
+    void gateway.packages.packageCatalog(projectPath, packageId).then((result) => {
+      if (!active) return;
+      if (result.kind === "ok") setOutcome({ kind: "ok", facts: result.result });
+      else if (result.kind === "failed") setOutcome({ kind: "failed", code: result.code });
+      else setOutcome({ kind: "unavailable" });
+    });
+    return () => {
+      active = false;
+    };
+  }, [gateway, projectPath, packageId]);
+
+  const facts = outcome.kind === "ok" ? outcome.facts : null;
+  const displayName = facts === null ? null : (facts.displayName ?? facts.packageId);
+  const updateLine =
+    facts === null || facts.updateAvailable === null
+      ? null
+      : facts.updateAvailable
+        ? copy.p2.updateAvailableYes
+        : copy.p2.updateAvailableNo;
+  const sourceLine =
+    facts === null
+      ? null
+      : facts.source === "repo"
+        ? facts.installed
+          ? copy.p2.sourceRepoInstalled
+          : copy.p2.sourceRepoNotInstalled
+        : facts.installed
+          ? copy.p2.sourceLocalInstalled
+          : copy.p2.sourceLocalNotInstalled;
+
+  return (
+    <Card>
+      <div className="vua-packages__catalog-head">
+        <h2 className="vua-packages__section-title">
+          {format(copy.p2.catalogTitle, { packageId })}
+        </h2>
+        <Button variant="subtle" onClick={onClose}>
+          {copy.p2.catalogClose}
+        </Button>
+      </div>
+      {outcome.kind === "loading" ? (
+        <div className="vua-page__stack">
+          <Skeleton width="45%" />
+          <Skeleton width="70%" />
+        </div>
+      ) : outcome.kind === "failed" ? (
+        outcome.code === "vua.vpm.no_matching_package" ? (
+          <EmptyState
+            title={copy.p2.catalogNotFoundTitle}
+            description={copy.p2.catalogNotFoundDescription}
+          />
+        ) : (
+          <EmptyState
+            title={copy.p2.catalogFailedTitle}
+            description={format(copy.p2.catalogQueryFailed, { code: outcome.code })}
+          />
+        )
+      ) : outcome.kind === "unavailable" ? (
+        <EmptyState
+          title={copy.p2.catalogFailedTitle}
+          description={copy.p2.catalogUnavailable}
+        />
+      ) : (
+        <div className="vua-packages__catalog-body">
+          <p>
+            <span className="vua-caption vua-text-secondary">{copy.columns.name}: </span>
+            {displayName}
+          </p>
+          <p>
+            <span className="vua-caption vua-text-secondary">{copy.p2.sourceLabel}: </span>
+            {sourceLine}
+          </p>
+          {updateLine !== null ? (
+            <p>
+              <span className="vua-caption vua-text-secondary">{copy.p2.updateAvailableLabel}: </span>
+              {updateLine}
+            </p>
+          ) : null}
+          <h3 className="vua-packages__section-title">{copy.p2.versionsTitle}</h3>
+          {outcome.facts.versions.length === 0 ? (
+            <p className="vua-caption vua-text-secondary">{copy.p2.versionsEmpty}</p>
+          ) : (
+            <ul className="vua-packages__repo-list">
+              {outcome.facts.versions.map((version) => (
+                <li key={version.version} className="vua-packages__repo-row">
+                  <span className="vua-packages__name-title">{version.version}</span>
+                  <span className="vua-caption">
+                    {version.yanked ? copy.p2.versionYanked : null}
+                    {version.compatible === true ? copy.p2.compatibleYes : null}
+                    {version.compatible === false ? copy.p2.compatibleNo : null}
+                    {version.compatible === null ? copy.p2.compatibleUnknown : null}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -345,10 +563,11 @@ export function PackagesPage() {
   // 预发布警告:每次会话开启前弹一次确认(用户裁决的一次性确认,不持久化)
   const [prereleaseAcked, setPrereleaseAcked] = useState(false);
   const [prereleasePrompt, setPrereleasePrompt] = useState(false);
-  // 选择 / 详情抽屉 / 项目切换
+  // 选择 / 详情抽屉 / 项目切换 / P2 目录面板(按需查询目标包)
   const [selectedIds, setSelectedIds] = useState<readonly string[]>([]);
   const [anchorId, setAnchorId] = useState<string | null>(null);
   const [detailId, setDetailId] = useState<string | null>(null);
+  const [catalogTarget, setCatalogTarget] = useState<string | null>(null);
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
   // 变更两阶段
   const [preview, setPreview] = useState<PackageChangePreview | null>(null);
@@ -387,16 +606,17 @@ export function PackagesPage() {
 
   const ready = view.kind === "ready" ? view : null;
   const p1 = view.kind === "ready-p1" ? view : null;
+  const p2 = view.kind === "ready-p2" ? view : null;
   const selectedProjectId = ready?.selectedProjectId ?? null;
 
-  // P1 注册项目清单(013 聚合,packages.listInstalled 的同一注册事实):
-  // 进入 P1 模式时加载;清单不可用 = null(诚实注记),形状不符行计数上呈
+  // P1/P2 注册项目清单(013 聚合,packages.listInstalled 的同一注册事实):
+  // 进入中间诚实态时加载;清单不可用 = null(诚实注记),形状不符行计数上呈
   const [registeredProjects, setRegisteredProjects] = useState<readonly RegisteredProjectRow[] | null>(null);
   const [p1Unreadable, setP1Unreadable] = useState<number | null>(null);
   const p1AutoSelected = useRef(false);
 
   useEffect(() => {
-    if (view.kind !== "ready-p1") return;
+    if (view.kind !== "ready-p1" && view.kind !== "ready-p2") return;
     let active = true;
     void gateway.projectOps.listProjects().then((outcome) => {
       if (!active) return;
@@ -413,9 +633,9 @@ export function PackagesPage() {
     };
   }, [gateway, view.kind]);
 
-  // P1 自动初始选择:清单首个可用项目(一次;此后尊重用户显式选择)
+  // P1/P2 自动初始选择:清单首个可用项目(一次;此后尊重用户显式选择)
   useEffect(() => {
-    if (view.kind !== "ready-p1" || registeredProjects === null || p1AutoSelected.current) return;
+    if ((view.kind !== "ready-p1" && view.kind !== "ready-p2") || registeredProjects === null || p1AutoSelected.current) return;
     const firstUsable = registeredProjects.find((project) => project.pathPresent);
     if (firstUsable !== undefined) {
       p1AutoSelected.current = true;
@@ -423,15 +643,17 @@ export function PackagesPage() {
     }
   }, [gateway, view.kind, registeredProjects]);
 
-  // 项目切换收敛(render 期调整,React 推荐模式):清空选择/锚点/抽屉;
-  // 订阅广播到达后解除切换中骨架。ready 身份 = projectId,P1 身份 = 路径
-  const selectedIdentity = ready?.selectedProjectId ?? p1?.projectPath ?? null;
+  // 项目切换收敛(render 期调整,React 推荐模式):清空选择/锚点/抽屉/
+  // 目录面板;订阅广播到达后解除切换中骨架。ready 身份 = projectId,
+  // P1/P2 身份 = 路径
+  const selectedIdentity = ready?.selectedProjectId ?? p1?.projectPath ?? p2?.projectPath ?? null;
   const [lastProjectId, setLastProjectId] = useState(selectedIdentity);
   if (selectedIdentity !== lastProjectId) {
     setLastProjectId(selectedIdentity);
     setSelectedIds([]);
     setAnchorId(null);
     setDetailId(null);
+    setCatalogTarget(null);
   }
   if (pendingProjectId !== null && pendingProjectId === selectedIdentity) {
     setPendingProjectId(null);
@@ -460,6 +682,14 @@ export function PackagesPage() {
     if (text === "") return p1.installedPackages;
     return p1.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
   }, [p1, debouncedText]);
+
+  // P2 过滤:同 P1 纪律(packageId 本地搜索,行序不重排)
+  const p2Rows = useMemo(() => {
+    if (p2 === null) return [] as readonly InstalledPackageRowV01[];
+    const text = debouncedText.trim().toLowerCase();
+    if (text === "") return p2.installedPackages;
+    return p2.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
+  }, [p2, debouncedText]);
 
   const showToast = (text: string) => {
     toastSeq.current += 1;
@@ -528,9 +758,9 @@ export function PackagesPage() {
   };
 
   const chooseProject = (projectId: string) => {
-    // P1 视图的项目身份 = 013 注册路径(projectPath);两种模式同一选择通道
-    const currentSelected = ready?.selectedProjectId ?? p1?.projectPath ?? null;
-    if (ready === null && p1 === null) return;
+    // P1/P2 视图的项目身份 = 013 注册路径(projectPath);各模式同一选择通道
+    const currentSelected = ready?.selectedProjectId ?? p1?.projectPath ?? p2?.projectPath ?? null;
+    if (ready === null && p1 === null && p2 === null) return;
     if (projectId === currentSelected) return;
     setPendingProjectId(projectId);
     void gateway.packages.selectProject(projectId).then(
@@ -611,6 +841,82 @@ export function PackagesPage() {
               : strings.capability.states[capability.state]
           }
         />
+      ) : p2 !== null ? (
+        /* P2 读面诚实态(025):已装可看 + 订阅清单/目录按能力行解锁;
+         * changes 恒 false,写入口不渲染;repos/catalog 区块 false 时不
+         * 渲染对应区块与入口(无事实源不渲染,渲染层不伪造) */
+        p2.blocks.installed ? (
+          <>
+            <P2Notice />
+            <P1ProjectPicker
+              projects={registeredProjects ?? []}
+              unreadable={p1Unreadable}
+              selectedProjectPath={p2.projectPath}
+              onSelect={chooseProject}
+            />
+            {p2.blocks.repos ? (
+              <P2ReposSection repos={p2.repos} reposErrorCode={p2.reposError?.code ?? null} />
+            ) : null}
+            {registeredProjects !== null && registeredProjects.length === 0 ? (
+              <EmptyState
+                title={copy.empty.noProjectsTitle}
+                description={copy.p1.noProjectsDescription}
+              />
+            ) : registeredProjects === null ? (
+              <EmptyState
+                title={copy.empty.noProjectsTitle}
+                description={copy.p1.projectsUnavailable}
+              />
+            ) : p2.projectPath === null ? (
+              <EmptyState
+                title={copy.empty.noSelectionTitle}
+                description={copy.empty.noSelectionDescription}
+              />
+            ) : (
+              <div className="vua-packages__main">
+                <div className="vua-packages__toolbar" role="search">
+                  <input
+                    type="search"
+                    className="vua-packages__search"
+                    placeholder={copy.toolbar.searchPlaceholder}
+                    aria-label={copy.toolbar.searchAria}
+                    value={searchText}
+                    onChange={(event) => setSearchText(event.target.value)}
+                  />
+                </div>
+                {switching ? (
+                  <Card>
+                    <div className="vua-page__stack">
+                      <Skeleton width="55%" />
+                      <Skeleton width="80%" />
+                      <Skeleton width="45%" />
+                    </div>
+                  </Card>
+                ) : (
+                  <P1InstalledTable
+                    rows={p2Rows}
+                    loadErrorCode={p2.loadError?.code ?? null}
+                    {...(p2.blocks.catalog ? { onShowCatalog: setCatalogTarget } : {})}
+                  />
+                )}
+                {catalogTarget !== null && p2.blocks.catalog && p2.projectPath !== null ? (
+                  <P2CatalogPanel
+                    projectPath={p2.projectPath}
+                    packageId={catalogTarget}
+                    gateway={gateway}
+                    onClose={() => setCatalogTarget(null)}
+                  />
+                ) : null}
+              </div>
+            )}
+          </>
+        ) : (
+          /* 能力行存在但不可用:已安装区块诚实不可渲染 */
+          <EmptyState
+            title={copy.empty.engineTitle}
+            description={strings.capability.details.packagesEngineMissing}
+          />
+        )
       ) : p1 !== null ? (
         /* P1 中间诚实态(024):区块标注 repos/changes 恒 false——分区切换
          * 器与一切写入口不渲染;清单来自 013 注册面,包行三键照实显示 */

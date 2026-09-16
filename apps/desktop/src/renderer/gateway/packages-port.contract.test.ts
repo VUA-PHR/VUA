@@ -54,6 +54,7 @@ test("empty: 全部变更入口恒 unavailable,视图恒 not-connected,不编造
   assert.equal((await port.selectProject("p-1")).kind, "not-connected");
   assert.equal((await port.setRepoEnabled("r-1", false)).kind, "not-connected");
   assert.equal((await port.listInstalled("C:/proj")).kind, "unavailable");
+  assert.equal((await port.packageCatalog("C:/proj", "com.example.x")).kind, "unavailable");
   assert.equal((await port.addProject()).kind, "unavailable");
   assert.equal((await port.importLocalPackage()).kind, "unavailable");
   assert.equal(
@@ -69,6 +70,14 @@ test("empty: 全部变更入口恒 unavailable,视图恒 not-connected,不编造
 test("fixture(demo-packages): P1 词面恒 unavailable(fixture 不模拟 wire 回执,ready 完整 IA 为其演示面)", async () => {
   const port = fixtureGateway("demo-packages").packages;
   assert.equal((await port.listInstalled("C:/proj")).kind, "unavailable");
+});
+
+test("fixture(demo-packages): P2 词面恒 unavailable(025 消费批;同 fixture 纪律不模拟 wire 回执)", async () => {
+  const port = fixtureGateway("demo-packages").packages;
+  assert.equal(
+    (await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer")).kind,
+    "unavailable",
+  );
 });
 
 /* ---- fixture(demo-packages):完整演示态走查 ---- */
