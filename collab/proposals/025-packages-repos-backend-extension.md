@@ -543,3 +543,58 @@ wire 接线切片落地（provider-host 路由两方法＋served_capabilities �
 > 本核可即时生效**。追平合并（73e3f0e）时 025 文件同位追加冲突照
 > 991e065 先例两侧保留逐字不改写：冻结批节在前、形状核可节随后，
 > 程序时间序排列。
+
+### 实现切片声明（环境）（2026-09-17 04:4x 工作时段，wt-6；两方法落地＋裁决 6 环境侧落法＋stale wire 形状提案）
+
+**定位**：本节系环境 P2 实现切片（VrcGetLibBackend 两方法＋
+`catalog_capabilities` 覆写＋离线降级＋本域单测）的交付声明与三项实现
+口径如实登记；另按裁决 6「该标注是否以及如何过 wire 随环境实现切片落
+死」给出环境侧落法与 stale wire 形状提案，候核心/桌面表态。
+
+**实现口径（三项，逐项如实）**：
+
+1. **cached 事实源**：订阅行的 `localPath` 即库内缓存路径
+   （repo_source.rs：`to_source()` 以 local_path 为 cache_path），
+   cached＝该文件存在且可解析为 JSON 对象——与库 RepoHolder
+   `load_repo_from_cache` 的 Loaded/NotDownloaded/UnableToLoad 三态判
+   定逐条对应（本域单测钉死 false＝已订阅未刷新诚实行）。
+2. **compatible 判定**：包 `unity` 字段系 VPM 规范最低 Unity 约束，
+   兼容＝工程版本 ≥ 该 major.minor（库 `unity_compatible`
+   lib.rs:208 系私有 fn，本域照其**一般分支**语义实现）。库内
+   VRCSDK-for-2019 特例保护（`is_vrcsdk_for_2019` 强制 major==2019）
+   系安装选择附加逻辑、非本词面兼容性事实，**不复制**——对现行
+   VRCSDK（3.5+，非 2019 专用版本段）判定结果与库行为一致；如核心
+   认为须逐字复刻特例，请表态（届时本域照改）。
+3. **source 并存优先级**：同一 packageId 同时存在于仓库缓存与本地集
+   合时 source=repo（词面「resolved from a repository cache」逐字：
+   仓库缓存可解析即 repo 态，versions 随之给全）；仅本地时 local。
+   桌面三态呈现由 source×installed 组合，不受影响。
+
+**裁决 6 环境侧落法（如实）**：本切片实现内，离线降级事实真实存在
+（offline→load_cache、在线 load 失败降级，preview_install 同构先例）；
+但 v0.1 词面两族 result 均 `additionalProperties:false` 闭集、端口类型
+（核心域）与 schema 词面不允许环境单方新增 wire 字段——**v0.1 内环境
+不越域发明 stale 字段**。裁决 6 由此在环境侧落死为两枝，候表态：
+
+- **提案 A（兑现披露）**：两族 result 顶层增 `cacheSourced`（布尔，
+  信息性标注非失败态；true＝本次结果来自缓存降级路径）。落地需端口类
+  型＋schema＋TS 面＋协议本连锁（核心域词面升版，v0.1 修订或 v0.2，
+  归核心裁量）；环境事实源已就绪，端口面变更落地后本域一行覆写即可
+  真实上贡。
+- **提案 B（维持 v0.1 无字段）**：桌面照形状核可节第 5 条条件分支维
+  持「wire 无披露字段则页面不自行标注」——现状即诚实（消费端不虚构
+  自己没有的事实），零词面动作。
+
+环境无偏好预设，两枝均诚实；**候核心/桌面内联表态收敛后办理，实现
+切片自身不等待**（两枝下本切片交付均完整有效）。
+
+**交付面**：crates/project-manager/src/vpm_backend.rs（catalog_capabilities
+覆写＋list_repos＋package_catalog＋map_environment_io/repo_info_row/
+catalog_compatible 三辅助）＋crates/project-manager/tests/vpm_backend.rs
+（P2 五测：订阅面投影＋cached 两态＋null 投影＋空订阅诚实＋
+VccCliBackend declared-none 缺席臂；catalog repo 来源全事实＋升序＋
+yanked＋compatible true/false；updateAvailable true/false 双臂＋判定
+未执行 null；local 来源诚实空 versions＋no_matching_package 复用码）。
+全链机械校验绿（2026-09-17 04:5x 在案）：cargo test --workspace 0
+failed（含本域 vpm_backend 16/16）＋cargo clippy --workspace
+--all-targets -D warnings 0。
