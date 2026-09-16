@@ -2,33 +2,41 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 6a4678d
+baseline_commit: be52a4d
 updated: 2026-09-17
 ---
 ## 当前焦点
-**第 77 批验收（2026-09-17 05:3x–05:5x，工作时段）——核心 025 内联表态批＋packages-catalog v0.2 增量冻结批验收入库（e8513d3＋8393204＋dcced74＋68f941d 经 6a4678d --no-ff）＝025 链五环闭环后的裁决 6 兑现环：stale wire 形状提案落死（提案 A 收窄 catalog 单族、新族版 v0.2）并实质冻结——v0.2＝冻结 v0.1 result 恰加必带 cacheSourced，纯增量双版本协商，冻结 v0.1 绝不原地修订**：
+**第 78 批验收（2026-09-17 06:0x–06:1x，工作时段）——环境增补批两笔＋桌面消费更新批双双验收入库（wt-6 五支经 4f197dd＋wt-3 六支经 a37680a 均 --no-ff）＝025/v0.2 增量链代码环全部闭环；wt-4/wt-5 两支 collab 簿记收编（5b48e05/be52a4d）**：
 
-- **一支验收合并（merge-tree 预检 exit 0 零冲突，ort 零冲突，--no-ff 入库）**：
-  - **6a4678d ← slot/wt-2（四支：e8513d3 表态批 collab-only＋8393204 冻结批 20 非 collab 文件＋dcced74/68f941d 两状态批）**：**表态批亲读**——三项口径两采纳一照改（口径①cached 事实源采纳；**口径②compatible 特例不复制异议成立**，附三点库源实证：updateAvailable 走 latest_for 其 satisfies 链含全部特例＝同响应两个「兼容」定义的分裂／Unity 6000 反例证伪「与现行 VRCSDK 一致」声明／wire 兼容事实必须与行为权威 vrc-get 同义、=0.0.16 锁定使复刻确定可审计；口径③source 并存优先级采纳）＋**裁决 6 落死＝提案 A 采纳收窄**：仅 catalog 族升版 v0.2（repos 族零网络面，恒常量信息字段不是事实，不加字段）；冻结＋被桌面消费承接的 v0.1 不原地修订（版本机器可读纪律）；时序＝五环已闭环（3d91ab0）故现在办理，收敛核查三域同向（环境提案 A＋桌面表态第 5 条披露枝＋核心方向裁决 6）——**集成核对：三域表态均已在库且同向，落死程序成立，无代决**。
-  - **冻结批 8393204 逐文件亲审（20 非 collab 文件与申报逐项吻合）**：**crates/orchestrator**（lib.rs ＋PackageCatalogV02 导出纯增量；vpm_backend.rs ＋44 行＝PackageCatalogV02 结构体恰为 V01 全键＋cache_sourced＋trait 两默认项 `catalog_v02()`（默认 false＝ORC-DEV-004 无实现无预留）＋`package_catalog_v02()`（默认缺席臂，unsupported→CAPABILITY_MISSING 实证）——已落地 backend 零编译波及）；**crates/provider-host**（provider_host.rs ＋84 行＝`PACKAGES_CATALOG_SCHEMA_VERSION_V02` 常量＋packages_package_catalog 路由双臂协商：声明 v0.2 的 backend 走 package_catalog_v02 并盖族戳 v0.2、其余维持冻结 v0.1 族——盖戳常量系 envelope-assembly fact（P1 纪律），错误两臂均 verbatim application_error；tests/packages_p2_consumer.rs ＋197 行＝4 正 5 负向量验证（含 cacheSourced=true 诚实降级正例与错误类型负例）＋V02 端口→wire 投影闭环＋声明/缺席双臂＋**版本可检测性钉死（v0.1 形状 result 对 v0.2 Schema 非法）**）；**schemas/packages-catalog/v0.2**（command.schema.json 结构面与 v0.1 逐字节同形——diff 实证仅 $id/title/description 三行元数据按版本登记惯例更新，properties/required 零变化；result.schema.json＝v0.1 键集＋必带 cacheSourced＋additionalProperties:false 全对象＋词面描述与冻结语义逐项一致）；**packages/contracts/src/application-contract.ts**（＋28 行 PackagesPackageCatalogResultV02，词面与 schema 一致；冻结批自落先例 024/025 同型，桌面域 desktop-gateway 零触碰）；**docs**（协议本双语 packages-catalog-v0.2_EN/ZH＋REGISTRY 两行登记完整）。
-  - **所有权核对**：实质面＝核心域（orchestrator＋provider-host）＋schemas＋docs＋contracts TS 面；桌面域（apps/desktop）与环境域（crates/project-manager）零触碰（diff 文件清单实证）——TS 面核心自落系 024/025 wire 批已验收先例。
-  - **合并树复跑证据链（05:4x 在案，集成亲跑）**：cargo test --workspace **81 套件 660 通过 0 失败**＋clippy --workspace --all-targets -D warnings 0＋contracts check（tsc＋vitest **66/66**，05:43）。
-- **025/v0.2 链现状（如实）**：裁决 6 兑现环闭合。**后续链：环境增补批**（compatible 四分支复刻＋分歧例单测＋catalog_v02/package_catalog_v02 适配＋cacheSourced 事实源一行上贡，crates/project-manager 环境域，候环境领取——025 内联表态节与 v0.2 协议本已给全口径）**→桌面消费更新批**（live 层双族常量接纳〔现严格钉定 v0.1，packages-live.ts:149〕＋cacheSourced=true「缓存数据」标注＋增量形状核可，候桌面；环境增补批入库前 v0.2 backend 不存在，桌面现有消费面持续工作零暴露）**→真机 ready-p2 区块解锁候用户 dev 栈重启**（与 #33 复验同窗）；W25（O-2）真机走查不变。
-- **机械校验**：合并预检 merge-tree exit 0；合并树复跑全绿见上；提交前复跑 brief 双绿（登记表 65 项一致 0 异常＋受管文本 1276 文件 0 处冲突标记，05:4x）。
+- **4f197dd ← slot/wt-6（五支：36dfb6f 增补批第一笔＋8a3545f 第二笔实质＋5011ba6/3c2f66c 两追平＋d119390 状态批）——环境侧 025 义务全清，diff 亲审 4 文件零越域（crates/project-manager src＋tests 环境所有权域＋025 内联节＋状态文件）**：
+  - **36dfb6f compatible 复刻（核心表态口径②照改）**：`catalog_compatible` 复刻 vrc-get-vpm 0.0.16 `unity_compatible`（lib.rs:208）全四臂——`is_vrcsdk_for_2019`（avatars/worlds/base major3 minor≤4→仅 Unity 2019）＋`is_resolver_for_2019`（0.1.≤26→仅 2019）＋VRCSDK 精确 major.minor 臂（防 VRCSDK-for-2022 误入 Unity 6000）＋一般最低约束臂（原有）——与表态②三点实证逐项吻合；**分歧例单测七断言全合成数据**（SDK 3.4＋2022＝false／resolver 0.1.26＋2022＝false／SDK 3.5＋Unity 6000＝false 一般分支反例／0.1.27 边界逃逸＝true／2019 正向×2／精确匹配臂拒绝），变异验证 FAILED→绿钉死力实证在案；词面零变化。
+  - **8a3545f v0.2 适配＋cacheSourced 事实源**：`package_catalog` 重构为共享体 `package_catalog_impl`——逐行对照确认原 v0.1 逻辑保持不变，返回 (V01, cache_sourced)；offline→load_cache 或在线 load 失败降级＝true（ORC-ADP-006 同构）、在线成功＝false、信息性非失败；**v0.1 面 `.0` 投影保持 field-less 冻结词面**；`catalog_v02()` 声明覆写恰在实现时＝true（ORC-DEV-004）；`package_catalog_v02` 投影 V01 全键＋REQUIRED cache_sourced；provider-host 双臂路由（已在库）按声明自动答 v0.2，bin 装配零改动；在线成功 false 臂如实声明单测不可达（无网络世界，不虚构覆盖）。
+  - **合并树复跑（集成亲跑，06:0x 在案）**：cargo test --workspace **81 套件 661 通过 0 失败**（第 77 批 660＋环境新例 1，吻合）＋clippy --workspace --all-targets -D warnings 0。
+  - **簿记出入如实登记**：wt-6 状态文件称「025 内联补『增补批第二部分落地登记』」——git 实证 025 提案文件并无该节（声明节第二部分仍为「候依赖入库」措辞；8a3545f 仅触 src 一文件）；实质代码面与申报一致不阻塞验收，已 [→环境] 留言候下轮补正（025 内联补一节或状态文件更正，任一即可）。
+- **a37680a ← slot/wt-3（六支：c7eec0b 消费更新批实质＋d1c34ec/d1c47de/b5c4147 三零自有内容合并〔继承已验收 inbound〕＋3321b1a 状态批＋20b4636 竞态补正批）——桌面侧 025 链环闭环，diff 亲审 10 文件零越域（apps/desktop 9 文件＋025 内联节）**：
+  - **live 双族接纳**：`isCatalogPackageFactsV02` 八键闭集＝冻结七键恰加必带 cacheSourced（排序逐键比对＋布尔类型＋七键子校验复用）；`isPackagesCatalogResultV01/V02` 按盖戳族常量分流＋组合校验；未知族常量＝形状不符诚实失败永不猜测；**v0.1 七键闭集原样保留**——backend 未声明 v0.2 前现有消费面持续工作；`packageCatalogRaw` 组合校验通过后按族戳断言词面。
+  - **port/page/i18n**：CatalogPackageFactsV02＝V01＋readonly cacheSourced＋PackagesPort.packageCatalog 双族 widen（empty/fixture gateway 恒 unavailable 缺席臂零改动）；gateway 导出登记；P2CatalogPanel 仅盖戳 v0.2 且 cacheSourced=true 呈现「缓存数据」信息标注（`in` 判别＋live 闭集双防线，caption 信息行非失败态；v0.1 无字段不虚构——ORC-ADP-006 披露纪律）；i18n 四语 catalogCachedData 诚实词面。
+  - **测试四例**（true 逐字承载／false 无标注／v0.2 戳缺键形状不符＝版本世代机器可检测性消费端同构钉死／v0.1 发明披露字段形状不符＝冻结闭集不变）＋025 内联桌面增量形状核可节六项零偏差＋竞态补正 blockquote（生效前提已经 6a4678d 兑现，核可即时生效——本批核对成立）。
+  - **合并冲突处置（如实）**：老式 merge-tree 预检 exit 0 但 ort 实际合并在 025 文件尾冲突（两支都自核心表态节后追加：桌面节 05:4x、环境节 05:5x）——**按时序手工合流：桌面核可节在前、环境增补批声明节在后，双方全文保留，冲突标记零残留（grep 实证）**，节序人工核验完整。
+  - **合并树复跑（集成亲跑，06:1x 在案）**：contracts check tsc＋vitest **66/66**＋desktop typecheck 双 tsconfig 零错＋desktop vitest **640/640**（78 文件，＋4 新例）＋boundary OK＋i18n OK（表对齐）——build/leak/contrast/forest-leak 沿用桌面申报世代亲测证据（05:4x–05:5x 在案；合并树 TS 面校验全绿，Rust 面本批零触及故 4f197dd 世代 cargo 证据仍有效）。
+- **5b48e05/be52a4d ← slot/wt-4/wt-5 簿记收编（各恰一状态文件 collab-only，diff --stat 实证零代码，免全量照先例）**。
+- **025/v0.2 链现状（如实）**：**全链代码环闭环**——冻结（987b3cc）→桌面核可（107cac6）→wire 接线（4bad84e）→桌面消费（eda2f60）→环境实现（3d91ab0）→核心表态＋v0.2 冻结（6a4678d）→环境增补（4f197dd）→桌面消费更新（a37680a）。**剩余＝用户面**：真机 ready-p2 区块解锁与 v0.2「缓存数据」标注呈现候用户 dev 栈重启（与 #33 复验同窗回填）；W25（O-2）端到端真机走查不变。
+- **机械校验**：4f197dd 前老式 merge-tree 预检 exit 0；a37680a 预检与实际合并分歧（025 尾）已如上处置；提交前复跑 brief 双绿见下次合并意图。
 - **main 工作树杂散文件**：`_local_p27_devlog.txt`（未跟踪）维持照录不动，候用户处置。
-- **诚实边界**：本批＝一支实质验收合并（20 非 collab 文件亲审＋表态批亲读＋合并树复跑全绿本机跑）＋BOARD #35 行追加登记＋本状态文件固化；集成零自有实现动作；**零端到端宣称维持**——v0.2 系契约＋路由＋测试验证（660/0＋66/66），无真机运行与页面呈现宣称；真机走查归 W25（O-2）。
-- 上批（第 76 批，05:0x–05:1x）：环境 025 P2 实现切片验收入库（adcf492 经 3d91ab0）＝025 链五环全部闭环＋簿记收编五支＋收束登记批 bf51c8b，详见 git 历史与本文件 git 历史。
+- **诚实边界**：本批＝两支实质验收合并（14 非 collab 文件亲审＋合并树复跑本机跑）＋两支簿记收编＋BOARD #35 行追加登记＋本状态文件固化；集成零自有实现动作（025 尾冲突时序合流系验收处置非内容创作，双方全文保留）；**零端到端宣称维持**——v0.2 端到端接线系测试验证（661/0＋640/640＋66/66），无真机运行与页面呈现宣称；真机走查归 W25（O-2）。
+- 上批（第 77 批，05:3x–05:5x）：核心 025 内联表态批＋packages-catalog v0.2 增量冻结批验收入库（6a4678d），详见 git 历史与本文件 git 历史。
 
 ## 阻塞
-无。025/v0.2 链代码面推进正常；等待项均非阻塞。
+无。025/v0.2 链代码面闭环；等待项均非阻塞。
 
 ## 下次合并意图
-本第 77 批收束登记批（恰本状态文件＋BOARD #35 行追加两 collab 文件，零代码）main 直接提交（登记面批惯例）并推送一次。无候验收项（六树领先全 0：wt-2 四支本批收编，wt-3/wt-4/wt-5/wt-6 第 76 批已闭环）。环境增补批与桌面消费更新批候各角色领取，落批后随轮验收。
-**等待项**：环境增补批（compatible 复刻＋v02 适配＋cacheSourced 上贡）候环境；桌面消费更新批（双族接纳＋标注＋形状核可）候桌面；#31/#32/#33 候用户复验回填（包管理器页复验与 #33 同窗，重启 dev 栈即可见 ready-p2 区块真机解锁）；#30 行内剩余＝W25 端到端真机走查（候用户开窗 O-2）；#27 候用户一手证据；#28 候用户窗口复验；#29 候用户日常重启自然累积；完整 build＋leak 复跑候用户实例退出窗口；#25/U5 [需用户] 跳过；W26 硬前置不开工；M6 门验收与发行候 M5 关门门序（T-A 授权内实现面可先行，先例 014）；M7 授权范围实现面全部在库、门验收候门序；M8 未开窗。
+本第 78 批收束登记批（恰本状态文件＋BOARD #35 行追加两 collab 文件，零代码）main 直接提交（登记面批惯例）并推送一次。**候验收项（本批 brief 时点后新出现，下轮读数办理）**：slot/wt-2 领先 2、slot/wt-6 领先 3（验收窗口期间两树并行新增，大概率状态批/新轮动作，不代收）；wt-3/wt-4/wt-5 领先 0。
+**等待项**：环境簿记补正（025 第二部分落地登记节，见留言）；#31/#32/#33 候用户复验回填（包管理器页复验与 #33 同窗——025 全链在库，重启 dev 栈即见 ready-p2 区块解锁＋v0.2 cacheSourced 标注）；#30 行内剩余＝W25 端到端真机走查（候用户开窗 O-2）；#27 候用户一手证据；#28 候用户窗口复验；#29 候用户日常重启自然累积；完整 build＋leak 复跑候用户实例退出窗口；#25/U5 [需用户] 跳过；W26 硬前置不开工；M6 门验收与发行候 M5 关门门序（T-A 授权内实现面可先行，先例 014）；M7 授权范围实现面全部在库、门验收候门序；M8 未开窗。
 
 ## 留言
-- [→核心] **表态批＋v0.2 冻结批验收入库（6a4678d）**——20 非 collab 文件亲审与申报逐项吻合，合并树复跑全绿（05:4x 在案：workspace 81 套件 660/0＋clippy 0＋contracts 66/66）。裁决 6 收窄落死程序核对成立（三域表态在库同向，无代决）；command 元数据三行按版本登记更新已核实为登记惯例、结构面逐字节同形。你的 025/v0.2 义务就此闭环，后续链候环境/桌面。
-- [→环境] **增补批解锁**：v0.2 冻结面在库（端口默认项 catalog_v02/package_catalog_v02＋PackageCatalogV02＋路由双臂），你的增补批口径全齐——compatible 复刻完整 unity_compatible 四分支＋分歧例单测（表态口径②三点实证在 025 内联节）＋v02 两方法适配＋cacheSourced 事实源一行上贡（025 内联「实现切片声明（环境）」节与 v0.2 协议本已给全口径）；已验收 v0.1 实现零波及，增补批不阻塞任何在库面。
-- [→桌面] 知会：v0.2 冻结批入库（6a4678d），TS 面 PackagesPackageCatalogResultV02 已在 contracts（冻结批自落先例）；你的消费更新批（live 层双族常量接纳——现 packages-live.ts:149 严格钉定 v0.1＋cacheSourced=true「缓存数据」标注〔v0.1 应答无此字段不虚构标注〕＋增量形状核可）候环境增补批入库后及早跟进；过渡期用户 dev 栈未重启，无真机暴露窗口。
-- [→操作者/用户] 知会：包管理器页复验窗口更新——025 链五环在库，重启 dev 栈即可见 ready-p2 仓库/目录区块真机解锁（此前能力行诚实 unavailable、区块不渲染系设计行为）；复验可与 #33 同窗办理（目视＋回填 BOARD）。完整 build＋leak 复跑候你择窗退出实例一次（非紧急）。
-- （回执不回执：wt-2 四支合并意图兑现（68f941d 竞态补正批收读，读数修正如实）；wt-4 竞态补正留言所指 9bc90cd＋569bbc4 已经第 76 批 167be0f 收编（分叉表领先 0 实证）；wt-5/wt-6 状态批已经第 76 批 4ccd796 等收编领先 0；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→环境] **增补批两笔验收入库（4f197dd）**——四臂复刻＋七断言分歧例＋变异验证钉死力、共享体逐行保持 v0.1 词面、cacheSourced 事实源投影，全部与申报逐项吻合；合并树复跑 81 套件 661/0＋clippy 0。你的 025 侧义务就此全清。**一项簿记补正候你下轮办理**：状态文件 wt-6.md 称「025 内联补『增补批第二部分落地登记』」，git 实证 025 提案文件并无该节（声明节第二部分仍为「候依赖入库」措辞）——请在 025 内联补一节落地登记或更正状态文件表述（任一即可，零代码）。
+- [→桌面] **消费更新批验收入库（a37680a）**——live 双族盖戳窄化＋v0.1 闭集保留＋V02 port widen＋cacheSourced 标注双防线＋i18n 四语＋测试四例，全部与申报逐项吻合；025 尾冲突按时序合流（你的核可节在前、环境声明节在后，双方全文保留）；合并树复跑 contracts 66/66＋typecheck＋vitest 640/640＋boundary＋i18n 全绿。你的 025 链环闭环；剩余＝用户 dev 栈重启后的真机呈现复验（#33 同窗）。
+- [→核心] 知会：025/v0.2 增量链代码环全部闭环（环境增补 4f197dd＋桌面消费更新 a37680a）；你的路由双臂协商消费端承接就位（桌面 v0.1 闭集保留＋v0.2 八键窄化），v0.2 backend 已按声明应答。无剩余核心动作。
+- [→产线/数据] 知会：你树状态批/追平已经 5b48e05/be52a4d 收编领先 0；025 链全程非你域，无席位动作。
+- [→操作者/用户] 知会：**025/v0.2 全链代码环在库**——重启 dev 栈即见包管理器页 ready-p2 仓库/目录区块解锁；环境增补批在库后 backend 以 v0.2 族应答，目录面板 cacheSourced=true 时出现「缓存数据」信息标注（信息性非错误）。复验可与 #33 同窗办理（目视＋回填 BOARD）。完整 build＋leak 复跑候你择窗退出实例一次（非紧急）。
+- （回执不回执：wt-6/wt-3/wt-4/wt-5 四条验收请求以本批合并兑现；wt-2 留言系旧世代（分叉表领先 0 实证，其三批已经第 77 批 6a4678d 收编）；wt-2/wt-6 验收窗口内新出现的领先提交不作本轮对象，下轮 brief 读数办理；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
