@@ -107,15 +107,81 @@ describe("contract environment snapshot projection", () => {
     expect(create.items).toEqual([expect.objectContaining({ id: "unity_editors", status: "error" })]);
   });
 
-  it("applies the consumer-side presence severity default and keeps engineering facts in the description", () => {
+  it("applies the consumer-side presence severity default and localizes presence words in the description", () => {
     const view = projectEnvironmentSnapshot(snapshot);
     const play = view.deployer.zones.play;
     const create = view.deployer.zones.create;
     if (play.kind !== "results" || create.kind !== "results") throw new Error("expected results phases");
     const [steam, vrRuntime, unity] = [play.items[0], play.items[1], create.items[0]];
-    expect(steam).toMatchObject({ description: "detected" });
-    expect(vrRuntime).toMatchObject({ description: "not_detected" });
+    // #31 修复:presence 三词投影为四语状态词;error_code(仅
+    // detection_failed 携带)保留工程事实码原词
+    expect(steam).toMatchObject({ description: strings.deployer.presence.detected });
+    expect(vrRuntime).toMatchObject({ description: strings.deployer.presence.notDetected });
     expect(unity).toMatchObject({ description: "vua.env.probe_failed" });
+  });
+
+  it("projects the full engine check-id closed set to localized card titles", () => {
+    // #31 修复:引擎 inspect_zone 当前 id 闭集(play 13 项＋create 4 独有 id)
+    // 全部注册,不再透传原词
+    const engineIds = [
+      "steam",
+      "vrchat",
+      "steamvr",
+      "openxr_runtime",
+      "oculus_runtime",
+      "pico_runtime",
+      "vive_runtime",
+      "virtual_desktop",
+      "alvr",
+      "gpu",
+      "network",
+      "windows",
+      "disk_space",
+      "unity_hub",
+      "unity_editors",
+      "vpm_cli",
+      "vcc",
+    ] as const;
+    const view = projectEnvironmentSnapshot({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 1,
+      capturedAt: "2026-09-16T01:00:00.000Z",
+      items: engineIds.map((checkId) => ({
+        checkId,
+        zone: "play" as const,
+        presence: "detected" as const,
+        facts: {},
+      })),
+    });
+    const play = view.deployer.zones.play;
+    if (play.kind !== "results") throw new Error("expected a results phase");
+    const checks = strings.deployer.checks as unknown as Readonly<Record<string, string>>;
+    const keyOf: Readonly<Record<string, string>> = {
+      steam: "steam",
+      vrchat: "vrchat",
+      steamvr: "steamvr",
+      openxr_runtime: "openxrRuntime",
+      oculus_runtime: "oculusRuntime",
+      pico_runtime: "picoRuntime",
+      vive_runtime: "viveRuntime",
+      virtual_desktop: "virtualDesktop",
+      alvr: "alvr",
+      gpu: "gpu",
+      network: "network",
+      windows: "windows",
+      disk_space: "diskSpace",
+      unity_hub: "unityHub",
+      unity_editors: "unityEditors",
+      vpm_cli: "vpmCli",
+      vcc: "vcc",
+    };
+    for (const [index, checkId] of engineIds.entries()) {
+      const item = play.items[index];
+      const key = keyOf[checkId];
+      if (key === undefined) throw new Error(`missing title key for ${checkId}`);
+      expect(item?.title).toBe(checks[key]);
+      expect(item?.title).not.toBe(checkId);
+    }
   });
 
   it("projects known check ids to four-language card titles and passes unknown ids through", () => {
