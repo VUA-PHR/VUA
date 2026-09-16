@@ -579,3 +579,60 @@
     transform: translateY(0);
   }
 }
+
+/* ---- 025 P2 读面(消费批):仓库订阅清单 + 单包目录面板 ---- */
+
+.vua-packages__section-title {
+  font: var(--vua-font-body);
+  font-weight: 600;
+  margin: 0 0 var(--vua-space-2);
+}
+
+.vua-packages__repo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__repo-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  padding: var(--vua-space-2);
+  border: 1px solid var(--vua-border-subtle);
+  border-radius: var(--vua-radius-md);
+}
+
+.vua-packages__repo-main {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__repo-main .vua-caption {
+  overflow-wrap: anywhere;
+}
+
+.vua-packages__catalog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__catalog-head .vua-packages__section-title {
+  margin: 0;
+}
+
+.vua-packages__catalog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__catalog-body p {
+  margin: 0;
+}

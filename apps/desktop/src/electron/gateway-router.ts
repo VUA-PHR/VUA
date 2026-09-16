@@ -213,6 +213,21 @@ function toApplicationRequest(
     // 诚实缺席,未注册路径 = 复用 vua.project.project_not_found 原样透传
     case "packages.listInstalled":
       return { ...base, kind: "query", method: "packages.listInstalled", params: { projectPath: request.params.projectPath } };
+    // 025 P2 读面(桌面 P2 消费批):两方法只读 verbatim 透传——listRepos
+    // 空闭集(全局配置面);packageCatalog 双键(projectPath 013 身份 +
+    // packageId)。实现域未接线 = provider 答 vua.packages.unavailable
+    // 诚实缺席;未注册路径 = 复用 vua.project.project_not_found;词表外
+    // 无此包 = vua.vpm.no_matching_package(独立空态非错误页)——全部
+    // 原样透传不折叠
+    case "packages.listRepos":
+      return { ...base, kind: "query", method: "packages.listRepos", params: {} };
+    case "packages.packageCatalog":
+      return {
+        ...base,
+        kind: "query",
+        method: "packages.packageCatalog",
+        params: { projectPath: request.params.projectPath, packageId: request.params.packageId },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":
