@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-repos/v0.1/result.schema.json",
+  "title": "VUA packages-repos result v0.1",
+  "description": "Result documents for the packages-repos v0.1 read face (proposal 025 P2 freeze batch 2026-09-17). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-repos/v0.1 — two independent versions (the c914cf2 standing rule). Each repo row is the frozen projection of ONE subscription entry: the four identifier/location facts are nullable strings — null is the honest projection of the library's Option (a local-directory repo has url=null; a remote repo may lack name or id) — and cached is the REQUIRED per-repo cache-hit fact: true = a refreshed local cache exists for this subscription, false = subscribed but never refreshed (its own honest state; the consumer must render it as such, never as an empty catalog). There is deliberately NO health field: the library carries no health fact carrier (VrcGetMeta is etag-only) and the converged ruling listed the health face as a P2 non-goal — a row carrying health/status/lastRefreshed is INVALID by schema, not merely discouraged (false-assertion guard, P1 additionalProperties discipline). Row order is the subscription face's own order (the settings userRepos array order — the user's configuration fact projected verbatim); the consumer relies on it as presentation fact and never re-sorts. An EMPTY repos array is a valid, honest answer (zero subscriptions).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listRepos"]
+    },
+    "result": { "$ref": "#/$defs/listReposResult" }
+  },
+  "$defs": {
+    "listReposResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "repos"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-repos/v0.1" },
+        "repos": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repoInfo" }
+        }
+      }
+    },
+    "repoInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoId", "name", "url", "localPath", "cached"],
+      "properties": {
+        "repoId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Subscription identifier; null when the library carries none."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Subscription display name; null when the library carries none."
+        },
+        "url": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Remote repository URL; null for a local-directory repo (the location then lives in localPath)."
+        },
+        "localPath": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Local cache file path of the subscription; null when the library carries none."
+        },
+        "cached": {
+          "type": "boolean",
+          "description": "Per-repo cache-hit fact: true = a refreshed local cache exists; false = subscribed but never refreshed (honest listed state, never hidden)."
+        }
+      }
+    }
+  }
+}

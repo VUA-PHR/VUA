@@ -106,6 +106,87 @@ pub struct RegisteredProjectV1 {
     pub name: String,
 }
 
+/// P2 read-family capability declaration (proposal 025 freeze batch,
+/// 2026-09-17). Declared as a separate defaulted trait accessor instead of
+/// a new `VpmCapabilities` field so the five-bit closed set stays stable
+/// and backends that do not implement the catalog faces keep compiling
+/// unchanged (ORC-DEV-004: no implementation, no reservation — the default
+/// is declared-none; a backend overrides it exactly when it implements
+/// `list_repos` / `package_catalog`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogCapabilities {
+    /// Covers both P2 read faces (`packages.listRepos` /
+    /// `packages.packageCatalog`): the repo subscription list and the
+    /// per-package catalog facts share one backend capability.
+    pub catalog: bool,
+}
+
+impl CatalogCapabilities {
+    pub const NONE: Self = Self { catalog: false };
+}
+
+/// P2: one repository subscription row (proposal 025 freeze batch). The
+/// subscription face is the world (the user's configuration fact), so the
+/// row projects the settings userRepos entry verbatim: every
+/// identifier/location fact is an Option and `None` is projected as an
+/// honest absence — never padded, never guessed. `cached` is the REQUIRED
+/// per-repo cache-hit fact: false = subscribed but never refreshed, its own
+/// honest state (never hidden, never rendered as an empty catalog).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoInfoV01 {
+    pub repo_id: Option<String>,
+    pub name: Option<String>,
+    pub url: Option<String>,
+    pub local_path: Option<String>,
+    pub cached: bool,
+}
+
+/// P2: the resolved origin of a catalog package (proposal 025 freeze
+/// batch). The desktop three-state presentation composes this with the
+/// separate `installed` fact of `PackageCatalogV01`; the word face never
+/// merges origin and installation into one word.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PackageSourceV01 {
+    /// Resolved from a repository cache.
+    Repo,
+    /// User-local package (no repository).
+    Local,
+}
+
+/// P2: one repository-cache version row (proposal 025 freeze batch).
+/// `yanked` is the repo-cache-carried yank fact; `compatible` is evaluated
+/// against the selected project's Unity version and is `None` exactly when
+/// that version is unknown (absence is not incompatibility).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CatalogVersionV01 {
+    pub version: String,
+    pub yanked: bool,
+    pub compatible: Option<bool>,
+}
+
+/// P2: per-package catalog facts for one package in one registered
+/// project's context (proposal 025 freeze batch). `update_available` is
+/// the frozen judgment CONCLUSION (a strictly newer compatible version
+/// exists vs this project's installed version); `None` = judgment not
+/// executed (package not installed here, or project Unity version
+/// unknown) — absence is never "no update". `versions` is empty for a
+/// local-source package (honest empty, not an error).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PackageCatalogV01 {
+    pub project_path: String,
+    pub package_id: String,
+    pub display_name: Option<String>,
+    pub source: PackageSourceV01,
+    pub installed: bool,
+    pub update_available: Option<bool>,
+    pub versions: Vec<CatalogVersionV01>,
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -167,6 +248,34 @@ pub trait VpmBackend: Send + Sync {
     /// B6: enumerate the manager's registered project paths.
     fn project_registry(&self) -> Result<Vec<RegisteredProjectV1>, AppErrorV1> {
         Err(unsupported("project_registry"))
+    }
+    /// P2 (proposal 025 freeze batch): capability declaration for the
+    /// catalog read faces. The default is declared-none; a backend
+    /// overrides it exactly when it implements `list_repos` and
+    /// `package_catalog`.
+    fn catalog_capabilities(&self) -> CatalogCapabilities {
+        CatalogCapabilities::NONE
+    }
+    /// P2 (proposal 025 freeze batch): the repository subscription list —
+    /// the subscription face is the world (settings userRepos projected
+    /// verbatim, array order preserved), each row carrying the REQUIRED
+    /// per-repo cache-hit fact. Read-only: enable/disable and add/remove
+    /// are write faces under the 013 R5 per-face path, not here.
+    fn list_repos(&self) -> Result<Vec<RepoInfoV01>, AppErrorV1> {
+        Err(unsupported("list_repos"))
+    }
+    /// P2 (proposal 025 freeze batch): per-package catalog facts for one
+    /// package in one registered project's context. On-demand granularity
+    /// only — no full-catalog projection, no pagination. An unknown
+    /// package (in neither repository caches nor the local set) answers
+    /// `vua.vpm.no_matching_package` (reused code, same fact); the
+    /// compatible judgment binds to this project's Unity version.
+    fn package_catalog(
+        &self,
+        _project: &ProjectRef,
+        _package_id: &str,
+    ) -> Result<PackageCatalogV01, AppErrorV1> {
+        Err(unsupported("package_catalog"))
     }
     /// Creates a project from a template; backends without the capability
     /// return a `capability_missing` error.

@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listRepos",
+  "params": {
+    "projectPath": "C:\\VRChat\\Projects\\Demo"
+  }
+}
