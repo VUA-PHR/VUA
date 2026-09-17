@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { APPLICATION_CONTRACT_VERSION, type ApplicationEventV01 } from "@vua/contracts";
 import { createElectronGateway } from "./electron-gateway.js";
 import { createGatewayClient, type DesktopGatewayHost } from "./gateway-client.js";
+import { strings } from "../i18n/index.js";
 import type { TaskCenterView } from "./task-port.js";
 
 function taskSnapshot(overrides: Record<string, unknown> = {}) {
@@ -143,11 +144,22 @@ describe("live Electron Gateway (F2)", () => {
     const { host } = stubHost((call) =>
       call.method === "environment.getSnapshot"
         ? ok({
+            // provider-host live 形状(BOARD #36 缺陷③,#22 教训:mock 钉
+            // live wire 而非 TS 面):顶层 contractVersion/revision 手拼,
+            // items 为引擎 serde 逐条输出(逐条 schemaVersion+checkId,
+            // errorCode 非 detection_failed 时为 null)
             contractVersion: APPLICATION_CONTRACT_VERSION,
             revision: 1,
             capturedAt: "2026-09-04T01:00:00.000Z",
             items: [
-              { checkId: "steam", zone: "play", presence: "detected", facts: {} },
+              {
+                schemaVersion: 1,
+                checkId: "steam",
+                zone: "play",
+                presence: "detected",
+                errorCode: null,
+                facts: {},
+              },
             ],
           })
         : ok({
@@ -162,6 +174,9 @@ describe("live Electron Gateway (F2)", () => {
     const play = view.deployer.zones.play;
     if (play.kind !== "results") throw new Error("expected a results phase");
     expect(play.items[0]).toMatchObject({ id: "steam", status: "ok" });
+    // #31 验收点:title 经投影词表带出(wire=checkId 后非空),DeployerPage
+    // h2 渲染 item.title 即此值
+    expect(play.items[0]?.title).toBe(strings.deployer.checks.steam);
     await expect(gateway.environment.capability()).resolves.toEqual({ state: "ready" });
     await expect(gateway.environment.planFix("steam")).resolves.toEqual({ kind: "unavailable" });
     await expect(gateway.task.capability()).resolves.toEqual({ state: "unavailable", detailKey: "taskEngineMissing" });
@@ -207,7 +222,13 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
               productVersion: "0.4.2",
               runtime: "electron" as const,
               platform: "win32" as const,
-              capabilities: { gateway: true as const, tasks: false, remoteBrowser: false },
+              capabilities: {
+                gateway: true as const,
+                tasks: false,
+                remoteBrowser: false,
+                // BOARD #36 缺陷①起信封必带 provider 能力行(可空数组)
+                operations: [],
+              },
             },
           }),
         },

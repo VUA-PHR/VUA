@@ -402,10 +402,15 @@ export async function routeDesktopGatewayInvoke(
           capabilities: {
             gateway: true,
             tasks: capabilityAvailable(providerResponse.value, TASK_LIST_CAPABILITY),
+            // BOARD #36 缺陷①修复(2026-09-18):provider 能力行原样透传,
+            // 不再整段丢弃——此前信封只保留旧三布尔,读 capabilities.
+            // operations 的页面(包管理器等)served_capabilities gate 恒空
+            // (#22 live/fixture 形状分裂教训:消费切片 mock 带行,live
+            // 信封没有,测试全绿真机不通)。
+            operations: providerResponse.value.capabilities.operations,
             // §11 仲裁 (a):内嵌浏览能力归壳自报(preload capabilities),
-            // provider 不再报告也不转述;字段保留待核心处置 AppSnapshot 形状,
-            // 恒 false 反映「provider 无此 capability 行」的事实(渲染层已
-            // 不消费本字段)
+            // provider 不再报告也不转述;本字段恒 false 反映该事实。能力面
+            // 开放属功能决策,另行走登记(壳侧呈现随 preload 自报翻转)
             remoteBrowser: false,
           },
         },

@@ -6,6 +6,7 @@ import {
   displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
+  narrowCompletedDownloads,
   type EmbeddedBrowseState,
 } from "./import-model.ts";
 import type { RemoteContentEventV1 } from "@vua/contracts";
@@ -14,7 +15,10 @@ import type { RemoteContentEventV1 } from "@vua/contracts";
  * 视图事件归约的纯函数覆盖。能力翻转(provider-bootstrap)随批 B;本测试
  * 锁定两态判据与事件语义,组件为薄渲染。
  * 用户实测缺口修复(2026-09-12):默认首页常量、导航历史可走性同步与
- * 地址脱敏显示在本文件补齐锁定。 */
+ * 地址脱敏显示在本文件补齐锁定。
+ * BOARD #36 缺陷②修复批(2026-09-18):downloads.listCompleted 收窄纯函数
+ * 覆盖——live 形状 = bdl-queries 三键信封(缺陷②根因:平铺读恒 undefined
+ * →诚实 unavailable 假象),正例/负例/空态/形态不齐逐项钉死。 */
 
 test("browseAvailability: 两态开关——仅显式 true 可用,未知/缺失保守不可用", () => {
   assert.deepEqual(browseAvailability(true), { kind: "available" });
@@ -120,4 +124,73 @@ test("embeddedBrowseReducer: blocked 留痕呈现(诚实上报,不静默)", () =
   });
   assert.equal(blocked.lastBlocked, "https://example.test/popup");
   assert.equal(blocked.viewId, "rc-1");
+});
+
+/* ---- downloads.listCompleted 收窄(BOARD #36 缺陷②,2026-09-18) ---- */
+
+const wireRow = (overrides: Record<string, unknown> = {}) => ({
+  adoptedWarehouseItemIds: [],
+  completedAt: "2026-09-17T20:00:00.000Z",
+  downloadId: "dl-1",
+  receivedBytes: 2048,
+  sourceUrl: "https://booth.pm/download/1",
+  suggestedFileName: "pack.unitypackage",
+  ...overrides,
+});
+
+const bdlEnvelope = (result: unknown) => ({
+  schemaVersion: "0.4",
+  operation: "downloads.listCompleted",
+  result,
+});
+
+test("narrowCompletedDownloads: live 三键信封正例收窄,行原样透传", () => {
+  const rows = narrowCompletedDownloads(bdlEnvelope({ downloads: [wireRow()] }));
+  assert.ok(Array.isArray(rows));
+  assert.equal(rows.length, 1);
+  assert.deepEqual(rows[0], wireRow());
+});
+
+test("narrowCompletedDownloads: 空 downloads = 诚实空数组(空态即终态)", () => {
+  assert.deepEqual(narrowCompletedDownloads(bdlEnvelope({ downloads: [] })), []);
+});
+
+test("narrowCompletedDownloads: 非信封形状(契约平铺值/缺键/词表外 operation/schemaVersion)判不可解释", () => {
+  // 缺陷②的旧形状:平铺 {downloads} 无信封 → null(不可解释,非空态)
+  assert.equal(narrowCompletedDownloads({ downloads: [wireRow()] }), null);
+  assert.equal(narrowCompletedDownloads({ schemaVersion: "0.4", result: { downloads: [] } }), null);
+  assert.equal(
+    narrowCompletedDownloads({ schemaVersion: "0.4", operation: "catalog.list", result: {} }),
+    null,
+  );
+  assert.equal(
+    narrowCompletedDownloads({
+      schemaVersion: "9.9",
+      operation: "downloads.listCompleted",
+      result: { downloads: [] },
+    }),
+    null,
+  );
+  assert.equal(narrowCompletedDownloads(null), null);
+  assert.equal(narrowCompletedDownloads("ok"), null);
+});
+
+test("narrowCompletedDownloads: result 缺 downloads 行数组或行形态不齐判不可解释", () => {
+  assert.equal(narrowCompletedDownloads(bdlEnvelope({})), null);
+  assert.equal(narrowCompletedDownloads(bdlEnvelope({ downloads: "all" })), null);
+  // 行缺键(suggestedFileName 缺席)= 提供方响应不可解释,整批判 null
+  const missingKey = wireRow();
+  delete (missingKey as { suggestedFileName?: unknown }).suggestedFileName;
+  assert.equal(narrowCompletedDownloads(bdlEnvelope({ downloads: [missingKey] })), null);
+  // 行多余键 = 形态不齐,同纪律
+  assert.equal(
+    narrowCompletedDownloads(bdlEnvelope({ downloads: [{ ...wireRow(), adopted: true }] })),
+    null,
+  );
+  // suggestedFileName null = 端口未报告的合法值(契约面 Option)
+  const nullable = narrowCompletedDownloads(
+    bdlEnvelope({ downloads: [wireRow({ suggestedFileName: null })] }),
+  );
+  assert.ok(Array.isArray(nullable));
+  assert.equal(nullable[0]?.suggestedFileName, null);
 });

@@ -13,6 +13,9 @@ import type { AcquireEntryDetailView, AcquireView } from "./acquire-port.ts";
  * F4-6 live 本地轨端口测试:warehouse.listEntries / warehouse.entryDetail 的
  * wire 投影(client 纪律)、断连语义与事件驱动重取。不经 Kernel 全链路
  * (路由臂由 contracts 守卫测试与 mock provider 覆盖)。
+ * BOARD #36 缺陷②同类修复批(2026-09-18):mock 应答统一钉 live 形状
+ * (bdl-queries 三键信封,schemaVersion "0.4" + operation + result)——
+ * 此前 mock 钉契约平铺值、live 实答带信封,测试全绿真机不通(#22 教训)。
  */
 
 const sha = (seed: string) => `sha256:${seed.repeat(8)}`;
@@ -47,10 +50,14 @@ function wireEntry(overrides: Record<string, unknown> = {}) {
   };
 }
 
-const okList = (entries: readonly unknown[]): GatewayResult<DesktopGatewaySuccessValueV1> => ({
+/** live 信封(provider-host bdl_query_success 同形):三键包裹 result 本体 */
+const okBdl = (operation: string, result: unknown): GatewayResult<DesktopGatewaySuccessValueV1> => ({
   ok: true,
-  value: { entries } as unknown as DesktopGatewaySuccessValueV1,
+  value: { schemaVersion: "0.4", operation, result } as unknown as DesktopGatewaySuccessValueV1,
 });
+
+const okList = (entries: readonly unknown[]): GatewayResult<DesktopGatewaySuccessValueV1> =>
+  okBdl("warehouse.listEntries", { entries });
 
 const errApplication = (code: string): GatewayResult<DesktopGatewaySuccessValueV1> => ({
   ok: false,
@@ -169,10 +176,7 @@ describe("live acquire port (F4-6)", () => {
     const client = stubClient();
     const port = createLiveAcquire(client);
 
-    client.queue({
-      ok: true,
-      value: { entry: wireEntry() } as unknown as DesktopGatewaySuccessValueV1,
-    });
+    client.queue(okBdl("warehouse.entryDetail", { entry: wireEntry() }));
     const detail = await port.entryDetail("whentry-1");
     expect(detail.kind).toBe("detail");
     if (detail.kind !== "detail") return;
@@ -185,8 +189,12 @@ describe("live acquire port (F4-6)", () => {
     const degraded = await port.entryDetail("whentry-1");
     expect(degraded.kind).toBe("not-connected");
 
-    // 形态不齐(缺 entry 键)按未接入处理,不渲染半可信详情
-    client.queue({ ok: true, value: {} as DesktopGatewaySuccessValueV1 });
+    // 形态不齐(信封缺 result 本体键)按未接入处理,不渲染半可信详情
+    client.queue(okBdl("warehouse.entryDetail", {}));
+    expect((await port.entryDetail("whentry-1")).kind).toBe("not-connected");
+
+    // #22 回摆钉死:契约平铺值(无信封)在 live 形状纪律下按不可解释处理
+    client.queue({ ok: true, value: { entry: wireEntry() } as unknown as DesktopGatewaySuccessValueV1 });
     expect((await port.entryDetail("whentry-1")).kind).toBe("not-connected");
   });
 
@@ -236,16 +244,13 @@ describe("live acquire port (F4-6)", () => {
   it("entryDetail preserves null-vs-absent discipline on fact fields", async () => {
     const client = stubClient();
     const port = createLiveAcquire(client);
-    client.queue({
-      ok: true,
-      value: {
-        entry: wireEntry({
-          artifactMode: "generate_vpm",
-          effectiveArtifactMode: "generate_vpm",
-          artifacts: [wireArtifact({ suggestedFileName: null, rejectionReason: "executable detected" })],
-        }),
-      } as unknown as DesktopGatewaySuccessValueV1,
-    });
+    client.queue(okBdl("warehouse.entryDetail", {
+      entry: wireEntry({
+        artifactMode: "generate_vpm",
+        effectiveArtifactMode: "generate_vpm",
+        artifacts: [wireArtifact({ suggestedFileName: null, rejectionReason: "executable detected" })],
+      }),
+    }));
     const detail: AcquireEntryDetailView = await port.entryDetail("whentry-1");
     expect(detail.kind).toBe("detail");
     if (detail.kind !== "detail") return;
