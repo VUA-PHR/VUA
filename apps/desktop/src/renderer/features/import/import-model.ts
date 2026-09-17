@@ -142,6 +142,51 @@ export const initialEmbeddedBrowseState: EmbeddedBrowseState = {
   lastBlocked: null,
 };
 
+/**
+ * 内嵌浏览面板生命周期代次(BOARD #37 修复,2026-09-18;承 #25 卸载即关):
+ * dev 的 StrictMode 对每个组件效果双调用(mount→cleanup→mount),「卸载
+ * 布尔」形态的守卫(原 disposedRef 只在清理效果置 true、无挂载复位)在
+ * 第二次挂载后永真——此后任意 open 落定的竞态兜底把每个新视图立即关闭,
+ * 自动打开与「打开」按钮全部失效,内嵌浏览完全无法进入(#37 根因)。
+ * 代次模型:挂载与卸载都推进代次,open 发起时捕获当前代次,open 落定时
+ * 比较——
+ * - 捕获代次 = 当前代次:open 属于活跃挂载,视图保留(#37 修复);
+ * - 失配:open 属于已卸载实例(真实切页后落定)或已过期挂载(StrictMode
+ *   首挂的 auto-open,二次挂载后才落定)——视图随即关闭,不留失联视图,
+ *   也不留 StrictMode 首挂孤儿视图(#25 语义保持 + dev 无泄漏形态)。
+ * 提取为纯对象模型使完整时序(mount→cleanup→remount→open 落定)可在
+ * 无 DOM 测试面锁定;组件效果只做接线,不携带生命周期判定。
+ */
+export interface BrowsePanelLifecycle {
+  /** 挂载接线:推进代次并返回新代次(每次挂载效果执行恰好调用一次) */
+  mount(): number;
+  /** 卸载接线:推进代次,使该实例此前捕获的 open 全部落入失配 */
+  unmount(): void;
+  /** open 发起时捕获当前代次 */
+  capture(): number;
+  /** 代次失配判定:true = 该 open 属已卸载/过期挂载,视图应随即关闭 */
+  isStale(capturedGeneration: number): boolean;
+}
+
+export function createBrowsePanelLifecycle(): BrowsePanelLifecycle {
+  let generation = 0;
+  return {
+    mount() {
+      generation += 1;
+      return generation;
+    },
+    unmount() {
+      generation += 1;
+    },
+    capture() {
+      return generation;
+    },
+    isStale(capturedGeneration: number) {
+      return capturedGeneration !== generation;
+    },
+  };
+}
+
 /** remote-content 事件流归约:只跟踪当前托管视图(单视图面板;多视图管理
  *  超出本页面板语义),blocked 一律留痕呈现 */
 export function embeddedBrowseReducer(

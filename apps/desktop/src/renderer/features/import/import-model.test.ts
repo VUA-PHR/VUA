@@ -3,6 +3,7 @@ import { test } from "vitest";
 import {
   BOOTH_HOME_URL,
   browseAvailability,
+  createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
@@ -18,7 +19,11 @@ import type { RemoteContentEventV1 } from "@vua/contracts";
  * 地址脱敏显示在本文件补齐锁定。
  * BOARD #36 缺陷②修复批(2026-09-18):downloads.listCompleted 收窄纯函数
  * 覆盖——live 形状 = bdl-queries 三键信封(缺陷②根因:平铺读恒 undefined
- * →诚实 unavailable 假象),正例/负例/空态/形态不齐逐项钉死。 */
+ * →诚实 unavailable 假象),正例/负例/空态/形态不齐逐项钉死。
+ * BOARD #37 修复批(2026-09-18):生命周期代次时序覆盖——StrictMode 双挂载
+ * (mount→cleanup→mount)下原 disposedRef 布尔永真致所有 open 落定即自关
+ * (根因),代次模型使首挂过期 open 失配关闭、活跃挂载 open 保留;#25 卸载
+ * 即关语义(卸载后落定的 open 随即关闭)锁定不回退。 */
 
 test("browseAvailability: 两态开关——仅显式 true 可用,未知/缺失保守不可用", () => {
   assert.deepEqual(browseAvailability(true), { kind: "available" });
@@ -124,6 +129,43 @@ test("embeddedBrowseReducer: blocked 留痕呈现(诚实上报,不静默)", () =
   });
   assert.equal(blocked.lastBlocked, "https://example.test/popup");
   assert.equal(blocked.viewId, "rc-1");
+});
+
+/* ---- 生命周期代次(BOARD #37 修复批,2026-09-18) ---- */
+
+test("browsePanelLifecycle: StrictMode 双挂载时序——首挂过期 open 失配关闭孤儿,活跃挂载 open 保留(#37 根因修复点)", () => {
+  const lifecycle = createBrowsePanelLifecycle();
+  const firstMount = lifecycle.mount(); // StrictMode 挂载#1
+  assert.equal(firstMount, 1);
+  const autoOpenFirst = lifecycle.capture(); // 首挂自动打开(booth.pm)
+  lifecycle.unmount(); // StrictMode 清理#1
+  lifecycle.mount(); // StrictMode 挂载#2(原 disposedRef 在此之后永真)
+  const autoOpenSecond = lifecycle.capture(); // 次挂自动打开
+  // 首挂的 open 在次挂后才落定:代次失配 = 孤儿视图随即关闭,不留泄漏
+  assert.equal(lifecycle.isStale(autoOpenFirst), true);
+  // 次挂(活跃挂载)的 open 落定:代次匹配 = 保留(#37 此前被竞态兜底误关)
+  assert.equal(lifecycle.isStale(autoOpenSecond), false);
+  // 用户此后点「打开」:同一活跃代次,不再被瞬间自关
+  const manualOpen = lifecycle.capture();
+  assert.equal(lifecycle.isStale(manualOpen), false);
+});
+
+test("browsePanelLifecycle: 真实卸载语义(#25 不回退)——卸载后落定的 open 失配,随即关闭不留失联视图", () => {
+  const lifecycle = createBrowsePanelLifecycle();
+  lifecycle.mount();
+  const inFlight = lifecycle.capture(); // open 已发起未落定
+  assert.equal(lifecycle.isStale(inFlight), false);
+  lifecycle.unmount(); // 切页卸载(清理同时显式关闭已托管视图)
+  // open 在卸载后才落定:视图随即关闭,不残留失联视图
+  assert.equal(lifecycle.isStale(inFlight), true);
+});
+
+test("browsePanelLifecycle: 生产单次挂载全周期——捕获即活跃代次,open 正常保留", () => {
+  const lifecycle = createBrowsePanelLifecycle();
+  assert.equal(lifecycle.mount(), 1);
+  const generation = lifecycle.capture();
+  assert.equal(generation, 1);
+  assert.equal(lifecycle.isStale(generation), false);
 });
 
 /* ---- downloads.listCompleted 收窄(BOARD #36 缺陷②,2026-09-18) ---- */
