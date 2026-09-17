@@ -507,7 +507,14 @@ describe("bdl-queries v0.2 routing", () => {
     });
     expect(listResponse).toMatchObject({
       ok: true,
-      value: { total: 0, entries: [] },
+      // bdl-queries v0.4 冻结 wire 信封(核心 63f652e mock 回正的机械跟随,
+      // 2026-09-18):三键 {schemaVersion, operation, result},内层 result 才是
+      // 结果本体;平铺断言随 mock 回正一并退役(#22 live/fixture 形状一致)
+      value: {
+        schemaVersion: "0.4",
+        operation: "catalog.list",
+        result: { total: 0, entries: [] },
+      },
     });
 
     const statusResponse = await routeDesktopGatewayInvoke(
@@ -517,7 +524,11 @@ describe("bdl-queries v0.2 routing", () => {
     );
     expect(statusResponse).toMatchObject({
       ok: true,
-      value: { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
+      value: {
+        schemaVersion: "0.4",
+        operation: "catalog.status",
+        result: { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
+      },
     });
 
     const detailResponse = await routeDesktopGatewayInvoke(
@@ -897,7 +908,13 @@ describe("bdl-commands v0.1 command routing", () => {
     await provider.start();
     const invoke = vi.spyOn(provider, "invoke").mockResolvedValue({
       ok: true,
-      value: { downloads: [] },
+      // mock 与 live wire 同形(三键信封,#22 形状一致纪律,2026-09-18 跟随):
+      // 本用例钉的是路由原样透传——信封进、信封出,不解包不加工
+      value: {
+        schemaVersion: "0.4",
+        operation: "downloads.listCompleted",
+        result: { downloads: [] },
+      },
     });
     const context = { provider, productVersion: "0.4.2", platform: "win32" as const, rendererUrl };
 
@@ -919,7 +936,14 @@ describe("bdl-commands v0.1 command routing", () => {
       method: "downloads.listCompleted",
       params: {},
     });
-    expect(response).toMatchObject({ ok: true, value: { downloads: [] } });
+    expect(response).toMatchObject({
+      ok: true,
+      value: {
+        schemaVersion: "0.4",
+        operation: "downloads.listCompleted",
+        result: { downloads: [] },
+      },
+    });
   });
 
   it("routes the v0.2 setNote command with a Kernel-generated commandId (guard positive example)", async () => {
