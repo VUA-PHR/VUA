@@ -3,7 +3,7 @@ name: "Data"
 description: "VUA数据子代理"
 color: green
 model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
-thoughtLevel: "high"
+thoughtLevel: "max"
 injectAgentsMd: true
 ---
 
