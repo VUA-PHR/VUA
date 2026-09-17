@@ -118,17 +118,19 @@ fn environment_snapshot_consumes_the_real_detection_engine() {
     let items = payload["items"].as_array().expect("items array");
     assert!(!items.is_empty(), "synthetic roots must produce findings");
     for item in items {
-        // The engine's own serde shape (EnvironmentCheckItemV01): each
-        // item carries its schemaVersion, the stable check id, the zone,
-        // the presence enum, and the engineering facts object.
-        assert!(item["id"].is_string(), "id: {item}");
+        // The engine's own serde shape (EnvironmentCheckItemV1): each
+        // item carries its schemaVersion, the stable check id under the
+        // frozen wire name `checkId` (application-contract v0.1 protocol
+        // §环境快照语义 + TS face; BOARD #36 defect ③ authority ruling),
+        // the zone, the presence enum, and the engineering facts object.
+        assert!(item["checkId"].is_string(), "checkId: {item}");
         assert!(item["zone"].is_string(), "zone: {item}");
         assert!(item["presence"].is_string(), "presence: {item}");
         assert!(item["facts"].is_object(), "facts: {item}");
     }
     let ids: Vec<&str> = items
         .iter()
-        .map(|item| item["id"].as_str().expect("id"))
+        .map(|item| item["checkId"].as_str().expect("checkId"))
         .collect();
     assert!(ids.contains(&"unity_editors"), "editors check ran: {ids:?}");
     assert!(ids.contains(&"steam"), "steam check ran: {ids:?}");
@@ -136,7 +138,7 @@ fn environment_snapshot_consumes_the_real_detection_engine() {
     assert!(ids.contains(&"disk_space"), "disk check ran: {ids:?}");
     let editors = items
         .iter()
-        .find(|item| item["id"] == "unity_editors")
+        .find(|item| item["checkId"] == "unity_editors")
         .expect("unity_editors item");
     assert_eq!(editors["presence"], "detected");
 }
