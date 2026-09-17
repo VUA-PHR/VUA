@@ -11,6 +11,10 @@ import type { CatalogDetailView, CatalogListView } from "./catalog-browser-port.
  * F4-5 live 云端目录轨端口测试:catalog.list / catalog.detail / catalog.status
  * 的 wire 投影(client 纪律)、诚实空态语义与能力门控。不经 Kernel 全链路
  * (路由臂由 contracts 守卫测试与 mock provider 覆盖)。
+ * BOARD #36 缺陷②同类修复批(2026-09-18):mock 应答统一钉 live 形状
+ * (bdl-queries 三键信封,schemaVersion "0.4" + operation + result)——
+ * 此前 mock 钉契约平铺值、live 实答带信封,测试全绿真机不通(#22 教训);
+ * 并以负例钉死「平铺值按不可解释处理」,防回摆。
  */
 
 function wireSummary(overrides: Record<string, unknown> = {}) {
@@ -67,6 +71,10 @@ const okValue = (value: unknown): GatewayResult<DesktopGatewaySuccessValueV1> =>
   value: value as DesktopGatewaySuccessValueV1,
 });
 
+/** bdl-queries live 信封(provider-host bdl_query_success 同形) */
+const okBdl = (operation: string, result: unknown): GatewayResult<DesktopGatewaySuccessValueV1> =>
+  okValue({ schemaVersion: "0.4", operation, result });
+
 const errApplication = (code: string): GatewayResult<DesktopGatewaySuccessValueV1> => ({
   ok: false,
   error: {
@@ -118,7 +126,7 @@ function stubClient(): StubClient {
 describe("live catalog browser port (F4-5)", () => {
   it("projects catalog.list wire values into summary domain types", async () => {
     const client = stubClient();
-    client.queue(okValue({
+    client.queue(okBdl("catalog.list", {
       total: 1,
       entries: [wireSummary({ imageUrl: null })],
     }));
@@ -143,7 +151,7 @@ describe("live catalog browser port (F4-5)", () => {
 
   it("drops entries with out-of-vocabulary status or malformed identity", async () => {
     const client = stubClient();
-    client.queue(okValue({
+    client.queue(okBdl("catalog.list", {
       total: 4,
       entries: [
         wireSummary(),
@@ -162,7 +170,7 @@ describe("live catalog browser port (F4-5)", () => {
   it("renders an empty catalog honestly as results-empty, not not-connected", async () => {
     const client = stubClient();
     // BDL 未落观测数据:服务面就绪,空态即终态,不谎报 not-connected
-    client.queue(okValue({ total: 0, entries: [] }));
+    client.queue(okBdl("catalog.list", { total: 0, entries: [] }));
     const port = createLiveCatalogBrowser(client);
     const view = await port.list();
     expect(view).toEqual({
@@ -177,7 +185,7 @@ describe("live catalog browser port (F4-5)", () => {
       },
     });
     // capability 探 status:空目录仍应答,服务面就绪即 ready
-    client.queue(okValue({ health: "unknown", revision: { datasetRevision: "0.3" } }));
+    client.queue(okBdl("catalog.status", { health: "unknown", revision: { datasetRevision: "0.3" } }));
     expect((await port.capability()).state).toBe("ready");
   });
 
@@ -189,9 +197,14 @@ describe("live catalog browser port (F4-5)", () => {
     expect(await port.status()).toEqual({ health: "unknown" });
     expect(await port.capability()).toEqual({ state: "unavailable", detailKey: "catalogMissing" });
 
-    // 形态不齐(缺 product 键)按未接入处理,不渲染半可信详情
-    client.queue(okValue({}));
+    // 形态不齐(信封缺 result 本体键)按未接入处理,不渲染半可信详情
+    client.queue(okBdl("catalog.detail", {}));
     expect((await port.detail("booth:3681787")).kind).toBe("not-connected");
+
+    // #22 回摆钉死:契约平铺值(无信封)在 live 形状纪律下按不可解释处理,
+    // 永不因「恰好读得到」回退平铺读
+    client.queue(okValue({ total: 1, entries: [wireSummary()] }));
+    expect((await port.list()).kind).toBe("not-connected");
 
     // 未知/墓碑 productId → 诚实 not-found(应用错误透传呈现)
     client.queue(errApplication("vua.catalog.product_not_found"));
@@ -248,7 +261,7 @@ describe("live catalog browser port (F4-5)", () => {
 
   it("maps detail increments honestly: adult/sourceCategory/subproducts/empty slots", async () => {
     const client = stubClient();
-    client.queue(okValue({ product: wireDetail() }));
+    client.queue(okBdl("catalog.detail", { product: wireDetail() }));
     const detail: CatalogDetailView = await createLiveCatalogBrowser(client).detail("booth:3681787");
     expect(detail.kind).toBe("detail");
     if (detail.kind !== "detail") return;
@@ -284,7 +297,7 @@ describe("live catalog browser port (F4-5)", () => {
     const client = stubClient();
     const port = createLiveCatalogBrowser(client);
     for (const health of ["unknown", "ok", "incompatible"] as const) {
-      client.queue(okValue({
+      client.queue(okBdl("catalog.status", {
         health,
         revision: { catalogUpdatedSeq: health === "ok" ? 7 : null, datasetRevision: "0.3" },
       }));
@@ -296,14 +309,14 @@ describe("live catalog browser port (F4-5)", () => {
       });
     }
     // 非协议健康词(渲染层预留态 stale 永不来自 wire)按未接入 → unknown
-    client.queue(okValue({ health: "stale", revision: { datasetRevision: "0.3" } }));
+    client.queue(okBdl("catalog.status", { health: "stale", revision: { datasetRevision: "0.3" } }));
     expect((await port.status()).health).toBe("unknown");
   });
 
   it("capability probes catalog.status: ready once the service face answers", async () => {
     const client = stubClient();
     const port = createLiveCatalogBrowser(client);
-    client.queue(okValue({ health: "unknown", revision: { datasetRevision: "0.3" } }));
+    client.queue(okBdl("catalog.status", { health: "unknown", revision: { datasetRevision: "0.3" } }));
     expect(await port.capability()).toEqual({ state: "ready" });
     client.queue(errUnavailable);
     expect(await port.capability()).toEqual({ state: "unavailable", detailKey: "catalogMissing" });
@@ -313,7 +326,7 @@ describe("live catalog browser port (F4-5)", () => {
 
   it("passes pagination and closed-set query params verbatim; retired fields are never sent", async () => {
     const client = stubClient();
-    client.queue(okValue({ total: 0, entries: [] }));
+    client.queue(okBdl("catalog.list", { total: 0, entries: [] }));
     await createLiveCatalogBrowser(client).list({
       text: "  outfit  ",
       availabilityStatus: "unavailable",
