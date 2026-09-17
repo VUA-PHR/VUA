@@ -10,8 +10,11 @@ import {
   type ApplicationEventV01,
   type ApplicationRequestV01,
   type ApplicationResponseV01,
-  type ApplicationSuccessValueV01,
   type BuildRecordDocumentV02,
+  type CatalogListResultV03,
+  type CatalogStatusResultV03,
+  type DownloadsListCompletedResultV04,
+  type WarehouseListEntriesResultV03,
   type CapabilityOperationV01,
   type InspectionDocumentV02,
   type PlanDocumentV02,
@@ -256,7 +259,11 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       // 应答形状照冻结 wire 信封(核心 2026-09-18,#36 桌面知会回正,
       // 详见 #bdlQuerySuccess 注记)
       case "catalog.list":
-        return this.#bdlQuerySuccess(request, "catalog.list", { total: 0, entries: [] });
+        return this.#bdlQuerySuccess(request, {
+          schemaVersion: "0.4",
+          operation: "catalog.list",
+          result: { total: 0, entries: [] },
+        });
       case "catalog.detail":
         // W12 对齐(核心 10325cd):detail 未命中(含墓碑)的应用面码为
         // vua.catalog.product_not_found,messageKey 随之;与真实
@@ -272,12 +279,20 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           false,
         ));
       case "catalog.status":
-        return this.#bdlQuerySuccess(request, "catalog.status", {
-          health: "unknown",
-          revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" },
+        return this.#bdlQuerySuccess(request, {
+          schemaVersion: "0.4",
+          operation: "catalog.status",
+          result: {
+            health: "unknown",
+            revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" },
+          },
         });
       case "warehouse.listEntries":
-        return this.#bdlQuerySuccess(request, "warehouse.listEntries", { entries: [] });
+        return this.#bdlQuerySuccess(request, {
+          schemaVersion: "0.4",
+          operation: "warehouse.listEntries",
+          result: { entries: [] },
+        });
       case "project.environmentManagers":
         // mock 无项目管理检测域:诚实空(013 读面第一翼;形态对齐 wire 实际
         // 信封 = project-inspection 信封 + 内层 result 快照本体,桌面 021
@@ -323,7 +338,11 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         // mock 无下载域:诚实空列表(bdl-queries v0.4 读面;桌面穷尽性
         // 机械跟随,业务语义归数据/核心)。形状照冻结 wire 信封
         // (核心 2026-09-18,#36 桌面知会回正)
-        return this.#bdlQuerySuccess(request, "downloads.listCompleted", { downloads: [] });
+        return this.#bdlQuerySuccess(request, {
+          schemaVersion: "0.4",
+          operation: "downloads.listCompleted",
+          result: { downloads: [] },
+        });
       case "warehouse.entryDetail":
         // 同上对齐:真实 provider(10325cd)对 entryDetail 未命中回既有
         // 冻结码 vua.warehouse.entry_not_found / errors.warehouse.
@@ -1111,22 +1130,21 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
    * value 面的权威形状 = 信封。mock 此前四个只读成功分支平铺回 result
    * 本体,系 #22 同构的 live/fixture 形状分裂(桌面按信封窄化消费后
    * dev 面恒诚实 unavailable);照本文件 project.environmentManagers
-   * 021 批先例对齐 wire 实际信封。TS 契约面 bdl 六成员当前仍登记
-   * result 本体形状(packages/contracts 系桌面登记职责域,候桌面按
-   * 021 先例对齐信封)——下方桥接断言仅在途,运行时形状以冻结 schema
-   * 为准,不回退;桌面对齐后此断言可去。
+   * 021 批先例对齐 wire 实际信封。
+   * 去桥完成(同日桌面 f8ad6cb 后):packages/contracts bdl 六结果类型
+   * 已照 021 先例登记信封形状(类型注释载权威链),helper 直接收类型化
+   * 信封联合、零强转——信封字面量偏离冻结成员类型即编译错;运行时形状
+   * 仍以冻结 schema 为准,不回退。
    */
   #bdlQuerySuccess(
     request: ApplicationRequestV01,
-    operation:
-      | "catalog.list"
-      | "catalog.status"
-      | "warehouse.listEntries"
-      | "downloads.listCompleted",
-    result: Record<string, unknown>,
+    envelope:
+      | CatalogListResultV03
+      | CatalogStatusResultV03
+      | WarehouseListEntriesResultV03
+      | DownloadsListCompletedResultV04,
   ): ApplicationResponseV01 {
-    const envelope = { schemaVersion: "0.4" as const, operation, result };
-    return this.#success(request, envelope as unknown as ApplicationSuccessValueV01);
+    return this.#success(request, envelope);
   }
 
   #success(

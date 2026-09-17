@@ -685,13 +685,20 @@ describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification
       } as Parameters<typeof request>[0]));
       expect(response.ok).toBe(true);
       if (!response.ok) throw new Error(`expected success: ${method}`);
-      const value = response.value as unknown as Record<string, unknown>;
+      // 去桥(桌面 f8ad6cb 后):contracts bdl 六结果类型已登记信封形状,
+      // in 守卫把 value 窄化到冻结信封面——非信封成员(缺任一键)在此抛出,
+      // 零强转;平铺形状回归在类型面与断言面双破。
+      if (!("schemaVersion" in response.value) || !("operation" in response.value)
+        || !("result" in response.value)) {
+        throw new Error(`expected frozen bdl envelope: ${method}`);
+      }
+      const value = response.value;
       // 冻结信封三键闭集(多一键少一键均破)
       expect(Object.keys(value).sort()).toEqual(["operation", "result", "schemaVersion"]);
-      expect(value["schemaVersion"]).toBe("0.4");
-      expect(value["operation"]).toBe(method);
+      expect(value.schemaVersion).toBe("0.4");
+      expect(value.operation).toBe(method);
       // result 本体精确全等(诚实空集/未知健康,零多键)
-      expect(value["result"]).toEqual(result);
+      expect(value.result).toEqual(result);
     }
   });
 });
