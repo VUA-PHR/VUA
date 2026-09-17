@@ -2,6 +2,7 @@ import type {
   AppErrorV01,
   ApplicationEventV01,
   ApplicationSuccessValueV01,
+  CapabilityOperationV01,
   CatalogAvailabilityStatusV03,
   ProductionModeV02,
   ProductionRiskChoiceV02,
@@ -12,6 +13,15 @@ import type {
 export const DESKTOP_GATEWAY_VERSION = 1 as const;
 export const DESKTOP_GATEWAY_MAX_REQUEST_BYTES = 64 * 1024;
 
+/**
+ * app.snapshot 桌面信封(BOARD #36 缺陷①修复批,2026-09-18):capabilities
+ * 并入 provider 能力行 `operations`(ApplicationSnapshotV01.capabilities.
+ * operations 原样透传,Kernel 不解释不增删)。此前信封只保留旧三布尔,致
+ * 所有读 capabilities.operations 的页面 gate 恒空(#22 live/fixture 形状
+ * 分裂教训:消费切片 mock 带行、live 信封没有)。remoteBrowser 仍恒 false:
+ * §11 仲裁 (a) 内嵌浏览能力归壳(preload capabilities)自报,provider 不
+ * 报告也不转述;能力面开放属功能决策,另行走登记。
+ */
 export interface AppSnapshotV1 {
   readonly schemaVersion: 1;
   readonly productVersion: string;
@@ -21,6 +31,7 @@ export interface AppSnapshotV1 {
     readonly gateway: true;
     readonly tasks: boolean;
     readonly remoteBrowser: boolean;
+    readonly operations: readonly CapabilityOperationV01[];
   };
 }
 
