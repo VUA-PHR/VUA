@@ -14,13 +14,16 @@ import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
   BOOTH_HOME_URL,
   browseAvailability,
+  classifyRemoteOpenError,
   createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
+  normalizeBrowseAddress,
   bytesText,
   narrowCompletedDownloads,
   type EmbeddedBrowseAvailability,
+  type EmbeddedBrowseOpenFailure,
   type EmbeddedBrowseState,
 } from "./import-model.ts";
 import "./import-page.css";
@@ -47,6 +50,11 @@ import "./import-page.css";
  *   按 CSS 规范构成 fixed 后代的包含块,把 position:fixed;top:0 的导航
  *   条钉进卡片内部、落入视图覆盖区看不见点不着(视图内无退出);portal
  *   脱离该包含块,top:0 恢复相对视口,与 Main 侧让位条带重新对齐。
+ *   地址栏输入归一化(#39 修复 2026-09-18):无 scheme 的裸域名(如
+ *   booth.pm)自动补 https:// 再开,无法解析的输入本地失败态呈现;
+ *   open 失败按拒绝原因三分呈现(地址无法解析/清单外拒绝/打开失败),
+ *   不再误用仓储命令文案(原「仓库服务尚未接入」与本错误无关,用户
+ *   据此误判 #37 未修复)。Main 侧清单裁决语义不变。
  *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
  * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
    任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
@@ -61,6 +69,16 @@ function commandErrorTextFor(error: {
   return commandErrorText(error, acquireCopy.commandErrors as Record<string, string>);
 }
 
+/** 内嵌视图 open 失败文案映射(BOARD #39 修复):按拒绝原因呈现——
+ *  本地归一化失败/清单外拒绝/其它失败三分,不再误用仓储命令文案
+ *  (原实现复用 vua_warehouse_unavailable「仓库服务尚未接入」,与本
+ *  错误完全无关,用户据此外观误判 #37 未修复)。 */
+const openFailureText: Record<EmbeddedBrowseOpenFailure["kind"], string> = {
+  "invalid-address": copy.openInvalidAddress,
+  "origin-not-allowed": copy.openOriginNotAllowed,
+  "open-failed": copy.openFailed,
+};
+
 /* ---- 云端段:内嵌浏览面板 ---- */
 
 function EmbeddedBrowsePanel({
@@ -70,7 +88,7 @@ function EmbeddedBrowsePanel({
 }) {
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
   const [address, setAddress] = useState("");
-  const [openFailed, setOpenFailed] = useState(false);
+  const [openFailure, setOpenFailure] = useState<EmbeddedBrowseOpenFailure | null>(null);
   // 视图生命周期守卫(#25 卸载即关 + #37 StrictMode 修复):Main 侧视图在
   // 壳导航切页后仍存续,而导航条/视图状态随本面板卸载——失联视图既无导航
   // 条也不可控(渲染层 viewId 判空,关闭入口缺席),重挂载首开还会叠加无人
@@ -113,21 +131,33 @@ function EmbeddedBrowsePanel({
   );
 
   const openAddress = (url: string) => {
-    setOpenFailed(false);
+    setOpenFailure(null);
     const remote = window.vua?.remoteContent;
     if (remote === undefined) return;
+    // 输入归一化(#39 修复):裸域名(如 booth.pm)自动补 https://——原样
+    // 透传会被 Main 源站清单按 origin_not_allowed 拒绝(用户真机实测撞
+    // 上);无法解析的输入不上 Main,本地按「地址无法解析」诚实呈现。
+    // Main 清单裁决语义不变,归一化只做「用户可读地址 → 可解析 URL」翻译
+    const normalized = normalizeBrowseAddress(url);
+    if (normalized.kind === "invalid") {
+      setOpenFailure({ kind: "invalid-address" });
+      return;
+    }
     const generation = lifecycleRef.current.capture();
-    void remote.open({ url }).then((state) => {
+    void remote.open({ url: normalized.url }).then((state) => {
       // open 落定时该 open 若属已卸载实例(真实切页)或已过期挂载
       // (StrictMode 首挂的自动打开),代次失配:视图随即关闭,不留失联/
       // 孤儿视图;活跃挂载的 open 正常保留(#37 修复点)
       if (lifecycleRef.current.isStale(generation)) {
         void remote.close(state.viewId).catch(() => {});
       }
-    }).catch(() => {
-      // 窄面拒绝(清单外来源):诚实呈现,不放行不猜测(Main 确认层语义
-      // 属导航策略面,页内确认层随批 B);面板已卸载则不再呈现
-      if (!lifecycleRef.current.isStale(generation)) setOpenFailed(true);
+    }).catch((error: unknown) => {
+      // 窄面拒绝按原因诚实呈现(#39 修复:原实现误用仓储命令文案):
+      // 清单外拒绝/其它失败分类呈现,不放行不猜测(Main 确认层语义属
+      // 导航策略面,页内确认层随批 B);面板已卸载则不再呈现
+      if (!lifecycleRef.current.isStale(generation)) {
+        setOpenFailure(classifyRemoteOpenError(error));
+      }
     });
   };
 
@@ -188,9 +218,9 @@ function EmbeddedBrowsePanel({
           </Button>
         ) : null}
       </div>
-      {openFailed ? (
+      {openFailure !== null ? (
         <p className="vua-caption vua-text-secondary" role="alert">
-          {acquireCopy.commandErrors.vua_warehouse_unavailable}
+          {openFailureText[openFailure.kind]}
         </p>
       ) : null}
       {browse.viewId === null ? (
