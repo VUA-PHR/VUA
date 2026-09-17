@@ -1,110 +1,135 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 80ef7aa
+baseline_commit: 0716644
 role: 桌面
 updated: 2026-09-18
 ---
 ## 当前焦点
-**[→桌面] 机械跟随批落地＋为 wt-2 63f652e 收编解耦（2026-09-18
-03:3x–03:4x,工作时段;代码批 f8ad6cb＋两耦合合并壳＋本状态批）——
-消化核心 63f652e 两跟随项请求（BOARD #36 路由＋80ef7aa 扣压登记）,
-桌面 TS 登记面追平 wire 实际形状,集成既定耦合同批收编条件就绪**:
+**[→桌面] 4748970 回退批落地（BOARD #36④ 更正,2026-09-18 05:4x–
+05:5x,工作时段;追平合并壳 e35aba7＋revert 批 912f72f＋本状态批）
+——消化 BOARD 0716644 更正批处置①「桌面回退 4748970 即刻恢复
+功能」,恢复 Booth 内嵌浏览,单拍单一任务**:
 
-- **六类型信封对齐（f8ad6cb①,packages/contracts）**：bdl 六只读结果
-  类型（CatalogListResultV03/CatalogDetailResultV03/
-  CatalogStatusResultV03/WarehouseListEntriesResultV03/
-  WarehouseEntryDetailResultV03/DownloadsListCompletedResultV04）照
-  021 project.environmentManagers 先例改登记 bdl-queries v0.4 冻结
-  三键信封 {schemaVersion const "0.4"＋operation 字面量＋result:
-  类型化冻结本体}——**零协议变更**：数据域冻结 schema
-  （schemas/bdl-queries/v0.4/result.schema.json）本就钉信封
-  （required schemaVersion+operation、additionalProperties false、
-  六方法枚举、按方法 result $defs）,provider-host
-  bdl_query_success 同形实达,supervised invoke 零解包透传;落后方
-  只是 TS 登记面（此前登记 result 本体平铺）。本体仍全类型内联
-  （bdl 面系冻结类型化镜像,异于 environmentManagers 的 Record 强度
-  快照,理由随类型注释在案）;联合判别严格增益（每成员 operation
-  字面量）。平铺读缺陷类（#22/#36）在类型面不可再生。
-- **测试跟随（f8ad6cb②,apps/desktop）**：gateway-router.test.ts
-  四处——510/520 两处平铺断言（合并树 24/25 唯一失败点,catalog.
-  list/catalog.status）跟随信封;900/922 v0.4 downloads 直通用例
-  mockResolvedValue＋断言系陈旧平铺（仅因路由原样透传而假绿）一并
-  重钉信封＝「信封进信封出」原样透传（#22 live/fixture 形状一致
-  纪律）。全树扫描零其余平铺消费点:渲染层窄化
-  （narrowCompletedDownloads/bdlQueryResult/okBdl）a621e1c/856c530
-  批已信封感知零改动;import-model.test 走信封构造器;
-  live-acquire-port.test 平铺拒绝钉子系 #22 防回摆负例保留不动。
-  类型变更编译零破坏（渲染层经 unknown 窄化消费,typecheck 双
-  tsconfig 0 错误实证）。
-- **耦合合并登记（本树分支事实,如实申报）**：53a043f 追平壳
-  （吸收 main 80ef7aa,零自有内容）＋83b87bd 测试耦合合并（吸收
-  slot/wt-2 a0bb9c5 四笔:63f652e＋81aac45＋49ccd88＋a0bb9c5）——
-  理由＝信封断言对 main 世代平铺 mock 无法诚实跑绿（红不可提交）,
-  合并系跨分支对齐的唯一 sanctioned 机制（零字节复制）;核心所有权
-  域 packages/orchestrator-provider 零编辑（pathspec 可证）。集成
-  80ef7aa 既定安排（本批在前、wt-2 批在后同批收编）不变;本树并入
-  wt-2 四笔后,集成无论先并何支均零冲突收敛。
-- **机械校验（自树证据在案）**：df 03:3x C 盘余 16G 先核后建;
-  contracts dist＋orchestrator-provider dist 先重建（核心预存观察
-  ：桌面 vitest 解析其 dist,陈旧产假失败）;桌面 check 全链绿
-  03:4x（typecheck 双 tsconfig＋vitest 647/647〔78 文件,含
-  gateway-router 25/25〕＋build＋boundary＋i18n＋contrast＋
-  check:leak 155 指纹零泄漏＋forest-leak）＋contracts check 66/66
-  （类型编辑后同世代复跑）;变更面恰桌面 TS 所有权域 2 文件
-  （81+/15-）;用户 dev 栈未触碰（electron 24864/vite 41952/
-  provider 113116 全程未动）。
-- **诚实边界**：零端到端宣称维持——本批只证明 TS 登记面与消费面
-  钉死在冻结信封形状上;真机复验仍候操作者刷构建重启 CDP（#36 链
-  与 #31 标题复验点不变,provider 重刷后 live wire 方实达）。
+- **背景与定性（照 BOARD 0716644 更正批全文消化,桌面全盘认账）**：
+  用户目视复验质询「Booth 内嵌浏览明明已实现」——经代码＋历史实证
+  **用户正确**:内嵌浏览基座随壳交付（main.ts:528 RemoteContentManager
+  allowedOrigins booth.pm 全接线＋preload vua:remote-content 七动作
+  窄面＋ImportPage 浏览面板）,**preload 自报 remoteBrowser:true 系
+  交付物本身**（875c85a IMP-2 batch B item 1,仲裁 015 §11 方案 a）;
+  remote-content.ts「#26 用户实测退出崩溃修复」与「导航条用户实测
+  缺口修复」两处留痕＝功能被真实使用过。原④定性错误根源＝把两处
+  未随 F4 落地翻转的陈旧常量（gateway-router.ts:414 旧三布尔信封
+  硬编码 false——恰缺陷①被替换信封的残余面＋provider-bootstrap
+  DESKTOP_CAPABILITIES「F4 前」陈旧行）误读为「功能不存在」,而真实
+  功能走 vua.remoteContent IPC 专面不经 gateway;4748970（09-18
+  03:0x）据此把正确的 true 翻 false＝**回归**。操作者 05:2x 复验
+  回执沿同一错误口径记④「实达」,已经 0716644 一并撤回更正。
+- **本拍执行三步**：①追平壳 e35aba7＝--no-ff 合并 main 0716644
+  （merge-base＝本树尖 86c05de,领先 0 纯追平;双法预检零冲突——
+  老式 0 标记＋ort --write-tree exit 0 tree a29f527b;inbound 非
+  collab 面恰核心 2 文件〔mock-provider.ts＋.test.ts,第 91 批
+  08fa61e 已收编内容〕＋collab 6 文件,与各批登记并集一致无夹带,
+  桌面域 inbound 零触碰）;②revert 批 912f72f＝`git revert 4748970`
+  零冲突（4748970..HEAD 间 preload.ts 零后续改动）,恰 preload.ts
+  一文件 4+/8-＝4748970 的精确逆;remoteBrowser:true 恢复＋原注释
+  「内嵌浏览基座(remote-content + U9 导航策略)随本壳交付」原语机械
+  恢复;**diff vs 4748970^ 零行＝与 875c85a 交付世代逐字节一致**;
+  ③桌面 check 全链绿（见证据）。
+- **证据（本机本树 VUA-3,05:4x–05:5x）**：df C 盘余 12G 先查（较
+  上拍 16G 再降,近满注记维持;本批零 Rust 面变更,cargo fresh 跳过
+  未触用户 provider 文件锁）;桌面 check 全链绿——typecheck 双
+  tsconfig＋vitest 78 文件 647/647（含 gateway-router 25/25＋
+  **import-model 10/10 两态测试双向在案全过**,与 4748970 前世代
+  读数一致）＋build＋boundary＋i18n＋contrast＋check:leak 155 指纹
+  零泄漏＋forest-leak;contracts 零变更免复跑（revert 恰桌面 1
+  文件,f8ad6cb 世代 66/66 在案有效）。变更面恰桌面所有权域 1 文件
+  （4+/8-）。
+- **④′能力面对齐切片本拍不做（BOARD 0716644 处置②,候下一拍
+  专项）**：能力面三处分叉（gateway 信封硬编码 false＋provider ops
+  desktop.remoteBrowser unavailable 陈旧行 vs 壳自报/已交付事实）
+  的对齐——信封随壳自报实值＋provider 行改注/路由决策＋三面 live
+  形状测试——本拍零触碰;gateway-router.ts:414 与 provider-bootstrap
+  陈旧行维持现状如实申报,不因本批回退而改读。
+- **环境事实（照操作者注记）**：dev 栈由操作者管理运行中（vite
+  5173＋electron CDP 51995＋provider 随 electron 树）,本树全程未
+  触碰;回退合并入库后操作者刷构建复验——回退后 CDP 复验内嵌浏览
+  面板恢复,随后 BOARD #36 行④改记「回归已修复」（BOARD 处置③,
+  本拍不代记,候复验回填）。
+- **诚实边界**：零端到端宣称维持——本批只证明代码面恢复＋测试全
+  绿;内嵌浏览真机可用性本拍未新增真机证据（历史真实使用留痕在案,
+  回退后复验归操作者刷构建 CDP）。
 
-## 前情（89 批收编世代,全文见本文件 git 历史）
-09-18 03:0x–03:2x 缺陷③消费面 3c37d19 经 5334f0d 同窗收编（三项
-自决获追认）＋两簿记批 bd83876/9e75b79 经 a3a1a24 收编;上世代
-#36 修复批八笔经 c89d17f 收编。更早见 git 历史。
+## 前情（机械跟随批世代,全文见本文件 git 历史）
+09-18 03:3x–03:4x 机械跟随批 f8ad6cb（contracts bdl 六类型信封
+对齐＋gateway-router 测试跟随）＋耦合合并壳 53a043f/83b87bd,已经
+第 90 批 1a21f94／第 91 批 e5502d7 收编入库;更早:缺陷③消费面
+3c37d19 经 5334f0d、#36 修复批八笔经 c89d17f。更早见 git 历史。
 
-## 本轮交付（80ef7aa 基线世代）
-- **代码批 f8ad6cb**：六类型信封对齐＋gateway-router 测试跟随
-  （恰 2 文件,全链证据在案）。
-- **耦合合并壳 53a043f＋83b87bd**（零自有内容;83b87bd 载 wt-2
-  四笔候同批收编）。
+## 本轮交付（0716644 基线世代）
+- **追平合并壳 e35aba7**（零自有内容,吸收 main 0716644）。
+- **revert 批 912f72f**（恰 apps/desktop/src/electron/preload.ts
+  一文件,4748970 精确逆,全链证据在案）。
 - **本状态批**（恰本文件,collab-only）。
 
 ## 在途/待他角色
-- **[等集成] f8ad6cb＋本状态批候随轮验收（--no-ff）**,与 wt-2 四笔
-  按 80ef7aa 既定安排耦合同批收编（本批在前）;合并树预期
-  gateway-router 25/25（本树已证）＋核心定向套件照集成门惯例复跑。
-- **[→核心] 去桥条件满足**：六类型已按 021 先例对齐信封,63f652e
-  #bdlQuerySuccess 桥接强转＋测试桥接断言可去（核心域动作,桌面
-  不代改）;去桥后 mock-provider TS 面零强转。
-- **[等用户] 既有项全部维持**：#36 全缺陷真机 CDP 复验回填
-  （操作者刷构建重启;③验收点＝引擎健康清单卡片标题非空且词表
-  命中）、ready-p2 解锁＋v0.2 标注呈现复验（与 #33 同窗）、
+- **[等集成] e35aba7＋912f72f＋本状态批候随轮验收（--no-ff）**：
+  实质对象＝revert 批 912f72f（恰桌面 1 文件,自树全链证据在案,
+  全量复跑候你方合并门照惯例）＋本状态批（collab-only 免全量）;
+  追平壳零自有内容照先例自然收编。
+- **[→操作者] 回退后刷构建＋CDP 复验**：内嵌浏览面板恢复呈现
+  （badge＋地址栏＋自动打开回到可用态）;复验回填后 BOARD #36 行④
+  改记「回归已修复」;#31 条目名称复验点等既有项随同窗不变。
+- **[等桌面/下一拍] ④′能力面对齐切片专项**（BOARD 处置②）：三面
+  分叉对齐＋live 形状测试,候下一拍,不与本批混做。
+- **[等用户] 既有项维持**：ready-p2 解锁＋v0.2「缓存数据」标注
+  呈现复验（与 #33 同窗,05:2x 重启后已解锁候目视确认）、
   #25/#27/#28/#29 回填、W25（O-2）。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝f8ad6cb（代码恰 2 文件）＋本状态批（恰本文件）,
-请集成与 wt-2 四笔耦合同批收编（80ef7aa 既定:本批在前、wt-2 批
-在后）,--no-ff;代码批已附全链证据,状态批 collab-only 免全量。**
-读数:领先 7（自有 3＝代码 1＋两合并壳;另载 wt-2 四笔候同批）、
-落后 0（80ef7aa 世代）。若下轮 brief 读数落后过 15 线照则自理追平。
+**候验收对象＝revert 批 912f72f（代码恰 1 文件）＋本状态批（恰本
+文件）,请集成随轮验收（--no-ff）,写明「4748970 回退批（BOARD
+#36④ 更正）」;追平壳 e35aba7 零自有内容随验收自然收编。**提交后
+读数:领先 3（合并壳 1＋revert 1＋本状态批 1;实质 1＝revert 批）、
+落后 0（0716644 世代）。若下轮 brief 读数落后过 15 线照则自理
+追平。
+
+## 待命声明（第 6 步,如实）
+本轮（2026-09-18 05:4x–05:5x,工作时段,三笔:e35aba7＋912f72f＋
+本状态批）：①date 05:43 确认工作时段;brief ①区指向本树唯一
+留言＝wt-2 去桥办结回执（收货消化零动作,见留言）,失鲜工作树无;
+②领任务＝操作者注记单拍单一任务「回退 4748970 恢复 Booth 内嵌
+浏览」（BOARD 0716644 更正批处置①指派桌面）,照办;③执行＝追平
+e35aba7（双法预检零冲突,inbound 与登记一致无夹带）→revert 912f72f
+（零冲突,恰 1 文件 4+/8-,diff vs 4748970^ 零行,原注释原语恢复）
+→check 全链绿（df 12G 先查;vitest 647/647 含 import-model 10/10
+两态双向全过;leak 155 零泄漏＋forest-leak;cargo fresh 跳过未触
+用户 provider 文件锁）;④所有权核验＝恰桌面域 preload.ts 一文件,
+其它域零触碰;⑤④′能力面对齐切片本拍不做照注记留候下一拍,
+gateway-router.ts:414＋provider 陈旧行维持现状如实申报;⑥环境
+事实＝操作者 dev 栈（vite 5173＋electron CDP 51995）全程未触碰,
+回退入库后操作者刷构建复验;⑦零端到端宣称维持——本批零真机新
+证据,复验归操作者 CDP,BOARD 行④改记候复验回填。退出待命,候
+集成验收本批、操作者刷构建 CDP 复验回填、下一拍④′专项或新
+指派;在手无半途切片、无未提交改动。
 
 ## 留言
-- [→集成] **机械跟随批落地,扣压可解**：f8ad6cb 恰桌面 TS 域 2 文件
-  （contracts 六类型信封对齐＋gateway-router.test 四处跟随）,自树
-  全链绿在案（vitest 647/647 含 gateway-router 25/25,恰你 80ef7aa
-  合并树预期读数）;本树已并 slot/wt-2 a0bb9c5（测试耦合合并,理由
-  与零编辑 pathspec 随提交信息在案）,耦合同批收编无论先并何支均
-  零冲突。collab-only 状态批免全量照例声明。
-- [→核心] **63f652e 收货＋去桥条件满足**：四分支信封回正与钉形状
-  测试逐项收货;六结果类型已按 021 先例对齐信封（类型注释载权威
-  链）,#bdlQuerySuccess 桥接强转＋测试桥接断言可去（你域动作）;
-  gateway-router 两平铺断言与 v0.4 downloads 陈旧平铺 mock 已一并
-  跟随,渲染层窄化面零改动（a621e1c/856c530 已信封感知,你 24/25
-  读数中的唯一失败点就此闭合）。
-- （操作者注记消化:两簿记候 89 批——已提前经 a3a1a24 收编,勿重复
-  事项就此核销;「扫其余平铺消费点」已完成＝零残留,扫描面随提交
-  信息在案。历史留言已消化归档,在途以 BOARD #36 与本状态文件为准。）
+- [→集成] **4748970 回退批（BOARD #36④ 更正）验收请求**：候验收
+  对象＝revert 批 912f72f（恰 apps/desktop/src/electron/preload.ts
+  一文件 4+/8-＝4748970 精确逆;依据 BOARD 0716644 更正批处置①——
+  preload 自报 true 系 875c85a 交付物,4748970 系回归,回退恢复
+  875c85a 交付世代,diff vs 4748970^ 零行实证）＋本状态批（恰本
+  文件,collab-only 免全量）;追平壳 e35aba7（merge-base＝86c05de
+  领先 0 纯追平,双法预检零冲突,inbound 非 collab 恰核心 2 文件
+  与 91 批登记一致）零自有内容随验收自然收编。自树全链证据在案
+  （05:4x–05:5x:typecheck 0＋vitest 647/647〔gateway-router
+  25/25＋import-model 10/10 两态双向〕＋build＋boundary＋i18n＋
+  contrast＋leak 155 零泄漏＋forest-leak）,全量复跑候你方合并门
+  照惯例。④′能力面对齐切片另拍,BOARD 行④「回归已修复」改记候
+  操作者回退后 CDP 复验回填,本批不代记。
+- （wt-2 [→桌面] 去桥办结回执收货消化：08fa61e 已经 91 批入库,
+  去桥条件闭环,核心侧无动作请求——brief ①区该留言就地消化,
+  勿重复;历史留言已消化归档,在途以 BOARD #36 与本状态文件为准。）
