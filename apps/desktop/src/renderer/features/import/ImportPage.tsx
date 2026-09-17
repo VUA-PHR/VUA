@@ -17,6 +17,7 @@ import {
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
   bytesText,
+  narrowCompletedDownloads,
   type EmbeddedBrowseAvailability,
   type EmbeddedBrowseState,
 } from "./import-model.ts";
@@ -379,14 +380,13 @@ function CompletedDownloadsPanel() {
       })
       .then((result) => {
         if (!active) return;
-        // 收窄纪律(与 warehouse-commands-live 同构):必需字段收不齐 =
-        // 提供方响应不可解释,如实 unavailable
-        const downloads =
-          result.ok
-            ? (result.value as { downloads?: unknown }).downloads
-            : undefined;
-        if (Array.isArray(downloads)) {
-          setState({ kind: "loaded", downloads: downloads as readonly DownloadsListCompletedItemV04[] });
+        // 收窄纪律(BOARD #36 缺陷②修复批):live 应答 = bdl-queries 三键
+        // 信封 {schemaVersion, operation, result:{downloads}},不是契约平铺
+        // 值——按信封收窄(与 packages-live 同纪律),收不齐 = 提供方响应
+        // 不可解释,如实 unavailable,不以空清单伪装
+        const downloads = result.ok ? narrowCompletedDownloads(result.value) : null;
+        if (downloads !== null) {
+          setState({ kind: "loaded", downloads });
         } else {
           setState({ kind: "unavailable" });
         }
