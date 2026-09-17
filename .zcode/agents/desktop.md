@@ -2,7 +2,7 @@
 name: "Desktop"
 description: "VUA桌面子代理"
 color: blue
-model: "custom:builtin%3Abigmodel-coding-plan:GLM-5.3-Flash"
+model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
 injectAgentsMd: true
 ---
 
