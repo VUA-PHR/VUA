@@ -6,79 +6,63 @@ baseline_commit: 2dc2e4d
 updated: 2026-09-18
 ---
 ## 当前焦点
-**候验收闭环＋恰超线自理追平轮（2026-09-18 02:1x–02:2x，工作时段；两笔：
-追平合并 6e556fc＋本状态批）——上轮三笔（状态批 2e5ff95＋追平
-6fe3ba2＋登记批 4887987）已经集成第 86 批 f073a87 收编（is-ancestor
-本地实证，4887987 即 merge-base＝全树历史入库），候验收状态就此闭环
-；本拍 brief ①区无指向本树/本角色的阻塞与留言；落后 26 恰超 15 触发
-线自理追平 6e556fc；四环复证（2dc2e4d 观测世代）无可领新项，不开新
-切片**：
+**点名核实轮（2026-09-18 02:5x，工作时段；本批恰本文件）——操作者
+指派本拍一项核实任务（BOARD #36③ 权威链最后一环，数据侧点名环境
+域）：读环境域冻结 JSON schema 双文件全文，核实环境条目（check
+item）键名在该 schema 面钉 `id`、钉 `checkId`、还是未钉。已完成，
+一行事实结论＝**未钉（schema 面无 check item 结构，id/checkId 双
+零出现，与核心裁决无冲突）**，闭环**：
 
-- **候验收闭环（is-ancestor 本地实证）**：`git merge-base
-  --is-ancestor` 实证 4887987（及其前 2e5ff95/6fe3ba2）均 main 祖
-  先——上轮三笔经集成第 86 批 f073a87 收编入库（同窗另收编
-  wt-2/3/4/5 五树七笔照 3cf5d40 同窗先例）。失鲜工作树：无。
-- **分叉读数与追平判定**：fetch 后读数领先 0、落后 26（全 collab
-  簿记＋7 个 `.zcode/agents/*.md` 操作者代理配置文件）——恰超
-  AGENTS.md 15 触发线，照 eaf700a 第 57 批先例／6fe3ba2／2aa3ef8
-  同则自理追平：**6e556fc（--no-ff）**，merge-base＝树尖 4887987，
-  自有领先内容＝零（纯追平壳）。**新老双法 merge-tree 预检均零冲
-  突**（老式 0 标记＋ort --write-tree exit 0，tree 41eeb635）。
-  **inbound 非 collab 面本轮非零文件，如实声明**＝恰 7 个
-  `.zcode/agents/*.md`（模型指向与 thoughtLevel 配置行，操作者运
-  维批，非 Rust/TS 代码面零行为）＋6 个 collab 文件；**环境所有权
-  域 inbound 零触碰 pathspec 实证**（crates/project-manager＋
-  docs/compatibility＋docs/tool-catalog 三点 diff 零行）。追平后
-  HEAD vs main 非 collab 面全等（diff 零文件实证），代码基线世代
-  刷新 2dc2e4d。追平落库后 main 同窗又推进（第 87 批陆续收编
-  wt-5/wt-3/wt-4 各树追平至 5bae48f）——同窗竞态照 3cf5d40/
-  f77e078 先例随验收合并自然收编；现读数落后 5 未达线不再追平。
-- **四环复证（2dc2e4d 观测世代）**：①本树在途＝追平笔 6e556fc＋
-  本状态批，无半途切片；②BOARD 环境行＝本拍读 main 版全文复证——
-  #35/025 链五环＋v0.2 增量链代码面零剩余（候用户 dev 栈重启解锁
-  ready-p2 与 cacheSourced 标注，#33 同窗）、#36 归桌面牵头（③
-  字段名权威核对候核心/数据，非环境席位，环境 wire face 定名归属
-  候核对结论无环境动作）、#31/#32/#33 修复在库候用户复验、#34 已
-  闭环、B4/B5/B6 已销账、U1 已批准归档环境侧义务清、O-2/B8 全
-  [需用户] 跳过不代决；③outline 双语落后区间零 diff，2.0.12 世代
-  结论继承（M5 表 W18–W26 无环境独立行，W25 候用户开窗 O-2，W26
-  归集成）；④M 门＝M5 开窗中关门候 W25 真机走查；M6/M7 门验收候
-  M5 关门门序；M8 未开窗。**结论：无可领新项，不开新切片。**
-- **机械校验**：本批变更面＝追平笔（零自有内容）＋本状态批恰本
-  文件，**collab-only 免全量如实声明**：本树代码面自 06:1x 合并树
-  全量绿世代（cargo 81 套件 662/0＋clippy --workspace
-  --all-targets -D warnings 0＋vpm_backend 18/18，第 79 批合并树
-  复跑在案、第 80 批登记批确认五树共用）以来零变更——追平 inbound
-  非 collab 面恰 7 个代理配置文件零代码（pathspec 实证环境域零触
-  碰），追平后非 collab 面与 main 全等 diff 零行，两笔全零代码改
-  动，该证据世代有效。磁盘注记维持：C 盘近满（本拍实测 15G），
-  后续任何全量 cargo 复跑前先查磁盘余量，环境性失败（LNK1318/
-  PDB LIMIT）先核磁盘再定性；根本腾挪候用户处置。零新代码交付、
-  零新阻塞、零新升级项，零端到端宣称维持。
+- **核实过程与证据**：①全文读毕
+  `schemas/environment-managers/v0.1/snapshot.schema.json`（199 行
+  ）与 `schemas/environment-spike/v0.1/snapshot.schema.json`（181
+  行）；②grep 三连机械复证全部 exit=1 零匹配——两文件内 `"id"`、
+  `"checkId"`、任何含 `check` 字符串均零出现，schemas/ 全目录
+  `checkId` 亦零出现（与数据侧核实读数一致）。
+- **一行事实结论（只报 schema 面事实，不重裁权威）**：环境条目
+  （check item）键名在该 schema 面**未钉**——两个环境域冻结
+  schema 根本不存在 check item 结构（无 checks/checkItem 类属性；
+  顶层与全部 $defs——editorFinding/vccCapability/alcomCapability/
+  projectFinding/diagnostic——均为 additionalProperties:false 封闭
+  枚举，其中既无 `id` 也无 `checkId`；最接近的条目标识字段是
+  diagnostic 的 `code` 与 editorFinding 的 `guidanceCode`，均带
+  pattern 约束）——属「未约束、与核心裁决（wire 面＝checkId）无
+  冲突」，非「钉 id」，**无跨域分歧，不需 [→集成] 仲裁与 [→核心]
+  知会**。
+- **树况与纪律**：上拍两笔（追平壳 6e556fc＋状态批 7edd543）已经
+  集成第 87 批 870b95b＋10eeb87 收编、f602555 修订笔登记闭环
+  （main tip 登记文自证，is-ancestor 同窗先例），勿重复；本拍
+  brief 02:55 ①区无指向本树/本角色的阻塞与留言；fetch 后读数领
+  先 0、落后 9（逐笔核实全 collab 簿记：5 合并笔零文件＋3 状态文
+  件＋1 登记文，main 相对本树尖非 collab 面 diff 零文件）未超 15
+  触发线，照上轮同则不再自理追平；ort merge-tree 预检 exit=0 零
+  冲突；本批变更恰本文件，collab-only 免全量如实声明（本树代码面
+  自 06:1x 合并树全量绿世代零变更维持，证据世代有效）。
+- **四环复证（2dc2e4d 观测世代，结论继承上拍）**：无可领新项，核
+  实任务外不开新切片——#36③ 权威链环境侧一环随本批闭合后，环境
+  域无剩余动作；等待项不变（真机 ready-p2 解锁、W25 开窗）。
 
-## 前情（消化＋恰达线自理追平轮 09-17 08:2x，全文见本文件 git 历史
-4887987 世代）
-上轮三笔：状态批 2e5ff95＋恰达线追平 6fe3ba2（落后 15 恰达线）＋
-登记批 4887987，已经集成第 86 批 f073a87 收编。更早（候验收闭环＋
-超线追平轮 06:4x–08:2x）：025/v0.2 增量链五环＋增补＋补交批全在库
-（3d91ab0/6a4678d/4f197dd/a37680a/e74da43 各批），8a3545f/a836893
-配对读完整。更早见 git 历史。
+## 前情（候验收闭环＋恰超线自理追平轮 09-18 02:1x–02:2x，全文见本
+文件 git 历史 7edd543 世代）
+两笔：追平合并 6e556fc（落后 26 超 15 触发线，纯追平壳零自有内容
+）＋状态批 7edd543，已经集成第 87 批收编。更早（消化＋恰达线自理
+追平轮 09-17 08:2x）：三笔 2e5ff95/6fe3ba2/4887987 经第 86 批
+f073a87 收编。025/v0.2 增量链五环＋增补＋补交批全在库
+（3d91ab0/6a4678d/4f197dd/a37680a/e74da43 各批）。更早见 git 历史
+。
 
 ## 本轮交付（2dc2e4d 基线世代）
-- **恰超线自理追平 6e556fc**（落后 26 超 15 触发线照先例；--no-ff
-  ，双法预检零冲突，自有领先内容＝零纯追平壳，inbound 非 collab
-  面＝7 个 .zcode/agents 代理配置文件零代码如实声明，环境所有权域
-  三点零触碰，追平后非 collab 面与 main 全等，基线世代刷新
-  2dc2e4d）。
-- **状态批（本批，恰本文件，collab-only 免全量）**：候验收闭环登
-  记＋追平笔落账＋同窗竞态照录＋四环复证世代标注 2dc2e4d。零新代
-  码交付、零新阻塞、零新升级项。
+- **点名核实批（本批，恰本文件，collab-only 免全量）**：BOARD
+  #36③ 权威链最后一环环境域 schema 面核实——结论「未钉、无
+  check item 结构、id/checkId 双零出现、与核心裁决无冲突」闭环；
+  全文读毕双 schema＋grep 三连 exit=1 复证在案。零代码交付、零新
+  阻塞、零新升级项。
 
 ## 在途/待他角色
-- **[等集成] 本状态批＋追平笔 6e556fc 候随轮验收（--no-ff）**——
-  两笔实质 diff 恰 collab/state/wt-6.md 一 collab 文件（追平笔零
-  自有内容照 wt-2 f77e078/wt-4 d4924b4 同窗先例随验收合并自然收
-  编）。本树无其它在途。
+- **[等集成] 本点名核实批候随轮验收（--no-ff）**——实质 diff 恰
+  collab/state/wt-6.md 一 collab 文件，collab-only 免全量；请集成
+  凭本批销账 #36③ 权威链环境侧一环（schema 面未钉、无冲突，链上
+  核心/数据/环境三方读数齐）。本树无其它在途。
 - [等用户] **真机 ready-p2 区块解锁**：025 链全部代码环闭环（冻结
   →桌面核可→wire 接线→环境实现→桌面消费更新→核心表态＋v0.2 冻
   结→环境增补→桌面消费更新），重启 dev 栈即可见 ready-p2 仓库/
@@ -93,50 +77,51 @@ updated: 2026-09-18
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**本状态批＋追平笔 6e556fc 请集成随轮验收（--no-ff）。**两笔实质
-diff 恰 collab/state/wt-6.md 一文件，collab-only 免全量；追平笔零
-自有内容照同窗先例随验收合并自然收编。
+**本点名核实批请集成随轮验收（--no-ff）。**实质 diff 恰
+collab/state/wt-6.md 一文件，collab-only 免全量；ort 预检零冲突
+（落后 9 未达线不追平，同窗自然收编）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-18 02:1x–02:2x，工作时段，两笔：追平 6e556fc＋状态
-批恰本文件）：
-①date 02:16 确认工作时段；brief 02:16 ①区无指向本树/本角色的阻
-塞与留言，失鲜工作树无；②候验收闭环——is-ancestor 实证上轮三笔
-经第 86 批 f073a87 收编（4887987 即 merge-base）；fetch 后读数落
-后 26 恰超 15 触发线，自理追平 6e556fc（--no-ff，新老双法
-merge-tree 预检均零冲突〔老式 0 标记＋ort exit 0 tree 41eeb635〕
-，merge-base＝4887987，自有领先内容＝零，inbound 非 collab 面＝
-恰 7 个 .zcode/agents 代理配置文件零代码如实声明＋6 个 collab 文
-件，环境所有权域三点零触碰 pathspec 实证，追平后 HEAD vs main 非
-collab 面全等，基线世代刷新 2dc2e4d）；追平落库后 main 同窗推进
-至 5bae48f（第 87 批收编 wt-3/wt-4/wt-5 追平）构成同窗竞态照
-3cf5d40/f77e078 先例随验收自然收编，现落后 5 未达线不再追平；③四
-环复证（2dc2e4d 观测世代）无可领新项——本树无半途切片、BOARD 环
-境行 main 版全文复证（#35 代码环零剩余候用户、#36 桌面牵头③候核
-心/数据、#31/32/33 候用户复验、#34 闭环、U1 义务清、O-2/B8
-[需用户] 全跳过；outline 落后区间零 diff 结论继承；M5 关门候 W25
-／M6/M7 候门序／M8 未开窗），不开新切片；④状态批恰本文件提交；⑤
-collab-only 免全量如实声明（本树代码面自 06:1x 合并树全量绿世代
-零变更，追平 inbound 非 collab 恰 7 代理配置零代码、两笔全零代码
-，全量证据沿用集成第 79 批合并树复跑世代在案：81 套件 662/0＋
-clippy 0＋vpm_backend 18/18，第 80 批登记批确认五树共用，等效成立
-）。零新代码交付、零新阻塞、零新升级项。**零端到端宣称维持**——
-真机 ready-p2 解锁与 v0.2 标注候用户 dev 栈重启（#33 同窗），走查
-归 W25（O-2）。退出待命，候集成验收本树两笔、W25 用户开窗、下轮
-brief 或新指派；在手无半途切片。
+本轮（2026-09-18 02:5x，工作时段，一笔：点名核实批恰本文件）：
+①date 02:55 确认工作时段；brief 02:55 ①区无指向本树/本角色的阻
+塞与留言，失鲜工作树无；②领受操作者指派核实任务（BOARD #36③ 权
+威链最后一环，数据侧点名环境域）——全文读毕
+schemas/environment-managers/v0.1/snapshot.schema.json（199 行）＋
+schemas/environment-spike/v0.1/snapshot.schema.json（181 行），
+grep 三连复证 exit=1 零匹配（两文件 "id"/"checkId"/含 check 字符
+串零出现，schemas/ 全目录 checkId 零出现与数据侧读数一致），
+**一行事实结论＝未钉**：schema 面无 check item 结构（顶层＋全部
+$defs additionalProperties:false 封闭，无 id 无 checkId；最接近
+标识字段为 diagnostic.code 与 editorFinding.guidanceCode 均
+pattern 约束），与核心裁决（wire 面＝checkId）无冲突——非钉 id
+，无跨域分歧，不需 [→集成] 仲裁与 [→核心] 知会，闭环；③树况：
+上拍两笔 6e556fc＋7edd543 经第 87 批 870b95b＋10eeb87 收编、
+f602555 登记闭环（勿重复）；fetch 后领先 0 落后 9（逐笔核实全
+collab 簿记，main vs 树尖非 collab 面 diff 零文件）未超 15 线不
+自理追平，ort merge-tree 预检 exit=0 零冲突；四环复证结论继承上
+拍（2dc2e4d 观测世代）无可领新项，核实外不开新切片；④本批恰本
+文件提交；⑤collab-only 免全量如实声明（本树代码面自 06:1x 全量
+绿世代零变更维持：cargo 81 套件 662/0＋clippy 0＋vpm_backend
+18/18，第 79 批合并树复跑在案、第 80 批确认五树共用；本批零代码
+，证据世代有效）。磁盘注记维持：C 盘 15G 读数在案，任何全量
+cargo 复跑前先 df。零新代码交付、零新阻塞、零新升级项。**零端到
+端宣称维持**——真机 ready-p2 解锁与 v0.2 标注候用户 dev 栈重启
+（#33 同窗），走查归 W25（O-2）。退出待命，候集成验收本批、W25
+用户开窗、下轮 brief 或新指派；在手无半途切片。
 
 ## 留言
-- [→集成] **候验收闭环＋恰超线自理追平落账**：上轮三笔
-  （2e5ff95＋6fe3ba2＋4887987）经你方第 86 批 f073a87 收编已本地
-  is-ancestor 实证闭环；本拍落后 26 恰超触发线，自理追平 6e556fc
-  （--no-ff，零自有内容，双法预检零冲突〔ort tree 41eeb635〕，
-  inbound 非 collab 面＝恰 7 个 .zcode/agents 代理配置文件零代码
-  如实声明，环境所有权域三点零触碰，追平后非 collab 面与 main 全
-  等，基线 2dc2e4d）。追平落库与你方第 87 批收编窗口同窗竞态（你
-  方已收编 wt-3/wt-4/wt-5 追平至 5bae48f），照 3cf5d40/f77e078 先
-  例随验收自然收编。**本状态批＋追平笔 6e556fc 请随轮验收
-  （--no-ff）**。环境侧无新请求，等待项不变＝真机 ready-p2 解锁
-  （#33 同窗）与 W25（O-2）。
-- （回执不回执：第 86 批上轮三笔收编确认以本状态批消化登记兑现；
-  历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为
-  准。）
+- [→集成] **#36③ 权威链环境侧一环核实闭环，请凭本批销账**：环境
+  域两个冻结 schema（environment-managers/v0.1 与
+  environment-spike/v0.1 的 snapshot.schema.json）全文读毕＋grep
+  三连 exit=1 复证——**check item 键名在该 schema 面未钉**：schema
+  面根本不存在 check item 结构（无 checks/checkItem 属性，顶层与
+  全部 $defs additionalProperties:false 封闭枚举），`id` 与
+  `checkId` 作为键名双双零出现（schemas/ 全目录 checkId 亦零出现
+  ，与数据侧读数一致）；最接近的条目标识字段为 diagnostic 的
+  `code` 与 editorFinding 的 `guidanceCode`（均 pattern 约束）。
+  **属「未约束、与核心裁决（wire 面＝checkId）无冲突」——非钉 id
+  ，无跨域分歧**，权威链三方读数（核心协议本＋TS 面＋环境 schema
+  面）齐，#36③ 字段名核对可闭合。
+- （回执不回执：上拍两笔收编确认以 main tip f602555 登记文与本
+  批消化兑现；历史留言已消化归档，在途事项以 BOARD 与本状态文件
+  当前焦点为准。）
