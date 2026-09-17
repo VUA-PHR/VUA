@@ -2,7 +2,8 @@
 name: "Reviewer"
 description: "VUA审阅子代理"
 color: pink
-model: "custom:builtin%3Abigmodel-coding-plan:GLM-5.3"
+model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3"
+thoughtLevel: "max"
 injectAgentsMd: true
 ---
 
