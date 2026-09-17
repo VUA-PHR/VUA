@@ -1,4 +1,4 @@
-import type { RemoteContentEventV1 } from "@vua/contracts";
+import type { DownloadsListCompletedItemV04, RemoteContentEventV1 } from "@vua/contracts";
 
 /**
  * 素材导入页云端段「内嵌浏览面板」的呈现纯函数(M6 IMP-2 批 A,proposal 015
@@ -35,6 +35,75 @@ export function displayUrl(url: string): string {
 /** app.snapshot 的能力标志 → 面板两态(未知快照 = 保守不可用,不猜测) */
 export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvailability {
   return remoteBrowser === true ? { kind: "available" } : { kind: "unavailable" };
+}
+
+/* ---- 已完成下载收窄(BOARD #36 缺陷②修复批,2026-09-18) ----
+ * live wire 形状 = bdl-queries 三键信封(provider-host bdl_query_success:
+ * schemaVersion "0.4" + operation + result 本体),不是契约平铺值
+ * {downloads}——此前读 value.downloads 恒 undefined→诚实 unavailable
+ * (「仓库服务尚未接入」假象,引擎侧直调实为健康)。修法自决申报:渲染层
+ * 按嵌套路径收窄(与 packages-live 信封收窄同纪律);路由层统一解包否决——
+ * live wire 各族信封异构(bdl/packages 嵌套 result,release/project 平铺
+ * 合并),统一解包需按族 wire 知识进 Kernel 且会破坏既有三个信封感知端口。
+ * 词表外信封或形态不齐行如实判不可解释,不猜测。 */
+
+const BDL_QUERIES_ENVELOPE_SCHEMA_VERSION = "0.4";
+const DOWNLOADS_LIST_COMPLETED_OPERATION = "downloads.listCompleted";
+
+/** 行六键闭集(DownloadsListCompletedItemV04 镜像):多余键/缺键/类型不符
+ * = 形态不齐,该行如实丢弃(半可信不渲染,与仓储列表同纪律) */
+function isDownloadsRow(value: unknown): value is DownloadsListCompletedItemV04 {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = [
+    "adoptedWarehouseItemIds",
+    "completedAt",
+    "downloadId",
+    "receivedBytes",
+    "sourceUrl",
+    "suggestedFileName",
+  ];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  const row = value as Record<string, unknown>;
+  return typeof row.downloadId === "string"
+    && row.downloadId.length > 0
+    && typeof row.sourceUrl === "string"
+    && row.sourceUrl.length > 0
+    && (row.suggestedFileName === null || typeof row.suggestedFileName === "string")
+    && typeof row.receivedBytes === "number"
+    && Number.isSafeInteger(row.receivedBytes) && row.receivedBytes >= 0
+    && typeof row.completedAt === "string"
+    && row.completedAt.length > 0
+    && Array.isArray(row.adoptedWarehouseItemIds)
+    && row.adoptedWarehouseItemIds.every((id) => typeof id === "string");
+}
+
+/**
+ * downloads.listCompleted 应答收窄:信封三键 + result.downloads 行数组。
+ * 返回 null = 信封词表外/本体或任一行形态不齐(提供方响应不可解释,调用方
+ * 如实 unavailable——行是采纳命令的身份事实,不渲染半可信清单);空数组 =
+ * 诚实零下载(空态即终态)。
+ */
+export function narrowCompletedDownloads(
+  value: unknown,
+): readonly DownloadsListCompletedItemV04[] | null {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return null;
+  const envelope = value as Record<string, unknown>;
+  if (envelope.schemaVersion !== BDL_QUERIES_ENVELOPE_SCHEMA_VERSION) return null;
+  if (envelope.operation !== DOWNLOADS_LIST_COMPLETED_OPERATION) return null;
+  const result = envelope.result;
+  if (typeof result !== "object" || result === null || Array.isArray(result)) return null;
+  const downloads = (result as Record<string, unknown>).downloads;
+  if (!Array.isArray(downloads)) return null;
+  const rows: DownloadsListCompletedItemV04[] = [];
+  for (const raw of downloads) {
+    if (!isDownloadsRow(raw)) return null;
+    rows.push(raw);
+  }
+  return rows;
 }
 
 /** 字节 → 人读量级(1024 进位;B 档整数,KB 起一位小数去尾零)。

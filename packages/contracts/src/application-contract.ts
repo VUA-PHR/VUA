@@ -1670,11 +1670,21 @@ export type EnvironmentZoneV01 = "play" | "create";
 export type EnvironmentPresenceV01 = "detected" | "not_detected" | "detection_failed";
 
 export interface EnvironmentCheckItemV01 {
-  /** 稳定检查 id（如 `steam`、`unity_editors`）；修复计划与表现层按它取键 */
+  /**
+   * 条目级 schema 版本，live wire 逐条携带（引擎 serde u8；操作者 CDP
+   * 键集实证 2026-09-17：schemaVersion+checkId+zone+presence+errorCode+facts）。
+   * BOARD #36 第二处分歧（逐条 schemaVersion 未声明）由核心账本判定加性
+   * 无害（2026-09-18）；桌面投影暂不消费，声明为可选——live 形状测试可
+   * 钉死此键，既有 mock/fixture 构造零破坏。
+   */
+  readonly schemaVersion?: number;
+  /** 稳定检查 id（如 `steam`、`unity_editors`）；修复计划与表现层按它取键。
+   *  BOARD #36 权威定名（2026-09-18 核心裁决）：wire 面即本键，偏差方为
+   *  引擎序列化面（引擎侧 serde rename 已修，wt-2 c9d3d83）。 */
   readonly checkId: string;
   readonly zone: EnvironmentZoneV01;
   readonly presence: EnvironmentPresenceV01;
-  /** 仅在 presence === "detection_failed" 时设置 */
+  /** 仅在 presence === "detection_failed" 时设置；live wire 上缺席时为 null */
   readonly errorCode?: string;
   /** 工程事实（路径、版本、字节数等原始观测）；对契约不透明 */
   readonly facts: Readonly<Record<string, unknown>>;

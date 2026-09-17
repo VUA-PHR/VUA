@@ -77,6 +77,22 @@ function word<T extends string>(value: unknown, vocabulary: readonly T[]): T | n
     : null;
 }
 
+/**
+ * bdl-queries 三键信封解包(BOARD #36 缺陷②同类修复批,2026-09-18):
+ * live wire 对 catalog.list / catalog.detail / catalog.status 应答
+ * {schemaVersion "0.4", operation, result 本体}(provider-host
+ * bdl_query_success),此前平铺读 value.{total,entries}/value.product/
+ * value.{health,revision} 恒 undefined → 目录页真机恒 not-connected
+ * (引擎健康,#22 live/fixture 形状分裂)。词表外信封 = null(调用方按
+ * 未接入处理)。
+ */
+function bdlQueryResult(value: unknown, operation: string): Record<string, unknown> | null {
+  const envelope = asRecord(value);
+  if (envelope === null) return null;
+  if (envelope.schemaVersion !== "0.4" || envelope.operation !== operation) return null;
+  return asRecord(envelope.result);
+}
+
 /** invoke 收窄:catalog 三方法的回执值按 unknown 投影,错误通道原样透传 */
 async function invokeCatalog(
   client: GatewayClient,
@@ -295,7 +311,8 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
           : notConnectedListView;
       }
       // 形态不齐按未接入处理,不渲染半可信列表
-      return projectList(result.value) ?? notConnectedListView;
+      const resultBody = bdlQueryResult(result.value, "catalog.list");
+      return resultBody !== null ? projectList(resultBody) ?? notConnectedListView : notConnectedListView;
     },
 
     async detail(productId): Promise<CatalogDetailView> {
@@ -310,8 +327,8 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
         params: { productId },
       });
       if (result.ok) {
-        const record = asRecord(result.value);
-        const product = record === null ? null : projectDetail(record.product);
+        const resultBody = bdlQueryResult(result.value, "catalog.detail");
+        const product = resultBody === null ? null : projectDetail(resultBody.product);
         return product !== null
           ? { schemaVersion: 1, kind: "detail", product }
           : { schemaVersion: 1, kind: "not-connected" };
@@ -339,7 +356,8 @@ export function createLiveCatalogBrowser(client: GatewayClient): CatalogBrowserP
       });
       // 状态失败 → health unknown(诚实缺省,不猜测 ok);不向上抛错
       if (!result.ok) return { health: "unknown" };
-      return projectStatus(result.value) ?? { health: "unknown" };
+      const resultBody = bdlQueryResult(result.value, "catalog.status");
+      return (resultBody !== null ? projectStatus(resultBody) : null) ?? { health: "unknown" };
     },
 
     async capability(): Promise<CapabilityReport> {

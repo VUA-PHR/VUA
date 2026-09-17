@@ -80,6 +80,32 @@ describe("Electron Desktop Gateway routing", () => {
       ok: true,
       value: { capabilities: { gateway: true, tasks: true, remoteBrowser: false } },
     });
+    if (!response.ok) throw new Error("expected a snapshot response");
+    const capabilities = (response.value as {
+      capabilities: { operations: unknown };
+    }).capabilities;
+    // BOARD #36 缺陷①钉死(#22 live/fixture 形状一致性):provider 能力行
+    // 原样透传进桌面信封——live provider(mock 与受监督进程同面)声明什么
+    // 行,渲染层读到的就是什么行,Kernel 不解释不增删。行序 = provider 侧
+    // 事实(mock 内部按 operationId 排序),断言按排序比较不耦合该内部顺序
+    const sortedRows = (rows: { operationId: string }[]) =>
+      [...rows].sort((a, b) => a.operationId.localeCompare(b.operationId));
+    expect(sortedRows(capabilities.operations)).toEqual(sortedRows([
+      { operationId: "task.list", availability: "available" },
+      {
+        operationId: "desktop.remoteBrowser",
+        availability: "unavailable",
+        reason: {
+          contractVersion: "0.1",
+          code: "vua.desktop.remote_browser_unavailable",
+          category: "unavailable",
+          messageKey: "errors.desktop.remoteBrowserUnavailable",
+          recoverable: true,
+          retryable: false,
+          correlationId: "capability-test",
+        },
+      },
+    ]));
   });
 
   it("reports absent Provider capabilities as unavailable", async () => {
@@ -96,6 +122,13 @@ describe("Electron Desktop Gateway routing", () => {
       ok: true,
       value: { capabilities: { gateway: true, tasks: false, remoteBrowser: false } },
     });
+    if (!response.ok) throw new Error("expected a snapshot response");
+    // 空能力表照原样透传:空数组是诚实空态,不是缺字段(读行方的词表 gate
+    // 依赖 Array.isArray 判定,缺字段会被误判为不可用——同一事实的两种
+    // 形状,信封只允许带行的那种)
+    expect((response.value as {
+      capabilities: { operations: unknown };
+    }).capabilities.operations).toEqual([]);
   });
 
   it("routes task.list through the Provider and returns the application value verbatim", async () => {
