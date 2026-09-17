@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
@@ -41,7 +42,11 @@ import "./import-page.css";
  *   blocked 事件诚实呈现。生命周期守卫用代次模型(#37 修复 2026-09-18):
  *   原卸载布尔在 StrictMode 效果双调用后永真,自动打开与「打开」全部
  *   瞬间自关,内嵌浏览无法进入;代次比较使活跃挂载的 open 保留、已卸载
- *   或过期挂载的 open 随即关闭。
+ *   或过期挂载的 open 随即关闭。导航条经 createPortal 挂 document.body
+ *   (#38 修复 2026-09-18):面板所在 .vua-card 带毛玻璃 backdrop-filter,
+ *   按 CSS 规范构成 fixed 后代的包含块,把 position:fixed;top:0 的导航
+ *   条钉进卡片内部、落入视图覆盖区看不见点不着(视图内无退出);portal
+ *   脱离该包含块,top:0 恢复相对视口,与 Main 侧让位条带重新对齐。
  *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
  * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
    任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
@@ -201,88 +206,101 @@ function EmbeddedBrowsePanel({
           <p className="vua-caption vua-text-secondary">{browse.lastBlocked}</p>
         </div>
       ) : null}
-      {viewId !== null ? (
-        <div className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={copy.navBack}
-            title={copy.navBack}
-            disabled={!browse.canGoBack}
-            onClick={() => historyAction("goBack")}
-          >
-            <Icon name="arrow-left" size={16} />
-          </button>
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={copy.navForward}
-            title={copy.navForward}
-            disabled={!browse.canGoForward}
-            onClick={() => historyAction("goForward")}
-          >
-            <Icon name="arrow-right" size={16} />
-          </button>
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={copy.navReload}
-            title={copy.navReload}
-            onClick={() => historyAction("reload")}
-          >
-            <Icon name="refresh" size={16} />
-          </button>
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={copy.navHome}
-            title={copy.navHome}
-            onClick={() => void window.vua?.remoteContent?.navigate(viewId, BOOTH_HOME_URL)}
-          >
-            <Icon name="home" size={16} />
-          </button>
-          <span className="vua-import__browse-url" title={browse.currentUrl ?? undefined}>
-            {displayUrl(browse.currentUrl ?? "")}
-          </span>
-          <button
-            type="button"
-            className="vua-import__browse-button vua-import__browse-button--close"
-            aria-label={copy.navClose}
-            title={copy.navClose}
-            onClick={closeView}
-          >
-            <Icon name="close" size={16} />
-          </button>
-          <span className="vua-import__browse-separator" aria-hidden="true" />
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={strings.app.windowMinimize}
-            title={strings.app.windowMinimize}
-            onClick={() => void window.vua?.window.minimize()}
-          >
-            <Icon name="minimize" size={16} />
-          </button>
-          <button
-            type="button"
-            className="vua-import__browse-button"
-            aria-label={strings.app.windowMaximize}
-            title={strings.app.windowMaximize}
-            onClick={() => void window.vua?.window.toggleMaximize()}
-          >
-            <Icon name="maximize" size={16} />
-          </button>
-          <button
-            type="button"
-            className="vua-import__browse-button vua-import__browse-button--close"
-            aria-label={strings.app.windowClose}
-            title={strings.app.windowClose}
-            onClick={() => void window.vua?.window.close()}
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </div>
-      ) : null}
+      {/* 导航条经 createPortal 挂 document.body(#38 修复 2026-09-18):
+          面板所在 .vua-card 带毛玻璃 backdrop-filter,按 CSS 规范构成
+          fixed 后代的包含块,把 position:fixed;top:0 的导航条钉进卡片
+          内部、落入原生视图覆盖区(Main 侧视图占 y≥44 全窗)——被压在
+          视图下面看不见点不着＝视图内无退出;portal 脱离该包含块后
+          top:0 恢复视口语义,重新对齐 Main 侧 REMOTE_VIEW_NAV_STRIP_PX=44
+          让位条带(两处同批改动纪律不变,本修复不动高度)。仓库先例:
+          ContextMenu(同类 fixed 包含块问题经 portal 解决)。条件渲染与
+          卸载语义不变:随本面板卸载 portal 内容同步移除,#25 卸载即关
+          与 #37 代次模型均不受影响。 */}
+      {viewId !== null
+        ? createPortal(
+            <div className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={copy.navBack}
+                title={copy.navBack}
+                disabled={!browse.canGoBack}
+                onClick={() => historyAction("goBack")}
+              >
+                <Icon name="arrow-left" size={16} />
+              </button>
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={copy.navForward}
+                title={copy.navForward}
+                disabled={!browse.canGoForward}
+                onClick={() => historyAction("goForward")}
+              >
+                <Icon name="arrow-right" size={16} />
+              </button>
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={copy.navReload}
+                title={copy.navReload}
+                onClick={() => historyAction("reload")}
+              >
+                <Icon name="refresh" size={16} />
+              </button>
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={copy.navHome}
+                title={copy.navHome}
+                onClick={() => void window.vua?.remoteContent?.navigate(viewId, BOOTH_HOME_URL)}
+              >
+                <Icon name="home" size={16} />
+              </button>
+              <span className="vua-import__browse-url" title={browse.currentUrl ?? undefined}>
+                {displayUrl(browse.currentUrl ?? "")}
+              </span>
+              <button
+                type="button"
+                className="vua-import__browse-button vua-import__browse-button--close"
+                aria-label={copy.navClose}
+                title={copy.navClose}
+                onClick={closeView}
+              >
+                <Icon name="close" size={16} />
+              </button>
+              <span className="vua-import__browse-separator" aria-hidden="true" />
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={strings.app.windowMinimize}
+                title={strings.app.windowMinimize}
+                onClick={() => void window.vua?.window.minimize()}
+              >
+                <Icon name="minimize" size={16} />
+              </button>
+              <button
+                type="button"
+                className="vua-import__browse-button"
+                aria-label={strings.app.windowMaximize}
+                title={strings.app.windowMaximize}
+                onClick={() => void window.vua?.window.toggleMaximize()}
+              >
+                <Icon name="maximize" size={16} />
+              </button>
+              <button
+                type="button"
+                className="vua-import__browse-button vua-import__browse-button--close"
+                aria-label={strings.app.windowClose}
+                title={strings.app.windowClose}
+                onClick={() => void window.vua?.window.close()}
+              >
+                <Icon name="close" size={16} />
+              </button>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
