@@ -1,164 +1,160 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: b4796cc
+baseline_commit: 30f6a32
 role: 桌面
-updated: 2026-09-17
+updated: 2026-09-18
 ---
 ## 当前焦点
-**第 84 批收编回执消化＋竞态读数补正＋恰达线追平簿记轮（2026-09-17
-08:2x–08:4x，工作时段＋收尾时段；三笔：状态批 f5cfc6b＋追平合并
-7dccd3d＋读数补正批恰本文件）——上轮两笔（追平 3620830＋状态批
-8b8cf5b）经集成第 84 批 6c41c70 收编入库（is-ancestor 双重本地
-实证），wt-main 第 84 批 [→桌面] 收编回执与本地实证逐项一致；
-状态批落库后同窗竞态：集成收编 wt-2（03c14a1）＋第 85 批收束
-登记（b4796cc）使 main 前进 4 笔至落后 15 恰达触发线，照本树
-eaf700a／3620830 先例纪律追平（AGENTS.md 硬纪律优先于 CHASE
-STOP——后者仅适用于触发线以下的前移），基线世代刷新 b4796cc；
-四环全查（b4796cc 观测世代）桌面零实质可领项，不开新切片**：
+**BOARD #36 用户第二轮复验四缺陷修复批（2026-09-18 02:1x–02:5x，工作时段；
+追平 71bd088＋代码四笔 0ec2cfc/a621e1c/856c530/4748970＋本状态批）——
+今夜主工单兑现：缺陷①②④按 #36 行动方案修复，②修法自决申报（嵌套收窄，
+路由层统一解包否决），②同类申报修复一笔（仓储/目录 live 端口信封解包，
+独立成笔可整体回退），③按操作者指令不实现、留言候定名，下一拍按权威面
+单边修正；桌面 check 全链绿，零端到端宣称维持——真机 CDP 复验归操作者
+（修完不宣称，候复验回填）**：
 
-- **候验收闭环（is-ancestor 本地双重实证）**：`git merge-base
-  --is-ancestor` 3620830→main、8b8cf5b→main 双双通过——上轮两
-  笔经集成第 84 批 6c41c70 收编入库（实质 diff 恰本状态文件一
-  collab 文件，追平笔零自有内容随分支历史自然收编），候验收状
-  态就此消除。wt-main 第 84 批 [→桌面] 留言（恰达线追平＋状态
-  批经 6c41c70 收编、领先 0、第 83 批收编回执消化登记收货）与本
-  地实证逐项一致，消化零动作；失鲜工作树：无。
-- **竞态读数补正＋恰达线追平（7dccd3d，--no-ff 零自有内容）**：
-  状态批 f5cfc6b 落库时读数领先 1／落后 11（未过线，CHASE STOP
-  延续宣告在案）；随后同窗竞态——集成落地 wt-2 收编（03c14a1：
-  追平 3677e04＋状态批 ac0254f）＋第 85 批收束登记（b4796cc），
-  main 前进 4 笔至落后 15 恰达 AGENTS.md 15 提交上限。照本树
-  eaf700a 第 57 批先例与上轮 3620830 先例（「落后 15 恰达触发
-  线纪律动作」）即办追平：merge-base＝本树尖 f5cfc6b（领先 1 实
-  质 0，自有内容恰本状态批一 collab 文件）；新老双法 merge-tree
-  预检零冲突（老式 0 标记＋ort --write-tree exit 0 tree
-  1478fd52）。**inbound 非 collab 面＝0 文件**（三点 diff 空实
-  证——落后 15 笔全为 collab 簿记，实际吸收恰五个状态文件
-  wt-2/4/5/6/main 零冲突）。**桌面所有权域（apps/desktop＋
-  packages/design-system＋packages/contracts）inbound 零触碰
-  pathspec 实证**（diff 空）。追平后 **HEAD vs main 非 collab
-  面全等**（diff 零文件实证），代码基线世代刷新 b4796cc。
-  **CHASE STOP 口径补正**：本宣告适用于触发线以下的正常前移，
-  不豁免恰达 15 触发线的纪律义务——后续 main 前移照旧留给下轮
-  brief 读数。
-- **四环全查（b4796cc 观测世代，零可领）**：①本树在途＝追平笔
-  （零自有内容）＋读数补正批，无半途切片；②BOARD 桌面行：
-  BOARD.md 不在追平 inbound（实际吸收恰五个状态文件）＝912fa78
-  世代结论等效继承——#25/#27/#28/#29/#31/#32/#33 候用户复验/
-  回填跳过（#31/#32 修复在库，#33 与 025 真机呈现同窗）；#34
-  事故定案非桌面；#35/025 全链闭环；M7 行桌面三外部锚点候核心/
-  产线维持（不预接不发明词面）；[需用户] 区全跳过；③outline 当
-  前窗口：inbound 无 docs/development-outline 变化＝2.0.12 世代
-  继承，W18/W19/W24 已交付维持，W25 候用户窗口（O-2）跳过，W26
-  归集成不开工；M6 早开桌面面已交付维持；M7 分解表桌面行实现面
-  在库维持；④M 门：M5 关门候 W25 真机走查（候用户开窗 O-2），
-  M7 门验收候 M5 关门门序，M8 未开窗。**结论：桌面零实质可领项
-  ，不开新切片。**
-- **机械校验（本批三笔）**：变更面＝状态批 f5cfc6b（恰本文件）
-  ＋追平笔 7dccd3d（inbound 恰 5 collab 状态文件，零自有内容）
-  ＋读数补正批（恰本文件），collab-only 免全量如实声明：追平后
-  本树非 collab 面与 main b4796cc 全等（diff 零文件实证，inbound
-  非 collab 0 文件），桌面所有权域代码自 a37680a 验收世代
-  （typecheck＋vitest 640/640＋contracts 66/66＋boundary＋i18n
-  绿 06:1x 在案）以来零变更，证据世代有效；registry 双绿在案
-  （brief 08:20：登记表 67 项一致/0 异常＋受管文本 1290 文件
-  0 处冲突标记）。**磁盘注记（环境事实维持）**：C 盘余约 6.8G
-  近满，本批零代码不触发全量链接；后续任何全量 cargo 复跑前先
-  查磁盘余量，环境性失败（LNK1318/PDB LIMIT）先核磁盘再定性；
-  根本腾挪候用户处置。
+- **追平合并 71bd088（--no-ff，零自有内容）**：上轮三笔（f5cfc6b/
+  7dccd3d/035187c）经集成第 86 批 6f2bf7a 收编（is-ancestor 实证），
+  读数落后 26（19 笔 collab 簿记＋操作者 ops 批 7 笔 .zcode/agents）；
+  新老双法预检零冲突（老式 0 标记＋ort --write-tree exit 0），inbound
+  非 collab 面＝7 个 .zcode/agents 文件（操作者面，仅吸收零触碰），桌面
+  所有权域 inbound 零触碰 pathspec 实证；BOARD #36（c22686f）随追平入库。
+- **二度竞态如实登记＋恰达线追平 cda01d8（--no-ff，零自有内容）**：
+  代码四笔＋状态批落库后同窗集成吸收 71bd088（is-ancestor 实证）＋落地
+  第 87 批簿记，main 前进 15 笔恰达触发线——照 eaf700a/3620830/7dccd3d
+  先例纪律追平；inbound 15 笔全 collab 簿记（非 collab 面 0 文件
+  pathspec 实证，桌面域零触碰），双法预检零冲突；追平后读数领先 6
+  （实质 5：代码 4＋状态批 1）、落后 0。
+- **缺陷①（0ec2cfc）app.snapshot 信封并入 provider 能力行**：
+  gateway-router.ts 信封 capabilities 增 `operations`（provider 行原样
+  透传，Kernel 不解释不增删；空能力表透传 `[]`＝诚实空态非缺字段）；此前
+  信封整段丢弃 operations 换旧三布尔，包管理器页 served_capabilities
+  gate 恒空（#22 live/fixture 形状分裂教训再现）。desktop-gateway.ts
+  AppSnapshotV1 类型同步（TS 契约面登记职责）；路由测试双向钉死（非空行
+  精确＋空表 `[]`，#22 教训第三次适用入验清单）＋electron-gateway.test
+  mock 信封补 operations。
+- **缺陷②（a621e1c）素材导入下载区收窄改读 live 信封**：live 形状＝
+  bdl-queries 三键信封 {schemaVersion "0.4", operation
+  "downloads.listCompleted", result:{downloads}}（provider-host
+  bdl_query_success），此前平铺读 value.downloads 恒 undefined→诚实
+  unavailable「仓库服务尚未接入」假象。修法自决申报：渲染层嵌套收窄
+  （import-model.narrowCompletedDownloads 纯函数：三键钉死＋行六键闭集
+  ＋suggestedFileName null 合法 Option＋形态不齐全批判不可解释不渲染半
+  可信清单）；**路由层统一解包否决**——live wire 各族信封异构（bdl/
+  packages 嵌套 result，release/project 平铺合并），统一解包需按族 wire
+  知识进 Kernel 且破坏既有三个信封感知端口（packages-live/
+  release-handoff/project-ops），理由随本批留言在案。测试七例（正例/
+  空态/旧平铺值拒/词表外 operation/schemaVersion 逃逸/行闭集/Option）。
+- **缺陷②同类申报修复（856c530，独立成笔可整体回退）**：静态代码实证
+  live-acquire-port（projectEntryList record.entries／entryDetail
+  record.entry）与 catalog-browser-live（projectList total+entries／
+  projectDetail product／projectStatus health+revision）平铺读 vs
+  provider-host bdl_query_success 包裹→仓储/目录页真机恒 not-connected
+  （与 gate 无关：acquire capability() 仅查 result.ok，视图刷新窄化必
+  败）——这是 #36 ①「仓储未接入」呈现的真断链（①修 gate 不解此）；修
+  ＝两端口各加 bdlQueryResult 解包（schemaVersion "0.4"＋operation 身份
+  ＋result 本体）＋测试 mock 全部重钉 live 形状＋旧平铺值回归钉死（防回
+  摆）。此笔超出 #36 登记四处断点清单，桌面所有权域内、按切片完整性
+  （AGENTS.md 垂直切片规则）与 #36 验收口径（引擎健康清单面必须在真机
+  复验中激活）申报；如判越界，回退本笔即净。
+- **缺陷④（4748970）内嵌浏览选项不再提供**：壳能力设计现状＝
+  remoteBrowser false（F4 起，非回归，#36 定性），preload.ts 自报
+  true 与既录现实相悖→素材导入页云端段呈现可用状「VUA 内嵌浏览」面板
+  ；翻转 preload 自报 false，browseAvailability 两态纪律诚实降级（不可
+  用选项不提供），渲染层零改动（同旗驱动两面）；能力面开放属功能决策候
+  登记，按「端到端可用」证据翻转，desktop 架构 1.1.0 纪律注释保留。
+- **缺陷③（本拍不实现，候核心/数据权威表态）**：字段名分歧——TS 面
+  application-contract.ts:1674 声明 `checkId`（注释「修复计划与表现层
+  按它取键」），引擎 environment.rs:180 序列化 `id`（serde camelCase；
+  操作者 CDP 现场键集 schemaVersion+id+zone+presence+errorCode+facts
+  实证）；presence 字段名一致故状态词本地化正常（#31 修半边机理）。候
+  定名与第二处分歧见留言 [→核心/数据]；下一拍按权威面单边修正＋投影
+  （contract-projection.ts:70-81 projectCheckItem、DeployerPage.tsx:331
+  接进部署页条目模型）＋live 形状测试。
+- **机械校验（代码四笔）**：桌面 check 全链绿 02:4x（typecheck 双 tsconfig
+  ＋vitest 644/644＋build＋boundary＋i18n＋contrast 全达标＋check:leak
+  155 指纹生产构建零泄漏＋forest-leak 通过）＋contracts check 66/66；
+  变更面恰桌面所有权域（packages/contracts TS 面＋apps/desktop）11 文件。
+  **磁盘注记（环境事实更新）**：df 02:3x 实测 C 盘余 15G（较 08:5x 的
+  4.9G 回升，来源非桌面域可查不越权定性）；大构建前仍先核磁盘。
+- **诚实边界**：零端到端宣称维持——本批全部修复候操作者刷构建重启 CDP
+  复验回填（#36 取证即复验基准：引擎健康清单在案）；复验通过前不宣称
+  「包管理器/仓储已接入」。mock 绿不算数教训已三次入验（live 形状钉死
+  测试为本批主体之一）。
 
-## 前情（候验收闭环＋落线追平轮世代，全文见本文件 git 历史）
-09-17 07:4x（上轮两笔）：落线追平 3620830（落后 15 恰达上限照
-eaf700a 第 57 批先例）＋状态批 8b8cf5b（候验收三笔
-8e3e2b5/1138fef/a9a3180 经 5ddfe3a 收编登记＋第 83 批 [→桌面]
-知会消化＋四环全查零可领）——两笔经第 84 批 6c41c70 收编。更早
-：07:0x 追平 8e3e2b5＋状态批 1138fef＋读数补正 a9a3180；06:3x
-追平 c4cc9ae＋状态批 4cc6df5；06:1x–06:2x 追平 4faddc0＋状态批
-a582e78（c7eec0b 经 a37680a 验收闭环、025/v0.2 桌面义务全清）
-；05:3x–05:5x 025 P2 消费切片 f266712（经 eda2f60 验收）、形状
-核可 e6676e3、025 表态 0031004、024 P1 消费批 1049366、019 批 D
-。见 git 历史。
+## 前情（读数补正批世代，全文见本文件 git 历史）
+09-17 08:2x–08:4x 三笔簿记：状态批 f5cfc6b＋追平 7dccd3d（落后 15 恰达
+触发线照 eaf700a/3620830 先例）＋读数补正 035187c——均经集成第 86 批
+6f2bf7a 收编。更早见 git 历史。
 
-## 本轮交付（b4796cc 基线世代）
-- **状态批 f5cfc6b**（08:2x）——第 84 批收编回执消化登记（
-  3620830＋8b8cf5b 经 6c41c70，is-ancestor 双重实证）＋四环全查
-  （4ab946d 世代）零可领。
-- **追平一笔 7dccd3d**（08:4x；--no-ff，零自有内容；落后 15 恰
-  达上限照 eaf700a／3620830 先例纪律动作，竞态如实登记在合并消
-  息；inbound 非 collab 0 文件全 collab；桌面域零触碰 pathspec
-  实证；非 collab 面与 main 全等）。
-- **读数补正批（本批，恰本文件）**——竞态如实补正（f5cfc6b 落
-  库落后 11 → 同窗 main 前进 4 笔恰达 15 线 → 追平 7dccd3d）
-  ＋CHASE STOP 口径补正（不豁免触发线纪律义务）＋四环全查
-  （b4796cc 世代，零可领）＋待命声明。
+## 本轮交付（30f6a32 基线世代）
+- **追平 71bd088**（--no-ff，落后 26 全簿记＋ops 批；预检双法零冲突；
+  桌面域 inbound 零触碰；已经集成同窗收编）。
+- **缺陷①修复 0ec2cfc**（信封 operations 透传＋AppSnapshotV1 类型同步
+  ＋双向钉死测试）。
+- **缺陷②修复 a621e1c**（narrowCompletedDownloads 信封收窄＋七例测试
+  ＋修法自决申报在案）。
+- **缺陷②同类申报 856c530**（live-acquire-port＋catalog-browser-live
+  信封解包＋mock 重钉 live 形状＋防回摆钉死；独立成笔）。
+- **缺陷④呈现 4748970**（preload 自报翻转 false＋降级呈现）。
+- **状态批 6b98663**（#36 修复轮全录＋③候定名留言）。
+- **二度竞态追平 cda01d8**（--no-ff，落后 15 恰达线；inbound 全 collab
+  簿记零冲突）＋读数补正批（本批，恰本文件）。
 
 ## 在途/待他角色
-- **[等用户] 包管理器页 ready-p2 区块解锁＋v0.2「缓存数据」标注
-  呈现复验＋#31/#32/#33 同窗回填（候 dev 栈重启）**——025 全链
-  在库，重启即见；W25 真机走查开窗（O-2）；#25/#27/#28 回填。
-- **[等核心/产线] M7 桌面三外部锚点**（requestRun 对象选择事实
-  源提案／SDK 交接延伸词表／overlay 投影延伸批）——锚点落地桌
-  面即消费。
-- **[等集成] 本读数补正批＋状态批 f5cfc6b＋追平笔 7dccd3d 候随
-  轮验收（--no-ff）**——实质 diff 恰本文件一 collab 文件（追平
-  笔零自有内容照先例随验收合并自然收编）。本树无其它在途。
+- **[等用户] #36 四缺陷真机 CDP 复验回填**（操作者刷构建重启；①②④＋
+  同类笔一并复验）；既有等用户项维持：包管理器页 ready-p2 解锁＋v0.2
+  标注呈现复验（与 #33 同窗）、#25/#27/#28/#29 回填、W25（O-2）。
+- **[等核心/数据] 缺陷③字段名权威一行表态**（见留言；表态后桌面下一拍
+  单边修正＋投影接线＋live 形状测试，不等待其余项）。
+- **[等核心] mock-provider 分歧知会**（packages/orchestrator-provider
+  mock-provider.ts:320 downloads.listCompleted 回契约平铺 {downloads:[]}
+  ，live 为三键信封——dev mock 面下导入页下载区将诚实 unavailable；属
+  核心所有权域，桌面不代改；候核心按 live 面对齐或声明 mock 面语义）。
+- **[等集成] 本状态批＋代码四笔候随轮验收（--no-ff）**——实质 diff 恰
+  桌面所有权域 11 代码文件＋本文件；全链证据在案（02:4x）。
 
 ## 阻塞
-- 无阻塞。等待项均非阻塞。
+- 无阻塞。等待项均非阻塞（③候表态不影响①②④复验）。
 
 ## 下次合并意图
-**候验收对象＝读数补正批（本文件）＋状态批 f5cfc6b（零自有内容
-外恰本文件一 collab 文件）＋追平笔 7dccd3d（零自有内容）请集成
-随轮验收（--no-ff）。**提交后读数：领先 3（实质 0：追平笔零自
-有内容，两笔状态批恰本 collab 文件）、落后 0。追平 inbound 非
-collab 面 0 文件，无需复跑任何代码面。**CHASE STOP 延续（口径
-见上：触发线以下的前移留给下轮 brief 读数；恰达 15 触发线的纪
-律义务不受豁免）**。
-
-## 待命声明（第 6 步，如实）
-本轮（09-17 08:2x–08:4x，工作时段＋收尾时段，三笔簿记）：①date
-08:20 确认工作时段；brief 08:20 ①区一条 [→桌面]（wt-main 第 84
-批收编回执）消化——与本地 is-ancestor 双重实证（3620830/
-8b8cf5b 均 main 祖先，经 6c41c70 收编）逐项一致，候验收状态消除
-，零动作；失鲜工作树无；②状态批 f5cfc6b（恰本文件，当时读数落
-后 11 未过线不追平＋CHASE STOP 延续宣告）；③竞态如实补正：状
-态批落库后同窗集成落地 wt-2 收编 03c14a1＋第 85 批收束登记
-b4796cc，main 前进 4 笔至落后 15 恰达触发线——照 eaf700a／
-3620830 先例纪律追平 7dccd3d（--no-ff，新老双法预检零冲突〔老
-式 0 标记＋ort exit 0 tree 1478fd52〕，merge-base＝本树尖
-f5cfc6b，inbound 非 collab 0 文件 pathspec 实证，实际吸收恰五
-状态文件零冲突，桌面域零触碰，非 collab 面与 main 全等 diff 零
-文件，基线世代刷新 b4796cc）；CHASE STOP 口径补正＝不豁免恰达
-触发线的纪律义务，触发线以下前移照旧留给下轮 brief 读数；④四环
-全查（b4796cc 观测世代）——本树在途＝追平笔＋读数补正批无半途
-切片、BOARD 桌面行不在追平 inbound 等效继承上轮结论（候用户复
-验项全跳过、#34 非桌面、#35 闭环、M7 锚点候核心/产线、[需用户]
-全跳过）、outline 2.0.12 继承 W18/W19/W24 交付维持＋W25 候用户
-O-2 跳过＋M6/M7 桌面面在库、M5 关门候 W25／M7 门验收候门序／M8
-未开窗；零可领不开新切片；⑤三笔全 collab 零代码，collab-only
-免全量如实声明（追平后非 collab 面与 main 全等实证，桌面域代码
-自 a37680a 验收世代零变更，证据继承集成第 79 批合并树复跑世代
-＋第 80/81/83/84 批登记批共用确认在案；磁盘约 6.8G 近满注记维
-持，零代码不触发全量链接）。零新代码交付、零新阻塞、零新升级项
-。**零端到端宣称维持**——真机 ready-p2 解锁与 v0.2 标注呈现候
-用户 dev 栈重启（#33 同窗），走查归 W25（O-2）。退出待命，候用
-户复验回填、核心/产线 M7 锚点、集成验收、下轮 brief 或新指派；
-在手无半途切片。
+**候验收对象＝缺陷①②④修复批（0ec2cfc/a621e1c/856c530/4748970）＋
+状态批（6b98663＋本读数补正批）＋追平笔 cda01d8（零自有内容）请集成
+随轮验收（--no-ff）。**桌面域代码变更批，全链证据 02:4x 在案；含
+packages/contracts TS 面变更（AppSnapshotV1 operations 字段，登记面），
+contracts 66/66 绿在案。提交后读数：领先 7（实质 6＝代码 4＋状态批 2
+恰本文件；追平 cda01d8 零自有内容计数，71bd088 已经集成同窗收编不在
+领先清单）、落后 0。上批订正：159550c 消息面「实质 5」为落笔时点读数
+（补正批自身未计），本批定格为实质 6。跨角色验收照门序——本批无跨域
+文件，桌面域内合并。
 
 ## 留言
-- [→集成] **第 84 批收编回执消化＋恰达线追平验收请求**：上轮两
-  笔（追平 3620830＋状态批 8b8cf5b）已经你方 6c41c70 收编，收货
-  （is-ancestor 双重实证），你方 [→桌面] 知会消化。**竞态如实
-  登记**：我方状态批 f5cfc6b 落库时落后 11，你方同窗落地 wt-2
-  收编 03c14a1＋第 85 批收束登记 b4796cc 使我树恰达 15 触发线
-  ，已照 eaf700a／3620830 先例自理追平 7dccd3d（--no-ff 零自有
-  内容；inbound 非 collab 0 文件，15 笔全 collab 簿记；桌面域零
-  触碰 pathspec 实证；非 collab 面与 main 全等）。**候验收对象
-  ＝读数补正批（本文件）＋状态批 f5cfc6b＋追平笔 7dccd3d，请随
-  轮验收（--no-ff）**。提交后读数：领先 3 实质 0、落后 0；
-  CHASE STOP 延续（口径补正在案：恰达触发线纪律义务不受豁免，
-  触发线以下前移留给下轮 brief 读数）。桌面侧无新请求。
-- （回执不回执：wt-main 第 84 批 [→桌面] 收编回执以状态批
-  f5cfc6b＋本批消化登记兑现；历史留言已消化归档，在途事项以
-  BOARD 与本状态文件当前焦点为准。）
+- [→核心/数据] **缺陷③字段名权威候一行表态（桌面下一拍单边修正，不等
+  待其余项）**：环境检测条目字段名分歧两处——(1) TS 面
+  application-contract.ts:1674 声明 `checkId`（注释明言「修复计划与表现
+  层按它取键」），引擎 environment.rs:180 `pub id`（camelCase 序列化即
+  `id`；操作者 CDP 键集实证）；mock provider 用 checkId＝mock/TS 面一
+  致、live 独走 id。**桌面候定名＝`checkId`**（语义明确：检查项身份非泛
+  id；TS 面＋mock＋投影测试已在此词上；引擎侧一行 serde rename 即对齐，
+  wire 变更归核心权威）。(2) live 条目键集含 `schemaVersion`（逐条目）
+  而 TS 面 EnvironmentCheckItemV01 未声明——表态定名时请一并处置（TS 面
+  补声明或引擎去除，键闭集纪律两可，桌面按权威面照办）。表态落地后桌面
+  下一拍：按权威面单边修正＋contract-projection.ts:70-81
+  projectCheckItem／DeployerPage.tsx:331 投影接进部署页条目模型＋补
+  live 形状测试（#31 标题空即此链修复的验收点）。
+- [→核心] **mock-provider 分歧知会**：mock-provider.ts:320
+  downloads.listCompleted 回契约平铺 {downloads:[]}，live 为三键信封
+  （本批 a621e1c 已按 live 面收窄）——dev mock 面下导入页下载区将诚实
+  unavailable（不冒充数据）；候选核心按 live 面对齐 mock（信封包裹），
+  桌面不代改核心域文件。
+- [→集成] **#36 修复批验收请求＋②修法自决申报**：四笔代码（0ec2cfc
+  ①信封 operations／a621e1c ②下载区信封收窄／856c530 ②同类申报——
+  仓储/目录 live 端口解包，独立成笔可整体回退／4748970 ④preload 自报
+  翻转）＋状态批。②两案自决＝渲染层嵌套收窄，路由层统一解包否决（wire
+  异构＋Kernel 不该长按族 wire 知识＋破坏三个既有信封感知端口），理由
+  在案候追认。**真机复验归操作者（#36 必做项），零端到端宣称维持至回填
+  **。桌面侧无新请求。
+- （回执不回执：brief 02:16 ①区各条 [→集成] 与本树无指向项；上轮
+  [→桌面] 无新留言；历史留言已消化归档，在途事项以 BOARD #36 与本状态
+  文件当前焦点为准。）

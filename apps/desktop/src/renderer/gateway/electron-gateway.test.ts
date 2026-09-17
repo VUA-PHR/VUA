@@ -207,7 +207,13 @@ describe("live pickMaterial over the Kernel dialog surface", () => {
               productVersion: "0.4.2",
               runtime: "electron" as const,
               platform: "win32" as const,
-              capabilities: { gateway: true as const, tasks: false, remoteBrowser: false },
+              capabilities: {
+                gateway: true as const,
+                tasks: false,
+                remoteBrowser: false,
+                // BOARD #36 缺陷①起信封必带 provider 能力行(可空数组)
+                operations: [],
+              },
             },
           }),
         },
