@@ -1,135 +1,141 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 0716644
+baseline_commit: 1aa0678
 role: 桌面
 updated: 2026-09-18
 ---
 ## 当前焦点
-**[→桌面] 4748970 回退批落地（BOARD #36④ 更正,2026-09-18 05:4x–
-05:5x,工作时段;追平合并壳 e35aba7＋revert 批 912f72f＋本状态批）
-——消化 BOARD 0716644 更正批处置①「桌面回退 4748970 即刻恢复
-功能」,恢复 Booth 内嵌浏览,单拍单一任务**:
+**[→桌面] #37 修复批落地（2026-09-18 06:1x–06:2x,工作时段;追平壳
+9b38d6e＋修复批 59ee6e8＋本状态批）——消化 BOARD #37（1aa0678
+操作者登记）「内嵌浏览在 dev 应用内完全无法进入」,单拍单一任务**:
 
-- **背景与定性（照 BOARD 0716644 更正批全文消化,桌面全盘认账）**：
-  用户目视复验质询「Booth 内嵌浏览明明已实现」——经代码＋历史实证
-  **用户正确**:内嵌浏览基座随壳交付（main.ts:528 RemoteContentManager
-  allowedOrigins booth.pm 全接线＋preload vua:remote-content 七动作
-  窄面＋ImportPage 浏览面板）,**preload 自报 remoteBrowser:true 系
-  交付物本身**（875c85a IMP-2 batch B item 1,仲裁 015 §11 方案 a）;
-  remote-content.ts「#26 用户实测退出崩溃修复」与「导航条用户实测
-  缺口修复」两处留痕＝功能被真实使用过。原④定性错误根源＝把两处
-  未随 F4 落地翻转的陈旧常量（gateway-router.ts:414 旧三布尔信封
-  硬编码 false——恰缺陷①被替换信封的残余面＋provider-bootstrap
-  DESKTOP_CAPABILITIES「F4 前」陈旧行）误读为「功能不存在」,而真实
-  功能走 vua.remoteContent IPC 专面不经 gateway;4748970（09-18
-  03:0x）据此把正确的 true 翻 false＝**回归**。操作者 05:2x 复验
-  回执沿同一错误口径记④「实达」,已经 0716644 一并撤回更正。
-- **本拍执行三步**：①追平壳 e35aba7＝--no-ff 合并 main 0716644
-  （merge-base＝本树尖 86c05de,领先 0 纯追平;双法预检零冲突——
-  老式 0 标记＋ort --write-tree exit 0 tree a29f527b;inbound 非
-  collab 面恰核心 2 文件〔mock-provider.ts＋.test.ts,第 91 批
-  08fa61e 已收编内容〕＋collab 6 文件,与各批登记并集一致无夹带,
-  桌面域 inbound 零触碰）;②revert 批 912f72f＝`git revert 4748970`
-  零冲突（4748970..HEAD 间 preload.ts 零后续改动）,恰 preload.ts
-  一文件 4+/8-＝4748970 的精确逆;remoteBrowser:true 恢复＋原注释
-  「内嵌浏览基座(remote-content + U9 导航策略)随本壳交付」原语机械
-  恢复;**diff vs 4748970^ 零行＝与 875c85a 交付世代逐字节一致**;
-  ③桌面 check 全链绿（见证据）。
-- **证据（本机本树 VUA-3,05:4x–05:5x）**：df C 盘余 12G 先查（较
-  上拍 16G 再降,近满注记维持;本批零 Rust 面变更,cargo fresh 跳过
-  未触用户 provider 文件锁）;桌面 check 全链绿——typecheck 双
-  tsconfig＋vitest 78 文件 647/647（含 gateway-router 25/25＋
-  **import-model 10/10 两态测试双向在案全过**,与 4748970 前世代
-  读数一致）＋build＋boundary＋i18n＋contrast＋check:leak 155 指纹
-  零泄漏＋forest-leak;contracts 零变更免复跑（revert 恰桌面 1
-  文件,f8ad6cb 世代 66/66 在案有效）。变更面恰桌面所有权域 1 文件
-  （4+/8-）。
-- **④′能力面对齐切片本拍不做（BOARD 0716644 处置②,候下一拍
-  专项）**：能力面三处分叉（gateway 信封硬编码 false＋provider ops
-  desktop.remoteBrowser unavailable 陈旧行 vs 壳自报/已交付事实）
-  的对齐——信封随壳自报实值＋provider 行改注/路由决策＋三面 live
-  形状测试——本拍零触碰;gateway-router.ts:414 与 provider-bootstrap
-  陈旧行维持现状如实申报,不因本批回退而改读。
+- **背景与根因（照 BOARD #37 登记全文消化）**：用户目视复验质询
+  「网页界面没有退出/在外面也没有进入」触发,操作者 CDP 实证——
+  素材导入页云端面板自动打开与「打开」按钮在 dev（main.tsx:46
+  StrictMode）下全部瞬间自关,四采样无视图无导航条无报错。根因
+  ＝#25「卸载即关」修复引入的 disposedRef 只在清理效果置 true、
+  无挂载复位——StrictMode 效果双调用（mount→cleanup→mount）后
+  标志永真,此后任意 open 的 then 竞态兜底
+  if(disposedRef.current) close(viewId) 把每个新视图立即关闭
+  （ImportPage.tsx :70/:89-100/:104-113）,auto-open 同路径同死
+  （:119-124）。代码核对与登记逐行一致,桌面认账。
+- **修法（登记两案择「实例代次比较」,自决申报理由）**：登记建议
+  的「配对复位」可修 #37 本体,但 StrictMode 双 auto-open 下首挂
+  的 open 在次挂后落定时标志已复位=false——孤儿视图不被关闭,
+  留 dev-only 泄漏形态（恰 #25 修复要防的「重开泄漏」)。代次模型
+  两面同修:挂载与卸载都推进代次,open 发起捕获当前代次、落定比较
+  ——活跃挂载落定保留（#37 修复）,已卸载实例或过期挂载落定随即
+  关闭（#25 语义保持＋首挂孤儿视图精确关闭,无泄漏）。
+- **本拍执行三步**：①追平壳 9b38d6e＝--no-ff 合并 main 1aa0678
+  （merge-base＝本树尖 a75d2ea,领先 0 落后 4 纯追平;零冲突;
+  inbound 恰 collab 2 文件〔BOARD＋wt-main〕＝92 批收编＋操作者
+  d721e80④复验回填＋1aa0678 #37 登记,桌面域 inbound 零触碰）;
+  ②修复批 59ee6e8＝恰桌面域三文件——import-model.ts 新增
+  BrowsePanelLifecycle 纯对象模型（mount/unmount/capture/isStale,
+  挂载卸载推进代次）＋ImportPage.tsx 接线（lifecycleRef 替换
+  disposedRef;卸载清理 unmount()＋保留 viewIdRef 显式关托管视图
+  ＝#25 卸载即关不回退;openAddress then 代次失配即关＝#25 在途
+  竞态兜底不回退;catch 守卫卸载后不再 setState;auto-open 注释
+  更新）＋import-model.test.ts 新增三时序测试;③桌面 check 全链
+  绿（见证据）。
+- **测试面与诚实申报（照登记「如实申报覆盖面」）**：生命周期
+  代次提取为纯模型后,完整时序在无 DOM 测试面锁定——StrictMode
+  双挂载时序（首挂过期 open 失配关孤儿＋次挂 open 保留＝缺陷点
+  ＋手动 open 保留）、真实卸载语义（卸载后落定失配即关＝#25 不
+  回退）、生产单挂载全周期,import-model 13/13（原 10＋新增 3）。
+  **组件效果接线未做组件级测试**——仓库无 jsdom/testing-library
+  基础设施（渲染层测试全为纯逻辑 *.test.ts）,新测试依赖引入系
+  基础设施决策不在本拍自决范围,如实申报不假造;真机验收归操作者
+  CDP 全链复验（登记既定门）。
+- **证据（本机本树 VUA-3,06:1x–06:2x）**：df C 盘余 12G 先查
+  （与操作者注记一致,近满注记维持;本批零 Rust 面变更,cargo
+  fresh 跳过未触用户 provider 文件锁）;桌面 check 全链绿——
+  typecheck 双 tsconfig 0 错误＋vitest 78 文件 650/647→650（含
+  import-model 13/13 新增三时序测试;gateway-router 等既有面随
+  全量全绿）＋build＋boundary＋i18n＋contrast＋check:leak 155
+  指纹零泄漏＋forest-leak。变更面恰桌面所有权域 3 文件（120+/19-）。
 - **环境事实（照操作者注记）**：dev 栈由操作者管理运行中（vite
-  5173＋electron CDP 51995＋provider 随 electron 树）,本树全程未
-  触碰;回退合并入库后操作者刷构建复验——回退后 CDP 复验内嵌浏览
-  面板恢复,随后 BOARD #36 行④改记「回归已修复」（BOARD 处置③,
-  本拍不代记,候复验回填）。
-- **诚实边界**：零端到端宣称维持——本批只证明代码面恢复＋测试全
-  绿;内嵌浏览真机可用性本拍未新增真机证据（历史真实使用留痕在案,
-  回退后复验归操作者刷构建 CDP）。
+  5173＋electron CDP 51995＋provider 随 electron 树）,本树全程
+  未触碰;修复入库后操作者重编重验——CDP「打开→固定导航条→
+  关闭」全链复验通过后 #37 行闭环（本拍不代记）,用户终局目视
+  确认随其后。
+- **诚实边界**：零端到端宣称维持——本批只证明代码面修复＋测试
+  全绿;修复后 dev 应用内行为本拍未新增真机证据（StrictMode 时序
+  由模型面测试锁定,组件接线与真机呈现候操作者 CDP 复验）。
 
 ## 前情（机械跟随批世代,全文见本文件 git 历史）
-09-18 03:3x–03:4x 机械跟随批 f8ad6cb（contracts bdl 六类型信封
-对齐＋gateway-router 测试跟随）＋耦合合并壳 53a043f/83b87bd,已经
-第 90 批 1a21f94／第 91 批 e5502d7 收编入库;更早:缺陷③消费面
-3c37d19 经 5334f0d、#36 修复批八笔经 c89d17f。更早见 git 历史。
+09-18 05:4x–05:5x 4748970 回退批三笔（e35aba7＋912f72f＋状态批
+a75d2ea）经第 92 批 c05dbdc 收编入库,操作者 d721e80 已回填 #36
+行④「回归已修复」（IPC 面直调 open 实证通）——本拍 #37 系其
+延续:面板 React 组件面在 StrictMode 下的残余死点。更早:机械跟随
+批 f8ad6cb、缺陷③消费面 3c37d19、#36 修复批八笔,见 git 历史。
 
-## 本轮交付（0716644 基线世代）
-- **追平合并壳 e35aba7**（零自有内容,吸收 main 0716644）。
-- **revert 批 912f72f**（恰 apps/desktop/src/electron/preload.ts
-  一文件,4748970 精确逆,全链证据在案）。
+## 本轮交付（1aa0678 基线世代）
+- **追平合并壳 9b38d6e**（零自有内容,吸收 main 1aa0678）。
+- **修复批 59ee6e8**（恰桌面域 3 文件:import-model.ts 模型＋
+  ImportPage.tsx 接线＋import-model.test.ts 时序测试,全链证据
+  在案）。
 - **本状态批**（恰本文件,collab-only）。
 
 ## 在途/待他角色
-- **[等集成] e35aba7＋912f72f＋本状态批候随轮验收（--no-ff）**：
-  实质对象＝revert 批 912f72f（恰桌面 1 文件,自树全链证据在案,
-  全量复跑候你方合并门照惯例）＋本状态批（collab-only 免全量）;
-  追平壳零自有内容照先例自然收编。
-- **[→操作者] 回退后刷构建＋CDP 复验**：内嵌浏览面板恢复呈现
-  （badge＋地址栏＋自动打开回到可用态）;复验回填后 BOARD #36 行④
-  改记「回归已修复」;#31 条目名称复验点等既有项随同窗不变。
-- **[等桌面/下一拍] ④′能力面对齐切片专项**（BOARD 处置②）：三面
-  分叉对齐＋live 形状测试,候下一拍,不与本批混做。
+- **[等集成] 9b38d6e＋59ee6e8＋本状态批候随轮验收（--no-ff）**：
+  实质对象＝修复批 59ee6e8（恰桌面 3 文件,自树全链证据在案,全量
+  复跑候你方合并门照惯例）＋本状态批（collab-only 免全量）;追平
+  壳零自有内容照先例自然收编。
+- **[→操作者] #37 修复后重编＋CDP 全链复验**：「打开→固定导航条
+  →关闭」全链通过后 #37 行闭环回填（含自动打开路径目视）,用户
+  终局目视确认随其后;本拍不代记。
+- **[等桌面/下一拍] ④′能力面对齐切片专项**（BOARD 0716644 处置
+  ②,维持）：三面分叉对齐＋live 形状测试,候下一拍,不与本批混做;
+  gateway-router.ts:414＋provider 陈旧行维持现状如实申报。
 - **[等用户] 既有项维持**：ready-p2 解锁＋v0.2「缓存数据」标注
-  呈现复验（与 #33 同窗,05:2x 重启后已解锁候目视确认）、
-  #25/#27/#28/#29 回填、W25（O-2）。
+  呈现复验（与 #33 同窗）、#25/#27/#28/#29 回填、W25（O-2）。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝revert 批 912f72f（代码恰 1 文件）＋本状态批（恰本
-文件）,请集成随轮验收（--no-ff）,写明「4748970 回退批（BOARD
-#36④ 更正）」;追平壳 e35aba7 零自有内容随验收自然收编。**提交后
-读数:领先 3（合并壳 1＋revert 1＋本状态批 1;实质 1＝revert 批）、
-落后 0（0716644 世代）。若下轮 brief 读数落后过 15 线照则自理
-追平。
+**候验收对象＝修复批 59ee6e8（代码恰 3 文件）＋本状态批（恰本
+文件）,请集成随轮验收（--no-ff）,写明「#37 修复批」;追平壳
+9b38d6e 零自有内容随验收自然收编。**提交后读数:领先 3（合并壳
+1＋修复 1＋本状态批 1;实质 1＝修复批）、落后 0（1aa0678 世代）。
+若下轮 brief 读数落后过 15 线照则自理追平。
 
 ## 待命声明（第 6 步,如实）
-本轮（2026-09-18 05:4x–05:5x,工作时段,三笔:e35aba7＋912f72f＋
-本状态批）：①date 05:43 确认工作时段;brief ①区指向本树唯一
-留言＝wt-2 去桥办结回执（收货消化零动作,见留言）,失鲜工作树无;
-②领任务＝操作者注记单拍单一任务「回退 4748970 恢复 Booth 内嵌
-浏览」（BOARD 0716644 更正批处置①指派桌面）,照办;③执行＝追平
-e35aba7（双法预检零冲突,inbound 与登记一致无夹带）→revert 912f72f
-（零冲突,恰 1 文件 4+/8-,diff vs 4748970^ 零行,原注释原语恢复）
-→check 全链绿（df 12G 先查;vitest 647/647 含 import-model 10/10
-两态双向全过;leak 155 零泄漏＋forest-leak;cargo fresh 跳过未触
-用户 provider 文件锁）;④所有权核验＝恰桌面域 preload.ts 一文件,
-其它域零触碰;⑤④′能力面对齐切片本拍不做照注记留候下一拍,
-gateway-router.ts:414＋provider 陈旧行维持现状如实申报;⑥环境
-事实＝操作者 dev 栈（vite 5173＋electron CDP 51995）全程未触碰,
-回退入库后操作者刷构建复验;⑦零端到端宣称维持——本批零真机新
-证据,复验归操作者 CDP,BOARD 行④改记候复验回填。退出待命,候
-集成验收本批、操作者刷构建 CDP 复验回填、下一拍④′专项或新
-指派;在手无半途切片、无未提交改动。
+本轮（2026-09-18 06:1x–06:2x,工作时段,三笔:9b38d6e＋59ee6e8＋
+本状态批）：①date 06:14 确认工作时段;brief ①区指向本树唯一
+留言＝wt-2 去桥办结回执（收货消化零动作）,失鲜工作树无;②领任务
+＝操作者注记最高优先领 BOARD #37（1aa0678 先读全文）,照办;
+③执行＝追平 9b38d6e（零冲突,inbound 恰 collab 2 文件无夹带）→
+修复 59ee6e8（代次模型＋组件接线＋三时序测试;修法自决申报＝登记
+两案中择代次比较,理由＝配对复位留 StrictMode 首挂孤儿视图
+dev-only 泄漏）→check 全链绿（df 12G 先查;vitest 78 文件 650/
+650 含 import-model 13/13;leak 155 零泄漏＋forest-leak;cargo
+fresh 跳过未触用户 provider 文件锁）;④所有权核验＝恰桌面域
+3 文件,其它域零触碰;⑤测试覆盖面如实申报＝模型时序全锁定＋
+组件接线无组件级测试（无 jsdom/testing-library 基础设施,新
+依赖不自决）,真机验收归操作者 CDP;⑥环境事实＝操作者 dev 栈
+（vite 5173＋electron CDP 51995）全程未触碰;⑦零端到端宣称
+维持。退出待命,候集成验收本批、操作者重编 CDP 复验回填、
+下一拍④′专项或新指派;在手无半途切片、无未提交改动。
 
 ## 留言
-- [→集成] **4748970 回退批（BOARD #36④ 更正）验收请求**：候验收
-  对象＝revert 批 912f72f（恰 apps/desktop/src/electron/preload.ts
-  一文件 4+/8-＝4748970 精确逆;依据 BOARD 0716644 更正批处置①——
-  preload 自报 true 系 875c85a 交付物,4748970 系回归,回退恢复
-  875c85a 交付世代,diff vs 4748970^ 零行实证）＋本状态批（恰本
-  文件,collab-only 免全量）;追平壳 e35aba7（merge-base＝86c05de
-  领先 0 纯追平,双法预检零冲突,inbound 非 collab 恰核心 2 文件
-  与 91 批登记一致）零自有内容随验收自然收编。自树全链证据在案
-  （05:4x–05:5x:typecheck 0＋vitest 647/647〔gateway-router
-  25/25＋import-model 10/10 两态双向〕＋build＋boundary＋i18n＋
-  contrast＋leak 155 零泄漏＋forest-leak）,全量复跑候你方合并门
-  照惯例。④′能力面对齐切片另拍,BOARD 行④「回归已修复」改记候
-  操作者回退后 CDP 复验回填,本批不代记。
-- （wt-2 [→桌面] 去桥办结回执收货消化：08fa61e 已经 91 批入库,
-  去桥条件闭环,核心侧无动作请求——brief ①区该留言就地消化,
-  勿重复;历史留言已消化归档,在途以 BOARD #36 与本状态文件为准。）
+- [→集成] **#37 修复批验收请求**：候验收对象＝修复批 59ee6e8
+  （恰 apps/desktop/src/renderer/features/import/ 三文件 120+/19-
+  ——import-model.ts 新增 BrowsePanelLifecycle 代次模型＋
+  ImportPage.tsx disposedRef→lifecycle 接线（#25 卸载即关与在途
+  竞态兜底两语义保留）＋import-model.test.ts 新增三时序测试
+  （StrictMode 双挂载孤儿关闭＋活跃 open 保留＝#37 缺陷点＋卸载
+  失配＝#25 不回退）;依据 BOARD #37 登记 1aa0678 根因分析,修法
+  择登记两案中「实例代次比较」并申报理由）＋本状态批（恰本文件,
+  collab-only 免全量）;追平壳 9b38d6e（merge-base＝a75d2ea 领先
+  0 落后 4 纯追平,零冲突,inbound 恰 collab 2 文件）零自有内容随
+  验收自然收编。自树全链证据在案（06:1x–06:2x:typecheck 双 0＋
+  vitest 78 文件 650/650〔import-model 13/13〕＋build＋boundary
+  ＋i18n＋contrast＋leak 155 零泄漏＋forest-leak）,全量复跑候
+  你方合并门照惯例。覆盖面诚实申报：组件接线无组件级测试（仓库
+  无组件测试基础设施,新依赖不自决）,#37 闭环候操作者重编 CDP
+  全链复验回填,本批不代记。
+- （wt-2 [→桌面] 去桥办结回执已在上拍消化归档;brief ①区本拍
+  无新指向本树的待办留言。）
