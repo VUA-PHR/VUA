@@ -13,6 +13,7 @@ import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
   BOOTH_HOME_URL,
   browseAvailability,
+  createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
   initialEmbeddedBrowseState,
@@ -37,7 +38,10 @@ import "./import-page.css";
  *   视图生命周期随页面(#25 定性修复 2026-09-13):面板卸载(切页)即关闭
  *   在途视图——页面是视图唯一控制面,卸载不关会留下无导航条、不可控的
  *   全屏视图与重开泄漏;U9 四分法导航在 Main 侧生效,本页不做第二次分流;
- *   blocked 事件诚实呈现。
+ *   blocked 事件诚实呈现。生命周期守卫用代次模型(#37 修复 2026-09-18):
+ *   原卸载布尔在 StrictMode 效果双调用后永真,自动打开与「打开」全部
+ *   瞬间自关,内嵌浏览无法进入;代次比较使活跃挂载的 open 保留、已卸载
+ *   或过期挂载的 open 随即关闭。
  *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
  * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
    任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
@@ -62,12 +66,15 @@ function EmbeddedBrowsePanel({
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
   const [address, setAddress] = useState("");
   const [openFailed, setOpenFailed] = useState(false);
-  // #25 定性修复(视图生命周期随页面):Main 侧视图在壳导航切页后仍存续,
-  // 而导航条/视图状态随本面板卸载——失联视图既无导航条也不可控(渲染层
-  // viewId 判空,关闭入口缺席),重挂载首开还会叠加无人能关的泄漏视图。
-  // 卸载标记＋在途视图 ref 支撑「卸载即关」;open 在卸载后才 resolve 的
-  // 竞态由 then 内卸载检查兜底,不残留失联视图
-  const disposedRef = useRef(false);
+  // 视图生命周期守卫(#25 卸载即关 + #37 StrictMode 修复):Main 侧视图在
+  // 壳导航切页后仍存续,而导航条/视图状态随本面板卸载——失联视图既无导航
+  // 条也不可控(渲染层 viewId 判空,关闭入口缺席),重挂载首开还会叠加无人
+  // 能关的泄漏视图。守卫用生命周期代次(import-model):挂载与卸载都推进
+  // 代次,open 落定按「捕获代次 = 当前代次?」判定——原 disposedRef 布尔
+  // 只在清理置 true、无挂载复位,StrictMode 效果双调用(mount→cleanup→
+  // mount)后永真,每个新视图被竞态兜底立即关闭(#37 根因);代次模型下
+  // 活跃挂载的 open 落定即保留,已卸载/过期挂载的 open 落定即关闭
+  const lifecycleRef = useRef(createBrowsePanelLifecycle());
   const viewIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -83,12 +90,13 @@ function EmbeddedBrowsePanel({
     viewIdRef.current = browse.viewId;
   }, [browse.viewId]);
 
-  // 卸载即关(#25 定性修复):素材导入页是视图的唯一控制面(固定导航条随
-  // 页面渲染,壳导航常驻面没有第二套视图控制),带着视图切页＝留下无导航
-  // 条的全屏视图;页面卸载时显式关闭,重挂载首开不叠加泄漏视图
+  // 卸载即关(#25 定性修复;#37 起卸载接线同时推进生命周期代次):素材导入
+  // 页是视图的唯一控制面(固定导航条随页面渲染,壳导航常驻面没有第二套视
+  // 图控制),带着视图切页＝留下无导航条的全屏视图;页面卸载时显式关闭已
+  // 托管视图,并在途 open 落定时代次失配随即关闭,重挂载首开不叠加泄漏视图
   useEffect(
     () => () => {
-      disposedRef.current = true;
+      lifecycleRef.current.unmount();
       const current = viewIdRef.current;
       if (current !== null) {
         void window.vua?.remoteContent?.close(current).catch(() => {
@@ -101,21 +109,27 @@ function EmbeddedBrowsePanel({
 
   const openAddress = (url: string) => {
     setOpenFailed(false);
-    void window.vua?.remoteContent?.open({ url }).then((state) => {
-      // 卸载后 open 才落定的竞态:视图随即关闭,不留失联视图
-      if (disposedRef.current) {
-        void window.vua?.remoteContent?.close(state.viewId).catch(() => {});
+    const remote = window.vua?.remoteContent;
+    if (remote === undefined) return;
+    const generation = lifecycleRef.current.capture();
+    void remote.open({ url }).then((state) => {
+      // open 落定时该 open 若属已卸载实例(真实切页)或已过期挂载
+      // (StrictMode 首挂的自动打开),代次失配:视图随即关闭,不留失联/
+      // 孤儿视图;活跃挂载的 open 正常保留(#37 修复点)
+      if (lifecycleRef.current.isStale(generation)) {
+        void remote.close(state.viewId).catch(() => {});
       }
     }).catch(() => {
       // 窄面拒绝(清单外来源):诚实呈现,不放行不猜测(Main 确认层语义
-      // 属导航策略面,页内确认层随批 B)
-      if (!disposedRef.current) setOpenFailed(true);
+      // 属导航策略面,页内确认层随批 B);面板已卸载则不再呈现
+      if (!lifecycleRef.current.isStale(generation)) setOpenFailed(true);
     });
   };
 
   // 首开自动导航默认首页(booth.pm,允许清单内;用户实测缺口修复):
   // 仅面板挂载且无打开视图时执行一次——用户关闭视图后不强行重开,
-  // 后续导航历史照常保留
+  // 后续导航历史照常保留。StrictMode 双调用下首挂的 open 在次挂后
+  // 落定,由生命周期代次判失配随即关闭,只留次挂(#37 修复)视图
   useEffect(() => {
     if (availability.kind !== "available") return;
     if (window.vua?.remoteContent === undefined) return;
