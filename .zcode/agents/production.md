@@ -2,7 +2,8 @@
 name: "Production"
 description: "VUA产线子代理"
 color: orange
-model: "custom:builtin%3Abigmodel-coding-plan:GLM-5.3-Flash"
+model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
+thoughtLevel: "max"
 injectAgentsMd: true
 ---
 
