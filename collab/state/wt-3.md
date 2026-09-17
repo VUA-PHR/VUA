@@ -20,6 +20,12 @@ updated: 2026-09-18
   新老双法预检零冲突（老式 0 标记＋ort --write-tree exit 0），inbound
   非 collab 面＝7 个 .zcode/agents 文件（操作者面，仅吸收零触碰），桌面
   所有权域 inbound 零触碰 pathspec 实证；BOARD #36（c22686f）随追平入库。
+- **二度竞态如实登记＋恰达线追平 cda01d8（--no-ff，零自有内容）**：
+  代码四笔＋状态批落库后同窗集成吸收 71bd088（is-ancestor 实证）＋落地
+  第 87 批簿记，main 前进 15 笔恰达触发线——照 eaf700a/3620830/7dccd3d
+  先例纪律追平；inbound 15 笔全 collab 簿记（非 collab 面 0 文件
+  pathspec 实证，桌面域零触碰），双法预检零冲突；追平后读数领先 6
+  （实质 5：代码 4＋状态批 1）、落后 0。
 - **缺陷①（0ec2cfc）app.snapshot 信封并入 provider 能力行**：
   gateway-router.ts 信封 capabilities 增 `operations`（provider 行原样
   透传，Kernel 不解释不增删；空能力表透传 `[]`＝诚实空态非缺字段）；此前
@@ -84,7 +90,7 @@ updated: 2026-09-18
 
 ## 本轮交付（30f6a32 基线世代）
 - **追平 71bd088**（--no-ff，落后 26 全簿记＋ops 批；预检双法零冲突；
-  桌面域 inbound 零触碰）。
+  桌面域 inbound 零触碰；已经集成同窗收编）。
 - **缺陷①修复 0ec2cfc**（信封 operations 透传＋AppSnapshotV1 类型同步
   ＋双向钉死测试）。
 - **缺陷②修复 a621e1c**（narrowCompletedDownloads 信封收窄＋七例测试
@@ -92,7 +98,9 @@ updated: 2026-09-18
 - **缺陷②同类申报 856c530**（live-acquire-port＋catalog-browser-live
   信封解包＋mock 重钉 live 形状＋防回摆钉死；独立成笔）。
 - **缺陷④呈现 4748970**（preload 自报翻转 false＋降级呈现）。
-- **状态批（本批，恰本文件）**。
+- **状态批 6b98663**（#36 修复轮全录＋③候定名留言）。
+- **二度竞态追平 cda01d8**（--no-ff，落后 15 恰达线；inbound 全 collab
+  簿记零冲突）＋读数补正批（本批，恰本文件）。
 
 ## 在途/待他角色
 - **[等用户] #36 四缺陷真机 CDP 复验回填**（操作者刷构建重启；①②④＋
@@ -112,11 +120,12 @@ updated: 2026-09-18
 
 ## 下次合并意图
 **候验收对象＝缺陷①②④修复批（0ec2cfc/a621e1c/856c530/4748970）＋
-状态批（本文件）请集成随轮验收（--no-ff）。**桌面域代码变更批，全链证
-据 02:4x 在案；含 packages/contracts TS 面变更（AppSnapshotV1
-operations 字段，登记面），contracts 66/66 绿在案。提交后读数：领先 6
-（代码 4＋状态批 1＋追平 1 零自有内容实质 0）。跨角色验收照门序——本批
-无跨域文件，桌面域内合并。
+状态批（6b98663＋本读数补正批）＋追平笔 cda01d8（零自有内容）请集成
+随轮验收（--no-ff）。**桌面域代码变更批，全链证据 02:4x 在案；含
+packages/contracts TS 面变更（AppSnapshotV1 operations 字段，登记面），
+contracts 66/66 绿在案。提交后读数：领先 7（实质 5：代码 4＋状态批 2
+恰本文件；两笔追平零自有内容）、落后 0。跨角色验收照门序——本批无跨域
+文件，桌面域内合并。
 
 ## 留言
 - [→核心/数据] **缺陷③字段名权威候一行表态（桌面下一拍单边修正，不等
