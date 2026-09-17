@@ -176,7 +176,13 @@ pub enum EnvironmentPresence {
 pub struct EnvironmentCheckItemV1 {
     pub schema_version: u8,
     /// Stable check id, e.g. `steam`, `unity_editors` (fix plans and the
-    /// frontend severity table key on it).
+    /// frontend severity table key on it). The wire name is the frozen
+    /// application-contract v0.1 face: `checkId` (protocol §环境快照语义
+    /// and the TS contract face agree). This struct was born pre-freeze
+    /// with `id` and the BG-16 verbatim passthrough leaked that spelling
+    /// to the wire; the serde rename restores conformance with the frozen
+    /// contract (core authority ruling for BOARD #36 defect ③, 2026-09-18).
+    #[serde(rename = "checkId")]
     pub id: String,
     pub zone: Zone,
     pub presence: EnvironmentPresence,
