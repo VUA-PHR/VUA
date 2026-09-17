@@ -3,7 +3,7 @@ name: "Integration"
 description: "VUA集成子代理"
 color: purple
 model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
-thoughtLevel: "enabled"
+thoughtLevel: "high"
 injectAgentsMd: true
 ---
 

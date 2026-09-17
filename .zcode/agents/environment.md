@@ -3,7 +3,7 @@ name: "Environment"
 description: "VUA环境子代理"
 color: yellow
 model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
-thoughtLevel: "enabled"
+thoughtLevel: "high"
 injectAgentsMd: true
 ---
 

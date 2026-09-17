@@ -3,7 +3,7 @@ name: "Core"
 description: "VUA核心子代理"
 color: red
 model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3-Flash"
-thoughtLevel: "enabled"
+thoughtLevel: "high"
 injectAgentsMd: true
 ---
 
