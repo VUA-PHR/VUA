@@ -190,6 +190,9 @@ demoTaskTitle: "Demo task",
     navReload: 'Reload',
     navHome: 'Back to booth.pm home',
     navClose: 'Close embedded view and return to VUA',
+    openInvalidAddress: 'That address could not be parsed. Enter a full URL (like https://booth.pm) or a bare domain (like booth.pm).',
+    openOriginNotAllowed: 'That origin is not on the embedded-browse allowlist; nothing was opened.',
+    openFailed: 'The embedded view failed to open.',
   },
   /** Hub landing page (S-VFX-2): default entry */
   home: {
