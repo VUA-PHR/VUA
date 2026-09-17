@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { APPLICATION_CONTRACT_VERSION, type TaskSnapshotV01 } from "@vua/contracts";
+import { APPLICATION_CONTRACT_VERSION, type EnvironmentCheckItemV01, type TaskSnapshotV01 } from "@vua/contracts";
 import { strings } from "../i18n/index.js";
 import {
   projectEnvironmentSnapshot,
@@ -237,5 +237,86 @@ describe("contract environment snapshot projection", () => {
       items: [],
     });
     expect(view.versions).toEqual({ play: [], create: [] });
+  });
+});
+
+/* ---- live wire 形状钉死(BOARD #36 缺陷③,#22 教训:live 形状用例必
+ * 含,mock 绿不算数)----
+ * provider-host environment_get_snapshot 的 items 为引擎 serde 逐条输出
+ * (操作者 CDP 键集实证 2026-09-17:schemaVersion+checkId+zone+presence+
+ * errorCode+facts);errorCode 在 presence ≠ detection_failed 时序列化为
+ * null(serde Option 无 skip),投影以 nullish 合并消化为状态词。
+ * #31 卡片标题空的机理即此链:wire 曾走 `id` 键,投影读 checkId 得
+ * undefined → checkTitle 透传 undefined → h2 空。核心裁决 wire=checkId
+ * (引擎侧 serde rename 已修,wt-2 c9d3d83),本组用例把消费面钉死在
+ * 冻结 TS 面词上,并拒绝向偏差键回摆。 ---- */
+describe("environment check item live wire shape (BOARD #36 defect 3)", () => {
+  /** provider-host 真实逐条 wire 形状(键闭集照 CDP 实证) */
+  const liveItem = (overrides: Record<string, unknown> = {}) =>
+    ({
+      schemaVersion: 1,
+      checkId: "steam",
+      zone: "play",
+      presence: "detected",
+      errorCode: null,
+      facts: {},
+      ...overrides,
+    }) as unknown as EnvironmentCheckItemV01;
+
+  const projectLive = (items: readonly EnvironmentCheckItemV01[]) =>
+    projectEnvironmentSnapshot({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 1,
+      capturedAt: "2026-09-18T02:00:00.000Z",
+      items,
+    });
+
+  it("projects the provider-host live item shape: title keys on checkId with localized copy", () => {
+    const view = projectLive([
+      liveItem(),
+      liveItem({
+        checkId: "unity_editors",
+        zone: "create",
+        presence: "detection_failed",
+        errorCode: "vua.env.probe_failed",
+      }),
+    ]);
+    const play = view.deployer.zones.play;
+    const create = view.deployer.zones.create;
+    if (play.kind !== "results" || create.kind !== "results") throw new Error("expected results phases");
+    // #31 验收点:标题来自词表(checkId 取键),不再是空串/undefined
+    expect(play.items[0]).toMatchObject({
+      id: "steam",
+      title: strings.deployer.checks.steam,
+      status: "ok",
+      description: strings.deployer.presence.detected,
+    });
+    // errorCode: null(live 语义)消化为状态词;detection_failed 携带工程事实码原词
+    expect(create.items[0]).toMatchObject({
+      id: "unity_editors",
+      title: strings.deployer.checks.unityEditors,
+      status: "error",
+      description: "vua.env.probe_failed",
+    });
+  });
+
+  it("keeps the per-item schemaVersion wire key declarable and unconsumed by the projection", () => {
+    // TS 面已补可选声明(BOARD #36 第二分歧自决 2026-09-18):live 逐条
+    // schemaVersion 键在类型面可表达;投影不消费(加性无害,核心账本)。
+    const item: EnvironmentCheckItemV01 = liveItem();
+    expect(item.schemaVersion).toBe(1);
+  });
+
+  it("refuses the pre-fix deviant `id` key: no fallback, no guessed title", () => {
+    // 引擎修正前偏差形状(操作者 CDP 实证):wire 走 id、无 checkId。
+    // 消费面不兼容偏差键——title 透传 undefined(诚实空,不猜测、不伪造);
+    // 若日后有人加 `id ?? checkId` 回摆兼容,本用例失败。
+    const view = projectLive([
+      { id: "steam", zone: "play", presence: "detected", errorCode: null, facts: {} } as unknown as EnvironmentCheckItemV01,
+    ]);
+    const play = view.deployer.zones.play;
+    if (play.kind !== "results") throw new Error("expected a results phase");
+    expect(play.items[0]?.title).toBeUndefined();
+    expect(play.items[0]?.id).toBeUndefined();
   });
 });
