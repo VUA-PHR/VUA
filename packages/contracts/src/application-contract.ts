@@ -349,7 +349,11 @@ export interface ProductionBuildRecordViewV02 {
 
 // ---- catalog.* / warehouse.*(bdl-queries v0.3 冻结面:AMF 从本地 BDL 出的
 // 五个只读查询。传输信封归本契约;本节冻结操作词表、查询闭集、字段面与结果
-// 形状。渲染层永不直接触达 BDL;协议变更须升版,不得原地改写) ----
+// 形状。渲染层永不直接触达 BDL;协议变更须升版,不得原地改写。2026-09-18
+// 结果面对齐:六个只读结果类型照 021 先例登记 bdl-queries v0.4 冻结 wire
+// 三键信封 {schemaVersion "0.4", operation, result}(schemas/bdl-queries/
+// v0.4/result.schema.json;BOARD #36 mock 信封回正的桌面 TS 登记面跟随,
+// 零协议变更——内层 result 才是各方法结果本体,renderer 经信封窄化取用) ----
 
 /** v0.2 availability 稳定枚举:由 AMF/BDL 处理器按协议版本化规则表从观测
  *  原词派生;渲染层只消费该枚举(徽标与筛选),原词证据走 availabilityRaw */
@@ -684,8 +688,15 @@ export interface DownloadsListCompletedItemV04 {
   readonly adoptedWarehouseItemIds: readonly string[];
 }
 
+/** bdl-queries v0.4 冻结 wire 信封(021 先例对齐,桌面 TS 登记面 2026-09-18):
+ *  外层三键闭集 + result 本体(downloadsListCompletedResult 冻结行六键闭集);
+ *  平铺消费即类型错误,renderer 经 narrowCompletedDownloads 信封窄化取行 */
 export interface DownloadsListCompletedResultV04 {
-  readonly downloads: readonly DownloadsListCompletedItemV04[];
+  readonly schemaVersion: "0.4";
+  readonly operation: "downloads.listCompleted";
+  readonly result: {
+    readonly downloads: readonly DownloadsListCompletedItemV04[];
+  };
 }
 
 export interface WarehouseEntryDetailQueryV03 extends ApplicationRequestBaseV01 {
@@ -722,10 +733,17 @@ export interface CatalogProductSummaryV03 {
   readonly entityTypes: readonly [];
 }
 
+/** bdl-queries v0.4 冻结 wire 信封(021 先例对齐,桌面 TS 登记面 2026-09-18):
+ *  外层三键闭集(schemaVersion const "0.4" + operation 字面量),内层 result
+ *  才是 catalog.list 结果本体(冻结字段面原样内联);平铺消费即类型错误 */
 export interface CatalogListResultV03 {
-  /** 分页总数(limit/offset 截取前计算) */
-  readonly total: number;
-  readonly entries: readonly CatalogProductSummaryV03[];
+  readonly schemaVersion: "0.4";
+  readonly operation: "catalog.list";
+  readonly result: {
+    /** 分页总数(limit/offset 截取前计算) */
+    readonly total: number;
+    readonly entries: readonly CatalogProductSummaryV03[];
+  };
 }
 
 export interface CatalogSubproductV03 {
@@ -759,8 +777,14 @@ export interface CatalogProductDetailV03 {
   readonly subproducts: readonly CatalogSubproductV03[];
 }
 
+/** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐):result 本体
+ *  携 detail 未命中前仅成功面的 product 文档 */
 export interface CatalogDetailResultV03 {
-  readonly product: CatalogProductDetailV03;
+  readonly schemaVersion: "0.4";
+  readonly operation: "catalog.detail";
+  readonly result: {
+    readonly product: CatalogProductDetailV03;
+  };
 }
 
 export type CatalogHealthV03 = "unknown" | "ok" | "incompatible";
@@ -772,9 +796,15 @@ export interface CatalogRevisionV03 {
   readonly datasetRevision: string;
 }
 
+/** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);mock 未知
+ *  健康语义经 result.health 承载不变 */
 export interface CatalogStatusResultV03 {
-  readonly health: CatalogHealthV03;
-  readonly revision: CatalogRevisionV03;
+  readonly schemaVersion: "0.4";
+  readonly operation: "catalog.status";
+  readonly result: {
+    readonly health: CatalogHealthV03;
+    readonly revision: CatalogRevisionV03;
+  };
 }
 
 export type WarehouseArtifactStateV03 = "pending" | "clean" | "quarantined";
@@ -810,8 +840,14 @@ export interface WarehouseEntryCardV03 {
   readonly effectiveArtifactMode: WarehouseArtifactModeV03;
 }
 
+/** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);诚实空集经
+ *  result.entries 承载不变 */
 export interface WarehouseListEntriesResultV03 {
-  readonly entries: readonly WarehouseEntryCardV03[];
+  readonly schemaVersion: "0.4";
+  readonly operation: "warehouse.listEntries";
+  readonly result: {
+    readonly entries: readonly WarehouseEntryCardV03[];
+  };
 }
 
 export interface WarehouseArtifactFactV03 extends WarehouseArtifactRefV03 {
@@ -824,9 +860,15 @@ export interface WarehouseArtifactFactV03 extends WarehouseArtifactRefV03 {
   readonly mappedProductIds: readonly string[];
 }
 
+/** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);工件事实族
+ *  (含 suggestedFileName/检查时刻/诚实判定)随 result.entry 承载不变 */
 export interface WarehouseEntryDetailResultV03 {
-  readonly entry: Omit<WarehouseEntryCardV03, "artifacts"> & {
-    readonly artifacts: readonly WarehouseArtifactFactV03[];
+  readonly schemaVersion: "0.4";
+  readonly operation: "warehouse.entryDetail";
+  readonly result: {
+    readonly entry: Omit<WarehouseEntryCardV03, "artifacts"> & {
+      readonly artifacts: readonly WarehouseArtifactFactV03[];
+    };
   };
 }
 
