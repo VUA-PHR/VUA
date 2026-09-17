@@ -654,3 +654,51 @@ describe("mock packages P2 read faces (025 core freeze batch)", () => {
     expect(response.error.messageKey).toBe("errors.packages.unavailable");
   });
 });
+
+describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
+  it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
+    // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/
+    // result.schema.json,required schemaVersion+operation、additionalProperties
+    // false)＋ provider-host bdl_query_success 同形实现＋ supervised invoke
+    // 零解包原样透传。此前四分支平铺回 result 本体系 #22 同构的 live/fixture
+    // 形状分裂;照本文件 project.environmentManagers 021 批先例对齐 wire 实际
+    // 信封——测试钉住冻结面,平铺形状回归即破。
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+
+    const cases = [
+      ["catalog.list", {}, { total: 0, entries: [] }],
+      [
+        "catalog.status",
+        {},
+        { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
+      ],
+      ["warehouse.listEntries", {}, { entries: [] }],
+      ["downloads.listCompleted", {}, { downloads: [] }],
+    ] as const;
+
+    for (const [method, params, result] of cases) {
+      const response = await provider.invoke(request({
+        kind: "query",
+        method,
+        params,
+      } as Parameters<typeof request>[0]));
+      expect(response.ok).toBe(true);
+      if (!response.ok) throw new Error(`expected success: ${method}`);
+      // 去桥(桌面 f8ad6cb 后):contracts bdl 六结果类型已登记信封形状,
+      // in 守卫把 value 窄化到冻结信封面——非信封成员(缺任一键)在此抛出,
+      // 零强转;平铺形状回归在类型面与断言面双破。
+      if (!("schemaVersion" in response.value) || !("operation" in response.value)
+        || !("result" in response.value)) {
+        throw new Error(`expected frozen bdl envelope: ${method}`);
+      }
+      const value = response.value;
+      // 冻结信封三键闭集(多一键少一键均破)
+      expect(Object.keys(value).sort()).toEqual(["operation", "result", "schemaVersion"]);
+      expect(value.schemaVersion).toBe("0.4");
+      expect(value.operation).toBe(method);
+      // result 本体精确全等(诚实空集/未知健康,零多键)
+      expect(value.result).toEqual(result);
+    }
+  });
+});
