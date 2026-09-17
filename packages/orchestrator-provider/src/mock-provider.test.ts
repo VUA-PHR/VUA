@@ -654,3 +654,44 @@ describe("mock packages P2 read faces (025 core freeze batch)", () => {
     expect(response.error.messageKey).toBe("errors.packages.unavailable");
   });
 });
+
+describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
+  it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
+    // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/
+    // result.schema.json,required schemaVersion+operation、additionalProperties
+    // false)＋ provider-host bdl_query_success 同形实现＋ supervised invoke
+    // 零解包原样透传。此前四分支平铺回 result 本体系 #22 同构的 live/fixture
+    // 形状分裂;照本文件 project.environmentManagers 021 批先例对齐 wire 实际
+    // 信封——测试钉住冻结面,平铺形状回归即破。
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+
+    const cases = [
+      ["catalog.list", {}, { total: 0, entries: [] }],
+      [
+        "catalog.status",
+        {},
+        { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
+      ],
+      ["warehouse.listEntries", {}, { entries: [] }],
+      ["downloads.listCompleted", {}, { downloads: [] }],
+    ] as const;
+
+    for (const [method, params, result] of cases) {
+      const response = await provider.invoke(request({
+        kind: "query",
+        method,
+        params,
+      } as Parameters<typeof request>[0]));
+      expect(response.ok).toBe(true);
+      if (!response.ok) throw new Error(`expected success: ${method}`);
+      const value = response.value as unknown as Record<string, unknown>;
+      // 冻结信封三键闭集(多一键少一键均破)
+      expect(Object.keys(value).sort()).toEqual(["operation", "result", "schemaVersion"]);
+      expect(value["schemaVersion"]).toBe("0.4");
+      expect(value["operation"]).toBe(method);
+      // result 本体精确全等(诚实空集/未知健康,零多键)
+      expect(value["result"]).toEqual(result);
+    }
+  });
+});
