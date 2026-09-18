@@ -142,6 +142,112 @@ export const initialEmbeddedBrowseState: EmbeddedBrowseState = {
   lastBlocked: null,
 };
 
+/**
+ * 内嵌浏览面板生命周期代次(BOARD #37 修复,2026-09-18;承 #25 卸载即关):
+ * dev 的 StrictMode 对每个组件效果双调用(mount→cleanup→mount),「卸载
+ * 布尔」形态的守卫(原 disposedRef 只在清理效果置 true、无挂载复位)在
+ * 第二次挂载后永真——此后任意 open 落定的竞态兜底把每个新视图立即关闭,
+ * 自动打开与「打开」按钮全部失效,内嵌浏览完全无法进入(#37 根因)。
+ * 代次模型:挂载与卸载都推进代次,open 发起时捕获当前代次,open 落定时
+ * 比较——
+ * - 捕获代次 = 当前代次:open 属于活跃挂载,视图保留(#37 修复);
+ * - 失配:open 属于已卸载实例(真实切页后落定)或已过期挂载(StrictMode
+ *   首挂的 auto-open,二次挂载后才落定)——视图随即关闭,不留失联视图,
+ *   也不留 StrictMode 首挂孤儿视图(#25 语义保持 + dev 无泄漏形态)。
+ * 提取为纯对象模型使完整时序(mount→cleanup→remount→open 落定)可在
+ * 无 DOM 测试面锁定;组件效果只做接线,不携带生命周期判定。
+ */
+export interface BrowsePanelLifecycle {
+  /** 挂载接线:推进代次并返回新代次(每次挂载效果执行恰好调用一次) */
+  mount(): number;
+  /** 卸载接线:推进代次,使该实例此前捕获的 open 全部落入失配 */
+  unmount(): void;
+  /** open 发起时捕获当前代次 */
+  capture(): number;
+  /** 代次失配判定:true = 该 open 属已卸载/过期挂载,视图应随即关闭 */
+  isStale(capturedGeneration: number): boolean;
+}
+
+export function createBrowsePanelLifecycle(): BrowsePanelLifecycle {
+  let generation = 0;
+  return {
+    mount() {
+      generation += 1;
+      return generation;
+    },
+    unmount() {
+      generation += 1;
+    },
+    capture() {
+      return generation;
+    },
+    isStale(capturedGeneration: number) {
+      return capturedGeneration !== generation;
+    },
+  };
+}
+
+/* ---- 地址栏输入归一化与打开失败分类(BOARD #39 修复,2026-09-18) ----
+ * 用户真机实测:地址栏输入裸域名 booth.pm(无 https:// 前缀)点「打开」,
+ * openAddress 原样透传,Main 侧 isAllowedRemoteOrigin 的 URL 解析对无
+ * scheme 输入失败→按 origin_not_allowed 拒绝;渲染层 catch 又误用仓储
+ * 命令文案(vua_warehouse_unavailable「仓库服务尚未接入」)呈现与本错误
+ * 完全无关的文本,用户据此外观误判 #37 未修复。修法:输入归一化(裸域名
+ * 自动补 https://,把「用户可读地址」翻译成「可解析 URL」)＋失败按拒绝
+ * 原因准确呈现。Main 侧清单裁决(authority)不变——归一化只加 scheme
+ * 前缀并本地预验可解析,不放宽任何 Main 判定。 */
+
+/** 地址归一化结果:open = 可解析 URL(交 Main 按清单裁决);invalid =
+ *  输入无法构成合法 URL(本地失败态呈现,不上 Main 不猜测) */
+export type NormalizedBrowseAddress =
+  | { readonly kind: "open"; readonly url: string }
+  | { readonly kind: "invalid" };
+
+const ADDRESS_SCHEME_PATTERN = /^[a-zA-Z][a-zA-Z0-9+.-]*:/;
+
+/**
+ * 地址栏输入归一化:无 scheme 的裸域名(判据照登记——不含 scheme、不以
+ * "/" 开头、含 ".")自动补 https:// 前缀;已带 scheme 的输入原样验证不
+ * 加工(清单协议裁决归 Main,渲染层不越权二次分流);其余输入(无点、
+ * 以 "/" 开头)不补前缀,连同补全后仍解析失败的输入一并返回 invalid。
+ * 返回值恒为可解析 URL 的标准形(open)或 invalid,不以不可解析字符串
+ * 透传 Main。
+ */
+export function normalizeBrowseAddress(raw: string): NormalizedBrowseAddress {
+  const input = raw.trim();
+  if (input === "") return { kind: "invalid" };
+  const hasScheme = ADDRESS_SCHEME_PATTERN.test(input);
+  const bareDomain = !hasScheme && !input.startsWith("/") && input.includes(".");
+  const candidate = hasScheme || !bareDomain ? input : `https://${input}`;
+  try {
+    return { kind: "open", url: new URL(candidate).toString() };
+  } catch {
+    return { kind: "invalid" };
+  }
+}
+
+/** 内嵌视图 open 失败的呈现分类:invalid-address = 输入无法解析(本地);
+ *  origin-not-allowed = Main 清单外拒绝;open-failed = 其它失败(如实
+ *  通用呈现,不猜测具体原因,不借用其它命令面文案) */
+export type EmbeddedBrowseOpenFailure =
+  | { readonly kind: "invalid-address" }
+  | { readonly kind: "origin-not-allowed" }
+  | { readonly kind: "open-failed" };
+
+/**
+ * Main 侧 open 拒绝分类:Main 侧 vua:remote-content:open 对清单外来源
+ * 唯一抛 Error("origin_not_allowed")(remote-content open/navigate 同
+ * 码),Electron invoke reject 的 Error message 保留该错误串——按此识别
+ * 清单外拒绝;其余错误(unknown_remote_view/时序面等)一律 open-failed
+ * 如实通用呈现,不猜测。
+ */
+export function classifyRemoteOpenError(error: unknown): EmbeddedBrowseOpenFailure {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("origin_not_allowed")
+    ? { kind: "origin-not-allowed" }
+    : { kind: "open-failed" };
+}
+
 /** remote-content 事件流归约:只跟踪当前托管视图(单视图面板;多视图管理
  *  超出本页面板语义),blocked 一律留痕呈现 */
 export function embeddedBrowseReducer(

@@ -9,12 +9,40 @@ import { Mascot } from "../../components/primitives/Mascot.tsx";
 import { StatusLight } from "../../components/primitives/StatusLight.tsx";
 import { format, strings } from "../../i18n/index.ts";
 import { useDataSource, useEnvironmentView, useGateway } from "../../gateway/index.ts";
-import { summarizeHealth, type CheckZone } from "./deployer-model.ts";
+import { summarizeGroup, summarizeHealth, type CheckItem, type CheckZone } from "./deployer-model.ts";
 import { canAdvanceStep, type FixPlanV1 } from "./fix-plan-model.ts";
 import { VersionPanel } from "./VersionPanel.tsx";
 import "./deployer.css";
 
 const copy = strings.deployer;
+
+/**
+ * 渲染条目:独立检查项原样成卡;替代组(CHECK_GROUPS)成员合并为一张组卡,
+ * 位置取组内首个成员处,顺序保持稳定(不重新排序,如实反映检测输出)。
+ */
+type DisplayEntry =
+  | { kind: "item"; item: CheckItem }
+  | { kind: "group"; groupId: string; members: CheckItem[] };
+
+function toDisplayEntries(items: readonly CheckItem[]): DisplayEntry[] {
+  const entries: DisplayEntry[] = [];
+  const groupAt = new Map<string, number>();
+  for (const item of items) {
+    if (item.groupId === undefined) {
+      entries.push({ kind: "item", item });
+      continue;
+    }
+    const at = groupAt.get(item.groupId);
+    if (at === undefined) {
+      groupAt.set(item.groupId, entries.length);
+      entries.push({ kind: "group", groupId: item.groupId, members: [item] });
+    } else {
+      const entry = entries[at];
+      if (entry?.kind === "group") entry.members.push(item);
+    }
+  }
+  return entries;
+}
 
 /** 修复计划流的页面本地状态:confirm = 计划确认;executing = 引导执行 */
 type PlanState =
@@ -324,38 +352,95 @@ export function DeployerPage({
       ) : null}
 
       <div className="vua-deployer__grid">
-        {items.map((item) => (
-          <Card key={item.id} className="vua-deployer__item" data-status={item.status}>
+        {toDisplayEntries(items).map((entry) =>
+          entry.kind === "group" ? (
+            <RuntimeGroupCard
+              key={entry.groupId}
+              groupId={entry.groupId}
+              members={entry.members}
+            />
+          ) : (
+          <Card key={entry.item.id} className="vua-deployer__item" data-status={entry.item.status}>
             <header className="vua-deployer__item-header">
-              <StatusLight level={item.status} />
-              <h2 className="vua-deployer__item-title">{item.title}</h2>
+              <StatusLight level={entry.item.status} />
+              <h2 className="vua-deployer__item-title">{entry.item.title}</h2>
             </header>
-            <p className="vua-deployer__item-desc vua-text-secondary">{item.description}</p>
+            <p className="vua-deployer__item-desc vua-text-secondary">{entry.item.description}</p>
             {/* 修复入口:能力可用时渲染真实按钮(planFix);不可用时动作建议
                 只以文本呈现,不渲染可点击外观(environment-port 契约) */}
-            {item.fixLabel ? (
+            {entry.item.fixLabel ? (
               checkReady ? (
                 <>
                   <Button
-                    variant={item.status === "error" ? "primary" : "subtle"}
-                    disabled={planBusyId === item.id}
-                    onClick={() => startFix(item.id)}
+                    variant={entry.item.status === "error" ? "primary" : "subtle"}
+                    disabled={planBusyId === entry.item.id}
+                    onClick={() => startFix(entry.item.id)}
                   >
-                    {item.fixLabel}
+                    {entry.item.fixLabel}
                   </Button>
-                  {planBusyId === item.id ? (
+                  {planBusyId === entry.item.id ? (
                     <p className="vua-caption vua-text-secondary">{copy.fix.loading}</p>
                   ) : null}
                 </>
               ) : (
-                <p className="vua-caption vua-text-secondary">{item.fixLabel}</p>
+                <p className="vua-caption vua-text-secondary">{entry.item.fixLabel}</p>
               )
             ) : null}
           </Card>
-        ))}
+          ),
+        )}
       </div>
       {versionTracks.length > 0 ? <VersionPanel tracks={versionTracks} /> : null}
     </div>
+  );
+}
+
+/* ---- 替代组卡(CHECK_GROUPS)---- */
+
+/**
+ * 替代组卡:整组一张卡(组级状态灯 + "任选其一"徽标 + 组结论),
+ * 成员逐行如实列出各自在场事实(已检测到/可选/检测失败)。
+ * 组文案注册表未收录的 groupId 如实透传 id(与 checkTitle 同一纪律),
+ * 不虚构组标题。
+ */
+function RuntimeGroupCard({
+  groupId,
+  members,
+}: {
+  groupId: string;
+  members: CheckItem[];
+}) {
+  const verdict = summarizeGroup(members);
+  const groupCopy = (copy.groups as Readonly<Record<string, typeof copy.groups.vrRuntime>>)[
+    groupId
+  ];
+  const detectedCount = members.filter((member) => member.status === "ok").length;
+  const description =
+    groupCopy === undefined
+      ? undefined
+      : verdict === "ok"
+        ? format(groupCopy.satisfied, { count: detectedCount })
+        : groupCopy.unsatisfied;
+  return (
+    <Card className="vua-deployer__item vua-deployer__group" data-status={verdict}>
+      <header className="vua-deployer__item-header">
+        <StatusLight level={verdict} />
+        <h2 className="vua-deployer__item-title">{groupCopy?.title ?? groupId}</h2>
+        {groupCopy !== undefined ? <Badge tone="neutral">{groupCopy.badge}</Badge> : null}
+      </header>
+      {description !== undefined ? (
+        <p className="vua-deployer__item-desc vua-text-secondary">{description}</p>
+      ) : null}
+      <ul className="vua-deployer__group-members">
+        {members.map((member) => (
+          <li key={member.id} data-status={member.status}>
+            <StatusLight level={member.status} />
+            <span className="vua-deployer__group-member-title">{member.title}</span>
+            <span className="vua-caption vua-text-secondary">{member.description}</span>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
 
