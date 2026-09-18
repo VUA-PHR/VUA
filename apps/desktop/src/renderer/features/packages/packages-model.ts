@@ -156,6 +156,47 @@ export function conflictMessageKey(key: string): ConflictMessageKey {
   return key === "requiredBy" ? "requiredBy" : "unknown";
 }
 
+/* ---- A1 移除写面(026 消费批):typed 码/守卫 → 文案键映射 ---- */
+
+/** A1 rejected guard → strings.packages.remove.guards 键;词表外回落
+ * "unknown"(诚实降级不崩,guard 三值闭集 preview_drift/
+ * package_not_found/execution_failed) */
+export type RemoveGuardKey =
+  | "preview_drift"
+  | "package_not_found"
+  | "execution_failed"
+  | "unknown";
+
+export function removeGuardKey(guard: string): RemoveGuardKey {
+  return guard === "preview_drift" ||
+    guard === "package_not_found" ||
+    guard === "execution_failed"
+    ? guard
+    : "unknown";
+}
+
+/** A1 信封/受理 typed 错误码 → strings.packages.remove.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 冻结词面已申报面:复用码 vua.project.project_not_found(未注册
+ * 路径)与 vua.packages.package_not_found(包不在已装集合)、通用
+ * vua.vpm.capability_missing(引擎后端未声明 remove_packages)、
+ * vua.packages.invalid_params(请求形状违规);任务非成功终态的
+ * error.code 原词不在此闭集时一律 unknown。 */
+export type RemoveEnvelopeErrorKey =
+  | "projectNotFound"
+  | "packageNotFound"
+  | "capabilityMissing"
+  | "invalidParams"
+  | "unknown";
+
+export function removeEnvelopeErrorKey(code: string): RemoveEnvelopeErrorKey {
+  if (code === "vua.project.project_not_found") return "projectNotFound";
+  if (code === "vua.packages.package_not_found") return "packageNotFound";
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  return "unknown";
+}
+
 /* ---- 选择与批量 ---- */
 
 /**

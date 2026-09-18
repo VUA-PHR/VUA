@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.applyInstall",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.2",
+    "kind": "rejected",
+    "guard": "execution_failed",
+    "code": "vua.vpm.apply_failed",
+    "detail": "the port-level code family never enters a rejected document"
+  }
+}

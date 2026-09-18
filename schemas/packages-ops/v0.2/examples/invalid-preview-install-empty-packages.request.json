@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.previewInstall",
+  "params": {
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "packages": []
+  }
+}

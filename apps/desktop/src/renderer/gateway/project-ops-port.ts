@@ -355,8 +355,10 @@ async function fetchTaskSnapshot(client: GatewayClient, taskId: string): Promise
  * 快照——事件是事实通知,快照才是权威(契约「revision 与事件」;020:
  * 两通道同源同值,终态提交点先于发布)。首取失败(断连/形态不齐)= 无
  * 权威事实基础,立即 null;等待中重取失败保留等待(后续事件或超时兜底)。
+ * 导出供 packages-live 复用(026 A1 applyRemove 任务化消费,020 同一
+ * 冻结面——共享单一实现防两端口任务语义漂移)。
  */
-async function waitForTerminalTask(
+export async function waitForTerminalTask(
   client: GatewayClient,
   taskId: string,
   waitMs: number,

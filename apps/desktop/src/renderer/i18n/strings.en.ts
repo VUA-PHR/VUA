@@ -1566,6 +1566,45 @@ demoTaskTitle: "Demo task",
       },
       legacyTitle: "Legacy folders that will be removed",
     },
+    remove: {
+      title: "Remove packages",
+      column: "Actions",
+      removedTitle: "Will remove",
+      installedTitle: "Will install",
+      legacyTitle: "Legacy files/folders to clean up",
+      destructiveHint: "This operation is destructive (dependency conflicts or legacy cleanup). Read the list first; the confirm button unlocks shortly.",
+      confirm: "Remove ({count} package(s))",
+      applying: "Removing… task progress is visible in the task center.",
+      close: "Close",
+      receiptTitle: "Removal complete",
+      receiptSummary: "Removed {count} package entries.",
+      receiptRemovedTitle: "Actually removed",
+      receiptDigest: "Confirmed digest: {digest}",
+      rejectedTitle: "Removal refused",
+      rejectedDetail: "Server note: {detail}",
+      driftHint: "The package list changed after you confirmed. Close this dialog, preview and confirm again; the stale list is never applied silently.",
+      guards: {
+        preview_drift: "The confirmed digest does not match the re-computed preview; nothing was removed. Preview and confirm again.",
+        package_not_found: "The requested package is not in this project's installed set.",
+        execution_failed: "The removal failed during execution.",
+        unknown: "The removal was refused.",
+      },
+      envelopeErrors: {
+        projectNotFound: "This project is no longer registered; removal is unavailable.",
+        packageNotFound: "The requested package is not installed in this project.",
+        capabilityMissing: "The current engine backend does not support removal.",
+        invalidParams: "The removal request has an invalid shape.",
+        unknown: "The operation failed.",
+      },
+      toasts: {
+        previewUnavailable: "Cannot generate the removal preview: the package engine is not connected.",
+        previewFailedUnknown: "Cannot generate the removal preview ({code}).",
+        nothingToRemove: "The current selection has nothing to remove.",
+        applyFailedUnknown: "The removal did not complete ({code}).",
+        applyUnavailable: "The removal did not complete: the result could not be confirmed; check the task center.",
+      },
+    },
+
     repos: {
       addCommunity: "Add community repository",
       riskTitle: "Before adding a community repository",
@@ -1600,6 +1639,8 @@ demoTaskTitle: "Demo task",
       loadFailed: "The package engine answered with an error ({code}).",
       emptyInstalledDescription:
         "No packages are installed in this project yet. Assemble the project from a {recipe} to add some.",
+      noticeChangesOpen: "Repository and change management status: installed packages are readable and removal is available (subject to engine capabilities).",
+
     },
     p2: {
       notice:
@@ -1638,6 +1679,8 @@ demoTaskTitle: "Demo task",
       compatibleYes: "compatible",
       compatibleNo: "incompatible",
       compatibleUnknown: "compatibility unknown",
+      noticeChangesOpen: "Repository subscriptions and per-package catalog facts are readable (P2), and removal is available; sections without engine data stay hidden.",
+
     },
     empty: {
       engineTitle: "Package management is not connected yet",
