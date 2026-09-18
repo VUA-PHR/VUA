@@ -240,3 +240,115 @@ packages-query/packages-repos/packages-catalog 三读面行在库）。
 草（本表态＋环境表态收敛后，024/025 同径：冻结批→wire 接线→环境实现
 核对→桌面消费切片逐批验收）。B 面（项目兼容并入包管理器）零词表依赖
 ，桌面径行领取不受本节影响。
+### 表态（环境）（2026-09-18 23:2x，slot/wt-6 工作时段；开放问题 2 答复——写方法缺口核对零缺口＋A4 settings.json 库面考证）
+
+**本表态系纯库面考证与实现核对，零代码变更；A4 实现候冻结批词面，环境
+不预动。**考证方法照 025 §1 同径：file:line 实测锚全部本机直读（库源＝
+本地 cargo registry `vrc-get-vpm-0.0.16`，版本钉死自本域
+crates/project-manager/Cargo.toml:17 `version = "=0.0.16"`）。下文库源
+行号均相对该 registry 解包目录。
+
+#### 1. A1–A3 写方法缺口核对（结论：实现零缺口，候冻结批即可进入实现核对）
+
+VrcGetLibBackend 六写方法全在库（本域 crates/project-manager/src/
+vpm_backend.rs，下称「实现」）：
+
+- **A1 移除**：preview_remove（实现 :351 起，`remove_request`→
+  summarize→digest）；apply_remove（实现 :390 起，预览重算第一道比对＋
+  执行前第二道比对→`apply_pending_changes`）。端口侧 trait 方法与
+  digest 纪律注释在 crates/orchestrator/src/vpm_backend.rs:253-270。
+- **A2 安装/升级**：preview_install（实现 :528 起）；apply_install
+  （实现 :757 起，两道摘要核对（Fix R2-7：legacy folders 计入摘要）→
+  `PackageInstaller::new`＋`apply_pending_changes`，成功返回
+  `{"applied": items}`）；preview_install_for_plan（trait default 转发
+  preview_install，模板感知后端可覆写——:221-229）。
+- **A3 register_local_package**：实现 :89-135（canonicalize＋
+  package.json 校验→`add_user_package`→`Settings::save`；
+  `AlreadyAdded` 幂等分支；`NonAbsolute`/`BadPackage` 定向错误码）。
+- **能力位如实**：VrcGetLibBackend 五位 VpmCapabilities 全 true（实现
+  :300-308）；VccCliBackend 仅 create_project:true（实现 :1102-1110，
+  preview_install/apply_install 返回 unsupported——「无预览能力的后端
+  不承担计划确认过的安装」ADR-0006 注释在案）。
+
+#### 2. 端口签名足够性评审（结论：A1–A3 足够；两点观察归冻结批，不构成环境侧阻塞）
+
+- 九态任务化宿主在 orchestrator 用例层（TaskState 九态，
+  crates/orchestrator/src/contracts.rs:163-172，ORC §7.2「内部工作流
+  阶段映射到九态」）；端口方法是被任务运行时调用的原子步骤。两段式
+  preview/apply 签名与九态天然映射：preview 段＝Running 前段；
+  WaitingForInput 挂「预览完成待确认」；确认后 apply 段；digest 漂移＝
+  Failed＋`recoverable: true`（实现内 PREVIEW_DRIFT
+  `.with_recoverable(true)` 在案）。**签名足够**。
+- 观察①：apply_* 返回 `serde_json::Value` 非类型化（apply_install
+  `{"applied": items}`／apply_remove `{"removed": items}`）。若冻结批
+  为 packages 写族立类型化结果（照 024/025 信封教训与 026 开放问题 1
+  的立码面），环境实现照冻结批类型化即可，调用形状不变。
+- 观察②：**A4 在端口层零方法**——`list_repos` 只读，025 冻结批注释
+  明示「enable/disable and add/remove are write faces under the 013
+  R5 per-face path, not here」（vpm_backend.rs list_repos 文档注释）。
+  A4 需新端口方法族＋wire 词表＋错误码，命名/形状/立码全归核心冻结批。
+
+#### 3. A4 settings.json 写路径库面考证（vrc-get-vpm 0.0.16；结论：增删/重排库面 API 完备且本域先例在库——可行；启停＝库面零支撑，若纳入 A4 需本域自写＋真机核实先行）
+
+**(a) 增**：
+
+- `Settings::can_add_remote_repo(&self, url, remote_repo) -> bool`
+  （settings.rs:188-220）：重复 URL／重复 id／官方与 curated 库守卫。
+- `Settings::add_remote_repo(&mut self, url, name, headers,
+  remote_repo, path_buf) -> bool`（settings.rs:222-247）：**需先经 HTTP
+  拉取远端清单（RemoteRepository）并写入本地缓存文件（path_buf）**——
+  含网络段，与 refresh 同族路径；headers 透传（:244）。
+- `Settings::add_local_repo(&mut self, path, name) -> bool`
+  （settings.rs:249-263）：本地目录仓库，路径 normalize＋重复守卫。
+
+**(b) 删／重排**：
+
+- `Settings::remove_repo(condition: impl Fn(&UserRepoSetting) -> bool)
+  -> Vec<UserRepoSetting>`（settings.rs:265-273，返回被删行）；`remove_repo_at_index(index) -> Option<UserRepoSetting>`（:275-278 附近）。
+- `reorder_user_repos_by_indices(&[usize])`（:280-283 附近）——重排
+  写面库面亦可用（A4 词面是否含重排归冻结批）。
+
+**(c) 写回与恢复语义**：
+
+- `Settings::save`（settings.rs:46-49）→ `VpmSettings::save`
+  （vpm_settings.rs:220-224）：**双写** settings.json 与
+  `vrc-get/vcc-settings-backup.json`——每次 save 主文件与备份同步
+  更新，库面自带备份维护。
+- `save_json`（utils/mod.rs:358-365）→ `write_atomic`
+  （io/tokio.rs:194-207）：临时文件（`.temp.N` 后缀）＋write_all＋
+  flush＋`sync_data`＋`rename` 原子替换；pretty JSON＋OS 行尾。
+- 恢复：`Settings::load`（settings.rs:25-43）主文件缺失/损坏时经
+  `load_alt`（vpm_settings.rs:93-104）从备份恢复（带 gui_toast 级
+  warn 日志），两处皆无才落 `VpmSettings::default()`。
+- **本域在库先例**：register_local_package 已走完整
+  load→add_user_package→save 环（实现 :115-135）——A4 增删组合零
+  库面未知量，照同径即可。
+
+**(d) 启停（enable/disable）：库面零支撑（本考证核心缺口，如实登记）**：
+
+- `UserRepoSetting` 五字段闭集（structs.rs:10-24：local_path／name／
+  url／id／headers）——**无 enabled 字段**。
+- `VpmSettings::AsJson`（vpm_settings.rs:13-80）仅 `user_repos`
+  单列表（:75）——**无禁用列表建模**；库 API 面零 enable/disable
+  方法。
+- 未知键以 `#[serde(flatten)] rest: JsonObject`（:78-79）透传保留：
+  库 load 保留 VCC 侧未知键、save 原样写回——**启停数据不会被库写
+  破坏，但库不提供操作它的 API**。
+- 因此：若 A4 词面含启停，须立项为**本域自写 JSON 面**（绕库 API 直
+  操作该未知键），且 VCC 禁用列表的确切键名／语义／行为需真机只读
+  核实（用户 settings.json 实样）或 VCC 上游源码核实后再冻结——环境
+  不凭记忆断言键名（诚实纪律；W25 真机窗口可顺带核实，与 024 表态
+  (b) vcc.liteDb 核实项同窗）。
+
+**(e) 并发窗口（如实登记）**：load→变更→save 是读-改-写全量覆盖
+（last-writer-wins；原子替换保证文件不半写，但与 VCC 同机并写存在互
+相覆盖窗口＝load 与 save 之间）。环境实现每次调用新 load、无长持句
+柄，窗口天然最小；是否需冻结批载明「写前重读」纪律归核心裁量。
+
+#### 4. 环境侧倾向（供冻结批裁量，不预决）
+
+- A4 词面建议**增删/启停二分**：增删（含重排）库面完备可先行冻结；
+  启停候真机键名核实后再冻结（或列为 A4 后续独立面）——避免冻结一
+  个库面不支撑、需自写且键名未核实的词面。
+- A1–A3 逐面冻结批落定后，环境照 024/025 实现切片程序做实现核对切片
+  （每面：实现＋定向测试＋wire 对齐证据）。
