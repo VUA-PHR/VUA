@@ -118,6 +118,37 @@
   gap: var(--vua-space-3);
 }
 
+/* 替代组卡(CHECK_GROUPS):整组一张卡横跨网格,成员逐行列出 */
+.vua-deployer__group {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.vua-deployer__group-members {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--vua-space-2) var(--vua-space-4);
+}
+
+.vua-deployer__group-members li {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-deployer__group-member-title {
+  font: var(--vua-font-body);
+}
+
+/* 未安装的可选项(info):整体降为次要文字,与警示色拉开层次 */
+.vua-deployer__group-members li[data-status="info"] .vua-deployer__group-member-title {
+  color: var(--vua-text-secondary);
+}
+
 .vua-deployer__item-title {
   margin: 0;
   font: var(--vua-font-body);

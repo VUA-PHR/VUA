@@ -40,6 +40,7 @@ export const strings: Strings = {
     warning: "需要确认",
     error: "需要修复",
     unknown: "未知",
+    info: "可选",
   },
   /** 后台任务九态(ui-ux §6.3;键与 app/task-status.ts 的 TaskStatus 一一对应) */
   taskStatus: {
@@ -350,6 +351,17 @@ demoTaskTitle: "演示任务",
       detected: "已检测到",
       notDetected: "未检测到",
       detectionFailed: "检测失败",
+      /** 替代组已满足时,组内其余未检测到成员的中性状态词(可选项,非待办) */
+      optional: "未检测到(可选)",
+    },
+    /** 替代组文案(CHECK_GROUPS):整组一张卡,键与组注册表 id 对应 */
+    groups: {
+      vrRuntime: {
+        title: "VR 运行时与串流",
+        badge: "任选其一",
+        satisfied: "已检测到 {count} 个可用运行时,任选其一即可游玩。",
+        unsatisfied: "未检测到可用的 VR 运行时。安装以下任意一种即可游玩。",
+      },
     },
     fix: {
       loading: "正在生成修复计划…",

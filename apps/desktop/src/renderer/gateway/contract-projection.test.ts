@@ -320,3 +320,91 @@ describe("environment check item live wire shape (BOARD #36 defect 3)", () => {
     expect(play.items[0]?.id).toBeUndefined();
   });
 });
+
+/* ---- 替代组投影(CHECK_GROUPS,消费侧严重度裁决):VR 运行时任选其一,
+ * 组满足时其余未检测到成员降 info 中性项;detection_failed 保持 error ---- */
+describe("alternative check groups projection (vr_runtime)", () => {
+  const runtimeItem = (
+    checkId: string,
+    presence: "detected" | "not_detected" | "detection_failed",
+    errorCode?: string,
+  ): EnvironmentCheckItemV01 =>
+    ({
+      schemaVersion: 1,
+      checkId,
+      zone: "play",
+      presence,
+      errorCode: errorCode ?? null,
+      facts: {},
+    }) as unknown as EnvironmentCheckItemV01;
+
+  const projectPlay = (items: readonly EnvironmentCheckItemV01[]) => {
+    const view = projectEnvironmentSnapshot({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      revision: 1,
+      capturedAt: "2026-09-18T08:00:00.000Z",
+      items,
+    });
+    const play = view.deployer.zones.play;
+    if (play.kind !== "results") throw new Error("expected a results phase");
+    return play.items;
+  };
+
+  it("assigns group membership from the registry and demotes not-detected members once the group is satisfied", () => {
+    // 用户实测场景(2026-09-18):SteamVR/Oculus/PICO 已装,VIVE/VD/ALVR 不应再标黄
+    const items = projectPlay([
+      runtimeItem("steamvr", "detected"),
+      runtimeItem("oculus_runtime", "detected"),
+      runtimeItem("pico_runtime", "detected"),
+      runtimeItem("vive_runtime", "not_detected"),
+      runtimeItem("virtual_desktop", "not_detected"),
+      runtimeItem("alvr", "not_detected"),
+    ]);
+    const byId = new Map(items.map((item) => [item.id, item]));
+    expect(byId.get("steamvr")).toMatchObject({ groupId: "vr_runtime", status: "ok" });
+    for (const id of ["vive_runtime", "virtual_desktop", "alvr"]) {
+      expect(byId.get(id)).toMatchObject({
+        groupId: "vr_runtime",
+        status: "info",
+        description: strings.deployer.presence.optional,
+      });
+    }
+  });
+
+  it("keeps every member warning when no runtime is detected (the group counts once upstream)", () => {
+    const items = projectPlay([
+      runtimeItem("steamvr", "not_detected"),
+      runtimeItem("alvr", "not_detected"),
+    ]);
+    for (const item of items) {
+      expect(item).toMatchObject({
+        groupId: "vr_runtime",
+        status: "warning",
+        description: strings.deployer.presence.notDetected,
+      });
+    }
+  });
+
+  it("keeps detection failures as errors even inside a satisfied group (failures stay visible)", () => {
+    const items = projectPlay([
+      runtimeItem("steamvr", "detected"),
+      runtimeItem("alvr", "detection_failed", "vua.env.probe_failed"),
+    ]);
+    const alvr = items.find((item) => item.id === "alvr");
+    expect(alvr).toMatchObject({
+      groupId: "vr_runtime",
+      status: "error",
+      description: "vua.env.probe_failed",
+    });
+  });
+
+  it("leaves ungrouped checks untouched (no groupId, independent severity)", () => {
+    const items = projectPlay([
+      runtimeItem("steamvr", "detected"),
+      runtimeItem("network", "not_detected"),
+    ]);
+    const network = items.find((item) => item.id === "network");
+    expect(network?.groupId).toBeUndefined();
+    expect(network?.status).toBe("warning");
+  });
+});
