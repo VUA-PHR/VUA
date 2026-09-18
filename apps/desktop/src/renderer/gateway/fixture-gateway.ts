@@ -538,6 +538,9 @@ function createStubPackages(): PackagesPort {
     // A1 写面(026):模拟/空退路面永不模拟 wire 写回执——恒缺席臂
     previewRemove: () => Promise.resolve({ kind: "unavailable" }),
     applyRemove: () => Promise.resolve({ kind: "unavailable" }),
+    // A2 写面(026 v0.2):同 A1 纪律——恒缺席臂
+    previewInstall: () => Promise.resolve({ kind: "unavailable" }),
+    applyInstall: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),

@@ -1,15 +1,19 @@
 /**
  * Packages 读面 live 端口(024 P1 中间诚实态消费批,2026-09-17;025 P2
  * 读面消费批,2026-09-17;025 v0.2 增量消费更新批,2026-09-17;026 A1
- * 移除写面消费批,2026-09-19):经 Desktop Gateway 消费 packages-query
- * v0.1(单方法只读 packages.listInstalled)、025 P2 双族 v0.1
- * (packages.listRepos 仓库订阅清单 + packages.packageCatalog 单包目录
- * 按需查询)与 packages-ops v0.1 A1 移除写面(packages.previewRemove
- * 同步只读变更预览 + packages.applyRemove 九态任务化移除写命令——
- * 双摘要守卫:confirmedDigest 漂移即拒 preview_drift recoverable 冲突,
- * 重预览重确认绝不静默覆盖,诚实纪律 3;权威判定在服务端)。目录族纯
- * 增量双版本协商——backend 未声明 v0.2 前以 v0.1 族应答(七键),声明
- * 后以 v0.2 族应答(冻结七键恰加必带 cacheSourced 披露)。消费纪律:
+ * 移除写面消费批,2026-09-19;026 A2 安装/升级写面消费批,2026-09-19):
+ * 经 Desktop Gateway 消费 packages-query v0.1(单方法只读
+ * packages.listInstalled)、025 P2 双族 v0.1(packages.listRepos 仓库订
+ * 阅清单 + packages.packageCatalog 单包目录按需查询)、packages-ops v0.1
+ * A1 移除写面(packages.previewRemove 同步只读变更预览 +
+ * packages.applyRemove 九态任务化移除写命令)与 packages-ops v0.2 A2
+ * 安装/升级写面(packages.previewInstall 同步只读安装/升级预览 +
+ * packages.applyInstall 九态任务化安装写命令——依赖解析可达仓库,在线
+ * 刷新失败降级缓存;双摘要守卫同 A1:confirmedDigest 漂移即拒
+ * preview_drift recoverable 冲突,重预览重确认绝不静默覆盖,诚实纪律 3;
+ * 权威判定在服务端)。目录族纯增量双版本协商——backend 未声明 v0.2 前
+ * 以 v0.1 族应答(七键),声明后以 v0.2 族应答(冻结七键恰加必带
+ * cacheSourced 披露)。消费纪律:
  * - 诚实缺席:引擎未装配/实现域未接线(vua.packages.unavailable)映射为
  *   not-connected 形态,绝不以空清单伪装(空态即终态);
  * - typed 失败照原词呈现:复用码 vua.project.project_not_found(选中项目
@@ -19,21 +23,30 @@
  *   operations):installed = packages.query 行;repos = packages.listRepos
  *   行;catalog = packages.packageCatalog 行;changes = packages.removeOps
  *   行(026 A1:随引擎后端 remove_packages 能力声明翻转,未声明即写入口
- *   诚实不渲染);
- * - 响应窄化按三键纪律:schemaVersion==="0.1" + operation + result(本体
- *   族常量 vua.packages-installed/v0.1、vua.packages-repos/v0.1、
- *   vua.packages-catalog/v0.1、vua.packages-ops/v0.1)组合定位,零字段
- *   猜测,行闭集校验(多余键/缺键/类型不符 = 形状不符诚实失败);行序
- *   为服务端冻结事实(installed 按 packageId 升序、repos 按订阅面自身
- *   顺序),客户端不重排不猜测。
+ *   诚实不渲染);installs = packages.installOps 行(026 A2:一位服务
+ *   previewInstall/applyInstall 双方法,removeOps 先例;A1 逐面升级承诺
+ *   = 纯增量新键,changes 语义与来源零变更);
+ * - 响应窄化按三键纪律:schemaVersion 信封("0.1"/"0.2" 各随其行)+
+ *   operation + result(本体族常量 vua.packages-installed/v0.1、
+ *   vua.packages-repos/v0.1、vua.packages-catalog/v0.1、
+ *   vua.packages-ops/v0.1、vua.packages-ops/v0.2)组合定位,零字段猜测,
+ *   行闭集校验(多余键/缺键/类型不符 = 形状不符诚实失败);行序为服务端
+ *   冻结事实(installed 按 packageId 升序、repos 按订阅面自身顺序),
+ *   客户端不重排不猜测。
  */
 import { isTerminalTaskStateV01 } from "@vua/contracts";
 import type {
+  PackagesApplyInstallRequestV1,
   PackagesApplyRemoveRequestV1,
   PackagesChangeItemV01,
+  PackagesInstallPlanV02,
+  PackagesInstallReceiptV02,
   PackagesListInstalledRequestV1,
   PackagesListReposRequestV1,
+  PackagesOpsRejectedV02,
   PackagesPackageCatalogRequestV1,
+  PackagesPackageRequestV02,
+  PackagesPreviewInstallRequestV1,
   PackagesPreviewRemoveRequestV1,
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
@@ -46,6 +59,7 @@ import type {
   CatalogPackageFactsV02,
   CatalogVersionRowV01,
   InstalledPackageRowV01,
+  PackagesInstallApplyOutcome,
   PackagesPort,
   PackagesRemoveApplyOutcome,
   PackagesView,
@@ -58,12 +72,21 @@ const LIST_REPOS_OPERATION_ID = "packages.listRepos";
 const CATALOG_OPERATION_ID = "packages.packageCatalog";
 /** A1 移除写面 served 行(026 接线批申报;remove_packages 能力门控) */
 const REMOVE_OPS_OPERATION_ID = "packages.removeOps";
+/** A2 安装/升级写面 served 行(026 v0.2 接线批申报;一位服务双方法,
+ * preview_install 能力门控——removeOps 先例) */
+const INSTALL_OPS_OPERATION_ID = "packages.installOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
+/** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
+ * 消费窄化按字面量,不按键集) */
+const PACKAGES_OPS_SCHEMA_VERSION_V02 = "vua.packages-ops/v0.2";
+/** packages-ops v0.2 wire 信封常量(A2 行;信封常设形状照 c914cf2 规矩) */
+const PACKAGES_OPS_ENVELOPE_V02 = "0.2";
 /**
- * applyRemove 任务等待上界(本地文件移除操作,正常终态由 task.completed
- * 事件驱动毫秒级到达;本界只防御事件丢失/断连后的无限挂起——超时是
- * 「无法确认结果」,任务本身仍在任务中心呈现真实状态;014 先例同界)。
+ * applyRemove/applyInstall 任务等待上界(本地文件操作,正常终态由
+ * task.completed 事件驱动毫秒级到达;本界只防御事件丢失/断连后的无限
+ * 挂起——超时是「无法确认结果」,任务本身仍在任务中心呈现真实状态;
+ * 014 先例同界)。
  */
 const PACKAGES_APPLY_TASK_WAIT_MS = 120_000;
 
@@ -181,9 +204,13 @@ function isCatalogPackageFactsV02(value: unknown): value is CatalogPackageFactsV
   });
 }
 
-function isPackagesWireEnvelope(value: unknown, operation: string): value is PackagesWireEnvelope {
+function isPackagesWireEnvelope(
+  value: unknown,
+  operation: string,
+  schemaVersion: string,
+): value is PackagesWireEnvelope {
   return isRecord(value)
-    && value.schemaVersion === "0.1"
+    && value.schemaVersion === schemaVersion
     && value.operation === operation
     && isRecord(value.result);
 }
@@ -340,6 +367,119 @@ function isApplyRemoveAccepted(value: unknown): value is { taskId: string; corre
     && value.correlationId.length > 0;
 }
 
+/* ---- A2 安装/升级写面窄化(026 packages-ops v0.2 冻结词面;family const
+ * vua.packages-ops/v0.2——与 v0.1 plan 同键集,消费窄化按字面量) ---- */
+
+/** 安装请求行二键闭集:packageId 非空 + version string|null(version
+ * 必填可空,null = 解析器选最新稳定版;空串/数字 = 形状违规) */
+function isInstallRequestRow(value: unknown): value is PackagesPackageRequestV02 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  if (keys.length !== 2 || keys[0] !== "packageId" || keys[1] !== "version") return false;
+  return typeof value.packageId === "string"
+    && value.packageId.length > 0
+    && (value.version === null
+      || (typeof value.version === "string" && value.version.length > 0));
+}
+
+/** kind=plan 九键闭集(v0.2 戳):与 v0.1 removePlan 同键集,items 可含
+ * install 与 remove 行(PackagesChangeItemV01 全闭集);schemaVersion
+ * 字面量互异 = 消费窄化按字面量成立,收不齐即形状不符诚实失败 */
+function isPackagesInstallPlanResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V02) return false;
+  const keys = Object.keys(value).sort();
+  const expected = [
+    "conflicts",
+    "destructive",
+    "digest",
+    "items",
+    "kind",
+    "projectPath",
+    "removeLegacyFiles",
+    "removeLegacyFolders",
+    "schemaVersion",
+  ];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "plan"
+    && typeof value.projectPath === "string"
+    && value.projectPath.length > 0
+    && Array.isArray(value.items)
+    && value.items.every(isRemoveChangeItem)
+    && isStringArray(value.conflicts)
+    && isStringArray(value.removeLegacyFiles)
+    && isStringArray(value.removeLegacyFolders)
+    && typeof value.destructive === "boolean"
+    && typeof value.digest === "string"
+    && value.digest.length > 0;
+}
+
+/** kind=receipt 六键闭集(installReceipt 变体,与 v0.1 removeReceipt 键集
+ * 互斥:requestedPackages 请求行 verbatim 携版本选择语义 + appliedItems
+ * = 端口 {applied: items} verbatim;诚实空数组按空数组传输,不发明下限;
+ * 无端口载体的发明事实在 Schema 即非法) */
+function isPackagesInstallReceiptResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V02) return false;
+  const keys = Object.keys(value).sort();
+  const expected = [
+    "appliedItems",
+    "confirmedDigest",
+    "kind",
+    "projectPath",
+    "requestedPackages",
+    "schemaVersion",
+  ];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "receipt"
+    && typeof value.projectPath === "string"
+    && value.projectPath.length > 0
+    && typeof value.confirmedDigest === "string"
+    && value.confirmedDigest.length > 0
+    && Array.isArray(value.requestedPackages)
+    && value.requestedPackages.every(isInstallRequestRow)
+    && Array.isArray(value.appliedItems)
+    && value.appliedItems.every(isRemoveChangeItem);
+}
+
+/** kind=rejected 五键闭集(v0.2 戳):guard 三值闭集复用 A1 零新增 +
+ * code 锁 vua.packages. 族(013 复用码永不入 rejected 文档) + detail
+ * 非空 */
+function isPackagesInstallRejectedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V02) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["code", "detail", "guard", "kind", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "rejected"
+    && (value.guard === "preview_drift"
+      || value.guard === "package_not_found"
+      || value.guard === "execution_failed")
+    && typeof value.code === "string"
+    && value.code.startsWith("vua.packages.")
+    && typeof value.detail === "string"
+    && value.detail.length > 0;
+}
+
+/** applyInstall wire 受理回执窄化(import-copy 同构四键,v0.2 信封:
+ * schemaVersion "0.2" + operation + taskId + correlationId;收不齐 =
+ * 形状不符) */
+function isApplyInstallAccepted(value: unknown): value is { taskId: string; correlationId: string } {
+  if (!isRecord(value)) return false;
+  return value.schemaVersion === PACKAGES_OPS_ENVELOPE_V02
+    && value.operation === "packages.applyInstall"
+    && typeof value.taskId === "string"
+    && value.taskId.length > 0
+    && typeof value.correlationId === "string"
+    && value.correlationId.length > 0;
+}
+
 type TypedOutcome<T> =
   | { readonly kind: "ok"; readonly result: T }
   | { readonly kind: "failed"; readonly code: string }
@@ -348,15 +488,17 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取三行——packages.query(installed)/packages.listRepos(repos)/
-   * packages.packageCatalog(catalog);行缺席或 availability 非
-   * available = 该区块诚实不可渲染(渲染层不伪造)。
+   * 一次取五行——packages.query(installed)/packages.listRepos(repos)/
+   * packages.packageCatalog(catalog)/packages.removeOps(changes)/
+   * packages.installOps(installs);行缺席或 availability 非 available =
+   * 该区块诚实不可渲染(渲染层不伪造)。
    */
   const readCapabilityRows = async (): Promise<{
     installed: boolean;
     repos: boolean;
     catalog: boolean;
     changes: boolean;
+    installs: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -380,6 +522,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       repos: availability(LIST_REPOS_OPERATION_ID),
       catalog: availability(CATALOG_OPERATION_ID),
       changes: availability(REMOVE_OPS_OPERATION_ID),
+      installs: availability(INSTALL_OPS_OPERATION_ID),
     };
   };
 
@@ -388,8 +531,10 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       | PackagesListInstalledRequestV1
       | PackagesListReposRequestV1
       | PackagesPackageCatalogRequestV1
-      | PackagesPreviewRemoveRequestV1,
+      | PackagesPreviewRemoveRequestV1
+      | PackagesPreviewInstallRequestV1,
     operation: string,
+    schemaVersion: string,
     validateResult: (value: Record<string, unknown>) => boolean,
   ): Promise<TypedOutcome<Record<string, unknown>>> => {
     const result = await client.invoke(request);
@@ -397,7 +542,8 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       if (result.error.kind === "application") {
         // 缺席臂(vua.packages.unavailable)= 引擎未装配,诚实 unavailable;
         // 其余 typed 码(project_not_found/no_matching_package/
-        // capability_missing/package_not_found 等)照原词上呈,不折叠为空态
+        // capability_missing/package_not_found/preview_failed 等)照原词
+        // 上呈,不折叠为空态
         if (result.error.error.code === "vua.packages.unavailable") {
           return { kind: "unavailable" };
         }
@@ -405,7 +551,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       }
       return { kind: "unavailable" };
     }
-    if (!isPackagesWireEnvelope(result.value, operation)) {
+    if (!isPackagesWireEnvelope(result.value, operation, schemaVersion)) {
       return { kind: "failed", code: "packages_shape_violation" };
     }
     const resultBody = result.value.result;
@@ -422,7 +568,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       method: "packages.listInstalled",
       params: { projectPath },
     };
-    const outcome = await invokeTyped(request, "packages.listInstalled", isPackagesInstalledResult);
+    const outcome = await invokeTyped(request, "packages.listInstalled", "0.1", isPackagesInstalledResult);
     if (outcome.kind !== "ok") return outcome;
     return { kind: "ok", result: (outcome.result as { packages: readonly InstalledPackageRowV01[] }).packages };
   };
@@ -435,7 +581,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       method: "packages.listRepos",
       params: {},
     };
-    const outcome = await invokeTyped(request, "packages.listRepos", isPackagesReposResult);
+    const outcome = await invokeTyped(request, "packages.listRepos", "0.1", isPackagesReposResult);
     if (outcome.kind !== "ok") return outcome;
     return { kind: "ok", result: (outcome.result as { repos: readonly RepoInfoRowV01[] }).repos };
   };
@@ -450,7 +596,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       method: "packages.packageCatalog",
       params: { projectPath, packageId },
     };
-    const outcome = await invokeTyped(request, "packages.packageCatalog", isPackagesCatalogResult);
+    const outcome = await invokeTyped(request, "packages.packageCatalog", "0.1", isPackagesCatalogResult);
     if (outcome.kind !== "ok") return outcome;
     const { schemaVersion: familyConst, ...facts } = outcome.result;
     // 组合校验已按族通过:剥信封键后按盖戳族断言对应词面事实
@@ -473,7 +619,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       method: "packages.previewRemove",
       params: { projectPath, packageIds },
     };
-    const outcome = await invokeTyped(request, "packages.previewRemove", isPackagesRemovePlanResult);
+    const outcome = await invokeTyped(request, "packages.previewRemove", "0.1", isPackagesRemovePlanResult);
     if (outcome.kind !== "ok") return outcome;
     return { kind: "ok", result: outcome.result as unknown as PackagesRemovePlanV01 };
   };
@@ -540,6 +686,97 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     return { kind: "failed", code: "packages_apply_result_shape" };
   };
 
+  /** A2 确认链第一步(026 v0.2 冻结词面):同步只读安装/升级预览,永不
+   * 变更状态;plan 九键闭集窄化(v0.2 戳),信封 typed 码照原词(缺席臂
+   * 折叠 unavailable;vua.packages.preview_failed = A2 信封新码,其余
+   * failed 照原词上呈) */
+  const previewInstallRaw = async (
+    projectPath: string,
+    packages: readonly PackagesPackageRequestV02[],
+  ): Promise<TypedOutcome<PackagesInstallPlanV02>> => {
+    const request: PackagesPreviewInstallRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.previewInstall",
+      params: { projectPath, packages: packages.map((row) => ({ ...row })) },
+    };
+    const outcome = await invokeTyped(
+      request,
+      "packages.previewInstall",
+      PACKAGES_OPS_ENVELOPE_V02,
+      isPackagesInstallPlanResult,
+    );
+    if (outcome.kind !== "ok") return outcome;
+    return { kind: "ok", result: outcome.result as unknown as PackagesInstallPlanV02 };
+  };
+
+  /** A2 确认链第二步(026 v0.2 冻结词面):任务化安装写命令(import-copy
+   * 同构,020 result 回流)——受理窄化→终态等待→Done payload 窄化。任
+   * 务九态语义归应用契约任务面;任务真实状态由任务中心呈现,本端口只消
+   * 费终态结果。apply 段仓库加载不降级(在线加载失败即任务如实失败)。
+   * 超时/断连/形态不齐 = 诚实 unavailable,不猜测不伪造结果文档(014 先
+   * 例);rejected 守卫拒绝是 Done payload(任务诚实完成、安装被拒),
+   * 不是错误。 */
+  const applyInstallRaw = async (
+    projectPath: string,
+    packages: readonly PackagesPackageRequestV02[],
+    confirmedDigest: string,
+  ): Promise<PackagesInstallApplyOutcome> => {
+    const request: PackagesApplyInstallRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.applyInstall",
+      params: {
+        projectPath,
+        packages: packages.map((row) => ({ ...row })),
+        confirmedDigest,
+      },
+    };
+    const response = await client.invoke(request);
+    if (!response.ok) {
+      if (response.error.kind === "application") {
+        // 受理阶段信封错误:缺席臂折叠 unavailable(引擎未装配/未接线),
+        // 其余 typed 码(未注册 vua.project.project_not_found / 能力缺席
+        // vua.vpm.capability_missing / 受理持久化失败
+        // vua.provider.persistence_failed / invalid_params)照原词 failed
+        if (response.error.error.code === "vua.packages.unavailable") {
+          return { kind: "unavailable" };
+        }
+        return { kind: "failed", code: response.error.error.code };
+      }
+      return { kind: "unavailable" };
+    }
+    if (!isApplyInstallAccepted(response.value)) {
+      return { kind: "failed", code: "packages_apply_acceptance_shape" };
+    }
+    const snapshot = await waitForTerminalTask(client, response.value.taskId, PACKAGES_APPLY_TASK_WAIT_MS);
+    if (snapshot === null) {
+      return { kind: "unavailable" };
+    }
+    // 冻结不变量(020):result 仅成功终态出现;rejected 守卫拒绝也在成
+    // 功终态的 Done payload 内(任务诚实完成)。非成功终态 = 安装未发生
+    // (failed/cancelled;恢复非终态绝不隐式续传),error.code 原词上呈,
+    // 收不齐 = 诚实降级码,不猜测
+    if (snapshot.state !== "succeeded" && snapshot.state !== "succeeded_with_warnings") {
+      const errorCode = isRecord(snapshot.error) && typeof snapshot.error.code === "string"
+        ? snapshot.error.code
+        : "packages_task_not_succeeded";
+      return { kind: "failed", code: errorCode };
+    }
+    const payload = isRecord(snapshot.result) ? snapshot.result : null;
+    const body = payload === null ? null : isRecord(payload.result) ? payload.result : null;
+    if (body === null) {
+      return { kind: "failed", code: "packages_apply_result_shape" };
+    }
+    if (body.kind === "receipt" && isPackagesInstallReceiptResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesInstallReceiptV02 };
+    }
+    if (body.kind === "rejected" && isPackagesInstallRejectedResult(body)) {
+      return { kind: "rejected", rejection: body as unknown as PackagesOpsRejectedV02 };
+    }
+    return { kind: "failed", code: "packages_apply_result_shape" };
+  };
+
   // 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动
   // 重取),订阅仅作能力行翻转的通知通道
   let selectedProjectPath: string | null = null;
@@ -569,6 +806,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           repos: capabilityRows.repos,
           catalog: capabilityRows.catalog,
           changes: capabilityRows.changes,
+          installs: capabilityRows.installs,
         },
         projectPath: null,
         installedPackages: [],
@@ -587,6 +825,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         repos: capabilityRows.repos,
         catalog: capabilityRows.catalog,
         changes: capabilityRows.changes,
+        installs: capabilityRows.installs,
       },
       projectPath: selectedProjectPath,
       installedPackages: outcome.kind === "ok" ? outcome.result : [],
@@ -633,6 +872,13 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         : outcome;
     },
     applyRemove: applyRemoveRaw,
+    async previewInstall(projectPath, packages) {
+      const outcome = await previewInstallRaw(projectPath, packages);
+      return outcome.kind === "ok"
+        ? { kind: "ok", plan: outcome.result }
+        : outcome;
+    },
+    applyInstall: applyInstallRaw,
     async addProject() {
       return { kind: "unavailable" };
     },

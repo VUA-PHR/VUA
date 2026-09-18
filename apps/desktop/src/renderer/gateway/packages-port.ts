@@ -1,4 +1,8 @@
 import type {
+  PackagesInstallPlanV02,
+  PackagesInstallReceiptV02,
+  PackagesOpsRejectedV02,
+  PackagesPackageRequestV02,
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
@@ -12,6 +16,16 @@ export type {
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
+} from "@vua/contracts";
+
+/** A2 安装/升级写面冻结词面(026 packages-ops v0.2;镜像 @vua/contracts
+ *  application-contract.ts A2 段——词面权威,投影与窄化纪律见
+ *  packages-live.ts) */
+export type {
+  PackagesInstallPlanV02,
+  PackagesInstallReceiptV02,
+  PackagesOpsRejectedV02,
+  PackagesPackageRequestV02,
 } from "@vua/contracts";
 
 /**
@@ -48,6 +62,16 @@ export type {
  *   事实源 = served_capabilities 的 packages.removeOps 能力行(随引擎
  *   后端 remove_packages 能力声明翻转,false = 行缺席或不可用,写入口
  *   不渲染——渲染层不伪造)。
+ * - A2 安装/升级写面消费批(026 packages-ops v0.2 冻结批 8552d2c 经第
+ *   101 批入库＋wire 接线批 61da51a 经第 102 批入库＋钉法缺口收口
+ *   beb7d34 经第 104 批入库,2026-09-19):packages.previewInstall(同步
+ *   只读安装/升级预览,依赖解析可达仓库)与 packages.applyInstall(九
+ *   态任务化安装写命令,双摘要守卫同 A1)已消费;blocks.installs 权威
+ *   事实源 = served_capabilities 的 packages.installOps 能力行(一位服
+ *   务 A2 双方法,removeOps 先例;false = 行缺席或不可用,安装入口不渲
+ *   染);blocks.changes 键语义与来源零变更(A1 逐面升级承诺:纯增量新
+ *   键,不改变已消费面的既有形状)。批量多选消费面解锁前置(同 id 唯一
+ *   三层钉法)已落地,本批照 C 面自决程序先交付行内单包安装首面。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -218,7 +242,10 @@ export type PackagesView =
    *   packages.query 能力行;repos 在 P1 词面无对应方法行类型级恒 false;
    *   changes 权威事实源 = packages.removeOps 能力行(026 A1 写面:随
    *   引擎后端 remove_packages 能力声明翻转,false = 行缺席或不可用,
-   *   写入口不渲染,渲染层不伪造);
+   *   写入口不渲染,渲染层不伪造);installs 权威事实源 =
+   *   packages.installOps 能力行(026 A2 安装/升级写面消费批,一位服务
+   *   双方法,同翻转纪律;A1 逐面升级承诺 = 纯增量新键,changes 语义与
+   *   来源零变更);
    * - installedPackages 按 packageId 升序(冻结的确定性呈现事实),
    *   空数组 = 诚实零已装包;
    * - loadError = 最近一次 listInstalled 的 typed 失败(错误码原词),
@@ -231,6 +258,7 @@ export type PackagesView =
         readonly installed: boolean;
         readonly repos: false;
         readonly changes: boolean;
+        readonly installs: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -238,12 +266,14 @@ export type PackagesView =
     }
   /**
    * P2 读面诚实态(025 冻结批消费批;「已装可看 + 订阅清单/包目录按
-   * 能力行解锁、变更面随 removeOps 能力行解锁」):
+   * 能力行解锁、变更面随 removeOps/installOps 能力行解锁」):
    * - blocks.repos/catalog 权威事实源 = served_capabilities 的
    *   packages.listRepos/packages.packageCatalog 能力行(随引擎后端
    *   catalog_capabilities 声明翻转);false = 该读面当前无能力行或行
    *   不可用,对应区块不渲染(渲染层不伪造);changes 权威事实源 =
    *   packages.removeOps 能力行(026 A1 写面消费批,同翻转纪律);
+   *   installs 权威事实源 = packages.installOps 能力行(026 A2 安装/
+   *   升级写面消费批,一位服务双方法,同翻转纪律);
    * - repos 行序 = 订阅面自身顺序(配置事实,客户端不重排);空数组 =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
@@ -259,6 +289,7 @@ export type PackagesView =
         readonly repos: boolean;
         readonly catalog: boolean;
         readonly changes: boolean;
+        readonly installs: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -319,6 +350,25 @@ export type ChangeRequest =
 export type PackagesRemoveApplyOutcome =
   | { readonly kind: "ok"; readonly receipt: PackagesRemoveReceiptV01 }
   | { readonly kind: "rejected"; readonly rejection: PackagesRemoveRejectedV01 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * A2 安装/升级写面结果(026 packages-ops v0.2 冻结词面;applyInstall
+ * 任务化消费四态,与 A1 移除四态同构):
+ * - ok = 审计收据(installReceipt 变体:确认指纹回显＋请求行 verbatim
+ *   携版本选择语义＋实际应用行,014 导入收据先例同构);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集复用 A1——preview_drift/
+ *   package_not_found/execution_failed;preview_drift 系 recoverable
+ *   冲突——重预览重确认,绝不静默覆盖,诚实纪律 3);
+ * - failed = 受理信封错误或任务非成功终态(typed 码原词:预览/查询段
+ *   失败 vua.packages.preview_failed〔A2 信封新码〕等);
+ * - unavailable = 引擎缺席/断连/超时无法确认结果(不猜测不伪造,
+ *   任务真实状态由任务中心呈现——014 先例)。
+ */
+export type PackagesInstallApplyOutcome =
+  | { readonly kind: "ok"; readonly receipt: PackagesInstallReceiptV02 }
+  | { readonly kind: "rejected"; readonly rejection: PackagesOpsRejectedV02 }
   | { readonly kind: "failed"; readonly code: string }
   | { readonly kind: "unavailable" };
 
@@ -411,6 +461,42 @@ export interface PackagesPort {
     packageIds: readonly string[],
     confirmedDigest: string,
   ): Promise<PackagesRemoveApplyOutcome>;
+  /**
+   * A2 词面消费(packages.previewInstall,026 packages-ops v0.2 冻结批):
+   * 安装/升级将造成的全部变更预览(依赖解析可达仓库,在线刷新失败降级
+   * 缓存——缓存降级是文档载明的行为,不是本面传输的事实)与摘要指纹
+   * digest——确认链第一步,永不变更任何状态;packages = 请求行闭列
+   * ({packageId, version string|null},version null = 解析器选最新稳定
+   * 版,string = 钉死精确版本,升级/降级同语法——A2 词面不立 upgrade
+   * 动词;同 packageId 重复 = 词面违反,行间 id 唯一在信封守卫钉死)。
+   * failed 携带信封 typed 码原词(vua.project.project_not_found = 未注册
+   * 路径复用码;vua.packages.preview_failed = A2 信封新码——预览/查询段
+   * 失败〔仓库解析、IO、外部失败类〕;vua.vpm.capability_missing =
+   * 引擎后端未声明 preview_install),不折叠不猜测。
+   */
+  previewInstall(
+    projectPath: string,
+    packages: readonly PackagesPackageRequestV02[],
+  ): Promise<
+    | { readonly kind: "ok"; readonly plan: PackagesInstallPlanV02 }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
+  /**
+   * A2 词面消费(packages.applyInstall,026 packages-ops v0.2 冻结批):
+   * 任务化安装写命令(import-copy 同构——端口内封装受理→终态等待→
+   * Done payload 窄化,020 result 回流先例);confirmedDigest 必携 =
+   * previewInstall 结果的 digest,服务端执行前复算,漂移即拒
+   * preview_drift(recoverable 冲突——重预览重确认,绝不静默覆盖,诚实
+   * 纪律 3;权威判定在服务端)。任务九态语义(可取消/事件＋revision/
+   * 恢复 inspect_required 绝不隐式续传)归应用契约任务面;任务真实状态
+   * 由任务中心呈现,本端口只消费终态结果(014 先例)。
+   */
+  applyInstall(
+    projectPath: string,
+    packages: readonly PackagesPackageRequestV02[],
+    confirmedDigest: string,
+  ): Promise<PackagesInstallApplyOutcome>;
   setRepoEnabled(repoId: string, enabled: boolean): Promise<PackagesView>;
   capability(): Promise<CapabilityReport>;
 }
