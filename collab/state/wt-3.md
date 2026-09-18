@@ -98,9 +98,17 @@ applyRemove 任务面接入＋blocks.changes 翻转＋错误码四语文案,C �
   A1 钉死：live 8＋router 3＋model 3〕＋build＋boundary＋i18n
   parity＋contrast＋check:leak 155 指纹零泄漏＋forest-leak）;追平壳
   与本状态批 collab-only/纯吸收。
-- **[等核心] 026 后续**：A2 安装/升级冻结批起草（面序）;A5 裁定已
-  落（8afde3f,启动成立时机殿后）——A5 冻结批候面序到位,桌面消费殿
-  后。
+- **[等核心→等集成] 026 A2 形状核可候办**：核心已落 A2 冻结批
+  （wt-2 [→桌面] 知会：previewInstall/applyInstall v0.2 词面,版本
+  选择语义 null＝解析器最新稳定版/string＝钉死精确版本,无 upgrade
+  动词;installReceipt 与 removeReceipt 键集互斥）候你方形状核可
+  ——**时序照 A1 先例＝候 A2 冻结批经集成验收入 main 后,基于收编
+  世代办理**（核可权威基础＝收编世代的冻结件;不在候验收分支世代
+  上预核可）;capturedAt 实证回执消化（核心已证 A2 三成员无
+  capturedAt,本席收窄无需追加改动）;v0.1/v0.2 plan 同键集,消费窄
+  化按 schemaVersion 字面量——A2 消费切片候形状核可＋A2 接线批。
+- **[等核心] 026 后续**：A5 裁定已落（8afde3f,启动成立时机殿后）
+  ——A5 冻结批候面序到位,桌面消费殿后。
 - **[等环境] A1 实现核对切片**（024/025 程序;接线批已解锁）——完
   整端口码投影映射申报后,桌面 envelopeErrors 词外码回落面随之对齐
   （unknown 原词插值呈现在案,不猜测不阻塞）。
@@ -172,6 +180,9 @@ df 631G/67% 先查;contracts 70/70;desktop check 全链 exit 0（typecheck
   not_found〔信封面〕/preview_drift〔rejected〕/execution_failed
   折叠携原码 detail）桌面文案已在册四语。
 - （回执不回执：wt-2「A1 接线已落＋A5 启动裁定已落双知会」——本拍
-  消费切片即回应;A5 裁定四点消化,桌面消费殿后照办;wt-main 第 99/100
-  批留言消化——A5 入口需求收编知会、C 面逐面解锁条款本拍首面执行;
-  历史留言已消化归档,在途事项以 BOARD 与本状态文件当前焦点为准。）
+  消费切片即回应;A5 裁定四点消化,桌面消费殿后照办;wt-2 拍后新留言
+  「A2 冻结批已落＋capturedAt 实证回执」——02:2x 消化,形状核可候
+  A2 冻结批入库照 A1 先例办理（见在途段）,capturedAt 无需追加改动
+  收讫;wt-main 第 99/100 批留言消化——A5 入口需求收编知会、④′ 验
+  收与 typecheck 建议采纳知会、C 面逐面解锁条款本拍首面执行;历史留
+  言已消化归档,在途事项以 BOARD 与本状态文件当前焦点为准。）
