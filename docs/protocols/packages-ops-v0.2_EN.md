@@ -2,7 +2,7 @@
 
 [English](packages-ops-v0.2_EN.md) | [简体中文](packages-ops-v0.2_ZH.md)
 
-> Document version: 0.2.1
+> Document version: 0.2.2
 > Status: **Frozen (packages-ops word-list row v0.2, slice A2
 > install/upgrade word face; the v0.1 A1 removal row stays frozen and
 > served untouched) — the word face is WIRED (wire routes in the tree;
@@ -12,7 +12,7 @@
 > upgrade = the same family as install, version-selection semantics
 > land with THIS freeze batch — the proposal pre-note honored)
 > Machine-readable word list: `schemas/packages-ops/v0.2/` (per-row
-> dual schemas + 4 positive / 8 negative vectors; core consumer tests
+> dual schemas + 4 positive / 9 negative vectors; core consumer tests
 > `crates/provider-host/tests/packages_ops_consumer_v02.rs`; wire
 > route tests
 > `crates/provider-host/tests/packages_ops_wire_v02.rs`; TS guard
@@ -35,7 +35,12 @@
 > core consumer tests + TS face + bilingual protocol doc + REGISTRY);
 > 2026-09-19 (v0.2.1 wiring batch: both wire route arms + the served
 > row landed, the honesty-boundary section honestly updated, the word
-> face zero-change)
+> face zero-change); 2026-09-19 (v0.2.2 shape-approval pin-gap
+> closure: the per-id uniqueness rule now honestly described as pinned
+> in three layers — a new exactly-repeated-row negative vector, the TS
+> guard narrowing with its tests, and the wire-layer request check;
+> the previous wording overstated what the negative-vector set and the
+> TS narrowing covered)
 
 ## A2 word-face semantics (install/upgrade = one family, no upgrade verb)
 
@@ -54,9 +59,13 @@
   `VersionSelector::latest_for` — latest stable; prereleases are never
   auto-selected); a string = pin exactly that version. An
   unresolvable pin answers `package_not_found`. A repeated `packageId`
-  across rows is a word-face violation even when the versions differ
-  (the schema `uniqueItems` pins exact duplicates; the negative vector
-  set and the TS narrowing pin the per-id rule).
+  across rows is a word-face violation even when the versions differ.
+  Pinned in three layers (v0.2.2 honest correction): the schema
+  `uniqueItems` pins exactly repeated rows (a dedicated negative
+  vector rides this batch; cross-row id comparison is beyond JSON
+  Schema's expressiveness and is NOT schema-pinned), the TS guard
+  narrowing refuses any repeated id with its own tests, and the
+  wire-layer request check refuses it at serving time.
 - **preview = synchronous read-only query, dependency-resolving.**
   Unlike A1 (no network, no dependency resolution), the A2 preview
   resolves dependencies against the registered repositories and MAY
@@ -204,7 +213,7 @@ the word list transports facts.
 ## Machine-readable word list
 
 - `schemas/packages-ops/v0.2/command.schema.json` +
-  `result.schema.json` + `examples/` (4 positive / 8 negative)
+  `result.schema.json` + `examples/` (4 positive / 9 negative)
 - Consumer tests:
   `crates/provider-host/tests/packages_ops_consumer_v02.rs`
   (schema vectors + the port→wire projection loop incl. the

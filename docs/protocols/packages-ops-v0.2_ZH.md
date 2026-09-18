@@ -2,14 +2,14 @@
 
 [English](packages-ops-v0.2_EN.md) | [简体中文](packages-ops-v0.2_ZH.md)
 
-> 文档版本：0.2.1
+> 文档版本：0.2.2
 > 状态：**已冻结（packages-ops 词表行 v0.2，A2 安装/升级词面；v0.1 A1
 > 移除行维持冻结照常服务，零触碰）——词面已接线（wire 路由在库，
 > 本版本如实更新接线状态；词面零变更）**
 > （2026-09-19，提案 026 面序，核心裁决 82a39c4 第 1 点：升级＝安装
 > 同族，版本选择语义随本冻结批落死——提案预记照办）
 > 机器可读词表：`schemas/packages-ops/v0.2/`（行级双 Schema＋4 正
-> 8 负向量；核心消费测试
+> 9 负向量；核心消费测试
 > `crates/provider-host/tests/packages_ops_consumer_v02.rs`；wire
 > 路由测试
 > `crates/provider-host/tests/packages_ops_wire_v02.rs`；TS 守卫
@@ -26,7 +26,10 @@
 > `blocks.changes` 演进照桌面表态 93752d5 第 3 条）
 > 更新：2026-09-19（v0.2 冻结批：双 Schema＋向量＋核心消费测试＋
 > TS 面＋双语协议本＋REGISTRY）；2026-09-19（v0.2.1 接线批：
-> wire 路由两臂＋served 行落地，诚实边界节如实更新，词面零变更）
+> wire 路由两臂＋served 行落地，诚实边界节如实更新，词面零变更）；
+> 2026-09-19（v0.2.2 形状核可钉法缺口闭合：同 id 唯一规则如实改写
+> 为三层钉法——新增完全重复行负例向量、TS 守卫窄化及其测试、
+> wire 层请求校验；前版措辞夸大了负例向量集与 TS 窄化的实际覆盖）
 
 ## A2 词面语义（安装/升级＝同族一对，不立 upgrade 动词）
 
@@ -41,8 +44,10 @@
   `VersionSelector::latest_for`——最新稳定版；预发布版绝不被自动
   选中）；字符串＝钉死精确版本。无法满足的钉版答
   `package_not_found`。同行重复 `packageId`＝词面违例，即使版本
-  不同（Schema `uniqueItems` 钉死精确重复；负例向量与 TS 窄化钉死
-  同 id 唯一规则）。
+  不同。三层钉法（v0.2.2 如实修正）：Schema `uniqueItems` 钉死
+  完全重复行（本批随批新增专负例向量；跨行 id 比较超出 JSON
+  Schema 表达力，Schema 层钉不了）；TS 守卫窄化拒绝任何重复 id
+  并携自有测试；wire 层请求校验在服务时拒绝。
 - **preview＝同步只读 query，做依赖解析。** 与 A1（无网络、无依赖
   解析）不同，A2 预览对已注册仓库做依赖解析、可能触网。在线仓库
   刷新失败时降级到包缓存（ORC-ADP-006 同构先例）。预览不携带缓存
@@ -157,7 +162,7 @@ Electron main（原样透传）→ 版本化应用契约 → provider wire 面 �
 ## 机器可读词表
 
 - `schemas/packages-ops/v0.2/command.schema.json`＋
-  `result.schema.json`＋`examples/`（4 正／8 负）
+  `result.schema.json`＋`examples/`（4 正／9 负）
 - 消费测试：
   `crates/provider-host/tests/packages_ops_consumer_v02.rs`
   （Schema 向量＋端口→wire 投影环〔含冲突触发 remove 行〕＋能力

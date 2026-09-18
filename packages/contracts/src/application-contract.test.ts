@@ -400,6 +400,29 @@ describe("bdl-commands v0.1 application surface", () => {
       ...base, kind: "query", method: "packages.previewInstall",
       params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }], confirmedDigest: "d" },
     })).toBe(false);
+    // 同 packageId 重复 = 词面违反(026 A2 形状核可钉法缺口闭合):
+    // 完全重复行(uniqueItems 语义)与同 id 异版本(行间 id 唯一,
+    // TS 守卫钉死——Schema uniqueItems 表达不了跨行 id 比较)一律拒绝
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: null },
+        ],
+      },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: "7.3.150" },
+        ],
+      },
+    })).toBe(false);
   });
 
   it("admits the 026 A2 packages.applyInstall command with the three-key closed params and commandId", () => {
@@ -423,6 +446,47 @@ describe("bdl-commands v0.1 application surface", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
       params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: 1 }], confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 同 id 异版本 = 行间 id 唯一违反(026 A2 形状核可钉法缺口闭合,
+    // 与 previewInstall 同一闭列规则)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: "7.3.150" },
+        ],
+        confirmedDigest: "fnv1a-7f3a91c2",
+      },
+    })).toBe(false);
+  });
+
+  it("admits the 026 A3 packages.registerLocalPackage command with the single-key closed params and no digest", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/generated/com.example.toolkit-1.4.0" },
+    })).toBe(true);
+    // 缺 packageRoot = 无可注册路径,形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: {},
+    })).toBe(false);
+    // 空 packageRoot = 非路径事实
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "" },
+    })).toBe(false);
+    // 发明 projectPath = 词表外键(注册只动后端隔离环境,不触项目)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/pkg", projectPath: "C:/proj" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 携 confirmedDigest = 形状违反(本面无 preview 可漂移,无 digest 位;
+    // 用户显式提交即确认)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/pkg", confirmedDigest: "d" },
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
   });
 
