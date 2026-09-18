@@ -33,6 +33,7 @@ export const strings: Strings = {
     warning: "확인 필요",
     error: "수정 필요",
     unknown: "알 수 없음",
+    info: "선택 사항",
   },
   taskStatus: {
     queued: "대기 중",
@@ -181,6 +182,9 @@ demoTaskTitle: "데모 작업",
     navReload: '새로 고침',
     navHome: 'booth.pm 홈으로 이동',
     navClose: '내장 뷰를 닫고 VUA로 돌아가기',
+    openInvalidAddress: '주소를 해석할 수 없습니다. 전체 URL(예: https://booth.pm) 또는 도메인(예: booth.pm)을 입력하세요.',
+    openOriginNotAllowed: '해당 출처는 내장 브라우징 허용 목록에 없어 열지 않았습니다.',
+    openFailed: '내장 뷰를 열지 못했습니다.',
   },
   home: {
     tagline: "VRChat 플레이와 창작의 커맨드 허브",
@@ -315,6 +319,11 @@ demoTaskTitle: "데모 작업",
       viveRuntime: "VIVE 런타임",
       virtualDesktop: "Virtual Desktop",
       alvr: "ALVR",
+      psvr2: "PlayStation VR2",
+      pimaxRuntime: "Pimax 런타임",
+      varjoRuntime: "Varjo 런타임",
+      bigscreenBeyond: "Bigscreen Beyond",
+      hpOmnicept: "HP Omnicept",
       gpu: "GPU",
       network: "네트워크 연결",
       windows: "Windows 버전",
@@ -329,6 +338,18 @@ demoTaskTitle: "데모 작업",
       detected: "감지됨",
       notDetected: "감지되지 않음",
       detectionFailed: "감지 실패",
+      /** 대안 그룹 충족 시 나머지 미감지 멤버의 중립 상태어(선택 사항, 할 일 아님) */
+      optional: "감지되지 않음(선택 사항)",
+    },
+    /** 대안 그룹 문구(CHECK_GROUPS): 그룹당 카드 한 장, 키는 그룹 id와 대응 */
+    groups: {
+      vrRuntime: {
+        title: "VR 런타임 및 스트리밍",
+        badge: "하나만 있으면 됨",
+        satisfied: "사용 가능한 런타임 {count}개를 감지했습니다. 하나만 있으면 플레이할 수 있습니다.",
+        unsatisfied:
+          "사용 가능한 VR 런타임이 감지되지 않았습니다. 다음 중 하나를 설치하면 플레이할 수 있습니다.",
+      },
     },
     fix: {
       loading: "수정 계획 생성 중…",

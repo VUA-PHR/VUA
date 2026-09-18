@@ -40,7 +40,11 @@
  * 窗口顶部,Main 侧 WebContentsView 上缘让位同高条带(remote-content
  * REMOTE_VIEW_NAV_STRIP_PX = 44px,两处必须同批改动)。条内空白可拖拽
  * 窗口(沉浸式标题栏等效),按钮与只读地址位不拖拽;色彩全部引用既有
- * token,hover 语言与壳窗口控制钮一致,对比度由 check:contrast 把守 */
+ * token,hover 语言与壳窗口控制钮一致,对比度由 check:contrast 把守。
+ * #38 修复(2026-09-18):本元素经 createPortal 挂 document.body(渲染
+ * 在 ImportPage 面板树内会被祖先 .vua-card 的毛玻璃 backdrop-filter 构
+ * 成的 fixed 包含块钉进卡片、落入视图覆盖区看不见点不着);挂 body 后
+ * position:fixed;top:0 相对视口,与 Main 侧 44px 让位条带重新对齐。 */
 .vua-import__browse-bar {
   position: fixed;
   top: 0;

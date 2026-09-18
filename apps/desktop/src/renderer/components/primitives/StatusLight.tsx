@@ -6,13 +6,14 @@ import "./status-light.css";
  * 红绿灯状态灯(§4 部署器辖区,红绿灯语义仅此处使用)。
  * 状态必须同时带图标,不单独依赖颜色(§3.2 / WCAG 1.4.1)。
  */
-export type StatusLevel = "ok" | "warning" | "error" | "unknown";
+export type StatusLevel = "ok" | "warning" | "error" | "unknown" | "info";
 
-const glyphs: Record<StatusLevel, "check" | "warning" | "close" | "question"> = {
+const glyphs: Record<StatusLevel, "check" | "warning" | "close" | "question" | "dash"> = {
   ok: "check",
   warning: "warning",
   error: "close",
   unknown: "question",
+  info: "dash",
 };
 
 const labels: Record<StatusLevel, string> = strings.statusLight;

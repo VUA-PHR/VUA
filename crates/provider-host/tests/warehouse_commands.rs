@@ -118,10 +118,15 @@ fn run_frames(world: &World, correlation_id: &str, commands: &[Value]) -> Vec<Va
         None,
     )
     .expect("the frame loop must stay alive for warehouse vectors");
+    // Only the request/response face is asserted here: the frame loop now also
+    // emits runtime-notification event frames (task lifecycle + persistence
+    // failures) for tasked warehouse commands — dropping them keeps every
+    // vector pinned to its response shape.
     String::from_utf8(output)
         .expect("output is UTF-8")
         .lines()
-        .map(|line| serde_json::from_str(line).expect("output lines are frames"))
+        .map(|line| serde_json::from_str::<Value>(line).expect("output lines are frames"))
+        .filter(|frame| frame["kind"] == "response")
         .collect()
 }
 

@@ -91,15 +91,11 @@ const api: VuaDesktopApiV1 = Object.freeze({
       },
     }),
   }),
-  // 壳能力自报(proposal 015 §11 方案 a):能力拥有者静态声明;呈现两态由
-  // 渲染层据此驱动(端到端可用才翻转呈现,desktop 架构 1.1.0)。
-  // BOARD #36 缺陷④呈现修(2026-09-18):remoteBrowser 恒 false = 壳层能力
-  // 设计现状(F4 起,非回归)——自报 true 会让素材导入页云端段呈现可用的
-  // 「VUA 内嵌浏览」面板而能力实际未开放;不可用的选项不提供,翻转回
-  // false 后面板按两态纪律诚实降级。能力面开放属功能决策,届时按「端到端
-  // 可用」证据翻转本标志,渲染层零改动
+  // 壳能力自报(proposal 015 §11 方案 a):能力拥有者静态声明;内嵌浏览
+  // 基座(remote-content + U9 导航策略)随本壳交付,呈现两态由渲染层据此
+  // 驱动(端到端可用才翻转呈现,desktop 架构 1.1.0)
   capabilities: Object.freeze({
-    remoteBrowser: false,
+    remoteBrowser: true,
   }),
   // 导航确认流(015 §12,批 B-3):Main 发确认请求,渲染层以 i18n 确认卡
   // 作答;确认在前/逐次无记忆,用户不答=不执行
