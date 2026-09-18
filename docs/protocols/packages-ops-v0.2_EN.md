@@ -2,16 +2,20 @@
 
 [English](packages-ops-v0.2_EN.md) | [简体中文](packages-ops-v0.2_ZH.md)
 
-> Document version: 0.2
+> Document version: 0.2.1
 > Status: **Frozen (packages-ops word-list row v0.2, slice A2
 > install/upgrade word face; the v0.1 A1 removal row stays frozen and
-> served untouched)**
+> served untouched) — the word face is WIRED (wire routes in the tree;
+> this revision honestly updates the wiring status, the word face
+> itself is zero-change)**
 > (2026-09-19, proposal 026 face order, core ruling 82a39c4 point 1:
 > upgrade = the same family as install, version-selection semantics
 > land with THIS freeze batch — the proposal pre-note honored)
 > Machine-readable word list: `schemas/packages-ops/v0.2/` (per-row
 > dual schemas + 4 positive / 8 negative vectors; core consumer tests
-> `crates/provider-host/tests/packages_ops_consumer_v02.rs`; TS guard
+> `crates/provider-host/tests/packages_ops_consumer_v02.rs`; wire
+> route tests
+> `crates/provider-host/tests/packages_ops_wire_v02.rs`; TS guard
 > tests `packages/contracts/src/application-contract.test.ts`)
 > Scope: `packages.previewInstall` (synchronous read-only install/
 > upgrade change preview, dependency-resolving, possibly network-
@@ -19,7 +23,8 @@
 > write command under the double-digest guard)
 > Ownership boundary: word-list freeze, port face (`VpmBackend`
 > `preview_install`/`apply_install` already in the tree), and wire
-> routing = core domain (wiring = the next core slice); the
+> routing = core domain (WIRED: both route arms + the
+> `packages.installOps` served row in the tree); the
 > `VpmBackend` library implementation (project-manager,
 > `preview_install` :528 / `apply_install` :757 already in the tree) =
 > environment domain (implementation verification slice per the
@@ -27,7 +32,10 @@
 > upgrade, `blocks.changes` evolution per desktop stance 93752d5
 > item 3)
 > Updated: 2026-09-19 (v0.2 freeze batch: dual schemas + vectors +
-> core consumer tests + TS face + bilingual protocol doc + REGISTRY)
+> core consumer tests + TS face + bilingual protocol doc + REGISTRY);
+> 2026-09-19 (v0.2.1 wiring batch: both wire route arms + the served
+> row landed, the honesty-boundary section honestly updated, the word
+> face zero-change)
 
 ## A2 word-face semantics (install/upgrade = one family, no upgrade verb)
 
@@ -155,8 +163,8 @@ ruling 82a39c4 point 4).
   `kind=rejected` (the typed guard refusal). Operation/kind lock:
   previewInstall answers plan only, applyInstall answers
   receipt/rejected only (machine-checkable at the schema layer).
-- **The served capability row (declared now, lands with the wiring
-  slice)**: one row, `packages.installOps`, serves both methods; its
+- **The served capability row (wired, landed)**: one row,
+  `packages.installOps`, serves both methods; its
   availability gates on the port's `VpmCapabilities.preview_install`
   bit (the frozen command schema's serving gate — one bit serving
   both A2 methods, the `packages.removeOps` A1 precedent). An engine
@@ -165,7 +173,18 @@ ruling 82a39c4 point 4).
   `vua.packages.unavailable`. The `vua.project.project_not_found`
   reuse answers at the route layer as the envelope error (the
   rejected arm's code schema locks `^vua\.packages\.` — a reused 013
-  code never enters a rejected document).
+  code never enters a rejected document). The wire-route projection
+  rules follow the A1 same path: the envelope-error face projects the
+  known mappings (`package_not_found` / `preview_failed`) and passes
+  word-out port codes through verbatim (the P1 discipline); the
+  task face projects the known guards (`preview_drift` /
+  `package_not_found`) and folds `apply_failed` plus every word-out
+  port code into `execution_failed` carrying the original code inside
+  `detail` as honest provenance (no invented fourth guard); the
+  double-digest guard is enforced at the wire layer (the server
+  re-computes the preview before execution — the authoritative
+  verdict lives server-side, proposal-014 arbitration point 2; the
+  backend's second comparison stays as defense in depth).
 
 ## Envelope, versions, and dependency direction
 
@@ -191,6 +210,12 @@ the word list transports facts.
   (schema vectors + the port→wire projection loop incl. the
   conflict-triggered remove row + the capability-absence word face +
   the drift-recoverable word face pinned);
+  `crates/provider-host/tests/packages_ops_wire_v02.rs` (11 wire
+  route cases riding the real frame loop: honest absence / the plan
+  envelope projection / the reused 013 code / the closed param
+  violations / capability absence / the two-code envelope projection /
+  the receipt Done payload / the drift refusal / the
+  execution_failed provenance / the route-layer refusal);
   `packages/contracts/src/application-contract.test.ts` (TS narrowing
   of the closed request rows); the `packages/orchestrator-provider`
   mock constant-absence arms (the simulation never simulates wire
@@ -198,12 +223,19 @@ the word list transports facts.
 
 ## Honesty boundaries and open items
 
-- **The wire routes are NOT wired yet.** Until the wiring slice
-  lands, `packages.previewInstall`/`packages.applyInstall` do not
-  exist on the wire face; desktop `blocks.changes` write entries stay
-  type-level invisible (fixture shapes are never moved into live —
-  the #22/#36 lessons, twice on record). Zero end-to-end claim: the
-  real-machine walkthrough stays with W25 (awaiting the user window
+- **The word face is wired (v0.2.1 honest update).** Both wire route
+  arms + the `packages.installOps` served row are in the tree:
+  `packages.previewInstall`/`packages.applyInstall` exist on the wire
+  face, and the route behavior is pinned by the 11
+  `packages_ops_wire_v02.rs` cases riding the real frame loop. The
+  pre-wiring honest-absence rules still serve engines that do not
+  declare the `preview_install` capability (the served row honestly
+  unavailable, the methods answering `vua.packages.unavailable` /
+  `capability_missing` — the capability face never lies). Desktop
+  `blocks.changes` write entries upgrade per the A2 consumption slice
+  (fixture shapes are never moved into live — the #22/#36 lessons,
+  twice on record); wired is not end-to-end: the real-machine
+  walkthrough stays with W25 (awaiting the user window
   O-2).
 - **Cache degradation is a documented behavior, not a transported
   fact (this face).** The preview may be computed against the package
