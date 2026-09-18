@@ -149,3 +149,94 @@ A 各面串行（每面冻结批候其表态收敛）。A4 不阻塞 A1–A3。
 
 （提出时无回复；各域表态按 024/025 先例内联落节，状态流转照
 proposals/README 办理。）
+
+### 表态（核心）（2026-09-18 晚，slot/wt-2 追平 79c9f72 后；开放问题 1 四项逐项裁决）
+
+**定位**：本节系 026 开放问题 1 的核心表态（面序确认／写面方法族命名与
+任务化形状／错误码新族立码／create_project 取舍）。本节为**程序与方向
+权威**，不预设字段名与最终闭集——各面权威词面由该面冻结批落死
+（025 先例：方向表态→冻结批落死，冻结批与本节冲突时以冻结批为准）。
+核实世代：main 79c9f72（本树追平 6c2f77e）；事实锚全部本机直读：
+crates/orchestrator/src/vpm_backend.rs:214-332（端口写方法族）、
+crates/project-manager/src/vpm_backend.rs:302-303/:351/:390/:528/:757/
+:898（VrcGetLibBackend 写能力位全 true 与五写方法实现在库；VccCliBackend
+:1105-1118 仅 create_project）、packages/contracts/src/application-contract.ts
+:33-55（TaskStateV01 九态闭集＋TaskRecoveryDispositionV01）、:583-584
+（读面族冻结注释「写面归 013 R5」）、:1359（requestRun 任务化驱动惯例
+注释）、schemas/ 目录（project-inspection 读＋project-ops 写分线先例，
+packages-query/packages-repos/packages-catalog 三读面行在库）。
+
+**开放问题 1 逐项表态**：
+
+1. **面序：A1 移除→A2 安装/升级→A3 register_local_package→A4 仓库
+   订阅写面，照建议序确认**。理由逐面核于端口与实现事实：A1
+   preview_remove/apply_remove 双双在库（端口 :254-270 默认 unsupported
+   ＋VrcGetLibBackend :351/:390 真实实现），无网络、无依赖解析，写面族
+   风险最小，宜立程序样板（九态任务／确认链／审计收据／恢复语义／错误
+   码族的逐面落实形状，014 import-copy 先例为底本）；A2
+   preview_install/apply_install 系端口必需方法＋ORC-WF-003/004 双摘要
+   守卫在库（:238-243）＋VrcGetLibBackend :528/:757 实现在库，升级＝
+   安装同族（版本选择语义随 A2 冻结批定，提案预记维持）；A3
+   register_local_package 端口在库（:244-248）＋能力位 true（:302 区）
+   ——本域隔离环境注册，面窄随 A2 后顺承；A4 殿后＝端口连方法都未立
+   （list_repos 只读注释 :282-286 明示启停/增删归 013 R5 写面不在此
+   处），需先立端口方法＋settings.json 写路径库面考证（环境开放问题 2
+   照 025 §1 同径），且 025 核心表态裁决 8 已把主动刷新类网络写行为列
+   R5 族候选面——A4 与 A1–A3 无串行依赖维持（提案并行关系节）。
+   A1–A3 每面冻结批六件（Schema＋正负例向量＋至少一端消费测试＋TS 面
+   ＋双语协议本＋REGISTRY）照提案 A 节确认，逐面独立验收。
+
+2. **方法族命名：wire 词表与读面同族 `packages.*` 前缀，preview/apply
+   二段动词照端口一一映射**（A1 面即 packages.previewRemove /
+   packages.applyRemove 形状；最终拼写随 A1 冻结批落死，本节立形状不
+   立全表）。理由：读面三方法 packages.listInstalled/listRepos/
+   packageCatalog 已在同族（024/025 链），写面另立前缀将分裂能力发现；
+   preview/apply 二段动词保留双摘要守卫的确认链结构——preview 系同步
+   只读 query（返回变更预览摘要＋摘要指纹），apply 系任务化写命令（携
+   用户确认的指纹，服务端复算 preview 校验指纹一致才执行——ORC-WF-003/
+   004 同纪律，桌面只做 UX 提示、权威判定在服务端，014 仲裁第 2 点先
+   例）。Schema 词表行归属：立独立写面行 `schemas/packages-ops/v0.1/`
+   ——直接先例＝项目域 project-inspection（读）＋project-ops（写）
+   分线（014 仲裁第 1 点「读/写分线」）；包域三读面行已分立，写面照搬
+   同构，不在既有读面行内扩写臂。
+
+3. **任务化形状：apply 面＝九态任务，preview 面＝同步 query**。九态
+   闭集即 TaskStateV01 在库九臂（queued/preparing/running/
+   waiting_for_input/paused/succeeded/succeeded_with_warnings/failed/
+   cancelled），恢复面 TaskRecoveryDispositionV01（none|inspect_required
+   ）——014 import-copy 同构（requestRun 任务化驱动、taskId 轮询，
+   application-contract.ts:1359 惯例注释在案；commandId 幂等/可取消/
+   事件＋revision 全部继承既有任务权威与任务中心）。恢复纪律逐面落实
+   诚实纪律 3：apply 任务中断/失败的非终态残留由复检标
+   `inspect_required`，绝不隐式续传；重试语义（014 先例＝清理后重来，
+   清理动作用户显式触发）随 A1 冻结批按移除面事实定形。审计收据（变更
+   清单＋实际结果）照 014 导入收据先例随 A1 命令 Schema 冻结定形。
+
+4. **错误码新族：立族名 `vua.packages.*`，立码时机＝A1 首面冻结批**。
+   024 桌面表态③预告名（「vua.packages.* 新族留给 P2/P3 有 packages
+   特有事实时随冻结批立」）照准——P3 首面（A1）冻结批即立码面：族与
+   wire 词表 packages.*、schemaVersion 命名空间 vua.packages-* 三面一
+   致，不再开 vua.vpm.* 新写码族；P2 在库既有码
+   vua.vpm.no_matching_package（catalog 面消费中）维持不动不回改。A1
+   冻结批立码纪律：闭集一次立全＋正负例向量覆盖（025 核心表态裁决 5
+   同律）；成员方向预记（最终闭集随冻结批）：预览-确认指纹漂移（双摘
+   要守卫拒绝）、包不存在、项目不在册、写能力缺席（通用
+   capability_missing 复用优先）。本节不预立具体码串。
+
+5. **create_project：不纳入 P3 面序（A1–A4 不含），留作后续候选面
+   （A5），启动条件＝桌面 B 面合并后提出入口需求**。理由：①性质不同
+   ——包写面修改在册项目（ChangePreviewV1 变更预览＋双摘要守卫形状适
+   配既有状态），create_project 新建目录无既有状态可 diff，预览/确认
+   链形状不共享（preview_install_for_plan :224-234 系「对计划基线预览
+   」的实现耦合，非面形状耦合）；②用户裁决边界——裁决原文「包管理器
+   要做写面」＋项目兼容并入，未提项目创建，U12 答复边界＝包写入口，
+   不预支；③样板纯度——A1 立写面程序样板应最小化，create_project 引
+   入模板选择/父目录/命名冲突等新预览维度会稀释样板。不预先关闭：端
+   口方法与 VccCliBackend/VrcGetLibBackend 双实现在库（:898/:326-331），
+   A5 照 013 R5 同程序独立启动即可，无实现前置缺口。
+
+**程序注记**：本节零代码纯 collab 面。开放问题 2（环境）／3（桌面）
+候各域落节；开放问题 4 集成自答预填无异议。核心侧下一步＝A1 冻结批起
+草（本表态＋环境表态收敛后，024/025 同径：冻结批→wire 接线→环境实现
+核对→桌面消费切片逐批验收）。B 面（项目兼容并入包管理器）零词表依赖
+，桌面径行领取不受本节影响。
