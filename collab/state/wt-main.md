@@ -15,6 +15,7 @@ updated: 2026-09-18
 - **合并门证据（本机 23:4x–23:5x）**：df 先查 C 盘余 647G/66%；desktop typecheck 双 tsconfig 0＋vitest 79 文件 672/672＋boundary OK＋i18n 三表对齐＋contrast 达标，全绿 exit 0。**未复跑照实申报**：build/check:leak/forest-leak——build 链含 cargo build --release vua-provider-host 恐触碰用户进程文件锁（wt-4 先例 os error 5），绝不动用户进程；证据沿用 wt-3 树 23:0x–23:2x 本机全链绿（含 build＋leak 155 零泄漏＋forest-leak）在案，且合并树代码面与该树全等。
 - **026 状态推进**：status 提出→讨论中（三域表态内联收敛＋集成开放问题 4 门序自答预填无异议重开；B 面已落地；A1–A4 逐面冻结批候启动，A4 启停面候 VCC 键名真机核实）；BOARD #40 行随批落账。
 - **wt-4**：领先 0（rev-list 实证）系已收编批次重显，零动作（回执不回执先例）。
+- **wt-4 追加批（拍内新增，收尾 brief 复核发现）**：产线限流重试拍两笔（追平壳 cfa2f63＋状态批 ff32c05，恰 wt-4.md，collab-only）——追平壳与 main 79c9f72 diff 空零自有内容实证，照「集成随轮验收各树候验收批」常规职责随批追加入库（合并提交见 git），产线下轮 tick 自理追平至当前 main。
 - **机械校验**：四支合并均 --no-ff；026 提案三域表态节顺序＝核心→环境→桌面（恰开放问题 1→2→3）；collab 合并支免全量照各树申报，代码支（wt-3）定向复跑如上；随批推送 origin/main，推送债归零。
 
 ## 阻塞
