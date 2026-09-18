@@ -2,18 +2,19 @@
 
 [English](packages-ops-v0.3_EN.md) | [简体中文](packages-ops-v0.3_ZH.md)
 
-> Document version: 0.3
+> Document version: 0.3.1
 > Status: **Frozen (packages-ops word-list row v0.3, slice A3
 > local-package registration word face; the v0.1 A1 removal row and the
 > v0.2 A2 install/upgrade row stay frozen and served untouched — v0.3
 > is a separate row directory per the packages-catalog v0.2 increment
-> precedent; the word face is NOT YET WIRED: the wire route does not
-> exist until the next core wiring slice, and until then the method is
-> absent from the wire face)**
+> precedent; the word face is WIRED: the wire route and the served row
+> are in the tree — desktop consumption follows the per-face upgrade,
+> and until that lands the method has no desktop entry point)**
 > (2026-09-19, proposal 026 face order A1→A2→A3)
 > Machine-readable word list: `schemas/packages-ops/v0.3/` (per-row
 > dual schemas + 2 positive / 7 negative vectors; core consumer tests
-> `crates/provider-host/tests/packages_ops_consumer_v03.rs`; TS guard
+> `crates/provider-host/tests/packages_ops_consumer_v03.rs`; wire route
+> tests `crates/provider-host/tests/packages_ops_wire_v03.rs`; TS guard
 > tests `packages/contracts/src/application-contract.test.ts`)
 > Scope: `packages.registerLocalPackage` (nine-state task-driven
 > registration of one generated local package into the backend's
@@ -24,13 +25,18 @@
 > `register_local_package` port method and the VrcGetLib implementation)
 > = core domain; wire route (the `packages.registerOps` served row gated
 > on the accessor, the route arm, the envelope assembly) = core domain,
-> the NEXT core slice; the `VrcGetLibBackend::register_capabilities`
+> LANDED with this batch; the `VrcGetLibBackend::register_capabilities`
 > override = environment domain (the implementation-verification slice,
 > the 024/025 procedure — the served row stays honestly unavailable
 > until that override flips it); desktop consumption = desktop domain
 > (per-face upgrade, `blocks.changes` evolution per desktop stance)
-> Updated: 2026-09-19 (v0.3 freeze batch: dual schemas + vectors +
-> core consumer tests + TS face + bilingual protocol doc + REGISTRY)
+> Updated: 2026-09-19 (v0.3.1 wiring batch: the route arm
+> `packages.registerLocalPackage` + the served row `packages.registerOps`
+> gated on the accessor + the envelope assembly + the closed-set
+> projection + the wire tests + this document names the wire envelope
+> const — word face ZERO change); 2026-09-19 (v0.3 freeze batch: dual
+> schemas + vectors + core consumer tests + TS face + bilingual protocol
+> doc + REGISTRY)
 
 ## A3 word-face semantics (registration is deliberately NOT a preview/apply pair)
 
@@ -113,14 +119,54 @@
   original code in detail; `local_package_register_failed` → rejected
   `execution_failed` with the original code in detail; capability
   absence → generic `capability_missing` (envelope error, pre-submit).
+- **The served capability row (wired, landed)**: one row,
+  `packages.registerOps`, serves the one method; its availability
+  gates on the NEW defaulted accessor
+  `register_capabilities().register_local_package` (the frozen v0.3
+  command schema's serving gate — the removeOps/installOps one-row
+  precedent). An engine wired without the registration capability
+  declared keeps the row honestly unavailable; an unwired engine
+  answers `vua.packages.unavailable`. There is NO registered-project
+  check on this route (no `projectPath` is taken — registration never
+  touches a project), so the 013 `project_not_found` reuse does not
+  apply to this face. The wire-route projection follows the A1/A2
+  discipline narrowed to this face: the task face folds EVERY port
+  refusal (`local_package_invalid`, `local_package_register_failed`,
+  the trait default's `capability_missing`, and every word-out code)
+  into `execution_failed` carrying the original code inside `detail`
+  as honest provenance — no invented fourth guard; the capability
+  gate answers the generic `capability_missing` at the route layer
+  BEFORE submit — capability absence never reaches a task.
+
+## Envelope, versions, and dependency direction
+
+The wire envelope is the standing shape (the `schemaVersion` envelope
+const `"0.3"` + `operation` + `result`); the result document carries
+its own family const (`vua.packages-ops/v0.3`) — the two versions are
+independent (the c914cf2 standing rule: every wire row carries a
+version constant of its own). The task acceptance and the Done payload
+both stamp the `"0.3"` envelope const. The v0.1 removal methods keep
+answering at the v0.1 word face and the v0.2 install methods at the
+v0.2 word face; a v0.3 request is only `packages.registerLocalPackage`
+(the v0.2 and v0.3 `changePlan` shapes share the same key set —
+consumers narrow by the `schemaVersion` literal, not by keys alone).
+Dependency direction unchanged: renderer → typed Gateway → Electron
+main (verbatim pass-through) → versioned application contract →
+provider wire face → the `VpmBackend` port → the project-manager
+adapter. Framework and vendor types stay in adapters; the word list
+transports facts.
 
 ## Honesty boundary
 
-- **The word face is NOT wired (v0.3 freeze batch).** The wire route,
-  the `packages.registerOps` served row and the envelope assembly are
-  the NEXT core slice; until that batch lands the method does not exist
-  on the wire face, no desktop entry point renders, and nothing here
-  claims runtime behavior. The consumer tests ride schema vectors and
-  fake backends — the real backend consumption is the environment
-  implementation-verification slice, and the end-to-end walkthrough
-  stays with W25 (pending the user opening window O-2).
+- **The word face is wired (v0.3.1 wiring batch); consumption is not.**
+  The wire route, the `packages.registerOps` served row, the envelope
+  assembly and the wire tests are in the tree — the method exists on
+  the wire face as of this batch. Desktop still renders no entry point
+  (consumption follows the per-face upgrade, the A1/A2 same program),
+  the environment `VrcGetLibBackend::register_capabilities` override
+  has not landed (the served row answers honestly unavailable until it
+  does), and the real backend consumption is the environment
+  implementation-verification slice. The consumer and wire tests ride
+  schema vectors and fake backends; the end-to-end walkthrough stays
+  with W25 (pending the user opening window O-2). Nothing here claims
+  runtime behavior beyond the wire face this batch landed.

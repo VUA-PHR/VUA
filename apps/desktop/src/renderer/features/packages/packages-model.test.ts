@@ -14,6 +14,7 @@ import {
   conflictMessageKey,
   filterPackages,
   groupPreviewItems,
+  installLatestRequests,
   invalidReasonKey,
   isEmptyPreview,
   looksPrerelease,
@@ -207,6 +208,28 @@ test("rangeSelect: 正向/反向范围,anchor 失效退化单选", () => {
   assert.deepEqual(rangeSelect(ids, null, "b"), ["b"]);
   assert.deepEqual(rangeSelect(ids, "gone", "b"), ["b"]);
   assert.deepEqual(rangeSelect(ids, "a", "gone"), []);
+});
+
+/* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面) ---- */
+
+test("installLatestRequests: 批量行 = version null 解析器语义(钉法),行序保持,空选择空数组", () => {
+  // 每行 version null = 解析器选最新稳定版(「安装/升级到最新」批量语义,
+  // 与单包「安装最新」入口同语义;A2 词面不立 upgrade 动词)
+  assert.deepEqual(installLatestRequests(["a", "b"]), [
+    { packageId: "a", version: null },
+    { packageId: "b", version: null },
+  ]);
+  // 行序保持给定顺序(已装表行序 = 服务端 packageId 升序,客户端不重排)
+  assert.deepEqual(
+    installLatestRequests(["z", "m", "a"]).map((row) => row.packageId),
+    ["z", "m", "a"],
+  );
+  // 空选择 = 空数组(调用方拒发空请求——词面 minItems 1,UI 不构造违例请求)
+  assert.deepEqual(installLatestRequests([]), []);
+  // 无钉版本行:批量面不携带 string 版本(钉版本粒度保留目录面板单包入口)
+  for (const row of installLatestRequests(["a", "b"])) {
+    assert.equal(row.version, null);
+  }
 });
 
 /* ---- 变更预览分组与空预览 ---- */
