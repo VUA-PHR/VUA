@@ -443,12 +443,15 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       case "packages.applyRemove":
       case "packages.previewInstall":
       case "packages.applyInstall":
+      case "packages.registerLocalPackage":
         // 025 P2 词表行(核心冻结批 2026-09-17)＋026 A1 写面(核心冻
         // 结批 2026-09-19)＋026 A2 安装/升级面(核心冻结批 2026-09-19,
-        // packages-ops v0.2):同 P1 纪律——模拟 Provider 无 VpmBackend
-        // 引擎面,恒答诚实缺席,绝不伪造仓库订阅清单/包目录事实/变更
-        // 预览/审计收据或空数组冒充(诚实空清单/空 versions/诚实空态
-        // 只属于真实后端的合法事实;模拟面永不模拟 wire 写回执)
+        // packages-ops v0.2)＋026 A3 本地包注册面(核心冻结批
+        // 2026-09-19,packages-ops v0.3):同 P1 纪律——模拟 Provider 无
+        // VpmBackend 引擎面,恒答诚实缺席,绝不伪造仓库订阅清单/包目录
+        // 事实/变更预览/审计收据/注册收据或空数组冒充(诚实空清单/空
+        // versions/诚实空态只属于真实后端的合法事实;模拟面永不模拟
+        // wire 写回执)
         return this.#failure(request, this.#error(
           "vua.packages.unavailable",
           "unavailable",

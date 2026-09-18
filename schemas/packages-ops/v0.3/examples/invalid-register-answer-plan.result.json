@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "packages.registerLocalPackage",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.3",
+    "kind": "plan",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "items": [],
+    "conflicts": [],
+    "removeLegacyFiles": [],
+    "removeLegacyFolders": [],
+    "destructive": false,
+    "digest": "fnv1a-7f3a91c2"
+  }
+}

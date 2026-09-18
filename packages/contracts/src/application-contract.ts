@@ -878,6 +878,61 @@ export type PackagesInstallResultV02 =
   | PackagesInstallReceiptV02
   | PackagesOpsRejectedV02;
 
+/* ---- 026 A3 写面(packages-ops v0.3,核心冻结批 2026-09-19)。本地包
+ *  注册面单方法,族中唯一无 preview 对偶的写面:端口无 preview 方法
+ *  (实现注释明示「注册与 preview/apply 刻意分离——常规摘要绑定安装
+ *  路径独占一切项目变更」),注册是幂等集合添加(库面 AlreadyAdded 答
+ *  成功,不区分首次/重复),非破坏性(只加一行用户包条目,不删不改)。
+ *  九态任务化写命令(写命令族一致形状——applyRemove/applyInstall/
+ *  project.setNote 同构):无 confirmedDigest(无既有状态可漂移,用户
+ *  显式提交即确认——A5 create_project 表态同向;ADR-0006 破坏性警示
+ *  路径不适用,本面不发明破坏性事实)。rejected 臂 guard 闭集零新增
+ *  (照 A2 折叠纪律——全部后端守卫折 execution_failed 携原码 detail
+ *  溯源;复用码 vua.vpm.* 永不入 rejected code 键)。served 能力位 =
+ *  新 default accessor register_capabilities() 门控(default
+ *  declared-none,025 catalog_capabilities 同律;packages.registerOps
+ *  行,一行一方法,removeOps/installOps 先例;VrcGetLib 覆写随环境
+ *  实现核对切片);wire 路由候核心接线切片 */
+
+/** packages.registerLocalPackage:任务化本地包注册写命令(command;
+ *  params 单键闭集 {packageRoot} = 本地包根目录(含 package.json),
+ *  端口 package_root verbatim camelCase 投影;无 projectPath——注册
+ *  只动后端隔离环境,不触项目、不触用户 VCC/ALCOM 设置) */
+export interface PackagesRegisterCommandV03 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.registerLocalPackage";
+  readonly commandId: string;
+  readonly params: {
+    readonly packageRoot: string;
+  };
+}
+
+/** kind=registered(A3 注册收据):最小诚实审计形状——端口答
+ *  Result<(), _> 无载荷,收据只携请求回显(packageRoot),别无他物;
+ *  AlreadyAdded 幂等折叠 = 无首次/重复事实,additionalProperties:false
+ *  禁止发明(负例 invalid-register-invented-field 钉死) */
+export interface PackagesRegisterReceiptV03 {
+  readonly schemaVersion: "vua.packages-ops/v0.3";
+  readonly kind: "registered";
+  /** 请求的 packageRoot 回显——本面唯一的审计事实 */
+  readonly packageRoot: string;
+}
+
+export interface PackagesRegisterRejectedV03 {
+  readonly schemaVersion: "vua.packages-ops/v0.3";
+  readonly kind: "rejected";
+  readonly guard: PackagesGuardV02;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern);原端口码
+   *  (vua.vpm.local_package_invalid / vua.vpm.local_package_register_
+   *  failed)在 detail 原词溯源,不入 code 键 */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesRegisterResultV03 =
+  | PackagesRegisterReceiptV03
+  | PackagesRegisterRejectedV03;
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1868,6 +1923,7 @@ export type ApplicationRequestV01 =
   | PackagesApplyRemoveCommandV01
   | PackagesPreviewInstallQueryV02
   | PackagesApplyInstallCommandV02
+  | PackagesRegisterCommandV03
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -2010,6 +2066,7 @@ export type ApplicationSuccessValueV01 =
   | ProjectImportCopyResultV01
   | PackagesRemoveResultV01
   | PackagesInstallResultV02
+  | PackagesRegisterResultV03
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV01;
 
@@ -2397,6 +2454,18 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       seenIds.add(row.packageId);
       return row.version === null || (typeof row.version === "string" && row.version.length > 0);
     });
+  }
+  // 026 A3 写面(核心冻结批 2026-09-19):registerLocalPackage = 单键
+  // 闭集 {packageRoot}(本地包根目录,非空;无 projectPath——注册只动
+  // 后端隔离环境;无 digest 位——携即形状违反,本面无 preview 可漂移,
+  // 用户显式提交即确认)
+  if (value.kind === "command" && value.method === "packages.registerLocalPackage") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["packageRoot"])) {
+      return false;
+    }
+    return typeof value.params.packageRoot === "string" && value.params.packageRoot.length > 0;
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {

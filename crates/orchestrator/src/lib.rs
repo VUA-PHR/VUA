@@ -134,8 +134,8 @@ pub use vpm::{fnv1a_hex, InstallConfirmation, InstallPlanV1, InstallRequest, Pla
 pub use vpm_backend::{
     error_codes as vpm_backend_error_codes, CatalogCapabilities, CatalogVersionV01, ChangeItemV1,
     ChangeKindV1, ChangePreviewV1, InstalledPackageV1, PackageCatalogV01, PackageCatalogV02,
-    PackageRequestV1, PackageSourceV01, RegisteredProjectV1, RepoInfoV01, VpmBackend,
-    VpmCapabilities,
+    PackageRequestV1, PackageSourceV01, RegisteredProjectV1, RegisterCapabilities, RepoInfoV01,
+    VpmBackend, VpmCapabilities,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};
