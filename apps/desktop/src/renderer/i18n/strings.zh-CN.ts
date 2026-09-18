@@ -1631,6 +1631,33 @@ rolled_back: "已回滚",
       },
     },
 
+    register: {
+      title: "注册本地包",
+      description:
+        "将本地包根目录（含 package.json）登记到 VUA 的包环境；只做登记，不修改项目，也不修改 VCC/ALCOM 设置。重复登记同一个包是安全的。",
+      placeholder: "输入本地包根目录路径，例如 C:\\LocalPackages\\com.example.pkg-1.0.0",
+      inputAria: "本地包根目录路径",
+      action: "注册",
+      submitting: "正在注册…",
+      successLine: "已注册：{packageRoot}",
+      rejectedDetail: "服务端说明：{detail}",
+      guards: {
+        preview_drift: "注册被拒绝。",
+        package_not_found: "注册被拒绝。",
+        execution_failed: "注册在执行阶段失败。",
+        unknown: "注册被拒绝。",
+      },
+      envelopeErrors: {
+        capabilityMissing: "当前引擎后端不支持本地包注册。",
+        invalidParams: "注册请求形状无效。",
+        unknown: "操作失败。",
+      },
+      toasts: {
+        failedUnknown: "注册未能完成（{code}）。",
+        unavailable: "注册未能完成：暂时无法确认结果；任务状态可在任务中心查看。",
+      },
+    },
+
     repos: {
       addCommunity: "添加社区仓库",
       riskTitle: "添加社区仓库之前",

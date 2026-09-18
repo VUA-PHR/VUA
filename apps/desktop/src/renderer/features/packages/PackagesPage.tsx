@@ -23,6 +23,7 @@ import {
   type PackagesInstallPlanV02,
   type PackagesInstallReceiptV02,
   type PackagesOpsRejectedV02,
+  type PackagesRegisterApplyOutcome,
   type PackagesRemovePlanV01,
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
@@ -46,7 +47,9 @@ import {
   isEmptyPreview,
   migrationSummaryKey,
   rangeSelect,
+  registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
+  removeGuardKey,
   sortPackages,
   sortProjects,
   sourceTextKeys,
@@ -65,6 +68,8 @@ const copy = strings.packages;
  * - 视图 ready-p1(024 P1 中间诚实态)→ 项目选择器(013 注册清单)+
  *   已装包简表;repos 无词表行恒不渲染;移除写入口随 removeOps 能力行
  *   解锁(026 A1 消费批:previewRemove 确认链 + applyRemove 任务面);
+ *   本地包注册区块随 registerOps 能力行解锁(026 A3 消费批:无确认链,
+ *   用户显式提交即确认);
  * - 视图 ready-p2(025 P2 读面消费批)→ P1 布局 + 仓库订阅区块(能力行
  *   解锁,cached=false「已订阅·缓存未建立」诚实态,零健康拟态词)+
  *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
@@ -76,7 +81,11 @@ const copy = strings.packages;
  *   最新稳定版,string = 钉死精确版本——A2 词面不立 upgrade 动词)+
  *   批量多选安装(C 面自决,026 A2 消费面:已装表多选列 + 批量条随
  *   installOps 能力行解锁;批量行全部 version null = 解析器语义,与
- *   单包「安装/升级到最新」同语义;可装性不预判,权威在服务端);
+ *   单包「安装/升级到最新」同语义;可装性不预判,权威在服务端)+
+ *   本地包注册区块(026 A3 消费批:随 registerOps 能力行解锁,{packageRoot}
+ *   单键手输 + 显式提交,无 preview 无确认链——注册是幂等集合添加,
+ *   AlreadyAdded 折叠为同一个成功事实;register_capabilities 访问器
+ *   翻转前能力行如实 unavailable,区块诚实缺席);
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - demo 泛型变更链(fixture 面):previewChanges → ChangesDialog 确认 →
@@ -85,7 +94,9 @@ const copy = strings.packages;
  *   (conflicts 警示 + destructive 延迟确认)→ applyRemove(任务化)→
  *   receipt/rejected 终态内联呈现;live A2 词面链(026 v0.2):
  *   previewInstall → InstallConfirmDialog(同构,收据键集互斥)→
- *   applyInstall(任务化)→ 终态内联呈现——三链分立互不污染。
+ *   applyInstall(任务化)→ 终态内联呈现;live A3 注册链(026 v0.3):
+ *   registerLocalPackage 显式提交(无 preview 无确认链,用户提交即确认)
+ *   → 任务化执行 → registered/rejected 行内呈现——各链分立互不污染。
  */
 
 type PackagesSection = "packages" | "repos";
@@ -529,6 +540,79 @@ function P2ReposSection({
   );
 }
 
+/* ---- A3 本地包注册区块(026 v0.3 消费批):blocks.registers(packages.
+ * registerOps 能力行)门控,false = 区块不渲染(诚实缺席)。族中唯一无
+ * preview 对偶的写面——无确认链:用户显式提交即确认,无 DelayedButton
+ * 无对话框(非破坏性,ADR-0006 破坏性警示路径不适用,本面不发明破坏性
+ * 事实)。空输入 = 按钮禁用(词面 minLength 1,UI 不构造违例请求)。
+ * ok(registered 三键回显)/rejected(guard 文案 + detail 原词)行内
+ * 呈现;failed/unavailable 关闭为 toast 诚实说明——任务真实状态由任务
+ * 中心呈现。幂等语义如实呈现:重复注册同一包根 = 同一个成功事实。 ---- */
+
+/** A3 注册区块行内终态:ok 保留收据回显 / rejected 保留拒绝呈现;
+ * failed/unavailable 不留行内状态( toast 说明后复位)。 */
+type RegisterOutcomeView =
+  | { readonly kind: "ok"; readonly packageRoot: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+function RegisterSection({
+  outcome,
+  busy,
+  path,
+  onPathChange,
+  onSubmit,
+}: {
+  outcome: RegisterOutcomeView | null;
+  busy: boolean;
+  path: string;
+  onPathChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const trimmed = path.trim();
+  const usable = trimmed.length > 0 && !busy;
+  return (
+    <Card>
+      <h2 className="vua-packages__section-title">{copy.register.title}</h2>
+      <p className="vua-caption vua-text-secondary">{copy.register.description}</p>
+      <div className="vua-packages__register-row">
+        <input
+          type="text"
+          className="vua-packages__register-input"
+          placeholder={copy.register.placeholder}
+          aria-label={copy.register.inputAria}
+          value={path}
+          onChange={(event) => onPathChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && usable) onSubmit();
+          }}
+        />
+        <Button variant="default" disabled={!usable} onClick={onSubmit}>
+          <Icon name="folder" size={16} />
+          {busy ? copy.register.submitting : copy.register.action}
+        </Button>
+      </div>
+      {outcome?.kind === "ok" ? (
+        <div className="vua-packages__register-result" role="status">
+          <Icon name="check" size={16} />
+          <span className="vua-caption">
+            {format(copy.register.successLine, { packageRoot: outcome.packageRoot })}
+          </span>
+        </div>
+      ) : null}
+      {outcome?.kind === "rejected" ? (
+        <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+          <Icon name="warning" size={16} />
+          <span className="vua-caption">
+            {copy.register.guards[removeGuardKey(outcome.guard)]}
+            {" "}
+            {format(copy.register.rejectedDetail, { detail: outcome.detail })}
+          </span>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 /** P2 目录事实面板:挂载即按需查询(双键闭集);五种形态严格区分——
  * 加载骨架 / typed 失败(码原词) / no_matching_package 独立空态 /
  * 目录事实行闭集呈现(displayName null 以 packageId 兼任;source 二态
@@ -754,6 +838,12 @@ export function PackagesPage() {
     rejection: PackagesOpsRejectedV02 | null;
   } | null>(null);
   const [installPreviewBusy, setInstallPreviewBusy] = useState(false);
+  // A3 本地包注册(026 v0.3 消费批;与 A1/A2 确认链分立):无 preview 无
+  // 确认链——用户显式提交即确认;ok(registered 回显)/rejected 行内呈现,
+  // failed/unavailable toast 后复位
+  const [registerRoot, setRegisterRoot] = useState("");
+  const [registerBusy, setRegisterBusy] = useState(false);
+  const [registerOutcome, setRegisterOutcome] = useState<RegisterOutcomeView | null>(null);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -1200,6 +1290,54 @@ export function PackagesPage() {
     clearInstallSelection();
   };
 
+  /* ---- A3 本地包注册(026 v0.3 消费批):无 preview 无确认链,用户显
+   * 式提交即确认(词面无 digest 位,UI 不构造携 digest 请求)。空输入 =
+   * 按钮禁用,提交函数再守卫一次(词面 minLength 1,UI 绝不构造违例请
+   * 求)。ok/rejected 行内呈现;failed/unavailable 关闭为 toast 诚实说
+   * 明——任务真实状态由任务中心呈现。幂等语义如实呈现:重复注册同一
+   * 包根 = 同一个成功事实(收据形状相同)。 ---- */
+
+  const startRegister = () => {
+    if (registerBusy) return;
+    const packageRoot = registerRoot.trim();
+    if (packageRoot.length === 0) return;
+    setRegisterBusy(true);
+    setRegisterOutcome(null);
+    void gateway.packages.registerLocalPackage(packageRoot).then(
+      (result) => {
+        setRegisterBusy(false);
+        if (result.kind === "ok") {
+          setRegisterOutcome({ kind: "ok", packageRoot: result.receipt.packageRoot });
+          return;
+        }
+        if (result.kind === "rejected") {
+          setRegisterOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        setRegisterOutcome(null);
+        if (result.kind === "failed") {
+          const key = registerEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.register.toasts.failedUnknown, { code: result.code })
+              : copy.register.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.register.toasts.unavailable);
+        }
+      },
+      () => {
+        setRegisterBusy(false);
+        setRegisterOutcome(null);
+        showToast(copy.register.toasts.unavailable);
+      },
+    );
+  };
+
   const togglePrereleases = (checked: boolean) => {
     if (checked && !prereleaseAcked) {
       setPrereleasePrompt(true);
@@ -1267,6 +1405,15 @@ export function PackagesPage() {
             />
             {p2.blocks.repos ? (
               <P2ReposSection repos={p2.repos} reposErrorCode={p2.reposError?.code ?? null} />
+            ) : null}
+            {p2.blocks.registers ? (
+              <RegisterSection
+                outcome={registerOutcome}
+                busy={registerBusy}
+                path={registerRoot}
+                onPathChange={setRegisterRoot}
+                onSubmit={startRegister}
+              />
             ) : null}
             {registeredProjects !== null && registeredProjects.length === 0 ? (
               <EmptyState
@@ -1363,6 +1510,15 @@ export function PackagesPage() {
                 selectedProjectPath={p1.projectPath}
                 onSelect={chooseProject}
               />
+              {p1.blocks.registers ? (
+                <RegisterSection
+                  outcome={registerOutcome}
+                  busy={registerBusy}
+                  path={registerRoot}
+                  onPathChange={setRegisterRoot}
+                  onSubmit={startRegister}
+                />
+              ) : null}
               {registeredProjects !== null && registeredProjects.length === 0 ? (
                 <EmptyState
                   title={copy.empty.noProjectsTitle}
