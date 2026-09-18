@@ -18,9 +18,11 @@ export const DESKTOP_GATEWAY_MAX_REQUEST_BYTES = 64 * 1024;
  * 并入 provider 能力行 `operations`(ApplicationSnapshotV01.capabilities.
  * operations 原样透传,Kernel 不解释不增删)。此前信封只保留旧三布尔,致
  * 所有读 capabilities.operations 的页面 gate 恒空(#22 live/fixture 形状
- * 分裂教训:消费切片 mock 带行、live 信封没有)。remoteBrowser 仍恒 false:
- * §11 仲裁 (a) 内嵌浏览能力归壳(preload capabilities)自报,provider 不
- * 报告也不转述;能力面开放属功能决策,另行走登记。
+ * 分裂教训:消费切片 mock 带行、live 信封没有)。remoteBrowser 值＝壳能力
+ * 自报同源(#36 缺陷4′ 对齐,2026-09-19):§11 仲裁 (a) 内嵌浏览能力归壳
+ * (preload capabilities)自报,provider 不报告也不转述;信封与壳自报引用
+ * 同一事实源(electron/shell-capabilities),不再硬编码。能力面开放属
+ * 功能决策,另行走登记。
  */
 export interface AppSnapshotV1 {
   readonly schemaVersion: 1;

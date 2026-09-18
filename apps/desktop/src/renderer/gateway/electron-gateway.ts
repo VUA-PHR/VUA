@@ -129,7 +129,10 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
       method: "environment.getSnapshot",
       params: {},
     });
-    if (!result.ok || !("items" in result.value)) throw new Error("environment_snapshot_unavailable");
+    // capturedAt 是环境快照在 ApplicationSuccessValueV01 union 中的唯一
+    // 顶层键(026 A1 冻结批 packages-ops plan 臂也带 items,"items" in 守卫
+    // 不再唯一收窄——A1 TS 面落地连带修复,桌面域,2026-09-19)
+    if (!result.ok || !("capturedAt" in result.value)) throw new Error("environment_snapshot_unavailable");
     return projectEnvironmentSnapshot(result.value);
   };
   return {
