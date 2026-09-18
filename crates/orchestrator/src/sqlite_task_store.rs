@@ -1230,6 +1230,9 @@ fn event_kind_name(kind: TaskEventKind) -> &'static str {
         TaskEventKind::Progress => "progress",
         TaskEventKind::CancelRequested => "cancel_requested",
         TaskEventKind::Completed => "completed",
+        // Never persisted today (persistence failing is what emits it), but
+        // mapped symmetrically so any future store path round-trips.
+        TaskEventKind::PersistenceFailed => "persistence_failed",
     }
 }
 
@@ -1240,6 +1243,7 @@ fn parse_event_kind(value: &str) -> Result<TaskEventKind, SqliteStoreError> {
         "progress" => Ok(TaskEventKind::Progress),
         "cancel_requested" => Ok(TaskEventKind::CancelRequested),
         "completed" => Ok(TaskEventKind::Completed),
+        "persistence_failed" => Ok(TaskEventKind::PersistenceFailed),
         _ => Err(SqliteStoreError::CorruptValue {
             field: "task event kind",
             value: value.into(),

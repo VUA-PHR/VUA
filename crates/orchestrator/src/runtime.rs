@@ -52,6 +52,13 @@
 //! 追加 → 改状态并 bump revision → 广播事件**。journal 失败会把任务
 //! 标记为 poisoned，且不会提交未持久化的新状态。
 //!
+//! **poisoned 的可见性（诚实纪律 #2）**：任务被污染的瞬间会广播一条
+//! `PersistenceFailed` 事件（仅内存——持久化正是失败的原因），快照同时
+//! 暴露 `poisoned` 并把 recovery_disposition 呈现为 `InspectRequired`。
+//! 污染任务对外不再是"还在跑"，而是"已冻结、等待恢复检查"；对污染任务
+//! 的 cancel 返回类型化错误，不再假装受理。重启后权威库仍将其读为
+//! inspect_required，两个时刻的语义一致。
+//!
 //! `emit_progress()` —— job 汇报进度的通道（ORC-IPC-004）。**同样
 //! bump revision**（v0 不落 journal）——这样事件流的 revision 严格
 //! 递增，前端发现跳号就知道漏了事件、重新拉快照。
@@ -134,6 +141,12 @@ pub struct TaskSnapshot {
     pub correlation_id: String,
     pub cancel_requested: bool,
     pub recovery_disposition: TaskRecoveryDisposition,
+    /// True when a persistence failure froze this task in-session: no
+    /// further mutations are accepted and the task must surface as needing
+    /// inspection (it will read `inspect_required` from the authority after
+    /// restart). Exposed so serving layers can present the freeze as a
+    /// failure instead of a task that merely stopped progressing.
+    pub poisoned: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -546,8 +559,19 @@ impl TaskRuntime {
                     task_id.to_owned(),
                 ));
             };
-            if record.state.is_terminal() || record.poisoned {
+            if record.state.is_terminal() {
                 return Ok(());
+            }
+            if record.poisoned {
+                // A frozen task cannot record a cancellation request;
+                // pretending success would be a false acknowledgement.
+                return Err(AppErrorV1::new(
+                    error_codes::JOURNAL_WRITE_FAILED,
+                    ErrorCategory::Internal,
+                    "errors.task.journalWriteFailed",
+                    task_id.to_owned(),
+                )
+                .with_recoverable(true));
             }
             if record.cancel_requested.load(Ordering::SeqCst) {
                 return Ok(());
@@ -561,6 +585,16 @@ impl TaskRuntime {
                 },
             ) {
                 record.poisoned = true;
+                let state = record.state;
+                let revision = record.revision + 1;
+                record.revision = revision;
+                publish_persistence_failed(
+                    &self.inner,
+                    task_id,
+                    state,
+                    revision,
+                    &record.correlation_id,
+                );
                 return Err(persistence_failure(&error, task_id));
             }
             record.cancel_requested.store(true, Ordering::SeqCst);
@@ -579,7 +613,10 @@ impl TaskRuntime {
         Ok(())
     }
 
-    /// Reads the current snapshot of one task (ORC-IPC-002).
+    /// Reads the current snapshot of one task (ORC-IPC-002). A poisoned
+    /// record reports `InspectRequired` regardless of its stored disposition:
+    /// the frozen condition and the restart-recovery condition require the
+    /// same user action.
     pub fn snapshot(&self, task_id: &str) -> Option<TaskSnapshot> {
         let tasks = self.inner.tasks.lock().expect("tasks poisoned");
         tasks.get(task_id).map(|record| TaskSnapshot {
@@ -588,7 +625,8 @@ impl TaskRuntime {
             revision: record.revision,
             correlation_id: record.correlation_id.clone(),
             cancel_requested: record.cancel_requested.load(Ordering::SeqCst),
-            recovery_disposition: record.recovery_disposition,
+            recovery_disposition: disposition_of(record),
+            poisoned: record.poisoned,
         })
     }
 
@@ -603,7 +641,8 @@ impl TaskRuntime {
                 revision: record.revision,
                 correlation_id: record.correlation_id.clone(),
                 cancel_requested: record.cancel_requested.load(Ordering::SeqCst),
-                recovery_disposition: record.recovery_disposition,
+                recovery_disposition: disposition_of(record),
+                poisoned: record.poisoned,
             })
             .collect();
         snapshots.sort_by(|left, right| left.task_id.cmp(&right.task_id));
@@ -733,6 +772,48 @@ fn can_transition(from: TaskState, to: TaskState) -> bool {
             | (Paused, Cancelled)
     )
 }
+
+/// The externally visible disposition of a record: a poisoned record awaits
+/// inspection exactly like a restart-recovered non-terminal one.
+fn disposition_of(record: &TaskRecord) -> TaskRecoveryDisposition {
+    if record.poisoned && record.recovery_disposition == TaskRecoveryDisposition::None {
+        return TaskRecoveryDisposition::InspectRequired;
+    }
+    record.recovery_disposition
+}
+
+/// Publishes the in-session freeze notification. Called exactly once per
+/// task, at the first persistence failure, with the tasks lock held (the
+/// same discipline as the Completed publish in `finish`).
+///
+/// The event is never persisted (persistence is what failed); the revision
+/// is bumped in memory so the event stream stays strictly monotonic. After a
+/// restart the authority's lower revision wins and consumers re-query a
+/// snapshot per the gap rule (ORC-STA-005).
+fn publish_persistence_failed(
+    inner: &RuntimeInner,
+    task_id: &str,
+    state: TaskState,
+    revision: u64,
+    correlation_id: &str,
+) {
+    let error = AppErrorV1::new(
+        error_codes::JOURNAL_WRITE_FAILED,
+        ErrorCategory::Internal,
+        "errors.task.journalWriteFailed",
+        format!("corr-{task_id}"),
+    )
+    .with_recoverable(true);
+    inner.publish(inner.make_event_at(
+        task_id,
+        revision,
+        TaskEventKind::PersistenceFailed,
+        state,
+        serde_json::to_value(&error).unwrap_or(Value::Null),
+        inner.clock.now_rfc3339(),
+        correlation_id.to_owned(),
+    ));
+}
 /// The handle a job uses to observe progress boundaries, emit progress and
 /// move through intermediate states.
 pub struct TaskContext {
@@ -830,6 +911,17 @@ impl TaskContext {
                         .is_err()
                     {
                         record.poisoned = true;
+                        let state = record.state;
+                        let revision = record.revision + 1;
+                        record.revision = revision;
+                        let correlation_id = record.correlation_id.clone();
+                        publish_persistence_failed(
+                            &self.runtime.inner,
+                            &self.task_id,
+                            state,
+                            revision,
+                            &correlation_id,
+                        );
                         return;
                     }
                     record.revision += 1;
@@ -897,6 +989,17 @@ impl TaskContext {
                 },
             ) {
                 record.poisoned = true;
+                let state = record.state;
+                let revision = record.revision + 1;
+                record.revision = revision;
+                let correlation_id = record.correlation_id.clone();
+                publish_persistence_failed(
+                    &self.runtime.inner,
+                    &self.task_id,
+                    state,
+                    revision,
+                    &correlation_id,
+                );
                 return Err(persistence_failure(&error, &self.task_id));
             }
             record.revision += 1;
@@ -952,6 +1055,17 @@ impl TaskContext {
                 .is_err()
             {
                 record.poisoned = true;
+                let state = record.state;
+                let revision = record.revision + 1;
+                record.revision = revision;
+                let correlation_id = record.correlation_id.clone();
+                publish_persistence_failed(
+                    &self.runtime.inner,
+                    &self.task_id,
+                    state,
+                    revision,
+                    &correlation_id,
+                );
                 return;
             }
             record.revision += 1;
@@ -1000,6 +1114,17 @@ impl TaskContext {
                 .is_err()
             {
                 record.poisoned = true;
+                let state = record.state;
+                let revision = record.revision + 1;
+                record.revision = revision;
+                let correlation_id = record.correlation_id.clone();
+                publish_persistence_failed(
+                    &self.runtime.inner,
+                    &self.task_id,
+                    state,
+                    revision,
+                    &correlation_id,
+                );
                 return;
             }
             record.cancel_requested.store(true, Ordering::SeqCst);

@@ -7,7 +7,13 @@ import {
   type TaskStateV01,
 } from "@vua/contracts";
 import type { TaskStatus } from "../app/task-status.ts";
-import type { CheckItem, CheckStatus, CheckZone, DeployerView } from "../features/deployer/deployer-model.ts";
+import {
+  CHECK_GROUPS,
+  type CheckItem,
+  type CheckStatus,
+  type CheckZone,
+  type DeployerView,
+} from "../features/deployer/deployer-model.ts";
 import type { EnvironmentView } from "./environment-port.ts";
 import type { WorkflowRunState } from "./workflow.ts";
 import type { TaskItem } from "./task-port.ts";
@@ -59,6 +65,7 @@ export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
 /**
  * 在场事实 → 部署器严重度的消费侧缺省裁决(契约明确严重度由消费侧决定):
  * detected → ok,not_detected → warning,detection_failed → error。
+ * 替代组(CHECK_GROUPS)成员在投影后由 applyCheckGroups 按组满意度二次裁决。
  * F6 环境切片引入检查项文案注册表后,此缺省由注册表替换。
  */
 const PRESENCE_SEVERITY: Readonly<Record<EnvironmentPresenceV01, CheckStatus>> = {
@@ -67,7 +74,13 @@ const PRESENCE_SEVERITY: Readonly<Record<EnvironmentPresenceV01, CheckStatus>> =
   detection_failed: "error",
 };
 
+/** checkId → 替代组 id(注册表派生;未注册的检查项不属于任何组) */
+const CHECK_GROUP_OF: ReadonlyMap<string, string> = new Map(
+  CHECK_GROUPS.flatMap((group) => group.memberIds.map((memberId) => [memberId, group.id] as const)),
+);
+
 function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
+  const groupId = CHECK_GROUP_OF.get(item.checkId);
   return {
     id: item.checkId,
     zone: item.zone,
@@ -77,7 +90,29 @@ function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
     // 四语状态词;error_code 仅 DetectionFailed 携带(引擎契约),属工程
     // 事实码照原词呈现(词表外码不猜测,诚实纪律)。
     description: item.errorCode ?? presenceText(item.presence),
+    // exactOptionalPropertyTypes:无组项不写 groupId 键
+    ...(groupId === undefined ? {} : { groupId }),
   };
+}
+
+/**
+ * 替代组二次裁决(消费侧,组内任一项可用即满足整组):
+ * 组已被满足时,其余未检测到成员由 warning 降为 info 中性项
+ * (未安装的可选项,不是待办);detection_failed 成员保持 error
+ * 原样呈现——观测失败是事实,不因组满足而隐藏(诚实纪律)。
+ * 组未满足时成员维持 warning,由汇总层把整组计为一项待办。
+ */
+function applyCheckGroups(items: CheckItem[]): CheckItem[] {
+  const satisfied: ReadonlySet<string> = new Set(
+    CHECK_GROUPS.filter((group) =>
+      items.some((item) => item.groupId === group.id && item.status === "ok"),
+    ).map((group) => group.id as string),
+  );
+  return items.map((item) => {
+    if (item.groupId === undefined || !satisfied.has(item.groupId)) return item;
+    if (item.status !== "warning") return item;
+    return { ...item, status: "info", description: strings.deployer.presence.optional };
+  });
 }
 
 /** presence 三词闭集 → 四语状态词(strings.deployer.presence.*) */
@@ -92,7 +127,9 @@ function presenceText(presence: EnvironmentPresenceV01): string {
 
 /* ---- 检查项卡片标题(用户实测缺口修复 2026-09-12,环境侧 wt-6 留言:
  *  disk_space 双区呈现后卡片 title 原为 checkId 透传;2026-09-16 #31 补齐
- *  引擎 id 闭集其余 6 项——brand runtime 五项＋gpu)。消费侧文案注册表:
+ *  引擎 id 闭集其余 6 项——brand runtime 五项＋gpu;2026-09-18 品牌面扩展
+ *  再增 psvr2/bigscreen_beyond/pimax_runtime/varjo_runtime/hp_omnicept
+ *  五项)。消费侧文案注册表:
  *  键覆盖引擎当前 id 闭集(engine environment.rs inspect_zone,disk_space
  *  双区同 id);引擎新增 id 而本表未收录时如实透传 checkId——不猜测、
  *  不伪造标题。 ---- */
@@ -108,6 +145,11 @@ const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   vive_runtime: "viveRuntime",
   virtual_desktop: "virtualDesktop",
   alvr: "alvr",
+  psvr2: "psvr2",
+  pimax_runtime: "pimaxRuntime",
+  varjo_runtime: "varjoRuntime",
+  bigscreen_beyond: "bigscreenBeyond",
+  hp_omnicept: "hpOmnicept",
   gpu: "gpu",
   network: "network",
   windows: "windows",
@@ -132,7 +174,7 @@ function checkTitle(checkId: string): string {
  */
 export function projectEnvironmentSnapshot(snapshot: EnvironmentSnapshotV01): EnvironmentView & { deployer: DeployerView } {
   const byZone = (zone: CheckZone) =>
-    snapshot.items.filter((item) => item.zone === zone).map(projectCheckItem);
+    applyCheckGroups(snapshot.items.filter((item) => item.zone === zone).map(projectCheckItem));
   return {
     schemaVersion: 1,
     deployer: {

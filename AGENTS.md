@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.1.3
+> Document version: 1.1.4
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -154,7 +154,12 @@ Electron handlers, Unity callbacks, or third-party wrappers.
    contract permits.
 5. Prefer capability detection over assumptions about installed software or upstream versions.
 6. Add dependencies only with a clear owner, purpose, license, and removal path.
-7. Preserve unrelated worktree changes. Never work directly on `main`.
+7. Preserve unrelated worktree changes. Never work directly on `main` — with two declared
+   exceptions: (a) the Integration seat's collab bookkeeping batches (state files, BOARD,
+   proposals) land on `main` directly, per `collab/README.md`; (b) an explicit user ruling may
+   direct a change onto `main` outside the slice flow. Both exceptions are registration-backed:
+   the landing commit or its collab entry must name the authority (standing mechanism or user
+   ruling) that sanctioned the direct landing.
 8. Do not add `Co-authored-by: Codex` trailers.
 
 ## Documentation discipline
@@ -177,6 +182,11 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.1.4 (2026-09-18): working-discipline rule 7 now declares its two standing exceptions —
+  Integration-seat collab bookkeeping batches on `main` (per `collab/README.md`) and explicit
+  user-ruled direct landings — closing the gap where every nightly bookkeeping batch
+  technically violated the rule as previously worded. No behavioral change; the rule text now
+  matches established practice and the authority order (user ruling first).
 - 1.1.3 (2026-09-07): code-reality bullet updated — `environment_managers` moved to
   `project-manager` behind the core-owned `VccSettingsReader` port (proposal 004 option 3
   landed); the deferred-extraction exception is closed.

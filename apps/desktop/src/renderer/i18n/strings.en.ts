@@ -41,6 +41,7 @@ export const strings = {
     warning: "Needs confirmation",
     error: "Needs fixing",
     unknown: "Unknown",
+    info: "Optional",
   },
   taskStatus: {
     queued: "Queued",
@@ -335,6 +336,11 @@ demoTaskTitle: "Demo task",
       viveRuntime: "VIVE runtime",
       virtualDesktop: "Virtual Desktop",
       alvr: "ALVR",
+      psvr2: "PlayStation VR2",
+      pimaxRuntime: "Pimax Runtime",
+      varjoRuntime: "Varjo Runtime",
+      bigscreenBeyond: "Bigscreen Beyond",
+      hpOmnicept: "HP Omnicept",
       gpu: "GPU",
       network: "Network",
       windows: "Windows version",
@@ -349,6 +355,17 @@ demoTaskTitle: "Demo task",
       detected: "Detected",
       notDetected: "Not detected",
       detectionFailed: "Detection failed",
+      /** Neutral word for not-detected members of a satisfied alternative group */
+      optional: "Not detected (optional)",
+    },
+    /** Alternative-group copy (CHECK_GROUPS): one card per group; keys match group ids */
+    groups: {
+      vrRuntime: {
+        title: "VR Runtimes & Streaming",
+        badge: "Any one",
+        satisfied: "{count} usable runtime(s) detected — any one of them is enough to play.",
+        unsatisfied: "No usable VR runtime detected. Install any one of the following to play.",
+      },
     },
     fix: {
       loading: "Generating fix plan…",
