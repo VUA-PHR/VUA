@@ -203,7 +203,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -278,13 +278,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -756,6 +756,245 @@ describe("packages live port A1 removal write face (026 consumption)", () => {
   });
 });
 
+/* ---- A2 安装/升级写面消费(026 packages-ops v0.2 冻结词面 8552d2c;wire
+ * 接线批 61da51a + 钉法缺口收口 beb7d34 世代) ---- */
+
+const VALID_INSTALL_PLAN = {
+  schemaVersion: "vua.packages-ops/v0.2",
+  kind: "plan",
+  projectPath: "C:/proj",
+  items: [
+    { kind: "install", packageId: "com.vrchat.avatars", version: "3.7.4", reason: null },
+    { kind: "remove", packageId: "com.example.conflict", version: null, reason: "conflict" },
+  ],
+  conflicts: ["com.example.conflict depends on com.vrchat.avatars < 3.7.0"],
+  removeLegacyFiles: [],
+  removeLegacyFolders: [],
+  destructive: true,
+  digest: "fnv-1a-def456",
+};
+
+const VALID_INSTALL_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.2",
+  kind: "receipt",
+  projectPath: "C:/proj",
+  confirmedDigest: "fnv-1a-def456",
+  requestedPackages: [{ packageId: "com.vrchat.avatars", version: null }],
+  appliedItems: [
+    { kind: "install", packageId: "com.vrchat.avatars", version: "3.7.5", reason: null },
+  ],
+};
+
+const VALID_INSTALL_REJECTED = {
+  schemaVersion: "vua.packages-ops/v0.2",
+  kind: "rejected",
+  guard: "preview_drift",
+  code: "vua.packages.preview_drift",
+  detail: "confirmed digest fnv-1a-def456 does not match the re-computed preview digest fnv-1a-abc123",
+};
+
+function previewInstallFrame(result: unknown): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.2", operation: "packages.previewInstall", result });
+}
+
+function acceptedInstallFrame(taskId: string): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.2", operation: "packages.applyInstall", taskId, correlationId: "c-2" });
+}
+
+/** A2 流编排 client:preview/apply/task.get 分支可控(与 A1 a1Client 分立,
+ * 信封版本 0.2)。 */
+function a2Client(overrides: {
+  snapshot?: Parameters<typeof appSnapshot>[0];
+  preview?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  apply?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  taskGet?: GatewayResult<DesktopGatewaySuccessValueV1>;
+} = {}): { client: GatewayClient; emitCompleted: (taskId: string) => void } {
+  const listeners = new Set<(event: unknown) => void>();
+  const client: GatewayClient = {
+    invoke: async (request) => {
+      if (request.method === "app.snapshot") {
+        return { ok: true, value: appSnapshot(overrides.snapshot ?? QUERY_AVAILABLE) };
+      }
+      if (request.method === "packages.previewInstall") {
+        return overrides.preview ?? { ok: true, value: previewInstallFrame(VALID_INSTALL_PLAN) };
+      }
+      if (request.method === "packages.applyInstall") {
+        return overrides.apply ?? { ok: true, value: acceptedInstallFrame("t-2") };
+      }
+      if (request.method === "task.get") {
+        return overrides.taskGet ?? { ok: true, value: taskSnapshotValue("running") };
+      }
+      return { ok: false, error: { kind: "unavailable" } as const };
+    },
+    subscribe: (callback) => {
+      listeners.add(callback as (event: unknown) => void);
+      return () => {
+        listeners.delete(callback as (event: unknown) => void);
+      };
+    },
+  };
+  return {
+    client,
+    emitCompleted: (taskId) => {
+      for (const listener of listeners) {
+        listener({ kind: "task.completed", taskId, payload: {} });
+      }
+    },
+  };
+}
+
+describe("packages live port A2 install write face (026 v0.2 consumption)", () => {
+  it("narrows the frozen nine-key v0.2 plan verbatim (family const stamped, version-selection semantics carried, conflict remove rows projected)", async () => {
+    const { client } = a2Client();
+    const port = createLivePackages(client);
+    const outcome = await port.previewInstall("C:/proj", [{ packageId: "com.vrchat.avatars", version: null }]);
+    expect(outcome).toEqual({ kind: "ok", plan: VALID_INSTALL_PLAN });
+  });
+
+  it("answers unavailable on the absence arm and passes the A2 preview_failed envelope code verbatim", async () => {
+    const absent = a2Client({
+      preview: applicationError("vua.packages.unavailable", "unavailable"),
+    });
+    expect(
+      await createLivePackages(absent.client).previewInstall("C:/proj", [{ packageId: "com.a.b", version: null }]),
+    ).toEqual({ kind: "unavailable" });
+    const previewFailed = a2Client({
+      preview: applicationError("vua.packages.preview_failed", "external_failure"),
+    });
+    expect(
+      await createLivePackages(previewFailed.client).previewInstall("C:/proj", [{ packageId: "com.a.b", version: null }]),
+    ).toEqual({ kind: "failed", code: "vua.packages.preview_failed" });
+  });
+
+  it("answers shape violation when a v0.1-stamped plan rides the v0.2 operation or a field is invented", async () => {
+    // v0.1 戳冒充 v0.2 应答:消费窄化按字面量,v0.1 戳 = 形状不符
+    const v01Stamp = a2Client({
+      preview: {
+        ok: true,
+        value: previewInstallFrame({ ...VALID_INSTALL_PLAN, schemaVersion: "vua.packages-ops/v0.1" }),
+      },
+    });
+    expect(
+      await createLivePackages(v01Stamp.client).previewInstall("C:/proj", [{ packageId: "com.a.b", version: null }]),
+    ).toEqual({ kind: "failed", code: "packages_shape_violation" });
+    const invented = a2Client({
+      preview: {
+        ok: true,
+        value: previewInstallFrame({ ...VALID_INSTALL_PLAN, cacheSourced: true }),
+      },
+    });
+    expect(
+      await createLivePackages(invented.client).previewInstall("C:/proj", [{ packageId: "com.a.b", version: null }]),
+    ).toEqual({ kind: "failed", code: "packages_shape_violation" });
+  });
+
+  it("flips blocks.installs with the served packages.installOps row (one row serves both A2 methods; changes semantics untouched)", async () => {
+    const withRow = await createLivePackages(
+      a2Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.installOps", availability: "available" },
+        ],
+      }).client,
+    ).snapshot();
+    if (withRow.kind === "ready-p2") {
+      expect(withRow.blocks.installs).toBe(true);
+      expect(withRow.blocks.changes).toBe(false);
+    }
+    const withoutRow = await createLivePackages(a2Client().client).snapshot();
+    if (withoutRow.kind === "ready-p2") {
+      expect(withoutRow.blocks.installs).toBe(false);
+    }
+  });
+
+  it("rides the task loop: v0.2 acceptance -> completed event -> succeeded snapshot with the install receipt payload", async () => {
+    const taskGetSequence: GatewayResult<DesktopGatewaySuccessValueV1>[] = [
+      { ok: true, value: taskSnapshotValue("running") },
+      {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.2", operation: "packages.applyInstall", result: VALID_INSTALL_RECEIPT },
+        }),
+      },
+    ];
+    let taskGetCalls = 0;
+    let subscribed = false;
+    const listeners = new Set<(event: unknown) => void>();
+    const client: GatewayClient = {
+      invoke: async (request) => {
+        if (request.method === "packages.applyInstall") {
+          return { ok: true, value: acceptedInstallFrame("t-2") };
+        }
+        if (request.method === "task.get") {
+          const answer: GatewayResult<DesktopGatewaySuccessValueV1> =
+            taskGetSequence[Math.min(taskGetCalls, taskGetSequence.length - 1)] ?? {
+              ok: false,
+              error: { kind: "unavailable" },
+            };
+          taskGetCalls += 1;
+          return answer;
+        }
+        return { ok: false, error: { kind: "unavailable" } as const };
+      },
+      subscribe: (callback) => {
+        listeners.add(callback as (event: unknown) => void);
+        subscribed = true;
+        return () => {
+          listeners.delete(callback as (event: unknown) => void);
+        };
+      },
+    };
+    const port = createLivePackages(client);
+    const pending = port.applyInstall("C:/proj", [{ packageId: "com.vrchat.avatars", version: null }], "fnv-1a-def456");
+    while (!subscribed) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (const listener of listeners) listener({ kind: "task.completed", taskId: "t-2", payload: {} });
+    expect(await pending).toEqual({ kind: "ok", receipt: VALID_INSTALL_RECEIPT });
+  });
+
+  it("surfaces a rejected guard refusal (drift) as the typed rejection and never an error", async () => {
+    const flow = a2Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.2", operation: "packages.applyInstall", result: VALID_INSTALL_REJECTED },
+        }),
+      },
+    });
+    const port = createLivePackages(flow.client);
+    expect(
+      await port.applyInstall("C:/proj", [{ packageId: "com.vrchat.avatars", version: null }], "fnv-1a-def456"),
+    ).toEqual({ kind: "rejected", rejection: VALID_INSTALL_REJECTED });
+  });
+
+  it("answers a non-succeeded terminal verbatim and a v0.1-stamped acceptance as shape violation (never fabricates a receipt)", async () => {
+    const failed = a2Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("failed", {
+          error: {
+            contractVersion: "0.1",
+            code: "vua.provider.persistence_failed",
+            category: "internal",
+            messageKey: "errors.provider.persistence",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-2",
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(failed.client).applyInstall("C:/proj", [{ packageId: "com.a.b", version: null }], "d"),
+    ).toEqual({ kind: "failed", code: "vua.provider.persistence_failed" });
+    // 受理回执信封版本钉 0.2:0.1 戳 = 受理形状违规
+    const badAcceptance = a2Client({
+      apply: { ok: true, value: asWire({ schemaVersion: "0.1", operation: "packages.applyInstall", taskId: "t-2", correlationId: "c-2" }) },
+    });
+    expect(
+      await createLivePackages(badAcceptance.client).applyInstall("C:/proj", [{ packageId: "com.a.b", version: null }], "d"),
+    ).toEqual({ kind: "failed", code: "packages_apply_acceptance_shape" });
+  });
+});
 
 function assertReadyP2(view: PackagesView): void {
   expect(view.kind).toBe("ready-p2");

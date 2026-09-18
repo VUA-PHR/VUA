@@ -591,3 +591,60 @@ tsconfig exit 0；desktop vitest 80 文件 687/687）。**结论：形状主结�
   packages.installOps served 行——接线前两方法在 wire 面不存在，
   desktop blocks.changes 安装写入口类型级不可见维持）。缺口闭合随
   核心节拍（接线批前宜闭合，批量面前必须闭合）。
+
+### 桌面形状核可（A3 TS 面，wt-3，2026-09-19 06:0x）
+
+**应第 105 批集成收尾留言之约**（「desktop A3 shape approval due」
+——A3 冻结批 0282a66 经 c8239d9 已入库，照 A1/A2 先例基于收编世代
+办理）。核可对象＝A3 冻结批 21 件中 TS 面（
+`packages/contracts/src/application-contract.ts` 026 A3 段＋测试
+1 例 5 断言）＋mock 恒缺席臂（orchestrator-provider），本机直读＋
+收编世代（ffd143d 合并后本树追平壳 24bc327）定向复跑亲测（06:0x：
+@vua/contracts check 75/75＝72＋本树 A2 消费切片 2＋A3 冻结 1；
+apps/desktop typecheck 双 tsconfig exit 0；desktop vitest 80 文件
+699/699）。**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①请求接口单键闭集——
+  PackagesRegisterCommandV03＝command（commandId Kernel 生成位，
+  import-copy/A1/A2 先例）＋params 恰 {packageRoot} 非空串；无
+  projectPath（注册只动后端隔离环境，不触项目、不触用户 VCC/ALCOM
+  设置）；无 confirmedDigest——携即形状违反（本面无 preview 可漂
+  移，用户显式提交即确认，负例 invalid-register-carries-digest 钉
+  死）。②registered 收据最小诚实审计形状——三键 {schemaVersion:
+  "vua.packages-ops/v0.3", kind: "registered", packageRoot 回显}：
+  端口答 Result<(),_> 无载荷，收据只携请求回显别无他物，
+  additionalProperties:false 禁止发明（负例
+  invalid-register-invented-field 钉死——注册时间戳/package.json
+  内容/环境文件路径一律违规）；AlreadyAdded 幂等折叠＝无 added 布
+  尔无首次/重复事实（诚实纪律：一个成功事实）。③rejected 臂
+  guard 复用 PackagesGuardV02 三值闭集零新增；code 锁
+  ^vua\.packages\.（复用码 vua.vpm.local_package_invalid/
+  local_package_register_failed 在 detail 原词溯源，永不入 code
+  键；负例 invalid-register-rejected-code-outside-family 钉死）。
+  ④union 双登记（ApplicationRequestV01/ApplicationSuccessValueV01
+  各一行）＋isApplicationRequestV01 窄化臂逐键闭集（缺 packageRoot
+  拒/空串拒/发明 projectPath 拒/携 digest 拒）。⑤TS 测试 1 例
+  5 断言与冻结批申报一一对应（正例＋缺键＋空串＋发明键＋携
+  digest）。⑥mock 恒缺席臂 packages.registerLocalPackage 归 P1
+  纪律同款（模拟面永不模拟 wire 写回执）＋mock 测试 1 例。⑦
+  capturedAt 收窄对 A3 有效性本机证实——全文件 readonly capturedAt
+  唯一（:2002 环境快照），A3 registered/rejected 两成员均无
+  capturedAt 顶层键，desktop electron-gateway.ts:135
+  `"capturedAt" in result.value` 收窄不因 A3 union 扩张而破裂
+  （typecheck 双 0 亲测，A2 先例同法）。⑧向量 2 正 7 负与第 105 批
+  登记一致（正＝请求＋registered 收据；负＝answer-plan kind 锁/
+  carries-digest/missing-root/empty-root/extra-param projectPath/
+  invented-field/code-outside-family）；kind=registered 字面量在
+  result union 内唯一，按 kind 消费无碰撞。⑨诚实边界如实：协议本
+  明示「词面尚未接线——wire 路由、packages.registerOps served 行
+  与信封组装属下一个核心切片」；served 行门控＝新 default accessor
+  register_capabilities（default declared-none，VrcGetLib 覆写随
+  环境核对切片——覆写前行如实 unavailable）。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：v0.3 行 wire 信封
+  常量协议本未载明（A2 协议本曾载信封 "0.2"）——信封组装归下一核
+  心接线切片，桌面消费切片窄化器按接线批实际落地面核对，不猜测；
+  A3 消费切片桌面侧解锁条件＝「接线批＋本形状核可」，候核心接线批
+  后照逐面程序领取（blocks 演进纯增量键照 A2 同法，消费切片时申
+  报）。
+- **解锁状态**：A3「形状核可」桌面侧条件满足；桌面无其他在途——
+  A2 消费切片已交付候验收（wt-3 树尖），A3 消费切片候核心接线批。

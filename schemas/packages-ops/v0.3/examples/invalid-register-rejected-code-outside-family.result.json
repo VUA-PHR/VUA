@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "packages.registerLocalPackage",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.3",
+    "kind": "rejected",
+    "guard": "execution_failed",
+    "code": "vua.vpm.local_package_invalid",
+    "detail": "package.json is missing"
+  }
+}
