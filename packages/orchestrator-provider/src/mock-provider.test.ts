@@ -655,6 +655,30 @@ describe("mock packages P2 read faces (025 core freeze batch)", () => {
   });
 });
 
+describe("mock packages-ops A1 write face (026 core freeze batch)", () => {
+  it.each([
+    ["packages.previewRemove", { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] }],
+    ["packages.applyRemove", { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"], confirmedDigest: "fnv1a-9e3779b9" }],
+  ] as const)("answers %s with the honest absence code — never a fabricated preview, receipt, or empty result posing as a fact", async (method, params) => {
+    // 026 A1 词表行:模拟面无 VpmBackend,恒答诚实缺席(P1/P2 同纪律)
+    // ——模拟面永不模拟 wire 写回执;变更预览/审计收据只属于真实后端
+    // 的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: method === "packages.applyRemove" ? "command" : "query",
+      method,
+      commandId: "cmd-test-a1",
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
   it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
     // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/

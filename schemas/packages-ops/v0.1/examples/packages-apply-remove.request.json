@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.applyRemove",
+  "params": {
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "packageIds": ["com.lilxyzw.liltoon"],
+    "confirmedDigest": "fnv1a-9e3779b9"
+  }
+}
