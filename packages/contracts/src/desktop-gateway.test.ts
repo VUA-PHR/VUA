@@ -392,6 +392,12 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "packages.packageCatalog": { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" },
     "packages.previewRemove": { projectPath: "C:/proj", packageIds: ["com.a.b"] },
     "packages.applyRemove": { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "fnv-1a-abc" },
+    "packages.previewInstall": { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: null }] },
+    "packages.applyInstall": {
+      projectPath: "C:/proj",
+      packages: [{ packageId: "com.a.b", version: null }],
+      confirmedDigest: "fnv-1a-abc",
+    },
   };
 
   it("admits a minimal well-formed request for every method in the kind table", () => {
@@ -520,6 +526,125 @@ describe("gateway guard covers every declared method (regression: silent guard g
       isDesktopGatewayRequestV1({
         ...request,
         params: { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "d", commandId: "cmd-1" },
+      }),
+    ).toBe(false);
+  });
+
+  it("packages.previewInstall: two-key closed params, request rows {packageId, version string|null} with cross-row id uniqueness, NO digest slot (026 A2 freeze; version null = resolver-picked latest stable; same id twice even with differing versions = word-face violation pinned by seenIds, matching the A2 guard narrowing)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-46",
+      method: "packages.previewInstall" as const,
+      params: {
+        projectPath: "C:/proj",
+        packages: [{ packageId: "com.a.b", version: null }, { packageId: "com.c.d", version: "3.1.4" }],
+      },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空路径/空列/词外键/投机的 digest 位(preview 参数无 digest——
+    // 携即形状违反):一律拒绝
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "", packages: [{ packageId: "com.a.b", version: null }] } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packages: [] } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: null, displayName: "A" }] },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: null }], confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    // 请求行缺 version 键 = 形状违反(version 必填可空,null 是显式语义);
+    // 数字型 version = string|null 闭集违反
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b" }] },
+      } as unknown as Parameters<typeof isDesktopGatewayRequestV1>[0]),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: 1 }] },
+      } as unknown as Parameters<typeof isDesktopGatewayRequestV1>[0]),
+    ).toBe(false);
+    // 完全重复行(uniqueItems 语义)与同 id 异版本(行间 id 唯一,seenIds
+    // 钉死——Schema uniqueItems 表达不了跨行 id 比较):一律拒绝
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: {
+          projectPath: "C:/proj",
+          packages: [{ packageId: "com.a.b", version: null }, { packageId: "com.a.b", version: null }],
+        },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: {
+          projectPath: "C:/proj",
+          packages: [{ packageId: "com.a.b", version: null }, { packageId: "com.a.b", version: "3.1.4" }],
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("packages.applyInstall: three-key closed params incl confirmedDigest, request rows share the preview closed-column rule, no commandId param slot (026 A2 freeze; Kernel generates the commandId per the import-copy precedent)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-47",
+      method: "packages.applyInstall" as const,
+      params: {
+        projectPath: "C:/proj",
+        packages: [{ packageId: "com.a.b", version: null }],
+        confirmedDigest: "fnv-1a-abc",
+      },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺 confirmedDigest/空 digest/空列/同 id 异版本/投机 commandId 位:
+    // 一律拒绝
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: null }] },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [{ packageId: "com.a.b", version: null }], confirmedDigest: "" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packages: [], confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: {
+          projectPath: "C:/proj",
+          packages: [{ packageId: "com.a.b", version: null }, { packageId: "com.a.b", version: "3.1.4" }],
+          confirmedDigest: "d",
+        },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: {
+          projectPath: "C:/proj",
+          packages: [{ packageId: "com.a.b", version: null }],
+          confirmedDigest: "d",
+          commandId: "cmd-2",
+        },
       }),
     ).toBe(false);
   });
