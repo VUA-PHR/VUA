@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.removeRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.4",
+    "kind": "removed",
+    "repoId": "repo.example.official"
+  }
+}

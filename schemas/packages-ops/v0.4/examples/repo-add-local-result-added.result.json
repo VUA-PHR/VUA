@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addLocalRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.4",
+    "kind": "repoReceipt",
+    "repoType": "local",
+    "path": "D:/synthetic/local-repo",
+    "name": "Local Synthetic Repo"
+  }
+}

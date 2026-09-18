@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addRemoteRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.4",
+    "kind": "repoReceipt",
+    "repoType": "remote",
+    "url": "https://example.vpm/repos/official.json",
+    "name": "Example Official",
+    "addedAt": "2026-09-19T00:00:00Z"
+  }
+}

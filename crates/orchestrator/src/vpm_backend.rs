@@ -20,6 +20,18 @@ pub mod error_codes {
     pub const LOCAL_PACKAGE_REGISTER_FAILED: &str = "vua.vpm.local_package_register_failed";
     pub const PACKAGE_NOT_INSTALLED: &str = "vua.vpm.package_not_installed";
     pub const PROJECT_LOAD_FAILED: &str = "vua.vpm.project_load_failed";
+    /// A4 repository add/remove face (proposal 026 freeze batch): the add
+    /// guard refused the row (duplicate url/name, official/curated guard,
+    /// malformed shape).
+    pub const REPO_INVALID: &str = "vua.vpm.repo_invalid";
+    /// A4: remove_repo named a repoId absent from the subscription list.
+    pub const REPO_NOT_FOUND: &str = "vua.vpm.repo_not_found";
+    /// A4: the remote-repository manifest fetch failed (the add-remote
+    /// network segment; the local-add and remove faces never answer this).
+    pub const REPO_FETCH_FAILED: &str = "vua.vpm.repo_fetch_failed";
+    /// A4: the isolated-environment settings write-back failed (save /
+    /// atomic replace / backup maintenance).
+    pub const REPO_WRITE_FAILED: &str = "vua.vpm.repo_write_failed";
 }
 
 /// Which optional capabilities a backend actually provides (honest gating,
@@ -145,6 +157,37 @@ pub struct RegisterCapabilities {
 
 impl RegisterCapabilities {
     pub const NONE: Self = Self { register_local_package: false };
+}
+
+/// A4 write-face capability declaration (proposal 026 freeze batch,
+/// 2026-09-19). Same shape law as `CatalogCapabilities` / `RegisterCapabilities`
+/// (the 025 accessor precedent): a separate defaulted trait accessor instead
+/// of a new `VpmCapabilities` field, so the five-bit closed set stays stable
+/// and backends without the repo add/remove face keep compiling unchanged
+/// (ORC-DEV-004: no implementation, no reservation — the default is
+/// declared-none; a backend overrides it exactly when it implements the
+/// `add_remote_repo` / `add_local_repo` / `remove_repo` methods). Three
+/// INDEPENDENT bits on purpose: a backend may serve a subset of the face
+/// (e.g. local-add only), and the honest gate is per method, never per face.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoWriteCapabilities {
+    /// Covers `packages.addRemoteRepo`: subscribing a remote repository
+    /// (the manifest-fetch network segment included).
+    pub add_remote_repo: bool,
+    /// Covers `packages.addLocalRepo`: subscribing a local directory
+    /// repository.
+    pub add_local_repo: bool,
+    /// Covers `packages.removeRepo`: removing one subscription row by id.
+    pub remove_repo: bool,
+}
+
+impl RepoWriteCapabilities {
+    pub const NONE: Self = Self {
+        add_remote_repo: false,
+        add_local_repo: false,
+        remove_repo: false,
+    };
 }
 
 /// P2: one repository subscription row (proposal 025 freeze batch). The
@@ -310,11 +353,59 @@ pub trait VpmBackend: Send + Sync {
     fn register_capabilities(&self) -> RegisterCapabilities {
         RegisterCapabilities::NONE
     }
+    /// A4 (proposal 026 freeze batch): capability declaration for the
+    /// repository add/remove write face. The default is declared-none; a
+    /// backend overrides it exactly when it implements the three repo
+    /// write methods (the 025 accessor law — the VrcGetLib override lands
+    /// with the environment implementation-verification slice, the same
+    /// honest-absence discipline: the served wire row stays unavailable
+    /// until the override flips it).
+    fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
+        RepoWriteCapabilities::NONE
+    }
+    /// A4 (proposal 026 freeze batch): subscribe one REMOTE repository in
+    /// this backend's isolated environment. The backend fetches the remote
+    /// manifest (the network segment is inherent to the face — a preview
+    /// cannot verify reachability without doing the same network work, so
+    /// the face has NO preview arm), then adds the subscription row. The
+    /// user-supplied `name` is required (the subscription list presents it;
+    /// the read face `RepoInfoV01.name` Option projects EXISTING rows
+    /// verbatim, it does not imply new rows may go nameless). Guard
+    /// refusals (duplicate url/name, official/curated guard, malformed
+    /// shape) answer `vua.vpm.repo_invalid`; fetch failures answer
+    /// `vua.vpm.repo_fetch_failed`; settings write-back failures answer
+    /// `vua.vpm.repo_write_failed`.
+    fn add_remote_repo(&self, _url: &str, _name: &str) -> Result<(), AppErrorV1> {
+        Err(unsupported("add_remote_repo"))
+    }
+    /// A4 (proposal 026 freeze batch): subscribe one LOCAL directory
+    /// repository in this backend's isolated environment. No network
+    /// segment. The same required-`name` and guard disciplines as
+    /// `add_remote_repo`; guard refusals answer `vua.vpm.repo_invalid`,
+    /// settings write-back failures answer `vua.vpm.repo_write_failed`.
+    fn add_local_repo(&self, _path: &Path, _name: &str) -> Result<(), AppErrorV1> {
+        Err(unsupported("add_local_repo"))
+    }
+    /// A4 (proposal 026 freeze batch): remove ONE subscription row by its
+    /// repository id. Id-addressed on purpose (an index drifts under
+    /// concurrent writers; an id is the row's stable handle). Rows whose
+    /// id is absent (the read face projects `RepoInfoV01.repo_id` as an
+    /// honest Option) are OUTSIDE this word face's remove reach — the
+    /// honest boundary is declared in the protocol document, not papered
+    /// over with index or url addressing. An unknown repoId answers
+    /// `vua.vpm.repo_not_found`; settings write-back failures answer
+    /// `vua.vpm.repo_write_failed`.
+    fn remove_repo(&self, _repo_id: &str) -> Result<(), AppErrorV1> {
+        Err(unsupported("remove_repo"))
+    }
     /// P2 (proposal 025 freeze batch): the repository subscription list —
     /// the subscription face is the world (settings userRepos projected
     /// verbatim, array order preserved), each row carrying the REQUIRED
-    /// per-repo cache-hit fact. Read-only: enable/disable and add/remove
-    /// are write faces under the 013 R5 per-face path, not here.
+    /// per-repo cache-hit fact. Read-only: the add/remove write faces are
+    /// frozen as proposal 026 A4 (`add_remote_repo` / `add_local_repo` /
+    /// `remove_repo` + `repo_write_capabilities`); enable/disable stays
+    /// outside every frozen word face until the VCC disabled-list key name
+    /// is verified on a real machine (the W25 window item).
     fn list_repos(&self) -> Result<Vec<RepoInfoV01>, AppErrorV1> {
         Err(unsupported("list_repos"))
     }
