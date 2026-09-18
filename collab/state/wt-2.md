@@ -2,127 +2,177 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 79c9f72
-updated: 2026-09-18
+baseline_commit: af204ec
+updated: 2026-09-19
 ---
 ## 当前焦点
-**026 核心表态批（2026-09-18 23:0x–23:4x 工作时段，三笔：追平壳
-6c2f77e＋表态批＋本状态批）——消化 wt-main 96 批 [→核心][→环境][→桌面
-]「026 已登记候表态（用户晚裁决『让它们今晚做』）」＝本拍唯一指向核心
-席位；BOARD #40 行开放问题 1 四项（P3 面序／写面方法族命名与任务化形
-状／错误码新族立码／create_project 取舍）全部逐项裁决落节提案 026 内
-联线程「表态（核心）」节**：
+**026 A1 移除面冻结批（2026-09-19 00:1x–00:4x 工作时段，两笔：追平壳
+a51117c＋冻结批 d7f6a57＋本状态批）——消化 wt-main 第 97 批 [→核心]
+「A1 冻结批六件候你方起草」（操作者注记同向指名）＝本拍唯一指向核心
+席位项；面序与词面纪律照本树 82a39c4 表态五点与 026 内联各节落死。
+第 98 批（65357fd，本拍起草中途落 main）026 status 推进 accepted＋A1
+启动信号系时序巧合无冲突——本批即该启动信号的执行，随状态批如实登
+记。冻结批六件一次备齐，全链定向证据亲测绿**：
 
-- **前置追平壳 6c2f77e（零自有内容）**：开工前追平 main 79c9f72（96
-  批）——brief 23:04 ③区读数落后 52／领先 0（实质 8）过 15 触发线，
-  照操作者注记与 wt-4/5/6 同窗先例自理追平（--no-ff，merge-base＝本树
-  尖 d0edc2f 即领先 0 纯追平）；双法 merge-tree 预检零冲突（老式 0 标
-  记＋ort --write-tree exit 0 tree 77b179a）；inbound 非 collab 面 42
-  文件全为 main 已验收切片纯吸收（桌面部署器/导入页＋核心环境快照链
-  ＋设计系统＋AGENTS 1.1.4＋REGISTRY），合并中各所有权域零编辑。
-- **表态批（恰 026 提案一 collab 文件）**：开放问题 1 五点落节——
-  ①面序照建议序确认（A1 移除→A2 安装/升级→A3 register_local_package
-  →A4 仓库订阅殿后；逐面理由核于端口/实现事实：A1 双方法在库无网络
-  无解析风险最小立样板，A2 端口必需＋ORC-WF-003/004 双摘要在库，A3
-  端口在库能力位 true，A4 端口方法未立＋settings.json 写路径候环境
-  考证且与 A1–A3 无串行依赖）；②方法族命名＝wire 同族 packages.* 前
-  缀＋preview/apply 二段动词照端口映射（preview＝同步只读 query，
-  apply＝任务化写命令携确认指纹、服务端复算校验——ORC-WF-003/004 同
-  纪律桌面只做 UX 提示），Schema 行立独立 packages-ops/v0.1（直接先
-  例＝project-inspection 读＋project-ops 写分线，014 仲裁第 1 点）；
-  ③任务化形状＝apply 九态任务（TaskStateV01 在库九臂）＋preview 同步
-  query，014 import-copy 同构，恢复＝复检 inspect_required 绝不隐式
-  续传（诚实纪律 3），审计收据随 A1 Schema 定形；④错误码新族立
-  vua.packages.*（024 桌面表态③预告名照准，wire/schemaVersion/错误
-  码三面一致；vua.vpm.no_matching_package 既有冻结码维持不动），立码
-  时机＝A1 首面冻结批闭集一次立全＋正负例向量；⑤create_project 不纳
-  入 P3 面序留 A5 候选面（新建目录与修改在册项目预览形状不共享、裁
-  决边界未提项目创建、样板纯度；端口＋双实现在库无前置缺口，启动条
-  件＝桌面 B 面合并后提出入口需求）。
-- **表态证据（本机直读，79c9f72 世代）**：vpm_backend.rs:214-332 端口
-  写方法族＋:224-234 preview_install_for_plan 实现耦合定性＋:282-286
-  list_repos 只读注释；project-manager/src/vpm_backend.rs:302-303 能
-  力位 true＋:351/:390/:528/:757/:898 五写方法实现在库＋:1105-1118
-  VccCliBackend 仅 create_project；application-contract.ts:33-55 九态
-  闭集＋恢复面＋:583-584 读面族冻结注释＋:1359 requestRun 任务化惯例
-  ；schemas/ 目录 project-ops 分线先例与 packages 三读面行直读。全锚
-  file:line 在表态节登记。
+- **前置追平壳 a51117c（零自有内容）**：开工前追平 main af204ec
+  （第 97 批收编尾）——brief 00:10 ③区读数落后 17／领先 0 过 15 触
+  发线，照 wt-4/5/6 同窗先例自理追平（--no-ff，merge-base＝本树尖
+  875b5bd 即领先 0 纯追平；本树表态批 82a39c4＋状态批 875b5bd 已经
+  第 97 批合并 0ffa364 入库）；双法 merge-tree 预检零冲突（老式 0
+  标记＋ort --write-tree exit 0 tree b726583）；inbound 全为第 97
+  批已验收入库内容纯吸收，合并中各所有权域零编辑。第 98 批登记
+  「a51117c 零自有内容照 batch-57/59 先例随下一状态批收编」知会
+  消化——本状态批即该载体。
+- **冻结批 d7f6a57（六件，恰核心域 9 文件）**：
+  ①**Schema**＝schemas/packages-ops/v0.1/（command＋result 双
+  Schema，独立词表行照 project-inspection/project-ops 读写分线先
+  例，014 仲裁第 1 点）——双方法二段动词照端口一一映射：
+  packages.previewRemove（同步只读 query，双键闭集，无 digest 位
+  ——digest 是 preview 的产物，携即形状违反）＋packages.applyRemove
+  （九态任务化写命令，三键闭集必携 confirmedDigest，服务端复算漂
+  移即拒 ORC-WF-003/004，桌面只做 UX 提示权威判定在服务端，014 仲
+  裁第 2 点）；operation/kind 锁在 Schema 层机器可检（previewRemove
+  恒答 plan、applyRemove 恒答 receipt/rejected）；packageIds＝显式
+  非空闭列无通配；additionalProperties:false 全量虚假断言防线（移
+  除后复检/字节数/时间戳等无端口载体发明字段在 Schema 即非法）。
+  ②**正负例向量**＝examples/ 4 正 8 负（正：preview 请求/plan 臂
+  全字段覆盖、apply 请求/receipt 臂；负：preview 携 digest／空
+  packageIds／apply 缺 digest／plan 臂发明 updateAvailable／receipt
+  臂发明 reInspection／code 词外族 vua.project.*／operation-kind
+  错配／item kind=upgrade 词外）。③**核心消费测试**＝crates/
+  provider-host/tests/packages_ops_consumer.rs 4 例（向量准入/拒绝
+  ＋fake 后端端口→wire 投影闭环含 camelCase 键名钉死＋trait 默认
+  缺席臂 capability_missing＋漂移 recoverable 词面钉死）。④**TS
+  面**＝packages/contracts/src/application-contract.ts（两请求接口
+  ＋变更行类型＋plan/receipt/rejected 三臂＋guard 三值闭集 union＋
+  result union 登记＋isApplicationRequestV01 两段窄化守卫）＋测试
+  4 例＋mock 恒缺席臂两方法（packages/orchestrator-provider，P1/P2
+  纪律：模拟面永不模拟 wire 写回执）＋mock 测试 3 例。⑤**双语协议
+  本**＝docs/protocols/packages-ops-v0.1_EN/ZH.md（头部版本/状态/
+  范围/所有权边界＋A1 语义节〔二段动词/九态任务/恢复＝复检绝不隐
+  式续传/参数闭集〕＋审计收据节＋错误码族节＋方法面节＋信封版本
+  节＋机器可读词表节＋诚实边界节）。⑥**REGISTRY** 两行（schema 行
+  ＋协议本行，域归属核心，日期 2026-09-19）。
+- **词面落死要点（与表态五点逐点对齐）**：审计收据 receipt＝确认
+  指纹回显＋请求清单＋实际移除行（014 导入收据先例；任务关联走任
+  务面 taskId/revision，回流载荷非持久链接）——核心裁决第 3 点
+  「审计收据随 A1 Schema 定形」执行；错误码族 vua.packages.* 首面
+  闭集一次立全＝新立三码 preview_drift/package_not_found/
+  execution_failed（guard 值＝code 后缀，Schema pattern
+  ^vua\.packages\.）＋复用零新立三码申报（vua.project.project_
+  not_found 未注册路径同事实同码／vua.packages.invalid_params／
+  vua.packages.unavailable）——核心裁决第 4 点执行；端口层既有码
+  族 vua.vpm.*（PREVIEW_DRIFT/APPLY_FAILED/PACKAGE_NOT_INSTALLED
+  等）系实现层事实继续存在，wire 词表投影映射随环境实现核对切片
+  申报；既有冻结码 vua.vpm.no_matching_package 维持不动。恢复词面
+  ＝漂移系 recoverable 冲突（重预览重确认绝不静默覆盖），非终态残
+  留复检标 inspect_required 绝不隐式续传（诚实纪律 3）。
+- **全链定向证据（本机 00:1x–00:4x 亲测）**：df 先查 C 盘余
+  646G/66%；cargo test -p vua-provider-host 24 套件 0 failed（含
+  packages_ops_consumer 4/4）；cargo test -p vua-orchestrator
+  231/0；clippy 双 crate --all-targets 0 告警；@vua/contracts check
+  68/68（64→68）；@vua/orchestrator-provider check 32/32（29→32）；
+  登记表一致性 69/69＋冲突标记扫描 0。
 
-## 前情（d0edc2f 世代，全文见本文件 git 历史）
-去桥收尾批（09-18 03:4x–04:0x）五笔：7dbe306＋767b466＋08fa61e（去桥
-切片＝mock-provider 零强转信封类型化，tsc 0＋30/30＋耦合树桌面 25/25
-＋9/9）＋3bdf503＋88d532e 读数修正——经集成收编全部入库（brief 23:04
-读数领先 0 实证；94 批登记「wt-2 去桥链完整收编、去桥切片闭环、核心
-无新可领项」）。更早见 git 历史。
+## 前情（875b5bd 世代，全文见本文件 git 历史）
+026 核心表态批（09-18 23:0x–23:4x，三笔：追平壳 6c2f77e＋表态批
+82a39c4＋状态批 875b5bd）——开放问题 1 五点落节，经第 97 批 0ffa364
+收编入库、第 98 批 026 status 推进 accepted（四开放问题全闭合）。
+去桥切片链更早见 git 历史。
 
-## 本轮交付（79c9f72 基线世代）
-- **追平壳 6c2f77e**（零自有内容，inbound 42 文件纯吸收）。
-- **表态批**：提案 026 开放问题 1 核心表态落节（恰
-  collab/proposals/026-packages-write-face-and-tab-merge.md 一文件，
-  零代码）。
+## 本轮交付（af204ec 基线世代）
+- **追平壳 a51117c**（零自有内容，落后 17 过线自理追平；inbound 全
+  为第 97 批已验收内容纯吸收；第 98 批已登记随本状态批收编）。
+- **A1 冻结批 d7f6a57**（六件恰核心域 9 文件，全链定向证据亲测绿
+  在案）。
 - **本状态批**（恰本文件一 collab 文件）。
 
 ## 在途/待他角色
-- **[等集成] 本拍候随轮验收（--no-ff）**：实质对象＝表态批（026 提案
-  文件）＋本状态批——两笔全 collab 面零代码，免全量照先例如实声明；
-  追平壳 6c2f77e 零自有内容照先例随验收合并自然收编。
-- **[等环境] 026 开放问题 2 表态**（VrcGetLibBackend 写方法与冻结词面
-  缺口核对＋A4 settings.json 写路径库面考证照 025 §1 同径）——核心表
-  态程序注记已声明 A1 冻结批起草候本表态收敛。
-- **[等桌面] 026 开放问题 3 表态＋B 面领取**（合并 IA 形状／易用性清
-  单／blocks.changes 演进；B 面零词表依赖可径行开工，核心表态不阻塞
-  B 面）。
-- **[等用户] W25 开窗（O-2）**；#31/#32/#33 复验＋#36 终局视觉确认候
-  用户以含最新构建重启 dev 栈回填。
+- **[等集成] 本拍候随轮验收（--no-ff）**：实质对象＝A1 冻结批
+  d7f6a57（恰核心域 9 文件：schemas/packages-ops/v0.1 全目录＋
+  provider-host 消费测试＋contracts TS 面＋orchestrator-provider
+  mock＋双语协议本＋REGISTRY）——全链定向证据亲测绿照冻结批先例
+  申报（024/025 同径：定向亲测＋合并门裁量合并树复跑）；追平壳
+  a51117c 零自有内容照第 98 批已登记先例随本状态批自然收编。
+- **[等核心=本席下拍] wire 接线切片**（路由/served_capabilities 行
+  ／信封组装/端口级 vua.vpm.*→vua.packages.* 词表映射申报）——
+  A1 冻结批验收后紧随，接线前两方法在 wire 面不存在。
+- **[等环境] 实现核对切片**（VrcGetLibBackend preview_remove/
+  apply_remove 已在库，照 024/025 程序实现＋定向测试＋wire 对齐
+  证据，候接线批落地）。
+- **[等桌面] 逐面升级消费切片**（表态 93752d5 第 3 条：A1 冻结批＝
+  该面 live 形状唯一权威；blocks.changes 写入口逐面解锁，候接线＋
+  形状核可）。
+- **[等用户] W25 开窗（O-2）**；A4 启停面 VCC 键名真机核实（候
+  W25 同窗）；#31/#32/#33 复验＋#36 终局视觉确认维持。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝026 核心表态批（恰
-collab/proposals/026-packages-write-face-and-tab-merge.md 一文件）＋
-本状态批（恰 collab/state/wt-2.md 一文件）——两笔全 collab 面零代码
-collab-only 免全量如实声明（本拍零 Rust/TS 代码变更，核心域定向证据
-沿用去桥批 08fa61e 世代 tsc 0＋30/30，该世代后核心域非 collab 面仅
-经追平吸收 main 已验收内容、零自有编辑），请集成随轮验收（--no-ff）
-；追平壳 6c2f77e 零自有内容照先例自然收编。**提交后读数（收尾 brief
-复核后回填于待命声明）：预期领先 3（6c2f77e＋表态批＋本状态批）、落
-后 0（79c9f72 世代）。
+**候验收对象＝A1 冻结批 d7f6a57（实质 diff 恰核心域 9 文件，全链
+定向亲测绿在案：provider-host 24 套件/231 orchestrator/clippy 0/
+contracts 68/68/provider 32/32/登记表 69/69）＋追平壳 a51117c（零
+自有内容照第 98 批登记先例随收编）＋本状态批（恰本文件），请集成
+随轮验收（--no-ff），写明「026 A1 移除面冻结批」。**提交后读数：
+领先 3（a51117c＋d7f6a57＋本状态批；实质 1＝冻结批）、落后 1
+（第 98 批 65357fd 系 collab-only 登记批不过线，照 CHASE STOP 留
+下轮 brief 读数达线再自理）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-18 23:0x–23:4x，工作时段，三笔：6c2f77e＋表态批＋本
-批）：①date 23:03 确认工作时段；brief ①区指向本树唯一条目＝本树上
-拍 [→集成] 验收请求回显（无新指向核心的阻塞/留言），失鲜工作树无；
-②③区读数落后 52／领先 0 过线→追平 6c2f77e（双法预检零冲突，inbound
-42 文件 main 已验收内容纯吸收，合并零跨域编辑）；②任务领取＝wt-main
-96 批 [→核心] 026 候表态（BOARD #40 行开放问题 1）为本拍唯一核心席
-位项，[需用户] 区与其它域行全跳过不代决；③表态前事实核验＝五处源直
-读（核心端口写方法族/环境实现能力位/契约九态与冻结注释/014 仲裁先例
-/025 核心表态先例），表态五点全部锚 file:line；所有权核验＝表态批恰
-collab 面 026 提案文件（协作簿记表态先例 024/025 同径），核心所有权
-域零代码编辑；④定向证据＝本拍零代码（tsc/vitest 无新触发面，核心域
-证据沿用 08fa61e 世代在案）；⑤本拍未触碰用户 dev 栈；零端到端宣称维
-持——表态系程序/方向权威，各面权威词面候冻结批，不预支实现；⑥状态
-批＋收尾 brief 读数复核后退出待命，候集成验收、环境/桌面 026 表态、
-A1 冻结批启动窗口、操作者真机复验回填或下轮 brief；在手无半途切片。
+本轮（2026-09-19 00:1x–00:4x，工作时段，两笔：a51117c＋d7f6a57＋
+本批）：①date 00:10 确认工作时段；brief ①区指向本角色唯一条目＝
+第 97 批 [→核心] A1 冻结批候起草（操作者注记同向），失鲜工作树
+无；②任务领取＝该条目为本席唯一可领项，[需用户] 区全跳过不代决；
+前置＝落后 17 过 15 触发线自理追平 a51117c（双法预检零冲突 tree
+b726583，inbound 全为已验收内容纯吸收，零跨域编辑）；③冻结批执
+行＝先例底本直读（014 project-ops 双 Schema 形状/024 packages-query
+信封与 c914cf2 族常量规矩/025 冻结批六件构成与消费测试结构/端口
+vpm_backend.rs preview_remove/apply_remove 签名与 VrcGetLibBackend
+实现返回 {"removed": items} 事实载体/错误码三族闭集 vua.vpm.* 在
+库位），词面逐点照 82a39c4 表态五点落死；起草中一次 schema 缺口
+自纠（commandId 不入 wire 信封照 014 底本同构——首版 apply 请求向
+量误携 commandId，消费测试红暴露，对照 014 向量修正后 4/4 绿）；
+④全链定向证据亲测（df 646G 先查；provider-host 24 套件 0 failed
+含 packages_ops_consumer 4/4；orchestrator 231/0；clippy 双 crate
+--all-targets 0；contracts 68/68；provider 32/32；登记表 69/69＋
+冲突标记 0）；⑤所有权核验＝本批自有编辑恰核心域 9 文件（schemas
+新行＋provider-host 测试＋contracts TS 面＋orchestrator-provider
+mock＋protocols 双语＋REGISTRY 随批登记惯例），其它域零触碰；
+⑥第 98 批（65357fd，起草中途落 main）消化＝026 status accepted
+＋A1 启动信号与本拍时序巧合无冲突如实登记，a51117c 收编安排照其
+登记执行；⑦零端到端宣称维持——本批系词表层，wire 路由未接线、
+两方法在 wire 面不存在、未触碰用户 dev 栈零进程接触，桌面消费与
+真机走查各归其位。退出待命，候集成验收本批、下拍 wire 接线切片、
+环境实现核对、桌面形状核可、W25 用户开窗或下轮 brief；在手无半途
+切片、无未提交改动。
 
 ## 留言
-- [→集成] **验收请求**：候验收对象＝026 核心表态批（恰 026 提案一文
-  件，开放问题 1 五点落节）＋本状态批（恰本文件）——两笔全 collab 面
-  零代码 collab-only 免全量如实声明；追平壳 6c2f77e 零自有内容（落后
-  52 过线自理追平照 wt-4/5/6 同窗先例，双法预检零冲突，inbound 42 文
-  件全为 main 已验收内容纯吸收）照先例随验收合并自然收编。
-- [→环境] **026 开放问题 2 候你方表态**：核心表态已落节（026 内联线
-  程「表态（核心）」节）——面序 A4 殿后理由之一即 settings.json 写路
-  径库面考证归你方（照 025 §1 同径）；A1 冻结批起草候你方开放问题 2
-  表态收敛后启动，届时 preview/apply 词面与端口签名缺口核对一并进行。
-- [→桌面] **026 核心表态落节知会**：开放问题 1 五点已裁（面序确认／
-  packages-ops 词表行／apply 九态任务＋preview 同步 query／
-  vua.packages.* 错误码族 A1 首面立／create_project 不入 P3 留 A5）。
-  你方 B 面（项目兼容并入包管理器）零词表依赖不受影响径行领取；开放
-  问题 3（合并 IA 形状／易用性清单／blocks.changes 演进）候你方落节；
-  A5（create_project）启动条件＝你方 B 面合并后提出入口需求。
-- （回执不回执：上拍五笔经集成收编已入库（brief 23:04 领先 0 实证，
-  94 批「去桥链完整收编」登记知会就地消化）；wt-3/4/5/6 各树验收请
-  求均 [→集成] 与本树无关零动作；历史留言已消化归档，在途事项以
-  BOARD 与本状态文件当前焦点为准。）
+- [→集成] **A1 冻结批验收请求**：候验收对象＝冻结批 d7f6a57（六件
+  恰核心域 9 文件：schemas/packages-ops/v0.1〔command＋result 双
+  Schema＋4 正 8 负向量〕＋crates/provider-host/tests/
+  packages_ops_consumer.rs 4 例＋packages/contracts TS 面〔两请求
+  接口＋三臂结果＋guard 闭集＋union 登记＋两段守卫＋测试 4 例〕＋
+  mock 恒缺席臂两方法＋测试 3 例＋docs/protocols/packages-ops-v0.1
+  双语＋REGISTRY 两行）＋追平壳 a51117c（零自有内容照你方第 98 批
+  已登记先例随收编）＋本状态批。全链定向证据亲测绿在案（00:1x–
+  00:4x：df 646G 先查；provider-host 24 套件 0 failed 含
+  packages_ops_consumer 4/4；orchestrator 231/0；clippy 双 crate
+  --all-targets 0；contracts 68/68〔64→68〕；provider 32/32〔29→
+  32〕；登记表 69/69＋冲突标记 0），合并树复跑候你方合并门裁量
+  （024/025 冻结批同径）。026 status＝accepted 与 A1 启动信号
+  （第 98 批）与本批时序巧合无冲突，本批即其执行。
+- [→环境] **A1 冻结批已落，候你方实现核对切片**：词表六件入库候
+  验收——VrcGetLibBackend preview_remove/apply_remove 已在库照
+  024/025 程序做实现核对（接线批落地后随批申报 wire 对齐证据）；
+  端口层 vua.vpm.* 错误码到 wire 词表 vua.packages.* 闭集的投影映
+  射随你方切片申报（词表层已按三新码＋三复用闭集预留语义位）。
+  A4 启停面 VCC 键名真机核实维持 W25 同窗。
+- [→桌面] **A1 冻结批已落知会**：packages.previewRemove/
+  packages.applyRemove 权威词面已冻结（六件候验收）——照你方表态
+  93752d5 第 3 条逐面升级：wire 接线切片（本席下拍）落地前两方法
+  在 wire 面不存在，blocks.changes 写入口维持类型级不可见不预搬
+  fixture 形状；接线＋你方形状核可后消费切片逐面解锁。
+- （回执不回执：第 97 批收编回执与第 98 批 026 accepted/A1 启动
+  信号登记就地消化；失鲜工作树无；历史留言已消化归档，在途事项
+  以 BOARD 与本状态文件当前焦点为准。）
