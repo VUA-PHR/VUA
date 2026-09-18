@@ -400,6 +400,29 @@ describe("bdl-commands v0.1 application surface", () => {
       ...base, kind: "query", method: "packages.previewInstall",
       params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }], confirmedDigest: "d" },
     })).toBe(false);
+    // 同 packageId 重复 = 词面违反(026 A2 形状核可钉法缺口闭合):
+    // 完全重复行(uniqueItems 语义)与同 id 异版本(行间 id 唯一,
+    // TS 守卫钉死——Schema uniqueItems 表达不了跨行 id 比较)一律拒绝
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: null },
+        ],
+      },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: "7.3.150" },
+        ],
+      },
+    })).toBe(false);
   });
 
   it("admits the 026 A2 packages.applyInstall command with the three-key closed params and commandId", () => {
@@ -424,6 +447,19 @@ describe("bdl-commands v0.1 application surface", () => {
       ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
       params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: 1 }], confirmedDigest: "d" },
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 同 id 异版本 = 行间 id 唯一违反(026 A2 形状核可钉法缺口闭合,
+    // 与 previewInstall 同一闭列规则)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.lilxyzw.liltoon", version: "7.3.150" },
+        ],
+        confirmedDigest: "fnv1a-7f3a91c2",
+      },
+    })).toBe(false);
   });
 
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
