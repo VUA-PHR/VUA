@@ -2,26 +2,34 @@
 
 [English](packages-ops-v0.2_EN.md) | [简体中文](packages-ops-v0.2_ZH.md)
 
-> 文档版本：0.2
+> 文档版本：0.2.2
 > 状态：**已冻结（packages-ops 词表行 v0.2，A2 安装/升级词面；v0.1 A1
-> 移除行维持冻结照常服务，零触碰）**
+> 移除行维持冻结照常服务，零触碰）——词面已接线（wire 路由在库，
+> 本版本如实更新接线状态；词面零变更）**
 > （2026-09-19，提案 026 面序，核心裁决 82a39c4 第 1 点：升级＝安装
 > 同族，版本选择语义随本冻结批落死——提案预记照办）
 > 机器可读词表：`schemas/packages-ops/v0.2/`（行级双 Schema＋4 正
-> 8 负向量；核心消费测试
-> `crates/provider-host/tests/packages_ops_consumer_v02.rs`；TS 守卫
+> 9 负向量；核心消费测试
+> `crates/provider-host/tests/packages_ops_consumer_v02.rs`；wire
+> 路由测试
+> `crates/provider-host/tests/packages_ops_wire_v02.rs`；TS 守卫
 > 测试 `packages/contracts/src/application-contract.test.ts`）
 > 范围：`packages.previewInstall`（同步只读安装/升级变更预览，做依赖
 > 解析、可能触网）与 `packages.applyInstall`（双摘要守卫下的九态
 > 任务化安装写命令）
 > 所有权边界：词表冻结、端口面（`VpmBackend`
 > `preview_install`/`apply_install` 已在库）、wire 路由＝核心域
-> （接线＝下一个核心切片）；`VpmBackend` 库实现（project-manager，
+> （已接线，路由两臂＋`packages.installOps` served 行在库）；
+> `VpmBackend` 库实现（project-manager，
 > `preview_install` :528／`apply_install` :757 已在库）＝环境域
 > （实现核对切片照 024/025 程序）；桌面消费＝桌面域（逐面升级，
 > `blocks.changes` 演进照桌面表态 93752d5 第 3 条）
 > 更新：2026-09-19（v0.2 冻结批：双 Schema＋向量＋核心消费测试＋
-> TS 面＋双语协议本＋REGISTRY）
+> TS 面＋双语协议本＋REGISTRY）；2026-09-19（v0.2.1 接线批：
+> wire 路由两臂＋served 行落地，诚实边界节如实更新，词面零变更）；
+> 2026-09-19（v0.2.2 形状核可钉法缺口闭合：同 id 唯一规则如实改写
+> 为三层钉法——新增完全重复行负例向量、TS 守卫窄化及其测试、
+> wire 层请求校验；前版措辞夸大了负例向量集与 TS 窄化的实际覆盖）
 
 ## A2 词面语义（安装/升级＝同族一对，不立 upgrade 动词）
 
@@ -36,8 +44,10 @@
   `VersionSelector::latest_for`——最新稳定版；预发布版绝不被自动
   选中）；字符串＝钉死精确版本。无法满足的钉版答
   `package_not_found`。同行重复 `packageId`＝词面违例，即使版本
-  不同（Schema `uniqueItems` 钉死精确重复；负例向量与 TS 窄化钉死
-  同 id 唯一规则）。
+  不同。三层钉法（v0.2.2 如实修正）：Schema `uniqueItems` 钉死
+  完全重复行（本批随批新增专负例向量；跨行 id 比较超出 JSON
+  Schema 表达力，Schema 层钉不了）；TS 守卫窄化拒绝任何重复 id
+  并携自有测试；wire 层请求校验在服务时拒绝。
 - **preview＝同步只读 query，做依赖解析。** 与 A1（无网络、无依赖
   解析）不同，A2 预览对已注册仓库做依赖解析、可能触网。在线仓库
   刷新失败时降级到包缓存（ORC-ADP-006 同构先例）。预览不携带缓存
@@ -121,7 +131,7 @@ projectPath）、`vua.packages.invalid_params`（请求形状违例）、
   `kind=rejected`（类型化守卫拒绝）。operation/kind 锁：
   previewInstall 恒答 plan，applyInstall 恒答 receipt/rejected
   （Schema 层机器可检）。
-- **served 能力行（本批申报，随接线切片落地）**：一行
+- **served 能力行（已接线落地）**：一行
   `packages.installOps` 服务双方法；可用性门控＝端口
   `VpmCapabilities.preview_install` 位（冻结 command Schema 的
   serving gate——一位服务 A2 双方法，`packages.removeOps` A1
@@ -129,6 +139,13 @@ projectPath）、`vua.packages.invalid_params`（请求形状违例）、
   引擎答 `vua.packages.unavailable`。`vua.project.project_not_found`
   复用在路由层以信封错误答出（rejected 臂 code Schema 锁
   `^vua\.packages\.`——复用的 013 码永不入 rejected 文档）。
+  wire 路由投影规则照 A1 同径：信封错误面已知映射
+  （`package_not_found`／`preview_failed`）投影、词外端口码照 P1
+  透传；任务面已知守卫（`preview_drift`／`package_not_found`）
+  投影、`apply_failed` 与词外端口码折入 `execution_failed` 携原码
+  进 `detail` 如实溯源（不发明第四 guard）；双摘要守卫在 wire 层
+  强制（服务端执行前复算 preview，权威判定在服务端——014 仲裁点
+  2；后端第二道比对留作纵深防御）。
 
 ## 信封、版本与依赖方向
 
@@ -145,22 +162,31 @@ Electron main（原样透传）→ 版本化应用契约 → provider wire 面 �
 ## 机器可读词表
 
 - `schemas/packages-ops/v0.2/command.schema.json`＋
-  `result.schema.json`＋`examples/`（4 正／8 负）
+  `result.schema.json`＋`examples/`（4 正／9 负）
 - 消费测试：
   `crates/provider-host/tests/packages_ops_consumer_v02.rs`
   （Schema 向量＋端口→wire 投影环〔含冲突触发 remove 行〕＋能力
   缺席词面＋漂移可恢复词面钉死）；
+  `crates/provider-host/tests/packages_ops_wire_v02.rs`（wire 路由
+  11 例骑真实帧环：诚实缺席／plan 信封投影／013 复用码／参数违例
+  闭集／能力缺席／两码信封投影／receipt Done payload／漂移拒绝／
+  execution_failed 溯源／路由层拒绝）；
   `packages/contracts/src/application-contract.test.ts`（闭集请求行
   TS 窄化）；`packages/orchestrator-provider` mock 恒缺席臂
   （模拟面永不模拟 wire 写回执）
 
 ## 诚实边界与开放项
 
-- **wire 路由尚未接线。** 接线切片落地前，
-  `packages.previewInstall`/`packages.applyInstall` 在 wire 面不
-  存在；桌面 `blocks.changes` 写入口维持类型级不可见（fixture 形状
-  绝不搬进 live——#22/#36 教训两次在案）。零端到端宣称：真机走查
-  归 W25（候用户开窗 O-2）。
+- **词面已接线（v0.2.1 如实更新）。** wire 路由两臂＋
+  `packages.installOps` served 行已在库：
+  `packages.previewInstall`/`packages.applyInstall` 在 wire 面存在，
+  路由行为由 `packages_ops_wire_v02.rs` 11 例骑真实帧环钉死。接线
+  前的诚实缺席规则仍服务未声明 `preview_install` 能力的引擎（served
+  行诚实不可用、方法答 `vua.packages.unavailable`／
+  `capability_missing`——能力面不撒谎）。桌面 `blocks.changes` 写
+  入口随 A2 消费切片逐面升级（fixture 形状绝不搬进 live——#22/#36
+  教训两次在案）；接线不等于端到端：真机走查归 W25（候用户开窗
+  O-2）。
 - **缓存降级是文档载明的行为，不是本面传输的事实。** 在线刷新失败
   后预览可能按包缓存计算；摘要绑定与服务端重算保证执行安全
   （漂移即拒）。apply 段不降级。将来若需传输披露，照 025

@@ -526,3 +526,68 @@ vpm_backend.rs，下称「实现」）：
   previewRemove 确认链消费＋applyRemove 任务面接入＋blocks.changes
   翻转＋vua.packages.* 三码与复用码四语文案（C 面「错误码文案桌面
   自决随消费切片落地申报」条款）。
+
+### 桌面形状核可（A2 TS 面，wt-3，2026-09-19 04:4x）
+
+**应第 101 批集成 [→桌面] 留言之约**（「A2 形状核可候办：A2 冻结批
+8552d2c 已入库，照 A1 先例基于收编世代办理」）。核可对象＝A2 冻结批
+8552d2c 22 件中 TS 面（`packages/contracts/src/application-contract.ts`
+026 A2 段＋测试 2 例）＋mock 恒缺席臂两方法（orchestrator-provider），
+已经第 101 批 80af709 实质验收入 main；本核可基于 main 收编世代
+（fba9b87 合并后本树追平壳）本机直读＋定向复跑亲测（04:4x：df C 盘
+630G/67% 先查；@vua/contracts check 72/72；apps/desktop typecheck 双
+tsconfig exit 0；desktop vitest 80 文件 687/687）。**结论：形状主结构
+核可通过**（A2 消费切片桌面侧解锁条件满足，候核心接线批），**附一项
+钉法缺口申报候核心闭合**（见末条，不阻塞消费切片首面）：
+
+- **逐项核可（九项一致）**：①两请求接口与冻结词面逐点一致——
+  previewInstall＝query 双键闭集（projectPath＋packages，无 commandId
+  位，014 同构）；applyInstall＝command 三键闭集（projectPath＋
+  packages＋confirmedDigest）＋commandId Kernel 生成位（import-copy/
+  A1 先例）。②版本选择语义类型面落死——PackagesPackageRequestV02
+  `{packageId, version: string | null}` 必填可空，守卫臂逐行校验
+  （version 缺键拒绝＝null 是显式语义非缺省；数字型拒绝＝
+  string|null 闭集；空闭列拒绝）。③plan/receipt/rejected 三臂齐——
+  PackagesInstallPlanV02 与 v0.1 removePlan 同键集
+  （schemaVersion 字面量 `vua.packages-ops/v0.2` 互异可辨析，消费窄
+  化按 schemaVersion 字面量在类型面成立——集成留言预判证实）；
+  installReceipt（confirmedDigest/requestedPackages/appliedItems）与
+  removeReceipt（requestedPackageIds/removedItems）键集互斥类型级
+  成立。④guard 三值闭集零新增——`PackagesGuardV02 =
+  PackagesRemoveGuardV01` 复用别名，A2 纪律「零新 guard」落死；新信
+  封错误码 vua.packages.preview_failed 走信封面不入 rejected 文档，
+  类型面无抵触。⑤零 upgrade 动词——变更行复用 PackagesChangeItemV01
+  （kind 闭集 install|remove 全集），安装 plan 携冲突触发 remove 行
+  无需新形状（ORC-WF-002 类型面零扩）。⑥union 双登记＋两窄化臂——
+  ApplicationRequestV01 增两行＋ApplicationSuccessValueV01 增
+  PackagesInstallResultV02＋isApplicationRequestV01 两臂（负例：
+  preview 携 digest 位拒＝「携即违反」、apply 缺 confirmedDigest 拒、
+  请求行词表外键拒）。⑦capturedAt 收窄对 A2 三成员有效性本机证实
+  ——全文件 `readonly capturedAt` 唯一（:1946），A2 plan/receipt/
+  rejected 三臂均无 capturedAt 顶层键，desktop
+  `"capturedAt" in result.value` 收窄不因 A2 成员扩张而破裂（typecheck
+  双 0 亲测，与第 101 批合并树终证一致）。⑧mock 恒缺席臂两方法归同
+  批缺席纪律（P1/P2/A1——模拟面永不模拟 wire 写回执），消费切片照
+  缺席臂呈现 unavailable，不预搬 fixture 形状。⑨TS 测试 2 例与申报
+  一一对应（preview 6 断言＋apply 3 断言），词面零变更。
+- **钉法缺口申报（核心域归属，桌面不代改）**：协议本双语均宣称
+  「同行重复 packageId＝词面违例，即使版本不同（Schema uniqueItems
+  钉死精确重复；负例向量与 TS 窄化钉死同 id 唯一规则）」——本席逐
+  层核对实况：①Schema `uniqueItems: true` 仅钉整行深度相等（协议本
+  自我限定「精确重复」，诚实）；②负例向量 8 例中**无** repeated-
+  package-id 负例；③TS 窄化守卫两臂（previewInstall/applyInstall）
+  **无** packageId 查重，application-contract.test.ts 2 例亦无同 id
+  断言——即宣称三层钉法中「负例向量＋TS 窄化」两层未落地，「同 id
+  唯一（异版本）」请求当前无任何机器层拦截（Schema 放行＋TS 放行＋
+  wire 候接线批沿用同 Schema 亦放行）。修复建议（核心域三点）：TS
+  两臂各补行间 id 唯一校验＋负例向量补 repeated-package-id 一例＋
+  consumer 预检计数随之（12→13）＋协议本措辞候补钉后复核。**影响评
+  估与解锁边界**：A2 消费切片首面＝行内单包安装（C 面自决先例同
+  A1「首面单包」），单行请求不可能重复 id，首面不受缺口影响、照常
+  候接线批；**批量多选面在缺口闭合前不得解锁**（诚实边界——UI 不得
+  在词面宣称违例的请求形状上放行批量提交）。
+- **解锁状态**：A2「形状核可」桌面侧条件满足；A2 消费切片候核心
+  wire 接线批（路由两臂 packages.previewInstall/applyInstall＋
+  packages.installOps served 行——接线前两方法在 wire 面不存在，
+  desktop blocks.changes 安装写入口类型级不可见维持）。缺口闭合随
+  核心节拍（接线批前宜闭合，批量面前必须闭合）。
