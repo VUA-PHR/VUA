@@ -679,6 +679,30 @@ describe("mock packages-ops A1 write face (026 core freeze batch)", () => {
   });
 });
 
+describe("mock packages-ops A2 install face (026 core freeze batch, packages-ops v0.2)", () => {
+  it.each([
+    ["packages.previewInstall", { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }] }],
+    ["packages.applyInstall", { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }], confirmedDigest: "fnv1a-7f3a91c2" }],
+  ] as const)("answers %s with the honest absence code — never a fabricated install preview, receipt, or empty result posing as a fact", async (method, params) => {
+    // 026 A2 词表行(packages-ops v0.2):模拟面无 VpmBackend,恒答诚实
+    // 缺席(P1/P2/A1 同纪律)——模拟面永不模拟 wire 写回执;安装预览/
+    // 审计收据只属于真实后端的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: method === "packages.applyInstall" ? "command" : "query",
+      method,
+      commandId: "cmd-test-a2",
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
   it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
     // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/

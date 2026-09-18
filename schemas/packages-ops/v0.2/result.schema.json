@@ -1,0 +1,305 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.2/result.schema.json",
+  "title": "VUA packages-ops result v0.2",
+  "description": "Result documents for the packages-ops v0.2 write face slice A2 = install/upgrade (proposal 026 freeze batch 2026-09-19; the v0.1 A1 removal result row stays frozen and served untouched). Envelope mirrors the standing wire shape (schemaVersion/operation/result); the envelope const is the word-list-row family version 0.2 and the result document carries its own family const vua.packages-ops/v0.2 — the two versions are independent (the c914cf2 standing rule). Operation/kind lock extended to four methods: BOTH preview methods are synchronous queries and answer kind=plan exactly (their failures are wire-envelope errors, not result arms); BOTH apply methods are nine-state tasks whose terminal reflux answers kind=receipt or kind=rejected. kind=plan (changePlan): the confirmation-face projection of the port's ChangePreviewV1 — the SAME shape the A1 removal plan froze, now serving both preview faces: items may contain install rows AND remove rows on the install face (the port's add_package_request reports conflict-triggered removals as Remove changes — the port fact projected verbatim, the v0.1 changeItem closed set already carried both kinds), conflicts, removeLegacyFiles/removeLegacyFolders, destructive (true when conflicts or legacy removals exist, ADR-0006), digest (FNV-1a over the canonical item list). kind=receipt: the AUDIT receipt (change list + actual result, proposal-014 import-receipt precedent) in TWO variants with mutually exclusive key sets: the A1 removeReceipt (confirmedDigest + requestedPackageIds + removedItems) and the A2 installReceipt (confirmedDigest + requestedPackages — the request rows verbatim WITH their version-selection semantics — + appliedItems, the port's apply_install {applied: items} projected verbatim). Task correlation lives on the task surface (taskId/revision); this document is a reflux payload, not a persisted link. kind=rejected: a typed guard refusal evaluated INSIDE the task; the guard closed set stands at the A1 three values (preview_drift/package_not_found/execution_failed) — A2 adds NO fourth guard: preview-phase failures travel as wire-envelope errors (the new envelope code vua.packages.preview_failed, declared in the protocol doc) and never enter a rejected document; inside an apply task every non-drift non-not-found port refusal folds into execution_failed with the original port code inside detail as honest provenance (the A1 discipline). additionalProperties:false everywhere is the false-assertion guard: facts with no port carrier (post-install re-inspection, download byte counts, timestamps, resolution trees) are INVALID by schema, not merely discouraged.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall"
+      ]
+    },
+    "result": {
+      "type": "object",
+      "required": ["schemaVersion", "kind"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-ops/v0.2" },
+        "kind": {
+          "enum": ["plan", "receipt", "rejected"]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "kind": { "const": "plan" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "$ref": "#/$defs/changePlan"
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "receipt" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "oneOf": [
+              { "$ref": "#/$defs/removeReceipt" },
+              { "$ref": "#/$defs/installReceipt" }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": { "kind": { "const": "rejected" } },
+            "required": ["kind"]
+          },
+          "then": {
+            "$ref": "#/$defs/rejected"
+          }
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "kind": { "const": "plan" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "kind": { "enum": ["receipt", "rejected"] }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "kind": { "const": "plan" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "result": {
+            "properties": {
+              "kind": { "enum": ["receipt", "rejected"] }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "changeKind": {
+      "enum": ["install", "remove"]
+    },
+    "changeItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "packageId", "version", "reason"],
+      "properties": {
+        "kind": { "$ref": "#/$defs/changeKind" },
+        "packageId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Target version for installs; null for removals (port fact: Option, verbatim)."
+        },
+        "reason": {
+          "type": ["string", "null"],
+          "description": "Machine reason, e.g. transitive_dependency, conflict; null when the backend carries none (port fact: Option, verbatim — never padded; the port's install rows carry none today)."
+        }
+      }
+    },
+    "changePlan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectPath",
+        "items",
+        "conflicts",
+        "removeLegacyFiles",
+        "removeLegacyFolders",
+        "destructive",
+        "digest"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-ops/v0.2" },
+        "kind": { "const": "plan" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/changeItem" },
+          "description": "Every change the request would make (ORC-WF-002: the plan must cover every change the backend will make). On the install face this includes transitive dependency installs and conflict-triggered remove rows."
+        },
+        "conflicts": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Free-text machine reasons for dependency breakage the change would cause — the transparency face; the confirm UI must warn, the authoritative verdict stays server-side."
+        },
+        "removeLegacyFiles": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "removeLegacyFolders": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "destructive": {
+          "type": "boolean",
+          "description": "True when the change set contains conflicts or legacy removals (ADR-0006) — the confirm UI must warn; a false assertion is checkable against the other four faces."
+        },
+        "digest": {
+          "type": "string",
+          "minLength": 1,
+          "description": "FNV-1a over the canonical item list; the applyInstall confirmedDigest binds to exactly this value. NOTE (consumer narrowing): the v0.1 and v0.2 plan shapes share the same key set — narrow by the schemaVersion literal, not by keys alone."
+        }
+      }
+    },
+    "removeReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectPath",
+        "confirmedDigest",
+        "requestedPackageIds",
+        "removedItems"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-ops/v0.2" },
+        "kind": { "const": "receipt" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "confirmedDigest": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The digest the user confirmed, echoed — the audit link between the confirmation face and the executed result."
+        },
+        "requestedPackageIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "The explicit request list, verbatim — the change list half of the audit receipt (the A1 removal variant; key set disjoint from installReceipt)."
+        },
+        "removedItems": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/changeItem" },
+          "description": "What the backend actually removed (port apply_remove {removed: items} verbatim) — the actual-result half of the audit receipt."
+        }
+      }
+    },
+    "installReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "kind",
+        "projectPath",
+        "confirmedDigest",
+        "requestedPackages",
+        "appliedItems"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-ops/v0.2" },
+        "kind": { "const": "receipt" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "confirmedDigest": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The digest the user confirmed, echoed — the audit link between the confirmation face and the executed result."
+        },
+        "requestedPackages": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageId", "version"],
+            "properties": {
+              "packageId": { "type": "string", "minLength": 1 },
+              "version": {
+                "type": ["string", "null"],
+                "minLength": 1,
+                "description": "The request's version-selection fact, verbatim: null = resolver-picked, a string = the pin."
+              }
+            }
+          },
+          "description": "The explicit request rows, verbatim (version-selection semantics included) — the change list half of the audit receipt (the A2 install variant; key set disjoint from removeReceipt)."
+        },
+        "appliedItems": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/changeItem" },
+          "description": "What the backend actually applied (port apply_install {applied: items} verbatim) — the actual-result half of the audit receipt. No minimum is invented: an honestly empty array transports as an empty array."
+        }
+      }
+    },
+    "rejected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "guard", "code", "detail"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-ops/v0.2" },
+        "kind": { "const": "rejected" },
+        "guard": {
+          "$ref": "#/$defs/guard"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^vua\\.packages\\."
+        },
+        "detail": { "type": "string" }
+      }
+    },
+    "guard": {
+      "enum": [
+        "preview_drift",
+        "package_not_found",
+        "execution_failed"
+      ]
+    }
+  }
+}
