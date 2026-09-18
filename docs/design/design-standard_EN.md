@@ -1,12 +1,12 @@
-# VUA design standard v0.7.1
+# VUA design standard v0.7.2
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.1
+> Document version: 0.7.2
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.1)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.2)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-07  
+> Updated: 2026-09-18  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -234,6 +234,11 @@ stable untilted cards.
   orange atmosphere may coexist; controls still use one primary jurisdiction color.
 - **Environment:** conclusion-first repairable status. Large red/green/amber lights are unique to this
   area; undetected is neutral; play and production environments are evaluated separately.
+  Mutually exclusive alternatives (brand VR runtimes and streaming apps) collapse into one
+  "any one" group card (v0.7.2): once any member is detected the group is ready, and the
+  remaining absent members render as neutral optional facts, never warnings; when none is
+  detected, the whole group counts as a single pending item. Detection failures stay visible
+  as failures at the member row and are never downgraded by group satisfaction.
 - **Warehouse/acquisition:** remote browsing, authorized download, and local Warehouse form one path.
   Remote origin/session boundary is explicit; 1:1 media cards keep user content primary. BDL is not
   directly exposed. Unchecked `LocalArtifact` values are pending/quarantined; executables are listed,
@@ -326,6 +331,12 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.2 (2026-09-18)**: §8 environment deployment gains the alternative-group rule —
+  brand VR runtimes / streaming apps are "any one" alternatives: one group card, a single
+  pending count when unsatisfied, and neutral "optional" absent members once satisfied.
+  Mirrors the ZH edition. (Registry row catches up from 0.7.0 to 0.7.2; the 0.7.1 bump had
+  missed its registry sync.)
 
 - **0.7.1 (2026-09-10)**: §8.3 wording fix (drift flagged in the desktop batch-A
   state) — "honest degradation pointing to the system browser" becomes "a plain

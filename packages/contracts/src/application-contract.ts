@@ -1853,6 +1853,20 @@ export type TaskEventV01 =
       readonly payload: {
         readonly error?: AppErrorV01;
       };
+    })
+  | (TaskEventBaseV01 & {
+      /**
+       * In-session persistence failure (honesty discipline #2): the task is
+       * frozen at its last persisted state and awaits inspection; it reads
+       * `recoveryDisposition: "inspect_required"` on the next snapshot
+       * re-query. Never persisted by the runtime — this event is the only
+       * in-session notification, so consumers must re-query the task face
+       * rather than infer a terminal state.
+       */
+      readonly kind: "task.persistenceFailed";
+      readonly payload: {
+        readonly error?: AppErrorV01;
+      };
     });
 
 export interface CapabilityChangedEventV01 {

@@ -43,6 +43,14 @@
   color: var(--vua-text-strong);
 }
 
+/* info = 中性可选项(部署器替代组未安装成员):描边圆点 + 横杠,
+ * 不用警示色、不发光、不脉冲——不制造焦虑(§8.2) */
+.vua-status-light[data-level="info"] .vua-status-light__dot {
+  background: transparent;
+  border: 1px solid var(--vua-border-strong);
+  color: var(--vua-text-secondary);
+}
+
 /* 英雄区(lg)状态色径向光晕:box-shadow 扩散,静态(§氛围基线 #8) */
 .vua-status-light--lg[data-level="ok"] .vua-status-light__dot {
   box-shadow: 0 0 24px 6px color-mix(in srgb, var(--vua-success) 40%, transparent);

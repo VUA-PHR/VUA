@@ -22,10 +22,15 @@
 //! `libraryfolders.vdf` 枚举全部游戏库根，多盘安装不再误报）、
 //! `vrchat` / `steamvr`（在发现的库根下定点观测；Steam 缺失时退回配置
 //! 根）、`openxr_runtime`（Khronos 注册表 ActiveRuntime → 运行时 JSON 的
-//! 名称：当前串流会走谁）、五个头显运行时存在性检查
-//! `oculus_runtime` / `pico_runtime` / `vive_runtime` /
-//! `virtual_desktop` / `alvr`（候选根存在性，候选根可注入，确切路径的
-//! 核实记录在环境检测 Spike 的开放问题）、`network`（对 `vrchat.com:443`
+//! 名称：当前串流会走谁）、头显/串流运行时存在性检查（品牌面对齐
+//! VRCFT 官方模块库的 PCVR 硬件面）：`oculus_runtime` / `pico_runtime` /
+//! `vive_runtime` / `virtual_desktop` / `pimax_runtime` /
+//! `varjo_runtime` / `hp_omnicept`（候选根存在性，候选根可注入）、
+//! `alvr`（候选根 + openvrpaths 外部驱动注册双信号——ALVR 无固定安装
+//! 目录，注册表驱动痕迹才是可靠观测）、`psvr2` / `bigscreen_beyond`
+//! （两者都是 Steam 分发，走游戏库目录探测）。ALXR（绿色 zip 无固定
+//! 痕迹）与 Steam Link（PC 侧即 Steam/SteamVR 本体）无诚实可探测信号，
+//! 刻意不设检查项。`network`（对 `vrchat.com:443`
 //! 做 TCP 探测，不发请求不登录）、`windows`（OS 版本注册表）、`gpu`
 //! （显示适配器类注册表 DriverDesc）。
 //!
@@ -278,6 +283,28 @@ pub trait VccSettingsReader: Send + Sync {
 /// and every path is a targeted observation, not a scan; exact locations
 /// for vendors that ship no stable documented path stay injectable so a
 /// real machine can confirm them without a code change.
+///
+/// Brand coverage follows VRCFT's official module list (PCVR side), with
+/// documented install evidence:
+/// - `virtual_desktop`: default install is `Program Files\Virtual Desktop
+///   Streamer` (uninstaller manifest + multiple vendor runbooks);
+///   `%LOCALAPPDATA%\VirtualDesktop` kept as a secondary trace.
+/// - `pimax`: `Program Files\Pimax` covers both generations — Pimax Play's
+///   `PimaxClient` and legacy PiTool's `Runtime` live under the same root.
+/// - `varjo`: `Program Files\Varjo` per Varjo's official support docs;
+///   `C:\Varjo` is a lower-confidence legacy/portable fallback.
+/// - `hp_omnicept`: HP documents the SDK root (`Program Files\HP\HP
+///   Omnicept SDK`); the Runtime root has no public record, so it stays a
+///   first-class injectable candidate.
+/// - ALVR ships as an unpack-anywhere zip with no fixed root: the
+///   `alvr` list keeps a best-effort config trace, and the reliable signal
+///   (vrpathreg external-driver registration) is checked separately via
+///   `openvrpaths` — see `check_alvr`.
+/// - ALXR (portable client zip, no installer/registry/OpenXR trace) and
+///   Steam Link (PC side *is* Steam/SteamVR) have no honest PC-side
+///   presence signal and are deliberately not checks.
+/// - PSVR2 and Bigscreen Beyond ship as Steam apps and are observed in the
+///   Steam library (`check_steam_library_component`), not here.
 #[derive(Debug, Clone)]
 pub struct VrRuntimeRoots {
     pub oculus: Vec<PathBuf>,
@@ -285,6 +312,9 @@ pub struct VrRuntimeRoots {
     pub vive: Vec<PathBuf>,
     pub virtual_desktop: Vec<PathBuf>,
     pub alvr: Vec<PathBuf>,
+    pub pimax: Vec<PathBuf>,
+    pub varjo: Vec<PathBuf>,
+    pub hp_omnicept: Vec<PathBuf>,
 }
 
 impl Default for VrRuntimeRoots {
@@ -304,8 +334,21 @@ impl Default for VrRuntimeRoots {
                 PathBuf::from(&local_app_data).join("Programs").join("PICO Connect"),
             ],
             vive: vec![PathBuf::from(&program_files).join("VIVE")],
-            virtual_desktop: vec![PathBuf::from(&local_app_data).join("VirtualDesktop")],
+            virtual_desktop: vec![
+                PathBuf::from(&program_files).join("Virtual Desktop Streamer"),
+                PathBuf::from(&local_app_data).join("VirtualDesktop"),
+            ],
             alvr: vec![PathBuf::from(&local_app_data).join("alvr")],
+            pimax: vec![PathBuf::from(&program_files).join("Pimax")],
+            varjo: vec![PathBuf::from(&program_files).join("Varjo"), PathBuf::from("C:\\Varjo")],
+            hp_omnicept: vec![
+                PathBuf::from(&program_files)
+                    .join("HP")
+                    .join("HP Omnicept Runtime"),
+                PathBuf::from(&program_files)
+                    .join("HP")
+                    .join("HP Omnicept SDK"),
+            ],
         }
     }
 }
@@ -337,6 +380,10 @@ pub struct EnvironmentRoots {
     pub steam_install_candidates: Vec<PathBuf>,
     /// Headset runtime candidate roots.
     pub vr_runtime_roots: VrRuntimeRoots,
+    /// OpenVR `openvrpaths.vrpath` candidates (external driver
+    /// registrations — the documented trace for unpack-anywhere runtimes
+    /// like ALVR).
+    pub openvrpaths: Vec<PathBuf>,
     /// VCC settings candidates, same resolution order the package backend
     /// uses (LOCALAPPDATA first, legacy Roaming fallback).
     pub vcc_settings_candidates: Vec<PathBuf>,
@@ -368,6 +415,9 @@ impl Default for EnvironmentRoots {
                 "C:\\Program Files (x86)\\Steam",
             )],
             vr_runtime_roots: VrRuntimeRoots::default(),
+            openvrpaths: vec![PathBuf::from(&local_app_data)
+                .join("openvr")
+                .join("openvrpaths.vrpath")],
             vcc_settings_candidates: vec![
                 PathBuf::from(&local_app_data)
                     .join("VRChatCreatorCompanion")
@@ -417,7 +467,12 @@ impl EnvironmentEngine {
                     "virtual_desktop",
                     &self.roots.vr_runtime_roots.virtual_desktop,
                 ),
-                self.check_brand_runtime("alvr", &self.roots.vr_runtime_roots.alvr),
+                self.check_alvr(),
+                self.check_steam_library_component("psvr2", "PlayStation VR2 App"),
+                self.check_steam_library_component("bigscreen_beyond", "Bigscreen Beyond Driver"),
+                self.check_brand_runtime("pimax_runtime", &self.roots.vr_runtime_roots.pimax),
+                self.check_brand_runtime("varjo_runtime", &self.roots.vr_runtime_roots.varjo),
+                self.check_brand_runtime("hp_omnicept", &self.roots.vr_runtime_roots.hp_omnicept),
                 self.check_network(),
                 self.check_windows(),
                 self.check_gpu(),
@@ -532,12 +587,19 @@ impl EnvironmentEngine {
     }
 
     fn check_steamvr(&self) -> EnvironmentCheckItemV1 {
+        self.check_steam_library_component("steamvr", "SteamVR")
+    }
+
+    /// Presence of a Steam-library component (SteamVR itself, the PSVR2
+    /// driver app, the Bigscreen Beyond driver): the install directory
+    /// under each discovered library root.
+    fn check_steam_library_component(&self, id: &str, dir_name: &str) -> EnvironmentCheckItemV1 {
         let library_roots = self.effective_library_roots();
         for root in &library_roots {
-            let install = root.join("SteamVR");
+            let install = root.join(dir_name);
             if install.is_dir() {
                 return item(
-                    "steamvr",
+                    id,
                     Zone::Play,
                     EnvironmentPresence::Detected,
                     None,
@@ -546,7 +608,7 @@ impl EnvironmentEngine {
             }
         }
         item(
-            "steamvr",
+            id,
             Zone::Play,
             EnvironmentPresence::NotDetected,
             None,
@@ -643,6 +705,79 @@ impl EnvironmentEngine {
             None,
             json!({ "searchedCandidates": roots_display(candidates) }),
         )
+    }
+
+    /// ALVR ships as an unpack-anywhere zip with no fixed install root:
+    /// presence = a configured candidate root hit, OR the documented
+    /// `vrpathreg adddriver` trace visible in OpenVR's `openvrpaths.vrpath`
+    /// external driver list. An absent openvrpaths file is a normal
+    /// "not detected" finding; a present-but-unreadable one is an
+    /// observation failure.
+    fn check_alvr(&self) -> EnvironmentCheckItemV1 {
+        let candidates = &self.roots.vr_runtime_roots.alvr;
+        for candidate in candidates {
+            if candidate.exists() {
+                return item(
+                    "alvr",
+                    Zone::Play,
+                    EnvironmentPresence::Detected,
+                    None,
+                    json!({
+                        "root": candidate.to_string_lossy(),
+                        "searchedCandidates": roots_display(candidates),
+                    }),
+                );
+            }
+        }
+        match self.openvr_external_driver_hit("alvr") {
+            Ok(Some(driver)) => item(
+                "alvr",
+                Zone::Play,
+                EnvironmentPresence::Detected,
+                None,
+                json!({ "registeredDriver": driver }),
+            ),
+            Ok(None) => item(
+                "alvr",
+                Zone::Play,
+                EnvironmentPresence::NotDetected,
+                None,
+                json!({ "searchedCandidates": roots_display(candidates) }),
+            ),
+            Err(code) => item(
+                "alvr",
+                Zone::Play,
+                EnvironmentPresence::DetectionFailed,
+                Some(code),
+                json!({ "searchedCandidates": roots_display(candidates) }),
+            ),
+        }
+    }
+
+    /// Reads the first configured OpenVR `openvrpaths.vrpath` and reports
+    /// the external driver entry containing `needle` (case-insensitive).
+    /// `Ok(None)` covers "file absent" and "no matching driver" — both
+    /// normal findings; only a present-but-unobservable file is an error.
+    fn openvr_external_driver_hit(&self, needle: &str) -> Result<Option<String>, String> {
+        for path in &self.roots.openvrpaths {
+            if !path.is_file() {
+                continue;
+            }
+            let text =
+                std::fs::read_to_string(path).map_err(|_| error_codes::READ_FAILED.to_owned())?;
+            let value: Value = serde_json::from_str(&text)
+                .map_err(|_| error_codes::READ_FAILED.to_owned())?;
+            let hit = value
+                .get("external_drivers")
+                .and_then(Value::as_array)
+                .into_iter()
+                .flatten()
+                .filter_map(Value::as_str)
+                .find(|entry| entry.to_lowercase().contains(needle))
+                .map(str::to_owned);
+            return Ok(hit);
+        }
+        Ok(None)
     }
 
     // --- play zone: machine identity ---

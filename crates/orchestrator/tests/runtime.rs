@@ -632,3 +632,129 @@ fn journal_payload_completed_roundtrips_through_the_wire_shape() {
     assert_eq!(parsed, entry);
     assert!(line.contains("\"payloadKind\":\"completed\""));
 }
+
+/* ---- poisoned-task visibility (honesty discipline #2): a persistence
+ * failure must surface as a failure at the moment it happens, not as a task
+ * that silently stops progressing until the next restart. ---- */
+
+#[derive(Default)]
+struct FailAfterAcceptanceJournal {
+    entries: Mutex<Vec<vua_orchestrator::JournalEntryV1>>,
+}
+
+impl JournalSink for FailAfterAcceptanceJournal {
+    fn append(
+        &self,
+        entry: &vua_orchestrator::JournalEntryV1,
+    ) -> Result<(), vua_orchestrator::JournalError> {
+        if entry.kind == JournalEntryKind::Accepted {
+            self.entries.lock().unwrap().push(entry.clone());
+            return Ok(());
+        }
+        Err(vua_orchestrator::JournalError::Io(std::io::Error::other(
+            "simulated mid-task disk failure",
+        )))
+    }
+
+    fn path(&self) -> Option<&std::path::Path> {
+        None
+    }
+}
+
+#[test]
+fn poisoned_task_publishes_persistence_failed_and_reads_inspect_required() {
+    let runtime = TaskRuntime::new(
+        Arc::new(FailAfterAcceptanceJournal::default()),
+        Arc::new(SystemClock),
+        Arc::new(FixedIdGenerator::default()),
+    );
+    let receiver = runtime.subscribe();
+    let accepted = runtime
+        .submit(SubmitRequest {
+            correlation_id: None,
+            timeout: None,
+            job: Box::new(|_context| Ok(TaskExit::Done(serde_json::Value::Null))),
+        })
+        .unwrap();
+
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let snapshot = runtime.snapshot(&accepted.task_id).unwrap();
+        if snapshot.poisoned {
+            break;
+        }
+        assert!(Instant::now() < deadline, "task was never poisoned");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+
+    let snapshot = runtime.snapshot(&accepted.task_id).unwrap();
+    assert!(
+        !snapshot.state.is_terminal(),
+        "a poisoned task never claims a terminal state"
+    );
+    assert_eq!(
+        snapshot.recovery_disposition,
+        vua_orchestrator::TaskRecoveryDisposition::InspectRequired,
+        "a poisoned task must read as awaiting inspection, not as running"
+    );
+
+    let events: Vec<_> = receiver.try_iter().collect();
+    let accepted_revision = events
+        .iter()
+        .find(|event| event.kind == TaskEventKind::Accepted)
+        .expect("acceptance event must have been published")
+        .revision;
+    let poison = events
+        .iter()
+        .find(|event| event.kind == TaskEventKind::PersistenceFailed)
+        .expect("the freeze must be published as PersistenceFailed");
+    assert!(poison.revision > accepted_revision);
+    assert_eq!(poison.task_id, accepted.task_id);
+    assert_eq!(poison.payload["code"], "vua.task.journal_write_failed");
+    assert_eq!(
+        poison.payload["recoverable"].as_bool(),
+        Some(true),
+        "the payload is the typed error envelope"
+    );
+    assert_eq!(
+        events
+            .iter()
+            .filter(|event| event.kind == TaskEventKind::PersistenceFailed)
+            .count(),
+        1,
+        "exactly one freeze notification per task"
+    );
+}
+
+#[test]
+fn cancelling_a_poisoned_task_returns_a_typed_error_instead_of_acknowledging() {
+    let runtime = TaskRuntime::new(
+        Arc::new(FailAfterAcceptanceJournal::default()),
+        Arc::new(SystemClock),
+        Arc::new(FixedIdGenerator::default()),
+    );
+    let accepted = runtime
+        .submit(SubmitRequest {
+            correlation_id: None,
+            timeout: None,
+            job: Box::new(|_context| Ok(TaskExit::Done(serde_json::Value::Null))),
+        })
+        .unwrap();
+
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let snapshot = runtime.snapshot(&accepted.task_id).unwrap();
+        if snapshot.poisoned {
+            break;
+        }
+        assert!(Instant::now() < deadline, "task was never poisoned");
+        std::thread::sleep(Duration::from_millis(5));
+    }
+
+    let error = runtime
+        .cancel(&accepted.task_id)
+        .expect_err("a frozen task cannot record a cancellation request");
+    assert_eq!(error.code, "vua.task.journal_write_failed");
+    assert_eq!(error.category, ErrorCategory::Internal);
+    assert!(error.recoverable);
+}
