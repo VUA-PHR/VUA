@@ -612,6 +612,18 @@
   gap: var(--vua-space-2);
 }
 
+/* A2 安装入口(026 v0.2 消费批):「安装最新」行与版本行内安装钮 */
+.vua-packages__install-latest {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__repo-row > .vua-button {
+  align-self: flex-start;
+}
+
+
 .vua-packages__repo-main .vua-caption {
   overflow-wrap: anywhere;
 }
