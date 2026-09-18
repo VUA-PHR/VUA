@@ -26,6 +26,7 @@ import {
 import { ChangesDialog } from "./ChangesDialog.tsx";
 import { PackageDetailDrawer } from "./PackageDetailDrawer.tsx";
 import { PackageTable } from "./PackageTable.tsx";
+import { ProjectCompatSection } from "./ProjectCompatSection.tsx";
 import { RepoSection } from "./RepoSection.tsx";
 import {
   SEARCH_DEBOUNCE_MS,
@@ -1165,6 +1166,11 @@ export function PackagesPage() {
           )}
         </>
       )}
+
+      {/* 项目兼容分区(proposal 026 B,用户 2026-09-18 裁决):原「项目兼容」
+       * 独立页并入本页尾部,恒渲染不挂 packages 引擎 capability 门控——
+       * 分区消费面走 projectOps 独立通道(IA 并入＝选项卡级合并)。 */}
+      <ProjectCompatSection />
 
       {preview !== null ? (
         <ChangesDialog
