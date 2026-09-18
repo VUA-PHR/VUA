@@ -134,7 +134,6 @@ demoTaskTitle: "演示任务",
       warehouse: "仓库",
       workshop: "车间",
       packages: "包管理",
-      projectCompat: "项目兼容",
     },
     pages: {
       home: "指挥台",
@@ -158,7 +157,6 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
-      projectCompat: "项目兼容",
       composePage: "搭配草稿",
       importMaterial: "素材导入",
       inspectionPage: "检测",
@@ -1370,17 +1368,16 @@ rolled_back: "已回滚",
       },
     },
   },
-  /** 项目兼容页(F6,M6 T-C):ALCOM/VCC 只读兼容呈现与「导入为 VUA 管理的副本」
-   *  入口;语义权威=product-boundary 1.2.0(U3 裁决);检测读面(环境 T-B)未接线
-   *  段以能力不可用诚实呈现;副本导入执行(环境 T-A)未接线,入口恒挂标注 */
+  /** 项目兼容分区(proposal 026 B,用户 2026-09-18 裁决):原独立页并入包管理器
+   *  页尾部分区;ALCOM/VCC 只读兼容呈现与「导入为 VUA 管理的副本」确认链;
+   *  语义权威=product-boundary 1.2.0(U3 裁决);检测读面 live(021 接线批);
+   *  副本导入走任务化通道(020 result 回流) */
   projectCompat: {
     title: "项目兼容",
     subtitle: "对 ALCOM/VCC 管理的项目只读;写操作请交接给对应管理器。",
     readOnlyTitle: "只读兼容(边界)",
     readOnlyDesc: "VUA 对 ALCOM/VCC 管理的项目只读:可以查看与诊断;不会在原项目内安装/移除包,不会修改 manifest、项目配置、素材或 .vua 作业文件,也不会写入 ALCOM/VCC 的注册表、数据库、设置或缓存。",
     detectionTitle: "项目检测(兼容矩阵)",
-    detectionSource: "检测项与呈现规则依据 ALCOM/VCC 项目兼容矩阵 1.0.0(已接受);全部只读。",
-    detectionNotWired: "检测数据获取尚未接线:wire 命令面随提案 013 裁决后启用;启用前本节为计划预告。",
     detectionWired: '实时检测(project-inspection 读面):',
     detectionManagersLine: 'VCC 注册项目:{vccN} - ALCOM 注册项目:{alcomN}',
     detectionPickCta: '选择项目文件夹',
@@ -1397,17 +1394,6 @@ rolled_back: "已回滚",
     lockLeftover: '在该项目上观察到残留变更锁。',
     lockUnreadable: '变更锁状态无法读取。',
     detectionReload: '重新检测',
-    detectionItemsTitle: "将检测的项(全部只读):",
-    detectionItems: [
-      "管理器在位(ALCOM/VCC 设置路径)",
-      "项目发现(两管理器注册路径并集,绝不扫描用户目录)",
-      "双管理器关联(同路径多关联去重)",
-      "Unity 版本与分类(生产目标/迁移源/其他)",
-      "VPM 包声明面(dependencies 与 locked)",
-      "VRChat SDK(com.vrchat.* 前缀识别)",
-      "未完成变更标记(.vua/pending-mutation.json 只读观察)",
-      "注册表死条目(保留并带警告,不静默丢弃)",
-    ],
     envStatusTitle: "环境状态(VUA 侧检测)",
     envStatusSource: "数据来源:VUA 环境检测,非 ALCOM/VCC 记录;版本以对应管理器记录为准。",
     handoverTitle: "写操作交接",
@@ -1426,7 +1412,8 @@ rolled_back: "已回滚",
 
     importSourceLabel: "源项目路径",
     importSourcePlaceholder: "ALCOM/VCC 管理的项目文件夹",
-    importSourceNote: "项目检测读面接线后,将从在册项目列表选择;当前请粘贴项目文件夹路径。",
+    importSourceRegisteredLabel: "从在册项目选择",
+    importSourceNote: "优先从上方在册项目列表选择;ALCOM/VCC 管理且未在册的原项目,可直接粘贴项目文件夹路径(导入守卫会核验)。",
     importParentLabel: "目标父目录",
     importParentPick: "选择父目录",
     importNameLabel: "新项目名",
@@ -1453,7 +1440,6 @@ rolled_back: "已回滚",
     guardPlanDrift: "导入计划已发生变化,请重新生成计划。",
     guardExecutionFailed: "导入执行失败。",
     guardFallback: "导入被拒绝。",
-    importNotWired: "副本导入执行尚未接线:等待环境读面与能力面落地后启用。",
     /** D-6 备注区(project-ops v0.2 setNote;裁定 A 行内查看+轻量编辑):
      *  absent 不呈现入口;unreadable 只读;成功判定经读面刷新确认 */
     note: {
