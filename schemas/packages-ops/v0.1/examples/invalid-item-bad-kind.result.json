@@ -1,0 +1,22 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.previewRemove",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.1",
+    "kind": "plan",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "items": [
+      {
+        "kind": "upgrade",
+        "packageId": "com.lilxyzw.liltoon",
+        "version": "1.4.0",
+        "reason": null
+      }
+    ],
+    "conflicts": [],
+    "removeLegacyFiles": [],
+    "removeLegacyFolders": [],
+    "destructive": false,
+    "digest": "fnv1a-9e3779b9"
+  }
+}

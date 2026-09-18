@@ -328,6 +328,48 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 026 A1 packages.previewRemove query with the two-key closed params and explicit non-empty list", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewRemove",
+      params: { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] },
+    })).toBe(true);
+    // 无通配:packageIds 显式非空闭列,空数组是形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewRemove",
+      params: { projectPath: "C:/proj", packageIds: [] },
+    })).toBe(false);
+    // preview 无 digest 位:digest 是 preview 的产物,携即违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewRemove",
+      params: { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"], confirmedDigest: "d" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewRemove",
+      params: { projectPath: "C:/proj" },
+    })).toBe(false);
+  });
+
+  it("admits the 026 A1 packages.applyRemove command with the three-key closed params and commandId", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyRemove", commandId: "cmd-1",
+      params: { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"], confirmedDigest: "fnv1a-9e3779b9" },
+    })).toBe(true);
+    // apply 缺确认指纹 = 无可绑定确认,形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyRemove", commandId: "cmd-1",
+      params: { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] },
+    })).toBe(false);
+    // 任务化命令缺 commandId = 形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyRemove",
+      params: { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"], confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyRemove", commandId: "cmd-1",
+      params: { projectPath: "C:/proj", packageIds: [], confirmedDigest: "d" },
+    })).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},
