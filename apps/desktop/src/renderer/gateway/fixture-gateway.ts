@@ -541,6 +541,8 @@ function createStubPackages(): PackagesPort {
     // A2 写面(026 v0.2):同 A1 纪律——恒缺席臂
     previewInstall: () => Promise.resolve({ kind: "unavailable" }),
     applyInstall: () => Promise.resolve({ kind: "unavailable" }),
+    // A3 写面(026 v0.3):同 A1 纪律——恒缺席臂
+    registerLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),

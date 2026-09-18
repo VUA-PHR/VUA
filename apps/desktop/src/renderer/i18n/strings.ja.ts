@@ -1578,6 +1578,33 @@ rolled_back: "ロールバック済み",
       },
     },
 
+    register: {
+      title: "ローカルパッケージの登録",
+      description:
+        "ローカルのパッケージルートフォルダー(package.json を含む)を VUA のパッケージ環境に登録します。登録はエントリーの追加のみで、プロジェクトや VCC/ALCOM の設定には一切触れません。同じパッケージを再登録しても安全です。",
+      placeholder: "ローカルパッケージのルートパスを入力(例: C:\\LocalPackages\\com.example.pkg-1.0.0)",
+      inputAria: "ローカルパッケージのルートパス",
+      action: "登録",
+      submitting: "登録中…",
+      successLine: "登録済み:{packageRoot}",
+      rejectedDetail: "サーバーの説明:{detail}",
+      guards: {
+        preview_drift: "登録は拒否されました。",
+        package_not_found: "登録は拒否されました。",
+        execution_failed: "登録は実行段階で失敗しました。",
+        unknown: "登録は拒否されました。",
+      },
+      envelopeErrors: {
+        capabilityMissing: "現在のエンジンバックエンドはローカルパッケージの登録に対応していません。",
+        invalidParams: "登録リクエストの形式が無効です。",
+        unknown: "操作に失敗しました。",
+      },
+      toasts: {
+        failedUnknown: "登録を完了できませんでした({code})。",
+        unavailable: "登録を完了できませんでした:結果を確認できません。タスクセンターで状況を確認してください。",
+      },
+    },
+
     repos: {
       addCommunity: "コミュニティリポジトリを追加",
       riskTitle: "コミュニティリポジトリを追加する前に",

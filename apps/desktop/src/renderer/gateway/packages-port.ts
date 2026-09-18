@@ -7,6 +7,10 @@ import type {
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
 } from "@vua/contracts";
+import type {
+  PackagesRegisterReceiptV03,
+  PackagesRegisterRejectedV03,
+} from "@vua/contracts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
 
 /** A1 移除写面冻结词面(026;镜像 @vua/contracts application-contract.ts
@@ -27,6 +31,11 @@ export type {
   PackagesOpsRejectedV02,
   PackagesPackageRequestV02,
 } from "@vua/contracts";
+
+/** A3 本地包注册写面冻结词面(026 packages-ops v0.3;镜像 @vua/contracts
+ *  application-contract.ts A3 段——词面权威,投影与窄化纪律见
+ *  packages-live.ts) */
+export type { PackagesRegisterResultV03 } from "@vua/contracts";
 
 /**
  * VPM 包管理窄端口(S-XVI;调研 docs/research/vrc-get-vcc-research.md)。
@@ -72,6 +81,18 @@ export type {
  *   染);blocks.changes 键语义与来源零变更(A1 逐面升级承诺:纯增量新
  *   键,不改变已消费面的既有形状)。批量多选消费面解锁前置(同 id 唯一
  *   三层钉法)已落地,本批照 C 面自决程序先交付行内单包安装首面。
+ * - A3 本地包注册写面消费批(026 packages-ops v0.3 冻结批 0282a66 经第
+ *   105 批入库＋wire 接线批 45ec57c 经第 107 批入库＋桌面 A3 形状核可
+ *   f1939d1 经第 106 批收编,2026-09-19):packages.registerLocalPackage
+ *   (族中唯一无 preview 对偶的九态任务化注册写命令——幂等集合添加,
+ *   AlreadyAdded 答成功折叠为一个成功事实;非破坏性;无 digest 无确认
+ *   链,用户显式提交即确认;params 单键闭集 {packageRoot},无
+ *   projectPath——注册只动后端隔离环境)已消费;blocks.registers 权威
+ *   事实源 = served_capabilities 的 packages.registerOps 能力行(一行
+ *   服务本方法,removeOps/installOps 先例;default declared-none 访问器
+ *   翻转前如实 unavailable,false = 行缺席或不可用,注册入口不渲染);
+ *   blocks.changes/installs 键语义与来源零变更(逐面升级承诺:纯增量
+ *   新键,不改变已消费面的既有形状)。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -245,7 +266,9 @@ export type PackagesView =
    *   写入口不渲染,渲染层不伪造);installs 权威事实源 =
    *   packages.installOps 能力行(026 A2 安装/升级写面消费批,一位服务
    *   双方法,同翻转纪律;A1 逐面升级承诺 = 纯增量新键,changes 语义与
-   *   来源零变更);
+   *   来源零变更);registers 权威事实源 = packages.registerOps 能力行
+   *   (026 A3 本地包注册写面消费批,一行一方法,同翻转纪律;逐面升级
+   *   承诺 = 纯增量新键,既有键语义与来源零变更);
    * - installedPackages 按 packageId 升序(冻结的确定性呈现事实),
    *   空数组 = 诚实零已装包;
    * - loadError = 最近一次 listInstalled 的 typed 失败(错误码原词),
@@ -259,6 +282,7 @@ export type PackagesView =
         readonly repos: false;
         readonly changes: boolean;
         readonly installs: boolean;
+        readonly registers: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -273,7 +297,9 @@ export type PackagesView =
    *   不可用,对应区块不渲染(渲染层不伪造);changes 权威事实源 =
    *   packages.removeOps 能力行(026 A1 写面消费批,同翻转纪律);
    *   installs 权威事实源 = packages.installOps 能力行(026 A2 安装/
-   *   升级写面消费批,一位服务双方法,同翻转纪律);
+   *   升级写面消费批,一位服务双方法,同翻转纪律);registers 权威事实
+   *   源 = packages.registerOps 能力行(026 A3 本地包注册写面消费批,
+   *   一行一方法,同翻转纪律);
    * - repos 行序 = 订阅面自身顺序(配置事实,客户端不重排);空数组 =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
@@ -290,6 +316,7 @@ export type PackagesView =
         readonly catalog: boolean;
         readonly changes: boolean;
         readonly installs: boolean;
+        readonly registers: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -369,6 +396,27 @@ export type PackagesRemoveApplyOutcome =
 export type PackagesInstallApplyOutcome =
   | { readonly kind: "ok"; readonly receipt: PackagesInstallReceiptV02 }
   | { readonly kind: "rejected"; readonly rejection: PackagesOpsRejectedV02 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * A3 本地包注册写面结果(026 packages-ops v0.3 冻结词面;
+ * registerLocalPackage 任务化消费四态,与 A1/A2 四态同构):
+ * - ok = 审计收据(registered 变体:最小诚实三键回显 {schemaVersion,
+ *   kind, packageRoot}——端口答 unit 无载荷,收据只携请求回显别无他物;
+ *   AlreadyAdded 幂等折叠 = 无首次/重复事实,一个成功事实);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集复用 A1/A2 零新增;
+ *   原端口码 vua.vpm.local_package_invalid/local_package_register_failed
+ *   在 detail 原词溯源,不入 code 键);
+ * - failed = 受理信封错误或任务非成功终态(typed 码原词:能力缺席
+ *   vua.vpm.capability_missing 在路由层答、受理持久化失败
+ *   vua.provider.persistence_failed 等);
+ * - unavailable = 引擎缺席/断连/超时无法确认结果(不猜测不伪造,
+ *   任务真实状态由任务中心呈现——014 先例)。
+ */
+export type PackagesRegisterApplyOutcome =
+  | { readonly kind: "ok"; readonly receipt: PackagesRegisterReceiptV03 }
+  | { readonly kind: "rejected"; readonly rejection: PackagesRegisterRejectedV03 }
   | { readonly kind: "failed"; readonly code: string }
   | { readonly kind: "unavailable" };
 
@@ -497,6 +545,18 @@ export interface PackagesPort {
     packages: readonly PackagesPackageRequestV02[],
     confirmedDigest: string,
   ): Promise<PackagesInstallApplyOutcome>;
+  /**
+   * A3 词面消费(packages.registerLocalPackage,026 packages-ops v0.3
+   * 冻结批):任务化本地包注册写命令(import-copy/A1/A2 同构——端口内
+   * 封装受理→终态等待→Done payload 窄化,020 result 回流先例)。
+   * packageRoot = 本地包根目录(含 package.json),单键闭集,verbatim
+   * 传输;注册只动后端隔离环境,无 projectPath(不触项目、不触用户
+   * VCC/ALCOM 设置)。族中唯一无 preview 对偶的写面:无 digest 无确认
+   * 链——用户显式提交即确认(携 confirmedDigest = 形状违反,负例钉死);
+   * 幂等集合添加,AlreadyAdded 折叠为同一个成功事实。任务九态语义归
+   * 应用契约任务面;任务真实状态由任务中心呈现,本端口只消费终态结果。
+   */
+  registerLocalPackage(packageRoot: string): Promise<PackagesRegisterApplyOutcome>;
   setRepoEnabled(repoId: string, enabled: boolean): Promise<PackagesView>;
   capability(): Promise<CapabilityReport>;
 }

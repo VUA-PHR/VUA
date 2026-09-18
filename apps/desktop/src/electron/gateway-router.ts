@@ -286,6 +286,21 @@ function toApplicationRequest(
           confirmedDigest: request.params.confirmedDigest,
         },
       };
+    // packages-ops v0.3 写面 A3 本地包注册(026 冻结批;桌面 A3 消费批):
+    // 族中唯一无 preview 对偶——单方法任务化 command(import-copy/A1/A2
+    // 同构,commandId 由 Kernel 生成照 applyRemove/applyInstall 先例);
+    // params 单键闭集 {packageRoot} verbatim 透传(注册只动后端隔离环境,
+    // 不触项目;无 digest 无确认链——用户显式提交即确认)
+    case "packages.registerLocalPackage":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.registerLocalPackage",
+        commandId: `reg-${crypto.randomUUID()}`,
+        params: {
+          packageRoot: request.params.packageRoot,
+        },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":
