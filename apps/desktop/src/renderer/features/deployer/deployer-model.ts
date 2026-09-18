@@ -38,7 +38,10 @@ export interface CheckItem {
  * 同组检查项互为替代关系——VRChat 游玩只需要其中任一可用路径,
  * 缺装未拥有的品牌运行时不是问题。引擎只报各项在场事实,
  * "任选其一"的归组与计数属于本层。
- * 当前唯一组:游玩辖区的 VR 运行时与串流(引擎 inspect_zone 七项)。
+ * 当前唯一组:游玩辖区的 VR 运行时与串流(引擎 inspect_zone 的运行时
+ * 检查项;品牌面对齐 VRCFT 官方模块库的 PCVR 硬件面——Meta/PICO/VIVE/
+ * Bigscreen/PSVR2/Pimax/Varjo/HP Omnicept 头显与 ALVR/Virtual
+ * Desktop 串流;ALXR/Steam Link 无诚实 PC 侧可探测信号,不设项)。
  */
 export const CHECK_GROUPS = [
   {
@@ -52,6 +55,11 @@ export const CHECK_GROUPS = [
       "vive_runtime",
       "virtual_desktop",
       "alvr",
+      "psvr2",
+      "pimax_runtime",
+      "varjo_runtime",
+      "bigscreen_beyond",
+      "hp_omnicept",
     ],
   },
 ] as const;

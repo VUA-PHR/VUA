@@ -127,7 +127,9 @@ function presenceText(presence: EnvironmentPresenceV01): string {
 
 /* ---- 检查项卡片标题(用户实测缺口修复 2026-09-12,环境侧 wt-6 留言:
  *  disk_space 双区呈现后卡片 title 原为 checkId 透传;2026-09-16 #31 补齐
- *  引擎 id 闭集其余 6 项——brand runtime 五项＋gpu)。消费侧文案注册表:
+ *  引擎 id 闭集其余 6 项——brand runtime 五项＋gpu;2026-09-18 品牌面扩展
+ *  再增 psvr2/bigscreen_beyond/pimax_runtime/varjo_runtime/hp_omnicept
+ *  五项)。消费侧文案注册表:
  *  键覆盖引擎当前 id 闭集(engine environment.rs inspect_zone,disk_space
  *  双区同 id);引擎新增 id 而本表未收录时如实透传 checkId——不猜测、
  *  不伪造标题。 ---- */
@@ -143,6 +145,11 @@ const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   vive_runtime: "viveRuntime",
   virtual_desktop: "virtualDesktop",
   alvr: "alvr",
+  psvr2: "psvr2",
+  pimax_runtime: "pimaxRuntime",
+  varjo_runtime: "varjoRuntime",
+  bigscreen_beyond: "bigscreenBeyond",
+  hp_omnicept: "hpOmnicept",
   gpu: "gpu",
   network: "network",
   windows: "windows",
