@@ -277,6 +277,185 @@ fn b3_spike_rejects_an_invalid_local_package_before_preview() {
     fs::remove_dir_all(&base).ok();
 }
 
+#[test]
+fn b3_install_roundtrip_is_digest_bound_and_honest_in_preview() {
+    let base = unique_dir("b3-install-drift");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("install-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+    let request = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: Some("0.0.1".to_owned()),
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&request))
+        .unwrap();
+    assert_eq!(preview.items.len(), 1);
+    assert_eq!(preview.items[0].kind, vua_orchestrator::ChangeKindV1::Install);
+
+    // The double-digest discipline on the install path (026 A2 frozen word
+    // face, same port-level anchor as the A1 removal test): a stale
+    // confirmation is refused as a typed RECOVERABLE conflict — re-preview
+    // and re-confirm, never a silent overwrite (honesty rule 3).
+    let forged = format!("0{}", &preview.digest[1..]);
+    assert_ne!(forged, preview.digest);
+    let error = backend
+        .apply_install(&project, std::slice::from_ref(&request), &forged)
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.preview_drift");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Conflict);
+    assert!(
+        error.recoverable,
+        "digest drift is a recoverable conflict, never a terminal failure"
+    );
+    assert!(
+        !project
+            .root
+            .join("Packages/com.ph-r.vua.local.synthetic/package.json")
+            .is_file(),
+        "a drifted apply must not install anything"
+    );
+
+    // The honest confirmation passes and really installs via vrc-get.
+    backend
+        .apply_install(&project, &[request], &preview.digest)
+        .unwrap();
+    let manifest = fs::read_to_string(project.root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(
+        manifest.contains("com.ph-r.vua.local.synthetic"),
+        "the confirmed install is applied by vrc-get"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The port install receipt contract (026 A2 wiring, 2026-09-19): the
+/// backend answers `{"applied": items}` — the item array the wire layer
+/// lifts verbatim into the frozen audit receipt (`appliedItems`, with the
+/// confirmedDigest echo and the requestedPackages rows). A result without
+/// that array is a port-contract violation the wire refuses; this test
+/// pins the shape the audit receipt's third part is sourced from.
+#[test]
+fn b3_apply_install_receipt_carries_the_applied_items() {
+    let base = unique_dir("b3-install-receipt");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("receipt-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+    let request = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: Some("0.0.1".to_owned()),
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&request))
+        .unwrap();
+
+    let receipt = backend
+        .apply_install(&project, &[request], &preview.digest)
+        .unwrap();
+    let applied = receipt
+        .get("applied")
+        .and_then(|value| value.as_array())
+        .expect("the port receipt carries the applied item array");
+    assert_eq!(applied.len(), preview.items.len());
+    let item = &applied[0];
+    assert_eq!(item["packageId"], "com.ph-r.vua.local.synthetic");
+    assert_eq!(item["kind"], "install");
+    assert_eq!(
+        item["version"], "0.0.1",
+        "install items carry the resolved target version"
+    );
+    assert!(
+        item["reason"].is_null(),
+        "install items carry no machine reason (removal-only field)"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The frozen A2 version-selection semantics at the port (026 A2 freeze
+/// batch): a null request row resolves to the resolver-picked LATEST
+/// STABLE (`VersionSelector::latest_for`, prereleases never auto-selected)
+/// and an exact pin rides `specific_version` verbatim — the wire receipt's
+/// `requestedPackages` rows carry these semantics, this test pins the port
+/// behavior they project.
+#[test]
+fn b3_preview_install_null_version_selects_the_latest_stable() {
+    let base = unique_dir("b3-install-null-version");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project = minimal_vpm_project(&base.join("null-version-project"));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+
+    // null row: the resolver picks the latest stable (the only version
+    // registered here), the plan item carries the resolved version.
+    let null_version = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: None,
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&null_version))
+        .unwrap();
+    assert_eq!(preview.items.len(), 1);
+    assert_eq!(
+        preview.items[0].version.as_deref(),
+        Some("0.0.1"),
+        "a null row resolves to the latest stable version"
+    );
+
+    // exact pin: the requested string rides through verbatim.
+    let pinned = PackageRequestV1 {
+        package_id: "com.ph-r.vua.local.synthetic".to_owned(),
+        version: Some("0.0.1".to_owned()),
+    };
+    let preview = backend
+        .preview_install(&project, std::slice::from_ref(&pinned))
+        .unwrap();
+    assert_eq!(preview.items[0].version.as_deref(), Some("0.0.1"));
+    fs::remove_dir_all(&base).ok();
+}
+
 
 // --- B6: general project/package management path ---
 
