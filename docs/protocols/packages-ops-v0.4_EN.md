@@ -2,22 +2,23 @@
 
 [English](packages-ops-v0.4_EN.md) | [简体中文](packages-ops-v0.4_ZH.md)
 
-> Document version: 0.4
+> Document version: 0.4.1
 > Status: **Frozen (packages-ops word-list row v0.4, slice A4
 > repository add/remove word face; the v0.1 A1 removal row, the v0.2
 > A2 install/upgrade row and the v0.3 A3 registration row stay frozen
 > and served untouched — v0.4 is a separate row directory per the
-> packages-catalog v0.2 increment precedent; the word face is NOT
-> wired: the wire routes and the served row land with the next core
-> wiring slice — until then the three methods do not exist on the wire
-> face and desktop renders no entry point)**
+> packages-catalog v0.2 increment precedent; the word face IS wired:
+> the wire routes and the served row are in tree — desktop consumption
+> rides the per-face upgrade, until it lands the methods have no
+> desktop entry point)**
 > (2026-09-19, proposal 026 face order A1→A2→A3→A4, the batch-98
 > word-face bisection ruling: add/remove freeze first, enable/disable
 > wording waits for the W25 VCC key-name real-machine verification)
 > Machine-readable word list: `schemas/packages-ops/v0.4/` (per-row
 > dual schemas + 6 positive / 11 negative vectors; core consumer tests
-> `crates/provider-host/tests/packages_ops_consumer_v04.rs`; TS guard
-> tests `packages/contracts/src/application-contract.test.ts`)
+> `crates/provider-host/tests/packages_ops_consumer_v04.rs`; wire
+> route tests `crates/provider-host/tests/packages_ops_wire_v04.rs`;
+> TS guard tests `packages/contracts/src/application-contract.test.ts`)
 > Scope: `packages.addRemoteRepo` / `packages.addLocalRepo` /
 > `packages.removeRepo` (nine-state task-driven writes of the repo
 > subscription list in the backend's isolated environment)
@@ -27,17 +28,23 @@
 > declared-none, plus the NEW port methods `add_remote_repo` /
 > `add_local_repo` / `remove_repo`) = core domain; wire route (the
 > `packages.repoOps` served row gated on the accessor, the route arms,
-> the envelope assembly) = core domain, lands with the NEXT core
-> wiring slice; the `VrcGetLibBackend::repo_write_capabilities`
+> the envelope assembly) = core domain, **landed with this batch**;
+> the `VrcGetLibBackend::repo_write_capabilities`
 > override and the three implementations over the library's Settings
 > add/remove = environment domain (the implementation-verification
 > slice, the 024/025 procedure — the served row stays honestly
 > unavailable until that override flips it); desktop consumption =
 > desktop domain (per-face upgrade, `blocks` evolution per desktop
 > stance)
-> Updated: 2026-09-19 (v0.4 freeze batch: dual schemas + vectors + core
-> consumer tests + TS face + mock constant-absence arms + bilingual
-> protocol doc + REGISTRY)
+> Updated: 2026-09-19 (v0.4.1 wiring batch: the route arms
+> `packages.addRemoteRepo` / `packages.addLocalRepo` /
+> `packages.removeRepo` + the served row `packages.repoOps` gated on
+> the accessor's three independent bits + envelope assembly +
+> closed-set projection + wire tests + this document NAMES the wire
+> envelope constants — word face ZERO change); 2026-09-19 (v0.4
+> freeze batch: dual schemas + vectors + core consumer tests + TS
+> face + mock constant-absence arms + bilingual protocol doc +
+> REGISTRY)
 
 ## A4 word-face semantics (subscription writes are deliberately NOT a preview/apply pair)
 
@@ -134,16 +141,20 @@
   never reaches a task); parameter violations answer
   `vua.packages.invalid_params`; an unwired engine answers the
   honest-absence arm `vua.packages.unavailable`.
-- **Serving gate**: the NEW defaulted accessor
+- **Serving gate (wired, landed)**: the NEW defaulted accessor
   `VpmBackend::repo_write_capabilities() -> RepoWriteCapabilities`
   with THREE INDEPENDENT bits (`add_remote_repo` / `add_local_repo` /
   `remove_repo` — a backend may serve a subset of the face; the gate
   is per method, never per face; default declared-none; the 025
-  `catalog_capabilities` law, ORC-DEV-004). One served row
+  `catalog_capabilities` law, ORC-DEV-004). The served row
   `packages.repoOps` serves the three methods (the
-  removeOps/installOps/registerOps one-row precedent); the row
-  availability and the per-method gating detail land with the wiring
-  slice. The VrcGetLib override lands with the environment
+  removeOps/installOps/registerOps one-row precedent): the row answers
+  available when the backend declares ANY of the three independent
+  bits (a partially-overriding backend must not have its served
+  methods hidden behind a face-level row), while each route
+  independently reads the method's OWN bit BEFORE submit, answering the
+  generic `capability_missing` on absence — capability absence never
+  reaches a task. The VrcGetLib override lands with the environment
   implementation-verification slice — until then the row is honestly
   unavailable.
 - **Port-code mapping declared with this batch** (the full per-code
@@ -173,34 +184,33 @@
 ## Envelope, versions, and dependency direction
 
 The wire envelope is the standing shape (the `schemaVersion` envelope
-const + `operation` + `result`); the result document carries its own
-family const (`vua.packages-ops/v0.4`) — the two versions are
+const `"0.4"` + `operation` + `result`); the result document carries
+its own family const (`vua.packages-ops/v0.4`) — the two versions are
 independent (the c914cf2 standing rule: every wire row carries a
-version constant of its own). The wire envelope const for this row is
-named at the wiring batch (the A3 precedent: the freeze-batch document
-registers the row, the wiring batch names the constant in a 0.4.x
-revision — consumers align against the landed face, never a guess).
-The v0.1 removal methods keep answering at the v0.1 word face, the
-v0.2 install methods at the v0.2 word face and the v0.3 registration
-at the v0.3 word face; a v0.4 request is only the three A4 methods
-(the v0.2/v0.3/v0.4 `changePlan` shapes share the same key set —
-consumers narrow by the `schemaVersion` literal, not by keys alone).
-Dependency direction unchanged: renderer → typed Gateway → Electron
-main (verbatim pass-through) → versioned application contract →
-provider wire face → the `VpmBackend` port → the project-manager
-adapter. Framework and vendor types stay in adapters; the word list
-transports facts.
+version constant of its own). All three methods stamp the envelope
+const `"0.4"` on both the task acceptance and the Done payload. The
+v0.1 removal methods keep answering at the v0.1 word face, the v0.2
+install methods at the v0.2 word face and the v0.3 registration at the
+v0.3 word face; a v0.4 request is only the three A4 methods (the
+v0.2/v0.3/v0.4 `changePlan` shapes share the same key set — consumers
+narrow by the `schemaVersion` literal, not by keys alone). Dependency
+direction unchanged: renderer → typed Gateway → Electron main
+(verbatim pass-through) → versioned application contract → provider
+wire face → the `VpmBackend` port → the project-manager adapter.
+Framework and vendor types stay in adapters; the word list transports
+facts.
 
 ## Honesty boundary
 
-- **The word face is frozen, not wired.** The wire routes, the
-  `packages.repoOps` served row and the envelope assembly land with
-  the next core wiring slice — until then the three methods do not
-  exist on the wire face. Desktop renders no entry point; the
-  environment `VrcGetLibBackend::repo_write_capabilities` override and
-  the three implementations have not landed (the served row will
-  answer honestly unavailable until they do); the real backend
-  consumption is the environment implementation-verification slice.
-  The consumer tests ride schema vectors and fake backends; the
-  end-to-end walkthrough stays with W25 (pending the user opening
-  window O-2). Nothing here claims runtime behavior.
+- **The word face is wired, not consumed.** The wire routes (three
+  arms), the `packages.repoOps` served row and the envelope assembly
+  landed with the v0.4.1 wiring batch — the three methods exist on the
+  wire face as of this batch. Desktop renders no entry point yet
+  (consumption rides the per-face upgrade); the environment
+  `VrcGetLibBackend::repo_write_capabilities` override and the three
+  implementations have not landed (the served row answers honestly
+  unavailable until they do); the real backend consumption is the
+  environment implementation-verification slice. The wire tests ride
+  the real frame loop and fake backends; the end-to-end walkthrough
+  stays with W25 (pending the user opening window O-2). Nothing here
+  claims real-machine behavior.
