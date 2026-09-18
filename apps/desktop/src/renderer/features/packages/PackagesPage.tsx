@@ -20,6 +20,9 @@ import {
   type PackageProject,
   type PackageRow,
   type PackageSource,
+  type PackagesRemovePlanV01,
+  type PackagesRemoveReceiptV01,
+  type PackagesRemoveRejectedV01,
   type RegisteredProjectRow,
   type RepoInfoRowV01,
 } from "../../gateway/index.ts";
@@ -27,6 +30,7 @@ import { ChangesDialog } from "./ChangesDialog.tsx";
 import { PackageDetailDrawer } from "./PackageDetailDrawer.tsx";
 import { PackageTable } from "./PackageTable.tsx";
 import { ProjectCompatSection } from "./ProjectCompatSection.tsx";
+import { RemoveConfirmDialog } from "./RemoveConfirmDialog.tsx";
 import { RepoSection } from "./RepoSection.tsx";
 import {
   SEARCH_DEBOUNCE_MS,
@@ -36,6 +40,7 @@ import {
   isEmptyPreview,
   migrationSummaryKey,
   rangeSelect,
+  removeEnvelopeErrorKey,
   sortPackages,
   sortProjects,
   sourceTextKeys,
@@ -52,17 +57,21 @@ const copy = strings.packages;
  *   (detailKey 文案来自 strings.capability.details);
  * - 视图 not-connected → EmptyState;无项目 → 空态 + 添加按钮(capability 门控);
  * - 视图 ready-p1(024 P1 中间诚实态)→ 项目选择器(013 注册清单)+
- *   已装包简表;repos/变更面无词表事实源,分区与写入口不渲染;
+ *   已装包简表;repos 无词表行恒不渲染;移除写入口随 removeOps 能力行
+ *   解锁(026 A1 消费批:previewRemove 确认链 + applyRemove 任务面);
  * - 视图 ready-p2(025 P2 读面消费批)→ P1 布局 + 仓库订阅区块(能力行
  *   解锁,cached=false「已订阅·缓存未建立」诚实态,零健康拟态词)+
  *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
  *   渲染入口;no_matching_package = 独立空态;updateAvailable null =
  *   更新行不渲染;v0.2 cacheSourced=true =「缓存数据」信息标注,v0.1
- *   无字段不虚构);变更面仍无词表,写入口不渲染;
+ *   无字段不虚构)+ 移除写入口(随 removeOps 能力行解锁,同 P1);
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
- * - 所有变更两阶段:previewChanges → ChangesDialog 确认 → applyChanges;
- *   破坏性预览的确认钮由 ChangesDialog 内 DelayedButton 延迟解锁。
+ * - demo 泛型变更链(fixture 面):previewChanges → ChangesDialog 确认 →
+ *   applyChanges;破坏性预览的确认钮由 ChangesDialog 内 DelayedButton
+ *   延迟解锁;live A1 词面链(026):previewRemove → RemoveConfirmDialog
+ *   (conflicts 警示 + destructive 延迟确认)→ applyRemove(任务化)→
+ *   receipt/rejected 终态内联呈现——两链分立互不污染。
  */
 
 type PackagesSection = "packages" | "repos";
@@ -219,20 +228,20 @@ function PackageToolbar({
  * 事实源不渲染(虚假断言防线);displayName 无生产者字段,以 packageId
  * 兼任显示(024 核心裁决 3,桌面表态既定走向)。 ---- */
 
-function P1Notice() {
+function P1Notice({ changesOpen }: { changesOpen: boolean }) {
   return (
     <div className="vua-packages__migration">
       <Icon name="question" size={16} />
-      <p>{copy.p1.notice}</p>
+      <p>{changesOpen ? copy.p1.noticeChangesOpen : copy.p1.notice}</p>
     </div>
   );
 }
 
-function P2Notice() {
+function P2Notice({ changesOpen }: { changesOpen: boolean }) {
   return (
     <div className="vua-packages__migration">
       <Icon name="question" size={16} />
-      <p>{copy.p2.notice}</p>
+      <p>{changesOpen ? copy.p2.noticeChangesOpen : copy.p2.notice}</p>
     </div>
   );
 }
@@ -290,15 +299,21 @@ function P1ProjectPicker({
 /** P1 已装包简表:loadError 存在时呈现 typed 失败(错误码原词),绝不以
  * 空态冒充;零已装包 = 合法空数组的诚实空态(两种形态严格区分)。
  * onShowCatalog 仅 P2 分支传入:目录事实(catalog)区块可用时行内提供
- * 按需目录查询入口,无工程上下文不由本表控制(页面级门控)。 */
+ * 按需目录查询入口,无工程上下文不由本表控制(页面级门控)。
+ * onRemove 仅 blocks.changes(026 A1 removeOps 能力行)可用时传入:
+ * 行内移除写入口,能力行缺席 = 入口不渲染(渲染层不伪造)。 */
 function P1InstalledTable({
   rows,
   loadErrorCode,
   onShowCatalog,
+  onRemove,
+  removeBusy,
 }: {
   rows: readonly InstalledPackageRowV01[];
   loadErrorCode: string | null;
   onShowCatalog?: (packageId: string) => void;
+  onRemove?: (packageId: string) => void;
+  removeBusy?: boolean;
 }) {
   if (loadErrorCode !== null) {
     return (
@@ -325,6 +340,7 @@ function P1InstalledTable({
             <th scope="col">{copy.columns.installed}</th>
             <th scope="col">{copy.p1.dependenciesColumn}</th>
             {onShowCatalog ? <th scope="col">{copy.p2.catalogColumn}</th> : null}
+            {onRemove ? <th scope="col">{copy.remove.column}</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -348,6 +364,17 @@ function P1InstalledTable({
                 <td data-column={copy.p2.catalogColumn}>
                   <Button variant="subtle" onClick={() => onShowCatalog(row.packageId)}>
                     {copy.p2.catalogColumn}
+                  </Button>
+                </td>
+              ) : null}
+              {onRemove ? (
+                <td data-column={copy.remove.column}>
+                  <Button
+                    variant="subtle"
+                    disabled={removeBusy}
+                    onClick={() => onRemove(row.packageId)}
+                  >
+                    {copy.menu.remove}
                   </Button>
                 </td>
               ) : null}
@@ -589,6 +616,17 @@ export function PackagesPage() {
   const [preview, setPreview] = useState<PackageChangePreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
   const [applying, setApplying] = useState(false);
+  // A1 移除确认链(026 消费批;live 词面与 demo 泛型链分立互不污染):
+  // confirm(预览确认)→ applying(任务化执行,任务中心呈现真实状态)→
+  // receipt(审计收据)/rejected(守卫拒绝)终态内联呈现
+  const [removeFlow, setRemoveFlow] = useState<{
+    phase: "confirm" | "applying" | "receipt" | "rejected";
+    plan: PackagesRemovePlanV01;
+    requestedPackageIds: readonly string[];
+    receipt: PackagesRemoveReceiptV01 | null;
+    rejection: PackagesRemoveRejectedV01 | null;
+  } | null>(null);
+  const [removePreviewBusy, setRemovePreviewBusy] = useState(false);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -670,6 +708,8 @@ export function PackagesPage() {
     setAnchorId(null);
     setDetailId(null);
     setCatalogTarget(null);
+    setRemoveFlow(null);
+    setRemovePreviewBusy(false);
   }
   if (pendingProjectId !== null && pendingProjectId === selectedIdentity) {
     setPendingProjectId(null);
@@ -773,6 +813,85 @@ export function PackagesPage() {
     );
   };
 
+  /** A1 确认链第一步(026 消费批):previewRemove 同步预览;typed 失败
+   * 照词面文案(词外码原词插值),unavailable 诚实说明,绝不弹空对话框 */
+  const startRemove = (packageId: string) => {
+    const projectPath = p1?.projectPath ?? p2?.projectPath ?? null;
+    if (projectPath === null || removePreviewBusy || removeFlow !== null) return;
+    setRemovePreviewBusy(true);
+    void gateway.packages.previewRemove(projectPath, [packageId]).then(
+      (result) => {
+        setRemovePreviewBusy(false);
+        if (result.kind === "unavailable") {
+          showToast(copy.remove.toasts.previewUnavailable);
+          return;
+        }
+        if (result.kind === "failed") {
+          const key = removeEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.remove.toasts.previewFailedUnknown, { code: result.code })
+              : copy.remove.envelopeErrors[key],
+          );
+          return;
+        }
+        if (result.plan.items.length === 0) {
+          showToast(copy.remove.toasts.nothingToRemove);
+          return;
+        }
+        setRemoveFlow({
+          phase: "confirm",
+          plan: result.plan,
+          requestedPackageIds: [packageId],
+          receipt: null,
+          rejection: null,
+        });
+      },
+      () => {
+        setRemovePreviewBusy(false);
+        showToast(copy.remove.toasts.previewUnavailable);
+      },
+    );
+  };
+
+  /** A1 确认链第二步:applyRemove 任务化执行(携 plan.digest 为
+   * confirmedDigest);receipt/rejected 终态对话框内呈现,failed/unavailable
+   * 关闭流以 toast 诚实说明——任务真实状态由任务中心呈现 */
+  const confirmRemove = () => {
+    if (removeFlow === null || removeFlow.phase !== "confirm") return;
+    const { plan, requestedPackageIds } = removeFlow;
+    setRemoveFlow({ ...removeFlow, phase: "applying" });
+    void gateway.packages.applyRemove(plan.projectPath, requestedPackageIds, plan.digest).then(
+      (result) => {
+        if (result.kind === "ok") {
+          setRemoveFlow((flow) =>
+            flow === null ? flow : { ...flow, phase: "receipt", receipt: result.receipt },
+          );
+        } else if (result.kind === "rejected") {
+          setRemoveFlow((flow) =>
+            flow === null ? flow : { ...flow, phase: "rejected", rejection: result.rejection },
+          );
+        } else {
+          setRemoveFlow(null);
+          if (result.kind === "failed") {
+            const key = removeEnvelopeErrorKey(result.code);
+            showToast(
+              key === "unknown"
+                ? format(copy.remove.toasts.applyFailedUnknown, { code: result.code })
+                : copy.remove.envelopeErrors[key],
+            );
+          } else {
+            showToast(copy.remove.toasts.applyUnavailable);
+          }
+        }
+      },
+      () => {
+        setRemoveFlow(null);
+        showToast(copy.remove.toasts.applyUnavailable);
+      },
+    );
+  };
+
   const chooseProject = (projectId: string) => {
     // P1/P2 视图的项目身份 = 013 注册路径(projectPath);各模式同一选择通道
     const currentSelected = ready?.selectedProjectId ?? p1?.projectPath ?? p2?.projectPath ?? null;
@@ -858,12 +977,12 @@ export function PackagesPage() {
           }
         />
       ) : p2 !== null ? (
-        /* P2 读面诚实态(025):已装可看 + 订阅清单/目录按能力行解锁;
-         * changes 恒 false,写入口不渲染;repos/catalog 区块 false 时不
+        /* P2 读面诚实态(025)+ A1 写面(026):已装可看 + 订阅清单/目录/
+         * 移除写入口按能力行解锁;repos/catalog/changes 区块 false 时不
          * 渲染对应区块与入口(无事实源不渲染,渲染层不伪造) */
         p2.blocks.installed ? (
           <>
-            <P2Notice />
+            <P2Notice changesOpen={p2.blocks.changes} />
             <P1ProjectPicker
               projects={registeredProjects ?? []}
               unreadable={p1Unreadable}
@@ -913,6 +1032,9 @@ export function PackagesPage() {
                     rows={p2Rows}
                     loadErrorCode={p2.loadError?.code ?? null}
                     {...(p2.blocks.catalog ? { onShowCatalog: setCatalogTarget } : {})}
+                    {...(p2.blocks.changes
+                      ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }
+                      : {})}
                   />
                 )}
                 {catalogTarget !== null && p2.blocks.catalog && p2.projectPath !== null ? (
@@ -934,12 +1056,13 @@ export function PackagesPage() {
           />
         )
       ) : p1 !== null ? (
-        /* P1 中间诚实态(024):区块标注 repos/changes 恒 false——分区切换
-         * 器与一切写入口不渲染;清单来自 013 注册面,包行三键照实显示 */
+        /* P1 中间诚实态(024)+ A1 写面(026):repos 无词表行恒 false,
+         * 分区切换器不渲染;移除写入口随 removeOps 能力行解锁;清单来自
+         * 013 注册面,包行三键照实显示 */
         <>
           {p1.blocks.installed ? (
             <>
-              <P1Notice />
+              <P1Notice changesOpen={p1.blocks.changes} />
               <P1ProjectPicker
                 projects={registeredProjects ?? []}
                 unreadable={p1Unreadable}
@@ -985,6 +1108,9 @@ export function PackagesPage() {
                     <P1InstalledTable
                       rows={p1Rows}
                       loadErrorCode={p1.loadError?.code ?? null}
+                      {...(p1.blocks.changes
+                        ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }
+                        : {})}
                     />
                   )}
                 </div>
@@ -1179,6 +1305,18 @@ export function PackagesPage() {
           resolveName={resolveName}
           onCancel={() => setPreview(null)}
           onConfirm={confirmPreview}
+        />
+      ) : null}
+
+      {removeFlow !== null ? (
+        <RemoveConfirmDialog
+          plan={removeFlow.plan}
+          requestedPackageIds={removeFlow.requestedPackageIds}
+          phase={removeFlow.phase}
+          receipt={removeFlow.receipt}
+          rejection={removeFlow.rejection}
+          onCancel={() => setRemoveFlow(null)}
+          onConfirm={confirmRemove}
         />
       ) : null}
 

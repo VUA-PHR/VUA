@@ -229,6 +229,32 @@ function toApplicationRequest(
         method: "packages.packageCatalog",
         params: { projectPath: request.params.projectPath, packageId: request.params.packageId },
       };
+    // packages-ops v0.1 写面 A1 移除(026 冻结批;桌面 A1 消费批):preview
+    // = 同步只读 query verbatim 透传(失败走信封错误:引擎缺席 =
+    // vua.packages.unavailable,未注册 = 复用 vua.project.project_not_found,
+    // 能力缺席 = vua.vpm.capability_missing——全部原样透传不折叠);
+    // apply = 任务化写 command(import-copy 同构,commandId 由 Kernel 生成
+    // 照 project.import-copy 先例;服务端复算摘要漂移即拒 preview_drift,
+    // 权威判定在服务端——桌面只做 UX 提示)
+    case "packages.previewRemove":
+      return {
+        ...base,
+        kind: "query",
+        method: "packages.previewRemove",
+        params: { projectPath: request.params.projectPath, packageIds: [...request.params.packageIds] },
+      };
+    case "packages.applyRemove":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.applyRemove",
+        commandId: `rmv-${crypto.randomUUID()}`,
+        params: {
+          projectPath: request.params.projectPath,
+          packageIds: [...request.params.packageIds],
+          confirmedDigest: request.params.confirmedDigest,
+        },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":

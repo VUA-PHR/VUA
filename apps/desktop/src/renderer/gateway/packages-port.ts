@@ -1,4 +1,18 @@
+import type {
+  PackagesRemovePlanV01,
+  PackagesRemoveReceiptV01,
+  PackagesRemoveRejectedV01,
+} from "@vua/contracts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
+
+/** A1 移除写面冻结词面(026;镜像 @vua/contracts application-contract.ts
+ *  A1 段——词面权威,投影与窄化纪律见 packages-live.ts) */
+export type {
+  PackagesChangeItemV01,
+  PackagesRemovePlanV01,
+  PackagesRemoveReceiptV01,
+  PackagesRemoveRejectedV01,
+} from "@vua/contracts";
 
 /**
  * VPM 包管理窄端口(S-XVI;调研 docs/research/vrc-get-vcc-research.md)。
@@ -26,6 +40,14 @@ import type { CapabilityReport, Unsubscribe } from "./types.ts";
  *   翻转,未实现即诚实不可渲染),健康面非目标零拟态词。v0.2 增量批
  *   (2026-09-17)消费更新:packageCatalog 双族协商(v0.1 七键/v0.2
  *   八键 cacheSourced 披露),盖戳族常量辨词面永不猜测。
+ * - A1 移除写面消费批(026 冻结批 TS 面经第 99 批入库＋wire 接线批
+ *   41503a4,2026-09-19):packages.previewRemove(同步只读变更预览,
+ *   确认链第一步)与 packages.applyRemove(九态任务化移除写命令,双摘
+ *   要守卫——confirmedDigest 漂移即拒 preview_drift recoverable 冲突,
+ *   重预览重确认绝不静默覆盖,诚实纪律 3)已消费;blocks.changes 权威
+ *   事实源 = served_capabilities 的 packages.removeOps 能力行(随引擎
+ *   后端 remove_packages 能力声明翻转,false = 行缺席或不可用,写入口
+ *   不渲染——渲染层不伪造)。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -191,11 +213,12 @@ export type PackagesView =
       };
     }
   /**
-   * P1 中间诚实态(024 冻结批;「已安装可看、变更面不可用」):
+   * P1 中间诚实态(024 冻结批;「已安装可看、变更面随能力行解锁」):
    * - blocks 是区块可用性标注,权威事实源 = served_capabilities 的
-   *   packages.query 能力行;repos/changes 在 P1 词面无对应方法行,
-   *   类型级恒 false(词表落地前不可能为 true,渲染层据此不渲染
-   *   仓库分区与一切变更/写入入口);
+   *   packages.query 能力行;repos 在 P1 词面无对应方法行类型级恒 false;
+   *   changes 权威事实源 = packages.removeOps 能力行(026 A1 写面:随
+   *   引擎后端 remove_packages 能力声明翻转,false = 行缺席或不可用,
+   *   写入口不渲染,渲染层不伪造);
    * - installedPackages 按 packageId 升序(冻结的确定性呈现事实),
    *   空数组 = 诚实零已装包;
    * - loadError = 最近一次 listInstalled 的 typed 失败(错误码原词),
@@ -207,7 +230,7 @@ export type PackagesView =
       readonly blocks: {
         readonly installed: boolean;
         readonly repos: false;
-        readonly changes: false;
+        readonly changes: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -215,12 +238,12 @@ export type PackagesView =
     }
   /**
    * P2 读面诚实态(025 冻结批消费批;「已装可看 + 订阅清单/包目录按
-   * 能力行解锁、变更面仍不可用」):
+   * 能力行解锁、变更面随 removeOps 能力行解锁」):
    * - blocks.repos/catalog 权威事实源 = served_capabilities 的
    *   packages.listRepos/packages.packageCatalog 能力行(随引擎后端
    *   catalog_capabilities 声明翻转);false = 该读面当前无能力行或行
-   *   不可用,对应区块不渲染(渲染层不伪造);changes 在 P3 词面落地
-   *   前类型级恒 false,一切写入口不渲染;
+   *   不可用,对应区块不渲染(渲染层不伪造);changes 权威事实源 =
+   *   packages.removeOps 能力行(026 A1 写面消费批,同翻转纪律);
    * - repos 行序 = 订阅面自身顺序(配置事实,客户端不重排);空数组 =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
@@ -235,7 +258,7 @@ export type PackagesView =
         readonly installed: boolean;
         readonly repos: boolean;
         readonly catalog: boolean;
-        readonly changes: false;
+        readonly changes: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -280,6 +303,24 @@ export type ChangeRequest =
   | { readonly kind: "update"; readonly packageId: string; readonly version?: string }
   | { readonly kind: "remove"; readonly packageId: string }
   | { readonly kind: "bulk-update-latest"; readonly packageIds: readonly string[] };
+
+/**
+ * A1 移除写面结果(026 冻结词面;applyRemove 任务化消费四态):
+ * - ok = 审计收据(确认指纹回显＋请求清单＋实际移除行,014 导入收据
+ *   先例同构);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集 preview_drift/
+ *   package_not_found/execution_failed;preview_drift 系 recoverable
+ *   冲突——重预览重确认,绝不静默覆盖,诚实纪律 3);
+ * - failed = 受理信封错误或任务非成功终态(typed 码原词:受理持久化
+ *   失败 vua.provider.persistence_failed 等);
+ * - unavailable = 引擎缺席/断连/超时无法确认结果(不猜测不伪造,
+ *   任务真实状态由任务中心呈现——014 先例)。
+ */
+export type PackagesRemoveApplyOutcome =
+  | { readonly kind: "ok"; readonly receipt: PackagesRemoveReceiptV01 }
+  | { readonly kind: "rejected"; readonly rejection: PackagesRemoveRejectedV01 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
 
 /** addProject / importLocalPackage 的三态结果:取消与未接入如实区分,不产生副作用 */
 export type PackageEntryResult =
@@ -338,6 +379,38 @@ export interface PackagesPort {
   ): Promise<
     { readonly kind: "applied"; readonly view: PackagesView } | { readonly kind: "unavailable" }
   >;
+  /**
+   * A1 词面消费(packages.previewRemove,026 冻结批):移除将造成的全部
+   * 变更预览(含传递依赖移除)与摘要指纹 digest——确认链第一步,永不
+   * 变更任何状态;packageIds = 显式非空闭列(无通配无「移除全部」速记)。
+   * failed 携带信封 typed 码原词(vua.project.project_not_found = 未注册
+   * 路径复用码;vua.packages.package_not_found = 请求移除的包不在已装
+   * 集合;vua.vpm.capability_missing = 引擎后端未声明 remove_packages),
+   * 不折叠不猜测。
+   */
+  previewRemove(
+    projectPath: string,
+    packageIds: readonly string[],
+  ): Promise<
+    | { readonly kind: "ok"; readonly plan: PackagesRemovePlanV01 }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
+  /**
+   * A1 词面消费(packages.applyRemove,026 冻结批):任务化移除写命令
+   * (import-copy 同构——端口内封装受理→终态等待→Done payload 窄化,
+   * 020 result 回流先例);confirmedDigest 必携 = previewRemove 结果的
+   * digest,服务端执行前复算,漂移即拒 preview_drift(recoverable 冲突
+   * ——重预览重确认,绝不静默覆盖,诚实纪律 3;权威判定在服务端)。
+   * 任务九态语义(可取消/事件＋revision/恢复 inspect_required 绝不隐
+   * 式续传)归应用契约任务面;任务真实状态由任务中心呈现,本端口只消
+   * 费终态结果(014 先例)。
+   */
+  applyRemove(
+    projectPath: string,
+    packageIds: readonly string[],
+    confirmedDigest: string,
+  ): Promise<PackagesRemoveApplyOutcome>;
   setRepoEnabled(repoId: string, enabled: boolean): Promise<PackagesView>;
   capability(): Promise<CapabilityReport>;
 }
