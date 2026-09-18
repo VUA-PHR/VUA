@@ -20,6 +20,9 @@ import {
   type PackageProject,
   type PackageRow,
   type PackageSource,
+  type PackagesInstallPlanV02,
+  type PackagesInstallReceiptV02,
+  type PackagesOpsRejectedV02,
   type PackagesRemovePlanV01,
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
@@ -27,6 +30,7 @@ import {
   type RepoInfoRowV01,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
+import { InstallConfirmDialog } from "./InstallConfirmDialog.tsx";
 import { PackageDetailDrawer } from "./PackageDetailDrawer.tsx";
 import { PackageTable } from "./PackageTable.tsx";
 import { ProjectCompatSection } from "./ProjectCompatSection.tsx";
@@ -36,6 +40,7 @@ import {
   SEARCH_DEBOUNCE_MS,
   TOAST_DURATION_MS,
   filterPackages,
+  installEnvelopeErrorKey,
   invalidReasonKey,
   isEmptyPreview,
   migrationSummaryKey,
@@ -64,14 +69,19 @@ const copy = strings.packages;
  *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
  *   渲染入口;no_matching_package = 独立空态;updateAvailable null =
  *   更新行不渲染;v0.2 cacheSourced=true =「缓存数据」信息标注,v0.1
- *   无字段不虚构)+ 移除写入口(随 removeOps 能力行解锁,同 P1);
+ *   无字段不虚构)+ 移除写入口(随 removeOps 能力行解锁,同 P1)+
+ *   安装/升级写入口(026 A2 消费批:目录面板内「安装最新」/版本行
+ *   「安装此版本」,随 installOps 能力行解锁;version null = 解析器选
+ *   最新稳定版,string = 钉死精确版本——A2 词面不立 upgrade 动词);
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - demo 泛型变更链(fixture 面):previewChanges → ChangesDialog 确认 →
  *   applyChanges;破坏性预览的确认钮由 ChangesDialog 内 DelayedButton
  *   延迟解锁;live A1 词面链(026):previewRemove → RemoveConfirmDialog
  *   (conflicts 警示 + destructive 延迟确认)→ applyRemove(任务化)→
- *   receipt/rejected 终态内联呈现——两链分立互不污染。
+ *   receipt/rejected 终态内联呈现;live A2 词面链(026 v0.2):
+ *   previewInstall → InstallConfirmDialog(同构,收据键集互斥)→
+ *   applyInstall(任务化)→ 终态内联呈现——三链分立互不污染。
  */
 
 type PackagesSection = "packages" | "repos";
@@ -455,15 +465,25 @@ function P2ReposSection({
  * × installed 组合呈现;updateAvailable null 时更新行不渲染) /
  * v0.2 cacheSourced=true「缓存数据」信息性标注(非失败;v0.1 应答无
  * 此字段不虚构标注——双族协商,盖戳族常量辨词面永不猜测)。 */
+/** P2 单包目录面板(按需查询):安装入口仅 p2.blocks.installs(packages.
+ * installOps 能力行,026 A2 消费批)可用时传入 onInstall——能力行缺席 =
+ * 入口不渲染(渲染层不伪造);onInstall(packageId, null) = 解析器选最新
+ * 稳定版,onInstall(packageId, version) = 钉死精确版本(升级/降级同语
+ * 法,A2 词面不立 upgrade 动词);yanked/compatible 事实照实标注,权威判
+ * 定在服务端(桌面不预判可装性)。 */
 function P2CatalogPanel({
   projectPath,
   packageId,
   gateway,
+  onInstall,
+  installBusy,
   onClose,
 }: {
   projectPath: string;
   packageId: string;
   gateway: ReturnType<typeof useGateway>;
+  onInstall?: (packageId: string, version: string | null) => void;
+  installBusy?: boolean;
   onClose: () => void;
 }) {
   const [outcome, setOutcome] = useState<
@@ -565,6 +585,18 @@ function P2CatalogPanel({
               {updateLine}
             </p>
           ) : null}
+          {onInstall ? (
+            <p className="vua-packages__install-latest">
+              <Button
+                variant="default"
+                disabled={installBusy}
+                onClick={() => onInstall(packageId, null)}
+              >
+                {copy.install.latest}
+              </Button>
+              <span className="vua-caption vua-text-secondary">{copy.install.latestHint}</span>
+            </p>
+          ) : null}
           <h3 className="vua-packages__section-title">{copy.p2.versionsTitle}</h3>
           {outcome.facts.versions.length === 0 ? (
             <p className="vua-caption vua-text-secondary">{copy.p2.versionsEmpty}</p>
@@ -579,6 +611,15 @@ function P2CatalogPanel({
                     {version.compatible === false ? copy.p2.compatibleNo : null}
                     {version.compatible === null ? copy.p2.compatibleUnknown : null}
                   </span>
+                  {onInstall ? (
+                    <Button
+                      variant="subtle"
+                      disabled={installBusy}
+                      onClick={() => onInstall(packageId, version.version)}
+                    >
+                      {copy.install.versionAction}
+                    </Button>
+                  ) : null}
                 </li>
               ))}
             </ul>
@@ -627,6 +668,18 @@ export function PackagesPage() {
     rejection: PackagesRemoveRejectedV01 | null;
   } | null>(null);
   const [removePreviewBusy, setRemovePreviewBusy] = useState(false);
+  // A2 安装/升级确认链(026 v0.2 消费批;与 A1 移除链分立——收据键集互
+  // 斥,呈现互不污染):confirm(预览确认)→ applying(任务化执行,任务
+  // 中心呈现真实状态)→ receipt(审计收据)/rejected(守卫拒绝)终态内
+  // 联呈现
+  const [installFlow, setInstallFlow] = useState<{
+    phase: "confirm" | "applying" | "receipt" | "rejected";
+    plan: PackagesInstallPlanV02;
+    requestedPackages: readonly { packageId: string; version: string | null }[];
+    receipt: PackagesInstallReceiptV02 | null;
+    rejection: PackagesOpsRejectedV02 | null;
+  } | null>(null);
+  const [installPreviewBusy, setInstallPreviewBusy] = useState(false);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -710,6 +763,8 @@ export function PackagesPage() {
     setCatalogTarget(null);
     setRemoveFlow(null);
     setRemovePreviewBusy(false);
+    setInstallFlow(null);
+    setInstallPreviewBusy(false);
   }
   if (pendingProjectId !== null && pendingProjectId === selectedIdentity) {
     setPendingProjectId(null);
@@ -892,6 +947,90 @@ export function PackagesPage() {
     );
   };
 
+  /** A2 确认链第一步(026 v0.2 消费批):previewInstall 同步预览(依赖解
+   * 析可达仓库);version null = 解析器选最新稳定版(「安装/升级到最新」
+   * ),string = 钉死精确版本(版本行内入口);typed 失败照词面文案(词
+   * 外码原词插值,A2 新码 preview_failed 有专属文案),unavailable 诚实说
+   * 明,绝不弹空对话框 */
+  const startInstall = (packageId: string, version: string | null) => {
+    const projectPath = p2?.projectPath ?? null;
+    if (projectPath === null || installPreviewBusy || installFlow !== null) return;
+    setInstallPreviewBusy(true);
+    void gateway.packages.previewInstall(projectPath, [{ packageId, version }]).then(
+      (result) => {
+        setInstallPreviewBusy(false);
+        if (result.kind === "unavailable") {
+          showToast(copy.install.toasts.previewUnavailable);
+          return;
+        }
+        if (result.kind === "failed") {
+          const key = installEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.install.toasts.previewFailedUnknown, { code: result.code })
+              : copy.install.envelopeErrors[key],
+          );
+          return;
+        }
+        if (result.plan.items.length === 0) {
+          showToast(copy.install.toasts.nothingToInstall);
+          return;
+        }
+        setInstallFlow({
+          phase: "confirm",
+          plan: result.plan,
+          requestedPackages: [{ packageId, version }],
+          receipt: null,
+          rejection: null,
+        });
+      },
+      () => {
+        setInstallPreviewBusy(false);
+        showToast(copy.install.toasts.previewUnavailable);
+      },
+    );
+  };
+
+  /** A2 确认链第二步:applyInstall 任务化执行(携 plan.digest 为
+   * confirmedDigest);receipt/rejected 终态对话框内呈现,failed/unavailable
+   * 关闭流以 toast 诚实说明——任务真实状态由任务中心呈现 */
+  const confirmInstall = () => {
+    if (installFlow === null || installFlow.phase !== "confirm") return;
+    const { plan, requestedPackages } = installFlow;
+    setInstallFlow({ ...installFlow, phase: "applying" });
+    void gateway.packages
+      .applyInstall(plan.projectPath, requestedPackages, plan.digest)
+      .then(
+        (result) => {
+          if (result.kind === "ok") {
+            setInstallFlow((flow) =>
+              flow === null ? flow : { ...flow, phase: "receipt", receipt: result.receipt },
+            );
+          } else if (result.kind === "rejected") {
+            setInstallFlow((flow) =>
+              flow === null ? flow : { ...flow, phase: "rejected", rejection: result.rejection },
+            );
+          } else {
+            setInstallFlow(null);
+            if (result.kind === "failed") {
+              const key = installEnvelopeErrorKey(result.code);
+              showToast(
+                key === "unknown"
+                  ? format(copy.install.toasts.applyFailedUnknown, { code: result.code })
+                  : copy.install.envelopeErrors[key],
+              );
+            } else {
+              showToast(copy.install.toasts.applyUnavailable);
+            }
+          }
+        },
+        () => {
+          setInstallFlow(null);
+          showToast(copy.install.toasts.applyUnavailable);
+        },
+      );
+  };
+
   const chooseProject = (projectId: string) => {
     // P1/P2 视图的项目身份 = 013 注册路径(projectPath);各模式同一选择通道
     const currentSelected = ready?.selectedProjectId ?? p1?.projectPath ?? p2?.projectPath ?? null;
@@ -982,7 +1121,7 @@ export function PackagesPage() {
          * 渲染对应区块与入口(无事实源不渲染,渲染层不伪造) */
         p2.blocks.installed ? (
           <>
-            <P2Notice changesOpen={p2.blocks.changes} />
+            <P2Notice changesOpen={p2.blocks.changes || p2.blocks.installs} />
             <P1ProjectPicker
               projects={registeredProjects ?? []}
               unreadable={p1Unreadable}
@@ -1042,6 +1181,12 @@ export function PackagesPage() {
                     projectPath={p2.projectPath}
                     packageId={catalogTarget}
                     gateway={gateway}
+                    {...(p2.blocks.installs
+                      ? {
+                          onInstall: startInstall,
+                          installBusy: installPreviewBusy || installFlow !== null,
+                        }
+                      : {})}
                     onClose={() => setCatalogTarget(null)}
                   />
                 ) : null}
@@ -1317,6 +1462,18 @@ export function PackagesPage() {
           rejection={removeFlow.rejection}
           onCancel={() => setRemoveFlow(null)}
           onConfirm={confirmRemove}
+        />
+      ) : null}
+
+      {installFlow !== null ? (
+        <InstallConfirmDialog
+          plan={installFlow.plan}
+          requestedPackages={installFlow.requestedPackages}
+          phase={installFlow.phase}
+          receipt={installFlow.receipt}
+          rejection={installFlow.rejection}
+          onCancel={() => setInstallFlow(null)}
+          onConfirm={confirmInstall}
         />
       ) : null}
 

@@ -449,6 +449,124 @@ describe("packages-ops v0.1 A1 removal routing (026 消费批)", () => {
   });
 });
 
+describe("packages-ops v0.2 A2 install routing (026 消费批)", () => {
+  it("routes packages.previewInstall verbatim (query; request rows copied verbatim) and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-inst-1",
+        method: "packages.previewInstall",
+        params: {
+          projectPath: "C:/VRChat/Projects/Chiffon",
+          packages: [{ packageId: "com.vrchat.avatars", version: null }],
+        },
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-inst-1",
+      correlationId: "desktop-request-inst-1",
+      kind: "query",
+      method: "packages.previewInstall",
+      params: {
+        projectPath: "C:/VRChat/Projects/Chiffon",
+        packages: [{ packageId: "com.vrchat.avatars", version: null }],
+      },
+    });
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.packages.unavailable" } },
+    });
+  });
+
+  it("routes packages.applyInstall as a tasked command with a Kernel-generated inst- commandId (applyRemove same shape)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-inst-2",
+        method: "packages.applyInstall",
+        params: {
+          projectPath: "C:/VRChat/Projects/Chiffon",
+          packages: [{ packageId: "com.vrchat.avatars", version: null }],
+          confirmedDigest: "fnv-1a-abc",
+        },
+      },
+    );
+    const call = invoke.mock.calls[0]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(call.kind).toBe("command");
+    expect(call.method).toBe("packages.applyInstall");
+    expect(call.commandId.startsWith("inst-")).toBe(true);
+    expect(call.params).toEqual({
+      projectPath: "C:/VRChat/Projects/Chiffon",
+      packages: [{ packageId: "com.vrchat.avatars", version: null }],
+      confirmedDigest: "fnv-1a-abc",
+    });
+  });
+
+  it("rejects the preview carrying a digest slot, apply without the digest, and repeated request-row ids at the envelope guard", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // preview 参数无 digest 位(冻结词面:携即形状违反)
+    const digestSlot = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-inst-3",
+        method: "packages.previewInstall",
+        params: {
+          projectPath: "C:/x",
+          packages: [{ packageId: "com.a.b", version: null }],
+          confirmedDigest: "fnv-1a-abc",
+        },
+      },
+    );
+    expect(digestSlot).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    // apply 缺 confirmedDigest:信封守卫即拒
+    const missingDigest = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-inst-4",
+        method: "packages.applyInstall",
+        params: { projectPath: "C:/x", packages: [{ packageId: "com.a.b", version: null }] },
+      },
+    );
+    expect(missingDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    // 同 id 异版本(行间 id 唯一):信封守卫即拒(钉法收口口径,TS 层钉死)
+    const repeatedId = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-inst-5",
+        method: "packages.previewInstall",
+        params: {
+          projectPath: "C:/x",
+          packages: [{ packageId: "com.a.b", version: null }, { packageId: "com.a.b", version: "3.1.4" }],
+        },
+      },
+    );
+    expect(repeatedId).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
 describe("packages-query v0.1 routing (024 P1 消费批)", () => {
   it("routes packages.listInstalled verbatim and passes the typed absence through", async () => {
     const provider = new MockOrchestratorProviderV01();

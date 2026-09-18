@@ -564,6 +564,58 @@ export interface PackagesApplyRemoveRequestV1 {
   };
 }
 
+// ---- packages-ops v0.2 写面 A2 安装/升级(026 冻结批 8552d2c 经第 101 批
+// 入库;wire 接线批 61da51a 经第 102 批入库;钉法缺口收口 beb7d34 经第 104
+// 批入库;桌面 A2 消费批登记 2026-09-19。previewInstall = 同步只读安装/
+// 升级预览 query(双键闭集,packages 请求行闭列 {packageId, version string
+// |null}——version 必填可空,null = 解析器选最新稳定版,string = 钉死精确
+// 版本,升级/降级同语法不立 upgrade 动词;同 packageId 重复 = 词面违反,
+// 版本不同亦然〔seenIds 行间 id 唯一,与 A2 守卫同形〕;preview 参数无
+// digest 位);applyInstall = 九态任务化安装写命令(三键闭集必携
+// confirmedDigest = previewInstall 结果 digest,服务端复算漂移即拒
+// preview_drift recoverable 冲突——ORC-WF-003/004 双摘要纪律,权威判定在
+// 服务端)。成功值为 wire 帧 { schemaVersion:"0.2", operation, result }
+// 包裹:previewInstall 恒答 kind=plan(schemaVersion 族常量
+// vua.packages-ops/v0.2,与 v0.1 plan 同键集,消费窄化按字面量);applyInstall
+// 受理回执 { taskId, correlationId }(import-copy 同构),审计收据 receipt
+// (installReceipt 变体:requestedPackages 携版本选择语义 + appliedItems) /
+// 类型化拒绝 rejected 随任务终态 Done payload 回流。词面权威 =
+// schemas/packages-ops/v0.2 + application-contract.ts A2 段 ----
+
+/** packages.previewInstall 只读查询:安装/升级将造成的全部变更预览(依赖
+ *  解析可达仓库,在线刷新失败降级缓存〔ORC-ADP-006 同构〕;plan 可含
+ *  remove 行——冲突触发的移除是端口事实 ORC-WF-002);永不变更任何状态,
+ *  失败走 wire 信封错误(vua.packages.preview_failed,非 result 臂) */
+export interface PackagesPreviewInstallRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.previewInstall";
+  readonly params: {
+    readonly projectPath: string;
+    readonly packages: readonly {
+      readonly packageId: string;
+      readonly version: string | null;
+    }[];
+  };
+}
+
+/** packages.applyInstall 写命令:任务化受理(import-copy 同构);commandId
+ *  由 Kernel 生成(照 project.import-copy 先例,渲染层不传),幂等/可取消
+ *  /事件＋revision 语义归应用契约任务面 */
+export interface PackagesApplyInstallRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.applyInstall";
+  readonly params: {
+    readonly projectPath: string;
+    readonly packages: readonly {
+      readonly packageId: string;
+      readonly version: string | null;
+    }[];
+    readonly confirmedDigest: string;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -616,7 +668,9 @@ export type DesktopGatewayRequestV1 =
   | PackagesListReposRequestV1
   | PackagesPackageCatalogRequestV1
   | PackagesPreviewRemoveRequestV1
-  | PackagesApplyRemoveRequestV1;
+  | PackagesApplyRemoveRequestV1
+  | PackagesPreviewInstallRequestV1
+  | PackagesApplyInstallRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -675,6 +729,10 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // query,apply 任务化 command(Kernel 生成 commandId)
   "packages.previewRemove": "query",
   "packages.applyRemove": "command",
+  // packages-ops v0.2 写面 A2 安装/升级(026;桌面 A2 消费批):preview 同步
+  // query,apply 任务化 command(Kernel 生成 commandId)
+  "packages.previewInstall": "query",
+  "packages.applyInstall": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -952,6 +1010,28 @@ function isArrayNonEmptyUniqueIdentifiers(value: unknown): value is readonly str
     && new Set(value).size === value.length;
 }
 
+/** packages-ops A2 冻结口径(桌面 A2 消费批):安装请求行闭列(minItems 1,
+ * 每行 {packageId, version} 二键闭集——version 必填可空,null = 解析器选
+ * 最新稳定版,string = 钉死精确版本〔minLength 1〕;同 packageId 重复 =
+ * 词面违反,版本不同亦然——行间 id 唯一 seenIds 在此钉死,与 026 A2 守卫
+ * 窄化同形〔Schema uniqueItems 只能钉完全重复行,跨行 id 比较由 TS 层
+ * 承担,026 形状核可钉法缺口申报的收口口径〕) */
+function isInstallRequestRows(value: unknown): value is readonly { packageId: string; version: string | null }[] {
+  if (!Array.isArray(value) || value.length === 0) return false;
+  const seenIds = new Set<string>();
+  return value.every((row) => {
+    if (typeof row !== "object" || row === null || Array.isArray(row)) return false;
+    const record = row as Record<string, unknown>;
+    const keys = Object.keys(record).sort();
+    if (keys.length !== 2 || keys[0] !== "packageId" || keys[1] !== "version") return false;
+    if (typeof record.packageId !== "string" || record.packageId.length === 0) return false;
+    if (seenIds.has(record.packageId)) return false;
+    seenIds.add(record.packageId);
+    return record.version === null
+      || (typeof record.version === "string" && record.version.length > 0);
+  });
+}
+
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
@@ -1155,6 +1235,26 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && typeof value.params.projectPath === "string"
         && value.params.projectPath.length >= 1
         && isArrayNonEmptyUniqueIdentifiers(value.params.packageIds)
+        && typeof value.params.confirmedDigest === "string"
+        && value.params.confirmedDigest.length >= 1;
+    // packages-ops v0.2 写面 A2 安装/升级(026;桌面 A2 消费批):packages =
+    // 请求行闭列({packageId, version string|null} 二键闭集行,minItems 1,
+    // 行间 id 唯一含异版本——同 packageId 重复 = 词面违反,seenIds 钉死与
+    // A2 守卫窄化同形);applyInstall 三键闭集必携 confirmedDigest
+    // (minLength 1),preview 参数无 digest 位;commandId 由 Kernel 生成
+    // 不在 params
+    case "packages.previewInstall":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "packages"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1
+        && isInstallRequestRows(value.params.packages);
+    case "packages.applyInstall":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "packages", "confirmedDigest"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1
+        && isInstallRequestRows(value.params.packages)
         && typeof value.params.confirmedDigest === "string"
         && value.params.confirmedDigest.length >= 1;
     case "warehouse.entryDetail":

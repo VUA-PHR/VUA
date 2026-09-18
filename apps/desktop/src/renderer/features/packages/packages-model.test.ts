@@ -20,6 +20,7 @@ import {
   migrationSummaryKey,
   rangeSelect,
   relativeCheckedTime,
+  installEnvelopeErrorKey,
   removeEnvelopeErrorKey,
   removeGuardKey,
   repoHealthTextKeys,
@@ -296,6 +297,34 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
     // 词外码(vua.vpm.* 端口族透传/任务 error.code)回落 unknown 原词插值
     assert.equal(removeEnvelopeErrorKey("vua.vpm.preview_drift"), "unknown");
     assert.equal(removeEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+  });
+
+  test("installEnvelopeErrorKey maps the declared v0.2 codes incl the new preview_failed and falls back to unknown (026 A2)", () => {
+    assert.equal(installEnvelopeErrorKey("vua.project.project_not_found"), "projectNotFound");
+    assert.equal(installEnvelopeErrorKey("vua.packages.package_not_found"), "packageNotFound");
+    assert.equal(installEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(installEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    // A2 信封新码:预览/查询段失败
+    assert.equal(installEnvelopeErrorKey("vua.packages.preview_failed"), "previewFailed");
+    // 词外码(vua.vpm.* 端口族透传/任务 error.code)回落 unknown 原词插值
+    assert.equal(installEnvelopeErrorKey("vua.vpm.preview_drift"), "unknown");
+    assert.equal(installEnvelopeErrorKey("vua.packages.apply_failed"), "unknown");
+    assert.equal(installEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+  });
+
+  test("install guard copy mirrors the shared three-value closed set in the i18n install section (026 A2)", () => {
+    // 四语 install.guards 表含恰四键(A1 复用守卫三码 + unknown),映射键
+    // 闭集与 i18n 同步
+    const guards = strings.packages.install.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+    const envelopeErrors = strings.packages.install.envelopeErrors;
+    for (const key of ["projectNotFound", "packageNotFound", "capabilityMissing", "invalidParams", "previewFailed", "unknown"] as const) {
+      assert.equal(typeof envelopeErrors[key], "string");
+      assert.ok(envelopeErrors[key].length > 0);
+    }
   });
 
 /* ---- 相对时间 ---- */

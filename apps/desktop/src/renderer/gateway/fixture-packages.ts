@@ -480,6 +480,10 @@ export function createFixturePackages(): PackagesPort {
     // 泛型 previewChanges/applyChanges,与 live A1 词面分立互不污染)
     previewRemove: () => Promise.resolve({ kind: "unavailable" } as const),
     applyRemove: () => Promise.resolve({ kind: "unavailable" } as const),
+    // A2 写面词面(packages.previewInstall/applyInstall,026 v0.2 消费批):
+    // 同纪律恒缺席臂(演示面永不模拟安装收据)
+    previewInstall: () => Promise.resolve({ kind: "unavailable" } as const),
+    applyInstall: () => Promise.resolve({ kind: "unavailable" } as const),
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
 }

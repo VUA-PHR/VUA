@@ -197,6 +197,33 @@ export function removeEnvelopeErrorKey(code: string): RemoveEnvelopeErrorKey {
   return "unknown";
 }
 
+/* ---- A2 安装/升级写面(026 v0.2 消费批):typed 码映射 ---- */
+
+/** A2 信封/受理 typed 错误码 → strings.packages.install.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 v0.2 冻结词面已申报面:复用码 vua.project.project_not_found(未注
+ * 册路径)、vua.packages.package_not_found(请求包/版本不可得)、通用
+ * vua.vpm.capability_missing(引擎后端未声明 preview_install)、
+ * vua.packages.invalid_params(请求形状违规)、A2 信封新码
+ * vua.packages.preview_failed(预览/查询段失败——仓库解析、IO、外部
+ * 失败类);任务非成功终态的 error.code 原词不在此闭集时一律 unknown。 */
+export type InstallEnvelopeErrorKey =
+  | "projectNotFound"
+  | "packageNotFound"
+  | "capabilityMissing"
+  | "invalidParams"
+  | "previewFailed"
+  | "unknown";
+
+export function installEnvelopeErrorKey(code: string): InstallEnvelopeErrorKey {
+  if (code === "vua.project.project_not_found") return "projectNotFound";
+  if (code === "vua.packages.package_not_found") return "packageNotFound";
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  if (code === "vua.packages.preview_failed") return "previewFailed";
+  return "unknown";
+}
+
 /* ---- 选择与批量 ---- */
 
 /**
