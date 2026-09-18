@@ -71,7 +71,7 @@
 | schemas/packages-catalog/v0.2 | 0.2 | 已冻结（packages.packageCatalog 结果族 v0.2 增量——cacheSourced 披露，2026-09-17：proposal 025 内联裁决——收敛面＝环境形状提案 A〔实现切片声明节〕＋桌面表态第 5 条披露枝〔0031004〕＋核心方向裁决 6〔bf78368〕三域同向；v0.2＝冻结 v0.1 result 恰加必带 cacheSourced 布尔〔true＝缓存降级路径，false＝在线刷新；信息性非失败；v0.1 应答无此字段消费端不虚构标注〕；command 面与 v0.1 逐字节同形；repos 族 v0.1 刻意不加字段〔零网络面恒常量非事实〕；纯增量双版本协商＝端口默认项 catalog_v02/package_catalog_v02〔ORC-DEV-004 零编译波及〕＋路由双臂按声明盖族戳〔冻结 v0.1 绝不原地修订；v0.1 形状对 v0.2 Schema 非法＝版本机器可检测〕；Schema＋4 正 5 负向量＋核心消费测试〔含版本可检测性钉死〕＋TS 面 PackagesPackageCatalogResultV02；compatible 语义随批澄清＝库完整 unity_compatible 全语义〔025 内联核心表态口径 2〕，实现面环境增补批照改；桌面消费更新批候随其后） | 核心 | 2026-09-17 |
 | docs/protocols/packages-catalog-v0.2_ZH.md | 0.2 | 已冻结（packages.packageCatalog 结果族 v0.2 增量，2026-09-17：恰一键披露增量一次冻结，双语协议本＋REGISTRY 登记随本冻结批） | 核心 | 2026-09-17 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/design/design-standard_ZH.md | 0.7.2 | 已接受 | 桌面 | 2026-09-18 |
+| docs/design/design-standard_ZH.md | 0.7.3 | 已接受 | 桌面 | 2026-09-18 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |
 | docs/meta/documentation-governance_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | CONTRIBUTING_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |

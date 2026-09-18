@@ -41,7 +41,6 @@ export type PageId =
   | "release"
   | "workshop"
   | "packages"
-  | "project-compat"
   | "tools-discover"
   | "tools-devices"
   | "tools-calibration"
@@ -177,7 +176,8 @@ export const businessModules: readonly ModuleDef[] = [
         labelKey: "packages",
         pages: [
           { id: "packages", labelKey: "packages" },
-          { id: "project-compat", labelKey: "projectCompat" },
+          // 项目兼容不再持独立页(proposal 026 B,用户 2026-09-18 裁决):
+          // 其读面段并入包管理器页尾部分区(PackagesPage 内 ProjectCompatSection)
         ],
       },
     ],
