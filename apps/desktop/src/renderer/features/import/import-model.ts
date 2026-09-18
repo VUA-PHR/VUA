@@ -3,8 +3,9 @@ import type { DownloadsListCompletedItemV04, RemoteContentEventV1 } from "@vua/c
 /**
  * 素材导入页云端段「内嵌浏览面板」的呈现纯函数(M6 IMP-2 批 A,proposal 015
  * 对账;design-standard 0.7.0 §8.3):
- * - 能力两态(两态开关,desktop 架构 1.1.0):app.snapshot 的 remoteBrowser
- *   标志驱动呈现——false = 未接线诚实降级(不可用标注,无替代假动作);
+ * - 能力两态(两态开关,desktop 架构 1.1.0):壳能力自报(preload
+ *   capabilities.remoteBrowser;app.snapshot 信封同源同值,#36 缺陷4′ 对齐)
+ *   驱动呈现——false = 未接线诚实降级(不可用标注,无替代假动作);
  *   true = 内嵌浏览面板可用(翻转随批 B);
  * - 内嵌视图状态由 remote-content 事件流归约(view-opened/navigated/
  *   view-closed/blocked),blocked 事件诚实呈现不静默;
@@ -32,7 +33,7 @@ export function displayUrl(url: string): string {
   }
 }
 
-/** app.snapshot 的能力标志 → 面板两态(未知快照 = 保守不可用,不猜测) */
+/** 壳能力自报标志(preload 面;信封同源同值) → 面板两态(未知 = 保守不可用,不猜测) */
 export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvailability {
   return remoteBrowser === true ? { kind: "available" } : { kind: "unavailable" };
 }

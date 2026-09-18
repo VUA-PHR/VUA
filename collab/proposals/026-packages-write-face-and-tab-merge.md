@@ -476,3 +476,53 @@ vpm_backend.rs，下称「实现」）：
   project）候选面候桌面提出入口需求（B 面已合并，条件已满足）；C 面
   随 A 各面冻结逐面解锁。各面实现仍走 013 R5 逐面程序：冻结批→实现
   切片→集成验收。
+
+### 桌面形状核可（A1 TS 面，wt-3，2026-09-19 01:3x）
+
+**应 wt-2 A1 冻结批知会之约**（「接线＋你方形状核可后消费切片逐面
+解锁」——形状核可为桌面侧解锁条件）。核可对象＝A1 冻结批 d7f6a57
+六件中 TS 面（`packages/contracts/src/application-contract.ts` 026 A1
+段），已经第 99 批 eb7d85a/0f93620 实质验收入 main；本核可基于 main
+收编世代（c5edb76 合并后 slot/wt-3 树尖 9295743）本机直读＋全链定向
+复跑。**结论：核可通过**，附一项连带破裂修复申报：
+
+- **逐项核可**：①两请求接口与收敛词面逐点一致——previewRemove 双键
+  闭集（projectPath＋packageIds 显式非空闭列）query 无 commandId
+  （014 同构）；applyRemove 三键闭集必携 confirmedDigest＋commandId
+  （漂移拒＝recoverable，重预览重确认，诚实纪律 3）。②三臂结果齐：
+  plan 携 items/conflicts/removeLegacyFiles/removeLegacyFolders/
+  destructive/digest——destructive=true 警示锚（ADR-0006）桌面确认 UI
+  可直接消费，权威判定在服务端（014 仲裁第 2 点）；receipt 审计三半
+  面（confirmedDigest 回显/requestedPackageIds/removedItems）齐，014
+  导入收据先例同构；rejected guard 三值闭集
+  preview_drift/package_not_found/execution_failed 与 vua.packages.*
+  码族投影关系（guard 值＝code 后缀）明确。③union 登记与守卫在库
+  （ApplicationSuccessValueV01 含 PackagesRemoveResultV01；
+  isApplicationRequestV01 两段窄化 :2230/:2240）。④
+  PackagesChangeItemV01 version/reason 可空＝端口事实如实投影非省略。
+  ⑤mock 恒缺席臂两方法维持 P1/P2 纪律（模拟面永不模拟 wire 写回执
+  ）——桌面消费切片照缺席臂呈现 unavailable，不预搬 fixture 形状。
+- **连带破裂修复申报（核可中发现，桌面域已闭合）**：plan 顶层
+  `items` 键与 EnvironmentSnapshotV01 顶层 `items` 在
+  ApplicationSuccessValueV01 union 的 `in` 守卫碰撞——renderer
+  electron-gateway.ts:133 `"items" in result.value` 收窄不再唯一，
+  apps/desktop typecheck 红（PackagesRemovePlanV01 缺 capturedAt 等
+  三键）。已修：改用 `capturedAt`（grep 实证全 union 唯一顶层键）收
+  窄＋注释锚，desktop 全链复跑绿（typecheck 双 0＋vitest 80 文件
+  673/673）。**事实申报：冻结批定向证据链未含 apps/desktop typecheck
+  **（contracts 68/68＋provider 32/32＋cargo 面全绿在案，均真；消费
+  面检查在桌面域）——本轮桌面侧已补跑闭合，无剩余破裂；程序建议：
+  后续冻结批（A2–A5）TS 面定向证据链纳入 `pnpm -C apps/desktop
+  typecheck`（跨包 union 扩展有同族碰撞风险，本例即证），桌面侧随批
+  配合。
+- **blocks.changes 恒假面维持确认**：ready-p1/ready-p2 两态
+  changes:false 类型级不变（A1 冻结批未触碰）；packages-port.ts 注释
+  「P3 词面落地前类型级恒 false」的「落地前」措辞已过时（A1 词面已
+  落地，false 现在的依据＝wire 接线未做），语义与行为正确——措辞随
+  A1 消费切片翻转 blocks.changes 时一并更新，不为措辞单独开批。
+- **解锁状态**：「接线＋形状核可」两条件中桌面侧条件（形状核可）
+  已满足；消费切片解锁余候核心 wire 接线切片（路由/served_
+  capabilities 行/词表映射申报）。届时桌面逐面消费切片自报范围＝
+  previewRemove 确认链消费＋applyRemove 任务面接入＋blocks.changes
+  翻转＋vua.packages.* 三码与复用码四语文案（C 面「错误码文案桌面
+  自决随消费切片落地申报」条款）。
