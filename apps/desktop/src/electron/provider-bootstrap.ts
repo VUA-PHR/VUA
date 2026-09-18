@@ -1,6 +1,5 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
-import type { CapabilityOperationV01 } from "@vua/contracts";
 import {
   providerEnvironment,
   SupervisedProcessProviderV01,
@@ -9,29 +8,13 @@ import {
 } from "@vua/orchestrator-provider";
 
 /**
- * 受监督真实 Provider 的能力表(操作级,契约 v0.1):
- * - task.list / environment.getSnapshot / demo.task:F2 已路由;demo 保持可用
- *   以贯通任务体验,F3 真实用例命令落地后从生产能力表移除;
- * - desktop.remoteBrowser:F4(WebContentsView + 隔离 Session)前显式不可用。
+ * 桌面壳侧 Provider 组合根。能力面注记(015 §11 方案 a + #36 缺陷4′ 对齐,
+ * 2026-09-19):内嵌浏览等壳交付能力不经 provider 面报告或转述——旧
+ * DESKTOP_CAPABILITIES 表(含 desktop.remoteBrowser unavailable 行)是未接线
+ * 的死常量(pre-F4 世代残留,零消费点),随能力面对齐切片整表移除;
+ * provider 能力行由 provider 进程自身事实出发,served_capabilities gate
+ * 不消费本文件。
  */
-const DESKTOP_CAPABILITIES: readonly CapabilityOperationV01[] = [
-  { operationId: "task.list", availability: "available" },
-  { operationId: "environment.getSnapshot", availability: "available" },
-  { operationId: "demo.task", availability: "available" },
-  {
-    operationId: "desktop.remoteBrowser",
-    availability: "unavailable",
-    reason: {
-      contractVersion: "0.1",
-      code: "vua.desktop.remote_browser_unavailable",
-      category: "unavailable",
-      messageKey: "errors.desktop.remoteBrowserUnavailable",
-      recoverable: true,
-      retryable: false,
-      correlationId: "kernel-capability",
-    },
-  },
-];
 
 export interface DesktopProviderEndpoint {
   /** 受监督 Provider 进程可执行文件(仓库构建产物,绝对路径) */

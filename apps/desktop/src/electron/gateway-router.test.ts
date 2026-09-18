@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockOrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke, type DesktopGatewayRouteContext } from "./gateway-router.js";
+import { SHELL_CAPABILITIES } from "./shell-capabilities.js";
 
 const rendererUrl = "http://127.0.0.1:5173";
 
@@ -45,13 +46,16 @@ describe("Electron Desktop Gateway routing", () => {
       capabilities: [
         { operationId: "task.list", availability: "available" },
         {
-          operationId: "desktop.remoteBrowser",
+          // 带 reason 的 unavailable 行照原样透传钉死;用 demo.task 变体——
+          // desktop.remoteBrowser 不是 provider 操作(015 §11 (a)),mock 不
+          // 复活已移除的死形状(#22 live/fixture 形状一致)
+          operationId: "demo.task",
           availability: "unavailable",
           reason: {
             contractVersion: "0.1",
-            code: "vua.desktop.remote_browser_unavailable",
+            code: "vua.demo.task_unavailable",
             category: "unavailable",
-            messageKey: "errors.desktop.remoteBrowserUnavailable",
+            messageKey: "errors.demo.taskUnavailable",
             recoverable: true,
             retryable: false,
             correlationId: "capability-test",
@@ -78,7 +82,15 @@ describe("Electron Desktop Gateway routing", () => {
     });
     expect(response).toMatchObject({
       ok: true,
-      value: { capabilities: { gateway: true, tasks: true, remoteBrowser: false } },
+      // #36 缺陷4′ 钉死:信封 remoteBrowser 与壳自报引用同一事实源
+      // (shell-capabilities),不再是硬编码字面量——实现改回硬编码即红
+      value: {
+        capabilities: {
+          gateway: true,
+          tasks: true,
+          remoteBrowser: SHELL_CAPABILITIES.remoteBrowser,
+        },
+      },
     });
     if (!response.ok) throw new Error("expected a snapshot response");
     const capabilities = (response.value as {
@@ -93,13 +105,13 @@ describe("Electron Desktop Gateway routing", () => {
     expect(sortedRows(capabilities.operations)).toEqual(sortedRows([
       { operationId: "task.list", availability: "available" },
       {
-        operationId: "desktop.remoteBrowser",
+        operationId: "demo.task",
         availability: "unavailable",
         reason: {
           contractVersion: "0.1",
-          code: "vua.desktop.remote_browser_unavailable",
+          code: "vua.demo.task_unavailable",
           category: "unavailable",
-          messageKey: "errors.desktop.remoteBrowserUnavailable",
+          messageKey: "errors.demo.taskUnavailable",
           recoverable: true,
           retryable: false,
           correlationId: "capability-test",
@@ -120,7 +132,15 @@ describe("Electron Desktop Gateway routing", () => {
 
     expect(response).toMatchObject({
       ok: true,
-      value: { capabilities: { gateway: true, tasks: false, remoteBrowser: false } },
+      // 同源钉死(#36 缺陷4′):空 provider 行集下信封能力布尔仍与壳自报
+      // 同一事实源
+      value: {
+        capabilities: {
+          gateway: true,
+          tasks: false,
+          remoteBrowser: SHELL_CAPABILITIES.remoteBrowser,
+        },
+      },
     });
     if (!response.ok) throw new Error("expected a snapshot response");
     // 空能力表照原样透传:空数组是诚实空态,不是缺字段(读行方的词表 gate
