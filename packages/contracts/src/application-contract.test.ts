@@ -370,6 +370,62 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 026 A2 packages.previewInstall query with the closed request rows and version-selection semantics", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }] },
+    })).toBe(true);
+    // 钉死精确版本 = 升级/降级同语法,合法
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.another.toolkit", version: "3.1.4" }] },
+    })).toBe(true);
+    // 请求行缺 version 键 = 形状违反(version 必填可空,null 是显式语义)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon" }] },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 请求行发明词表外键 = 虚假断言防线
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null, displayName: "lilToon" }] },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 空闭列 = 形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [] },
+    })).toBe(false);
+    // preview 无 digest 位:携即违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.previewInstall",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }], confirmedDigest: "d" },
+    })).toBe(false);
+  });
+
+  it("admits the 026 A2 packages.applyInstall command with the three-key closed params and commandId", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
+      params: {
+        projectPath: "C:/proj",
+        packages: [
+          { packageId: "com.lilxyzw.liltoon", version: null },
+          { packageId: "com.another.toolkit", version: "3.1.4" },
+        ],
+        confirmedDigest: "fnv1a-7f3a91c2",
+      },
+    })).toBe(true);
+    // apply 缺确认指纹 = 无可绑定确认,形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: null }] },
+    })).toBe(false);
+    // version 数字类型 = 形状违反(string|null 闭集)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.applyInstall", commandId: "cmd-2",
+      params: { projectPath: "C:/proj", packages: [{ packageId: "com.lilxyzw.liltoon", version: 1 }], confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},

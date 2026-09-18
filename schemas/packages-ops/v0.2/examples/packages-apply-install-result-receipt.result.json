@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.applyInstall",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.2",
+    "kind": "receipt",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "confirmedDigest": "fnv1a-7f3a91c2",
+    "requestedPackages": [
+      {
+        "packageId": "com.lilxyzw.liltoon",
+        "version": null
+      },
+      {
+        "packageId": "com.another.toolkit",
+        "version": "3.1.4"
+      }
+    ],
+    "appliedItems": [
+      {
+        "kind": "install",
+        "packageId": "com.lilxyzw.liltoon",
+        "version": "7.3.150",
+        "reason": null
+      },
+      {
+        "kind": "install",
+        "packageId": "com.another.toolkit",
+        "version": "3.1.4",
+        "reason": null
+      }
+    ]
+  }
+}

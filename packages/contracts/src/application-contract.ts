@@ -779,6 +779,105 @@ export type PackagesRemoveResultV01 =
   | PackagesRemoveReceiptV01
   | PackagesRemoveRejectedV01;
 
+/* ---- 026 A2 写面(packages-ops v0.2,核心冻结批 2026-09-19)。安装/升级
+ *  面双方法二段动词,照提案面序「升级 = 安装同族,版本选择语义随 A2 冻结
+ *  批落死」:packages.previewInstall = 同步只读 query(依赖解析可达仓库,
+ *  在线刷新失败降级缓存〔ORC-ADP-006 同构〕;词面零披露字段——端口
+ *  ChangePreviewV1 无载体,诚实边界见协议本),packages.applyInstall =
+ *  九态任务化写命令(携确认指纹,服务端复算漂移即拒——ORC-WF-003/004;
+ *  后端第二道比对〔Fix R2-7 legacy folders 计入摘要〕留作纵深防御)。
+ *  版本选择语义:version=null = 解析器选最新稳定版;string = 钉死精确
+ *  版本(升级/降级同语法,不立 upgrade 动词——端口 ChangeKindV1 闭集
+ *  install|remove,v0.1 changeItem 行已全闭集)。安装预览的 plan 可含
+ *  remove 行(冲突触发的移除是端口事实如实投影)。审计收据双变体:
+ *  removeReceipt(v0.1 形状)与 installReceipt(requestedPackages 携版本
+ *  选择语义 verbatim + appliedItems = 端口 {applied: items} verbatim,
+ *  键集互斥)。guard 三值闭集维持不扩(preview 失败走信封错误
+ *  vua.packages.preview_failed,不入 rejected 文档;任务内非 drift 非
+ *  not_found 统一折 execution_failed 携原码——A1 纪律)。v0.1/v0.2 plan
+ *  同键集:窄化按 schemaVersion 字面量,不按键集。served 能力位 =
+ *  VpmCapabilities.preview_install 门控(packages.installOps 行,
+ *  removeOps 先例);wire 路由候核心接线切片 */
+
+/** 安装请求行(端口 PackageRequestV1 投影):version 必填可空,null =
+ *  解析器选最新稳定版,string = 钉死精确版本 */
+export interface PackagesPackageRequestV02 {
+  readonly packageId: string;
+  readonly version: string | null;
+}
+
+/** packages.previewInstall:同步只读安装/升级预览(query;params 双键
+ *  闭集,packages 显式非空闭列且同 packageId 不得重复——负例钉死) */
+export interface PackagesPreviewInstallQueryV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.previewInstall";
+  readonly params: {
+    readonly projectPath: string;
+    readonly packages: readonly PackagesPackageRequestV02[];
+  };
+}
+
+/** packages.applyInstall:任务化安装写命令(command;必携
+ *  confirmedDigest = previewInstall 结果的 digest,服务端复算漂移即拒
+ *  ,拒绝 = recoverable 冲突——重预览重确认,绝不静默覆盖) */
+export interface PackagesApplyInstallCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.applyInstall";
+  readonly commandId: string;
+  readonly params: {
+    readonly projectPath: string;
+    readonly packages: readonly PackagesPackageRequestV02[];
+    readonly confirmedDigest: string;
+  };
+}
+
+/** kind=plan(v0.2,双 preview 方法共用):与 v0.1 removePlan 同形状,
+ *  items 可含 install 与 remove 行;同键集窄化按 schemaVersion 字面量 */
+export interface PackagesInstallPlanV02 {
+  readonly schemaVersion: "vua.packages-ops/v0.2";
+  readonly kind: "plan";
+  readonly projectPath: string;
+  readonly items: readonly PackagesChangeItemV01[];
+  readonly conflicts: readonly string[];
+  readonly removeLegacyFiles: readonly string[];
+  readonly removeLegacyFolders: readonly string[];
+  readonly destructive: boolean;
+  /** FNV-1a(规范条目列表);applyInstall 的 confirmedDigest 绑定恰此值 */
+  readonly digest: string;
+}
+
+/** kind=receipt(A2 安装变体):请求行 verbatim(携版本选择语义)＋
+ *  后端实际应用行 verbatim */
+export interface PackagesInstallReceiptV02 {
+  readonly schemaVersion: "vua.packages-ops/v0.2";
+  readonly kind: "receipt";
+  readonly projectPath: string;
+  /** 用户确认的指纹回显——确认面与执行结果的审计关联 */
+  readonly confirmedDigest: string;
+  /** 请求行照实回显(审计「变更清单」半面;version null = 解析器选) */
+  readonly requestedPackages: readonly PackagesPackageRequestV02[];
+  /** 后端实际应用的变更行(端口 {applied: items} verbatim) */
+  readonly appliedItems: readonly PackagesChangeItemV01[];
+}
+
+/** guard 三值闭集维持 A1 冻结(A2 零新成员;preview 失败走信封错误面
+ *  vua.packages.preview_failed,不入 rejected 文档) */
+export type PackagesGuardV02 = PackagesRemoveGuardV01;
+
+export interface PackagesOpsRejectedV02 {
+  readonly schemaVersion: "vua.packages-ops/v0.2";
+  readonly kind: "rejected";
+  readonly guard: PackagesGuardV02;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern) */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesInstallResultV02 =
+  | PackagesInstallPlanV02
+  | PackagesInstallReceiptV02
+  | PackagesOpsRejectedV02;
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1767,6 +1866,8 @@ export type ApplicationRequestV01 =
   | PackagesPackageCatalogQueryV01
   | PackagesPreviewRemoveQueryV01
   | PackagesApplyRemoveCommandV01
+  | PackagesPreviewInstallQueryV02
+  | PackagesApplyInstallCommandV02
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -1908,6 +2009,7 @@ export type ApplicationSuccessValueV01 =
   | RecordListResultV02
   | ProjectImportCopyResultV01
   | PackagesRemoveResultV01
+  | PackagesInstallResultV02
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV01;
 
@@ -2248,6 +2350,42 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     const packageIds = value.params.packageIds;
     if (!Array.isArray(packageIds) || packageIds.length === 0) return false;
     return packageIds.every((id) => typeof id === "string" && id.length > 0);
+  }
+  // 026 A2 写面(核心冻结批 2026-09-19):previewInstall = 双键闭集
+  // (projectPath 013 身份 + packages 请求行闭列〔packageId+version 必填
+  // 可空〕,同 packageId 重复 = 词面违反);applyInstall = 三键闭集(加
+  // confirmedDigest,commandId 幂等)
+  if (value.kind === "query" && value.method === "packages.previewInstall") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      || !hasExactKeys(value.params, ["projectPath", "packages"])) {
+      return false;
+    }
+    if (!isIdentifier(value.params.projectPath)) return false;
+    const packages = value.params.packages;
+    if (!Array.isArray(packages) || packages.length === 0) return false;
+    return packages.every((row) => {
+      if (typeof row !== "object" || row === null) return false;
+      if (!hasExactKeys(row, ["packageId", "version"])) return false;
+      if (typeof row.packageId !== "string" || row.packageId.length === 0) return false;
+      return row.version === null || (typeof row.version === "string" && row.version.length > 0);
+    });
+  }
+  if (value.kind === "command" && value.method === "packages.applyInstall") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["projectPath", "packages", "confirmedDigest"])) {
+      return false;
+    }
+    if (!isIdentifier(value.params.projectPath)) return false;
+    if (typeof value.params.confirmedDigest !== "string" || value.params.confirmedDigest.length === 0) return false;
+    const packages = value.params.packages;
+    if (!Array.isArray(packages) || packages.length === 0) return false;
+    return packages.every((row) => {
+      if (typeof row !== "object" || row === null) return false;
+      if (!hasExactKeys(row, ["packageId", "version"])) return false;
+      if (typeof row.packageId !== "string" || row.packageId.length === 0) return false;
+      return row.version === null || (typeof row.version === "string" && row.version.length > 0);
+    });
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {

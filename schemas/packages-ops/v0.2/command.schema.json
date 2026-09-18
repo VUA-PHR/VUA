@@ -1,0 +1,182 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.2/command.schema.json",
+  "title": "VUA packages-ops command v0.2",
+  "description": "Packages write face, second frozen slice A2 = install/upgrade (proposal 026 face order, core ruling 82a39c4 point 1: upgrade = the same family as install, version-selection semantics land with THIS freeze batch; the v0.1 A1 removal word face stays frozen and served untouched — v0.2 is a separate row directory per the proposal-025 v0.2-increment precedent). Exactly four methods on the packages.* family: the A1 pair (packages.previewRemove / packages.applyRemove, v0.1 shapes verbatim) plus the A2 pair (packages.previewInstall / packages.applyInstall) mapped one-to-one onto the VpmBackend port methods preview_install/apply_install. packages.previewInstall is the SYNCHRONOUS read-only query (a change preview the user confirms; never mutates); packages.applyInstall is the TASK-DRIVEN write command (nine-state task semantics ride the application-contract task surface, not this schema: commandId idempotency, cancellable, events+revision, no implicit resume — honesty rule 3). The A2 preview DOES resolve dependencies against the registered repositories and MAY hit the network: the online repository refresh degrades to the package cache on failure (the ORC-ADP-006 isomorphic precedent) — the preview carries NO cache-sourcing disclosure field (the port ChangePreviewV1 has no carrier; the honesty boundary is documented in the protocol doc, and the double-digest guard stays the safety net); the apply phase's repository load does NOT degrade (an online load failure fails the task honestly). VERSION-SELECTION SEMANTICS (frozen here, the proposal pre-note honored): each packages row is {packageId, version} with version REQUIRED and nullable; version=null = install the version the resolver picks (the port's VersionSelector::latest_for — latest stable, prereleases never auto-selected); version=<string> = pin exactly that version — upgrading AND downgrading use the same pin syntax, an unresolvable pin answers package_not_found, no separate upgrade verb is invented (the port ChangeKindV1 closed set is install|remove and the v0.1 changeItem row already projects both). A repeated packageId across rows is a word-face violation (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness — negative vector pins it). Both A2 methods take the SAME registered-path identity as the 013 read face (projectPath); an unregistered path answers the REUSED typed not-found vua.project.project_not_found (same fact, same code, 024 P1 precedent). The confirmedDigest is the FNV-1a digest over the canonical item list that applyInstall binds to — the server re-computes the preview at apply time and refuses on drift (ORC-WF-003/004; the authoritative verdict lives server-side, proposal-014 arbitration point 2); the backend carries its own second comparison as defense in depth (Fix R2-7: legacy folders count into the digest). packages.previewInstall params carry NO digest slot — a preview request carrying one is a shape violation. Gate: the wire routes for this family do not exist yet (wiring is the next core slice); serving is capability-gated (VpmCapabilities.preview_install — one bit serving both A2 methods, the packages.installOps served-row shape, the A1 removeOps precedent), a backend without the capability answers the generic capability_missing and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.2" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1,
+                      "description": "Version-selection semantics frozen with this batch: null = the resolver picks (latest stable); a string = pin exactly that version (upgrade and downgrade share the pin syntax; an unresolvable pin answers package_not_found)."
+                    }
+                  }
+                },
+                "description": "The closed explicit request list. A repeated packageId across rows is a word-face violation even when the versions differ (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness; the negative vector pins the rule)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The SAME closed explicit request list the preview answered (the audit link: the confirmed digest binds to exactly that preview's canonical item list)."
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewInstall result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
