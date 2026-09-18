@@ -2363,10 +2363,16 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     if (!isIdentifier(value.params.projectPath)) return false;
     const packages = value.params.packages;
     if (!Array.isArray(packages) || packages.length === 0) return false;
+    // 同 packageId 重复 = 词面违反(版本不同亦然)。Schema uniqueItems 只
+    // 钉完全重复行;行间 id 唯一在此闭集窄化内钉死——026 A2 形状核可钉
+    // 法缺口申报(wt-3 2026-09-19)的 TS 层闭合。
+    const seenIds = new Set<string>();
     return packages.every((row) => {
       if (typeof row !== "object" || row === null) return false;
       if (!hasExactKeys(row, ["packageId", "version"])) return false;
       if (typeof row.packageId !== "string" || row.packageId.length === 0) return false;
+      if (seenIds.has(row.packageId)) return false;
+      seenIds.add(row.packageId);
       return row.version === null || (typeof row.version === "string" && row.version.length > 0);
     });
   }
@@ -2380,10 +2386,15 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     if (typeof value.params.confirmedDigest !== "string" || value.params.confirmedDigest.length === 0) return false;
     const packages = value.params.packages;
     if (!Array.isArray(packages) || packages.length === 0) return false;
+    // 同 packageId 重复 = 词面违反(版本不同亦然)——与 previewInstall 同
+    // 一闭列规则,TS 层闭合(026 A2 形状核可钉法缺口申报)。
+    const seenIds = new Set<string>();
     return packages.every((row) => {
       if (typeof row !== "object" || row === null) return false;
       if (!hasExactKeys(row, ["packageId", "version"])) return false;
       if (typeof row.packageId !== "string" || row.packageId.length === 0) return false;
+      if (seenIds.has(row.packageId)) return false;
+      seenIds.add(row.packageId);
       return row.version === null || (typeof row.version === "string" && row.version.length > 0);
     });
   }
