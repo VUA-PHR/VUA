@@ -84,16 +84,21 @@ const grouped = (id: string, status: CheckItem["status"]): CheckItem => ({
   groupId: "vr_runtime",
 });
 
-test("替代组注册表:vr_runtime 组覆盖引擎七项运行时检查", () => {
+test("替代组注册表:vr_runtime 组覆盖引擎全部运行时检查项", () => {
   const group = CHECK_GROUPS.find((entry) => entry.id === "vr_runtime");
   assert.ok(group);
   assert.equal(group.zone, "play");
   assert.deepEqual([...group.memberIds].sort(), [
     "alvr",
+    "bigscreen_beyond",
+    "hp_omnicept",
     "oculus_runtime",
     "openxr_runtime",
     "pico_runtime",
+    "pimax_runtime",
+    "psvr2",
     "steamvr",
+    "varjo_runtime",
     "virtual_desktop",
     "vive_runtime",
   ]);

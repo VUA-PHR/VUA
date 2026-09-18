@@ -121,8 +121,10 @@ describe("contract environment snapshot projection", () => {
   });
 
   it("projects the full engine check-id closed set to localized card titles", () => {
-    // #31 修复:引擎 inspect_zone 当前 id 闭集(play 13 项＋create 4 独有 id)
-    // 全部注册,不再透传原词
+    // #31 修复:引擎 inspect_zone 当前 id 闭集(play 18 项＋create 4 独有 id)
+    // 全部注册,不再透传原词;2026-09-18 品牌面扩展(VRCFT 模块库对齐)
+    // 新增 psvr2/pimax_runtime/varjo_runtime/bigscreen_beyond/hp_omnicept
+    // (ALXR 绿色 zip 无可探信号,不设检测项;Steam Link 即 Steam/SteamVR 本体)
     const engineIds = [
       "steam",
       "vrchat",
@@ -133,6 +135,11 @@ describe("contract environment snapshot projection", () => {
       "vive_runtime",
       "virtual_desktop",
       "alvr",
+      "psvr2",
+      "pimax_runtime",
+      "varjo_runtime",
+      "bigscreen_beyond",
+      "hp_omnicept",
       "gpu",
       "network",
       "windows",
@@ -166,6 +173,11 @@ describe("contract environment snapshot projection", () => {
       vive_runtime: "viveRuntime",
       virtual_desktop: "virtualDesktop",
       alvr: "alvr",
+      psvr2: "psvr2",
+      pimax_runtime: "pimaxRuntime",
+      varjo_runtime: "varjoRuntime",
+      bigscreen_beyond: "bigscreenBeyond",
+      hp_omnicept: "hpOmnicept",
       gpu: "gpu",
       network: "network",
       windows: "windows",
