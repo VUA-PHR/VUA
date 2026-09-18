@@ -60,7 +60,6 @@ import { ImportPage } from "./features/import/ImportPage.tsx";
 import { ComposePage } from "./features/compose/ComposePage.tsx";
 import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
-import { ProjectCompatPage } from "./features/packages/ProjectCompatPage.tsx";
 import { ProductionIntroOverlay } from "./features/production/ProductionIntroOverlay.tsx";
 import { RecipePage } from "./features/recipe/RecipePage.tsx";
 import { ReleasePage } from "./features/release/ReleasePage.tsx";
@@ -596,8 +595,6 @@ function renderPage(
       return <ReleasePage onNavigate={actions.navigate} />;
     case "packages":
       return <PackagesPage />;
-    case "project-compat":
-      return <ProjectCompatPage />;
     case "workshop":
       return (
         <WorkshopPage
