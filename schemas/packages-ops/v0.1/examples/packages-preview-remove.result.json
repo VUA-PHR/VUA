@@ -1,0 +1,34 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.previewRemove",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.1",
+    "kind": "plan",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "items": [
+      {
+        "kind": "remove",
+        "packageId": "com.lilxyzw.liltoon",
+        "version": null,
+        "reason": null
+      },
+      {
+        "kind": "remove",
+        "packageId": "jp.lilxyzw.avatarloader",
+        "version": null,
+        "reason": "transitive_dependency"
+      }
+    ],
+    "conflicts": [
+      "com.another.avatarbase depends on com.lilxyzw.liltoon"
+    ],
+    "removeLegacyFiles": [
+      "Assets/lilToon/Editor/OldMetaFile.txt"
+    ],
+    "removeLegacyFolders": [
+      "Assets/lilToon"
+    ],
+    "destructive": true,
+    "digest": "fnv1a-9e3779b9"
+  }
+}

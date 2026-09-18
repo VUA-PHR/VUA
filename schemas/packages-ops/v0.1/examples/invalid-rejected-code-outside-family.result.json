@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.applyRemove",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.1",
+    "kind": "rejected",
+    "guard": "preview_drift",
+    "code": "vua.project.project_not_found",
+    "detail": "drift"
+  }
+}
