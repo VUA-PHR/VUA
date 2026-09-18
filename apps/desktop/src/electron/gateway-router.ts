@@ -11,6 +11,7 @@ import {
 } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { isAllowedLocalSender } from "./security.js";
+import { SHELL_CAPABILITIES } from "./shell-capabilities.js";
 
 const TASK_LIST_CAPABILITY = "task.list";
 
@@ -409,9 +410,11 @@ export async function routeDesktopGatewayInvoke(
             // 信封没有,测试全绿真机不通)。
             operations: providerResponse.value.capabilities.operations,
             // §11 仲裁 (a):内嵌浏览能力归壳自报(preload capabilities),
-            // provider 不再报告也不转述;本字段恒 false 反映该事实。能力面
-            // 开放属功能决策,另行走登记(壳侧呈现随 preload 自报翻转)
-            remoteBrowser: false,
+            // provider 不报告也不转述。信封值与壳自报同源引用单一事实源
+            // (shell-capabilities;#36 缺陷4′ 对齐——硬编码 false 与壳自报
+            // true 是同一能力的两个矛盾桌面声明,已消灭)。能力面开放属
+            // 功能决策,另行走登记(壳侧呈现随 preload 自报翻转)
+            remoteBrowser: SHELL_CAPABILITIES.remoteBrowser,
           },
         },
       };
