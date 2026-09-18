@@ -565,6 +565,54 @@ describe("packages-ops v0.2 A2 install routing (026 消费批)", () => {
     expect(repeatedId).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).not.toHaveBeenCalled();
   });
+
+  it("routes packages.registerLocalPackage as a tasked command with a Kernel-generated reg- commandId and the verbatim packageRoot (026 A3; the family's only face without a preview arm), and rejects carried digest/projectPath slots at the envelope guard", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-reg-1",
+        method: "packages.registerLocalPackage",
+        params: { packageRoot: "C:/LocalPackages/com.a.b-1.0.0" },
+      },
+    );
+    const call = invoke.mock.calls[0]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(call.kind).toBe("command");
+    expect(call.method).toBe("packages.registerLocalPackage");
+    expect(call.commandId.startsWith("reg-")).toBe(true);
+    expect(call.params).toEqual({ packageRoot: "C:/LocalPackages/com.a.b-1.0.0" });
+
+    // 发明 projectPath 位(注册不触项目)与携 digest 位(本面无 preview 可
+    // 漂移,携即形状违反):信封守卫即拒,绝不进任务
+    const carriedProjectPath = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-reg-2",
+        method: "packages.registerLocalPackage",
+        params: { packageRoot: "C:/LocalPackages/com.a.b-1.0.0", projectPath: "C:/x" },
+      },
+    );
+    expect(carriedProjectPath).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const carriedDigest = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-reg-3",
+        method: "packages.registerLocalPackage",
+        params: { packageRoot: "C:/LocalPackages/com.a.b-1.0.0", confirmedDigest: "fnv-1a-abc" },
+      },
+    );
+    expect(carriedDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("packages-query v0.1 routing (024 P1 消费批)", () => {

@@ -648,4 +648,42 @@ describe("gateway guard covers every declared method (regression: silent guard g
       }),
     ).toBe(false);
   });
+
+  it("packages.registerLocalPackage: single-key closed params {packageRoot} non-empty, NO projectPath NO digest slot no commandId param slot (026 A3 freeze; the family's only face without a preview arm - the user's explicit submission IS the confirmation; registration never touches a project and never mutates VCC/ALCOM settings)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-53",
+      method: "packages.registerLocalPackage" as const,
+      params: { packageRoot: "C:/local/com.a.b-1.0.0" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺 packageRoot/空串(空串 = 无根目录,词面 minLength 1)/发明
+    // projectPath 位(注册不触项目)/携 digest 位(本面无 preview 可漂移,
+    // 携即形状违反——负例 invalid-register-carries-digest 同形)/投机
+    // commandId 位:一律拒绝
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: {} }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { packageRoot: "" } }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { packageRoot: "C:/local/com.a.b-1.0.0", projectPath: "C:/proj" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { packageRoot: "C:/local/com.a.b-1.0.0", confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { packageRoot: "C:/local/com.a.b-1.0.0", commandId: "cmd-9" },
+      }),
+    ).toBe(false);
+  });
 });

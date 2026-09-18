@@ -1647,6 +1647,33 @@ demoTaskTitle: "Demo task",
       },
     },
 
+    register: {
+      title: "Register local package",
+      description:
+        "Register a local package root folder (containing package.json) with VUA's package environment; registration only adds an entry — it never touches projects or your VCC/ALCOM settings. Registering the same package again is safe.",
+      placeholder: "Enter a local package root path, e.g. C:\\LocalPackages\\com.example.pkg-1.0.0",
+      inputAria: "Local package root path",
+      action: "Register",
+      submitting: "Registering…",
+      successLine: "Registered: {packageRoot}",
+      rejectedDetail: "Server says: {detail}",
+      guards: {
+        preview_drift: "The registration was refused.",
+        package_not_found: "The registration was refused.",
+        execution_failed: "The registration failed during execution.",
+        unknown: "The registration was refused.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "The current engine backend does not support local package registration.",
+        invalidParams: "The registration request shape is invalid.",
+        unknown: "The operation failed.",
+      },
+      toasts: {
+        failedUnknown: "The registration did not complete ({code}).",
+        unavailable: "The registration did not complete: the result could not be confirmed; check the task center.",
+      },
+    },
+
     repos: {
       addCommunity: "Add community repository",
       riskTitle: "Before adding a community repository",

@@ -22,6 +22,7 @@ import {
   rangeSelect,
   relativeCheckedTime,
   installEnvelopeErrorKey,
+  registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
   removeGuardKey,
   repoHealthTextKeys,
@@ -345,6 +346,30 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
     }
     const envelopeErrors = strings.packages.install.envelopeErrors;
     for (const key of ["projectNotFound", "packageNotFound", "capabilityMissing", "invalidParams", "previewFailed", "unknown"] as const) {
+      assert.equal(typeof envelopeErrors[key], "string");
+      assert.ok(envelopeErrors[key].length > 0);
+    }
+  });
+
+  test("registerEnvelopeErrorKey maps the declared v0.3 codes and falls back to unknown; the register i18n section mirrors the keys (026 A3)", () => {
+    // v0.3 已申报面:能力门控在路由层答(访问器未翻转,绝不进任务)+
+    // 请求形状违规。A3 无注册项目检查(project_not_found 不适用)且无
+    // preview 段(preview_failed 不存在),两码如实缺席闭集
+    assert.equal(registerEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(registerEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    assert.equal(registerEnvelopeErrorKey("vua.project.project_not_found"), "unknown");
+    assert.equal(registerEnvelopeErrorKey("vua.packages.preview_failed"), "unknown");
+    // 词外码(vua.vpm.local_package_invalid / local_package_register_failed
+    // 端口族透传/任务 error.code)回落 unknown 原词插值
+    assert.equal(registerEnvelopeErrorKey("vua.vpm.local_package_invalid"), "unknown");
+    assert.equal(registerEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+    const guards = strings.packages.register.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+    const envelopeErrors = strings.packages.register.envelopeErrors;
+    for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
       assert.equal(typeof envelopeErrors[key], "string");
       assert.ok(envelopeErrors[key].length > 0);
     }
