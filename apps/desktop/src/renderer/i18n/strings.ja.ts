@@ -121,7 +121,6 @@ demoTaskTitle: "デモタスク",
       warehouse: "倉庫",
       workshop: "作業場",
       packages: "パッケージ",
-      projectCompat: "プロジェクト互換",
     },
     pages: {
       home: "ハブ",
@@ -145,7 +144,6 @@ demoTaskTitle: "デモタスク",
       settingsAbout: "について",
       settingsDonate: "寄付",
       packages: "パッケージマネージャー",
-      projectCompat: "プロジェクト互換",
       composePage: "コーディネート下書き",
       importMaterial: "マテリアル取り込み",
       inspectionPage: "検査",
@@ -1307,18 +1305,18 @@ rolled_back: "ロールバック済み",
     },
   },
   /** パッケージ管理(S-XVI):Recipe 外の手動 VPM 操作面。用語はプレイヤー語彙で、semver/プロトコル詳細は出さない */
-  /** プロジェクト互換ページ(F6, M6 T-C): ALCOM/VCC 管理プロジェクトの読み取り専用表示と
-   *  「VUA 管理のコピーとして取り込む」入口。権威=product-boundary 1.2.0(U3 裁决)。
-   *  検出読み取り面(環境 T-B)は未接続のため正直に unavailable 表示、コピー取り込み
-   *  実行(環境 T-A)も未接続のため入口に常時注記 */
+  /** プロジェクト互換セクション(proposal 026 B、ユーザー 2026-09-18 裁决):
+   *  旧独立ページはパッケージマネージャーページ末尾のセクションに統合。
+   *  ALCOM/VCC 管理プロジェクトの読み取り専用表示と「VUA 管理のコピーとして
+   *  取り込む」確認チェーン。権威=product-boundary 1.2.0(U3 裁决)。
+   *  検出読み取り面はライブ(021 接続バッチ)、コピー取り込みはタスク化
+   *  チャネル(020 result リフラックス) */
   projectCompat: {
     title: "プロジェクト互換",
     subtitle: "ALCOM/VCC 管理のプロジェクトは読み取り専用です。書き込みは対応マネージャーに任せてください。",
     readOnlyTitle: "読み取り専用互換(境界)",
     readOnlyDesc: "VUA は ALCOM/VCC 管理のプロジェクトに対して読み取り専用です。閲覧と診断はできますが、元のプロジェクト内でのパッケージ追加/削除、manifest・プロジェクト設定・アセット・.vua ジョブファイルの変更、ALCOM/VCC のレジストリ・データベース・設定・キャッシュへの書き込みは行いません。",
     detectionTitle: "プロジェクト検出(互換マトリクス)",
-    detectionSource: "検出項目と表示ルールは ALCOM/VCC プロジェクト互換マトリクス 1.0.0(受諾済み)に従います。すべて読み取り専用です。",
-    detectionNotWired: "検出データの取得はまだ接続されていません:wire コマンド面は proposal 013 の裁决後に有効になります。それまでこの節は計画プレビューです。",
     detectionWired: 'ライブ検出(project-inspection 読み取り面):',
     detectionManagersLine: 'VCC 登録:{vccN} - ALCOM 登録:{alcomN}',
     detectionPickCta: 'プロジェクトフォルダを選択',
@@ -1335,17 +1333,6 @@ rolled_back: "ロールバック済み",
     lockLeftover: 'このプロジェクトに残存変更ロックが観察されました。',
     lockUnreadable: '変更ロックの状態を読み取れませんでした。',
     detectionReload: '再検出',
-    detectionItemsTitle: "検出予定の項目(すべて読み取り専用):",
-    detectionItems: [
-      "マネージャーの在位(ALCOM/VCC 設定パス)",
-      "プロジェクト発見(両マネージャー登録パスの和集合、ユーザーディレクトリは決して走査しない)",
-      "二重マネージャー関連(同一パスの複数関連を重複除去)",
-      "Unity バージョンと分類(生産ターゲット/移行元/その他)",
-      "VPM パッケージ宣言面(dependencies と locked)",
-      "VRChat SDK(com.vrchat.* 接頭辞の識別)",
-      "未完了変更マーカー(.vua/pending-mutation.json の読み取り専用観察)",
-      "レジストリ死蔵エントリ(警告付きで保持、黙って破棄しない)",
-    ],
     envStatusTitle: "環境状態(VUA 側検出)",
     envStatusSource: "データソース:VUA の環境検出(ALCOM/VCC の記録ではありません)。バージョンは対応マネージャーの記録が正となります。",
     handoverTitle: "書き込み操作の引き渡し",
@@ -1364,7 +1351,8 @@ rolled_back: "ロールバック済み",
 
     importSourceLabel: "ソースプロジェクトのパス",
     importSourcePlaceholder: "ALCOM/VCC 管理のプロジェクトフォルダー",
-    importSourceNote: "プロジェクト検出の読み取り面が接続されると、登録済みプロジェクトから選択できます。現在はプロジェクトフォルダーのパスを貼り付けてください。",
+    importSourceRegisteredLabel: "登録済みプロジェクトから選択",
+    importSourceNote: "まず上の登録済みプロジェクト一覧から選んでください。ALCOM/VCC 管理で未登録の元プロジェクトは、プロジェクトフォルダーのパスを直接貼り付けてください(取り込みガードが検証します)。",
     importParentLabel: "取り込み先の親ディレクトリ",
     importParentPick: "親ディレクトリを選択",
     importNameLabel: "新しいプロジェクト名",
@@ -1391,7 +1379,6 @@ rolled_back: "ロールバック済み",
     guardPlanDrift: "取り込み計画が変わりました。計画を再生成してください。",
     guardExecutionFailed: "取り込みの実行に失敗しました。",
     guardFallback: "取り込みは拒否されました。",
-    importNotWired: "コピー取り込みの実行はまだ接続されていません。環境の読み取り面と能力面の着地後に有効になります。",
     /** D-6 メモセクション(project-ops v0.2 setNote。裁定 A:行内表示+軽量編集)。
      *  absent は入口非表示。unreadable は読み取り専用。成功は読み取り面の再照会で確認 */
     note: {

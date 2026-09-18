@@ -130,7 +130,6 @@ demoTaskTitle: "Demo task",
       warehouse: "Warehouse",
       workshop: "Workshop",
       packages: "Packages",
-      projectCompat: "Project compatibility",
     },
     pages: {
       home: "Hub",
@@ -154,7 +153,6 @@ demoTaskTitle: "Demo task",
       settingsAbout: "About",
       settingsDonate: "Donate",
       packages: "Package Manager",
-      projectCompat: "Project compatibility",
       composePage: "Composing draft",
       importMaterial: "Material Import",
       inspectionPage: "Inspection",
@@ -1378,19 +1376,18 @@ demoTaskTitle: "Demo task",
    * 玩家语言,不暴露 semver 范围语法/仓库协议细节;版本状态词表
    * (states/sources)与端口类型一一对应,词表外取值由模型层回落,不猜测。
    */
-  /** Project compatibility page (F6, M6 T-C): ALCOM/VCC read-only presentation
-   *  and the "Import as a VUA-managed copy" entry; authority = product-boundary
-   *  1.2.0 (U3 ruling). The detection read face (env T-B) is unwired and shown
-   *  honestly unavailable; copy-import execution (env T-A) is unwired and the
-   *  entry permanently carries its note */
+  /** Project compatibility section (proposal 026 B, user ruling 2026-09-18):
+   *  the former standalone tab lives as a section at the end of the package
+   *  manager page; ALCOM/VCC read-only presentation and the "Import as a
+   *  VUA-managed copy" chain; authority = product-boundary 1.2.0 (U3 ruling).
+   *  Detection read face is live (021 wiring batch); copy-import runs the
+   *  task-based channel (020 result reflux). */
   projectCompat: {
     title: "Project compatibility",
     subtitle: "ALCOM/VCC-managed projects are read-only; hand write operations to the owning manager.",
     readOnlyTitle: "Read-only compatibility (boundary)",
     readOnlyDesc: "VUA is read-only for ALCOM/VCC-managed projects: you can inspect and diagnose. VUA will not install or remove packages inside the original project, will not modify its manifest, project settings, assets or .vua job files, and will not write to ALCOM/VCC registries, databases, settings or caches.",
     detectionTitle: "Project detection (compatibility matrix)",
-    detectionSource: "Detection items and presentation rules follow the ALCOM/VCC project compatibility matrix 1.0.0 (accepted); all read-only.",
-    detectionNotWired: "Detection data fetching is not wired yet: the wire command face enables after proposal 013 is ruled; this section is a plan preview until then.",
     detectionWired: 'Live detection (project-inspection read face):',
     detectionManagersLine: 'VCC: {vccN} registered - ALCOM: {alcomN} registered',
     detectionPickCta: 'Choose project folder',
@@ -1407,17 +1404,6 @@ demoTaskTitle: "Demo task",
     lockLeftover: 'A leftover mutation lock was observed on this project.',
     lockUnreadable: 'The mutation lock state could not be read.',
     detectionReload: 'Re-run detection',
-    detectionItemsTitle: "Items that will be detected (all read-only):",
-    detectionItems: [
-      "Manager presence (ALCOM/VCC settings paths)",
-      "Project discovery (union of both managers' registered paths, never scanning user directories)",
-      "Dual-manager association (deduplicated when one path is registered by both)",
-      "Unity version and classification (production target / migration source / other)",
-      "VPM package declaration face (dependencies and locked)",
-      "VRChat SDK (com.vrchat.* prefix identification)",
-      "Pending-mutation marker (read-only observation of .vua/pending-mutation.json)",
-      "Registry dead entries (kept with a warning, never silently dropped)",
-    ],
     envStatusTitle: "Environment status (VUA-side detection)",
     envStatusSource: "Source: VUA environment detection, not ALCOM/VCC records; versions are authoritative in the owning manager.",
     handoverTitle: "Hand over write operations",
@@ -1436,7 +1422,8 @@ demoTaskTitle: "Demo task",
 
     importSourceLabel: "Source project path",
     importSourcePlaceholder: "ALCOM/VCC-managed project folder",
-    importSourceNote: "Once the project detection read face is wired, you will pick from registered projects; for now paste the project folder path.",
+    importSourceRegisteredLabel: "Pick a registered project",
+    importSourceNote: "Pick from registered projects above; for original projects managed by ALCOM/VCC that are not registered, paste the project folder path (the import guard verifies it).",
     importParentLabel: "Target parent directory",
     importParentPick: "Choose parent directory",
     importNameLabel: "New project name",
@@ -1463,7 +1450,6 @@ demoTaskTitle: "Demo task",
     guardPlanDrift: "The import plan has changed; regenerate the plan.",
     guardExecutionFailed: "The import execution failed.",
     guardFallback: "The import was rejected.",
-    importNotWired: "Copy-import execution is not wired yet: it enables once the environment read/capability faces land.",
     /** D-6 note section (project-ops v0.2 setNote; ruling A inline view + light edit):
      *  no entry on absent; read-only on unreadable; success confirmed via read-face refresh */
     note: {

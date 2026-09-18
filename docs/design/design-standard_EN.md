@@ -1,10 +1,10 @@
-# VUA design standard v0.7.2
+# VUA design standard v0.7.3
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.2
+> Document version: 0.7.3
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.2)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.3)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-18  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -285,7 +285,12 @@ stable untilted cards.
   baked turntable direction. Static/off modes return to flat horizontal scrolling and stable previews
   without losing any result, diagnostic, or handoff action.
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
-  before install/update/remove; no third-party branding that implies embedding.
+  before install/update/remove; no third-party branding that implies embedding. Project compatibility
+  no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
+  faces (project detection, note, lock status, environment status, copy-import confirmation chain)
+  render as a "Project compatibility" section at the end of the package manager page; the section is
+  not gated on the package engine capability. Write-operation handover stays guidance-only: no
+  invented interaction without a word face or capability facts.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 
@@ -331,6 +336,14 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.3 (2026-09-18)**: §8 information-architecture update (proposal 026 B, user ruling
+  2026-09-18) — the standalone "Project compatibility" second-level page is removed; its read
+  faces merge into a "Project compatibility" section at the end of the package manager page
+  (section-inside-tab shape, not gated on the package engine capability); the copy-import source
+  prefers a registered-project picker with a manual-path fallback for out-of-registry ALCOM/VCC
+  originals; the write-operation handover card stays guidance-only (honesty discipline 1, no
+  invented interaction). Mirrors the ZH edition.
 
 - **0.7.2 (2026-09-18)**: §8 environment deployment gains the alternative-group rule —
   brand VR runtimes / streaming apps are "any one" alternatives: one group card, a single
