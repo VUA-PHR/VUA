@@ -2,8 +2,9 @@
 
 [English](packages-ops-v0.1_EN.md) | [简体中文](packages-ops-v0.1_ZH.md)
 
-> 文档版本：0.1
-> 状态：**已冻结（包管理 P3 写面 A1 移除词表行）**
+> 文档版本：0.1.1
+> 状态：**已冻结（包管理 P3 写面 A1 移除词表行；v0.1.1 接线批落地，
+> 词面零变更）**
 > （2026-09-19，提案 026 A1 核心冻结批：表态程序收敛——核心裁决
 > 82a39c4 五点、环境库面考证 4a0f02f 实现零缺口、桌面表态 93752d5
 > 三项；本批落死权威词面）
@@ -14,12 +15,16 @@
 > 范围：`packages.previewRemove`（同步只读变更预览）与
 > `packages.applyRemove`（九态任务化移除写命令，双摘要守卫）
 > 所有权边界：词表冻结、端口面（`VpmBackend` 写方法族已在库）、
-> wire 路由＝核心域（接线切片紧随本批）；`VpmBackend` 库面实现
+> wire 路由＝核心域（接线切片 v0.1.1 已落地）；`VpmBackend` 库面实现
 > （project-manager，`preview_remove`/`apply_remove` 已在库）＝环境
 > 域（实现核对切片照 024/025 程序随后落地）；桌面消费＝桌面域
 > （逐面升级，`blocks.changes` 演进照桌面表态 93752d5 第 3 条）
 > 更新：2026-09-19（v0.1 冻结批：双 Schema＋向量＋核心消费测试＋
 > TS 面＋双语协议本＋REGISTRY 登记）
+> 更新：2026-09-19（v0.1.1 接线批：wire 路由两臂＋
+> `served_capabilities` 行 `packages.removeOps`＋端口错误投影落地；
+> 词面零变更——词表、Schema、向量、TS 面均不动；路由与投影测试
+> `crates/provider-host/tests/packages_ops_wire.rs` 10 例）
 
 ## A1 写面语义（二段动词与九态任务）
 
@@ -97,6 +102,18 @@ wire 词表投影到本闭集的映射随环境实现核对切片申报。既有
   `kind=rejected`（类型化守卫拒绝：`guard` 三值闭集＋`code`＋
   `detail`）。operation/kind 锁：previewRemove 恒答 plan，
   applyRemove 恒答 receipt/rejected（Schema 层机器可检）。
+- **served 能力行（v0.1.1 接线批）**：`packages.removeOps` 一行服务
+  双方法，可用性门控＝端口 `VpmCapabilities.remove_packages` 位
+  （冻结 command Schema 尾注的 serving gate）；引擎接线而后端未声
+  明移除能力时该行如实 unavailable，未接线引擎答
+  `vua.packages.unavailable`。preview 阶段失败走 wire 信封错误
+  （已知端口事实投影闭集码：`package_not_installed`→
+  `vua.packages.package_not_found`；词外端口码照 P1 读面先例照实
+  透传）；apply 任务内一切拒绝投影 rejected 闭集（词外端口码折入
+  `execution_failed`，原端口码进 `detail` 如实溯源——不发明第四
+  guard）；`vua.project.project_not_found` 复用码在路由层信封答出
+  （rejected 臂 code Schema pattern 锁 `^vua\.packages\.`，013 复
+  用码永不入 rejected 文档）。
 
 ## 信封、版本与依赖方向
 
@@ -120,17 +137,24 @@ project-manager 适配器。框架与厂商类型留在适配器；词表只传�
 
 ## 诚实边界与开放项
 
-- **wire 路由未接线。** 本批系词表层：`packages.previewRemove`/
-  `packages.applyRemove` 的路由、`served_capabilities` 行与信封组装
-  归核心接线切片（紧随本批）；接线前这两方法在 wire 面不存在，桌
-  面 `blocks.changes` 写入口维持类型级不可见（不预搬 fixture 形状
-  进 live——#22/#36 教训两次在案）。
-- 环境实现核对切片（`VrcGetLibBackend` `preview_remove`/`apply_remove`
-  已在库，照 024/025 程序做实现＋定向测试＋wire 对齐证据）随接线
-  批落地。
-- 桌面消费照逐面升级程序（表态 93752d5 第 3 条：A1 冻结批解锁对应
-  写入口，冻结批＝该面 live 形状唯一权威）；零端到端宣称：真机走
-  查仍归 W25（候用户开窗 O-2）。
+- **wire 路由已接线（v0.1.1 接线批，2026-09-19）。**
+  `packages.previewRemove`/`packages.applyRemove` 的路由两臂、
+  `served_capabilities` 行（`packages.removeOps`，门控
+  `remove_packages`）与信封组装已落地
+  （`crates/provider-host/src/provider_host.rs`；路由与投影测试
+  `crates/provider-host/tests/packages_ops_wire.rs` 10 例亲测绿）。
+  桌面消费侧仍照逐面升级程序：消费切片落地前 `blocks.changes` 写
+  入口维持类型级不可见（不预搬 fixture 形状进 live——#22/#36 教
+  训两次在案）。零端到端宣称维持：接线批系 provider 进程内 wire
+  面，真机走查仍归 W25（候用户开窗 O-2）。
+- 环境实现核对切片（`VrcGetLibBackend` `preview_remove`/
+  `apply_remove` 已在库，照 024/025 程序做实现＋定向测试＋wire 对
+  齐证据）随接线批之后落地；端口层 `vua.vpm.*` 码到闭集的完整投
+  影映射申报随该切片。
+- 桌面消费照逐面升级程序（表态 93752d5 第 3 条：A1 冻结批解锁对
+  应写入口，冻结批＝该面 live 形状唯一权威）；零端到端宣称：真机
+  走查仍归 W25（候用户开窗 O-2）。
 - `create_project` 不在 P3 面序（核心裁决 82a39c4 第 5 点：留 A5，
-  启动条件＝桌面提出入口需求）；A4 仓库订阅写面候增删/启停二分表
-  态收敛（环境倾向增删先行，启停候 VCC 键名真机核实）。
+  启动条件＝桌面提出入口需求；A5 启动裁定已落，见各树状态文件与
+  BOARD #40 行）；A4 仓库订阅写面候增删/启停二分表态收敛（环境倾
+  向增删先行，启停候 VCC 键名真机核实）。

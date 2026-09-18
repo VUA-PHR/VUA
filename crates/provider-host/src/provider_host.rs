@@ -297,6 +297,13 @@ pub const PACKAGES_CATALOG_SCHEMA_VERSION: &str = "vua.packages-catalog/v0.1";
 /// keep answering the frozen v0.1 family below).
 pub const PACKAGES_CATALOG_SCHEMA_VERSION_V02: &str = "vua.packages-catalog/v0.2";
 
+/// The `packages-ops` v0.1 result family constant (proposal 026 A1 freeze
+/// batch 2026-09-19; the c914cf2 standing rule — every wire row carries a
+/// version constant of its own, independent of the envelope const). The
+/// route stamps it at envelope assembly, never the backend; the envelope
+/// itself stays on the shared `packages` word-list-row `0.1` const.
+pub const PACKAGES_OPS_SCHEMA_VERSION: &str = "vua.packages-ops/v0.1";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1216,6 +1223,16 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.catalog_capabilities().catalog => "available",
         _ => "unavailable",
     };
+    // Proposal 026 A1: the removal write face rides the SAME VpmBackend
+    // wiring, gated on the port's `remove_packages` capability bit (the
+    // frozen command schema's serving gate). One row serves both methods
+    // (previewRemove/applyRemove share the gate); a wired engine whose
+    // backend declares no removal capability keeps the row honestly
+    // unavailable.
+    let packages_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.capabilities().remove_packages => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1239,6 +1256,7 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "packages.query", "availability": packages_availability},
         {"operationId": "packages.listRepos", "availability": packages_catalog_availability},
         {"operationId": "packages.packageCatalog", "availability": packages_catalog_availability},
+        {"operationId": "packages.removeOps", "availability": packages_ops_availability},
     ])
 }
 
@@ -5037,6 +5055,12 @@ fn packages_request(
         "packages.packageCatalog" => {
             packages_package_catalog(state, vpm, request, request_id, correlation_id)
         }
+        "packages.previewRemove" => {
+            packages_preview_remove(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.applyRemove" => {
+            packages_apply_remove(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5338,6 +5362,357 @@ fn packages_package_catalog(
             "result": result,
         }),
     ))
+}
+
+/// The A1 removal word face's synchronous-face error projection (proposal
+/// 026 A1 wiring, 2026-09-19). The port-level `vua.vpm.*` family keeps
+/// existing as implementation-layer fact; the frozen wire closed set is
+/// `vua.packages.*` (first freeze batch, guard value = code suffix). The
+/// one known port fact with a closed-set slot (`package_not_installed` →
+/// `vua.packages.package_not_found`) projects; UNKNOWN port codes pass
+/// through verbatim (the P1 read-face precedent — implementation-layer
+/// facts travel as they are; the full projection mapping declaration
+/// rides the environment implementation-verification slice).
+fn packages_ops_envelope_error(
+    request_id: &str,
+    correlation_id: &str,
+    error: &AppErrorV1,
+) -> FrameOutcome {
+    let (code, message_key): (String, String) = match error.code.as_str() {
+        "vua.vpm.package_not_installed" => (
+            "vua.packages.package_not_found".to_owned(),
+            "errors.packages.packageNotFound".to_owned(),
+        ),
+        _ => (error.code.clone(), error.message_key.clone()),
+    };
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        &code,
+        &message_key,
+        app_error_category(error.category),
+    ))
+}
+
+/// The typed guard refusal document (frozen rejected arm: guard
+/// three-value closed set + `vua.packages.*` code + free-text detail).
+fn packages_ops_rejected(guard: &str, code: &str, detail: String) -> Value {
+    json!({
+        "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION,
+        "kind": "rejected",
+        "guard": guard,
+        "code": code,
+        "detail": detail,
+    })
+}
+
+/// Port error → rejected-arm projection INSIDE the apply task: known port
+/// codes map onto the frozen closed set; unknown ones fold into
+/// `execution_failed` with the original port code inside `detail` (honest
+/// provenance — never a fabricated fourth guard; the guard set is frozen
+/// closed, and the rejected arm's schema pattern locks the code to
+/// `^vua\.packages\.`, so port codes can never travel verbatim there).
+fn packages_ops_port_rejection(error: &AppErrorV1) -> Value {
+    let (guard, code) = match error.code.as_str() {
+        "vua.vpm.preview_drift" => ("preview_drift", "vua.packages.preview_drift"),
+        "vua.vpm.package_not_installed" => {
+            ("package_not_found", "vua.packages.package_not_found")
+        }
+        _ => ("execution_failed", "vua.packages.execution_failed"),
+    };
+    packages_ops_rejected(
+        guard,
+        code,
+        format!("port code {}: {}", error.code, error.message_key),
+    )
+}
+
+/// Closed param set of the A1 removal pair: `{ projectPath, packageIds }`,
+/// plus `confirmedDigest` on the apply command only. `packageIds` is an
+/// explicit non-empty closed list (no wildcard, no "remove everything"
+/// shorthand, unique entries); a preview request carrying a digest is a
+/// shape violation by the frozen command schema (the digest is the
+/// preview's product). Violations answer `vua.packages.invalid_params` at
+/// the route layer — never absence, never a fabricated plan.
+fn packages_ops_remove_params(
+    request: &Value,
+    require_digest: bool,
+) -> Option<(String, Vec<String>, String)> {
+    let params = request.get("params")?.as_object()?;
+    let allowed = ["projectPath", "packageIds", "confirmedDigest"];
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return None;
+    }
+    if params.contains_key("confirmedDigest") != require_digest {
+        return None;
+    }
+    let project_path = params.get("projectPath")?.as_str()?;
+    if project_path.is_empty() {
+        return None;
+    }
+    let entries = params.get("packageIds")?.as_array()?;
+    if entries.is_empty() {
+        return None;
+    }
+    let mut package_ids = Vec::with_capacity(entries.len());
+    for entry in entries {
+        let id = entry.as_str()?;
+        if id.is_empty() {
+            return None;
+        }
+        package_ids.push(id.to_owned());
+    }
+    let unique: std::collections::HashSet<&String> = package_ids.iter().collect();
+    if unique.len() != package_ids.len() {
+        return None;
+    }
+    let confirmed_digest = if require_digest {
+        let digest = params.get("confirmedDigest")?.as_str()?;
+        if digest.is_empty() {
+            return None;
+        }
+        digest.to_owned()
+    } else {
+        String::new()
+    };
+    Some((project_path.to_owned(), package_ids, confirmed_digest))
+}
+
+/// The A1 removal pair validates registration against the SAME 013
+/// inspection aggregate `project.inspectProject` uses (same fact, same
+/// code: `vua.project.project_not_found` — the frozen reuse ruling). On
+/// the apply command this check stays at the route layer: the rejected
+/// arm's code schema locks `^vua\.packages\.`, so a reused 013 code can
+/// never travel inside a rejected document — the refusal travels as the
+/// typed envelope error instead.
+fn packages_ops_registered_project(project_ops: &ProjectOpsServices, project_path: &str) -> bool {
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    snapshot
+        .projects
+        .iter()
+        .any(|project| project.path == project_path)
+}
+
+/// `packages.previewRemove` (proposal 026 A1 wiring): the SYNCHRONOUS
+/// read-only change preview — it never mutates any state, and its
+/// failures travel as wire-envelope errors, never result arms (the
+/// operation/kind lock: this method answers kind=plan exactly). The plan
+/// document is the port's `ChangePreviewV1` serde projection (camelCase
+/// frozen by the consumer test) stamped with the family const, the kind
+/// and the requested projectPath.
+fn packages_preview_remove(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // Without the 013 aggregate the not-found calibration does not
+        // exist, so the whole face stays honestly absent (P1 precedent).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((project_path, package_ids, _)) = packages_ops_remove_params(request, false) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !packages_ops_registered_project(&project_ops, &project_path) {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.capabilities().remove_packages {
+        // The frozen command schema's serving gate: a wired engine whose
+        // backend declares no removal capability answers the generic
+        // capability-missing arm (P1 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let preview = vpm.preview_remove(
+        &ProjectRef {
+            id: project_path.clone(),
+            root: PathBuf::from(&project_path),
+        },
+        &package_ids,
+    );
+    let preview = match preview {
+        Ok(preview) => preview,
+        Err(error) => {
+            return packages_ops_envelope_error(request_id, correlation_id, &error);
+        }
+    };
+    // Invariant: ChangePreviewV1 is a plain serde struct — serialization
+    // cannot fail; a silent fallback would fabricate a plan.
+    let mut plan = serde_json::to_value(&preview).expect("ChangePreviewV1 serialization cannot fail");
+    plan["schemaVersion"] = json!(PACKAGES_OPS_SCHEMA_VERSION);
+    plan["kind"] = json!("plan");
+    plan["projectPath"] = json!(project_path);
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+            "operation": "packages.previewRemove",
+            "result": plan,
+        }),
+    ))
+}
+
+/// `packages.applyRemove` (proposal 026 A1 wiring): the NINE-STATE
+/// task-driven write command (import-copy same shape — the task accepts,
+/// the terminal reflux carries the frozen result document). The
+/// double-digest discipline is enforced HERE, at the wire layer: the
+/// preview is re-computed before execution and any drift refuses as the
+/// typed `preview_drift` guard — the authoritative verdict lives
+/// server-side (014 arbitration point 2), never delegated to backend
+/// goodwill; the backend's own second digest check stays as defense in
+/// depth. A typed guard refusal is a Done payload carrying the frozen
+/// `rejected` result document (the task honestly completed; the removal
+/// was refused), never a transport error; the digest drift is a
+/// RECOVERABLE conflict (re-preview and re-confirm — never a silent
+/// overwrite, never an implicit resumption, honesty rule 3).
+fn packages_apply_remove(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((project_path, package_ids, confirmed_digest)) =
+        packages_ops_remove_params(request, true)
+    else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !packages_ops_registered_project(&project_ops, &project_path) {
+        // Route-layer refusal: the reused 013 code cannot travel inside a
+        // rejected document (rejected.code locks `^vua\.packages\.`).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.capabilities().remove_packages {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let project = ProjectRef {
+                id: project_path.clone(),
+                root: PathBuf::from(&project_path),
+            };
+            // Server-side re-computation BEFORE execution (ORC-WF-003/004):
+            // drift refuses before the backend is ever asked to apply.
+            let result: Value = match vpm.preview_remove(&project, &package_ids) {
+                Err(error) => packages_ops_port_rejection(&error),
+                Ok(fresh) => {
+                    if fresh.digest != confirmed_digest {
+                        packages_ops_rejected(
+                            "preview_drift",
+                            "vua.packages.preview_drift",
+                            format!(
+                                "confirmed digest {confirmed_digest} does not match the \
+                                 re-computed preview digest {}",
+                                fresh.digest
+                            ),
+                        )
+                    } else {
+                        match vpm.apply_remove(&project, &package_ids, &confirmed_digest) {
+                            Ok(applied) => {
+                                // The audit receipt: the confirmed digest echo +
+                                // the request list + the backend's actually
+                                // removed items (port `{removed: items}`
+                                // verbatim). A backend result without the item
+                                // array is a port-contract violation: it
+                                // refuses honestly instead of fabricating a
+                                // receipt.
+                                match applied.get("removed").filter(|v| v.is_array()).cloned() {
+                                    Some(removed_items) => json!({
+                                        "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION,
+                                        "kind": "receipt",
+                                        "projectPath": project_path,
+                                        "confirmedDigest": confirmed_digest,
+                                        "requestedPackageIds": package_ids,
+                                        "removedItems": removed_items,
+                                    }),
+                                    None => packages_ops_rejected(
+                                        "execution_failed",
+                                        "vua.packages.execution_failed",
+                                        "the backend result carried no `removed` item array \
+                                         (port contract: {\"removed\": items})"
+                                            .to_owned(),
+                                    ),
+                                }
+                            }
+                            Err(error) => packages_ops_port_rejection(&error),
+                        }
+                    }
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+                "operation": "packages.applyRemove",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
+                "operation": "packages.applyRemove",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task
+        // authority (import-copy same face, provider-layer code — the
+        // failure is the task authority's, not the packages domain's).
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.persistence_failed",
+            "errors.provider.persistence",
+            "internal",
+        )),
+    }
 }
 
 fn app_error_category(category: ErrorCategory) -> &'static str {
