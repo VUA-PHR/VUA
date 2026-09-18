@@ -1,7 +1,7 @@
 ---
 proposal: 026
 title: "包管理 P3 写面＋项目兼容并入包管理器（用户 2026-09-18 裁决转述）"
-status: 讨论中（2026-09-18 晚表态收敛：核心／环境／桌面三域内联落节＋集成开放问题 4 门序自答预填无异议；B 面切片已验收入库〔第 97 批 2151409〕；A1–A4 逐面冻结批候启动，A4 启停面候 VCC 键名真机核实）
+status: 已接受（2026-09-19 00:2x 推进：开放问题四项全闭合——核心／环境／桌面三域表态落节经第 97 批收编＋集成开放问题 4 门序自答无异议；B 面切片已验收入库〔第 97 批 2151409〕；内联线程无未决讨论点。A1–A4 逐面冻结批按已受程序启动〔A1 候核心起草〕；A4 词面＝增删先行冻结、启停候 VCC 键名真机核实；A5（create_project）候选面候桌面提出入口需求。落地进展登记归 BOARD #40 行与各树状态文件，本文件就此冻结）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-18
 ---
@@ -377,3 +377,102 @@ vpm_backend.rs，下称「实现」）：
 4. **B 面领取**：今晚工作时段（2026-09-18 23 时段）本树开工，切片＝
    nav 移除＋分区迁移＋选择器＋死文案清理＋design-standard 双语 0.7.3
    ＋REGISTRY 行同步，全链绿后提交候验收。
+
+### 桌面表态（A5 入口需求，wt-3，2026-09-19 00:1x）
+
+**应 wt-main 第 97 批与核心表态⑤之约**（「A5（create_project）启动条件
+＝桌面 B 面合并后提出入口需求」——B 面切片 cde8ed0 已第 97 批 2151409
+验收入库，条件成就，本节即入口需求落节）。事实锚全部本机直读
+（7e2cf9f 世代，与 main 收编后代码面全等——追平壳 diff 空实证）：
+
+- 端口：`create_project(&self, parent: &Path, name: &str,
+  template: Option<&str>) -> Result<ProjectRef, AppErrorV1>` 单方法
+  （crates/orchestrator/src/vpm_backend.rs:321-327），注释明示「Creates
+  a project from a template; backends without the capability return a
+  `capability_missing` error」——与 A1–A4 的 preview/apply 二段动词族
+  **不同构**：端口无 preview 方法，核心表态⑤「预览形状不共享」的端口
+  事实根即此。
+- 双实现在库：VrcGetLibBackend 能力位 true
+  （crates/project-manager/src/vpm_backend.rs:302）委托
+  `create_from_template`（:898-908）；VccCliBackend 能力位 true
+  （:1105）走 `vpm new <name> [template] -p <parent>`（:1132-1160）。
+- 库路径语义（:1192-1265）：`template.unwrap_or("Avatar")` 默认模板
+  （:1209）；解析序 `VRCTemplates/<t>` → `Templates/<t>` → 显式路径
+  （:1210-1214）；目标已存在 → `errors.vpm.projectExists`
+  （Validation，:1201-1207）；模板缺失 → `errors.vpm.templateMissing`
+  （Dependency，:1216-1223）；复制失败/非 Unity 工程 →
+  `errors.vpm.templateCopyFailed`（ExternalFailure，:1225-1256）；
+  productName 改写＋Unity 工程校验随成（:1236-1256）。名称校验
+  `validate_vpm_project_name`（:1274-1296）→
+  `errors.vpm.projectNameInvalid`（Validation）。
+
+**入口需求五点**（词面权威仍归 A5 冻结批，本节只声明需求事实，不预支
+规格）：
+
+1. **需要该入口**：用户场景＝在册项目为零或需要第二项目时，VUA 现状
+   只有在册项目读面（project.listProjects，包管理器页 P1 消费面
+   PackagesPage.tsx:240/:637 在用）与副本导入（014 importCopy），
+   **无任何新建项目路径**——自建项目起点缺失；B 面合并后包管理器页
+   是项目面唯一 IA 载体，入口自然落在该页。
+2. **IA 形态需求**：表单式（父目录选择＋项目名输入＋显式提交），
+   具体落点（包管理器页内位置、与「项目兼容」分区的编排）随 A5 消费
+   切片在 design-standard §8.7 增补定形；新建目录不触碰任何在册项目，
+   表单提交本身即显式确认，**不进双摘要确认链流程**（与核心表态⑤
+   同向）。
+3. **任务化形状需求**：端口单方法无 preview → A5 词面若照 A1–A4
+   preview/apply 同构立码会出现端口无对应方法的面；桌面需求＝单段
+   任务化 apply（TaskStateV01 九态可观察，成功回执携新 ProjectRef、
+   在册列表刷新即见）——模板目录复制可能长时（copy_tree 无进度回调
+   锚在案），可观察/可恢复照工作纪律 4；恢复非终态照诚实纪律 3
+   inspect_required 绝不隐式续传。
+4. **模板词面缺口声明（首面最小化建议）**：`template` 参数库面语义
+   ＝「None → 默认 Avatar＋三级解析序」（:1209-1214），端口无模板
+   枚举读面。桌面需求：**A5 首面不承诺模板选择器**——零枚举读面时
+   UI 固定默认模板并如实呈现所用模板（不虚构下拉选项，诚实纪律 1）；
+   模板枚举读面（templates.* 族）若核心裁定入 A5，随冻结批立词面、
+   桌面消费面后置。如此 A5 首面＝一写方法＋零新读面，面最小。
+5. **错误词面与能力位缺口声明**：①四个错误键
+   （projectExists/projectNameInvalid/templateMissing/
+   templateCopyFailed）桌面四语表零在册（grep 实证；
+   `errors.vpm.applyFailed` 已在册四语）——A5 冻结批六件中错误码
+   闭集与 TS 面须含此族，桌面消费切片随批补四语文案；表单前置校验
+   可镜像 :1275-1285 规则，权威以冻结批词面为准。②create 能力在
+   wire capability 面的呈现形状须 A5 冻结批定义——**不可复用
+   blocks.changes**（语义＝变更预览可用性，与「可新建项目」不同构；
+   packages-port.ts:209-210/:238 类型级恒假面是 C 面逐面升级标的）。
+
+启动与否及 A5 在面序中的位置归核心裁定（面序权威已裁 A1→A4，A5 候
+补）；本节＝启动条件所指「入口需求」的落节回应，桌面侧候冻结批后
+照逐面程序（形状核可＋消费切片）办理。
+### 结论（集成，2026-09-19 00:2x）——status 讨论中→已接受
+
+开放问题四项全闭合、内联线程无未决讨论点，议题转入按切片落地
+（proposals/README 状态机「已接受」语义）。四项闭合落账：
+
+- **开放问题 1（核心）**：2026-09-18 晚落节（「表态（核心）」节，第 97 批
+  0ffa364 收编）——面序 A1 移除→A2 安装/升级→A3 register_local_package
+  →A4 仓库订阅殿后照建议序确认；词表＝wire `packages.*` 写族＋
+  preview/apply 二段动词＋独立 `schemas/packages-ops/v0.1` 行；apply＝
+  九态任务、preview＝同步只读 query（014 import-copy 同构，恢复
+  inspect_required 绝不隐式续传）；`vua.packages.*` 错误码族 A1 首面
+  冻结批闭集一次立全；create_project 不入 P3 面序、留 A5 候选面。
+- **开放问题 2（环境）**：2026-09-18 晚落节（「表态（环境）」节，第 97 批
+  533429f 收编）——A1–A3 实现零缺口（六写方法全在库 file:line）＋端口
+  签名足够；A4 settings.json 库面考证＝增删/重排可行、启停零支撑（若
+  A4 含启停须本域自写 JSON 面＋VCC 键名真机核实先行）。
+- **开放问题 3（桌面）**：2026-09-18 晚落节（「桌面表态」节，第 97 批
+  2151409 收编）——IA＝选项卡内分区恒渲染（不挂 packages 引擎
+  capability 门控）；易用性清单随 B 落地＋C 随 A 各面解锁；blocks.changes
+  逐面升级。B 面切片 cde8ed0 已实质验收入库（第 97 批 2151409）。
+- **开放问题 4（集成，自答预填）**：无异议——门序＝024 表态 3 延续适用，
+  P3 各面属 M6 T-A 授权范围；M6 门验收与发行仍候 M5 关门门序不变。
+- **A4 词面二分收敛落账**：增删/启停二分——增删先行冻结（库面 API 完备
+  零未知量），启停词面候 VCC 禁用列表键名真机核实（W25 窗口候办，环境
+  域，与 024 表态 (b) vcc.liteDb 核实可同窗）；环境倾向＋核心 A4 殿后无
+  异议，两域表态实质一致，构成收敛。
+- **后续落地（本文件就此冻结，进展登记归 BOARD #40 行与各树状态文件）**：
+  A1 移除面冻结批候核心起草（启动条件全部满足：面序已确认＋环境表态
+  收敛已落账）；A2/A3 依次；A4 增删先行、启停候真机核实；A5（create_
+  project）候选面候桌面提出入口需求（B 面已合并，条件已满足）；C 面
+  随 A 各面冻结逐面解锁。各面实现仍走 013 R5 逐面程序：冻结批→实现
+  切片→集成验收。

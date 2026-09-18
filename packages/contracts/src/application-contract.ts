@@ -674,6 +674,111 @@ export interface PackagesPackageCatalogResultV02 {
   readonly cacheSourced: boolean;
 }
 
+/* ---- 026 A1 写面(packages-ops v0.1,核心冻结批 2026-09-19;表态程序
+ *  收敛:核心裁决 82a39c4 五点／环境库面考证 4a0f02f 实现零缺口／桌面
+ *  表态 93752d5)。移除面双方法二段动词:packages.previewRemove = 同步
+ *  只读 query(变更预览＋摘要指纹;无网络无依赖解析,写面族风险最小立
+ *  程序样板),packages.applyRemove = 九态任务化写命令(携确认指纹,服
+ *  务端复算漂移即拒——ORC-WF-003/004 纪律;桌面只做 UX 提示,权威判
+ *  定在服务端,014 仲裁第 2 点)。九态任务语义(commandId 幂等/可取消/
+ *  事件＋revision/恢复复检 inspect_required 绝不隐式续传——诚实纪律
+ *  3)走应用契约任务面,不在本词表。审计收据(receipt)照 014 导入收据
+ *  先例:确认指纹回显＋请求清单＋实际移除行;任务关联走任务面
+ *  (taskId/revision),回流文档非持久链接。错误码族 vua.packages.*
+ *  首面闭集一次立全(preview_drift/package_not_found/execution_failed
+ *  ,guard 值 = code 后缀);projectPath 未注册复用
+ *  vua.project.project_not_found(013/024 同事实同码);引擎未接线诚实
+ *  缺席 vua.packages.unavailable(024 已立)维持。wire 路由候核心接线
+ *  切片;served 能力位 = VpmCapabilities.remove_packages 门控 */
+
+export type PackagesChangeKindV01 = "install" | "remove";
+
+/** 变更行(端口 ChangeItemV1 投影):version/reason 可空(移除行 =
+ *  null,null 是端口事实如实投影,非省略) */
+export interface PackagesChangeItemV01 {
+  readonly kind: PackagesChangeKindV01;
+  readonly packageId: string;
+  readonly version: string | null;
+  readonly reason: string | null;
+}
+
+/** packages.previewRemove:同步只读变更预览(query;params 双键闭集,
+ *  packageIds 显式非空闭列——无通配,无「移除全部」速记) */
+export interface PackagesPreviewRemoveQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.previewRemove";
+  readonly params: {
+    readonly projectPath: string;
+    readonly packageIds: readonly string[];
+  };
+}
+
+/** packages.applyRemove:任务化移除写命令(command;必携
+ *  confirmedDigest = previewRemove 结果的 digest,服务端复算漂移即拒
+ *  ,拒绝 = recoverable 冲突——重预览重确认,绝不静默覆盖) */
+export interface PackagesApplyRemoveCommandV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.applyRemove";
+  readonly commandId: string;
+  readonly params: {
+    readonly projectPath: string;
+    readonly packageIds: readonly string[];
+    readonly confirmedDigest: string;
+  };
+}
+
+/** kind=plan:确认面投影(items/conflicts/removeLegacyFiles/
+ *  removeLegacyFolders/destructive/digest);destructive=true 时确认
+ *  UI 必须警示(ADR-0006),权威判定仍在服务端。行闭集 = 虚假断言
+ *  防线(无端口载体的发明字段在 schema 即非法,非「不鼓励」) */
+export interface PackagesRemovePlanV01 {
+  readonly schemaVersion: "vua.packages-ops/v0.1";
+  readonly kind: "plan";
+  readonly projectPath: string;
+  readonly items: readonly PackagesChangeItemV01[];
+  readonly conflicts: readonly string[];
+  readonly removeLegacyFiles: readonly string[];
+  readonly removeLegacyFolders: readonly string[];
+  readonly destructive: boolean;
+  /** FNV-1a(规范条目列表);applyRemove 的 confirmedDigest 绑定恰此值 */
+  readonly digest: string;
+}
+
+/** kind=receipt:审计收据(变更清单＋实际结果,014 导入收据先例随
+ *  A1 命令 Schema 冻结定形) */
+export interface PackagesRemoveReceiptV01 {
+  readonly schemaVersion: "vua.packages-ops/v0.1";
+  readonly kind: "receipt";
+  readonly projectPath: string;
+  /** 用户确认的指纹回显——确认面与执行结果的审计关联 */
+  readonly confirmedDigest: string;
+  /** 请求清单照实回显(审计「变更清单」半面) */
+  readonly requestedPackageIds: readonly string[];
+  /** 后端实际移除的变更行(审计「实际结果」半面) */
+  readonly removedItems: readonly PackagesChangeItemV01[];
+}
+
+/** kind=rejected:类型化守卫拒绝(guard 值 = code 后缀;A1 首面闭集
+ *  一次立全,族 vua.packages.*) */
+export type PackagesRemoveGuardV01 =
+  | "preview_drift"
+  | "package_not_found"
+  | "execution_failed";
+
+export interface PackagesRemoveRejectedV01 {
+  readonly schemaVersion: "vua.packages-ops/v0.1";
+  readonly kind: "rejected";
+  readonly guard: PackagesRemoveGuardV01;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern) */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesRemoveResultV01 =
+  | PackagesRemovePlanV01
+  | PackagesRemoveReceiptV01
+  | PackagesRemoveRejectedV01;
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1660,6 +1765,8 @@ export type ApplicationRequestV01 =
   | PackagesListInstalledQueryV01
   | PackagesListReposQueryV01
   | PackagesPackageCatalogQueryV01
+  | PackagesPreviewRemoveQueryV01
+  | PackagesApplyRemoveCommandV01
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -1800,6 +1907,7 @@ export type ApplicationSuccessValueV01 =
   | RecordGetResultV02
   | RecordListResultV02
   | ProjectImportCopyResultV01
+  | PackagesRemoveResultV01
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV01;
 
@@ -2115,6 +2223,31 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && hasExactKeys(value.params, ["projectPath", "packageId"])
       && isIdentifier(value.params.projectPath)
       && isIdentifier(value.params.packageId);
+  }
+  // 026 A1 写面(核心冻结批 2026-09-19):previewRemove = 双键闭集
+  // (projectPath 013 身份 + packageIds 显式非空闭列,无通配);
+  // applyRemove = 三键闭集(加 confirmedDigest,commandId 幂等)
+  if (value.kind === "query" && value.method === "packages.previewRemove") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      || !hasExactKeys(value.params, ["projectPath", "packageIds"])) {
+      return false;
+    }
+    if (!isIdentifier(value.params.projectPath)) return false;
+    const packageIds = value.params.packageIds;
+    if (!Array.isArray(packageIds) || packageIds.length === 0) return false;
+    return packageIds.every((id) => typeof id === "string" && id.length > 0);
+  }
+  if (value.kind === "command" && value.method === "packages.applyRemove") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["projectPath", "packageIds", "confirmedDigest"])) {
+      return false;
+    }
+    if (!isIdentifier(value.params.projectPath)) return false;
+    if (typeof value.params.confirmedDigest !== "string" || value.params.confirmedDigest.length === 0) return false;
+    const packageIds = value.params.packageIds;
+    if (!Array.isArray(packageIds) || packageIds.length === 0) return false;
+    return packageIds.every((id) => typeof id === "string" && id.length > 0);
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {

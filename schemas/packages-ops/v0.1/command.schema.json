@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.1/command.schema.json",
+  "title": "VUA packages-ops command v0.1",
+  "description": "Packages write face, first frozen slice A1 = removal (proposal 026, three-domain stance convergence 2026-09-18: core ruling 82a39c4 five points, environment study 4a0f02f zero-implementation-gap, desktop stance 93752d5; this freeze batch lands the authoritative word face). Exactly two methods, the preview/apply two-verb pair mapped one-to-one onto the VpmBackend port methods preview_remove/apply_remove: packages.previewRemove is the SYNCHRONOUS read-only query (a change preview the user confirms; never mutates), packages.applyRemove is the TASK-DRIVEN write command (nine-state task semantics ride the application-contract task surface, not this schema: commandId idempotency, cancellable, events+revision, no implicit resume — a crashed half-removal re-inspects to inspect_required and retry means the user-triggered preview-then-confirm again, honesty rule 3). Both methods take the SAME registered-path identity as the proposal-013 read face (projectPath); an unregistered path answers the REUSED typed not-found vua.project.project_not_found (same fact, same code, 024 P1 precedent). The removal preview is computed WITHOUT network and WITHOUT dependency resolution against upstream (the smallest-risk write face sets the program template); the confirmedDigest is the FNV-1a digest over the canonical item list that applyRemove binds to — the server re-computes the preview at apply time and refuses on drift (ORC-WF-003/004 same binding discipline; the desktop may pre-hint but the authoritative verdict lives server-side, proposal-014 arbitration point 2). packageIds is a closed explicit list (minItems 1, uniqueItems): removal of everything means listing every package, no wildcard is invented. packages.previewRemove params carry NO digest slot — the digest is the preview's product, a preview request carrying one is a shape violation. Gate: the wire routes for this family do not exist yet (wiring is the next core slice); serving is capability-gated (VpmCapabilities.remove_packages), a backend without the capability answers the generic capability_missing and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.previewRemove", "packages.applyRemove"]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
