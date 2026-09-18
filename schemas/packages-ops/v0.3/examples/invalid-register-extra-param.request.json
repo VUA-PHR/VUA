@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "packages.registerLocalPackage",
+  "params": {
+    "packageRoot": "C:/Users/dev/VUA/warehouse/generated/com.example.toolkit-1.4.0",
+    "projectPath": "C:/VRChat/Projects/Chiffon"
+  }
+}

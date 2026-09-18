@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "packages.registerLocalPackage",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.3",
+    "kind": "registered",
+    "packageRoot": "C:/Users/dev/VUA/warehouse/generated/com.example.toolkit-1.4.0",
+    "added": true
+  }
+}

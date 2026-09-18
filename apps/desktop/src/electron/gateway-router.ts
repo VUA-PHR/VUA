@@ -255,6 +255,37 @@ function toApplicationRequest(
           confirmedDigest: request.params.confirmedDigest,
         },
       };
+    // packages-ops v0.2 写面 A2 安装/升级(026 冻结批;桌面 A2 消费批):
+    // preview = 同步只读 query verbatim 透传(请求行闭列 {packageId,
+    // version string|null} 逐行拷贝;失败走信封错误:引擎缺席 =
+    // vua.packages.unavailable,未注册 = 复用 vua.project.project_not_found,
+    // 能力缺席 = vua.vpm.capability_missing,预览段失败 =
+    // vua.packages.preview_failed——全部原样透传不折叠);apply = 任务化
+    // 写 command(import-copy 同构,commandId 由 Kernel 生成照
+    // packages.applyRemove 先例;服务端复算摘要漂移即拒 preview_drift,
+    // 权威判定在服务端——桌面只做 UX 提示)
+    case "packages.previewInstall":
+      return {
+        ...base,
+        kind: "query",
+        method: "packages.previewInstall",
+        params: {
+          projectPath: request.params.projectPath,
+          packages: request.params.packages.map((row) => ({ ...row })),
+        },
+      };
+    case "packages.applyInstall":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.applyInstall",
+        commandId: `inst-${crypto.randomUUID()}`,
+        params: {
+          projectPath: request.params.projectPath,
+          packages: request.params.packages.map((row) => ({ ...row })),
+          confirmedDigest: request.params.confirmedDigest,
+        },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":
