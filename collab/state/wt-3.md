@@ -1,102 +1,86 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: a400cc3
+baseline_commit: ffd143d
 role: 桌面
 updated: 2026-09-19
 ---
 ## 当前焦点
-**026 A2 安装/升级消费切片轮（2026-09-19 05:2x–05:5x,工作时段,三笔:
-追平壳 1c9410a＋消费切片批 bb09927＋本状态批）——brief 05:21 ①区
-集成 [→桌面] 留言「A2 钉死收口已验收入库（第 104 批 item 1）,A2 消
-费切片三前置全成就（形状核可＋接线批＋钉死收口）」领取,照 A1 先例
-同径办理;结论＝切片全链绿交付,首面行内单包安装,零跨域触碰**：
+**026 A2 消费切片＋A3 形状核可双交付轮（2026-09-19 05:2x–06:1x,工
+作时段,五笔：追平壳 1c9410a＋A2 消费切片批 bb09927＋A3 追平壳
+24bc327＋A3 形状核可批 f1939d1＋本状态批）——brief 05:21 ①区集成
+[→桌面] 留言「A2 消费切片三前置全成就」领取 A2 切片;追平第 105 批
+时发现集成收尾留言「desktop A3 shape approval due」,照 A1/A2 先例
+同拍续办 A3 形状核可;结论＝A2 切片全链绿交付（首面行内单包）＋A3
+TS 面形状核可通过（九项一致＋一项消费核对点登记）,零跨域触碰**：
 
-- **领取依据**：brief ①区 wt-main [→桌面] 留言（最高优先）＋操作者
-  注「A2 链已解锁,可开工 A2 安装/升级消费切片」＋本树在途「[等核
-  心] 接线批/钉法缺口闭合」两项前置均已成就入库（fff3781 第 102 批
-  ＋beb7d34→539858b 第 104 批）;上拍形状核可批 719a729 已经第 103
-  批 a1291dc 验收入库,钉法缺口经第 104 批销账（批量多选面解锁前置
-  落地,集成明示「照 C 面自决程序自行认领」）;[需用户] 区零桌面条
-  目不代决;失鲜工作树无。
-- **追平壳 1c9410a**：落后 20 过 15 触发线＋接线批/收口批系本切片直
-  接权威基础,--no-ff 合并 a400cc3,双法 merge-tree 预检零冲突（ort
-  exit 0＋老式 0 标记）;inbound 17 文件全为已验收内容纯吸收（核心
-  wire 接线批 61da51a＋钉死收口批 beb7d34〔负例向量＋TS seenIds＋
-  协议本 0.2.2〕＋第 103/104 批簿记）,零夹带;基线世代刷新
-  **a400cc3**。
-- **消费切片批 bb09927（恰桌面域 18 文件＋contracts TS 面 2 文件＝
-  桌面登记职责,1605+/44-,零跨域触碰）**——照 A1 消费切片先例同径
-  全层交付：
-  - **contracts TS 面（desktop-gateway.ts/测试）**：两方法登记
-    （previewInstall query 双键闭集/applyInstall command 三键闭集
-    ＋commandId Kernel 生成位）;请求行闭集守卫 {packageId, version
-    string|null}（version 必填可空,null＝解析器选最新稳定版;
-    seenIds 行间 id 唯一含异版本——与 A2 守卫窄化收口同形钉死;
-    preview 携 digest 位拒）;union＋method-kind 表＋负例钉死测试。
-  - **路由**：两臂 verbatim 透传;applyInstall＝inst- 前缀 Kernel 生
-    成 commandId（rmv- 先例）。
-  - **Port**：A2 类型再导出＋previewInstall/applyInstall 两方法
-    （apply 四态 outcome）;**blocks.installs 新键**（ready-p1/p2 纯
-    增量）,权威事实源＝served packages.installOps 能力行（一位服
-    务双方法,removeOps 先例;false＝行缺席或不可用,安装入口不渲
-    染）;blocks.changes 语义与来源零变更（A1 逐面升级承诺兑现）。
-  - **live**：五行能力行读取;v0.2 族常量＋信封 "0.2" 窄化器组
-    （plan 九键同键集按字面量窄化/installReceipt 六键 requestedPac
-    kages＋appliedItems/rejected 五键 guard 复用 A1 三值＋code 锁
-    vua.packages. 族）;applyInstall 骑任务环（014/020 先例,受理窄
-    化→终态等待共享实现 120s 界→Done payload 窄化;守卫拒绝是
-    Done payload 非错误;超时/断连＝诚实 unavailable）;vua.packages
-    .preview_failed 信封新码照原词上呈;缺席臂照纪律。
-  - **UI**：InstallConfirmDialog 新组件（A2 词面专用——installRec
-    eipt 与 removeReceipt 键集互斥,两 live 链收据呈现互不污染;
-    destructive DelayedButton 1s;drift 重预览重确认引导）;接入 P2
-    目录面板（「安装/升级到最新」＝version null 解析器语义＋版本
-    行「安装此版本」钉版入口;yanked/compatible 事实照实标注,可装
-    性不预判,权威在服务端）;入口门控 blocks.installs;P2 notice 文
-    案中性化（写入操作表述,四语言）。
-  - **i18n 四语言**：packages.install 段（guards 复用三码＋unknown/
-    envelopeErrors 含新 previewFailed/toasts/plan 投影文案）。
-- **定向证据亲测（05:3x–05:5x）**：df C 盘 627G/67% 先查;@vua/
-  contracts check 74/74（72+2 desktop-gateway 钉断言）;desktop
-  check 全链 exit 0（typecheck 双 tsconfig 0＋vitest 80 文件
-  699/699 含 +12 A2 钉例〔live 7 骑假 wire 帧＋真任务等待环＋路由
-  3 含 inst- 形状与 seenIds 拒＋model 2〕＋build＋boundary＋i18n
-  parity＋contrast＋check:leak 155 指纹零泄漏＋forest-leak）。
-- **诚实边界**：首面＝行内单包安装（C 面先例同 A1）;批量多选面解
-  锁前置已落地（539858b）,该面留待后续 C 面自决认领（本切片不铺
-  多选 UI,如实申报）;零端到端宣称维持——provider 进程内 wire 联
-  动由核心 wire 测试钉死（packages_ops_wire_v02 11/11,第 102/104
-  批在案）,桌面侧测试骑假 wire 帧,真机走查归 W25（O-2 候用户开
-  窗）,零用户 dev 栈接触;mock/fixture 恒缺席臂维持（模拟面永不模
-  拟 wire 写回执）。
+- **A2 消费切片批 bb09927（恰桌面域 18 文件＋contracts TS 面 2 文
+  件＝桌面登记职责,1605+/44-）**：previewInstall 确认链＋
+  applyInstall 任务面（骑共享 waitForTerminalTask,守卫拒绝是 Done
+  payload 非错误,超时/断连＝诚实 unavailable）＋blocks.installs 新
+  键随 served packages.installOps 行翻转（纯增量,changes 语义零变
+  更,A1 逐面升级承诺兑现）＋v0.2 族常量/信封 "0.2" 窄化器组
+  （plan 按字面量/installReceipt requestedPackages＋appliedItems/
+  rejected guard 复用三值）＋vua.packages.preview_failed 新码照原
+  词＋InstallConfirmDialog 词面专用组件（收据键集互斥,两 live 链
+  互不污染;destructive DelayedButton;drift 重预览引导）接入 P2 目
+  录面板（「安装/升级到最新」＝version null 解析器语义＋版本行钉
+  版入口;可装性不预判,权威在服务端）＋i18n install 段四语言;定向
+  证据亲测 05:4x：df C 627G/67% 先查＋contracts 74/74＋desktop
+  check 全链 exit 0（双 typecheck 0＋vitest 80 文件 699/699 含
+  +12 A2 钉例＋leak 155 指纹零泄漏）。
+- **A3 形状核可批 f1939d1（collab-only 恰 proposal 026 一文件）**：
+  应第 105 批集成「desktop A3 shape approval due」,基于收编世代
+  （ffd143d 经追平壳 24bc327）直读＋定向复跑亲测。**结论＝九项一
+  致核可通过**：①请求单键闭集 {packageRoot}＋Kernel commandId,无
+  projectPath（只动隔离环境）,无 confirmedDigest（携即违反,负例
+  钉死,显式提交即确认）;②registered 收据最小诚实审计三键（族常
+  量 v0.3/kind/packageRoot 回显）,端口答 unit 禁止发明（负例钉
+  死）,AlreadyAdded 幂等＝无 added 布尔;③rejected guard 复用三值
+  零新增＋code 锁族＋原码 detail 溯源;④union 双登记＋窄化臂;⑤
+  TS 测试 1 例 5 断言对应申报;⑥mock 恒缺席臂;⑦capturedAt 收窄对
+  A3 有效（grep 唯一 :2002,typecheck 双 0 亲测,A2 先例同法）;⑧向
+  量 2 正 7 负对应登记;⑨诚实边界如实（词面未接线,served 行门控
+  register_capabilities accessor default declared-none）。**消费
+  切片核对点登记（非缺口）**：v0.3 wire 信封常量协议本未载明——
+  信封组装归下一核心接线切片,桌面消费切片按接线批实际落地面对
+  照,不猜测。定向证据亲测 06:0x：contracts 75/75（72＋本树 A2 切
+  片 2＋A3 冻结 1）＋desktop typecheck 双 0＋vitest 699/699。
+- **两次追平壳**：1c9410a（落后 20 过线,接线批/收口批系 A2 切片
+  直接权威基础＋集成留言点名,--no-ff 合并 a400cc3,双法预检零冲
+  突,inbound 17 文件纯吸收）;24bc327（落后 7 未过线,但 A3 冻结批
+  c8239d9 系形状核可直接权威基础＋集成留言点名,A1/A2 同拍先例,
+  --no-ff 合并 ffd143d,零冲突,inbound 纯吸收）;基线世代刷新
+  **ffd143d**。
 
 ## 前情（9a8aef3 世代,全文见本文件 git 历史）
-09-19 04:3x–04:5x A2 TS 面形状核可轮三笔（追平壳＋核可批 719a729
-经第 103 批 a1291dc 验收入库＋钉法缺口申报经第 104 批核心闭合销
-账）;09-19 01:5x–02:2x A1 消费切片三笔经第 101 批验收入库;更早
-见 git 历史。
+09-19 04:3x–04:5x A2 TS 面形状核可轮三笔（核可批 719a729 经第 103
+批 a1291dc 入库;钉法缺口申报经第 104 批核心闭合销账）;09-19
+01:5x–02:2x A1 消费切片三笔经第 101 批验收入库;更早见 git 历史。
 
-## 本轮交付（a400cc3 基线世代）
-- **追平壳 1c9410a**（落后 20 过线,直接权威基础＋留言点名,零冲突
-  纯吸收）。
-- **消费切片批 bb09927**（桌面域 18＋contracts TS 面 2,全链绿亲
-  测在案）。
+## 本轮交付（ffd143d 基线世代）
+- **追平壳 1c9410a＋24bc327**（零冲突纯吸收）。
+- **A2 消费切片批 bb09927**（桌面域 18＋contracts TS 面 2,全链绿
+  亲测在案）。
+- **A3 形状核可批 f1939d1**（collab-only 恰 proposal 026 一文件）。
 - **本状态批**（恰本文件）。
 
 ## 在途/待他角色
 - **[等集成] 本拍候随轮验收（--no-ff）**：实质对象＝A2 消费切片批
-  bb09927（桌面域 18＋contracts TS 面 2;定向证据亲测在案：
-  contracts 74/74＋typecheck 双 0＋vitest 699/699＋全链含 leak 155
-  指纹零泄漏）;追平壳与本状态批纯吸收/collab-only。
+  bb09927（桌面域 18＋contracts TS 面 2）＋A3 形状核可批 f1939d1
+  （collab-only 一文件,免全量按例声明,定向证据亲测在案）;两追平
+  壳与本状态批纯吸收/collab-only。
+- **[等核心] A3 wire 接线切片**——落地入 main 后 A3 消费切片两解
+  锁条件全成就（形状核可本拍已满足＋接线批）,桌面下拍领取;v0.3
+  信封常量随接线批落地面核对（proposal 026 核可节已登记,不猜测）。
 - **[→用户] IA 并入复测**（维持）：包管理器页尾「项目兼容」分区可
   见可用/侧栏「项目兼容」页消失/导入源选择器;dev 栈复测可顺带目
   视 A1 移除入口与 A2 安装入口（目录面板,installOps 行可用时出
   现,未声明即不出现＝诚实缺席）;A1 移除确认链＋A2 安装链真机全
   链走查归 W25（O-2 候用户开窗）。
 - **[等环境] A1 端口码投影映射完整申报**（维持）——申报后桌面
-  envelopeErrors 词外码回落面随之对齐（unknown 原词插值在案,不猜
-  测不阻塞）;A2 同族映射申报随环境 A2 实现核对切片。
+  envelopeErrors 词外码回落面随之对齐;A2/A3 同族映射申报随环境各
+  实现核对切片。
 - **[等用户] 既有项维持**：#39 HMR 三复测点、#36 操作者 CDP 复验、
   ready-p2 解锁＋v0.2「缓存数据」标注复验、#25/#27/#28/#29 回填、
   W25（O-2）。
@@ -106,50 +90,58 @@ updated: 2026-09-19
 
 ## 下次合并意图
 **候验收对象＝026 A2 消费切片批 bb09927（实质切片,请集成亲审验收
---no-ff,写明「026 A2 安装/升级消费切片」）＋追平壳＋本状态批;**
-提交后读数：领先 3（切片 1＋追平壳 1＋本状态批 1;实质 1）;落后
-读数下轮 brief 复测,过 15 线照则自理追平。
+--no-ff,写明「026 A2 安装/升级消费切片」）＋A3 形状核可批
+f1939d1（collab-only 一文件,可随轮免全量收编）＋两追平壳＋本状态
+批;**提交后读数：领先 5（切片 1＋核可 1＋追平壳 2＋本状态批 1;
+实质 1）;落后读数下轮 brief 复测,过 15 线照则自理追平。
 
 ## 待命声明（第 6 步,如实）
-本轮（2026-09-19 05:2x–05:5x,工作时段,三笔：追平壳 1c9410a＋消费
-切片批 bb09927＋本状态批）：①date 05:21 确认工作时段;brief ①区
-集成 [→桌面]「A2 消费切片三前置全成就」领取（本树在途最高优先,
-上拍核可批已入库＋接线批/收口批均入库）;[需用户] 区零桌面条目;
-②执行＝追平合并 1c9410a（双法预检零冲突）→A1 先例 20 文件构成逐
-一研读（faed1bd diff 全读＋A2 冻结 TS 面直读＋协议本 v0.2 双语＋
-wire 受理回执形状亲核〔"0.2" 信封〕＋mock 缺席臂核对）→切片全层
-实现（contracts 登记→路由→port→live→UI→i18n,层序依赖照先例）
-→定向复跑（df 627G/67% 先查;contracts 74/74;desktop check 全链
-exit 0:双 typecheck 0＋vitest 699/699＋leak 155 零泄漏）→切片批
-提交→本状态批;③所有权核验＝自有编辑恰桌面域 18 文件＋contracts
-TS 面 2 文件（desktop-gateway.ts/测试,登记职责 A1 先例同权）,wire
-面/Schema/协议本/REGISTRY 全只读零跨域;④诚实边界＝首面行内单包
-如实申报（批量面解锁前置已落地但本切片不铺多选 UI,留 C 面自决后
-续认领）;零端到端宣称维持（桌面骑假 wire 帧测试,真机归 W25）;
-blocks.installs 纯增量不翻转 A1 已消费面形状;⑤在手无半途切片、
-无未提交改动;退出待命,候集成验收、下轮 brief 或新指派。
+本轮（2026-09-19 05:2x–06:1x,工作时段,五笔）：①date 05:21 确认
+工作时段;brief ①区集成 [→桌面]「A2 消费切片三前置全成就」领取;
+追平读数时发现 main 第 105 批新入库（A3 冻结批＋「desktop A3
+shape approval due」）,同拍续办 A3 形状核可（候办明确,轻量轮,
+工作时段允许）;[需用户] 区零桌面条目;②执行＝A2：追平 1c9410a→
+A1 先例 20 文件构成逐一研读＋A2 冻结 TS 面直读＋协议本 v0.2＋wire
+受理回执形状亲核→切片全层实现（contracts 登记→路由→port→live→
+UI→i18n）→定向复跑（df 627G 先查;74/74;desktop check 全链 exit
+0）→切片批 bb09927;A3：追平 24bc327→A3 TS 面直读（接口/收据/
+rejected/union/窄化臂/测试/mock）＋协议本 v0.3＋向量清点＋
+capturedAt 唯一性 grep＋desktop 收窄面核对→定向复跑（75/75＋双
+typecheck 0＋699/699）→核可节写入 proposal 026→核可批 f1939d1→
+本状态批;③所有权核验＝自有代码编辑恰桌面域 18＋contracts TS 面
+2（登记职责先例同权）,collab 编辑恰 proposal 026＋本文件;wire
+面/Schema/协议本/REGISTRY 全只读零跨域;④诚实边界＝A2 首面行内单
+包如实申报（批量面解锁前置已落地但本切片不铺多选 UI,留 C 面自决
+后续认领）;A3 核可附消费核对点登记（v0.3 信封常量未载明,候接线
+批对齐,不猜测）;零端到端宣称维持（桌面骑假 wire 帧测试,真机归
+W25）;blocks.installs 纯增量不翻转 A1 已消费面形状;⑤在手无半途
+切片、无未提交改动;退出待命,候集成验收、核心 A3 接线批、下轮
+brief 或新指派。
 
 ## 留言
-- [→集成] **验收请求**：候验收对象＝026 A2 安装/升级消费切片批
-  bb09927（桌面域 18 文件＋contracts TS 面 2 文件〔desktop-gateway
-  登记,74/74 亲测〕——previewInstall 确认链＋applyInstall 任务面
-  ＋blocks.installs 随 packages.installOps 能力行翻转〔纯增量新
-  键,changes 语义零变更〕＋installOps 五行能力面＋InstallConfirm
-  Dialog 词面专用组件＋i18n install 段四语言;定向证据亲测 05:4x：
-  df 627G 先查＋contracts 74/74＋desktop check 全链 exit 0〔双
-  typecheck 0＋vitest 80 文件 699/699＋build＋boundary＋i18n
-  parity＋contrast＋leak 155 指纹零泄漏＋forest-leak〕）＋追平壳
-  1c9410a（落后 20 过线,接线批/收口批系直接权威基础,零冲突纯吸
-  收）＋本状态批。首面＝行内单包安装;批量多选面解锁前置虽已落地
-  （539858b）,本切片未铺多选 UI,该面留后续 C 面自决认领（如实申
-  报,不静默扩面）。
-- [→核心] **A2 消费切片已交付（知会,回执不回执）**：三前置（形状
-  核可 a1291dc＋接线批 fff3781＋钉死收口 539858b）世代上实现,冻
-  结词面零变更;桌面登记面（desktop-gateway 两方法＋请求行闭集守
-  卫 seenIds 行间 id 唯一与你们 TS 守卫收口同形）随切片交付; wire
-  受理回执 "0.2" 信封形状已按 provider_host.rs 实况窄化对齐。A2
-  完成后面序下一环＝A3 register_local_package 冻结批（你方已交付
-  0282a66 候验收）→桌面形状核可＋消费切片照逐面程序跟进。
-- （回执不回执：wt-main 第 104 批 [→桌面] 留言——本拍消费切片即回
-  应;历史留言已消化归档,在途事项以 BOARD 与本状态文件当前焦点为
-  准。）
+- [→集成] **验收请求**：候验收对象＝①026 A2 安装/升级消费切片批
+  bb09927（桌面域 18＋contracts TS 面 2——previewInstall 确认链＋
+  applyInstall 任务面＋blocks.installs 随 packages.installOps 行
+  翻转〔纯增量,changes 语义零变更〕＋InstallConfirmDialog 词面专
+  用组件＋i18n 四语言;定向证据亲测 05:4x：df 627G 先查＋contracts
+  74/74＋desktop check 全链 exit 0〔双 typecheck 0＋vitest 699/
+  699＋leak 155 零泄漏〕;首面行内单包,批量面留 C 面自决后续认领
+  如实申报）;②A3 形状核可批 f1939d1（collab-only 恰 proposal 026
+  一文件——九项一致核可通过＋v0.3 信封常量消费核对点登记〔非缺
+  口〕;定向证据亲测 06:0x：contracts 75/75＋双 typecheck 0＋
+  vitest 699/699,免全量按例声明）;③追平壳 1c9410a（落后 20 过线
+  照则）＋24bc327（落后 7 未过线,A3 冻结批直接权威基础＋留言点
+  名,A1/A2 同拍先例）＋本状态批。
+- [→核心] **A3 形状核可通过（知会,回执不回执）**：九项一致（详
+  见 proposal 026「桌面形状核可（A3 TS 面）」节——单键闭集/最小
+  诚实收据/guard 复用零新增/union 双登记/capturedAt 收窄有效/
+  mock 缺席臂）;A3 消费切片桌面侧解锁条件（形状核可）满足,候你
+  方 wire 接线切片（路由＋packages.registerOps served 行＋信封组
+  装）。**核对点知会**：v0.3 行 wire 信封常量协议本未载明（A2 曾
+  载 "0.2"）——接线批落地时请载明,桌面消费切片按落地面对照。A2
+  消费切片已交付候验收（你方 A2 词面消费面已闭环到 UI,A2 环境实
+  现核对候你方节拍）。
+- （回执不回执：wt-main 第 104 批 [→桌面] 留言——本拍 A2 消费切
+  片即回应;第 105 批收尾留言「desktop A3 shape approval due」——
+  本拍核可批即回应;历史留言已消化归档,在途事项以 BOARD 与本状态
+  文件当前焦点为准。）
