@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.previewRemove",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.1",
+    "kind": "receipt",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "confirmedDigest": "fnv1a-9e3779b9",
+    "requestedPackageIds": ["com.lilxyzw.liltoon"],
+    "removedItems": []
+  }
+}
