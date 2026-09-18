@@ -224,6 +224,27 @@ export function installEnvelopeErrorKey(code: string): InstallEnvelopeErrorKey {
   return "unknown";
 }
 
+/* ---- A3 本地包注册写面(026 v0.3 消费批):typed 码映射 ---- */
+
+/** A3 信封/受理 typed 错误码 → strings.packages.register.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 v0.3 冻结词面已申报面:通用 vua.vpm.capability_missing(能力门控
+ * 在路由层答——register_capabilities 访问器未翻转,绝不进任务)、
+ * vua.packages.invalid_params(请求形状违规)。A3 无注册项目检查
+ * (project_not_found 复用对本面不适用——注册不触项目)且无 preview 段
+ * (preview_failed 对本面不存在),两码均不在闭集,如实缺席。任务非成
+ * 功终态的 error.code 原词不在此闭集时一律 unknown。 */
+export type RegisterEnvelopeErrorKey =
+  | "capabilityMissing"
+  | "invalidParams"
+  | "unknown";
+
+export function registerEnvelopeErrorKey(code: string): RegisterEnvelopeErrorKey {
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  return "unknown";
+}
+
 /* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面):批量请求行构造 ---- */
 
 /**

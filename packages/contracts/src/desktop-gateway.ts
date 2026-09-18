@@ -616,6 +616,30 @@ export interface PackagesApplyInstallRequestV1 {
   };
 }
 
+// ---- packages-ops v0.3 写面 A3 本地包注册(026 冻结批 0282a66 经第 105 批
+// 入库;wire 接线批 45ec57c 经第 107 批入库;桌面 A3 消费批登记 2026-09-19。
+// 族中唯一无 preview 对偶的写面——端口无 preview 方法,不发明:注册是幂
+// 等集合添加(库面 AlreadyAdded 答成功,不区分首次/重复),非破坏性(只加
+// 一行用户包条目),无既有状态可漂移——无 confirmedDigest 位(携即形状违
+// 反,用户显式提交即确认);params 单键闭集 {packageRoot} = 本地包根目录
+// (含 package.json),无 projectPath——注册只动后端隔离环境,不触项目、
+// 不触用户 VCC/ALCOM 设置。任务化写命令:受理回执 { taskId, correlationId }
+// (import-copy/A1/A2 同构),审计收据 registered(最小诚实三键回显) /
+// 类型化拒绝 rejected 随任务终态 Done payload 回流。词面权威 =
+// schemas/packages-ops/v0.3 + application-contract.ts A3 段 ----
+
+/** packages.registerLocalPackage 写命令:任务化受理(import-copy 同构);
+ *  commandId 由 Kernel 生成(渲染层不传,project.import-copy 先例);无
+ *  digest 无确认链——用户显式提交即确认 */
+export interface PackagesRegisterLocalPackageRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.registerLocalPackage";
+  readonly params: {
+    readonly packageRoot: string;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -670,7 +694,8 @@ export type DesktopGatewayRequestV1 =
   | PackagesPreviewRemoveRequestV1
   | PackagesApplyRemoveRequestV1
   | PackagesPreviewInstallRequestV1
-  | PackagesApplyInstallRequestV1;
+  | PackagesApplyInstallRequestV1
+  | PackagesRegisterLocalPackageRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -733,6 +758,9 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // query,apply 任务化 command(Kernel 生成 commandId)
   "packages.previewInstall": "query",
   "packages.applyInstall": "command",
+  // packages-ops v0.3 写面 A3 本地包注册(026;桌面 A3 消费批):族中唯一
+  // 无 preview 对偶——单方法任务化 command(Kernel 生成 commandId)
+  "packages.registerLocalPackage": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1257,6 +1285,15 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isInstallRequestRows(value.params.packages)
         && typeof value.params.confirmedDigest === "string"
         && value.params.confirmedDigest.length >= 1;
+    // packages-ops v0.3 写面 A3 本地包注册(026;桌面 A3 消费批):params
+    // 单键闭集 {packageRoot}(本地包根目录,非空;无 projectPath——注册
+    // 只动后端隔离环境;无 digest 位——携即形状违反,本面无 preview 可
+    // 漂移,用户显式提交即确认);commandId 由 Kernel 生成不在 params
+    case "packages.registerLocalPackage":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["packageRoot"])
+        && typeof value.params.packageRoot === "string"
+        && value.params.packageRoot.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

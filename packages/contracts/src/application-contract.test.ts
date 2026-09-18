@@ -490,6 +490,58 @@ describe("bdl-commands v0.1 application surface", () => {
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
   });
 
+  it("admits the 026 A4 repo add/remove commands with the closed params and no digest and no projectPath", () => {
+    // addRemoteRepo 双键闭集 {url, name}
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addRemoteRepo", commandId: "cmd-4",
+      params: { url: "https://example.vpm/repos/official.json", name: "Example Official" },
+    })).toBe(true);
+    // 缺 name = 显示名必填(读面 Option 只投影既有行,不意味新行可无名)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addRemoteRepo", commandId: "cmd-4",
+      params: { url: "https://example.vpm/repos/official.json" },
+    })).toBe(false);
+    // 空 url = 非事实
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addRemoteRepo", commandId: "cmd-4",
+      params: { url: "", name: "Example Official" },
+    })).toBe(false);
+    // 携 confirmedDigest = 形状违反(本面无 preview 可漂移,无 digest 位)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addRemoteRepo", commandId: "cmd-4",
+      params: { url: "https://example.vpm/repos/official.json", name: "n", confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 携 projectPath = 词表外键(订阅面只写后端隔离环境,不触项目)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addRemoteRepo", commandId: "cmd-4",
+      params: { url: "https://example.vpm/repos/official.json", name: "n", projectPath: "C:/proj" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // addLocalRepo 双键闭集 {path, name}
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addLocalRepo", commandId: "cmd-5",
+      params: { path: "D:/synthetic/local-repo", name: "Local Synthetic Repo" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.addLocalRepo", commandId: "cmd-5",
+      params: { path: "", name: "Local Synthetic Repo" },
+    })).toBe(false);
+    // removeRepo 单键闭集 {repoId}
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.removeRepo", commandId: "cmd-6",
+      params: { repoId: "repo.example.official" },
+    })).toBe(true);
+    // 空 repoId = 非行柄
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.removeRepo", commandId: "cmd-6",
+      params: { repoId: "" },
+    })).toBe(false);
+    // 发明 index 键 = 索引寻址不冻结(索引在并发写下漂移)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.removeRepo", commandId: "cmd-6",
+      params: { repoId: "repo.example.official", index: 0 },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},
