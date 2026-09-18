@@ -121,7 +121,6 @@ demoTaskTitle: "데모 작업",
       warehouse: "창고",
       workshop: "작업장",
       packages: "패키지",
-      projectCompat: "프로젝트 호환",
     },
     pages: {
       home: "허브",
@@ -145,7 +144,6 @@ demoTaskTitle: "데모 작업",
       settingsAbout: "정보",
       settingsDonate: "후원",
       packages: "패키지 관리자",
-      projectCompat: "프로젝트 호환",
       composePage: "코디네이트 초안",
       importMaterial: "소재 가져오기",
       inspectionPage: "검사",
@@ -1305,18 +1303,17 @@ rolled_back: "롤백됨",
     },
   },
   /** 패키지 관리(S-XVI): Recipe 외의 수동 VPM 작업면. 플레이어 언어를 사용하며 semver/프로토콜 세부는 노출하지 않음 */
-  /** 프로젝트 호환 페이지(F6, M6 T-C): ALCOM/VCC 관리 프로젝트의 읽기 전용 표시와
-   *  "VUA 관리 복사본으로 가져오기" 입구. 권위=product-boundary 1.2.0(U3 결정).
-   *  감지 읽기 면(환경 T-B)은 미연결로 정직하게 unavailable 표시, 복사 가져오기
-   *  실행(환경 T-A)도 미연결로 입구에 상시 주기 */
+  /** 프로젝트 호환 섹션(proposal 026 B, 사용자 2026-09-18 결정): 기존 독립
+   *  페이지는 패키지 관리자 페이지 끝의 섹션으로 통합. ALCOM/VCC 관리
+   *  프로젝트의 읽기 전용 표시와 "VUA 관리 복사본으로 가져오기" 확인 체인.
+   *  권위=product-boundary 1.2.0(U3 결정). 감지 읽기 면은 라이브(021 연결
+   *  배치), 복사 가져오기는 태스크 채널(020 result 리플럭스) */
   projectCompat: {
     title: "프로젝트 호환",
     subtitle: "ALCOM/VCC 관리 프로젝트는 읽기 전용입니다. 쓰기 작업은 해당 관리자에게 맡기세요.",
     readOnlyTitle: "읽기 전용 호환(경계)",
     readOnlyDesc: "VUA는 ALCOM/VCC 관리 프로젝트에 대해 읽기 전용입니다. 열람과 진단은 가능하지만, 원본 프로젝트 내 패키지 설치/제거, manifest·프로젝트 설정·애셋·.vua 작업 파일 변경, ALCOM/VCC의 레지스트리·데이터베이스·설정·캐시 쓰기는 하지 않습니다.",
     detectionTitle: "프로젝트 감지(호환 매트릭스)",
-    detectionSource: "감지 항목과 표시 규칙은 ALCOM/VCC 프로젝트 호환 매트릭스 1.0.0(수락됨)을 따릅니다. 모두 읽기 전용입니다.",
-    detectionNotWired: "감지 데이터 가져오기는 아직 연결되지 않았습니다: wire 명령 면은 proposal 013 결정 후 활성화됩니다. 그 전까지 이 섹션은 계획 미리보기입니다.",
     detectionWired: '실시간 감지(project-inspection 읽기 면):',
     detectionManagersLine: 'VCC 등록:{vccN} - ALCOM 등록:{alcomN}',
     detectionPickCta: '프로젝트 폴더 선택',
@@ -1333,17 +1330,6 @@ rolled_back: "롤백됨",
     lockLeftover: '이 프로젝트에서 남아 있는 변경 잠금이 관찰되었습니다.',
     lockUnreadable: '변경 잠금 상태를 읽을 수 없습니다.',
     detectionReload: '다시 감지',
-    detectionItemsTitle: "감지 예정 항목(모두 읽기 전용):",
-    detectionItems: [
-      "관리자 재위(ALCOM/VCC 설정 경로)",
-      "프로젝트 발견(두 관리자 등록 경로의 합집합, 사용자 디렉터리는 절대 스캔하지 않음)",
-      "이중 관리자 연관(동일 경로의 다중 연관 중복 제거)",
-      "Unity 버전 및 분류(생산 대상/마이그레이션 원본/기타)",
-      "VPM 패키지 선언 면(dependencies와 locked)",
-      "VRChat SDK(com.vrchat.* 접두사 식별)",
-      "미완료 변경 표식(.vua/pending-mutation.json 읽기 전용 관찰)",
-      "레지스트리 삭제 항목(경고와 함께 보존, 조용히 버리지 않음)",
-    ],
     envStatusTitle: "환경 상태(VUA 측 감지)",
     envStatusSource: "데이터 출처: VUA 환경 감지(ALCOM/VCC 기록이 아님). 버전은 해당 관리자의 기록이 기준입니다.",
     handoverTitle: "쓰기 작업 인계",
@@ -1362,7 +1348,8 @@ rolled_back: "롤백됨",
 
     importSourceLabel: "소스 프로젝트 경로",
     importSourcePlaceholder: "ALCOM/VCC 관리 프로젝트 폴더",
-    importSourceNote: "프로젝트 감지 읽기 면이 연결되면 등록된 프로젝트에서 선택할 수 있습니다. 현재는 프로젝트 폴더 경로를 붙여넣어 주세요.",
+    importSourceRegisteredLabel: "등록된 프로젝트에서 선택",
+    importSourceNote: "먼저 위의 등록된 프로젝트 목록에서 선택하세요. ALCOM/VCC 관리이지만 등록되지 않은 원본 프로젝트는 프로젝트 폴더 경로를 직접 붙여넣어 주세요(가져오기 가드가 검증합니다).",
     importParentLabel: "대상 부모 디렉터리",
     importParentPick: "부모 디렉터리 선택",
     importNameLabel: "새 프로젝트 이름",
@@ -1389,7 +1376,6 @@ rolled_back: "롤백됨",
     guardPlanDrift: "가져오기 계획이 변경되었습니다. 계획을 다시 생성하세요.",
     guardExecutionFailed: "가져오기 실행에 실패했습니다.",
     guardFallback: "가져오기가 거부되었습니다.",
-    importNotWired: "복사 가져오기 실행은 아직 연결되지 않았습니다. 환경 읽기 면과 능력 면이 착지하면 활성화됩니다.",
     /** D-6 메모 섹션(project-ops v0.2 setNote.裁定 A: 행 내 보기 + 가벼운 편집).
      *  absent는 입구 미표시. unreadable은 읽기 전용. 성공은 읽기 면 재조회로 확인 */
     note: {
