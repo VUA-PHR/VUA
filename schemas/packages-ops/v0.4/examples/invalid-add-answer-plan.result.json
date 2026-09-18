@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addRemoteRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.4",
+    "kind": "plan",
+    "projectPath": "C:/Users/dev/VUA/projects/Alpha",
+    "items": [],
+    "conflicts": [],
+    "removeLegacyFiles": [],
+    "removeLegacyFolders": [],
+    "destructive": false,
+    "digest": "fnv1a-00000000"
+  }
+}

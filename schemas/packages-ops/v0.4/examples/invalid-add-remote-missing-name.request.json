@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addRemoteRepo",
+  "params": {
+    "url": "https://example.vpm/repos/official.json"
+  }
+}

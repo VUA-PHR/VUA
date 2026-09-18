@@ -933,6 +933,122 @@ export type PackagesRegisterResultV03 =
   | PackagesRegisterReceiptV03
   | PackagesRegisterRejectedV03;
 
+/* ---- 026 A4 写面(packages-ops v0.4,核心冻结批 2026-09-19)。仓库
+ *  订阅增删面三方法:packages.addRemoteRepo / packages.addLocalRepo /
+ *  packages.removeRepo,各一一映射端口方法(add_remote_repo /
+ *  add_local_repo / remove_repo)。照 A3 同律破 preview/apply 对偶——
+ *  本面无 preview 臂:远端订阅天然含清单拉取网络段(预览无法在不做同
+ *  样网络工作的前提下验证可达性),且无既有状态摘要可绑定(订阅列表
+ *  可漂移,诚实失败模式=执行时端口答 repo_not_found,绝非摘要仪式);
+ *  九态任务化写命令(写命令族一致形状;远端网络段使可取消性成为实质)。
+ *  订阅面只写后端隔离环境(A3 同事实:绝不触用户 VCC/ALCOM 设置、
+ *  不触项目)——三方法均不收 projectPath,013 project_not_found 复用
+ *  对本面不适用。用户显式提交即确认(A3/A5 同向;删除订阅行不删任何
+ *  包文件与项目内容,ADR-0006 破坏性警示路径不适用;携 confirmedDigest
+ *  =形状违反,负例钉死)。rejected 臂 guard 闭集零新增(照 A1/A2/A3
+ *  折叠纪律——全部端口拒绝折 execution_failed 携原码 detail 溯源:
+ *  vua.vpm.repo_invalid / repo_not_found / repo_fetch_failed /
+ *  repo_write_failed;复用码永不入 rejected code 键)。served 能力位 =
+ *  新 default accessor repo_write_capabilities() 三独立位门控(default
+ *  declared-none,025 catalog_capabilities 同律;packages.repoOps 一行
+ *  服务三方法,removeOps/installOps/registerOps 一行先例;VrcGetLib
+ *  覆写随环境实现核对切片);wire 路由候核心接线切片。首期词面不收
+ *  HTTP 头/凭据传输(未来收凭据的面需另立安全裁决);启停(enable/
+ *  disable)不在任何已冻结词面内,候 W25 VCC 禁用列表键名真机核实;
+ *  重排不在本面(增删先行裁决词面) */
+
+/** packages.addRemoteRepo:任务化远端仓库订阅写命令(command;
+ *  params 双键闭集 {url, name}=仓库 URL＋必填显示名;无 projectPath、
+ *  无 digest 位;首期词面不收 HTTP 头/凭据) */
+export interface PackagesAddRemoteRepoCommandV04 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.addRemoteRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly url: string;
+    readonly name: string;
+  };
+}
+
+/** packages.addLocalRepo:任务化本地目录仓库订阅写命令(command;
+ *  params 双键闭集 {path, name};无网络段) */
+export interface PackagesAddLocalRepoCommandV04 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.addLocalRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly path: string;
+    readonly name: string;
+  };
+}
+
+/** packages.removeRepo:任务化订阅移除写命令(command;
+ *  params 单键闭集 {repoId}=仓库 id(稳定行柄;索引寻址不冻结——索引
+ *  在并发写下漂移);未知 repoId=执行时端口答 repo_not_found;id 缺席
+ *  行在本词面移除可达范围之外(协议本载明的诚实边界)) */
+export interface PackagesRemoveRepoCommandV04 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.removeRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
+/** kind=repoReceipt(A4 添加收据)remote 变体:最小诚实审计形状——端口
+ *  答 Result<(), _> 无载荷,收据只携请求回显(url＋name);键集与
+ *  local 变体互斥,与一切前代收据臂互斥;additionalProperties:false
+ *  禁止发明时间戳/行位/清单内容 */
+export interface PackagesRemoteRepoAddedV04 {
+  readonly schemaVersion: "vua.packages-ops/v0.4";
+  readonly kind: "repoReceipt";
+  readonly repoType: "remote";
+  readonly url: string;
+  readonly name: string;
+}
+
+/** kind=repoReceipt(A4 添加收据)local 变体:path＋name 回显;键集与
+ *  remote 变体互斥 */
+export interface PackagesLocalRepoAddedV04 {
+  readonly schemaVersion: "vua.packages-ops/v0.4";
+  readonly kind: "repoReceipt";
+  readonly repoType: "local";
+  readonly path: string;
+  readonly name: string;
+}
+
+/** kind=removed(A4 移除收据):被删行 repoId 回显——本面唯一事实(端口
+ *  答 unit;回显即审计链;不发明被删行快照——行可携本面从不过手的
+ *  id 缺席事实);键集与一切收据臂互斥 */
+export interface PackagesRepoRemovedV04 {
+  readonly schemaVersion: "vua.packages-ops/v0.4";
+  readonly kind: "removed";
+  readonly repoId: string;
+}
+
+export interface PackagesRepoRejectedV04 {
+  readonly schemaVersion: "vua.packages-ops/v0.4";
+  readonly kind: "rejected";
+  readonly guard: PackagesGuardV02;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern);原端口码
+   *  (vua.vpm.repo_invalid / repo_not_found / repo_fetch_failed /
+   *  repo_write_failed)在 detail 原词溯源,不入 code 键 */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesAddRemoteRepoResultV04 =
+  | PackagesRemoteRepoAddedV04
+  | PackagesRepoRejectedV04;
+
+export type PackagesAddLocalRepoResultV04 =
+  | PackagesLocalRepoAddedV04
+  | PackagesRepoRejectedV04;
+
+export type PackagesRemoveRepoResultV04 =
+  | PackagesRepoRemovedV04
+  | PackagesRepoRejectedV04;
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -1924,6 +2040,9 @@ export type ApplicationRequestV01 =
   | PackagesPreviewInstallQueryV02
   | PackagesApplyInstallCommandV02
   | PackagesRegisterCommandV03
+  | PackagesAddRemoteRepoCommandV04
+  | PackagesAddLocalRepoCommandV04
+  | PackagesRemoveRepoCommandV04
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -2067,6 +2186,9 @@ export type ApplicationSuccessValueV01 =
   | PackagesRemoveResultV01
   | PackagesInstallResultV02
   | PackagesRegisterResultV03
+  | PackagesAddRemoteRepoResultV04
+  | PackagesAddLocalRepoResultV04
+  | PackagesRemoveRepoResultV04
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV01;
 
@@ -2466,6 +2588,37 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       return false;
     }
     return typeof value.params.packageRoot === "string" && value.params.packageRoot.length > 0;
+  }
+  // 026 A4 写面(核心冻结批 2026-09-19):仓库订阅增删面三命令。
+  // addRemoteRepo = 双键闭集 {url, name}(均非空;无 projectPath——订阅
+  // 面只写后端隔离环境;无 digest 位——携即形状违反;首期词面不收
+  // HTTP 头/凭据);addLocalRepo = 双键闭集 {path, name}(无网络段);
+  // removeRepo = 单键闭集 {repoId}(稳定行柄,非空;索引寻址不冻结)
+  if (value.kind === "command" && value.method === "packages.addRemoteRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["url", "name"])) {
+      return false;
+    }
+    return typeof value.params.url === "string" && value.params.url.length > 0
+      && typeof value.params.name === "string" && value.params.name.length > 0;
+  }
+  if (value.kind === "command" && value.method === "packages.addLocalRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["path", "name"])) {
+      return false;
+    }
+    return typeof value.params.path === "string" && value.params.path.length > 0
+      && typeof value.params.name === "string" && value.params.name.length > 0;
+  }
+  if (value.kind === "command" && value.method === "packages.removeRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["repoId"])) {
+      return false;
+    }
+    return typeof value.params.repoId === "string" && value.params.repoId.length > 0;
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {
