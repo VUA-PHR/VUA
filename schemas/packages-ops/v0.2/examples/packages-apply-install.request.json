@@ -1,0 +1,18 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.applyInstall",
+  "params": {
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "packages": [
+      {
+        "packageId": "com.lilxyzw.liltoon",
+        "version": null
+      },
+      {
+        "packageId": "com.another.toolkit",
+        "version": "3.1.4"
+      }
+    ],
+    "confirmedDigest": "fnv1a-7f3a91c2"
+  }
+}

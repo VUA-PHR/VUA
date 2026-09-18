@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.previewInstall",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.2",
+    "kind": "receipt",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "confirmedDigest": "fnv1a-7f3a91c2",
+    "requestedPackages": [
+      {
+        "packageId": "com.lilxyzw.liltoon",
+        "version": null
+      }
+    ],
+    "appliedItems": []
+  }
+}

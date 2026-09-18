@@ -20,6 +20,8 @@ import {
   migrationSummaryKey,
   rangeSelect,
   relativeCheckedTime,
+  removeEnvelopeErrorKey,
+  removeGuardKey,
   repoHealthTextKeys,
   requestForVersion,
   rowStatus,
@@ -267,6 +269,34 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
   assert.ok("unknown" in strings.packages.changes.conflicts);
   assert.ok("vpmProject" in strings.packages.migration.summaries);
 });
+
+  test("removeGuardKey maps the frozen three-value closed set and falls back to unknown (026 A1)", () => {
+    assert.equal(removeGuardKey("preview_drift"), "preview_drift");
+    assert.equal(removeGuardKey("package_not_found"), "package_not_found");
+    assert.equal(removeGuardKey("execution_failed"), "execution_failed");
+    // 词外 guard:诚实回落 unknown,不猜测
+    assert.equal(removeGuardKey("plan_drift"), "unknown");
+    assert.equal(removeGuardKey(""), "unknown");
+  });
+
+  test("removeGuardKey unknown falls back maps to the i18n guards table without inventing words", () => {
+    // 四语 guards 表含恰四键(三码 + unknown),映射键闭集与 i18n 同步
+    const guards = strings.packages.remove.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+  });
+
+  test("removeEnvelopeErrorKey maps the declared reused codes and falls back to unknown", () => {
+    assert.equal(removeEnvelopeErrorKey("vua.project.project_not_found"), "projectNotFound");
+    assert.equal(removeEnvelopeErrorKey("vua.packages.package_not_found"), "packageNotFound");
+    assert.equal(removeEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(removeEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    // 词外码(vua.vpm.* 端口族透传/任务 error.code)回落 unknown 原词插值
+    assert.equal(removeEnvelopeErrorKey("vua.vpm.preview_drift"), "unknown");
+    assert.equal(removeEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+  });
 
 /* ---- 相对时间 ---- */
 
