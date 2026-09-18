@@ -1550,6 +1550,45 @@ rolled_back: "已回滚",
       },
       legacyTitle: "将被移除的旧版(legacy)目录",
     },
+    remove: {
+      title: "移除包",
+      column: "操作",
+      removedTitle: "将移除",
+      installedTitle: "将新装",
+      legacyTitle: "将顺带清理的遗留（legacy）文件/目录",
+      destructiveHint: "此操作存在破坏性（依赖冲突或遗留清理），请先阅读清单，确认按钮稍候解锁。",
+      confirm: "移除（{count} 个包）",
+      applying: "正在移除…任务进度可在任务中心查看。",
+      close: "关闭",
+      receiptTitle: "移除完成",
+      receiptSummary: "已移除 {count} 个包条目。",
+      receiptRemovedTitle: "实际移除",
+      receiptDigest: "确认指纹：{digest}",
+      rejectedTitle: "移除被拒绝",
+      rejectedDetail: "服务端说明：{detail}",
+      driftHint: "包清单在确认后发生了变化。请关闭后重新预览并再次确认；系统绝不会静默应用旧清单。",
+      guards: {
+        preview_drift: "确认的指纹与服务端复算的预览不一致，本次未移除任何内容；请重新预览并确认。",
+        package_not_found: "请求移除的包不在该项目的已安装集合中。",
+        execution_failed: "移除在执行阶段失败。",
+        unknown: "移除被拒绝。",
+      },
+      envelopeErrors: {
+        projectNotFound: "该项目已不在登记清单中，无法执行移除。",
+        packageNotFound: "请求移除的包不在该项目的已安装集合中。",
+        capabilityMissing: "当前引擎后端不支持移除操作。",
+        invalidParams: "移除请求形状无效。",
+        unknown: "操作失败。",
+      },
+      toasts: {
+        previewUnavailable: "无法生成移除预览：包管理引擎尚未接入。",
+        previewFailedUnknown: "无法生成移除预览（{code}）。",
+        nothingToRemove: "当前选择没有可移除的变更。",
+        applyFailedUnknown: "移除未能完成（{code}）。",
+        applyUnavailable: "移除未能完成：暂时无法确认结果；任务状态可在任务中心查看。",
+      },
+    },
+
     repos: {
       addCommunity: "添加社区仓库",
       riskTitle: "添加社区仓库之前",
@@ -1581,6 +1620,8 @@ rolled_back: "已回滚",
       loadFailed: "包管理引擎返回了错误（{code}）。",
       emptyInstalledDescription:
         "该项目还没有已安装的包。用{recipe}装配项目即可添加。",
+      noticeChangesOpen: "仓库与变更管理接入状态：已安装包可查看，移除操作已开放（随引擎能力提供）。",
+
     },
     p2: {
       notice:
@@ -1618,6 +1659,8 @@ rolled_back: "已回滚",
       compatibleYes: "兼容",
       compatibleNo: "不兼容",
       compatibleUnknown: "兼容性未知",
+      noticeChangesOpen: "仓库订阅与单包目录事实现已可读（P2），移除操作已开放；引擎未提供的数据相应区块不显示。",
+
     },
     empty: {
       engineTitle: "包管理尚未接入",

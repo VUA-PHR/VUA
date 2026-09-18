@@ -527,6 +527,43 @@ export interface PackagesPackageCatalogRequestV1 {
   readonly params: { readonly projectPath: string; readonly packageId: string };
 }
 
+// ---- packages-ops v0.1 写面 A1 移除(026 冻结批 d7f6a57 经第 99 批入库;
+// wire 接线批 41503a4 候验收;桌面 A1 消费批登记 2026-09-19。previewRemove
+// = 同步只读变更预览 query(双键闭集,packageIds 显式非空闭列 minItems 1 +
+// uniqueItems,无通配无「移除全部」速记;preview 参数无 digest 位——digest
+// 是 preview 的产物,携即形状违反);applyRemove = 九态任务化移除写命令
+// (三键闭集必携 confirmedDigest = previewRemove 结果 digest,服务端复算
+// 漂移即拒 preview_drift recoverable 冲突——ORC-WF-003/004 双摘要纪律,
+// 权威判定在服务端)。成功值为 wire 帧 { schemaVersion:"0.1", operation,
+// result } 包裹:previewRemove 恒答 kind=plan;applyRemove 受理回执
+// { taskId, correlationId }(import-copy 同构),审计收据 receipt / 类型化
+// 拒绝 rejected 随任务终态 Done payload 回流。词面权威 =
+// schemas/packages-ops/v0.1 + application-contract.ts A1 段 ----
+
+/** packages.previewRemove 只读查询:移除将造成的全部变更预览(含传递
+ *  依赖移除 ORC-WF-002)与摘要指纹;永不变更任何状态,失败走 wire 信封
+ *  错误(非 result 臂) */
+export interface PackagesPreviewRemoveRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.previewRemove";
+  readonly params: { readonly projectPath: string; readonly packageIds: readonly string[] };
+}
+
+/** packages.applyRemove 写命令:任务化受理(import-copy 同构);commandId
+ *  由 Kernel 生成(照 project.import-copy 先例,渲染层不传),幂等/可取消
+ *  /事件＋revision 语义归应用契约任务面 */
+export interface PackagesApplyRemoveRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.applyRemove";
+  readonly params: {
+    readonly projectPath: string;
+    readonly packageIds: readonly string[];
+    readonly confirmedDigest: string;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -577,7 +614,9 @@ export type DesktopGatewayRequestV1 =
   | ReleaseOpenForHandoffRequestV1
   | PackagesListInstalledRequestV1
   | PackagesListReposRequestV1
-  | PackagesPackageCatalogRequestV1;
+  | PackagesPackageCatalogRequestV1
+  | PackagesPreviewRemoveRequestV1
+  | PackagesApplyRemoveRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -632,6 +671,10 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // 025 P2 读面(桌面 P2 消费批):两方法只读同族
   "packages.listRepos": "query",
   "packages.packageCatalog": "query",
+  // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):preview 同步
+  // query,apply 任务化 command(Kernel 生成 commandId)
+  "packages.previewRemove": "query",
+  "packages.applyRemove": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -900,6 +943,15 @@ function isIdentifier(value: unknown): value is string {
   return typeof value === "string" && value.length > 0 && value.length <= 128;
 }
 
+/** packages-ops A1 冻结口径:packageIds 显式非空闭列(minItems 1 +
+ * uniqueItems,词表外键/重复项/空项均形状违反) */
+function isArrayNonEmptyUniqueIdentifiers(value: unknown): value is readonly string[] {
+  return Array.isArray(value)
+    && value.length > 0
+    && value.every((item) => isIdentifier(item))
+    && new Set(value).size === value.length;
+}
+
 function isNonNegativeInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
@@ -1087,6 +1139,24 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && value.params.projectPath.length >= 1
         && typeof value.params.packageId === "string"
         && value.params.packageId.length >= 1;
+    // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):packageIds =
+    // 显式非空闭列(minItems 1 + uniqueItems,冻结 Schema 口径,词表外
+    // 键拒绝);applyRemove 三键闭集必携 confirmedDigest(minLength 1),
+    // preview 参数无 digest 位;commandId 由 Kernel 生成不在 params
+    case "packages.previewRemove":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "packageIds"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1
+        && isArrayNonEmptyUniqueIdentifiers(value.params.packageIds);
+    case "packages.applyRemove":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath", "packageIds", "confirmedDigest"])
+        && typeof value.params.projectPath === "string"
+        && value.params.projectPath.length >= 1
+        && isArrayNonEmptyUniqueIdentifiers(value.params.packageIds)
+        && typeof value.params.confirmedDigest === "string"
+        && value.params.confirmedDigest.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

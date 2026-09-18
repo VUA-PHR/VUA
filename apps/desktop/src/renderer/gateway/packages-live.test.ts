@@ -480,6 +480,283 @@ describe("packages live port (025 v0.2 increment consumption update)", () => {
   });
 });
 
+
+/* ---- A1 移除写面消费(026 冻结词面 d7f6a57;wire 接线批 41503a4 世代) ---- */
+
+const VALID_PLAN = {
+  schemaVersion: "vua.packages-ops/v0.1",
+  kind: "plan",
+  projectPath: "C:/proj",
+  items: [{ kind: "remove", packageId: "com.vrchat.avatars", version: null, reason: null }],
+  conflicts: ["com.example.dependent depends on com.vrchat.avatars"],
+  removeLegacyFiles: [],
+  removeLegacyFolders: ["Packages/com.vrchat.avatars_legacy"],
+  destructive: true,
+  digest: "fnv-1a-abc123",
+};
+
+const VALID_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.1",
+  kind: "receipt",
+  projectPath: "C:/proj",
+  confirmedDigest: "fnv-1a-abc123",
+  requestedPackageIds: ["com.vrchat.avatars"],
+  removedItems: [{ kind: "remove", packageId: "com.vrchat.avatars", version: null, reason: null }],
+};
+
+const VALID_REJECTED = {
+  schemaVersion: "vua.packages-ops/v0.1",
+  kind: "rejected",
+  guard: "preview_drift",
+  code: "vua.packages.preview_drift",
+  detail: "confirmed digest fnv-1a-abc123 does not match the re-computed preview digest fnv-1a-def456",
+};
+
+function previewRemoveFrame(result: unknown): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.1", operation: "packages.previewRemove", result });
+}
+
+function acceptedFrame(taskId: string): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.1", operation: "packages.applyRemove", taskId, correlationId: "c-1" });
+}
+
+function taskSnapshotValue(state: string, extra: { result?: unknown; error?: unknown } = {}): DesktopGatewaySuccessValueV1 {
+  return asWire({
+    contractVersion: "0.1",
+    taskId: "t-1",
+    correlationId: "c-1",
+    revision: 2,
+    state,
+    cancellationRequested: false,
+    recoveryDisposition: "none",
+    updatedAt: "2026-09-19T00:00:00Z",
+    ...extra,
+  });
+}
+
+/** A1 流编排 client:preview/apply/task.get 分支可控;subscribe 支持
+ * task.completed 事件派发(020 终态等待通道)。 */
+function a1Client(overrides: {
+  snapshot?: Parameters<typeof appSnapshot>[0];
+  preview?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  apply?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  taskGet?: GatewayResult<DesktopGatewaySuccessValueV1>;
+} = {}): { client: GatewayClient; emitCompleted: (taskId: string) => void } {
+  const listeners = new Set<(event: unknown) => void>();
+  const client: GatewayClient = {
+    invoke: async (request) => {
+      if (request.method === "app.snapshot") {
+        return { ok: true, value: appSnapshot(overrides.snapshot ?? QUERY_AVAILABLE) };
+      }
+      if (request.method === "packages.previewRemove") {
+        return overrides.preview ?? { ok: true, value: previewRemoveFrame(VALID_PLAN) };
+      }
+      if (request.method === "packages.applyRemove") {
+        return overrides.apply ?? { ok: true, value: acceptedFrame("t-1") };
+      }
+      if (request.method === "task.get") {
+        return overrides.taskGet ?? { ok: true, value: taskSnapshotValue("running") };
+      }
+      return { ok: false, error: { kind: "unavailable" } as const };
+    },
+    subscribe: (callback) => {
+      listeners.add(callback as (event: unknown) => void);
+      return () => {
+        listeners.delete(callback as (event: unknown) => void);
+      };
+    },
+  };
+  return {
+    client,
+    emitCompleted: (taskId) => {
+      for (const listener of listeners) {
+        listener({ kind: "task.completed", taskId, payload: {} });
+      }
+    },
+  };
+}
+
+describe("packages live port A1 removal write face (026 consumption)", () => {
+  it("narrows the frozen nine-key plan verbatim (family const stamped, nulls projected as port facts)", async () => {
+    const { client } = a1Client();
+    const port = createLivePackages(client);
+    const outcome = await port.previewRemove("C:/proj", ["com.vrchat.avatars"]);
+    expect(outcome).toEqual({ kind: "ok", plan: VALID_PLAN });
+  });
+
+  it("answers unavailable on the absence arm and passes unknown-port codes verbatim as envelope errors", async () => {
+    const absent = a1Client({
+      preview: {
+        ok: false,
+        error: {
+          kind: "application",
+          error: {
+            contractVersion: "0.1",
+            code: "vua.packages.unavailable",
+            category: "unavailable",
+            messageKey: "errors.packages.unavailable",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c",
+          },
+        },
+      },
+    });
+    expect(
+      await createLivePackages(absent.client).previewRemove("C:/proj", ["com.vrchat.avatars"]),
+    ).toEqual({ kind: "unavailable" });
+    const notFound = a1Client({
+      preview: applicationError("vua.packages.package_not_found", "validation"),
+    });
+    expect(
+      await createLivePackages(notFound.client).previewRemove("C:/proj", ["com.vrchat.avatars"]),
+    ).toEqual({ kind: "failed", code: "vua.packages.package_not_found" });
+  });
+
+  it("answers shape violation when the plan invents a field or the result carries a foreign kind", async () => {
+    const invented = a1Client({
+      preview: {
+        ok: true,
+        value: previewRemoveFrame({ ...VALID_PLAN, updateAvailable: false }),
+      },
+    });
+    expect(
+      await createLivePackages(invented.client).previewRemove("C:/proj", ["com.vrchat.avatars"]),
+    ).toEqual({ kind: "failed", code: "packages_shape_violation" });
+    const foreignKind = a1Client({
+      preview: {
+        ok: true,
+        value: previewRemoveFrame({ ...VALID_PLAN, kind: "receipt" }),
+      },
+    });
+    expect(
+      await createLivePackages(foreignKind.client).previewRemove("C:/proj", ["com.vrchat.avatars"]),
+    ).toEqual({ kind: "failed", code: "packages_shape_violation" });
+  });
+
+  it("flips blocks.changes with the served packages.removeOps row (absent row stays false)", async () => {
+    const withRow = await createLivePackages(
+      a1Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.removeOps", availability: "available" },
+        ],
+      }).client,
+    ).snapshot();
+    assertReadyP2(withRow);
+    if (withRow.kind === "ready-p2") {
+      expect(withRow.blocks.changes).toBe(true);
+    }
+    const withoutRow = await createLivePackages(a1Client().client).snapshot();
+    assertReadyP2(withoutRow);
+    if (withoutRow.kind === "ready-p2") {
+      expect(withoutRow.blocks.changes).toBe(false);
+    }
+  });
+
+  it("rides the task loop: acceptance -> completed event -> succeeded snapshot with the receipt payload", async () => {
+    // task.get 序列:首取 running(非终态) -> task.completed 事件后重取 succeeded 携收据
+    const taskGetSequence: GatewayResult<DesktopGatewaySuccessValueV1>[] = [
+      { ok: true, value: taskSnapshotValue("running") },
+      {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.1", operation: "packages.applyRemove", result: VALID_RECEIPT },
+        }),
+      },
+    ];
+    let taskGetCalls = 0;
+    let subscribed = false;
+    const listeners = new Set<(event: unknown) => void>();
+    const client: GatewayClient = {
+      invoke: async (request) => {
+        if (request.method === "packages.applyRemove") {
+          return { ok: true, value: acceptedFrame("t-1") };
+        }
+        if (request.method === "task.get") {
+          const answer: GatewayResult<DesktopGatewaySuccessValueV1> =
+            taskGetSequence[Math.min(taskGetCalls, taskGetSequence.length - 1)] ?? {
+              ok: false,
+              error: { kind: "unavailable" },
+            };
+          taskGetCalls += 1;
+          return answer;
+        }
+        return { ok: false, error: { kind: "unavailable" } as const };
+      },
+      subscribe: (callback) => {
+        listeners.add(callback as (event: unknown) => void);
+        subscribed = true;
+        return () => {
+          listeners.delete(callback as (event: unknown) => void);
+        };
+      },
+    };
+    const port = createLivePackages(client);
+    const pending = port.applyRemove("C:/proj", ["com.vrchat.avatars"], "fnv-1a-abc123");
+    // 端口订阅建立后才派发 task.completed(020 事件通道语义:订阅先于事件)
+    while (!subscribed) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (const listener of listeners) listener({ kind: "task.completed", taskId: "t-1", payload: {} });
+    expect(await pending).toEqual({ kind: "ok", receipt: VALID_RECEIPT });
+  });
+
+  it("surfaces a rejected guard refusal (drift) as the typed rejection, never an error", async () => {
+    const flow = a1Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.1", operation: "packages.applyRemove", result: VALID_REJECTED },
+        }),
+      },
+    });
+    const port = createLivePackages(flow.client);
+    expect(await port.applyRemove("C:/proj", ["com.vrchat.avatars"], "fnv-1a-abc123")).toEqual({
+      kind: "rejected",
+      rejection: VALID_REJECTED,
+    });
+  });
+
+  it("reports a non-succeeded terminal state verbatim (task truth lives in the task center)", async () => {
+    const flow = a1Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("failed", {
+          error: {
+            contractVersion: "0.1",
+            code: "vua.provider.persistence_failed",
+            category: "internal",
+            messageKey: "errors.provider.persistence",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-1",
+          },
+        }),
+      },
+    });
+    const port = createLivePackages(flow.client);
+    expect(await port.applyRemove("C:/proj", ["com.vrchat.avatars"], "fnv-1a-abc123")).toEqual({
+      kind: "failed",
+      code: "vua.provider.persistence_failed",
+    });
+  });
+
+  it("answers acceptance shape violation and unavailable honestly (never fabricates a receipt)", async () => {
+    const badAcceptance = a1Client({
+      apply: { ok: true, value: asWire({ schemaVersion: "0.1", operation: "packages.applyRemove", taskId: "t-1" }) },
+    });
+    expect(
+      await createLivePackages(badAcceptance.client).applyRemove("C:/proj", ["com.vrchat.avatars"], "d"),
+    ).toEqual({ kind: "failed", code: "packages_apply_acceptance_shape" });
+    const absent = a1Client({
+      apply: applicationError("vua.packages.unavailable", "unavailable"),
+    });
+    expect(
+      await createLivePackages(absent.client).applyRemove("C:/proj", ["com.vrchat.avatars"], "d"),
+    ).toEqual({ kind: "unavailable" });
+  });
+});
+
+
 function assertReadyP2(view: PackagesView): void {
   expect(view.kind).toBe("ready-p2");
 }

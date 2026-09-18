@@ -340,12 +340,19 @@ fn b6_remove_roundtrip_is_digest_bound_and_honest_in_preview() {
     );
     assert!(!preview.destructive, "removing the only package breaks nothing");
 
-    // The double-digest discipline: a stale confirmation is refused.
+    // The double-digest discipline: a stale confirmation is refused as a
+    // typed RECOVERABLE conflict (026 A1 frozen word face: re-preview and
+    // re-confirm, never a silent overwrite — honesty rule 3 at the port).
     let forged = format!("sha256-deadbeef{}", &preview.digest[14..]);
     let error = backend
         .apply_remove(&project, &package_ids, &forged)
         .unwrap_err();
     assert_eq!(error.code, "vua.vpm.preview_drift");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Conflict);
+    assert!(
+        error.recoverable,
+        "digest drift is a recoverable conflict, never a terminal failure"
+    );
 
     backend
         .apply_remove(&project, &package_ids, &preview.digest)
@@ -356,6 +363,39 @@ fn b6_remove_roundtrip_is_digest_bound_and_honest_in_preview() {
     assert!(
         !manifest.contains("com.ph-r.vua.local.synthetic"),
         "the manifest no longer references the removed package"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The port removal receipt contract (026 A1 wiring, 2026-09-19): the
+/// backend answers `{"removed": items}` — the item array the wire layer
+/// lifts verbatim into the frozen audit receipt (`removedItems`). A result
+/// without that array is a port-contract violation the wire refuses; this
+/// test pins the shape the audit receipt's third part is sourced from.
+#[test]
+fn b6_apply_remove_receipt_carries_the_removed_items() {
+    let (backend, project, base) = installed_world("b6-remove-receipt");
+    let package_ids = vec!["com.ph-r.vua.local.synthetic".to_owned()];
+    let preview = backend.preview_remove(&project, &package_ids).unwrap();
+
+    let applied = backend
+        .apply_remove(&project, &package_ids, &preview.digest)
+        .unwrap();
+    let removed = applied
+        .get("removed")
+        .and_then(|value| value.as_array())
+        .expect("the port receipt carries the removed item array");
+    assert_eq!(removed.len(), preview.items.len());
+    let item = &removed[0];
+    assert_eq!(item["packageId"], "com.ph-r.vua.local.synthetic");
+    assert_eq!(item["kind"], "remove");
+    assert!(
+        item["version"].is_null(),
+        "removal items carry no target version"
+    );
+    assert!(
+        item["reason"].as_str().is_some_and(|reason| !reason.is_empty()),
+        "removal items carry the machine reason"
     );
     fs::remove_dir_all(&base).ok();
 }
