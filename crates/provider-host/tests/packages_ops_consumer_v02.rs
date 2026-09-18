@@ -271,6 +271,15 @@ fn ops_v02_schema_admits_positive_vectors_and_rejects_negative_ones() {
     // kind=plan exactly, never a task-terminal arm.
     let kind_mismatch = read_ops_json("schemas/packages-ops/v0.2/examples/invalid-preview-install-answer-receipt.result.json");
     assert!(!result.is_valid(&kind_mismatch), "previewInstall must never answer kind=receipt");
+
+    // The explicit closed request list: an exactly repeated row is a
+    // word-face violation at the SCHEMA layer too (uniqueItems). NOTE
+    // (026 A2 shape-approval pin-gap closure, wt-3 2026-09-19): the same
+    // id across rows with DIFFERENT versions is beyond JSON Schema's
+    // cross-row expressiveness — it is pinned by the TS guard narrowing
+    // and the wire-layer request check, never admitted end to end.
+    let duplicate_row = read_ops_json("schemas/packages-ops/v0.2/examples/invalid-install-package-row-duplicate.request.json");
+    assert!(!command.is_valid(&duplicate_row), "an exactly repeated request row must be invalid");
 }
 
 #[test]
