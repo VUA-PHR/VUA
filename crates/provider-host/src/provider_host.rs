@@ -122,6 +122,13 @@ struct HostState {
     use_cases: Option<Arc<ProductionUseCaseServices>>,
     project_ops: Option<Arc<ProjectOpsServices>>,
     environment: Option<Arc<EnvironmentServices>>,
+    /// In-session events published by the driven task runtimes (warehouse /
+    /// project-ops) awaiting wire emission. Drained by the frame loop; the
+    /// same store-backed events also persist, this channel only adds the
+    /// notification frame so Gateway consumers re-query authoritative
+    /// snapshots (contract "revision 与事件"). It is also the ONLY carrier of
+    /// `PersistenceFailed`, which by definition never persists.
+    runtime_events: Arc<Mutex<Vec<StoredTaskEvent>>>,
     /// The VPM engine face (proposal 024 P1, `packages.listInstalled`).
     /// Absent wiring answers a typed `vua.packages.unavailable` — honest
     /// absence, never a fabricated or padded listing.
@@ -695,7 +702,44 @@ pub fn run_provider_host_full(
         environment,
         editor_verify,
         vpm,
+        runtime_events: Arc::new(Mutex::new(Vec::new())),
     };
+
+    // Runtime event forwarding (poisoned visibility + warehouse/project-ops
+    // task notifications): one reader thread per driven runtime pushes
+    // published events into the shared queue; the frame loop drains it within
+    // its 100ms wake tick. The threads end with the process; the queue is
+    // bounded in practice by the runtimes' low-frequency event discipline.
+    {
+        let sink = state.runtime_events.clone();
+        let mut driven_runtimes: Vec<vua_orchestrator::TaskRuntime> = Vec::new();
+        if let Some(warehouse) = &state.warehouse {
+            driven_runtimes.push(warehouse.runtime.clone());
+        }
+        if let Some(project_ops) = &state.project_ops {
+            driven_runtimes.push(project_ops.runtime.clone());
+        }
+        for runtime in driven_runtimes {
+            let sink = sink.clone();
+            std::thread::spawn(move || {
+                let receiver = runtime.subscribe();
+                for event in receiver {
+                    let stored = StoredTaskEvent {
+                        task_id: event.task_id,
+                        revision: event.revision,
+                        kind: event.kind,
+                        state: event.state,
+                        occurred_at: event.occurred_at,
+                        correlation_id: event.correlation_id,
+                        payload: event.payload,
+                    };
+                    sink.lock()
+                        .expect("runtime events poisoned")
+                        .push(stored);
+                }
+            });
+        }
+    }
 
     // The reader runs on its own thread so the host can wake up between
     // frames: worker completion events reach an idle Gateway without it
@@ -775,6 +819,7 @@ pub fn run_provider_host_full(
             pending_events.extend(guard.drain(..));
             drop(guard);
         }
+        pending_events.extend(drain_runtime_events(&state));
         for event in pending_events {
             let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
             write_frame(&mut output, &event_id, "event", task_event(&event_id, &event))?;
@@ -1403,8 +1448,34 @@ fn handle_cancellation(
     }
 }
 
+/// True when a driven task runtime holds this task frozen by a persistence
+/// failure (honesty discipline #2): the store row is stuck at its last
+/// persisted state, so the served snapshot must not read as still
+/// progressing. The use-case runtime reuses the warehouse instance and needs
+/// no separate check.
+fn runtime_poisoned(state: &HostState, task_id: &str) -> bool {
+    let poisoned = |runtime: &TaskRuntime| {
+        runtime
+            .snapshot(task_id)
+            .map(|snapshot| snapshot.poisoned)
+            .unwrap_or(false)
+    };
+    state
+        .warehouse
+        .as_ref()
+        .map(|services| poisoned(&services.runtime))
+        .unwrap_or(false)
+        || state
+            .project_ops
+            .as_ref()
+            .map(|services| poisoned(&services.runtime))
+            .unwrap_or(false)
+}
+
 fn task_snapshot(state: &HostState, task: &StoredTask) -> Value {
-    let recovery = if state.recovered_nonterminal_tasks.contains(&task.task_id) {
+    let recovery = if state.recovered_nonterminal_tasks.contains(&task.task_id)
+        || runtime_poisoned(state, &task.task_id)
+    {
         "inspect_required"
     } else {
         "none"
@@ -1474,6 +1545,9 @@ fn task_event(event_id: &str, event: &StoredTaskEvent) -> Value {
             TaskEventKind::Progress => "task.progressed",
             TaskEventKind::CancelRequested => "task.cancellationRequested",
             TaskEventKind::Completed => "task.completed",
+            // In-session freeze notification: published by the runtime at the
+            // persistence failure and forwarded here; it is never stored.
+            TaskEventKind::PersistenceFailed => "task.persistenceFailed",
         },
         "state": state_name(event.state),
         "payload": event.payload,
@@ -7686,11 +7760,23 @@ fn write_pending_events(
         pending_events.extend(guard.drain(..));
         drop(guard);
     }
+    pending_events.extend(drain_runtime_events(state));
     for event in pending_events {
         let event_id = format!("sqlite-{}-{}", event.task_id, event.revision);
         write_frame(output, &event_id, "event", task_event(&event_id, &event))?;
     }
     Ok(())
+}
+
+/// Takes the runtime-published events queued by the forwarding threads.
+/// Called with `&mut HostState` (frame-loop ownership) — the Arc'd queue is
+/// only borrowed here, matching the other drains.
+fn drain_runtime_events(state: &HostState) -> Vec<StoredTaskEvent> {
+    let mut guard = state
+        .runtime_events
+        .lock()
+        .expect("runtime events poisoned");
+    std::mem::take(&mut *guard)
 }
 
 fn write_frame(
@@ -7944,6 +8030,7 @@ mod tests {
             environment: None,
             editor_verify: Arc::new(verify_editor_path_system),
             vpm: None,
+            runtime_events: Arc::new(Mutex::new(Vec::new())),
         };
 
         let prepare = InboundFrame {
@@ -8064,4 +8151,60 @@ mod tests {
             .expect("new demo task id");
         assert_ne!(new_task_id, task_id, "a fresh command id accepts a new task");
     }
+
+    #[test]
+    fn persistence_failed_events_map_to_their_wire_kind() {
+        let event = StoredTaskEvent {
+            task_id: "task-poison".into(),
+            revision: 4,
+            kind: TaskEventKind::PersistenceFailed,
+            state: TaskState::Running,
+            occurred_at: "2026-09-18T00:00:00.000Z".into(),
+            correlation_id: "corr-poison".into(),
+            payload: json!({"code": "vua.task.journal_write_failed"}),
+        };
+        let wire = task_event("runtime-task-poison-4", &event);
+        assert_eq!(wire["kind"], "task.persistenceFailed");
+        assert_eq!(wire["taskId"], "task-poison");
+        assert_eq!(wire["revision"], 4);
+    }
+
+    #[test]
+    fn runtime_event_queue_drains_completely() {
+        let state = HostState {
+            store: Arc::new(SqliteTaskStore::open_in_memory().unwrap()),
+            provider_instance_id: "provider-test".into(),
+            recovered_nonterminal_tasks: HashSet::new(),
+            production: None,
+            downloads: None,
+            warehouse: None,
+            use_cases: None,
+            project_ops: None,
+            environment: None,
+            editor_verify: Arc::new(verify_editor_path_system),
+            vpm: None,
+            runtime_events: Arc::new(Mutex::new(vec![StoredTaskEvent {
+                task_id: "task-x".into(),
+                revision: 2,
+                kind: TaskEventKind::StateChanged,
+                state: TaskState::Running,
+                occurred_at: "2026-09-18T00:00:00.000Z".into(),
+                correlation_id: "corr-x".into(),
+                payload: Value::Null,
+            }])),
+        };
+        let drained = drain_runtime_events(&state);
+        assert_eq!(drained.len(), 1);
+        assert_eq!(drained[0].task_id, "task-x");
+        assert!(
+            state
+                .runtime_events
+                .lock()
+                .expect("runtime events poisoned")
+                .is_empty(),
+            "drain must take the queue"
+        );
+        assert!(!runtime_poisoned(&state, "task-x"), "no runtime holds task-x");
+    }
 }
+

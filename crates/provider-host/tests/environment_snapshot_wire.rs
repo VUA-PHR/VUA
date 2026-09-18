@@ -46,7 +46,11 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
             vive: vec![base.join("vr/VIVE")],
             virtual_desktop: vec![base.join("vr/VirtualDesktop")],
             alvr: vec![base.join("vr/alvr")],
+            pimax: vec![base.join("vr/Pimax")],
+            varjo: vec![base.join("vr/Varjo")],
+            hp_omnicept: vec![base.join("vr/HP Omnicept Runtime")],
         },
+        openvrpaths: vec![base.join("openvr/openvrpaths.vrpath")],
         vcc_settings_candidates: vec![base.join("vcc/settings.json")],
     }
 }

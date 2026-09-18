@@ -226,6 +226,13 @@ pub struct TaskEventV1<P = serde_json::Value> {
 }
 
 /// Closed set of task event kinds for the minimal runtime.
+///
+/// `PersistenceFailed` is the one kind that is never persisted: it reports
+/// in-session that a mutation could not be committed (journal/SQLite write
+/// failure) and the task is frozen awaiting inspection. It exists so the
+/// frozen condition is visible as a failure at the moment it happens
+/// (honesty discipline #2) instead of only surfacing as `inspect_required`
+/// after the next restart.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum TaskEventKind {
@@ -234,4 +241,5 @@ pub enum TaskEventKind {
     Progress,
     CancelRequested,
     Completed,
+    PersistenceFailed,
 }

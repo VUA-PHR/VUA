@@ -4,7 +4,6 @@ import path from "node:path";
 import type {
   ApplicationEventV01,
   DownloadEventV01,
-  DownloadIngestReceiptV03,
   EditorSettingsV1,
   NavigationConfirmRequestV1,
   RemoteContentEventV1,
@@ -13,6 +12,7 @@ import { APPLICATION_CONTRACT_VERSION } from "@vua/contracts";
 import type { OrchestratorProviderV01 } from "@vua/orchestrator-provider";
 import { routeDesktopGatewayInvoke } from "./gateway-router.js";
 import { DownloadPort } from "./download-port.js";
+import { createDownloadEventSink } from "./download-ingest.js";
 import { RemoteContentManager } from "./remote-content.js";
 import { createDesktopOrchestratorProvider } from "./provider-bootstrap.js";
 import {
@@ -460,56 +460,35 @@ async function createWindow(): Promise<void> {
 
   // 下载端口(F4-3/F4-4):will-download 接管 + 冻结词表事件规范化。事件汇
   // 按传输定案批量投递 download.ingest(at-least-once:回执裁剪缓冲 + BDL
-  // 去重;握手未声明下载域时诚实降级写诊断通道)。暂存根跟随用户数据目录
-  // 布局,由注入决定,端口不自选策略
-  const buffer: DownloadEventV01[] = [];
-  let flushTimer: NodeJS.Timeout | null = null;
-  const flushIngest = async (): Promise<void> => {
-    if (buffer.length === 0 || provider === null) return;
-    const batch = buffer.splice(0, buffer.length);
-    try {
-      const response = await provider.invoke({
-        contractVersion: APPLICATION_CONTRACT_VERSION,
-        requestId: crypto.randomUUID(),
-        correlationId: crypto.randomUUID(),
-        commandId: crypto.randomUUID(),
-        kind: "command",
-        method: "download.ingest",
-        params: { schemaVersion: "0.1", events: batch },
-      });
-      if (!response.ok) throw new Error(response.error.code);
-      const receipt = response.value as unknown as DownloadIngestReceiptV03;
-      for (const rejected of receipt.rejected) {
-        // 单条非法事件死信(不毒化整批);诊断通道留痕
-        process.stderr.write(`${JSON.stringify({ channel: "download-events", deadLetter: rejected })}\n`);
+  // 去重;投递失败按指数退避自主重试,不依赖后续新事件——抽至
+  // download-ingest.ts,行为有单测)。握手未声明下载域时诚实降级写诊断
+  // 通道。暂存根跟随用户数据目录布局,由注入决定,端口不自选策略
+  const ingestSink = createDownloadEventSink({
+    invoke: (params) => {
+      if (provider === null) {
+        return Promise.reject(new Error("provider is not running"));
       }
-    } catch (error) {
-      // 投递失败:整批回灌,等待下次冲刷(at-least-once)
-      buffer.unshift(...batch);
-      process.stderr.write(`${JSON.stringify({ channel: "download-events", ingestRetry: String(error) })}\n`);
-    }
-  };
-  const scheduleFlush = (): void => {
-    if (flushTimer !== null || buffer.length === 0) return;
-    flushTimer = setTimeout(() => {
-      flushTimer = null;
-      void flushIngest();
-    }, 1_000);
-  };
+      return provider
+        .invoke({
+          contractVersion: APPLICATION_CONTRACT_VERSION,
+          requestId: crypto.randomUUID(),
+          correlationId: crypto.randomUUID(),
+          commandId: crypto.randomUUID(),
+          kind: "command",
+          method: "download.ingest",
+          params,
+        })
+        .then((response) =>
+          response.ok
+            ? { ok: true as const, value: response.value }
+            : Promise.reject(new Error(response.error.code)),
+        );
+    },
+  });
   const downloadSink = {
     emit: (event: DownloadEventV01): void => {
       if (providerHandshake?.downloadIngest === true) {
-        buffer.push(event);
-        if (buffer.length > 1_000) buffer.splice(0, buffer.length - 1_000);
-        if (buffer.length >= 20) {
-          if (flushTimer !== null) {
-            clearTimeout(flushTimer);
-            flushTimer = null;
-          }
-          void flushIngest();
-        } else {
-          scheduleFlush();
-        }
+        ingestSink.emit(event);
       } else {
         process.stderr.write(`${JSON.stringify({ channel: "download-events", ...event })}\n`);
       }

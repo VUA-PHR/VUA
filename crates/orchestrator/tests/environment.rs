@@ -43,7 +43,11 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
             vive: vec![base.join("vr/VIVE")],
             virtual_desktop: vec![base.join("vr/VirtualDesktop")],
             alvr: vec![base.join("vr/alvr")],
+            pimax: vec![base.join("vr/Pimax")],
+            varjo: vec![base.join("vr/Varjo")],
+            hp_omnicept: vec![base.join("vr/HP Omnicept Runtime")],
         },
+        openvrpaths: vec![base.join("openvr/openvrpaths.vrpath")],
         vcc_settings_candidates: vec![base.join("vcc/settings.json")],
     }
 }
@@ -343,13 +347,130 @@ fn orc_env_headset_runtime_presence_checks_are_independent_findings() {
         find(&items, "oculus_runtime").facts["root"],
         base.join("vr/Oculus").to_string_lossy().to_string()
     );
-    for id in ["pico_runtime", "vive_runtime", "virtual_desktop", "alvr"] {
+    for id in [
+        "pico_runtime",
+        "vive_runtime",
+        "virtual_desktop",
+        "alvr",
+        "psvr2",
+        "bigscreen_beyond",
+        "pimax_runtime",
+        "varjo_runtime",
+        "hp_omnicept",
+    ] {
         let item = find(&items, id);
         assert_eq!(item.presence, EnvironmentPresence::NotDetected, "{id}");
         assert_eq!(item.error_code, None, "{id}: missing is a finding");
     }
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_new_brand_runtimes_detect_via_candidate_roots() {
+    // Pimax / Varjo / HP Omnicept are plain candidate-root presence
+    // checks (VRCFT module-library hardware coverage, 2026-09-18).
+    let base = unique_dir("vr-brands");
+    for dir in ["vr/Pimax", "vr/Varjo", "vr/HP Omnicept Runtime"] {
+        fs::create_dir_all(base.join(dir)).unwrap();
+    }
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    for (id, dir) in [
+        ("pimax_runtime", "vr/Pimax"),
+        ("varjo_runtime", "vr/Varjo"),
+        ("hp_omnicept", "vr/HP Omnicept Runtime"),
+    ] {
+        let item = find(&items, id);
+        assert_eq!(item.presence, EnvironmentPresence::Detected, "{id}");
+        assert_eq!(
+            item.facts["root"],
+            base.join(dir).to_string_lossy().to_string(),
+            "{id}"
+        );
+    }
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_psvr2_and_bigscreen_detect_via_steam_library_dirs() {
+    // Both ship as Steam apps (PSVR2 app 2580190, Bigscreen Beyond driver
+    // tool 2467050): presence = the install directory under a discovered
+    // Steam library root.
+    let base = unique_dir("vr-steam-lib");
+    fs::create_dir_all(base.join("steam/steamapps/common/PlayStation VR2 App")).unwrap();
+    fs::create_dir_all(base.join("steam/steamapps/common/Bigscreen Beyond Driver")).unwrap();
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let psvr2 = find(&items, "psvr2");
+    assert_eq!(psvr2.presence, EnvironmentPresence::Detected);
+    assert_eq!(
+        psvr2.facts["root"],
+        base.join("steam")
+            .join("steamapps")
+            .join("common")
+            .join("PlayStation VR2 App")
+            .to_string_lossy()
+            .to_string()
+    );
+    assert_eq!(
+        find(&items, "bigscreen_beyond").presence,
+        EnvironmentPresence::Detected
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_alvr_detects_via_openvrpaths_external_driver_registration() {
+    // ALVR has no fixed install root: the documented presence signal is
+    // its vrpathreg external-driver registration in openvrpaths.vrpath
+    // (matching is case-insensitive).
+    let base = unique_dir("alvr-openvr");
+    let openvrpaths = base.join("openvr/openvrpaths.vrpath");
+    fs::create_dir_all(openvrpaths.parent().unwrap()).unwrap();
+    fs::write(
+        &openvrpaths,
+        serde_json::json!({ "external_drivers": ["E:\\Tools\\ALVR-Streamer"] }).to_string(),
+    )
+    .unwrap();
+    let engine = engine_with(synthetic_roots(&base), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let alvr = find(&items, "alvr");
+    assert_eq!(alvr.presence, EnvironmentPresence::Detected);
+    assert_eq!(alvr.facts["registeredDriver"], "E:\\Tools\\ALVR-Streamer");
+
+    // An absent openvrpaths file is a normal not-detected finding, never
+    // an error.
+    let base2 = unique_dir("alvr-absent");
+    let engine = engine_with(synthetic_roots(&base2), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let alvr = find(&items, "alvr");
+    assert_eq!(alvr.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(alvr.error_code, None, "absent file is a finding");
+
+    // A present-but-unobservable openvrpaths file is a detection failure
+    // with a stable code.
+    let base3 = unique_dir("alvr-garbled");
+    let openvrpaths3 = base3.join("openvr/openvrpaths.vrpath");
+    fs::create_dir_all(openvrpaths3.parent().unwrap()).unwrap();
+    fs::write(&openvrpaths3, "not json at all").unwrap();
+    let engine = engine_with(synthetic_roots(&base3), default_runner());
+    let items = engine.inspect_zone(Zone::Play);
+    let alvr = find(&items, "alvr");
+    assert_eq!(alvr.presence, EnvironmentPresence::DetectionFailed);
+    assert_eq!(
+        alvr.error_code.as_deref(),
+        Some(env_error_codes::READ_FAILED)
+    );
+    for b in [&base, &base2, &base3] {
+        if b.exists() {
+            fs::remove_dir_all(b).unwrap();
+        }
     }
 }
 
@@ -627,7 +748,7 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
     // (`expected_play = index <= 12`) silently desynced whenever the check
     // set changed. disk_space reports per zone (assignment 2026-09-11
     // lists disk under play AND create; same stable id at both tails).
-    let expected: [(&str, Zone); 18] = [
+    let expected: [(&str, Zone); 23] = [
         ("steam", Zone::Play),
         ("vrchat", Zone::Play),
         ("steamvr", Zone::Play),
@@ -637,6 +758,11 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
         ("vive_runtime", Zone::Play),
         ("virtual_desktop", Zone::Play),
         ("alvr", Zone::Play),
+        ("psvr2", Zone::Play),
+        ("bigscreen_beyond", Zone::Play),
+        ("pimax_runtime", Zone::Play),
+        ("varjo_runtime", Zone::Play),
+        ("hp_omnicept", Zone::Play),
         ("network", Zone::Play),
         ("windows", Zone::Play),
         ("gpu", Zone::Play),
