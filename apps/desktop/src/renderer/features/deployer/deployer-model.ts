@@ -11,7 +11,9 @@
  * 字符串 key + 插值参数,由表现层查表展开。
  */
 
-export type CheckStatus = "ok" | "warning" | "error";
+/** info = 中性事实项:未安装的可选项(同属替代组且组已被其它成员满足),
+ *  不构成待办、不点亮红绿灯警示色 */
+export type CheckStatus = "ok" | "warning" | "error" | "info";
 
 /** 部署器辖区:play = 游玩环境,create = 创作环境(与 strings.deployer.zones 键一致) */
 export type CheckZone = "play" | "create";
@@ -26,6 +28,40 @@ export interface CheckItem {
   description: string;
   /** 单项修复入口文案,动词短语;无修复入口时省略 */
   fixLabel?: string;
+  /** 替代组 id(CHECK_GROUPS):同组任一成员 detected 即满足整组;
+   *  无 groupId 的项独立计数 */
+  groupId?: string;
+}
+
+/**
+ * 替代组注册表(消费侧呈现决策,契约授权消费侧做严重度裁决):
+ * 同组检查项互为替代关系——VRChat 游玩只需要其中任一可用路径,
+ * 缺装未拥有的品牌运行时不是问题。引擎只报各项在场事实,
+ * "任选其一"的归组与计数属于本层。
+ * 当前唯一组:游玩辖区的 VR 运行时与串流(引擎 inspect_zone 七项)。
+ */
+export const CHECK_GROUPS = [
+  {
+    id: "vr_runtime",
+    zone: "play",
+    memberIds: [
+      "steamvr",
+      "openxr_runtime",
+      "oculus_runtime",
+      "pico_runtime",
+      "vive_runtime",
+      "virtual_desktop",
+      "alvr",
+    ],
+  },
+] as const;
+
+/** 替代组裁决:任一成员 ok → 整组 ok;无 ok 且有检测失败成员 → error;
+ *  全部未检测到 → warning(一张待办卡,而非每成员一张) */
+export function summarizeGroup(members: readonly CheckItem[]): Exclude<CheckStatus, "info"> {
+  if (members.some((item) => item.status === "ok")) return "ok";
+  if (members.some((item) => item.status === "error")) return "error";
+  return "warning";
 }
 
 /** 结论文案 key:"ready" 取辖区 readyHeadline;"pending" 取 summary.pending 并展开 {count};
@@ -37,7 +73,8 @@ export type CtaKey = "enterNext" | "fixAll";
 
 export interface HealthSummary {
   ready: boolean;
-  /** 未就绪项数量(warning 与 error 都计入) */
+  /** 未就绪项数量(warning 与 error 计入;未满足的替代组整组计 1 项;
+   *  info 中性项不计入) */
   pendingCount: number;
   /** 汇总后的最差状态,驱动英雄区状态灯;空列表为 "unknown"(无数据,非"正常") */
   overall: CheckStatus | "unknown";
@@ -59,19 +96,35 @@ export function summarizeHealth(items: CheckItem[]): HealthSummary {
       ctaKey: "fixAll",
     };
   }
-  const pending = items.filter((item) => item.status !== "ok");
-  const ready = pending.length === 0;
-  const overall: CheckStatus = items.some((item) => item.status === "error")
-    ? "error"
-    : pending.length > 0
-      ? "warning"
-      : "ok";
+  // 替代组整组计数:组满足(任一成员 ok)时组内其余非 ok 成员是可选事实,
+  // 不产生待办;组未满足时整组只计 1 项待办(任选其一即可,不逐项告警)
+  const ungrouped = items.filter((item) => item.groupId === undefined);
+  const groups = new Map<string, CheckItem[]>();
+  for (const item of items) {
+    if (item.groupId === undefined) continue;
+    const members = groups.get(item.groupId);
+    if (members) members.push(item);
+    else groups.set(item.groupId, [item]);
+  }
+  const ungroupedPending = ungrouped.filter(
+    (item) => item.status === "warning" || item.status === "error",
+  ).length;
+  const groupVerdicts = [...groups.values()].map(summarizeGroup);
+  const unsatisfiedGroups = groupVerdicts.filter((verdict) => verdict !== "ok").length;
+  const pendingCount = ungroupedPending + unsatisfiedGroups;
+  const ready = pendingCount === 0;
+  const overall: CheckStatus =
+    ungrouped.some((item) => item.status === "error") || groupVerdicts.includes("error")
+      ? "error"
+      : pendingCount > 0
+        ? "warning"
+        : "ok";
   return {
     ready,
-    pendingCount: pending.length,
+    pendingCount,
     overall,
     headlineKey: ready ? "ready" : "pending",
-    headlineParams: { count: pending.length },
+    headlineParams: { count: pendingCount },
     ctaKey: ready ? "enterNext" : "fixAll",
   };
 }

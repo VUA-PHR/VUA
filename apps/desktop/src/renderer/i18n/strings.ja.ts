@@ -33,6 +33,7 @@ export const strings: Strings = {
     warning: "確認が必要",
     error: "修復が必要",
     unknown: "不明",
+    info: "任意",
   },
   taskStatus: {
     queued: "待機中",
@@ -333,6 +334,18 @@ demoTaskTitle: "デモタスク",
       detected: "検出済み",
       notDetected: "未検出",
       detectionFailed: "検出失敗",
+      /** 代替グループ充足時、残りの未検出メンバーの中立ステータス(任意・非タスク) */
+      optional: "未検出(任意)",
+    },
+    /** 代替グループ文案(CHECK_GROUPS):グループごとに1枚のカード、キーはグループ id に対応 */
+    groups: {
+      vrRuntime: {
+        title: "VR ランタイム・ストリーミング",
+        badge: "いずれか一つ",
+        satisfied: "利用可能なランタイムを {count} 個検出しました。いずれか一つでプレイできます。",
+        unsatisfied:
+          "利用可能な VR ランタイムが検出されませんでした。以下のいずれかをインストールするとプレイできます。",
+      },
     },
     fix: {
       loading: "修復計画を生成中…",

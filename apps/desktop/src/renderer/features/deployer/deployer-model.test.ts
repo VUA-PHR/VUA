@@ -3,9 +3,11 @@ import { test } from "vitest";
 import { format } from "../../i18n/format.ts";
 import { strings } from "../../i18n/strings.zh-CN.ts";
 import {
+  CHECK_GROUPS,
   creatorEnvReady,
   neverChecked,
   relativeTimeKey,
+  summarizeGroup,
   summarizeHealth,
   type CheckItem,
   type DeployerView,
@@ -72,6 +74,85 @@ test("ready headline resolves through the zone string table", () => {
   const summary = summarizeHealth([createOk("a")]);
   assert.equal(summary.headlineKey, "ready");
   assert.equal(strings.deployer.zones.create.readyHeadline, "可以开始制作 Avatar 了");
+});
+
+/* ---- 替代组(CHECK_GROUPS):VR 运行时任选其一 ---- */
+
+const grouped = (id: string, status: CheckItem["status"]): CheckItem => ({
+  ...ok(id),
+  status,
+  groupId: "vr_runtime",
+});
+
+test("替代组注册表:vr_runtime 组覆盖引擎七项运行时检查", () => {
+  const group = CHECK_GROUPS.find((entry) => entry.id === "vr_runtime");
+  assert.ok(group);
+  assert.equal(group.zone, "play");
+  assert.deepEqual([...group.memberIds].sort(), [
+    "alvr",
+    "oculus_runtime",
+    "openxr_runtime",
+    "pico_runtime",
+    "steamvr",
+    "virtual_desktop",
+    "vive_runtime",
+  ]);
+});
+
+test("组已满足:未安装成员是 info 中性项,不产生待办,整组绿灯", () => {
+  // 用户场景(2026-09-18):SteamVR/Oculus/PICO 已检测到,
+  // VIVE/Virtual Desktop/ALVR 未安装不应再"还差 3 项"
+  const items = [
+    ok("steam"),
+    grouped("steamvr", "ok"),
+    grouped("oculus_runtime", "ok"),
+    grouped("vive_runtime", "info"),
+    grouped("virtual_desktop", "info"),
+    grouped("alvr", "info"),
+  ];
+  const summary = summarizeHealth(items);
+  assert.equal(summary.ready, true);
+  assert.equal(summary.pendingCount, 0);
+  assert.equal(summary.overall, "ok");
+  assert.equal(summary.headlineKey, "ready");
+});
+
+test("组未满足:整组只计 1 项待办,而非每成员一项", () => {
+  const items = [
+    ok("steam"),
+    grouped("steamvr", "warning"),
+    grouped("oculus_runtime", "warning"),
+    grouped("vive_runtime", "warning"),
+  ];
+  const summary = summarizeHealth(items);
+  assert.equal(summary.ready, false);
+  assert.equal(summary.pendingCount, 1);
+  assert.equal(summary.overall, "warning");
+  assert.equal(format(strings.deployer.summary.pending, summary.headlineParams), "还差 1 项准备");
+});
+
+test("组未满足且有成员检测失败:整组计 1 项,总览升 error(观测失败不降级)", () => {
+  const items = [grouped("steamvr", "warning"), grouped("alvr", "error")];
+  const summary = summarizeHealth(items);
+  assert.equal(summary.pendingCount, 1);
+  assert.equal(summary.overall, "error");
+});
+
+test("summarizeGroup 裁决:任一 ok 即组 ok;无 ok 有 error 即 error;否则 warning", () => {
+  assert.equal(summarizeGroup([grouped("a", "info"), grouped("b", "ok")]), "ok");
+  assert.equal(summarizeGroup([grouped("a", "warning"), grouped("b", "error")]), "error");
+  assert.equal(summarizeGroup([grouped("a", "warning"), grouped("b", "info")]), "warning");
+  // 组已满足时残留的检测失败成员不拖垮组裁决(成员行仍以红灯如实呈现)
+  assert.equal(summarizeGroup([grouped("a", "ok"), grouped("b", "error")]), "ok");
+});
+
+test("info 中性项不计待办;独立项行为不变(回归)", () => {
+  const summary = summarizeHealth([
+    { ...ok("a"), status: "info" },
+    { ...ok("b"), status: "warning" },
+  ]);
+  assert.equal(summary.pendingCount, 1);
+  assert.equal(summary.overall, "warning");
 });
 
 test("creator readiness: not-run is never ready", () => {

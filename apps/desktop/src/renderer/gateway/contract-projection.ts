@@ -7,7 +7,13 @@ import {
   type TaskStateV01,
 } from "@vua/contracts";
 import type { TaskStatus } from "../app/task-status.ts";
-import type { CheckItem, CheckStatus, CheckZone, DeployerView } from "../features/deployer/deployer-model.ts";
+import {
+  CHECK_GROUPS,
+  type CheckItem,
+  type CheckStatus,
+  type CheckZone,
+  type DeployerView,
+} from "../features/deployer/deployer-model.ts";
 import type { EnvironmentView } from "./environment-port.ts";
 import type { WorkflowRunState } from "./workflow.ts";
 import type { TaskItem } from "./task-port.ts";
@@ -59,6 +65,7 @@ export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
 /**
  * 在场事实 → 部署器严重度的消费侧缺省裁决(契约明确严重度由消费侧决定):
  * detected → ok,not_detected → warning,detection_failed → error。
+ * 替代组(CHECK_GROUPS)成员在投影后由 applyCheckGroups 按组满意度二次裁决。
  * F6 环境切片引入检查项文案注册表后,此缺省由注册表替换。
  */
 const PRESENCE_SEVERITY: Readonly<Record<EnvironmentPresenceV01, CheckStatus>> = {
@@ -67,7 +74,13 @@ const PRESENCE_SEVERITY: Readonly<Record<EnvironmentPresenceV01, CheckStatus>> =
   detection_failed: "error",
 };
 
+/** checkId → 替代组 id(注册表派生;未注册的检查项不属于任何组) */
+const CHECK_GROUP_OF: ReadonlyMap<string, string> = new Map(
+  CHECK_GROUPS.flatMap((group) => group.memberIds.map((memberId) => [memberId, group.id] as const)),
+);
+
 function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
+  const groupId = CHECK_GROUP_OF.get(item.checkId);
   return {
     id: item.checkId,
     zone: item.zone,
@@ -77,7 +90,29 @@ function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
     // 四语状态词;error_code 仅 DetectionFailed 携带(引擎契约),属工程
     // 事实码照原词呈现(词表外码不猜测,诚实纪律)。
     description: item.errorCode ?? presenceText(item.presence),
+    // exactOptionalPropertyTypes:无组项不写 groupId 键
+    ...(groupId === undefined ? {} : { groupId }),
   };
+}
+
+/**
+ * 替代组二次裁决(消费侧,组内任一项可用即满足整组):
+ * 组已被满足时,其余未检测到成员由 warning 降为 info 中性项
+ * (未安装的可选项,不是待办);detection_failed 成员保持 error
+ * 原样呈现——观测失败是事实,不因组满足而隐藏(诚实纪律)。
+ * 组未满足时成员维持 warning,由汇总层把整组计为一项待办。
+ */
+function applyCheckGroups(items: CheckItem[]): CheckItem[] {
+  const satisfied: ReadonlySet<string> = new Set(
+    CHECK_GROUPS.filter((group) =>
+      items.some((item) => item.groupId === group.id && item.status === "ok"),
+    ).map((group) => group.id as string),
+  );
+  return items.map((item) => {
+    if (item.groupId === undefined || !satisfied.has(item.groupId)) return item;
+    if (item.status !== "warning") return item;
+    return { ...item, status: "info", description: strings.deployer.presence.optional };
+  });
 }
 
 /** presence 三词闭集 → 四语状态词(strings.deployer.presence.*) */
@@ -132,7 +167,7 @@ function checkTitle(checkId: string): string {
  */
 export function projectEnvironmentSnapshot(snapshot: EnvironmentSnapshotV01): EnvironmentView & { deployer: DeployerView } {
   const byZone = (zone: CheckZone) =>
-    snapshot.items.filter((item) => item.zone === zone).map(projectCheckItem);
+    applyCheckGroups(snapshot.items.filter((item) => item.zone === zone).map(projectCheckItem));
   return {
     schemaVersion: 1,
     deployer: {

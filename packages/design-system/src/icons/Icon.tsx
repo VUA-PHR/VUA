@@ -25,6 +25,7 @@ export type IconName =
   | "anim"
   | "shader"
   | "refresh"
+  | "dash"
   | "home";
 
 const paths: Record<IconName, string> = {
@@ -50,6 +51,8 @@ const paths: Record<IconName, string> = {
   shader: "M12 3.5 13.9 9.1l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.6L4.5 11l5.6-1.9L12 3.5Z",
   // 内嵌浏览导航条(Fluent 风格描边):刷新 = 顺时针环形箭头,回首页 = 屋形
   refresh: "M20 12a8 8 0 1 1-2.34-5.66M20 4.5v4h-4",
+  // 中性横杠:可选/不适用状态(部署器替代组未安装成员)
+  dash: "M5 12h14",
   home: "M4 11l8-7 8 7M6.5 9.5V20h11V9.5",
 };
 

@@ -33,6 +33,7 @@ export const strings: Strings = {
     warning: "확인 필요",
     error: "수정 필요",
     unknown: "알 수 없음",
+    info: "선택 사항",
   },
   taskStatus: {
     queued: "대기 중",
@@ -332,6 +333,18 @@ demoTaskTitle: "데모 작업",
       detected: "감지됨",
       notDetected: "감지되지 않음",
       detectionFailed: "감지 실패",
+      /** 대안 그룹 충족 시 나머지 미감지 멤버의 중립 상태어(선택 사항, 할 일 아님) */
+      optional: "감지되지 않음(선택 사항)",
+    },
+    /** 대안 그룹 문구(CHECK_GROUPS): 그룹당 카드 한 장, 키는 그룹 id와 대응 */
+    groups: {
+      vrRuntime: {
+        title: "VR 런타임 및 스트리밍",
+        badge: "하나만 있으면 됨",
+        satisfied: "사용 가능한 런타임 {count}개를 감지했습니다. 하나만 있으면 플레이할 수 있습니다.",
+        unsatisfied:
+          "사용 가능한 VR 런타임이 감지되지 않았습니다. 다음 중 하나를 설치하면 플레이할 수 있습니다.",
+      },
     },
     fix: {
       loading: "수정 계획 생성 중…",
