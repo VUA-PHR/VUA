@@ -10,7 +10,7 @@ use vua_unity_bridge::{
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
 };
 use vua_unity_bridge::MaterialTaskResult;
-use vua_orchestrator::{ProjectRef, VpmBackend};
+use vua_orchestrator::{ProjectRef, PackageRequestV1, VpmBackend};
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
     collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
@@ -303,6 +303,19 @@ pub const PACKAGES_CATALOG_SCHEMA_VERSION_V02: &str = "vua.packages-catalog/v0.2
 /// route stamps it at envelope assembly, never the backend; the envelope
 /// itself stays on the shared `packages` word-list-row `0.1` const.
 pub const PACKAGES_OPS_SCHEMA_VERSION: &str = "vua.packages-ops/v0.1";
+
+/// The `packages-ops` v0.2 result family constant (proposal 026 A2 freeze
+/// batch 2026-09-19; same standing rule — the install/upgrade row carries
+/// its own version constant, and the frozen v0.1 A1 removal row keeps
+/// serving through `PACKAGES_OPS_SCHEMA_VERSION` untouched: two separate
+/// word-face generations served side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V02: &str = "vua.packages-ops/v0.2";
+
+/// The `packages` envelope const of the v0.2 word-face row (the frozen v0.2
+/// result schema locks the ENVELOPE schemaVersion to "0.2" — unlike the
+/// catalog v0.2 increment, the packages-ops v0.2 row directory carries its
+/// own envelope generation; the v0.1 A1 envelope stays on "0.1").
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02: &str = "0.2";
 
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
@@ -1233,6 +1246,15 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.capabilities().remove_packages => "available",
         _ => "unavailable",
     };
+    // Proposal 026 A2: the install/upgrade write face rides the SAME
+    // VpmBackend wiring, gated on the port's `preview_install` capability
+    // bit (the frozen v0.2 command schema's serving gate; the removeOps
+    // one-row-serves-both-methods precedent — previewInstall/applyInstall
+    // share this gate).
+    let packages_install_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.capabilities().preview_install => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1257,6 +1279,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "packages.listRepos", "availability": packages_catalog_availability},
         {"operationId": "packages.packageCatalog", "availability": packages_catalog_availability},
         {"operationId": "packages.removeOps", "availability": packages_ops_availability},
+        {
+            "operationId": "packages.installOps",
+            "availability": packages_install_ops_availability,
+        },
     ])
 }
 
@@ -5061,6 +5087,12 @@ fn packages_request(
         "packages.applyRemove" => {
             packages_apply_remove(state, vpm, request, request_id, correlation_id)
         }
+        "packages.previewInstall" => {
+            packages_preview_install(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.applyInstall" => {
+            packages_apply_install(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5396,9 +5428,17 @@ fn packages_ops_envelope_error(
 
 /// The typed guard refusal document (frozen rejected arm: guard
 /// three-value closed set + `vua.packages.*` code + free-text detail).
-fn packages_ops_rejected(guard: &str, code: &str, detail: String) -> Value {
+/// The family const is the CALLER's word-face generation: the v0.1 A1
+/// removal row stamps v0.1, the v0.2 A2 install row stamps v0.2 — the
+/// word face that answered is never a guess.
+fn packages_ops_rejected(
+    schema_version: &'static str,
+    guard: &str,
+    code: &str,
+    detail: String,
+) -> Value {
     json!({
-        "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION,
+        "schemaVersion": schema_version,
         "kind": "rejected",
         "guard": guard,
         "code": code,
@@ -5421,6 +5461,7 @@ fn packages_ops_port_rejection(error: &AppErrorV1) -> Value {
         _ => ("execution_failed", "vua.packages.execution_failed"),
     };
     packages_ops_rejected(
+        PACKAGES_OPS_SCHEMA_VERSION,
         guard,
         code,
         format!("port code {}: {}", error.code, error.message_key),
@@ -5644,6 +5685,7 @@ fn packages_apply_remove(
                 Ok(fresh) => {
                     if fresh.digest != confirmed_digest {
                         packages_ops_rejected(
+                            PACKAGES_OPS_SCHEMA_VERSION,
                             "preview_drift",
                             "vua.packages.preview_drift",
                             format!(
@@ -5672,6 +5714,7 @@ fn packages_apply_remove(
                                         "removedItems": removed_items,
                                     }),
                                     None => packages_ops_rejected(
+                                        PACKAGES_OPS_SCHEMA_VERSION,
                                         "execution_failed",
                                         "vua.packages.execution_failed",
                                         "the backend result carried no `removed` item array \
@@ -5698,6 +5741,356 @@ fn packages_apply_remove(
             json!({
                 "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
                 "operation": "packages.applyRemove",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task
+        // authority (import-copy same face, provider-layer code — the
+        // failure is the task authority's, not the packages domain's).
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.persistence_failed",
+            "errors.provider.persistence",
+            "internal",
+        )),
+    }
+}
+
+/// Closed param set of the A2 install pair: `{ projectPath, packages }`,
+/// plus `confirmedDigest` on the apply command only. Each packages row is
+/// `{ packageId, version }` with version REQUIRED and nullable (the
+/// version-selection semantics frozen with the A2 batch: null = the
+/// resolver picks the latest stable, a string = pin exactly that version —
+/// upgrade and downgrade share the pin syntax). A repeated packageId
+/// across rows is a word-face violation even when the versions differ; a
+/// preview request carrying a digest is a shape violation (the digest is
+/// the preview's product). Violations answer `vua.packages.invalid_params`
+/// at the route layer — never absence, never a fabricated plan.
+fn packages_ops_install_params(
+    request: &Value,
+    require_digest: bool,
+) -> Option<(String, Vec<PackageRequestV1>, String)> {
+    let params = request.get("params")?.as_object()?;
+    let allowed = ["projectPath", "packages", "confirmedDigest"];
+    if params.keys().any(|key| !allowed.contains(&key.as_str())) {
+        return None;
+    }
+    if params.contains_key("confirmedDigest") != require_digest {
+        return None;
+    }
+    let project_path = params.get("projectPath")?.as_str()?;
+    if project_path.is_empty() {
+        return None;
+    }
+    let rows = params.get("packages")?.as_array()?;
+    if rows.is_empty() {
+        return None;
+    }
+    let mut requests = Vec::with_capacity(rows.len());
+    for row in rows {
+        let row = row.as_object()?;
+        if row.len() != 2 || !row.contains_key("packageId") || !row.contains_key("version") {
+            return None;
+        }
+        let package_id = row.get("packageId")?.as_str()?;
+        if package_id.is_empty() {
+            return None;
+        }
+        let version = match row.get("version") {
+            Some(Value::Null) => None,
+            Some(Value::String(version)) if !version.is_empty() => Some(version.to_owned()),
+            _ => return None,
+        };
+        requests.push(PackageRequestV1 {
+            package_id: package_id.to_owned(),
+            version,
+        });
+    }
+    let mut seen = std::collections::HashSet::new();
+    if !requests.iter().all(|request| seen.insert(&request.package_id)) {
+        return None;
+    }
+    let confirmed_digest = if require_digest {
+        let digest = params.get("confirmedDigest")?.as_str()?;
+        if digest.is_empty() {
+            return None;
+        }
+        digest.to_owned()
+    } else {
+        String::new()
+    };
+    Some((project_path.to_owned(), requests, confirmed_digest))
+}
+
+/// Port error → envelope-error projection for the A2 install preview face.
+/// The frozen A2 mapping: `no_matching_package` (a pinned version the
+/// resolver cannot satisfy) answers the closed-set
+/// `vua.packages.package_not_found`; the preview-phase failure code folds
+/// into the one new envelope-face code `vua.packages.preview_failed`;
+/// word-out port codes pass through verbatim (the P1 discipline — the
+/// closed set is never stretched at runtime).
+fn packages_ops_install_envelope_error(
+    request_id: &str,
+    correlation_id: &str,
+    error: &AppErrorV1,
+) -> FrameOutcome {
+    let (code, message_key): (String, String) = match error.code.as_str() {
+        "vua.vpm.no_matching_package" => (
+            "vua.packages.package_not_found".to_owned(),
+            "errors.packages.packageNotFound".to_owned(),
+        ),
+        "vua.vpm.preview_failed" => (
+            "vua.packages.preview_failed".to_owned(),
+            "errors.packages.previewFailed".to_owned(),
+        ),
+        _ => (error.code.clone(), error.message_key.clone()),
+    };
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        &code,
+        &message_key,
+        app_error_category(error.category),
+    ))
+}
+
+/// Port error → rejected-arm projection INSIDE the A2 apply task: the
+/// frozen mapping projects `preview_drift` and `no_matching_package` onto
+/// their closed-set words; `apply_failed` and every word-out port code
+/// fold into `execution_failed` carrying the original port code in
+/// `detail` (honest provenance — the guard set is frozen closed and the
+/// rejected arm's schema pattern locks the code to `^vua\.packages\.`).
+fn packages_ops_install_port_rejection(error: &AppErrorV1) -> Value {
+    let (guard, code) = match error.code.as_str() {
+        "vua.vpm.preview_drift" => ("preview_drift", "vua.packages.preview_drift"),
+        "vua.vpm.no_matching_package" => {
+            ("package_not_found", "vua.packages.package_not_found")
+        }
+        "vua.vpm.apply_failed" => ("execution_failed", "vua.packages.execution_failed"),
+        _ => ("execution_failed", "vua.packages.execution_failed"),
+    };
+    packages_ops_rejected(
+        PACKAGES_OPS_SCHEMA_VERSION_V02,
+        guard,
+        code,
+        format!("port code {}: {}", error.code, error.message_key),
+    )
+}
+
+/// `packages.previewInstall` (proposal 026 A2 wiring): the SYNCHRONOUS
+/// read-only change preview — it resolves dependencies against the
+/// registered repositories and MAY hit the network (the online refresh
+/// degrades to the package cache on failure INSIDE the backend, per the
+/// ORC-ADP-006 isomorphic precedent; the wire face carries no disclosure
+/// field — the frozen A2 honesty boundary, the double-digest guard stays
+/// the safety net). It never mutates any state, and its failures travel
+/// as wire-envelope errors, never result arms (the operation/kind lock:
+/// this method answers kind=plan exactly). The plan document is the
+/// port's `ChangePreviewV1` serde projection (camelCase frozen by the
+/// consumer test) stamped with the v0.2 family const, the kind and the
+/// requested projectPath. An install plan carries conflict-triggered
+/// REMOVE rows verbatim (ORC-WF-002: the plan must cover every change the
+/// backend will make).
+fn packages_preview_install(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // Without the 013 aggregate the not-found calibration does not
+        // exist, so the whole face stays honestly absent (P1 precedent).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((project_path, packages, _)) = packages_ops_install_params(request, false) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !packages_ops_registered_project(&project_ops, &project_path) {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.capabilities().preview_install {
+        // The frozen v0.2 command schema's serving gate: a wired engine
+        // whose backend declares no install capability answers the generic
+        // capability-missing arm (P1 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let preview = vpm.preview_install(
+        &ProjectRef {
+            id: project_path.clone(),
+            root: PathBuf::from(&project_path),
+        },
+        &packages,
+    );
+    let preview = match preview {
+        Ok(preview) => preview,
+        Err(error) => return packages_ops_install_envelope_error(request_id, correlation_id, &error),
+    };
+    // Invariant: ChangePreviewV1 is a plain serde struct — serialization
+    // cannot fail; a silent fallback would fabricate a plan.
+    let mut plan = serde_json::to_value(&preview).expect("ChangePreviewV1 serialization cannot fail");
+    plan["schemaVersion"] = json!(PACKAGES_OPS_SCHEMA_VERSION_V02);
+    plan["kind"] = json!("plan");
+    plan["projectPath"] = json!(project_path);
+    FrameOutcome::Response(application_success(
+        request_id,
+        json!({
+            "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02,
+            "operation": "packages.previewInstall",
+            "result": plan,
+        }),
+    ))
+}
+
+/// `packages.applyInstall` (proposal 026 A2 wiring): the NINE-STATE
+/// task-driven write command (the A1 applyRemove same shape — the task
+/// accepts, the terminal reflux carries the frozen v0.2 result document).
+/// The double-digest discipline is enforced HERE, at the wire layer: the
+/// preview is re-computed before execution and any drift refuses as the
+/// typed `preview_drift` guard — the authoritative verdict lives
+/// server-side (014 arbitration point 2), never delegated to backend
+/// goodwill; the backend's own second digest check stays as defense in
+/// depth. A typed guard refusal is a Done payload carrying the frozen
+/// `rejected` result document (the task honestly completed; the install
+/// was refused), never a transport error; the digest drift is a
+/// RECOVERABLE conflict (re-preview and re-confirm — never a silent
+/// overwrite, never an implicit resumption, honesty rule 3). The apply
+/// phase's repository load does NOT degrade — an online load failure
+/// fails the task honestly.
+fn packages_apply_install(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((project_path, packages, confirmed_digest)) =
+        packages_ops_install_params(request, true)
+    else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !packages_ops_registered_project(&project_ops, &project_path) {
+        // Route-layer refusal: the reused 013 code cannot travel inside a
+        // rejected document (rejected.code locks `^vua\.packages\.`).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    if !vpm.capabilities().preview_install {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let project = ProjectRef {
+                id: project_path.clone(),
+                root: PathBuf::from(&project_path),
+            };
+            // Server-side re-computation BEFORE execution (ORC-WF-003/004):
+            // drift refuses before the backend is ever asked to apply.
+            let result: Value = match vpm.preview_install(&project, &packages) {
+                Err(error) => packages_ops_install_port_rejection(&error),
+                Ok(fresh) => {
+                    if fresh.digest != confirmed_digest {
+                        packages_ops_rejected(
+                            PACKAGES_OPS_SCHEMA_VERSION_V02,
+                            "preview_drift",
+                            "vua.packages.preview_drift",
+                            format!(
+                                "confirmed digest {confirmed_digest} does not match the \
+                                 re-computed preview digest {}",
+                                fresh.digest
+                            ),
+                        )
+                    } else {
+                        match vpm.apply_install(&project, &packages, &confirmed_digest) {
+                            Ok(applied) => {
+                                // The audit receipt: the confirmed digest echo +
+                                // the request rows verbatim (version-selection
+                                // semantics included) + the backend's actually
+                                // applied items (port `{"applied": items}`
+                                // verbatim). A backend result without the item
+                                // array is a port-contract violation: it
+                                // refuses honestly instead of fabricating a
+                                // receipt.
+                                match applied.get("applied").filter(|v| v.is_array()).cloned() {
+                                    Some(applied_items) => json!({
+                                        "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V02,
+                                        "kind": "receipt",
+                                        "projectPath": project_path,
+                                        "confirmedDigest": confirmed_digest,
+                                        "requestedPackages": serde_json::to_value(&packages)
+                                            .expect("PackageRequestV1 serialization cannot fail"),
+                                        "appliedItems": applied_items,
+                                    }),
+                                    None => packages_ops_rejected(
+                                        PACKAGES_OPS_SCHEMA_VERSION_V02,
+                                        "execution_failed",
+                                        "vua.packages.execution_failed",
+                                        "the backend result carried no `applied` item array \
+                                         (port contract: {\"applied\": items})"
+                                            .to_owned(),
+                                    ),
+                                }
+                            }
+                            Err(error) => packages_ops_install_port_rejection(&error),
+                        }
+                    }
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02,
+                "operation": "packages.applyInstall",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02,
+                "operation": "packages.applyInstall",
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
             }),

@@ -390,6 +390,8 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "packages.listInstalled": { projectPath: "C:/proj" },
     "packages.listRepos": {},
     "packages.packageCatalog": { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" },
+    "packages.previewRemove": { projectPath: "C:/proj", packageIds: ["com.a.b"] },
+    "packages.applyRemove": { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "fnv-1a-abc" },
   };
 
   it("admits a minimal well-formed request for every method in the kind table", () => {
@@ -463,6 +465,61 @@ describe("gateway guard covers every declared method (regression: silent guard g
       isDesktopGatewayRequestV1({
         ...request,
         params: { projectPath: "C:/proj", packageId: "com.a.b", includePrerelease: true },
+      }),
+    ).toBe(false);
+  });
+
+  it("packages.previewRemove: two-key closed params, packageIds non-empty unique closed list, NO digest slot (026 A1 freeze; digest is the preview's product — carrying it is a shape violation)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-44",
+      method: "packages.previewRemove" as const,
+      params: { projectPath: "C:\VRChat\Projects", packageIds: ["com.a.b", "com.c.d"] },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串路径/空列(词面 minItems 1)/重复项(uniqueItems)/词外键/投机的
+    // digest 位(preview 参数无 digest——携即形状违反):一律拒绝
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "", packageIds: ["com.a.b"] } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: [] } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: ["com.a.b", "com.a.b"] } }),
+    ).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: [""] } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "fnv-1a-abc" },
+      }),
+    ).toBe(false);
+  });
+
+  it("packages.applyRemove: three-key closed params incl confirmedDigest, no commandId param slot (026 A1 freeze; Kernel generates the commandId per the import-copy precedent)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-45",
+      method: "packages.applyRemove" as const,
+      params: { projectPath: "C:\VRChat\Projects", packageIds: ["com.a.b"], confirmedDigest: "fnv-1a-abc" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺 confirmedDigest/空 digest/空列/重复项/投机 commandId 位:一律拒绝
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: ["com.a.b"] } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "" } }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/proj", packageIds: [], confirmedDigest: "d" } }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packageIds: ["com.a.b", "com.a.b"], confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...request,
+        params: { projectPath: "C:/proj", packageIds: ["com.a.b"], confirmedDigest: "d", commandId: "cmd-1" },
       }),
     ).toBe(false);
   });

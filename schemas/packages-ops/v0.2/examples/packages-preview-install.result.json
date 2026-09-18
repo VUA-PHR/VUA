@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.2",
+  "operation": "packages.previewInstall",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.2",
+    "kind": "plan",
+    "projectPath": "C:/VRChat/Projects/Chiffon",
+    "items": [
+      {
+        "kind": "install",
+        "packageId": "com.lilxyzw.liltoon",
+        "version": "7.3.150",
+        "reason": null
+      },
+      {
+        "kind": "install",
+        "packageId": "jp.lilxyzw.transitdependency",
+        "version": "1.2.0",
+        "reason": null
+      },
+      {
+        "kind": "remove",
+        "packageId": "com.example.conflictingpackage",
+        "version": null,
+        "reason": "conflict"
+      }
+    ],
+    "conflicts": [
+      "com.example.conflictingpackage conflicts with com.lilxyzw.liltoon"
+    ],
+    "removeLegacyFiles": [],
+    "removeLegacyFolders": [
+      "Assets/lilToon"
+    ],
+    "destructive": true,
+    "digest": "fnv1a-7f3a91c2"
+  }
+}

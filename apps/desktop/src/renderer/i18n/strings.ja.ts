@@ -1497,6 +1497,45 @@ rolled_back: "ロールバック済み",
       },
       legacyTitle: "削除される legacy フォルダー",
     },
+    remove: {
+      title: "パッケージの削除",
+      column: "操作",
+      removedTitle: "削除される項目",
+      installedTitle: "新規インストールされる項目",
+      legacyTitle: "合わせて削除されるレガシーファイル/フォルダ",
+      destructiveHint: "この操作は破壊的です（依存関係の競合やレガシー削除）。まず一覧を確認してください。確認ボタンは少し後に有効になります。",
+      confirm: "削除する（{count} 個）",
+      applying: "削除中…タスクの進行状況はタスクセンターで確認できます。",
+      close: "閉じる",
+      receiptTitle: "削除が完了しました",
+      receiptSummary: "{count} 件のパッケージを削除しました。",
+      receiptRemovedTitle: "実際に削除された項目",
+      receiptDigest: "確認フィンガープリント：{digest}",
+      rejectedTitle: "削除が拒否されました",
+      rejectedDetail: "サーバーからの説明：{detail}",
+      driftHint: "確認後にパッケージ一覧が変わりました。閉じて再度プレビューと確認を行ってください。古い一覧が黙って適用されることはありません。",
+      guards: {
+        preview_drift: "確認したフィンガープリントがサーバー側の再計算結果と一致しません。何も削除されていません。再度プレビューして確認してください。",
+        package_not_found: "削除対象のパッケージはこのプロジェクトにインストールされていません。",
+        execution_failed: "削除の実行中に失敗しました。",
+        unknown: "削除が拒否されました。",
+      },
+      envelopeErrors: {
+        projectNotFound: "このプロジェクトは登録一覧に存在しないため、削除できません。",
+        packageNotFound: "削除対象のパッケージはこのプロジェクトにインストールされていません。",
+        capabilityMissing: "現在のエンジンバックエンドは削除操作に対応していません。",
+        invalidParams: "削除リクエストの形式が無効です。",
+        unknown: "操作に失敗しました。",
+      },
+      toasts: {
+        previewUnavailable: "削除プレビューを生成できません：パッケージエンジンが未接続です。",
+        previewFailedUnknown: "削除プレビューを生成できません（{code}）。",
+        nothingToRemove: "現在の選択には削除できる変更がありません。",
+        applyFailedUnknown: "削除を完了できませんでした（{code}）。",
+        applyUnavailable: "削除を完了できませんでした：結果を確認できません。タスクセンターで状況を確認してください。",
+      },
+    },
+
     repos: {
       addCommunity: "コミュニティリポジトリを追加",
       riskTitle: "コミュニティリポジトリを追加する前に",
@@ -1530,6 +1569,8 @@ rolled_back: "ロールバック済み",
       loadFailed: "パッケージエンジンがエラーを返しました（{code}）。",
       emptyInstalledDescription:
         "このプロジェクトにはまだインストール済みパッケージがありません。{recipe}から組み立てると追加されます。",
+      noticeChangesOpen: "リポジトリと変更管理の状態：インストール済みパッケージは閲覧でき、削除操作が利用可能です（エンジンの機能に依存）。",
+
     },
     p2: {
       notice:
@@ -1568,6 +1609,8 @@ rolled_back: "ロールバック済み",
       compatibleYes: "互換性あり",
       compatibleNo: "互換性なし",
       compatibleUnknown: "互換性不明",
+      noticeChangesOpen: "リポジトリ購読とパッケージ別カタログ情報は読み取り可能（P2）で、削除操作も利用可能です。エンジンがデータを提供しないセクションは表示されません。",
+
     },
     empty: {
       engineTitle: "パッケージ管理は未接続です",

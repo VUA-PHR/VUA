@@ -1493,6 +1493,45 @@ rolled_back: "롤백됨",
       },
       legacyTitle: "제거될 레거시 폴더",
     },
+    remove: {
+      title: "패키지 제거",
+      column: "작업",
+      removedTitle: "제거될 항목",
+      installedTitle: "새로 설치될 항목",
+      legacyTitle: "함께 정리될 레거시(legacy) 파일/폴더",
+      destructiveHint: "이 작업은 되돌릴 수 없는 결과를 낳을 수 있습니다(의존성 충돌 또는 레거시 정리). 먼저 목록을 확인하세요. 확인 버튼은 잠시 후 활성화됩니다.",
+      confirm: "제거({count}개 패키지)",
+      applying: "제거 중… 작업 진행 상황은 작업 센터에서 볼 수 있습니다.",
+      close: "닫기",
+      receiptTitle: "제거 완료",
+      receiptSummary: "{count}개 패키지 항목을 제거했습니다.",
+      receiptRemovedTitle: "실제 제거됨",
+      receiptDigest: "확인 지문: {digest}",
+      rejectedTitle: "제거가 거부되었습니다",
+      rejectedDetail: "서버 설명: {detail}",
+      driftHint: "확인 후 패키지 목록이 변경되었습니다. 닫은 후 다시 미리보기하고 확인하세요. 이전 목록이 잠자코 적용되는 일은 없습니다.",
+      guards: {
+        preview_drift: "확인한 지문이 서버 재계산 결과와 일치하지 않습니다. 아무것도 제거되지 않았습니다. 다시 미리보기하고 확인하세요.",
+        package_not_found: "제거 요청한 패키지가 이 프로젝트의 설치 목록에 없습니다.",
+        execution_failed: "제거 실행 중 실패했습니다.",
+        unknown: "제거가 거부되었습니다.",
+      },
+      envelopeErrors: {
+        projectNotFound: "이 프로젝트는 등록 목록에 더 이상 없으므로 제거할 수 없습니다.",
+        packageNotFound: "제거 요청한 패키지가 이 프로젝트에 설치되어 있지 않습니다.",
+        capabilityMissing: "현재 엔진 백엔드는 제거 작업을 지원하지 않습니다.",
+        invalidParams: "제거 요청 형식이 잘못되었습니다.",
+        unknown: "작업이 실패했습니다.",
+      },
+      toasts: {
+        previewUnavailable: "제거 미리보기를 생성할 수 없습니다: 패키지 엔진이 연결되지 않았습니다.",
+        previewFailedUnknown: "제거 미리보기를 생성할 수 없습니다({code}).",
+        nothingToRemove: "현재 선택에는 제거할 변경 사항이 없습니다.",
+        applyFailedUnknown: "제거를 완료하지 못했습니다({code}).",
+        applyUnavailable: "제거를 완료하지 못했습니다: 결과를 확인할 수 없습니다. 작업 센터에서 상태를 확인하세요.",
+      },
+    },
+
     repos: {
       addCommunity: "커뮤니티 리포지토리 추가",
       riskTitle: "커뮤니티 리포지토리를 추가하기 전에",
@@ -1526,6 +1565,8 @@ rolled_back: "롤백됨",
       loadFailed: "패키지 엔진이 오류를 반환했습니다({code}).",
       emptyInstalledDescription:
         "이 프로젝트에는 아직 설치된 패키지가 없습니다. {recipe}에서 프로젝트를 조립하면 추가됩니다.",
+      noticeChangesOpen: "저장소 및 변경 관리 상태: 설치된 패키지를 볼 수 있으며 제거 작업을 사용할 수 있습니다(엔진 기능에 따름).",
+
     },
     p2: {
       notice:
@@ -1564,6 +1605,8 @@ rolled_back: "롤백됨",
       compatibleYes: "호환",
       compatibleNo: "비호환",
       compatibleUnknown: "호환성 알 수 없음",
+      noticeChangesOpen: "저장소 구독과 패키지별 카탈로그 정보를 읽을 수 있고(P2) 제거 작업을 사용할 수 있습니다. 엔진이 데이터를 제공하지 않는 섹션은 표시되지 않습니다.",
+
     },
     empty: {
       engineTitle: "패키지 관리가 아직 연결되지 않았습니다",
