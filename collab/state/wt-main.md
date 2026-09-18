@@ -2,24 +2,27 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: f86163a
+baseline_commit: 4c8b9b2
 updated: 2026-09-18
 ---
 ## 当前焦点
-**第 93 批（2026-09-18 20:4x）：用户裁决切片「环境检测 VR 品牌面对齐 VRCFT 官方模块库」验收直办入库（实现批 00dcc58＋合并 f86163a，--no-ff，预检零冲突）**：
+**第 96 批（2026-09-18 22:1x）：提案 026「包管理 P3 写面＋项目兼容并入包管理器」登记（用户 2026-09-18 晚裁决转述）＋U12 答复落账关闭＋BOARD #40 行＋批号勘误（collab 登记面批，零实现工作）**：
 
-- **内容**：引擎 play 区 13→18 项——psvr2/bigscreen_beyond（Steam 库目录探测）＋pimax_runtime/varjo_runtime/hp_omnicept（候选根）＋alvr 双信号（候选根＋openvrpaths.vrpath external_drivers 注册，缺席＝not_detected、不可读＝detection_failed）；virtual_desktop 主候选修正为 Program Files\Virtual Desktop Streamer（漏报修复）；ALXR/Steam Link 无诚实 PC 侧可探信号刻意不设项（引擎注释登记弃项原因）。渲染层 vr_runtime 替代组 7→12 成员＋CHECK_TITLE_KEYS 与四语词条各 +5；wire 零 schema 变更。
-- **证据**：切片树（VUA-7）与 main 合并树双轮——cargo test 工作区全绿（环境套件 19 例含新增 4 例；引擎闭集表 18→23）＋clippy 0＋desktop 双 tsc 0＋vitest 79 文件 672/672＋contracts 66/66＋boundary/i18n/contrast/forest-leak/leak 155 指纹全过＋design-system check。未跑＝pnpm build 打包链（cargo release 与用户 dev 栈锁冲突，照先例如实申报）。
-- **用户可见**：VR 运行时与串流组卡扩到 12 成员，PSVR2/Bigscreen/Pimax/Varjo/HP Omnicept/ALVR/Virtual Desktop 覆盖补齐；真机命中面候用户以含本切片构建重启 dev 栈目视复验。
-- 上一批（第 92 批，VR 运行时替代组交互语义）内容见本文件 git 历史；其等待项全部沿用。
+- **026 登记**：用户裁决原文照录（「包管理器要做写面，现有的项目兼容选项卡没有必要再单独存在，并入包管理器选项卡，UI做易用性调整。写一份报告给协作机制让它们今晚做。」）；事实基线全 file:line 锚提出前本机直读核实——读面 P1/P2 全链在库（024/025 链；真机证据 09-17 12:0x CDP 六真实包＋09-18 05:2x ready-p2 四仓库在列）；写面缺口＝纯 wire 词表缺席（application-contract.ts:583-584 明示归 013 R5；VpmBackend 写方法族 crates/orchestrator/src/vpm_backend.rs:214-332＋VrcGetLibBackend 实现 crates/project-manager/src/vpm_backend.rs:300-308 等在库）；项目兼容页三缺口（交接卡待规格 ProjectCompatPage.tsx:44-45／导入源手输 strings.zh-CN.ts:1429／死文案四键零引用）。提案三分：A＝P3 写面 013 R5 逐面（建议面序 A1 移除→A2 安装/升级→A3 register_local_package→A4 仓库订阅写面）；B＝项目兼容并入包管理器（桌面域零新词表）；C＝易用性收口随 A 各面解锁。开放问题四项候核心/环境/桌面表态（集成门序自答预填＝024 表态 3 延续，异议重开）。
+- **U12 关闭**：用户裁决即 U12「写入口优先级」明示答复（提为优先指令），BOARD U12 行随批改记 ✅。
+- **批号勘误（如实登记，不改写历史）**：昨晚两笔前录自编号 92（7d660d7，19:3x）/93（4c8b9b2，20:4x）与当日清晨行内已实际使用的 92（c05dbdc，#36 行）/93（860d756，#37 行）/94（1c55153，#38 行）/95（bf521f1＋簿记 155ce23，#39 行）冲突——晚间取号未核对行内批号；历史文本与已推送提交消息不改写（git 历史纪律），**本批起续号＝第 96 批**。
+- **机械校验**：collab:brief 双绿（2026-09-18 22:17 本机：登记表 67 项一致/0 异常＋受管文本 1292 文件 0 冲突标记）；变更面＝026 新文件＋BOARD（前录＋#40＋U12）＋本状态文件全 collab 面零代码，免全量如实声明（最近合并门证据 f86163a 世代在案）；随批推送 origin/main，推送债归零。
+- **【① 注意】消化（brief 22:17）**：五条 [→集成] 验收请求留言（wt-2 去桥批 08fa61e／wt-3 #39 修复批 cab76f2／wt-4 追平 741b05d＋状态批／wt-5 追平＋状态批／wt-6 追平壳 16fa432＋状态批）经 ③ 区读数核实＝各树领先全部 0（rev-list 实证），均系已收编批次重显——照夜结批（469346f）与「回执不回执」先例零动作不乒乓；wt-5 留言内 df 16G 系清晨旧文（⑤ 区前 05:3x 实测 207G、U11 清理后 651G 在案），磁盘定性归环境域不变。
+- 上一批（晚间前录误号「第 93 批」，4c8b9b2，VR 品牌面扩展）内容见本文件 git 历史；其等待项沿用并随本批修正编号引用。
 
 ## 阻塞
 无。
 
 ## 下次合并意图
-本批（第 93 批登记批）随批推送 origin/main，推送债归零。下窗恢复维护姿态：只收同窗新到（簿记/追平照先例随轮验收）；各树落后读数下轮 brief 复测，过 15 触发线照同则自理追平。
-**等待项**：（沿用）**用户 #39 HMR 复测回填**；**④′能力面对齐切片与包管理器写入口优先级候用户**；**磁盘清理方案 A/B/C 候用户裁决**；#31/#32/#33 候用户复验回填；#30 行内剩余＝W25 端到端真机走查；#27/#28/#29 维持；#25/U5 跳过；W26 硬前置不开工；M6/M7/M8 候门序；poisoned 可见性修复候操作者真机复验。
+本批（第 96 批登记批）随批推送 origin/main，推送债归零。下窗恢复维护姿态：026 各域表态批与各树状态批随轮验收；各树落后读数下轮 brief 复测，过 15 触发线照同则自理追平。
+**等待项**：**026 开放问题候核心/环境/桌面今晚表态（B 面零词表依赖，桌面今晚即可领取）**；**用户复验回填＝#31/#32/#33（含修复构建重启目视）＋#36 终局视觉确认＋#39 HMR 三复测点**；#28 抖动消除候用户窗口复验；#29 全链验证候用户日常重启自然累积；#25/U5 跳过；**④′能力面对齐切片候专项**（包管理器写入口优先级已经用户裁决转入 026，不在等待项）；#30 行内剩余＝W25 端到端真机走查（O-2 候用户开窗）；poisoned 可见性修复候操作者真机复验；W26 硬前置不开工；M6/M7/M8 候门序。
 
 ## 留言
-- [→各树] **第 93 批知会**：main 落环境检测 VR 品牌面扩展（play 13→18 项）。**注意**：crates/orchestrator 的 `EnvironmentRoots` 增 `openvrpaths` 字段、`VrRuntimeRoots` 增 pimax/varjo/hp_omnicept 三字段——各树若自行构造 EnvironmentRoots 字面量（测试夹具），合并后需补字段（orchestrator/provider-host/project-manager 三处合成 roots 已随批补齐在库）。各树下窗照常 brief。
+- [→核心][→环境][→桌面] **026 已登记候表态（用户 2026-09-18 晚裁决「让它们今晚做」）**：提案 `collab/proposals/026-packages-write-face-and-tab-merge.md`（状态=提出）＋BOARD 开放问题表 #40。核心＝开放问题 1（P3 面序确认／写族命名与任务化形状／错误码新族 vua.packages.* 立码／create_project 取舍）；环境＝开放问题 2（VrcGetLibBackend 写方法实现与词面需求缺口核对＋A4 settings.json 写面库面可行性，照 025 §1 考证同径）；桌面＝开放问题 3（合并 IA 形状／易用性清单／blocks.changes 演进）——**B 面（项目兼容并入包管理器）零词表依赖，桌面今晚即可领取开工**；表态按 024/025 先例内联落节。
+- [→各树] **批号勘误知会**：昨晚两笔前录自编号 92/93 与当日清晨行内 92–95 批冲突（事实链见 BOARD 第 96 批前录③）；历史文本与提交消息不改写，自本批起续号＝第 96 批，各树下轮 tick 引用批号以 96 起算。
 - （历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
