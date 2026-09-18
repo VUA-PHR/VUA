@@ -2,8 +2,9 @@
 
 [English](packages-ops-v0.1_EN.md) | [简体中文](packages-ops-v0.1_ZH.md)
 
-> Document version: 0.1
-> Status: **Frozen (packages P3 write face, A1 removal word-list row)**
+> Document version: 0.1.1
+> Status: **Frozen (packages P3 write face, A1 removal word-list row;
+> v0.1.1 wiring batch landed, zero word-face change)**
 > (2026-09-19, proposal 026 A1 core freeze batch: stance-program
 > convergence — core ruling 82a39c4 five points, environment library
 > study 4a0f02f zero implementation gap, desktop stance 93752d5 three
@@ -17,7 +18,7 @@
 > write command under the double-digest guard)
 > Ownership boundary: word-list freeze, port face (`VpmBackend` write
 > method family already in the tree), and wire routing = core domain
-> (wiring slice follows this batch); the `VpmBackend` library
+> (wiring slice landed as v0.1.1); the `VpmBackend` library
 > implementation (project-manager, `preview_remove`/`apply_remove`
 > already in the tree) = environment domain (implementation
 > verification slice per the 024/025 procedure); desktop consumption =
@@ -25,6 +26,11 @@
 > desktop stance 93752d5 item 3)
 > Updated: 2026-09-19 (v0.1 freeze batch: dual schemas + vectors +
 > core consumer tests + TS face + bilingual protocol doc + REGISTRY)
+> Updated: 2026-09-19 (v0.1.1 wiring batch: the two wire route arms +
+> the `served_capabilities` row `packages.removeOps` + the port-code
+> projection landed; zero word-face change — word list, schemas,
+> vectors, TS face untouched; route/projection tests
+> `crates/provider-host/tests/packages_ops_wire.rs` 10 cases)
 
 ## A1 write-face semantics (the two-verb pair and the nine-state task)
 
@@ -127,6 +133,23 @@ catalog face) stays untouched (core ruling 82a39c4 point 4).
   closed set + `code` + `detail`). Operation/kind lock:
   previewRemove answers plan only, applyRemove answers
   receipt/rejected only (machine-checkable at the schema layer).
+- **The served capability row (v0.1.1 wiring batch)**: one row,
+  `packages.removeOps`, serves both methods; its availability gates on
+  the port's `VpmCapabilities.remove_packages` bit (the frozen command
+  schema's serving gate). An engine wired without the removal
+  capability declared keeps the row honestly unavailable; an unwired
+  engine answers `vua.packages.unavailable`. Preview-phase failures
+  travel as wire-envelope errors (the one known port fact projects onto
+  the closed set: `package_not_installed` →
+  `vua.packages.package_not_found`; unknown port codes pass through
+  verbatim per the P1 read-face precedent); every refusal inside the
+  apply task projects onto the rejected closed set (unknown port codes
+  fold into `execution_failed` with the original port code inside
+  `detail` as honest provenance — never a fabricated fourth guard);
+  the reused `vua.project.project_not_found` code answers at the route
+  layer as the envelope error (the rejected arm's code schema locks
+  `^vua\.packages\.` — a reused 013 code never enters a rejected
+  document).
 
 ## Envelope, versions, and dependency direction
 
@@ -153,18 +176,25 @@ vendor types stay in adapters; the word list transports facts.
 
 ## Honesty boundaries and open items
 
-- **The wire routes are not wired yet.** This batch is the word-list
-  layer: the routes for `packages.previewRemove`/
-  `packages.applyRemove`, the `served_capabilities` rows, and the
-  envelope assembly belong to the core wiring slice (immediately
-  after this batch); until wired, the two methods do not exist on the
-  wire face and the desktop `blocks.changes` write entries stay
-  type-level invisible (fixture shapes are never moved into live —
-  the #22/#36 lessons, twice on record).
+- **The wire routes are wired (v0.1.1 wiring batch, 2026-09-19).**
+  The route arms for `packages.previewRemove`/`packages.applyRemove`,
+  the `served_capabilities` row (`packages.removeOps`, gated on
+  `remove_packages`), and the envelope assembly have landed
+  (`crates/provider-host/src/provider_host.rs`; route/projection tests
+  `crates/provider-host/tests/packages_ops_wire.rs` 10 cases, run
+  green). The desktop consumption side still follows the per-face
+  upgrade procedure: until its consumption slice lands, the
+  `blocks.changes` write entries stay type-level invisible (fixture
+  shapes are never moved into live — the #22/#36 lessons, twice on
+  record). Zero end-to-end claim maintained: the wiring batch is the
+  wire face inside the provider process; the real-machine walkthrough
+  stays with W25 (awaiting the user window O-2).
 - The environment implementation-verification slice
   (`VrcGetLibBackend` `preview_remove`/`apply_remove` already in the
   tree, per the 024/025 procedure: implementation + targeted tests +
-  wire-alignment evidence) lands with the wiring batch.
+  wire-alignment evidence) lands after the wiring batch; the full
+  port-code → closed-set projection mapping declaration rides that
+  slice.
 - Desktop consumption follows the per-face upgrade procedure (stance
   93752d5 item 3: the A1 freeze batch unlocks the matching write
   entries; the freeze batch is the single authority for that face's
@@ -172,7 +202,8 @@ vendor types stay in adapters; the word list transports facts.
   with W25 (awaiting the user window O-2).
 - `create_project` is not in the P3 face order (core ruling 82a39c4
   point 5: reserved as A5, start condition = a desktop entry-point
-  demand); A4 repo-subscription writes await the add/remove vs
-  enable/disable split convergence (environment leans add/remove
-  first; enable/disable awaits real-machine verification of the VCC
-  key name).
+  demand; the A5 start ruling has landed — see the per-tree state
+  files and BOARD row #40); A4 repo-subscription writes await the
+  add/remove vs enable/disable split convergence (environment leans
+  add/remove first; enable/disable awaits real-machine verification of
+  the VCC key name).

@@ -93,7 +93,10 @@ const api: VuaDesktopApiV1 = Object.freeze({
   }),
   // 壳能力自报(proposal 015 §11 方案 a):能力拥有者静态声明;内嵌浏览
   // 基座(remote-content + U9 导航策略)随本壳交付,呈现两态由渲染层据此
-  // 驱动(端到端可用才翻转呈现,desktop 架构 1.1.0)
+  // 驱动(端到端可用才翻转呈现,desktop 架构 1.1.0)。沙箱 preload 不能
+  // 运行时导入本地模块,值按 DESKTOP_GATEWAY_VERSION 先例持本地字面量,
+  // 与 electron/shell-capabilities 单一事实源的同值由测试钉死把守
+  // (#36 缺陷4′ 能力面对齐)
   capabilities: Object.freeze({
     remoteBrowser: true,
   }),
