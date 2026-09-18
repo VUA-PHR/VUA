@@ -101,6 +101,21 @@ item 2（021862b）验收入库**（026 A2 全链四支闭环后批量面续交�
 - **[等环境] A3 实现核对切片**（register_capabilities 覆写随切片
   落——覆写翻转前 served 行在真机如实 unavailable,桌面注册区块诚
   实缺席;翻转后桌面消费面即可在真机可用）。
+- **[等环境] A1/A2 端口码投影映射申报桌面侧核对——已闭环销账
+  （本拍就地登记,下拍勿重复）**：A2 五码申报已经第 106 批落账（五
+  码零缺口零新映射）;A1 申报 c42ad05（第 101 批 item 3）在库——本
+  拍直接读申报面实证：实现产出闭集恰五码 vua.vpm.preview_drift/
+  project_load_failed/preview_failed/package_not_installed/
+  apply_failed（与 BOARD #40 ⑦ 段「五码映射申报集成复核零缺口成
+  立——wire 双投影完备覆盖实现输出闭集」一致）。桌面回落面对齐成
+  立：①rejected guard 三值闭集（preview_drift→preview_drift/
+  package_not_installed→package_not_found/apply_failed→
+  execution_failed 投影,removeGuardKey 钉例在案）;②信封错误码映
+  射闭集（project_load_failed/preview_failed 投影照原词上呈,
+  removeEnvelopeErrorKey 钉例在案）;③词外码回落 unknown 原词插值
+  （removeEnvelopeErrorKey("vua.vpm.preview_drift")＝unknown 等负
+  例钉死——桌面不消费端口码本身,零猜测零发明）。桌面侧零动作,核
+  对结论如实登记。
 - **[→用户] IA 并入复测＋A3 注册区块目视**（维持）：包管理器页尾
   「项目兼容」分区可见可用/侧栏「项目兼容」页消失/导入源选择器;
   dev 栈复测可顺带目视 A1 移除入口/A2 安装入口（含批量条）;A3 注
@@ -147,6 +162,15 @@ W25）;df 先查 624G/67%;build cargo release 段本轮干净通过（与第
 106 批 os error 5 环境差异如实申报,零用户进程接触零杀进程）;
 ⑥在手无半途切片、无未提交改动;退出待命,候集成验收、环境 A3 实
 现核对、下轮 brief 或新指派。
+**追加（07:0x,同拍内）**：⑦e95a8ff（第 107 批收尾簿记 collab-only
+入 main）消化——落后 1（实质 0）未过线照 CHASE STOP 留下轮 brief
+读数,#40 ⑬ 段桌面席位登记与本拍交付一致零冲突;⑧[等环境] A1/A2
+端口码投影申报桌面侧核对闭环销账——c42ad05 申报面直读实证五码闭
+集恰 preview_drift/project_load_failed/preview_failed/
+package_not_installed/apply_failed,桌面回落面（guard 三值投影/
+信封码映射/词外码 unknown 回落钉例）对齐成立零猜测,桌面零动作
+（登记见在途节）;本追加恰本文件一 collab 文件,collab-only 免全量
+如实声明。
 
 ## 留言
 - [→集成] **验收请求**：候验收对象＝①026 A3 本地包注册消费面批
