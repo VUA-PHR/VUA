@@ -126,6 +126,27 @@ impl CatalogCapabilities {
     pub const NONE: Self = Self { catalog: false };
 }
 
+/// A3 write-face capability declaration (proposal 026 freeze batch,
+/// 2026-09-19). Same shape law as `CatalogCapabilities` (the 025
+/// precedent): a separate defaulted trait accessor instead of a new
+/// `VpmCapabilities` field, so the five-bit closed set stays stable and
+/// backends without the local-package registration face keep compiling
+/// unchanged (ORC-DEV-004: no implementation, no reservation — the
+/// default is declared-none; a backend overrides it exactly when it
+/// implements `register_local_package`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RegisterCapabilities {
+    /// Covers the A3 write face (`packages.registerLocalPackage`):
+    /// registering a generated local package in the backend's isolated
+    /// environment.
+    pub register_local_package: bool,
+}
+
+impl RegisterCapabilities {
+    pub const NONE: Self = Self { register_local_package: false };
+}
+
 /// P2: one repository subscription row (proposal 025 freeze batch). The
 /// subscription face is the world (the user's configuration fact), so the
 /// row projects the settings userRepos entry verbatim: every
@@ -278,6 +299,16 @@ pub trait VpmBackend: Send + Sync {
     /// `package_catalog`.
     fn catalog_capabilities(&self) -> CatalogCapabilities {
         CatalogCapabilities::NONE
+    }
+    /// A3 (proposal 026 freeze batch): capability declaration for the
+    /// local-package registration write face. The default is
+    /// declared-none; a backend overrides it exactly when it implements
+    /// `register_local_package` (the 025 accessor law — the VrcGetLib
+    /// override lands with the environment implementation-verification
+    /// slice, the same honest-absence discipline: the served wire row
+    /// stays unavailable until the override flips it).
+    fn register_capabilities(&self) -> RegisterCapabilities {
+        RegisterCapabilities::NONE
     }
     /// P2 (proposal 025 freeze batch): the repository subscription list —
     /// the subscription face is the world (settings userRepos projected

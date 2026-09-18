@@ -462,6 +462,34 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 026 A3 packages.registerLocalPackage command with the single-key closed params and no digest", () => {
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/generated/com.example.toolkit-1.4.0" },
+    })).toBe(true);
+    // 缺 packageRoot = 无可注册路径,形状违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: {},
+    })).toBe(false);
+    // 空 packageRoot = 非路径事实
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "" },
+    })).toBe(false);
+    // 发明 projectPath = 词表外键(注册只动后端隔离环境,不触项目)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/pkg", projectPath: "C:/proj" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 携 confirmedDigest = 形状违反(本面无 preview 可漂移,无 digest 位;
+    // 用户显式提交即确认)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.registerLocalPackage", commandId: "cmd-3",
+      params: { packageRoot: "C:/synthetic/pkg", confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},

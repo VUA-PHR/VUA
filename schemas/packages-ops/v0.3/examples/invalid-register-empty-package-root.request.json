@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.3",
+  "operation": "packages.registerLocalPackage",
+  "params": {
+    "packageRoot": ""
+  }
+}

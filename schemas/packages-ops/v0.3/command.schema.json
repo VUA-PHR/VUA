@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.3/command.schema.json",
+  "title": "VUA packages-ops command v0.3",
+  "description": "Packages write face, third frozen slice A3 = register_local_package (proposal 026 face order; the v0.1 A1 removal row and the v0.2 A2 install/upgrade row stay frozen and served untouched — v0.3 is a separate row directory per the packages-catalog v0.2 increment precedent). Exactly five methods on the packages.* family: the A1 pair (packages.previewRemove / packages.applyRemove, v0.1 shapes verbatim), the A2 pair (packages.previewInstall / packages.applyInstall, v0.2 shapes verbatim), plus the A3 single method packages.registerLocalPackage mapped one-to-one onto the VpmBackend port method register_local_package. THE A3 FACE DELIBERATELY BREAKS THE preview/apply PAIR SHAPE — the only face in the family without a preview arm: the port has NO preview method for registration (the implementation documents the fact: 'Registration is deliberately separate from preview/apply: the normal digest-bound install path still owns every project mutation'), registration is an IDEMPOTENT set-add into the backend's isolated environment (the library's AlreadyAdded result answers success, never an error), it is non-destructive (it adds one user-package row; it removes and rewrites nothing), and there is no pre-existing state to drift (no digest, no confirmedDigest, no double-digest guard). The user's explicit submission IS the confirmation (the A5 create-project stance's same direction: a form submission is an explicit confirmation; ADR-0006's destructive warning path does not apply — the face invents no destructive fact). packages.registerLocalPackage is a NINE-STATE TASK-DRIVEN write command (the family-consistent shape: applyRemove/applyInstall/project.setNote all ride the task surface — commandId idempotency, cancellable, events+revision, recovery maps non-terminal residue to inspect_required and never resumes implicitly, honesty rule 3). Params are the closed single key {packageRoot}: the local package root directory (the port's package_root projected verbatim, camelCase); it is a filesystem path fact, non-empty; NO projectPath is taken — registration mutates the backend's ISOLATED environment (never the user's VCC or ALCOM settings, never a project; the port signature takes no project). The port answers Result<(), AppErrorV1> — no payload, so the result face carries the request echo only (see result.schema.json). Gate: the wire routes for this method do not exist yet (wiring is the next core slice); serving is capability-gated on the NEW defaulted accessor VpmBackend::register_capabilities() -> RegisterCapabilities (default declared-none, the 025 catalog_capabilities law; one row packages.registerOps serving the one method, the removeOps/installOps one-row precedent; a backend that overrides nothing keeps the row honestly unavailable; a wired backend without the capability answers the generic capability_missing) and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.3" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall",
+        "packages.registerLocalPackage"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1,
+                      "description": "Version-selection semantics frozen with the A2 batch: null = the resolver picks (latest stable); a string = pin exactly that version."
+                    }
+                  }
+                },
+                "description": "The closed explicit request list. A repeated packageId across rows is a word-face violation even when the versions differ (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness; the negative vector pins the rule)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": { "type": "string", "minLength": 1 },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The SAME closed explicit request list the preview answered (the audit link: the confirmed digest binds to exactly that preview's canonical item list)."
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewInstall result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.registerLocalPackage" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageRoot"],
+            "properties": {
+              "packageRoot": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local package root directory (the port's package_root, verbatim camelCase projection): the directory containing the package.json of the generated local VPM package to register into the backend's isolated environment. A path fact only — no projectId, no projectPath: registration never touches a project or the user's VCC/ALCOM settings. Registration is idempotent (AlreadyAdded answers success) and carries NO digest: there is no pre-existing state to drift and the user's explicit submission IS the confirmation."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
