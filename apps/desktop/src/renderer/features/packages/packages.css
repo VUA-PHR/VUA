@@ -648,3 +648,33 @@
 .vua-packages__catalog-body p {
   margin: 0;
 }
+
+/* A3 本地包注册区块(026 v0.3 消费批):单键手输 + 显式提交 */
+.vua-packages__register-row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  margin-top: var(--vua-space-2);
+}
+
+.vua-packages__register-input {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.vua-packages__register-result {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+  margin-top: var(--vua-space-2);
+  color: var(--vua-color-success, var(--vua-text-secondary, inherit));
+}
+
+.vua-packages__register-result--rejected {
+  color: var(--vua-color-danger, var(--vua-text-secondary, inherit));
+}
+
+.vua-packages__register-result .vua-caption {
+  overflow-wrap: anywhere;
+}

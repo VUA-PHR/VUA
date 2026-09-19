@@ -224,6 +224,44 @@ export function installEnvelopeErrorKey(code: string): InstallEnvelopeErrorKey {
   return "unknown";
 }
 
+/* ---- A3 本地包注册写面(026 v0.3 消费批):typed 码映射 ---- */
+
+/** A3 信封/受理 typed 错误码 → strings.packages.register.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 v0.3 冻结词面已申报面:通用 vua.vpm.capability_missing(能力门控
+ * 在路由层答——register_capabilities 访问器未翻转,绝不进任务)、
+ * vua.packages.invalid_params(请求形状违规)。A3 无注册项目检查
+ * (project_not_found 复用对本面不适用——注册不触项目)且无 preview 段
+ * (preview_failed 对本面不存在),两码均不在闭集,如实缺席。任务非成
+ * 功终态的 error.code 原词不在此闭集时一律 unknown。 */
+export type RegisterEnvelopeErrorKey =
+  | "capabilityMissing"
+  | "invalidParams"
+  | "unknown";
+
+export function registerEnvelopeErrorKey(code: string): RegisterEnvelopeErrorKey {
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  return "unknown";
+}
+
+/* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面):批量请求行构造 ---- */
+
+/**
+ * 批量多选 → A2 请求行:每行 version null = 解析器选最新稳定版(「安装/
+ * 升级到最新」批量语义,与单包「安装最新」入口同语义——A2 词面不立
+ * upgrade 动词;钉版本粒度保留目录面板单包入口);行序保持给定顺序
+ * (已装表行序 = 服务端 packageId 升序,客户端不重排),空选择返回空
+ * 数组(调用方拒发空请求——词面 minItems 1,UI 层不构造违例请求)。
+ * 可装性/可升性不预判:批量预览的权威判定在服务端(空变更以 toast
+ * 如实反馈,绝不猜测量)。
+ */
+export function installLatestRequests(
+  packageIds: readonly string[],
+): { packageId: string; version: null }[] {
+  return packageIds.map((packageId) => ({ packageId, version: null }));
+}
+
 /* ---- 选择与批量 ---- */
 
 /**

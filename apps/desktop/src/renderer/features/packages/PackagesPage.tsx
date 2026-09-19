@@ -23,6 +23,7 @@ import {
   type PackagesInstallPlanV02,
   type PackagesInstallReceiptV02,
   type PackagesOpsRejectedV02,
+  type PackagesRegisterApplyOutcome,
   type PackagesRemovePlanV01,
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
@@ -41,11 +42,14 @@ import {
   TOAST_DURATION_MS,
   filterPackages,
   installEnvelopeErrorKey,
+  installLatestRequests,
   invalidReasonKey,
   isEmptyPreview,
   migrationSummaryKey,
   rangeSelect,
+  registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
+  removeGuardKey,
   sortPackages,
   sortProjects,
   sourceTextKeys,
@@ -64,6 +68,8 @@ const copy = strings.packages;
  * - 视图 ready-p1(024 P1 中间诚实态)→ 项目选择器(013 注册清单)+
  *   已装包简表;repos 无词表行恒不渲染;移除写入口随 removeOps 能力行
  *   解锁(026 A1 消费批:previewRemove 确认链 + applyRemove 任务面);
+ *   本地包注册区块随 registerOps 能力行解锁(026 A3 消费批:无确认链,
+ *   用户显式提交即确认);
  * - 视图 ready-p2(025 P2 读面消费批)→ P1 布局 + 仓库订阅区块(能力行
  *   解锁,cached=false「已订阅·缓存未建立」诚实态,零健康拟态词)+
  *   行内目录查询入口(按需;compatible 绑定选中工程,无工程上下文不
@@ -72,7 +78,14 @@ const copy = strings.packages;
  *   无字段不虚构)+ 移除写入口(随 removeOps 能力行解锁,同 P1)+
  *   安装/升级写入口(026 A2 消费批:目录面板内「安装最新」/版本行
  *   「安装此版本」,随 installOps 能力行解锁;version null = 解析器选
- *   最新稳定版,string = 钉死精确版本——A2 词面不立 upgrade 动词);
+ *   最新稳定版,string = 钉死精确版本——A2 词面不立 upgrade 动词)+
+ *   批量多选安装(C 面自决,026 A2 消费面:已装表多选列 + 批量条随
+ *   installOps 能力行解锁;批量行全部 version null = 解析器语义,与
+ *   单包「安装/升级到最新」同语义;可装性不预判,权威在服务端)+
+ *   本地包注册区块(026 A3 消费批:随 registerOps 能力行解锁,{packageRoot}
+ *   单键手输 + 显式提交,无 preview 无确认链——注册是幂等集合添加,
+ *   AlreadyAdded 折叠为同一个成功事实;register_capabilities 访问器
+ *   翻转前能力行如实 unavailable,区块诚实缺席);
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - demo 泛型变更链(fixture 面):previewChanges → ChangesDialog 确认 →
@@ -81,7 +94,9 @@ const copy = strings.packages;
  *   (conflicts 警示 + destructive 延迟确认)→ applyRemove(任务化)→
  *   receipt/rejected 终态内联呈现;live A2 词面链(026 v0.2):
  *   previewInstall → InstallConfirmDialog(同构,收据键集互斥)→
- *   applyInstall(任务化)→ 终态内联呈现——三链分立互不污染。
+ *   applyInstall(任务化)→ 终态内联呈现;live A3 注册链(026 v0.3):
+ *   registerLocalPackage 显式提交(无 preview 无确认链,用户提交即确认)
+ *   → 任务化执行 → registered/rejected 行内呈现——各链分立互不污染。
  */
 
 type PackagesSection = "packages" | "repos";
@@ -311,19 +326,34 @@ function P1ProjectPicker({
  * onShowCatalog 仅 P2 分支传入:目录事实(catalog)区块可用时行内提供
  * 按需目录查询入口,无工程上下文不由本表控制(页面级门控)。
  * onRemove 仅 blocks.changes(026 A1 removeOps 能力行)可用时传入:
- * 行内移除写入口,能力行缺席 = 入口不渲染(渲染层不伪造)。 */
+ * 行内移除写入口,能力行缺席 = 入口不渲染(渲染层不伪造)。
+ * installBulk 仅 blocks.installs(026 A2 installOps 能力行)可用时传入:
+ * 批量多选安装面(C 面自决,026 A2 消费面)——选择列 + sticky 批量条,
+ * 批量语义 = 选中行全部「安装/升级到最新」(version null = 解析器选
+ * 最新稳定版,与单包入口同语义;钉版本粒度保留目录面板单包入口);
+ * 能力行缺席 = 选择列与批量条不渲染(渲染层不伪造)。 */
 function P1InstalledTable({
   rows,
   loadErrorCode,
   onShowCatalog,
   onRemove,
   removeBusy,
+  installBulk,
 }: {
   rows: readonly InstalledPackageRowV01[];
   loadErrorCode: string | null;
   onShowCatalog?: (packageId: string) => void;
   onRemove?: (packageId: string) => void;
   removeBusy?: boolean;
+  installBulk?: {
+    /** 当前选中 packageId 集(行序 = 用户勾选顺序,提交时照实透传) */
+    selectedIds: readonly string[];
+    busy: boolean;
+    onToggleRow: (packageId: string, shiftKey: boolean) => void;
+    onToggleAll: () => void;
+    onClear: () => void;
+    onRun: (packageIds: readonly string[]) => void;
+  };
 }) {
   if (loadErrorCode !== null) {
     return (
@@ -341,11 +371,27 @@ function P1InstalledTable({
       />
     );
   }
+  const bulk = installBulk;
+  const allSelected = rows.every((row) => bulk?.selectedIds.includes(row.packageId) === true);
+  const someSelected = rows.some((row) => bulk?.selectedIds.includes(row.packageId) === true);
   return (
     <div className="vua-packages__table-scroll">
       <table className="vua-packages__table">
         <thead>
           <tr>
+            {bulk ? (
+              <th>
+                <input
+                  type="checkbox"
+                  aria-label={copy.columns.selectAll}
+                  checked={allSelected}
+                  ref={(element) => {
+                    if (element) element.indeterminate = !allSelected && someSelected;
+                  }}
+                  onChange={bulk.onToggleAll}
+                />
+              </th>
+            ) : null}
             <th scope="col">{copy.columns.name}</th>
             <th scope="col">{copy.columns.installed}</th>
             <th scope="col">{copy.p1.dependenciesColumn}</th>
@@ -356,6 +402,21 @@ function P1InstalledTable({
         <tbody>
           {rows.map((row) => (
             <tr key={row.packageId}>
+              {bulk ? (
+                <td>
+                  <input
+                    type="checkbox"
+                    aria-label={format(copy.columns.selectRow, { name: row.packageId })}
+                    checked={bulk.selectedIds.includes(row.packageId)}
+                    onChange={(event) =>
+                      bulk.onToggleRow(
+                        row.packageId,
+                        (event.nativeEvent as MouseEvent).shiftKey === true,
+                      )
+                    }
+                  />
+                </td>
+              ) : null}
               <td data-column={copy.columns.name}>
                 <div className="vua-packages__name">
                   <span className="vua-packages__name-title" title={row.packageId}>
@@ -392,6 +453,26 @@ function P1InstalledTable({
           ))}
         </tbody>
       </table>
+      {/* 批量条:sticky 贴表格滚动区底部(与 demo 面同构),出现时不推挤
+       * 上方内容;按钮 = 批量「安装/升级到最新」(version null 解析器语义,
+       * 可装性权威在服务端预览,空变更以 toast 如实反馈) */}
+      {bulk && bulk.selectedIds.length > 0 ? (
+        <div className="vua-packages__bulkbar">
+          <span className="vua-caption">
+            {format(copy.bulk.selectedCount, { count: bulk.selectedIds.length })}
+          </span>
+          <Button
+            variant="default"
+            disabled={bulk.busy}
+            onClick={() => bulk.onRun(bulk.selectedIds)}
+          >
+            {copy.install.latest}
+          </Button>
+          <Button variant="subtle" onClick={bulk.onClear}>
+            {copy.bulk.clear}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -455,6 +536,79 @@ function P2ReposSection({
           );
         })}
       </ul>
+    </Card>
+  );
+}
+
+/* ---- A3 本地包注册区块(026 v0.3 消费批):blocks.registers(packages.
+ * registerOps 能力行)门控,false = 区块不渲染(诚实缺席)。族中唯一无
+ * preview 对偶的写面——无确认链:用户显式提交即确认,无 DelayedButton
+ * 无对话框(非破坏性,ADR-0006 破坏性警示路径不适用,本面不发明破坏性
+ * 事实)。空输入 = 按钮禁用(词面 minLength 1,UI 不构造违例请求)。
+ * ok(registered 三键回显)/rejected(guard 文案 + detail 原词)行内
+ * 呈现;failed/unavailable 关闭为 toast 诚实说明——任务真实状态由任务
+ * 中心呈现。幂等语义如实呈现:重复注册同一包根 = 同一个成功事实。 ---- */
+
+/** A3 注册区块行内终态:ok 保留收据回显 / rejected 保留拒绝呈现;
+ * failed/unavailable 不留行内状态( toast 说明后复位)。 */
+type RegisterOutcomeView =
+  | { readonly kind: "ok"; readonly packageRoot: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+function RegisterSection({
+  outcome,
+  busy,
+  path,
+  onPathChange,
+  onSubmit,
+}: {
+  outcome: RegisterOutcomeView | null;
+  busy: boolean;
+  path: string;
+  onPathChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const trimmed = path.trim();
+  const usable = trimmed.length > 0 && !busy;
+  return (
+    <Card>
+      <h2 className="vua-packages__section-title">{copy.register.title}</h2>
+      <p className="vua-caption vua-text-secondary">{copy.register.description}</p>
+      <div className="vua-packages__register-row">
+        <input
+          type="text"
+          className="vua-packages__register-input"
+          placeholder={copy.register.placeholder}
+          aria-label={copy.register.inputAria}
+          value={path}
+          onChange={(event) => onPathChange(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && usable) onSubmit();
+          }}
+        />
+        <Button variant="default" disabled={!usable} onClick={onSubmit}>
+          <Icon name="folder" size={16} />
+          {busy ? copy.register.submitting : copy.register.action}
+        </Button>
+      </div>
+      {outcome?.kind === "ok" ? (
+        <div className="vua-packages__register-result" role="status">
+          <Icon name="check" size={16} />
+          <span className="vua-caption">
+            {format(copy.register.successLine, { packageRoot: outcome.packageRoot })}
+          </span>
+        </div>
+      ) : null}
+      {outcome?.kind === "rejected" ? (
+        <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+          <Icon name="warning" size={16} />
+          <span className="vua-caption">
+            {copy.register.guards[removeGuardKey(outcome.guard)]}
+            {" "}
+            {format(copy.register.rejectedDetail, { detail: outcome.detail })}
+          </span>
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -653,6 +807,10 @@ export function PackagesPage() {
   const [detailId, setDetailId] = useState<string | null>(null);
   const [catalogTarget, setCatalogTarget] = useState<string | null>(null);
   const [pendingProjectId, setPendingProjectId] = useState<string | null>(null);
+  // 批量多选安装选择(live 链,C 面自决 026 A2 消费面;与 demo 泛型链的
+  // selectedIds 分立互不污染):anchor 供 Shift 范围选
+  const [installSelectedIds, setInstallSelectedIds] = useState<readonly string[]>([]);
+  const [installAnchorId, setInstallAnchorId] = useState<string | null>(null);
   // 变更两阶段
   const [preview, setPreview] = useState<PackageChangePreview | null>(null);
   const [previewBusy, setPreviewBusy] = useState(false);
@@ -680,6 +838,12 @@ export function PackagesPage() {
     rejection: PackagesOpsRejectedV02 | null;
   } | null>(null);
   const [installPreviewBusy, setInstallPreviewBusy] = useState(false);
+  // A3 本地包注册(026 v0.3 消费批;与 A1/A2 确认链分立):无 preview 无
+  // 确认链——用户显式提交即确认;ok(registered 回显)/rejected 行内呈现,
+  // failed/unavailable toast 后复位
+  const [registerRoot, setRegisterRoot] = useState("");
+  const [registerBusy, setRegisterBusy] = useState(false);
+  const [registerOutcome, setRegisterOutcome] = useState<RegisterOutcomeView | null>(null);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -765,6 +929,8 @@ export function PackagesPage() {
     setRemovePreviewBusy(false);
     setInstallFlow(null);
     setInstallPreviewBusy(false);
+    setInstallSelectedIds([]);
+    setInstallAnchorId(null);
   }
   if (pendingProjectId !== null && pendingProjectId === selectedIdentity) {
     setPendingProjectId(null);
@@ -948,15 +1114,22 @@ export function PackagesPage() {
   };
 
   /** A2 确认链第一步(026 v0.2 消费批):previewInstall 同步预览(依赖解
-   * 析可达仓库);version null = 解析器选最新稳定版(「安装/升级到最新」
-   * ),string = 钉死精确版本(版本行内入口);typed 失败照词面文案(词
-   * 外码原词插值,A2 新码 preview_failed 有专属文案),unavailable 诚实说
-   * 明,绝不弹空对话框 */
-  const startInstall = (packageId: string, version: string | null) => {
+   * 析可达仓库);请求行 = {packageId, version}:version null = 解析器选
+   * 最新稳定版(「安装/升级到最新」,单包与批量多选入口同语义),string =
+   * 钉死精确版本(版本行内入口);typed 失败照词面文案(词外码原词插值,
+   * A2 新码 preview_failed 有专属文案),unavailable 诚实说明,绝不弹空
+   * 对话框;空请求行集 = UI 层拒发(词面 minItems 1,不构造违例请求) */
+  const startInstallRows = (
+    requests: readonly { packageId: string; version: string | null }[],
+  ) => {
     const projectPath = p2?.projectPath ?? null;
     if (projectPath === null || installPreviewBusy || installFlow !== null) return;
+    if (requests.length === 0) {
+      showToast(copy.install.toasts.nothingToInstall);
+      return;
+    }
     setInstallPreviewBusy(true);
-    void gateway.packages.previewInstall(projectPath, [{ packageId, version }]).then(
+    void gateway.packages.previewInstall(projectPath, requests).then(
       (result) => {
         setInstallPreviewBusy(false);
         if (result.kind === "unavailable") {
@@ -979,7 +1152,7 @@ export function PackagesPage() {
         setInstallFlow({
           phase: "confirm",
           plan: result.plan,
-          requestedPackages: [{ packageId, version }],
+          requestedPackages: requests,
           receipt: null,
           rejection: null,
         });
@@ -989,6 +1162,11 @@ export function PackagesPage() {
         showToast(copy.install.toasts.previewUnavailable);
       },
     );
+  };
+
+  /** 单包安装入口(目录面板「安装最新」/版本行「安装此版本」) */
+  const startInstall = (packageId: string, version: string | null) => {
+    startInstallRows([{ packageId, version }]);
   };
 
   /** A2 确认链第二步:applyInstall 任务化执行(携 plan.digest 为
@@ -1063,6 +1241,103 @@ export function PackagesPage() {
     setAnchorId(null);
   };
 
+  /* ---- 批量多选安装(live 链,C 面自决 026 A2 消费面;与 demo 泛型链的
+   * toggleRow/toggleAll 分立互不污染)。行序 = 当前视图过滤后行序(服务
+   * 端 packageId 升序,客户端不重排)。 ---- */
+
+  const toggleInstallRow = (packageId: string, shiftKey: boolean) => {
+    const orderedRows = p1 !== null ? p1Rows : p2Rows;
+    if (shiftKey && installAnchorId !== null) {
+      setInstallSelectedIds(
+        rangeSelect(
+          orderedRows.map((row) => row.packageId),
+          installAnchorId,
+          packageId,
+        ),
+      );
+      return;
+    }
+    setInstallAnchorId(packageId);
+    setInstallSelectedIds((prev) =>
+      prev.includes(packageId)
+        ? prev.filter((id) => id !== packageId)
+        : [...prev, packageId],
+    );
+  };
+
+  const toggleInstallAll = () => {
+    const orderedRows = p1 !== null ? p1Rows : p2Rows;
+    const allSelected =
+      orderedRows.length > 0 &&
+      orderedRows.every((row) => installSelectedIds.includes(row.packageId));
+    setInstallSelectedIds(allSelected ? [] : orderedRows.map((row) => row.packageId));
+    setInstallAnchorId(null);
+  };
+
+  const clearInstallSelection = () => {
+    setInstallSelectedIds([]);
+    setInstallAnchorId(null);
+  };
+
+  /** 批量入口:选中行全部「安装/升级到最新」(version null = 解析器选
+   * 最新稳定版,与单包入口同语义;可装性/可升性不预判,权威判定在服务
+   * 端 preview——空变更以 toast 如实反馈)。预览受理(进入确认链)即
+   * 清空批量选择:确认链期间批量条退场;拒绝后的重试 = 重新勾选重预览
+   * (digest 确认链机制本就要求重预览,绝不静默沿用旧清单,诚实纪律 3) */
+  const runInstallLatest = (packageIds: readonly string[]) => {
+    if (packageIds.length === 0) return;
+    startInstallRows(installLatestRequests(packageIds));
+    clearInstallSelection();
+  };
+
+  /* ---- A3 本地包注册(026 v0.3 消费批):无 preview 无确认链,用户显
+   * 式提交即确认(词面无 digest 位,UI 不构造携 digest 请求)。空输入 =
+   * 按钮禁用,提交函数再守卫一次(词面 minLength 1,UI 绝不构造违例请
+   * 求)。ok/rejected 行内呈现;failed/unavailable 关闭为 toast 诚实说
+   * 明——任务真实状态由任务中心呈现。幂等语义如实呈现:重复注册同一
+   * 包根 = 同一个成功事实(收据形状相同)。 ---- */
+
+  const startRegister = () => {
+    if (registerBusy) return;
+    const packageRoot = registerRoot.trim();
+    if (packageRoot.length === 0) return;
+    setRegisterBusy(true);
+    setRegisterOutcome(null);
+    void gateway.packages.registerLocalPackage(packageRoot).then(
+      (result) => {
+        setRegisterBusy(false);
+        if (result.kind === "ok") {
+          setRegisterOutcome({ kind: "ok", packageRoot: result.receipt.packageRoot });
+          return;
+        }
+        if (result.kind === "rejected") {
+          setRegisterOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        setRegisterOutcome(null);
+        if (result.kind === "failed") {
+          const key = registerEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.register.toasts.failedUnknown, { code: result.code })
+              : copy.register.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.register.toasts.unavailable);
+        }
+      },
+      () => {
+        setRegisterBusy(false);
+        setRegisterOutcome(null);
+        showToast(copy.register.toasts.unavailable);
+      },
+    );
+  };
+
   const togglePrereleases = (checked: boolean) => {
     if (checked && !prereleaseAcked) {
       setPrereleasePrompt(true);
@@ -1131,6 +1406,15 @@ export function PackagesPage() {
             {p2.blocks.repos ? (
               <P2ReposSection repos={p2.repos} reposErrorCode={p2.reposError?.code ?? null} />
             ) : null}
+            {p2.blocks.registers ? (
+              <RegisterSection
+                outcome={registerOutcome}
+                busy={registerBusy}
+                path={registerRoot}
+                onPathChange={setRegisterRoot}
+                onSubmit={startRegister}
+              />
+            ) : null}
             {registeredProjects !== null && registeredProjects.length === 0 ? (
               <EmptyState
                 title={copy.empty.noProjectsTitle}
@@ -1174,6 +1458,18 @@ export function PackagesPage() {
                     {...(p2.blocks.changes
                       ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }
                       : {})}
+                    {...(p2.blocks.installs
+                      ? {
+                          installBulk: {
+                            selectedIds: installSelectedIds,
+                            busy: installPreviewBusy || installFlow !== null,
+                            onToggleRow: toggleInstallRow,
+                            onToggleAll: toggleInstallAll,
+                            onClear: clearInstallSelection,
+                            onRun: runInstallLatest,
+                          },
+                        }
+                      : {})}
                   />
                 )}
                 {catalogTarget !== null && p2.blocks.catalog && p2.projectPath !== null ? (
@@ -1214,6 +1510,15 @@ export function PackagesPage() {
                 selectedProjectPath={p1.projectPath}
                 onSelect={chooseProject}
               />
+              {p1.blocks.registers ? (
+                <RegisterSection
+                  outcome={registerOutcome}
+                  busy={registerBusy}
+                  path={registerRoot}
+                  onPathChange={setRegisterRoot}
+                  onSubmit={startRegister}
+                />
+              ) : null}
               {registeredProjects !== null && registeredProjects.length === 0 ? (
                 <EmptyState
                   title={copy.empty.noProjectsTitle}
@@ -1255,6 +1560,18 @@ export function PackagesPage() {
                       loadErrorCode={p1.loadError?.code ?? null}
                       {...(p1.blocks.changes
                         ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }
+                        : {})}
+                      {...(p1.blocks.installs
+                        ? {
+                            installBulk: {
+                              selectedIds: installSelectedIds,
+                              busy: installPreviewBusy || installFlow !== null,
+                              onToggleRow: toggleInstallRow,
+                              onToggleAll: toggleInstallAll,
+                              onClear: clearInstallSelection,
+                              onRun: runInstallLatest,
+                            },
+                          }
                         : {})}
                     />
                   )}

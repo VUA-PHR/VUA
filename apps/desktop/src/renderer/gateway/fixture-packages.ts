@@ -484,6 +484,9 @@ export function createFixturePackages(): PackagesPort {
     // 同纪律恒缺席臂(演示面永不模拟安装收据)
     previewInstall: () => Promise.resolve({ kind: "unavailable" } as const),
     applyInstall: () => Promise.resolve({ kind: "unavailable" } as const),
+    // A3 写面词面(packages.registerLocalPackage,026 v0.3 消费批):同纪律
+    // 恒缺席臂(演示面永不模拟注册收据)
+    registerLocalPackage: () => Promise.resolve({ kind: "unavailable" } as const),
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
 }

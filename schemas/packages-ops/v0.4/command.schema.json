@@ -1,0 +1,281 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.4/command.schema.json",
+  "title": "VUA packages-ops command v0.4",
+  "description": "Packages write face, fourth frozen slice A4 = repository add/remove (proposal 026 face order; the v0.1 A1 removal row, the v0.2 A2 install/upgrade row and the v0.3 A3 registration row stay frozen and served untouched — v0.4 is a separate row directory per the packages-catalog v0.2 increment precedent). Exactly eight methods on the packages.* family: the A1 pair (packages.previewRemove / packages.applyRemove, v0.1 shapes verbatim), the A2 pair (packages.previewInstall / packages.applyInstall, v0.2 shapes verbatim), the A3 single method (packages.registerLocalPackage, v0.3 shape verbatim), plus the THREE A4 methods packages.addRemoteRepo / packages.addLocalRepo / packages.removeRepo, each mapped one-to-one onto a VpmBackend port method (add_remote_repo / add_local_repo / remove_repo). THE A4 FACE DELIBERATELY BREAKS THE preview/apply PAIR SHAPE like A3 — no method on this face carries a preview arm: adding a REMOTE repository inherently contains a manifest-fetch network segment (a preview cannot verify reachability without doing the same network work, so a preview arm would be a second network round-trip pretending to be a safer first one — not frozen), and no method on this face has a pre-existing state digest to bind (the subscription list may drift between two reads, but the honest failure mode is the port answering vua.vpm.repo_not_found at execution time, never a digest ritual — ORC-WF-003/004 has no purchase here). All three methods are NINE-STATE TASK-DRIVEN write commands (the family-consistent shape: applyRemove/applyInstall/registerLocalPackage/project.setNote all ride the task surface — commandId idempotency, cancellable — the remote fetch makes cancellability material — events+revision, recovery maps non-terminal residue to inspect_required and never resumes implicitly, honesty rule 3). THE SUBSCRIPTION FACE WRITES THE BACKEND'S ISOLATED ENVIRONMENT ONLY (the same fact A3 froze: never the user's VCC or ALCOM settings, never a project) — so NO method takes a projectPath; the project-identity gate (013 project_not_found reuse) does not apply to this face. THE USER'S EXPLICIT SUBMISSION IS THE CONFIRMATION (the A3/A5 stance; ADR-0006's destructive-warning path does not apply — adding or removing one subscription row deletes no package file and no project content; a carried confirmedDigest = shape violation, negative vector). params: addRemoteRepo {url, name} — url is the remote repository URL (a non-empty string; no tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream URL grammar), name is the REQUIRED user-supplied display name (the subscription list presents it; the read face RepoInfoV01.name Option projects EXISTING rows verbatim, it does not imply new rows may go nameless). addLocalRepo {path, name} — path is the local repository directory, non-empty. removeRepo {repoId} — the repository id (the stable row handle; index addressing is NOT frozen: an index drifts under concurrent writers). Rows whose id is absent are outside this face's remove reach (the honest boundary is declared in the protocol document). Gate: the wire routes for these methods do not exist yet (wiring is the next core slice); serving is capability-gated on the NEW defaulted accessor VpmBackend::repo_write_capabilities() -> RepoWriteCapabilities with THREE INDEPENDENT bits (addRemoteRepo / addLocalRepo / removeRepo — a backend may serve a subset; default declared-none, the 025 catalog_capabilities law; one row packages.repoOps serving the three methods, the removeOps/installOps/registerOps one-row precedent; a backend that overrides nothing keeps the row honestly unavailable; a wired backend without the specific bit answers the generic capability_missing) and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.4" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall",
+        "packages.registerLocalPackage",
+        "packages.addRemoteRepo",
+        "packages.addLocalRepo",
+        "packages.removeRepo"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1,
+                      "description": "Version-selection semantics frozen with the A2 batch: null = the resolver picks (latest stable); a string = pin exactly that version."
+                    }
+                  }
+                },
+                "description": "The closed explicit request list. A repeated packageId across rows is a word-face violation even when the versions differ (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness; the negative vector pins the rule)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": { "type": "string", "minLength": 1 },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The SAME closed explicit request list the preview answered (the audit link: the confirmed digest binds to exactly that preview's canonical item list)."
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewInstall result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.registerLocalPackage" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageRoot"],
+            "properties": {
+              "packageRoot": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local package root directory (the port's package_root, verbatim camelCase projection): the directory containing the package.json of the generated local VPM package to register into the backend's isolated environment. A path fact only — no projectId, no projectPath: registration never touches a project or the user's VCC/ALCOM settings. Registration is idempotent (AlreadyAdded answers success) and carries NO digest: there is no pre-existing state to drift and the user's explicit submission IS the confirmation."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addRemoteRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "name"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The remote repository URL to subscribe. No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream URL grammar; the backend's guard (duplicate url/name, official/curated guard) is the authority and answers vua.vpm.repo_invalid on refusal. The manifest fetch is inherent to execution (no preview arm exists on this face)."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row (the subscription list presents it). Headers/auth are NOT taken by this word face — the first frozen slice carries no credential transport; a future face that does needs its own accepted security decision."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addLocalRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "name"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local repository directory to subscribe (the port's path, verbatim). The backend's duplicate/shape guard is the authority and answers vua.vpm.repo_invalid on refusal. No network segment on this method."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.removeRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row to remove (the stable row handle; index addressing is NOT frozen — an index drifts under concurrent writers). An unknown repoId answers vua.vpm.repo_not_found at execution time. Rows whose id is absent are outside this face's remove reach (protocol-document boundary)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -1574,6 +1574,33 @@ rolled_back: "롤백됨",
       },
     },
 
+    register: {
+      title: "로컬 패키지 등록",
+      description:
+        "로컬 패키지 루트 폴더(package.json 포함)를 VUA 패키지 환경에 등록합니다. 등록은 항목 추가만 수행하며 프로젝트나 VCC/ALCOM 설정은 건드리지 않습니다. 같은 패키지를 다시 등록해도 안전합니다.",
+      placeholder: "로컬 패키지 루트 경로 입력, 예: C:\\LocalPackages\\com.example.pkg-1.0.0",
+      inputAria: "로컬 패키지 루트 경로",
+      action: "등록",
+      submitting: "등록 중…",
+      successLine: "등록됨: {packageRoot}",
+      rejectedDetail: "서버 설명: {detail}",
+      guards: {
+        preview_drift: "등록이 거부되었습니다.",
+        package_not_found: "등록이 거부되었습니다.",
+        execution_failed: "등록이 실행 단계에서 실패했습니다.",
+        unknown: "등록이 거부되었습니다.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "현재 엔진 백엔드는 로컬 패키지 등록을 지원하지 않습니다.",
+        invalidParams: "등록 요청 형식이 잘못되었습니다.",
+        unknown: "작업에 실패했습니다.",
+      },
+      toasts: {
+        failedUnknown: "등록을 완료하지 못했습니다({code}).",
+        unavailable: "등록을 완료하지 못했습니다: 결과를 확인할 수 없습니다. 작업 센터에서 상태를 확인하세요.",
+      },
+    },
+
     repos: {
       addCommunity: "커뮤니티 리포지토리 추가",
       riskTitle: "커뮤니티 리포지토리를 추가하기 전에",
