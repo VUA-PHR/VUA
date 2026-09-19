@@ -16,12 +16,13 @@ use vua_orchestrator::{
     AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
     ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
     PackageCatalogV02, PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef,
-    RegisterCapabilities, RegisteredProjectV1, RepoInfoV01, RepoWriteCapabilities, VpmBackend,
+    RegisterCapabilities, RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01,
+    RepoCatalogRepoV01, RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, VpmBackend,
     VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -410,6 +411,52 @@ fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
     }
 }
 
+/// 027 F2（实现核对切片）：预定义两仓的订阅 url（库私有常量逐字镜像——
+/// vrc-get-vpm 0.0.16 environment.rs:45/:47，依赖锁定 =0.0.16）。仅用于
+/// 「该预定义仓是否已被集合装载」的 url 命中判定（装载时库把缓存文档 url
+/// 覆写为订阅 url，repo_holder.rs load_repo_from_cache），缓存文件的路径
+/// 面照协议本根事实专节由库自身解析（Repos/vrc-official.json、
+/// Repos/vrc-curated.json，相对环境根），本适配层不拼装、不读写。
+const OFFICIAL_REPO_URL: &str = "https://packages.vrchat.com/official?download";
+const CURATED_REPO_URL: &str = "https://packages.vrchat.com/curated?download";
+
+/// 027 F2（实现核对切片）：单仓库缓存清单的包行投影。包事实唯一解析源＝
+/// 库集合：`get_latest(latest_for(None, show_prerelease))`（remote.rs:212–223
+/// ——satisfies 链＝非 yanked＋prerelease 开关，project_unity=None 时 unity
+/// 过滤全通＝冻结词面「无工程 Unity 约束」）；`latestVersion: null`＝当前
+/// 设置下无合资格版本——行仍在、缺席不是「无包」。`versionCount`＝缓存清
+/// 单自身条目计数（all_versions，yanked 计入）——按缓存事实计数，不是可用
+/// 性承诺。`packageIds` 过滤是透镜：不匹配＝诚实空数组，绝不是错误
+/// （`no_matching_package` 在本面无适用范围）。行序＝文档自身 packages 枚
+/// 举序（IndexMap 插入序），不发明排序键。
+fn repo_catalog_packages(
+    repo: &vrc_get_vpm::repository::LocalCachedRepository,
+    show_prerelease: bool,
+    filter: &HashSet<&str>,
+) -> Vec<RepoCatalogPackageV01> {
+    let selector = vrc_get_vpm::VersionSelector::latest_for(None, show_prerelease);
+    repo.get_packages()
+        .filter_map(|packages| {
+            // 身份事实载体：合资格最新版优先；无合资格版本（全 yanked／被
+            // prerelease 开关排除）时取版本最高的条目承载身份——行仍在，
+            // latestVersion 如实 null。
+            let latest = packages.get_latest(selector);
+            let identity =
+                latest.or_else(|| packages.all_versions().max_by_key(|m| m.version()))?;
+            if !filter.is_empty() && !filter.contains(identity.name()) {
+                return None;
+            }
+            Some(RepoCatalogPackageV01 {
+                package_id: identity.name().to_owned(),
+                display_name: identity.display_name().map(str::to_owned),
+                description: identity.description().map(str::to_owned),
+                latest_version: latest.map(|manifest| manifest.version().to_string()),
+                version_count: packages.all_versions().count() as u64,
+            })
+        })
+        .collect()
+}
+
 /// The `compatible` judgment (025 freeze batch: evaluated against the
 /// selected project's Unity version). This re-creates vrc-get's
 /// `unity_compatible` (lib.rs:208, private fn, dependency locked =0.0.16)
@@ -540,6 +587,20 @@ impl VpmBackend for VrcGetLibBackend {
             add_remote_repo: true,
             add_local_repo: true,
             remove_repo: true,
+        }
+    }
+
+    fn repo_catalog_capabilities(&self) -> RepoCatalogCapabilities {
+        // 027 F2 冻结批（实现核对切片）：恰在实现 `repo_catalog` 时覆写默认
+        // declared-none（025/026 catalog/register/repo-write 同律，
+        // ORC-DEV-004）。库后端具备仓库级列表能力（PackageCollection::
+        // get_remote，环境考证 3bd4f12 §1(a)），能力如实随实现翻转——覆写即
+        // served 行 `packages.repoCatalogOps` 翻转 available（此前按默认
+        // declared-none 如实维持不可用）。`VccCliBackend` 不覆写——CLI 无仓
+        // 库级包列表能力（考证 §1 CLI 臂），如实维持 declared-none，缺席臂
+        // 零改动。
+        RepoCatalogCapabilities {
+            repo_catalog: true,
         }
     }
 
@@ -759,6 +820,158 @@ impl VpmBackend for VrcGetLibBackend {
             update_available: catalog.update_available,
             versions: catalog.versions,
             cache_sourced,
+        })
+    }
+
+    fn repo_catalog(
+        &self,
+        repo_id: Option<&str>,
+        package_ids: &[String],
+    ) -> Result<RepoCatalogV01, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let offline = self.offline;
+        let repo_scope = repo_id.map(str::to_owned);
+        let package_filter: Vec<String> = package_ids.to_vec();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 与 package_catalog_impl 同构的降级路径（ORC-ADP-006）：offline →
+            // load_cache（cacheSourced=true）；在线 load 失败降级 load_cache
+            // （true）；在线成功 load（含 etag 条件刷新共享缓存文件——027 协议
+            // 本「生产接线面」事实：与 VCC/vrc-get 自身刷新行为相同）→ false。
+            // cacheSourced 是信息性披露，非失败态。
+            let (collection, cache_sourced) = if offline {
+                (
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        .await
+                        .map_err(map_environment_io("loading package cache"))?,
+                    true,
+                )
+            } else {
+                match vrc_get_vpm::environment::PackageCollection::load(
+                    &settings,
+                    &io,
+                    Some(&http),
+                )
+                .await
+                {
+                    Ok(collection) => (collection, false),
+                    Err(_) => (
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                            .await
+                            .map_err(map_environment_io("loading package cache"))?,
+                        true,
+                    ),
+                }
+            };
+            // 判定输入一次读定：prerelease 开关读同一 settings.json（027 冻结
+            // 词面：零 wire 开关）。
+            let show_prerelease = settings.show_prerelease_packages();
+            let filter: HashSet<&str> = package_filter.iter().map(String::as_str).collect();
+
+            // 第 1 层＝集合已装载仓库行：`get_remote()` 自身枚举顺序逐字投影
+            // （冻结词面：不发明排序键）。已装载＝缓存命中（cached=true），包
+            // 事实唯一解析源＝库集合（单事实源纪律，repo_catalog_packages）。
+            // 身份取缓存文档自身的 id/name（集合世界的事实源）。
+            let loaded: Vec<&vrc_get_vpm::repository::LocalCachedRepository> =
+                collection.get_remote().collect();
+            let loaded_urls: HashSet<String> = loaded
+                .iter()
+                .filter_map(|repo| repo.url())
+                .map(|url| url.as_str().to_owned())
+                .collect();
+            let mut repos: Vec<RepoCatalogRepoV01> = loaded
+                .iter()
+                .map(|repo| RepoCatalogRepoV01 {
+                    repo_id: repo.id().map(str::to_owned),
+                    name: repo.name().map(str::to_owned),
+                    cached: true,
+                    packages: repo_catalog_packages(repo, show_prerelease, &filter),
+                })
+                .collect();
+
+            // 第 2 层＝世界中未被集合装载的仓库行（已订阅未刷新＝其自身诚实
+            // 状态：cached=false、空 packages 数组，不隐藏——冻结词面）。行序
+            // ＝库装载链自身顺序（预定义两仓先、用户仓库按订阅序——
+            // load_cache 的 predefined.chain(user) 源序），非发明排序。已装载
+            // 行不重复出现。装载判定：url 行＝订阅 url 命中已装载集合（库装
+            // 载时把缓存文档 url 覆写为订阅 url，精确匹配）；无 url 行（本地
+            // 目录仓）＝库自身反序列化器接受该缓存文件（与库 load_repo_from_cache
+            // 无 url 臂同构的布尔判定——只判定、绝不二次投影其内容，包事实
+            // 仍唯一出自第 1 层库集合）。
+            if !settings.ignore_official_repository()
+                && !loaded_urls.contains(OFFICIAL_REPO_URL)
+            {
+                repos.push(RepoCatalogRepoV01 {
+                    // 预定义仓无订阅行身份：未装载时无任何身份事实，如实双双
+                    // null（诚实缺席）。
+                    repo_id: None,
+                    name: None,
+                    cached: false,
+                    packages: Vec::new(),
+                });
+            }
+            if !settings.ignore_curated_repository() && !loaded_urls.contains(CURATED_REPO_URL) {
+                repos.push(RepoCatalogRepoV01 {
+                    repo_id: None,
+                    name: None,
+                    cached: false,
+                    packages: Vec::new(),
+                });
+            }
+            for repo in settings.get_user_repos() {
+                let loaded = match repo.url() {
+                    Some(url) => loaded_urls.contains(url.as_str()),
+                    None => std::fs::read(repo.local_path())
+                        .ok()
+                        .and_then(|bytes| {
+                            serde_json::from_slice::<vrc_get_vpm::repository::LocalCachedRepository>(
+                                &bytes,
+                            )
+                            .ok()
+                        })
+                        .is_some(),
+                };
+                if loaded {
+                    continue;
+                }
+                repos.push(RepoCatalogRepoV01 {
+                    // 未装载行唯一存在的身份事实＝订阅行自身的 id/name
+                    // （025 订阅面同源），Option 如实投影。
+                    repo_id: repo.id().map(str::to_owned),
+                    name: repo.name().map(str::to_owned),
+                    cached: false,
+                    packages: Vec::new(),
+                });
+            }
+
+            // repoId 透镜：null＝全部仓库行；非空 id＝只答投影 repo_id 恰等
+            // 的行（本面自己投影过的 id——已装载行取缓存文档 id、未装载行取
+            // 订阅行 id，都是该 id 的诚实事实源）。词表外 id＝**复用**
+            // vua.vpm.repo_not_found（A4 removeRepo 同事实、零新码），绝不虚
+            // 构空形状成功。id 缺席（null）的行在 scope 臂不可达（与 A4
+            // removeRepo 的无 id 行不可寻址同款纪律）。
+            if let Some(scope) = repo_scope.as_deref() {
+                repos.retain(|repo| repo.repo_id.as_deref() == Some(scope));
+                if repos.is_empty() {
+                    return Err(AppErrorV1::new(
+                        error_codes::REPO_NOT_FOUND,
+                        ErrorCategory::Validation,
+                        "errors.vpm.repoNotFound",
+                        "corr-vpm-catalog",
+                    )
+                    .with_param("repoId", ParamValue::Text(scope.to_owned())));
+                }
+            }
+            Ok(RepoCatalogV01 {
+                repos,
+                cache_sourced,
+            })
         })
     }
 
