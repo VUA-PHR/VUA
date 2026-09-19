@@ -90,6 +90,7 @@ export const strings: Strings = {
     generateVpm: "VPM パッケージを生成:{name}",
     deleteOriginals: "オリジナルを削除:{name}",
     importBatch: "素材パッケージ一括取り込み",
+    adoptDownload: "ダウンロードを採用",
   },
   taskCenter: {
     title: "通知センター",
@@ -110,6 +111,7 @@ demoTaskTitle: "デモタスク",
     openAria: "通知センターを開く(実行中 {count} 件)",
     closeAria: "通知センターを閉じる",
     empty: "通知はありません",
+    unlabeledTask: "バックグラウンドタスク",
   },
   bootSplash: {
     starting: "VUA を起動しています",

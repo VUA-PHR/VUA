@@ -1,9 +1,12 @@
+import type { PageId } from "../app/nav-model.ts";
 import type { GatewayClient } from "./gateway-client.ts";
 import type { WarehouseArtifactMode } from "./acquire-port.ts";
 import type {
   WarehouseCommandOutcome,
   WarehouseCommandsPort,
 } from "./warehouse-commands-port.ts";
+import { registerTaskIdentity } from "./task-identity.ts";
+import { strings } from "../i18n/index.ts";
 
 /**
  * F4-9 live 写命令端口:warehouse.setArtifactMode / generateVpm /
@@ -83,6 +86,20 @@ function narrowAcceptance(value: unknown): WarehouseCommandOutcome {
   return { ok: true, accepted: { taskId, correlationId } };
 }
 
+/** 受理即登记任务身份(W25 走查 D1):命令回执给出 taskId,发起端口已知
+ * 操作类型与来源页——登记后通知中心以人类可读标题呈现,不再裸 taskId。
+ * wire 无描述字段,登记是渲染层会话事实,不发明 wire 面。 */
+function acceptWithIdentity(
+  value: unknown,
+  identity: { readonly title: string; readonly originPage: PageId },
+): WarehouseCommandOutcome {
+  const outcome = narrowAcceptance(value);
+  if (outcome.ok && "accepted" in outcome) {
+    registerTaskIdentity(outcome.accepted.taskId, identity);
+  }
+  return outcome;
+}
+
 /** W14 v0.2 全局层:回执 = 从 BDL 读回的持久事实(globalDefaultMode),非回显 */
 function narrowGlobalDefault(value: unknown): WarehouseCommandOutcome {
   const record = asRecord(value);
@@ -148,7 +165,12 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
         method: "warehouse.import",
         params: { sourceFolders: [...sourceFolders], commandId: `whcmd-${crypto.randomUUID()}` },
       });
-      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+      return response.ok
+        ? acceptWithIdentity(response.value, {
+            title: strings.taskTitles.importBatch,
+            originPage: "import-material",
+          })
+        : outcomeFromClientError(response.error);
     },
     // IMP-3 下载采纳(bdl-commands v0.4):仅身份请求,受理即采纳任务身份;
     // 进度与落成条目经任务面/读面
@@ -159,7 +181,12 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
         method: "warehouse.importDownloads",
         params: { downloadIds: [...downloadIds], commandId: `whcmd-${crypto.randomUUID()}` },
       });
-      return response.ok ? narrowAcceptance(response.value) : outcomeFromClientError(response.error);
+      return response.ok
+        ? acceptWithIdentity(response.value, {
+            title: strings.taskTitles.adoptDownload,
+            originPage: "import-material",
+          })
+        : outcomeFromClientError(response.error);
     },
     capability: async () => {
       // 能力探测同 live-acquire 先例:读面探针(写面与读面同域,服务缺位时

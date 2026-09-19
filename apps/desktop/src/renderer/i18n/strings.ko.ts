@@ -90,6 +90,7 @@ export const strings: Strings = {
     generateVpm: "VPM 패키지 생성:{name}",
     deleteOriginals: "오리지널 삭제:{name}",
     importBatch: "소재 패키지 일괄 가져오기",
+    adoptDownload: "다운로드 채택",
   },
   taskCenter: {
     title: "알림 센터",
@@ -110,6 +111,7 @@ demoTaskTitle: "데모 작업",
     openAria: "알림 센터 열기(진행 중 {count}개)",
     closeAria: "알림 센터 닫기",
     empty: "알림이 없습니다",
+    unlabeledTask: "백그라운드 작업",
   },
   bootSplash: {
     starting: "VUA 시작 중",

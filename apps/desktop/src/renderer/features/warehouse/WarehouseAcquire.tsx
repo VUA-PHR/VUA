@@ -10,6 +10,7 @@ import {
 import { Skeleton } from "../../components/primitives/Skeleton.tsx";
 import {
   readEntryPreview,
+  registerTaskIdentity,
   useAcquireView,
   useGateway,
   type AcquireEntryDetailView,
@@ -377,10 +378,17 @@ function EntryDetail({
                   .generateVpm(entry.warehouseItemId)
                   .then((outcome) => {
                     setBusy(false);
-                    if (outcome.ok) {
+                    if (outcome.ok && "accepted" in outcome) {
+                      // 受理即登记任务身份(W25 走查 D1):通知中心标题绑定
+                      // 操作条目实体(走查 3a 先例:实体名 verbatim),来源页
+                      // 回仓库页
+                      registerTaskIdentity(outcome.accepted.taskId, {
+                        title: format(strings.taskTitles.generateVpm, { name: entry.displayName }),
+                        originPage: "warehouse",
+                      });
                       setFeedback(copy.acceptedNote);
                       setReloadKey((key) => key + 1);
-                    } else {
+                    } else if (!outcome.ok) {
                       setFeedback(commandErrorTextFor(outcome.error));
                     }
                   });

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { APPLICATION_CONTRACT_VERSION, type EnvironmentCheckItemV01, type TaskSnapshotV01 } from "@vua/contracts";
 import { strings } from "../i18n/index.js";
 import {
@@ -6,6 +6,11 @@ import {
   projectTaskItem,
   projectTaskState,
 } from "./contract-projection.js";
+import { registerTaskIdentity, resetTaskIdentities } from "./task-identity.js";
+
+beforeEach(() => {
+  resetTaskIdentities();
+});
 
 function task(overrides: Partial<TaskSnapshotV01> = {}): TaskSnapshotV01 {
   return {
@@ -34,9 +39,25 @@ describe("contract task state projection", () => {
     expect(projectTaskState("cancelled")).toBe("cancelled");
   });
 
-  it("labels demo tasks and keeps other task ids honest", () => {
+  it("labels demo tasks and falls back to the honest type word for unregistered tasks", () => {
     expect(projectTaskItem(task({ taskId: "demo-1" })).title).toBe(strings.taskCenter.demoTaskTitle);
-    expect(projectTaskItem(task({ taskId: "inspect-42" })).title).toBe("inspect-42");
+    // W25 走查 D1 回归钉:裸 taskId 不再充当标题,未登记任务回落类型词
+    const item = projectTaskItem(task({ taskId: "task-178984402495255500-0001" }));
+    expect(item.title).toBe(strings.taskCenter.unlabeledTask);
+    expect(item.title).not.toBe("task-178984402495255500-0001");
+    expect(item.originPage).toBe("home");
+  });
+
+  it("uses the registered identity title and origin page when the renderer initiated the task", () => {
+    registerTaskIdentity("task-178984402495255500-0001", {
+      title: "批量导入素材包",
+      originPage: "import-material",
+    });
+    const item = projectTaskItem(task({ taskId: "task-178984402495255500-0001" }));
+    expect(item.title).toBe("批量导入素材包");
+    expect(item.originPage).toBe("import-material");
+    // 演示任务身份不受登记影响(demo 前缀照旧给本地化标签)
+    expect(projectTaskItem(task({ taskId: "demo-1" })).title).toBe(strings.taskCenter.demoTaskTitle);
   });
 
   it("derives cancellability from application facts only", () => {

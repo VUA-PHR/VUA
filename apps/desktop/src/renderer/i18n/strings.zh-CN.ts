@@ -103,6 +103,7 @@ export const strings: Strings = {
     generateVpm: "生成 VPM 包:{name}",
     deleteOriginals: "删除原始素材:{name}",
     importBatch: "批量导入素材包",
+    adoptDownload: "采纳下载",
   },
   taskCenter: {
     title: "通知中心",
@@ -123,6 +124,7 @@ demoTaskTitle: "演示任务",
     openAria: "打开通知中心,{count} 项进行中",
     closeAria: "关闭通知中心",
     empty: "暂无通知",
+    unlabeledTask: "后台任务",
   },
   bootSplash: {
     starting: "正在启动 VUA",

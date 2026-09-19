@@ -51,7 +51,14 @@ function TaskRow({
       <span className="vua-taskbar__task-glyph" data-status={task.status}>
         <Icon name={statusGlyph[task.status]} size={16} />
       </span>
-      <div className="vua-taskbar__task-main">
+      {/* 行主区 = 打开按钮(W25 走查 D2):活动/终态两态一致回来源页,
+          不做静默无响应;可访问名说明动作与目标,行内动作按钮在其外 */}
+      <button
+        type="button"
+        className="vua-taskbar__task-main"
+        onClick={onBackToOrigin}
+        aria-label={`${copy.backToOrigin}: ${task.title}`}
+      >
         <span className="vua-taskbar__task-title">{task.title}</span>
         <span className="vua-taskbar__task-meta vua-caption">
           <span className="vua-taskbar__task-status" data-status={task.status}>
@@ -67,7 +74,7 @@ function TaskRow({
           <span className="vua-caption vua-text-secondary">{task.errorText}</span>
         ) : null}
         {rejected ? <span className="vua-taskbar__rejected vua-caption">{copy.cancelRejected}</span> : null}
-      </div>
+      </button>
       <div className="vua-taskbar__task-actions">
         <Button variant="subtle" onClick={onBackToOrigin}>
           {copy.backToOrigin}

@@ -99,6 +99,7 @@ export const strings = {
     generateVpm: "Generate VPM: {name}",
     deleteOriginals: "Delete originals: {name}",
     importBatch: "Batch import material packages",
+    adoptDownload: "Adopt download",
   },
   taskCenter: {
     title: "Notification Center",
@@ -119,6 +120,7 @@ demoTaskTitle: "Demo task",
     openAria: "Open notification center, {count} active",
     closeAria: "Close notification center",
     empty: "No notifications",
+    unlabeledTask: "Background task",
   },
   bootSplash: {
     starting: "Starting VUA",
