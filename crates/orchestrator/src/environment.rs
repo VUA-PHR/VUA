@@ -37,11 +37,17 @@
 //! Play 辖区另含 `disk_space`（同一次磁盘观测在两辖区各报告一条——分配
 //! 2026-09-11 把 disk 列入 play 与 create 两清单；同一稳定 id，逐区条目）。
 //!
-//! Create 辖区 —— `unity_hub`（默认安装路径定点探测）、
+//! Create 辖区 —— `unity_hub`（候选路径列表定点探测：用户级
+//! `%LOCALAPPDATA%\Programs` 与机器级 `C:\Program Files` 双安装位，再以
+//! HKCU/HKLM Uninstall 键 `DisplayIcon` 值兜底——任一命中即 Detected，
+//! facts 记录命中路径与来源）、
 //! `unity_editors`（枚举 Unity Hub 编辑器目录并按支持矩阵分类
 //! production_target / migration_source / other_unity_version /
-//! tuanjie_family，分类事实进 facts）、`vpm_cli`（经 ProcessRunner 跑
-//! `--version`）、`vcc`（VCC settings.json 能力：存在性、格式、注册项目
+//! tuanjie_family，分类事实进 facts）、`vpm`（VPM 能力：VUA 内嵌
+//! `vrc-get-vpm` 库（Cargo.lock 钉版）恒在＝Detected 恒真，版本照钉版
+//! 如实呈现；独立 `vrc-get` CLI 经 ProcessRunner 跑 `--version`
+//! 探测，命中与否只作附加信息事实，从非前置——用户裁决
+//! 2026-09-20）、`vcc`（VCC settings.json 能力：存在性、格式、注册项目
 //! 数——与包后端 vrc-get-vpm 同源）、`disk_space`（kernel32 的
 //! `GetDiskFreeSpaceExW` 直接 FFI，只报字节数；阈值判断属于消费者）。
 //!
@@ -154,6 +160,60 @@ const OPENXR_REGISTRY_SUBKEY: &str = "SOFTWARE\\Khronos\\OpenXR\\1";
 const WINDOWS_CURRENT_VERSION_SUBKEY: &str = "SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion";
 const GPU_CLASS_SUBKEY: &str =
     "SYSTEM\\CurrentControlSet\\Control\\Class\\{4d36e968-e325-11ce-bfc1-08002be10318}";
+
+/// The `vrc-get-vpm` library version embedded in this binary — the
+/// workspace `Cargo.lock` pin. The `vpm` check presents it verbatim; a
+/// regression test asserts lockstep with `Cargo.lock`, so the fact cannot
+/// drift from the real dependency.
+pub const EMBEDDED_VRC_GET_VPM_VERSION: &str = "0.0.16";
+
+/// Well-known Uninstall-registry subkey carrying the Unity Hub entry
+/// (machine-wide installs: `HKLM\...\Uninstall\Unity Technologies - Hub`;
+/// per-user installs mirror it under HKCU). Its `DisplayIcon` value names
+/// the Hub executable even when the install directory is non-default.
+const UNITY_HUB_UNINSTALL_SUBKEY: &str =
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Unity Technologies - Hub";
+/// 32-bit-view variant of [`UNITY_HUB_UNINSTALL_SUBKEY`], probed as a
+/// cheap extra candidate.
+const UNITY_HUB_UNINSTALL_WOW64_SUBKEY: &str =
+    "SOFTWARE\\WOW6432Node\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Unity Technologies - Hub";
+
+/// Parses an Uninstall-registry `DisplayIcon` value into an executable
+/// path candidate. Handles the documented shapes — quoted
+/// (`"C:\path\app.exe"`), plain, each with an optional `,<icon-index>`
+/// suffix (`C:\Program Files\Unity Hub\Unity Hub.exe,0` → the exe path).
+/// Existence of the file is the caller's check, so a malformed value
+/// yields `None` rather than a fabricated path.
+fn display_icon_executable(raw: &str) -> Option<PathBuf> {
+    let trimmed = raw.trim();
+    let unquoted = match trimmed.strip_prefix('"') {
+        Some(rest) => match rest.split_once('"') {
+            Some((path, _)) => path,
+            None => rest,
+        },
+        None => trimmed,
+    };
+    let without_index = match unquoted.rfind(',') {
+        Some(index) if unquoted[index + 1..].bytes().all(|byte| byte.is_ascii_digit()) => {
+            &unquoted[..index]
+        }
+        _ => unquoted,
+    };
+    let candidate = PathBuf::from(without_index.trim());
+    if candidate.as_os_str().is_empty() {
+        None
+    } else {
+        Some(candidate)
+    }
+}
+
+/// Short hive label used in probe-record facts (`HKCU` / `HKLM`).
+fn registry_hive_label(hive: RegistryHive) -> &'static str {
+    match hive {
+        RegistryHive::CurrentUser => "HKCU",
+        RegistryHive::LocalMachine => "HKLM",
+    }
+}
 
 /// Deployer zones, mirroring the frontend navigation (v0.4.0 §2.1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -364,7 +424,14 @@ pub struct EnvironmentRoots {
     pub steam_common: Vec<PathBuf>,
     /// `%USERPROFILE%\AppData\LocalLow` on Windows.
     pub local_low: PathBuf,
-    pub unity_hub_exe: PathBuf,
+    /// Unity Hub executable candidates, probed in order: the per-user
+    /// install location first, then machine-wide installs (W25 live
+    /// finding: `%LOCALAPPDATA%\Programs` alone misses machine-level
+    /// setups). Any hit means detected; the hit path is the fact.
+    pub unity_hub_exe_candidates: Vec<PathBuf>,
+    /// Uninstall-registry `(hive, subkey)` entries whose `DisplayIcon`
+    /// value is parsed as additional Hub executable candidates.
+    pub unity_hub_registry_display_icon_keys: Vec<(RegistryHive, String)>,
     /// Unity Hub's per-version editor folders.
     pub unity_editors_root: PathBuf,
     /// Fixed vrc-get identity probed through the process runner.
@@ -403,9 +470,23 @@ impl Default for EnvironmentRoots {
                 "C:\\Program Files (x86)\\Steam\\steamapps\\common",
             )],
             local_low: PathBuf::from(format!("{user_profile}\\AppData\\LocalLow")),
-            unity_hub_exe: PathBuf::from(format!(
-                "{local_app_data}\\Programs\\Unity Hub\\Unity Hub.exe"
-            )),
+            unity_hub_exe_candidates: vec![
+                PathBuf::from(format!(
+                    "{local_app_data}\\Programs\\Unity Hub\\Unity Hub.exe"
+                )),
+                PathBuf::from("C:\\Program Files\\Unity Hub\\Unity Hub.exe"),
+            ],
+            unity_hub_registry_display_icon_keys: vec![
+                (RegistryHive::CurrentUser, UNITY_HUB_UNINSTALL_SUBKEY.to_owned()),
+                (
+                    RegistryHive::LocalMachine,
+                    UNITY_HUB_UNINSTALL_SUBKEY.to_owned(),
+                ),
+                (
+                    RegistryHive::LocalMachine,
+                    UNITY_HUB_UNINSTALL_WOW64_SUBKEY.to_owned(),
+                ),
+            ],
             unity_editors_root: PathBuf::from("C:\\Program Files\\Unity\\Hub\\Editor"),
             vrc_get_executable: "vrc-get".to_owned(),
             disk_target: PathBuf::from(&user_profile),
@@ -484,7 +565,7 @@ impl EnvironmentEngine {
             Zone::Create => vec![
                 self.check_unity_hub(),
                 self.check_unity_editors(),
-                self.check_vpm_cli(),
+                self.check_vpm(),
                 self.check_vcc(),
                 self.check_disk_space(Zone::Create),
             ],
@@ -869,23 +950,61 @@ impl EnvironmentEngine {
     // --- create zone ---
 
     fn check_unity_hub(&self) -> EnvironmentCheckItemV1 {
-        let exe = &self.roots.unity_hub_exe;
-        match std::fs::metadata(exe) {
-            Ok(metadata) if metadata.is_file() => item(
-                "unity_hub",
-                Zone::Create,
-                EnvironmentPresence::Detected,
-                None,
-                json!({ "exe": exe.to_string_lossy() }),
-            ),
-            _ => item(
-                "unity_hub",
-                Zone::Create,
-                EnvironmentPresence::NotDetected,
-                None,
-                json!({ "exe": exe.to_string_lossy() }),
-            ),
+        // 1. File candidates in order; the first existing executable wins.
+        for exe in &self.roots.unity_hub_exe_candidates {
+            if exe.is_file() {
+                return item(
+                    "unity_hub",
+                    Zone::Create,
+                    EnvironmentPresence::Detected,
+                    None,
+                    json!({ "exe": exe.to_string_lossy(), "via": "path" }),
+                );
+            }
         }
+        // 2. Uninstall-registry DisplayIcon values as fallback candidates.
+        let mut probed_keys = Vec::new();
+        for (hive, subkey) in &self.roots.unity_hub_registry_display_icon_keys {
+            let key_display = format!("{}\\{}", registry_hive_label(*hive), subkey);
+            probed_keys.push(key_display.clone());
+            let raw = match self.roots.registry.get_string(*hive, subkey, "DisplayIcon") {
+                Some(raw) => raw,
+                None => continue,
+            };
+            let exe = match display_icon_executable(&raw) {
+                Some(exe) => exe,
+                None => continue,
+            };
+            if exe.is_file() {
+                return item(
+                    "unity_hub",
+                    Zone::Create,
+                    EnvironmentPresence::Detected,
+                    None,
+                    json!({
+                        "exe": exe.to_string_lossy(),
+                        "via": "registry",
+                        "registryKey": key_display,
+                    }),
+                );
+            }
+        }
+        // 3. Nothing hit: record what was probed, deterministically.
+        item(
+            "unity_hub",
+            Zone::Create,
+            EnvironmentPresence::NotDetected,
+            None,
+            json!({
+                "candidates": self
+                    .roots
+                    .unity_hub_exe_candidates
+                    .iter()
+                    .map(|path| path.to_string_lossy())
+                    .collect::<Vec<_>>(),
+                "registryKeys": probed_keys,
+            }),
+        )
     }
 
     fn check_unity_editors(&self) -> EnvironmentCheckItemV1 {
@@ -934,7 +1053,13 @@ impl EnvironmentEngine {
         }
     }
 
-    fn check_vpm_cli(&self) -> EnvironmentCheckItemV1 {
+    /// VPM capability. VUA embeds the `vrc-get-vpm` library (the
+    /// Cargo.lock pin), so the capability is always present — detected
+    /// unconditionally, with the pinned version presented verbatim. A
+    /// standalone `vrc-get` CLI is probed and recorded informationally
+    /// when found; its absence is a normal fact, never a downgrade — the
+    /// CLI was never a prerequisite (user ruling 2026-09-20).
+    fn check_vpm(&self) -> EnvironmentCheckItemV1 {
         let exe = &self.roots.vrc_get_executable;
         let spec = ProcessSpec {
             executable: PathBuf::from(exe),
@@ -944,7 +1069,7 @@ impl EnvironmentEngine {
             output_limit: OUTPUT_LIMIT,
             ..Default::default()
         };
-        match self.runner.run(&spec) {
+        let standalone_cli = match self.runner.run(&spec) {
             Ok(outcome) if outcome.success() => {
                 let version = outcome
                     .stdout
@@ -953,39 +1078,39 @@ impl EnvironmentEngine {
                     .unwrap_or("")
                     .trim()
                     .to_owned();
-                item(
-                    "vpm_cli",
-                    Zone::Create,
-                    EnvironmentPresence::Detected,
-                    None,
-                    json!({ "version": version, "exe": exe }),
-                )
+                json!({
+                    "state": "detected",
+                    "exe": exe,
+                    "version": version,
+                })
             }
-            Ok(outcome) if outcome.timed_out => item(
-                "vpm_cli",
-                Zone::Create,
-                EnvironmentPresence::DetectionFailed,
-                Some(error_codes::PROBE_FAILED.to_owned()),
-                json!({ "exe": exe }),
-            ),
+            Ok(outcome) if outcome.timed_out => json!({
+                "state": "detection_failed",
+                "exe": exe,
+            }),
             // A missing binary or a failing probe is a normal missing
-            // finding, not a detection failure (验收: 无 vrc-get 机器返回
-            // 确定"未安装").
-            Ok(outcome) => item(
-                "vpm_cli",
-                Zone::Create,
-                EnvironmentPresence::NotDetected,
-                None,
-                json!({ "exe": exe, "exitCode": outcome.exit_code }),
-            ),
-            Err(_) => item(
-                "vpm_cli",
-                Zone::Create,
-                EnvironmentPresence::NotDetected,
-                None,
-                json!({ "exe": exe }),
-            ),
-        }
+            // fact about the optional CLI, not a detection failure of
+            // the capability itself.
+            Ok(outcome) => json!({
+                "state": "not_detected",
+                "exe": exe,
+                "exitCode": outcome.exit_code,
+            }),
+            Err(_) => json!({ "state": "not_detected", "exe": exe }),
+        };
+        item(
+            "vpm",
+            Zone::Create,
+            EnvironmentPresence::Detected,
+            None,
+            json!({
+                "embedded": {
+                    "library": "vrc-get-vpm",
+                    "version": EMBEDDED_VRC_GET_VPM_VERSION,
+                },
+                "standaloneCli": standalone_cli,
+            }),
+        )
     }
 
     /// VCC capability, read through the `VccSettingsReader` port
