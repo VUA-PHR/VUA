@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addLocalRepo",
+  "params": {
+    "path": "D:/synthetic/local-repo",
+    "name": "Local Synthetic Repo",
+    "url": "https://example.vpm/repos/official.json"
+  }
+}

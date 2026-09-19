@@ -14,6 +14,7 @@ import {
   conflictMessageKey,
   filterPackages,
   groupPreviewItems,
+  installLatestRequests,
   invalidReasonKey,
   isEmptyPreview,
   looksPrerelease,
@@ -21,6 +22,7 @@ import {
   rangeSelect,
   relativeCheckedTime,
   installEnvelopeErrorKey,
+  registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
   removeGuardKey,
   repoHealthTextKeys,
@@ -209,6 +211,28 @@ test("rangeSelect: 正向/反向范围,anchor 失效退化单选", () => {
   assert.deepEqual(rangeSelect(ids, "a", "gone"), []);
 });
 
+/* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面) ---- */
+
+test("installLatestRequests: 批量行 = version null 解析器语义(钉法),行序保持,空选择空数组", () => {
+  // 每行 version null = 解析器选最新稳定版(「安装/升级到最新」批量语义,
+  // 与单包「安装最新」入口同语义;A2 词面不立 upgrade 动词)
+  assert.deepEqual(installLatestRequests(["a", "b"]), [
+    { packageId: "a", version: null },
+    { packageId: "b", version: null },
+  ]);
+  // 行序保持给定顺序(已装表行序 = 服务端 packageId 升序,客户端不重排)
+  assert.deepEqual(
+    installLatestRequests(["z", "m", "a"]).map((row) => row.packageId),
+    ["z", "m", "a"],
+  );
+  // 空选择 = 空数组(调用方拒发空请求——词面 minItems 1,UI 不构造违例请求)
+  assert.deepEqual(installLatestRequests([]), []);
+  // 无钉版本行:批量面不携带 string 版本(钉版本粒度保留目录面板单包入口)
+  for (const row of installLatestRequests(["a", "b"])) {
+    assert.equal(row.version, null);
+  }
+});
+
 /* ---- 变更预览分组与空预览 ---- */
 
 test("groupPreviewItems: 固定顺序,空组省略", () => {
@@ -322,6 +346,30 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
     }
     const envelopeErrors = strings.packages.install.envelopeErrors;
     for (const key of ["projectNotFound", "packageNotFound", "capabilityMissing", "invalidParams", "previewFailed", "unknown"] as const) {
+      assert.equal(typeof envelopeErrors[key], "string");
+      assert.ok(envelopeErrors[key].length > 0);
+    }
+  });
+
+  test("registerEnvelopeErrorKey maps the declared v0.3 codes and falls back to unknown; the register i18n section mirrors the keys (026 A3)", () => {
+    // v0.3 已申报面:能力门控在路由层答(访问器未翻转,绝不进任务)+
+    // 请求形状违规。A3 无注册项目检查(project_not_found 不适用)且无
+    // preview 段(preview_failed 不存在),两码如实缺席闭集
+    assert.equal(registerEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(registerEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    assert.equal(registerEnvelopeErrorKey("vua.project.project_not_found"), "unknown");
+    assert.equal(registerEnvelopeErrorKey("vua.packages.preview_failed"), "unknown");
+    // 词外码(vua.vpm.local_package_invalid / local_package_register_failed
+    // 端口族透传/任务 error.code)回落 unknown 原词插值
+    assert.equal(registerEnvelopeErrorKey("vua.vpm.local_package_invalid"), "unknown");
+    assert.equal(registerEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+    const guards = strings.packages.register.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+    const envelopeErrors = strings.packages.register.envelopeErrors;
+    for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
       assert.equal(typeof envelopeErrors[key], "string");
       assert.ok(envelopeErrors[key].length > 0);
     }

@@ -176,6 +176,8 @@ export type {
   PackagesP1LoadError,
   PackagesP2LoadError,
   PackagesPort,
+  PackagesRegisterApplyOutcome,
+  PackagesRegisterResultV03,
   PackagesRemoveApplyOutcome,
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,

@@ -317,6 +317,20 @@ pub const PACKAGES_OPS_SCHEMA_VERSION_V02: &str = "vua.packages-ops/v0.2";
 /// own envelope generation; the v0.1 A1 envelope stays on "0.1").
 pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02: &str = "0.2";
 
+/// The `packages-ops` v0.3 result family constant (proposal 026 A3 freeze
+/// batch 2026-09-19; same standing rule — the local-package registration
+/// row carries its own version constant, and the frozen v0.1 A1 removal
+/// row and v0.2 A2 install row keep serving through their own consts
+/// untouched: three separate word-face generations served side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V03: &str = "vua.packages-ops/v0.3";
+
+/// The `packages` envelope const of the v0.3 word-face row (the frozen
+/// v0.3 result schema locks the ENVELOPE schemaVersion to "0.3"; the v0.1
+/// and v0.2 envelopes stay on their own consts — the c914cf2 standing
+/// rule: every wire row carries a version constant of its own, independent
+/// of the envelope const).
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V03: &str = "0.3";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1255,6 +1269,18 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.capabilities().preview_install => "available",
         _ => "unavailable",
     };
+    // Proposal 026 A3: the local-package registration write face rides the
+    // SAME VpmBackend wiring, gated on the NEW defaulted accessor
+    // `register_capabilities` (the frozen v0.3 command schema's serving
+    // gate; the removeOps/installOps one-row precedent — the single
+    // registerLocalPackage method answers through this row). Default
+    // declared-none keeps the row honestly unavailable until the
+    // environment implementation-verification slice flips it with the
+    // VrcGetLib override.
+    let packages_register_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.register_capabilities().register_local_package => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1282,6 +1308,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.installOps",
             "availability": packages_install_ops_availability,
+        },
+        {
+            "operationId": "packages.registerOps",
+            "availability": packages_register_ops_availability,
         },
     ])
 }
@@ -5093,6 +5123,9 @@ fn packages_request(
         "packages.applyInstall" => {
             packages_apply_install(state, vpm, request, request_id, correlation_id)
         }
+        "packages.registerLocalPackage" => {
+            packages_register_local_package(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5879,6 +5912,44 @@ fn packages_ops_install_port_rejection(error: &AppErrorV1) -> Value {
     )
 }
 
+/// Closed param set of the A3 registration command: `{ packageRoot }` —
+/// the single key, nothing else. A carried `confirmedDigest` is a shape
+/// violation (no digest, no confirmation chain: the user's explicit
+/// submission IS the confirmation); a carried `projectPath` likewise
+/// (registration never touches a project and never mutates the user's
+/// VCC/ALCOM settings). Violations answer `vua.packages.invalid_params`
+/// at the route layer — never absence, never a fabricated receipt.
+fn packages_ops_register_params(request: &Value) -> Option<String> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 1 {
+        return None;
+    }
+    let package_root = params.get("packageRoot")?.as_str()?;
+    if package_root.is_empty() {
+        return None;
+    }
+    Some(package_root.to_owned())
+}
+
+/// Port error → rejected-arm projection INSIDE the A3 registration task:
+/// the guard closed set stands at the A1/A2 three values and A3 adds NO
+/// guard — registration has no preview to drift and no resolver to miss,
+/// so every port refusal (`local_package_invalid` /
+/// `local_package_register_failed`, the trait default's
+/// `capability_missing` for an unimplemented backend, and every word-out
+/// code) folds into `execution_failed` carrying the original port code
+/// inside `detail` (honest provenance — the rejected arm's schema pattern
+/// locks the code to `^vua\.packages\.`, so port codes can never travel
+/// verbatim there).
+fn packages_ops_register_port_rejection(error: &AppErrorV1) -> Value {
+    packages_ops_rejected(
+        PACKAGES_OPS_SCHEMA_VERSION_V03,
+        "execution_failed",
+        "vua.packages.execution_failed",
+        format!("port code {}: {}", error.code, error.message_key),
+    )
+}
+
 /// `packages.previewInstall` (proposal 026 A2 wiring): the SYNCHRONOUS
 /// read-only change preview — it resolves dependencies against the
 /// registered repositories and MAY hit the network (the online refresh
@@ -6091,6 +6162,102 @@ fn packages_apply_install(
             json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V02,
                 "operation": "packages.applyInstall",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task
+        // authority (import-copy same face, provider-layer code — the
+        // failure is the task authority's, not the packages domain's).
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.persistence_failed",
+            "errors.provider.persistence",
+            "internal",
+        )),
+    }
+}
+
+/// `packages.registerLocalPackage` (proposal 026 A3 wiring): the
+/// NINE-STATE task-driven write command (the applyRemove/applyInstall
+/// same shape — the task accepts, the terminal reflux carries the frozen
+/// v0.3 result document). The family's ONLY face without a preview arm:
+/// registration is an IDEMPOTENT set-add into the backend's ISOLATED
+/// environment (the library's AlreadyAdded answers success exactly like
+/// Success — first and repeat registration collapse into ONE success
+/// fact), it is non-destructive, and there is no pre-existing state to
+/// drift — no digest, no confirmation chain, no double-digest guard (the
+/// user's explicit submission IS the confirmation; a carried
+/// confirmedDigest is a shape violation). Params are the closed single
+/// key {packageRoot}; NO projectPath is taken — registration never
+/// touches a project and never mutates the user's VCC/ALCOM settings, so
+/// there is no registered-project check either. The capability gate reads
+/// the NEW defaulted accessor BEFORE submit — capability absence never
+/// reaches a task. Every port refusal folds into the frozen
+/// `execution_failed` guard carrying the original port code inside
+/// detail (no invented fourth guard, honesty rule 3 intact: recovery
+/// maps non-terminal residue to inspect_required and never resumes
+/// implicitly).
+fn packages_register_local_package(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // The task surface requires the shared task authority; without it
+        // the write face stays honestly absent (A1/A2 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(package_root) = packages_ops_register_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.register_capabilities().register_local_package {
+        // The frozen v0.3 command schema's serving gate: a wired engine
+        // whose backend declares no registration capability answers the
+        // generic capability-missing arm BEFORE submit — capability
+        // absence never reaches a task (the P1 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.register_local_package(&PathBuf::from(&package_root)) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V03,
+                    "kind": "registered",
+                    "packageRoot": package_root,
+                }),
+                Err(error) => packages_ops_register_port_rejection(&error),
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V03,
+                "operation": "packages.registerLocalPackage",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V03,
+                "operation": "packages.registerLocalPackage",
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
             }),

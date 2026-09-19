@@ -203,7 +203,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -278,13 +278,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -993,6 +993,221 @@ describe("packages live port A2 install write face (026 v0.2 consumption)", () =
     expect(
       await createLivePackages(badAcceptance.client).applyInstall("C:/proj", [{ packageId: "com.a.b", version: null }], "d"),
     ).toEqual({ kind: "failed", code: "packages_apply_acceptance_shape" });
+  });
+});
+
+/* ---- A3 本地包注册写面(026 v0.3 消费批) ---- */
+
+const VALID_REGISTER_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.3",
+  kind: "registered",
+  packageRoot: "C:/LocalPackages/com.a.b-1.0.0",
+};
+
+const VALID_REGISTER_REJECTED = {
+  schemaVersion: "vua.packages-ops/v0.3",
+  kind: "rejected",
+  guard: "execution_failed",
+  code: "vua.packages.execution_failed",
+  detail: "vua.vpm.local_package_register_failed: backend refused the set-add for C:/LocalPackages/com.a.b-1.0.0",
+};
+
+/** A3 流编排 client:register/task.get 分支可控(信封版本 0.3;与 A1/A2
+ * 流编排 client 分立)。 */
+function a3Client(overrides: {
+  snapshot?: Parameters<typeof appSnapshot>[0];
+  register?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  taskGet?: GatewayResult<DesktopGatewaySuccessValueV1>;
+} = {}): GatewayClient {
+  return fakeClient(async (request) => {
+    if (request.method === "app.snapshot") {
+      return { ok: true, value: appSnapshot(overrides.snapshot ?? QUERY_AVAILABLE) };
+    }
+    if (request.method === "packages.registerLocalPackage") {
+      return overrides.register ?? { ok: true, value: acceptedRegisterFrame("t-3") };
+    }
+    if (request.method === "task.get") {
+      return overrides.taskGet ?? { ok: true, value: taskSnapshotValue("running") };
+    }
+    return { ok: false, error: { kind: "unavailable" } as const };
+  });
+}
+
+function acceptedRegisterFrame(taskId: string): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.3", operation: "packages.registerLocalPackage", taskId, correlationId: "c-3" });
+}
+
+describe("packages live port A3 register write face (026 v0.3 consumption)", () => {
+  it("flips blocks.registers with the served packages.registerOps row (one row serves the one method; changes/installs semantics untouched)", async () => {
+    const withRow = await createLivePackages(
+      a3Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.installOps", availability: "available" },
+          { operationId: "packages.registerOps", availability: "available" },
+        ],
+      }),
+    ).snapshot();
+    if (withRow.kind === "ready-p2") {
+      expect(withRow.blocks.registers).toBe(true);
+      expect(withRow.blocks.changes).toBe(false);
+      expect(withRow.blocks.installs).toBe(true);
+    }
+    const withoutRow = await createLivePackages(a3Client()).snapshot();
+    if (withoutRow.kind === "ready-p2") {
+      expect(withoutRow.blocks.registers).toBe(false);
+    }
+    // 行存在但引擎后端未翻转访问器(availability unavailable)= 诚实缺席
+    const rowUnavailable = await createLivePackages(
+      a3Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.registerOps", availability: "unavailable" },
+        ],
+      }),
+    ).snapshot();
+    if (rowUnavailable.kind === "ready-p2") {
+      expect(rowUnavailable.blocks.registers).toBe(false);
+    }
+  });
+
+  it("rides the task loop: v0.3 acceptance -> completed event -> succeeded snapshot with the minimal registered receipt (idempotence = the same one success fact, no added flag no first/repeat distinction)", async () => {
+    const taskGetSequence: GatewayResult<DesktopGatewaySuccessValueV1>[] = [
+      { ok: true, value: taskSnapshotValue("running") },
+      {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.3", operation: "packages.registerLocalPackage", result: VALID_REGISTER_RECEIPT },
+        }),
+      },
+    ];
+    let taskGetCalls = 0;
+    let subscribed = false;
+    const listeners = new Set<(event: unknown) => void>();
+    const client: GatewayClient = {
+      invoke: async (request) => {
+        if (request.method === "packages.registerLocalPackage") {
+          // 端口 verbatim 传输钉死:packageRoot 原样上呈,无 projectPath
+          // 无 digest 位
+          expect(request.params).toEqual({ packageRoot: "C:/LocalPackages/com.a.b-1.0.0" });
+          return { ok: true, value: acceptedRegisterFrame("t-3") };
+        }
+        if (request.method === "task.get") {
+          const answer: GatewayResult<DesktopGatewaySuccessValueV1> =
+            taskGetSequence[Math.min(taskGetCalls, taskGetSequence.length - 1)] ?? {
+              ok: false,
+              error: { kind: "unavailable" },
+            };
+          taskGetCalls += 1;
+          return answer;
+        }
+        return { ok: false, error: { kind: "unavailable" } as const };
+      },
+      subscribe: (callback) => {
+        listeners.add(callback as (event: unknown) => void);
+        subscribed = true;
+        return () => {
+          listeners.delete(callback as (event: unknown) => void);
+        };
+      },
+    };
+    const port = createLivePackages(client);
+    const pending = port.registerLocalPackage("C:/LocalPackages/com.a.b-1.0.0");
+    while (!subscribed) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (const listener of listeners) listener({ kind: "task.completed", taskId: "t-3", payload: {} });
+    const first = await pending;
+    expect(first).toEqual({ kind: "ok", receipt: VALID_REGISTER_RECEIPT });
+    // 幂等第二轮(AlreadyAdded):收据形状与首轮同一成功事实
+    const second = await port.registerLocalPackage("C:/LocalPackages/com.a.b-1.0.0");
+    expect(second).toEqual(first);
+  });
+
+  it("surfaces the typed rejection (execution_failed with the original port code in detail) as the typed rejection and never an error", async () => {
+    const client = a3Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.3", operation: "packages.registerLocalPackage", result: VALID_REGISTER_REJECTED },
+        }),
+      },
+    });
+    const outcome = await createLivePackages(client).registerLocalPackage("C:/LocalPackages/com.a.b-1.0.0");
+    expect(outcome).toEqual({ kind: "rejected", rejection: VALID_REGISTER_REJECTED });
+  });
+
+  it("folds the capability-missing acceptance to failed verbatim, a non-succeeded terminal verbatim, and a 0.2-stamped acceptance as shape violation (never fabricates a receipt)", async () => {
+    // 能力缺席在路由层答 vua.vpm.capability_missing(绝不进任务)——照
+    // 原词 failed,缺席臂(vua.packages.unavailable)折叠 unavailable
+    expect(
+      await createLivePackages(
+        a3Client({ register: applicationError("vua.vpm.capability_missing", "unavailable") }),
+      ).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "vua.vpm.capability_missing" });
+    expect(
+      await createLivePackages(
+        a3Client({ register: applicationError("vua.packages.unavailable", "unavailable") }),
+      ).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "unavailable" });
+    // 任务非成功终态:error.code 原词上呈(恢复非终态绝不隐式续传)
+    const failed = a3Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("failed", {
+          error: {
+            contractVersion: "0.1",
+            code: "vua.vpm.local_package_register_failed",
+            category: "external_failure",
+            messageKey: "errors.vpm.localPackageRegisterFailed",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-3",
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(failed).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "vua.vpm.local_package_register_failed" });
+    // 受理回执信封版本钉 0.3:0.2 戳 = 受理形状违规
+    const badAcceptance = a3Client({
+      register: { ok: true, value: asWire({ schemaVersion: "0.2", operation: "packages.registerLocalPackage", taskId: "t-3", correlationId: "c-3" }) },
+    });
+    expect(
+      await createLivePackages(badAcceptance).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "packages_apply_acceptance_shape" });
+  });
+
+  it("answers shape violation when the registered receipt invents a field (minimal honest audit shape — no timestamp, no package.json content, no env path) or the receipt is 0.2-stamped", async () => {
+    const invented = a3Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.3",
+            operation: "packages.registerLocalPackage",
+            result: { ...VALID_REGISTER_RECEIPT, registeredAt: "2026-09-19T00:00:00Z" },
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(invented).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
+    const staleStamp = a3Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.3",
+            operation: "packages.registerLocalPackage",
+            result: { ...VALID_REGISTER_RECEIPT, schemaVersion: "vua.packages-ops/v0.2" },
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(staleStamp).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
   });
 });
 
