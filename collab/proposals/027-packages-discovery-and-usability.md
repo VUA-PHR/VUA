@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-19 深夜推进：开放问题 1 核心表态〔58d1a0c〕＋开放问题 3 桌面表态〔75f0dac〕落节经第 120 批收编，F1 文案修正切片 cbfb9d8 已验收入库；候环境开放问题 2 库面考证落节后三域收敛→核心起草 F2 冻结批——各面照 026 五链程序逐面办理）
+status: 讨论中（2026-09-20 02:0x 推进：**F2 wire 已接线**——接线批 629699e〔恰核心域 5 文件 839+/22-：provider_host.rs 路由臂 packages.repoCatalog＋served 行 packages.repoCatalogOps〔repo_catalog_capabilities 门，默认 declared-none 候环境覆写置真〕＋信封双常量命名 PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 "0.1"／PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 "vua.packages-repo-catalog/v0.1"＋wire 测试 8 例骑真帧环含十一例违规电池＋双语协议本 0.1.1 词面零变更＋REGISTRY 同步〕＋随批竞速修正 fabb04d〔协议本双语头部＋REGISTRY 行状态词干回归「已冻结」照 A5 先例；登记表 79/79 一致 0 异常；docs-only 代码树字节相同、定向证据继承声明成立〕经第 123 批 --no-ff 验收入库〔合并 203cb9f；集成亲审 diff 逐项对表冻结词面成立：闭集双键必带可空 params＋能力门在端口调用之前＋端口拒绝逐字透传＋路由盖常量＋A5 诚实结构差异申报；合并将成树等价性实证＝预检树 c2cbf83 vs wt-2 尖非 collab 面零漂移；全链定向证据集成独立复跑全绿：provider-host 246/0〔含 wire_v01 8/8〕＋orchestrator 231/0＋clippy 双 0＋contracts 81/81＋orchestrator-provider 42/42＋desktop typecheck 双 0〕；**下一环＝环境实现核对切片**〔VrcGetLib repo_catalog 覆写＋capability 覆写置真＋离线降级＋单元测试，候即领；接线代码重推导验收锚适用〕＋桌面形状核可程序〔双前置已成就〕；F3/F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---

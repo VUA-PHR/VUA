@@ -674,6 +674,66 @@ export interface PackagesPackageCatalogResultV02 {
   readonly cacheSourced: boolean;
 }
 
+/* ---- 027 F2 读面(packages-repo-catalog v0.1,核心冻结批 2026-09-20;
+ *  表态程序收敛:核心裁决 58d1a0c／环境考证 3bd4f12／桌面表态 75f0dac,
+ *  三域收敛第 121 批登记)。仓库级可装包清单读面 = 缓存清单投影——
+ *  packages-catalog 族冻结词面刻意排除的仓库级投影归此新族,订阅面
+ *  (packages-repos 族)仍是配置事实面,两视图分立不混同;跨仓合并判定
+ *  仍是 packages-catalog 族事实,本面逐仓分组绝不跨仓合并。设计约束
+ *  (用户裁决④):packageIds 批量过滤键 = Recipe 自动化第一消费者形状,
+ *  手动浏览 UI 是同一查询的次要呈现。author 刻意缺席:库面 manifest
+ *  反序列化闭集无 author 字段(环境考证 §1(b)),v0.1 裁如实缺席〔选项
+ *  (iii)〕不立第二解析面;compatible 刻意不存在:无工程上下文判定不可
+ *  执行,恒 null 非事实(逐版本 compatible 仍是 packages-catalog 面的
+ *  工程绑定冻结事实)。零新码:未知 repoId 复用 vua.vpm.repo_not_found
+ *  (A4 removeRepo 同事实先例) */
+export interface PackagesRepoCatalogQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.repoCatalog";
+  readonly params: {
+    /** null = 全部仓库逐仓分组;非空 = 只答该仓库行;词表外 id =
+     *  复用 vua.vpm.repo_not_found */
+    readonly repoId: string | null;
+    /** null = 不过滤浏览;非空 = Recipe 需求集合批量过滤(唯一非空
+     *  id,空数组是形状违反非空过滤) */
+    readonly packageIds: readonly string[] | null;
+  };
+}
+
+/** 仓库清单包行:库面实际上限闭集(无 author 无 compatible——两者
+ *  缺席均系裁决非遗漏,发明即 schema 非法);latestVersion = 本仓内
+ *  非-yanked 且未被用户 prerelease 设置排除的最新版判定(无工程
+ *  Unity 约束),null = 当前设置下无合资格版本——缺席不是「无包」 */
+export interface PackagesRepoCatalogPackageV01 {
+  readonly packageId: string;
+  /** null 呈现 = packageId 兼任显示名(P1 裁决 3),不冒充字段事实 */
+  readonly displayName: string | null;
+  /** null = manifest 未携带(诚实缺席,不补齐) */
+  readonly description: string | null;
+  readonly latestVersion: string | null;
+  /** 仓库缓存自身清单计数(yanked 计入)——缓存事实非可用性承诺 */
+  readonly versionCount: number;
+}
+
+/** 仓库行:cached 必带 = 逐仓库缓存命中事实(false = 已订阅未刷新,
+ *  以空 packages 数组如实呈现,不隐藏不伪造);行序 = 集合自身枚举
+ *  顺序照实投影,不发明排序键 */
+export interface PackagesRepoCatalogRepoV01 {
+  readonly repoId: string | null;
+  readonly name: string | null;
+  readonly cached: boolean;
+  readonly packages: readonly PackagesRepoCatalogPackageV01[];
+}
+
+export interface PackagesRepoCatalogResultV01 {
+  readonly schemaVersion: "vua.packages-repo-catalog/v0.1";
+  /** 空数组 = 诚实零仓库缓存应答 */
+  readonly repos: readonly PackagesRepoCatalogRepoV01[];
+  /** 必带信息性降级披露事实(降生即带,catalog v0.2 先例):true =
+   *  缓存降级路径所得;false = 在线刷新所得;信息性非失败 */
+  readonly cacheSourced: boolean;
+}
+
 /* ---- 026 A1 写面(packages-ops v0.1,核心冻结批 2026-09-19;表态程序
  *  收敛:核心裁决 82a39c4 五点／环境库面考证 4a0f02f 实现零缺口／桌面
  *  表态 93752d5)。移除面双方法二段动词:packages.previewRemove = 同步
@@ -2121,6 +2181,7 @@ export type ApplicationRequestV01 =
   | PackagesListInstalledQueryV01
   | PackagesListReposQueryV01
   | PackagesPackageCatalogQueryV01
+  | PackagesRepoCatalogQueryV01
   | PackagesPreviewRemoveQueryV01
   | PackagesApplyRemoveCommandV01
   | PackagesPreviewInstallQueryV02
@@ -2592,6 +2653,21 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && hasExactKeys(value.params, ["projectPath", "packageId"])
       && isIdentifier(value.params.projectPath)
       && isIdentifier(value.params.packageId);
+  }
+  // 027 F2 读面(核心冻结批 2026-09-20):repoCatalog = 双键必带可空
+  // 闭集(repoId 仓库范围 null=全部;packageIds Recipe 需求集合批量
+  // 过滤 null=不过滤,非空数组须唯一非空 id,空数组是形状违反)
+  if (value.kind === "query" && value.method === "packages.repoCatalog") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      || !hasExactKeys(value.params, ["repoId", "packageIds"])) {
+      return false;
+    }
+    const { repoId, packageIds } = value.params;
+    if (repoId !== null && (typeof repoId !== "string" || repoId.length === 0)) return false;
+    if (packageIds === null) return true;
+    if (!Array.isArray(packageIds) || packageIds.length === 0) return false;
+    return packageIds.every((id) => typeof id === "string" && id.length > 0)
+      && new Set(packageIds).size === packageIds.length;
   }
   // 026 A1 写面(核心冻结批 2026-09-19):previewRemove = 双键闭集
   // (projectPath 013 身份 + packageIds 显式非空闭列,无通配);
