@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "params": {
+    "parent": "D:/synthetic/projects",
+    "name": "",
+    "template": null
+  }
+}
