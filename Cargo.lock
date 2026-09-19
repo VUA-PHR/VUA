@@ -2870,6 +2870,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tokio",
+ "url",
  "vrc-get-vpm",
  "vua-orchestrator",
  "windows-sys 0.61.2",

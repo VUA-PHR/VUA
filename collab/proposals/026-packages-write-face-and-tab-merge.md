@@ -648,3 +648,84 @@ apps/desktop typecheck 双 tsconfig exit 0；desktop vitest 80 文件
   报）。
 - **解锁状态**：A3「形状核可」桌面侧条件满足；桌面无其他在途——
   A2 消费切片已交付候验收（wt-3 树尖），A3 消费切片候核心接线批。
+
+### 桌面形状核可（A4 TS 面，wt-3，2026-09-19 08:1x）
+
+**应第 108 批集成 [→桌面] 留言之约**（「A4 形状核可解锁条件成就
+——A4 冻结批 28c63fa 本批入库，照 A1/A2/A3 形状核可先例基于收编
+世代办理」）。核可对象＝A4 冻结批 29 件中 TS 面（
+`packages/contracts/src/application-contract.ts` 026 A4 段＋测试
+1 例 10 断言）＋mock 恒缺席臂（orchestrator-provider 三方法归 P1
+unavailable 臂＋3 测试行），本机直读＋收编世代（本树追平壳
+1fd76a1 吸收 f2586d4 后）定向复跑亲测（08:1x：@vua/contracts
+check 77/77；apps/desktop typecheck 双 tsconfig exit 0；desktop
+vitest 80 文件 707/707）。**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①请求接口三命令闭集——
+  PackagesAddRemoteRepoCommandV04＝command（commandId Kernel 生成
+  位，import-copy/A1/A2/A3 先例）＋params 恰 {url, name} 双键非
+  空；PackagesAddLocalRepoCommandV04＋params 恰 {path, name} 双键
+  非空（无网络段）；PackagesRemoveRepoCommandV04＋params 恰
+  {repoId} 单键非空（稳定行柄，索引寻址不冻结）；三方法均无
+  projectPath（订阅面只写后端隔离环境，013 project_not_found 复
+  用对本面不适用）；均无 confirmedDigest——携即形状违反（本面照
+  A3 同律破 preview/apply 对偶：远端订阅天然含清单拉取网络段，
+  preview 只会是伪装成更安全首跳的第二跳网络往返；无既有状态摘
+  要可绑定，诚实失败＝执行时端口答 repo_not_found；负例
+  invalid-add-remote-carries-digest/carries-project-path 钉死）；
+  首期词面不收 HTTP 头/凭据传输（未来收凭据需另立安全裁决）。
+  ②收据最小诚实审计形状——repoReceipt 双互斥变体：remote 五键
+  {schemaVersion: "vua.packages-ops/v0.4", kind: "repoReceipt",
+  repoType: "remote", url 回显, name 回显}／local 五键 {同前,
+  repoType: "local", path 回显, name 回显}；removed 三键
+  {schemaVersion, kind, repoId 回显}：端口答 Result<(),_> 无载荷，
+  收据只携请求回显别无他物，additionalProperties:false 禁止发明
+  （负例 invalid-result-invented-field 钉死——添加时间戳/行位/
+  清单内容/被删行快照一律违规；removed 回显即审计链，不发明行快
+  照）；键集与一切前代收据臂互斥。③rejected 臂 guard 复用
+  PackagesGuardV02 三值闭集零新增（A4 不加 guard）；四端口码
+  vua.vpm.repo_invalid/repo_not_found/repo_fetch_failed/
+  repo_write_failed 全折 execution_failed 携原码 detail 溯源；
+  code 锁 ^vua\.packages\.（负例 result-rejected-code-outside-
+  family 钉死）；桌面回落面三值投影 A1 removeGuardKey 钉例同款
+  可直接复用；**添加面不宣称幂等**——与 A3 AlreadyAdded 折叠刻
+  意不同（库面守卫拒绝重复如实 repo_invalid 折 rejected），桌面
+  未来消费面将如实呈现拒绝，不发明幂等成功。④union 双登记（三
+  命令入 ApplicationRequestV01、三结果 union 入
+  ApplicationSuccessValueV01）＋isApplicationRequestV01 三窄化臂
+  逐键闭集（顶键七键 hasExactKeys＋params 精确键集＋非空串；缺
+  键/空串/携 digest/携 projectPath/走私 commandId 拒）。⑤TS 测
+  试 1 例 10 断言与冻结批申报一一对应。⑥mock 恒缺席臂三方法归
+  P1 unavailable 臂（模拟面永不模拟 wire 写回执）＋3 测试行。⑦
+  capturedAt 收窄对 A4 有效性本机证实——application-contract.ts
+  全文件 readonly capturedAt 唯一（:2121 downloads 面），A4 六个
+  新成员（三命令＋remote/local/removed/rejected 四收据）均无
+  capturedAt 顶层键；桌面 capturedAt 窄化点在
+  project-detection-model.ts（project.detect 快照面）与
+  gateway-router.test.ts 夹具，与 packages-ops union 零交集，窄
+  化不因 A4 union 扩张而破裂（typecheck 双 0 亲测，A2/A3 先例同
+  法）。⑧向量 6 正 11 负与第 108 批登记一致（正＝三请求＋
+  remote/local 添加收据＋removed 收据；负＝两 carries 类/缺
+  url/缺 name/空 path/extra-param/缺 repoId/空 repoId/answer-plan
+  kind 锁/invented-field/code-outside-family）；kind=repoReceipt/
+  removed 字面量在 result union 内唯一按 kind 消费无碰撞；
+  schemaVersion 窄化规则词面载明（plan/receipt 形状四世代同键集
+  ——按 schemaVersion 字面量窄化不按键集，result.schema.json
+  digest 注记原文）。⑨诚实边界如实：词面已冻结未接线——wire 路
+  由、packages.repoOps served 行与信封组装属下一核心接线切片
+  （wt-2 已交付候验收 3d4b667）；served 行门控＝新 default
+  accessor repo_write_capabilities 三独立位（default
+  declared-none，VrcGetLib 覆写随环境核对切片——覆写前行如实
+  unavailable，桌面消费区块诚实缺席不渲染）；门按方法绝不按面
+  （后端可只服务子集）；启停（enable/disable）不在任何已冻结词
+  面内（候 W25 VCC 禁用列表键名真机核实）——桌面不发明启停入
+  口；重排不在本面。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：v0.4 wire 信封
+  常量协议本 0.4 未载明（协议本明文「wire 信封常量在接线批载明
+  （A3 先例……0.4.x 修订载明常量——消费面按落地面对照，绝不猜
+  测）」）——A4 消费切片窄化器按接线批实际落地面核对，不猜测；
+  A4 消费切片桌面侧解锁条件＝「本形状核可＋核心接线批入库」（双
+  前置，A3 同构）。
+- **解锁状态**：A4「形状核可」桌面侧条件满足（本节）；桌面无其
+  他在途——A3 消费切片已验收入库（第 108 批 item 2），A4 消费切
+  片候核心接线批入库。
