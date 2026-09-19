@@ -750,4 +750,57 @@ describe("gateway guard covers every declared method (regression: silent guard g
       }),
     ).toBe(false);
   });
+
+  it("packages.createProject: three-key closed params {parent,name,template} with template REQUIRED-nullable, NO projectPath NO digest slot no commandId param slot (026 A5 freeze; single-stage task rooted in the port - no create-preview counterpart exists, a brand-new directory has no pre-existing state to diff and no digest to bind, so the user's explicit form submission IS the confirmation; creation addresses no registered project; null template = the backend's default resolution, empty string = shape violation)", () => {
+    const create = {
+      schemaVersion: 1 as const,
+      requestId: "request-57",
+      method: "packages.createProject" as const,
+      params: { parent: "C:/Users/me/VRC projects", name: "New World", template: null },
+    };
+    const createWithTemplate = {
+      schemaVersion: 1 as const,
+      requestId: "request-58",
+      method: "packages.createProject" as const,
+      params: { parent: "C:/Users/me/VRC projects", name: "New Avatar", template: "Avatar" },
+    };
+    expect(isDesktopGatewayRequestV1(create)).toBe(true);
+    expect(isDesktopGatewayRequestV1(createWithTemplate)).toBe(true);
+    // 缺键/空串(词面 minLength 1)一律拒绝;template REQUIRED-nullable:
+    // 键必须在位(null = 后端默认解析),空串/非串 = 违例
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "C:/p", name: "New World" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { name: "New World", template: null } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "C:/p", template: null } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "", name: "New World", template: null } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "C:/p", name: "", template: null } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "C:/p", name: "New World", template: "" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...create, params: { parent: "C:/p", name: "New World", template: 3 } })).toBe(false);
+    // 发明 projectPath 位(创建不寻址任何在册项目,013 复用不适用)/携
+    // digest 位(本面无 preview 可漂移,携即形状违反——负例钉死)/投机
+    // commandId 位/多余键:一律拒绝
+    expect(
+      isDesktopGatewayRequestV1({
+        ...create,
+        params: { parent: "C:/p", name: "New World", template: null, projectPath: "C:/proj" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...create,
+        params: { parent: "C:/p", name: "New World", template: null, confirmedDigest: "fnv-1a-abc" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...create,
+        params: { parent: "C:/p", name: "New World", template: null, commandId: "cmd-1" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...create,
+        params: { parent: "C:/p", name: "New World", template: null, extra: 1 },
+      }),
+    ).toBe(false);
+  });
 });
