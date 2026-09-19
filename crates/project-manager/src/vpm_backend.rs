@@ -16,7 +16,8 @@ use vua_orchestrator::{
     AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
     ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
     PackageCatalogV02, PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef,
-    RegisteredProjectV1, RepoInfoV01, VpmBackend, VpmCapabilities,
+    RegisterCapabilities, RegisteredProjectV1, RepoInfoV01, RepoWriteCapabilities, VpmBackend,
+    VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -135,6 +136,160 @@ impl VrcGetLibBackend {
         })
     }
 
+    /// A4 (proposal 026 freeze batch): subscribes one REMOTE repository in
+    /// this backend's isolated environment. The manifest fetch (the network
+    /// segment inherent to the face) runs through the library's own
+    /// downloader; the guard (duplicate url, official/curated/id refusals)
+    /// is the library's `Settings::add_remote_repo` bool, answered honestly
+    /// as `repo_invalid`. No credentials or HTTP headers are accepted — the
+    /// frozen word face transports none, so the header map stays empty.
+    pub fn add_remote_repo(&self, url: &str, name: &str) -> Result<(), AppErrorV1> {
+        let parsed = url::Url::parse(url)
+            .map_err(|error| repo_invalid(format!("url does not parse: {error}")))?;
+        let environment_root = self.environment_root.clone();
+        let http = self.http.clone();
+        let name = name.to_owned();
+        self.runtime.block_on(async move {
+            // The cache path is this row's own local cache slot under the
+            // isolated environment's Repos/ directory (the library's own
+            // convention: the subscription's local_path IS the cache path,
+            // repo_source.rs); a stable url-name hash keeps rows collision-
+            // free per url. The library fills it on the next catalog refresh.
+            let cache_path = environment_root
+                .join("Repos")
+                .join(format!("{}.json", vua_orchestrator::fnv1a_hex(parsed.as_str().as_bytes())));
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let mut settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_repo_write("loading isolated VPM settings"))?;
+            if settings
+                .get_user_repos()
+                .iter()
+                .any(|repo| repo.url() == Some(&parsed))
+            {
+                return Err(repo_invalid(
+                    "a repository with this url is already subscribed",
+                ));
+            }
+            // Brand-new subscription: no cached copy, so no etag is sent.
+            // Ok(None) ("not modified") is unreachable without an etag per
+            // the library's own contract, but it is answered honestly as a
+            // fetch failure, never a success.
+            let downloaded =
+                vrc_get_vpm::repository::RemoteRepository::download_with_etag(
+                    &http,
+                    &parsed,
+                    &default_of(),
+                    None,
+                )
+                .await
+                .map_err(|error| {
+                    repo_fetch_failed(format!("fetching the remote repository manifest: {error}"))
+                })?;
+            let (remote_repo, _etag) = match downloaded {
+                Some(pair) => pair,
+                None => {
+                    return Err(repo_fetch_failed(
+                        "the remote manifest fetch returned no content".to_owned(),
+                    ));
+                }
+            };
+            if !settings.add_remote_repo(
+                &parsed,
+                Some(&name),
+                Default::default(),
+                &remote_repo,
+                &cache_path,
+            ) {
+                return Err(repo_invalid(
+                    "the library guard refused this subscription (official/curated or duplicate id)",
+                ));
+            }
+            settings
+                .save(&io)
+                .await
+                .map_err(map_repo_write("saving isolated VPM settings"))?;
+            Ok(())
+        })
+    }
+
+    /// A4 (proposal 026 freeze batch): subscribes one LOCAL directory
+    /// repository in this backend's isolated environment. The frozen word
+    /// face says "the local repository directory"; the library persists the
+    /// subscription row's local_path and later READS that path AS the
+    /// manifest json (`load_repo_from_cache` parse_json_file on url-less
+    /// rows), so the directory maps onto its `repo.json` (the VCC-ecosystem
+    /// standard manifest name inside the directory) — declared here, and a
+    /// directory without one is the honest malformed-shape refusal.
+    pub fn add_local_repo(&self, path: &Path, name: &str) -> Result<(), AppErrorV1> {
+        let dir = std::fs::canonicalize(path)
+            .map_err(|error| repo_invalid(format!("local repository path does not resolve: {error}")))?;
+        if !dir.is_dir() {
+            return Err(repo_invalid("local repository path is not a directory"));
+        }
+        let manifest = dir.join("repo.json");
+        if !manifest.is_file() {
+            return Err(repo_invalid(
+                "repo.json is missing in the local repository directory",
+            ));
+        }
+        let environment_root = self.environment_root.clone();
+        let name = name.to_owned();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let mut settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_repo_write("loading isolated VPM settings"))?;
+            if !settings.add_local_repo(&manifest, Some(&name)) {
+                return Err(repo_invalid(
+                    "a repository with this path is already subscribed",
+                ));
+            }
+            settings
+                .save(&io)
+                .await
+                .map_err(map_repo_write("saving isolated VPM settings"))?;
+            Ok(())
+        })
+    }
+
+    /// A4 (proposal 026 freeze batch): removes ONE subscription row by its
+    /// repository id. Rows without an id are outside the word face's remove
+    /// reach (frozen protocol boundary); the removed-row list being empty is
+    /// the honest `repo_not_found` — never a silent success.
+    pub fn remove_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let repo_id = repo_id.to_owned();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let mut settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_repo_write("loading isolated VPM settings"))?;
+            let removed =
+                settings.remove_repo(|repo| repo.id() == Some(repo_id.as_str()));
+            if removed.is_empty() {
+                return Err(AppErrorV1::new(
+                    error_codes::REPO_NOT_FOUND,
+                    ErrorCategory::Validation,
+                    "errors.vpm.repoNotFound",
+                    "corr-vpm-repo-write",
+                )
+                .with_param("repoId", ParamValue::Text(repo_id)));
+            }
+            settings
+                .save(&io)
+                .await
+                .map_err(map_repo_write("saving isolated VPM settings"))?;
+            Ok(())
+        })
+    }
+
     fn digest_of(
         items: &[ChangeItemV1],
         conflicts: &[String],
@@ -168,6 +323,52 @@ fn map_local_package_io(context: &'static str) -> impl Fn(std::io::Error) -> App
             ErrorCategory::ExternalFailure,
             "errors.vpm.localPackageRegisterFailed",
             "corr-vpm-local-package",
+        )
+        .with_param("reason", ParamValue::Text(format!("{context}: {error}")))
+    }
+}
+
+/// Infers `T: Default` from the call site (the library's `IndexMap`
+/// headers type is not nameable without adding a direct indexmap
+/// dependency; the empty map is the only value this face ever needs).
+fn default_of<T: Default>() -> T {
+    T::default()
+}
+
+/// A4 (proposal 026 freeze batch): one malformed-subscription refusal —
+/// unparseable url, unresolvable path, missing repo.json, duplicate
+/// url/path, official/curated guard. The port's single Validation code.
+fn repo_invalid(reason: impl std::fmt::Display) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::REPO_INVALID,
+        ErrorCategory::Validation,
+        "errors.vpm.repoInvalid",
+        "corr-vpm-repo-write",
+    )
+    .with_param("reason", ParamValue::Text(reason.to_string()))
+}
+
+/// A4: the manifest-fetch network segment failed (add_remote_repo only).
+fn repo_fetch_failed(reason: String) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::REPO_FETCH_FAILED,
+        ErrorCategory::ExternalFailure,
+        "errors.vpm.repoFetchFailed",
+        "corr-vpm-repo-write",
+    )
+    .with_param("reason", ParamValue::Text(reason))
+}
+
+/// A4: isolated-environment settings read/write-back failure — the same
+/// io-leg discipline as `map_local_package_io` (ExternalFailure, context
+/// prefix), mapped onto the face's own write-failed code.
+fn map_repo_write(context: &'static str) -> impl Fn(std::io::Error) -> AppErrorV1 {
+    move |error| {
+        AppErrorV1::new(
+            error_codes::REPO_WRITE_FAILED,
+            ErrorCategory::ExternalFailure,
+            "errors.vpm.repoWriteFailed",
+            "corr-vpm-repo-write",
         )
         .with_param("reason", ParamValue::Text(format!("{context}: {error}")))
     }
@@ -314,8 +515,44 @@ impl VpmBackend for VrcGetLibBackend {
         CatalogCapabilities { catalog: true }
     }
 
+    fn register_capabilities(&self) -> RegisterCapabilities {
+        // 026 A3 冻结批：恰在实现 `register_local_package` 时覆写默认
+        // declared-none（025 catalog 同律，ORC-DEV-004）。注册是库内实现
+        // （vrc-get 0.0.16 `Settings::add_user_package`），无外部进程依赖，
+        // 能力如实随实现翻转；覆写前 served 行 `packages.registerOps`
+        // 如实 unavailable。`VccCliBackend` 不覆写——不声明，缺席臂零改动。
+        RegisterCapabilities {
+            register_local_package: true,
+        }
+    }
+
     fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {
         VrcGetLibBackend::register_local_package(self, package_root)
+    }
+
+    fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
+        // 026 A4 冻结批：恰在实现三仓库写方法时覆写默认 declared-none
+        // （025/026 catalog 与 register 同律，ORC-DEV-004）。三独立位如实
+        // 声明——后端可只服务子集，门按方法绝不按面；覆写前 served 行
+        // `packages.repoOps` 如实 unavailable。`VccCliBackend` 不覆写——
+        // 不声明，缺席臂零改动。
+        RepoWriteCapabilities {
+            add_remote_repo: true,
+            add_local_repo: true,
+            remove_repo: true,
+        }
+    }
+
+    fn add_remote_repo(&self, url: &str, name: &str) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::add_remote_repo(self, url, name)
+    }
+
+    fn add_local_repo(&self, path: &Path, name: &str) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::add_local_repo(self, path, name)
+    }
+
+    fn remove_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::remove_repo(self, repo_id)
     }
 
     fn list_packages(&self, project: &ProjectRef) -> Result<Vec<InstalledPackageV1>, AppErrorV1> {
