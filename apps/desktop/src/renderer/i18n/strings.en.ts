@@ -9,10 +9,7 @@
  *   code are rejected by scripts/check-i18n.mjs.
  * - Interpolation uses named placeholders ("{count} remaining"), expanded by
  *   format(); never assemble sentences by concatenation.
- * - Product terms (Warehouse / Recipe / Assembly / Production / Inspection /
- *   Release / AMF) are never translated; terms.* only holds local annotations
- *   (empty in English — the terms are self-explanatory). Reference terms via
- *   {placeholder} + termLabel(), never hardcode them in a sentence.
+ * - Domain IDs stay stable; terms.* supplies localized display names. Brands stay unchanged.
  * - Demo-data payload copy does not live here; see ./strings.fixtures.zh-CN.ts
  *   (DEV-only, reachable only from gateway fixtures, tree-shaken in release).
  */
@@ -25,6 +22,28 @@ export const strings = {
     inspection: "",
     release: "",
     amf: "",
+  },
+  diagnostics: {
+    "statusWithCode": "{status} ({code})",
+    "unknown": "Additional information is available in the original message.",
+    "original": "Original message",
+    "inspectRequired": "Review the interrupted task before choosing how to recover. It will not resume automatically.",
+    "taskFailed": "The task reported an error. Open its details to review what happened.",
+    "projectReady": "The Unity project and current scene can be read.",
+    "validationPassed": "Outfit hierarchy, Merge Armature and selected references passed validation.",
+    "performanceEstimated": "A local structural estimate is available. This is not an official VRChat performance rank.",
+    "missingMesh": "A mesh reference is missing. See the original message for the affected object.",
+    "missingMaterial": "A material reference is missing. See the original message for the object and slot.",
+    "missingScript": "The avatar hierarchy contains a missing script.",
+    "referencesClean": "Mesh, material and script references are present.",
+    "realtimeLights": "The scene contains realtime or mixed lights. This is an observation, not an official rating.",
+    "bakedLights": "All observed scene lights are baked. This is not an official rating.",
+    "noLights": "No scene lights were found. This is not an official rating.",
+    "sdkAbsent": "VRChat Avatar SDK components were not found in this project.",
+    "descriptorMissing": "The avatar has no Avatar Descriptor component.",
+    "pipelineMissing": "The avatar has no Pipeline Manager component.",
+    "uploadComponentsPresent": "Avatar Descriptor and Pipeline Manager are present. This does not mean the official SDK has approved upload.",
+    "buildTarget": "The active build target is recorded in the original message."
   },
   common: {
     fixtureBadge: "Demo data",
@@ -678,7 +697,7 @@ demoTaskTitle: "Demo task",
             id: "prepare",
             title: "Before you start",
             paragraphs: [
-              "Make sure your accelerator is on and pinned to the same route, and Steam is signed in. VRChat itself is free.",
+              "Sign in to Steam and check your internet connection. If you cannot connect, follow the network troubleshooting guide. VRChat is free to play.",
             ],
           },
           {
@@ -786,7 +805,7 @@ demoTaskTitle: "Demo task",
             id: "accounts",
             title: "About accounts",
             paragraphs: [
-              "Steam guest-account data cannot be migrated; register on the official site and link it to keep favorites and friends long-term.",
+              "You can upgrade a Steam platform account to a VRChat account or link it to an existing one. Follow the official account-upgrade instructions to keep friends and favorites.",
             ],
           },
         ],
@@ -837,7 +856,7 @@ demoTaskTitle: "Demo task",
   },
   warehouse: {
     subtitle:
-      "The product catalog and assets arriving on this machine meet here; purchases and downloads always happen in the system browser or official tools.",
+      "Manage product information and assets saved on this PC. Open BOOTH product pages in the app or your browser, and use your own account for purchases.",
     searchPlaceholder: "Search title or product ID",
     searchAria: "Search catalog products",
     filters: {
@@ -916,7 +935,7 @@ demoTaskTitle: "Demo task",
       openInApp: "Open in app window",
       openInAppFailed: "Could not open the in-app window; use the system browser instead.",
       sourceUrlNote:
-        "Sign-in, purchase and download happen on the source page or the official BOOTH Library Manager; once files arrive, {warehouse} scans and takes over.",
+        "Sign in, purchase and download on the original product page. Once files are saved locally, add them to {warehouse}.",
       retry: "Retry",
       preview3dTitle: "3D preview",
       preview3dNote: "Real-time VRM preview is planned: models that arrive locally will be rotatable here.",
@@ -926,7 +945,7 @@ demoTaskTitle: "Demo task",
       viewCatalog: "Catalog",
       viewLocal: "Local assets",
       viewSwitchAria: "Switch catalog / local assets view",
-      trackCatalogDesc: "Cloud catalog snapshot; purchase and download always finish on the source page or official tools",
+      trackCatalogDesc: "Product information saved on this PC. Purchase and download from the original source.",
       trackLocalDesc: "Gallery of warehouse material entries; assets are inspected before use",
       entriesTitle: "Warehouse entries",
       entriesEmpty:
@@ -1053,7 +1072,7 @@ demoTaskTitle: "Demo task",
       },
       "start-prepare": {
         title: "Before you start",
-        body: "Make sure your accelerator is on and pinned to the lowest-latency route, and Steam is signed in.",
+        body: "Sign in to Steam and check your internet connection. If you cannot connect, follow the network troubleshooting guide. VRChat is free to play.",
       },
       "start-first-world": {
         title: "Enter your first world",
@@ -1077,7 +1096,7 @@ demoTaskTitle: "Demo task",
       },
       "basics-status": {
         title: "What status colors mean",
-        body: "Green = online, blue = in a group, yellow = busy, red = do not disturb. Your status shows on your nameplate.",
+        body: "Green = Online; blue = Join Me; orange = Ask Me; red = Do Not Disturb. These statuses affect joining and notifications; blue does not mean group membership.",
       },
       "safety-open-urls": {
         title: "Turn this switch on first",
@@ -1113,11 +1132,11 @@ demoTaskTitle: "Demo task",
       },
       "tutorials-faq": {
         title: "Quick FAQ",
-        body: "An avatar not showing is usually a shield level or platform compatibility issue; check the accelerator first when disconnected; see each guide page for more.",
+        body: "If an avatar is hidden, check Safety settings and platform compatibility. If disconnected, check your network connection and VRChat service status.",
       },
       "tutorials-accounts": {
         title: "About accounts",
-        body: "Steam guest-account data cannot be migrated; register a full account on the official site and link it to keep favorites and friends long-term.",
+        body: "You can upgrade a Steam platform account to a VRChat account or link it to an existing one. Follow the official account-upgrade instructions to keep friends and favorites.",
       },
     },
   },
@@ -2037,9 +2056,9 @@ demoTaskTitle: "Demo task",
     },
     version: {
       heading: "VUA Desktop",
-      versionLine: "v0.3.0 · Early preview",
+      versionLine: "v{version} · Early preview",
       description:
-        "Current slice: four-goal information architecture, first-run onboarding, and deployer/workshop shells. Environment checks, asset warehousing and the production pipeline arrive in later milestones.",
+        "An early preview of VUA. Available features depend on the connected local services; see each page for their current status.",
       debugHeading: "Debug mode",
       debugDescription:
         "When enabled, warehouse product details show full structured data (including entity UUIDs) for troubleshooting data issues. Display only; nothing is modified.",

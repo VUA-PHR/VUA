@@ -1,3 +1,4 @@
+import { formatDateTime } from "./i18n/index.ts";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { saveDebugMode, useDebugMode } from "./app/debug-mode.ts";
 import {
@@ -462,7 +463,7 @@ function VersionPage() {
       <Card>
         <div className="vua-page__stack">
           <h2 className="vua-title">{copy.heading}</h2>
-          <p className="vua-page__version">{copy.versionLine}</p>
+          <p className="vua-page__version">{format(copy.versionLine, { version: __VUA_BUILD_INFO__.version })}</p>
           <p className="vua-text-secondary">{copy.description}</p>
         </div>
       </Card>
@@ -491,7 +492,7 @@ function VersionPage() {
           ) : null}
           {updateCache ? (
             <p className="vua-caption vua-text-secondary">
-              {format(copy.updateCheckedAt, { at: new Date(updateCache.checkedAt).toLocaleString() })}
+              {format(copy.updateCheckedAt, { at: formatDateTime(updateCache.checkedAt) })}
             </p>
           ) : null}
           <div style={{ display: "flex", gap: "0.5rem" }}>

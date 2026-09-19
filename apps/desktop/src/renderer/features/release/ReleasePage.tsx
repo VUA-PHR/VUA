@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { lazy, Suspense, useEffect, useMemo, useState, type MouseEvent as ReactMouseEvent } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -70,7 +71,7 @@ function inspectionOf(project: ReleaseProject): {
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? iso : formatDateTime(iso);
 }
 
 function ProjectCard({

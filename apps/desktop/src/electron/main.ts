@@ -1,3 +1,4 @@
+import { dialogStrings } from "./dialog-i18n.js";
 import { app, BrowserWindow, dialog, ipcMain, net, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
@@ -186,7 +187,7 @@ function registerIpc(provider: OrchestratorProviderV01): void {
 
   // 素材来源对话框(生产用例契约草案"双素材入口"):按 intake 限定可选形态,
   // 选取结果落 Kernel 映射,回发 { refId, displayName };取消返回 null
-  ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown) => {
+  ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     if (intake !== "direct_unity_package" && intake !== "local_reusable_vpm") {
       throw new Error("invalid material intake");
@@ -194,12 +195,12 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const options =
       intake === "direct_unity_package"
         ? {
-            title: "Unity package",
-            filters: [{ name: "Unity package", extensions: ["unitypackage"] }],
+            title: dialogStrings(locale).unityPackage,
+            filters: [{ name: dialogStrings(locale).unityPackageFilter, extensions: ["unitypackage"] }],
             properties: ["openFile"] as ("openFile" | "openDirectory")[],
           }
         : {
-            title: "Local VPM package",
+            title: dialogStrings(locale).localVpm,
             filters: [] as { name: string; extensions: string[] }[],
             properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
           };
@@ -219,10 +220,10 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   // 仓储导入文件夹多选(W18,bdl-commands v0.3 warehouse.import 的本地拾取面):
   // openDirectory + multiSelections;取消或空选返回 null,路径交给渲染层经
   // warehouse.import 提交(本进程不做任何文件操作)
-  ipcMain.handle("vua:dialog:pick-warehouse-folders", async (event) => {
+  ipcMain.handle("vua:dialog:pick-warehouse-folders", async (event, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     const result = await dialog.showOpenDialog({
-      title: "Import material packages",
+      title: dialogStrings(locale).warehouse,
       properties: ["openDirectory", "multiSelections"] as ("openFile" | "openDirectory" | "multiSelections")[],
     });
     if (result.canceled || result.filePaths.length === 0) return null;
@@ -232,7 +233,7 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   // U10 手选编辑器路径(021 收敛点 4:单一「浏览」入口双态):exe 文件本身
   // 或目录(版本化根/Editor 目录);取消返回 null。路径原样交渲染层经
   // environment.verifyEditor 透传验证,本进程不做归一化
-  ipcMain.handle("vua:dialog:pick-editor-path", async (event, mode: unknown) => {
+  ipcMain.handle("vua:dialog:pick-editor-path", async (event, mode: unknown, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     if (mode !== "executable" && mode !== "directory") {
       throw new Error("invalid editor path mode");
@@ -240,12 +241,12 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const options =
       mode === "executable"
         ? {
-            title: "Unity editor executable",
+            title: dialogStrings(locale).editorExecutable,
             filters: [{ name: "Unity", extensions: ["exe"] }],
             properties: ["openFile"] as ("openFile" | "openDirectory")[],
           }
         : {
-            title: "Unity editor directory",
+            title: dialogStrings(locale).editorDirectory,
             filters: [] as { name: string; extensions: string[] }[],
             properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
           };

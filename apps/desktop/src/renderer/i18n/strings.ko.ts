@@ -4,8 +4,7 @@ import type { Strings } from "./strings.en.ts";
  * VUA UI 문자열 테이블(ko). 소스 언어: en(strings.en.ts).
  * - 구조 키는 Strings 타입이 컴파일 타임에 강제;
  *   보간 플레이스홀더는 scripts/check-i18n-tables.mjs 가 검사.
- * - 제품 용어(Warehouse / Recipe / Assembly / Production / Inspection /
- *   Release / AMF)는 번역하지 않음. terms.* 는 로컬 주석만 보유.
+ * - terms.* 는 현지화된 표시 이름입니다. 브랜드와 내부 ID는 변경하지 않습니다.
  * - {placeholder} 이름은 소스 테이블과 정확히 일치해야 함.
  */
 export const strings: Strings = {
@@ -17,6 +16,28 @@ export const strings: Strings = {
     inspection: "검사",
     release: "출고",
     amf: "",
+  },
+  diagnostics: {
+    "statusWithCode": "{status} ({code})",
+    "unknown": "자세한 내용은 원본 메시지를 확인하세요.",
+    "original": "원본 메시지",
+    "inspectRequired": "중단된 작업을 확인한 후 복구 방법을 선택하세요. 자동으로 다시 시작하지 않습니다.",
+    "taskFailed": "작업에서 오류가 보고되었습니다. 세부 정보를 열어 확인하세요.",
+    "projectReady": "Unity 프로젝트와 현재 씬을 읽을 수 있습니다.",
+    "validationPassed": "의상 계층, Merge Armature 및 선택한 참조 검사를 통과했습니다.",
+    "performanceEstimated": "로컬 구조 추정 결과입니다. VRChat 공식 성능 등급이 아닙니다.",
+    "missingMesh": "메시 참조가 없습니다. 대상 오브젝트는 원본 메시지에서 확인하세요.",
+    "missingMaterial": "머티리얼 참조가 없습니다. 오브젝트와 슬롯은 원본 메시지에서 확인하세요.",
+    "missingScript": "아바타 계층에 누락된 스크립트가 있습니다.",
+    "referencesClean": "메시, 머티리얼 및 스크립트 참조를 확인했습니다.",
+    "realtimeLights": "씬에 실시간 또는 혼합 조명이 있습니다. 공식 평가가 아닙니다.",
+    "bakedLights": "확인한 씬 조명은 모두 베이크 설정입니다. 공식 평가가 아닙니다.",
+    "noLights": "씬에서 조명을 찾지 못했습니다. 공식 평가가 아닙니다.",
+    "sdkAbsent": "이 프로젝트에서 VRChat Avatar SDK 컴포넌트를 찾지 못했습니다.",
+    "descriptorMissing": "아바타에 Avatar Descriptor가 없습니다.",
+    "pipelineMissing": "아바타에 Pipeline Manager가 없습니다.",
+    "uploadComponentsPresent": "Avatar Descriptor와 Pipeline Manager를 확인했습니다. 공식 SDK 업로드 검사를 통과했다는 의미는 아닙니다.",
+    "buildTarget": "현재 빌드 타깃은 원본 메시지에서 확인하세요."
   },
   common: {
     fixtureBadge: "데모 데이터",
@@ -646,7 +667,7 @@ rolled_back: "롤백됨",
             id: "prepare",
             title: "시작 전 준비",
             paragraphs: [
-              "가속기가 켜져 있고 같은 회선으로 고정되어 있는지, Steam에 로그인되어 있는지 확인하세요. VRChat 본체는 무료입니다.",
+              "Steam에 로그인하고 인터넷 연결을 확인하세요. 연결되지 않으면 네트워크 문제 해결 안내를 확인하세요. VRChat은 기본적으로 무료입니다.",
             ],
           },
           {
@@ -735,7 +756,7 @@ rolled_back: "롤백됨",
           {
             id: "accounts",
             title: "계정 안내",
-            paragraphs: ["Steam 임시 계정 데이터는 이전할 수 없습니다. 공식 사이트에서 가입하고 연동하면 즐겨찾기와 친구를 오래 보존할 수 있습니다."],
+            paragraphs: ["Steam 플랫폼 계정을 VRChat 계정으로 업그레이드하거나 기존 계정과 연동할 수 있습니다. 친구와 즐겨찾기를 유지하려면 공식 계정 업그레이드 안내를 따르세요."],
           },
         ],
       },
@@ -782,7 +803,7 @@ rolled_back: "롤백됨",
     },
   },
   warehouse: {
-    subtitle: "상품 카탈로그와 이 PC에 도착한 에셋이 여기서 만납니다. 구매와 다운로드는 항상 시스템 브라우저 또는 공식 도구에서 이루어집니다.",
+    subtitle: "이 PC에 저장된 상품 정보와 에셋을 관리합니다. 앱이나 브라우저에서 BOOTH 상품 페이지를 열고 본인 계정으로 구매하세요.",
     searchPlaceholder: "제목 또는 상품 ID 검색",
     searchAria: "카탈로그 상품 검색",
     filters: {
@@ -859,7 +880,7 @@ rolled_back: "롤백됨",
       openSourceFailed: "시스템 브라우저를 호출하지 못했습니다. 위 링크를 수동으로 복사하세요.",
       openInApp: "앱 내 창에서 열기",
       openInAppFailed: "앱 내 창을 열지 못했습니다. 시스템 브라우저를 이용하세요.",
-      sourceUrlNote: "로그인, 구매, 다운로드는 출처 페이지 또는 BOOTH 공식 Library Manager에서 진행합니다. 파일이 도착하면 {warehouse}가 스캔하여 인계받습니다.",
+      sourceUrlNote: "원본 상품 페이지에서 로그인, 구매, 다운로드하세요. 로컬에 저장한 파일을 {warehouse}에 추가할 수 있습니다.",
       retry: "다시 시도",
       preview3dTitle: "3D 미리보기",
       preview3dNote: "VRM 실시간 미리보기를 준비 중입니다. 도착한 모델을 여기에서 회전해 볼 수 있습니다.",
@@ -869,7 +890,7 @@ rolled_back: "롤백됨",
       viewCatalog: "카탈로그",
       viewLocal: "로컬 에셋",
       viewSwitchAria: "카탈로그/로컬 에셋 보기 전환",
-      trackCatalogDesc: "클라우드 카탈로그 스냅숏. 구매와 다운로드는 출처 페이지 또는 공식 도구에서 진행합니다",
+      trackCatalogDesc: "이 PC에 저장된 상품 정보입니다. 구매와 다운로드는 원본 상품 페이지에서 진행하세요.",
       trackLocalDesc: "창고 안 소재 패키지 항목의 갤러리. 에셋은 검사 후 사용합니다",
       entriesTitle: "창고 항목",
       entriesEmpty:
@@ -992,7 +1013,7 @@ rolled_back: "롤백됨",
       },
       "start-prepare": {
         title: "시작 전 준비",
-        body: "가속기가 켜져 있고 지연이 가장 낮은 회선으로 고정되어 있는지, Steam에 로그인되어 있는지 확인하세요.",
+        body: "Steam에 로그인하고 인터넷 연결을 확인하세요. 연결되지 않으면 네트워크 문제 해결 안내를 확인하세요. VRChat은 기본적으로 무료입니다.",
       },
       "start-first-world": {
         title: "첫 월드 입장",
@@ -1016,7 +1037,7 @@ rolled_back: "롤백됨",
       },
       "basics-status": {
         title: "상태 색상의 의미",
-        body: "녹색=온라인, 파랑=그룹 참여 중, 노랑=바쁨, 빨강=방해 금지. 상태는 네임플레이트에 표시됩니다.",
+        body: "초록색 = Online, 파란색 = Join Me, 주황색 = Ask Me, 빨간색 = Do Not Disturb. 참가와 알림에 영향을 주는 상태이며, 파란색은 그룹 참가를 뜻하지 않습니다.",
       },
       "safety-open-urls": {
         title: "먼저 이 스위치를 켜세요",
@@ -1052,11 +1073,11 @@ rolled_back: "롤백됨",
       },
       "tutorials-faq": {
         title: "자주 묻는 질문",
-        body: "아바타가 보이지 않는 것은 대부분 보호 수준이나 플랫폼 호환성 문제입니다. 연결이 끊기면 가속기를 먼저 확인하세요. 더 많은 문제는 각 가이드 페이지를 참조하세요.",
+        body: "아바타가 표시되지 않으면 안전 설정과 플랫폼 호환성을 확인하세요. 연결이 끊기면 네트워크 연결과 VRChat 서비스 상태를 확인하세요.",
       },
       "tutorials-accounts": {
         title: "계정 안내",
-        body: "Steam 임시 계정 데이터는 이전할 수 없습니다. 공식 사이트에서 정식 계정을 가입하고 연동하면 즐겨찾기와 친구를 오래 보존할 수 있습니다.",
+        body: "Steam 플랫폼 계정을 VRChat 계정으로 업그레이드하거나 기존 계정과 연동할 수 있습니다. 친구와 즐겨찾기를 유지하려면 공식 계정 업그레이드 안내를 따르세요.",
       },
     },
   },
@@ -1959,8 +1980,8 @@ rolled_back: "롤백됨",
     },
     version: {
       heading: "VUA 데스크톱",
-      versionLine: "v0.3.0 · 얼리 프리뷰",
-      description: "현재 슬라이스: 4개 목표의 정보 아키텍처, 첫 실행 가이드, 디플로이어/작업장 셸. 환경 검사, 에셋 창고, 생산 파이프라인은 이후 마일스톤에서 연결됩니다.",
+      versionLine: "v{version} · 얼리 프리뷰",
+      description: "VUA 얼리 프리뷰입니다. 사용 가능한 기능은 로컬 서비스 연결 상태에 따라 달라집니다. 각 페이지에서 현재 상태를 확인하세요.",
       debugHeading: "디버그 모드",
       debugDescription: "켜면 창고 상품 상세에 완전한 구조화 데이터(엔티티 UUID 포함)를 표시해 데이터 문제를 진단합니다. 표시에만 영향을 주며 데이터는 변경하지 않습니다.",
       debugToggle: "상품 디버그 정보 표시",
