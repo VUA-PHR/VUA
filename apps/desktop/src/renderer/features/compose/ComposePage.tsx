@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
+import { ConfirmDialog } from "../../components/primitives/ConfirmDialog.tsx";
 import { EmptyState } from "../../components/primitives/EmptyState.tsx";
 import { useAcquireView } from "../../gateway/index.ts";
 import { format, strings } from "../../i18n/index.ts";
@@ -34,8 +35,12 @@ export function ComposePage() {
   const view = useAcquireView();
   const draft = useComposeDraft();
   const [sourceIndex, setSourceIndex] = useState(0);
-  // 保存链:容器层共享 hook(D-3 提取;recipe.save 线形状与回执对齐不变)
-  const { saveState, saveDraft } = useComposeSave();
+  // 挂载名称高级展开(D3):默认隐藏——自动派生后无须用户填写
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  // 保存链:容器层共享 hook(D-3 提取;recipe.save 线形状与回执对齐不变;
+  // D5 查重命中确认框亦由本 hook 承载——两套 UI 同一规则)
+  const { saveState, duplicate, saveDraft, confirmDuplicateSave, cancelDuplicateSave } =
+    useComposeSave();
 
   const entries = view.kind === "entries" ? view.entries : [];
   const canUndo = draft.undoStack.length > 0;
@@ -60,32 +65,51 @@ export function ComposePage() {
             {draft.items.length === 0 ? (
               <EmptyState title={copy.draftEmptyTitle} description={copy.draftEmptyDesc} />
             ) : (
-              <ul className="vua-project-compat__specs">
-                {draft.items.map((item) => (
-                  <li key={item.warehouseItemId}>
-                    <strong>{item.title}</strong>{" "}
-                    <span className="vua-caption vua-text-secondary">
-                      {item.role === null ? "" : format(copy.roleLine, { role: item.role })}
-                    </span>{" "}
-                    <input
-                      type="text"
-                      value={item.nameHint ?? ""}
-                      placeholder={copy.nameHintPlaceholder}
-                      aria-label={format(copy.nameHintAria, { title: item.title })}
-                      onChange={(event) =>
-                        composeSetNameHintAction(item.warehouseItemId, event.target.value)
-                      }
-                    />
-                    <Button
-                      variant="subtle"
-                      aria-label={format(copy.removeItemAria, { title: item.title })}
-                      onClick={() => composeRemoveItemAction(item.warehouseItemId)}
-                    >
-                      {copy.removeCta}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
+              <>
+                {/* D3(用户裁定 2026-09-20「不该让用户填写」):挂载名称加入草稿
+                    时已自动派生自条目 displayName,输入框收进可选高级展开——
+                    默认隐藏,覆盖仅高级用户按需展开 */}
+                <div className="vua-project-compat__row">
+                  <Button
+                    variant="subtle"
+                    aria-expanded={advancedOpen}
+                    onClick={() => setAdvancedOpen((open) => !open)}
+                  >
+                    {copy.advancedMountToggle}
+                  </Button>
+                </div>
+                {advancedOpen ? (
+                  <p className="vua-caption vua-text-secondary">{copy.autoNameNote}</p>
+                ) : null}
+                <ul className="vua-project-compat__specs">
+                  {draft.items.map((item) => (
+                    <li key={item.warehouseItemId}>
+                      <strong>{item.title}</strong>{" "}
+                      <span className="vua-caption vua-text-secondary">
+                        {item.role === null ? "" : format(copy.roleLine, { role: item.role })}
+                      </span>{" "}
+                      {advancedOpen ? (
+                        <input
+                          type="text"
+                          value={item.nameHint ?? ""}
+                          placeholder={copy.nameHintPlaceholder}
+                          aria-label={format(copy.nameHintAria, { title: item.title })}
+                          onChange={(event) =>
+                            composeSetNameHintAction(item.warehouseItemId, event.target.value)
+                          }
+                        />
+                      ) : null}
+                      <Button
+                        variant="subtle"
+                        aria-label={format(copy.removeItemAria, { title: item.title })}
+                        onClick={() => composeRemoveItemAction(item.warehouseItemId)}
+                      >
+                        {copy.removeCta}
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              </>
             )}
             <div className="vua-project-compat__row">
               <Button variant="subtle" disabled={!canUndo} onClick={composeUndoAction}>
@@ -94,7 +118,10 @@ export function ComposePage() {
               <Button
                 variant="primary"
                 disabled={
-                  draft.items.length === 0 || saveState === "saving" || composeSaveBlocked(draft.items)
+                  draft.items.length === 0 ||
+                  saveState === "checking" ||
+                  saveState === "saving" ||
+                  composeSaveBlocked(draft.items)
                 }
                 onClick={saveDraft}
               >
@@ -165,6 +192,26 @@ export function ComposePage() {
       {/* 019 批 C:生产链段(保存后推进——解析/计划/任务/记录;无保存事实时
           自行不渲染);身份与请求状态在共享容器层,跨 UI 根保留 */}
       <ProductionChainSection />
+
+      {/* D5(用户裁定 2026-09-20「点 N 次存 N 版应先查重询问」):保存前查重
+          命中完全一致内容时,须用户确认才提交新修订 */}
+      <ConfirmDialog
+        open={duplicate !== null}
+        title={copy.dedupTitle}
+        cancelLabel={copy.dedupCancelCta}
+        confirmLabel={copy.dedupConfirmCta}
+        onCancel={cancelDuplicateSave}
+        onConfirm={confirmDuplicateSave}
+      >
+        <p className="vua-text-secondary">
+          {duplicate === null
+            ? null
+            : format(copy.dedupBody, {
+                recipeId: duplicate.recipeId,
+                revision: String(duplicate.revision),
+              })}
+        </p>
+      </ConfirmDialog>
     </div>
   );
 }

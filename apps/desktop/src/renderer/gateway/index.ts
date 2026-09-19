@@ -178,6 +178,16 @@ export type {
   PackagesPort,
   PackagesRegisterApplyOutcome,
   PackagesRegisterResultV03,
+  PackagesLocalRepoAddedV04,
+  PackagesRemoteRepoAddedV04,
+  PackagesRepoAddApplyOutcome,
+  PackagesRepoRejectedV04,
+  PackagesRepoRemoveApplyOutcome,
+  PackagesRepoRemovedV04,
+  PackagesCreateApplyOutcome,
+  PackagesCreateProjectResultV05,
+  PackagesCreateRejectedV05,
+  PackagesProjectCreatedV05,
   PackagesRemoveApplyOutcome,
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
@@ -192,6 +202,8 @@ export type {
 export type { SettingsPort, SettingsView } from "./settings-port.ts";
 export { createSignal } from "./signal.ts";
 export type { CancelTaskResult, TaskCenterView, TaskItem, TaskPort } from "./task-port.ts";
+export { registerTaskIdentity, taskIdentityOf } from "./task-identity.ts";
+export type { TaskIdentity } from "./task-identity.ts";
 export { createInactiveTutorialPort } from "./tutorial-port.ts";
 export type { DispatchResult, TutorialAction, TutorialPort, TutorialSnapshot } from "./tutorial-port.ts";
 export type { VuaGateway } from "./gateway.ts";

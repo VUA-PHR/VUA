@@ -1,12 +1,12 @@
-# VUA design standard v0.7.3
+# VUA design standard v0.7.5
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.3
+> Document version: 0.7.5
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.3)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.5)  
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-18  
+> Updated: 2026-09-19  
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -291,6 +291,24 @@ stable untilted cards.
   render as a "Project compatibility" section at the end of the package manager page; the section is
   not gated on the package engine capability. Write-operation handover stays guidance-only: no
   invented interaction without a word face or capability facts.
+
+  Project creation (026 A5) is a single-stage write command without the combined change preview: a
+  brand-new project directory has no pre-existing state to diff and no digest to bind, so the user's
+  explicit form submission is the confirmation. The entry is gated on the create capability fact row;
+  without the fact it does not render. The form is a parent-folder path input plus a project name
+  input — no invented directory enumeration and no fabricated template dropdown; leaving the template
+  blank means the backend default template resolution, stated as it is. Success registers the project
+  immediately (visible after the list refresh); creation is not idempotent, and refusals such as an
+  already-existing target directory render inline as they are.
+
+  Settings-face copy discipline (027 F1, user ruling U14): UI copy for settings-face operations
+  such as subscribing and registering local packages states the shared semantics honestly — the
+  same package-manager settings file (settings.json) is shared with VCC/ALCOM and changes are
+  visible to both sides immediately; VUA does not modify your project files, and external imports
+  default to cloning a copy before modifying it. Settings-face copy must not use exclusive claims
+  such as "isolated backend environment" or "never modifies your VCC/ALCOM settings" that
+  contradict the shared implementation; the read-only project-file face and clone-first semantics
+  are unchanged.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 
@@ -336,6 +354,25 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.5 (2026-09-19)**: §8.7 projects/packages supplemented with the settings-face copy
+  discipline (proposal 027 F1, user ruling U14) — UI copy for settings-face operations such as
+  subscribing and registering local packages states the shared semantics honestly (the same
+  package-manager settings file settings.json is shared with VCC/ALCOM and changes are visible to
+  both sides immediately; VUA does not modify project files, and external imports default to
+  cloning a copy before modifying it), and exclusive claims such as "isolated backend environment"
+  or "never modifies your VCC/ALCOM settings" that contradict the shared implementation are
+  banned; the read-only project-file face and clone-first semantics are unchanged. Mirrors the ZH
+  edition.
+
+- **0.7.4 (2026-09-19)**: §8.7 projects/packages supplemented with project-creation presentation
+  (026 A5 consumption slice) — creation is a single-stage write command without the combined change
+  preview (a brand-new directory has no pre-existing state to diff and no digest to bind; the
+  explicit form submission is the confirmation); the entry is gated on the create capability fact
+  row; parent-folder path and project name inputs invent no directory enumeration, and leaving the
+  template blank means the backend default template resolution, stated honestly with no fabricated
+  dropdown; success registers the project immediately, creation is not idempotent, and refusals such
+  as an already-existing target directory render as they are. Mirrors the ZH edition.
 
 - **0.7.3 (2026-09-18)**: §8 information-architecture update (proposal 026 B, user ruling
   2026-09-18) — the standalone "Project compatibility" second-level page is removed; its read

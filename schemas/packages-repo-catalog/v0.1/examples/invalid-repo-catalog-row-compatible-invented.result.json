@@ -1,0 +1,25 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.repoCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-repo-catalog/v0.1",
+    "repos": [
+      {
+        "repoId": "official",
+        "name": "Official",
+        "cached": true,
+        "packages": [
+          {
+            "packageId": "com.anatawa12.avatar-optimizer",
+            "displayName": "Avatar Optimizer",
+            "description": "Optimization tools for avatars",
+            "latestVersion": "1.7.0",
+            "versionCount": 14,
+            "compatible": true
+          }
+        ]
+      }
+    ],
+    "cacheSourced": false
+  }
+}

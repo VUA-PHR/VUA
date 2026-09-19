@@ -655,6 +655,30 @@ describe("mock packages P2 read faces (025 core freeze batch)", () => {
   });
 });
 
+describe("mock packages F2 repo-catalog read face (027 core freeze batch)", () => {
+  it.each([
+    ["packages.repoCatalog", { repoId: null, packageIds: null }],
+    ["packages.repoCatalog", { repoId: "official", packageIds: null }],
+    ["packages.repoCatalog", { repoId: null, packageIds: ["com.anatawa12.avatar-optimizer"] }],
+  ] as const)("answers %s with the honest absence code — never a fabricated inventory or an empty array posing as a fact", async (method, params) => {
+    // 027 F2 词表行:模拟面无 VpmBackend,恒答诚实缺席(P1/P2 同纪律)
+    // ——绝不伪造仓库级包目录清单;诚实空清单/空 packages 只属于真实
+    // 后端的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "query",
+      method,
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock packages-ops A1 write face (026 core freeze batch)", () => {
   it.each([
     ["packages.previewRemove", { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] }],
@@ -741,6 +765,30 @@ describe("mock packages-ops A4 repo add/remove face (026 core freeze batch, pack
       kind: "command",
       method,
       commandId: "cmd-test-a4",
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
+describe("mock packages-ops A5 create face (026 core freeze batch, packages-ops v0.5)", () => {
+  it.each([
+    ["packages.createProject", { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null }],
+  ] as const)("answers %s with the honest absence code — never a fabricated creation receipt", async (method, params) => {
+    // 026 A5 词表行(packages-ops v0.5):模拟面无 VpmBackend,恒答诚实
+    // 缺席(P1/P2/A1/A2/A3/A4 同纪律)——模拟面永不模拟 wire 写回执;
+    // 创建收据(ProjectRef 投影)与「创建即在册」副作用只属于真实后端
+    // 的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "command",
+      method,
+      commandId: "cmd-test-a5",
       params,
     } as Parameters<typeof request>[0]));
     expect(response.ok).toBe(false);

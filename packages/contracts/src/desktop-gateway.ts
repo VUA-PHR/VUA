@@ -640,6 +640,105 @@ export interface PackagesRegisterLocalPackageRequestV1 {
   };
 }
 
+// ---- packages-ops v0.4 写面 A4 仓库订阅增删(026 冻结批 28c63fa 经第 108 批
+// 入库;wire 接线批 3d4b667 经第 109 批入库;桌面 A4 消费批登记 2026-09-19。
+// 三命令闭集 addRemoteRepo/addLocalRepo/removeRepo 一一映射端口方法
+// add_remote_repo/add_local_repo/remove_repo。照 A3 同律破 preview/apply
+// 对偶——本面无 preview 臂:远端订阅天然含清单拉取网络段(preview 只会是
+// 伪装成更安全首跳的第二跳网络往返),且无既有状态摘要可绑定(订阅列表
+// 可漂移,诚实失败 = 执行时端口答 repo_not_found)——无 confirmedDigest
+// 位(携即形状违反,用户显式提交即确认);三方法均无 projectPath(订阅面
+// 只写后端隔离环境,013 project_not_found 复用对本面不适用);首期词面不
+// 收 HTTP 头/凭据传输。任务化写命令:受理回执 { taskId, correlationId }
+// (import-copy/A1/A2/A3 同构),审计收据 repoReceipt(remote/local 双互斥
+// 变体,五键最小诚实回显)/removed(三键 repoId 回显——回显即审计链,不
+// 发明被删行快照)/类型化拒绝 rejected 随任务终态 Done payload 回流。
+// served 行 packages.repoOps 一行服务三方法(repo_write_capabilities 三独
+// 立位门控,任一位声明即 available;wire 门按方法绝不按面)。词面权威 =
+// schemas/packages-ops/v0.4 + application-contract.ts A4 段 ----
+
+/** packages.addRemoteRepo 写命令:任务化受理(import-copy 同构);
+ *  commandId 由 Kernel 生成(渲染层不传,project.import-copy 先例);
+ *  params 双键闭集 {url, name} 非空 = 仓库 URL＋必填显示名;无
+ *  projectPath、无 digest 位、无 HTTP 头/凭据传输 */
+export interface PackagesAddRemoteRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.addRemoteRepo";
+  readonly params: {
+    readonly url: string;
+    readonly name: string;
+  };
+}
+
+/** packages.addLocalRepo 写命令:任务化受理;params 双键闭集
+ *  {path, name} 非空 = 本地目录仓库路径＋必填显示名(无网络段) */
+export interface PackagesAddLocalRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.addLocalRepo";
+  readonly params: {
+    readonly path: string;
+    readonly name: string;
+  };
+}
+
+/** packages.removeRepo 写命令:任务化受理;params 单键闭集
+ *  {repoId} 非空 = 仓库 id(稳定行柄,索引寻址不冻结);id 缺席行在本
+ *  词面移除可达范围之外(协议本载明的诚实边界) */
+export interface PackagesRemoveRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.removeRepo";
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
+// ---- packages-ops v0.5 写面 A5 项目创建(026 冻结批 0c77273 经第 112 批
+// 入库;wire 接线批 8abb638 经第 113 批入库;桌面 A5 消费批登记 2026-09-19。
+// 单命令 packages.createProject 一一映射端口方法 create_project(parent,
+// name, template)。照 A3/A4 同律破 preview/apply 对偶且根在端口:端口恰
+// 一个创建方法、无 create-preview 对应(预览臂会在 wire 面立端口后不存在
+// 的方法);全新项目目录无既有状态可 diff,无摘要可绑定——无
+// confirmedDigest 位(携即形状违反,用户显式表单提交即确认;创建新目录
+// 不触任何在册项目、包文件、他项目内容,ADR-0006 破坏性警示路径无可警
+// 示)。不收 projectPath(创建不寻址任何在册项目,013 project_not_found
+// 复用不适用)。任务化写命令:受理回执 { taskId, correlationId }(
+// import-copy/A1–A4 同构),created 收据 = 端口 ProjectRef {id, root} 投
+// 影四键闭集(packages-ops 族唯一有实际载荷的收据;projectId 信息性标识
+// 非 013 身份键,projectPath = 注册路径身份——创建即在册冻结端口事实:
+// 双后端成功路径尾调 FileSystemProjectStore::initialize,创建成功即在
+// 册、在册列表刷新即见,词面不虚构「仅建目录不登记」形状),类型化拒绝
+// rejected(guard 三值闭集复用 A1–A4 零新增;原端口码
+// vua.vpm.template_missing/apply_failed/backend_unavailable 在 detail
+// 原词溯源,不入 code 键;创建不幂等——重复目录执行时拒绝如实上呈)随
+// 任务终态 Done payload 回流。served 行 packages.createOps 一行服务本方
+// 法(行可用性 = 既有 VpmCapabilities.create_project 五联位——A5 零新
+// accessor,位先于批在库双后端已声明;wire 门 submit 前读位,假位答通用
+// capability_missing 绝不进任务)。词面权威 = schemas/packages-ops/v0.5 +
+// application-contract.ts A5 段 ----
+
+/** packages.createProject 写命令:任务化受理(import-copy/A1–A4 同构);
+ *  commandId 由 Kernel 生成(渲染层不传);params 三键闭集 {parent,
+ *  name, template}——parent/name 非空串 verbatim 透传(parent = 新项目
+ *  目录的父目录,路径事实非在册项目身份;name 后端名称校验为执行时权
+ *  威,表单前置校验仅作 UI 引导不重审上游语法),template REQUIRED-
+ *  nullable(null = 后端默认模板解析〔库路径默认 Avatar 三级解析序,冻
+ *  结词面事实非选择器,首面零新读面 templates.* 不立〕;非空串 = 该模板
+ *  名/路径 verbatim 透传;空串 = 形状违反);无 projectPath、无 digest
+ *  位 */
+export interface PackagesCreateProjectRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.createProject";
+  readonly params: {
+    readonly parent: string;
+    readonly name: string;
+    readonly template: string | null;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -695,7 +794,11 @@ export type DesktopGatewayRequestV1 =
   | PackagesApplyRemoveRequestV1
   | PackagesPreviewInstallRequestV1
   | PackagesApplyInstallRequestV1
-  | PackagesRegisterLocalPackageRequestV1;
+  | PackagesRegisterLocalPackageRequestV1
+  | PackagesAddRemoteRepoRequestV1
+  | PackagesAddLocalRepoRequestV1
+  | PackagesRemoveRepoRequestV1
+  | PackagesCreateProjectRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -761,6 +864,15 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // packages-ops v0.3 写面 A3 本地包注册(026;桌面 A3 消费批):族中唯一
   // 无 preview 对偶——单方法任务化 command(Kernel 生成 commandId)
   "packages.registerLocalPackage": "command",
+  // packages-ops v0.4 写面 A4 仓库订阅增删(026;桌面 A4 消费批):照 A3
+  // 同律无 preview 对偶——三方法任务化 command(Kernel 生成 commandId)
+  "packages.addRemoteRepo": "command",
+  "packages.addLocalRepo": "command",
+  "packages.removeRepo": "command",
+  // packages-ops v0.5 写面 A5 项目创建(026;桌面 A5 消费批):照 A3/A4
+  // 同律无 preview 对偶且根在端口——单方法任务化 command(Kernel 生成
+  // commandId)
+  "packages.createProject": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -960,6 +1072,31 @@ export interface DesktopEditorSettingsApiV1 {
   save(settings: EditorSettingsV1): Promise<EditorSettingsV1>;
 }
 
+// ---- 版本检测(2026-09-19 用户裁决:默认开启、设置可关;仅只读探测,
+// 下载/应用更新 = Phase C 单独立提案,本面不承载) ----
+
+/** 三态闭集:newer-available = 远端发布高于当前;up-to-date = 已最新或无法
+ * 证明更高;check-failed = 网络/解析失败(如实呈现,绝不猜态) */
+export type UpdateCheckStateV1 = "newer-available" | "up-to-date" | "check-failed";
+
+export interface UpdateCheckResultV1 {
+  readonly schemaVersion: 1;
+  readonly state: UpdateCheckStateV1;
+  /** 发起检测时的当前应用版本(app.getVersion()) */
+  readonly currentVersion: string;
+  /** 远端最新发布版本;check-failed 或缺 tag_name 时为 null(诚实缺席) */
+  readonly latestVersion: string | null;
+  /** 远端发布页 URL;无发布或失败时为 null */
+  readonly releaseUrl: string | null;
+  /** 检测完成时刻(RFC 3339,Main 侧落戳) */
+  readonly checkedAt: string;
+}
+
+export interface DesktopSystemApiV1 {
+  /** 只读版本探测:比对 GitHub latest release;永不抛——失败恒落 check-failed */
+  checkUpdate(): Promise<UpdateCheckResultV1>;
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
@@ -969,6 +1106,7 @@ export interface VuaDesktopApiV1 {
   readonly capabilities: DesktopCapabilitiesV1;
   readonly navigationConfirm: DesktopNavigationConfirmApiV1;
   readonly editorSettings: DesktopEditorSettingsApiV1;
+  readonly system: DesktopSystemApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1294,6 +1432,46 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["packageRoot"])
         && typeof value.params.packageRoot === "string"
         && value.params.packageRoot.length >= 1;
+    // packages-ops v0.4 写面 A4 仓库订阅增删(026;桌面 A4 消费批):
+    // params 精确键集闭集(双键 {url,name}/{path,name} 与单键 {repoId},
+    // 全非空串;无 projectPath——订阅面只写后端隔离环境;无 digest 位——
+    // 本面无 preview 可漂移,携即形状违反;commandId 由 Kernel 生成不在
+    // params)
+    case "packages.addRemoteRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["name", "url"])
+        && typeof value.params.url === "string"
+        && value.params.url.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1;
+    case "packages.addLocalRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["name", "path"])
+        && typeof value.params.path === "string"
+        && value.params.path.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1;
+    case "packages.removeRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["repoId"])
+        && typeof value.params.repoId === "string"
+        && value.params.repoId.length >= 1;
+    // packages-ops v0.5 写面 A5 项目创建(026;桌面 A5 消费批):params
+    // 三键闭集 {parent, name, template}(parent/name 非空串;template
+    // REQUIRED-nullable——键必须在位:缺键 = 违例,null = 后端默认解析,
+    // 非空串 = verbatim 透传,空串/非串 = 违例;无 projectPath——创建不
+    // 寻址任何在册项目;无 digest 位——本面无 preview 可漂移,携即形状
+    // 违反,用户显式表单提交即确认;commandId 由 Kernel 生成不在 params)
+    case "packages.createProject":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["parent", "name", "template"])
+        && typeof value.params.parent === "string"
+        && value.params.parent.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1
+        && (value.params.template === null
+          || (typeof value.params.template === "string"
+            && value.params.template.length >= 1));
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

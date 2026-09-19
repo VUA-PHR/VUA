@@ -2,110 +2,164 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 6f00abe
-updated: 2026-09-19
+baseline_commit: be16708
+updated: 2026-09-20
 ---
 ## 当前焦点
-**026 A4 接线批验收落账轮（2026-09-19 08:1x–08:4x 工作时段最后一
-拍，两笔：追平壳 fdb87ef＋本状态批）——A5 create_project 冻结批
-时机成就，照切片完整性优先顺延下窗开工**：
+**操作者批（W25 真机窗口 live 发现，时段例外延续）——环境检测两探针缺陷修复
+轮（2026-09-20 03:2x–04:0x；三笔：追平壳吸收 main be16708＋修复批
+1602ed4＋本状态批恰本文件）。E-1＝unity_hub 候选路径列表化＋注册表
+DisplayIcon 兜底；E-2＝vpm_cli 行语义重构为「VPM 能力」且 id 改名
+vpm_cli→vpm（裁决与理由见下）；冻结词面同步面全数同批落地；定向证据全
+绿亲测；上拍候验收三笔（629699e＋fabb04d＋状态批）经第 124 批登记收编
+入库、身份关闭**：
 
-- **A4 wire 接线批 3d4b667 验收入库回执（第 109 批 item 1，经
-  f5c929e --no-ff，零修改要求）**：集成逐点亲审通过——恰核心域
-  5 文件 1324+/77- 与申报一致，路由三臂闭集/逐方法独立位门控/任
-  一位行级可用性/双常量信封/三收据形状/四码折叠＋无幂等/11 例真
-  帧环逐项对账；合并树复跑 provider-host 222/0（wire_v04 11/11
-  新例＋三词面原样）＋orchestrator 231/0＋clippy 0＋contracts
-  77/77＋provider 38/38＋typecheck 双 0 在案；协议本 0.4.1 信封
-  常量载明核对点提前闭合。026 A4 链已闭环两环（冻结 28c63fa→接
-  线 3d4b667），余桌面消费＋环境实现核对两环（均已解锁、候各自
-  树办理，非本席）。回执不回执。
-- **brief 08:11 ①区两条 [→核心] 留言消化**：wt-main 第 108 批
-  「A4 冻结批已验收入库……核心侧下一步＝A4 wire 接线切片」＝上
-  拍交付 3d4b667 即回应（本拍轮询一次即见经第 109 批 item 1 入
-  库）；wt-3「A3 消费切片已交付（知会）」＝收讫零动作（8c655dd
-  经 3460865 入库）；第 109 批收尾留言「A5 create_project 冻结
-  批时机成就（8afde3f 裁定序 A4 接线已入库）＝本席下一冻结起草
-  对象」收讫——见下行时机处理。
-- **A5 冻结批顺延下窗（本拍不开）**：操作者注明本拍为工作时段最
-  后一拍；08:11 起拍轮询后 08:17 见 3d4b667 入库、08:26 见第 109
-  批收尾（6f00abe），A5 时机确已成就，但本拍剩余窗口不足以完整
-  交付一个冻结切片（照 A4 冻结批先例体量＝schemas＋端口面＋双
-  向量＋消费测试＋协议本＋REGISTRY 多文件同批），开则必成半途切
-  片——照第 3 步「切片完整性优先」纪律本拍不开工，A5 冻结批顺
-  延下窗第一拍即办（词面方向六点/载体声明/desktop typecheck 新
-  口径等裁定四点已在前录状态文件在案，起草条件齐备零缺口）。
-- **追平壳 fdb87ef**：--no-ff 合并 main 6f00abe（第 109 批三笔：
-  item 1 接线批验收 f5c929e＋item 2 wt-6 环境 A3 实现核对
-  dac78ee〔026 A3 链四环全闭环〕＋收尾 6f00abe），双法预检零冲
-  突（ort --write-tree exit 0＋老式 0 标记）；inbound 非 collab
-  面＝核心接线批 5 文件（本席自有已交付内容）＋环境核对 2 文件
-  （第 109 批已验收内容），零夹带；基线世代刷新 **6f00abe**——
-  下窗 A5 冻结批即对此验收世代开工。
+- **追平壳（TICK 第 4 步开工纪律）**：--no-ff 吸收 main be16708（第 124
+  批登记＋W25 窗口各树簿记＋outline 2.0.13），inbound 10 文件全 collab
+  ＋outline 文档面、零代码，基线刷新 **be16708**。**上拍验收回执就地关
+  账**：is-ancestor 实测接线批 629699e 已入 main（随第 124 批「四个
+  collab-only 候验收批收编」），候验收对象三笔身份关闭，勿重复验收；
+  状态批书写的「F3 条件未成就」判定在验收时点已翻转照实补记——
+  **629699e 在库＝F3 领取条件成就（本拍 04:0x 复核）**，F3 照既定程序
+  下拍领取（本拍全力在操作者批，未抢领）。
+- **缺陷 E-1（unity_hub 漏检）修复**：缺陷本体＝探针只查
+  `%LOCALAPPDATA%\Programs\Unity Hub\Unity Hub.exe`，用户机器级安装
+  漏检（本机只读复核 2026-09-20：`C:\Program Files\Unity Hub\Unity
+  Hub.exe` 在位 210MB、per-user 位缺席＝与用户截图实证一致）。修复＝
+  `EnvironmentRoots.unity_hub_exe: PathBuf` →
+  `unity_hub_exe_candidates: Vec<PathBuf>`（用户级位在前、机器级
+  `C:\Program Files\Unity Hub` 在后）＋新增
+  `unity_hub_registry_display_icon_keys: Vec<(RegistryHive, String)>`
+  走既有 win_registry 注入口点查 Uninstall 键 `DisplayIcon`
+  （HKCU／HKLM／WOW6432Node 三候选，子键名 `Unity Technologies - Hub`
+  系本机只读实测所得真键名）；DisplayIcon 解析剥引号与 `,<图标索引>`
+  后缀（本机实测值形 `C:\...\Unity Hub.exe,0` 即此形）；任一命中即
+  Detected，facts 记录 `{exe: 命中路径, via: path|registry,
+  registryKey?}`；未命中如实记录探测过的
+  `{candidates, registryKeys}` 列表（空态即终态）。
+- **缺陷 E-2（vpm_cli 行语义错位）修复＋id 裁决**：缺陷本体＝
+  `check_vpm_cli` 跑 `vrc-get --version` 要求独立 CLI——但 VUA 架构＝
+  内嵌 vrc-get-vpm 0.0.16 库（Cargo.lock 钉版），独立 CLI 从非前置
+  （用户裁决 2026-09-20：「没有 ALCOM 或者没有 VCC 不应作为阻塞」＋
+  库优先架构事实）。修复＝行语义重构为「VPM 能力」：内嵌库恒在＝
+  Detected 恒真，version 照钉版如实呈现（新增 pub 常量
+  `EMBEDDED_VRC_GET_VPM_VERSION = "0.0.16"`，**Cargo.lock 解析回归测试
+  钉死两者不漂移**）；独立 CLI 若在仅作附加信息 facts
+  `{standaloneCli: {state: detected|not_detected|detection_failed,
+  exe, version?, exitCode?}}`，任何 CLI 结果不降条目、不带条目级
+  错误码。**id 裁决＝改名 `vpm_cli` → `vpm`**，理由：①词面诚实——
+  保留 vpm_cli 会让冻结词面继续指称一个已非前置、非被测物的 CLI；
+  ②同域先例——姊妹项 `vcc` 即以能力命名（非以访问器命名），`vpm`
+  与之对齐；③线面无损——application-contract 的 `checkId` 为开集
+  string（TS 面实读），id 闭集无机器可读 schema，两侧测试钉闭集即可，
+  旧快照含 vpm_cli 仍类型通过、桌面投影对未知 id 设计性透传＝无
+  wire 形状变更、无契约版本升降；**同步面清单（全在本批）**＝
+  orchestrator inspect_zone＋zone 闭集测试表（orchestrator tests）、
+  桌面 CHECK_TITLE_KEYS（contract-projection.ts `vpm: "vpm"`）＋
+  投影测试 engineIds/keyOf、四语 i18n checks 键 vpmCli→vpm＋能力
+  题名（EN/ZH/JA/KO 四文件）、模块 doc 中文逐项说明；跨域触碰申报＝
+  desktop 6 文件（任务明文授权的 CHECK_TITLE_KEYS/向量/词面同步面）
+  ＋project-manager 测试夹具 1 文件（roots 字段变更的机械后果）。
+- **诚实边界与残留**：`error_codes::PROBE_FAILED` 现为定义但无发射方
+  （vpm 超时改为 facts 内信息态、不再产生条目级 detection_failed），
+  常量保留于稳定错误码命名空间未删除；真机复检＝用户 W25 窗自身动作
+  （本轮只读 reg query／dir 清单仅为缺陷实证与键名取证，不构成端到端
+  宣称），**零端到端宣称维持**。
+- **定向证据（本拍亲测全绿）**：orchestrator environment 套件
+  **22/22**（新增 4 测试＝Hub 双候选命中/未命中＋注册表 DisplayIcon
+  三形状命中＋不存在路径落空＋Cargo.lock 钉版锁步＋vpm 内嵌库恒真跨
+  四种 CLI 结局）；vua-orchestrator 全 crate 16 套件 0 失败；
+  provider-host environment_snapshot_wire 2/2；project-manager
+  environment_engine 1/1；clippy 三 crate --all-targets exit 0 零
+  警告；desktop typecheck 双 0（两 tsconfig exit 0）；
+  contract-projection vitest 17/17；check:i18n 表对齐 OK。
 
-## 前情（6f00abe 世代前的本域链，全文见本文件 git 历史）
-A4 wire 接线批 3d4b667〔经第 109 批 item 1 f5c929e 入库〕＋追平
-壳 7af9562＋状态批 2256e37；更早 A4 冻结批 28c63fa〔经第 108 批
-item 1 aad8b65〕；A3 链四环全闭环（冻结 0282a66→接线
-45ec57c→桌面消费 8c655dd→环境实现核对 dac78ee〔经第 109 批
-item 2〕）；A2 全链、A1 全链见 git 历史。
+## 前情（本域链，全文见本文件 git 历史）
+上拍（09-20 01:4x–01:5x 三笔）＝027 F2 接线批修正＋登记表一致性轮：
+追平壳 61f20ba＋修正批 fabb04d＋状态批——三笔已随第 124 批收编入库
+（is-ancestor 实测），本拍追平壳吸收后身份全部关闭。更早：接线批
+629699e、冻结批 c46545f（第 122 批 item 1 验收）见 git 历史。
 
-## 本轮交付（6f00abe 基线世代）
-- **追平壳 fdb87ef**（--no-ff 吸收 main 6f00abe 第 109 批，零自
-  有内容）。
-- **本状态批**（恰本文件）。
-- 无新实质交付——A4 接线切片已闭环验收落账，A5 顺延下窗照切片
-  完整性优先办理（如实声明，非空转：有验收落账＋留言消化＋顺延
-  裁决登记）。
+## 本轮交付（be16708 基线世代）
+- **追平壳**（--no-ff 吸收 main be16708＝第 124 批登记世代，inbound
+  10 文件全 collab/outline 面零代码，预检零冲突，基线刷新 be16708；
+  上拍候验收三笔随吸收关闭）。
+- **修复批 1602ed4**（恰 11 文件 406+/93-：核心域 environment.rs＋
+  lib.rs 导出＋orchestrator 测试＋provider-host/project-manager 测试
+  夹具＋desktop 投影面 2 文件＋i18n 四语；E-1/E-2 本体＋冻结词面同步
+  ＋新增测试 4 项，详见当前焦点）。
+- **本状态批（恰本文件）**。
+- 零新阻塞、零新升级项。
 
 ## 在途/待他角色
-- **[本席候办] A5 create_project 冻结批＝下窗第一拍即办**（时机
-  成就：8afde3f 裁定序 A4 接线已入库＋集成留言确认；裁定四点已
-  落前录状态文件：启动成立、时机殿后、词面方向六点、载体声明；
-  desktop typecheck 新口径照 A2–A5 冻结批证据程序；基线已追平
-  6f00abe 验收世代，起草零前置缺口）。
-- **[等桌面] A4 形状核可＋消费切片**（形状核可条件全成就——冻
-  结批＋接线批入库＋信封常量随协议本 0.4.1 载明；消费候形状核
-  可，repoReceipt 双变体＋removed 键集照落地面窄化）。
-- **[等环境] A4 实现核对切片**（解锁条件成就：repo_write_
-  capabilities 三独立位覆写＋三实现 Settings 增删直读核对＋四码
-  闭集零缺口核验随切片，照 A1/A2/A3 同径）。
-- **[等用户] W25 开窗（O-2）**；A4 启停面 VCC 禁用列表键名真机核
-  实（候 W25 同窗，024 表态 (b) vcc.liteDb 核实可顺带）；A1 移除
-  确认链＋A2 安装链＋A3 注册链＋A4 增删链真机走查归 W25。
+- **[等环境] F2 实现核对切片**：解锁条件已全成就（冻结批＋接线批＋
+  第 124 批解锁复核），候环境角色按 025/026 程序领取；本批 vpm 恒真
+  行为与其 VrcGetLibBackend 实现核对无冲突（served 行不可用事实照旧，
+  027 文档面未被本批触碰）。
+- **[等桌面] F2 形状核可＋消费切片**：程序照旧；本批 CHECK_TITLE_KEYS
+  与 i18n 键改名属桌面同步面、已随本批落地，投影测试 17/17 亲测绿，
+  桌面后续形状核可读到的是改名后的 `vpm` 键面。
+- **核心下拍可领项**：**F3（packages-query v0.2 已装表更新感知冻结批）
+  条件已成就**（629699e 在库，本拍 is-ancestor 复核）——下拍领取；
+  F4 刷新写面（ops v0.6）启停面硬前置已由 wt-6 W25 只读核实成就
+  （判 (c)：VCC 无启停位＋自有键不入 userRepos[i] 元素设计提示），
+  候面序排后。
+- [等用户] W25 开窗（O-2）续：026/027 全链真机走查与本批探针修复的
+  真机复检同窗办理。
+- F5 冻结批照面序候后续节拍。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔簿记（追平壳 fdb87ef 零自有内容照先例随收
-编＋本状态批 collab-only 免全量如实声明），请集成随轮验收
-（--no-ff）。**提交后读数：领先 2（追平壳＋本状态批；实质 0）；
-落后 0（6f00abe 世代）。下窗开工 A5 冻结批前照例再追平 main 最
-新。若下轮 brief 读数落后过 15 线照则自理追平。
+**候验收对象＝三笔（--no-ff）：追平壳＋修复批 1602ed4＋本状态批，请
+集成随轮验收，写明「wt-2 环境检测探针修复批（W25 实测 E-1/E-2，基点
+be16708）」。**提交后读数（rev-list 实测）：领先 2（修复批 1602ed4＝
+实质 1＋本状态批；追平壳零自有）、落后 0（be16708 世代）；本拍合并
+执行时 main 无新前进。实质非 collab 面＝恰 11 文件（核心域 5＋
+desktop 6——其中 project-manager 夹具 1 系机械同步），请 diff 复核
+或合并树定向复跑酌定（证据读数见当前焦点）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-19 08:1x–08:4x，工作时段最后一拍，两笔簿记：追平
-壳 fdb87ef＋本状态批）：①date 08:11 确认工作时段；brief 08:11
-①区两条 [→核心] 留言消化（wt-main 第 108 批验收留言＝上拍交付
-3d4b667 即回应，wt-3 知会收讫零动作）；②轮询一次（sleep 4 分钟
-后 fetch）见 main 前移 78f881a 且 is-ancestor 3d4b667 通过——
-**A4 wire 接线批经第 109 批 item 1 f5c929e 零修改要求验收入库**，
-合并信息逐点对账读毕如实收讫（复跑读数 222/0/231/0/0/77/77/
-38/38/双 0 与我树申报一致）；③续等 5 分钟见第 109 批收尾
-6f00abe，读收尾留言——[→核心]「A5 冻结批时机成就＝本席下一冻
-结起草对象」收讫；④操作者注「最后一拍，若未及验收 A5 顺延勿抢
-跑」执行：A4 已验收故 A5 时机成就，但本拍剩余窗口不足一个完整
-冻结切片，照「切片完整性优先」不开半途切片——A5 顺延下窗第一
-拍即办，本拍以追平＋落账代替（保守且如实申报，未降低任何标准）；
-⑤执行＝双法预检（ort exit 0＋老式 0 标记）→追平壳 fdb87ef
-（--no-ff 零自有内容，inbound＝本席已验收接线批＋环境已验收核
-对＋collab，零夹带，基线刷新 6f00abe）→本状态批；⑥本拍零代码
-改动零测试跑（无新增代码面，全链定向绿读数以第 109 批合并树复
-跑为准：provider-host 222/0＋orchestrator 231/0＋clippy 0＋
-contracts 77/77＋provider 38/38＋typecheck 双 0）；⑦所有权核验
-＝追平壳＋本状态批均 collab 面，零跨域触碰；⑧零端到端宣称维
-持——A4 三方法已接线未消费、环境覆写未落（A4 实现核对候环境
-树）、真机走查归 W25。在手无半途切片、无未提交改动。退出待命，
-候本拍簿记随轮验收；下窗第一拍＝A5 create_project 冻结批（时机
-成就、裁定齐备、基线 6f00abe 就绪）。
+本轮（2026-09-20 03:2x–04:0x，操作者批／W25 真机窗口时段例外；三笔：
+追平壳＋1602ed4＋本状态批）：①brief 03:26 实读，①区两条指向本树/
+本角色留言（wt-main F2 冻结批验收回执、wt-6 F4 启停面解锁回执）就地
+消化——前者系上拍已消化事实的登记世代（验收回执随第 124 批入库），
+后者记入在途（F4 硬前置成就，判 (c) 键名事实采信入档）；失鲜工作树
+无；②领任务＝操作者批明派 E-1/E-2 探针修复（crates/orchestrator
+核心所有权域），四环全查无竞速冲突；③追平壳先行使基线刷新 be16708
+（TICK 第 4 步），上拍候验收三笔 is-ancestor 实测在库、身份关闭；
+④修复批 1602ed4＝E-1 候选列表＋注册表 DisplayIcon 兜底（键名经本机
+只读取证）＋E-2 VPM 能力重构＋id 改名 vpm（裁决与同步面清单见当前
+焦点）＋新增测试 4 项；⑤定向证据亲测全绿（清单见当前焦点），全链
+为本拍亲自执行非继承；⑥F3 未抢领如实申报（操作者批全力办理，条件
+成就状态已登记、下拍领取）；⑦诚实边界＝本机 reg query/dir 只读
+取证不冒充端到端、零端到端宣称维持、PROBE_FAILED 无发射方如实
+登记。在手无半途切片、除本状态批外无未提交改动。退出待命，候集成
+验收三笔、下拍领 F3、下轮 brief 或新指派。
+
+## 留言
+- [→集成] 验收请求：**候验收对象＝追平壳＋修复批 1602ed4（恰 11 文件
+  406+/93-，实质＝核心域 environment.rs 探针修复＋冻结词面同步面）＋
+  本状态批，请随轮验收（--no-ff），写明「wt-2 环境检测探针修复批
+  （W25 实测 E-1/E-2，基点 be16708）」。**本批依据＝操作者批明派＋
+  用户 W25 实测（2026-09-20 03:03 检测报告＋截图）＋用户裁决
+  2026-09-20（无 ALCOM/VCC 不阻塞）；id 改名 vpm_cli→vpm 系核心对
+  冻结词面的演进裁决（理由与同步面清单见状态文件当前焦点），线面
+  无形状变更无契约版本升降；定向证据全绿亲测（environment 22/22
+  含新增 4 测试＋全 crate 16 套件 0 失败＋clippy 三 crate 0 警告＋
+  typecheck 双 0＋投影 vitest 17/17＋i18n 对齐），真机复检留 W25
+  用户窗，零端到端宣称。上拍三笔已入库勿重复验收。无新请求。
+- [→桌面]（知会）本批在你方域落地 6 文件机械同步：CHECK_TITLE_KEYS
+  `vpm_cli: "vpmCli"` → `vpm: "vpm"`、投影测试 engineIds/keyOf 同步、
+  四语 checks 键 vpmCli→vpm（题名改为「VPM 能力（内嵌 vrc-get-vpm）」
+  族）；投影 vitest 17/17＋typecheck 双 0＋check:i18n 亲测绿。后续
+  形状核可与消费切片读到 `vpm` 键面；`unity_hub` facts 形状升级
+  （candidates/registryKeys/via）如需展示细化照 core 域 facts 开集
+  消费即可，无阻塞。
+- [→环境]（知会）F2 实现核对切片解锁条件全成就，可领取；另：本批
+  vpm 检查（原 vpm_cli）语义已改为「内嵌库恒在＝Detected 恒真＋独立
+  CLI 信息性 facts」，与你方 VrcGetLibBackend 实现核对切片的能力门控
+  事实对表时以此为准（027 文档面 served 行不可用事实未被本批触碰）。
+- （回执不回执：第 124 批登记、wt-3/wt-4/wt-6 簿记随追平壳吸收；
+  历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）

@@ -1,8 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  activeTaskCount,
   canDismiss,
   isTerminalStatus,
+  taskRowOpenTarget,
   visibleNotifications,
 } from "./notification-model.ts";
 import type { TaskItem } from "../../gateway/index.ts";
@@ -61,4 +63,37 @@ test("通知清除合法性:仅终态可清除,活动任务不可", () => {
   assert.equal(canDismiss(taskOf("d", "failed")), true);
   assert.equal(canDismiss(taskOf("e", "cancelled")), true);
   assert.equal(isTerminalStatus("completedWithWarnings"), true);
+});
+
+test("进行中计数:queued/preparing/running 计入,终态与等待/暂停不计", () => {
+  const mixed = [
+    ...tasks,
+    taskOf("t-queued", "queued"),
+    taskOf("t-preparing", "preparing"),
+    taskOf("t-waiting", "waitingInput"),
+    taskOf("t-paused", "paused"),
+  ];
+  assert.equal(activeTaskCount(mixed), 3);
+  assert.equal(activeTaskCount([]), 0);
+});
+
+test("行打开语义(D2 回归钉):九态全列两态一致回来源页,无状态分支、无静默无响应", () => {
+  const statuses: TaskItem["status"][] = [
+    "queued",
+    "preparing",
+    "running",
+    "waitingInput",
+    "paused",
+    "completed",
+    "completedWithWarnings",
+    "failed",
+    "cancelled",
+  ];
+  for (const status of statuses) {
+    // 活动态与终态走同一打开行为:行主区点击 = 回到来源页(任务上下文/结果面)
+    assert.equal(taskRowOpenTarget(taskOf("t-any", status)), "warehouse");
+  }
+  // 目标恒为任务自身携带的来源页事实,不由状态推断改写
+  const importTask: TaskItem = { ...taskOf("t-import", "completed"), originPage: "import-material" };
+  assert.equal(taskRowOpenTarget(importTask), "import-material");
 });

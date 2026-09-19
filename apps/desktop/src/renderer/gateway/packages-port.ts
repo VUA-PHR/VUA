@@ -10,6 +10,14 @@ import type {
 import type {
   PackagesRegisterReceiptV03,
   PackagesRegisterRejectedV03,
+  PackagesRemoteRepoAddedV04,
+  PackagesLocalRepoAddedV04,
+  PackagesRepoRejectedV04,
+  PackagesRepoRemovedV04,
+} from "@vua/contracts";
+import type {
+  PackagesProjectCreatedV05,
+  PackagesCreateRejectedV05,
 } from "@vua/contracts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
 
@@ -36,6 +44,27 @@ export type {
  *  application-contract.ts A3 段——词面权威,投影与窄化纪律见
  *  packages-live.ts) */
 export type { PackagesRegisterResultV03 } from "@vua/contracts";
+
+/** A4 仓库订阅增删写面冻结词面(026 packages-ops v0.4;镜像 @vua/contracts
+ *  application-contract.ts A4 段——词面权威,投影与窄化纪律见
+ *  packages-live.ts) */
+export type {
+  PackagesLocalRepoAddedV04,
+  PackagesRemoteRepoAddedV04,
+  PackagesRepoRejectedV04,
+  PackagesRepoRemovedV04,
+} from "@vua/contracts";
+
+/** A5 项目创建写面冻结词面(026 packages-ops v0.5;镜像 @vua/contracts
+ *  application-contract.ts A5 段——词面权威,投影与窄化纪律见
+ *  packages-live.ts)。created 收据 = 端口 ProjectRef {id, root} 投影四
+ *  键闭集(packages-ops 族唯一有实际载荷的收据);rejected guard 三值闭
+ *  集复用 A1–A4 零新增 */
+export type {
+  PackagesCreateProjectResultV05,
+  PackagesCreateRejectedV05,
+  PackagesProjectCreatedV05,
+} from "@vua/contracts";
 
 /**
  * VPM 包管理窄端口(S-XVI;调研 docs/research/vrc-get-vcc-research.md)。
@@ -93,6 +122,40 @@ export type { PackagesRegisterResultV03 } from "@vua/contracts";
  *   翻转前如实 unavailable,false = 行缺席或不可用,注册入口不渲染);
  *   blocks.changes/installs 键语义与来源零变更(逐面升级承诺:纯增量
  *   新键,不改变已消费面的既有形状)。
+ * - A4 仓库订阅增删写面消费批(026 packages-ops v0.4 冻结批 28c63fa 经
+ *   第 108 批入库＋wire 接线批 3d4b667 经第 109 批入库＋桌面 A4 形状核
+ *   可 6771d5e 经第 110 批收编,2026-09-19):packages.addRemoteRepo/
+ *   packages.addLocalRepo/packages.removeRepo(照 A3 同律无 preview 对
+ *   偶的三命令九态任务化写命令——远端订阅天然含清单拉取网络段,无既
+ *   有状态摘要可绑定,用户显式提交即确认,无 digest 位无 projectPath;
+ *   添加面与移除面都不宣称幂等:库面守卫拒绝重复/未知 id 如实折
+ *   rejected 呈现,A3 AlreadyAdded 折叠刻意不复制)已消费;
+ *   blocks.repoWrites 权威事实源 = served_capabilities 的 packages.
+ *   repoOps 能力行(一行服务三方法,行可用性由后端 repo_write_
+ *   capabilities 三独立位承载——任一位声明即 available;wire 门按方法
+ *   绝不按面,部分声明后端上未声明方法的提交在路由层答 capability_
+ *   missing 照原词呈现;false = 行缺席或不可用,仓库写入口不渲染);
+ *   既有 blocks 键语义与来源零变更(逐面升级承诺:纯增量新键);启停
+ *   (enable/disable)不在任何已冻结词面内(候 W25 VCC 禁用列表键名真
+ *   机核实)——桌面不发明启停入口;重排不在本面。
+ * - A5 项目创建写面消费批(026 packages-ops v0.5 冻结批 0c77273 经第
+ *   112 批入库＋wire 接线批 8abb638 经第 113 批入库＋桌面 A5 形状核可
+ *   a700e61 经第 113 批收编,2026-09-19):packages.createProject(照
+ *   A3/A4 同律无 preview 对偶且根在端口的单命令九态任务化写命令——全
+ *   新项目目录无既有状态可 diff 无摘要可绑定,用户显式表单提交即确认,
+ *   无 digest 位无 projectPath;template REQUIRED-nullable,null = 后端
+ *   默认模板解析非选择器,首面零新读面 templates.* 不立;创建不幂等:
+ *   重复目录执行时拒绝如实折 rejected 呈现;created 收据 = ProjectRef
+ *   投影四键闭集——projectId 信息性标识,projectPath = 注册路径身份)
+ *   已消费;blocks.creates 权威事实源 = served_capabilities 的
+ *   packages.createOps 能力行(一行服务本方法,removeOps/installOps/
+ *   registerOps/repoOps 一行先例;行可用性 = 既有
+ *   VpmCapabilities.create_project 五联位——A5 零新 accessor,与 A3/A4
+ *   declared-none 缺省态不同构:位先于冻结批在库,双后端已声明 true;
+ *   false = 行缺席或不可用,创建入口不渲染);create 能力呈现系新立键
+ *   不可复用 blocks.changes(其语义 = 变更预览可用性,与「可新建项目」
+ *   不同构——A5 形状核可裁定);既有 blocks 键语义与来源零变更(逐面
+ *   升级承诺:纯增量新键)。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -268,7 +331,19 @@ export type PackagesView =
    *   双方法,同翻转纪律;A1 逐面升级承诺 = 纯增量新键,changes 语义与
    *   来源零变更);registers 权威事实源 = packages.registerOps 能力行
    *   (026 A3 本地包注册写面消费批,一行一方法,同翻转纪律;逐面升级
-   *   承诺 = 纯增量新键,既有键语义与来源零变更);
+   *   承诺 = 纯增量新键,既有键语义与来源零变更);repoWrites 权威事实
+   *   源 = packages.repoOps 能力行(026 A4 仓库订阅增删写面消费批,一
+   *   行服务三方法,removeOps/installOps/registerOps 一行先例;行可用
+   *   性由后端 repo_write_capabilities 三独立位承载——任一位声明即
+   *   available,wire 门按方法绝不按面,部分声明后端上未声明方法的提
+   *   交在路由层答 capability_missing 照原词呈现;同翻转纪律;逐面升
+   *   级承诺 = 纯增量新键,既有键语义与来源零变更);creates 权威事实
+   *   源 = packages.createOps 能力行(026 A5 项目创建写面消费批,一行
+   *   一方法,repoOps 一行先例;行可用性 = 既有 VpmCapabilities.
+   *   create_project 五联位,A5 零新 accessor、无 declared-none 缺省态
+   *   ——位先于冻结批在库双后端已声明 true;create 能力呈现系新立键
+   *   不可复用 blocks.changes——语义不同构,核可裁定;同翻转纪律;逐
+   *   面升级承诺 = 纯增量新键,既有键语义与来源零变更);
    * - installedPackages 按 packageId 升序(冻结的确定性呈现事实),
    *   空数组 = 诚实零已装包;
    * - loadError = 最近一次 listInstalled 的 typed 失败(错误码原词),
@@ -283,6 +358,8 @@ export type PackagesView =
         readonly changes: boolean;
         readonly installs: boolean;
         readonly registers: boolean;
+        readonly repoWrites: boolean;
+        readonly creates: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -299,7 +376,10 @@ export type PackagesView =
    *   installs 权威事实源 = packages.installOps 能力行(026 A2 安装/
    *   升级写面消费批,一位服务双方法,同翻转纪律);registers 权威事实
    *   源 = packages.registerOps 能力行(026 A3 本地包注册写面消费批,
-   *   一行一方法,同翻转纪律);
+   *   一行一方法,同翻转纪律);repoWrites 权威事实源 = packages.repoOps
+   *   能力行(026 A4 仓库订阅增删写面消费批,一行服务三方法,同翻转纪
+   *   律);creates 权威事实源 = packages.createOps 能力行(026 A5 项目
+   *   创建写面消费批,一行一方法,同翻转纪律);
    * - repos 行序 = 订阅面自身顺序(配置事实,客户端不重排);空数组 =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
@@ -317,6 +397,8 @@ export type PackagesView =
         readonly changes: boolean;
         readonly installs: boolean;
         readonly registers: boolean;
+        readonly repoWrites: boolean;
+        readonly creates: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -417,6 +499,78 @@ export type PackagesInstallApplyOutcome =
 export type PackagesRegisterApplyOutcome =
   | { readonly kind: "ok"; readonly receipt: PackagesRegisterReceiptV03 }
   | { readonly kind: "rejected"; readonly rejection: PackagesRegisterRejectedV03 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * A4 仓库订阅添加写面结果(026 packages-ops v0.4 冻结词面;
+ * addRemoteRepo/addLocalRepo 任务化消费四态,与 A1/A2/A3 四态同构):
+ * - ok = 审计收据(repoReceipt 变体:remote 五键 {schemaVersion,
+ *   kind, repoType: "remote", url 回显, name 回显} / local 五键
+ *   {同前, repoType: "local", path 回显, name 回显}——端口答
+ *   Result<(),_> 无载荷,收据只携请求回显别无他物,不发明时间戳/行位/
+ *   清单内容);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集复用 A1/A2/A3 零新增;
+ *   原端口码 vua.vpm.repo_invalid/repo_fetch_failed 在 detail 原词溯
+ *   源,不入 code 键);**添加面不宣称幂等**——与 A3 AlreadyAdded 折叠
+ *   刻意不同(库面守卫拒绝重复订阅如实 repo_invalid 折 rejected),拒
+ *   绝如实呈现,不发明幂等成功;
+ * - failed = 受理信封错误或任务非成功终态(typed 码原词:能力缺席
+ *   vua.vpm.capability_missing 在路由层答、受理持久化失败
+ *   vua.provider.persistence_failed 等);
+ * - unavailable = 引擎缺席/断连/超时无法确认结果(不猜测不伪造,
+ *   任务真实状态由任务中心呈现——014 先例)。
+ */
+export type PackagesRepoAddApplyOutcome =
+  | {
+      readonly kind: "ok";
+      readonly receipt: PackagesRemoteRepoAddedV04 | PackagesLocalRepoAddedV04;
+    }
+  | { readonly kind: "rejected"; readonly rejection: PackagesRepoRejectedV04 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * A4 仓库订阅移除写面结果(026 packages-ops v0.4 冻结词面;
+ * removeRepo 任务化消费四态,与添加四态同构):
+ * - ok = 审计收据(removed 三键 {schemaVersion, kind, repoId 回显}——
+ *   回显即审计链,不发明被删行快照);
+ * - rejected = 类型化守卫拒绝(同添加;原端口码 vua.vpm.repo_not_found/
+ *   repo_write_failed 在 detail 原词溯源;移除面同样不宣称幂等——重复
+ *   移除未知 id 如实 repo_not_found);
+ * - failed/unavailable 语义与添加四态相同。
+ */
+export type PackagesRepoRemoveApplyOutcome =
+  | { readonly kind: "ok"; readonly receipt: PackagesRepoRemovedV04 }
+  | { readonly kind: "rejected"; readonly rejection: PackagesRepoRejectedV04 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * A5 项目创建写面结果(026 packages-ops v0.5 冻结词面;
+ * createProject 任务化消费四态,与 A1–A4 四态同构):
+ * - ok = created 收据(端口 ProjectRef {id, root} 投影四键闭集
+ *   {schemaVersion, kind, projectId, projectPath}——packages-ops 族唯
+ *   一有实际载荷的收据;projectId = 端口铸造事实回显,信息性标识非 013
+ *   身份键;projectPath = 新项目根目录 = 注册路径身份,创建即在册冻结
+ *   端口事实:双后端成功路径尾调 FileSystemProjectStore::initialize,
+ *   创建成功即在册、在册列表刷新即见;不发明创建时间戳/复制统计/包清
+ *   单);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集复用 A1–A4 零新增;原端
+ *   口码 vua.vpm.template_missing〔库路径四 i18n 键共享载体——双后端
+ *   拒绝形状不同构如实载明〕/vua.vpm.apply_failed〔CLI 超时/非零退出
+ *   携 exitCode 与登记腿〕/vua.vpm.backend_unavailable〔CLI runner 故
+ *   障〕在 detail 原词溯源,不入 code 键);**创建不幂等**——重复目录
+ *   执行时拒绝如实折 rejected 呈现,A3 AlreadyAdded 折叠刻意不复制;
+ * - failed = 受理信封错误或任务非成功终态(typed 码原词:能力缺席
+ *   vua.vpm.capability_missing 在路由层答、受理持久化失败
+ *   vua.provider.persistence_failed 等);
+ * - unavailable = 引擎缺席/断连/超时无法确认结果(不猜测不伪造,
+ *   任务真实状态由任务中心呈现——014 先例)。
+ */
+export type PackagesCreateApplyOutcome =
+  | { readonly kind: "ok"; readonly receipt: PackagesProjectCreatedV05 }
+  | { readonly kind: "rejected"; readonly rejection: PackagesCreateRejectedV05 }
   | { readonly kind: "failed"; readonly code: string }
   | { readonly kind: "unavailable" };
 
@@ -557,6 +711,52 @@ export interface PackagesPort {
    * 应用契约任务面;任务真实状态由任务中心呈现,本端口只消费终态结果。
    */
   registerLocalPackage(packageRoot: string): Promise<PackagesRegisterApplyOutcome>;
+  /**
+   * A4 词面消费(packages.addRemoteRepo,026 packages-ops v0.4 冻结批):
+   * 任务化远端仓库订阅写命令(import-copy/A1/A2/A3 同构——端口内封装
+   * 受理→终态等待→Done payload 窄化,020 result 回流先例)。params 双
+   * 键闭集 {url, name} verbatim 传输;无 projectPath(订阅面只写后端隔
+   * 离环境)、无 digest 位(本面无 preview 可漂移——用户显式提交即确
+   * 认,携 confirmedDigest = 形状违反)、首期词面不收 HTTP 头/凭据。
+   * 添加面不宣称幂等:库面守卫拒绝重复订阅如实折 rejected 呈现。
+   * 任务九态语义归应用契约任务面;任务真实状态由任务中心呈现,本端口
+   * 只消费终态结果。
+   */
+  addRemoteRepo(url: string, name: string): Promise<PackagesRepoAddApplyOutcome>;
+  /**
+   * A4 词面消费(packages.addLocalRepo,026 packages-ops v0.4 冻结批):
+   * 任务化本地目录仓库订阅写命令(无网络段);params 双键闭集
+   * {path, name} verbatim 传输;无 digest 无确认链同 addRemoteRepo。
+   */
+  addLocalRepo(path: string, name: string): Promise<PackagesRepoAddApplyOutcome>;
+  /**
+   * A4 词面消费(packages.removeRepo,026 packages-ops v0.4 冻结批):
+   * 任务化订阅移除写命令;params 单键闭集 {repoId} verbatim 传输(稳定
+   * 行柄;id 缺席行在本词面移除可达范围之外——列表 id 为 null 的行不
+   * 提供移除入口,UI 不发明)。未知 repoId = 执行时端口答
+   * repo_not_found 折 rejected 呈现(移除面同样不宣称幂等)。删除订阅
+   * 行不删任何包文件与项目内容(非破坏性,ADR-0006 延迟警示路径不适
+   * 用;行内两击确认是纯 UX 步骤,不发明词面事实)。
+   */
+  removeRepo(repoId: string): Promise<PackagesRepoRemoveApplyOutcome>;
+  /**
+   * A5 词面消费(packages.createProject,026 packages-ops v0.5 冻结批):
+   * 任务化项目创建写命令(import-copy/A1–A4 同构——端口内封装受理→终
+   * 态等待→Done payload 窄化,020 result 回流先例)。params 三键闭集
+   * {parent, name, template} verbatim 传输:parent = 新项目目录的父目
+   * 录(路径事实,非在册项目身份;创建不寻址任何在册项目,无
+   * projectPath),name 后端名称校验为执行时权威(表单前置校验仅作
+   * UI 引导),template REQUIRED-nullable(null = 后端默认模板解析
+   * 〔库路径默认 Avatar 三级解析序,冻结词面事实非选择器,首面零新读
+   * 面〕;非空串 = verbatim;空串 = 形状违反,UI 不构造)。照 A3/A4 同
+   * 律无 preview 对偶且根在端口:无 digest 无确认链——用户显式表单提
+   * 交即确认。**创建不幂等**:重复目录执行时拒绝如实折 rejected 呈现
+   * (原端口码 detail 溯源),不发明幂等成功。created 收据 = ProjectRef
+   * 投影四键闭集;创建即在册(冻结端口事实)——成功后广播新快照,在
+   * 册列表刷新即见。任务九态语义归应用契约任务面;任务真实状态由任务
+   * 中心呈现,本端口只消费终态结果。
+   */
+  createProject(parent: string, name: string, template: string | null): Promise<PackagesCreateApplyOutcome>;
   setRepoEnabled(repoId: string, enabled: boolean): Promise<PackagesView>;
   capability(): Promise<CapabilityReport>;
 }

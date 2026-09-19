@@ -38,6 +38,27 @@ export function canDismiss(task: TaskItem): boolean {
   return isTerminalStatus(task.status);
 }
 
+const ACTIVE: readonly TaskStatus[] = ["queued", "preparing", "running"];
+
+export function isActiveStatus(status: TaskStatus): boolean {
+  return ACTIVE.includes(status);
+}
+
+/** 进行中任务计数:通知铃铛徽标与折叠条摘要共用同一口径 */
+export function activeTaskCount(tasks: readonly TaskItem[]): number {
+  return tasks.filter((task) => isActiveStatus(task.status)).length;
+}
+
+/**
+ * 行打开语义(W25 走查 D2 修复):行主区点击 = 回到来源页——任务上下文与
+ * 结果所在的页面。活动/终态两态共用同一行为(单一函数,无状态分支),
+ * 不做静默无响应;任务详情面未建成前,来源页即任务事实的可达面
+ * (design-standard §6.2:清除通知后任务事实仍可经任务面查询)。
+ */
+export function taskRowOpenTarget(task: TaskItem): TaskItem["originPage"] {
+  return task.originPage;
+}
+
 /* ---- 已清除集合的持久化(localStorage;存储不可用则仅本次会话生效) ---- */
 
 export function loadDismissedIds(): ReadonlySet<string> {

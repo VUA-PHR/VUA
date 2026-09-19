@@ -613,6 +613,159 @@ describe("packages-ops v0.2 A2 install routing (026 消费批)", () => {
     expect(carriedDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).toHaveBeenCalledTimes(1);
   });
+
+  it("routes the A4 repo write trio as tasked commands with Kernel-generated repo- commandIds and verbatim closed params, and rejects carried digest/projectPath slots at the envelope guard (026 A4; the face breaks the preview/apply pair per the A3 law - the user's explicit submission IS the confirmation)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-repo-1",
+        method: "packages.addRemoteRepo",
+        params: { url: "https://vpm.example/index.json", name: "Example Repo" },
+      },
+    );
+    const addRemote = invoke.mock.calls[0]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(addRemote.kind).toBe("command");
+    expect(addRemote.method).toBe("packages.addRemoteRepo");
+    expect(addRemote.commandId.startsWith("repo-")).toBe(true);
+    expect(addRemote.params).toEqual({ url: "https://vpm.example/index.json", name: "Example Repo" });
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-repo-2",
+        method: "packages.addLocalRepo",
+        params: { path: "C:/Repos/local-curations", name: "Local Curations" },
+      },
+    );
+    const addLocal = invoke.mock.calls[1]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(addLocal.method).toBe("packages.addLocalRepo");
+    expect(addLocal.commandId.startsWith("repo-")).toBe(true);
+    expect(addLocal.params).toEqual({ path: "C:/Repos/local-curations", name: "Local Curations" });
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-repo-3",
+        method: "packages.removeRepo",
+        params: { repoId: "repo-example" },
+      },
+    );
+    const remove = invoke.mock.calls[2]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(remove.method).toBe("packages.removeRepo");
+    expect(remove.commandId.startsWith("repo-")).toBe(true);
+    expect(remove.params).toEqual({ repoId: "repo-example" });
+
+    // 发明 projectPath 位(订阅面不触项目)与携 digest 位(本面无 preview
+    // 可漂移,携即形状违反——负例 invalid-add-remote-carries-digest 同形):
+    // 信封守卫即拒,绝不进任务
+    const carriedProjectPath = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-repo-4",
+        method: "packages.addRemoteRepo",
+        params: { url: "https://vpm.example/index.json", name: "Example Repo", projectPath: "C:/x" },
+      },
+    );
+    expect(carriedProjectPath).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const carriedDigest = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-repo-5",
+        method: "packages.removeRepo",
+        params: { repoId: "repo-example", confirmedDigest: "fnv-1a-abc" },
+      },
+    );
+    expect(carriedDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(3);
+  });
+
+  it("routes packages.createProject as a tasked command with a Kernel-generated create- commandId and verbatim three-key params (template REQUIRED-nullable passthrough), and rejects carried digest/projectPath/empty-template shapes at the envelope guard (026 A5; single-stage task rooted in the port - the user's explicit form submission IS the confirmation; creation addresses no registered project)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-create-1",
+        method: "packages.createProject",
+        params: { parent: "C:/Users/me/VRC projects", name: "New World", template: null },
+      },
+    );
+    const created = invoke.mock.calls[0]?.[0] as { kind: string; method: string; commandId: string; params: Record<string, unknown> };
+    expect(created.kind).toBe("command");
+    expect(created.method).toBe("packages.createProject");
+    expect(created.commandId.startsWith("create-")).toBe(true);
+    expect(created.params).toEqual({ parent: "C:/Users/me/VRC projects", name: "New World", template: null });
+
+    await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-create-2",
+        method: "packages.createProject",
+        params: { parent: "C:/Users/me/VRC projects", name: "New Avatar", template: "Avatar" },
+      },
+    );
+    const createdWithTemplate = invoke.mock.calls[1]?.[0] as { commandId: string; params: Record<string, unknown> };
+    expect(createdWithTemplate.commandId.startsWith("create-")).toBe(true);
+    expect(createdWithTemplate.params).toEqual({ parent: "C:/Users/me/VRC projects", name: "New Avatar", template: "Avatar" });
+
+    // 发明 projectPath 位(创建不寻址任何在册项目,013 复用不适用)/携
+    // digest 位(本面无 preview 可漂移,携即形状违反)/空 template(词面
+    // REQUIRED-nullable:空串 = 形状违反):信封守卫即拒,绝不进任务
+    const carriedProjectPath = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-create-3",
+        method: "packages.createProject",
+        params: { parent: "C:/p", name: "New World", template: null, projectPath: "C:/proj" },
+      },
+    );
+    expect(carriedProjectPath).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const carriedDigest = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-create-4",
+        method: "packages.createProject",
+        params: { parent: "C:/p", name: "New World", template: null, confirmedDigest: "fnv-1a-abc" },
+      },
+    );
+    expect(carriedDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const emptyTemplate = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-create-5",
+        method: "packages.createProject",
+        params: { parent: "C:/p", name: "New World", template: "" },
+      },
+    );
+    expect(emptyTemplate).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe("packages-query v0.1 routing (024 P1 消费批)", () => {

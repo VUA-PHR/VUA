@@ -4,11 +4,14 @@ import { format } from "../../i18n/format.ts";
 import { strings } from "../../i18n/strings.zh-CN.ts";
 import {
   CHECK_GROUPS,
+  CREATE_GATE_IDS,
   creatorEnvReady,
+  isCreateGateItem,
   neverChecked,
   relativeTimeKey,
   summarizeGroup,
   summarizeHealth,
+  zoneSummaryItems,
   type CheckItem,
   type DeployerView,
   type ZoneCheckResult,
@@ -160,6 +163,19 @@ test("info 中性项不计待办;独立项行为不变(回归)", () => {
   assert.equal(summary.overall, "warning");
 });
 
+/* ---- 生产门组成(2026-09-20 用户裁决:「没有 ALCOM 或者没有 VCC 不应作为
+ * 阻塞」+库优先架构;Unity 编辑器已检测是唯一硬前置,门内项用引擎词表
+ * checkId;此前"创作辖区全项 ok 才开门"的组成随裁决废止)---- */
+
+test("生产门注册表:唯一硬前置是 Unity 编辑器(引擎词表 id)", () => {
+  assert.deepEqual([...CREATE_GATE_IDS], ["unity_editors"]);
+  assert.equal(isCreateGateItem("unity_editors"), true);
+  // 信息性展示项不进门(vpm_cli 内嵌库恒在;vcc/alcom/磁盘是可选管理器与容量事实)
+  assert.equal(isCreateGateItem("vpm_cli"), false);
+  assert.equal(isCreateGateItem("vcc"), false);
+  assert.equal(isCreateGateItem("disk_space"), false);
+});
+
 test("creator readiness: not-run is never ready", () => {
   assert.equal(creatorEnvReady(neverChecked()), false);
 });
@@ -173,21 +189,77 @@ test("creator readiness: running / failed without evidence are never ready", () 
 });
 
 test("creator readiness: failed keeps stale evidence but is not current readiness", () => {
-  const stale: ZoneCheckResult = { items: [createOk("unity")], checkedAt: "2026-08-27T09:00:00+08:00" };
+  const stale: ZoneCheckResult = {
+    items: [createOk("unity_editors")],
+    checkedAt: "2026-08-27T09:00:00+08:00",
+  };
   const view: DeployerView = {
     zones: { play: { kind: "not-run" }, create: { kind: "failed", last: stale } },
   };
   assert.equal(creatorEnvReady(view), false);
 });
 
-test("creator readiness: all create-zone checks green means ready", () => {
+test("生产门:仅 Unity 编辑器已检测即开门,信息性项全缺不挡门(用户裁决钉例)", () => {
   const view: DeployerView = {
     zones: {
       play: { kind: "not-run" },
-      create: { kind: "results", items: [createOk("unity"), createOk("vpm")], checkedAt: "2026-08-27T10:00:00+08:00" },
+      create: {
+        kind: "results",
+        items: [
+          createOk("unity_editors"),
+          { ...createOk("vpm_cli"), status: "warning" },
+          { ...createOk("vcc"), status: "warning" },
+          { ...createOk("alcom"), status: "warning" },
+          { ...createOk("disk_space"), status: "warning" },
+        ],
+        checkedAt: "2026-08-27T10:00:00+08:00",
+      },
     },
   };
   assert.equal(creatorEnvReady(view), true);
+});
+
+test("生产门:Unity 编辑器缺失(未检测到)门关", () => {
+  const view: DeployerView = {
+    zones: {
+      play: { kind: "not-run" },
+      create: {
+        kind: "results",
+        items: [
+          { ...createOk("unity_editors"), status: "warning" },
+          createOk("vpm_cli"),
+          createOk("vcc"),
+        ],
+        checkedAt: "2026-08-27T10:00:00+08:00",
+      },
+    },
+  };
+  assert.equal(creatorEnvReady(view), false);
+});
+
+test("生产门:门内项检测失败(detection_failed)门关,信息性项检测失败不拖门", () => {
+  const gateFailed: DeployerView = {
+    zones: {
+      play: { kind: "not-run" },
+      create: {
+        kind: "results",
+        items: [{ ...createOk("unity_editors"), status: "error" }, createOk("vcc")],
+        checkedAt: "2026-08-27T10:00:00+08:00",
+      },
+    },
+  };
+  assert.equal(creatorEnvReady(gateFailed), false);
+  const infoFailed: DeployerView = {
+    zones: {
+      play: { kind: "not-run" },
+      create: {
+        kind: "results",
+        items: [createOk("unity_editors"), { ...createOk("vcc"), status: "error" }],
+        checkedAt: "2026-08-27T10:00:00+08:00",
+      },
+    },
+  };
+  assert.equal(creatorEnvReady(infoFailed), true);
 });
 
 test("creator readiness: play-zone failures do not block creation", () => {
@@ -198,19 +270,19 @@ test("creator readiness: play-zone failures do not block creation", () => {
         items: [{ ...ok("vrchat"), status: "error" }],
         checkedAt: "2026-08-27T10:00:00+08:00",
       },
-      create: { kind: "results", items: [createOk("unity")], checkedAt: "2026-08-27T10:00:00+08:00" },
+      create: { kind: "results", items: [createOk("unity_editors")], checkedAt: "2026-08-27T10:00:00+08:00" },
     },
   };
   assert.equal(creatorEnvReady(view), true);
 });
 
-test("creator readiness: any create-zone miss means not ready", () => {
+test("生产门:无门内检测证据不开门(全信息性项结果不构成门证据)", () => {
   const view: DeployerView = {
     zones: {
-      play: { kind: "not-run" },
+      play: { kind: "results", items: [ok("vrchat")], checkedAt: "2026-08-27T10:00:00+08:00" },
       create: {
         kind: "results",
-        items: [createOk("unity"), { ...createOk("vpm"), status: "warning" }],
+        items: [createOk("vpm_cli"), createOk("vcc")],
         checkedAt: "2026-08-27T10:00:00+08:00",
       },
     },
@@ -226,6 +298,41 @@ test("creator readiness: results without create-zone items are not trusted", () 
     },
   };
   assert.equal(creatorEnvReady(view), false);
+});
+
+/* ---- 计数口径(2026-09-20 用户裁决:「还差 N 项准备」只数门内项)---- */
+
+test("计数口径:创作辖区摘要只取门内项,游玩辖区全量计入", () => {
+  const createItems = [
+    createOk("unity_editors"),
+    { ...createOk("vpm_cli"), status: "warning" },
+    { ...createOk("vcc"), status: "warning" },
+  ] as CheckItem[];
+  assert.deepEqual(
+    zoneSummaryItems("create", createItems).map((item) => item.id),
+    ["unity_editors"],
+  );
+  // 汇总语义:信息性项缺失不再产出"还差 N 项"待办(门内 Unity ok → ready)
+  const summary = summarizeHealth(zoneSummaryItems("create", createItems));
+  assert.equal(summary.ready, true);
+  assert.equal(summary.pendingCount, 0);
+  // Unity 缺 → 唯一门内待办
+  const gateMissing = summarizeHealth(
+    zoneSummaryItems("create", [
+      { ...createOk("unity_editors"), status: "warning" },
+      { ...createOk("vcc"), status: "warning" },
+    ]),
+  );
+  assert.equal(gateMissing.ready, false);
+  assert.equal(gateMissing.pendingCount, 1);
+  assert.equal(
+    format(strings.deployer.summary.pending, gateMissing.headlineParams),
+    "还差 1 项准备",
+  );
+  // 游玩辖区无门概念:全量计入(替代组计数照旧)
+  const playItems: CheckItem[] = [ok("steam"), { ...ok("vrchat"), status: "warning" }];
+  assert.equal(zoneSummaryItems("play", playItems).length, 2);
+  assert.equal(summarizeHealth(zoneSummaryItems("play", playItems)).pendingCount, 1);
 });
 
 test("relativeTimeKey: 分桶与截断(分钟/小时/天)", () => {

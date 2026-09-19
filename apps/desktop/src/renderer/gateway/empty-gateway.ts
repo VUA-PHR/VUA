@@ -105,6 +105,12 @@ function createEmptyPackages(): PackagesPort {
     applyInstall: () => Promise.resolve({ kind: "unavailable" }),
     // A3 写面(026 v0.3):同 A1 纪律——恒缺席臂
     registerLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
+    // A4 写面(026 v0.4 仓库订阅增删):同 A1 纪律——恒缺席臂
+    addRemoteRepo: () => Promise.resolve({ kind: "unavailable" }),
+    addLocalRepo: () => Promise.resolve({ kind: "unavailable" }),
+    removeRepo: () => Promise.resolve({ kind: "unavailable" }),
+    // A5 写面(026 v0.5 项目创建):同 A1 纪律——恒缺席臂
+    createProject: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),
