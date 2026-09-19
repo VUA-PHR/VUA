@@ -2,33 +2,32 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: d31109d
+baseline_commit: 3dd3a9a
 updated: 2026-09-19
 ---
 ## 当前焦点
-**第 115 批（2026-09-19 14:4x–15:1x，紧急操作者批非节拍续办——集成验收轮，操作者指令面＝A5 双下游实质验收＋簿记收编＋推送归零＋026 A 面收官登记）——两笔实质亲审 --no-ff 入库，026 A 面（A1–A5）收官登记落 BOARD #40 ㉑ 段**：
+**第 116 批登记批（2026-09-19 18:2x–18:4x，工作时段）——026 A 面收官审查通过＋用户四项裁决落账（U14）＋产品边界 1.4.0 双语修订＋提案 027 立案；全登记面零代码**：
 
-- **item 1 wt-3 026 A5 消费切片批（基点 e63ab90，2aaedd7 --no-ff）**：切片 235a2d2（恰桌面域 17＋contracts TS 面 2＋design-standard ZH/EN＋REGISTRY 一行，21 文件 1258+/18-）＋追平壳 b344aa9（第二父 diff 空＝零自有内容本轮复证；竞速 amend 照 7ec9ad9/91ef11c 先例如实）＋状态批 8f77813（恰一 collab 文件）。逐文件亲审全过：contracts 三键闭集 {parent,name,template} REQUIRED-nullable 登记＋union 行＋method-kind command 行＋guard 2 正 11 负；router create- 臂 verbatim 三键透传（null/非空双臂钉死，信封守卫拒绝 invoke 未达 2 次）；port 四态＋createProject＋blocks.creates 纯增量键骑 served packages.createOps（前任 11 文件半途代码两处 import 缺口就此闭合）；live 双常量与接线落地面一致＋created 恰四键＋rejected 五键闭集 code 锁族＋骑共享 120s 任务环＋**创建不幂等重复拒绝如实上呈**＋ok 骑刷新广播；UI CreateSection P1/P2 双门控（不发明枚举、template 留空＝null 后端默认解析如实标注、创建即在册文案、拒绝如实呈现、失败诚实 toast 闭集恰二码）；i18n 四语；design-standard 0.7.4（ZH＋EN 镜像＋REGISTRY）；capturedAt 全 diff 零命中；mock/empty/fixture 恒缺席臂；前任半途代码照 BOARD #34 检验采纳先例（九项对照）采纳依据成立非静默。
-- **item 2 wt-6 026 A5 实现核对切片批（基点 e67f89b，前置壳 dabfacd 已随 b53410f 收编不再收；d31109d --no-ff）**：切片 5389416（恰环境域一文件 crates/project-manager/tests/vpm_backend.rs 408+/0-，实现零触碰词面零变更）＋状态批 02f9ff6（恰一 collab 文件，竞速 amend 照先例）。逐行亲审全过：前任残留 +331（8 个 orc_adp_005_* 钉）照 #34 先例检验采纳＋续完 +77 两钉（projectNameInvalid 校验先于 exists() 与一切磁盘触碰；set_product_name 无 productName 行静默 no-op 字节保真）＝测试 32→42；逐码映射零缺口复核成立（template_missing 四 i18n 键共享载体四键全钉／apply_failed CLI 三腿全钉〔超时 −1／非零 exitCode 3／登记腿 reason〕／backend_unavailable spawn 唯一腿库路径结构上永不答；对照接线批 8abb638 三码折 execution_failed 原码入 detail 投影零缺口）；能力位恰五位 VpmCapabilities 结构体字面量钉死零新 accessor（双后端逐位断言；served 行骑既有位环境侧零覆写照预登记兑现）；实现锚点本会话合并树源码复验（validate 先于 exists()、unwrap_or("Avatar")、copy_tree→set_product_name→ProjectVersion 校验→initialize 登记尾调、CLI vpm new 路径）；诚实边界钉死（重复拒绝绝不发明幂等成功＝wire 孪生诚实；半成品无回滚无虚假登记）。
-- **合并树定向复跑照 A5 口径全绿（14:5x–15:1x 本机亲测，df 先查 C 盘余 592G/69%）**：project-manager 14 目标 **112/0**（vpm_backend **42/0**）＋provider-host 33 套件 **234/0**＋orchestrator 16 套件 **231/0**＋clippy 三 crate --all-targets **0**＋contracts **80/80**（跑前 dist 重建照陈旧事故先例）＋desktop typecheck 双 tsconfig **exit 0**＋desktop vitest 80 文件 **721/721**（714＋7 与 wt-3 树自测读数互证）；双法 merge-tree 预检零冲突（wt-3 tree a6cbabd／wt-6 tree b792e01＋对 post-item-1 main 重预检 exit 0）。
-- **簿记消化**：brief ①区 wt-2/wt-4/wt-5 三条验收请求系第 114 批已收编内容的回执/消化请求——分叉区三树领先 0 实证（slot/wt-2、slot/wt-4、slot/wt-5 尖均 main 祖先），就地消化勿重复；wt-3/wt-6 两条为本批实质办理。主树 _local_p27_devlog.txt 未跟踪本地文件照例保留不触碰。
-- **026 A 面收官登记（BOARD #40 ㉑ 段落账）＝A1–A5 五链全闭环全在库**：A1（冻结→接线 41503a4→形状核可 692f83e→消费 faed1bd→实现核对 c42ad05）；A2（冻结 8552d2c→接线 61da51a＋收口 539858b→形状核可 719a729→消费 bb09927＋批量 4701558→实现核对 13d19be）；A3（冻结 0282a66→接线 45ec57c→形状核可 f1939d1→消费 8c655dd→实现核对 dac78ee）；A4（冻结 28c63fa→接线 3d4b667→形状核可 6771d5e→实现核对 8869e55→消费 7d14b1e）；A5（冻结 0c77273→接线 8abb638→形状核可 a700e61→实现核对 5389416→消费 235a2d2）。B 面 IA 并入第 97 批已入库（2151409）；C 面随 A 各面自决落地在库。**收官口径如实：系 wire 面＋桌面消费面＋端口侧实现核对全部落账的程序收官，零端到端宣称维持**——A1–A5 全链真机走查归 W25（O-2 候用户开窗同窗办理：A4 启停键名核实＋024 (b) vcc.liteDb 核实＋served 行真机呈现＋桌面创建入口真机点击）；桌面证据系假 wire 帧骑真实任务等待环、零真机走查。
-- **机械校验**：本批非 collab 变更面＝0（两支合并带入的实质内容系 wt-3 切片 21 文件＋wt-6 切片 1 文件，均已亲审）；簿记（BOARD #40 ㉑＋本状态批）恰 collab 面，main 直接提交（AGENTS 1.1.4 例外 (a)，authority＝本机制）；定向复跑读数上列本机亲测在案；登记表与冲突标记以本关账后 brief 复测为准；推送债随本关账批推送归零。
+- **026 收官审查（用户指令「审查其工作结果」）通过**：批 107–115 链与 BOARD #40 ㉑ 段登记逐项对账＋本机亲测门禁（18:1x）与登记读数一致——cargo workspace 762/0（project-manager 112/0＋provider-host 234/0＋orchestrator 231/0 等）／contracts 80/80／orchestrator-provider 39/39／desktop typecheck 双 tsconfig exit 0／vitest 80 文件 721/721。A1–A5 五链全闭环成立。
+- **审查发现＋U14**：026 提案文本与包管理器 UI 文案宣称「写入只发生在 VUA 的隔离后端环境、绝不修改 VCC/ALCOM 设置」，但生产二进制自 024 起把 VPM 后端环境根接在用户真实 VCC settings 目录（`crates/provider-host/src/bin/vua-orchestrator-provider.rs:225-232`；`crates/project-manager/src/vpm_backend.rs:52-54` 注释自认共享位置）——A3 本地包注册/A4 仓库订阅写面实际读写共享 settings.json。升 U14 候用户裁决。
+- **用户四项裁决落账（2026-09-19，BOARD U14 行照录原文）**：(1) 同意开放触碰 VCC/ALCOM 的设置，但默认的外部导入仍应是克隆项目再修改复制品；(2) 同意 P0 立案；(3) 同意模板枚举 wire 面；(4) 重申产品边界——VUA 中最常用到的「项目管理」其实是 Recipe 和 Release 两个模块，包管理器不应作为用户第一次进入就要操作导入一系列插件的模块，而是根据 Recipe 输入的信息自动寻找对应包自动导入。处置＝隔离宣称**改文案不改接线**（共享根与 ALCOM 互操作行为一致、是正确产品行为；项目文件面 U3 只读＋克隆优先维持），文案修正归 027 F1。另用户 2026-09-19 授权无视时段开发（时段例外延续办理，各面表态收敛后即可开工不候 23:00 窗口）。
+- **产品边界 1.4.0 双语修订落账**：`docs/product-boundary_ZH.md`＋`_EN.md` §5 项目管理条改写（Recipe 驱动第一形态＋设置面例外：开放 VCC/ALCOM settings.json 的 userRepos/userPackages 读写，外部导入默认维持克隆再改复制品）＋明确边界 U3 条追加设置面豁免（`vcc.liteDb` 等其余存储面维持禁止）＋changelog 双语 prepend；REGISTRY 行同步 1.4.0/2026-09-19。
+- **提案 027 立案**（`collab/proposals/027-packages-discovery-and-usability.md`，状态=提出；BOARD #41 行落账）——面分解：F1 隔离文案修正（桌面小切片零 wire 依赖）／F2 仓库级包目录读面（含 packageId 集合批量过滤＝Recipe 铺路，P0）／F3 已装表更新感知（P0）／F4 仓库启停＋手动刷新（VCC 键名真机核实＝冻结硬前置，P1）／F5 模板枚举读面（裁决 (3) 批准，P1）／F6 Recipe→包自动解析方向锚（不冻结）。含设计约束 3 条、五链程序＋新增「环境根/路径对账」验收检查点（026 隔离宣称漏检教训入清单）、开放问题四项。
+- **机械校验**：本批变更面＝collab 3 文件（提案 027 新建＋BOARD＋本状态文件）＋docs 边界双语＋REGISTRY 一行，零代码；main 直接提交（AGENTS 1.1.4 例外 (a) 集成簿记＋(b) 用户裁决直落），随批推送 origin/main；登记表一致性＋冲突标记随批 brief 复测；`?? _local_p27_devlog.txt` 未跟踪用户 dev 日志照例保留不触碰；零端到端宣称维持——026 全链真机走查归 W25（O-2 候用户开窗）不变。
 
-## 前录（第 114 批，2026-09-19 14:1x–14:3x，全文见 git 历史）
-全 collab 面零代码：第 113 批关账残留采纳（abfe9b4，BOARD #34 先例逐项复证）＋五树簿记/追平壳收编（items 1-5：cef06d3／0dfb5eb／e67f89b／c6b91c4／26f5772）＋竞速壳 dabfacd 收编（b53410f）＋e63ab90 竞速补录登记（5389416 在候未验收如实登记）；推送债清偿（origin/main 2693835→e63ab90）。
+## 前录（第 115 批，2026-09-19 14:4x–15:1x，全文见 git 历史）
+wt-3 A5 消费切片批（2aaedd7）＋wt-6 A5 实现核对切片批（d31109d）亲审 --no-ff 入库＝026 A 面（A1–A5）五链全闭环收官登记（BOARD #40 ㉑ 段）；合并树定向复跑全绿（project-manager 112/0／provider-host 234/0／orchestrator 231/0／clippy 0／contracts 80/80／typecheck 双 0／vitest 721/721）。
 
 ## 阻塞
 无。
 
 ## 下次合并意图
-**026 A 面收官，集成退出待命。** 候办均为他方窗口：W25 端到端真机走查（O-2 候用户开窗，窗口内兼办 A4 启停键名核实＋024 (b) vcc.liteDb 核实＋A1–A5 全链走查＋served 行真机呈现＋桌面创建入口点击）；M5 关门候 W25、M6/M7/M8 候门序；用户复验回填项维持（IA 并入 HMR 复测＋#31/#32/#33＋#36＋#39）；provider-host 偶发计时敏感信号留观（连续多拍全绿维持）；W26 硬前置不开工。各树状态批/追平笔如有新落照常随轮验收；各树落后读数下窗 brief 复测，过 15 触发线照自理条款追平。
+候三域对提案 027 表态（核心开放问题 1／环境开放问题 2／桌面开放问题 3，收敛程序照 013/026 先例落节）；各树状态批/追平笔如有新落照常随轮验收；各树落后读数下窗 brief 复测，过 15 触发线照自理条款追平。W25 真机走查（O-2 候用户开窗）与 M 门序维持；用户复验回填项维持（IA 并入 HMR 复测＋#31/#32/#33＋#36＋#39）。
 
 ## 留言
-- [→wt-3] 三笔（切片 235a2d2＋追平壳 b344aa9＋状态批 8f77813）已经第 115 批 item 1（2aaedd7）亲审 --no-ff 验收入库：九项采纳依据照认、竞速 amend 照先例留痕；逐文件亲审与合并树定向复跑（contracts 80/80＋typecheck 双 0＋vitest 721/721 等全绿）在 BOARD #40 ㉑ 段登记。**A5 消费环落账＝026 A 面（A1–A5）收官**（㉑ 段收官登记落账，零端到端宣称维持——真机走查归 W25/O-2）。桌面侧零新请求；下窗 tick 批号自 115 起算。
-- [→wt-6] 切片 5389416＋状态批 02f9ff6 已经第 115 批 item 2（d31109d）亲审 --no-ff 验收入库（前置壳 dabfacd 已随 b53410f 收编未重复收编）：前任残留采纳照 #34 先例照认、逐码映射零缺口复核成立、五位能力位钉死照认、32→42 与合并树复跑 112/0（vpm_backend 42/0）互证；验收读数在 BOARD #40 ㉑ 段登记。**A5 实现核对环落账＝026 A 面（A1–A5）收官**；W25 开窗（O-2）环境侧候办清单维持（EAC 四件套＋B 段＋E2＋允许清单首批＋A4 启停键名核实＋024 (b)＋A5 served 行真机呈现确认）。环境侧零新请求。
-- [→wt-2] A5 双下游（环境实现核对 5389416＋桌面消费 235a2d2）已经第 115 批两支亲审验收入库——**026 A 面（A1–A5）收官登记落 BOARD #40 ㉑ 段**；A5 接线环协议本 0.5.1 信封常量钉死被两下游消费面对照引用，链条闭合。核心侧候 M 门序（M7 四行候门验收），零新请求。
-- [→wt-4] 本树状态批 bed9c57 已经第 114 批 item 3 收编（brief 分叉区本树领先 0 实证），验收请求就地消化勿重复。026 A 面收官登记落 BOARD #40 ㉑ 段——产线席位全程零对应任务照认；W25（O-2）义务与 M5/M7 门序候办维持。
-- [→wt-5] 本树追平壳 52cce69＋状态批 6a8b99d 已经第 114 批 item 4 收编（brief 分叉区本树领先 0 实证），验收请求就地消化勿重复。026 A 面收官登记落 BOARD #40 ㉑ 段——026 各面零数据席位结论照认；磁盘读数 592G/69% 本拍复测照录归环境域，「全量复跑前先 df」维持。
-- [→各树] 本批 tick 引用批号自 115 起算。各树回执就地消化勿重复；失鲜工作树无；主树 _local_p27_devlog.txt 系未跟踪本地文件照例不触碰。
+- [→wt-2] **提案 027 立案候表态**（`collab/proposals/027-packages-discovery-and-usability.md`，状态=提出；BOARD #41）：开放问题 1＝面序与族划分（F2＝packages-catalog v0.3 增量 or 新族；F3＝packages-query listInstalled 升版形态；F4＝packages-ops 扩面版次；F5＝新族 templates.* or 并入既有族）＋各面错误码新增闭集＋F4 启停解冻程序确认——请照 013 R5/026 先例落节表态；F2 冻结批起草候三域收敛。另 U14 裁决 (3) 已批准模板枚举 wire 面（F5）、裁决 (4) 重申 Recipe 驱动为第一形态（F6 方向锚不冻结）。
+- [→wt-3] **027 F1 隔离文案修正切片可领**（桌面小切片零 wire 依赖，开放问题 3 表态收敛前即可开工；用户 2026-09-19 授权无视时段开发，不候 23:00 窗口）：修正 `apps/desktop/src/renderer/i18n/strings.zh-CN.ts:1664`／`strings.en.ts:1680` 等「隔离后端环境/绝不修改 VCC/ALCOM 设置」宣称，使其与真实行为一致（共享 VCC settings 根；项目文件面只读＋克隆优先不变）——文案词面照 027 F1 节与产品边界 1.4.0 §5，四语 parity；提案 027 开放问题 3（IA 重构形态／F1 措辞四语／设计标准增补）同候表态。
+- [→wt-6] **027 开放问题 2 库面考证可领**（零代码照 025 先例输出）：F2 repoCatalog 数据源（缓存面/清单面字段上限）＋F4 启停位 settings 键名真机核实方法（只读核实不写入，真机核实本身仍＝W25 硬前置）＋F5 模板枚举库面 API＋F3 updateAvailable 判定成本与 latest_for 语义复用度；另 W25 候办清单维持（A4 启停键名核实＋024 (b) vcc.liteDb 只读核实＋A1–A5 全链走查同窗）。
+- [→wt-4/wt-5] 信息知会无即时动作：026 A 面已收官、工作面移交 027；产线/数据席位对 027 各面无对应任务照认（F6 Recipe 方向锚落地时产线域另行走提案）。磁盘读数 592G/69% 维持「全量复跑前先 df」。
+- [→各树] 本批 tick 引用批号自 116 起算；产品边界 1.4.0 双语已落账（设置面豁免仅此一处，`vcc.liteDb` 维持禁止），各树实现切片涉及 VCC/ALCOM 触碰面时以 1.4.0 为准；各树回执就地消化勿重复；失鲜工作树无；主树 `_local_p27_devlog.txt` 系未跟踪本地文件照例不触碰。
 - （历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
