@@ -2,16 +2,24 @@
 
 [English](packages-query-v0.2_EN.md) | [简体中文](packages-query-v0.2_ZH.md)
 
-> Document version: 0.2
-> Status: **Frozen (the packages-query result family v0.2 increment)**
-> (2026-09-20, proposal 027 F3 freeze batch: core stance 3 converged with
-> environment verification s2 and desktop IA stance 3, face order F2->F3
-> registered at batches 121/122; the F2 freeze + wiring both in-library =
-> the claim condition achieved [verified at batches 124/126])
+> Document version: 0.2.1
+> Status: **Frozen (the packages-query result family v0.2 increment,
+> 2026-09-20) and WIRED (the v0.2.1 core wiring batch, 2026-09-20): the
+> route dual-arm negotiation and the named family constants are in tree —
+> desktop consumption rides the per-face program after shape approval; the
+> library implementation is the environment implementation-verification
+> slice; until that lands every wired backend keeps answering the frozen
+> v0.1 family (the trait-default `query_v02 -> false`).**
+> (Freeze provenance: proposal 027 F3 freeze batch — core stance 3
+> converged with environment verification s2 and desktop IA stance 3, face
+> order F2->F3 registered at batches 121/122; the F2 freeze + wiring both
+> in-library = the claim condition achieved [verified at batches 124/126].)
 > Machine-readable word list: `schemas/packages-query/v0.2/` (command
 > byte-for-byte identical to v0.1; result = v0.1 plus exactly three facts
 > + 4 positive / 7 negative vectors; core consumer test
-> `crates/provider-host/tests/packages_query_consumer_v02.rs`; TS face
+> `crates/provider-host/tests/packages_query_consumer_v02.rs`; wire route
+> tests `crates/provider-host/tests/packages_query_wire_v02.rs` [the real
+> frame loop]; TS face
 > `packages/contracts/src/application-contract.ts`)
 > Scope: only the **result family** of `packages.listInstalled` bumps to
 > `vua.packages-installed/v0.2`. The command face is unchanged; the frozen
@@ -21,8 +29,9 @@
 > (implementation-verification slice: `list_packages_v02` + the `query_v02`
 > override); desktop consumption = desktop (shape approval + consumption
 > batch: dual family-const admission + honest "updatable" column)
-> Updated: 2026-09-20 (v0.2 increment freeze batch: schemas + vectors +
-> core consumer test + TS face + bilingual protocol doc + REGISTRY)
+> Updated: 2026-09-20 (v0.2.1 wiring batch: route dual-arm negotiation +
+> named family constants `PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02` +
+> wire tests 6 riding the real frame loop; word face ZERO change)
 
 ## Increment content (exactly three new facts)
 
@@ -102,16 +111,31 @@ created.
   `InstalledPackageV02` = all `InstalledPackageV1` keys +
   `latest_version` + `update_available`; `InstalledListingV02` = the rows
   + `cache_sourced`.
-- The wire route **negotiates two arms** (landing with the wiring slice):
-  a backend declaring v0.2 answers the `vua.packages-installed/v0.2`
-  family; any other backend keeps answering the frozen
-  `vua.packages-installed/v0.1` family. The family const and projectPath
-  are stamped by the route at envelope assembly (the P1 discipline:
-  envelope facts are the route's, backend facts verbatim) — the consumer
-  reads the family const to know which word face answered, **never a
-  guess**. A v0.1-shaped row is INVALID under the v0.2 schema (missing
-  REQUIRED keys) — the version increment is machine-detectable (pinned by
-  the consumer test).
+- The wire route **negotiates two arms (wired, landed with the v0.2.1
+  wiring batch)**: a backend declaring v0.2 answers the
+  `vua.packages-installed/v0.2` family; any other backend keeps answering
+  the frozen `vua.packages-installed/v0.1` family. The face-level gate
+  (`capabilities().list_packages`) precedes the negotiation — without the
+  face there is no word face at all, whatever its generation; the shared
+  P1 preconditions (013 registration reuse, closed params, verbatim typed
+  refusals) likewise precede and serve both arms unchanged. The family
+  const and projectPath are stamped by the route at envelope assembly (the
+  P1 discipline: envelope facts are the route's, backend facts verbatim) —
+  the consumer reads the family const to know which word face answered,
+  **never a guess**. A v0.1-shaped row is INVALID under the v0.2 schema
+  (missing REQUIRED keys) — the version increment is machine-detectable
+  (pinned by the consumer test and the wire tests).
+- **Wire family constants (named at the v0.2.1 wiring batch, the
+  A3/A4/A5/F2 precedent)**: the result family consts
+  `PACKAGES_INSTALLED_SCHEMA_VERSION_V01 = "vua.packages-installed/v0.1"`
+  and `PACKAGES_INSTALLED_SCHEMA_VERSION_V02 = "vua.packages-installed/v0.2"`
+  are published from `vua_provider_host::provider_host` — consumers key on
+  the core-owned constants, never private literals; the route stamps the
+  family const on the result document at envelope assembly, never the
+  backend. The envelope stays on the standing shared const
+  `PACKAGES_QUERY_SCHEMA_VERSION = "0.1"` (the catalog v0.2 precedent:
+  only the result family moved; the frozen v0.2 command schema locks the
+  same envelope generation).
 - The standing envelope shape is unchanged (the `schemaVersion` envelope
   const `"0.1"` + `operation` + `result`; the c914cf2 rule: the family
   version is independent of the envelope version).
@@ -177,9 +201,14 @@ created.
 
 ## Honest boundaries and open items
 
-- **Core wiring slice (next link)**: the `packages.listInstalled` route
-  dual-arm negotiation + the named envelope constants + wire tests (the
-  A3/A4/A5/F2 wiring precedent).
+- **Core wiring slice (DONE, this v0.2.1 batch)**: the
+  `packages.listInstalled` route dual-arm negotiation is in tree behind
+  the named family constants; wire tests 6 ride the real frame loop
+  (v0.2-family answer with every judgment arm pinned + the v0.1
+  zero-regression family pin + the face-gate-before-negotiation pin +
+  verbatim refusals on both arms + the shared P1 preconditions under a
+  v0.2 backend + the const-detectability pin against the frozen schema
+  consts).
 - **Environment implementation-verification slice**: the
   `VrcGetLibBackend` `list_packages_v02` + `query_v02` override + the
   one-collection-load batch judgment + the offline-degradation
@@ -191,5 +220,7 @@ created.
   renders an honest empty**; cacheSourced renders a "cached data"
   informational annotation; the inline update key reuses the A2 install
   face's version=null semantics (desktop IA stance 3, as ruled).
-- Zero end-to-end claims maintained: the real-machine walkthrough stays
-  W25 (the user window O-2 pending).
+- Zero end-to-end claims maintained: the route is wired, **not consumed**
+  — no desktop surface reads the v0.2 family until the shape-approval +
+  consumption batch lands, and the real-machine walkthrough stays W25
+  (the user window O-2 pending).

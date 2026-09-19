@@ -2,14 +2,20 @@
 
 [English](packages-query-v0.2_EN.md) | [简体中文](packages-query-v0.2_ZH.md)
 
-> 文档版本：0.2
-> 状态：**已冻结（packages-query 结果族 v0.2 增量）**
-> （2026-09-20，提案 027 F3 冻结批：核心表态 3 与环境考证 s2、桌面
+> 文档版本：0.2.1
+> 状态：**已冻结（packages-query 结果族 v0.2 增量，2026-09-20）且已接
+> 线（v0.2.1 核心接线批，2026-09-20）：路由双臂协商与命名族常量已落
+> 树——桌面消费候形状核可后照面序程序办理；库面实现归环境实现核对
+> 切片；在其落地前一切已接线 backend 均以冻结 v0.1 族应答（trait 默
+> 认 `query_v02 -> false`）。**
+> （冻结出处：提案 027 F3 冻结批——核心表态 3 与环境考证 s2、桌面
 > IA 表态 3 同向收敛，面序 F2→F3 三域收敛第 121/122 批登记；F2 冻
-> 结＋接线均已入库＝领取条件成就〔第 124/126 批核实〕）
+> 结＋接线均已入库＝领取条件成就〔第 124/126 批核实〕。）
 > 机器可读词表：`schemas/packages-query/v0.2/`（command 与 v0.1 逐字
 > 节同形；result ＝ v0.1 恰加三事实＋4 正 7 负向量；核心消费测试
-> `crates/provider-host/tests/packages_query_consumer_v02.rs`；TS 面
+> `crates/provider-host/tests/packages_query_consumer_v02.rs`；wire 路
+> 由测试 `crates/provider-host/tests/packages_query_wire_v02.rs`〔真
+> 实帧循环〕；TS 面
 > `packages/contracts/src/application-contract.ts`）
 > 范围：仅 `packages.listInstalled` 的 **result 族**升版至
 > `vua.packages-installed/v0.2`。command 面零变化；冻结的 v0.1 词面
@@ -18,8 +24,9 @@
 > 面实现（project-manager）＝环境域（实现核对切片：`list_packages_v02`
 > ＋`query_v02` 覆写）；桌面消费＝桌面域（形状核可＋消费批：双族常
 > 量接纳＋「可更新」列诚实呈现）
-> 更新：2026-09-20（v0.2 增量冻结批：Schema＋向量＋核心消费测试＋
-> TS 面＋双语协议本＋REGISTRY 登记）
+> 更新：2026-09-20（v0.2.1 接线批：路由双臂协商＋命名族常量
+> `PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02`＋wire 测试 6 例骑真
+> 实帧循环；词面零变化）
 
 ## 增量内容（恰三个新事实）
 
@@ -81,12 +88,25 @@ catalog 判定逐字同源），不立第二判定语义。
   （默认缺席臂 `capability_missing`）；`InstalledPackageV02` ＝
   `InstalledPackageV1` 全键＋`latest_version`＋`update_available`；
   `InstalledListingV02` ＝ 行集＋`cache_sourced`。
-- wire 路由**双臂协商**（接线切片落地）：声明 v0.2 的 backend 以
-  `vua.packages-installed/v0.2` 族应答；未声明的 backend 维持冻结的
-  `vua.packages-installed/v0.1` 族应答。族常量与 projectPath 在信封
-  组装时由路由盖戳（P1 纪律：信封事实路由定，后端事实逐字）——消
-  费端读族常量辨词面世代，**永不猜测**。v0.1 形状行对 v0.2 Schema
-  非法（缺必带键）——版本增量机器可检测（消费测试钉死）。
+- wire 路由**双臂协商（已接线，v0.2.1 接线批落地）**：声明 v0.2 的
+  backend 以 `vua.packages-installed/v0.2` 族应答；未声明的 backend
+  维持冻结的 `vua.packages-installed/v0.1` 族应答。面级能力门
+  （`capabilities().list_packages`）先于协商——无面即无词面，与世
+  代无关；共享 P1 前置（013 注册复用、闭集参数、类型化拒绝逐字）同
+  样先于协商且双臂共享零变化。族常量与 projectPath 在信封组装时由
+  路由盖戳（P1 纪律：信封事实路由定，后端事实逐字）——消费端读族
+  常量辨词面世代，**永不猜测**。v0.1 形状行对 v0.2 Schema 非法（缺
+  必带键）——版本增量机器可检测（消费测试与 wire 测试钉死）。
+- **wire 族常量（v0.2.1 接线批命名，A3/A4/A5/F2 先例）**：result 族
+  常量 `PACKAGES_INSTALLED_SCHEMA_VERSION_V01 =
+  "vua.packages-installed/v0.1"` 与
+  `PACKAGES_INSTALLED_SCHEMA_VERSION_V02 =
+  "vua.packages-installed/v0.2"` 自
+  `vua_provider_host::provider_host` 发布——消费端钉核心域常量，绝
+  不私有字面量；路由在信封组装时把族常量盖在 result 文档上，绝不后
+  端。信封维持常设共享常量 `PACKAGES_QUERY_SCHEMA_VERSION = "0.1"`
+  （catalog v0.2 先例：仅 result 族升版；v0.2 冻结 command Schema
+  锁定同一信封世代）。
 - 信封常设形状不变（`schemaVersion` 信封常量 `"0.1"` ＋ `operation`
   ＋ `result`；c914cf2 规矩：族版本独立于信封版本）。
 - **错误面零新码**：注册校验复用 `vua.project.project_not_found`、
@@ -140,8 +160,11 @@ catalog 判定逐字同源），不立第二判定语义。
 
 ## 诚实边界与开放项
 
-- **核心接线切片（下一环）**：`packages.listInstalled` 路由双臂协商
-  ＋信封常量命名＋wire 测试（照 A3/A4/A5/F2 接线先例）。
+- **核心接线切片（已完成，本 v0.2.1 批）**：`packages.listInstalled`
+  路由双臂协商已落树、骑命名族常量；wire 测试 6 例骑真实帧循环
+  （v0.2 族应答全判定臂钉死＋v0.1 零回归族钉＋面级门先于协商钉＋
+  双臂拒绝逐字透传钉＋v0.2 backend 下共享 P1 前置钉＋对冻结 Schema
+  常量的可检测性钉）。
 - **环境实现核对切片**：`VrcGetLibBackend` `list_packages_v02`＋
   `query_v02` 覆写＋一次集合加载批量判定＋离线降级 cacheSourced 臂
   ＋单元测试；验收锚＝本协议本「后端指向根事实」节逐项对账。
@@ -149,4 +172,5 @@ catalog 判定逐字同源），不立第二判定语义。
   **无判定事实（null）不渲染「已最新」，该列如实空显**；cacheSourced
   呈现「缓存数据」信息标注；行内升级键复用 A2 安装面 version=null
   语义（桌面 IA 表态 3 照准）。
-- 零端到端宣称维持：真机走查归 W25（候用户窗 O-2）。
+- 零端到端宣称维持：路由已接线、**未被消费**——形状核可＋消费批落
+  地前无任何桌面面读取 v0.2 族；真机走查归 W25（候用户窗 O-2）。

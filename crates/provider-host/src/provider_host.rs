@@ -278,6 +278,31 @@ pub const PACKAGES_QUERY_SCHEMA_VERSION: &str = "0.1";
 /// padded listing — an empty array is a real backend fact only.
 pub const PACKAGES_UNAVAILABLE: &str = "vua.packages.unavailable";
 
+/// The `packages-installed` v0.1 result family constant (proposal 024 P1
+/// freeze batch 2026-09-17; the c914cf2 standing rule — every wire row
+/// carries a version constant of its own, independent of the envelope
+/// const). The route stamps it at envelope assembly, never the backend.
+/// Named at the F3 wiring batch (2026-09-20) when the route grew the
+/// dual-version negotiation arms — extracting the P1-era inline literal
+/// changes no word-face byte (the same string the frozen v0.1 result
+/// schema locks), it only gives the frozen v0.1 generation its own
+/// core-owned constant beside the v0.2 one.
+pub const PACKAGES_INSTALLED_SCHEMA_VERSION_V01: &str = "vua.packages-installed/v0.1";
+
+/// The `packages-installed` v0.2 result family constant (proposal 027 F3
+/// freeze batch 2026-09-20: the installed-set update-awareness increment,
+/// new family version — the frozen v0.1 word face is never revised in
+/// place). The route serves this family exactly when the backend declares
+/// `query_v02` (additive dual-version negotiation, ORC-DEV-004: the
+/// `catalog_v02` precedent — backends that have not adopted v0.2 keep
+/// answering the frozen v0.1 family above). The envelope stays on the
+/// shared `packages` word-list-row `0.1` const (the frozen v0.2 command
+/// schema locks the ENVELOPE schemaVersion to "0.1" — the catalog v0.2
+/// increment precedent); the result carries this family const — two
+/// independent versions (the c914cf2 standing rule). The route stamps it
+/// at envelope assembly, never the backend.
+pub const PACKAGES_INSTALLED_SCHEMA_VERSION_V02: &str = "vua.packages-installed/v0.2";
+
 /// The `packages-repos` v0.1 result family constant (proposal 025 P2 freeze
 /// batch 2026-09-17; the c914cf2 standing rule — every wire row carries a
 /// version constant of its own, independent of the envelope const). The
@@ -5264,14 +5289,25 @@ fn packages_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutco
     ))
 }
 
-/// `packages.listInstalled` (proposal 024 P1): the installed package set of
+/// `packages.listInstalled` (proposal 024 P1; result family negotiated at
+/// v0.2 by the proposal 027 F3 wiring batch): the installed package set of
 /// ONE registered project. Registration is validated against the SAME 013
 /// inspection aggregate `project.inspectProject` uses (same fact, same
 /// code: `vua.project.project_not_found` — the frozen reuse ruling); an
 /// off-aggregate path never reaches the backend. The listing itself is the
 /// backend's manifest+lock projection; an empty lock is an honest empty
 /// array, and a load failure is the backend's typed error — never an empty
-/// masquerade.
+/// masquerade. The RESULT family is negotiated additively (proposal 027 F3
+/// freeze batch, the `catalog_v02` law): a backend declaring `query_v02`
+/// answers `vua.packages-installed/v0.2` (rows carry the REQUIRED judgment
+/// pair; the listing carries the REQUIRED cacheSourced disclosure); every
+/// other backend keeps answering the frozen `vua.packages-installed/v0.1`
+/// family — the stamped family const tells the consumer which word face
+/// answered, never a guess. The face-level capability gate
+/// (`capabilities().list_packages`) precedes the negotiation: without the
+/// face there is no word face at all, whatever its generation. Both family
+/// consts are envelope-assembly facts (P1 discipline): the route stamps
+/// them, the backend facts stay verbatim.
 fn packages_list_installed(
     state: &HostState,
     vpm: Arc<dyn VpmBackend>,
@@ -5322,33 +5358,63 @@ fn packages_list_installed(
             "unavailable",
         ));
     }
-    let listing = vpm.list_packages(&ProjectRef {
+    // Additive dual-version negotiation (proposal 027 F3 freeze batch, the
+    // `catalog_v02` law): a backend that declares `query_v02` answers the
+    // v0.2 result family (rows carry the latestVersion/updateAvailable
+    // judgment pair; the listing carries the REQUIRED cacheSourced
+    // disclosure); every other backend keeps answering the frozen v0.1
+    // family. The family const is an envelope-assembly fact (P1
+    // discipline): the route stamps it, the backend facts stay verbatim —
+    // the consumer reads the const, never guesses the word face.
+    let project = ProjectRef {
         id: project_path.to_string(),
         root: PathBuf::from(project_path),
-    });
-    let packages = match listing {
-        Ok(packages) => packages,
-        Err(error) => {
-            return FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                &error.code,
-                &error.message_key,
-                app_error_category(error.category),
-            ));
+    };
+    let (mut result, family_const) = if vpm.query_v02() {
+        match vpm.list_packages_v02(&project) {
+            Ok(listing) => {
+                // The backend projects its own facts (rows + cacheSourced);
+                // projectPath is the ROUTE's envelope-assembly fact — the
+                // route stamps it, the backend facts stay verbatim (the P1
+                // discipline; the frozen v0.2 result schema requires it).
+                let mut value = serde_json::to_value(&listing).unwrap_or_else(|_| json!({}));
+                value["projectPath"] = json!(project_path);
+                (value, PACKAGES_INSTALLED_SCHEMA_VERSION_V02)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
+        }
+    } else {
+        match vpm.list_packages(&project) {
+            Ok(packages) => {
+                let rows = serde_json::to_value(&packages).unwrap_or_else(|_| json!([]));
+                (json!({ "projectPath": project_path, "packages": rows }), PACKAGES_INSTALLED_SCHEMA_VERSION_V01)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
         }
     };
-    let rows = serde_json::to_value(&packages).unwrap_or_else(|_| json!([]));
+    result["schemaVersion"] = json!(family_const);
     FrameOutcome::Response(application_success(
         request_id,
         json!({
             "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
             "operation": "packages.listInstalled",
-            "result": {
-                "schemaVersion": "vua.packages-installed/v0.1",
-                "projectPath": project_path,
-                "packages": rows,
-            },
+            "result": result,
         }),
     ))
 }
