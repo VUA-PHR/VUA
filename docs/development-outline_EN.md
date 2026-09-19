@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.12
+> Document version: 2.0.13
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.12)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.13)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -96,6 +96,17 @@ Responsibility rules:
 > Every task
 > in this window is decomposed to a role; once complete, the
 > Integration role accepts them and advances the M5 gate.
+>
+> Window status (2.0.13 update, 2026-09-20): **the W25 real-machine window has been
+> opened by user instruction (2026-09-19/20, executed as a schedule exception per
+> user instruction)** — each role's W25 pending items proceed in-window per the O-2
+> sequence and its own duty list; the Integration seat has already carried out the
+> preliminary inventory for W26 step a (document review) = an audit of user/operator-
+> facing managed documents (the list lands in
+> `collab/proposals/028-user-facing-doc-audit.md`; list first, per-domain updates
+> after). The zero-end-to-end-claim discipline is unchanged: everything produced
+> in-window is registered item by item against real-machine evidence, and segments
+> not run are honestly reported as not run.
 
 | # | Task | Owning role | Collaborators | Anchor / acceptance |
 | --- | --- | --- | --- | --- |
@@ -106,8 +117,8 @@ Responsibility rules:
 | W22 | Full Build Record (plan diff, evidence digest) | Core | Production | existing M5 table row |
 | W23 | Compatibility/missing-evidence model | Data | Core | existing M5 table row |
 | W24 | Recipe/Assembly workbench (shared selection and domain semantics across three views) | Desktop | Core | existing M5 table row |
-| W25 | Lawful self-owned asset smoke path and reproducibility | Production | Integration | existing M5 table row; real-machine window and lawful-asset environment variables |
-| W26 | Gate acceptance and release (v0.7.0) | Integration | All | per the M4 closure precedent: document review → gate-item verification → version/release/push |
+| W25 | Lawful self-owned asset smoke path and reproducibility | Production | Integration | existing M5 table row; real-machine window and lawful-asset environment variables; **the window has been opened by user instruction (2026-09-19/20, schedule exception)** |
+| W26 | Gate acceptance and release (v0.7.0) | Integration | All | per the M4 closure precedent: document review → gate-item verification → version/release/push; step-a preliminary inventory = proposal 028 user/operator-facing document audit (list landed 2026-09-20) |
 
 ## M sequence: Main integration and delivery
 
@@ -505,6 +516,14 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.13 (2026-09-20): **W25 real-machine window opening fact registered** (user
+  instruction 2026-09-19/20, executed as a schedule exception per user instruction) —
+  the current-window section gains a window-status paragraph: each role's W25 pending
+  items proceed in-window per the O-2 sequence; the Integration seat carried out the
+  preliminary inventory for W26 step a = the user/operator-facing managed-document
+  audit (list in `collab/proposals/028-user-facing-doc-audit.md`); W25/W26 rows
+  annotated. The zero-end-to-end-claim discipline is unchanged. EN mirror of the ZH
+  2.0.13 entry.
 - 2.0.12 (2026-09-15): **M7 (v0.9.0) task-table early-open authorization note for
   the first four rows** (user ruling 2026-09-15, relayed by the operator) —
   following the M6 precedent: the first four rows [inspection evidence /

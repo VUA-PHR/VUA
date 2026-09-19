@@ -1,10 +1,16 @@
 # packages-repo-catalog protocol v0.1 (the packages.repoCatalog read face: the per-repository installable-package inventory)
 
-> Document version: 0.1
-> Status: Frozen (proposal 027 F2 core freeze batch, 2026-09-20)
+> Document version: 0.1.1
+> Status: **Frozen (proposal 027 F2 core freeze batch; the v0.1.1 wiring batch
+> landed with zero word-face change — the wire route and the served row are in
+> tree, desktop consumption awaits shape approval, and the library
+> implementation is the environment implementation-verification slice; until
+> that slice flips the capability the row stays honestly unavailable)**
 > Authority pair: this file and `packages-repo-catalog-v0.1_ZH.md` (single meaning, two languages).
 > Word-face authority: `schemas/packages-repo-catalog/v0.1/` (command + result schemas and the
 > example vectors). This document explains; the schemas bind.
+> Wire route tests: `crates/provider-host/tests/packages_repo_catalog_wire_v01.rs` (the real
+> frame loop); core consumer tests: `crates/provider-host/tests/packages_repo_catalog_consumer_v01.rs`.
 
 ## What this face is
 
@@ -116,15 +122,33 @@ increment is a v0.2 row-directory question, never an in-place revision of this f
 - Read-only by design: repository enable/disable and manual refresh are packages-ops (proposal
   027 F4) write faces and do not exist in this family.
 
-## Capability gate
+## Capability gate (wired, landed with the v0.1.1 wiring batch)
 
 New defaulted accessor `VpmBackend::repo_catalog_capabilities() -> RepoCatalogCapabilities`
 (one bit, `repo_catalog`), the 025 accessor law (ORC-DEV-004: default declared-none; a backend
 overrides it exactly when it implements `repo_catalog`). The library backend has the
 repo-scale listing and will declare true with its implementation-verification slice; the CLI
 backend has no repo-scale package listing (environment verification 3bd4f12 s1) and stays
-honestly false. Until a route is wired (the NEXT core wiring slice), the method does not exist
-on the wire face and consumers render no entry.
+honestly false.
+
+- **Serving gate (wired, landed)**: the served row `packages.repoCatalogOps` serves the one
+  method (the removeOps/installOps/registerOps/repoOps/createOps one-row precedent); row
+  availability = the backend's `repo_catalog_capabilities().repo_catalog` bit — default
+  declared-none keeps the row honestly unavailable until the environment
+  implementation-verification slice flips it with the VrcGetLib override. The wire route
+  reads the same bit BEFORE the port call; a false bit answers the generic
+  `vua.vpm.capability_missing` and never reaches a backend method.
+- **The honest structural difference from the A5 face**: the `repo_catalog` port method HAS
+  a default body (unlike `create_project`, which is REQUIRED with no default), so a
+  declared-but-unimplemented backend CAN exist at the type level — and BOTH layers answer
+  `capability_missing` (the route gate first, the trait-default body carrying a
+  `capability` parameter). The gate is the honest arm, not a type-level impossibility.
+- **Wire envelope constants (named at this wiring batch, the A3/A4/A5 precedent)**: the
+  envelope const `PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 = "0.1"` and the result
+  family const `PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 = "vua.packages-repo-catalog/v0.1"`
+  are published from `vua_provider_host::provider_host` — consumers key on the core-owned
+  constants, never private literals; the route stamps both at envelope assembly (the family
+  const on the result document, the envelope const on the response), never the backend.
 
 ## Backend-root-facts section (the 027 checkpoint — mandatory)
 
@@ -171,10 +195,11 @@ face:
 
 ## Honesty boundary
 
-Zero end-to-end claims are made by this batch: the freeze batch is the word-list layer — the
-wire route/served row/envelope assembly belong to the next core wiring slice, the library
-implementation to the environment implementation-verification slice, desktop consumption to the
-per-face upgrade program after shape approval. Real-machine walkthrough of the whole chain
-stays in the W25 window (O-2, awaiting the user). The empty state is the final state: empty
-repos arrays, empty packages arrays, and null latest/display/description facts render as
-designed empties, never as guessed content.
+Zero end-to-end claims are made: the freeze batch was the word-list layer; the v0.1.1 wiring
+batch put the wire route, the `packages.repoCatalogOps` served row and the envelope assembly
+in tree — desktop consumption still belongs to the per-face upgrade program after shape
+approval, the library implementation to the environment implementation-verification slice
+(a wired backend keeps the row honestly unavailable until that override lands), and
+real-machine walkthrough of the whole chain stays in the W25 window (O-2, awaiting the user).
+The empty state is the final state: empty repos arrays, empty packages arrays, and null
+latest/display/description facts render as designed empties, never as guessed content.

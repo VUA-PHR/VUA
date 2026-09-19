@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-20 01:2x 推进：**F2 词面已冻结**——冻结批 c46545f〔恰核心域 26 文件：packages-repo-catalog v0.1 双 Schema＋6 正 8 负向量＋端口面＋消费测试 4 例＋TS 面＋mock 缺席臂＋双语协议本含「后端指向根事实」专节＋REGISTRY〕经第 122 批 --no-ff 验收入库〔合并 a50241f；集成亲审 diff＋新检查点逐项核对成立：生产接线根＝用户真实 VCC 共享家目录只读＋测试隔离面＝with_environment_root 临时根纯合成；合并树定向证据集成独立复跑全绿：contracts 81/81＋orchestrator-provider 42/42＋desktop typecheck 双 0＋orchestrator 16 目标 0 失败＋provider-host 238/0＋clippy 双 0〕；词面裁决＝author 如实缺席〔选项 (iii)〕＋compatible 刻意不存在＋零新码 repo_not_found 复用＋cacheSourced 降生即带；下一环＝核心 F2 wire 接线切片〔候本验收〕→环境实现核对→桌面消费〔候形状核可〕；F3/F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，开放问题 1/2/3 全部落节）
+status: 讨论中（2026-09-20 02:0x 推进：**F2 wire 已接线**——接线批 629699e〔恰核心域 5 文件 839+/22-：provider_host.rs 路由臂 packages.repoCatalog＋served 行 packages.repoCatalogOps〔repo_catalog_capabilities 门，默认 declared-none 候环境覆写置真〕＋信封双常量命名 PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 "0.1"／PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 "vua.packages-repo-catalog/v0.1"＋wire 测试 8 例骑真帧环含十一例违规电池＋双语协议本 0.1.1 词面零变更＋REGISTRY 同步〕＋随批竞速修正 fabb04d〔协议本双语头部＋REGISTRY 行状态词干回归「已冻结」照 A5 先例；登记表 79/79 一致 0 异常；docs-only 代码树字节相同、定向证据继承声明成立〕经第 123 批 --no-ff 验收入库〔合并 203cb9f；集成亲审 diff 逐项对表冻结词面成立：闭集双键必带可空 params＋能力门在端口调用之前＋端口拒绝逐字透传＋路由盖常量＋A5 诚实结构差异申报；合并将成树等价性实证＝预检树 c2cbf83 vs wt-2 尖非 collab 面零漂移；全链定向证据集成独立复跑全绿：provider-host 246/0〔含 wire_v01 8/8〕＋orchestrator 231/0＋clippy 双 0＋contracts 81/81＋orchestrator-provider 42/42＋desktop typecheck 双 0〕；**下一环＝环境实现核对切片**〔VrcGetLib repo_catalog 覆写＋capability 覆写置真＋离线降级＋单元测试，候即领；接线代码重推导验收锚适用〕＋桌面形状核可程序〔双前置已成就〕；F3/F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -485,3 +485,61 @@ b58ab76 世代（第 119 批 tip，与 main 全等）。
 - **F4 packages-ops v0.6 二分：支持**——刷新面库面事实在库（update_cache etag
   条件刷新）随 v0.6 先行冻结可办；启停面候真机核实且本考证交付方法（§3(b)），
   核心表态 7 三段程序的①（环境先行交付方法）由本节完成。
+
+#### 6. F4 启停键名只读真机核实执行记录（2026-09-20 W25 窗，环境；结论四选一＝(c)）
+
+**执行授权与方式**：W25 真机验收窗（用户 2026-09-19/20 指令开窗，O-2 例外照准）；
+方法＝本节 §3(b) 八步之**静态取证子集**（步 1 定位根／步 2 家族清单＋SHA-256＋
+mtime 原位读数／步 6 判读／步 7 落账）；步 3–5 动态双快照对照（需用户 GUI 操作）
+本窗指令未列入执行面，登记为可选补充证据。**全程只读**（read/readdir/stat 口径）：
+零写入、零移动、零重命名、零复制、零启动、零进程接触。用户路径与项目名一概脱敏
+不入树。VCC 版本＝**2.4.5**（release/2.4.5，Logs/ 最新日志只读读出，最近运行
+2026-09-19）。
+
+**(a) 文件家族存在性（%LOCALAPPDATA%\VRChatCreatorCompanion\）**：settings.json
+（2939B，mtime 2026-09-19）；vcc.liteDb（73728B，mtime 2026-09-02，合法 LiteDB v5
+签名）；Repos/（vrc-official.json＋vrc-curated.json＋GUID 名缓存×6＋包名缓存若干＋
+package-cache.json）；另有 Logs/、Project Backups/、Templates/、VRCTemplates/、
+Updater/。**根下无 vrc-get/ 备份目录**（§3(b) 步 2 候选家族项缺席，如实登记）。
+
+**(b) settings.json 键清单（照录；键名真值，值面脱敏）**：顶层恰 18 键（文件序）＝
+pathToUnityExe、pathToUnityHub、userProjects(array[18])、unityEditors(array[0])、
+preferredUnityEditors{2019,2022}、defaultProjectPath、lastUIState(number)、
+skipUnityAutoFind(bool)、userPackageFolders(array[1])、windowSizeData{width,height,
+x,y}、skipRequirements(bool)、lastNewsUpdate(string)、allowPii(bool)、
+projectBackupPath(string)、showPrereleasePackages(bool)、trackCommunityRepos(bool)、
+selectedProviders(number)、userRepos(array[4])。**userRepos 元素键集**＝恰
+vrc-get-vpm `UserRepoSetting` 闭集：4 元素中 3 个五键 {localPath,url,name,id,headers}、
+1 个四键（headers 缺席＝可选键实证），**零元素外键**。**启停语义键全文件递归扫描**
+（enabl/disabl/activ/disabled 模式）：**零命中**——元素内无、顶层无、嵌套无；
+全文件每键均可对账为已知 VCC/vrc-get 设置键，零未知键，顶层亦无任何按仓启停状态
+映射键。
+
+**(c) vcc.liteDb 表清单（024 表态 (b) 同窗顺带项）**：存在，恰 2 集合＝
+`projects`＋`unityVersions`（读法＝二进制字符串扫描口径：签名＋集合名＋字段名
+可读，未做完整 BSON 解析，方法如实声明）。字段面＝projects≈{Path,Type,
+UnityVersion,Favorite,CreatedAt,LastModified}、unityVersions≈{Path,Version,
+LoadedFromHub}；**无 repo 表、无任何启停语义字段**（用户项目路径与项目名一概
+脱敏；unityVersions 含 2019.4.31f1／2022.3.6f1／2022.3.22f1 三版本条目，与产品
+钉定全局版本吻合）。
+
+**(d) ALCOM 侧同构对照＝不可执行（能力诚实登记）**：%APPDATA%\ALCOM 不存在；
+候选根扫描（APPDATA/LOCALAPPDATA × ALCOM/alcom/com.anatawa12.alcom 共 6）＋
+两侧 AppData 顶层目录名 /alcom/i 扫描零命中——本机未装 ALCOM（或从未运行），
+无对照面。
+
+**(e) 四选一结论＝(c) VCC 无启停位（VUA 自有键名可自定）**：(a) 元素内位**证伪**
+（元素恰闭集）；(b) 顶层 flatten 保留区——保留区在（源码事实 2），但现机保留区
+无启停键；(c) 正面证据＝三存储位（settings.json 全文／litedb 两集合／Repos 缓存
+面 {repo,headers,vrc-get{etag}} LocalCachedRepository 形态）均无启停状态。源码
+事实 4 的「写面剥键互操作风险」在现机形态下**无可剥对象**——026 A4 启停二分
+裁决的追溯风险面就此以真机证据落定；**F4 启停面冻结硬前置成就**。**环境设计
+提示（词面权威归核心 F4 冻结批）**：VUA 自有启停键**不可放 userRepos[i] 元素内**
+——VUA 写面经 vrc-get `Settings::save`（五键闭集同构）会剥自有键（源码事实 3
+同理适用于 VUA 自身）；自有语义宜置顶层 flatten 保留区或自有存储，往返无损。
+刷新面（update_cache etag 条件刷新）不受本结论影响，照 v0.6 先行不变。
+
+**(f) 残余诚实边界**：静态单时点观察（2026-09-20）；步 3–5 动态双快照对照未执行
+（本窗指令范围外，候补可选）；F5 素材顺带观察＝VRCTemplates/ 恰 5 目录
+（Avatar／Avatar 2019／Base／World／World 2019，目录名读数），元数据文件形态
+未核（归 F5 顺带项本面）。零端到端宣称维持——本记录只登记只读取证事实。
