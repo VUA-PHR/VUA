@@ -116,6 +116,12 @@ export const strings = {
 demoTaskTitle: "Demo task",
     replay: "Replay event stream",
     progress: "{done}/{total}",
+    openAria: "Open notification center, {count} active",
+    closeAria: "Close notification center",
+    empty: "No notifications",
+  },
+  bootSplash: {
+    starting: "Starting VUA",
   },
   nav: {
     tabs: {

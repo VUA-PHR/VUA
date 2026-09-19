@@ -120,6 +120,12 @@ export const strings: Strings = {
 demoTaskTitle: "演示任务",
     replay: "回放事件流",
     progress: "{done}/{total}",
+    openAria: "打开通知中心,{count} 项进行中",
+    closeAria: "关闭通知中心",
+    empty: "暂无通知",
+  },
+  bootSplash: {
+    starting: "正在启动 VUA",
   },
   nav: {
     tabs: {

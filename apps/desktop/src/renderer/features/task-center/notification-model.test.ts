@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
+  activeTaskCount,
   canDismiss,
   isTerminalStatus,
   visibleNotifications,
@@ -61,4 +62,16 @@ test("通知清除合法性:仅终态可清除,活动任务不可", () => {
   assert.equal(canDismiss(taskOf("d", "failed")), true);
   assert.equal(canDismiss(taskOf("e", "cancelled")), true);
   assert.equal(isTerminalStatus("completedWithWarnings"), true);
+});
+
+test("进行中计数:queued/preparing/running 计入,终态与等待/暂停不计", () => {
+  const mixed = [
+    ...tasks,
+    taskOf("t-queued", "queued"),
+    taskOf("t-preparing", "preparing"),
+    taskOf("t-waiting", "waitingInput"),
+    taskOf("t-paused", "paused"),
+  ];
+  assert.equal(activeTaskCount(mixed), 3);
+  assert.equal(activeTaskCount([]), 0);
 });

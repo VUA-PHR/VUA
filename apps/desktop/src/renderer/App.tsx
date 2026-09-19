@@ -69,6 +69,8 @@ import {
   type ProductionIntroPhase,
 } from "./features/production/production-intro-state.ts";
 import { Taskbar } from "./features/task-center/Taskbar.tsx";
+import { NotificationPopover } from "./features/task-center/NotificationPopover.tsx";
+import { BootSplash } from "./components/splash/BootSplash.tsx";
 import { ToolsPage, type ToolsPageId } from "./features/tools/ToolsPage.tsx";
 import { WarehousePage } from "./features/warehouse/WarehousePage.tsx";
 import { WorkshopPage } from "./features/workshop/WorkshopPage.tsx";
@@ -1081,6 +1083,9 @@ function AppShell({
         >
           {strings.app.overlayToggle}
         </button>
+        {/* 通知中心顶栏入口(对标 Comfy 铃铛,自绘):与底部任务条共用同一通知投影;
+         *  capability 非 ready 时组件自身不渲染 */}
+        <NotificationPopover navigate={navigate} />
         {inShell ? (
           <div className="vua-shell__window-controls">
             <button
@@ -1192,6 +1197,8 @@ export function App() {
     resolveEntry(storedGoals, override === null ? readStoredPage() : null),
   );
   const [showOnboarding, setShowOnboarding] = useState(entry.showOnboarding);
+  // 启动开屏:首帧覆盖层,播完/跳过后卸载;与 Gateway 装配并行,不阻塞数据
+  const [splashDone, setSplashDone] = useState(false);
   // 深链接(C-EFFICIENCY):#<pageId> 优先于 ?page= 与历史落点
   const [page, setPage] = useState<PageId>(() => {
     const hashPage = readHashPage();
@@ -1259,11 +1266,14 @@ export function App() {
 
   if (showOnboarding) {
     return (
-      <OnboardingPage
-        initialGoals={storedGoals?.goals ?? []}
-        initialEnvs={storedGoals?.environments ?? []}
-        onComplete={handleOnboardingComplete}
-      />
+      <>
+        {!splashDone ? <BootSplash onDone={() => setSplashDone(true)} /> : null}
+        <OnboardingPage
+          initialGoals={storedGoals?.goals ?? []}
+          initialEnvs={storedGoals?.environments ?? []}
+          onComplete={handleOnboardingComplete}
+        />
+      </>
     );
   }
 
@@ -1275,6 +1285,7 @@ export function App() {
 
   return (
     <GatewayProvider gateway={gateway}>
+      {!splashDone ? <BootSplash onDone={() => setSplashDone(true)} /> : null}
       {uiRoot === "forest-green" ? (
         <ForestVariantRoot onBackToCurrent={() => setUiRoot("current")} />
       ) : (

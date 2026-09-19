@@ -107,6 +107,12 @@ export const strings: Strings = {
 demoTaskTitle: "デモタスク",
     replay: "イベントストリームを再生",
     progress: "{done}/{total}",
+    openAria: "通知センターを開く(実行中 {count} 件)",
+    closeAria: "通知センターを閉じる",
+    empty: "通知はありません",
+  },
+  bootSplash: {
+    starting: "VUA を起動しています",
   },
   nav: {
     tabs: {
