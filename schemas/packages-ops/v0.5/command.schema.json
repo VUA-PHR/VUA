@@ -1,0 +1,314 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.5/command.schema.json",
+  "title": "VUA packages-ops command v0.5",
+  "description": "Packages write face, fifth frozen slice A5 = project creation (proposal 026 face order; the v0.1 A1 removal row, the v0.2 A2 install/upgrade row, the v0.3 A3 registration row and the v0.4 A4 repository add/remove row stay frozen and served untouched — v0.5 is a separate row directory per the packages-catalog v0.2 increment precedent). Exactly nine methods on the packages.* family: the A1 pair (packages.previewRemove / packages.applyRemove, v0.1 shapes verbatim), the A2 pair (packages.previewInstall / packages.applyInstall, v0.2 shapes verbatim), the A3 single method (packages.registerLocalPackage, v0.3 shape verbatim), the THREE A4 methods (packages.addRemoteRepo / packages.addLocalRepo / packages.removeRepo, v0.4 shapes verbatim), plus the ONE A5 method packages.createProject, mapped one-to-one onto the VpmBackend port method create_project(parent, name, template) -> Result<ProjectRef, _>. THE A5 FACE IS THE SECOND MEMBER OF THE NO-PREVIEW-PAIR SHAPE (the A3/A4 law, here rooted in the port itself): the port has exactly ONE creation method and NO create-preview counterpart — freezing a preview arm would put a method on the wire face with no port method behind it; a brand-new project directory also has NO pre-existing state to diff (nothing to preview against, no digest to bind — the 026 A5 core stance and the desktop entry-need stance agree), so NO confirmedDigest slot exists and a carried confirmedDigest = shape violation (negative vector). THE USER'S EXPLICIT FORM SUBMISSION IS THE CONFIRMATION (the desktop A5 entry-need point 2: the form submit itself is the explicit confirmation; the creation does not enter the double-summary confirm chain — ADR-0006's destructive-warning path has nothing to warn about: creating a new directory touches no existing registered project, no package file, no other project's content). NO method param names a projectPath: creation does not address any registered project (the 013 project_not_found reuse does not apply; a carried projectPath = shape violation, negative vector). THE ONE METHOD IS A NINE-STATE TASK-DRIVEN WRITE COMMAND (the family-consistent shape: applyRemove/applyInstall/registerLocalPackage/addRemoteRepo all ride the task surface — commandId idempotency, cancellable, events+revision; the template directory copy can run long and the copy_tree segment carries no progress callback — observability/recoverability ride the standing task authority; recovery maps non-terminal residue to inspect_required and NEVER resumes implicitly, honesty rule 3). params: createProject {parent, name, template} — parent is the parent directory the new project directory is created under (the port's parent, verbatim camelCase projection; a path fact only, never a registered-project identity), name is the new project name (the port's name; the backend's own name validation is the authority and refuses invalid names at execution — the wire face does not re-litigate upstream name grammar, the table-form pre-validation mirrors the backend rule as UI guidance with the frozen word face staying authoritative), template is REQUIRED-nullable per the A2 version-selection isomorph: null = the backend default template resolution (the port Option None fact — the library path defaults to the Avatar template with the VRCTemplates/<t> -> Templates/<t> -> explicit-path resolution order, carried as the frozen word-face FACT; the desktop presents the template actually used and invents NO template picker — the first face has ZERO new read faces, no templates.* enumeration exists, honesty rule 1), a non-empty string = that template name/path passed verbatim to the port. RECEIPT FACT: creation success answers the port's ProjectRef {id, root} — the ONE A5 face with an actual-result payload (unlike the unit-answering A3/A4 faces); the kind=created receipt carries the projectId+projectPath echo (see result.schema.json). REGISTERS-IN-STORE SIDE EFFECT (frozen fact, protocol-document duty): a successful creation REGISTERS the new project in VUA's in-store project storage (the FileSystemProjectStore::initialize tail call on both backends' success paths) — the returned ProjectRef IS the registered-project fact; the registered-project list shows the new project on its next refresh; the word face carries this as the honest consequence of the port fact, never as a separate 'directory-only' invention. Backends without the creation capability (the EXISTING five-bit VpmCapabilities.create_project face — no new accessor is frozen: the bit predates this batch and both in-repo backends already declare it honestly) answer the generic capability_missing at the wire gate BEFORE submit — capability absence never reaches a task. Gate: the wire routes for this method do not exist yet (wiring is the next core slice); serving is gated on the existing capabilities().create_project bit (one row packages.createOps serving the one method, the registerOps/removeOps one-row precedent; a wired backend without the bit answers the generic capability_missing) and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.5" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall",
+        "packages.registerLocalPackage",
+        "packages.addRemoteRepo",
+        "packages.addLocalRepo",
+        "packages.removeRepo",
+        "packages.createProject"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1,
+                      "description": "Version-selection semantics frozen with the A2 batch: null = the resolver picks (latest stable); a string = pin exactly that version."
+                    }
+                  }
+                },
+                "description": "The closed explicit request list. A repeated packageId across rows is a word-face violation even when the versions differ (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness; the negative vector pins the rule)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": { "type": "string", "minLength": 1 },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The SAME closed explicit request list the preview answered (the audit link: the confirmed digest binds to exactly that preview's canonical item list)."
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewInstall result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.registerLocalPackage" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageRoot"],
+            "properties": {
+              "packageRoot": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local package root directory (the port's package_root, verbatim camelCase projection): the directory containing the package.json of the generated local VPM package to register into the backend's isolated environment. A path fact only — no projectId, no projectPath: registration never touches a project or the user's VCC/ALCOM settings. Registration is idempotent (AlreadyAdded answers success) and carries NO digest: there is no pre-existing state to drift and the user's explicit submission IS the confirmation."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addRemoteRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "name"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The remote repository URL to subscribe. No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream URL grammar; the backend's guard (duplicate url/name, official/curated guard) is the authority and answers vua.vpm.repo_invalid on refusal. The manifest fetch is inherent to execution (no preview arm exists on this face)."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row (the subscription list presents it). Headers/auth are NOT taken by this word face — the first frozen slice carries no credential transport; a future face that does needs its own accepted security decision."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addLocalRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "name"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local repository directory to subscribe (the port's path, verbatim). The backend's duplicate/shape guard is the authority and answers vua.vpm.repo_invalid on refusal. No network segment on this method."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.removeRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row to remove (the stable row handle; index addressing is NOT frozen — an index drifts under concurrent writers). An unknown repoId answers vua.vpm.repo_not_found at execution time. Rows whose id is absent are outside this face's remove reach (protocol-document boundary)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.createProject" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["parent", "name", "template"],
+            "properties": {
+              "parent": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The parent directory the new project directory is created under (the port's parent, verbatim camelCase projection). A path fact only — NOT a registered-project identity: creation addresses no existing project (the 013 project_not_found reuse does not apply). The backend's own target-existence guard is the authority and refuses at execution when the target path already exists."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The new project name (the port's name, verbatim). The backend's name validation is the authority and refuses invalid names at execution; the wire face does not re-litigate upstream name grammar. The returned receipt echoes the resulting project identity."
+              },
+              "template": {
+                "type": ["string", "null"],
+                "minLength": 1,
+                "description": "Template selection, REQUIRED-nullable per the A2 version-selection isomorph: null = the backend default resolution (the port Option None fact: the library path defaults to the Avatar template with the VRCTemplates/<t> -> Templates/<t> -> explicit-path order — the frozen word-face FACT; the desktop presents the template actually used and invents NO picker — zero new read faces on this first face); a non-empty string = that template name/path passed verbatim. A missing template at execution answers the backend's template-missing refusal honestly (the two backends' refusal shapes differ and the protocol document declares the difference — no unified shape is invented)."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

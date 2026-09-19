@@ -39,6 +39,12 @@ pub mod error_codes {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct VpmCapabilities {
+    /// A5 (proposal 026 freeze batch): this EXISTING five-bit-closed-set
+    /// member is the creation gate — no new accessor is frozen for A5 (the
+    /// bit predates the batch and both in-repo backends already declare it
+    /// honestly: the library backend true, the CLI backend true). The wire
+    /// gate reads it before submit; a false bit answers the generic
+    /// capability_missing and never reaches a task.
     pub create_project: bool,
     pub preview_install: bool,
     /// B6: read the installed package set of one project.
@@ -443,8 +449,32 @@ pub trait VpmBackend: Send + Sync {
     ) -> Result<PackageCatalogV02, AppErrorV1> {
         Err(unsupported("package_catalog_v02"))
     }
-    /// Creates a project from a template; backends without the capability
-    /// return a `capability_missing` error.
+    /// A5 (proposal 026 freeze batch, packages-ops v0.5): creates a project
+    /// from a template. REQUIRED method (no default body): a backend without
+    /// the creation capability declares it honestly through
+    /// `capabilities().create_project == false` and the wire gate answers
+    /// `capability_missing` BEFORE submit — capability absence never reaches
+    /// a task. THE PORT HAS NO CREATE-PREVIEW COUNTERPART (the A5 word face
+    /// is the second no-preview-pair member, rooted here): a brand-new
+    /// project directory has no pre-existing state to diff, so no digest
+    /// binds and the user's explicit form submission IS the confirmation.
+    /// `template: None` = the backend's default template resolution (the
+    /// library path: the Avatar template, VRCTemplates/<t> ->
+    /// Templates/<t> -> explicit-path order — a frozen word-face FACT, not
+    /// a picker: the first face has zero new read faces). SUCCESS ANSWERS
+    /// `ProjectRef` — the one packages-ops face with an actual-result
+    /// payload — AND REGISTERS THE NEW PROJECT IN VUA's in-store project
+    /// storage (the `FileSystemProjectStore::initialize` tail call on both
+    /// backends' success paths): a created project IS a registered project.
+    /// Refusal faces are backend-honest and DIVERGE by backend (the wire
+    /// word face folds them all into `execution_failed` carrying the
+    /// original code in detail; the protocol document declares the
+    /// difference): the library path answers `vua.vpm.template_missing`
+    /// for all four refusal keys (projectExists / projectNameInvalid /
+    /// templateMissing / templateCopyFailed — the i18n message key and the
+    /// port code are two layers); the CLI path answers
+    /// `vua.vpm.apply_failed` (timeout / non-zero exit, carrying the
+    /// exitCode) and `vua.vpm.backend_unavailable` (runner-spawn failure).
     fn create_project(
         &self,
         parent: &Path,
