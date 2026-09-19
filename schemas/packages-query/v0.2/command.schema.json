@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-query/v0.2/command.schema.json",
+  "title": "VUA packages-query command v0.2",
+  "description": "The packages read-face command (proposal 024 P1 freeze batch, 2026-09-17; three-domain stance converged: desktop ab02215, environment 62b4989, integration 70th batch ae6eca6). v0.2 carries exactly one method, packages.listInstalled: the installed package set of ONE registered project, read from its VPM manifest and lock by the wired VpmBackend (E-VPM-DUAL). The COMMAND face is byte-for-byte the frozen v0.1 command face (proposal 027 F3 freeze batch 2026-09-20: the v0.2 increment versions the RESULT family only — the single-key closed params set, the 013 registration identity, error codes, and every v0.1 semantic are unchanged and remain governed by the v0.1 freeze text). projectPath is the same registered-path identity the proposal-013 read face uses; there is no separate packages-side project id, and an unregistered path answers the REUSED typed not-found vua.project.project_not_found (same fact, same code — the validation face is the 013 inspection aggregate, the same semantics as project.inspectProject; a path registered only in vcc.liteDb may be invisible to that aggregate — the known liteDb-only invisibility risk is honestly registered in proposal 024 and re-checked against the real machine in W25). P1 is read-only by design: no write method exists in this family, write faces follow proposal 013 R5 as separate per-face proposals, and the update path stays the packages-ops install face (A2: version=null resolver semantics — no upgrade verb is invented on this face). Known absent on purpose (never invented here): source, versions/compatible/yanked, changelogUrl, displayName — the per-package versions enumeration stays the packages-catalog face's on-demand fact (a constant per-row repetition would defeat that granularity ruling) and the VPM-manifest projection carries no display-name fact, so the word list reserves none (ORC-DEV-004: no implementation, no reserved field). The v0.1 previewed absence of updateAvailable/latestVersion is resolved by THIS v0.2 result-face increment — the v0.1 word list itself is never revised in place.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listInstalled"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The registered project path (proposal-013 identity). Exactly one key is accepted; any extra key is a vua.packages.invalid_params shape violation, never a default."
+        }
+      }
+    }
+  }
+}
