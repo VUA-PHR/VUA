@@ -2,18 +2,19 @@
 
 [English](packages-ops-v0.4_EN.md) | [简体中文](packages-ops-v0.4_ZH.md)
 
-> 文档版本：0.4
+> 文档版本：0.4.1
 > 状态：**已冻结（packages-ops 词表行 v0.4，A4 仓库增删词面；v0.1 A1
 > 移除行、v0.2 A2 安装/升级行与 v0.3 A3 注册行保持冻结原样服务——
-> v0.4 照 packages-catalog v0.2 增量先例为独立行目录；本词面【未接
-> 线】：wire 路由与 served 行随下一核心接线切片落地——此前三方法在
-> wire 面不存在，桌面不渲染任何入口）**
+> v0.4 照 packages-catalog v0.2 增量先例为独立行目录；词面已接线：
+> wire 路由与 served 行已在库——桌面消费候逐面升级，落地前本方法无
+> 桌面写入口）**
 > （2026-09-19，proposal 026 面序 A1→A2→A3→A4；第 98 批词面二分裁
 > 决：增删先行冻结，启停词面候 W25 VCC 键名真机核实）
 > 机器可读词表：`schemas/packages-ops/v0.4/`（行级双 Schema＋6 正 /
 > 11 负向量；核心消费测试
-> `crates/provider-host/tests/packages_ops_consumer_v04.rs`；TS 守卫
-> 测试 `packages/contracts/src/application-contract.test.ts`）
+> `crates/provider-host/tests/packages_ops_consumer_v04.rs`；wire 路
+> 由测试 `crates/provider-host/tests/packages_ops_wire_v04.rs`；TS 守
+> 卫测试 `packages/contracts/src/application-contract.test.ts`）
 > 范围：`packages.addRemoteRepo` / `packages.addLocalRepo` /
 > `packages.removeRepo`（后端隔离环境内仓库订阅列表的九态任务化写
 > 命令）
@@ -22,13 +23,17 @@
 > 三独立位，default declared-none，以及新增端口方法
 > `add_remote_repo` / `add_local_repo` / `remove_repo`）＝核心域；
 > wire 路由（accessor 门控的 `packages.repoOps` served 行、路由臂、
-> 信封组装）＝核心域，随【下一】核心接线切片落地；
+> 信封组装）＝核心域，**随本批落地**；
 > `VrcGetLibBackend::repo_write_capabilities` 覆写与基于库面
 > Settings 增删的三实现＝环境域（实现核对切片，024/025 同程序——
 > 覆写翻转前 served 行如实 unavailable）；桌面消费＝桌面域（逐面升
 > 级，`blocks` 演进照桌面表态）
-> 更新：2026-09-19（v0.4 冻结批：双 Schema＋向量＋核心消费测试＋TS
-> 面＋mock 恒缺席臂＋双语协议本＋REGISTRY）
+> 更新：2026-09-19（v0.4.1 接线批：路由臂
+> `packages.addRemoteRepo` / `packages.addLocalRepo` /
+> `packages.removeRepo`＋served 行 `packages.repoOps` 门控读
+> accessor 三独立位＋信封组装＋闭集投影＋wire 测试＋本文载明 wire
+> 信封常量——词面零变更）；2026-09-19（v0.4 冻结批：双 Schema＋向
+> 量＋核心消费测试＋TS 面＋mock 恒缺席臂＋双语协议本＋REGISTRY）
 
 ## A4 词面语义（订阅写面刻意不是 preview/apply 对偶）
 
@@ -99,14 +104,17 @@
   实；wire 门在 submit 前作答——能力缺席绝不进任务）；参数违反答
   `vua.packages.invalid_params`；未接线引擎答诚实缺席臂
   `vua.packages.unavailable`。
-- **服务门**：新增 default accessor
+- **服务门（已接线，落地）**：新增 default accessor
   `VpmBackend::repo_write_capabilities() -> RepoWriteCapabilities`
   三独立位（`add_remote_repo` / `add_local_repo` / `remove_repo`——
   后端可只服务面的子集；门按方法、绝不按面；default declared-none；
-  025 `catalog_capabilities` 同律，ORC-DEV-004）。一个 served 行
-  `packages.repoOps` 服务三方法（removeOps/installOps/registerOps
-  一行先例）；行可用性与逐方法门控细节随接线切片落地。VrcGetLib
-  覆写随环境实现核对切片落地——此前该行如实 unavailable。
+  025 `catalog_capabilities` 同律，ORC-DEV-004）。served 行
+  `packages.repoOps` 一行服务三方法（removeOps/installOps/
+  registerOps 一行先例）：行可用性＝后端声明【任一】独立位即
+  available（部分覆写的后端，其已服务方法绝不被面级行隐藏）；每个
+  路由在 submit 前各自独立读【本方法】的位，缺席答通用
+  `capability_missing`——能力缺席绝不进任务。VrcGetLib 覆写随环境
+  实现核对切片落地——此前该行如实 unavailable。
 - **端口码映射随本批申报**（逐码完整对齐申报随环境实现核对切片，
   A1/A2/A3 同径）：`repo_invalid` / `repo_not_found` /
   `repo_fetch_failed` / `repo_write_failed` → rejected
@@ -126,24 +134,24 @@
 
 ## 信封、版本与依赖方向
 
-wire 信封为常设形状（`schemaVersion` 信封常量＋`operation`＋
-`result`）；结果文档自带族常量（`vua.packages-ops/v0.4`）——两版
-本相互独立（c914cf2 常设规则：每条 wire 行自带版本常量）。本行的
-wire 信封常量在接线批载明（A3 先例：冻结批协议本登记行，接线批以
-0.4.x 修订载明常量——消费面按落地面对照，绝不猜测）。v0.1 移除方
-法按 v0.1 词面、v0.2 安装方法按 v0.2 词面、v0.3 注册按 v0.3 词面
-原样服务；v0.4 请求仅为 A4 三方法（v0.2/v0.3/v0.4 `changePlan`
-形状同键集——消费面按 `schemaVersion` 字面量窄化，绝不只按键集）。
-依赖方向不变：renderer → 类型化 Gateway → Electron main（原词透
-传）→ 版本化应用契约 → provider wire 面 → `VpmBackend` 端口 →
-project-manager 适配器。框架与厂商类型留在适配器；词表传输事实。
+wire 信封是常设形状（`schemaVersion` 信封常量 `"0.4"`＋
+`operation`＋`result`）；结果文档自带族常量
+（`vua.packages-ops/v0.4`）——两个版本相互独立（c914cf2 常设规则：
+每条 wire 行自带版本常量）。三方法的任务受理应答与 Done payload
+均盖 `"0.4"` 信封常量。v0.1 移除方法继续在 v0.1 词面应答、v0.2 安
+装方法在 v0.2 词面应答、v0.3 注册在 v0.3 词面应答；v0.4 请求仅为
+A4 三方法（v0.2/v0.3/v0.4 `changePlan` 形状共享同一键集——消费者
+按 `schemaVersion` 字面量窄化，不按键集）。依赖方向不变：
+renderer → 类型化 Gateway → Electron main（verbatim 透传）→ 版本
+化应用契约 → provider wire 面 → `VpmBackend` 端口 →
+project-manager 适配器。框架与厂商类型留在适配器；词表运输事实。
 
 ## 诚实边界
 
-- **本词面已冻结、未接线。** wire 路由、`packages.repoOps` served
-  行与信封组装随下一核心接线切片落地——此前三方法在 wire 面不存
-  在。桌面不渲染任何入口；环境 `VrcGetLibBackend::repo_write_
-  capabilities` 覆写与三实现未落（落地前 served 行将如实
-  unavailable）；真实后端消费归环境实现核对切片。消费测试骑
-  Schema 向量与假后端；端到端走查归 W25（候用户开窗 O-2）。本文
-  档不宣称任何运行时行为。
+- **词面已接线、未消费。** wire 路由（三臂）、`packages.repoOps`
+  served 行与信封组装随 v0.4.1 接线批落地——三方法自本批起在
+  wire 面存在。桌面尚无任何写入口（消费候逐面升级）；环境
+  `VrcGetLibBackend::repo_write_capabilities` 覆写与三实现未落
+  （落地前 served 行如实 unavailable）；真实后端消费归环境实现核
+  对切片。wire 测试骑真帧环与假后端；端到端走查归 W25（候用户开
+  窗 O-2）。本文档不宣称任何真机行为。

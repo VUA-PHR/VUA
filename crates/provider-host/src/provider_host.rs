@@ -331,6 +331,21 @@ pub const PACKAGES_OPS_SCHEMA_VERSION_V03: &str = "vua.packages-ops/v0.3";
 /// of the envelope const).
 pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V03: &str = "0.3";
 
+/// The `packages-ops` v0.4 result family constant (proposal 026 A4 freeze
+/// batch 2026-09-19; same standing rule — the repository add/remove row
+/// carries its own version constant, and the frozen v0.1 A1 removal row,
+/// v0.2 A2 install row and v0.3 A3 registration row keep serving through
+/// their own consts untouched: four separate word-face generations served
+/// side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V04: &str = "vua.packages-ops/v0.4";
+
+/// The `packages` envelope const of the v0.4 word-face row (the frozen
+/// v0.4 result schema locks the ENVELOPE schemaVersion to "0.4"; the v0.1,
+/// v0.2 and v0.3 envelopes stay on their own consts — the c914cf2 standing
+/// rule: every wire row carries a version constant of its own, independent
+/// of the envelope const).
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04: &str = "0.4";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1281,6 +1296,28 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.register_capabilities().register_local_package => "available",
         _ => "unavailable",
     };
+    // Proposal 026 A4: the repository add/remove write face rides the SAME
+    // VpmBackend wiring, gated on the NEW defaulted accessor
+    // `repo_write_capabilities` — one row serving the THREE methods
+    // (removeOps/installOps/registerOps one-row precedent), but the honest
+    // gate stays PER METHOD: the row answers available when the backend
+    // declares ANY of the three independent bits (a partially-overriding
+    // backend must not have its served methods hidden behind a face-level
+    // row), while each route independently answers the generic
+    // capability-missing arm for its own bit BEFORE submit. Default
+    // declared-none keeps the row honestly unavailable until the
+    // environment implementation-verification slice flips it with the
+    // VrcGetLib override.
+    let packages_repo_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if {
+            let repo = vpm.repo_write_capabilities();
+            repo.add_remote_repo || repo.add_local_repo || repo.remove_repo
+        } =>
+        {
+            "available"
+        }
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1312,6 +1349,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.registerOps",
             "availability": packages_register_ops_availability,
+        },
+        {
+            "operationId": "packages.repoOps",
+            "availability": packages_repo_ops_availability,
         },
     ])
 }
@@ -5126,6 +5167,15 @@ fn packages_request(
         "packages.registerLocalPackage" => {
             packages_register_local_package(state, vpm, request, request_id, correlation_id)
         }
+        "packages.addRemoteRepo" => {
+            packages_add_remote_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.addLocalRepo" => {
+            packages_add_local_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.removeRepo" => {
+            packages_remove_repo(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5950,6 +6000,82 @@ fn packages_ops_register_port_rejection(error: &AppErrorV1) -> Value {
     )
 }
 
+/// Closed param set of the A4 `packages.addRemoteRepo` command:
+/// `{ url, name }` — the two keys, nothing else. A carried
+/// `confirmedDigest` is a shape violation (the user's explicit submission
+/// IS the confirmation — ADR-0006's destructive path does not exist:
+/// adding one subscription row deletes nothing); a carried `projectPath`
+/// likewise (the subscription face writes the backend's ISOLATED
+/// environment only). Both keys are non-empty strings. Violations answer
+/// `vua.packages.invalid_params` at the route layer — never absence,
+/// never a fabricated receipt.
+fn packages_ops_add_remote_params(request: &Value) -> Option<(String, String)> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 2 {
+        return None;
+    }
+    let url = params.get("url")?.as_str()?;
+    let name = params.get("name")?.as_str()?;
+    if url.is_empty() || name.is_empty() {
+        return None;
+    }
+    Some((url.to_owned(), name.to_owned()))
+}
+
+/// Closed param set of the A4 `packages.addLocalRepo` command:
+/// `{ path, name }` — the two keys, nothing else, same shape law as
+/// `addRemoteRepo` (no network segment on this method, but the closed-set
+/// and no-projectPath disciplines are face-wide).
+fn packages_ops_add_local_params(request: &Value) -> Option<(String, String)> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 2 {
+        return None;
+    }
+    let path = params.get("path")?.as_str()?;
+    let name = params.get("name")?.as_str()?;
+    if path.is_empty() || name.is_empty() {
+        return None;
+    }
+    Some((path.to_owned(), name.to_owned()))
+}
+
+/// Closed param set of the A4 `packages.removeRepo` command:
+/// `{ repoId }` — the single key, nothing else (the stable row handle;
+/// index addressing is NOT frozen). Violations answer
+/// `vua.packages.invalid_params` at the route layer.
+fn packages_ops_remove_repo_params(request: &Value) -> Option<String> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 1 {
+        return None;
+    }
+    let repo_id = params.get("repoId")?.as_str()?;
+    if repo_id.is_empty() {
+        return None;
+    }
+    Some(repo_id.to_owned())
+}
+
+/// Port error → rejected-arm projection INSIDE the A4 repo-write tasks:
+/// the guard closed set stands at the A1/A2/A3 three values and A4 adds
+/// NO guard — the face has no preview to drift and no resolver to miss,
+/// so every port refusal (`repo_invalid` / `repo_not_found` /
+/// `repo_fetch_failed` / `repo_write_failed`, the trait default's
+/// `capability_missing` for an unimplemented backend, and every word-out
+/// code) folds into `execution_failed` carrying the original port code
+/// inside `detail` (honest provenance — the rejected arm's schema pattern
+/// locks the code to `^vua\.packages\.`, so port codes can never travel
+/// verbatim there). The add face claims NO idempotence: where the backend
+/// refuses a duplicate, the wire answers the refusal honestly — no
+/// idempotent success is invented.
+fn packages_ops_repo_port_rejection(error: &AppErrorV1) -> Value {
+    packages_ops_rejected(
+        PACKAGES_OPS_SCHEMA_VERSION_V04,
+        "execution_failed",
+        "vua.packages.execution_failed",
+        format!("port code {}: {}", error.code, error.message_key),
+    )
+}
+
 /// `packages.previewInstall` (proposal 026 A2 wiring): the SYNCHRONOUS
 /// read-only change preview — it resolves dependencies against the
 /// registered repositories and MAY hit the network (the online refresh
@@ -6265,6 +6391,234 @@ fn packages_register_local_package(
         // Submission rejection is a persistence failure of the task
         // authority (import-copy same face, provider-layer code — the
         // failure is the task authority's, not the packages domain's).
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.persistence_failed",
+            "errors.provider.persistence",
+            "internal",
+        )),
+    }
+}
+
+/// `packages.addRemoteRepo` (proposal 026 A4 wiring): the NINE-STATE
+/// task-driven write command subscribing one REMOTE repository in the
+/// backend's ISOLATED environment. The face deliberately breaks the
+/// preview/apply pair shape (the A3 law): the manifest fetch is INHERENT
+/// to execution (a preview arm would be a second network round-trip
+/// pretending to be a safer first one), and there is no pre-existing
+/// state digest to bind (the subscription list may drift — the honest
+/// failure mode is the port answering at execution time). The user's
+/// explicit submission IS the confirmation (adding one subscription row
+/// deletes no package file and no project content). Params are the closed
+/// two-key set {url, name}; NO projectPath is taken — the 013
+/// project_not_found reuse does not apply to this face. The capability
+/// gate reads the backend's OWN independent bit on the NEW defaulted
+/// accessor BEFORE submit — capability absence never reaches a task (the
+/// gate is per method, never per face: a backend may serve a subset).
+/// Every port refusal folds into the frozen `execution_failed` guard
+/// carrying the original port code inside detail; the success reflux
+/// carries the minimal honest `repoReceipt` (remote variant: the request
+/// echo and NOTHING else — the port answers unit, no payload invented;
+/// NO idempotence claimed where the backend refuses duplicates). Recovery
+/// maps non-terminal residue to inspect_required and never resumes
+/// implicitly (honesty rule 3).
+fn packages_add_remote_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // The task surface requires the shared task authority; without it
+        // the write face stays honestly absent (A1/A2/A3 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((url, name)) = packages_ops_add_remote_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_write_capabilities().add_remote_repo {
+        // The frozen v0.4 command schema's serving gate, read BEFORE
+        // submit on the method's OWN independent bit — capability absence
+        // never reaches a task (the P1/A2/A3 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.add_remote_repo(&url, &name) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V04,
+                    "kind": "repoReceipt",
+                    "repoType": "remote",
+                    "url": url,
+                    "name": name,
+                }),
+                Err(error) => packages_ops_repo_port_rejection(&error),
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "operation": "packages.addRemoteRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(accepted, "packages.addRemoteRepo", request_id, correlation_id)
+}
+
+/// `packages.addLocalRepo` (proposal 026 A4 wiring): the same task-driven
+/// shape as `packages.addRemoteRepo` minus the network segment — the
+/// closed two-key set {path, name}, the per-method capability gate on the
+/// accessor's own `add_local_repo` bit BEFORE submit, and the minimal
+/// honest `repoReceipt` (local variant: {schemaVersion, kind, repoType,
+/// path, name} — the request echo and nothing else).
+fn packages_add_local_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((path, name)) = packages_ops_add_local_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_write_capabilities().add_local_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.add_local_repo(std::path::Path::new(&path), &name) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V04,
+                    "kind": "repoReceipt",
+                    "repoType": "local",
+                    "path": path,
+                    "name": name,
+                }),
+                Err(error) => packages_ops_repo_port_rejection(&error),
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "operation": "packages.addLocalRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(accepted, "packages.addLocalRepo", request_id, correlation_id)
+}
+
+/// `packages.removeRepo` (proposal 026 A4 wiring): the same task-driven
+/// shape, id-addressed on purpose (an index drifts under concurrent
+/// writers; the id is the row's stable handle). The closed single-key set
+/// {repoId}, the per-method gate on the accessor's own `remove_repo` bit
+/// BEFORE submit, and the minimal honest `removed` receipt
+/// ({schemaVersion, kind, repoId} — the echo IS the audit link, no
+/// removed-row snapshot invented). An unknown repoId answers
+/// `vua.vpm.repo_not_found` at execution time and folds into the frozen
+/// `execution_failed` guard like every other refusal.
+fn packages_remove_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_remove_repo_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_write_capabilities().remove_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.remove_repo(&repo_id) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V04,
+                    "kind": "removed",
+                    "repoId": repo_id,
+                }),
+                Err(error) => packages_ops_repo_port_rejection(&error),
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "operation": "packages.removeRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(accepted, "packages.removeRepo", request_id, correlation_id)
+}
+
+/// Shared acceptance tail of the three A4 repo-write routes: the
+/// acceptance answer and the Done payload both stamp the envelope const
+/// "0.4" (the result document inside carries its own family const);
+/// submission rejection stays the persistence failure of the task
+/// authority (import-copy same face, provider-layer code — the failure is
+/// the task authority's, not the packages domain's).
+fn finish_repo_write_acceptance(
+    accepted: Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1>,
+    operation: &str,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "operation": operation,
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
         Err(_) => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
