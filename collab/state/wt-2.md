@@ -2,131 +2,146 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: ae4b93c
+baseline_commit: 8416df6
 updated: 2026-09-19
 ---
 ## 当前焦点
-**026 A5 create_project 冻结批轮（2026-09-19 10:5x–11:3x 操作者紧急
-批〔用户 10:5x 明示「无视工作时间，做完包管理器剩下的部分」，TICK
-第 0 步时段判定以该注记覆盖，开满切片〕，三笔：追平壳 f772f3d＋冻
-结批 0c77273＋本状态批）——A5 词面冻结六件交付，候集成验收**：
+**026 A5 wire 接线切片轮（2026-09-19 11:3x–12:0x 操作者紧急批续拍
+〔用户 10:5x 时段例外注记维持覆盖 TICK 第 0 步时段判定〕，三笔：追
+平壳 3ed9360＋切片批 8abb638＋本状态批）——A5 词面已接线，候集成
+验收**：
 
-- **brief ①区留言消化**：wt-main [→核心]「A4 回执勿重复；A5 冻结
-  批＝下窗第一拍（时机成就维持，裁定四点在案，基线 6f00abe 就
-  绪）」收讫照办——A4 回执零重复（第 109 批已落账），A5 冻结批本
-  拍开工（裁定四点取证自 8afde3f 状态文件世代全文；桌面入口需求五
-  点取证自 026 内联 a4c74a7 节；双实现错误面全部本机直读复核实）。
-- **追平壳 f772f3d**：brief 10:56 读数基线 6f00abe 后 main 又前移
-  （第 110 批收尾 93c4fe3＋第 111 批 wt-3/4/5 簿记＋wt-6 越线尾壳
-  ae4b93c），落后 23 过 15 线——开工前 --no-ff 合并 main ae4b93c，
-  双法预检零冲突（ort exit 0＋老式 0 标记）；inbound 非 collab 面
-  ＝环境 A4 实现核对切片 4 文件（Cargo.toml＋vpm_backend.rs 228+＋
-  tests 199+＋Cargo.lock 一行）全部第 110 批已验收内容纯吸收，零夹
-  带；基线世代刷新 **ae4b93c**。
-- **冻结批 0c77273（恰核心域 24 文件 2018+/7-）**：A5 create_project
-  词面按裁定六点落死——
-  1. **单段任务化**（裁定 a）：单方法 packages.createProject 一一
-     映射端口 create_project；无 preview 对偶第二员（端口恰一个创
-     建方法无 create-preview 对应——预览臂会立 wire 面端口后不存在
-     的方法；全新目录无既有状态可 diff 无摘要可绑定）；九态任务化
-     写命令（commandId 幂等/可取消/事件＋revision；copy_tree 无进
-     度回调——可观察骑任务状态面、恢复 inspect_required 绝不隐式
-     续传）；用户显式表单提交即确认（桌面第 2 点，携
-     confirmedDigest=形状违反负例钉死）；不收 projectPath（创建不
-     寻址在册项目，013 复用不适用，携即负例钉死）。
-  2. **首面零新读面**（裁定 b）：templates.* 枚举不立；template 参
-     数 REQUIRED-nullable 照 A2 版本选择同构——null=后端默认解析
-     （库路径默认 Avatar 三级解析序，冻结词面事实非选择器）、非空
-     串=verbatim 透传；桌面如实呈现所用模板不虚构下拉。
-  3. **错误闭集**（裁定 c）：guard 三值闭集零新增，全部端口拒绝折
-     execution_failed 携原码 detail；**端口码闭集＝三个既有码零新
-     立**（端口方法与双实现均先于本批在库——冻结传输诚实面不铸造
-     新码）：vua.vpm.template_missing（库路径四 i18n 键共享载体：
-     projectExists/projectNameInvalid/templateMissing/
-     templateCopyFailed——i18n 消息键与端口错误码系两层，如实同载）
-     ＋vua.vpm.apply_failed（CLI 超时/非零携 exitCode＋登记腿）＋
-     vua.vpm.backend_unavailable（CLI runner 故障）；**双后端拒绝
-     形状不同构如实声明**（裁定 f），不虚构统一形状；复用码永不入
-     code 键，pattern 锁 ^vua\.packages\. 负例钉死；信封错误面零新
-     码。
-  4. **能力位呈现**（裁定 d）：门＝既有 VpmCapabilities.create_
-     project 五位居——**A5 零新 accessor 与 A3/A4 不同**（位先于本
-     批存在且双在库后端已诚实声明：库真 CLI 真，ORC-DEV-004 由既有
-     声明满足）；served 行 packages.createOps 一行一方法申报随接线
-     切片；桌面消费 create 能力呈现须新立、不可复用 blocks.changes
-     （语义不同构）照桌面第 5 点②在词面/协议本载明。
-  5. **创建即在册副作用**（裁定 e，桌面五点第 2/3 点同向）：双后端
-     成功路径尾调 FileSystemProjectStore::initialize——创建成功＝
-     在册成功、在册列表刷新即见，词面/协议本如实载明，不虚构「仅
-     建目录不登记」形状；既有目标守卫执行时拒绝，不宣称幂等。
-  6. **收据＝created 臂**：packages-ops 族唯一有实际载荷收据（端口
-     答 Result<ProjectRef, _> 不同于 A3/A4 的 unit）——projectId
-     （ProjectRef.id 回显，信息性标识非 013 身份键，项目身份仍是路
-     径）＋projectPath（ProjectRef.root 回显＝注册路径身份），键集
-     与一切前代收据臂互斥，additionalProperties:false 禁止发明时间
-     戳/复制统计/包清单。
-  交付物：schemas/packages-ops/v0.5 双 Schema＋3 正 10 负向量（含
-  carries-digest/carries-project-path/空 template/缺 template 键/
-  extra-param/answer-plan 锁/invented-field/code 出族）＋端口面文
-  档注释更新（vpm_backend.rs 两处注释，零新类型零新码零 trait 变
-  更，lib.rs 不动）＋consumer 测试 packages_ops_consumer_v05.rs 4
-  例（向量准入/拒绝＋既有位门词面＋假后端 ProjectRef 投影精确键集
-  钉＋三码折叠六拒绝例）＋TS 面（命令接口＋created＋rejected＋
-  result union＋双 union 注册＋narrowing 臂含 REQUIRED-nullable 律
-  ＋测试 1 例 9 断言）＋mock 恒缺席臂＋测试行＋双语协议本 0.5（明
-  确词面之外节：templates.* 不立/projectId 非身份参数〔013 裁决不
-  变〕/文件系统读面不立；诚实边界「已冻结未接线」）＋REGISTRY 两
-  行。
-- **desktop typecheck 三段实证照 A2 先例（union 碰撞检查必做，11:2x
-  本机亲测）**：段一 RED——electron-gateway.ts 的 capturedAt
-  narrowing 临时移除＋A5 union 成员在位 → TS2345 union in-guard 碰
-  撞实证（检查非虚过）；段二直读——readonly capturedAt 全库唯一顶
-  层键（恰 1 处 EnvironmentSnapshotV01）＋A5 新成员（created/
-  rejected）零 capturedAt 顶层键（0 命中）——narrowing 前提在 A5
-  扩员后保持；段三 GREEN——narrowing 恢复＋typecheck 双 tsconfig
-  exit 0。electron-gateway.ts 触碰系过程性（A2 先例「temporarily
-  applied」同径），已 checkout 恢复世代原样——**桌面域零触碰实
-  证**（提交树 diff 为空）。与 A2 批两 RED（A1/A2 两世代先后）的结
-  构差异如实申报：本批单一世代，段一直读覆盖「碰撞存在」、段二覆
-  盖「narrowing 前提在扩员后保持」两实证点，验收效力同构。
-- **全链定向证据亲测绿（11:1x–11:2x，df 先查 C 盘余 603G/68%）**：
-  cargo test -p vua-provider-host 32 套件 **226/0**（A4 世代 31/
-  222＋v05 新 4/4）；cargo test -p vua-orchestrator 16 套件
-  **231/0** 原样；clippy 三 crate（orchestrator/provider-host/
-  project-manager）--all-targets **0** 告警；@vua/contracts check
-  **78/78**（77→78）；@vua/orchestrator-provider check **39/39**
-  （38→39）；冲突标记 0；desktop typecheck 双 tsconfig exit 0（三
-  段实证段三）。desktop build/vitest 全链本批未跑（冻结批口径照
-  A4 先例＝desktop 定向 typecheck；vitest/boundary/i18n/contrast
+- **brief ①区留言消化**：wt-main [→核心]「追平壳 f772f3d 照第
+  57/59/98 批纯追平先例未单独合并，随本树状态批/切片批自然收编；A5
+  冻结批候交付验收」收讫照办（冻结批 0c77273 经第 112 批 item 2
+  8416df6 已验收入库，回执闭环；f772f3d 随同批自然收编勿重复）；
+  wt-6 [→核心]「A5 实现侧备料七点已登记候冻结批词面对照」收讫——
+  系冻结批输入材料，冻结批已按其七点事实（错误闭集/能力位分叉/初
+  始化副作用/测试现状）落死词面，本切片接线照落死词面执行，零新分
+  歧。
+- **开关条件成就＋轮询同拍开工（照 eedd11b/1c6961e 先例）**：后台
+  fetch 轮询自 11:40:25 起 30 秒一拍，第 16 拍 11:48:15 实证
+  `merge-base --is-ancestor 0c77273 main` 通过（第 112 批 item 2 合
+  并 8416df6，集成批注＝亲身 diff review＋机械核对全过）——同拍开
+  工，未在候验收世代抢跑（轮询期间仅做只读研读：A4 接线批
+  3d4b667 全量先例＋v0.5 双 Schema 词面＋consumer_v05 钉例＋协议本
+  0.5 待更新节）。
+- **追平壳 3ed9360（开工前合并纪律）**：轮询落地时读数落后 13（第
+  112 批 item 1 wt-3 桌面 A4 消费切片三笔＋item 2 本树冻结批三笔收
+  编＋第 111 批关账）——双法预检零冲突（ort --write-tree exit 0
+  tree 1eb20ce＋老式 merge-tree exit 0 零标记）；inbound 非 collab
+  面＝wt-3 桌面 A4 消费切片 19 文件（桌面域 17＋contracts TS 面
+  2）全部 item 1 已验收内容纯吸收，核心域 pathspec 实证零触碰；
+  **诚实过程注记：首次预检误用 `git merge-recursive` 触碰工作区**
+  （合并前本树干净、零未提交工作）——`reset --hard` 即刻恢复逐字
+  节原样、零提交产生、零工作损失，已如实登记于追平壳提交信息与本
+  状态批；基线世代刷新 **8416df6**。
+- **切片批 8abb638（恰核心域 5 文件 946+/53-）——A5 词面按冻结批
+  0c77273 落地面逐点接线**：
+  1. **路由臂 packages.createProject**（provider_host.rs 派发臂＋
+      packages_create_project）：九态任务化写命令照 A1–A4 同构（任
+      务受理、终态回流携冻结 v0.5 结果文档）；一一映射端口
+      create_project(parent, name, template) -> Result<ProjectRef,
+      _>；无 preview 臂（无对偶第二员照端口事实）；参数三键闭集
+      {parent, name, template}——parent/name 非空串，template
+      REQUIRED-nullable（**键必须在位**：缺键=违例；null=端口
+      Option None 默认解析事实；非空串=verbatim 透传；空串/非串=
+      违例）；不收 projectPath（路由层零在册项目核对——创建不寻址
+      在册项目，013 复用不适用，既有目标守卫由后端执行时拒绝）；携
+      confirmedDigest=形状违反；违例路由层答
+      vua.packages.invalid_params。
+  2. **能力门＝既有五联位（裁定照冻结批，零新 accessor）**：路由
+      submit 前读 `capabilities().create_project`，缺席答通用
+      vua.vpm.capability_missing 绝不进任务；**端口方法系必需方法
+      无缺省体——门即缺席臂**（类型层面不存在「声明但未实现」后
+      端，与 A4 accessor 律的结构差异已在协议本如实声明）。
+  3. **served 行 packages.createOps 一行一方法**（registerOps/
+      removeOps/repoOps 一行先例）：行可用性＝create 位；与 A4 行
+      不同——**无候环境覆写的 declared-none 缺省态**（位先于冻结批
+      存在且双在库后端已声明 true），位真的已接线后端自本批起答
+      available。
+  4. **双常量信封**：受理应答与 Done payload 双处盖新信封常量
+      PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05 "0.5"；收据盖新族常
+      量 PACKAGES_OPS_SCHEMA_VERSION_V05 vua.packages-ops/v0.5
+      （v0.1–v0.4 行维持原常量照常服务——五代词面并存零触碰）。
+  5. **created 收据＝ProjectRef 投影**：{schemaVersion, kind=created,
+      projectId=ProjectRef.id 回显〔信息性非 013 身份键〕，
+      projectPath=ProjectRef.root 字符串回显〔注册路径身份——创建
+      即在册冻结端口事实〕}恰四键（additionalProperties:false 使发
+      明时间戳/复制统计/包清单成为 Schema 违例）。
+  6. **三既有错误码闭集投影（零新码零新 guard）**：一切端口拒绝
+      （template_missing〔库路径四 i18n 键共享载体〕/apply_failed/
+      backend_unavailable〔CLI 双腿〕——双后端形状不同构如实折
+      叠）折 execution_failed 携原码 detail 溯源；code 键 pattern 锁
+      ^vua\.packages\.，复用码 vua.vpm.* 永不入 code 键；**不宣称
+      幂等**——重复创建拒绝如实折 rejected 上呈（A3 AlreadyAdded
+      幂等折叠刻意不复制）。
+- **wire 测试 packages_ops_wire_v05.rs 8 例骑真帧环**：①未接线＝
+  类型化诚实缺席＋行 unavailable；②已接线受理＋created 收据
+  Schema 有效＋恰四键钉＋parent/name/template verbatim 传输钉＋行
+  available；③null template 过端口 None 且收据照常投影
+  （REQUIRED-nullable 律上活体 wire）；④十一项参数违例（含缺
+  template 键/空 template/携 digest/携 projectPath/extra-param/
+  数值型）；⑤既有位门：位假答 capability_missing 绝不进任务＋行
+  unavailable；⑥三码折叠携原码全 Schema 有效；⑦**create 不幂等
+  重复拒绝如实上呈**（首轮创建成功，同参二轮后端拒 projectExists
+  →rejected execution_failed 携 template_missing 原码）；⑧**信封
+  版本可检测**——公开常量对冻结 Schema 常量钉死（command 信封
+  const＋created/rejected 双 def 族 const）＋活体双盖戳按常量断言
+  非字面量。
+- **协议本双语 0.5→0.5.1＋REGISTRY 同步**：信封节载明双常量
+  （A3/A4 先例——桌面形状核可需要的核对点提前闭合）；服务门节落
+  地为「已接线」＋行可用性＝既有位＋门即缺席臂细节；诚实边界节如
+  实更新「已接线未消费」；词面零变更；REGISTRY v0.5_ZH 行
+  0.5→0.5.1 同步。
+- **全链定向证据亲测绿（11:5x，df 先查 C 盘余 595G/69%）**：
+  cargo test -p vua-provider-host 33 套件 **234/0**（冻结世代 32/
+  226＋wire_v05 新 8/8；wire 10＋wire_v02 11＋wire_v03 8＋wire_v04
+  11＋consumer_v04 5＋consumer_v05 4 全部原样=冻结词面行零变更实
+  证）；cargo test -p vua-orchestrator 16 套件 **231/0** 原样；
+  clippy 三 crate（orchestrator/provider-host/project-manager）
+  --all-targets **0** 告警；@vua/contracts check **79/79**（合并世
+  代联合计数：77 基数＋wt-3 桌面 A4 消费 1 钉＋本链 A5 TS 1 钉——
+  与集成第 112 批关账批「JOINT count honestly noted」读数吻合，本
+  批零 TS 面触碰）；@vua/orchestrator-provider check **39/39**；
+  desktop typecheck 双 tsconfig **exit 0**（接线批口径 GREEN——冻
+  结批已携三段 narrowing 实证且本批零 TS 面触碰）。desktop
+  build/vitest 本批未跑（接线批照 A4 接线批口径＝定向 typecheck；
   照例归集成合并树复跑裁量）——如实申报。
+- **竞速时序如实申报**：main 在本切片实现期间前移至 **2693835**
+  （第 112 批关账批：BOARD #40 item-18＋wt-main 状态批＋操作者澄
+  清注记——**全 collab 面**零代码）——竞速发生在切片批提交与状态
+  批落笔之间；切片批内申报读数在落笔时点真实（开工前追平对象恰
+  8416df6，无失实）；对新 main（2693835）落后 1 提交（实质 0）不
+  过 15 线，**CHASE STOP 如实留给下轮 brief 读数，本拍不再追平**。
 
-## 前情（ae4b93c 世代前的本域链，全文见本文件 git 历史）
-A4 wire 接线批 3d4b667〔第 109 批 f5c929e 入库〕＋A4 冻结批 28c63fa
-〔第 108 批 aad8b65〕＋追平壳 fdb87ef＋状态批 aaa961c；A3 链四环全
-闭环、A2 全链、A1 全链见 git 历史。A5 启动裁定 8afde3f 世代（裁定四
-点＋桌面五点事实锚全部在案，本批照单落死）。
+## 前情（8416df6 世代前的本域链，全文见本文件 git 历史）
+A5 冻结批 0c77273＋追平壳 f772f3d＋状态批 70a74a2〔第 112 批 item
+2 8416df6 入库〕；A4 链五环全闭环（冻结 28c63fa→接线 3d4b667→形
+状核可 6771d5e→环境实现核对 8869e55→桌面消费 7d14b1e）；A3 链四
+环、A2 全链、A1 全链见 git 历史。A5 启动裁定 8afde3f 世代在案。
 
-## 本轮交付（ae4b93c 基线世代）
-- **追平壳 f772f3d**（--no-ff 吸收 main ae4b93c 第 110 收尾＋第 111
-  批，零自有内容）。
-- **A5 create_project 冻结批 0c77273**（恰核心域 24 文件 2018+/7-，
-  全链定向亲测绿在案）。
+## 本轮交付（8416df6 基线世代）
+- **追平壳 3ed9360**（--no-ff 吸收 main 8416df6 第 112 批，零自有
+  内容；含 merge-recursive 误触即恢复的过程注记）。
+- **A5 wire 接线切片批 8abb638**（恰核心域 5 文件 946+/53-：provider_host.rs
+  ＋wire_v05 测试＋双语协议本 0.5.1＋REGISTRY，全链定向亲测绿在
+  案）。
 - **本状态批**（恰本文件）。
 
 ## 在途/待他角色
-- **[等集成] 候随轮验收（--no-ff）**：实质对象＝A5 冻结批 0c77273
-  （恰核心域 24 文件，全链定向亲测绿在案）＋追平壳 f772f3d（零自有
-  内容照先例随收编）＋本状态批（恰本文件，collab-only 免全量如实声
-  明），写明「026 A5 项目创建冻结批」。
-- **[等核心=本席] A5 wire 接线切片**（packages.createOps 路由臂/
-  served 行/信封组装＋信封常量协议本 0.5.x 载明＋wire 测试）——A5
-  冻结批验收后第一优先开工。
-- **[等环境] A5 实现核对切片**（双实现已在库：库路径
-  create_from_template／CLI 路径 vpm new——核对点＝错误形状不同构面
-  如实核对，照 024/025/026 A4 程序，候接线批落地）。
-- **[等桌面] A5 形状核可＋消费切片**（形状核可候冻结批验收；消费候
-  核可＋接线批双前置；create 能力呈现须新立不可复用 blocks.changes；
-  表单前置校验镜像边界照协议本；四错误 i18n 键四语文案随消费切片补
+- **[等集成] 三笔候随轮验收（--no-ff）**：实质对象＝A5 wire 接线
+  切片批 8abb638（恰核心域 5 文件，全链定向亲测绿在案）＋追平壳
+  3ed9360（零自有内容照先例随收编）＋本状态批（恰本文件，
+  collab-only 免全量如实声明），写明「026 A5 项目创建接线批」。
+- **[等环境] A5 实现核对切片**（本接线批落地即解锁：双实现在库
+  ——库路径 create_from_template／CLI 路径 vpm new；核对点＝错误
+  形状不同构面如实核对已接线面，照 024/025/026 A4 程序；served 行
+  createOps 位真后端即 available）。
+- **[等桌面] A5 形状核可＋消费切片**（形状核可候冻结批验收——已
+  入库候其桌面树办理；消费候核可＋本接线批双前置（接线半已就
+  绪）；create 能力呈现须新立不可复用 blocks.changes；表单前置校
+  验镜像边界照协议本 0.5.1；四错误 i18n 键四语文案随消费切片补
   齐；design-standard §8.7 增补随切片）。
 - **[等用户] W25 开窗（O-2）**；A4 启停面 VCC 键名真机核实（候 W25
   同窗）；A1–A5 全链真机走查归 W25。
@@ -135,39 +150,74 @@ A4 wire 接线批 3d4b667〔第 109 批 f5c929e 入库〕＋A4 冻结批 28c63fa
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝A5 冻结批 0c77273（实质 diff 恰核心域 24 文件
-2018+/7-，全链定向亲测绿在案：provider-host 32 套件 226/0＋
-orchestrator 231/0＋clippy 三 crate 0＋contracts 78/78＋provider
-39/39＋typecheck 双 0 三段实证）＋追平壳 f772f3d（零自有内容照先例
-随收编）＋本状态批（恰本文件，collab-only 免全量如实声明），请集成
-随轮验收（--no-ff），写明「026 A5 项目创建冻结批」。**提交后读数：
-领先 3（追平壳＋冻结批＋本状态批；实质 1＝冻结批）、落后 0
-（ae4b93c 世代）。下拍 A5 接线切片开工前照例再追平 main 最新。
+**候验收对象＝026 A5 wire 接线切片批 8abb638（实质 diff 恰核心域
+5 文件 946+/53-，全链定向亲测绿在案：provider-host 33 套件 234/0
+＋orchestrator 231/0＋clippy 三 crate 0＋contracts 79/79 联合计
+数＋provider 39/39＋typecheck 双 0）＋追平壳 3ed9360（零自有内容
+照先例随收编，含过程注记）＋本状态批（恰本文件，collab-only 免全
+量如实声明），请集成随轮验收（--no-ff），写明「wt-2 026 A5 项目
+创建接线批（基点 8416df6）」。**提交后读数：领先 3（追平壳＋切片
+批＋本状态批；实质 1＝切片批）、落后 1（2693835 全 collab 面，
+CHASE STOP 留下轮读数）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-19 10:5x–11:3x，操作者紧急批〔用户 10:5x 时段例外注
-记覆盖 TICK 第 0 步时段判定〕，三笔：f772f3d＋0c77273＋本批）：①
-brief 10:56 ①区 [→核心] 留言消化（A4 回执零重复，A5 冻结批本拍开
-工）；②裁定四点取证（8afde3f 全文：启动成立/时机殿后现解除〔A4 接
-线已入库〕/词面方向六点/载体声明）＋桌面五点取证（026 内联
-a4c74a7）＋双实现错误面直读复核（project-manager vpm_backend.rs
-create_from_template 四键全挂 template_missing 码＋CLI 路径
-apply_failed/backend_unavailable——错误闭集零新码的事实根）；③追
-平壳 f772f3d（落后 23 过线照自理条款，双法预检零冲突，inbound 恰
-第 110/111 批已验收内容零夹带，基线 ae4b93c）；④冻结批执行＝裁定
-六点逐点落死（单段任务化/零新读面/错误闭集/能力位呈现/创建即在册/
-双实现差异面）＋六件交付（Schema 向量/端口注释/consumer 4 例/TS 面
-＋narrowing/mock 缺席臂/双语协议本＋REGISTRY 两行）；⑤desktop
-typecheck 三段实证（RED 实证→capturedAt 唯一性＋A5 成员零携带直
-读→GREEN 双 0；electron-gateway.ts 过程性触碰已 checkout 恢复，桌
-面域零触碰实证）；⑥全链定向证据亲测绿（provider-host 226/0＋
-orchestrator 231/0＋clippy 三 0＋contracts 78/78＋provider 39/39
-＋冲突标记 0；desktop build/vitest 未跑如实申报照 A4 冻结批口径）；
-⑦所有权核验＝提交树恰核心域 24 文件（schemas 行＋orchestrator 注
-释＋provider-host 测试＋contracts＋orchestrator-provider＋协议本
-＋REGISTRY），环境/桌面/数据/产线/环境域零触碰；⑧零端到端宣称维
-持——本批系词表层：wire 路由/packages.createOps served 行/信封组
-装候下一接线切片，未接线前本方法在 wire 面不存在、桌面无创建入口、
-mock 恒答诚实缺席；双实现在库但环境实现核对切片未办理、真机走查归
-W25。在手无半途切片、无未提交改动。退出待命，候集成验收（A5 冻结
-批）；下拍第一优先＝A5 wire 接线切片（候验收）。
+本轮（2026-09-19 11:3x–12:0x，操作者紧急批续拍〔用户 10:5x 时段
+例外注记维持覆盖〕，三笔：3ed9360＋8abb638＋本批）：①brief ①区
+两条 [→核心] 留言消化（wt-main 追平壳自然收编照办；wt-6 备料七点
+系冻结批输入已消化）；②开关条件轮询成就——后台 30 秒一拍 fetch
+轮询第 16 拍 11:48:15 实证 0c77273 is-ancestor of main（第 112 批
+item 2 8416df6），照 eedd11b/1c6961e 先例同拍开工，候验收世代零抢
+跑（轮询期只读研读 A4 接线全量先例＋v0.5 词面）；③追平壳
+3ed9360（落后 13，双法预检零冲突 ort tree 1eb20ce，inbound 非
+collab 面＝wt-3 桌面 A4 消费 19 文件纯吸收，核心域 pathspec 零触
+碰，基线刷新 8416df6；**过程注记：首次预检误用 merge-recursive
+触工作区——合并前树干净零未提交工作，reset --hard 即刻恢复，零
+提交零损失，已登记**）；④切片批执行＝冻结批落死词面逐点接线（路
+由臂三键闭集 REQUIRED-nullable／既有五联位门门即缺席臂／
+createOps 行无双切面／双常量信封／created 收据四键 ProjectRef 投
+影／三既有码闭集折叠＋不宣称幂等）＋wire 8 例骑真帧环（含不幂等
+重复拒绝如实上呈＋信封版本可检测常量钉死）＋协议本双语
+0.5→0.5.1 双常量载明＋REGISTRY 同步；⑤全链定向证据亲测绿（df
+595G/69% 先查；provider-host 33/234-0＋orchestrator 231/0＋clippy
+三 0＋contracts 79/79 与集成关账联合计数吻合＋provider 39/39＋
+typecheck 双 0；desktop build/vitest 未跑照 A4 接线批口径如实申
+报）；⑥所有权核验＝切片批恰核心域 5 文件（provider-host 2＋协议
+本双语＋REGISTRY），orchestrator 端口面零变更（接线零端口改动）、
+环境/桌面/数据/产线域零触碰；⑦竞速时序如实申报（main 切片期间
+前移 2693835 全 collab 面，落后 1 实质 0 过线否，CHASE STOP 留下
+轮）；⑧零端到端宣称维持——路由自本批起在 wire 面存在，但桌面无
+创建入口（消费候形状核可后逐面升级）、双实现核对切片未办理、
+served 行真机呈现未走查、真机走查归 W25（O-2）。在手无半途切片、
+无未提交改动。退出待命，候集成验收（A5 接线批三笔）；下拍照新
+brief 读数办理。
+
+## 留言
+- [→集成] **026 A5 wire 接线切片候验收**：冻结批 0c77273 经第 112
+  批 item 2 验收入库的收编回执就地消化勿重复。**候验收对象＝切片
+  批 8abb638（恰核心域 5 文件 946+/53-：packages.createProject 路
+  由臂九态任务化〔三键闭集 REQUIRED-nullable／无 projectPath 无
+  digest 位／违例答 invalid_params〕＋能力门读既有
+  VpmCapabilities.create_project 五联位零新 accessor〔缺席答
+  capability_missing 绝不进任务；必需方法无缺省体门即缺席臂〕＋
+  served 行 packages.createOps 一行一方法〔行可用性＝create 位，
+  无 declared-none 缺省态〕＋双常量信封 "0.5"/vua.packages-ops/
+  v0.5〔受理与 Done 双盖戳＋收据族常量〕＋created 收据 ProjectRef
+  投影恰四键＋三既有错误码闭集投影〔词外折 execution_failed 携原
+  码；不宣称幂等〕＋wire 测试 8 例骑真帧环〔含 create 不幂等重复
+  拒绝如实上呈、能力缺席、信封版本可检测〕＋协议本双语
+  0.5→0.5.1 信封节载明双常量〔A3/A4 先例提前闭合桌面核对点〕＋
+  REGISTRY 0.5.1 同步）＋追平壳 3ed9360（零自有内容照先例随收
+  编）＋本状态批（恰本文件，collab-only 免全量），请随轮验收
+  （--no-ff），写明「wt-2 026 A5 项目创建接线批（基点 8416df6）」。
+  **定向证据本机亲测绿（11:5x，df 595G/69% 先查）：provider-host
+  33 套件 234/0（你方第 112 批关账合并树复跑 32/226 世代＋本批
+  wire_v05 8/8；冻结词面行零变更实证）＋orchestrator 231/0＋
+  clippy 三 crate 0＋contracts 79/79（联合计数与你方关账批注记吻
+  合）＋provider 39/39＋desktop typecheck 双 0。**追平壳过程注记
+  如实申报：首次预检误用 merge-recursive 触碰工作区，本树当时干
+  净零未提交工作，reset --hard 即刻恢复零提交零损失（提交信息内
+  已载）。环境 A5 实现核对切片与桌面 A5 形状核可/消费切片双前
+  置（接线半）自本批起就绪。零端到端宣称维持——真机走查归 W25
+  （O-2）。核心侧无新请求。
+- （回执不回执：第 112 批 [→核心] 留言＝本切片交付即回应；历史留
+  言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
