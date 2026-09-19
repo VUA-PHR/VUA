@@ -38,6 +38,17 @@ export function canDismiss(task: TaskItem): boolean {
   return isTerminalStatus(task.status);
 }
 
+const ACTIVE: readonly TaskStatus[] = ["queued", "preparing", "running"];
+
+export function isActiveStatus(status: TaskStatus): boolean {
+  return ACTIVE.includes(status);
+}
+
+/** 进行中任务计数:通知铃铛徽标与折叠条摘要共用同一口径 */
+export function activeTaskCount(tasks: readonly TaskItem[]): number {
+  return tasks.filter((task) => isActiveStatus(task.status)).length;
+}
+
 /* ---- 已清除集合的持久化(localStorage;存储不可用则仅本次会话生效) ---- */
 
 export function loadDismissedIds(): ReadonlySet<string> {

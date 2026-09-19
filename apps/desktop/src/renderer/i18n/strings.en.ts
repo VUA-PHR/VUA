@@ -116,6 +116,14 @@ export const strings = {
 demoTaskTitle: "Demo task",
     replay: "Replay event stream",
     progress: "{done}/{total}",
+    openAria: "Open notification center, {count} active",
+    closeAria: "Close notification center",
+    empty: "No notifications",
+  },
+  bootSplash: {
+    starting: "Starting VUA",
+    waitingServices: "Waiting for local services…",
+    updateAvailable: "New version {version} available",
   },
   nav: {
     tabs: {
@@ -2039,6 +2047,17 @@ demoTaskTitle: "Demo task",
         "Export a redacted diagnostics bundle for troubleshooting. Contains only: app version, data source, environment check states with timestamps, and your goal selection. Never contains: file paths, asset or recipe content, account or device identifiers.",
       diagnosticsExport: "Export diagnostics",
       diagnosticsFailed: "Export failed. Please try again.",
+      updateHeading: "Update check",
+      updateDescription:
+        "On launch, VUA checks the project's release page for a newer version and shows it honestly. Read-only: nothing is downloaded or installed. Turn it off here at any time.",
+      updateToggle: "Check for updates on launch",
+      updateNow: "Check now",
+      updateChecking: "Checking…",
+      updateNewer: "New version available: {version}",
+      updateUpToDate: "You are on the latest version.",
+      updateFailed: "Update check failed. It will retry on the next launch.",
+      updateCheckedAt: "Last checked: {at}",
+      updateViewRelease: "View release notes",
     },
     about: {
       heading: "VRC Ultra Assistant",

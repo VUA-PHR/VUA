@@ -107,6 +107,14 @@ export const strings: Strings = {
 demoTaskTitle: "デモタスク",
     replay: "イベントストリームを再生",
     progress: "{done}/{total}",
+    openAria: "通知センターを開く(実行中 {count} 件)",
+    closeAria: "通知センターを閉じる",
+    empty: "通知はありません",
+  },
+  bootSplash: {
+    starting: "VUA を起動しています",
+    waitingServices: "ローカルサービスの起動を待っています…",
+    updateAvailable: "新しいバージョン {version} があります",
   },
   nav: {
     tabs: {
@@ -1964,6 +1972,17 @@ rolled_back: "ロールバック済み",
       diagnosticsDescription: "問題切り分け用の脱敏済み診断バンドルをエクスポートします。含まれるもの: アプリバージョン、データソース、環境チェック状態とタイムスタンプ、目標選択。含まれないもの: ファイルパス、素材やレシピの内容、アカウントやデバイス識別子。",
       diagnosticsExport: "診断バンドルをエクスポート",
       diagnosticsFailed: "エクスポートに失敗しました。もう一度お試しください。",
+      updateHeading: "アップデート確認",
+      updateDescription:
+        "起動時に VUA がプロジェクトのリリースページへ新バージョンの有無を読み取り専用で確認し、結果をありのまま表示します。ダウンロードやインストールは行いません。いつでもここでオフにできます。",
+      updateToggle: "起動時にアップデートを確認",
+      updateNow: "今すぐ確認",
+      updateChecking: "確認しています…",
+      updateNewer: "新しいバージョンがあります: {version}",
+      updateUpToDate: "最新バージョンを利用しています。",
+      updateFailed: "確認に失敗しました。次回起動時に再試行します。",
+      updateCheckedAt: "最終確認: {at}",
+      updateViewRelease: "リリースノートを見る",
     },
     about: {
       heading: "VRC Ultra Assistant",

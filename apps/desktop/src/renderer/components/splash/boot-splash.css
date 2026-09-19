@@ -1,0 +1,146 @@
+/* 启动开屏:方形柱格自顶向下落满 + 中央 VUA 字母框体。
+ * 色彩纪律:品牌紫/橙实色只作稀疏点缀,基底为低透明紫;字母描边走紫→橙渐变。
+ * 动效降级:reduced-motion / 特效关由全局规则摊平动画(单元延迟失效,整屏即显),
+ * 组件侧只缩短驻留,不空等动画窗。 */
+
+.vua-boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  background: var(--vua-bg-canvas);
+  cursor: pointer;
+  opacity: 1;
+  transition: opacity 420ms ease;
+}
+
+.vua-boot-splash--leaving {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.vua-boot-splash__grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: start;
+}
+
+.vua-boot-splash__cell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--vua-purple) 14%, transparent);
+  opacity: 0;
+  transform: translateY(-6px) scale(0.7);
+  animation: vua-boot-cell-in 260ms cubic-bezier(0.2, 0.8, 0.3, 1) forwards;
+}
+
+.vua-boot-splash__cell[data-tone="purple"] {
+  background: var(--vua-purple);
+}
+
+.vua-boot-splash__cell[data-tone="orange"] {
+  background: var(--vua-orange);
+}
+
+@keyframes vua-boot-cell-in {
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 中央标记:压在方格之上,下方垫一层径向暗晕保证字母可读 */
+.vua-boot-splash__mark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--vua-space-4);
+  background: radial-gradient(
+    ellipse 42% 30% at 50% 50%,
+    color-mix(in srgb, var(--vua-bg-canvas) 88%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+.vua-boot-splash__letters {
+  width: min(264px, 42vw);
+  height: auto;
+  filter: drop-shadow(0 0 18px color-mix(in srgb, var(--vua-purple) 45%, transparent));
+}
+
+.vua-boot-splash__letter {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: vua-boot-letter-draw 520ms ease-out forwards;
+}
+
+@keyframes vua-boot-letter-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.vua-boot-splash__subtitle {
+  font: var(--vua-font-caption);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--vua-text-secondary);
+  opacity: 0;
+  animation: vua-boot-subtitle-in 480ms ease-out 640ms forwards;
+}
+
+/* 等待态(预算播完而启动里程碑未齐):方格转呼吸循环,字幕如实说明 */
+.vua-boot-splash--waiting .vua-boot-splash__cell {
+  animation: vua-boot-cell-breathe 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes vua-boot-cell-breathe {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.vua-boot-splash__phase {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  opacity: 0;
+  animation: vua-boot-subtitle-in 240ms ease-out forwards;
+}
+
+/* 新版本角标:上次检测缓存的如实呈现(仅 newer-available 上屏) */
+.vua-boot-splash__update {
+  font: var(--vua-font-caption);
+  color: var(--vua-orange);
+  opacity: 0;
+  animation: vua-boot-subtitle-in 240ms ease-out 420ms forwards;
+}
+
+/* 版本角标:构建期事实(version/commit/dirty),左下角小字 */
+.vua-boot-splash__version {
+  position: absolute;
+  left: var(--vua-space-4);
+  bottom: var(--vua-space-3);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  opacity: 0.75;
+}
+
+@keyframes vua-boot-subtitle-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
