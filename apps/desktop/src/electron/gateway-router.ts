@@ -301,6 +301,44 @@ function toApplicationRequest(
           packageRoot: request.params.packageRoot,
         },
       };
+    // packages-ops v0.4 写面 A4 仓库订阅增删(026 冻结批;桌面 A4 消费批):
+    // 照 A3 同律无 preview 对偶——三方法任务化 command(import-copy/A1/A2/
+    // A3 同构,commandId 由 Kernel 生成照 applyRemove/applyInstall/
+    // registerLocalPackage 先例);params 精确键集闭集 verbatim 透传(订阅
+    // 面只写后端隔离环境,不触项目;无 digest 无确认链——用户显式提交即
+    // 确认;移除行柄 = repoId 稳定 id,索引寻址不冻结)
+    case "packages.addRemoteRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.addRemoteRepo",
+        commandId: `repo-${crypto.randomUUID()}`,
+        params: {
+          url: request.params.url,
+          name: request.params.name,
+        },
+      };
+    case "packages.addLocalRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.addLocalRepo",
+        commandId: `repo-${crypto.randomUUID()}`,
+        params: {
+          path: request.params.path,
+          name: request.params.name,
+        },
+      };
+    case "packages.removeRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.removeRepo",
+        commandId: `repo-${crypto.randomUUID()}`,
+        params: {
+          repoId: request.params.repoId,
+        },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":

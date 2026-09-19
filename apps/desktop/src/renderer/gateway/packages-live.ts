@@ -33,17 +33,23 @@
  *   = 纯增量新键,changes 语义与来源零变更);registers = packages.
  *   registerOps 行(026 A3:一行服务 registerLocalPackage,register_
  *   capabilities 访问器门控,default declared-none 翻转前如实不可用,
- *   同翻转纪律;既有键语义与来源零变更);
+ *   同翻转纪律;既有键语义与来源零变更);repoWrites = packages.repoOps
+ *   行(026 A4:一行服务 addRemoteRepo/addLocalRepo/removeRepo 三方法,
+ *   repo_write_capabilities 三独立位门控——任一位声明即 available,
+ *   wire 门按方法绝不按面,同翻转纪律;既有键语义与来源零变更);
  * - 响应窄化按三键纪律:schemaVersion 信封("0.1"/"0.2" 各随其行)+
  *   operation + result(本体族常量 vua.packages-installed/v0.1、
  *   vua.packages-repos/v0.1、vua.packages-catalog/v0.1、
- *   vua.packages-ops/v0.1、vua.packages-ops/v0.2)组合定位,零字段猜测,
+ *   vua.packages-ops/v0.1、vua.packages-ops/v0.2、vua.packages-ops/v0.4)
+ *   组合定位,零字段猜测,
  *   行闭集校验(多余键/缺键/类型不符 = 形状不符诚实失败);行序为服务端
  *   冻结事实(installed 按 packageId 升序、repos 按订阅面自身顺序),
  *   客户端不重排不猜测。
  */
 import { isTerminalTaskStateV01 } from "@vua/contracts";
 import type {
+  PackagesAddLocalRepoRequestV1,
+  PackagesAddRemoteRepoRequestV1,
   PackagesApplyInstallRequestV1,
   PackagesApplyRemoveRequestV1,
   PackagesChangeItemV01,
@@ -51,6 +57,7 @@ import type {
   PackagesInstallReceiptV02,
   PackagesListInstalledRequestV1,
   PackagesListReposRequestV1,
+  PackagesLocalRepoAddedV04,
   PackagesOpsRejectedV02,
   PackagesPackageCatalogRequestV1,
   PackagesPackageRequestV02,
@@ -59,9 +66,13 @@ import type {
   PackagesRegisterLocalPackageRequestV1,
   PackagesRegisterReceiptV03,
   PackagesRegisterRejectedV03,
+  PackagesRemoteRepoAddedV04,
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
+  PackagesRemoveRepoRequestV1,
+  PackagesRepoRejectedV04,
+  PackagesRepoRemovedV04,
 } from "@vua/contracts";
 import type { GatewayClient } from "./gateway-client.ts";
 import { waitForTerminalTask } from "./project-ops-port.ts";
@@ -74,6 +85,8 @@ import type {
   PackagesPort,
   PackagesRegisterApplyOutcome,
   PackagesRemoveApplyOutcome,
+  PackagesRepoAddApplyOutcome,
+  PackagesRepoRemoveApplyOutcome,
   PackagesView,
   RepoInfoRowV01,
 } from "./packages-port.ts";
@@ -91,6 +104,10 @@ const INSTALL_OPS_OPERATION_ID = "packages.installOps";
  * register_capabilities().register_local_package 门控——removeOps/
  * installOps 先例;default declared-none 翻转前如实 unavailable) */
 const REGISTER_OPS_OPERATION_ID = "packages.registerOps";
+/** A4 仓库订阅增删写面 served 行(026 v0.4 接线批申报;一行服务三方法,
+ * repo_write_capabilities 三独立位门控——任一位声明即 available;wire
+ * 门按方法绝不按面) */
+const REPO_OPS_OPERATION_ID = "packages.repoOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
 /** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
@@ -104,6 +121,12 @@ const PACKAGES_OPS_SCHEMA_VERSION_V03 = "vua.packages-ops/v0.3";
 /** packages-ops v0.3 wire 信封常量(A3 行;接线批协议本 0.3.1 载明,
  * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
 const PACKAGES_OPS_ENVELOPE_V03 = "0.3";
+/** packages-ops v0.4 result 本体族常量(A4 冻结批;repoReceipt/removed/
+ * rejected 盖戳,消费窄化按字面量) */
+const PACKAGES_OPS_SCHEMA_VERSION_V04 = "vua.packages-ops/v0.4";
+/** packages-ops v0.4 wire 信封常量(A4 行;接线批协议本 0.4.1 载明,
+ * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
+const PACKAGES_OPS_ENVELOPE_V04 = "0.4";
 /**
  * applyRemove/applyInstall 任务等待上界(本地文件操作,正常终态由
  * task.completed 事件驱动毫秒级到达;本界只防御事件丢失/断连后的无限
@@ -557,6 +580,101 @@ function isApplyRegisterAccepted(value: unknown): value is { taskId: string; cor
     && value.correlationId.length > 0;
 }
 
+/* ---- A4 仓库订阅增删写面窄化(026 packages-ops v0.4 冻结词面;family
+ * const vua.packages-ops/v0.4——repoReceipt/removed/rejected 盖戳按字
+ * 面量) ---- */
+
+/** kind=repoReceipt remote 变体五键闭集(最小诚实审计形状:端口答
+ * Result<(),_> 无载荷,收据只携请求回显 url＋name,别无他物——添加
+ * 时间戳/行位/清单内容等发明事实 = 形状违规,负例
+ * invalid-result-invented-field 同形) */
+function isPackagesRemoteRepoReceiptResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V04) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "name", "repoType", "schemaVersion", "url"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "repoReceipt"
+    && value.repoType === "remote"
+    && typeof value.url === "string"
+    && value.url.length > 0
+    && typeof value.name === "string"
+    && value.name.length > 0;
+}
+
+/** kind=repoReceipt local 变体五键闭集(path＋name 回显;与 remote 变体
+ * 键集互斥——repoType 字面量分立) */
+function isPackagesLocalRepoReceiptResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V04) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "name", "path", "repoType", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "repoReceipt"
+    && value.repoType === "local"
+    && typeof value.path === "string"
+    && value.path.length > 0
+    && typeof value.name === "string"
+    && value.name.length > 0;
+}
+
+/** kind=removed 三键闭集(被删行 repoId 回显——回显即审计链;被删行快
+ * 照 = 发明事实,形状违规) */
+function isPackagesRepoRemovedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V04) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "repoId", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "removed"
+    && typeof value.repoId === "string"
+    && value.repoId.length > 0;
+}
+
+/** kind=rejected 五键闭集(v0.4 戳):guard 三值闭集复用 A1/A2/A3 零新
+ * 增(A4 不加 guard)+ code 锁 vua.packages. 族(013 复用码 vua.vpm.*
+ * 永不入 rejected 文档,原端口码 repo_invalid/repo_not_found/
+ * repo_fetch_failed/repo_write_failed 在 detail 原词溯源) + detail 非空 */
+function isPackagesRepoRejectedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V04) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["code", "detail", "guard", "kind", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "rejected"
+    && (value.guard === "preview_drift"
+      || value.guard === "package_not_found"
+      || value.guard === "execution_failed")
+    && typeof value.code === "string"
+    && value.code.startsWith("vua.packages.")
+    && typeof value.detail === "string"
+    && value.detail.length > 0;
+}
+
+/** A4 wire 受理回执窄化(import-copy 同构四键,v0.4 信封:schemaVersion
+ * "0.4" + operation(三方法分立) + taskId + correlationId;收不齐 =
+ * 形状不符;0.3/0.2/0.1 戳 = 受理形状违规) */
+function isApplyRepoAccepted(
+  value: unknown,
+  operation: "packages.addRemoteRepo" | "packages.addLocalRepo" | "packages.removeRepo",
+): value is { taskId: string; correlationId: string } {
+  if (!isRecord(value)) return false;
+  return value.schemaVersion === PACKAGES_OPS_ENVELOPE_V04
+    && value.operation === operation
+    && typeof value.taskId === "string"
+    && value.taskId.length > 0
+    && typeof value.correlationId === "string"
+    && value.correlationId.length > 0;
+}
+
 type TypedOutcome<T> =
   | { readonly kind: "ok"; readonly result: T }
   | { readonly kind: "failed"; readonly code: string }
@@ -565,11 +683,11 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取六行——packages.query(installed)/packages.listRepos(repos)/
+   * 一次取七行——packages.query(installed)/packages.listRepos(repos)/
    * packages.packageCatalog(catalog)/packages.removeOps(changes)/
-   * packages.installOps(installs)/packages.registerOps(registers);行
-   * 缺席或 availability 非 available = 该区块诚实不可渲染(渲染层不伪
-   * 造)。
+   * packages.installOps(installs)/packages.registerOps(registers)/
+   * packages.repoOps(repoWrites);行缺席或 availability 非 available =
+   * 该区块诚实不可渲染(渲染层不伪造)。
    */
   const readCapabilityRows = async (): Promise<{
     installed: boolean;
@@ -578,6 +696,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     changes: boolean;
     installs: boolean;
     registers: boolean;
+    repoWrites: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -603,6 +722,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       changes: availability(REMOVE_OPS_OPERATION_ID),
       installs: availability(INSTALL_OPS_OPERATION_ID),
       registers: availability(REGISTER_OPS_OPERATION_ID),
+      repoWrites: availability(REPO_OPS_OPERATION_ID),
     };
   };
 
@@ -919,6 +1039,138 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     return { kind: "failed", code: "packages_apply_result_shape" };
   };
 
+  /** A4 写命令共享任务环(026 v0.4 冻结词面;import-copy/A1/A2/A3 同构,
+   * 020 result 回流)——受理窄化→终态等待→Done payload 窄化,三方法
+   * (addRemoteRepo/addLocalRepo/removeRepo)分立薄封装,收据按 kind 字
+   * 面量分派(repoReceipt 双互斥变体/removed/rejected)。照 A3 同律无
+   * preview 对偶:无 digest 无确认链,用户显式提交即确认。任务九态语
+   * 义归应用契约任务面;任务真实状态由任务中心呈现,本端口只消费终态
+   * 结果。超时/断连/形态不齐 = 诚实 unavailable,不猜测不伪造结果文
+   * 档(014 先例);rejected 守卫拒绝是 Done payload(任务诚实完成、
+   * 写操作被拒),不是错误。 */
+  const repoWriteViaTask = async (
+    operation: "packages.addRemoteRepo" | "packages.addLocalRepo" | "packages.removeRepo",
+    request: PackagesAddRemoteRepoRequestV1 | PackagesAddLocalRepoRequestV1 | PackagesRemoveRepoRequestV1,
+  ): Promise<PackagesRepoAddApplyOutcome | PackagesRepoRemoveApplyOutcome> => {
+    const response = await client.invoke(request);
+    if (!response.ok) {
+      if (response.error.kind === "application") {
+        // 受理阶段信封错误:缺席臂折叠 unavailable(引擎未装配/未接线),
+        // 其余 typed 码(能力缺席 vua.vpm.capability_missing 在路由层答
+        // ——绝不进任务/受理持久化失败 vua.provider.persistence_failed/
+        // invalid_params)照原词 failed
+        if (response.error.error.code === "vua.packages.unavailable") {
+          return { kind: "unavailable" };
+        }
+        return { kind: "failed", code: response.error.error.code };
+      }
+      return { kind: "unavailable" };
+    }
+    if (!isApplyRepoAccepted(response.value, operation)) {
+      return { kind: "failed", code: "packages_apply_acceptance_shape" };
+    }
+    const snapshot = await waitForTerminalTask(client, response.value.taskId, PACKAGES_APPLY_TASK_WAIT_MS);
+    if (snapshot === null) {
+      return { kind: "unavailable" };
+    }
+    // 冻结不变量(020):result 仅成功终态出现;rejected 守卫拒绝也在成
+    // 功终态的 Done payload 内(任务诚实完成、写操作被拒)。非成功终态
+    // = 写操作未发生(failed/cancelled;恢复非终态绝不隐式续传),
+    // error.code 原词上呈,收不齐 = 诚实降级码,不猜测
+    if (snapshot.state !== "succeeded" && snapshot.state !== "succeeded_with_warnings") {
+      const errorCode = isRecord(snapshot.error) && typeof snapshot.error.code === "string"
+        ? snapshot.error.code
+        : "packages_task_not_succeeded";
+      return { kind: "failed", code: errorCode };
+    }
+    const payload = isRecord(snapshot.result) ? snapshot.result : null;
+    const body = payload === null ? null : isRecord(payload.result) ? payload.result : null;
+    if (body === null) {
+      return { kind: "failed", code: "packages_apply_result_shape" };
+    }
+    if (body.kind === "repoReceipt" && isPackagesRemoteRepoReceiptResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesRemoteRepoAddedV04 };
+    }
+    if (body.kind === "repoReceipt" && isPackagesLocalRepoReceiptResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesLocalRepoAddedV04 };
+    }
+    if (body.kind === "removed" && isPackagesRepoRemovedResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesRepoRemovedV04 };
+    }
+    if (body.kind === "rejected" && isPackagesRepoRejectedResult(body)) {
+      return { kind: "rejected", rejection: body as unknown as PackagesRepoRejectedV04 };
+    }
+    return { kind: "failed", code: "packages_apply_result_shape" };
+  };
+
+  /** A4 添加远端订阅(026 v0.4 冻结词面):params 双键闭集 {url, name}
+   * verbatim 传输;收据按 remote 变体收窄——方法与收据变体不对应 =
+   * 服务端词面违反,诚实降级不冒充成功;成功后广播新快照(订阅面已
+   * 变,列表按新事实重取) */
+  const addRemoteRepoRaw = async (url: string, name: string): Promise<PackagesRepoAddApplyOutcome> => {
+    const request: PackagesAddRemoteRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.addRemoteRepo",
+      params: { url, name },
+    };
+    const outcome = await repoWriteViaTask("packages.addRemoteRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "repoReceipt" || receipt.repoType !== "remote") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
+  /** A4 添加本地目录订阅(026 v0.4 冻结词面):params 双键闭集
+   * {path, name} verbatim 传输;收据按 local 变体收窄(同上诚实纪律);
+   * 成功后广播新快照 */
+  const addLocalRepoRaw = async (path: string, name: string): Promise<PackagesRepoAddApplyOutcome> => {
+    const request: PackagesAddLocalRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.addLocalRepo",
+      params: { path, name },
+    };
+    const outcome = await repoWriteViaTask("packages.addLocalRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "repoReceipt" || receipt.repoType !== "local") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
+  /** A4 移除订阅(026 v0.4 冻结词面):params 单键闭集 {repoId} verbatim
+   * 传输(稳定行柄;未知 id = 执行时端口答 repo_not_found 折 rejected,
+   * 移除面不宣称幂等);收据按 removed 变体收窄(同上诚实纪律);成功
+   * 后广播新快照 */
+  const removeRepoRaw = async (repoId: string): Promise<PackagesRepoRemoveApplyOutcome> => {
+    const request: PackagesRemoveRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.removeRepo",
+      params: { repoId },
+    };
+    const outcome = await repoWriteViaTask("packages.removeRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "removed") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
   // 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动
   // 重取),订阅仅作能力行翻转的通知通道
   let selectedProjectPath: string | null = null;
@@ -950,6 +1202,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           changes: capabilityRows.changes,
           installs: capabilityRows.installs,
           registers: capabilityRows.registers,
+          repoWrites: capabilityRows.repoWrites,
         },
         projectPath: null,
         installedPackages: [],
@@ -970,6 +1223,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         changes: capabilityRows.changes,
         installs: capabilityRows.installs,
         registers: capabilityRows.registers,
+        repoWrites: capabilityRows.repoWrites,
       },
       projectPath: selectedProjectPath,
       installedPackages: outcome.kind === "ok" ? outcome.result : [],
@@ -1024,6 +1278,9 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     },
     applyInstall: applyInstallRaw,
     registerLocalPackage: registerLocalPackageRaw,
+    addRemoteRepo: addRemoteRepoRaw,
+    addLocalRepo: addLocalRepoRaw,
+    removeRepo: removeRepoRaw,
     async addProject() {
       return { kind: "unavailable" };
     },
