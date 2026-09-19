@@ -112,3 +112,184 @@ packageId）、已装表更新感知（无「可更新」列与行内升级键�
 
 零端到端宣称维持；全部新面真机走查归 W25（O-2 候用户开窗，与 026 A1–A5 走查同窗）。
 F4 启停在 VCC 键名真机核实前维持词面之外（026 A4 启停同款纪律）。
+
+## 内联讨论线程
+
+### 考证（环境）（2026-09-19 深夜工作时段，slot/wt-6 追平 b58ab76 后；开放问题 2 四点零代码输出，照 025 §1 先例 file:line 实测锚格式）
+
+**定位**：本节系 027 开放问题 2 的环境席位库面考证（F2 数据源与字段上限／F3 判定
+成本与 latest_for 复用度／F4 启停键名源码事实＋只读真机核实方法设计／F5 模板枚举
+库面 API 有无）。本节为**事实输入面，非词面权威**——各面字段闭集、方法命名、错误
+码由该面冻结批落死，本节与冻结批冲突时以冻结批为准（025 先例同款定位）。核心表
+态（slot/wt-2 本文件同线程）已落，本节末尾附对照登记。
+
+**考证世代与方式（如实声明）**：源码＝`vrc-get-vpm` **0.0.16**（Cargo.lock :2785
+锁定版本），本地 cargo registry 缓存源码直读，零网络零真机触碰；行号锚均该版本。
+`vrc-get` 主 crate（CLI）与 VCC（C#）源码不在本地——凡涉两者的能力与键名一律不
+臆断、标真机核实。本节零代码变更（纯 collab 面）。
+
+#### 1. F2 repoCatalog 数据源（缓存面/清单面）与字段上限
+
+**(a) 数据源链路（库面）**：
+
+- 订阅面：settings.json `userRepos`（`VpmSettings::AsJson.user_repos`，
+  vpm_settings.rs:75）；缓存加载 `RepoHolder::load_cache`（repo_holder.rs:106–123）
+  ＝**预定义两仓＋用户仓库**两源合流：official＝`Repos/vrc-official.json`
+  （environment.rs:46）、curated＝`Repos/vrc-curated.json`（:48，均相对环境根；
+  受 `ignore_official_repository`/`ignore_curated_repository` 开关影响，
+  repo_holder.rs:125–153）；用户仓库逐仓 cache_path＝`userRepos[i].localPath`
+  （`UserRepoSetting::to_source`，structs.rs:59–61）。
+- 缓存文件格式：`LocalCachedRepository`（local.rs:8–15）＝RemoteRepository＋
+  headers＋`vrc-get{etag}`；`RemoteRepository` 内部保留原始 JSON（`actual` 字段，
+  remote.rs:19）但**系私有字段无公开访问器**——公开面仅 name/url/id/packages。
+- 刷新面：`update_cache`（repo_holder.rs:213）＝`download_with_etag` 条件
+  刷新（If-None-Match），命中则写回 localPath 缓存文件；`Ok(None)`＝etag 未变
+  「already up to date」——**F4 刷新面的库面事实源在此，不涉任何 VCC 键名**（与
+  核心表态 7「刷新面不受键名核实约束」互证）。
+- 枚举路径：**按仓库分组**＝`PackageCollection::get_remote()`
+  （package_collection.rs:76）→`LocalCachedRepository::get_packages()`
+  （local.rs:75）→`RemotePackages::all_versions()`（remote.rs:199）；跨仓库合并
+  最新包辅助＝`find_whole_all_packages`（package_collection.rs:84–97，selector
+  过滤＋按 name 分组取 max——**不按仓库分组**）。`PackageInfo::remote(json, repo)`
+  携带仓库归属事实。F2 按仓库列表＝(a) 订阅面为世界＋(b) 缓存命中逐仓库投影，
+  025 §1(b) 两集合区分结论照延续。
+
+**(b) 字段上限（PackageManifest 反序列化闭集——宏定义 package_manifest/mod.rs
+:40–113、实例化 :134 起、公开访问器 :148–199；库面可得上限）**：
+
+- 可得：`name`(packageId)/`version`/`displayName`/`description`/`unity`
+  （PartialUnityVersion）/`url`（zip 包 URL）/`zipSHA256`/`vpmDependencies`/
+  `legacyFolders`/`legacyFiles`/`legacyPackages`/`headers`/`changelogUrl`/
+  `documentationUrl`/`keywords`/`vrc-get{yanked, aliases}`；版本计数＝
+  all_versions() 计数；最新版本＝`RemotePackages::get_latest(selector)`
+  （remote.rs:212–223：过滤 yanked＋selector.satisfies 后 max_by_key version；
+  `get_latest_may_yanked` :203 备选语义）。
+- **author 不可得（F2 词面上限的关键缺席，如实登记）**：宏结构无 `author` 字段，
+  serde 忽略未声明键、零访问器；同文件测试样例 JSON 恰含 author（:335/:364）——
+  仓库缓存 JSON 里常见该字段而库面不解析的实证。原始 JSON 在 `actual` 私有字段
+  不可达。若冻结批需要 author，可选 (i) 上游依赖扩展（跨 vrc-get-vpm 版本升级）、
+  (ii) 环境域自行解析 localPath 缓存 JSON 文件（只读可行，但制造第二解析面——
+  同一事实两处解析的漂移风险）、(iii) v0.1 以库面闭集为上限、author 如实缺席。
+  **环境倾向 (iii)**（单事实源纪律），裁决归冻结批。提案 F2 词面「描述/作者等
+  元信息以库面实际可得上限为准」——按上限纪律 author 缺席与该词面一致。
+- CLI 后端（VccCliBackend）**无仓库级包列表能力支撑**：vrc-get CLI 源码不在本地，
+  `vpm` 子命令清单不可考、不臆断——F2 能力位 CLI 侧如实缺席（capability gate 照
+  A5 五位先例，库后端真、CLI 后端假）。
+
+#### 2. F3 updateAvailable 判定成本与 latest_for 语义复用度
+
+- **判定实现已在库**（catalog v0.1/v0.2 现路径，本域 vpm_backend.rs:1289–1307）：
+  collection（`load_cache` 缓存面）→ `find_package_by_name(package_id,
+  latest_for(unity, show_prerelease))` → `latest.version() > installed_version`
+  严格比较；已装才判定，未装＝None（缺席不是「无更新」，024 表态②冻结语义）。
+- **latest_for 语义**（version_selector.rs:35＋:100–107）：`Latest` 分支＝
+  include_prerelease ? 非 yanked＋unity 兼容 ： `is_stable()`＋非 yanked＋unity
+  兼容。prerelease 开关读用户 `show_prerelease_packages` 设置（settings.rs:55–61），
+  零 wire 开关——与 catalog 现判定完全同源。
+- **成本结论：批量判定可行**。判定纯内存（集合加载后每包一次 find_package_by_name
+  ＝按名定位＋该包版本集 satisfies 过滤＋max），零网络零额外 IO；listInstalled
+  result 增量携带判定事实在库面可实现。**实现注意事项（非阻塞）**：须同一
+  collection 实例一次 load 批量出表，逐行独立加载集合则重复 IO 不可接受。
+- **两处语义边界如实交冻结批落死**：①`find_package_by_name` 系**跨仓库合并取
+  版本最高**（package_collection.rs:148–168，`max_by_key(version)`）——同名包
+  多仓时 latest 可能来自与 F2 分仓库视图不同的仓库；F2（按仓分组）与 F3（跨仓
+  最高）视图差异需在各自词面声明，不冲突但不可混同。②已装版本本身是 prerelease
+  且 include_prerelease=false 时，latest 仅在 stable 集内取——此时
+  updateAvailable=false 的准确语义是「不存在严格更新的、符合过滤条件的版本」，
+  不是「无更新」泛化；Option 三态语义照 catalog 冻结不变。
+- **载体**：InstalledPackageV1 恰三键无 latest/update 载体（核心表态已引本域
+  :111-116 直读在案）——query v0.2 result 面增量立载体，照 packages-catalog
+  v0.2 同方法 result 增量先例，环境侧无异议。
+
+#### 3. F4 启停位 settings 键名：源码级事实＋只读真机核实方法
+
+**(a) 源码级事实（本机直读 vrc-get-vpm 0.0.16，四条）**：
+
+1. **库面无启停概念**：全库 grep -i「disable|enable」零命中（settings.rs/
+   vpm_settings.rs/structs.rs/repo_holder.rs 全覆盖）；`Settings` 仓库管理 API
+   （settings.rs:184–338）＝get_user_repos/add_remote_repo/add_local_repo/
+   remove_repo/remove_repo_at_index/reorder_user_repos_by_indices，**无启停方法**。
+2. **settings.json 顶层未知键保留**：`AsJson` 末尾 `#[serde(flatten)] rest:
+   JsonObject`（vpm_settings.rs:77–78）——顶层未知键读入后随 save 原样写回，
+   往返无损。
+3. **userRepos[i] 元素键闭集且不保留未知键**：`UserRepoSetting`
+   `#[serde(rename_all = "camelCase")]` 恰五键 localPath/name/url/id/headers
+   （structs.rs:8–21），**无 flatten**——元素内未知键反序列化丢弃、序列化不写回。
+4. **VUA 写面互操作风险（高严重度，如实登记）**：VUA A1–A4 写面全部经
+   `Settings::load`→修改→`save`（本域 vpm_backend.rs :116/:132、:164/:211、
+   :244/:253、:271/:286），save 双写 settings.json＋vrc-get 备份
+   （vpm_settings.rs:220–223）。**若 VCC 将启停位存于 userRepos[i] 元素内（候选
+   位置之一，未证实），VUA 任何一次仓库写面操作都会剥除该键＝静默清掉用户在 VCC
+   的启停状态**。若存顶层（flatten 保留→无损）或 settings.json 之外（如
+   vcc.litedb→无损），则无此风险。三种定位的差异**只有真机核实能裁决**——F4
+   启停词面冻结硬前置由此从「缺证据」升级为「存在写面剥键互操作风险」的实证
+   （026 A4 启停二分裁决的正确性获源码级佐证）。
+5. vcc.litedb：`vrc-get-litedb` 0.3.0-beta.8 系通用 LiteDB 文件解析器（bson/
+   file_io，无 repo 表结构封装），VUA 侧尚未接线（本域 grep 零命中）；VCC 官方
+   预告状态面未来迁 litedb（vpm_settings.rs:19–36 注释自证）——启停位若在
+   litedb，024 (b) vcc.liteDb 只读核实同窗顺带覆盖。
+
+**(b) 只读真机核实方法（本节交付物核心；W25/O-2 窗口执行，VUA 全程零写入、
+零键名预断）**：
+
+1. **定位共享根**：只读解析生产接线根（026 U14 落账事实：provider-host
+   :225-232 指向用户 VCC settings 目录），真机确认 settings.json 实际路径；
+   路径以真机为准、零猜测。
+2. **基线快照**：对根目录树候选文件集——settings.json、`vrc-get/`（备份目录）、
+   `Repos/`（缓存目录）、`vcc.litedb`——逐文件只读 copy＋SHA-256＋mtime 清单。
+3. **单一操作**：请用户在 VCC GUI 对**一个**仓库执行一次「禁用」（或反向）。
+   VUA 不参与操作、零写入。
+4. **复测快照＋逐文件 hash 对比**：定位变化文件（可能不止一个）；对每个变化的
+   JSON 文件做 JSON-path 级结构化 diff。
+5. **反向操作（启用）**：第三次快照对比，确认键切换语义（布尔翻转／元素增删／
+   元素内键增删／跨文件迁移）。
+6. **判读三问**：①userRepos 数组元素是否移动/增减；②userRepos[i] 内键集合与
+   值变化（记录精确键名与 JSON path）；③顶层新键或新文件（litedb 变化只登记
+   mtime/hash，解析候 024 (b) 顺带）。
+7. **证据落账**：三份快照、diff 结论、精确键名、VCC 版本号 collab 登记；若
+   ALCOM 同时在装可同法对照观察（键名可能不同，分别登记不混同）。
+8. **解锁与风险联动**：核实证据在库 → F4 启停面冻结批解锁（核心表态 7②③ 照
+   办）；**若核实发现启停位存于 VUA 写面会剥除的位置（userRepos[i] 元素内），
+   F4 冻结批必须同时载「VUA 写面剥键风险缓解设计」**（如 UserRepoSetting 兼容
+   写路径或 settings 写路径规避），升级为冻结批硬约束——此项为 A1–A4 既有写面
+   的追溯风险面，不限于 F4。
+
+#### 4. F5 模板枚举库面 API
+
+- **vrc-get-vpm 0.0.16 无模板枚举/清单 API**：全库 grep -i「template」唯一命中＝
+  unity_project/resolve.rs:131 注释（"template projects" 依赖解析语境）；lib.rs
+  公开导出面（:35–43）无模板类型。与 026 A5 消费面「不发明枚举」留白互证。
+- **CLI 面**：VccCliBackend create 走 `vpm new <name> [template]`（本域
+  vpm_backend.rs:1373–1379）；vrc-get 主 crate（CLI）源码不在本地，是否有模板
+  枚举子命令不可考、不臆断。
+- **VUA 库后端现有模板创建系自实现**（create_from_template，本域
+  vpm_backend.rs:1429–1509，026 A5 实现核对切片直读锚点）：三候选目录解析
+  `environment_root/VRCTemplates/<name>` → `environment_root/Templates/<name>`
+  → 显式路径；默认 "Avatar"；模板有效性＝复制后 ProjectSettings/ProjectVersion.txt
+  存在校验。
+- **F5 枚举事实源结论**：库面枚举 API 不存在，但枚举的**事实源＝VUA 已钉死的两
+  目录根**（VRCTemplates/Templates，环境根相对）——枚举＝两目录下目录条目扫描
+  （环境域自实现，与 create_from_template 同根同序）；核心表态 8 预告的「模板
+  目录三候选根」检查点在冻结批落地时本节锚点即对账基础。
+- **模板元信息（显示名/描述）库面零支撑**：模板目录内 package.json 是否存在/
+  形态如何未考证（VCC 模板规范文件不在本地）——**真机核实顺带项**（W25 同窗：
+  只读列模板目录＋查看元数据文件如有）。v0.1 若先冻结：目录名＝模板 id 与名称
+  同值、元信息字段如实 null、目录不存在＝诚实空态（零模板非错误，R4 先例）——
+  「无事实不发明」纪律照办，候冻结批定形。
+
+#### 5. 与核心表态（slot/wt-2 同线程节）的对照登记
+
+- **面序 F2→F3→F5→F4：考证支持，零出入**。F3 与 F2 同源成立（判定直接复用
+  F2 同一 collection 加载路径）；F4 殿后成立且本考证新增实证（源码事实 4——
+  核实必要性从「缺证据」升级为「写面剥键互操作风险」）。
+- **F2 新族 packages-repo-catalog：支持，一处上限出入须登记**——核心表态 2 将
+  「字段上限」归本考证，考证结论＝**author 不在库面闭集**（§1(b)）。提案 F2
+  词面「以库面实际可得上限为准」兼容 author 缺席；若冻结批决意携带 author，
+  须同时裁决第二解析面风险（§1(b) 选项 ii）或上游扩展路径（选项 i）。
+- **F3 packages-query v0.2 result 增量：支持，零出入**；两语义边界（跨仓 max
+  与 prerelease-已装边界）交冻结批落死（§2）。
+- **F5 新族 packages-templates（前缀 packages.\*）：支持，零出入**；库面无 API
+  与 A5 留白互证，事实源＝已钉两目录根（§4）。
+- **F4 packages-ops v0.6 二分：支持**——刷新面库面事实在库（update_cache etag
+  条件刷新）随 v0.6 先行冻结可办；启停面候真机核实且本考证交付方法（§3(b)），
+  核心表态 7 三段程序的①（环境先行交付方法）由本节完成。
