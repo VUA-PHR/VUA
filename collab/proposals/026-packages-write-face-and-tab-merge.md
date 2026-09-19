@@ -729,3 +729,122 @@ vitest 80 文件 707/707）。**结论：核可通过**：
 - **解锁状态**：A4「形状核可」桌面侧条件满足（本节）；桌面无其
   他在途——A3 消费切片已验收入库（第 108 批 item 2），A4 消费切
   片候核心接线批入库。
+
+### 桌面形状核可（A5 TS 面，wt-3，2026-09-19 11:5x）
+
+**应操作者紧急批指派**（「026 A5 形状核可，开关条件＝A5 冻结批
+0c77273 入 main——照『轮询至入库后基于收编世代办理』先例，勿在候
+验收世代预核可」）。核可对象＝A5 冻结批 0c77273 24 件中 TS 面（
+`packages/contracts/src/application-contract.ts` 026 A5 段＋测试
+1 例 9 断言）＋mock 恒缺席臂（orchestrator-provider createProject
+归 P1 unavailable 臂＋1 测试行）。轮询实测 0c77273 经第 112 批
+item 2（8416df6）11:48 实质验收入 main（同拍 item 1 收编本树 A4
+消费切片三笔——收编回执就地消化）；本树追平壳 f3be0d5 --no-ff 吸
+收 8416df6（落后 5 领先 0 纯追平，ort 预检 tree 1eb20ce 零冲突，
+合并后与 main 逐字节全等），本核可基于收编世代（本树尖 f3be0d5＝
+main 8416df6 内容全等）本机直读＋定向复跑亲测（11:50–11:5x：df
+C 盘 596G/69% 先查；@vua/contracts check **79/79**＝wt-2 世代
+78＋本树 A4 钉例经 item 1 回归；@vua/orchestrator-provider check
+**39/39**＝38＋A5 mock 缺席臂 1；apps/desktop typecheck **双
+tsconfig exit 0**；desktop vitest 80 文件 **714/714**；跑前
+contracts dist 先重建照上拍陈旧事故登记先例）。**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①请求接口单命令闭集——
+  PackagesCreateProjectCommandV05＝command（commandId Kernel 生成
+  位，import-copy/A1–A4 先例）＋params 恰 {parent, name, template}
+  三键全 required：parent＝父目录路径事实非在册项目身份；name 非空
+  串（后端名称校验执行时权威，wire 面不重审上游语法——表单前置校
+  验仅 UI 引导镜像，协议本载明）；template REQUIRED-nullable（
+  schema type ["string","null"] minLength 1 实读，A2 版本选择同构
+  ：null＝后端默认解析〔库路径 Avatar 三级解析序——冻结词面事实
+  非选择器〕、非空串＝verbatim 透传、空串拒、缺键拒）；无
+  projectPath（创建不寻址在册项目，013 project_not_found 复用不适
+  用；携即形状违反，负例 invalid-create-carries-project-path＋TS
+  窄化负例钉死）；无 confirmedDigest（携即形状违反，负例
+  invalid-create-carries-digest＋TS 窄化负例钉死）。②plan 语义不
+  存在＝单段任务化（A3/A4 破对偶同律，此面根在端口：端口恰一个创
+  建方法无 create-preview 对应——预览臂会在 wire 面立端口后不存在
+  的方法；全新目录无既有状态可 diff 无摘要可绑定，端口 doc 注释实
+  读锚定）；用户显式表单提交即确认（桌面入口需求第 2 点落死，
+  ADR-0006 破坏性警示路径无可警示不发明）；answer-plan kind 锁负
+  例 invalid-create-answer-plan 钉死；九态任务化写命令（commandId
+  幂等/可取消/事件＋revision；copy_tree 无进度回调——可观察骑任
+  务状态面，恢复非终态 inspect_required 绝不隐式续传，诚实纪律
+  3）。③created 收据键集＝packages-ops 族唯一有实际载荷收据——
+  projectCreated 恰四键 {schemaVersion: "vua.packages-ops/v0.5",
+  kind: "created", projectId, projectPath} required＋additional
+  Properties:false（schema 实读：创建时间戳/复制统计/包清单发明即
+  INVALID 非仅不鼓励）；kind enum 纯增量 created（七值）；键集与
+  一切前代收据臂互斥（schema 逐臂 disjoint 载明）。④rejected 臂
+  guard 复用 PackagesGuardV02＝PackagesRemoveGuardV01 别名（:865）
+  三值闭集零新增（A5 不加 guard）；端口码闭集＝三个既有码零新立
+  （端口方法与双实现先于本批在库——冻结传输诚实面不铸造新码）：
+  模板路径四 i18n 键共享 vua.vpm.template_missing 载体（i18n 消息
+  键与端口错误码两层如实同载）＋CLI 路径 vua.vpm.apply_failed 携
+  exitCode＋vua.vpm.backend_unavailable；**双后端拒绝形状不同构如
+  实声明**不虚构统一形状（协议本载明）；全部拒绝折 execution_
+  failed 携原码 detail 溯源；code 锁 ^vua\.packages\.（schema
+  :498 实读；负例 invalid-result-rejected-code-outside-family 钉
+  死——复用码永不入 code 键）；信封错误面零新码（capability_
+  missing／invalid_params／unavailable 既有三码）。⑤零新 accessor
+  五联位（A5 与 A3/A4 结构差异，词面如实）——能力门＝既有
+  VpmCapabilities.create_project 五位居（vpm_backend.rs :48，位先
+  于本批存在且双在库后端已诚实声明：库真 CLI 真）；create_
+  capabilities 全文件 grep 零命中＝零新 accessor 实证；A3/A4 的
+  default declared-none 缺席臂模式本面不存在亦不需要（诚实缺席由
+  位 false＋wire 门 pre-submit 通用 capability_missing 承载，能力
+  缺席绝不进任务）；served 行 packages.createOps 一行一方法申报
+  （registerOps/removeOps 先例）随核心接线切片落地——接线前本方
+  法在 wire 面不存在；桌面消费 create 能力呈现须新立、不可复用
+  blocks.changes（语义＝变更预览可用性与「可新建项目」不同构，桌
+  面入口需求第 5 点②落死）。⑥union 双登记＋窄化臂负例——
+  ApplicationRequestV01 增 PackagesCreateProjectCommandV05、
+  ApplicationSuccessValueV01 增 PackagesCreateProjectResultV05 各
+  一行（:2132/:2279）；isApplicationRequestV01 窄化臂（:2717–
+  2733）顶键七键 hasExactKeys＋params 精确三键＋parent/name 非空
+  串＋template REQUIRED-nullable 律（null 或非空串二值闭集）；TS
+  测试 1 例 9 断言（正 2：null 模板＋"Avatar" 显式模板；负 7：缺
+  parent/空 name/空 template 串/缺 template 键/携 digest/携
+  projectPath 等）与冻结批申报一一对应。⑦capturedAt 收窄对 A5 新
+  成员有效性本世代证实——application-contract.ts 全文件 readonly
+  capturedAt 恰 1 处（:2208 EnvironmentSnapshotV01），A5 三新成员
+  （command/created/rejected）零 capturedAt 顶层键（A5 段 grep 零
+  命中）；桌面窄化点 electron-gateway.ts:135
+  `"capturedAt" in result.value` 不因 A5 union 扩张而破裂（type
+  check 双 tsconfig exit 0 行为级亲测，A2/A3/A4 先例同法）。⑧mock
+  恒缺席臂——createProject 归 P1 unavailable 臂（mock-provider.ts
+  :450；模拟面永不模拟 wire 写回执——创建收据 ProjectRef 投影与
+  「创建即在册」副作用只属于真实后端的合法事实）＋测试 1 行（恒答
+  vua.packages.unavailable）；provider check 39/39 行为级实证；桌
+  面消费切片照缺席臂呈现 unavailable，不预搬 fixture 形状。⑨
+  created 收据 ProjectRef 投影与诚实边界——projectId＝ProjectRef
+  .id 回显（后端铸造的信息性标识，非 013 项目身份键——项目身份仍
+  是路径，schema/TS 注释/协议本三面同载）；projectPath＝
+  ProjectRef.root 回显＝注册路径身份；创建即在册副作用（双后端成
+  功路径尾调 FileSystemProjectStore::initialize）词面/协议本如实
+  载明，不虚构「仅建目录不登记」形状（桌面入口需求第 3 点「成功
+  回执携新 ProjectRef、在册列表刷新即见」落死）；向量 3 正 10 负
+  与第 112 批登记一致（正＝null 模板请求＋显式模板请求＋created
+  收据；负＝carries-digest/carries-project-path/空 name/缺 name/
+  缺 parent/空 template/extra-param/answer-plan kind 锁/
+  invented-field/code-outside-family，examples 目录 13 文件实读）
+  ；协议本双语「明确在本词面之外」节如实（templates.* 枚举不冻结
+  ／projectId 非身份参数〔013 裁决不变〕／无文件系统读面）；「已
+  冻结未接线」诚实边界载明。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：v0.5 wire 信封常
+  量协议本 0.5 未载明（协议本明文「信封常量照 A3/A4 先例候接线批
+  于本文 0.5.x 修订载明」）——A5 消费切片窄化器按接线批实际落地面
+  核对，不猜测；create 能力呈现新键随消费切片申报（blocks 纯增量
+  键照 A2/A4 同法）；四错误 i18n 键（projectExists/
+  projectNameInvalid/templateMissing/templateCopyFailed）四语文案
+  随消费切片补齐（桌面入口需求第 5 点①在案；applyFailed 已在册先
+  例）；template=null 呈现＝如实呈现后端实际所用模板、不虚构下拉
+  选择器（首面零选择器，桌面入口需求第 4 点）；parent 落点＝表单
+  路径输入（目录枚举读面不存在，桌面不发明）；design-standard
+  §8.7 增补随消费切片。
+- **解锁状态**：A5「形状核可」桌面侧条件满足（本节）；A5 消费切片
+  （新建项目 UI 入口）解锁条件＝「本形状核可＋核心接线批入库」双
+  前置（A3/A4 同构）——本节落定其一，余候核心 A5 wire 接线切片
+  （packages.createOps 路由臂/served 行/信封组装）入库；消费切片
+  照操作者指派候下波办理，本拍不抢跑。零端到端宣称维持——本核可
+  系词表层核对＋定向复跑，无真机走查（归 W25/O-2）。
