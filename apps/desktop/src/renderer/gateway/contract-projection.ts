@@ -17,6 +17,7 @@ import {
 import type { EnvironmentView } from "./environment-port.ts";
 import type { WorkflowRunState } from "./workflow.ts";
 import type { TaskItem } from "./task-port.ts";
+import { taskIdentityOf } from "./task-identity.ts";
 import { strings } from "../i18n/index.ts";
 
 /**
@@ -44,17 +45,23 @@ export function projectTaskState(state: TaskStateV01): TaskStatus {
 
 /**
  * TaskSnapshotV01 → 任务中心条目。
- * - title:契约 v0.1 尚无标题负载(F3 首个真实用例引入);演示任务给本地化
- *   标签,其余任务如实展示 taskId,不伪造标题;
+ * - title:契约 v0.1 尚无标题负载(F3 首个真实用例引入),不发明 wire 字段;
+ *   渲染层发起操作的命令受理已登记身份的任务用登记标题,演示任务给本地化
+ *   标签,其余任务如实给类型词「后台任务」——W25 走查 D1 修复:裸 taskId
+ *   不再充当标题(投影不到的事实不编造描述,宁可显示类型词);
+ * - originPage:登记身份携带真实来源页,未登记回落 home;
  * - cancellable:由应用层事实派生(未请求取消且非终态),前端不自行猜测;
  * - errorText:契约错误码(工程事实);本地化错误文案随 F3 诊断切片接入。
  */
 export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
+  const identity = taskIdentityOf(task.taskId);
   return {
     id: task.taskId,
-    title: task.taskId.startsWith("demo-") ? strings.taskCenter.demoTaskTitle : task.taskId,
+    title:
+      identity?.title ??
+      (task.taskId.startsWith("demo-") ? strings.taskCenter.demoTaskTitle : strings.taskCenter.unlabeledTask),
     status: projectTaskState(task.state),
-    originPage: "home",
+    originPage: identity?.originPage ?? "home",
     cancellable: !task.cancellationRequested && !isTerminalTaskStateV01(task.state),
     ...(task.error === undefined ? {} : { errorText: task.error.code }),
     // 重启恢复(M2):遗留非终态任务如实标注,前端不得当作仍在执行
@@ -156,7 +163,7 @@ const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   disk_space: "diskSpace",
   unity_hub: "unityHub",
   unity_editors: "unityEditors",
-  vpm_cli: "vpmCli",
+  vpm: "vpm",
   vcc: "vcc",
 };
 

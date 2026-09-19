@@ -4,9 +4,11 @@ import {
   composeDraftToSaveDocument,
   composeRemoveItem,
   composeSaved,
+  composeSetNameHint,
   composeUndo,
   emptyComposeDraft,
 } from "./compose-draft-store.ts";
+import { composeSaveBlocked } from "./compose-save-chain.ts";
 
 /* 搭配草稿共享状态(019 批 B,UI-03):加入/移除/撤销/保存对齐的纯函数
  * 覆盖。会话概念(不进 localStorage);撤销只回退本地编辑;保存对齐由
@@ -110,4 +112,49 @@ test("composeDraftToSaveDocument: 草稿→recipe v0.3 保存文档(entrypoint=n
 
 test("composeDraftToSaveDocument: 空草稿 = null(不伪造空文档)", () => {
   expect(composeDraftToSaveDocument({ savedRecipeId: null, savedRevision: 0, items: [], now: "x" })).toBeNull();
+});
+
+/* ---- D3(用户裁定 2026-09-20「不该让用户填写」)回归钉:挂载名称自动派生
+ * 与保存链贯通——加入草稿即派生,无须用户输入即可保存;显式清空仍如实阻止 ---- */
+
+test("D3 自动派生:加入草稿时 nameHint 未指定 → 派生为条目 displayName(title)", () => {
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
+  expect(s1.items[0]?.nameHint).toBe("条目 wh-1");
+  // 两套 UI 同一规则:UI 调用面传入的即 null(ComposePage / forest root 同形)
+  expect(composeAddItem(emptyComposeDraft, itemWithHint("wh-2", null), T0).items[0]?.nameHint).toBe(
+    "条目 wh-2",
+  );
+  // 显式指定优先:用户提示不被派生覆盖
+  expect(composeAddItem(emptyComposeDraft, itemWithHint("wh-3", "my-hint"), T0).items[0]?.nameHint).toBe(
+    "my-hint",
+  );
+});
+
+test("D3 保存链贯通:自动派生值过 composeSaveBlocked,文档映射取派生值", () => {
+  const s1 = composeAddItem(
+    composeAddItem(emptyComposeDraft, item("wh-1"), T0),
+    item("wh-2"),
+    T1,
+  );
+  // 校验对自动填充值恒过:全派生草稿可直接提交
+  expect(composeSaveBlocked(s1.items)).toBe(false);
+  const doc = composeDraftToSaveDocument({
+    savedRecipeId: null,
+    savedRevision: 0,
+    items: s1.items,
+    now: T1,
+  });
+  expect(doc).not.toBeNull();
+  expect(doc?.instances.map((instance) => instance.entrypoint.nameHint)).toEqual([
+    "条目 wh-1",
+    "条目 wh-2",
+  ]);
+});
+
+test("D3 显式清空 = 显式未命名:守卫如实阻止(自动派生不吞用户覆盖)", () => {
+  const s1 = composeAddItem(emptyComposeDraft, item("wh-1"), T0);
+  expect(composeSaveBlocked(s1.items)).toBe(false);
+  const cleared = composeSetNameHint(s1, "wh-1", "");
+  expect(cleared.items[0]?.nameHint).toBeNull();
+  expect(composeSaveBlocked(cleared.items)).toBe(true);
 });

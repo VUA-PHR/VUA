@@ -49,7 +49,9 @@ const mixedChecks: CheckItem[] = [
     description: checks.vrchat.okDescription,
   },
   {
-    id: "unity",
+    // Unity 行携带引擎词表 checkId(CREATE_GATE_IDS 消费引擎 id 闭集):
+    // fixture 模拟真实数据源负载,id 词表与引擎 inspect_zone 对齐
+    id: "unity_editors",
     zone: "create",
     title: checks.unity.title,
     status: "ok",

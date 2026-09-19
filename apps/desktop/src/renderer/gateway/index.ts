@@ -202,6 +202,8 @@ export type {
 export type { SettingsPort, SettingsView } from "./settings-port.ts";
 export { createSignal } from "./signal.ts";
 export type { CancelTaskResult, TaskCenterView, TaskItem, TaskPort } from "./task-port.ts";
+export { registerTaskIdentity, taskIdentityOf } from "./task-identity.ts";
+export type { TaskIdentity } from "./task-identity.ts";
 export { createInactiveTutorialPort } from "./tutorial-port.ts";
 export type { DispatchResult, TutorialAction, TutorialPort, TutorialSnapshot } from "./tutorial-port.ts";
 export type { VuaGateway } from "./gateway.ts";

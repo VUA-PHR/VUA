@@ -11,8 +11,9 @@ VUA는 Windows를 우선 대상으로 하는 로컬 우선 VRChat 데스크톱 �
 하나의 연속된 워크플로로 구성합니다.
 
 > [!IMPORTANT]
-> **현재 제품 버전은 v0.5.0(pre-alpha)입니다.** 이 저장소는 초기 평가와 개발을 위한 것이며,
-> 일반 사용자가 일상적으로 사용할 수 있는 안정 버전은 아직 아닙니다.
+> **현재 제품 버전은 v0.6.0(pre-alpha)입니다. 릴리스 노트는 [docs/release/](docs/release/)를
+> 참조하세요.** 이 저장소는 초기 평가와 개발을 위한 것이며, 일반 사용자가 일상적으로 사용할 수 있는
+> 안정 버전은 아직 아닙니다.
 
 ## 제품 방향
 
@@ -30,7 +31,9 @@ VUA는 사용자가 원하는 결과에서 시작합니다. 환경 준비 또는
 - **Kernel 및 애플리케이션 호스트:** 소형 Node.js Kernel이 시작, 데스크톱 보안, Gateway,
   Orchestrator Provider 수명 주기를 담당합니다. React UI는 통제된 프레젠테이션 표면입니다.
 - **환경 및 프로젝트 관리:** VR, Unity, VRChat과 관련 도구를 검사하고 안내합니다. `vrc-get` 기반
-  VUA 패키지 관리자와 ALCOM/VCC 관리 프로젝트 호환성을 제공합니다.
+  VUA 패키지 관리자와 ALCOM/VCC 관리 프로젝트 호환성을 제공합니다. VPM 패키지 관리 설정
+  (`settings.json`의 저장소 구독 및 로컬 패키지 등록 표면)은 VCC/ALCOM과 동일한 설정 파일을
+  공유합니다. 자세한 내용은 [제품 경계(영어)](docs/product-boundary_EN.md)를 참조하세요.
 - **Orchestrator:** 계획, 승인, 영속 작업, 취소, 복구, 어댑터, Build Record를 담당하는 Rust 핵심이며,
   교체 가능한 버전형 Provider 경계를 통해 Kernel에 연결됩니다.
 - **Avatar MegaFactory(AMF):** Warehouse, Recipe, Assembly, Inspection, Release의 다섯 사용자
@@ -38,7 +41,8 @@ VUA는 사용자가 원하는 결과에서 시작합니다. 환경 준비 또는
 - **BDL(Booth Database Local):** 카탈로그, 출처, 이용 조건, 호환성, 검색, Warehouse 매핑 메타데이터를
   관리하는 AMF 전용 로컬 모듈입니다.
 - **Unity Bridge:** 글로벌 Unity `2022.3.22f1`에서 결정적인 작업을 수행하는 버전 지정 프로토콜입니다.
-- **데스크톱 및 VR Overlay:** 안정된 애플리케이션 서비스를 통해 상태와 안내를 표시합니다.
+- **데스크톱 및 VR Overlay:** 안정된 애플리케이션 서비스를 통해 상태와 안내를 표시합니다. VR Overlay는
+  `1.0.0` 이후 방향 앵커입니다.
 - **플러그인 프로토콜:** 기능 선언형 확장 경계로 계획되어 있습니다. 호스팅 마켓플레이스와 신뢰할 수
   없는 코드 실행은 현재 제공 계획에 포함되지 않습니다.
 
