@@ -146,7 +146,7 @@ describe("contract environment snapshot projection", () => {
       "disk_space",
       "unity_hub",
       "unity_editors",
-      "vpm_cli",
+      "vpm",
       "vcc",
     ] as const;
     const view = projectEnvironmentSnapshot({
@@ -184,7 +184,7 @@ describe("contract environment snapshot projection", () => {
       disk_space: "diskSpace",
       unity_hub: "unityHub",
       unity_editors: "unityEditors",
-      vpm_cli: "vpmCli",
+      vpm: "vpm",
       vcc: "vcc",
     };
     for (const [index, checkId] of engineIds.entries()) {

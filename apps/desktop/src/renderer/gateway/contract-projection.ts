@@ -156,7 +156,7 @@ const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   disk_space: "diskSpace",
   unity_hub: "unityHub",
   unity_editors: "unityEditors",
-  vpm_cli: "vpmCli",
+  vpm: "vpm",
   vcc: "vcc",
 };
 

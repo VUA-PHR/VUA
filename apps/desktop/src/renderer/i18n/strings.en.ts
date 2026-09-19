@@ -353,7 +353,7 @@ demoTaskTitle: "Demo task",
       diskSpace: "Disk space",
       unityHub: "Unity Hub",
       unityEditors: "Unity editors",
-      vpmCli: "VPM CLI (vrc-get)",
+      vpm: "VPM capability (embedded vrc-get-vpm)",
       vcc: "VCC (VRChat Creator Companion)",
     },
     /** presence three-word closed set → check item status words (#31 fix) */

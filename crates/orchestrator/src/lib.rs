@@ -85,6 +85,7 @@ pub use environment::{
     EditorInstallObservation, InstalledUnityEditor, EnvironmentCheckItemV1, EnvironmentEngine,
     EnvironmentPresence, EnvironmentRoots, EnvironmentSnapshotV1, FindingSeverity,
     ManagerDiagnostic, ManagerPresence, VccCapability, VccSettingsReader, VrRuntimeRoots, Zone,
+    EMBEDDED_VRC_GET_VPM_VERSION,
 };
 pub use filesystem::{
     project_tree_fingerprint, FileSystemProjectStore, FileSystemSnapshotStore,

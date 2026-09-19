@@ -354,7 +354,7 @@ demoTaskTitle: "演示任务",
       diskSpace: "磁盘空间",
       unityHub: "Unity Hub",
       unityEditors: "Unity 编辑器",
-      vpmCli: "VPM CLI(vrc-get)",
+      vpm: "VPM 能力（内嵌 vrc-get-vpm）",
       vcc: "VCC(VRChat Creator Companion)",
     },
     /** presence 三词闭集 → 条目卡状态词(用户实测缺口 #31 修复) */
