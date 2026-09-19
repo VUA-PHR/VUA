@@ -1,7 +1,7 @@
 ---
 proposal: 028
 title: "面向用户/操作者的受管文档审计（M5 关门程序 W26 步骤 a 前置盘点——用户 2026-09-19/20 指令「找之前的对用户需求和操作文档，看有没有需要更新的内容」）"
-status: 提出（2026-09-20 第 124 批登记；本提案＝审计清单登记面，先出清单、他域文档逐域下批更新；W25 真机窗口已由用户指令开启，清单办理在窗内进行）
+status: 办理中（2026-09-20 第 124 批登记；第 127 批：#1/#2/#5 集成席位办理完毕、#4 候用户裁决维持登记、#3/#7 挂账、#6 零强制行动、#8/#9 已办、#10 候 W26-a；剩余待办见内联线程集成回复）
 author: wt-main（集成，用户指令转述）
 date: 2026-09-20
 ---
@@ -67,6 +67,42 @@ date: 2026-09-20
   故候窗后办理（标准应记载修复后形态，避免先成文再返工）。
 - 时机理由：W25 真机窗口进行中，桌面席位优先走查发现项修复；design-standard 系受管文档
   （版本头＋REGISTRY＋双语镜像同步），候例行轮一次办理，不占本批。
+
+### 回复（集成 wt-main，2026-09-20 第 127 批）
+
+**#1/#2/#5 办理完毕，#4 维持候用户，另登记一处治理观察**：
+
+- **#1 根 README 四语言已办**：四语言版本声明 v0.5.0→v0.6.0 并补 `docs/release/` 发行页
+  链接（两选项并取，降低下次发行再腐化概率）；「桌面与 VR Overlay」行补「VR Overlay 为
+  `1.0.0` 后方向锚」限定（对齐 product-boundary 1.4.0）；「环境与项目管理」条补 U14 设置
+  面共享一句并链接产品边界（ZH/EN 链 `_ZH/_EN`；JA/KO 无边界镜像，按该文既有惯例链 EN）。
+- **#2 docs/README 双语导航已办**：「当前入口」按现行协议族刷新（unity-bridge 标注现行 v3
+  且注记生产路径 v2 继续生效、bdl-queries/bdl-commands v0.4、packages 族五行〔query v0.1／
+  catalog v0.2／ops v0.5／repos-catalog v0.1／repo-catalog v0.1〕、project-inspection v0.2、
+  project-ops v0.2、inspection-queries v0.1、editor-verify v0.1、production-use-case v0.2、
+  release-handoff v0.1）；入口区头部补 development-outline／design-standard／
+  project-context／REGISTRY 四链接；发行说明补 v0.5.0/v0.6.0；按任务阅读表 AMF/Recipe/Unity
+  行 unity-bridge-v1→v3；补 `collab/README.md` 协作机制入口一句；头部更新日期 2026-09-20。
+  **是否纳管 REGISTRY 留 W26-a 治理判断**（本批不擅自登记，导航自称的规范效力与未登记受管
+  的空隙照 #10 维持登记）。
+- **#5 alcom-vcc 已办**：条目 front-matter `status: planned→experimental`（先例
+  eac-process-recovery）、`delivery: v0.8.0→v0.7.0`（024–027 链归 M5/v0.7.0 窗口）；双语
+  正文补 U14 设置面例外句（对齐 product-boundary 1.4.0「明确边界」节措辞：豁免只及
+  settings.json 仓库订阅＋本地包注册表面；vcc.liteDb 等其余存储面与项目文件面维持禁止）
+  ＋落地注记（读面与设置面已随 024–027 落地，发行面候 v0.7.0）。连带
+  `docs/compatibility/alcom-vcc_ZH/EN.md` 升 **1.3.0**：权威与硬边界节补「设置面例外」段＋
+  禁止清单补豁免注记＋权威行刷至 1.4.0＋变更日志条目；REGISTRY 行同步（域归属保持环境，
+  集成代笔修订在行注记与本回复声明）。capabilities/risk 未动（risk 由发布门派生，本批零
+  capability 变更）。
+- **#4 project-context**：路线 A/B 候用户裁决维持登记不代决（操作者 2026-09-20 注：候用户
+  裁决项维持登记）。默认 A 不构成裁决。
+- **治理观察（新增，并入 #10）**：`docs/README.md`（无语言后缀）系 b4 世代旧残留（头
+  「范围：VUA 新仓库」、权威顺序含「用户当前明确裁决」等旧词、链接 product-boundary.md），
+  与现行 `README_ZH.md` 大面积分叉——候 W26-a 与纳管判断一并处置（更新/重定向/移除）。
+  本批不动它（028 清单未点名，避免超范围改写）。
+- 授权链：用户 2026-09-19/20 指令「找之前的对用户需求和操作文档，看有没有需要更新的内容」
+  （先清单后更新）＋操作者 2026-09-20 注「本拍可办」＋本提案执行序建议第 2 条；本批全部
+  变更面在集成所有权域（docs/＋collab/），照 outline 2.0.13 判例随集成登记批落 main。
 
 ### 回复（桌面 wt-3，2026-09-20 F2 消费批随批）
 

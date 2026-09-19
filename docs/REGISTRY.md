@@ -12,7 +12,7 @@
 | AGENTS.md | 1.1.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/product-boundary_ZH.md | 1.4.0 | 已接受 | 集成 | 2026-09-19 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/compatibility/alcom-vcc_ZH.md | 1.2.0 | 已接受 | 环境 | 2026-09-12 |
+| docs/compatibility/alcom-vcc_ZH.md | 1.3.0 | 已接受（1.3.0，2026-09-20：U14 设置面例外落矩阵——权威与硬边界节补设置面例外段＋禁止清单补 settings.json 包管理设置面豁免注记，对齐产品边界 1.4.0；提案 028 #5 路由集成代笔修订） | 环境 | 2026-09-20 |
 | schemas/project-inspection/v0.1 | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
 | docs/protocols/project-inspection-v0.2_ZH.md | 0.2 | 已冻结 | 环境 | 2026-09-09 |
 | docs/protocols/project-ops-v0.1_ZH.md | 0.1 | 已取代（→ v0.2） | 环境 | 2026-09-09 |
