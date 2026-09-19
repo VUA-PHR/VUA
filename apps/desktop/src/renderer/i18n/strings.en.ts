@@ -116,6 +116,14 @@ export const strings = {
 demoTaskTitle: "Demo task",
     replay: "Replay event stream",
     progress: "{done}/{total}",
+    openAria: "Open notification center, {count} active",
+    closeAria: "Close notification center",
+    empty: "No notifications",
+  },
+  bootSplash: {
+    starting: "Starting VUA",
+    waitingServices: "Waiting for local services…",
+    updateAvailable: "New version {version} available",
   },
   nav: {
     tabs: {
@@ -1716,6 +1724,43 @@ demoTaskTitle: "Demo task",
       removedLine: "Removed subscription: {repoId}",
     },
 
+    create: {
+      title: "Create new project",
+      description:
+        "Create a new VRChat project in a parent folder you choose. On success the project is registered with VUA immediately and appears in the registered list. Creation is not idempotent: creating into a directory that already exists is refused, and any refusal is shown as it is. Your VCC/ALCOM settings are never touched.",
+      parentPlaceholder: "Parent folder path, e.g. C:\\Users\\me\\VRChat Projects",
+      parentAria: "Parent folder path",
+      namePlaceholder: "Project name, e.g. My World",
+      nameAria: "Project name",
+      templatePlaceholder: "Template name (optional) — leave blank for the backend default template",
+      templateAria: "Template name, optional",
+      action: "Create project",
+      submitting: "Creating…",
+      successLine: "Created and registered: {projectPath}",
+      rejectedDetail: "Server says: {detail}",
+      refusals: {
+        projectExists: "The target directory already exists.",
+        projectNameInvalid: "The project name contains a forbidden character.",
+        templateMissing: "No template with that name exists in the library.",
+        templateCopyFailed: "Copying the template contents failed.",
+      },
+      guards: {
+        preview_drift: "The creation was refused.",
+        package_not_found: "The creation was refused.",
+        execution_failed: "The creation failed during execution.",
+        unknown: "The creation was refused.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "The current engine backend does not support project creation.",
+        invalidParams: "The creation request shape is invalid.",
+        unknown: "The operation failed.",
+      },
+      toasts: {
+        failedUnknown: "The project creation did not complete ({code}).",
+        unavailable: "The project creation did not complete: the result could not be confirmed; check the task center.",
+      },
+    },
+
     repos: {
       addCommunity: "Add community repository",
       riskTitle: "Before adding a community repository",
@@ -2002,6 +2047,17 @@ demoTaskTitle: "Demo task",
         "Export a redacted diagnostics bundle for troubleshooting. Contains only: app version, data source, environment check states with timestamps, and your goal selection. Never contains: file paths, asset or recipe content, account or device identifiers.",
       diagnosticsExport: "Export diagnostics",
       diagnosticsFailed: "Export failed. Please try again.",
+      updateHeading: "Update check",
+      updateDescription:
+        "On launch, VUA checks the project's release page for a newer version and shows it honestly. Read-only: nothing is downloaded or installed. Turn it off here at any time.",
+      updateToggle: "Check for updates on launch",
+      updateNow: "Check now",
+      updateChecking: "Checking…",
+      updateNewer: "New version available: {version}",
+      updateUpToDate: "You are on the latest version.",
+      updateFailed: "Update check failed. It will retry on the next launch.",
+      updateCheckedAt: "Last checked: {at}",
+      updateViewRelease: "View release notes",
     },
     about: {
       heading: "VRC Ultra Assistant",

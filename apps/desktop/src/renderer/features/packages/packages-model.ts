@@ -270,6 +270,52 @@ export function repoEnvelopeErrorKey(code: string): RepoEnvelopeErrorKey {
   return "unknown";
 }
 
+/* ---- A5 项目创建写面(026 v0.5 消费批):typed 码映射＋拒绝 detail 原
+ * 码检测 ---- */
+
+/** A5 信封/受理 typed 错误码 → strings.packages.create.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 v0.5 冻结词面已申报面(接线批落地面):通用 vua.vpm.capability_
+ * missing(能力门控在路由层作答——create 位假绝不进任务)、vua.
+ * packages.invalid_params(请求形状违规)。A5 无 projectPath(vua.
+ * project.project_not_found 复用对本面不适用——创建不寻址任何在册项
+ * 目)且无 preview 段(vua.packages.preview_failed 对本面不存在——本
+ * 面照 A3/A4 同律破 preview/apply 对偶),两码均不在闭集,如实缺席。
+ * 端口三码(vua.vpm.template_missing/apply_failed/backend_unavailable)
+ * 全折 execution_failed 的 rejected 臂(非信封错误),不经此映射;任务
+ * 非成功终态的 error.code 原词不在此闭集时一律 unknown。 */
+export type CreateEnvelopeErrorKey =
+  | "capabilityMissing"
+  | "invalidParams"
+  | "unknown";
+
+export function createEnvelopeErrorKey(code: string): CreateEnvelopeErrorKey {
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  return "unknown";
+}
+
+/** A5 rejected detail 原码检测:库路径四 i18n 键共享
+ * vua.vpm.template_missing 一码(i18n 消息键与端口错误码系两层——协议
+ * 本 0.5 双层如实载明),原消息键在 detail 原词携带,按其呈现四语语义
+ * 文案;CLI 腿(apply_failed/backend_unavailable)与词外 detail 无四键
+ * 语义,如实回落 "unknown"(guard 文案＋detail 原词呈现,绝不合并词、
+ * 绝不猜测)。检测 = 词面包含关系,不改写不截断 detail。 */
+export type CreateRefusalDetailKey =
+  | "projectExists"
+  | "projectNameInvalid"
+  | "templateMissing"
+  | "templateCopyFailed"
+  | "unknown";
+
+export function createRefusalDetailKey(detail: string): CreateRefusalDetailKey {
+  if (detail.includes("errors.vpm.projectExists")) return "projectExists";
+  if (detail.includes("errors.vpm.projectNameInvalid")) return "projectNameInvalid";
+  if (detail.includes("errors.vpm.templateMissing")) return "templateMissing";
+  if (detail.includes("errors.vpm.templateCopyFailed")) return "templateCopyFailed";
+  return "unknown";
+}
+
 /* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面):批量请求行构造 ---- */
 
 /**

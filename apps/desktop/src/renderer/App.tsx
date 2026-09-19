@@ -69,6 +69,9 @@ import {
   type ProductionIntroPhase,
 } from "./features/production/production-intro-state.ts";
 import { Taskbar } from "./features/task-center/Taskbar.tsx";
+import { NotificationPopover } from "./features/task-center/NotificationPopover.tsx";
+import { BootSplash } from "./components/splash/BootSplash.tsx";
+import { bootProgress } from "./app/boot-progress.ts";
 import { ToolsPage, type ToolsPageId } from "./features/tools/ToolsPage.tsx";
 import { WarehousePage } from "./features/warehouse/WarehousePage.tsx";
 import { WorkshopPage } from "./features/workshop/WorkshopPage.tsx";
@@ -80,6 +83,12 @@ import { ExperimentalCommands } from "./features/settings/experimental-commands.
 import { DevModeSection } from "./features/settings/dev-mode-section.tsx";
 import { EnvironmentSettingsPage } from "./features/settings/environment-page.tsx";
 import { useAutoDeleteOriginals } from "./app/delete-originals-auto.ts";
+import {
+  runUpdateCheck,
+  saveUpdateCheckEnabled,
+  useUpdateCheckCache,
+  useUpdateCheckEnabled,
+} from "./app/update-check-store.ts";
 import { appMeta } from "./app/app-meta.ts";
 import { NavOverflowMenu } from "./app/NavOverflowMenu.tsx";
 import { openExternalUrl } from "./app/open-external.ts";
@@ -425,6 +434,11 @@ function VersionPage() {
   const settings = useSettingsView();
   const dataSource = useDataSource();
   const [exportFailed, setExportFailed] = useState(false);
+  // 版本检测(2026-09-19 裁决:默认开启、设置可关;只读探测,Phase C
+  // 下载/应用更新独立提案):开关与缓存经 update-check-store,三态如实呈现
+  const updateEnabled = useUpdateCheckEnabled();
+  const updateCache = useUpdateCheckCache();
+  const [updateChecking, setUpdateChecking] = useState(false);
 
   const exportDiagnostics = () => {
     const bundle = buildDiagnostics({
@@ -433,6 +447,11 @@ function VersionPage() {
       deployer: environment.deployer,
     });
     setExportFailed(!downloadDiagnostics(bundle));
+  };
+
+  const checkNow = () => {
+    setUpdateChecking(true);
+    void runUpdateCheck().finally(() => setUpdateChecking(false));
   };
 
   return (
@@ -445,6 +464,46 @@ function VersionPage() {
           <h2 className="vua-title">{copy.heading}</h2>
           <p className="vua-page__version">{copy.versionLine}</p>
           <p className="vua-text-secondary">{copy.description}</p>
+        </div>
+      </Card>
+      <Card>
+        <div className="vua-page__stack">
+          <h2 className="vua-title">{copy.updateHeading}</h2>
+          <p className="vua-text-secondary">{copy.updateDescription}</p>
+          <label className="vua-settings-toggle">
+            <input
+              type="checkbox"
+              checked={updateEnabled}
+              onChange={(event) => saveUpdateCheckEnabled(event.target.checked)}
+            />
+            {copy.updateToggle}
+          </label>
+          {updateCache?.state === "newer-available" ? (
+            <p className="vua-caption">
+              {format(copy.updateNewer, { version: updateCache.latestVersion ?? "" })}
+            </p>
+          ) : null}
+          {updateCache?.state === "up-to-date" ? (
+            <p className="vua-caption vua-text-secondary">{copy.updateUpToDate}</p>
+          ) : null}
+          {updateCache?.state === "check-failed" ? (
+            <p className="vua-caption vua-text-secondary">{copy.updateFailed}</p>
+          ) : null}
+          {updateCache ? (
+            <p className="vua-caption vua-text-secondary">
+              {format(copy.updateCheckedAt, { at: new Date(updateCache.checkedAt).toLocaleString() })}
+            </p>
+          ) : null}
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <Button variant="default" disabled={updateChecking} onClick={checkNow}>
+              {updateChecking ? copy.updateChecking : copy.updateNow}
+            </Button>
+            {updateCache?.state === "newer-available" && updateCache.releaseUrl ? (
+              <Button variant="subtle" onClick={() => openExternalUrl(updateCache.releaseUrl!)}>
+                {copy.updateViewRelease}
+              </Button>
+            ) : null}
+          </div>
         </div>
       </Card>
       <Card>
@@ -663,6 +722,10 @@ function AppShell({
 }) {
   // 008 路径 a 桌面接线(W19):删除偏好开启时,生成完成即逐条目发起独立删除任务
   useAutoDeleteOriginals();
+  // 启动里程碑 paint:AppShell 首帧提交(Phase A 开屏牵线)
+  useEffect(() => {
+    bootProgress.report("paint");
+  }, []);
   // 主题(C-RESUME 工作区恢复):localStorage 持久化优先,?theme= 仅作走查覆盖
   const [themeOverrideFromUrl] = useState(() => {
     const value = new URLSearchParams(window.location.search).get("theme");
@@ -1081,6 +1144,9 @@ function AppShell({
         >
           {strings.app.overlayToggle}
         </button>
+        {/* 通知中心顶栏入口(对标 Comfy 铃铛,自绘):与底部任务条共用同一通知投影;
+         *  capability 非 ready 时组件自身不渲染 */}
+        <NotificationPopover navigate={navigate} />
         {inShell ? (
           <div className="vua-shell__window-controls">
             <button
@@ -1192,6 +1258,24 @@ export function App() {
     resolveEntry(storedGoals, override === null ? readStoredPage() : null),
   );
   const [showOnboarding, setShowOnboarding] = useState(entry.showOnboarding);
+  // 启动开屏:首帧覆盖层,播完/跳过后卸载;与 Gateway 装配并行,不阻塞数据
+  const [splashDone, setSplashDone] = useState(false);
+  // 启动里程碑(Phase A 牵线):gateway 装配完成即报;provider 探针=首个
+  // capability 应答(任一结果均计,测网关链活性);paint 由 AppShell 首效应上报
+  useEffect(() => {
+    bootProgress.report("gateway");
+    void gateway.task.capability().then(
+      () => bootProgress.report("provider"),
+      () => bootProgress.report("provider"),
+    );
+  }, [gateway]);
+  // 版本检测(2026-09-19 裁决:默认开启、设置可关):启动后静默自检一次,
+  // 结果落缓存供开屏角标/设置页呈现;延迟 2.5s 让启动链路先行,失败
+  // 恒落 check-failed 缓存(不弹打扰、不猜态)
+  useEffect(() => {
+    const timer = window.setTimeout(() => void runUpdateCheck(), 2500);
+    return () => window.clearTimeout(timer);
+  }, []);
   // 深链接(C-EFFICIENCY):#<pageId> 优先于 ?page= 与历史落点
   const [page, setPage] = useState<PageId>(() => {
     const hashPage = readHashPage();
@@ -1259,11 +1343,14 @@ export function App() {
 
   if (showOnboarding) {
     return (
-      <OnboardingPage
-        initialGoals={storedGoals?.goals ?? []}
-        initialEnvs={storedGoals?.environments ?? []}
-        onComplete={handleOnboardingComplete}
-      />
+      <>
+        {!splashDone ? <BootSplash onDone={() => setSplashDone(true)} /> : null}
+        <OnboardingPage
+          initialGoals={storedGoals?.goals ?? []}
+          initialEnvs={storedGoals?.environments ?? []}
+          onComplete={handleOnboardingComplete}
+        />
+      </>
     );
   }
 
@@ -1275,6 +1362,7 @@ export function App() {
 
   return (
     <GatewayProvider gateway={gateway}>
+      {!splashDone ? <BootSplash onDone={() => setSplashDone(true)} /> : null}
       {uiRoot === "forest-green" ? (
         <ForestVariantRoot onBackToCurrent={() => setUiRoot("current")} />
       ) : (

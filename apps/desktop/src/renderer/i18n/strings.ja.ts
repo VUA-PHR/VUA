@@ -107,6 +107,14 @@ export const strings: Strings = {
 demoTaskTitle: "デモタスク",
     replay: "イベントストリームを再生",
     progress: "{done}/{total}",
+    openAria: "通知センターを開く(実行中 {count} 件)",
+    closeAria: "通知センターを閉じる",
+    empty: "通知はありません",
+  },
+  bootSplash: {
+    starting: "VUA を起動しています",
+    waitingServices: "ローカルサービスの起動を待っています…",
+    updateAvailable: "新しいバージョン {version} があります",
   },
   nav: {
     tabs: {
@@ -1647,6 +1655,43 @@ rolled_back: "ロールバック済み",
       removedLine: "購読を解除しました:{repoId}",
     },
 
+    create: {
+      title: "新規プロジェクトを作成",
+      description:
+        "選択した親フォルダーに新しい VRChat プロジェクトを作成します。作成に成功すると、プロジェクトは直ちに VUA に登録され、登録リストに表示されます。作成は冪等ではありません:既に存在するディレクトリーへの作成は拒否され、拒否はそのまま表示されます。VCC/ALCOM の設定は一切変更しません。",
+      parentPlaceholder: "親フォルダーのパス(例: C:\\Users\\me\\VRChat Projects)",
+      parentAria: "親フォルダーのパス",
+      namePlaceholder: "プロジェクト名(例: My World)",
+      nameAria: "プロジェクト名",
+      templatePlaceholder: "テンプレート名(任意)—空欄でバックエンド既定テンプレートを使用",
+      templateAria: "テンプレート名(任意)",
+      action: "プロジェクトを作成",
+      submitting: "作成中…",
+      successLine: "作成・登録済み:{projectPath}",
+      rejectedDetail: "サーバーの説明:{detail}",
+      refusals: {
+        projectExists: "対象ディレクトリーは既に存在します。",
+        projectNameInvalid: "プロジェクト名に禁止文字が含まれています。",
+        templateMissing: "その名前のテンプレートはライブラリーに存在しません。",
+        templateCopyFailed: "テンプレート内容のコピーに失敗しました。",
+      },
+      guards: {
+        preview_drift: "作成要求は拒否されました。",
+        package_not_found: "作成要求は拒否されました。",
+        execution_failed: "作成は実行中に失敗しました。",
+        unknown: "作成要求は拒否されました。",
+      },
+      envelopeErrors: {
+        capabilityMissing: "現在のエンジンバックエンドはプロジェクト作成に対応していません。",
+        invalidParams: "作成要求の形式が無効です。",
+        unknown: "操作に失敗しました。",
+      },
+      toasts: {
+        failedUnknown: "プロジェクト作成が完了しませんでした({code})。",
+        unavailable: "プロジェクト作成が完了しませんでした:結果を確認できません。タスクセンターを確認してください。",
+      },
+    },
+
     repos: {
       addCommunity: "コミュニティリポジトリを追加",
       riskTitle: "コミュニティリポジトリを追加する前に",
@@ -1927,6 +1972,17 @@ rolled_back: "ロールバック済み",
       diagnosticsDescription: "問題切り分け用の脱敏済み診断バンドルをエクスポートします。含まれるもの: アプリバージョン、データソース、環境チェック状態とタイムスタンプ、目標選択。含まれないもの: ファイルパス、素材やレシピの内容、アカウントやデバイス識別子。",
       diagnosticsExport: "診断バンドルをエクスポート",
       diagnosticsFailed: "エクスポートに失敗しました。もう一度お試しください。",
+      updateHeading: "アップデート確認",
+      updateDescription:
+        "起動時に VUA がプロジェクトのリリースページへ新バージョンの有無を読み取り専用で確認し、結果をありのまま表示します。ダウンロードやインストールは行いません。いつでもここでオフにできます。",
+      updateToggle: "起動時にアップデートを確認",
+      updateNow: "今すぐ確認",
+      updateChecking: "確認しています…",
+      updateNewer: "新しいバージョンがあります: {version}",
+      updateUpToDate: "最新バージョンを利用しています。",
+      updateFailed: "確認に失敗しました。次回起動時に再試行します。",
+      updateCheckedAt: "最終確認: {at}",
+      updateViewRelease: "リリースノートを見る",
     },
     about: {
       heading: "VRC Ultra Assistant",

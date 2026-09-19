@@ -2,11 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.3.0
+> Document version: 1.4.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.3.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.4.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-09
+> Updated: 2026-09-19
 > Normative effect: Yes
 
 ## Product definition
@@ -38,11 +38,20 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    local catalog, terms, compatibility, source, search, and mapping module.
 4. **Environment deployment:** prerequisite detection, guided deployment, and bounded recovery for
    hardware, VR, Unity, VRChat, and related tools without which play or Avatar production is blocked.
-5. **Project management:** VUA's `vrc-get`-based package manager; **read-only compatibility**
-   with ALCOM/VCC-managed projects, whose only write path is the user-initiated "import as a
+5. **Project management:** the most frequently used "project management" in VUA is actually the
+   Recipe and Release modules; VUA's `vrc-get`-based package manager takes **Recipe-driven
+   automatic resolution and import** as its primary form — it finds and imports the matching
+   packages from a Recipe's inputs, rather than being a module where the user manually imports a
+   series of plugins on first entry; manual per-package management is the secondary form (user
+   reaffirmation and ruling U14, 2026-09-19). **Read-only compatibility** applies to
+   ALCOM/VCC-managed projects, whose only write path is the user-initiated "import as a
    VUA-managed copy" (user ruling U3, 2026-09-08; allow/deny lists, copy spec, and tightening
    clause under Explicit boundaries; write capability against original projects is uniformly
-   false within the `1.0.x` boundary).
+   false within the `1.0.x` boundary). **Settings-face exception (user ruling U14,
+   2026-09-19):** the VPM package-manager settings (the repository-subscription and
+   local-package-registry faces of `settings.json`) are the same file shared with VCC/ALCOM;
+   VUA may read and write it, and changes are visible to both sides immediately — this exception
+   covers the settings face only; the project-file face keeps U3 unchanged.
 6. **Unity Bridge:** a versioned deterministic protocol whose production target is exactly global
    Unity `2022.3.22f1`; historical editor projects enter through the documented migration boundary.
 7. **Desktop overlay:** guidance, status, and runtime information through stable application
@@ -122,7 +131,14 @@ gate derives risk from declared capabilities and behavior.
   and recovery mechanics. **Tightening clause:** within the `1.0.x` boundary, write capability
   against ALCOM/VCC-managed projects is uniformly false; it may only be opened later through a
   **new user ruling** once the upstream offers verifiable transactions/locks/a supported write
-  interface — warnings alone are not sufficient.
+  interface — warnings alone are not sufficient. **Settings-face exception (user ruling U14,
+  2026-09-19):** the deny-list item "writing ALCOM/VCC registries, databases, settings, or
+  caches" is waived for the VPM package-manager settings file (the repository-subscription and
+  local-package-registry faces of `settings.json`) — that location is the shared settings
+  convention of VCC/ALCOM/vrc-get, and VUA is opened for read/write with changes visible to both
+  sides immediately; all other storage faces such as `vcc.liteDb` stay denied, and the
+  project-file face keeps U3 read-only with clone-then-modify-the-copy as the default external
+  import path.
 - **Remote web browsing and window/protocol boundary (user rulings U7② + U9, 2026-09-09):**
   Web browsing follows an **allowlist-first** policy — allowlisted domains browse directly;
   non-allowlisted domains are **prompted but never blocked** (content stays reachable after
@@ -162,6 +178,17 @@ contribution policy is defined in the root contribution guide. Release signing a
 remain release-engineering decisions.
 
 ## Document changelog
+
+- 1.4.0 (2026-09-19): U14 user ruling landed in the boundary — project-management item 5
+  reaffirmed: the most frequently used "project management" in VUA is actually the Recipe and
+  Release modules; the package manager's primary form is Recipe-driven automatic resolution and
+  import (finding and importing the matching packages from a Recipe's inputs), with manual
+  per-package management as the secondary form; a settings-face exception is opened: the VPM
+  package-manager settings (the repository-subscription and local-package-registry faces of
+  `settings.json`) are shared with VCC/ALCOM as one file, VUA may read and write it, and changes
+  are visible to both sides immediately; the project-file face keeps U3 unchanged — external
+  import still defaults to clone-then-modify-the-copy and original projects stay read-only.
+  Mirrors the ZH edition.
 
 - 1.3.0 (2026-09-09): U7② + U9 user rulings landed in the boundary — a new Explicit-boundaries
   clause, **remote web browsing and window/protocol boundary**: allowlist-first browsing,

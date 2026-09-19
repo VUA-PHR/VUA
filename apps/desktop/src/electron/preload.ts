@@ -100,6 +100,11 @@ const api: VuaDesktopApiV1 = Object.freeze({
   capabilities: Object.freeze({
     remoteBrowser: true,
   }),
+  // 版本检测(2026-09-19 裁决:默认开启、设置可关;只读探测,下载/
+  // 应用更新属 Phase C 独立提案;失败恒落 check-failed,渲染层如实呈现)
+  system: Object.freeze({
+    checkUpdate: () => ipcRenderer.invoke("vua:system:check-update"),
+  }),
   // 导航确认流(015 §12,批 B-3):Main 发确认请求,渲染层以 i18n 确认卡
   // 作答;确认在前/逐次无记忆,用户不答=不执行
   navigationConfirm: Object.freeze({

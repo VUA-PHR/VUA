@@ -1,4 +1,4 @@
-import { app, BrowserWindow, dialog, ipcMain, session, shell } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, net, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
 import type {
@@ -34,6 +34,7 @@ import {
   isAllowedLocalSender,
   localWindowWebPreferences,
 } from "./security.js";
+import { checkLatestRelease } from "./update-check.js";
 
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
@@ -267,6 +268,18 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const current = readEditorSettingsFromFile(editorSettingsPath());
     if (!isEditorSettingsV1(settings)) return current;
     return writeEditorSettingsToFile(editorSettingsPath(), settings as EditorSettingsV1);
+  });
+
+  // 版本检测(2026-09-19 用户裁决:默认开启、设置可关;只读探测——
+  // 下载/应用更新属 Phase C 独立提案):经 electron net 栈走系统网络,
+  // 10s 超时熔断;失败语义全部内收于 check-failed,本 handler 永不抛
+  ipcMain.handle("vua:system:check-update", async (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    return checkLatestRelease(app.getVersion(), async (url) => {
+      const response = await net.fetch(url, { signal: AbortSignal.timeout(10_000) });
+      if (!response.ok) throw new Error(`http ${response.status}`);
+      return response.json();
+    });
   });
 
   ipcMain.handle("vua:window:minimize", (event) => {
