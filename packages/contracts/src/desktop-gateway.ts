@@ -1072,6 +1072,31 @@ export interface DesktopEditorSettingsApiV1 {
   save(settings: EditorSettingsV1): Promise<EditorSettingsV1>;
 }
 
+// ---- 版本检测(2026-09-19 用户裁决:默认开启、设置可关;仅只读探测,
+// 下载/应用更新 = Phase C 单独立提案,本面不承载) ----
+
+/** 三态闭集:newer-available = 远端发布高于当前;up-to-date = 已最新或无法
+ * 证明更高;check-failed = 网络/解析失败(如实呈现,绝不猜态) */
+export type UpdateCheckStateV1 = "newer-available" | "up-to-date" | "check-failed";
+
+export interface UpdateCheckResultV1 {
+  readonly schemaVersion: 1;
+  readonly state: UpdateCheckStateV1;
+  /** 发起检测时的当前应用版本(app.getVersion()) */
+  readonly currentVersion: string;
+  /** 远端最新发布版本;check-failed 或缺 tag_name 时为 null(诚实缺席) */
+  readonly latestVersion: string | null;
+  /** 远端发布页 URL;无发布或失败时为 null */
+  readonly releaseUrl: string | null;
+  /** 检测完成时刻(RFC 3339,Main 侧落戳) */
+  readonly checkedAt: string;
+}
+
+export interface DesktopSystemApiV1 {
+  /** 只读版本探测:比对 GitHub latest release;永不抛——失败恒落 check-failed */
+  checkUpdate(): Promise<UpdateCheckResultV1>;
+}
+
 export interface VuaDesktopApiV1 {
   readonly gateway: DesktopGatewayApiV1;
   readonly events: DesktopGatewayEventsApiV1;
@@ -1081,6 +1106,7 @@ export interface VuaDesktopApiV1 {
   readonly capabilities: DesktopCapabilitiesV1;
   readonly navigationConfirm: DesktopNavigationConfirmApiV1;
   readonly editorSettings: DesktopEditorSettingsApiV1;
+  readonly system: DesktopSystemApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

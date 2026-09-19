@@ -42,4 +42,10 @@ export const storageKeys = {
    *  值 = ui-registry 的 UiRootId(current | forest-green);共享容器
    *  (GatewayProvider)不随切换重建 */
   uiRootSelection: "vua-ui-root-selection",
+  /** 版本检测开关(2026-09-19 裁决:默认开启、设置可关):absent/"on" = 开,
+   *  "off" = 关;见 app/update-check-store.ts */
+  updateCheckEnabled: "vua-update-check-enabled",
+  /** 版本检测最近结果缓存(开屏角标/设置页冷启动呈现):版本化
+   *  StoredUpdateCheckV1;见 app/update-check-store.ts */
+  updateCheckCache: "vua-update-check-cache",
 } as const;

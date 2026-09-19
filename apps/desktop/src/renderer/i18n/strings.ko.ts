@@ -113,6 +113,8 @@ demoTaskTitle: "데모 작업",
   },
   bootSplash: {
     starting: "VUA 시작 중",
+    waitingServices: "로컬 서비스 준비를 기다리는 중…",
+    updateAvailable: "새 버전 {version} 사용 가능",
   },
   nav: {
     tabs: {
@@ -1964,6 +1966,17 @@ rolled_back: "롤백됨",
       diagnosticsDescription: "문제 진단용 비식별 진단 번들을 내보냅니다. 포함: 앱 버전, 데이터 소스, 환경 검사 상태와 타임스탬프, 목표 선택. 미포함: 파일 경로, 에셋·레시피 내용, 계정 또는 디바이스 식별자.",
       diagnosticsExport: "진단 번들 내보내기",
       diagnosticsFailed: "내보내기에 실패했습니다. 다시 시도하세요.",
+      updateHeading: "업데이트 확인",
+      updateDescription:
+        "시작할 때 VUA가 프로젝트 릴리스 페이지에서 새 버전이 있는지 읽기 전용으로 확인하고 결과를 있는 그대로 표시합니다. 다운로드하거나 설치하지 않습니다. 언제든 여기에서 끌 수 있습니다.",
+      updateToggle: "시작 시 업데이트 확인",
+      updateNow: "지금 확인",
+      updateChecking: "확인하는 중…",
+      updateNewer: "새 버전 사용 가능: {version}",
+      updateUpToDate: "최신 버전을 사용 중입니다.",
+      updateFailed: "확인에 실패했습니다. 다음 시작 때 다시 시도합니다.",
+      updateCheckedAt: "마지막 확인: {at}",
+      updateViewRelease: "릴리스 노트 보기",
     },
     about: {
       heading: "VRC Ultra Assistant",
