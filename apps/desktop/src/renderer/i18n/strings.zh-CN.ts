@@ -103,6 +103,7 @@ export const strings: Strings = {
     generateVpm: "生成 VPM 包:{name}",
     deleteOriginals: "删除原始素材:{name}",
     importBatch: "批量导入素材包",
+    adoptDownload: "采纳下载",
   },
   taskCenter: {
     title: "通知中心",
@@ -123,6 +124,7 @@ demoTaskTitle: "演示任务",
     openAria: "打开通知中心,{count} 项进行中",
     closeAria: "关闭通知中心",
     empty: "暂无通知",
+    unlabeledTask: "后台任务",
   },
   bootSplash: {
     starting: "正在启动 VUA",
@@ -299,7 +301,7 @@ demoTaskTitle: "演示任务",
       create: {
         title: "生产环境",
         readyHeadline: "可以开始制作 Avatar 了",
-        readyDescription: "{zone}检查全部通过,可以进入下一步。",
+        readyDescription: "{zone}硬前置(Unity 编辑器)已就绪,可以开始创作。",
         pendingDescription: "完成缺失项目后即可开始创作,修复不会影响已有数据。",
         emptyDescription: "环境检测器接入后,此处会逐项显示 Unity、VPM 与磁盘空间状态。",
       },
@@ -427,7 +429,7 @@ demoTaskTitle: "演示任务",
     /** 生产环境未就绪时的诚实阻断态(v0.3.3 §2.1:不自动切页,由用户点击后才跳转) */
     blocked: {
       title: "生产环境尚未准备",
-      description: "车间需要可用的 Unity 与 VPM 生产环境。准备好之后即可开始装配。",
+      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始装配。",
       cta: "前往准备生产环境",
     },
     trackAria: "{amf}生产阶段",

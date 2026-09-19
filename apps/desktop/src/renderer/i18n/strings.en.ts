@@ -99,6 +99,7 @@ export const strings = {
     generateVpm: "Generate VPM: {name}",
     deleteOriginals: "Delete originals: {name}",
     importBatch: "Batch import material packages",
+    adoptDownload: "Adopt download",
   },
   taskCenter: {
     title: "Notification Center",
@@ -119,6 +120,7 @@ demoTaskTitle: "Demo task",
     openAria: "Open notification center, {count} active",
     closeAria: "Close notification center",
     empty: "No notifications",
+    unlabeledTask: "Background task",
   },
   bootSplash: {
     starting: "Starting VUA",
@@ -300,7 +302,7 @@ demoTaskTitle: "Demo task",
       create: {
         title: "Production Environment",
         readyHeadline: "You're ready to create avatars",
-        readyDescription: "All {zone} checks passed. You can move on to the next step.",
+        readyDescription: "The {zone} hard prerequisite (Unity editor) is ready. You can start creating.",
         pendingDescription: "Complete the missing items to start creating; fixes do not affect existing data.",
         emptyDescription:
           "Once environment detectors are connected, Unity, VPM and disk space status will be listed here.",
@@ -424,7 +426,7 @@ demoTaskTitle: "Demo task",
     blocked: {
       title: "Production environment not ready",
       description:
-        "The workshop needs a working Unity and VPM production environment. Once ready, assembly can begin.",
+        "The workshop needs a working Unity editor (the production-build hard prerequisite). Once ready, assembly can begin.",
       cta: "Prepare production environment",
     },
     trackAria: "{amf} production stages",
