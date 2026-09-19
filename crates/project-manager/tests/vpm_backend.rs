@@ -1841,3 +1841,282 @@ fn p2_package_catalog_local_source_is_honest_and_an_absent_package_is_typed() {
     fs::remove_dir_all(&base).ok();
 }
 
+// --- 027 F2 read face: per-repository installable-package inventory ---
+
+/// Builds the F2 repo-catalog world: an isolated environment subscribing two
+/// synthetic repositories — one refreshed (cache file in place, id+name in
+/// the document) and one never refreshed — exercising the face's whole world
+/// (loaded rows + not-loaded remainder incl. the two predefined caches).
+/// All data synthetic; the backend runs offline (cache-degradation path).
+fn f2_repo_world(label: &str) -> (VrcGetLibBackend, std::path::PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    let cached_repo = environment_root.join("Repos").join("synthetic-repo.json");
+    synthetic_repo_cache(&cached_repo);
+    let never_refreshed = environment_root.join("Repos").join("never-refreshed.json");
+    fs::create_dir_all(&environment_root).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({
+            "userRepos": [
+                {
+                    "localPath": cached_repo.display().to_string(),
+                    "name": "Synthetic Repo",
+                    "id": "com.vua.test.repo.synthetic",
+                    "url": "https://example.invalid/vua/synthetic-repo.json"
+                },
+                {
+                    "localPath": never_refreshed.display().to_string(),
+                    "name": "Never Refreshed",
+                    "id": "com.vua.test.repo.never",
+                    "url": "https://example.invalid/vua/never-refreshed.json"
+                }
+            ]
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    (backend, base)
+}
+
+#[test]
+fn f2_repo_catalog_projects_the_collection_world_per_repository() {
+    let (backend, base) = f2_repo_world("f2-catalog");
+
+    // The capability is declared exactly now that the face is implemented
+    // (ORC-DEV-004: no implementation, no reservation) — this override is
+    // what flips the served row packages.repoCatalogOps to available.
+    assert!(backend.repo_catalog_capabilities().repo_catalog);
+
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(
+        catalog.cache_sourced,
+        "offline world = this result was served through the cache-degradation path"
+    );
+    assert_eq!(
+        catalog.repos.len(),
+        4,
+        "world = the loaded row + the not-loaded remainder (official/curated/never-refreshed)"
+    );
+
+    // Loaded rows first, in the collection's own enumeration order (one here);
+    // identity comes from the cache document itself.
+    let synthetic = &catalog.repos[0];
+    assert_eq!(
+        synthetic.repo_id.as_deref(),
+        Some("com.vua.test.repo.synthetic")
+    );
+    assert_eq!(synthetic.name.as_deref(), Some("Synthetic Repo"));
+    assert!(synthetic.cached, "the refreshed cache file is a collection hit");
+    assert_eq!(synthetic.packages.len(), 1);
+    let package = &synthetic.packages[0];
+    assert_eq!(package.package_id, "com.vua.test.catalog.synthetic");
+    assert_eq!(package.display_name.as_deref(), Some("Synthetic Catalog"));
+    assert_eq!(
+        package.description.as_deref(),
+        None,
+        "the manifest carries no description: honest null, never padded"
+    );
+    // latestVersion = the per-repo frozen judgment: yanked 0.9.0 excluded,
+    // prerelease switch off, and NO project-Unity constraint (2.0.0 with
+    // unity 2022.4 still qualifies — the compatible judgment stays the
+    // packages-catalog face's project-bound fact).
+    assert_eq!(package.latest_version.as_deref(), Some("2.0.0"));
+    assert_eq!(
+        package.version_count, 3,
+        "cache inventory count, yanked included — a cache fact, not an availability promise"
+    );
+
+    // The not-loaded remainder in the library's own source-chain order: the
+    // two predefined caches (no identity facts exist yet: honest null/null)
+    // then the never-refreshed subscription (its settings-row identity), all
+    // with EMPTY packages arrays — their own honest state, never hidden.
+    for predefined in [&catalog.repos[1], &catalog.repos[2]] {
+        assert_eq!(predefined.repo_id, None, "predefined cache not yet refreshed: no identity facts");
+        assert_eq!(predefined.name, None);
+        assert!(!predefined.cached);
+        assert!(predefined.packages.is_empty());
+    }
+    let never = &catalog.repos[3];
+    assert_eq!(never.repo_id.as_deref(), Some("com.vua.test.repo.never"));
+    assert_eq!(never.name.as_deref(), Some("Never Refreshed"));
+    assert!(
+        !never.cached,
+        "subscribed but never refreshed is its own honest listed state"
+    );
+    assert!(never.packages.is_empty(), "empty packages array, never hidden");
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f2_repo_catalog_scopes_by_repo_id_and_answers_the_reused_repo_not_found() {
+    let (backend, base) = f2_repo_world("f2-scope");
+
+    let scoped = backend
+        .repo_catalog(Some("com.vua.test.repo.synthetic"), &[])
+        .unwrap();
+    assert_eq!(
+        scoped.repos.len(),
+        1,
+        "the scoped lens answers exactly the one repo row"
+    );
+    assert_eq!(
+        scoped.repos[0].repo_id.as_deref(),
+        Some("com.vua.test.repo.synthetic")
+    );
+    assert!(!scoped.repos[0].packages.is_empty());
+
+    // A not-loaded row is reachable by its settings-row id — its only
+    // existing identity fact.
+    let never = backend
+        .repo_catalog(Some("com.vua.test.repo.never"), &[])
+        .unwrap();
+    assert_eq!(never.repos.len(), 1);
+    assert!(!never.repos[0].cached);
+    assert!(never.repos[0].packages.is_empty());
+
+    // An id outside the word face answers the REUSED A4 removeRepo same-fact
+    // code verbatim — zero new codes, never a fabricated empty-shape success.
+    let error = backend
+        .repo_catalog(Some("com.vua.test.repo.unknown"), &[])
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_not_found");
+    assert_eq!(error.message_key, "errors.vpm.repoNotFound");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f2_repo_catalog_package_ids_filter_is_a_lens_never_an_existence_assertion() {
+    let (backend, base) = f2_repo_world("f2-filter");
+
+    let hit = backend
+        .repo_catalog(None, &["com.vua.test.catalog.synthetic".to_owned()])
+        .unwrap();
+    let synthetic = hit.repos.iter().find(|repo| repo.cached).unwrap();
+    assert_eq!(synthetic.packages.len(), 1, "the requirement-set lens passes the match");
+
+    // A filter matching nothing is an HONEST EMPTY answer — not an error;
+    // vua.vpm.no_matching_package has no reach on this face (the single-
+    // package existence assertion stays the packages-catalog face's fact).
+    let miss = backend
+        .repo_catalog(None, &["com.vua.test.catalog.missing".to_owned()])
+        .unwrap();
+    let synthetic = miss.repos.iter().find(|repo| repo.cached).unwrap();
+    assert!(
+        synthetic.packages.is_empty(),
+        "the filter is a lens: empty here, never an error"
+    );
+    assert!(miss.cache_sourced);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f2_repo_catalog_loaded_predefined_cache_is_never_duplicated() {
+    let base = unique_dir("f2-official");
+    let environment_root = base.join("isolated-vpm-environment");
+    // A refreshed official cache: the library loads Repos/vrc-official.json
+    // and serves the document with the predefined subscription url stamped
+    // on it — the face must answer it exactly ONCE (the loaded row), never
+    // plus a second cached-false remainder row.
+    let official_cache = environment_root.join("Repos").join("vrc-official.json");
+    fs::create_dir_all(official_cache.parent().unwrap()).unwrap();
+    let cache = serde_json::json!({
+        "repo": {
+            "name": "Official",
+            "id": "com.vrchat.repos.official",
+            "url": "https://packages.vrchat.com/official?download",
+            "packages": {
+                "com.vua.test.official.synthetic": {
+                    "versions": {
+                        "1.0.0": {
+                            "name": "com.vua.test.official.synthetic",
+                            "displayName": "Official Synthetic",
+                            "version": "1.0.0",
+                            "unity": "2022.3",
+                            "vpmDependencies": {}
+                        }
+                    }
+                }
+            }
+        }
+    });
+    fs::write(&official_cache, cache.to_string()).unwrap();
+    synthetic_settings(&environment_root, serde_json::json!([]));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert_eq!(
+        catalog.repos.len(),
+        2,
+        "the loaded official row + the not-loaded curated row — nothing duplicated, nothing dropped"
+    );
+    let official = &catalog.repos[0];
+    assert_eq!(
+        official.repo_id.as_deref(),
+        Some("com.vrchat.repos.official"),
+        "identity from the loaded cache document"
+    );
+    assert!(official.cached);
+    assert_eq!(
+        official.packages[0].package_id,
+        "com.vua.test.official.synthetic"
+    );
+    let curated = &catalog.repos[1];
+    assert_eq!(curated.repo_id, None, "curated not refreshed: honest null identity, exactly once");
+    assert!(!curated.cached);
+    assert!(curated.packages.is_empty());
+
+    // Scoping reaches the loaded predefined row by its document id.
+    let scoped = backend
+        .repo_catalog(Some("com.vrchat.repos.official"), &[])
+        .unwrap();
+    assert_eq!(scoped.repos.len(), 1);
+    assert_eq!(
+        scoped.repos[0].repo_id.as_deref(),
+        Some("com.vrchat.repos.official")
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f2_repo_catalog_answers_an_honest_empty_world_when_every_repo_is_ignored() {
+    let base = unique_dir("f2-empty");
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    synthetic_settings(&environment_root, serde_json::json!([]));
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(
+        catalog.repos.is_empty(),
+        "zero repository caches is a legal, honest empty answer"
+    );
+    assert!(catalog.cache_sourced);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f2_repo_catalog_cli_backend_stays_declared_none_with_absence_arm() {
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(
+        !cli.repo_catalog_capabilities().repo_catalog,
+        "the CLI has no repo-scale package listing (environment verification 3bd4f12 s1): honestly declared-none"
+    );
+    let error = cli.repo_catalog(None, &[]).unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.capability_missing",
+        "the trait default absence arm answers capability_missing"
+    );
+}
+
