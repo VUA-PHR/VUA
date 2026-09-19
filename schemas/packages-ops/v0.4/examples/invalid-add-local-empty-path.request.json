@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.4",
+  "operation": "packages.addLocalRepo",
+  "params": {
+    "path": "",
+    "name": "Local Synthetic Repo"
+  }
+}
