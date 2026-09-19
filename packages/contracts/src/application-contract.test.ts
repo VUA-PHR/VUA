@@ -328,6 +328,46 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 027 F2 packages.repoCatalog read query with the two-key nullable closed params", () => {
+    // 浏览全形态:双 null(全仓库不过滤)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: null, packageIds: null },
+    })).toBe(true);
+    // 仓库范围形态
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: "official", packageIds: null },
+    })).toBe(true);
+    // Recipe 需求集合批量过滤形态
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: null, packageIds: ["com.anatawa12.avatar-optimizer", "com.vrchat.avatars"] },
+    })).toBe(true);
+    // 双键必带可空闭集:缺键/多键即违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: null },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: null, packageIds: null, projectPath: "C:/proj" },
+    })).toBe(false);
+    // 空数组不是空过滤,是形状违反(null 才是不过滤)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: { repoId: null, packageIds: [] },
+    })).toBe(false);
+    // 需求集合唯一性:重复 id 即违反
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.repoCatalog",
+      params: {
+        repoId: null,
+        packageIds: ["com.anatawa12.avatar-optimizer", "com.anatawa12.avatar-optimizer"],
+      },
+    })).toBe(false);
+  });
+
   it("admits the 026 A1 packages.previewRemove query with the two-key closed params and explicit non-empty list", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "packages.previewRemove",

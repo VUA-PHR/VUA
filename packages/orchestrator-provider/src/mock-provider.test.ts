@@ -655,6 +655,30 @@ describe("mock packages P2 read faces (025 core freeze batch)", () => {
   });
 });
 
+describe("mock packages F2 repo-catalog read face (027 core freeze batch)", () => {
+  it.each([
+    ["packages.repoCatalog", { repoId: null, packageIds: null }],
+    ["packages.repoCatalog", { repoId: "official", packageIds: null }],
+    ["packages.repoCatalog", { repoId: null, packageIds: ["com.anatawa12.avatar-optimizer"] }],
+  ] as const)("answers %s with the honest absence code — never a fabricated inventory or an empty array posing as a fact", async (method, params) => {
+    // 027 F2 词表行:模拟面无 VpmBackend,恒答诚实缺席(P1/P2 同纪律)
+    // ——绝不伪造仓库级包目录清单;诚实空清单/空 packages 只属于真实
+    // 后端的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "query",
+      method,
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock packages-ops A1 write face (026 core freeze batch)", () => {
   it.each([
     ["packages.previewRemove", { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] }],

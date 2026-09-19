@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.repoCatalog",
+  "params": {
+    "repoId": null,
+    "packageIds": null,
+    "projectPath": "C:/proj"
+  }
+}
