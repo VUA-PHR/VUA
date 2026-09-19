@@ -1658,7 +1658,7 @@ demoTaskTitle: "Demo task",
     register: {
       title: "Register local package",
       description:
-        "Register a local package root folder (containing package.json) with VUA's package environment; registration only adds an entry — it never touches projects or your VCC/ALCOM settings. Registering the same package again is safe.",
+        "Register a local package root folder (containing package.json) in the package-manager settings (settings.json) shared with VCC/ALCOM; registration only adds an entry and never modifies project files. Registering the same package again is safe.",
       placeholder: "Enter a local package root path, e.g. C:\\LocalPackages\\com.example.pkg-1.0.0",
       inputAria: "Local package root path",
       action: "Register",
@@ -1685,7 +1685,7 @@ demoTaskTitle: "Demo task",
     repoWrite: {
       title: "Repository subscriptions",
       description:
-        "Subscribe to remote or local package repositories, or remove a subscription. Writes go to VUA's isolated backend environment only — your VCC/ALCOM settings are never touched, and removing a subscription deletes no package files. Adding a remote repository fetches its manifest and may take a moment; duplicate subscriptions can be refused and any refusal is shown as it is.",
+        "Subscribe to remote or local package repositories, or remove a subscription. These operations share the same package-manager settings file (settings.json) with VCC/ALCOM — changes are visible to both sides immediately; VUA does not modify your project files, and external imports default to cloning a copy before modifying it. Removing a subscription deletes no package files. Adding a remote repository fetches its manifest and may take a moment; duplicate subscriptions can be refused and any refusal is shown as it is.",
       remoteHeadline: "Add remote repository",
       remoteUrlPlaceholder: "Repository manifest URL, e.g. https://vpm.example/index.json",
       remoteUrlAria: "Repository manifest URL",
@@ -1727,7 +1727,7 @@ demoTaskTitle: "Demo task",
     create: {
       title: "Create new project",
       description:
-        "Create a new VRChat project in a parent folder you choose. On success the project is registered with VUA immediately and appears in the registered list. Creation is not idempotent: creating into a directory that already exists is refused, and any refusal is shown as it is. Your VCC/ALCOM settings are never touched.",
+        "Create a new VRChat project in a parent folder you choose. On success the project is registered with VUA immediately and appears in the registered list. Creation is not idempotent: creating into a directory that already exists is refused, and any refusal is shown as it is. This operation only creates the new project directory and its files; it does not write to the package-manager settings (settings.json) shared with VCC/ALCOM.",
       parentPlaceholder: "Parent folder path, e.g. C:\\Users\\me\\VRChat Projects",
       parentAria: "Parent folder path",
       namePlaceholder: "Project name, e.g. My World",

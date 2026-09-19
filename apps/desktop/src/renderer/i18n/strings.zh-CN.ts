@@ -1642,7 +1642,7 @@ rolled_back: "已回滚",
     register: {
       title: "注册本地包",
       description:
-        "将本地包根目录（含 package.json）登记到 VUA 的包环境；只做登记，不修改项目，也不修改 VCC/ALCOM 设置。重复登记同一个包是安全的。",
+        "将本地包根目录（含 package.json）登记到与 VCC/ALCOM 共享的包管理设置（settings.json）；只添加登记条目，不修改任何项目文件。重复登记同一个包是安全的。",
       placeholder: "输入本地包根目录路径，例如 C:\\LocalPackages\\com.example.pkg-1.0.0",
       inputAria: "本地包根目录路径",
       action: "注册",
@@ -1669,7 +1669,7 @@ rolled_back: "已回滚",
     repoWrite: {
       title: "仓库订阅管理",
       description:
-        "订阅远端或本地包仓库，或移除订阅。写入只发生在 VUA 的隔离后端环境——绝不修改你的 VCC/ALCOM 设置，移除订阅也不删除任何包文件。添加远端仓库需要拉取其清单，可能稍候片刻；重复订阅可能被拒绝，拒绝将如实呈现。",
+        "订阅远端或本地包仓库，或移除订阅。这些操作与 VCC/ALCOM 共享同一份包管理设置（settings.json），改动双方立即可见；VUA 不修改你的项目文件，外部导入默认克隆为副本后修改。移除订阅不删除任何包文件。添加远端仓库需要拉取其清单，可能稍候片刻；重复订阅可能被拒绝，拒绝将如实呈现。",
       remoteHeadline: "添加远端仓库",
       remoteUrlPlaceholder: "仓库清单 URL，例如 https://vpm.example/index.json",
       remoteUrlAria: "仓库清单 URL",
@@ -1711,7 +1711,7 @@ rolled_back: "已回滚",
     create: {
       title: "新建项目",
       description:
-        "在你选择的父目录下创建新的 VRChat 项目。创建成功即立即在 VUA 注册，在册列表刷新即见。创建不幂等：目标目录已存在时将被拒绝，任何拒绝都如实呈现。你的 VCC/ALCOM 设置绝不会被改动。",
+        "在你选择的父目录下创建新的 VRChat 项目。创建成功即立即在 VUA 注册，在册列表刷新即见。创建不幂等：目标目录已存在时将被拒绝，任何拒绝都如实呈现。此操作只新建项目目录与项目文件，不写入与 VCC/ALCOM 共享的包管理设置（settings.json）。",
       parentPlaceholder: "父目录路径，如 C:\\Users\\me\\VRChat Projects",
       parentAria: "父目录路径",
       namePlaceholder: "项目名称，如 My World",
