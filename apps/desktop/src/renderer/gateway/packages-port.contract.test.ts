@@ -55,6 +55,8 @@ test("empty: 全部变更入口恒 unavailable,视图恒 not-connected,不编造
   assert.equal((await port.setRepoEnabled("r-1", false)).kind, "not-connected");
   assert.equal((await port.listInstalled("C:/proj")).kind, "unavailable");
   assert.equal((await port.packageCatalog("C:/proj", "com.example.x")).kind, "unavailable");
+  // F2 词面(027 消费批):同读面缺席纪律——恒缺席,不伪造仓库级包目录
+  assert.equal((await port.repoCatalog(null, null)).kind, "unavailable");
   assert.equal((await port.addProject()).kind, "unavailable");
   assert.equal((await port.importLocalPackage()).kind, "unavailable");
   assert.equal(
@@ -76,6 +78,16 @@ test("fixture(demo-packages): P2 词面恒 unavailable(025 消费批;同 fixture
   const port = fixtureGateway("demo-packages").packages;
   assert.equal(
     (await port.packageCatalog("C:/proj", "com.anatawa12.avatar-optimizer")).kind,
+    "unavailable",
+  );
+});
+
+test("fixture(demo-packages): F2 词面恒 unavailable(027 消费批;演示面永不模拟仓库级包目录 wire 回执)", async () => {
+  const port = fixtureGateway("demo-packages").packages;
+  assert.equal((await port.repoCatalog(null, null)).kind, "unavailable");
+  assert.equal((await port.repoCatalog("official", null)).kind, "unavailable");
+  assert.equal(
+    (await port.repoCatalog(null, ["com.anatawa12.avatar-optimizer"])).kind,
     "unavailable",
   );
 });

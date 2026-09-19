@@ -4,6 +4,7 @@ import type {
   PackageChangePreview,
   PackageProject,
   PackageRow,
+  RepoCatalogPackageRowV01,
 } from "../../gateway/index.ts";
 import { strings } from "../../i18n/strings.en.ts";
 import {
@@ -13,6 +14,7 @@ import {
   changeKindTextKeys,
   conflictMessageKey,
   filterPackages,
+  filterRepoCatalogPackages,
   groupPreviewItems,
   installLatestRequests,
   invalidReasonKey,
@@ -484,4 +486,34 @@ test("relativeCheckedTime: 分钟/小时/天分档,非法与未来时间回落 n
   assert.equal(relativeCheckedTime(undefined, now), null);
   assert.equal(relativeCheckedTime("not-a-date", now), null);
   assert.equal(relativeCheckedTime("2026-08-27T00:00:00.000Z", now), null);
+});
+
+test("filterRepoCatalogPackages matches packageId and displayName (null display falls back to packageId), empty query returns everything verbatim", () => {
+  const rows: RepoCatalogPackageRowV01[] = [
+    {
+      packageId: "com.anatawa12.avatar-optimizer",
+      displayName: "Avatar Optimizer",
+      description: null,
+      latestVersion: "1.9.0",
+      versionCount: 7,
+    },
+    {
+      packageId: "com.example.legacy",
+      displayName: null,
+      description: null,
+      latestVersion: null,
+      versionCount: 2,
+    },
+  ];
+  // 空查询 = 全量照实返回(同源数组拷贝,不重排)
+  assert.deepEqual(filterRepoCatalogPackages(rows, ""), rows);
+  assert.deepEqual(filterRepoCatalogPackages(rows, "   "), rows);
+  // packageId 子串命中(大小写不敏感)
+  assert.deepEqual(filterRepoCatalogPackages(rows, "AVATAR-OPT"), [rows[0]]);
+  // displayName 命中
+  assert.deepEqual(filterRepoCatalogPackages(rows, "optimizer"), [rows[0]]);
+  // displayName null 以 packageId 兼任匹配(与呈现规则一致)
+  assert.deepEqual(filterRepoCatalogPackages(rows, "legacy"), [rows[1]]);
+  // 无命中 = 诚实空数组
+  assert.deepEqual(filterRepoCatalogPackages(rows, "no-such-package"), []);
 });
