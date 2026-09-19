@@ -211,6 +211,414 @@ fn orc_adp_004_template_missing_is_a_typed_dependency_error() {
     fs::remove_dir_all(&base).ok();
 }
 
+// --- 026 A5 实现核对切片（冻结批 0c77273 ＋接线批 8abb638 落地面直读钉例） ---
+// 逐码映射申报：端口错误闭集恰三既有码零新码——template_missing（库路径
+// 四 i18n 键共享载体：projectExists/projectNameInvalid/templateMissing/
+// templateCopyFailed）、apply_failed（CLI 超时/非零携 exitCode ＋登记腿
+// 携 reason）、backend_unavailable（仅 CLI spawn 故障，库路径永不答此码）。
+// 接线批把三码全折进 execution_failed guard、原端口码入 detail——本节把
+// 端口侧的每一腿钉死，使折算面零缺口可证。
+
+/// 最小 Unity 模板骨架（复制→productName→校验→登记四步全过）。
+fn unity_template(template_dir: &std::path::Path, marker: &str) {
+    fs::create_dir_all(template_dir.join("ProjectSettings")).unwrap();
+    fs::create_dir_all(template_dir.join("Packages")).unwrap();
+    fs::write(
+        template_dir.join("ProjectSettings/ProjectVersion.txt"),
+        "m_EditorVersion: 2022.3.22f1",
+    )
+    .unwrap();
+    fs::write(
+        template_dir.join("ProjectSettings/ProjectSettings.asset"),
+        format!("someKey: 1\n  productName: {marker}\notherKey: 2\n"),
+    )
+    .unwrap();
+    fs::write(
+        template_dir.join("Packages/manifest.json"),
+        format!("{{\"marker\":\"{marker}\"}}"),
+    )
+    .unwrap();
+}
+
+/// `template: null`（接线批 REQUIRED-nullable 语义的端口侧事实）＝后端
+/// 默认模板名 "Avatar"，且候选顺序第一候选 `VRCTemplates/` 优先：两级
+/// 同名并存时复制的是 VCC 安装位模板，不是用户位模板。
+#[test]
+fn orc_adp_005_null_template_resolves_the_default_avatar_first_candidate() {
+    let base = unique_dir("a5-null-default");
+    let environment_root = base.join("VRChatCreatorCompanion");
+    unity_template(&environment_root.join("VRCTemplates").join("Avatar"), "vrc");
+    unity_template(&environment_root.join("Templates").join("Avatar"), "user");
+
+    let project = vua_project_manager::create_from_template(
+        &environment_root,
+        &base.join("workspace"),
+        "My Avatar",
+        None,
+    )
+    .unwrap();
+
+    let manifest =
+        fs::read_to_string(project.root.join("Packages/manifest.json")).unwrap();
+    assert!(
+        manifest.contains("\"vrc\""),
+        "null template must resolve through the FIRST candidate \
+         (VRCTemplates/Avatar), not the user Templates/ fallback"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 候选顺序逐级兜底：`VRCTemplates/` 无此模板时落到用户 `Templates/`；
+/// 两处皆无时第三候选＝显式路径原样直读（模板三候选默认 Avatar 三级
+/// 解析冻结事实的后两级）。
+#[test]
+fn orc_adp_005_template_resolution_falls_through_candidates_in_order() {
+    let base = unique_dir("a5-fallthrough");
+    // 第二候选：仅用户位有 World 模板。
+    let user_root = base.join("env-user");
+    unity_template(&user_root.join("Templates").join("World"), "user-world");
+    let from_user = vua_project_manager::create_from_template(
+        &user_root,
+        &base.join("ws-user"),
+        "User World",
+        Some("World"),
+    )
+    .unwrap();
+    assert!(fs::read_to_string(from_user.root.join("Packages/manifest.json"))
+        .unwrap()
+        .contains("\"user-world\""));
+
+    // 第三候选：显式路径在两级环境目录之外，原样直读。
+    let explicit = base.join("elsewhere").join("MyTemplate");
+    unity_template(&explicit, "explicit-path");
+    let from_explicit = vua_project_manager::create_from_template(
+        &base.join("env-empty"),
+        &base.join("ws-explicit"),
+        "Explicit",
+        Some(explicit.to_string_lossy().as_ref()),
+    )
+    .unwrap();
+    assert!(fs::read_to_string(from_explicit.root.join("Packages/manifest.json"))
+        .unwrap()
+        .contains("\"explicit-path\""));
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 不幂等（诚实边界）：目标路径已存在时 exists() 前置守卫拒绝（库路径
+/// `projectExists` 键、Validation、携 name 参数），且拒绝先于模板解析——
+/// 连 `template: null` 也照拒；首建工程原样无损（接线批 NO-idempotence
+/// 钉例的端口侧孪生：wire 面 duplicate＝execution_failed rejected）。
+#[test]
+fn orc_adp_005_duplicate_target_refusal_is_honest_and_not_idempotent() {
+    let base = unique_dir("a5-duplicate");
+    let environment_root = base.join("VRChatCreatorCompanion");
+    unity_template(&environment_root.join("VRCTemplates").join("Avatar"), "vrc");
+
+    let first = vua_project_manager::create_from_template(
+        &environment_root,
+        &base.join("workspace"),
+        "My Avatar",
+        None,
+    )
+    .unwrap();
+
+    // 同名二建（显式模板名与 null 皆然）＝同型拒绝，绝不发明幂等成功。
+    for template in [Some("Avatar"), None] {
+        let error = vua_project_manager::create_from_template(
+            &environment_root,
+            &base.join("workspace"),
+            "My Avatar",
+            template,
+        )
+        .expect_err("an existing target must be refused, never idempotent");
+        assert_eq!(error.code, "vua.vpm.template_missing");
+        assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+        assert_eq!(error.message_key, "errors.vpm.projectExists");
+        assert_eq!(
+            error.params.as_ref().unwrap().get("name"),
+            Some(&vua_orchestrator::ParamValue::Text("My Avatar".to_owned()))
+        );
+    }
+
+    // 首建工程无损：登记文件与 productName 原样。
+    assert!(first.root.join(".vua/project.json").is_file());
+    let settings =
+        fs::read_to_string(first.root.join("ProjectSettings/ProjectSettings.asset"))
+            .unwrap();
+    assert!(settings.contains("  productName: \"My Avatar\""));
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 半成品无回滚（诚实边界）：模板非 Unity 工程（缺
+/// ProjectSettings/ProjectVersion.txt）时校验腿拒绝
+/// （templateCopyFailed/ExternalFailure 携 reason），已复制的目标目录
+/// 原样留存——copy_tree 半成品照词面不清理、不回滚；登记文件不落
+/// （绝无虚假登记）。缺失 ProjectSettings.asset 时 set_product_name
+/// 的 best-effort 静默 no-op 顺带被该腿覆盖（读不到文件＝静默跳过）。
+#[test]
+fn orc_adp_005_half_created_target_is_never_rolled_back() {
+    let base = unique_dir("a5-no-rollback");
+    let environment_root = base.join("VRChatCreatorCompanion");
+    let broken = environment_root.join("VRCTemplates").join("Broken");
+    fs::create_dir_all(broken.join("Packages")).unwrap();
+    fs::write(broken.join("Packages/manifest.json"), "{}").unwrap();
+
+    let error = vua_project_manager::create_from_template(
+        &environment_root,
+        &base.join("workspace"),
+        "Half Done",
+        Some("Broken"),
+    )
+    .expect_err("a non-Unity template must be refused at the validation leg");
+    assert_eq!(error.code, "vua.vpm.template_missing");
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    assert_eq!(error.message_key, "errors.vpm.templateCopyFailed");
+    assert_eq!(
+        error.params.as_ref().unwrap().get("reason"),
+        Some(&vua_orchestrator::ParamValue::Text(
+            "template is not a Unity project".to_owned()
+        ))
+    );
+
+    // 半成品留存：已复制内容在、无回滚、无登记。
+    let target = base.join("workspace").join("Half Done");
+    assert!(target.is_dir(), "the copied target must NOT be rolled back");
+    assert!(target.join("Packages/manifest.json").is_file());
+    assert!(
+        !target.join(".vua").exists(),
+        "a failed creation must never leave a registration file"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 四键共享载体最后一键（逐码映射闭合）：非法工程名在库路径同样拒绝
+/// （validate_vpm_project_name :1511-1532 → projectNameInvalid/Validation
+/// 携 name），且校验先于 exists() 守卫与模板解析（:1435 先于 :1437/:1447）
+/// ——模板缺席与否不影响该腿（磁盘零触碰）。
+#[test]
+fn orc_adp_005_invalid_project_name_answers_project_name_invalid_before_disk() {
+    let base = unique_dir("a5-invalid-name");
+    let environment_root = base.join("VRChatCreatorCompanion");
+    // 模板在位：拒绝只能来自名字校验，绝非模板解析。
+    unity_template(&environment_root.join("VRCTemplates").join("Avatar"), "vrc");
+
+    let error = vua_project_manager::create_from_template(
+        &environment_root,
+        &base.join("workspace"),
+        "-leading-dash",
+        Some("Avatar"),
+    )
+    .expect_err("an option-like name must be refused before any disk work");
+    assert_eq!(error.code, "vua.vpm.template_missing");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    assert_eq!(error.message_key, "errors.vpm.projectNameInvalid");
+    assert_eq!(
+        error.params.as_ref().unwrap().get("name"),
+        Some(&vua_orchestrator::ParamValue::Text(
+            "-leading-dash".to_owned()
+        ))
+    );
+    assert!(
+        !base.join("workspace").exists(),
+        "the name guard must precede exists() and every disk touch"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// set_product_name 第二条静默 no-op 腿（best-effort 诚实申报闭合）：
+/// settings 文件在但无 productName 行时 replaced=false＝不写盘、照常
+/// 成功（:1542-1582 两腿——缺文件腿由 no-rollback 例顺带覆盖，本例钉
+/// 无行腿），登记不受影响（模板内容逐字节保真）。
+#[test]
+fn orc_adp_005_settings_without_product_name_line_is_a_silent_noop() {
+    let base = unique_dir("a5-no-line-noop");
+    let environment_root = base.join("VRChatCreatorCompanion");
+    let template = environment_root.join("VRCTemplates").join("Avatar");
+    fs::create_dir_all(template.join("ProjectSettings")).unwrap();
+    fs::create_dir_all(template.join("Packages")).unwrap();
+    fs::write(
+        template.join("ProjectSettings/ProjectVersion.txt"),
+        "m_EditorVersion: 2022.3.22f1",
+    )
+    .unwrap();
+    let settings_without_name = "someKey: 1\notherKey: 2\n";
+    fs::write(
+        template.join("ProjectSettings/ProjectSettings.asset"),
+        settings_without_name,
+    )
+    .unwrap();
+    fs::write(template.join("Packages/manifest.json"), "{}").unwrap();
+
+    let project = vua_project_manager::create_from_template(
+        &environment_root,
+        &base.join("workspace"),
+        "My Avatar",
+        Some("Avatar"),
+    )
+    .unwrap();
+
+    let settings =
+        fs::read_to_string(project.root.join("ProjectSettings/ProjectSettings.asset"))
+            .unwrap();
+    assert_eq!(
+        settings, settings_without_name,
+        "no productName line must stay a byte-identical silent no-op"
+    );
+    assert!(project.root.join(".vua/project.json").is_file());
+    fs::remove_dir_all(&base).ok();
+}
+
+/// CLI 后端 apply_failed 双腿（逐码映射）：超时（exit_code 缺席＝透传
+/// -1）与非零退出（携 exitCode）同型应答 apply_failed/ExternalFailure
+/// （:1392-1402）。
+#[test]
+fn orc_adp_005_vcc_cli_timeout_and_nonzero_exit_answer_apply_failed() {
+    let base = unique_dir("a5-cli-apply");
+    fs::create_dir_all(&base).unwrap();
+
+    let timed_out = Arc::new(FakeProcessRunner::new());
+    timed_out.push(Ok(ProcessOutcome {
+        exit_code: None,
+        timed_out: true,
+        cancelled: false,
+        process_tree_clean: true,
+        stdout: String::new(),
+        stderr: String::new(),
+        truncated: false,
+    }));
+    let error = backend_with(timed_out)
+        .create_project(&base, "Timed", Some("Avatar"))
+        .expect_err("a timed-out vpm new must be a typed failure");
+    assert_eq!(error.code, vua_orchestrator::vpm_backend_error_codes::APPLY_FAILED);
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    assert_eq!(error.message_key, "errors.vpm.applyFailed");
+    assert_eq!(
+        error.params.as_ref().unwrap().get("exitCode"),
+        Some(&vua_orchestrator::ParamValue::Number(-1.0))
+    );
+
+    let nonzero = Arc::new(FakeProcessRunner::new());
+    nonzero.push(Ok(ProcessOutcome {
+        exit_code: Some(3),
+        timed_out: false,
+        cancelled: false,
+        process_tree_clean: true,
+        stdout: String::new(),
+        stderr: "boom".to_owned(),
+        truncated: false,
+    }));
+    let error = backend_with(nonzero)
+        .create_project(&base, "Failed", Some("Avatar"))
+        .expect_err("a non-zero vpm new must be a typed failure");
+    assert_eq!(error.code, vua_orchestrator::vpm_backend_error_codes::APPLY_FAILED);
+    assert_eq!(
+        error.params.as_ref().unwrap().get("exitCode"),
+        Some(&vua_orchestrator::ParamValue::Number(3.0))
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// CLI 后端 backend_unavailable 唯一腿（逐码映射）：runner spawn 故障
+/// 应答 backend_unavailable/Unavailable 携 reason（:1383-1391）——库
+/// 路径永不答此码（无进程段）。
+#[test]
+fn orc_adp_005_vcc_cli_spawn_failure_answers_backend_unavailable() {
+    let base = unique_dir("a5-cli-spawn");
+    fs::create_dir_all(&base).unwrap();
+    let runner = Arc::new(FakeProcessRunner::new());
+    runner.push(Err("simulated spawn failure".to_owned()));
+
+    let error = backend_with(runner)
+        .create_project(&base, "Unreachable", Some("Avatar"))
+        .expect_err("a spawn failure must be a typed unavailability");
+    assert_eq!(
+        error.code,
+        vua_orchestrator::vpm_backend_error_codes::BACKEND_UNAVAILABLE
+    );
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Unavailable);
+    assert_eq!(error.message_key, "errors.vpm.backendUnavailable");
+    assert!(matches!(
+        error.params.as_ref().unwrap().get("reason"),
+        Some(vua_orchestrator::ParamValue::Text(_))
+    ));
+    fs::remove_dir_all(&base).ok();
+}
+
+/// CLI 后端登记腿（逐码映射，接线批登记的 apply_failed 第三腿）：进程
+/// 成功返回但落盘缺 Unity 工程标记时，FileSystemProjectStore::initialize
+/// 失败折算 apply_failed 携 reason（:1409-1417）。
+#[test]
+fn orc_adp_005_vcc_cli_initialize_failure_answers_apply_failed() {
+    let base = unique_dir("a5-cli-init");
+    fs::create_dir_all(&base).unwrap();
+    let runner = Arc::new(FakeProcessRunner::new());
+    // spawn「成功」但磁盘上没有工程骨架（无 on_run 落盘模拟）。
+    runner.push(Ok(success("vpm 0.1.28")));
+
+    let error = backend_with(runner)
+        .create_project(&base, "Ghost", Some("Avatar"))
+        .expect_err("a successful spawn without a real project must be a typed failure");
+    assert_eq!(error.code, vua_orchestrator::vpm_backend_error_codes::APPLY_FAILED);
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    assert_eq!(error.message_key, "errors.vpm.applyFailed");
+    assert!(matches!(
+        error.params.as_ref().unwrap().get("reason"),
+        Some(vua_orchestrator::ParamValue::Text(_))
+    ));
+    assert!(!base.join("Ghost").join(".vua").exists());
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 能力位核对（A5 裁定：维持既有五联位零新 accessor，库真 CLI 真）：
+/// 双在库后端 create_project 位均 true，其余四值与既有声明逐位相等——
+/// 结构体恰五位、零新增（新增第六位即编译破坏此钉）。served 行
+/// packages.createOps 骑此位即 available（接线批落地面直读核实），
+/// 环境侧零覆写动作（与 A4 repo_write_capabilities 覆写不同构）。
+#[test]
+fn orc_adp_005_capabilities_declare_the_create_bit_on_both_backends() {
+    use vua_orchestrator::VpmCapabilities;
+    let base = unique_dir("a5-caps");
+    let library = VrcGetLibBackend::with_environment_root(
+        base.join("isolated-vpm-environment"),
+        true,
+    )
+    .unwrap();
+    assert_eq!(
+        library.capabilities(),
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: true,
+            remove_packages: true,
+            project_registry: true,
+        },
+        "the library backend creates in-process; exactly the existing five bits"
+    );
+
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert_eq!(
+        cli.capabilities(),
+        VpmCapabilities {
+            create_project: true,
+            preview_install: false,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+        },
+        "the CLI backend owns only vpm new; exactly the existing five bits"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
 #[test]
 fn b3_spike_local_package_is_registered_previewed_and_installed_by_vrc_get() {
     let base = unique_dir("local-package");
