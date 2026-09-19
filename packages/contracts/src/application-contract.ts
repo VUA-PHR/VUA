@@ -577,6 +577,46 @@ export interface PackagesListInstalledResultV01 {
   readonly packages: readonly PackagesInstalledItemV01[];
 }
 
+/* ---- 027 F3 增量(packages-query v0.2,核心冻结批 2026-09-20;已装表
+ *  更新感知:027 核心表态 3＋环境考证 s2 两语义边界＋桌面 IA 表态 3,
+ *  面序 F2→F3 三域收敛)。command 面与 v0.1 逐字节同形
+ *  (PackagesListInstalledQueryV01 不变,请求联合零新增);v0.2 = 冻结
+ *  v0.1 result 恰加三事实——行级判定对 latestVersion/updateAvailable
+ *  (必带可空)＋文档级 cacheSourced(必带);冻结 v0.1 词面绝不原地
+ *  修订——backend 未声明 query_v02 前继续应答 v0.1 族,盖戳族常量告知
+ *  消费端应答的是哪个词面,永不猜测(catalog v0.2 双版本协商先例)。
+ *  虚假断言防线(024 表态②,用户裁定 2026-09-20):updateAvailable=null
+ *  = 判定未执行,消费端对 null 渲染诚实空态,绝不渲染「已最新」,
+ *  绝不以默认 false 填充 */
+/** 已装包行 v0.2:v0.1 三键(零变动)＋判定对两键(必带可空) */
+export interface PackagesInstalledItemV02 {
+  readonly packageId: string;
+  readonly version: string;
+  readonly dependencies: readonly string[];
+  /** 判定跨集合全仓合并取最高(跨仓 max——刻意非 F2 分仓视图,两视图
+   *  分立不混同);null = 当前设置下无合资格版本(本地包无缓存位或全
+   *  部候选被 yanked/设置排除)——缺席不是「无更新」 */
+  readonly latestVersion: string | null;
+  /** 冻结判定结论(存在严格更新的、符合当前过滤条件的版本);null =
+   *  判定未执行(无合资格最新版或工程 Unity 版本未知)——null 绝不是
+   *  「已最新」;已装版自身是 prerelease 且设置关时,合资格最新取稳定
+   *  集,false 精确语义 =「当前过滤条件下不存在严格更新版本」,非泛化
+   *  「无更新」 */
+  readonly updateAvailable: boolean | null;
+}
+
+export interface PackagesListInstalledResultV02 {
+  readonly schemaVersion: "vua.packages-installed/v0.2";
+  readonly projectPath: string;
+  /** packageId 升序(冻结的确定性呈现事实,零变动);空数组 = 诚实空清单 */
+  readonly packages: readonly PackagesInstalledItemV02[];
+  /** 必带信息性降级披露事实(catalog v0.2 先例):true = 本次清单判定经
+   *  缓存降级路径(offline→load_cache,或在线 load 失败降级);false =
+   *  在线刷新 load 所得;信息性非失败,消费端呈现「缓存数据」标注,
+   *  绝不渲染为失败,也绝不为无此字段的 v0.1 应答虚构标注 */
+  readonly cacheSourced: boolean;
+}
+
 /* ---- 025 P2 读面(packages-repos＋packages-catalog v0.1,核心冻结批
  *  2026-09-17;表态程序收敛:环境提案 64bfe58／集成 7a50ce9／桌面
  *  0031004／核心裁决 bf78368)。两方法只读,按需查询粒度,零分页语义;

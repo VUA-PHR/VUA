@@ -2,20 +2,28 @@
 
 [English](alcom-vcc_EN.md) | [简体中文](alcom-vcc_ZH.md)
 
-> Document version: 1.2.0  
+> Document version: 1.3.0  
 > Status: Accepted  
 > Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
-> Updated: 2026-09-12  
-> Authority: `docs/product-boundary_EN.md` 1.2.0 (user ruling U3, 2026-09-08)
+> Updated: 2026-09-20  
+> Authority: `docs/product-boundary_EN.md` 1.4.0 (user ruling U3, 2026-09-08; settings-face
+> exception U14, 2026-09-19)
 
 ## Authority and hard boundary
 
-This matrix elaborates product-boundary 1.2.0 and introduces no new semantics. VUA is
+This matrix elaborates product-boundary 1.4.0 and introduces no new semantics. VUA is
 **read-only** toward projects managed by ALCOM/VCC; the only write path is the
 user-chosen "import as a VUA-managed copy" (new project path and identity, disk usage
 stated up front, no copying of regenerable directories or old task state, re-Inspect
 after import, source link kept). Inside the `1.0.x` boundary the write capability toward
 the original project is always false; any future opening requires a new user ruling.
+
+**Settings-face exception (user ruling U14, 2026-09-19):** the VPM package-management
+settings (the repository-subscription and local-package-registry faces of `settings.json`)
+are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
+immediately visible to both sides. All other storage faces such as `vcc.liteDb` stay
+denied, and the project-file face stays read-only (authoritative wording in the
+product-boundary 1.4.0 "explicit boundary" section).
 
 **Allowed** (every check in this matrix is inside this list):
 
@@ -27,8 +35,10 @@ the original project is always false; any future opening requires a new user rul
 
 **Forbidden**: installing/removing packages inside the original project; modifying its
 manifest, project configuration, assets, or `.vua` job files; writing ALCOM/VCC
-registries, databases, settings, or caches; silently re-labeling the original project as
-VUA-managed.
+registries, databases, settings, or caches (**exception**: the `settings.json`
+package-management face — repository subscriptions and the local package registry — is
+shared read/write by user ruling U14, see "Settings-face exception" above); silently
+re-labeling the original project as VUA-managed.
 
 ## Detection matrix
 
@@ -130,6 +140,13 @@ inspection face never writes.
 
 ## Document changelog
 
+- 1.3.0 (2026-09-20): the U14 settings-face exception landed in the matrix (proposal 028
+  item-5 routing, revision authored by Integration) — the "Authority and hard boundary"
+  section gains a "Settings-face exception" paragraph and the Forbidden list gains the
+  `settings.json` package-management-face exemption note (aligned with product-boundary
+  1.4.0 wording: the exemption covers only the repository-subscription and
+  local-package-registry faces; other storage faces such as `vcc.liteDb` and the
+  project-file face stay denied/read-only); authority line refreshed to 1.4.0.
 - 1.2.0 (2026-09-12): the "Source-finding principles and capability boundary"
   section added (formal answer to BOARD B5①: project origin = manager registry
   fact, package origin = VPM declared face; pins the "cannot assert real

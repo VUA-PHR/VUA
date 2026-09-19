@@ -2,7 +2,8 @@
  * Packages 读面 live 端口(024 P1 中间诚实态消费批,2026-09-17;025 P2
  * 读面消费批,2026-09-17;025 v0.2 增量消费更新批,2026-09-17;026 A1
  * 移除写面消费批,2026-09-19;026 A2 安装/升级写面消费批,2026-09-19;
- * 026 A3 本地包注册写面消费批,2026-09-19):
+ * 026 A3 本地包注册写面消费批,2026-09-19;027 F2 仓库级包目录读面消费
+ * 批,2026-09-20):
  * 经 Desktop Gateway 消费 packages-query v0.1(单方法只读
  * packages.listInstalled)、025 P2 双族 v0.1(packages.listRepos 仓库订
  * 阅清单 + packages.packageCatalog 单包目录按需查询)、packages-ops v0.1
@@ -74,6 +75,7 @@ import type {
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
   PackagesRemoveRepoRequestV1,
+  PackagesRepoCatalogRequestV1,
   PackagesRepoRejectedV04,
   PackagesRepoRemovedV04,
 } from "@vua/contracts";
@@ -87,6 +89,9 @@ import type {
   PackagesCreateApplyOutcome,
   PackagesInstallApplyOutcome,
   PackagesPort,
+  RepoCatalogFactsV01,
+  RepoCatalogPackageRowV01,
+  RepoCatalogRepoRowV01,
   PackagesRegisterApplyOutcome,
   PackagesRemoveApplyOutcome,
   PackagesRepoAddApplyOutcome,
@@ -117,6 +122,11 @@ const REPO_OPS_OPERATION_ID = "packages.repoOps";
  * VpmCapabilities.create_project 五联位——A5 零新 accessor,位先于冻
  * 结批在库双后端已声明 true,无 declared-none 缺省态) */
 const CREATE_OPS_OPERATION_ID = "packages.createOps";
+/** F2 仓库级包目录读面 served 行(027 接线批申报;一行一方法,
+ * repo_catalog_capabilities 访问器门控——removeOps/installOps/
+ * registerOps/repoOps/createOps 一行先例;default declared-none,
+ * 环境覆写置真前如实 unavailable) */
+const REPO_CATALOG_OPERATION_ID = "packages.repoCatalogOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
 /** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
@@ -273,6 +283,53 @@ function isPackagesWireEnvelope(
     && value.schemaVersion === schemaVersion
     && value.operation === operation
     && isRecord(value.result);
+}
+
+/** F2 仓库级包行五键闭集(027 冻结词面;author/compatible 发明字段 =
+ * 形状违规——环境考证 §1(b) 单事实源裁决,负面向量钉死) */
+function isRepoCatalogPackageRow(value: unknown): value is RepoCatalogPackageRowV01 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["description", "displayName", "latestVersion", "packageId", "versionCount"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.packageId === "string"
+    && value.packageId.length > 0
+    && isNullableNonEmptyString(value.displayName)
+    && isNullableNonEmptyString(value.description)
+    && isNullableNonEmptyString(value.latestVersion)
+    && typeof value.versionCount === "number"
+    && Number.isSafeInteger(value.versionCount)
+    && value.versionCount >= 0;
+}
+
+/** F2 仓库行四键闭集(cached 必带 = 逐仓库缓存命中事实,false = 已订阅
+ * 未刷新的诚实状态,不隐藏不伪造) */
+function isRepoCatalogRepoRow(value: unknown): value is RepoCatalogRepoRowV01 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["cached", "name", "packages", "repoId"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.cached === "boolean"
+    && isNullableNonEmptyString(value.repoId)
+    && isNullableNonEmptyString(value.name)
+    && Array.isArray(value.packages)
+    && value.packages.every(isRepoCatalogPackageRow);
+}
+
+/** result 本体:schemaVersion 族常量 + repos 行数组 + cacheSourced 必带
+ * 信息性降级披露(027 冻结词面三键,出生即带——catalog v0.2 先例;
+ * 空数组 = 诚实零仓库缓存应答) */
+function isRepoCatalogResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-repo-catalog/v0.1") return false;
+  return typeof value.cacheSourced === "boolean"
+    && Array.isArray(value.repos)
+    && value.repos.every(isRepoCatalogRepoRow);
 }
 
 /** result 本体:schemaVersion 族常量 + projectPath + packages 行数组 */
@@ -760,11 +817,12 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取八行——packages.query(installed)/packages.listRepos(repos)/
+   * 一次取九行——packages.query(installed)/packages.listRepos(repos)/
    * packages.packageCatalog(catalog)/packages.removeOps(changes)/
    * packages.installOps(installs)/packages.registerOps(registers)/
-   * packages.repoOps(repoWrites)/packages.createOps(creates);行缺席
-   * 或 availability 非 available = 该区块诚实不可渲染(渲染层不伪造)。
+   * packages.repoOps(repoWrites)/packages.createOps(creates)/
+   * packages.repoCatalogOps(repoCatalog,027 F2);行缺席或 availability
+   * 非 available = 该区块诚实不可渲染(渲染层不伪造)。
    */
   const readCapabilityRows = async (): Promise<{
     installed: boolean;
@@ -775,6 +833,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     registers: boolean;
     repoWrites: boolean;
     creates: boolean;
+    repoCatalog: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -802,6 +861,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       registers: availability(REGISTER_OPS_OPERATION_ID),
       repoWrites: availability(REPO_OPS_OPERATION_ID),
       creates: availability(CREATE_OPS_OPERATION_ID),
+      repoCatalog: availability(REPO_CATALOG_OPERATION_ID),
     };
   };
 
@@ -810,6 +870,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       | PackagesListInstalledRequestV1
       | PackagesListReposRequestV1
       | PackagesPackageCatalogRequestV1
+      | PackagesRepoCatalogRequestV1
       | PackagesPreviewRemoveRequestV1
       | PackagesPreviewInstallRequestV1,
     operation: string,
@@ -883,6 +944,30 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       ? (facts as unknown as CatalogPackageFactsV02)
       : (facts as unknown as CatalogPackageFactsV01);
     return { kind: "ok", result: typedFacts };
+  };
+
+  /** F2 仓库级目录事实(027 冻结词面):双键必带可空 params verbatim
+   * 传输(repoId/packageIds null 原样上 wire;packageIds 非空 = 唯一非
+   * 空 id 闭列,UI 不构造空数组);typed 码照原词(repo_not_found = 逐字
+   * 透传不折叠,P2 读面零折叠);族常量在窄化校验时消费,剥信封键后
+   * 返回事实文档,盖戳辨词面永不猜测 */
+  const repoCatalogRaw = async (
+    repoId: string | null,
+    packageIds: readonly string[] | null,
+  ): Promise<TypedOutcome<RepoCatalogFactsV01>> => {
+    const request: PackagesRepoCatalogRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.repoCatalog",
+      params: {
+        repoId,
+        packageIds: packageIds === null ? null : [...packageIds],
+      },
+    };
+    const outcome = await invokeTyped(request, "packages.repoCatalog", "0.1", isRepoCatalogResult);
+    if (outcome.kind !== "ok") return outcome;
+    const { schemaVersion: _familyConst, ...facts } = outcome.result;
+    return { kind: "ok", result: facts as unknown as RepoCatalogFactsV01 };
   };
 
   /** A1 确认链第一步(026 冻结词面):同步只读预览,永不变更状态;
@@ -1368,6 +1453,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           registers: capabilityRows.registers,
           repoWrites: capabilityRows.repoWrites,
           creates: capabilityRows.creates,
+          repoCatalog: capabilityRows.repoCatalog,
         },
         projectPath: null,
         installedPackages: [],
@@ -1390,6 +1476,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         registers: capabilityRows.registers,
         repoWrites: capabilityRows.repoWrites,
         creates: capabilityRows.creates,
+        repoCatalog: capabilityRows.repoCatalog,
       },
       projectPath: selectedProjectPath,
       installedPackages: outcome.kind === "ok" ? outcome.result : [],
@@ -1429,6 +1516,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     },
     listInstalled: listInstalledRaw,
     packageCatalog: packageCatalogRaw,
+    repoCatalog: repoCatalogRaw,
     async previewRemove(projectPath, packageIds) {
       const outcome = await previewRemoveRaw(projectPath, packageIds);
       return outcome.kind === "ok"
