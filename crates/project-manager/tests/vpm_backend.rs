@@ -580,6 +580,205 @@ fn b3_register_idempotence_keeps_exactly_one_settings_entry() {
     fs::remove_dir_all(&base).ok();
 }
 
+// --- 026 A4: repository add/remove implementation verification ---
+
+/// Port-level capability declaration IS the served-row flip switch (the A3
+/// law carried to A4): the library backend implements all three repo write
+/// methods in-process (vrc-get 0.0.16 `Settings::add_remote_repo` /
+/// `add_local_repo` / `remove_repo`), so the override declares the THREE
+/// INDEPENDENT bits; `VccCliBackend` implements none and stays declared-none
+/// (ORC-DEV-004: no implementation, no reservation). Until this override the
+/// wire's `packages.repoOps` row answered honestly unavailable.
+#[test]
+fn b4_repo_write_capabilities_declare_exactly_the_three_bits() {
+    let base = unique_dir("b4-repo-caps");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+
+    let caps = backend.repo_write_capabilities();
+    assert!(
+        caps.add_remote_repo && caps.add_local_repo && caps.remove_repo,
+        "the library implements all three repo write methods in-process, so \
+         the override declares all three INDEPENDENT bits"
+    );
+
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert_eq!(
+        cli.repo_write_capabilities(),
+        vua_orchestrator::RepoWriteCapabilities::NONE,
+        "no implementation, no declaration"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// Local-directory subscription round trip through the isolated settings
+/// (026 A4 word face: the directory maps onto its `repo.json`, which the
+/// library persists as the row's local_path and later reads AS the manifest
+/// json). The second identical add is the duplicate-path guard — the add
+/// face claims NO idempotence (the A3 AlreadyAdded collapse deliberately not
+/// copied): the refusal travels as `vua.vpm.repo_invalid`.
+#[test]
+fn b4_add_local_repo_roundtrip_and_duplicate_refusal() {
+    let base = unique_dir("b4-add-local");
+    let environment_root = base.join("isolated-vpm-environment");
+    let repo_dir = base.join("local-repo");
+    fs::create_dir_all(&repo_dir).unwrap();
+    fs::write(
+        repo_dir.join("repo.json"),
+        r#"{"name":"synthetic-local","packages":{}}"#,
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    backend.add_local_repo(&repo_dir, "Synthetic Local").unwrap();
+
+    let repos = backend.list_repos().unwrap();
+    assert_eq!(repos.len(), 1, "exactly one subscription row");
+    let canonical_manifest = std::fs::canonicalize(repo_dir.join("repo.json")).unwrap();
+    assert_eq!(
+        std::path::PathBuf::from(repos[0].local_path.as_deref().unwrap()),
+        canonical_manifest,
+        "the row's local_path is the directory's repo.json (the library's \
+         cache-path-equals-local_path law)"
+    );
+    assert_eq!(repos[0].name.as_deref(), Some("Synthetic Local"));
+    assert!(repos[0].url.is_none(), "a local row carries no url");
+    assert!(repos[0].repo_id.is_none(), "a local row carries no id — it \
+        sits OUTSIDE the remove face's reach (frozen protocol boundary)");
+    assert!(repos[0].cached, "repo.json exists and parses — cached=true");
+
+    let error = backend.add_local_repo(&repo_dir, "Synthetic Local").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_invalid");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The malformed-shape refusal (026 A4 word face: guard refusals answer
+/// `vua.vpm.repo_invalid`): a directory without repo.json is exactly that —
+/// the library would silently persist an unreadable row, the environment
+/// refuses it before any settings write.
+#[test]
+fn b4_add_local_repo_rejects_directory_without_repo_json() {
+    let base = unique_dir("b4-add-local-empty");
+    let environment_root = base.join("isolated-vpm-environment");
+    let repo_dir = base.join("empty-repo");
+    fs::create_dir_all(&repo_dir).unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let error = backend.add_local_repo(&repo_dir, "Empty").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_invalid");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    assert!(
+        !environment_root.join("settings.json").exists(),
+        "a refused subscription writes no settings at all"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// Unknown repoId answers `vua.vpm.repo_not_found` — the empty removed-row
+/// list is the honest not-found, never a silent success (the frozen word
+/// face's honest failure mode for remove).
+#[test]
+fn b4_remove_repo_unknown_id_answers_repo_not_found() {
+    let base = unique_dir("b4-remove-missing");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+
+    let error = backend.remove_repo("com.example.absent").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_not_found");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// Remove is id-addressed and reaches ONLY rows carrying that id (the
+/// frozen boundary: id-absent rows are outside the face's remove reach).
+/// A preset isolated settings.json carries one id-bearing remote row and
+/// one id-less local row; removing by id deletes exactly the former and
+/// leaves the latter — then the repeat answers repo_not_found (no
+/// idempotence claimed on the remove face either: the second removal is an
+/// honest not-found, not an invented success).
+#[test]
+fn b4_remove_repo_deletes_exactly_the_id_bearing_row() {
+    let base = unique_dir("b4-remove-id");
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(&environment_root).unwrap();
+    let idless_manifest = base.join("idless/repo.json");
+    fs::create_dir_all(idless_manifest.parent().unwrap()).unwrap();
+    fs::write(&idless_manifest, r#"{"name":"idless","packages":{}}"#).unwrap();
+    let idless = std::fs::canonicalize(&idless_manifest).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        format!(
+            r#"{{"userRepos":[
+                {{"localPath":"{}","name":"preset-remote","url":"https://example.invalid/repo.json","id":"com.example.remote"}},
+                {{"localPath":"{}","name":"preset-local"}}
+            ]}}"#,
+            base.join("remote-cache.json").to_string_lossy().replace('\\', "\\\\"),
+            idless.to_string_lossy().replace('\\', "\\\\"),
+        ),
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    backend.remove_repo("com.example.remote").unwrap();
+
+    let repos = backend.list_repos().unwrap();
+    assert_eq!(repos.len(), 1, "exactly the id-less local row survives");
+    assert_eq!(repos[0].name.as_deref(), Some("preset-local"));
+
+    let error = backend.remove_repo("com.example.remote").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_not_found");
+
+    let settings: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(environment_root.join("settings.json")).unwrap())
+            .unwrap();
+    assert_eq!(
+        settings["userRepos"].as_array().unwrap().len(),
+        1,
+        "the persisted settings carry exactly the surviving row"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The fetch network segment (add_remote_repo): an unresolvable host
+/// answers `vua.vpm.repo_fetch_failed` (ExternalFailure) — the honest
+/// failure mode of the face's inherent network work, never a guessed
+/// success and never a validation code. (The official/curated guard is the
+/// library's own can_add_remote_repo, exercised by the duplicate/official
+/// legs of the same repo_invalid code; no real remote is contacted by any
+/// test here.)
+#[test]
+fn b4_add_remote_repo_unreachable_host_answers_repo_fetch_failed() {
+    let base = unique_dir("b4-add-remote-fetch");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), false)
+            .unwrap();
+
+    let error = backend
+        .add_remote_repo("http://127.0.0.1:1/repo.json", "Unreachable")
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_fetch_failed");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::ExternalFailure);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// An unparseable url is the Validation leg BEFORE any network work: the
+/// answer is `vua.vpm.repo_invalid` and nothing is fetched, nothing saved.
+#[test]
+fn b4_add_remote_repo_unparseable_url_answers_repo_invalid_without_fetch() {
+    let base = unique_dir("b4-add-remote-url");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), false)
+            .unwrap();
+
+    let error = backend.add_remote_repo("not a url at all", "Broken").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_invalid");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Validation);
+    fs::remove_dir_all(&base).ok();
+}
+
 
 // --- B6: general project/package management path ---
 
