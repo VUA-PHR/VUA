@@ -10,8 +10,8 @@ VUA 是以 Windows 为首要平台、本地优先的 VRChat 桌面生产环境�
 Avatar 装配与检测、本地素材管理和可复现生产记录组织为一套连贯工作流。
 
 > [!IMPORTANT]
-> **当前产品版本为 v0.5.0（pre-alpha）。** 本仓库提供开发预览与早期试用版本；面向普通玩家的
-> 稳定性承诺从 `1.0.0` 开始。
+> **当前产品版本为 v0.6.0（pre-alpha）；发行说明见 [docs/release/](docs/release/)。**
+> 本仓库提供开发预览与早期试用版本；面向普通玩家的稳定性承诺从 `1.0.0` 开始。
 
 ## 产品方向
 
@@ -26,7 +26,8 @@ VUA 从用户想得到的结果出发。用户选择目标，例如准备环境�
 - **Kernel 与应用宿主**：小型 Node.js Kernel 负责启动、桌面安全、Gateway 与 Orchestrator Provider
   生命周期；React UI 构成受控表现层。
 - **环境与项目管理**：检测并引导配置 VR、Unity、VRChat 及相关工具；提供基于 `vrc-get` 的 VUA
-  包管理器，并兼容 ALCOM 和 VCC 管理的项目。
+  包管理器，并兼容 ALCOM 和 VCC 管理的项目。VPM 包管理设置（`settings.json` 的仓库订阅与
+  本地包注册表面）与 VCC/ALCOM 共享同一份设置文件，详见[产品边界](docs/product-boundary_ZH.md)。
 - **Orchestrator**：Rust 应用核心，负责计划、批准、持久任务、取消、恢复、适配器和 Build Record，
   通过可替换的版本化 Provider 边界接入 Kernel。
 - **Avatar MegaFactory（AMF）**：Recipe-first 的生产流程，包含 Warehouse、Recipe、Assembly、
@@ -35,7 +36,7 @@ VUA 从用户想得到的结果出发。用户选择目标，例如准备环境�
   Warehouse 映射元数据。
 - **Unity Bridge**：面向全球版 Unity `2022.3.22f1` 执行确定性操作的版本化协议；历史项目通过
   已定义的迁移路径接入。
-- **桌面与 VR Overlay**：基于稳定应用服务提供状态与引导。
+- **桌面与 VR Overlay**：基于稳定应用服务提供状态与引导；VR Overlay 为 `1.0.0` 后方向锚。
 - **插件协议**：计划中的能力声明式扩展边界；首轮交付覆盖协议与宿主安全模型，市场治理由后续
   发行决议安排。
 

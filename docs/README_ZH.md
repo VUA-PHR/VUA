@@ -4,7 +4,7 @@
 
 > 状态：已接受  
 > 范围：VUA 公开仓库  
-> 更新：2026-09-04
+> 更新：2026-09-20
 > 规范效力：定义公开文档入口与权威顺序
 
 公开仓库保存最终产品边界、架构、版本化接口、发行政策和社区工具目录。每项任务从最小相关文档
@@ -43,7 +43,7 @@
 | Electron / React | 产品边界、[桌面架构](architecture/desktop_ZH.md) | Gateway 契约与安全测试 |
 | Orchestrator | 产品边界、[Orchestrator 架构](architecture/orchestrator_ZH.md) | 状态、恢复和适配器协议 |
 | AMF 素材获取 / BDL | 产品边界、[AMF](architecture/amf-unity_ZH.md)、[BDL](architecture/bdl_ZH.md) | Session、下载与持久化契约 |
-| AMF / Recipe / Unity | 产品边界、AMF 架构、[Unity Editor 兼容性](compatibility/unity-editor_ZH.md) | Recipe 与 [Unity Bridge](protocols/unity-bridge-v1_ZH.md) |
+| AMF / Recipe / Unity | 产品边界、AMF 架构、[Unity Editor 兼容性](compatibility/unity-editor_ZH.md) | Recipe 与 [Unity Bridge v3（现行）](protocols/unity-bridge-v3_ZH.md) |
 | Kernel / Provider 托管 | 产品边界、[系统架构](architecture/system_ZH.md) | Desktop 与 Orchestrator 架构 |
 | Core 工具 | 产品边界、[集成架构](architecture/integrations-and-overlays_ZH.md)、[Core 目录](tool-catalog/core/README.md) | 安全证据与能力矩阵 |
 | Plugin | 产品边界、集成架构、[Plugin 目录](tool-catalog/plugin/README.md) | 插件协议与兼容测试 |
@@ -52,6 +52,10 @@
 
 ## 当前入口
 
+- [开发大纲（当前窗口与批次）](development-outline_ZH.md)
+- [设计标准](design/design-standard_ZH.md)
+- [项目交接摘要](project-context_ZH.md)
+- [受管文档登记表](REGISTRY.md)
 - [系统架构](architecture/system_ZH.md)
 - [Electron 桌面与表现层](architecture/desktop_ZH.md)
 - [Orchestrator](architecture/orchestrator_ZH.md)
@@ -59,16 +63,31 @@
 - [Unity Editor 兼容性](compatibility/unity-editor_ZH.md)
 - [BDL](architecture/bdl_ZH.md)
 - [Core、Plugin、External 与 Overlay](architecture/integrations-and-overlays_ZH.md)
-- [Unity Bridge v1](protocols/unity-bridge-v1_ZH.md)
+- [Unity Bridge v3（现行冻结；生产路径 v2 继续生效）](protocols/unity-bridge-v3_ZH.md)
 - [应用契约 v0.1](protocols/application-contract-v0.1_ZH.md)
 - [Orchestrator 任务存储格式 v0.1](protocols/task-store-v0.1_ZH.md)
 - [受监督 Provider 进程协议 v0.1](protocols/provider-process-v0.1_ZH.md)
 - [下载事件协议 v0.1](protocols/download-events-v0.1_ZH.md)
-- [BDL 读取面协议 v0.3](protocols/bdl-queries-v0.3_ZH.md)
+- [BDL 读取面协议 v0.4](protocols/bdl-queries-v0.4_ZH.md)
+- [BDL 命令面协议 v0.4](protocols/bdl-commands-v0.4_ZH.md)
+- [包管理查询协议 v0.1](protocols/packages-query-v0.1_ZH.md)
+- [包管理目录协议 v0.2](protocols/packages-catalog-v0.2_ZH.md)
+- [包管理操作协议 v0.5](protocols/packages-ops-v0.5_ZH.md)
+- [包管理仓库目录协议 v0.1](protocols/packages-repos-catalog-v0.1_ZH.md)
+- [仓库级包目录协议 v0.1](protocols/packages-repo-catalog-v0.1_ZH.md)
+- [项目检视协议 v0.2](protocols/project-inspection-v0.2_ZH.md)
+- [项目操作协议 v0.2](protocols/project-ops-v0.2_ZH.md)
+- [检验查询协议 v0.1](protocols/inspection-queries-v0.1_ZH.md)
+- [编辑器校验协议 v0.1](protocols/editor-verify-v0.1_ZH.md)
+- [生产用例协议 v0.2](protocols/production-use-case-v0.2_ZH.md)
+- [SDK 交接协议 v0.1](protocols/release-handoff-v0.1_ZH.md)
 - [ADR：Orchestrator 受监督独立进程托管](decisions/orchestrator-supervised-provider_ZH.md)
 - [版本政策](release/versioning_ZH.md)
+- [v0.6.0 发行说明](release/v0.6.0_ZH.md)
+- [v0.5.0 发行说明](release/v0.5.0_ZH.md)
 - [v0.4.1 发行说明](release/v0.4.1_ZH.md)
 - [面向社区维护的工具目录](tool-catalog/README.md)
+- 协作者入口：仓库协作机制见 [`collab/README.md`](../collab/README.md)（工作区指令见根目录 `AGENTS.md`）。
 
 ## 文档规则
 
