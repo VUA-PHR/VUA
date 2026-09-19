@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 提出（2026-09-19 集成登记；候核心/环境/桌面三域表态收敛——各面照 026 五链程序逐面办理）
+status: 讨论中（2026-09-19 深夜推进：开放问题 1 核心表态〔58d1a0c〕＋开放问题 3 桌面表态〔75f0dac〕落节经第 120 批收编，F1 文案修正切片 cbfb9d8 已验收入库；候环境开放问题 2 库面考证落节后三域收敛→核心起草 F2 冻结批——各面照 026 五链程序逐面办理）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -115,6 +115,198 @@ F4 启停在 VCC 键名真机核实前维持词面之外（026 A4 启停同款�
 
 ## 内联讨论线程
 
+（提出时无回复；各域表态按 024/025/026 先例内联落节，状态流转照
+proposals/README 办理。）
+
+### 表态（核心）（2026-09-19 深夜工作时段，slot/wt-2 追平 b58ab76 后；开放问题 1 三项逐项裁决——面序与族划分／错误码闭集方向／F4 启停解冻程序确认）
+
+**定位**：本节系 027 开放问题 1 的核心表态（面序确认／F2–F5 族划分／各面错误码
+新增闭集方向／F4 解冻程序）。本节为**程序与方向权威**，不预设字段名与最终闭集
+——各面权威词面由该面冻结批落死（025/026 先例：方向表态→冻结批落死，冻结批与
+本节冲突时以冻结批为准）。核实世代：main b58ab76（本树合并壳 b5737bb）；事实锚
+全部本机直读：`schemas/packages-query/v0.1/`（listInstalled 单方法；command 描述
+明文「Known absent on purpose (P2 facts, never invented here): source, versions/
+compatible/yanked, updateAvailable, latestVersion, changelogUrl, displayName」）、
+`schemas/packages-catalog/v0.2/`（v0.2 增量先例＝「versions the RESULT family
+only——command face byte-for-byte the frozen v0.1」；粒度裁决明文「NO full-catalog
+projection and NO pagination semantics——thousands-scale caches never ride this
+face」）、`schemas/packages-repos/v0.1/`（族界词面「the subscription face is the
+world——the user's configuration fact, NOT the refresh-derived cache」＋「Repo
+enable/disable and add/remove are WRITE faces……do not exist in this family」＋
+「The proactive network refresh (update_cache) is likewise excluded」）、
+`schemas/packages-ops/v0.5/`（九方法五代行目录；guard 三值闭集 preview_drift/
+package_not_found/execution_failed 自 A1 未变；rejected code 锁 `^vua\.packages\.`
+）、`crates/orchestrator/src/vpm_backend.rs`（:111-116 InstalledPackageV1 恰三键
+无 latest/update 载体；:208-214 RepoInfoV01；:241-281 PackageCatalogV01/V02
+update_available: Option<bool> 冻结语义「None＝判定未执行绝不等于无更新」；端口
+无仓库级包目录方法、无模板枚举方法——:284-486 全方法族逐一核对）。
+
+**开放问题 1 逐项表态**：
+
+1. **面序：F2→F3→F5→F4 确认（F1 桌面先行不占 wire 序，提案已载零依赖可即领）**。
+   理由：F2 最前＝P0 立案主诉第一缺口（包发现）＋纯读零写风险＋F6 Recipe 自动化
+   的前置依赖（裁决④「查询形状以 Recipe 自动化为第一消费者」——先冻结先解锁 F6
+   设计研究的事实源）；F3 次之＝latestVersion/updateAvailable 判定事实与 F2 同源
+   （仓库缓存清单面），F2 先冻结让 F3 冻结批直接复用同源事实语义避免二次考证，
+   且 F3 桌面行内升级键所依赖的 A2 install version=null 语义已在库零阻塞；F5
+   第三＝独立读面零依赖，但涉模板目录根事实（本提案新增检查点直接适用）且解锁
+   的是新建项目低频路径，U14 裁决 (3) 批准的是 wire 面本身、不等于优先序提前；
+   F4 殿后＝启停硬前置 VCC 键名真机核实（W25/O-2 候用户开窗）系外部阻塞无法内部
+   推进。**F4 面内二分照 026 A4 增删先行/启停候核实同构先例：刷新面（缓存失效
+   重拉）不依赖键名核实，与 F2/F3/F5 无串行依赖可并行启动；启停面候核实殿后**
+   （解冻程序见表态 7）。
+
+2. **F2＝新读面族 `packages-repo-catalog`（`schemas/packages-repo-catalog/v0.1/`
+   行目录；wire 方法名 `packages.repoCatalog`；result 命名空间
+   `vua.packages-repo-catalog/v0.1`），packages-catalog v0.3 增量选项否决**。
+   这不是偏好问题——三个既有族的冻结词面全部明确排除 F2 的事实源语义：①
+   packages-catalog v0.1/v0.2 粒度裁决钉死「deliberately NO full-catalog
+   projection——thousands-scale caches never ride this face」，F2 的仓库级列表
+   恰是数千级缓存投影，v0.3 增量将制造同族两方法词面自相矛盾（一方法明文拒全
+   目录投影、另一方法即全目录投影）；②packages-repos v0.1 族界钉死「the
+   subscription face is the world——NOT the refresh-derived cache」，F2 的可装
+   包条目恰是缓存清单面投影；③packages-query 是已装清单面（project 维度），
+   与「订阅仓库可装包」（repo 缓存维度）不同事实对象。新族使 025 冻结词面零回
+   改（冻结面零回改纪律），F2 的批量形状、缓存退化披露（cache_sourced 信息面
+   照 catalog v0.2 同款先例）、字段上限（环境开放问题 2 考证）在独立 v0.1 一次
+   立全。查询形状方向（裁决④第一消费者）：params 形状必须配 packageId 集合
+   批量过滤键（Recipe 需求集合→可装版本解析），浏览消费＝同一查询不过滤形态
+   ——是否保留 projectPath 上下文键（compatible 判定绑项目 Unity 版本的 catalog
+   面语义是否延伸）归冻结批按环境考证落死；本节立形状不立字段。
+
+3. **F3＝packages-query 升版 v0.2：command 面照 packages-catalog v0.2 先例逐字
+   节不动，result 面增量携带 latestVersion/updateAvailable 判定事实**。理由：①
+   v0.1 冻结词面明文将这些预告为「Known absent on purpose (P2 facts, never
+   invented here)」——升版是词面预告过的合法增量路径，无词面自相矛盾；②
+   packages-catalog v0.1→v0.2 先例＝同方法 result 面增量，同构可照搬；③判定
+   语义复用 catalog 面冻结语义：updateAvailable 系 `Option` 三态事实（true/
+   false/None＝判定未执行），None 绝不渲染「已最新」（024 表态②虚假断言防线
+   延续）；latestVersion 判定结论的字段载体与判定成本归冻结批＋环境开放问题 2
+   考证（latest_for 语义复用度）收敛落死。桌面「可更新」列对判定未执行行渲染
+   诚实空态（非「已最新」），行内升级键复用 A2 install version=null 解析器语义
+   不立 upgrade 动词（提案已明示照准）。
+
+4. **F4＝packages-ops 扩面版次：新行目录 `schemas/packages-ops/v0.6/`（A6 行）**
+   ，方法形状＝启停二方法对＋刷新一方法（最终命名归冻结批落死，本节立形状不立
+   全表；候选形状 packages.enableRepo / packages.disableRepo /
+   packages.refreshRepo）。理由：①packages-repos v0.1 词面已预先裁决「启停/增
+   删是写面走 013 R5 逐面独立路径」「主动网络刷新同样排除（网络写行为需任务
+   语义）」——F4 归写面族有冻结词面直接背书；②任务化九态/审计/恢复语义/能力
+   位只存在于 packages-ops 族，读面族零写方法先例（catalog v0.2 描述「read-only
+   by design」）；③行目录惯例（v0.1–v0.5 五代并行服务）＝每面独立行目录，v0.6
+   行照搬，五代词面零回改。启停面涉 settings.json 共享根＝U14 教训正中此面：
+   冻结批必须载明「写入目标是用户 VCC/ALCOM 共享 settings.json」的根事实＋F1
+   同款如实 UI 文案口径（设计约束 3）。
+
+5. **F5＝新读面族 `packages-templates`（`schemas/packages-templates/v0.1/` 行
+   目录；wire 方法名 `packages.listTemplates`）——新族成立，但 wire 前缀维持
+   packages.* 不另立 templates.***。理由：①读写分线（014 仲裁第 1 点先例）：
+   createProject 在写面族 packages-ops，模板枚举是纯读面，并入 ops v0.6 将使
+   读方法混入「族内全任务化写形状」的族语义（ops 九方法含 preview 也是确认链
+   前段的写面语义，无纯读先例）；②前缀不分裂：026 表态 2 同律（「另立前缀将
+   分裂能力发现」）——模板枚举消费者是 createProject 表单与未来模板自动化，
+   同属包管理器能力面；族名/前缀/码族三面一致惯例（packages-templates 族 /
+   packages.* 前缀 / vua.packages.* 码族）照既有四族同构；③026 内联线程
+   「templates.* 族若核心裁定入 A5」的语境已随 A5 交付（消费面「不发明枚举」
+   留白在案）闭合，F5 系 027 独立面照独立程序冻结，不回填 A5 词面。U14 裁决 (3)
+   「同意模板枚举 wire 面」即本族的立案权威，词面归冻结批。模板枚举涉文件
+   系统根（库路径三候选 VRCTemplates/Templates/显式路径，026 A5 环境核对切片
+   直读锚点在案）——新增检查点直接适用（见表态 8）。
+
+6. **错误码闭集方向：复用优先，新码仅在独立事实腿实证时随该面冻结批一次立全**。
+   复用清单（既有码零回改）：`vua.project.project_not_found`（注册路径身份，
+   013 复用律）、`vua.vpm.no_matching_package`（包既不在仓库缓存也不在本地集，
+   025 先例——消费方渲染空态非错误页）、`vua.vpm.capability_missing`（通用能
+   力门，缺席面永不达任务）、信封层 `vua.packages.invalid_params` /
+   `vua.packages.unavailable` / `vua.packages.preview_failed`（形状违例/行不
+   可用/查询失败）。逐面方向：**F2** 零新码方向预记（project_not_found＋
+   no_matching_package 复用；若环境考证出独立事实腿如缓存清单不可读，归 v0.1
+   冻结批一次立全）；**F3** 零新码（既有 listInstalled 错误面不变，updateAvailable
+   Option 语义照 catalog 冻结语义）；**F4** 方向复用 `vua.vpm.repo_not_found`
+   （仓库不存在，A4 removeRepo detail 载体先例）＋execution_failed 折叠纪律
+   （刷新网络失败/启停写失败原码入 detail；rejected code 锁 `^vua\.packages\.`
+   维持），新码仅在独立事实腿实证时于 v0.6 冻结批一次立全；**F5** 零新码方向
+   预记（模板根不可达优先诚实空态照 R4 先例定形，归冻结批与环境考证收敛）。
+   立码纪律照 026 表态 4：闭集一次立全＋正负例向量覆盖；冻结只 transport 实现
+   事实，不铸造码。
+
+7. **F4 启停「VCC 键名真机核实」解冻程序确认：三段程序，照 026 A4 二分裁决
+   同款纪律，确认如下**——
+   ①**环境先行（不候窗口）**：开放问题 2 的「settings 键名真机核实方法」照
+   025 先例零代码交付：载明读哪个文件、哪个键、如何只读验证语义；方法交付本身
+   不含真机执行。②**真机核实（W25/O-2 候用户开窗）**：只读核实执行（只读，
+   绝不写入——提案开放问题 2 原文照准）＋键名/语义/真实文件路径证据 collab
+   落账；**026 A4 启停与 027 F4 启停系同一候办，一次核实两处受益合并办理**。
+   ③**解冻条件**：核实证据在库 → F4 启停面冻结批解锁起草；此前启停词面维持
+   冻结之外，环境不实现任何启停 wire 路由（013 R6 先例：裁决前只交付库级只读
+   面）。**刷新面不受本程序约束**（缓存失效重拉系 VUA/库侧缓存语义，不涉 VCC
+   键名），随 F4 v0.6 冻结批先行冻结不候核实。真机核实本身不等于启停面真机
+   走查——后者仍归 W25 全链走查（O-2）。
+
+8. **新增验收检查点：核心席位主动承诺——本提案四面冻结批全部载「后端指向根
+   事实」专节**。026 U14 漏检教训（schema 词面钉不住「后端指向哪个目录」的运
+   行时接线事实）入核心起草纪律：F2（仓库缓存清单根——库内默认根与配置覆写
+   的来源事实）、F3（latest 判定数据源根——缓存面消费事实）、F4 启停（用户
+   VCC/ALCOM 共享 settings.json 共享根，写入面如实宣称）＋F4 刷新（缓存目录
+   根）、F5（模板目录候选根三候选——库路径默认解析与显式路径两腿）各面冻结
+   批必须钉死「生产接线面指向哪个根/文件」＋「测试隔离面（临时目录注入）是
+   什么」，实现核对切片逐项对账，集成验收照提案程序节执行。
+
+**程序注记**：本节零代码纯 collab 面。开放问题 2（环境）／3（桌面）候各域落
+节；开放问题 4 集成自答预填无异议（M6 T-A 提前开工授权范围延续照准，M6 门验
+收与发行仍候 M5 关门门序）。核心侧下一步＝F2 冻结批起草候三域表态收敛（024/
+025/026 同径：三域收敛→核心起草冻结批→wire 接线→桌面形状核可→桌面消费→
+环境实现核对逐面逐批验收）。证据链口径：desktop typecheck 双 tsconfig 纳入各
+面冻结批证据链照第 100 批程序＋A2 先例（冻结批三段收窄证明／接线批 GREEN-only
+条款）延续。
+
+### 桌面表态（开放问题 3，wt-3，2026-09-19 23:2x）
+
+**F1 已落地＋IA 四项方向表态**。核实世代：本树追平壳 ccc4239 后的
+b58ab76 世代（第 119 批 tip，与 main 全等）。
+
+1. **F1 文案修订措辞四语＝已交卷（切片 cbfb9d8，slot/wt-3 候验收）**：
+   四语三键——repoWrite.description（审查点名对）＋register.description
+   （F1 明文要求核对的同款）＋create.description（026 A5 批自有绝对宣称
+   「绝不会被改动」，**超出 F1 明文两处，按同款宣称全量核对纳入并已在
+   提交信息申报**）；措辞照 F1 节模板句与产品边界 1.4.0 §5，四语
+   parity 绿。create 新句「不写入共享设置」有实现证据支撑（本拍直读
+   vpm_backend.rs create_from_template :1429–:1500：写面＝copy_tree
+   到目标目录＋set_product_name＋FileSystemProjectStore::initialize，
+   不写 settings.json 亦不触 VccDatabaseConnection）。设计标准增补随行
+   **v0.7.5**（§8.7 设置面文案纪律：如实共享语义入文、排他宣称禁用；
+   ZH 权威＋EN 镜像＋REGISTRY 行同步）。此两项就此候集成收敛确认。
+2. **IA 形态·发现面入口（F2 桌面消费方向表态）**：仓库订阅与仓库订阅
+   管理两分区合并为单一「仓库」分区——订阅列表行为主体，行内展开即
+   该仓库可装包浏览面（packageId/displayName/最新版本/版本计数等以
+   F2 冻结词面实际字段为准）；搜索框作用于 packageId/displayName 过滤，
+   同一事实源（设计约束 1：手动浏览 UI 是 F2 查询面的次要呈现，批量
+   packageId 过滤由词面承担，UI 不另立查询形状）。分区归并不动词面：
+   repoWrites 写面键与 blocks.repoWrites 能力行照旧，纯桌面呈现层重组；
+   合并分区入口随 repos＋repoWrites 能力事实行共同门控（无事实不渲染
+   纪律不变）。
+3. **IA 形态·已装表更新列与徽章（F3 桌面消费方向表态）**：已装表加
+   「可更新」列，判定事实唯 F3 冻结词面（updateAvailable/latestVersion
+   以冻结批字段为准）；行内升级键复用 A2 安装面 version=null 解析器
+   语义，不立 upgrade 动词（026 已立规矩维持）；徽章两层＝行级「可更新」
+   标记＋分区头可更新计数汇总；**无判定事实不渲染「已最新」**（024
+   表态②虚假断言防线照旧）；判定事实行缺席时该列如实空显不猜测。
+4. **IA 形态·空态引导**：诚实空态纪律不变（空态即终态，不虚构仓库/包
+   存在性）；引导文案指向双如实路径——「先订阅仓库」与「经 Recipe
+   自动导入」（裁决④：包管理器第一形态＝Recipe 驱动，手动管理为次要
+   形态——空态引导是裁决④在 UI 的第一落点，Recipe 主路径入口关系在
+   F2 消费切片中一并给出）；分区能力行缺席时整分区不渲染（既有纪律），
+   空态引导只挂在有渲染资格的分区内。
+5. **IA 形态·新建项目模板下拉（F5 桌面消费方向表态）**：F5 模板枚举
+   读面冻结后，A5 现行手填模板输入升级为下拉（枚举字段 id/名称/描述
+   以 F5 冻结词面为准）；枚举缺席或创建能力不可用时回落现行手填＋
+   留空＝后端默认解析（A5 语义原样保持）；**F5 词面落地前「不虚构
+   下拉」纪律继续有效**（design-standard 8.7 现行文本不动摇）。
+6. **表态性质**：全部为方向表态（025 先例：方向表态→冻结批落死，
+   冲突时以冻结批词面为准）；各面最终形态候该面冻结批＋桌面形状核可
+   （双前置照 026 程序）。设计标准对应增补随各面消费切片办理（026
+   0.7.3/0.7.4 先例），本拍 0.7.5 只落 F1 文案纪律、不预设 F2/F3/F5
+   消费面词。
 ### 考证（环境）（2026-09-19 深夜工作时段，slot/wt-6 追平 b58ab76 后；开放问题 2 四点零代码输出，照 025 §1 先例 file:line 实测锚格式）
 
 **定位**：本节系 027 开放问题 2 的环境席位库面考证（F2 数据源与字段上限／F3 判定
