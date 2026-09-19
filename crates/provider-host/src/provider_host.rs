@@ -297,6 +297,20 @@ pub const PACKAGES_CATALOG_SCHEMA_VERSION: &str = "vua.packages-catalog/v0.1";
 /// keep answering the frozen v0.1 family below).
 pub const PACKAGES_CATALOG_SCHEMA_VERSION_V02: &str = "vua.packages-catalog/v0.2";
 
+/// The `packages-repo-catalog` v0.1 result family constant (proposal 027 F2
+/// freeze batch 2026-09-20; the c914cf2 standing rule — every wire row
+/// carries a version constant of its own, independent of the envelope
+/// const). The route stamps it at envelope assembly, never the backend.
+pub const PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01: &str = "vua.packages-repo-catalog/v0.1";
+
+/// The `packages` envelope const of the repo-catalog v0.1 word-face row
+/// (named at this wiring batch per the A3/A4/A5 precedent: the frozen v0.1
+/// command schema locks the ENVELOPE schemaVersion to "0.1" — the same
+/// word-list-row generation as the P1/P2 read faces' shared const, carried
+/// as its OWN named constant so wire consumers key on the core-owned
+/// constant, never a private literal; the c914cf2 standing rule).
+pub const PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01: &str = "0.1";
+
 /// The `packages-ops` v0.1 result family constant (proposal 026 A1 freeze
 /// batch 2026-09-19; the c914cf2 standing rule — every wire row carries a
 /// version constant of its own, independent of the envelope const). The
@@ -1347,6 +1361,19 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.capabilities().create_project => "available",
         _ => "unavailable",
     };
+    // Proposal 027 F2: the repo-catalog read face rides the SAME VpmBackend
+    // wiring, gated on the NEW defaulted accessor `repo_catalog_capabilities`
+    // (the frozen v0.1 command schema's serving gate; the A4 accessor law —
+    // default declared-none keeps the row honestly unavailable until the
+    // environment implementation-verification slice flips it with the
+    // VrcGetLib override; the CLI backend has no repo-scale listing and
+    // stays honestly false). One row serving the ONE method
+    // (removeOps/installOps/registerOps/repoOps/createOps one-row
+    // precedent).
+    let packages_repo_catalog_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.repo_catalog_capabilities().repo_catalog => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1386,6 +1413,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.createOps",
             "availability": packages_create_ops_availability,
+        },
+        {
+            "operationId": "packages.repoCatalogOps",
+            "availability": packages_repo_catalog_availability,
         },
     ])
 }
@@ -5212,6 +5243,7 @@ fn packages_request(
         "packages.createProject" => {
             packages_create_project(state, vpm, request, request_id, correlation_id)
         }
+        "packages.repoCatalog" => packages_repo_catalog(vpm, request, request_id, correlation_id),
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5379,6 +5411,104 @@ fn packages_list_repos(
             },
         }),
     ))
+}
+
+/// `packages.repoCatalog` (proposal 027 F2 freeze batch, wired by this
+/// batch): the per-repository installable-package inventory over the wired
+/// backend's collection — one row per repository (identity, the REQUIRED
+/// `cached` cache-hit fact, that repository's own package rows), a GLOBAL
+/// face needing no registration binding (no projectPath exists on the
+/// frozen v0.1 word face). Params are the frozen two-key REQUIRED-nullable
+/// closed set {repoId, packageIds}: BOTH keys must be present — `repoId`
+/// null = every repository of the collection world, a non-empty string
+/// scopes the answer to that one repository row (an unknown id is the
+/// PORT's `vua.vpm.repo_not_found` refusal, the A4 removeRepo same-fact
+/// precedent, traveling verbatim per the read-face pass-through
+/// discipline); `packageIds` null = browse-all, a non-null array is the
+/// batch requirement-set filter (unique non-empty ids — the Recipe
+/// automation shape, user ruling 4; an EMPTY array is a shape violation,
+/// not an empty filter). Any other shape answers
+/// `vua.packages.invalid_params` at the route layer. The capability gate
+/// reads the NEW defaulted accessor `repo_catalog_capabilities` (default
+/// declared-none) BEFORE the port call — absence answers the generic
+/// `vua.vpm.capability_missing` and never reaches a backend method; unlike
+/// the A5 face the port method HAS a default body, so the honest
+/// structural difference holds: a declared-but-unimplemented backend CAN
+/// exist at the type level, and BOTH layers answer `capability_missing`
+/// (the route gate first). The port's typed errors travel verbatim (the
+/// P2 read-face precedent — no read-face fold exists); the result document
+/// is the port's `RepoCatalogV01` projected through serde, stamped with
+/// the family const at envelope assembly (P1 discipline: the route stamps
+/// the const, the backend facts stay verbatim).
+fn packages_repo_catalog(
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    // The closed two-key set: exactly repoId + packageIds, both present.
+    if params.len() != 2 || !params.contains_key("repoId") || !params.contains_key("packageIds") {
+        return packages_invalid_params(request_id, correlation_id);
+    }
+    let repo_id = match params.get("repoId") {
+        Some(Value::Null) => None,
+        Some(Value::String(id)) if !id.is_empty() => Some(id.clone()),
+        _ => return packages_invalid_params(request_id, correlation_id),
+    };
+    let package_ids: Option<Vec<String>> = match params.get("packageIds") {
+        Some(Value::Null) => None,
+        Some(Value::Array(items)) => {
+            let mut ids = Vec::with_capacity(items.len());
+            for item in items {
+                match item.as_str() {
+                    Some(id) if !id.is_empty() => ids.push(id.to_owned()),
+                    _ => return packages_invalid_params(request_id, correlation_id),
+                }
+            }
+            // An empty array is a shape violation, not a third state next
+            // to null; so is a duplicate id (the frozen schema's
+            // uniqueItems law).
+            if ids.is_empty() || ids.iter().collect::<std::collections::HashSet<_>>().len() != ids.len() {
+                return packages_invalid_params(request_id, correlation_id);
+            }
+            Some(ids)
+        }
+        _ => return packages_invalid_params(request_id, correlation_id),
+    };
+    if !vpm.repo_catalog_capabilities().repo_catalog {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let catalog = vpm.repo_catalog(repo_id.as_deref(), package_ids.as_deref().unwrap_or(&[]));
+    match catalog {
+        Ok(catalog) => {
+            let mut result = serde_json::to_value(&catalog).unwrap_or_else(|_| json!({}));
+            result["schemaVersion"] = json!(PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01);
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({
+                    "schemaVersion": PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01,
+                    "operation": "packages.repoCatalog",
+                    "result": result,
+                }),
+            ))
+        }
+        Err(error) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            &error.code,
+            &error.message_key,
+            app_error_category(error.category),
+        )),
+    }
 }
 
 /// `packages.packageCatalog` (proposal 025 P2 freeze batch): the on-demand

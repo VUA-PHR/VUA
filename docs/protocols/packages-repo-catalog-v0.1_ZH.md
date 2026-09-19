@@ -1,10 +1,15 @@
 # packages-repo-catalog 协议本 v0.1（packages.repoCatalog 读面：仓库级可装包清单）
 
-> 文档版本：0.1
-> 状态：已冻结（提案 027 F2 核心冻结批，2026-09-20）
+> 文档版本：0.1.1
+> 状态：**已冻结（提案 027 F2 核心冻结批；v0.1.1 接线批落地，词面零变更——
+> wire 路由与 served 行已在树，桌面消费候形状核可，库实现归环境实现核对切片；
+> 该切片覆写置真前，served 行如实维持不可用）**
 > 权威对：本文件与 `packages-repo-catalog-v0.1_EN.md`（单一语义，双语镜像）。
 > 词面权威：`schemas/packages-repo-catalog/v0.1/`（command＋result Schema 与正负例
 > 向量）。本文负责解释；Schema 具约束力。
+> wire 路由测试：`crates/provider-host/tests/packages_repo_catalog_wire_v01.rs`
+> （骑真帧环）；核心消费测试：
+> `crates/provider-host/tests/packages_repo_catalog_consumer_v01.rs`。
 
 ## 本面是什么
 
@@ -100,13 +105,28 @@ packages-catalog 面的工程绑定冻结事实。未来工程绑定的 repo-cat
   `vua.packages.unavailable`。
 - 只读设计：仓库启停与手动刷新是 packages-ops（提案 027 F4）写面，不属于本族。
 
-## 能力门控
+## 能力门控（已接线，随 v0.1.1 接线批落地）
 
 新默认访问器 `VpmBackend::repo_catalog_capabilities() -> RepoCatalogCapabilities`
 （单一位 `repo_catalog`），025 访问器法则（ORC-DEV-004：默认 declared-none；后端
 恰在实现 `repo_catalog` 时覆写）。库后端具备仓库级列表能力，随其实现核对切片如实
-置真；CLI 后端无仓库级包列表能力（环境考证 3bd4f12 §1），如实维持假。接线批（下
-一核心接线切片）落地前，该方法在 wire 面不存在，消费端不渲染入口。
+置真；CLI 后端无仓库级包列表能力（环境考证 3bd4f12 §1），如实维持假。
+
+- **服务门（已接线，已落地）**：served 行 `packages.repoCatalogOps` 服务该唯一方法
+  （removeOps/installOps/registerOps/repoOps/createOps 单行先例）；行可用性＝后端
+  `repo_catalog_capabilities().repo_catalog` 位——默认 declared-none 让该行在环境
+  实现核对切片以 VrcGetLib 覆写置真前如实维持不可用。wire 路由在调用端口方法**之
+  前**读同一位；假位答通用 `vua.vpm.capability_missing`，绝不触达后端方法。
+- **与 A5 面的诚实结构差异**：`repo_catalog` 端口方法**有**默认体（不同于无默认体
+  的必带方法 `create_project`），因此「已声明未实现」的后端在类型层可以存在——且
+  两层都答 `capability_missing`（路由门先行，trait 默认体携带 `capability` 参数）。
+  门是诚实防线，不是类型层不可能。
+- **wire 信封常量（本接线批命名，A3/A4/A5 先例）**：信封常量
+  `PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 = "0.1"` 与结果族常量
+  `PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 = "vua.packages-repo-catalog/v0.1"`
+  自 `vua_provider_host::provider_host` 发布——消费端以核心自有常量为键，绝不用私
+  有字面量；路由在信封组装时加盖两常量（族常量盖结果文档、信封常量盖响应），
+  绝不由后端加盖。
 
 ## 后端指向根事实专节（027 检查点——必载）
 
@@ -144,7 +164,8 @@ packages-catalog 面的工程绑定冻结事实。未来工程绑定的 repo-cat
 
 ## 诚实边界
 
-本批零端到端宣称：冻结批是词表层——wire 路由/served 行/信封组装归下一核心接线切
-片，库实现归环境实现核对切片，桌面消费候形状核可后逐面升级程序。全链真机走查归
-W25 窗口（O-2，候用户开窗）。空态即终态：空 repos 数组、空 packages 数组、null 的
-latest/display/description 事实一律按设计的空态呈现，绝不以猜测内容填充。
+零端到端宣称：冻结批是词表层；v0.1.1 接线批已把 wire 路由、`packages.repoCatalogOps`
+served 行与信封组装落入树中——桌面消费仍候形状核可后逐面升级程序，库实现归环境实
+现核对切片（该覆写落地前，已接线的后端让 served 行如实维持不可用），全链真机走查
+归 W25 窗口（O-2，候用户开窗）。空态即终态：空 repos 数组、空 packages 数组、null
+的 latest/display/description 事实一律按设计的空态呈现，绝不以猜测内容填充。
