@@ -2,15 +2,15 @@
 
 [English](packages-ops-v0.5_EN.md) | [简体中文](packages-ops-v0.5_ZH.md)
 
-> Document version: 0.5
+> Document version: 0.5.1
 > Status: **Frozen (packages-ops word-list row v0.5, slice A5
 > project-creation word face; the v0.1 A1 removal row, the v0.2 A2
 > install/upgrade row, the v0.3 A3 registration row and the v0.4 A4
 > repository add/remove row stay frozen and served untouched — v0.5 is
 > a separate row directory per the packages-catalog v0.2 increment
-> precedent; the word face is NOT wired: the wire routes and the served
-> row wait for the next core wiring slice — until it lands the method
-> does not exist on the wire face and the desktop has no write entry)**
+> precedent; the word face IS wired: the wire route and the served row
+> are in tree — desktop consumption rides the per-face upgrade, until
+> it lands the method has no desktop entry point)**
 > (2026-09-19, proposal 026 face order A1→A2→A3→A4→A5; the A5 start
 > ruling = core, 2026-09-19 01:3x — start granted / timing last /
 > word-face direction six points / carrier declaration, recorded in the
@@ -18,8 +18,9 @@
 > points = the 026 inline desktop stance section a4c74a7)
 > Machine-readable word list: `schemas/packages-ops/v0.5/` (per-row
 > dual schemas + 3 positive / 10 negative vectors; core consumer tests
-> `crates/provider-host/tests/packages_ops_consumer_v05.rs`; TS guard
-> tests `packages/contracts/src/application-contract.test.ts`)
+> `crates/provider-host/tests/packages_ops_consumer_v05.rs`; wire
+> route tests `crates/provider-host/tests/packages_ops_wire_v05.rs`;
+> TS guard tests `packages/contracts/src/application-contract.test.ts`)
 > Scope: `packages.createProject` (the nine-state task-driven write
 > command creating a new project)
 > Ownership boundary: word-list freeze + port-face documentation
@@ -28,15 +29,20 @@
 > five-bit member `VpmCapabilities.create_project`, the bit predates
 > this batch and both in-repo backends already declare it honestly) =
 > core domain; wire route (the `packages.createOps` served row, the
-> route arm, the envelope assembly) = core domain, waiting for the
-> next wiring slice; the dual implementations (the library path
+> route arm, the envelope assembly) = core domain, **landed with the
+> v0.5.1 wiring batch**; the dual implementations (the library path
 > `create_from_template` / the CLI path `vpm new`) are already in tree
 > = environment domain (the implementation-verification slice per the
 > 024/025 procedure); desktop consumption = desktop domain (per-face
 > upgrade, the create capability presentation must be NEWLY declared —
 > reusing `blocks` is not available: its semantics = change-preview
 > availability, a different fact from "can create projects")
-> Updated: 2026-09-19 (v0.5 freeze batch: dual schemas + vectors + core
+> Updated: 2026-09-19 (v0.5.1 wiring batch: the route arm
+> `packages.createProject` + the served row `packages.createOps`
+> gated on the existing `capabilities().create_project` bit + envelope
+> assembly + all-refusals-fold projection + wire tests + this document
+> NAMES the wire envelope constants — word face ZERO change);
+> 2026-09-19 (v0.5 freeze batch: dual schemas + vectors + core
 > consumer tests + TS face + mock constant-absence arm + bilingual
 > protocol doc + REGISTRY)
 
@@ -161,14 +167,18 @@
   in-repo backends already declare it honestly); param violations
   answer `vua.packages.invalid_params`; unwired engines answer the
   honest-absence arm `vua.packages.unavailable`.
-- **Serving gate (lands with the wiring slice)**: the served row
-  `packages.createOps` serves the one method (the registerOps /
-  removeOps one-row precedent); row availability = the backend's
-  `capabilities().create_project` bit; the wire route reads the bit
-  before submit, a false bit answers the generic
-  `capability_missing`. The wire envelope constants follow the A3/A4
-  precedent and are named in this document at a 0.5.x revision by the
-  wiring batch.
+- **Serving gate (wired, landed)**: the served row `packages.createOps`
+  serves the one method (the registerOps / removeOps / repoOps one-row
+  precedent); row availability = the backend's
+  `capabilities().create_project` bit (the EXISTING five-bit member — no
+  new accessor exists on this face, so unlike the A4 row there is no
+  declared-none default waiting for an environment override: a wired
+  backend with the bit true answers available as of this wiring batch);
+  the wire route reads the same bit before submit, a false bit answers
+  the generic `capability_missing` and never reaches a task. Because the
+  port method is REQUIRED with no default body, the gate IS the absence
+  arm — a declared-but-unimplemented backend cannot exist at the type
+  level.
 
 ## Explicitly outside this word face
 
@@ -191,7 +201,14 @@ The wire envelope is the standing shape (the `schemaVersion` envelope
 const `"0.5"` + `operation` + `result`); the result document carries
 its own family const (`vua.packages-ops/v0.5`) — the two versions are
 independent (the c914cf2 standing rule: every wire row carries its own
-version constant). The v0.1 removal methods keep answering in the v0.1
+version constant). All the method's wire outcomes stamp the envelope
+const `"0.5"` on both the task acceptance answer and the Done payload,
+and the receipt stamps the family const `vua.packages-ops/v0.5` — the
+constants are named and pinned by the v0.5.1 wiring batch (the A3/A4
+precedent: the freeze-batch document registers the row, the wiring
+batch names the constants in a 0.5.x revision — consumers align
+against the landed face, never a guess). The v0.1 removal methods keep
+answering in the v0.1
 word face, the v0.2 install methods in the v0.2 word face, the v0.3
 registration in the v0.3 word face, the v0.4 subscription three
 methods in the v0.4 word face; the v0.5 request is the A5 method only
@@ -205,15 +222,15 @@ transports facts.
 
 ## Honesty boundary
 
-- **The word face is frozen, NOT wired.** The wire route (the
-  `packages.createOps` served row and the route arm), the envelope
-  assembly wait for the next core wiring slice — from this batch until
-  the wiring lands, `packages.createProject` does not exist on the wire
-  face, the desktop has no creation entry point, and the mock answers
-  the honest absence. Both implementations are in tree (the library
-  path / the CLI path); the environment implementation-verification
-  slice follows the wiring batch per the 024/025 procedure; the desktop
-  consumption slice waits for the shape approval. Wire tests riding the
-  real frame loop with fake backends belong to the wiring batch; the
-  end-to-end walkthrough stays W25 (waiting for the user to open O-2).
-  This document claims no real-machine behavior.
+- **The word face is wired, not consumed.** The wire route (the
+  `packages.createOps` served row and the route arm) and the envelope
+  assembly landed with the v0.5.1 wiring batch — the method exists on
+  the wire face as of this batch. Desktop renders no entry point yet
+  (consumption rides the per-face upgrade after the shape approval);
+  both implementations are in tree (the library path / the CLI path) and
+  the environment implementation-verification slice follows per the
+  024/025 procedure. Wire tests riding the real frame loop with fake
+  backends landed with the wiring batch
+  (`packages_ops_wire_v05.rs`); the end-to-end walkthrough stays W25
+  (waiting for the user to open O-2). This document claims no
+  real-machine behavior.
