@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-repo-catalog/v0.1/command.schema.json",
+  "title": "VUA packages-repo-catalog command v0.1",
+  "description": "The packages repoCatalog read-face command (proposal 027 F2 freeze batch 2026-09-20; stance program converged: core rulings 58d1a0c, environment verification 3bd4f12, desktop stance 75f0dac — three-domain convergence registered batch 121). v0.1 carries exactly one method, packages.repoCatalog: the per-repository inventory of installable packages (packageId / displayName / latestVersion / versionCount / description within the library's actual field ceiling). FAMILY PARTITION is the 027 open-question-1 ruling: this is a NEW read family, not a packages-catalog increment — the frozen packages-catalog word faces deliberately exclude repo-scale projections ('NO full-catalog projection — thousands-scale caches never ride this face'), and the frozen packages-repos word face is the subscription configuration face ('the subscription face is the world — NOT the refresh-derived cache'). THIS family is the cache-inventory projection those rulings reserved for it: the world of the face is the backend collection's repository set (the predefined official/curated repositories unless ignored through their switches, plus every subscribed user repository), grouped per repository — never a cross-repository merge (the per-package cross-repo latest judgment stays the packages-catalog family's fact; the two views are declared different and are never conflated). DESIGN-CONSTRAINT shape (user ruling 4): the params carry a packageId-set batch filter key — the Recipe automation flow (requirement set -> resolvable installable facts) is the first consumer of this face; the manual browse UI is the same query's secondary presentation and issues the identical shape unfiltered. Both params keys are REQUIRED-nullable in the VUA idiom (026 A5 template precedent): null = unscoped / unfiltered; a non-null repoId scopes the answer to that one repository row (an unknown repoId answers the REUSED vua.vpm.repo_not_found — the A4 removeRepo same-fact precedent); a non-null packageIds is the batch requirement set (unique non-empty ids — an empty array is not a third state next to null, it is a shape violation). There is deliberately NO projectPath key in v0.1: the latestVersion judgment runs with no project Unity constraint (the library selector's unity filter passes all when unconstrained), so no compatible fact exists on this face — a per-version compatibility judgment without a project context would be a constant null, and a constant is not a fact (it gets no wire key; per-package version-level compatible remains the packages-catalog face's frozen project-bound fact). Read-only by design: repository enable/disable and manual refresh are write faces of the packages-ops family (proposal 027 F4) and do not exist here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.repoCatalog"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoId", "packageIds"],
+      "properties": {
+        "repoId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Repository scope: null = every repository of the collection world, grouped per repo; a non-null id scopes the answer to that one repository row (the stable row handle of the packages-repos face). An id not present in the collection world answers the REUSED vua.vpm.repo_not_found, never an invented empty-shaped success."
+        },
+        "packageIds": {
+          "type": ["array", "null"],
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1,
+          "uniqueItems": true,
+          "description": "Batch requirement-set filter (user ruling 4, Recipe first consumer): null = browse-all rows; a non-null array restricts every repo's package rows to the listed ids. Unique non-empty ids — an empty array is a shape violation, not an empty filter."
+        }
+      }
+    }
+  }
+}
