@@ -28,6 +28,8 @@ import {
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
   type RegisteredProjectRow,
+  type RepoCatalogFactsV01,
+  type RepoCatalogRepoRowV01,
   type RepoInfoRowV01,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
@@ -43,6 +45,7 @@ import {
   createEnvelopeErrorKey,
   createRefusalDetailKey,
   filterPackages,
+  filterRepoCatalogPackages,
   installEnvelopeErrorKey,
   installLatestRequests,
   invalidReasonKey,
@@ -503,6 +506,8 @@ function P1InstalledTable({
 function P2ReposSection({
   repos,
   reposErrorCode,
+  browseEnabled,
+  gateway,
   onRemoveRequest,
   removeConfirmId,
   removeBusyId,
@@ -510,11 +515,17 @@ function P2ReposSection({
 }: {
   repos: readonly RepoInfoRowV01[];
   reposErrorCode: string | null;
+  /** F2 仓库浏览入口(blocks.repoCatalog 能力行)——false = 展开入口
+   *  不渲染(诚实缺席);repoId 缺席行不在浏览可达范围(id 缺席 = 无
+   *  稳定行柄,scoped 查询无从寻址——A4 移除入口同款纪律),UI 不发明 */
+  browseEnabled?: boolean;
+  gateway?: ReturnType<typeof useGateway>;
   onRemoveRequest?: (repoId: string) => void;
   removeConfirmId?: string | null;
   removeBusyId?: string | null;
   removeOutcome?: RepoRemoveOutcomeView | null;
 }) {
+  const [browseRepoId, setBrowseRepoId] = useState<string | null>(null);
   if (reposErrorCode !== null) {
     return (
       <EmptyState
@@ -538,6 +549,7 @@ function P2ReposSection({
         {repos.map((repo, index) => {
           const title = repo.name ?? repo.repoId ?? copy.p2.repoNoIdentifier;
           const location = repo.url ?? repo.localPath;
+          const browseOpen = browseEnabled === true && browseRepoId !== null && browseRepoId === repo.repoId;
           return (
             <li key={`${repo.repoId ?? "repo"}-${index}`} className="vua-packages__repo-row">
               <div className="vua-packages__repo-main">
@@ -547,6 +559,16 @@ function P2ReposSection({
                 <Badge tone={repo.cached ? "neutral" : "warning"}>
                   {repo.cached ? copy.p2.repoCached : copy.p2.repoNotCached}
                 </Badge>
+                {browseEnabled && repo.repoId !== null && gateway ? (
+                  <Button
+                    variant="subtle"
+                    aria-expanded={browseOpen}
+                    aria-label={format(copy.p2.browseAria, { name: title })}
+                    onClick={() => setBrowseRepoId(browseOpen ? null : (repo.repoId as string))}
+                  >
+                    {browseOpen ? copy.p2.browseClose : copy.p2.browseAction}
+                  </Button>
+                ) : null}
                 {onRemoveRequest && repo.repoId !== null ? (
                   <Button
                     variant="subtle"
@@ -567,6 +589,14 @@ function P2ReposSection({
                 <span className="vua-caption vua-text-secondary" title={location}>
                   {repo.url !== null ? `${copy.p2.repoUrlLabel}: ${repo.url}` : `${copy.p2.repoLocalPathLabel}: ${repo.localPath}`}
                 </span>
+              ) : null}
+              {browseOpen && repo.repoId !== null && gateway ? (
+                <RepoCatalogPanel
+                  repoId={repo.repoId}
+                  repoName={title}
+                  gateway={gateway}
+                  onClose={() => setBrowseRepoId(null)}
+                />
               ) : null}
             </li>
           );
@@ -1111,6 +1141,151 @@ function P2CatalogPanel({
         </div>
       )}
     </Card>
+  );
+}
+
+/* ---- F2 仓库浏览面板(027 消费批):行内展开即该仓库可装包浏览面
+ * (IA 表态 2)。同一事实源——repoCatalog(repoId, null) 不过滤形态,
+ * 搜索框是呈现层过滤(filterRepoCatalogPackages 纯函数),不另立查询
+ * 形状(027 设计约束 1)。诚实纪律:cached=false 行 =「已订阅·缓存未建
+ * 立」空态;latestVersion null = 如实「无合资格版本」,绝不渲染「已最
+ * 新」类断言(024 表态②防线);cacheSourced=true =「缓存数据」信息标注
+ * 非失败(复用目录面板同款词面);typed 失败照原词(repo_not_found 逐字
+ * 透传——P2 读面零折叠);scoped 应答缺行 = 形状不符如实呈现,无证据
+ * 不发明行。 ---- */
+
+function RepoCatalogPanel({
+  repoId,
+  repoName,
+  gateway,
+  onClose,
+}: {
+  repoId: string;
+  repoName: string;
+  gateway: ReturnType<typeof useGateway>;
+  onClose: () => void;
+}) {
+  const [outcome, setOutcome] = useState<
+    | { kind: "loading" }
+    | { kind: "ok"; cacheSourced: boolean; row: RepoCatalogRepoRowV01 }
+    | { kind: "failed"; code: string }
+    | { kind: "unavailable" }
+  >({ kind: "loading" });
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setOutcome({ kind: "loading" });
+    setSearch("");
+    void gateway.packages.repoCatalog(repoId, null).then((result) => {
+      if (!active) return;
+      if (result.kind === "ok") {
+        const row = result.result.repos.find((repo) => repo.repoId === repoId);
+        if (row === undefined) {
+          setOutcome({ kind: "failed", code: "packages_shape_violation" });
+        } else {
+          setOutcome({ kind: "ok", cacheSourced: result.result.cacheSourced, row });
+        }
+      } else if (result.kind === "failed") setOutcome({ kind: "failed", code: result.code });
+      else setOutcome({ kind: "unavailable" });
+    });
+    return () => {
+      active = false;
+    };
+  }, [gateway, repoId]);
+
+  const row = outcome.kind === "ok" ? outcome.row : null;
+  const filtered = row === null ? [] : filterRepoCatalogPackages(row.packages, search);
+
+  return (
+    <div className="vua-packages__repo-browse">
+      <div className="vua-packages__repo-browse-head">
+        <h3 className="vua-packages__section-title">
+          {format(copy.p2.browseTitle, { name: repoName })}
+        </h3>
+        <Button variant="subtle" aria-expanded onClick={onClose}>
+          {copy.p2.browseClose}
+        </Button>
+      </div>
+      {outcome.kind === "loading" ? (
+        <div className="vua-page__stack">
+          <Skeleton width="45%" />
+          <Skeleton width="70%" />
+        </div>
+      ) : outcome.kind === "failed" ? (
+        <EmptyState
+          title={copy.p2.browseFailedTitle}
+          description={format(copy.p2.browseQueryFailed, { code: outcome.code })}
+        />
+      ) : outcome.kind === "unavailable" ? (
+        <EmptyState
+          title={copy.p2.browseFailedTitle}
+          description={copy.p2.browseUnavailable}
+        />
+      ) : (
+        <>
+          {outcome.cacheSourced ? (
+            <p className="vua-caption vua-text-secondary">
+              <Icon name="question" size={16} /> {copy.p2.catalogCachedData}
+            </p>
+          ) : null}
+          {row !== null && !row.cached ? (
+            <EmptyState
+              title={copy.p2.repoNotCached}
+              description={copy.p2.browseNotCachedDescription}
+            />
+          ) : row !== null && row.packages.length === 0 ? (
+            <EmptyState
+              title={copy.p2.browseEmptyTitle}
+              description={copy.p2.browseEmptyDescription}
+            />
+          ) : (
+            <>
+              <input
+                type="search"
+                className="vua-packages__search"
+                placeholder={copy.p2.browseSearchPlaceholder}
+                aria-label={copy.p2.browseSearchAria}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              {filtered.length === 0 ? (
+                <EmptyState
+                  title={copy.empty.noResultTitle}
+                  description={copy.empty.noResultDescription}
+                />
+              ) : (
+                <ul className="vua-packages__repo-list">
+                  {filtered.map((entry) => (
+                    <li key={entry.packageId} className="vua-packages__repo-browse-row">
+                      <div className="vua-packages__repo-main">
+                        <span className="vua-packages__name-title" title={entry.packageId}>
+                          {entry.displayName ?? entry.packageId}
+                        </span>
+                        <span className="vua-caption vua-text-secondary">{entry.packageId}</span>
+                      </div>
+                      {entry.description !== null ? (
+                        <span className="vua-caption vua-text-secondary">{entry.description}</span>
+                      ) : null}
+                      <div className="vua-packages__repo-browse-facts">
+                        <span className="vua-caption">
+                          {entry.latestVersion !== null
+                            ? `${copy.columns.latest}: ${entry.latestVersion}`
+                            : copy.p2.browseLatestNone}
+                        </span>
+                        <span className="vua-caption vua-text-secondary">
+                          {format(copy.p2.browseVersionCount, { count: entry.versionCount })}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -1958,36 +2133,47 @@ export function PackagesPage() {
               selectedProjectPath={p2.projectPath}
               onSelect={chooseProject}
             />
-            {p2.blocks.repos ? (
-              <P2ReposSection
-                repos={p2.repos}
-                reposErrorCode={p2.reposError?.code ?? null}
-                {...(p2.blocks.repoWrites
-                  ? {
-                      onRemoveRequest: requestRemoveRepo,
-                      removeConfirmId: repoRemoveConfirmId,
-                      removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
-                      removeOutcome: repoRemoveOutcome,
-                    }
-                  : {})}
-              />
-            ) : null}
-            {p2.blocks.repoWrites ? (
-              <RepoWriteSection
-                busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
-                remoteUrl={repoRemoteUrl}
-                remoteName={repoRemoteName}
-                localPath={repoLocalPath}
-                localName={repoLocalName}
-                remoteOutcome={repoRemoteOutcome}
-                localOutcome={repoLocalOutcome}
-                onRemoteUrlChange={setRepoRemoteUrl}
-                onRemoteNameChange={setRepoRemoteName}
-                onLocalPathChange={setRepoLocalPath}
-                onLocalNameChange={setRepoLocalName}
-                onAddRemote={startRepoAddRemote}
-                onAddLocal={startRepoAddLocal}
-              />
+            {(p2.blocks.repos || p2.blocks.repoWrites || p2.blocks.repoCatalog) ? (
+              /* F2 消费批(027)IA 表态 2 落地:仓库订阅与订阅管理两分区
+               * 合并为单一「仓库」分区(纯呈现层重组——blocks 键与能力行
+               * 照旧,入口随 repos＋repoWrites＋repoCatalog 能力事实行共
+               * 同门控,无事实不渲染纪律不变);订阅列表行内展开即该仓浏
+               * 览面(blocks.repoCatalog 门控) */
+              <section className="vua-packages__repo-partition" aria-label={copy.p2.partitionAria}>
+                <h2 className="vua-packages__partition-title">{copy.p2.partitionTitle}</h2>
+                {p2.blocks.repos ? (
+                  <P2ReposSection
+                    repos={p2.repos}
+                    reposErrorCode={p2.reposError?.code ?? null}
+                    {...(p2.blocks.repoCatalog ? { browseEnabled: true, gateway } : {})}
+                    {...(p2.blocks.repoWrites
+                      ? {
+                          onRemoveRequest: requestRemoveRepo,
+                          removeConfirmId: repoRemoveConfirmId,
+                          removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
+                          removeOutcome: repoRemoveOutcome,
+                        }
+                      : {})}
+                  />
+                ) : null}
+                {p2.blocks.repoWrites ? (
+                  <RepoWriteSection
+                    busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
+                    remoteUrl={repoRemoteUrl}
+                    remoteName={repoRemoteName}
+                    localPath={repoLocalPath}
+                    localName={repoLocalName}
+                    remoteOutcome={repoRemoteOutcome}
+                    localOutcome={repoLocalOutcome}
+                    onRemoteUrlChange={setRepoRemoteUrl}
+                    onRemoteNameChange={setRepoRemoteName}
+                    onLocalPathChange={setRepoLocalPath}
+                    onLocalNameChange={setRepoLocalName}
+                    onAddRemote={startRepoAddRemote}
+                    onAddLocal={startRepoAddLocal}
+                  />
+                ) : null}
+              </section>
             ) : null}
             {p2.blocks.registers ? (
               <RegisterSection

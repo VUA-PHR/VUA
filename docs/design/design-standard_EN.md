@@ -1,12 +1,12 @@
-# VUA design standard v0.7.5
+# VUA design standard v0.7.7
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.5
+> Document version: 0.7.7
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.5)  
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.7)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-19  
+> Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -309,6 +309,23 @@ stable untilted cards.
   such as "isolated backend environment" or "never modifies your VCC/ALCOM settings" that
   contradict the shared implementation; the read-only project-file face and clone-first semantics
   are unchanged.
+
+  Repository discovery presentation (027 F2 consumption slice, IA stance 2 landed): the repository
+  subscriptions and repository-subscription-management partitions merge into a single
+  "Repositories" partition (a pure presentation-layer restructure; capability fact rows and word
+  faces unchanged) — the subscription list rows are the main body, and expanding a row inline is
+  that repository's installable-packages browse face; the browse entry is gated on the
+  packages.repoCatalogOps capability fact row (honestly absent until the environment override
+  flips it; no fact, no render); the search box is a presentation-layer filter over the already
+  fetched catalog facts (packageId/displayName), never a second query shape — batch packageId
+  filtering is carried by the word face. Honest-presentation discipline: cached=false rows render
+  the "subscribed · no cache yet" empty state, never hidden and never disguised as an empty
+  inventory; latestVersion=null renders "no qualifying version" as it is and never renders
+  "up to date"-style assertions; cacheSourced=true renders an informational "cached data"
+  annotation, never a failure; author and compatible are deliberately absent from the frozen word
+  face and are never invented by the presentation layer; displayName=null lets the packageId act
+  as the display name; typed failures render verbatim (repo_not_found travels untouched) — a
+  failure never masquerades as an empty state.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 
@@ -354,6 +371,17 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.7 (2026-09-20)**: §8.7 supplemented with repository-discovery presentation (proposal 027
+  F2 consumption slice) — repository subscriptions and subscription management merge into a single
+  "Repositories" partition (IA stance 2 landed: subscription list rows as the main body, inline
+  row expansion as the per-repo installable-packages browse face, the search box as a
+  presentation-layer filter never a second query shape, the entry gated jointly on capability
+  fact rows); honest-presentation discipline for the browse face (cached=false "subscribed · no
+  cache yet" empty state, latestVersion=null "no qualifying version" never rendered as "up to
+  date", cacheSourced=true informational "cached data" annotation, author/compatible deliberate
+  absence never invented, failures verbatim). Version 0.7.7 skips 0.7.6, reserved for the wt-7
+  in-flight batch. EN mirror synced.
 
 - **0.7.5 (2026-09-19)**: §8.7 projects/packages supplemented with the settings-face copy
   discipline (proposal 027 F1, user ruling U14) — UI copy for settings-face operations such as
