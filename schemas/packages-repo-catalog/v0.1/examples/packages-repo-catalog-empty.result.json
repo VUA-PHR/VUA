@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.repoCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-repo-catalog/v0.1",
+    "repos": [],
+    "cacheSourced": true
+  }
+}

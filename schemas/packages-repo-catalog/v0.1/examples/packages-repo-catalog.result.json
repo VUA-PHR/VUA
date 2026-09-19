@@ -1,0 +1,51 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.repoCatalog",
+  "result": {
+    "schemaVersion": "vua.packages-repo-catalog/v0.1",
+    "repos": [
+      {
+        "repoId": "official",
+        "name": "Official",
+        "cached": true,
+        "packages": [
+          {
+            "packageId": "com.anatawa12.avatar-optimizer",
+            "displayName": "Avatar Optimizer",
+            "description": "Optimization tools for avatars",
+            "latestVersion": "1.7.0",
+            "versionCount": 14
+          },
+          {
+            "packageId": "com.example.all-yanked",
+            "displayName": null,
+            "description": null,
+            "latestVersion": null,
+            "versionCount": 3
+          }
+        ]
+      },
+      {
+        "repoId": "curated",
+        "name": "Curated",
+        "cached": false,
+        "packages": []
+      },
+      {
+        "repoId": null,
+        "name": "Local tools",
+        "cached": true,
+        "packages": [
+          {
+            "packageId": "com.example.local-tool",
+            "displayName": "Local Tool",
+            "description": "A locally hosted package",
+            "latestVersion": "0.2.0",
+            "versionCount": 2
+          }
+        ]
+      }
+    ],
+    "cacheSourced": false
+  }
+}

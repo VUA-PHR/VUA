@@ -196,6 +196,28 @@ impl RepoWriteCapabilities {
     };
 }
 
+/// F2 read-face capability declaration (proposal 027 freeze batch,
+/// 2026-09-20). Same shape law as `CatalogCapabilities` / `RegisterCapabilities`
+/// / `RepoWriteCapabilities` (the 025 accessor precedent): a separate
+/// defaulted trait accessor instead of a new `VpmCapabilities` field, so the
+/// five-bit closed set stays stable and backends without the repo-catalog
+/// read face keep compiling unchanged (ORC-DEV-004: no implementation, no
+/// reservation — the default is declared-none; a backend overrides it
+/// exactly when it implements `repo_catalog`). The library backend has the
+/// repo-scale listing (PackageCollection::get_remote); the CLI backend has
+/// no repo-scale package listing and stays honestly false.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoCatalogCapabilities {
+    /// Covers the F2 read face (`packages.repoCatalog`): the per-repository
+    /// installable-package inventory over the backend collection's cache.
+    pub repo_catalog: bool,
+}
+
+impl RepoCatalogCapabilities {
+    pub const NONE: Self = Self { repo_catalog: false };
+}
+
 /// P2: one repository subscription row (proposal 025 freeze batch). The
 /// subscription face is the world (the user's configuration fact), so the
 /// row projects the settings userRepos entry verbatim: every
@@ -277,6 +299,68 @@ pub struct PackageCatalogV02 {
     pub installed: bool,
     pub update_available: Option<bool>,
     pub versions: Vec<CatalogVersionV01>,
+    pub cache_sourced: bool,
+}
+
+/// F2 (proposal 027 freeze batch): one installable package row of ONE
+/// repository's cache inventory — the library's ACTUAL field ceiling
+/// (environment verification 3bd4f12 s1(b)). `author` is deliberately
+/// absent: the library's manifest deserialization carries no author field
+/// and drops undeclared keys, and v0.1 rules the honest-absence option
+/// (iii) over a second parsing surface (one fact source). `latest_version`
+/// is the frozen per-repo judgment (this repo's newest version neither
+/// yanked nor excluded by the user's prerelease setting, NO project Unity
+/// constraint); null = no version qualifies under the current setting —
+/// absence is not "no packages". There is deliberately NO compatible fact
+/// on this face: without a project context the judgment cannot execute and
+/// a constant null is not a fact (per-version compatible stays the
+/// packages-catalog face's project-bound frozen fact).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoCatalogPackageV01 {
+    pub package_id: String,
+    pub display_name: Option<String>,
+    pub description: Option<String>,
+    pub latest_version: Option<String>,
+    /// The repository cache's own inventory count of version entries
+    /// (yanked included) — the cache fact as counted, not an availability
+    /// promise.
+    pub version_count: u64,
+}
+
+/// F2 (proposal 027 freeze batch): one repository's inventory row. The
+/// world of the face is the backend collection's repository set (predefined
+/// official/curated unless ignored + subscribed user repos) — NOT the
+/// subscription face (the packages-repos family keeps that word), and
+/// never a cross-repository merge (a package in several repos appears under
+/// each; the cross-repo latest judgment stays the packages-catalog family's
+/// fact). `cached` is the REQUIRED per-repo cache-hit fact: false =
+/// subscribed but never refreshed — its own honest state rendered with an
+/// EMPTY packages array, never hidden.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoCatalogRepoV01 {
+    pub repo_id: Option<String>,
+    pub name: Option<String>,
+    pub cached: bool,
+    pub packages: Vec<RepoCatalogPackageV01>,
+}
+
+/// F2 (proposal 027 freeze batch): the per-repository installable-package
+/// inventory (wire method `packages.repoCatalog`, family
+/// `vua.packages-repo-catalog/v0.1`). `cache_sourced` is the REQUIRED
+/// informational degradation disclosure born with this v0.1 (the
+/// packages-catalog v0.2 precedent adopted at birth per the 027 core
+/// ruling): true = served through the cache-degradation path (offline ->
+/// load_cache, or an online load failed and degraded — the ORC-ADP-006
+/// isomorphic precedent); false = served from an online-refreshed load.
+/// Cache sourcing is not an error.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoCatalogV01 {
+    /// Collection's own enumeration order projected verbatim (no invented
+    /// sort keys); EMPTY = honest zero-repository-caches answer.
+    pub repos: Vec<RepoCatalogRepoV01>,
     pub cache_sourced: bool,
 }
 
@@ -369,6 +453,17 @@ pub trait VpmBackend: Send + Sync {
     fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
         RepoWriteCapabilities::NONE
     }
+    /// F2 (proposal 027 freeze batch): capability declaration for the
+    /// repo-catalog read face. The default is declared-none; a backend
+    /// overrides it exactly when it implements `repo_catalog` (the 025
+    /// accessor law — the VrcGetLib override lands with the environment
+    /// implementation-verification slice, the same honest-absence
+    /// discipline: the served wire row stays unavailable until the
+    /// override flips it; the CLI backend has no repo-scale listing and
+    /// stays honestly false).
+    fn repo_catalog_capabilities(&self) -> RepoCatalogCapabilities {
+        RepoCatalogCapabilities::NONE
+    }
     /// A4 (proposal 026 freeze batch): subscribe one REMOTE repository in
     /// this backend's isolated environment. The backend fetches the remote
     /// manifest (the network segment is inherent to the face — a preview
@@ -448,6 +543,31 @@ pub trait VpmBackend: Send + Sync {
         _package_id: &str,
     ) -> Result<PackageCatalogV02, AppErrorV1> {
         Err(unsupported("package_catalog_v02"))
+    }
+    /// F2 (proposal 027 freeze batch): the per-repository installable-package
+    /// inventory over the backend collection's cache — package discovery
+    /// facts (packageId / displayName / latestVersion / versionCount /
+    /// description within the library's field ceiling; `author` deliberately
+    /// absent, environment verification 3bd4f12 s1(b)). The world is the
+    /// COLLECTION's repository set (predefined official/curated unless
+    /// ignored + subscribed user repos), grouped per repository, never a
+    /// cross-repository merge; rows project the collection's own enumeration
+    /// order verbatim. `repo_id` scopes the answer to one repository row
+    /// (None = all); an unknown id answers the REUSED
+    /// `vua.vpm.repo_not_found` (the A4 removeRepo same-fact precedent).
+    /// `package_ids` is the batch requirement-set filter (user ruling 4:
+    /// Recipe automation is this face's first consumer; empty slice = no
+    /// filter) — a filter that matches nothing is an HONEST EMPTY answer
+    /// (empty packages arrays / empty repos), never an error:
+    /// `no_matching_package` has no reach on this face. Read-only:
+    /// enable/disable and manual refresh are packages-ops (F4) write faces
+    /// and do not exist here.
+    fn repo_catalog(
+        &self,
+        _repo_id: Option<&str>,
+        _package_ids: &[String],
+    ) -> Result<RepoCatalogV01, AppErrorV1> {
+        Err(unsupported("repo_catalog"))
     }
     /// A5 (proposal 026 freeze batch, packages-ops v0.5): creates a project
     /// from a template. REQUIRED method (no default body): a backend without
