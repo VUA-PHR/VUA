@@ -11,8 +11,9 @@ environment setup, authorized asset acquisition, Avatar assembly and inspection,
 management, and reproducible production records into one connected workflow.
 
 > [!IMPORTANT]
-> **The current product version is v0.5.0 (pre-alpha).** This repository provides developer previews
-> and early evaluation builds; the everyday-player stability commitment begins with `1.0.0`.
+> **The current product version is v0.6.0 (pre-alpha); see [docs/release/](docs/release/) for
+> release notes.** This repository provides developer previews and early evaluation builds; the
+> everyday-player stability commitment begins with `1.0.0`.
 
 ## Product direction
 
@@ -32,7 +33,9 @@ preparation, import order, binding, menus, optimization, validation, and recover
   and Orchestrator Provider lifecycle; the React UI forms the controlled presentation surface.
 - **Environment and project management:** guided checks and setup for VR, Unity, VRChat, and related
   tooling; a VUA package manager built on `vrc-get`; compatibility with ALCOM- and VCC-managed
-  projects.
+  projects. The VPM package-management settings (the repository-subscription and
+  local-package-registry faces of `settings.json`) are shared as one file with VCC/ALCOM; see the
+  [product boundary](docs/product-boundary_EN.md).
 - **Orchestrator:** the Rust application core for plans, approvals, durable tasks, cancellation,
   recovery, adapters, and Build Records, exposed through a replaceable versioned Provider boundary.
 - **Avatar MegaFactory (AMF):** a Recipe-first production flow with five user stages: Warehouse,
@@ -41,7 +44,8 @@ preparation, import order, binding, menus, optimization, validation, and recover
   compatibility, search, and Warehouse mapping metadata.
 - **Unity Bridge:** a versioned protocol for deterministic operations on global Unity
   `2022.3.22f1`; historical projects use the documented migration path.
-- **Desktop and VR overlays:** status and guidance surfaces backed by stable application services.
+- **Desktop and VR overlays:** status and guidance surfaces backed by stable application services;
+  the VR overlay is a post-`1.0.0` direction anchor.
 - **Plugin protocol:** a planned, capability-declared extension boundary. Initial delivery covers the
   protocol and host security model; marketplace governance follows a later release decision.
 

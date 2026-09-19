@@ -287,6 +287,49 @@ export interface CatalogPackageFactsV02 extends CatalogPackageFactsV01 {
 }
 
 /**
+ * F2 仓库级包行(027 packages-repo-catalog v0.1 冻结词面五键闭集,镜像
+ * @vua/contracts PackagesRepoCatalogPackageV01):库面实际上限闭集——
+ * author 刻意缺席(库面 manifest 反序列化闭集无 author 字段,单事实源
+ * 裁决,发明即形状违反)、compatible 刻意不存在(无工程上下文判定不可
+ * 执行,恒 null 非事实);displayName null 呈现 = packageId 兼任显示名
+ * (P1 裁决 3,不冒充字段事实);latestVersion null = 当前设置下无合资格
+ * 版本——缺席不是「无包」,呈现层不得渲染「已最新」类断言;versionCount
+ * = 仓库缓存自身清单计数(yanked 计入)——缓存事实非可用性承诺。
+ */
+export interface RepoCatalogPackageRowV01 {
+  readonly packageId: string;
+  readonly displayName: string | null;
+  readonly description: string | null;
+  readonly latestVersion: string | null;
+  readonly versionCount: number;
+}
+
+/**
+ * F2 仓库行(027 冻结词面四键闭集,镜像 @vua/contracts
+ * PackagesRepoCatalogRepoV01):cached 必带 = 逐仓库缓存命中事实,
+ * false = 已订阅未刷新——其自身诚实状态以空 packages 数组如实呈现,
+ * 不隐藏不伪造;行序 = 集合自身枚举顺序照实投影,客户端不重排。
+ */
+export interface RepoCatalogRepoRowV01 {
+  readonly repoId: string | null;
+  readonly name: string | null;
+  readonly cached: boolean;
+  readonly packages: readonly RepoCatalogPackageRowV01[];
+}
+
+/**
+ * F2 仓库级目录事实(027 冻结词面,镜像 @vua/contracts
+ * PackagesRepoCatalogResultV01 去 schemaVersion 信封键):repos 空数组
+ * = 诚实零仓库缓存应答;cacheSourced 必带信息性降级披露(出生即带,
+ * catalog v0.2 先例)——true = 缓存降级路径所得,呈现「缓存数据」信息
+ * 标注非失败;false = 在线刷新所得,无标注。
+ */
+export interface RepoCatalogFactsV01 {
+  readonly repos: readonly RepoCatalogRepoRowV01[];
+  readonly cacheSourced: boolean;
+}
+
+/**
  * P1 读取失败形态:typed 错误码照原词呈现(工程事实,不猜测映射;
  * 复用码 vua.project.project_not_found = 选中项目已从 013 注册面消失,
  * 与「零已装包」的合法空数组严格区分——诚实纪律 2,失败不冒充空态)。
@@ -384,8 +427,15 @@ export type PackagesView =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
    * - installedPackages/loadError 语义与 ready-p1 相同。
+   * - repoCatalog 权威事实源 = packages.repoCatalogOps 能力行(027 F2
+   *   仓库级包目录读面消费批:一行服务 packages.repoCatalog,removeOps/
+   *   installOps/registerOps/repoOps/creates 一行先例;default
+   *   declared-none 访问器门控,环境覆写置真前如实 unavailable;同翻转
+   *   纪律;逐面升级承诺 = 纯增量新键,既有键语义与来源零变更);
    * - 包目录事实不进快照:按需查询粒度(双键闭集),经
-   *   PackagesPort.packageCatalog 由选中包驱动,页面局部承载。
+   *   PackagesPort.packageCatalog 由选中包驱动,页面局部承载;
+   *   F2 仓库级目录事实同理不进快照:经 PackagesPort.repoCatalog 由
+   *   仓库行展开驱动,页面局部承载。
    */
   | {
       schemaVersion: 1;
@@ -399,6 +449,12 @@ export type PackagesView =
         readonly registers: boolean;
         readonly repoWrites: boolean;
         readonly creates: boolean;
+        /** F2 仓库级包目录读面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.repoCatalogOps 能力行(default
+         *  declared-none 访问器门控,环境覆写置真前如实 unavailable);
+         *  false = 行缺席或不可用,仓库浏览入口不渲染(渲染层不伪造);
+         *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
+        readonly repoCatalog: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly InstalledPackageRowV01[];
@@ -613,6 +669,28 @@ export interface PackagesPort {
     packageId: string,
   ): Promise<
     | { readonly kind: "ok"; readonly result: CatalogPackageFactsV01 | CatalogPackageFactsV02 }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
+  /**
+   * F2 词面消费(packages.repoCatalog,027 packages-repo-catalog v0.1
+   * 冻结批):仓库级可装包清单只读查询——双键必带可空 params verbatim
+   * 传输:repoId null = 全部仓库逐仓分组(跨仓合并不存在于本面,同名包
+   * 在各仓各自出现),非空串 = 只答该仓库行(词表外 id = 端口答
+   * vua.vpm.repo_not_found,逐字透传——P2 读面零折叠,不折叠为空态);
+   * packageIds null = 不过滤浏览,非空 = Recipe 需求集合批量过滤(唯一
+   * 非空 id;空数组 = 形状违反,UI 不构造)。逐仓 latestVersion 判定无
+   * 工程 Unity 约束,null = 当前设置下无合资格版本(缺席不是「无包」,
+   * 呈现层不渲染「已最新」类断言);cacheSourced = true 呈现「缓存数据」
+   * 信息标注非失败。unavailable = 引擎缺席/未接线或 served 行 declared
+   * -none(环境覆写置真前诚实缺席);failed 携带 typed 错误码原词,不折
+   * 叠不猜测。
+   */
+  repoCatalog(
+    repoId: string | null,
+    packageIds: readonly string[] | null,
+  ): Promise<
+    | { readonly kind: "ok"; readonly result: RepoCatalogFactsV01 }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;

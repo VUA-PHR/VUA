@@ -527,6 +527,34 @@ export interface PackagesPackageCatalogRequestV1 {
   readonly params: { readonly projectPath: string; readonly packageId: string };
 }
 
+// ---- 027 F2 读面(packages-repo-catalog v0.1,核心冻结批 c46545f 经
+// 第 122 批入库;wire 接线批 629699e 经第 123 批入库;桌面形状核可
+// 2026-09-20 05:1x 落节,桌面 F2 消费批登记。只读单方法:仓库级可装包
+// 清单逐仓分组,双键必带可空 params {repoId, packageIds}(026 A5 同款
+// REQUIRED-nullable idiom):repoId null = 全部仓库逐仓分组、非空串 =
+// 只答该仓库行(词表外 id = 复用 vua.vpm.repo_not_found,端口拒绝逐字
+// 透传——P2 读面零折叠);packageIds null = 不过滤浏览、非空 = Recipe
+// 需求集合批量过滤(唯一非空 id 闭列;空数组 = 形状违反非空过滤,不立
+// 第三态)。刻意无 projectPath(缓存维度非工程维度)。served 行
+// packages.repoCatalogOps(default declared-none 访问器门控,环境覆写
+// 置真前如实 unavailable)为区块标注权威事实源 ----
+
+/** packages.repoCatalog 只读查询:仓库级可装包清单(逐仓分组缓存投影,
+ *  绝不跨仓合并;用户裁决④ Recipe 自动化为第一消费者,浏览 UI 是同一
+ *  查询的次要呈现) */
+export interface PackagesRepoCatalogRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.repoCatalog";
+  readonly params: {
+    /** null = 全部仓库逐仓分组;非空 = 只答该仓库行 */
+    readonly repoId: string | null;
+    /** null = 不过滤浏览;非空 = 批量需求集合过滤(唯一非空 id;
+     *  空数组 = 形状违反,UI 不构造) */
+    readonly packageIds: readonly string[] | null;
+  };
+}
+
 // ---- packages-ops v0.1 写面 A1 移除(026 冻结批 d7f6a57 经第 99 批入库;
 // wire 接线批 41503a4 候验收;桌面 A1 消费批登记 2026-09-19。previewRemove
 // = 同步只读变更预览 query(双键闭集,packageIds 显式非空闭列 minItems 1 +
@@ -790,6 +818,7 @@ export type DesktopGatewayRequestV1 =
   | PackagesListInstalledRequestV1
   | PackagesListReposRequestV1
   | PackagesPackageCatalogRequestV1
+  | PackagesRepoCatalogRequestV1
   | PackagesPreviewRemoveRequestV1
   | PackagesApplyRemoveRequestV1
   | PackagesPreviewInstallRequestV1
@@ -853,6 +882,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // 025 P2 读面(桌面 P2 消费批):两方法只读同族
   "packages.listRepos": "query",
   "packages.packageCatalog": "query",
+  // 027 F2 读面(桌面 F2 消费批):仓库级可装包清单只读同族
+  "packages.repoCatalog": "query",
   // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):preview 同步
   // query,apply 任务化 command(Kernel 生成 commandId)
   "packages.previewRemove": "query",
@@ -1385,6 +1416,24 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && value.params.projectPath.length >= 1
         && typeof value.params.packageId === "string"
         && value.params.packageId.length >= 1;
+    // 027 F2 读面(桌面 F2 消费批):repoCatalog 双键必带可空闭集——
+    // repoId null 或非空串(minLength 1);packageIds null = 不过滤,
+    // 非空 = 唯一非空 id 闭列(空数组 = 形状违反非空过滤,与冻结词面
+    // 同形;词表外键拒绝)
+    case "packages.repoCatalog": {
+      if (!hasExactKeys(value, REQUEST_KEYS) || !hasExactKeys(value.params, ["repoId", "packageIds"])) {
+        return false;
+      }
+      const repoCatalogParams = value.params as PackagesRepoCatalogRequestV1["params"];
+      if (repoCatalogParams.repoId !== null
+        && (typeof repoCatalogParams.repoId !== "string" || repoCatalogParams.repoId.length < 1)) {
+        return false;
+      }
+      if (repoCatalogParams.packageIds === null) return true;
+      if (!Array.isArray(repoCatalogParams.packageIds) || repoCatalogParams.packageIds.length === 0) return false;
+      return repoCatalogParams.packageIds.every((id) => typeof id === "string" && id.length >= 1)
+        && new Set(repoCatalogParams.packageIds).size === repoCatalogParams.packageIds.length;
+    }
     // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):packageIds =
     // 显式非空闭列(minItems 1 + uniqueItems,冻结 Schema 口径,词表外
     // 键拒绝);applyRemove 三键闭集必携 confirmedDigest(minLength 1),

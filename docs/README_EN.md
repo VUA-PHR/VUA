@@ -4,7 +4,7 @@
 
 > Status: Accepted  
 > Scope: Public VUA repository  
-> Updated: 2026-09-04
+> Updated: 2026-09-20
 > Normative effect: Defines public documentation routes and authority
 
 The public repository contains final product boundaries, architecture, versioned interfaces, release
@@ -45,7 +45,7 @@ documents above.
 | Electron / React | Product boundary, [desktop architecture](architecture/desktop_EN.md) | Gateway contract and security tests |
 | Orchestrator | Product boundary, [Orchestrator architecture](architecture/orchestrator_EN.md) | State, recovery, and adapter protocols |
 | AMF acquisition / BDL | Product boundary, [AMF](architecture/amf-unity_EN.md), [BDL](architecture/bdl_EN.md) | Session, download, and persistence contracts |
-| AMF / Recipe / Unity | Product boundary, AMF architecture, [Unity editor compatibility](compatibility/unity-editor_EN.md) | Recipe and [Unity Bridge](protocols/unity-bridge-v1_EN.md) |
+| AMF / Recipe / Unity | Product boundary, AMF architecture, [Unity editor compatibility](compatibility/unity-editor_EN.md) | Recipe and [Unity Bridge v3 (current)](protocols/unity-bridge-v3_EN.md) |
 | Kernel / Provider hosting | Product boundary, [system architecture](architecture/system_EN.md) | Desktop and Orchestrator architecture |
 | Core tools | Product boundary, [integration architecture](architecture/integrations-and-overlays_EN.md), [core catalog](tool-catalog/core/README.md) | Safety evidence and capability matrices |
 | Plugins | Product boundary, integration architecture, [plugin catalog](tool-catalog/plugin/README.md) | Plugin protocol and compatibility tests |
@@ -54,6 +54,10 @@ documents above.
 
 ## Current entry points
 
+- [Development outline (current window and batches)](development-outline_EN.md)
+- [Design standard](design/design-standard_EN.md)
+- [Project handoff summary](project-context_EN.md)
+- [Managed-document registry](REGISTRY.md)
 - [System architecture](architecture/system_EN.md)
 - [Electron desktop and presentation](architecture/desktop_EN.md)
 - [Orchestrator](architecture/orchestrator_EN.md)
@@ -61,16 +65,32 @@ documents above.
 - [Unity editor compatibility](compatibility/unity-editor_EN.md)
 - [BDL](architecture/bdl_EN.md)
 - [Core, plugins, external integrations, and overlays](architecture/integrations-and-overlays_EN.md)
-- [Unity Bridge v1](protocols/unity-bridge-v1_EN.md)
+- [Unity Bridge v3 (current frozen; the v2 production path remains in effect)](protocols/unity-bridge-v3_EN.md)
 - [Application Contract v0.1](protocols/application-contract-v0.1_EN.md)
 - [Orchestrator Task Store Format v0.1](protocols/task-store-v0.1_EN.md)
 - [Supervised Provider Process Protocol v0.1](protocols/provider-process-v0.1_EN.md)
 - [Download Events Protocol v0.1](protocols/download-events-v0.1_EN.md)
-- [BDL Read-Model Protocol v0.3](protocols/bdl-queries-v0.3_EN.md)
+- [BDL Read-Model Protocol v0.4](protocols/bdl-queries-v0.4_EN.md)
+- [BDL Command Protocol v0.4](protocols/bdl-commands-v0.4_EN.md)
+- [Packages Query Protocol v0.1](protocols/packages-query-v0.1_EN.md)
+- [Packages Catalog Protocol v0.2](protocols/packages-catalog-v0.2_EN.md)
+- [Packages Ops Protocol v0.5](protocols/packages-ops-v0.5_EN.md)
+- [Packages Repos Catalog Protocol v0.1](protocols/packages-repos-catalog-v0.1_EN.md)
+- [Repo-Level Package Catalog Protocol v0.1](protocols/packages-repo-catalog-v0.1_EN.md)
+- [Project Inspection Protocol v0.2](protocols/project-inspection-v0.2_EN.md)
+- [Project Ops Protocol v0.2](protocols/project-ops-v0.2_EN.md)
+- [Inspection Queries Protocol v0.1](protocols/inspection-queries-v0.1_EN.md)
+- [Editor Verify Protocol v0.1](protocols/editor-verify-v0.1_EN.md)
+- [Production Use-Case Protocol v0.2](protocols/production-use-case-v0.2_EN.md)
+- [SDK Handoff Protocol v0.1](protocols/release-handoff-v0.1_EN.md)
 - [ADR: Supervised independent-process Orchestrator Provider](decisions/orchestrator-supervised-provider_EN.md)
 - [Versioning policy](release/versioning_EN.md)
+- [v0.6.0 release notes](release/v0.6.0_EN.md)
+- [v0.5.0 release notes](release/v0.5.0_EN.md)
 - [v0.4.1 release notes](release/v0.4.1_EN.md)
 - [Community-maintainable tool catalog](tool-catalog/README.md)
+- Collaborator entry point: the repository collaboration mechanism lives in
+  [`collab/README.md`](../collab/README.md) (workspace instructions in the root `AGENTS.md`).
 
 ## Documentation rules
 

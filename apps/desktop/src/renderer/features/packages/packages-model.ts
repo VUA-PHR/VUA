@@ -7,6 +7,7 @@ import type {
   PackageRow,
   PackageSource,
   PackageVersionEntry,
+  RepoCatalogPackageRowV01,
   RepoHealth,
 } from "../../gateway/index.ts";
 
@@ -445,4 +446,23 @@ export function relativeCheckedTime(
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return { key: "checkedHoursAgo", count: hours };
   return { key: "checkedDaysAgo", count: Math.floor(hours / 24) };
+}
+
+/**
+ * F2 仓库浏览搜索过滤(027 消费批;纯函数):作用于已取得的仓库级目录
+ * 事实(同一事实源,不另立查询形状——027 设计约束 1:批量 packageId 过
+ * 滤由词面承担,此过滤是呈现层行为);displayName null 以 packageId 兼
+ * 任(与呈现规则一致);大小写不敏感子串匹配;空查询 = 全量照实返回。
+ */
+export function filterRepoCatalogPackages(
+  rows: readonly RepoCatalogPackageRowV01[],
+  query: string,
+): RepoCatalogPackageRowV01[] {
+  const text = query.trim().toLowerCase();
+  if (text === "") return [...rows];
+  return rows.filter(
+    (row) =>
+      row.packageId.toLowerCase().includes(text) ||
+      (row.displayName ?? row.packageId).toLowerCase().includes(text),
+  );
 }

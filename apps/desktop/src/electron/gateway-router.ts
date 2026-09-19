@@ -229,6 +229,24 @@ function toApplicationRequest(
         method: "packages.packageCatalog",
         params: { projectPath: request.params.projectPath, packageId: request.params.packageId },
       };
+    // 027 F2 读面(桌面 F2 消费批):仓库级可装包清单只读 verbatim 透传
+    // ——双键必带可空(repoId/packageIds null 原样上 wire,packageIds 非
+    // 空逐项拷贝);路由层闭集校验已由信封守卫完成。实现域未接线 =
+    // provider 答 vua.packages.unavailable 诚实缺席;词表外 repoId =
+    // 复用 vua.vpm.repo_not_found 逐字透传不折叠(P2 读面零折叠);
+    // 形状违例 = vua.packages.invalid_params;能力缺席(declared-none
+    // 访问器,环境覆写置真前)= vua.vpm.capability_missing
+    case "packages.repoCatalog":
+      return {
+        ...base,
+        kind: "query",
+        method: "packages.repoCatalog",
+        params: {
+          repoId: request.params.repoId,
+          packageIds:
+            request.params.packageIds === null ? null : [...request.params.packageIds],
+        },
+      };
     // packages-ops v0.1 写面 A1 移除(026 冻结批;桌面 A1 消费批):preview
     // = 同步只读 query verbatim 透传(失败走信封错误:引擎缺席 =
     // vua.packages.unavailable,未注册 = 复用 vua.project.project_not_found,
