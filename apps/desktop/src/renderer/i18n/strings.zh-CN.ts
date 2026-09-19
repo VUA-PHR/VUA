@@ -126,6 +126,8 @@ demoTaskTitle: "演示任务",
   },
   bootSplash: {
     starting: "正在启动 VUA",
+    waitingServices: "正在等待本地服务就绪…",
+    updateAvailable: "发现新版本 {version}",
   },
   nav: {
     tabs: {
@@ -2021,6 +2023,17 @@ rolled_back: "已回滚",
         "导出一份脱敏诊断包,用于排查问题。只包含:应用版本、数据来源、环境检测状态与时间戳、你的目标选择。不包含:文件路径、素材与配方内容、账户或设备标识。",
       diagnosticsExport: "导出诊断包",
       diagnosticsFailed: "导出失败,请重试。",
+      updateHeading: "版本检测",
+      updateDescription:
+        "启动时 VUA 会向项目发布页只读探测是否有新版本,并如实呈现结果;不会下载或安装任何内容。可随时在此关闭。",
+      updateToggle: "启动时检测更新",
+      updateNow: "立即检测",
+      updateChecking: "正在检测…",
+      updateNewer: "发现新版本:{version}",
+      updateUpToDate: "当前已是最新版本。",
+      updateFailed: "检测失败,下次启动时会自动重试。",
+      updateCheckedAt: "上次检测:{at}",
+      updateViewRelease: "查看发布说明",
     },
     about: {
       heading: "VRC Ultra Assistant",

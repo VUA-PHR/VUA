@@ -95,6 +95,45 @@
   animation: vua-boot-subtitle-in 480ms ease-out 640ms forwards;
 }
 
+/* 等待态(预算播完而启动里程碑未齐):方格转呼吸循环,字幕如实说明 */
+.vua-boot-splash--waiting .vua-boot-splash__cell {
+  animation: vua-boot-cell-breathe 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes vua-boot-cell-breathe {
+  from {
+    opacity: 0.55;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.vua-boot-splash__phase {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  opacity: 0;
+  animation: vua-boot-subtitle-in 240ms ease-out forwards;
+}
+
+/* 新版本角标:上次检测缓存的如实呈现(仅 newer-available 上屏) */
+.vua-boot-splash__update {
+  font: var(--vua-font-caption);
+  color: var(--vua-orange);
+  opacity: 0;
+  animation: vua-boot-subtitle-in 240ms ease-out 420ms forwards;
+}
+
+/* 版本角标:构建期事实(version/commit/dirty),左下角小字 */
+.vua-boot-splash__version {
+  position: absolute;
+  left: var(--vua-space-4);
+  bottom: var(--vua-space-3);
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  opacity: 0.75;
+}
+
 @keyframes vua-boot-subtitle-in {
   from {
     opacity: 0;
