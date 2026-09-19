@@ -2120,3 +2120,396 @@ fn f2_repo_catalog_cli_backend_stays_declared_none_with_absence_arm() {
     );
 }
 
+// --- 027 F3 read face: installed-set listing at the v0.2 word face ---
+
+/// Writes a synthetic repository-cache file with the given package versions
+/// (the flat LocalCachedRepository JSON shape vrc-get itself persists; each
+/// entry: id -> { versions: version -> manifest }). All data synthetic.
+fn f3_repo_cache(cache_path: &std::path::Path, packages: serde_json::Value) {
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    let cache = serde_json::json!({
+        "repo": {
+            "name": "Synthetic F3 Repo",
+            "id": "com.vua.test.repo.f3",
+            "url": "https://example.invalid/vua/f3-repo.json",
+            "packages": packages
+        }
+    });
+    fs::write(cache_path, cache.to_string()).unwrap();
+}
+
+/// Builds a synthetic VCC-shaped project with physically installed packages:
+/// each row = the folder manifest (`Packages/<id>/package.json` — the
+/// version authority the library reads) + the matching locked entry in
+/// `Packages/vpm-manifest.json` (the MAP shape vrc-get 0.0.16 persists).
+/// All data synthetic.
+fn f3_installed_project(
+    root: &std::path::Path,
+    editor_version: &str,
+    packages: &[(&str, &str, Option<&str>)],
+) -> ProjectRef {
+    fs::create_dir_all(root.join("Packages")).unwrap();
+    fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+    fs::write(
+        root.join("Packages/manifest.json"),
+        r#"{"dependencies":{}}"#,
+    )
+    .unwrap();
+    let mut locked = serde_json::Map::new();
+    for (id, version, _) in packages {
+        locked.insert(
+            (*id).to_owned(),
+            serde_json::json!({ "version": version, "dependencies": {} }),
+        );
+    }
+    fs::write(
+        root.join("Packages/vpm-manifest.json"),
+        serde_json::json!({ "dependencies": {}, "locked": locked }).to_string(),
+    )
+    .unwrap();
+    for (id, version, unity) in packages {
+        let dir = root.join("Packages").join(id);
+        fs::create_dir_all(&dir).unwrap();
+        let mut manifest = serde_json::json!({
+            "name": id,
+            "version": version,
+            "vpmDependencies": {}
+        });
+        if let Some(unity) = unity {
+            manifest["unity"] = serde_json::json!(unity);
+        }
+        fs::write(dir.join("package.json"), manifest.to_string()).unwrap();
+    }
+    fs::write(
+        root.join("ProjectSettings/ProjectVersion.txt"),
+        format!("m_EditorVersion: {editor_version}\n"),
+    )
+    .unwrap();
+    ProjectRef {
+        id: "vpm-f3-spike".to_owned(),
+        root: root.to_owned(),
+    }
+}
+
+#[test]
+fn f3_query_v02_negotiation_declares_exactly_the_implemented_face() {
+    // ORC-DEV-004 pairing, both directions: the library backend overrides
+    // query_v02 exactly now that list_packages_v02 is implemented (this is
+    // what makes the wire route answer the v0.2 family const); the CLI
+    // backend does neither — its served face stays the frozen v0.1 family
+    // and the port default absence arm answers capability_missing verbatim.
+    let library =
+        VrcGetLibBackend::with_environment_root(unique_dir("f3-neg"), true).unwrap();
+    assert!(
+        library.query_v02(),
+        "the declaration is the implementation's honest face on the negotiation"
+    );
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(
+        !cli.query_v02(),
+        "no implementation, no reservation: the CLI keeps serving the frozen v0.1 family"
+    );
+    let project = minimal_vpm_project(&unique_dir("f3-neg-proj"));
+    let error = cli.list_packages_v02(&project).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    assert_eq!(error.message_key, "errors.vpm.capabilityMissing");
+}
+
+#[test]
+fn f3_list_packages_v02_projects_v01_facts_with_the_judgment_pair() {
+    let base = unique_dir("f3-list");
+    let environment_root = base.join("isolated-vpm-environment");
+    // The F2 synthetic cache reused verbatim: 0.9.0 yanked, 1.0.0 (unity
+    // 2022.3), 2.0.0 (minimum unity 2022.4) — against the 2022.3 project the
+    // qualifying latest is exactly 1.0.0.
+    f3_repo_cache(
+        &environment_root.join("Repos").join("synthetic-repo.json"),
+        serde_json::json!({
+            "com.vua.test.catalog.synthetic": { "versions": {
+                "0.9.0": { "name": "com.vua.test.catalog.synthetic", "version": "0.9.0", "unity": "2022.3", "vpmDependencies": {}, "vrc-get": { "yanked": true } },
+                "1.0.0": { "name": "com.vua.test.catalog.synthetic", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} },
+                "2.0.0": { "name": "com.vua.test.catalog.synthetic", "version": "2.0.0", "unity": "2022.4", "vpmDependencies": {} }
+            } }
+        }),
+    );
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [{
+            "localPath": environment_root.join("Repos").join("synthetic-repo.json").display().to_string(),
+            "url": "https://example.invalid/vua/f3-repo.json"
+        }] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[
+            ("com.vua.test.catalog.synthetic", "1.0.0", Some("2022.3")),
+            // An installed package with NEITHER a repository cache position
+            // nor an environment local-package position: the judgment has no
+            // candidate — the null PAIR, never a false fill.
+            ("com.vua.test.orphan", "0.1.0", None),
+        ],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let listing = backend.list_packages_v02(&project).unwrap();
+    assert!(
+        listing.cache_sourced,
+        "offline world = the judgment rode the cache-degradation path (informational, not a failure)"
+    );
+    assert_eq!(
+        listing.packages.len(),
+        2,
+        "the installed-set fact root is the frozen v0.1 manifest+lock projection"
+    );
+    // Rows ascend by packageId — the v0.1 frozen row order, unchanged.
+    assert_eq!(listing.packages[0].package_id, "com.vua.test.catalog.synthetic");
+    assert_eq!(listing.packages[1].package_id, "com.vua.test.orphan");
+
+    let synthetic = &listing.packages[0];
+    assert_eq!(synthetic.version, "1.0.0", "the v0.1 version fact, verbatim");
+    assert!(
+        synthetic.dependencies.is_empty(),
+        "the v0.1 dependencies fact, verbatim"
+    );
+    assert_eq!(
+        synthetic.latest_version.as_deref(),
+        Some("1.0.0"),
+        "cross-repo qualifying latest: 0.9.0 yanked-excluded, 2.0.0 unity-2022.4-excluded under the 2022.3 project binding"
+    );
+    assert_eq!(
+        synthetic.update_available,
+        Some(false),
+        "the PRECISE false: no strictly newer version matching the CURRENT filter exists (2.0.0 exists but does not qualify) — never a generalized no-update"
+    );
+
+    let orphan = &listing.packages[1];
+    assert_eq!(
+        orphan.latest_version, None,
+        "no qualifying candidate: the judgment is NOT EXECUTED — null is never already-latest"
+    );
+    assert_eq!(
+        orphan.update_available, None,
+        "the null arm rides the latest arm in a PAIR — never filled with a default false (024 stance-2 line)"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f3_list_packages_v02_prerelease_setting_drives_the_judgment() {
+    let base = unique_dir("f3-pre");
+    let environment_root = base.join("isolated-vpm-environment");
+    f3_repo_cache(
+        &environment_root.join("Repos").join("pre-repo.json"),
+        serde_json::json!({
+            "com.vua.test.pre.synthetic": { "versions": {
+                "1.0.0": { "name": "com.vua.test.pre.synthetic", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} },
+                "2.0.0-beta.1": { "name": "com.vua.test.pre.synthetic", "version": "2.0.0-beta.1", "unity": "2022.3", "vpmDependencies": {} }
+            } }
+        }),
+    );
+    let cache_path = environment_root
+        .join("Repos")
+        .join("pre-repo.json")
+        .display()
+        .to_string();
+    // Zero wire switch: the prerelease inclusion reads the SAME settings.json
+    // (the exact camelCase key the library's vpm_settings serde reads:
+    // `showPrereleasePackages`).
+    let settings_with = |prerelease: serde_json::Value| {
+        fs::write(
+            environment_root.join("settings.json"),
+            serde_json::json!({
+                "userRepos": [{ "localPath": cache_path, "url": "https://example.invalid/vua/f3-pre.json" }],
+                "showPrereleasePackages": prerelease
+            })
+            .to_string(),
+        )
+        .unwrap();
+    };
+    let switch_off_stable = f3_installed_project(
+        &base.join("project-stable"),
+        "2022.3.22f1",
+        &[("com.vua.test.pre.synthetic", "1.0.0", Some("2022.3"))],
+    );
+    let switch_off_prerelease = f3_installed_project(
+        &base.join("project-prerelease"),
+        "2022.3.22f1",
+        &[("com.vua.test.pre.synthetic", "2.0.0-beta.1", Some("2022.3"))],
+    );
+    let backend_of = |prerelease: serde_json::Value| {
+        settings_with(prerelease);
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap()
+    };
+
+    // Switch OFF (the default), stable installed: the prerelease candidate is
+    // setting-excluded, the qualifying latest stays 1.0.0.
+    let listing = backend_of(serde_json::json!(false))
+        .list_packages_v02(&switch_off_stable)
+        .unwrap();
+    assert_eq!(listing.packages[0].latest_version.as_deref(), Some("1.0.0"));
+    assert_eq!(listing.packages[0].update_available, Some(false));
+
+    // Switch ON: the same collection world now qualifies 2.0.0-beta.1 as the
+    // cross-repo max — the judgment follows the setting, never a wire key.
+    let listing = backend_of(serde_json::json!(true))
+        .list_packages_v02(&switch_off_stable)
+        .unwrap();
+    assert_eq!(
+        listing.packages[0].latest_version.as_deref(),
+        Some("2.0.0-beta.1")
+    );
+    assert_eq!(listing.packages[0].update_available, Some(true));
+
+    // Boundary 2 (the frozen false semantics): the INSTALLED version is
+    // itself a prerelease with the switch off — the qualifying latest is
+    // taken from the stable set; `false` reads exactly "no strictly newer
+    // version matching the current filter exists" (the installed row is
+    // itself newer than the stable latest), never "this package stopped
+    // updating" and never a null.
+    let listing = backend_of(serde_json::json!(false))
+        .list_packages_v02(&switch_off_prerelease)
+        .unwrap();
+    assert_eq!(listing.packages[0].version, "2.0.0-beta.1");
+    assert_eq!(listing.packages[0].latest_version.as_deref(), Some("1.0.0"));
+    assert_eq!(listing.packages[0].update_available, Some(false));
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f3_list_packages_v02_cross_repo_max_merges_the_collection() {
+    let base = unique_dir("f3-cross");
+    let environment_root = base.join("isolated-vpm-environment");
+    // The same package id carried by TWO subscribed repositories at different
+    // qualifying latests — this face answers the CROSS-REPO max (the
+    // find_package_by_name semantics), deliberately NOT the F2 per-repo view
+    // (which would answer 1.4.0 in repo A and 1.5.0 in repo B separately).
+    // Two views, each face declaring its own, never mixed.
+    f3_repo_cache(
+        &environment_root.join("Repos").join("cross-a.json"),
+        serde_json::json!({
+            "com.vua.test.cross.common": { "versions": {
+                "1.4.0": { "name": "com.vua.test.cross.common", "version": "1.4.0", "unity": "2022.3", "vpmDependencies": {} }
+            } }
+        }),
+    );
+    f3_repo_cache(
+        &environment_root.join("Repos").join("cross-b.json"),
+        serde_json::json!({
+            "com.vua.test.cross.common": { "versions": {
+                "1.5.0": { "name": "com.vua.test.cross.common", "version": "1.5.0", "unity": "2022.3", "vpmDependencies": {} }
+            } }
+        }),
+    );
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [
+            { "localPath": environment_root.join("Repos").join("cross-a.json").display().to_string(), "url": "https://example.invalid/vua/cross-a.json" },
+            { "localPath": environment_root.join("Repos").join("cross-b.json").display().to_string(), "url": "https://example.invalid/vua/cross-b.json" }
+        ] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.cross.common", "1.4.0", Some("2022.3"))],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let listing = backend.list_packages_v02(&project).unwrap();
+    assert_eq!(
+        listing.packages[0].latest_version.as_deref(),
+        Some("1.5.0"),
+        "the judgment merges the WHOLE repository set and takes the highest qualifying version"
+    );
+    assert_eq!(
+        listing.packages[0].update_available,
+        Some(true),
+        "a strictly newer qualifying version exists across the collection"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f3_list_packages_v02_local_collection_chain_rides_the_same_judgment() {
+    let base = unique_dir("f3-local");
+    let environment_root = base.join("isolated-vpm-environment");
+    // No repository caches at all — but the environment's local-package set
+    // (the collection's user_packages chain in find_package_by_name) carries
+    // a newer version of the installed package. The verbatim library
+    // semantics keep the local chain inside the SAME one-load judgment.
+    fs::create_dir_all(&environment_root).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [] }).to_string(),
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    let local_package_dir = base.join("local-pkg-src");
+    fs::create_dir_all(&local_package_dir).unwrap();
+    fs::write(
+        local_package_dir.join("package.json"),
+        serde_json::json!({
+            "name": "com.vua.test.local.pkg",
+            "version": "1.1.0",
+            "vpmDependencies": {}
+        })
+        .to_string(),
+    )
+    .unwrap();
+    backend.register_local_package(&local_package_dir).unwrap();
+
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.local.pkg", "1.0.0", None)],
+    );
+    let listing = backend.list_packages_v02(&project).unwrap();
+    assert_eq!(
+        listing.packages[0].latest_version.as_deref(),
+        Some("1.1.0"),
+        "the collection's local-package chain is a candidate source of the SAME judgment"
+    );
+    assert_eq!(listing.packages[0].update_available, Some(true));
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f3_list_packages_v02_honest_empty_set_and_the_frozen_error_face() {
+    let base = unique_dir("f3-empty");
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(&environment_root).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [] }).to_string(),
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    // An empty lock is an honest empty array at the v0.2 face too.
+    let empty_project = minimal_vpm_project(&base.join("bare-project"));
+    let listing = backend.list_packages_v02(&empty_project).unwrap();
+    assert!(listing.packages.is_empty());
+    assert!(listing.cache_sourced);
+
+    // The error face is the frozen v0.1 face, zero new codes: a root without
+    // ProjectVersion.txt fails the project load with the REUSED
+    // project_load_failed code (the v0.1 list_packages same-fact arm).
+    let error = backend
+        .list_packages_v02(&ProjectRef {
+            id: "broken".to_owned(),
+            root: base.join("not-a-project"),
+        })
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.project_load_failed");
+    assert_eq!(error.message_key, "errors.vpm.projectLoadFailed");
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
