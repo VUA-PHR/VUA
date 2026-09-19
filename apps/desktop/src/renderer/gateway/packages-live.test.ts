@@ -56,6 +56,13 @@ const P2_ROWS_UNAVAILABLE = [
   { operationId: "packages.listRepos", availability: "unavailable" },
   { operationId: "packages.packageCatalog", availability: "unavailable" },
 ];
+/** F2 读面齐全:repoCatalogOps 行 available(027;环境覆写置真后的翻转态) */
+const F2_AVAILABLE = [
+  { operationId: "packages.query", availability: "available" },
+  { operationId: "packages.listRepos", availability: "available" },
+  { operationId: "packages.packageCatalog", availability: "available" },
+  { operationId: "packages.repoCatalogOps", availability: "available" },
+];
 
 function installedFrame(rows: unknown[]) {
   return asWire({
@@ -88,6 +95,14 @@ function catalogFrame(result: unknown) {
   });
 }
 
+function repoCatalogFrame(result: unknown) {
+  return asWire({
+    schemaVersion: "0.1",
+    operation: "packages.repoCatalog",
+    result,
+  });
+}
+
 const VALID_ROWS = [
   { packageId: "com.vrchat.avatars", version: "3.7.4", dependencies: ["com.vrchat.base"] },
   { packageId: "com.vrchat.base", version: "3.7.2", dependencies: [] },
@@ -104,6 +119,36 @@ const VALID_REPO_ROWS = [
   },
   { repoId: null, name: null, url: null, localPath: "C:/repos/local.json", cached: false },
 ];
+
+/** F2 仓库级目录事实(027 冻结词面;族常量在窄化校验时消费,不外传):
+ *  cacheSourced 必带信息性降级披露 + cached=false 诚实行(空 packages) */
+const VALID_REPO_CATALOG_FACTS = {
+  repos: [
+    {
+      repoId: "official",
+      name: "Official",
+      cached: true,
+      packages: [
+        {
+          packageId: "com.anatawa12.avatar-optimizer",
+          displayName: "Avatar Optimizer",
+          description: null,
+          latestVersion: "1.9.0",
+          versionCount: 7,
+        },
+        {
+          packageId: "com.example.legacy",
+          displayName: null,
+          description: "Legacy package",
+          latestVersion: null,
+          versionCount: 2,
+        },
+      ],
+    },
+    { repoId: "pending", name: "Pending", cached: false, packages: [] },
+  ],
+  cacheSourced: false,
+};
 
 /** 端口返回的七键事实(族常量 schemaVersion 在窄化校验时消费,不外传) */
 const VALID_CATALOG_FACTS = {
@@ -156,6 +201,8 @@ function clientWith(overrides: {
   listResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
   reposResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
   catalogResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  repoCatalogResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  onRepoCatalogRequest?: (request: DesktopGatewayRequestV1) => void;
 } = {}): GatewayClient {
   return fakeClient(async (request) => {
     if (request.method === "app.snapshot") {
@@ -173,6 +220,15 @@ function clientWith(overrides: {
         overrides.catalogResult ?? {
           ok: true,
           value: catalogFrame({ schemaVersion: "vua.packages-catalog/v0.1", ...VALID_CATALOG_FACTS }),
+        }
+      );
+    }
+    if (request.method === "packages.repoCatalog") {
+      overrides.onRepoCatalogRequest?.(request);
+      return (
+        overrides.repoCatalogResult ?? {
+          ok: true,
+          value: repoCatalogFrame({ schemaVersion: "vua.packages-repo-catalog/v0.1", ...VALID_REPO_CATALOG_FACTS }),
         }
       );
     }
@@ -203,7 +259,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -278,13 +334,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -1798,3 +1854,119 @@ describe("packages live port A5 create write face (026 v0.5 consumption)", () =>
 function assertReadyP2(view: PackagesView): void {
   expect(view.kind).toBe("ready-p2");
 }
+
+describe("packages live port (027 F2 consumption)", () => {
+  it("flips the repoCatalog block from the repoCatalogOps served row (declared-none stays honestly hidden)", async () => {
+    const hidden = await createLivePackages(clientWith()).snapshot();
+    assertReadyP2(hidden);
+    if (hidden.kind !== "ready-p2") return;
+    expect(hidden.blocks.repoCatalog).toBe(false);
+
+    const port = createLivePackages(clientWith({ snapshot: F2_AVAILABLE }));
+    const view = await port.snapshot();
+    assertReadyP2(view);
+    if (view.kind !== "ready-p2") return;
+    expect(view.blocks.repoCatalog).toBe(true);
+  });
+
+  it("carries the frozen per-repo rows verbatim after stripping the family const (cacheSourced and cached=false preserved)", async () => {
+    const port = createLivePackages(clientWith({ snapshot: F2_AVAILABLE }));
+    const outcome = await port.repoCatalog(null, null);
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect(outcome.result).toEqual(VALID_REPO_CATALOG_FACTS);
+    expect(outcome.result).not.toHaveProperty("schemaVersion");
+  });
+
+  it("transports the two-key REQUIRED-nullable params verbatim (null browse and scoped+filtered shapes)", async () => {
+    let seen: unknown = null;
+    const base = {
+      onRepoCatalogRequest: (request: DesktopGatewayRequestV1) => {
+        seen = (request as { params: unknown }).params;
+      },
+    };
+    await createLivePackages(clientWith({ ...base, snapshot: F2_AVAILABLE })).repoCatalog(null, null);
+    expect(seen).toEqual({ repoId: null, packageIds: null });
+
+    seen = null;
+    await createLivePackages(
+      clientWith({ ...base, snapshot: F2_AVAILABLE }),
+    ).repoCatalog("official", ["com.anatawa12.avatar-optimizer", "com.vrchat.avatars"]);
+    expect(seen).toEqual({
+      repoId: "official",
+      packageIds: ["com.anatawa12.avatar-optimizer", "com.vrchat.avatars"],
+    });
+  });
+
+  it("surfaces the port refusal verbatim (repo_not_found travels, no read-face fold)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        snapshot: F2_AVAILABLE,
+        repoCatalogResult: applicationError("vua.vpm.repo_not_found", "validation"),
+      }),
+    );
+    expect(await port.repoCatalog("ghost", null)).toEqual({
+      kind: "failed",
+      code: "vua.vpm.repo_not_found",
+    });
+  });
+
+  it("answers unavailable for the absence arm and shape violation for invented/missing facts", async () => {
+    const absent = createLivePackages(
+      clientWith({ snapshot: F2_AVAILABLE, repoCatalogResult: UNAVAILABLE_ERROR }),
+    );
+    expect(await absent.repoCatalog(null, null)).toEqual({ kind: "unavailable" });
+
+    const invented = createLivePackages(
+      clientWith({
+        snapshot: F2_AVAILABLE,
+        repoCatalogResult: {
+          ok: true,
+          value: repoCatalogFrame({
+            schemaVersion: "vua.packages-repo-catalog/v0.1",
+            repos: [
+              {
+                repoId: "official",
+                name: "Official",
+                cached: true,
+                packages: [
+                  // author = 冻结词面刻意缺席(单事实源裁决);发明即形状不符
+                  {
+                    packageId: "com.x",
+                    displayName: null,
+                    description: null,
+                    latestVersion: null,
+                    versionCount: 1,
+                    author: "someone",
+                  },
+                ],
+              },
+            ],
+            cacheSourced: false,
+          }),
+        },
+      }),
+    );
+    expect(await invented.repoCatalog(null, null)).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+
+    const missingDisclosure = createLivePackages(
+      clientWith({
+        snapshot: F2_AVAILABLE,
+        repoCatalogResult: {
+          ok: true,
+          value: repoCatalogFrame({
+            schemaVersion: "vua.packages-repo-catalog/v0.1",
+            repos: [],
+          }),
+        },
+      }),
+    );
+    expect(await missingDisclosure.repoCatalog(null, null)).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+  });
+});

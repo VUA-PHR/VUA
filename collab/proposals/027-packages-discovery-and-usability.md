@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-20 02:0x 推进：**F2 wire 已接线**——接线批 629699e〔恰核心域 5 文件 839+/22-：provider_host.rs 路由臂 packages.repoCatalog＋served 行 packages.repoCatalogOps〔repo_catalog_capabilities 门，默认 declared-none 候环境覆写置真〕＋信封双常量命名 PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 "0.1"／PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 "vua.packages-repo-catalog/v0.1"＋wire 测试 8 例骑真帧环含十一例违规电池＋双语协议本 0.1.1 词面零变更＋REGISTRY 同步〕＋随批竞速修正 fabb04d〔协议本双语头部＋REGISTRY 行状态词干回归「已冻结」照 A5 先例；登记表 79/79 一致 0 异常；docs-only 代码树字节相同、定向证据继承声明成立〕经第 123 批 --no-ff 验收入库〔合并 203cb9f；集成亲审 diff 逐项对表冻结词面成立：闭集双键必带可空 params＋能力门在端口调用之前＋端口拒绝逐字透传＋路由盖常量＋A5 诚实结构差异申报；合并将成树等价性实证＝预检树 c2cbf83 vs wt-2 尖非 collab 面零漂移；全链定向证据集成独立复跑全绿：provider-host 246/0〔含 wire_v01 8/8〕＋orchestrator 231/0＋clippy 双 0＋contracts 81/81＋orchestrator-provider 42/42＋desktop typecheck 双 0〕；**下一环＝环境实现核对切片**〔VrcGetLib repo_catalog 覆写＋capability 覆写置真＋离线降级＋单元测试，候即领；接线代码重推导验收锚适用〕＋桌面形状核可程序〔双前置已成就〕；F3/F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批）
+status: 讨论中（2026-09-20 02:0x 推进：**F2 wire 已接线**——接线批 629699e〔恰核心域 5 文件 839+/22-：provider_host.rs 路由臂 packages.repoCatalog＋served 行 packages.repoCatalogOps〔repo_catalog_capabilities 门，默认 declared-none 候环境覆写置真〕＋信封双常量命名 PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01 "0.1"／PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01 "vua.packages-repo-catalog/v0.1"＋wire 测试 8 例骑真帧环含十一例违规电池＋双语协议本 0.1.1 词面零变更＋REGISTRY 同步〕＋随批竞速修正 fabb04d〔协议本双语头部＋REGISTRY 行状态词干回归「已冻结」照 A5 先例；登记表 79/79 一致 0 异常；docs-only 代码树字节相同、定向证据继承声明成立〕经第 123 批 --no-ff 验收入库〔合并 203cb9f；集成亲审 diff 逐项对表冻结词面成立：闭集双键必带可空 params＋能力门在端口调用之前＋端口拒绝逐字透传＋路由盖常量＋A5 诚实结构差异申报；合并将成树等价性实证＝预检树 c2cbf83 vs wt-2 尖非 collab 面零漂移；全链定向证据集成独立复跑全绿：provider-host 246/0〔含 wire_v01 8/8〕＋orchestrator 231/0＋clippy 双 0＋contracts 81/81＋orchestrator-provider 42/42＋desktop typecheck 双 0〕；**下一环＝环境实现核对切片**〔VrcGetLib repo_catalog 覆写＋capability 覆写置真＋离线降级＋单元测试，候即领；接线代码重推导验收锚适用〕＋桌面形状核可已落节（2026-09-20 05:1x 线程末节：九项一致通过、零预核可、基于收编世代定向复跑亲测全绿——F2 桌面消费切片就此解锁）；F3/F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -543,3 +543,113 @@ LoadedFromHub}；**无 repo 表、无任何启停语义字段**（用户项目�
 （本窗指令范围外，候补可选）；F5 素材顺带观察＝VRCTemplates/ 恰 5 目录
 （Avatar／Avatar 2019／Base／World／World 2019，目录名读数），元数据文件形态
 未核（归 F5 顺带项本面）。零端到端宣称维持——本记录只登记只读取证事实。
+
+### 桌面形状核可（F2 TS 面＋wire 接线面，wt-3，2026-09-20 05:1x）
+
+**应操作者节拍指派**（「027 置顶继续——下一环＝F2 形状核可：双前置已成就且两度顺延，
+本轮首项必办；照 A1–A4 形状核可先例九项逐项对照，基于收编世代，零预核可」）。核可
+对象＝F2 冻结批 c46545f（26 文件 1316+，经第 122 批合并 a50241f 入库）＋wire 接线批
+629699e（恰核心域 5 文件 839+/22-，经第 123 批合并 203cb9f 入库）＋随批修正 fabb04d
+（协议本双语头部＋REGISTRY，第 124 批收编）的**收编世代**——本树追平壳 899902b
+--no-ff 吸收 main b22939e（第 126 批世代＝收编本树上拍三笔的合并 f8d8358＋登记批；
+merge-tree 预检 tree 514c3dbc 零冲突，落后 0，非 collab 面与 main 全等），本机直读＋
+定向复跑亲测（05:1x：df 先查 C 盘 616G/67%；contracts dist 先重建照陈旧事故先例——
+@vua/contracts check **81/81**；@vua/orchestrator-provider check **42/42**；desktop
+typecheck **双 tsconfig exit 0**；desktop vitest 86 文件 **765/765**；cargo test
+-p vua-provider-host 定向两件＝wire **8/8**＋consumer **4/4**；clippy 双 crate
+--all-targets 零警告）。**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①请求接口单查询闭集——
+  PackagesRepoCatalogQueryV01＝kind "query"（纯读零任务语义，非 command——本面
+  无九态/确认链/commandId）＋method "packages.repoCatalog" 族内单方法＋params 恰
+  双键 REQUIRED-nullable {repoId, packageIds}（026 A5 template 同款 idiom）：repoId
+  null＝全部仓库逐仓分组、非空串＝只答该仓库行（词表外 id＝复用
+  vua.vpm.repo_not_found，A4 removeRepo 同事实先例）；packageIds null＝不过滤浏览、
+  非空＝Recipe 需求集合批量过滤（唯一非空 id 闭列——用户裁决④第一消费者形状；
+  **空数组＝形状违反非空过滤**，不立第三态）；刻意无 projectPath（缓存维度非工程
+  维度——latestVersion 判定无工程 Unity 约束，故 compatible 刻意不存在：常量
+  null 非事实不给 wire 键，逐版本 compatible 仍是 packages-catalog 面的工程绑定
+  冻结事实）；无 confirmedDigest（读面无确认指纹）；携第三键/缺键即形状违反
+  （TS 窄化负例＋wire 十一例违规电池钉死）。②result 最小诚实形状——
+  PackagesRepoCatalogResultV01 恰三键 {schemaVersion:
+  "vua.packages-repo-catalog/v0.1", repos, cacheSourced}：信封常量 "0.1" 与族常量
+  两独立版本（c914cf2 常规；路由在信封组装时加盖，绝不由后端盖——wire 实读
+  provider_host.rs :5494–5499）；repos 空数组＝诚实零仓库缓存应答；**cacheSourced
+  必带信息性降级披露出生即带**（catalog v0.2 先例于 v0.1 采纳——true＝缓存降级
+  路径所得/false＝在线刷新所得，信息性非失败，消费端呈现「缓存数据」标注绝不渲染
+  为失败）；仓库行四键 {repoId nullable, name nullable, **cached 必带**, packages}
+  （cached false＝已订阅未刷新＝空 packages 数组如实呈现，不隐藏不伪造）；包行五键
+  {packageId, displayName nullable（null 呈现＝packageId 兼任显示名，P1 裁决 3，
+  不冒充字段事实）, description nullable（诚实缺席不补齐）, latestVersion nullable
+  （本仓内非-yanked 且未被 prerelease 设置排除的最新版判定；null＝当前设置下无
+  合资格版本——缺席不是「无包」）, versionCount（仓库缓存自身清单计数 yanked
+  计入——缓存事实非可用性承诺）}；**author 刻意缺席**（环境考证 §1(b) 选项 (iii)
+  单事实源裁决——库面 manifest 反序列化闭集无 author 字段、第二解析面否决；
+  row-author-field 负例钉死发明即非法，license/changelogUrl/downloadCount 同律）；
+  行序＝集合自身枚举顺序照实投影，不发明排序键；**逐仓分组绝不跨仓合并**（同名包
+  在各仓各自出现；跨仓最高版判定仍是 packages-catalog 族声明事实——与 F3 视图
+  分立不混同，环境考证 §2 边界 1 落死）。③错误面零新码——读面零 rejected 臂零
+  guard：端口拒绝**逐字透传**（P2 读面零折叠——repo_not_found 携
+  code+messageKey+category 原样上 wire；与 A4 写面四码折 execution_failed 的折叠
+  纪律刻意不同构且 wire 处理函数 doc 注释如实自载该结构差异）；过滤器未命中＝诚实
+  空应答（no_matching_package 在本面无主体——过滤是透镜非存在断言）；无
+  projectPath 故 project_not_found 无主体；信封层形状违例＝既有
+  vua.packages.invalid_params、能力缺席＝既有 vua.vpm.capability_missing、信封
+  错误面维持既有集合零新码（核心表态 6 零新码方向照准落死）。④union 登记与窄化
+  臂——请求侧 ApplicationRequestV01 增一行（:2184）；窄化臂（:2660–2671）顶键六键
+  hasExactKeys＋params 精确双键＋repoId「null 或非空串」二值闭集＋packageIds
+  「null 或非空唯一非空串数组」闭集（缺键/多键/空数组/重复/空 id/非字符串全拒）；
+  result 侧不入 ApplicationSuccessValueV01 union＝**packages 读面族先例一致**
+  （listInstalled/listRepos/packageCatalog v0.1/v0.2 同构缺席，经 packages-port
+  独立映射面去 schemaVersion 消费——packages-port.ts :255/:277 先例实读），非本
+  面缺口。⑤TS 测试对表——1 例 7 断言（正 3：双 null 浏览形态/repoId 范围形态/
+  Recipe 批量过滤形态；负 4：缺 packageIds 键/携第三键 projectPath/空数组/重复
+  id）与冻结批申报「1 test case 7 assertions」一一对应；schema 层另有 python
+  jsonschema 正负例预检 14/14 申报在案。⑥mock 恒缺席臂——
+  "packages.repoCatalog" 加入 P2 词表组恒答 vua.packages.unavailable（诚实缺席：
+  模拟 Provider 无 VpmBackend 引擎面，绝不伪造仓库级包目录或空数组冒充——诚实空
+  清单只属于真实后端的合法事实）＋测试 3 行（mock-provider.test.ts :660–662 三参
+  形态）；provider check 42/42 行为级实证；桌面消费切片照缺席臂呈现，不预搬
+  fixture 形状（mock/fixture 不出 DEV 纪律照旧）。⑦capturedAt 收窄有效性——F2
+  四新 TS 成员（Query/Package/Repo/Result）零 capturedAt 顶层键（F2 段 677–735
+  全文实读）；桌面 capturedAt 窄化点 electron-gateway.ts:135
+  `"capturedAt" in result.value` 系 EnvironmentSnapshotV01 快照面专属，F2 result
+  本不入 success union 故该点不可达 F2 形状，收窄不因 F2 而破裂（typecheck 双 0
+  行为级亲测，A2–A5 先例同法）。⑧向量对表——6 正 8 负与登记一致（正＝浏览请求/
+  范围请求/过滤请求/默认应答/空应答/缓存降级应答；负＝重复 packageIds/空
+  packageIds/携第三键/缺 cacheSourced/仓库行缺 cached/包行携 author/发明
+  compatible/包行缺 versionCount——examples 目录 14 文件实读）；向量正负例与
+  schema additionalProperties:false 闭集（command 顶层三键＋params 双键；result
+  三键＋repo 行四键＋package 行五键）逐一对表成立。⑨诚实边界如实——**词面已
+  冻结且 wire 已接线**（与 A4 核可时点「已冻结未接线」不同，本核可双前置齐备后
+  办理）：路由臂 packages.repoCatalog（provider_host.rs :5246/:5416–5547 实读）
+  闭集双键校验在路由层、**能力门先于端口调用**（repo_catalog_capabilities 访问
+  器位缺席答 capability_missing，后端方法永不被触达）、端口拒绝逐字透传、路由
+  盖戳双常量；served 行 packages.repoCatalogOps 一行一方法（removeOps/installOps/
+  registerOps/repoOps/createOps 先例），门＝新默认访问器（**default declared-none
+  ——环境覆写置真前 served 行如实维持不可用**；CLI 后端无仓库级列表能力如实
+  false）；端口面默认方法体 Err(unsupported)（已声明未实现后端在类型层可存在、
+  两层同答 capability_missing 的诚实结构差异如实载明）；协议本双语 v0.1.1
+  （接线批落地词面零变更＋信封常量 :124–128 载明＋**后端指向根事实专节** :131
+  必载——生产接线＝用户真实 VCC settings 目录共享根、本面**只读**绝不写
+  settings/caches/projects；测试隔离＝VrcGetLibBackend::with_environment_root
+  临时根纯合成）；REGISTRY 两行经 fabb04d 修正后 79/79 一致。**零端到端宣称
+  维持**——本核可系词表层核对＋定向复跑，served 行真机呈现与全链真机走查归
+  W25（O-2）。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：①served 行 declared-none 期间，
+  F2 桌面消费切片（仓库浏览＋搜索 UI）必须诚实缺席渲染——repoCatalogOps 能力行
+  不可用/缺席时发现面入口整块不渲染（既有「无事实不渲染」纪律照旧），不预搬
+  fixture 形状；②信封双常量已由接线批落地载明（协议本 0.1.1 :124–128）——消费
+  窄化按落地常量对照，不猜测；③IA 形态照桌面表态 2（2026-09-19）：仓库订阅与订
+  阅管理两分区合并为单一「仓库」分区、行内展开即该仓浏览面、搜索框作用于
+  packageId/displayName 过滤且同一事实源不另立查询形状（设计约束 1：UI 是 F2 查
+  询面的次要呈现，批量过滤由词面承担）；④cacheSourced=true 呈现「缓存数据」信息
+  标注非失败；cached=false 行＝「已订阅未刷新」诚实空态＋latestVersion=null 行如
+  实空显不渲染「已最新」类断言（024 表态②防线延续）；⑤新 i18n 键四语随消费切片
+  申报，且须避让 wt-7（slice/desktop-i18n-player-language）已改四语词面语义——
+  后续合并保留新语义（wt-7 [→桌面] 留言照办）；design-standard §8 增补随消费切
+  片（0.7.3/0.7.4 先例）。
+- **解锁状态**：F2「形状核可」桌面侧条件满足（本节）；双前置（冻结批 c46545f 经
+  第 122 批＋接线批 629699e 经第 123 批入库）全成就——**F2 消费切片（仓库浏览＋
+  搜索 UI）就此解锁**，照 026 A 消费切片先例候桌面续领；环境实现核对切片（环境席
+  位）与本核可互不阻塞、照序并行。零端到端宣称维持。
