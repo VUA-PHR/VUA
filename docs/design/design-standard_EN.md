@@ -1,10 +1,10 @@
-# VUA design standard v0.7.7
+# VUA design standard v0.7.8
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.7
+> Document version: 0.7.8
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.7)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.8)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -328,6 +328,38 @@ stable untilted cards.
   failure never masquerades as an empty state.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
+- **Global shell: boot splash and notification center:** the boot splash is the brand's first
+  frame, never a loading-mask stand-in: the square column grid falling top-to-bottom and the
+  central VUA letter frames in a purple-orange gradient stroke are the fixed ceremony. Exit is
+  driven by the real startup chain — the fade-out happens only when the animation budget is spent
+  AND all four milestones (renderer/gateway/provider/paint) have been reached; otherwise the
+  splash enters a waiting state (breathing columns plus an honest waiting caption), and the hard
+  cap forces exit on schedule with the main UI's own honest-absence rendering taking over.
+  Escape and click skip immediately. With flattened motion (reduced-motion / effects off) the
+  animations flatten entirely, the dwell shortens, and milestones are not awaited. The
+  bottom-left version badge reads build-time injected facts (version · commit · dirty); the
+  update badge appears only for "newer available" — a failed check or up-to-date never disturbs.
+  The notification center (header bell) and the bottom taskbar share one notification projection
+  — one fact source, two presentations, no diverging invented counts; when the task-engine
+  capability is not ready the entry never appears at all (§2.6 no-fact-no-render, not a disabled
+  state), and the bell badge equals the active-task count. The panel is a fullscreen frosted
+  backdrop plus a solid panel: the header's own backdrop-filter traps fixed descendants, so
+  backdrop and panel always portal to body, blur lives only on the fullscreen backdrop and the
+  panel itself stays unblurred (the compositing ghosting lesson). Opening moves focus into the
+  panel; closing returns it to the bell (not stolen when the user has focused elsewhere);
+  outside click / Escape / scroll / blur close it; flattened motion skips the exit animation
+  window.
+  Notification-entry discipline: active tasks show by default; terminal tasks appear only with
+  "show completed" enabled and not dismissed. Dismissal is offered only for terminal
+  notifications — what is cleared is the notification, not the fact; task authority remains
+  queryable through the task surfaces (§6.2). Task-row titles project honestly: registered task
+  identities use their registered title, unregistered tasks get the honest type word
+  "background task", and a bare taskId never serves as a description (facts the projection
+  cannot reach are not invented). Clicking the row's main area returns to the task's origin page,
+  identical for active and terminal states, never a silent no-response. The in-row status glyph
+  and status word carry success/failure facts, action buttons (retry/clear) each do one job, and
+  the panel close ✕ only closes the panel — never conflated with dismissing a notification or
+  presenting a failure.
 
 ## 9. Accessibility, internationalization, and performance
 
@@ -371,6 +403,19 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.8 (2026-09-20)**: new §8 global-shell bullets (boot splash and notification center;
+  proposal 028 #7 desktop stance now codified) — splash exit milestone discipline (budget spent
+  plus four milestones / waiting state / hard-cap forced exit / Escape skip / flattened motion),
+  the update badge reporting only "newer available"; the notification center's single projection
+  across two presentations, entry absent entirely when the capability is not ready, the portal
+  positioning discipline (blur only on the fullscreen backdrop), clearing a notification never
+  the fact, honest task-title projection (unregistered tasks get the type word "background
+  task", bare taskId never a description), row-open returns to the origin page identically in
+  both states, and the three-way split between status glyphs, action buttons, and the panel
+  close ✕. The original stance ("after the W25 window, as 0.7.6") was advanced by the operator's
+  2026-09-20 tick assignment; 0.7.6 belongs to the wt-7 in-flight batch and 0.7.7 to the F2
+  consumption slice, so this batch takes 0.7.8. EN mirror synced.
 
 - **0.7.7 (2026-09-20)**: §8.7 supplemented with repository-discovery presentation (proposal 027
   F2 consumption slice) — repository subscriptions and subscription management merge into a single
