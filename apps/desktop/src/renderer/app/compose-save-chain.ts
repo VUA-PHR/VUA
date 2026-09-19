@@ -6,6 +6,12 @@ import {
   useComposeDraft,
   type ComposeDraftState,
 } from "./compose-draft-store.ts";
+import {
+  composeDraftCompareKey,
+  fetchRecipeCompareCandidates,
+  findIdenticalRecipe,
+  type IdenticalRecipe,
+} from "./compose-save-dedup.ts";
 import { productionChainRecipeSavedAction } from "./production-chain-store.ts";
 
 /**
@@ -19,6 +25,11 @@ import { productionChainRecipeSavedAction } from "./production-chain-store.ts";
  * - 「已保存」只在持久化回执后显示(UI-03/AC-04):失败/不可解释回执/
  *   传输异常一律落入 failed——内容保留、未保存标记不动、不自动重试,
  *   重试由用户显式发起;
+ * - 保存前查重(D5,用户裁定 2026-09-20「点 N 次存 N 版应先查重询问」):
+ *   提交前先用配方文档库既有列表(recipe.list 读面,已在库)比对草稿内容
+ *   (素材集合＋挂载名等可判等字段,compose-save-dedup);完全一致→弹确认
+ *   框(duplicate 身份供展示),用户确认才提交新修订;不一致→照常直存;
+ *   列表不可得/为空→诚实降级照常保存,不阻塞;
  * - 成功对齐双 store:composeSavedAction(脏标记清除+saved 身份)+
  *   productionChainRecipeSavedAction(链推进入口启用)——与服务端同一
  *   回执对齐,跨 UI 根保留(UI-01/UI-05);保存回执落容器层不随卸载取消,
@@ -26,11 +37,15 @@ import { productionChainRecipeSavedAction } from "./production-chain-store.ts";
  * 时钟注入(BG-18):now 在命令边界取用。
  */
 
-/** 保存请求状态(idle=未开始/saving=提交中/failed=失败如实呈现) */
-export type ComposeSaveState = "idle" | "saving" | "failed";
+/** 保存请求状态(idle=未开始/checking=查重中/saving=提交中/failed=失败
+ *  如实呈现) */
+export type ComposeSaveState = "idle" | "checking" | "saving" | "failed";
 
 /** 保存可提交性(纯函数):任一条目 nameHint 为空白即不可提交——挂载
- *  选择器用户命名提示是 recipe.save 词表的必填面,两套 UI 同一规则。 */
+ *  选择器用户命名提示是 recipe.save 词表的必填面,两套 UI 同一规则。
+ *  D3(用户裁定 2026-09-20):加入草稿时挂载名称已自动派生自条目
+ *  displayName(composeAddItem),自动填充值非空白——校验对自动填充值恒过;
+ *  仅当用户显式清空输入框(null/空白)时如实阻止。 */
 export function composeSaveBlocked(items: ComposeDraftState["items"]): boolean {
   return items.some((item) => (item.nameHint ?? "").trim() === "");
 }
@@ -54,22 +69,32 @@ export function classifyComposeSaveResult(result: DesktopGatewayResponseV1): Com
  *  权威身份在容器层 store) */
 export function useComposeSave(): {
   readonly saveState: ComposeSaveState;
+  /** 查重命中待确认的既有配方身份(D5;null = 无命中,不弹确认框) */
+  readonly duplicate: IdenticalRecipe | null;
+  /** 保存入口:先查重后提交(命中→弹确认框等用户裁决;否则直存) */
   readonly saveDraft: () => void;
+  /** 确认「仍保存为新修订」(D5 确认框;用户显式确认后才提交) */
+  readonly confirmDuplicateSave: () => void;
+  /** 取消查重命中(不提交,回到 idle) */
+  readonly cancelDuplicateSave: () => void;
 } {
   const draft = useComposeDraft();
   const [saveState, setSaveState] = useState<ComposeSaveState>("idle");
-  const savingRef = useRef(false);
+  const [duplicate, setDuplicate] = useState<IdenticalRecipe | null>(null);
+  const busyRef = useRef(false);
 
-  const saveDraft = () => {
-    if (savingRef.current) return;
+  /** 实际提交(查重通过或用户确认后;忙碌守卫由调用方持有) */
+  const submitSave = (items: ComposeDraftState["items"], saved: ComposeDraftState["saved"]) => {
     const document = composeDraftToSaveDocument({
-      savedRecipeId: draft.saved?.recipeId ?? null,
-      savedRevision: draft.saved?.revision ?? 0,
-      items: draft.items,
+      savedRecipeId: saved?.recipeId ?? null,
+      savedRevision: saved?.revision ?? 0,
+      items,
       now: new Date().toISOString(),
     });
-    if (document === null) return;
-    savingRef.current = true;
+    if (document === null) {
+      setSaveState("idle");
+      return;
+    }
     setSaveState("saving");
     void window.vua?.gateway
       .invoke({
@@ -78,7 +103,7 @@ export function useComposeSave(): {
         method: "recipe.save",
         params: {
           recipeDocument: document as unknown as Record<string, unknown>,
-          baseRevision: draft.saved?.revision ?? 0,
+          baseRevision: saved?.revision ?? 0,
         },
       })
       .then((result) => {
@@ -98,9 +123,62 @@ export function useComposeSave(): {
         setSaveState("failed");
       })
       .finally(() => {
-        savingRef.current = false;
+        busyRef.current = false;
       });
   };
 
-  return { saveState, saveDraft };
+  const saveDraft = () => {
+    if (busyRef.current) return;
+    if (draft.items.length === 0) return;
+    if (composeSaveBlocked(draft.items)) return;
+    const items = draft.items;
+    const saved = draft.saved;
+    busyRef.current = true;
+    setDuplicate(null);
+    setSaveState("checking");
+    void fetchRecipeCompareCandidates((request) => {
+      const api = window.vua?.gateway;
+      if (api === undefined) {
+        // 宿主面缺席:文档库不可得→诚实降级(空候选=直存路径),不阻塞
+        return Promise.resolve({
+          schemaVersion: 1,
+          requestId: request.requestId,
+          ok: false,
+          error: { code: "internal", messageKey: "vua_internal" },
+        } as DesktopGatewayResponseV1);
+      }
+      return api.invoke(request);
+    })
+      .then((candidates) => {
+        const hit = findIdenticalRecipe(composeDraftCompareKey(items), candidates);
+        if (hit === null) {
+          // 无命中:照常直存(D5 主路径)
+          submitSave(items, saved);
+          return;
+        }
+        // 命中:弹确认框等用户裁决;busy 持有至确认/取消
+        setDuplicate(hit);
+        setSaveState("idle");
+      })
+      .catch(() => {
+        // 查重装配自身异常也不阻塞保存(诚实降级;装配层已吞读失败,此处兜底)
+        submitSave(items, saved);
+      });
+  };
+
+  const confirmDuplicateSave = () => {
+    if (duplicate === null) return;
+    setDuplicate(null);
+    // 确认时以当前草稿重建文档(对话框打开期间草稿可能被编辑;诚实取当下)
+    submitSave(draft.items, draft.saved);
+  };
+
+  const cancelDuplicateSave = () => {
+    if (duplicate === null) return;
+    setDuplicate(null);
+    setSaveState("idle");
+    busyRef.current = false;
+  };
+
+  return { saveState, duplicate, saveDraft, confirmDuplicateSave, cancelDuplicateSave };
 }

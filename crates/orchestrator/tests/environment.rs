@@ -30,7 +30,8 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
     EnvironmentRoots {
         steam_common: vec![base.join("steam/steamapps/common")],
         local_low: base.join("LocalLow"),
-        unity_hub_exe: base.join("hub/Unity Hub.exe"),
+        unity_hub_exe_candidates: vec![base.join("hub/Unity Hub.exe")],
+        unity_hub_registry_display_icon_keys: Vec::new(),
         unity_editors_root: base.join("editors"),
         vrc_get_executable: "vrc-get".into(),
         disk_target: base.to_path_buf(),
@@ -569,11 +570,178 @@ fn orc_wf_001_unity_editors_enumerate_classify_and_ignore_junk() {
     }
 }
 
-#[test]
-fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
-    let base = unique_dir("vpmcli");
+/// Synthetic stand-in for the well-known Unity Hub Uninstall key.
+const SYNTHETIC_HUB_UNINSTALL_SUBKEY: &str =
+    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall\\Synthetic Hub";
 
-    // Probe succeeds → detected with the version fact.
+#[test]
+fn orc_env_unity_hub_candidates_cover_machine_wide_installs() {
+    let base = unique_dir("hub-candidates");
+    let per_user = base.join("local/Programs/Unity Hub/Unity Hub.exe");
+    let machine_wide = base.join("Program Files/Unity Hub/Unity Hub.exe");
+    fs::create_dir_all(per_user.parent().unwrap()).unwrap();
+    fs::create_dir_all(machine_wide.parent().unwrap()).unwrap();
+
+    // First (per-user) candidate hit → detected with the hit path.
+    fs::write(&per_user, "hub").unwrap();
+    let roots = EnvironmentRoots {
+        unity_hub_exe_candidates: vec![per_user.clone(), machine_wide.clone()],
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::Detected);
+    assert_eq!(hub.facts["exe"].as_str(), Some(per_user.to_string_lossy().as_ref()));
+    assert_eq!(hub.facts["via"], "path");
+    fs::remove_file(&per_user).unwrap();
+
+    // Per-user absent, machine-wide present → the W25 live miss
+    // (machine-level `C:\Program Files\Unity Hub` install) is covered.
+    fs::write(&machine_wide, "hub").unwrap();
+    let roots = EnvironmentRoots {
+        unity_hub_exe_candidates: vec![per_user, machine_wide.clone()],
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::Detected);
+    assert_eq!(
+        hub.facts["exe"].as_str(),
+        Some(machine_wide.to_string_lossy().as_ref())
+    );
+    assert_eq!(hub.facts["via"], "path");
+    fs::remove_file(&machine_wide).unwrap();
+
+    // Nothing hit → deterministic not_detected with the probed lists in
+    // facts (the empty state is the final state).
+    let registry = FakeRegistrySource::new().with(
+        RegistryHive::LocalMachine,
+        SYNTHETIC_HUB_UNINSTALL_SUBKEY,
+        "DisplayName",
+        "Unity Hub 3.15.2",
+    );
+    let roots = EnvironmentRoots {
+        unity_hub_exe_candidates: vec![base.join("local/Programs/Unity Hub/Unity Hub.exe")],
+        unity_hub_registry_display_icon_keys: vec![(
+            RegistryHive::LocalMachine,
+            SYNTHETIC_HUB_UNINSTALL_SUBKEY.to_owned(),
+        )],
+        registry: Arc::new(registry),
+        ..synthetic_roots(&base)
+    };
+    let engine = engine_with(roots, default_runner());
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(hub.error_code, None);
+    assert_eq!(
+        hub.facts["candidates"][0].as_str(),
+        Some(
+            base.join("local/Programs/Unity Hub/Unity Hub.exe")
+                .to_string_lossy()
+                .as_ref()
+        )
+    );
+    assert_eq!(
+        hub.facts["registryKeys"][0],
+        serde_json::json!(format!("HKLM\\{SYNTHETIC_HUB_UNINSTALL_SUBKEY}"))
+    );
+
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_env_unity_hub_registry_display_icon_fallback() {
+    let base = unique_dir("hub-registry");
+    let exe = base.join("Hub Elsewhere/Unity Hub.exe");
+    fs::create_dir_all(exe.parent().unwrap()).unwrap();
+    fs::write(&exe, "hub").unwrap();
+
+    let icon = |value: String| {
+        let registry = FakeRegistrySource::new().with(
+            RegistryHive::LocalMachine,
+            SYNTHETIC_HUB_UNINSTALL_SUBKEY,
+            "DisplayIcon",
+            &value,
+        );
+        let roots = EnvironmentRoots {
+            unity_hub_exe_candidates: vec![base.join("absent/Unity Hub.exe")],
+            unity_hub_registry_display_icon_keys: vec![(
+                RegistryHive::LocalMachine,
+                SYNTHETIC_HUB_UNINSTALL_SUBKEY.to_owned(),
+            )],
+            registry: Arc::new(registry),
+            ..synthetic_roots(&base)
+        };
+        engine_with(roots, default_runner())
+    };
+
+    // Unquoted value with icon-index suffix — the shape observed on the
+    // W25 real machine (`C:\Program Files\Unity Hub\Unity Hub.exe,0`).
+    let engine = icon(format!("{},0", exe.display()));
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::Detected);
+    assert_eq!(hub.facts["via"], "registry");
+    assert_eq!(hub.facts["exe"].as_str(), Some(exe.to_string_lossy().as_ref()));
+    assert_eq!(
+        hub.facts["registryKey"],
+        serde_json::json!(format!("HKLM\\{SYNTHETIC_HUB_UNINSTALL_SUBKEY}"))
+    );
+
+    // Quoted value with icon-index suffix parses too.
+    let engine = icon(format!("\"{}\",0", exe.display()));
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::Detected);
+    assert_eq!(hub.facts["via"], "registry");
+
+    // Plain quoted value (no index) parses.
+    let engine = icon(format!("\"{}\"", exe.display()));
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::Detected);
+    assert_eq!(hub.facts["via"], "registry");
+
+    // A DisplayIcon naming a non-existent file is no hit: the probe
+    // falls through to the honest not_detected, never a guessed path.
+    let engine = icon("C:\\synthetic-absent\\Unity Hub.exe,0".to_owned());
+    let items = engine.inspect_zone(Zone::Create);
+    let hub = find(&items, "unity_hub");
+    assert_eq!(hub.presence, EnvironmentPresence::NotDetected);
+    assert_eq!(hub.error_code, None);
+
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn orc_adp_003_vpm_capability_embedded_library_is_always_detected() {
+    let base = unique_dir("vpm");
+
+    // The embedded vrc-get-vpm library is a compile-time fact: detected
+    // with the pinned version even when the standalone CLI probe fails
+    // outright (独立 CLI 从非前置 — user ruling 2026-09-20).
+    let runner = Arc::new(FakeProcessRunner::new());
+    runner.push(Err("binary absent".into()));
+    let engine = engine_with(synthetic_roots(&base), runner);
+    let items = engine.inspect_zone(Zone::Create);
+    let vpm = find(&items, "vpm");
+    assert_eq!(vpm.presence, EnvironmentPresence::Detected);
+    assert_eq!(vpm.error_code, None);
+    assert_eq!(vpm.facts["embedded"]["library"], "vrc-get-vpm");
+    assert_eq!(
+        vpm.facts["embedded"]["version"],
+        vua_orchestrator::EMBEDDED_VRC_GET_VPM_VERSION
+    );
+    assert_eq!(vpm.facts["standaloneCli"]["state"], "not_detected");
+
+    // A working standalone CLI rides in facts only.
     let runner = Arc::new(FakeProcessRunner::new());
     runner.push(Ok(ProcessOutcome {
         exit_code: Some(0),
@@ -586,20 +754,13 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     }));
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
-    let vpm = find(&items, "vpm_cli");
+    let vpm = find(&items, "vpm");
     assert_eq!(vpm.presence, EnvironmentPresence::Detected);
-    assert_eq!(vpm.facts["version"], "vrc-get 1.9.2");
+    assert_eq!(vpm.facts["standaloneCli"]["state"], "detected");
+    assert_eq!(vpm.facts["standaloneCli"]["version"], "vrc-get 1.9.2");
 
-    // Spawn failure (binary absent) → normal missing finding, no error code.
-    let runner = Arc::new(FakeProcessRunner::new());
-    runner.push(Err("binary absent".into()));
-    let engine = engine_with(synthetic_roots(&base), runner);
-    let items = engine.inspect_zone(Zone::Create);
-    let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.presence, EnvironmentPresence::NotDetected);
-    assert_eq!(vpm.error_code, None);
-
-    // Timed-out probe → detection failure with a stable code.
+    // Timed-out CLI probe: the capability stays detected and the probe
+    // failure is recorded informationally, without an item error code.
     let runner = Arc::new(FakeProcessRunner::new());
     runner.push(Ok(ProcessOutcome {
         exit_code: None,
@@ -612,24 +773,48 @@ fn orc_adp_003_vpm_cli_probe_maps_backend_failures_honestly() {
     }));
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
-    let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.presence, EnvironmentPresence::DetectionFailed);
-    assert_eq!(
-        vpm.error_code.as_deref(),
-        Some(env_error_codes::PROBE_FAILED)
-    );
+    let vpm = find(&items, "vpm");
+    assert_eq!(vpm.presence, EnvironmentPresence::Detected);
+    assert_eq!(vpm.error_code, None);
+    assert_eq!(vpm.facts["standaloneCli"]["state"], "detection_failed");
 
-    // Non-zero exit without timeout → normal missing finding.
+    // Non-zero exit: the optional CLI is simply absent, the capability
+    // is not downgraded.
     let runner = Arc::new(FakeProcessRunner::new());
     runner.push(Ok(outcome_with_exit(1, "")));
     let engine = engine_with(synthetic_roots(&base), runner);
     let items = engine.inspect_zone(Zone::Create);
-    let vpm = find(&items, "vpm_cli");
-    assert_eq!(vpm.presence, EnvironmentPresence::NotDetected);
-    assert_eq!(vpm.error_code, None);
+    let vpm = find(&items, "vpm");
+    assert_eq!(vpm.presence, EnvironmentPresence::Detected);
+    assert_eq!(vpm.facts["standaloneCli"]["state"], "not_detected");
+    assert_eq!(vpm.facts["standaloneCli"]["exitCode"], 1);
+
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
+}
+
+/// The embedded version fact is only honest if it cannot drift from the
+/// real dependency: parse the workspace `Cargo.lock` and compare.
+#[test]
+fn orc_adp_003_embedded_vrc_get_vpm_version_matches_the_cargo_lock_pin() {
+    let lock = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("..")
+        .join("..")
+        .join("Cargo.lock");
+    let text = fs::read_to_string(lock).unwrap();
+    let marker = "name = \"vrc-get-vpm\"";
+    let position = text.find(marker).expect("vrc-get-vpm pinned in Cargo.lock");
+    let version_line = text[position..]
+        .lines()
+        .nth(1)
+        .expect("version line follows the name line");
+    let pinned = version_line
+        .trim()
+        .strip_prefix("version = \"")
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("Cargo.lock version line parses");
+    assert_eq!(pinned, vua_orchestrator::EMBEDDED_VRC_GET_VPM_VERSION);
 }
 
 #[test]
@@ -769,7 +954,7 @@ fn orc_ipc_002_full_snapshot_has_all_checks_with_stable_ids_and_zones() {
         ("disk_space", Zone::Play),
         ("unity_hub", Zone::Create),
         ("unity_editors", Zone::Create),
-        ("vpm_cli", Zone::Create),
+        ("vpm", Zone::Create),
         ("vcc", Zone::Create),
         ("disk_space", Zone::Create),
     ];

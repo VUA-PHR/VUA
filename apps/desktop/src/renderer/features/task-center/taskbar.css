@@ -121,12 +121,28 @@
   color: var(--vua-error);
 }
 
+/* 行主区是打开按钮(W25 走查 D2:活动/终态两态一致回来源页,不静默无响应):
+ * 去按钮铬保留文本语义;焦点环走 base.css 全局 :focus-visible(不覆盖
+ * box-shadow),hover 镜像折叠条同一底色令可点击性可见。 */
 .vua-taskbar__task-main {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--vua-space-1);
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  padding: var(--vua-space-1);
+  margin: calc(-1 * var(--vua-space-1));
+  border-radius: var(--vua-radius-control);
+  text-align: left;
+  cursor: pointer;
+}
+
+.vua-taskbar__task-main:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 6%, transparent);
 }
 
 .vua-taskbar__task-title {

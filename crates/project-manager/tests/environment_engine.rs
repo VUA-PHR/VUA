@@ -29,7 +29,8 @@ fn synthetic_roots(base: &Path) -> EnvironmentRoots {
     EnvironmentRoots {
         steam_common: vec![base.join("steam/steamapps/common")],
         local_low: base.join("LocalLow"),
-        unity_hub_exe: base.join("hub/Unity Hub.exe"),
+        unity_hub_exe_candidates: vec![base.join("hub/Unity Hub.exe")],
+        unity_hub_registry_display_icon_keys: Vec::new(),
         unity_editors_root: base.join("editors"),
         vrc_get_executable: "vrc-get".into(),
         disk_target: base.to_path_buf(),
