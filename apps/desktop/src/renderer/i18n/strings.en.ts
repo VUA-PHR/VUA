@@ -1716,6 +1716,43 @@ demoTaskTitle: "Demo task",
       removedLine: "Removed subscription: {repoId}",
     },
 
+    create: {
+      title: "Create new project",
+      description:
+        "Create a new VRChat project in a parent folder you choose. On success the project is registered with VUA immediately and appears in the registered list. Creation is not idempotent: creating into a directory that already exists is refused, and any refusal is shown as it is. Your VCC/ALCOM settings are never touched.",
+      parentPlaceholder: "Parent folder path, e.g. C:\\Users\\me\\VRChat Projects",
+      parentAria: "Parent folder path",
+      namePlaceholder: "Project name, e.g. My World",
+      nameAria: "Project name",
+      templatePlaceholder: "Template name (optional) — leave blank for the backend default template",
+      templateAria: "Template name, optional",
+      action: "Create project",
+      submitting: "Creating…",
+      successLine: "Created and registered: {projectPath}",
+      rejectedDetail: "Server says: {detail}",
+      refusals: {
+        projectExists: "The target directory already exists.",
+        projectNameInvalid: "The project name contains a forbidden character.",
+        templateMissing: "No template with that name exists in the library.",
+        templateCopyFailed: "Copying the template contents failed.",
+      },
+      guards: {
+        preview_drift: "The creation was refused.",
+        package_not_found: "The creation was refused.",
+        execution_failed: "The creation failed during execution.",
+        unknown: "The creation was refused.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "The current engine backend does not support project creation.",
+        invalidParams: "The creation request shape is invalid.",
+        unknown: "The operation failed.",
+      },
+      toasts: {
+        failedUnknown: "The project creation did not complete ({code}).",
+        unavailable: "The project creation did not complete: the result could not be confirmed; check the task center.",
+      },
+    },
+
     repos: {
       addCommunity: "Add community repository",
       riskTitle: "Before adding a community repository",

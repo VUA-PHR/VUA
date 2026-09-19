@@ -40,6 +40,8 @@ import { RepoSection } from "./RepoSection.tsx";
 import {
   SEARCH_DEBOUNCE_MS,
   TOAST_DURATION_MS,
+  createEnvelopeErrorKey,
+  createRefusalDetailKey,
   filterPackages,
   installEnvelopeErrorKey,
   installLatestRequests,
@@ -824,6 +826,123 @@ function RepoWriteSection({
   );
 }
 
+/* ---- A5 项目创建区块(026 v0.5 消费批):blocks.creates(packages.createOps
+ * 能力行,一行一方法)门控,false = 区块不渲染(诚实缺席)。照 A3/A4 同律
+ * 无 preview 无确认链——全新项目目录无既有状态可 diff 无摘要可绑定,用户
+ * 显式表单提交即确认。表单:parent 路径输入(不发明目录枚举/选择器)+
+ * name;template 选填,留空 = null = 后端默认模板解析(冻结词面事实,非
+ * 选择器——templates.* 枚举不在冻结词面,不虚构模板下拉)。创建即在册(
+ * 冻结端口事实)如实文案:成功即注册、在册列表刷新即见。**创建不幂等**:
+ * 目标目录已存在等拒绝如实行内呈现(库路径四拒绝腿按 detail 原码呈现四
+ * 语语义文案;CLI 腿与词外 detail 回落 guard 文案 + detail 原词,绝不合并
+ * 词绝不猜测),不发明幂等成功。空输入 = 按钮禁用(词面 minLength 1,UI
+ * 不构造违例请求;template 空串 = 词面形状违反,UI 只构造 null)。ok(
+ * created 收据 projectPath = 注册路径身份回显)/rejected 行内呈现;
+ * failed/unavailable 关闭为 toast 诚实说明——任务真实状态由任务中心呈
+ * 现。 ---- */
+
+/** A5 创建表单行内终态:ok 保留注册路径回显 / rejected 保留拒绝呈现;
+ * failed/unavailable 不留行内状态(toast 说明后复位)。 */
+type CreateOutcomeView =
+  | { readonly kind: "ok"; readonly projectPath: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+function CreateSection({
+  busy,
+  parent,
+  name,
+  template,
+  outcome,
+  onParentChange,
+  onNameChange,
+  onTemplateChange,
+  onSubmit,
+}: {
+  busy: boolean;
+  parent: string;
+  name: string;
+  template: string;
+  outcome: CreateOutcomeView | null;
+  onParentChange: (value: string) => void;
+  onNameChange: (value: string) => void;
+  onTemplateChange: (value: string) => void;
+  onSubmit: () => void;
+}) {
+  const usable = parent.trim().length > 0 && name.trim().length > 0 && !busy;
+  const refusalKey =
+    outcome?.kind === "rejected" ? createRefusalDetailKey(outcome.detail) : null;
+  return (
+    <Card>
+      <h2 className="vua-packages__section-title">{copy.create.title}</h2>
+      <p className="vua-caption vua-text-secondary">{copy.create.description}</p>
+      <div className="vua-packages__repowrite-group">
+        <div className="vua-packages__register-row">
+          <input
+            type="text"
+            className="vua-packages__register-input"
+            placeholder={copy.create.parentPlaceholder}
+            aria-label={copy.create.parentAria}
+            value={parent}
+            onChange={(event) => onParentChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && usable) onSubmit();
+            }}
+          />
+          <input
+            type="text"
+            className="vua-packages__register-input vua-packages__repowrite-name"
+            placeholder={copy.create.namePlaceholder}
+            aria-label={copy.create.nameAria}
+            value={name}
+            onChange={(event) => onNameChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && usable) onSubmit();
+            }}
+          />
+          <Button variant="default" disabled={!usable} onClick={onSubmit}>
+            <Icon name="folder" size={16} />
+            {busy ? copy.create.submitting : copy.create.action}
+          </Button>
+        </div>
+        <div className="vua-packages__register-row">
+          <input
+            type="text"
+            className="vua-packages__register-input"
+            placeholder={copy.create.templatePlaceholder}
+            aria-label={copy.create.templateAria}
+            value={template}
+            onChange={(event) => onTemplateChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && usable) onSubmit();
+            }}
+          />
+        </div>
+      </div>
+      {outcome?.kind === "ok" ? (
+        <div className="vua-packages__register-result" role="status">
+          <Icon name="check" size={16} />
+          <span className="vua-caption">
+            {format(copy.create.successLine, { projectPath: outcome.projectPath })}
+          </span>
+        </div>
+      ) : null}
+      {outcome?.kind === "rejected" ? (
+        <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+          <Icon name="warning" size={16} />
+          <span className="vua-caption">
+            {copy.create.guards[removeGuardKey(outcome.guard)]}
+            {refusalKey !== null && refusalKey !== "unknown" ? (
+              <> {copy.create.refusals[refusalKey]}</>
+            ) : null}
+            {" "}
+            {format(copy.create.rejectedDetail, { detail: outcome.detail })}
+          </span>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
 /** P2 目录事实面板:挂载即按需查询(双键闭集);五种形态严格区分——
  * 加载骨架 / typed 失败(码原词) / no_matching_package 独立空态 /
  * 目录事实行闭集呈现(displayName null 以 packageId 兼任;source 二态
@@ -1069,6 +1188,16 @@ export function PackagesPage() {
   const [repoLocalOutcome, setRepoLocalOutcome] = useState<RepoAddOutcomeView | null>(null);
   const [repoRemoveConfirmId, setRepoRemoveConfirmId] = useState<string | null>(null);
   const [repoRemoveOutcome, setRepoRemoveOutcome] = useState<RepoRemoveOutcomeView | null>(null);
+  // A5 项目创建(026 v0.5 消费批;与 A1–A4 各链分立):无 preview 无确认
+  // 链——用户显式表单提交即确认;三键表单(parent/name 必填,template 选
+  // 填留空 = null = 后端默认模板解析);ok(created 收据回显)/rejected
+  // 行内呈现,failed/unavailable toast 后复位。创建不幂等——重复目录拒
+  // 绝如实呈现,不发明幂等成功
+  const [createParent, setCreateParent] = useState("");
+  const [createName, setCreateName] = useState("");
+  const [createTemplate, setCreateTemplate] = useState("");
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createOutcome, setCreateOutcome] = useState<CreateOutcomeView | null>(null);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -1713,6 +1842,58 @@ export function PackagesPage() {
     );
   };
 
+  /* ---- A5 项目创建(026 v0.5 消费批):无 preview 无确认链——用户显式
+   * 表单提交即确认(全新目录无既有状态可 diff 无摘要可绑定,UI 不构造携
+   * digest/projectPath 请求)。template 输入留空 = null(后端默认模板解
+   * 析),非空 = verbatim;空串 = 词面形状违反,UI 只构造 null 绝不构造空
+   * 串。创建不幂等:重复目录拒绝如实行内呈现,不发明幂等成功。ok(
+   * created 收据 = ProjectRef 投影,projectPath = 注册路径身份;创建即在
+   * 册,成功后在册列表由端口广播刷新)/rejected 行内呈现;failed/
+   * unavailable 关闭为 toast 诚实说明——任务真实状态由任务中心呈现。 ---- */
+
+  const startCreate = () => {
+    if (createBusy) return;
+    const parent = createParent.trim();
+    const name = createName.trim();
+    const template = createTemplate.trim();
+    if (parent.length === 0 || name.length === 0) return;
+    setCreateBusy(true);
+    setCreateOutcome(null);
+    void gateway.packages.createProject(parent, name, template.length === 0 ? null : template).then(
+      (result) => {
+        setCreateBusy(false);
+        if (result.kind === "ok") {
+          setCreateOutcome({ kind: "ok", projectPath: result.receipt.projectPath });
+          return;
+        }
+        if (result.kind === "rejected") {
+          setCreateOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        setCreateOutcome(null);
+        if (result.kind === "failed") {
+          const key = createEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.create.toasts.failedUnknown, { code: result.code })
+              : copy.create.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.create.toasts.unavailable);
+        }
+      },
+      () => {
+        setCreateBusy(false);
+        setCreateOutcome(null);
+        showToast(copy.create.toasts.unavailable);
+      },
+    );
+  };
+
   const togglePrereleases = (checked: boolean) => {
     if (checked && !prereleaseAcked) {
       setPrereleasePrompt(true);
@@ -1815,6 +1996,19 @@ export function PackagesPage() {
                 path={registerRoot}
                 onPathChange={setRegisterRoot}
                 onSubmit={startRegister}
+              />
+            ) : null}
+            {p2.blocks.creates ? (
+              <CreateSection
+                busy={createBusy}
+                parent={createParent}
+                name={createName}
+                template={createTemplate}
+                outcome={createOutcome}
+                onParentChange={setCreateParent}
+                onNameChange={setCreateName}
+                onTemplateChange={setCreateTemplate}
+                onSubmit={startCreate}
               />
             ) : null}
             {registeredProjects !== null && registeredProjects.length === 0 ? (
@@ -1936,6 +2130,19 @@ export function PackagesPage() {
                   path={registerRoot}
                   onPathChange={setRegisterRoot}
                   onSubmit={startRegister}
+                />
+              ) : null}
+              {p1.blocks.creates ? (
+                <CreateSection
+                  busy={createBusy}
+                  parent={createParent}
+                  name={createName}
+                  template={createTemplate}
+                  outcome={createOutcome}
+                  onParentChange={setCreateParent}
+                  onNameChange={setCreateName}
+                  onTemplateChange={setCreateTemplate}
+                  onSubmit={startCreate}
                 />
               ) : null}
               {registeredProjects !== null && registeredProjects.length === 0 ? (

@@ -1647,6 +1647,43 @@ rolled_back: "ロールバック済み",
       removedLine: "購読を解除しました:{repoId}",
     },
 
+    create: {
+      title: "新規プロジェクトを作成",
+      description:
+        "選択した親フォルダーに新しい VRChat プロジェクトを作成します。作成に成功すると、プロジェクトは直ちに VUA に登録され、登録リストに表示されます。作成は冪等ではありません:既に存在するディレクトリーへの作成は拒否され、拒否はそのまま表示されます。VCC/ALCOM の設定は一切変更しません。",
+      parentPlaceholder: "親フォルダーのパス(例: C:\\Users\\me\\VRChat Projects)",
+      parentAria: "親フォルダーのパス",
+      namePlaceholder: "プロジェクト名(例: My World)",
+      nameAria: "プロジェクト名",
+      templatePlaceholder: "テンプレート名(任意)—空欄でバックエンド既定テンプレートを使用",
+      templateAria: "テンプレート名(任意)",
+      action: "プロジェクトを作成",
+      submitting: "作成中…",
+      successLine: "作成・登録済み:{projectPath}",
+      rejectedDetail: "サーバーの説明:{detail}",
+      refusals: {
+        projectExists: "対象ディレクトリーは既に存在します。",
+        projectNameInvalid: "プロジェクト名に禁止文字が含まれています。",
+        templateMissing: "その名前のテンプレートはライブラリーに存在しません。",
+        templateCopyFailed: "テンプレート内容のコピーに失敗しました。",
+      },
+      guards: {
+        preview_drift: "作成要求は拒否されました。",
+        package_not_found: "作成要求は拒否されました。",
+        execution_failed: "作成は実行中に失敗しました。",
+        unknown: "作成要求は拒否されました。",
+      },
+      envelopeErrors: {
+        capabilityMissing: "現在のエンジンバックエンドはプロジェクト作成に対応していません。",
+        invalidParams: "作成要求の形式が無効です。",
+        unknown: "操作に失敗しました。",
+      },
+      toasts: {
+        failedUnknown: "プロジェクト作成が完了しませんでした({code})。",
+        unavailable: "プロジェクト作成が完了しませんでした:結果を確認できません。タスクセンターを確認してください。",
+      },
+    },
+
     repos: {
       addCommunity: "コミュニティリポジトリを追加",
       riskTitle: "コミュニティリポジトリを追加する前に",
