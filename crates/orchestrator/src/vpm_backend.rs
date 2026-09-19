@@ -364,6 +364,58 @@ pub struct RepoCatalogV01 {
     pub cache_sourced: bool,
 }
 
+/// F3 (proposal 027 freeze batch, packages-query v0.2): one installed-package
+/// row at the v0.2 word face — the frozen v0.1 three-key projection
+/// (packageId / version / dependencies; packageId-ascending order stays the
+/// frozen presentation fact, zero movement) plus EXACTLY two REQUIRED
+/// judgment facts. `latest_version` is the latest-version fact found by the
+/// frozen selector over the collection's WHOLE repository set (the
+/// cross-repository max — deliberately NOT the per-repo view, which stays
+/// the packages-repo-catalog family's declared fact; the two views are
+/// different facts and are never conflated); null = no qualifying latest
+/// under the current setting (the package sits in no repository cache — a
+/// local-source package, or every candidate is yanked/excluded) — absence
+/// is never "no update". `update_available` is the frozen judgment
+/// CONCLUSION (a strictly newer selector-qualifying version exists vs the
+/// installed version); null = judgment not executed (no qualifying latest,
+/// or the project's Unity version is unknown) — null is never "already
+/// latest" (the 024 stance-2 false-assertion line). The selector reuses the
+/// packages-catalog frozen semantics verbatim (latest_for(project Unity
+/// version, show_prerelease setting), zero wire switch): when the installed
+/// version is itself a prerelease and the setting is off, the qualifying
+/// latest comes from the stable set — `false` means exactly "no strictly
+/// newer version matching the CURRENT filter exists", never a generalized
+/// "no update".
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledPackageV02 {
+    pub package_id: String,
+    pub version: String,
+    /// Direct dependencies the installed package declares (the frozen v0.1
+    /// fact, unchanged).
+    pub dependencies: Vec<String>,
+    pub latest_version: Option<String>,
+    pub update_available: Option<bool>,
+}
+
+/// F3 (proposal 027 freeze batch, packages-query v0.2): the installed-set
+/// listing at the v0.2 word face — the v0.2 rows plus the REQUIRED
+/// informational `cache_sourced` disclosure (the packages-catalog v0.2
+/// precedent adopted for the judgment face): true = this listing's judgment
+/// rode the cache-degradation path (offline -> load_cache, or an online
+/// load failed and degraded — the ORC-ADP-006 isomorphic precedent); false
+/// = served from an online-refreshed load. The whole table's judgments ride
+/// ONE collection load (the environment-verification cost law: per-row
+/// collection reloads never serve this face). projectPath is an
+/// envelope-assembly fact: the route stamps it, the backend facts stay
+/// verbatim (the P1 discipline).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledListingV02 {
+    pub packages: Vec<InstalledPackageV02>,
+    pub cache_sourced: bool,
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -568,6 +620,33 @@ pub trait VpmBackend: Send + Sync {
         _package_ids: &[String],
     ) -> Result<RepoCatalogV01, AppErrorV1> {
         Err(unsupported("repo_catalog"))
+    }
+    /// F3 (proposal 027 freeze batch, packages-query v0.2): declaration that
+    /// this backend serves the installed-set read face at the v0.2 word face
+    /// (rows carry the latestVersion/updateAvailable judgment facts; the
+    /// listing carries the REQUIRED cacheSourced disclosure). The default is
+    /// false — the frozen v0.1 word face keeps being served; a backend
+    /// overrides this exactly when it implements `list_packages_v02`
+    /// (ORC-DEV-004: no implementation, no reservation; the additive
+    /// dual-version negotiation law is the `catalog_v02` precedent).
+    fn query_v02(&self) -> bool {
+        false
+    }
+    /// F3 (proposal 027 freeze batch, packages-query v0.2): the installed
+    /// set at the v0.2 word face — the frozen v0.1 manifest+lock projection
+    /// facts plus the per-row judgment facts ([`InstalledPackageV02`]) and
+    /// the REQUIRED `cache_sourced` disclosure. Backends keep serving v0.1
+    /// through `list_packages` until they adopt this; the wire route
+    /// negotiates the family version by `query_v02` (the stamped family
+    /// const tells the consumer which word face answered, never a guess).
+    /// The judgment reuses the packages-catalog frozen selector semantics
+    /// over ONE collection load for the whole table (never per-row
+    /// reloads); the error face is the frozen v0.1 face, zero new codes.
+    fn list_packages_v02(
+        &self,
+        _project: &ProjectRef,
+    ) -> Result<InstalledListingV02, AppErrorV1> {
+        Err(unsupported("list_packages_v02"))
     }
     /// A5 (proposal 026 freeze batch, packages-ops v0.5): creates a project
     /// from a template. REQUIRED method (no default body): a backend without
