@@ -336,7 +336,7 @@ demoTaskTitle: "데모 작업",
       diskSpace: "디스크 공간",
       unityHub: "Unity Hub",
       unityEditors: "Unity 편집기",
-      vpmCli: "VPM CLI(vrc-get)",
+      vpm: "VPM 기능(내장 vrc-get-vpm)",
       vcc: "VCC(VRChat Creator Companion)",
     },
     /** presence 삼어 폐집합 → 검사 항목 상태어(#31 수정) */

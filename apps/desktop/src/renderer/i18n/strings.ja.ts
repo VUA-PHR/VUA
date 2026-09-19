@@ -337,7 +337,7 @@ demoTaskTitle: "デモタスク",
       diskSpace: "ディスク空き容量",
       unityHub: "Unity Hub",
       unityEditors: "Unity エディター",
-      vpmCli: "VPM CLI(vrc-get)",
+      vpm: "VPM機能（内蔵 vrc-get-vpm）",
       vcc: "VCC(VRChat Creator Companion)",
     },
     /** presence 三語閉集合 → チェック項目状態語(#31 修正) */
