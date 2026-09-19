@@ -2,39 +2,35 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: a2ddb2f
+baseline_commit: 9b221ba
 updated: 2026-09-20
 ---
 ## 当前焦点
-**第 124 批（2026-09-20 02:2x–03:2x，W25 真机窗口批，非节拍，时段例外照用户 2026-09-19/20 指令）——面向用户/操作者受管文档审计清单落地（W26 步骤 a 前置盘点，提案 028）＋三支 collab-only 候验收批收编＋outline 2.0.13 W25 开窗登记**：
+**第 125 批（2026-09-20 03:4x–04:3x，W25 真机窗口批延续，非节拍，时段例外照用户 2026-09-19/20 指令）——紧急操作者批验收轮：两支实质修复批 --no-ff 收编（wt-2 环境检测探针修复批＋wt-3 W25 走查修复两批）＋wt-4 簿记笔核实已收编＋合并树定向复跑全绿**：
 
-- **三支 --no-ff 收编（merge-tree 预检各 exit 0 零冲突；均恰各一状态文件，collab-only 免全量）**：wt-3 形状核可观察簿记轮两笔（d5ec81e 追平壳零自有内容＋920c01b 状态批）＋wt-4 批 121/122 消化＋读数警戒簿记状态批（ba69672；**合并执行时 slot/wt-4 tip 已竞速前移 ba69672→395c7d1＝W25 冒烟路径预备状态批，随合并一并收编，incoming 清单以本簿记补全照 88d20ba/203cb9f 先例**）＋wt-6 冻结批验收消化＋F2 解锁条件复测状态批（4674f76）。两支状态批书写的「候验收/条件未成就」判定系书写时点事实，验收时点条件已翻转照实补记不重认＝wt-3 F2 形状核可双前置成就（候九项逐项对照，026 程序）、wt-6 F2 实现核对切片解锁（候即领，验收锚＝协议本「后端指向根事实」专节逐项对账）。收编后五树 rev-list 领先 0 实证。
-- **wt-6 第二批（竞速，W25 窗实质执行）随轮收编（item 4，--no-ff）**：追平壳 6c0bec3（零自有内容）＋**027 内联 F4 启停键名只读真机核实执行记录**（d268ad4，58 行）＋状态批 d35ba35（**合并执行时再竞速前移 d35ba35→a260397，恰 wt-6.md 单文件随合并收编，incoming 清单以本簿记补全照先例；合并消息按 d35ba35 时点申报撰写不改写**）——恰 027＋wt-6.md 两 collab 文件，collab-only 免全量。核实结论＝**四选一 (c)：VCC 无启停位**（userRepos 元素恰 vrc-get-vpm UserRepoSetting 闭集零外键、全文递归启停语义扫描零命中、vcc.liteDb 恰 2 集合无 repo 表无启停字段——024 表态 (b) 同窗顺带闭合；ALCOM 同构对照诚实不可执行＝本机未装）；全程只读＋脱敏如实声明；源码事实 4 剥键风险现机无可剥对象，**F4 启停面冻结硬前置成就**；环境设计提示（自有启停键不可入 userRepos[i] 元素，宜置顶层 flatten 保留区或自有存储）候核心 F4 冻结批对表；静态单时点诚实边界与零端到端宣称保留。集成亲审：授权链一致（W25 用户开窗＋O-2 例外）＋只读口径与脱敏声明成立＋方法＝八步法静态取证子集（步 3–5 如实登记未执行）。
-- **①区五条验收请求留言（wt-2/wt-3/wt-4/wt-5/wt-6）核实＝均已收编批次（第 120–122 批）的回执重显**，就地消化勿重复；失鲜工作树无。
-- **W25 开窗登记（用户指令 2026-09-19/20，时段例外）**：outline 双语 2.0.12→2.0.13（当前窗口节窗口状态段＋W25/W26 行注记＋变更日志；EN 镜像同步；REGISTRY 行按 patch 升版免登记惯例不动）＋BOARD O-2 行注记＋M5 门行补登。
-- **文档审计（用户令「找之前的对用户需求和操作文档，看有没有需要更新的内容」＝W26 步骤 a 前置盘点，先出清单再更新）**：七组文档逐份对照当前现实（026 写面全量＋IA 并入＋027 进行中＋TICK v1.6＋boot-splash/通知中心两特性）——**提案 028 登记**（`collab/proposals/028-user-facing-doc-audit.md`，状态=提出；BOARD 开放问题表 #42 行随批）＝十行清单（文档｜差距｜建议要点｜归属域）。核心差距：根 README 四语言版本声明停留 v0.5.0（现行发布 v0.6.0）＋VR Overlay 句未随边界 1.0.0 限定；docs/README 导航「当前入口」停留 09-04 世代；project-context 停留 09-01 世代且 EN 镜像缺约三分之一；tool-catalog alcom-vcc 条目「VUA 不写入 VCC/ALCOM 设置」与 U14 直接矛盾（含 compatibility 矩阵同步面）。
-- **product-boundary 1.4.0 核对结论＝026/027 未引入已生效边界修订需求**（U14 已落账，IA 并入属 UI 组织）；两个候核对项（027 F4 手动刷新写共享 Repos/ 缓存是否落 U14 豁免、启停词面按 wt-6 W25 窗真机核实结论 (c) 对表）候核心 F4 冻结批起草时对表，有缺口升 [需用户]。**design-standard 0.7.5 版本链核对一致零行动**（头部＝REGISTRY 行＝changelog；0.7.2→0.7.5 连续；boot-splash/通知中心 §8 增补候桌面表态）。
-- **本批直接修订仅集成域**（outline 双语＋BOARD＋提案 028＋本状态文件）；他域文档（根 README/docs/README/project-context/tool-catalog/compatibility）按 028 清单路由，下批办理（路由：[→集成] 自领三件＝根 README 四语言＋docs/README 刷新＋alcom-vcc 条目与 compatibility 矩阵；project-context 路线候用户裁决默认 A；[→核心] F4 对表输入；[→桌面] design-standard 表态）。
-- **BOARD 维护随批**：M5 门行补登（门表此前无 M5 行，当前门状态散落前录；M8 行留 W26-a）＋O-2 开窗注记＋#42 行＋前录轮换（保留最近 10 条，其余靠 git 历史）。
-- **机械校验**：本批变更面＝collab 面（BOARD＋提案 028＋wt-main 状态文件）＋docs/development-outline 双语，零代码零 Schema；collab+docs 簿记面免全量如实声明（最近全量证据＝第 123 批定向复跑 01:4x–02:0x 在案，本批零代码变更零编译触发）；collab:brief 双绿随批登记（登记表一致性＋冲突标记扫描）。**推送债如实登记**：origin/main 推送 4 次（02:5x–03:3x 间隔重试）均失败＝`schannel: failed to receive handshake, SSL/TLS connection failed`（github.com 网络层不可达，非凭据问题）；本地提交 18f905e 在库，下窗/brief 恢复后重试推送清债。`?? _local_p27_devlog.txt` 照例不触碰。
-- **诚实边界**：零端到端宣称维持——本批零真机触碰，文档审计系文本核对非运行验证；W25 真机走查义务不变（各角色候办照 O-2 执行序与各自候办清单在窗内办理）。
+- **wt-2 环境检测探针修复批（W25 实测 E-1/E-2，基点 be16708）经 merge --no-ff 收编（合并 3381592b）**——三笔＝追平壳 42c3978（零自有内容，吸收 main be16708）＋修复批 1602ed4（恰 11 文件 406+/93-）＋状态批 a5d13cc。集成逐文件亲审通过：**E-1**＝unity_hub 探针候选列表化（`unity_hub_exe_candidates: Vec<PathBuf>` 用户级在前、机器级 `C:\Program Files` 在后）＋Uninstall 注册表 DisplayIcon 兜底（既有 win_registry 注入缝，HKCU/HKLM/WOW6432Node 三候选，子键 `Unity Technologies - Hub` 系用户机器只读取证真键名；解析剥引号与 `,<图标索引>` 后缀；任一命中即 Detected 带 `{exe, via: path|registry, registryKey}`；未命中如实记录探测清单——空态即终态）；**E-2**＝vpm_cli→vpm 改名＋VPM 能力语义（内嵌 vrc-get-vpm 0.0.16 恒在＝Detected 恒真，`EMBEDDED_VRC_GET_VPM_VERSION` 常量经 Cargo.lock 解析回归测试钉死不漂移；独立 CLI 降信息性 facts `{state, exe, version?, exitCode?}` 永不降条目）。**残留申报核实成立**＝PROBE_FAILED 仅存稳定错误码命名空间定义、零发射方（grep 实证）。**跨域同步面 6 桌面文件（任务明文授权）核对完整**＝CHECK_TITLE_KEYS `vpm: "vpm"`＋投影测试 engineIds/keyOf＋四语 i18n checks 键 vpmCli→vpm（能力题名四语齐）；全树零 vpm_cli/vpmCli 残留（1602ed4 世代 grep 实证）；checkId 系开集 string 无契约版本升降＝线面无损成立。新增 4 测试亲阅覆盖申报全部行为（Hub 双候选命中/未命中＋注册表三形状＋DisplayIcon 指向不存在文件诚实落空＋钉版锁步＋vpm 恒真跨四种 CLI 结局）。
+- **wt-3 W25 走查修复两批（基点 920c01b，追平至 be16708）经 merge --no-ff 收编（合并 9b221ba4）**——五笔＝追平壳 fef3b59（零自有内容）＋修复批 ad6de34（桌面 17 文件 252+/16-）＋状态批 4436860（含 028 内联回复）＋修复批 05393b6（桌面 11 文件 265+/41-）＋状态批 add65c3。集成逐文件亲审通过，申报回归钉全数在位：**D-A 生产门组成修正**（用户裁决 2026-09-20「没有 ALCOM 或者没有 VCC 不应作为阻塞」＋库优先架构）＝`CREATE_GATE_IDS=["unity_editors"]` 唯一硬前置闭集＋`isCreateGateItem`＋`zoneSummaryItems` 计数口径（「还差 N 项」只数门内项，游玩辖区全量）＋`creatorEnvReady` 重写（results＋门内项在位且全 ok；门内证据缺席不开门＝无证据不判就绪）＋诚实文案四语两键组＋fixture 演示档 id unity→unity_editors 对齐；**D-B DEV 演示切换双根因修复**（DEV-gated 面生产路径零触碰）＝`devTargetButtonDisabled` 纯函数（按钮只在目标态已达成时禁用，旧表达式 live 基线双双锁死）＋`devPortStorageOp` 纯函数（档位-only 变更落盘；空 targets＋默认档仍移除键保全 live 复位）＋`DEFAULT_FIXTURE_TIER` 收敛；**D1**＝任务身份登记投影（task-identity.ts 渲染层会话登记，wire 零发明；未登记回落诚实类型词「后台任务」——裸 taskId 不再充当标题；新键 adoptDownload/unlabeledTask 四语齐；`"accepted" in outcome` 收窄对三形联合类型正当）＋warehouse 命令受理即登记三处；**D2**＝完成行点击回来源页（行主区实按钮＋aria-label＋九态单函数无状态分支无静默无响应）。一处注释措辞宽泛登记不阻塞＝deployer-model 注释提 alcom 系 packages 域管理器能力词非环境检测 id，行为面由 CREATE_GATE_IDS 精确驱动、与用户裁决原话一致。
+- **wt-4 簿记笔 395c7d1（W25 冒烟备料状态批）核实＝已随第 124 批被动收编**（merge-base --is-ancestor 实证在库，第 124 批 incoming 清单已照 88d20ba/203cb9f 先例补全登记）——候验收状态消除，勿重复验收。
+- **W25 真机语境专项推导核验（合并代码上静态推导）**：用户机器事实（wt-4 只读前置核实＋wt-2 取证在案）＝Unity Hub 机器级在位、编辑器 2022.3.22f1 双证在位、独立 vrc-get/VCC/ALCOM 缺。修复后链＝引擎 Create 区 unity_hub→Detected（候选 2 命中，注册表兜底同键名在位）、unity_editors→Detected（production_target）、vpm→Detected 恒真、vcc→NotDetected（信息性）；投影 detected→ok（PRESENCE_SEVERITY 闭集实证）；新门内恰 `[unity_editors: ok]`→`creatorEnvReady=true`→车间页开门、「还差 N 项」＝0、VCC 卡 warning 如实展示不挡门；旧组成下 vcc warning 即挡门——修复直接对症用户实测阻断。**静态推导不构成端到端宣称**——真机复验候操作者刷新核证（核证点见 wt-3 [→操作者] 留言）。
+- **合并树定向复跑全绿（04:0x 本机亲测，main＝9b221ba4 合并将成树）**：desktop typecheck 双 tsconfig exit 0；@vua/contracts check 81/81；desktop vitest 全量 84 文件 753/753；orchestrator environment 套件 22/22；provider-host environment_snapshot_wire 2/2；project-manager environment_engine 1/1（1 ignored 照旧）；clippy 三 crate（orchestrator/provider-host/project-manager）--all-targets exit 0 零警告；check:i18n 三表对齐。**build/leak 未跑照 W25 文件锁先例如实申报**（用户 dev 栈运行中持 exe/dist 锁，零用户进程触碰；操作者刷新即得两批修复）。
+- **BOARD 维护随批**：第 125 批前录入账＋前录轮换实际执行（保留 116–124＋125 恰 10 条，106 及更早条目靠 git 历史——第 124 批申报的轮换政策本批补办到位）；origin 推送记录随批补登。本批变更面＝两合并（实质 39 文件随两批入库＋两状态文件）＋collab 面（BOARD＋本状态文件）；零代码零 Schema 直改；簿记面免全量如实声明（合并树定向复跑即本批新鲜证据，读数见上）。
+- **推送债处置（结局）**：接续第 124 批债（origin/main＝730259a 第 120 批世代），本批推送尝试 3 次（04:0x–04:1x 间隔重试）均失败＝同因 schannel SSL/TLS handshake failed（github.com 网络层不可达，非凭据问题）；按操作者指令三次上限用尽不空转；尝试时实测债 57 提交，本登记批落库后共 58 提交，下窗/brief 网络恢复后重试清债（结果已登记 BOARD origin 推送记录）。`?? _local_p27_devlog.txt` 照例不触碰。
+- **诚实边界**：零端到端宣称维持——门开推导系合并代码静态推导，D-A/D-B/D1/D2 与探针修复的真机效果全部候操作者窗内刷新核证回填；W25 真机走查义务不变（产线冒烟路径候操作者按 O-2 执行序驱动）。
 
-## 前录（第 123 批，2026-09-20 01:4x–02:1x，全文见 git 历史与 BOARD 前录）
-027 F2 wire 接线批验收入库（五链第二环落地，合并 203cb9f；竞速三笔随合并收编）＋wt-5 竞速追平簿记批收编（合并 84e85ff）；提案 027 状态推进＝F2 wire 已接线。
+## 前录（第 124 批，2026-09-20 02:2x–03:2x，全文见 git 历史与 BOARD 前录）
+面向用户/操作者受管文档审计清单落地（提案 028 登记，#42 行）＋三支 collab-only 候验收批收编＋wt-6 第二批（F4 启停键名只读真机核实，四选一 (c) VCC 无启停位＝F4 硬前置成就）收编＋outline 2.0.13 W25 开窗登记；推送债首记（schannel 网络层失败 4 次）。
 
 ## 阻塞
-无。
+无。（github.com 网络层不可达维持＝推送债延续，非本地工作阻塞。）
 
 ## 下次合并意图
-候各树状态批/切片批照常随轮验收（--no-ff）：wt-6 F2 实现核对切片候交付（解锁已成就，验收锚＝「后端指向根事实」专节）；wt-3 F2 形状核可候申请（双前置成就）；集成席位下批自领 028 清单三件（根 README 四语言＋docs/README 刷新＋alcom-vcc 条目与 compatibility 矩阵 U14 句）；project-context 路线候用户裁决（默认 A）。各树落后读数下窗 brief 复测，过 15 实质线照自理条款追平。
+候各树状态批/切片批照常随轮验收（--no-ff）：wt-3 F2 形状核可候申请（双前置成就，026 程序九项逐项对照）；wt-6 F2 实现核对切片候交付；wt-2 F3 冻结批候领取（条件成就）；集成席位下批自领 028 清单三件（根 README 四语言＋docs/README 刷新＋alcom-vcc 条目与 compatibility 矩阵 U14 句）；project-context 路线候用户裁决（默认 A）。各树落后读数下窗 brief 复测，过 15 实质线照自理条款追平；推送债下窗/brief 恢复后重试清债。
 
 ## 留言
-- [→wt-3] **F2 形状核可双前置成就**：你方状态批（920c01b，本批收编）书写时点接线批未入库属实；现接线批 629699e 已经第 123 批收编（203cb9f）——形状核可九项逐项对照（026 程序）解锁，候你方申请，基于收编世代办理，零预核可。
-- [→wt-6] **F2 实现核对切片解锁确认**：接线批 629699e 已入库（203cb9f，第 123 批）——repo_catalog 实现＋capability 覆写置真＋离线降级＋单元测试即领；开工前合并 main 最新；验收锚＝协议本「后端指向根事实」专节逐项对账（生产根＝用户真实 VCC 共享家目录只读，测试根＝with_environment_root 临时根纯合成）。
-- [→wt-4] 你方状态批（ba69672）本批收编；读数警戒条款维持（下窗 brief 复测，实质过 15 照自理追平）；W25 窗口已开，产线候办照 O-2 执行序在窗内办理。
-- [→wt-5] 你方第 122 批竞速补收回执已在前批登记；无新请求；F6 方向锚留意项维持，涉数据面立案时按席位办理。
-- [→wt-2] F2 wire 接线批验收回执已随第 123 批登记（勿重复）；028 文档审计两个候核对项随 F4 冻结批起草对表：刷新写面 U14 豁免定性（共享 Repos/ 缓存目录）＋启停词面按 wt-6 W25 窗真机核实结论 (c)（VCC 无启停位，硬前置成就）与环境设计提示（自有键不可入 userRepos[i] 元素——Settings::save 五键闭集会剥自有键）对表；有缺口升 [需用户]。
-- [→wt-4] 你方状态批（ba69672）本批收编；**竞速笔 395c7d1（W25 冒烟路径预备状态批）已随合并被动收编并照实补记**；读数警戒条款维持（下窗 brief 复测，实质过 15 照自理追平）；W25 窗口已开，产线候办照 O-2 执行序在窗内办理。
-- [→wt-6] **W25 真机核实批验收回执**：第二批（6c0bec3 壳＋d268ad4 027 内联＋状态批——合并执行时你方 tip 已由 d35ba35 再竞速前移至 a260397，恰 wt-6.md 单文件，随合并一并收编并照实补记）已经本批 --no-ff 收编（item 4）——F4 启停键名只读取证亲审通过（授权链＋只读脱敏口径＋四选一 (c) 结论＋静态单时点诚实边界全部成立），027 内联 §6 与你方状态文件入库；F2 实现核对切片候即领（解锁已成就）；F5 模板元数据形态顺带项已登记（VRCTemplates/ 5 目录读数入 027 内联）。
-- [→桌面] 028 清单 #7：boot-splash/通知中心两特性（第 117 批）尚无 §8 呈现规则增补——是否成文归你方裁量，可在 028 内联回复；不构成本审计缺陷。
+- [→wt-2] **环境检测探针修复批验收回执**：三笔（追平壳 42c3978＋1602ed4＋状态批 a5d13cc）已经第 125 批 --no-ff 收编（合并 3381592b）——E-1/E-2 本体＋冻结词面同步面亲审通过，残留申报（PROBE_FAILED 零发射方）核实成立，跨域 6 桌面文件同步完整性核对无缺；合并树定向复跑 environment 22/22＋clippy 0＋contracts 81/81 全绿。F3 冻结批候你方下批领取（条件成就）；F4 冻结批起草时两候核对项照前批留言对表。
+- [→wt-3] **W25 走查修复两批验收回执**：五笔（fef3b59＋ad6de34＋4436860＋05393b6＋状态批 add65c3）已经第 125 批 --no-ff 收编（合并 9b221ba4）——D-A/D-B/D1/D2 亲审通过、申报回归钉全数在位；合并树定向复跑 vitest 84/753＋typecheck 双 0＋i18n 对齐全绿（build/leak 照第 117 批先例未跑，操作者刷新即得）。W25 真机核证点候操作者回填；F2 形状核可下一轮首项维持（零预核可）。
+- [→操作者] **两批修复已入 main（3381592b＋9b221ba4），运行中 dev 栈（主检出）未触碰**——择机刷新构建后窗内核证：①Unity 在位、VCC/ALCOM 缺的机器装配页（车间）应可进入，环境部署-生产环境页「还差 N 项准备」只数 Unity，VCC/ALCOM 卡如实展示各自检测事实；②设置-实验性开发模式区「切到演示 fixture」在真实连接态可点、fixture 档位选择跨重载保持（会话级边界照旧＝整应用重启清零，设计如此）；③通知中心任务行呈人类可读标题（未登记任务呈「后台任务」类型词）、完成行点击回来源页；④环境检测 Unity Hub 行应呈已检测（机器级安装位命中）。发现项如实回填；产线冒烟路径（wt-4 备料）随窗推进。
+- [→wt-4] 你方备料批 395c7d1 系第 124 批被动收编（is-ancestor 实证），候验收状态消除勿重复；W25 冒烟路径候操作者按你方脚本执行序驱动，A3 段 Unity 侧核证义务在肩。
+- [→wt-5] 无新请求；F6 方向锚留意项维持，涉数据面立案时按席位办理。
+- [→wt-6] 无新请求；F2 实现核对切片候即领（解锁维持）；开工前合并 main 最新（本批两合并入 main，探针修复不触你方切片面）。
 - （历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
