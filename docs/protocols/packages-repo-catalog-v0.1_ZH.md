@@ -1,10 +1,9 @@
 # packages-repo-catalog 协议本 v0.1（packages.repoCatalog 读面：仓库级可装包清单）
 
 > 文档版本：0.1.1
-> 状态：**已冻结（提案 027 F2 核心冻结批，2026-09-20）且已接线（v0.1.1 核心接线
-> 批，2026-09-20）：wire 路由与 served 行已在树——桌面消费候形状核可后逐面升级；
-> 库实现归环境实现核对切片；该切片落地前，已接线的后端让 served 行如实维持不可
-> 用。**
+> 状态：**已冻结（提案 027 F2 核心冻结批；v0.1.1 接线批落地，词面零变更——
+> wire 路由与 served 行已在树，桌面消费候形状核可，库实现归环境实现核对切片；
+> 该切片覆写置真前，served 行如实维持不可用）**
 > 权威对：本文件与 `packages-repo-catalog-v0.1_EN.md`（单一语义，双语镜像）。
 > 词面权威：`schemas/packages-repo-catalog/v0.1/`（command＋result Schema 与正负例
 > 向量）。本文负责解释；Schema 具约束力。

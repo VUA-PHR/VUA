@@ -1,12 +1,11 @@
 # packages-repo-catalog protocol v0.1 (the packages.repoCatalog read face: the per-repository installable-package inventory)
 
 > Document version: 0.1.1
-> Status: **Frozen (proposal 027 F2 core freeze batch, 2026-09-20) and WIRED
-> (the v0.1.1 core wiring batch, 2026-09-20): the wire route and the served
-> row are in tree — desktop consumption rides the per-face upgrade after
-> shape approval; the library implementation is the environment
-> implementation-verification slice; until that lands a wired backend keeps
-> the row honestly unavailable.**
+> Status: **Frozen (proposal 027 F2 core freeze batch; the v0.1.1 wiring batch
+> landed with zero word-face change — the wire route and the served row are in
+> tree, desktop consumption awaits shape approval, and the library
+> implementation is the environment implementation-verification slice; until
+> that slice flips the capability the row stays honestly unavailable)**
 > Authority pair: this file and `packages-repo-catalog-v0.1_ZH.md` (single meaning, two languages).
 > Word-face authority: `schemas/packages-repo-catalog/v0.1/` (command + result schemas and the
 > example vectors). This document explains; the schemas bind.
