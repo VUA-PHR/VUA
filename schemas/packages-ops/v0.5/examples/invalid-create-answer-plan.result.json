@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.5",
+    "kind": "plan",
+    "projectPath": "D:/synthetic/projects/Synthetic Project",
+    "items": [],
+    "conflicts": [],
+    "removeLegacyFiles": [],
+    "removeLegacyFolders": [],
+    "destructive": false,
+    "digest": "fnv1a-00000000"
+  }
+}

@@ -346,6 +346,22 @@ pub const PACKAGES_OPS_SCHEMA_VERSION_V04: &str = "vua.packages-ops/v0.4";
 /// of the envelope const).
 pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04: &str = "0.4";
 
+/// The `packages-ops` v0.5 result family constant (proposal 026 A5 freeze
+/// batch 2026-09-19, wiring named it per the A3/A4 precedent; same standing
+/// rule — the project-creation row carries its own version constant, and
+/// the frozen v0.1 A1 removal row, v0.2 A2 install row, v0.3 A3
+/// registration row and v0.4 A4 repository add/remove row keep serving
+/// through their own consts untouched: five separate word-face generations
+/// served side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V05: &str = "vua.packages-ops/v0.5";
+
+/// The `packages` envelope const of the v0.5 word-face row (the frozen
+/// v0.5 result schema locks the ENVELOPE schemaVersion to "0.5"; the v0.1
+/// through v0.4 envelopes stay on their own consts — the c914cf2 standing
+/// rule: every wire row carries a version constant of its own, independent
+/// of the envelope const).
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05: &str = "0.5";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1318,6 +1334,19 @@ fn served_capabilities(state: &HostState) -> Value {
         }
         _ => "unavailable",
     };
+    // Proposal 026 A5: the project-creation write face rides the SAME
+    // VpmBackend wiring, gated on the EXISTING five-bit
+    // `capabilities().create_project` member — one row serving the ONE
+    // method (the removeOps/installOps/registerOps/repoOps one-row
+    // precedent). A5 freezes NO new accessor, unlike A3/A4: the bit
+    // predates the freeze batch and both in-repo backends already declare
+    // it honestly, so unlike the A4 row there is no declared-none default
+    // waiting for an environment override — a wired backend with the bit
+    // true answers available as of this wiring batch.
+    let packages_create_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.capabilities().create_project => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1353,6 +1382,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.repoOps",
             "availability": packages_repo_ops_availability,
+        },
+        {
+            "operationId": "packages.createOps",
+            "availability": packages_create_ops_availability,
         },
     ])
 }
@@ -5176,6 +5209,9 @@ fn packages_request(
         "packages.removeRepo" => {
             packages_remove_repo(state, vpm, request, request_id, correlation_id)
         }
+        "packages.createProject" => {
+            packages_create_project(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -6619,6 +6655,168 @@ fn finish_repo_write_acceptance(
                 "correlationId": correlation_id,
             }),
         )),
+        Err(_) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.persistence_failed",
+            "errors.provider.persistence",
+            "internal",
+        )),
+    }
+}
+
+/// Closed param set of the A5 `packages.createProject` command:
+/// `{ parent, name, template }` — the three-key closed set, nothing else.
+/// `parent` and `name` are non-empty string facts (the backend's own name
+/// validation is the execution-time authority — the wire face does not
+/// re-litigate upstream name grammar). `template` is REQUIRED-nullable per
+/// the frozen v0.5 word face: the KEY must be present (a missing key is a
+/// violation), `null` = the backend's default template resolution (the
+/// port `Option None` fact), a non-empty string = that template name/path
+/// passed verbatim, an empty string is a violation. NO `projectPath` is
+/// taken — creation addresses no registered project (the 013
+/// `project_not_found` reuse does not apply, the `parent` is a path fact
+/// never a project identity); no digest, no confirmation chain — a carried
+/// `confirmedDigest` is a shape violation (the user's explicit form
+/// submission IS the confirmation). Violations answer
+/// `vua.packages.invalid_params` at the route layer — never absence, never
+/// a fabricated receipt.
+fn packages_ops_create_params(request: &Value) -> Option<(String, String, Option<String>)> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 3 {
+        return None;
+    }
+    let parent = params.get("parent")?.as_str()?;
+    let name = params.get("name")?.as_str()?;
+    if parent.is_empty() || name.is_empty() {
+        return None;
+    }
+    let template = match params.get("template")? {
+        Value::Null => None,
+        Value::String(template) if !template.is_empty() => Some(template.clone()),
+        _ => return None,
+    };
+    Some((parent.to_owned(), name.to_owned(), template))
+}
+
+/// Port error → rejected-arm projection INSIDE the A5 creation task:
+/// the guard closed set stands at the A1–A4 three values and A5 adds NO
+/// guard — every port refusal (the library path's `template_missing`
+/// carrying all four i18n message keys, the CLI path's `apply_failed` /
+/// `backend_unavailable`, the required method's absence via the gate, and
+/// every word-out code) folds into `execution_failed` carrying the
+/// original port code inside `detail` (honest provenance — the rejected
+/// arm's schema pattern locks the code to `^vua\.packages\.`, so the
+/// reused `vua.vpm.*` codes can never travel verbatim there). The two
+/// backends' refusal shapes honestly diverge and the wire face folds both
+/// without inventing a unified shape. The creation face claims NO
+/// idempotence: where the backend refuses an existing target, the wire
+/// answers the refusal honestly — no idempotent success is invented.
+fn packages_ops_create_port_rejection(error: &AppErrorV1) -> Value {
+    packages_ops_rejected(
+        PACKAGES_OPS_SCHEMA_VERSION_V05,
+        "execution_failed",
+        "vua.packages.execution_failed",
+        format!("port code {}: {}", error.code, error.message_key),
+    )
+}
+
+/// `packages.createProject` (proposal 026 A5 wiring): the NINE-STATE
+/// task-driven write command creating one new project from a template,
+/// mapped one-to-one onto the port method
+/// `create_project(parent, name, template) -> Result<ProjectRef, _>`. The
+/// second no-preview-pair member (the A3/A4 law, rooted in the port
+/// itself): the port has exactly ONE creation method and NO
+/// create-preview counterpart, a brand-new directory has no pre-existing
+/// state to diff — the user's explicit form submission IS the
+/// confirmation, and a carried `confirmedDigest` is a shape violation.
+/// NO registered-project check runs at the route (creation addresses no
+/// registered project; the 013 reuse does not apply — the backend's own
+/// target-existence guard refuses at execution). The capability gate reads
+/// the EXISTING five-bit `capabilities().create_project` member BEFORE
+/// submit — capability absence never reaches a task (A5 freezes no new
+/// accessor, unlike A3/A4). The success reflux carries the ONE
+/// packages-ops receipt with an actual-result payload: the `created`
+/// document projecting the port's `ProjectRef` — `projectId` = the
+/// `ProjectRef.id` echo (an informational backend-minted fact, NOT the
+/// 013 project identity key) and `projectPath` = the `ProjectRef.root`
+/// echo (the new project's registered-path identity — the
+/// registers-in-store side effect is the frozen port fact: creation
+/// success = registration success). Every port refusal folds into the
+/// frozen `execution_failed` guard carrying the original port code inside
+/// detail. Recovery maps non-terminal residue to `inspect_required` and
+/// never resumes implicitly (honesty rule 3).
+fn packages_create_project(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        // The task surface requires the shared task authority; without it
+        // the write face stays honestly absent (A1–A4 same face).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some((parent, name, template)) = packages_ops_create_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.capabilities().create_project {
+        // The frozen v0.5 command schema's serving gate, read BEFORE
+        // submit on the EXISTING five-bit member — capability absence
+        // never reaches a task (the P1/A2/A3/A4 same face; no new
+        // accessor exists on this face to read instead).
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.create_project(
+                std::path::Path::new(&parent),
+                &name,
+                template.as_deref(),
+            ) {
+                Ok(project_ref) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V05,
+                    "kind": "created",
+                    "projectId": project_ref.id,
+                    "projectPath": project_ref.root.to_string_lossy(),
+                }),
+                Err(error) => packages_ops_create_port_rejection(&error),
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05,
+                "operation": "packages.createProject",
+                "result": result,
+            })))
+        }),
+    });
+    match accepted {
+        Ok(accepted) => FrameOutcome::Response(application_success(
+            request_id,
+            json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05,
+                "operation": "packages.createProject",
+                "taskId": accepted.task_id,
+                "correlationId": correlation_id,
+            }),
+        )),
+        // Submission rejection is a persistence failure of the task
+        // authority (import-copy same face, provider-layer code — the
+        // failure is the task authority's, not the packages domain's).
         Err(_) => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,

@@ -640,6 +640,61 @@ export interface PackagesRegisterLocalPackageRequestV1 {
   };
 }
 
+// ---- packages-ops v0.4 写面 A4 仓库订阅增删(026 冻结批 28c63fa 经第 108 批
+// 入库;wire 接线批 3d4b667 经第 109 批入库;桌面 A4 消费批登记 2026-09-19。
+// 三命令闭集 addRemoteRepo/addLocalRepo/removeRepo 一一映射端口方法
+// add_remote_repo/add_local_repo/remove_repo。照 A3 同律破 preview/apply
+// 对偶——本面无 preview 臂:远端订阅天然含清单拉取网络段(preview 只会是
+// 伪装成更安全首跳的第二跳网络往返),且无既有状态摘要可绑定(订阅列表
+// 可漂移,诚实失败 = 执行时端口答 repo_not_found)——无 confirmedDigest
+// 位(携即形状违反,用户显式提交即确认);三方法均无 projectPath(订阅面
+// 只写后端隔离环境,013 project_not_found 复用对本面不适用);首期词面不
+// 收 HTTP 头/凭据传输。任务化写命令:受理回执 { taskId, correlationId }
+// (import-copy/A1/A2/A3 同构),审计收据 repoReceipt(remote/local 双互斥
+// 变体,五键最小诚实回显)/removed(三键 repoId 回显——回显即审计链,不
+// 发明被删行快照)/类型化拒绝 rejected 随任务终态 Done payload 回流。
+// served 行 packages.repoOps 一行服务三方法(repo_write_capabilities 三独
+// 立位门控,任一位声明即 available;wire 门按方法绝不按面)。词面权威 =
+// schemas/packages-ops/v0.4 + application-contract.ts A4 段 ----
+
+/** packages.addRemoteRepo 写命令:任务化受理(import-copy 同构);
+ *  commandId 由 Kernel 生成(渲染层不传,project.import-copy 先例);
+ *  params 双键闭集 {url, name} 非空 = 仓库 URL＋必填显示名;无
+ *  projectPath、无 digest 位、无 HTTP 头/凭据传输 */
+export interface PackagesAddRemoteRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.addRemoteRepo";
+  readonly params: {
+    readonly url: string;
+    readonly name: string;
+  };
+}
+
+/** packages.addLocalRepo 写命令:任务化受理;params 双键闭集
+ *  {path, name} 非空 = 本地目录仓库路径＋必填显示名(无网络段) */
+export interface PackagesAddLocalRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.addLocalRepo";
+  readonly params: {
+    readonly path: string;
+    readonly name: string;
+  };
+}
+
+/** packages.removeRepo 写命令:任务化受理;params 单键闭集
+ *  {repoId} 非空 = 仓库 id(稳定行柄,索引寻址不冻结);id 缺席行在本
+ *  词面移除可达范围之外(协议本载明的诚实边界) */
+export interface PackagesRemoveRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.removeRepo";
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -695,7 +750,10 @@ export type DesktopGatewayRequestV1 =
   | PackagesApplyRemoveRequestV1
   | PackagesPreviewInstallRequestV1
   | PackagesApplyInstallRequestV1
-  | PackagesRegisterLocalPackageRequestV1;
+  | PackagesRegisterLocalPackageRequestV1
+  | PackagesAddRemoteRepoRequestV1
+  | PackagesAddLocalRepoRequestV1
+  | PackagesRemoveRepoRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -761,6 +819,11 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // packages-ops v0.3 写面 A3 本地包注册(026;桌面 A3 消费批):族中唯一
   // 无 preview 对偶——单方法任务化 command(Kernel 生成 commandId)
   "packages.registerLocalPackage": "command",
+  // packages-ops v0.4 写面 A4 仓库订阅增删(026;桌面 A4 消费批):照 A3
+  // 同律无 preview 对偶——三方法任务化 command(Kernel 生成 commandId)
+  "packages.addRemoteRepo": "command",
+  "packages.addLocalRepo": "command",
+  "packages.removeRepo": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1294,6 +1357,30 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["packageRoot"])
         && typeof value.params.packageRoot === "string"
         && value.params.packageRoot.length >= 1;
+    // packages-ops v0.4 写面 A4 仓库订阅增删(026;桌面 A4 消费批):
+    // params 精确键集闭集(双键 {url,name}/{path,name} 与单键 {repoId},
+    // 全非空串;无 projectPath——订阅面只写后端隔离环境;无 digest 位——
+    // 本面无 preview 可漂移,携即形状违反;commandId 由 Kernel 生成不在
+    // params)
+    case "packages.addRemoteRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["name", "url"])
+        && typeof value.params.url === "string"
+        && value.params.url.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1;
+    case "packages.addLocalRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["name", "path"])
+        && typeof value.params.path === "string"
+        && value.params.path.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1;
+    case "packages.removeRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["repoId"])
+        && typeof value.params.repoId === "string"
+        && value.params.repoId.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

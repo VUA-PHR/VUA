@@ -203,7 +203,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -278,13 +278,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -1207,6 +1207,313 @@ describe("packages live port A3 register write face (026 v0.3 consumption)", () 
     });
     expect(
       await createLivePackages(staleStamp).registerLocalPackage("C:/x"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
+  });
+});
+
+/* ---- A4 仓库订阅增删写面(026 v0.4 消费批) ---- */
+
+const VALID_REMOTE_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.4",
+  kind: "repoReceipt",
+  repoType: "remote",
+  url: "https://vpm.example/index.json",
+  name: "Example Repo",
+};
+
+const VALID_LOCAL_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.4",
+  kind: "repoReceipt",
+  repoType: "local",
+  path: "C:/Repos/local-curations",
+  name: "Local Curations",
+};
+
+const VALID_REMOVED_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.4",
+  kind: "removed",
+  repoId: "repo-example",
+};
+
+const VALID_REPO_REJECTED = {
+  schemaVersion: "vua.packages-ops/v0.4",
+  kind: "rejected",
+  guard: "execution_failed",
+  code: "vua.packages.execution_failed",
+  detail: "vua.vpm.repo_invalid: backend refused the duplicate subscription for https://vpm.example/index.json",
+};
+
+/** A4 流编排 client:三写方法/task.get 分支可控(信封版本 0.4;与 A1/A2/
+ * A3 流编排 client 分立)。 */
+function a4Client(overrides: {
+  snapshot?: Parameters<typeof appSnapshot>[0];
+  addRemote?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  addLocal?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  remove?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  taskGet?: GatewayResult<DesktopGatewaySuccessValueV1>;
+} = {}): GatewayClient {
+  return fakeClient(async (request) => {
+    if (request.method === "app.snapshot") {
+      return { ok: true, value: appSnapshot(overrides.snapshot ?? QUERY_AVAILABLE) };
+    }
+    if (request.method === "packages.addRemoteRepo") {
+      return overrides.addRemote ?? { ok: true, value: acceptedRepoFrame("t-4", "packages.addRemoteRepo") };
+    }
+    if (request.method === "packages.addLocalRepo") {
+      return overrides.addLocal ?? { ok: true, value: acceptedRepoFrame("t-4", "packages.addLocalRepo") };
+    }
+    if (request.method === "packages.removeRepo") {
+      return overrides.remove ?? { ok: true, value: acceptedRepoFrame("t-4", "packages.removeRepo") };
+    }
+    if (request.method === "task.get") {
+      return overrides.taskGet ?? { ok: true, value: taskSnapshotValue("running") };
+    }
+    return { ok: false, error: { kind: "unavailable" } as const };
+  });
+}
+
+function acceptedRepoFrame(taskId: string, operation: string): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.4", operation, taskId, correlationId: "c-4" });
+}
+
+describe("packages live port A4 repo write face (026 v0.4 consumption)", () => {
+  it("flips blocks.repoWrites with the served packages.repoOps row (one row serves the three methods; changes/installs/registers semantics untouched)", async () => {
+    const withRow = await createLivePackages(
+      a4Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.installOps", availability: "available" },
+          { operationId: "packages.registerOps", availability: "available" },
+          { operationId: "packages.repoOps", availability: "available" },
+        ],
+      }),
+    ).snapshot();
+    if (withRow.kind === "ready-p2") {
+      expect(withRow.blocks.repoWrites).toBe(true);
+      expect(withRow.blocks.changes).toBe(false);
+      expect(withRow.blocks.installs).toBe(true);
+      expect(withRow.blocks.registers).toBe(true);
+    }
+    const withoutRow = await createLivePackages(a4Client()).snapshot();
+    if (withoutRow.kind === "ready-p2") {
+      expect(withoutRow.blocks.repoWrites).toBe(false);
+    }
+    // 行存在但引擎后端三独立位均未声明(availability unavailable)= 诚实缺席
+    const rowUnavailable = await createLivePackages(
+      a4Client({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.repoOps", availability: "unavailable" },
+        ],
+      }),
+    ).snapshot();
+    if (rowUnavailable.kind === "ready-p2") {
+      expect(rowUnavailable.blocks.repoWrites).toBe(false);
+    }
+  });
+
+  it("rides the task loop for all three methods: v0.4 acceptance -> succeeded snapshot with the exact-five-keys remote/local receipts and the exact-three-keys removed receipt (key sets mutually exclusive; verbatim params; ok rides a refresh broadcast)", async () => {
+    const taskGetSequence: GatewayResult<DesktopGatewaySuccessValueV1>[] = [
+      { ok: true, value: taskSnapshotValue("running") },
+      {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.4", operation: "packages.addRemoteRepo", result: VALID_REMOTE_RECEIPT },
+        }),
+      },
+    ];
+    let taskGetCalls = 0;
+    let broadcasts = 0;
+    const listeners = new Set<(event: unknown) => void>();
+    const client: GatewayClient = {
+      invoke: async (request) => {
+        if (request.method === "packages.addRemoteRepo") {
+          // 端口 verbatim 传输钉死:params 恰 {url, name},无 projectPath
+          // 无 digest 位
+          expect(request.params).toEqual({ url: "https://vpm.example/index.json", name: "Example Repo" });
+          return { ok: true, value: acceptedRepoFrame("t-4", "packages.addRemoteRepo") };
+        }
+        if (request.method === "task.get") {
+          const answer: GatewayResult<DesktopGatewaySuccessValueV1> =
+            taskGetSequence[Math.min(taskGetCalls, taskGetSequence.length - 1)] ?? {
+              ok: false,
+              error: { kind: "unavailable" },
+            };
+          taskGetCalls += 1;
+          return answer;
+        }
+        return { ok: false, error: { kind: "unavailable" } as const };
+      },
+      subscribe: (callback) => {
+        listeners.add(callback as (event: unknown) => void);
+        return () => {
+          listeners.delete(callback as (event: unknown) => void);
+        };
+      },
+    };
+    const port = createLivePackages(client);
+    port.subscribe(() => {
+      broadcasts += 1;
+    });
+    const pending = port.addRemoteRepo("https://vpm.example/index.json", "Example Repo");
+    while (listeners.size === 0) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (const listener of listeners) listener({ kind: "task.completed", taskId: "t-4", payload: {} });
+    // 收据逐键钉死:五键闭集 {schemaVersion, kind, repoType, url, name},
+    // 无时间戳无行位无清单内容
+    expect(await pending).toEqual({ kind: "ok", receipt: VALID_REMOTE_RECEIPT });
+    expect(Object.keys(VALID_REMOTE_RECEIPT).sort()).toEqual(
+      ["kind", "name", "repoType", "schemaVersion", "url"],
+    );
+    // ok 收据骑刷新广播(订阅面已变,列表按新事实重取);广播链异步,
+    // 先排空任务队列再断言
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(broadcasts).toBeGreaterThan(0);
+
+    // local 变体(键集与 remote 互斥:repoType local + path)与 removed
+    // 三键收据
+    const localClient = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.4", operation: "packages.addLocalRepo", result: VALID_LOCAL_RECEIPT },
+        }),
+      },
+    });
+    expect(await createLivePackages(localClient).addLocalRepo("C:/Repos/local-curations", "Local Curations"))
+      .toEqual({ kind: "ok", receipt: VALID_LOCAL_RECEIPT });
+    expect(Object.keys(VALID_LOCAL_RECEIPT).sort()).toEqual(
+      ["kind", "name", "path", "repoType", "schemaVersion"],
+    );
+    const removeClient = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.4", operation: "packages.removeRepo", result: VALID_REMOVED_RECEIPT },
+        }),
+      },
+    });
+    expect(await createLivePackages(removeClient).removeRepo("repo-example"))
+      .toEqual({ kind: "ok", receipt: VALID_REMOVED_RECEIPT });
+    expect(Object.keys(VALID_REMOVED_RECEIPT).sort()).toEqual(["kind", "repoId", "schemaVersion"]);
+  });
+
+  it("surfaces the typed rejection (execution_failed with the original port code in detail) as the typed rejection and never an error; the add face claims NO idempotence - the duplicate refusal travels as the rejection", async () => {
+    const client = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.4", operation: "packages.addRemoteRepo", result: VALID_REPO_REJECTED },
+        }),
+      },
+    });
+    const outcome = await createLivePackages(client).addRemoteRepo("https://vpm.example/index.json", "Example Repo");
+    expect(outcome).toEqual({ kind: "rejected", rejection: VALID_REPO_REJECTED });
+  });
+
+  it("folds the capability-missing acceptance to failed verbatim, the absence arm to unavailable, a non-succeeded terminal verbatim, and a 0.3-stamped acceptance as shape violation (never fabricates a receipt)", async () => {
+    // 能力缺席在路由层按方法答 vua.vpm.capability_missing(绝不进任务)
+    // ——照原词 failed;缺席臂(vua.packages.unavailable)折叠 unavailable
+    expect(
+      await createLivePackages(
+        a4Client({ addRemote: applicationError("vua.vpm.capability_missing", "unavailable") }),
+      ).addRemoteRepo("https://vpm.example/index.json", "Example Repo"),
+    ).toEqual({ kind: "failed", code: "vua.vpm.capability_missing" });
+    expect(
+      await createLivePackages(
+        a4Client({ remove: applicationError("vua.packages.unavailable", "unavailable") }),
+      ).removeRepo("repo-example"),
+    ).toEqual({ kind: "unavailable" });
+    // 任务非成功终态:error.code 原词上呈(恢复非终态绝不隐式续传)
+    const failed = a4Client({
+      remove: { ok: true, value: acceptedRepoFrame("t-4", "packages.removeRepo") },
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("failed", {
+          error: {
+            contractVersion: "0.1",
+            code: "vua.vpm.repo_write_failed",
+            category: "external_failure",
+            messageKey: "errors.vpm.repoWriteFailed",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-4",
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(failed).removeRepo("repo-example"),
+    ).toEqual({ kind: "failed", code: "vua.vpm.repo_write_failed" });
+    // 受理回执信封版本钉 0.4:0.3 戳 = 受理形状违规
+    const badAcceptance = a4Client({
+      addLocal: { ok: true, value: asWire({ schemaVersion: "0.3", operation: "packages.addLocalRepo", taskId: "t-4", correlationId: "c-4" }) },
+    });
+    expect(
+      await createLivePackages(badAcceptance).addLocalRepo("C:/Repos", "Local"),
+    ).toEqual({ kind: "failed", code: "packages_apply_acceptance_shape" });
+  });
+
+  it("answers shape violation when a receipt invents a field (no timestamps, no removed-row snapshots) or the receipt variant does not match the method (remote answered with the local variant)", async () => {
+    // 发明字段(时间戳)= 形状违规(最小诚实审计形状)
+    const invented = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.4",
+            operation: "packages.addRemoteRepo",
+            result: { ...VALID_REMOTE_RECEIPT, addedAt: "2026-09-19T00:00:00Z" },
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(invented).addRemoteRepo("https://vpm.example/index.json", "Example Repo"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
+    // 被删行快照 = 发明事实(removed 回显即审计链,三键之外一字段即违规)
+    const snapshotInvented = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.4",
+            operation: "packages.removeRepo",
+            result: { ...VALID_REMOVED_RECEIPT, removedRow: { repoId: "repo-example", name: "Example Repo" } },
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(snapshotInvented).removeRepo("repo-example"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
+    // 收据变体与请求方法不对应(remote 请求答 local 变体)= 服务端词面
+    // 违反,诚实降级不冒充成功
+    const wrongVariant = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.4", operation: "packages.addRemoteRepo", result: VALID_LOCAL_RECEIPT },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(wrongVariant).addRemoteRepo("https://vpm.example/index.json", "Example Repo"),
+    ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
+    // 旧戳收据(v0.3)= 形状违规
+    const staleStamp = a4Client({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.4",
+            operation: "packages.removeRepo",
+            result: { ...VALID_REMOVED_RECEIPT, schemaVersion: "vua.packages-ops/v0.3" },
+          },
+        }),
+      },
+    });
+    expect(
+      await createLivePackages(staleStamp).removeRepo("repo-example"),
     ).toEqual({ kind: "failed", code: "packages_apply_result_shape" });
   });
 });

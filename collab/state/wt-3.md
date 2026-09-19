@@ -1,127 +1,153 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: f2586d4
+baseline_commit: 8416df6
 role: 桌面
 updated: 2026-09-19
 ---
 ## 当前焦点
-**026 A4 形状核可轮（2026-09-19 08:1x–08:3x,工作时段,三笔：追平壳
-1fd76a1＋A4 形状核可批 6771d5e＋本状态批,三笔全 collab-only）——
-brief 08:11 ①区集成 [→桌面] 留言消化：A3 本地包注册消费面已验收
-入库（第 108 批 item 2,3460865＝上拍候验收闭环,merge-base 领先 0）
-＋A4 形状核可解锁条件成就（A4 冻结批 28c63fa 经第 108 批 item 1
-aad8b65 入库）,照 A1/A2/A3 形状核可先例基于收编世代办理,本拍领取;
-A4 消费候核心接线批（wt-2 已交付 3d4b667 候验收,不抢跑）**：
+**026 A5 形状核可轮（2026-09-19 11:3x–11:5x，操作者紧急批非节拍：时段
+例外照用户 10:5x 明示指令按工作时段规则处理，三笔：追平壳 f3be0d5＋
+核可批 a700e61＋本状态批恰本文件）——任务＝026 A5 形状核可，开关条
+件＝A5 冻结批 0c77273 入 main，照「轮询至入库后基于收编世代办理」先
+例办理（候验收世代零预核可）**：
 
-- **追平壳 1fd76a1（--no-ff 合并 f2586d4）**：落后 13（实质 3）未
-  过 15 线,但核可必须基于 A4 冻结批收编世代照 A1/A2/A3 先例办理
-  （b25d0a0/fffe0dc 同径）;双法预检零冲突（ort --write-tree exit 0
-  tree 4f0fbb9＋老式 0 标记）;inbound 非 collab＝核心 A4 冻结批 29
-  文件＋本树上拍 A3 消费批 19 文件,全为第 108 批已验收内容纯吸收
-  零夹带;基线世代刷新 **f2586d4**。
-- **A4 形状核可批 6771d5e（恰 proposal 026 一文件 81 行）——九项
-  一致核可通过**：①三命令接口闭集（addRemoteRepo {url,name}／
-  addLocalRepo {path,name} 双键非空／removeRepo {repoId} 单键非
-  空,commandId Kernel 生成位;三方法均无 projectPath 无
-  confirmedDigest——携即形状违反,负例钉死;首期词面不收凭据）;②
-  收据最小诚实审计形状（repoReceipt 双互斥变体 remote/local 五键
-  ＋removed 三键回显;端口答 Result<(),_> 无载荷不发明,键集与一切
-  前代收据臂互斥）;③rejected 臂 guard 三值闭集零新增（四端口码
-  全折 execution_failed 携原码 detail,code 锁 ^vua\.packages\.;桌
-  面回落面三值投影 A1 钉例同款可复用;**添加面不宣称幂等**——与
-  A3 AlreadyAdded 折叠刻意不同,桌面未来消费如实呈现拒绝）;④
-  union 双登记＋三窄化臂逐键闭集;⑤TS 测试 1 例 10 断言对应;⑥
-  mock 恒缺席臂三方法（P1 unavailable,模拟面永不模拟 wire 写回
-  执）;⑦capturedAt 收窄对 A4 有效性本机证实（contracts :2121 全
-  文件唯一 downloads 面,A4 六新成员均无该顶层键;桌面窄化点在
-  project-detection-model.ts 零交集,typecheck 双 0 亲测,A2/A3 同
-  法）;⑧向量 6 正 11 负与第 108 批登记一致（schemaVersion 字面量
-  窄化规则词面载明——按字面量窄化不按键集）;⑨诚实边界（词面冻
-  结未接线;repo_write_capabilities 三独立位 default declared-none,
-  环境覆写翻转前 served 行如实 unavailable;启停不在任何已冻结词
-  面候 W25 键名真机核实——桌面不发明启停入口）。**检查点登记（非
-  缺口）**：v0.4 wire 信封常量协议本 0.4 未载明（协议本明文候接
-  线批 0.4.x 修订载明,A3 先例）——A4 消费切片窄化按接线批落地面
-  对照不猜测;A4 消费切片桌面侧解锁＝本核可＋核心接线批入库（双
-  前置,A3 同构）。
-- **定向证据亲测（08:1x,收编世代 f2586d4）**：@vua/contracts
-  check 77/77＋apps/desktop typecheck 双 tsconfig exit 0＋desktop
-  vitest 80 文件 707/707。collab-only 免全量如实声明（核可批恰
-  proposal 一文件,零代码变更;全量证据沿用第 108 批集成合并树登记
-  世代）。
+- **brief 11:39 ①区消化**：两条 [→wt-3]/[→桌面] 留言系簿记知会（收尾
+  追平批经第 111 批 item 1 收编——回执上拍已消化勿重复；A4 消费切片
+  候验收）零动作；失鲜工作树无；[需用户] 区零桌面未决项。
+- **轮询与开关判定**：brief 后 main＝3b172c7（0c77273 在 slot/wt-2 候
+  验收）——不预核可，轮询至 **11:48 实测 0c77273 经第 112 批 item 2
+  （8416df6）实质验收入 main**（merge-base --is-ancestor 实证）；同
+  批 item 1（8f367f5）收编本树 A4 消费切片三笔（7d14b1e＋48f465d＋
+  ad76829）——收编回执就地消化勿重复。
+- **追平壳 f3be0d5**：领先 0／落后 5 纯追平形态；双法预检零冲突（ort
+  --write-tree exit 0 tree 1eb20ce）；inbound 桌面域面＝本树 A4 切片
+  经 item 1 回归（自有内容）＋A5 冻结批核心域 24 文件（零越域桌面触
+  碰 pathspec 实证）；合并后与 main 8416df6 逐字节全等（diff 零文
+  件），基线世代刷新 **8416df6**。CHASE STOP 延续。
+- **核可批 a700e61（恰 026 提案一 collab 文件 119 行，A1–A4 核可先例
+  同构）**：**结论＝核可通过**，九项逐项核对全部基于收编世代本机直读
+  ＋定向复跑亲测（11:50–11:5x，df C 盘 596G/69% 先查，跑前 contracts
+  dist 重建照上拍陈旧事故登记先例）：①请求闭集＝单命令三键 params
+  {parent,name,template} 全 required（template REQUIRED-nullable
+  schema type ["string","null"] minLength 1 实读；无 projectPath／无
+  confirmedDigest 双负例向量＋TS 窄化负例钉死）；②plan 语义不存在＝
+  单段任务化（无 preview 对偶根在端口 doc 注释实读；用户显式表单提
+  交即确认；answer-plan kind 锁负例）；③created 收据恰四键
+  {schemaVersion,kind,projectId,projectPath}＋additionalProperties:
+  false（kind enum 纯增量；键集与前代收据臂逐臂互斥）；④guard 复用
+  PackagesGuardV02＝PackagesRemoveGuardV01 别名三值闭集零新增＋端口
+  码闭集三既有码零新立（template_missing 四 i18n 键共享载体两层如实
+  ＋apply_failed 携 exitCode＋backend_unavailable；双后端拒绝形状不
+  同构如实声明；折 execution_failed 携原码 detail；code 锁
+  ^vua\.packages\. schema :498 实读）；⑤零新 accessor＝既有
+  VpmCapabilities.create_project 五联位（vpm_backend.rs :48 实读，
+  create_capabilities grep 零命中；位先于批在库双后端已诚实声明）；
+  served 行 packages.createOps 申报随核心接线切片；桌面 create 能力
+  呈现须新立不可复用 blocks.changes；⑥union 双登记（:2132/:2279）＋
+  isApplicationRequestV01 窄化臂（:2717–2733）逐键闭集含
+  REQUIRED-nullable 律＋TS 测试 1 例 9 断言（2 正 7 负）与申报一一
+  对应；⑦capturedAt 唯一性本世代证实＝全文件 readonly capturedAt 恰
+  1 处（:2208 EnvironmentSnapshotV01）＋A5 三新成员零 capturedAt
+  （grep 零命中）＋桌面窄化点 electron-gateway.ts:135 存续（typecheck
+  双 0 行为级亲测，A2/A3/A4 同法）；⑧mock 恒缺席臂（mock-provider
+  .ts :450 归 P1 unavailable 臂恒答 vua.packages.unavailable，模拟面
+  永不模拟 wire 写回执；provider check 39/39 行为级）；⑨created 收
+  据＝ProjectRef 投影（projectId 信息性标识非 013 身份键／
+  projectPath＝注册路径身份；创建即在册尾调 initialize 词面如实载明
+  不虚构「仅建目录不登记」；向量 3 正 10 负与第 112 批登记一致
+  examples 13 文件实读；协议本「明确在本词面之外」节＋「已冻结未接
+  线」边界如实）。
+- **定向证据亲测（本收编世代 11:50–11:5x）**：@vua/contracts check
+  **79/79**（78 wt-2 世代＋本树 A4 钉例经 item 1 回归）；@vua/
+  orchestrator-provider check **39/39**（38＋A5 mock 缺席臂 1）；
+  desktop typecheck **双 tsconfig exit 0**（本批强制条款亲测随批）；
+  desktop vitest 80 文件 **714/714**。核可批与状态批 collab-only 免
+  全量如实声明——定向证据已列，全量证据沿用第 112 批合并树复跑登记
+  世代。
+- **消费切片核对点登记（核可节内，非缺口）**：v0.5 wire 信封常量候接
+  线批 0.5.x 修订载明（消费窄化器按落地面核对不猜测）；create 能力呈
+  现新键／四错误 i18n 键四语文案／template=null 如实呈现所用模板不虚
+  构下拉／parent 表单路径输入不发明目录枚举／design-standard §8.7 增
+  补——均随消费切片。
+- **机械校验**：本拍三笔＝追平壳（零自有内容纯吸收）＋核可批（恰提
+  案一 collab 文件）＋本状态批（恰本文件）；零代码变更面、零跨域触
+  碰。
 
 ## 前情（全文见本文件 git 历史）
-09-19 06:3x–07:1x A3 本地包注册消费面轮三笔（追平壳 fffe0dc＋切片
-批 8c655dd＋状态批）——**已经第 108 批 item 2（3460865）验收入库**。
-09-19 05:2x–06:1x A2 批量多选消费面＋A3 形状核可轮——已经第 106/
-107 批验收入库;更早 A1/A2 链见 git 历史。
+09-19 10:5x–11:3x A4 消费切片轮三笔（切片 7d14b1e＋追平壳 48f465d＋
+状态批 ad76829）——已经第 112 批 item 1（8f367f5）验收入库。更早：
+A4 形状核可 6771d5e（第 110 批）、A3 消费 8c655dd（第 108 批）、A1/A2
+链见 git 历史。
 
-## 本轮交付（f2586d4 基线世代）
-- **追平壳 1fd76a1**（零冲突纯吸收,落后 13 未过线,核可骑收编世代
-  理由如实申报）。
-- **A4 形状核可批 6771d5e**（恰 proposal 026 一文件 81 行,
-  collab-only）。
-- **本状态批**（恰本文件）。
+## 本轮交付（8416df6 基线世代）
+- **追平壳 f3be0d5**（--no-ff 吸收 main 8416df6 第 112 批，零自有内
+  容纯吸收，基线刷新 8416df6）。
+- **核可批 a700e61**（026 A5 形状核可节内联落提案文件——A5 消费切片
+  桌面侧解锁条件其一落定）。
+- **本状态批（恰本文件）**：核可交付申报＋轮询/收编落账＋验收请求。
 
 ## 在途/待他角色
-- **[等集成] 本拍候随轮验收（--no-ff）**：三笔全 collab-only（核
-  可批恰 proposal 026 一文件＋追平壳零自有内容＋本状态批恰本文
-  件）,免全量如实声明,定向证据亲测在案。
-- **[等核心] A4 wire 接线批 3d4b667 候验收入库**——A4 消费切片解
-  锁条件之二（协议本 0.4.1 载明 v0.4 信封常量即闭合本核可登记的
-  检查点）;入库后照 A1/A2/A3 消费先例领取 A4 消费切片。
-- **[等环境] A4 实现核对切片**（repo_write_capabilities 三独立位
-  覆写随切片落——覆写翻转前 served 行在真机如实 unavailable,桌
-  面 A4 消费区块诚实缺席）。
-- **[→用户] 既有项维持**：IA 并入复测＋A3 注册区块目视、#39 HMR
-  三复测点、#36 操作者 CDP 复验、ready-p2 解锁＋v0.2「缓存数据」
-  标注复验、#25/#27/#28/#29 回填、W25（O-2）开窗。
+- **[等集成] 三笔候随轮验收（--no-ff）**：核可批 a700e61（实质＝提案
+  一文件）＋追平壳 f3be0d5（零自有内容随批自然收编）＋本状态批（恰本
+  文件，collab-only 免全量），写明「wt-3 026 A5 形状核可批」。
+- **[等核心] A5 wire 接线切片**（packages.createOps 路由臂/served 行/
+  信封组装＋信封常量协议本 0.5.x 载明）——A5 消费切片双前置其余半。
+- **[等操作者] A5 消费切片（新建项目 UI 入口）候下波指派**——双前置
+  ＝本核可＋核心接线批入库（A3/A4 同构）；本轮只办核可不抢跑。
+- **[等用户] 既有项维持**：W25（O-2）开窗——A1 移除＋A2 安装＋A3 注
+  册＋A4 增删（＋A5 创建词面落地后同窗走查）真机走查归 W25；#39/#36
+  等回填照旧。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝026 A4 形状核可批 6771d5e（恰 proposal 026 一文件
-81 行,collab-only,写明「026 A4 形状核可批」）＋追平壳 1fd76a1（零
-自有内容纯吸收）＋本状态批;三笔全 collab-only 免全量如实声明。**
-提交后读数：领先 3（实质 0）;落后读数下轮 brief 复测,过 15 线照则
-自理追平。
+**候验收对象＝026 A5 形状核可批 a700e61（恰 collab/proposals/026 一
+文件 119 行：九项逐项核可全过＋消费切片核对点登记＋解锁状态）＋追平
+壳 f3be0d5（零自有内容，--no-ff 吸收你方 main 8416df6 第 112 批，ort
+tree 1eb20ce 零冲突）＋本状态批（恰本文件，collab-only 免全量），请
+集成随轮验收（--no-ff），写明「wt-3 026 A5 形状核可批（基点
+8416df6）」。**提交后读数：领先 3（实质 0——核可批系 collab 面）、
+落后 0（8416df6 世代）。CHASE STOP 延续。
 
-## 待命声明（第 6 步,如实）
-本轮（2026-09-19 08:1x–08:3x,工作时段,三笔：追平壳 1fd76a1＋核可
-批 6771d5e＋本状态批）：①date 08:11 确认工作时段;brief ①区集成
-[→桌面] 留言消化——「A3 消费面已验收入库＋A4 形状核可解锁条件成
-就」＝上拍候验收闭环（8c655dd 经 3460865 入库）＋本拍任务指派,即
-领;[需用户] 区零桌面未决项;outline 当前窗口桌面行（W24/W18/W19）
-已交付无新项;②执行＝fetch 复核（本地 main＝origin/main＝f2586d4）
-→双法预检零冲突→追平壳 1fd76a1（--no-ff 合并 f2586d4,inbound 全
-为第 108 批已验收内容纯吸收,基线刷新）→A4 冻结落地面细读（词面双
-schema 281+470 行＋contracts TS 面 A4 段＋窄化臂＋协议本 0.4 信封
-节＋mock 臂 diff＋capturedAt 全文件 grep）→九项逐项核对→定向复跑
-三件（contracts 77/77＋typecheck 双 0＋vitest 707/707）→核可批
-6771d5e→本状态批;③所有权核验＝自有 collab 编辑恰 proposal 026 一
-文件＋本文件;schemas/contracts TS 面/协议本/REGISTRY/代码面全只读
-零跨域零代码变更;④如实申报：定向复跑实测 contracts 77/77（第 108
-批集成登记 76/76 系其复跑时点读数,与 wt-2 接线批申报 77/77 一致,
-两读数并存不矛盾,以本世代亲测为准）;⑤诚实边界＝零端到端宣称维持
-——词面未接线桌面零 A4 消费,served 行环境覆写未落,真机走查归
-W25;核可为登记性核对非代码交付,collab-only 免全量如实声明;⑥在手
-无半途切片、无未提交改动;退出待命,候集成验收、核心 A4 接线批入库
-（候 A4 消费切片领取）、下轮 brief 或新指派。
+## 待命声明（第 6 步，如实）
+本轮（2026-09-19 11:3x–11:5x，操作者紧急批非节拍，时段例外照用户
+10:5x 明示指令按工作时段规则处理，三笔：f3be0d5＋a700e61＋本批）：
+①brief 11:39 ①区两条留言消化零动作；失鲜工作树无；②开关判定＝轮询
+至 11:48 实测 0c77273 经第 112 批 item 2 入 main（is-ancestor 实
+证），候验收世代零预核可——先备料（026 先例九项＋wt-2 词面只读预
+研）后办理，收编世代前未写任何核可节；③追平壳 f3be0d5（领先 0 落
+后 5 纯追平，双法预检零冲突，inbound 桌面域零越域触碰，基线刷新
+8416df6）；④九项核对＝全部本收编世代本机直读（TS 面/schema 双
+JSON/端口 doc 注释/能力位/mock 臂/向量/协议本双语/桌面窄化点）＋定
+向复跑亲测（contracts 79/79＋provider 39/39＋typecheck 双 0＋vitest
+714/714，df 596G/69% 先查，contracts dist 先重建）；⑤核可结论＝通
+过，零钉法缺口申报（A2 轮曾有的缺口形态本轮未再现——负例向量/TS 窄
+化/schema 钉法三层齐全）；⑥诚实边界＝零端到端宣称维持——本核可系
+词表层核对＋定向复跑亲测，无真机走查（归 W25/O-2）；A5 未接线前本
+方法在 wire 面不存在、桌面无创建入口、mock 恒答诚实缺席；消费切片候
+下波不抢跑；⑦所有权核验＝核可批恰提案一 collab 文件＋状态批恰本文
+件＋追平壳零自有内容，桌面域/他域代码零触碰；在手无半途切片、无未提
+交改动。退出待命，候集成验收本拍三笔、核心接线批、操作者下波指派或
+下轮 brief。
 
 ## 留言
-- [→集成] **验收请求**：候验收对象＝①026 A4 形状核可批 6771d5e
-  （恰 proposal 026 一文件 81 行,collab-only——九项一致核可通过:
-  三命令闭集无 projectPath 无 digest 位负例钉死／repoReceipt 双变
-  体＋removed 三键最小诚实收据／guard 三值闭集零新增四码折叠/
-  添加面不宣称幂等／union＋三窄化臂／capturedAt 窄化有效性本机证
-  实／向量 6 正 11 负对应／启停不发明入口;检查点登记＝v0.4 信封
-  常量候接线批 0.4.x 载明照 A3 先例;定向证据亲测 08:1x:contracts
-  77/77＋desktop typecheck 双 0＋vitest 707/707）;②追平壳
-  1fd76a1（落后 13 未过线,核可骑收编世代理由如实申报,零冲突纯吸
-  收）＋本状态批;三笔全 collab-only 免全量如实声明,请随轮验收
-  （--no-ff）,写明「026 A4 形状核可批」。
-- （回执不回执：第 108 批 item 2 验收登记系上拍交付收编落账——候
-  验收闭环即回应;wt-2 A4 接线批交付＝[等核心] 在途项登记;历史留
-  言已消化归档,在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] **026 A5 形状核可候验收**：开关条件经轮询成就（0c77273 经
+  第 112 批 item 2 入库，候验收世代零预核可），核可基于收编世代
+  8416df6 本机直读＋定向复跑亲测（contracts 79/79＋provider 39/39＋
+  typecheck 双 tsconfig exit 0＋vitest 714/714，df 596G/69% 先查）。
+  **候验收对象＝核可批 a700e61（恰 026 提案一文件 119 行）＋追平壳
+  f3be0d5（零自有内容）＋本状态批（恰本文件，collab-only 免全量），
+  请随轮验收（--no-ff），写明「wt-3 026 A5 形状核可批（基点
+  8416df6）」。**零端到端宣称维持——词表层核对无真机走查（W25/
+  O-2）。桌面侧无新请求。
+- [→核心] A5 形状核可通过已落提案节（a700e61）——桌面侧解锁条件其
+  一成就；消费切片双前置余你方 wire 接线切片（packages.createOps 路
+  由臂/served 行/信封组装，信封常量候 0.5.x 载明）；核可节登记的消
+  费核对点（create 能力呈现新立不可复用 blocks.changes／四错误 i18n
+  键四语文案／template=null 如实呈现不虚构下拉）随我方消费切片办
+  理，候操作者下波指派。
+- （回执不回执：第 112 批 item 1 本树 A4 消费切片收编＝就地消化勿重
+  复；第 111 批 [→桌面] 留言已消化归档，在途事项以 BOARD 与本状态文
+  件当前焦点为准。）

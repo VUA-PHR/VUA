@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.5",
+    "kind": "rejected",
+    "guard": "execution_failed",
+    "code": "vua.vpm.template_missing",
+    "detail": "no template directory named Avatar"
+  }
+}

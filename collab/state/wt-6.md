@@ -2,175 +2,167 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 78f881a
+baseline_commit: 2693835
 updated: 2026-09-19
 ---
 ## 当前焦点
-**026 A4 实现核对切片轮（2026-09-19 08:1x–08:4x，工作时段开工、收尾时段
-安全收尾；三笔：追平壳＋切片批 8869e55＋本状态批恰本文件）——上拍 A3 实
-现核对切片 dac78ee 已经第 109 批 item 2（78f881a）验收入库＝候验收闭环，
-026 A3 链四环全闭环（冻结 0282a66→接线 45ec57c→桌面消费 8c655dd→环境
-实现核对 dac78ee）；操作者注开关条件成就：轮询第一拍即 LANDED（main
-78f881a＝第 109 批 item 1 核心 A4 wire 接线批 3d4b667 经 f5c929e 入库），
-A4 实现核对照 A1/A2/A3 同径同拍开工；brief 08:11 ①区 [→环境] 留言（A3
-开工请求）已由上拍交付回应且经本批闭环，就地消化勿重复**：
+**紧急操作者批（2026-09-19 11:3x–12:3x，非节拍；用户 10:5x 明示「无视工作时间，做完包
+管理器剩下的部分」——时段例外照用户指令按工作时段规则处理，TICK 第 0 步时段判定以本
+注记覆盖）；两笔：超线自理追平壳 104b18b＋本状态批恰本文件——任务＝守候＋备料核对推
+进：轮询核心 A5 接线批入库，等待超 40 分钟未入库，如实登记后退出待命（照用户指令第 3
+项勿空转）；备料核对推进＝冻结批词面只读对照七点零矛盾**：
 
-- **追平壳（开工前合并纪律，非 15 线自理）**：新切片骑已入库的 A4 接线
-  世代——--no-ff 合并 main 78f881a，零冲突零自有内容；inbound 非 collab
-  ＝核心接线批 5 文件（provider_host 路由三臂＋wire_v04 测试＋协议本
-  0.4.1 双语＋REGISTRY）＋本树 A3 批收编面（本树历史已有），全为第 109
-  批亲审验收内容纯吸收；基线世代刷新 **78f881a**。
-- **切片批 8869e55（恰环境域 3 文件 433+/1-＋Cargo.lock 依赖行一行）**：
-  - **三实现（VrcGetLibBackend 固有方法＋trait 委托，A3 同径；实现输出
-    与库面直读锚点）**：add_remote_repo＝url 解析（不可解析答
-    repo_invalid Validation，先于任何网络段）→重复 url 预检（
-    get_user_repos）→库 RemoteRepository::download_with_etag 抓清单
-    （面固有网络段；新订阅无 etag；不可达主机答 repo_fetch_failed
-    ExternalFailure；库契约内不可达的 Ok(None)〔无 etag 时「not
-    modified」不应发生〕也如实答 fetch 失败绝不猜成功）→库
-    Settings::add_remote_repo 守卫（重复 id/官方/精选拒绝如实
-    repo_invalid；headers 恒空 map——冻结词面不收凭据/HTTP 头）→
-    settings.save；缓存槽＝隔离环境 Repos/ 目录下 fnv1a_hex(url).json
-    （库自法律：订阅行 local_path 即缓存路径，repo_source.rs；库在下次
-    目录刷新时填充）。add_local_repo＝canonicalize（不可解析答
-    repo_invalid）→目录性校验（冻结词面「directory」）→映射
-    dir/repo.json（VCC 生态标准清单名——库把行 local_path 当清单 JSON
-    读：load_repo_from_cache 对无 url 行 parse_json_file，故目录无
-    repo.json＝诚实 malformed 拒绝，先于任何 settings 写入）→重复路径
-    答 repo_invalid（**不宣称幂等**——A3 AlreadyAdded 折叠刻意不复制）
-    →save。remove_repo＝库 Settings::remove_repo 谓词 id() 等价删除→
-    空 removed 行表答 repo_not_found（诚实未找到，绝不静默成功）→
-    map_repo_write 映射 io 腿（REPO_WRITE_FAILED ExternalFailure，
-    context 前缀纪律同 map_local_package_io）。
-  - **覆写（恰一处能力声明＝翻转开关）**：repo_write_capabilities 三独
-    立位 true（后端可只服务子集，wire 门按方法绝不按面；VccCliBackend
-    维持 declared-none 零改动）；覆写前 served 行 packages.repoOps 如实
-    unavailable，自本切片真 backend 行翻转 available。
-  - **逐码完整映射申报（实现输出闭集恰四码，对照冻结批申报与接线批
-    all-refusals-fold 投影）**：①repo_invalid＝全部畸形订阅腿（url 不
-    可解析/路径不可解析/非目录/缺 repo.json/重复 url/重复路径/库官方精
-    选 id 守卫）全 Validation；②repo_fetch_failed＝清单网络段（含无内
-    容 Ok(None) 腿）ExternalFailure；③repo_not_found＝空 removed 行表，
-    Validation 携 repoId 参数；④repo_write_failed＝settings load/save
-    io 腿 ExternalFailure。零词外码、零 trait-default 可达（三位全实
-    现）、capability_missing 仅他后端可能——接线批单一 execution_failed
-    折叠完全覆盖闭集，**零映射缺口、无事求核心**。
-  - **依赖增补如实申报**：Cargo.toml 加 url = "2"（owner 环境域；Settings
-    API 收已解析 url::Url；与库自身依赖同 major；移除路径随适配器；库
-    面类型 IndexMap 不命名——泛型 default_of 推断空 map，不引直接
-    indexmap 依赖）；Cargo.lock diff 恰依赖清单一行（url 2.x 已在
-    lock，零新包）。
-  - **定向测试（恰本一测试文件，25→32 例，+7 钉例）**：能力三位翻转＋
-    VccCli NONE／local 往返（行 local_path＝dir/repo.json 库自法律、
-    cached=true、无 url 无 id——无 id 行在 remove reach 外的冻结边界钉
-    死）＋重复拒绝 repo_invalid／缺 repo.json 拒绝且零 settings 写入／
-    未知 id repo_not_found／remove 恰删带 id 行留无 id 行＋
-    settings.json 恰余一行＋重复 remove 诚实 not_found（remove 面同样
-    不宣称幂等）／不可达主机 fetch_failed／不可解析 url 先于 fetch 答
-    repo_invalid。
-- **全链定向证据（本机亲测绿 08:4x，df 先查 C 盘余 613G/68%）**：cargo
-  test -p vua-project-manager 14 targets 102/0（was 95，vpm_backend
-  32/0 含 7 新例）；cargo test -p vua-provider-host 31 套件 222/0 原样
-  （fake backend 注入——覆写在 provider-host 测试面零行翻转，真进程行
-  为系装配期事实）；cargo test -p vua-orchestrator 231/0 原样；clippy
-  三 crate（project-manager/provider-host/orchestrator）--all-targets
-  0 告警；零端到端宣称维持——三方法已实现、行已翻转，真机走查归 W25
-  （O-2）。
-- **机械校验**：本批变更面＝追平壳（inbound 全为第 109 批已验收内容）＋
-  切片批（恰本域 3 文件＋Cargo.lock 一行）＋本状态批（恰本文件一
-  collab 文件，collab-only 免全量如实声明——定向证据已列，未跑全量
-  cargo 真实复跑〔U11 清理后从零重编成本在案，定向证据已足〕；build/
-  leak 候用户 dev 栈退出窗口）。
+- **①区消化（零动作）**：brief 11:39 ①区无指向本树/本角色的阻塞与留言、失鲜工作树无。
+  候验收闭环：本树上拍状态批 77cc9d0 已经第 111 批 item 6（902bdde）收编入库（merge-base
+  --is-ancestor 实证领先归 0；brief ③区本树领先 0 同证），收编回执就地消化勿重复。操作
+  者澄清消化：第 112 批关账批 2693835 载明第 111 批「疑似并行进程」实为本会话多瞬时分发
+  （环境/产线/数据同受 10:5x 指令）——本进程即被分发的环境瞬时之一，上拍「in flight
+  not archived」自述与该澄清吻合，分歧措辞已由集成关闭，本树零补记义务仅如实消化。
+- **A5 备料核对推进（只读直读，冻结批 0c77273 词面对照；零代码、零跨域触碰、零映射申
+  报预写）**：对照对象＝slot/wt-2 冻结批 0c77273（读取时点在 wt-2 分支；等待窗口内已经
+  第 112 批 item 2＝8416df6 零修改要求验收入库，对照结论对入库世代同等有效）。上拍七点
+  事实逐点对照**零矛盾**，细化登记四条：
+  1. **能力位裁定核实**：A5 维持既有五联位 `VpmCapabilities.create_project`、零新
+     accessor（与 A3/A4 accessor＋default-err 模式不同构）——端口 doc 注释（create_
+     project REQUIRED 无 default 臂＋字段注释「gate law」）与协议本 0.5 双双载明「位
+     先于本批存在且双在库后端已诚实声明（库真 CLI 真）」。
+  2. **served 行 packages.createOps 翻转语义核实（切片核对点预登记）**：一行一方法
+     （registerOps/removeOps 一行先例）；行可用性＝`capabilities().create_project` 位；
+     wire 门 submit 前读位、假位答通用 `capability_missing`。今日 wire 面零 createProject
+     路由（grep 实证世代 2693835）＝**A5 行系新行非翻转行**；双 backend 位已 true＝接线
+     落地时行在双真后端即时 available、**环境侧零覆写动作**（与 A4 VccCli 需
+     repo_write_capabilities 覆写三位不同——本面无覆写位需求，覆写核对结论＝不适用）。
+  3. **错误闭集双面核实**：`template_missing`＝库路径四 i18n 键共享载体（projectExists
+     Validation／projectNameInvalid Validation／templateMissing Dependency／
+     templateCopyFailed ExternalFailure）；`apply_failed`＝CLI 三腿（超时/非零携
+     exitCode :1392–1402＋登记腿 initialize 失败携 reason :1409–1417）；`backend_
+     unavailable`＝runner spawn 故障 :1383–1391（库路径永不答此码）——协议本「CLI 超时
+     或非零退出（携 exitCode）与登记腿」措辞与实现逐腿吻合（上拍登记「超时/非零＋登记
+     腿」的「登记腿」至此实证为 initialize 失败腿）。零新码；`vua.vpm.*` 永不入 code 键
+     （pattern 锁 `^vua\.packages\.`）。
+  4. **诚实边界照词面处置核实**：协议本「目标路径已存在时后端守卫在执行时拒绝（库路径
+     projectExists 键），不宣称幂等」＋恢复纪律「非终态残留映射 inspect_required、绝不
+     隐式续传」——实现 exists() 前置拒绝与 copy_tree 无清理/无回滚与词面一致，环境核对
+     切片将钉此二点；created 收据恰四键 {schemaVersion, kind:"created", projectId,
+     projectPath} additionalProperties:false（result.schema.json projectCreated def 直
+     读）；参数面 {parent, name, template} 三键闭集、template REQUIRED-nullable（null＝
+     后端默认 Avatar 三级解析冻结事实非选择器）。
+- **守候轮询日志（如实）**：等待窗口自 11:43 起，fetch 轮询五拍（11:51／11:59／12:08／
+  12:16／12:24）——窗口内 main 两度前移：第 112 批在途（item 1 wt-3 A4 消费切片批
+  7d14b1e 验收＋item 2 8416df6 **A5 冻结批 0c77273 验收**）→关账 **2693835**（随批推
+  送，main＝origin/main 推送债归零）；**A5 接线批未在窗口内入库**（全程 provider-host
+  src 零 createOps、零 wire v0.5 路由文件，末拍 main 自 2693835 静止）。结构性如实注
+  记：冻结批 11:5x 方经 item 2 验收，接线切片系核心冻结批验收后第一优先（wt-2 状态文
+  件在案），40 分钟窗口内不及落地属预期结构非异常——照用户指令第 3 项如实登记后退出
+  待命，环境 A5 实现核对切片开关条件（接线批入 main）未成就，不抢跑。
+- **超线自理追平壳 104b18b**：末读落后 22（实质＝第 112 批两实质切片）过 15 触发线照
+  自理条款即办；fetch 实测 main＝origin/main＝2693835（已推送无推送债）；双法预检零冲
+  突（ort --write-tree exit 0 tree 4b250ed＋老式 0 标记）；--no-ff 合并，merge-base＝
+  本树尖 77cc9d0 领先 0 零自有内容纯吸收；inbound 净面＝非 collab 43 文件（wt-3 A4 消
+  费切片 19＋wt-2 A5 冻结批 24）＋collab 面（BOARD #40 ⑱ 段＋wt-main 状态批），全为第
+  112 批已验收内容纯吸收零夹带；环境域（crates/project-manager、docs/compatibility、
+  docs/tool-catalog）pathspec 实证零触碰（0 文件）；追平后全 diff vs main 零文件；基
+  线世代刷新 **2693835**。
+- **过程事故如实登记**：追平合并首笔命令因会话 cwd 重置落在 VUA 主检出（main 分支）执
+  行——「Already up to date」（main 合 main）零提交零变更零效果，主检出事后核验仅既有
+  未跟踪 `_local_p27_devlog.txt`（第 111 批已登记保留不触碰）零污染；合并已在本树
+  （VUA-6）重做落地为 104b18b。零损伤、如实留痕。
+- **机械校验**：本拍两笔零自有代码变更（备料纯只读＋追平壳零自有内容），collab-only 免
+  全量如实声明——全量证据沿用第 112 批关账批（2693835）合并树定向复跑登记世代
+  （contracts 79/79 联合计数＝77 基数＋wt-3 A4 钉例＋wt-2 A5 钉例＋provider 39/39＋
+  desktop typecheck 双 tsconfig 0＋vitest 80 文件 714/714＋boundary/i18n/contrast＋
+  check:leak 155 零泄漏＋forest-leak；desktop build release 段未重跑——wt-3 全链干净
+  跑被引于 blob-identical 世代，集成如实申报在案）；project-manager 证据沿用第 110 批
+  合并树复跑世代 14 targets 102/0（vpm_backend 32/0）——本拍 inbound 环境域 pathspec
+  零触碰实证，该世代对 2693835 基线继续有效。本拍零测试跑、零进程接触、零磁盘重测。
 
-## 前情（cb93446 世代＝A3 实现核对切片轮，全文见本文件 git 历史）
-09-19 07:2x–07:4x 三笔（追平壳 7cf85c3＋切片批 dac78ee＋状态批
-c31f465）＋超线自理追平 cb93446——dac78ee 已经第 109 批 item 2（
-78f881a）验收入库闭环；更早（4728725、31246f8 A2 实现核对、95da3cd
-A1 线、025/v0.2 增量链）见 git 历史。
+## 前情（77cc9d0 世代＝紧急批追平＋A5 备料七点轮，全文见本文件 git 历史）
+09-19 10:5x–11:0x 两笔（追平壳 3b8903c＋状态批 77cc9d0）——追平壳已经第 111 批 item 3
+（ae4b93c）收编、状态批经 item 6（902bdde）收编；更早（8869e55 A4 实现核对切片、dac78ee
+A3、31246f8 A2、c42ad05 A1、025/v0.2 增量链）见 git 历史。
 
-## 本轮交付（78f881a 基线世代）
-- **追平壳**（--no-ff 吸收 main 78f881a 第 109 批，开工前合并纪律，零
-  冲突零自有内容）。
-- **切片批 8869e55**（026 A4 实现核对：三实现＋覆写翻转开关＋逐码四项
-  申报零缺口＋定向测试 25→32；恰环境域 3 文件＋Cargo.lock 一行）。
-- **本状态批（恰本文件）**：A3 候验收闭环消化＋第 109 批留言消化＋追平
-  笔落账＋切片批交付申报＋磁盘读数 613G。
+## 本轮交付（2693835 基线世代）
+- **超线自理追平壳 104b18b**（落后 22 过 15 线自理，--no-ff 吸收 main 2693835 第 112 批，
+  零自有内容零冲突，inbound 非 collab 43 文件全为已验收内容、环境域零触碰，基线刷新
+  2693835）。
+- **本状态批（恰本文件）**：brief ①区零动作消化＋第 111 批 item 6 收编闭环＋操作者澄清
+  消化＋A5 冻结批词面只读对照四条细化（七点零矛盾）＋守候轮询日志（接线批未入库，等待
+  超 40 分钟如实登记）＋过程事故留痕。
+- 零新代码交付、零新阻塞、零新升级项（非空转轮：有超线追平＋备料对照推进＋守候轮询实
+  质簿记内容）。
 
 ## 在途/待他角色
-- **[等集成] 追平壳（零自有内容）＋切片批 8869e55（实质）＋本状态批
-  （恰本文件）候随轮验收（--no-ff）**。
-- **[等桌面] A4 形状核可＋消费切片**（形状核可候接线批入库世代照
-  A1/A2/A3 先例——协议本 0.4.1 信封常量已载明无缺口；消费候形状核可。
-  与本切片无先后依赖）。
-- [等用户] **W25 开窗（O-2 延期维持）**——窗口内环境候办清单不变：EAC
-  真机四件套＋B 段＋E2 运行中探测＋允许清单首批条目；026 A4 启停面
-  VCC 禁用列表键名真机核实；024 表态 (b) vcc.liteDb 只读核实（可同窗
-  顺带）；A3/A4 served 行翻转真机呈现确认（与桌面消费走查同窗）；真机
-  ready-p2 区块解锁（与 #33 同窗）。
+- **[等核心] A5 wire 接线切片**（packages.createOps 路由臂/served 行/信封组装＋协议本
+  0.5.x 信封常量＋wire 测试）——**环境 A5 实现核对切片开关条件＝接线批入 main；成就即
+  照 A1–A4 同径开工：create_project 直读核对（create_from_template :1429–1509／VccCli
+  vpm new 路径）＋映射申报（template_missing/apply_failed/backend_unavailable 闭集，含
+  apply_failed 三腿）＋不幂等/半成品无回滚诚实边界照词面钉死＋能力位覆写核对（本面预
+  登记结论＝零覆写动作、served 行新行即时双真 available）＋served 行 packages.createOps
+  语义核对。不抢跑。**
+- **[等集成] 本拍两笔候随轮验收（--no-ff）**：追平壳 104b18b（零自有内容照先例随批自然
+  收编）＋本状态批（恰本文件，collab-only 免全量如实声明）。
+- [等用户] **W25 开窗（O-2 延期维持）**——窗口内环境候办清单不变：EAC 真机四件套＋B 段
+  ＋E2 运行中探测＋允许清单首批条目；026 A4 启停面 VCC 禁用列表键名真机核实；024 表态
+  (b) vcc.liteDb 只读核实（可同窗顺带）；A3/A4 served 行翻转真机呈现确认；真机 ready-p2
+  区块解锁。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝026 A4 实现核对切片批 8869e55（实质：恰环境域 3 文件
-433+/1-＋Cargo.lock 依赖行，三实现＋覆写三独立位＋逐码四项申报零缺
-口，定向证据亲测在案）＋追平壳（落后 5 实质 2，开工前合并纪律，零自
-有内容纯吸收，零冲突）＋本状态批（实质 diff 恰本文件一 collab 文件，
-collab-only 免全量如实声明），请集成随轮验收（--no-ff），写明「wt-6
-026 A4 实现核对切片批」。**本批入库后 026 A4 链四环闭环（冻结 28c63fa
-→接线 3d4b667→桌面消费候形状核可→环境实现核对 8869e55）、served 行
-packages.repoOps 真后端翻转 available。**提交后读数：领先 3（实质
-1）、落后 0（78f881a 世代）。若下轮 brief 读数落后过 15 线照则自理追
-平（CHASE STOP 延续）。
+**候验收对象＝本状态批（实质 diff 恰本文件一 collab 文件，collab-only 免全量如实声明），
+请集成随轮验收（--no-ff），写明「wt-6 紧急守候批状态批（追平壳 104b18b 随批自然收编）」。**
+提交后读数：领先 2（实质 0）、落后 0（2693835 世代，落笔时点真实）。**CHASE STOP 延
+续**——后续 main 前移（核心 A5 接线批候交付）照下轮 brief 读数，达线再自理；接线批入
+库即照 A1–A4 同径开工（开关条件成就），不以 CHASE STOP 抵扣切片开工。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-19 08:1x–08:4x，工作时段开工、收尾时段安全收尾，三笔：
-追平壳＋切片批 8869e55＋本状态批）：①date 08:11 确认工作时段；brief
-08:11 ①区 [→环境] 留言＝A3 开工请求，开局核实其已被上拍 dac78ee 交付
-回应且经第 109 批 item 2（78f881a）验收入库闭环，就地消化；失鲜工作树
-无；②操作者注开关条件照「候验收世代不抢跑、入库后同拍开工」先例办理
-——首轮 fetch 即 LANDED（main 78f881a 含核心 A4 接线批 3d4b667）即开
-工；③执行＝只读预研（trait 端口面/RepoWriteCapabilities/四码常量/
-vrc-get-vpm 0.0.16 库面 Settings API 直读：add_remote_repo 需先抓
-RemoteRepository、add_local_repo 行 local_path 即清单路径、
-remove_repo 谓词删除返回被删行表、settings.json 持久化、
-HttpClient for reqwest::Client 在库）→追平壳（--no-ff 合并 78f881a，
-零冲突）→三实现＋覆写＋helper＋url 依赖→定向测试 7 例→定向复跑全绿
-→提交切片批→本状态批；④开发中如实申报：三拍编译修正（download_with_
-etag 返回 Option 解构＋&IndexMap 不可 Default〔泛型 default_of 推断
-解决，不引 indexmap 直接依赖〕＋environment_root move 时序），均实现
-文件内当拍修正；测试一拍 move 时序修正（测试文件内）；⑤证据＝df
-613G/68% 先查；project-manager 14 targets 102/0（vpm_backend 32/0 含
-7 新）／provider-host 31 套件 222/0 原样（fake 注入零翻转）／
-orchestrator 231/0 原样／clippy 三 crate 0；⑥所有权核验＝恰环境域 3
-文件（vpm_backend.rs＋tests/vpm_backend.rs＋Cargo.toml）＋Cargo.lock
-依赖行一行（零新包）＋追平壳＋本状态批，零跨域触碰；⑦机械校验如实声
-明（状态批 collab-only 免全量；全量 cargo 未跑，U11 从零重编成本在
-案；cargo 全程未跑 build --release，os error 5 教训维持）；⑧环境事实
-＝零进程接触、未探测不宣称用户 dev 栈现况。零端到端宣称维持——真机
-走查归 W25（O-2）。退出待命，候集成验收（追平壳＋切片批＋本状态批）、
-下轮 brief 或新指派；在手无半途切片、无未提交改动。
+本轮（2026-09-19 11:3x–12:3x，紧急操作者批非节拍，时段例外照用户 10:5x 明示指令按工作
+时段规则处理；两笔：追平壳 104b18b＋本状态批恰本文件）：①pnpm collab:brief 11:39 ①区
+无指向本树/角色的阻塞与留言、失鲜工作树无，零动作消化；候验收闭环＝77cc9d0 经第 111 批
+item 6（902bdde）收编（is-ancestor 实证）就地消化勿重复；②任务第 2 项备料核对推进＝冻
+结批 0c77273 词面只读对照（该批等待窗口内经第 112 批 item 2 验收入库）——上拍七点事实
+零矛盾＋四条细化登记（能力位维持既有五联位零新 accessor／served 行 packages.createOps
+新行非翻转行、行可用性骑既有位、环境侧零覆写动作／错误闭集三码逐腿吻合含 apply_failed
+登记腿实证 :1409–1417／诚实边界与 created 四键收据直读核实），零映射申报预写、零代码、
+零跨域触碰；③任务第 2 项守候＝fetch 轮询五拍（11:51–12:24），窗口内 main 前移至
+2693835（第 112 批：wt-3 A4 消费＋wt-2 A5 冻结两实质验收＋关账推送归零推送债），**接
+线批未入库**（provider-host src 零 createOps 全程实证）；任务第 3 项＝等待超 40 分钟
+（11:43–12:24）如实登记后退出待命勿空转——开关条件未成就不抢跑，结构性原因如实注记
+（冻结批窗口中段方验收，接线系其验收后第一优先）；④任务第 4 项追平/状态批照先例＝末
+读落后 22 过 15 线自理追平（fetch 实测 main＝origin/main＝2693835 后双法预检零冲突 ort
+tree 4b250ed＋老式 0 标记，--no-ff 合并 104b18b，merge-base＝77cc9d0 领先 0 零自有内
+容，inbound 非 collab 43 文件全为第 112 批已验收内容、环境域 pathspec 零触碰实证，追
+平后全 diff vs main 零文件，基线刷新 2693835）；⑤过程事故如实留痕＝首笔合并命令因
+cwd 重置误落 VUA 主检出的 no-op（main 合 main「Already up to date」零提交零变更，主检
+出零污染核验在案），本树重做落地为 104b18b；⑥collab-only 免全量如实声明（两笔零自有
+代码变更；全量证据沿用第 112 批关账合并树复跑登记世代 79/79＋39/39＋typecheck 双 0＋
+vitest 714/714 等在案；project-manager 沿用第 110 批 102/0 世代——本拍 inbound 环境域
+零触碰实证世代有效）；本拍零测试跑、零进程接触、零磁盘重测；⑦所有权核验＝追平壳零自
+有内容＋本状态批恰本文件一 collab 文件，代码面全只读零跨域触碰；⑧零端到端宣称维持——
+A5 未接线（wire 面方法不存在）、环境核对切片未开工，真机走查归 W25（O-2）；在手无半途
+切片、无未提交改动。退出待命，候核心 A5 接线批入库（开关条件成就即照 A1–A4 同径开工）、
+集成验收本拍两笔、下轮 brief 或新指派。
 
 ## 留言
-- [→集成] **026 A4 实现核对切片候验收**：上拍 A3 切片 dac78ee 已经
-  78f881a 验收入库（A3 链四环闭环）就地消化勿重复。**候验收对象＝切片
-  批 8869e55（恰环境域 3 文件 433+/1-＋Cargo.lock 依赖行：三实现
-  add_remote_repo/add_local_repo/remove_repo 照 A3 同径＋
-  repo_write_capabilities 三独立位覆写〔served 行 packages.repoOps 真
-  后端翻转开关，VccCliBackend 维持诚实缺席〕＋逐码四项映射申报零缺口
-  ＋url="2" 依赖增补如实申报〔Cargo.lock 零新包〕＋定向测试 25→32 七
-  钉例）＋追平壳（开工前合并纪律吸收 78f881a，零自有内容零冲突）＋本
-  状态批（collab-only 免全量如实声明），请随轮验收（--no-ff），写明
-  「wt-6 026 A4 实现核对切片批」。**定向证据本机亲测绿：df 613G 先
-  查；project-manager 14 targets 102/0（vpm_backend 32/0 含 7 新）＋
-  provider-host 31 套件 222/0 原样＋orchestrator 231/0 原样＋clippy
-  三 crate 0。实现核对另附三申报：目录→repo.json 映射（词面
-  「directory」与库面「行 local_path 即清单路径」的诚实调和，缺文件
-  ＝malformed 拒绝先于任何写入）；缓存槽 fnv1a_hex(url).json 命名
-  （库自法律 local_path 即缓存路径，环境域自决非词面事实）；Ok(None)
-  腿如实答 fetch 失败（库契约内不可达但不猜成功）——均系登记非裁决请
-  求。零端到端宣称维持，真机 served 行翻转走查归 W25。磁盘知会：本拍
-  df 实测 C 盘余 613G（68%）；「全量复跑前先 df」维持。
-- （回执不回执：第 109 批 [→环境] 留言＝上拍 A3 交付即回应；本批 A4
-  交付即操作者注开关条件的执行；历史留言已消化归档，在途事项以 BOARD
-  与本状态文件当前焦点为准。）
+- [→集成] **候验收对象＝本状态批单笔＋追平壳随批自然收编**：追平壳 104b18b（落后 22 过
+  15 线自理，--no-ff 吸收你方 main 2693835 第 112 批，零自有内容，双法预检零冲突 ort
+  tree 4b250ed，inbound 非 collab 43 文件全为你方第 112 批已验收内容纯吸收，环境域
+  pathspec 零触碰实证，追平后全 diff vs main 零文件）＋本状态批（恰本文件，collab-only
+  免全量）请随轮验收（--no-ff），写明「wt-6 紧急守候批（追平壳 104b18b＋状态批）」。
+  提交后读数：领先 2（实质 0）、落后 0（2693835 世代）。守候结果如实登记：A5 接线批未
+  在 40 分钟窗口入库（结构性：冻结批 8416df6 窗口中段方验收，接线系核心验收后第一优
+  先），本树照指令登记退出待命，开关条件（接线批入 main）成就即照 A1–A4 同径开工环境
+  核对切片。免重跑证据＝inbound 代码面全为你方第 112 批亲审验收入库内容（关账 2693835
+  合并树复跑登记在案），本拍零代码变更。环境侧无新请求。
+- [→核心] **A5 备料对照结论包（候你方接线批参考）**：冻结批 0c77273 词面与本树 77cc9d0
+  登记的七点实现侧事实逐点对照零矛盾；四条细化已登记本状态批——①能力位裁定核实＝维持
+  既有五联位零新 accessor（库真 CLI 真）；②served 行 packages.createOps＝新行非翻转行，
+  行可用性骑既有位（双真后端即时 available）、wire 门 submit 前读位，**环境侧零覆写动
+  作**（与 A4 覆写三位不同构，覆写核对对本面不适用）；③错误闭集三码逐腿吻合——
+  apply_failed 登记腿实证＝initialize 失败携 reason（:1409–1417），超时/非零携
+  exitCode（:1392–1402），backend_unavailable＝spawn 故障（:1383–1391）；④诚实边界＝
+  exists() 前置拒绝不宣称幂等＋copy_tree 无回滚照词面处置。环境核对切片候你方接线批入
+  main 即照 A1–A4 同径开工，不抢跑。
+- （回执不回执：第 111 批 item 6 收编回执、第 112 批两实质验收知会、操作者澄清＝本状态
+  批就地消化；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
