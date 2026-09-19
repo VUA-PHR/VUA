@@ -25,6 +25,7 @@ import {
   registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
   removeGuardKey,
+  repoEnvelopeErrorKey,
   repoHealthTextKeys,
   requestForVersion,
   rowStatus,
@@ -369,6 +370,34 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
       assert.ok(guards[key].length > 0);
     }
     const envelopeErrors = strings.packages.register.envelopeErrors;
+    for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
+      assert.equal(typeof envelopeErrors[key], "string");
+      assert.ok(envelopeErrors[key].length > 0);
+    }
+  });
+
+  test("repoEnvelopeErrorKey maps the declared v0.4 codes and falls back to unknown; the repoWrite i18n section mirrors the keys (026 A4)", () => {
+    // v0.4 已申报面(接线批落地面):能力门控在路由层按方法作答(三独立
+    // 位未声明的方法绝不进任务)+ 请求形状违规
+    assert.equal(repoEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(repoEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    // 「预览语义不存在」负例:本面照 A3 同律破 preview/apply 对偶——
+    // preview_failed 不在闭集,project_not_found 亦不适用(订阅面无项目
+    // 身份),两码如实缺席
+    assert.equal(repoEnvelopeErrorKey("vua.packages.preview_failed"), "unknown");
+    assert.equal(repoEnvelopeErrorKey("vua.project.project_not_found"), "unknown");
+    // 词外码(端口四码 vua.vpm.repo_invalid/repo_not_found/
+    // repo_fetch_failed/repo_write_failed 全折 execution_failed 的
+    // rejected 臂不经此映射;任务 error.code 原词)回落 unknown 原词插值
+    assert.equal(repoEnvelopeErrorKey("vua.vpm.repo_invalid"), "unknown");
+    assert.equal(repoEnvelopeErrorKey("vua.vpm.repo_not_found"), "unknown");
+    assert.equal(repoEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+    const guards = strings.packages.repoWrite.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+    const envelopeErrors = strings.packages.repoWrite.envelopeErrors;
     for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
       assert.equal(typeof envelopeErrors[key], "string");
       assert.ok(envelopeErrors[key].length > 0);

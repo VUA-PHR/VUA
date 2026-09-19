@@ -686,4 +686,68 @@ describe("gateway guard covers every declared method (regression: silent guard g
       }),
     ).toBe(false);
   });
+
+  it("packages.addRemoteRepo / addLocalRepo / removeRepo: exact keyset closed params non-empty, NO projectPath NO digest slot no commandId param slot (026 A4 freeze; the face breaks the preview/apply pair per the A3 law - a preview would be a second network round-trip pretending to be a safer first hop and no pre-existing state digest exists to bind, so the user's explicit submission IS the confirmation; the subscription face writes the backend's isolated environment only)", () => {
+    const addRemote = {
+      schemaVersion: 1 as const,
+      requestId: "request-54",
+      method: "packages.addRemoteRepo" as const,
+      params: { url: "https://vpm.example/index.json", name: "Example Repo" },
+    };
+    const addLocal = {
+      schemaVersion: 1 as const,
+      requestId: "request-55",
+      method: "packages.addLocalRepo" as const,
+      params: { path: "C:/Repos/local-curations", name: "Local Curations" },
+    };
+    const remove = {
+      schemaVersion: 1 as const,
+      requestId: "request-56",
+      method: "packages.removeRepo" as const,
+      params: { repoId: "repo-example" },
+    };
+    expect(isDesktopGatewayRequestV1(addRemote)).toBe(true);
+    expect(isDesktopGatewayRequestV1(addLocal)).toBe(true);
+    expect(isDesktopGatewayRequestV1(remove)).toBe(true);
+    // 缺键/空串(词面 minLength 1)一律拒绝
+    expect(isDesktopGatewayRequestV1({ ...addRemote, params: { name: "Example Repo" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...addRemote, params: { url: "", name: "Example Repo" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...addLocal, params: { path: "C:/Repos" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...addLocal, params: { path: "C:/Repos", name: "" } })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...remove, params: {} })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...remove, params: { repoId: "" } })).toBe(false);
+    // 发明 projectPath 位(订阅面不触项目)/携 digest 位(本面无 preview 可
+    // 漂移,携即形状违反——负例 invalid-add-remote-carries-digest 同形)/
+    // 投机 commandId 位/多余键:一律拒绝
+    expect(
+      isDesktopGatewayRequestV1({
+        ...addRemote,
+        params: { url: "https://vpm.example/index.json", name: "Example Repo", projectPath: "C:/proj" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...addRemote,
+        params: { url: "https://vpm.example/index.json", name: "Example Repo", confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...remove,
+        params: { repoId: "repo-example", confirmedDigest: "d" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...addLocal,
+        params: { path: "C:/Repos", name: "Local Curations", commandId: "cmd-9" },
+      }),
+    ).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({
+        ...addLocal,
+        params: { path: "C:/Repos", name: "Local Curations", extra: 1 },
+      }),
+    ).toBe(false);
+  });
 });
