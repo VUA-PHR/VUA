@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.repoCatalog",
+  "params": {
+    "repoId": null,
+    "packageIds": [
+      "com.anatawa12.avatar-optimizer",
+      "com.anatawa12.avatar-optimizer"
+    ]
+  }
+}
