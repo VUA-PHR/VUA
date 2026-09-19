@@ -107,6 +107,14 @@ export const strings: Strings = {
 demoTaskTitle: "데모 작업",
     replay: "이벤트 스트림 재생",
     progress: "{done}/{total}",
+    openAria: "알림 센터 열기(진행 중 {count}개)",
+    closeAria: "알림 센터 닫기",
+    empty: "알림이 없습니다",
+  },
+  bootSplash: {
+    starting: "VUA 시작 중",
+    waitingServices: "로컬 서비스 준비를 기다리는 중…",
+    updateAvailable: "새 버전 {version} 사용 가능",
   },
   nav: {
     tabs: {
@@ -1643,6 +1651,43 @@ rolled_back: "롤백됨",
       removedLine: "구독 해제됨: {repoId}",
     },
 
+    create: {
+      title: "새 프로젝트 만들기",
+      description:
+        "선택한 상위 폴더에 새 VRChat 프로젝트를 만듭니다. 성공하면 프로젝트가 즉시 VUA에 등록되어 등록 목록에 나타납니다. 생성은 멱등하지 않습니다. 이미 존재하는 디렉터리에 생성하면 거부되며, 거부는 그대로 표시됩니다. VCC/ALCOM 설정은 절대 변경되지 않습니다.",
+      parentPlaceholder: "상위 폴더 경로(예: C:\\Users\\me\\VRChat Projects)",
+      parentAria: "상위 폴더 경로",
+      namePlaceholder: "프로젝트 이름(예: My World)",
+      nameAria: "프로젝트 이름",
+      templatePlaceholder: "템플릿 이름(선택) — 비워 두면 백엔드 기본 템플릿을 사용합니다",
+      templateAria: "템플릿 이름, 선택",
+      action: "프로젝트 만들기",
+      submitting: "만드는 중…",
+      successLine: "생성 및 등록됨: {projectPath}",
+      rejectedDetail: "서버 설명: {detail}",
+      refusals: {
+        projectExists: "대상 디렉터리가 이미 존재합니다.",
+        projectNameInvalid: "프로젝트 이름에 금지된 문자가 포함되어 있습니다.",
+        templateMissing: "해당 이름의 템플릿이 라이브러리에 없습니다.",
+        templateCopyFailed: "템플릿 내용 복사에 실패했습니다.",
+      },
+      guards: {
+        preview_drift: "생성 요청이 거부되었습니다.",
+        package_not_found: "생성 요청이 거부되었습니다.",
+        execution_failed: "생성이 실행 중에 실패했습니다.",
+        unknown: "생성 요청이 거부되었습니다.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "현재 엔진 백엔드는 프로젝트 생성을 지원하지 않습니다.",
+        invalidParams: "생성 요청 형식이 잘못되었습니다.",
+        unknown: "작업에 실패했습니다.",
+      },
+      toasts: {
+        failedUnknown: "프로젝트 생성이 완료되지 않았습니다({code}).",
+        unavailable: "프로젝트 생성이 완료되지 않았습니다: 결과를 확인할 수 없습니다. 작업 센터를 확인하세요.",
+      },
+    },
+
     repos: {
       addCommunity: "커뮤니티 리포지토리 추가",
       riskTitle: "커뮤니티 리포지토리를 추가하기 전에",
@@ -1921,6 +1966,17 @@ rolled_back: "롤백됨",
       diagnosticsDescription: "문제 진단용 비식별 진단 번들을 내보냅니다. 포함: 앱 버전, 데이터 소스, 환경 검사 상태와 타임스탬프, 목표 선택. 미포함: 파일 경로, 에셋·레시피 내용, 계정 또는 디바이스 식별자.",
       diagnosticsExport: "진단 번들 내보내기",
       diagnosticsFailed: "내보내기에 실패했습니다. 다시 시도하세요.",
+      updateHeading: "업데이트 확인",
+      updateDescription:
+        "시작할 때 VUA가 프로젝트 릴리스 페이지에서 새 버전이 있는지 읽기 전용으로 확인하고 결과를 있는 그대로 표시합니다. 다운로드하거나 설치하지 않습니다. 언제든 여기에서 끌 수 있습니다.",
+      updateToggle: "시작 시 업데이트 확인",
+      updateNow: "지금 확인",
+      updateChecking: "확인하는 중…",
+      updateNewer: "새 버전 사용 가능: {version}",
+      updateUpToDate: "최신 버전을 사용 중입니다.",
+      updateFailed: "확인에 실패했습니다. 다음 시작 때 다시 시도합니다.",
+      updateCheckedAt: "마지막 확인: {at}",
+      updateViewRelease: "릴리스 노트 보기",
     },
     about: {
       heading: "VRC Ultra Assistant",

@@ -339,6 +339,24 @@ function toApplicationRequest(
           repoId: request.params.repoId,
         },
       };
+    // packages-ops v0.5 写面 A5 项目创建(026 冻结批;桌面 A5 消费批):
+    // 照 A3/A4 同律无 preview 对偶且根在端口——单方法任务化 command(
+    // import-copy/A1–A4 同构,commandId 由 Kernel 生成照先例,create- 前
+    // 缀);params 三键闭集 verbatim 透传(template REQUIRED-nullable:
+    // null = 后端默认解析,非空串 = verbatim;无 digest 无确认链——用户
+    // 显式表单提交即确认;无 projectPath——创建不寻址任何在册项目)
+    case "packages.createProject":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.createProject",
+        commandId: `create-${crypto.randomUUID()}`,
+        params: {
+          parent: request.params.parent,
+          name: request.params.name,
+          template: request.params.template,
+        },
+      };
     case "warehouse.entryDetail":
       return { ...base, kind: "query", method: "warehouse.entryDetail", params: { warehouseItemId: request.params.warehouseItemId } };
     case "download.retry":

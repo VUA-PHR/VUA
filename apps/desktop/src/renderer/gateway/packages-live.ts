@@ -53,6 +53,8 @@ import type {
   PackagesApplyInstallRequestV1,
   PackagesApplyRemoveRequestV1,
   PackagesChangeItemV01,
+  PackagesCreateProjectRequestV1,
+  PackagesCreateRejectedV05,
   PackagesInstallPlanV02,
   PackagesInstallReceiptV02,
   PackagesListInstalledRequestV1,
@@ -63,6 +65,7 @@ import type {
   PackagesPackageRequestV02,
   PackagesPreviewInstallRequestV1,
   PackagesPreviewRemoveRequestV1,
+  PackagesProjectCreatedV05,
   PackagesRegisterLocalPackageRequestV1,
   PackagesRegisterReceiptV03,
   PackagesRegisterRejectedV03,
@@ -81,6 +84,7 @@ import type {
   CatalogPackageFactsV02,
   CatalogVersionRowV01,
   InstalledPackageRowV01,
+  PackagesCreateApplyOutcome,
   PackagesInstallApplyOutcome,
   PackagesPort,
   PackagesRegisterApplyOutcome,
@@ -108,6 +112,11 @@ const REGISTER_OPS_OPERATION_ID = "packages.registerOps";
  * repo_write_capabilities 三独立位门控——任一位声明即 available;wire
  * 门按方法绝不按面) */
 const REPO_OPS_OPERATION_ID = "packages.repoOps";
+/** A5 项目创建写面 served 行(026 v0.5 接线批申报;一行一方法,
+ * registerOps/removeOps/repoOps 一行先例;行可用性 = 既有
+ * VpmCapabilities.create_project 五联位——A5 零新 accessor,位先于冻
+ * 结批在库双后端已声明 true,无 declared-none 缺省态) */
+const CREATE_OPS_OPERATION_ID = "packages.createOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
 /** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
@@ -127,6 +136,12 @@ const PACKAGES_OPS_SCHEMA_VERSION_V04 = "vua.packages-ops/v0.4";
 /** packages-ops v0.4 wire 信封常量(A4 行;接线批协议本 0.4.1 载明,
  * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
 const PACKAGES_OPS_ENVELOPE_V04 = "0.4";
+/** packages-ops v0.5 result 本体族常量(A5 冻结批;created/rejected 两
+ * 成员盖戳,消费窄化按字面量) */
+const PACKAGES_OPS_SCHEMA_VERSION_V05 = "vua.packages-ops/v0.5";
+/** packages-ops v0.5 wire 信封常量(A5 行;接线批协议本 0.5.1 载明,
+ * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
+const PACKAGES_OPS_ENVELOPE_V05 = "0.5";
 /**
  * applyRemove/applyInstall 任务等待上界(本地文件操作,正常终态由
  * task.completed 事件驱动毫秒级到达;本界只防御事件丢失/断连后的无限
@@ -675,6 +690,68 @@ function isApplyRepoAccepted(
     && value.correlationId.length > 0;
 }
 
+/* ---- A5 项目创建写面窄化(026 packages-ops v0.5 冻结词面;family
+ * const vua.packages-ops/v0.5——created/rejected 盖戳按字面量) ---- */
+
+/** kind=created 四键闭集(A5 创建收据 = 端口 ProjectRef {id, root} 投
+ * 影——packages-ops 族唯一有实际载荷的收据:projectId = 端口铸造事实回
+ * 显〔信息性标识非 013 身份键〕,projectPath = 新项目根目录 = 注册路径
+ * 身份〔创建即在册冻结端口事实〕;发明创建时间戳/复制统计/包清单 =
+ * 形状违规,负例 invalid-result-invented-field 同形) */
+function isPackagesProjectCreatedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V05) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "projectId", "projectPath", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "created"
+    && typeof value.projectId === "string"
+    && value.projectId.length > 0
+    && typeof value.projectPath === "string"
+    && value.projectPath.length > 0;
+}
+
+/** kind=rejected 五键闭集(v0.5 戳):guard 三值闭集复用 A1–A4 零新增
+ * (A5 不加 guard)+ code 锁 vua.packages. 族(013 复用码 vua.vpm.*
+ * 永不入 rejected 文档,原端口码 template_missing/apply_failed/
+ * backend_unavailable 在 detail 原词溯源;双后端拒绝形状不同构如实折
+ * 叠,桌面按 detail 原码呈现不合并词) + detail 非空 */
+function isPackagesCreateRejectedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V05) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["code", "detail", "guard", "kind", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "rejected"
+    && (value.guard === "preview_drift"
+      || value.guard === "package_not_found"
+      || value.guard === "execution_failed")
+    && typeof value.code === "string"
+    && value.code.startsWith("vua.packages.")
+    && typeof value.detail === "string"
+    && value.detail.length > 0;
+}
+
+/** A5 wire 受理回执窄化(import-copy 同构四键,v0.5 信封:schemaVersion
+ * "0.5" + operation + taskId + correlationId;收不齐 = 形状不符;0.4/
+ * 0.3/0.2/0.1 戳 = 受理形状违规) */
+function isApplyCreateAccepted(
+  value: unknown,
+  operation: "packages.createProject",
+): value is { taskId: string; correlationId: string } {
+  if (!isRecord(value)) return false;
+  return value.schemaVersion === PACKAGES_OPS_ENVELOPE_V05
+    && value.operation === operation
+    && typeof value.taskId === "string"
+    && value.taskId.length > 0
+    && typeof value.correlationId === "string"
+    && value.correlationId.length > 0;
+}
+
 type TypedOutcome<T> =
   | { readonly kind: "ok"; readonly result: T }
   | { readonly kind: "failed"; readonly code: string }
@@ -683,11 +760,11 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取七行——packages.query(installed)/packages.listRepos(repos)/
+   * 一次取八行——packages.query(installed)/packages.listRepos(repos)/
    * packages.packageCatalog(catalog)/packages.removeOps(changes)/
    * packages.installOps(installs)/packages.registerOps(registers)/
-   * packages.repoOps(repoWrites);行缺席或 availability 非 available =
-   * 该区块诚实不可渲染(渲染层不伪造)。
+   * packages.repoOps(repoWrites)/packages.createOps(creates);行缺席
+   * 或 availability 非 available = 该区块诚实不可渲染(渲染层不伪造)。
    */
   const readCapabilityRows = async (): Promise<{
     installed: boolean;
@@ -697,6 +774,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     installs: boolean;
     registers: boolean;
     repoWrites: boolean;
+    creates: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -723,6 +801,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       installs: availability(INSTALL_OPS_OPERATION_ID),
       registers: availability(REGISTER_OPS_OPERATION_ID),
       repoWrites: availability(REPO_OPS_OPERATION_ID),
+      creates: availability(CREATE_OPS_OPERATION_ID),
     };
   };
 
@@ -1171,6 +1250,91 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     return outcome;
   };
 
+  /** A5 写命令任务环(026 v0.5 冻结词面;import-copy/A1–A4 同构,020
+   * result 回流)——受理窄化→终态等待→Done payload 窄化,单方法
+   * createProject 薄封装,收据按 kind 字面量分派(created/rejected)。
+   * 照 A3/A4 同律无 preview 对偶且根在端口:无 digest 无确认链,用户显
+   * 式表单提交即确认。任务九态语义归应用契约任务面;任务真实状态由任
+   * 务中心呈现,本端口只消费终态结果。超时/断连/形态不齐 = 诚实
+   * unavailable,不猜测不伪造结果文档(014 先例);rejected 守卫拒绝是
+   * Done payload(任务诚实完成、创建被拒),不是错误——创建不幂等,重
+   * 复目录执行时拒绝如实上呈。 */
+  const createViaTask = async (
+    request: PackagesCreateProjectRequestV1,
+  ): Promise<PackagesCreateApplyOutcome> => {
+    const response = await client.invoke(request);
+    if (!response.ok) {
+      if (response.error.kind === "application") {
+        // 受理阶段信封错误:缺席臂折叠 unavailable(引擎未装配/未接线),
+        // 其余 typed 码(能力缺席 vua.vpm.capability_missing 在路由层答
+        // ——绝不进任务/受理持久化失败 vua.provider.persistence_failed/
+        // invalid_params)照原词 failed
+        if (response.error.error.code === "vua.packages.unavailable") {
+          return { kind: "unavailable" };
+        }
+        return { kind: "failed", code: response.error.error.code };
+      }
+      return { kind: "unavailable" };
+    }
+    if (!isApplyCreateAccepted(response.value, "packages.createProject")) {
+      return { kind: "failed", code: "packages_apply_acceptance_shape" };
+    }
+    const snapshot = await waitForTerminalTask(client, response.value.taskId, PACKAGES_APPLY_TASK_WAIT_MS);
+    if (snapshot === null) {
+      return { kind: "unavailable" };
+    }
+    // 冻结不变量(020):result 仅成功终态出现;rejected 守卫拒绝也在成
+    // 功终态的 Done payload 内(任务诚实完成、创建被拒)。非成功终态 =
+    // 创建未发生(failed/cancelled;恢复非终态绝不隐式续传),error.code
+    // 原词上呈,收不齐 = 诚实降级码,不猜测
+    if (snapshot.state !== "succeeded" && snapshot.state !== "succeeded_with_warnings") {
+      const errorCode = isRecord(snapshot.error) && typeof snapshot.error.code === "string"
+        ? snapshot.error.code
+        : "packages_task_not_succeeded";
+      return { kind: "failed", code: errorCode };
+    }
+    const payload = isRecord(snapshot.result) ? snapshot.result : null;
+    const body = payload === null ? null : isRecord(payload.result) ? payload.result : null;
+    if (body === null) {
+      return { kind: "failed", code: "packages_apply_result_shape" };
+    }
+    if (body.kind === "created" && isPackagesProjectCreatedResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesProjectCreatedV05 };
+    }
+    if (body.kind === "rejected" && isPackagesCreateRejectedResult(body)) {
+      return { kind: "rejected", rejection: body as unknown as PackagesCreateRejectedV05 };
+    }
+    return { kind: "failed", code: "packages_apply_result_shape" };
+  };
+
+  /** A5 项目创建(026 v0.5 冻结词面):params 三键闭集 {parent, name,
+   * template} verbatim 传输(template REQUIRED-nullable:null = 后端默
+   * 认解析,非空串 = verbatim);收据按 created 变体收窄——非 created
+   * 结果冒充创建成功 = 服务端词面违反,诚实降级不冒充成功;创建即在册
+   * (冻结端口事实),成功后广播新快照,在册列表刷新即见 */
+  const createProjectRaw = async (
+    parent: string,
+    name: string,
+    template: string | null,
+  ): Promise<PackagesCreateApplyOutcome> => {
+    const request: PackagesCreateProjectRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.createProject",
+      params: { parent, name, template },
+    };
+    const outcome = await createViaTask(request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "created") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
   // 无事件推送源:快照按需聚合(选中项目变化或 capability.changed 驱动
   // 重取),订阅仅作能力行翻转的通知通道
   let selectedProjectPath: string | null = null;
@@ -1203,6 +1367,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           installs: capabilityRows.installs,
           registers: capabilityRows.registers,
           repoWrites: capabilityRows.repoWrites,
+          creates: capabilityRows.creates,
         },
         projectPath: null,
         installedPackages: [],
@@ -1224,6 +1389,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         installs: capabilityRows.installs,
         registers: capabilityRows.registers,
         repoWrites: capabilityRows.repoWrites,
+        creates: capabilityRows.creates,
       },
       projectPath: selectedProjectPath,
       installedPackages: outcome.kind === "ok" ? outcome.result : [],
@@ -1281,6 +1447,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     addRemoteRepo: addRemoteRepoRaw,
     addLocalRepo: addLocalRepoRaw,
     removeRepo: removeRepoRaw,
+    createProject: createProjectRaw,
     async addProject() {
       return { kind: "unavailable" };
     },
