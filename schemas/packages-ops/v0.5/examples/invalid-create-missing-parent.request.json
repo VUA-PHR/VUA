@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "params": {
+    "name": "Synthetic Project",
+    "template": null
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "params": {
+    "parent": "D:/synthetic/projects",
+    "name": "Synthetic Project",
+    "template": null,
+    "templateId": "tpl-avatar-01"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "packages.createProject",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.5",
+    "kind": "created",
+    "projectId": "proj-Synthetic Project",
+    "projectPath": "D:/synthetic/projects/Synthetic Project"
+  }
+}
