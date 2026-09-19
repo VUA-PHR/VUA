@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listInstalled",
+  "result": {
+    "schemaVersion": "vua.packages-installed/v0.2",
+    "projectPath": "C:/Users/demo/Projects/MyAvatarProject",
+    "packages": [
+      {
+        "packageId": "com.anatawa12.avatar-optimizer",
+        "version": "1.7.0",
+        "dependencies": ["com.anatawa12.gists"],
+        "latestVersion": "1.8.2",
+        "updateAvailable": true
+      },
+      {
+        "packageId": "com.vrchat.avatars",
+        "version": "3.7.4",
+        "dependencies": ["com.vrchat.base"],
+        "latestVersion": "3.7.4",
+        "updateAvailable": false
+      },
+      {
+        "packageId": "com.vrchat.base",
+        "version": "3.7.4",
+        "dependencies": [],
+        "latestVersion": "3.7.4",
+        "updateAvailable": false
+      }
+    ],
+    "cacheSourced": false
+  }
+}
