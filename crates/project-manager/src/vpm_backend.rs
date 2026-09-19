@@ -16,7 +16,7 @@ use vua_orchestrator::{
     AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
     ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
     PackageCatalogV02, PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef,
-    RegisteredProjectV1, RepoInfoV01, VpmBackend, VpmCapabilities,
+    RegisterCapabilities, RegisteredProjectV1, RepoInfoV01, VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -312,6 +312,17 @@ impl VpmBackend for VrcGetLibBackend {
         // 默认 declared-none（ORC-DEV-004 无实现不预留）。`VccCliBackend`
         // 不覆写——不声明，五位 `VpmCapabilities` 闭集与其默认缺席臂零改动。
         CatalogCapabilities { catalog: true }
+    }
+
+    fn register_capabilities(&self) -> RegisterCapabilities {
+        // 026 A3 冻结批：恰在实现 `register_local_package` 时覆写默认
+        // declared-none（025 catalog 同律，ORC-DEV-004）。注册是库内实现
+        // （vrc-get 0.0.16 `Settings::add_user_package`），无外部进程依赖，
+        // 能力如实随实现翻转；覆写前 served 行 `packages.registerOps`
+        // 如实 unavailable。`VccCliBackend` 不覆写——不声明，缺席臂零改动。
+        RegisterCapabilities {
+            register_local_package: true,
+        }
     }
 
     fn register_local_package(&self, package_root: &Path) -> Result<(), AppErrorV1> {

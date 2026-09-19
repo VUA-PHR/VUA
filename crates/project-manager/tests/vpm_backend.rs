@@ -456,6 +456,130 @@ fn b3_preview_install_null_version_selects_the_latest_stable() {
     fs::remove_dir_all(&base).ok();
 }
 
+/// A3 port facts (proposal 026 A3 wiring batch, 2026-09-19): the served
+/// wire row `packages.registerOps` is gated on
+/// `VpmBackend::register_capabilities().register_local_package` BEFORE
+/// submit, so the port-level capability declaration IS the flip switch —
+/// the frozen word face keeps the row honestly unavailable until the
+/// environment override lands, and this test pins the flip. Same law as
+/// the 025 catalog declaration: the implementing backend declares exactly
+/// its implemented face; the non-implementing backend stays declared-none
+/// (ORC-DEV-004: no implementation, no reservation).
+#[test]
+fn b3_register_capabilities_declare_exactly_the_local_package_face() {
+    let base = unique_dir("b3-register-caps");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+
+    let caps = backend.register_capabilities();
+    assert!(
+        caps.register_local_package,
+        "the library implements registration in-process (vrc-get 0.0.16 \
+         Settings::add_user_package), so the override declares it"
+    );
+
+    // VccCliBackend implements no registration arm — it stays declared-none
+    // (honest absence: an undeclared face can never be requested through
+    // the wire gate, and the trait-default port arm stays unreachable).
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert_eq!(
+        cli.register_capabilities(),
+        vua_orchestrator::RegisterCapabilities::NONE,
+        "no implementation, no declaration"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The isolated-settings I/O leg (026 A3 freeze word face): a failure
+/// loading the backend environment's settings.json answers
+/// `vua.vpm.local_package_register_failed` (ExternalFailure) through
+/// `map_local_package_io` — never a guessed success, never a validation
+/// code (the settings leg is the environment's, not the package's; the
+/// package-shaped refusals own `local_package_invalid`). The wire folds
+/// this code into the rejected `execution_failed` arm carrying the
+/// original code in detail (per-code mapping, mapping table entry 2).
+#[test]
+fn b3_register_io_failure_answers_local_package_register_failed() {
+    let base = unique_dir("b3-register-io");
+    let environment_root = base.join("isolated-vpm-environment");
+    // A package-shaped world passes the two validation legs
+    // (canonicalize + package.json presence) and reaches the settings leg.
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    // The environment's settings.json as a DIRECTORY makes the settings
+    // load fail with a non-NotFound io error (try_load_json answers None
+    // only for a missing file — a directory open propagates), which rides
+    // map_local_package_io into the typed register-failed code.
+    fs::create_dir_all(environment_root.join("settings.json")).unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+
+    let error = backend.register_local_package(&package_root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.local_package_register_failed");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::ExternalFailure);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// Idempotent set-add, environment-side evidence (026 A3 freeze word
+/// face): first registration (Success) and the repeat (AlreadyAdded)
+/// collapse into ONE success fact — the environment keeps EXACTLY ONE
+/// userPackageFolders entry for the package root, no duplicate row is
+/// ever written. This is the port-side fact the wire's idempotence test
+/// (two rounds, identical registered receipts) projects.
+#[test]
+fn b3_register_idempotence_keeps_exactly_one_settings_entry() {
+    let base = unique_dir("b3-register-idempotent");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    backend.register_local_package(&package_root).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+
+    let settings: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(environment_root.join("settings.json")).unwrap())
+            .unwrap();
+    let folders = settings["userPackageFolders"]
+        .as_array()
+        .expect("settings.json carries the userPackageFolders array");
+    assert_eq!(
+        folders.len(),
+        1,
+        "Success and AlreadyAdded collapse into one success fact: exactly one entry"
+    );
+    let registered = folders[0].as_str().unwrap();
+    let canonical = std::fs::canonicalize(&package_root).unwrap();
+    assert_eq!(
+        std::path::PathBuf::from(registered),
+        canonical,
+        "the single entry is the canonicalized package root"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
 
 // --- B6: general project/package management path ---
 
