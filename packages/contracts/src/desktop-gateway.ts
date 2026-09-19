@@ -695,6 +695,50 @@ export interface PackagesRemoveRepoRequestV1 {
   };
 }
 
+// ---- packages-ops v0.5 写面 A5 项目创建(026 冻结批 0c77273 经第 112 批
+// 入库;wire 接线批 8abb638 经第 113 批入库;桌面 A5 消费批登记 2026-09-19。
+// 单命令 packages.createProject 一一映射端口方法 create_project(parent,
+// name, template)。照 A3/A4 同律破 preview/apply 对偶且根在端口:端口恰
+// 一个创建方法、无 create-preview 对应(预览臂会在 wire 面立端口后不存在
+// 的方法);全新项目目录无既有状态可 diff,无摘要可绑定——无
+// confirmedDigest 位(携即形状违反,用户显式表单提交即确认;创建新目录
+// 不触任何在册项目、包文件、他项目内容,ADR-0006 破坏性警示路径无可警
+// 示)。不收 projectPath(创建不寻址任何在册项目,013 project_not_found
+// 复用不适用)。任务化写命令:受理回执 { taskId, correlationId }(
+// import-copy/A1–A4 同构),created 收据 = 端口 ProjectRef {id, root} 投
+// 影四键闭集(packages-ops 族唯一有实际载荷的收据;projectId 信息性标识
+// 非 013 身份键,projectPath = 注册路径身份——创建即在册冻结端口事实:
+// 双后端成功路径尾调 FileSystemProjectStore::initialize,创建成功即在
+// 册、在册列表刷新即见,词面不虚构「仅建目录不登记」形状),类型化拒绝
+// rejected(guard 三值闭集复用 A1–A4 零新增;原端口码
+// vua.vpm.template_missing/apply_failed/backend_unavailable 在 detail
+// 原词溯源,不入 code 键;创建不幂等——重复目录执行时拒绝如实上呈)随
+// 任务终态 Done payload 回流。served 行 packages.createOps 一行服务本方
+// 法(行可用性 = 既有 VpmCapabilities.create_project 五联位——A5 零新
+// accessor,位先于批在库双后端已声明;wire 门 submit 前读位,假位答通用
+// capability_missing 绝不进任务)。词面权威 = schemas/packages-ops/v0.5 +
+// application-contract.ts A5 段 ----
+
+/** packages.createProject 写命令:任务化受理(import-copy/A1–A4 同构);
+ *  commandId 由 Kernel 生成(渲染层不传);params 三键闭集 {parent,
+ *  name, template}——parent/name 非空串 verbatim 透传(parent = 新项目
+ *  目录的父目录,路径事实非在册项目身份;name 后端名称校验为执行时权
+ *  威,表单前置校验仅作 UI 引导不重审上游语法),template REQUIRED-
+ *  nullable(null = 后端默认模板解析〔库路径默认 Avatar 三级解析序,冻
+ *  结词面事实非选择器,首面零新读面 templates.* 不立〕;非空串 = 该模板
+ *  名/路径 verbatim 透传;空串 = 形状违反);无 projectPath、无 digest
+ *  位 */
+export interface PackagesCreateProjectRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.createProject";
+  readonly params: {
+    readonly parent: string;
+    readonly name: string;
+    readonly template: string | null;
+  };
+}
+
 export type DesktopGatewayRequestV1 =
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
@@ -753,7 +797,8 @@ export type DesktopGatewayRequestV1 =
   | PackagesRegisterLocalPackageRequestV1
   | PackagesAddRemoteRepoRequestV1
   | PackagesAddLocalRepoRequestV1
-  | PackagesRemoveRepoRequestV1;
+  | PackagesRemoveRepoRequestV1
+  | PackagesCreateProjectRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -824,6 +869,10 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "packages.addRemoteRepo": "command",
   "packages.addLocalRepo": "command",
   "packages.removeRepo": "command",
+  // packages-ops v0.5 写面 A5 项目创建(026;桌面 A5 消费批):照 A3/A4
+  // 同律无 preview 对偶且根在端口——单方法任务化 command(Kernel 生成
+  // commandId)
+  "packages.createProject": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1381,6 +1430,22 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && hasExactKeys(value.params, ["repoId"])
         && typeof value.params.repoId === "string"
         && value.params.repoId.length >= 1;
+    // packages-ops v0.5 写面 A5 项目创建(026;桌面 A5 消费批):params
+    // 三键闭集 {parent, name, template}(parent/name 非空串;template
+    // REQUIRED-nullable——键必须在位:缺键 = 违例,null = 后端默认解析,
+    // 非空串 = verbatim 透传,空串/非串 = 违例;无 projectPath——创建不
+    // 寻址任何在册项目;无 digest 位——本面无 preview 可漂移,携即形状
+    // 违反,用户显式表单提交即确认;commandId 由 Kernel 生成不在 params)
+    case "packages.createProject":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["parent", "name", "template"])
+        && typeof value.params.parent === "string"
+        && value.params.parent.length >= 1
+        && typeof value.params.name === "string"
+        && value.params.name.length >= 1
+        && (value.params.template === null
+          || (typeof value.params.template === "string"
+            && value.params.template.length >= 1));
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

@@ -492,6 +492,9 @@ export function createFixturePackages(): PackagesPort {
     addRemoteRepo: () => Promise.resolve({ kind: "unavailable" } as const),
     addLocalRepo: () => Promise.resolve({ kind: "unavailable" } as const),
     removeRepo: () => Promise.resolve({ kind: "unavailable" } as const),
+    // A5 写面词面(packages.createProject,026 v0.5 消费批):同纪律
+    // 恒缺席臂(演示面永不模拟创建收据)
+    createProject: () => Promise.resolve({ kind: "unavailable" } as const),
     capability: () => Promise.resolve<CapabilityReport>({ state: "ready" }),
   };
 }

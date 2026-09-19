@@ -1700,6 +1700,43 @@ rolled_back: "已回滚",
       removedLine: "已移除订阅：{repoId}",
     },
 
+    create: {
+      title: "新建项目",
+      description:
+        "在你选择的父目录下创建新的 VRChat 项目。创建成功即立即在 VUA 注册，在册列表刷新即见。创建不幂等：目标目录已存在时将被拒绝，任何拒绝都如实呈现。你的 VCC/ALCOM 设置绝不会被改动。",
+      parentPlaceholder: "父目录路径，如 C:\\Users\\me\\VRChat Projects",
+      parentAria: "父目录路径",
+      namePlaceholder: "项目名称，如 My World",
+      nameAria: "项目名称",
+      templatePlaceholder: "模板名（可选）——留空使用后端默认模板",
+      templateAria: "模板名，可选",
+      action: "创建项目",
+      submitting: "创建中…",
+      successLine: "已创建并注册：{projectPath}",
+      rejectedDetail: "服务端说明：{detail}",
+      refusals: {
+        projectExists: "目标目录已存在。",
+        projectNameInvalid: "项目名称含有禁止字符。",
+        templateMissing: "库中不存在该名称的模板。",
+        templateCopyFailed: "模板内容复制失败。",
+      },
+      guards: {
+        preview_drift: "创建请求被拒绝。",
+        package_not_found: "创建请求被拒绝。",
+        execution_failed: "创建在执行阶段失败。",
+        unknown: "创建请求被拒绝。",
+      },
+      envelopeErrors: {
+        capabilityMissing: "当前引擎后端不支持项目创建。",
+        invalidParams: "创建请求形状无效。",
+        unknown: "操作失败。",
+      },
+      toasts: {
+        failedUnknown: "项目创建未完成（{code}）。",
+        unavailable: "项目创建未完成：无法确认结果；请查看任务中心。",
+      },
+    },
+
     repos: {
       addCommunity: "添加社区仓库",
       riskTitle: "添加社区仓库之前",

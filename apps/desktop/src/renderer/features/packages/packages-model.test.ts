@@ -21,6 +21,8 @@ import {
   migrationSummaryKey,
   rangeSelect,
   relativeCheckedTime,
+  createEnvelopeErrorKey,
+  createRefusalDetailKey,
   installEnvelopeErrorKey,
   registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
@@ -398,6 +400,61 @@ test("词表回落:未知原因/迁移/冲突键不猜测", () => {
       assert.ok(guards[key].length > 0);
     }
     const envelopeErrors = strings.packages.repoWrite.envelopeErrors;
+    for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
+      assert.equal(typeof envelopeErrors[key], "string");
+      assert.ok(envelopeErrors[key].length > 0);
+    }
+  });
+
+  test("createEnvelopeErrorKey maps the declared v0.5 envelope codes and falls back to unknown; createRefusalDetailKey detects the four library-leg refusal keys and falls back to unknown; the create i18n section mirrors the keys (026 A5)", () => {
+    // v0.5 已申报面(接线批落地面):能力门控在路由层作答(create 位假绝
+    // 不进任务)+ 请求形状违规
+    assert.equal(createEnvelopeErrorKey("vua.vpm.capability_missing"), "capabilityMissing");
+    assert.equal(createEnvelopeErrorKey("vua.packages.invalid_params"), "invalidParams");
+    // 负例如实缺席:创建不寻址任何在册项目(project_not_found 复用不适
+    // 用)、本面照 A3/A4 同律破 preview/apply 对偶(preview_failed 不存在);
+    // 端口三码(template_missing/apply_failed/backend_unavailable)全折
+    // execution_failed 的 rejected 臂不经此映射;任务 error.code 原词回落
+    assert.equal(createEnvelopeErrorKey("vua.project.project_not_found"), "unknown");
+    assert.equal(createEnvelopeErrorKey("vua.packages.preview_failed"), "unknown");
+    assert.equal(createEnvelopeErrorKey("vua.vpm.template_missing"), "unknown");
+    assert.equal(createEnvelopeErrorKey("vua.vpm.apply_failed"), "unknown");
+    assert.equal(createEnvelopeErrorKey("vua.vpm.backend_unavailable"), "unknown");
+    assert.equal(createEnvelopeErrorKey("packages_task_not_succeeded"), "unknown");
+    // 拒绝 detail 原码检测:库路径四拒绝腿(词面包含关系,不改写不截断)
+    assert.equal(
+      createRefusalDetailKey("errors.vpm.projectExists: the target path already exists"),
+      "projectExists",
+    );
+    assert.equal(
+      createRefusalDetailKey("errors.vpm.projectNameInvalid: the name carries a forbidden character"),
+      "projectNameInvalid",
+    );
+    assert.equal(
+      createRefusalDetailKey("errors.vpm.templateMissing: no template directory named Avatar"),
+      "templateMissing",
+    );
+    assert.equal(
+      createRefusalDetailKey("errors.vpm.templateCopyFailed: the template copy failed"),
+      "templateCopyFailed",
+    );
+    // CLI 腿(apply_failed/backend_unavailable)与词外 detail 无四键语义,
+    // 如实回落 unknown(guard 文案 + detail 原词呈现,绝不猜测)
+    assert.equal(createRefusalDetailKey("vua.vpm.apply_failed: exit code 1"), "unknown");
+    assert.equal(createRefusalDetailKey("vua.vpm.backend_unavailable: runner gone"), "unknown");
+    assert.equal(createRefusalDetailKey(""), "unknown");
+    // i18n 镜像:refusals 四键 / guards 四值 / envelopeErrors 三键全非空
+    const refusals = strings.packages.create.refusals;
+    for (const key of ["projectExists", "projectNameInvalid", "templateMissing", "templateCopyFailed"] as const) {
+      assert.equal(typeof refusals[key], "string");
+      assert.ok(refusals[key].length > 0);
+    }
+    const guards = strings.packages.create.guards;
+    for (const key of ["preview_drift", "package_not_found", "execution_failed", "unknown"] as const) {
+      assert.equal(typeof guards[key], "string");
+      assert.ok(guards[key].length > 0);
+    }
+    const envelopeErrors = strings.packages.create.envelopeErrors;
     for (const key of ["capabilityMissing", "invalidParams", "unknown"] as const) {
       assert.equal(typeof envelopeErrors[key], "string");
       assert.ok(envelopeErrors[key].length > 0);

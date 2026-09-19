@@ -1643,6 +1643,43 @@ rolled_back: "롤백됨",
       removedLine: "구독 해제됨: {repoId}",
     },
 
+    create: {
+      title: "새 프로젝트 만들기",
+      description:
+        "선택한 상위 폴더에 새 VRChat 프로젝트를 만듭니다. 성공하면 프로젝트가 즉시 VUA에 등록되어 등록 목록에 나타납니다. 생성은 멱등하지 않습니다. 이미 존재하는 디렉터리에 생성하면 거부되며, 거부는 그대로 표시됩니다. VCC/ALCOM 설정은 절대 변경되지 않습니다.",
+      parentPlaceholder: "상위 폴더 경로(예: C:\\Users\\me\\VRChat Projects)",
+      parentAria: "상위 폴더 경로",
+      namePlaceholder: "프로젝트 이름(예: My World)",
+      nameAria: "프로젝트 이름",
+      templatePlaceholder: "템플릿 이름(선택) — 비워 두면 백엔드 기본 템플릿을 사용합니다",
+      templateAria: "템플릿 이름, 선택",
+      action: "프로젝트 만들기",
+      submitting: "만드는 중…",
+      successLine: "생성 및 등록됨: {projectPath}",
+      rejectedDetail: "서버 설명: {detail}",
+      refusals: {
+        projectExists: "대상 디렉터리가 이미 존재합니다.",
+        projectNameInvalid: "프로젝트 이름에 금지된 문자가 포함되어 있습니다.",
+        templateMissing: "해당 이름의 템플릿이 라이브러리에 없습니다.",
+        templateCopyFailed: "템플릿 내용 복사에 실패했습니다.",
+      },
+      guards: {
+        preview_drift: "생성 요청이 거부되었습니다.",
+        package_not_found: "생성 요청이 거부되었습니다.",
+        execution_failed: "생성이 실행 중에 실패했습니다.",
+        unknown: "생성 요청이 거부되었습니다.",
+      },
+      envelopeErrors: {
+        capabilityMissing: "현재 엔진 백엔드는 프로젝트 생성을 지원하지 않습니다.",
+        invalidParams: "생성 요청 형식이 잘못되었습니다.",
+        unknown: "작업에 실패했습니다.",
+      },
+      toasts: {
+        failedUnknown: "프로젝트 생성이 완료되지 않았습니다({code}).",
+        unavailable: "프로젝트 생성이 완료되지 않았습니다: 결과를 확인할 수 없습니다. 작업 센터를 확인하세요.",
+      },
+    },
+
     repos: {
       addCommunity: "커뮤니티 리포지토리 추가",
       riskTitle: "커뮤니티 리포지토리를 추가하기 전에",
