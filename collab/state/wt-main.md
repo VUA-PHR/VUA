@@ -2,30 +2,35 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 3e062cf
+baseline_commit: 7d82dc5
 updated: 2026-09-20
 ---
 ## 当前焦点
-**第 129 批（2026-09-20 06:2x–06:4x，节拍轮工作时段 06:27 date 实测）——操作者注置顶候验收实质一笔办理：027 F2 环境实现批 --no-ff 收编入库＝F2 五环全闭环收官＋BOARD #41 收官登记落账＋合并树定向复跑全绿**：
+**第 130 批（2026-09-20 06:5x–07:2x，节拍轮工作时段 06:57 date 实测）——操作者注候验收实质一笔办理：027 F3 packages-query v0.2 wire 接线切片 --no-ff 收编入库＝F3 接线环落地＋环境实现/桌面形状核可双解锁＋四树簿记随轮收编＋合并树定向复跑全绿**：
 
-- **brief ①区消化**：wt-2/wt-3/wt-4/wt-5 四条验收请求系第 128 批已收编批次的残留留言（③区四树领先 0 实证：wt-2 树尖 0e8960b／wt-3 b6ffb93／wt-4 a219c8f／wt-5 ec18337），就地消化勿重复；wt-7 树尖 5c58622 无前移，其状态批「追加批进行中请暂缓合并」仍为权威（127/128 批判读延续），维持观察不合并。失鲜工作树无。
-- **wt-6 027 F2 实现核对切片收编（合并 3e062cf，预检 exit 0 tree 85e8ae1 零冲突）**：三笔＝追平壳 452753b（零自有内容，吸收 main ad07685 第 125–127 批世代；照第 128 批裁处随实现批一并收编不单收）＋实现核对切片 27c3c9d（恰环境域 2 文件 494+/2-：crates/project-manager src/vpm_backend.rs＋tests/vpm_backend.rs）＋状态批 c9a3f91。集成亲审逐项成立：`repo_catalog_capabilities` 覆写仅库后端翻转 served 行 `packages.repoCatalogOps` available（`VccCliBackend` 不覆写、维持 declared-none 通用 capability_missing 缺席臂）；降级路径与 package_catalog_impl 同构（ORC-ADP-006：offline→load_cache true／在线失败降级 true／在线成功含 etag 条件刷新 false——双臂都存在故披露是真事实非常量）；包事实唯一解析源＝库集合 `get_latest(latest_for(None, show_prerelease))`（冻结逐仓判定：非 yanked＋prerelease 开关、零工程 Unity 约束；latestVersion null＝行仍在、最高版条目身份兜底；versionCount＝all_versions 计数 yanked 计入）；author 刻意缺席＝冻结裁决选项 3、零发明字段；packageIds 过滤＝透镜（不匹配＝诚实空数组非错误）；repoId 词表外复用 `vua.vpm.repo_not_found`（Validation＋errors.vpm.repoNotFound＋corr-vpm-catalog，A4 同事实零新码）；预定义两仓 url 私有常量逐字镜像＋装载判定防重复成行——**clippy 死码警告抓到真缺陷（已装载预定义仓重复成行），已修复并钉测试**；测试 +6 名实逐一核对（集合世界投影／scoping＋repo_not_found 三腿／过滤透镜／预定义仓不重复／双 ignore 诚实空／CLI declared-none 缺席臂，with_environment_root 临时根纯合成）；cacheSourced=false 臂离线不可测照 025 先例如实申报。
-- **F2 五环全闭环收官登记（BOARD #41 第 129 批推进节落账）**：冻结 c46545f（第 122 批）→接线 629699e/fabb04d（第 123 批）→形状核可 670828f（第 128 批）→消费 f23f3a3（第 128 批）→实现 27c3c9d（本批）。F2 席位就此关闭。诚实边界维持＝真机 served 行呈现归 W25（O-2），桌面浏览面真机可达剩余前置＝操作者刷构建（环境侧置真已入库），零端到端宣称。
-- **合并树定向复跑全绿（06:3x–06:4x 集成亲测，main＝3e062cf）**：df 先查 620G/67%＋project-manager **118/0**（112→118＝+6 F2，既有行零回归）＋provider-host **250/0**（246＋F3 冻结批 4 例＝合并世代预期值；packages_repo_catalog_wire_v01 8/8＋consumer_v01 在列）＋orchestrator **234/0**＋clippy 三 crate --all-targets **0 警告**；build/leak 照第 117 批 W25 dev-stack 文件锁先例未跑如实申报（零进程触碰）。
-- **核心 F3 接线切片随轮办理核查**：操作者注「核心或已领 F3 接线切片随轮办理」——wt-2 树尖 0e8960b 领先 0 实证尚未领取，无批可办，照实登记；领取条件（F3 冻结批 35ffb61 已入库，第 128 批）已成就，候其下拍按 poll-until-landed 先例领取。
-- **BOARD**：前录轮转（存 119–129 十条，118 及更早依 git 历史）＋#41 行第 129 批 F2 收官登记＋推送记录条目＋本状态批。**推送**：56bc48e..2ed2ba4 于 06:4x 首次尝试一次推净（origin/main 同步确认＝2ed2ba4），推送债清零——登记批随本窗一并推净，状态批原「随下窗推送」表述由推送记录条目订正如实。
+- **brief ①区消化**：六条指向集成留言全系本批办理对象（wt-2/wt-3/wt-5/wt-6 验收请求）或残留回执（wt-4 备料批回执）；wt-7 树尖 5c58622 无前移，其状态批「追加批进行中请暂缓合并」仍为权威（127/128/129 批判读延续），维持观察不合并。失鲜工作树无。
+- **wt-2 027 F3 wire 接线切片收编（合并 abdf328，预检 exit 0 tree 2e26c503 零冲突）**：五笔＝追平壳 c0e2312（零自有内容，吸收 56bc48e 第 128 批世代）＋**接线批 676b185（恰核心域 5 文件 782+/61-）**＋状态批 bf6c557＋轮中竞速追平壳 47c75c2（吸收 a5c3ebd 第 129 批世代，与本批 5 核心域文件 pathspec 零重叠实证）＋订正批 b9a3943。集成亲审逐项成立：**路由双臂协商**在既有 packages.listInstalled handler 内（族选择非新方法，command 面逐字节 v0.1）；**面级能力门先于协商**（函数序亲验：project_ops 缺席臂→单键参数→013 注册复用 project_not_found→能力门 capability_missing→方才协商）；加法双版本协商照 catalog_v02 法则（ORC-DEV-004：query_v02 声明后端由 list_packages_v02 应答盖 PACKAGES_INSTALLED_SCHEMA_VERSION_V02 "vua.packages-installed/v0.2"，projectPath 由路由盖在后端逐字事实上〔P1 纪律〕；其余后端维持 list_packages 盖 V01 常量＝P1 时代内联字面量提取、词面零字节变化）；共享 P1 前置双臂零变化零新错误码（后端类型化拒绝逐字透传 code+messageKey+category）；信封维持共享常量 PACKAGES_QUERY_SCHEMA_VERSION "0.1"（catalog v0.2 先例仅 result 族升版）；双族常量自 vua_provider_host::provider_host 发布（A3/A4/A5/F2 先例，c914cf2 站立规则两世代齐备）。**wire 测试 packages_query_wire_v02 6 例亲阅**：v0.2 族应答（Schema 校验＋升序钉＋判定三臂 true/false/null 对＋五键闭集钉＋projectPath 盖戳＋cacheSourced 逐字）／v0.1 零回归钉（无判定事实无披露、v0.1 Schema 仍合法）／门先于协商（capability_missing，端口体被触即 panic——双臂体各钉）／双臂拒绝逐字透传／v0.2 后端下共享 P1 前置／常量可检测（两常量对冻结 Schema const 钉死＋live 盖戳对常量非字面量）；测试后端 QueryV02Vpm 构造器（v01_only/declaring_v02/without_face/failing）跨臂 panic 钉核实。双语协议本 0.2→0.2.1 状态落 Frozen and WIRED＋诚实边界 wired-not-consumed＋词面零变更（零 Schema 文件触碰）；REGISTRY 行同步 0.2.1（状态词干照校验器法则保持、接线事实入括注——F2 行同款）。
+- **合并树定向复跑全绿（07:0x 集成亲测，main＝abdf328）**：df 先查 619G/67%＋provider-host **256/0**（37 套件，250→256＝新 wire v02 6/6）＋orchestrator **234/0**＋clippy 三 crate（provider-host/orchestrator/project-manager）--all-targets **0 警告**；build/leak 照 W25 dev-stack 文件锁先例未跑如实申报（本批零桌面触碰、零进程触碰）。
+- **簿记批随轮收编**：wt-5 状态批 f50c59c（合并 c1c495d，恰一 collab 文件，落后 17 双口径未过线照 52cce69/f0be3d5/9513fdd 判例不追平、合并自然吸收；数据域六点 pathspec 零触碰照其申报）＋**wt-6 簿记四笔** ad32e0f/5f6dc1e/2fbd64d/0366c56（合并 e9c4917——**合并执行时树尖竞速前移至 0366c56，四笔一并收编，incoming 清单以本簿记补全照 88d20ba/203cb9f 先例**；0366c56 申报「676b185 NOT IN MAIN＝F3 前置 2 未成就、候接线批入库下拍即领」系落笔时点事实，验收时点条件已翻转照实补记不重认照第 124 批先例；追平壳 ad32e0f 第二父 3e062cf 同窗实证照其订正批采信）＋wt-3 两笔 bd108c4 壳/22d7bd9 状态批（合并 7d82dc5，落后 6 collab-only 自然吸收）；wt-4 树尖 a219c8f is-ancestor 实证已在 main（第 128 批 8b02b71 收编），其验收请求系残留回执就地消化勿重复。均 collab-only 免全量照章声明。收编后六树读数：全部领先 0（wt-7 除外＝暂缓维持）。
+- **双解锁登记（BOARD #41 第 130 批推进节落账）**：**环境 F3 库实现切片双前置齐**（冻结 35ffb61＋接线 676b185 均在 main）候其下拍即领，验收锚＝packages-query-v0.2 协议本 0.2.1「后端指向根事实」节逐项对账（VrcGetLibBackend list_packages_v02＋query_v02 覆写＋一次集合加载批量判定＋离线 cacheSourced 臂）；**桌面 F3 形状核可**照 F2 程序基于本收编世代办理（零预核可），通过即续领 F3 消费（已装表「可更新」列 updateAvailable null 如实空显绝不「已最新」＋cacheSourced「缓存数据」标注＋行内升级键复用 A2 version=null 语义）。诚实边界维持＝wire 已接线未被消费、零端到端宣称、真机走查归 W25（O-2）。
+- **BOARD**：前录轮转（存 120–130 十条，119 及更早依 git 历史）＋#41 行第 130 批推进节＋推送记录条目＋本状态批。**推送**：a5c3ebd..7d82dc5 四笔验收合并与登记批于 07:2x 推送（结果见推送记录区）。
 
-## 前录（第 128 批，2026-09-20 06:0x，全文见 git 历史与 BOARD 前录）
-操作者注两笔实质候验收办理：027 F3 冻结批（e2486ed）＋F2 桌面双环轮（9eb77b6）收编入库＋诚实缺席口径裁决确认＋wt-4/wt-5 簿记批收编（8b02b71/eeb66d7）＋合并树定向复跑全绿＋推送一次推净。
+## 前录（第 129 批，2026-09-20 06:2x–06:4x，全文见 git 历史与 BOARD 前录）
+操作者注置顶候验收实质一笔办理：027 F2 环境实现批（27c3c9d）收编入库＝F2 五环全闭环收官（合并 3e062cf）＋BOARD #41 收官登记＋合并树定向复跑全绿（118/0＋250/0＋234/0＋clippy 0）＋推送 56bc48e..2ed2ba4 一次推净。
 
 ## 阻塞
 无。（无本地工作阻塞。）
 
 ## 下次合并意图
-候各树状态批/切片批照常随轮验收（--no-ff）：wt-2 F3 wire 接线切片候领取入库（领取条件已成就，其树尚未前移）；wt-6 F3 库实现切片候核心接线批入库后按面序（双前置中 F2 实现核对已成就）；wt-3 F3 形状核可＋消费候 F3 冻结＋接线双前置链（其树已申报待命）；wt-7 i18n 切片候其完整提交（追加批进行中，暂缓维持）；wt-4/wt-5 候各自窗口批。集成席位 028 剩余全为挂账（#3 候 F4 冻结批、#10 候 W26-a、#4 候 U15 用户裁决）无自领实现项；project-context 路线候用户裁决（U15，默认 A 不构成裁决）。推送照网络实况。
+候各树状态批/切片批照常随轮验收（--no-ff）：wt-6 F3 库实现切片候其下拍领取入库（双前置已齐，本批解锁）；wt-2 候其下批（F4 冻结批照面序 F3→F5→F4 候后续节拍，硬前置已成就）；wt-3 F3 形状核可＋消费候其基于收编世代办理后申报；wt-7 i18n 切片候其完整提交（追加批进行中，暂缓维持）；wt-4/wt-5 候各自窗口批。集成席位 028 剩余全为挂账（#3 候 F4 冻结批、#10 候 W26-a、#4 候 U15 用户裁决）无自领实现项；project-context 路线候用户裁决（U15，默认 A 不构成裁决）。推送照网络实况。
+
+## 待命声明（第 6 步，如实）
+本轮（2026-09-20 06:5x–07:2x，节拍轮工作时段 date 06:57 实测）：①date 06:57 实测工作时段，pnpm collab:brief 06:57 六条指向集成留言判读＝四树验收请求本批办理＋wt-4 残留回执就地消化＋wt-7 暂缓维持；②操作者注候验收实质一笔＝wt-2 F3 wire 接线切片五笔，亲审 676b185 六件套逐项成立后 --no-ff 收编（合并 abdf328）；③合并树定向复跑集成亲测全绿（256/0＋234/0＋clippy 0＋df 619G/67%）；④wt-5/wt-6/wt-3 簿记批随轮收编（c1c495d/e9c4917/7d82dc5，wt-6 竞速第四笔 0366c56 合并执行时一并收编如实补记）；wt-4 is-ancestor 就地消化；⑤BOARD #41 F3 接线环登记落账＋双解锁登记＋前录轮转；⑥零端到端宣称维持——wire 已接线未被消费，真机走查归 W25（O-2）；在手无半途工作，登记批落账后推送并退出待命。
 
 ## 留言
-- [→操作者] **F2 实现批已验收入库（第 129 批），F2 五环全闭环收官登记落 BOARD #41**：wt-6 三笔经逐项亲审收编（合并 3e062cf；clippy 死码警告抓到的预定义仓重复成行真缺陷修复与测试 +6 均核实）；合并树定向复跑全绿在案（118/0＋250/0＋234/0＋clippy 0）。F2 浏览面真机可达剩余前置＝你方刷构建（环境侧置真已入库）；「核心或已领 F3 接线切片随轮办理」核查＝wt-2 树尖未前移、无批可办，照实登记。
-- [→wt-6] 验收遵照：三笔经第 129 批 --no-ff 收编（合并 3e062cf，基点 a260397、追平至 ad07685）。F3 库实现切片双前置中「F2 实现核对」已成就入库；候核心 F3 接线批入库后按面序即领，验收锚＝packages-query-v0.2 协议本「后端指向根事实」专节逐项对账。
-- [→wt-3]（知会）F2 环境置真已入库（合并 3e062cf）：served 行 `packages.repoCatalogOps` 在库后端翻转 available——你方 declared-none 形态交付的浏览面入口真机可达剩余前置仅操作者刷构建，桌面无需追加变更。
-- （回执不回执：wt-2/wt-4/wt-5 ①区验收请求系第 128 批已收编回执就地消化勿重复；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→操作者] **F3 wire 接线切片已验收入库（第 130 批，合并 abdf328），F3 接线环落地＋双解锁**：wt-2 五笔经逐项亲审收编（路由双臂协商＋面级门先于协商＋族常量 V01/V02 命名发布＋wire 测试 6 例＋协议本 0.2.1 均核实）；合并树定向复跑全绿在案（256/0＋234/0＋clippy 三 crate 0）。环境 F3 库实现切片双前置齐候其下拍即领；桌面 F3 形状核可照 F2 程序基于收编世代办理。你方上批注「F3 接线入库后＝环境 F3 库实现＋桌面 F3 形状核可双解锁」就此兑现，照实登记。
+- [→wt-2] 验收遵照：五笔经第 130 批 --no-ff 收编（合并 abdf328，基点 56bc48e、轮中追平 a5c3ebd，预检 tree 2e26c503 零冲突）。亲审六件套全数成立；轮中竞速追平壳 47c75c2 与订正批 b9a3943一并收编，第 129 批「tip unmoved」时点观察以其订正批为准归档。F4 冻结批照面序 F3→F5→F4 候后续节拍，硬前置已成就。
+- [→wt-6] 验收遵照：簿记四笔（含竞速第四笔 0366c56 合并执行时一并收编，incoming 清单已补全照 88d20ba/203cb9f 先例）经第 130 批收编（合并 e9c4917）。其申报「候接线批入库下拍即领 F3 库实现」条件已成就——双前置齐，候你方下拍领取，验收锚＝packages-query-v0.2 协议本 0.2.1「后端指向根事实」节逐项对账。
+- [→wt-3]（知会）F3 wire 接线已入库（合并 abdf328）：桌面 F3 形状核可前置成就，照 F2 程序基于本收编世代（main≥7d82dc5）办理九项对照零预核可，通过即续领 F3 消费；F3 词面纪律维持你方已收讫口径（updateAvailable null 如实空显＋cacheSourced 标注＋A2 version=null 升级键语义）。
+- [→wt-5] 验收遵照：状态批 f50c59c 经第 130 批收编（合并 c1c495d，落后 17 双口径未过线照判例自然吸收）。数据域六点 pathspec 零触碰照其申报核可；W25 窗内数据候办两项维持候驱动。
+- （回执不回执：wt-4 备料批验收回执系已收编批次残留就地消化；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
