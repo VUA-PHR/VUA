@@ -245,6 +245,31 @@ export function registerEnvelopeErrorKey(code: string): RegisterEnvelopeErrorKey
   return "unknown";
 }
 
+/* ---- A4 仓库订阅增删写面(026 v0.4 消费批):typed 码映射 ---- */
+
+/** A4 信封/受理 typed 错误码 → strings.packages.repoWrite.envelopeErrors
+ * 键;词外码回落 "unknown"(原词插值呈现,不猜测语义)。映射闭集 =
+ * 026 v0.4 冻结词面已申报面(接线批落地面):通用 vua.vpm.capability_
+ * missing(能力门控在路由层按方法作答——repo_write_capabilities 三独
+ * 立位未声明的方法绝不进任务)、vua.packages.invalid_params(请求形状
+ * 违规)。A4 无 projectPath(vua.project.project_not_found 复用对本面
+ * 不适用——订阅面只写后端隔离环境)且无 preview 段(vua.packages.
+ * preview_failed 对本面不存在——本面照 A3 同律破 preview/apply 对偶),
+ * 两码均不在闭集,如实缺席。端口四码(vua.vpm.repo_invalid/repo_not_
+ * found/repo_fetch_failed/repo_write_failed)全折 execution_failed 的
+ * rejected 臂(非信封错误),不经此映射;任务非成功终态的 error.code
+ * 原词不在此闭集时一律 unknown。 */
+export type RepoEnvelopeErrorKey =
+  | "capabilityMissing"
+  | "invalidParams"
+  | "unknown";
+
+export function repoEnvelopeErrorKey(code: string): RepoEnvelopeErrorKey {
+  if (code === "vua.vpm.capability_missing") return "capabilityMissing";
+  if (code === "vua.packages.invalid_params") return "invalidParams";
+  return "unknown";
+}
+
 /* ---- A2 批量多选安装(C 面自决,026 v0.2 消费面):批量请求行构造 ---- */
 
 /**

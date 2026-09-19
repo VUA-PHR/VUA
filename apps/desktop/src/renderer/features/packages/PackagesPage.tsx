@@ -50,6 +50,7 @@ import {
   registerEnvelopeErrorKey,
   removeEnvelopeErrorKey,
   removeGuardKey,
+  repoEnvelopeErrorKey,
   sortPackages,
   sortProjects,
   sourceTextKeys,
@@ -86,6 +87,12 @@ const copy = strings.packages;
  *   单键手输 + 显式提交,无 preview 无确认链——注册是幂等集合添加,
  *   AlreadyAdded 折叠为同一个成功事实;register_capabilities 访问器
  *   翻转前能力行如实 unavailable,区块诚实缺席);
+ * - A4 仓库订阅增删(026 v0.4 消费批,ready-p1/ready-p2 两视图):仓库
+ *   订阅管理区块随 repoOps 能力行解锁(一行服务三方法,wire 门按方法
+ *   绝不按面)——添加远端/本地仓库双键表单 + 显式提交(无 preview 无
+ *   确认链,用户提交即确认;添加面不宣称幂等,拒绝如实呈现)+ 订阅
+ *   行内移除两击确认(repoId 非 null 行;id 缺席行不在移除可达范围,
+ *   不渲染入口);启停/重排不在任何已冻结词面内,桌面不发明入口;
  * - 有项目 → 项目头 + 迁移卡 + 工具栏 + 表格;切换项目时表格区骨架
  *   (stale-while-revalidate,其余区域不清空);
  * - demo 泛型变更链(fixture 面):previewChanges → ChangesDialog 确认 →
@@ -486,13 +493,25 @@ function P1InstalledTable({
  * 数组)无 yanked 断言。 ---- */
 
 /** P2 仓库订阅清单:行序 = 订阅面自身顺序(配置事实,不重排);
- * reposError = typed 失败照原词呈现,与空数组零订阅严格区分。 */
+ * reposError = typed 失败照原词呈现,与空数组零订阅严格区分;
+ * 移除入口(026 A4 消费批)仅 repoId 非 null 的行渲染——id 缺席行不
+ * 在本词面移除可达范围(协议本载明的诚实边界),UI 不发明;移除 =
+ * 行内两击确认(第一击进入确认态,再击执行;纯 UX 步骤,不发明词面
+ * 事实——删除订阅行不删任何包文件,ADR-0006 延迟警示路径不适用)。 */
 function P2ReposSection({
   repos,
   reposErrorCode,
+  onRemoveRequest,
+  removeConfirmId,
+  removeBusyId,
+  removeOutcome,
 }: {
   repos: readonly RepoInfoRowV01[];
   reposErrorCode: string | null;
+  onRemoveRequest?: (repoId: string) => void;
+  removeConfirmId?: string | null;
+  removeBusyId?: string | null;
+  removeOutcome?: RepoRemoveOutcomeView | null;
 }) {
   if (reposErrorCode !== null) {
     return (
@@ -526,6 +545,21 @@ function P2ReposSection({
                 <Badge tone={repo.cached ? "neutral" : "warning"}>
                   {repo.cached ? copy.p2.repoCached : copy.p2.repoNotCached}
                 </Badge>
+                {onRemoveRequest && repo.repoId !== null ? (
+                  <Button
+                    variant="subtle"
+                    className="vua-packages__repo-remove"
+                    disabled={removeBusyId != null}
+                    aria-label={format(copy.repoWrite.removeAria, { name: title })}
+                    onClick={() => onRemoveRequest(repo.repoId as string)}
+                  >
+                    {removeBusyId === repo.repoId
+                      ? copy.repoWrite.removing
+                      : removeConfirmId === repo.repoId
+                        ? copy.repoWrite.removeConfirm
+                        : copy.repoWrite.removeAction}
+                  </Button>
+                ) : null}
               </div>
               {location !== null && location !== undefined ? (
                 <span className="vua-caption vua-text-secondary" title={location}>
@@ -536,6 +570,24 @@ function P2ReposSection({
           );
         })}
       </ul>
+      {removeOutcome?.kind === "ok" ? (
+        <div className="vua-packages__register-result" role="status">
+          <Icon name="check" size={16} />
+          <span className="vua-caption">
+            {format(copy.repoWrite.removedLine, { repoId: removeOutcome.repoId })}
+          </span>
+        </div>
+      ) : null}
+      {removeOutcome?.kind === "rejected" ? (
+        <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+          <Icon name="warning" size={16} />
+          <span className="vua-caption">
+            {copy.repoWrite.guards[removeGuardKey(removeOutcome.guard)]}
+            {" "}
+            {format(copy.repoWrite.rejectedDetail, { detail: removeOutcome.detail })}
+          </span>
+        </div>
+      ) : null}
     </Card>
   );
 }
@@ -609,6 +661,165 @@ function RegisterSection({
           </span>
         </div>
       ) : null}
+    </Card>
+  );
+}
+
+/* ---- A4 仓库订阅增删区块(026 v0.4 消费批):blocks.repoWrites(
+ * packages.repoOps 能力行,一行服务三方法)门控,false = 区块不渲染
+ * (诚实缺席)。照 A3 同律无 preview 无确认链——用户显式提交即确认,
+ * 无 DelayedButton 无对话框(添加与移除订阅行都是非破坏性:不删任何
+ * 包文件与项目内容,ADR-0006 破坏性警示路径不适用,本面不发明破坏性
+ * 事实);订阅行移除的行内两击确认是纯 UX 步骤。空输入 = 按钮禁用
+ * (词面 minLength 1,UI 不构造违例请求)。**添加面不宣称幂等**——
+ * 文案不写「重复安全」(与 A3 注册刻意不同),库面拒绝重复订阅时
+ * rejected 如实行内呈现,不发明幂等成功。ok(repoReceipt 变体回显)/
+ * rejected(guard 文案 + detail 原词)行内呈现;failed/unavailable
+ * 关闭为 toast 诚实说明——任务真实状态由任务中心呈现。启停/重排
+ * 不在任何已冻结词面内——本区块不发明入口。 ---- */
+
+/** A4 添加表单行内终态:ok 保留收据回显行 / rejected 保留拒绝呈现;
+ * failed/unavailable 不留行内状态(toast 说明后复位)。 */
+type RepoAddOutcomeView =
+  | { readonly kind: "ok"; readonly line: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+/** A4 移除行内终态:ok 保留被删行 repoId 回显 / rejected 保留拒绝呈现。 */
+type RepoRemoveOutcomeView =
+  | { readonly kind: "ok"; readonly repoId: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+function RepoWriteSection({
+  busy,
+  remoteUrl,
+  remoteName,
+  localPath,
+  localName,
+  remoteOutcome,
+  localOutcome,
+  onRemoteUrlChange,
+  onRemoteNameChange,
+  onLocalPathChange,
+  onLocalNameChange,
+  onAddRemote,
+  onAddLocal,
+}: {
+  busy: "remote" | "local" | null;
+  remoteUrl: string;
+  remoteName: string;
+  localPath: string;
+  localName: string;
+  remoteOutcome: RepoAddOutcomeView | null;
+  localOutcome: RepoAddOutcomeView | null;
+  onRemoteUrlChange: (value: string) => void;
+  onRemoteNameChange: (value: string) => void;
+  onLocalPathChange: (value: string) => void;
+  onLocalNameChange: (value: string) => void;
+  onAddRemote: () => void;
+  onAddLocal: () => void;
+}) {
+  const remoteUsable =
+    remoteUrl.trim().length > 0 && remoteName.trim().length > 0 && busy === null;
+  const localUsable =
+    localPath.trim().length > 0 && localName.trim().length > 0 && busy === null;
+  return (
+    <Card>
+      <h2 className="vua-packages__section-title">{copy.repoWrite.title}</h2>
+      <p className="vua-caption vua-text-secondary">{copy.repoWrite.description}</p>
+      <div className="vua-packages__repowrite-group">
+        <h3 className="vua-caption">{copy.repoWrite.remoteHeadline}</h3>
+        <div className="vua-packages__register-row">
+          <input
+            type="text"
+            className="vua-packages__register-input"
+            placeholder={copy.repoWrite.remoteUrlPlaceholder}
+            aria-label={copy.repoWrite.remoteUrlAria}
+            value={remoteUrl}
+            onChange={(event) => onRemoteUrlChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && remoteUsable) onAddRemote();
+            }}
+          />
+          <input
+            type="text"
+            className="vua-packages__register-input vua-packages__repowrite-name"
+            placeholder={copy.repoWrite.remoteNamePlaceholder}
+            aria-label={copy.repoWrite.remoteNameAria}
+            value={remoteName}
+            onChange={(event) => onRemoteNameChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && remoteUsable) onAddRemote();
+            }}
+          />
+          <Button variant="default" disabled={!remoteUsable} onClick={onAddRemote}>
+            <Icon name="cloud" size={16} />
+            {busy === "remote" ? copy.repoWrite.adding : copy.repoWrite.remoteAction}
+          </Button>
+        </div>
+        {remoteOutcome?.kind === "ok" ? (
+          <div className="vua-packages__register-result" role="status">
+            <Icon name="check" size={16} />
+            <span className="vua-caption">{remoteOutcome.line}</span>
+          </div>
+        ) : null}
+        {remoteOutcome?.kind === "rejected" ? (
+          <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+            <Icon name="warning" size={16} />
+            <span className="vua-caption">
+              {copy.repoWrite.guards[removeGuardKey(remoteOutcome.guard)]}
+              {" "}
+              {format(copy.repoWrite.rejectedDetail, { detail: remoteOutcome.detail })}
+            </span>
+          </div>
+        ) : null}
+      </div>
+      <div className="vua-packages__repowrite-group">
+        <h3 className="vua-caption">{copy.repoWrite.localHeadline}</h3>
+        <div className="vua-packages__register-row">
+          <input
+            type="text"
+            className="vua-packages__register-input"
+            placeholder={copy.repoWrite.localPathPlaceholder}
+            aria-label={copy.repoWrite.localPathAria}
+            value={localPath}
+            onChange={(event) => onLocalPathChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && localUsable) onAddLocal();
+            }}
+          />
+          <input
+            type="text"
+            className="vua-packages__register-input vua-packages__repowrite-name"
+            placeholder={copy.repoWrite.localNamePlaceholder}
+            aria-label={copy.repoWrite.localNameAria}
+            value={localName}
+            onChange={(event) => onLocalNameChange(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && localUsable) onAddLocal();
+            }}
+          />
+          <Button variant="default" disabled={!localUsable} onClick={onAddLocal}>
+            <Icon name="folder" size={16} />
+            {busy === "local" ? copy.repoWrite.adding : copy.repoWrite.localAction}
+          </Button>
+        </div>
+        {localOutcome?.kind === "ok" ? (
+          <div className="vua-packages__register-result" role="status">
+            <Icon name="check" size={16} />
+            <span className="vua-caption">{localOutcome.line}</span>
+          </div>
+        ) : null}
+        {localOutcome?.kind === "rejected" ? (
+          <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+            <Icon name="warning" size={16} />
+            <span className="vua-caption">
+              {copy.repoWrite.guards[removeGuardKey(localOutcome.guard)]}
+              {" "}
+              {format(copy.repoWrite.rejectedDetail, { detail: localOutcome.detail })}
+            </span>
+          </div>
+        ) : null}
+      </div>
     </Card>
   );
 }
@@ -844,6 +1055,20 @@ export function PackagesPage() {
   const [registerRoot, setRegisterRoot] = useState("");
   const [registerBusy, setRegisterBusy] = useState(false);
   const [registerOutcome, setRegisterOutcome] = useState<RegisterOutcomeView | null>(null);
+  // A4 仓库订阅增删(026 v0.4 消费批;与 A1/A2/A3 各链分立):无 preview
+  // 无确认链——用户显式提交即确认;添加双键表单(remote url+name/local
+  // path+name),移除 = 订阅行内两击确认;ok(收据回显)/rejected 行内呈
+  // 现,failed/unavailable toast 后复位。添加面不宣称幂等——文案不写
+  // 「重复安全」,拒绝如实呈现
+  const [repoRemoteUrl, setRepoRemoteUrl] = useState("");
+  const [repoRemoteName, setRepoRemoteName] = useState("");
+  const [repoLocalPath, setRepoLocalPath] = useState("");
+  const [repoLocalName, setRepoLocalName] = useState("");
+  const [repoBusy, setRepoBusy] = useState<"remote" | "local" | "remove" | null>(null);
+  const [repoRemoteOutcome, setRepoRemoteOutcome] = useState<RepoAddOutcomeView | null>(null);
+  const [repoLocalOutcome, setRepoLocalOutcome] = useState<RepoAddOutcomeView | null>(null);
+  const [repoRemoveConfirmId, setRepoRemoveConfirmId] = useState<string | null>(null);
+  const [repoRemoveOutcome, setRepoRemoveOutcome] = useState<RepoRemoveOutcomeView | null>(null);
   // 结果 toast(短暂停留,role=status)
   const [toast, setToast] = useState<{ id: number; text: string } | null>(null);
   const toastSeq = useRef(0);
@@ -1338,6 +1563,156 @@ export function PackagesPage() {
     );
   };
 
+  /* ---- A4 仓库订阅增删(026 v0.4 消费批):三方法各自任务化——受理→
+   * 终态等待→收据/拒绝回流(端口内封装,骑共享 waitForTerminalTask)。
+   * ok/rejected 行内呈现;failed/unavailable 关闭为 toast 诚实说明——
+   * 任务真实状态由任务中心呈现。添加面不宣称幂等:重复订阅被拒如实
+   * 呈现,不发明幂等成功。移除 = 行内两击确认(第一击进入确认态,再击
+   * 执行);repoId 为 null 的行不提供移除入口(词面:id 缺席行不在移除
+   * 可达范围)。ok 后订阅列表由端口广播刷新(列表按新事实重取)。 ---- */
+
+  const startRepoAddRemote = () => {
+    if (repoBusy !== null) return;
+    const url = repoRemoteUrl.trim();
+    const name = repoRemoteName.trim();
+    if (url.length === 0 || name.length === 0) return;
+    setRepoBusy("remote");
+    setRepoRemoteOutcome(null);
+    void gateway.packages.addRemoteRepo(url, name).then(
+      (result) => {
+        setRepoBusy(null);
+        if (result.kind === "ok") {
+          const receipt = result.receipt;
+          if (receipt.kind === "repoReceipt" && receipt.repoType === "remote") {
+            setRepoRemoteOutcome({
+              kind: "ok",
+              line: format(copy.repoWrite.remoteSuccessLine, { name: receipt.name, url: receipt.url }),
+            });
+          }
+          return;
+        }
+        if (result.kind === "rejected") {
+          setRepoRemoteOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        setRepoRemoteOutcome(null);
+        if (result.kind === "failed") {
+          const key = repoEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.repoWrite.toasts.failedUnknown, { code: result.code })
+              : copy.repoWrite.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.repoWrite.toasts.unavailable);
+        }
+      },
+      () => {
+        setRepoBusy(null);
+        setRepoRemoteOutcome(null);
+        showToast(copy.repoWrite.toasts.unavailable);
+      },
+    );
+  };
+
+  const startRepoAddLocal = () => {
+    if (repoBusy !== null) return;
+    const path = repoLocalPath.trim();
+    const name = repoLocalName.trim();
+    if (path.length === 0 || name.length === 0) return;
+    setRepoBusy("local");
+    setRepoLocalOutcome(null);
+    void gateway.packages.addLocalRepo(path, name).then(
+      (result) => {
+        setRepoBusy(null);
+        if (result.kind === "ok") {
+          const receipt = result.receipt;
+          if (receipt.kind === "repoReceipt" && receipt.repoType === "local") {
+            setRepoLocalOutcome({
+              kind: "ok",
+              line: format(copy.repoWrite.localSuccessLine, { name: receipt.name, path: receipt.path }),
+            });
+          }
+          return;
+        }
+        if (result.kind === "rejected") {
+          setRepoLocalOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        setRepoLocalOutcome(null);
+        if (result.kind === "failed") {
+          const key = repoEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.repoWrite.toasts.failedUnknown, { code: result.code })
+              : copy.repoWrite.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.repoWrite.toasts.unavailable);
+        }
+      },
+      () => {
+        setRepoBusy(null);
+        setRepoLocalOutcome(null);
+        showToast(copy.repoWrite.toasts.unavailable);
+      },
+    );
+  };
+
+  /** 移除两击确认:第一击进入确认态;同 repoId 再击执行;其他操作繁忙
+   * 时忽略。执行期间保留确认 repoId(行内按钮呈「正在移除…」并禁用),
+   * 完成或失败后复位。 */
+  const requestRemoveRepo = (repoId: string) => {
+    if (repoBusy !== null) return;
+    if (repoRemoveConfirmId !== repoId) {
+      setRepoRemoveConfirmId(repoId);
+      return;
+    }
+    setRepoBusy("remove");
+    setRepoRemoveOutcome(null);
+    void gateway.packages.removeRepo(repoId).then(
+      (result) => {
+        setRepoBusy(null);
+        setRepoRemoveConfirmId(null);
+        if (result.kind === "ok") {
+          setRepoRemoveOutcome({ kind: "ok", repoId: result.receipt.repoId });
+          return;
+        }
+        if (result.kind === "rejected") {
+          setRepoRemoveOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        if (result.kind === "failed") {
+          const key = repoEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.repoWrite.toasts.failedUnknown, { code: result.code })
+              : copy.repoWrite.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.repoWrite.toasts.unavailable);
+        }
+      },
+      () => {
+        setRepoBusy(null);
+        setRepoRemoveConfirmId(null);
+        showToast(copy.repoWrite.toasts.unavailable);
+      },
+    );
+  };
+
   const togglePrereleases = (checked: boolean) => {
     if (checked && !prereleaseAcked) {
       setPrereleasePrompt(true);
@@ -1345,7 +1720,6 @@ export function PackagesPage() {
     }
     setShowPrereleases(checked);
   };
-
   const detailRow =
     detailId === null
       ? null
@@ -1404,7 +1778,35 @@ export function PackagesPage() {
               onSelect={chooseProject}
             />
             {p2.blocks.repos ? (
-              <P2ReposSection repos={p2.repos} reposErrorCode={p2.reposError?.code ?? null} />
+              <P2ReposSection
+                repos={p2.repos}
+                reposErrorCode={p2.reposError?.code ?? null}
+                {...(p2.blocks.repoWrites
+                  ? {
+                      onRemoveRequest: requestRemoveRepo,
+                      removeConfirmId: repoRemoveConfirmId,
+                      removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
+                      removeOutcome: repoRemoveOutcome,
+                    }
+                  : {})}
+              />
+            ) : null}
+            {p2.blocks.repoWrites ? (
+              <RepoWriteSection
+                busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
+                remoteUrl={repoRemoteUrl}
+                remoteName={repoRemoteName}
+                localPath={repoLocalPath}
+                localName={repoLocalName}
+                remoteOutcome={repoRemoteOutcome}
+                localOutcome={repoLocalOutcome}
+                onRemoteUrlChange={setRepoRemoteUrl}
+                onRemoteNameChange={setRepoRemoteName}
+                onLocalPathChange={setRepoLocalPath}
+                onLocalNameChange={setRepoLocalName}
+                onAddRemote={startRepoAddRemote}
+                onAddLocal={startRepoAddLocal}
+              />
             ) : null}
             {p2.blocks.registers ? (
               <RegisterSection
@@ -1510,6 +1912,23 @@ export function PackagesPage() {
                 selectedProjectPath={p1.projectPath}
                 onSelect={chooseProject}
               />
+              {p1.blocks.repoWrites ? (
+                <RepoWriteSection
+                  busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
+                  remoteUrl={repoRemoteUrl}
+                  remoteName={repoRemoteName}
+                  localPath={repoLocalPath}
+                  localName={repoLocalName}
+                  remoteOutcome={repoRemoteOutcome}
+                  localOutcome={repoLocalOutcome}
+                  onRemoteUrlChange={setRepoRemoteUrl}
+                  onRemoteNameChange={setRepoRemoteName}
+                  onLocalPathChange={setRepoLocalPath}
+                  onLocalNameChange={setRepoLocalName}
+                  onAddRemote={startRepoAddRemote}
+                  onAddLocal={startRepoAddLocal}
+                />
+              ) : null}
               {p1.blocks.registers ? (
                 <RegisterSection
                   outcome={registerOutcome}
