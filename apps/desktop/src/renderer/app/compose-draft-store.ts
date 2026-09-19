@@ -23,7 +23,9 @@ export interface ComposeDraftItem {
   readonly title: string;
   /** 素材角色(素材事实;无则 null) */
   readonly role: string | null;
-  /** 挂载选择器名称提示(recipe v0.3 anyOf 用户输入;null = 未指定) */
+  /** 挂载选择器名称提示(recipe v0.3 anyOf 用户输入;null = 未指定)。
+   *  D3 自动派生(用户裁定 2026-09-20):加入时未指定即派生为条目
+   *  displayName——用户无须填写即可保存;清空 = 显式未命名(守卫如实阻止) */
   readonly nameHint: string | null;
   readonly addedAt: string;
 }
@@ -183,7 +185,11 @@ export function composeDraftToSaveDocument(
 }
 
 /** 加入素材(身份幂等:同素材重复加入为无操作)。时钟注入(BG-18):now
- *  必填——纯函数确定化,真实时钟由 action 层(命令边界)取用 */
+ *  必填——纯函数确定化,真实时钟由 action 层(命令边界)取用。
+ *  挂载名称自动派生(D3,用户裁定 2026-09-20「不该让用户填写」):加入时
+ *  未指定 nameHint(null/空白)即自动派生为条目 displayName(title,仓库
+ *  素材的稳定呈现标识,满足 recipe 词面校验)——两套 UI 同一规则;用户仍可
+ *  在输入框显式覆盖或清空(清空 = 显式未命名,保存守卫如实阻止) */
 export function composeAddItem(
   state: ComposeDraftState,
   item: Omit<ComposeDraftItem, "addedAt">,
@@ -192,8 +198,10 @@ export function composeAddItem(
   if (state.items.some((existing) => existing.warehouseItemId === item.warehouseItemId)) {
     return state;
   }
+  const nameHint =
+    item.nameHint !== null && item.nameHint.trim() !== "" ? item.nameHint : item.title;
   return {
-    items: [...state.items, { ...item, addedAt: now }],
+    items: [...state.items, { ...item, nameHint, addedAt: now }],
     undoStack: [...state.undoStack.slice(-49), state.items],
     dirty: true,
     saved: state.saved,
