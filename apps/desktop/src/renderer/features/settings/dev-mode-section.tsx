@@ -5,6 +5,7 @@ import {
   allFixtureSelection,
   allLiveSelection,
   devPortIds,
+  devTargetButtonDisabled,
   readDevPortSelection,
   writeDevPortSelection,
   type DevPortId,
@@ -20,6 +21,11 @@ import {
  * (照 DevScenarioBar 切换先例,装配点在 createGatewayState)。任一端口
  * fixture=「演示数据」徽标恒显(原则①聚合语义);开发模式是连接目标
  * 选择器,不是「让一切变绿」的开关。
+ * W25 走查 D-B 修复(2026-09-20):切换按钮禁用判定经
+ * devTargetButtonDisabled(按钮只在目标态已达成时禁用)——此前两按钮
+ * 共用 target === "live" 禁用表达式,live 基线下双双不可点,per-port
+ * 演示切换被锁死;fixture 档位-only 变更亦因空 targets 整键移除而
+ * 不落盘(恒回 demo-mixed),两根因分别在 dev-port-selection 与此修复。
  */
 const copy = strings.dev;
 
@@ -106,14 +112,14 @@ export function DevModeSection() {
               <strong>{portLabels[port]}</strong>{" "}
               <Button
                 variant={target === "fixture" ? "subtle" : "default"}
-                disabled={target === "live"}
+                disabled={devTargetButtonDisabled(target, "fixture")}
                 onClick={() => setTarget(port, "fixture")}
               >
                 {copy.targetFixture}
               </Button>{" "}
               <Button
                 variant={target === "live" ? "subtle" : "default"}
-                disabled={target === "live"}
+                disabled={devTargetButtonDisabled(target, "live")}
                 onClick={() => setTarget(port, "live")}
               >
                 {copy.targetLiveReset}

@@ -4,7 +4,7 @@
  *
  * 部署器分两个辖区(§2.1):游玩环境(VRChat / VR 运行时 / 网络)与
  * 创作环境(Unity / VPM / 磁盘)。检查项按 zone 归属,两个页面各自汇总;
- * 其中创作环境就绪是 AMF 车间页的唯一硬门控(nav-model.resolvePageLanding)。
+ * 其中生产门(创作辖区的门内项,CREATE_GATE_IDS)是 AMF 车间页的唯一硬门控。
  *
  * 文案纪律(i18n 预备):本文件不持有任何文案字面量。辖区文案在
  * strings.deployer.zones[zone] 按 zone id 直接索引;汇总结果返回
@@ -210,13 +210,43 @@ export function relativeTimeKey(
   return { key: "daysAgo", count: Math.floor(diffHours / 24) };
 }
 
+/* ---- 生产门组成(2026-09-20 用户裁决:「没有 ALCOM 或者没有 VCC 不应作为
+ * 阻塞」+库优先架构)---- */
+
 /**
- * 创作环境是否就绪:驱动 AMF Tab 角标与车间页门控(§2.1)。
- * 创作辖区必须是 results 且至少一项全部通过;not-run / running / failed
- * 一律视为未就绪,防止检测器漏报创作项时被误判为就绪。
+ * 生产门硬前置 checkId 闭集(引擎词表,contract-projection CHECK_TITLE_KEYS
+ * 同源词表):Unity 编辑器已检测是唯一硬前置——生产构建事实必需。
+ * vpm_cli(内嵌库恒在,核心探针重构后该行转恒真)/vcc/alcom/disk_space
+ * 等是信息性展示项,不进门。门内项缺席(检测结果不含该行,即无该前置的
+ * 检测证据)时不得判就绪:无证据不判就绪(原则①)。
+ */
+export const CREATE_GATE_IDS: readonly string[] = ["unity_editors"];
+
+/** 检查项是否属于生产门(门内项;门内项之外的创作辖区项均为信息性展示项) */
+export function isCreateGateItem(id: string): boolean {
+  return (CREATE_GATE_IDS as readonly string[]).includes(id);
+}
+
+/**
+ * 辖区摘要取数(「还差 N 项准备」计数口径,与生产门同源):
+ * 创作辖区只数门内项(信息性展示项卡照常逐张呈现,但不进计数与总览灯);
+ * 游玩辖区无门概念,全量计入(替代组计数照旧)。
+ */
+export function zoneSummaryItems(zone: CheckZone, items: CheckItem[]): CheckItem[] {
+  return zone === "create" ? items.filter((item) => isCreateGateItem(item.id)) : items;
+}
+
+/**
+ * 生产门是否开启:驱动 AMF Tab 角标与车间页门控(§2.1)。
+ * 组成语义(2026-09-20 用户裁决):创作辖区必须是 results 且门内项
+ * (CREATE_GATE_IDS,当前唯一硬前置 = Unity 编辑器)全部 ok;
+ * 辖区其余项(vpm_cli/vcc/alcom/磁盘等)是信息性展示项,不进门——
+ * 仅它们缺失时门照开。not-run / running / failed 一律不开门;
+ * 门内项缺席(无检测证据)不开门,防止检测器漏报硬前置时被误判为就绪。
  */
 export function creatorEnvReady(view: DeployerView): boolean {
   const create = view.zones.create;
   if (create.kind !== "results") return false;
-  return create.items.length > 0 && create.items.every((item) => item.status === "ok");
+  const gateItems = create.items.filter((item) => isCreateGateItem(item.id));
+  return gateItems.length > 0 && gateItems.every((item) => item.status === "ok");
 }
