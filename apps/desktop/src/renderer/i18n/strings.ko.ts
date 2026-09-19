@@ -107,6 +107,12 @@ export const strings: Strings = {
 demoTaskTitle: "데모 작업",
     replay: "이벤트 스트림 재생",
     progress: "{done}/{total}",
+    openAria: "알림 센터 열기(진행 중 {count}개)",
+    closeAria: "알림 센터 닫기",
+    empty: "알림이 없습니다",
+  },
+  bootSplash: {
+    starting: "VUA 시작 중",
   },
   nav: {
     tabs: {
