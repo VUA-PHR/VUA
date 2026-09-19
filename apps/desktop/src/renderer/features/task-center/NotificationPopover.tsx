@@ -5,6 +5,7 @@ import { format, strings } from "../../i18n/index.ts";
 import type { PageId } from "../../app/nav-model.ts";
 import type { TaskItem } from "../../gateway/index.ts";
 import { NotificationList } from "./NotificationList.tsx";
+import { taskRowOpenTarget } from "./notification-model.ts";
 import { useNotificationCenter } from "./use-notification-center.ts";
 import "./notification-popover.css";
 
@@ -143,7 +144,8 @@ export function NotificationPopover({ navigate }: { navigate: (target: PageId) =
                   dismissible={center.dismissible}
                   onBackToOrigin={(task: TaskItem) => {
                     close();
-                    navigate(task.originPage);
+                    // 行打开语义经模型函数(D2):活动/终态两态一致回来源页
+                    navigate(taskRowOpenTarget(task));
                   }}
                   emptyText={copy.empty}
                   replay={center.replay}

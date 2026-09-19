@@ -9,7 +9,7 @@ import { Mascot } from "../../components/primitives/Mascot.tsx";
 import { StatusLight } from "../../components/primitives/StatusLight.tsx";
 import { format, strings } from "../../i18n/index.ts";
 import { useDataSource, useEnvironmentView, useGateway } from "../../gateway/index.ts";
-import { summarizeGroup, summarizeHealth, type CheckItem, type CheckZone } from "./deployer-model.ts";
+import { summarizeGroup, summarizeHealth, zoneSummaryItems, type CheckItem, type CheckZone } from "./deployer-model.ts";
 import { canAdvanceStep, type FixPlanV1 } from "./fix-plan-model.ts";
 import { VersionPanel } from "./VersionPanel.tsx";
 import "./deployer.css";
@@ -231,7 +231,10 @@ export function DeployerPage({
   const evidenceTime =
     evidence !== null ? new Date(evidence.checkedAt).toLocaleString() : null;
   const items = evidence?.items ?? [];
-  const summary = summarizeHealth(items);
+  // 摘要计数口径(2026-09-20 用户裁决,与生产门同源):创作辖区只数门内项
+  // (Unity 编辑器是唯一硬前置);信息性展示项卡照常逐张呈现,不进「还差
+  // N 项准备」计数与总览灯。游玩辖区全量计入。
+  const summary = summarizeHealth(zoneSummaryItems(zone, items));
   const headline =
     summary.headlineKey === "ready"
       ? zoneCopy.readyHeadline
