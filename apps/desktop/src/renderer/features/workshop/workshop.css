@@ -4,6 +4,13 @@
   gap: var(--vua-space-5);
   max-width: 960px;
   margin: 0 auto;
+  /* 页面级滚动(D4,用户实测 2026-09-20;#32 .vua-deployer 同类修法):
+   * 本页根类不是 .vua-page,父链 .vua-shell__main overflow:hidden——无此
+   * 三件套时内容超出视口即被截断、底部不可达。与 .vua-page 同构:
+   * flex 撑满＋min-height:0 允许收缩＋自身滚动,顶栏/侧栏/任务栏常驻 */
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .vua-workshop__hero {

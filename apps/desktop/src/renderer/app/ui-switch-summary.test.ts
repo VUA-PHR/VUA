@@ -60,10 +60,12 @@ describe("ui switch summary (AC-09 read-only projection)", () => {
     }, NOW);
     const summary = uiSwitchSummary(two);
     expect(summary.items.map((item) => item.warehouseItemId)).toEqual(["w-1", "w-2"]);
+    // D3(用户裁定 2026-09-20):加入时挂载名称自动派生为条目 displayName,
+    // 摘要如实投影派生值(不发明——值溯源共享草稿事实)
     expect(summary.items[1]).toEqual({
       warehouseItemId: "w-2",
       title: "Outfit B",
-      nameHint: null,
+      nameHint: "Outfit B",
     });
   });
 
