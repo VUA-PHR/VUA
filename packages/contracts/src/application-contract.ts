@@ -1049,6 +1049,92 @@ export type PackagesRemoveRepoResultV04 =
   | PackagesRepoRemovedV04
   | PackagesRepoRejectedV04;
 
+/* ---- 026 A5 写面(packages-ops v0.5,核心冻结批 2026-09-19)。项目创建
+ *  单方法:packages.createProject,一一映射端口方法 create_project
+ *  (parent, name, template)。无 preview 对偶第二员(A3/A4 同律,此面
+ *  根在端口:端口恰一个创建方法、无 create-preview 对应——预览臂会
+ *  在 wire 面立端口后不存在的 方法;全新项目目录无既有状态可
+ *  diff,无摘要可绑定,026 A5 核心表态与桌面入口需求表态同向)。用
+ *  户显式表单提交即确认(桌面 A5 第 2 点:表单提交本身即显式确认,
+ *  不进双摘要确认链——创建新目录不触任何在册项目、包文件、他项目
+ *  内容,ADR-0006 破坏性警示路径无可警示;携 confirmedDigest=形状
+ *  违反正例钉死)。不收 projectPath(创建不寻址任何在册项目,013
+ *  project_not_found 复用不适用;携即形状违反负例钉死)。九态任务化
+ *  写命令(写命令族一致形状;模板目录复制可长时且 copy_tree 段无进
+ *  度回调——可观察/可恢复骑既有任务权威;恢复非终态 inspect_
+ *  required 绝不隐式续传,诚实纪律 3)。模板参数 REQUIRED-nullable
+ *  照 A2 版本选择同构:null=后端默认模板解析(库路径默认 Avatar 三
+ *  级解析序——冻结词面事实,非选择器:首面零新读面,templates.*
+ *  枚举不存在,桌面如实呈现所用模板不虚构下拉,诚实纪律 1);非空
+ *  串=该模板名/路径 verbatim 透传。收据事实:成功答端口 ProjectRef
+ *  {id, root}——packages-ops 族唯一有实际载荷的收据;kind=created
+ *  携 projectId+projectPath 回显。创建即在册副作用=冻结端口事实
+ *  (双后端成功路径尾调 FileSystemProjectStore::initialize):创建成
+ *  功即在册,在册列表刷新即见;词面绝不虚构「仅建目录不登记」形状。
+ *  能力门=既有 VpmCapabilities.create_project 五位居(A5 零新
+ *  accessor,与 A3/A4 不同:位先于本批存在且双在库后端已诚实声明),
+ *  wire 门 submit 前读位,假位答通用 capability_missing 绝不进任务;
+ *  桌面消费侧能力呈现须新立(不可复用 blocks.changes——语义=变更预
+ *  览可用性,与「可新建项目」不同构)。双后端拒绝形状不同构如实载
+ *  明(库路径四 i18n 键共享 vua.vpm.template_missing 一码——i18n 消
+ *  息键与端口错误码系两层;CLI 路径 vua.vpm.apply_failed 携 exitCode
+ *  ＋vua.vpm.backend_unavailable),不虚构统一形状。wire 路由候核心
+ *  接线切片;零端到端宣称维持 */
+
+/** packages.createProject:任务化项目创建写命令(command;
+ *  params 三键闭集 {parent, name, template},template REQUIRED-
+ *  nullable(null=后端默认解析);无 projectPath、无 digest 位) */
+export interface PackagesCreateProjectCommandV05 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.createProject";
+  readonly commandId: string;
+  readonly params: {
+    /** 新项目目录的父目录(端口 parent verbatim;路径事实,非在册项目
+     *  身份——创建不寻址任何在册项目) */
+    readonly parent: string;
+    /** 新项目名(端口 name verbatim;后端名称校验为执行时权威,本词表
+     *  不重审上游名称语法;表单前置校验镜像后端规则仅作 UI 引导) */
+    readonly name: string;
+    /** 模板选择:null=后端默认模板解析(库路径默认 Avatar 三级解析序
+     *  ——冻结词面事实,非选择器,首面零新读面);非空串=该模板名/路
+     *  径 verbatim 透传 */
+    readonly template: string | null;
+  };
+}
+
+/** kind=created(A5 创建收据):端口 ProjectRef {id, root} 投影——
+ *  packages-ops 族唯一有实际结果载荷的收据(不同于答 unit 的 A3/A4
+ *  面)。projectId=ProjectRef.id 回显(后端铸造的创建事实,信息性标
+ *  识;非 013 项目身份键——项目身份仍是路径);projectPath=ProjectRef
+ *  .root 回显(新项目根目录=注册路径身份:创建即在册副作用=冻结端
+ *  口事实——双后端成功路径尾调 FileSystemProjectStore::initialize,
+ *  创建成功即在册、在册列表刷新即见;不虚构「仅建目录不登记」形状)。
+ *  additionalProperties:false 禁止发明创建时间戳/复制统计/包清单;
+ *  键集与一切前代收据臂互斥 */
+export interface PackagesProjectCreatedV05 {
+  readonly schemaVersion: "vua.packages-ops/v0.5";
+  readonly kind: "created";
+  readonly projectId: string;
+  readonly projectPath: string;
+}
+
+export interface PackagesCreateRejectedV05 {
+  readonly schemaVersion: "vua.packages-ops/v0.5";
+  readonly kind: "rejected";
+  readonly guard: PackagesGuardV02;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern);原端口码
+   *  (vua.vpm.template_missing——库路径四 i18n 键共享载体 /
+   *  vua.vpm.apply_failed——CLI 超时/非零退出携 exitCode 与登记腿 /
+   *  vua.vpm.backend_unavailable——CLI runner 故障)在 detail 原词溯
+   *  源,不入 code 键 */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesCreateProjectResultV05 =
+  | PackagesProjectCreatedV05
+  | PackagesCreateRejectedV05;
+
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
 export interface DownloadsListCompletedItemV04 {
@@ -2043,6 +2129,7 @@ export type ApplicationRequestV01 =
   | PackagesAddRemoteRepoCommandV04
   | PackagesAddLocalRepoCommandV04
   | PackagesRemoveRepoCommandV04
+  | PackagesCreateProjectCommandV05
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -2189,6 +2276,7 @@ export type ApplicationSuccessValueV01 =
   | PackagesAddRemoteRepoResultV04
   | PackagesAddLocalRepoResultV04
   | PackagesRemoveRepoResultV04
+  | PackagesCreateProjectResultV05
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV01;
 
@@ -2619,6 +2707,23 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       return false;
     }
     return typeof value.params.repoId === "string" && value.params.repoId.length > 0;
+  }
+  // 026 A5 写面(核心冻结批 2026-09-19):createProject = 三键闭集
+  // {parent, name, template}(前两者非空;template REQUIRED-nullable——
+  // null=后端默认模板解析〔库路径默认 Avatar 三级解析序,冻结词面事实
+  // 非选择器,首面零新读面〕,非空串=该模板名/路径 verbatim 透传;无
+  // projectPath——创建不寻址任何在册项目;无 digest 位——携即形状违反,
+  // 用户显式表单提交即确认)
+  if (value.kind === "command" && value.method === "packages.createProject") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["parent", "name", "template"])) {
+      return false;
+    }
+    return typeof value.params.parent === "string" && value.params.parent.length > 0
+      && typeof value.params.name === "string" && value.params.name.length > 0
+      && (value.params.template === null
+        || (typeof value.params.template === "string" && value.params.template.length > 0));
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {

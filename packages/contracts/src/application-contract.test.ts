@@ -542,6 +542,53 @@ describe("bdl-commands v0.1 application surface", () => {
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
   });
 
+  it("admits the 026 A5 create command with the closed params and no digest and no projectPath", () => {
+    // createProject 三键闭集 {parent, name, template};template
+    // REQUIRED-nullable:null=后端默认模板解析(库路径默认 Avatar 三级
+    // 解析序——冻结词面事实,非选择器),非空串=verbatim 透传
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: "Avatar" },
+    })).toBe(true);
+    // 缺 parent = 无创建落点
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { name: "Synthetic Project", template: null },
+    })).toBe(false);
+    // 空 name = 非事实
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "", template: null },
+    })).toBe(false);
+    // 空 template 串 = REQUIRED-nullable 的空串不是默认语义(默认=null),
+    // minLength 1 拒绝
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: "" },
+    })).toBe(false);
+    // 缺 template 键 = REQUIRED-nullable(照 A2 版本选择同构:缺席与
+    // null 的双态歧义不立,null 即默认)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 携 confirmedDigest = 形状违反(全新目录无既有状态可漂移,无
+    // preview 对偶——端口事实;用户显式表单提交即确认)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null, confirmedDigest: "d" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    // 携 projectPath = 词表外键(创建不寻址任何在册项目,013 复用不适用)
+    expect(isApplicationRequestV01({
+      ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
+      params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null, projectPath: "C:/proj" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "downloads.listCompleted", params: {},

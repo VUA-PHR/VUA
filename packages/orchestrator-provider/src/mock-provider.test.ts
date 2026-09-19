@@ -751,6 +751,30 @@ describe("mock packages-ops A4 repo add/remove face (026 core freeze batch, pack
   });
 });
 
+describe("mock packages-ops A5 create face (026 core freeze batch, packages-ops v0.5)", () => {
+  it.each([
+    ["packages.createProject", { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null }],
+  ] as const)("answers %s with the honest absence code — never a fabricated creation receipt", async (method, params) => {
+    // 026 A5 词表行(packages-ops v0.5):模拟面无 VpmBackend,恒答诚实
+    // 缺席(P1/P2/A1/A2/A3/A4 同纪律)——模拟面永不模拟 wire 写回执;
+    // 创建收据(ProjectRef 投影)与「创建即在册」副作用只属于真实后端
+    // 的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "command",
+      method,
+      commandId: "cmd-test-a5",
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
   it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
     // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/
