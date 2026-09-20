@@ -1,3 +1,4 @@
+import { useModalOwner } from "../../components/primitives/modal-layer.tsx";
 import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -91,6 +92,7 @@ function EmbeddedBrowsePanel({
 }: {
   availability: EmbeddedBrowseAvailability;
 }) {
+  const modalOwner = useModalOwner();
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
   const [address, setAddress] = useState("");
   const [openFailure, setOpenFailure] = useState<EmbeddedBrowseOpenFailure | null>(null);
@@ -253,7 +255,7 @@ function EmbeddedBrowsePanel({
           与 #37 代次模型均不受影响。 */}
       {viewId !== null
         ? createPortal(
-            <div className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
+            <div data-vua-modal-owner={modalOwner} className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
               <button
                 type="button"
                 className="vua-import__browse-button"

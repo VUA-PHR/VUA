@@ -6,7 +6,7 @@ baseline_commit: e768dde
 updated: 2026-09-21
 ---
 ## 当前焦点
-用户直接授权 2026-09-21：执行 7562f03 计划六项修复并交集成验收。
+用户直接授权 2026-09-21：执行 7562f03 计划六项修复并交集成验收。六项已完成。
 VUA-8 单树兼桌面/产线；VUA-7 只协调，不共写，不直接合 main。
 ## 自基线交付
 A：R1 camera.scene 绑定 preview scene、还原 RenderTexture.active；
@@ -28,9 +28,26 @@ Unity 全套 53/53（results-final.xml，含干净场景与非空 RT 恢复）�
 命令：VUA_BRIDGE_V4_RECEIPTS=<该工程>/.vua/bridge/v4-test-receipts，
 cargo test -p vua-unity-bridge --test bridge_v4_vectors --test material_staging -- --include-ignored，6/6。
 Rust 两 crate 全量通过（既有手动真机用例仍忽略），Bridge clippy 全 targets 通过。
+C：R4 两种弹窗共享栈，Esc/遮罩仅关闭顶层；R5 初始焦点、循环、恢复、
+StrictMode/卸载/动态按钮与 inert/aria-hidden 背景隔离；ImportPage body
+portal 按模态 owner 保留可操作，内层确认期间随父层隔离。
+R6 成功持久化回执触发宿主重读列表＋选中详情，弹窗卸载不丢通知；
+失败/关闭不刷新，旧读请求不覆盖新读，保存期间编辑保留 dirty。
+复核订正：宿主原选择函数把 ID 当文档传入且从未更新 selectedId；一并修通。
+DOM：pnpm --filter @vua/desktop smoke:production-review，Chromium 152.0.7977.65
+实际 DOM 33/33（含原生 Esc 输入、实际 ImportPage portal、合成 Gateway）。
+证据：C:/Users/AR/AppData/Local/Temp/vua-production-review-dom.json（2026-09-21 05:28 HKT）。
+桌面 typecheck 双通过；vitest 89 文件 807/807；boundary/i18n/contrast 通过；
+check:leak 独立临时生产构建 155 指纹零泄漏。未触发桌面 dist 清理/完整发布构建。
+真机未验：真实付费 Avatar/自定义 shader、真实远程网页视图与正式 Gateway 全链。
+范围外维持：正式预览触发、Gateway bake 定位、正式资产读取协议、解除 DEV 门。
+无完整端到端宣称。冻结 v1–v4 Schema 未修改；所有测试素材均合成，产物仅本地。
 ## 阻塞
 无。此前自动审批要求本任务直接授权，用户已补充授权，已恢复执行。
 ## 下次合并意图
-B 已完成，C（R4–R6 模态/保存刷新）待提交，完成后统一交集成。
+候验收：本分支三笔 A a7bc1b4、B a09b3b6、C 本提交，基线 e768dde。
+R1–R6 均已实现并验证；跨域请集成审查合入，本树不直接合 main。
 ## 留言
-- [→集成] 本树执行六项审阅修复，当前 A 已验证，未请求合并。
+- [→集成] 请求验收本分支三笔；六项完成，真实 Unity/DOM 与未验范围如上。
+- [→桌面] R4–R6 已落本树；同一持久化通知与模态所有权供现有页面消费。
+- [→产线] R1–R3 已落本树；补齐 staging helper 防止打包后缺类。
