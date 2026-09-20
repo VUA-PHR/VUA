@@ -1,0 +1,11 @@
+{
+  "schemaVersion": "0.6",
+  "operation": "packages.disableRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.6",
+    "kind": "rejected",
+    "guard": "execution_failed",
+    "code": "vua.vpm.repo_not_found",
+    "detail": "no subscription row carries this repoId"
+  }
+}

@@ -13,6 +13,9 @@ import {
   type InspectionEvidenceDocumentV01,
   type PackagesInstalledItemV02,
   type PackagesListInstalledResultV02,
+  type PackagesListReposResultV02,
+  type PackagesRepoInfoV02,
+  type PackagesRepoRefreshedV06,
   type InspectionGetResultV01,
   type InspectionListResultV01,
   type OverlaySnapshotResultV01,
@@ -701,6 +704,68 @@ describe("bdl-commands v0.1 application surface", () => {
       ...base, kind: "command", method: "packages.createProject", commandId: "cmd-7",
       params: { parent: "D:/synthetic/projects", name: "Synthetic Project", template: null, projectPath: "C:/proj" },
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
+  it("admits the 027 F4 lifecycle commands with the closed single-key params and no digest and no projectPath", () => {
+    // F4 三方法各单键闭集 {repoId}(稳定行柄;A4 removeRepo 同柄)。启停
+    // 系 VUA 自有语义(W25 只读取证裁决 (c):VCC 无任何启停状态),存储
+    // 裁决=VUA 自有存储,词面绝不携 settings.json 键位
+    for (const method of ["packages.enableRepo", "packages.disableRepo", "packages.refreshRepo"] as const) {
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: { repoId: "repo.example.community" },
+      })).toBe(true);
+      // 空 repoId = 非事实
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: { repoId: "" },
+      })).toBe(false);
+      // 缺 repoId 键 = 形状违反
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: {},
+      } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+      // 携第二键 = 闭集违反(以 name 为例)
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: { repoId: "repo.example.community", name: "Community Repo" },
+      } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+      // 携 confirmedDigest = 形状违反(无 preview 对偶——A3/A4 同律,用户
+      // 显式提交即确认;刷新网络段为执行本体,预览无法不做同样网络工作而
+      // 验证可达性)
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: { repoId: "repo.example.community", confirmedDigest: "d" },
+      } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+      // 携 projectPath = 词表外键(生命周期面只寻址订阅行,013 复用不适用)
+      expect(isApplicationRequestV01({
+        ...base, kind: "command", method, commandId: "cmd-f4",
+        params: { repoId: "repo.example.community", projectPath: "C:/proj" },
+      } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+    }
+    // 类型级钉:v0.2 订阅行恰六键(v0.1 五键 + enabled 必带);refreshed
+    // 收据恰四键(cacheUpdated 必带,两臂皆成功);键集发明即类型错误
+    const v02Row: PackagesRepoInfoV02 = {
+      repoId: "repo.example.community",
+      name: "Community Repo",
+      url: null,
+      localPath: null,
+      cached: true,
+      enabled: false,
+    };
+    expect(v02Row.enabled).toBe(false);
+    const v02Listing: PackagesListReposResultV02 = {
+      schemaVersion: "vua.packages-repos/v0.2",
+      repos: [v02Row],
+    };
+    expect(v02Listing.repos[0]?.cached).toBe(true);
+    const refreshed: PackagesRepoRefreshedV06 = {
+      schemaVersion: "vua.packages-ops/v0.6",
+      kind: "refreshed",
+      repoId: "repo.example.community",
+      cacheUpdated: false,
+    };
+    expect(refreshed.cacheUpdated).toBe(false);
   });
 
   it("admits the bdl-queries v0.4 completed-downloads read query with empty params", () => {

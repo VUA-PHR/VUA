@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.6",
+  "operation": "packages.refreshRepo",
+  "params": {
+    "repoId": "repo.example.community",
+    "confirmedDigest": "aa92c9f0bb11d3e4"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.6",
+  "operation": "packages.enableRepo",
+  "result": {
+    "schemaVersion": "vua.packages-ops/v0.6",
+    "kind": "enabled",
+    "repoId": "repo.example.community"
+  }
+}
