@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { MockOrchestratorProviderV01, type OrchestratorProviderV01 } from "@vua/orchestrator-provider";
+import { APPLICATION_CONTRACT_VERSION } from "@vua/contracts";
 import type { ApplicationEventV01, CapabilityOperationV01, DesktopGatewaySuccessValueV1 } from "@vua/contracts";
 import { routeDesktopGatewayInvoke } from "../../electron/gateway-router.js";
 import { createElectronGateway, type DesktopKernelHost } from "./electron-gateway.js";
@@ -65,10 +66,9 @@ function kernelHost(
 }
 
 const dialog = {
+  // W25 真机第四批:素材入口为文件夹选择器,displayName = 所选文件夹名
   pickMaterialSource: async (intake: string) =>
-    intake === "direct_unity_package"
-      ? { refId: "mat-1", displayName: "closet.unitypackage" }
-      : null,
+    intake === "direct_unity_package" ? { refId: "mat-1", displayName: "closet" } : null,
 };
 
 async function liveGateway(
@@ -140,7 +140,7 @@ describe("live production port over the Kernel route (F-3)", () => {
 
     // 素材选取经 Kernel 对话框;startInspection 携带 refId(路径由 Kernel 解析)
     const material = await port.pickMaterial("direct_unity_package");
-    expect(material).toEqual({ materialId: "mat-1", intake: "direct_unity_package", displayName: "closet.unitypackage" });
+    expect(material).toEqual({ materialId: "mat-1", intake: "direct_unity_package", displayName: "closet" });
     const started = await port.startInspection(material!);
     expect(started.kind).toBe("ok");
     if (started.kind !== "ok" || started.run.kind !== "run") throw new Error("expected a run");
@@ -324,13 +324,92 @@ describe("live production port over the Kernel route (F-3)", () => {
     // Kernel 以 vua.material.source_unknown 拒绝;渲染层映射为专用拒绝原因,
     // 绝不折叠成「生产能力未连接」(unavailable)。空登记 = 重启后未再注册。
     const { port } = await liveGateway(PRODUCTION_CAPABILITIES, new Map());
-    const staleRef = { materialId: "mat-1", intake: "direct_unity_package" as const, displayName: "closet.unitypackage" };
+    const staleRef = { materialId: "mat-1", intake: "direct_unity_package" as const, displayName: "closet" };
 
     const result = await port.startInspection(staleRef);
     expect(result).toMatchObject({ kind: "rejected", reason: "unknown_material_source" });
     if (result.kind !== "rejected") throw new Error("expected a rejection");
     // 拒绝如实携带当前运行快照(尚无运行:not-connected),命令未发出
     expect(result.run).toMatchObject({ kind: "not-connected" });
+  });
+
+  it("forwards the picked material folder to the provider context as sourceFolder (W25 live batch 4)", async () => {
+    // W25 真机第四批修复钉:素材入口 = 文件夹选择器(dialog openDirectory),
+    // 登记 sourceFolder = 所选文件夹(provider inspect_folder canonicalize+
+    // is_dir 只接受目录);文件夹 intake 登记 → startInspection 通过形状,
+    // displayName 即所选文件夹名
+    const provider = new MockOrchestratorProviderV01({ capabilities: PRODUCTION_CAPABILITIES });
+    await provider.start();
+    const folderDialog = {
+      pickMaterialSource: async (intake: string) =>
+        intake === "direct_unity_package" ? { refId: "mat-1", displayName: "Meiyun_Package" } : null,
+    };
+    const gateway = createElectronGateway(
+      { ...kernelHost(provider, new Map([["mat-1", "C:/materials/Meiyun_Package"]])), dialog: folderDialog },
+      null,
+    );
+    const port = gateway.modelProduction;
+    const invokeSpy = vi.spyOn(provider, "invoke");
+
+    const material = await port.pickMaterial("direct_unity_package");
+    expect(material).toEqual({
+      materialId: "mat-1",
+      intake: "direct_unity_package",
+      displayName: "Meiyun_Package",
+    });
+    const started = await port.startInspection(material!);
+    expect(started.kind).toBe("ok");
+    const startCall = invokeSpy.mock.calls.find(([request]) => request.method === "production.startInspection")?.[0];
+    // 登记四元组 sourceFolder = 所选文件夹,原样透传 provider
+    expect(startCall).toMatchObject({
+      kind: "command",
+      params: { sourceFolder: "C:/materials/Meiyun_Package" },
+    });
+  });
+
+  it("surfaces the provider source_invalid rejection for a file-path registration without pre-blocking (W25 live batch 4)", async () => {
+    // W25 真机第四批修复钉:旧版文件选择器时代的 .unitypackage 文件路径登记
+    // (落盘残留形态)不被桌面侧预拦——命令照常发出,provider 端
+    // inspect_folder 的 vua.material.source_invalid 拒绝经专用拒绝原因如实
+    // 上呈,不折叠「未连接/操作未发出」(honesty:失败呈现为失败)
+    const { provider, port } = await liveGateway(
+      PRODUCTION_CAPABILITIES,
+      new Map([["mat-1", "C:/downloads/Meiyun.unitypackage"]]),
+    );
+    const original = provider.invoke.bind(provider);
+    const invokeSpy = vi
+      .spyOn(provider, "invoke")
+      .mockImplementation(async (request) =>
+        request.method === "production.startInspection"
+          ? {
+              contractVersion: APPLICATION_CONTRACT_VERSION,
+              requestId: request.requestId,
+              ok: false as const,
+              error: {
+                contractVersion: APPLICATION_CONTRACT_VERSION,
+                code: "vua.material.source_invalid",
+                category: "validation" as const,
+                messageKey: "errors.material.sourceInvalid",
+                recoverable: false,
+                retryable: false,
+                correlationId: request.requestId,
+              },
+            }
+          : original(request),
+      );
+
+    const material = await port.pickMaterial("direct_unity_package");
+    const started = await port.startInspection(material!);
+    // 不预拦:命令已真实发出,sourceFolder = 文件路径原样透传
+    const startCall = invokeSpy.mock.calls.find(([request]) => request.method === "production.startInspection")?.[0];
+    expect(startCall).toMatchObject({
+      kind: "command",
+      params: { sourceFolder: "C:/downloads/Meiyun.unitypackage" },
+    });
+    // provider 拒绝如实上呈:专用拒绝原因,绝非 unavailable(未连接误报)
+    expect(started).toMatchObject({ kind: "rejected", reason: "source_invalid" });
+    if (started.kind !== "rejected") throw new Error("expected a rejection");
+    expect(started.run).toMatchObject({ kind: "not-connected" });
   });
 
   it("keeps the last view when a refresh fails mid-subscription and resumes after recovery", async () => {
@@ -426,7 +505,7 @@ describe("task snapshot narrowing requires the contract version (L-level observa
   const source = {
     materialId: "mat-1",
     intake: "direct_unity_package",
-    displayName: "closet.unitypackage",
+    displayName: "closet",
   } as const;
 
   function portWithReceipt(value: DesktopGatewaySuccessValueV1): ModelProductionPort {

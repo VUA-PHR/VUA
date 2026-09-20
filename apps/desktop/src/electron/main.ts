@@ -223,25 +223,24 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     request,
   ));
 
-  // 素材来源对话框(生产用例契约草案"双素材入口"):按 intake 限定可选形态,
-  // 选取结果落 Kernel 映射,回发 { refId, displayName };取消返回 null
+  // 素材来源对话框(生产用例契约草案"双素材入口"):两个 intake 均为文件夹选择器
+  // (W25 真机第四批:provider 端 inspect_folder 对 sourceFolder 做
+  // canonicalize+is_dir 校验(material_intake.rs),非目录一律
+  // vua.material.source_invalid 拒绝——曾经的 openFile+.unitypackage 过滤器
+  // 让用户选中文件必被 provider 拒)。桌面侧不做目录性预拦:登记原样落
+  // Kernel 映射并回发 { refId, displayName },取消返回 null;若仍有文件路径
+  // 登记(如旧版落盘残留),provider 拒绝经渲染层 source_invalid 专用拒绝
+  // 原因如实上呈
   ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     if (intake !== "direct_unity_package" && intake !== "local_reusable_vpm") {
       throw new Error("invalid material intake");
     }
-    const options =
-      intake === "direct_unity_package"
-        ? {
-            title: "Unity package",
-            filters: [{ name: "Unity package", extensions: ["unitypackage"] }],
-            properties: ["openFile"] as ("openFile" | "openDirectory")[],
-          }
-        : {
-            title: "Local VPM package",
-            filters: [] as { name: string; extensions: string[] }[],
-            properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
-          };
+    const options = {
+      title: intake === "direct_unity_package" ? "Material folder" : "Local VPM package",
+      filters: [] as { name: string; extensions: string[] }[],
+      properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
+    };
     const result =
       mainWindow === null
         ? await dialog.showOpenDialog(options)

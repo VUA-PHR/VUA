@@ -5,7 +5,7 @@ import { format, strings } from "../../i18n/index.ts";
 import type { PageId } from "../../app/nav-model.ts";
 import type { TaskItem } from "../../gateway/index.ts";
 import { NotificationList } from "./NotificationList.tsx";
-import { taskRowOpenTarget } from "./notification-model.ts";
+import { scrollClosesPanel, taskRowOpenTarget } from "./notification-model.ts";
 import { useNotificationCenter } from "./use-notification-center.ts";
 import "./notification-popover.css";
 
@@ -60,7 +60,10 @@ export function NotificationPopover({ navigate }: { navigate: (target: PageId) =
     }
   }, [phase]);
 
-  // 外击(排除铃铛自身)/Escape/滚动/失焦关闭——与 NavOverflowMenu 交互对齐
+  // 外击(排除面板与铃铛自身)/Escape/面板外滚动/失焦关闭——与 NavOverflowMenu
+  // 交互对齐;面板内列表滚动不关闭(W25 真机第四批:window 捕获阶段的
+  // scroll 关闭监听曾把面板内滚动一并算作关闭手势,判定语义钉在
+  // notification-model.scrollClosesPanel)
   useEffect(() => {
     if (phase !== "open") return;
     const panel = panelRef.current;
@@ -75,14 +78,18 @@ export function NotificationPopover({ navigate }: { navigate: (target: PageId) =
         close();
       }
     };
+    const onScroll = (event: Event) => {
+      const target = event.target instanceof Node ? event.target : null;
+      if (scrollClosesPanel(target !== null && panel?.contains(target) === true)) close();
+    };
     window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("scroll", close, true);
+    window.addEventListener("scroll", onScroll, true);
     window.addEventListener("blur", close);
     return () => {
       window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("scroll", close, true);
+      window.removeEventListener("scroll", onScroll, true);
       window.removeEventListener("blur", close);
     };
   }, [phase]);
