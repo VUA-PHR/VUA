@@ -2513,3 +2513,106 @@ fn f3_list_packages_v02_honest_empty_set_and_the_frozen_error_face() {
     fs::remove_dir_all(&base).ok();
 }
 
+
+// --- F5 (packages-templates v0.1): the library enumeration face ---
+
+/// Creates an empty synthetic template directory under one of the two
+/// pinned roots of the environment root. All data synthetic, temp roots
+/// only (never the user's real VCC/ALCOM home).
+fn f5_template_dir(environment_root: &std::path::Path, root: &str, name: &str) {
+    fs::create_dir_all(environment_root.join(root).join(name)).unwrap();
+}
+
+#[test]
+fn f5_template_capabilities_declares_exactly_the_implemented_face() {
+    // ORC-DEV-004 pairing, both directions: the library backend overrides
+    // template_capabilities exactly now that list_templates is implemented
+    // (this is what flips the served wire row packages.templatesOps to
+    // available); the CLI backend does neither — its default declared-none
+    // keeps the row honestly unavailable and the port absence arm answers
+    // capability_missing verbatim, never reaching a backend method.
+    let library =
+        VrcGetLibBackend::with_environment_root(unique_dir("f5-neg"), true).unwrap();
+    assert!(
+        library.template_capabilities().list_templates,
+        "the declaration is the implementation's honest face on the capability accessor"
+    );
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(
+        !cli.template_capabilities().list_templates,
+        "no implementation, no reservation: the CLI backend stays declared-none"
+    );
+    let error = cli.list_templates().unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    assert_eq!(error.message_key, "errors.vpm.capabilityMissing");
+    assert_eq!(error.category, vua_orchestrator::ErrorCategory::Unavailable);
+}
+
+#[test]
+fn f5_list_templates_scans_both_roots_dedup_resolver_order() {
+    // The frozen root-facts section, item by item: both pinned roots of the
+    // library-path default resolution leg, VRCTemplates scanned in full
+    // FIRST, Templates filling only the missing set (World under both roots
+    // enumerates ONCE, resolved to VRCTemplates — enumeration never
+    // diverges from what create would copy); directory entries only (the
+    // plain file is not a template); rows id-ascending with name the frozen
+    // same-value display projection of id.
+    let base = unique_dir("f5-scan");
+    let environment_root = base.join("isolated-vpm-environment");
+    f5_template_dir(&environment_root, "VRCTemplates", "World");
+    f5_template_dir(&environment_root, "VRCTemplates", "Base");
+    fs::write(
+        environment_root.join("VRCTemplates").join("readme.txt"),
+        "synthetic: a plain file is NOT a template",
+    )
+    .unwrap();
+    f5_template_dir(&environment_root, "Templates", "Avatar");
+    f5_template_dir(&environment_root, "Templates", "World");
+
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    let templates = backend.list_templates().unwrap();
+    let ids: Vec<&str> = templates.iter().map(|entry| entry.id.as_str()).collect();
+    assert_eq!(
+        ids,
+        vec!["Avatar", "Base", "World"],
+        "id-ascending; the both-roots name enumerates once at the resolver root; the file is excluded"
+    );
+    for entry in &templates {
+        assert_eq!(
+            entry.name, entry.id,
+            "name is the frozen same-value display projection of id"
+        );
+    }
+
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn f5_list_templates_honest_empty_when_roots_missing_or_bare() {
+    // A missing pair of roots — and a bare root holding zero directories —
+    // is the honest zero-templates answer: a FACT, never an error (the R4
+    // precedent; zero new error codes), so the wired route answers an empty
+    // templates array successfully.
+    let base = unique_dir("f5-empty");
+    let environment_root = base.join("isolated-vpm-environment");
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+    assert!(
+        backend.list_templates().unwrap().is_empty(),
+        "missing roots contribute nothing and stay a success"
+    );
+
+    fs::create_dir_all(environment_root.join("Templates")).unwrap();
+    fs::write(
+        environment_root.join("Templates").join("notes.txt"),
+        "synthetic: still not a template",
+    )
+    .unwrap();
+    assert!(
+        backend.list_templates().unwrap().is_empty(),
+        "only files under the bare root — zero directories is still the honest empty answer"
+    );
+
+    fs::remove_dir_all(&base).ok();
+}

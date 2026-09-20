@@ -18,11 +18,13 @@ use vua_orchestrator::{
     InstalledPackageV1, InstalledPackageV02, PackageCatalogV01, PackageCatalogV02,
     PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisterCapabilities,
     RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01, RepoCatalogRepoV01,
-    RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, VpmBackend, VpmCapabilities,
+    RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, TemplateCapabilities, TemplateEntryV01,
+    VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
 use std::collections::{BTreeMap, HashSet};
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -602,6 +604,24 @@ impl VpmBackend for VrcGetLibBackend {
         RepoCatalogCapabilities {
             repo_catalog: true,
         }
+    }
+
+    fn template_capabilities(&self) -> TemplateCapabilities {
+        // 027 F5 冻结批（实现核对切片）：恰在实现 `list_templates` 时覆写
+        // 默认 declared-none（025/026/027 catalog/register/repo-write/
+        // repo-catalog 同律，ORC-DEV-004 无实现不预留）。枚举＝两已钉目录
+        // 根的本地目录扫描（vrc-get-vpm 0.0.16 无模板枚举 API，环境考证
+        // 027 §4），能力如实随实现翻转——覆写即 served 行
+        // `packages.templatesOps` 翻转 available（此前按默认 declared-none
+        // 如实维持不可用）。`VccCliBackend` 不覆写——CLI 后端如实假，缺席
+        // 臂零改动。
+        TemplateCapabilities {
+            list_templates: true,
+        }
+    }
+
+    fn list_templates(&self) -> Result<Vec<TemplateEntryV01>, AppErrorV1> {
+        list_template_dirs(&self.environment_root)
     }
 
     fn add_remote_repo(&self, url: &str, name: &str) -> Result<(), AppErrorV1> {
@@ -1837,6 +1857,53 @@ pub fn create_from_template(
         .with_param("reason", ParamValue::Text(error.to_string()))
     })?;
     Ok(project)
+}
+
+/// F5 (proposal 027 freeze batch, packages-templates v0.1): enumerates the
+/// available templates as a LOCAL DIRECTORY SCAN over the same pair of
+/// pinned roots the `create_from_template` library leg reads —
+/// `<environment_root>/VRCTemplates` first in full, then
+/// `<environment_root>/Templates` filling only the missing set (a name
+/// under both roots enumerates ONCE, resolved to VRCTemplates — the
+/// projection of the creation resolution order: enumeration never diverges
+/// from what create would copy). vrc-get-vpm 0.0.16 ships no template
+/// enumeration API (environment verification 027 §4), so the scan IS the
+/// implementation. Directory entries only — plain files under a template
+/// root (metadata files, forms unknown pending W25) are not templates.
+/// Rows are id-ascending (the frozen presentation fact — raw scan order is
+/// not stable across platforms, the F3 packageId precedent) and `name` is
+/// the frozen same-value display projection of `id`. An empty vec is the
+/// honest zero-templates answer: a missing or unreadable root is a FACT,
+/// never an error (the R4 precedent; zero new error codes on this face).
+/// Read-only over the environment root: the two template roots are never
+/// written, moved, renamed, or deleted (protocol root-facts section).
+pub fn list_template_dirs(environment_root: &Path) -> Result<Vec<TemplateEntryV01>, AppErrorV1> {
+    let mut ids: Vec<String> = Vec::new();
+    for root_name in ["VRCTemplates", "Templates"] {
+        let entries = match fs::read_dir(environment_root.join(root_name)) {
+            Ok(entries) => entries,
+            // Root missing or unreachable = contributes nothing (honest
+            // empty state, never an error — the frozen root-facts section).
+            Err(_) => continue,
+        };
+        for entry in entries.flatten() {
+            if !entry.path().is_dir() {
+                continue;
+            }
+            let id = entry.file_name().to_string_lossy().into_owned();
+            if !ids.contains(&id) {
+                ids.push(id);
+            }
+        }
+    }
+    ids.sort();
+    Ok(ids
+        .into_iter()
+        .map(|id| {
+            let name = id.clone();
+            TemplateEntryV01 { id, name }
+        })
+        .collect())
 }
 
 fn validate_vpm_project_name(name: &str) -> Result<(), AppErrorV1> {
