@@ -1,79 +1,147 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 7d82dc5
+baseline_commit: 0cd4bf9
 role: 桌面
 updated: 2026-09-20
 ---
 ## 当前焦点
-**027 F3 形状核可轮（2026-09-20 06:5x–07:3x，节拍轮正常工作时段 date 06:57 实测；三笔：
-追平壳 be9637c＋形状核可批 ed6cfe1＋本状态批恰本文件）——操作者注条件成就兑现：brief
-06:57 实测 676b185 未入库（slot/wt-2 树尖 b9a3943 领先 5 候验收），核查期间集成第 130 批
-同窗竞速落地（wt-2 F3 接线批合并 abdf328 验收入库〔集成亲审逐项 PASSED〕＋本树上拍两笔
-簿记合并 7d82dc5 收编关账），F3 形状核可双前置（冻结批 35ffb61 第 128 批＋接线批 676b185
-第 130 批入库）就此成就——照 F2 先例基于收编世代九项对照办理，核可通过（ed6cfe1 落 027
-提案线程末节＋状态行刷新），F3 桌面消费切片解锁登记；①区四条指向桌面留言就地消化**：
+**027 F3 桌面消费切片轮（2026-09-20 07:3x–08:0x，节拍轮工作时段 date 07:36 实测；三笔：
+追平壳 ec8aec6＋切片批 92d201e〔恰 15 文件 468+/23-〕＋本状态批恰本文件）——操作者注
+双裁断中取「开工」且按切片完整性交付：F3 消费切片上轮核可（ed6cfe1）解锁后本轮首领项
+兑现，核对点五条全部落地，定向证据集亲测全绿**：
 
-- **轮首开工纪律（TICK）**：pnpm collab:brief 06:57 ①区四条指向本树/桌面（见下）；
-  merge-tree 双法预检 exit 0（write-tree tree a4c4b26 零冲突），追平壳 be9637c --no-ff
-  吸收 main **7d82dc5**（第 130 批世代＝abdf328 wt-2 F3 接线切片＋c1c495d wt-5 状态批＋
-  e9c4917 wt-6 簿记三笔＋7d82dc5 本树上拍两笔），合并后非 collab 面与 main 逐字节全等
-  （diff 为零实证），基线刷新 **7d82dc5**。落笔前再实测：main 竞速前移至 **0cd4bf9**
-  （第 130 批推送记录批＋登记批 1cc7ea9，全 collab 面）——落后 2 collab-only 未过 15 线
-  且与本拍 collab 面零重叠，照 wt-6 同窗判例不追加追平壳，候验收合并自然吸收。
-- **brief ①区消化（06:57 实读，四条指向本树/桌面）**：①wt-main [→wt-3]（知会）F2 环境
-  置真已入库（合并 3e062cf）就地消化——本地实证 `git merge-base --is-ancestor 27c3c9d
-  main` 通过，served 行 packages.repoCatalogOps 在库后端翻转 available；桌面零追加变更
-  确认；**[等环境] F2 实现核对候验收项就此关闭**，浏览面入口真机可达剩余前置仅操作者刷
-  构建（非桌面席位动作）；②wt-6 [→桌面]（状态刷新）与 wt-main 同事实一并消化；③wt-2
-  [→桌面]（知会）F3 wire 双臂已接线（候验收）收讫——其时点事实已被第 130 批收编超越
-  （676b185 经 abdf328 入库），双族常量发布、TS 面类型级钉、updateAvailable=null 如实
-  空显词面均与本核可直读一致；④wt-7 [→桌面] 语义保留要求系上拍已回执留言延续（本树
-  已 [→wt-7] 照办），回执不回执。
-- **F3 形状核可执行（本轮实质交付，ed6cfe1 恰 027 提案 1 文件 100+/1-）**：核可对象＝
-  冻结批 35ffb61＋接线批 676b185 的收编世代（追平壳 be9637c 后本机直读）。九项一致通过：
-  ①请求接口单查询闭集（command 面逐字节 v0.1、零新请求类型、请求联合零新增、单键
-  projectPath 闭集、TS 窄化臂 :2680–2684 与 gateway 消费守卫同形）；②result 最小诚实形状
-  （文档恰四键＋行恰五键＝v0.1 三键零变动＋判定对必带可空〔latestVersion 跨仓 max 刻意
-  非 F2 分仓视图〕＋cacheSourced 必带信息性披露；三态防线落死〔null＝判定未执行绝非
-  「已最新」绝不默认 false、false 精确语义非泛化无更新；024 表态②用户裁定〕；选择器逐
-  字复用 latest_for 零第二判定语义；additionalProperties:false 全覆盖）；③错误面零新码
-  （共享 P1 前置双臂零变化：invalid_params/project_not_found 复用/capability_missing/后
-  端拒绝逐字透传，wire :5330–5416 实读）；④union 登记与窄化臂（请求侧零新增；result
-  侧不入 success union＝packages 读面族先例；族世代辨识＝路由盖戳常量即机器可检测——
-  v0.1 行对 v0.2 Schema 非法，consumer_v02 第 4 例钉死）；⑤TS 测试对表（1 例 7 断言
-  与冻结申报一一对应）；⑥mock 恒缺席臂（vua.packages.unavailable 照旧、冻结批足迹零
-  mock 改动＝无 v0.2 伪造臂、provider 42/42）；⑦capturedAt 收窄有效性（F3 两新 TS 成员
-  零 capturedAt；result 不入 union 故桌面窄化点不可达，typecheck 双 0 行为级亲测）；⑧向
-  量对表（4 正 7 负＝11 文件实读与冻结登记一致，consumer_v02 jsonschema 双向钉）；⑨诚
-  实边界如实（冻结且已接线；族常量 :290/:304 发布；信封维持 "0.1"；wire 6 例例名逐一
-  对表；协议本 0.2.1 wired-not-consumed；REGISTRY 两行一致；**零端到端宣称——路由已接
-  线未被消费**）。消费切片核对点五条登记（三态呈现/cacheSourced 标注且 v0.1 族应答绝不
-  虚构标注/族常量接纳/IA 表态 3 行内升级键复用 A2 version=null/i18n 避让 wt-7）。
-- **定向复跑亲测全绿（07:1x）**：df 先查 C 盘 **619G/67%**；contracts dist 先重建照陈旧
-  事故先例——@vua/contracts check tsc 0＋vitest **82/82**；@vua/orchestrator-provider
-  check **42/42**；desktop typecheck 双 tsconfig exit 0；desktop vitest 86 文件 **772/772**；
-  cargo test -p vua-provider-host 定向三件＝wire_v02 **6/6**＋consumer_v02 **4/4**＋
-  consumer（v0.1 零回归）**4/4**；clippy 双 crate --all-targets 零警告。
-- **可领项检查**：**F3 消费切片已解锁**（核可通过＋双前置入库；其「候环境 F3 库实现」
-  框定差异已在核可节如实登记——桌面照集成登记与 F2 先例〔消费先于实现，第 128/129 批
-  次序〕执行，消费对 v0.1/v0.2 族应答双臂兼容不候实现），但本轮剩余时间窗（至 08:40）
-  不足以按切片完整性交付其全层（端口映射＋已装表列＋四语 i18n＋design-standard 增补＋
-  build/leak 证据集），**不抢开半途切片，登记为下轮首领**；F2 浏览面真机核证候操作者刷
-  构建；028 #3 两候核对项候 F4 冻结批起草。
-- **四环全查（7d82dc5 观测世代）**：①本树在途＝本拍三笔，无半途切片；②BOARD「待用户
-  裁决」区零桌面可办条目（用户测试反馈 1–9 与 U15 均 [需用户] 照规则跳过）；#41 桌面席
-  位＝F3 消费解锁（本核可落地）；③outline 2.0.13：W25 在办（产线负责），当前窗口零桌
-  面新行变更；④M 门：M5 开窗中（关门候 W25 真机走查）；M6 T-A 授权范围（F3 链属此，
-  核可环已办）；M8 未开窗。
-- **机械校验**：三笔＝追平壳 be9637c（零自有内容纯吸收）＋核可批 ed6cfe1（恰 027 提案
-  1 collab 文件，其证据＝上列定向复跑亲测）＋本状态批恰本文件；核可批与状态批
-  **collab-only 免全量如实声明**（核可批所携定向证据集系其自有证据，非全量替代）；
-  git diff --check 清洁、冲突标记 0 处。
-- **诚实边界**：零端到端宣称维持——形状核可系词表层核对＋定向复跑；路由已接线未被消
-  费（消费切片落地前无任何桌面面读取 v0.2 族）；F2 浏览面真机呈现候操作者刷构建；真机
-  走查归 W25（O-2）。
+- **轮首开工纪律（TICK）**：pnpm collab:brief 07:37 ①区三条指向本树/桌面全系上拍已办
+  事实的知会/延续（wt-main F3 接线入库知会＝上轮核可已兑现、wt-2 双臂接线候验收知会＝
+  已被第 130 批收编超越上轮已消化、wt-7 语义保留＝上拍已回执照办）；merge-tree 预检
+  exit 0（tree d6cb747 零冲突），追平壳 ec8aec6 --no-ff 吸收 main **0cd4bf9**（第 130 批
+  推送记录＋登记批 1cc7ea9，全 collab 面），合并后非 collab 面与 main 逐字节全等（diff
+  为零实证），基线刷新 **0cd4bf9**。
+- **F3 消费切片执行（本轮实质交付，92d201e 恰 15 文件 468+/23-，核对点五条逐条落地）**：
+  ①**端口映射族常量接纳**——packages-port.ts 新增 InstalledPackageRowV02 镜像（冻结五键
+  闭集＝v0.1 三键零变动＋判定对 latestVersion/updateAvailable 必带可空）＋InstalledList
+  Answer 双族联合（族常量字面量判别 "vua.packages-installed/v0.1|v0.2"，永不猜测，catalog
+  v0.2 先例同构）＋listInstalled 端口签名改为族应答；packages-live.ts 新增
+  isInstalledPackageRowV02 五键闭集守卫（发明字段/缺判定对键/缺披露＝形状违规）＋双族组
+  合守卫（v0.1 零回归臂＋v0.2 臂 REQUIRED cacheSourced）＋listInstalledRaw 剥信封按族常
+  量窄化＋视图仅 v0.2 族应答携 installedPackages 判定行与 installedCacheSourced（v0.1 族
+  应答绝不虚构字段）；②**已装表「可更新」列三态诚实呈现**——纯函数
+  installedUpdateCellState（packages-model.ts）四臂：absent＝v0.1 族行诚实空显绝不虚构/
+  notExecuted＝null 空显携悬浮说明〔null 绝不「已最新」绝不默认 false，024 表态②〕/
+  noneUnderFilter＝false 精确词面「当前过滤条件下不存在严格更新版本」不泛化/available＝
+  true「有更新」＋行内升级键（随 blocks.installs 能力行门控，无事实不渲染）；③**行内升
+  级键复用 A2 version=null 语义**——startInstallRows([{packageId, version:null}]) 同链，
+  零新升级动词（复用 menu.updateToLatest 既有词面）；④**cacheSourced 标注**——仅 v0.2
+  族且 true 时表格上方「缓存数据」信息标注（复用 p2.catalogCachedData catalog 措辞，信息
+  性非失败，v0.1 族应答绝不虚构标注）；⑤**四语 i18n＋design-standard 增补**——新键恰 3
+  ×4 语言对齐（updatableColumn/updateNotExecuted/updateNoneUnderFilter），零既有键触碰
+  （wt-7 已改词面语义避让照办），复用键 3（states.updateAvailable＋menu.updateToLatest＋
+  p2.catalogCachedData）；design-standard **0.7.9**（0.7.8 已被 028 #7 占用，顺延取号）
+  §8.7 已装包更新感知呈现节双语＋changelog＋REGISTRY 行同步。
+- **定向证据亲测全绿（07:5x–08:0x 本拍亲测；vitest 完成 08:00:03〔Start 07:59:59〕，
+  build/leak/contrast 随后至 08:0x——切片批提交信息申报「08:1x」系估读超前，本订正批
+  如实订正，证据内容与读数不变）**：desktop typecheck 双 tsconfig exit 0＋desktop
+  vitest 86 文件 **780/780**（772→780＝新增 8：live F3 describe 4＝v0.2 行＋披露携带且
+  族常量被消费/v0.1 零回归零虚构字段/cacheSourced=false 在线刷新事实照实传播/缺判定对与
+  缺披露双形状违规机器诚实拒绝；model 选择器 4 臂）＋check:i18n OK（3 交付语言表对齐）
+  ＋check:boundary OK＋**build 成功＋check:leak 通过（155 条指纹生产构建零泄漏）**＋
+  check:contrast 全部达标＋git diff --check 清洁；零 crates 触碰（contracts/Rust 面零文
+  件变更，TS 面 Frozen 批已钉类型直接消费）。
+- **诚实边界**：零端到端宣称维持——本切片系 TS 面消费接线＋定向证据（mock 客户端测试
+  ＋静态检查＋生产构建泄漏扫描）；wire 面真机呈现与全链走查归 W25（O-2）；mock 恒缺席
+  臂未触碰（provider 面零变更，无 v0.2 伪造臂）；fixture 面 DEV 门照旧零触碰。
+- **四环全查（0cd4bf9 观测世代）**：①本树在途＝本拍三笔，无半途切片；②BOARD「待用户
+  裁决」区零桌面可办条目（[需用户] 项照规则跳过）；③outline 当前窗口零桌面新行变更；
+  ④M 门：M5 开窗中（关门候 W25 真机走查）；M6 T-A 授权范围（F3 链属此，核可环＋消费环
+  已办）；M8 未开窗。
+- **机械校验**：三笔＝追平壳 ec8aec6（零自有内容纯吸收）＋切片批 92d201e（恰 15 文件，
+  面覆盖＝gateway 3＋packages feature 4＋i18n 4＋design-standard 2＋REGISTRY 1＋测试 2
+  内含）＋本状态批恰本文件；切片批非 collab 面＝15 文件全在桌面所有权域＋docs/design
+  ＋REGISTRY（桌面席位文档域），其证据＝上列定向复跑亲测。
 
+## 前情（全文见本文件 git 历史）
+09-20 06:5x–07:3x F3 形状核可轮（三笔 be9637c＋ed6cfe1＋状态批，候验收）：九项对照通
+过、消费切片解锁、下轮首领登记。更早：第 128 批消化＋追平＋簿记轮（bd108c4＋22d7bd9，
+经 7d82dc5 收编关账）、027 F2 全链桌面双环轮、W25 真机窗口 D1–D5 修复批见 git 历史。
+
+## 本轮交付（0cd4bf9 基线世代）
+- **追平壳 ec8aec6**（--no-ff 吸收 main 0cd4bf9＝第 130 批推送世代，零自有内容纯吸收，
+  预检 exit 0 tree d6cb747，基线刷新；上拍三笔候验收状态不变，随本拍合并一并收编）。
+- **切片批 92d201e**（恰 15 文件 468+/23-：F3 消费切片全层，详见当前焦点）。
+- **本状态批（恰本文件）**：消费切片执行登记＋核对点五条逐条对表＋证据读数＋四环全查。
+- 零新阻塞、零新升级项、零 [需用户]。
+
+## 在途/待他角色
+- **[等集成] 本树两轮五笔候随轮验收（--no-ff）**：上拍三笔（追平壳 be9637c 零自有＋核
+  可批 ed6cfe1 恰 027 提案 1 collab 文件＋状态批 2089c09 恰本文件历史版）＋本拍三笔
+  （追平壳 ec8aec6 零自有＋切片批 92d201e 恰 15 文件桌面域＋本状态批），请写明「wt-3
+  027 F3 形状核可轮＋F3 桌面消费切片轮（基点 7d82dc5/0cd4bf9，两代追平）」合并办理；
+  切片批 diff 复核建议聚焦 packages-port/packages-live 双族窄化与 PackagesPage 三态单
+  元格（其证据＝定向复跑读数见当前焦点，build/leak 本拍已亲跑通过非豁免）。
+- **[等环境] F3 库实现切片 GO**（第 130 批登记，候环境席位；与桌面消费互不阻塞照序并
+  行，桌面消费对 v0.1 族应答诚实空显与 v0.2 族三态呈现双臂兼容）。
+- **[等操作者] 真机核证候办**：F2 浏览面＋F3 已装表更新列真机呈现（候刷构建）——核证
+  点＝已装表「可更新」列三态呈现与 cacheSourced 标注（引擎真机 v0.2 族应答下）＋v0.1
+  族应答期间列诚实空显。
+- **[等桌面·后续例行]** 028 #3 两候核对项随 F4 冻结批起草对表；wt-7 合并后四语语义保
+  留照其留言办理。
+
+## 阻塞
+- 无阻塞。
+
+## 下次合并意图
+**候验收对象＝本拍切片批 92d201e（恰 15 文件恰桌面域，--no-ff），写明「wt-3 027 F3 桌
+面消费切片批」；上拍形状核可轮三笔已经第 131 批收编关账（合并 0bef879）。**实质非
+collab 面＝92d201e 恰 15 文件恰桌面域＋桌面文档域，diff 复核聚焦 packages-port/packages
+-live 双族窄化＋PackagesPage 三态单元格；本订正批恰本文件随合并自然吸收。落笔后读数
+订正（rev-list 实测，见下订正节）：领先 2（实质 1＝92d201e）、落后 4（7ce7c2c 世代，
+全 collab 面未过线零重叠，照 wt-6/上拍判例自然吸收不追平）。
+
+## 轮末竞速订正（本订正批，恰本文件，2026-09-20 08:3x）
+落笔时点订正照 0366c56/第 129 批先例：本状态批第一版申报「领先 5 落后 0（0cd4bf9 世
+代）」系其落笔时点事实；提交后实测 main 已竞速前移至 **7ce7c2c**（第 131 批：合并
+0bef879 收编本树上拍形状核可轮三笔〔be9637c/ed6cfe1/2089c09〕——**其第二父实证 =
+本拍追平壳 ec8aec6**，即合并执行瞬间本树尖已前移，集成照 88d20ba/203cb9f 先例补记
+incoming 四笔＋7ce7c2c 订正批在案）＋682aa9d 登记＋384ac19 推送记录（07:5x 推净，
+origin/main 同步）。本拍两笔（92d201e＋63e471f）系其收编关闭后新竞速，照其「post-
+closure new races registered as next-round acceptance objects」惯例列为本批候验收对
+象；落后 4 全 collab 面、未过 15 线、与本批桌面域切片零重叠，照判例不追加追平壳。
+消费切片解锁确认已由第 131 批登记（「F3 shape-approval ring landed + desktop
+consumption slice unlock confirmed」），消费批就此候验收。
+
+## 待命声明（第 6 步，如实）
+本轮（2026-09-20 07:3x–08:3x，节拍轮工作时段 date 07:36 实测；三笔）：①date 07:36 实
+测工作时段，pnpm collab:brief ①区三条指向本树/桌面留言全系上拍已办事实延续，就地消化；
+②操作者注双裁断取「开工」——上轮核可节核对点五条已把设计决策全部钉死（三态呈现/族常
+量判别/IA 表态 3 升级键/v0.1 零回归/wt-7 避让＋design-standard 随片），零猜测空间，F2
+消费切片同径可循，裁断按切片完整性交付；③追平壳 ec8aec6 吸收 main 0cd4bf9（预检
+exit 0、非 collab 面逐字节全等、基线刷新）；④切片批 92d201e＝F3 消费全层（端口双族接
+纳＋已装表更新列三态＋行内升级键 A2 复用＋cacheSourced 标注＋四语 3 新键＋design-standard
+0.7.9 双语增补＋REGISTRY＋测试 8 例），核对点五条逐条落地详见当前焦点；⑤定向证据本拍
+亲测全绿（typecheck 双 0＋vitest 780/780＋i18n/boundary/leak/contrast OK＋build 成功，
+build/leak 本拍亲跑非豁免）——途中 3 例测试红（snapshot 前 selectProject 缺失）如实修
+复复跑转绿，2 处 JSX 语法错（attribute 区注释容器）如实修复，无跳测试无放宽校验；⑥诚
+实边界＝零端到端宣称、真机归 W25（O-2）、mock 恒缺席臂零触碰、fixture DEV 门照旧。在手
+无半途切片、除本状态批外无未提交改动。退出待命，候集成验收、环境 F3 库实现、操作者刷
+构建真机核证、下轮指派。
+
+## 留言
+- [→集成] 验收请求：**候验收对象＝本树两轮五笔（--no-ff）：上拍形状核可轮三笔（追平壳
+  be9637c 零自有＋核可批 ed6cfe1 恰 027 提案 1 collab 文件＋状态批）＋本拍消费切片轮追
+  平壳 ec8aec6（零自有）＋切片批 92d201e（恰 15 文件 468+/23-＝F3 消费全层：端口双族接
+  纳＋已装表「可更新」列三态诚实呈现＋行内升级键复用 A2 version=null＋cacheSourced 复
+  用 catalog 措辞标注＋四语 3 新键避让 wt-7＋design-standard 0.7.9 §8.7 双语＋REGISTRY
+  ＋测试 8 例）**，请写明「wt-3 027 F3 形状核可轮＋F3 桌面消费切片轮（基点 7d82dc5/
+  0cd4bf9）」随轮验收。切片批定向证据本拍亲测全绿：typecheck 双 0＋vitest 86 文件 780/
+  780（772→780）＋i18n/boundary OK＋build 成功＋leak 155 指纹零泄漏＋contrast 达标；
+  diff 复核建议聚焦 packages-port.ts/packages-live.ts 双族窄化与 PackagesPage.tsx 三态
+  单元格。F3 消费环就此落地（桌面侧 TS 面消费接线，真机呈现候 W25（O-2））。零端到端
+  宣称维持。无新请求。
+- [→wt-2]（知会）F3 桌面消费切片已落地（候验收）：双族协商消费按你方接线批盖戳族常量
+  窄化（v0.1 零回归臂＋v0.2 三态臂），TS 面 PackagesInstalledItemV02/ResultV02 冻结批
+  类型直接消费零追加，updateAvailable=null 如实空显绝不「已最新」词面照办。
+- （回执不回执：brief ①区三条已消化登记；上拍 wt-2 框定差异登记维持〔桌面消费不候环
+  境库实现，F2 先例〕；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
 ## 前情（全文见本文件 git 历史）
 09-20 06:2x–06:4x 第 128 批消化＋追平＋簿记轮（两笔 bd108c4＋22d7bd9，经第 130 批合并
 7d82dc5 收编入库，身份关闭）。更早：027 F2 全链桌面双环轮（形状核可九项 670828f＋消费

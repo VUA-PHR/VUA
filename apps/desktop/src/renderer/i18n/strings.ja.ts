@@ -1728,6 +1728,9 @@ rolled_back: "ロールバック済み",
       emptyInstalledDescription:
         "このプロジェクトにはまだインストール済みパッケージがありません。{recipe}から組み立てると追加されます。",
       noticeChangesOpen: "リポジトリと変更管理の状態：インストール済みパッケージは閲覧でき、削除操作が利用可能です（エンジンの機能に依存）。",
+      updatableColumn: "更新可能",
+      updateNotExecuted: "更新判定は未実行です。",
+      updateNoneUnderFilter: "現在のフィルター条件で厳密に新しいバージョンはありません。",
 
     },
     p2: {

@@ -13,6 +13,7 @@ import {
   changeKindOrder,
   changeKindTextKeys,
   conflictMessageKey,
+  installedUpdateCellState,
   filterPackages,
   filterRepoCatalogPackages,
   groupPreviewItems,
@@ -516,4 +517,20 @@ test("filterRepoCatalogPackages matches packageId and displayName (null display 
   assert.deepEqual(filterRepoCatalogPackages(rows, "legacy"), [rows[1]]);
   // 无命中 = 诚实空数组
   assert.deepEqual(filterRepoCatalogPackages(rows, "no-such-package"), []);
+});
+
+// 027 F3 消费批:「可更新」列三态呈现选择(纯函数四臂;行 = 冻结词面形状)
+const V01_ROW = { packageId: "com.a", version: "1.0.0", dependencies: [] };
+const V02_ROW = { ...V01_ROW, latestVersion: "1.1.0", updateAvailable: true };
+test("installedUpdateCellState: v0.1 row without the judgment pair stays honestly absent", () => {
+  assert.equal(installedUpdateCellState(V01_ROW), "absent");
+});
+test("installedUpdateCellState: null = judgment not executed, never already-latest", () => {
+  assert.equal(installedUpdateCellState({ ...V02_ROW, updateAvailable: null }), "notExecuted");
+});
+test("installedUpdateCellState: false = precise none-under-filter semantics", () => {
+  assert.equal(installedUpdateCellState({ ...V02_ROW, updateAvailable: false }), "noneUnderFilter");
+});
+test("installedUpdateCellState: true = available with inline update key", () => {
+  assert.equal(installedUpdateCellState({ ...V02_ROW, updateAvailable: true }), "available");
 });

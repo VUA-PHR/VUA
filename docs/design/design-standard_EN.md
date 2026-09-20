@@ -2,7 +2,7 @@
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.8
+> Document version: 0.7.9
 > Status: Accepted
 > Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.8)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
@@ -326,6 +326,21 @@ stable untilted cards.
   face and are never invented by the presentation layer; displayName=null lets the packageId act
   as the display name; typed failures render verbatim (repo_not_found travels untouched) — a
   failure never masquerades as an empty state.
+
+  Installed-packages update awareness presentation (027 F3 consumption slice): the installed
+  table gains an "Updatable" column rendering the frozen judgment word face as a three-state
+  honest projection — updateAvailable=null (judgment not executed) renders honestly empty with
+  a hover explanation, never "up to date" and never a default false fill (024 stance 2, user
+  ruling); false = the precise word face "no strictly newer version under the current filter
+  conditions", never generalized into a "no update" assertion; true = renders "update
+  available" plus an inline update key (gated on the packages.installOps capability fact row;
+  no fact, no render), the key reusing the A2 install-face version=null semantics (resolver
+  picks the latest stable), with no new upgrade verb. Dual-family negotiation discipline: a
+  v0.1-family answer (discriminated by family constant vua.packages-installed/v0.1) carries no
+  judgment facts, so the column stays honestly empty with zero regression to the existing
+  presentation; cacheSourced=true rides only v0.2-family answers and renders an informational
+  "cached data" annotation above the table (reusing catalog wording), never a failure — a
+  v0.1-family answer never fabricates the annotation.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 - **Global shell: boot splash and notification center:** the boot splash is the brand's first
@@ -403,6 +418,16 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.9 (2026-09-20)**: §8.7 addendum for installed-packages update awareness presentation
+  (proposal 027 F3 consumption slice) — "Updatable" column three-state honest projection
+  (null = judgment not executed, honestly empty, never "up to date", never default false;
+  false = precise "no strictly newer version under the current filter conditions" word face,
+  never generalized; true = "update available" plus inline update key reusing the A2
+  version=null semantics, gated on the installs capability row); dual-family negotiation
+  discipline (v0.1-family answers keep the column honestly empty with zero regression;
+  cacheSourced=true rides only v0.2-family answers with the "cached data" annotation and is
+  never fabricated for v0.1-family answers). EN mirror of the ZH authority.
 
 - **0.7.8 (2026-09-20)**: new §8 global-shell bullets (boot splash and notification center;
   proposal 028 #7 desktop stance now codified) — splash exit milestone discipline (budget spent
