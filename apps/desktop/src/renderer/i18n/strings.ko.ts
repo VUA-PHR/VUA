@@ -1688,6 +1688,15 @@ rolled_back: "롤백됨",
       nameAria: "프로젝트 이름",
       templatePlaceholder: "템플릿 이름(선택 사항, 비워 두면 기본 템플릿 사용)",
       templateAria: "템플릿 이름, 선택",
+      templateSelectAria: "프로젝트 템플릿",
+      templateDefaultOption: "백엔드 기본 템플릿 사용(비워 두기)",
+      templatesLoading: "템플릿 목록을 가져오는 중…",
+      templatesEmptyNote:
+        "사용 가능한 템플릿이 없습니다(템플릿 디렉터리 부재는 사실이며 오류가 아닙니다). 템플릿 이름을 직접 입력하거나 비워 두면 백엔드 기본 템플릿을 사용합니다",
+      templatesFailedNote:
+        "템플릿 목록 가져오기 실패({code}) - 템플릿 이름을 직접 입력하거나 비워 두면 백엔드 기본 템플릿을 사용합니다",
+      templatesUnavailableNote:
+        "템플릿 목록을 현재 사용할 수 없습니다 - 템플릿 이름을 직접 입력하거나 비워 두면 백엔드 기본 템플릿을 사용합니다",
       action: "프로젝트 만들기",
       submitting: "만드는 중…",
       successLine: "생성 및 등록됨: {projectPath}",

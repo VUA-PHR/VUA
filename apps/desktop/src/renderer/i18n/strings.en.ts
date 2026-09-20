@@ -1759,6 +1759,15 @@ demoTaskTitle: "Demo task",
       nameAria: "Project name",
       templatePlaceholder: "Template name (optional; blank uses the default)",
       templateAria: "Template name, optional",
+      templateSelectAria: "Project template",
+      templateDefaultOption: "Use the backend default template (leave empty)",
+      templatesLoading: "Fetching the template list…",
+      templatesEmptyNote:
+        "No templates found (a missing template directory is a fact, not an error) — type a template name manually, or leave it empty to use the backend default",
+      templatesFailedNote:
+        "Failed to fetch the template list ({code}) — type a template name manually, or leave it empty to use the backend default",
+      templatesUnavailableNote:
+        "The template list is currently unavailable — type a template name manually, or leave it empty to use the backend default",
       action: "Create project",
       submitting: "Creating…",
       successLine: "Created and registered: {projectPath}",

@@ -539,6 +539,8 @@ function createStubPackages(): PackagesPort {
     packageCatalog: () => Promise.resolve({ kind: "unavailable" }),
     // F2 读面(027):同读面缺席纪律——恒缺席,不伪造仓库级包目录
     repoCatalog: () => Promise.resolve({ kind: "unavailable" }),
+    // F5 读面(027):同读面缺席纪律——恒缺席,不伪造模板枚举
+    listTemplates: () => Promise.resolve({ kind: "unavailable" }),
     // A1 写面(026):模拟/空退路面永不模拟 wire 写回执——恒缺席臂
     previewRemove: () => Promise.resolve({ kind: "unavailable" }),
     applyRemove: () => Promise.resolve({ kind: "unavailable" }),

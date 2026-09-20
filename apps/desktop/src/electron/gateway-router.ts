@@ -247,6 +247,15 @@ function toApplicationRequest(
             request.params.packageIds === null ? null : [...request.params.packageIds],
         },
       };
+    // 027 F5 读面(桌面 F5 消费批):模板条目枚举只读 verbatim 透传——
+    // 空闭集(环境级配置面,listRepos 空闭集先例)。实现域未接线 =
+    // provider 答 vua.packages.unavailable 诚实缺席;能力缺席(declared-
+    // none 访问器,环境覆写置真前)= vua.vpm.capability_missing;形状
+    // 违例 = vua.packages.invalid_params——全部原样透传不折叠;空数组 =
+    // 诚实零模板应答(目录根缺失是事实非错误,桌面回落手填绝不渲染成
+    // 错误、绝不虚构模板清单)
+    case "packages.listTemplates":
+      return { ...base, kind: "query", method: "packages.listTemplates", params: {} };
     // packages-ops v0.1 写面 A1 移除(026 冻结批;桌面 A1 消费批):preview
     // = 同步只读 query verbatim 透传(失败走信封错误:引擎缺席 =
     // vua.packages.unavailable,未注册 = 复用 vua.project.project_not_found,
