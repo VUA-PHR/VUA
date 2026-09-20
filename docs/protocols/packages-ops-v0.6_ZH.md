@@ -3,10 +3,10 @@
 [English](packages-ops-v0.6_EN.md) | [简体中文](packages-ops-v0.6_ZH.md)
 
 > 文档版本：0.6.1
-> 状态：**已冻结并已接线（packages-ops 词表行 v0.6，F4 仓库生命周期词面＝
+> 状态：**已冻结（packages-ops 词表行 v0.6，F4 仓库生命周期词面＝
 > 启停二方法＋刷新一方法；v0.1 A1 移除行、v0.2 A2 安装/升级行、v0.3 A3 注册
 > 行、v0.4 A4 仓库增删行与 v0.5 A5 项目创建行保持冻结原样服务——v0.6
-> 照 packages-catalog v0.2 增量先例为独立行目录。F4 接线批 2026-09-21
+> 照 packages-catalog v0.2 增量先例为独立行目录。）且已接线（F4 接线批 2026-09-21
 > 接线：三路由臂＋`packages.repoLifecycleOps` served 行＋命名双常量已落
 > 核心 wire 面。未消费：桌面面与 VrcGetLib 覆写候各自切片）**
 > （2026-09-20，proposal 027 面序 F2→F3→F5→F4；解冻权威＝W25 只读取证

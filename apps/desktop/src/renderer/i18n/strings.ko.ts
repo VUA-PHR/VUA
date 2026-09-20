@@ -42,6 +42,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "데모 데이터",
     mascotAria: "VUA 마스코트 로봇",
+    /** 콘텐츠 대화상자 닫기 버튼(소재 가져오기/코디네이트 초안) */
+    dialogClose: "닫기",
   },
   boot: {
     loadFailedTitle: "시작 데이터를 불러오지 못했습니다",
@@ -148,11 +150,9 @@ demoTaskTitle: "데모 작업",
       tools: "도구 모음",
       settings: "설정",
     },
-    groups: {
-      warehouse: "에셋 라이브러리",
-      workshop: "작업장",
-      packages: "패키지",
-    },
+    /** 현재 어떤 모듈 사이드바도 그룹 레이블을 쓰지 않음(모델 생산은 2026-09-20
+     *  내비게이션 재편으로 플랫화). 그룹 메커니즘은 유지. */
+    groups: {},
     pages: {
       home: "허브",
       envPlay: "플레이 환경",
@@ -175,8 +175,8 @@ demoTaskTitle: "데모 작업",
       settingsAbout: "VUA 정보",
       settingsDonate: "후원",
       packages: "패키지 관리자",
+      /** 코디네이트 초안은 2026-09-20 내비게이션 재편 이후 레시피 페이지 내 대화상자. */
       composePage: "아바타 구성",
-      importMaterial: "에셋 가져오기",
       inspectionPage: "검사",
     },
   },
@@ -1676,6 +1676,25 @@ rolled_back: "롤백됨",
       removeConfirm: "해제 확인",
       removing: "해제 중…",
       removedLine: "구독 해제됨: {repoId}",
+      /** F4 리포지토리 수명 주기(027 v0.6 소비 배치): 활성화/비활성화/
+       *  새로 고침 행 내 컨트롤. 활성 상태는 VUA 고유의 사실 — 비활성화된
+       *  리포지토리도 구독 목록에 남아(숨기지 않음) 그 패키지는 열거 및
+       *  설치 해석에서 제외됩니다. VCC/ALCOM 공유 설정은 절대 쓰지 않습니다. */
+      lifecycle: {
+        enableAction: "활성화",
+        disableAction: "비활성화",
+        enableAria: "리포지토리 {name} 활성화",
+        disableAria: "리포지토리 {name} 비활성화",
+        refreshAction: "새로 고침",
+        refreshAria: "리포지토리 {name}의 캐시 새로 고침",
+        enabling: "활성화 중…",
+        disabling: "비활성화 중…",
+        refreshing: "새로 고치는 중…",
+        disabledBadge: "비활성화됨",
+        disabledNote: "비활성화: 이 리포지토리의 패키지는 탐색 및 설치 해석에서 제외되며, 구독 행은 목록에 남습니다.",
+        doneLine: "작업 완료: {repoId}",
+        upToDate: "리포지토리 캐시가 이미 최신 상태입니다.",
+      },
     },
 
     create: {
@@ -1730,7 +1749,10 @@ rolled_back: "롤백됨",
       riskBody:
         "커뮤니티 리포지토리는 제3자가 관리하며 VRChat이나 VUA의 검토를 받지 않습니다. 추가한 후에도 패키지가 변경될 수 있으므로 신뢰하는 제작자의 리포지토리만 추가하세요.",
       riskAcknowledge: "확인했습니다",
-      toggleAria: "{name} 활성화 또는 비활성화",
+      /** F4 소비 배치(2026-09-21): toggleAria 조작 어휘는 로컬 체크박스
+       *  전환과 함께 은퇴하고 읽기 전용 정적 표시로 대체됨 */
+      enabledBadge: "활성화됨",
+      disabledBadge: "비활성화됨",
       health: {
         unknown: "확인 안 함",
         ok: "연결 가능",
@@ -2207,18 +2229,18 @@ rolled_back: "롤백됨",
       "DEV spike: T1 webview 직접 렌더 소재와 T2 Unity 베이크 산출물을 비교합니다. 프로젝트 데이터는 로컬 데모 매니페스트에서 읽으며 리포지토리에 커밋하지 않습니다.",
     needRootTitle: "데모 프로젝트가 지정되지 않음",
     needRootBody:
-      "URL 에 &demoRoot=<Unity 프로젝트 경로> 를 추가하세요. 해당 프로젝트의 .vrcua/bridge/demo-lab.json 을 읽습니다.",
+      "URL 에 &demoRoot=<Unity 프로젝트 경로> 를 추가하세요. 해당 프로젝트의 .vua/bridge/demo-lab.json 을 읽습니다.",
     demoRootLabel: "프로젝트",
     manifestLoading: "데모 매니페스트를 읽는 중…",
     manifestFailedTitle: "데모 매니페스트를 읽을 수 없음",
     manifestFailedBody:
-      "{path} 를 읽지 못했습니다. demoRoot 와 프로젝트 내 .vrcua/bridge/demo-lab.json 존재 여부를 확인하세요.",
+      "{path} 를 읽지 못했습니다. demoRoot 와 프로젝트 내 .vua/bridge/demo-lab.json 존재 여부를 확인하세요.",
     sourcesTitle: "소재 · T1 webview 직접 렌더",
     sourcesNote:
       "Unity 커스텀 셰이더는 기본 머티리얼+메인 텍스처로 근사하고 FBX 임베디드 텍스처는 유지합니다. 조명과 셰이딩은 Unity 베이크와 다릅니다.",
     productsTitle: "산출물 · T2 Unity 에디터 베이크",
     productsNote:
-      "턴테이블 프레임은 Unity 에디터 브리지가 .vrcua/bridge/preview/ 에 베이크합니다. VRM 은 대조군으로 webview 에서 직접 렌더합니다.",
+      "턴테이블 프레임은 Unity 에디터 브리지가 .vua/bridge/preview/ 에 베이크합니다. VRM 은 대조군으로 webview 에서 직접 렌더합니다.",
     cardStatusLoading: "로딩 중…",
     cardStatusFailed: "로드 실패",
     bakePending:
@@ -2326,6 +2348,16 @@ rolled_back: "롤백됨",
     },
     environment: {
       verifyUnavailable: "에디터 검증 서비스가 현재 사용할 수 없습니다.",
+    },
+    /** 머티리얼 체인 오류 문구(데스크톱 142批次, 작업 이벤트 실패 행 표시):
+     *  키 = 와이어상의 messageKey(vua.material 계열 오류는 AppErrorV01 경유).
+     *  provisionFailed는 예약 행 — 머티리얼 체인 v0.2 신규 코드
+     *  vua.material.provision_failed는 코어 석 수정 배치(wt-2, 편입 대기)와
+     *  함께 전달됩니다. 문구를 먼저 4개 언어로 동기화하여 코드 도착 시
+     *  즉시 일치시킵니다. */
+    material: {
+      executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
+      provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
     },
   },
 };

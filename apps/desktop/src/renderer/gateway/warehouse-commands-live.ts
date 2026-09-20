@@ -168,7 +168,9 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
       return response.ok
         ? acceptWithIdentity(response.value, {
             title: strings.taskTitles.importBatch,
-            originPage: "import-material",
+            // 来源页 = 仓储页:素材导入自 2026-09-20 导航重构起为仓储页内
+            // 弹窗,不再持独立页;任务「回到来源页」落回其宿主页面
+            originPage: "warehouse",
           })
         : outcomeFromClientError(response.error);
     },
@@ -184,7 +186,8 @@ export function createWarehouseCommands(client: GatewayClient): WarehouseCommand
       return response.ok
         ? acceptWithIdentity(response.value, {
             title: strings.taskTitles.adoptDownload,
-            originPage: "import-material",
+            // 来源页同上:下载采纳入口现居仓储页素材导入弹窗内
+            originPage: "warehouse",
           })
         : outcomeFromClientError(response.error);
     },

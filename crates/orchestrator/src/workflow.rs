@@ -257,5 +257,6 @@ fn label(operation: UnityOperation) -> &'static str {
         UnityOperation::InspectAvatarReferences => "检查 Avatar 资产引用完整性",
         UnityOperation::InspectLighting => "检查场景光照事实",
         UnityOperation::InspectUploadReadiness => "检查上传准备度前置项",
+        UnityOperation::BuildPreview => "烘焙 Release 预览转盘",
     }
 }

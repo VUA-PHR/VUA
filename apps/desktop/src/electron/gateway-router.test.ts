@@ -1466,3 +1466,77 @@ describe("bdl-commands v0.1 command routing", () => {
     expect(extraKey.ok).toBe(false);
   });
 });
+
+describe("packages-ops v0.6 F4 repo lifecycle routing (027 消费批)", () => {
+  it("routes the three lifecycle methods as tasked commands with Kernel-generated lifecycle- commandIds and verbatim single-key {repoId} params, and rejects carried digest/projectPath/extra-key/empty-repoId shapes at the envelope guard (word-list escape costs zero wire overhead)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    for (const [index, method] of [
+      "packages.enableRepo",
+      "packages.disableRepo",
+      "packages.refreshRepo",
+    ].entries()) {
+      await routeDesktopGatewayInvoke(
+        { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+        `${rendererUrl}/`,
+        {
+          schemaVersion: 1,
+          requestId: `desktop-request-lifecycle-${index}`,
+          method,
+          params: { repoId: "repo-example" },
+        },
+      );
+      const translated = invoke.mock.calls[index]?.[0] as {
+        kind: string;
+        method: string;
+        commandId: string;
+        params: Record<string, unknown>;
+      };
+      expect(translated.kind).toBe("command");
+      expect(translated.method).toBe(method);
+      expect(translated.commandId.startsWith("lifecycle-")).toBe(true);
+      expect(translated.params).toEqual({ repoId: "repo-example" });
+    }
+    expect(invoke).toHaveBeenCalledTimes(3);
+
+    // 携 confirmedDigest(无 preview 臂——启停 diff 无既有摘要、刷新即网
+    // 络本体)/携 projectPath(生命周期面只寻址订阅行)/发明额外键/空
+    // repoId(词面 minLength 1):信封守卫即拒,绝不进任务
+    const carriedDigest = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-lifecycle-9",
+        method: "packages.refreshRepo",
+        params: { repoId: "repo-example", confirmedDigest: "fnv-1a-abc" },
+      },
+    );
+    expect(carriedDigest).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const carriedProjectPath = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-lifecycle-10",
+        method: "packages.disableRepo",
+        params: { repoId: "repo-example", projectPath: "C:/proj" },
+      },
+    );
+    expect(carriedProjectPath).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    const emptyRepoId = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-lifecycle-11",
+        method: "packages.enableRepo",
+        params: { repoId: "" },
+      },
+    );
+    expect(emptyRepoId).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(3);
+  });
+});

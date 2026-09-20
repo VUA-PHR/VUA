@@ -47,6 +47,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "演示数据",
     mascotAria: "VUA 吉祥物小机器人",
+    /** 内容弹窗关闭钮(素材导入/搭配草稿弹窗) */
+    dialogClose: "关闭",
   },
   /** 启动闸口(GatewayProvider):五领域首帧快照拉齐失败的全局诚实失败态 */
   boot: {
@@ -159,11 +161,9 @@ demoTaskTitle: "演示任务",
       tools: "工具合集",
       settings: "设置",
     },
-    groups: {
-      warehouse: "仓库",
-      workshop: "车间",
-      packages: "包管理",
-    },
+    /** 当前各模块侧栏均无分组标签(模型生产已于 2026-09-20 导航重构改平铺);
+     *  分组机制保留,下一个有标签的分组在此补键。 */
+    groups: {},
     pages: {
       home: "指挥台",
       envPlay: "游玩环境",
@@ -186,8 +186,8 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      /** 搭配草稿自 2026-09-20 导航重构起为配方页内弹窗;键保留作词面。 */
       composePage: "搭配草稿",
-      importMaterial: "素材导入",
       inspectionPage: "检测",
     },
   },
@@ -1729,6 +1729,25 @@ rolled_back: "已回滚",
       removeConfirm: "确认移除",
       removing: "正在移除…",
       removedLine: "已移除订阅：{repoId}",
+      /** F4 仓库生命周期(027 v0.6 消费批):启停/刷新行内控制。启停语义
+       *  如实口径:VUA 自有状态——禁用的仓库保留在订阅列表(禁用在列不
+       *  隐藏),其包不再参与枚举与安装解析;不写 VCC/ALCOM 共享设置
+       *  (W25 只读证据裁决 (c):VCC 无任何启停状态)。 */
+      lifecycle: {
+        enableAction: "启用",
+        disableAction: "禁用",
+        enableAria: "启用仓库 {name}",
+        disableAria: "禁用仓库 {name}",
+        refreshAction: "刷新",
+        refreshAria: "刷新仓库 {name} 的缓存",
+        enabling: "正在启用…",
+        disabling: "正在禁用…",
+        refreshing: "正在刷新…",
+        disabledBadge: "已禁用",
+        disabledNote: "已禁用：该仓库的包不再参与浏览与安装解析，订阅行保留在列。",
+        doneLine: "操作已完成：{repoId}",
+        upToDate: "仓库缓存已是最新。",
+      },
     },
 
     create: {
@@ -1782,7 +1801,10 @@ rolled_back: "已回滚",
       riskBody:
         "社区仓库由第三方维护,未经 VRChat 或 VUA 审核;订阅后其中的包可能发生变化。请只添加你信任的作者发布的仓库。订阅功能将随包管理引擎一同接入,本说明提前展示。",
       riskAcknowledge: "知道了",
-      toggleAria: "启用或停用 {name}",
+      /** F4 消费批(2026-09-21):toggleAria 交互词面随本地 checkbox 翻转
+       *  一并退役,替换为只读静态标注 */
+      enabledBadge: "已启用",
+      disabledBadge: "已停用",
       health: {
         unknown: "未核对",
         ok: "可访问",
@@ -2261,18 +2283,18 @@ rolled_back: "已回滚",
       "DEV spike:T1 webview 直渲素材 对照 T2 Unity 烘焙成品;项目数据读取本机 demo 清单,不入库。",
     needRootTitle: "未指定演示工程",
     needRootBody:
-      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vrcua/bridge/demo-lab.json。",
+      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vua/bridge/demo-lab.json。",
     demoRootLabel: "工程",
     manifestLoading: "正在读取演示清单…",
     manifestFailedTitle: "演示清单不可用",
     manifestFailedBody:
-      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vrcua/bridge/demo-lab.json。",
+      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vua/bridge/demo-lab.json。",
     sourcesTitle: "素材 · T1 webview 直渲",
     sourcesNote:
       "Unity 自定义 shader 以既有材质 + 主贴图近似,FBX 内嵌贴图保留;光照与着色与 Unity 烘焙存在差异。",
     productsTitle: "成品 · T2 Unity 编辑器烘焙",
     productsNote:
-      "转盘帧由 Unity 编辑器桥烘焙到 .vrcua/bridge/preview/;VRM 由 webview 直渲作为对照。",
+      "转盘帧由 Unity 编辑器桥烘焙到 .vua/bridge/preview/;VRM 由 webview 直渲作为对照。",
     cardStatusLoading: "加载中…",
     cardStatusFailed: "加载失败",
     bakePending: "未找到烘焙产物——请先在 Unity 触发 build_preview({path})。",
@@ -2378,6 +2400,15 @@ rolled_back: "已回滚",
     },
     environment: {
       verifyUnavailable: "编辑器验证服务当前不可用。",
+    },
+    /** 素材链错误词面(027 第 142 批桌面,任务事件失败行呈现):
+     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发);
+     *  provisionFailed 为预留行——素材链 v0.2 新码 vua.material.
+     *  provision_failed 由核心座修复批(wt-2,候入库)携带,词面先行
+     *  四表同步,码落地即命中 */
+    material: {
+      executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
+      provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
     },
   },
 };

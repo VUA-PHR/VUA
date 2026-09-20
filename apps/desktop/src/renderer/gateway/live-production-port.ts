@@ -1,5 +1,6 @@
 import {
   APPLICATION_CONTRACT_VERSION,
+  type AppErrorV01,
   type DesktopGatewayRequestV1,
   type DesktopGatewaySuccessValueV1,
   type TaskSnapshotV01,
@@ -32,7 +33,7 @@ import type {
   SourceIntake,
 } from "./model-production-port.ts";
 import { sourceIntakes } from "./model-production-port.ts";
-import { liveWorkshopView } from "./production-workshop-view.ts";
+import { failureLogText, liveWorkshopView } from "./production-workshop-view.ts";
 import { workflowStages, type WorkflowStage } from "./workflow.ts";
 import type { GatewayClient, GatewayClientError } from "./gateway-client.ts";
 import type { DesktopKernelHost } from "./electron-gateway.ts";
@@ -367,8 +368,27 @@ export function createLiveModelProduction(
     const key = phase as string;
     if (key === lastPhaseKey) return;
     lastPhaseKey = key;
-    log.push({ time: at, text: strings.productionFlow.phase[phase] });
+    // 诚实纪律#2(W25 真机呈现缺口修复,第 142 批):失败行词面必须携带
+    // 错误详情——messageKey 命中 errors 词表用本地化词面,否则 code 原词
+    // 呈现(如 vua.material.bridge_failed),绝不只呈「失败」两字让用户去
+    // 任务记录翻原因;error 缺席 = 仅基础词面,不猜测不虚构详情
+    let text = strings.productionFlow.phase[phase];
+    if (phase === "failed" || phase === "failedRecoverable") {
+      text = failureLogText(text, currentTaskError());
+    }
+    log.push({ time: at, text });
     if (log.length > LOG_LIMIT) log.splice(0, log.length - LOG_LIMIT);
+  };
+
+  /** 当前任务快照的 error 载荷(与 runView 同一当前任务定位;失败行详情
+   *  数据源——契约 AppErrorV01:code + messageKey + params) */
+  const currentTaskError = (): AppErrorV01 | null => {
+    if (run === null) return null;
+    const current = run.tasks.at(-1);
+    if (current === undefined) return null;
+    const snapshot = run.snapshots.get(current.taskId);
+    const error = snapshot?.error;
+    return error ?? null;
   };
 
   const withTask = (record: RunRecord, task: TaskSnapshotV01): RunRecord => ({

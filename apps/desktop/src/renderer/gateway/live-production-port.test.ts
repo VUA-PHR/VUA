@@ -7,6 +7,7 @@ import { createElectronGateway, type DesktopKernelHost } from "./electron-gatewa
 import type { GatewayClient } from "./gateway-client.js";
 import { createLiveModelProduction } from "./live-production-port.js";
 import type { ModelProductionPort, ModelProductionView } from "./model-production-port.js";
+import { strings } from "../i18n/index.ts";
 
 /**
  * F-3 live 生产端口测试:renderer typed client → Kernel 路由
@@ -292,6 +293,50 @@ describe("live production port over the Kernel route (F-3)", () => {
       .toMatchObject({ kind: "rejected", reason: "not_recoverable" });
     expect(await port.recover("__missing__", { kind: "rollback" }))
       .toMatchObject({ kind: "rejected", reason: "unknown_ref" });
+  });
+
+  it("carries the error code/messageKey into the failure log line (batch-142 honest-failure presentation: never the bare two-character word)", async () => {
+    // W25 真机呈现缺口(2026-09-20 用户报):执行日志失败时只显示「失败」
+    // 两字,错误码/原因要到任务记录里翻——诚实纪律#2 要求失败行词面携带
+    // 错误详情(messageKey 有本地化词面则用之,否则 code 原词)。
+    const { provider, port } = await liveGateway();
+
+    const material = await port.pickMaterial("direct_unity_package");
+    const started = await port.startInspection(material!);
+    if (started.kind !== "ok") throw new Error("expected start acceptance");
+    const { inspection } = await completeInspection(port);
+    const { plan } = await planAndWait(port, inspection.inspectionId);
+    const confirmed = await port.confirmPlan(plan.planId, plan.revision, "continue");
+    if (confirmed.kind !== "ok") throw new Error("expected confirm acceptance");
+
+    // 失败事件:completed 载荷 error 携带 code/messageKey(与 W25 取证同
+    // 形:vua.material.bridge_failed + errors.material.executionFailed)
+    provider.commitTaskState(confirmed.taskId, "failed", {
+      error: {
+        contractVersion: "0.1",
+        code: "vua.material.bridge_failed",
+        category: "external_failure",
+        messageKey: "errors.material.executionFailed",
+        recoverable: false,
+        retryable: true,
+        correlationId: confirmed.taskId,
+      },
+    });
+    await vi.waitFor(async () => expect(runStateOf(await port.snapshot())).toBe("failed"));
+
+    const view = await port.snapshot();
+    if (view.workshop.kind !== "running") throw new Error("expected a running workshop view");
+    const lastLog = view.workshop.log.at(-1);
+    if (lastLog === undefined) throw new Error("expected a failure log line");
+    // 失败行 = 阶段词面 + 错误详情,绝不只是「失败」两字;详情 = 本地化
+    // 词面(errors.material.executionFailed 命中词表)
+    expect(lastLog.text).toContain(strings.productionFlow.phase.failed);
+    expect(lastLog.text).toContain(strings.errors.material.executionFailed);
+    expect(lastLog.text).not.toBe(strings.productionFlow.phase.failed);
+
+    // 词表外 messageKey → code 原词呈现(下一条失败迁移;新运行注入避免
+    // 去重短路——直接断言纯函数已覆盖原词臂,此处钉「详情必在场」)
+    expect(lastLog.text.includes(":")).toBe(true);
   });
 
   it("stays honest when the production use case is absent and the provider is unreachable", async () => {

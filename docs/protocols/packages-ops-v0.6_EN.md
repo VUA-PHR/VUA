@@ -3,13 +3,13 @@
 [English](packages-ops-v0.6_EN.md) | [简体中文](packages-ops-v0.6_ZH.md)
 
 > Document version: 0.6.1
-> Status: **FROZEN and WIRED (packages-ops word-list row v0.6, the F4
+> Status: **FROZEN (packages-ops word-list row v0.6, the F4
 > repository-lifecycle word face = the enable/disable method pair + the
 > refresh method; the v0.1 A1 removal row, the v0.2 A2 install/upgrade row,
 > the v0.3 A3 registration row, the v0.4 A4 repository add/remove row and the
 > v0.5 A5 project-creation row stay frozen and served untouched — v0.6 is a
-> separate row directory per the packages-catalog v0.2 increment precedent.
-> WIRED at the F4 wiring batch, 2026-09-21: the three route arms, the
+> separate row directory per the packages-catalog v0.2 increment precedent.)
+> and WIRED (at the F4 wiring batch, 2026-09-21: the three route arms, the
 > `packages.repoLifecycleOps` served row and the named dual constants landed
 > on the core wire face. NOT CONSUMED: the desktop surface and the VrcGetLib
 > override wait for their own slices)**
