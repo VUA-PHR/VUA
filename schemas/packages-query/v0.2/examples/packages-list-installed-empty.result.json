@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listInstalled",
+  "result": {
+    "schemaVersion": "vua.packages-installed/v0.2",
+    "projectPath": "C:/Users/demo/Projects/FreshProject",
+    "packages": [],
+    "cacheSourced": false
+  }
+}

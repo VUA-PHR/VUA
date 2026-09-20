@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listInstalled",
+  "result": {
+    "schemaVersion": "vua.packages-installed/v0.2",
+    "projectPath": "C:/Users/demo/Projects/MyAvatarProject",
+    "packages": [
+      {
+        "packageId": "com.demo.local-tool",
+        "version": "0.2.0",
+        "dependencies": [],
+        "latestVersion": null,
+        "updateAvailable": null
+      },
+      {
+        "packageId": "com.demo.prerelease-addon",
+        "version": "2.0.0-beta.4",
+        "dependencies": [],
+        "latestVersion": "1.9.0",
+        "updateAvailable": false
+      },
+      {
+        "packageId": "com.example.all-yanked",
+        "version": "0.5.0",
+        "dependencies": [],
+        "latestVersion": null,
+        "updateAvailable": null
+      }
+    ],
+    "cacheSourced": true
+  }
+}

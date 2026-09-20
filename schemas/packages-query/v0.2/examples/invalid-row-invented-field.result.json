@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listInstalled",
+  "result": {
+    "schemaVersion": "vua.packages-installed/v0.2",
+    "projectPath": "C:/Users/demo/Projects/MyAvatarProject",
+    "packages": [
+      {
+        "packageId": "com.vrchat.avatars",
+        "version": "3.7.4",
+        "dependencies": ["com.vrchat.base"],
+        "latestVersion": "3.7.4",
+        "updateAvailable": false,
+        "changelogUrl": "https://example.com/changelog.md"
+      }
+    ],
+    "cacheSourced": false
+  }
+}

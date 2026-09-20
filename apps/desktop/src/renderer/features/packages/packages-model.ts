@@ -5,8 +5,11 @@ import type {
   PackageChangePreview,
   PackageProject,
   PackageRow,
+  InstalledPackageRowV01,
+  InstalledPackageRowV02,
   PackageSource,
   PackageVersionEntry,
+  RepoCatalogPackageRowV01,
   RepoHealth,
 } from "../../gateway/index.ts";
 
@@ -445,4 +448,46 @@ export function relativeCheckedTime(
   const hours = Math.floor(minutes / 60);
   if (hours < 24) return { key: "checkedHoursAgo", count: hours };
   return { key: "checkedDaysAgo", count: Math.floor(hours / 24) };
+}
+
+/**
+ * F2 仓库浏览搜索过滤(027 消费批;纯函数):作用于已取得的仓库级目录
+ * 事实(同一事实源,不另立查询形状——027 设计约束 1:批量 packageId 过
+ * 滤由词面承担,此过滤是呈现层行为);displayName null 以 packageId 兼
+ * 任(与呈现规则一致);大小写不敏感子串匹配;空查询 = 全量照实返回。
+ */
+export function filterRepoCatalogPackages(
+  rows: readonly RepoCatalogPackageRowV01[],
+  query: string,
+): RepoCatalogPackageRowV01[] {
+  const text = query.trim().toLowerCase();
+  if (text === "") return [...rows];
+  return rows.filter(
+    (row) =>
+      row.packageId.toLowerCase().includes(text) ||
+      (row.displayName ?? row.packageId).toLowerCase().includes(text),
+  );
+}
+
+/**
+ * F3 已装表「可更新」列三态呈现选择(027 F3 消费批;纯函数):按冻结判
+ * 定词面区分四种呈现形态——v0.1 族应答行无判定事实("absent",该列诚
+ * 实空显,绝不虚构);updateAvailable null = 判定未执行("notExecuted",
+ * 如实空显——024 表态②用户裁定:null 绝不是「已最新」绝不默认 false);
+ * false = 精确语义("noneUnderFilter",呈现「当前条件下无严格更新」类
+ * 精确词面,不泛化为「无更新」断言);true = 判定成立("available",呈现
+ * 有更新＋行内升级键入口复用 A2 version=null 语义)。
+ */
+export type InstalledUpdateCellState =
+  | "absent"
+  | "notExecuted"
+  | "noneUnderFilter"
+  | "available";
+
+export function installedUpdateCellState(
+  row: InstalledPackageRowV01 | InstalledPackageRowV02,
+): InstalledUpdateCellState {
+  if (!("updateAvailable" in row)) return "absent";
+  if (row.updateAvailable === null) return "notExecuted";
+  return row.updateAvailable ? "available" : "noneUnderFilter";
 }

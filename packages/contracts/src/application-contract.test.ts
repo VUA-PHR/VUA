@@ -11,6 +11,8 @@ import {
   type EditorVerifyRefusedV01,
   type EnvironmentVerifyEditorResultV01,
   type InspectionEvidenceDocumentV01,
+  type PackagesInstalledItemV02,
+  type PackagesListInstalledResultV02,
   type InspectionGetResultV01,
   type InspectionListResultV01,
   type OverlaySnapshotResultV01,
@@ -303,6 +305,56 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("pins the 027 F3 packages-installed v0.2 result word face (judgment pair + disclosure)", () => {
+    // 全臂形态:判定真/判定假/判定未执行(null)——编译期钉死键集与可空
+    // 性,任何接口形状漂移在此先红。虚假断言防线:判定未执行行
+    // (updateAvailable=null)是诚实空态事实,消费端绝不渲染「已最新」。
+    const listing: PackagesListInstalledResultV02 = {
+      schemaVersion: "vua.packages-installed/v0.2",
+      projectPath: "C:/proj",
+      packages: [
+        {
+          packageId: "com.anatawa12.avatar-optimizer",
+          version: "1.7.0",
+          dependencies: ["com.anatawa12.gists"],
+          latestVersion: "1.8.2",
+          updateAvailable: true,
+        },
+        {
+          packageId: "com.demo.local-tool",
+          version: "0.2.0",
+          dependencies: [],
+          latestVersion: null,
+          updateAvailable: null,
+        },
+      ],
+      cacheSourced: true,
+    };
+    // 行键闭集(v0.1 三键＋判定对两键,恰五键零多余)
+    const row: PackagesInstalledItemV02 = listing.packages[1];
+    expect(Object.keys(row).sort()).toEqual([
+      "dependencies",
+      "latestVersion",
+      "packageId",
+      "updateAvailable",
+      "version",
+    ]);
+    // 判定未执行臂:双 null 如实缺席,不是 false 不是数字零
+    expect(row.latestVersion).toBeNull();
+    expect(row.updateAvailable).toBeNull();
+    // 文档键闭集(恰四键:family 常量＋projectPath＋packages＋cacheSourced)
+    expect(Object.keys(listing).sort()).toEqual([
+      "cacheSourced",
+      "packages",
+      "projectPath",
+      "schemaVersion",
+    ]);
+    expect(listing.cacheSourced).toBe(true);
+    // 判定真臂携带版本事实对
+    expect(listing.packages[0].updateAvailable).toBe(true);
+    expect(listing.packages[0].latestVersion).toBe("1.8.2");
+  });
+
   it("admits the 025 P2 packages.listRepos read query with empty closed params", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "packages.listRepos", params: {},
@@ -365,6 +417,28 @@ describe("bdl-commands v0.1 application surface", () => {
         repoId: null,
         packageIds: ["com.anatawa12.avatar-optimizer", "com.anatawa12.avatar-optimizer"],
       },
+    })).toBe(false);
+  });
+
+  it("admits the 027 F5 packages.listTemplates read query with the closed empty params", () => {
+    // 空闭集形态(环境级配置面,packages.listRepos 零参数先例)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: {},
+    })).toBe(true);
+    // 任何键 = 词表外形状违反,绝不默认
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: { projectPath: "C:/proj" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: { templateRoot: "C:/VRCTemplates" },
+    })).toBe(false);
+    // 词表行闭集:operation 单数形态非法(冻结词面恰 packages.listTemplates)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplate",
+      params: {},
     })).toBe(false);
   });
 

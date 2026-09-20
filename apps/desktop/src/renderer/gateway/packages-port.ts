@@ -222,6 +222,38 @@ export interface InstalledPackageRowV01 {
 }
 
 /**
+ * 已装包行 v0.2(027 F3 packages-query v0.2 冻结词面五键,镜像
+ * @vua/contracts PackagesInstalledItemV02):v0.1 三键零变动＋判定对两
+ * 键(必带可空)。虚假断言防线(024 表态②,用户裁定):latestVersion null
+ * = 当前设置下无合资格版本(跨仓 max——刻意非 F2 分仓视图);updateAvailable
+ * null = 判定未执行——null 绝不是「已最新」,消费端空显绝不默认 false;
+ * false 精确语义 =「当前过滤条件下不存在严格更新版本」,非泛化「无更新」。
+ */
+export interface InstalledPackageRowV02 extends InstalledPackageRowV01 {
+  readonly latestVersion: string | null;
+  readonly updateAvailable: boolean | null;
+}
+
+/**
+ * packages.listInstalled 双族应答事实(027 F3 消费批):盖戳族常量判别
+ * 应答词面世代,消费端读戳辨族永不猜测(catalog v0.2 双版本协商先例)。
+ * v0.1 族 = 冻结三键行(零判定事实,消费端不虚构「可更新」列内容与缓
+ * 存标注);v0.2 族 = 五键行(判定对)＋必带 cacheSourced 信息性降级披
+ * 露(true = 缓存降级路径所得,呈现「缓存数据」标注非失败;false = 在
+ * 线刷新所得,无标注)。
+ */
+export type InstalledListAnswer =
+  | {
+      readonly family: "vua.packages-installed/v0.1";
+      readonly rows: readonly InstalledPackageRowV01[];
+    }
+  | {
+      readonly family: "vua.packages-installed/v0.2";
+      readonly rows: readonly InstalledPackageRowV02[];
+      readonly cacheSourced: boolean;
+    };
+
+/**
  * P2 仓库订阅行(025 packages-repos v0.1 冻结词面五键闭集,镜像
  * @vua/contracts PackagesRepoInfoV01):订阅面为世界(用户配置事实),
  * 四标识/定位事实可空字符串(null = 库面 Option 如实投影,本地目录仓
@@ -283,6 +315,49 @@ export interface CatalogPackageFactsV02 extends CatalogPackageFactsV01 {
   /** 信息性降级披露:true = 本次结果经缓存降级路径(offline→load_cache
    *  或在线 load 失败降级),呈现「缓存数据」标注——信息性非失败,绝不
    *  渲染为失败态;false = 在线刷新所得,无标注 */
+  readonly cacheSourced: boolean;
+}
+
+/**
+ * F2 仓库级包行(027 packages-repo-catalog v0.1 冻结词面五键闭集,镜像
+ * @vua/contracts PackagesRepoCatalogPackageV01):库面实际上限闭集——
+ * author 刻意缺席(库面 manifest 反序列化闭集无 author 字段,单事实源
+ * 裁决,发明即形状违反)、compatible 刻意不存在(无工程上下文判定不可
+ * 执行,恒 null 非事实);displayName null 呈现 = packageId 兼任显示名
+ * (P1 裁决 3,不冒充字段事实);latestVersion null = 当前设置下无合资格
+ * 版本——缺席不是「无包」,呈现层不得渲染「已最新」类断言;versionCount
+ * = 仓库缓存自身清单计数(yanked 计入)——缓存事实非可用性承诺。
+ */
+export interface RepoCatalogPackageRowV01 {
+  readonly packageId: string;
+  readonly displayName: string | null;
+  readonly description: string | null;
+  readonly latestVersion: string | null;
+  readonly versionCount: number;
+}
+
+/**
+ * F2 仓库行(027 冻结词面四键闭集,镜像 @vua/contracts
+ * PackagesRepoCatalogRepoV01):cached 必带 = 逐仓库缓存命中事实,
+ * false = 已订阅未刷新——其自身诚实状态以空 packages 数组如实呈现,
+ * 不隐藏不伪造;行序 = 集合自身枚举顺序照实投影,客户端不重排。
+ */
+export interface RepoCatalogRepoRowV01 {
+  readonly repoId: string | null;
+  readonly name: string | null;
+  readonly cached: boolean;
+  readonly packages: readonly RepoCatalogPackageRowV01[];
+}
+
+/**
+ * F2 仓库级目录事实(027 冻结词面,镜像 @vua/contracts
+ * PackagesRepoCatalogResultV01 去 schemaVersion 信封键):repos 空数组
+ * = 诚实零仓库缓存应答;cacheSourced 必带信息性降级披露(出生即带,
+ * catalog v0.2 先例)——true = 缓存降级路径所得,呈现「缓存数据」信息
+ * 标注非失败;false = 在线刷新所得,无标注。
+ */
+export interface RepoCatalogFactsV01 {
+  readonly repos: readonly RepoCatalogRepoRowV01[];
   readonly cacheSourced: boolean;
 }
 
@@ -362,7 +437,9 @@ export type PackagesView =
         readonly creates: boolean;
       };
       readonly projectPath: string | null;
-      readonly installedPackages: readonly InstalledPackageRowV01[];
+      readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
+      /** 027 F3:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
+      readonly installedCacheSourced?: boolean;
       readonly loadError?: PackagesP1LoadError;
     }
   /**
@@ -384,8 +461,15 @@ export type PackagesView =
    *   诚实零订阅;reposError = listRepos typed 失败(错误码原词),存
    *   在时仓库区呈现失败而非空态(两者严格区分);
    * - installedPackages/loadError 语义与 ready-p1 相同。
+   * - repoCatalog 权威事实源 = packages.repoCatalogOps 能力行(027 F2
+   *   仓库级包目录读面消费批:一行服务 packages.repoCatalog,removeOps/
+   *   installOps/registerOps/repoOps/creates 一行先例;default
+   *   declared-none 访问器门控,环境覆写置真前如实 unavailable;同翻转
+   *   纪律;逐面升级承诺 = 纯增量新键,既有键语义与来源零变更);
    * - 包目录事实不进快照:按需查询粒度(双键闭集),经
-   *   PackagesPort.packageCatalog 由选中包驱动,页面局部承载。
+   *   PackagesPort.packageCatalog 由选中包驱动,页面局部承载;
+   *   F2 仓库级目录事实同理不进快照:经 PackagesPort.repoCatalog 由
+   *   仓库行展开驱动,页面局部承载。
    */
   | {
       schemaVersion: 1;
@@ -399,9 +483,17 @@ export type PackagesView =
         readonly registers: boolean;
         readonly repoWrites: boolean;
         readonly creates: boolean;
+        /** F2 仓库级包目录读面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.repoCatalogOps 能力行(default
+         *  declared-none 访问器门控,环境覆写置真前如实 unavailable);
+         *  false = 行缺席或不可用,仓库浏览入口不渲染(渲染层不伪造);
+         *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
+        readonly repoCatalog: boolean;
       };
       readonly projectPath: string | null;
-      readonly installedPackages: readonly InstalledPackageRowV01[];
+      readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
+      /** 027 F3:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
+      readonly installedCacheSourced?: boolean;
       readonly loadError?: PackagesP1LoadError;
       readonly repos: readonly RepoInfoRowV01[];
       readonly reposError?: PackagesP2LoadError;
@@ -585,15 +677,18 @@ export interface PackagesPort {
   subscribe(callback: (view: PackagesView) => void): Unsubscribe;
   selectProject(projectId: string): Promise<PackagesView>;
   /**
-   * P1 词面消费(packages.listInstalled,024 冻结批):单个已注册项目的
-   * 已装包集合;projectId 参数即 013 注册路径(P1 视图无第二项目身份)。
-   * unavailable = 引擎缺席/未接线;failed 携带 typed 错误码原词
-   * (vua.project.project_not_found 等),不折叠为空态。
+   * P1 词面消费(packages.listInstalled,024 冻结批;027 F3 消费批起双
+   * 族协商):单个已注册项目的已装包集合;projectId 参数即 013 注册路
+   * 径(P1 视图无第二项目身份)。应答按盖戳族常量辨世代(InstalledList
+   * Answer):v0.1 族 = 冻结三键行零判定事实;v0.2 族 = 五键行判定对＋
+   * cacheSourced 披露——updateAvailable null = 判定未执行绝不渲染「已
+   * 最新」绝不默认 false。unavailable = 引擎缺席/未接线;failed 携带
+   * typed 错误码原词(vua.project.project_not_found 等),不折叠为空态。
    */
   listInstalled(
     projectPath: string,
   ): Promise<
-    | { readonly kind: "ok"; readonly result: readonly InstalledPackageRowV01[] }
+    | { readonly kind: "ok"; readonly result: InstalledListAnswer }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;
@@ -613,6 +708,28 @@ export interface PackagesPort {
     packageId: string,
   ): Promise<
     | { readonly kind: "ok"; readonly result: CatalogPackageFactsV01 | CatalogPackageFactsV02 }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
+  /**
+   * F2 词面消费(packages.repoCatalog,027 packages-repo-catalog v0.1
+   * 冻结批):仓库级可装包清单只读查询——双键必带可空 params verbatim
+   * 传输:repoId null = 全部仓库逐仓分组(跨仓合并不存在于本面,同名包
+   * 在各仓各自出现),非空串 = 只答该仓库行(词表外 id = 端口答
+   * vua.vpm.repo_not_found,逐字透传——P2 读面零折叠,不折叠为空态);
+   * packageIds null = 不过滤浏览,非空 = Recipe 需求集合批量过滤(唯一
+   * 非空 id;空数组 = 形状违反,UI 不构造)。逐仓 latestVersion 判定无
+   * 工程 Unity 约束,null = 当前设置下无合资格版本(缺席不是「无包」,
+   * 呈现层不渲染「已最新」类断言);cacheSourced = true 呈现「缓存数据」
+   * 信息标注非失败。unavailable = 引擎缺席/未接线或 served 行 declared
+   * -none(环境覆写置真前诚实缺席);failed 携带 typed 错误码原词,不折
+   * 叠不猜测。
+   */
+  repoCatalog(
+    repoId: string | null,
+    packageIds: readonly string[] | null,
+  ): Promise<
+    | { readonly kind: "ok"; readonly result: RepoCatalogFactsV01 }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;

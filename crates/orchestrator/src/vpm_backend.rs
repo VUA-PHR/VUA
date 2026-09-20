@@ -364,6 +364,106 @@ pub struct RepoCatalogV01 {
     pub cache_sourced: bool,
 }
 
+/// F5 (proposal 027 freeze batch, 2026-09-20): one available template entry
+/// of the template-enumeration read face (wire method
+/// `packages.listTemplates`, family `vua.packages-templates/v0.1`). The
+/// enumeration's fact source is the two pinned directory roots of the
+/// library-path default resolution leg — `<environment_root>/VRCTemplates`
+/// first, then `<environment_root>/Templates` (the create_from_template
+/// resolution order, environment verification 027 s4: vrc-get-vpm 0.0.16
+/// ships NO template enumeration API, so the scan IS the enumeration) —
+/// with the duplicate-name rule VRCTemplates-first (an id present under
+/// both roots enumerates ONCE, resolved to the root the creation
+/// resolution order would pick: enumeration never diverges from what
+/// create would actually copy). `id` is the template directory name; `name`
+/// is its frozen same-value display projection (no independent display-name
+/// fact source exists in v0.1 — the projection states the identity
+/// verbatim, consumers never fabricate a friendlier label); there is
+/// deliberately NO description/metadata field: the template directory's
+/// metadata-file shape is unverified (W25 real-machine item) and v0.1 has
+/// no producer for it (ORC-DEV-004: no implementation, no reservation —
+/// the P1 displayName precedent; a row carrying description/sourceRoot is
+/// INVALID by schema, negative vectors pin it).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TemplateEntryV01 {
+    pub id: String,
+    pub name: String,
+}
+
+/// F5 (proposal 027 freeze batch): capability declaration for the
+/// template-enumeration read face. Same shape law as `CatalogCapabilities`
+/// / `RegisterCapabilities` / `RepoWriteCapabilities` / `RepoCatalogCapabilities`
+/// (the 025 accessor precedent): a separate defaulted trait accessor
+/// instead of a new `VpmCapabilities` field, so the five-bit closed set
+/// stays stable and backends without the template-enumeration face keep
+/// compiling unchanged (ORC-DEV-004: no implementation, no reservation —
+/// the default is declared-none; a backend overrides it exactly when it
+/// implements `list_templates`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TemplateCapabilities {
+    /// Covers the F5 read face (`packages.listTemplates`): the available
+    /// template entries under the two pinned directory roots.
+    pub list_templates: bool,
+}
+
+impl TemplateCapabilities {
+    pub const NONE: Self = Self { list_templates: false };
+}
+
+/// F3 (proposal 027 freeze batch, packages-query v0.2): one installed-package
+/// row at the v0.2 word face — the frozen v0.1 three-key projection
+/// (packageId / version / dependencies; packageId-ascending order stays the
+/// frozen presentation fact, zero movement) plus EXACTLY two REQUIRED
+/// judgment facts. `latest_version` is the latest-version fact found by the
+/// frozen selector over the collection's WHOLE repository set (the
+/// cross-repository max — deliberately NOT the per-repo view, which stays
+/// the packages-repo-catalog family's declared fact; the two views are
+/// different facts and are never conflated); null = no qualifying latest
+/// under the current setting (the package sits in no repository cache — a
+/// local-source package, or every candidate is yanked/excluded) — absence
+/// is never "no update". `update_available` is the frozen judgment
+/// CONCLUSION (a strictly newer selector-qualifying version exists vs the
+/// installed version); null = judgment not executed (no qualifying latest,
+/// or the project's Unity version is unknown) — null is never "already
+/// latest" (the 024 stance-2 false-assertion line). The selector reuses the
+/// packages-catalog frozen semantics verbatim (latest_for(project Unity
+/// version, show_prerelease setting), zero wire switch): when the installed
+/// version is itself a prerelease and the setting is off, the qualifying
+/// latest comes from the stable set — `false` means exactly "no strictly
+/// newer version matching the CURRENT filter exists", never a generalized
+/// "no update".
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledPackageV02 {
+    pub package_id: String,
+    pub version: String,
+    /// Direct dependencies the installed package declares (the frozen v0.1
+    /// fact, unchanged).
+    pub dependencies: Vec<String>,
+    pub latest_version: Option<String>,
+    pub update_available: Option<bool>,
+}
+
+/// F3 (proposal 027 freeze batch, packages-query v0.2): the installed-set
+/// listing at the v0.2 word face — the v0.2 rows plus the REQUIRED
+/// informational `cache_sourced` disclosure (the packages-catalog v0.2
+/// precedent adopted for the judgment face): true = this listing's judgment
+/// rode the cache-degradation path (offline -> load_cache, or an online
+/// load failed and degraded — the ORC-ADP-006 isomorphic precedent); false
+/// = served from an online-refreshed load. The whole table's judgments ride
+/// ONE collection load (the environment-verification cost law: per-row
+/// collection reloads never serve this face). projectPath is an
+/// envelope-assembly fact: the route stamps it, the backend facts stay
+/// verbatim (the P1 discipline).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstalledListingV02 {
+    pub packages: Vec<InstalledPackageV02>,
+    pub cache_sourced: bool,
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -568,6 +668,63 @@ pub trait VpmBackend: Send + Sync {
         _package_ids: &[String],
     ) -> Result<RepoCatalogV01, AppErrorV1> {
         Err(unsupported("repo_catalog"))
+    }
+    /// F3 (proposal 027 freeze batch, packages-query v0.2): declaration that
+    /// this backend serves the installed-set read face at the v0.2 word face
+    /// (rows carry the latestVersion/updateAvailable judgment facts; the
+    /// listing carries the REQUIRED cacheSourced disclosure). The default is
+    /// false — the frozen v0.1 word face keeps being served; a backend
+    /// overrides this exactly when it implements `list_packages_v02`
+    /// (ORC-DEV-004: no implementation, no reservation; the additive
+    /// dual-version negotiation law is the `catalog_v02` precedent).
+    fn query_v02(&self) -> bool {
+        false
+    }
+    /// F3 (proposal 027 freeze batch, packages-query v0.2): the installed
+    /// set at the v0.2 word face — the frozen v0.1 manifest+lock projection
+    /// facts plus the per-row judgment facts ([`InstalledPackageV02`]) and
+    /// the REQUIRED `cache_sourced` disclosure. Backends keep serving v0.1
+    /// through `list_packages` until they adopt this; the wire route
+    /// negotiates the family version by `query_v02` (the stamped family
+    /// const tells the consumer which word face answered, never a guess).
+    /// The judgment reuses the packages-catalog frozen selector semantics
+    /// over ONE collection load for the whole table (never per-row
+    /// reloads); the error face is the frozen v0.1 face, zero new codes.
+    fn list_packages_v02(
+        &self,
+        _project: &ProjectRef,
+    ) -> Result<InstalledListingV02, AppErrorV1> {
+        Err(unsupported("list_packages_v02"))
+    }
+    /// F5 (proposal 027 freeze batch): capability declaration for the
+    /// template-enumeration read face. The default is declared-none; a
+    /// backend overrides it exactly when it implements `list_templates`
+    /// (the 025 accessor law — the VrcGetLib override lands with the
+    /// environment implementation-verification slice, the same
+    /// honest-absence discipline: the served wire row stays unavailable
+    /// until the override flips it).
+    fn template_capabilities(&self) -> TemplateCapabilities {
+        TemplateCapabilities::NONE
+    }
+    /// F5 (proposal 027 freeze batch): the available template entries under
+    /// the two pinned directory roots of the library-path default
+    /// resolution leg (`<environment_root>/VRCTemplates` first, then
+    /// `<environment_root>/Templates` — the create_from_template
+    /// resolution order; the explicit-path leg is a per-create argument
+    /// shape, NOT a directory root, and has no reach on this face). The
+    /// enumeration is a LOCAL DIRECTORY SCAN (vrc-get-vpm 0.0.16 ships no
+    /// template enumeration API — environment verification 027 s4), a
+    /// zero-network face: NO cacheSourced disclosure exists here (a
+    /// constant informational field is not a fact, the packages-repos
+    /// v0.1 law). A name present under both roots enumerates ONCE,
+    /// resolved to the root the creation resolution order would pick —
+    /// enumeration never diverges from what create would copy. Rows are
+    /// id-ascending (the frozen presentation fact); an EMPTY vec is the
+    /// honest zero-templates answer (a missing root or an empty pair of
+    /// roots is a fact, never an error — the R4 precedent). Zero new
+    /// error codes: the error face is the standing envelope set.
+    fn list_templates(&self) -> Result<Vec<TemplateEntryV01>, AppErrorV1> {
+        Err(unsupported("list_templates"))
     }
     /// A5 (proposal 026 freeze batch, packages-ops v0.5): creates a project
     /// from a template. REQUIRED method (no default body): a backend without

@@ -157,7 +157,9 @@ export type {
 } from "../features/release/release-handoff-port.ts";
 export type {
   ChangeRequest,
+  InstalledListAnswer,
   InstalledPackageRowV01,
+  InstalledPackageRowV02,
   CatalogPackageFactsV01,
   CatalogPackageFactsV02,
   CatalogVersionRowV01,
@@ -195,6 +197,9 @@ export type {
   PackagesView,
   PackageSource,
   PackageVersionEntry,
+  RepoCatalogFactsV01,
+  RepoCatalogPackageRowV01,
+  RepoCatalogRepoRowV01,
   RepoHealth,
   RepoInfo,
   RepoInfoRowV01,
