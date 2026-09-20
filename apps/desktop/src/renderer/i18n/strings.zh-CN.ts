@@ -47,6 +47,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "演示数据",
     mascotAria: "VUA 吉祥物小机器人",
+    /** 内容弹窗关闭钮(素材导入/搭配草稿弹窗) */
+    dialogClose: "关闭",
   },
   /** 启动闸口(GatewayProvider):五领域首帧快照拉齐失败的全局诚实失败态 */
   boot: {
@@ -159,11 +161,9 @@ demoTaskTitle: "演示任务",
       tools: "工具合集",
       settings: "设置",
     },
-    groups: {
-      warehouse: "仓库",
-      workshop: "车间",
-      packages: "包管理",
-    },
+    /** 当前各模块侧栏均无分组标签(模型生产已于 2026-09-20 导航重构改平铺);
+     *  分组机制保留,下一个有标签的分组在此补键。 */
+    groups: {},
     pages: {
       home: "指挥台",
       envPlay: "游玩环境",
@@ -186,8 +186,8 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      /** 搭配草稿自 2026-09-20 导航重构起为配方页内弹窗;键保留作词面。 */
       composePage: "搭配草稿",
-      importMaterial: "素材导入",
       inspectionPage: "检测",
     },
   },
@@ -2261,18 +2261,18 @@ rolled_back: "已回滚",
       "DEV spike:T1 webview 直渲素材 对照 T2 Unity 烘焙成品;项目数据读取本机 demo 清单,不入库。",
     needRootTitle: "未指定演示工程",
     needRootBody:
-      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vrcua/bridge/demo-lab.json。",
+      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vua/bridge/demo-lab.json。",
     demoRootLabel: "工程",
     manifestLoading: "正在读取演示清单…",
     manifestFailedTitle: "演示清单不可用",
     manifestFailedBody:
-      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vrcua/bridge/demo-lab.json。",
+      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vua/bridge/demo-lab.json。",
     sourcesTitle: "素材 · T1 webview 直渲",
     sourcesNote:
       "Unity 自定义 shader 以既有材质 + 主贴图近似,FBX 内嵌贴图保留;光照与着色与 Unity 烘焙存在差异。",
     productsTitle: "成品 · T2 Unity 编辑器烘焙",
     productsNote:
-      "转盘帧由 Unity 编辑器桥烘焙到 .vrcua/bridge/preview/;VRM 由 webview 直渲作为对照。",
+      "转盘帧由 Unity 编辑器桥烘焙到 .vua/bridge/preview/;VRM 由 webview 直渲作为对照。",
     cardStatusLoading: "加载中…",
     cardStatusFailed: "加载失败",
     bakePending: "未找到烘焙产物——请先在 Unity 触发 build_preview({path})。",

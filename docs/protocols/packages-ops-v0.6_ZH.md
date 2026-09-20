@@ -2,12 +2,13 @@
 
 [English](packages-ops-v0.6_EN.md) | [简体中文](packages-ops-v0.6_ZH.md)
 
-> 文档版本：0.6
-> 状态：**已冻结（packages-ops 词表行 v0.6，F4 仓库生命周期词面＝启停二
-> 方法＋刷新一方法；v0.1 A1 移除行、v0.2 A2 安装/升级行、v0.3 A3 注册
+> 文档版本：0.6.1
+> 状态：**已冻结（packages-ops 词表行 v0.6，F4 仓库生命周期词面＝
+> 启停二方法＋刷新一方法；v0.1 A1 移除行、v0.2 A2 安装/升级行、v0.3 A3 注册
 > 行、v0.4 A4 仓库增删行与 v0.5 A5 项目创建行保持冻结原样服务——v0.6
-> 照 packages-catalog v0.2 增量先例为独立行目录。词面未接线：wire 路由
-> 与 served 行候核心下一切片）**
+> 照 packages-catalog v0.2 增量先例为独立行目录。）且已接线（F4 接线批 2026-09-21
+> 接线：三路由臂＋`packages.repoLifecycleOps` served 行＋命名双常量已落
+> 核心 wire 面。未消费：桌面面与 VrcGetLib 覆写候各自切片）**
 > （2026-09-20，proposal 027 面序 F2→F3→F5→F4；解冻权威＝W25 只读取证
 > 记录裁决 (c)〔027 提案 s6，2026-09-20 环境席：VCC 2.4.5 全文／
 > vcc.liteDb 两集合／Repos 缓存形态均无任何启停状态〕＋核心表态 4/6/7/8；
@@ -15,19 +16,24 @@
 > 机器可读词表：`schemas/packages-ops/v0.6/`（行级双 Schema＋5 正 /
 > 10 负向量；核心消费测试
 > `crates/provider-host/tests/packages_ops_consumer_v06.rs` 4 例；TS 守
-> 卫测试 `packages/contracts/src/application-contract.test.ts`）
+> 卫测试 `packages/contracts/src/application-contract.test.ts`；wire 测试
+> `crates/provider-host/tests/packages_ops_wire_v06.rs` 11 例＋
+> `packages_repos_wire_v02.rs` 3 例）
 > 范围：`packages.enableRepo` / `packages.disableRepo` /
 > `packages.refreshRepo`（订阅行启停与缓存刷新的九态任务化写命令）
 > 所有权边界：词表冻结＋端口面（`RepoLifecycleCapabilities` 三独立位＋
 > `enable_repo` / `disable_repo` / `refresh_repo`＋`RepoRefreshOutcomeV01`
 > ＋default accessor，全部 default declared-none）＝核心域；wire 路由
-> （`packages.repoLifecycleOps` served 行、路由臂、信封组装）＝核心域候
-> 下一切片；双实现（库路径 VUA 自有存储启停＋库面 etag 条件刷新）＝环境
-> 域（实现核对切片照 024/025 程序，落地前 served 行如实 unavailable）；
-> 桌面消费＝桌面域（订阅行启停开关＋刷新键，候形状核可后逐面升级）
-> 更新：2026-09-20（v0.6 冻结批：双 Schema＋向量＋核心消费测试＋TS 面＋
-> mock 恒缺席臂＋双语协议本＋REGISTRY＋同批冻结 packages-repos v0.2 读
-> 回增量）
+> （`packages.repoLifecycleOps` served 行、路由臂、信封组装）＝核心域，
+> F4 接线批已落地（2026-09-21）；双实现（库路径 VUA 自有存储启停＋库面
+> etag 条件刷新）＝环境域（实现核对切片照 024/025 程序，落地前 served
+> 行如实 unavailable）；桌面消费＝桌面域（订阅行启停开关＋刷新键，候形
+> 状核可后逐面升级）
+> 更新：2026-09-21（v0.6.1 接线批：三路由臂＋served 行＋命名双常量＋
+> packages-repos v0.2 协商路由臂＋wire 测试；词面零字节变化——本文档版
+> 本只登记 wire 落地事实。前次：2026-09-20 v0.6 冻结批：双 Schema＋向量
+> ＋核心消费测试＋TS 面＋mock 恒缺席臂＋双语协议本＋REGISTRY＋同批冻结
+> packages-repos v0.2 读回增量）
 
 ## A4 词面之外预告的兑现（裁决 (c) 解冻记录）
 
@@ -112,7 +118,7 @@
   任务）；参数违反答 `vua.packages.invalid_params`；未接线引擎答诚实缺
   席臂 `vua.packages.unavailable`。
 
-## 能力门控（已命名，未路由——候接线批落地）
+## 能力门控（F4 接线批已命名并已路由，2026-09-21）
 
 - 新 default accessor `VpmBackend::repo_lifecycle_capabilities() ->
   RepoLifecycleCapabilities` **三独立位**（`enable_repo` / `disable_repo`
@@ -121,13 +127,32 @@
   本批三方法端口方法带 default 体（declared-none 答
   `capability_missing`）——trait default 即缺席臂，与 wire 门同码双臂
   两层诚实（A3/A4 同构）。
-- served 行 **`packages.repoLifecycleOps`** 一行服务三方法（repoOps/
-  createOps 一行先例）：行可用性＝后端声明【任一】独立位即 available；
+- served 行 **`packages.repoLifecycleOps`** 一行服务三方法（repoOps 一行
+  服务三方法先例）：行可用性＝后端声明【任一】独立位即 available；
   每个路由 submit 前各自独立读【本方法】的位，缺席答通用
-  `capability_missing`。wire 路由与双常量（信封 `"0.6"`＋族
-  `vua.packages-ops/v0.6`）候核心接线切片载明。VrcGetLib 覆写随环境实
-  现核对切片落地——此前该行如实 unavailable；CLI 后端无生命周期面如
-  实假。
+  `capability_missing`。F4 接线批已路由：三路由臂入常设
+  `packages_request` 词表（`packages.enableRepo` /
+  `packages.disableRepo` / `packages.refreshRepo`），每臂同一任务化形状
+  ——先闭单键 `{repoId}` 形状判决（路由层答
+  `vua.packages.invalid_params`）、再 submit 前按方法门、然后九态任务
+  内调唯一端口方法；全部端口拒绝折冻结 `execution_failed` guard，盖
+  v0.6 族常量（A4 折叠同律，原端口码入 detail 溯源）。VrcGetLib 覆写随
+  环境实现核对切片落地——此前该行如实 unavailable；CLI 后端无生命周期
+  面如实假。
+- **命名双常量**（A3/A4/A5/F2/F3 先例，接线批闭环；自
+  `vua_provider_host::provider_host` 发布——消费方锚核心自有常量，绝不用
+  私有字面量）：`PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06` = `"0.6"`
+  （冻结 v0.6 command Schema 锁此信封世代）与
+  `PACKAGES_OPS_SCHEMA_VERSION_V06` = `"vua.packages-ops/v0.6"`（冻结
+  v0.6 result Schema 锁此族常量——c914cf2 常设规则：每条 wire 行自带
+  版本常量，独立于信封常量）。五个前行各经自有常量原样继续服务——六代
+  词面并立，wire 测试钉死。
+- **packages-repos v0.2 协商路由臂**（同接线批）：`packages.listRepos`
+  现按加法双版本协商律（`catalog_v02`/`query_v02` 同律）协商读回增量
+  ——声明 `repos_v02` 的后端答 v0.2 结果族（行带必带 `enabled` 位），
+  其余后端照旧答冻结 v0.1 族；command 面与 v0.1 逐字节同形（信封
+  `"0.1"`），盖章族常量（`PACKAGES_REPOS_SCHEMA_VERSION_V02` =
+  `"vua.packages-repos/v0.2"`）告知消费方应答词面，绝不靠猜。
 
 ## 后端指向根事实专节（027 检查点——必载）
 
@@ -163,8 +188,10 @@
 
 ## 诚实边界
 
-零端到端宣称维持——本词面已冻结**未接线、未消费**（wire 路由候核心接
-线切片；桌面订阅行启停开关与刷新键候形状核可后消费；VrcGetLib 覆写候
-环境实现核对切片——此前 served 行如实 unavailable）；真机走查归 W25
-（O-2 候用户开窗）。本批与 packages-repos v0.2 读回增量同批冻结（无读
-回位则切换面不可诚实消费——F3 增量先例同径）。
+零端到端宣称维持——本词面已冻结并**已接线、未消费**（路由臂、served 行
+与双常量已于 2026-09-21 F4 接线批落核心 wire 面——wire 测试内对 FAKE
+后端作答；桌面订阅行启停开关与刷新键候形状核可后消费；VrcGetLib 覆写候
+环境实现核对切片——此前任何真实引擎上 served 行如实 unavailable、无真实
+后端可应答这些路由）；真机走查归 W25（O-2 候用户开窗）。本批与
+packages-repos v0.2 读回增量同批冻结（无读回位则切换面不可诚实消费
+——F3 增量先例同径）；v0.2 协商路由臂随接线批落地。

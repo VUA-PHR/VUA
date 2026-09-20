@@ -252,7 +252,11 @@ function registryCheck() {
     // 改校验目录存在＋目录版本与 REGISTRY 版本 major.minor 一致。
     if (regPath0.startsWith('schemas/')) {
       const dirExists = existsSync(full);
-      const m = regPath0.match(/\/v(\d+\.\d+(?:\.\d+)?)\/?$/);
+      // 尾段接受 v<整数> / vX.Y / vX.Y.Z——unity-bridge 命令面自带整数版本
+      // 惯例（schemas/unity-bridge/v4，schemaVersion 常量即 4），其「版本载体
+      // ＝路径尾段目录名且须与登记版本 major.minor 一致」的校验强度不变
+      //（2026-09-21 集成第 141 批随 VUA-8 并线登记扩展）。
+      const m = regPath0.match(/\/v(\d+(?:\.\d+){0,2})\/?$/);
       const dirVer = m ? m[1] : null;
       const dirVerOk = dirVer !== null && majMin(dirVer) === majMin(regVer);
       if (dirExists && dirVerOk) {
