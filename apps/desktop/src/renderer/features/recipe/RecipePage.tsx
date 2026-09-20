@@ -61,6 +61,8 @@ import {
   type RecipeVersionEntry,
   type StoredRecipeVersionsV2,
 } from "./recipe-versions.ts";
+import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
+import { ComposePage } from "../compose/ComposePage.tsx";
 import "./recipe.css";
 
 const copy = strings.recipe;
@@ -694,6 +696,10 @@ export function RecipePage() {
   const [versions, setVersions] = useState<StoredRecipeVersionsV2>(() => loadRecipeVersions());
   const [versionNote, setVersionNote] = useState("");
   const layoutsRef = useRef<StoredRecipeLayoutsV2 | null>(null);
+  // 搭配草稿弹窗(2026-09-20 导航重构):原独立页(019 批 B)收敛为配方页内
+  // 弹窗;草稿状态在容器层(compose-draft-store/compose-save-chain),弹窗
+  // 开关不影响其存续
+  const [composeDialogOpen, setComposeDialogOpen] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -945,6 +951,13 @@ export function RecipePage() {
             </Button>
           ) : null}
         </div>
+        {/* 搭配草稿入口(2026-09-20 导航重构):原独立页收敛为本页内弹窗——
+            项目无关草稿的连续搭配起点仍在,只是不再占一个侧栏页位 */}
+        <div className="vua-page__actions">
+          <Button variant="default" onClick={() => setComposeDialogOpen(true)}>
+            {strings.nav.pages.composePage}
+          </Button>
+        </div>
       </section>
 
       <Card>
@@ -1148,6 +1161,14 @@ export function RecipePage() {
         </>
       )}
       {menu !== null ? <ContextMenu menu={menu} onClose={() => setMenu(null)} /> : null}
+      <ContentDialog
+        open={composeDialogOpen}
+        title={strings.nav.pages.composePage}
+        closeLabel={strings.common.dialogClose}
+        onClose={() => setComposeDialogOpen(false)}
+      >
+        <ComposePage />
+      </ContentDialog>
     </div>
   );
 }

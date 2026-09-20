@@ -29,6 +29,8 @@ export const strings = {
   common: {
     fixtureBadge: "Demo data",
     mascotAria: "VUA mascot robot",
+    /** Content dialog chrome (material import / composing draft dialogs) */
+    dialogClose: "Close",
   },
   boot: {
     loadFailedTitle: "Startup data failed to load",
@@ -136,11 +138,10 @@ demoTaskTitle: "Demo task",
       tools: "Tools",
       settings: "Settings",
     },
-    groups: {
-      warehouse: "Warehouse",
-      workshop: "Workshop",
-      packages: "Packages",
-    },
+    /** No module currently uses sidebar group labels (production went flat in
+     * the 2026-09-20 navigation rework); the mechanism stays, keys return here
+     * with the next labeled group. */
+    groups: {},
     pages: {
       home: "Hub",
       envPlay: "Play Environment",
@@ -163,8 +164,9 @@ demoTaskTitle: "Demo task",
       settingsAbout: "About",
       settingsDonate: "Donate",
       packages: "Package Manager",
+      /** Composing draft lives in a dialog inside the recipe page since the
+       * 2026-09-20 navigation rework; the key stays as its word face. */
       composePage: "Composing draft",
-      importMaterial: "Material Import",
       inspectionPage: "Inspection",
     },
   },

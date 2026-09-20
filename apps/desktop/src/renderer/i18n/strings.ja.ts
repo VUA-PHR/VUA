@@ -21,6 +21,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "デモデータ",
     mascotAria: "VUA マスコットロボット",
+    /** コンテンツダイアログの閉じるボタン(マテリアル取り込み/コーディネート下書き) */
+    dialogClose: "閉じる",
   },
   boot: {
     loadFailedTitle: "起動データの読み込みに失敗しました",
@@ -127,11 +129,9 @@ demoTaskTitle: "デモタスク",
       tools: "ツール集",
       settings: "設定",
     },
-    groups: {
-      warehouse: "倉庫",
-      workshop: "作業場",
-      packages: "パッケージ",
-    },
+    /** 現在どのモジュールのサイドバーもグループラベルを使わない(モデル生産は
+     *  2026-09-20 のナビ再編でフラット化)。グループ機構は残す。 */
+    groups: {},
     pages: {
       home: "ハブ",
       envPlay: "プレイ環境",
@@ -154,8 +154,8 @@ demoTaskTitle: "デモタスク",
       settingsAbout: "について",
       settingsDonate: "寄付",
       packages: "パッケージマネージャー",
+      /** コーディネート下書きは 2026-09-20 のナビ再編以降、レシピページ内のダイアログ。 */
       composePage: "コーディネート下書き",
-      importMaterial: "マテリアル取り込み",
       inspectionPage: "検査",
     },
   },

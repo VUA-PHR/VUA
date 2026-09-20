@@ -28,6 +28,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "演示数据",
     mascotAria: "VUA 吉祥物小机器人",
+    /** 内容弹窗关闭钮(素材导入/搭配草稿弹窗) */
+    dialogClose: "关闭",
   },
   /** 启动闸口(GatewayProvider):五领域首帧快照拉齐失败的全局诚实失败态 */
   boot: {
@@ -140,11 +142,9 @@ demoTaskTitle: "演示任务",
       tools: "工具合集",
       settings: "设置",
     },
-    groups: {
-      warehouse: "仓库",
-      workshop: "车间",
-      packages: "包管理",
-    },
+    /** 当前各模块侧栏均无分组标签(模型生产已于 2026-09-20 导航重构改平铺);
+     *  分组机制保留,下一个有标签的分组在此补键。 */
+    groups: {},
     pages: {
       home: "指挥台",
       envPlay: "游玩环境",
@@ -167,8 +167,8 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      /** 搭配草稿自 2026-09-20 导航重构起为配方页内弹窗;键保留作词面。 */
       composePage: "搭配草稿",
-      importMaterial: "素材导入",
       inspectionPage: "检测",
     },
   },

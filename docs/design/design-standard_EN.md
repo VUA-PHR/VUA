@@ -1,10 +1,10 @@
-# VUA design standard v0.7.8
+# VUA design standard v0.7.10
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.9
+> Document version: 0.7.10
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.8)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.10)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -253,23 +253,36 @@ stable untilted cards.
   server; per-entry mode editing and generate/delete entries inside the warehouse entry details
   mirror the entry facts and carry the experimental badge; "Delete originals after generation"
   is an unwired preference (proposal 008), permanently labeled unwired.
-- Dedicated import tab (v0.7.0, proposal 015 reconciliation accepted; IMP-1): the
-  "one continuous acquisition path" lands as a dedicated "Import" page — a cloud
-  section (embedded browsing and catalog mode as parallel discovery entries, plus
-  a per-batch adopt-into-warehouse entry for completed downloads) above a local
-  section (system folder pick → confirmation list → single command → task center),
-  both landing in the same warehouse entry model; the warehouse page converges to
-  pure entry management (dual-track header removal rides the IMP-4 reorg batch;
-  status quo kept until then, no extra change surface); the embedded browse area
-  permanently shows the "VUA embedded browsing · Session isolated" badge, and the
-  isolation red lines (sandbox / no preload / separate partition / standard Web
-  APIs) remain untouched item by item; platform pages render as-is with zero
-  purchase-flow UI; the `desktop.remoteBrowser` capability is two-state — it flips
-  only when embedded browsing works end to end, and unwired entries stay
-  permanently labeled unavailable (a plain unavailable note with no alternative
-  action — under the U9 four-way split, http/https popups open in the current
-  embedded view, so no "hand off to the system browser" degradation path exists).
-- **Recipe:** graph, list, and exploded views remain peers. The list is complete and always available.
+- Material import is a content dialog inside the warehouse page (0.7.10, user
+  ruling 2026-09-20; dedicated import tab since v0.7.0, proposal 015
+  reconciliation accepted; IMP-1): the "one continuous acquisition path" keeps
+  its two sections — a cloud section (embedded browsing and catalog mode as
+  parallel discovery entries, plus a per-batch adopt-into-warehouse entry for
+  completed downloads) above a local section (system folder pick →
+  confirmation list → single command → task center), both landing in the same
+  warehouse entry model; what changes is the hosting: instead of a dedicated
+  "Import" page, a wide content dialog (internal scroll, Esc/backdrop close,
+  title bar + close button) opens from the warehouse page hero — closing the
+  dialog unmounts the component and closes any in-flight embedded view, so the
+  "component is the view's only control surface" lifecycle semantics stay
+  unchanged; the sidebar drops the warehouse/workshop/packages group labels,
+  making production a flat ungrouped list like every other module; the
+  embedded browse area permanently shows the "VUA embedded browsing · Session
+  isolated" badge, and the isolation red lines (sandbox / no preload /
+  separate partition / standard Web APIs) remain untouched item by item;
+  platform pages render as-is with zero purchase-flow UI; the
+  `desktop.remoteBrowser` capability is two-state — it flips only when
+  embedded browsing works end to end, and unwired entries stay permanently
+  labeled unavailable (a plain unavailable note with no alternative action —
+  under the U9 four-way split, http/https popups open in the current embedded
+  view, so no "hand off to the system browser" degradation path exists).
+- **Recipe:** the composing draft is a content dialog inside the recipe page
+  (0.7.10, user ruling 2026-09-20; standalone page since batch 019 B): the
+  project-independent drafting starting point mounts the former "Composing
+  draft" page as a dialog behind the recipe page hero entry — draft state lives
+  in the container layer (shared across UI roots), so opening or closing the
+  dialog never destroys it; the save chain and production chain semantics are
+  unchanged. Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
   All views share selection, version snapshots, domain semantics, keyboard operation, and non-drag
@@ -279,7 +292,11 @@ stable untilted cards.
   workshop remains a core visual investment: assets become parts on a track; carrying, alignment,
   locking, node illumination, missing-dependency confusion, and rollback reversal are driven by real
   task events. Increase spectacle after flow logic stabilizes; scheduling does not delete the direction.
-- **Inspection/Release:** evidence and next steps distinguish local estimates from official results.
+- **Inspection/Release:** inspection stays a standalone second-level page,
+  independent of the workshop (0.7.10 navigation rework confirmed): it is the
+  inspection landing point of the main flow "assembly → inspection → SDK
+  handoff", keeping evidence and next steps that distinguish local estimates
+  from official results.
   Release shows result cards, versions, snapshots, Build Records, and official SDK handoff. It retains
   the horizontal conveyor, animated-tier coverflow, WebGL pedestal, CSS pedestal fallback, and Unity-
   baked turntable direction. Static/off modes return to flat horizontal scrolling and stable previews
@@ -418,6 +435,18 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.10 (2026-09-20)**: §8.3/§8.4/§8.6 navigation rework (user ruling
+  2026-09-20) — "Material import" moves from a dedicated tab into a content
+  dialog inside the warehouse page; "Composing draft" moves from a dedicated
+  page into a content dialog inside the recipe page (wide panel, internal
+  scroll, Esc/backdrop close, closing unmounts the component and closes any
+  in-flight embedded view); the production sidebar drops the
+  warehouse/workshop/packages group labels and becomes a flat ungrouped list
+  like every other module; inspection stays a standalone page (independent of
+  the workshop) as the inspection landing point of "assembly → inspection →
+  SDK handoff". Mirrors the ZH edition (which also realigns the EN title that
+  had lagged at v0.7.8).
 
 - **0.7.9 (2026-09-20)**: §8.7 addendum for installed-packages update awareness presentation
   (proposal 027 F3 consumption slice) — "Updatable" column three-state honest projection

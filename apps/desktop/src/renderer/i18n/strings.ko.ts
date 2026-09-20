@@ -21,6 +21,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "데모 데이터",
     mascotAria: "VUA 마스코트 로봇",
+    /** 콘텐츠 대화상자 닫기 버튼(소재 가져오기/코디네이트 초안) */
+    dialogClose: "닫기",
   },
   boot: {
     loadFailedTitle: "시작 데이터를 불러오지 못했습니다",
@@ -127,11 +129,9 @@ demoTaskTitle: "데모 작업",
       tools: "도구 모음",
       settings: "설정",
     },
-    groups: {
-      warehouse: "창고",
-      workshop: "작업장",
-      packages: "패키지",
-    },
+    /** 현재 어떤 모듈 사이드바도 그룹 레이블을 쓰지 않음(모델 생산은 2026-09-20
+     *  내비게이션 재편으로 플랫화). 그룹 메커니즘은 유지. */
+    groups: {},
     pages: {
       home: "허브",
       envPlay: "플레이 환경",
@@ -154,8 +154,8 @@ demoTaskTitle: "데모 작업",
       settingsAbout: "정보",
       settingsDonate: "후원",
       packages: "패키지 관리자",
+      /** 코디네이트 초안은 2026-09-20 내비게이션 재편 이후 레시피 페이지 내 대화상자. */
       composePage: "코디네이트 초안",
-      importMaterial: "소재 가져오기",
       inspectionPage: "검사",
     },
   },

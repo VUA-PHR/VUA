@@ -51,11 +51,11 @@ describe("contract task state projection", () => {
   it("uses the registered identity title and origin page when the renderer initiated the task", () => {
     registerTaskIdentity("task-178984402495255500-0001", {
       title: "批量导入素材包",
-      originPage: "import-material",
+      originPage: "warehouse",
     });
     const item = projectTaskItem(task({ taskId: "task-178984402495255500-0001" }));
     expect(item.title).toBe("批量导入素材包");
-    expect(item.originPage).toBe("import-material");
+    expect(item.originPage).toBe("warehouse");
     // 演示任务身份不受登记影响(demo 前缀照旧给本地化标签)
     expect(projectTaskItem(task({ taskId: "demo-1" })).title).toBe(strings.taskCenter.demoTaskTitle);
   });
