@@ -29,7 +29,7 @@ describe("live warehouse command port task identity registration", () => {
     expect(outcome.ok).toBe(true);
     expect(taskIdentityOf("task-178984402495255500-0001")).toEqual({
       title: strings.taskTitles.importBatch,
-      originPage: "import-material",
+      originPage: "warehouse",
     });
   });
 
@@ -41,7 +41,7 @@ describe("live warehouse command port task identity registration", () => {
     expect(outcome.ok).toBe(true);
     expect(taskIdentityOf("task-2")).toEqual({
       title: strings.taskTitles.adoptDownload,
-      originPage: "import-material",
+      originPage: "warehouse",
     });
   });
 

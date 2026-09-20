@@ -18,7 +18,9 @@ import { composeSourceLines } from "./compose-source-model.ts";
 import { ProductionChainSection } from "./ProductionChainSection.tsx";
 
 /**
- * 搭配草稿页(019 批 B,桌面切片):项目无关的素材搭配草稿——从素材库
+ * 搭配草稿(019 批 B,桌面切片;2026-09-20 导航重构起由配方页经
+ * ContentDialog 挂载为页内弹窗,不再是独立页):项目无关的素材搭配草稿
+ * ——从素材库
  * (warehouse 读面)直接把素材加入当前搭配,无须先创建 Unity 项目(UI-03)。
  *
  * - 共享草稿状态在容器层(app/compose-draft-store signal),跨 UI 根切换

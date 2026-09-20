@@ -1,0 +1,61 @@
+/* 内容型弹窗(2026-09-20 导航重构切片):宽面板承载整页级功能
+ * (素材导入/搭配草稿)。宽 ≈ min(1040px, 94vw),max-height 90vh、
+ * 内部滚动;色彩/间距/圆角全部引用既有主题 token,深浅色随主题。
+ * 层叠:与 ConfirmDialog 同用 --vua-z-dialog;ImportPage 的内嵌浏览
+ * 导航条(portal 挂 body,z-index 1000)刻意浮于本弹窗之上。 */
+
+.vua-content-dialog__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--vua-z-dialog, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--vua-space-3);
+  background: color-mix(in srgb, var(--vua-bg-canvas) 55%, transparent);
+}
+
+.vua-content-dialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1040px, 94vw);
+  max-height: 90vh;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-elevated);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--vua-bg-canvas) 60%, transparent);
+}
+
+.vua-content-dialog__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+  border-bottom: 1px solid var(--vua-border);
+}
+
+.vua-content-dialog__title {
+  font: var(--vua-font-title);
+  font-weight: 700;
+  color: var(--vua-text);
+}
+
+.vua-content-dialog__close {
+  border: none;
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vua-content-dialog__close:hover {
+  color: var(--vua-text);
+}
+
+/* 内部滚动容器:宿主页面(.vua-page)整体挂载于此,滚动发生在本层 */
+.vua-content-dialog__body {
+  overflow-y: auto;
+  padding: var(--vua-space-3);
+}

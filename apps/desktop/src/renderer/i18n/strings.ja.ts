@@ -42,6 +42,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "デモデータ",
     mascotAria: "VUA マスコットロボット",
+    /** コンテンツダイアログの閉じるボタン(マテリアル取り込み/コーディネート下書き) */
+    dialogClose: "閉じる",
   },
   boot: {
     loadFailedTitle: "起動データの読み込みに失敗しました",
@@ -148,11 +150,9 @@ demoTaskTitle: "デモタスク",
       tools: "ツール集",
       settings: "設定",
     },
-    groups: {
-      warehouse: "素材ライブラリ",
-      workshop: "作業場",
-      packages: "パッケージ",
-    },
+    /** 現在どのモジュールのサイドバーもグループラベルを使わない(モデル生産は
+     *  2026-09-20 のナビ再編でフラット化)。グループ機構は残す。 */
+    groups: {},
     pages: {
       home: "ハブ",
       envPlay: "プレイ環境",
@@ -175,8 +175,8 @@ demoTaskTitle: "デモタスク",
       settingsAbout: "VUA について",
       settingsDonate: "寄付",
       packages: "パッケージマネージャー",
+      /** コーディネート下書きは 2026-09-20 のナビ再編以降、レシピページ内のダイアログ。 */
       composePage: "コーディネート下書き",
-      importMaterial: "素材のインポート",
       inspectionPage: "検査",
     },
   },
@@ -2213,18 +2213,18 @@ rolled_back: "ロールバック済み",
       "DEV spike: T1 webview 直描の素材と T2 Unity ベイク成品を対比。プロジェクトデータは本機の demo マニフェストから読み取り、リポジトリには入れません。",
     needRootTitle: "デモプロジェクトが未指定です",
     needRootBody:
-      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vrcua/bridge/demo-lab.json を読み込みます。",
+      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vua/bridge/demo-lab.json を読み込みます。",
     demoRootLabel: "プロジェクト",
     manifestLoading: "デモマニフェストを読み込み中…",
     manifestFailedTitle: "デモマニフェストを読めません",
     manifestFailedBody:
-      "{path} を読み取れませんでした。demoRoot と .vrcua/bridge/demo-lab.json の存在を確認してください。",
+      "{path} を読み取れませんでした。demoRoot と .vua/bridge/demo-lab.json の存在を確認してください。",
     sourcesTitle: "素材 · T1 webview 直描",
     sourcesNote:
       "Unity カスタムシェーダーは基本マテリアル+メインテクスチャで近似し、FBX 埋め込みテクスチャは保持します。ライティングとシェーディングは Unity ベイクと異なります。",
     productsTitle: "成品 · T2 Unity エディターベイク",
     productsNote:
-      "ターンテーブルフレームは Unity エディターブリッジが .vrcua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
+      "ターンテーブルフレームは Unity エディターブリッジが .vua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
     cardStatusLoading: "読み込み中…",
     cardStatusFailed: "読み込みに失敗しました",
     bakePending:
