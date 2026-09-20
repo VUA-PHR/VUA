@@ -115,11 +115,15 @@ function createEmptyPackages(): PackagesPort {
     removeRepo: () => Promise.resolve({ kind: "unavailable" }),
     // A5 写面(026 v0.5 项目创建):同 A1 纪律——恒缺席臂
     createProject: () => Promise.resolve({ kind: "unavailable" }),
+    // F4 写面(027 v0.6 仓库生命周期):同 A1 纪律——恒缺席臂;原
+    // setRepoEnabled 本地假翻转退役,本地状态绝不冒充 wire 写面
+    enableRepo: () => Promise.resolve({ kind: "unavailable" }),
+    disableRepo: () => Promise.resolve({ kind: "unavailable" }),
+    refreshRepo: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),
     applyChanges: () => Promise.resolve({ kind: "unavailable" }),
-    setRepoEnabled: () => Promise.resolve(packagesView),
     capability: () =>
       Promise.resolve<CapabilityReport>({
         state: "unavailable",

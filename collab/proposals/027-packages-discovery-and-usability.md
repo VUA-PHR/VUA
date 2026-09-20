@@ -1043,3 +1043,59 @@ PackagesPage CreateSection＝TemplatesFace 五形态状态机＋下拉/手填双
   位＋.vua/vpm-repo-state.json 自有存储＋etag 两臂投影＋repos_v02 状态位投影）候环
   境席位，与桌面消费互不阻塞（F2/F3/F5 双环先例：消费对 declared-none 后端诚实降级
   即合法形态——缺席臂兼容，消费不候实现入库）。零端到端宣称维持。
+
+### 桌面消费落节（F4 仓库行启停控制＋刷新动作，wt-3，2026-09-21 03:0x）
+
+**应本节解锁登记照 F2/F3/F5 消费先例续领**（核可节本拍落账，消费与核可同批交付——
+F2 核可 670828f＋消费 f23f3a3 同批先例；追平壳 29edb9c 基点零预消费）。消费对象＝
+packages-ops v0.6 冻结词面（冻结 47d4185 经第 139 批＋接线 7361213 经第 141 批均
+在库）。**核对点逐条兑现**：
+
+- **①能力缺席降级**——blocks.repoLifecycle 纯增量新键（p1/p2 双视图，逐面升级承
+  诺照办；权威事实源＝served 行 packages.repoLifecycleOps）：行缺席或 unavailable
+  ＝启停/刷新控制不渲染、订阅行照常呈现（降级非错误，TemplatesFace constant
+  -absence 同构）；v0.1 族应答（族常量辨世代的 ReposListAnswer 双组，installed 双
+  族先例同构）行无 enabled 位＝启停控制不渲染（状态不可知不猜测——诚实纪律#1），
+  刷新控制不依赖 enabled 位独立渲染；repoId null 行不渲染任何控制（removeRepo 同
+  边界诚实纪律）。
+- **②禁用在列不隐藏＋cacheUpdated 两臂诚实**（集成 ①区两呈现锚）——v0.2 族
+  enabled=false 行照常渲染＋「已禁用」标注＋禁用语义说明行（离开包集合世界、保留
+  订阅面）；refreshed 收据 cacheUpdated=false＝「仓库缓存已是最新」信息呈现（role
+  =status），**绝不渲染成错误**；enabled/disabled 收据后订阅面经广播按新事实重取
+  （收据不重复状态，新状态读回权威在 v0.2 行）。
+- **③诚实错误态**——typed 拒绝（rejected guard＋detail 原词溯源）行内 alert 呈现
+  不折叠 unavailable；受理层能力缺席（capability_missing）折 failed 原词 toast 与
+  引擎缺席（unavailable）toast 呈现区分；非成功终态 error.code 原词上呈（任务真实
+  状态由任务中心呈现）；重复启停不宣称幂等，拒绝如实呈现。
+- **④禁用语义如实（裁决 (c) 词面）**——启停区块说明与禁用行说明如实表述 VUA 自
+  有状态口径（禁用在列、不写共享 settings.json；W25 只读证据裁决 (c)），与 §8.7
+  设置面共享语义表述纪律的区分在设计标准 0.7.13 载明。
+- **⑤退役与缺席臂**——旧 setRepoEnabled 本地假翻转全链退役（live 端原实现仅重取
+  视图状态从未变更＝本地翻转假成功；演示面 RepoSection checkbox 改只读静态标注，
+  empty/fixture gateway 三方法恒缺席臂照 F5 先例，mock 永不模拟 wire 回执、不出
+  DEV 纪律照旧）；i18n 四表新增 lifecycle 组 13 键×4＋repos 组 2 键×4（toggleAria
+  交互词面随 checkbox 退役），避让 wt-7 已审词面与 VUA-8 previewLab/dialogClose 键
+  面；设计标准 0.7.13 双语（§8.7 仓库生命周期呈现段）＋REGISTRY 行随升。
+- **⑥零端到端宣称**——served 行环境覆写置真前启停/刷新控制如实不渲染（declared
+  -none 世代下缺席臂即合法呈现）；真机走查归 W25（O-2）。
+
+**实现面**（桌面域 TS 全链一批）：packages/contracts desktop-gateway.ts＝三请求接
+口（单键闭集 {repoId}）＋METHOD_KINDS 三行 command＋信封守卫三 case（携 digest/
+projectPath/空 repoId 即拒）；electron gateway-router.ts＝三 translate 臂（command
+Id lifecycle- 前缀照 A4 repo- 前缀先例）；renderer packages-port.ts＝RepoInfoRowV02
+六键行＋ReposListAnswer 双族＋PackagesRepoLifecycleApplyOutcome 四态＋port 三方法
+（setRepoEnabled 移除）；packages-live.ts＝REPO_LIFECYCLE_OPERATION_ID＋双族守卫
+（isRepoInfoRowV02 六键闭集/发明字段即形状违规）＋listReposRaw 双族化＋
+lifecycleViaTask（A4 repoWriteViaTask 同构：受理窄化→终态等待→Done payload 按
+kind 字面量分派 enabled/disabled/refreshed/rejected）＋三方法薄封装＋blocks 投影；
+PackagesPage＝runRepoLifecycle 单操作 busy 状态机＋P2ReposSection 行内启停/刷新控
+制与行内终态呈现。
+
+**定向证据（本拍亲测，b3581da 收编世代＋本拍消费批）**：contracts dist 重建照陈旧
+事故先例后 pnpm check **84/84**；desktop **typecheck 双 tsconfig exit 0**；vitest
+**90 文件 819/819**（对 main 世代 806 净增 13：live.test F4 组 6 枚〔能力行翻转/
+三方法 task loop 骑行＋三键四键闭收据/两臂皆成功＋typed 拒绝/四态降级与形状违例/
+v0.2 协商消费＋v0.1 照常/v0.2 行闭集两负例〕＋router.test F4 分发臂 1 枚＋
+production-workshop-view.test 失败行词面 5 枚＋live-production-port 失败行骑行 1
+枚）＋build 成功＋**check:i18n OK**（四表对齐）＋**check:boundary OK**＋
+**check:contrast 全达标**。df 先查后申报。**零端到端宣称维持**。

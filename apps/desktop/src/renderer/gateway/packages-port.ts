@@ -19,6 +19,10 @@ import type {
 import type {
   PackagesProjectCreatedV05,
   PackagesCreateRejectedV05,
+  PackagesRepoEnabledV06,
+  PackagesRepoDisabledV06,
+  PackagesRepoRefreshedV06,
+  PackagesRepoRejectedV06,
 } from "@vua/contracts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
 
@@ -74,6 +78,19 @@ export type {
  *  template 参数机器标识原样传递)。description/sourceRoot 刻意缺席
  *  (发明即非法——冻结负例向量钉死),消费端不猜不补 */
 export type { PackagesTemplateItemV01 } from "@vua/contracts";
+
+/** 027 F4 仓库生命周期写面冻结词面(packages-ops v0.6;镜像 @vua/contracts
+ *  application-contract.ts F4 段——词面权威,投影与窄化纪律见
+ *  packages-live.ts)。enabled/disabled 收据恰三键回显(回显即审计链,
+ *  新状态经 repos v0.2 订阅面读回,收据绝不重复状态);refreshed 四键必
+ *  带 cacheUpdated(两臂皆成功——false = etag 未变「已是最新」,结果非
+ *  错误);rejected code 族锁 vua.packages.*,原端口码 detail 原词溯源 */
+export type {
+  PackagesRepoEnabledV06,
+  PackagesRepoDisabledV06,
+  PackagesRepoRefreshedV06,
+  PackagesRepoRejectedV06,
+} from "@vua/contracts";
 
 /**
  * VPM 包管理窄端口(S-XVI;调研 docs/research/vrc-get-vcc-research.md)。
@@ -293,6 +310,37 @@ export interface RepoInfoRowV01 {
 }
 
 /**
+ * P2 仓库订阅行 v0.2(027 F4 packages-repos v0.2 冻结词面六键,镜像
+ * @vua/contracts PackagesRepoInfoV02):v0.1 五键零变动＋REQUIRED enabled
+ * 位(VUA 自有启停状态——W25 只读证据裁决 (c):VCC 无任何启停状态,该位
+ * 投影 VUA 自有存储绝不写共享 settings.json)。false = 已禁用——仍在订
+ * 阅且在列,但其包被枚举与解析排除(禁用在列不隐藏);repoId null 行
+ * enabled 恒 true(id 缺席行在启停面可达范围之外,removeRepo 同边界)。
+ * 字段闭集 = 虚假断言防线:health/status/lastRefreshed/disabledAt 等无
+ * 端口载体事实在词面不存在,消费层不发明。
+ */
+export interface RepoInfoRowV02 extends RepoInfoRowV01 {
+  readonly enabled: boolean;
+}
+
+/**
+ * packages.listRepos 双族应答事实(027 F4 消费批,027 F3 InstalledListAnswer
+ * 先例同构):盖戳族常量判别应答词面世代,消费端读戳辨族永不猜测。
+ * backend 未采纳 v0.2 前继续应答 v0.1 族(command 面逐字节不变,v0.2 是
+ * 结果文档事实)。v0.1 族 = 五键行(无 enabled 位——启停状态不可知,消
+ * 费端不渲染启停开关绝不猜测);v0.2 族 = 六键行(启停面读回权威)。
+ */
+export type ReposListAnswer =
+  | {
+      readonly family: "vua.packages-repos/v0.1";
+      readonly rows: readonly RepoInfoRowV01[];
+    }
+  | {
+      readonly family: "vua.packages-repos/v0.2";
+      readonly rows: readonly RepoInfoRowV02[];
+    };
+
+/**
  * P2 目录版本行(packages-catalog v0.1 冻结词面三键,镜像
  * @vua/contracts PackagesCatalogVersionV01):yanked = 仓库缓存携带事
  * 实;compatible = 按选中工程 Unity 版本判定,null = 工程版本未知
@@ -474,6 +522,13 @@ export type PackagesView =
          *  或不可用,模板下拉不渲染、创建表单回落手填(渲染层不伪造);
          *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
         readonly templates: boolean;
+        /** F4 仓库生命周期写面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.repoLifecycleOps 能力行(三独立位
+         *  ANY 即 available);false = 行缺席或不可用,启停/刷新控制不
+         *  渲染(渲染层不伪造);纯增量新键,既有键语义与来源零变更
+         *  (逐面升级承诺;p1 视图 repos 区块恒 false,键面随族升级照
+         *  F5 templates 先例并立) */
+        readonly repoLifecycle: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
@@ -535,13 +590,24 @@ export type PackagesView =
          *  (渲染层不伪造);纯增量新键,既有键语义与来源零变更(逐面
          *  升级承诺) */
         readonly templates: boolean;
+        /** F4 仓库生命周期写面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.repoLifecycleOps 能力行(一行服务三
+         *  方法,三独立位 ANY 即 available——部分覆写后端不被面级行隐藏;
+         *  每路由仍按自身位独立门。default declared-none,环境覆写置真
+         *  前如实 unavailable = 启停/刷新控制不渲染,订阅行照常呈现);
+         *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
+        readonly repoLifecycle: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
       /** 027 F3:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
       readonly installedCacheSourced?: boolean;
       readonly loadError?: PackagesP1LoadError;
-      readonly repos: readonly RepoInfoRowV01[];
+      /** 027 F4:行联合(v0.1 五键/v0.2 六键按族常量判别透传);v0.1 行
+       *  无 enabled 位 = 启停状态不可知,启停开关不渲染(不猜测) */
+      readonly repos: readonly (RepoInfoRowV01 | RepoInfoRowV02)[];
+      /** 027 F4:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
+      readonly reposWordFace?: "vua.packages-repos/v0.2";
       readonly reposError?: PackagesP2LoadError;
     };
 
@@ -709,6 +775,31 @@ export type PackagesRepoRemoveApplyOutcome =
 export type PackagesCreateApplyOutcome =
   | { readonly kind: "ok"; readonly receipt: PackagesProjectCreatedV05 }
   | { readonly kind: "rejected"; readonly rejection: PackagesCreateRejectedV05 }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
+
+/**
+ * F4 仓库生命周期写面结果(027 packages-ops v0.6 冻结词面;三方法任务化
+ * 消费四态,A1–A5 四态同构):
+ * - ok = 审计收据(enabled/disabled 恰三键 {schemaVersion, kind, repoId
+ *   回显}——回显即审计链,新状态经 repos v0.2 订阅面读回,收据绝不重复
+ *   状态;refreshed 四键必带 cacheUpdated,**两臂皆成功**:true = etag 条
+ *   件抓取写入新缓存,false = etag 未变「已是最新」——无新数据是结果绝
+ *   非错误,呈现层如实呈现不渲染失败);
+ * - rejected = 类型化守卫拒绝(guard 三值闭集复用 A1–A4 零新增;code 族
+ *   锁 vua.packages.*,原端口码 vua.vpm.repo_not_found/repo_write_failed/
+ *   repo_fetch_failed 在 detail 原词溯源,不入 code 键;重复启停不宣称
+ *   幂等,拒绝如实呈现);
+ * - failed/unavailable 语义与 A1–A5 四态相同(能力缺席
+ *   vua.vpm.capability_missing 在路由层答折 failed 原词——绝不进任务;
+ *   引擎缺席/断连/超时 = unavailable,任务真实状态由任务中心呈现)。
+ */
+export type PackagesRepoLifecycleApplyOutcome =
+  | {
+      readonly kind: "ok";
+      readonly receipt: PackagesRepoEnabledV06 | PackagesRepoDisabledV06 | PackagesRepoRefreshedV06;
+    }
+  | { readonly kind: "rejected"; readonly rejection: PackagesRepoRejectedV06 }
   | { readonly kind: "failed"; readonly code: string }
   | { readonly kind: "unavailable" };
 
@@ -938,6 +1029,30 @@ export interface PackagesPort {
    * 中心呈现,本端口只消费终态结果。
    */
   createProject(parent: string, name: string, template: string | null): Promise<PackagesCreateApplyOutcome>;
-  setRepoEnabled(repoId: string, enabled: boolean): Promise<PackagesView>;
+  /**
+   * F4 词面消费(packages.enableRepo,027 packages-ops v0.6 冻结批):
+   * 任务化订阅行启用写命令;params 单键闭集 {repoId} verbatim 传输(稳
+   * 定行柄;id 缺席(repoId null)行在本词面可达范围之外,UI 不构造入口
+   * ——removeRepo 同边界诚实纪律)。启用 = VUA 自有语义(W25 只读证据
+   * 裁决 (c):VCC 无任何启停状态——启停位投影 VUA 自有存储,本面绝不写
+   * 共享 settings.json,UI 文案如实表述)。无 digest 位(状态切换 diff
+   * 无既有摘要,用户显式提交即确认);重复启停不宣称幂等,拒绝如实呈现。
+   */
+  enableRepo(repoId: string): Promise<PackagesRepoLifecycleApplyOutcome>;
+  /**
+   * F4 词面消费(packages.disableRepo,027 v0.6 冻结批):任务化订阅行
+   * 禁用写命令;禁用行离开包集合世界(目录浏览/最新判定/安装解析不再
+   * 见其包)但保留在订阅面在列(v0.2 enabled=false 行照常渲染＋「已禁
+   * 用」标注——禁用在列不隐藏)。无 digest 无确认链同 enableRepo。
+   */
+  disableRepo(repoId: string): Promise<PackagesRepoLifecycleApplyOutcome>;
+  /**
+   * F4 词面消费(packages.refreshRepo,027 v0.6 冻结批):任务化订阅行
+   * 缓存刷新写命令(该行自身 localPath 缓存 etag 条件抓取——vrc-get 自
+   * 身同源写法;官方/精选缓存无 repoId 不在本面可达范围)。refreshed
+   * 收据 REQUIRED cacheUpdated 两臂皆成功:false = etag 未变「已是最新」
+   * ——结果非错误,呈现层如实呈现绝不渲染失败。
+   */
+  refreshRepo(repoId: string): Promise<PackagesRepoLifecycleApplyOutcome>;
   capability(): Promise<CapabilityReport>;
 }

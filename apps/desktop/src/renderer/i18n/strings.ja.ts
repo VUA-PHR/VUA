@@ -1680,6 +1680,25 @@ rolled_back: "ロールバック済み",
       removeConfirm: "解除を確認",
       removing: "解除中…",
       removedLine: "購読を解除しました:{repoId}",
+      /** F4 リポジトリライフサイクル(027 v0.6 消費バッチ):有効化/無効化/
+       *  更新の行内操作。有効状態は VUA 固有の事実——無効化したリポジトリ
+       *  も購読一覧に残り(非表示にしない)、そのパッケージは列挙とイン
+       *  ストール解決の対象外。VCC/ALCOM 共有設定は決して書き換えない。 */
+      lifecycle: {
+        enableAction: "有効化",
+        disableAction: "無効化",
+        enableAria: "リポジトリ {name} を有効化",
+        disableAria: "リポジトリ {name} を無効化",
+        refreshAction: "更新",
+        refreshAria: "リポジトリ {name} のキャッシュを更新",
+        enabling: "有効化中…",
+        disabling: "無効化中…",
+        refreshing: "更新中…",
+        disabledBadge: "無効",
+        disabledNote: "無効:このリポジトリのパッケージはブラウズとインストール解決の対象外になり、購読行は一覧に残ります。",
+        doneLine: "操作が完了しました:{repoId}",
+        upToDate: "リポジトリのキャッシュは最新です。",
+      },
     },
 
     create: {
@@ -1734,7 +1753,10 @@ rolled_back: "ロールバック済み",
       riskBody:
         "コミュニティリポジトリは第三者が保守しており、VRChat や VUA による審査を受けていません。購読後にパッケージが変わる可能性があります。信頼できる作者のリポジトリのみ追加してください。購読機能はパッケージエンジンと一緒に提供予定で、この案内は先行して表示しています。",
       riskAcknowledge: "了解",
-      toggleAria: "{name} を有効/無効にする",
+      /** F4 消費バッチ(2026-09-21):toggleAria の操作語彙はローカル
+       *  チェックボックス切替とともに引退し、読み取り専用の静的表示に置換 */
+      enabledBadge: "有効",
+      disabledBadge: "無効",
       health: {
         unknown: "未確認",
         ok: "到達可能",
@@ -2332,6 +2354,16 @@ rolled_back: "ロールバック済み",
     },
     environment: {
       verifyUnavailable: "エディター検証サービスは現在利用できません。",
+    },
+    /** マテリアルチェーンのエラー文面(デスクトップ第 142 バッチ、タスク
+     *  イベント失敗行の表示):キー = ワイヤ上の messageKey(vua.material
+     *  家族のエラーは AppErrorV01 経由)。provisionFailed は予約行——
+     *  マテリアルチェーン v0.2 の新コード vua.material.provision_failed
+     *  はコア席の修正バッチ(wt-2、取込待ち)で運ばれる。文面を先行して
+     *  4 言語同期しておき、コード到着時に即ヒットさせる。 */
+    material: {
+      executionFailed: "マテリアル実行に失敗しました:Unity 側の操作が完了しませんでした。",
+      provisionFailed: "ターゲットプロジェクトの供給に失敗しました:Unity プロジェクトがマテリアル取り込み可能な状態ではありません。",
     },
   },
 };
