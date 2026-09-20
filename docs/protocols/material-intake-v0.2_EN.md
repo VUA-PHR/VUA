@@ -2,9 +2,10 @@
 
 [English](material-intake-v0.2_EN.md) | [简体中文](material-intake-v0.2_ZH.md)
 
-> Document version: 0.2
+> Document version: 0.2.1
 > Status: FROZEN (B3 baseline v0.2 provisioning-step increment, batch 141,
-> 2026-09-21; W25 real-machine finding fix)
+> 2026-09-21; W25 real-machine finding fix; 0.2.1 provision dependency-resolution
+> annotation, batch 146, 2026-09-21)
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-21
 > Previous: [v0.1](material-intake-v0.1_EN.md) (2026-09-05, kept as history)
@@ -14,6 +15,14 @@ The ONLY word-face change in v0.2 versus v0.1: the closed step-kind set gains
 `schemas/amf-production/v0.2/material-plan.schema.json`, `plan.schemaVersion = "0.2"`).
 The inspection (source) word face stays v0.1; the `source` embedding inside a Build
 Record is therefore unaffected.
+
+v0.2.1 (batch 146, user ruling "finish the SDK import before real-machine
+acceptance"): annotation only — the provision step's execution semantics widen to
+"create AND resolve-and-download the project's declared SDK dependencies (a network
+operation)"; the plan schema's step-kind closed set is unchanged (still the one
+`provision_project` kind), the wire/provider-host face is untouched, and
+`resolve_project` is an internal supply-step fact never exposed through the desktop
+gateway.
 
 ## Batch and naming
 
@@ -73,18 +82,37 @@ When the target project carries no `ProjectSettings/ProjectVersion.txt`, the pla
   dependency. The executor re-checks the condition at execution time (the assembly run-step
   idempotence): a project that appears between plan review and execution skips creation and the
   plan-time fingerprint chain continues.
+- **Dependency resolution (v0.2.1 addition, batch 146)**: the creation template only DECLARES
+  the SDK dependencies in `Packages/vpm-manifest.json` (`com.vrchat.base` /
+  `com.vrchat.avatars`) — the pure template copy does not vendor the package bodies. After
+  creation succeeds and BEFORE the baseline re-read, the executor resolves the project's
+  declared dependencies through the backend port `VpmBackend::resolve_project` — resolved from
+  the ENABLED repositories (the disabled-set semantics are the F4 collection-world law),
+  installed into `Packages/`, with the locked section written back. This is a NETWORK
+  operation, and the honest word face says so: "resolve and download the project's declared
+  SDK dependencies". Only the fresh-creation path resolves (an already-provisioned target
+  skips both creation and resolution — the idempotent re-check status quo); resolution is
+  idempotent itself (locked requirements already satisfied answer `already_satisfied`). A
+  backend without the face (the VCC CLI stays honestly declared-none) is refused through the
+  trait-default absence arm with the `capability_missing` family — never a guessed success.
+  The resolve receipt (`vua.vpm-resolve-receipt/v0.1`: resolved / already_satisfied / failed)
+  is an internal supply-step fact, never exposed through the desktop gateway.
 - **Baseline re-read**: the brand-new project's state is not the plan-time state. After a
   successful provision the executor re-reads the Unity-side baseline fingerprint through a
   read-only Inspect (the staging chain's inspect-first discipline) and binds subsequent mutating
   commands to it — the plan-time project-tree digest is never carried into the new project's
-  fingerprint chain.
+  fingerprint chain. The re-read is pinned AFTER dependency resolution: the baseline covers the
+  final post-resolve state, never a pre-resolve intermediate.
 - **Compensation**: a failed provision rolls the pre-provision snapshot back. For an
   unprovisioned target that snapshot IS the empty state: the restore moves half-initialized
   creation content into the recovery quarantine (`.vua/recovery/`) — equivalent to the assembly's
   "delete the half-initialized project and replan" semantics.
 - **Error face**: a failed provision reports `vua.material.provision_failed` (the
   `vua.material.*` family rule) with the backend's original code and reason carried inside the
-  message; the failure still publishes its Build Record and never bypasses the receipt.
+  message (the dependency-resolution arm folds in the same wrapper: a receipt whose `failed`
+  set is non-empty carries the first dependency's reason code and id, reusing the standing
+  codes — zero new codes); the failure still publishes its Build Record and never bypasses the
+  receipt.
 
 ## Workflow stage mapping
 

@@ -70,6 +70,7 @@ impl VpmBackend for MinimalBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -139,6 +140,7 @@ impl VpmBackend for FakeRemoveBackend {
             list_packages: false,
             remove_packages: true,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

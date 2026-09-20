@@ -89,6 +89,7 @@ impl VpmBackend for FakeReposV02Backend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repos_v02(&self) -> bool {
@@ -237,6 +238,7 @@ fn repos_v02_negotiation_defaults_declared_and_v01_keeps_serving() {
                 list_packages: false,
                 remove_packages: false,
                 project_registry: false,
+            resolve_project: false,
             }
         }
         fn preview_install(

@@ -191,6 +191,7 @@ impl VpmBackend for RepoCatalogVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_catalog_capabilities(&self) -> RepoCatalogCapabilities {

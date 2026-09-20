@@ -71,6 +71,7 @@ impl VpmBackend for NoVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(&self, _project: &ProjectRef, _packages: &[PackageRequestV1]) -> Result<ChangePreviewV1, AppErrorV1> {

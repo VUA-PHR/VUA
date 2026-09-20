@@ -49,7 +49,7 @@
 | docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
-| docs/protocols/material-intake-v0.2_ZH.md | 0.2 | 已冻结（B3 基线 v0.2 增补，2026-09-21 第 141 批：工程供给节〔条件化 provision_project 步骤＝assembly 计划同款诚实模型——已供给零词面变化、确认后执行、快照后导入前、VpmBackend::create_project 端口路由〔E-VPM-DUAL，Fix 4 无 CLI 依赖〕、供给后指纹基线重取〔inspect-first〕、失败补偿＝空态快照恢复移入恢复隔离区、错误面 vua.material.provision_failed 携后端原码〕＋工作流阶段映射表〔含 provision_project→execute〕＋计划 Schema 引用升 v0.2＋向量节；检查面与暂存契约词面零变更；桌面步骤呈现归桌面消费切片如实声明） | 核心 | 2026-09-21 |
+| docs/protocols/material-intake-v0.2_ZH.md | 0.2.1 | 已冻结（B3 基线 v0.2 增补，2026-09-21 第 141 批：工程供给节〔条件化 provision_project 步骤＝assembly 计划同款诚实模型——已供给零词面变化、确认后执行、快照后导入前、VpmBackend::create_project 端口路由〔E-VPM-DUAL，Fix 4 无 CLI 依赖〕、供给后指纹基线重取〔inspect-first〕、失败补偿＝空态快照恢复移入恢复隔离区、错误面 vua.material.provision_failed 携后端原码〕＋工作流阶段映射表〔含 provision_project→execute〕＋计划 Schema 引用升 v0.2＋向量节；检查面与暂存契约词面零变更；桌面步骤呈现归桌面消费切片如实声明；0.2.1 供给依赖解析注记，2026-09-21 第 146 批：文档版本升 0.2.1 补注记〔词干已冻结保持〕——供给语义扩为创建＋解析并下载工程声明的 SDK 依赖〔网络操作〕＝VpmBackend::resolve_project 端口、启用仓库解析＋locked 回写＋幂等 already_satisfied、指纹重取钉在解析后、仅新建路径调用、缺席臂 capability_missing 如实拒、解析收据 vua.vpm-resolve-receipt/v0.1 不经桌面网关暴露；计划 Schema 步骤枚举闭集不变、wire 面零变化） | 核心 | 2026-09-21 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | 已冻结（M3 验收） | 核心 | 2026-09-07 |
 | docs/protocols/production-use-case-v0.2_ZH.md | 0.2 | 已冻结（W20，2026-09-09：Schema＋向量 24＋消费测试全链） | 核心 | 2026-09-09 |
 | docs/protocols/provider-process-v0.1_ZH.md | 0.2 | B2 实现基线（握手帧面 Schema 已冻结） | 核心 | 2026-09-07 |

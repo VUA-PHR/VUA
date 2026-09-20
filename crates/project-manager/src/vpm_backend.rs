@@ -19,7 +19,8 @@ use vua_orchestrator::{
     PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisterCapabilities,
     RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01, RepoCatalogRepoV01,
     RepoCatalogV01, RepoInfoV01, RepoInfoV02, RepoLifecycleCapabilities, RepoRefreshOutcomeV01,
-    RepoWriteCapabilities, TemplateCapabilities, TemplateEntryV01, VpmBackend, VpmCapabilities,
+    RepoWriteCapabilities, ResolveFailureV01, ResolveReceiptV01, ResolvedPackageV01,
+    TemplateCapabilities, TemplateEntryV01, VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -965,6 +966,11 @@ impl VpmBackend for VrcGetLibBackend {
             list_packages: true,
             remove_packages: true,
             project_registry: true,
+            // 第 146 批（用户裁决 2026-09-21：先做好 SDK 导入再真机验收）：
+            // 库后端具备工程依赖解析能力（vrc-get-vpm 0.0.16 should_resolve /
+            // resolve_request / apply_pending_changes），能力如实随实现翻转。
+            // `VccCliBackend` 不覆写——CLI 无 resolve 命令，如实维持缺位。
+            resolve_project: true,
         }
     }
 
@@ -2015,6 +2021,176 @@ impl VpmBackend for VrcGetLibBackend {
         let template = template.map(str::to_owned);
         create_from_template(&environment_root, parent, name, template.as_deref())
     }
+
+    fn resolve_project(&self, project_root: &Path) -> Result<ResolveReceiptV01, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let offline = self.offline;
+        let project_root = project_root.to_path_buf();
+        let http = self.http.clone();
+
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.clone().into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(|error| {
+                    // 环境设置不可读＝解析世界不可知：如实拒绝（复用码），
+                    // 绝不以空世界猜测。
+                    AppErrorV1::new(
+                        error_codes::BACKEND_UNAVAILABLE,
+                        ErrorCategory::Unavailable,
+                        "errors.vpm.backendUnavailable",
+                        "corr-vpm-resolve",
+                    )
+                    .with_param("reason", ParamValue::Text(error.to_string()))
+                })?;
+            // 第 146 批：禁用集语义与 F4 collection_world 同律——禁用订阅行
+            // 离开包集合世界，解析绝不从禁用行取包。状态文件不可读＝复用
+            // 共享构造器如实拒绝（与 preview/apply 同一装载入口纪律）。
+            let (world, _disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
+            // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006 同律）。
+            let collection = if offline {
+                vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
+                    .await
+                    .map_err(|error| {
+                        AppErrorV1::new(
+                            error_codes::BACKEND_UNAVAILABLE,
+                            ErrorCategory::Unavailable,
+                            "errors.vpm.backendUnavailable",
+                            "corr-vpm-resolve",
+                        )
+                        .with_param("reason", ParamValue::Text(error.to_string()))
+                    })?
+            } else {
+                match vrc_get_vpm::environment::PackageCollection::load(&world, &io, Some(&http))
+                    .await
+                {
+                    Ok(collection) => collection,
+                    Err(_) => {
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
+                            .await
+                            .map_err(|error| {
+                                AppErrorV1::new(
+                                    error_codes::BACKEND_UNAVAILABLE,
+                                    ErrorCategory::Unavailable,
+                                    "errors.vpm.backendUnavailable",
+                                    "corr-vpm-resolve",
+                                )
+                                .with_param("reason", ParamValue::Text(error.to_string()))
+                            })?
+                    }
+                }
+            };
+            let project_io =
+                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
+            let mut unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(|error| {
+                    AppErrorV1::new(
+                        error_codes::PROJECT_LOAD_FAILED,
+                        ErrorCategory::ExternalFailure,
+                        "errors.vpm.projectLoadFailed",
+                        "corr-vpm-resolve",
+                    )
+                    .with_param("reason", ParamValue::Text(error.to_string()))
+                })?;
+
+            // 幂等臂：locked 与 dependencies 全部已在盘上满足→如实列报，
+            // 零写动作。第二次 resolve 对未变化工程回答 already_satisfied。
+            if !unity_project.should_resolve() {
+                let already_satisfied = unity_project
+                    .dependencies()
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>();
+                return Ok(ResolveReceiptV01 {
+                    resolved: Vec::new(),
+                    already_satisfied,
+                    failed: Vec::new(),
+                });
+            }
+
+            // 缺失依赖臂：依赖无法从启用仓库解析（DependenciesNotFound 是
+            // 库错误唯一变体）→ 逐依赖进 failed（reason_code 复用
+            // no_matching_package，零新码），receipt 如实呈不完整面；调用方
+            // （素材链供给臂）把非空 failed 聚合为供给失败携原码上浮。
+            let changes = match unity_project.resolve_request(&collection).await {
+                Ok(changes) => changes,
+                Err(error) => {
+                    return match error {
+                        vrc_get_vpm::unity_project::ResolvePackageErr::DependenciesNotFound {
+                            dependencies,
+                        } => Ok(ResolveReceiptV01 {
+                            resolved: Vec::new(),
+                            already_satisfied: Vec::new(),
+                            failed: dependencies
+                                .into_iter()
+                                .map(|(id, _range)| ResolveFailureV01 {
+                                    id: id.to_string(),
+                                    reason_code: error_codes::NO_MATCHING_PACKAGE.to_owned(),
+                                })
+                                .collect::<Vec<_>>(),
+                        }),
+                        // 库错误当前唯一变体如上；non_exhaustive 面前不猜测，
+                        // 其余形态按环境不可用如实拒绝。
+                        #[allow(unreachable_patterns)]
+                        _ => Err(AppErrorV1::new(
+                            error_codes::BACKEND_UNAVAILABLE,
+                            ErrorCategory::Unavailable,
+                            "errors.vpm.backendUnavailable",
+                            "corr-vpm-resolve",
+                        )
+                        .with_param("reason", ParamValue::Text(error.to_string()))),
+                    };
+                }
+            };
+
+            // 安装事实先于 apply 提取（apply 消耗 changes）：包体落
+            // Packages/、locked 段由 apply_pending_changes 内部写回
+            // vpm-manifest.json（库内含 save）。
+            let mut resolved = Vec::new();
+            for (name, change) in changes.package_changes() {
+                if let Some(install) = change.as_install() {
+                    if let Some(package) = install.install_package() {
+                        let source_repo = package
+                            .repo()
+                            .and_then(|repo| {
+                                repo.id()
+                                    .or(repo.name())
+                                    .map(|value| value.to_owned())
+                            })
+                            .unwrap_or_else(|| "local".to_owned());
+                        resolved.push(ResolvedPackageV01 {
+                            id: name.to_string(),
+                            version: package.version().to_string(),
+                            source_repo,
+                        });
+                    }
+                }
+            }
+            resolved.sort_by(|left, right| left.id.cmp(&right.id));
+
+            let installer = vrc_get_vpm::environment::PackageInstaller::new(&io, Some(&http));
+            unity_project
+                .apply_pending_changes(&installer, changes)
+                .await
+                .map_err(|error| {
+                    AppErrorV1::new(
+                        error_codes::APPLY_FAILED,
+                        ErrorCategory::ExternalFailure,
+                        "errors.vpm.applyFailed",
+                        "corr-vpm-resolve",
+                    )
+                    .with_param("reason", ParamValue::Text(error.to_string()))
+                })?;
+            Ok(ResolveReceiptV01 {
+                resolved,
+                already_satisfied: Vec::new(),
+                failed: Vec::new(),
+            })
+        })
+    }
 }
 
 // --- backend 2: official VCC CLI (`vpm`) ---
@@ -2222,6 +2398,10 @@ impl VpmBackend for VccCliBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+            // 第 146 批：CLI 无 resolve 命令（`vpm` CLI 无工程依赖解析面），
+            // 如实维持 declared-none 缺位——trait 默认缺席臂回答
+            // capability_missing，能力位不撒谎。
+            resolve_project: false,
         }
     }
 

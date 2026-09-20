@@ -29,6 +29,11 @@ pub const MATERIAL_INTAKE_SCHEMA_VERSION: &str = "0.1";
 /// Unity against an empty directory. Pure enumeration increment; consumers
 /// that never observed the new kind are unaffected (the desktop does not
 /// consume step kinds — the AMF stage track projects stages, not steps).
+/// v0.2 annotation (batch 146, 2026-09-21 — schema version UNCHANGED): the
+/// step's execution semantics are "create AND resolve-and-download the
+/// project's declared SDK dependencies (a network operation)" — the plan
+/// data and this schema carry the kind, the honest description lives in the
+/// protocol book and the executor; the closed set stays nine members.
 pub const MATERIAL_PLAN_SCHEMA_VERSION: &str = "0.2";
 const MAX_PATHNAME_BYTES: u64 = 64 * 1024;
 
@@ -50,12 +55,16 @@ pub mod error_codes {
 pub enum MaterialIntakeStepKind {
     VerifySource,
     CreateSnapshot,
-    /// plan v0.2 (W25 real-machine finding): the project-creation step for a
+    /// plan v0.2 (W25 real-machine finding): the project-supply step for a
     /// not-yet-provisioned target. Placed after the snapshot and before the
     /// first project mutation; executed through the VPM backend port
     /// (`VpmBackend::create_project` — vrc-get lib template copy or VCC
     /// `vpm new`; the vrc-get CLI has no creation command, provision.rs
-    /// Fix 4). Word face names the creation semantics; the user confirms the
+    /// Fix 4) FOLLOWED BY the dependency resolve (`VpmBackend::resolve_project`,
+    /// batch 146 — the template only DECLARES the SDK dependencies, the copy
+    /// does not vendor them; resolve is a network operation over the enabled
+    /// repositories, and an already-provisioned target skips it). Word face
+    /// names the creation-and-resolve semantics; the user confirms the
     /// plan containing it before anything runs — never a silent provision.
     ProvisionProject,
     ImportUnityPackages,

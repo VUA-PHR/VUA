@@ -522,24 +522,36 @@ impl MaterialExecutor {
 
     /// Creates the not-yet-provisioned target through the VPM backend port
     /// (E-VPM-DUAL: vrc-get lib template copy, or VCC `vpm new` — the
-    /// vrc-get CLI has NO creation command, provision.rs Fix 4). Two laws
-    /// beyond the port call:
+    /// vrc-get CLI has NO creation command, provision.rs Fix 4), then
+    /// RESOLVES the SDK dependencies the fresh project declares (batch 146,
+    /// user ruling 2026-09-21: SDK import before real-machine acceptance —
+    /// the template's `Packages/vpm-manifest.json` declares
+    /// `com.vrchat.base` / `com.vrchat.avatars`, but the pure template copy
+    /// does not vendor the package bodies; without the resolve leg the first
+    /// Unity launch sees a project missing its declared SDK). Three laws
+    /// beyond the port calls:
     ///
     /// - Idempotent re-check (the assembly run-step law): a project that
-    ///   appeared between plan review and execution skips creation — the
-    ///   plan-time fingerprint chain continues unchanged.
-    /// - Baseline re-read: the brand-new project's state is NOT the plan-time
-    ///   state, so the first mutating Bridge command must expect what Unity
-    ///   ACTUALLY sees. A read-only inspect (the staging chain's
-    ///   inspect-first discipline) re-reads the Unity-side baseline
-    ///   fingerprint after creation; the plan-time tree digest is never
-    ///   carried into the new project's chain.
-    ///
-    /// Compensation is the empty-state snapshot taken before this step: a
-    /// failed creation restores to absence — the restore moves the created
-    /// scopes into the recovery quarantine (the assembly "delete the
-    /// half-initialized project and replan" semantics, through the same
-    /// verified-snapshot rollback every mutating run owes).
+    ///   appeared between plan review and execution skips creation AND skips
+    ///   resolve — the plan-time fingerprint chain continues unchanged and
+    ///   the already-provisioned path runs ZERO resolve calls (minimal blast
+    ///   radius: the standing provisioning behavior on that path is exactly
+    ///   what shipped before batch 146).
+    /// - Resolve ordering: the resolve runs AFTER create_project succeeds
+    ///   and BEFORE the baseline re-read, so the Unity-side fingerprint the
+    ///   first mutating command binds covers the FINAL on-disk state (the
+    ///   resolved package set included), never a pre-resolve snapshot.
+    /// - Honest failure faces: a backend Err folds into the standing
+    ///   `vua.material.provision_failed` arm carrying the backend's original
+    ///   code in the message (the vua.vpm.* codes never replace the
+    ///   vua.material.* family code); a receipt whose `failed` set is
+    ///   non-empty is the resolve face's honest INCOMPLETE answer and fails
+    ///   the same arm carrying the first dependency's reason code. Either
+    ///   way the compensation is the empty-state snapshot taken before this
+    ///   step: the restore moves the half-provisioned content into the
+    ///   `.vua/recovery` quarantine (the assembly "delete the
+    ///   half-initialized project and replan" semantics, through the same
+    ///   verified-snapshot rollback every mutating run owes).
     fn run_provision(
         &self,
         plan: &crate::material_intake::MaterialIntakePlanV01,
@@ -592,8 +604,32 @@ impl MaterialExecutor {
                     MaterialExecutionStatus::Failed,
                 )
             })?;
+        // Resolve the declared SDK dependencies (batch 146): the network
+        // segment is inherent to the face, and a backend without the face
+        // answers the capability_missing family here — reported as a failed
+        // provision, never papered over. The receipt's failed set is the
+        // honest incomplete face: any entry fails the run.
+        let receipt = self.vpm.resolve_project(&project.root).map_err(|error| {
+            (
+                format!("{}: {}", error_codes::PROVISION_FAILED, error.code),
+                MaterialExecutionStatus::Failed,
+            )
+        })?;
+        if let Some(first) = receipt.failed.first() {
+            return Err((
+                format!(
+                    "{}: {}: {}",
+                    error_codes::PROVISION_FAILED,
+                    first.reason_code,
+                    first.id
+                ),
+                MaterialExecutionStatus::Failed,
+            ));
+        }
         // Re-baseline: Unity's own view of the freshly created project. The
         // inspect is read-only (dry-run) and carries no expected fingerprint.
+        // It stays AFTER the resolve: the baseline must cover the resolved
+        // final state.
         let inspect = self.inspect(
             project,
             &format!("{}-provision-inspect", plan.plan_id),

@@ -518,6 +518,7 @@ impl VpmBackend for NoVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+            resolve_project: false,
         }
     }
 

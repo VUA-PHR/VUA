@@ -1,6 +1,6 @@
 {
   "name": "material-plan.valid.unprovisioned",
-  "description": "plan v0.2: target without ProjectSettings/ProjectVersion.txt plans the explicit provision_project step (W25 real-machine finding) - snapshot BEFORE provisioning, provisioning BEFORE the first project mutation, mutatesTargetProject=true so the plan review names the creation semantics to the user.",
+  "description": "plan v0.2: target without ProjectSettings/ProjectVersion.txt plans the explicit provision_project step (W25 real-machine finding) - snapshot BEFORE provisioning, provisioning BEFORE the first project mutation, mutatesTargetProject=true so the plan review names the create-and-resolve semantics to the user (batch 146: creation plus resolving and downloading the project's declared SDK dependencies - a network operation). The step data itself is unchanged - the kind is one closed-set member, the description is annotation.",
   "schema": "material-plan.schema.json",
   "instance": {
     "schemaVersion": "0.2",
