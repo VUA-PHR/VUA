@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-templates/v0.1/result.schema.json",
+  "title": "VUA packages-templates result v0.1",
+  "description": "Result documents for the packages-templates v0.1 read face (proposal 027 F5 freeze batch 2026-09-20). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-templates/v0.1 — two independent versions (the c914cf2 standing rule). Each row is the frozen projection of ONE available template: id = the template directory name (the machine identity passed to packages.createProject's template argument); name = the frozen SAME-VALUE display projection of the directory name (no independent display-name fact source exists in v0.1 — the projection states the identity verbatim so the display semantics live in the word face and consumers never fabricate a friendlier label; same-value enforcement is a producer contract pinned by the core consumer tests, not expressible across keys in JSON Schema draft-07). There are deliberately NO metadata fields: description has NO v0.1 producer (the template directory's metadata-file shape is unverified — W25 real-machine item, ORC-DEV-004 no-implementation-no-reservation, the P1 displayName precedent) and sourceRoot has no consumer need (which root serves an id is create's frozen resolution order, not a per-row fact) — a row carrying description/sourceRoot/author/license is INVALID by schema, negative vectors pin it. Row order is id-ascending: the frozen presentation fact (a raw directory scan order is platform-unstable; the presentation fact keeps desktop dropdown consumption deterministic — the F3 packageId-ascending precedent). An EMPTY templates array is a valid, honest answer: a missing root or an empty pair of roots is a fact, never an error (the R4 precedent).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listTemplates"]
+    },
+    "result": { "$ref": "#/$defs/listTemplatesResult" }
+  },
+  "$defs": {
+    "listTemplatesResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "templates"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-templates/v0.1" },
+        "templates": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/templateEntry" }
+        }
+      }
+    },
+    "templateEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The template directory name under one of the two pinned roots; the machine identity handed to packages.createProject."
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The frozen same-value display projection of id (v0.1 has no independent display-name fact source; consumers never fabricate a friendlier label)."
+        }
+      }
+    }
+  }
+}

@@ -752,3 +752,31 @@
   gap: var(--vua-space-2);
   flex-wrap: wrap;
 }
+
+/* ---- 027 F3 消费批:已装表「可更新」列三态呈现＋cacheSourced 标注 ----
+ * 包裹层承载标注与滚动区;标注为信息性非失败;精确词面用次要文字色 */
+.vua-packages__table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2, 8px);
+}
+
+.vua-packages__cache-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--vua-font-size-sm, 13px);
+  color: var(--vua-text-secondary, var(--vua-text-2, inherit));
+}
+
+.vua-packages__update-none {
+  color: var(--vua-text-secondary, var(--vua-text-2, inherit));
+  font-size: var(--vua-font-size-sm, 13px);
+}
+
+.vua-packages__update-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

@@ -1779,6 +1779,9 @@ rolled_back: "已回滚",
       emptyInstalledDescription:
         "该项目还没有已安装的包。用{recipe}装配项目即可添加。",
       noticeChangesOpen: "仓库与变更管理接入状态：已安装包可查看，移除操作已开放（随引擎能力提供）。",
+      updatableColumn: "可更新",
+      updateNotExecuted: "更新判定未执行。",
+      updateNoneUnderFilter: "当前过滤条件下不存在严格更新版本。",
 
     },
     p2: {

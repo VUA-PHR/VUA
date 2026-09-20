@@ -157,7 +157,9 @@ export type {
 } from "../features/release/release-handoff-port.ts";
 export type {
   ChangeRequest,
+  InstalledListAnswer,
   InstalledPackageRowV01,
+  InstalledPackageRowV02,
   CatalogPackageFactsV01,
   CatalogPackageFactsV02,
   CatalogVersionRowV01,
