@@ -700,3 +700,83 @@
 .vua-packages__repo-remove {
   margin-left: auto;
 }
+
+/* ---- 027 F2 读面(消费批):仓库分区(IA 表态 2:订阅与订阅管理合并为
+   单一「仓库」分区)+ 行内展开仓库浏览面(搜索为呈现层过滤,同一事实
+   源不另立查询形状) ---- */
+
+.vua-packages__repo-partition {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__partition-title {
+  font: var(--vua-font-body);
+  font-weight: 600;
+  margin: 0;
+}
+
+.vua-packages__repo-browse {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2);
+  margin-top: var(--vua-space-1);
+  padding-top: var(--vua-space-2);
+  border-top: 1px solid var(--vua-border-subtle);
+}
+
+.vua-packages__repo-browse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--vua-space-2);
+}
+
+.vua-packages__repo-browse-head .vua-packages__section-title {
+  margin: 0;
+}
+
+.vua-packages__repo-browse-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+  padding: var(--vua-space-2);
+  border: 1px solid var(--vua-border-subtle);
+  border-radius: var(--vua-radius-md);
+}
+
+.vua-packages__repo-browse-facts {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+/* ---- 027 F3 消费批:已装表「可更新」列三态呈现＋cacheSourced 标注 ----
+ * 包裹层承载标注与滚动区;标注为信息性非失败;精确词面用次要文字色 */
+.vua-packages__table-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-2, 8px);
+}
+
+.vua-packages__cache-note {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--vua-font-size-sm, 13px);
+  color: var(--vua-text-secondary, var(--vua-text-2, inherit));
+}
+
+.vua-packages__update-none {
+  color: var(--vua-text-secondary, var(--vua-text-2, inherit));
+  font-size: var(--vua-font-size-sm, 13px);
+}
+
+.vua-packages__update-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}

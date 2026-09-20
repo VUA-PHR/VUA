@@ -15,6 +15,7 @@ import {
   type CatalogPackageFactsV02,
   type ChangeRequest,
   type InstalledPackageRowV01,
+  type InstalledPackageRowV02,
   type PackageChangePreview,
   type PackageEntryResult,
   type PackageProject,
@@ -28,6 +29,8 @@ import {
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
   type RegisteredProjectRow,
+  type RepoCatalogFactsV01,
+  type RepoCatalogRepoRowV01,
   type RepoInfoRowV01,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
@@ -43,8 +46,10 @@ import {
   createEnvelopeErrorKey,
   createRefusalDetailKey,
   filterPackages,
+  filterRepoCatalogPackages,
   installEnvelopeErrorKey,
   installLatestRequests,
+  installedUpdateCellState,
   invalidReasonKey,
   isEmptyPreview,
   migrationSummaryKey,
@@ -56,6 +61,7 @@ import {
   sortPackages,
   sortProjects,
   sourceTextKeys,
+  type InstalledUpdateCellState,
 } from "./packages-model.ts";
 import "./packages.css";
 
@@ -344,16 +350,26 @@ function P1ProjectPicker({
 function P1InstalledTable({
   rows,
   loadErrorCode,
+  cacheSourced,
   onShowCatalog,
   onRemove,
   removeBusy,
+  onUpdate,
+  updateBusy,
   installBulk,
 }: {
-  rows: readonly InstalledPackageRowV01[];
+  rows: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
   loadErrorCode: string | null;
+  /** 027 F3:仅 v0.2 族应答且 true 时呈现「缓存数据」信息标注(复用
+   * catalog 措辞;v0.1 族应答无该字段绝不虚构标注——族常量判别) */
+  cacheSourced?: boolean;
   onShowCatalog?: (packageId: string) => void;
   onRemove?: (packageId: string) => void;
   removeBusy?: boolean;
+  /** 027 F3:行内升级键(随 blocks.installs 能力行解锁,渲染层不伪造);
+   * 语义 = A2 安装面 version null(解析器选最新稳定版,零新升级动词) */
+  onUpdate?: (packageId: string) => void;
+  updateBusy?: boolean;
   installBulk?: {
     /** 当前选中 packageId 集(行序 = 用户勾选顺序,提交时照实透传) */
     selectedIds: readonly string[];
@@ -384,7 +400,16 @@ function P1InstalledTable({
   const allSelected = rows.every((row) => bulk?.selectedIds.includes(row.packageId) === true);
   const someSelected = rows.some((row) => bulk?.selectedIds.includes(row.packageId) === true);
   return (
-    <div className="vua-packages__table-scroll">
+    <div className="vua-packages__table-wrap">
+      {/* 027 F3 cacheSourced 信息性标注:仅 v0.2 族应答且 true 时呈现
+       * (复用 catalog 措辞,信息性非失败);v0.1 族应答无该字段,绝不
+       * 虚构标注(族常量判别,盖戳辨词面) */}
+      {cacheSourced ? (
+        <p className="vua-packages__cache-note" role="note">
+          <Icon name="question" size={16} /> {copy.p2.catalogCachedData}
+        </p>
+      ) : null}
+      <div className="vua-packages__table-scroll">
       <table className="vua-packages__table">
         <thead>
           <tr>
@@ -403,6 +428,7 @@ function P1InstalledTable({
             ) : null}
             <th scope="col">{copy.columns.name}</th>
             <th scope="col">{copy.columns.installed}</th>
+            <th scope="col">{copy.p1.updatableColumn}</th>
             <th scope="col">{copy.p1.dependenciesColumn}</th>
             {onShowCatalog ? <th scope="col">{copy.p2.catalogColumn}</th> : null}
             {onRemove ? <th scope="col">{copy.remove.column}</th> : null}
@@ -434,6 +460,40 @@ function P1InstalledTable({
                 </div>
               </td>
               <td data-column={copy.columns.installed}>{row.version}</td>
+              {/* 027 F3 三态呈现(纯函数 installedUpdateCellState):absent
+               * = v0.1 族应答行无判定事实(该列诚实空显,绝不虚构);
+               * notExecuted = updateAvailable null(判定未执行,如实空显
+               * 携悬浮说明——null 绝不是「已最新」绝不默认 false,024 表
+               * 态②);noneUnderFilter = false(精确语义「当前条件下无严
+               * 格更新」,不泛化);available = true(呈现有更新＋行内升级
+               * 键复用 A2 version=null 语义,随 installs 能力行解锁) */}
+              <td data-column={copy.p1.updatableColumn}>
+                {(() => {
+                  const cell: InstalledUpdateCellState = installedUpdateCellState(row);
+                  if (cell === "absent") return null;
+                  if (cell === "notExecuted") {
+                    return <span title={copy.p1.updateNotExecuted} />;
+                  }
+                  if (cell === "noneUnderFilter") {
+                    return <span className="vua-packages__update-none">{copy.p1.updateNoneUnderFilter}</span>;
+                  }
+                  return (
+                    <span className="vua-packages__update-cell">
+                      {copy.states.updateAvailable}
+                      {onUpdate ? (
+                        <Button
+                          variant="subtle"
+                          disabled={updateBusy}
+                          aria-label={format(copy.menu.updateToLatest, {}) + " — " + row.packageId}
+                          onClick={() => onUpdate(row.packageId)}
+                        >
+                          {copy.menu.updateToLatest}
+                        </Button>
+                      ) : null}
+                    </span>
+                  );
+                })()}
+              </td>
               <td
                 data-column={copy.p1.dependenciesColumn}
                 title={row.dependencies.length > 0 ? row.dependencies.join(", ") : undefined}
@@ -482,6 +542,7 @@ function P1InstalledTable({
           </Button>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -503,6 +564,8 @@ function P1InstalledTable({
 function P2ReposSection({
   repos,
   reposErrorCode,
+  browseEnabled,
+  gateway,
   onRemoveRequest,
   removeConfirmId,
   removeBusyId,
@@ -510,11 +573,17 @@ function P2ReposSection({
 }: {
   repos: readonly RepoInfoRowV01[];
   reposErrorCode: string | null;
+  /** F2 仓库浏览入口(blocks.repoCatalog 能力行)——false = 展开入口
+   *  不渲染(诚实缺席);repoId 缺席行不在浏览可达范围(id 缺席 = 无
+   *  稳定行柄,scoped 查询无从寻址——A4 移除入口同款纪律),UI 不发明 */
+  browseEnabled?: boolean;
+  gateway?: ReturnType<typeof useGateway>;
   onRemoveRequest?: (repoId: string) => void;
   removeConfirmId?: string | null;
   removeBusyId?: string | null;
   removeOutcome?: RepoRemoveOutcomeView | null;
 }) {
+  const [browseRepoId, setBrowseRepoId] = useState<string | null>(null);
   if (reposErrorCode !== null) {
     return (
       <EmptyState
@@ -538,6 +607,7 @@ function P2ReposSection({
         {repos.map((repo, index) => {
           const title = repo.name ?? repo.repoId ?? copy.p2.repoNoIdentifier;
           const location = repo.url ?? repo.localPath;
+          const browseOpen = browseEnabled === true && browseRepoId !== null && browseRepoId === repo.repoId;
           return (
             <li key={`${repo.repoId ?? "repo"}-${index}`} className="vua-packages__repo-row">
               <div className="vua-packages__repo-main">
@@ -547,6 +617,16 @@ function P2ReposSection({
                 <Badge tone={repo.cached ? "neutral" : "warning"}>
                   {repo.cached ? copy.p2.repoCached : copy.p2.repoNotCached}
                 </Badge>
+                {browseEnabled && repo.repoId !== null && gateway ? (
+                  <Button
+                    variant="subtle"
+                    aria-expanded={browseOpen}
+                    aria-label={format(copy.p2.browseAria, { name: title })}
+                    onClick={() => setBrowseRepoId(browseOpen ? null : (repo.repoId as string))}
+                  >
+                    {browseOpen ? copy.p2.browseClose : copy.p2.browseAction}
+                  </Button>
+                ) : null}
                 {onRemoveRequest && repo.repoId !== null ? (
                   <Button
                     variant="subtle"
@@ -567,6 +647,14 @@ function P2ReposSection({
                 <span className="vua-caption vua-text-secondary" title={location}>
                   {repo.url !== null ? `${copy.p2.repoUrlLabel}: ${repo.url}` : `${copy.p2.repoLocalPathLabel}: ${repo.localPath}`}
                 </span>
+              ) : null}
+              {browseOpen && repo.repoId !== null && gateway ? (
+                <RepoCatalogPanel
+                  repoId={repo.repoId}
+                  repoName={title}
+                  gateway={gateway}
+                  onClose={() => setBrowseRepoId(null)}
+                />
               ) : null}
             </li>
           );
@@ -1114,6 +1202,151 @@ function P2CatalogPanel({
   );
 }
 
+/* ---- F2 仓库浏览面板(027 消费批):行内展开即该仓库可装包浏览面
+ * (IA 表态 2)。同一事实源——repoCatalog(repoId, null) 不过滤形态,
+ * 搜索框是呈现层过滤(filterRepoCatalogPackages 纯函数),不另立查询
+ * 形状(027 设计约束 1)。诚实纪律:cached=false 行 =「已订阅·缓存未建
+ * 立」空态;latestVersion null = 如实「无合资格版本」,绝不渲染「已最
+ * 新」类断言(024 表态②防线);cacheSourced=true =「缓存数据」信息标注
+ * 非失败(复用目录面板同款词面);typed 失败照原词(repo_not_found 逐字
+ * 透传——P2 读面零折叠);scoped 应答缺行 = 形状不符如实呈现,无证据
+ * 不发明行。 ---- */
+
+function RepoCatalogPanel({
+  repoId,
+  repoName,
+  gateway,
+  onClose,
+}: {
+  repoId: string;
+  repoName: string;
+  gateway: ReturnType<typeof useGateway>;
+  onClose: () => void;
+}) {
+  const [outcome, setOutcome] = useState<
+    | { kind: "loading" }
+    | { kind: "ok"; cacheSourced: boolean; row: RepoCatalogRepoRowV01 }
+    | { kind: "failed"; code: string }
+    | { kind: "unavailable" }
+  >({ kind: "loading" });
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    setOutcome({ kind: "loading" });
+    setSearch("");
+    void gateway.packages.repoCatalog(repoId, null).then((result) => {
+      if (!active) return;
+      if (result.kind === "ok") {
+        const row = result.result.repos.find((repo) => repo.repoId === repoId);
+        if (row === undefined) {
+          setOutcome({ kind: "failed", code: "packages_shape_violation" });
+        } else {
+          setOutcome({ kind: "ok", cacheSourced: result.result.cacheSourced, row });
+        }
+      } else if (result.kind === "failed") setOutcome({ kind: "failed", code: result.code });
+      else setOutcome({ kind: "unavailable" });
+    });
+    return () => {
+      active = false;
+    };
+  }, [gateway, repoId]);
+
+  const row = outcome.kind === "ok" ? outcome.row : null;
+  const filtered = row === null ? [] : filterRepoCatalogPackages(row.packages, search);
+
+  return (
+    <div className="vua-packages__repo-browse">
+      <div className="vua-packages__repo-browse-head">
+        <h3 className="vua-packages__section-title">
+          {format(copy.p2.browseTitle, { name: repoName })}
+        </h3>
+        <Button variant="subtle" aria-expanded onClick={onClose}>
+          {copy.p2.browseClose}
+        </Button>
+      </div>
+      {outcome.kind === "loading" ? (
+        <div className="vua-page__stack">
+          <Skeleton width="45%" />
+          <Skeleton width="70%" />
+        </div>
+      ) : outcome.kind === "failed" ? (
+        <EmptyState
+          title={copy.p2.browseFailedTitle}
+          description={format(copy.p2.browseQueryFailed, { code: outcome.code })}
+        />
+      ) : outcome.kind === "unavailable" ? (
+        <EmptyState
+          title={copy.p2.browseFailedTitle}
+          description={copy.p2.browseUnavailable}
+        />
+      ) : (
+        <>
+          {outcome.cacheSourced ? (
+            <p className="vua-caption vua-text-secondary">
+              <Icon name="question" size={16} /> {copy.p2.catalogCachedData}
+            </p>
+          ) : null}
+          {row !== null && !row.cached ? (
+            <EmptyState
+              title={copy.p2.repoNotCached}
+              description={copy.p2.browseNotCachedDescription}
+            />
+          ) : row !== null && row.packages.length === 0 ? (
+            <EmptyState
+              title={copy.p2.browseEmptyTitle}
+              description={copy.p2.browseEmptyDescription}
+            />
+          ) : (
+            <>
+              <input
+                type="search"
+                className="vua-packages__search"
+                placeholder={copy.p2.browseSearchPlaceholder}
+                aria-label={copy.p2.browseSearchAria}
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+              {filtered.length === 0 ? (
+                <EmptyState
+                  title={copy.empty.noResultTitle}
+                  description={copy.empty.noResultDescription}
+                />
+              ) : (
+                <ul className="vua-packages__repo-list">
+                  {filtered.map((entry) => (
+                    <li key={entry.packageId} className="vua-packages__repo-browse-row">
+                      <div className="vua-packages__repo-main">
+                        <span className="vua-packages__name-title" title={entry.packageId}>
+                          {entry.displayName ?? entry.packageId}
+                        </span>
+                        <span className="vua-caption vua-text-secondary">{entry.packageId}</span>
+                      </div>
+                      {entry.description !== null ? (
+                        <span className="vua-caption vua-text-secondary">{entry.description}</span>
+                      ) : null}
+                      <div className="vua-packages__repo-browse-facts">
+                        <span className="vua-caption">
+                          {entry.latestVersion !== null
+                            ? `${copy.columns.latest}: ${entry.latestVersion}`
+                            : copy.p2.browseLatestNone}
+                        </span>
+                        <span className="vua-caption vua-text-secondary">
+                          {format(copy.p2.browseVersionCount, { count: entry.versionCount })}
+                        </span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ---- 页面 ---- */
 
 export function PackagesPage() {
@@ -1308,7 +1541,7 @@ export function PackagesPage() {
   // P1 过滤:仅按 packageId 本地搜索;行序保持服务端 packageId 升序
   // (冻结的确定性呈现事实,客户端不重排)
   const p1Rows = useMemo(() => {
-    if (p1 === null) return [] as readonly InstalledPackageRowV01[];
+    if (p1 === null) return [] as readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
     const text = debouncedText.trim().toLowerCase();
     if (text === "") return p1.installedPackages;
     return p1.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
@@ -1316,7 +1549,7 @@ export function PackagesPage() {
 
   // P2 过滤:同 P1 纪律(packageId 本地搜索,行序不重排)
   const p2Rows = useMemo(() => {
-    if (p2 === null) return [] as readonly InstalledPackageRowV01[];
+    if (p2 === null) return [] as readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
     const text = debouncedText.trim().toLowerCase();
     if (text === "") return p2.installedPackages;
     return p2.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
@@ -1958,36 +2191,47 @@ export function PackagesPage() {
               selectedProjectPath={p2.projectPath}
               onSelect={chooseProject}
             />
-            {p2.blocks.repos ? (
-              <P2ReposSection
-                repos={p2.repos}
-                reposErrorCode={p2.reposError?.code ?? null}
-                {...(p2.blocks.repoWrites
-                  ? {
-                      onRemoveRequest: requestRemoveRepo,
-                      removeConfirmId: repoRemoveConfirmId,
-                      removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
-                      removeOutcome: repoRemoveOutcome,
-                    }
-                  : {})}
-              />
-            ) : null}
-            {p2.blocks.repoWrites ? (
-              <RepoWriteSection
-                busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
-                remoteUrl={repoRemoteUrl}
-                remoteName={repoRemoteName}
-                localPath={repoLocalPath}
-                localName={repoLocalName}
-                remoteOutcome={repoRemoteOutcome}
-                localOutcome={repoLocalOutcome}
-                onRemoteUrlChange={setRepoRemoteUrl}
-                onRemoteNameChange={setRepoRemoteName}
-                onLocalPathChange={setRepoLocalPath}
-                onLocalNameChange={setRepoLocalName}
-                onAddRemote={startRepoAddRemote}
-                onAddLocal={startRepoAddLocal}
-              />
+            {(p2.blocks.repos || p2.blocks.repoWrites || p2.blocks.repoCatalog) ? (
+              /* F2 消费批(027)IA 表态 2 落地:仓库订阅与订阅管理两分区
+               * 合并为单一「仓库」分区(纯呈现层重组——blocks 键与能力行
+               * 照旧,入口随 repos＋repoWrites＋repoCatalog 能力事实行共
+               * 同门控,无事实不渲染纪律不变);订阅列表行内展开即该仓浏
+               * 览面(blocks.repoCatalog 门控) */
+              <section className="vua-packages__repo-partition" aria-label={copy.p2.partitionAria}>
+                <h2 className="vua-packages__partition-title">{copy.p2.partitionTitle}</h2>
+                {p2.blocks.repos ? (
+                  <P2ReposSection
+                    repos={p2.repos}
+                    reposErrorCode={p2.reposError?.code ?? null}
+                    {...(p2.blocks.repoCatalog ? { browseEnabled: true, gateway } : {})}
+                    {...(p2.blocks.repoWrites
+                      ? {
+                          onRemoveRequest: requestRemoveRepo,
+                          removeConfirmId: repoRemoveConfirmId,
+                          removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
+                          removeOutcome: repoRemoveOutcome,
+                        }
+                      : {})}
+                  />
+                ) : null}
+                {p2.blocks.repoWrites ? (
+                  <RepoWriteSection
+                    busy={repoBusy === "remote" ? "remote" : repoBusy === "local" ? "local" : null}
+                    remoteUrl={repoRemoteUrl}
+                    remoteName={repoRemoteName}
+                    localPath={repoLocalPath}
+                    localName={repoLocalName}
+                    remoteOutcome={repoRemoteOutcome}
+                    localOutcome={repoLocalOutcome}
+                    onRemoteUrlChange={setRepoRemoteUrl}
+                    onRemoteNameChange={setRepoRemoteName}
+                    onLocalPathChange={setRepoLocalPath}
+                    onLocalNameChange={setRepoLocalName}
+                    onAddRemote={startRepoAddRemote}
+                    onAddLocal={startRepoAddLocal}
+                  />
+                ) : null}
+              </section>
             ) : null}
             {p2.blocks.registers ? (
               <RegisterSection
@@ -2050,6 +2294,14 @@ export function PackagesPage() {
                   <P1InstalledTable
                     rows={p2Rows}
                     loadErrorCode={p2.loadError?.code ?? null}
+                    {...(p2.installedCacheSourced ? { cacheSourced: true } : {})}
+                    {...(p2.blocks.installs
+                      ? {
+                          onUpdate: (packageId: string) =>
+                            startInstallRows([{ packageId, version: null }]),
+                          updateBusy: installPreviewBusy || installFlow !== null,
+                        }
+                      : {})}
                     {...(p2.blocks.catalog ? { onShowCatalog: setCatalogTarget } : {})}
                     {...(p2.blocks.changes
                       ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }

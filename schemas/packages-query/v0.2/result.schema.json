@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-query/v0.2/result.schema.json",
+  "title": "VUA packages-query result v0.2",
+  "description": "Result documents for the packages-query v0.2 read face (proposal 027 F3 freeze batch, 2026-09-20: the installed-set update-awareness increment per the 027 core stance 3 — three-domain converged face order F2->F3, environment verification s2, desktop IA stance 3, user ruling on the false-assertion line). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-installed/v0.2 — two independent versions (the c914cf2 standing rule). v0.2 is the frozen v0.1 result plus EXACTLY three new facts — the per-row judgment pair and the result-level disclosure — nothing else moved, and the frozen v0.1 word face is never revised in place (a backend that has not adopted v0.2 keeps answering the v0.1 family; the stamped const tells the consumer which word face answered, never a guess; additive dual-version negotiation = the packages-catalog v0.2 precedent). The result of packages.listInstalled remains the honest projection of one project's installed package set as resolved from its VPM manifest and lock, sorted by packageId ascending (the frozen presentation fact, unchanged); an EMPTY packages array is a valid, honest answer. updateAvailable is the CONCLUSION of the frozen judgment (the installed version vs the latest selector-qualifying version — a strictly newer version matching the current filter exists); it is nullable: null means the judgment was NOT executed (no qualifying latest in the collection's repository caches, or the project's Unity version is unknown) — absence is not 'no update', and the consumer keeps the false-assertion line: NO 'already latest' is ever rendered on null, never a default false. latestVersion is the judgment's version-string fact: the latest selector-qualifying version over the collection's WHOLE repository set (the CROSS-REPOSITORY max — deliberately not the per-repo view, which stays the packages-repo-catalog family's declared fact; the two views are different facts, never conflated); null = no qualifying latest under the current setting (the package sits in no repository cache — a local-source package — or every candidate is yanked/excluded by the user's prerelease setting). The selector reuses the packages-catalog frozen semantics verbatim (latest_for(project Unity version, show_prerelease), zero wire switch): when the installed version is itself a prerelease and the setting is off, the qualifying latest comes from the stable set — updateAvailable:false means exactly 'no strictly newer version matching the CURRENT filter exists', never a generalized 'no update'. cacheSourced is the REQUIRED informational degradation-disclosure fact (the catalog v0.2 precedent adopted for the judgment face): true = this listing's judgment rode the cache-degradation path (offline -> load_cache, or an online load failed and degraded — the ORC-ADP-006 isomorphic precedent); false = served from an online-refreshed load; cache sourcing is NOT an error — consumers render it as an informational 'cached data' annotation, never a failure, and never invent the annotation for a v0.1 answer that carries no such fact. additionalProperties:false on every object is the false-assertion guard: invented facts (changelogUrl, displayName, source, versions) are INVALID by schema, not merely discouraged (the v0.1 discipline; ORC-DEV-004: no implementation, no reserved field).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listInstalled"]
+    },
+    "result": { "$ref": "#/$defs/listInstalledResult" }
+  },
+  "$defs": {
+    "listInstalledResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "projectPath", "packages", "cacheSourced"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-installed/v0.2" },
+        "projectPath": { "type": "string", "minLength": 1 },
+        "packages": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/installedPackage" }
+        },
+        "cacheSourced": {
+          "type": "boolean",
+          "description": "REQUIRED informational degradation disclosure (the v0.2 increment): true = this listing's judgment rode the cache-degradation path (offline -> load_cache, or online load failed and degraded); false = served from an online-refreshed load. Informational, never an error."
+        }
+      }
+    },
+    "installedPackage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "version", "dependencies", "latestVersion", "updateAvailable"],
+      "properties": {
+        "packageId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+        },
+        "version": { "type": "string", "minLength": 1 },
+        "dependencies": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "description": "Direct dependencies the installed package declares (the frozen v0.1 fact, unchanged)."
+        },
+        "latestVersion": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "The latest selector-qualifying version over the collection's WHOLE repository set (cross-repository max, not the per-repo view); null = no qualifying latest under the current setting — absence is never 'no update'."
+        },
+        "updateAvailable": {
+          "type": ["boolean", "null"],
+          "description": "Frozen judgment conclusion: a strictly newer selector-qualifying version exists vs the installed version. null = judgment not executed (no qualifying latest, or project Unity version unknown) — null is never 'already latest'; the consumer renders an honest empty state, never a default false."
+        }
+      }
+    }
+  }
+}
