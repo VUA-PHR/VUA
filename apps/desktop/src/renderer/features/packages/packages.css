@@ -697,6 +697,20 @@
   flex: 0 1 180px;
 }
 
+/* 027 F5 消费批:创建区块模板下拉(枚举 ready 时替换手填输入;回落纪
+   律 = 缺席/空数组/失败一律手填,样式同 register-input 行内形状) */
+.vua-packages__create-template-select {
+  height: var(--vua-control-height);
+  padding: 0 var(--vua-space-2);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+  background: color-mix(in srgb, var(--vua-bg-panel) 70%, transparent);
+}
+
+.vua-packages__create-template-select:focus-visible {
+  border-color: var(--vua-border-focus);
+}
+
 .vua-packages__repo-remove {
   margin-left: auto;
 }

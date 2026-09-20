@@ -412,6 +412,79 @@ impl TemplateCapabilities {
     pub const NONE: Self = Self { list_templates: false };
 }
 
+/// F4 write-face capability declaration (proposal 027 freeze batch,
+/// 2026-09-20). Same shape law as `CatalogCapabilities` / `RegisterCapabilities`
+/// / `RepoWriteCapabilities` / `RepoCatalogCapabilities` / `TemplateCapabilities`
+/// (the 025 accessor precedent): a separate defaulted trait accessor instead
+/// of a new `VpmCapabilities` field, so the five-bit closed set stays stable
+/// and backends without the repository-lifecycle face keep compiling
+/// unchanged (ORC-DEV-004: no implementation, no reservation — the default
+/// is declared-none; a backend overrides it exactly when it implements the
+/// `enable_repo` / `disable_repo` / `refresh_repo` methods). Three
+/// INDEPENDENT bits on purpose (the A4 `RepoWriteCapabilities` law): a
+/// backend may serve a subset of the face, and the honest gate is per
+/// method, never per face.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoLifecycleCapabilities {
+    /// Covers `packages.enableRepo`: re-activating one disabled subscription
+    /// row (VUA-owned state — the W25 evidence record ruling (c): VCC
+    /// carries no enable/disable state anywhere, so the state is VUA's own).
+    pub enable_repo: bool,
+    /// Covers `packages.disableRepo`: excluding one subscription row from
+    /// the package-collection world (subscribed and listed, never resolved).
+    pub disable_repo: bool,
+    /// Covers `packages.refreshRepo`: the etag-conditional cache refresh of
+    /// one subscription row's own cache file (the network segment is
+    /// inherent to the face).
+    pub refresh_repo: bool,
+}
+
+impl RepoLifecycleCapabilities {
+    pub const NONE: Self = Self {
+        enable_repo: false,
+        disable_repo: false,
+        refresh_repo: false,
+    };
+}
+
+/// F4 (proposal 027 freeze batch, packages-ops v0.6): the refresh-outcome
+/// fact of one `refresh_repo` call. `cache_updated` is the library's own
+/// two-arm outcome: true = the etag-conditional fetch wrote a new cache
+/// file (the subscription's own `userRepos[i].localPath`); false = the etag
+/// was unchanged ("already up to date"). BOTH arms are success — "no new
+/// data" is a refresh outcome, never an error (the wire receipt carries it
+/// as the REQUIRED `cacheUpdated` fact).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoRefreshOutcomeV01 {
+    pub cache_updated: bool,
+}
+
+/// F4 (proposal 027 freeze batch, packages-repos v0.2): one subscription row
+/// at the v0.2 word face — the frozen v0.1 five-key projection (repoId /
+/// name / url / localPath / cached, every Option projected as an honest
+/// absence, row order the configuration fact) plus EXACTLY one new REQUIRED
+/// fact: `enabled`, the VUA-owned enable/disable state bit read back from
+/// the backend's own storage (NEVER a settings.json key — the W25 evidence
+/// record ruling (c): VCC carries no enable counterpart, so there is
+/// nothing to share and nothing another writer could strip). true = the row
+/// is active in the package-collection world; false = disabled (subscribed
+/// and listed, its packages excluded from enumeration and resolution). A row
+/// whose `repo_id` is `None` projects `enabled: true` ALWAYS: id-absent rows
+/// are outside the toggle faces' reach (the `remove_repo` same boundary —
+/// the id IS the row handle), so true is its honest permanent fact.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RepoInfoV02 {
+    pub repo_id: Option<String>,
+    pub name: Option<String>,
+    pub url: Option<String>,
+    pub local_path: Option<String>,
+    pub cached: bool,
+    pub enabled: bool,
+}
+
 /// F3 (proposal 027 freeze batch, packages-query v0.2): one installed-package
 /// row at the v0.2 word face — the frozen v0.1 three-key projection
 /// (packageId / version / dependencies; packageId-ascending order stays the
@@ -564,6 +637,17 @@ pub trait VpmBackend: Send + Sync {
     fn repo_catalog_capabilities(&self) -> RepoCatalogCapabilities {
         RepoCatalogCapabilities::NONE
     }
+    /// F4 (proposal 027 freeze batch): capability declaration for the
+    /// repository-lifecycle write face. The default is declared-none; a
+    /// backend overrides it exactly when it implements the `enable_repo` /
+    /// `disable_repo` / `refresh_repo` methods (the 025 accessor law — the
+    /// VrcGetLib override lands with the environment implementation-
+    /// verification slice, the same honest-absence discipline: the served
+    /// wire row stays unavailable until the override flips it; the CLI
+    /// backend has no lifecycle face and stays honestly false).
+    fn repo_lifecycle_capabilities(&self) -> RepoLifecycleCapabilities {
+        RepoLifecycleCapabilities::NONE
+    }
     /// A4 (proposal 026 freeze batch): subscribe one REMOTE repository in
     /// this backend's isolated environment. The backend fetches the remote
     /// manifest (the network segment is inherent to the face — a preview
@@ -599,16 +683,87 @@ pub trait VpmBackend: Send + Sync {
     fn remove_repo(&self, _repo_id: &str) -> Result<(), AppErrorV1> {
         Err(unsupported("remove_repo"))
     }
+    /// F4 (proposal 027 freeze batch): re-activate one disabled subscription
+    /// row by its repository id. Id-addressed on purpose (the `remove_repo`
+    /// same handle law). The state is VUA-OWNED semantics — the W25
+    /// read-only evidence record (proposal 027 s6) concluded ruling (c):
+    /// VCC carries no enable/disable state anywhere, so the toggle shares
+    /// nothing and the state lives in VUA's own storage under the
+    /// environment root (NEVER a userRepos[i] key — vrc-get's own save
+    /// strips unknown element keys — and NEVER a settings.json top-level
+    /// key — the VCC/ALCOM writer tolerance for unknown top-level keys is
+    /// unverified; the shared file carries shared facts only). An unknown
+    /// repoId answers the REUSED `vua.vpm.repo_not_found`; the state-file
+    /// write-back failing answers the REUSED `vua.vpm.repo_write_failed`
+    /// (zero new codes — the freeze transports honest faces, it mints no
+    /// code).
+    fn enable_repo(&self, _repo_id: &str) -> Result<(), AppErrorV1> {
+        Err(unsupported("enable_repo"))
+    }
+    /// F4 (proposal 027 freeze batch): exclude one subscription row from
+    /// the backend's package-collection world by its repository id. The
+    /// disabled row STAYS subscribed and listed (the packages-repos v0.2
+    /// `enabled` bit projects the state; disabling hides nothing from the
+    /// configuration view) — enumeration and resolution faces
+    /// (repo-catalog listing, latest-version judgment, install resolver)
+    /// never see its packages. A newly added subscription row is always
+    /// enabled (the add faces reset any stale state entry — a fresh
+    /// subscription starts fresh); removing a row leaves no state residue.
+    /// Error faces: the `enable_repo` reused-code law verbatim.
+    fn disable_repo(&self, _repo_id: &str) -> Result<(), AppErrorV1> {
+        Err(unsupported("disable_repo"))
+    }
+    /// F4 (proposal 027 freeze batch): the etag-conditional cache refresh of
+    /// one subscription row's OWN cache file (`userRepos[i].localPath` — the
+    /// exact write vrc-get itself performs on refresh, same-origin with
+    /// VCC/vrc-get; the official/curated predefined caches have no repoId in
+    /// the subscription world and are unreachable). The network fetch is
+    /// inherent to the face (no preview arm — the A4 add-remote law). SUCCESS
+    /// ANSWERS [`RepoRefreshOutcomeV01`] — the library's own two-arm outcome:
+    /// cache written, or etag unchanged ("already up to date"); BOTH arms are
+    /// success and the fact travels to the wire receipt as the REQUIRED
+    /// `cacheUpdated` fact — "no new data" is a refresh outcome, never an
+    /// error. Error faces: the `enable_repo` reused-code law plus the REUSED
+    /// `vua.vpm.repo_fetch_failed` for the network segment.
+    fn refresh_repo(&self, _repo_id: &str) -> Result<RepoRefreshOutcomeV01, AppErrorV1> {
+        Err(unsupported("refresh_repo"))
+    }
     /// P2 (proposal 025 freeze batch): the repository subscription list —
     /// the subscription face is the world (settings userRepos projected
     /// verbatim, array order preserved), each row carrying the REQUIRED
     /// per-repo cache-hit fact. Read-only: the add/remove write faces are
     /// frozen as proposal 026 A4 (`add_remote_repo` / `add_local_repo` /
-    /// `remove_repo` + `repo_write_capabilities`); enable/disable stays
-    /// outside every frozen word face until the VCC disabled-list key name
-    /// is verified on a real machine (the W25 window item).
+    /// `remove_repo` + `repo_write_capabilities`); the enable/disable and
+    /// manual-refresh write faces are frozen as proposal 027 F4
+    /// (`enable_repo` / `disable_repo` / `refresh_repo` +
+    /// `repo_lifecycle_capabilities`, packages-ops v0.6 — the W25 evidence
+    /// record ruling (c) settled the enable state as VUA-owned semantics);
+    /// their read-back state bit rides the v0.2 word face
+    /// (`repos_v02` / `list_repos_v02`).
     fn list_repos(&self) -> Result<Vec<RepoInfoV01>, AppErrorV1> {
         Err(unsupported("list_repos"))
+    }
+    /// F4 (proposal 027 freeze batch, packages-repos v0.2): declaration that
+    /// this backend serves the subscription-list read face at the v0.2 word
+    /// face (rows carry the REQUIRED VUA-owned `enabled` state bit). The
+    /// default is false — the frozen v0.1 word face keeps being served; a
+    /// backend overrides this exactly when it implements `list_repos_v02`
+    /// (ORC-DEV-004: no implementation, no reservation; the additive
+    /// dual-version negotiation law is the `catalog_v02` / `query_v02`
+    /// precedent).
+    fn repos_v02(&self) -> bool {
+        false
+    }
+    /// F4 (proposal 027 freeze batch, packages-repos v0.2): the subscription
+    /// list at the v0.2 word face — the frozen v0.1 five-key projection plus
+    /// the REQUIRED `enabled` state bit per row ([`RepoInfoV02`]; id-absent
+    /// rows project `enabled: true` always — they are outside the toggle
+    /// faces' reach). Backends keep serving v0.1 through `list_repos` until
+    /// they adopt this; the wire route negotiates the family version by
+    /// `repos_v02` (the stamped family const tells the consumer which word
+    /// face answered, never a guess).
+    fn list_repos_v02(&self) -> Result<Vec<RepoInfoV02>, AppErrorV1> {
+        Err(unsupported("list_repos_v02"))
     }
     /// P2 (proposal 025 freeze batch): per-package catalog facts for one
     /// package in one registered project's context. On-demand granularity

@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listRepos",
+  "result": {
+    "schemaVersion": "vua.packages-repos/v0.2",
+    "repos": [
+      {
+        "repoId": "repo.example.official",
+        "name": "Official Repo",
+        "url": "https://example.invalid/vrc-official.json",
+        "localPath": "C:/anywhere/Repos/official-cache.json",
+        "cached": true,
+        "enabled": true
+      },
+      {
+        "repoId": "repo.example.community",
+        "name": "Community Repo",
+        "url": "https://example.invalid/community.json",
+        "localPath": "C:/anywhere/Repos/community-cache.json",
+        "cached": true,
+        "enabled": false
+      },
+      {
+        "repoId": null,
+        "name": "Local Dir Repo",
+        "url": null,
+        "localPath": null,
+        "cached": false,
+        "enabled": true
+      }
+    ]
+  }
+}

@@ -1,12 +1,23 @@
 # packages-templates 协议本 v0.1（packages.listTemplates 读面：模板条目清单）
 
-> 文档版本：0.1
-> 状态：**已冻结（提案 027 F5 核心冻结批——wire 路由、信封常量与 served 行候核心
-> 接线切片；库实现归环境实现核对切片；桌面消费候形状核可）**
+> 文档版本：0.1.1
+> 状态：**已冻结（提案 027 F5 核心冻结批，2026-09-20）且已接线（v0.1.1 核心接
+> 线批，2026-09-20）：`packages.listTemplates` 路由、信封双常量与 served 行
+> `packages.templatesOps` 已落树——库面实现归环境实现核对切片；桌面消费候形
+> 状核可后照面序程序办理；在其落地前一切已接线 backend 均停在诚实缺席臂
+> （trait 默认 `template_capabilities -> NONE`，served 行如实 unavailable）。**
+> （冻结出处：提案 027 F5 冻结批——U14 裁决 (3) 立案权威、027 核心表态 5 三
+> 域收敛、面序 F2→F3→F5 第 121–130 批登记。）
 > 权威对：本文件与 `packages-templates-v0.1_EN.md`（单一语义，双语镜像）。
 > 词面权威：`schemas/packages-templates/v0.1/`（command＋result Schema 与正负例
 > 向量）。本文负责解释；Schema 具约束力。
-> 核心消费测试：`crates/provider-host/tests/packages_templates_consumer_v01.rs`。
+> 核心消费测试：`crates/provider-host/tests/packages_templates_consumer_v01.rs`；
+> wire 路由测试 `crates/provider-host/tests/packages_templates_wire_v01.rs`
+> 〔真实帧循环〕。
+> 更新：2026-09-20（v0.1.1 接线批：`packages.listTemplates` 路由臂＋信封双常
+> 量 `PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01`/`PACKAGES_TEMPLATES_
+> SCHEMA_VERSION_V01`＋served 行 `packages.templatesOps`＋wire 测试 7 例骑真
+> 实帧循环；词面零变化）
 
 ## 本面是什么
 
@@ -61,6 +72,14 @@ v0.1 同律先例）。
 - 方法：`packages.listTemplates`（kind `query`）。
 - 信封：`schemaVersion` 常量 `"0.1"`；结果族常量 `vua.packages-templates/v0.1`
   （两版本独立——c914cf2 既有规则）。
+- **wire 常量（v0.1.1 接线批命名，A3/A4/A5/F2/F3 先例——提前闭合桌面核对点）**：
+  信封常量 `PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01 = "0.1"` 与结果族常
+  量 `PACKAGES_TEMPLATES_SCHEMA_VERSION_V01 = "vua.packages-templates/v0.1"`
+  自 `vua_provider_host::provider_host` 发布——消费端钉核心域常量，绝不私有
+  字面量；路由在信封组装时把两常量盖在应答上（信封 `schemaVersion` ＋
+  result 文档 `schemaVersion`），绝不后端、绝不字面量。词表字节零变化——
+  常量锁定的正是本冻结 Schema 的同一字符串（c914cf2 规矩：每行自带版本常
+  量，信封版本独立于族版本）。
 - params：**空闭集**（`packages.listRepos` 零参数先例）——模板面是环境级配置事
   实，非 per-project；任何键是 `vua.packages.invalid_params` 形状违反，绝不默认。
 - result（族 `vua.packages-templates/v0.1`）：
@@ -113,15 +132,31 @@ wire 键——恒常量不是事实（F2 compatible 同律）；ORC-DEV-004 无�
 - 只读设计：项目创建是 packages-ops `createProject`（026 A5）写面，不属于本族；
   本面绝不提供创建/预览/写方法。
 
-## 能力门控（候接线批命名与路由）
+## 能力门控（已命名与路由，v0.1.1 接线批落地）
 
 新默认访问器 `VpmBackend::template_capabilities() -> TemplateCapabilities`（单一
 位 `list_templates`），025 访问器法则（ORC-DEV-004：默认 declared-none；后端恰在
 实现 `list_templates` 时覆写）。环境 VrcGetLib 覆写随其实现核对切片如实置真（两
 目录根扫描自实现，与 `create_from_template` 同根同序）；CLI 后端无目录根扫描面，
-如实维持假。本批冻结词面与端口面默认项；wire 路由、`packages.*TemplatesOps` served
-行与信封常量命名归**下一核心接线切片**（A3/A4/A5/F2/F3 先例：族常量在接线批自
-`vua_provider_host::provider_host` 发布）。
+如实维持假。
+
+接线事实（本批落地）：
+
+- **served 行 `packages.templatesOps`**（A3/A4/A5/F2 先例单行单法——族名
+  packages-templates 照 F2 repo-catalog 同构投影为 served 行名）：仅当已接线
+  backend 的 `template_capabilities().list_templates` 为真时 available；默认
+  declared-none 保持行如实 unavailable 直至环境覆写置真。
+- **路由臂顺序（照 F2/F3 同构）**：params 空闭集形状验证**先于**能力门——任何
+  键或非 object params 答 `vua.packages.invalid_params`（纯形状裁决，先于门）；
+  门（`template_capabilities().list_templates`）**先于**端口调用——缺席答通用
+  `vua.vpm.capability_missing`，绝不触达后端方法（端口方法有默认体，声明而未
+  实现的 backend 在类型层存在——两层同答 capability_missing，路由门先行）；
+  端口类型化拒绝逐字透传（code＋messageKey＋category，读面无折叠）；信封组装
+  时路由盖双常量（信封＋族），后端事实逐字——id 升序与 name===id 同值投影是
+  冻结词面的生产者契约（核心消费测试钉死），路由绝不改写。
+- **wire 路由测试**：`packages_templates_wire_v01.rs` 7 例骑真实帧循环（冻结
+  词面全钉＋缺席臂＋门先于端口＋逐字透传＋空枚举合法应答＋形状违例先于门＋
+  双常量对冻结 Schema 常量的可检测性钉）。
 
 ## 后端指向根事实专节（027 检查点——必载）
 
@@ -159,9 +194,11 @@ wire 键——恒常量不是事实（F2 compatible 同律）；ORC-DEV-004 无�
 
 ## 诚实边界
 
-零端到端宣称：本批是词表层——wire 路由/信封常量/served 行候核心接线切片，库实现
-（两根目录扫描自实现＋能力覆写置真）归环境实现核对切片，桌面消费（新建项目模板下
-拉：枚举缺席或创建能力不可用回落现行手填＋留空＝后端默认解析语义原样保持）候形状
-核可后逐面程序，全链真机走查归 W25 窗口（O-2，候用户开窗）。空态即终态：空
-templates 数组按设计的空态呈现，绝不以猜测内容填充；元信息不可得即无元信息键，绝
-不虚构。
+核心接线切片**已完成（本 v0.1.1 批）**：`packages.listTemplates` 路由臂已落树、
+骑命名信封双常量；wire 测试 7 例骑真实帧循环。路由已接线、**未被消费**——桌面
+消费（新建项目模板下拉：枚举缺席或创建能力不可用回落现行手填＋留空＝后端默认
+解析语义原样保持）候形状核可后逐面程序；库实现（两根目录扫描自实现＋能力覆写
+置真）归环境实现核对切片，在其落地前一切已接线 backend 停在诚实缺席臂（served
+行如实 unavailable）；全链真机走查归 W25 窗口（O-2，候用户开窗）。空态即终态：
+空 templates 数组按设计的空态呈现，绝不以猜测内容填充；元信息不可得即无元信息
+键，绝不虚构。

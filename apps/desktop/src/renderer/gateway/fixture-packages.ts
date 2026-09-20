@@ -479,6 +479,10 @@ export function createFixturePackages(): PackagesPort {
     // 演示面永不模拟仓库级包目录 wire 回执(F2 浏览面只在 live 装配的
     // ready-p2 视图出现,mock 不冒充真实引擎)
     repoCatalog: () => Promise.resolve({ kind: "unavailable" } as const),
+    // F5 词面(packages.listTemplates,027 消费批):同纪律恒诚实缺席——
+    // 演示面永不模拟模板枚举 wire 回执(模板下拉只在 live 装配出现,
+    // mock 不冒充真实引擎)
+    listTemplates: () => Promise.resolve({ kind: "unavailable" } as const),
     // A1 写面词面(packages.previewRemove/applyRemove,026 消费批):模拟
     // 面永不模拟 wire 写回执——恒缺席臂(演示变更链走既有 ready 视图
     // 泛型 previewChanges/applyChanges,与 live A1 词面分立互不污染)
