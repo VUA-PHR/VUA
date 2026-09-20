@@ -607,6 +607,7 @@ rolled_back: "롤백됨",
       finishedAt: "완료 시각 {time}",
         recovered_badge: '복구된 실행',
         recovered_note: "복구 후 완료된 작업 기록입니다.",
+      goRelease: "릴리스로 이동",
     },
     phase: {
       inspecting: "검사 중",

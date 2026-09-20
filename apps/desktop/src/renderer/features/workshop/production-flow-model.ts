@@ -1,5 +1,6 @@
 import type {
   BuildRecord,
+  BuildRecordDisplayStatus,
   CapabilityReport,
   InspectionReport,
   MaterialRef,
@@ -171,6 +172,18 @@ export function toneForPhase(phase: ProductionFlowPhase): FlowTone {
     case "completed":
       return "accent";
   }
+}
+
+/**
+ * 记录卡「去出厂」链钮可见性(wt-4 缺口清单 (a) 同批小改):仅显示投影 completed
+ * 放行——aborted/rolled_back 无可看的出厂对象,rollback_failed 是阻断态;
+ * recovered 权威态经投影折叠为 completed 后同样在场(与卡头徽标同口径,不另设
+ * 判定)。纯导航语义:只切页,不跨页携带记录身份(023 跨源推导投影纪律)。
+ */
+export function buildRecordGoReleaseAvailable(
+  displayStatus: BuildRecordDisplayStatus,
+): boolean {
+  return displayStatus === "completed";
 }
 
 function cardsFor(run: RunView, phase: ProductionFlowPhase): FlowCards {
