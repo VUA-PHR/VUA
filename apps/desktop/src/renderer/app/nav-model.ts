@@ -6,7 +6,9 @@ import type { TermId } from "../i18n/terms.ts";
  * 一级 Tab = 指挥台 + 四类用户目标(环境部署/游戏引导/工具合集/模型生产,
  * S-XIII-3 起工具合集第四、模型生产第五),
  * 设置不是用户目标,固定在顶部最右侧但仍参与路由、颜色辖区与侧栏计算;
- * 仓库/车间/包管理仅为模型生产侧栏分组,不产生独立模块;
+ * 模型生产侧栏与其余模块一致为无组标签平铺(2026-09-20 导航重构,用户
+ * 裁决):素材导入与搭配草稿不再是独立页,分别收敛为仓储页/配方页
+ * hero 内的内容型弹窗,导航模型不产生对应页面;
  * 任意已开放功能进入对应 Tab 后一次点击到达(验收 §12-6)。
  *
  * 门控语义(v0.3.3 §2.1 的页面粒度解释):
@@ -33,8 +35,6 @@ export type PageId =
   | "guide-safety"
   | "guide-devices"
   | "guide-tutorials"
-  | "import-material"
-  | "compose"
   | "warehouse"
   | "recipe"
   | "inspection"
@@ -149,35 +149,20 @@ export const businessModules: readonly ModuleDef[] = [
     id: "production",
     labelKey: "production",
     defaultPage: "warehouse",
+    // 2026-09-20 导航重构(用户裁决):无组标签平铺,与其它模块一致——
+    // 素材导入/搭配草稿不再是独立页,收敛为仓储页/配方页 hero 内的
+    // 内容型弹窗(ContentDialog 承载原页面组件,见 WarehousePage/
+    // RecipePage);检查页(BG-15,设计标准 §8.6)保持独立页,是主流程
+    // 「装配 → 检测 → SDK 交接」中独立于车间的检测落点
     groups: [
       {
-        labelKey: "warehouse",
         pages: [
-          // 素材导入(设计标准 0.7.0 §8.3:连续素材获取路径的独立页,置于
-          // 仓储相邻位——先获取后管理)
-          { id: "import-material", labelKey: "importMaterial" },
-          // 搭配草稿(019 批 B:项目无关草稿,连续路径的搭配起点)
-          { id: "compose", labelKey: "composePage" },
           { id: "warehouse", labelKey: null, labelTerms: ["warehouse"] },
           { id: "recipe", labelKey: null, labelTerms: ["recipe"] },
-          // 检查页(BG-15,设计标准 §8.6):报告/证据/下一步;置于出厂前——
-          // 主流程「装配 → 检测 → SDK 交接」的检测落点
           { id: "inspection", labelKey: null, labelTerms: ["inspection"] },
           { id: "release", labelKey: null, labelTerms: ["release"] },
-        ],
-      },
-      {
-        labelKey: "workshop",
-        pages: [
           { id: "workshop", labelKey: null, labelTerms: ["assembly", "production", "inspection"] },
-        ],
-      },
-      {
-        labelKey: "packages",
-        pages: [
           { id: "packages", labelKey: "packages" },
-          // 项目兼容不再持独立页(proposal 026 B,用户 2026-09-18 裁决):
-          // 其读面段并入包管理器页尾部分区(PackagesPage 内 ProjectCompatSection)
         ],
       },
     ],

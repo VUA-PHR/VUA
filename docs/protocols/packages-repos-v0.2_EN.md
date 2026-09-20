@@ -2,31 +2,41 @@
 
 [English](packages-repos-v0.2_EN.md) | [简体中文](packages-repos-v0.2_ZH.md)
 
-> Document version: 0.2
-> Status: **FROZEN (packages-repos word-list row v0.2 = the subscription-row
-> state increment; the v0.1 row stays frozen and served untouched — a backend
-> that has not adopted v0.2 keeps answering the v0.1 family; v0.2 is a
-> separate row directory per the packages-catalog v0.2 / packages-query v0.2
-> increment precedent. NOT WIRED: the v0.2 dual-version negotiation routes
-> wait for the next core wiring batch)**
+> Document version: 0.2.1
+> Status: **FROZEN (packages-repos word-list row v0.2 = the
+> subscription-row state increment; the v0.1 row stays frozen and served
+> untouched — a backend that has not adopted v0.2 keeps answering the v0.1
+> family; v0.2 is a separate row directory per the packages-catalog v0.2 /
+> packages-query v0.2 increment precedent.) and WIRED (the v0.2 negotiation
+> route arm landed at the F4 wiring batch, 2026-09-21: a backend declaring `repos_v02`
+> answers the v0.2 family through `packages.listRepos`, every other backend
+> keeps answering the v0.1 family. NOT CONSUMED: the desktop toggle rendering
+> waits for shape approval)**
 > (2026-09-20, a same-batch product of the proposal 027 F4 freeze batch —
 > without the read-back bit the toggle write face could not be consumed
 > honestly; the unfreeze authority and the storage ruling live in the
 > packages-ops v0.6 protocol document)
 > Machine-readable word list: `schemas/packages-repos/v0.2/` (row-level dual
 > schemas + 3 positive / 4 negative vectors; core consumer tests
-> `crates/provider-host/tests/packages_repos_consumer_v02.rs` 3 cases)
+> `crates/provider-host/tests/packages_repos_consumer_v02.rs` 3 cases; wire
+> tests `crates/provider-host/tests/packages_repos_wire_v02.rs` 3 cases)
 > Scope: the `packages.listRepos` result face gains EXACTLY one REQUIRED
 > row-level fact, `enabled`
 > Ownership boundary: word-list freeze + port face (`RepoInfoV02` + the
 > defaulted accessor `repos_v02` + `list_repos_v02`, default
-> declared-false/absent) = core domain; dual implementation (VrcGetLib
-> projecting the state bit from VUA-owned storage) = environment domain,
-> implementation-verification slice; desktop consumption = desktop domain
-> (the subscription-row toggle rendering, after shape approval)
-> Updated: 2026-09-20 (v0.2 freeze batch: dual schemas + vectors + core
-> consumer tests + TS face + bilingual protocol doc + REGISTRY; the command
-> face is byte-for-byte the frozen v0.1 face, zero change)
+> declared-false/absent) = core domain; the negotiation route arm = core
+> domain, LANDED at the F4 wiring batch (2026-09-21, the family const
+> `PACKAGES_REPOS_SCHEMA_VERSION_V02` stamped by the route); dual
+> implementation (VrcGetLib projecting the state bit from VUA-owned storage)
+> = environment domain, implementation-verification slice; desktop
+> consumption = desktop domain (the subscription-row toggle rendering, after
+> shape approval)
+> Updated: 2026-09-21 (v0.2.1 wiring batch: the packages.listRepos
+> negotiation route arm landed — WORD FACE ZERO CHANGE, this document
+> version records the route landing only. Previous: 2026-09-20 v0.2 freeze
+> batch: dual schemas + vectors + core consumer tests + TS face + bilingual
+> protocol doc + REGISTRY; the command face is byte-for-byte the frozen
+> v0.1 face, zero change)
 
 ## INCREMENT SEMANTICS (the v0.1 word list is never revised in place)
 
@@ -101,11 +111,12 @@
 
 ## HONESTY BOUNDARY
 
-Zero end-to-end claims maintained — this increment is FROZEN and **NOT WIRED,
-NOT CONSUMED** (the v0.2 negotiation routes wait for the next core wiring
-batch; the VrcGetLib state projection waits for the environment
-implementation-verification slice — until then backends honestly keep
-answering the v0.1 family); the real-machine walkthrough stays W25 (O-2).
-Frozen in the same batch as packages-ops v0.6: the write face and its
-read-back bit deliver as one — without the read-back bit the toggle face
-could not be consumed honestly.
+Zero end-to-end claims maintained — this increment is FROZEN and **WIRED,
+NOT CONSUMED** (the v0.2 negotiation route arm landed at the 2026-09-21 F4
+wiring batch — against FAKE backends in the wire tests; the VrcGetLib state
+projection waits for the environment implementation-verification slice —
+until then real backends honestly keep answering the v0.1 family; the
+desktop toggle rendering waits for shape approval); the real-machine
+walkthrough stays W25 (O-2). Frozen in the same batch as packages-ops v0.6:
+the write face and its read-back bit deliver as one — without the read-back
+bit the toggle face could not be consumed honestly.

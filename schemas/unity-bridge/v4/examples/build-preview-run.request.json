@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 4,
+  "commandId": "preview-run-01",
+  "operation": "build_preview",
+  "projectId": "proj-release-smoke",
+  "dryRun": false,
+  "expectedProjectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+  "payload": {
+    "avatarGlobalObjectId": "GlobalObjectId_V1-2-00000000000000000000000000000000-100000-0"
+  }
+}

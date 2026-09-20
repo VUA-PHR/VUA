@@ -33,6 +33,8 @@ import { useDebugMode } from "../../app/debug-mode.ts";
 import { useCardSpotlight } from "./use-card-spotlight.ts";
 import { CardAlbumMedia, DetailAlbum } from "./WarehouseAlbum.tsx";
 import { WarehouseAcquire } from "./WarehouseAcquire.tsx";
+import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
+import { ImportPage } from "../import/ImportPage.tsx";
 import {
   emptyWarehouseQuery,
   hasActiveFilter,
@@ -418,6 +420,9 @@ export function WarehousePage() {
   const [lifecycle, setLifecycle] = useState<StoredLifecycleV1>(loadLifecycle);
   /** 素材卡右键菜单(S-XII):null 即关闭;动作全部映射真实能力 */
   const [cardMenu, setCardMenu] = useState<ContextMenuState | null>(null);
+  // 素材导入弹窗(2026-09-20 导航重构):原独立页收敛为仓储页内弹窗,
+  // 弹窗关闭即卸载 ImportPage——其「卸载即在途关闭内嵌视图」生命周期语义原样生效
+  const [importDialogOpen, setImportDialogOpen] = useState(false);
 
   // 指针聚光 + 微倾斜:回调 ref 追踪 wall-scroll 元素(视图切换会重建它),
   // hook 内部按场景模式决定是否挂载监听(非 animated 模式零开销)
@@ -521,6 +526,14 @@ export function WarehousePage() {
           </button>
         </div>
         <p className="vua-text-secondary">{copy.subtitle}</p>
+        {/* 素材导入入口(2026-09-20 导航重构):原独立页(设计标准 §8.3)收敛为
+            本页内弹窗——连续素材获取路径(云端内嵌浏览/已完成下载采纳/本地
+            文件夹导入)仍在,只是不再占一个侧栏页位 */}
+        <div className="vua-page__actions">
+          <Button variant="primary" onClick={() => setImportDialogOpen(true)}>
+            {strings.importPage.title}
+          </Button>
+        </div>
         {dataSource === "fixture" ? (
           <div>
             <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
@@ -746,6 +759,14 @@ export function WarehousePage() {
       {cardMenu !== null ? (
         <ContextMenu menu={cardMenu} onClose={() => setCardMenu(null)} />
       ) : null}
+      <ContentDialog
+        open={importDialogOpen}
+        title={strings.importPage.title}
+        closeLabel={strings.common.dialogClose}
+        onClose={() => setImportDialogOpen(false)}
+      >
+        <ImportPage />
+      </ContentDialog>
     </div>
   );
 }

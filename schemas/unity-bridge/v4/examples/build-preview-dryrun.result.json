@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 4,
+  "commandId": "preview-dry-01",
+  "operation": "build_preview",
+  "status": "succeeded",
+  "changedPaths": [],
+  "diagnostics": [
+    { "code": "preview.dry_run", "severity": "info", "message": "预览烘焙检查通过:SmokeAvatar,尚未生成图片。" }
+  ],
+  "data": {
+    "projectFingerprint": "v1:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
+    "avatarName": "SmokeAvatar",
+    "basis": "local_estimate",
+    "triangles": 42000,
+    "materialSlots": 8,
+    "skinnedMeshRenderers": 3,
+    "bones": 220
+  }
+}

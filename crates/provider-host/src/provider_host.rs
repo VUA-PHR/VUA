@@ -416,6 +416,34 @@ pub const PACKAGES_OPS_SCHEMA_VERSION_V05: &str = "vua.packages-ops/v0.5";
 /// of the envelope const).
 pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05: &str = "0.5";
 
+/// The `packages-ops` v0.6 result family constant (proposal 027 F4 freeze
+/// batch 2026-09-20, wiring named it per the A3/A4/A5 precedent; same
+/// standing rule — the repository-lifecycle row carries its own version
+/// constant, and the frozen v0.1 A1 removal row, v0.2 A2 install row,
+/// v0.3 A3 registration row, v0.4 A4 repository add/remove row and v0.5
+/// A5 project-creation row keep serving through their own consts
+/// untouched: six separate word-face generations served side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V06: &str = "vua.packages-ops/v0.6";
+
+/// The `packages` envelope const of the v0.6 word-face row (the frozen
+/// v0.6 result schema locks the ENVELOPE schemaVersion to "0.6"; the v0.1
+/// through v0.5 envelopes stay on their own consts — the c914cf2 standing
+/// rule: every wire row carries a version constant of its own, independent
+/// of the envelope const).
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06: &str = "0.6";
+
+/// The `packages-repos` v0.2 result family constant (proposal 027 F4 freeze
+/// batch 2026-09-20, wiring named it per the installed/catalog v0.2
+/// precedent): the subscription-list increment rows carry the REQUIRED
+/// VUA-owned `enabled` state bit (ruling (c) — VCC carries no enable
+/// counterpart, so the bit projects VUA-owned storage, never a
+/// settings.json key). The COMMAND face stays byte-for-byte the frozen
+/// v0.1 face and the ENVELOPE stays on the shared `packages` word-list-row
+/// `"0.1"` const — the v0.2 family const is a RESULT-document fact only
+/// (the F3 installed-increment law: two independent versions, the stamped
+/// const tells the consumer which word face answered, never a guess).
+pub const PACKAGES_REPOS_SCHEMA_VERSION_V02: &str = "vua.packages-repos/v0.2";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -1428,6 +1456,29 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.template_capabilities().list_templates => "available",
         _ => "unavailable",
     };
+    // Proposal 027 F4 (wired at this batch): the repository-lifecycle write
+    // face rides the SAME VpmBackend wiring, gated on the NEW defaulted
+    // accessor `repo_lifecycle_capabilities` — one row serving the THREE
+    // methods (enableRepo/disableRepo/refreshRepo; the repoOps
+    // one-row-serves-three-methods precedent), but the honest gate stays
+    // PER METHOD: the row answers available when the backend declares ANY
+    // of the three independent bits (a partially-overriding backend must
+    // not have its served methods hidden behind a face-level row), while
+    // each route independently answers the generic capability-missing arm
+    // for its own bit BEFORE submit. Default declared-none keeps the row
+    // honestly unavailable until the environment implementation-verification
+    // slice flips it with the VrcGetLib override; the CLI backend has no
+    // lifecycle face and stays honestly false.
+    let packages_repo_lifecycle_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if {
+            let lifecycle = vpm.repo_lifecycle_capabilities();
+            lifecycle.enable_repo || lifecycle.disable_repo || lifecycle.refresh_repo
+        } =>
+        {
+            "available"
+        }
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1475,6 +1526,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.templatesOps",
             "availability": packages_templates_availability,
+        },
+        {
+            "operationId": "packages.repoLifecycleOps",
+            "availability": packages_repo_lifecycle_ops_availability,
         },
     ])
 }
@@ -5305,6 +5360,15 @@ fn packages_request(
         "packages.listTemplates" => {
             packages_list_templates(vpm, request, request_id, correlation_id)
         }
+        "packages.enableRepo" => {
+            packages_enable_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.disableRepo" => {
+            packages_disable_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.refreshRepo" => {
+            packages_refresh_repo(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5464,9 +5528,23 @@ fn packages_list_installed(
 /// catalog declaration (`catalog_capabilities`, default declared-none): an
 /// engine wired without the P2 implementation answers
 /// `vua.vpm.capability_missing`, never a fabricated or padded list. Rows
-/// project the backend's `RepoInfoV01` facts verbatim (serde camelCase,
-/// nulls preserved as honest absences); row order is the backend's
-/// subscription-face order — the route invents no sort key.
+/// project the backend's facts verbatim (serde camelCase, nulls preserved
+/// as honest absences); row order is the backend's subscription-face
+/// order — the route invents no sort key.
+///
+/// The RESULT family is negotiated additively (proposal 027 F4 freeze
+/// batch, the `repos_v02` law — the `catalog_v02`/`query_v02` precedent):
+/// a backend that declares `repos_v02` answers the v0.2 result family
+/// (rows carry the REQUIRED VUA-owned `enabled` state bit — ruling (c):
+/// VCC carries no enable counterpart, so the bit projects VUA-owned
+/// storage, never a settings.json key; an id-absent row projects
+/// `enabled: true` ALWAYS — it is outside the toggle faces' reach); every
+/// other backend keeps answering the frozen `vua.packages-repos/v0.1`
+/// family. The COMMAND face stays byte-for-byte the frozen v0.1 face: the
+/// envelope const stays `"0.1"` and the v0.2 increment is a
+/// result-document fact only (the stamped family const tells the consumer
+/// which word face answered, never a guess — the P1 discipline: the route
+/// stamps the const, the backend facts stay verbatim).
 fn packages_list_repos(
     vpm: Arc<dyn VpmBackend>,
     request: &Value,
@@ -5489,28 +5567,47 @@ fn packages_list_repos(
             "unavailable",
         ));
     }
-    let repos = match vpm.list_repos() {
-        Ok(repos) => repos,
-        Err(error) => {
-            return FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                &error.code,
-                &error.message_key,
-                app_error_category(error.category),
-            ));
+    let (result, family_const) = if vpm.repos_v02() {
+        match vpm.list_repos_v02() {
+            Ok(repos) => {
+                let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+                (json!({ "repos": rows }), PACKAGES_REPOS_SCHEMA_VERSION_V02)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
+        }
+    } else {
+        match vpm.list_repos() {
+            Ok(repos) => {
+                let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+                (json!({ "repos": rows }), PACKAGES_REPOS_SCHEMA_VERSION)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
         }
     };
-    let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+    let mut result = result;
+    result["schemaVersion"] = json!(family_const);
     FrameOutcome::Response(application_success(
         request_id,
         json!({
             "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
             "operation": "packages.listRepos",
-            "result": {
-                "schemaVersion": PACKAGES_REPOS_SCHEMA_VERSION,
-                "repos": rows,
-            },
+            "result": result,
         }),
     ))
 }
@@ -6408,10 +6505,13 @@ fn packages_ops_remove_repo_params(request: &Value) -> Option<String> {
 /// locks the code to `^vua\.packages\.`, so port codes can never travel
 /// verbatim there). The add face claims NO idempotence: where the backend
 /// refuses a duplicate, the wire answers the refusal honestly — no
-/// idempotent success is invented.
-fn packages_ops_repo_port_rejection(error: &AppErrorV1) -> Value {
+/// idempotent success is invented. The family const travels with the
+/// caller's word-face row: the A4 add/remove routes stamp the frozen v0.4
+/// family, the F4 lifecycle routes stamp the frozen v0.6 family — the
+/// same fold law per row, never a cross-row stamp.
+fn packages_ops_repo_port_rejection(schema_version: &'static str, error: &AppErrorV1) -> Value {
     packages_ops_rejected(
-        PACKAGES_OPS_SCHEMA_VERSION_V04,
+        schema_version,
         "execution_failed",
         "vua.packages.execution_failed",
         format!("port code {}: {}", error.code, error.message_key),
@@ -6810,7 +6910,7 @@ fn packages_add_remote_repo(
                     "url": url,
                     "name": name,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6819,7 +6919,13 @@ fn packages_add_remote_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.addRemoteRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.addRemoteRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
 /// `packages.addLocalRepo` (proposal 026 A4 wiring): the same task-driven
@@ -6868,7 +6974,7 @@ fn packages_add_local_repo(
                     "path": path,
                     "name": name,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6877,7 +6983,13 @@ fn packages_add_local_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.addLocalRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.addLocalRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
 /// `packages.removeRepo` (proposal 026 A4 wiring): the same task-driven
@@ -6927,7 +7039,7 @@ fn packages_remove_repo(
                     "kind": "removed",
                     "repoId": repo_id,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6936,18 +7048,251 @@ fn packages_remove_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.removeRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.removeRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
-/// Shared acceptance tail of the three A4 repo-write routes: the
-/// acceptance answer and the Done payload both stamp the envelope const
-/// "0.4" (the result document inside carries its own family const);
-/// submission rejection stays the persistence failure of the task
-/// authority (import-copy same face, provider-layer code — the failure is
-/// the task authority's, not the packages domain's).
+/// Closed param set of the F4 `packages.enableRepo` / `packages.disableRepo`
+/// / `packages.refreshRepo` commands (proposal 027 F4 wiring):
+/// `{ repoId }` — the single key, nothing else (the stable row handle, the
+/// A4 `removeRepo` same handle; index addressing is NOT frozen). NO
+/// `confirmedDigest` slot exists on any of the three (a state toggle diffs
+/// no pre-existing summary and refresh IS the network act — a carried
+/// digest is a shape violation) and NO `projectPath` is taken (the
+/// lifecycle face addresses SUBSCRIPTION rows only). Violations answer
+/// `vua.packages.invalid_params` at the route layer.
+fn packages_ops_repo_lifecycle_params(request: &Value) -> Option<String> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 1 {
+        return None;
+    }
+    let repo_id = params.get("repoId")?.as_str()?;
+    if repo_id.is_empty() {
+        return None;
+    }
+    Some(repo_id.to_owned())
+}
+
+/// `packages.enableRepo` (proposal 027 F4 wiring, 2026-09-21): the A4
+/// `packages.removeRepo` task-driven isomorph over the frozen
+/// `schemas/packages-ops/v0.6/` word list. Re-activating one disabled
+/// subscription row — VUA-owned semantics (the W25 evidence record ruling
+/// (c): VCC carries NO enable/disable state anywhere). The per-method gate
+/// reads ITS OWN bit off the defaulted `repo_lifecycle_capabilities`
+/// accessor BEFORE submit (capability absence never reaches a task); the
+/// receipt echoes the repoId and nothing else (the port answers
+/// `Result<(), _>` — the echo IS the audit link; the new state itself is
+/// read back on the packages-repos v0.2 subscription face, never
+/// duplicated into the receipt). Every port refusal folds into the frozen
+/// `execution_failed` guard carrying the original port code inside
+/// `detail` (the reused `vua.vpm.*` codes never travel in the rejected
+/// `code` key).
+fn packages_enable_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().enable_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.enable_repo(&repo_id) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "enabled",
+                    "repoId": repo_id,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.enableRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.enableRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// `packages.disableRepo` (proposal 027 F4 wiring): excluding one
+/// subscription row from the package-collection world (subscribed and
+/// listed, never resolved). The disable set lives in VUA-OWNED STORAGE
+/// under the environment root (the `.vua/vpm-repo-state.json` ruling word
+/// face) — the wire face never touches the shared settings.json. Same
+/// task-driven shape and fold law as `packages.enableRepo`.
+fn packages_disable_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().disable_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.disable_repo(&repo_id) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "disabled",
+                    "repoId": repo_id,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.disableRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.disableRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// `packages.refreshRepo` (proposal 027 F4 wiring): the etag-conditional
+/// cache refresh of one subscription row's OWN cache file (the network
+/// segment is inherent to the face — the task is cancellable and the
+/// nine-state machinery is substantive, the A4 task-driven isomorph). The
+/// receipt REQUIRES `cacheUpdated` (the `RepoRefreshOutcomeV01` carrier):
+/// true = the fetch wrote a new cache; false = etag unchanged, "already up
+/// to date" — an honest SUCCESS either way. Same fold law as the two
+/// toggle arms.
+fn packages_refresh_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().refresh_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.refresh_repo(&repo_id) {
+                Ok(outcome) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "refreshed",
+                    "repoId": repo_id,
+                    "cacheUpdated": outcome.cache_updated,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.refreshRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.refreshRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// Shared acceptance tail of the repo-write routes (the three A4
+/// add/remove routes and the three F4 lifecycle routes): the acceptance
+/// answer and the Done payload both stamp the CALLER's envelope const
+/// ("0.4" for the A4 row, "0.6" for the F4 row — the result document
+/// inside carries its own family const); submission rejection stays the
+/// persistence failure of the task authority (import-copy same face,
+/// provider-layer code — the failure is the task authority's, not the
+/// packages domain's).
 fn finish_repo_write_acceptance(
     accepted: Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1>,
     operation: &str,
+    envelope_schema_version: &'static str,
     request_id: &str,
     correlation_id: &str,
 ) -> FrameOutcome {
@@ -6955,7 +7300,7 @@ fn finish_repo_write_acceptance(
         Ok(accepted) => FrameOutcome::Response(application_success(
             request_id,
             json!({
-                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "schemaVersion": envelope_schema_version,
                 "operation": operation,
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
