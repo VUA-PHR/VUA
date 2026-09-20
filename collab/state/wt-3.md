@@ -6,7 +6,7 @@ role: 桌面
 updated: 2026-09-20
 ---
 ## 当前焦点
-**027 F3 桌面消费切片轮（2026-09-20 07:3x–08:3x，节拍轮工作时段 date 07:36 实测；三笔：
+**027 F3 桌面消费切片轮（2026-09-20 07:3x–08:0x，节拍轮工作时段 date 07:36 实测；三笔：
 追平壳 ec8aec6＋切片批 92d201e〔恰 15 文件 468+/23-〕＋本状态批恰本文件）——操作者注
 双裁断中取「开工」且按切片完整性交付：F3 消费切片上轮核可（ed6cfe1）解锁后本轮首领项
 兑现，核对点五条全部落地，定向证据集亲测全绿**：
@@ -38,7 +38,9 @@ updated: 2026-09-20
   （wt-7 已改词面语义避让照办），复用键 3（states.updateAvailable＋menu.updateToLatest＋
   p2.catalogCachedData）；design-standard **0.7.9**（0.7.8 已被 028 #7 占用，顺延取号）
   §8.7 已装包更新感知呈现节双语＋changelog＋REGISTRY 行同步。
-- **定向证据亲测全绿（08:1x 本拍亲测）**：desktop typecheck 双 tsconfig exit 0＋desktop
+- **定向证据亲测全绿（07:5x–08:0x 本拍亲测；vitest 完成 08:00:03〔Start 07:59:59〕，
+  build/leak/contrast 随后至 08:0x——切片批提交信息申报「08:1x」系估读超前，本订正批
+  如实订正，证据内容与读数不变）**：desktop typecheck 双 tsconfig exit 0＋desktop
   vitest 86 文件 **780/780**（772→780＝新增 8：live F3 describe 4＝v0.2 行＋披露携带且
   族常量被消费/v0.1 零回归零虚构字段/cacheSourced=false 在线刷新事实照实传播/缺判定对与
   缺披露双形状违规机器诚实拒绝；model 选择器 4 臂）＋check:i18n OK（3 交付语言表对齐）
