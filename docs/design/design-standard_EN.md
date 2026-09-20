@@ -1,10 +1,10 @@
-# VUA design standard v0.7.10
+# VUA design standard v0.7.11
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.10
+> Document version: 0.7.11
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.10)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.11)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -296,10 +296,23 @@ stable untilted cards.
   brand-new project directory has no pre-existing state to diff and no digest to bind, so the user's
   explicit form submission is the confirmation. The entry is gated on the create capability fact row;
   without the fact it does not render. The form is a parent-folder path input plus a project name
-  input — no invented directory enumeration and no fabricated template dropdown; leaving the template
-  blank means the backend default template resolution, stated as it is. Success registers the project
-  immediately (visible after the list refresh); creation is not idempotent, and refusals such as an
-  already-existing target directory render inline as they are.
+  input — no invented directory enumeration. Success registers the project immediately (visible
+  after the list refresh); creation is not idempotent, and refusals such as an already-existing
+  target directory render inline as they are.
+
+  Template enumeration presentation (027 F5 consumption slice): the create block mounts the
+  template enumeration gated on the packages.templatesOps capability fact row
+  (packages.listTemplates is an environment-level configuration face, page-locally carried, never
+  entering the snapshot) — once the enumeration is ready a template dropdown replaces the manual
+  input: the default option = "use the backend default template (leave empty)" (026 A5 blank-face
+  semantics verbatim), each row displays the name verbatim (= the frozen same-value projection of
+  id, never a fabricated friendlier label), and the selected id is passed as-is as the
+  packages.createProject template argument. Fall-back discipline: capability-row absence, an empty
+  array (an honest zero-template answer — a missing directory root is a fact, not an error, never
+  rendered as an error and never fabricated into a listing), typed failures, and unavailability
+  all fall back to the standing manual input plus leave-empty = backend default resolution; typed
+  failures render with the error code verbatim, strictly distinguished from capability absence —
+  a failure never masquerades as an empty listing.
 
   Settings-face copy discipline (027 F1, user ruling U14): UI copy for settings-face operations
   such as subscribing and registering local packages states the shared semantics honestly — the
@@ -419,6 +432,16 @@ direction.
 
 ## 12. Document changelog
 
+- **0.7.11 (2026-09-20)**: §8.7 addendum for template enumeration presentation (proposal 027 F5
+  consumption slice) — the create block mounts the template dropdown gated on the
+  packages.templatesOps capability fact row (a ready enumeration replaces the manual input; the
+  default option = leave-empty backend default; the name projects verbatim, never a fabricated
+  label; the id passes as-is as the createProject template argument); fall-back discipline
+  (capability-row absence / an empty array = an honest zero-template answer [a fact, not an error]
+  / typed failures carrying the error code verbatim / unavailability all fall back to the manual
+  input plus leave-empty = backend default resolution, failures and absence strictly distinguished,
+  never folded into an empty listing); the §8.7 project-creation sentence "no fabricated template
+  dropdown" retires with the frozen word face now consumed. EN mirror in sync.
 - **0.7.10 (2026-09-20)**: §8.9 notification-center scroll-to-close semantics clarified (W25
   real-machine batch-4 correction) — the user observed scrolling the notification list inside
   the panel closing the whole notification center; clarified that the scroll-to-close gesture

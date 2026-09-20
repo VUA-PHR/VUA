@@ -6,6 +6,7 @@ import type {
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
+  PackagesTemplateItemV01,
 } from "@vua/contracts";
 import type {
   PackagesRegisterReceiptV03,
@@ -65,6 +66,14 @@ export type {
   PackagesCreateRejectedV05,
   PackagesProjectCreatedV05,
 } from "@vua/contracts";
+
+/** 027 F5 模板条目枚举读面冻结词面(packages-templates v0.1;镜像
+ *  @vua/contracts application-contract.ts F5 段——词面权威,投影与窄
+ *  化纪律见 packages-live.ts)。行 = id+name 两键闭集(name = id 冻结
+ *  同值显示投影,消费端逐字显示绝不虚构更友好标签;id 作 createProject
+ *  template 参数机器标识原样传递)。description/sourceRoot 刻意缺席
+ *  (发明即非法——冻结负例向量钉死),消费端不猜不补 */
+export type { PackagesTemplateItemV01 } from "@vua/contracts";
 
 /**
  * VPM 包管理窄端口(S-XVI;调研 docs/research/vrc-get-vcc-research.md)。
@@ -156,6 +165,19 @@ export type {
  *   不可复用 blocks.changes(其语义 = 变更预览可用性,与「可新建项目」
  *   不同构——A5 形状核可裁定);既有 blocks 键语义与来源零变更(逐面
  *   升级承诺:纯增量新键)。
+ * - F5 模板条目枚举读面消费批(027 packages-templates v0.1 冻结批
+ *   d09c1e6 经第 132 批入库＋wire 接线批 8677607 经第 136 批入库＋桌面
+ *   形状核可 d41f3a7 经第 137 批入库,2026-09-20):packages.listTemplates
+ *   (params 空闭集环境级配置面读面,id+name 两键闭集行——name = id 冻
+ *   结同值显示投影逐字显示,id = createProject template 参数机器标识)
+ *   已消费;blocks.templates 权威事实源 = served_capabilities 的
+ *   packages.templatesOps 能力行(一行服务本方法,repoCatalogOps 一行
+ *   先例;default declared-none 访问器门控,环境覆写置真前如实
+ *   unavailable;false = 行缺席或不可用,模板下拉不渲染、创建表单回落
+ *   手填——渲染层不伪造);回落纪律:枚举缺席/typed 失败/空数组一律回
+ *   落现行手填＋留空 = null = 后端默认模板解析(026 A5 留白填面语义原
+ *   样;typed 失败与空数组在 UI 呈现上严格区分,失败绝不冒充空清单);
+ *   既有 blocks 键语义与来源零变更(逐面升级承诺:纯增量新键)。
  */
 
 /** 包来源:官方 / 官方精选 / 社区订阅 / 本地导入(玩家语言,不暴露 VPM 术语) */
@@ -362,6 +384,18 @@ export interface RepoCatalogFactsV01 {
 }
 
 /**
+ * F5 模板条目枚举事实(027 冻结词面,镜像 @vua/contracts
+ * PackagesListTemplatesResultV01 去 schemaVersion 信封键):templates
+ * 空数组 = 诚实零模板应答(目录根缺失是事实非错误——回落手填,绝不
+ * 渲染成错误、绝不虚构模板清单);行序 = 服务端冻结 id 升序呈现事实,
+ * 客户端不重排不猜测;零网络面无 cacheSourced(恒常量信息字段不是事实,
+ * repoCatalog 先例)。
+ */
+export interface TemplatesFactsV01 {
+  readonly templates: readonly PackagesTemplateItemV01[];
+}
+
+/**
  * P1 读取失败形态:typed 错误码照原词呈现(工程事实,不猜测映射;
  * 复用码 vua.project.project_not_found = 选中项目已从 013 注册面消失,
  * 与「零已装包」的合法空数组严格区分——诚实纪律 2,失败不冒充空态)。
@@ -435,6 +469,11 @@ export type PackagesView =
         readonly registers: boolean;
         readonly repoWrites: boolean;
         readonly creates: boolean;
+        /** F5 模板枚举读面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.templatesOps 能力行;false = 行缺席
+         *  或不可用,模板下拉不渲染、创建表单回落手填(渲染层不伪造);
+         *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
+        readonly templates: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
@@ -489,6 +528,13 @@ export type PackagesView =
          *  false = 行缺席或不可用,仓库浏览入口不渲染(渲染层不伪造);
          *  纯增量新键,既有键语义与来源零变更(逐面升级承诺) */
         readonly repoCatalog: boolean;
+        /** F5 模板条目枚举读面(027 消费批):权威事实源 = served_
+         *  capabilities 的 packages.templatesOps 能力行(default
+         *  declared-none 访问器门控,环境覆写置真前如实 unavailable);
+         *  false = 行缺席或不可用,模板下拉不渲染、创建表单回落手填
+         *  (渲染层不伪造);纯增量新键,既有键语义与来源零变更(逐面
+         *  升级承诺) */
+        readonly templates: boolean;
       };
       readonly projectPath: string | null;
       readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
@@ -730,6 +776,24 @@ export interface PackagesPort {
     packageIds: readonly string[] | null,
   ): Promise<
     | { readonly kind: "ok"; readonly result: RepoCatalogFactsV01 }
+    | { readonly kind: "failed"; readonly code: string }
+    | { readonly kind: "unavailable" }
+  >;
+  /**
+   * F5 词面消费(packages.listTemplates,027 packages-templates v0.1
+   * 冻结批):模板条目枚举只读查询——params 空闭集(环境级配置面,非
+   * per-project,listRepos 先例),零网络无 cacheSourced。行 = id+name
+   * 两键闭集:name = id 冻结同值显示投影(下拉显示行逐字用 name,绝不
+   * 虚构更友好标签),id = packages.createProject template 参数机器标
+   * 识(选择即传该 id 原样,verbatim 非空串腿);templates 空数组 =
+   * 诚实零模板应答(目录根缺失是事实非错误)——回落手填,绝不渲染成
+   * 错误、绝不虚构模板清单。typed 码照原词(unavailable = 引擎缺席/
+   * 未接线或 served 行 declared-none 环境覆写置真前诚实缺席;failed 携
+   * 带错误码原词,不折叠不猜测)。模板枚举事实不进快照:F2 同款页面局
+   * 部承载(创建区块按需查询,blocks.templates 能力行门控)。
+   */
+  listTemplates(): Promise<
+    | { readonly kind: "ok"; readonly result: TemplatesFactsV01 }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;

@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-20 07:1x 推进：**F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节**——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5/F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
+status: 讨论中（2026-09-20 07:1x 推进：**F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节**——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5 链＝冻结 d09c1e6（132 批）→接线 8677607（136 批）→形状核可 d41f3a7（137 批）→**桌面消费已落节（2026-09-21 00:1x 线程末节：核对点五条逐条兑现＋定向复跑亲测全绿，消费批候随轮验收）**——环境 F5 库实现切片候环境席位、与桌面消费互不阻塞；F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -882,3 +882,59 @@ d09c1e6（经第 132 批合并 640b365 入库）＋wire 接线批 8677607（恰�
   测试）候环境席位领取，与本核可及桌面消费互不阻塞（F2/F3 双环先例：消费对
   declared-none 后端诚实回落手填即合法消费形态——缺席臂兼容，消费不候实现入库）。
   零端到端宣称维持。
+
+### 桌面消费落节（F5 模板下拉，wt-3，2026-09-21 00:1x）
+
+**应本节解锁登记照 F2/F3 消费先例续领**（上拍核可批 d41f3a7 经第 137 批合并
+e6ee4eb 收编入库，F5 桌面消费切片解锁正式落账 main；追平壳吸收 main 680907d
+世代后动工，基点零预消费）。消费对象＝packages-templates v0.1 冻结词面
+（冻结批 d09c1e6＋接线批 8677607 收编世代）——**核对点五条逐条兑现**：
+
+1. **回落纪律（核对点①）**：blocks.templates（packages.templatesOps 能力行）
+   false＝下拉不渲染、创建表单回落现行手填（渲染层不伪造）；挂载即查一次
+   （环境级配置面，F2 页面局部承载先例，不进快照）；空数组＝诚实零模板应答
+   （目录根缺失是事实非错误）回落手填＋信息性标注，**绝不渲染成错误、绝不虚
+   构模板清单**；typed 失败/unavailable 同回落手填＋留空＝null＝后端默认解析
+   （026 A5 留白填面语义原样——提交链零改动：trim 后空串只构造 null，UI 永不
+   构造空串违例）；loading 期手填禁用＋提示（不制造「手填值遗留到下拉世界」
+   的展示错位）。
+2. **name 投影逐字（核对点②）**：下拉默认项＝「使用后端默认模板（留空）」；
+   模板行显示名逐字用 name（=id 冻结同值投影），绝不虚构更友好标签；选中项
+   value＝id 作 packages.createProject template 参数机器标识原样传递（提交链
+   verbatim 非空腿复用，零新构造）。
+3. **诚实错误态（核对点③）**：typed 失败携错误码原词呈现（live 层
+   invokeTyped 原词上呈零折叠；vua.packages.unavailable 缺席臂折叠
+   unavailable 照先例）；失败标注（错误码原词）与能力缺席标注四语文案严格分
+   立，能力缺席与加载失败呈现区分，**失败不冒充空清单**（诚实纪律 2）。
+4. **i18n 与文档随批（核对点④）**：新 i18n 键六枚四语随批（templateSelect
+   Aria/templateDefaultOption/templatesLoading/templatesEmptyNote/templates
+   FailedNote/templatesUnavailableNote——自然措辞、既有键零误伤、wt-7 未检
+   查/无匹配更新/缓存空态词面零触碰，check-i18n 四语对齐 OK）；design-standard
+   §8 增补随批＝0.7.11（§8.7 模板枚举呈现段＋项目创建段「不虚构模板下拉」
+   表述随消费落地退役改写，EN 镜像同步 0.7.11）。
+5. **零端到端宣称（核对点⑤）**：维持——本落节系词面消费＋定向复跑，真机走
+   查归 W25（O-2）。
+
+**实现面（桌面域 TS 全层切片同批）**：contracts desktop-gateway.ts＝Packages
+ListTemplatesRequestV1 请求类型＋DESKTOP_GATEWAY_METHOD_KINDS 登记
+"query"＋isDesktopGatewayRequestV1 空闭集 case＋请求联合成员；electron
+gateway-router.ts＝packages.listTemplates 分发臂（空闭集 params verbatim
+透传）；renderer packages-port.ts＝TemplatesFactsV01＋blocks.templates 纯增
+量新键（p1/p2 双视图，逐面升级承诺照办）＋listTemplates() 方法；packages-
+live.ts＝TEMPLATES_OPERATION_ID＋capabilityRows 十行＋isPackagesTemplates
+Result 守卫（行两键闭集：id 非空机器标识＋name 非空投影；发明 description
+即形状不符）＋listTemplatesRaw（族常量剥除、id 升序呈现事实不重排）；empty/
+fixture gateway 恒缺席臂（mock 永不模拟模板枚举，不出 DEV 纪律照旧）；
+PackagesPage CreateSection＝TemplatesFace 五形态状态机＋下拉/手填双臂渲染。
+
+**定向证据（本拍亲测，680907d 基点世代）**：contracts dist 重建照陈旧事故
+先例（method-kinds 表登记后 dist 未重建曾致 router 测试假红——如实登记此
+轮内小教训）后 pnpm check 83/83；desktop pnpm check 全链 exit 0（typecheck
+双 tsconfig 0＋vitest 89 文件 806/806〔含 live.test 新增 F5 用例组 6 枚：
+能力行翻转/族常量剥除/id 升序不重排/空数组诚实应答/typed 原词与缺席臂/形
+状违例两件；router.test 新增分发臂用例：translate verbatim＋空闭集词表外键
+信封守卫拒〕＋build＋check:boundary OK＋check:i18n OK＋check:contrast 达
+标＋check:leak 155 指纹零泄漏＋check:forest-leak 通过）。df 先查 616G/67%
+（上拍 605G/68%，读数如实更新）。**零端到端宣称维持**——served 行环境覆写置真前模板
+枚举如实 unavailable、创建区块如实回落手填（declared-none 世代下下拉不渲
+染＝核对点①缺席臂合法呈现）；真机呈现归 W25（O-2）。

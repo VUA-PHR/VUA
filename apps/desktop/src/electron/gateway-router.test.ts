@@ -906,6 +906,49 @@ describe("packages-query v0.1 routing (024 P1 消费批)", () => {
     expect(catalogExtraKey).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).not.toHaveBeenCalled();
   });
+
+  it("routes the 027 F5 template enumeration verbatim and rejects word-list-escape params (empty closed set)", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // listTemplates:空闭集 params verbatim(mock 无模板能力 →
+    // vua.vpm.capability_missing 诚实缺席照原样透传;mock 未实现该方法时
+    // 走通用 application 错误面,分发形状仍逐字可断言)
+    const templates = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-tpl-1",
+        method: "packages.listTemplates",
+        params: {},
+      },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-pkg-tpl-1",
+      correlationId: "desktop-request-pkg-tpl-1",
+      kind: "query",
+      method: "packages.listTemplates",
+      params: {},
+    });
+    expect(templates.ok).toBe(false);
+
+    // 空闭集:任何键在信封守卫即拒(词表外键零 wire 开销)
+    const templatesExtraKey = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-pkg-tpl-2",
+        method: "packages.listTemplates",
+        params: { projectPath: "C:/x" },
+      },
+    );
+    expect(templatesExtraKey).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("bdl-queries v0.2 routing", () => {

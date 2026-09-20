@@ -28,6 +28,7 @@ import {
   type PackagesRemovePlanV01,
   type PackagesRemoveReceiptV01,
   type PackagesRemoveRejectedV01,
+  type PackagesTemplateItemV01,
   type RegisteredProjectRow,
   type RepoCatalogFactsV01,
   type RepoCatalogRepoRowV01,
@@ -918,8 +919,17 @@ function RepoWriteSection({
  * 能力行,一行一方法)门控,false = 区块不渲染(诚实缺席)。照 A3/A4 同律
  * 无 preview 无确认链——全新项目目录无既有状态可 diff 无摘要可绑定,用户
  * 显式表单提交即确认。表单:parent 路径输入(不发明目录枚举/选择器)+
- * name;template 选填,留空 = null = 后端默认模板解析(冻结词面事实,非
- * 选择器——templates.* 枚举不在冻结词面,不虚构模板下拉)。创建即在册(
+ * name;template 选填,留空 = null = 后端默认模板解析(冻结词面事实)。
+ * 027 F5 消费批:blocks.templates(packages.templatesOps 能力行)为真时
+ * 挂载即查 packages.listTemplates(环境级配置面,页面局部承载 F2 先例),
+ * 枚举 ready = 模板下拉替换手填(显示行逐字用 name = id 冻结同值投影,
+ * 绝不虚构更友好标签;选中项 value = id 作 createProject template 参数
+ * 机器标识原样传递);回落纪律——能力行缺席/loading 外的枚举不可用
+ * (空数组 = 诚实零模板应答,目录根缺失是事实非错误/typed 失败/unavailable)
+ * 一律回落现行手填 + 留空 = 后端默认解析(026 A5 留白填面语义原样),
+ * 空数组绝不渲染成错误、缺席绝不虚构模板清单;typed 失败(错误码原词)
+ * 与能力缺席呈现严格区分,失败不冒充空清单。loading 期手填禁用(枚举
+ * 即将就位,不制造「手填值遗留到下拉世界」的展示错位)。创建即在册(
  * 冻结端口事实)如实文案:成功即注册、在册列表刷新即见。**创建不幂等**:
  * 目标目录已存在等拒绝如实行内呈现(库路径四拒绝腿按 detail 原码呈现四
  * 语语义文案;CLI 腿与词外 detail 回落 guard 文案 + detail 原词,绝不合并
@@ -928,6 +938,16 @@ function RepoWriteSection({
  * created 收据 projectPath = 注册路径身份回显)/rejected 行内呈现;
  * failed/unavailable 关闭为 toast 诚实说明——任务真实状态由任务中心呈
  * 现。 ---- */
+
+/** F5 模板枚举读面形态(null = blocks.templates false,未查询不虚构):
+ * loading / ready(枚举行集,服务端冻结 id 升序呈现事实原样)/ empty
+ * (诚实零模板)/ failed(typed 错误码原词)/ unavailable(能力缺席) */
+type TemplatesFace =
+  | { readonly kind: "loading" }
+  | { readonly kind: "ready"; readonly templates: readonly PackagesTemplateItemV01[] }
+  | { readonly kind: "empty" }
+  | { readonly kind: "failed"; readonly code: string }
+  | { readonly kind: "unavailable" };
 
 /** A5 创建表单行内终态:ok 保留注册路径回显 / rejected 保留拒绝呈现;
  * failed/unavailable 不留行内状态(toast 说明后复位)。 */
@@ -941,6 +961,8 @@ function CreateSection({
   name,
   template,
   outcome,
+  templatesBlock,
+  gateway,
   onParentChange,
   onNameChange,
   onTemplateChange,
@@ -951,6 +973,10 @@ function CreateSection({
   name: string;
   template: string;
   outcome: CreateOutcomeView | null;
+  /** F5 能力行(blocks.templates):false = 模板下拉不渲染,创建表单
+   *  回落手填(渲染层不伪造) */
+  templatesBlock: boolean;
+  gateway: ReturnType<typeof useGateway>;
   onParentChange: (value: string) => void;
   onNameChange: (value: string) => void;
   onTemplateChange: (value: string) => void;
@@ -959,6 +985,33 @@ function CreateSection({
   const usable = parent.trim().length > 0 && name.trim().length > 0 && !busy;
   const refusalKey =
     outcome?.kind === "rejected" ? createRefusalDetailKey(outcome.detail) : null;
+  // F5 模板枚举(027 消费批):能力行为真时挂载即查一次(环境级配置面,
+  // 非随项目/随行变化;F2 页面局部承载先例)。查询只此一处,失败/缺席
+  // 如实落形态,绝不重试轰炸绝不虚构清单
+  const [templatesFace, setTemplatesFace] = useState<TemplatesFace | null>(null);
+  useEffect(() => {
+    if (!templatesBlock) return;
+    let active = true;
+    setTemplatesFace({ kind: "loading" });
+    void gateway.packages.listTemplates().then((result) => {
+      if (!active) return;
+      if (result.kind === "ok") {
+        setTemplatesFace(
+          result.result.templates.length === 0
+            ? { kind: "empty" }
+            : { kind: "ready", templates: result.result.templates },
+        );
+      } else if (result.kind === "failed") {
+        setTemplatesFace({ kind: "failed", code: result.code });
+      } else {
+        setTemplatesFace({ kind: "unavailable" });
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [gateway, templatesBlock]);
+  const templateSelector = templatesFace?.kind === "ready" ? templatesFace.templates : null;
   return (
     <Card>
       <h2 className="vua-packages__section-title">{copy.create.title}</h2>
@@ -993,18 +1046,58 @@ function CreateSection({
           </Button>
         </div>
         <div className="vua-packages__register-row">
-          <input
-            type="text"
-            className="vua-packages__register-input"
-            placeholder={copy.create.templatePlaceholder}
-            aria-label={copy.create.templateAria}
-            value={template}
-            onChange={(event) => onTemplateChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter" && usable) onSubmit();
-            }}
-          />
+          {templateSelector !== null ? (
+            <select
+              className="vua-packages__register-input vua-packages__create-template-select"
+              aria-label={copy.create.templateSelectAria}
+              value={template}
+              onChange={(event) => onTemplateChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && usable) onSubmit();
+              }}
+            >
+              <option value="">{copy.create.templateDefaultOption}</option>
+              {templateSelector.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              className="vua-packages__register-input"
+              placeholder={copy.create.templatePlaceholder}
+              aria-label={copy.create.templateAria}
+              value={template}
+              disabled={templatesFace?.kind === "loading"}
+              onChange={(event) => onTemplateChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter" && usable) onSubmit();
+              }}
+            />
+          )}
         </div>
+        {templatesFace?.kind === "loading" ? (
+          <p className="vua-caption vua-text-secondary" role="status">
+            {copy.create.templatesLoading}
+          </p>
+        ) : null}
+        {templatesFace?.kind === "empty" ? (
+          <p className="vua-caption vua-text-secondary">
+            {copy.create.templatesEmptyNote}
+          </p>
+        ) : null}
+        {templatesFace?.kind === "failed" ? (
+          <p className="vua-caption vua-packages__register-result--rejected" role="alert">
+            {format(copy.create.templatesFailedNote, { code: templatesFace.code })}
+          </p>
+        ) : null}
+        {templatesFace?.kind === "unavailable" ? (
+          <p className="vua-caption vua-text-secondary">
+            {copy.create.templatesUnavailableNote}
+          </p>
+        ) : null}
       </div>
       {outcome?.kind === "ok" ? (
         <div className="vua-packages__register-result" role="status">
@@ -2078,7 +2171,9 @@ export function PackagesPage() {
   /* ---- A5 项目创建(026 v0.5 消费批):无 preview 无确认链——用户显式
    * 表单提交即确认(全新目录无既有状态可 diff 无摘要可绑定,UI 不构造携
    * digest/projectPath 请求)。template 输入留空 = null(后端默认模板解
-   * 析),非空 = verbatim;空串 = 词面形状违反,UI 只构造 null 绝不构造空
+   * 析),非空 = verbatim(027 F5 消费批:非空值来源 = 模板下拉选中的
+   * id〔冻结机器标识,原样传递〕或枚举不可用时的手填,下拉显示行逐字用
+   * name 绝不虚构标签);空串 = 词面形状违反,UI 只构造 null 绝不构造空
    * 串。创建不幂等:重复目录拒绝如实行内呈现,不发明幂等成功。ok(
    * created 收据 = ProjectRef 投影,projectPath = 注册路径身份;创建即在
    * 册,成功后在册列表由端口广播刷新)/rejected 行内呈现;failed/
@@ -2249,6 +2344,8 @@ export function PackagesPage() {
                 name={createName}
                 template={createTemplate}
                 outcome={createOutcome}
+                templatesBlock={p2.blocks.templates}
+                gateway={gateway}
                 onParentChange={setCreateParent}
                 onNameChange={setCreateName}
                 onTemplateChange={setCreateTemplate}
@@ -2391,6 +2488,8 @@ export function PackagesPage() {
                   name={createName}
                   template={createTemplate}
                   outcome={createOutcome}
+                  templatesBlock={p1.blocks.templates}
+                  gateway={gateway}
                   onParentChange={setCreateParent}
                   onNameChange={setCreateName}
                   onTemplateChange={setCreateTemplate}
