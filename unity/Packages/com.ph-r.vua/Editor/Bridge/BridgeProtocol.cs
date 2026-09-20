@@ -191,25 +191,37 @@ namespace Vua.Editor.Bridge
         public List<BridgeDiagnostic> diagnostics = new List<BridgeDiagnostic>();
         public BridgeData data = new BridgeData();
 
-        public static BridgeResult Success(BridgeCommand command) => new BridgeResult
+        public static BridgeResult Success(BridgeCommand command) => ForCommand(command, new BridgeResult
         {
             commandId = command.commandId,
             status = "succeeded"
-        };
+        });
 
-        public static BridgeResult Reject(BridgeCommand command, string code, string message) => new BridgeResult
+        public static BridgeResult Reject(BridgeCommand command, string code, string message) => ForCommand(command, new BridgeResult
         {
             commandId = CorrelationId(command),
             status = "rejected",
             diagnostics = new List<BridgeDiagnostic> { BridgeDiagnostic.Error(code, message) }
-        };
+        });
 
-        public static BridgeResult Fail(BridgeCommand command, string code, string message) => new BridgeResult
+        public static BridgeResult Fail(BridgeCommand command, string code, string message) => ForCommand(command, new BridgeResult
         {
             commandId = CorrelationId(command),
             status = "failed",
             diagnostics = new List<BridgeDiagnostic> { BridgeDiagnostic.Error(code, message) }
-        };
+        });
+
+        // v1-v3 keep their existing wire behavior; only the v4 face is normalized.
+        internal static BridgeResult ForCommand(BridgeCommand command, BridgeResult result)
+        {
+            if (command?.schemaVersion != 4) return result;
+            result.schemaVersion = 4;
+            result.operation = command.operation;
+            result.data.dryRun = command.dryRun;
+            if (command.operation == "execute_production_job" && string.IsNullOrEmpty(result.data.planHash)) result.data.planHash = command.payload?.planHash ?? "";
+            if (command.operation == "restore_project" && string.IsNullOrEmpty(result.data.restoredFrom)) result.data.restoredFrom = command.payload?.snapshotId ?? "";
+            return result;
+        }
 
         private static string CorrelationId(BridgeCommand command) =>
             command == null || string.IsNullOrWhiteSpace(command.commandId) ? "unknown" : command.commandId;

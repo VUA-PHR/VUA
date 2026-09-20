@@ -26,6 +26,19 @@ fn staged_project_bundles_the_bridge_scaffold_by_default() {
         std::fs::read_to_string(packages.join("nadena.dev.modular-avatar.core/package.json")).unwrap();
     assert!(stub.contains("0.0.0-stub"));
 
+    // Every Bridge source and GUID must reach staging, including helper files
+    // referenced by the entry point/processor. A partial package cannot compile.
+    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../unity/Packages/com.ph-r.vua/Editor/Bridge");
+    for entry in std::fs::read_dir(source).unwrap() {
+        let path = entry.unwrap().path();
+        if path.is_file() {
+            let bundled = packages.join("com.ph-r.vua/Editor/Bridge").join(path.file_name().unwrap());
+            assert_eq!(std::fs::read(&bundled).expect("complete Bridge scaffold"),
+                std::fs::read(&path).unwrap(), "{}", bundled.display());
+        }
+    }
+
     staging.destroy().unwrap();
     let _ = std::fs::remove_dir_all(&temp);
 }

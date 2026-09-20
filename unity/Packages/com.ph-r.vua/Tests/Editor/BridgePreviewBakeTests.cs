@@ -87,9 +87,10 @@ namespace Vua.Editor.Bridge.Tests
             Assert.That(result.diagnostics[0].code, Is.EqualTo("preview.no_avatar"));
         }
 
-        [TestCase(true)]
-        [TestCase(false)]
-        public void PreviewPreservesDirtyUserResourcesAndRendersOnlyItsScene(bool dryRun)
+        [TestCase(true, true)]
+        [TestCase(false, true)]
+        [TestCase(false, false)]
+        public void PreviewPreservesDirtyUserResourcesAndRendersOnlyItsScene(bool dryRun, bool initiallyDirty)
         {
             const string folder = "Assets/VuaPreviewIsolationTest";
             EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
@@ -130,19 +131,36 @@ namespace Vua.Editor.Bridge.Tests
             command.expectedProjectFingerprint = ProjectFingerprint.Compute();
             var sceneCount = SceneManager.sceneCount;
             var previewCount = EditorSceneManager.previewSceneCount;
+            if (!initiallyDirty)
+            {
+                AssetDatabase.SaveAssets();
+                EditorSceneManager.SaveScene(scene);
+                bytes = paths.Select(File.ReadAllBytes).ToArray();
+                command.expectedProjectFingerprint = ProjectFingerprint.Compute();
+            }
             var previousActive = RenderTexture.active;
+            var sentinel = new RenderTexture(8, 8, 0);
+            RenderTexture.active = sentinel;
             try
             {
                 var result = BridgeCommandProcessor.Process(command);
                 Assert.That(result.status, Is.EqualTo("succeeded"), JsonUtility.ToJson(result));
+                var receiptOutput = Path.Combine(Directory.GetCurrentDirectory(), ".vua/bridge/v4-test-receipts");
+                Directory.CreateDirectory(receiptOutput);
+                File.WriteAllText(Path.Combine(receiptOutput, dryRun ? "preview-dryrun.json" : "preview-baked.json"),
+                    BridgeResultJson.Serialize(result));
+                var replay = BridgeCommandProcessor.Process(command);
+                Assert.That(replay.diagnostics.Any(item => item.code == "bridge.idempotent_replay"), Is.True);
+                File.WriteAllText(Path.Combine(receiptOutput, dryRun ? "dryrun-replay.json" : "baked-replay.json"),
+                    BridgeResultJson.Serialize(replay));
                 for (var i = 0; i < paths.Length; i++)
                     Assert.That(File.ReadAllBytes(paths[i]), Is.EqualTo(bytes[i]), paths[i]);
-                Assert.That(EditorUtility.IsDirty(material), Is.True);
-                Assert.That(EditorUtility.IsDirty(settings), Is.True);
-                Assert.That(scene.isDirty, Is.True);
+                Assert.That(EditorUtility.IsDirty(material), Is.EqualTo(initiallyDirty));
+                Assert.That(EditorUtility.IsDirty(settings), Is.EqualTo(initiallyDirty));
+                Assert.That(scene.isDirty, Is.EqualTo(initiallyDirty));
                 Assert.That(SceneManager.sceneCount, Is.EqualTo(sceneCount));
                 Assert.That(EditorSceneManager.previewSceneCount, Is.EqualTo(previewCount));
-                Assert.That(RenderTexture.active, Is.EqualTo(previousActive));
+                Assert.That(RenderTexture.active, Is.EqualTo(sentinel));
                 var output = Path.Combine(Directory.GetCurrentDirectory(), ".vua/bridge/preview", command.commandId);
                 if (dryRun) Assert.That(Directory.Exists(output), Is.False);
                 else
@@ -171,6 +189,9 @@ namespace Vua.Editor.Bridge.Tests
             }
             finally
             {
+                RenderTexture.active = previousActive;
+                sentinel.Release();
+                UnityEngine.Object.DestroyImmediate(sentinel);
                 EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
                 UnityEngine.Object.DestroyImmediate(interference);
                 AssetDatabase.DeleteAsset(folder);
