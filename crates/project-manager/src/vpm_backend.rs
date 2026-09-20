@@ -2050,6 +2050,38 @@ impl VpmBackend for VrcGetLibBackend {
             // 共享构造器如实拒绝（与 preview/apply 同一装载入口纪律）。
             let (world, _disabled) =
                 collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
+            let project_io =
+                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
+            let mut unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(|error| {
+                    AppErrorV1::new(
+                        error_codes::PROJECT_LOAD_FAILED,
+                        ErrorCategory::ExternalFailure,
+                        "errors.vpm.projectLoadFailed",
+                        "corr-vpm-resolve",
+                    )
+                    .with_param("reason", ParamValue::Text(error.to_string()))
+                })?;
+
+            // 幂等臂（环境实现批对齐钉）：locked 与 dependencies 全部已在盘
+            // 上满足→如实列报，且**必须在集合装载之前短路**——端口面文档
+            // 「answers them via already_satisfied and touches nothing」的
+            // 「零触碰」律：在线 load 臂会刷新仓库缓存（网络＋缓存写），快
+            // 路径绝不装载集合（零网络零写入，环回连接计数＋工程树逐字节
+            // 双钉）。第二次 resolve 对未变化工程回答 already_satisfied。
+            if !unity_project.should_resolve() {
+                let already_satisfied = unity_project
+                    .dependencies()
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>();
+                return Ok(ResolveReceiptV01 {
+                    resolved: Vec::new(),
+                    already_satisfied,
+                    failed: Vec::new(),
+                });
+            }
+
             // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006 同律）。
             let collection = if offline {
                 vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
@@ -2083,34 +2115,6 @@ impl VpmBackend for VrcGetLibBackend {
                     }
                 }
             };
-            let project_io =
-                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
-            let mut unity_project = vrc_get_vpm::UnityProject::load(project_io)
-                .await
-                .map_err(|error| {
-                    AppErrorV1::new(
-                        error_codes::PROJECT_LOAD_FAILED,
-                        ErrorCategory::ExternalFailure,
-                        "errors.vpm.projectLoadFailed",
-                        "corr-vpm-resolve",
-                    )
-                    .with_param("reason", ParamValue::Text(error.to_string()))
-                })?;
-
-            // 幂等臂：locked 与 dependencies 全部已在盘上满足→如实列报，
-            // 零写动作。第二次 resolve 对未变化工程回答 already_satisfied。
-            if !unity_project.should_resolve() {
-                let already_satisfied = unity_project
-                    .dependencies()
-                    .map(str::to_owned)
-                    .collect::<Vec<_>>();
-                return Ok(ResolveReceiptV01 {
-                    resolved: Vec::new(),
-                    already_satisfied,
-                    failed: Vec::new(),
-                });
-            }
-
             // 缺失依赖臂：依赖无法从启用仓库解析（DependenciesNotFound 是
             // 库错误唯一变体）→ 逐依赖进 failed（reason_code 复用
             // no_matching_package，零新码），receipt 如实呈不完整面；调用方
@@ -2171,18 +2175,32 @@ impl VpmBackend for VrcGetLibBackend {
             }
             resolved.sort_by(|left, right| left.id.cmp(&right.id));
 
-            let installer = vrc_get_vpm::environment::PackageInstaller::new(&io, Some(&http));
+            // 安装腿（环境实现批对齐钉两处，端口面文档自有词句为准）：
+            // ① offline＝下载臂无 http——离线后端绝不为包体下载出网，库自
+            // 身 "Offline mode" 错误如实上浮（绝不静默半成功）；
+            // ② 失败承载体按网络段二分——端口面文档「repo_fetch_failed for
+            // the network segment」：offline 臂的下载失败确定性落在网络段
+            // （repo_fetch_failed）；在线臂的安装/清单写回腿照落地映射
+            // （apply_failed——文档「install/manifest-write leg」）。
+            let http_install = if offline { None } else { Some(&http) };
+            let installer = vrc_get_vpm::environment::PackageInstaller::new(&io, http_install);
             unity_project
                 .apply_pending_changes(&installer, changes)
                 .await
                 .map_err(|error| {
-                    AppErrorV1::new(
-                        error_codes::APPLY_FAILED,
-                        ErrorCategory::ExternalFailure,
-                        "errors.vpm.applyFailed",
-                        "corr-vpm-resolve",
-                    )
-                    .with_param("reason", ParamValue::Text(error.to_string()))
+                    if offline {
+                        repo_fetch_failed(format!(
+                            "resolving the declared dependencies (offline): {error}"
+                        ))
+                    } else {
+                        AppErrorV1::new(
+                            error_codes::APPLY_FAILED,
+                            ErrorCategory::ExternalFailure,
+                            "errors.vpm.applyFailed",
+                            "corr-vpm-resolve",
+                        )
+                        .with_param("reason", ParamValue::Text(error.to_string()))
+                    }
                 })?;
             Ok(ResolveReceiptV01 {
                 resolved,
