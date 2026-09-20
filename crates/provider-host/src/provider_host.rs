@@ -336,6 +336,21 @@ pub const PACKAGES_REPO_CATALOG_SCHEMA_VERSION_V01: &str = "vua.packages-repo-ca
 /// constant, never a private literal; the c914cf2 standing rule).
 pub const PACKAGES_REPO_CATALOG_ENVELOPE_SCHEMA_VERSION_V01: &str = "0.1";
 
+/// The `packages-templates` v0.1 result family constant (proposal 027 F5
+/// freeze batch 2026-09-20, named at this wiring batch per the
+/// A3/A4/A5/F2/F3 precedent; the c914cf2 standing rule — every wire row
+/// carries a version constant of its own, independent of the envelope
+/// const). The route stamps it at envelope assembly, never the backend.
+pub const PACKAGES_TEMPLATES_SCHEMA_VERSION_V01: &str = "vua.packages-templates/v0.1";
+
+/// The `packages` envelope const of the templates v0.1 word-face row
+/// (named at this wiring batch per the A3/A4/A5/F2 precedent: the frozen
+/// v0.1 command schema locks the ENVELOPE schemaVersion to "0.1" — the same
+/// word-list-row generation as the P1/P2 read faces' shared const, carried
+/// as its OWN named constant so wire consumers key on the core-owned
+/// constant, never a private literal; the c914cf2 standing rule).
+pub const PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01: &str = "0.1";
+
 /// The `packages-ops` v0.1 result family constant (proposal 026 A1 freeze
 /// batch 2026-09-19; the c914cf2 standing rule — every wire row carries a
 /// version constant of its own, independent of the envelope const). The
@@ -1399,6 +1414,20 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.repo_catalog_capabilities().repo_catalog => "available",
         _ => "unavailable",
     };
+    // Proposal 027 F5 (wired at this batch): the template-enumeration read
+    // face rides the SAME VpmBackend wiring, gated on the NEW defaulted
+    // accessor `template_capabilities` (the frozen v0.1 command schema's
+    // serving gate; the F2 repo-catalog accessor law — default declared-none
+    // keeps the row honestly unavailable until the environment
+    // implementation-verification slice flips it with the VrcGetLib
+    // override; the CLI backend has no directory-root scan face and stays
+    // honestly false). One row serving the ONE method
+    // (removeOps/installOps/registerOps/repoOps/createOps/repoCatalogOps
+    // one-row precedent).
+    let packages_templates_availability = match state.vpm.as_ref() {
+        Some(vpm) if vpm.template_capabilities().list_templates => "available",
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1442,6 +1471,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.repoCatalogOps",
             "availability": packages_repo_catalog_availability,
+        },
+        {
+            "operationId": "packages.templatesOps",
+            "availability": packages_templates_availability,
         },
     ])
 }
@@ -5269,6 +5302,9 @@ fn packages_request(
             packages_create_project(state, vpm, request, request_id, correlation_id)
         }
         "packages.repoCatalog" => packages_repo_catalog(vpm, request, request_id, correlation_id),
+        "packages.listTemplates" => {
+            packages_list_templates(vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5477,6 +5513,80 @@ fn packages_list_repos(
             },
         }),
     ))
+}
+
+/// `packages.listTemplates` (proposal 027 F5 freeze batch, wired by this
+/// batch): the template entries available to project creation, enumerated by
+/// the backend's LOCAL DIRECTORY SCAN over the two pinned directory roots of
+/// the library-path default resolution leg (`<environment_root>/VRCTemplates`
+/// first, then `<environment_root>/Templates` — the create_from_template
+/// resolution order; vrc-get-vpm 0.0.16 ships no template enumeration API, so
+/// the scan IS the enumeration). One method, ZERO parameters (the
+/// `packages.listRepos` zero-parameter precedent — the template face is
+/// environment-level configuration, not per-project): any key, or a
+/// missing/non-object params, answers `vua.packages.invalid_params` at the
+/// route layer, never a default. The capability gate reads the NEW defaulted
+/// accessor `template_capabilities` (default declared-none) BEFORE the port
+/// call — absence answers the generic `vua.vpm.capability_missing` and never
+/// reaches a backend method (the F2 same structural law: the port method HAS
+/// a default body, so a declared-but-unimplemented backend CAN exist at the
+/// type level, and BOTH layers answer `capability_missing`, the route gate
+/// first). The port's typed errors travel verbatim (the read-face
+/// pass-through discipline — no read-face fold exists); an EMPTY templates
+/// array is the honest zero-templates answer (a missing root is a fact, never
+/// an error — the R4 precedent). The result document is the port's
+/// `TemplateEntryV01` rows projected through serde, stamped with the family
+/// const at envelope assembly (P1 discipline: the route stamps the const, the
+/// backend facts stay verbatim — id-ascending and the name===id same-value
+/// projection are PRODUCER contracts of the frozen word face, not route
+/// rewrites; the wire tests pin them over the real frame loop).
+fn packages_list_templates(
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    // The closed EMPTY params set (the packages.listRepos zero-parameter
+    // precedent): any key is a shape violation, never a default.
+    let empty_params = request
+        .get("params")
+        .and_then(Value::as_object)
+        .is_some_and(|object| object.is_empty());
+    if !empty_params {
+        return packages_invalid_params(request_id, correlation_id);
+    }
+    if !vpm.template_capabilities().list_templates {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    match vpm.list_templates() {
+        Ok(templates) => {
+            let rows = serde_json::to_value(&templates).unwrap_or_else(|_| json!([]));
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({
+                    "schemaVersion": PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01,
+                    "operation": "packages.listTemplates",
+                    "result": {
+                        "schemaVersion": PACKAGES_TEMPLATES_SCHEMA_VERSION_V01,
+                        "templates": rows,
+                    },
+                }),
+            ))
+        }
+        Err(error) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            &error.code,
+            &error.message_key,
+            app_error_category(error.category),
+        )),
+    }
 }
 
 /// `packages.repoCatalog` (proposal 027 F2 freeze batch, wired by this

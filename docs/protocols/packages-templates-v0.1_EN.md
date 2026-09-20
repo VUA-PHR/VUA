@@ -1,16 +1,30 @@
 # packages-templates Protocol Document v0.1 (the packages.listTemplates read face: available template entries)
 
-> Document version: 0.1
-> Status: **FROZEN (proposal 027 F5 core freeze batch — the wire route, envelope
-> consts and served row belong to the NEXT core wiring slice; the library
-> implementation to the environment implementation-verification slice; desktop
-> consumption after shape approval)**
+> Document version: 0.1.1
+> Status: **FROZEN (proposal 027 F5 core freeze batch, 2026-09-20) and WIRED
+> (the v0.1.1 core wiring batch, 2026-09-20): the `packages.listTemplates`
+> route, the named envelope consts and the served row `packages.templatesOps`
+> have landed — the library implementation belongs to the environment
+> implementation-verification slice; desktop consumption follows the per-face
+> program after shape approval; until then every wired backend stays on the
+> honest absence arm (the trait default `template_capabilities -> NONE`, the
+> served row honestly unavailable).**
+> (Freeze provenance: proposal 027 F5 freeze batch — the U14 ruling (3)
+> founding authority, the 027 core stance 5 three-domain convergence, the face
+> order F2->F3->F5 registered by batches 121-130.)
 > Authoritative pair: this file and `packages-templates-v0.1_ZH.md` (one
 > semantics, bilingual mirror).
 > Word-face authority: `schemas/packages-templates/v0.1/` (command + result
 > schemas and the positive/negative example vectors). This document explains;
 > the schemas bind.
-> Core consumer tests: `crates/provider-host/tests/packages_templates_consumer_v01.rs`.
+> Core consumer tests: `crates/provider-host/tests/packages_templates_consumer_v01.rs`;
+> wire route tests `crates/provider-host/tests/packages_templates_wire_v01.rs`
+> [real frame loop].
+> Updated: 2026-09-20 (the v0.1.1 wiring batch: the `packages.listTemplates`
+> route arm + the named envelope consts `PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_
+> VERSION_V01`/`PACKAGES_TEMPLATES_SCHEMA_VERSION_V01` + the served row
+> `packages.templatesOps` + wire tests 7 cases riding the real frame loop;
+> word face ZERO change).
 
 ## What this face is
 
@@ -91,6 +105,19 @@ packages-repos v0.1 law).
 - Envelope: `schemaVersion` const `"0.1"`; result family const
   `vua.packages-templates/v0.1` (two independent versions — the c914cf2
   standing rule).
+- **Wire consts (named at this v0.1.1 wiring batch, the A3/A4/A5/F2/F3
+  precedent — closing the desktop checkpoint ahead of time)**: the envelope
+  const `PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01 = "0.1"` and the
+  result family const `PACKAGES_TEMPLATES_SCHEMA_VERSION_V01 =
+  "vua.packages-templates/v0.1"` are published from
+  `vua_provider_host::provider_host` — consumers key on the core-owned
+  constants, never private literals; the route stamps both consts onto the
+  response at envelope assembly (the envelope `schemaVersion` + the result
+  document's `schemaVersion`), never the backend, never literals. The
+  word-list bytes are unchanged — the constants lock exactly the same strings
+  this frozen schema carries (the c914cf2 rule: every wire row carries a
+  version constant of its own, the envelope version independent of the family
+  version).
 - params: **closed empty set** (the `packages.listRepos` zero-parameter
   precedent) — the template face is environment-level configuration, not
   per-project; any key is a `vua.packages.invalid_params` shape violation,
@@ -168,7 +195,7 @@ stable for the version bump with zero consumer word-face migration).
   (026 A5) write face and does not belong to this family; this face never
   carries a create/preview/write method.
 
-## Capability gating (naming and route wait for the wiring slice)
+## Capability gating (named and routed, landed at the v0.1.1 wiring batch)
 
 New defaulted accessor `VpmBackend::template_capabilities() ->
 TemplateCapabilities` (one bit `list_templates`), the 025 accessor law
@@ -176,11 +203,34 @@ TemplateCapabilities` (one bit `list_templates`), the 025 accessor law
 implements `list_templates`). The environment VrcGetLib override lands with
 its implementation-verification slice (a self-implemented two-root directory
 scan, same roots and order as `create_from_template`); the CLI backend has no
-directory-root scan face and stays honestly false. This batch freezes the word
-face and the port-face default items; the wire route, the
-`packages.*TemplatesOps` served row and the envelope const naming belong to
-the NEXT core wiring slice (the A3/A4/A5/F2/F3 precedent: family consts are
-published from `vua_provider_host::provider_host` at the wiring batch).
+directory-root scan face and stays honestly false.
+
+Wiring facts (landed at this batch):
+
+- **Served row `packages.templatesOps`** (the A3/A4/A5/F2 one-row-one-method
+  precedent — the packages-templates family projects onto the served row name
+  isomorphically with the F2 repo-catalog): available exactly when a wired
+  backend's `template_capabilities().list_templates` is true; the default
+  declared-none keeps the row honestly unavailable until the environment
+  override flips it.
+- **Route arm order (the F2/F3 isomorph)**: the closed-empty-params shape
+  validation PRECEDES the capability gate — any key or a non-object params
+  answers `vua.packages.invalid_params` (a pure shape verdict, before the
+  gate); the gate (`template_capabilities().list_templates`) PRECEDES the
+  port call — absence answers the generic `vua.vpm.capability_missing` and
+  never reaches a backend method (the port method HAS a default body, so a
+  declared-but-unimplemented backend CAN exist at the type level — both
+  layers answer `capability_missing`, the route gate first); the port's typed
+  refusals pass through verbatim (code + messageKey + category, no read-face
+  fold); at envelope assembly the route stamps both consts (envelope +
+  family), the backend facts stay verbatim — id-ascending and the name===id
+  same-value projection are PRODUCER contracts of the frozen word face
+  (pinned by the core consumer tests), never route rewrites.
+- **Wire route tests**: `packages_templates_wire_v01.rs` 7 cases riding the
+  real frame loop (the frozen word face fully pinned + the absence arm + the
+  gate-before-port pin + the verbatim pass-through pin + the honest empty
+  listing + the shape violations before the gate + the detectability of both
+  consts against the frozen schema consts).
 
 ## Backend-root-facts section (027 checkpoint — mandatory)
 
@@ -235,15 +285,18 @@ its roots. This face:
 
 ## Honest boundary
 
-Zero end-to-end claims: this batch is the word-list layer — the wire route /
-envelope consts / served row wait for the next core wiring slice, the library
-implementation (the two-root directory scan + the capability override) waits
-for the environment implementation-verification slice, desktop consumption
-(the new-project template dropdown: falling back to the current manual input
-when the enumeration is absent or the creation capability is unavailable, with
-an empty value = the backend default resolution semantics kept verbatim) waits
-for shape approval and the per-face program, and the full-chain real-machine
-walkthrough stays in the W25 window (O-2, waiting for the user to open the
-window). The empty state is the final state: an empty templates array renders
-as the designed empty state, never filled with guessed content; unavailable
-metadata means no metadata key, never invented.
+The core wiring slice is **complete (this v0.1.1 batch)**: the
+`packages.listTemplates` route arm has landed riding the named envelope
+consts; wire tests 7 cases ride the real frame loop. The route is wired and
+**NOT consumed** — desktop consumption (the new-project template dropdown:
+falling back to the current manual input when the enumeration is absent or
+the creation capability is unavailable, with an empty value = the backend
+default resolution semantics kept verbatim) follows the per-face program
+after shape approval; the library implementation (the two-root directory scan
++ the capability override) belongs to the environment
+implementation-verification slice, and until it lands every wired backend
+stays on the honest absence arm (the served row honestly unavailable); the
+full-chain real-machine walkthrough stays in the W25 window (O-2, waiting for
+the user to open the window). The empty state is the final state: an empty
+templates array renders as the designed empty state, never filled with
+guessed content; unavailable metadata means no metadata key, never invented.

@@ -1,3 +1,4 @@
+import { installLocaleSync } from "./i18n/locale-sync.ts";
 import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
@@ -41,6 +42,8 @@ const PreviewLabPage = import.meta.env.DEV
 
 // html lang 与当前语言表同步(C-I18N;辅助技术与拼写检查依赖)
 document.documentElement.lang = currentLocale;
+const stopLocaleSync = installLocaleSync(currentLocale);
+if (import.meta.hot) import.meta.hot.dispose(stopLocaleSync);
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>

@@ -122,13 +122,13 @@ test("label keys resolve in the string table and term ids are valid", () => {
   }
 });
 
-test("sidebar term labels render as term + local annotation", () => {
+test("sidebar labels use localized names without English prefixes", () => {
   const warehouse = allPages.find((p) => p.id === "warehouse");
-  assert.equal(warehouse ? pageLabel(warehouse) : "", "Warehouse 仓储");
+  assert.equal(warehouse ? pageLabel(warehouse) : "", "仓储");
   const workshop = allPages.find((p) => p.id === "workshop");
   assert.equal(
     workshop ? pageLabel(workshop) : "",
-    "Assembly 装配 → Production 生产 → Inspection 检测",
+    "装配 → 生产 → 检测",
   );
 });
 
