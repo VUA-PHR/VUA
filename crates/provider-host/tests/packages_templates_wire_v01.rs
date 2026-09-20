@@ -139,6 +139,7 @@ impl VpmBackend for TemplatesVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn template_capabilities(&self) -> TemplateCapabilities {

@@ -65,6 +65,16 @@ pub enum UnityOperation {
     /// producing layer of the upload_readiness dimension (Bridge v3).
     /// Read-only; never an official SDK verdict.
     InspectUploadReadiness,
+    /// Release bake-preview turntable (Bridge v4; slice/production-nav-
+    /// bake-preview, user ruling 2026-09-20): renders an isolated preview-
+    /// scene copy of the Avatar into `.vua/bridge/preview/<commandId>/`
+    /// (60 frames 1024x1024 PNG + cover.png + manifest v1). Classified
+    /// mutating because artifacts are written into the project directory:
+    /// a real run requires expectedProjectFingerprint, dryRun=true reports
+    /// structure statistics only and produces no images. The user scene is
+    /// never modified (preview-scene isolation; the mutating pipeline skips
+    /// the scene-save step for this operation).
+    BuildPreview,
 }
 
 impl UnityOperation {
@@ -78,6 +88,7 @@ impl UnityOperation {
                 | Self::CreateToggle
                 | Self::ExecuteProductionJob
                 | Self::RestoreProject
+                | Self::BuildPreview
         )
     }
 }

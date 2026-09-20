@@ -366,6 +366,41 @@ function toApplicationRequest(
           repoId: request.params.repoId,
         },
       };
+    // packages-ops v0.6 写面 F4 仓库生命周期(027 冻结批;桌面 F4 消费批):
+    // 照 A3/A4 同律无 preview 对偶——三方法任务化 command(Kernel 生成
+    // commandId 照先例,lifecycle- 前缀);params 单键闭集 {repoId}
+    // verbatim 透传(携 confirmedDigest/projectPath = 形状违反,信封守卫
+    // 已在词表验证层拒绝;id 缺席行不在本词面可达范围,UI 不构造入口)
+    case "packages.enableRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.enableRepo",
+        commandId: `lifecycle-${crypto.randomUUID()}`,
+        params: {
+          repoId: request.params.repoId,
+        },
+      };
+    case "packages.disableRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.disableRepo",
+        commandId: `lifecycle-${crypto.randomUUID()}`,
+        params: {
+          repoId: request.params.repoId,
+        },
+      };
+    case "packages.refreshRepo":
+      return {
+        ...base,
+        kind: "command",
+        method: "packages.refreshRepo",
+        commandId: `lifecycle-${crypto.randomUUID()}`,
+        params: {
+          repoId: request.params.repoId,
+        },
+      };
     // packages-ops v0.5 写面 A5 项目创建(026 冻结批;桌面 A5 消费批):
     // 照 A3/A4 同律无 preview 对偶且根在端口——单方法任务化 command(
     // import-copy/A1–A4 同构,commandId 由 Kernel 生成照先例,create- 前

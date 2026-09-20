@@ -89,6 +89,7 @@ impl VpmBackend for MinimalBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -132,6 +133,7 @@ impl VpmBackend for FakeCatalogBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -374,6 +376,7 @@ impl VpmBackend for FakeCatalogV02Backend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

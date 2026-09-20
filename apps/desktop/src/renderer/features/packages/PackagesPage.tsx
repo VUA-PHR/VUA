@@ -33,6 +33,7 @@ import {
   type RepoCatalogFactsV01,
   type RepoCatalogRepoRowV01,
   type RepoInfoRowV01,
+  type RepoInfoRowV02,
 } from "../../gateway/index.ts";
 import { ChangesDialog } from "./ChangesDialog.tsx";
 import { InstallConfirmDialog } from "./InstallConfirmDialog.tsx";
@@ -571,8 +572,13 @@ function P2ReposSection({
   removeConfirmId,
   removeBusyId,
   removeOutcome,
+  lifecycleEnabled,
+  onLifecycle,
+  lifecycleBusyAction,
+  lifecycleBusyRepoId,
+  lifecycleOutcome,
 }: {
-  repos: readonly RepoInfoRowV01[];
+  repos: readonly (RepoInfoRowV01 | RepoInfoRowV02)[];
   reposErrorCode: string | null;
   /** F2 仓库浏览入口(blocks.repoCatalog 能力行)——false = 展开入口
    *  不渲染(诚实缺席);repoId 缺席行不在浏览可达范围(id 缺席 = 无
@@ -583,6 +589,16 @@ function P2ReposSection({
   removeConfirmId?: string | null;
   removeBusyId?: string | null;
   removeOutcome?: RepoRemoveOutcomeView | null;
+  /** F4 生命周期控制(blocks.repoLifecycle 能力行)——false/缺席 =
+   *  启停/刷新控制不渲染,订阅行照常呈现(降级非错误——F5 TemplatesFace
+   *  constant-absence 同构);v0.1 族行无 enabled 位 = 启停控制仍不渲染
+   *  (状态不可知不猜测),刷新控制不依赖 enabled 位可独立渲染;
+   *  repoId null 行在词面可达范围之外(removeRepo 同边界),无任何控制 */
+  lifecycleEnabled?: boolean;
+  onLifecycle?: (action: "enable" | "disable" | "refresh", repoId: string) => void;
+  lifecycleBusyAction?: "enable" | "disable" | "refresh" | null;
+  lifecycleBusyRepoId?: string | null;
+  lifecycleOutcome?: RepoLifecycleOutcomeView | null;
 }) {
   const [browseRepoId, setBrowseRepoId] = useState<string | null>(null);
   if (reposErrorCode !== null) {
@@ -609,12 +625,28 @@ function P2ReposSection({
           const title = repo.name ?? repo.repoId ?? copy.p2.repoNoIdentifier;
           const location = repo.url ?? repo.localPath;
           const browseOpen = browseEnabled === true && browseRepoId !== null && browseRepoId === repo.repoId;
+          // F4 生命周期:v0.2 行携带 enabled 位(词面读回权威);v0.1 行无
+          // 此位 = 启停控制不渲染(状态不可知不猜测)。repoId null 行不在
+          // 词面可达范围(removeRepo 同边界)无任何控制。禁用行在列不隐藏
+          const rowEnabled = "enabled" in repo ? repo.enabled : undefined;
+          const lifecycleRow = lifecycleEnabled === true
+            && onLifecycle
+            && repo.repoId !== null;
+          const lifecycleToggling = lifecycleBusyAction !== null
+            && lifecycleBusyAction !== "refresh"
+            && lifecycleBusyRepoId === repo.repoId;
+          const lifecycleRefreshing = lifecycleBusyAction === "refresh"
+            && lifecycleBusyRepoId === repo.repoId;
+          const anyLifecycleBusy = lifecycleBusyAction !== null;
           return (
             <li key={`${repo.repoId ?? "repo"}-${index}`} className="vua-packages__repo-row">
               <div className="vua-packages__repo-main">
                 <span className="vua-packages__name-title" title={repo.repoId ?? undefined}>
                   {title}
                 </span>
+                {rowEnabled === false ? (
+                  <Badge tone="warning">{copy.repoWrite.lifecycle.disabledBadge}</Badge>
+                ) : null}
                 <Badge tone={repo.cached ? "neutral" : "warning"}>
                   {repo.cached ? copy.p2.repoCached : copy.p2.repoNotCached}
                 </Badge>
@@ -626,6 +658,35 @@ function P2ReposSection({
                     onClick={() => setBrowseRepoId(browseOpen ? null : (repo.repoId as string))}
                   >
                     {browseOpen ? copy.p2.browseClose : copy.p2.browseAction}
+                  </Button>
+                ) : null}
+                {lifecycleRow ? (
+                  <Button
+                    variant="subtle"
+                    disabled={anyLifecycleBusy}
+                    aria-label={format(
+                      rowEnabled === false ? copy.repoWrite.lifecycle.enableAria : copy.repoWrite.lifecycle.disableAria,
+                      { name: title },
+                    )}
+                    onClick={() => onLifecycle(rowEnabled === false ? "enable" : "disable", repo.repoId as string)}
+                  >
+                    {lifecycleToggling
+                      ? rowEnabled === false
+                        ? copy.repoWrite.lifecycle.enabling
+                        : copy.repoWrite.lifecycle.disabling
+                      : rowEnabled === false
+                        ? copy.repoWrite.lifecycle.enableAction
+                        : copy.repoWrite.lifecycle.disableAction}
+                  </Button>
+                ) : null}
+                {lifecycleRow ? (
+                  <Button
+                    variant="subtle"
+                    disabled={anyLifecycleBusy}
+                    aria-label={format(copy.repoWrite.lifecycle.refreshAria, { name: title })}
+                    onClick={() => onLifecycle("refresh", repo.repoId as string)}
+                  >
+                    {lifecycleRefreshing ? copy.repoWrite.lifecycle.refreshing : copy.repoWrite.lifecycle.refreshAction}
                   </Button>
                 ) : null}
                 {onRemoveRequest && repo.repoId !== null ? (
@@ -649,6 +710,11 @@ function P2ReposSection({
                   {repo.url !== null ? `${copy.p2.repoUrlLabel}: ${repo.url}` : `${copy.p2.repoLocalPathLabel}: ${repo.localPath}`}
                 </span>
               ) : null}
+              {rowEnabled === false ? (
+                <span className="vua-caption vua-text-secondary">
+                  {copy.repoWrite.lifecycle.disabledNote}
+                </span>
+              ) : null}
               {browseOpen && repo.repoId !== null && gateway ? (
                 <RepoCatalogPanel
                   repoId={repo.repoId}
@@ -661,6 +727,28 @@ function P2ReposSection({
           );
         })}
       </ul>
+      {lifecycleOutcome?.kind === "ok" ? (
+        <div className="vua-packages__register-result" role="status">
+          <Icon name="check" size={16} />
+          <span className="vua-caption">
+            {lifecycleOutcome.cacheUpdated === false
+              ? /* 呈现锚二:cacheUpdated=false = etag 未变「已是最新」——
+                 * 两臂皆成功,信息呈现绝非错误 */
+                copy.repoWrite.lifecycle.upToDate
+              : format(copy.repoWrite.lifecycle.doneLine, { repoId: lifecycleOutcome.repoId })}
+          </span>
+        </div>
+      ) : null}
+      {lifecycleOutcome?.kind === "rejected" ? (
+        <div className="vua-packages__register-result vua-packages__register-result--rejected" role="alert">
+          <Icon name="warning" size={16} />
+          <span className="vua-caption">
+            {copy.repoWrite.guards[removeGuardKey(lifecycleOutcome.guard)]}
+            {" "}
+            {format(copy.repoWrite.rejectedDetail, { detail: lifecycleOutcome.detail })}
+          </span>
+        </div>
+      ) : null}
       {removeOutcome?.kind === "ok" ? (
         <div className="vua-packages__register-result" role="status">
           <Icon name="check" size={16} />
@@ -778,6 +866,13 @@ type RepoAddOutcomeView =
 /** A4 移除行内终态:ok 保留被删行 repoId 回显 / rejected 保留拒绝呈现。 */
 type RepoRemoveOutcomeView =
   | { readonly kind: "ok"; readonly repoId: string }
+  | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
+
+/** F4 生命周期行内终态:ok 保留收据回显(cacheUpdated 仅 refreshed 收据
+ * 携带——false = etag 未变「已是最新」,信息呈现非错误)/ rejected 保留
+ * 拒绝呈现;failed/unavailable 不留行内状态(toast 说明后复位)。 */
+type RepoLifecycleOutcomeView =
+  | { readonly kind: "ok"; readonly repoId: string; readonly cacheUpdated: boolean | null }
   | { readonly kind: "rejected"; readonly guard: string; readonly detail: string };
 
 function RepoWriteSection({
@@ -1514,6 +1609,13 @@ export function PackagesPage() {
   const [repoLocalOutcome, setRepoLocalOutcome] = useState<RepoAddOutcomeView | null>(null);
   const [repoRemoveConfirmId, setRepoRemoveConfirmId] = useState<string | null>(null);
   const [repoRemoveOutcome, setRepoRemoveOutcome] = useState<RepoRemoveOutcomeView | null>(null);
+  // F4 仓库生命周期(027 v0.6 消费批;与 A1–A5 各链分立):启停/刷新三
+  // 方法任务化写命令,行内单操作 busy;ok(refreshed cacheUpdated=false =
+  // 「已是最新」信息呈现非错误)/rejected 行内呈现,failed/unavailable
+  // toast 后复位。重复启停不宣称幂等——拒绝如实呈现
+  const [lifecycleBusy, setLifecycleBusy] = useState<"enable" | "disable" | "refresh" | null>(null);
+  const [lifecycleBusyRepoId, setLifecycleBusyRepoId] = useState<string | null>(null);
+  const [lifecycleOutcome, setLifecycleOutcome] = useState<RepoLifecycleOutcomeView | null>(null);
   // A5 项目创建(026 v0.5 消费批;与 A1–A4 各链分立):无 preview 无确认
   // 链——用户显式表单提交即确认;三键表单(parent/name 必填,template 选
   // 填留空 = null = 后端默认模板解析);ok(created 收据回显)/rejected
@@ -2168,6 +2270,68 @@ export function PackagesPage() {
     );
   };
 
+  /* ---- F4 仓库生命周期(027 v0.6 消费批):启停/刷新三方法任务化写命
+   * 令——params 单键 {repoId} verbatim(id 缺席行不在词面可达范围,UI 不
+   * 构造入口);无 digest 无确认链,用户显式点击即确认。能力缺席臂照 F5
+   * TemplatesFace 五态机先例:blocks.repoLifecycle false = 控制不渲染
+   * (订阅行照常呈现,降级非错误);v0.1 族行无 enabled 位 = 启停控制不
+   * 渲染(状态不可知不猜测),刷新控制不依赖 enabled 位。禁用语义如实
+   * 呈现:禁用行离开包集合世界但在列不隐藏(W25 裁决 (c):VUA 自有状态,
+   * 绝不写共享 settings.json,区块说明词面照此口径)。ok(refreshed
+   * cacheUpdated=false = 「已是最新」信息呈现非错误)/rejected 行内呈现;
+   * failed/unavailable 关闭为 toast 诚实说明——任务真实状态由任务中心
+   * 呈现。重复启停不宣称幂等,拒绝如实呈现。 ---- */
+
+  const runRepoLifecycle = (action: "enable" | "disable" | "refresh", repoId: string) => {
+    if (lifecycleBusy !== null) return;
+    setLifecycleBusy(action);
+    setLifecycleBusyRepoId(repoId);
+    setLifecycleOutcome(null);
+    const call =
+      action === "enable"
+        ? gateway.packages.enableRepo(repoId)
+        : action === "disable"
+          ? gateway.packages.disableRepo(repoId)
+          : gateway.packages.refreshRepo(repoId);
+    void call.then(
+      (result) => {
+        setLifecycleBusy(null);
+        setLifecycleBusyRepoId(null);
+        if (result.kind === "ok") {
+          setLifecycleOutcome({
+            kind: "ok",
+            repoId: result.receipt.repoId,
+            cacheUpdated: result.receipt.kind === "refreshed" ? result.receipt.cacheUpdated : null,
+          });
+          return;
+        }
+        if (result.kind === "rejected") {
+          setLifecycleOutcome({
+            kind: "rejected",
+            guard: result.rejection.guard,
+            detail: result.rejection.detail,
+          });
+          return;
+        }
+        if (result.kind === "failed") {
+          const key = repoEnvelopeErrorKey(result.code);
+          showToast(
+            key === "unknown"
+              ? format(copy.repoWrite.toasts.failedUnknown, { code: result.code })
+              : copy.repoWrite.envelopeErrors[key],
+          );
+        } else {
+          showToast(copy.repoWrite.toasts.unavailable);
+        }
+      },
+      () => {
+        setLifecycleBusy(null);
+        setLifecycleBusyRepoId(null);
+        showToast(copy.repoWrite.toasts.unavailable);
+      },
+    );
+  };
+
   /* ---- A5 项目创建(026 v0.5 消费批):无 preview 无确认链——用户显式
    * 表单提交即确认(全新目录无既有状态可 diff 无摘要可绑定,UI 不构造携
    * digest/projectPath 请求)。template 输入留空 = null(后端默认模板解
@@ -2305,6 +2469,15 @@ export function PackagesPage() {
                           removeConfirmId: repoRemoveConfirmId,
                           removeBusyId: repoBusy === "remove" ? repoRemoveConfirmId : null,
                           removeOutcome: repoRemoveOutcome,
+                        }
+                      : {})}
+                    {...(p2.blocks.repoLifecycle
+                      ? {
+                          lifecycleEnabled: true,
+                          onLifecycle: runRepoLifecycle,
+                          lifecycleBusyAction: lifecycleBusy,
+                          lifecycleBusyRepoId: lifecycleBusyRepoId,
+                          lifecycleOutcome: lifecycleOutcome,
                         }
                       : {})}
                   />
@@ -2596,10 +2769,10 @@ export function PackagesPage() {
           </div>
 
           {section === "repos" ? (
-            <RepoSection
-              repos={ready.repos}
-              onToggle={(repoId, enabled) => void gateway.packages.setRepoEnabled(repoId, enabled)}
-            />
+            /* F4 消费批:旧演示视图启停 checkbox 退役——本地状态翻转绝不
+             * 冒充 wire 写面;演示行启停位改为只读静态呈现,启停交互只在
+             * live 装配的 P2 词面(blocks.repoLifecycle 门控)提供 */
+            <RepoSection repos={ready.repos} />
           ) : (
             <>
               <ProjectHeader

@@ -131,6 +131,7 @@ impl VpmBackend for FakeCreate {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

@@ -231,6 +231,7 @@ impl VpmBackend for QueryV02Vpm {
             list_packages: self.list_packages_cap,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

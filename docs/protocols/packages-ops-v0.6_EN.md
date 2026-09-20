@@ -2,14 +2,17 @@
 
 [English](packages-ops-v0.6_EN.md) | [简体中文](packages-ops-v0.6_ZH.md)
 
-> Document version: 0.6
-> Status: **FROZEN (packages-ops word-list row v0.6, the F4 repository-lifecycle
-> word face = the enable/disable method pair + the refresh method; the v0.1 A1
-> removal row, the v0.2 A2 install/upgrade row, the v0.3 A3 registration row,
-> the v0.4 A4 repository add/remove row and the v0.5 A5 project-creation row
-> stay frozen and served untouched — v0.6 is a separate row directory per the
-> packages-catalog v0.2 increment precedent. NOT WIRED: the wire routes and the
-> served row wait for the next core wiring slice)**
+> Document version: 0.6.1
+> Status: **FROZEN (packages-ops word-list row v0.6, the F4
+> repository-lifecycle word face = the enable/disable method pair + the
+> refresh method; the v0.1 A1 removal row, the v0.2 A2 install/upgrade row,
+> the v0.3 A3 registration row, the v0.4 A4 repository add/remove row and the
+> v0.5 A5 project-creation row stay frozen and served untouched — v0.6 is a
+> separate row directory per the packages-catalog v0.2 increment precedent.)
+> and WIRED (at the F4 wiring batch, 2026-09-21: the three route arms, the
+> `packages.repoLifecycleOps` served row and the named dual constants landed
+> on the core wire face. NOT CONSUMED: the desktop surface and the VrcGetLib
+> override wait for their own slices)**
 > (2026-09-20, proposal 027 face order F2→F3→F5→F4; unfreeze authority = the
 > W25 read-only evidence record ruling (c) [proposal 027 s6, 2026-09-20
 > environment seat: VCC 2.4.5 carries NO enable/disable state anywhere —
@@ -19,7 +22,9 @@
 > Machine-readable word list: `schemas/packages-ops/v0.6/` (row-level dual
 > schemas + 5 positive / 10 negative vectors; core consumer tests
 > `crates/provider-host/tests/packages_ops_consumer_v06.rs` 4 cases; TS guard
-> tests `packages/contracts/src/application-contract.test.ts`)
+> tests `packages/contracts/src/application-contract.test.ts`; wire tests
+> `crates/provider-host/tests/packages_ops_wire_v06.rs` 11 cases +
+> `packages_repos_wire_v02.rs` 3 cases)
 > Scope: `packages.enableRepo` / `packages.disableRepo` /
 > `packages.refreshRepo` (nine-state task-driven write commands for
 > subscription-row enable/disable and cache refresh)
@@ -27,16 +32,20 @@
 > three independent bits + `enable_repo` / `disable_repo` / `refresh_repo` +
 > `RepoRefreshOutcomeV01` + the defaulted accessor, all default declared-none)
 > = core domain; wire routes (the `packages.repoLifecycleOps` served row, the
-> route arms, envelope assembly) = core domain, NEXT wiring slice; dual
-> implementations (the library-path VUA-owned-storage toggles + the library's
-> etag-conditional refresh) = environment domain (implementation-verification
-> slice per the 024/025 program — the served row stays honestly unavailable
-> until then); desktop consumption = desktop domain (the subscription-row
-> toggle + refresh button, after shape approval per the per-face program)
-> Updated: 2026-09-20 (v0.6 freeze batch: dual schemas + vectors + core
-> consumer tests + TS face + mock constant-absence arms + bilingual protocol
-> doc + REGISTRY + the packages-repos v0.2 read-back increment frozen in the
-> same batch)
+> route arms, envelope assembly) = core domain, LANDED at the F4 wiring batch
+> (2026-09-21); dual implementations (the library-path VUA-owned-storage
+> toggles + the library's etag-conditional refresh) = environment domain
+> (implementation-verification slice per the 024/025 program — the served row
+> stays honestly unavailable until then); desktop consumption = desktop domain
+> (the subscription-row toggle + refresh button, after shape approval per the
+> per-face program)
+> Updated: 2026-09-21 (v0.6.1 wiring batch: the three route arms + the served
+> row + the named dual constants + the packages-repos v0.2 negotiation route
+> arm + the wire tests; WORD FACE ZERO CHANGE — this document version records
+> the wire landing only. Previous: 2026-09-20 v0.6 freeze batch: dual schemas
+> + vectors + core consumer tests + TS face + mock constant-absence arms +
+> bilingual protocol doc + REGISTRY + the packages-repos v0.2 read-back
+> increment frozen in the same batch)
 
 ## THE A4 EXPLICITLY-OUTSIDE PREVIEW RESOLVED (the ruling-(c) unfreeze record)
 
@@ -155,7 +164,7 @@
   params violation answers `vua.packages.invalid_params`; an unwired engine
   answers the honest-absence arm `vua.packages.unavailable`.
 
-## CAPABILITY GATING (named, not routed — the wiring batch lands it)
+## CAPABILITY GATING (named and routed at the F4 wiring batch, 2026-09-21)
 
 - The new defaulted accessor `VpmBackend::repo_lifecycle_capabilities() ->
   RepoLifecycleCapabilities` carries **three INDEPENDENT bits**
@@ -167,14 +176,40 @@
   gate answers the same code: one code, two absence mechanisms, both honest
   (the A3/A4 isomorph).
 - The served row **`packages.repoLifecycleOps`** serves the three methods on
-  one row (the repoOps/createOps one-row precedent): row availability = the
+  one row (the repoOps one-row-serves-three precedent): row availability = the
   backend declares ANY of the bits; each route independently reads ITS OWN
   method's bit before submit and answers the generic `capability_missing` on
-  absence. The wire routes and the dual constants (envelope `"0.6"` + family
-  `vua.packages-ops/v0.6`) wait for the next core wiring slice. The VrcGetLib
-  override lands with the environment implementation-verification slice — the
-  row stays honestly unavailable until then; the CLI backend has no lifecycle
-  face and stays honestly false.
+  absence. ROUTED at the F4 wiring batch: the three route arms live in the
+  standing `packages_request` word list (`packages.enableRepo` /
+  `packages.disableRepo` / `packages.refreshRepo`), each the same task-driven
+  shape — the closed single-key `{repoId}` shape verdict FIRST
+  (`vua.packages.invalid_params` at the route layer), then the per-method gate
+  BEFORE submit, then the ONE port method inside the nine-state task; every
+  port refusal folds into the frozen `execution_failed` guard stamped with the
+  v0.6 family const (the A4 fold law, the original port code travels inside
+  detail). The VrcGetLib override lands with the environment
+  implementation-verification slice — the row stays honestly unavailable until
+  then; the CLI backend has no lifecycle face and stays honestly false.
+- **The named dual constants** (the A3/A4/A5/F2/F3 precedent, closed at the
+  wiring batch; published from `vua_provider_host::provider_host` — consumers
+  key on the core-owned constants, never private literals):
+  `PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06` = `"0.6"` (the frozen v0.6
+  command schema locks this envelope generation) and
+  `PACKAGES_OPS_SCHEMA_VERSION_V06` = `"vua.packages-ops/v0.6"` (the frozen
+  v0.6 result schema locks this family const — the c914cf2 standing rule:
+  every wire row carries a version constant of its own, independent of the
+  envelope const). The five predecessor rows keep serving through their own
+  consts untouched — six separate word-face generations side by side, pinned
+  by the wire tests.
+- **The packages-repos v0.2 negotiation route arm** (the same wiring batch):
+  `packages.listRepos` now negotiates the read-back increment additively (the
+  `catalog_v02`/`query_v02` law) — a backend declaring `repos_v02` answers the
+  v0.2 result family (rows carry the REQUIRED `enabled` bit) through
+  `list_repos_v02`, every other backend keeps answering the frozen v0.1
+  family; the command face stays byte-for-byte the v0.1 face (envelope
+  `"0.1"`), the stamped family const
+  (`PACKAGES_REPOS_SCHEMA_VERSION_V02` = `"vua.packages-repos/v0.2"`) tells
+  the consumer which word face answered, never a guess.
 
 ## BACKEND-ROOT-FACTS SECTION (the 027 checkpoint — mandatory)
 
@@ -220,12 +255,15 @@
 
 ## HONESTY BOUNDARY
 
-Zero end-to-end claims maintained — this word face is FROZEN and **NOT WIRED,
-NOT CONSUMED** (wire routes wait for the next core wiring slice; the desktop
-subscription-row toggle and refresh button wait for shape approval; the
-VrcGetLib override waits for the environment implementation-verification
-slice — the served row stays honestly unavailable until then); the real-machine
-walkthrough stays W25 (O-2, waiting for the user window). This batch and the
-packages-repos v0.2 read-back increment froze in the same batch (without the
-read-back bit the toggle face could not be consumed honestly — the F3
-increment precedent, same path).
+Zero end-to-end claims maintained — this word face is FROZEN and **WIRED, NOT
+CONSUMED** (the route arms, the served row and the dual constants landed on
+the core wire face at the 2026-09-21 F4 wiring batch — against FAKE backends
+in the wire tests; the desktop subscription-row toggle and refresh button
+wait for shape approval; the VrcGetLib override waits for the environment
+implementation-verification slice — until then the served row stays honestly
+unavailable on any real engine and no real backend can answer these routes);
+the real-machine walkthrough stays W25 (O-2, waiting for the user window).
+This batch and the packages-repos v0.2 read-back increment froze in the same
+batch (without the read-back bit the toggle face could not be consumed
+honestly — the F3 increment precedent, same path); the v0.2 negotiation
+route arm landed with the wiring batch.

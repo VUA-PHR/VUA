@@ -79,6 +79,7 @@ test("every page belongs to exactly its own module", () => {
   assert.equal(moduleOf("guide-tutorials"), "guide");
   assert.equal(moduleOf("warehouse"), "production");
   assert.equal(moduleOf("recipe"), "production");
+  assert.equal(moduleOf("inspection"), "production");
   assert.equal(moduleOf("release"), "production");
   assert.equal(moduleOf("workshop"), "production");
   assert.equal(moduleOf("packages"), "production");
@@ -89,11 +90,15 @@ test("every page belongs to exactly its own module", () => {
   assert.equal(moduleOf("settings-goals"), "settings");
 });
 
-test("warehouse, workshop and packages are sidebar groups of production, not modules", () => {
+test("production sidebar is one flat group without a group label, pages in flow order", () => {
+  // 2026-09-20 导航重构(用户裁决):模型生产与其余模块一致为无组标签平铺;
+  // 素材导入/搭配草稿不再是页(收敛为仓储页/配方页内弹窗),检查页保持独立
   const production = modules.find((m) => m.id === "production");
+  assert.equal(production?.groups.length, 1);
+  assert.equal(production?.groups[0]?.labelKey, undefined);
   assert.deepEqual(
-    production?.groups.map((g) => g.labelKey),
-    ["warehouse", "workshop", "packages"],
+    production?.groups[0]?.pages.map((p) => p.id),
+    ["warehouse", "recipe", "inspection", "release", "workshop", "packages"],
   );
 });
 
@@ -228,6 +233,9 @@ test("default landing is the hub home page", () => {
 test("isPageId rejects unknown and legacy ids", () => {
   assert.ok(isPageId("env-play"));
   assert.ok(!isPageId("deployer-play"));
+  // 2026-09-20 导航重构退役页:不再合法,存储的过期落点由 resolveEntry 回退默认页
+  assert.ok(!isPageId("import-material"));
+  assert.ok(!isPageId("compose"));
   assert.ok(!isPageId("nope"));
   assert.ok(!isPageId(null));
 });
