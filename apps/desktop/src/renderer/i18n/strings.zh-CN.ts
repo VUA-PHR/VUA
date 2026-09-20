@@ -1729,6 +1729,25 @@ rolled_back: "已回滚",
       removeConfirm: "确认移除",
       removing: "正在移除…",
       removedLine: "已移除订阅：{repoId}",
+      /** F4 仓库生命周期(027 v0.6 消费批):启停/刷新行内控制。启停语义
+       *  如实口径:VUA 自有状态——禁用的仓库保留在订阅列表(禁用在列不
+       *  隐藏),其包不再参与枚举与安装解析;不写 VCC/ALCOM 共享设置
+       *  (W25 只读证据裁决 (c):VCC 无任何启停状态)。 */
+      lifecycle: {
+        enableAction: "启用",
+        disableAction: "禁用",
+        enableAria: "启用仓库 {name}",
+        disableAria: "禁用仓库 {name}",
+        refreshAction: "刷新",
+        refreshAria: "刷新仓库 {name} 的缓存",
+        enabling: "正在启用…",
+        disabling: "正在禁用…",
+        refreshing: "正在刷新…",
+        disabledBadge: "已禁用",
+        disabledNote: "已禁用：该仓库的包不再参与浏览与安装解析，订阅行保留在列。",
+        doneLine: "操作已完成：{repoId}",
+        upToDate: "仓库缓存已是最新。",
+      },
     },
 
     create: {
@@ -1782,7 +1801,10 @@ rolled_back: "已回滚",
       riskBody:
         "社区仓库由第三方维护,未经 VRChat 或 VUA 审核;订阅后其中的包可能发生变化。请只添加你信任的作者发布的仓库。订阅功能将随包管理引擎一同接入,本说明提前展示。",
       riskAcknowledge: "知道了",
-      toggleAria: "启用或停用 {name}",
+      /** F4 消费批(2026-09-21):toggleAria 交互词面随本地 checkbox 翻转
+       *  一并退役,替换为只读静态标注 */
+      enabledBadge: "已启用",
+      disabledBadge: "已停用",
       health: {
         unknown: "未核对",
         ok: "可访问",
@@ -2378,6 +2400,15 @@ rolled_back: "已回滚",
     },
     environment: {
       verifyUnavailable: "编辑器验证服务当前不可用。",
+    },
+    /** 素材链错误词面(027 第 142 批桌面,任务事件失败行呈现):
+     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发);
+     *  provisionFailed 为预留行——素材链 v0.2 新码 vua.material.
+     *  provision_failed 由核心座修复批(wt-2,候入库)携带,词面先行
+     *  四表同步,码落地即命中 */
+    material: {
+      executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
+      provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
     },
   },
 };
