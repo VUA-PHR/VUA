@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listTemplates",
+  "params": {
+    "projectPath": "C:/demo/MyProject"
+  }
+}
