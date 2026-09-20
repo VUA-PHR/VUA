@@ -651,6 +651,34 @@ export interface PackagesListReposResultV01 {
   readonly repos: readonly PackagesRepoInfoV01[];
 }
 
+/* ---- 027 F4 增量(packages-repos v0.2,核心冻结批 2026-09-20)。
+ *  v0.2 = 冻结 v0.1 result 恰加一个必带行级事实 enabled,其余零变动;
+ *  冻结的 v0.1 词面绝不原地修订——backend 未采纳 v0.2 前继续应答 v0.1
+ *  族,盖戳族常量告知消费端应答的是哪个词面,永不猜测(command 面与
+ *  v0.1 逐字节同形,PackagesListReposQueryV01 不变;catalog/query v0.2
+ *  增量先例)。enabled = VUA 自有启停状态位(packages-ops v0.6
+ *  enableRepo/disableRepo 写面读回):true=该行在包集合世界中活跃;
+ *  false=已禁用——仍在订阅且在列,但其包被枚举与解析排除。W25 只读
+ *  证据记录裁决 (c):VCC 无任何启停状态——该位投影 VUA 自有存储,绝不
+ *  是 settings.json 键。repoId 为 null 的行 enabled 恒为 true: id 缺席
+ *  行在启停面可达范围之外(removeRepo 同边界),true 是其诚实的恒久
+ *  事实。虚假断言防线:health/status/lastRefreshed/disabledAt 等无端口
+ *  载体事实在 schema 即非法 */
+export interface PackagesRepoInfoV02 {
+  readonly repoId: string | null;
+  readonly name: string | null;
+  readonly url: string | null;
+  readonly localPath: string | null;
+  readonly cached: boolean;
+  readonly enabled: boolean;
+}
+
+export interface PackagesListReposResultV02 {
+  readonly schemaVersion: "vua.packages-repos/v0.2";
+  /** 订阅面自身顺序 = 冻结的确定性呈现事实;空数组 = 诚实零订阅 */
+  readonly repos: readonly PackagesRepoInfoV02[];
+}
+
 /** packages.packageCatalog:单包目录事实按需查询(选中工程上下文绑定;
  *  无全量目录投影、无分页语义)。packageId 词表外包 = 复用
  *  vua.vpm.no_matching_package(消费端呈现为独立空态非错误页) */
@@ -1273,6 +1301,127 @@ export interface PackagesCreateRejectedV05 {
 export type PackagesCreateProjectResultV05 =
   | PackagesProjectCreatedV05
   | PackagesCreateRejectedV05;
+
+/* ---- 027 F4 写面(packages-ops v0.6,核心冻结批 2026-09-20)。仓库生命周期
+ *  面三方法:packages.enableRepo / packages.disableRepo /
+ *  packages.refreshRepo,各一一映射端口方法(enable_repo / disable_repo /
+ *  refresh_repo)。A4 v0.4 词面之外节预告的启停面就此解冻——W25 只读取证
+ *  记录(027 提案 s6)结论裁决 (c):VCC 2.4.5 全文/liteDb 两集合/Repos 缓存
+ *  形态均无任何启停状态,启停系 VUA 自有语义,无可共享 counterpart;存储
+ *  裁决=VUA 自有存储(环境根下 .vua 惯例文件),绝不入 userRepos[i] 元素
+ *  (vrc-get 自身 save 剥未知元素键——源码事实 4 对 VUA 自身同样成立)、
+ *  绝不立 settings.json 顶层新键(VCC/ALCOM 写方对未知顶层键的容忍未经
+ *  真机核实——共享文件只载共享事实,F1 如实口径方向)。三方法均无 preview
+ *  臂(A3/A4 同律):启停为单行原子状态翻转(无既有状态摘要可 diff,
+ *  ADR-0006 破坏性警示路径无可警示),刷新即网络行为本体(A4 远端订阅同
+ *  律——预览无法不做同样网络工作而验证可达性);携 confirmedDigest 或
+ *  projectPath=形状违反,负例钉死。禁用语义=该行离开包集合世界(枚举与
+ *  解析面〔repo-catalog 列表/latest 判定/安装解析器〕不再见其包),但订阅
+ *  面继续列出行与本批冻结的 packages-repos v0.2 enabled 位读回——禁用对
+ *  配置视图零隐藏;新添加订阅行恒为 enabled(添加面重置同 id 残留状态),
+ *  移除行不留状态残留。刷新语义=该行自身缓存文件(userRepos[i].localPath)
+ *  的 etag 条件刷新(vrc-get 自身刷新同源同写;official/curated 预定义缓
+ *  存在订阅世界无 repoId,本面不可达);refreshed 收据必携 cacheUpdated
+ *  (库面 update_cache 两臂事实:写新缓存/etag 未变「已是最新」——两臂皆
+ *  成功,「无新数据」是刷新结果绝非错误)。九态任务化写命令(写命令族一
+ *  致形状;刷新网络段使可取消性成为实质);恢复=非终态残留映射
+ *  inspect_required 绝不隐式续传(诚实纪律 3)。rejected 臂 guard 三值闭
+ *  集零新增(A1/A2 折叠纪律——端口拒绝折 execution_failed 携原码 detail:
+ *  vua.vpm.repo_not_found〔未知 repoId,A4 removeRepo 同事实〕/
+ *  repo_write_failed〔启停状态文件或刷新缓存写回失败〕/repo_fetch_failed
+ *  〔刷新网络段〕;三码全系 A4 批既有零新立,复用码永不入 code 键)。
+ *  served 能力位=新 default accessor repo_lifecycle_capabilities() 三独立
+ *  位门控(后端可只服务子集,门按方法绝不按面;default declared-none,
+ *  025 catalog_capabilities 同律 ORC-DEV-004;packages.repoLifecycleOps 一
+ *  行服务三方法,repoOps 一行先例;VrcGetLib 覆写随环境实现核对切片;CLI
+ *  后端无生命周期面如实假);wire 路由候核心接线切片。零端到端宣称——
+ *  本面已冻结未接线未消费,真机走查归 W25(O-2) */
+
+/** packages.enableRepo:任务化订阅行启用写命令(command;params 单键闭集
+ *  {repoId}=仓库 id 稳定行柄;未知 repoId=执行时端口答 repo_not_found;
+ *  id 缺席行在本词面可达范围之外〔协议本载明诚实边界〕;无 digest 位——
+ *  用户显式提交即确认) */
+export interface PackagesEnableRepoCommandV06 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.enableRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
+/** packages.disableRepo:任务化订阅行禁用写命令(command;单键闭集
+ *  {repoId};禁用行离开包集合世界但保留在订阅面+v0.2 enabled 位) */
+export interface PackagesDisableRepoCommandV06 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.disableRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
+/** packages.refreshRepo:任务化订阅行缓存刷新写命令(command;单键闭集
+ *  {repoId};网络段为执行本体,无 preview 臂) */
+export interface PackagesRefreshRepoCommandV06 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "packages.refreshRepo";
+  readonly commandId: string;
+  readonly params: {
+    readonly repoId: string;
+  };
+}
+
+/** kind=enabled(A4 removed 臂同构最小审计形状):端口答 Result<(), _>
+ *  无载荷,收据只携 repoId 回显;新状态本身经 packages-repos v0.2 订阅面
+ *  读回,收据绝不重复——additionalProperties:false 禁止发明切换时间戳/
+ *  前状态回显;与 removed/enabled/disabled 臂以 kind 常量判别,绝不按键集 */
+export interface PackagesRepoEnabledV06 {
+  readonly schemaVersion: "vua.packages-ops/v0.6";
+  readonly kind: "enabled";
+  readonly repoId: string;
+}
+
+/** kind=disabled:repoId 回显;禁用行离开包集合世界但保留订阅面 */
+export interface PackagesRepoDisabledV06 {
+  readonly schemaVersion: "vua.packages-ops/v0.6";
+  readonly kind: "disabled";
+  readonly repoId: string;
+}
+
+/** kind=refreshed(A4 收据族唯一新增事实):cacheUpdated 必带=库面
+ *  update_cache 两臂结果(true=etag 条件抓取写入新缓存;false=etag 未变
+ *  「已是最新」)——两臂皆成功;无字节计数/包清单发明(键集即非法) */
+export interface PackagesRepoRefreshedV06 {
+  readonly schemaVersion: "vua.packages-ops/v0.6";
+  readonly kind: "refreshed";
+  readonly repoId: string;
+  readonly cacheUpdated: boolean;
+}
+
+export interface PackagesRepoRejectedV06 {
+  readonly schemaVersion: "vua.packages-ops/v0.6";
+  readonly kind: "rejected";
+  readonly guard: PackagesGuardV02;
+  /** vua.packages.* 稳定码(三值闭集,冻结 Schema pattern);原端口码
+   *  (vua.vpm.repo_not_found / repo_write_failed / repo_fetch_failed,
+   *  A4 批既有零新立)在 detail 原词溯源,不入 code 键 */
+  readonly code: string;
+  readonly detail: string;
+}
+
+export type PackagesEnableRepoResultV06 =
+  | PackagesRepoEnabledV06
+  | PackagesRepoRejectedV06;
+
+export type PackagesDisableRepoResultV06 =
+  | PackagesRepoDisabledV06
+  | PackagesRepoRejectedV06;
+
+export type PackagesRefreshRepoResultV06 =
+  | PackagesRepoRefreshedV06
+  | PackagesRepoRejectedV06;
+
 
 /** 单条可采纳下载(bdl-queries v0.4 冻结面镜像):仅传输事实＋采纳关联,
  *  路径永不过 wire;renderer 从不由此推导产品身份 */
@@ -2271,6 +2420,9 @@ export type ApplicationRequestV01 =
   | PackagesAddLocalRepoCommandV04
   | PackagesRemoveRepoCommandV04
   | PackagesCreateProjectCommandV05
+  | PackagesEnableRepoCommandV06
+  | PackagesDisableRepoCommandV06
+  | PackagesRefreshRepoCommandV06
   | OverlayGetSnapshotQueryV01
   | InspectionGetQueryV01
   | InspectionListQueryV01
@@ -2886,6 +3038,36 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && typeof value.params.name === "string" && value.params.name.length > 0
       && (value.params.template === null
         || (typeof value.params.template === "string" && value.params.template.length > 0));
+  }
+  // 027 F4 写面(核心冻结批 2026-09-20):仓库生命周期面三命令。
+  // enableRepo / disableRepo / refreshRepo 各单键闭集 {repoId}(稳定行
+  // 柄,非空;无 digest 位——携即形状违反,用户显式提交即确认;无
+  // projectPath——生命周期面只寻址订阅行)。禁用语义=该行离开包集合世
+  // 界但保留订阅面(v0.2 enabled 位读回);刷新=etag 条件刷新该行自身
+  // 缓存,cacheUpdated 两臂皆成功
+  if (value.kind === "command" && value.method === "packages.enableRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["repoId"])) {
+      return false;
+    }
+    return typeof value.params.repoId === "string" && value.params.repoId.length > 0;
+  }
+  if (value.kind === "command" && value.method === "packages.disableRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["repoId"])) {
+      return false;
+    }
+    return typeof value.params.repoId === "string" && value.params.repoId.length > 0;
+  }
+  if (value.kind === "command" && value.method === "packages.refreshRepo") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      || !isIdentifier(value.commandId)
+      || !hasExactKeys(value.params, ["repoId"])) {
+      return false;
+    }
+    return typeof value.params.repoId === "string" && value.params.repoId.length > 0;
   }
   // 017 overlay 读面批 1:params 闭集 = 空
   if (value.kind === "query" && value.method === "overlay.getSnapshot") {
