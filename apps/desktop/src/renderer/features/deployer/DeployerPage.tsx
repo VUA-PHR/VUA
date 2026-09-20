@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useState } from "react";
 import { useMinBusyValue } from "../../app/busy-timing.ts";
 import { openExternalUrl } from "../../app/open-external.ts";
@@ -229,7 +230,7 @@ export function DeployerPage({
   // 证据:results 是当前证据;running/failed 的 last 是旧证据,仅供参考
   const evidence = phase.kind === "results" ? phase : phase.last;
   const evidenceTime =
-    evidence !== null ? new Date(evidence.checkedAt).toLocaleString() : null;
+    evidence !== null ? formatDateTime(evidence.checkedAt) : null;
   const items = evidence?.items ?? [];
   // 摘要计数口径(2026-09-20 用户裁决,与生产门同源):创作辖区只数门内项
   // (Unity 编辑器是唯一硬前置);信息性展示项卡照常逐张呈现,不进「还差

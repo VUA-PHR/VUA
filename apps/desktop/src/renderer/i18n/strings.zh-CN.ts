@@ -7,10 +7,7 @@ import type { Strings } from "./strings.en.ts";
  *   scripts/check-i18n-tables.mjs 校验;
  * - 插值统一用具名参数模板("还差 {count} 项准备"),由 format() 展开,
  *   禁止字符串拼接造句;
- * - 产品术语(Warehouse / Recipe / Assembly / Production / Inspection /
- *   Release / AMF)不进入翻译流程:术语原形见 ./terms.ts,本表 terms.*
- *   只持有其本地注释;文案中引用术语一律走 {placeholder} + termLabel(),
- *   不得把术语写死在句子里;
+ * - terms.* 提供本地化功能名称；品牌与内部 ID 保持不变。引用通过 termLabel()。
  * - 演示数据负载文案不在本表,见 ./strings.fixtures.zh-CN.ts(DEV 专用,
  *   仅 gateway fixture 可达,生产构建被 Tree-shaking 剔除)。
  */
@@ -24,6 +21,28 @@ export const strings: Strings = {
     inspection: "检测",
     release: "出厂",
     amf: "",
+  },
+  diagnostics: {
+    "statusWithCode": "{status} ({code})",
+    "unknown": "更多信息请查看原始消息。",
+    "original": "原始消息",
+    "inspectRequired": "请先检查中断的任务，再选择恢复方式。任务不会自动继续。",
+    "taskFailed": "任务报告了错误。请打开详情查看原因。",
+    "projectReady": "可以读取 Unity 项目和当前场景。",
+    "validationPassed": "衣装层级、Merge Armature 和所选引用检查通过。",
+    "performanceEstimated": "已生成本地结构估算；这不是 VRChat 官方性能等级。",
+    "missingMesh": "网格引用丢失。受影响对象请见原始消息。",
+    "missingMaterial": "材质引用丢失。对象和槽位请见原始消息。",
+    "missingScript": "模型层级中存在丢失的脚本。",
+    "referencesClean": "网格、材质和脚本引用完整。",
+    "realtimeLights": "场景包含实时或混合光源。这是本地观察，不是官方评级。",
+    "bakedLights": "观察到的场景光源均为烘焙光源。这不是官方评级。",
+    "noLights": "未发现场景光源。这不是官方评级。",
+    "sdkAbsent": "此项目未检测到 VRChat Avatar SDK 组件。",
+    "descriptorMissing": "模型缺少 Avatar Descriptor 组件。",
+    "pipelineMissing": "模型缺少 Pipeline Manager 组件。",
+    "uploadComponentsPresent": "Avatar Descriptor 和 Pipeline Manager 均在位。这不代表官方 SDK 已批准上传。",
+    "buildTarget": "当前构建目标见原始消息。"
   },
   common: {
     fixtureBadge: "演示数据",
@@ -688,7 +707,7 @@ rolled_back: "已回滚",
             id: "prepare",
             title: "开始前准备",
             paragraphs: [
-              "确认加速器已开启并固定使用同一线路,Steam 已登录。VRChat 本体免费。",
+              "确认已登录 Steam，并检查网络连接。若无法连接，请参照网络故障排查指引。VRChat 本体免费。",
             ],
           },
           {
@@ -777,7 +796,7 @@ rolled_back: "已回滚",
           {
             id: "accounts",
             title: "账号说明",
-            paragraphs: ["Steam 免登号数据无法迁移;官网注册并绑定后,收藏与好友才能长期保留。"],
+            paragraphs: ["Steam 平台账号可以升级为 VRChat 账号或关联已有账号。请按官方账号升级说明操作，以保留好友和收藏。"],
           },
         ],
       },
@@ -829,7 +848,7 @@ rolled_back: "已回滚",
   },
   /** Warehouse 目录浏览(G8):卡片墙、搜索筛选、详情抽屉与三态文案 */
   warehouse: {
-    subtitle: "商品目录与到达本机的素材在此汇合;购买与下载始终在系统浏览器或官方工具中完成。",
+    subtitle: "管理商品信息和保存在本机的素材。可以在应用内或浏览器中打开 BOOTH 商品页，使用自己的账号购买。",
     searchPlaceholder: "搜索标题或商品 ID",
     searchAria: "搜索目录商品",
     filters: {
@@ -917,7 +936,7 @@ rolled_back: "已回滚",
       openInApp: "在应用内窗口打开",
       openInAppFailed: "未能打开应用内窗口,可改用系统浏览器。",
       sourceUrlNote:
-        "登录、购买与下载在来源页或 BOOTH 官方 Library Manager 完成;文件到达本机后由{warehouse}扫描接管。",
+        "请在商品来源页登录、购买和下载。文件保存到本机后，可添加到{warehouse}。",
       retry: "重试",
       /** 3D 预览占位槽(S-VFX-4):VRM 实时预览落地前展示 */
       preview3dTitle: "3D 预览",
@@ -931,7 +950,7 @@ rolled_back: "已回滚",
       viewLocal: "本地素材",
       viewSwitchAria: "目录/本地素材视图切换",
       /** 双轨视图头(S-IX-3):轨道卡描述行 */
-      trackCatalogDesc: "云端目录快照;购买与下载始终在来源页或官方工具完成",
+      trackCatalogDesc: "保存在本机的商品信息。购买与下载请前往商品来源页。",
       trackLocalDesc: "仓库中的素材包条目图册;素材先检查再使用",
       entriesTitle: "仓库条目",
       entriesEmpty: "仓库中还没有素材包条目。素材经授权下载或批量导入进入仓库。",
@@ -1062,7 +1081,7 @@ rolled_back: "已回滚",
       },
       "start-prepare": {
         title: "开始前准备",
-        body: "确认加速器已开启并固定使用延迟最低的线路,Steam 已登录。",
+        body: "确认已登录 Steam，并检查网络连接。若无法连接，请参照网络故障排查指引。VRChat 本体免费。",
       },
       "start-first-world": {
         title: "进入第一个世界",
@@ -1086,7 +1105,7 @@ rolled_back: "已回滚",
       },
       "basics-status": {
         title: "状态颜色的含义",
-        body: "绿=在线,蓝=组队中,黄=忙碌,红=请勿打扰。状态会显示在你的名牌上。",
+        body: "绿色＝Online（在线）；蓝色＝Join Me（欢迎加入）；橙色＝Ask Me（申请加入）；红色＝Do Not Disturb（请勿打扰）。这些状态影响加入和通知，蓝色不表示正在群组中。",
       },
       "safety-open-urls": {
         title: "先打开这个开关",
@@ -1122,11 +1141,11 @@ rolled_back: "已回滚",
       },
       "tutorials-faq": {
         title: "常见问题速查",
-        body: "模型不显示多半是防护级别或平台兼容问题;掉线先看加速器;更多问题见各引导页。",
+        body: "模型不显示时，请检查安全设置和平台兼容性；掉线时，请检查网络连接与 VRChat 服务状态。",
       },
       "tutorials-accounts": {
         title: "账号说明",
-        body: "Steam 免登号的数据无法迁移;在官网注册正式账号并绑定后,收藏与好友才能长期保留。",
+        body: "Steam 平台账号可以升级为 VRChat 账号或关联已有账号。请按官方账号升级说明操作，以保留好友和收藏。",
       },
     },
   },
@@ -1388,7 +1407,7 @@ rolled_back: "已回滚",
     title: "项目兼容",
     subtitle: "对 ALCOM/VCC 管理的项目只读;写操作请交接给对应管理器。",
     readOnlyTitle: "只读兼容(边界)",
-    readOnlyDesc: "VUA 对 ALCOM/VCC 管理的项目只读:可以查看与诊断;不会在原项目内安装/移除包,不会修改 manifest、项目配置、素材或 .vua 作业文件,也不会写入 ALCOM/VCC 的注册表、数据库、设置或缓存。",
+    readOnlyDesc: "VUA 只读访问 ALCOM/VCC 的原项目文件；修改项目之前，请先导入为 VUA 管理的副本。仓库订阅和本地包注册通过 settings.json 与 VCC/ALCOM 共享，这些设置的修改会对双方可见。其余管理器注册表、数据库和缓存仍为只读。",
     detectionTitle: "项目检测(兼容矩阵)",
     detectionWired: '实时检测(project-inspection 读面):',
     detectionManagersLine: 'VCC 注册项目:{vccN} - ALCOM 注册项目:{alcomN}',
@@ -2033,9 +2052,9 @@ rolled_back: "已回滚",
     },
     version: {
       heading: "VUA 桌面端",
-      versionLine: "v0.3.0 · 早期预览",
+      versionLine: "v{version} · 早期预览",
       description:
-        "当前切片:四目标信息架构、首次引导与部署器/车间外壳。环境检测、素材仓储与生产流程将在后续里程碑接入。",
+        "VUA 早期预览版。可用功能取决于当前连接的本地服务，各页面会显示实际状态。",
       debugHeading: "调试模式",
       debugDescription:
         "开启后,仓库商品详情会显示完整的结构化数据(含实体 UUID),供排查数据问题。仅影响展示,不修改任何数据。",

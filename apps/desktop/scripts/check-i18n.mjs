@@ -4,7 +4,7 @@
  * src/i18n/ 字符串表(en 为源语言),术语原形在 src/i18n/terms.ts。
  *
  * 扫描规则:
- * - 范围:src 目录下全部 .ts / .tsx / .css 文件;
+ * - 范围:src/renderer 目录下全部 .ts / .tsx / .css 文件;
  * - 排除:src/i18n/(字符串表与术语常量)、.test.ts 测试文件(可断言文案内容);
  * - 先剥离注释(注释不限语言),再检索汉字;命中即非零退出。
  */
@@ -54,4 +54,4 @@ if (violations > 0) {
   );
   process.exit(1);
 }
-console.log("check-i18n: OK — 业务代码无中文字面量");
+console.log("check-i18n: OK — renderer 汉字硬编码检查通过（不代表翻译语义或全部显示链路已验收）");
