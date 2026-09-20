@@ -2,8 +2,8 @@
 
 [English](material-intake-v0.2_EN.md) | [简体中文](material-intake-v0.2_ZH.md)
 
-> 文档版本：0.2
-> 状态：已冻结（B3 基线 v0.2 供给步骤增补，2026-09-21 第 141 批；W25 真机发现修复）
+> 文档版本：0.2.1
+> 状态：已冻结（B3 基线 v0.2 供给步骤增补，2026-09-21 第 141 批；W25 真机发现修复；0.2.1 供给依赖解析注记，2026-09-21 第 146 批）
 > 范围：`.unitypackage` 直接导入与 `local-reusable` VPM 制作/安装
 > 更新：2026-09-21
 > 前版：[v0.1](material-intake-v0.1_ZH.md)（2026-09-05，历史保留）
@@ -12,6 +12,11 @@ v0.2 相对 v0.1 的唯一词面变化：计划步骤种类闭集新增 `provisi
 （计划 Schema 升版 `schemas/amf-production/v0.2/material-plan.schema.json`，
 `plan.schemaVersion = "0.2"`）。检查（source）词面保持 v0.1 不变；Build Record
 中的 source 嵌入因此不受影响。
+
+v0.2.1（第 146 批，用户裁决"先做好 SDK 的导入再真机验收"）：仅补注记——供给步骤的
+执行语义扩为"创建＋解析并下载工程声明的 SDK 依赖（网络操作）"；计划 Schema 步骤枚举
+闭集不变（仍是 `provision_project` 一个 kind），wire/provider-host 面零变化，
+`resolve_project` 是供给内部步骤、不经桌面网关暴露。
 
 ## 批次与名称
 
@@ -57,13 +62,24 @@ v0.2 相对 v0.1 的唯一词面变化：计划步骤种类闭集新增 `provisi
   vrc-get 库模板拷贝，或 VCC `vpm new`）。vrc-get CLI 没有创建命令（provision.rs Fix 4），
   不新增 CLI 依赖。执行器在执行时重查条件（assembly 执行臂同款幂等防护）：计划审阅与执行
   之间工程若已出现，创建跳过，计划时指纹链照旧。
+- **依赖解析（v0.2.1 增补，第 146 批）**：创建模板只在 `Packages/vpm-manifest.json` **声明**
+  SDK 依赖（`com.vrchat.base` / `com.vrchat.avatars`），纯模板拷贝不携带包体。创建成功后、
+  基线指纹重取之前，执行器经后端端口 `VpmBackend::resolve_project` 解析工程声明的依赖——
+  从**启用**仓库解析（禁用集语义与 F4 collection-world 一致）并落包进 `Packages/`、回写
+  locked 段。这是**网络操作**，声明词面如实含"解析并下载工程声明的 SDK 依赖"；仅新建路径
+  调用（已供给工程跳过创建与解析，维持幂等重检现状）；幂等（locked 已满足→`already_satisfied`）。
+  后端无此能力面时（VCC CLI 如实 declared-none）缺席臂按 `capability_missing` 家族如实拒绝，
+  绝不假装解析成功。解析收据（`vua.vpm-resolve-receipt/v0.1`：resolved／already_satisfied／
+  failed）是供给内部步骤的事实面，不经桌面网关暴露。
 - **指纹基线重取**：新建工程的状态不是计划时状态。供给成功后执行器以只读 Inspect 重读
   Unity 侧基线指纹（与暂存链的 inspect-first 同一纪律），后续变更命令绑定该基线——绝不把
-  计划时的工程树摘要带进新工程的指纹链。
+  计划时的工程树摘要带进新工程的指纹链。重取固定在依赖解析**之后**：基线覆盖落包后的
+  最终态，绝不含解析前的中间态。
 - **补偿**：供给失败时回滚供给前快照。对未供给目标，快照即空态：恢复把半初始化创建的内容
   移入恢复隔离区（`.vua/recovery/`），等效于 assembly 的"删除半初始化项目后重新计划"语义。
 - **错误面**：供给失败按 `vua.material.provision_failed` 上报（`vua.material.*` 家族规则），
-  后端原码与原因随消息携带；失败照常发布 Build Record，绝不绕过收据。
+  后端原码与原因随消息携带（依赖解析失败同臂：收据 `failed` 集非空时携首个依赖的原码与
+  id，复用码零新立）；失败照常发布 Build Record，绝不绕过收据。
 
 ## 工作流阶段映射
 

@@ -53,8 +53,19 @@ pub struct VpmCapabilities {
     pub remove_packages: bool,
     /// B6: enumerate the manager's registered project paths.
     pub project_registry: bool,
-    // resolve（ADR-0006 能力表）在后端补上对应方法时才加入此结构——
-    // ORC-DEV-004 禁止预留无实现的能力位。
+    /// Batch 146 (user ruling 2026-09-21: SDK import before real-machine
+    /// acceptance): resolve the SDK dependencies a project's
+    /// `Packages/vpm-manifest.json` DECLARES — the creation template only
+    /// declares them (`com.vrchat.base` / `com.vrchat.avatars`), the package
+    /// bodies are not vendored by the copy. This is the预留 bit the struct
+    /// comment reserved ("resolve joins this struct when a backend grows the
+    /// matching method" — ORC-DEV-004: no implementation, no reservation):
+    /// the method lands in the same batch, so the reservation closes now.
+    /// Default declared-none: the trait-default `resolve_project` answers the
+    /// capability_missing family; the VrcGetLib backend overrides the bit to
+    /// true, the VCC CLI backend stays honestly false (no resolve command —
+    /// the CLI's creation cannot complete the declared-dependency face).
+    pub resolve_project: bool,
 }
 
 /// One entry of an install preview (ORC-WF-002: the plan must cover every
@@ -537,6 +548,67 @@ pub struct InstalledListingV02 {
     pub cache_sourced: bool,
 }
 
+/// Batch 146: the schema-version constant of the resolve receipt family.
+/// The receipt is an in-process supply-step fact (NOT a wire face — the
+/// desktop gateway never carries it), so the version travels as the named
+/// family constant here, the same identification law as the standing
+/// `*_SCHEMA_VERSION` consts; the struct keeps the minimal closed field set
+/// the batch pinned (`resolved` / `already_satisfied` / `failed`).
+pub const RESOLVE_RECEIPT_SCHEMA_VERSION: &str = "vua.vpm-resolve-receipt/v0.1";
+
+/// Batch 146: one dependency the resolve installed — the package id, the
+/// locked version written back to `Packages/vpm-manifest.json`, and the
+/// repository the package came from (the subscription row's id when present,
+/// else its name; a local-path source is recorded verbatim as `local`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolvedPackageV01 {
+    pub id: String,
+    pub version: String,
+    pub source_repo: String,
+}
+
+/// Batch 146: one dependency resolve could not satisfy. `reason_code` reuses
+/// the standing `vua.vpm.*` codes (zero new codes — the freeze transports
+/// honest faces, it mints no code); a failed entry means the receipt's
+/// `resolved` set is INCOMPLETE for the declared dependency set, never a
+/// partial success.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveFailureV01 {
+    pub id: String,
+    pub reason_code: String,
+}
+
+/// Batch 146: the outcome of one `resolve_project` call. Three arms, and
+/// exactly the minimal closed field set the batch pinned:
+/// - `resolved`: packages fetched and installed into `Packages/` with their
+///   locked versions written back to the manifest (the network segment is
+///   inherent — declared dependencies are not vendored by the template copy);
+/// - `already_satisfied`: dependency ids whose locked/declared requirement
+///   was already met on disk (the idempotency arm: a second resolve over an
+///   unchanged project answers this vec and touches nothing);
+/// - `failed`: dependencies that could not be resolved (see
+///   [`ResolveFailureV01`] — the honest incomplete face).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ResolveReceiptV01 {
+    pub resolved: Vec<ResolvedPackageV01>,
+    pub already_satisfied: Vec<String>,
+    pub failed: Vec<ResolveFailureV01>,
+}
+
+impl ResolveReceiptV01 {
+    pub const SCHEMA_VERSION: &'static str = RESOLVE_RECEIPT_SCHEMA_VERSION;
+    /// The honest empty receipt: nothing resolved, nothing pending, nothing
+    /// failed — the shape a backend without declared dependencies answers.
+    pub const EMPTY: Self = Self {
+        resolved: Vec::new(),
+        already_satisfied: Vec::new(),
+        failed: Vec::new(),
+    };
+}
+
 /// One VPM backend implementation.
 pub trait VpmBackend: Send + Sync {
     /// Stable backend name, e.g. `vrc-get-lib`, `vcc-cli`.
@@ -913,6 +985,30 @@ pub trait VpmBackend: Send + Sync {
         name: &str,
         template: Option<&str>,
     ) -> Result<ProjectRef, AppErrorV1>;
+    /// Batch 146 (user ruling 2026-09-21: SDK import before real-machine
+    /// acceptance): resolve the dependencies the project's
+    /// `Packages/vpm-manifest.json` DECLARES — read the dependencies, resolve
+    /// them from the ENABLED repositories (the disabled-set semantics are the
+    /// F4 collection-world law: a disabled subscription row never serves
+    /// resolution), install the package bodies into `Packages/` and write the
+    /// locked section back. Idempotent: a project whose locked/declared
+    /// requirements are already satisfied answers them via
+    /// `already_satisfied` and touches nothing. The network segment is
+    /// inherent to the face (fetching the package bodies), so there is NO
+    /// preview arm — the A4 add-remote law. Zero new error codes: the error
+    /// face reuses the standing family (`repo_fetch_failed` for the network
+    /// segment, `repo_not_found` / `backend_unavailable` for the collection
+    /// and state legs, `no_matching_package` for a dependency no enabled
+    /// repository satisfies, `apply_failed` for the install/manifest-write
+    /// leg). The trait default is the DECLARED-NONE absence arm: a backend
+    /// that has not grown this face answers the capability_missing family
+    /// (the `unsupported` arm — the same law as `register_local_package`),
+    /// and `capabilities().resolve_project == false` states that honestly;
+    /// the VrcGetLib backend overrides both, the VCC CLI backend stays
+    /// honestly absent.
+    fn resolve_project(&self, _project_root: &Path) -> Result<ResolveReceiptV01, AppErrorV1> {
+        Err(unsupported("resolve_project"))
+    }
 }
 
 fn unsupported(capability: &str) -> AppErrorV1 {

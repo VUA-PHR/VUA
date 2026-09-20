@@ -600,6 +600,7 @@ fn orc_adp_005_capabilities_declare_the_create_bit_on_both_backends() {
             list_packages: true,
             remove_packages: true,
             project_registry: true,
+            resolve_project: true,
         },
         "the library backend creates in-process; exactly the existing five bits"
     );
@@ -613,6 +614,7 @@ fn orc_adp_005_capabilities_declare_the_create_bit_on_both_backends() {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+            resolve_project: false,
         },
         "the CLI backend owns only vpm new; exactly the existing five bits"
     );
@@ -3666,5 +3668,118 @@ fn f4_collection_world_filter_rides_the_online_load_arm_too() {
     backend
         .preview_install(&project, std::slice::from_ref(&on_request))
         .unwrap();
+    fs::remove_dir_all(&base).ok();
+}
+
+// --- batch 146 (user ruling 2026-09-21: SDK import before real-machine
+// --- acceptance): VrcGetLibBackend::resolve_project, the three honest arms ---
+
+/// Writes a vpm-manifest.json that DECLARES one dependency (the creation
+/// template's shape: declared but NOT vendored).
+fn declare_dependency(project: &std::path::Path, package_id: &str, version: &str) {
+    let manifest = format!(
+        r#"{{"dependencies":{{"{package_id}":{{"version":"{version}"}}}},"locked":{{}}}}"#
+    );
+    fs::write(project.join("Packages/vpm-manifest.json"), manifest).unwrap();
+}
+
+#[test]
+fn b3_batch146_resolve_installs_declared_local_package_and_reports_it() {
+    let base = unique_dir("batch146-resolve-installs");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project_root = base.join("validation-project");
+    let _project = minimal_vpm_project(&project_root);
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+    declare_dependency(&project_root, "com.ph-r.vua.local.synthetic", "0.0.1");
+
+    // First resolve: the declared dependency is fetched-and-installed (from
+    // the registered local set here — no network needed), the receipt names
+    // it with its version and source, the body lands in Packages/ and the
+    // locked section is written back.
+    let receipt = backend.resolve_project(&project_root).unwrap();
+    assert!(receipt.failed.is_empty());
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.resolved.len(), 1);
+    assert_eq!(receipt.resolved[0].id, "com.ph-r.vua.local.synthetic");
+    assert_eq!(receipt.resolved[0].version, "0.0.1");
+    assert_eq!(receipt.resolved[0].source_repo, "local");
+    assert!(
+        project_root
+            .join("Packages/com.ph-r.vua.local.synthetic/package.json")
+            .is_file(),
+        "the resolved package body must be installed into Packages/"
+    );
+    let manifest =
+        fs::read_to_string(project_root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(
+        manifest.contains("\"locked\"") && manifest.contains("com.ph-r.vua.local.synthetic"),
+        "the locked section must be written back: {manifest}"
+    );
+
+    // Second resolve over the unchanged project: the idempotency arm — the
+    // dependency is already satisfied, nothing is resolved again.
+    let second = backend.resolve_project(&project_root).unwrap();
+    assert!(second.resolved.is_empty());
+    assert!(second.failed.is_empty());
+    assert_eq!(second.already_satisfied, vec!["com.ph-r.vua.local.synthetic"]);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_batch146_unresolvable_dependency_answers_the_honest_failed_receipt() {
+    let base = unique_dir("batch146-resolve-missing");
+    let project_root = base.join("empty-environment-project");
+    let _project = minimal_vpm_project(&project_root);
+    // No repositories, no local packages: the declared SDK dependency cannot
+    // be satisfied from ANY enabled source.
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+    declare_dependency(&project_root, "com.vrchat.base", "3.10.1");
+
+    let receipt = backend.resolve_project(&project_root).unwrap();
+    assert!(receipt.resolved.is_empty());
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vrchat.base");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the failed arm reuses the standing code — zero new codes"
+    );
+    assert!(
+        !project_root.join("Packages/com.vrchat.base").exists(),
+        "nothing may be installed when nothing resolves"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_batch146_capability_absence_keeps_the_cli_backend_honestly_false() {
+    let base = unique_dir("batch146-cli-absent");
+    let project_root = base.join("cli-project");
+    let _project = minimal_vpm_project(&project_root);
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+
+    // The capability bit stays declared-none...
+    assert!(!cli.capabilities().resolve_project);
+    // ...and the trait-default absence arm answers the capability_missing
+    // family — the CLI never pretends to resolve.
+    let error = cli.resolve_project(&project_root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
     fs::remove_dir_all(&base).ok();
 }

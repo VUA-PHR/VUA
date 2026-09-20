@@ -139,6 +139,7 @@ impl VpmBackend for FakeRepo {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
@@ -759,6 +760,7 @@ fn unimplemented_repo_port_capability_missing_folds_into_execution_failed() {
                 list_packages: false,
                 remove_packages: false,
                 project_registry: false,
+            resolve_project: false,
             }
         }
         fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
