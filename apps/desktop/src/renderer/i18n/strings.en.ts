@@ -500,11 +500,12 @@ demoTaskTitle: "Demo task",
         local_reusable_vpm:
           "Built as a local-reusable VPM package in an isolated staging project, then installed by the package manager.",
       },
-      pick: "Choose material file…",
-      pickFirst: "Choose a material file first",
+      pick: "Choose material folder…",
+      pickFirst: "Choose a material folder first",
       pickedLine: "Selected: {name}",
       start: "Start inspection",
-      startHint: "Inspection only reads the material and the project state; nothing is modified.",
+      startHint:
+        "Choose a material folder containing the .unitypackage; inspection only reads the material and the project state; nothing is modified.",
     },
     inspection: {
       title: "Material inspection",
@@ -642,6 +643,8 @@ demoTaskTitle: "Demo task",
       invalid_state: "The run is not in a state that accepts this action.",
       unknown_ref: "The referenced inspection, plan or task no longer exists.",
       unknown_material_source: "The material selection is no longer registered. Please pick the file again.",
+      source_invalid:
+        "The material source is invalid: choose a material folder containing the .unitypackage.",
     },
     states: {
       emptyTitle: "No production run yet",

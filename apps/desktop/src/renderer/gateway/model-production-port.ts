@@ -410,13 +410,17 @@ export type ProductionRunView =
  *  not_recoverable=当前运行不可恢复;invalid_state=当前状态不接受该意图;
  *  unknown_ref=引用的检查/计划/任务不存在;
  *  unknown_material_source=Kernel 侧素材登记失效(W25 真机实测:应用重启
- *  后渲染层残留的 materialRefId 成死引用,命令未发出)——≠生产能力未连接 */
+ *  后渲染层残留的 materialRefId 成死引用,命令未发出);
+ *  source_invalid=provider 拒绝素材来源本身(W25 真机第四批:inspect_folder
+ *  要求目录,文件路径一律 vua.material.source_invalid——命令已发出且被
+ *  provider 拒,≠生产能力未连接)——两者都≠生产能力未连接 */
 export type ProductionRejectReason =
   | "stale_revision"
   | "not_recoverable"
   | "invalid_state"
   | "unknown_ref"
-  | "unknown_material_source";
+  | "unknown_material_source"
+  | "source_invalid";
 
 /** 全集:与 strings.productionFlow.rejected 一一对应 */
 export const productionRejectReasons: readonly ProductionRejectReason[] = [
@@ -425,6 +429,7 @@ export const productionRejectReasons: readonly ProductionRejectReason[] = [
   "invalid_state",
   "unknown_ref",
   "unknown_material_source",
+  "source_invalid",
 ];
 
 /** 意图方法统一返回(草案:意图方法均返回"已创建任务 + 当前快照");

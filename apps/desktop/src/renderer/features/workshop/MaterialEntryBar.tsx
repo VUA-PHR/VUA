@@ -10,7 +10,9 @@ const copy = strings.productionFlow.material;
 
 /**
  * 素材入口条(F3):双素材入口选择(direct_unity_package / local_reusable_vpm)+
- * 选择文件按钮 + 开始检查。文件选择在 fixture 下模拟返回合成 MaterialRef;
+ * 选择素材文件夹按钮 + 开始检查。两个 intake 均拾取文件夹(W25 真机第四批:
+ * provider inspect_folder 仅接受目录,内含 .unitypackage 的文件夹即直产入口);
+ * 文件夹拾取在 fixture 下模拟返回合成 MaterialRef。
  * 生产 capability 非 ready 时整条不渲染(由 Section 的 hidden 态保证,§2.6)。
  * 开始检查的关键动作禁用时给出可发现原因(§5)。
  */
