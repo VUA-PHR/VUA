@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { format, strings } from "../../i18n/index.ts";
 import {
@@ -58,7 +59,7 @@ export function VersionPanel({ tracks }: { tracks: readonly VersionTrack[] }) {
                   <dd
                     title={
                       track.checkedAt !== null
-                        ? new Date(track.checkedAt).toLocaleString()
+                        ? formatDateTime(track.checkedAt)
                         : undefined
                     }
                   >

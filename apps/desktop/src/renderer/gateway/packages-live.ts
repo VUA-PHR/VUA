@@ -85,7 +85,9 @@ import type {
   CatalogPackageFactsV01,
   CatalogPackageFactsV02,
   CatalogVersionRowV01,
+  InstalledListAnswer,
   InstalledPackageRowV01,
+  InstalledPackageRowV02,
   PackagesCreateApplyOutcome,
   PackagesInstallApplyOutcome,
   PackagesPort,
@@ -189,6 +191,47 @@ function isInstalledPackageRow(value: unknown): value is InstalledPackageRowV01 
     && value.version.length > 0
     && Array.isArray(value.dependencies)
     && value.dependencies.every((dependency) => typeof dependency === "string");
+}
+
+/** F3 已装包行五键闭集(027 packages-installed v0.2 冻结词面;v0.1 三键
+ * 零变动＋判定对必带可空——发明字段/缺判定对键 = 形状违规,负面向量
+ * 钉死;updateAvailable 仅 true/false/null,数字零或缺键都不是合法词面) */
+function isInstalledPackageRowV02(value: unknown): value is InstalledPackageRowV02 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["dependencies", "latestVersion", "packageId", "updateAvailable", "version"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.packageId === "string"
+    && value.packageId.length > 0
+    && typeof value.version === "string"
+    && value.version.length > 0
+    && Array.isArray(value.dependencies)
+    && value.dependencies.every((dependency) => typeof dependency === "string")
+    && (value.latestVersion === null || (typeof value.latestVersion === "string" && value.latestVersion.length > 0))
+    && (value.updateAvailable === null || typeof value.updateAvailable === "boolean");
+}
+
+/** result 本体:schemaVersion 族常量 + projectPath + packages 行数组;
+ * 027 F3 起双族协商(v0.1 三键行族 / v0.2 五键行族＋cacheSourced 必带
+ * 披露)——盖戳族常量按对应词面窄化,零字段猜测;两族盖戳不匹配各自键
+ * 闭集 = 形状不符(catalog v0.2 双族先例同构) */
+function isPackagesInstalledResultV01(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-installed/v0.1") return false;
+  if (typeof value.projectPath !== "string" || value.projectPath.length === 0) return false;
+  return Array.isArray(value.packages) && value.packages.every(isInstalledPackageRow);
+}
+
+/** v0.2 族应答:五键行闭集＋cacheSourced 必带信息性披露(缺披露 = 形状
+ * 违规——负面向量钉死) */
+function isPackagesInstalledResultV02(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-installed/v0.2") return false;
+  if (typeof value.projectPath !== "string" || value.projectPath.length === 0) return false;
+  return typeof value.cacheSourced === "boolean"
+    && Array.isArray(value.packages)
+    && value.packages.every(isInstalledPackageRowV02);
 }
 
 /** P2 仓库订阅行五键闭集(025 冻结词面;health/status 等发明字段 = 形状违规) */
@@ -332,11 +375,10 @@ function isRepoCatalogResult(value: Record<string, unknown>): boolean {
     && value.repos.every(isRepoCatalogRepoRow);
 }
 
-/** result 本体:schemaVersion 族常量 + projectPath + packages 行数组 */
+/** result 本体组合守卫:双族协商按盖戳族常量窄化(027 F3;catalog v0.2
+ * 先例同构——盖戳辨词面永不猜测) */
 function isPackagesInstalledResult(value: Record<string, unknown>): boolean {
-  if (value.schemaVersion !== "vua.packages-installed/v0.1") return false;
-  if (typeof value.projectPath !== "string" || value.projectPath.length === 0) return false;
-  return Array.isArray(value.packages) && value.packages.every(isInstalledPackageRow);
+  return isPackagesInstalledResultV01(value) || isPackagesInstalledResultV02(value);
 }
 
 /** result 本体:schemaVersion 族常量 + repos 行数组(空数组 = 诚实零订阅) */
@@ -901,7 +943,10 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     return { kind: "ok", result: resultBody };
   };
 
-  const listInstalledRaw = async (projectPath: string): Promise<TypedOutcome<readonly InstalledPackageRowV01[]>> => {
+  /** P1 词面消费(027 F3 消费批起双族协商):组合校验已按族通过,剥信封
+   * 后按盖戳族常量窄化返回对应词面行集(族常量字面量判别,永不猜测;
+   * catalog v0.2 双族先例同构) */
+  const listInstalledRaw = async (projectPath: string): Promise<TypedOutcome<InstalledListAnswer>> => {
     const request: PackagesListInstalledRequestV1 = {
       schemaVersion: 1,
       requestId: crypto.randomUUID(),
@@ -910,7 +955,26 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     };
     const outcome = await invokeTyped(request, "packages.listInstalled", "0.1", isPackagesInstalledResult);
     if (outcome.kind !== "ok") return outcome;
-    return { kind: "ok", result: (outcome.result as { packages: readonly InstalledPackageRowV01[] }).packages };
+    const { schemaVersion: familyConst, projectPath: _stamped, ...rest } = outcome.result as {
+      schemaVersion: string;
+      projectPath: string;
+      packages: readonly unknown[];
+      cacheSourced?: boolean;
+    };
+    if (familyConst === "vua.packages-installed/v0.2") {
+      return {
+        kind: "ok",
+        result: {
+          family: familyConst,
+          rows: rest.packages as readonly InstalledPackageRowV02[],
+          cacheSourced: rest.cacheSourced === true,
+        },
+      };
+    }
+    return {
+      kind: "ok",
+      result: { family: "vua.packages-installed/v0.1", rows: rest.packages as readonly InstalledPackageRowV01[] },
+    };
   };
 
   /** P2 订阅清单:行序 = 订阅面自身顺序(配置事实),空数组 = 诚实零订阅 */
@@ -1479,7 +1543,14 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         repoCatalog: capabilityRows.repoCatalog,
       },
       projectPath: selectedProjectPath,
-      installedPackages: outcome.kind === "ok" ? outcome.result : [],
+      // 027 F3 双族组装:v0.2 族应答携判定行集＋cacheSourced 披露;
+      // v0.1 族应答零新增字段(既有 P1 呈现零回归,绝不虚构标注)
+      ...(outcome.kind === "ok" && outcome.result.family === "vua.packages-installed/v0.2"
+        ? {
+            installedPackages: outcome.result.rows,
+            installedCacheSourced: outcome.result.cacheSourced,
+          }
+        : { installedPackages: outcome.kind === "ok" ? outcome.result.rows : [] }),
       ...(outcome.kind === "failed" ? { loadError: { code: outcome.code } } : {}),
       ...reposFace,
     };

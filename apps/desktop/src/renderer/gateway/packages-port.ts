@@ -222,6 +222,38 @@ export interface InstalledPackageRowV01 {
 }
 
 /**
+ * 已装包行 v0.2(027 F3 packages-query v0.2 冻结词面五键,镜像
+ * @vua/contracts PackagesInstalledItemV02):v0.1 三键零变动＋判定对两
+ * 键(必带可空)。虚假断言防线(024 表态②,用户裁定):latestVersion null
+ * = 当前设置下无合资格版本(跨仓 max——刻意非 F2 分仓视图);updateAvailable
+ * null = 判定未执行——null 绝不是「已最新」,消费端空显绝不默认 false;
+ * false 精确语义 =「当前过滤条件下不存在严格更新版本」,非泛化「无更新」。
+ */
+export interface InstalledPackageRowV02 extends InstalledPackageRowV01 {
+  readonly latestVersion: string | null;
+  readonly updateAvailable: boolean | null;
+}
+
+/**
+ * packages.listInstalled 双族应答事实(027 F3 消费批):盖戳族常量判别
+ * 应答词面世代,消费端读戳辨族永不猜测(catalog v0.2 双版本协商先例)。
+ * v0.1 族 = 冻结三键行(零判定事实,消费端不虚构「可更新」列内容与缓
+ * 存标注);v0.2 族 = 五键行(判定对)＋必带 cacheSourced 信息性降级披
+ * 露(true = 缓存降级路径所得,呈现「缓存数据」标注非失败;false = 在
+ * 线刷新所得,无标注)。
+ */
+export type InstalledListAnswer =
+  | {
+      readonly family: "vua.packages-installed/v0.1";
+      readonly rows: readonly InstalledPackageRowV01[];
+    }
+  | {
+      readonly family: "vua.packages-installed/v0.2";
+      readonly rows: readonly InstalledPackageRowV02[];
+      readonly cacheSourced: boolean;
+    };
+
+/**
  * P2 仓库订阅行(025 packages-repos v0.1 冻结词面五键闭集,镜像
  * @vua/contracts PackagesRepoInfoV01):订阅面为世界(用户配置事实),
  * 四标识/定位事实可空字符串(null = 库面 Option 如实投影,本地目录仓
@@ -405,7 +437,9 @@ export type PackagesView =
         readonly creates: boolean;
       };
       readonly projectPath: string | null;
-      readonly installedPackages: readonly InstalledPackageRowV01[];
+      readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
+      /** 027 F3:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
+      readonly installedCacheSourced?: boolean;
       readonly loadError?: PackagesP1LoadError;
     }
   /**
@@ -457,7 +491,9 @@ export type PackagesView =
         readonly repoCatalog: boolean;
       };
       readonly projectPath: string | null;
-      readonly installedPackages: readonly InstalledPackageRowV01[];
+      readonly installedPackages: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
+      /** 027 F3:仅 v0.2 族应答携带(族常量判别,v0.1 族应答绝不虚构) */
+      readonly installedCacheSourced?: boolean;
       readonly loadError?: PackagesP1LoadError;
       readonly repos: readonly RepoInfoRowV01[];
       readonly reposError?: PackagesP2LoadError;
@@ -641,15 +677,18 @@ export interface PackagesPort {
   subscribe(callback: (view: PackagesView) => void): Unsubscribe;
   selectProject(projectId: string): Promise<PackagesView>;
   /**
-   * P1 词面消费(packages.listInstalled,024 冻结批):单个已注册项目的
-   * 已装包集合;projectId 参数即 013 注册路径(P1 视图无第二项目身份)。
-   * unavailable = 引擎缺席/未接线;failed 携带 typed 错误码原词
-   * (vua.project.project_not_found 等),不折叠为空态。
+   * P1 词面消费(packages.listInstalled,024 冻结批;027 F3 消费批起双
+   * 族协商):单个已注册项目的已装包集合;projectId 参数即 013 注册路
+   * 径(P1 视图无第二项目身份)。应答按盖戳族常量辨世代(InstalledList
+   * Answer):v0.1 族 = 冻结三键行零判定事实;v0.2 族 = 五键行判定对＋
+   * cacheSourced 披露——updateAvailable null = 判定未执行绝不渲染「已
+   * 最新」绝不默认 false。unavailable = 引擎缺席/未接线;failed 携带
+   * typed 错误码原词(vua.project.project_not_found 等),不折叠为空态。
    */
   listInstalled(
     projectPath: string,
   ): Promise<
-    | { readonly kind: "ok"; readonly result: readonly InstalledPackageRowV01[] }
+    | { readonly kind: "ok"; readonly result: InstalledListAnswer }
     | { readonly kind: "failed"; readonly code: string }
     | { readonly kind: "unavailable" }
   >;

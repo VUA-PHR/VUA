@@ -1,10 +1,10 @@
-# VUA design standard v0.7.8
+# VUA design standard v0.7.10
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.8
+> Document version: 0.7.10
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.8)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.10)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -326,6 +326,21 @@ stable untilted cards.
   face and are never invented by the presentation layer; displayName=null lets the packageId act
   as the display name; typed failures render verbatim (repo_not_found travels untouched) — a
   failure never masquerades as an empty state.
+
+  Installed-packages update awareness presentation (027 F3 consumption slice): the installed
+  table gains an "Updatable" column rendering the frozen judgment word face as a three-state
+  honest projection — updateAvailable=null (judgment not executed) renders honestly empty with
+  a hover explanation, never "up to date" and never a default false fill (024 stance 2, user
+  ruling); false = the precise word face "no strictly newer version under the current filter
+  conditions", never generalized into a "no update" assertion; true = renders "update
+  available" plus an inline update key (gated on the packages.installOps capability fact row;
+  no fact, no render), the key reusing the A2 install-face version=null semantics (resolver
+  picks the latest stable), with no new upgrade verb. Dual-family negotiation discipline: a
+  v0.1-family answer (discriminated by family constant vua.packages-installed/v0.1) carries no
+  judgment facts, so the column stays honestly empty with zero regression to the existing
+  presentation; cacheSourced=true rides only v0.2-family answers and renders an informational
+  "cached data" annotation above the table (reusing catalog wording), never a failure — a
+  v0.1-family answer never fabricates the annotation.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 - **Global shell: boot splash and notification center:** the boot splash is the brand's first
@@ -347,8 +362,9 @@ stable untilted cards.
   backdrop and panel always portal to body, blur lives only on the fullscreen backdrop and the
   panel itself stays unblurred (the compositing ghosting lesson). Opening moves focus into the
   panel; closing returns it to the bell (not stolen when the user has focused elsewhere);
-  outside click / Escape / scroll / blur close it; flattened motion skips the exit animation
-  window.
+  outside click / Escape / scrolling outside the panel (scrolling inside the panel's list does
+  not close it — W25 real-machine correction) / blur close it; flattened motion skips the exit
+  animation window.
   Notification-entry discipline: active tasks show by default; terminal tasks appear only with
   "show completed" enabled and not dismissed. Dismissal is offered only for terminal
   notifications — what is cleared is the notification, not the fact; task authority remains
@@ -365,8 +381,7 @@ stable untilted cards.
 
 Core flows work by keyboard with visible predictable focus. State never relies on color alone; field
 errors are associated; icon buttons have names/tooltips. Support dark, light, forced colors, at least
-200% text zoom, 960×600, and 125%/150% DPI. User strings use language keys; domain terms retain the
-English name with a local explanation. Fixtures are development-only and labeled. Large lists use
+200% text zoom, 960×600, and 125%/150% DPI. User strings use language keys; domain function names use familiar local wording without mandatory English prefixes. Brands and internal IDs stay unchanged (user-approved i18n review, 2026-09-20). Known diagnostics have localized explanations keyed by stable codes, with original messages retained; dates and native dialogs follow the app language. Fixtures are development-only and labeled. Large lists use
 virtualization or `content-visibility`; expensive effects need measurements and an off path. If a
 Recipe graph exists, the target at 100 nodes is 60 fps, minimum 30 fps, with a list alternative.
 
@@ -404,6 +419,22 @@ direction.
 
 ## 12. Document changelog
 
+- **0.7.10 (2026-09-20)**: §8.9 notification-center scroll-to-close semantics clarified (W25
+  real-machine batch-4 correction) — the user observed scrolling the notification list inside
+  the panel closing the whole notification center; clarified that the scroll-to-close gesture
+  holds only for scrolling outside the panel, scrolling inside the panel's list (wheel,
+  scrollbar, keyboard) keeps it open, and scrolling outside still closes per the original rule.
+
+- **0.7.9 (2026-09-20)**: §8.7 addendum for installed-packages update awareness presentation
+  (proposal 027 F3 consumption slice) — "Updatable" column three-state honest projection
+  (null = judgment not executed, honestly empty, never "up to date", never default false;
+  false = precise "no strictly newer version under the current filter conditions" word face,
+  never generalized; true = "update available" plus inline update key reusing the A2
+  version=null semantics, gated on the installs capability row); dual-family negotiation
+  discipline (v0.1-family answers keep the column honestly empty with zero regression;
+  cacheSourced=true rides only v0.2-family answers with the "cached data" annotation and is
+  never fabricated for v0.1-family answers). EN mirror of the ZH authority.
+
 - **0.7.8 (2026-09-20)**: new §8 global-shell bullets (boot splash and notification center;
   proposal 028 #7 desktop stance now codified) — splash exit milestone discipline (budget spent
   plus four milestones / waiting state / hard-cap forced exit / Escape skip / flattened motion),
@@ -427,6 +458,8 @@ direction.
   date", cacheSourced=true informational "cached data" annotation, author/compatible deliberate
   absence never invented, failures verbatim). Version 0.7.7 skips 0.7.6, reserved for the wt-7
   in-flight batch. EN mirror synced.
+
+- **0.7.6 (2026-09-20)**: User-approved i18n repair; §9 uses familiar localized function names without mandatory English prefixes, retains brands and internal IDs, preserves original diagnostics, and makes dates and native dialogs follow the app language.
 
 - **0.7.5 (2026-09-19)**: §8.7 projects/packages supplemented with the settings-face copy
   discipline (proposal 027 F1, user ruling U14) — UI copy for settings-face operations such as

@@ -15,6 +15,7 @@ import {
   type CatalogPackageFactsV02,
   type ChangeRequest,
   type InstalledPackageRowV01,
+  type InstalledPackageRowV02,
   type PackageChangePreview,
   type PackageEntryResult,
   type PackageProject,
@@ -48,6 +49,7 @@ import {
   filterRepoCatalogPackages,
   installEnvelopeErrorKey,
   installLatestRequests,
+  installedUpdateCellState,
   invalidReasonKey,
   isEmptyPreview,
   migrationSummaryKey,
@@ -59,6 +61,7 @@ import {
   sortPackages,
   sortProjects,
   sourceTextKeys,
+  type InstalledUpdateCellState,
 } from "./packages-model.ts";
 import "./packages.css";
 
@@ -347,16 +350,26 @@ function P1ProjectPicker({
 function P1InstalledTable({
   rows,
   loadErrorCode,
+  cacheSourced,
   onShowCatalog,
   onRemove,
   removeBusy,
+  onUpdate,
+  updateBusy,
   installBulk,
 }: {
-  rows: readonly InstalledPackageRowV01[];
+  rows: readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
   loadErrorCode: string | null;
+  /** 027 F3:仅 v0.2 族应答且 true 时呈现「缓存数据」信息标注(复用
+   * catalog 措辞;v0.1 族应答无该字段绝不虚构标注——族常量判别) */
+  cacheSourced?: boolean;
   onShowCatalog?: (packageId: string) => void;
   onRemove?: (packageId: string) => void;
   removeBusy?: boolean;
+  /** 027 F3:行内升级键(随 blocks.installs 能力行解锁,渲染层不伪造);
+   * 语义 = A2 安装面 version null(解析器选最新稳定版,零新升级动词) */
+  onUpdate?: (packageId: string) => void;
+  updateBusy?: boolean;
   installBulk?: {
     /** 当前选中 packageId 集(行序 = 用户勾选顺序,提交时照实透传) */
     selectedIds: readonly string[];
@@ -387,7 +400,16 @@ function P1InstalledTable({
   const allSelected = rows.every((row) => bulk?.selectedIds.includes(row.packageId) === true);
   const someSelected = rows.some((row) => bulk?.selectedIds.includes(row.packageId) === true);
   return (
-    <div className="vua-packages__table-scroll">
+    <div className="vua-packages__table-wrap">
+      {/* 027 F3 cacheSourced 信息性标注:仅 v0.2 族应答且 true 时呈现
+       * (复用 catalog 措辞,信息性非失败);v0.1 族应答无该字段,绝不
+       * 虚构标注(族常量判别,盖戳辨词面) */}
+      {cacheSourced ? (
+        <p className="vua-packages__cache-note" role="note">
+          <Icon name="question" size={16} /> {copy.p2.catalogCachedData}
+        </p>
+      ) : null}
+      <div className="vua-packages__table-scroll">
       <table className="vua-packages__table">
         <thead>
           <tr>
@@ -406,6 +428,7 @@ function P1InstalledTable({
             ) : null}
             <th scope="col">{copy.columns.name}</th>
             <th scope="col">{copy.columns.installed}</th>
+            <th scope="col">{copy.p1.updatableColumn}</th>
             <th scope="col">{copy.p1.dependenciesColumn}</th>
             {onShowCatalog ? <th scope="col">{copy.p2.catalogColumn}</th> : null}
             {onRemove ? <th scope="col">{copy.remove.column}</th> : null}
@@ -437,6 +460,40 @@ function P1InstalledTable({
                 </div>
               </td>
               <td data-column={copy.columns.installed}>{row.version}</td>
+              {/* 027 F3 三态呈现(纯函数 installedUpdateCellState):absent
+               * = v0.1 族应答行无判定事实(该列诚实空显,绝不虚构);
+               * notExecuted = updateAvailable null(判定未执行,如实空显
+               * 携悬浮说明——null 绝不是「已最新」绝不默认 false,024 表
+               * 态②);noneUnderFilter = false(精确语义「当前条件下无严
+               * 格更新」,不泛化);available = true(呈现有更新＋行内升级
+               * 键复用 A2 version=null 语义,随 installs 能力行解锁) */}
+              <td data-column={copy.p1.updatableColumn}>
+                {(() => {
+                  const cell: InstalledUpdateCellState = installedUpdateCellState(row);
+                  if (cell === "absent") return null;
+                  if (cell === "notExecuted") {
+                    return <span title={copy.p1.updateNotExecuted} />;
+                  }
+                  if (cell === "noneUnderFilter") {
+                    return <span className="vua-packages__update-none">{copy.p1.updateNoneUnderFilter}</span>;
+                  }
+                  return (
+                    <span className="vua-packages__update-cell">
+                      {copy.states.updateAvailable}
+                      {onUpdate ? (
+                        <Button
+                          variant="subtle"
+                          disabled={updateBusy}
+                          aria-label={format(copy.menu.updateToLatest, {}) + " — " + row.packageId}
+                          onClick={() => onUpdate(row.packageId)}
+                        >
+                          {copy.menu.updateToLatest}
+                        </Button>
+                      ) : null}
+                    </span>
+                  );
+                })()}
+              </td>
               <td
                 data-column={copy.p1.dependenciesColumn}
                 title={row.dependencies.length > 0 ? row.dependencies.join(", ") : undefined}
@@ -485,6 +542,7 @@ function P1InstalledTable({
           </Button>
         </div>
       ) : null}
+      </div>
     </div>
   );
 }
@@ -1483,7 +1541,7 @@ export function PackagesPage() {
   // P1 过滤:仅按 packageId 本地搜索;行序保持服务端 packageId 升序
   // (冻结的确定性呈现事实,客户端不重排)
   const p1Rows = useMemo(() => {
-    if (p1 === null) return [] as readonly InstalledPackageRowV01[];
+    if (p1 === null) return [] as readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
     const text = debouncedText.trim().toLowerCase();
     if (text === "") return p1.installedPackages;
     return p1.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
@@ -1491,7 +1549,7 @@ export function PackagesPage() {
 
   // P2 过滤:同 P1 纪律(packageId 本地搜索,行序不重排)
   const p2Rows = useMemo(() => {
-    if (p2 === null) return [] as readonly InstalledPackageRowV01[];
+    if (p2 === null) return [] as readonly (InstalledPackageRowV01 | InstalledPackageRowV02)[];
     const text = debouncedText.trim().toLowerCase();
     if (text === "") return p2.installedPackages;
     return p2.installedPackages.filter((row) => row.packageId.toLowerCase().includes(text));
@@ -2236,6 +2294,14 @@ export function PackagesPage() {
                   <P1InstalledTable
                     rows={p2Rows}
                     loadErrorCode={p2.loadError?.code ?? null}
+                    {...(p2.installedCacheSourced ? { cacheSourced: true } : {})}
+                    {...(p2.blocks.installs
+                      ? {
+                          onUpdate: (packageId: string) =>
+                            startInstallRows([{ packageId, version: null }]),
+                          updateBusy: installPreviewBusy || installFlow !== null,
+                        }
+                      : {})}
                     {...(p2.blocks.catalog ? { onShowCatalog: setCatalogTarget } : {})}
                     {...(p2.blocks.changes
                       ? { onRemove: startRemove, removeBusy: removePreviewBusy || removeFlow !== null }
