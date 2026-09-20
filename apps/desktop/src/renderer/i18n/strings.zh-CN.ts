@@ -441,14 +441,14 @@ demoTaskTitle: "演示任务",
   },
   workshop: {
     title: "工厂车间",
-    subtitle: "装配、生产与检测任务会在这里执行并全程可恢复。",
-    runningSubtitle: "装配计划已确认,快照已创建,可随时恢复。",
+    subtitle: "导入、生产与检测任务会在这里执行并全程可恢复。",
+    runningSubtitle: "执行计划已确认,快照已创建,可随时恢复。",
     idleTitle: "生产流程尚未接入",
-    idleDescription: "{recipe}与装配流程接入后,这里会显示装配轨道、执行状态与快照恢复入口。",
+    idleDescription: "{recipe}与执行流程接入后,这里会显示轨道阶段、执行状态与快照恢复入口。",
     /** 生产环境未就绪时的诚实阻断态(v0.3.3 §2.1:不自动切页,由用户点击后才跳转) */
     blocked: {
       title: "生产环境尚未准备",
-      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始装配。",
+      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始导入与构建。",
       cta: "前往准备生产环境",
     },
     trackAria: "{amf}生产阶段",
@@ -480,7 +480,7 @@ demoTaskTitle: "演示任务",
       livePendingNote: "实时事件流接入后,这里会显示该工位的事件明细。",
       /** 键与 track-model.ts 的 StageId 一一对应(进料口/配方位/三工位/出货口) */
       role: {
-        warehouse: "进料口:到达本机的素材经检查后在此排队,等待进入装配。",
+        warehouse: "进料口:到达本机的素材经检查后在此排队,等待进入轨道。",
         recipe: "配方位:装配的期望状态来源——配方决定装什么、怎么装。",
         assembly: "组装工位:按配方把素材绑定到素体,生成可构建的工程结构。",
         production: "生产工位:执行构建与打包,产出可上传的产物。",
@@ -639,6 +639,8 @@ rolled_back: "已回滚",
       finishedAt: "完成于 {time}",
         recovered_badge: '已恢复的运行',
         recovered_note: '此记录来自恢复突变成功后重新完成的运行(权威状态:recovered)。',
+      /** 记录卡完成态的出厂页链钮(第 150 批缺口 (a));纯导航,不跨页携带记录身份。 */
+      goRelease: '去出厂',
     },
     /** 键与 production-flow-model.ts 的 ProductionFlowPhase 一一对应 */
     phase: {
