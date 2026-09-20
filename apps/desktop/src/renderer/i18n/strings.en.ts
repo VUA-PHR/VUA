@@ -2260,18 +2260,18 @@ demoTaskTitle: "Demo task",
       "DEV spike: T1 webview-rendered source materials vs T2 Unity-baked product; project data is read from the local demo manifest and never committed to the repo.",
     needRootTitle: "No demo project specified",
     needRootBody:
-      "Append &demoRoot=<Unity project path> to the URL; the page reads .vrcua/bridge/demo-lab.json from that project.",
+      "Append &demoRoot=<Unity project path> to the URL; the page reads .vua/bridge/demo-lab.json from that project.",
     demoRootLabel: "Project",
     manifestLoading: "Reading demo manifest…",
     manifestFailedTitle: "Demo manifest unavailable",
     manifestFailedBody:
-      "Could not read {path}. Check demoRoot and that .vrcua/bridge/demo-lab.json exists in the project.",
+      "Could not read {path}. Check demoRoot and that .vua/bridge/demo-lab.json exists in the project.",
     sourcesTitle: "Materials · T1 direct webview render",
     sourcesNote:
       "Unity custom shaders are approximated with the base material plus its main texture; FBX-embedded textures are kept. Lighting and shading differ from the Unity bake.",
     productsTitle: "Products · T2 Unity editor bake",
     productsNote:
-      "Turntable frames are baked by the Unity editor bridge into .vrcua/bridge/preview/; the VRM is rendered directly by the webview as a control.",
+      "Turntable frames are baked by the Unity editor bridge into .vua/bridge/preview/; the VRM is rendered directly by the webview as a control.",
     cardStatusLoading: "Loading…",
     cardStatusFailed: "Load failed",
     bakePending: "Bake output not found — run build_preview in Unity first ({path}).",

@@ -121,7 +121,7 @@ export interface ReleaseProject {
   /**
    * 烘焙转盘预览定位(T1/T2 预览体系 T2,Release 详情):
    * Unity 工程根 + build_preview 命令 id,产物在
-   * <projectRoot>/.vrcua/bridge/preview/<commandId>/(manifest v1)。
+   * <projectRoot>/.vua/bridge/preview/<commandId>/(manifest v1)。
    * 当前仅 DEV fixture 携带并经 vite /@fs/ 读取;正式实现经资产协议接入后
    * 替换本字段的寻址方式,UI 不变。无烘焙产物时缺省,卡片/详情渲染诚实占位。
    */

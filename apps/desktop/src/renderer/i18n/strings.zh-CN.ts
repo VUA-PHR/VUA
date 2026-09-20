@@ -2233,18 +2233,18 @@ rolled_back: "已回滚",
       "DEV spike:T1 webview 直渲素材 对照 T2 Unity 烘焙成品;项目数据读取本机 demo 清单,不入库。",
     needRootTitle: "未指定演示工程",
     needRootBody:
-      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vrcua/bridge/demo-lab.json。",
+      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vua/bridge/demo-lab.json。",
     demoRootLabel: "工程",
     manifestLoading: "正在读取演示清单…",
     manifestFailedTitle: "演示清单不可用",
     manifestFailedBody:
-      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vrcua/bridge/demo-lab.json。",
+      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vua/bridge/demo-lab.json。",
     sourcesTitle: "素材 · T1 webview 直渲",
     sourcesNote:
       "Unity 自定义 shader 以既有材质 + 主贴图近似,FBX 内嵌贴图保留;光照与着色与 Unity 烘焙存在差异。",
     productsTitle: "成品 · T2 Unity 编辑器烘焙",
     productsNote:
-      "转盘帧由 Unity 编辑器桥烘焙到 .vrcua/bridge/preview/;VRM 由 webview 直渲作为对照。",
+      "转盘帧由 Unity 编辑器桥烘焙到 .vua/bridge/preview/;VRM 由 webview 直渲作为对照。",
     cardStatusLoading: "加载中…",
     cardStatusFailed: "加载失败",
     bakePending: "未找到烘焙产物——请先在 Unity 触发 build_preview({path})。",

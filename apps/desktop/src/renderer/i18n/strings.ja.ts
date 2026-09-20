@@ -2180,18 +2180,18 @@ rolled_back: "ロールバック済み",
       "DEV spike: T1 webview 直描の素材と T2 Unity ベイク成品を対比。プロジェクトデータは本機の demo マニフェストから読み取り、リポジトリには入れません。",
     needRootTitle: "デモプロジェクトが未指定です",
     needRootBody:
-      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vrcua/bridge/demo-lab.json を読み込みます。",
+      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vua/bridge/demo-lab.json を読み込みます。",
     demoRootLabel: "プロジェクト",
     manifestLoading: "デモマニフェストを読み込み中…",
     manifestFailedTitle: "デモマニフェストを読めません",
     manifestFailedBody:
-      "{path} を読み取れませんでした。demoRoot と .vrcua/bridge/demo-lab.json の存在を確認してください。",
+      "{path} を読み取れませんでした。demoRoot と .vua/bridge/demo-lab.json の存在を確認してください。",
     sourcesTitle: "素材 · T1 webview 直描",
     sourcesNote:
       "Unity カスタムシェーダーは基本マテリアル+メインテクスチャで近似し、FBX 埋め込みテクスチャは保持します。ライティングとシェーディングは Unity ベイクと異なります。",
     productsTitle: "成品 · T2 Unity エディターベイク",
     productsNote:
-      "ターンテーブルフレームは Unity エディターブリッジが .vrcua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
+      "ターンテーブルフレームは Unity エディターブリッジが .vua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
     cardStatusLoading: "読み込み中…",
     cardStatusFailed: "読み込みに失敗しました",
     bakePending:

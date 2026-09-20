@@ -49,7 +49,7 @@ const copy = strings.release;
 const bakePreviewEnabled = import.meta.env.DEV;
 
 function bakeUrlFor(projectRoot: string): (rel: string) => string {
-  const base = `/@fs/${projectRoot}/.vrcua/bridge/preview`;
+  const base = `/@fs/${projectRoot}/.vua/bridge/preview`;
   return (rel: string) => encodeURI(`${base}/${rel}`);
 }
 

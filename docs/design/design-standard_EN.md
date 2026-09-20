@@ -1,10 +1,10 @@
-# VUA design standard v0.7.10
+# VUA design standard v0.7.11
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.10
+> Document version: 0.7.11
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.10)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.11)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -298,9 +298,14 @@ stable untilted cards.
   handoff", keeping evidence and next steps that distinguish local estimates
   from official results.
   Release shows result cards, versions, snapshots, Build Records, and official SDK handoff. It retains
-  the horizontal conveyor, animated-tier coverflow, WebGL pedestal, CSS pedestal fallback, and Unity-
-  baked turntable direction. Static/off modes return to flat horizontal scrolling and stable previews
-  without losing any result, diagnostic, or handoff action.
+  the horizontal conveyor, animated-tier coverflow, WebGL pedestal, and CSS pedestal fallback. The
+  Unity-baked turntable direction is promoted to an accepted form (0.7.11, user ruling 2026-09-20):
+  TurntablePlayer is the accepted landed shape — the Release detail embeds the turntable player,
+  consuming unity-bridge v4 `build_preview` artifacts (`.vua/bridge/preview/<commandId>/`, manifest v1
+  driving 60-frame 1024x1024 PNG canvas playback, cover.png as the card cover); the degradation path
+  is pinned — missing artifacts or read failures render the honest placeholder copy, never a broken
+  image or a fabricated thumbnail, and static/off modes return to flat horizontal scrolling and
+  stable previews without losing any result, diagnostic, or handoff action.
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
   before install/update/remove; no third-party branding that implies embedding. Project compatibility
   no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
@@ -435,6 +440,15 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.11 (2026-09-20)**: §8.6 the Release baked-turntable direction is promoted to an
+  accepted form (user ruling 2026-09-20, slice/production-nav-bake-preview) —
+  TurntablePlayer is the accepted landed shape: it consumes unity-bridge v4
+  `build_preview` artifacts (manifest v1 driving 60-frame 1024x1024 PNG canvas playback
+  plus cover.png cover), with the degradation path pinned (missing artifacts or read
+  failures render the honest placeholder copy, never a broken image or a fabricated
+  thumbnail; static/off modes return to flat horizontal scrolling and stable previews).
+  EN mirror of the ZH authority.
 
 - **0.7.10 (2026-09-20)**: §8.3/§8.4/§8.6 navigation rework (user ruling
   2026-09-20) — "Material import" moves from a dedicated tab into a content

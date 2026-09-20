@@ -2174,18 +2174,18 @@ rolled_back: "롤백됨",
       "DEV spike: T1 webview 직접 렌더 소재와 T2 Unity 베이크 산출물을 비교합니다. 프로젝트 데이터는 로컬 데모 매니페스트에서 읽으며 리포지토리에 커밋하지 않습니다.",
     needRootTitle: "데모 프로젝트가 지정되지 않음",
     needRootBody:
-      "URL 에 &demoRoot=<Unity 프로젝트 경로> 를 추가하세요. 해당 프로젝트의 .vrcua/bridge/demo-lab.json 을 읽습니다.",
+      "URL 에 &demoRoot=<Unity 프로젝트 경로> 를 추가하세요. 해당 프로젝트의 .vua/bridge/demo-lab.json 을 읽습니다.",
     demoRootLabel: "프로젝트",
     manifestLoading: "데모 매니페스트를 읽는 중…",
     manifestFailedTitle: "데모 매니페스트를 읽을 수 없음",
     manifestFailedBody:
-      "{path} 를 읽지 못했습니다. demoRoot 와 프로젝트 내 .vrcua/bridge/demo-lab.json 존재 여부를 확인하세요.",
+      "{path} 를 읽지 못했습니다. demoRoot 와 프로젝트 내 .vua/bridge/demo-lab.json 존재 여부를 확인하세요.",
     sourcesTitle: "소재 · T1 webview 직접 렌더",
     sourcesNote:
       "Unity 커스텀 셰이더는 기본 머티리얼+메인 텍스처로 근사하고 FBX 임베디드 텍스처는 유지합니다. 조명과 셰이딩은 Unity 베이크와 다릅니다.",
     productsTitle: "산출물 · T2 Unity 에디터 베이크",
     productsNote:
-      "턴테이블 프레임은 Unity 에디터 브리지가 .vrcua/bridge/preview/ 에 베이크합니다. VRM 은 대조군으로 webview 에서 직접 렌더합니다.",
+      "턴테이블 프레임은 Unity 에디터 브리지가 .vua/bridge/preview/ 에 베이크합니다. VRM 은 대조군으로 webview 에서 직접 렌더합니다.",
     cardStatusLoading: "로딩 중…",
     cardStatusFailed: "로드 실패",
     bakePending:
