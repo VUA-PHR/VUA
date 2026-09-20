@@ -2,23 +2,30 @@
 
 [English](packages-repos-v0.2_EN.md) | [简体中文](packages-repos-v0.2_ZH.md)
 
-> 文档版本：0.2
-> 状态：**已冻结（packages-repos 词表行 v0.2＝订阅行状态增量；v0.1 行保
-> 持冻结原样服务——backend 未采纳 v0.2 前继续应答 v0.1 族；v0.2 照
-> packages-catalog v0.2 / packages-query v0.2 增量先例为独立行目录。
-> 词面未接线：v0.2 双版本协商路由候核心接线批）**
+> 文档版本：0.2.1
+> 状态：**已冻结并已接线（packages-repos 词表行 v0.2＝订阅行状态增量；
+> v0.1 行保持冻结原样服务——backend 未采纳 v0.2 前继续应答 v0.1 族；
+> v0.2 照 packages-catalog v0.2 / packages-query v0.2 增量先例为独立行
+> 目录。v0.2 协商路由臂已随 F4 接线批 2026-09-21 落地：声明 `repos_v02`
+> 的 backend 经 `packages.listRepos` 应答 v0.2 族，其余照旧答 v0.1 族。
+> 未消费：桌面启停开关呈现候形状核可）**
 > （2026-09-20，proposal 027 F4 冻结批同批产物——无读回位则启停写面不
 > 可诚实消费；解冻权威与存储裁决见 packages-ops v0.6 协议本）
 > 机器可读词表：`schemas/packages-repos/v0.2/`（行级双 Schema＋3 正 /
 > 4 负向量；核心消费测试
-> `crates/provider-host/tests/packages_repos_consumer_v02.rs` 3 例）
+> `crates/provider-host/tests/packages_repos_consumer_v02.rs` 3 例；wire
+> 测试 `crates/provider-host/tests/packages_repos_wire_v02.rs` 3 例）
 > 范围：`packages.listRepos` 结果面恰加一个必带行级事实 `enabled`
 > 所有权边界：词表冻结＋端口面（`RepoInfoV02`＋default accessor
 > `repos_v02`＋`list_repos_v02`，default declared-false/缺席）＝核心域；
-> 双实现（VrcGetLib 从 VUA 自有存储投影状态位）＝环境域实现核对切片；
-> 桌面消费＝桌面域（订阅行启停开关呈现，候形状核可）
-> 更新：2026-09-20（v0.2 冻结批：双 Schema＋向量＋核心消费测试＋TS 面＋
-> 双语协议本＋REGISTRY；command 面与 v0.1 逐字节同形零变更）
+> 协商路由臂＝核心域，F4 接线批已落地（2026-09-21，族常量
+> `PACKAGES_REPOS_SCHEMA_VERSION_V02` 由路由盖章）；双实现（VrcGetLib 从
+> VUA 自有存储投影状态位）＝环境域实现核对切片；桌面消费＝桌面域（订阅
+> 行启停开关呈现，候形状核可）
+> 更新：2026-09-21（v0.2.1 接线批：packages.listRepos 协商路由臂落地
+> ——词面零变更，本文档版本只登记路由落地事实。前次：2026-09-20 v0.2
+> 冻结批：双 Schema＋向量＋核心消费测试＋TS 面＋双语协议本＋REGISTRY；
+> command 面与 v0.1 逐字节同形零变更）
 
 ## 增量语义（v0.1 词面绝不原地修订）
 
@@ -75,7 +82,9 @@
 
 ## 诚实边界
 
-零端到端宣称维持——本增量已冻结**未接线、未消费**（v0.2 协商路由候核
-心接线批；VrcGetLib 状态投影候环境实现核对切片——此前 backend 如实继
-续应答 v0.1 族）；真机走查归 W25（O-2）。与 packages-ops v0.6 同批冻
-结：写面与读回位一体交付，无读回位则切换面不可诚实消费。
+零端到端宣称维持——本增量已冻结并**已接线、未消费**（v0.2 协商路由臂
+已随 2026-09-21 F4 接线批落地——wire 测试内对 FAKE backend 作答；
+VrcGetLib 状态投影候环境实现核对切片——此前真实 backend 如实继续应答
+v0.1 族；桌面启停开关呈现候形状核可）；真机走查归 W25（O-2）。与
+packages-ops v0.6 同批冻结：写面与读回位一体交付，无读回位则切换面不
+可诚实消费。
