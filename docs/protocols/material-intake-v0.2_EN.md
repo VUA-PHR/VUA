@@ -5,7 +5,8 @@
 > Document version: 0.2.1
 > Status: FROZEN (B3 baseline v0.2 provisioning-step increment, batch 141,
 > 2026-09-21; W25 real-machine finding fix; 0.2.1 provision dependency-resolution
-> annotation, batch 146, 2026-09-21)
+> annotation, batch 146, 2026-09-21; 0.2.1 failure word-face split + Packages/
+> channel-boundary annotation, batch 150, 2026-09-21)
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-21
 > Previous: [v0.1](material-intake-v0.1_EN.md) (2026-09-05, kept as history)
@@ -23,6 +24,32 @@ operation)"; the plan schema's step-kind closed set is unchanged (still the one
 `provision_project` kind), the wire/provider-host face is untouched, and
 `resolve_project` is an internal supply-step fact never exposed through the desktop
 gateway.
+
+v0.2.1 (batch 150, desktop-seat batch-148 evidence + operator ruling on the
+`Packages/` blind spot): two annotation-only items; the envelope and its field
+closed set are untouched —
+(1) **Failure word faces split by failure category**: the task-layer failure
+event's `messageKey` is no longer the constant `errors.material.executionFailed` —
+a provision-segment failure (the `run_provision` create/resolve arms and their
+wrappers, whose codes all carry the `vua.material.provision_failed` prefix) now
+emits the desktop table's long-reserved `errors.material.provisionFailed`; every
+other failure (bridge/snapshot/rollback/receipt/inspection) keeps
+`executionFailed`. The differentiated facts still travel in `code` (the desktop
+presents the localized face AND the raw code side by side, its batch-148
+dual-fact law).
+(2) **The `Packages/` channel boundary (operator ruling: the material direct
+channel must never silently write `Packages/`)**: `Packages/` is the VPM
+channel's territory, tracked by the vpm-manifest; a write that bypasses that
+tracking violates the single-channel write model. An archive carrying
+`Packages/` entries is refused WHOLE at two standing gates, zero new codes: the
+inspection face blocks it honestly under `vua.material.archive_invalid` (so no
+plan or confirmation can form), and the execution face's extraction arm (shared
+by all three materialize consumption sites) refuses it in the first pass, before
+anything lands on disk (zero residue, zero partial materialization), surfacing
+under the same family. A package of this kind added after planning is refused
+honestly at the pre-execution re-inspection (same `archive_invalid`, before the
+snapshot and the first mutation). Archives containing only `Assets/` entries at
+plan time behave exactly as before.
 
 ## Batch and naming
 
@@ -119,7 +146,9 @@ When the target project carries no `ProjectSettings/ProjectVersion.txt`, the pla
   message (the dependency-resolution arm folds in the same wrapper: a receipt whose `failed`
   set is non-empty carries the first dependency's reason code and id, reusing the standing
   codes — zero new codes); the failure still publishes its Build Record and never bypasses the
-  receipt.
+  receipt. The task-layer failure event's word face splits per the batch-150 annotation: the
+  provision segment hits `errors.material.provisionFailed`, everything else keeps
+  `executionFailed`.
 
 ## Workflow stage mapping
 

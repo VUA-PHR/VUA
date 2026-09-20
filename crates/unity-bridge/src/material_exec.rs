@@ -62,6 +62,26 @@ pub mod error_codes {
     pub const PROVISION_FAILED: &str = "vua.material.provision_failed";
 }
 
+/// The task-layer failure word-face law (batch 150): a provision-segment
+/// failure — `run_provision`'s create/resolve arms, every one of which packs
+/// its report under the `PROVISION_FAILED` prefix — hits the desktop's long
+/// reserved `errors.material.provisionFailed` row; every other failure keeps
+/// the standing `errors.material.executionFailed`. Before batch 150 both
+/// faces emitted the coarse executionFailed regardless of code, so the
+/// reserved provision row could never hit (desktop batch-148 evidence). This
+/// is payload-data refinement only: the AppErrorV1 envelope and its field
+/// closed set are untouched, the code still carries the original detail
+/// (the desktop presents the localized face AND the raw code side by side,
+/// batch-148 dual-fact law).
+pub fn failure_message_key(error_code: Option<&str>) -> &'static str {
+    match error_code {
+        Some(code) if code.starts_with(error_codes::PROVISION_FAILED) => {
+            "errors.material.provisionFailed"
+        }
+        _ => "errors.material.executionFailed",
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MaterialExecutionStatus {
@@ -1232,7 +1252,10 @@ impl MaterialExecutor {
 /// Unpacks a `.unitypackage` (tar.gz of `<guid>` folders carrying `asset`,
 /// `asset.meta`, and `pathname`) verbatim into `extracted_root` and returns
 /// the logical asset paths (`Assets/…`) recorded by the pathname entries.
-/// Untrusted pathnames are skipped, not followed.
+/// Untrusted pathnames are skipped, not followed. An archive whose pathname
+/// entries target `Packages/` is refused outright before anything lands on
+/// disk — the material direct channel never writes the VPM channel's
+/// territory (batch 150, operator ruling).
 pub(crate) fn extract_package_into_dir(
     archive_path: &Path,
     extracted_root: &Path,
@@ -1254,6 +1277,21 @@ pub(crate) fn extract_package_into_dir(
                 let mut logical = String::new();
                 entry.read_to_string(&mut logical)?;
                 let logical = logical.trim().replace('\\', "/");
+                // 第 150 批通道边界（操作者裁定）：素材直导通道不得静默写
+                // 入 `Packages/`——那是 VPM 通道的领地，绕过 vpm-manifest
+                // 追踪的写入违背单通道写模型。含 `Packages/` 条目的归档在
+                // 解包第一遍即整体拒绝（先于任何落盘，零残留、零部分物
+                // 化），错误按既有 `archive_invalid` 族上浮，零新码。与 C#
+                // 物化面的 `Assets/`-only 校验期望从此不再可能静默分歧。
+                // Ordinal 前缀与 C# 面第 259–260 行的判定逐字节同形。
+                if logical.starts_with("Packages/") {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!(
+                            "archive entry targets Packages/ (VPM channel boundary): {logical}"
+                        ),
+                    ));
+                }
                 if logical.starts_with("Assets/")
                     && !logical.split('/').any(|part| part.is_empty() || part == "..")
                 {
@@ -1502,5 +1540,92 @@ mod batch148_extraction_guard {
 
         let _ = fs::remove_dir_all(&base);
         let _ = fs::remove_dir_all(&escape_dir);
+    }
+}
+
+#[cfg(test)]
+mod batch150_channel_boundary {
+    //! 第 150 批通道边界钉（操作者裁定）：含 `Packages/` 条目的归档在解包
+    //! 第一遍即**整体**拒绝——先于任何落盘（零残留、零部分物化），错误按
+    //! 既有 `archive_invalid` 族上浮、零新码。素材直导通道不得静默写入
+    //! VPM 包域；C# 物化面的 `Assets/`-only 校验期望从此不再可能被绕开。
+
+    use flate2::write::GzEncoder;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn guid_archive(path: &std::path::Path, folders: &[(&str, &str)]) {
+        let file = fs::File::create(path).unwrap();
+        let mut builder = tar::Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+        for (guid, logical) in folders {
+            for (suffix, bytes) in [
+                ("pathname", format!("{logical}\n").into_bytes()),
+                ("asset", b"synthetic".to_vec()),
+                ("asset.meta", b"meta".to_vec()),
+            ] {
+                let mut header = tar::Header::new_gnu();
+                header.set_size(bytes.len() as u64);
+                header.set_mode(0o644);
+                header.set_cksum();
+                builder
+                    .append_data(&mut header, format!("{guid}/{suffix}"), &bytes[..])
+                    .unwrap();
+            }
+        }
+        builder.finish().unwrap();
+    }
+
+    fn fresh_base(label: &str) -> std::path::PathBuf {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        std::env::temp_dir().join(format!("vua-150-boundary-{label}-{nanos}"))
+    }
+
+    #[test]
+    fn packages_prefixed_archive_is_refused_before_anything_lands() {
+        let base = fresh_base("pure-packages");
+        let extracted_root = base.join("extracted");
+        let archive = base.join("pack.unitypackage");
+        fs::create_dir_all(&base).unwrap();
+        guid_archive(&archive, &[("0123456789abcdef0123456789abcdef", "Packages/com.evil/thing.asset")]);
+
+        let error = super::extract_package_into_dir(&archive, &extracted_root)
+            .expect_err("a Packages/-targeting archive is refused at the channel boundary");
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(
+            error.to_string().contains("Packages/"),
+            "the refusal names the boundary: {error}"
+        );
+        // Pass 1 fails BEFORE pass 2: nothing is created, nothing extracted.
+        assert!(
+            !extracted_root.exists(),
+            "no extraction residue may exist for a refused archive"
+        );
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn mixed_assets_and_packages_archive_is_refused_whole_never_partially() {
+        let base = fresh_base("mixed");
+        let extracted_root = base.join("extracted");
+        let archive = base.join("pack.unitypackage");
+        fs::create_dir_all(&base).unwrap();
+        guid_archive(
+            &archive,
+            &[
+                ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "Assets/OK.prefab"),
+                ("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "Packages/com.x/y.png"),
+            ],
+        );
+
+        let error = super::extract_package_into_dir(&archive, &extracted_root)
+            .expect_err("one Packages/ entry refuses the WHOLE archive — no silent partial import");
+        assert!(error.to_string().contains("Packages/com.x/y.png"));
+        assert!(
+            !extracted_root.exists(),
+            "the Assets/ sibling must not materialize either"
+        );
+
+        let _ = fs::remove_dir_all(&base);
     }
 }

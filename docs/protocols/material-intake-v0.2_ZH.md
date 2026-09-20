@@ -3,7 +3,7 @@
 [English](material-intake-v0.2_EN.md) | [简体中文](material-intake-v0.2_ZH.md)
 
 > 文档版本：0.2.1
-> 状态：已冻结（B3 基线 v0.2 供给步骤增补，2026-09-21 第 141 批；W25 真机发现修复；0.2.1 供给依赖解析注记，2026-09-21 第 146 批）
+> 状态：已冻结（B3 基线 v0.2 供给步骤增补，2026-09-21 第 141 批；W25 真机发现修复；0.2.1 供给依赖解析注记，2026-09-21 第 146 批；0.2.1 失败词面分流＋Packages/ 通道边界注记，2026-09-21 第 150 批）
 > 范围：`.unitypackage` 直接导入与 `local-reusable` VPM 制作/安装
 > 更新：2026-09-21
 > 前版：[v0.1](material-intake-v0.1_ZH.md)（2026-09-05，历史保留）
@@ -17,6 +17,21 @@ v0.2.1（第 146 批，用户裁决"先做好 SDK 的导入再真机验收"）�
 执行语义扩为"创建＋解析并下载工程声明的 SDK 依赖（网络操作）"；计划 Schema 步骤枚举
 闭集不变（仍是 `provision_project` 一个 kind），wire/provider-host 面零变化，
 `resolve_project` 是供给内部步骤、不经桌面网关暴露。
+
+v0.2.1（第 150 批，桌面座 148 批实证＋操作者对 `Packages/` 盲点的裁定）：两笔仅注记，
+信封与字段闭集零触碰——
+(1) **失败词面按类别分流**：任务层失败事件的 `messageKey` 不再恒为
+`errors.material.executionFailed`——供给段失败（`run_provision` 的 create/resolve 臂及其
+包装臂，码一律以 `vua.material.provision_failed` 为前缀）改发桌面词表预留的
+`errors.material.provisionFailed`；其余（桥接/快照/回滚/收据/检查）维持
+`executionFailed`。差异化事实仍由 `code` 携带（桌面按 148 批并呈律同显词面与原码）。
+(2) **`Packages/` 通道边界（操作者裁定：素材直导通道不得静默写入 `Packages/`）**：
+`Packages/` 是 vpm-manifest 追踪的 VPM 通道领地，绕过其追踪的写入违背单通道写模型。
+含 `Packages/` 条目的归档在两道既有闸口被整体拒绝、零新码：检查面
+（inspect）即按 `vua.material.archive_invalid` 如实阻断（计划与确认因此不会形成）；
+执行面解包臂（三处物化消费点共用）在落盘前的第一遍即整体拒绝（零残留、零部分物化），
+同族上浮。计划后混入此类包的来源在执行前重检时同样按 `archive_invalid` 诚实拒绝
+（先于快照与首笔变更）。计划时只含 `Assets/` 条目的归档行为零变化。
 
 ## 批次与名称
 
@@ -82,7 +97,9 @@ v0.2.1（第 146 批，用户裁决"先做好 SDK 的导入再真机验收"）�
   移入恢复隔离区（`.vua/recovery/`），等效于 assembly 的"删除半初始化项目后重新计划"语义。
 - **错误面**：供给失败按 `vua.material.provision_failed` 上报（`vua.material.*` 家族规则），
   后端原码与原因随消息携带（依赖解析失败同臂：收据 `failed` 集非空时携首个依赖的原码与
-  id，复用码零新立）；失败照常发布 Build Record，绝不绕过收据。
+  id，复用码零新立）；失败照常发布 Build Record，绝不绕过收据。任务层失败事件的词面键
+  按第 150 批注记分流：供给段命中 `errors.material.provisionFailed`，其余维持
+  `executionFailed`。
 
 ## 工作流阶段映射
 
