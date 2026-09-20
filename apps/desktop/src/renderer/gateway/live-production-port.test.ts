@@ -295,7 +295,7 @@ describe("live production port over the Kernel route (F-3)", () => {
       .toMatchObject({ kind: "rejected", reason: "unknown_ref" });
   });
 
-  it("carries the error code/messageKey into the failure log line (batch-142 honest-failure presentation: never the bare two-character word)", async () => {
+  it("carries the error code/messageKey into the failure log line (batch-142 honest-failure presentation: never the bare two-character word; 148-batch dual-fact: the verbatim code rides alongside the localized face)", async () => {
     // W25 真机呈现缺口(2026-09-20 用户报):执行日志失败时只显示「失败」
     // 两字,错误码/原因要到任务记录里翻——诚实纪律#2 要求失败行词面携带
     // 错误详情(messageKey 有本地化词面则用之,否则 code 原词)。
@@ -328,10 +328,13 @@ describe("live production port over the Kernel route (F-3)", () => {
     if (view.workshop.kind !== "running") throw new Error("expected a running workshop view");
     const lastLog = view.workshop.log.at(-1);
     if (lastLog === undefined) throw new Error("expected a failure log line");
-    // 失败行 = 阶段词面 + 错误详情,绝不只是「失败」两字;详情 = 本地化
-    // 词面(errors.material.executionFailed 命中词表)
+    // 失败行 = 阶段词面 + 错误详情,绝不只是「失败」两字;详情两事实并呈
+    // (148 批反向审查):本地化词面(errors.material.executionFailed 命中
+    // 词表)+ code 原词——引擎恒发粗粒度 executionFailed 键,code 原词
+    // (bridge_failed 等精确原因)绝不被词面遮蔽
     expect(lastLog.text).toContain(strings.productionFlow.phase.failed);
     expect(lastLog.text).toContain(strings.errors.material.executionFailed);
+    expect(lastLog.text).toContain("vua.material.bridge_failed");
     expect(lastLog.text).not.toBe(strings.productionFlow.phase.failed);
 
     // 词表外 messageKey → code 原词呈现(下一条失败迁移;新运行注入避免

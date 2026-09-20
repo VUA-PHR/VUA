@@ -5,6 +5,8 @@ import type {
   PackageProject,
   PackageRow,
   RepoCatalogPackageRowV01,
+  RepoInfoRowV01,
+  RepoInfoRowV02,
 } from "../../gateway/index.ts";
 import { strings } from "../../i18n/strings.en.ts";
 import {
@@ -31,6 +33,7 @@ import {
   removeEnvelopeErrorKey,
   removeGuardKey,
   repoEnvelopeErrorKey,
+  repoLifecycleToggleAvailable,
   repoHealthTextKeys,
   requestForVersion,
   rowStatus,
@@ -533,4 +536,31 @@ test("installedUpdateCellState: false = precise none-under-filter semantics", ()
 });
 test("installedUpdateCellState: true = available with inline update key", () => {
   assert.equal(installedUpdateCellState({ ...V02_ROW, updateAvailable: true }), "available");
+});
+
+// 027 F4 消费批(148 批反向审查修复):行级启停控制可用性 = 行族分派。
+// v0.2 六键行(带 enabled 位)可渲染启停入口;v0.1 五键行无位 = 状态不可知,
+// 启停入口不渲染(状态不可知不猜测——port ReposListAnswer 族注释同律)。
+// 反向审查前渲染层仅按 blocks.repoLifecycle 门控,v0.1 行误渲染启停按钮
+// 且按钮词面恒为「禁用」;本组测试钉死分派律,防回摆。
+const REPO_BASE = {
+  name: "Repo",
+  url: "https://vpm.example/index.json",
+  localPath: null,
+  cached: true,
+} as const;
+const REPO_V01: RepoInfoRowV01 = { ...REPO_BASE, repoId: "repo-legacy" };
+const REPO_V02_ENABLED: RepoInfoRowV02 = { ...REPO_BASE, repoId: "repo-live", enabled: true };
+const REPO_V02_DISABLED: RepoInfoRowV02 = { ...REPO_BASE, repoId: "repo-live", enabled: false };
+const REPO_V02_NULL_ID: RepoInfoRowV02 = { ...REPO_BASE, repoId: null, enabled: true };
+
+test("repoLifecycleToggleAvailable: v0.2 row with the enabled bit carries the toggle", () => {
+  assert.equal(repoLifecycleToggleAvailable(REPO_V02_ENABLED), true);
+  assert.equal(repoLifecycleToggleAvailable(REPO_V02_DISABLED), true);
+});
+test("repoLifecycleToggleAvailable: v0.1 row without the bit renders no toggle (state unknowable, never guessed)", () => {
+  assert.equal(repoLifecycleToggleAvailable(REPO_V01), false);
+});
+test("repoLifecycleToggleAvailable: family is the sole criterion - a null-id v0.2 row still carries the bit (row-handle reachability stays the render layer's repoId check)", () => {
+  assert.equal(repoLifecycleToggleAvailable(REPO_V02_NULL_ID), true);
 });

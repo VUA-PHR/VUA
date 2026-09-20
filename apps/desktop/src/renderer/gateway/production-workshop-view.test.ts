@@ -4,9 +4,12 @@ import { errorCopyFor, failureLogText } from "./production-workshop-view.ts";
 import { strings } from "../i18n/index.ts";
 
 /**
- * 失败行词面纯函数测试(诚实纪律#2;W25 真机呈现缺口修复,第 142 批):
- * 执行日志失败行必须携带错误详情——messageKey 命中 errors 词表用本地化
- * 词面,否则 code 原词呈现,绝不只呈「失败」两字让用户去任务记录翻原因。
+ * 失败行词面纯函数测试(诚实纪律#2;W25 真机呈现缺口修复,第 142 批;
+ * 148 批反向审查订正为并呈律):执行日志失败行必须携带错误详情——
+ * messageKey 命中 errors 词表 = 本地化词面 + code 原词并呈(引擎实证
+ * material Failed 的 messageKey 恒为 executionFailed 与 code 无关,只呈
+ * 词面会遮蔽精确原因),未命中 = code 原词,绝不只呈「失败」两字让用户
+ * 去任务记录翻原因。
  */
 
 function materialError(overrides: Partial<AppErrorV01> = {}): AppErrorV01 {
@@ -36,11 +39,25 @@ describe("workshop failure-log word face (batch 142 honest-failure presentation)
     expect(errorCopyFor("")).toBeNull();
   });
 
-  it("appends the localized copy when the messageKey hits the table (failure carries its reason, never the bare two-character word)", () => {
+  it("appends the localized copy AND the raw code when the messageKey hits the table (engine emits the coarse executionFailed key regardless of code - the verbatim code must never be shadowed; 148-batch dual-fact presentation)", () => {
     const base = strings.productionFlow.phase.failed;
     const line = failureLogText(base, materialError());
-    expect(line).toBe(`${base}:${strings.errors.material.executionFailed}`);
+    expect(line).toBe(
+      `${base}:${strings.errors.material.executionFailed} (vua.material.bridge_failed)`,
+    );
+    expect(line).toContain(strings.errors.material.executionFailed);
+    expect(line).toContain("vua.material.bridge_failed");
     expect(line).not.toBe(base);
+  });
+
+  it("carries the localized word face plus the provision code for a provision failure (the reserved provisionFailed key stays unused today, yet the provision reason still reaches the line via the code - batch-146 shape)", () => {
+    const base = strings.productionFlow.phase.failed;
+    const line = failureLogText(
+      base,
+      materialError({ code: "vua.material.provision_failed: vua.vpm.no_matching_package" }),
+    );
+    expect(line).toContain(strings.errors.material.executionFailed);
+    expect(line).toContain("vua.material.provision_failed");
   });
 
   it("appends the raw code verbatim when the messageKey has no localized word face (e.g. vua.material.bridge_failed)", () => {
