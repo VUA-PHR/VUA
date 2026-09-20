@@ -103,6 +103,29 @@ function repoCatalogFrame(result: unknown) {
   });
 }
 
+/** F5 模板枚举应答帧(027;族常量盖戳 + templates 行数组) */
+function templatesFrame(result: unknown) {
+  return asWire({
+    schemaVersion: "0.1",
+    operation: "packages.listTemplates",
+    result,
+  });
+}
+
+/** F5 读面齐全:templatesOps 行 available(027;环境覆写置真后的翻转态) */
+const F5_AVAILABLE = [
+  { operationId: "packages.query", availability: "available" },
+  { operationId: "packages.templatesOps", availability: "available" },
+];
+
+/** F5 模板行集:服务端冻结 id 升序呈现事实(name = id 冻结同值显示投影;
+ *  description/sourceRoot 刻意缺席,发明即非法) */
+const VALID_TEMPLATE_ROWS = [
+  { id: "com.vrchat.avatars", name: "com.vrchat.avatars" },
+  { id: "com.vrchat.base", name: "com.vrchat.base" },
+  { id: "com.vrchat.worlds", name: "com.vrchat.worlds" },
+];
+
 const VALID_ROWS = [
   { packageId: "com.vrchat.avatars", version: "3.7.4", dependencies: ["com.vrchat.base"] },
   { packageId: "com.vrchat.base", version: "3.7.2", dependencies: [] },
@@ -202,7 +225,9 @@ function clientWith(overrides: {
   reposResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
   catalogResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
   repoCatalogResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  templatesResult?: GatewayResult<DesktopGatewaySuccessValueV1>;
   onRepoCatalogRequest?: (request: DesktopGatewayRequestV1) => void;
+  onListTemplatesRequest?: (request: DesktopGatewayRequestV1) => void;
 } = {}): GatewayClient {
   return fakeClient(async (request) => {
     if (request.method === "app.snapshot") {
@@ -229,6 +254,15 @@ function clientWith(overrides: {
         overrides.repoCatalogResult ?? {
           ok: true,
           value: repoCatalogFrame({ schemaVersion: "vua.packages-repo-catalog/v0.1", ...VALID_REPO_CATALOG_FACTS }),
+        }
+      );
+    }
+    if (request.method === "packages.listTemplates") {
+      overrides.onListTemplatesRequest?.(request);
+      return (
+        overrides.templatesResult ?? {
+          ok: true,
+          value: templatesFrame({ schemaVersion: "vua.packages-templates/v0.1", templates: [] }),
         }
       );
     }
@@ -259,7 +293,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -334,13 +368,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -1965,6 +1999,125 @@ describe("packages live port (027 F2 consumption)", () => {
       }),
     );
     expect(await missingDisclosure.repoCatalog(null, null)).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+  });
+});
+
+/** ---- 027 F5 消费批:packages.listTemplates 模板条目枚举读面 ---- */
+
+describe("packages live port (027 F5 consumption)", () => {
+  it("flips the templates block from the templatesOps served row (declared-none stays honestly hidden)", async () => {
+    const hidden = await createLivePackages(clientWith()).snapshot();
+    assertReadyP2(hidden);
+    if (hidden.kind !== "ready-p2") return;
+    expect(hidden.blocks.templates).toBe(false);
+
+    const port = createLivePackages(clientWith({ snapshot: F5_AVAILABLE }));
+    const view = await port.snapshot();
+    assertReadyP2(view);
+    if (view.kind !== "ready-p2") return;
+    expect(view.blocks.templates).toBe(true);
+  });
+
+  it("carries the frozen id-ascending rows verbatim after stripping the family const (order untouched, no invented fields)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        snapshot: F5_AVAILABLE,
+        templatesResult: {
+          ok: true,
+          value: templatesFrame({
+            schemaVersion: "vua.packages-templates/v0.1",
+            templates: VALID_TEMPLATE_ROWS,
+          }),
+        },
+      }),
+    );
+    const outcome = await port.listTemplates();
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect(outcome.result).toEqual({ templates: VALID_TEMPLATE_ROWS });
+    expect(outcome.result).not.toHaveProperty("schemaVersion");
+    // 冻结呈现事实:id 升序由服务端投影,客户端不重排
+    expect(outcome.result.templates.map((row) => row.id)).toEqual([
+      "com.vrchat.avatars",
+      "com.vrchat.base",
+      "com.vrchat.worlds",
+    ]);
+  });
+
+  it("answers an honest empty array for zero templates (missing directory root is a fact, not an error)", async () => {
+    const port = createLivePackages(clientWith({ snapshot: F5_AVAILABLE }));
+    const outcome = await port.listTemplates();
+    expect(outcome).toEqual({ kind: "ok", result: { templates: [] } });
+  });
+
+  it("transports the empty-closed-set params (environment-level face, any key would be a wire violation)", async () => {
+    let seen: unknown = null;
+    const port = createLivePackages(
+      clientWith({
+        snapshot: F5_AVAILABLE,
+        onListTemplatesRequest: (request) => {
+          seen = (request as { params: unknown }).params;
+        },
+      }),
+    );
+    await port.listTemplates();
+    // 空闭集 = 环境级配置面(listRepos 先例);live 构造恒 {} 绝不带键
+    expect(seen).toEqual({});
+  });
+
+  it("surfaces typed refusals verbatim and the absence arm as unavailable (never folded into an empty listing)", async () => {
+    const refused = createLivePackages(
+      clientWith({
+        snapshot: F5_AVAILABLE,
+        templatesResult: applicationError("vua.vpm.capability_missing", "validation"),
+      }),
+    );
+    expect(await refused.listTemplates()).toEqual({
+      kind: "failed",
+      code: "vua.vpm.capability_missing",
+    });
+
+    const absent = createLivePackages(
+      clientWith({ snapshot: F5_AVAILABLE, templatesResult: UNAVAILABLE_ERROR }),
+    );
+    expect(await absent.listTemplates()).toEqual({ kind: "unavailable" });
+  });
+
+  it("answers shape violation for invented or empty-name rows (frozen two-key closed set, wire lock stays authoritative)", async () => {
+    const invented = createLivePackages(
+      clientWith({
+        snapshot: F5_AVAILABLE,
+        templatesResult: {
+          ok: true,
+          value: templatesFrame({
+            schemaVersion: "vua.packages-templates/v0.1",
+            // description = 冻结词面刻意缺席(无 v0.1 生产者);发明即形状不符
+            templates: [{ id: "com.x", name: "com.x", description: "friendly" }],
+          }),
+        },
+      }),
+    );
+    expect(await invented.listTemplates()).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+
+    const emptyName = createLivePackages(
+      clientWith({
+        snapshot: F5_AVAILABLE,
+        templatesResult: {
+          ok: true,
+          value: templatesFrame({
+            schemaVersion: "vua.packages-templates/v0.1",
+            templates: [{ id: "com.x", name: "" }],
+          }),
+        },
+      }),
+    );
+    expect(await emptyName.listTemplates()).toEqual({
       kind: "failed",
       code: "packages_shape_violation",
     });

@@ -1692,6 +1692,15 @@ rolled_back: "ロールバック済み",
       nameAria: "プロジェクト名",
       templatePlaceholder: "テンプレート名(任意)—空欄でバックエンド既定テンプレートを使用",
       templateAria: "テンプレート名(任意)",
+      templateSelectAria: "プロジェクトテンプレート",
+      templateDefaultOption: "バックエンド既定テンプレートを使用(空欄)",
+      templatesLoading: "テンプレート一覧を取得中…",
+      templatesEmptyNote:
+        "利用可能なテンプレートが見つかりません(テンプレートディレクトリの欠落は事実でありエラーではありません)。テンプレート名を手動入力するか、空欄でバックエンド既定テンプレートを使用できます",
+      templatesFailedNote:
+        "テンプレート一覧の取得に失敗しました({code})。テンプレート名を手動入力するか、空欄でバックエンド既定テンプレートを使用できます",
+      templatesUnavailableNote:
+        "テンプレート一覧は現在利用できません。テンプレート名を手動入力するか、空欄でバックエンド既定テンプレートを使用できます",
       action: "プロジェクトを作成",
       submitting: "作成中…",
       successLine: "作成・登録済み:{projectPath}",

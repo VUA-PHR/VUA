@@ -555,6 +555,25 @@ export interface PackagesRepoCatalogRequestV1 {
   };
 }
 
+// ---- 027 F5 读面(packages-templates v0.1,核心冻结批 640b365 经第 132
+// 批入库;wire 接线批 8677607 经第 136 批入库;桌面形状核可 d41f3a7 经第
+// 137 批入库,桌面 F5 消费批登记 2026-09-20。只读单方法:模板条目枚举
+// 纯读面,params 空闭集 = 环境级配置面非 per-project(listRepos 空闭集
+// 先例);零网络无 cacheSourced,空数组 = 诚实零模板应答(目录根缺失是
+// 事实非错误)。id = 模板目录名(packages.createProject template 参数
+// 机器标识),name = id 冻结同值显示投影(消费端逐字显示绝不虚构更友好
+// 标签)。served 行 packages.templatesOps(default declared-none 访问器
+// 门控,环境覆写置真前如实 unavailable)为区块标注权威事实源 ----
+
+/** packages.listTemplates 只读查询:模板条目枚举(环境级配置面,
+ *  空闭集 params——任何键 = 词表外形状违反) */
+export interface PackagesListTemplatesRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.listTemplates";
+  readonly params: Record<string, never>;
+}
+
 // ---- packages-ops v0.1 写面 A1 移除(026 冻结批 d7f6a57 经第 99 批入库;
 // wire 接线批 41503a4 候验收;桌面 A1 消费批登记 2026-09-19。previewRemove
 // = 同步只读变更预览 query(双键闭集,packageIds 显式非空闭列 minItems 1 +
@@ -819,6 +838,7 @@ export type DesktopGatewayRequestV1 =
   | PackagesListReposRequestV1
   | PackagesPackageCatalogRequestV1
   | PackagesRepoCatalogRequestV1
+  | PackagesListTemplatesRequestV1
   | PackagesPreviewRemoveRequestV1
   | PackagesApplyRemoveRequestV1
   | PackagesPreviewInstallRequestV1
@@ -884,6 +904,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "packages.packageCatalog": "query",
   // 027 F2 读面(桌面 F2 消费批):仓库级可装包清单只读同族
   "packages.repoCatalog": "query",
+  // 027 F5 读面(桌面 F5 消费批):模板条目枚举只读同族
+  "packages.listTemplates": "query",
   // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):preview 同步
   // query,apply 任务化 command(Kernel 生成 commandId)
   "packages.previewRemove": "query",
@@ -1434,6 +1456,10 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       return repoCatalogParams.packageIds.every((id) => typeof id === "string" && id.length >= 1)
         && new Set(repoCatalogParams.packageIds).size === repoCatalogParams.packageIds.length;
     }
+    // 027 F5 读面(桌面 F5 消费批):listTemplates 空闭集(环境级配置
+    // 面,任何键 = 词表外形状违反;listRepos 空闭集同款)
+    case "packages.listTemplates":
+      return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
     // packages-ops v0.1 写面 A1 移除(026;桌面 A1 消费批):packageIds =
     // 显式非空闭列(minItems 1 + uniqueItems,冻结 Schema 口径,词表外
     // 键拒绝);applyRemove 三键闭集必携 confirmedDigest(minLength 1),

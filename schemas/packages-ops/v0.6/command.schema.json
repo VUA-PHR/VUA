@@ -1,0 +1,383 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-ops/v0.6/command.schema.json",
+  "title": "VUA packages-ops command v0.6",
+  "description": "Packages write face, sixth frozen slice F4 = repository lifecycle (proposal 027 face order; the v0.1 A1 removal row, the v0.2 A2 install/upgrade row, the v0.3 A3 registration row, the v0.4 A4 repository add/remove row and the v0.5 A5 project-creation row stay frozen and served untouched — v0.6 is a separate row directory per the packages-catalog v0.2 increment precedent). Exactly TWELVE methods on the packages.* family: the A1 pair (packages.previewRemove / packages.applyRemove, v0.1 shapes verbatim), the A2 pair (packages.previewInstall / packages.applyInstall, v0.2 shapes verbatim), the A3 single method (packages.registerLocalPackage, v0.3 shape verbatim), the THREE A4 methods (packages.addRemoteRepo / packages.addLocalRepo / packages.removeRepo, v0.4 shapes verbatim), the ONE A5 method packages.createProject (v0.5 shape verbatim), plus the THREE F4 methods packages.enableRepo / packages.disableRepo / packages.refreshRepo, mapped one-to-one onto the VpmBackend port methods enable_repo / disable_repo / refresh_repo. THE F4 FACE RESOLVES THE A4 FREEZE-BATCH EXPLICITLY-OUTSIDE PREVIEW: the enable/disable word face was held out of every frozen word list until the VCC disabled-list key name was verified on a real machine — the W25 read-only evidence record (2026-09-20, environment, proposal 027 s6) concluded ruling (c): VCC 2.4.5 carries NO enable/disable state anywhere (settings.json full scan, vcc.liteDb collections, Repos cache shapes — zero hits; the userRepos element key set is the exact vrc-get closed set, zero foreign keys), so repository enable/disable is VUA-OWNED semantics with no shared counterpart, and the freeze hard precondition is achieved. THE STORAGE RULING (the word-face authority, this batch): the VUA disable set lives in VUA-OWNED STORAGE under the environment root (the .vua VUA-owned-storage convention) — NEVER inside userRepos[i] elements (vrc-get's own five-key closed set strips unknown element keys on every settings save — source fact 4 would apply to VUA itself) and NEVER as new top-level keys inside the shared settings.json (vrc-get's flatten roundtrip preserves unknown top-level keys, but the VCC/ALCOM writer tolerance for unknown top-level keys is UNVERIFIED on the real machine — writing VUA-only state into a file other tools own and rewrite would expose it to the exact silent-strip risk class the source-fact analysis identified; the shared file carries shared facts only, the F1 honesty direction). ALL THREE F4 METHODS ARE NO-PREVIEW NINE-STATE TASK-DRIVEN WRITE COMMANDS (the A3/A4 law, family-consistent shape: commandId idempotency, cancellable, events+revision; recovery maps non-terminal residue to inspect_required and NEVER resumes implicitly, honesty rule 3). NO confirmedDigest slot exists on any of the three: enable/disable toggles one row's VUA-owned state atomically (no pre-existing state summary to diff, ADR-0006's destructive-warning path has nothing to warn about — toggling never touches package files, project content, or the subscription row itself) and refresh IS the network act (a preview cannot verify reachability without doing the same network work — the A4 add-remote law); a carried confirmedDigest = shape violation (negative vector). NO method param names a projectPath: the lifecycle face addresses SUBSCRIPTION rows only (the 013 project_not_found reuse does not apply; a carried projectPath = shape violation, negative vector). params: enableRepo / disableRepo / refreshRepo each carry the closed single-key set {repoId} — the repository id of the subscription row (the stable row handle, the A4 removeRepo same handle; index addressing is NOT frozen — an index drifts under concurrent writers). AN UNKNOWN repoId answers the REUSED vua.vpm.repo_not_found at execution time (the A4 removeRepo same-fact precedent, folded into the rejected arm with the original code in detail). ID-ABSENT ROWS (repoId null on the read face) ARE OUTSIDE THIS FACE'S REACH — the honest boundary is declared in the protocol document, not papered over with index or url addressing. THE ENABLE/DISABLE SEMANTIC (frozen word-face fact): a disabled subscription row is EXCLUDED from the backend's package-collection world — enumeration and resolution faces (the packages-repo-catalog listing, the packages-query latest-version judgment, the install-face resolver) never see its packages; the subscription face itself (packages.listRepos) KEEPS LISTING every subscribed row with its state bit (the packages-repos v0.2 increment frozen in the same batch — the toggle consumer renders real state, never a guess), so disabling hides nothing from the configuration view and removing nothing from the subscription. A newly added subscription row is always enabled (the A4 add faces reset any stale state entry for the id — a fresh subscription starts fresh); removing a row leaves no state residue (the implementation duty is declared in the protocol document). REFRESH SEMANTICS: the etag-conditional cache refresh of the addressed subscription's OWN cache file (settings userRepos[i].localPath — the exact write vrc-get itself performs on refresh, same-origin with VCC/vrc-get; the official/curated predefined caches have NO repoId in the subscription world and are unreachable by this face). The refreshed receipt carries the REQUIRED cacheUpdated fact — the library's own update_cache two-arm outcome (cache written vs etag unchanged 'already up to date'), an honest SUCCESS either way: 'no new data' is a refresh outcome, never an error. Backends without a lifecycle capability bit answer the generic capability_missing at the wire gate BEFORE submit — capability absence never reaches a task. Gate: the wire routes for these methods do not exist yet (wiring is the next core slice); serving is gated on the NEW defaulted accessor repo_lifecycle_capabilities() three INDEPENDENT bits (the A4 RepoWriteCapabilities law: a backend may serve a subset of the face, and the honest gate is per method, never per face; default declared-none — ORC-DEV-004) and the honest-absence wire arm vua.packages.unavailable stays for unwired engines.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.6" },
+    "operation": {
+      "enum": [
+        "packages.previewRemove",
+        "packages.applyRemove",
+        "packages.previewInstall",
+        "packages.applyInstall",
+        "packages.registerLocalPackage",
+        "packages.addRemoteRepo",
+        "packages.addLocalRepo",
+        "packages.removeRepo",
+        "packages.createProject",
+        "packages.enableRepo",
+        "packages.disableRepo",
+        "packages.refreshRepo"
+      ]
+    },
+    "params": {
+      "type": "object"
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true,
+                "description": "The closed explicit list of package ids to remove. No wildcard, no 'all' shorthand."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyRemove" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packageIds", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packageIds": {
+                "type": "array",
+                "items": { "type": "string", "minLength": 1 },
+                "minItems": 1,
+                "uniqueItems": true
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewRemove result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.previewInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The registered project path (proposal-013 identity), same fact and code vua.project.project_not_found when unregistered."
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "description": "The VPM package identifier (the manifest name). No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+                    },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1,
+                      "description": "Version-selection semantics frozen with the A2 batch: null = the resolver picks (latest stable); a string = pin exactly that version."
+                    }
+                  }
+                },
+                "description": "The closed explicit request list. A repeated packageId across rows is a word-face violation even when the versions differ (uniqueItems pins exact duplicates; the closed-list rule text pins the per-id uniqueness; the negative vector pins the rule)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.applyInstall" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["projectPath", "packages", "confirmedDigest"],
+            "properties": {
+              "projectPath": {
+                "type": "string",
+                "minLength": 1
+              },
+              "packages": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["packageId", "version"],
+                  "properties": {
+                    "packageId": { "type": "string", "minLength": 1 },
+                    "version": {
+                      "type": ["string", "null"],
+                      "minLength": 1
+                    }
+                  }
+                },
+                "description": "The SAME closed explicit request list the preview answered (the audit link: the confirmed digest binds to exactly that preview's canonical item list)."
+              },
+              "confirmedDigest": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The digest from the previewInstall result the user confirmed. The server re-computes the preview at apply time and refuses on drift (vua.packages.preview_drift, recoverable — re-preview, never implicit resumption)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.registerLocalPackage" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["packageRoot"],
+            "properties": {
+              "packageRoot": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local package root directory (the port's package_root, verbatim camelCase projection): the directory containing the package.json of the generated local VPM package to register into the backend's isolated environment. A path fact only — no projectId, no projectPath: registration never touches a project or the user's VCC/ALCOM settings. Registration is idempotent (AlreadyAdded answers success) and carries NO digest: there is no pre-existing state to drift and the user's explicit submission IS the confirmation."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addRemoteRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url", "name"],
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The remote repository URL to subscribe. No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream URL grammar; the backend's guard (duplicate url/name, official/curated guard) is the authority and answers vua.vpm.repo_invalid on refusal. The manifest fetch is inherent to execution (no preview arm exists on this face)."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row (the subscription list presents it). Headers/auth are NOT taken by this word face — the first frozen slice carries no credential transport; a future face that does needs its own accepted security decision."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.addLocalRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "name"],
+            "properties": {
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The local repository directory to subscribe (the port's path, verbatim). The backend's duplicate/shape guard is the authority and answers vua.vpm.repo_invalid on refusal. No network segment on this method."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The REQUIRED user-supplied display name for the subscription row."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.removeRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row to remove (the stable row handle; index addressing is NOT frozen — an index drifts under concurrent writers). An unknown repoId answers vua.vpm.repo_not_found at execution time. Rows whose id is absent are outside this face's remove reach (protocol-document boundary)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.createProject" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["parent", "name", "template"],
+            "properties": {
+              "parent": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The parent directory the new project directory is created under (the port's parent, verbatim camelCase projection). A path fact only — NOT a registered-project identity: creation addresses no existing project (the 013 project_not_found reuse does not apply). The backend's own target-existence guard is the authority and refuses at execution when the target path already exists."
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The new project name (the port's name, verbatim). The backend's name validation is the authority and refuses invalid names at execution; the wire face does not re-litigate upstream name grammar. The returned receipt echoes the resulting project identity."
+              },
+              "template": {
+                "type": ["string", "null"],
+                "minLength": 1,
+                "description": "Template selection, REQUIRED-nullable per the A2 version-selection isomorph: null = the backend default resolution (the port Option None fact: the library path defaults to the Avatar template with the VRCTemplates/<t> -> Templates/<t> -> explicit-path order — the frozen word-face FACT; the desktop presents the template actually used and invents NO picker — zero new read faces on this first face); a non-empty string = that template name/path passed verbatim. A missing template at execution answers the backend's template-missing refusal honestly (the two backends' refusal shapes differ and the protocol document declares the difference — no unified shape is invented)."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.enableRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row to enable (the stable row handle, the A4 removeRepo same handle). An unknown repoId answers vua.vpm.repo_not_found at execution time. Id-absent rows are outside this face's reach (protocol-document boundary). No digest slot: the user's explicit submission IS the confirmation (a state toggle diffs no pre-existing summary); a carried confirmedDigest or projectPath is a shape violation."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.disableRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row to disable. The disabled row leaves the backend's package-collection world (enumeration and resolution never see its packages) but STAYS on the subscription face with its state bit (packages-repos v0.2) — disabling hides nothing from the configuration view. An unknown repoId answers vua.vpm.repo_not_found at execution time."
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": { "operation": { "const": "packages.refreshRepo" } },
+        "required": ["operation"]
+      },
+      "then": {
+        "properties": {
+          "params": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["repoId"],
+            "properties": {
+              "repoId": {
+                "type": "string",
+                "minLength": 1,
+                "description": "The repository id of the subscription row whose cache to refresh. The network fetch is inherent to execution (no preview arm — the A4 add-remote law). The refresh writes the row's OWN cache file (settings userRepos[i].localPath) under the etag-conditional discipline, the same write vrc-get itself performs; the refreshed receipt carries the cacheUpdated outcome fact. An unknown repoId answers vua.vpm.repo_not_found at execution time."
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
