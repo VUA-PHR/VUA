@@ -60,6 +60,7 @@ import {
   removeEnvelopeErrorKey,
   removeGuardKey,
   repoEnvelopeErrorKey,
+  repoLifecycleToggleAvailable,
   sortPackages,
   sortProjects,
   sourceTextKeys,
@@ -626,12 +627,16 @@ function P2ReposSection({
           const location = repo.url ?? repo.localPath;
           const browseOpen = browseEnabled === true && browseRepoId !== null && browseRepoId === repo.repoId;
           // F4 生命周期:v0.2 行携带 enabled 位(词面读回权威);v0.1 行无
-          // 此位 = 启停控制不渲染(状态不可知不猜测)。repoId null 行不在
-          // 词面可达范围(removeRepo 同边界)无任何控制。禁用行在列不隐藏
+          // 此位 = 启停控制不渲染(状态不可知不猜测——行族分派经
+          // repoLifecycleToggleAvailable,148 批反向审查修复:原实现仅按
+          // blocks.repoLifecycle 门控,v0.1 行误渲染启停按钮且词面恒为
+          // 「禁用」)。repoId null 行不在词面可达范围(removeRepo 同边界)
+          // 无任何控制。禁用行在列不隐藏
           const rowEnabled = "enabled" in repo ? repo.enabled : undefined;
           const lifecycleRow = lifecycleEnabled === true
             && onLifecycle
             && repo.repoId !== null;
+          const lifecycleToggleRow = lifecycleRow && repoLifecycleToggleAvailable(repo);
           const lifecycleToggling = lifecycleBusyAction !== null
             && lifecycleBusyAction !== "refresh"
             && lifecycleBusyRepoId === repo.repoId;
@@ -660,7 +665,7 @@ function P2ReposSection({
                     {browseOpen ? copy.p2.browseClose : copy.p2.browseAction}
                   </Button>
                 ) : null}
-                {lifecycleRow ? (
+                {lifecycleToggleRow ? (
                   <Button
                     variant="subtle"
                     disabled={anyLifecycleBusy}

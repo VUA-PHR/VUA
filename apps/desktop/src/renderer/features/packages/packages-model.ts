@@ -11,6 +11,8 @@ import type {
   PackageVersionEntry,
   RepoCatalogPackageRowV01,
   RepoHealth,
+  RepoInfoRowV01,
+  RepoInfoRowV02,
 } from "../../gateway/index.ts";
 
 /**
@@ -157,6 +159,24 @@ export type ConflictMessageKey = "requiredBy" | "unknown";
 
 export function conflictMessageKey(key: string): ConflictMessageKey {
   return key === "requiredBy" ? "requiredBy" : "unknown";
+}
+
+/* ---- F4 仓库生命周期(027 v0.6 消费批;148 批反向审查修复):行族分派 ---- */
+
+/**
+ * F4 行级启停控制可用性(行族分派,反向审查批修复):仅 v0.2 六键行
+ * (携带 enabled 位)可渲染启停入口;v0.1 五键行无 enabled 位 = 启停状态
+ * 不可知,启停控制不渲染(状态不可知不猜测——packages-port ReposList
+ * Answer 族注释同律;2026-09-21 反向审查发现渲染层未按族分派,启停按钮
+ * 误渲染于 v0.1 行且按钮词面恒为「禁用」)。刷新控制不依赖 enabled 位,
+ * 由渲染层 lifecycleEnabled 门控独立裁定,不经此函数。
+ * repoId 缺席行(id null)在启停/移除词面可达范围之外,同样由渲染层的
+ * repoId 判定裁定,不在本函数职责内。
+ */
+export function repoLifecycleToggleAvailable(
+  repo: RepoInfoRowV01 | RepoInfoRowV02,
+): boolean {
+  return "enabled" in repo;
 }
 
 /* ---- A1 移除写面(026 消费批):typed 码/守卫 → 文案键映射 ---- */
