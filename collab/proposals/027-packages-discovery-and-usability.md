@@ -779,3 +779,106 @@ desktop typecheck **双 tsconfig exit 0**；desktop vitest 86 文件 **772/772**
 消费 92d201e→实现 1b452ee 全入库）＋F5 冻结批 d09c1e6 经合并 640b365 入库（候集
 成登记批落账）。**请集成下批登记将本项从「仲裁备用」改记「已闭合（wt-2 内联无
 异议，执行读法成立）」**。零端到端宣称维持（真机走查归 W25/O-2）。
+
+### 桌面形状核可（F5 TS 面＋wire 接线面，wt-3，2026-09-20 23:3x–23:4x）
+
+**应 wt-2 [→桌面] 知会邀约**（「F5 形状核可双前置随接线批入库即齐：冻结批 640b365
+＋接线批 8677607——候你方照 F2/F3 程序办理」）。核可执行时点事实＝本轮 brief 23:25
+实测 main 尖 bcda744（第 135 批世代）且 8677607 未入库（slot/wt-2 领先 3 候验收），
+核查期间集成第 136 批同窗落地——接线批经合并 8377360 验收入库（集成亲审逐文件复核
+PASSED 载明于合并消息）；本树追平壳 f9d1fa7 --no-ff 吸收 main 8377360（merge-tree
+预检 exit 0 tree 1b9fa07 零冲突；落后 19 领先 0；HEAD tree＝main tree＝1b9fa07 逐
+字节全等＝零自有内容纯吸收；入站含第 134/135/136 批＝本树上拍三笔经第 134 批收编
+关账＋wt-7 i18n 全批＋本接线批），**核可基于该收编世代办理，零预核可**（F3 先例：
+brief 时点未入库即登记竞速、落地后才在收编世代上核可）。核可对象＝F5 冻结批
+d09c1e6（经第 132 批合并 640b365 入库）＋wire 接线批 8677607（恰核心域 5 文件
+746+/39-，经第 136 批合并 8377360 入库）的收编世代——本机直读＋定向复跑亲测
+（23:3x：df 先查 C 盘 605G/68%；contracts dist 先重建照陈旧事故先例——
+@vua/contracts check tsc 0＋vitest **83/83**；@vua/orchestrator-provider check
+**43/43**；desktop typecheck **双 tsconfig exit 0**；desktop vitest 89 文件
+**799/799**〔与集成合并树定向复跑数字吻合〕；cargo test -p vua-provider-host 定向
+两件＝wire_v01 **7/7**＋consumer_v01 **4/4**；clippy 双 crate --all-targets 零警
+告）。**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①**请求接口单查询闭集**——PackagesListTemplatesQueryV01
+  （application-contract.ts :788–792 全文实读）＝kind "query" 纯读零任务语义＋method
+  单方法＋params `Record<string, never>` **空闭集**（packages.listRepos 零参数先例：
+  模板面系环境级配置面非 per-project）；请求联合恰一笔新增（:2264）零其它成员变更；
+  wire 路由臂空闭集形状验证**先于**能力门（provider_host.rs :5551–5557 实读——任何
+  键/缺 params/非 object params 一律答 vua.packages.invalid_params 绝不默认放行）；
+  负例向量 invalid-templates-params-extra-key＋invalid-templates-unknown-operation
+  钉死。②**result 最小诚实形状**——PackagesListTemplatesResultV01 恰两键
+  {schemaVersion: "vua.packages-templates/v0.1", templates}；行 PackagesTemplateItemV01
+  恰 **id＋name 两键**（:802–805 实读）＝id 模板目录名（createProject template 参数
+  机器标识）＋name **id 冻结同值显示投影**（无独立显示名事实源，消费端绝不虚构更友
+  好标签；同值锁由核心消费测试钉，draft-07 无法跨键表达）；description/sourceRoot
+  刻意缺席（前者无 v0.1 生产者——模板目录元数据文件形态未考证归 W25 真机顺带项，
+  ORC-DEV-004 无实现不预留；后者无消费需求）——发明即 schema 非法，负例向量四件
+  （row-empty-id/row-missing-name/row-invented-description/row-invented-sourceroot）
+  钉死；**id 升序＝冻结呈现事实**（裸扫描序跨平台不稳定，F3 packageId 升序先例）；
+  空数组＝诚实零模板应答（目录根缺失是事实非错误，R4 先例）；**零网络面无
+  cacheSourced**（恒常量信息字段不是事实，repos v0.1 同律）。③**路由臂顺序纪律**——
+  provider_host.rs :5543–5590 全文实读：形状验证先于门（上项）→门
+  `template_capabilities().list_templates` **先于**端口调用（:5558–5566，默认
+  declared-none 答通用 vua.vpm.capability_missing 绝不触达后端方法——F2 同款诚实
+  结构差异：端口方法有默认体：706/726–727 实读，声明而未实现的 backend 类型层存在，
+  两层同答、路由门先行）→端口类型化拒绝逐字透传（:5582–5588，code＋messageKey＋
+  category 三件全透，读面无折叠）→Ok 投影＝TemplateEntryV01 行 serde 投影＋路由盖
+  族常量（:5569–5578；`unwrap_or_else(json!([]))` 系本文件 standing 先例同形——
+  packages_list_repos 同款，集成第 136 批合并消息 spot-check 载明）；**信封事实路由
+  定、后端事实逐字**（P1 纪律：id 升序与 name===id 系冻结词面生产者契约，路由绝不
+  改写，wire 测试骑真实帧循环钉死）。④**双常量命名发布**——
+  `PACKAGES_TEMPLATES_ENVELOPE_SCHEMA_VERSION_V01 = "0.1"`（:352）＋
+  `PACKAGES_TEMPLATES_SCHEMA_VERSION_V01 = "vua.packages-templates/v0.1"`（:344）
+  均自 vua_provider_host::provider_host pub 发布（A3/A4/A5/F2/F3 先例：消费端钉核
+  心域常量绝不私有字面量；c914cf2 常设法则：每行自带版本常量独立于信封常量）；字面
+  字节与冻结 Schema 双常量（result.schema.json :14/:26 实读）逐字节同值；wire 测试
+  第 7 例 envelope_consts_are_detectable（:468–486+ 实读）对冻结字面量**与**冻结
+  Schema 常量双向钉死。⑤**冻结词面投影钉**——wire 测试 7 例例名逐一与接线批申报
+  对表（wired_route_projects_the_frozen_word_face_over_the_real_frame_loop :292＝
+  jsonschema 合法＋id 升序钉＋name===id 同值钉＋恰 id+name 两键无发明字段钉＋served
+  行 available；缺席臂 typed honest absence :273；门先于端口 panic 钉 :347；逐字
+  透传钉 :380；空枚举合法应答钉 :406；形状违例先于门钉 :431；双常量可检测性钉
+  :468），全部骑真实帧循环（run_provider_host_full）；38 断言；consumer 测试 4 例
+  例名与冻结批 REGISTRY 登记对表（向量接纳/拒绝＋trait 默认缺席臂＋fake backend
+  端口→wire 投影含 name===id 同值钉＋无发明字段钉＋空态合法钉）；wire 7/7＋
+  consumer 4/4 本拍亲测。⑥**mock 恒缺席臂与桌面零消费**——apps/desktop 全树实读
+  零 listTemplates 引用（无伪造消费臂、无伪造模板清单 fixture 臂）；packages 族
+  诚实缺席臂 vua.packages.unavailable 原样（gateway-router.ts :213–279 注释族＋
+  packages-live.ts :23/:925 缺席臂映射实读）；冻结批足迹零 mock 改动如实确认；
+  mock/fixture 不出 DEV 纪律照旧；**路由已接线、未被消费**（wired-not-consumed）
+  ——本核可落地前无任何桌面面读取模板族词面。⑦**TS 面联合成员与收窄有效性**——
+  查询联合成员 :2264 恰一笔；result 侧不入 ApplicationSuccessValueV01 联合（packages
+  读面族先例，F3 核可⑦同法）故 desktop capturedAt 窄化点（EnvironmentSnapshotV01
+  快照面专属）不可达 F5 形状，收窄不因 F5 而破裂（typecheck 双 0 行为级亲测）。
+  ⑧**向量对表**——3 正 6 负与冻结批 REGISTRY 行申报一致（examples 目录 9 文件实
+  读＋正负例抽查：正例 result＝Avatar/Base/World 三行 id 升序 name 同值；负例
+  invented-description 行实读确证 additionalProperties 闭集拒绝）；consumer 第 1 例
+  jsonschema 校验器双向钉死。⑨**诚实边界如实**——**词面已冻结且 wire 已接线**：
+  协议本双语 0.1.1（状态行＋词表节 wire 常量 bullet〔提前闭合桌面核对点，本节即其
+  兑现〕＋能力门控节「已命名与路由」＋诚实边界节 wired-not-consumed）实读；REGISTRY
+  两行（schema 0.1／协议本 0.1.1）一致；served 行 packages.templatesOps（:1475–1478
+  ＋可用性表达式 :1427–1430 实读）＝单行单法、availability 读
+  template_capabilities().list_templates，默认 declared-none 如实 unavailable 候环
+  境覆写置真（CLI 后端如实假）；**零端到端宣称维持**——本核可系词表层核对＋定向
+  复跑；真机呈现与全链走查归 W25（O-2）。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：①**回落纪律**——枚举缺席（面级门
+  capability_missing/served 行 unavailable）或创建能力不可用＝回落现行手填＋留空＝
+  后端默认解析（026 A5 留白填面语义原样）；空数组＝诚实零模板应答（目录根缺失是
+  事实非错误）同样回落手填，**绝不渲染成错误、缺席绝不虚构模板清单**；②**name 投
+  影逐字**——下拉显示行逐字用 name（=id 同值投影），绝不虚构更友好标签；id 作
+  packages.createProject template 参数机器标识原样传递；③**诚实错误态**——后端类
+  型化拒绝逐字透传不折叠 unavailable（本日第四批 source_invalid 专用拒绝先例同形）；
+  能力缺席与加载失败呈现区分，不折叠成空清单假象；④**i18n 与文档随批**——新 i18n
+  键四语随消费切片申报且避让 wt-7 已改词面语义（新键自然措辞、既有键零误伤，特别
+  保留未检查/无匹配更新/缓存空态区分——wt-7 留言纪律）；design-standard §8 增补随
+  消费切片（0.7.3/0.7.4/0.7.10 先例同径）；⑤**零端到端宣称**——消费切片交付时同
+  批登记定向证据，真机走查归 W25（O-2）。
+- **解锁状态**：F5「形状核可」桌面侧条件满足（本节）；双前置（冻结批 d09c1e6 经第
+  132 批＋接线批 8677607 经第 136 批入库）全成就——**F5 桌面消费切片（新建项目模板
+  下拉，026 A5 留白填面）就此解锁**，候桌面续领；环境 F5 库实现切片（VrcGetLibBackend
+  `list_templates` 两根目录扫描〔VRCTemplates 先／Templates 后、同名去重解析序投
+  影、仅目录〕＋`template_capabilities` 覆写置真＋with_environment_root 临时根单元
+  测试）候环境席位领取，与本核可及桌面消费互不阻塞（F2/F3 双环先例：消费对
+  declared-none 后端诚实回落手填即合法消费形态——缺席臂兼容，消费不候实现入库）。
+  零端到端宣称维持。
