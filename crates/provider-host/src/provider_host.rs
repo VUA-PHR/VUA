@@ -8682,7 +8682,18 @@ fn request_plan(
 
     let plan = services
         .engine
-        .plan(mode, project_id, project_fingerprint, inspection, correlation_id)
+        // The bound project root drives the CONDITIONAL provision step
+        // (plan v0.2, W25 real-machine finding): an unprovisioned target
+        // plans the explicit user-confirmed project-creation step — same
+        // honest model as the assembly plan.
+        .plan(
+            mode,
+            project_id,
+            project_fingerprint,
+            inspection,
+            Path::new(&project_root),
+            correlation_id,
+        )
         .map_err(|error| persist_task_error(&state.store, &task_id, error))?;
     let result = serde_json::to_value(&plan)
         .map_err(|_| SqliteStoreError::CorruptValue { field: "plan", value: "json".into() })?;

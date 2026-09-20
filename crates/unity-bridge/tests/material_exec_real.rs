@@ -355,6 +355,7 @@ fn m3_real_direct_vertical_slice_succeeds_and_records() {
             project.id.clone(),
             fingerprint,
             inspection.clone(),
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -447,6 +448,7 @@ fn m3_real_stale_fingerprint_is_rejected_and_restored() {
             project.id.clone(),
             "stale-fingerprint",
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -628,6 +630,7 @@ fn m3_real_local_reusable_vertical_slice() {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             correlation,
         )
         .expect("plan builds");
@@ -788,6 +791,7 @@ fn m3_real_direct_replay_of_succeeded_receipt_skips_unity() {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -858,6 +862,7 @@ fn m3_real_direct_cancel_at_step_boundary_records_facts() {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -927,6 +932,7 @@ fn m3_real_direct_source_drift_fails_before_first_write() {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -993,6 +999,7 @@ fn m3_real_direct_bridge_timeout_budget_is_enforced() {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -1053,6 +1060,7 @@ fn m3_real_direct_rollback_failure_is_recorded_not_hidden() {
             project.id.clone(),
             "stale-fingerprint",
             inspection,
+            &project.root,
             "real-corr",
         )
         .expect("plan builds");
@@ -1178,6 +1186,7 @@ fn p2_harness(label: &str) -> P2Harness {
             project.id.clone(),
             fingerprint,
             inspection,
+            &project.root,
             &correlation,
         )
         .expect("plan builds");

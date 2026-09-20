@@ -63,6 +63,13 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef) {
     fs::create_dir_all(project_root.join("Assets")).unwrap();
     fs::create_dir_all(project_root.join("Packages")).unwrap();
     fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
+    // Already-provisioned target: the standing fixtures plan and execute the
+    // UNCHANGED v0.1 step set (zero-change law for provisioned projects).
+    fs::write(
+        project_root.join("ProjectSettings").join("ProjectVersion.txt"),
+        "2022.3.22f1",
+    )
+    .unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
     let project = ProjectRef {
         id: "project".into(),
@@ -71,15 +78,33 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef) {
     (base, project)
 }
 
+/// An EMPTY target directory: no ProjectSettings/, no Assets/. Plans on this
+/// path carry the conditional provision step (plan v0.2).
+fn make_empty_target(base: &Path) -> ProjectRef {
+    let project_root = base.join("empty-target");
+    fs::create_dir_all(&project_root).unwrap();
+    ProjectRef {
+        id: "project".into(),
+        root: project_root,
+    }
+}
+
 fn inspection(folder: &Path) -> SourceFolderInspectionV01 {
     MaterialIntakeEngine
         .inspect_folder(folder, "corr")
         .expect("source inspects")
 }
 
-fn plan(mode: MaterialEntryMode, folder: &Path) -> MaterialIntakePlanV01 {
+fn plan(mode: MaterialEntryMode, folder: &Path, project_root: &Path) -> MaterialIntakePlanV01 {
     MaterialIntakeEngine
-        .plan(mode, "project", "project-fingerprint", inspection(folder), "corr")
+        .plan(
+            mode,
+            "project",
+            "project-fingerprint",
+            inspection(folder),
+            project_root,
+            "corr",
+        )
         .expect("plan builds")
 }
 
@@ -289,7 +314,7 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     let vpm = FakeVpm::new();
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -357,7 +382,7 @@ fn b3_exec_002_source_drift_fails_before_the_first_mutation() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source);
+    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root);
     let confirmation = confirmation(&plan);
     // Drift: the source grows after Inspect/plan.
     unitypackage(&source.join("late.unitypackage"), &["Assets/Late.prefab"]);
@@ -390,7 +415,7 @@ fn b3_exec_003_cancellation_before_the_first_step_touches_nothing() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let token = MaterialCancelToken::new();
     token.cancel();
     let report = executor.execute(
@@ -431,7 +456,7 @@ fn b3_exec_004_bridge_rejection_restores_the_verified_snapshot() {
 
     let manifest_before =
         fs::read_to_string(project.root.join("vpm-manifest.json")).unwrap();
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -471,7 +496,7 @@ fn b3_exec_005_bridge_timeout_is_a_typed_failure_with_restore() {
     let bridge = FakeBridge::new(vec![Err(BridgeError::TimedOut)]);
     let executor = executor(&base, bridge, FakeVpm::new());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -503,7 +528,7 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -615,7 +640,7 @@ fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
     })];
     let bridge = FakeBridge::new(rejection);
     let first_executor = executor(&base, bridge.clone(), FakeVpm::new());
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let first = first_executor.execute(
         &confirmation,
         &source,
@@ -720,7 +745,7 @@ fn b3_exec_007_restore_failure_still_publishes_the_receipt() {
         LocalPackageIdentityStore::new(base.join("identities.json")),
     );
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -767,7 +792,7 @@ fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let plan = plan(MaterialEntryMode::LocalReusableVpm, &source);
+    let plan = plan(MaterialEntryMode::LocalReusableVpm, &source, &project.root);
     let confirmation = confirmation(&plan);
 
     // The user edits the declarations after planning: the produced
@@ -794,6 +819,325 @@ fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
         report.error_code
     );
     assert_eq!(bridge.command_count(), 0, "no Unity command may run on drift");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- W25 provision vectors (plan v0.2) ---
+
+/// Creates a minimal valid project skeleton and records the call — the
+/// successful-provisioning fake (the vrc-get lib template copy, faked to the
+/// smallest observable shape).
+struct CreatingVpm {
+    creates: AtomicUsize,
+}
+
+impl CreatingVpm {
+    fn new() -> Arc<Self> {
+        Arc::new(Self { creates: AtomicUsize::new(0) })
+    }
+}
+
+impl VpmBackend for CreatingVpm {
+    fn name(&self) -> &'static str {
+        "creating-vpm"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        self.creates.fetch_add(1, Ordering::SeqCst);
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        fs::create_dir_all(root.join("Assets")).unwrap();
+        Ok(ProjectRef { id: name.to_owned(), root })
+    }
+}
+
+/// Creates the ProjectSettings skeleton and THEN fails — the
+/// half-initialized-creation compensation vector (the assembly "delete the
+/// half-initialized project" semantics, through the snapshot rollback).
+struct HalfwayCreateVpm;
+
+impl VpmBackend for HalfwayCreateVpm {
+    fn name(&self) -> &'static str {
+        "halfway-create"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        // Half of the template copy lands, then the backend refuses.
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        Err(
+            vua_orchestrator::AppErrorV1::new(
+                "vua.vpm.template_missing",
+                vua_orchestrator::ErrorCategory::ExternalFailure,
+                "errors.vpm.templateMissing",
+                "corr",
+            )
+            .with_param(
+                "reason",
+                vua_orchestrator::ParamValue::Text("template copy failed".to_owned()),
+            ),
+        )
+    }
+}
+
+#[test]
+fn b3_w25_empty_target_provisions_through_the_backend_port_before_import() {
+    let (base, _provisioned) = make_world("w25-exec-empty");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = CreatingVpm::new();
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+    assert!(plan
+        .steps
+        .iter()
+        .any(|step| step.kind == vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Succeeded,
+        "{:?}",
+        report.error_code
+    );
+    // The creation went through the backend port, not around it.
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        report.completed_steps,
+        vec![
+            vua_unity_bridge::MaterialIntakeStepKind::VerifySource,
+            vua_unity_bridge::MaterialIntakeStepKind::CreateSnapshot,
+            vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject,
+            vua_unity_bridge::MaterialIntakeStepKind::ImportUnityPackages,
+            vua_unity_bridge::MaterialIntakeStepKind::ValidateMinimumStructure,
+            vua_unity_bridge::MaterialIntakeStepKind::WriteBuildRecord,
+        ]
+    );
+    assert_eq!(report.rollback, RollbackOutcome::NotNeeded);
+
+    // Three Bridge commands: the post-provision baseline inspect, the import,
+    // the read-only validation. The import must expect the BASELINE the
+    // inspect returned (fp-1) — never the plan-time tree digest — because
+    // the freshly created project's state is not the plan-time state.
+    assert_eq!(bridge.command_count(), 3);
+    let commands = bridge.state.lock().unwrap().commands.clone();
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::InspectProject);
+    assert!(commands[0].dry_run);
+    assert_eq!(
+        commands[1].operation,
+        vua_orchestrator::UnityOperation::MaterializeExtractedPackage
+    );
+    assert_eq!(
+        commands[1].expected_project_fingerprint.as_deref(),
+        Some("fp-1"),
+        "the first mutating command binds the post-provision baseline fingerprint"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_w25_failed_provision_restores_the_empty_state_and_honestly_reports() {
+    let (base, _provisioned) = make_world("w25-exec-provision-fail");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        Arc::new(HalfwayCreateVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    // Honest failure face: the family code, the restore-eligible rollback,
+    // and NO provision step in completed_steps.
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("vua.material.provision_failed"),
+        "the provision code is the finding: {:?}",
+        report.error_code
+    );
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .contains("vua.vpm.template_missing"),
+        "the backend's original code travels inside the message: {:?}",
+        report.error_code
+    );
+    assert!(!report
+        .completed_steps
+        .contains(&vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+
+    // Compensation: the half-initialized creation left the target — the
+    // empty-state snapshot restore moved it into the recovery quarantine.
+    assert!(
+        !empty.root.join("ProjectSettings").exists(),
+        "the half-initialized project must not survive the rollback"
+    );
+    assert!(empty.root.join(".vua/recovery").is_dir());
+
+    // The failed run still gets a receipt (audit history, never bypassed).
+    let receipt = BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", plan.plan_id))
+        .expect("the failed run still publishes its receipt");
+    assert_eq!(receipt.status, vua_orchestrator::BuildRecordStatus::Failed);
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run after the failed provision"
+    );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }

@@ -1,0 +1,38 @@
+{
+  "name": "material-plan.valid.unprovisioned",
+  "description": "plan v0.2: target without ProjectSettings/ProjectVersion.txt plans the explicit provision_project step (W25 real-machine finding) - snapshot BEFORE provisioning, provisioning BEFORE the first project mutation, mutatesTargetProject=true so the plan review names the creation semantics to the user.",
+  "schema": "material-plan.schema.json",
+  "instance": {
+    "schemaVersion": "0.2",
+    "planId": "material-sha256abcdefgh00000000000000000000000000000",
+    "planHash": "sha256:1111111111111111111111111111111111111111111111111111111111111111",
+    "mode": "direct_unity_package",
+    "projectId": "project-1",
+    "projectFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "source": {
+      "schemaVersion": "0.1",
+      "displayName": "Synthetic Outfit",
+      "sourceFingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "riskFingerprint": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "packages": [
+        {
+          "relativePath": "pack.unitypackage",
+          "sizeBytes": 128,
+          "sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "assetPaths": ["Assets/Outfit/base.prefab"]
+        }
+      ],
+      "executableRisks": [],
+      "declaredDependencies": []
+    },
+    "riskDecisionRequired": false,
+    "steps": [
+      { "kind": "verify_source", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "create_snapshot", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "provision_project", "mutatesTargetProject": true, "safeBoundaryAfter": true },
+      { "kind": "import_unity_packages", "mutatesTargetProject": true, "safeBoundaryAfter": true },
+      { "kind": "validate_minimum_structure", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "write_build_record", "mutatesTargetProject": false, "safeBoundaryAfter": true }
+    ]
+  }
+}

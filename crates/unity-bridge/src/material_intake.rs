@@ -16,7 +16,20 @@ use std::fs::File;
 use std::io::{self, Read};
 use std::path::{Component, Path, PathBuf};
 
+/// The inspection (source) word face. v0.1 unchanged since B3: this batch
+/// (W25 real-machine finding) touches only the PLAN step set, so the
+/// inspection face and the build-record `source` embedding keep serving the
+/// frozen v0.1 word face.
 pub const MATERIAL_INTAKE_SCHEMA_VERSION: &str = "0.1";
+/// The plan word face. v0.2 (W25 real-machine finding, 2026-09-20): the
+/// conditional `provision_project` step joins the closed step-kind set — a
+/// target project without `ProjectSettings/ProjectVersion.txt` now plans an
+/// explicit user-confirmed project-creation step (the assembly plan's
+/// conditional-provisioning law, same honest model) instead of launching
+/// Unity against an empty directory. Pure enumeration increment; consumers
+/// that never observed the new kind are unaffected (the desktop does not
+/// consume step kinds — the AMF stage track projects stages, not steps).
+pub const MATERIAL_PLAN_SCHEMA_VERSION: &str = "0.2";
 const MAX_PATHNAME_BYTES: u64 = 64 * 1024;
 
 pub mod error_codes {
@@ -37,6 +50,14 @@ pub mod error_codes {
 pub enum MaterialIntakeStepKind {
     VerifySource,
     CreateSnapshot,
+    /// plan v0.2 (W25 real-machine finding): the project-creation step for a
+    /// not-yet-provisioned target. Placed after the snapshot and before the
+    /// first project mutation; executed through the VPM backend port
+    /// (`VpmBackend::create_project` — vrc-get lib template copy or VCC
+    /// `vpm new`; the vrc-get CLI has no creation command, provision.rs
+    /// Fix 4). Word face names the creation semantics; the user confirms the
+    /// plan containing it before anything runs — never a silent provision.
+    ProvisionProject,
     ImportUnityPackages,
     CreateLocalVpmPackage,
     PreviewVpmInstall,
@@ -190,12 +211,20 @@ impl MaterialIntakeEngine {
         })
     }
 
+    /// Pure plan derivation. Conditionally includes the `ProvisionProject`
+    /// step when the bound target has not been provisioned yet (no
+    /// `ProjectSettings/ProjectVersion.txt`) — the assembly plan's law
+    /// (`assembly.rs` derive_plan): an already-provisioned project plans the
+    /// exact same step set as before this step existed (zero word-face
+    /// change on that path), and the conditional presence itself makes the
+    /// plan content — and therefore the plan hash — differ.
     pub fn plan(
         &self,
         mode: MaterialEntryMode,
         project_id: impl Into<String>,
         project_fingerprint: impl Into<String>,
         source: SourceFolderInspectionV01,
+        project_root: &Path,
         correlation_id: &str,
     ) -> Result<MaterialIntakePlanV01, AppErrorV1> {
         let mut steps = vec![step(MaterialIntakeStepKind::VerifySource, false)];
@@ -203,6 +232,18 @@ impl MaterialIntakeEngine {
         // needs target protection. The actual snapshot may be reused when the
         // batch risk choice explicitly requests it.
         steps.push(step(MaterialIntakeStepKind::CreateSnapshot, false));
+        // Provisioning sits AFTER the snapshot and BEFORE the first project
+        // mutation (the plan ordering law): creating the project is itself a
+        // mutation, and an unprovisioned target has nothing to protect — the
+        // empty-state snapshot is exactly what rollback restores over a
+        // half-initialized creation.
+        let provisioned = project_root
+            .join("ProjectSettings")
+            .join("ProjectVersion.txt")
+            .is_file();
+        if !provisioned {
+            steps.push(step(MaterialIntakeStepKind::ProvisionProject, true));
+        }
         match mode {
             MaterialEntryMode::DirectUnityPackage => {
                 steps.push(step(MaterialIntakeStepKind::ImportUnityPackages, true));
@@ -220,7 +261,7 @@ impl MaterialIntakeEngine {
         ));
         steps.push(step(MaterialIntakeStepKind::WriteBuildRecord, false));
         let mut plan = MaterialIntakePlanV01 {
-            schema_version: MATERIAL_INTAKE_SCHEMA_VERSION.to_owned(),
+            schema_version: MATERIAL_PLAN_SCHEMA_VERSION.to_owned(),
             plan_id: String::new(),
             plan_hash: String::new(),
             mode,

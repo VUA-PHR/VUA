@@ -55,6 +55,11 @@ pub mod error_codes {
     pub const SNAPSHOT_FAILED: &str = "vua.material.snapshot_failed";
     pub const ROLLBACK_FAILED: &str = "vua.material.rollback_failed";
     pub const STAGING_FAILED: &str = "vua.material.staging_failed";
+    /// plan v0.2 (W25 real-machine finding): creating the not-yet-provisioned
+    /// target through the VPM backend port failed. The backend's original
+    /// code and reason travel inside the message (the vua.vpm.* codes never
+    /// replace the vua.material.* family code — the family law).
+    pub const PROVISION_FAILED: &str = "vua.material.provision_failed";
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
@@ -331,7 +336,35 @@ impl MaterialExecutor {
         let mut final_fingerprint: Option<String> = None;
         let mut validation: Option<BuildValidationEvidenceV01> = None;
         let mut local_vpm: Option<vua_orchestrator::LocalVpmEvidenceV01> = None;
-        let failure = match plan.mode {
+
+        // ProvisionProject (plan v0.2, conditional step): a target the plan
+        // found unprovisioned is created through the VPM backend port AFTER
+        // the recovery snapshot and BEFORE the first project mutation. The
+        // executor re-checks the condition (the assembly run-step law): if
+        // the project appeared between plan review and execution, creation
+        // skips and the plan-time fingerprint chain continues unchanged.
+        let failure: Option<StepFailure> =
+            if plan
+                .steps
+                .iter()
+                .any(|step| step.kind == MaterialIntakeStepKind::ProvisionProject)
+            {
+                match self.run_provision(plan, project, &mut current_fingerprint, &mut bridge_jobs)
+                {
+                    Ok(()) => {
+                        report.completed_steps.push(MaterialIntakeStepKind::ProvisionProject);
+                        None
+                    }
+                    Err(failure) => Some(failure),
+                }
+            } else {
+                None
+            };
+
+        let failure = if failure.is_some() {
+            failure
+        } else {
+            match plan.mode {
             MaterialEntryMode::DirectUnityPackage => {
                 match self.run_direct_imports(
                     plan,
@@ -372,6 +405,7 @@ impl MaterialExecutor {
                     }
                     Err(failure) => Some(failure),
                 }
+            }
             }
         };
 
@@ -482,6 +516,100 @@ impl MaterialExecutor {
             }
         }
         report
+    }
+
+    // --- provision_project (plan v0.2) ---
+
+    /// Creates the not-yet-provisioned target through the VPM backend port
+    /// (E-VPM-DUAL: vrc-get lib template copy, or VCC `vpm new` — the
+    /// vrc-get CLI has NO creation command, provision.rs Fix 4). Two laws
+    /// beyond the port call:
+    ///
+    /// - Idempotent re-check (the assembly run-step law): a project that
+    ///   appeared between plan review and execution skips creation — the
+    ///   plan-time fingerprint chain continues unchanged.
+    /// - Baseline re-read: the brand-new project's state is NOT the plan-time
+    ///   state, so the first mutating Bridge command must expect what Unity
+    ///   ACTUALLY sees. A read-only inspect (the staging chain's
+    ///   inspect-first discipline) re-reads the Unity-side baseline
+    ///   fingerprint after creation; the plan-time tree digest is never
+    ///   carried into the new project's chain.
+    ///
+    /// Compensation is the empty-state snapshot taken before this step: a
+    /// failed creation restores to absence — the restore moves the created
+    /// scopes into the recovery quarantine (the assembly "delete the
+    /// half-initialized project and replan" semantics, through the same
+    /// verified-snapshot rollback every mutating run owes).
+    fn run_provision(
+        &self,
+        plan: &crate::material_intake::MaterialIntakePlanV01,
+        project: &ProjectRef,
+        current_fingerprint: &mut String,
+        bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
+    ) -> Result<(), StepFailure> {
+        if project
+            .root
+            .join("ProjectSettings")
+            .join("ProjectVersion.txt")
+            .is_file()
+        {
+            return Ok(());
+        }
+        let parent = project.root.parent().ok_or_else(|| {
+            (
+                format!("{}: target has no parent directory", error_codes::PROVISION_FAILED),
+                MaterialExecutionStatus::Failed,
+            )
+        })?;
+        std::fs::create_dir_all(parent).map_err(|error| {
+            (
+                format!("{}: {error}", error_codes::PROVISION_FAILED),
+                MaterialExecutionStatus::Failed,
+            )
+        })?;
+        let name = project
+            .root
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "VUA-Project".to_owned());
+        self.vpm
+            .create_project(parent, &name, None)
+            .map_err(|error| {
+                let detail = error.params.as_ref().and_then(|params| params.get("reason").cloned());
+                (
+                    format!(
+                        "{}: {}{}",
+                        error_codes::PROVISION_FAILED,
+                        error.code,
+                        detail
+                            .map(|value| match value {
+                                vua_orchestrator::ParamValue::Text(reason) =>
+                                    format!(": {reason}"),
+                                other => format!(": {other:?}"),
+                            })
+                            .unwrap_or_default()
+                    ),
+                    MaterialExecutionStatus::Failed,
+                )
+            })?;
+        // Re-baseline: Unity's own view of the freshly created project. The
+        // inspect is read-only (dry-run) and carries no expected fingerprint.
+        let inspect = self.inspect(
+            project,
+            &format!("{}-provision-inspect", plan.plan_id),
+            bridge_jobs,
+        )?;
+        let baseline = fingerprint_of(&inspect).ok_or_else(|| {
+            (
+                format!(
+                    "{}: provisioned project reported no fingerprint",
+                    error_codes::BRIDGE_FAILED
+                ),
+                MaterialExecutionStatus::Failed,
+            )
+        })?;
+        *current_fingerprint = baseline;
+        Ok(())
     }
 
     // --- direct_unity_package ---
