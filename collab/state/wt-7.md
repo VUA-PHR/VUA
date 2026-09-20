@@ -2,30 +2,27 @@
 worktree: wt-7
 branch: slice/desktop-i18n-player-language
 role: 桌面
-baseline_commit: 76e02fa
+baseline_commit: 29e972e
 updated: 2026-09-20
 ---
 ## 当前焦点
-用户 2026-09-20 追加要求检查并修复英文、韩文；当前继续同一隔离切片，前批完成，本追加批在做。原六树均有常驻席位，本次新增 VUA-7 隔离执行；不接管 wt-3、不触碰运行中的开发栈。
+用户 2026-09-20 授权的 desktop i18n 修复及追加英文/韩文审阅全部完成，解除验收暂缓，候集成。独立 VUA-7 工作树，未接管六个常驻槽位、未触碰运行中的开发栈。
 ## 自基线交付
-- 开工登记 a6df397；实现提交 **2b20a48**（36 文件，517+/259-）。
-- 日文纠正素材/材质、制作/生産、追加/採用、删除/墓碑等概念，清理恢复、检查、制作页面的内部开发用语；功能导航使用本地化名称，品牌及内部 ID 不变。用户批准的规则调整同步设计规范双语 0.7.6＋REGISTRY。
-- 四语修复状态颜色、Steam 平台账号可升级/关联、加速器并非通用前置条件；清除云端目录与仅外部下载的过时说法及 BLM 官方归属误称。版本页从构建事实读取版本，不再在语言表写死 v0.3.0。
-- 已知检查诊断按稳定代码提供四语说明（保留非官方估算/前置观察边界），原始消息可展开；未知码不猜测。任务恢复提示及环境失败增加本地化说明，原码保留，无任务执行或恢复行为变更。
-- 原生拾取器经既有 private IPC 附带调用窗口 html lang，Main 闭集选择四语文案，未知输入回落 en；公开 VuaDesktopApi 契约无变化，远程来源校验保留。
-- 日期使用应用语言并保留本机时区，异常时间原样保留；覆盖设置、部署、导入、Recipe、Release、制作链、记录与 Overlay。辅助窗口响应同源 localStorage 语言事件重载，忽略其他设置及 sessionStorage。
-- 新增 8 项回归测试：四语原生对话框覆盖/异常 IPC 语言参数、日期与异常时间、已知及未知诊断、恢复说明、跨窗口语言监听和清理；同步受新术语呈现规则影响的旧断言。
+- 首批实现 **2b20a48**：日文玩家术语、四语教程事实、已知诊断说明/原文保留、原生对话框语言、应用语言日期与辅助窗口同步；取消功能名强制英文前缀，品牌及内部 ID 不变；版本页使用真实构建版本。前批完整记录见 5a67531。
+- 追加英韩实现 **b1fb942**（四个语言文件 502+/502-）：以具体键审阅导航/引导/素材/制作/Recipe/Release/检查/包管理/设置。英文 asset 与 Unity material 分离，清理 synthetic-vertical、recovery mutation、read face、idempotent 等内部术语；韩文统一 에셋、아바타 제작、레시피、알림 센터，修正 채택/톰브스톤/인도 等直译、夹杂中文入口、받침助词与同一概念混用。上传交接明确为准备上传，不宣称上传完成；恢复/未知/未检查语义保留；计数文案避免英文单复数错误。
+- 同批四语 projectCompat.readOnlyDesc 更正已存在矛盾：原项目文件只读/克隆优先，settings.json 的订阅和本地包注册按 U14 共享可写，其余管理存储只读；不扩大原有权限或改变代码行为。
+- **6a21a3c** 合并最新 main **29e972e**：吸收 027 F2/F3/F4 等协作进展；英韩两处 noticeChangesOpen 冲突保留本批自然表达及 main 新增 16 键；设计规范/REGISTRY 采用最新 **0.7.9**，保留 main 0.7.7–0.7.9 与本树预留 0.7.6 的全部规则和变更记录；修正 main 英文镜像标题/同步版本仍为 0.7.8 的漂移。契约仅经本次 git 合并对齐，零手工复制。
+- **4f53811**：补审协作新到的仓库浏览/更新感知英韩六键，保留 null＝未检查、false＝当前过滤条件下无严格更新版本、缓存为空不代表线上无包等区别。
+- 本追加批不改应用协议/Schema、业务逻辑或权限；商品名、路径、技术代码、第三方原始消息不猜测翻译。零付费素材或用户数据进入仓库。
 ## 验证与边界
-- 2026-09-20 本机 VUA-7：desktop 双 tsconfig typecheck 通过；vitest **86 文件 / 761 测试通过**（最终 04:52）；check:i18n 四表键/占位符对齐；check:boundary 通过。
-- Electron tsc 编译通过；Vite 生产构建通过；check:leak 最终生产重建 **155 指纹零泄漏**；check:forest-leak 通过；git diff --check 通过；REGISTRY **79/79** 一致。
-- 未运行完整 Rust release 打包/Unity 实机流程，未进行 Electron 原生对话框和日文逐屏真机验收；不宣称端到端已验证。新诊断用例为合成单测，未使用真实素材。
-- 翻译检查脚本仅汉字硬编码和表结构检查，其输出已明确不能代替语义/显示链路验收。第三方自由文本与未知诊断保留原文，不做猜测翻译；韩文未做母语质量验收。
-- 事实核对来源：https://wiki.vrchat.com/wiki/Social 、https://help.vrchat.com/hc/en-us/articles/360062659053-I-want-to-turn-my-platform-account-through-Steam-Meta-Pico-or-Viveport-into-a-VRChat-account 、https://modular-avatar.nadena.dev/ja/docs/intro 。
+- 2026-09-20 **12:59 本机 VUA-7 最终合并树**：desktop 双 tsconfig typecheck 通过；vitest **88 文件 / 788 测试全通过**；check:i18n 四语键及占位符一致；check:leak 临时 Vite 生产构建通过，**155 指纹零泄漏**。
+- 最终 diff --check 通过；collab:brief 登记表 **83/83** 一致、1473 受管文本文件 **零冲突标记**。对 main 29e972e merge-tree 预检通过（tree 9dd24c6）。
+- 首批 Electron 编译、boundary、forest-leak 验证沿用 5a67531 记录；本追加批未重复全 Rust release 打包、Unity 实机流程、Electron 逐屏验收，也未取得独立韩文母语审校；不宣称端到端或母语验收已通过。没有为简单文案改动添加镜像测试；复用表结构/占位符及完整 desktop 回归。
+- 术语对照：https://docs.unity3d.com/kr/2022.3/Manual/Materials.html （머티리얼/셰이더）、https://docs.unity3d.com/kr/2022.3/Manual/ImportingAssets.html （에셋）、https://modular-avatar.nadena.dev/docs/intro （avatar/outfit/setup）。首批教程事实来源保留于 5a67531。
 ## 阻塞
-无。此前一次自动审批因额度无法完成，写入未执行；用户「继续」后正常重试完成。
+无；英文/韩文追加批已收尾。
 ## 下次合并意图
-**追加批进行中：请暂缓合并本分支，待英文/韩文修复验收请求更新。**
-候验收：slice/desktop-i18n-player-language（开工登记＋2b20a48＋本状态提交）。对 main 76e02fa 的 merge-tree 预检通过，tree 3d647b7。本树不直接合并 main；集成请在最新 main 上复核并合并，留意 wt-3 后续四语/导航同文件变更。
+请集成 --no-ff 合并整个 slice/desktop-i18n-player-language 分支（包含首批＋英韩追加＋两次 main 同步及本状态）。所有代码已提交，工作树干净。当前主干更新频繁，实际合并前请对最新 main 复核冲突和测试。
 ## 留言
-- [→集成] **验收暂缓：用户追加英文/韩文修复，正在同树执行**，实现 2b20a48，86 文件 761 测试通过，构建/语言/泄漏/文档校验通过；请 --no-ff 合并整个 slice/desktop-i18n-player-language 分支并登记 BOARD。新工作树已由 brief 按状态 front-matter 正确识别；无待用户裁决项。
-- [→桌面] 本次修复已候验收；保留 W25 已落库的任务身份登记、制作门和 027 设置边界。四语表、terms、少量显示调用有改动，后续合并请保留新语义，不恢复强制英文前缀或旧教程错误。
+- [→集成] **验收请求恢复：wt-7 i18n 全批完成**。核心实现 2b20a48＋b1fb942＋4f53811；最新 main 29e972e 已经 6a21a3c 合入并解完冲突，88/788 测试和类型/语言/生产构建/泄漏/文档检查通过。请验收整个分支并登记 BOARD；设计规范保持最新 0.7.9，预留的本批 0.7.6 变更记录已并回，无新增产品裁决。
+- [→桌面] 英韩追加已完成并吸收 F2/F3 新文案；后续合并保留新键与自然措辞，特别保留未检查/无匹配更新/缓存空态区分。共享设置说明四语已与 U14 对齐；nameHint 只改显示为“レシピ/recipe 中的名字”对应英韩表达，不动 D3 自动命名及 D5 去重逻辑。
