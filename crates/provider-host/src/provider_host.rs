@@ -9184,7 +9184,12 @@ fn confirm_plan(
                                     .clone()
                                     .unwrap_or_else(|| "vua.material.failed".to_owned()),
                                 ErrorCategory::ExternalFailure,
-                                "errors.material.executionFailed",
+                                // 第 150 批：与 material_task 同一律——供给段
+                                // 失败命中预留 provisionFailed，其余维持
+                                // executionFailed（分类助手单一来源）。
+                                vua_unity_bridge::material_exec::failure_message_key(
+                                    report.error_code.as_deref(),
+                                ),
                                 &confirmation.correlation_id,
                             )
                             .with_param(

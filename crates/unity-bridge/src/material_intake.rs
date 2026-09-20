@@ -509,6 +509,19 @@ fn scan_unitypackage(
         entry.read_to_string(&mut logical_path)?;
         let logical_path = logical_path.trim().replace('\\', "/");
         validate_asset_path(&logical_path)?;
+        // 第 150 批通道边界预检（操作者裁定）：含 `Packages/` 条目的包在
+        // 检查面即如实阻断——素材直导通道不写 VPM 包域（`Packages/` 是
+        // vpm-manifest 追踪的 VPM 通道领地），计划与确认因此根本不会形成。
+        // 按既有 `archive_invalid` 族上浮，零新码。判定与 C# 物化面/
+        // 解包面的 Ordinal 前缀同形。
+        if logical_path.starts_with("Packages/") {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                format!(
+                    "archive entry targets Packages/ (VPM channel boundary): {logical_path}"
+                ),
+            ));
+        }
         classify_risks(package_path, &logical_path, output);
         asset_paths.push(logical_path);
     }

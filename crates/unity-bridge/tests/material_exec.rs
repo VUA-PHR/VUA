@@ -1737,3 +1737,115 @@ fn b3_batch146_capability_absent_backend_fails_the_provision_honestly() {
         fs::remove_dir_all(&base).unwrap();
     }
 }
+
+// --- 第 150 批：Packages/ 通道边界（操作者裁定） ---
+
+/// Builds a guid-layout archive whose pathname entries carry the given
+/// logical paths (the layout the real .unitypackage uses, which the plain
+/// `unitypackage` helper's flat entries never exercise).
+fn guid_layout_package(path: &Path, folders: &[(&str, &str)]) {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+    let file = fs::File::create(path).unwrap();
+    let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+    for (guid, logical) in folders {
+        for (suffix, bytes) in [
+            ("pathname", format!("{logical}\n").into_bytes()),
+            ("asset", b"synthetic".to_vec()),
+            ("asset.meta", b"meta".to_vec()),
+        ] {
+            let mut header = Header::new_gnu();
+            header.set_size(bytes.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, format!("{guid}/{suffix}"), &bytes[..])
+                .unwrap();
+        }
+    }
+    builder.finish().unwrap();
+}
+
+#[test]
+fn b3_batch150_intake_blocks_a_packages_prefixed_archive_as_a_finding() {
+    let base = temp_dir("batch150-intake-block");
+    let source = base.join("source");
+    fs::create_dir_all(&source).unwrap();
+    guid_layout_package(
+        &source.join("pack.unitypackage"),
+        &[("0123456789abcdef0123456789abcdef", "Packages/com.evil/thing.asset")],
+    );
+
+    // 发现面呈现：检查面即如实阻断（既有 archive_invalid 族，零新码），
+    // 计划与确认根本不会形成——绕过 vpm-manifest 追踪的写入不可能起跑。
+    let error = MaterialIntakeEngine
+        .inspect_folder(&source, "corr")
+        .expect_err("a Packages/-carrying package is blocked at inspection");
+    assert_eq!(error.code, "vua.material.archive_invalid");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_batch150_execution_refuses_a_packages_archive_added_after_planning() {
+    let (base, project) = make_world("batch150-exec-refuse");
+    let source = base.join("source");
+
+    // Plan against the clean folder, THEN a Packages/-carrying archive
+    // appears (drift-by-addition). The run's VerifySource re-inspection is
+    // the execution-arm defense: the honest refusal fires before the
+    // snapshot, before any mutation, before any receipt.
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            "project-fingerprint",
+            inspection(&source),
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+    guid_layout_package(
+        &source.join("late.unitypackage"),
+        &[("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "Packages/com.late/x.asset")],
+    );
+
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), FakeVpm::new());
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    let code = report.error_code.as_deref().unwrap_or("");
+    assert!(
+        code.starts_with("vua.material.archive_invalid"),
+        "the channel boundary rides the standing family: {code}"
+    );
+    assert_eq!(
+        report.rollback,
+        RollbackOutcome::NotNeeded,
+        "the refusal fires before the snapshot exists — nothing to restore"
+    );
+    assert!(report.completed_steps.is_empty());
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run against a refused source"
+    );
+    assert!(
+        BuildRecordStore::new(base.join("records"))
+            .read(&format!("material-{}", plan.plan_id))
+            .is_err(),
+        "a pre-mutation refusal leaves no receipt"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
