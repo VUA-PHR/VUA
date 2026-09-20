@@ -701,6 +701,31 @@ describe("mock packages F5 template-enumeration read face (027 core freeze batch
   });
 });
 
+describe("mock packages-ops F4 repository-lifecycle write face (027 core freeze batch)", () => {
+  it.each([
+    ["packages.enableRepo", { repoId: "repo.example.community" }],
+    ["packages.disableRepo", { repoId: "repo.example.community" }],
+    ["packages.refreshRepo", { repoId: "repo.example.community" }],
+  ] as const)("answers %s with the honest absence code — never a fabricated toggle/refresh receipt posing as a fact", async (method, params) => {
+    // 027 F4 词表行:模拟面无 VpmBackend,恒答诚实缺席(P1/P2/F2/F5 同纪
+    // 律)——绝不伪造启停/刷新收据或 cacheUpdated 事实;诚实收据只属于
+    // 真实后端的合法事实
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "command",
+      method,
+      commandId: "cmd-f4-mock",
+      params,
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.packages.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.packages.unavailable");
+  });
+});
+
 describe("mock packages-ops A1 write face (026 core freeze batch)", () => {
   it.each([
     ["packages.previewRemove", { projectPath: "C:/proj", packageIds: ["com.lilxyzw.liltoon"] }],

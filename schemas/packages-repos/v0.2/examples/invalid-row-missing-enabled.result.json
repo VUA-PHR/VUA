@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listRepos",
+  "result": {
+    "schemaVersion": "vua.packages-repos/v0.2",
+    "repos": [
+      {
+        "repoId": "repo.example.official",
+        "name": "Official Repo",
+        "url": "https://example.invalid/vrc-official.json",
+        "localPath": "C:/anywhere/Repos/official-cache.json",
+        "cached": true
+      }
+    ]
+  }
+}
