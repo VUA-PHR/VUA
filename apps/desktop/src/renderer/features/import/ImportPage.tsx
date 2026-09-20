@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Badge } from "../../components/primitives/Badge.tsx";
@@ -504,7 +505,7 @@ function CompletedDownloadsPanel() {
                 <strong>{name}</strong>{" "}
                 <span className="vua-caption vua-text-secondary">
                   {format(copy.downloadSize, { size: bytesText(download.receivedBytes) })} ·{" "}
-                  {format(copy.downloadCompletedAt, { at: download.completedAt })}
+                  {format(copy.downloadCompletedAt, { at: formatDateTime(download.completedAt) })}
                 </span>{" "}
                 {adopted ? (
                   <Badge tone="success">{copy.downloadAdopted}</Badge>

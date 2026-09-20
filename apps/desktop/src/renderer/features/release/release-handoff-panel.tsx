@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -197,7 +198,7 @@ export function HandoffPanel({
         <p className="vua-caption vua-text-secondary">
           {format(copy.succeededLine, {
             editorVersion: phase.fact.editor.version,
-            occurredAt: phase.fact.occurredAt,
+            occurredAt: formatDateTime(phase.fact.occurredAt),
           })}
         </p>
         <p className="vua-caption vua-text-secondary">

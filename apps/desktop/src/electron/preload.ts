@@ -36,11 +36,11 @@ const api: VuaDesktopApiV1 = Object.freeze({
   }),
   dialog: Object.freeze({
     pickMaterialSource: (intake: "direct_unity_package" | "local_reusable_vpm") =>
-      ipcRenderer.invoke("vua:dialog:pick-material-source", intake),
-    pickWarehouseFolders: () => ipcRenderer.invoke("vua:dialog:pick-warehouse-folders"),
+      ipcRenderer.invoke("vua:dialog:pick-material-source", intake, document.documentElement.lang),
+    pickWarehouseFolders: () => ipcRenderer.invoke("vua:dialog:pick-warehouse-folders", document.documentElement.lang),
     // U10 手选编辑器路径(021 收敛点 4:双态浏览;取消返回 null)
-    pickEditorExecutable: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "executable"),
-    pickEditorDirectory: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "directory"),
+    pickEditorExecutable: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "executable", document.documentElement.lang),
+    pickEditorDirectory: () => ipcRenderer.invoke("vua:dialog:pick-editor-path", "directory", document.documentElement.lang),
   }),
   // 壳编辑器设置(U10 门③留痕:手选值物理持久化归桌面机器级 settings,
   // 核心经 VUA_UNITY_EDITOR 注入消费)

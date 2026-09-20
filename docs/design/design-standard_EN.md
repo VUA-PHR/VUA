@@ -1,10 +1,10 @@
-# VUA design standard v0.7.8
+# VUA design standard v0.7.10
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.9
+> Document version: 0.7.10
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.8)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.10)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-20
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -362,8 +362,9 @@ stable untilted cards.
   backdrop and panel always portal to body, blur lives only on the fullscreen backdrop and the
   panel itself stays unblurred (the compositing ghosting lesson). Opening moves focus into the
   panel; closing returns it to the bell (not stolen when the user has focused elsewhere);
-  outside click / Escape / scroll / blur close it; flattened motion skips the exit animation
-  window.
+  outside click / Escape / scrolling outside the panel (scrolling inside the panel's list does
+  not close it — W25 real-machine correction) / blur close it; flattened motion skips the exit
+  animation window.
   Notification-entry discipline: active tasks show by default; terminal tasks appear only with
   "show completed" enabled and not dismissed. Dismissal is offered only for terminal
   notifications — what is cleared is the notification, not the fact; task authority remains
@@ -380,8 +381,7 @@ stable untilted cards.
 
 Core flows work by keyboard with visible predictable focus. State never relies on color alone; field
 errors are associated; icon buttons have names/tooltips. Support dark, light, forced colors, at least
-200% text zoom, 960×600, and 125%/150% DPI. User strings use language keys; domain terms retain the
-English name with a local explanation. Fixtures are development-only and labeled. Large lists use
+200% text zoom, 960×600, and 125%/150% DPI. User strings use language keys; domain function names use familiar local wording without mandatory English prefixes. Brands and internal IDs stay unchanged (user-approved i18n review, 2026-09-20). Known diagnostics have localized explanations keyed by stable codes, with original messages retained; dates and native dialogs follow the app language. Fixtures are development-only and labeled. Large lists use
 virtualization or `content-visibility`; expensive effects need measurements and an off path. If a
 Recipe graph exists, the target at 100 nodes is 60 fps, minimum 30 fps, with a list alternative.
 
@@ -419,6 +419,12 @@ direction.
 
 ## 12. Document changelog
 
+- **0.7.10 (2026-09-20)**: §8.9 notification-center scroll-to-close semantics clarified (W25
+  real-machine batch-4 correction) — the user observed scrolling the notification list inside
+  the panel closing the whole notification center; clarified that the scroll-to-close gesture
+  holds only for scrolling outside the panel, scrolling inside the panel's list (wheel,
+  scrollbar, keyboard) keeps it open, and scrolling outside still closes per the original rule.
+
 - **0.7.9 (2026-09-20)**: §8.7 addendum for installed-packages update awareness presentation
   (proposal 027 F3 consumption slice) — "Updatable" column three-state honest projection
   (null = judgment not executed, honestly empty, never "up to date", never default false;
@@ -452,6 +458,8 @@ direction.
   date", cacheSourced=true informational "cached data" annotation, author/compatible deliberate
   absence never invented, failures verbatim). Version 0.7.7 skips 0.7.6, reserved for the wt-7
   in-flight batch. EN mirror synced.
+
+- **0.7.6 (2026-09-20)**: User-approved i18n repair; §9 uses familiar localized function names without mandatory English prefixes, retains brands and internal IDs, preserves original diagnostics, and makes dates and native dialogs follow the app language.
 
 - **0.7.5 (2026-09-19)**: §8.7 projects/packages supplemented with the settings-face copy
   discipline (proposal 027 F1, user ruling U14) — UI copy for settings-face operations such as

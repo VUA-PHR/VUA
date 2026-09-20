@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import {
   useEffect,
   useMemo,
@@ -74,7 +75,7 @@ function nextVersionId(): string {
 
 function formatTime(iso: string): string {
   const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? iso : date.toLocaleString();
+  return Number.isNaN(date.getTime()) ? iso : formatDateTime(iso);
 }
 
 /**
@@ -630,7 +631,7 @@ function RecipeLibrarySection({
               >
                 <strong>{entry.title}</strong>{' '}
                 <span className="vua-caption vua-text-secondary">
-                  rev {entry.revision} · {entry.updatedAt}
+                  rev {entry.revision} · {formatDateTime(entry.updatedAt)}
                 </span>{' '}
                 {selectedId === entry.recipeId ? (
                   <Badge tone="success">{copy.librarySelected}</Badge>

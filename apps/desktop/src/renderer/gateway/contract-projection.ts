@@ -1,3 +1,4 @@
+import { format } from "../i18n/index.ts";
 import {
   isTerminalTaskStateV01,
   type EnvironmentCheckItemV01,
@@ -51,7 +52,7 @@ export function projectTaskState(state: TaskStateV01): TaskStatus {
  *   不再充当标题(投影不到的事实不编造描述,宁可显示类型词);
  * - originPage:登记身份携带真实来源页,未登记回落 home;
  * - cancellable:由应用层事实派生(未请求取消且非终态),前端不自行猜测;
- * - errorText:契约错误码(工程事实);本地化错误文案随 F3 诊断切片接入。
+ * - errorText:契约错误码(工程事实);显示层另加本地化说明，原码保留。
  */
 export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
   const identity = taskIdentityOf(task.taskId);
@@ -95,8 +96,8 @@ function projectCheckItem(item: EnvironmentCheckItemV01): CheckItem {
     status: PRESENCE_SEVERITY[item.presence],
     // 状态词本地化(用户实测缺口 #31 修复 2026-09-16):presence 投影为
     // 四语状态词;error_code 仅 DetectionFailed 携带(引擎契约),属工程
-    // 事实码照原词呈现(词表外码不猜测,诚实纪律)。
-    description: item.errorCode ?? presenceText(item.presence),
+    // 事实码保留，并附本地化观测状态；词表外原因不猜测。
+    description: item.errorCode == null ? presenceText(item.presence) : format(strings.diagnostics.statusWithCode, { status: presenceText(item.presence), code: item.errorCode }),
     // exactOptionalPropertyTypes:无组项不写 groupId 键
     ...(groupId === undefined ? {} : { groupId }),
   };

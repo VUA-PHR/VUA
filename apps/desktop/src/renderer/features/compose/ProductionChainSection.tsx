@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -308,7 +309,7 @@ export function ProductionChainSection() {
                     {format(copy.recordLine, {
                       buildId: record.buildId,
                       status: record.status,
-                      at: record.finishedAt,
+                      at: formatDateTime(record.finishedAt),
                     })}
                   </span>
                 </li>

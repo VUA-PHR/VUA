@@ -4,6 +4,7 @@ import {
   activeTaskCount,
   canDismiss,
   isTerminalStatus,
+  scrollClosesPanel,
   taskRowOpenTarget,
   visibleNotifications,
 } from "./notification-model.ts";
@@ -96,4 +97,12 @@ test("行打开语义(D2 回归钉):九态全列两态一致回来源页,无状�
   // 目标恒为任务自身携带的来源页事实,不由状态推断改写
   const importTask: TaskItem = { ...taskOf("t-import", "completed"), originPage: "import-material" };
   assert.equal(taskRowOpenTarget(importTask), "import-material");
+});
+
+test("滚动关闭判定(W25 真机第四批回归钉):面板内滚动保持打开,面板外滚动照常关闭", () => {
+  // 用户实测缺陷:在通知面板内滚动列表会关闭整个通知中心——滚动关闭
+  // 手势只对面板外滚动成立;面板内滚动(滚轮/滚动条/键盘)保持打开
+  assert.equal(scrollClosesPanel(true), false);
+  // 面板外滚动/目标不可判定(照 §8.9 原纪律)照常关闭
+  assert.equal(scrollClosesPanel(false), true);
 });

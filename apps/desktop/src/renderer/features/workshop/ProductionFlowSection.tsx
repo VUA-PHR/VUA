@@ -100,6 +100,9 @@ export function ProductionFlowSection({
       />
       {rejection !== null ? (
         <p className="vua-flow__rejection vua-caption" role="alert">
+          {/* 分流(W25 实测修正):unavailable=生产能力未连接;其余按
+            ProductionRejectReason 各自专用文案——unknown_material_source
+            (素材登记失效)有独立文案,绝不落入「未连接」误报 */}
           {rejection === "unavailable"
             ? copy.states.actionUnavailable
             : copy.rejected[rejection]}

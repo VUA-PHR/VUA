@@ -59,6 +59,18 @@ export function taskRowOpenTarget(task: TaskItem): TaskItem["originPage"] {
   return task.originPage;
 }
 
+/**
+ * 滚动关闭判定(W25 真机实测第四批修复):滚动关闭手势只对面板外滚动成立。
+ * 用户实测在通知面板内滚动列表会关闭整个通知中心——根因是 window 捕获阶段
+ * 的 scroll 关闭监听把面板内列表滚动一并算作关闭手势。钉死语义:
+ * 面板内滚动(滚轮/滚动条/键盘)→ 保持打开;面板外滚动/目标不可判定 →
+ * 照 §8.9 原纪律关闭。DOM 归属判定(instanceof/contains)留在组件薄壳,
+ * 判定语义在此纯函数,供 node 环境测试钉住。
+ */
+export function scrollClosesPanel(targetInsidePanel: boolean): boolean {
+  return !targetInsidePanel;
+}
+
 /* ---- 已清除集合的持久化(localStorage;存储不可用则仅本次会话生效) ---- */
 
 export function loadDismissedIds(): ReadonlySet<string> {

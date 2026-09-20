@@ -1,3 +1,4 @@
+import { dialogStrings } from "./dialog-i18n.js";
 import { app, BrowserWindow, dialog, ipcMain, net, session, shell } from "electron";
 import fs from "node:fs";
 import path from "node:path";
@@ -20,6 +21,11 @@ import {
   readEditorSettingsFromFile,
   writeEditorSettingsToFile,
 } from "./editor-settings.js";
+import {
+  readMaterialSourcesFromFile,
+  writeMaterialSourcesToFile,
+  type MaterialSourceEntryV1,
+} from "./material-source-store.js";
 import {
   OVERLAY_SURFACE_PARAM,
   OVERLAY_WINDOW_HEIGHT,
@@ -56,9 +62,43 @@ process.on("uncaughtException", (error) => {
 });
 
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
- *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组 */
-const materialSources = new Map<string, { path: string; displayName: string }>();
+ *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组。
+ *  持久化(W25 真机实测易失缺陷修复 2026-09-20):登记落盘 userData 下
+ *  material-sources.json,启动载入、注册即写盘——此前仅存内存,应用重启
+ *  即失,渲染层残留 refId 成死引用(详见 material-source-store.ts)。 */
+const materialSources = new Map<string, MaterialSourceEntryV1>();
 let materialSourceSequence = 0;
+
+/** 素材登记落盘路径:userData 内,含用户本机路径不入 git(操作者红线,
+ *  无脱敏设计) */
+function materialSourcesPath(): string {
+  return path.join(app.getPath("userData"), "material-sources.json");
+}
+
+/** 注册面写盘:内存为准落盘(全量覆写,原子写);写失败即本次拾取失败
+ *  (handler 拒绝,渲染层如实呈现)——登记不能只报成功不留盘,否则同一
+ *  易失缺陷静默回归 */
+function persistMaterialSources(): void {
+  writeMaterialSourcesToFile(materialSourcesPath(), materialSources, new Date().toISOString());
+}
+
+/** 启动载入(进程 ready 后、IPC 注册前):落盘事实为准;损坏文件已由
+ *  读取侧归档并按空登记,诊断通道留痕(诚实可见,不静默) */
+function loadMaterialSourcesFromDisk(): void {
+  const loaded = readMaterialSourcesFromFile(materialSourcesPath());
+  if (loaded.kind === "recovered") {
+    process.stderr.write(`${JSON.stringify({
+      channel: "material-sources",
+      event: "persisted-file-recovered",
+      reason: loaded.reason,
+      archivedTo: loaded.archivedTo,
+    })}\n`);
+  }
+  if (loaded.kind !== "loaded") return;
+  materialSources.clear();
+  for (const [refId, entry] of loaded.sources) materialSources.set(refId, entry);
+  materialSourceSequence = loaded.sequence;
+}
 
 /**
  * 生产上下文(amf-production v0.2,M3 纵向):projectRoot/artifactOutputRoot/
@@ -184,25 +224,29 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     request,
   ));
 
-  // 素材来源对话框(生产用例契约草案"双素材入口"):按 intake 限定可选形态,
-  // 选取结果落 Kernel 映射,回发 { refId, displayName };取消返回 null
-  ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown) => {
+  // 素材来源对话框(生产用例契约草案"双素材入口"):两个 intake 均为文件夹选择器
+  // (W25 真机第四批:provider 端 inspect_folder 对 sourceFolder 做
+  // canonicalize+is_dir 校验(material_intake.rs),非目录一律
+  // vua.material.source_invalid 拒绝——曾经的 openFile+.unitypackage 过滤器
+  // 让用户选中文件必被 provider 拒)。桌面侧不做目录性预拦:登记原样落
+  // Kernel 映射并回发 { refId, displayName },取消返回 null;若仍有文件路径
+  // 登记(如旧版落盘残留),provider 拒绝经渲染层 source_invalid 专用拒绝
+  // 原因如实上呈。对话框标题按应用语言本地化(i18n 批 locale 边界):
+  // direct_unity_package 拾取的是内含 .unitypackage 的素材文件夹,标题词面
+  // 随第四批四语表 pick 措辞取文件夹语义
+  ipcMain.handle("vua:dialog:pick-material-source", async (event, intake: unknown, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     if (intake !== "direct_unity_package" && intake !== "local_reusable_vpm") {
       throw new Error("invalid material intake");
     }
-    const options =
-      intake === "direct_unity_package"
-        ? {
-            title: "Unity package",
-            filters: [{ name: "Unity package", extensions: ["unitypackage"] }],
-            properties: ["openFile"] as ("openFile" | "openDirectory")[],
-          }
-        : {
-            title: "Local VPM package",
-            filters: [] as { name: string; extensions: string[] }[],
-            properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
-          };
+    const options = {
+      title:
+        intake === "direct_unity_package"
+          ? dialogStrings(locale).unityPackage
+          : dialogStrings(locale).localVpm,
+      filters: [] as { name: string; extensions: string[] }[],
+      properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
+    };
     const result =
       mainWindow === null
         ? await dialog.showOpenDialog(options)
@@ -213,16 +257,19 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const refId = `mat-${materialSourceSequence}-${crypto.randomUUID()}`;
     const displayName = path.basename(pickedPath);
     materialSources.set(refId, { path: pickedPath, displayName });
+    // 注册即写盘(W25 易失缺陷修复):重启后登记仍在;写失败向上抛,
+    // 拾取如实失败(渲染层可发现),不留「成功但不持久」的静默缺口
+    persistMaterialSources();
     return { refId, displayName };
   });
 
   // 仓储导入文件夹多选(W18,bdl-commands v0.3 warehouse.import 的本地拾取面):
   // openDirectory + multiSelections;取消或空选返回 null,路径交给渲染层经
   // warehouse.import 提交(本进程不做任何文件操作)
-  ipcMain.handle("vua:dialog:pick-warehouse-folders", async (event) => {
+  ipcMain.handle("vua:dialog:pick-warehouse-folders", async (event, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     const result = await dialog.showOpenDialog({
-      title: "Import material packages",
+      title: dialogStrings(locale).warehouse,
       properties: ["openDirectory", "multiSelections"] as ("openFile" | "openDirectory" | "multiSelections")[],
     });
     if (result.canceled || result.filePaths.length === 0) return null;
@@ -232,7 +279,7 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   // U10 手选编辑器路径(021 收敛点 4:单一「浏览」入口双态):exe 文件本身
   // 或目录(版本化根/Editor 目录);取消返回 null。路径原样交渲染层经
   // environment.verifyEditor 透传验证,本进程不做归一化
-  ipcMain.handle("vua:dialog:pick-editor-path", async (event, mode: unknown) => {
+  ipcMain.handle("vua:dialog:pick-editor-path", async (event, mode: unknown, locale: unknown) => {
     assertLocalSender(senderFrameUrl(event));
     if (mode !== "executable" && mode !== "directory") {
       throw new Error("invalid editor path mode");
@@ -240,12 +287,12 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const options =
       mode === "executable"
         ? {
-            title: "Unity editor executable",
+            title: dialogStrings(locale).editorExecutable,
             filters: [{ name: "Unity", extensions: ["exe"] }],
             properties: ["openFile"] as ("openFile" | "openDirectory")[],
           }
         : {
-            title: "Unity editor directory",
+            title: dialogStrings(locale).editorDirectory,
             filters: [] as { name: string; extensions: string[] }[],
             properties: ["openDirectory"] as ("openFile" | "openDirectory")[],
           };
@@ -549,6 +596,9 @@ async function createWindow(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  // 素材登记持久化(W25 易失缺陷修复):先载入落盘事实再开放 IPC 面,
+  // 保证首个渲染层请求可见的登记与上一次会话一致
+  loadMaterialSourcesFromDisk();
   provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
   providerHandshake = await provider.start();
   provider.subscribe((event) => {
