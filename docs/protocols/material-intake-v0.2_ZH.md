@@ -70,7 +70,10 @@ v0.2.1（第 146 批，用户裁决"先做好 SDK 的导入再真机验收"）�
   调用（已供给工程跳过创建与解析，维持幂等重检现状）；幂等（locked 已满足→`already_satisfied`）。
   后端无此能力面时（VCC CLI 如实 declared-none）缺席臂按 `capability_missing` 家族如实拒绝，
   绝不假装解析成功。解析收据（`vua.vpm-resolve-receipt/v0.1`：resolved／already_satisfied／
-  failed）是供给内部步骤的事实面，不经桌面网关暴露。
+  failed）是供给内部步骤的事实面，不经桌面网关暴露。操作者裁决两笔随验收落账（第 147 批）：
+  (a) 依赖不可满足时收据如实逐条呈现——Ok 携非空 `failed` 集，**非整次 Err**（素材执行器已把
+  非空 `failed` 聚合为 `provision_failed`，用户结局两案相同而收据信息更丰富）；
+  (b) `failed` 条目的 `reason_code` 复用 `no_matching_package`（源在而版本不合）——零新码。
 - **指纹基线重取**：新建工程的状态不是计划时状态。供给成功后执行器以只读 Inspect 重读
   Unity 侧基线指纹（与暂存链的 inspect-first 同一纪律），后续变更命令绑定该基线——绝不把
   计划时的工程树摘要带进新工程的指纹链。重取固定在依赖解析**之后**：基线覆盖落包后的

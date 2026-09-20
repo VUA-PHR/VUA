@@ -96,7 +96,14 @@ When the target project carries no `ProjectSettings/ProjectVersion.txt`, the pla
   backend without the face (the VCC CLI stays honestly declared-none) is refused through the
   trait-default absence arm with the `capability_missing` family — never a guessed success.
   The resolve receipt (`vua.vpm-resolve-receipt/v0.1`: resolved / already_satisfied / failed)
-  is an internal supply-step fact, never exposed through the desktop gateway.
+  is an internal supply-step fact, never exposed through the desktop gateway. Operator
+  rulings recorded at acceptance (batch 147): (a) an unsatisfiable dependency answers the
+  receipt form — Ok carrying a non-empty `failed` set, honest per dependency — not a
+  whole-call Err (the material executor folds a non-empty `failed` set into
+  `provision_failed`, so the user-perceivable outcome is a failed provision either way,
+  while the receipt keeps the richer per-dependency facts); (b) the failed entries'
+  `reason_code` reuses `no_matching_package` (the source exists, no version satisfies) —
+  the standing reuse, zero new codes.
 - **Baseline re-read**: the brand-new project's state is not the plan-time state. After a
   successful provision the executor re-reads the Unity-side baseline fingerprint through a
   read-only Inspect (the staging chain's inspect-first discipline) and binds subsequent mutating

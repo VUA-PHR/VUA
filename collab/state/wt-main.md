@@ -2,36 +2,143 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 63c8981
+baseline_commit: edeaa086
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 145 批收官批（2026-09-21 03:5x–04:0x，节拍轮工作时段 date 实测；压缩派发轮（仅集成座）：wt-6 F4 补切片验收闭环＝027 F4 五环闭环收官＋027 提案 F1–F5 全部落地登记＋BOARD 收官段＋状态批推送）**：
+**第 147 批（2026-09-21 05:2x–06:1x，节拍轮工作时段 date 实测；压缩派发：仅集成座实质项）
+＝U17 供给依赖解析双栈验收闭环＋操作者裁决两笔落账＋用户裁决装配词面登记＋BOARD
+U17/U18/#44 三行＋状态批推送**：
 
-- **wt-6 补切片交付轮三笔 --no-ff 收编（合并 63c8981，merge-tree 预检 exit 0 零冲突合成树 a85e8d7，df 先查 582G/69%）**＝补切片 08923b5（恰两文件 631+/46-）＋自理追平壳 14d19ed（零自有内容，落后 15 恰线自理；随并入退回实现批 3f8f55d＝第 143 批十项核对表亲审成立面原样入库＋状态批 f86dfe1）＋状态批 342dfba。集成四验收点逐条亲审成立：
-  1. **五装载点确接过滤且仅作用于包集合世界**（第 143 批退回理由恰一处的正面核销）：`collection_world()`（读 VUA 自有状态文件→克隆 Settings→库公开 `remove_repo` retain 按 repoId 移除禁用行）恰五调用点全数接入——repo_catalog（:1481）／package_catalog_impl（:2092，package_catalog＋v02 双族同走）／list_packages_v02 latest 判定（:1135）／preview_install（:1651）＋apply_install（:1896，A2 解析器）；过滤后 world 直读核实传入每处 `PackageCollection::load/load_cache`，原 settings 仅用于 show_prerelease 开关等非集合事实；preview_install_for_plan 两臂均委托已过滤 preview_install＝无第六裸装载点。**两面不矛盾复证（诚实纪律 #1 正反面）**：list_repos_v02（:1386）逻辑零改动零过滤调用——enabled=false 行照列（订阅面在列）而其包在枚举/判定/解析三面缺席（集合世界如实收窄）；冻结词面 packages-ops v0.6「启停语义（冻结词面事实）」节（协议本 :88–93）逐句兑现。
-  2. **offline load_cache 腿已钉（第 143 批点名项）＋缓存失效结构钉成立**：测试①全 offline（with_environment_root(..., true)）且断言 cache_sourced=true 证明 load_cache 腿真实走通非旁路；测试④在线臂（cache_sourced=false＋预定义两仓库自有实验开关环回化＋loopback 200＋禁用行缓存逐字节未动）证明过滤骑在线装载臂同等成立。缓存失效结构钉双重实证可信：结构面＝VrcGetLibBackend 字段恰 runtime/http/root/offline 四项（无跨调用集合缓存层可存活）；行为面＝测试②同实例三 Toggle 六世界态（写面返回后下一读面即见新状态——有缓存层必红）。
-  3. **损坏状态文件拒绝而非猜测全启用（诚实纪律 #3 同族）**：测试③写 "not-json" 后五面（repo_catalog／package_catalog／preview_install／list_packages_v02＋v0.2 投影面）全拒复用码 vua.vpm.backend_unavailable＋category Unavailable；apply_install 与 preview 同 helper 同共享构造器 backend_unavailable_state（:1896 亲核）同享拒绝。
-  4. **词面零改、wire/provider-host/桌面零触碰复证**：补切片 diff 恰两 project-manager 文件零 docs/contracts/i18n 触碰。两项实现侧解释对照协议本核为**向冻结词面收敛**非偏离：①第 2 层 cached 事实改 repo_cached_fact 统一事实源——packages-repos-catalog v0.1 冻结字段语义「逐仓库缓存存在性已由必带 cached 事实诚实覆盖」，旧硬编码 false 对缓存在场的禁用行恰系谎报未刷新，新实现对启用行第 2 层逐案相等、对禁用行如实 true；②装载腿状态读取失败经共享构造器与 v0.2 投影面同事实同码同词（list_repos_v02 内联闭包换构造器零字节差，一事实一码）。
-- **合并树定向复跑集成亲测全绿（04:0x）**：cargo test 四 crate **合计 736/0**（project-manager 140/0＝vpm_backend 70〔常备 66＋补切片新 4〕＋orchestrator 234/0＋provider-host 288/0＋unity-bridge 74/0；对第 143 批世代 723 净 +13＝退回批自带 9 例＋补切片 4 例，数字自洽）＋clippy 四 crate --all-targets **0 警告**＋desktop typecheck 双 tsconfig **exit 0**。
-- **027 收官登记**：**F4 五环闭环＝冻结 47d4185〔139〕→接线 7361213〔141〕→形状核可 8955430〔142〕→环境实现 3f8f55d＋补切片 08923b5〔145〕→桌面消费 e05e1e7〔143〕**。退回-补交-闭环链留痕于 027 提案集成验收登记节（第 143 批节退回裁决→第 145 批节验收闭环）。**027 status 落「已接受（F1–F5 五链全部落地收官）」本文件就此冻结；F6 方向锚维持不冻结、不立案、单独归档候立不变**。BOARD #41 行收官推进段落账；#43 行维持开放候 W25 真机复验（不记 resolved）；前录轮转（存 134–143＋本批 10 段，133 及更早依 git 历史）。桌面 disabledNote 词面「包不再参与浏览与安装解析」自此有真实效果面背书（此前 v0.2 族无人应答无呈现路径，缺口已闭合）。
-- **①区判读（03:54 实读）**：wt-2 修复批 f68ee67 验收请求系第 142 批已收编身份（a788b04 is-ancestor 亲测）就地消化；wt-3 修复批 8563571 验收请求系第 143 批已收编身份（e40530c）就地消化；wt-4/wt-5 簿记请求照 is-ancestor＋领先 0 双实证消化关账；wt-6 补切片验收请求本批兑现（合并 63c8981）；wt-7/wt-8 六项审阅修复分工留言收讫（观测登记：两分支各领先 1，均自述未请求合并不代合并）；失鲜工作树无。
-- **推送**：收官批推送照网络实况办理（失败重试≤3 并登记）；零端到端宣称维持——本批全部结论系代码面＋库面＋环回源证据，F4 served 行 packages.repoLifecycleOps 真机翻转、禁用/刷新控制与 disabledNote 真机呈现、#43 真机复验全归 W25（O-2），测试绿≠真机绿。
+- **wt-2 三笔 --no-ff 收编（合并 f3dc7a4f，merge-tree 预检 exit 0 零冲突合成树
+  0bdc40d2）**＝追平壳 e8104a8（零自有纯吸收，落后 24→0）＋实现批 70f7476（恰 40
+  文件 987+/36-）＋状态批 044cb10。派单验收重点逐项亲审成立：
+  1. **resolve 仅新建路径**：接线骑幂等重检之后，已供给工程零 resolve 调用——执行
+     面钉 resolves==0（b3_batch146_provisioned_target_plans_and_runs_zero_resolve_
+     calls 断言「the already-provisioned path must not resolve」）＋新建路径恰一次
+     （既有空目标测试加强 resolves==1）。
+  2. **指纹重取在 resolve 后（哨兵序）**：CreatingVpm resolve 臂投放
+     `.vua/batch146-resolve-marker`，FakeBridge 逐命令记录哨兵在场事实，断言
+     marker_seen[0]==true＝首条 Bridge 命令（基线重取）记录时哨兵已在场——指纹覆盖
+     落包后最终态钉死。
+  3. **失败两臂诚实**：backend Err 臂→`vua.material.provision_failed` 携原码
+     （capability_missing 含内＝CLI 后端新建供给如实失败）；收据 failed 非空臂→携
+     首个依赖 reason_code＋id 同臂上浮；两臂照常空态快照补偿（隔离区在场）＋失败
+     Build Record 照常发布。
+  4. **域外机械补位核验成立**：acquisition warehouse_maintenance.rs 恰 1 行（tests
+     mod 内 VpmCapabilities 字面量补 resolve_project: false）＋provider-host 24 测试
+     文件＋production_host.rs（1+/1-）全系同族字面量——`git show 70f7476 --
+     crates/provider-host` 全 diff 逐行核对，非 resolve_project 行仅被替换旧行＝
+     纯编译涟漪零行为变更，provider_host.rs 路由零触碰零新 gateway 方法。
+  5. 端口面（trait 方法＋ResolveReceiptV01 三闭集＋家族常量
+     `vua.vpm-resolve-receipt/v0.1`＋VpmCapabilities.resolve_project 独立位关闭既有
+     预留点 ORC-DEV-004＋trait-default 缺席臂）与协议本 0.2→0.2.1 仅注记、REGISTRY
+     同步、向量 description 数据面更新逐项对表成立。
+- **wt-6 两笔 --no-ff 收编（合并 edeaa086，预检 exit 0 零冲突合成树 b719f48a）**＝
+  实现批 51b38e0（恰两文件 651+/36-）＋状态批 14d27b9；**fast-forward 对齐 044cb10
+  实测＝与 wt-2 落地端口面零偏差 verbatim 骑乘**（环境座并行草案〔all-or-nothing
+  Err 设计〕未入库，按核心落地语义交付——派单风险点收敛方向裁决无需出手，落地已
+  一致）。三项对齐钉亲审成立：①幂等前移短路于集合装载之前（端口面文档「touches
+  nothing」律字面兑现——在线 load 臂会刷新仓库缓存〔网络＋缓存写〕，快路径绝不装载
+  集合；环回连接计数不动＋工程树逐字节双钉 f6_resolve_idempotent）；②离线安装器无
+  http（http_install = if offline { None }——离线绝不为包体出网，库自身 Offline
+  mode 错误如实上浮绝不静默半成功）；③失败承载体按网络段二分（offline 下载腿确定性
+  repo_fetch_failed——端口面文档「repo_fetch_failed for the network segment」自有
+  词句；在线安装/清单写回腿照落地 apply_failed；repo_fetch_failed 系既有构造器
+  src:592 零新码）。测试 7 例全环回夹具（TcpListener 127.0.0.1:0，零真实网络零新
+  依赖）：主钉恰 2 连接＋source_repo＝行 id／幂等零网络零写入／不完整收据
+  no_matching_package 恰 1 连接 zip 从未开始树逐字节不变／**全禁用仓互证双向钉**
+  （禁用行零连接＝离开集合世界≠取数失败＋重启用对照臂同包落地＝collection_world
+  双向钉）／离线 repo_fetch_failed example.invalid 零接触／能力位双向钉（库 true／
+  CLI false＋capability_missing）／损坏状态文件第六消费者同律 backend_unavailable。
+  **部分失败不静默半成功成立**（failed 收据如实不完整面＋下载腿诚实失败＋零半成功
+  路径）。测试绝不触网核实（全部环回＋example.invalid 占位域）。
+- **操作者裁决两笔随验收落账**（登记环境座申报的指派分歧）：
+  - (a) 派单字面「解析失败→整次 Err」未实现，落地为 Ok 携非空 failed 收据——
+    **裁定采纳落地形态**：收据按依赖逐条诚实，素材链 run_provision 已把非空 failed
+    聚合为 provision_failed 上滚，用户结局两案相同而收据信息更丰富；验收复核聚合
+    测试钉在场（b3_batch146_incomplete_resolve_reports_the_honest_face_and_restores
+    断言 code 含 vua.vpm.no_matching_package＋status Failed）。
+  - (b) reason_code 用 `no_matching_package` 而非 repo_not_found——**裁定采纳**：
+    语义更准（源在而版本不合）。
+  - 两笔裁决锚已补注 027 验收登记节（第 147 批节）与素材协议本双语 0.2.1 注记
+    （ZH/EN 镜像同步）；REGISTRY 行括注同步。
+- **合并树定向复跑集成亲测全绿（05:4x–06:0x，df 先查 595G/69%）**：cargo test 五
+  crate 合计 **812/0**（orchestrator 234/0＋provider-host 288/0＋project-manager
+  **150**/0＝vpm_backend 80〔常备 66＋F4 4＋核心批146 3＋环境 7〕＋unity-bridge
+  77/0＋acquisition **63**/0 机械补位 crate 复跑零回归；对第 145 批世代四 crate
+  736 净 +76＝五 crate 口径扩展 +63 与两批新测 +13，数字自洽）＋clippy 五 crate
+  --all-targets **0 警告 0 错误**＋desktop typecheck 双 tsconfig **exit 0**。
+- **BOARD 登记（用户裁决与讨论项）**：
+  1. 开放问题 **#44 行**＝用户裁决（2026-09-21）装配词面纪律：**「素材直导链的单
+     模型导入→上传全流程在 W25 汇报/文档/UI 中不得称『装配』」**——「装配」保留给
+     配方链（衣装挂接）语义；wt-4 演练脚本 A2 段标题含「装配」字样者候产线座订正
+     （登记指向，不改他树文件）。
+  2. **U17 行**＝SDK 依赖解析依裁决落地＝本批验收对象；验收后记「**代码面闭环，
+     真机候 W25**」。
+  3. **U18 行**＝shader 依赖策略讨论中（检测驱动按需安装 vs 每项目全装三 shader），
+     操作者答复用户中，候用户裁决后立项 [需用户]——一行登记。
+- **前录轮转**：存 134–143＋145＋本批 10 段（2026-09-20 15:0x 段轮出依 git 历史）。
+- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋库面＋环回源证据；SDK
+  解析真机走查（活仓库解析下载 com.vrchat.base/avatars）归 W25（O-2），测试绿≠
+  真机绿。`?? _local_p27_devlog.txt` 照例不触碰。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 143 批（03:0x–03:4x）＝wt-3 桌面双环＋W25 呈现缺口修复轮收编（e40530c：消费 e05e1e7＋失败行修复 8563571）＋wt-6 实现批退回裁决（冻结词面「禁用＝离开包集合世界」效果面缺失）＋027 登记节＋BOARD。第 142 批（02:2x–03:0x）＝wt-2 W25 供给步骤修复批收编（a788b04，#43 代码面关闭）＋wt-6/wt-3 壳与形状核可收编。第 141 批＝F4 接线批 7361213 收编（b6d7b29）。第 139/138/137/136/135/134/133 批＝F5 五环闭环＋F4 冻结 47d4185 收编等，见 BOARD 前录与 git 历史。
+第 145 批（03:5x–04:4x）＝wt-6 F4 补切片验收闭环＝027 F4 五环闭环收官（合并
+63c8981）＋027 F1–F5 全落地冻结＋BOARD 收官段。第 143 批（03:0x–03:4x）＝wt-3 桌面
+双环＋W25 呈现缺口修复轮收编（e40530c）＋wt-6 实现批退回裁决。第 142/141/139/138/
+137/136/135/134 批见 BOARD 前录与 git 历史。
 
 ## 阻塞
-无。（无本地工作阻塞。#43 真机复验候 W25 用户回访；U15/U16 候用户非阻塞；027 已冻结收官，F6 方向锚单独归档候立。）
+无。（无本地工作阻塞。#43 真机复验候 W25 用户回访；U15/U16/U18 候用户非阻塞；
+wt-4 A2 段「装配」字样订正候产线座；027 已冻结收官。）
 
 ## 下次合并意图
-候验收队列清零：slot/wt-2/3/4/5/6 领先全 0（is-ancestor 亲测）。slice/production-review-fixes（wt-7，领先 1）与 slice/production-review-repairs（wt-8，领先 1）维持观测候其验收请求（两树均自述未请求合并，不代合并）。#43 真机复验候 W25（O-2）。U15/U16 候用户裁决。
+候验收队列：slot/wt-2/6 领先全 0（本批收编闭环）。wt-7
+（slice/production-review-fixes，领先 1）与 wt-8（slice/production-review-repairs，
+领先 1）维持观测候其验收请求（两树均自述未请求合并，不代合并）。wt-4/wt-5 簿记批
+候随轮验收。#43 真机复验候 W25（O-2）。U15/U16/U18 候用户裁决。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 03:5x–04:0x，节拍轮工作时段 date 实测）：①date 03:54 实测工作时段，pnpm collab:brief ①区判读＝wt-6 补切片验收请求进入本批、wt-2/3/4/5 系已收编身份簿记消化、wt-7/wt-8 分工知会观测登记、失鲜工作树无；②wt-6 三笔验收＝四验收点亲审（五装载点 world 直读＋两面不矛盾＋load_cache 腿与在线臂双腿＋缓存失效结构钉双实证＋损坏状态文件五面拒绝＋词面零改与两实现侧解释协议本对照核为收敛）→merge-tree 预检 exit 0 零冲突（a85e8d7）→--no-ff 合并 63c8981；③合并树定向复跑亲测：cargo 四 crate 736/0＋clippy 四 crate 0＋typecheck 双 0；④收官登记＝027 提案第 145 批集成验收登记节（退回-补交-闭环链留痕）＋status 落「已接受（F1–F5 五链全部落地收官）」本文件冻结＋F6 方向锚维持单独归档候立＋BOARD #41 行收官推进段＋#43 行维持＋前录轮转（10 段）＋本状态批；⑤[需用户] 条目（U15/U16）照规则跳过未代决；⑥推送照网络实况办理（失败重试≤3 并登记）；⑦诚实边界维持：零端到端宣称——F4 served 行真机翻转、禁用/刷新控制与 disabledNote 真机呈现、#43 真机复验全归 W25（O-2），测试绿≠真机绿。在手无半途切片、除本登记批外无未提交改动（`?? _local_p27_devlog.txt` 照例不触碰）。完成后退出待命。
+本轮（2026-09-21 05:2x–06:1x，节拍轮工作时段 date 实测）：①pnpm collab:brief ①区
+判读＝wt-2/wt-6 验收请求进入本批、wt-3 修复批 8563571 系第 143 批已收编身份就地消
+化、wt-4/wt-5 簿记请求照 is-ancestor＋领先 0 双实证消化、wt-7/wt-8 分工知会观测登
+记、失鲜工作树无；②wt-2 三笔验收＝派单验收重点逐项亲审（仅新建路径零调用钉＋哨兵
+序＋失败两臂＋域外机械补位全 diff 逐行核对纯字面量）→merge-tree 预检 exit 0 零冲
+突（0bdc40d2）→--no-ff 合并 f3dc7a4f；③wt-6 两笔验收＝fast-forward 对齐端口面零
+偏差实证＋三项对齐钉亲审＋七例环回测试逐例对表（绝不触网、禁用集互证、部分失败不
+静默）→预检 exit 0 零冲突（b719f48a）→--no-ff 合并 edeaa086；④操作者裁决两笔随
+验收落账（采纳落地形态＋采纳 no_matching_package）＋027 第 147 批登记节＋素材协议
+本双语裁决锚＋REGISTRY 括注；⑤合并树定向复跑亲测：cargo 五 crate 812/0＋clippy 五
+crate 0＋typecheck 双 0；⑥BOARD 登记＝#44 装配词面裁决行＋U17 代码面闭环行＋U18
+shader 依赖策略候裁决行＋前录轮转（10 段）＋本状态批；⑦[需用户] 条目（U15/U16/
+U18）照规则跳过未代决；⑧推送照网络实况办理（失败重试≤3 并登记）；⑨诚实边界维持：
+零端到端宣称——SDK 解析真机走查归 W25（O-2），测试绿≠真机绿。在手无半途切片、除
+本登记批外无未提交改动。完成后退出待命。
 
 ## 留言
-- [→环境/wt-6]（验收回执）**F4 collection-world 补切片 08923b5 验收入库（合并 63c8981），退回批 3f8f55d 随并入，F4 五环闭环——027 就此收官**：四验收点逐条亲审成立（五装载点 world 直读核实且 preview_install_for_plan 无第六裸装载点；v0.2 投影面零改动两面不矛盾；offline load_cache 腿 cache_sourced=true 实证＋在线臂 cache_sourced=false 环回 200；缓存失效结构钉＝字段四项无缓存层＋同实例三 Toggle 六世界态；损坏状态文件五面拒绝 apply 同构造器亲核；词面零改＋两实现侧解释对照 packages-repos-catalog v0.1 cached 字段冻结语义核为向词面收敛——旧硬编码 false 对缓存在场禁用行恰系谎报未刷新，你席此改正确）。合并树复跑 736/0＋clippy 0＋typecheck 双 0 与你席申报一致。027 status 已落「已接受（F1–F5 五链全部落地收官）」本文件冻结；F6 方向锚维持单独归档候立。你席状态批 342dfba 与追平壳 14d19ed 随本批一并入库，候验收队列清零。零端到端维持——served 行真机翻转与 disabledNote 真机呈现归 W25（O-2）。
-- [→桌面/wt-3]（知会）**disabledNote 词面的效果面已真实**：wt-6 补切片 08923b5 入库（63c8981）后，「包不再参与浏览与安装解析」承诺的效果面（repo-catalog 枚举/latest 判定/A2 解析三面缺席＋订阅面照列）已有库面与测试背书——第 143 批登记的交叉点就此闭合。W25 走查时该呈现可按词面兑现核查；served 行翻转与控制真机呈现仍归 W25（O-2）。
-- [→操作者] 第 145 批办理完毕（合并 63c8981＋027 提案冻结＋BOARD 收官段＋状态批）：**wt-6 F4 补切片验收入库＝027 F4 五环闭环，027 F1–F5 全部落地收官（F6 方向锚维持单独归档候立）**。退回-补交-闭环链全程留痕（第 143 批退回→补切片逐条兑现→本批验收）。合并树定向复跑全绿（cargo 四 crate 736/0＋clippy 四 crate 0＋typecheck 双 0）。零端到端宣称维持：F4 served 行真机翻转、禁用/刷新控制与 disabledNote 真机呈现、#43 真机复验全归 W25（O-2）。wt-7/wt-8 六项审阅修复分工观测登记，候其验收请求。候验收队列清零。
-- （回执不回执：wt-2/wt-3/wt-4/wt-5 验收请求照 is-ancestor＋领先 0 双实证消化关账；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→核心/wt-2]（验收回执）**供给依赖解析批 70f7476 验收入库（合并 f3dc7a4f），
+  U17 代码面闭环**：派单验收重点逐项亲审成立（仅新建路径 resolves==0/==1 双钉＋哨
+  兵序 marker_seen[0]＋失败两臂诚实＋域外机械补位 acquisition 1 行与 provider-host
+  24 文件全系纯字面量 grep 实证）。操作者裁决两笔落账：(a) 落地 Ok 携非空 failed
+  收据形态采纳（聚合测试钉亲核在场）；(b) no_matching_package 采纳。协议本双语裁
+  决锚与 027 第 147 批登记节随批落账。合并树复跑 812/0 与你席申报一致。零端到端维
+  持——带解析供给真机走查归 W25（O-2）。
+- [→环境/wt-6]（验收回执）**实现核验切片 51b38e0 验收入库（合并 edeaa086）**：
+  fast-forward 对齐实测端口面零偏差；三项对齐钉逐条亲审成立（幂等前移短路集合装载
+  之前双钉／离线安装器无 http／网络段二分 repo_fetch_failed-apply_failed）；七例环
+  回测试逐例对表（全禁用仓互证双向钉与部分失败不静默半成功为验收亮点）；分歧登记
+  与操作者裁决对表一致，无需收敛动作。你席状态批 14d27b9 随批入库，候验收队列清
+  零。零端到端维持——活仓库解析真机走查归 W25（O-2）。
+- [→产线/wt-4]（订正指向知会）**用户裁决（2026-09-21）装配词面纪律**：素材直导链
+  的单模型导入→上传全流程在 W25 汇报/文档/UI 中不得称「装配」，「装配」保留给配
+  方链（衣装挂接）语义。已登记 BOARD 开放问题 #44 行；**wt-4 演练脚本 A2 段标题含
+  「装配」字样者候你席订正**（集成只登记指向不改他树文件），候随轮办理并落账。
+- [→操作者] 第 147 批办理完毕（合并 f3dc7a4f＋edeaa086＋BOARD 三行＋状态批）：
+  **U17 供给依赖解析双栈验收闭环＝代码面闭环，真机候 W25**（用户裁决「先做好 SDK
+  的导入再真机验收」的代码侧兑现完成）。操作者两笔裁决已随验收落账（027 登记节＋
+  素材协议本双语注记＋REGISTRY 括注＋BOARD 前录）。合并树定向复跑全绿（cargo 五
+  crate 812/0＋clippy 五 crate 0＋typecheck 双 0）。U18（shader 依赖策略）已一行登
+  记候用户裁决。零端到端宣称维持。候验收队列：wt-2/wt-6 清零；wt-7/wt-8 观测中。
+- （回执不回执：wt-3 验收请求照 is-ancestor 就地消化；历史留言已消化归档，在途事
+  项以 BOARD 与本状态文件当前焦点为准。）

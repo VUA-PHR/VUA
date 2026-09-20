@@ -1203,3 +1203,49 @@ production-workshop-view.test 失败行词面 5 枚＋live-production-port 失�
 - **零端到端宣称维持**：全部结论系代码面＋库面＋环回源证据；F4 served 行
   packages.repoLifecycleOps 真机翻转、禁用/刷新控制与 disabledNote 真机
   呈现、#43 真机复验全归 W25（O-2）。测试绿≠真机绿。
+
+## 集成验收登记（第 147 批，2026-09-21 05:4x）——U17 供给依赖解析双栈验收入库（代码面闭环）
+
+> 本节系已冻结提案（status「已接受」）的 append-only 验收登记，照第 143/145 批先例；
+> 027 链外延展（素材链供给步骤依赖解析，U17）依用户裁决 2026-09-21「先做好 SDK 的
+> 导入再真机验收」落地，登记于此留验收链痕。
+
+- **wt-2 三笔 --no-ff 收编（合并 f3dc7a4f，预检 exit 0 零冲突合成树 0bdc40d2）**＝追平壳
+  e8104a8（零自有）＋实现批 70f7476（恰 40 文件 987+/36-）＋状态批 044cb10。集成亲审
+  成立面：端口面钉底（`VpmBackend::resolve_project`＋`ResolveReceiptV01` 三闭集
+  resolved/already_satisfied/failed＋家族常量 `vua.vpm-resolve-receipt/v0.1`＋
+  `VpmCapabilities.resolve_project` 独立位关闭既有预留点 ORC-DEV-004＋trait-default
+  缺席臂 capability_missing）；run_provision 接线序 create→resolve→指纹重取、仅新建
+  路径（已供给零调用，resolves==0 幂等钉）；指纹重取在 resolve 后（哨兵序
+  `marker_seen[0]` 断言）；失败两臂诚实（Err 臂携后端原码／failed 非空臂携首依赖
+  reason_code＋id）；域外机械补位核验（acquisition 1 行 tests 字面量＋provider-host
+  24 测试文件＋production_host.rs 全系 `resolve_project: false` 纯编译涟漪，grep 实证
+  diff 无第五行为）；协议本 0.2→0.2.1 仅注记＋REGISTRY 同步。
+- **wt-6 两笔 --no-ff 收编（合并 edeaa086，预检 exit 0 零冲突合成树 b719f48a；
+  fast-forward 对齐 044cb10＝端口面零偏差 verbatim 骑乘）**＝实现批 51b38e0（恰两文件
+  651+/36-）＋状态批 14d27b9。三项对齐钉亲审成立：①幂等前移短路于集合装载之前
+  （「touches nothing」律字面兑现——在线 load 臂会刷新仓库缓存，快路径绝不装载集合；
+  环回连接计数不动＋工程树逐字节双钉）；②离线安装器无 http（离线绝不为包体出网，
+  Offline mode 错误如实上浮绝不静默半成功）；③失败承载体按网络段二分（offline 下载腿
+  确定性 repo_fetch_failed——端口面文档自有词句；在线安装/清单写回腿照落地
+  apply_failed；repo_fetch_failed 系既有构造器零新码）。测试 7 例全环回夹具
+  （TcpListener 127.0.0.1:0 零真实网络零新依赖）：主钉恰 2 连接＋source_repo＝行 id／
+  幂等零网络零写入／不完整收据 no_matching_package 恰 1 连接 zip 从未开始树逐字节
+  不变／全禁用仓互证双向钉（禁用行零连接＝离开集合世界≠取数失败＋重启用对照臂同包
+  落地＝collection_world 双向钉）／离线 repo_fetch_failed example.invalid 零接触／
+  能力位双向钉（库 true／CLI false＋capability_missing）／损坏状态文件第六消费者同律
+  backend_unavailable。部分失败不静默半成功成立。
+- **操作者裁决两笔随验收落账**：(a) 派单字面「解析失败→整次 Err」未实现，落地为 Ok
+  携非空 failed 收据——**裁定采纳落地形态**（收据按依赖逐条诚实，run_provision 已把
+  非空 failed 聚合为 provision_failed 上滚，用户结局两案相同而收据信息更丰富；聚合
+  测试钉 b3_batch146_incomplete_resolve_reports_the_honest_face_and_restores 亲核在
+  场）；(b) reason_code 用 `no_matching_package` 而非 repo_not_found——**裁定采纳**
+  （语义更准：源在而版本不合）。裁决锚已补注素材协议本双语 0.2.1 注记。
+- **合并树定向复跑集成亲测全绿（05:4x–06:0x，df 先查 595G/69%）**：cargo test 五 crate
+  合计 **812/0**（orchestrator 234/0＋provider-host 288/0＋project-manager 150/0
+  〔vpm_backend 80＝常备 66＋F4 4＋核心批146 3＋环境 7〕＋unity-bridge 77/0＋
+  acquisition 63/0 机械补位 crate 复跑零回归；对第 145 批世代四 crate 736 净 +76＝
+  五 crate 口径扩展 +63 与两批新测 +13，数字自洽）＋clippy 五 crate --all-targets
+  **0 警告 0 错误**＋desktop typecheck 双 tsconfig **exit 0**。
+- **零端到端宣称维持**：SDK 解析真机走查（活仓库解析下载 com.vrchat.base/avatars）
+  归 W25（O-2），真机复测通过前不宣称端到端；测试绿≠真机绿。
