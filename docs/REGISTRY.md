@@ -23,7 +23,7 @@
 | schemas/eac-probe/v0.1 | 0.1 | 已冻结（006 R1a，集成验收复跑 437/0） | 环境 | 2026-09-10 |
 | schemas/eac-allowlist/v0.1 | 0.1 | 已冻结（006 R2/R3，集成验收复跑 442-443/0） | 环境 | 2026-09-10 |
 | schemas/eac-terminate/v0.1 | 0.1 | 已冻结（006 R1b 全链收官，集成验收复跑 447/0） | 环境 | 2026-09-10 |
-| schemas/amf-production/v0.2 | 0.2 | 已冻结（M3 验收，2026-09-07；v0.1 历史保留） | 核心 | 2026-09-10 |
+| schemas/amf-production/v0.2 | 0.2 | 已冻结（M3 验收，2026-09-07；v0.1 历史保留；2026-09-21 第 141 批增补 material-plan.schema.json v0.2＝素材计划供给步骤词面〔W25 真机发现修复：步骤种类闭集新增 provision_project，计划 schemaVersion 0.1→0.2，检查面与 build-record source 嵌入保持 v0.1 不变〕＋向量 2 正 1 负〔vectors/material-plan/ 子目录〕＋消费测试 material_intake） | 核心 | 2026-09-10 |
 | schemas/environment-managers/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-10 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
@@ -49,6 +49,7 @@
 | docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
+| docs/protocols/material-intake-v0.2_ZH.md | 0.2 | 已冻结（B3 基线 v0.2 增补，2026-09-21 第 141 批：工程供给节〔条件化 provision_project 步骤＝assembly 计划同款诚实模型——已供给零词面变化、确认后执行、快照后导入前、VpmBackend::create_project 端口路由〔E-VPM-DUAL，Fix 4 无 CLI 依赖〕、供给后指纹基线重取〔inspect-first〕、失败补偿＝空态快照恢复移入恢复隔离区、错误面 vua.material.provision_failed 携后端原码〕＋工作流阶段映射表〔含 provision_project→execute〕＋计划 Schema 引用升 v0.2＋向量节；检查面与暂存契约词面零变更；桌面步骤呈现归桌面消费切片如实声明） | 核心 | 2026-09-21 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | 已冻结（M3 验收） | 核心 | 2026-09-07 |
 | docs/protocols/production-use-case-v0.2_ZH.md | 0.2 | 已冻结（W20，2026-09-09：Schema＋向量 24＋消费测试全链） | 核心 | 2026-09-09 |
 | docs/protocols/provider-process-v0.1_ZH.md | 0.2 | B2 实现基线（握手帧面 Schema 已冻结） | 核心 | 2026-09-07 |

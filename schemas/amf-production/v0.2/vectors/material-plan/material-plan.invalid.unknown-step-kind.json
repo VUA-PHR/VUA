@@ -1,0 +1,38 @@
+{
+  "name": "material-plan.invalid.unknown-step-kind",
+  "description": "plan v0.2 negative vector: a step kind outside the closed nine-member set is INVALID by schema. The step-kind enum is closed; an invented kind (here a silent Unity-launch verb that bypasses the plan review) must never validate.",
+  "schema": "material-plan.schema.json",
+  "instance": {
+    "schemaVersion": "0.2",
+    "planId": "material-sha256cbcdefgh00000000000000000000000000000",
+    "planHash": "sha256:8888888888888888888888888888888888888888888888888888888888888888",
+    "mode": "direct_unity_package",
+    "projectId": "project-1",
+    "projectFingerprint": "sha256:2222222222222222222222222222222222222222222222222222222222222222",
+    "source": {
+      "schemaVersion": "0.1",
+      "displayName": "Synthetic Outfit",
+      "sourceFingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "riskFingerprint": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "packages": [
+        {
+          "relativePath": "pack.unitypackage",
+          "sizeBytes": 128,
+          "sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "assetPaths": ["Assets/Outfit/base.prefab"]
+        }
+      ],
+      "executableRisks": [],
+      "declaredDependencies": []
+    },
+    "riskDecisionRequired": false,
+    "steps": [
+      { "kind": "verify_source", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "create_snapshot", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "launch_unity_arbitrary", "mutatesTargetProject": true, "safeBoundaryAfter": true },
+      { "kind": "import_unity_packages", "mutatesTargetProject": true, "safeBoundaryAfter": true },
+      { "kind": "validate_minimum_structure", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "write_build_record", "mutatesTargetProject": false, "safeBoundaryAfter": true }
+    ]
+  }
+}

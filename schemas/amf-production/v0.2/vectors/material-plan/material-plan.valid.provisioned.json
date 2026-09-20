@@ -1,0 +1,40 @@
+{
+  "name": "material-plan.valid.provisioned",
+  "description": "plan v0.2: an ALREADY-provisioned target (ProjectSettings/ProjectVersion.txt present) plans the exact v0.1 step set - NO provision_project step. The conditional absence is the zero-change law for provisioned projects (assembly.rs derive_plan precedent); plan hashes differ between provisioned and unprovisioned targets over the same source.",
+  "schema": "material-plan.schema.json",
+  "instance": {
+    "schemaVersion": "0.2",
+    "planId": "material-sha256bbcdefgh00000000000000000000000000000",
+    "planHash": "sha256:6666666666666666666666666666666666666666666666666666666666666666",
+    "mode": "local_reusable_vpm",
+    "projectId": "project-1",
+    "projectFingerprint": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+    "source": {
+      "schemaVersion": "0.1",
+      "displayName": "Synthetic Outfit",
+      "sourceFingerprint": "sha256:3333333333333333333333333333333333333333333333333333333333333333",
+      "riskFingerprint": "sha256:4444444444444444444444444444444444444444444444444444444444444444",
+      "packages": [
+        {
+          "relativePath": "pack.unitypackage",
+          "sizeBytes": 128,
+          "sha256": "sha256:5555555555555555555555555555555555555555555555555555555555555555",
+          "assetPaths": ["Assets/Outfit/base.prefab"]
+        }
+      ],
+      "executableRisks": [],
+      "declaredDependencies": []
+    },
+    "riskDecisionRequired": false,
+    "steps": [
+      { "kind": "verify_source", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "create_snapshot", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "import_unity_packages", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "create_local_vpm_package", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "preview_vpm_install", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "apply_vpm_install", "mutatesTargetProject": true, "safeBoundaryAfter": true },
+      { "kind": "validate_minimum_structure", "mutatesTargetProject": false, "safeBoundaryAfter": true },
+      { "kind": "write_build_record", "mutatesTargetProject": false, "safeBoundaryAfter": true }
+    ]
+  }
+}
