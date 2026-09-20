@@ -1,3 +1,4 @@
+import { diagnosticMessage } from "../../i18n/diagnostics.ts";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
@@ -90,7 +91,8 @@ function DetailReport({ detail }: { detail: EvidenceDetailModel }) {
                           {copy.checkSeverity[check.severity as keyof typeof copy.checkSeverity]
                             ?? check.severity}
                         </Badge>
-                        <span>{check.message}</span>
+                        <span>{diagnosticMessage(check.code)}</span>
+                        <details><summary>{strings.diagnostics.original}</summary><p>{check.message}</p></details>
                         <code className="vua-caption vua-text-secondary">{check.code}</code>
                       </li>
                     ))}

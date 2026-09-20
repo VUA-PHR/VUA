@@ -36,19 +36,19 @@ test("suite pins the annotation table to zh-CN (BOARD #8 mock is in effect)", as
   assert.equal(pinned.currentStrings, strings);
 });
 
-test("termLabel renders term + local annotation; bare term when annotation is empty", () => {
-  assert.equal(termLabel("warehouse"), "Warehouse 仓储");
-  assert.equal(termLabel("release"), "Release 出厂");
+test("termLabel uses local names without forcing English prefixes; brands stay unchanged", () => {
+  assert.equal(termLabel("warehouse"), "仓储");
+  assert.equal(termLabel("release"), "出厂");
   assert.equal(termLabel("amf"), "AMF");
   for (const id of Object.keys(TERMS) as TermId[]) {
-    assert.ok(termLabel(id).startsWith(TERMS[id]), `${id} 显示必须以术语原形开头`);
+    assert.equal(termLabel(id), strings.terms[id] || TERMS[id]);
   }
 });
 
 test("termSequence joins stage labels with arrows", () => {
   assert.equal(
     termSequence(["assembly", "production", "inspection"]),
-    "Assembly 装配 → Production 生产 → Inspection 检测",
+    "装配 → 生产 → 检测",
   );
 });
 

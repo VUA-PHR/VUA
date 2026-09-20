@@ -1,3 +1,4 @@
+import { taskErrorMessage } from "../../i18n/diagnostics.ts";
 import { useRef } from "react";
 import { monotonicDone } from "../../app/busy-timing.ts";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -71,7 +72,7 @@ function TaskRow({
           ) : null}
         </span>
         {task.errorText ? (
-          <span className="vua-caption vua-text-secondary">{task.errorText}</span>
+          <span className="vua-caption vua-text-secondary">{taskErrorMessage(task.errorText)} <code>{task.errorText}</code></span>
         ) : null}
         {rejected ? <span className="vua-taskbar__rejected vua-caption">{copy.cancelRejected}</span> : null}
       </button>

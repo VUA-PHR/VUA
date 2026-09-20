@@ -22,3 +22,5 @@ export {
 } from "./locales.ts";
 export { format } from "./format.ts";
 export { TERMS, termLabel, termNote, termSequence, type TermId } from "./terms.ts";
+
+export { formatDateTime } from "./date-time.ts";
