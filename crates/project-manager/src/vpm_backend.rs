@@ -18,12 +18,12 @@ use vua_orchestrator::{
     InstalledPackageV1, InstalledPackageV02, PackageCatalogV01, PackageCatalogV02,
     PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisterCapabilities,
     RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01, RepoCatalogRepoV01,
-    RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, TemplateCapabilities, TemplateEntryV01,
-    VpmBackend, VpmCapabilities,
+    RepoCatalogV01, RepoInfoV01, RepoInfoV02, RepoLifecycleCapabilities, RepoRefreshOutcomeV01,
+    RepoWriteCapabilities, TemplateCapabilities, TemplateEntryV01, VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -161,6 +161,7 @@ impl VrcGetLibBackend {
             let cache_path = environment_root
                 .join("Repos")
                 .join(format!("{}.json", vua_orchestrator::fnv1a_hex(parsed.as_str().as_bytes())));
+            let state_root = environment_root.clone();
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
                 environment_root.into_boxed_path(),
             );
@@ -214,6 +215,15 @@ impl VrcGetLibBackend {
                 .save(&io)
                 .await
                 .map_err(map_repo_write("saving isolated VPM settings"))?;
+            // F4 冻结职责（实现核对切片兑现）：新订阅恒启用——添加成功后以行
+            // 生效 id 清扫 VUA 自有状态文件中的禁用残留（清单 id；无 id 清单按
+            // 库 UserRepoSetting::new 回填惯例以 url 串为行 id）。共享
+            // settings.json 的写入已在上行由库 save 完成，本步绝不二次触碰它。
+            let effective_id = remote_repo
+                .id()
+                .map(str::to_owned)
+                .unwrap_or_else(|| parsed.as_str().to_owned());
+            prune_disabled_entry(&state_root, &effective_id)?;
             Ok(())
         })
     }
@@ -241,6 +251,7 @@ impl VrcGetLibBackend {
         let environment_root = self.environment_root.clone();
         let name = name.to_owned();
         self.runtime.block_on(async move {
+            let state_root = environment_root.clone();
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
                 environment_root.into_boxed_path(),
             );
@@ -256,6 +267,24 @@ impl VrcGetLibBackend {
                 .save(&io)
                 .await
                 .map_err(map_repo_write("saving isolated VPM settings"))?;
+            // F4 冻结职责（实现核对切片兑现）：新订阅恒启用。本地行在添加时
+            // 无 id（库 add_local_repo 恒建 id=None 行），但清单自带 id 会在
+            // 其后集合装载时被库回填为行 id（vpm_settings.rs update_id）——
+            // 残留清扫因此按清单自身 id 键执行：同 id 的陈旧禁用残留若在，
+            // 添加成功即清除，新订阅从启用态开始。id 缺席清单无可清扫键——
+            // id 缺席行本就在启停面可达范围之外（恒 true），无需清扫。
+            let manifest_id: Option<String> = std::fs::read(&manifest)
+                .ok()
+                .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+                .and_then(|value| {
+                    value
+                        .get("id")
+                        .and_then(|id| id.as_str())
+                        .map(str::to_owned)
+                });
+            if let Some(id) = manifest_id {
+                prune_disabled_entry(&state_root, &id)?;
+            }
             Ok(())
         })
     }
@@ -268,6 +297,7 @@ impl VrcGetLibBackend {
         let environment_root = self.environment_root.clone();
         let repo_id = repo_id.to_owned();
         self.runtime.block_on(async move {
+            let state_root = environment_root.clone();
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
                 environment_root.into_boxed_path(),
             );
@@ -277,19 +307,222 @@ impl VrcGetLibBackend {
             let removed =
                 settings.remove_repo(|repo| repo.id() == Some(repo_id.as_str()));
             if removed.is_empty() {
-                return Err(AppErrorV1::new(
-                    error_codes::REPO_NOT_FOUND,
-                    ErrorCategory::Validation,
-                    "errors.vpm.repoNotFound",
-                    "corr-vpm-repo-write",
-                )
-                .with_param("repoId", ParamValue::Text(repo_id)));
+                return Err(repo_not_found(&repo_id));
             }
             settings
                 .save(&io)
                 .await
                 .map_err(map_repo_write("saving isolated VPM settings"))?;
+            // F4 冻结职责（实现核对切片兑现）：移除不留状态残留——被移除行
+            // 携带的每个 id 自 VUA 自有禁用集中清扫（共享 settings.json 的写
+            // 入已由库 save 完成，本步绝不二次触碰它）。
+            for row in &removed {
+                if let Some(id) = row.id() {
+                    prune_disabled_entry(&state_root, id)?;
+                }
+            }
             Ok(())
+        })
+    }
+
+    /// F4 (proposal 027 freeze batch, implementation-verification slice): the
+    /// enable/disable write pair over the VUA-OWNED state file
+    /// (`<environment_root>/.vua/vpm-repo-state.json`, the storage ruling).
+    /// The shared settings.json is only ever READ here — to verify the
+    /// repoId exists in the subscription world (the not-found fact); the
+    /// toggle itself never writes it, never touches userRepos[i], never adds
+    /// a settings.json top-level key. Unknown repoId answers the REUSED
+    /// `vua.vpm.repo_not_found`; state-file read/write failures answer the
+    /// REUSED `vua.vpm.repo_write_failed` (zero new codes — the freeze
+    /// transports honest faces, it mints no code).
+    pub fn enable_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        self.set_repo_enabled(repo_id, true)
+    }
+
+    /// F4: see [`VrcGetLibBackend::enable_repo`]. The disabled row STAYS
+    /// subscribed and listed (the packages-repos v0.2 `enabled` bit projects
+    /// the state); its packages leave the package-collection world only at
+    /// the read/judgment faces that honor the state bit.
+    pub fn disable_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        self.set_repo_enabled(repo_id, false)
+    }
+
+    fn set_repo_enabled(&self, repo_id: &str, enabled: bool) -> Result<(), AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let repo_id = repo_id.to_owned();
+        self.runtime.block_on(async move {
+            let state_path = repo_state_path(&environment_root);
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            // settings.json read-only: the id-existence check rides the
+            // library's own settings load (the shared file carries shared
+            // facts; the toggle state stays in VUA's own file below).
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_repo_write("loading isolated VPM settings"))?;
+            if !settings
+                .get_user_repos()
+                .iter()
+                .any(|repo| repo.id() == Some(repo_id.as_str()))
+            {
+                return Err(repo_not_found(&repo_id));
+            }
+            let mut disabled = load_disabled_set(&state_path)
+                .map_err(|reason| repo_write_failed_text("reading the VUA repository state file", reason))?;
+            let changed = if enabled {
+                disabled.remove(&repo_id)
+            } else {
+                disabled.insert(repo_id)
+            };
+            if changed {
+                write_disabled_set(&state_path, &disabled).map_err(|error| {
+                    repo_write_failed_text("writing the VUA repository state file", error)
+                })?;
+            }
+            Ok(())
+        })
+    }
+
+    /// F4: the etag-conditional cache refresh of ONE subscription row's OWN
+    /// cache file (`userRepos[i].localPath` — the exact write vrc-get itself
+    /// performs, same-origin with VCC/vrc-get; the official/curated
+    /// predefined caches have no repoId and are unreachable). The
+    /// implementation mirrors the library's own per-row update arm
+    /// (repo_holder.rs `update_cache`) verbatim:
+    /// - cache doc present → download from the SUBSCRIPTION url (the
+    ///   library's load-time `set_url` law) with the doc's own headers and
+    ///   its `vrc-get.etag`;
+    /// - cache doc absent/unparseable → full download (no etag) with the
+    ///   subscription row's headers;
+    /// - no effective url (a local-directory row) → the library's own arm is
+    ///   a no-op (`Ok(false)`, repo_holder.rs: the row has no remote to
+    ///   fetch) — answered as `cache_updated = false` ("no new data"), never
+    ///   an error, never a write;
+    /// - HTTP 304 with etag → `cache_updated = false`, zero writes;
+    /// - new content → the refreshed document is written to the row's own
+    ///   localPath with the new etag → `cache_updated = true`.
+    ///
+    /// BOTH success arms are the frozen outcome pair; "no new data" is an
+    /// outcome never an error. Refresh never touches the enable/disable
+    /// state file and never writes settings.json. Unknown repoId answers the
+    /// REUSED `vua.vpm.repo_not_found`; the network segment failing answers
+    /// the REUSED `vua.vpm.repo_fetch_failed`; cache write-back failures
+    /// answer the REUSED `vua.vpm.repo_write_failed` (zero new codes).
+    pub fn refresh_repo(&self, repo_id: &str) -> Result<RepoRefreshOutcomeV01, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let repo_id = repo_id.to_owned();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_repo_write("loading isolated VPM settings"))?;
+            let row = settings
+                .get_user_repos()
+                .iter()
+                .find(|repo| repo.id() == Some(repo_id.as_str()))
+                .ok_or_else(|| repo_not_found(&repo_id))?;
+            let cache_path: PathBuf = row.local_path().to_owned();
+            let subscription_url = row.url().cloned();
+            let subscription_headers = row.headers().clone();
+
+            // load_repo_from_cache 镜像：缓存文档存在且可解析 → Loaded 臂
+            // （url 行的下载 url＝订阅 url——库装载 set_url 律；headers 取
+            // 文档自身）；文档缺席/不可解析 → NotDownloaded 臂（订阅 url＋订
+            // 阅 headers、无 etag）。etag 载体＝缓存文档自身 `vrc-get.etag`
+            // （LocalCachedRepository 的 vrc_get 字段 pub(crate) 无访问器，
+            // 从原始 JSON 同源读取；空串按库 serde skip 语义视同无 etag）。
+            let bytes = std::fs::read(&cache_path).ok();
+            let loaded = bytes.as_deref().and_then(|doc_bytes| {
+                serde_json::from_slice::<vrc_get_vpm::repository::LocalCachedRepository>(
+                    doc_bytes,
+                )
+                .ok()
+            });
+            let current_etag: Option<String> = bytes
+                .as_deref()
+                .and_then(|doc_bytes| serde_json::from_slice::<serde_json::Value>(doc_bytes).ok())
+                .and_then(|value| {
+                    value
+                        .get("vrc-get")
+                        .and_then(|meta| meta.get("etag"))
+                        .and_then(|etag| etag.as_str())
+                        .map(str::to_owned)
+                })
+                .filter(|etag| !etag.is_empty());
+            let (url, headers, current_etag) = match &loaded {
+                Some(doc) => (
+                    subscription_url.clone().or_else(|| doc.url().cloned()),
+                    doc.headers().clone(),
+                    current_etag,
+                ),
+                None => (subscription_url, subscription_headers, None),
+            };
+            let Some(url) = url else {
+                // 无有效 url（本地目录行）：库自身 update 臂对该行零动作
+                // （无远端可取）——诚实两臂结果的「无新数据」臂，零写零错。
+                return Ok(RepoRefreshOutcomeV01 {
+                    cache_updated: false,
+                });
+            };
+            match vrc_get_vpm::repository::RemoteRepository::download_with_etag(
+                &http,
+                &url,
+                &headers,
+                current_etag.as_deref(),
+            )
+            .await
+            {
+                // etag 未变（304）：已是最新是刷新结果，不是错误；零写入。
+                Ok(None) => Ok(RepoRefreshOutcomeV01 {
+                    cache_updated: false,
+                }),
+                Ok(Some((remote_repo, new_etag))) => {
+                    // set_repo/set_etag 为 pub(crate)：以库公共 Serialize 形态
+                    // 重建同一文档（下载文档恒带 id/url，set_repo 的继承臂无
+                    // 效果差），再于序列化产物上注入 vrc-get.etag——写回字节
+                    // 与库自身 save 同形（缓存文档自嵌 repo 对象＋vrc-get 元
+                    // 数据，实机缓存文件形态逐字段同构）。
+                    let new_doc = vrc_get_vpm::repository::LocalCachedRepository::new(
+                        remote_repo,
+                        headers,
+                    );
+                    let mut value = serde_json::to_value(&new_doc).map_err(|error| {
+                        repo_write_failed_text("serializing the refreshed cache", error)
+                    })?;
+                    if let Some(etag) = new_etag.as_ref() {
+                        value["vrc-get"] = serde_json::json!({ "etag": etag });
+                    }
+                    let mut doc_bytes = serde_json::to_vec_pretty(&value).map_err(|error| {
+                        repo_write_failed_text("serializing the refreshed cache", error)
+                    })?;
+                    doc_bytes.push(b'\n');
+                    // The library pre-creates the Repos/ cache folder at
+                    // collection-load time (repo_holder.rs load_cache); the
+                    // per-row mirror creates the cache path's own parent so a
+                    // never-loaded environment still receives its first cache.
+                    if let Some(parent) = cache_path.parent() {
+                        std::fs::create_dir_all(parent).map_err(|error| {
+                            repo_write_failed_text(
+                                "creating the repository cache directory",
+                                error,
+                            )
+                        })?;
+                    }
+                    std::fs::write(&cache_path, doc_bytes).map_err(|error| {
+                        repo_write_failed_text("writing the refreshed repository cache", error)
+                    })?;
+                    Ok(RepoRefreshOutcomeV01 {
+                        cache_updated: true,
+                    })
+                }
+                Err(error) => Err(repo_fetch_failed(format!(
+                    "refreshing the repository cache: {error}"
+                ))),
+            }
         })
     }
 
@@ -400,10 +633,7 @@ fn map_environment_io(context: &'static str) -> impl Fn(std::io::Error) -> AppEr
 /// cached = that file exists and parses as a JSON object). false = subscribed
 /// but never refreshed: its own honest listed state, never an empty catalog.
 fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
-    let cached = std::fs::read(repo.local_path())
-        .ok()
-        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
-        .is_some_and(|value| value.is_object());
+    let cached = repo_cached_fact(repo.local_path());
     RepoInfoV01 {
         repo_id: repo.id().map(str::to_owned),
         name: repo.name().map(str::to_owned),
@@ -411,6 +641,130 @@ fn repo_info_row(repo: &vrc_get_vpm::UserRepoSetting) -> RepoInfoV01 {
         local_path: Some(repo.local_path().to_string_lossy().into_owned()),
         cached,
     }
+}
+
+/// The per-repo cache-hit fact (025 冻结批 `cached` 键)：缓存文件存在且可解析
+/// 为 JSON 对象即命中。库自身的 Loaded/NotDownloaded 判定同源（local_path 即
+/// 缓存路径），订阅面与 v0.2 状态面共用同一事实源。
+fn repo_cached_fact(cache_path: &Path) -> bool {
+    fs::read(cache_path)
+        .ok()
+        .and_then(|bytes| serde_json::from_slice::<serde_json::Value>(&bytes).ok())
+        .is_some_and(|value| value.is_object())
+}
+
+// --- 027 F4: VUA-owned repository enable/disable state storage ---
+//
+// 存储裁决（027 F4 冻结批词面权威，packages-ops v0.6 协议本「存储裁决」节）：
+// 禁用集住 VUA 自有存储 `<environment_root>/.vua/vpm-repo-state.json`——
+// 绝不入 userRepos[i] 元素（vrc-get 五键闭集，元素内未知键被库自身 save 剥
+// 除）、绝不立 settings.json 顶层新键（VCC/ALCOM 写方对未知顶层键容忍未经
+// 真机核实；共享文件只载共享事实）。文件缺席＝全部启用（诚实空态，非错误）。
+// 持久化格式按文档纪律携显式机器可读版本（schemaVersion=1；未知键容忍、
+// 缺版本键即拒——版本增量机器可检测）。
+
+/// VUA 状态目录（`.vua` 惯例——真机家族清单 027 s6(a) 证实现根无该条目，
+/// 与 Logs/、Updater/ 等工具自有目录同存的共存模式）。
+const VUA_STATE_DIR: &str = ".vua";
+const VUA_REPO_STATE_FILE: &str = "vpm-repo-state.json";
+const VUA_REPO_STATE_SCHEMA_VERSION: i64 = 1;
+
+/// 启停状态文件路径：`<environment_root>/.vua/vpm-repo-state.json`（冻结
+/// 词面钉死的唯一存储位）。
+fn repo_state_path(environment_root: &Path) -> PathBuf {
+    environment_root
+        .join(VUA_STATE_DIR)
+        .join(VUA_REPO_STATE_FILE)
+}
+
+/// The persisted VUA-owned state document (schemaVersion 1): the disable set
+/// keyed by repoId. Absent file = the all-enabled honest empty state.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RepoStateFileV1 {
+    schema_version: i64,
+    disabled_repo_ids: Vec<String>,
+}
+
+/// Reads the disable set. Absent file = the honest empty set (all enabled);
+/// a present-but-unreadable or version-mismatched file is a refusal (the
+/// enabled bit is REQUIRED per row — without the state it cannot be
+/// projected truthfully, and guessing is never an option). The reason string
+/// carries the failure fact; the caller maps it onto its own face's reused
+/// code (write faces: `repo_write_failed`; the v0.2 read face:
+/// `backend_unavailable`).
+fn load_disabled_set(state_path: &Path) -> Result<BTreeSet<String>, String> {
+    let bytes = match fs::read(state_path) {
+        Ok(bytes) => bytes,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(BTreeSet::new()),
+        Err(error) => return Err(format!("reading the state file failed: {error}")),
+    };
+    let document: RepoStateFileV1 = serde_json::from_slice(&bytes)
+        .map_err(|error| format!("parsing the state file failed: {error}"))?;
+    if document.schema_version != VUA_REPO_STATE_SCHEMA_VERSION {
+        return Err(format!(
+            "unsupported state schema version {} (expected {VUA_REPO_STATE_SCHEMA_VERSION})",
+            document.schema_version
+        ));
+    }
+    Ok(document.disabled_repo_ids.into_iter().collect())
+}
+
+/// Writes the disable set (the ONLY writer of the VUA-owned file; settings.json
+/// is never touched on this path — the storage ruling's whole point). The
+/// `.vua` directory is created on demand.
+fn write_disabled_set(state_path: &Path, disabled: &BTreeSet<String>) -> std::io::Result<()> {
+    if let Some(parent) = state_path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let document = RepoStateFileV1 {
+        schema_version: VUA_REPO_STATE_SCHEMA_VERSION,
+        disabled_repo_ids: disabled.iter().cloned().collect(),
+    };
+    let mut bytes = serde_json::to_vec_pretty(&document)?;
+    bytes.push(b'\n');
+    fs::write(state_path, bytes)
+}
+
+/// Drops one repoId from the disable set, writing only when something was
+/// actually removed (the add/remove faces' F4 frozen duty: a newly added
+/// subscription row is always enabled — adds reset stale state — and a
+/// removed row leaves no state residue). State-write failures answer the
+/// faces' own reused `repo_write_failed` (zero new codes).
+fn prune_disabled_entry(environment_root: &Path, repo_id: &str) -> Result<(), AppErrorV1> {
+    let state_path = repo_state_path(environment_root);
+    let mut disabled = load_disabled_set(&state_path).map_err(|reason| {
+        repo_write_failed_text("reading the VUA repository state file", &reason)
+    })?;
+    if disabled.remove(repo_id) {
+        write_disabled_set(&state_path, &disabled)
+            .map_err(|error| repo_write_failed_text("writing the VUA repository state file", error))?;
+    }
+    Ok(())
+}
+
+/// A4：仓库写面族共用错误构造（读/写原因以文本携带——serde_json 错误等非
+/// io 错误与 io 错误同形映射，复用码零新立）。
+fn repo_write_failed_text(context: &str, reason: impl std::fmt::Display) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::REPO_WRITE_FAILED,
+        ErrorCategory::ExternalFailure,
+        "errors.vpm.repoWriteFailed",
+        "corr-vpm-repo-write",
+    )
+    .with_param("reason", ParamValue::Text(format!("{context}: {reason}")))
+}
+
+/// A4/F4 共用：词表外 repoId 的诚实拒绝（复用码，零新立）。行存在性以订阅
+/// 世界（settings userRepos 的 id）为准。
+fn repo_not_found(repo_id: &str) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::REPO_NOT_FOUND,
+        ErrorCategory::Validation,
+        "errors.vpm.repoNotFound",
+        "corr-vpm-repo-write",
+    )
+    .with_param("repoId", ParamValue::Text(repo_id.to_owned()))
 }
 
 /// 027 F2（实现核对切片）：预定义两仓的订阅 url（库私有常量逐字镜像——
@@ -606,6 +960,21 @@ impl VpmBackend for VrcGetLibBackend {
         }
     }
 
+    fn repo_lifecycle_capabilities(&self) -> RepoLifecycleCapabilities {
+        // 027 F4 冻结批（实现核对切片）：恰在实现 enable_repo/disable_repo/
+        // refresh_repo 三方法时覆写默认 declared-none（025/026/027 catalog/
+        // register/repo-write/repo-catalog 同律，ORC-DEV-004 无实现不预留）。
+        // 三独立位如实声明（A4 三位律：门按方法绝不按面）——覆写即 served 行
+        // `packages.repoLifecycleOps` 翻转 available（此前按默认 declared-none
+        // 如实维持不可用）。`VccCliBackend` 不覆写——CLI 无生命周期面如实假，
+        // 缺席臂零改动。
+        RepoLifecycleCapabilities {
+            enable_repo: true,
+            disable_repo: true,
+            refresh_repo: true,
+        }
+    }
+
     fn template_capabilities(&self) -> TemplateCapabilities {
         // 027 F5 冻结批（实现核对切片）：恰在实现 `list_templates` 时覆写
         // 默认 declared-none（025/026/027 catalog/register/repo-write/
@@ -634,6 +1003,18 @@ impl VpmBackend for VrcGetLibBackend {
 
     fn remove_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
         VrcGetLibBackend::remove_repo(self, repo_id)
+    }
+
+    fn enable_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::enable_repo(self, repo_id)
+    }
+
+    fn disable_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
+        VrcGetLibBackend::disable_repo(self, repo_id)
+    }
+
+    fn refresh_repo(&self, repo_id: &str) -> Result<RepoRefreshOutcomeV01, AppErrorV1> {
+        VrcGetLibBackend::refresh_repo(self, repo_id)
     }
 
     fn list_packages(&self, project: &ProjectRef) -> Result<Vec<InstalledPackageV1>, AppErrorV1> {
@@ -928,6 +1309,70 @@ impl VpmBackend for VrcGetLibBackend {
             // 逐字投影，行序＝配置顺序（不发明排序键）；逐行携带 cached 缓存
             // 命中事实。本面只读缓存、零网络（缓存命中判定），无在线刷新分支。
             Ok(settings.get_user_repos().iter().map(repo_info_row).collect())
+        })
+    }
+
+    fn repos_v02(&self) -> bool {
+        // 027 F4 冻结批（实现核对切片）：恰在实现 `list_repos_v02` 时覆写默认
+        // false（catalog_v02/query_v02 加法双版本协商同律，ORC-DEV-004：无实
+        // 现不预留）——覆写即 wire 路由对本后端以 `vua.packages-repos/v0.2` 族
+        // 应答（族常量盖戳属路由事实，P1 纪律）。`VccCliBackend` 不覆写——
+        // CLI 后端维持冻结 v0.1 族应答，协商缺席臂零改动。
+        true
+    }
+
+    fn list_repos_v02(&self) -> Result<Vec<RepoInfoV02>, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        self.runtime.block_on(async move {
+            let state_path = repo_state_path(&environment_root);
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 状态位事实源＝VUA 自有状态文件（v0.2 根事实节：本面只读——
+            // 绝不写状态文件、绝不写 settings.json、绝不写共享缓存）。文件缺
+            // 席＝全启用（诚实空态）；文件不可读/版本不符＝拒绝整表（enabled
+            // 是每行必带事实，无状态即无法如实投影——绝不猜测），错误面照
+            // list_repos 既有 io-leg 纪律（backend_unavailable 复用码）。
+            let disabled = load_disabled_set(&state_path).map_err(
+                |reason| {
+                    AppErrorV1::new(
+                        error_codes::BACKEND_UNAVAILABLE,
+                        ErrorCategory::Unavailable,
+                        "errors.vpm.backendUnavailable",
+                        "corr-vpm-catalog",
+                    )
+                    .with_param(
+                        "reason",
+                        ParamValue::Text(format!("reading the VUA repository state file: {reason}")),
+                    )
+                },
+            )?;
+            // 行闭集＝v0.1 五键逐字投影（repo_info_row 同源事实）＋恰一个新
+            // REQUIRED 事实 enabled：id 缺席行恒 true（id 即行柄，启停面可达
+            // 范围之外——A4 removeRepo 同边界）；其余行 enabled＝不在禁用集。
+            // 行序＝订阅面自身顺序（配置事实 verbatim），不发明排序键。
+            Ok(settings
+                .get_user_repos()
+                .iter()
+                .map(|repo| {
+                    let repo_id = repo.id().map(str::to_owned);
+                    let enabled = match &repo_id {
+                        Some(id) => !disabled.contains(id),
+                        None => true,
+                    };
+                    RepoInfoV02 {
+                        repo_id,
+                        name: repo.name().map(str::to_owned),
+                        url: repo.url().map(|url| url.to_string()),
+                        local_path: Some(repo.local_path().to_string_lossy().into_owned()),
+                        cached: repo_cached_fact(repo.local_path()),
+                        enabled,
+                    }
+                })
+                .collect())
         })
     }
 
