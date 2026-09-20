@@ -651,6 +651,7 @@ rolled_back: "已回滚",
       not_recoverable: "该运行当前不在可恢复状态。",
       invalid_state: "当前状态不接受该操作。",
       unknown_ref: "引用的检查、计划或任务已不存在。",
+      unknown_material_source: "素材选择已失效,请重新选择。",
     },
     states: {
       emptyTitle: "尚无生产运行",

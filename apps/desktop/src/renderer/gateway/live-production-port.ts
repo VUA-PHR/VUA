@@ -157,6 +157,9 @@ function rejectReasonFor(error: GatewayClientError): ProductionRejectReason | "u
     // v0.2:领域身份存在性统一词(record_not_found);任务面未知引用同义
     "vua.production.record_not_found": "unknown_ref",
     "vua.task.not_found": "unknown_ref",
+    // W25 真机实测(2026-09-20):Kernel 重启后素材登记失存,渲染层残留
+    // materialRefId 成死引用——专用拒绝原因,不再误报「生产能力未连接」
+    "vua.material.source_unknown": "unknown_material_source",
   };
   return map[error.error.code] ?? "unavailable";
 }

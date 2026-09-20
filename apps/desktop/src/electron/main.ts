@@ -21,6 +21,11 @@ import {
   writeEditorSettingsToFile,
 } from "./editor-settings.js";
 import {
+  readMaterialSourcesFromFile,
+  writeMaterialSourcesToFile,
+  type MaterialSourceEntryV1,
+} from "./material-source-store.js";
+import {
   OVERLAY_SURFACE_PARAM,
   OVERLAY_WINDOW_HEIGHT,
   OVERLAY_WINDOW_LEVEL,
@@ -56,9 +61,43 @@ process.on("uncaughtException", (error) => {
 });
 
 /** Kernel 侧素材来源映射(refId → 真实路径):Renderer 只见不透明 refId;
- *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组 */
-const materialSources = new Map<string, { path: string; displayName: string }>();
+ *  生产命令 live 接线后,由 Kernel 在 Gateway → 应用契约翻译时补全四元组。
+ *  持久化(W25 真机实测易失缺陷修复 2026-09-20):登记落盘 userData 下
+ *  material-sources.json,启动载入、注册即写盘——此前仅存内存,应用重启
+ *  即失,渲染层残留 refId 成死引用(详见 material-source-store.ts)。 */
+const materialSources = new Map<string, MaterialSourceEntryV1>();
 let materialSourceSequence = 0;
+
+/** 素材登记落盘路径:userData 内,含用户本机路径不入 git(操作者红线,
+ *  无脱敏设计) */
+function materialSourcesPath(): string {
+  return path.join(app.getPath("userData"), "material-sources.json");
+}
+
+/** 注册面写盘:内存为准落盘(全量覆写,原子写);写失败即本次拾取失败
+ *  (handler 拒绝,渲染层如实呈现)——登记不能只报成功不留盘,否则同一
+ *  易失缺陷静默回归 */
+function persistMaterialSources(): void {
+  writeMaterialSourcesToFile(materialSourcesPath(), materialSources, new Date().toISOString());
+}
+
+/** 启动载入(进程 ready 后、IPC 注册前):落盘事实为准;损坏文件已由
+ *  读取侧归档并按空登记,诊断通道留痕(诚实可见,不静默) */
+function loadMaterialSourcesFromDisk(): void {
+  const loaded = readMaterialSourcesFromFile(materialSourcesPath());
+  if (loaded.kind === "recovered") {
+    process.stderr.write(`${JSON.stringify({
+      channel: "material-sources",
+      event: "persisted-file-recovered",
+      reason: loaded.reason,
+      archivedTo: loaded.archivedTo,
+    })}\n`);
+  }
+  if (loaded.kind !== "loaded") return;
+  materialSources.clear();
+  for (const [refId, entry] of loaded.sources) materialSources.set(refId, entry);
+  materialSourceSequence = loaded.sequence;
+}
 
 /**
  * 生产上下文(amf-production v0.2,M3 纵向):projectRoot/artifactOutputRoot/
@@ -213,6 +252,9 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     const refId = `mat-${materialSourceSequence}-${crypto.randomUUID()}`;
     const displayName = path.basename(pickedPath);
     materialSources.set(refId, { path: pickedPath, displayName });
+    // 注册即写盘(W25 易失缺陷修复):重启后登记仍在;写失败向上抛,
+    // 拾取如实失败(渲染层可发现),不留「成功但不持久」的静默缺口
+    persistMaterialSources();
     return { refId, displayName };
   });
 
@@ -549,6 +591,9 @@ async function createWindow(): Promise<void> {
 }
 
 app.whenReady().then(async () => {
+  // 素材登记持久化(W25 易失缺陷修复):先载入落盘事实再开放 IPC 面,
+  // 保证首个渲染层请求可见的登记与上一次会话一致
+  loadMaterialSourcesFromDisk();
   provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
   providerHandshake = await provider.start();
   provider.subscribe((event) => {
