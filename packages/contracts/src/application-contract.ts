@@ -774,6 +774,45 @@ export interface PackagesRepoCatalogResultV01 {
   readonly cacheSourced: boolean;
 }
 
+/* ---- 027 F5 读面(packages-templates v0.1,核心冻结批 2026-09-20)。
+ *  模板枚举纯读面:枚举事实源 = 库路径默认解析腿已钉两目录根
+ *  (VRCTemplates 先、Templates 后——create_from_template 解析序;
+ *  vrc-get-vpm 0.0.16 无模板枚举 API,目录扫描即枚举——环境考证 §4
+ *  枚举形态裁决:目录扫描枚举 vs 列非目标,裁决前者,立案权威 U14
+ *  裁决 (3) + 027 核心表态 5,零网络面无 cacheSourced——恒常量信息
+ *  字段不是事实,repos v0.1 同律)。create 三候选解析的显式路径腿是
+ *  逐次参数形态非目录根,不入枚举世界;同名模板两根都在 = 枚举一次,
+ *  落在创建解析序会选的根——枚举绝不偏离 create 实际复制之物 */
+/** packages.listTemplates:模板条目枚举读面(params 空闭集 = 环境级
+ *  配置面,非 per-project;packages.listRepos 零参数先例) */
+export interface PackagesListTemplatesQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "packages.listTemplates";
+  readonly params: Record<string, never>;
+}
+
+/** 模板条目行:id = 模板目录名(传给 packages.createProject template
+ *  参数的机器标识);name = id 的冻结同值显示投影(v0.1 无独立显示名
+ *  事实源,投影逐字声明同一事实,消费端绝不虚构更友好的标签;同值
+ *  锁由核心消费测试钉——JSON Schema draft-07 无法跨键表达)。
+ *  description/sourceRoot 刻意缺席:前者无 v0.1 生产者(模板目录元
+ *  数据文件形态未考证——W25 真机顺带项,ORC-DEV-004 无实现不预留,
+ *  P1 displayName 先例),后者无消费需求(哪根服务某 id 是 create 的
+ *  冻结解析序非逐行事实)——发明即 schema 非法,负例向量钉死 */
+export interface PackagesTemplateItemV01 {
+  readonly id: string;
+  readonly name: string;
+}
+
+export interface PackagesListTemplatesResultV01 {
+  readonly schemaVersion: "vua.packages-templates/v0.1";
+  /** id 升序 = 冻结呈现事实(裸目录扫描序跨平台不稳定,呈现事实保
+   *  桌面下拉确定性消费——F3 packageId 升序先例);空数组 = 诚实零
+   *  模板应答(目录根缺失是事实非错误,R4 先例) */
+  readonly templates: readonly PackagesTemplateItemV01[];
+}
+
+
 /* ---- 026 A1 写面(packages-ops v0.1,核心冻结批 2026-09-19;表态程序
  *  收敛:核心裁决 82a39c4 五点／环境库面考证 4a0f02f 实现零缺口／桌面
  *  表态 93752d5)。移除面双方法二段动词:packages.previewRemove = 同步
@@ -2222,6 +2261,7 @@ export type ApplicationRequestV01 =
   | PackagesListReposQueryV01
   | PackagesPackageCatalogQueryV01
   | PackagesRepoCatalogQueryV01
+  | PackagesListTemplatesQueryV01
   | PackagesPreviewRemoveQueryV01
   | PackagesApplyRemoveCommandV01
   | PackagesPreviewInstallQueryV02
@@ -2708,6 +2748,12 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     if (!Array.isArray(packageIds) || packageIds.length === 0) return false;
     return packageIds.every((id) => typeof id === "string" && id.length > 0)
       && new Set(packageIds).size === packageIds.length;
+  }
+  // 027 F5 读面(核心冻结批 2026-09-20):listTemplates = 空闭集(环境
+  // 级配置面,任何键 = 词表外形状违反)
+  if (value.kind === "query" && value.method === "packages.listTemplates") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, []);
   }
   // 026 A1 写面(核心冻结批 2026-09-19):previewRemove = 双键闭集
   // (projectPath 013 身份 + packageIds 显式非空闭列,无通配);
