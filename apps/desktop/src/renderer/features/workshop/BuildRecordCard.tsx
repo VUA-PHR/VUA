@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import { format, strings } from "../../i18n/index.ts";
@@ -118,7 +119,7 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
         </dl>
       </section>
       <p className="vua-caption vua-text-secondary">
-        {format(copy.finishedAt, { time: record.finishedAt })}
+        {format(copy.finishedAt, { time: formatDateTime(record.finishedAt) })}
       </p>
     </Card>
   );

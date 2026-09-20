@@ -3,7 +3,7 @@
  * 读面消费批,2026-09-17;025 v0.2 增量消费更新批,2026-09-17;026 A1
  * 移除写面消费批,2026-09-19;026 A2 安装/升级写面消费批,2026-09-19;
  * 026 A3 本地包注册写面消费批,2026-09-19;027 F2 仓库级包目录读面消费
- * 批,2026-09-20):
+ * 批,2026-09-20;027 F5 模板条目枚举读面消费批,2026-09-20):
  * 经 Desktop Gateway 消费 packages-query v0.1(单方法只读
  * packages.listInstalled)、025 P2 双族 v0.1(packages.listRepos 仓库订
  * 阅清单 + packages.packageCatalog 单包目录按需查询)、packages-ops v0.1
@@ -38,10 +38,15 @@
  *   行(026 A4:一行服务 addRemoteRepo/addLocalRepo/removeRepo 三方法,
  *   repo_write_capabilities 三独立位门控——任一位声明即 available,
  *   wire 门按方法绝不按面,同翻转纪律;既有键语义与来源零变更);
+ *   templates = packages.templatesOps 行(027 F5:一行服务 listTemplates,
+ *   template_capabilities().list_templates 门控,default declared-none
+ *   翻转前如实不可用,false = 模板下拉不渲染、创建表单回落手填,同翻转
+ *   纪律;既有键语义与来源零变更);
  * - 响应窄化按三键纪律:schemaVersion 信封("0.1"/"0.2" 各随其行)+
  *   operation + result(本体族常量 vua.packages-installed/v0.1、
  *   vua.packages-repos/v0.1、vua.packages-catalog/v0.1、
- *   vua.packages-ops/v0.1、vua.packages-ops/v0.2、vua.packages-ops/v0.4)
+ *   vua.packages-templates/v0.1、vua.packages-ops/v0.1、
+ *   vua.packages-ops/v0.2、vua.packages-ops/v0.4)
  *   组合定位,零字段猜测,
  *   行闭集校验(多余键/缺键/类型不符 = 形状不符诚实失败);行序为服务端
  *   冻结事实(installed 按 packageId 升序、repos 按订阅面自身顺序),
@@ -60,6 +65,7 @@ import type {
   PackagesInstallReceiptV02,
   PackagesListInstalledRequestV1,
   PackagesListReposRequestV1,
+  PackagesListTemplatesRequestV1,
   PackagesLocalRepoAddedV04,
   PackagesOpsRejectedV02,
   PackagesPackageCatalogRequestV1,
@@ -94,6 +100,7 @@ import type {
   RepoCatalogFactsV01,
   RepoCatalogPackageRowV01,
   RepoCatalogRepoRowV01,
+  TemplatesFactsV01,
   PackagesRegisterApplyOutcome,
   PackagesRemoveApplyOutcome,
   PackagesRepoAddApplyOutcome,
@@ -129,6 +136,10 @@ const CREATE_OPS_OPERATION_ID = "packages.createOps";
  * registerOps/repoOps/createOps 一行先例;default declared-none,
  * 环境覆写置真前如实 unavailable) */
 const REPO_CATALOG_OPERATION_ID = "packages.repoCatalogOps";
+/** F5 模板条目枚举读面 served 行(027 接线批申报;一行一方法,
+ * template_capabilities().list_templates 门控——repoCatalogOps 一行
+ * 先例;default declared-none,环境覆写置真前如实 unavailable) */
+const TEMPLATES_OPERATION_ID = "packages.templatesOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
 /** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
@@ -385,6 +396,26 @@ function isPackagesInstalledResult(value: Record<string, unknown>): boolean {
 function isPackagesReposResult(value: Record<string, unknown>): boolean {
   if (value.schemaVersion !== "vua.packages-repos/v0.1") return false;
   return Array.isArray(value.repos) && value.repos.every(isRepoInfoRow);
+}
+
+/** 模板条目行:id = 非空机器标识(createProject template 参数原样传递),
+ *  name = 非空显示投影(wire 层 name===id 同值锁由核心消费测试钉,桌面
+ *  守卫只验诚实可显示性,不重审同值事实);description/sourceRoot 刻意
+ *  缺席——多余键 = 形状不符(发明即非法,冻结负例向量钉死) */
+function isTemplateItemRow(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  return Object.keys(value).length === 2
+    && typeof value.id === "string"
+    && value.id.length > 0
+    && typeof value.name === "string"
+    && value.name.length > 0;
+}
+
+/** result 本体:schemaVersion 族常量 + templates 行数组(空数组 = 诚实
+ *  零模板应答;零网络面无 cacheSourced——恒常量信息字段不是事实) */
+function isPackagesTemplatesResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== "vua.packages-templates/v0.1") return false;
+  return Array.isArray(value.templates) && value.templates.every(isTemplateItemRow);
 }
 
 /** result 本体:schemaVersion 族常量 + 冻结七键目录事实(v0.1 冻结词面,
@@ -859,12 +890,13 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取九行——packages.query(installed)/packages.listRepos(repos)/
+   * 一次取十行——packages.query(installed)/packages.listRepos(repos)/
    * packages.packageCatalog(catalog)/packages.removeOps(changes)/
    * packages.installOps(installs)/packages.registerOps(registers)/
    * packages.repoOps(repoWrites)/packages.createOps(creates)/
-   * packages.repoCatalogOps(repoCatalog,027 F2);行缺席或 availability
-   * 非 available = 该区块诚实不可渲染(渲染层不伪造)。
+   * packages.repoCatalogOps(repoCatalog,027 F2)/packages.templatesOps
+   * (templates,027 F5);行缺席或 availability 非 available = 该区块
+   * 诚实不可渲染(渲染层不伪造)。
    */
   const readCapabilityRows = async (): Promise<{
     installed: boolean;
@@ -876,6 +908,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     repoWrites: boolean;
     creates: boolean;
     repoCatalog: boolean;
+    templates: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -904,6 +937,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       repoWrites: availability(REPO_OPS_OPERATION_ID),
       creates: availability(CREATE_OPS_OPERATION_ID),
       repoCatalog: availability(REPO_CATALOG_OPERATION_ID),
+      templates: availability(TEMPLATES_OPERATION_ID),
     };
   };
 
@@ -913,6 +947,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       | PackagesListReposRequestV1
       | PackagesPackageCatalogRequestV1
       | PackagesRepoCatalogRequestV1
+      | PackagesListTemplatesRequestV1
       | PackagesPreviewRemoveRequestV1
       | PackagesPreviewInstallRequestV1,
     operation: string,
@@ -1032,6 +1067,25 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     if (outcome.kind !== "ok") return outcome;
     const { schemaVersion: _familyConst, ...facts } = outcome.result;
     return { kind: "ok", result: facts as unknown as RepoCatalogFactsV01 };
+  };
+
+  /** F5 模板条目枚举事实(027 冻结词面):params 空闭集(环境级配置面,
+   *  listRepos 空闭集先例,任何键 = 词表外形状违反);零网络无
+   *  cacheSourced(恒常量信息字段不是事实,repos v0.1 同律);typed 码
+   *  照原词(unavailable 缺席臂折叠为 unavailable,其余 failed 照原词
+   *  上呈);族常量在窄化校验时消费,剥信封键后返回事实文档,盖戳辨词
+   *  面永不猜测;行序 = 服务端冻结 id 升序呈现事实,客户端不重排 */
+  const listTemplatesRaw = async (): Promise<TypedOutcome<TemplatesFactsV01>> => {
+    const request: PackagesListTemplatesRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.listTemplates",
+      params: {},
+    };
+    const outcome = await invokeTyped(request, "packages.listTemplates", "0.1", isPackagesTemplatesResult);
+    if (outcome.kind !== "ok") return outcome;
+    const { schemaVersion: _familyConst, ...facts } = outcome.result;
+    return { kind: "ok", result: facts as unknown as TemplatesFactsV01 };
   };
 
   /** A1 确认链第一步(026 冻结词面):同步只读预览,永不变更状态;
@@ -1518,6 +1572,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           repoWrites: capabilityRows.repoWrites,
           creates: capabilityRows.creates,
           repoCatalog: capabilityRows.repoCatalog,
+          templates: capabilityRows.templates,
         },
         projectPath: null,
         installedPackages: [],
@@ -1541,6 +1596,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         repoWrites: capabilityRows.repoWrites,
         creates: capabilityRows.creates,
         repoCatalog: capabilityRows.repoCatalog,
+        templates: capabilityRows.templates,
       },
       projectPath: selectedProjectPath,
       // 027 F3 双族组装:v0.2 族应答携判定行集＋cacheSourced 披露;
@@ -1588,6 +1644,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     listInstalled: listInstalledRaw,
     packageCatalog: packageCatalogRaw,
     repoCatalog: repoCatalogRaw,
+    listTemplates: listTemplatesRaw,
     async previewRemove(projectPath, packageIds) {
       const outcome = await previewRemoveRaw(projectPath, packageIds);
       return outcome.kind === "ok"

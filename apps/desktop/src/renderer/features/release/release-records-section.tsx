@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 import { useCallback, useEffect, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -141,7 +142,7 @@ export function ReleaseRecordsSection({
                     <Badge tone={recordListStatusTone(row.status)}>
                       {recordListStatusLabel(row.status, copy.status)}
                     </Badge>
-                    <span className="vua-caption vua-text-secondary">{row.finishedAt}</span>
+                    <span className="vua-caption vua-text-secondary">{formatDateTime(row.finishedAt)}</span>
                   </button>
                 </li>
               ))}
@@ -189,7 +190,7 @@ export function ReleaseRecordsSection({
                     <dl className="vua-release-detail">
                       <div className="vua-release-detail__row">
                         <dt className="vua-caption vua-text-secondary">{copy.startedAt}</dt>
-                        <dd>{detail.facts.startedAt}</dd>
+                        <dd>{formatDateTime(detail.facts.startedAt)}</dd>
                       </div>
                       <div className="vua-release-detail__row">
                         <dt className="vua-caption vua-text-secondary">{copy.jobsTitle}</dt>

@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-repos/v0.2/command.schema.json",
+  "title": "VUA packages-repos command v0.2",
+  "description": "The packages repo-list read-face command (proposal 025 P2 freeze batch, 2026-09-17; stance program converged: environment proposal 64bfe58, integration stances 7a50ce9, desktop stance 0031004, core rulings bf78368). v0.2 carries exactly one method, packages.listRepos: the user's VPM repository subscription list read from the VCC settings userRepos face (the subscription face is the world, per the converged ruling — the user's configuration fact, not the refresh-derived cache). The COMMAND face is byte-for-byte the frozen v0.1 command face (proposal 027 F4 freeze batch 2026-09-20: the v0.2 increment versions the RESULT family only — the closed-empty params set, the subscription-face world ruling, and every v0.1 semantic are unchanged and remain governed by the v0.1 freeze text). The list takes NO parameters: the subscription face is global configuration, not per-project. Credentials and local session facts never ride the wire; the read projects identifiers and locations only. A repo subscribed but never successfully refreshed is an honest listed row with cached=false, never hidden and never rendered as an empty catalog (absence is not negation). The v0.1 preview of repo enable/disable as a WRITE face is resolved by the packages-ops v0.6 F4 freeze (proposal 027): the enable/disable METHODS live on the ops family, and their read-back state bit (enabled) rides THIS v0.2 result-face increment — the v0.1 word list itself is never revised in place. The proactive network refresh (update_cache) likewise moved to the packages-ops v0.6 refreshRepo write method (task semantics; P2 reads consume existing cache plus implicit load only).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listRepos"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "description": "Closed empty set: the subscription face is global configuration. Any key is a vua.packages.invalid_params shape violation, never a default."
+    }
+  }
+}

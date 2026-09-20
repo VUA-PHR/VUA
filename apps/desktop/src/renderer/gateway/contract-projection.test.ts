@@ -138,7 +138,7 @@ describe("contract environment snapshot projection", () => {
     // detection_failed 携带)保留工程事实码原词
     expect(steam).toMatchObject({ description: strings.deployer.presence.detected });
     expect(vrRuntime).toMatchObject({ description: strings.deployer.presence.notDetected });
-    expect(unity).toMatchObject({ description: "vua.env.probe_failed" });
+    expect(unity).toMatchObject({ description: `${strings.deployer.presence.detectionFailed} (vua.env.probe_failed)` });
   });
 
   it("projects the full engine check-id closed set to localized card titles", () => {
@@ -329,7 +329,7 @@ describe("environment check item live wire shape (BOARD #36 defect 3)", () => {
       id: "unity_editors",
       title: strings.deployer.checks.unityEditors,
       status: "error",
-      description: "vua.env.probe_failed",
+      description: `${strings.deployer.presence.detectionFailed} (vua.env.probe_failed)`,
     });
   });
 
@@ -427,7 +427,7 @@ describe("alternative check groups projection (vr_runtime)", () => {
     expect(alvr).toMatchObject({
       groupId: "vr_runtime",
       status: "error",
-      description: "vua.env.probe_failed",
+      description: `${strings.deployer.presence.detectionFailed} (vua.env.probe_failed)`,
     });
   });
 

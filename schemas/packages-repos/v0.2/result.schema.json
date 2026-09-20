@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-repos/v0.2/result.schema.json",
+  "title": "VUA packages-repos result v0.2",
+  "description": "Result documents for the packages-repos v0.2 read face (proposal 027 F4 freeze batch 2026-09-20: the subscription-row state increment per the 027 core stance 4/7 and the W25 real-machine evidence record s6 — three-domain face order F2->F3->F5->F4, environment verification s3 source facts, ruling (c)). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.packages-repos/v0.2 — two independent versions (the c914cf2 standing rule). v0.2 is the frozen v0.1 result plus EXACTLY one new REQUIRED fact per row — the enabled state bit — nothing else moved, and the frozen v0.1 word face is never revised in place (a backend that has not adopted v0.2 keeps answering the v0.1 family; the stamped const tells the consumer which word face answered, never a guess; additive dual-version negotiation = the packages-catalog v0.2 and packages-query v0.2 precedent, negotiated by the port's defaulted repos_v02 accessor). Each repo row remains the frozen projection of ONE subscription entry: the four identifier/location facts are nullable strings — null is the honest projection of the library's Option (a local-directory repo has url=null; a remote repo may lack name or id) — and cached is the REQUIRED per-repo cache-hit fact (true = a refreshed local cache exists; false = subscribed but never refreshed). enabled is the REQUIRED VUA-OWNED enable/disable state bit (the packages-ops v0.6 F4 toggle faces' read-back): true = the row is active in the backend's package-collection world (enumeration and resolution see its packages); false = the row is disabled — it STAYS subscribed and listed but its packages are excluded from the collection world. The state is VUA-owned semantics with NO shared counterpart (the W25 read-only evidence record s6, ruling (c): VCC 2.4.5 carries no enable/disable state anywhere — settings.json full scan, vcc.liteDb collections, Repos cache shapes all zero hits), so the bit projects VUA's own storage under the environment root, never a settings.json key: there is NOTHING to share and nothing another tool could strip. A row whose repoId is null projects enabled=true ALWAYS: an id-absent row is outside the toggle faces' reach (the A4 removeRepo same boundary — the id IS the row handle) and can never be disabled through them, so true is its honest permanent fact. Row order is the subscription face's own order (the settings userRepos array order — the user's configuration fact projected verbatim); the consumer relies on it as presentation fact and never re-sorts. An EMPTY repos array is a valid, honest answer (zero subscriptions). additionalProperties:false forbids inventing more (no health, no status, no lastRefreshed, no disabledAt — facts with no port carrier are INVALID by schema, not merely discouraged).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listRepos"]
+    },
+    "result": { "$ref": "#/$defs/listReposResult" }
+  },
+  "$defs": {
+    "listReposResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "repos"],
+      "properties": {
+        "schemaVersion": { "const": "vua.packages-repos/v0.2" },
+        "repos": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/repoInfo" }
+        }
+      }
+    },
+    "repoInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repoId", "name", "url", "localPath", "cached", "enabled"],
+      "properties": {
+        "repoId": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Subscription identifier; null when the library carries none. A null-repoId row projects enabled=true always: id-absent rows are outside the packages-ops v0.6 toggle faces' reach."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Subscription display name; null when the library carries none."
+        },
+        "url": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Remote repository URL; null for a local-directory repo (the location then lives in localPath)."
+        },
+        "localPath": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "Local cache file path of the subscription; null when the library carries none. The packages-ops v0.6 refreshRepo method writes EXACTLY this file under the etag-conditional discipline."
+        },
+        "cached": {
+          "type": "boolean",
+          "description": "Per-repo cache-hit fact: true = a refreshed local cache exists; false = subscribed but never refreshed (honest listed state, never hidden)."
+        },
+        "enabled": {
+          "type": "boolean",
+          "description": "The REQUIRED VUA-owned enable/disable state bit (the packages-ops v0.6 enableRepo/disableRepo read-back): true = the row is active in the package-collection world; false = disabled — subscribed and listed, but its packages are excluded from enumeration and resolution. VUA-owned semantics with no shared counterpart (W25 evidence record ruling (c)); projected from VUA's own storage under the environment root, never a settings.json key."
+        }
+      }
+    }
+  }
+}

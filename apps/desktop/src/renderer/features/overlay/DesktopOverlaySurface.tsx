@@ -1,3 +1,4 @@
+import { formatDateTime } from "../../i18n/index.ts";
 /**
  * 桌面 Overlay 表面(切片五 F7a,键鼠形态;设计规范 v0.6.1 §8.8)。
  * 经 ?surface=overlay-desktop 在应用初始化最早阶段分流渲染:不初始化主壳
@@ -285,7 +286,7 @@ export function DesktopOverlaySurface() {
                       {copy.productionRecordStatuses[model.productionCard.latestRecord.statusLabel as keyof typeof copy.productionRecordStatuses]
                         ?? model.productionCard.latestRecord.statusLabel}
                       {" · "}
-                      {model.productionCard.latestRecord.finishedAt}
+                      {formatDateTime(model.productionCard.latestRecord.finishedAt)}
                     </p>
                   </Card>
                 ) : null}
@@ -303,7 +304,7 @@ export function DesktopOverlaySurface() {
                         <p className="vua-overlay__task-meta">
                           <Badge tone="brand">{taskStateLabel(row.stateRaw)}</Badge>
                           {" · "}
-                          {row.updatedAt}
+                          {formatDateTime(row.updatedAt)}
                         </p>
                       </Card>
                     </li>

@@ -194,6 +194,7 @@ export type {
   PackagesRemovePlanV01,
   PackagesRemoveReceiptV01,
   PackagesRemoveRejectedV01,
+  PackagesTemplateItemV01,
   PackagesView,
   PackageSource,
   PackageVersionEntry,
@@ -201,6 +202,7 @@ export type {
   RepoCatalogPackageRowV01,
   RepoCatalogRepoRowV01,
   RepoHealth,
+  TemplatesFactsV01,
   RepoInfo,
   RepoInfoRowV01,
 } from "./packages-port.ts";
