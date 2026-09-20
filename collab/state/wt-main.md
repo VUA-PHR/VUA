@@ -2,146 +2,150 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 7962cbc7
+baseline_commit: 5be42135
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 149 批（2026-09-21 06:2x–07:0x，节拍轮工作时段 date 实测；压缩派发：仅集成座实质项）
-＝第 148 批反向审查三栈验收闭环（wt-2 核心修复＋wt-3 桌面修复＋wt-4 状态批两文档）
-＋U19 [需用户] 登记＋跨域候派/知会落 BOARD＋状态批推送**：
+**第 151 批（2026-09-21 07:0x–07:2x，节拍轮工作时段 date 实测；压缩派发：仅集成座实质项；
+本工作时段收官拍，窗口 08:40 止）＝第 150 批两栈验收闭环（wt-2 核心交付＋wt-3 桌面交付）
+＋BOARD #44/#45 行收官更新＋状态批推送**：
 
-- **wt-2 两笔 --no-ff 收编（合并 da6a3bfb，merge-tree 预检 exit 0 零冲突合成树
-  4339bf8b）**＝修复批 83e267d9（恰两文件 369+/9-）＋状态批 98767e61。安全修复重点
-  复核成立：
-  1. **tar 解包组件级路径守卫**：不可信 BOOTH 包威胁模型下条目名含
-     Prefix/RootDir/ParentDir 组件一律跳过不跟随（join 替换语义封死盘符绝对路径
-     逃逸；守卫先于 join、反斜杠先归一化；提取只走 read_to_end＋fs::write 从不创建
-     符号链接——恶意链接条目退化为根内空文件无跟随面；被跳条目不进
-     manifest.sha256 故 Bridge 端 VerifyAgainstManifest 天然拒绝）——手拼 raw-ustar
-     恶意归档单测钉三形态（真临时目录盘符绝对 canary＋..逃逸＋根锚），断言合法布局
-     落地、三恶意条目未写未 manifest。
-  2. **mutating 命令 id attempt 盐**：attempt>1 注入 -r{attempt}，首 attempt 逐字节
-     保持既有形态零行为变化（plan_id=material+16hex 共 25 字符加盐后在 C#
-     ^[A-Za-z0-9_-]{1,128}$ 语法与字符集内）。盐只加 mutating 的理由复核成立：
-     staging 命令不盐＝一次性暂存工程每执行新建随退出销毁、completed 回执无从跨
-     attempt 存活的结构性保护；只读 validate 不进回执库 id 不盐。重试测试钉首
-     attempt 历史形态＋重试 -r2 零重合＋validate 素 id＋回执照发
-     material-{plan}-attempt2。
-  3. **物化指纹硬要求**：直接/staging 导入/generate_vpm_only 三消费点成功臂一律要求
-     非空指纹，空/缺按既有 vua.material.bridge_failed 族诚实失败、回滚照跑、final
-     指纹保持空不写假值——空 data map 脚本化成功钉诚实失败＋Restored＋Failed 记录
-     无指纹。
-- **wt-3 三笔 --no-ff 收编（合并 1b36238e，预检 exit 0 零冲突合成树 7a8105b7）**＝
-  追平壳 05d546b9（纯吸收 147 批代）＋修复批 0e6208ea（恰 6 文件 101+/16-）＋状态批
-  539095c3。两处诚实呈现缺陷修复亲审成立：
-  1. **repoLifecycleToggleAvailable 纯谓词**：行族分派＝唯一判据 enabled 在场；启停
-     钮改 lifecycleToggleRow 门控——v0.1 五键行无位不渲染启停入口，「状态不可知不猜
-     测」四层登记声明字面兑现；刷新钮保持位独立；repoId null 可达性留渲染层既有判
-     定。3 回归钉（v0.2 带位双向／v0.1 无钮／null-id v0.2 族判据唯一）。
-  2. **failureLogText 并呈律**：messageKey 命中＝本地化词面＋code 原词半角括号并呈
-     （diagnostics.statusWithCode 同构）、未命中＝仅原码、缺席＝仅基础词面——三臂皆
-     无虚构，与诚实三律兼容不双重虚构。载荷证据集成亲核＝material_task.rs:104 对全
-     部 Failed 恒发 errors.material.executionFailed、差异化事实只在 code
-     （provider_host.rs:9187/9297 同律），旧律命中即遮蔽原码致 provision/bridge 失败
-     同词面且预留 provisionFailed 词面永不命中。i18n 零新键核实（无 strings 文件触
-     碰、词表既有复用）。
-- **wt-4 两笔 --no-ff 收编（合并 7962cbc7，预检 exit 0 零冲突合成树 bbba1077）**＝
-  追平壳 e1a599ca（纯吸收）＋状态批 e4c44ce1（tracked 面恰 collab/state/wt-4.md 一
-  文件零代码触碰）。两文档照章验收成立：
-  1. **演练脚本 #44 装配词面订正核实在场**（VUA-4 docs/plans 本地件：订正注记引
-     BOARD #44、原稿词面就地引用 append-only、配方链段落词面按裁决保留防过正守卫在
-     场；残留装配＝订正自引＋配方链上下文引用）。
-  2. **W25 交接段诚实地图核实在场**（w25-handoff-segment-map_ZH.md：出厂页逐钮
-     wired/absent 核验；editor 解析代码事实订正〔非 ProjectVersion.txt——构建记录携
-     带 unityEditorVersion 对装配面候选，三因折一 wire 码 editor_unresolved〕；交棒
-     动作现实〔probe 握手＋pid 活性／启臂 Unity.exe -projectPath 唯一参数 R2-2 凭据
-     剥离／500ms 轮询 900s 预算／握手到达唯一完成事实／五键事实无 upload 字段测试钉
-     ＋负向量钉〕；承诺边界＝上传状态缺席系产品边界非缺陷协议本引文）。
-  3. 九缺口清单 a–i 逐条落 BOARD（见 BOARD 登记节）。
-- **合并树定向复跑集成亲测全绿（06:3x–06:5x，df 先查 594G/69%）**：cargo test 五
-  crate **815/0**（96 测试二进制合计：unity-bridge 80＝常备 77＋3 新钉、orchestrator
-  234＋provider-host 288＋project-manager 150＋acquisition 63 零回归复跑；对 147 批
-  世代 812 净 +3＝本批三新测数字自洽）＋clippy 五 crate（含 bdl-store）--all-targets
-  **0 警告 0 错误**＋desktop typecheck 双 tsconfig **exit 0**＋vitest 90 文件
-  **823/823**（对 147 批 819 净 +4＝族分派 3＋并呈形状 1）＋check:i18n OK＋
-  check:boundary OK＋check:leak **155 指纹零泄漏**。
-- **BOARD 登记**：
-  1. **U19 [需用户]**＝交接准入是否校验构建记录终态——failed/recovered 记录亦可交
-     棒（route 只验存在＋身份＋编辑器；B2a completed-only 系程序纪律非机器门槛）；
-     是否加拦截/警示属产品裁决候用户，裁决前现状维持。
-  2. 开放问题 **#45 新行**＝第 148 批反向审查跨域候派与知会登记——**核心候派四件**：
-     Packages/ 前缀验证盲点跨面决策／loadedAssetPaths 证据面 unwrap_or_default／
-     端口面取消位（VpmBackend·Bridge）／.vua/imports 残留清理策略；**桌面知会核心件
-     两笔**：引擎 messageKey 粒度细化（executionFailed 恒发致预留词面永不命中）、
-     errors.* 词表补齐候选（~170 码对 11 键，下一批候选 material 族）。
-  3. **#44 行更新**＝演练脚本订正已兑现验收；余下指向＝桌面 workshop 词面适配候派
-     （九缺口 i 项；compose 配方链卡词面按裁决保留勿过正）。
-  4. **#43 行更新**＝第 148 批反向审查三项加固随批入库；真机复验口径不变候 W25。
-- **前录轮转**：存 136–147＋本批 10 段（135 段轮出依 git 历史）。
-- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋fake/手拼归档/环回证据；
-  W25 单模型导入→上传真机走查归 O-2，测试绿≠真机绿。`?? _local_p27_devlog.txt`
-  照例不触碰。
+- **wt-2 两笔 --no-ff 收编（合并 3e5573a6，merge-tree 预检 exit 0 零冲突合成树
+  b89e066b）**＝修复批 7bc18e90（恰 10 文件 533+/11-）＋状态批 464541c3（恰 wt-2.md
+  一文件）。两项交付集成亲审成立：
+  1. **失败词面按类别分流（BOARD #45 行 messageKey 粒度闭环）**：material_exec 新增
+     failure_message_key 分类助手单一来源——供给段失败（run_provision 的
+     create/resolve 臂及包装臂，码一律 vua.material.provision_failed 前缀）命中桌面
+     预留 errors.material.provisionFailed，其余维持 executionFailed；两发射面
+     （material_task.rs 任务运行时＋provider_host.rs confirm_plan worker）同消费一
+     助手。**验收重点一「载荷数据细化非 wire 形状变更」核成立**：AppErrorV1 信封、
+     字段闭集、schema 零触碰，零新码，差异化事实仍由 code 携带（与桌面 148 批并呈律
+     衔接——词面＋原码同显）。任务级两臂钉（FailingCreateVpm 供给失败→provisionFailed
+     ＋族码＋Failed 收据照发＋空态恢复 ProjectSettings 不存在；RejectingBridge→
+     executionFailed＋bridge_rejected）＋worker 面 bridge_timeout 钉扩展
+     executionFailed 断言；inspect_project 直发面维持 executionFailed 有注记（检查面
+     无供给段）。协议本 material-intake v0.2 双语 0.2.1 注记＋REGISTRY 同步。
+  2. **Packages/ 通道边界两层兜底（BOARD #45 行盲点闭环；操作者裁定：素材直导通道
+     不得静默写入 VPM 包域）**，零新码：intake 预检 scan_unitypackage 检查面拒收
+     Packages/ 前缀（archive_invalid 族、计划与确认根本不形成；软证据-only 方案被
+     正确否决——确认计划静默丢弃该内容＝静默部分导入，恰系要封死的罪）＋执行臂
+     extract_package_into_dir 第一遍整体拒绝先于任何落盘（零残留、零部分物化；
+     Ordinal 前缀与 C# 面判定逐字节同形；直接/staging/generate_vpm_only 三物化消费
+     点共用）。**验收重点三「计划后混入重检臂诚实面」钉成立**：plan 后投放含
+     Packages/ 归档→执行前 VerifySource 重检拒收——Failed＋archive_invalid 族＋
+     rollback NotNeeded（先于快照）＋零 bridge 命令＋无收据，先于快照与首笔变更。
+     staging 腿旧静默有损形态一并转诚实拒收。**C# 面刻意不动有决策注记**：Bridge v4
+     冻结、诊断码集无诚实既有码、零新码约束封死新码；双 Rust 闸口后 C# 接受臂链上
+     不可达＝dormant 面，收窄候后续码裁决或协议注记（**新增候派一项落 #45 行**，
+     登记不夹带本批）；ValidateAssetPaths 保持 Packages/ 期望＝VPM 通道合法面。
+  3. **验收重点二「与 148 批安全守卫正交无回摆」核成立**：148 批组件守卫在解包第二
+     遍条目名（Prefix/RootDir/ParentDir 跳过）、150 批在第一遍 pathname 内容
+     （Packages/ 前缀拒收）——作用域与阶段双重正交；148 批三形态手拼恶意归档钉合法
+     布局用 Assets/ 路径名，套内全绿零回摆。
+- **wt-3 三笔 --no-ff 收编（合并 5be42135，预检 exit 0 零冲突合成树 b17b936f）**＝
+  追平壳 553ff5d6（纯吸收，树与 main cc5a4d7c 全等实测 0 行差）＋修复批 441627c2
+  （恰 9 文件 68+/7-）＋状态批 f69d1b9b（恰 wt-3.md 一文件）。两项交付集成亲审成立：
+  1. **#44 装配词面纪律落地 workshop 命名空间（九缺口 i 项闭环）**：审计结论 en 源
+     表本系 setup/build 系词面（ja/ko setup 系同证）仅 zh 翻译表漂移为「装配」，
+     productionFlow 命名空间本身干净。恰 5 键改动逐键有由（subtitle 导入，生产与检
+     测／runningSubtitle 执行计划已确认／idleDescription 执行流程＋轨道阶段／blocked
+     即可开始导入与构建／station.role.warehouse 等待进入轨道——保留轨道物流语义消除
+     段跳歧义）。**en/ja/ko 零触碰复核成立**（三表 diff 全部仅 goRelease 新键一行，
+     workshop 域零触碰）。**13 处保留逐键理由抽审通过**（terms.assembly＋nav 轨道阶
+     段名 S7.1／compose 配方链卡按裁决保留勿过正／taskTitles.assembly＋fixtures 引
+     擎任务身份核心域登记不改／station.role.recipe 轨道语义／inspection.subtitle 归
+     因配方链装配产物；工作流设计标准两处「装配」系主流程阶段名仅登记不升版）。
+  2. **出厂链钮缺口 (a) 小改分支**：buildRecordGoReleaseAvailable 纯谓词仅显示投影
+     completed 放行（aborted/rolled_back 无可看出厂对象、rollback_failed 阻断态；
+     recovered 经投影折叠 completed 同口径与卡头徽标同判据不另设判定；**023 投影纪
+     律**＝纯导航零记录身份跨页）＋prop drill
+     WorkshopPage→ProductionFlowSection→BuildRecordCard（onNavigate 缺席时链钮不渲
+     染不猜测）＋i18n 四表新键 productionFlow.record.goRelease（en Go to release／
+     zh 去出厂／ja リリースへ／ko 릴리스로 이동）＋回归钉
+     Record<BuildRecordDisplayStatus,boolean> 四态期望表遍历闭集（新状态入集即编译
+     ＋测试双失败候决）。
+- **合并树定向复跑集成亲测全绿（07:1x–07:4x，df 先查 592G/69%）**：cargo test 五
+  crate **821/0**（96 测试二进制精确统计；对 149 批世代 815 净 +6＝in-src 通道边界
+  2＋material_exec 集成 2＋material_task 任务级 2，数字自洽；workspace 全口径 102
+  二进制 877/0 附记）＋clippy workspace --all-targets **0 警告 0 错误**＋desktop
+  typecheck 双 tsconfig **exit 0**＋vitest 90 文件 **824/824**（对 149 批 823 净 +1
+  ＝goRelease 四态钉）＋check:i18n OK（3 交付语言表与源表对齐）＋check:boundary OK
+  ＋check:leak **155 指纹零泄漏**。
+- **BOARD 收官登记**：
+  1. **#45 行进度更新**＝messageKey 粒度细化**已闭环**（核心座 150 批交付）、
+     Packages/ 盲点**已闭环**（操作者裁定两层兜底）、桌面 i 项词面适配**已落地**
+     （见 #44 行）；**errors.* 词表补齐候选更新＝material 家族 10 键**（wt-2 实测：
+     引擎在用 errors.material.* 12 键对桌面词表持有 2 键；现走 code 原词诚实回落系
+     增强非缺陷）候桌面派单；**余候派三项维持**（loadedAssetPaths 证据面
+     unwrap_or_default／端口面取消位 VpmBackend·Bridge／.vua/imports 残留清理策略）
+     ＋**新增候派一项**（C# 接受臂 dormant 收窄候码裁决或协议注记）；桌面知会核心件
+     两笔（fixtures DEV 演示负载词面＋taskTitles zh/en 措辞差）转 #44 行登记。
+  2. **#44 行更新**＝桌面 workshop 词面适配已落地并经集成验收（合并 5be42135，恰
+     5 键＋13 保留甄别＋en/ja/ko 零触碰复核；缺口 (a) 出厂链钮随批）；**登记项仅剩
+     fixtures DEV 演示负载词面两处 [知会核心]**。
+- **前录轮转**：存 137–149＋本批 10 段（136 段轮出依 git 历史）。
+- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋fake/手拼归档/合成树证
+  据；素材链真机走查、词面真机呈现与出厂链钮真机跳转全归 W25（O-2），测试绿≠真机
+  绿。`?? _local_p27_devlog.txt` 照例不触碰。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 147 批（05:2x–06:1x）＝U17 供给依赖解析双栈验收闭环（合并 f3dc7a4f＋edeaa086）＋
-操作者裁决两笔落账＋BOARD U17/U18/#44 三行。第 145 批（03:5x–04:4x）＝wt-6 F4 补切片
-验收闭环＝027 F4 五环闭环收官（63c8981）。第 143/142/141/139/138/137/136/135 批见
-BOARD 前录与 git 历史。
+第 149 批（06:2x–07:0x）＝第 148 批反向审查三栈验收闭环（合并 da6a3bfb＋1b36238e＋
+7962cbc7）＋U19 [需用户] 登记＋#45 候派/知会行落 BOARD。第 147 批（05:2x–06:1x）＝
+U17 供给依赖解析双栈验收闭环（合并 f3dc7a4f＋edeaa086）＋操作者裁决两笔落账＋#44 装
+配词面裁决登记。第 145/143/142/141/139/138/137/136 批见 BOARD 前录与 git 历史。
 
 ## 阻塞
 无。（无本地工作阻塞。#43 真机复验候 W25 用户回访；U15/U16/U18/U19 候用户非阻塞；
-#45 候派项非阻塞；027 已冻结收官。）
+#45 余候派项非阻塞；027 已冻结收官。）
 
 ## 下次合并意图
-候验收队列：slot/wt-2/3/4 领先全 0（本批收编闭环）；wt-5/wt-6 领先 0 无验收对象
-（简报留言系上批世代残余照消化）。wt-7（slice/production-review-fixes）与 wt-8
-（slice/production-review-repairs）本拍不在派单，维持观测候专项派单（不代合并）。
-#45 核心候派四件＋桌面 i 项词面适配候集成下批派单裁量。#43 真机复验候 W25（O-2）。
-U15/U16/U18/U19 候用户裁决。
+候验收队列：slot/wt-2/3 本批收编闭环；wt-4/5/6 尖 is-ancestor 实测全在 main（简报
+留言系世代残余照消化）。wt-7（slice/production-review-fixes，领先 1）与 wt-8
+（slice/production-review-repairs，领先 3）本拍不在派单，维持观测候专项派单（不代
+合并）。#45 候派项（核心三项＋C# dormant 收窄＋桌面 material 家族 10 键词表补齐）
+候下批派单裁量。#43 真机复验候 W25（O-2）。U15/U16/U18/U19 候用户裁决。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 06:2x–07:0x，节拍轮工作时段 date 实测）：①pnpm collab:brief ①区判
-读＝wt-2/wt-3/wt-4 三栈验收请求进本批派单、wt-5/wt-6 留言经领先 0 is-ancestor 实测
-系上批世代残余照消化、wt-7/wt-8 观测登记、失鲜工作树无；②wt-2 修复批亲审＝安全三
-项（tar 守卫绕过面〔join 语义/符号链接/反斜杠〕＋盐只加 mutating 理由＋指纹三消费
-点）逐项核成立→预检 exit 0（4339bf8b）→--no-ff 合并 da6a3bfb；③wt-3 修复批亲审＝
-族分派谓词＋并呈律三臂无虚构＋messageKey 恒发载荷证据亲核（material_task.rs:104）
-＋i18n 零新键→预检 exit 0（7a8105b7）→--no-ff 合并 1b36238e；④wt-4 状态批照章验
-收＝两文档 VUA-4 本地件逐项核在场＋九缺口清单落 BOARD→预检 exit 0（bbba1077）→
---no-ff 合并 7962cbc7；⑤合并树定向复跑亲测全绿：cargo 五 crate 815/0＋clippy 0＋
-typecheck 双 0＋vitest 823/823＋i18n/boundary/leak；⑥BOARD 登记＝U19 [需用户]＋#45
-候派/知会行＋#43/#44 行更新＋前录轮转（10 段，135 轮出）＋本状态批；⑦[需用户] 条目
-（U15/U16/U18/U19）照规则跳过未代决；⑧推送照网络实况办理（失败重试≤3 并登记）；
-⑨诚实边界维持：零端到端宣称——W25 单模型导入→上传真机走查归 O-2，测试绿≠真机绿。
-在手无半途切片、除本登记批外无未提交改动。完成后退出待命。
+本轮（2026-09-21 07:0x–07:2x，节拍轮工作时段 date 实测）：①pnpm collab:brief ①区判
+读＝wt-2/wt-3 验收请求进本批派单（压缩派发仅集成座）、wt-4/5/6 留言经 is-ancestor
+实测系世代残余照消化、wt-7/wt-8 观测登记、失鲜工作树无；②wt-2 修复批亲审＝三项验
+收重点（messageKey 载荷数据非 wire 形状／Packages/ 两层闸口与 148 批守卫正交无回摆
+／计划后混入重检臂诚实面）逐项核成立→预检 exit 0（b89e066b）→--no-ff 合并
+3e5573a6；③wt-3 修复批亲审＝en/ja/ko 零触碰复核＋13 保留抽审＋goRelease 纯谓词四
+态闭集与 023 投影纪律＋追平壳树全等 0 行差→预检 exit 0（b17b936f）→--no-ff 合并
+5be42135；④合并树定向复跑亲测全绿：cargo 五 crate 821/0（96 二进制；ws 全口径 877/0
+附记）＋clippy workspace 0＋typecheck 双 0＋vitest 824/824＋i18n/boundary/leak 155
+指纹零泄漏；⑤BOARD 收官登记＝#45 行进度更新（两项闭环＋词表候选 10 键＋余三项＋新
+增 C# dormant 收窄）＋#44 行更新（词面适配落地、仅剩 fixtures 两处 [知会核心]）＋
+前录轮转（136 段轮出）＋本状态批；⑥[需用户] 条目（U15/U16/U18/U19）照规则跳过未代
+决；⑦推送照网络实况办理（失败重试≤3 并登记）；⑧诚实边界维持：零端到端宣称——素
+材链真机走查归 W25（O-2），测试绿≠真机绿。在手无半途切片、除本登记批外无未提交改
+动。完成后退出待命。
 
 ## 留言
-- [→核心/wt-2]（验收回执）**反向审查修复批 83e267d9 验收入库（合并 da6a3bfb），三
-  项真机风险修复全部成立**：tar 守卫绕过面重点复审通过（组件判定先于 join、反斜杠
-  先归一化、提取面无符号链接创建路径、被跳条目不进 manifest 双层防御）；盐只加
-  mutating 理由复核成立（staging 结构性免疫＋只读 validate 不进回执库）；指纹硬要
-  求三消费点闭合。四 crate 815/0 复跑与你席申报一致（五 crate 合并树口径）。派单候
-  选四件已落 BOARD #45 行（Packages/ 盲点跨面决策／loadedAssetPaths 证据面／端口取
-  消位／imports 残留），候派单裁量，不阻塞。零端到端维持——真机走查归 W25（O-2）。
-- [→桌面/wt-3]（验收回执）**反向审查修复批 0e6208ea 验收入库（合并 1b36238e），两
-  处诚实呈现修复成立**：族分派谓词三回归钉＋并呈律三臂无虚构亲审通过；messageKey
-  恒发载荷证据集成独立亲核（material_task.rs:104）与你席判定一致。vitest 823/823＋
-  typecheck＋check:leak 合并树复跑全绿与你席申报一致。两笔残留已落 BOARD #45 行知
-  会核心（引擎 messageKey 粒度细化／errors.* 词表补齐候选）；另 **#44 桌面 workshop
-  命名空间词面适配候派指向**（九缺口 i 项：subtitle/runningSubtitle/idleDescription/
-  blocked/station.role.warehouse/inspection.subtitle 与用户裁决口径适配；注意
-  compose 配方链卡词面按裁决**保留**勿过正）已随 #44 行登记。零端到端维持（O-2）。
-- [→产线/wt-4]（验收回执）**状态批 e4c44ce1 验收入库（合并 7962cbc7），两文档照章
-  验收成立**：演练脚本 #44 订正逐项核在场（订正注记引裁决、原稿就地引用 append-only、
-  防过正守卫在场）；交接段诚实地图逐项核在场（editor 解析代码事实订正、交棒动作现
-  实五键事实、承诺边界）。九缺口处置落账：缺口 b **升 U19 [需用户]**（交接准入终态
-  校验候用户裁决，裁决前现状维持）；缺口 a/c/i 归桌面随 #45/#44 行候派；d–h 维持登
-  记。零端到端维持——交接段从未真机验证，全归 W25（O-2）。
-- [→操作者] 第 149 批办理完毕（合并 da6a3bfb＋1b36238e＋7962cbc7＋BOARD 四处＋状态
-  批）：**第 148 批反向审查三栈验收闭环**。操作者「不代决」裁定落账＝U19 [需用户]。
-  合并树定向复跑全绿（cargo 五 crate 815/0＋clippy 五 crate 0＋typecheck 双 0＋
-  vitest 823/823＋i18n/boundary/leak 155 指纹零泄漏）。#45 候派项（核心四件＋桌面
-  i 项）候下批派单裁量。零端到端宣称维持。候验收队列：wt-2/3/4/5/6 全清零；
-  wt-7/wt-8 观测中候专项派单。
-- （回执不回执：wt-5/wt-6 简报留言经领先 0 is-ancestor 实测系上批世代残余照消化；
-  历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→核心/wt-2]（验收回执）**第 150 批修复批 7bc18e90 验收入库（合并 3e5573a6），两
+  项交付全部成立**：messageKey 分类助手单源两发射面分流、载荷数据细化非 wire 形状
+  变更亲核成立（AppErrorV1 信封/闭集零触碰、code 仍携原细节与桌面并呈律衔接）；
+  Packages/ 两层兜底与「计划后混入」重检臂诚实钉亲审通过，与 148 批守卫正交无回摆
+  （第二遍条目名 vs 第一遍 pathname 内容，双重正交）。C# 面刻意不动的决策注记与
+  dormant 收窄候派已落 #45 行。五 crate 821/0 合并树复跑与你席申报一致。material
+  家族 10 键词表补齐候选已挂 #45 行候桌面派单（知会你席留存）。零端到端维持——真
+  机归 W25（O-2）。
+- [→桌面/wt-3]（验收回执）**第 150 批修复批 441627c2 验收入库（合并 5be42135），两
+  项交付全部成立**：#44 词面纪律落地 workshop 恰 5 键逐键有由、en/ja/ko 零触碰复核
+  成立（三表仅 goRelease 新键一行）、13 保留逐键甄别抽审通过（轨道阶段名/compose 配
+  方链卡按裁决保留/taskTitles 引擎域登记不改）；goRelease 纯谓词仅 completed 投影
+  放行＋四态闭集钉＋023 投影纪律亲审成立，onNavigate 缺席不渲染不猜测。vitest
+  824/824＋typecheck＋i18n/boundary/leak 合并树复跑全绿与你席申报一致。**#44 行登
+  记项仅剩 fixtures DEV 演示负载词面两处 [知会核心]**（tape headlines＋taskTitles
+  zh/en 措辞差，候核心裁量）；**errors.* 词表补齐候选 material 家族 10 键已挂 #45
+  行候派**（wt-2 实测口径）。零端到端维持（O-2）。
+- [→操作者] 第 151 批办理完毕（合并 3e5573a6＋5be42135＋BOARD 两行收官更新＋状态
+  批）：**第 150 批两栈验收闭环，本工作时段收官**。#45 行两项核心候派闭环（messageKey
+  粒度＋Packages/ 盲点）、#44 行桌面词面适配落地；余候派＝核心三项（loadedAssetPaths
+  ／端口取消位／imports 残留）＋C# dormant 收窄＋桌面 material 家族 10 键词表补齐。
+  合并树定向复跑全绿（cargo 五 crate 821/0＋clippy 0＋typecheck 双 0＋vitest 824/
+  824＋i18n/boundary/leak 155 指纹零泄漏）。零端到端宣称维持——真机全归 W25（O-2）。
+  候验收队列：wt-2/3/4/5/6 全清零；wt-7（领先 1）/wt-8（领先 3）观测中候专项派单。
+- （回执不回执：wt-4/5/6 简报留言经 is-ancestor 实测系世代残余照消化；历史留言已消
+  化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
