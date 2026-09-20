@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-20 07:1x 推进：**F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节**——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5 链＝冻结 d09c1e6（132 批）→接线 8677607（136 批）→形状核可 d41f3a7（137 批）→**桌面消费已落节（2026-09-21 00:1x 线程末节：核对点五条逐条兑现＋定向复跑亲测全绿，消费批候随轮验收）**——环境 F5 库实现切片候环境席位、与桌面消费互不阻塞；F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
+status: 已接受（**F1–F5 五链全部落地收官（第 145 批，2026-09-21 04:0x）——F4 补切片 08923b5 经集成验收合并 63c8981 后五环闭环：冻结 47d4185→接线 7361213→形状核可 8955430→环境实现 3f8f55d＋补切片 08923b5〔第 143 批退回-补交链，集成验收登记节留痕〕→桌面消费 e05e1e7；F1/F2/F3/F5 链闭环登记见集成验收登记各节与 BOARD #41。F6 方向锚维持不冻结、不立案、单独归档候立。真机呈现与 #43 复验归 W25（O-2），本文件就此冻结**；收官前推进史：2026-09-20 07:1x 推进：F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5 链＝冻结 d09c1e6（132 批）→接线 8677607（136 批）→形状核可 d41f3a7（137 批）→**桌面消费已落节（2026-09-21 00:1x 线程末节：核对点五条逐条兑现＋定向复跑亲测全绿，消费批候随轮验收）**——环境 F5 库实现切片候环境席位、与桌面消费互不阻塞；F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -1138,3 +1138,68 @@ production-workshop-view.test 失败行词面 5 枚＋live-production-port 失�
   F1/F2/F3/F5 四链全闭环＋F4 链四环在库，不宣布 F1–F5 全部落地。
 - **零端到端宣称维持**：全部结论系代码面＋fake 端口证据；F4 served 行真机翻
   转、禁用/刷新控制真机呈现、执行日志失败行真机呈现归 W25（O-2）。
+
+---
+
+## 集成验收登记（第 145 批，2026-09-21 04:0x）——F4 补切片验收入库，退回-补交-闭环链就此闭合
+
+- **F4 环境实现补切片验收入库**：补切片 08923b5（wt-6，恰两文件 631+/46-
+  ＝crates/project-manager src＋tests）经 --no-ff 合并 63c8981 收编，随并入
+  退回实现批 3f8f55d（第 143 批亲审成立面原样入库）＋自理追平壳 14d19ed
+  （零自有内容）＋状态批 f86dfe1/342dfba。集成四验收点逐条亲审成立：
+  1. **五装载点确接过滤且仅作用于包集合世界**（第 143 批退回理由恰一处的
+     正面核销）：新 `collection_world()` 装载输入构造（读 VUA 自有状态文件
+     →克隆 Settings→库公开 `remove_repo` retain 按 repoId 移除禁用行）在
+     装载层一次完成，集成直读源码核实恰五调用点全数接入——`repo_catalog`
+     （:1481）、`package_catalog_impl`（:2092，`package_catalog`/v02 双族
+     同走）、`list_packages_v02` latest 判定（:1135）、`preview_install`
+     （:1651）＋`apply_install`（:1896，A2 解析器）；过滤后 `world` 传入
+     每处 `PackageCollection::load/load_cache`，原 `settings` 仅用于
+     show_prerelease 开关等非集合事实；`preview_install_for_plan` 两臂均
+     委托已过滤 `preview_install`＝无第六裸装载点。**两面不矛盾复证**：
+     `list_repos_v02`（:1386）逻辑零改动零过滤调用——enabled=false 行照列
+     （诚实纪律 #1 正面：订阅面在列）而其包在枚举/判定/解析三面缺席
+     （反面：集合世界如实收窄），测试①两面对照同测试钉死。冻结词面
+     packages-ops v0.6「启停语义（冻结词面事实）」节（协议本 :88–93）逐
+     句兑现。
+  2. **offline load_cache 腿已钉＋缓存失效结构钉成立**（第 143 批点名项）：
+     测试①全 offline（`with_environment_root(..., true)`）且断言
+     `cache_sourced=true` 证明 load_cache 腿真实走通非旁路；测试④在线臂
+     （`cache_sourced=false`＋预定义两仓库自有开关环回化＋loopback 200）
+     证明过滤骑在线装载臂同等成立。缓存失效结构钉双重实证可信：结构面＝
+     `VrcGetLibBackend` 字段恰 runtime/http/root/offline 四项（无跨调用集合
+     缓存层可存活）；行为面＝测试②同实例三 Toggle 六世界态（缺省全启用→
+     禁用排除→启用恢复→再禁用排除，写面返回后下一读面即见新状态——若有
+     缓存层此测必红）。
+  3. **损坏状态文件拒绝而非猜测全启用**（诚实纪律 #3 同族）：测试③写
+     "not-json" 后五面（repo_catalog／package_catalog／preview_install／
+     list_packages_v02＋v0.2 投影面）全拒复用码 `vua.vpm.backend_unavailable`
+     ＋category Unavailable；apply_install 与 preview 同 helper 同共享构造
+     器 `backend_unavailable_state`（源码 :1896 亲核）同享拒绝。
+  4. **词面零改、wire/provider-host/桌面零触碰复证**：补切片 diff 恰两
+     project-manager 文件，零 docs/contracts/i18n 触碰。两项实现侧解释经
+     对照协议本核为**向冻结词面收敛**非偏离：①第 2 层 cached 事实改
+     `repo_cached_fact` 统一事实源——packages-repos-catalog v0.1 冻结字段
+     语义「逐仓库缓存存在性已由必带 cached 事实诚实覆盖」，旧硬编码 false
+     对缓存在场的禁用行恰系谎报未刷新，新实现对启用行第 2 层逐案相等
+     （可解析缓存必被装载）、对禁用行如实 true；②装载腿状态读取失败经共
+     享构造器与 v0.2 投影面同事实同码同词——list_repos_v02 内联闭包换构
+     造器零字节差，一事实一码。
+- **合并树定向复跑集成亲测全绿（04:0x，df 先查 582G/69%）**：cargo test
+  四 crate **合计 736/0**（project-manager 140/0＝vpm_backend 70〔常备
+  66＋补切片新 4〕＋orchestrator 234/0＋provider-host 288/0＋unity-bridge
+  74/0；对第 143 批世代 723 净 +13＝退回批自带 9 例＋补切片 4 例，数字
+  自洽）＋clippy 四 crate --all-targets **0 警告**＋desktop typecheck 双
+  tsconfig **exit 0**。merge-tree 预检 exit 0 零冲突（合成树 a85e8d7）。
+- **F4 五环闭环（027 收官）**：冻结 47d4185〔139〕→接线 7361213〔141〕→
+  形状核可 8955430〔142〕→环境实现 3f8f55d＋补切片 08923b5〔145〕→桌面
+  消费 e05e1e7〔143〕。退回-补交-闭环链留痕：第 143 批退回裁决（冻结词面
+  效果面缺失＝投影虚假事实，诚实纪律 #1）→ wt-6 补切片逐条兑现（第 143
+  批点名腿全钉＋实现侧解释两项经协议本对照核为收敛）→ 本批验收闭环。
+  **F1 隔离文案修正＋F2＋F3＋F4＋F5 五链全部落地；F6 方向锚维持不冻结、
+  不立案、单独归档候立不变**。桌面 disabledNote 词面「包不再参与浏览与
+  安装解析」自此有真实效果面背书（此前因 v0.2 族无人应答无呈现路径，缺
+  口已闭合）。
+- **零端到端宣称维持**：全部结论系代码面＋库面＋环回源证据；F4 served 行
+  packages.repoLifecycleOps 真机翻转、禁用/刷新控制与 disabledNote 真机
+  呈现、#43 真机复验全归 W25（O-2）。测试绿≠真机绿。
