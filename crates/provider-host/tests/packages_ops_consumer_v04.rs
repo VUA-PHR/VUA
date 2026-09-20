@@ -89,6 +89,7 @@ impl VpmBackend for FakeRepoWriteBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
@@ -148,6 +149,7 @@ impl VpmBackend for LocalOnlyRepoBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
@@ -202,6 +204,7 @@ impl VpmBackend for RefusingRepoBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_write_capabilities(&self) -> RepoWriteCapabilities {
@@ -374,6 +377,7 @@ fn repo_write_capability_absence_keeps_the_declared_none_word_face() {
                 list_packages: false,
                 remove_packages: false,
                 project_registry: false,
+            resolve_project: false,
             }
         }
         fn preview_install(

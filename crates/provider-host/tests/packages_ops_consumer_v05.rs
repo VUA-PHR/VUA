@@ -100,6 +100,7 @@ impl VpmBackend for FakeCreateBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -154,6 +155,7 @@ impl VpmBackend for NoCreateBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -199,6 +201,7 @@ impl VpmBackend for RefusingCreateBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

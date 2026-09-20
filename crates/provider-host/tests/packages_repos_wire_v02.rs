@@ -75,6 +75,7 @@ impl VpmBackend for ReposV02Backend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn catalog_capabilities(&self) -> vua_orchestrator::CatalogCapabilities {
@@ -154,6 +155,7 @@ impl VpmBackend for ReposV01OnlyBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn catalog_capabilities(&self) -> vua_orchestrator::CatalogCapabilities {

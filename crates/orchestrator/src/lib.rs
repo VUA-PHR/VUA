@@ -138,7 +138,9 @@ pub use vpm_backend::{
     PackageCatalogV01, PackageCatalogV02, PackageRequestV1, PackageSourceV01, RegisteredProjectV1,
     RegisterCapabilities, RepoCatalogCapabilities, RepoCatalogPackageV01, RepoCatalogRepoV01,
     RepoCatalogV01, RepoInfoV01, RepoInfoV02, RepoLifecycleCapabilities, RepoRefreshOutcomeV01,
-    RepoWriteCapabilities, TemplateCapabilities, TemplateEntryV01, VpmBackend, VpmCapabilities,
+    RepoWriteCapabilities, ResolveFailureV01, ResolveReceiptV01, ResolvedPackageV01,
+    RESOLVE_RECEIPT_SCHEMA_VERSION, TemplateCapabilities, TemplateEntryV01, VpmBackend,
+    VpmCapabilities,
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};

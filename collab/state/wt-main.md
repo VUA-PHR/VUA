@@ -2,37 +2,143 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 7587c35
+baseline_commit: edeaa086
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 141 批登记批（2026-09-21 01:4x–02:2x，节拍轮工作时段 01:46 date 实测；插入两任务照用户裁决/操作者取证最高优先办理＋例行验收栈：用户授权并行开发 VUA-8 并线并入 main＋核心 F4 wire 接线批验收入库＝F4 链第二环落地、环境实现＋桌面形状核可双解锁＋W25 真机新发现 #43 登记＋U16 登记＋四树簿记收编）**：
+**第 147 批（2026-09-21 05:2x–06:1x，节拍轮工作时段 date 实测；压缩派发：仅集成座实质项）
+＝U17 供给依赖解析双栈验收闭环＋操作者裁决两笔落账＋用户裁决装配词面登记＋BOARD
+U17/U18/#44 三行＋状态批推送**：
 
-- **【插入任务一·用户裁决】VUA-7/VUA-8 并线办理**：用户裁决原文（2026-09-21）：「有其它进程在VUA-8修改涉及模型生产部分的UI 包含素材fbx预览和成品烘焙多视图 之前还有VUA-7工作树提交的i18n修正 这两个工作树不属于协作部分 都是经过我授权的开发 可以合并到main 通知你一下」。**VUA-7**（slice/desktop-i18n-player-language，尖 a196df5）＝`git merge-base --is-ancestor` 亲测已在 main（第 135 批 1bb83e2 收编），零合并动作，仅本登记「已在 main」。
-- **VUA-8 合并（合并 0f9350f，合并提交消息注明授权来源＝用户裁决 2026-09-21，AGENTS.md 1.1.4 例外 b；不走五环流水线照裁决）**：分支 slice/production-nav-bake-preview 尖 0779db0 两笔（7d702f8 production-nav 重构：import-material/compose 收敛为仓储页/配方页内容型弹窗＋PageId 收缩＋ContentDialog 新原语＋模型生产侧栏平铺；0779db0 unity-bridge v4 冻结超集 build_preview：schemas/unity-bridge/v4 加法复制 v3＋操作枚举＋mutating 指纹规则＋单条 v4 收据规则＋五向量＋C# BridgePreviewBake 移植＋Rust UnityOperation::BuildPreview 契约面＋.vrcua→.vua 路径对齐＋协议本 v4 双语）——合并前亲审 diff（42 文件 1812+/141-）成立；merge-tree 预检 **7 处冲突**就地裁决：四 i18n 表（采 VUA-8 平铺 groups:{}＋importMaterial 键删除＋composePage 保留 wt-7 已审措辞携 VUA-8 注释）＋REGISTRY＋design-standard 双语（**两线版本撞车如实收拢 0.7.12**：main 0.7.11=§8.7 模板枚举 vs 分支 0.7.10/0.7.11=导航重构＋转盘转正，线性并序＋撞车注记不改史＋正文引用随升＋REGISTRY 行随升并修正 main 侧行停 0.7.10 的既有漂移）。**合并树定向验证集成亲测全绿（01:5x–02:0x，操作者证用户栈 01:20 关闭、tasklist 实证无 electron/provider 进程）**：desktop typecheck 双 0＋vitest **89 文件 806/806**（对 main 世代零回退）＋check:i18n 三表对齐＋boundary OK＋contrast 全达标＋cargo test -p vua-orchestrator -p vua-unity-bridge **304/0**（＝main 世代 234＋70；分支自述 231＋70 系其自身世代差值吻合）＋clippy 两 crate --all-targets 0＋**check:leak 155 指纹零泄漏（分支诚实未跑项候补跑兑现）**；仍诚实未跑：C# EditMode（无仓内 batchmode runner 候真机 Unity 窗）、pnpm build cargo-release 段。零端到端宣称维持。
-- **【插入任务二】W25 真机新发现登记＝开放问题 #43（操作者已完成取证 2026-09-20 15:17Z 真机，集成只登记不修码）**：任务 prod-b345e8a09ff7 失败（`vua.material.bridge_failed: Unity exited unsuccessfully (Some(1))`，快照回滚成功 restoreSucceeded=true）；Editor.log 证实 -projectPath 指向 synthetic-avatar-project 被拒 exit 1——目标工程目录为空（无 ProjectSettings/Assets）；根因＝素材链 material_intake.rs::plan（201–221）步骤集缺工程供给条件步骤，对照配方链 assembly.rs:289-303/672-681 有 ProvisionProject；证据四件套（provider.db＋records json＋Editor.log:36＋空目录实测）在 #43 行；**修复切片已派核心座（wt-2）在途**，本行候修复切片验收随批更新。
-- **wt-2 F4 wire 接线批收编（合并 b6d7b29，预检零冲突）**＝slot/wt-2 四笔（追平壳 95b0918 零自有＋**接线批 7361213 恰 8 文件 1738+/133-**＋状态批 f7a95a8＋订正批 5372de2 竞速登记随合并收编）——集成逐文件亲审成立：三路由臂 packages.enableRepo/disableRepo/refreshRepo（A4 removeRepo 任务化同构：闭单键集 {repoId} 形状判决先行→repo_lifecycle_capabilities 按方法门 submit 前绝不进任务→九态任务；收据 enabled/disabled 恰三键回显、refreshed 必带 cacheUpdated 两臂皆成功；端口拒绝折 execution_failed 盖 v0.6 族常量携原码零新码）＋served 行 packages.repoLifecycleOps 任一位 available＋双常量 V06/PACKAGES_REPOS_SCHEMA_VERSION_V02 命名发布＋共享尾参数化（A4 三路由传 V04 常量行为逐字节不变）＋packages.listRepos v0.2 协商路由臂（command 面逐字节 0.1）＋wire 测试 11+3 例骑真帧环＋双语协议本 0.6.1/0.2.1 词面零变更＋REGISTRY 两行。**合并树定向复跑集成亲测全绿**：provider-host **43 套件 288/0**＋orchestrator 234/0＋project-manager 127/0＋clippy 三 crate 0＋contracts **84/84**＋orchestrator-provider **46/46**＋typecheck 双 0——**验收即解锁：环境 F4 实现核对切片＋桌面 F4 形状核可双前置全成就**（F4 链两环在库：冻结 47d4185〔139〕→接线 7361213〔141〕；#41 行随批更新）。
-- **四树簿记批随轮收编（均恰本文件 collab 面＋零自有壳，collab-only 免全量照章）**：wt-3（合并 1667d5c：壳 68afbfd＋状态批 77c47b6）＋wt-4（合并 51f7270：壳 bc2c163＋状态批 a7d4f49＋订正批 047591f 世代表述订正 append-only）＋wt-5（合并 ea07006：壳 f0b0518＋状态批 c099c56 含同窗竞速订正）＋wt-6（合并 7587c35：壳 0dfeb5a＋状态批 4c26363）。wt-3「形状核可不领取」与 wt-6「实现不领取」均系其落笔时点事实（接线批彼时未入库）——本批接线入库后双前置全成就，两席下轮首领即办。
-- **登记项三＝U16**：车间入口模型（素材驱动 vs 配方驱动主次）候用户裁决 [需用户]，裁决后立项，不展开（用户提问由操作者主会话答复）。
-- **brief ①区判读（01:46 实读）**：wt-2 验收请求兑现（本批合并 b6d7b29）；wt-3（68afbfd＋77c47b6）/wt-4（a7d4f49＋047591f）/wt-5（f0b0518＋c099c56）/wt-6（0dfeb5a＋4c26363）四条簿记候验收随轮收编；wt-7 验收请求恢复＝a196df5 is-ancestor 亲测在 main＋③区领先 0 双实证就地消化（用户裁决登记「已在 main」）；失鲜工作树无。收编后 slot/wt-2～wt-6＋slice 两分支领先全 0（is-ancestor 逐一亲测）。
+- **wt-2 三笔 --no-ff 收编（合并 f3dc7a4f，merge-tree 预检 exit 0 零冲突合成树
+  0bdc40d2）**＝追平壳 e8104a8（零自有纯吸收，落后 24→0）＋实现批 70f7476（恰 40
+  文件 987+/36-）＋状态批 044cb10。派单验收重点逐项亲审成立：
+  1. **resolve 仅新建路径**：接线骑幂等重检之后，已供给工程零 resolve 调用——执行
+     面钉 resolves==0（b3_batch146_provisioned_target_plans_and_runs_zero_resolve_
+     calls 断言「the already-provisioned path must not resolve」）＋新建路径恰一次
+     （既有空目标测试加强 resolves==1）。
+  2. **指纹重取在 resolve 后（哨兵序）**：CreatingVpm resolve 臂投放
+     `.vua/batch146-resolve-marker`，FakeBridge 逐命令记录哨兵在场事实，断言
+     marker_seen[0]==true＝首条 Bridge 命令（基线重取）记录时哨兵已在场——指纹覆盖
+     落包后最终态钉死。
+  3. **失败两臂诚实**：backend Err 臂→`vua.material.provision_failed` 携原码
+     （capability_missing 含内＝CLI 后端新建供给如实失败）；收据 failed 非空臂→携
+     首个依赖 reason_code＋id 同臂上浮；两臂照常空态快照补偿（隔离区在场）＋失败
+     Build Record 照常发布。
+  4. **域外机械补位核验成立**：acquisition warehouse_maintenance.rs 恰 1 行（tests
+     mod 内 VpmCapabilities 字面量补 resolve_project: false）＋provider-host 24 测试
+     文件＋production_host.rs（1+/1-）全系同族字面量——`git show 70f7476 --
+     crates/provider-host` 全 diff 逐行核对，非 resolve_project 行仅被替换旧行＝
+     纯编译涟漪零行为变更，provider_host.rs 路由零触碰零新 gateway 方法。
+  5. 端口面（trait 方法＋ResolveReceiptV01 三闭集＋家族常量
+     `vua.vpm-resolve-receipt/v0.1`＋VpmCapabilities.resolve_project 独立位关闭既有
+     预留点 ORC-DEV-004＋trait-default 缺席臂）与协议本 0.2→0.2.1 仅注记、REGISTRY
+     同步、向量 description 数据面更新逐项对表成立。
+- **wt-6 两笔 --no-ff 收编（合并 edeaa086，预检 exit 0 零冲突合成树 b719f48a）**＝
+  实现批 51b38e0（恰两文件 651+/36-）＋状态批 14d27b9；**fast-forward 对齐 044cb10
+  实测＝与 wt-2 落地端口面零偏差 verbatim 骑乘**（环境座并行草案〔all-or-nothing
+  Err 设计〕未入库，按核心落地语义交付——派单风险点收敛方向裁决无需出手，落地已
+  一致）。三项对齐钉亲审成立：①幂等前移短路于集合装载之前（端口面文档「touches
+  nothing」律字面兑现——在线 load 臂会刷新仓库缓存〔网络＋缓存写〕，快路径绝不装载
+  集合；环回连接计数不动＋工程树逐字节双钉 f6_resolve_idempotent）；②离线安装器无
+  http（http_install = if offline { None }——离线绝不为包体出网，库自身 Offline
+  mode 错误如实上浮绝不静默半成功）；③失败承载体按网络段二分（offline 下载腿确定性
+  repo_fetch_failed——端口面文档「repo_fetch_failed for the network segment」自有
+  词句；在线安装/清单写回腿照落地 apply_failed；repo_fetch_failed 系既有构造器
+  src:592 零新码）。测试 7 例全环回夹具（TcpListener 127.0.0.1:0，零真实网络零新
+  依赖）：主钉恰 2 连接＋source_repo＝行 id／幂等零网络零写入／不完整收据
+  no_matching_package 恰 1 连接 zip 从未开始树逐字节不变／**全禁用仓互证双向钉**
+  （禁用行零连接＝离开集合世界≠取数失败＋重启用对照臂同包落地＝collection_world
+  双向钉）／离线 repo_fetch_failed example.invalid 零接触／能力位双向钉（库 true／
+  CLI false＋capability_missing）／损坏状态文件第六消费者同律 backend_unavailable。
+  **部分失败不静默半成功成立**（failed 收据如实不完整面＋下载腿诚实失败＋零半成功
+  路径）。测试绝不触网核实（全部环回＋example.invalid 占位域）。
+- **操作者裁决两笔随验收落账**（登记环境座申报的指派分歧）：
+  - (a) 派单字面「解析失败→整次 Err」未实现，落地为 Ok 携非空 failed 收据——
+    **裁定采纳落地形态**：收据按依赖逐条诚实，素材链 run_provision 已把非空 failed
+    聚合为 provision_failed 上滚，用户结局两案相同而收据信息更丰富；验收复核聚合
+    测试钉在场（b3_batch146_incomplete_resolve_reports_the_honest_face_and_restores
+    断言 code 含 vua.vpm.no_matching_package＋status Failed）。
+  - (b) reason_code 用 `no_matching_package` 而非 repo_not_found——**裁定采纳**：
+    语义更准（源在而版本不合）。
+  - 两笔裁决锚已补注 027 验收登记节（第 147 批节）与素材协议本双语 0.2.1 注记
+    （ZH/EN 镜像同步）；REGISTRY 行括注同步。
+- **合并树定向复跑集成亲测全绿（05:4x–06:0x，df 先查 595G/69%）**：cargo test 五
+  crate 合计 **812/0**（orchestrator 234/0＋provider-host 288/0＋project-manager
+  **150**/0＝vpm_backend 80〔常备 66＋F4 4＋核心批146 3＋环境 7〕＋unity-bridge
+  77/0＋acquisition **63**/0 机械补位 crate 复跑零回归；对第 145 批世代四 crate
+  736 净 +76＝五 crate 口径扩展 +63 与两批新测 +13，数字自洽）＋clippy 五 crate
+  --all-targets **0 警告 0 错误**＋desktop typecheck 双 tsconfig **exit 0**。
+- **BOARD 登记（用户裁决与讨论项）**：
+  1. 开放问题 **#44 行**＝用户裁决（2026-09-21）装配词面纪律：**「素材直导链的单
+     模型导入→上传全流程在 W25 汇报/文档/UI 中不得称『装配』」**——「装配」保留给
+     配方链（衣装挂接）语义；wt-4 演练脚本 A2 段标题含「装配」字样者候产线座订正
+     （登记指向，不改他树文件）。
+  2. **U17 行**＝SDK 依赖解析依裁决落地＝本批验收对象；验收后记「**代码面闭环，
+     真机候 W25**」。
+  3. **U18 行**＝shader 依赖策略讨论中（检测驱动按需安装 vs 每项目全装三 shader），
+     操作者答复用户中，候用户裁决后立项 [需用户]——一行登记。
+- **前录轮转**：存 134–143＋145＋本批 10 段（2026-09-20 15:0x 段轮出依 git 历史）。
+- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋库面＋环回源证据；SDK
+  解析真机走查（活仓库解析下载 com.vrchat.base/avatars）归 W25（O-2），测试绿≠
+  真机绿。`?? _local_p27_devlog.txt` 照例不触碰。
+
+## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
+第 145 批（03:5x–04:4x）＝wt-6 F4 补切片验收闭环＝027 F4 五环闭环收官（合并
+63c8981）＋027 F1–F5 全落地冻结＋BOARD 收官段。第 143 批（03:0x–03:4x）＝wt-3 桌面
+双环＋W25 呈现缺口修复轮收编（e40530c）＋wt-6 实现批退回裁决。第 142/141/139/138/
+137/136/135/134 批见 BOARD 前录与 git 历史。
 
 ## 阻塞
-无。（无本地工作阻塞。#43 修复在途指核心座；U15/U16 候用户非阻塞。）
+无。（无本地工作阻塞。#43 真机复验候 W25 用户回访；U15/U16/U18 候用户非阻塞；
+wt-4 A2 段「装配」字样订正候产线座；027 已冻结收官。）
 
 ## 下次合并意图
-候验收队列现清空（六树＋两用户授权分支领先全 0）。下窗优先面：**027 F4 后链双环候领**——环境 F4 实现核对切片（VrcGetLib 覆写三独立位＋.vua/vpm-repo-state.json 自有存储启停＋etag 两臂投影＋repos_v02 状态位投影＋with_environment_root 临时根测试；锚＝v0.6.1 协议本「后端指向根事实」节＋存储裁决节）与桌面 F4 形状核可（F2/F3/F5 九项对照同径；呈现锚＝v0.2 enabled 位禁用在列不隐藏、cacheUpdated=false 如实「已是最新」非错误）；**#43 素材链修复切片候核心座交付**（装配 A2 段修复，真机复验归 W25）；wt-3 下轮消化 VUA-8 并入的导航重构面（其追平壳自然吸收）；U15/U16 候用户裁决；VUA-7/VUA-8 后续批候用户裁决与登记。
+候验收队列：slot/wt-2/6 领先全 0（本批收编闭环）。wt-7
+（slice/production-review-fixes，领先 1）与 wt-8（slice/production-review-repairs，
+领先 1）维持观测候其验收请求（两树均自述未请求合并，不代合并）。wt-4/wt-5 簿记批
+候随轮验收。#43 真机复验候 W25（O-2）。U15/U16/U18 候用户裁决。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 01:46–02:2x，节拍轮工作时段 date 实测）：①date 01:46 实测工作时段，pnpm collab:brief ①区六条判读＝wt-2 兑现、wt-3/4/5/6 四条簿记随轮收编、wt-7 is-ancestor 消化，失鲜工作树无；②插入任务一（用户裁决最高优先）＝VUA-7 亲测已在 main 仅登记＋VUA-8 审 diff（42 文件）→merge-tree 预检 7 冲突→就地裁决（i18n 四表取并集、design-standard 撞车收拢 0.7.12、REGISTRY 行随升并修漂移）→合并 0f9350f→合并树定向验证亲测全绿（typecheck 双 0＋vitest 806/806＋i18n/boundary/contrast 过＋cargo 两 crate 304/0＋clippy 0＋check:leak 155 零泄漏，用户栈关闭 tasklist 实证）——合并提交消息注明授权来源（用户裁决 2026-09-21，AGENTS.md 1.1.4 例外 b）；③插入任务二＝W25 A2 失败发现照操作者取证结论登记 BOARD #43（证据四件套＋根因对照＋修复在途指核心座），零修码；④例行验收栈＝wt-2 接线批 8 文件逐文件亲审＋--no-ff 合并 b6d7b29＋合并树定向复跑亲测全绿（288/0＋234/0＋127/0＋clippy 0＋84/84＋46/46＋typecheck 双 0），验收解锁环境实现＋桌面核可双环；四树簿记批 collab-only 收编（1667d5c/51f7270/ea07006/7587c35）；⑤U16 登记不展开；BOARD 前录第 141 批＋第 130 批轮出＋#41 第 141 批推进节＋#43 新行＋U16 新行＋本状态批；收编后七分支领先全 0 复证；⑥[需用户] 条目（U15/U16）照规则跳过未代决；登记批推送照网络实况办理（schannel SSL 失败则登记重试≤3）；⑦诚实边界维持：测试绿≠真机绿、零端到端宣称——VUA-8 弹窗层叠与转盘、F4 served 行真机呈现、#43 修复复验全归 W25（O-2）；VUA-8 两笔诚实未跑项（C# EditMode、cargo-release 段）如实登记。在手无半途切片、除本登记批外无未提交改动。完成后退出待命。
+本轮（2026-09-21 05:2x–06:1x，节拍轮工作时段 date 实测）：①pnpm collab:brief ①区
+判读＝wt-2/wt-6 验收请求进入本批、wt-3 修复批 8563571 系第 143 批已收编身份就地消
+化、wt-4/wt-5 簿记请求照 is-ancestor＋领先 0 双实证消化、wt-7/wt-8 分工知会观测登
+记、失鲜工作树无；②wt-2 三笔验收＝派单验收重点逐项亲审（仅新建路径零调用钉＋哨兵
+序＋失败两臂＋域外机械补位全 diff 逐行核对纯字面量）→merge-tree 预检 exit 0 零冲
+突（0bdc40d2）→--no-ff 合并 f3dc7a4f；③wt-6 两笔验收＝fast-forward 对齐端口面零
+偏差实证＋三项对齐钉亲审＋七例环回测试逐例对表（绝不触网、禁用集互证、部分失败不
+静默）→预检 exit 0 零冲突（b719f48a）→--no-ff 合并 edeaa086；④操作者裁决两笔随
+验收落账（采纳落地形态＋采纳 no_matching_package）＋027 第 147 批登记节＋素材协议
+本双语裁决锚＋REGISTRY 括注；⑤合并树定向复跑亲测：cargo 五 crate 812/0＋clippy 五
+crate 0＋typecheck 双 0；⑥BOARD 登记＝#44 装配词面裁决行＋U17 代码面闭环行＋U18
+shader 依赖策略候裁决行＋前录轮转（10 段）＋本状态批；⑦[需用户] 条目（U15/U16/
+U18）照规则跳过未代决；⑧推送照网络实况办理（失败重试≤3 并登记）；⑨诚实边界维持：
+零端到端宣称——SDK 解析真机走查归 W25（O-2），测试绿≠真机绿。在手无半途切片、除
+本登记批外无未提交改动。完成后退出待命。
 
 ## 留言
-- [→核心/wt-2]（回执＋新指派知会）**F4 wire 接线批 --no-ff 收编入库（合并 b6d7b29），F4 链两环在库**：收编四笔（追平壳 95b0918 零自有＋接线批 7361213 恰 8 文件 1738+/133-＋状态批 f7a95a8＋订正批 5372de2 竞速登记随合并收编）；逐文件亲审成立（三路由臂形状判决→按方法门→九态任务＋收据最小形状＋折叠盖 v0.6 族零新码＋served 行＋双常量＋共享尾参数化 A4 逐字节不变＋listRepos v0.2 协商臂＋wire 11+3 例＋协议本 0.6.1/0.2.1＋REGISTRY 两行）；合并树定向复跑亲测 288/0＋234/0＋127/0＋clippy 0＋84/84＋46/46＋typecheck 双 0 全绿。**新指派知会：W25 A2 段素材链修复切片已派你席**（操作者 2026-09-21 指派；发现登记＝BOARD 开放问题 #43：素材链 material_intake.rs::plan 步骤集缺工程供给条件步骤，对照配方链 assembly.rs ProvisionProject 有而素材链无，证据四件套在 #43 行）——候你席领取，修复后 A2 复验归 W25。另：你树在途「028 #3 对表」维持候办。零端到端宣称维持——已接线未消费。
-- [→环境]（知会）**F4 实现核对切片双前置全成就解锁候领**（冻结 47d4185＋接线 7361213 均在库）：VrcGetLib 覆写 repo_lifecycle_capabilities 三独立位＋enable_repo/disable_repo（.vua/vpm-repo-state.json 自有存储读写，绝不触 settings.json）＋refresh_repo（etag 两臂投影 cacheUpdated）＋repos_v02/list_repos_v02 状态位投影（id 缺席行恒 true）＋with_environment_root 临时根单元测试；验收锚＝packages-ops **v0.6.1** 协议本「后端指向根事实」节＋存储裁决节；wire 面已备（三路由＋served 行在库），覆写翻转前真实引擎上 served 行如实 unavailable。你树状态批「接线未落地不领取」系落笔时点事实照 is-ancestor 消化，下轮首领即办。
-- [→桌面]（知会两件）①**F4 形状核可双前置全成就解锁**（冻结＋接线均在库）：照 F2/F3/F5 九项对照同径，下轮首领即办；呈现锚＝v0.2 enabled 位（禁用在列不隐藏）、cacheUpdated=false 如实「已是最新」非错误。②**VUA-8 并线开发已经用户裁决并入 main（合并 0f9350f）**：导航重构落地（import-material/compose 收敛为仓储页/配方页内容型弹窗＋侧栏平铺＋ContentDialog 新原语）＋unity-bridge v4 build_preview 契约面——你席追平壳自然吸收后，F4 消费与后续桌面切片的新键 i18n 请避让其 previewLab/dialogClose 键面并维持 wt-7 四语纪律（本席合并已保留你席 composePage 等已审措辞，en「Avatar draft」/ko「아바타 구성」＋VUA-8 结构注释并立）；design-standard 现行 **0.7.12**（两线 0.7.10/0.7.11 撞车收拢，变更记录在册）。
-- [→产线/wt-4]（回执）簿记批收编（51f7270，含世代表述订正 047591f append-only 照订正先例）；五域零触碰申报核可。车间入口模型问题已登记 **U16**（候用户裁决，裁决后立项）——你树在途「配方↔素材链接达核实候指派」维持候操作者调度，与 U16 裁决面相关联候其驱动。
-- [→数据/wt-5]（回执）簿记批收编（ea07006，含同窗竞速订正登记照先例）；数据域六点 pathspec 零触碰申报照录；第 136–141 批持续零数据席位照认。
-- [→操作者] 第 141 批办理完毕（0f9350f＋b6d7b29＋四簿记合并＋BOARD/状态批）：**插入两任务兑现**——VUA-8 经用户裁决验证后合并（定向验证全绿＋check:leak 候补跑项兑现；两笔诚实未跑项维持登记）、VUA-7 登记已在 main、W25 A2 发现登记 #43 指核心座；**F4 链两环在库，环境实现＋桌面形状核可双解锁**；U16 已登记候用户。七分支领先全 0。登记批推送照网络实况办理。
-- （回执不回执：wt-7 验收请求照 is-ancestor＋领先 0 双实证消化关账（用户裁决登记「已在 main」）；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
-
-## 【订正批·登记批落笔后机械校验暴露三异常如实订正（append-only 照 b2b2454/1cda0b2/aa4d040/7505a9f 先例不改史）】
-登记批 c2b003d 提交后收尾复跑 collab:brief ④区暴露 **3 项异常**，逐项定性并订正：①②`packages-ops-v0.6_ZH`／`packages-repos-v0.2_ZH` 状态词干失配＝接线批 7361213 将文档头状态行写作「已冻结并已接线（…）」（词干＝「已冻结并已接线」），偏离既往接线批词干法式样（对照 packages-templates-v0.1「已冻结（…）且已接线（…）」词干落「已冻结」；REGISTRY 行词干「已冻结」系照章保持）——订正＝四份协议本（ZH/EN 双镜像）状态行括注重排：「已冻结（冻结批事实…）且已接线／FROZEN (…) and WIRED (接线批事实…)」，语义零变化、词干还原、REGISTRY 行零触碰；③`schemas/unity-bridge/v4` 版本格式失配＝校验器目录尾段正则 vX.Y 不纳 unity-bridge 整数版本惯例（目录名 v4＝schemaVersion 常量 4）——订正＝`scripts/collab-brief.mjs` 尾段正则扩展为 `v(\d+(?:\.\d+){0,2})`（v<整数>/vX.Y/vX.Y.Z 皆纳；「目录版本＝登记版本 major.minor 一致」校验强度不变，注释载明扩展依据与批次）。复跑 collab:brief：**登记表 89/89 一致 0 异常＋冲突标记 0**。本订正批恰五文件（四协议本＋brief 脚本）＋本节；零代码面（docs/collab 工具面）、零测试义务照 collab-only 口径如实声明（协议本词面正文零变化，仅头部括注形态）。
+- [→核心/wt-2]（验收回执）**供给依赖解析批 70f7476 验收入库（合并 f3dc7a4f），
+  U17 代码面闭环**：派单验收重点逐项亲审成立（仅新建路径 resolves==0/==1 双钉＋哨
+  兵序 marker_seen[0]＋失败两臂诚实＋域外机械补位 acquisition 1 行与 provider-host
+  24 文件全系纯字面量 grep 实证）。操作者裁决两笔落账：(a) 落地 Ok 携非空 failed
+  收据形态采纳（聚合测试钉亲核在场）；(b) no_matching_package 采纳。协议本双语裁
+  决锚与 027 第 147 批登记节随批落账。合并树复跑 812/0 与你席申报一致。零端到端维
+  持——带解析供给真机走查归 W25（O-2）。
+- [→环境/wt-6]（验收回执）**实现核验切片 51b38e0 验收入库（合并 edeaa086）**：
+  fast-forward 对齐实测端口面零偏差；三项对齐钉逐条亲审成立（幂等前移短路集合装载
+  之前双钉／离线安装器无 http／网络段二分 repo_fetch_failed-apply_failed）；七例环
+  回测试逐例对表（全禁用仓互证双向钉与部分失败不静默半成功为验收亮点）；分歧登记
+  与操作者裁决对表一致，无需收敛动作。你席状态批 14d27b9 随批入库，候验收队列清
+  零。零端到端维持——活仓库解析真机走查归 W25（O-2）。
+- [→产线/wt-4]（订正指向知会）**用户裁决（2026-09-21）装配词面纪律**：素材直导链
+  的单模型导入→上传全流程在 W25 汇报/文档/UI 中不得称「装配」，「装配」保留给配
+  方链（衣装挂接）语义。已登记 BOARD 开放问题 #44 行；**wt-4 演练脚本 A2 段标题含
+  「装配」字样者候你席订正**（集成只登记指向不改他树文件），候随轮办理并落账。
+- [→操作者] 第 147 批办理完毕（合并 f3dc7a4f＋edeaa086＋BOARD 三行＋状态批）：
+  **U17 供给依赖解析双栈验收闭环＝代码面闭环，真机候 W25**（用户裁决「先做好 SDK
+  的导入再真机验收」的代码侧兑现完成）。操作者两笔裁决已随验收落账（027 登记节＋
+  素材协议本双语注记＋REGISTRY 括注＋BOARD 前录）。合并树定向复跑全绿（cargo 五
+  crate 812/0＋clippy 五 crate 0＋typecheck 双 0）。U18（shader 依赖策略）已一行登
+  记候用户裁决。零端到端宣称维持。候验收队列：wt-2/wt-6 清零；wt-7/wt-8 观测中。
+- （回执不回执：wt-3 验收请求照 is-ancestor 就地消化；历史留言已消化归档，在途事
+  项以 BOARD 与本状态文件当前焦点为准。）

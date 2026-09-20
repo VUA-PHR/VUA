@@ -1,7 +1,7 @@
 ---
 proposal: 027
 title: "包管理器 P0 体验面：包发现＋更新感知＋仓库启停/刷新＋模板枚举＋026 隔离文案修正（用户 2026-09-19 裁决立案）"
-status: 讨论中（2026-09-20 07:1x 推进：**F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节**——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5 链＝冻结 d09c1e6（132 批）→接线 8677607（136 批）→形状核可 d41f3a7（137 批）→**桌面消费已落节（2026-09-21 00:1x 线程末节：核对点五条逐条兑现＋定向复跑亲测全绿，消费批候随轮验收）**——环境 F5 库实现切片候环境席位、与桌面消费互不阻塞；F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
+status: 已接受（**F1–F5 五链全部落地收官（第 145 批，2026-09-21 04:0x）——F4 补切片 08923b5 经集成验收合并 63c8981 后五环闭环：冻结 47d4185→接线 7361213→形状核可 8955430→环境实现 3f8f55d＋补切片 08923b5〔第 143 批退回-补交链，集成验收登记节留痕〕→桌面消费 e05e1e7；F1/F2/F3/F5 链闭环登记见集成验收登记各节与 BOARD #41。F6 方向锚维持不冻结、不立案、单独归档候立。真机呈现与 #43 复验归 W25（O-2），本文件就此冻结**；收官前推进史：2026-09-20 07:1x 推进：F2 五环全闭环收官（第 129 批，BOARD #41 落账）＋F3 已冻结已接线且桌面形状核可已落节——F2 链＝冻结 c46545f（122 批）→接线 629699e/fabb04d（123 批）→形状核可 670828f（128 批）→消费 f23f3a3（128 批）→实现 27c3c9d（129 批合并 3e062cf，集成亲审 PASSED：repo_catalog 覆写仅库后端翻转 served 行 packages.repoCatalogOps available＋降级路径 ORC-ADP-006 同构双臂＋author 刻意缺席裁决选项 3＋repo_not_found 复用零新码＋clippy 死码警告抓真缺陷修复钉测；F2 浏览面真机可达剩余前置＝操作者刷构建）；F3 链＝冻结批 35ffb61〔恰 21 文件：result 族升 vua.packages-installed/v0.2 恰加三必带事实〔行级判定对 latestVersion 跨仓 max／updateAvailable 三态防线 024 表态②＋文档级 cacheSourced〕＋双版本协商端口默认项 query_v02/list_packages_v02＋4 正 7 负向量＋消费测试 4 例＋TS 面＋双语协议本 0.2＋REGISTRY〕经第 128 批合并 e2486ed 入库＋接线批 676b185〔恰核心域 5 文件：路由双臂协商＋面级门先于协商＋共享 P1 前置双臂零变化＋族常量 PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02 命名发布＋wire 测试 6 例骑真实帧循环＋协议本 0.2.1 词面零变更〕经第 130 批合并 abdf328 入库（集成亲审逐项 PASSED）；**桌面形状核可已落节（2026-09-20 07:1x 线程末节：九项一致通过、零预核可、基于第 130 批收编世代定向复跑亲测全绿）——F3 桌面消费切片〔已装表「可更新」列＋行内升级键复用 A2 version=null 语义〕就此解锁候桌面续领；环境 F3 库实现切片 GO（第 130 批登记）候环境席位**；F5 链＝冻结 d09c1e6（132 批）→接线 8677607（136 批）→形状核可 d41f3a7（137 批）→**桌面消费已落节（2026-09-21 00:1x 线程末节：核对点五条逐条兑现＋定向复跑亲测全绿，消费批候随轮验收）**——环境 F5 库实现切片候环境席位、与桌面消费互不阻塞；F4 刷新面照面序候后续节拍、F4 启停面候 W25 真机核实〔八步方法在库〕——各面照 026 五链程序逐面办理；前情：三域收敛达成于第 121 批，F2 词面冻结于第 122 批，F3 词面冻结于第 128 批）
 author: wt-main（集成，用户裁决转述）
 date: 2026-09-19
 ---
@@ -1099,3 +1099,153 @@ v0.2 协商消费＋v0.1 照常/v0.2 行闭集两负例〕＋router.test F4 分�
 production-workshop-view.test 失败行词面 5 枚＋live-production-port 失败行骑行 1
 枚）＋build 成功＋**check:i18n OK**（四表对齐）＋**check:boundary OK**＋
 **check:contrast 全达标**。df 先查后申报。**零端到端宣称维持**。
+
+---
+
+## 集成验收登记（第 143 批，2026-09-21 03:2x）
+
+- **F4 桌面消费环验收入库**：消费批 e05e1e7＋失败行修复批 8563571（wt-3）经
+  --no-ff 合并 e40530c 收编。集成逐文件亲审成立：六项消费核对点逐条兑现（能力
+  缺席降级／禁用在列不隐藏＋cacheUpdated=false「已是最新」信息呈现绝非错误／
+  诚实错误态／裁决 (c) 词面纪律／setRepoEnabled 本地假翻转全链退役＋演示
+  checkbox 只读化〔全桌面零残留假成功路径〕／零端到端宣称）；失败行修复批兑现
+  诚实纪律 #2（messageKey 命中词表用本地化词面、断链/词表外回落 code 原词、
+  error 缺席仅基础词面绝不虚构）。合并树定向复跑全绿（读数见 wt-main 状态批
+  第 143 批；首跑 vitest 818/819 一例红系本树 contracts dist 陈旧——重建后
+  819/819 全绿，陈旧事故先例口径）。
+- **F4 环境实现批验收裁决＝退回（不合并）**：实现批 3f8f55d（wt-6，恰两文件
+  1008+/14-）对照冻结词面 47d4185 逐条复核，其自拟十项核对表所载各项（存储
+  裁决／settings.json 逐字节钉／三独立位与缺席臂／cacheUpdated 双臂／refresh
+  不改位／六键闭集 id 缺席恒真／零新码三复用／add-remove 残留清扫／wire 零触
+  碰）经亲审成立；三项实现侧解释（无 url 本地行 refresh=false、LF 写回、etag
+  读法）审为忠实镜像的实现自由度非词面偏离。**但冻结词面「禁用语义＝该行离开
+  包集合世界」（packages-ops v0.6 协议本「启停语义（冻结词面事实）」节＋
+  REGISTRY 冻结行明文：repo-catalog 列表／latest 判定／A2 安装解析器不再见其
+  包）未兑现**——集成直读 slot/wt-6 树源码：禁用集消费点恰三处（启停写面、
+  add/remove 清扫、list_repos_v02 投影），repo_catalog／package_catalog_impl
+  （PackageCollection::load/load_cache 装载全部订阅行）与安装解析路径均无禁用
+  过滤，禁用行的包仍参与枚举与解析。而 packages-repos v0.2 协议本对 enabled
+  位语义定义恰为「true＝该行在包集合世界中活跃（enumeration and resolution
+  see its packages）／false＝禁用但在订阅且在列」——位答 false 而枚举解析照
+  见其包＝投影虚假事实（诚实纪律 #1）。此系冻结词面语义缺失非实现自由度；
+  实现批自拟十项核对表第 6 项只核投影未核效果面属核对表漏项，验收对照对象是
+  冻结词面本身。wt-6 十项之外另有两项交叉实证同理登记：桌面消费批 i18n
+  disabledNote 词面向用户承诺「包不再参与浏览与安装解析」——该承诺的效果面
+  即此缺口。**退回处理**：候 wt-6 补切片（集合装载路径消费禁用集：repo-catalog
+  列表／latest 判定／安装解析器三面＋测试钉），补切片入库并验收后 F4 链方成
+  五环。**F4 链现况如实：冻结 47d4185→接线 7361213→形状核可 8955430→桌面
+  消费 e05e1e7 四环在库，环境实现环退回在途**——027 收官状态如实登记为
+  F1/F2/F3/F5 四链全闭环＋F4 链四环在库，不宣布 F1–F5 全部落地。
+- **零端到端宣称维持**：全部结论系代码面＋fake 端口证据；F4 served 行真机翻
+  转、禁用/刷新控制真机呈现、执行日志失败行真机呈现归 W25（O-2）。
+
+---
+
+## 集成验收登记（第 145 批，2026-09-21 04:0x）——F4 补切片验收入库，退回-补交-闭环链就此闭合
+
+- **F4 环境实现补切片验收入库**：补切片 08923b5（wt-6，恰两文件 631+/46-
+  ＝crates/project-manager src＋tests）经 --no-ff 合并 63c8981 收编，随并入
+  退回实现批 3f8f55d（第 143 批亲审成立面原样入库）＋自理追平壳 14d19ed
+  （零自有内容）＋状态批 f86dfe1/342dfba。集成四验收点逐条亲审成立：
+  1. **五装载点确接过滤且仅作用于包集合世界**（第 143 批退回理由恰一处的
+     正面核销）：新 `collection_world()` 装载输入构造（读 VUA 自有状态文件
+     →克隆 Settings→库公开 `remove_repo` retain 按 repoId 移除禁用行）在
+     装载层一次完成，集成直读源码核实恰五调用点全数接入——`repo_catalog`
+     （:1481）、`package_catalog_impl`（:2092，`package_catalog`/v02 双族
+     同走）、`list_packages_v02` latest 判定（:1135）、`preview_install`
+     （:1651）＋`apply_install`（:1896，A2 解析器）；过滤后 `world` 传入
+     每处 `PackageCollection::load/load_cache`，原 `settings` 仅用于
+     show_prerelease 开关等非集合事实；`preview_install_for_plan` 两臂均
+     委托已过滤 `preview_install`＝无第六裸装载点。**两面不矛盾复证**：
+     `list_repos_v02`（:1386）逻辑零改动零过滤调用——enabled=false 行照列
+     （诚实纪律 #1 正面：订阅面在列）而其包在枚举/判定/解析三面缺席
+     （反面：集合世界如实收窄），测试①两面对照同测试钉死。冻结词面
+     packages-ops v0.6「启停语义（冻结词面事实）」节（协议本 :88–93）逐
+     句兑现。
+  2. **offline load_cache 腿已钉＋缓存失效结构钉成立**（第 143 批点名项）：
+     测试①全 offline（`with_environment_root(..., true)`）且断言
+     `cache_sourced=true` 证明 load_cache 腿真实走通非旁路；测试④在线臂
+     （`cache_sourced=false`＋预定义两仓库自有开关环回化＋loopback 200）
+     证明过滤骑在线装载臂同等成立。缓存失效结构钉双重实证可信：结构面＝
+     `VrcGetLibBackend` 字段恰 runtime/http/root/offline 四项（无跨调用集合
+     缓存层可存活）；行为面＝测试②同实例三 Toggle 六世界态（缺省全启用→
+     禁用排除→启用恢复→再禁用排除，写面返回后下一读面即见新状态——若有
+     缓存层此测必红）。
+  3. **损坏状态文件拒绝而非猜测全启用**（诚实纪律 #3 同族）：测试③写
+     "not-json" 后五面（repo_catalog／package_catalog／preview_install／
+     list_packages_v02＋v0.2 投影面）全拒复用码 `vua.vpm.backend_unavailable`
+     ＋category Unavailable；apply_install 与 preview 同 helper 同共享构造
+     器 `backend_unavailable_state`（源码 :1896 亲核）同享拒绝。
+  4. **词面零改、wire/provider-host/桌面零触碰复证**：补切片 diff 恰两
+     project-manager 文件，零 docs/contracts/i18n 触碰。两项实现侧解释经
+     对照协议本核为**向冻结词面收敛**非偏离：①第 2 层 cached 事实改
+     `repo_cached_fact` 统一事实源——packages-repos-catalog v0.1 冻结字段
+     语义「逐仓库缓存存在性已由必带 cached 事实诚实覆盖」，旧硬编码 false
+     对缓存在场的禁用行恰系谎报未刷新，新实现对启用行第 2 层逐案相等
+     （可解析缓存必被装载）、对禁用行如实 true；②装载腿状态读取失败经共
+     享构造器与 v0.2 投影面同事实同码同词——list_repos_v02 内联闭包换构
+     造器零字节差，一事实一码。
+- **合并树定向复跑集成亲测全绿（04:0x，df 先查 582G/69%）**：cargo test
+  四 crate **合计 736/0**（project-manager 140/0＝vpm_backend 70〔常备
+  66＋补切片新 4〕＋orchestrator 234/0＋provider-host 288/0＋unity-bridge
+  74/0；对第 143 批世代 723 净 +13＝退回批自带 9 例＋补切片 4 例，数字
+  自洽）＋clippy 四 crate --all-targets **0 警告**＋desktop typecheck 双
+  tsconfig **exit 0**。merge-tree 预检 exit 0 零冲突（合成树 a85e8d7）。
+- **F4 五环闭环（027 收官）**：冻结 47d4185〔139〕→接线 7361213〔141〕→
+  形状核可 8955430〔142〕→环境实现 3f8f55d＋补切片 08923b5〔145〕→桌面
+  消费 e05e1e7〔143〕。退回-补交-闭环链留痕：第 143 批退回裁决（冻结词面
+  效果面缺失＝投影虚假事实，诚实纪律 #1）→ wt-6 补切片逐条兑现（第 143
+  批点名腿全钉＋实现侧解释两项经协议本对照核为收敛）→ 本批验收闭环。
+  **F1 隔离文案修正＋F2＋F3＋F4＋F5 五链全部落地；F6 方向锚维持不冻结、
+  不立案、单独归档候立不变**。桌面 disabledNote 词面「包不再参与浏览与
+  安装解析」自此有真实效果面背书（此前因 v0.2 族无人应答无呈现路径，缺
+  口已闭合）。
+- **零端到端宣称维持**：全部结论系代码面＋库面＋环回源证据；F4 served 行
+  packages.repoLifecycleOps 真机翻转、禁用/刷新控制与 disabledNote 真机
+  呈现、#43 真机复验全归 W25（O-2）。测试绿≠真机绿。
+
+## 集成验收登记（第 147 批，2026-09-21 05:4x）——U17 供给依赖解析双栈验收入库（代码面闭环）
+
+> 本节系已冻结提案（status「已接受」）的 append-only 验收登记，照第 143/145 批先例；
+> 027 链外延展（素材链供给步骤依赖解析，U17）依用户裁决 2026-09-21「先做好 SDK 的
+> 导入再真机验收」落地，登记于此留验收链痕。
+
+- **wt-2 三笔 --no-ff 收编（合并 f3dc7a4f，预检 exit 0 零冲突合成树 0bdc40d2）**＝追平壳
+  e8104a8（零自有）＋实现批 70f7476（恰 40 文件 987+/36-）＋状态批 044cb10。集成亲审
+  成立面：端口面钉底（`VpmBackend::resolve_project`＋`ResolveReceiptV01` 三闭集
+  resolved/already_satisfied/failed＋家族常量 `vua.vpm-resolve-receipt/v0.1`＋
+  `VpmCapabilities.resolve_project` 独立位关闭既有预留点 ORC-DEV-004＋trait-default
+  缺席臂 capability_missing）；run_provision 接线序 create→resolve→指纹重取、仅新建
+  路径（已供给零调用，resolves==0 幂等钉）；指纹重取在 resolve 后（哨兵序
+  `marker_seen[0]` 断言）；失败两臂诚实（Err 臂携后端原码／failed 非空臂携首依赖
+  reason_code＋id）；域外机械补位核验（acquisition 1 行 tests 字面量＋provider-host
+  24 测试文件＋production_host.rs 全系 `resolve_project: false` 纯编译涟漪，grep 实证
+  diff 无第五行为）；协议本 0.2→0.2.1 仅注记＋REGISTRY 同步。
+- **wt-6 两笔 --no-ff 收编（合并 edeaa086，预检 exit 0 零冲突合成树 b719f48a；
+  fast-forward 对齐 044cb10＝端口面零偏差 verbatim 骑乘）**＝实现批 51b38e0（恰两文件
+  651+/36-）＋状态批 14d27b9。三项对齐钉亲审成立：①幂等前移短路于集合装载之前
+  （「touches nothing」律字面兑现——在线 load 臂会刷新仓库缓存，快路径绝不装载集合；
+  环回连接计数不动＋工程树逐字节双钉）；②离线安装器无 http（离线绝不为包体出网，
+  Offline mode 错误如实上浮绝不静默半成功）；③失败承载体按网络段二分（offline 下载腿
+  确定性 repo_fetch_failed——端口面文档自有词句；在线安装/清单写回腿照落地
+  apply_failed；repo_fetch_failed 系既有构造器零新码）。测试 7 例全环回夹具
+  （TcpListener 127.0.0.1:0 零真实网络零新依赖）：主钉恰 2 连接＋source_repo＝行 id／
+  幂等零网络零写入／不完整收据 no_matching_package 恰 1 连接 zip 从未开始树逐字节
+  不变／全禁用仓互证双向钉（禁用行零连接＝离开集合世界≠取数失败＋重启用对照臂同包
+  落地＝collection_world 双向钉）／离线 repo_fetch_failed example.invalid 零接触／
+  能力位双向钉（库 true／CLI false＋capability_missing）／损坏状态文件第六消费者同律
+  backend_unavailable。部分失败不静默半成功成立。
+- **操作者裁决两笔随验收落账**：(a) 派单字面「解析失败→整次 Err」未实现，落地为 Ok
+  携非空 failed 收据——**裁定采纳落地形态**（收据按依赖逐条诚实，run_provision 已把
+  非空 failed 聚合为 provision_failed 上滚，用户结局两案相同而收据信息更丰富；聚合
+  测试钉 b3_batch146_incomplete_resolve_reports_the_honest_face_and_restores 亲核在
+  场）；(b) reason_code 用 `no_matching_package` 而非 repo_not_found——**裁定采纳**
+  （语义更准：源在而版本不合）。裁决锚已补注素材协议本双语 0.2.1 注记。
+- **合并树定向复跑集成亲测全绿（05:4x–06:0x，df 先查 595G/69%）**：cargo test 五 crate
+  合计 **812/0**（orchestrator 234/0＋provider-host 288/0＋project-manager 150/0
+  〔vpm_backend 80＝常备 66＋F4 4＋核心批146 3＋环境 7〕＋unity-bridge 77/0＋
+  acquisition 63/0 机械补位 crate 复跑零回归；对第 145 批世代四 crate 736 净 +76＝
+  五 crate 口径扩展 +63 与两批新测 +13，数字自洽）＋clippy 五 crate --all-targets
+  **0 警告 0 错误**＋desktop typecheck 双 tsconfig **exit 0**。
+- **零端到端宣称维持**：SDK 解析真机走查（活仓库解析下载 com.vrchat.base/avatars）
+  归 W25（O-2），真机复测通过前不宣称端到端；测试绿≠真机绿。

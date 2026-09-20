@@ -63,6 +63,13 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef) {
     fs::create_dir_all(project_root.join("Assets")).unwrap();
     fs::create_dir_all(project_root.join("Packages")).unwrap();
     fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
+    // Already-provisioned target: the standing fixtures plan and execute the
+    // UNCHANGED v0.1 step set (zero-change law for provisioned projects).
+    fs::write(
+        project_root.join("ProjectSettings").join("ProjectVersion.txt"),
+        "2022.3.22f1",
+    )
+    .unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
     let project = ProjectRef {
         id: "project".into(),
@@ -71,15 +78,33 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef) {
     (base, project)
 }
 
+/// An EMPTY target directory: no ProjectSettings/, no Assets/. Plans on this
+/// path carry the conditional provision step (plan v0.2).
+fn make_empty_target(base: &Path) -> ProjectRef {
+    let project_root = base.join("empty-target");
+    fs::create_dir_all(&project_root).unwrap();
+    ProjectRef {
+        id: "project".into(),
+        root: project_root,
+    }
+}
+
 fn inspection(folder: &Path) -> SourceFolderInspectionV01 {
     MaterialIntakeEngine
         .inspect_folder(folder, "corr")
         .expect("source inspects")
 }
 
-fn plan(mode: MaterialEntryMode, folder: &Path) -> MaterialIntakePlanV01 {
+fn plan(mode: MaterialEntryMode, folder: &Path, project_root: &Path) -> MaterialIntakePlanV01 {
     MaterialIntakeEngine
-        .plan(mode, "project", "project-fingerprint", inspection(folder), "corr")
+        .plan(
+            mode,
+            "project",
+            "project-fingerprint",
+            inspection(folder),
+            project_root,
+            "corr",
+        )
         .expect("plan builds")
 }
 
@@ -102,6 +127,13 @@ fn confirmation(plan: &MaterialIntakePlanV01) -> MaterialIntakeConfirmationV01 {
 struct FakeBridgeState {
     script: VecDeque<Result<UnityResult, BridgeError>>,
     commands: Vec<UnityCommand>,
+    /// Batch 146: whether the resolve-order sentinel
+    /// (`<root>/.vua/batch146-resolve-marker`, dropped by the
+    /// `CreatingVpm::resolve_project` arm) existed when the command was
+    /// recorded — false for every command a run issued BEFORE the resolve
+    /// leg, true from the first command after it. The index pairs with
+    /// `commands`.
+    resolve_marker_seen: Vec<bool>,
 }
 
 #[derive(Clone)]
@@ -115,6 +147,7 @@ impl FakeBridge {
             state: Arc::new(Mutex::new(FakeBridgeState {
                 script: script.into(),
                 commands: Vec::new(),
+                resolve_marker_seen: Vec::new(),
             })),
         }
     }
@@ -132,6 +165,13 @@ impl UnityBridge for FakeBridge {
     ) -> Result<UnityResult, BridgeError> {
         let mut state = self.state.lock().unwrap();
         state.commands.push(command.clone());
+        state.resolve_marker_seen.push(
+            project
+                .root
+                .join(".vua")
+                .join("batch146-resolve-marker")
+                .is_file(),
+        );
         // The real Bridge produces the package layout inside the staging
         // project at Packages/<packageId>/; the fake reproduces just enough
         // of that side effect for the deterministic publication step.
@@ -216,6 +256,7 @@ impl VpmBackend for FakeVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+            resolve_project: false,
         }
     }
 
@@ -289,7 +330,7 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     let vpm = FakeVpm::new();
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -357,7 +398,7 @@ fn b3_exec_002_source_drift_fails_before_the_first_mutation() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source);
+    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root);
     let confirmation = confirmation(&plan);
     // Drift: the source grows after Inspect/plan.
     unitypackage(&source.join("late.unitypackage"), &["Assets/Late.prefab"]);
@@ -390,7 +431,7 @@ fn b3_exec_003_cancellation_before_the_first_step_touches_nothing() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let token = MaterialCancelToken::new();
     token.cancel();
     let report = executor.execute(
@@ -431,7 +472,7 @@ fn b3_exec_004_bridge_rejection_restores_the_verified_snapshot() {
 
     let manifest_before =
         fs::read_to_string(project.root.join("vpm-manifest.json")).unwrap();
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -471,7 +512,7 @@ fn b3_exec_005_bridge_timeout_is_a_typed_failure_with_restore() {
     let bridge = FakeBridge::new(vec![Err(BridgeError::TimedOut)]);
     let executor = executor(&base, bridge, FakeVpm::new());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -503,7 +544,7 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), vpm.clone());
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::LocalReusableVpm, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -615,7 +656,7 @@ fn b3_exec_007_failed_receipt_is_never_replayed_as_success() {
     })];
     let bridge = FakeBridge::new(rejection);
     let first_executor = executor(&base, bridge.clone(), FakeVpm::new());
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let first = first_executor.execute(
         &confirmation,
         &source,
@@ -720,7 +761,7 @@ fn b3_exec_007_restore_failure_still_publishes_the_receipt() {
         LocalPackageIdentityStore::new(base.join("identities.json")),
     );
 
-    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source));
+    let confirmation = confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
     let report = executor.execute(
         &confirmation,
         &source,
@@ -767,7 +808,7 @@ fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
     let bridge = FakeBridge::new(vec![]);
     let executor = executor(&base, bridge.clone(), FakeVpm::new());
 
-    let plan = plan(MaterialEntryMode::LocalReusableVpm, &source);
+    let plan = plan(MaterialEntryMode::LocalReusableVpm, &source, &project.root);
     let confirmation = confirmation(&plan);
 
     // The user edits the declarations after planning: the produced
@@ -794,6 +835,731 @@ fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
         report.error_code
     );
     assert_eq!(bridge.command_count(), 0, "no Unity command may run on drift");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- W25 provision vectors (plan v0.2) ---
+
+/// Creates a minimal valid project skeleton and records the call — the
+/// successful-provisioning fake (the vrc-get lib template copy, faked to the
+/// smallest observable shape). Batch 146: also implements the resolve leg —
+/// it counts the calls and drops the ordering sentinel
+/// (`<root>/.vua/batch146-resolve-marker`) so the tests can prove the
+/// baseline re-read happened AFTER the resolve.
+struct CreatingVpm {
+    creates: AtomicUsize,
+    resolves: AtomicUsize,
+}
+
+impl CreatingVpm {
+    fn new() -> Arc<Self> {
+        Arc::new(Self { creates: AtomicUsize::new(0), resolves: AtomicUsize::new(0) })
+    }
+}
+
+impl VpmBackend for CreatingVpm {
+    fn name(&self) -> &'static str {
+        "creating-vpm"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+            resolve_project: true,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        self.creates.fetch_add(1, Ordering::SeqCst);
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        fs::create_dir_all(root.join("Assets")).unwrap();
+        Ok(ProjectRef { id: name.to_owned(), root })
+    }
+
+    /// The batch-146 resolve leg: counted, and it drops the ordering
+    /// sentinel so a later test can verify the baseline re-read (the first
+    /// Bridge command) happened after the resolve.
+    fn resolve_project(
+        &self,
+        project_root: &Path,
+    ) -> Result<vua_orchestrator::ResolveReceiptV01, vua_orchestrator::AppErrorV1> {
+        self.resolves.fetch_add(1, Ordering::SeqCst);
+        let marker_dir = project_root.join(".vua");
+        fs::create_dir_all(&marker_dir).unwrap();
+        fs::write(marker_dir.join("batch146-resolve-marker"), b"resolved").unwrap();
+        Ok(vua_orchestrator::ResolveReceiptV01 {
+            resolved: vec![vua_orchestrator::ResolvedPackageV01 {
+                id: "com.vrchat.base".to_owned(),
+                version: "3.10.1".to_owned(),
+                source_repo: "official".to_owned(),
+            }],
+            already_satisfied: Vec::new(),
+            failed: Vec::new(),
+        })
+    }
+}
+
+/// Creates the ProjectSettings skeleton and THEN fails — the
+/// half-initialized-creation compensation vector (the assembly "delete the
+/// half-initialized project" semantics, through the snapshot rollback).
+struct HalfwayCreateVpm;
+
+impl VpmBackend for HalfwayCreateVpm {
+    fn name(&self) -> &'static str {
+        "halfway-create"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+            resolve_project: false,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        // Half of the template copy lands, then the backend refuses.
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        Err(
+            vua_orchestrator::AppErrorV1::new(
+                "vua.vpm.template_missing",
+                vua_orchestrator::ErrorCategory::ExternalFailure,
+                "errors.vpm.templateMissing",
+                "corr",
+            )
+            .with_param(
+                "reason",
+                vua_orchestrator::ParamValue::Text("template copy failed".to_owned()),
+            ),
+        )
+    }
+}
+
+#[test]
+fn b3_w25_empty_target_provisions_through_the_backend_port_before_import() {
+    let (base, _provisioned) = make_world("w25-exec-empty");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = CreatingVpm::new();
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+    assert!(plan
+        .steps
+        .iter()
+        .any(|step| step.kind == vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Succeeded,
+        "{:?}",
+        report.error_code
+    );
+    // The creation went through the backend port, not around it.
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 1);
+    // Batch 146: the fresh-creation path resolves the declared SDK
+    // dependencies EXACTLY ONCE, through the same port.
+    assert_eq!(vpm.resolves.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        report.completed_steps,
+        vec![
+            vua_unity_bridge::MaterialIntakeStepKind::VerifySource,
+            vua_unity_bridge::MaterialIntakeStepKind::CreateSnapshot,
+            vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject,
+            vua_unity_bridge::MaterialIntakeStepKind::ImportUnityPackages,
+            vua_unity_bridge::MaterialIntakeStepKind::ValidateMinimumStructure,
+            vua_unity_bridge::MaterialIntakeStepKind::WriteBuildRecord,
+        ]
+    );
+    assert_eq!(report.rollback, RollbackOutcome::NotNeeded);
+
+    // Three Bridge commands: the post-provision baseline inspect, the import,
+    // the read-only validation. The import must expect the BASELINE the
+    // inspect returned (fp-1) — never the plan-time tree digest — because
+    // the freshly created project's state is not the plan-time state.
+    assert_eq!(bridge.command_count(), 3);
+    let commands = bridge.state.lock().unwrap().commands.clone();
+    assert_eq!(commands[0].operation, vua_orchestrator::UnityOperation::InspectProject);
+    assert!(commands[0].dry_run);
+    assert_eq!(
+        commands[1].operation,
+        vua_orchestrator::UnityOperation::MaterializeExtractedPackage
+    );
+    assert_eq!(
+        commands[1].expected_project_fingerprint.as_deref(),
+        Some("fp-1"),
+        "the first mutating command binds the post-provision baseline fingerprint"
+    );
+    // Batch 146 ordering proof: the resolve sentinel was already on disk when
+    // the FIRST Bridge command (the baseline re-read) was recorded — the
+    // fingerprint re-read therefore covers the resolved final state, never a
+    // pre-resolve snapshot.
+    let marker_seen = bridge.state.lock().unwrap().resolve_marker_seen.clone();
+    assert_eq!(marker_seen.len(), 3);
+    assert!(
+        marker_seen[0],
+        "the baseline re-read must run AFTER the resolve leg (sentinel observed)"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_w25_failed_provision_restores_the_empty_state_and_honestly_reports() {
+    let (base, _provisioned) = make_world("w25-exec-provision-fail");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        Arc::new(HalfwayCreateVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    // Honest failure face: the family code, the restore-eligible rollback,
+    // and NO provision step in completed_steps.
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("vua.material.provision_failed"),
+        "the provision code is the finding: {:?}",
+        report.error_code
+    );
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .contains("vua.vpm.template_missing"),
+        "the backend's original code travels inside the message: {:?}",
+        report.error_code
+    );
+    assert!(!report
+        .completed_steps
+        .contains(&vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+
+    // Compensation: the half-initialized creation left the target — the
+    // empty-state snapshot restore moved it into the recovery quarantine.
+    assert!(
+        !empty.root.join("ProjectSettings").exists(),
+        "the half-initialized project must not survive the rollback"
+    );
+    assert!(empty.root.join(".vua/recovery").is_dir());
+
+    // The failed run still gets a receipt (audit history, never bypassed).
+    let receipt = BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", plan.plan_id))
+        .expect("the failed run still publishes its receipt");
+    assert_eq!(receipt.status, vua_orchestrator::BuildRecordStatus::Failed);
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run after the failed provision"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+/// Batch 146: creates the project skeleton fine, but the resolve leg answers
+/// the receipt with a non-empty `failed` set — the resolve face's honest
+/// INCOMPLETE answer (a dependency no enabled repository satisfies).
+struct ResolveIncompleteVpm {
+    creates: AtomicUsize,
+    resolves: AtomicUsize,
+}
+
+impl ResolveIncompleteVpm {
+    fn new() -> Arc<Self> {
+        Arc::new(Self { creates: AtomicUsize::new(0), resolves: AtomicUsize::new(0) })
+    }
+}
+
+impl VpmBackend for ResolveIncompleteVpm {
+    fn name(&self) -> &'static str {
+        "resolve-incomplete"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+            resolve_project: true,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        self.creates.fetch_add(1, Ordering::SeqCst);
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        Ok(ProjectRef { id: name.to_owned(), root })
+    }
+
+    fn resolve_project(
+        &self,
+        _project_root: &Path,
+    ) -> Result<vua_orchestrator::ResolveReceiptV01, vua_orchestrator::AppErrorV1> {
+        self.resolves.fetch_add(1, Ordering::SeqCst);
+        Ok(vua_orchestrator::ResolveReceiptV01 {
+            resolved: Vec::new(),
+            already_satisfied: Vec::new(),
+            failed: vec![vua_orchestrator::ResolveFailureV01 {
+                id: "com.vrchat.avatars".to_owned(),
+                reason_code: "vua.vpm.no_matching_package".to_owned(),
+            }],
+        })
+    }
+}
+
+/// Batch 146: the backend grows `create_project` but NOT the resolve face —
+/// the trait-default absence arm must answer the capability_missing family
+/// through the executor's provision_failed fold (never a guessed success).
+struct NoResolveVpm {
+    creates: AtomicUsize,
+}
+
+impl NoResolveVpm {
+    fn new() -> Arc<Self> {
+        Arc::new(Self { creates: AtomicUsize::new(0) })
+    }
+}
+
+impl VpmBackend for NoResolveVpm {
+    fn name(&self) -> &'static str {
+        "no-resolve"
+    }
+
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities {
+            create_project: true,
+            preview_install: true,
+            list_packages: false,
+            remove_packages: false,
+            project_registry: false,
+            resolve_project: false,
+        }
+    }
+
+    fn preview_install(
+        &self,
+        _project: &ProjectRef,
+        packages: &[PackageRequestV1],
+    ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        Ok(ChangePreviewV1 {
+            items: vec![],
+            conflicts: vec![],
+            remove_legacy_files: vec![],
+            remove_legacy_folders: vec![],
+            destructive: false,
+            digest: format!("digest-{}", packages.len()),
+        })
+    }
+
+    fn apply_install(
+        &self,
+        _project: &ProjectRef,
+        _packages: &[PackageRequestV1],
+        confirmed_digest: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        assert_eq!(confirmed_digest, "digest-1");
+        Ok(serde_json::json!({ "installed": true }))
+    }
+
+    fn create_project(
+        &self,
+        parent: &Path,
+        name: &str,
+        _template: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        self.creates.fetch_add(1, Ordering::SeqCst);
+        let root = parent.join(name);
+        fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+        fs::write(
+            root.join("ProjectSettings").join("ProjectVersion.txt"),
+            "2022.3.22f1",
+        )
+        .unwrap();
+        Ok(ProjectRef { id: name.to_owned(), root })
+    }
+    // resolve_project deliberately NOT overridden: the trait-default
+    // declared-none absence arm is exactly the face under test.
+}
+
+#[test]
+fn b3_batch146_provisioned_target_plans_and_runs_zero_resolve_calls() {
+    let (base, project) = make_world("batch146-provisioned-no-resolve");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = CreatingVpm::new();
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    // The ALREADY-PROVISIONED make_world target: the plan carries NO
+    // provision step and the run creates AND resolves zero times — the
+    // standing behavior on that path is byte-identical to pre-146 (minimal
+    // blast radius).
+    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root);
+    assert!(!plan
+        .steps
+        .iter()
+        .any(|step| step.kind == vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(
+        report.status,
+        MaterialExecutionStatus::Succeeded,
+        "{:?}",
+        report.error_code
+    );
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 0);
+    assert_eq!(
+        vpm.resolves.load(Ordering::SeqCst),
+        0,
+        "the already-provisioned path must not resolve (idempotency law)"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_batch146_incomplete_resolve_reports_the_honest_face_and_restores() {
+    let (base, _provisioned) = make_world("batch146-resolve-incomplete");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = ResolveIncompleteVpm::new();
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    // Honest failure face: the family code wraps the receipt's FIRST reason
+    // code and the unresolved dependency id; the create succeeded (1) and
+    // the resolve RAN (1) — the incompleteness is what failed the run.
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    let code = report.error_code.as_deref().unwrap_or("");
+    assert!(
+        code.starts_with("vua.material.provision_failed"),
+        "the provision code is the family wrapper: {code}"
+    );
+    assert!(
+        code.contains("vua.vpm.no_matching_package"),
+        "the receipt's reason code travels inside the message: {code}"
+    );
+    assert!(
+        code.contains("com.vrchat.avatars"),
+        "the unresolved dependency id travels inside the message: {code}"
+    );
+    assert!(!report
+        .completed_steps
+        .contains(&vua_unity_bridge::MaterialIntakeStepKind::ProvisionProject));
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 1);
+    assert_eq!(vpm.resolves.load(Ordering::SeqCst), 1);
+
+    // Compensation: the half-provisioned creation left the target — the
+    // empty-state snapshot restore moved it into the recovery quarantine.
+    assert!(
+        !empty.root.join("ProjectSettings").exists(),
+        "the half-provisioned project must not survive the rollback"
+    );
+    assert!(empty.root.join(".vua/recovery").is_dir());
+
+    // The failed run still publishes its receipt, and no Unity command ran
+    // after the failed resolve.
+    let receipt = BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", plan.plan_id))
+        .expect("the failed run still publishes its receipt");
+    assert_eq!(receipt.status, vua_orchestrator::BuildRecordStatus::Failed);
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run after an incomplete resolve"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_batch146_capability_absent_backend_fails_the_provision_honestly() {
+    let (base, _provisioned) = make_world("batch146-capability-absent");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    let bridge = FakeBridge::new(vec![]);
+    let vpm = NoResolveVpm::new();
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge.clone()),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &empty,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    // The trait-default absence arm answers the capability_missing family;
+    // the executor folds it into the provision_failed wrapper with the
+    // original code inside the message. Creation succeeded (1) — the refusal
+    // is the resolve leg's, reported as a failed provision, never papered
+    // over.
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    let code = report.error_code.as_deref().unwrap_or("");
+    assert!(
+        code.starts_with("vua.material.provision_failed"),
+        "the family wrapper holds: {code}"
+    );
+    assert!(
+        code.contains("vua.vpm.capability_missing"),
+        "the absence arm's original code travels inside the message: {code}"
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run after the refused resolve"
+    );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
