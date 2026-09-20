@@ -3165,3 +3165,506 @@ fn f4_state_write_failure_answers_reused_repo_write_failed() {
     );
     fs::remove_dir_all(&base).ok();
 }
+
+// --- 027 F4 patch slice: the collection world consumes the disabled set ---
+//
+// 第 144 批补切片（第 143 批退回裁决的逐条兑现）：冻结词面「禁用＝该行
+// 离开包集合世界」（packages-ops v0.6 协议本「启停语义（冻结词面事实）」
+// 节）的效果面钉死——集合装载路径（collection_world：settings 内存克隆
+// 过滤后入 PackageCollection::load/load_cache）让禁用行的包在三个消费面
+// 集体缺席（repo-catalog 列表／latest 判定／A2 安装解析器），而 repos
+// v0.2 订阅投影仍如实列出行（enabled=false）——两面对照钉死，绝不投影
+// 虚假事实（诚实纪律 #1）。
+
+/// The F4 collection-world builder: TWO subscription rows, each with an
+/// in-place cache file — `com.vua.test.repo.off` (package
+/// `com.vua.test.f4.off` with qualifying 1.0.0 and newer 2.0.0, both unity
+/// 2022.3) and `com.vua.test.repo.on` (package `com.vua.test.f4.on` 1.0.0).
+/// The project has both packages installed at 1.0.0. All data synthetic;
+/// the backend runs offline (the load_cache leg).
+fn f4_collection_world(label: &str) -> (VrcGetLibBackend, ProjectRef, PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    let off_cache = environment_root.join("Repos").join("off-repo.json");
+    let on_cache = environment_root.join("Repos").join("on-repo.json");
+    let off_packages = serde_json::json!({
+        "com.vua.test.f4.off": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.off", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} },
+            "2.0.0": { "name": "com.vua.test.f4.off", "version": "2.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    let on_packages = serde_json::json!({
+        "com.vua.test.f4.on": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.on", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    for (path, id, name, url, packages) in [
+        (
+            &off_cache,
+            "com.vua.test.repo.off",
+            "Will Disable",
+            "https://example.invalid/vua/f4-off.json",
+            &off_packages,
+        ),
+        (
+            &on_cache,
+            "com.vua.test.repo.on",
+            "Stays Enabled",
+            "https://example.invalid/vua/f4-on.json",
+            &on_packages,
+        ),
+    ] {
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(
+            path,
+            serde_json::json!({
+                "repo": { "name": name, "id": id, "url": url, "packages": packages }
+            })
+            .to_string(),
+        )
+        .unwrap();
+    }
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [
+            {
+                "localPath": off_cache.display().to_string(),
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json"
+            },
+            {
+                "localPath": on_cache.display().to_string(),
+                "name": "Stays Enabled",
+                "id": "com.vua.test.repo.on",
+                "url": "https://example.invalid/vua/f4-on.json"
+            }
+        ] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[
+            ("com.vua.test.f4.off", "1.0.0", Some("2022.3")),
+            ("com.vua.test.f4.on", "1.0.0", Some("2022.3")),
+        ],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    (backend, project, base)
+}
+
+/// THE two-face contrast pin (the rejection's exact defect class, dead):
+/// the same disabled repository answers `enabled = false` on the repos v0.2
+/// subscription projection — row PRESENT, the configuration view hides
+/// nothing — while its packages are absent from every collection-world
+/// consumer: the repo-catalog listing (row present via the not-loaded layer
+/// with the HONEST cache-hit fact, packages empty), the per-package catalog
+/// (`no_matching_package` — the collection world truly has no such package),
+/// the v0.2 latest judgment (the null pair — the judgment cannot see the
+/// disabled row, and absence is never filled with "no update"), and the A2
+/// install resolver (`no_matching_package`). The enabled control row keeps
+/// enumerating, judging and resolving throughout. Offline world = the
+/// load_cache leg of the collection load.
+#[test]
+fn f4_collection_world_disabled_row_stays_listed_while_its_packages_leave_every_consumer() {
+    let (backend, project, base) = f4_collection_world("f4-world-contrast");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+
+    // Face 1 — repo-catalog listing: the disabled row is NOT hidden. It
+    // falls to the not-loaded layer with its OWN identity facts, the honest
+    // cache-hit fact (true — leaving the collection world is not a cache
+    // removal), and an EMPTY packages array. The enabled control row keeps
+    // its package.
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(catalog.cache_sourced, "offline world = the load_cache leg");
+    let off = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .expect("the disabled row STAYS listed — hiding it would violate the word face's other half");
+    assert!(off.cached, "cache-hit fact stays honest: filtered != never refreshed");
+    assert!(
+        off.packages.is_empty(),
+        "the disabled row's packages left the enumeration"
+    );
+    let on = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+        .unwrap();
+    assert!(on.cached);
+    assert_eq!(on.packages.len(), 1, "the enabled row keeps enumerating");
+    assert_eq!(on.packages[0].package_id, "com.vua.test.f4.on");
+
+    // The scope lens reaches the disabled row by its subscription id (the
+    // id is still subscribed — repo_not_found would be a false fact) and
+    // answers the same honest row.
+    let scoped = backend
+        .repo_catalog(Some("com.vua.test.repo.off"), &[])
+        .unwrap();
+    assert_eq!(scoped.repos.len(), 1);
+    assert!(scoped.repos[0].cached);
+    assert!(scoped.repos[0].packages.is_empty());
+
+    // Face 2 — the repos v0.2 subscription projection, THE OTHER SIDE of
+    // the contrast: the same repo row present with enabled=false, the cache
+    // fact unchanged. One disabled repository, two faces, both truthful.
+    let rows = backend.list_repos_v02().unwrap();
+    assert_eq!(rows.len(), 2, "disabling hides nothing from the configuration view");
+    let off_row = rows
+        .iter()
+        .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .unwrap();
+    assert!(!off_row.enabled, "the v0.2 bit reads back the real state");
+    assert!(
+        off_row.cached,
+        "the subscription face's cache fact is untouched by the filter"
+    );
+    assert!(
+        rows.iter()
+            .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+            .unwrap()
+            .enabled
+    );
+
+    // Face 3 — the per-package catalog: the disabled row's package answers
+    // the REUSED no_matching_package (the collection world truthfully has
+    // no such package), while the enabled control resolves.
+    let off_catalog = backend
+        .package_catalog(&project, "com.vua.test.f4.off")
+        .unwrap_err();
+    assert_eq!(off_catalog.code, "vua.vpm.no_matching_package");
+    assert_eq!(
+        off_catalog.category,
+        vua_orchestrator::ErrorCategory::Dependency
+    );
+    let on_catalog = backend.package_catalog(&project, "com.vua.test.f4.on").unwrap();
+    assert_eq!(on_catalog.versions.len(), 1);
+
+    // Face 4 — the v0.2 latest judgment: the installed off package has a
+    // qualifying 2.0.0 in its (disabled) repo, yet the judgment sees only
+    // the filtered world — the null PAIR (judgment not executed), never a
+    // false "no update" fill. The on package judges normally against its
+    // enabled repo (latest = itself, no strict update).
+    let listing = backend.list_packages_v02(&project).unwrap();
+    let off_installed = listing
+        .packages
+        .iter()
+        .find(|row| row.package_id == "com.vua.test.f4.off")
+        .unwrap();
+    assert_eq!(
+        off_installed.latest_version, None,
+        "the latest judgment cannot see the disabled row"
+    );
+    assert_eq!(
+        off_installed.update_available, None,
+        "no qualifying version in the filtered world = the null pair, never false"
+    );
+    let on_installed = listing
+        .packages
+        .iter()
+        .find(|row| row.package_id == "com.vua.test.f4.on")
+        .unwrap();
+    assert_eq!(on_installed.latest_version.as_deref(), Some("1.0.0"));
+    assert_eq!(on_installed.update_available, Some(false));
+
+    // Face 5 — the A2 install resolver: the disabled row's package no
+    // longer resolves (REUSED no_matching_package), the enabled one does.
+    let off_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: Some("2.0.0".to_owned()),
+    };
+    let preview_error = backend
+        .preview_install(&project, std::slice::from_ref(&off_request))
+        .unwrap_err();
+    assert_eq!(preview_error.code, "vua.vpm.no_matching_package");
+    let on_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.on".to_owned(),
+        version: None,
+    };
+    backend
+        .preview_install(&project, std::slice::from_ref(&on_request))
+        .unwrap();
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The round trip (disable → faces exclude → enable → faces restore →
+/// disable again → faces exclude) on ONE backend instance: every read face
+/// rebuilds its collection from a fresh settings load plus a fresh state
+/// read (there is no cross-call collection cache in the implementation
+/// face), so a toggle write face returning is IMMEDIATELY visible to the
+/// next load — the cache-invalidation property pinned structurally: the
+/// "changed the state, stale cache still serves" failure has no code path
+/// to live in.
+#[test]
+fn f4_collection_world_reenable_restores_every_face_on_the_same_backend() {
+    let (backend, project, base) = f4_collection_world("f4-world-roundtrip");
+    let enabled_faces = |backend: &VrcGetLibBackend, project: &ProjectRef| {
+        let catalog = backend.repo_catalog(None, &[]).unwrap();
+        let off = catalog
+            .repos
+            .iter()
+            .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap();
+        assert!(
+            !off.packages.is_empty(),
+            "enabled world: the off row is a loaded collection row with its package"
+        );
+        assert_eq!(off.packages[0].latest_version.as_deref(), Some("2.0.0"));
+        assert!(backend.package_catalog(project, "com.vua.test.f4.off").is_ok());
+        assert!(
+            backend
+                .list_repos_v02()
+                .unwrap()
+                .iter()
+                .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+                .unwrap()
+                .enabled
+        );
+    };
+    let disabled_faces = |backend: &VrcGetLibBackend, project: &ProjectRef| {
+        let catalog = backend.repo_catalog(None, &[]).unwrap();
+        let off = catalog
+            .repos
+            .iter()
+            .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap();
+        assert!(off.cached, "the row stays listed, cache fact honest");
+        assert!(off.packages.is_empty(), "disabled world: packages gone");
+        assert_eq!(
+            backend
+                .package_catalog(project, "com.vua.test.f4.off")
+                .unwrap_err()
+                .code,
+            "vua.vpm.no_matching_package"
+        );
+        assert!(
+            !backend
+                .list_repos_v02()
+                .unwrap()
+                .iter()
+                .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+                .unwrap()
+                .enabled
+        );
+    };
+
+    // Absent state file: the all-enabled honest empty state.
+    enabled_faces(&backend, &project);
+
+    // Disable — the very next read on the SAME instance serves the filtered
+    // world. No re-instantiation, no cache warm-up: the load path re-reads
+    // the state file per call.
+    backend.disable_repo("com.vua.test.repo.off").unwrap();
+    disabled_faces(&backend, &project);
+
+    // Re-enable — every face restores (the row's cache file was never
+    // touched by the filter: recovery needs no refresh).
+    backend.enable_repo("com.vua.test.repo.off").unwrap();
+    enabled_faces(&backend, &project);
+
+    // Disable again — excluded again. Three toggles, six world states, one
+    // instance: a stale in-process collection cache could not pass this.
+    backend.disable_repo("com.vua.test.repo.off").unwrap();
+    disabled_faces(&backend, &project);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// A corrupt VUA state file refuses the collection world with the REUSED
+/// `backend_unavailable` (the shared load-leg constructor — the v0.2
+/// projection face's same fact, same code, same wording): with the disable
+/// state unreadable, no collection-world face may guess "all enabled" and
+/// serve packages the user disabled. The v0.2 projection face answers the
+/// same code on the same file (one fact, one code everywhere).
+#[test]
+fn f4_collection_world_corrupt_state_file_refuses_every_loader_never_guesses() {
+    let (backend, project, base) = f4_collection_world("f4-world-corrupt");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+    fs::write(f4_state_path(&environment_root), "not-json").unwrap();
+
+    let catalog_error = backend.repo_catalog(None, &[]).unwrap_err();
+    assert_eq!(catalog_error.code, "vua.vpm.backend_unavailable");
+    assert_eq!(
+        catalog_error.category,
+        vua_orchestrator::ErrorCategory::Unavailable
+    );
+    assert_eq!(
+        backend
+            .package_catalog(&project, "com.vua.test.f4.off")
+            .unwrap_err()
+            .code,
+        "vua.vpm.backend_unavailable"
+    );
+    let request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: None,
+    };
+    assert_eq!(
+        backend
+            .preview_install(&project, std::slice::from_ref(&request))
+            .unwrap_err()
+            .code,
+        "vua.vpm.backend_unavailable"
+    );
+    assert_eq!(
+        backend.list_packages_v02(&project).unwrap_err().code,
+        "vua.vpm.backend_unavailable"
+    );
+    assert_eq!(
+        backend.list_repos_v02().unwrap_err().code,
+        "vua.vpm.backend_unavailable"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The filter rides the ONLINE load arm with the same force: with the two
+/// predefined repositories ignored (the library's own experimental switch —
+/// the network segment stays hermetic, loopback only, synthetic data), a
+/// real `PackageCollection::load` against a loopback origin serves
+/// `cache_sourced = false` and the disabled row's packages are equally
+/// absent. The disabled row's cache file is untouched by the online load
+/// (leaving the collection world is not a cache removal — the file the
+/// re-enable recovery reads back is byte-identical).
+#[test]
+fn f4_collection_world_filter_rides_the_online_load_arm_too() {
+    let base = unique_dir("f4-world-online");
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let on_packages = serde_json::json!({
+        "com.vua.test.f4.on": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.on", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    let on_body = serde_json::json!({
+        "name": "Stays Enabled",
+        "id": "com.vua.test.repo.on",
+        "packages": on_packages
+    })
+    .to_string();
+    let on_addr = f4_spawn_repo_server(on_body, "\"vua-f4-online-etag\"");
+    let on_url = format!("http://{on_addr}/repo.json");
+    let on_cache = environment_root.join("Repos").join("on-repo.json");
+    fs::create_dir_all(on_cache.parent().unwrap()).unwrap();
+    fs::write(
+        &on_cache,
+        serde_json::json!({
+            "repo": { "name": "Stays Enabled", "id": "com.vua.test.repo.on", "url": on_url, "packages": on_packages }
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let off_cache = environment_root.join("Repos").join("off-repo.json");
+    let off_bytes_before = {
+        fs::create_dir_all(off_cache.parent().unwrap()).unwrap();
+        let bytes = serde_json::json!({
+            "repo": {
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json",
+                "packages": {
+                    "com.vua.test.f4.off": { "versions": {
+                        "2.0.0": { "name": "com.vua.test.f4.off", "version": "2.0.0", "unity": "2022.3", "vpmDependencies": {} }
+                    } }
+                }
+            }
+        })
+        .to_string();
+        fs::write(&off_cache, &bytes).unwrap();
+        bytes
+    };
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [
+            {
+                "localPath": off_cache.display().to_string(),
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json"
+            },
+            {
+                "localPath": on_cache.display().to_string(),
+                "name": "Stays Enabled",
+                "id": "com.vua.test.repo.on",
+                "url": on_url
+            }
+        ] })
+        .to_string(),
+    )
+    .unwrap();
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.f4.on", "1.0.0", Some("2022.3"))],
+    );
+    // ONLINE backend: the load arm fetches the loopback origin for the one
+    // ENABLED row; the disabled row is not in the load's world at all.
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, false).unwrap();
+
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(
+        !catalog.cache_sourced,
+        "the ONLINE load arm served this result (predefined ignored, enabled row loopback 200) — the filter provably rides the online arm, not just load_cache"
+    );
+    let off = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .expect("the disabled row stays listed on the online arm too");
+    assert!(off.cached);
+    assert!(off.packages.is_empty());
+    let on = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+        .unwrap();
+    assert_eq!(on.packages.len(), 1);
+    assert!(
+        !backend
+            .list_repos_v02()
+            .unwrap()
+            .iter()
+            .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap()
+            .enabled
+    );
+    assert_eq!(
+        fs::read_to_string(&off_cache).unwrap(),
+        off_bytes_before,
+        "the online load never touched the disabled row's cache file — re-enable recovery reads the same bytes"
+    );
+    // The A2 resolver rides the same online-loaded collection: the disabled
+    // row's package does not resolve, the enabled one does.
+    let off_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: None,
+    };
+    assert_eq!(
+        backend
+            .preview_install(&project, std::slice::from_ref(&off_request))
+            .unwrap_err()
+            .code,
+        "vua.vpm.no_matching_package"
+    );
+    let on_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.on".to_owned(),
+        version: None,
+    };
+    backend
+        .preview_install(&project, std::slice::from_ref(&on_request))
+        .unwrap();
+    fs::remove_dir_all(&base).ok();
+}

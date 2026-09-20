@@ -341,8 +341,12 @@ impl VrcGetLibBackend {
 
     /// F4: see [`VrcGetLibBackend::enable_repo`]. The disabled row STAYS
     /// subscribed and listed (the packages-repos v0.2 `enabled` bit projects
-    /// the state); its packages leave the package-collection world only at
-    /// the read/judgment faces that honor the state bit.
+    /// the state); its packages leave the package-collection world AT THE
+    /// COLLECTION LOAD LAYER (the F4 patch slice: every collection-loading
+    /// face — repo-catalog listing, latest judgment, install resolution —
+    /// builds its collection from the disable-filtered settings clone via
+    /// `collection_world`, so enumeration and resolution never see the
+    /// disabled row's packages).
     pub fn disable_repo(&self, repo_id: &str) -> Result<(), AppErrorV1> {
         self.set_repo_enabled(repo_id, false)
     }
@@ -624,6 +628,25 @@ fn map_environment_io(context: &'static str) -> impl Fn(std::io::Error) -> AppEr
     }
 }
 
+/// 027 F4 补切片：集合装载腿的 VUA 启停状态文件读取失败＝包集合世界无法
+/// 如实枚举/判定/解析（enabled 位是每行必带事实，无状态即无法投影——
+/// 与 v0.2 投影面同事实同律），复用 `backend_unavailable`（025 冻结批复用
+/// 清单；v0.2 投影面 `list_repos_v02` 同码同词位同 reason 文本——一事实一
+/// 码），绝不以「全启用」猜测。共享构造器替代 v0.2 面的内联闭包（零字节
+/// 差异）并服务全部装载点。
+fn backend_unavailable_state(reason: impl std::fmt::Display) -> AppErrorV1 {
+    AppErrorV1::new(
+        error_codes::BACKEND_UNAVAILABLE,
+        ErrorCategory::Unavailable,
+        "errors.vpm.backendUnavailable",
+        "corr-vpm-catalog",
+    )
+    .with_param(
+        "reason",
+        ParamValue::Text(format!("reading the VUA repository state file: {reason}")),
+    )
+}
+
 /// One subscription row projected verbatim (025 freeze batch `RepoInfoV01`):
 /// the four identifier/location facts are the library Options projected as
 /// null (a local-directory repo has no url); `cached` is the REQUIRED
@@ -741,6 +764,40 @@ fn prune_disabled_entry(environment_root: &Path, repo_id: &str) -> Result<(), Ap
             .map_err(|error| repo_write_failed_text("writing the VUA repository state file", error))?;
     }
     Ok(())
+}
+
+/// 027 F4 补切片（装载层一次过滤——冻结词面「启停语义」效果面的唯一兑现
+/// 点）：包集合世界的装载输入构造。禁用＝该行**离开包集合世界**
+/// （packages-ops v0.6 协议本「启停语义（冻结词面事实）」节）：枚举与解析
+/// 面（repo-catalog 列表、latest 判定、A2 安装解析器）不再见其包——过滤
+/// 在集合装载之前、settings 的内存克隆上一次完成；全部装载点
+/// （`repo_catalog`／`package_catalog_impl`／`list_packages_v02` latest 判
+/// 定／`preview_install`+`apply_install` 安装解析）共用本函数，绝不在消费
+/// 点重复判断。
+///
+/// - 状态事实源＝VUA 自有状态文件（`repo_state_path`；文件缺席＝全启用的
+///   诚实空态）。读取失败＝`Err(String)`，调用面经 `backend_unavailable_state`
+///   映射复用码——无状态即无法如实枚举，绝不以「全启用」猜测。
+/// - 过滤载体＝库公开 API `Settings::remove_repo`（retain 语义）按 repoId
+///   精确移除，作用在克隆上：共享 settings.json 零触碰（装载路径本就不
+///   save）、禁用行的缓存文件零触碰（离开集合世界≠删除缓存——重新启用
+///   即原样恢复）。id 缺席行不在禁用集可达范围（行柄边界，v0.2 投影同律）。
+///   预定义两仓不在 userRepos、无 repoId 可达臂（启停写面 repo_not_found
+///   同边界），天然不受过滤——与存储裁决一致。
+/// - 返回禁用集本体：repo-catalog 第 2 层（订阅行未装载余部）投影需要该
+///   事实——禁用行必须按「未装载」呈行（订阅面继续列出行，配置视图零隐
+///   藏）。这是行投影事实，不是对集合的二次过滤。
+fn collection_world(
+    environment_root: &Path,
+    settings: &vrc_get_vpm::environment::Settings,
+) -> Result<(vrc_get_vpm::environment::Settings, BTreeSet<String>), String> {
+    let disabled = load_disabled_set(&repo_state_path(environment_root))?;
+    let mut world = settings.clone();
+    if !disabled.is_empty() {
+        world
+            .remove_repo(|repo| repo.id().is_some_and(|id| disabled.contains(id)));
+    }
+    Ok((world, disabled))
 }
 
 /// A4：仓库写面族共用错误构造（读/写原因以文本携带——serde_json 错误等非
@@ -1066,11 +1123,16 @@ impl VpmBackend for VrcGetLibBackend {
         let http = self.http.clone();
         self.runtime.block_on(async move {
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
-                environment_root.into_boxed_path(),
+                environment_root.clone().into_boxed_path(),
             );
             let settings = vrc_get_vpm::environment::Settings::load(&io)
                 .await
                 .map_err(map_environment_io("loading VPM settings"))?;
+            // F4 补切片：装载层一次过滤（禁用行离开包集合世界——latest 判
+            // 定的数据源根即本集合，禁用行的包不入判定链）。失败＝状态文件
+            // 不可读，复用码如实拒绝（绝不以全启用猜测）。
+            let (world, _disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
             // 三臂降级与 F2 repo_catalog / package_catalog_impl 同构
             // （ORC-ADP-006）：offline → load_cache（cacheSourced=true）；
             // 在线 load 失败降级 load_cache（true）；在线成功 load（含 etag
@@ -1078,14 +1140,14 @@ impl VpmBackend for VrcGetLibBackend {
             // false。cacheSourced 是信息性披露，非失败态。
             let (collection, cache_sourced) = if offline {
                 (
-                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                         .await
                         .map_err(map_environment_io("loading package cache"))?,
                     true,
                 )
             } else {
                 match vrc_get_vpm::environment::PackageCollection::load(
-                    &settings,
+                    &world,
                     &io,
                     Some(&http),
                 )
@@ -1093,7 +1155,7 @@ impl VpmBackend for VrcGetLibBackend {
                 {
                     Ok(collection) => (collection, false),
                     Err(_) => (
-                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                             .await
                             .map_err(map_environment_io("loading package cache"))?,
                         true,
@@ -1335,21 +1397,9 @@ impl VpmBackend for VrcGetLibBackend {
             // 绝不写状态文件、绝不写 settings.json、绝不写共享缓存）。文件缺
             // 席＝全启用（诚实空态）；文件不可读/版本不符＝拒绝整表（enabled
             // 是每行必带事实，无状态即无法如实投影——绝不猜测），错误面照
-            // list_repos 既有 io-leg 纪律（backend_unavailable 复用码）。
-            let disabled = load_disabled_set(&state_path).map_err(
-                |reason| {
-                    AppErrorV1::new(
-                        error_codes::BACKEND_UNAVAILABLE,
-                        ErrorCategory::Unavailable,
-                        "errors.vpm.backendUnavailable",
-                        "corr-vpm-catalog",
-                    )
-                    .with_param(
-                        "reason",
-                        ParamValue::Text(format!("reading the VUA repository state file: {reason}")),
-                    )
-                },
-            )?;
+            // list_repos 既有 io-leg 纪律（backend_unavailable 复用码，共享
+            // 构造器 backend_unavailable_state——与集合装载腿同事实同码）。
+            let disabled = load_disabled_set(&state_path).map_err(backend_unavailable_state)?;
             // 行闭集＝v0.1 五键逐字投影（repo_info_row 同源事实）＋恰一个新
             // REQUIRED 事实 enabled：id 缺席行恒 true（id 即行柄，启停面可达
             // 范围之外——A4 removeRepo 同边界）；其余行 enabled＝不在禁用集。
@@ -1418,11 +1468,17 @@ impl VpmBackend for VrcGetLibBackend {
         let http = self.http.clone();
         self.runtime.block_on(async move {
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
-                environment_root.into_boxed_path(),
+                environment_root.clone().into_boxed_path(),
             );
             let settings = vrc_get_vpm::environment::Settings::load(&io)
                 .await
                 .map_err(map_environment_io("loading VPM settings"))?;
+            // F4 补切片：装载层一次过滤（禁用行离开包集合世界——repo-catalog
+            // 列表只见启用行的包）。disabled 集返回给第 2 层投影：禁用行必须
+            // 按「未装载」呈行（订阅面继续列出行，零隐藏）——行投影事实，
+            // 非二次过滤。
+            let (world, disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
             // 与 package_catalog_impl 同构的降级路径（ORC-ADP-006）：offline →
             // load_cache（cacheSourced=true）；在线 load 失败降级 load_cache
             // （true）；在线成功 load（含 etag 条件刷新共享缓存文件——027 协议
@@ -1430,14 +1486,14 @@ impl VpmBackend for VrcGetLibBackend {
             // cacheSourced 是信息性披露，非失败态。
             let (collection, cache_sourced) = if offline {
                 (
-                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                         .await
                         .map_err(map_environment_io("loading package cache"))?,
                     true,
                 )
             } else {
                 match vrc_get_vpm::environment::PackageCollection::load(
-                    &settings,
+                    &world,
                     &io,
                     Some(&http),
                 )
@@ -1445,7 +1501,7 @@ impl VpmBackend for VrcGetLibBackend {
                 {
                     Ok(collection) => (collection, false),
                     Err(_) => (
-                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                             .await
                             .map_err(map_environment_io("loading package cache"))?,
                         true,
@@ -1508,18 +1564,24 @@ impl VpmBackend for VrcGetLibBackend {
                 });
             }
             for repo in settings.get_user_repos() {
-                let loaded = match repo.url() {
-                    Some(url) => loaded_urls.contains(url.as_str()),
-                    None => std::fs::read(repo.local_path())
-                        .ok()
-                        .and_then(|bytes| {
-                            serde_json::from_slice::<vrc_get_vpm::repository::LocalCachedRepository>(
-                                &bytes,
-                            )
+                // F4 补切片：禁用行已被装载层过滤（不在集合世界），无论其缓
+                // 存文件是否在场都必须走第 2 层——「已装载」判定若仍按缓存
+                // 命中把禁用行判回集合世界，该行会从本应答中整行消失＝对配
+                // 置视图隐藏（违冻结词面「订阅面继续列出行」）。
+                let disabled_row = repo.id().is_some_and(|id| disabled.contains(id));
+                let loaded = !disabled_row
+                    && match repo.url() {
+                        Some(url) => loaded_urls.contains(url.as_str()),
+                        None => std::fs::read(repo.local_path())
                             .ok()
-                        })
-                        .is_some(),
-                };
+                            .and_then(|bytes| {
+                                serde_json::from_slice::<vrc_get_vpm::repository::LocalCachedRepository>(
+                                    &bytes,
+                                )
+                                .ok()
+                            })
+                            .is_some(),
+                    };
                 if loaded {
                     continue;
                 }
@@ -1528,7 +1590,13 @@ impl VpmBackend for VrcGetLibBackend {
                     // （025 订阅面同源），Option 如实投影。
                     repo_id: repo.id().map(str::to_owned),
                     name: repo.name().map(str::to_owned),
-                    cached: false,
+                    // cached＝逐仓库缓存命中事实（packages-repos-catalog v0.1
+                    // 字段语义「025 repos 面法则承袭」，与订阅面同一事实源
+                    // repo_cached_fact）：启用行的第 2 层＝缓存缺席/不可解析
+                    // ＝false（与旧硬编码逐案相等——可解析缓存必被装载）；
+                    // 禁用行缓存可能在场（离开集合世界≠缓存消失）＝如实
+                    // true——绝不把「被启停过滤」谎报成「未刷新」。
+                    cached: repo_cached_fact(repo.local_path()),
                     packages: Vec::new(),
                 });
             }
@@ -1576,18 +1644,23 @@ impl VpmBackend for VrcGetLibBackend {
             let settings = vrc_get_vpm::environment::Settings::load(&io)
                 .await
                 .map_err(map_io("loading VPM settings"))?;
+            // F4 补切片：装载层一次过滤（禁用行离开包集合世界——A2 解析器
+            // 不再从禁用行解析包）。状态文件不可读＝复用码如实拒绝（与投影
+            // 面同事实同码，绝不以全启用猜测）。
+            let (world, _disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
             // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006）。
             let collection = if offline {
-                vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                     .await
                     .map_err(map_io("loading package cache"))?
             } else {
-                match vrc_get_vpm::environment::PackageCollection::load(&settings, &io, Some(&http))
+                match vrc_get_vpm::environment::PackageCollection::load(&world, &io, Some(&http))
                     .await
                 {
                     Ok(collection) => collection,
                     Err(_) => {
-                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                             .await
                             .map_err(map_io("loading package cache"))?
                     }
@@ -1817,12 +1890,16 @@ impl VpmBackend for VrcGetLibBackend {
             let settings = vrc_get_vpm::environment::Settings::load(&io)
                 .await
                 .map_err(map_io("loading VPM settings"))?;
+            // F4 补切片：装载层一次过滤（禁用行离开包集合世界——apply 解析
+            // 与 preview 同一装载入口，双摘要重算见不得未过滤世界）。
+            let (world, _disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
             let collection = if self.offline {
-                vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                     .await
                     .map_err(map_io("loading package cache"))?
             } else {
-                vrc_get_vpm::environment::PackageCollection::load(&settings, &io, Some(&http))
+                vrc_get_vpm::environment::PackageCollection::load(&world, &io, Some(&http))
                     .await
                     .map_err(map_io("loading package collection"))?
             };
@@ -2003,24 +2080,29 @@ impl VrcGetLibBackend {
         let http = self.http.clone();
         self.runtime.block_on(async move {
             let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
-                environment_root.into_boxed_path(),
+                environment_root.clone().into_boxed_path(),
             );
             let settings = vrc_get_vpm::environment::Settings::load(&io)
                 .await
                 .map_err(map_environment_io("loading VPM settings"))?;
+            // F4 补切片：装载层一次过滤（禁用行离开包集合世界——单包目录的
+            // 版本枚举与 updateAvailable 判定只见启用行的包）。状态文件不可
+            // 读＝复用码如实拒绝（绝不以全启用猜测）。
+            let (world, _disabled) =
+                collection_world(&environment_root, &settings).map_err(backend_unavailable_state)?;
             // 在线刷新仓库清单失败时降级到缓存（ORC-ADP-006；preview_install
             // 同构先例）。降级事实如实上贡 v0.2 cacheSourced（信息性标注、非
             // 失败态）；v0.1 冻结词面无此字段、不发明。
             let (collection, cache_sourced) = if offline {
                 (
-                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                         .await
                         .map_err(map_environment_io("loading package cache"))?,
                     true,
                 )
             } else {
                 match vrc_get_vpm::environment::PackageCollection::load(
-                    &settings,
+                    &world,
                     &io,
                     Some(&http),
                 )
@@ -2028,7 +2110,7 @@ impl VrcGetLibBackend {
                 {
                     Ok(collection) => (collection, false),
                     Err(_) => (
-                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&world, &io)
                             .await
                             .map_err(map_environment_io("loading package cache"))?,
                         true,
