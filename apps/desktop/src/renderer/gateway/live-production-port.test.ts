@@ -71,14 +71,17 @@ const dialog = {
       : null,
 };
 
-async function liveGateway(capabilities: CapabilityOperationV01[] = PRODUCTION_CAPABILITIES): Promise<{
+async function liveGateway(
+  capabilities: CapabilityOperationV01[] = PRODUCTION_CAPABILITIES,
+  materialSources: ReadonlyMap<string, string> = new Map([["mat-1", "C:/materials/closet"]]),
+): Promise<{
   provider: MockOrchestratorProviderV01;
   port: ModelProductionPort;
   gateway: ReturnType<typeof createElectronGateway>;
 }> {
   const provider = new MockOrchestratorProviderV01({ capabilities });
   await provider.start();
-  const gateway = createElectronGateway({ ...kernelHost(provider), dialog }, null);
+  const gateway = createElectronGateway({ ...kernelHost(provider, materialSources), dialog }, null);
   return { provider, port: gateway.modelProduction, gateway };
 }
 
@@ -313,6 +316,21 @@ describe("live production port over the Kernel route (F-3)", () => {
     const deadPort = createElectronGateway({ ...host, dialog }, null).modelProduction;
     await expect(deadPort.capability()).rejects.toThrow("production_capability_unavailable");
     await expect(deadPort.snapshot()).resolves.toMatchObject({ schemaVersion: 1, productionRun: { kind: "not-connected" } });
+  });
+
+  it("rejects a stale material refId with the dedicated unknown_material_source reason after a kernel restart", async () => {
+    // W25 真机实测(2026-09-20):Kernel 重启后素材登记失存,渲染层残留的
+    // materialRefId 成死引用——resolveProductionContext 返回 undefined,
+    // Kernel 以 vua.material.source_unknown 拒绝;渲染层映射为专用拒绝原因,
+    // 绝不折叠成「生产能力未连接」(unavailable)。空登记 = 重启后未再注册。
+    const { port } = await liveGateway(PRODUCTION_CAPABILITIES, new Map());
+    const staleRef = { materialId: "mat-1", intake: "direct_unity_package" as const, displayName: "closet.unitypackage" };
+
+    const result = await port.startInspection(staleRef);
+    expect(result).toMatchObject({ kind: "rejected", reason: "unknown_material_source" });
+    if (result.kind !== "rejected") throw new Error("expected a rejection");
+    // 拒绝如实携带当前运行快照(尚无运行:not-connected),命令未发出
+    expect(result.run).toMatchObject({ kind: "not-connected" });
   });
 
   it("keeps the last view when a refresh fails mid-subscription and resumes after recovery", async () => {

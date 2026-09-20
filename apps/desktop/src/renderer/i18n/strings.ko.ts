@@ -613,6 +613,7 @@ rolled_back: "롤백됨",
       not_recoverable: "이 실행은 복구 가능한 상태가 아닙니다.",
       invalid_state: "현재 상태에서는 이 작업을 수락할 수 없습니다.",
       unknown_ref: "참조된 검사, 계획 또는 태스크가 더 이상 존재하지 않습니다.",
+      unknown_material_source: "소재 선택이 더 이상 유효하지 않습니다. 다시 선택해 주세요.",
     },
     states: {
       emptyTitle: "아직 프로덕션 실행이 없습니다",

@@ -614,6 +614,7 @@ rolled_back: "ロールバック済み",
       not_recoverable: "このランは復旧可能な状態ではありません。",
       invalid_state: "現在の状態ではこの操作を受け付けられません。",
       unknown_ref: "参照された検査・計画・タスクはもう存在しません。",
+      unknown_material_source: "素材の選択が無効になりました。もう一度選び直してください。",
     },
     states: {
       emptyTitle: "生産ランはまだありません",

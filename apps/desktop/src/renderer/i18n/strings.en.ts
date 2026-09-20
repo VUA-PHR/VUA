@@ -641,6 +641,7 @@ demoTaskTitle: "Demo task",
       not_recoverable: "This run is not in a recoverable state.",
       invalid_state: "The run is not in a state that accepts this action.",
       unknown_ref: "The referenced inspection, plan or task no longer exists.",
+      unknown_material_source: "The material selection is no longer registered. Please pick the file again.",
     },
     states: {
       emptyTitle: "No production run yet",
