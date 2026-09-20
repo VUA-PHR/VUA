@@ -3,10 +3,10 @@
 [English](packages-repos-v0.2_EN.md) | [简体中文](packages-repos-v0.2_ZH.md)
 
 > 文档版本：0.2.1
-> 状态：**已冻结并已接线（packages-repos 词表行 v0.2＝订阅行状态增量；
+> 状态：**已冻结（packages-repos 词表行 v0.2＝订阅行状态增量；
 > v0.1 行保持冻结原样服务——backend 未采纳 v0.2 前继续应答 v0.1 族；
 > v0.2 照 packages-catalog v0.2 / packages-query v0.2 增量先例为独立行
-> 目录。v0.2 协商路由臂已随 F4 接线批 2026-09-21 落地：声明 `repos_v02`
+> 目录。）且已接线（v0.2 协商路由臂已随 F4 接线批 2026-09-21 落地：声明 `repos_v02`
 > 的 backend 经 `packages.listRepos` 应答 v0.2 族，其余照旧答 v0.1 族。
 > 未消费：桌面启停开关呈现候形状核可）**
 > （2026-09-20，proposal 027 F4 冻结批同批产物——无读回位则启停写面不

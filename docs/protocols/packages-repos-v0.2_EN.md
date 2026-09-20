@@ -3,12 +3,12 @@
 [English](packages-repos-v0.2_EN.md) | [简体中文](packages-repos-v0.2_ZH.md)
 
 > Document version: 0.2.1
-> Status: **FROZEN and WIRED (packages-repos word-list row v0.2 = the
+> Status: **FROZEN (packages-repos word-list row v0.2 = the
 > subscription-row state increment; the v0.1 row stays frozen and served
 > untouched — a backend that has not adopted v0.2 keeps answering the v0.1
 > family; v0.2 is a separate row directory per the packages-catalog v0.2 /
-> packages-query v0.2 increment precedent. The v0.2 negotiation route arm
-> landed at the F4 wiring batch, 2026-09-21: a backend declaring `repos_v02`
+> packages-query v0.2 increment precedent.) and WIRED (the v0.2 negotiation
+> route arm landed at the F4 wiring batch, 2026-09-21: a backend declaring `repos_v02`
 > answers the v0.2 family through `packages.listRepos`, every other backend
 > keeps answering the v0.1 family. NOT CONSUMED: the desktop toggle rendering
 > waits for shape approval)**
