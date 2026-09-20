@@ -157,6 +157,13 @@ function rejectReasonFor(error: GatewayClientError): ProductionRejectReason | "u
     // v0.2:领域身份存在性统一词(record_not_found);任务面未知引用同义
     "vua.production.record_not_found": "unknown_ref",
     "vua.task.not_found": "unknown_ref",
+    // W25 真机实测(2026-09-20):Kernel 重启后素材登记失存,渲染层残留
+    // materialRefId 成死引用——专用拒绝原因,不再误报「生产能力未连接」
+    "vua.material.source_unknown": "unknown_material_source",
+    // W25 真机第四批(2026-09-20):provider inspect_folder 要求 sourceFolder
+    // 为目录,文件路径被 vua.material.source_invalid 拒绝——命令已发出且被
+    // provider 拒,如实上呈专用拒绝原因,不折叠「未连接/操作未发出」
+    "vua.material.source_invalid": "source_invalid",
   };
   return map[error.error.code] ?? "unavailable";
 }
