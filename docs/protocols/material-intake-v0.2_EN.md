@@ -3,8 +3,8 @@
 [English](material-intake-v0.2_EN.md) | [简体中文](material-intake-v0.2_ZH.md)
 
 > Document version: 0.2
-> Status: B3 implementation baseline (v0.2 adds the project-provision step; W25
-> real-machine finding fix, 2026-09-21)
+> Status: FROZEN (B3 baseline v0.2 provisioning-step increment, batch 141,
+> 2026-09-21; W25 real-machine finding fix)
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-21
 > Previous: [v0.1](material-intake-v0.1_EN.md) (2026-09-05, kept as history)

@@ -3,7 +3,7 @@
 [English](material-intake-v0.2_EN.md) | [简体中文](material-intake-v0.2_ZH.md)
 
 > 文档版本：0.2
-> 状态：B3 实现基线（v0.2 增补工程供给步骤；W25 真机发现修复，2026-09-21）
+> 状态：已冻结（B3 基线 v0.2 供给步骤增补，2026-09-21 第 141 批；W25 真机发现修复）
 > 范围：`.unitypackage` 直接导入与 `local-reusable` VPM 制作/安装
 > 更新：2026-09-21
 > 前版：[v0.1](material-intake-v0.1_ZH.md)（2026-09-05，历史保留）
