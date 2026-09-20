@@ -2,117 +2,186 @@
 worktree: wt-6
 branch: slot/wt-6
 role: 环境
-baseline_commit: 3e062cf
+baseline_commit: 0cd4bf9
 updated: 2026-09-20
 ---
 ## 当前焦点
-**wt-2 F3 接线知会消化＋F3 前置复核实证＋簿记轮（2026-09-20 07:0x，节拍
-轮工作时段 date 06:57 实测；恰本文件一笔）——wt-2 [→环境] 知会 F3 wire
-接线批 676b185 已交付候验收＝本树上笔「wt-2 树尖未动尚未领取」表述过时
-照实刷新；本地实测 676b185 未入库（is-ancestor 不通过）＝F3 库实现切片
-领取条件②未成就，照 poll-until-landed 先例与操作者注「接线批入库前不
-抢跑」维持候领；零代码变更簿记轮**：
+**027 F3 packages-query v0.2 库实现切片领取即交付轮（2026-09-20 07:3x–
+07:5x，节拍轮工作时段 date 07:36 实测；三笔：追平壳 8deddee 吸收
+main 0cd4bf9＋实现批 1b452ee 恰 2 环境域文件 516+/5-＋本状态批恰本
+文件）——brief ①区双指针（wt-main 验收遵照＋领取解锁令、wt-2 接线
+知会）与操作者注「F3 接线批已入库（abdf328，第 130 批）＝库实现切片
+解锁，照 A1/A2 同径即领即开工：list_packages_v02 双版本协商库实现核
+对＋逐码申报＋测试补强，勿重写库实现」三令合一，本轮兑现：双前置亲
+测实证（e2486ed＋676b185 均 is-ancestor main 通过）→追平→实现→定向
+证据全绿→切片批落库候验收**：
 
-- **brief ①区消化（06:57 实读，三条指向本树）**：①wt-main [→wt-6] 验
-  收遵照（F2 实现批经第 129 批收编、候核心接线批入库后按面序即领）——
-  上笔 2fbd64d 已消化，勿重复；②**wt-2 [→环境]（知会）F3 wire 接线已
-  落地候验收**——就地消化：wt-2 五笔候验收（追平壳 c0e2312＋接线批
-  676b185＋状态批 bf6c557＋追平壳 47c75c2＋订正批），接线批恰 5 文件恰
-  核心域（路由双臂协商＋面级门先于协商＋族常量 V01/V02 发布＋wire 测
-  试 6 例＋协议本 0.2.1＋REGISTRY）；其「协商面声明＝覆写 query_v02()
-  返回 true 恰在实现 list_packages_v02 时（ORC-DEV-004）」收讫，环境实
-  现切片将照此面序申报；③wt-3 [→wt-6]（收讫回执）F2 置真知会——回执
-  性质就地消化勿重复。失鲜工作树无。
-- **F3 前置复核实证（本拍亲测）**：①`git merge-base --is-ancestor
-  e2486ed main` 通过＝F3 冻结批入库维持成就（前置①）；②`git
-  merge-base --is-ancestor 676b185 main` **不通过＝核心接线批尚未入库
-  **（候验收中）＝前置②未成就——**不抢跑**（poll-until-landed 先例＋
-  操作者注明示），候集成验收入库后下拍按面序即领（验收锚＝
-  packages-query-v0.2 协议本「后端指向根事实」专节＋一次集合加载批量
-  判定＋离线降级 cacheSourced 臂形态，F2 先例实现核对对照接线落地面）。
-- **四环全查（a5c3ebd 观测世代）**：①本树在途＝四笔全 collab 面簿记
-  （ad32e0f 追平壳＋5f6dc1e＋2fbd64d＋本批），无半途切片，工作树清洁；
-  ②BOARD 待用户裁决区零环境可办条目（U1–U14 已裁决关闭留档；U13/U15
-  集成域候用户；用户测试反馈 1–9 [需用户] 跳过）；③outline 零环境行
-  变更（main 自上批仅前移 2ed2ba4＋a5c3ebd 两笔，name-only 实证全为
-  collab 面＝BOARD＋wt-main 状态文件，零 outline/M 门触碰）；④M 门零
-  变化（M5 候 W25 真机走查、M6 提前开工范围内 027 链推进中、M8 未开窗
-  ）。可领项检查＝零（F3 候接线批入库，其余候办 [等桌面/操作者/用户]）
-  ，不开新切片。
-- **读数（rev-list 实测，本批后）**：领先 4 全 collab 面（ad32e0f＋
-  5f6dc1e＋2fbd64d＋本批，实质 0）、落后 2 collab-only（2ed2ba4 登记＋
-  a5c3ebd 推送记录）未过 15 线零重叠——无追平义务，落后吸收归集成下次
-  簿记合并自然收编即可。
+- **brief ①区消化（07:36 实读，两条指向本树）**：①wt-main [→wt-6]
+  验收遵照（簿记四笔含竞速第四笔 0366c56 经第 130 批收编 e9c4917）
+  ＋「候接线批入库下拍即领 F3 库实现」条件成就令——就以本轮领取执
+  行兑现消化；②wt-2 [→环境]（知会）F3 wire 接线已落地
+  （其留言落笔时点候验收，现经 abdf328 入库超越）＋协商面声明
+  「query_v02() 返回 true 恰在实现 list_packages_v02 时
+  （ORC-DEV-004）」收讫照办。另 wt-3 [→wt-2] 框定差异（桌面消费双臂
+  兼容不候库实现）系桌面↔核心↔集成线程，非指向本树——本切片交付后
+  v0.2 后端臂已在库，该差异自然消解，如实登记不另开线程。失鲜工作树
+  无。
+- **开工纪律**：merge-tree 预检 exit 0（tree 89c4b222…）零冲突，追
+  平壳 8deddee --no-ff 吸收 main 0cd4bf9（第 130 批全世代＝abdf328
+  wt-2 F3 接线切片＋e9c4917/c1c495d/7d82dc5 簿记合并＋1cc7ea9 登记
+  ＋0cd4bf9 推送记录），基线刷新 0cd4bf9；双前置本拍亲测：e2486ed
+  （冻结）＋676b185（接线）均 `merge-base --is-ancestor` main 通过。
+- **F3 库实现（1b452ee，恰 2 文件恰环境域＝crates/project-manager
+  src/vpm_backend.rs 128+/5-＋tests/vpm_backend.rs 388+）**——「勿重
+  写库实现」照办：v0.1 `list_packages`、`package_catalog_impl`、F2
+  `repo_catalog` 全部零触碰，v0.2 面纯增量骑既有事实源：
+  - `query_v02` 覆写 true（库后端独有；`VccCliBackend` 不覆写＝默
+    认 false 维持 v0.1 族应答，缺席臂零改动——ORC-DEV-004 双向）。
+  - `list_packages_v02` 覆写：根事实照协议本专节——已装集＝项目
+    Packages/vpm-manifest.json＋lock（v0.1 冻结源零变动，同
+    UnityProject::load）；判定源＝单一环境根**一次**集合加载（
+    settings userRepos＋预定义两仓受 ignore 开关＋各 localPath 缓
+    存）；prerelease 开关读同一 settings.json，零 wire 开关。
+  - cacheSourced 三臂降级与 F2 同构（ORC-ADP-006）：offline→
+    load_cache true／在线失败降级 true／在线成功（含 etag 条件刷
+    新）false——信息性披露非失败态。
+  - 一次集合加载批量判定：VersionSelector 系 Copy，循环外构造一次
+    （latest_for(工程 Unity 版本, prerelease 设置)，catalog 冻结语
+    义逐字、零第二判定）；逐行 find_package_by_name 系该已装载集合
+    上的内存判定——逐行独立加载集合在本形态下结构不可能。
+  - 判定语义＝库 find_package_by_name 逐字（0.0.16
+    package_collection.rs：remote 各仓 get_latest 后
+    chain(local).max_by_key）＝跨仓 max，刻意非 F2 分仓视图；本地集
+    合候选入链（测试钉死）。
+  - null 对纪律：latestVersion 与 updateAvailable 成对——无合资格
+    候选＝双双 null＝判定未执行，绝不默认 false 填充（024 表态②防
+    线）；精确 false 语义钉死（已装 prerelease＋开关关＝稳定集内比
+    较）。
+  - 行面＝v0.1 冻结事实逐字（packageId／folder manifest 版本／排序
+    dependencies）＋判定对；行序 packageId 升序同 v0.1；后端应答仅
+    rows＋cacheSourced，projectPath 归路由盖戳（P1 纪律）。
+  - 错误面零新码：project_load_failed／backend_unavailable 全复用
+    既有映射（025 裁决 5 复用清单）。
+- **测试＋6（合成临时根 with_environment_root，绝不触用户真实
+  VCC/ALCOM 家目录；助手 f3_repo_cache＋f3_installed_project＝
+  0.0.16 locked MAP 形＋folder package.json 版本权威）**：协商声明
+  配对（库 true／CLI false＋CLI 缺席臂）／v0.1 事实＋判定对投影
+  （0.9.0 yanked 排除＋2.0.0 unity-2022.4 排除＝1.0.0 精确 false＋
+  孤儿行 null 对）／prerelease 设置驱动判定（同一集合世界仅凭设置
+  键翻转＋边界 2 钉）／跨仓 max（双仓 1.4.0/1.5.0→1.5.0 true）／本
+  地链同判定（register_local_package 1.1.0→true）／诚实空集＋冻结
+  错误面。**一处实证收获如实登记**：prerelease 设置键首稿误猜
+  snake_case，测试即捕获（库 vpm_settings AsJson 带
+  rename_all=camelCase，实键 `showPrereleasePackages`，猜错静默读
+  false）——修正并以测试钉死该库面事实。
+- **定向证据（本拍亲测，合并树世代）**：cargo test -p
+  vua-project-manager **124/0**（14 测试目标，118→124＝+6 零回
+  归）；cargo test -p vua-provider-host **256/0**（wire 路由零触碰
+  ＋wire v02 6/6 零回归）；cargo test -p vua-orchestrator **234/0**
+  （端口面 crate 零触碰）；clippy 三 crate --all-targets **0 警
+  告**；git diff --check 清洁。
+- **诚实边界**：cacheSourced=false 在线成功臂离线定义性不可测（025
+  ／F2 先例，true 臂＋降级形态按构造钉死）；零端到端宣称维持——
+  wire 面在桌面 F3 消费批落地前无任何桌面面读取 v0.2 族；served 行
+  真机呈现归 W25（O-2）；本轮零真机触碰。
+- **读数（rev-list 实测，本批后）**：领先 3（8deddee 追平壳零自有
+  ＋1b452ee 实质 1＋本批）、落后 0（基线 0cd4bf9＝main 树尖）。
+- **【订正批订正·落笔后竞速实测】**：状态批落笔时「落后 0」系按追
+  平壳基点推断、未在提交前亲测——状态批提交后 rev-list 亲测＝落后
+  **8**：main 于本拍工作窗内竞速前移至 7ce7c2c（第 131 批全世代＝
+  0bef879 wt-3 F3 形状核可轮收编＋682aa9d 登记＋384ac19/7ce7c2c 推
+  送与订正记录，全 collab 面），其登记批已就地登记「wt-6 8deddee
+  壳候下轮验收对象（substantive 0）」——该观察系其时点事实，现树
+  尖已前移至本状态批（实质 1＝1b452ee 在途候验收）。竞速面与本切
+  片零重叠实证（`diff --name-only slot/wt-6...main` 非 collab 面
+  为空：仅 BOARD＋027 提案＋wt-3/wt-main 状态文件），落后 8 未过
+  15 线——照同窗竞速判例不追加追平壳，候验收合并自然吸收；本切片
+  基点 0cd4bf9 表述不变，验收请求三笔不变。
 
 ## 前情
-- 上拍（06:4x–06:5x，同工作时段；一笔 2fbd64d）：F2 收编回执照办消化＋
-  同窗竞速订正——集成第 129 批收编本树 F2 实现核对切片（3e062cf 逐文件
-  亲审 PASSED＝F2 五环闭环：冻结 c46545f→接线 629699e/fabb04d→形状核
-  可 670828f→消费 f23f3a3→实现 27c3c9d，BOARD #41 闭环落账）＋追平壳
-  ad32e0f 第二父竞速订正（实为 3e062cf）＋5f6dc1e 失效表述取代。更早＝
-  追平自理簿记轮两笔（ad32e0f＋5f6dc1e）、027 F2 实现核对切片交付轮三
-  笔（452753b＋27c3c9d＋c9a3f91，业经 129 批收编闭环）；更早见本文件
-  git 历史。
+- 上拍（07:0x，一笔 0366c56）：wt-2 F3 接线知会消化＋F3 前置复核实
+  证（彼时 676b185 NOT in main＝不抢跑）——该四笔簿记经第 130 批收
+  编（e9c4917）入库，身份关闭；其「候接线批入库下拍即领」条件在验
+  收时点翻转成就，本轮即领取兑现。更早＝F2 实现核对切片交付轮三笔
+  （452753b＋27c3c9d＋c9a3f91，129 批收编闭环）；更早见本文件 git
+  历史。
 
-## 本轮交付（3e062cf 基线世代）
-- **本状态批（恰本文件）**：wt-2 F3 接线知会消化＋F3 前置复核实证
-  （676b185 NOT in main 实测）＋四环全查＋读数刷新。零新代码、零新阻塞
-  、零新升级项、零 [需用户]。
+## 本轮交付（0cd4bf9 基线世代）
+- **追平壳 8deddee**（--no-ff 吸收 main 0cd4bf9＝第 130 批全世代，
+  预检 exit 0 tree 89c4b222 零冲突，基线刷新）。
+- **实现批 1b452ee**（恰 2 环境域文件 516+/5-，逐码申报全文见其提
+  交信息＝验收锚协议本「后端指向根事实」节逐项对账）。
+- **本状态批（恰本文件）**：①区双指针消化＋领取即交付登记＋四环全
+  查＋读数刷新。零新阻塞、零新升级项、零 [需用户]。
 
 ## 在途/待他角色
-- **[等核心/集成] F3 wire 接线批入库**（wt-2 五笔候验收：676b185 实测
-  NOT in main）——**入库后 F3 库实现切片双前置即齐，本树下拍按面序即
-  领**：VrcGetLibBackend `list_packages_v02`＋`query_v02` 覆写（协商面
-  声明照 wt-2 知会：覆写 query_v02() 返回 true 恰在实现
-  list_packages_v02 时，ORC-DEV-004）＋一次集合加载批量判定＋离线降级
-  cacheSourced 臂＋单元测试（验收锚＝packages-query-v0.2 协议本 0.2.1
-  「后端指向根事实」专节逐项对账）。
-- **[等桌面/操作者] 真机呈现**：环境置真已入 main（27c3c9d 经 129 批收
-  编）；剩余前置＝操作者刷构建，刷后 declared-none 形态的浏览面入口即
-  真机可达；served 行 packages.repoCatalogOps 真机呈现归 W25（O-2）走
-  查，零端到端宣称维持。
-- **[等用户] W25 窗其余环境候办**（候指令/候窗）：EAC 真机四件套＋B 段
-  ＋E2 运行中探测＋允许清单首批条目（EAC 须先出边界裁决稿候批准——域纪
-  律）；F5 模板元数据形态只读顺带；026/027 全链＋F2 served 行真机呈现确
-  认；动态双快照启停对照（步 3–5，可选补充证据，需用户 GUI 配合）。
+- **[等集成] 本拍三笔候随轮验收（--no-ff）**：追平壳 8deddee（零自
+  有内容）＋实现批 1b452ee（恰 2 文件恰环境域）＋本状态批（恰本文
+  件），写明「wt-6 027 F3 packages-query v0.2 库实现切片（基点
+  0cd4bf9，追平壳 8deddee＋实现批 1b452ee＋状态批）」。实质非
+  collab 面＝1b452ee 恰 2 文件，请 diff 复核或合并树定向复跑酌定
+  （证据读数见当前焦点）。
+- **[等桌面/操作者] 真机呈现**：F2 浏览面入口候操作者刷构建（置真
+  已在库）；F3 后链桌面消费候其形状核可＋本实现批入库双前
+  置——本批交付后环境半环已就位。served 行真机呈现归 W25（O-2）。
+- **[等用户] W25 窗其余环境候办**（候指令/候窗）：EAC 真机四件套＋
+  B 段＋E2 运行中探测＋允许清单首批条目（EAC 须先出边界裁决稿候批
+  准——域纪律）；F5 模板元数据形态只读顺带；026/027 全链＋F2/F3
+  served 行真机呈现确认；动态双快照启停对照（步 3–5，需用户 GUI 配
+  合）。
 
 ## 阻塞
 - 无阻塞。等待项均非阻塞。
 
 ## 下次合并意图
-**候验收对象＝本树四笔全 collab 面簿记（ad32e0f 追平壳〔第二父 3e062cf
-实证〕＋5f6dc1e＋2fbd64d＋本批），候随轮簿记收编（--no-ff，collab-only
-免全量照章），写明「wt-6 簿记批：追平壳＋竞速订正＋F3 接线知会消化（基
-点 c9a3f91，吸收 3e062cf，落后 2 未过线自然吸收）」。**读数：领先 4 全
-collab 面（实质 0）、落后 2 collab-only。
+**候验收对象＝本拍三笔（追平壳 8deddee 零自有＋实现批 1b452ee 恰 2
+环境域文件 516+/5-＋本状态批恰本文件），请集成随轮验收（--no-ff），
+写明「wt-6 027 F3 packages-query v0.2 库实现切片（基点 0cd4bf9）」。
+**提交后读数（rev-list 亲测，订正批后）：领先 4（实质 1＝
+1b452ee）、落后 8（7ce7c2c 世代＝第 131 批全世代，全 collab 面未过
+线零重叠，照判例自然吸收不追平）。**实质面请 diff 复核或合并树定向
+复跑酌定；定向证据亲测读数见当前焦点（124/0＋256/0＋234/0＋clippy 0）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-20 07:0x，工作时段 date 06:57 实测；恰本批）：①date
-06:57 实测工作时段，pnpm collab:brief 06:57 ①区三条指向本树/角色留言
-就地消化（wt-main 验收遵照上笔已消化勿重复、wt-2 F3 接线知会本拍消化、
-wt-3 收讫回执就地消化），失鲜工作树无；②F3 前置复核实证＝e2486ed IN
-main（前置①维持）＋676b185 NOT in main（前置②未成就，is-ancestor 本
-拍亲测）——照 poll-until-landed 先例与操作者注「接线批入库前不抢跑」
-不开 F3 库实现切片；③领任务四环全查（a5c3ebd 世代）＝本树在途四笔全
-collab 面簿记无半途切片、BOARD 零环境可办条目、outline/M 门零变化
-（main 新增两笔 name-only 实证零 outline 触碰）、可领项零——簿记轮不
-开新切片，与操作者注「本轮大概率空转或簿记轮」判读一致；④机械校验＝
-collab-only 免全量如实声明（恰本文件零代码变更、零测试跑、零编译触发
-；is-ancestor/rev-list/name-only 全为本地只读 git 操作）；⑤诚实边界＝
-零端到端宣称维持、零真机触碰、F2 真机呈现归 W25 候操作者刷构建。在手
-无半途切片、除本状态批外无未提交改动。退出待命，候核心 F3 接线批经集
-成验收入库后环境 F3 库实现下拍即领、操作者刷构建、W25 窗其余候办指令
-或新指派。
+本轮（2026-09-20 07:3x–07:5x，工作时段 date 07:36 实测；三笔）：①
+date 07:36 实测工作时段，pnpm collab:brief 07:36 ①区两条指向本树
+（wt-main 验收遵照＋领取令、wt-2 接线知会）就地消化＝领取即执行兑现
+，失鲜工作树无；②领任务＝操作者注「F3 接线批已入库＝库实现切片解
+锁，即领即开工」＋wt-main 同令，双前置亲测成就（e2486ed＋676b185
+is-ancestor main），无竞速（四环全查：本树在途零、BOARD 零环境可办
+条目〔U13/U15 集成域候用户、用户反馈 1–9 [需用户] 跳过〕、outline
+零环境行变更、M 门零变化）；③追平壳 8deddee 先行（TICK 第 4 步，
+预检零冲突，基线 0cd4bf9）；④实现批 1b452ee＝F3 库实现六件（
+query_v02/list_packages_v02 覆写＋一次集合加载批量判定＋跨仓 max
+逐字语义＋null 对纪律＋cacheSourced 三臂＋零新错误码，逐码申报见
+提交信息）；⑤测试＋6 全合成临时根，其一实测捕获设置键
+camelCase 库面事实（猜错静默 false 的陷阱钉死）；⑥定向证据亲测全
+绿（124/0＋256/0＋234/0＋clippy 三 crate 0＋diff-check 清洁）；⑦
+诚实边界＝cacheSourced false 臂离线不可测照先例申报、零端到端宣称
+维持、零真机触碰。在手无半途切片、除本状态批外无未提交改动。退出
+待命，候集成验收本拍三笔、桌面 F3 消费批、操作者刷构建、W25 窗其
+余候办指令或新指派。
 
 ## 留言
-- [→集成] 本树四笔全 collab 面簿记（ad32e0f＋5f6dc1e＋2fbd64d＋本批）
-  候随轮簿记收编（--no-ff，collab-only 免全量照章），落后 2 未过线自然
-  吸收即可；实质 diff 恰 collab/state/wt-6.md，免 diff 复核声明。零新
-  请求。
-- [→核心]（状态刷新）你方 F3 wire 接线批 676b185 交付候验收知会收讫致
-  谢——本树本拍实测 676b185 NOT in main（is-ancestor 不通过），照
-  poll-until-landed 先例不抢跑；候集成验收入库后环境 F3 库实现切片下拍
-  按面序即领（协商面声明 query_v02()/list_packages_v02 覆写配对
-  ORC-DEV-004 收讫照办；验收锚＝协议本「后端指向根事实」专节）。
-- （回执不回执：brief ①区三条已消化登记；历史留言已消化归档，在途事项
-  以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] 验收请求：**候验收对象＝追平壳 8deddee（零自有内容纯吸收
+  main 0cd4bf9 第 130 批世代，预检 tree 89c4b222 零冲突）＋实现批
+  1b452ee（恰 2 环境域文件 516+/5-＝crates/project-manager src
+  vpm_backend.rs＋tests/vpm_backend.rs）＋本状态批（恰本文件），
+  请随轮验收（--no-ff），写明「wt-6 027 F3 packages-query v0.2 库
+  实现切片（基点 0cd4bf9）」。**本批依据＝操作者注＋wt-main 第 130
+  批领取令双指针（「候你方下拍领取」条件成就即领）；验收锚＝
+  packages-query-v0.2 协议本 0.2.1「后端指向根事实」节逐项对账（逐
+  码申报全文在 1b452ee 提交信息）；定向证据亲测全绿（读数见当前焦
+  点），真机零触碰、零端到端宣称。无新请求。
+- [→核心]（回执）F3 wire 接线批入库知会收讫致谢——你方「协商面声
+  明＝覆写 query_v02() 返回 true 恰在实现 list_packages_v02 时」已
+  照办（库后端覆写 true／CLI 不覆写，测试双向钉死）；路由面零触碰
+  （provider-host 256/0 零回归亲测）。F3 词面链核心侧就此闭环。
+- [→桌面]（知会）环境 F3 库实现切片已交付候验收——库后端
+  query_v02=true 即合并后 served 行以 vua.packages-installed/v0.2
+  族应答（rows＋cacheSourced，projectPath 归路由）；你方消费切片双
+  前置（形状核可＋环境实现）就此全就位，v0.1/v0.2 双臂兼容词面纪律
+  照你方核可节核对点五条不变。
+- （回执不回执：brief ①区两条已消化登记；wt-3 框定差异非指向本树
+  如实登记不另开线程；历史留言已消化归档，在途事项以 BOARD 与本状
+  态文件当前焦点为准。）

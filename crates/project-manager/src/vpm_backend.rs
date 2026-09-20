@@ -14,11 +14,11 @@
 use vua_orchestrator::vpm_backend_error_codes as error_codes;
 use vua_orchestrator::{
     AppErrorV1, CatalogCapabilities, CatalogVersionV01, ChangeItemV1, ChangeKindV1,
-    ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledPackageV1, PackageCatalogV01,
-    PackageCatalogV02, PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef,
-    RegisterCapabilities, RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01,
-    RepoCatalogRepoV01, RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, VpmBackend,
-    VpmCapabilities,
+    ChangePreviewV1, ErrorCategory, FileSystemProjectStore, InstalledListingV02,
+    InstalledPackageV1, InstalledPackageV02, PackageCatalogV01, PackageCatalogV02,
+    PackageRequestV1, PackageSourceV01, ParamValue, ProjectRef, RegisterCapabilities,
+    RegisteredProjectV1, RepoCatalogCapabilities, RepoCatalogPackageV01, RepoCatalogRepoV01,
+    RepoCatalogV01, RepoInfoV01, RepoWriteCapabilities, VpmBackend, VpmCapabilities,
 };
 use vua_orchestrator::{Clock, ProcessRunner, ProcessSpec};
 use serde_json::json;
@@ -643,6 +643,124 @@ impl VpmBackend for VrcGetLibBackend {
                 .collect();
             packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
             Ok(packages)
+        })
+    }
+
+    fn query_v02(&self) -> bool {
+        // 027 F3 冻结批（实现核对切片）：恰在实现 `list_packages_v02` 时覆写
+        // 默认 false（catalog_v02 同律，ORC-DEV-004：无实现不预留）——覆写
+        // 即 wire 路由对本后端以 `vua.packages-installed/v0.2` 族应答（族常
+        // 量盖戳属路由事实，P1 纪律）。`VccCliBackend` 不覆写——CLI 后端
+        // 维持冻结 v0.1 族应答，协商缺席臂零改动。
+        true
+    }
+
+    fn list_packages_v02(
+        &self,
+        project: &ProjectRef,
+    ) -> Result<InstalledListingV02, AppErrorV1> {
+        let environment_root = self.environment_root.clone();
+        let offline = self.offline;
+        let project_root = project.root.clone();
+        let http = self.http.clone();
+        self.runtime.block_on(async move {
+            let io = vrc_get_vpm::io::DefaultEnvironmentIo::new(
+                environment_root.into_boxed_path(),
+            );
+            let settings = vrc_get_vpm::environment::Settings::load(&io)
+                .await
+                .map_err(map_environment_io("loading VPM settings"))?;
+            // 三臂降级与 F2 repo_catalog / package_catalog_impl 同构
+            // （ORC-ADP-006）：offline → load_cache（cacheSourced=true）；
+            // 在线 load 失败降级 load_cache（true）；在线成功 load（含 etag
+            // 条件刷新共享缓存文件——与 VCC/vrc-get 自身刷新行为同源）→
+            // false。cacheSourced 是信息性披露，非失败态。
+            let (collection, cache_sourced) = if offline {
+                (
+                    vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                        .await
+                        .map_err(map_environment_io("loading package cache"))?,
+                    true,
+                )
+            } else {
+                match vrc_get_vpm::environment::PackageCollection::load(
+                    &settings,
+                    &io,
+                    Some(&http),
+                )
+                .await
+                {
+                    Ok(collection) => (collection, false),
+                    Err(_) => (
+                        vrc_get_vpm::environment::PackageCollection::load_cache(&settings, &io)
+                            .await
+                            .map_err(map_environment_io("loading package cache"))?,
+                        true,
+                    ),
+                }
+            };
+            // 已装集事实源根（v0.1 冻结事实源零变动）：项目
+            // Packages/vpm-manifest.json＋lock；同一次工程加载携带 Unity 版
+            // 本（m_EditorVersion 解析失败＝load Err→project_load_failed，
+            // 判定绑定有据）。latest 判定数据源根＝同一环境根的仓库缓存集
+            // 合面（上列一次集合加载；prerelease 开关读同一 settings.json，
+            // 冻结词面零 wire 开关）。
+            let show_prerelease = settings.show_prerelease_packages();
+            let project_io =
+                vrc_get_vpm::io::DefaultProjectIo::new(project_root.into_boxed_path());
+            let unity_project = vrc_get_vpm::UnityProject::load(project_io)
+                .await
+                .map_err(map_project_load("loading project"))?;
+            let unity = unity_project.unity_version();
+            // 选择器逐字复用 packages-catalog 族冻结语义：latest_for(工程
+            // Unity 版本, 用户 prerelease 设置)，零第二判定语义。Copy 选择
+            // 器循环外构造一次，整表判定骑上列**一次**集合加载（批量可行
+            // 纪律——逐行独立加载集合不构成本面合法实现形态；逐行
+            // find_package_by_name 是该已装载集合上的内存判定）。
+            let selector = vrc_get_vpm::VersionSelector::latest_for(Some(unity), show_prerelease);
+            use vrc_get_vpm::PackageCollection as _;
+            let mut packages: Vec<InstalledPackageV02> = unity_project
+                .all_installed_packages()
+                .map(|manifest| {
+                    let package_id = manifest.name().to_string();
+                    let installed_version = manifest.version().clone();
+                    let mut dependencies: Vec<String> = manifest
+                        .vpm_dependencies()
+                        .keys()
+                        .map(|key| key.to_string())
+                        .collect();
+                    dependencies.sort();
+                    // 判定＝库 find_package_by_name 语义逐字（0.0.16
+                    // package_collection.rs：remote 各仓 get_latest(选择器)
+                    // 后 chain(local).max_by_key(version)）＝跨集合全仓库合
+                    // 并取最高合资格版本（跨仓 max，刻意非 F2 分仓视图；本
+                    // 地集合候选入链——项目内已装、环境无仓库缓存位且自身
+                    // 不满足选择器时恰为 None）。latestVersion 与
+                    // updateAvailable 成对携带：无合资格最新版＝双双 null
+                    // （判定未执行，绝不以默认 false 填充——024 表态②防线
+                    // ，缺席不是「无更新」）；有＝「存在严格更新的、符合当
+                    // 前过滤条件的版本」精确结论（已装 prerelease＋开关关时
+                    // false＝稳定集内无严格更新，非泛化「无更新」）。
+                    let latest = collection.find_package_by_name(&package_id, selector);
+                    let latest_version = latest.as_ref().map(|info| info.version().to_string());
+                    let update_available = latest
+                        .as_ref()
+                        .map(|info| info.version() > &installed_version);
+                    InstalledPackageV02 {
+                        package_id,
+                        version: installed_version.to_string(),
+                        dependencies,
+                        latest_version,
+                        update_available,
+                    }
+                })
+                .collect();
+            // 行序＝v0.1 冻结投影同款 packageId 升序。
+            packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
+            Ok(InstalledListingV02 {
+                packages,
+                cache_sourced,
+            })
         })
     }
 
