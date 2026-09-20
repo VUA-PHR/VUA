@@ -3783,3 +3783,600 @@ fn b3_batch146_capability_absence_keeps_the_cli_backend_honestly_false() {
     assert_eq!(error.code, "vua.vpm.capability_missing");
     fs::remove_dir_all(&base).ok();
 }
+
+// ======================================================================
+// 环境实现核对切片（wt-6，批 146）：resolve_project 的环境侧证据钉。核心
+// 接线批 70f7476 的三臂钉之上，本组按操作者指派钉「幂等零网络零写入逐字
+// 节＋禁用集语义与 collection_world 互证＋离线如实上浮＋环回夹具仓全解
+// 析落地」。全部走环回源＋合成数据（零真实网络），离线臂零出网。
+// ======================================================================
+
+/// Builds a minimal STORED-method (no compression) zip archive in bytes:
+/// one entry per (name, content), correct CRC-32, central directory and
+/// EOCD — just enough for the library's async_zip reader to extract the
+/// synthetic package, with zero extra dependencies in the test crate.
+fn f6_zip_bytes(entries: &[(&str, &[u8])]) -> Vec<u8> {
+    fn crc32(data: &[u8]) -> u32 {
+        let mut table = [0u32; 256];
+        for (index, slot) in table.iter_mut().enumerate() {
+            let mut crc = index as u32;
+            for _ in 0..8 {
+                crc = if crc & 1 != 0 {
+                    0xEDB8_8320 ^ (crc >> 1)
+                } else {
+                    crc >> 1
+                };
+            }
+            *slot = crc;
+        }
+        let mut crc = 0xFFFF_FFFFu32;
+        for &byte in data {
+            crc = table[((crc ^ byte as u32) & 0xFF) as usize] ^ (crc >> 8);
+        }
+        crc ^ 0xFFFF_FFFF
+    }
+    fn put_u16(out: &mut Vec<u8>, value: u16) {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+    fn put_u32(out: &mut Vec<u8>, value: u32) {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+
+    let mut local = Vec::new();
+    let mut central = Vec::new();
+    let mut offset = 0u32;
+    for (name, content) in entries {
+        let crc = crc32(content);
+        let name_bytes = name.as_bytes();
+        let header_offset = offset;
+        put_u32(&mut local, 0x0403_4b50);
+        put_u16(&mut local, 20); // version needed
+        put_u16(&mut local, 0); // flags
+        put_u16(&mut local, 0); // method: stored
+        put_u16(&mut local, 0); // mod time
+        put_u16(&mut local, 0x0021); // mod date (1980-01-01)
+        put_u32(&mut local, crc);
+        put_u32(&mut local, content.len() as u32);
+        put_u32(&mut local, content.len() as u32);
+        put_u16(&mut local, name_bytes.len() as u16);
+        put_u16(&mut local, 0); // extra length
+        local.extend_from_slice(name_bytes);
+        local.extend_from_slice(content);
+        put_u32(&mut central, 0x0201_4b50);
+        put_u16(&mut central, 20); // version made by
+        put_u16(&mut central, 20); // version needed
+        put_u16(&mut central, 0); // flags
+        put_u16(&mut central, 0); // method
+        put_u16(&mut central, 0); // mod time
+        put_u16(&mut central, 0x0021); // mod date
+        put_u32(&mut central, crc);
+        put_u32(&mut central, content.len() as u32);
+        put_u32(&mut central, content.len() as u32);
+        put_u16(&mut central, name_bytes.len() as u16);
+        put_u16(&mut central, 0); // extra
+        put_u16(&mut central, 0); // comment
+        put_u16(&mut central, 0); // disk start
+        put_u16(&mut central, 0); // internal attrs
+        put_u32(&mut central, 0); // external attrs
+        put_u32(&mut central, header_offset);
+        central.extend_from_slice(name_bytes);
+        offset += (30 + name_bytes.len() + content.len()) as u32;
+    }
+    let central_offset = offset;
+    let central_size = central.len() as u32;
+    let mut out = local;
+    out.extend_from_slice(&central);
+    put_u32(&mut out, 0x0605_4b50);
+    put_u16(&mut out, 0); // disk
+    put_u16(&mut out, 0); // cd disk
+    put_u16(&mut out, entries.len() as u16);
+    put_u16(&mut out, entries.len() as u16);
+    put_u32(&mut out, central_size);
+    put_u32(&mut out, central_offset);
+    put_u16(&mut out, 0); // comment length
+    out
+}
+
+const F6_README_NAME: &str = "README.md";
+const F6_README_BODY: &str = "synthetic resolve package\n";
+
+/// One path-aware loopback origin serving BOTH the repository manifest
+/// (`/repo.json`) and the package zip (`/pkg.zip`), synthetic data only.
+/// The `build` closure receives the bound loopback address so the manifest
+/// body can point at this very origin for the zip. Counts accepted
+/// connections so the zero-network pins are PROVEN, not assumed.
+fn f6_spawn_resolve_server(
+    build: impl FnOnce(std::net::SocketAddr) -> (String, Vec<u8>),
+) -> (std::net::SocketAddr, Arc<std::sync::atomic::AtomicUsize>) {
+    use std::io::{Read as _, Write as _};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (repo_body, zip_bytes) = build(addr);
+    let hits = Arc::new(AtomicUsize::new(0));
+    let hits_thread = Arc::clone(&hits);
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(mut stream) = stream else { break };
+            hits_thread.fetch_add(1, Ordering::SeqCst);
+            let mut buffer = Vec::new();
+            let mut chunk = [0u8; 1024];
+            loop {
+                let read = match stream.read(&mut chunk) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => n,
+                };
+                buffer.extend_from_slice(&chunk[..read]);
+                if buffer.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let head = String::from_utf8_lossy(&buffer);
+            let path = head
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("")
+                .split('?')
+                .next()
+                .unwrap_or("")
+                .to_owned();
+            let response: Vec<u8> = match path.as_str() {
+                "/repo.json" => format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    repo_body.len(),
+                    repo_body
+                )
+                .into_bytes(),
+                "/pkg.zip" => {
+                    let mut http = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        zip_bytes.len()
+                    )
+                    .into_bytes();
+                    http.extend_from_slice(&zip_bytes);
+                    http
+                }
+                _ => b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    .to_vec(),
+            };
+            let _ = stream.write_all(&response);
+        }
+    });
+    (addr, hits)
+}
+
+/// A VCC-shaped project with DECLARED but UNRESOLVED dependencies: the
+/// vpm-manifest dependencies section carries the rows, `locked` is empty
+/// and nothing is installed under `Packages/` — the exact shape a VCC
+/// template copy (the material chain's supply step) leaves behind.
+fn f6_declared_project(root: &std::path::Path, editor: &str, deps: &[(&str, &str)]) -> ProjectRef {
+    fs::create_dir_all(root.join("Packages")).unwrap();
+    fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+    fs::write(root.join("Packages/manifest.json"), r#"{"dependencies":{}}"#).unwrap();
+    let mut dependencies = serde_json::Map::new();
+    for (id, range) in deps {
+        dependencies.insert((*id).to_owned(), serde_json::json!({ "version": range }));
+    }
+    fs::write(
+        root.join("Packages/vpm-manifest.json"),
+        serde_json::json!({ "dependencies": dependencies, "locked": {} }).to_string(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("ProjectSettings/ProjectVersion.txt"),
+        format!("m_EditorVersion: {editor}\n"),
+    )
+    .unwrap();
+    ProjectRef {
+        id: "vpm-f6-resolve".to_owned(),
+        root: root.to_owned(),
+    }
+}
+
+/// Deterministic snapshot of every file byte in the project tree (sorted by
+/// path) — the zero-write pins compare before/after snapshots, not memories.
+fn f6_tree_bytes(root: &std::path::Path) -> Vec<(String, Vec<u8>)> {
+    fn walk(dir: &std::path::Path, prefix: &str, out: &mut Vec<(String, Vec<u8>)>) {
+        for entry in fs::read_dir(dir).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let rel = format!("{prefix}{}", entry.file_name().to_string_lossy());
+            if path.is_dir() {
+                walk(&path, &format!("{rel}\\"), out);
+            } else {
+                out.push((rel, fs::read(&path).unwrap()));
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(root, "", &mut out);
+    out.sort_by(|left, right| left.0.cmp(&right.0));
+    out
+}
+
+/// The resolve world: predefined official/curated repos neutralized via the
+/// library's own experimental switches (zero outbound network), one loopback
+/// subscription row (cache file ABSENT — the online leg fetches and writes
+/// it, the add_remote_repo row shape), and the declared-only project.
+fn f6_resolve_world(
+    label: &str,
+    dep_range: &str,
+) -> (
+    VrcGetLibBackend,
+    ProjectRef,
+    PathBuf,
+    Arc<std::sync::atomic::AtomicUsize>,
+) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let package_json = serde_json::json!({
+        "name": "com.vua.test.resolve.dep",
+        "version": "1.0.0",
+        "vpmDependencies": {}
+    })
+    .to_string();
+    let zip = f6_zip_bytes(&[
+        ("package.json", package_json.as_bytes()),
+        (F6_README_NAME, F6_README_BODY.as_bytes()),
+    ]);
+
+    let (addr, hits) = f6_spawn_resolve_server(|addr| {
+        let body = serde_json::json!({
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "packages": {
+                "com.vua.test.resolve.dep": { "versions": {
+                    "1.0.0": {
+                        "name": "com.vua.test.resolve.dep",
+                        "version": "1.0.0",
+                        "vpmDependencies": {},
+                        "url": format!("http://{addr}/pkg.zip")
+                    }
+                } }
+            }
+        })
+        .to_string();
+        (body, zip)
+    });
+    let repo_url = format!("http://{addr}/repo.json");
+    let cache_path = environment_root.join("Repos").join("resolve-repo.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [{
+            "localPath": cache_path.display().to_string(),
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "url": repo_url
+        }] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f6_declared_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.resolve.dep", dep_range)],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, false).unwrap();
+    (backend, project, base, hits)
+}
+
+/// 主钉：声明依赖全解析成功（环回夹具仓——清单与包 zip 全走 127.0.0.1，
+/// 真实网络零触碰）。resolved 收据（id/version/source_repo＝启用仓库行
+/// id）＋Packages 实地落地＋vpm-manifest locked 段回写；恰两次环回连接
+/// （清单刷新＋包 zip 下载）。
+#[test]
+fn f6_resolve_declared_dependencies_land_locked_and_receipted() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-main", "1.0.0");
+    let manifest_path = project.root.join("Packages/vpm-manifest.json");
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert_eq!(
+        receipt.resolved.len(),
+        1,
+        "exactly the declared dependency lands"
+    );
+    let entry = &receipt.resolved[0];
+    assert_eq!(entry.id, "com.vua.test.resolve.dep");
+    assert_eq!(entry.version, "1.0.0");
+    assert_eq!(
+        entry.source_repo, "com.vua.test.repo.resolve",
+        "source_repo is the enabled repository's row id"
+    );
+    assert!(receipt.already_satisfied.is_empty());
+    assert!(
+        receipt.failed.is_empty(),
+        "a full resolve answers an empty failed set"
+    );
+
+    // Packages 实地落地：解包内容存在且 package.json 与收据同源。
+    let installed = fs::read_to_string(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep/package.json"),
+    )
+    .unwrap();
+    let installed: serde_json::Value = serde_json::from_str(&installed).unwrap();
+    assert_eq!(installed["name"], "com.vua.test.resolve.dep");
+    assert_eq!(installed["version"], "1.0.0");
+    assert!(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep")
+            .join(F6_README_NAME)
+            .is_file(),
+        "the zip content itself landed"
+    );
+
+    // locked 段回写：依赖在锁定表、版本与收据一致。
+    let manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    assert_eq!(
+        manifest["locked"]["com.vua.test.resolve.dep"]["version"], "1.0.0",
+        "the resolve writes the locked section back"
+    );
+
+    // 环回实证：恰两次连接（清单刷新＋包 zip 下载），零真实网络。
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        2,
+        "exactly the manifest fetch and the package zip download rode the loopback"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 幂等钉：locked 已满足＝already_satisfied，零网络零写入——第二次
+/// resolve 在快路径短路（端口面文档「touches nothing」律：在线 load 臂
+/// 会刷新仓库缓存，快路径绝不装载集合），连接计数一动不动、工程树逐字节
+/// 不动。
+#[test]
+fn f6_resolve_idempotent_second_call_is_already_satisfied_zero_network_zero_writes() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-idem", "1.0.0");
+    backend.resolve_project(&project.root).unwrap();
+    let before = f6_tree_bytes(&project.root);
+    let hits_after_first = hits.load(std::sync::atomic::Ordering::SeqCst);
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty(), "nothing re-lands");
+    assert_eq!(
+        receipt.already_satisfied,
+        vec!["com.vua.test.resolve.dep".to_owned()],
+        "the satisfied declared dependency answers already_satisfied"
+    );
+    assert!(receipt.failed.is_empty());
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        hits_after_first,
+        "zero network: the fast path never loads the collection, never opens a connection"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "zero writes: the project tree is byte-identical"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 版本不满足→failed 如实：声明依赖的版本范围在启用仓库无满足项→诚实
+/// 不完整收据（failed 逐依赖携复用码 no_matching_package，零新码），
+/// resolved 恰空、zip 下载从不发生（恰一次清单连接）、工程树逐字节不动
+/// ——绝不返回半落地成功收据。
+#[test]
+fn f6_resolve_version_unsatisfiable_answers_the_honest_failed_receipt() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-ver", "2.0.0");
+    let before = f6_tree_bytes(&project.root);
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty(), "nothing resolves, nothing lands");
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vua.test.resolve.dep");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the failed arm reuses the standing code — zero new codes"
+    );
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        1,
+        "only the manifest fetch ran — the zip download never started"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "a failed resolve writes nothing — never a half-landed state"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 仓库全禁用→解析失败诚实（与 F4 collection_world 语义互证）：禁用行的
+/// 包不参与解析→failed 收据如实；被禁行的源站零接触（恰零连接）；对照臂
+/// （重新启用同一世界、零其他改动）→同包解析落地成功——失败确证来自
+/// 禁用过滤（离开集合世界），不是仓库不可达。
+#[test]
+fn f6_resolve_all_repos_disabled_leaves_the_package_unresolvable() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-disable", "1.0.0");
+    let environment_root = base.join("isolated-vpm-environment");
+    let before = f6_tree_bytes(&project.root);
+
+    f4_write_state(&environment_root, &["com.vua.test.repo.resolve"]);
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vua.test.resolve.dep");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the disabled row's packages left the collection world — unresolvable, honestly"
+    );
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "the filtered row's origin is never contacted — leaving the collection world is not a fetch failure"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "nothing lands from a world that cannot resolve"
+    );
+
+    // 对照臂：重新启用（禁用集清空）、零其他改动→同包解析落地成功。
+    f4_write_state(&environment_root, &[]);
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert_eq!(
+        receipt.resolved.len(),
+        1,
+        "the same package resolves once enabled"
+    );
+    assert_eq!(receipt.resolved[0].id, "com.vua.test.resolve.dep");
+    assert!(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep/package.json")
+            .is_file(),
+        "the enabled world lands the package the disabled world could not see"
+    );
+    assert!(
+        hits.load(std::sync::atomic::Ordering::SeqCst) >= 2,
+        "the enabled arm rode the loopback origin (manifest + zip)"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 离线钉：离线后端＋缓存可解析＋下载不可行→repo_fetch_failed 如实上浮
+/// （端口面文档「repo_fetch_failed for the network segment」；库自身
+/// "Offline mode" 错误随 reason 携带），绝不静默半成功；工程树逐字节不动、
+/// 无半落地包目录。零出网：安装臂无 http，example.invalid 从不被接触。
+#[test]
+fn f6_resolve_offline_answers_repo_fetch_failed_never_half_success() {
+    let base = unique_dir("f6-resolve-offline");
+    let environment_root = base.join("isolated-vpm-environment");
+    // 预定义两仓照 F4 先例以库自有实验开关 neutralize（零出网）。
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    // 直接种子仓库缓存文件（离线 load_cache 腿可解析），包 url 指向
+    // example.invalid（离线后端安装臂无 http——该地址从不被请求）。
+    let cache_path = environment_root.join("Repos").join("resolve-repo.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    fs::write(
+        &cache_path,
+        serde_json::json!({
+            "repo": {
+                "name": "Synthetic Resolve Repo",
+                "id": "com.vua.test.repo.resolve",
+                "url": "https://example.invalid/vua/resolve-repo.json",
+                "packages": {
+                    "com.vua.test.resolve.dep": { "versions": {
+                        "1.0.0": {
+                            "name": "com.vua.test.resolve.dep",
+                            "version": "1.0.0",
+                            "vpmDependencies": {},
+                            "url": "https://example.invalid/vua/pkg.zip"
+                        }
+                    } }
+                }
+            }
+        })
+        .to_string(),
+    )
+    .unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [{
+            "localPath": cache_path.display().to_string(),
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "url": "https://example.invalid/vua/resolve-repo.json"
+        }] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f6_declared_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.resolve.dep", "1.0.0")],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    let before = f6_tree_bytes(&project.root);
+
+    let error = backend.resolve_project(&project.root).unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.repo_fetch_failed",
+        "offline: the download arm surfaces the network-segment failure honestly"
+    );
+    let reason = match error.params.as_ref().and_then(|params| params.get("reason")) {
+        Some(vua_orchestrator::ParamValue::Text(text)) => text.clone(),
+        other => panic!("the failure carries the honest detail: {other:?}"),
+    };
+    assert!(
+        reason.to_lowercase().contains("offline"),
+        "the library's own Offline mode error rides the reason: {reason}"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "never a silent half success: the project tree is byte-identical"
+    );
+    assert!(
+        !project.root.join("Packages/com.vua.test.resolve.dep").exists(),
+        "no package directory landed"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 能力位双向钉（操作者指派缺席臂＋库位覆写）：库后端独立位如实 true；
+/// CLI 后端如实 false 且缺席臂答 capability_missing、message_key 同词位
+/// （与核心批 b3_batch146_capability_absence 互证互补）。
+#[test]
+fn f6_resolve_capabilities_absence_arm_on_cli_backend() {
+    let library = VrcGetLibBackend::with_environment_root(unique_dir("f6-caps-lib"), true).unwrap();
+    assert!(
+        library.capabilities().resolve_project,
+        "the library implements resolve in-process, so its independent bit is true"
+    );
+
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(
+        !cli.capabilities().resolve_project,
+        "no implementation, no declaration"
+    );
+    let project = minimal_vpm_project(&unique_dir("f6-caps-proj"));
+    let error = cli.resolve_project(&project.root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    assert_eq!(error.message_key, "errors.vpm.capabilityMissing");
+}
+
+/// F4 集合世界第六消费者同律：VUA 启停状态文件不可读→backend_unavailable
+/// 共享构造器如实拒绝（与五装载点同事实同码），绝不以「全启用」猜测。
+#[test]
+fn f6_resolve_corrupt_state_file_refuses_like_every_collection_consumer() {
+    let (backend, project, base, _hits) = f6_resolve_world("f6-resolve-state", "1.0.0");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &[]);
+    let state_path = f4_state_path(&environment_root);
+    fs::write(&state_path, "not-json").unwrap();
+
+    let error = backend.resolve_project(&project.root).unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.backend_unavailable",
+        "no state means no honest collection world — refuse, never guess"
+    );
+    fs::remove_dir_all(&base).ok();
+}
