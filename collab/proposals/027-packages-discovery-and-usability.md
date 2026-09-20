@@ -938,3 +938,108 @@ PackagesPage CreateSection＝TemplatesFace 五形态状态机＋下拉/手填双
 （上拍 605G/68%，读数如实更新）。**零端到端宣称维持**——served 行环境覆写置真前模板
 枚举如实 unavailable、创建区块如实回落手填（declared-none 世代下下拉不渲
 染＝核对点①缺席臂合法呈现）；真机呈现归 W25（O-2）。
+
+### 桌面形状核可（F4 TS 面＋wire 接线面，wt-3，2026-09-21 02:3x–03:1x）
+
+**应 wt-main [→桌面] ①区知会办理**（「F4 形状核可双前置全成就解锁（冻结＋接线均在
+库）：照 F2/F3/F5 九项对照同径，下轮首领即办」）。核可执行时点事实＝本拍追平壳
+29edb9c --no-ff 吸收 main b3581da（第 141 批世代：F4 wire 接线批经合并 b6d7b29
+验收入库＋VUA-8 用户裁决并线合并 0f9350f），merge-tree 预检 exit 0 零冲突，落后 22
+领先 0，**核可基于该收编世代办理，零预核可**（接线批 b6d7b29 在收编后始可直读——
+上拍 77c47b6 世代时其未入库，形状核可不领取判定与前拍一致且已随接线入库自然兑现）。
+核可对象＝F4 冻结批 47d4185（恰 39 文件，经第 139 批合并 a3a9d86 入库）＋wire 接线
+批 7361213（恰核心域 8 文件 1738+/133-，经第 141 批合并 b6d7b29 入库，集成逐文件亲
+审 PASSED 载明于合并消息）。本机直读＋定向复跑随消费切片同批亲测（本节判读先落，
+复跑数字见下方消费落节申报——同批双环照 F2/F3/F5 核可＋消费同径先例拆分申报）。
+**结论：核可通过**：
+
+- **逐项核可（九项一致）**：①**请求接口单键闭集**——三命令 TS 面
+  PackagesEnableRepoCommandV06／DisableRepo／RefreshRepo（application-contract.ts
+  :1344/:1355/:1366 全文实读）＝kind "command" 任务化＋params 恰 `{repoId}` 单键闭集
+  （A4 removeRepo 同稳定行柄）＋commandId 必带；请求联合恰三笔新增（:2423–2425）零
+  其它成员变更；wire 闭集形状验证 packages_ops_repo_lifecycle_params
+  （provider_host.rs :7069–7079 实读：params.len()==1＋repoId 非空串，**携
+  confirmedDigest 或 projectPath 即形状违反**——启停 diff 既有摘要、刷新即网络本体，
+  无 preview 臂可漂移）**先于**按方法门，违例一律答 vua.packages.invalid_params；负
+  例向量 invalid-enable-extra-param／invalid-enable-missing-repo-id／invalid-disable
+  -carries-project-path／invalid-disable-empty-repo-id／invalid-refresh-carries
+  -digest 钉死。②**result 最小诚实形状**——三收据 TS 面 :1413（PackagesRepoEnabledV06
+  恰三键 {schemaVersion, kind:"enabled", repoId}）/:1417（disabled 同构）/:1421
+  （refreshed 四键＋**cacheUpdated REQUIRED**）；rejected :1430（guard+code+detail
+  三键，code 族锁 vua.packages.* 冻结 Schema pattern，原端口码 vua.vpm.* 三件零新立
+  在 detail 原词溯源**永不入 code 键**）；enabled/disabled 回显即审计链（端口答
+  Result<(),_> 无载荷，收据绝不重复状态——新状态经 repos v0.2 订阅面读回）；**
+  cacheUpdated 两臂皆成功**（false＝etag 未变「已是最新」是结果非错误，库面
+  update_cache 两臂事实）；发明字段（切换时间戳/前状态回显/字节计数/包清单）＝
+  schema 非法，负例向量 invalid-result-enabled-invented-field／invalid-result
+  -enabled-stale-family／invalid-result-refreshed-invented-payload／invalid-result
+  -refreshed-missing-cacheupdated／invalid-result-rejected-code-outside-family 钉
+  死；repos_v02 六键行 PackagesRepoInfoV02（:667–674 实读＝repoId/name/url/localPath
+  /cached/enabled，REQUIRED enabled 位；id 缺席行 enabled 恒 true 律 :663 注释＋wire
+  测试钉死）。③**路由臂顺序纪律**——provider_host.rs 三路由臂全文实读（enable
+  :7081–7150／disable :7153–7215／refresh :7217–7282）：形状验证先于门→门读**自身
+  位**（repo_lifecycle_capabilities() 每方法独立位——三独立位子集后端各路由独立门）
+  **先于** submit（能力缺席 vua.vpm.capability_missing 在路由层答，绝不进任务）→
+  端口类型化拒绝折 execution_failed 盖 v0.6 族常量携原码 detail
+  （packages_ops_repo_port_rejection 参数化尾）→Ok 投影 serde 收据＋信封双常量盖戳
+  （受理九态任务，refresh 网络段使取消语义实质）；listRepos v0.2 协商臂 :5536–5610
+  实读＝catalog_capabilities 门先于协商、repos_v02() 声明才走 list_repos_v02、族常
+  量路由盖戳、**command 面逐字节 v0.1 信封 0.1**（F3 query_v02 同律）；shared-tail
+  参数化（finish_repo_write_acceptance＋packages_ops_repo_port_rejection 增
+  envelope/family 参数）A4 路由传 V04 常量行为逐字节不变（v04 wire 套件仍绿＋跨行
+  隔离钉 the_frozen_v04_row_keeps_serving_untouched_beside_the_v06_row）。④**双常
+  量命名发布**——PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06 "0.6"（:433）＋
+  PACKAGES_OPS_SCHEMA_VERSION_V06 "vua.packages-ops/v0.6"（:426）＋
+  PACKAGES_REPOS_SCHEMA_VERSION_V02 "vua.packages-repos/v0.2"（:445）均 pub 自
+  vua_provider_host::provider_host（A3/A4/A5/F2/F3 先例：消费端钉核心域常量绝不私
+  有字面量；c914cf2 法则）；wire 测试 envelope_consts_are_detectable（:771）对冻结
+  Schema 常量双向钉死＋活盖戳对常量断言。⑤**冻结词面投影钉**——wire 测试
+  packages_ops_wire_v06.rs 11 例例名逐一与接线批申报对表（缺席接线 typed honest
+  absence＋行 unavailable :341／wired enable 最小收据 :366／wired disable :410／
+  refresh 两臂皆成功＋四键闭收据 :443／参数违例含携 digest 携 projectPath :495／
+  declared-none 门先于 submit :537／子集后端 refresh-only 服务＋toggle 答
+  capability_missing＋行 available :565／拒绝折 execution_failed 搠端口出处三码
+  :604／declared-but-unimplemented 折 trait 默认 :695／双常量可检测 :771／v04 行照
+  常服务 :793）；packages_repos_wire_v02.rs 3 例（v0.2 族协商：族常量＋六键行＋
+  disabled 在列＋id 缺席恒 true＋schema 校验 :241／v0.1 照常服务 :310／空闭集参数律
+  :339）；全部骑真实帧循环；consumer 测试 4+3 例与冻结批 REGISTRY 申报对表。⑥**mock
+  恒缺席臂与桌面零消费**——apps/desktop 全树实读零 enableRepo/disableRepo/
+  refreshRepo/repoLifecycle 引用（grep exit 1 零匹配，wired-not-consumed 成立）；
+  冻结批足迹 mock 臂＝三方法加入 standing unavailable 组（orchestrator-provider
+  mock-provider.ts＋mock-provider.test.ts 1 例 3 断言）；fixture-packages.ts 本地
+  setRepoEnabled 仅本地演示视图翻转非 wire 冒充（F4 消费批随批替换为恒缺席臂）；
+  mock/fixture 不出 DEV 纪律照旧。⑦**TS 面联合成员与收窄有效性**——请求联合恰三
+  笔；result 侧不入 ApplicationSuccessValueV01 联合（packages 写面族先例，F5 核可⑦
+  同法），desktop capturedAt 窄化点不可达 F4 形状；contracts 测试 :713 三方法闭集
+  拒绝＋:748 v02Row 钉在库（本批随消费切片定向复跑亲测）。⑧**向量对表**——
+  packages-ops/v0.6 examples 15 文件＝5 正 10 负、packages-repos/v0.2 examples 7 文
+  件＝3 正 4 负，与冻结批 REGISTRY 申报一致（目录实读计数＋正负例名对表）。⑨**诚实
+  边界如实**——协议本双语 packages-ops v0.6.1（状态行已冻结且已接线；能力门控节命
+  名并路由；诚实边界节 wired-not-consumed-against-fake-backends）＋packages-repos
+  v0.2.1（协商臂落地）实读；REGISTRY 两行一致；served 行 packages.repoLifecycleOps
+  （:1531＋可用性表达式 :1478–1490 实读）＝单行服务三方法、availability 读三独立位
+  ANY（部分覆写后端不被面级行隐藏），默认 declared-none 如实 unavailable 候环境覆写
+  置真（CLI 后端如实假）；**零端到端宣称维持**——本核可系词表层核对；真机呈现归
+  W25（O-2）。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：①**能力缺席降级**——served 行
+  packages.repoLifecycleOps false＝启停/刷新控制不渲染（订阅行照常呈现，降级非错
+  误； TemplatesFace 五态机 constant-absence 同构）；v0.1 族应答（无 enabled 位）＝
+  启停开关不渲染（当前状态不可知不猜测——诚实纪律#1），刷新控制不依赖 enabled 位
+  可独立渲染；repoId null 行＝无启停/刷新入口（removeRepo 同边界诚实纪律，id 缺席
+  行在词面可达范围之外）；②**禁用行在列不隐藏**——v0.2 enabled=false 行照常渲染
+  ＋「已禁用」标注（呈现锚一）；**cacheUpdated=false 呈现「已是最新」非错误**（呈现
+  锚二）；③**收据两臂诚实**——enabled/disabled 收据后订阅面读回新状态（收据不重复
+  状态）；typed 拒绝（execution_failed 携原码 detail）照原词呈现不折叠 unavailable；
+  能力缺席（capability_missing 折 failed 原词）与引擎缺席（unavailable）呈现区分；
+  ④**禁用语义如实**——禁用行离开包集合世界但保留订阅面在列；UI 文案如实表述 VUA
+  自有语义（W25 裁决 (c)：绝不写共享 settings.json，启停面是 VUA 自有状态文件）；
+  ⑤**i18n 四表＋设计标准随批**——新键四语自然措辞、避让 wt-7 已审词面与 VUA-8
+  previewLab/dialogClose 键面、保留未检查/无匹配更新/缓存空态区分（wt-7 纪律）；
+  设计标准 §8 增补照 0.7.12 线双语；⑥**零端到端宣称**——消费切片交付时同批登记定
+  向证据，真机走查归 W25（O-2）。
+- **解锁状态**：F4「形状核可」桌面侧条件满足（本节）；双前置（冻结批 47d4185 经第
+  139 批＋接线批 7361213 经第 141 批入库）全成就——**F4 桌面消费切片（仓库行启停
+  控制＋刷新动作）就此解锁随本拍续领**；环境 F4 实现核对切片（VrcGetLib 覆写三独立
+  位＋.vua/vpm-repo-state.json 自有存储＋etag 两臂投影＋repos_v02 状态位投影）候环
+  境席位，与桌面消费互不阻塞（F2/F3/F5 双环先例：消费对 declared-none 后端诚实降级
+  即合法形态——缺席臂兼容，消费不候实现入库）。零端到端宣称维持。
