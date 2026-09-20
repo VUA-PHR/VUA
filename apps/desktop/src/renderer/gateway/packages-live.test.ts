@@ -1970,3 +1970,147 @@ describe("packages live port (027 F2 consumption)", () => {
     });
   });
 });
+
+/** ---- 027 F3 消费批:packages.listInstalled 双族协商(v0.1/v0.2) ---- */
+
+/** v0.2 族应答帧:路由盖戳族常量 vua.packages-installed/v0.2,行 = 五键
+ *  闭集(v0.1 三键零变动＋判定对必带可空),cacheSourced 必带披露 */
+function installedFrameV02(result: unknown) {
+  return asWire({
+    schemaVersion: "0.1",
+    operation: "packages.listInstalled",
+    result,
+  });
+}
+
+const VALID_ROWS_V02 = [
+  {
+    packageId: "com.vrchat.avatars",
+    version: "3.7.4",
+    dependencies: ["com.vrchat.base"],
+    latestVersion: "3.7.6",
+    updateAvailable: true,
+  },
+  {
+    packageId: "com.vrchat.base",
+    version: "3.7.2",
+    dependencies: [],
+    latestVersion: null,
+    updateAvailable: null,
+  },
+];
+
+describe("packages live port (027 F3 consumption)", () => {
+  it("carries v0.2-family judgment rows and the cacheSourced disclosure into the view (family const consumed, never guessed)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        listResult: {
+          ok: true,
+          value: installedFrameV02({
+            schemaVersion: "vua.packages-installed/v0.2",
+            projectPath: "C:/proj",
+            packages: VALID_ROWS_V02,
+            cacheSourced: true,
+          }),
+        },
+      }),
+    );
+    await port.selectProject("C:/proj");
+    const view = await port.snapshot();
+    assertReadyP2(view);
+    if (view.kind !== "ready-p2") return;
+    expect(view.installedPackages).toEqual(VALID_ROWS_V02);
+    expect(view.installedCacheSourced).toBe(true);
+
+    const outcome = await port.listInstalled("C:/proj");
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect(outcome.result).toEqual({
+      family: "vua.packages-installed/v0.2",
+      rows: VALID_ROWS_V02,
+      cacheSourced: true,
+    });
+    expect(outcome.result).not.toHaveProperty("schemaVersion");
+  });
+
+  it("keeps the v0.1-family answer at the existing P1 rendering with zero regression (no cacheSourced field invented)", async () => {
+    const port = createLivePackages(clientWith());
+    await port.selectProject("C:/proj");
+    const view = await port.snapshot();
+    assertReadyP2(view);
+    if (view.kind !== "ready-p2") return;
+    expect(view.installedPackages).toEqual(VALID_ROWS);
+    expect("installedCacheSourced" in view).toBe(false);
+
+    const outcome = await port.listInstalled("C:/proj");
+    expect(outcome.kind).toBe("ok");
+    if (outcome.kind !== "ok") return;
+    expect(outcome.result).toEqual({ family: "vua.packages-installed/v0.1", rows: VALID_ROWS });
+  });
+
+  it("propagates cacheSourced=false as the online-refresh fact (present, not fabricated, not a failure)", async () => {
+    const port = createLivePackages(
+      clientWith({
+        listResult: {
+          ok: true,
+          value: installedFrameV02({
+            schemaVersion: "vua.packages-installed/v0.2",
+            projectPath: "C:/proj",
+            packages: [
+              {
+                packageId: "com.vrchat.avatars",
+                version: "3.7.4",
+                dependencies: [],
+                latestVersion: "3.7.4",
+                updateAvailable: false,
+              },
+            ],
+            cacheSourced: false,
+          }),
+        },
+      }),
+    );
+    await port.selectProject("C:/proj");
+    const view = await port.snapshot();
+    assertReadyP2(view);
+    if (view.kind !== "ready-p2") return;
+    expect(view.installedCacheSourced).toBe(false);
+  });
+
+  it("rejects shape violations machine-honestly (missing judgment pair or missing cacheSourced under the v0.2 stamp)", async () => {
+    const missingPair = createLivePackages(
+      clientWith({
+        listResult: {
+          ok: true,
+          value: installedFrameV02({
+            schemaVersion: "vua.packages-installed/v0.2",
+            projectPath: "C:/proj",
+            packages: VALID_ROWS,
+            cacheSourced: true,
+          }),
+        },
+      }),
+    );
+    expect(await missingPair.listInstalled("C:/proj")).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+
+    const missingDisclosure = createLivePackages(
+      clientWith({
+        listResult: {
+          ok: true,
+          value: installedFrameV02({
+            schemaVersion: "vua.packages-installed/v0.2",
+            projectPath: "C:/proj",
+            packages: VALID_ROWS_V02,
+          }),
+        },
+      }),
+    );
+    expect(await missingDisclosure.listInstalled("C:/proj")).toEqual({
+      kind: "failed",
+      code: "packages_shape_violation",
+    });
+  });
+});

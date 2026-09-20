@@ -1798,6 +1798,9 @@ demoTaskTitle: "Demo task",
       emptyInstalledDescription:
         "No packages are installed in this project yet. Assemble the project from a {recipe} to add some.",
       noticeChangesOpen: "Repository and change management status: installed packages are readable and removal is available (subject to engine capabilities).",
+      updatableColumn: "Updatable",
+      updateNotExecuted: "Update judgment not executed.",
+      updateNoneUnderFilter: "No strictly newer version under current filter conditions.",
 
     },
     p2: {

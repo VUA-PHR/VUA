@@ -1724,6 +1724,9 @@ rolled_back: "롤백됨",
       emptyInstalledDescription:
         "이 프로젝트에는 아직 설치된 패키지가 없습니다. {recipe}에서 프로젝트를 조립하면 추가됩니다.",
       noticeChangesOpen: "저장소 및 변경 관리 상태: 설치된 패키지를 볼 수 있으며 제거 작업을 사용할 수 있습니다(엔진 기능에 따름).",
+      updatableColumn: "업데이트 가능",
+      updateNotExecuted: "업데이트 판정이 실행되지 않았습니다.",
+      updateNoneUnderFilter: "현재 필터 조건에서 엄격히 새로운 버전이 없습니다.",
 
     },
     p2: {
