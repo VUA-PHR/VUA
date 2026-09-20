@@ -1,12 +1,12 @@
-# VUA design standard v0.7.12
+# VUA design standard v0.7.13
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.12
+> Document version: 0.7.13
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.12)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.13)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-20
+> Updated: 2026-09-21
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -376,6 +376,28 @@ stable untilted cards.
   presentation; cacheSourced=true rides only v0.2-family answers and renders an informational
   "cached data" annotation above the table (reusing catalog wording), never a failure — a
   v0.1-family answer never fabricates the annotation.
+
+  Repository lifecycle presentation (027 F4 consumption slice): the subscription rows carry
+  inline enable/disable and refresh controls, gated on the packages.repoLifecycleOps
+  capability fact row (one row serving the three methods; honestly absent until the
+  environment override flips it = controls not rendered while the subscription rows keep
+  rendering — degradation is not an error, no fact no render). Honest enable-wording ruling
+  (W25 read-only evidence ruling (c): VCC carries no enable/disable state anywhere): the
+  enable bit is VUA-owned state, distinguished from the §8.7 settings-face shared-semantics
+  copy discipline — the disabled wording honestly states "a disabled repository stays
+  listed while its packages leave browsing and install resolution; the shared VCC/ALCOM
+  settings are never written", which is an implementation-faithful statement, not an
+  exclusivity claim. Disabled-not-hidden: a v0.2-family answer (discriminated by family
+  constant vua.packages-repos/v0.2) renders enabled=false rows as usual with a "disabled"
+  badge; a v0.1-family answer carries no enabled bit = the toggle state is unknowable, so
+  the enable/disable control is not rendered (never guessed), while the refresh control does
+  not depend on that bit and may render independently; id-absent rows lie outside the
+  lifecycle word faces' reach and render no controls at all. Both refresh receipt arms are
+  successes: cacheUpdated=false (etag unchanged) renders the honest "cache already up to
+  date" informational word face, never an error. Typed refusals surface with the original
+  port code in detail, strictly distinguished from capability absence; capability absence
+  (capability_missing) and engine absence (unavailable) are presented distinctly; repeated
+  toggles claim no idempotence and refusals surface as refusals.
 - **Overlay:** stronger text contrast, fewer levels, larger targets, stable snapshots, and semantic
   actions. No blur, complex background, or long lists; desktop fallback is always available.
 - **Global shell: boot splash and notification center:** the boot splash is the brand's first
@@ -453,6 +475,18 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.13 (2026-09-21)**: §8.7 addendum for repository lifecycle presentation (proposal 027
+  F4 consumption slice) — inline enable/disable and refresh controls on subscription rows
+  gated on the packages.repoLifecycleOps capability fact row (degradation is not an error;
+  no fact no render); honest enable-wording ruling (W25 ruling (c): VUA-owned state,
+  disabled-not-hidden, shared settings never written, with the distinction from the
+  settings-face shared-semantics copy discipline spelled out); dual-family negotiation
+  discipline (a v0.1-family answer carries no enabled bit = the toggle control is not
+  rendered, never guessed); both refresh receipt arms are successes (cacheUpdated=false =
+  "already up to date" informational presentation, never an error); three-state presentation
+  distinction among typed refusals, capability absence, and engine absence. ZH source
+  updated; EN mirror synced.
 
 - **0.7.12 (2026-09-20)**: navigation rework and baked-turntable promotion (user ruling
   2026-09-20; slice/production-nav-bake-preview merged into main by user ruling 2026-09-21).

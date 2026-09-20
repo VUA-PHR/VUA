@@ -52,6 +52,13 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef, PathBuf) {
     fs::create_dir_all(project_root.join("Assets")).unwrap();
     fs::create_dir_all(project_root.join("Packages")).unwrap();
     fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
+    // Already-provisioned target: the standing fixtures plan the UNCHANGED
+    // v0.1 step set (zero-change law for provisioned projects).
+    fs::write(
+        project_root.join("ProjectSettings").join("ProjectVersion.txt"),
+        "2022.3.22f1",
+    )
+    .unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
     let project = ProjectRef { id: "project".into(), root: project_root };
     (base, project, source)
@@ -187,6 +194,7 @@ fn b3_task_001_happy_path_runs_and_replays() {
             project.id.clone(),
             "project-fingerprint",
             inspection,
+            &project.root,
             "corr",
         )
         .unwrap();
@@ -242,6 +250,7 @@ fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
             project.id.clone(),
             "project-fingerprint",
             inspection,
+            &project.root,
             "corr",
         )
         .unwrap();

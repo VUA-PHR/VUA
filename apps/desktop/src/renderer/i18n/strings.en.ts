@@ -1749,6 +1749,27 @@ demoTaskTitle: "Demo task",
       removeConfirm: "Confirm removal",
       removing: "Removing…",
       removedLine: "Removed subscription: {repoId}",
+      /** F4 repository lifecycle (027 v0.6 consumption): inline toggle/
+       *  refresh controls. Honest-wording ruling: enable state is VUA-owned
+       *  — a disabled repository stays listed (disabled-not-hidden), its
+       *  packages leave enumeration and install resolution; the shared
+       *  VCC/ALCOM settings are never written (W25 read-only evidence
+       *  ruling (c): VCC carries no enable/disable state anywhere). */
+      lifecycle: {
+        enableAction: "Enable",
+        disableAction: "Disable",
+        enableAria: "Enable repository {name}",
+        disableAria: "Disable repository {name}",
+        refreshAction: "Refresh",
+        refreshAria: "Refresh the cache of repository {name}",
+        enabling: "Enabling…",
+        disabling: "Disabling…",
+        refreshing: "Refreshing…",
+        disabledBadge: "Disabled",
+        disabledNote: "Disabled: this repository's packages no longer take part in browsing or install resolution; the subscription row stays listed.",
+        doneLine: "Done: {repoId}",
+        upToDate: "The repository cache is already up to date.",
+      },
     },
 
     create: {
@@ -1803,7 +1824,11 @@ demoTaskTitle: "Demo task",
       riskBody:
         "Community repositories are maintained by third parties and are not reviewed by VRChat or VUA. Their packages can change after you subscribe. Only add repositories from creators you trust.",
       riskAcknowledge: "Got it",
-      toggleAria: "Enable or disable {name}",
+      /** F4 consumption (2026-09-21): the toggleAria interactive wording
+       *  retires together with the local checkbox flip, replaced by the
+       *  read-only static badges */
+      enabledBadge: "Enabled",
+      disabledBadge: "Disabled",
       health: {
         unknown: "Not checked",
         ok: "Reachable",
@@ -2409,6 +2434,16 @@ demoTaskTitle: "Demo task",
     },
     environment: {
       verifyUnavailable: "The editor verification service is not available right now.",
+    },
+    /** Material-chain error copy (desktop batch 142, task-event failure-row
+     *  presentation): keys = wire messageKeys (vua.material family errors
+     *  carried by AppErrorV01). provisionFailed is a reserved row — the
+     *  material-chain v0.2 code vua.material.provision_failed travels with
+     *  the core seat's fix slice (wt-2, pending landing); the copy lands
+     *  first in sync across the four tables so the code hits on arrival. */
+    material: {
+      executionFailed: "Material execution failed: the Unity-side operation did not complete.",
+      provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
     },
   },
 };

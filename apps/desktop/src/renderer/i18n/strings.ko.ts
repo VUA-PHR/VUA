@@ -1676,6 +1676,25 @@ rolled_back: "롤백됨",
       removeConfirm: "해제 확인",
       removing: "해제 중…",
       removedLine: "구독 해제됨: {repoId}",
+      /** F4 리포지토리 수명 주기(027 v0.6 소비 배치): 활성화/비활성화/
+       *  새로 고침 행 내 컨트롤. 활성 상태는 VUA 고유의 사실 — 비활성화된
+       *  리포지토리도 구독 목록에 남아(숨기지 않음) 그 패키지는 열거 및
+       *  설치 해석에서 제외됩니다. VCC/ALCOM 공유 설정은 절대 쓰지 않습니다. */
+      lifecycle: {
+        enableAction: "활성화",
+        disableAction: "비활성화",
+        enableAria: "리포지토리 {name} 활성화",
+        disableAria: "리포지토리 {name} 비활성화",
+        refreshAction: "새로 고침",
+        refreshAria: "리포지토리 {name}의 캐시 새로 고침",
+        enabling: "활성화 중…",
+        disabling: "비활성화 중…",
+        refreshing: "새로 고치는 중…",
+        disabledBadge: "비활성화됨",
+        disabledNote: "비활성화: 이 리포지토리의 패키지는 탐색 및 설치 해석에서 제외되며, 구독 행은 목록에 남습니다.",
+        doneLine: "작업 완료: {repoId}",
+        upToDate: "리포지토리 캐시가 이미 최신 상태입니다.",
+      },
     },
 
     create: {
@@ -1730,7 +1749,10 @@ rolled_back: "롤백됨",
       riskBody:
         "커뮤니티 리포지토리는 제3자가 관리하며 VRChat이나 VUA의 검토를 받지 않습니다. 추가한 후에도 패키지가 변경될 수 있으므로 신뢰하는 제작자의 리포지토리만 추가하세요.",
       riskAcknowledge: "확인했습니다",
-      toggleAria: "{name} 활성화 또는 비활성화",
+      /** F4 소비 배치(2026-09-21): toggleAria 조작 어휘는 로컬 체크박스
+       *  전환과 함께 은퇴하고 읽기 전용 정적 표시로 대체됨 */
+      enabledBadge: "활성화됨",
+      disabledBadge: "비활성화됨",
       health: {
         unknown: "확인 안 함",
         ok: "연결 가능",
@@ -2326,6 +2348,16 @@ rolled_back: "롤백됨",
     },
     environment: {
       verifyUnavailable: "에디터 검증 서비스가 현재 사용할 수 없습니다.",
+    },
+    /** 머티리얼 체인 오류 문구(데스크톱 142批次, 작업 이벤트 실패 행 표시):
+     *  키 = 와이어상의 messageKey(vua.material 계열 오류는 AppErrorV01 경유).
+     *  provisionFailed는 예약 행 — 머티리얼 체인 v0.2 신규 코드
+     *  vua.material.provision_failed는 코어 석 수정 배치(wt-2, 편입 대기)와
+     *  함께 전달됩니다. 문구를 먼저 4개 언어로 동기화하여 코드 도착 시
+     *  즉시 일치시킵니다. */
+    material: {
+      executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
+      provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
     },
   },
 };

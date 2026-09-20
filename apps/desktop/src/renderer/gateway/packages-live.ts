@@ -3,7 +3,8 @@
  * 读面消费批,2026-09-17;025 v0.2 增量消费更新批,2026-09-17;026 A1
  * 移除写面消费批,2026-09-19;026 A2 安装/升级写面消费批,2026-09-19;
  * 026 A3 本地包注册写面消费批,2026-09-19;027 F2 仓库级包目录读面消费
- * 批,2026-09-20;027 F5 模板条目枚举读面消费批,2026-09-20):
+ * 批,2026-09-20;027 F5 模板条目枚举读面消费批,2026-09-20;027 F4 仓库
+ * 生命周期写面消费批,2026-09-21):
  * 经 Desktop Gateway 消费 packages-query v0.1(单方法只读
  * packages.listInstalled)、025 P2 双族 v0.1(packages.listRepos 仓库订
  * 阅清单 + packages.packageCatalog 单包目录按需查询)、packages-ops v0.1
@@ -41,12 +42,21 @@
  *   templates = packages.templatesOps 行(027 F5:一行服务 listTemplates,
  *   template_capabilities().list_templates 门控,default declared-none
  *   翻转前如实不可用,false = 模板下拉不渲染、创建表单回落手填,同翻转
- *   纪律;既有键语义与来源零变更);
+ *   纪律;既有键语义与来源零变更);repoLifecycle = packages.
+ *   repoLifecycleOps 行(027 F4:一行服务 enableRepo/disableRepo/
+ *   refreshRepo 三方法,repo_lifecycle_capabilities 三独立位 ANY 即
+ *   available——部分覆写后端不被面级行隐藏,wire 门按方法绝不按面,
+ *   同翻转纪律;既有键语义与来源零变更);listRepos 结果族按盖戳族常
+ *   量辨世代(F3 installed 双族先例同构):v0.1 族五键行无 enabled 位
+ *   = 启停开关不渲染(状态不可知不猜测),v0.2 族六键行启停面读回权威
+ *   (禁用在列不隐藏);
  * - 响应窄化按三键纪律:schemaVersion 信封("0.1"/"0.2" 各随其行)+
  *   operation + result(本体族常量 vua.packages-installed/v0.1、
- *   vua.packages-repos/v0.1、vua.packages-catalog/v0.1、
+ *   vua.packages-repos/v0.1、vua.packages-repos/v0.2、
+ *   vua.packages-catalog/v0.1、
  *   vua.packages-templates/v0.1、vua.packages-ops/v0.1、
- *   vua.packages-ops/v0.2、vua.packages-ops/v0.4)
+ *   vua.packages-ops/v0.2、vua.packages-ops/v0.4、
+ *   vua.packages-ops/v0.6)
  *   组合定位,零字段猜测,
  *   行闭集校验(多余键/缺键/类型不符 = 形状不符诚实失败);行序为服务端
  *   冻结事实(installed 按 packageId 升序、repos 按订阅面自身顺序),
@@ -61,6 +71,8 @@ import type {
   PackagesChangeItemV01,
   PackagesCreateProjectRequestV1,
   PackagesCreateRejectedV05,
+  PackagesDisableRepoRequestV1,
+  PackagesEnableRepoRequestV1,
   PackagesInstallPlanV02,
   PackagesInstallReceiptV02,
   PackagesListInstalledRequestV1,
@@ -73,6 +85,7 @@ import type {
   PackagesPreviewInstallRequestV1,
   PackagesPreviewRemoveRequestV1,
   PackagesProjectCreatedV05,
+  PackagesRefreshRepoRequestV1,
   PackagesRegisterLocalPackageRequestV1,
   PackagesRegisterReceiptV03,
   PackagesRegisterRejectedV03,
@@ -82,7 +95,11 @@ import type {
   PackagesRemoveRejectedV01,
   PackagesRemoveRepoRequestV1,
   PackagesRepoCatalogRequestV1,
+  PackagesRepoDisabledV06,
+  PackagesRepoEnabledV06,
+  PackagesRepoRefreshedV06,
   PackagesRepoRejectedV04,
+  PackagesRepoRejectedV06,
   PackagesRepoRemovedV04,
 } from "@vua/contracts";
 import type { GatewayClient } from "./gateway-client.ts";
@@ -104,9 +121,12 @@ import type {
   PackagesRegisterApplyOutcome,
   PackagesRemoveApplyOutcome,
   PackagesRepoAddApplyOutcome,
+  PackagesRepoLifecycleApplyOutcome,
   PackagesRepoRemoveApplyOutcome,
   PackagesView,
   RepoInfoRowV01,
+  RepoInfoRowV02,
+  ReposListAnswer,
 } from "./packages-port.ts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
 
@@ -140,6 +160,11 @@ const REPO_CATALOG_OPERATION_ID = "packages.repoCatalogOps";
  * template_capabilities().list_templates 门控——repoCatalogOps 一行
  * 先例;default declared-none,环境覆写置真前如实 unavailable) */
 const TEMPLATES_OPERATION_ID = "packages.templatesOps";
+/** F4 仓库生命周期写面 served 行(027 v0.6 接线批申报;一行服务三方法,
+ * repo_lifecycle_capabilities 三独立位 ANY 即 available——repoOps 一行
+ * 三方法先例,部分覆写后端不被面级行隐藏;每路由仍按自身位独立门;
+ * default declared-none,环境覆写置真前如实 unavailable) */
+const REPO_LIFECYCLE_OPERATION_ID = "packages.repoLifecycleOps";
 /** packages-ops result 本体族常量(026 冻结批;盖戳辨词面永不猜测) */
 const PACKAGES_OPS_SCHEMA_VERSION = "vua.packages-ops/v0.1";
 /** packages-ops v0.2 result 本体族常量(A2 冻结批;与 v0.1 plan 同键集,
@@ -165,6 +190,15 @@ const PACKAGES_OPS_SCHEMA_VERSION_V05 = "vua.packages-ops/v0.5";
 /** packages-ops v0.5 wire 信封常量(A5 行;接线批协议本 0.5.1 载明,
  * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
 const PACKAGES_OPS_ENVELOPE_V05 = "0.5";
+/** packages-ops v0.6 result 本体族常量(F4 冻结批;enabled/disabled/
+ * refreshed/rejected 盖戳,消费窄化按字面量) */
+const PACKAGES_OPS_SCHEMA_VERSION_V06 = "vua.packages-ops/v0.6";
+/** packages-ops v0.6 wire 信封常量(F4 行;接线批协议本 0.6.1 载明,
+ * 桌面消费按落地面核对——形状核可登记的核对点就此闭合) */
+const PACKAGES_OPS_ENVELOPE_V06 = "0.6";
+/** packages-repos v0.2 result 本体族常量(F4 冻结批;双版本协商——
+ * backend 未采纳 v0.2 前继续应答 v0.1 族,盖戳辨词面永不猜测) */
+const PACKAGES_REPOS_SCHEMA_VERSION_V02 = "vua.packages-repos/v0.2";
 /**
  * applyRemove/applyInstall 任务等待上界(本地文件操作,正常终态由
  * task.completed 事件驱动毫秒级到达;本界只防御事件丢失/断连后的无限
@@ -255,6 +289,25 @@ function isRepoInfoRow(value: unknown): value is RepoInfoRowV01 {
     if (keys[index] !== expected[index]) return false;
   }
   return typeof value.cached === "boolean"
+    && isNullableNonEmptyString(value.repoId)
+    && isNullableNonEmptyString(value.name)
+    && isNullableNonEmptyString(value.url)
+    && isNullableNonEmptyString(value.localPath);
+}
+
+/** P2 仓库订阅行 v0.2 六键闭集(027 F4 冻结词面;v0.1 五键＋REQUIRED
+ * enabled 位——VUA 自有启停状态读回;health/status/disabledAt 等发明
+ * 字段 = 形状违规) */
+function isRepoInfoRowV02(value: unknown): value is RepoInfoRowV02 {
+  if (!isRecord(value)) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["cached", "enabled", "localPath", "name", "repoId", "url"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return typeof value.cached === "boolean"
+    && typeof value.enabled === "boolean"
     && isNullableNonEmptyString(value.repoId)
     && isNullableNonEmptyString(value.name)
     && isNullableNonEmptyString(value.url)
@@ -392,10 +445,25 @@ function isPackagesInstalledResult(value: Record<string, unknown>): boolean {
   return isPackagesInstalledResultV01(value) || isPackagesInstalledResultV02(value);
 }
 
-/** result 本体:schemaVersion 族常量 + repos 行数组(空数组 = 诚实零订阅) */
-function isPackagesReposResult(value: Record<string, unknown>): boolean {
+/** result 本体:v0.1 族应答(schemaVersion 族常量 + repos 行数组;空数组
+ *  = 诚实零订阅) */
+function isPackagesReposResultV01(value: Record<string, unknown>): boolean {
   if (value.schemaVersion !== "vua.packages-repos/v0.1") return false;
   return Array.isArray(value.repos) && value.repos.every(isRepoInfoRow);
+}
+
+/** result 本体:v0.2 族应答(027 F4 增量;六键行 REQUIRED enabled——
+ * id 缺席行 enabled 恒 true 的投影由 wire/端口层保证,桌面守卫只验行
+ * 闭集与位类型) */
+function isPackagesReposResultV02(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_REPOS_SCHEMA_VERSION_V02) return false;
+  return Array.isArray(value.repos) && value.repos.every(isRepoInfoRowV02);
+}
+
+/** result 本体组合守卫:双族协商按盖戳族常量窄化(027 F4;installed
+ * v0.2 双族先例同构——盖戳辨词面永不猜测,command 面逐字节 v0.1) */
+function isPackagesReposResult(value: Record<string, unknown>): boolean {
+  return isPackagesReposResultV01(value) || isPackagesReposResultV02(value);
 }
 
 /** 模板条目行:id = 非空机器标识(createProject template 参数原样传递),
@@ -882,6 +950,97 @@ function isApplyCreateAccepted(
     && value.correlationId.length > 0;
 }
 
+/* ---- F4 仓库生命周期写面窄化(027 packages-ops v0.6 冻结词面;family
+ * const vua.packages-ops/v0.6——enabled/disabled/refreshed/rejected 盖
+ * 戳按字面量) ---- */
+
+/** kind=enabled 三键闭集(enabled/disabled 同构:端口答 Result<(),_> 无
+ * 载荷,repoId 回显即审计链;新状态经 repos v0.2 订阅面读回——发明切换
+ * 时间戳/前状态回显 = 形状违规,负例向量钉死) */
+function isPackagesRepoEnabledResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V06) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "repoId", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "enabled"
+    && typeof value.repoId === "string"
+    && value.repoId.length > 0;
+}
+
+/** kind=disabled 三键闭集(与 enabled 同构,kind 字面量分立) */
+function isPackagesRepoDisabledResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V06) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["kind", "repoId", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "disabled"
+    && typeof value.repoId === "string"
+    && value.repoId.length > 0;
+}
+
+/** kind=refreshed 四键闭集(A4 收据族唯一新增事实):cacheUpdated REQUIRED
+ * 必带(库面 update_cache 两臂结果——true = etag 条件抓取写入新缓存,
+ * false = etag 未变「已是最新」;两臂皆成功,无新数据是结果绝非错误);
+ * 发明字节计数/包清单 = 形状违规,缺 cacheUpdated = 形状违规(负例向量
+ * invalid-result-refreshed-missing-cacheupdated 钉死) */
+function isPackagesRepoRefreshedResult(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V06) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["cacheUpdated", "kind", "repoId", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "refreshed"
+    && typeof value.repoId === "string"
+    && value.repoId.length > 0
+    && typeof value.cacheUpdated === "boolean";
+}
+
+/** kind=rejected 五键闭集(v0.6 戳):guard 三值闭集复用 A1–A5 零新增
+ * (F4 不加 guard)+ code 锁 vua.packages. 族(复用码 vua.vpm.*
+ * repo_not_found/repo_write_failed/repo_fetch_failed 永不入 rejected
+ * 文档,原端口码在 detail 原词溯源) + detail 非空 */
+function isPackagesRepoRejectedResultV06(value: Record<string, unknown>): boolean {
+  if (value.schemaVersion !== PACKAGES_OPS_SCHEMA_VERSION_V06) return false;
+  const keys = Object.keys(value).sort();
+  const expected = ["code", "detail", "guard", "kind", "schemaVersion"];
+  if (keys.length !== expected.length) return false;
+  for (let index = 0; index < expected.length; index += 1) {
+    if (keys[index] !== expected[index]) return false;
+  }
+  return value.kind === "rejected"
+    && (value.guard === "preview_drift"
+      || value.guard === "package_not_found"
+      || value.guard === "execution_failed")
+    && typeof value.code === "string"
+    && value.code.startsWith("vua.packages.")
+    && typeof value.detail === "string"
+    && value.detail.length > 0;
+}
+
+/** F4 wire 受理回执窄化(import-copy 同构四键,v0.6 信封:schemaVersion
+ * "0.6" + operation(三方法分立) + taskId + correlationId;收不齐 =
+ * 形状不符;0.5/0.4/0.3/0.2/0.1 戳 = 受理形状违规) */
+function isApplyLifecycleAccepted(
+  value: unknown,
+  operation: "packages.enableRepo" | "packages.disableRepo" | "packages.refreshRepo",
+): value is { taskId: string; correlationId: string } {
+  if (!isRecord(value)) return false;
+  return value.schemaVersion === PACKAGES_OPS_ENVELOPE_V06
+    && value.operation === operation
+    && typeof value.taskId === "string"
+    && value.taskId.length > 0
+    && typeof value.correlationId === "string"
+    && value.correlationId.length > 0;
+}
+
 type TypedOutcome<T> =
   | { readonly kind: "ok"; readonly result: T }
   | { readonly kind: "failed"; readonly code: string }
@@ -890,7 +1049,7 @@ type TypedOutcome<T> =
 export function createLivePackages(client: GatewayClient): PackagesPort {
   /**
    * served_capabilities 能力行读取(区块标注权威事实源):app.snapshot
-   * 一次取十行——packages.query(installed)/packages.listRepos(repos)/
+   * 一次取十一行——packages.query(installed)/packages.listRepos(repos)/
    * packages.packageCatalog(catalog)/packages.removeOps(changes)/
    * packages.installOps(installs)/packages.registerOps(registers)/
    * packages.repoOps(repoWrites)/packages.createOps(creates)/
@@ -909,6 +1068,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     creates: boolean;
     repoCatalog: boolean;
     templates: boolean;
+    repoLifecycle: boolean;
   }> => {
     const result = await client.invoke({
       schemaVersion: 1,
@@ -938,6 +1098,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
       creates: availability(CREATE_OPS_OPERATION_ID),
       repoCatalog: availability(REPO_CATALOG_OPERATION_ID),
       templates: availability(TEMPLATES_OPERATION_ID),
+      repoLifecycle: availability(REPO_LIFECYCLE_OPERATION_ID),
     };
   };
 
@@ -1012,8 +1173,11 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     };
   };
 
-  /** P2 订阅清单:行序 = 订阅面自身顺序(配置事实),空数组 = 诚实零订阅 */
-  const listReposRaw = async (): Promise<TypedOutcome<readonly RepoInfoRowV01[]>> => {
+  /** P2 订阅清单:行序 = 订阅面自身顺序(配置事实),空数组 = 诚实零订
+   *  阅。027 F4:双族协商消费(027 F3 installed 双族先例同构)——盖戳族
+   *  常量辨世代,backend 未采纳 v0.2 前继续应答 v0.1 族(command 面
+   *  逐字节不变);v0.2 族六键行 REQUIRED enabled = 启停面读回权威 */
+  const listReposRaw = async (): Promise<TypedOutcome<ReposListAnswer>> => {
     const request: PackagesListReposRequestV1 = {
       schemaVersion: 1,
       requestId: crypto.randomUUID(),
@@ -1022,7 +1186,20 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     };
     const outcome = await invokeTyped(request, "packages.listRepos", "0.1", isPackagesReposResult);
     if (outcome.kind !== "ok") return outcome;
-    return { kind: "ok", result: (outcome.result as { repos: readonly RepoInfoRowV01[] }).repos };
+    const { schemaVersion: familyConst, repos } = outcome.result as {
+      schemaVersion: string;
+      repos: readonly unknown[];
+    };
+    if (familyConst === PACKAGES_REPOS_SCHEMA_VERSION_V02) {
+      return {
+        kind: "ok",
+        result: { family: PACKAGES_REPOS_SCHEMA_VERSION_V02, rows: repos as readonly RepoInfoRowV02[] },
+      };
+    }
+    return {
+      kind: "ok",
+      result: { family: "vua.packages-repos/v0.1", rows: repos as readonly RepoInfoRowV01[] },
+    };
   };
 
   /** P2 目录事实:按需查询(双键闭集);typed 码照原词(no_matching_package
@@ -1453,6 +1630,135 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     return outcome;
   };
 
+  /** F4 生命周期任务环(027 v0.6 冻结词面;A4 removeRepo 同构,020
+   * result 回流)——受理窄化→终态等待→Done payload 窄化,三方法薄封装
+   * 共用,收据按 kind 字面量分派(enabled/disabled/refreshed/rejected)。
+   * 照 A3/A4 同律无 preview 对偶且根在端口:无 digest 无确认链,用户显
+   * 式提交即确认。任务九态语义归应用契约任务面;任务真实状态由任务中心
+   * 呈现,本端口只消费终态结果。超时/断连/形态不齐 = 诚实 unavailable,
+   * 不猜测不伪造结果文档(014 先例);rejected 守卫拒绝是 Done payload
+   * (任务诚实完成、操作被拒),不是错误——重复启停不宣称幂等。 */
+  const lifecycleViaTask = async (
+    operation: "packages.enableRepo" | "packages.disableRepo" | "packages.refreshRepo",
+    request: PackagesEnableRepoRequestV1 | PackagesDisableRepoRequestV1 | PackagesRefreshRepoRequestV1,
+  ): Promise<PackagesRepoLifecycleApplyOutcome> => {
+    const response = await client.invoke(request);
+    if (!response.ok) {
+      if (response.error.kind === "application") {
+        // 受理阶段信封错误:缺席臂折叠 unavailable(引擎未装配/未接线),
+        // 其余 typed 码(能力缺席 vua.vpm.capability_missing 在路由层答
+        // ——绝不进任务/受理持久化失败/invalid_params)照原词 failed
+        if (response.error.error.code === "vua.packages.unavailable") {
+          return { kind: "unavailable" };
+        }
+        return { kind: "failed", code: response.error.error.code };
+      }
+      return { kind: "unavailable" };
+    }
+    if (!isApplyLifecycleAccepted(response.value, operation)) {
+      return { kind: "failed", code: "packages_apply_acceptance_shape" };
+    }
+    const snapshot = await waitForTerminalTask(client, response.value.taskId, PACKAGES_APPLY_TASK_WAIT_MS);
+    if (snapshot === null) {
+      return { kind: "unavailable" };
+    }
+    // 冻结不变量(020):result 仅成功终态出现;rejected 守卫拒绝也在成
+    // 功终态的 Done payload 内(任务诚实完成、操作被拒)。非成功终态 =
+    // 操作未发生(failed/cancelled;恢复非终态绝不隐式续传),error.code
+    // 原词上呈,收不齐 = 诚实降级码,不猜测
+    if (snapshot.state !== "succeeded" && snapshot.state !== "succeeded_with_warnings") {
+      const errorCode = isRecord(snapshot.error) && typeof snapshot.error.code === "string"
+        ? snapshot.error.code
+        : "packages_task_not_succeeded";
+      return { kind: "failed", code: errorCode };
+    }
+    const payload = isRecord(snapshot.result) ? snapshot.result : null;
+    const body = payload === null ? null : isRecord(payload.result) ? payload.result : null;
+    if (body === null) {
+      return { kind: "failed", code: "packages_apply_result_shape" };
+    }
+    if (body.kind === "enabled" && isPackagesRepoEnabledResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesRepoEnabledV06 };
+    }
+    if (body.kind === "disabled" && isPackagesRepoDisabledResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesRepoDisabledV06 };
+    }
+    if (body.kind === "refreshed" && isPackagesRepoRefreshedResult(body)) {
+      return { kind: "ok", receipt: body as unknown as PackagesRepoRefreshedV06 };
+    }
+    if (body.kind === "rejected" && isPackagesRepoRejectedResultV06(body)) {
+      return { kind: "rejected", rejection: body as unknown as PackagesRepoRejectedV06 };
+    }
+    return { kind: "failed", code: "packages_apply_result_shape" };
+  };
+
+  /** F4 启用(027 v0.6 冻结词面):params 单键闭集 {repoId} verbatim;
+   * 方法与收据变体不对应 = 服务端词面违反,诚实降级不冒充成功;成功后
+   * 广播新快照(订阅面 enabled 位已变,列表按新事实重取——禁用在列不
+   * 隐藏,新状态读回权威在 v0.2 行) */
+  const enableRepoRaw = async (repoId: string): Promise<PackagesRepoLifecycleApplyOutcome> => {
+    const request: PackagesEnableRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.enableRepo",
+      params: { repoId },
+    };
+    const outcome = await lifecycleViaTask("packages.enableRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "enabled") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
+  /** F4 禁用(027 v0.6 冻结词面):禁用行离开包集合世界但保留订阅面在
+   * 列;同律收窄与广播 */
+  const disableRepoRaw = async (repoId: string): Promise<PackagesRepoLifecycleApplyOutcome> => {
+    const request: PackagesDisableRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.disableRepo",
+      params: { repoId },
+    };
+    const outcome = await lifecycleViaTask("packages.disableRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "disabled") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
+  /** F4 刷新(027 v0.6 冻结词面):该行自身 localPath 缓存 etag 条件抓
+   * 取;refreshed 收据 REQUIRED cacheUpdated 两臂皆成功——false = etag
+   * 未变「已是最新」,结果非错误,呈现层如实呈现(缓存面已变与否均广
+   * 播刷新,订阅行 cached 位按新事实重取) */
+  const refreshRepoRaw = async (repoId: string): Promise<PackagesRepoLifecycleApplyOutcome> => {
+    const request: PackagesRefreshRepoRequestV1 = {
+      schemaVersion: 1,
+      requestId: crypto.randomUUID(),
+      method: "packages.refreshRepo",
+      params: { repoId },
+    };
+    const outcome = await lifecycleViaTask("packages.refreshRepo", request);
+    if (outcome.kind === "ok") {
+      const { receipt } = outcome;
+      if (receipt.kind !== "refreshed") {
+        return { kind: "failed", code: "packages_apply_result_shape" };
+      }
+      broadcast();
+      return { kind: "ok", receipt };
+    }
+    return outcome;
+  };
+
   /** A5 写命令任务环(026 v0.5 冻结词面;import-copy/A1–A4 同构,020
    * result 回流)——受理窄化→终态等待→Done payload 窄化,单方法
    * createProject 薄封装,收据按 kind 字面量分派(created/rejected)。
@@ -1552,11 +1858,13 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     if (reposOutcome !== null && reposOutcome.kind === "unavailable") {
       return { schemaVersion: 1, kind: "not-connected" };
     }
-    const reposFace: { repos: readonly RepoInfoRowV01[] } & { reposError?: { code: string } } =
+    const reposFace: { repos: readonly (RepoInfoRowV01 | RepoInfoRowV02)[]; reposWordFace?: "vua.packages-repos/v0.2" } & { reposError?: { code: string } } =
       reposOutcome === null
         ? { repos: [] }
         : reposOutcome.kind === "ok"
-          ? { repos: reposOutcome.result }
+          ? reposOutcome.result.family === PACKAGES_REPOS_SCHEMA_VERSION_V02
+            ? { repos: reposOutcome.result.rows, reposWordFace: PACKAGES_REPOS_SCHEMA_VERSION_V02 }
+            : { repos: reposOutcome.result.rows }
           : { repos: [], reposError: { code: reposOutcome.code } };
     if (selectedProjectPath === null) {
       return {
@@ -1573,6 +1881,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
           creates: capabilityRows.creates,
           repoCatalog: capabilityRows.repoCatalog,
           templates: capabilityRows.templates,
+          repoLifecycle: capabilityRows.repoLifecycle,
         },
         projectPath: null,
         installedPackages: [],
@@ -1597,6 +1906,7 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
         creates: capabilityRows.creates,
         repoCatalog: capabilityRows.repoCatalog,
         templates: capabilityRows.templates,
+        repoLifecycle: capabilityRows.repoLifecycle,
       },
       projectPath: selectedProjectPath,
       // 027 F3 双族组装:v0.2 族应答携判定行集＋cacheSourced 披露;
@@ -1676,9 +1986,12 @@ export function createLivePackages(client: GatewayClient): PackagesPort {
     async applyChanges() {
       return { kind: "unavailable" };
     },
-    async setRepoEnabled() {
-      return fetchView();
-    },
+    // F4 仓库生命周期写面(027 v0.6 消费批):enableRepo/disableRepo/
+    // refreshRepo 三方法走 gateway 真实面——原 setRepoEnabled 本地假翻转
+    // (仅重取视图,状态从未变更)就此退役,本地翻转绝不冒充 wire 写面
+    enableRepo: enableRepoRaw,
+    disableRepo: disableRepoRaw,
+    refreshRepo: refreshRepoRaw,
     async capability(): Promise<CapabilityReport> {
       const capabilityRows = await readCapabilityRows();
       return capabilityRows.installed

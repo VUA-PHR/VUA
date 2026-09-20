@@ -293,7 +293,7 @@ describe("packages live port (024 P1 consumption)", () => {
     expect(view).toEqual({
       schemaVersion: 1,
       kind: "ready-p2",
-      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false },
+      blocks: { installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false, repoLifecycle: false },
       projectPath: null,
       installedPackages: [],
       repos: [],
@@ -368,13 +368,13 @@ describe("packages live port (025 P2 consumption)", () => {
     const hidden = await port.snapshot();
     assertReadyP2(hidden);
     if (hidden.kind !== "ready-p2") return;
-    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false });
+    expect(hidden.blocks).toEqual({ installed: true, repos: false, catalog: false, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false, repoLifecycle: false });
 
     const port2 = createLivePackages(clientWith({ snapshot: P2_AVAILABLE }));
     const view = await port2.snapshot();
     assertReadyP2(view);
     if (view.kind !== "ready-p2") return;
-    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false });
+    expect(view.blocks).toEqual({ installed: true, repos: true, catalog: true, changes: false, installs: false, registers: false, repoWrites: false, creates: false, repoCatalog: false, templates: false, repoLifecycle: false });
     expect(view.repos).toEqual(VALID_REPO_ROWS);
     expect(view.reposError).toBeUndefined();
   });
@@ -2265,5 +2265,435 @@ describe("packages live port (027 F3 consumption)", () => {
       kind: "failed",
       code: "packages_shape_violation",
     });
+  });
+});
+
+/* ---- F4 仓库生命周期写面(027 v0.6 消费批) ---- */
+
+const VALID_ENABLED_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.6",
+  kind: "enabled",
+  repoId: "repo-example",
+};
+
+const VALID_DISABLED_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.6",
+  kind: "disabled",
+  repoId: "repo-example",
+};
+
+const VALID_REFRESHED_RECEIPT = {
+  schemaVersion: "vua.packages-ops/v0.6",
+  kind: "refreshed",
+  repoId: "repo-example",
+  cacheUpdated: true,
+};
+
+const VALID_LIFECYCLE_REJECTED = {
+  schemaVersion: "vua.packages-ops/v0.6",
+  kind: "rejected",
+  guard: "execution_failed",
+  code: "vua.packages.execution_failed",
+  detail: "vua.vpm.repo_write_failed: backend refused the toggle write",
+};
+
+/** F4 流编排 client:三生命周期方法/task.get 分支可控(信封版本 0.6;
+ * 与 A4 流编排 client 分立互不污染)。 */
+function lifecycleClient(overrides: {
+  snapshot?: Parameters<typeof appSnapshot>[0];
+  enable?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  disable?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  refresh?: GatewayResult<DesktopGatewaySuccessValueV1>;
+  taskGet?: GatewayResult<DesktopGatewaySuccessValueV1>;
+} = {}): GatewayClient {
+  return fakeClient(async (request) => {
+    if (request.method === "app.snapshot") {
+      return { ok: true, value: appSnapshot(overrides.snapshot ?? QUERY_AVAILABLE) };
+    }
+    if (request.method === "packages.enableRepo") {
+      return overrides.enable ?? { ok: true, value: acceptedLifecycleFrame("t-6", "packages.enableRepo") };
+    }
+    if (request.method === "packages.disableRepo") {
+      return overrides.disable ?? { ok: true, value: acceptedLifecycleFrame("t-6", "packages.disableRepo") };
+    }
+    if (request.method === "packages.refreshRepo") {
+      return overrides.refresh ?? { ok: true, value: acceptedLifecycleFrame("t-6", "packages.refreshRepo") };
+    }
+    if (request.method === "task.get") {
+      return overrides.taskGet ?? { ok: true, value: taskSnapshotValue("running") };
+    }
+    return { ok: false, error: { kind: "unavailable" } as const };
+  });
+}
+
+function acceptedLifecycleFrame(taskId: string, operation: string): DesktopGatewaySuccessValueV1 {
+  return asWire({ schemaVersion: "0.6", operation, taskId, correlationId: "c-6" });
+}
+
+/** listRepos 单方法 client(应答体测试内给定;v0.2 协商消费专用) */
+function reposReadClient(reposAnswer: unknown): GatewayClient {
+  return fakeClient(async (request) => {
+    if (request.method === "app.snapshot") {
+      return {
+        ok: true,
+        value: appSnapshot([
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.listRepos", availability: "available" },
+        ]),
+      };
+    }
+    if (request.method === "packages.listRepos") {
+      return {
+        ok: true,
+        value: asWire({
+          schemaVersion: "0.1",
+          operation: "packages.listRepos",
+          result: reposAnswer,
+        }),
+      };
+    }
+    return { ok: false, error: { kind: "unavailable" } as const };
+  });
+}
+
+describe("packages live port F4 repo lifecycle write face (027 v0.6 consumption)", () => {
+  it("flips blocks.repoLifecycle with the served packages.repoLifecycleOps row (one row serves the three methods; repoWrites/templates semantics untouched; declared-none stays false)", async () => {
+    const withRow = await createLivePackages(
+      lifecycleClient({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.repoOps", availability: "available" },
+          { operationId: "packages.templatesOps", availability: "available" },
+          { operationId: "packages.repoLifecycleOps", availability: "available" },
+        ],
+      }),
+    ).snapshot();
+    if (withRow.kind === "ready-p2") {
+      expect(withRow.blocks.repoLifecycle).toBe(true);
+      expect(withRow.blocks.repoWrites).toBe(true);
+      expect(withRow.blocks.templates).toBe(true);
+    }
+    const withoutRow = await createLivePackages(lifecycleClient()).snapshot();
+    if (withoutRow.kind === "ready-p2") {
+      expect(withoutRow.blocks.repoLifecycle).toBe(false);
+    }
+    // 行存在但引擎后端三独立位均未声明(availability unavailable)= 诚实缺席
+    const rowUnavailable = await createLivePackages(
+      lifecycleClient({
+        snapshot: [
+          { operationId: "packages.query", availability: "available" },
+          { operationId: "packages.repoLifecycleOps", availability: "unavailable" },
+        ],
+      }),
+    ).snapshot();
+    if (rowUnavailable.kind === "ready-p2") {
+      expect(rowUnavailable.blocks.repoLifecycle).toBe(false);
+    }
+  });
+
+  it("rides the task loop for all three methods: v0.6 acceptance -> succeeded snapshot with the exact-three-keys enabled/disabled receipts and the exact-four-keys refreshed receipt (cacheUpdated REQUIRED; verbatim single-key params; ok rides a refresh broadcast)", async () => {
+    let broadcasts = 0;
+    const listeners = new Set<(event: unknown) => void>();
+    // task.get 序列:running(非终态,迫使 waitForTerminalTask 订阅事件
+    // 通道)→ succeeded(A4 task loop 同构)
+    const taskGetSequence: GatewayResult<DesktopGatewaySuccessValueV1>[] = [
+      { ok: true, value: taskSnapshotValue("running") },
+      {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.6", operation: "packages.enableRepo", result: VALID_ENABLED_RECEIPT },
+        }),
+      },
+    ];
+    let taskGetCalls = 0;
+    const client: GatewayClient = {
+      invoke: async (request) => {
+        if (request.method === "packages.enableRepo") {
+          // 端口 verbatim 传输钉死:params 恰 {repoId},无 confirmedDigest
+          // 无 projectPath(闭集形状违反由 wire 层拒绝,UI 绝不构造)
+          expect(request.params).toEqual({ repoId: "repo-example" });
+          return { ok: true, value: acceptedLifecycleFrame("t-6", "packages.enableRepo") };
+        }
+        if (request.method === "task.get") {
+          const answer: GatewayResult<DesktopGatewaySuccessValueV1> =
+            taskGetSequence[Math.min(taskGetCalls, taskGetSequence.length - 1)] ?? {
+              ok: false,
+              error: { kind: "unavailable" },
+            };
+          taskGetCalls += 1;
+          return answer;
+        }
+        return { ok: false, error: { kind: "unavailable" } as const };
+      },
+      subscribe: (callback) => {
+        listeners.add(callback as (event: unknown) => void);
+        return () => {
+          listeners.delete(callback as (event: unknown) => void);
+        };
+      },
+    };
+    const port = createLivePackages(client);
+    port.subscribe(() => {
+      broadcasts += 1;
+    });
+    const pending = port.enableRepo("repo-example");
+    while (listeners.size === 0) await new Promise((resolve) => setTimeout(resolve, 1));
+    for (const listener of listeners) listener({ kind: "task.completed", taskId: "t-6", payload: {} });
+    // 收据逐键钉死:enabled/disabled 三键闭集 {schemaVersion, kind, repoId}
+    // ——回显即审计链,无时间戳无前状态回显;新状态经订阅面读回收据绝不重复
+    expect(await pending).toEqual({ kind: "ok", receipt: VALID_ENABLED_RECEIPT });
+    expect(Object.keys(VALID_ENABLED_RECEIPT).sort()).toEqual(["kind", "repoId", "schemaVersion"]);
+    // ok 收据骑刷新广播(订阅面 enabled 位已变,列表按新事实重取)
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(broadcasts).toBeGreaterThan(0);
+
+    // disabled 三键收据
+    const disableClient = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.6", operation: "packages.disableRepo", result: VALID_DISABLED_RECEIPT },
+        }),
+      },
+    });
+    expect(await createLivePackages(disableClient).disableRepo("repo-example"))
+      .toEqual({ kind: "ok", receipt: VALID_DISABLED_RECEIPT });
+    expect(Object.keys(VALID_DISABLED_RECEIPT).sort()).toEqual(["kind", "repoId", "schemaVersion"]);
+
+    // refreshed 四键收据:cacheUpdated REQUIRED(缺即形状违规)
+    const refreshClient = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.6", operation: "packages.refreshRepo", result: VALID_REFRESHED_RECEIPT },
+        }),
+      },
+    });
+    expect(await createLivePackages(refreshClient).refreshRepo("repo-example"))
+      .toEqual({ kind: "ok", receipt: VALID_REFRESHED_RECEIPT });
+    expect(Object.keys(VALID_REFRESHED_RECEIPT).sort()).toEqual([
+      "cacheUpdated",
+      "kind",
+      "repoId",
+      "schemaVersion",
+    ]);
+  });
+
+  it("carries cacheUpdated=false as an honest success (already up to date is an outcome, never an error) and surfaces the typed rejection (execution_failed with the original port code in detail) as the rejection, never an error", async () => {
+    const upToDateClient = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.6",
+            operation: "packages.refreshRepo",
+            result: { ...VALID_REFRESHED_RECEIPT, cacheUpdated: false },
+          },
+        }),
+      },
+    });
+    // 呈现锚二:cacheUpdated=false = etag 未变「已是最新」——ok 臂,绝不折叠失败
+    expect(await createLivePackages(upToDateClient).refreshRepo("repo-example")).toEqual({
+      kind: "ok",
+      receipt: { ...VALID_REFRESHED_RECEIPT, cacheUpdated: false },
+    });
+
+    const rejectedClient = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: { schemaVersion: "0.6", operation: "packages.disableRepo", result: VALID_LIFECYCLE_REJECTED },
+        }),
+      },
+    });
+    expect(await createLivePackages(rejectedClient).disableRepo("repo-example")).toEqual({
+      kind: "rejected",
+      rejection: VALID_LIFECYCLE_REJECTED,
+    });
+  });
+
+  it("folds the capability-missing acceptance to failed verbatim, the absence arm to unavailable, a non-succeeded terminal verbatim, and a 0.4-stamped acceptance or invented receipt field as shape violation (never fabricates a receipt)", async () => {
+    // 能力缺席在路由层答(绝不进任务)→ 折 failed 原词,与引擎缺席(unavailable)呈现区分
+    const capabilityMissing = lifecycleClient({
+      enable: {
+        ok: false,
+        error: {
+          kind: "application",
+          error: {
+            contractVersion: "0.1",
+            code: "vua.vpm.capability_missing",
+            category: "unavailable",
+            messageKey: "errors.vpm.capabilityMissing",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-6",
+          },
+        },
+      },
+    });
+    expect(await createLivePackages(capabilityMissing).enableRepo("repo-example")).toEqual({
+      kind: "failed",
+      code: "vua.vpm.capability_missing",
+    });
+    const absent = lifecycleClient({
+      enable: { ok: false, error: { kind: "unavailable" } as const },
+    });
+    expect(await createLivePackages(absent).enableRepo("repo-example")).toEqual({ kind: "unavailable" });
+
+    // 非成功终态:error.code 原词上呈(任务真实状态由任务中心呈现)
+    const failedTerminal = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("failed", {
+          error: {
+            contractVersion: "0.1",
+            code: "vua.provider.persistence_failed",
+            category: "internal",
+            messageKey: "errors.provider.persistenceFailed",
+            recoverable: false,
+            retryable: false,
+            correlationId: "c-6",
+          },
+        }),
+      },
+    });
+    expect(await createLivePackages(failedTerminal).enableRepo("repo-example")).toEqual({
+      kind: "failed",
+      code: "vua.provider.persistence_failed",
+    });
+
+    // 0.4 假盖戳 = 受理形状违规;发明收据字段(切换时间戳)= 形状违规
+    const staleAcceptance = lifecycleClient({
+      enable: { ok: true, value: acceptedRepoFrame("t-4", "packages.enableRepo") },
+    });
+    expect(await createLivePackages(staleAcceptance).enableRepo("repo-example")).toEqual({
+      kind: "failed",
+      code: "packages_apply_acceptance_shape",
+    });
+    const inventedReceipt = lifecycleClient({
+      taskGet: {
+        ok: true,
+        value: taskSnapshotValue("succeeded", {
+          result: {
+            schemaVersion: "0.6",
+            operation: "packages.enableRepo",
+            result: { ...VALID_ENABLED_RECEIPT, disabledAt: "2026-09-21T00:00:00Z" },
+          },
+        }),
+      },
+    });
+    expect(await createLivePackages(inventedReceipt).enableRepo("repo-example")).toEqual({
+      kind: "failed",
+      code: "packages_apply_result_shape",
+    });
+  });
+
+  it("consumes the v0.2 repos family through the stamped family const (six-key rows with the REQUIRED enabled bit projected verbatim, disabled stays listed, word face carried) while the v0.1 family keeps answering without the word face", async () => {
+    const v02Port = createLivePackages(
+      reposReadClient({
+        schemaVersion: "vua.packages-repos/v0.2",
+        repos: [
+          {
+            repoId: "repo-live",
+            name: "Live Repo",
+            url: "https://vpm.example/index.json",
+            localPath: null,
+            cached: true,
+            enabled: false,
+          },
+          {
+            repoId: null,
+            name: null,
+            url: null,
+            localPath: "C:/Repos/local",
+            cached: false,
+            enabled: true,
+          },
+        ],
+      }),
+    );
+    const v02View = await v02Port.snapshot();
+    if (v02View.kind === "ready-p2") {
+      expect(v02View.reposWordFace).toBe("vua.packages-repos/v0.2");
+      expect(v02View.repos).toEqual([
+        {
+          repoId: "repo-live",
+          name: "Live Repo",
+          url: "https://vpm.example/index.json",
+          localPath: null,
+          cached: true,
+          enabled: false,
+        },
+        {
+          repoId: null,
+          name: null,
+          url: null,
+          localPath: "C:/Repos/local",
+          cached: false,
+          enabled: true,
+        },
+      ]);
+    } else {
+      throw new Error("expected a ready-p2 view");
+    }
+
+    // v0.1 族照常应答:五键行无 enabled 位,word face 不置位(消费端启停
+    // 控制不渲染——状态不可知不猜测)
+    const v01Port = createLivePackages(
+      reposReadClient({
+        schemaVersion: "vua.packages-repos/v0.1",
+        repos: [
+          {
+            repoId: "repo-legacy",
+            name: "Legacy Repo",
+            url: "https://vpm.example/index.json",
+            localPath: null,
+            cached: true,
+          },
+        ],
+      }),
+    );
+    const v01View = await v01Port.snapshot();
+    if (v01View.kind === "ready-p2") {
+      expect(v01View.reposWordFace).toBeUndefined();
+      expect(v01View.repos).toEqual([
+        {
+          repoId: "repo-legacy",
+          name: "Legacy Repo",
+          url: "https://vpm.example/index.json",
+          localPath: null,
+          cached: true,
+        },
+      ]);
+    } else {
+      throw new Error("expected a ready-p2 view");
+    }
+  });
+
+  it("answers shape violation when a v0.2-stamped row invents a field or drops the REQUIRED enabled bit (closed sets pinned, never guessed)", async () => {
+    for (const badRow of [
+      // 发明 health 位(虚假断言防线:health face 是冻结非目标)
+      {
+        repoId: "repo-x",
+        name: "X",
+        url: null,
+        localPath: null,
+        cached: true,
+        enabled: true,
+        health: "ok",
+      },
+      // 缺 REQUIRED enabled 位
+      { repoId: "repo-x", name: "X", url: null, localPath: null, cached: true },
+    ]) {
+      const port = createLivePackages(
+        reposReadClient({ schemaVersion: "vua.packages-repos/v0.2", repos: [badRow] }),
+      );
+      const view = await port.snapshot();
+      if (view.kind === "ready-p2") {
+        expect(view.reposError?.code).toBe("packages_shape_violation");
+      } else {
+        throw new Error("expected a ready-p2 view");
+      }
+    }
   });
 });

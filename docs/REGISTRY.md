@@ -23,7 +23,7 @@
 | schemas/eac-probe/v0.1 | 0.1 | 已冻结（006 R1a，集成验收复跑 437/0） | 环境 | 2026-09-10 |
 | schemas/eac-allowlist/v0.1 | 0.1 | 已冻结（006 R2/R3，集成验收复跑 442-443/0） | 环境 | 2026-09-10 |
 | schemas/eac-terminate/v0.1 | 0.1 | 已冻结（006 R1b 全链收官，集成验收复跑 447/0） | 环境 | 2026-09-10 |
-| schemas/amf-production/v0.2 | 0.2 | 已冻结（M3 验收，2026-09-07；v0.1 历史保留） | 核心 | 2026-09-10 |
+| schemas/amf-production/v0.2 | 0.2 | 已冻结（M3 验收，2026-09-07；v0.1 历史保留；2026-09-21 第 141 批增补 material-plan.schema.json v0.2＝素材计划供给步骤词面〔W25 真机发现修复：步骤种类闭集新增 provision_project，计划 schemaVersion 0.1→0.2，检查面与 build-record source 嵌入保持 v0.1 不变〕＋向量 2 正 1 负〔vectors/material-plan/ 子目录〕＋消费测试 material_intake） | 核心 | 2026-09-10 |
 | schemas/environment-managers/v0.1 | 0.1 | 已冻结 | 环境 | 2026-09-10 |
 | docs/architecture/system_ZH.md | 1.0.1 | 已接受 | 桌面 | 2026-09-07 |
 | docs/architecture/orchestrator_ZH.md | 1.0.0 | 已接受 | 桌面 | 2026-09-06 |
@@ -49,6 +49,7 @@
 | docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
 | docs/protocols/material-intake-v0.1_ZH.md | 0.1 | B3 实现基线 | 产线 | 2026-09-06 |
+| docs/protocols/material-intake-v0.2_ZH.md | 0.2 | 已冻结（B3 基线 v0.2 增补，2026-09-21 第 141 批：工程供给节〔条件化 provision_project 步骤＝assembly 计划同款诚实模型——已供给零词面变化、确认后执行、快照后导入前、VpmBackend::create_project 端口路由〔E-VPM-DUAL，Fix 4 无 CLI 依赖〕、供给后指纹基线重取〔inspect-first〕、失败补偿＝空态快照恢复移入恢复隔离区、错误面 vua.material.provision_failed 携后端原码〕＋工作流阶段映射表〔含 provision_project→execute〕＋计划 Schema 引用升 v0.2＋向量节；检查面与暂存契约词面零变更；桌面步骤呈现归桌面消费切片如实声明） | 核心 | 2026-09-21 |
 | docs/protocols/production-use-case-v0.1_ZH.md | 0.1 | 已冻结（M3 验收） | 核心 | 2026-09-07 |
 | docs/protocols/production-use-case-v0.2_ZH.md | 0.2 | 已冻结（W20，2026-09-09：Schema＋向量 24＋消费测试全链） | 核心 | 2026-09-09 |
 | docs/protocols/provider-process-v0.1_ZH.md | 0.2 | B2 实现基线（握手帧面 Schema 已冻结） | 核心 | 2026-09-07 |
@@ -93,7 +94,7 @@
 | schemas/packages-repos/v0.2 | 0.2 | 已冻结（包管理订阅清单读面状态增量，2026-09-20：proposal 027 F4 冻结批同批产物——无读回位则 packages-ops v0.6 启停写面不可诚实消费；v0.2＝冻结 v0.1 result 恰加一个必带行级事实 enabled，其余零变动〔行序/空数组/健康面非目标/五可空与必带键全维持〕，v0.1 行维持冻结照常服务零触碰；command 面与 v0.1 逐字节同形〔信封 const 保持 0.1，F3 增量先例〕；双版本协商＝default accessor repos_v02 default false＋list_repos_v02 default 缺席臂 capability_missing〔catalog_v02/query_v02 先例 ORC-DEV-004〕，盖戳族常量 vua.packages-repos/v0.2 告知消费端应答词面永不猜测，v0.1 形状行在 v0.2 Schema 下非法＝版本增量机器可检测负例钉死；enabled 位语义＝VUA 自有启停状态位读回〔true=包集合世界活跃/false=禁用但在订阅且在列〕，投影 VUA 自有存储绝非 settings.json 键〔裁决 (c)：VCC 无可共享 counterpart〕；id 缺席行 enabled 恒 true〔可达范围之外同 removeRepo 边界，恒久事实〕；虚假断言防线 health/status/lastRefreshed/disabledAt 发明即非法负例钉死；错误码零新码读面错误面与 v0.1 全同；后端指向根事实专节〔状态位事实源＝.vua 状态文件与启停写面同一存储，本面只读，测试隔离临时根〕；Schema＋3 正 4 负向量＋核心消费测试 packages_repos_consumer_v02 3 例〔向量接纳/拒绝＋协商默认与 v0.1 继续服务钉＋fake backend 行投影含六键闭集钉与 id 缺席恒 true 钉〕＋@vua/contracts 守卫〔请求 union 零新增成员，command 面零变更〕＋双语协议本＋port face〔RepoInfoV02＋accessor＋方法＋lib 导出〕；v0.2 协商路由候核心接线批，环境状态投影候实现核对切片，桌面启停开关呈现候形状核可，零端到端宣称） | 核心 | 2026-09-20 |
 | docs/protocols/packages-repos-v0.2_ZH.md | 0.2.1 | 已冻结（包管理订阅清单读面 v0.2 状态增量词表行，2026-09-20：恰加一必带行级事实一次冻结，双语协议本＋REGISTRY 登记随本冻结批；增量语义节〔command 面逐字节同形＋双版本协商＋盖戳判别〕＋enabled 位语义节〔VUA 自有语义＋id 缺席行恒 true＋虚假断言防线〕＋后端指向根事实专节〔只读面〕；同日 2026-09-21 v0.2.1 接线批：packages.listRepos 双版本协商路由臂落地〔声明 repos_v02 的 backend 答 v0.2 族、其余照旧答 v0.1 族；族常量 PACKAGES_REPOS_SCHEMA_VERSION_V02 由路由盖章〕＋wire 测试 packages_repos_wire_v02 3 例骑真帧环，词面零变更；诚实边界节如实更新「已接线未消费」；与 packages-ops v0.6 同批一体交付载明） | 核心 | 2026-09-21 |
 | docs/release/versioning_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| docs/design/design-standard_ZH.md | 0.7.12 | 已接受（0.7.12，2026-09-20：导航重构与烘焙转盘转正并版——用户授权并行开发 slice/production-nav-bake-preview 经用户裁决 2026-09-21 并入 main 时与 main 侧各自推进的 0.7.10/0.7.11 同号撞车，集成合并收拢并序〔如实注记不改史〕：§8.3/§8.4 素材导入收敛为仓储页内容型弹窗＋搭配草稿收敛为配方页内容型弹窗＋模型生产侧栏无组标签平铺＋检查页保持独立页〔0.7.10 导航重构，用户 2026-09-20 裁决〕；§8.6 Release 烘焙转盘方向转正——TurntablePlayer 消费 unity-bridge v4 `build_preview` 产物〔manifest v1 驱动 60 帧画布播放＋cover.png 封面〕，降级路径落死〔读取失败/无产物渲染诚实占位不显示破图，静态与关闭档退回平直横滚与稳定预览〕；0.7.11＝§8.7 模板枚举呈现〔027 F5 消费〕、0.7.10＝§8.9 通知中心滚动关闭语义澄清〔W25 第四批〕两线内容均维持在本版历史序；本行同步修正前批文档头已至 0.7.11 而本行停留 0.7.10 的登记漂移；双语同步） | 桌面 | 2026-09-20 |
+| docs/design/design-standard_ZH.md | 0.7.13 | 已接受（0.7.13，2026-09-21：§8.7 增补仓库生命周期呈现〔027 F4 消费——启停/刷新控制随 packages.repoLifecycleOps 能力行门控、禁用在列不隐藏、v0.1 族无 enabled 位启停控制不渲染、刷新 cacheUpdated=false＝「已是最新」信息呈现非错误、typed 拒绝/能力缺席/引擎缺席三态区分；启停语义如实口径＝W25 裁决 (c) VUA 自有状态与设置面共享语义纪律的区分载明〕；0.7.12＝导航重构与烘焙转盘转正并版〔2026-09-20，用户裁决两线并序撞车收拢〕；双语同步） | 桌面 | 2026-09-21 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |
 | docs/meta/documentation-governance_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | CONTRIBUTING_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
