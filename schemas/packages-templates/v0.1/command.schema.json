@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://ph-r.com/vua/schemas/packages-templates/v0.1/command.schema.json",
+  "title": "VUA packages-templates command v0.1",
+  "description": "The packages template-enumeration read-face command (proposal 027 F5 freeze batch, 2026-09-20; the face-order program F2->F3->F5->F4 with F2/F3 accepted into the library, batches 121-130). v0.1 carries exactly one method, packages.listTemplates: the template entries available to project creation, enumerated by a LOCAL DIRECTORY SCAN over the two pinned directory roots of the library-path default resolution leg — <environment_root>/VRCTemplates first, then <environment_root>/Templates (the create_from_template resolution order; vrc-get-vpm 0.0.16 ships no template enumeration API, environment verification 027 s4, so the scan IS the enumeration). The list takes NO parameters: the template face is environment-level configuration, not per-project (the packages.listRepos zero-parameter precedent). The explicit-path leg of create's three-candidate resolution is a per-create argument shape, NOT a directory root, and has no reach on this face. This face is READ-ONLY by design: project creation stays the packages-ops family write face (createProject, 026 A5 — U14 ruling 3 'agree the template-enumeration wire face' is this family's founding authority); no create/preview/write method exists here. Zero-network fact: no cacheSourced disclosure is carried (a constant informational field is not a fact — the packages-repos v0.1 law). A missing or empty pair of roots answers the honest empty listing, never an error (the R4 precedent).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["packages.listTemplates"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {},
+      "description": "Closed empty set: the template face is environment-level configuration. Any key is a vua.packages.invalid_params shape violation, never a default."
+    }
+  }
+}

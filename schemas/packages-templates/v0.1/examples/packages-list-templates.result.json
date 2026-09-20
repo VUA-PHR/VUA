@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "packages.listTemplates",
+  "result": {
+    "schemaVersion": "vua.packages-templates/v0.1",
+    "templates": [
+      { "id": "Avatar", "name": "Avatar" },
+      { "id": "Base", "name": "Base" },
+      { "id": "World", "name": "World" }
+    ]
+  }
+}

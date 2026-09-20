@@ -420,6 +420,28 @@ describe("bdl-commands v0.1 application surface", () => {
     })).toBe(false);
   });
 
+  it("admits the 027 F5 packages.listTemplates read query with the closed empty params", () => {
+    // 空闭集形态(环境级配置面,packages.listRepos 零参数先例)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: {},
+    })).toBe(true);
+    // 任何键 = 词表外形状违反,绝不默认
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: { projectPath: "C:/proj" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplates",
+      params: { templateRoot: "C:/VRCTemplates" },
+    })).toBe(false);
+    // 词表行闭集:operation 单数形态非法(冻结词面恰 packages.listTemplates)
+    expect(isApplicationRequestV01({
+      ...base, kind: "query", method: "packages.listTemplate",
+      params: {},
+    })).toBe(false);
+  });
+
   it("admits the 026 A1 packages.previewRemove query with the two-key closed params and explicit non-empty list", () => {
     expect(isApplicationRequestV01({
       ...base, kind: "query", method: "packages.previewRemove",
