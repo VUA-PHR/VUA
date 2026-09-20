@@ -574,6 +574,49 @@ export interface PackagesListTemplatesRequestV1 {
   readonly params: Record<string, never>;
 }
 
+// ---- 027 F4 写面(packages-ops v0.6,核心冻结批 47d4185 经第 139 批
+// 入库;wire 接线批 7361213 经第 141 批入库;桌面形状核可随消费批登记
+// 2026-09-21。仓库生命周期:启停二方法＋刷新一方法,照 A3/A4 同律无
+// preview 对偶——启停 diff 无既有摘要、刷新即网络本体,携 confirmedDigest
+// 或 projectPath = 形状违反;params 单键闭集 {repoId} = A4 removeRepo 同
+// 稳定行柄;id 缺席(repoId null)行在本词面可达范围之外,UI 不构造入口)。
+// 三方法任务化 command(Kernel 生成 commandId),收据随任务终态 Done
+// payload 回流:enabled/disabled 恰三键回显(端口答 Result<(),_>,回显即
+// 审计链,新状态经 packages-repos v0.2 订阅面读回,收据绝不重复状态);
+// refreshed 四键必带 cacheUpdated(库面 update_cache 两臂皆成功——false =
+// etag 未变「已是最新」,结果非错误);rejected guard+code+detail 三键,code
+// 族锁 vua.packages.*,原端口码(vua.vpm.repo_not_found/repo_write_failed/
+// repo_fetch_failed,A4 批既有零新立)在 detail 原词溯源。词面权威 =
+// schemas/packages-ops/v0.6 + application-contract.ts F4 段 ----
+
+/** packages.enableRepo 写命令:任务化订阅行启用(VUA 自有语义,W25 只读
+ *  证据裁决 (c)——VCC 无任何启停状态,启停位投影 VUA 自有存储绝不写共享
+ *  settings.json) */
+export interface PackagesEnableRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.enableRepo";
+  readonly params: { readonly repoId: string };
+}
+
+/** packages.disableRepo 写命令:任务化订阅行禁用(禁用行离开包集合世界
+ *  但保留在订阅面在列——呈现层禁用在列不隐藏) */
+export interface PackagesDisableRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.disableRepo";
+  readonly params: { readonly repoId: string };
+}
+
+/** packages.refreshRepo 写命令:任务化订阅行缓存刷新(该行自身 localPath
+ *  缓存 etag 条件抓取;cacheUpdated=false =「已是最新」诚实两臂结果) */
+export interface PackagesRefreshRepoRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "packages.refreshRepo";
+  readonly params: { readonly repoId: string };
+}
+
 // ---- packages-ops v0.1 写面 A1 移除(026 冻结批 d7f6a57 经第 99 批入库;
 // wire 接线批 41503a4 候验收;桌面 A1 消费批登记 2026-09-19。previewRemove
 // = 同步只读变更预览 query(双键闭集,packageIds 显式非空闭列 minItems 1 +
@@ -847,7 +890,10 @@ export type DesktopGatewayRequestV1 =
   | PackagesAddRemoteRepoRequestV1
   | PackagesAddLocalRepoRequestV1
   | PackagesRemoveRepoRequestV1
-  | PackagesCreateProjectRequestV1;
+  | PackagesCreateProjectRequestV1
+  | PackagesEnableRepoRequestV1
+  | PackagesDisableRepoRequestV1
+  | PackagesRefreshRepoRequestV1;
 
 /** 方法 → 应用语义:Kernel 路由用;未知方法返回 undefined */
 export const DESKTOP_GATEWAY_METHOD_KINDS = {
@@ -926,6 +972,12 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   // 同律无 preview 对偶且根在端口——单方法任务化 command(Kernel 生成
   // commandId)
   "packages.createProject": "command",
+  // packages-ops v0.6 写面 F4 仓库生命周期(027;桌面 F4 消费批):照 A3/
+  // A4/A5 同律无 preview 对偶——三方法任务化 command(Kernel 生成
+  // commandId;params 单键闭集 {repoId})
+  "packages.enableRepo": "command",
+  "packages.disableRepo": "command",
+  "packages.refreshRepo": "command",
 } as const satisfies Readonly<Record<string, "query" | "command">>;
 
 export type DesktopGatewayMethodV1 = keyof typeof DESKTOP_GATEWAY_METHOD_KINDS;
@@ -1547,6 +1599,17 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && (value.params.template === null
           || (typeof value.params.template === "string"
             && value.params.template.length >= 1));
+    // 027 F4 写面(桌面 F4 消费批):三方法单键闭集 {repoId} verbatim——
+    // 任何额外键(含 confirmedDigest/projectPath)= 词表外形状违反(无
+    // preview 臂可漂移,冻结负例向量钉死);repoId 非空串(空串 = 形状
+    // 违反,冻结词面 minLength 1)
+    case "packages.enableRepo":
+    case "packages.disableRepo":
+    case "packages.refreshRepo":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["repoId"])
+        && typeof value.params.repoId === "string"
+        && value.params.repoId.length >= 1;
     case "warehouse.entryDetail":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["warehouseItemId"])

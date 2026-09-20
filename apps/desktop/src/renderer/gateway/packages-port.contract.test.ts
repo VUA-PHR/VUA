@@ -52,7 +52,11 @@ test("empty: 全部变更入口恒 unavailable,视图恒 not-connected,不编造
   const view = await port.snapshot();
   assert.equal(view.kind, "not-connected");
   assert.equal((await port.selectProject("p-1")).kind, "not-connected");
-  assert.equal((await port.setRepoEnabled("r-1", false)).kind, "not-connected");
+  // F4 词面(027 v0.6 消费批):同缺席纪律——恒缺席,不伪造生命周期收据
+  // (原 setRepoEnabled 本地假翻转退役,本地状态绝不冒充 wire 写面)
+  assert.equal((await port.enableRepo("r-1")).kind, "unavailable");
+  assert.equal((await port.disableRepo("r-1")).kind, "unavailable");
+  assert.equal((await port.refreshRepo("r-1")).kind, "unavailable");
   assert.equal((await port.listInstalled("C:/proj")).kind, "unavailable");
   assert.equal((await port.packageCatalog("C:/proj", "com.example.x")).kind, "unavailable");
   // F2 词面(027 消费批):同读面缺席纪律——恒缺席,不伪造仓库级包目录
@@ -188,13 +192,9 @@ test("fixture(demo-packages): 降级请求分类为 downgrade 且 destructive", 
   assert.equal(downgrade.preview.destructive, true);
 });
 
-test("fixture(demo-packages): setRepoEnabled 启停仓库并广播", async () => {
+test("fixture(demo-packages): F4 生命周期词面恒 unavailable(fixture 不模拟 wire 回执;原 setRepoEnabled 本地假翻转退役,演示行启停位只读静态呈现)", async () => {
   const port = fixtureGateway("demo-packages").packages;
-  const view = await port.setRepoEnabled("repo-community-b", false);
-  assert.equal(view.kind, "ready");
-  if (view.kind !== "ready") return;
-  assert.equal(
-    view.repos.find((repo) => repo.id === "repo-community-b")?.enabled,
-    false,
-  );
+  assert.equal((await port.enableRepo("repo-community-b")).kind, "unavailable");
+  assert.equal((await port.disableRepo("repo-community-b")).kind, "unavailable");
+  assert.equal((await port.refreshRepo("repo-community-b")).kind, "unavailable");
 });

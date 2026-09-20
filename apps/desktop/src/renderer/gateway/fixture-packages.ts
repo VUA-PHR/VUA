@@ -461,13 +461,6 @@ export function createFixturePackages(): PackagesPort {
       broadcast();
       return Promise.resolve({ kind: "applied", view: toView(state) } as const);
     },
-    setRepoEnabled: (repoId, enabled) => {
-      state.repos = state.repos.map((repo) =>
-        repo.id === repoId ? { ...repo, enabled } : repo,
-      );
-      broadcast();
-      return Promise.resolve(toView(state));
-    },
     // P1 词面(packages.listInstalled,024 消费批):fixture 是 DEV 演示面,
     // 不模拟 wire 词面回执——如实 unavailable(演示数据走既有 ready 完整
     // IA 视图,P1 中间诚实态只有 live 装配提供,mock 不冒充真实引擎)
@@ -500,6 +493,13 @@ export function createFixturePackages(): PackagesPort {
     addRemoteRepo: () => Promise.resolve({ kind: "unavailable" } as const),
     addLocalRepo: () => Promise.resolve({ kind: "unavailable" } as const),
     removeRepo: () => Promise.resolve({ kind: "unavailable" } as const),
+    // F4 写面词面(packages.enableRepo/disableRepo/refreshRepo,027 v0.6
+    // 消费批):同纪律恒缺席臂(演示面永不模拟生命周期收据);原
+    // setRepoEnabled 本地演示翻转退役——本地状态翻转绝不冒充 wire 写面,
+    // 演示仓库行如需展示禁用态走静态演示数据非交互切换
+    enableRepo: () => Promise.resolve({ kind: "unavailable" } as const),
+    disableRepo: () => Promise.resolve({ kind: "unavailable" } as const),
+    refreshRepo: () => Promise.resolve({ kind: "unavailable" } as const),
     // A5 写面词面(packages.createProject,026 v0.5 消费批):同纪律
     // 恒缺席臂(演示面永不模拟创建收据)
     createProject: () => Promise.resolve({ kind: "unavailable" } as const),
