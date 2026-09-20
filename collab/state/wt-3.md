@@ -1,156 +1,137 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 444ff30
+baseline_commit: 8377360
 role: 桌面
 updated: 2026-09-20
 ---
 ## 当前焦点
-**W25 真机发现第四批·素材入口文件/文件夹语义错位＋通知中心滚动即关闭修复切片轮
-（2026-09-20 14:4x–15:1x，时段例外延续操作者批；三笔：追平壳 3fb5f78〔吸收 main
-444ff30〕＋修复切片批 2a25a50 恰 15 文件 188+/49-＋本状态批恰本文件）——用户 W25
-实测两缺陷桌面域内修复：F-A 选 Meiyun.unitypackage 文件→开始检查→provider 拒
-`vua.material.source_invalid`（用户被此缺陷挡在 A2 段）；F-B 滚动通知中心面板即
-关闭整个通知中心（截图在案）。全链证据本拍亲测在案**：
+**027 F5 形状核可轮（2026-09-20 23:2x–23:4x，节拍轮工作时段 23:25 date 实测；三笔：
+追平壳 f9d1fa7〔吸收 main 8377360〕＋核可批 d41f3a7 恰 1 提案文件 103+＋本状态批恰
+本文件）——应 wt-2 [→桌面] 知会照 F2/F3 程序办理：第 136 批（接线批 8677607 经合并
+8377360，集成亲审 PASSED 载明）在本拍验证窗口内同窗落地，双前置（冻结批 640b365 第
+132 批＋接线批）全成就，形状核可基于收编世代办理、零预核可（F3 先例同径：brief 时
+点未入库即登记竞速、落地后才核可）。九项对照全部通过＋定向复跑亲测全绿，**F5 桌面
+消费切片（新建项目模板下拉，026 A5 留白填面）就此解锁**，核可节落 027 提案**：
 
-- **轮首开工纪律（TICK）**：pnpm collab:brief 14:41 ①区两条指向本树/桌面全数就地
-  消化——wt-main 回执（上拍三笔 --no-ff 收编 93be2fa＋合并树定向复跑 788/788，照
-  is-ancestor 领先 0 就地消化勿重复）＋wt-7 留言（英韩追加完成；后续合并保留新键
-  与自然措辞）＝本拍 en/ja/ko 文案改动照其纪律办理（新键给自然措辞、既有键零误伤）。
-- **追平（操作者指令「先合并 main 最新」）**：main 竞速前移至 444ff30（第 133 批登
-  记＋推送记录，全 collab 面），rev-list 实测本树落后 6、领先 0；merge-tree 预检
-  exit 0（tree 58447ae）零冲突标记，--no-ff 追平壳 3fb5f78 落地（入站与在途脏切片
-  文件零重叠预验证后带脏合并），基线刷新 **444ff30**。
-- **F-A 缺陷根因（代码亲读实证）**：provider 端
-  `crates/unity-bridge/src/material_intake.rs:110-113` `inspect_folder` 对
-  sourceFolder 做 canonicalize＋`is_dir` 校验，非目录一律 `vua.material.source_invalid`
-  拒绝；而桌面 `main.ts` 拾取对话框给 direct_unity_package 的是 openFile＋
-  .unitypackage 过滤器——用户实测选文件必被 provider 拒，且该码当年无映射、折叠进
-  unavailable 落「生产能力当前未连接，操作未发出」误报词面。
-- **F-A 修复①入口语义对照改（文件夹选择器）**：`main.ts` 拾取处理器两个 intake 均
-  改 `openDirectory`（title 素材文件夹 / Local VPM package；目录选择下扩展名过滤器
-  无意义故删）。注册四元组不变：refId→{path, displayName} 照旧，sourceFolder＝所选
-  文件夹原样透传 provider；displayName＝path.basename＝文件夹名，已选展示行天然显示
-  文件夹名。`MaterialEntryBar` 注释同步 intake 语义（两入口均拾取内含 .unitypackage
-  的文件夹）。**红线**：桌面侧零目录性预拦——文件路径登记（旧版落盘残留形态）原样
-  发出，provider 仍是唯一校验权威。
-- **F-A 修复②provider 拒绝如实上呈（source_invalid 专用拒绝原因，第三批先例同形）**：
-  `ProductionRejectReason` 联合＋全集数组新增 `source_invalid`（奇偶钉保持）；
-  `rejectReasonFor` 映射 `vua.material.source_invalid → source_invalid`——该场景命令
-  已发出且被 provider 拒，折叠 unavailable 会渲染「未连接/操作未发出」虚假词面（与
-  第三批 unknown_material_source 同一误报论证）；四语表 `productionFlow.rejected`
-  新增键（zh「素材来源无效:请选择内含 .unitypackage 的素材文件夹。」＋en/ja/ko 自然
-  措辞）；四语 `material.pick/pickFirst` 改文件夹词面（zh「选择素材文件夹…」照操作
-  者指令）、`startHint` 补「选择内含 .unitypackage 的素材文件夹」前缀（四语同步）。
-- **F-B 缺陷根因＋修复**：`NotificationPopover` 在 window 捕获阶段注册 scroll 关闭
-  监听——面板内通知列表滚动被一并算作关闭手势。修复＝滚动关闭判定提取为纯模型函数
-  `notification-model.scrollClosesPanel(targetInsidePanel)`（node 测试环境可钉；DOM
-  instanceof/contains 判定留在组件薄监听器，照 028 §8.9 portal 纪律薄壳原则）：
-  面板内滚动（滚轮/滚动条/键盘）保持打开，面板外滚动照 §8.9 原纪律关闭。
-  design-standard **0.7.10** zh+en（§8.9 滚动关闭语义澄清：面板外滚动才关闭）＋双语
-  变更记录＋REGISTRY 行（EN 标题/镜像注 0.7.8/0.7.9 漂移顺手修复至 0.7.10，如实记
-  录）。
-- **回归测试（＋3，缺陷路径钉死）**：`live-production-port.test.ts` 两例骑真实
-  Kernel 路由——①文件夹 intake 登记→startInspection 通过形状（自带对话框 mock，
-  displayName＝文件夹名，provider 请求 sourceFolder＝所选文件夹原样透传）；②文件
-  路径登记（旧版残留形态）→不预拦：invokeSpy 证命令真实发出且 sourceFolder＝文件
-  路径，provider 以 `vua.material.source_invalid` 拒绝（注入恰 real provider
-  simple_error 形状的 AppErrorV01）→渲染层如实上呈
-  `{kind:"rejected", reason:"source_invalid", run:not-connected}`，绝非 unavailable。
-  `notification-model.test.ts` 一例＝scrollClosesPanel 双臂（面板内 true→不关，
-  面板外 false→关）。共享 harness 对话框 displayName `closet.unitypackage`→`closet`
-  （文件夹拾取形状，三处字面量随改）。
-- **定向证据（本拍亲测，444ff30 基线世代）**：desktop typecheck 双 0；vitest
-  **791/791**（上世代 788＋新增 3）；**build 全链绿含 cargo release 段**（本窗文件
-  锁未触发——W25 文件锁先例**无需援引**，如实记录非豁免申报）；boundary OK／
-  i18n 3 交付表对齐 OK／contrast 全达标／leak 155 指纹零泄漏（临时生产构建）／
-  forest-leak 通过；git diff --check 干净。切片批恰 15 文件＝12 apps/desktop＋
-  docs/design 双语对＋REGISTRY 登记行（先例 92d201e/24965f3 桌面席位随批登记）。
-- **诚实边界**：零端到端宣称维持——本修复系 TS 面＋壳面＋文档面代码事实＋单元/
-  回归测试证据；**真机复验（选素材文件夹→开始检查；滚动通知面板保持打开）归用户
-  W25 走查（O-2）**，本拍不宣称真机已验。
-- **四环全查（444ff30 观测世代）**：①本树在途＝本拍三笔，无半途切片；②BOARD
-  「待用户裁决」区零桌面可办条目（U15 照规则跳过）；③outline 当前窗桌面行＝W25
-  在办（本批即响应操作者第四批指派）；④M 门：M5 开窗中关门候 W25 真机走查；M6/M7/
-  M8 桌面无新解锁面（F5 消费仍候冻结外双环，不预接线）。**顺手观察（不动手）**：
-  NavOverflowMenu/ContextMenu 共享同款 window 捕获 scroll-close 模式，但其菜单内容
-  不可滚动、缺陷无从显形，仅登记知会，不扩并本拍。
+- **轮首开工纪律（TICK）**：pnpm collab:brief 23:25 ①区两条指向本树/桌面全数就地消
+  化——wt-2 知会（F5 形状核可双前置随接线批入库即齐，候照 F2/F3 程序办理）＋wt-7
+  留言（英韩追加合并纪律：后续合并保留新键与自然措辞、特别保留未检查/无匹配更新/
+  缓存空态区分）＝其 i18n 全批已经第 135 批（1bb83e2）收编入库，纪律转为常设合并纪
+  律照办；失鲜工作树无。
+- **轮中竞速如实登记**：brief 23:25 实测 main 尖 bcda744（第 135 批世代）且 8677607
+  未入库（slot/wt-2 领先 3 候验收）；核查期间集成第 136 批同窗落地（合并 8377360）
+  ——与 F3 形状核可轮「batch 130 landed during this round's verification window」
+  同径，追平后基于收编世代核可。
+- **追平（TICK 第 4 步）**：rev-list 实测本树落后 19、领先 0；merge-tree 预检 exit 0
+  （tree 1b9fa07）零冲突，--no-ff 追平壳 **f9d1fa7** 落地，HEAD tree＝main tree＝
+  1b9fa07 逐字节全等＝零自有内容纯吸收（入站含第 134/135/136 批：本树上拍三笔经第
+  134 批收编**关账**＋wt-4 A2 订正轮＋wt-5/wt-6 簿记＋wt-7 i18n 全批＋本接线批），
+  基线刷新 **8377360**。
+- **核可对象与执行**：F5 冻结批 d09c1e6（第 132 批 640b365 入库）＋接线批 8677607
+  （恰核心域 5 文件 746+/39-，第 136 批 8377360 入库）的收编世代——本机直读九项全
+  过：①请求接口单查询闭集（TS :788–792 params Record<string,never>＋联合恰 :2264
+  一笔新增；路由 :5551–5557 空闭集形状验证先于门）；②result 最小诚实形状（恰
+  id+name 两键、name＝id 冻结同值投影、id 升序呈现事实、空数组诚实零模板、零网络
+  无 cacheSourced、发明即非法负例四件钉死）；③路由臂顺序纪律（:5558–5566 门先于
+  端口——默认 declared-none 答 capability_missing 绝不触达后端；:5582–5588 类型化
+  拒绝逐字透传；:5569–5578 路由盖双常量后端事实逐字，unwrap_or_else(json!([]))
+  系文件级 standing 先例同形）；④双常量命名发布（:344/:352 pub，与冻结 Schema
+  :14/:26 逐字节同值，wire 第 7 例双向钉）；⑤冻结词面投影钉（wire 7 例例名＋38 断
+  言与接线批申报对表、consumer 4 例与冻结 REGISTRY 对表，全骑真实帧循环）；⑥mock
+  恒缺席臂与桌面零消费（apps/desktop 全树零 listTemplates 引用，packages 诚实缺席
+  臂原样，wired-NOT-consumed）；⑦TS 联合成员与收窄有效性（result 不入 success
+  union，capturedAt 窄化点不可达，F3 核可⑦同法）；⑧向量对表（3 正 6 负与冻结申报
+  一致，正负例抽查实读）；⑨诚实边界如实（协议本双语 0.1.1 frozen-AND-wired＋
+  REGISTRY 两行一致＋served 行如实 unavailable 候环境覆写）。逐项明细与消费切片核
+  对点五条已落 027 提案核可节（核可批 d41f3a7）。
+- **定向证据（本拍亲测，8377360 基线世代，23:3x）**：df 先查 C 盘 **605G/68%**；
+  contracts dist 先重建照陈旧事故先例——@vua/contracts check tsc 0＋vitest
+  **83/83**；@vua/orchestrator-provider check **43/43**；desktop typecheck **双
+  tsconfig exit 0**；desktop vitest 89 文件 **799/799**（与集成合并树定向复跑数字吻
+  合）；cargo test -p vua-provider-host 定向两件＝wire_v01 **7/7**＋consumer_v01
+  **4/4**；clippy 双 crate --all-targets 零警告。核可批＋状态批系 collab 面零代码触
+  碰，免全量照章如实声明（定向复跑即本拍证据面）。
+- **解锁登记**：**F5 桌面消费切片（新建项目模板下拉，026 A5 留白填面）解锁**，候桌
+  面续领（回落纪律＝枚举缺席/capability_missing/unavailable/空数组均回落现行手填＋
+  留空＝后端默认解析 A5 语义原样；name 逐字显示绝不虚构标签；i18n 四语新键随切片
+  避让 wt-7 语义）；环境 F5 库实现切片与桌面消费互不阻塞（F2/F3 双环先例：消费对
+  declared-none 后端诚实回落即合法消费形态）。
+- **诚实边界**：零端到端宣称维持——本核可系词表层核对＋定向复跑；路由已接线**未被
+  消费**（本核可落地前无任何桌面面读取模板族词面）；served 行在环境覆写落地前如实
+  unavailable；真机走查归 W25（O-2，候用户开窗）。
+- **四环全查（8377360 观测世代）**：①本树在途＝本拍三笔，无半途切片；②BOARD「待
+  用户裁决」区零桌面可办条目（U15 照规则跳过）；③outline 当前窗桌面行＝W25 在办
+  （真机走查候用户返回驱动）；④M 门：M5 开窗中关门候 W25 真机走查；M6 面内 F5 消
+  费已解锁候续领，M7 四行实现面全在库，M8 未开窗——无其它新解锁面。
 
 ## 前情（全文见本文件 git 历史）
-09-20 13:5x–14:2x W25 第三批素材登记持久化＋unknown_material_source 专用拒绝修复
-切片轮（3fb5f78 追平壳吸收前的三笔，经第 133 批 93be2fa 收编）；更早：F3 消费切片
-收编关账、D1–D5 修复批，见 git 历史。
+09-20 14:4x–15:1x W25 真机发现第四批（素材入口文件/文件夹语义＋通知中心滚动修复，
+三笔经第 134 批收编关账）；更早：W25 第三批、F3 五环全链（冻结→接线→形状核可
+ed6cfe1→消费 92d201e→实现 1b452ee）、D1–D5 修复批，见 git 历史。
 
-## 本轮交付（444ff30 基线世代）
-- **追平壳 3fb5f78**（--no-ff 吸收 main 444ff30，落后 6 操作者指令追平，预检 exit 0
-  tree 58447ae，入站全 collab 面零代码触碰）。
-- **修复切片批 2a25a50**（恰 15 文件 188+/49-，全在本席域＋docs/design＋REGISTRY
-  登记行）：main.ts 对话框改文件夹选择器、MaterialEntryBar 注释、
-  model-production-port 联合扩员、live-production-port 映射＋回归测试两例、
-  notification-model 纯函数＋测试、NotificationPopover 接线、四语表 material 三键
-  改词面＋rejected 新键、design-standard 0.7.10 双语、REGISTRY 行。证据见当前焦点
-  「定向证据」节。
+## 本轮交付（8377360 基线世代）
+- **追平壳 f9d1fa7**（--no-ff 吸收 main 8377360＝第 136 批世代，落后 19 领先 0，预
+  检 exit 0 tree 1b9fa07，合并树与 main 逐字节全等零自有内容，基线刷新）。
+- **核可批 d41f3a7**（恰 1 文件＝collab/proposals/027-packages-discovery-and-usability.md
+  103+，F3 核可批 ed6cfe1 同 footprint：F5 形状核可节——九项逐项核可＋消费切片核
+  对点五条＋解锁登记；零代码触碰）。
 - **本状态批（恰本文件）**。
 - 零新阻塞、零新升级项、零 [需用户]。
 
 ## 在途/待他角色
-- **[等集成] 本拍三笔候随轮验收（--no-ff），用户被 F-A 缺陷挡在 A2 段，请优先验收**：
-  追平壳 3fb5f78（零自有内容纯吸收）＋修复切片批 2a25a50（恰 15 文件：12
-  apps/desktop＋docs/design 双语对＋REGISTRY 登记行，请亲审 diff；定向证据
-  typecheck 双 0＋vitest 791/791＋build 全链含 cargo release＋boundary/i18n/
-  contrast/leak/forest-leak 全 OK 在案）＋本状态批恰本文件，写明「wt-3 W25 真机发
-  现第四批：素材入口文件/文件夹语义修复＋通知中心面板内滚动修复切片轮（基线
-  444ff30）」。
-- **[等用户] 真机复验**：修复面真机走查（选内含 .unitypackage 的素材文件夹→开始
-  检查应正常进入检查；通知面板内滚动列表不再关闭整个通知中心；如见「素材来源无效」
-  即 source_invalid 专用拒绝路径如实呈现）——归 W25（O-2）窗内，候用户返回驱动。
-- **[等核心/环境] F5 接线→库实现→桌面形状核可**（既有面序不变，本拍零预动）。
-- [等桌面·后续例行] wt-7 合并后四语语义保留照其留言办理（候其追加批合并）。
+- **[等集成] 本拍三笔候随轮验收（--no-ff）**：追平壳 f9d1fa7（零自有内容纯吸收）＋
+  核可批 d41f3a7（恰 1 提案文件 103+，请亲审核可节 diff；定向复跑全绿在案：contracts
+  83/83＋provider 43/43＋typecheck 双 0＋vitest 799/799＋wire 7/7＋consumer 4/4＋
+  clippy 0）＋本状态批恰本文件，写明「wt-3 F5 形状核可轮（基线 8377360）」。
+- **[等桌面·下拍续领] F5 消费切片已解锁**（新建项目模板下拉，026 A5 留白填面；核可
+  节核对点五条即其验收锚）。
+- **[等环境] F5 库实现核对切片**（与桌面消费互不阻塞，候环境席位领取）。
+- **[等用户] W25 真机复验维持**：上拍修复面走查（选素材文件夹→开始检查；通知面板
+  内滚动保持打开）＋026/027 全链＋F2/F3/F5 served 行真机呈现确认——归 W25（O-2）
+  窗内，候用户返回驱动。
 
 ## 阻塞
 - 无阻塞。
 
 ## 下次合并意图
-**候验收对象＝本拍三笔（--no-ff）：追平壳 3fb5f78（零自有内容纯吸收）＋修复切片批
-2a25a50（恰 15 文件，实质非 collab 面＝12 apps/desktop＋docs/design 双语对＋
-REGISTRY 登记行，请 diff 复核）＋本状态批恰本文件，写明「wt-3 W25 真机发现第四批：
-素材入口文件/文件夹语义修复＋通知中心面板内滚动修复切片轮（基线 444ff30）」。
-提交后读数（rev-list 实测）：领先 3、落后 0。**
+**候验收对象＝本拍三笔（--no-ff）：追平壳 f9d1fa7（零自有内容纯吸收）＋核可批
+d41f3a7（恰 1 提案文件，实质 diff 恰 collab 面，免全量照章声明、定向复跑证据在案）
+＋本状态批恰本文件，写明「wt-3 F5 形状核可轮（基线 8377360）」。提交后读数
+（rev-list 实测）：领先 3、落后 0。**
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-20 14:4x–15:1x，时段例外延续操作者批；三笔）：①date 14:41 实测时段，
-pnpm collab:brief ①区两条就地消化（wt-main 回执 is-ancestor 消化；wt-7 四语合并纪
-律照办）；②追平壳 3fb5f78 吸收 main 444ff30（落后 6 操作者指令追平，预检 exit 0、
-基线刷新、带脏合并前零重叠预验证）；③操作者指令两任务全办：F-A＝文件夹选择器
-（openDirectory 双 intake＋注册四元组不变＋已选显示文件夹名天然成立＋零预拦红线）
-＋source_invalid 专用拒绝（联合＋映射＋四语键＋material 三键词面改＋hint 前缀）；
-F-B＝scrollClosesPanel 纯模型判定（面板内滚动保持打开）＋design-standard 0.7.10 双
-语澄清＋REGISTRY；④回归测试＋3（文件夹透传形状／文件路径不预拦如实上呈／滚动判定
-双臂）；⑤定向证据本拍亲测：typecheck 双 0、vitest 791/791（＋3）、build 全链含
-cargo release 绿（文件锁本窗未触发，先例无需援引，照实记录）、boundary/i18n/
-contrast/leak 155 指纹/forest-leak/git diff --check 全干净；⑥诚实边界：零端到端宣
-称——修复系代码＋测试＋文档面事实，真机复验归 W25（O-2）候用户；⑦四环全查零其它
-桌面可领任务（F5 消费不预接线，BOARD 零桌面可办条目，[需用户] 照规则跳过；菜单组
-件同款模式仅登记不扩并）。在手无半途切片、除本状态批外无未提交改动。退出待命，候
-集成验收本拍三笔（用户被挡在 A2 段，请优先）、用户真机复验、下轮 brief 或新指派。
+本轮（2026-09-20 23:2x–23:4x，工作时段 23:25 date 实测；三笔）：①date 23:25 实测
+工作时段，pnpm collab:brief ①区两条指向本树/桌面全数就地消化（wt-2 F5 知会＝本拍
+任务源；wt-7 i18n 合并纪律＝其全批经第 135 批入库后转常设纪律）；②轮中竞速如实登
+记——brief 时点 8677607 未入库，第 136 批（8377360）验证窗口内落地，照 F3 zero-
+pre-approval 先例追平后基于收编世代核可；③追平壳 f9d1fa7（落后 19 领先 0，预检
+exit 0，HEAD tree＝main tree 逐字节全等，基线刷新 8377360）；④核可批 d41f3a7＝
+027 提案 F5 形状核可节恰 1 文件 103+（九项对照全过＋消费切片核对点五条＋解锁登
+记）；⑤定向证据本拍亲测全绿（df 605G/68% 先查；contracts dist 重建后 tsc 0＋83/83；
+provider 43/43；typecheck 双 0；vitest 799/799；wire 7/7＋consumer 4/4；clippy 双
+crate 0）；⑥诚实边界：零端到端宣称维持——词面已冻结已接线**未被消费**，served 行
+如实 unavailable 候环境覆写，真机走查归 W25（O-2）；[需用户] 条目（U15）照规则跳
+过未代决；⑦四环全查零其它桌面可领任务（F5 消费解锁候下拍续领，BOARD 零桌面可办
+条目，outline 桌面行 W25 候用户）。在手无半途切片、除本状态批外无未提交改动。退出
+待命，候集成验收本拍三笔、用户 W25 返回、下轮 brief 或新指派（F5 消费切片已解锁候
+续领）。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝本拍三笔（--no-ff）：追平壳 3fb5f78（零自有内
-  容）＋修复切片批 2a25a50（恰 15 文件＝12 apps/desktop 桌面域＋docs/design 双语对
-  ＋REGISTRY 登记行：main.ts 素材对话框改文件夹选择器〔openDirectory 双 intake〕、
-  model-production-port source_invalid 扩员、live-production-port 映射＋回归两例、
-  MaterialEntryBar 注释、四语表 material 三键改词面＋rejected 新键、
-  notification-model.scrollClosesPanel＋测试＋NotificationPopover 接线、
-  design-standard 0.7.10 双语＋REGISTRY 行）＋本状态批恰本文件，写明「wt-3 W25 真
-  机发现第四批：素材入口文件/文件夹语义修复＋通知中心面板内滚动修复切片轮（基线
-  444ff30）」。W25 live 第四批，用户被此缺陷挡在 A2 段，请优先验收。**定向证据本
-  拍亲测：typecheck 双 0＋vitest 791/791（＋3）＋build 全链含 cargo release 段绿
-  （本窗文件锁未触发，无需援引 W25 文件锁先例）＋boundary/i18n/contrast/leak/
-  forest-leak 全 OK。零端到端宣称维持——真机复验归用户 W25 走查。无新请求。
-- [→wt-7]（知会）本拍四语表改动两组：①`productionFlow.material` 三键改词面
-  （pick/pickFirst 文件夹措辞＋startHint 前缀补「内含 .unitypackage 的素材文件夹」，
-  zh/en/ja/ko 四表同步）；②`productionFlow.rejected` 新增 `source_invalid` 一键
-  （四表同步）。后续你树合并时如遇邻接冲突，照你方留言纪律保留新键与自然措辞办理。
-- （回执不回执：brief ①区 wt-main 回执照 is-ancestor＋领先 0 就地消化、wt-7 留言
-  已消化＝本拍四语改动照其纪律执行；历史留言已消化归档，在途事项以 BOARD 与本状态
-  文件当前焦点为准。）
+- [→集成] 验收请求：**候验收对象＝本拍三笔（--no-ff）：追平壳 f9d1fa7（零自有内
+  容，HEAD tree＝main tree 1b9fa07 实证）＋核可批 d41f3a7（恰 1 提案文件 103+＝
+  027 提案 F5 形状核可节，请 diff 复核；定向复跑本拍亲测全绿：contracts 83/83＋
+  orchestrator-provider 43/43＋desktop typecheck 双 0＋vitest 799/799＋wire_v01
+  7/7＋consumer_v01 4/4＋clippy 双 crate 0）＋本状态批恰本文件，collab-only 免全
+  量照章声明，写明「wt-3 F5 形状核可轮（基线 8377360）」。**核可结论＝F5 桌面消费
+  切片解锁（新建项目模板下拉）；环境 F5 库实现切片与桌面消费互不阻塞（F2/F3 双环
+  先例）。零端到端宣称维持——路由已接线未被消费，真机走查归 W25。
+- [→wt-2]（回执）**F5 形状核可通过（核可批 d41f3a7，027 提案核可节在案）**：你方
+  知会收讫，双前置成就后本拍即办——第 136 批收编世代上九项对照全过＋定向复跑全绿
+  （你方接线批申报与落地物逐项对表零出入：路由臂顺序纪律/双常量字节同值/wire 7 例
+  例名与断言对表/served 行如实 unavailable）。信封双常量词表节核对点已在核可节⑨
+  兑现闭合。**F5 桌面消费切片就此解锁**（回落纪律与 name 逐字投影已登记核可节核对
+  点①②），环境库实现切片不阻塞消费（F2/F3 双环先例）。
+- （回执不回执：brief ①区 wt-2 知会经本拍办理关账、wt-7 留言消化为其 i18n 全批已
+  第 135 批入库＋纪律转常设；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前
+  焦点为准。）
