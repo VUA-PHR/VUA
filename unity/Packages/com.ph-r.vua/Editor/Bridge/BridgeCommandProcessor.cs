@@ -114,13 +114,13 @@ namespace Vua.Editor.Bridge
 
                 if (result.status == "succeeded" && IsMutating(command.operation))
                 {
-                    AssetDatabase.SaveAssets();
                     // build_preview 刻意跳过场景保存:烘焙全程在 preview scene
                     // 隔离内进行(BridgePreviewBake),用户场景从未被本操作弄脏;
                     // 即使用户场景自带未保存改动,一次预览烘焙也绝不可以替用户
                     // 保存——用户场景必须零改动(用户裁决 2026-09-20)。
                     if (command.operation != "build_preview")
                     {
+                        AssetDatabase.SaveAssets();
                         var scene = SceneManager.GetActiveScene();
                         if (scene.IsValid() && scene.isDirty)
                         {
