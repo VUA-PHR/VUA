@@ -1281,9 +1281,16 @@ pub(crate) fn extract_package_into_dir(
                 // 入 `Packages/`——那是 VPM 通道的领地，绕过 vpm-manifest
                 // 追踪的写入违背单通道写模型。含 `Packages/` 条目的归档在
                 // 解包第一遍即整体拒绝（先于任何落盘，零残留、零部分物
-                // 化），错误按既有 `archive_invalid` 族上浮，零新码。与 C#
-                // 物化面的 `Assets/`-only 校验期望从此不再可能静默分歧。
-                // Ordinal 前缀与 C# 面第 259–260 行的判定逐字节同形。
+                // 化），错误按既有 `archive_invalid` 族上浮，零新码。
+                // 第 158 批校准（#45 B 案先行注记，操作者裁决）：C# 物化面
+                // MaterializeExtractedPackage 的条目跳过条件对 `Assets/` 与
+                // `Packages/` 双前缀都接受——并非 Assets/-only；本臂与检查
+                // 面预检双闸持守下，其 `Packages/` 接受子句链上不可达（休
+                // 眠面，非 VPM 通道许可）。第 150 批终结的是分歧经链物化，
+                // 不是 C# 面字母收窄；守卫句：移除任一闸口前必须先收窄
+                // C# 面（协议本 material-intake 0.2.1 第 158 批注记同源）。
+                // Ordinal 前缀与 C# 面 MaterializeExtractedPackage 条目跳
+                // 过条件的判定逐字节同形。
                 if logical.starts_with("Packages/") {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
@@ -1548,7 +1555,12 @@ mod batch150_channel_boundary {
     //! 第 150 批通道边界钉（操作者裁定）：含 `Packages/` 条目的归档在解包
     //! 第一遍即**整体**拒绝——先于任何落盘（零残留、零部分物化），错误按
     //! 既有 `archive_invalid` 族上浮、零新码。素材直导通道不得静默写入
-    //! VPM 包域；C# 物化面的 `Assets/`-only 校验期望从此不再可能被绕开。
+    //! VPM 包域。第 158 批校准（#45 B 案先行注记）：C# 物化面在代码里对
+    //! `Assets/`/`Packages/` 双前缀都接受（BridgeCommandProcessor 的
+    //! MaterializeExtractedPackage 条目跳过条件），并非 Assets/-only——
+    //! 本钉与检查面预检共同持有边界后，其 `Packages/` 接受子句链上不可
+    //! 达（休眠面）；本钉即该不可达性的仓内检验载体，删除本钉或任一闸
+    //! 口前必须先收窄 C# 面（守卫句，同协议本 0.2.1 第 158 批注记）。
 
     use flate2::write::GzEncoder;
     use std::fs;
