@@ -72,6 +72,13 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             warehouse_root,
             global_default,
             executor: production.as_ref().map(|config| config.executor.clone()),
+            // The bdl-queries v0.5 dependencies read face: the REAL query
+            // executor (reading the BDL library) is a later
+            // data/production-domain implementation ring — the slot stays
+            // None (the honest absence) until that batch lands and flips
+            // the defaulted `dependencies_capabilities` accessor (the
+            // recipe-export loop-3 flip precedent).
+            dependencies_queries: None,
         })
     });
     // The Hub editors root the selection enumerates when no explicit

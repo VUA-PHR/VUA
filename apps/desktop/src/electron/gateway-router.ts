@@ -200,6 +200,26 @@ function toApplicationRequest(
     // bdl-queries v0.4(015 §10):可采纳下载列表,空参数 verbatim
     case "downloads.listCompleted":
       return { ...base, kind: "query", method: "downloads.listCompleted", params: {} };
+    // bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN;桌面 TS 登记
+    // 面 2026-09-22):两方法只读 verbatim 透传,零折叠。查询闭集已由信封
+    // 守卫验证(词外键含 fuzzy 等价开关在词表层拒绝);核心接线批升信封常
+    // 量与 provider 路由臂前,实现域未接线 = provider 答类型化
+    // vua.provider.unknown_method 诚实缺席,本路由原样透传(缺席语义不折
+    // 叠,recipe.exportProjectDraft 先例同律)
+    case "dependencies.lookup":
+      return {
+        ...base,
+        kind: "query",
+        method: "dependencies.lookup",
+        params: {
+          name: request.params.name,
+          ...(request.params.depKind === undefined ? {} : { depKind: request.params.depKind }),
+          ...(request.params.limit === undefined ? {} : { limit: request.params.limit }),
+          ...(request.params.offset === undefined ? {} : { offset: request.params.offset }),
+        },
+      };
+    case "dependencies.listByProduct":
+      return { ...base, kind: "query", method: "dependencies.listByProduct", params: { productId: request.params.productId } };
     // 013 读面第一翼(核心 e720544):environmentManagers 快照,空参数 verbatim
     case "project.environmentManagers":
       return { ...base, kind: "query", method: "project.environmentManagers", params: {} };

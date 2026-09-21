@@ -5,6 +5,7 @@ import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import { createUnavailableRecipeExportPort } from "./recipe-export-port.ts";
+import { createUnavailableDependenciesPort } from "./dependencies-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
 import { createAbsentReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
@@ -238,6 +239,9 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     productionChain: createUnavailableProductionChainPort(),
     // 029 B 面环 4:配方导出 not-run 诚实缺席(不伪造草稿)
     recipeExport: createUnavailableRecipeExportPort(),
+    // bdl-queries v0.5 消费准备切片:依赖反查/观察列 not-run 诚实缺席
+    // (不伪造线索/建议;缺席臂 = 能力缺席控制不渲染先例)
+    dependencies: createUnavailableDependenciesPort(),
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
     releaseHandoff: createAbsentReleaseHandoffPort(),

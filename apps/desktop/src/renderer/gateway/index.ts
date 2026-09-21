@@ -153,6 +153,19 @@ export type {
   RecipeExportPort,
   RecipeProjectDraft,
 } from "./recipe-export-port.ts";
+export {
+  createLiveDependenciesPort,
+  createUnavailableDependenciesPort,
+  narrowDependencyMatch,
+  narrowDependencyObservation,
+} from "./dependencies-port.ts";
+export type {
+  DependenciesErrorKey,
+  DependenciesLookupQuery,
+  DependenciesLookupView,
+  DependenciesObservationsView,
+  DependenciesPort,
+} from "./dependencies-port.ts";
 export type {
   InspectionDetailView,
   InspectionListQuery,

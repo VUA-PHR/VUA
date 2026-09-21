@@ -1,7 +1,11 @@
-//! Catalog read-face wire tests (W12 closeout; bdl-queries v0.3 -> v0.4).
+//! Catalog read-face wire tests (W12 closeout; bdl-queries v0.3 -> v0.4 ->
+//! v0.5 ride-along: the additive six->eight operation rise leaves the six
+//! v0.4 methods' params/fields/results identical — only the shared family
+//! envelope const rises with the vocabulary, so these pins follow the
+//! frozen face to the v0.5 directory).
 //!
 //! The host consumes the data-side frozen vectors from
-//! `schemas/bdl-queries/v0.4/examples` through the real frame loop. The
+//! `schemas/bdl-queries/v0.5/examples` through the real frame loop. The
 //! assembly (bdl-store) produces the result payload; the wire face wraps it
 //! into the frozen `{ schemaVersion, operation, result }` document — so the
 //! wire answer must equal the direct store assembly for the same params
@@ -18,24 +22,51 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 use serde_json::{json, Value};
-use vua_bdl_store::{ArtifactMode, BdlStore, BDL_FORMAT_VERSION, CatalogListParams};
+use vua_bdl_store::{
+    ArtifactMode, BdlStore, BDL_FORMAT_VERSION, BDL_QUERIES_SCHEMA_VERSION, CatalogListParams,
+};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
+/// The frozen v0.5 schemas (the CURRENT generation: the validators key on
+/// the word face the wire now serves).
 fn schema_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.5")
+}
+
+/// The frozen vector generation for the six v0.4 methods' examples: the
+/// v0.5 freeze added only the dependencies vectors (the additive rise
+/// keeps the six v0.4 word faces identical, so their vectors stay in the
+/// v0.4 generation dir verbatim — schemaVersion "0.4" and all). The route
+/// parses params only, so a vector drives the wire with its params alone.
+fn vector_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.4")
 }
 
-fn read_json(relative: &str) -> Value {
-    let bytes = fs::read(schema_dir().join(relative)).expect("schema/vector must exist");
-    serde_json::from_slice(&bytes).expect("schema/vector must be valid JSON")
+fn read_schema(relative: &str) -> Value {
+    let bytes = fs::read(schema_dir().join(relative)).expect("schema must exist");
+    serde_json::from_slice(&bytes).expect("schema must be valid JSON")
+}
+
+fn read_vector(relative: &str) -> Value {
+    let bytes = fs::read(vector_dir().join(relative)).expect("vector must exist");
+    serde_json::from_slice(&bytes).expect("vector must be valid JSON")
+}
+
+/// The frozen request vector with its envelope schemaVersion bumped to the
+/// CURRENT family const — the additive-rise proof that the params face is
+/// identical (the vector body is otherwise untouched).
+fn current_request_vector(relative: &str) -> Value {
+    let mut request = read_vector(relative);
+    request["schemaVersion"] = json!(BDL_QUERIES_SCHEMA_VERSION);
+    request
 }
 
 fn query_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("query.schema.json")).expect("frozen query schema")
+    jsonschema::validator_for(&read_schema("query.schema.json")).expect("frozen query schema")
 }
 
 fn result_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("result.schema.json")).expect("frozen result schema")
+    jsonschema::validator_for(&read_schema("result.schema.json")).expect("frozen result schema")
 }
 
 static SEQUENCE: AtomicU32 = AtomicU32::new(0);
@@ -117,6 +148,7 @@ fn run_query(world: &World, request_id: &str, operation: &str, params: Value) ->
         warehouse_root: world.base.join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     let mut output = Vec::new();
     run_provider_host_with_services(
@@ -144,7 +176,7 @@ fn catalog_request_vectors_are_consumable_query_documents() {
         "examples/catalog-detail.request.json",
         "examples/catalog-status.request.json",
     ] {
-        let vector = read_json(name);
+        let vector = current_request_vector(name);
         assert!(validator.is_valid(&vector), "{name} must validate");
     }
 }
@@ -160,7 +192,7 @@ fn empty_table_answers_the_honest_empty_state_over_the_wire() {
     let frames = run_query(&world, "req-list", "catalog.list", json!({}));
     let value = &frames[0]["payload"]["value"];
     assert!(validator.is_valid(value), "{value}");
-    assert_eq!(value["schemaVersion"], "0.4");
+    assert_eq!(value["schemaVersion"], "0.5");
     assert_eq!(value["operation"], "catalog.list");
     assert_eq!(value["result"]["total"], 0);
     assert_eq!(value["result"]["entries"], json!([]));
@@ -187,7 +219,7 @@ fn catalog_list_wire_equals_the_store_assembly_and_never_serves_tombstones() {
 
     // The positive vector, reworded to the seeded ids (no text filter — the
     // seeded rows carry no presentation fields yet).
-    let request = read_json("examples/catalog-list.request.json");
+    let request = current_request_vector("examples/catalog-list.request.json");
     let mut params = request["params"].clone();
     params["text"] = Value::Null;
     let frames = run_query(&world, "req-list", "catalog.list", params);
@@ -224,7 +256,7 @@ fn catalog_detail_serves_cards_and_answers_not_found_for_misses() {
 
     // The positive vector, reworded to the seeded id: the assembled detail
     // equals the store assembly and validates against the frozen schema.
-    let request = read_json("examples/catalog-detail.request.json");
+    let request = current_request_vector("examples/catalog-detail.request.json");
     let frames = run_query(&world, "req-detail", "catalog.detail", request["params"].clone());
     let value = &frames[0]["payload"]["value"];
     assert!(validator.is_valid(value), "{value}");
@@ -300,7 +332,7 @@ fn closed_set_violations_are_contract_errors_not_empty_answers() {
         "examples/invalid-entity-filter.json",
         "examples/invalid-availability-filter.json",
     ] {
-        let request = read_json(name);
+        let request = current_request_vector(name);
         let frames = run_query(&world, "req-invalid", "catalog.list", request["params"].clone());
         assert_eq!(
             frames[0]["payload"]["error"]["code"],
@@ -342,7 +374,7 @@ fn warehouse_read_face_vectors_drive_cards_and_detail_over_the_wire() {
     // listEntries: the frozen closed set {} drives the whole card list; the
     // wire result equals the store assembly (face adds nothing, hides
     // nothing) and resolves effective modes against the composed global.
-    let request = read_json("examples/warehouse-list-entries.request.json");
+    let request = current_request_vector("examples/warehouse-list-entries.request.json");
     let frames = run_query(&world, "req-wh-list", "warehouse.listEntries", request["params"].clone());
     let value = &frames[0]["payload"]["value"];
     assert!(validator.is_valid(value), "{value}");
@@ -363,7 +395,7 @@ fn warehouse_read_face_vectors_drive_cards_and_detail_over_the_wire() {
     );
 
     // entryDetail: the seeded id round-trips with the full fact payload.
-    let request = read_json("examples/warehouse-entry-detail.request.json");
+    let request = current_request_vector("examples/warehouse-entry-detail.request.json");
     let mut params = request["params"].clone();
     params["warehouseItemId"] = json!(item.warehouse_item_id);
     let frames = run_query(&world, "req-wh-detail", "warehouse.entryDetail", params);
@@ -459,7 +491,7 @@ fn unknown_catalog_methods_and_unwired_bdl_answer_typed_errors() {
     assert_eq!(frames[0]["payload"]["error"]["code"], "vua.catalog.unavailable");
 }
 
-// --- bdl-queries v0.4: the download-adoption source listing face ---
+// --- bdl-queries v0.4 -> v0.5 ride-along: the download-adoption source listing face ---
 
 #[test]
 fn downloads_list_completed_is_the_adoption_guards_mirror() {
@@ -510,6 +542,7 @@ fn downloads_list_completed_is_the_adoption_guards_mirror() {
         warehouse_root: world.base.join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     let frame = json!({
         "frameVersion": "0.1",
@@ -551,8 +584,8 @@ fn downloads_list_completed_is_the_adoption_guards_mirror() {
     // the adopted one carries its warehouse entry link, the other empty.
     let frames = run_query(&world, "req-downloads", "downloads.listCompleted", json!({}));
     let value = &frames[0]["payload"]["value"];
-    assert!(validator.is_valid(value), "the listing must match the frozen v0.4 schema: {value}");
-    assert_eq!(value["schemaVersion"], "0.4");
+    assert!(validator.is_valid(value), "the listing must match the frozen v0.5 schema: {value}");
+    assert_eq!(value["schemaVersion"], "0.5");
     assert_eq!(value["operation"], "downloads.listCompleted");
     let rows = value["result"]["downloads"].as_array().expect("downloads rows");
     assert_eq!(rows.len(), 2, "both adoptable deliveries list: {value}");

@@ -106,6 +106,7 @@ fn run_frames(world: &World, correlation_id: &str, commands: &[Value]) -> Vec<Va
         warehouse_root: world.base.join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     let mut output = Vec::new();
     run_provider_host_with_services(
@@ -373,6 +374,7 @@ fn set_global_default_mode_rejects_null_missing_and_unknown_modes() {
             warehouse_root: world.base.join("warehouse"),
             global_default: ArtifactMode::UseOriginalUnitypackage,
             executor: None,
+            dependencies_queries: None,
         }),
         None,
     )
@@ -1001,6 +1003,7 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
         warehouse_root: world.base.join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
 
     // Seed: two imported folders as warehouse entries (the assets' source),
@@ -1679,6 +1682,7 @@ fn seeded_production_world(
         warehouse_root: world.base.join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     (world, use_cases, warehouse)
 }

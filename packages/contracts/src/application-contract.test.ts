@@ -1503,3 +1503,74 @@ describe("release.openForInspection vocabulary row (v0.2, core U19 batch merged 
     expect(isReleaseInspectionFactV02({ ...fact, schemaVersion: "0.1" })).toBe(false);
   });
 });
+
+// bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN;桌面 TS 登记面
+// 2026-09-22):两方法只读查询守卫钉——params 闭集与冻结 Schema
+// additionalProperties:false 同形,词外键(fuzzy 等价开关)/词外
+// depKind(v0.2 N1 裁决面)/过滤键拒绝,绝不静默空答。
+describe("bdl-queries v0.5 application-request guards (dependencies.lookup / dependencies.listByProduct)", () => {
+  const base = {
+    contractVersion: "0.1",
+    requestId: "req-1",
+    correlationId: "corr-1",
+    kind: "query",
+  } as const;
+
+  it("admits lookup within the frozen closed set {name, depKind?, limit?, offset?}", () => {
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "lilToon", depKind: null, limit: 50, offset: 0 },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "liltoon", depKind: "shader" },
+    })).toBe(true);
+  });
+
+  it("rejects lookup faces the frozen negative vectors pin: empty name, v0.2-N1 foreign depKind, fuzzy key, paging escapes", () => {
+    expect(isApplicationRequestV01({
+      ...base, method: "dependencies.lookup", params: { name: "" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "Unity", depKind: "unity_or_sdk_version" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "lilToon", fuzzy: true },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "dependencies.lookup", params: { name: "x", limit: 201 },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base, method: "dependencies.lookup", params: { name: "x", offset: -1 },
+    })).toBe(false);
+  });
+
+  it("admits listByProduct with the closed single-key {productId} and rejects client-side filters (contract errors, never silent empty answers)", () => {
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744" },
+    })).toBe(true);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744", depKind: "shader" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "not-booth" },
+    })).toBe(false);
+    expect(isApplicationRequestV01({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: {},
+    })).toBe(false);
+  });
+});

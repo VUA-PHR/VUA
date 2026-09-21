@@ -557,6 +557,7 @@ fn run_frame_wired(
         warehouse_root: database.parent().unwrap_or(database).join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     let mut output = Vec::new();
     run_provider_host_full(
@@ -858,6 +859,7 @@ fn explicit_injection_short_circuits_and_reaches_the_port() {
         warehouse_root: database.parent().unwrap_or(&database).join("warehouse"),
         global_default: ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     };
     let mut output = Vec::new();
     run_provider_host_full(
