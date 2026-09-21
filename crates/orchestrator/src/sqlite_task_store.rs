@@ -937,6 +937,18 @@ impl SqliteTaskStore {
 
     /// Put one production domain record (inspection/plan) into the
     /// registry. Idempotent per domain id — replays keep the original.
+    ///
+    /// Why failed runs have no row here (batch 156, observation B): the
+    /// registry binds STABLE domain identities for the downstream
+    /// reference-resolution chain only (kind closed set frozen at
+    /// `('inspection', 'plan')` in schema 002). A failed stage completes via
+    /// the `persist_task_error` path — no document, no domain identity, and
+    /// nothing downstream could ever reference — so issuing no row is the
+    /// honest bookkeeping, not an omission. Build records (any status,
+    /// failed included) are equally absent BY DESIGN: they are
+    /// identity-addressed in the BuildRecordStore (records/*.json) and read
+    /// directly by id (`record.get`, handoff admission); see the
+    /// BuildRecordStore doc for the full ruling.
     pub fn put_domain_record(
         &self,
         domain_id: &str,
@@ -1706,5 +1718,48 @@ mod tests {
             )
             .unwrap();
         assert_eq!(third.generation, 3);
+    }
+
+    /// Registry ruling pin (batch 156, observation B): the
+    /// production_domain_records kind closed set is exactly the
+    /// reference-resolution chain (inspection, plan). A build record — of
+    /// any terminal status, failed included — is NOT a registry kind: build
+    /// records live only in the BuildRecordStore (records/*.json),
+    /// identity-addressed and read directly by id (`record.get`, handoff
+    /// admission). The CHECK constraint pins the ruling so a future "the
+    /// failed run is missing its registry row" reading cannot grow a build
+    /// kind here.
+    #[test]
+    fn domain_record_registry_accepts_chain_kinds_and_rejects_build_kind() {
+        let store = SqliteTaskStore::open_in_memory().unwrap();
+        store.accept_task(&task("one")).unwrap();
+        store
+            .put_domain_record(
+                "insp-1",
+                "inspection",
+                "one",
+                "{}",
+                "{}",
+                "2026-09-02T00:00:03.000Z",
+            )
+            .unwrap();
+        store
+            .put_domain_record("plan-1", "plan", "one", "{}", "{}", "2026-09-02T00:00:04.000Z")
+            .unwrap();
+        let error = store
+            .put_domain_record(
+                "build-1",
+                "build",
+                "one",
+                "{}",
+                "{}",
+                "2026-09-02T00:00:05.000Z",
+            )
+            .unwrap_err();
+        assert!(
+            matches!(error, SqliteStoreError::Database(_)),
+            "CHECK constraint must refuse a build kind, got {error:?}"
+        );
+        assert!(store.domain_record("build-1").unwrap().is_none());
     }
 }
