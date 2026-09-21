@@ -1,0 +1,32 @@
+{
+  "vector": "N2",
+  "name": "dependency-observations.invalid.n02.source-span-foreign-both-tables",
+  "basis": "'heading' is not a member of the v0.2 source_span closed set ('body','subproduct_name','image','title','description_link') — rejected on BOTH tables that carry the set: the new dependency_observations and the REBUILT compatibility_observations. The v0.1 word face does not swing; only 'title' and 'description_link' joined (P9).",
+  "expect": "reject",
+  "reject_law": "source_span CHECK closed set (both tables)",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "heading",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "q",
+        "source_span": "heading",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    }
+  ]
+}

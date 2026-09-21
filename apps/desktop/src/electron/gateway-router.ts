@@ -475,6 +475,11 @@ function toApplicationRequest(
       return { ...base, kind: "query", method: "recipe.get", params: { recipeId: request.params.recipeId } };
     case "recipe.list":
       return { ...base, kind: "query", method: "recipe.list", params: request.params };
+    // 029 B 面(桌面环 4 消费批):recipe-export v0.1 同步只读 Query verbatim
+    // 透传;实现域未接线 = vua.recipe_export.unavailable 诚实缺席,未注册路径
+    // = vua.project.project_not_found 原样透传(024 判例,缺席语义不折叠)
+    case "recipe.exportProjectDraft":
+      return { ...base, kind: "query", method: "recipe.exportProjectDraft", params: { projectPath: request.params.projectPath } };
     case "plan.get":
       return { ...base, kind: "query", method: "plan.get", params: { planId: request.params.planId } };
     case "plan.list":

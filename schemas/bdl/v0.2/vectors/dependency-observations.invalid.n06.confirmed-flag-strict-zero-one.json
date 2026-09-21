@@ -1,0 +1,24 @@
+{
+  "vector": "N6",
+  "name": "dependency-observations.invalid.n06.confirmed-flag-strict-zero-one",
+  "basis": "confirmed_by_human is a strict 0/1 flag (NOT NULL DEFAULT 0, CHECK (confirmed_by_human IN (0,1))): 0 = unconfirmed clue by default (never a suggestion on the read side), 1 = the explicit, recorded human-confirmation write. Anything else is refused.",
+  "expect": "reject",
+  "reject_law": "CHECK (confirmed_by_human IN (0,1))",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "confirmed_by_human": 2,
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

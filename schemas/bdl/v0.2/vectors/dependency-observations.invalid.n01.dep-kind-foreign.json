@@ -1,0 +1,52 @@
+{
+  "vector": "N1",
+  "name": "dependency-observations.invalid.n01.dep-kind-foreign",
+  "basis": "dep_kind closed set is FROZEN as four values ('shader','tool_package','avatar_base','other'). 'unity_or_sdk_version' — the five-value draft's extra member — is deliberately NOT admitted (freeze ruling, operator-preauthorized direction): version constraints are version_hint's dimension, and a bare engine/SDK pin lands as dep_kind='other' + version_hint (P7). 'engine' and the empty string are likewise foreign.",
+  "expect": "reject",
+  "reject_law": "dep_kind CHECK closed set",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "unity_or_sdk_version",
+        "dep_name": "Unity",
+        "raw_quote": "- Unity 2022.3.22f1",
+        "source_span": "body",
+        "version_hint": "2022.3.22f1",
+        "extraction_method": "bullet",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "engine",
+        "dep_name": "Unity",
+        "raw_quote": "- Unity 2022.3.22f1",
+        "source_span": "body",
+        "extraction_method": "bullet",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

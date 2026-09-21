@@ -367,6 +367,21 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "recipe.exportProjectDraft":
+        // 029 B 面 recipe-export v0.1(核心冻结批 2026-09-22,桌面环 4 登记
+        // TS 方法闭集时的穷尽性最小表态,业务路由归核心):模拟 Provider 无
+        // 工程聚合读域,恒答冻结诚实缺席 vua.recipe_export.unavailable
+        // (code/category/messageKey 三元与真实 provider-host 缺席分支一致,
+        // 不折入 warehouse/recipe 族缺席码)——绝不伪造草稿(草稿转正唯一
+        // 通道 = 用户显式确认后的既有 recipe.save 保存链)
+        return this.#failure(request, this.#error(
+          "vua.recipe_export.unavailable",
+          "unavailable",
+          "errors.recipeExport.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
       case "warehouse.setArtifactMode":
       case "warehouse.generateVpm":
       case "warehouse.deleteOriginals":

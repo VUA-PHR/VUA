@@ -1,0 +1,25 @@
+{
+  "vector": "N4",
+  "name": "dependency-observations.invalid.n04.resolution-without-evidence",
+  "basis": "The one store-level resolution hard law (CHECK): resolved_ref_product_id NOT NULL implies resolution_evidence NOT NULL. Under the 030 §1 sample-3 mislink evidence a resolution must carry its reconciliation evidence; a bare resolved reference is refused at the store boundary, not merely flagged downstream.",
+  "expect": "reject",
+  "reject_law": "CHECK (resolved_ref_product_id IS NULL OR resolution_evidence IS NOT NULL)",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "q",
+        "source_span": "description_link",
+        "resolved_ref_product_id": "booth:3087170",
+        "resolution_evidence": null,
+        "extraction_method": "link",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

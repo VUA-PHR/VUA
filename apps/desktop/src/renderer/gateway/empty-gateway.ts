@@ -4,6 +4,7 @@ import type { AcquireEntryDetailView, AcquirePort, AcquireView } from "./acquire
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
+import { createUnavailableRecipeExportPort } from "./recipe-export-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
 import { createAbsentReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
@@ -235,6 +236,8 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     projectOps: createEmptyProjectOps(),
     // 019 批 C:not-run 时生产链诚实不可用(不渲染虚构推进入口)
     productionChain: createUnavailableProductionChainPort(),
+    // 029 B 面环 4:配方导出 not-run 诚实缺席(不伪造草稿)
+    recipeExport: createUnavailableRecipeExportPort(),
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
     releaseHandoff: createAbsentReleaseHandoffPort(),
