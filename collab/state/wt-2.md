@@ -2,81 +2,72 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: cd8c0000
+baseline_commit: 36bab970
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 152 批（2026-09-21 16:4x–17:0x，节拍轮工作时段 date 实测）＝纯文档起草批：
-proposal 029（车间入口模型重构〔配方驱动为主〕＋从已有 Unity 项目导出 Recipe）
-两笔——提案批 cd8c0000（恰 `collab/proposals/029-recipe-driven-workshop-and-project-export.md`
-一文件 218+）＋本状态批恰本文件；轮首追平 main e394831f（fast-forward，落后 2→0，
-纯吸收集成第 151 批世代）；**资源纪律如实遵守：用户下午在场用机，本批零 cargo、
-零构建、零测试、零代码**，全部工作为只读代码事实盘点＋文档起草；VUA-7/VUA-8
-全程未触碰**：
+**第 155 批（2026-09-21 23:0x–23:5x，节拍轮工作时段 date 实测）＝U19 交棒准
+入闸后端切片（用户裁决 2026-09-21 下午，BOARD U19 行裁决全文照录为规范源，
+今晚窗口置顶首项）一笔实现批 36bab970；轮首合并 main fa2290ab（本树原领先
+两笔已被集成第 154 批收编为合并 9125f8f1，零分叉追平后叠加）；五 crate＋
+docs＋mock 面 6 改 9 增；cargo test --workspace 890/0＋clippy --workspace
+--all-targets 0 警告；VUA-7/VUA-8 全程零触碰**：
 
-- **起草依据＝用户裁决 U16 答复（2026-09-21 立项；BOARD 用户裁决表行由集成随
-  验收改记）**：车间入口模型**配方驱动为主**，期望流转「Recipe 列表创建 Recipe→
-  点选添加素材→打开本地素材仓库（可添加本地/云端素材）→Recipe 列表选择→预览
-  内容→点击组装→车间只作状态显示」；并新增配套功能**从已有 Unity 项目导出
-  Recipe**（反向方向：项目→配方）。提案结构照 024–028 先例（背景/裁决依据/
-  面清单/环流水线/边界/未决项/内联线程），status: 提出。
-- **A 面（车间入口模型重构，桌面消费为主）四条现状盘点全部代码事实实测锚**
-  （main e394831f 世代只读）：(1) 车间页＝素材驱动链唯一接线
-  （`WorkshopPage.tsx:536-635` ProductionFlowSection＝production-use-case **v0.1**
-  素材直产链全动作在车间发起；配方仅流水线条显示面 :500-525）；(2) 配方链后端
-  已完整（`assembly.rs` derive_plan/confirm/execute＋八操作闭集＋AssemblyPlanV1
-  package_preview＋tests/assembly.rs 在库；wire 面 v0.2 服务路径在 provider_host.rs）；
-  (3) 桌面「配方→执行」入口未接入主流程（**精确化注记，与派单措辞的差异如实
-  记录**：gateway.productionChain 端口已被配方链卡 `ProductionChainSection` 消费，
-  但链状态机配方身份唯一外部写入方＝`productionChainRecipeSavedAction`、唯一
-  调用方＝`compose-save-chain.ts`——即入口只在「保存搭配草稿」后可达，配方库
-  选择不填充链，配方页主体与车间页均无组装发起面）；(4) VUA-8 导航重构已并入
-  （合并 0f9350f，2026-09-20 IA＝本重构基线）。目标流转 A1–A6 逐卡对照
-  （配方页成制作中枢；车间降级执行状态面；素材直导去留列未决项 1、裁定前
-  车间现状维持不拆——降级先加「状态面」职责不删既有可用链）；设计标准
-  §8.3/§8.4/§8.5 升版预告登记（0.7.14+，桌面域办理，本提案不代落）。
-- **B 面（项目导出 Recipe，核心域为主）能力盘点三档如实**：**可导出（可靠）**
-  ＝vpm-manifest dependencies+locked（`project_inspection.rs:238` inspect_project_deep
-  → `RecipeV02.dependencies`，重放承接＝U17 已落地 `VpmBackend::resolve_project`）
-  ＋unity_version 约束＋VuaIdentityFinding 工程身份注记；**需新桥接只读扫描**
-  ＝Avatar/衣装层级发现（现状只读操作集**无发现类操作**——`IdentifyAssets`
-  系「确认给定选择」`BridgeCommandProcessor.cs:504` 非发现；Bridge v4 已冻结，
-  新操作＝协议升版决策；零桥接备选＝骨架＋用户点选补全，两案候冻结环裁量）；
-  **不可导出（诚实边界）**＝设计意图、无 VUA 导入记录时的素材来源（只有文件
-  指纹可身份比对不提供来源）、非 MA 挂接结构。导出物定性＝**Recipe 草稿
-  （draft）**，须用户在配方页确认补全并显式保存后才成正式 Recipe，草稿态如实
-  标注缺失维度清单绝不静默转正；**导出不宣称还原设计意图**（诚实律前置）。
-  B 面环流水线＝冻结（Recipe 导出面 Schema＋正负例向量＋消费测试）→接线→
-  实现→消费，照 024–028 先例。
-- **两面耦合与排序**：A 面可在手工创建 Recipe 上先行（A1/A2/A4/A5/A6 不依赖
-  导出物）；B 面冻结以 A 面落形为消费形状输入（导入草稿要有页面可落）；
-  设计标准升版随 A 面消费批。验收门：A 面消费批＝typecheck/vitest/i18n/
-  boundary/leak 全绿＋空态失败态诚实钉；B 面各环照 027 先例；真机（真实工程
-  导出→组装→车间状态呈现）归 W25（O-2），**零端到端宣称**。
-- **边界七条＋未决项五条**（提案内如实列，不臆断）：①素材直导链去留（候桌面
-  形状核可，裁定前现状维持）；②非 VUA 创建工程导出适用边界（候冻结批对表，
-  涉边界语义则升 [需用户]）；③BOOTH/云端素材在「添加素材」步接入面（与
-  U18〔shader 依赖策略，候用户裁决〕及 BDL 面联动——候集成随本提案验收登记
-  开放问题行，派单称 #46，以集成登记为准）；④关系面扫描双案裁量（新只读桥
-  操作＋协议升版 vs 零桥接骨架，冻结批输入）；⑤`AssemblyEngine` 与 v0.2 服务
-  路径（Local Resolution 执行器＋任务化编排臂）归一/分工定性（引擎已测未接
-  服务路径的现状两套形状并存，A5 接线前冻结核对，本提案不预决）。
-- **本批形状**：恰两笔两文件（提案批 cd8c0000 一文件＋本状态批一文件），
-  零构建零测试零代码；上位权威一致性已在提案内核对（产品边界 Recipe-first
-  原则＝操作化非扩权；设计标准 §2.2 同向；BOARD #44 装配词面纪律——用户
-  动作词面从裁决原文用「组装」；U14/027 裁决④ Recipe 自动化方向同源）。
-  **验收请求**：提案 029 文档批（基线 e394831f）＝cd8c0000＋本状态批，请集成
-  验收；U16 行改记与开放问题登记归集成。
-- **诚实边界维持：零端到端宣称**——本批全部结论系只读代码事实＋文档起草，
-  未运行任何构建/测试；A 面现状盘点锚定 main e394831f 世代，后续世代漂移
-  候落批时复核。
+- **交棒状态闸（后端权威，provider_host 准入序，不在 UI）**：核心分类函数
+  `classify_handoff_record_state`（crates/orchestrator/src/release_handoff.rs）
+  按构建记录 v0.3 status 枚举对表落位——规范表：`succeeded`／
+  `succeeded_with_warnings` 放行（警告呈现保留归桌面面，后端零改写）；
+  `failed`／`cancelled`／`rolled_back`／`recovered` 拦截＝新码
+  `vua.release_handoff.record_state_blocked`（category=**permission**＝政
+  策拒绝类，裁决修正 a「状态是事实、哪些状态可交接是政策」；`params.state`
+  携记录状态原值逐字）；status 缺失/非字符串/枚举外拒绝＝新码
+  `vua.release_handoff.record_state_unknown`（category=validation，记录无
+  法确认）。闸位＝记录存在之后、身份解析之前（wire 钉准入序）；被拦记录
+  **不受理任务**（任务库零写入、port 永不触达）。messageKey 恰两键
+  `errors.releaseHandoff.stateBlocked`／`errors.releaseHandoff.stateUnknown`
+  （四语词面归桌面座并行批，本座只管发射面）。recovered 与其余终态同待遇
+  （裁决修正 b：检视完成不改失败历史为成功，两套状态不混用）；成功记录不
+  保证工程仍是当时结果（修正 c，零宣称）。
+- **独立检视入口（裁决①「不得禁止打开工程排错」）**：新路由
+  `release.openForInspection`＝交棒受理序**去掉状态闸**的剩余全集
+  （params 闭集／接线面／build_unknown／editor_unresolved 照验，wire 钉）；
+  完成事实＝`build_inspection_fact` 六键闭集（交接事实五键＋显式
+  `operation` 键 const 检视词面）——词面由形状钉死**绝不宣称交接完成**
+  （负例向量：携交接操作词面的检视事实非法；无上传字段形状钉）。port/
+  trait 形状零变化（两入口复用 `ReleaseHandoffPort` 机制，操作语义归路
+  由面），unity-bridge 零增操作。
+- **词表升版 release-handoff v0.2**：版本常量 0.1→0.2 单源（provider-host
+  改再导出核心常量，双源字面量删除）；错误信封新增 params 面（ORC-ERR-001
+  形状，**仅非空出现**——既有码线面形状逐字节不变）；冻结集＝
+  `schemas/release-handoff/v0.2/` 双方法 Schema＋正例 5＋负例 6 向量＋双
+  语协议本 `docs/protocols/release-handoff-v0.2_ZH.md`/`_EN.md`＋REGISTRY
+  两行；**v0.1 族文档一字节不动**（历史冻结面，编译钉保留）。
+- **测试（裁决④⑤：绕过 UI 直接调用＋全部状态覆盖）**：wire 帧环 20/20
+  ——六枚举态＋缺失＋非字符串＋枚举外＋空串逐一过真环；拦截三断言
+  （码＋category＋params.state 逐字）；被拦不受理任务且 port 未达；准入
+  序钉；检视入口对被拦/缺失/枚举外全不闸＋词面钉＋三验照旧；orchestrator
+  release_handoff 单测 14（全枚举分类守卫＋检视事实构造）。全绿：
+  cargo test --workspace **890/0**＋clippy --workspace --all-targets **0
+  警告**；mock 包 tsc＋vitest 46/46 复绿。
+- **跨座接续点（候桌面座 wt-3 随环流水线下一环，非阻塞登记）**：①TS 契
+  约 face（packages/contracts，桌面所有权）词表行升 0.2＋
+  `release.openForInspection` 方法面——其前桌面编译期类型停留 0.1（运行时
+  无版本闸，桌面本地面无隐性回归，已核 release-handoff-model/port 零版本
+  字面量钉）；②四语词表两新键＋Release 页独立打开入口确认；③mock provider
+  检视入口缺席 fall-through 分支候 TS method 闭集入新方法后随批补入（本批
+  仅更新缺席分支注释如实登记——method 闭集在 @vua/contracts，本座不越域；
+  其前模拟面对检视方法如实答 unknown_method，不属伪造）。
+- **诚实边界维持：零端到端宣称**——全部证据系 fake port／临时库帧环（裁
+  决 15 本地先行）；真机（真实记录→真启动→handshake→事实回流、被拦态桌
+  面呈现全链）归 W25（O-2），证据要求不放宽。`?? _local_p27_devlog.txt`
+  照例未触碰。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 150 批（7bc18e90＋464541c3，2026-09-21）＝素材链修复批：失败 messageKey 按
-类别分流（failure_message_key 分类助手单一来源，供给段失败→provisionFailed，
-载荷数据细化非 wire 形状变更零新码）＋Packages/ 通道边界两层兜底（操作者裁定：
-intake 预检 archive_invalid 阻断＋执行臂第一遍整体拒收零残留，C# 面休眠臂收窄
-候裁决登记不夹带），五 crate 821/0，经集成第 151 批收编（合并 3e5573a6）。
-第 148 批（83e267d9＋98767e61）＝素材链反向审查批：tar 解包组件级路径守卫＋
-mutating 命令 id attempt 盐＋物化指纹硬要求三修复三钉，经集成第 149 批收编
-（da6a3bfb）。更早段落见本文件 git 历史与 BOARD 前录（10 段轮转）。
+第 152 批（cd8c0000＋d2063abe，2026-09-21）＝纯文档起草批：proposal 029
+（车间入口模型重构〔配方驱动为主〕＋从已有 Unity 项目导出 Recipe）两笔，
+经集成第 154 批收编（合并 9125f8f1）验收成立；用户下午在场资源纪律遵守
+（零构建零测试）。第 150 批（7bc18e90＋464541c3）＝素材链修复批（失败
+messageKey 类别分流＋Packages/ 通道边界两层兜底），经集成第 151 批收编
+（合并 3e5573a6）。第 148 批（83e267d9＋98767e61）＝素材链反向审查批
+（tar 解包组件级路径守卫＋mutating 命令 id attempt 盐＋物化指纹硬要求），
+经集成第 149 批收编（da6a3bfb）。更早段落见本文件 git 历史与 BOARD 前录。
