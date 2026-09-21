@@ -1,5 +1,6 @@
-/* 素材导入页(M6 IMP-2 批 A;design-standard 0.7.0 §8.3):布局沿用页面
- * 通用栈与卡片,以下仅本页微调;色彩/间距 token 全部引用既有变量。 */
+/* 素材导入(M6 IMP-2 批 A;design-standard §8.3;2026-09-20 导航重构起为
+ * 仓储页内弹窗组件,布局仍沿用页面通用栈与卡片),以下仅本组件微调;
+ * 色彩/间距 token 全部引用既有变量。 */
 
 .vua-import__cloud-panel {
   display: flex;

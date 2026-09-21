@@ -251,11 +251,20 @@ pub const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
 /// as a verification refusal (refusals travel the result state, nail 1).
 pub const ENVIRONMENT_VERIFY_UNAVAILABLE: &str = "vua.environment.verify_unavailable";
 
-/// The `release.openForHandoff` family version constant (proposal 023 freeze
-/// batch 2026-09-16; the c914cf2 standing rule — every wire row carries a
-/// version constant of its own). Published so wire consumers key on the
-/// core-owned constant, never a private literal.
-pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.1";
+/// The release-handoff family version constant — a re-export of the
+/// core-owned constant (v0.2: the U19 record-state gate + the independent
+/// `release.openForInspection` entry, 2026-09-21; v0.1 was the single
+/// `release.openForHandoff` row frozen 2026-09-16). One source of truth:
+/// route responses key on the core constant, never a private literal.
+pub use vua_orchestrator::RELEASE_HANDOFF_SCHEMA_VERSION;
+
+/// The two typed rejection codes the U19 record-state gate answers with
+/// (v0.2). `record_state_blocked` carries the record's original state as
+/// the `state` param; `record_state_unknown` answers a missing or
+/// unparseable status. Published as constants so tests and consumers key
+/// on named facts, never inline literals.
+pub const RELEASE_HANDOFF_RECORD_STATE_BLOCKED: &str = "vua.release_handoff.record_state_blocked";
+pub const RELEASE_HANDOFF_RECORD_STATE_UNKNOWN: &str = "vua.release_handoff.record_state_unknown";
 
 /// The honest absence code for the `release.openForHandoff` route while the
 /// production-domain process/window port and the core use case are unwired
@@ -415,6 +424,34 @@ pub const PACKAGES_OPS_SCHEMA_VERSION_V05: &str = "vua.packages-ops/v0.5";
 /// rule: every wire row carries a version constant of its own, independent
 /// of the envelope const).
 pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V05: &str = "0.5";
+
+/// The `packages-ops` v0.6 result family constant (proposal 027 F4 freeze
+/// batch 2026-09-20, wiring named it per the A3/A4/A5 precedent; same
+/// standing rule — the repository-lifecycle row carries its own version
+/// constant, and the frozen v0.1 A1 removal row, v0.2 A2 install row,
+/// v0.3 A3 registration row, v0.4 A4 repository add/remove row and v0.5
+/// A5 project-creation row keep serving through their own consts
+/// untouched: six separate word-face generations served side by side).
+pub const PACKAGES_OPS_SCHEMA_VERSION_V06: &str = "vua.packages-ops/v0.6";
+
+/// The `packages` envelope const of the v0.6 word-face row (the frozen
+/// v0.6 result schema locks the ENVELOPE schemaVersion to "0.6"; the v0.1
+/// through v0.5 envelopes stay on their own consts — the c914cf2 standing
+/// rule: every wire row carries a version constant of its own, independent
+/// of the envelope const).
+pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06: &str = "0.6";
+
+/// The `packages-repos` v0.2 result family constant (proposal 027 F4 freeze
+/// batch 2026-09-20, wiring named it per the installed/catalog v0.2
+/// precedent): the subscription-list increment rows carry the REQUIRED
+/// VUA-owned `enabled` state bit (ruling (c) — VCC carries no enable
+/// counterpart, so the bit projects VUA-owned storage, never a
+/// settings.json key). The COMMAND face stays byte-for-byte the frozen
+/// v0.1 face and the ENVELOPE stays on the shared `packages` word-list-row
+/// `"0.1"` const — the v0.2 family const is a RESULT-document fact only
+/// (the F3 installed-increment law: two independent versions, the stamped
+/// const tells the consumer which word face answered, never a guess).
+pub const PACKAGES_REPOS_SCHEMA_VERSION_V02: &str = "vua.packages-repos/v0.2";
 
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
@@ -1280,6 +1317,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             "release.openForHandoff" => {
                 release_open_for_handoff(state, request, request_id, correlation_id)
             }
+            "release.openForInspection" => {
+                release_open_for_inspection(state, request, request_id, correlation_id)
+            }
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
                 correlation_id,
@@ -1428,6 +1468,29 @@ fn served_capabilities(state: &HostState) -> Value {
         Some(vpm) if vpm.template_capabilities().list_templates => "available",
         _ => "unavailable",
     };
+    // Proposal 027 F4 (wired at this batch): the repository-lifecycle write
+    // face rides the SAME VpmBackend wiring, gated on the NEW defaulted
+    // accessor `repo_lifecycle_capabilities` — one row serving the THREE
+    // methods (enableRepo/disableRepo/refreshRepo; the repoOps
+    // one-row-serves-three-methods precedent), but the honest gate stays
+    // PER METHOD: the row answers available when the backend declares ANY
+    // of the three independent bits (a partially-overriding backend must
+    // not have its served methods hidden behind a face-level row), while
+    // each route independently answers the generic capability-missing arm
+    // for its own bit BEFORE submit. Default declared-none keeps the row
+    // honestly unavailable until the environment implementation-verification
+    // slice flips it with the VrcGetLib override; the CLI backend has no
+    // lifecycle face and stays honestly false.
+    let packages_repo_lifecycle_ops_availability = match state.vpm.as_ref() {
+        Some(vpm) if {
+            let lifecycle = vpm.repo_lifecycle_capabilities();
+            lifecycle.enable_repo || lifecycle.disable_repo || lifecycle.refresh_repo
+        } =>
+        {
+            "available"
+        }
+        _ => "unavailable",
+    };
     let overlay_availability = recipe_availability;
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
@@ -1475,6 +1538,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "packages.templatesOps",
             "availability": packages_templates_availability,
+        },
+        {
+            "operationId": "packages.repoLifecycleOps",
+            "availability": packages_repo_lifecycle_ops_availability,
         },
     ])
 }
@@ -4502,13 +4569,13 @@ fn overlay_get_snapshot(
 }
 
 /// The `release.openForHandoff` route (proposal 023 freeze batch,
-/// 2026-09-16; implementation wiring = follow-up slice 2, this batch).
-/// The tasked command that hands the user to the START of the official SDK
-/// upload flow. Handoff semantics per the product boundary: the upload
-/// itself never enters VUA; the succeeded task snapshot's result carries
-/// the handoff fact document — a shape with no upload-status field at all,
-/// so honesty rules 1/2 hold by construction (the negative vector pins
-/// it).
+/// 2026-09-16; implementation wiring = follow-up slice 2; v0.2 = the U19
+/// record-state gate, 2026-09-21). The tasked command that hands the user
+/// to the START of the official SDK upload flow. Handoff semantics per the
+/// product boundary: the upload itself never enters VUA; the succeeded task
+/// snapshot's result carries the handoff fact document — a shape with no
+/// upload-status field at all, so honesty rules 1/2 hold by construction
+/// (the negative vector pins it).
 ///
 /// Admission flow (validation ordering preserved): the params closed set
 /// `{buildId}` is checked FIRST — a closed-set violation answers
@@ -4527,15 +4594,103 @@ fn overlay_get_snapshot(
 /// determined — retryable, never dressed as "unknown"), and an
 /// unresolvable editor identity answers
 /// `vua.release_handoff.editor_unresolved` (ruling 5; diagnosis reuses
-/// the verifyEditor semantics). Only then is the task accepted — the
-/// task nine states carry ONLY the long-running part (launch + handshake
-/// wait), never the admission checks.
+/// the verifyEditor semantics).
+///
+/// v0.2 record-state gate (U19 user ruling, BOARD row = normative source):
+/// between the record read and the identity resolution, the record's
+/// `status` is classified backend-authoritatively against the ruling
+/// whitelist — `succeeded` / `succeeded_with_warnings` pass (the warning
+/// presentation stays a desktop concern; the record is never rewritten),
+/// `failed` / `cancelled` / `rolled_back` / `recovered` answer
+/// `vua.release_handoff.record_state_blocked` (typed rejection carrying
+/// the record's original state value as the `state` param — the desktop
+/// words its diagnostic / recovery / re-production entry around it), and a
+/// missing / non-string / out-of-enum status answers
+/// `vua.release_handoff.record_state_unknown` (the record cannot be
+/// confirmed). The gate is a policy check, never a state rewrite:
+/// `recovered` blocks like the other terminal states because a completed
+/// inspection does not turn a failed history record into a success
+/// (ruling correction b), and a whitelisted state is no guarantee the
+/// project still matches the record (correction c — this gate prevents
+/// obviously wrong handoffs, nothing more). Only then is the task
+/// accepted — the task nine states carry ONLY the long-running part
+/// (launch + handshake wait), never the admission checks.
 fn release_open_for_handoff(
     state: &HostState,
     request: &Value,
     request_id: &str,
     correlation_id: &str,
 ) -> Result<FrameOutcome, SqliteStoreError> {
+    let admission = match admit_editor_open(state, request, request_id, correlation_id, true) {
+        Ok(admission) => admission,
+        Err(response) => return Ok(FrameOutcome::Response(response)),
+    };
+    submit_editor_open_task(
+        admission,
+        request_id,
+        correlation_id,
+        "release.openForHandoff",
+        vua_orchestrator::build_handoff_fact,
+    )
+}
+
+/// The `release.openForInspection` route (U19 v0.2, 2026-09-21): the
+/// explicit independent "open in Unity to inspect/fix" path. The ruling
+/// keeps this path OPEN regardless of the build record's state — opening
+/// the editor is neither recovery-execution nor upload permission, so a
+/// user may always open the project to look at it and fix it. Admission is
+/// the handoff admission MINUS the state gate: params closed set, wired
+/// faces, record existence (`build_unknown`), project identity and editor
+/// resolution only. The completion fact is `build_inspection_fact` — its
+/// explicit `operation: "release.openForInspection"` key means the
+/// wording can never be read as a handoff completion (never "交接完成").
+fn release_open_for_inspection(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let admission = match admit_editor_open(state, request, request_id, correlation_id, false) {
+        Ok(admission) => admission,
+        Err(response) => return Ok(FrameOutcome::Response(response)),
+    };
+    submit_editor_open_task(
+        admission,
+        request_id,
+        correlation_id,
+        vua_orchestrator::OPEN_FOR_INSPECTION_OPERATION,
+        vua_orchestrator::build_inspection_fact,
+    )
+}
+
+/// Everything the shared admission sequence established for one
+/// editor-open entry (handoff or inspection): the record anchor, the
+/// project identity resolved from the record, the editor identity
+/// resolved per ruling 5, and the checked wiring (runtime + port +
+/// trusted-side project root) so the acceptance re-fetches nothing.
+struct EditorOpenAdmission {
+    build_id: String,
+    project_id: String,
+    resolved: vua_orchestrator::HandoffEditorCandidate,
+    runtime: TaskRuntime,
+    port: std::sync::Arc<dyn vua_orchestrator::ReleaseHandoffPort>,
+    project_root: PathBuf,
+}
+
+/// The shared admission sequence of the two editor-open entries (U19 v0.2):
+/// `release.openForHandoff` and `release.openForInspection` differ in
+/// exactly two points — the record-state gate (`enforce_state_gate`) and
+/// the completion fact wording. Everything here is backend-authoritative:
+/// no UI decision can admit a handoff the gate refuses, and no UI refusal
+/// is needed for a handoff the gate admits. `Ok` carries the admission,
+/// `Err` carries the ready error response payload.
+fn admit_editor_open(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+    enforce_state_gate: bool,
+) -> Result<EditorOpenAdmission, Value> {
     let params_ok = request
         .get("params")
         .and_then(Value::as_object)
@@ -4549,43 +4704,43 @@ fn release_open_for_handoff(
         })
         .unwrap_or(false);
     if !params_ok {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             "vua.release_handoff.invalid_params",
             "errors.releaseHandoff.invalidParams",
             "validation",
-        )));
+        ));
     }
     let Some(use_cases) = state.use_cases.clone() else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let Some(runtime) = use_cases.runtime.clone() else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let Some(port) = use_cases.handoff.clone() else {
         // The production-domain process/window adapter is not wired:
         // honest absence (category unavailable, recoverable) — never a
         // silent success, never a guessed handoff fact.
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let build_id = request
         .pointer("/params/buildId")
@@ -4599,37 +4754,68 @@ fn release_open_for_handoff(
     let record = match use_cases.records.get(&build_id) {
         Ok(Some(record)) => record,
         Ok(None) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.build_unknown",
                 "errors.releaseHandoff.buildUnknown",
                 "validation",
-            )));
+            ));
         }
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 RELEASE_HANDOFF_UNAVAILABLE,
                 "errors.releaseHandoff.unavailable",
                 "unavailable",
-            )));
+            ));
         }
     };
+    if enforce_state_gate {
+        // U19 record-state gate (v0.2): the whitelist is a product-policy
+        // decision (ruling correction a), applied here — before any task
+        // exists, never in a UI. Blocked carries the state verbatim as
+        // the wire param; unknown refuses a record it cannot confirm.
+        match vua_orchestrator::classify_handoff_record_state(&record) {
+            vua_orchestrator::HandoffRecordAdmission::Allowed => {}
+            vua_orchestrator::HandoffRecordAdmission::Blocked { state: record_state } => {
+                return Err(application_error_with_params(
+                    request_id,
+                    correlation_id,
+                    RELEASE_HANDOFF_RECORD_STATE_BLOCKED,
+                    "errors.releaseHandoff.stateBlocked",
+                    "permission",
+                    &[(
+                        "state",
+                        vua_orchestrator::ParamValue::Text(record_state),
+                    )],
+                ));
+            }
+            vua_orchestrator::HandoffRecordAdmission::Unknown => {
+                return Err(application_error(
+                    request_id,
+                    correlation_id,
+                    RELEASE_HANDOFF_RECORD_STATE_UNKNOWN,
+                    "errors.releaseHandoff.stateUnknown",
+                    "validation",
+                ));
+            }
+        }
+    }
     // A schema-valid v0.3 record always carries both identities; a record
     // missing them cannot establish the handoff identity, so the route
     // answers the same typed unresolved (the closed set has no separate
     // "incomplete record" code — this IS an identity-resolution failure).
     let record_version = vua_orchestrator::record_editor_version(&record).unwrap_or_default();
     let Some(record_project_id) = vua_orchestrator::record_project_id(&record) else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             "vua.release_handoff.editor_unresolved",
             "errors.releaseHandoff.editorUnresolved",
             "dependency",
-        )));
+        ));
     };
     // Editor-identity resolution (ruling 5): explicit injection > the
     // record's carried version matched against observed candidates >
@@ -4644,40 +4830,64 @@ fn release_open_for_handoff(
     let candidates = match handoff_editor_candidates(state) {
         Ok(candidates) => candidates,
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.editor_unresolved",
                 "errors.releaseHandoff.editorUnresolved",
                 "dependency",
-            )));
+            ));
         }
     };
     let resolved = match vua_orchestrator::resolve_handoff_editor(&candidates, record_version) {
         Ok(resolved) => resolved,
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.editor_unresolved",
                 "errors.releaseHandoff.editorUnresolved",
                 "dependency",
-            )));
+            ));
         }
     };
-    // Task acceptance: the nine states carry ONLY the long-running part.
-    // Completion = Bridge handshake arrival (ruling 3) — the port owns the
-    // wait; "process started" never completes the task; OS focus enters
-    // neither the judgment nor the fact.
-    let launch = vua_orchestrator::HandoffLaunch {
-        build_id: build_id.clone(),
+    Ok(EditorOpenAdmission {
+        build_id,
         project_id: record_project_id.to_owned(),
+        resolved,
+        runtime,
+        port,
         project_root: use_cases.project_root.clone(),
-        editor_exe: resolved.exe_path.clone(),
-        editor_version: resolved.version.clone(),
+    })
+}
+
+/// Accepts the long-running part of one editor-open entry (the shared task
+/// face of handoff and inspection): the nine states carry ONLY the
+/// long-running part. Completion = Bridge handshake arrival (ruling 3) —
+/// the port owns the wait; "process started" never completes the task; OS
+/// focus enters neither the judgment nor the fact. The `fact_builder`
+/// picks the wording: `build_handoff_fact` (handoff) vs
+/// `build_inspection_fact` (inspection — its `operation` key never reads
+/// as a handoff completion). The wiring (runtime/port/project root)
+/// arrives checked with the admission — nothing is re-fetched, so the
+/// acceptance cannot diverge from what admission validated.
+fn submit_editor_open_task(
+    admission: EditorOpenAdmission,
+    request_id: &str,
+    correlation_id: &str,
+    operation: &str,
+    fact_builder: fn(&str, &str, &str, &str, &str) -> Value,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let launch = vua_orchestrator::HandoffLaunch {
+        build_id: admission.build_id.clone(),
+        project_id: admission.project_id.clone(),
+        project_root: admission.project_root.clone(),
+        editor_exe: admission.resolved.exe_path.clone(),
+        editor_version: admission.resolved.version.clone(),
     };
+    let port = admission.port;
     let run_correlation = correlation_id.to_owned();
-    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+    let accepted = admission.runtime.submit(vua_orchestrator::SubmitRequest {
         correlation_id: Some(correlation_id.to_owned()),
         timeout: None,
         job: Box::new(move |context| {
@@ -4686,15 +4896,13 @@ fn release_open_for_handoff(
             }
             match port.open_for_handoff(&launch) {
                 Ok(vua_orchestrator::HandoffOutcome::HandshakeArrived) => {
-                    Ok(vua_orchestrator::TaskExit::Done(
-                        vua_orchestrator::build_handoff_fact(
-                            &launch.build_id,
-                            &launch.project_id,
-                            &launch.editor_exe.to_string_lossy(),
-                            &launch.editor_version,
-                            &now_rfc3339(),
-                        ),
-                    ))
+                    Ok(vua_orchestrator::TaskExit::Done(fact_builder(
+                        &launch.build_id,
+                        &launch.project_id,
+                        &launch.editor_exe.to_string_lossy(),
+                        &launch.editor_version,
+                        &now_rfc3339(),
+                    )))
                 }
                 Ok(vua_orchestrator::HandoffOutcome::HandshakeTimeout) => {
                     // The wait ran and no handshake arrived: an honest
@@ -4727,7 +4935,7 @@ fn release_open_for_handoff(
             request_id,
             json!({
                 "schemaVersion": RELEASE_HANDOFF_SCHEMA_VERSION,
-                "operation": "release.openForHandoff",
+                "operation": operation,
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
             }),
@@ -5305,6 +5513,15 @@ fn packages_request(
         "packages.listTemplates" => {
             packages_list_templates(vpm, request, request_id, correlation_id)
         }
+        "packages.enableRepo" => {
+            packages_enable_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.disableRepo" => {
+            packages_disable_repo(state, vpm, request, request_id, correlation_id)
+        }
+        "packages.refreshRepo" => {
+            packages_refresh_repo(state, vpm, request, request_id, correlation_id)
+        }
         _ => FrameOutcome::Response(application_error(
             request_id,
             correlation_id,
@@ -5464,9 +5681,23 @@ fn packages_list_installed(
 /// catalog declaration (`catalog_capabilities`, default declared-none): an
 /// engine wired without the P2 implementation answers
 /// `vua.vpm.capability_missing`, never a fabricated or padded list. Rows
-/// project the backend's `RepoInfoV01` facts verbatim (serde camelCase,
-/// nulls preserved as honest absences); row order is the backend's
-/// subscription-face order — the route invents no sort key.
+/// project the backend's facts verbatim (serde camelCase, nulls preserved
+/// as honest absences); row order is the backend's subscription-face
+/// order — the route invents no sort key.
+///
+/// The RESULT family is negotiated additively (proposal 027 F4 freeze
+/// batch, the `repos_v02` law — the `catalog_v02`/`query_v02` precedent):
+/// a backend that declares `repos_v02` answers the v0.2 result family
+/// (rows carry the REQUIRED VUA-owned `enabled` state bit — ruling (c):
+/// VCC carries no enable counterpart, so the bit projects VUA-owned
+/// storage, never a settings.json key; an id-absent row projects
+/// `enabled: true` ALWAYS — it is outside the toggle faces' reach); every
+/// other backend keeps answering the frozen `vua.packages-repos/v0.1`
+/// family. The COMMAND face stays byte-for-byte the frozen v0.1 face: the
+/// envelope const stays `"0.1"` and the v0.2 increment is a
+/// result-document fact only (the stamped family const tells the consumer
+/// which word face answered, never a guess — the P1 discipline: the route
+/// stamps the const, the backend facts stay verbatim).
 fn packages_list_repos(
     vpm: Arc<dyn VpmBackend>,
     request: &Value,
@@ -5489,28 +5720,47 @@ fn packages_list_repos(
             "unavailable",
         ));
     }
-    let repos = match vpm.list_repos() {
-        Ok(repos) => repos,
-        Err(error) => {
-            return FrameOutcome::Response(application_error(
-                request_id,
-                correlation_id,
-                &error.code,
-                &error.message_key,
-                app_error_category(error.category),
-            ));
+    let (result, family_const) = if vpm.repos_v02() {
+        match vpm.list_repos_v02() {
+            Ok(repos) => {
+                let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+                (json!({ "repos": rows }), PACKAGES_REPOS_SCHEMA_VERSION_V02)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
+        }
+    } else {
+        match vpm.list_repos() {
+            Ok(repos) => {
+                let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+                (json!({ "repos": rows }), PACKAGES_REPOS_SCHEMA_VERSION)
+            }
+            Err(error) => {
+                return FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                ));
+            }
         }
     };
-    let rows = serde_json::to_value(&repos).unwrap_or_else(|_| json!([]));
+    let mut result = result;
+    result["schemaVersion"] = json!(family_const);
     FrameOutcome::Response(application_success(
         request_id,
         json!({
             "schemaVersion": PACKAGES_QUERY_SCHEMA_VERSION,
             "operation": "packages.listRepos",
-            "result": {
-                "schemaVersion": PACKAGES_REPOS_SCHEMA_VERSION,
-                "repos": rows,
-            },
+            "result": result,
         }),
     ))
 }
@@ -6408,10 +6658,13 @@ fn packages_ops_remove_repo_params(request: &Value) -> Option<String> {
 /// locks the code to `^vua\.packages\.`, so port codes can never travel
 /// verbatim there). The add face claims NO idempotence: where the backend
 /// refuses a duplicate, the wire answers the refusal honestly — no
-/// idempotent success is invented.
-fn packages_ops_repo_port_rejection(error: &AppErrorV1) -> Value {
+/// idempotent success is invented. The family const travels with the
+/// caller's word-face row: the A4 add/remove routes stamp the frozen v0.4
+/// family, the F4 lifecycle routes stamp the frozen v0.6 family — the
+/// same fold law per row, never a cross-row stamp.
+fn packages_ops_repo_port_rejection(schema_version: &'static str, error: &AppErrorV1) -> Value {
     packages_ops_rejected(
-        PACKAGES_OPS_SCHEMA_VERSION_V04,
+        schema_version,
         "execution_failed",
         "vua.packages.execution_failed",
         format!("port code {}: {}", error.code, error.message_key),
@@ -6810,7 +7063,7 @@ fn packages_add_remote_repo(
                     "url": url,
                     "name": name,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6819,7 +7072,13 @@ fn packages_add_remote_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.addRemoteRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.addRemoteRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
 /// `packages.addLocalRepo` (proposal 026 A4 wiring): the same task-driven
@@ -6868,7 +7127,7 @@ fn packages_add_local_repo(
                     "path": path,
                     "name": name,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6877,7 +7136,13 @@ fn packages_add_local_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.addLocalRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.addLocalRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
 /// `packages.removeRepo` (proposal 026 A4 wiring): the same task-driven
@@ -6927,7 +7192,7 @@ fn packages_remove_repo(
                     "kind": "removed",
                     "repoId": repo_id,
                 }),
-                Err(error) => packages_ops_repo_port_rejection(&error),
+                Err(error) => packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V04, &error),
             };
             Ok(vua_orchestrator::TaskExit::Done(json!({
                 "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
@@ -6936,18 +7201,251 @@ fn packages_remove_repo(
             })))
         }),
     });
-    finish_repo_write_acceptance(accepted, "packages.removeRepo", request_id, correlation_id)
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.removeRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+        request_id,
+        correlation_id,
+    )
 }
 
-/// Shared acceptance tail of the three A4 repo-write routes: the
-/// acceptance answer and the Done payload both stamp the envelope const
-/// "0.4" (the result document inside carries its own family const);
-/// submission rejection stays the persistence failure of the task
-/// authority (import-copy same face, provider-layer code — the failure is
-/// the task authority's, not the packages domain's).
+/// Closed param set of the F4 `packages.enableRepo` / `packages.disableRepo`
+/// / `packages.refreshRepo` commands (proposal 027 F4 wiring):
+/// `{ repoId }` — the single key, nothing else (the stable row handle, the
+/// A4 `removeRepo` same handle; index addressing is NOT frozen). NO
+/// `confirmedDigest` slot exists on any of the three (a state toggle diffs
+/// no pre-existing summary and refresh IS the network act — a carried
+/// digest is a shape violation) and NO `projectPath` is taken (the
+/// lifecycle face addresses SUBSCRIPTION rows only). Violations answer
+/// `vua.packages.invalid_params` at the route layer.
+fn packages_ops_repo_lifecycle_params(request: &Value) -> Option<String> {
+    let params = request.get("params")?.as_object()?;
+    if params.len() != 1 {
+        return None;
+    }
+    let repo_id = params.get("repoId")?.as_str()?;
+    if repo_id.is_empty() {
+        return None;
+    }
+    Some(repo_id.to_owned())
+}
+
+/// `packages.enableRepo` (proposal 027 F4 wiring, 2026-09-21): the A4
+/// `packages.removeRepo` task-driven isomorph over the frozen
+/// `schemas/packages-ops/v0.6/` word list. Re-activating one disabled
+/// subscription row — VUA-owned semantics (the W25 evidence record ruling
+/// (c): VCC carries NO enable/disable state anywhere). The per-method gate
+/// reads ITS OWN bit off the defaulted `repo_lifecycle_capabilities`
+/// accessor BEFORE submit (capability absence never reaches a task); the
+/// receipt echoes the repoId and nothing else (the port answers
+/// `Result<(), _>` — the echo IS the audit link; the new state itself is
+/// read back on the packages-repos v0.2 subscription face, never
+/// duplicated into the receipt). Every port refusal folds into the frozen
+/// `execution_failed` guard carrying the original port code inside
+/// `detail` (the reused `vua.vpm.*` codes never travel in the rejected
+/// `code` key).
+fn packages_enable_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().enable_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.enable_repo(&repo_id) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "enabled",
+                    "repoId": repo_id,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.enableRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.enableRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// `packages.disableRepo` (proposal 027 F4 wiring): excluding one
+/// subscription row from the package-collection world (subscribed and
+/// listed, never resolved). The disable set lives in VUA-OWNED STORAGE
+/// under the environment root (the `.vua/vpm-repo-state.json` ruling word
+/// face) — the wire face never touches the shared settings.json. Same
+/// task-driven shape and fold law as `packages.enableRepo`.
+fn packages_disable_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().disable_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.disable_repo(&repo_id) {
+                Ok(()) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "disabled",
+                    "repoId": repo_id,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.disableRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.disableRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// `packages.refreshRepo` (proposal 027 F4 wiring): the etag-conditional
+/// cache refresh of one subscription row's OWN cache file (the network
+/// segment is inherent to the face — the task is cancellable and the
+/// nine-state machinery is substantive, the A4 task-driven isomorph). The
+/// receipt REQUIRES `cacheUpdated` (the `RepoRefreshOutcomeV01` carrier):
+/// true = the fetch wrote a new cache; false = etag unchanged, "already up
+/// to date" — an honest SUCCESS either way. Same fold law as the two
+/// toggle arms.
+fn packages_refresh_repo(
+    state: &HostState,
+    vpm: Arc<dyn VpmBackend>,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(project_ops) = state.project_ops.clone() else {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            PACKAGES_UNAVAILABLE,
+            "errors.packages.unavailable",
+            "unavailable",
+        ));
+    };
+    let Some(repo_id) = packages_ops_repo_lifecycle_params(request) else {
+        return packages_invalid_params(request_id, correlation_id);
+    };
+    if !vpm.repo_lifecycle_capabilities().refresh_repo {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.vpm.capability_missing",
+            "errors.vpm.capabilityMissing",
+            "unavailable",
+        ));
+    }
+    let accepted = project_ops.runtime.submit(vua_orchestrator::SubmitRequest {
+        correlation_id: Some(correlation_id.to_owned()),
+        timeout: None,
+        job: Box::new(move |_| {
+            let result: Value = match vpm.refresh_repo(&repo_id) {
+                Ok(outcome) => json!({
+                    "schemaVersion": PACKAGES_OPS_SCHEMA_VERSION_V06,
+                    "kind": "refreshed",
+                    "repoId": repo_id,
+                    "cacheUpdated": outcome.cache_updated,
+                }),
+                Err(error) => {
+                    packages_ops_repo_port_rejection(PACKAGES_OPS_SCHEMA_VERSION_V06, &error)
+                }
+            };
+            Ok(vua_orchestrator::TaskExit::Done(json!({
+                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+                "operation": "packages.refreshRepo",
+                "result": result,
+            })))
+        }),
+    });
+    finish_repo_write_acceptance(
+        accepted,
+        "packages.refreshRepo",
+        PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06,
+        request_id,
+        correlation_id,
+    )
+}
+
+/// Shared acceptance tail of the repo-write routes (the three A4
+/// add/remove routes and the three F4 lifecycle routes): the acceptance
+/// answer and the Done payload both stamp the CALLER's envelope const
+/// ("0.4" for the A4 row, "0.6" for the F4 row — the result document
+/// inside carries its own family const); submission rejection stays the
+/// persistence failure of the task authority (import-copy same face,
+/// provider-layer code — the failure is the task authority's, not the
+/// packages domain's).
 fn finish_repo_write_acceptance(
     accepted: Result<vua_orchestrator::CommandAcceptedV1, vua_orchestrator::AppErrorV1>,
     operation: &str,
+    envelope_schema_version: &'static str,
     request_id: &str,
     correlation_id: &str,
 ) -> FrameOutcome {
@@ -6955,7 +7453,7 @@ fn finish_repo_write_acceptance(
         Ok(accepted) => FrameOutcome::Response(application_success(
             request_id,
             json!({
-                "schemaVersion": PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V04,
+                "schemaVersion": envelope_schema_version,
                 "operation": operation,
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
@@ -7864,19 +8362,57 @@ fn application_error(
     message_key: &str,
     category: &str,
 ) -> Value {
+    application_error_with_params(
+        request_id,
+        correlation_id,
+        code,
+        message_key,
+        category,
+        &[],
+    )
+}
+
+/// The error envelope with localized params (ORC-ERR-001 shape: user-facing
+/// text goes through messageKey + params). The params object is emitted
+/// ONLY when non-empty, so every pre-existing error keeps its exact wire
+/// shape (no empty-params field appears). The U19 record-state blocked
+/// rejection is the first admission-time emitter: it carries the record's
+/// original `state` value so the localized wording can name it.
+fn application_error_with_params(
+    request_id: &str,
+    correlation_id: &str,
+    code: &str,
+    message_key: &str,
+    category: &str,
+    params: &[(&str, vua_orchestrator::ParamValue)],
+) -> Value {
+    let mut error = json!({
+        "contractVersion": APPLICATION_CONTRACT_VERSION,
+        "code": code,
+        "category": category,
+        "messageKey": message_key,
+        "recoverable": true,
+        "retryable": false,
+        "correlationId": correlation_id,
+    });
+    if !params.is_empty() {
+        let object = error
+            .as_object_mut()
+            .expect("the error envelope is an object");
+        object.insert(
+            "params".to_owned(),
+            json!(params
+                .iter()
+                .map(|(key, value)| (key.to_string(), serde_json::to_value(value)
+                    .expect("ParamValue always serializes")))
+                .collect::<serde_json::Map<String, Value>>()),
+        );
+    }
     json!({
         "contractVersion": APPLICATION_CONTRACT_VERSION,
         "requestId": request_id,
         "ok": false,
-        "error": {
-            "contractVersion": APPLICATION_CONTRACT_VERSION,
-            "code": code,
-            "category": category,
-            "messageKey": message_key,
-            "recoverable": true,
-            "retryable": false,
-            "correlationId": correlation_id,
-        },
+        "error": error,
     })
 }
 
@@ -8337,7 +8873,18 @@ fn request_plan(
 
     let plan = services
         .engine
-        .plan(mode, project_id, project_fingerprint, inspection, correlation_id)
+        // The bound project root drives the CONDITIONAL provision step
+        // (plan v0.2, W25 real-machine finding): an unprovisioned target
+        // plans the explicit user-confirmed project-creation step — same
+        // honest model as the assembly plan.
+        .plan(
+            mode,
+            project_id,
+            project_fingerprint,
+            inspection,
+            Path::new(&project_root),
+            correlation_id,
+        )
         .map_err(|error| persist_task_error(&state.store, &task_id, error))?;
     let result = serde_json::to_value(&plan)
         .map_err(|_| SqliteStoreError::CorruptValue { field: "plan", value: "json".into() })?;
@@ -8828,7 +9375,12 @@ fn confirm_plan(
                                     .clone()
                                     .unwrap_or_else(|| "vua.material.failed".to_owned()),
                                 ErrorCategory::ExternalFailure,
-                                "errors.material.executionFailed",
+                                // 第 150 批：与 material_task 同一律——供给段
+                                // 失败命中预留 provisionFailed，其余维持
+                                // executionFailed（分类助手单一来源）。
+                                vua_unity_bridge::material_exec::failure_message_key(
+                                    report.error_code.as_deref(),
+                                ),
                                 &confirmation.correlation_id,
                             )
                             .with_param(

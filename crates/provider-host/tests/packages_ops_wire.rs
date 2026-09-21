@@ -146,6 +146,7 @@ impl VpmBackend for FakeRemove {
             list_packages: false,
             remove_packages: self.remove_cap,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

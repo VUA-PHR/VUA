@@ -25,6 +25,16 @@ namespace Vua.Editor.Bridge
 
         internal static BridgeResult Process(BridgeCommand command, string editorVersion)
         {
+            if (command?.schemaVersion != 4) return ProcessCore(command, editorVersion);
+            try { return BridgeResult.ForCommand(command, ProcessCore(command, editorVersion)); }
+            catch (Exception exception)
+            {
+                return BridgeResult.Fail(command, "bridge.unhandled", exception.GetType().Name + "：" + exception.Message);
+            }
+        }
+
+        private static BridgeResult ProcessCore(BridgeCommand command, string editorVersion)
+        {
             var invalid = ValidateEnvelope(command);
             if (invalid != null) return invalid;
 
@@ -105,20 +115,30 @@ namespace Vua.Editor.Bridge
                     case "inspect_upload_readiness":
                         result = InspectUploadReadiness(command);
                         break;
+                    case "build_preview":
+                        result = BridgePreviewBake.Bake(command);
+                        break;
                     default:
                         return BridgeResult.Reject(command, "bridge.operation_not_allowed", "该操作不在允许列表中。");
                 }
 
                 if (result.status == "succeeded" && IsMutating(command.operation))
                 {
-                    AssetDatabase.SaveAssets();
-                    var scene = SceneManager.GetActiveScene();
-                    if (scene.IsValid() && scene.isDirty)
+                    // build_preview 刻意跳过场景保存:烘焙全程在 preview scene
+                    // 隔离内进行(BridgePreviewBake),用户场景从未被本操作弄脏;
+                    // 即使用户场景自带未保存改动,一次预览烘焙也绝不可以替用户
+                    // 保存——用户场景必须零改动(用户裁决 2026-09-20)。
+                    if (command.operation != "build_preview")
                     {
-                        if (string.IsNullOrWhiteSpace(scene.path) || !EditorSceneManager.SaveScene(scene))
+                        AssetDatabase.SaveAssets();
+                        var scene = SceneManager.GetActiveScene();
+                        if (scene.IsValid() && scene.isDirty)
                         {
-                            return BridgeResult.Fail(command, "bridge.scene_save_failed",
-                                "Unity 场景无法保存，本次操作未记录为成功。");
+                            if (string.IsNullOrWhiteSpace(scene.path) || !EditorSceneManager.SaveScene(scene))
+                            {
+                                return BridgeResult.Fail(command, "bridge.scene_save_failed",
+                                    "Unity 场景无法保存，本次操作未记录为成功。");
+                            }
                         }
                     }
                 }
@@ -144,7 +164,11 @@ namespace Vua.Editor.Bridge
                    operation == "materialize_extracted_package" ||
                    operation == "create_local_vpm_package" ||
                    operation == "install_outfit" || operation == "create_toggle" ||
-                   operation == "execute_production_job" || operation == "restore_project";
+                   operation == "execute_production_job" || operation == "restore_project" ||
+                   // v4 (slice/production-nav-bake-preview, 用户裁决 2026-09-20):
+                   // 产物写入工程目录(.vua/bridge/preview/)即副作用,按 mutating
+                   // 落信封纪律;preview scene 隔离保证用户场景零改动。
+                   operation == "build_preview";
         }
 
         private static bool IsInspection(string operation)
@@ -470,7 +494,7 @@ namespace Vua.Editor.Bridge
             if (string.IsNullOrWhiteSpace(directory)) throw new InvalidOperationException("回执路径缺少父目录。");
             Directory.CreateDirectory(directory);
             var temporary = path + ".tmp";
-            File.WriteAllText(temporary, JsonUtility.ToJson(result, true));
+            File.WriteAllText(temporary, BridgeResultJson.Serialize(result));
             if (File.Exists(path)) File.Delete(temporary);
             else File.Move(temporary, path);
         }
@@ -1366,7 +1390,7 @@ namespace Vua.Editor.Bridge
         private static BridgeResult ValidateEnvelope(BridgeCommand command)
         {
             if (command == null) return BridgeResult.Reject(null, "bridge.invalid_json", "命令 JSON 无法解析。");
-            if (command.schemaVersion != 1 && command.schemaVersion != 2 && command.schemaVersion != 3) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
+            if (command.schemaVersion != 1 && command.schemaVersion != 2 && command.schemaVersion != 3 && command.schemaVersion != 4) return BridgeResult.Reject(command, "bridge.unsupported_schema", "不支持该协议版本。");
             if (command.schemaVersion == 1 && (command.operation == "execute_production_job" || command.operation == "restore_project"))
             {
                 return BridgeResult.Reject(command, "bridge.unsupported_schema", "生产作业与恢复操作需要协议 v2。");
@@ -1374,6 +1398,10 @@ namespace Vua.Editor.Bridge
             if (command.schemaVersion < 3 && IsInspection(command.operation))
             {
                 return BridgeResult.Reject(command, "bridge.unsupported_schema", "检查读面操作需要协议 v3。");
+            }
+            if (command.schemaVersion < 4 && command.operation == "build_preview")
+            {
+                return BridgeResult.Reject(command, "bridge.unsupported_schema", "烘焙预览操作需要协议 v4。");
             }
             if (string.IsNullOrWhiteSpace(command.commandId) ||
                 !Regex.IsMatch(command.commandId, "^[A-Za-z0-9_-]{1,128}$", RegexOptions.CultureInvariant))
@@ -1408,7 +1436,8 @@ namespace Vua.Editor.Bridge
                    operation == "restore_project" ||
                    operation == "inspect_avatar_references" ||
                    operation == "inspect_lighting" ||
-                   operation == "inspect_upload_readiness";
+                   operation == "inspect_upload_readiness" ||
+                   operation == "build_preview";
         }
 
         private static bool TryResolve(string serializedId, out GameObject gameObject)

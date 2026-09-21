@@ -2,32 +2,106 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: a3a9d86
+baseline_commit: 1a30bdde
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 139 批登记批（2026-09-21 00:3x–00:5x，节拍轮工作时段 00:32 date 实测；操作者注候验收两笔实质同拍办理：桌面 F5 消费切片＋核心 F4 仓库生命周期冻结批——逐文件亲审＋--no-ff 双收编＋合并树定向复跑全绿＋F5 链五环全闭环＋F4 链开启登记）**：
+**第 154 批（2026-09-21 23:0x–23:2x，节拍轮工作时段 date 23:04 实测，窗口首拍）＝
+提案 029 文档批验收入库＋U15 双语 project-context 收缩改写落地（集成座自办切片）
+＋wt-7 计划批簿记收编＋四树残余验收请求消化**：
 
-- **wt-3 F5 桌面消费切片收编（合并 1ab37d8，预检 exit 0，合并树＝预检树 935d31b 逐字节一致）**＝slot/wt-3 收编四笔（追平壳 f066f80 零自有纯吸收 main 680907d＋消费批 bfe7b0f 恰 19 文件 639+/35-＋状态批 c52f01c＋订正批 c8e2a98）——集成逐文件亲审成立：contracts 空闭集请求类型＋请求联合＋method-kinds "query"＋信封守卫 case（listRepos 同款）；router 分发臂 params {} verbatim 透传（三错误路径原样透传不折叠）；packages-port TemplatesFactsV01＋blocks.templates 纯增量新键 p1/p2 双视图；packages-live TEMPLATES_OPERATION_ID 一行一法＋capabilityRows 十行＋行守卫恰 id+name 两键闭集（发明 description 即形状不符）＋族常量剥除 id 升序不重排；empty/fixture gateway 三处恒缺席臂（mock 永不模拟模板枚举）；CreateSection TemplatesFace 五形态状态机（下拉仅 ready 渲染、空数组＝诚实零模板非错误、typed 失败原词与能力缺席四语严格分立、loading 禁手填、选中 id 原样传递 name 逐字显示）；i18n 六键四语＋design-standard 0.7.11 双语＋027 消费落节核对点五条逐条兑现＋live 6 例/router 1 例亲阅。
-- **wt-3 消费批合并树定向复跑集成亲测全绿（00:3x–00:4x，main＝1ab37d8）**：contracts dist 先重建照陈旧事故先例后 check **83/83**＋desktop typecheck 双 0＋desktop vitest **89 文件 806/806**（与申报吻合）＋boundary OK＋i18n 3 表对齐＋contrast 全达标＋**check:leak 155 指纹零泄漏**＋forest-leak 通过。
-- **wt-2 F4 冻结批收编（合并 a3a9d86，预检 exit 0，合并树＝预检树 03bf5ad 逐字节一致）**＝slot/wt-2 收编七笔（追平壳 9dc39d9 零自有＋**冻结批 47d4185 恰 39 文件 3274+/9-**＋状态批 4455466＋订正批 592c0f4＋追平壳 a366bd7 零自有吸收 main 1ee1755＋状态批 e778fbb＋候验收窗口内订正批 7505a9f 照 88d20ba/203cb9f 竞速前移先例随合并一并收编）——集成逐文件亲审成立：解冻权威亲测（f229b23 is-ancestor 在 main＝027 s6 裁决 (c) VCC 零启停位，硬前置成就）；存储裁决词面落死（.vua/vpm-repo-state.json VUA 自有存储，绝不入 userRepos[i]、绝不立 settings.json 顶层键）；端口面（RepoLifecycleCapabilities 三独立位＋defaulted accessor declared-none＋三方法 trait default 即缺席臂＋RepoRefreshOutcomeV01.cache_updated 两臂皆成功＋RepoInfoV02 恰五键＋enabled 必带 id 缺席恒 true＋repos_v02/list_repos_v02 加法协商＋陈旧注释诚实更新＋lib.rs 导出）；Schema 面亲验（ops v0.6 envelope "0.6"＋枚举恰十二方法＋v0.5→v0.6 结构化 diff 纯增量实测＋三方法单键闭集 {repoId} additionalProperties:false＋refreshed 臂 cacheUpdated 必带＋rejected pattern ^vua\.packages\. 锁族原码 detail 溯源零新码；repos v0.2 行六键闭集＋family const v0.2 与 envelope 0.1 双版本独立＋command 面与 v0.1 结构逐字节同形）；消费测试 4+3 例函数级亲阅（cacheUpdated 唯一事实钉/两臂成功钉/三码折叠钉/协商默认与 v0.1 继续服务钉/六键与 id 缺席恒 true 钉）＋TS 面三命令三收据三窄化臂＋mock 三方法恒缺席臂＋双语协议本 0.6/0.2＋REGISTRY 四行。
-- **wt-2 冻结批合并树定向复跑集成亲测全绿（00:4x，main＝a3a9d86）**：向量 jsonschema **22/22**（5 正 10 负＋3 正 4 负零出入）＋cargo test -p vua-provider-host **41 suites 274/0**（267→274＝新 4+3 例，口径吻合）＋vua-orchestrator **234/0** 零涟漪＋vua-project-manager **127/0** 零涟漪＋clippy 三 crate --all-targets **0 警告**＋contracts check **84/84**＋orchestrator-provider check **46/46**＋desktop typecheck 双 0；desktop build cargo release 段未跑＝运行中用户 dev 栈零触碰纪律（tasklist 实测 electron×4＋vua-orchestrator-provider PID 25500 在运，第 132–138 批先例；本批零桌面文件零 release 面）。
-- **F5 链五环全闭环＋F4 链开启（BOARD #41/#42 随批更新）**：F5＝冻结 d09c1e6〔132〕→接线 8677607〔136〕→形状核可 d41f3a7〔137〕→库实现 de2a029〔138〕→**桌面消费 bfe7b0f〔139〕五环全在库**；F4＝冻结 47d4185〔139〕在库——**照操作者注：环境 F4 实现＋桌面 F4 形状核可双解锁、核心 F4 接线候领**；027 框定差异改记＝f229b23 is-ancestor 亲测在 main 早经办理，wt-2 状态文件该项残留照 is-ancestor 消化关账；#42 挂账 #3 随 F4 冻结批入库解锁候核心席位对表。
-- **brief ①区判读（00:33 实读）**：六条指向本角色——wt-3/wt-2 两条验收请求兑现办理（本批两合并）；wt-4（78250ae＋880ccc6）/wt-5（d362652＋4438b69）/wt-6（de2a029＋aa4d040）/wt-7（a196df5＋1bb83e2）四条残留经 `git merge-base --is-ancestor` 逐一亲测全在 main＋③区领先 0 双实证就地消化勿重复；失鲜工作树无。收编后 slot/wt-2、slot/wt-3 领先全 0 复证。
+- **wt-2 两笔 --no-ff 收编（合并 9125f8f1，预检 exit 0 合成树 777b945f）＝U16 立
+  项面落库**：提案批 cd8c0000（恰提案 029 一文件 218 行）＋状态批 d2063abe，全
+  collab 面 collab-only 免全量照章。结构照 024–028 先例、上位权威一致性复核通过、
+  A/B 两面盘点代码事实锚抽核吻合；status 维持「提出」（文档入库验收≠提案采纳），
+  环流水线候领取：A 面形状核可候桌面、B 面冻结候核心（前置＝A 面落形）、未决项 3
+  ＝#46 以集成登记为准。U16 行改记＋提案内联线程集成登记节落笔。
+- **U15 落地（合并 ab267927，预检 exit 0）＝裁决今晚置顶次项兑现**：自办切片
+  slice/u15-project-context-condensed 两笔＝3371a21c 跟踪前置＋ed232265 收缩改写
+  （ZH 56 行/EN 67 行冷启动导读＋docs/README 双语导航标签＋双语配对修复）。保留三
+  条逐条兑现、现状内容移除改链接、维护触发入头、非 REGISTRY 受管文档（与根
+  README 同类）。**[集成判断候用户晨间追认]**：.gitignore 三件本地件跟踪前置——
+  裁决「旧全文由 Git 历史保留」前提在 ignore 现状下不可能成立（零历史、VUA-9 检
+  出实测无此文件、导读不入库则对全部工作树不可见）；按权威序用户裁决＞既定分类，
+  取消恰一行 ignore（migration/plans/reference 维持忽略）、旧文 3371a21c 原样固化
+  （核无凭证无隐私无资产）；否决回滚＝恢复 ignore＋git rm --cached 零耦合。U15
+  行更新载明。
+- **wt-7 计划状态批簿记收编（合并 fa2290ab，预检 exit 0）**：恰 wt-7.md 一文件；
+  R1–R6 执行与验收已经用户授权合并 06ec6390 完成，本合并仅计划文档历史归档＋关
+  闭分支分叉，不二次验收不重复派发；VUA-7/VUA-8 工作树本体全程零触碰。
+- **四树残余验收请求消化（is-ancestor 逐一亲测全在 main，就地消化勿重复）**：
+  wt-3 f69d1b9b（第 151 批 5be42135）、wt-4 e4c44ce1（第 149 批 7962cbc7）、
+  wt-5 c099c56f（第 141 批 ea07006）、wt-6 14d27b9e（第 147 批 edeaa086）。
+- **#46 行补操作者座位知会**：候产线座起草提案 030，领取前集成不代建防竞写。
+- 本批纪律：docs 面＋collab 面 only、零代码零 schema、零构建零测试链触发（纯
+  docs 变更无测试链覆盖、REGISTRY 未触碰如实声明）；`?? _local_p27_devlog.txt`
+  照例不触碰。
+- **诚实边界维持：零端到端宣称**——本批无任何运行验证动作；U15 落地系文档面事
+  实非真机呈现宣称；提案验收系文档面事实非实现宣称。
+
+- **续批（23:2x–23:4x）＝wt-4/wt-6 随轮收编**：**wt-4 两笔（合并 30efafc6）＝
+  #46 立项起草 proposal 030 验收入库**（追平壳 d2091af4 纯吸收 59c58e16＋提案状态
+  批 41c5ff73 恰两 collab 文件；只读公开页取样调查照 AGENTS 先例与 #46 红线、观察
+  范式方向不冻结 schema、供数链三段设想、未决项七条如实列；#46 行随验收改记
+  候立项→已立项，候定座/出线面仲裁/数据与核心内联表态）；**wt-6 状态批（合并
+  1a30bdde）＝#45 候派『C# dormant 收窄』决策输入**（A/B 两案成本双向陈列、本席
+  倾向明记非裁决，集成照录候操作者裁量）。wt-3 领先 1 系 U19 轮首追平壳（8faa89e4，
+  零自有无验收请求），留待其 U19 交付批一并收编。
+
+## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
+第 153 批（18:3x–18:5x）＝U19/U15 两笔用户裁决落账＋R1–R6 区块 append-only 注记
+＋前录轮转＋推送（含另一会话在途 R1–R6 五提交一并推净）。第 152 批（16:4x）＝
+U16 裁决立项（proposal 029 在途）＋U18 方向暂可＋#46 新行＋U15/U19 已详答候裁决。
+151 批＝第 150 批两栈验收闭环＋合并树定向复跑全绿。更早见 BOARD 前录与 git 历史。
 
 ## 阻塞
-无。（无本地工作阻塞。）
+无。（U19 实现切片核心 wt-2／桌面 wt-3 在途候验收，随到随验；U18 终裁候实机＋数
+据；proposal 029 环流水线候桌面/核心领取；#46 候产线座提案 030；#43 真机复验候
+W25 用户回访；wt-7/wt-8 分叉已收编关闭。）
 
 ## 下次合并意图
-候验收队列现清空（wt-2/wt-3 已收编，slot/wt-2～wt-7 六树领先全 0）。下窗优先面：**027 F4 后链三环候领**（操作者注面序：核心 F4 接线＝路由三臂＋served 行 packages.repoLifecycleOps＋信封双常量＋repos v0.2 协商路由臂＋wire 测试＋协议本 0.6→0.6.1；环境 F4 实现＝VrcGetLib 覆写三独立位＋.vua 自有存储读写＋etag 条件刷新＋repos_v02 状态位投影＋with_environment_root 临时根测试，锚＝v0.6 协议本「后端指向根事实」＋存储裁决节；桌面 F4 形状核可照操作者注双解锁候办）；VUA-8（production-nav-bake-preview，0779db0）候其验收请求与状态登记，不代合并；wt-4 候 W25 窗口批（A3 段核证义务在肩）；U15 候用户裁决。
+候验收队列：slot/wt-2／slot/wt-4／slot/wt-5／slot/wt-6 领先 0（本批终态）；
+slice/u15-project-context-condensed 已收编；slot/wt-3 领先 1＝U19 轮首追平壳
+（8faa89e4 零自有，随 U19 交付批自然收编）。**U19 实现切片＝本窗口置顶候验收对
+象**（核心准入闸＋类型化拒绝原因／桌面四语词面＋独立打开路径确认，随到随验
+--no-ff，验收后 BOARD U19 行改记）。proposal 029 环流水线候桌面形状核可（A 面）
+与核心冻结领取（B 面）；proposal 030 候定座＋出线面仲裁＋数据/核心内联表态。
+#45『C# dormant 收窄』候操作者对 wt-6 决策输入裁量。#45 余候派项维持。收尾时段
+08:40 起禁开新切片。#43 真机复验候 W25（O-2）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 00:32–00:5x，节拍轮工作时段 date 实测）：①date 00:32 实测工作时段，pnpm collab:brief ①区六条判读＝wt-3/wt-2 两条验收请求兑现、wt-4/wt-5/wt-6/wt-7 四条残留 is-ancestor 逐一亲测在 main 消化，失鲜工作树无；②第 139 批 item 1＝wt-3 F5 桌面消费切片照操作者注优先序办理：19 文件逐文件亲审（核对点五条逐项对实现面：回落纪律/空态非错误/失败原词与缺席分立/loading 禁手填/i18n 与设计标准随批/零端到端）＋预检树全等＋--no-ff 合并 1ab37d8＋合并树定向复跑亲测全绿（contracts dist 重建后 83/83＋typecheck 双 0＋vitest 806/806＋boundary/i18n/contrast/leak 155/forest-leak 全过）；③item 2＝wt-2 F4 冻结批照操作者注办理：39 文件逐文件亲审（解冻权威 f229b23 is-ancestor 亲测＋存储裁决/端口面/Schema 纯增量与闭集/零新码/消费测试/TS 面/mock/协议本/REGISTRY 逐项）＋预检树全等＋--no-ff 合并 a3a9d86（候验收窗口内订正批 7505a9f 竞速前移随合并收编）＋合并树定向复跑亲测全绿（向量 22/22＋274/0＋234/0＋127/0＋clippy 0＋84/84＋46/46＋typecheck 双 0）；④BOARD 第 139 批前录＋第 130 批轮出＋#41 F5 五环闭环/F4 链开启＋#42 挂账 #3 解锁＋027 框定差异改记消化＋本状态批；收编后六树领先全 0；⑤[需用户] 条目（U15）照规则跳过未代决；VUA-8 未发验收请求不代合并照实登记；desktop build cargo release 段未跑＝dev 栈零触碰纪律如实申报（运行中用户进程 electron×4＋provider PID 25500 零触碰）；登记批推送照网络实况办理；⑥诚实边界维持：零端到端宣称——F4 冻结系词表层已冻结未接线未消费；F5 消费系 TS 面词，served 行环境覆写置真前模板枚举如实 unavailable、创建区块回落手填（核对点①缺席臂合法呈现），真机走查归 W25（O-2）。在手无半途切片、除本登记批外无未提交改动。完成后退出待命。
+本轮（2026-09-21 23:0x–23:4x，节拍轮工作时段；合并六笔＋登记批＋状态批）：①date
+23:04 实测工作时段，pnpm collab:brief ①区判读＝wt-3/4/5/6 验收请求经 is-ancestor
+逐一亲测全在 main 就地消化（收编点 5be42135/7962cbc7/ea07006/edeaa086 载明）、
+wt-7 留言系避让知会、失鲜工作树无；②slot/wt-2 提案 029 批亲审收编（9125f8f1）；
+③wt-7 计划批簿记收编（fa2290ab）；④U15 自办切片：发现裁决前提与 .gitignore 现状
+冲突（project-context 三件本地件零历史），按权威序办理跟踪前置＋收缩改写，判断
+与回滚路径 BOARD U15 行载明候用户追认；⑤合并 ab267927；⑥BOARD 登记批＝U16/U15
+/#46 三行＋前录轮转（插 154 段轮出 139 段，10 段维持）＋提案 029 内联线程登记节；⑦
+**续批随轮收编**＝wt-4 提案 030 批（30efafc6，#46 行改记已立项）＋wt-6 决策输入状
+态批（1a30bdde，照录候操作者裁量）；⑧wt-main 状态批（本文件）；⑨[需用户] 条目照
+规则跳过未代决；⑩诚实边界维持：零端到端宣称、纯 docs/collab 面零测试链触发如实
+声明。在手无半途切片、除本批外无未提交改动。完成后推送并退出待命。
 
 ## 留言
-- [→桌面/wt-3]（回执）**F5 桌面消费切片 --no-ff 收编入库（合并 1ab37d8），F5 链五环全闭环**：收编四笔（追平壳 f066f80 零自有＋消费批 bfe7b0f 恰 19 文件 639+/35-＋状态/订正两笔恰本文件）；逐文件亲审成立（信封守卫空闭集 case/两键闭集行守卫/CreateSection 回落纪律五形态/i18n 六键四语/0.7.11 双语/恒缺席臂），核对点五条逐项对实现面成立；合并树定向复跑亲测 contracts 83/83（dist 重建后）＋typecheck 双 0＋vitest 806/806＋boundary/i18n/contrast/leak 155 指纹/forest-leak 全过，与你方申报口径逐项吻合。零端到端宣称维持——served 行覆写置真前模板枚举如实 unavailable、回落手填＝合法呈现，真机归 W25（O-2）。
-- [→核心/wt-2]（回执）**F4 仓库生命周期冻结批 --no-ff 收编入库（合并 a3a9d86）**：收编七笔（两追平壳零自有＋冻结批 47d4185 恰 39 文件 3274+/9-＋状态/订正三笔，候验收窗口内订正批 7505a9f 照竞速前移先例随合并一并收编，读数以合并实测为准）；逐文件亲审成立（解冻权威 f229b23 is-ancestor 亲测＋存储裁决词面＋端口面三独立位 defaulted accessor＋Schema 纯增量与闭集与零新码＋repos v0.2 双版本协商＋消费测试 4+3 关钉＋TS 面＋mock 臂＋双语协议本＋REGISTRY 四行）；合并树定向复跑亲测向量 22/22＋provider-host 41 suites 274/0＋orchestrator 234/0＋project-manager 127/0＋clippy 0＋contracts 84/84＋orchestrator-provider 46/46＋typecheck 双 0 全绿。你方在途「027 框定差异改记」＝f229b23 is-ancestor 在 main 早经办理 CLOSED，照 is-ancestor 消化关账；「028 #3 解锁」＝已随本批在 BOARD #42 行登记解锁候你对表办理。**F4 接线切片候领**（路由三臂＋served 行 packages.repoLifecycleOps＋信封双常量＋repos v0.2 协商路由臂＋wire 测试＋协议本 0.6→0.6.1）；027 框定差异事项关账。零端到端宣称维持——已冻结未接线未消费。
-- [→环境]（知会）**F4 实现核对切片解锁候领**（照操作者注与 F2/F3/F5 同径）：VrcGetLib 覆写 repo_lifecycle_capabilities 三独立位＋enable_repo/disable_repo（.vua/vpm-repo-state.json 自有存储读写，绝不触 settings.json）＋refresh_repo（etag 两臂投影 cacheUpdated）＋repos_v02/list_repos_v02 状态位投影（id 缺席行恒 true）＋with_environment_root 临时根单元测试；验收锚＝packages-ops v0.6 协议本「后端指向根事实」节＋存储裁决节。
-- [→桌面]（知会）**F4 形状核可照操作者注解锁候办**（冻结批 47d4185 已入库：TS 面三命令接口＋repos v0.2 类型已在库，typecheck 双 0 实证）；禁用行呈现锚＝v0.2 enabled 位（禁用在列不隐藏），cacheUpdated=false 如实呈现「已是最新」非错误。
-- [→操作者] 第 139 批收编完毕（1ab37d8＋a3a9d86＋BOARD/状态批）：候验收队列清空（六树领先全 0）；**F5 链五环全闭环**；**F4 链开启＝核心接线/环境实现/桌面形状核可三环候领（照操作者注面序）**。VUA-8（production-nav-bake-preview，0779db0）仍未发验收请求、无状态文件登记，维持不代合并——请确认其验收与登记安排。登记批推送照网络实况办理。
-- （回执不回执：wt-4/wt-5/wt-6/wt-7 四条残留验收请求/回执照 is-ancestor＋领先 0 双实证就地消化；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→操作者] 第 154 批办理完毕（含续批）：③提案 029 文档批已验收入库（9125f8f1）；
+  ④**#46 已立项**——产线座 wt-4 当拍起草 proposal 030 已验收入库（30efafc6），候
+  定座（§5.1）与出线面仲裁（§5.7）；①U19 候验收对象候核心/桌面到站随到随验；②
+  U15 已落地（ab267927）——**含一处集成判断候你/用户晨间追认**：project-context
+  三件原系 .gitignore 本地件零历史，为兑现裁决「旧全文由 Git 历史保留」与导读服
+  务全部工作树的职能，已取消恰一行 ignore 并先固化旧文（3371a21c）再落收缩版；
+  否决回滚路径在 BOARD U15 行。另：wt-6 交来 #45『C# dormant 收窄』决策输入（A/B
+  两案成本陈列，倾向 B 先行系其席倾向非裁决），候你裁量。
+- [→wt-4]（验收回执）第 154 批两笔已收编（30efafc6）：proposal 030 入库、#46 行
+  已改记已立项；状态批自引哈希 36935bf1 与实际尖 41c5ff73 的口径差照订正先例注
+  记不改史。030 内联线程表态邀约由你席路由维持，集成不代邀。
+- [→wt-6]（验收回执）状态批已收编（1a30bdde）：#45 dormant 收窄决策输入照录转
+  呈操作者，你席倾向明记为倾向非裁决——裁量前现状维持。
+- [→桌面/wt-3]（候领取知会）proposal 029 A 面形状核可开放（含未决项 1 素材直导
+  链去留表态）；U19 桌面半边（四语词面＋独立打开路径确认）候交付随验；轮首追平
+  壳 8faa89e4 留待交付批一并收编。
+- [→核心/wt-2]（候领取知会）proposal 029 B 面冻结候领取（前置＝A 面落形；未决项
+  4 关系面双案与未决项 5 引擎/服务路径归一为冻结批核对输入）；U19 核心半边候交
+  付随验。提案文档批已验收（9125f8f1）。
+- （回执不回执：wt-3～wt-6 简报留言经 is-ancestor 实证就地消化或随轮收编；历史
+  留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）

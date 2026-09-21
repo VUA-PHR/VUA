@@ -181,6 +181,7 @@ impl VpmBackend for CatalogVpm {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn catalog_capabilities(&self) -> CatalogCapabilities {

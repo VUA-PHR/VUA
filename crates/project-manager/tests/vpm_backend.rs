@@ -600,6 +600,7 @@ fn orc_adp_005_capabilities_declare_the_create_bit_on_both_backends() {
             list_packages: true,
             remove_packages: true,
             project_registry: true,
+            resolve_project: true,
         },
         "the library backend creates in-process; exactly the existing five bits"
     );
@@ -613,6 +614,7 @@ fn orc_adp_005_capabilities_declare_the_create_bit_on_both_backends() {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+            resolve_project: false,
         },
         "the CLI backend owns only vpm new; exactly the existing five bits"
     );
@@ -2614,5 +2616,1767 @@ fn f5_list_templates_honest_empty_when_roots_missing_or_bare() {
         "only files under the bare root — zero directories is still the honest empty answer"
     );
 
+    fs::remove_dir_all(&base).ok();
+}
+
+// --- 027 F4: repository lifecycle implementation verification ---
+
+/// Preseeds the VUA-owned enable/disable state file (the storage ruling's
+/// `<environment_root>/.vua/vpm-repo-state.json`) with the given disabled
+/// repoIds. Tests that need a FRESH world simply never call this — the
+/// absent file is the all-enabled honest empty state.
+fn f4_write_state(environment_root: &std::path::Path, disabled: &[&str]) {
+    let state_path = environment_root.join(".vua").join("vpm-repo-state.json");
+    fs::create_dir_all(state_path.parent().unwrap()).unwrap();
+    let document = serde_json::json!({
+        "schemaVersion": 1,
+        "disabledRepoIds": disabled,
+    });
+    fs::write(state_path, document.to_string()).unwrap();
+}
+
+/// Reads the raw VUA-owned state document for exact-content pins.
+fn f4_read_state(environment_root: &std::path::Path) -> serde_json::Value {
+    serde_json::from_str(&fs::read_to_string(f4_state_path(environment_root)).unwrap()).unwrap()
+}
+
+/// The state file path predicate (absence pins).
+fn f4_state_path(environment_root: &std::path::Path) -> std::path::PathBuf {
+    environment_root.join(".vua").join("vpm-repo-state.json")
+}
+
+/// One synthetic HTTP origin serving a repository manifest with a fixed
+/// ETag: a fetch without that etag answers 200 + ETag + body; a conditional
+/// fetch carrying that exact etag answers 304 (the etag-conditional
+/// two-arm law, exercised over loopback with synthetic data only).
+fn f4_spawn_repo_server(body: String, etag: &'static str) -> std::net::SocketAddr {
+    use std::io::{Read as _, Write as _};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(mut stream) = stream else { break };
+            let mut buffer = Vec::new();
+            let mut chunk = [0u8; 1024];
+            loop {
+                let read = match stream.read(&mut chunk) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => n,
+                };
+                buffer.extend_from_slice(&chunk[..read]);
+                if buffer.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let head = String::from_utf8_lossy(&buffer).to_lowercase();
+            let response = if head.contains(&format!("if-none-match: {etag}")) {
+                "HTTP/1.1 304 Not Modified\r\nConnection: close\r\n\r\n".to_owned()
+            } else {
+                format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nETag: {etag}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+                    body.len()
+                )
+            };
+            let _ = stream.write_all(response.as_bytes());
+        }
+    });
+    addr
+}
+
+/// The capability declaration IS the served-row flip switch (the A3/A4/F2/F5
+/// law): the library backend implements all three lifecycle methods
+/// in-process, so the override declares the THREE INDEPENDENT bits (the A4
+/// three-bit law — gate per method, never per face); `VccCliBackend`
+/// implements none and stays declared-none with the trait-default absence
+/// arms (ORC-DEV-004), including the repos_v02 negotiation default.
+#[test]
+fn f4_repo_lifecycle_capabilities_declare_exactly_the_three_bits() {
+    let base = unique_dir("f4-caps");
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+
+    let caps = backend.repo_lifecycle_capabilities();
+    assert!(
+        caps.enable_repo && caps.disable_repo && caps.refresh_repo,
+        "the library implements all three lifecycle methods in-process, so \
+         the override declares all three INDEPENDENT bits"
+    );
+    assert!(
+        backend.repos_v02(),
+        "the v0.2 negotiation bit rides the implemented list_repos_v02"
+    );
+
+    // The CLI backend: declared-none everywhere, absence arms answer the
+    // reused capability_missing (same code as the wire gate — two-layer
+    // honesty), and the frozen v0.1 repos family keeps being served.
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert_eq!(
+        cli.repo_lifecycle_capabilities(),
+        vua_orchestrator::RepoLifecycleCapabilities::NONE,
+        "no implementation, no declaration"
+    );
+    assert!(!cli.repos_v02());
+    assert_eq!(
+        cli.enable_repo("com.example.absent").unwrap_err().code,
+        "vua.vpm.capability_missing"
+    );
+    assert_eq!(
+        cli.disable_repo("com.example.absent").unwrap_err().code,
+        "vua.vpm.capability_missing"
+    );
+    assert_eq!(
+        cli.refresh_repo("com.example.absent").unwrap_err().code,
+        "vua.vpm.capability_missing"
+    );
+    assert_eq!(
+        cli.list_repos_v02().unwrap_err().code,
+        "vua.vpm.capability_missing"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The enable/disable round trip persists ONLY in the VUA-owned state file:
+/// the toggle never writes settings.json (byte-pinned), never touches
+/// userRepos[i], and the v0.2 enabled bit reads back truthfully at every
+/// step. Absent file = all enabled (the honest empty state); the disabled
+/// row STAYS subscribed and listed (disabling hides nothing from the
+/// configuration view).
+#[test]
+fn f4_disable_enable_roundtrip_persists_in_the_vua_owned_state_file() {
+    let base = unique_dir("f4-toggle");
+    let environment_root = base.join("isolated-vpm-environment");
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": environment_root.join("Repos").join("synthetic-repo.json").display().to_string(),
+            "name": "Synthetic Repo",
+            "id": "com.vua.test.repo.synthetic",
+            "url": "https://example.invalid/vua/synthetic-repo.json"
+        }]),
+    );
+    let settings_before = fs::read(environment_root.join("settings.json")).unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    // Absent state file: the honest all-enabled empty state.
+    let rows = backend.list_repos_v02().unwrap();
+    assert_eq!(rows.len(), 1);
+    assert!(rows[0].enabled, "no state file = all enabled");
+
+    // Disable: the state lands in .vua/vpm-repo-state.json and NOWHERE else.
+    backend.disable_repo("com.vua.test.repo.synthetic").unwrap();
+    assert_eq!(
+        fs::read(environment_root.join("settings.json")).unwrap(),
+        settings_before,
+        "the toggle face NEVER writes the shared settings.json (byte pin)"
+    );
+    let state = f4_read_state(&environment_root);
+    assert_eq!(
+        state["disabledRepoIds"],
+        serde_json::json!(["com.vua.test.repo.synthetic"]),
+        "exactly the toggled repoId, keyed by id"
+    );
+    let rows = backend.list_repos_v02().unwrap();
+    assert_eq!(rows.len(), 1, "the disabled row STAYS listed");
+    assert!(!rows[0].enabled, "the v0.2 bit reads back false");
+
+    // settings.json carries no VUA key anywhere (the storage ruling's point).
+    let settings_json: serde_json::Value =
+        serde_json::from_slice(&fs::read(environment_root.join("settings.json")).unwrap())
+            .unwrap();
+    assert!(
+        settings_json.get("vua").is_none() && settings_json.get("disabledRepoIds").is_none(),
+        "settings.json carries shared facts only"
+    );
+
+    // Re-enable: the set empties and the bit reads back true.
+    backend.enable_repo("com.vua.test.repo.synthetic").unwrap();
+    let state = f4_read_state(&environment_root);
+    assert_eq!(
+        state["disabledRepoIds"],
+        serde_json::json!([]),
+        "re-enabling removes the entry instead of carrying a residue"
+    );
+    assert!(backend.list_repos_v02().unwrap()[0].enabled);
+
+    // Repeat toggles are honest no-op rewrites (no invented second entries).
+    backend.disable_repo("com.vua.test.repo.synthetic").unwrap();
+    backend.disable_repo("com.vua.test.repo.synthetic").unwrap();
+    let state = f4_read_state(&environment_root);
+    assert_eq!(state["disabledRepoIds"].as_array().unwrap().len(), 1);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// An unknown repoId answers the REUSED `vua.vpm.repo_not_found` on all
+/// three lifecycle methods — never a silent success — and a refused toggle
+/// writes nothing at all (no state file, no .vua directory).
+#[test]
+fn f4_unknown_repo_id_answers_reused_repo_not_found_and_writes_nothing() {
+    let base = unique_dir("f4-not-found");
+    let environment_root = base.join("isolated-vpm-environment");
+    synthetic_settings(&environment_root, serde_json::json!([]));
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let enable_error = backend.enable_repo("com.example.absent").unwrap_err();
+    assert_eq!(enable_error.code, "vua.vpm.repo_not_found");
+    assert_eq!(
+        enable_error.category,
+        vua_orchestrator::ErrorCategory::Validation
+    );
+    assert_eq!(
+        backend.disable_repo("com.example.absent").unwrap_err().code,
+        "vua.vpm.repo_not_found"
+    );
+    assert_eq!(
+        backend.refresh_repo("com.example.absent").unwrap_err().code,
+        "vua.vpm.repo_not_found"
+    );
+    assert!(
+        !f4_state_path(&environment_root).exists() && !environment_root.join(".vua").exists(),
+        "a refused toggle writes nothing"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The v0.2 row projection: the frozen v0.1 five keys project verbatim and
+/// EXACTLY one REQUIRED fact joins them — `enabled`. The id-absent row is
+/// ALWAYS enabled (id-absent rows sit outside the toggle faces' reach — the
+/// id IS the row handle), while the disabled id-bearing row reads false.
+#[test]
+fn f4_id_absent_row_is_always_enabled_and_projects_the_v02_keys() {
+    let base = unique_dir("f4-id-absent");
+    let environment_root = base.join("isolated-vpm-environment");
+    let manifest = base.join("local-dir-repo").join("repo.json");
+    fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+    fs::write(&manifest, r#"{"name":"local","packages":{}}"#).unwrap();
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([
+            {
+                "localPath": environment_root.join("Repos").join("a.json").display().to_string(),
+                "name": "Repo A",
+                "id": "com.vua.test.repo.a",
+                "url": "https://example.invalid/vua/a.json"
+            },
+            {
+                "localPath": manifest.display().to_string(),
+                "name": "Local Dir"
+            }
+        ]),
+    );
+    f4_write_state(&environment_root, &["com.vua.test.repo.a"]);
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let rows = backend.list_repos_v02().unwrap();
+    assert_eq!(rows.len(), 2, "row order = subscription order");
+    assert!(!rows[0].enabled, "the disabled id-bearing row reads false");
+    assert!(!rows[0].cached, "subscribed-but-never-refreshed");
+    assert!(
+        rows[1].enabled,
+        "the id-absent row is ALWAYS enabled — outside the toggle faces' reach"
+    );
+    assert_eq!(rows[1].repo_id, None);
+    assert_eq!(rows[1].url, None, "a local row carries no url (honest null)");
+    assert!(rows[1].cached, "repo.json exists and parses — cached=true");
+
+    // The row shape is the frozen closed set: the v0.1 five keys plus
+    // enabled — exactly six keys, zero invented facts (the schema
+    // additionalProperties:false mirror at the projection source).
+    let row_json = serde_json::to_value(&rows[0]).unwrap();
+    let mut keys: Vec<&str> = row_json
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect();
+    keys.sort_unstable();
+    assert_eq!(
+        keys,
+        vec!["cached", "enabled", "localPath", "name", "repoId", "url"]
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The refresh two-arm law over a loopback origin with synthetic data: the
+/// first refresh downloads (200 + ETag), writes the row's OWN cache file at
+/// userRepos[i].localPath with the etag aboard, and answers
+/// cacheUpdated=true; the conditional second refresh rides the stored etag,
+/// the origin answers 304, and cacheUpdated=false — "already up to date" is
+/// an outcome, never an error, and NOTHING was rewritten. Refresh never
+/// touches the enable/disable state file (no .vua write at all) and never
+/// writes settings.json.
+#[test]
+fn f4_refresh_writes_cache_then_304_reports_no_new_data() {
+    let base = unique_dir("f4-refresh");
+    let environment_root = base.join("isolated-vpm-environment");
+    let cache_path = environment_root.join("Repos").join("refreshed.json");
+    let addr = f4_spawn_repo_server(
+        r#"{"name":"Refreshed Synthetic","id":"com.vua.test.repo.refresh","packages":{}}"#
+            .to_owned(),
+        "\"v1\"",
+    );
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": cache_path.display().to_string(),
+            "name": "Refreshed Synthetic",
+            "id": "com.vua.test.repo.refresh",
+            "url": format!("http://{addr}/repo.json")
+        }]),
+    );
+    let settings_before = fs::read(environment_root.join("settings.json")).unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    // Arm one: no cache yet → full download → cache written → true.
+    let outcome = backend.refresh_repo("com.vua.test.repo.refresh").unwrap();
+    assert!(outcome.cache_updated, "a first refresh writes the cache");
+    let raw: serde_json::Value =
+        serde_json::from_slice(&fs::read(&cache_path).unwrap()).unwrap();
+    assert_eq!(
+        raw["repo"]["id"], "com.vua.test.repo.refresh",
+        "the cache file carries the downloaded manifest (the library's own \
+         LocalCachedRepository shape: the document nested under `repo`)"
+    );
+    assert_eq!(
+        raw["vrc-get"]["etag"], "\"v1\"",
+        "the etag rides the cache file itself (the library's own storage law)"
+    );
+    let bytes_after_first = fs::read(&cache_path).unwrap();
+
+    // Arm two: the stored etag matches → 304 → false, zero writes.
+    let outcome = backend.refresh_repo("com.vua.test.repo.refresh").unwrap();
+    assert!(
+        !outcome.cache_updated,
+        "etag unchanged = the honest already-up-to-date outcome, never an error"
+    );
+    assert_eq!(
+        fs::read(&cache_path).unwrap(),
+        bytes_after_first,
+        "the 304 arm rewrites nothing"
+    );
+
+    // Refresh is not a state writer: no .vua file, settings.json untouched.
+    assert!(
+        !f4_state_path(&environment_root).exists(),
+        "refresh NEVER touches the VUA enable/disable state file"
+    );
+    assert_eq!(
+        fs::read(environment_root.join("settings.json")).unwrap(),
+        settings_before,
+        "refresh NEVER writes the shared settings.json"
+    );
+    // The refreshed row reads back enabled (refresh carries no state change).
+    assert!(backend.list_repos_v02().unwrap()[0].enabled);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The refresh network segment failing answers the REUSED
+/// `vua.vpm.repo_fetch_failed` (ExternalFailure) — never a silent success,
+/// never an invented cache. Zero writes on the failed path.
+#[test]
+fn f4_refresh_fetch_failure_answers_reused_repo_fetch_failed() {
+    let base = unique_dir("f4-refresh-fail");
+    let environment_root = base.join("isolated-vpm-environment");
+    let cache_path = environment_root.join("Repos").join("never.json");
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": cache_path.display().to_string(),
+            "name": "Unreachable",
+            "id": "com.vua.test.repo.unreachable",
+            "url": "http://127.0.0.1:1/repo.json"
+        }]),
+    );
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let error = backend
+        .refresh_repo("com.vua.test.repo.unreachable")
+        .unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_fetch_failed");
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    assert!(!cache_path.exists(), "a failed fetch writes no cache");
+    assert!(!f4_state_path(&environment_root).exists());
+    fs::remove_dir_all(&base).ok();
+}
+
+/// A url-less (local-directory) row has no remote to refresh — the library's
+/// own update arm is a no-op for exactly this shape (repo_holder.rs: no
+/// effective url → no fetch, no write). The honest projection of that arm
+/// is cacheUpdated=false ("no new data"), never an error, never a write.
+#[test]
+fn f4_refresh_url_less_row_is_honest_no_new_data() {
+    let base = unique_dir("f4-refresh-local");
+    let environment_root = base.join("isolated-vpm-environment");
+    let manifest = base.join("local-dir-repo").join("repo.json");
+    fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+    fs::write(
+        &manifest,
+        r#"{"name":"local","id":"com.vua.test.repo.local","packages":{}}"#,
+    )
+    .unwrap();
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": manifest.display().to_string(),
+            "name": "Local Dir",
+            "id": "com.vua.test.repo.local"
+        }]),
+    );
+    let manifest_before = fs::read(&manifest).unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let outcome = backend.refresh_repo("com.vua.test.repo.local").unwrap();
+    assert!(
+        !outcome.cache_updated,
+        "a local row's manifest IS its cache — nothing remote to refresh"
+    );
+    assert_eq!(
+        fs::read(&manifest).unwrap(),
+        manifest_before,
+        "the no-new-data arm on a url-less row rewrites nothing"
+    );
+    assert!(!f4_state_path(&environment_root).exists());
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The F4 frozen duty on the pre-existing add/remove faces: a newly added
+/// subscription row is always enabled (adds reset stale state — by the
+/// manifest id on the remote face, by the url backfill when the manifest
+/// carries no id) and a removed row leaves no state residue. All resets ride
+/// the VUA-owned state file; the settings.json the library writes never
+/// carries a VUA key.
+#[test]
+fn f4_add_and_remove_faces_leave_no_state_residue() {
+    let base = unique_dir("f4-residue");
+    let environment_root = base.join("isolated-vpm-environment");
+    let id_addr = f4_spawn_repo_server(
+        r#"{"name":"Re-added","id":"com.vua.test.repo.readded","packages":{}}"#.to_owned(),
+        "\"etag-id\"",
+    );
+    let url_id_addr = f4_spawn_repo_server(
+        r#"{"name":"No Id In Manifest","packages":{}}"#.to_owned(),
+        "\"etag-url\"",
+    );
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": environment_root.join("Repos").join("gone.json").display().to_string(),
+            "name": "To Remove",
+            "id": "com.vua.test.repo.gone",
+            "url": "https://example.invalid/vua/gone.json"
+        }]),
+    );
+    f4_write_state(
+        &environment_root,
+        &[
+            "com.vua.test.repo.gone",
+            "com.vua.test.repo.readded",
+            "com.vua.test.repo.untouched",
+            &format!("http://{url_id_addr}/repo.json"),
+        ],
+    );
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    // Remove leaves no residue: the removed row's id leaves the state set.
+    backend.remove_repo("com.vua.test.repo.gone").unwrap();
+    assert_eq!(
+        f4_read_state(&environment_root)["disabledRepoIds"],
+        serde_json::json!([
+            "com.vua.test.repo.readded",
+            "com.vua.test.repo.untouched",
+            format!("http://{url_id_addr}/repo.json"),
+        ]),
+        "exactly the removed row's entry is pruned"
+    );
+
+    // Add resets stale state (remote face, manifest id): the re-added
+    // subscription starts enabled even though a stale entry existed.
+    backend
+        .add_remote_repo(&format!("http://{id_addr}/repo.json"), "Re-added")
+        .unwrap();
+    assert_eq!(
+        f4_read_state(&environment_root)["disabledRepoIds"],
+        serde_json::json!([
+            "com.vua.test.repo.untouched",
+            format!("http://{url_id_addr}/repo.json"),
+        ]),
+        "the re-added manifest id's stale entry is reset"
+    );
+
+    // Add resets stale state (remote face, id-less manifest → the library's
+    // own url backfill is the effective row id): the url-keyed stale entry
+    // is reset too.
+    backend
+        .add_remote_repo(&format!("http://{url_id_addr}/repo.json"), "No Id")
+        .unwrap();
+    assert_eq!(
+        f4_read_state(&environment_root)["disabledRepoIds"],
+        serde_json::json!(["com.vua.test.repo.untouched"]),
+        "the url-backfill id's stale entry is reset"
+    );
+
+    // Every subscription row reads back enabled; the shared settings.json
+    // the library saved carries no VUA-owned key anywhere.
+    for row in backend.list_repos_v02().unwrap() {
+        assert!(row.enabled, "a freshly added subscription starts enabled");
+    }
+    let settings_json: serde_json::Value =
+        serde_json::from_slice(&fs::read(environment_root.join("settings.json")).unwrap())
+            .unwrap();
+    assert!(settings_json.get("vua").is_none());
+    assert!(settings_json.get("disabledRepoIds").is_none());
+    fs::remove_dir_all(&base).ok();
+}
+
+/// A state-file write-back failure answers the REUSED
+/// `vua.vpm.repo_write_failed` (ExternalFailure) — the frozen three-code
+/// closed set transports the honest failure, zero new codes.
+#[test]
+fn f4_state_write_failure_answers_reused_repo_write_failed() {
+    let base = unique_dir("f4-write-fail");
+    let environment_root = base.join("isolated-vpm-environment");
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([{
+            "localPath": base.join("a.json").display().to_string(),
+            "name": "Repo A",
+            "id": "com.vua.test.repo.a",
+            "url": "https://example.invalid/vua/a.json"
+        }]),
+    );
+    // `.vua` exists as a FILE: creating the state directory beneath it fails.
+    fs::write(environment_root.join(".vua"), "not a directory").unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    let error = backend.disable_repo("com.vua.test.repo.a").unwrap_err();
+    assert_eq!(error.code, "vua.vpm.repo_write_failed");
+    assert_eq!(
+        error.category,
+        vua_orchestrator::ErrorCategory::ExternalFailure
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+// --- 027 F4 patch slice: the collection world consumes the disabled set ---
+//
+// 第 144 批补切片（第 143 批退回裁决的逐条兑现）：冻结词面「禁用＝该行
+// 离开包集合世界」（packages-ops v0.6 协议本「启停语义（冻结词面事实）」
+// 节）的效果面钉死——集合装载路径（collection_world：settings 内存克隆
+// 过滤后入 PackageCollection::load/load_cache）让禁用行的包在三个消费面
+// 集体缺席（repo-catalog 列表／latest 判定／A2 安装解析器），而 repos
+// v0.2 订阅投影仍如实列出行（enabled=false）——两面对照钉死，绝不投影
+// 虚假事实（诚实纪律 #1）。
+
+/// The F4 collection-world builder: TWO subscription rows, each with an
+/// in-place cache file — `com.vua.test.repo.off` (package
+/// `com.vua.test.f4.off` with qualifying 1.0.0 and newer 2.0.0, both unity
+/// 2022.3) and `com.vua.test.repo.on` (package `com.vua.test.f4.on` 1.0.0).
+/// The project has both packages installed at 1.0.0. All data synthetic;
+/// the backend runs offline (the load_cache leg).
+fn f4_collection_world(label: &str) -> (VrcGetLibBackend, ProjectRef, PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    let off_cache = environment_root.join("Repos").join("off-repo.json");
+    let on_cache = environment_root.join("Repos").join("on-repo.json");
+    let off_packages = serde_json::json!({
+        "com.vua.test.f4.off": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.off", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} },
+            "2.0.0": { "name": "com.vua.test.f4.off", "version": "2.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    let on_packages = serde_json::json!({
+        "com.vua.test.f4.on": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.on", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    for (path, id, name, url, packages) in [
+        (
+            &off_cache,
+            "com.vua.test.repo.off",
+            "Will Disable",
+            "https://example.invalid/vua/f4-off.json",
+            &off_packages,
+        ),
+        (
+            &on_cache,
+            "com.vua.test.repo.on",
+            "Stays Enabled",
+            "https://example.invalid/vua/f4-on.json",
+            &on_packages,
+        ),
+    ] {
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(
+            path,
+            serde_json::json!({
+                "repo": { "name": name, "id": id, "url": url, "packages": packages }
+            })
+            .to_string(),
+        )
+        .unwrap();
+    }
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [
+            {
+                "localPath": off_cache.display().to_string(),
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json"
+            },
+            {
+                "localPath": on_cache.display().to_string(),
+                "name": "Stays Enabled",
+                "id": "com.vua.test.repo.on",
+                "url": "https://example.invalid/vua/f4-on.json"
+            }
+        ] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[
+            ("com.vua.test.f4.off", "1.0.0", Some("2022.3")),
+            ("com.vua.test.f4.on", "1.0.0", Some("2022.3")),
+        ],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    (backend, project, base)
+}
+
+/// THE two-face contrast pin (the rejection's exact defect class, dead):
+/// the same disabled repository answers `enabled = false` on the repos v0.2
+/// subscription projection — row PRESENT, the configuration view hides
+/// nothing — while its packages are absent from every collection-world
+/// consumer: the repo-catalog listing (row present via the not-loaded layer
+/// with the HONEST cache-hit fact, packages empty), the per-package catalog
+/// (`no_matching_package` — the collection world truly has no such package),
+/// the v0.2 latest judgment (the null pair — the judgment cannot see the
+/// disabled row, and absence is never filled with "no update"), and the A2
+/// install resolver (`no_matching_package`). The enabled control row keeps
+/// enumerating, judging and resolving throughout. Offline world = the
+/// load_cache leg of the collection load.
+#[test]
+fn f4_collection_world_disabled_row_stays_listed_while_its_packages_leave_every_consumer() {
+    let (backend, project, base) = f4_collection_world("f4-world-contrast");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+
+    // Face 1 — repo-catalog listing: the disabled row is NOT hidden. It
+    // falls to the not-loaded layer with its OWN identity facts, the honest
+    // cache-hit fact (true — leaving the collection world is not a cache
+    // removal), and an EMPTY packages array. The enabled control row keeps
+    // its package.
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(catalog.cache_sourced, "offline world = the load_cache leg");
+    let off = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .expect("the disabled row STAYS listed — hiding it would violate the word face's other half");
+    assert!(off.cached, "cache-hit fact stays honest: filtered != never refreshed");
+    assert!(
+        off.packages.is_empty(),
+        "the disabled row's packages left the enumeration"
+    );
+    let on = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+        .unwrap();
+    assert!(on.cached);
+    assert_eq!(on.packages.len(), 1, "the enabled row keeps enumerating");
+    assert_eq!(on.packages[0].package_id, "com.vua.test.f4.on");
+
+    // The scope lens reaches the disabled row by its subscription id (the
+    // id is still subscribed — repo_not_found would be a false fact) and
+    // answers the same honest row.
+    let scoped = backend
+        .repo_catalog(Some("com.vua.test.repo.off"), &[])
+        .unwrap();
+    assert_eq!(scoped.repos.len(), 1);
+    assert!(scoped.repos[0].cached);
+    assert!(scoped.repos[0].packages.is_empty());
+
+    // Face 2 — the repos v0.2 subscription projection, THE OTHER SIDE of
+    // the contrast: the same repo row present with enabled=false, the cache
+    // fact unchanged. One disabled repository, two faces, both truthful.
+    let rows = backend.list_repos_v02().unwrap();
+    assert_eq!(rows.len(), 2, "disabling hides nothing from the configuration view");
+    let off_row = rows
+        .iter()
+        .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .unwrap();
+    assert!(!off_row.enabled, "the v0.2 bit reads back the real state");
+    assert!(
+        off_row.cached,
+        "the subscription face's cache fact is untouched by the filter"
+    );
+    assert!(
+        rows.iter()
+            .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+            .unwrap()
+            .enabled
+    );
+
+    // Face 3 — the per-package catalog: the disabled row's package answers
+    // the REUSED no_matching_package (the collection world truthfully has
+    // no such package), while the enabled control resolves.
+    let off_catalog = backend
+        .package_catalog(&project, "com.vua.test.f4.off")
+        .unwrap_err();
+    assert_eq!(off_catalog.code, "vua.vpm.no_matching_package");
+    assert_eq!(
+        off_catalog.category,
+        vua_orchestrator::ErrorCategory::Dependency
+    );
+    let on_catalog = backend.package_catalog(&project, "com.vua.test.f4.on").unwrap();
+    assert_eq!(on_catalog.versions.len(), 1);
+
+    // Face 4 — the v0.2 latest judgment: the installed off package has a
+    // qualifying 2.0.0 in its (disabled) repo, yet the judgment sees only
+    // the filtered world — the null PAIR (judgment not executed), never a
+    // false "no update" fill. The on package judges normally against its
+    // enabled repo (latest = itself, no strict update).
+    let listing = backend.list_packages_v02(&project).unwrap();
+    let off_installed = listing
+        .packages
+        .iter()
+        .find(|row| row.package_id == "com.vua.test.f4.off")
+        .unwrap();
+    assert_eq!(
+        off_installed.latest_version, None,
+        "the latest judgment cannot see the disabled row"
+    );
+    assert_eq!(
+        off_installed.update_available, None,
+        "no qualifying version in the filtered world = the null pair, never false"
+    );
+    let on_installed = listing
+        .packages
+        .iter()
+        .find(|row| row.package_id == "com.vua.test.f4.on")
+        .unwrap();
+    assert_eq!(on_installed.latest_version.as_deref(), Some("1.0.0"));
+    assert_eq!(on_installed.update_available, Some(false));
+
+    // Face 5 — the A2 install resolver: the disabled row's package no
+    // longer resolves (REUSED no_matching_package), the enabled one does.
+    let off_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: Some("2.0.0".to_owned()),
+    };
+    let preview_error = backend
+        .preview_install(&project, std::slice::from_ref(&off_request))
+        .unwrap_err();
+    assert_eq!(preview_error.code, "vua.vpm.no_matching_package");
+    let on_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.on".to_owned(),
+        version: None,
+    };
+    backend
+        .preview_install(&project, std::slice::from_ref(&on_request))
+        .unwrap();
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The round trip (disable → faces exclude → enable → faces restore →
+/// disable again → faces exclude) on ONE backend instance: every read face
+/// rebuilds its collection from a fresh settings load plus a fresh state
+/// read (there is no cross-call collection cache in the implementation
+/// face), so a toggle write face returning is IMMEDIATELY visible to the
+/// next load — the cache-invalidation property pinned structurally: the
+/// "changed the state, stale cache still serves" failure has no code path
+/// to live in.
+#[test]
+fn f4_collection_world_reenable_restores_every_face_on_the_same_backend() {
+    let (backend, project, base) = f4_collection_world("f4-world-roundtrip");
+    let enabled_faces = |backend: &VrcGetLibBackend, project: &ProjectRef| {
+        let catalog = backend.repo_catalog(None, &[]).unwrap();
+        let off = catalog
+            .repos
+            .iter()
+            .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap();
+        assert!(
+            !off.packages.is_empty(),
+            "enabled world: the off row is a loaded collection row with its package"
+        );
+        assert_eq!(off.packages[0].latest_version.as_deref(), Some("2.0.0"));
+        assert!(backend.package_catalog(project, "com.vua.test.f4.off").is_ok());
+        assert!(
+            backend
+                .list_repos_v02()
+                .unwrap()
+                .iter()
+                .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+                .unwrap()
+                .enabled
+        );
+    };
+    let disabled_faces = |backend: &VrcGetLibBackend, project: &ProjectRef| {
+        let catalog = backend.repo_catalog(None, &[]).unwrap();
+        let off = catalog
+            .repos
+            .iter()
+            .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap();
+        assert!(off.cached, "the row stays listed, cache fact honest");
+        assert!(off.packages.is_empty(), "disabled world: packages gone");
+        assert_eq!(
+            backend
+                .package_catalog(project, "com.vua.test.f4.off")
+                .unwrap_err()
+                .code,
+            "vua.vpm.no_matching_package"
+        );
+        assert!(
+            !backend
+                .list_repos_v02()
+                .unwrap()
+                .iter()
+                .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+                .unwrap()
+                .enabled
+        );
+    };
+
+    // Absent state file: the all-enabled honest empty state.
+    enabled_faces(&backend, &project);
+
+    // Disable — the very next read on the SAME instance serves the filtered
+    // world. No re-instantiation, no cache warm-up: the load path re-reads
+    // the state file per call.
+    backend.disable_repo("com.vua.test.repo.off").unwrap();
+    disabled_faces(&backend, &project);
+
+    // Re-enable — every face restores (the row's cache file was never
+    // touched by the filter: recovery needs no refresh).
+    backend.enable_repo("com.vua.test.repo.off").unwrap();
+    enabled_faces(&backend, &project);
+
+    // Disable again — excluded again. Three toggles, six world states, one
+    // instance: a stale in-process collection cache could not pass this.
+    backend.disable_repo("com.vua.test.repo.off").unwrap();
+    disabled_faces(&backend, &project);
+    fs::remove_dir_all(&base).ok();
+}
+
+/// A corrupt VUA state file refuses the collection world with the REUSED
+/// `backend_unavailable` (the shared load-leg constructor — the v0.2
+/// projection face's same fact, same code, same wording): with the disable
+/// state unreadable, no collection-world face may guess "all enabled" and
+/// serve packages the user disabled. The v0.2 projection face answers the
+/// same code on the same file (one fact, one code everywhere).
+#[test]
+fn f4_collection_world_corrupt_state_file_refuses_every_loader_never_guesses() {
+    let (backend, project, base) = f4_collection_world("f4-world-corrupt");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+    fs::write(f4_state_path(&environment_root), "not-json").unwrap();
+
+    let catalog_error = backend.repo_catalog(None, &[]).unwrap_err();
+    assert_eq!(catalog_error.code, "vua.vpm.backend_unavailable");
+    assert_eq!(
+        catalog_error.category,
+        vua_orchestrator::ErrorCategory::Unavailable
+    );
+    assert_eq!(
+        backend
+            .package_catalog(&project, "com.vua.test.f4.off")
+            .unwrap_err()
+            .code,
+        "vua.vpm.backend_unavailable"
+    );
+    let request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: None,
+    };
+    assert_eq!(
+        backend
+            .preview_install(&project, std::slice::from_ref(&request))
+            .unwrap_err()
+            .code,
+        "vua.vpm.backend_unavailable"
+    );
+    assert_eq!(
+        backend.list_packages_v02(&project).unwrap_err().code,
+        "vua.vpm.backend_unavailable"
+    );
+    assert_eq!(
+        backend.list_repos_v02().unwrap_err().code,
+        "vua.vpm.backend_unavailable"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// The filter rides the ONLINE load arm with the same force: with the two
+/// predefined repositories ignored (the library's own experimental switch —
+/// the network segment stays hermetic, loopback only, synthetic data), a
+/// real `PackageCollection::load` against a loopback origin serves
+/// `cache_sourced = false` and the disabled row's packages are equally
+/// absent. The disabled row's cache file is untouched by the online load
+/// (leaving the collection world is not a cache removal — the file the
+/// re-enable recovery reads back is byte-identical).
+#[test]
+fn f4_collection_world_filter_rides_the_online_load_arm_too() {
+    let base = unique_dir("f4-world-online");
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let on_packages = serde_json::json!({
+        "com.vua.test.f4.on": { "versions": {
+            "1.0.0": { "name": "com.vua.test.f4.on", "version": "1.0.0", "unity": "2022.3", "vpmDependencies": {} }
+        } }
+    });
+    let on_body = serde_json::json!({
+        "name": "Stays Enabled",
+        "id": "com.vua.test.repo.on",
+        "packages": on_packages
+    })
+    .to_string();
+    let on_addr = f4_spawn_repo_server(on_body, "\"vua-f4-online-etag\"");
+    let on_url = format!("http://{on_addr}/repo.json");
+    let on_cache = environment_root.join("Repos").join("on-repo.json");
+    fs::create_dir_all(on_cache.parent().unwrap()).unwrap();
+    fs::write(
+        &on_cache,
+        serde_json::json!({
+            "repo": { "name": "Stays Enabled", "id": "com.vua.test.repo.on", "url": on_url, "packages": on_packages }
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let off_cache = environment_root.join("Repos").join("off-repo.json");
+    let off_bytes_before = {
+        fs::create_dir_all(off_cache.parent().unwrap()).unwrap();
+        let bytes = serde_json::json!({
+            "repo": {
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json",
+                "packages": {
+                    "com.vua.test.f4.off": { "versions": {
+                        "2.0.0": { "name": "com.vua.test.f4.off", "version": "2.0.0", "unity": "2022.3", "vpmDependencies": {} }
+                    } }
+                }
+            }
+        })
+        .to_string();
+        fs::write(&off_cache, &bytes).unwrap();
+        bytes
+    };
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [
+            {
+                "localPath": off_cache.display().to_string(),
+                "name": "Will Disable",
+                "id": "com.vua.test.repo.off",
+                "url": "https://example.invalid/vua/f4-off.json"
+            },
+            {
+                "localPath": on_cache.display().to_string(),
+                "name": "Stays Enabled",
+                "id": "com.vua.test.repo.on",
+                "url": on_url
+            }
+        ] })
+        .to_string(),
+    )
+    .unwrap();
+    f4_write_state(&environment_root, &["com.vua.test.repo.off"]);
+    let project = f3_installed_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.f4.on", "1.0.0", Some("2022.3"))],
+    );
+    // ONLINE backend: the load arm fetches the loopback origin for the one
+    // ENABLED row; the disabled row is not in the load's world at all.
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, false).unwrap();
+
+    let catalog = backend.repo_catalog(None, &[]).unwrap();
+    assert!(
+        !catalog.cache_sourced,
+        "the ONLINE load arm served this result (predefined ignored, enabled row loopback 200) — the filter provably rides the online arm, not just load_cache"
+    );
+    let off = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+        .expect("the disabled row stays listed on the online arm too");
+    assert!(off.cached);
+    assert!(off.packages.is_empty());
+    let on = catalog
+        .repos
+        .iter()
+        .find(|repo| repo.repo_id.as_deref() == Some("com.vua.test.repo.on"))
+        .unwrap();
+    assert_eq!(on.packages.len(), 1);
+    assert!(
+        !backend
+            .list_repos_v02()
+            .unwrap()
+            .iter()
+            .find(|row| row.repo_id.as_deref() == Some("com.vua.test.repo.off"))
+            .unwrap()
+            .enabled
+    );
+    assert_eq!(
+        fs::read_to_string(&off_cache).unwrap(),
+        off_bytes_before,
+        "the online load never touched the disabled row's cache file — re-enable recovery reads the same bytes"
+    );
+    // The A2 resolver rides the same online-loaded collection: the disabled
+    // row's package does not resolve, the enabled one does.
+    let off_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.off".to_owned(),
+        version: None,
+    };
+    assert_eq!(
+        backend
+            .preview_install(&project, std::slice::from_ref(&off_request))
+            .unwrap_err()
+            .code,
+        "vua.vpm.no_matching_package"
+    );
+    let on_request = PackageRequestV1 {
+        package_id: "com.vua.test.f4.on".to_owned(),
+        version: None,
+    };
+    backend
+        .preview_install(&project, std::slice::from_ref(&on_request))
+        .unwrap();
+    fs::remove_dir_all(&base).ok();
+}
+
+// --- batch 146 (user ruling 2026-09-21: SDK import before real-machine
+// --- acceptance): VrcGetLibBackend::resolve_project, the three honest arms ---
+
+/// Writes a vpm-manifest.json that DECLARES one dependency (the creation
+/// template's shape: declared but NOT vendored).
+fn declare_dependency(project: &std::path::Path, package_id: &str, version: &str) {
+    let manifest = format!(
+        r#"{{"dependencies":{{"{package_id}":{{"version":"{version}"}}}},"locked":{{}}}}"#
+    );
+    fs::write(project.join("Packages/vpm-manifest.json"), manifest).unwrap();
+}
+
+#[test]
+fn b3_batch146_resolve_installs_declared_local_package_and_reports_it() {
+    let base = unique_dir("batch146-resolve-installs");
+    let environment_root = base.join("isolated-vpm-environment");
+    let package_root = base.join("generated-package");
+    fs::create_dir_all(package_root.join("Runtime")).unwrap();
+    fs::write(package_root.join("Runtime/hello.txt"), "hello\n").unwrap();
+    fs::write(
+        package_root.join("package.json"),
+        r#"{
+  "name": "com.ph-r.vua.local.synthetic",
+  "displayName": "Synthetic",
+  "version": "0.0.1",
+  "unity": "2022.3",
+  "vpmDependencies": {}
+}"#,
+    )
+    .unwrap();
+    let project_root = base.join("validation-project");
+    let _project = minimal_vpm_project(&project_root);
+    let backend = VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+    backend.register_local_package(&package_root).unwrap();
+    declare_dependency(&project_root, "com.ph-r.vua.local.synthetic", "0.0.1");
+
+    // First resolve: the declared dependency is fetched-and-installed (from
+    // the registered local set here — no network needed), the receipt names
+    // it with its version and source, the body lands in Packages/ and the
+    // locked section is written back.
+    let receipt = backend.resolve_project(&project_root).unwrap();
+    assert!(receipt.failed.is_empty());
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.resolved.len(), 1);
+    assert_eq!(receipt.resolved[0].id, "com.ph-r.vua.local.synthetic");
+    assert_eq!(receipt.resolved[0].version, "0.0.1");
+    assert_eq!(receipt.resolved[0].source_repo, "local");
+    assert!(
+        project_root
+            .join("Packages/com.ph-r.vua.local.synthetic/package.json")
+            .is_file(),
+        "the resolved package body must be installed into Packages/"
+    );
+    let manifest =
+        fs::read_to_string(project_root.join("Packages/vpm-manifest.json")).unwrap();
+    assert!(
+        manifest.contains("\"locked\"") && manifest.contains("com.ph-r.vua.local.synthetic"),
+        "the locked section must be written back: {manifest}"
+    );
+
+    // Second resolve over the unchanged project: the idempotency arm — the
+    // dependency is already satisfied, nothing is resolved again.
+    let second = backend.resolve_project(&project_root).unwrap();
+    assert!(second.resolved.is_empty());
+    assert!(second.failed.is_empty());
+    assert_eq!(second.already_satisfied, vec!["com.ph-r.vua.local.synthetic"]);
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_batch146_unresolvable_dependency_answers_the_honest_failed_receipt() {
+    let base = unique_dir("batch146-resolve-missing");
+    let project_root = base.join("empty-environment-project");
+    let _project = minimal_vpm_project(&project_root);
+    // No repositories, no local packages: the declared SDK dependency cannot
+    // be satisfied from ANY enabled source.
+    let backend =
+        VrcGetLibBackend::with_environment_root(base.join("isolated-vpm-environment"), true)
+            .unwrap();
+    declare_dependency(&project_root, "com.vrchat.base", "3.10.1");
+
+    let receipt = backend.resolve_project(&project_root).unwrap();
+    assert!(receipt.resolved.is_empty());
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vrchat.base");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the failed arm reuses the standing code — zero new codes"
+    );
+    assert!(
+        !project_root.join("Packages/com.vrchat.base").exists(),
+        "nothing may be installed when nothing resolves"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+#[test]
+fn b3_batch146_capability_absence_keeps_the_cli_backend_honestly_false() {
+    let base = unique_dir("batch146-cli-absent");
+    let project_root = base.join("cli-project");
+    let _project = minimal_vpm_project(&project_root);
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+
+    // The capability bit stays declared-none...
+    assert!(!cli.capabilities().resolve_project);
+    // ...and the trait-default absence arm answers the capability_missing
+    // family — the CLI never pretends to resolve.
+    let error = cli.resolve_project(&project_root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    fs::remove_dir_all(&base).ok();
+}
+
+// ======================================================================
+// 环境实现核对切片（wt-6，批 146）：resolve_project 的环境侧证据钉。核心
+// 接线批 70f7476 的三臂钉之上，本组按操作者指派钉「幂等零网络零写入逐字
+// 节＋禁用集语义与 collection_world 互证＋离线如实上浮＋环回夹具仓全解
+// 析落地」。全部走环回源＋合成数据（零真实网络），离线臂零出网。
+// ======================================================================
+
+/// Builds a minimal STORED-method (no compression) zip archive in bytes:
+/// one entry per (name, content), correct CRC-32, central directory and
+/// EOCD — just enough for the library's async_zip reader to extract the
+/// synthetic package, with zero extra dependencies in the test crate.
+fn f6_zip_bytes(entries: &[(&str, &[u8])]) -> Vec<u8> {
+    fn crc32(data: &[u8]) -> u32 {
+        let mut table = [0u32; 256];
+        for (index, slot) in table.iter_mut().enumerate() {
+            let mut crc = index as u32;
+            for _ in 0..8 {
+                crc = if crc & 1 != 0 {
+                    0xEDB8_8320 ^ (crc >> 1)
+                } else {
+                    crc >> 1
+                };
+            }
+            *slot = crc;
+        }
+        let mut crc = 0xFFFF_FFFFu32;
+        for &byte in data {
+            crc = table[((crc ^ byte as u32) & 0xFF) as usize] ^ (crc >> 8);
+        }
+        crc ^ 0xFFFF_FFFF
+    }
+    fn put_u16(out: &mut Vec<u8>, value: u16) {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+    fn put_u32(out: &mut Vec<u8>, value: u32) {
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+
+    let mut local = Vec::new();
+    let mut central = Vec::new();
+    let mut offset = 0u32;
+    for (name, content) in entries {
+        let crc = crc32(content);
+        let name_bytes = name.as_bytes();
+        let header_offset = offset;
+        put_u32(&mut local, 0x0403_4b50);
+        put_u16(&mut local, 20); // version needed
+        put_u16(&mut local, 0); // flags
+        put_u16(&mut local, 0); // method: stored
+        put_u16(&mut local, 0); // mod time
+        put_u16(&mut local, 0x0021); // mod date (1980-01-01)
+        put_u32(&mut local, crc);
+        put_u32(&mut local, content.len() as u32);
+        put_u32(&mut local, content.len() as u32);
+        put_u16(&mut local, name_bytes.len() as u16);
+        put_u16(&mut local, 0); // extra length
+        local.extend_from_slice(name_bytes);
+        local.extend_from_slice(content);
+        put_u32(&mut central, 0x0201_4b50);
+        put_u16(&mut central, 20); // version made by
+        put_u16(&mut central, 20); // version needed
+        put_u16(&mut central, 0); // flags
+        put_u16(&mut central, 0); // method
+        put_u16(&mut central, 0); // mod time
+        put_u16(&mut central, 0x0021); // mod date
+        put_u32(&mut central, crc);
+        put_u32(&mut central, content.len() as u32);
+        put_u32(&mut central, content.len() as u32);
+        put_u16(&mut central, name_bytes.len() as u16);
+        put_u16(&mut central, 0); // extra
+        put_u16(&mut central, 0); // comment
+        put_u16(&mut central, 0); // disk start
+        put_u16(&mut central, 0); // internal attrs
+        put_u32(&mut central, 0); // external attrs
+        put_u32(&mut central, header_offset);
+        central.extend_from_slice(name_bytes);
+        offset += (30 + name_bytes.len() + content.len()) as u32;
+    }
+    let central_offset = offset;
+    let central_size = central.len() as u32;
+    let mut out = local;
+    out.extend_from_slice(&central);
+    put_u32(&mut out, 0x0605_4b50);
+    put_u16(&mut out, 0); // disk
+    put_u16(&mut out, 0); // cd disk
+    put_u16(&mut out, entries.len() as u16);
+    put_u16(&mut out, entries.len() as u16);
+    put_u32(&mut out, central_size);
+    put_u32(&mut out, central_offset);
+    put_u16(&mut out, 0); // comment length
+    out
+}
+
+const F6_README_NAME: &str = "README.md";
+const F6_README_BODY: &str = "synthetic resolve package\n";
+
+/// One path-aware loopback origin serving BOTH the repository manifest
+/// (`/repo.json`) and the package zip (`/pkg.zip`), synthetic data only.
+/// The `build` closure receives the bound loopback address so the manifest
+/// body can point at this very origin for the zip. Counts accepted
+/// connections so the zero-network pins are PROVEN, not assumed.
+fn f6_spawn_resolve_server(
+    build: impl FnOnce(std::net::SocketAddr) -> (String, Vec<u8>),
+) -> (std::net::SocketAddr, Arc<std::sync::atomic::AtomicUsize>) {
+    use std::io::{Read as _, Write as _};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let (repo_body, zip_bytes) = build(addr);
+    let hits = Arc::new(AtomicUsize::new(0));
+    let hits_thread = Arc::clone(&hits);
+    std::thread::spawn(move || {
+        for stream in listener.incoming() {
+            let Ok(mut stream) = stream else { break };
+            hits_thread.fetch_add(1, Ordering::SeqCst);
+            let mut buffer = Vec::new();
+            let mut chunk = [0u8; 1024];
+            loop {
+                let read = match stream.read(&mut chunk) {
+                    Ok(0) | Err(_) => break,
+                    Ok(n) => n,
+                };
+                buffer.extend_from_slice(&chunk[..read]);
+                if buffer.windows(4).any(|window| window == b"\r\n\r\n") {
+                    break;
+                }
+            }
+            let head = String::from_utf8_lossy(&buffer);
+            let path = head
+                .split_whitespace()
+                .nth(1)
+                .unwrap_or("")
+                .split('?')
+                .next()
+                .unwrap_or("")
+                .to_owned();
+            let response: Vec<u8> = match path.as_str() {
+                "/repo.json" => format!(
+                    "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
+                    repo_body.len(),
+                    repo_body
+                )
+                .into_bytes(),
+                "/pkg.zip" => {
+                    let mut http = format!(
+                        "HTTP/1.1 200 OK\r\nContent-Type: application/zip\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        zip_bytes.len()
+                    )
+                    .into_bytes();
+                    http.extend_from_slice(&zip_bytes);
+                    http
+                }
+                _ => b"HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+                    .to_vec(),
+            };
+            let _ = stream.write_all(&response);
+        }
+    });
+    (addr, hits)
+}
+
+/// A VCC-shaped project with DECLARED but UNRESOLVED dependencies: the
+/// vpm-manifest dependencies section carries the rows, `locked` is empty
+/// and nothing is installed under `Packages/` — the exact shape a VCC
+/// template copy (the material chain's supply step) leaves behind.
+fn f6_declared_project(root: &std::path::Path, editor: &str, deps: &[(&str, &str)]) -> ProjectRef {
+    fs::create_dir_all(root.join("Packages")).unwrap();
+    fs::create_dir_all(root.join("ProjectSettings")).unwrap();
+    fs::write(root.join("Packages/manifest.json"), r#"{"dependencies":{}}"#).unwrap();
+    let mut dependencies = serde_json::Map::new();
+    for (id, range) in deps {
+        dependencies.insert((*id).to_owned(), serde_json::json!({ "version": range }));
+    }
+    fs::write(
+        root.join("Packages/vpm-manifest.json"),
+        serde_json::json!({ "dependencies": dependencies, "locked": {} }).to_string(),
+    )
+    .unwrap();
+    fs::write(
+        root.join("ProjectSettings/ProjectVersion.txt"),
+        format!("m_EditorVersion: {editor}\n"),
+    )
+    .unwrap();
+    ProjectRef {
+        id: "vpm-f6-resolve".to_owned(),
+        root: root.to_owned(),
+    }
+}
+
+/// Deterministic snapshot of every file byte in the project tree (sorted by
+/// path) — the zero-write pins compare before/after snapshots, not memories.
+fn f6_tree_bytes(root: &std::path::Path) -> Vec<(String, Vec<u8>)> {
+    fn walk(dir: &std::path::Path, prefix: &str, out: &mut Vec<(String, Vec<u8>)>) {
+        for entry in fs::read_dir(dir).unwrap() {
+            let entry = entry.unwrap();
+            let path = entry.path();
+            let rel = format!("{prefix}{}", entry.file_name().to_string_lossy());
+            if path.is_dir() {
+                walk(&path, &format!("{rel}\\"), out);
+            } else {
+                out.push((rel, fs::read(&path).unwrap()));
+            }
+        }
+    }
+    let mut out = Vec::new();
+    walk(root, "", &mut out);
+    out.sort_by(|left, right| left.0.cmp(&right.0));
+    out
+}
+
+/// The resolve world: predefined official/curated repos neutralized via the
+/// library's own experimental switches (zero outbound network), one loopback
+/// subscription row (cache file ABSENT — the online leg fetches and writes
+/// it, the add_remote_repo row shape), and the declared-only project.
+fn f6_resolve_world(
+    label: &str,
+    dep_range: &str,
+) -> (
+    VrcGetLibBackend,
+    ProjectRef,
+    PathBuf,
+    Arc<std::sync::atomic::AtomicUsize>,
+) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+
+    let package_json = serde_json::json!({
+        "name": "com.vua.test.resolve.dep",
+        "version": "1.0.0",
+        "vpmDependencies": {}
+    })
+    .to_string();
+    let zip = f6_zip_bytes(&[
+        ("package.json", package_json.as_bytes()),
+        (F6_README_NAME, F6_README_BODY.as_bytes()),
+    ]);
+
+    let (addr, hits) = f6_spawn_resolve_server(|addr| {
+        let body = serde_json::json!({
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "packages": {
+                "com.vua.test.resolve.dep": { "versions": {
+                    "1.0.0": {
+                        "name": "com.vua.test.resolve.dep",
+                        "version": "1.0.0",
+                        "vpmDependencies": {},
+                        "url": format!("http://{addr}/pkg.zip")
+                    }
+                } }
+            }
+        })
+        .to_string();
+        (body, zip)
+    });
+    let repo_url = format!("http://{addr}/repo.json");
+    let cache_path = environment_root.join("Repos").join("resolve-repo.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [{
+            "localPath": cache_path.display().to_string(),
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "url": repo_url
+        }] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f6_declared_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.resolve.dep", dep_range)],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, false).unwrap();
+    (backend, project, base, hits)
+}
+
+/// 主钉：声明依赖全解析成功（环回夹具仓——清单与包 zip 全走 127.0.0.1，
+/// 真实网络零触碰）。resolved 收据（id/version/source_repo＝启用仓库行
+/// id）＋Packages 实地落地＋vpm-manifest locked 段回写；恰两次环回连接
+/// （清单刷新＋包 zip 下载）。
+#[test]
+fn f6_resolve_declared_dependencies_land_locked_and_receipted() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-main", "1.0.0");
+    let manifest_path = project.root.join("Packages/vpm-manifest.json");
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert_eq!(
+        receipt.resolved.len(),
+        1,
+        "exactly the declared dependency lands"
+    );
+    let entry = &receipt.resolved[0];
+    assert_eq!(entry.id, "com.vua.test.resolve.dep");
+    assert_eq!(entry.version, "1.0.0");
+    assert_eq!(
+        entry.source_repo, "com.vua.test.repo.resolve",
+        "source_repo is the enabled repository's row id"
+    );
+    assert!(receipt.already_satisfied.is_empty());
+    assert!(
+        receipt.failed.is_empty(),
+        "a full resolve answers an empty failed set"
+    );
+
+    // Packages 实地落地：解包内容存在且 package.json 与收据同源。
+    let installed = fs::read_to_string(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep/package.json"),
+    )
+    .unwrap();
+    let installed: serde_json::Value = serde_json::from_str(&installed).unwrap();
+    assert_eq!(installed["name"], "com.vua.test.resolve.dep");
+    assert_eq!(installed["version"], "1.0.0");
+    assert!(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep")
+            .join(F6_README_NAME)
+            .is_file(),
+        "the zip content itself landed"
+    );
+
+    // locked 段回写：依赖在锁定表、版本与收据一致。
+    let manifest: serde_json::Value =
+        serde_json::from_str(&fs::read_to_string(&manifest_path).unwrap()).unwrap();
+    assert_eq!(
+        manifest["locked"]["com.vua.test.resolve.dep"]["version"], "1.0.0",
+        "the resolve writes the locked section back"
+    );
+
+    // 环回实证：恰两次连接（清单刷新＋包 zip 下载），零真实网络。
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        2,
+        "exactly the manifest fetch and the package zip download rode the loopback"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 幂等钉：locked 已满足＝already_satisfied，零网络零写入——第二次
+/// resolve 在快路径短路（端口面文档「touches nothing」律：在线 load 臂
+/// 会刷新仓库缓存，快路径绝不装载集合），连接计数一动不动、工程树逐字节
+/// 不动。
+#[test]
+fn f6_resolve_idempotent_second_call_is_already_satisfied_zero_network_zero_writes() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-idem", "1.0.0");
+    backend.resolve_project(&project.root).unwrap();
+    let before = f6_tree_bytes(&project.root);
+    let hits_after_first = hits.load(std::sync::atomic::Ordering::SeqCst);
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty(), "nothing re-lands");
+    assert_eq!(
+        receipt.already_satisfied,
+        vec!["com.vua.test.resolve.dep".to_owned()],
+        "the satisfied declared dependency answers already_satisfied"
+    );
+    assert!(receipt.failed.is_empty());
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        hits_after_first,
+        "zero network: the fast path never loads the collection, never opens a connection"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "zero writes: the project tree is byte-identical"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 版本不满足→failed 如实：声明依赖的版本范围在启用仓库无满足项→诚实
+/// 不完整收据（failed 逐依赖携复用码 no_matching_package，零新码），
+/// resolved 恰空、zip 下载从不发生（恰一次清单连接）、工程树逐字节不动
+/// ——绝不返回半落地成功收据。
+#[test]
+fn f6_resolve_version_unsatisfiable_answers_the_honest_failed_receipt() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-ver", "2.0.0");
+    let before = f6_tree_bytes(&project.root);
+
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty(), "nothing resolves, nothing lands");
+    assert!(receipt.already_satisfied.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vua.test.resolve.dep");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the failed arm reuses the standing code — zero new codes"
+    );
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        1,
+        "only the manifest fetch ran — the zip download never started"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "a failed resolve writes nothing — never a half-landed state"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 仓库全禁用→解析失败诚实（与 F4 collection_world 语义互证）：禁用行的
+/// 包不参与解析→failed 收据如实；被禁行的源站零接触（恰零连接）；对照臂
+/// （重新启用同一世界、零其他改动）→同包解析落地成功——失败确证来自
+/// 禁用过滤（离开集合世界），不是仓库不可达。
+#[test]
+fn f6_resolve_all_repos_disabled_leaves_the_package_unresolvable() {
+    let (backend, project, base, hits) = f6_resolve_world("f6-resolve-disable", "1.0.0");
+    let environment_root = base.join("isolated-vpm-environment");
+    let before = f6_tree_bytes(&project.root);
+
+    f4_write_state(&environment_root, &["com.vua.test.repo.resolve"]);
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert!(receipt.resolved.is_empty());
+    assert_eq!(receipt.failed.len(), 1);
+    assert_eq!(receipt.failed[0].id, "com.vua.test.resolve.dep");
+    assert_eq!(
+        receipt.failed[0].reason_code, "vua.vpm.no_matching_package",
+        "the disabled row's packages left the collection world — unresolvable, honestly"
+    );
+    assert_eq!(
+        hits.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "the filtered row's origin is never contacted — leaving the collection world is not a fetch failure"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "nothing lands from a world that cannot resolve"
+    );
+
+    // 对照臂：重新启用（禁用集清空）、零其他改动→同包解析落地成功。
+    f4_write_state(&environment_root, &[]);
+    let receipt = backend.resolve_project(&project.root).unwrap();
+    assert_eq!(
+        receipt.resolved.len(),
+        1,
+        "the same package resolves once enabled"
+    );
+    assert_eq!(receipt.resolved[0].id, "com.vua.test.resolve.dep");
+    assert!(
+        project
+            .root
+            .join("Packages/com.vua.test.resolve.dep/package.json")
+            .is_file(),
+        "the enabled world lands the package the disabled world could not see"
+    );
+    assert!(
+        hits.load(std::sync::atomic::Ordering::SeqCst) >= 2,
+        "the enabled arm rode the loopback origin (manifest + zip)"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 离线钉：离线后端＋缓存可解析＋下载不可行→repo_fetch_failed 如实上浮
+/// （端口面文档「repo_fetch_failed for the network segment」；库自身
+/// "Offline mode" 错误随 reason 携带），绝不静默半成功；工程树逐字节不动、
+/// 无半落地包目录。零出网：安装臂无 http，example.invalid 从不被接触。
+#[test]
+fn f6_resolve_offline_answers_repo_fetch_failed_never_half_success() {
+    let base = unique_dir("f6-resolve-offline");
+    let environment_root = base.join("isolated-vpm-environment");
+    // 预定义两仓照 F4 先例以库自有实验开关 neutralize（零出网）。
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    // 直接种子仓库缓存文件（离线 load_cache 腿可解析），包 url 指向
+    // example.invalid（离线后端安装臂无 http——该地址从不被请求）。
+    let cache_path = environment_root.join("Repos").join("resolve-repo.json");
+    fs::create_dir_all(cache_path.parent().unwrap()).unwrap();
+    fs::write(
+        &cache_path,
+        serde_json::json!({
+            "repo": {
+                "name": "Synthetic Resolve Repo",
+                "id": "com.vua.test.repo.resolve",
+                "url": "https://example.invalid/vua/resolve-repo.json",
+                "packages": {
+                    "com.vua.test.resolve.dep": { "versions": {
+                        "1.0.0": {
+                            "name": "com.vua.test.resolve.dep",
+                            "version": "1.0.0",
+                            "vpmDependencies": {},
+                            "url": "https://example.invalid/vua/pkg.zip"
+                        }
+                    } }
+                }
+            }
+        })
+        .to_string(),
+    )
+    .unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [{
+            "localPath": cache_path.display().to_string(),
+            "name": "Synthetic Resolve Repo",
+            "id": "com.vua.test.repo.resolve",
+            "url": "https://example.invalid/vua/resolve-repo.json"
+        }] })
+        .to_string(),
+    )
+    .unwrap();
+    let project = f6_declared_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[("com.vua.test.resolve.dep", "1.0.0")],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, true).unwrap();
+    let before = f6_tree_bytes(&project.root);
+
+    let error = backend.resolve_project(&project.root).unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.repo_fetch_failed",
+        "offline: the download arm surfaces the network-segment failure honestly"
+    );
+    let reason = match error.params.as_ref().and_then(|params| params.get("reason")) {
+        Some(vua_orchestrator::ParamValue::Text(text)) => text.clone(),
+        other => panic!("the failure carries the honest detail: {other:?}"),
+    };
+    assert!(
+        reason.to_lowercase().contains("offline"),
+        "the library's own Offline mode error rides the reason: {reason}"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "never a silent half success: the project tree is byte-identical"
+    );
+    assert!(
+        !project.root.join("Packages/com.vua.test.resolve.dep").exists(),
+        "no package directory landed"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
+/// 能力位双向钉（操作者指派缺席臂＋库位覆写）：库后端独立位如实 true；
+/// CLI 后端如实 false 且缺席臂答 capability_missing、message_key 同词位
+/// （与核心批 b3_batch146_capability_absence 互证互补）。
+#[test]
+fn f6_resolve_capabilities_absence_arm_on_cli_backend() {
+    let library = VrcGetLibBackend::with_environment_root(unique_dir("f6-caps-lib"), true).unwrap();
+    assert!(
+        library.capabilities().resolve_project,
+        "the library implements resolve in-process, so its independent bit is true"
+    );
+
+    let cli = backend_with(Arc::new(FakeProcessRunner::new()));
+    assert!(
+        !cli.capabilities().resolve_project,
+        "no implementation, no declaration"
+    );
+    let project = minimal_vpm_project(&unique_dir("f6-caps-proj"));
+    let error = cli.resolve_project(&project.root).unwrap_err();
+    assert_eq!(error.code, "vua.vpm.capability_missing");
+    assert_eq!(error.message_key, "errors.vpm.capabilityMissing");
+}
+
+/// F4 集合世界第六消费者同律：VUA 启停状态文件不可读→backend_unavailable
+/// 共享构造器如实拒绝（与五装载点同事实同码），绝不以「全启用」猜测。
+#[test]
+fn f6_resolve_corrupt_state_file_refuses_like_every_collection_consumer() {
+    let (backend, project, base, _hits) = f6_resolve_world("f6-resolve-state", "1.0.0");
+    let environment_root = base.join("isolated-vpm-environment");
+    f4_write_state(&environment_root, &[]);
+    let state_path = f4_state_path(&environment_root);
+    fs::write(&state_path, "not-json").unwrap();
+
+    let error = backend.resolve_project(&project.root).unwrap_err();
+    assert_eq!(
+        error.code, "vua.vpm.backend_unavailable",
+        "no state means no honest collection world — refuse, never guess"
+    );
     fs::remove_dir_all(&base).ok();
 }

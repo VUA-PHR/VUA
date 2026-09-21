@@ -1,6 +1,8 @@
+import { useRecipeLibraryRevision } from "../../app/recipe-library-revision.ts";
 import { formatDateTime } from "../../i18n/index.ts";
 import {
   useEffect,
+  useCallback,
   useMemo,
   useRef,
   useState,
@@ -62,6 +64,8 @@ import {
   type RecipeVersionEntry,
   type StoredRecipeVersionsV2,
 } from "./recipe-versions.ts";
+import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
+import { ComposePage } from "../compose/ComposePage.tsx";
 import "./recipe.css";
 
 const copy = strings.recipe;
@@ -531,15 +535,20 @@ function LayerList({
 function RecipeLibrarySection({
   selectedId,
   onSelectDocument,
+  onSelectId,
+  refreshKey,
 }: {
   selectedId: string | null;
   onSelectDocument: (document: unknown) => void;
+  onSelectId: (id: string) => void;
+  refreshKey: number;
 }) {
   const [state, setState] = useState<
     | { readonly kind: "loading" }
     | { readonly kind: "unavailable" }
     | { readonly kind: "loaded"; readonly entries: readonly RecipeLibraryEntryNarrowed[] }
   >({ kind: "loading" });
+  const persistedRevision = useRecipeLibraryRevision();
   const [facts, setFacts] = useState<RecipeDocumentFacts | null>(null);
   const [structure, setStructure] = useState<ReturnType<typeof narrowRecipeDocumentStructure>>(null);
   const [reloadNonce, setReloadNonce] = useState(0);
@@ -548,16 +557,15 @@ function RecipeLibrarySection({
     let alive = true;
     setState({ kind: "loading" });
     setFacts(null);
-    void window.vua?.gateway
-      .invoke({
+    void Promise.resolve(window.vua?.gateway.invoke({
         schemaVersion: 1,
         requestId: crypto.randomUUID(),
         method: "recipe.list",
         params: {},
-      })
+      }))
       .then((result) => {
         if (!alive) return;
-        if (!result.ok) {
+        if (!result?.ok) {
           setState({ kind: "unavailable" });
           return;
         }
@@ -565,11 +573,12 @@ function RecipeLibrarySection({
           (result.value as { entries?: unknown }).entries,
         );
         setState({ kind: "loaded", entries });
-      });
+      })
+      .catch(() => { if (alive) setState({ kind: "unavailable" }); });
     return () => {
       alive = false;
     };
-  }, [reloadNonce]);
+  }, [reloadNonce, persistedRevision, refreshKey]);
 
   useEffect(() => {
     if (selectedId === null) {
@@ -580,27 +589,29 @@ function RecipeLibrarySection({
     let alive = true;
     setFacts(null);
     setStructure(null);
-    void window.vua?.gateway
-      .invoke({
+    void Promise.resolve(window.vua?.gateway.invoke({
         schemaVersion: 1,
         requestId: crypto.randomUUID(),
         method: "recipe.get",
         params: { recipeId: selectedId },
-      })
+      }))
       .then((result) => {
         if (!alive) return;
-        if (!result.ok) {
+        if (!result?.ok) {
           setFacts(null);
+          onSelectDocument(null);
           return;
         }
         const document = (result.value as { recipe?: unknown }).recipe;
         setFacts(narrowRecipeDocumentFacts(document));
         setStructure(narrowRecipeDocumentStructure(document));
-      });
+        onSelectDocument(document);
+      })
+      .catch(() => { if (alive) onSelectDocument(null); });
     return () => {
       alive = false;
     };
-  }, [selectedId]);
+  }, [selectedId, reloadNonce, persistedRevision, refreshKey, onSelectDocument]);
 
   return (
     <div className="vua-recipe-library">
@@ -677,7 +688,7 @@ function RecipeLibrarySection({
 
   function setQueueSelect(entry: RecipeLibraryEntryNarrowed): void {
     const next = selectLibraryRecipe(selectedId, entry.recipeId);
-    if (next !== null) onSelectDocument(next);
+    if (next !== null) onSelectId(next);
   }
 }
 
@@ -695,8 +706,15 @@ export function RecipePage() {
   const [versions, setVersions] = useState<StoredRecipeVersionsV2>(() => loadRecipeVersions());
   const [versionNote, setVersionNote] = useState("");
   const layoutsRef = useRef<StoredRecipeLayoutsV2 | null>(null);
+  // 搭配草稿弹窗(2026-09-20 导航重构):原独立页(019 批 B)收敛为配方页内
+  // 弹窗;草稿状态在容器层(compose-draft-store/compose-save-chain),弹窗
+  // 开关不影响其存续
+  const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
+  const [documentMode, setDocumentMode] = useState(false);
+  const [composeDialogOpen, setComposeDialogOpen] = useState(false);
 
   useEffect(() => {
+    if (documentMode) return;
     let alive = true;
     setLoadFailed(false);
     void gateway.modelProduction
@@ -724,7 +742,7 @@ export function RecipePage() {
     return () => {
       alive = false;
     };
-  }, [gateway, reloadNonce]);
+  }, [gateway, reloadNonce, documentMode]);
 
   const base = graph?.kind === "graph" ? basePoints(graph) : null;
   const layout = points !== null ? layoutFromPoints(points) : null;
@@ -877,12 +895,11 @@ export function RecipePage() {
   // BG-1(W24 读面预备,A 路径已确认):文档库共享选择骨架——选中库文档即
   // 经映射(recipeDocumentToGraphView)装载三视图,state=expected 期望态
   // 词表(语义标注随视图呈现);清除选择回合成纵向(reloadNonce 重取)
-  const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
-  const [documentMode, setDocumentMode] = useState(false);
 
-  const handleLibraryDocument = (document: unknown) => {
+  const handleLibraryDocument = useCallback((document: unknown) => {
     const view = recipeDocumentToGraphView(document);
-    if (view === null || view.kind !== "graph") return;
+    if (view === null || view.kind !== "graph") { setLoadFailed(true); return; }
+    setLoadFailed(false);
     setDocumentMode(true);
     setGraph(view);
     const stored = loadRecipeLayouts();
@@ -894,9 +911,10 @@ export function RecipePage() {
         bucket ? new Map(Object.entries(bucket)) : new Map<string, GraphPoint>(),
       ),
     );
-  };
+  }, []);
 
   const exitDocumentMode = () => {
+    setSelectedLibraryRecipeId(null);
     setDocumentMode(false);
     setReloadNonce((nonce) => nonce + 1);
   };
@@ -946,11 +964,27 @@ export function RecipePage() {
             </Button>
           ) : null}
         </div>
+        {/* 搭配草稿入口(2026-09-20 导航重构):原独立页收敛为本页内弹窗——
+            项目无关草稿的连续搭配起点仍在,只是不再占一个侧栏页位 */}
+        <div className="vua-page__actions">
+          <Button variant="default" onClick={() => setComposeDialogOpen(true)}>
+            {strings.nav.pages.composePage}
+          </Button>
+        </div>
       </section>
 
       <Card>
         <RecipeLibrarySection
+          refreshKey={reloadNonce}
           selectedId={selectedLibraryRecipeId}
+          onSelectId={(id) => {
+            if (id === selectedLibraryRecipeId) return;
+            setSelectedLibraryRecipeId(id);
+            setDocumentMode(true);
+            setGraph(null);
+            setPoints(null);
+            setLoadFailed(false);
+          }}
           onSelectDocument={handleLibraryDocument}
         />
       </Card>
@@ -1149,6 +1183,14 @@ export function RecipePage() {
         </>
       )}
       {menu !== null ? <ContextMenu menu={menu} onClose={() => setMenu(null)} /> : null}
+      <ContentDialog
+        open={composeDialogOpen}
+        title={strings.nav.pages.composePage}
+        closeLabel={strings.common.dialogClose}
+        onClose={() => setComposeDialogOpen(false)}
+      >
+        <ComposePage />
+      </ContentDialog>
     </div>
   );
 }

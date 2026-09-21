@@ -47,6 +47,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "演示数据",
     mascotAria: "VUA 吉祥物小机器人",
+    /** 内容弹窗关闭钮(素材导入/搭配草稿弹窗) */
+    dialogClose: "关闭",
   },
   /** 启动闸口(GatewayProvider):五领域首帧快照拉齐失败的全局诚实失败态 */
   boot: {
@@ -159,11 +161,9 @@ demoTaskTitle: "演示任务",
       tools: "工具合集",
       settings: "设置",
     },
-    groups: {
-      warehouse: "仓库",
-      workshop: "车间",
-      packages: "包管理",
-    },
+    /** 当前各模块侧栏均无分组标签(模型生产已于 2026-09-20 导航重构改平铺);
+     *  分组机制保留,下一个有标签的分组在此补键。 */
+    groups: {},
     pages: {
       home: "指挥台",
       envPlay: "游玩环境",
@@ -186,8 +186,8 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      /** 搭配草稿自 2026-09-20 导航重构起为配方页内弹窗;键保留作词面。 */
       composePage: "搭配草稿",
-      importMaterial: "素材导入",
       inspectionPage: "检测",
     },
   },
@@ -441,14 +441,14 @@ demoTaskTitle: "演示任务",
   },
   workshop: {
     title: "工厂车间",
-    subtitle: "装配、生产与检测任务会在这里执行并全程可恢复。",
-    runningSubtitle: "装配计划已确认,快照已创建,可随时恢复。",
+    subtitle: "导入、生产与检测任务会在这里执行并全程可恢复。",
+    runningSubtitle: "执行计划已确认,快照已创建,可随时恢复。",
     idleTitle: "生产流程尚未接入",
-    idleDescription: "{recipe}与装配流程接入后,这里会显示装配轨道、执行状态与快照恢复入口。",
+    idleDescription: "{recipe}与执行流程接入后,这里会显示轨道阶段、执行状态与快照恢复入口。",
     /** 生产环境未就绪时的诚实阻断态(v0.3.3 §2.1:不自动切页,由用户点击后才跳转) */
     blocked: {
       title: "生产环境尚未准备",
-      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始装配。",
+      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始导入与构建。",
       cta: "前往准备生产环境",
     },
     trackAria: "{amf}生产阶段",
@@ -480,7 +480,7 @@ demoTaskTitle: "演示任务",
       livePendingNote: "实时事件流接入后,这里会显示该工位的事件明细。",
       /** 键与 track-model.ts 的 StageId 一一对应(进料口/配方位/三工位/出货口) */
       role: {
-        warehouse: "进料口:到达本机的素材经检查后在此排队,等待进入装配。",
+        warehouse: "进料口:到达本机的素材经检查后在此排队,等待进入轨道。",
         recipe: "配方位:装配的期望状态来源——配方决定装什么、怎么装。",
         assembly: "组装工位:按配方把素材绑定到素体,生成可构建的工程结构。",
         production: "生产工位:执行构建与打包,产出可上传的产物。",
@@ -639,6 +639,8 @@ rolled_back: "已回滚",
       finishedAt: "完成于 {time}",
         recovered_badge: '已恢复的运行',
         recovered_note: '此记录来自恢复突变成功后重新完成的运行(权威状态:recovered)。',
+      /** 记录卡完成态的出厂页链钮(第 150 批缺口 (a));纯导航,不跨页携带记录身份。 */
+      goRelease: '去出厂',
     },
     /** 键与 production-flow-model.ts 的 ProductionFlowPhase 一一对应 */
     phase: {
@@ -1396,6 +1398,33 @@ rolled_back: "已回滚",
         retry: "重试",
         taskErrorLine: "任务错误:{code}",
         taskFailedNote: "交接任务失败。",
+        /* U19 交棒准入呈现分桶(用户裁决 2026-09-21):succeeded/
+         * succeeded_with_warnings → 放行(警告徽标保留);failed/cancelled/
+         * rolled_back → 禁用＋原因＋检视/车间入口链;recovered → 禁用,
+         * 先完成检视及后续生产流程;缺失/词表外状态 → 拒绝,记录无法确认。
+         * 后端权威闸独立在路由准入序,此为可发现原因词面(设计标准 §5)。 */
+        blockedTitle: "交棒不可用",
+        blockedFailed: "此构建已失败，无法交棒。请检查结果、发起恢复，或重新生产。",
+        blockedCancelled: "此构建已被取消，无法交棒。请重新生产以生成新记录。",
+        blockedRolledBack: "此构建已回滚，无法交棒。请重新生产以生成新记录。",
+        recoveredBlockNote: "此记录为恢复后完成。请先完成检视及后续生产流程，再进行交棒。",
+        unconfirmedNote: "交棒动作不可用：此记录无法确认。",
+        entryWorkshop: "前往车间",
+      },
+      /* U19 第二交付(用户裁决明文):独立「在 Unity 中打开以检查/修复」动作
+       * ——与交棒按钮显式分离(独立组件/端口/词面组);不按记录状态闸;打开
+       * 编辑器既不是恢复执行也不是上传许可。核心座后端 open 检查入口本拍未
+       * 入库:端口结构缺席,词面如实呈现缺席,不虚构后端能力。 */
+      openInUnity: {
+        action: "在 Unity 中打开以检查/修复",
+        actionNote:
+          "在 Unity 编辑器中打开此构建的工程，供人工检查与修复。打开编辑器既不是恢复执行，也不是上传许可。",
+        absentTitle: "在 Unity 中打开不可用",
+        absentNote: "在 Unity 中打开此工程的功能尚未接线。",
+        failedTitle: "在 Unity 中打开请求被拒",
+        failedUnknown: "请求被拒，未携带错误码。",
+        failedWithCode: "请求被拒：{code}",
+        retry: "重试",
       },
     },
   },
@@ -1729,6 +1758,25 @@ rolled_back: "已回滚",
       removeConfirm: "确认移除",
       removing: "正在移除…",
       removedLine: "已移除订阅：{repoId}",
+      /** F4 仓库生命周期(027 v0.6 消费批):启停/刷新行内控制。启停语义
+       *  如实口径:VUA 自有状态——禁用的仓库保留在订阅列表(禁用在列不
+       *  隐藏),其包不再参与枚举与安装解析;不写 VCC/ALCOM 共享设置
+       *  (W25 只读证据裁决 (c):VCC 无任何启停状态)。 */
+      lifecycle: {
+        enableAction: "启用",
+        disableAction: "禁用",
+        enableAria: "启用仓库 {name}",
+        disableAria: "禁用仓库 {name}",
+        refreshAction: "刷新",
+        refreshAria: "刷新仓库 {name} 的缓存",
+        enabling: "正在启用…",
+        disabling: "正在禁用…",
+        refreshing: "正在刷新…",
+        disabledBadge: "已禁用",
+        disabledNote: "已禁用：该仓库的包不再参与浏览与安装解析，订阅行保留在列。",
+        doneLine: "操作已完成：{repoId}",
+        upToDate: "仓库缓存已是最新。",
+      },
     },
 
     create: {
@@ -1782,7 +1830,10 @@ rolled_back: "已回滚",
       riskBody:
         "社区仓库由第三方维护,未经 VRChat 或 VUA 审核;订阅后其中的包可能发生变化。请只添加你信任的作者发布的仓库。订阅功能将随包管理引擎一同接入,本说明提前展示。",
       riskAcknowledge: "知道了",
-      toggleAria: "启用或停用 {name}",
+      /** F4 消费批(2026-09-21):toggleAria 交互词面随本地 checkbox 翻转
+       *  一并退役,替换为只读静态标注 */
+      enabledBadge: "已启用",
+      disabledBadge: "已停用",
       health: {
         unknown: "未核对",
         ok: "可访问",
@@ -2261,18 +2312,18 @@ rolled_back: "已回滚",
       "DEV spike:T1 webview 直渲素材 对照 T2 Unity 烘焙成品;项目数据读取本机 demo 清单,不入库。",
     needRootTitle: "未指定演示工程",
     needRootBody:
-      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vrcua/bridge/demo-lab.json。",
+      "在 URL 后追加 &demoRoot=<Unity 工程路径>;页面会读取该工程的 .vua/bridge/demo-lab.json。",
     demoRootLabel: "工程",
     manifestLoading: "正在读取演示清单…",
     manifestFailedTitle: "演示清单不可用",
     manifestFailedBody:
-      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vrcua/bridge/demo-lab.json。",
+      "无法读取 {path}。请检查 demoRoot,以及工程内是否存在 .vua/bridge/demo-lab.json。",
     sourcesTitle: "素材 · T1 webview 直渲",
     sourcesNote:
       "Unity 自定义 shader 以既有材质 + 主贴图近似,FBX 内嵌贴图保留;光照与着色与 Unity 烘焙存在差异。",
     productsTitle: "成品 · T2 Unity 编辑器烘焙",
     productsNote:
-      "转盘帧由 Unity 编辑器桥烘焙到 .vrcua/bridge/preview/;VRM 由 webview 直渲作为对照。",
+      "转盘帧由 Unity 编辑器桥烘焙到 .vua/bridge/preview/;VRM 由 webview 直渲作为对照。",
     cardStatusLoading: "加载中…",
     cardStatusFailed: "加载失败",
     bakePending: "未找到烘焙产物——请先在 Unity 触发 build_preview({path})。",
@@ -2378,6 +2429,23 @@ rolled_back: "已回滚",
     },
     environment: {
       verifyUnavailable: "编辑器验证服务当前不可用。",
+    },
+    /** 素材链错误词面(027 第 142 批桌面,任务事件失败行呈现):
+     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发);
+     *  provisionFailed 为预留行——素材链 v0.2 新码 vua.material.
+     *  provision_failed 由核心座修复批(wt-2,候入库)携带,词面先行
+     *  四表同步,码落地即命中 */
+    material: {
+      executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
+      provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
+    },
+    /** 交棒准入闸词面(U19 用户裁决 2026-09-21,BOARD U19 行为规范源)。
+     *  预留行——码 vua.release_handoff.record_state_blocked(params 携
+     *  {state})与 vua.release_handoff.record_state_unknown 由核心座准入闸
+     *  切片(wt-2,在途)携带,词面先行四表同步,码落地即命中 */
+    releaseHandoff: {
+      stateBlocked: "交棒被拒：此构建记录的当前状态不允许交棒（状态：{state}）。",
+      stateUnknown: "交棒被拒：此构建记录的状态无法确认。",
     },
   },
 };

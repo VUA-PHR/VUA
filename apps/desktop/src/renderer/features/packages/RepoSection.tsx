@@ -19,15 +19,15 @@ function checkedText(repo: RepoInfo, now: number): string {
 /**
  * 仓库订阅区(S-XVI):
  * - 健康点 = 中性色圆点 + 文字标签,不进红绿灯语义;unreachable 属异常才用红;
- * - 启停是语义开关(停用不删数据),官方/精选行只读(本切片无任何删除入口);
+ * - 启停位呈现为只读静态标注(F4 消费批,2026-09-21:本地 checkbox 翻转
+ *   退役——本地状态翻转绝不冒充 wire 写面,启停交互只在 live 装配的
+ *   packages.enableRepo/disableRepo 词面〔blocks.repoLifecycle 门控〕提供);
  * - "添加社区仓库"先弹风险说明;真实订阅随包引擎接入(fixture 只演示弹层,不真加)。
  */
 export function RepoSection({
   repos,
-  onToggle,
 }: {
   repos: readonly RepoInfo[];
-  onToggle: (repoId: string, enabled: boolean) => void;
 }) {
   const [riskOpen, setRiskOpen] = useState(false);
   const now = Date.now();
@@ -41,15 +41,10 @@ export function RepoSection({
       <ul className="vua-packages__repos">
         {repos.map((repo) => (
           <li key={repo.id} className="vua-packages__repo">
-            <label className="vua-packages__repo-toggle">
-              <input
-                type="checkbox"
-                checked={repo.enabled}
-                aria-label={format(copy.repos.toggleAria, { name: repo.name })}
-                onChange={(event) => onToggle(repo.id, event.target.checked)}
-              />
-            </label>
             <span className="vua-packages__repo-name">{repo.name}</span>
+            <Badge tone={repo.enabled ? "neutral" : "warning"}>
+              {repo.enabled ? copy.repos.enabledBadge : copy.repos.disabledBadge}
+            </Badge>
             <Badge tone="neutral">{copy.sources[repo.kind]}</Badge>
             <span className="vua-packages__health" data-health={repo.health}>
               <span className="vua-packages__health-dot" aria-hidden="true" />

@@ -1,3 +1,4 @@
+import { useModalOwner } from "../../components/primitives/modal-layer.tsx";
 import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -30,8 +31,11 @@ import {
 import "./import-page.css";
 
 /**
- * 素材导入页(M6 IMP-2 批 A;proposal 015 对账受理,design-standard 0.7.0
- * §8.3「素材导入独立页签」):连续素材获取路径的独立页,两段诚实呈现——
+ * 素材导入(M6 IMP-2 批 A;proposal 015 对账受理,design-standard §8.3):连续素
+ * 材获取路径的两段诚实呈现。2026-09-20 导航重构(用户裁决)起不再是独立页——
+ * 组件整体由仓储页经 ContentDialog 挂载为页内弹窗,导航模型无对应页面;以下
+ * 生命周期与两段内容语义不变,弹窗关闭即卸载组件,恰好触发同款「卸载即关」
+ * 语义(见下)。
  *
  * - 云端段:内嵌浏览面板。能力两态(desktop 架构 1.1.0):壳能力自报驱动——
  *   false = 未接线诚实降级(不可用标注,无替代假动作);true = 面板可用。
@@ -40,9 +44,10 @@ import "./import-page.css";
  *   打开时呈现固定导航条(后退/前进/刷新/回首页/URL 脱敏显示/关闭回
  *   VUA+窗口控制;用户实测缺口修复——全屏视图原盖死壳界面无法退出),
  *   Main 侧视图上缘让位同高条带(remote-content REMOTE_VIEW_NAV_STRIP_PX)。
- *   视图生命周期随页面(#25 定性修复 2026-09-13):面板卸载(切页)即关闭
- *   在途视图——页面是视图唯一控制面,卸载不关会留下无导航条、不可控的
- *   全屏视图与重开泄漏;U9 四分法导航在 Main 侧生效,本页不做第二次分流;
+ *   视图生命周期随组件卸载(#25 定性修复 2026-09-13):宿主弹窗关闭即卸载
+ *   本组件,面板卸载(切页/关弹窗)即关闭在途视图——组件是视图唯一控制面,
+ *   卸载不关会留下无导航条、不可控的全屏视图与重开泄漏;U9 四分法导航在
+ *   Main 侧生效,本组件不做第二次分流;
  *   blocked 事件诚实呈现。生命周期守卫用代次模型(#37 修复 2026-09-18):
  *   原卸载布尔在 StrictMode 效果双调用后永真,自动打开与「打开」全部
  *   瞬间自关,内嵌浏览无法进入;代次比较使活跃挂载的 open 保留、已卸载
@@ -87,6 +92,7 @@ function EmbeddedBrowsePanel({
 }: {
   availability: EmbeddedBrowseAvailability;
 }) {
+  const modalOwner = useModalOwner();
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
   const [address, setAddress] = useState("");
   const [openFailure, setOpenFailure] = useState<EmbeddedBrowseOpenFailure | null>(null);
@@ -249,7 +255,7 @@ function EmbeddedBrowsePanel({
           与 #37 代次模型均不受影响。 */}
       {viewId !== null
         ? createPortal(
-            <div className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
+            <div data-vua-modal-owner={modalOwner} className="vua-import__browse-bar" role="toolbar" aria-label={copy.navBarAria}>
               <button
                 type="button"
                 className="vua-import__browse-button"

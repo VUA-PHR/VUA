@@ -94,9 +94,10 @@ test("行打开语义(D2 回归钉):九态全列两态一致回来源页,无状�
     // 活动态与终态走同一打开行为:行主区点击 = 回到来源页(任务上下文/结果面)
     assert.equal(taskRowOpenTarget(taskOf("t-any", status)), "warehouse");
   }
-  // 目标恒为任务自身携带的来源页事实,不由状态推断改写
-  const importTask: TaskItem = { ...taskOf("t-import", "completed"), originPage: "import-material" };
-  assert.equal(taskRowOpenTarget(importTask), "import-material");
+  // 目标恒为任务自身携带的来源页事实,不由状态推断改写;素材导入任务
+  // 自 2026-09-20 导航重构起来源页为仓储页(导入收敛为仓储页内弹窗)
+  const importTask: TaskItem = { ...taskOf("t-import", "completed"), originPage: "warehouse" };
+  assert.equal(taskRowOpenTarget(importTask), "warehouse");
 });
 
 test("滚动关闭判定(W25 真机第四批回归钉):面板内滚动保持打开,面板外滚动照常关闭", () => {

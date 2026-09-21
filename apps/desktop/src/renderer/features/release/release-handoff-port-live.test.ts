@@ -1,9 +1,10 @@
 /**
  * release.openForHandoff live 端口测试(023 消费切片):以假 GatewayClient
- * 驱动五类事实:
+ * 驱动事实:
  * - ok 受理回执 → accepted(taskId/correlationId 原样);
  * - vua.release_handoff.unavailable → absent 诚实缺席(不伪造受理);
  * - 其余闭集应用错误(build_unknown 等) → failed 携原码透传;
+ * - U19 准入闸码 → failed 携原码＋params 防御性透传(state 原词;非标量滤除);
  * - 信封级 unavailable/request_rejected → absent / failed(code=null);
  * - 受理回执形状不符 → failed(响应不可解释≠缺席);
  * - task.get 快照 → projectHandoffTask 投影;读取失败 → null。
@@ -19,7 +20,11 @@ import { createLiveReleaseHandoffPort } from "./release-handoff-port-live.ts";
 
 interface ScriptedResponse {
   readonly value?: DesktopGatewaySuccessValueV1;
-  readonly applicationError?: { readonly code: string };
+  readonly applicationError?: {
+    readonly code: string;
+    /** 防御性收窄测试通道:非标量值混入由端口滤除 */
+    readonly params?: Record<string, unknown>;
+  };
   /** 信封级拒绝(Kernel 层,无应用码) */
   readonly envelopeError?: "invalid_request" | "unsupported_method";
   readonly reject?: boolean;
@@ -65,6 +70,7 @@ function makeHost(script: Partial<Record<string, ScriptedResponse[]>>): {
                   code: next.applicationError.code,
                   category: "unavailable",
                   messageKey: "errors.release_handoff.unavailable",
+                  params: next.applicationError.params,
                   recoverable: true,
                   retryable: false,
                   correlationId: "c",
@@ -146,7 +152,46 @@ describe("release-handoff live port: openForHandoff", () => {
     });
     const port = createLiveReleaseHandoffPort(clientOf(host));
     const intent = await port.openForHandoff("build-1");
-    assert.deepEqual(intent, { kind: "failed", code: "vua.release_handoff.build_unknown" });
+    assert.deepEqual(intent, {
+      kind: "failed",
+      code: "vua.release_handoff.build_unknown",
+      params: {},
+    });
+  });
+
+  test("U19 准入闸 record_state_blocked → failed 携原码＋params(state 原词)", async () => {
+    const { host } = makeHost({
+      "release.openForHandoff": [
+        { applicationError: { code: "vua.release_handoff.record_state_blocked", params: { state: "failed" } } },
+      ],
+    });
+    const port = createLiveReleaseHandoffPort(clientOf(host));
+    const intent = await port.openForHandoff("build-1");
+    assert.deepEqual(intent, {
+      kind: "failed",
+      code: "vua.release_handoff.record_state_blocked",
+      params: { state: "failed" },
+    });
+  });
+
+  test("params 形状防御:非标量值滤除,标量保留(词面插值消费安全)", async () => {
+    const { host } = makeHost({
+      "release.openForHandoff": [
+        {
+          applicationError: {
+            code: "vua.release_handoff.record_state_unknown",
+            params: { state: "rolled_back", hostile: { nested: true } },
+          },
+        },
+      ],
+    });
+    const port = createLiveReleaseHandoffPort(clientOf(host));
+    const intent = await port.openForHandoff("build-1");
+    assert.deepEqual(intent, {
+      kind: "failed",
+      code: "vua.release_handoff.record_state_unknown",
+      params: { state: "rolled_back" },
+    });
   });
 
   test("宿主不可达(信封级 unavailable) → absent", async () => {
@@ -162,7 +207,7 @@ describe("release-handoff live port: openForHandoff", () => {
     });
     const port = createLiveReleaseHandoffPort(clientOf(host));
     const intent = await port.openForHandoff("build-1");
-    assert.deepEqual(intent, { kind: "failed", code: null });
+    assert.deepEqual(intent, { kind: "failed", code: null, params: {} });
   });
 
   test("受理回执形状不符(缺 correlationId) → failed(不可解释≠缺席)", async () => {
@@ -180,7 +225,7 @@ describe("release-handoff live port: openForHandoff", () => {
     });
     const port = createLiveReleaseHandoffPort(clientOf(host));
     const intent = await port.openForHandoff("build-1");
-    assert.deepEqual(intent, { kind: "failed", code: null });
+    assert.deepEqual(intent, { kind: "failed", code: null, params: {} });
   });
 });
 

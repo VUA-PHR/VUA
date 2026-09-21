@@ -48,6 +48,8 @@ export const strings = {
   common: {
     fixtureBadge: "Demo data",
     mascotAria: "VUA mascot robot",
+    /** Content dialog chrome (material import / composing draft dialogs) */
+    dialogClose: "Close",
   },
   boot: {
     loadFailedTitle: "Startup data failed to load",
@@ -155,11 +157,10 @@ demoTaskTitle: "Demo task",
       tools: "Tools",
       settings: "Settings",
     },
-    groups: {
-      warehouse: "Asset library",
-      workshop: "Workshop",
-      packages: "Packages",
-    },
+    /** No module currently uses sidebar group labels (production went flat in
+     * the 2026-09-20 navigation rework); the mechanism stays, keys return here
+     * with the next labeled group. */
+    groups: {},
     pages: {
       home: "Hub",
       envPlay: "Play Environment",
@@ -182,8 +183,9 @@ demoTaskTitle: "Demo task",
       settingsAbout: "About VUA",
       settingsDonate: "Donate",
       packages: "Package Manager",
+      /** Composing draft lives in a dialog inside the recipe page since the
+       * 2026-09-20 navigation rework; the key stays as its word face. */
       composePage: "Avatar draft",
-      importMaterial: "Import assets",
       inspectionPage: "Inspection",
     },
   },
@@ -633,6 +635,9 @@ demoTaskTitle: "Demo task",
       recovered_badge: "Recovered run",
       recovered_note:
         "This run completed after recovery.",
+      /** Release-page link on completed record cards (batch-150 gap (a));
+       *  plain navigation only: no record identity crosses the page boundary. */
+      goRelease: "Go to release",
     },
     phase: {
       inspecting: "Inspecting",
@@ -1401,6 +1406,44 @@ demoTaskTitle: "Demo task",
         retry: "Retry",
         taskErrorLine: "Task error: {code}",
         taskFailedNote: "Upload preparation failed.",
+        /* U19 handoff admission presentation buckets (user ruling 2026-09-21):
+         * succeeded/succeeded_with_warnings -> action offered (warning badge
+         * stays); failed/cancelled/rolled_back -> action withheld, reason +
+         * inspect/workshop entry chain; recovered -> withheld until the
+         * inspection and follow-up production steps are done; missing or
+         * out-of-vocabulary state -> rejected as unconfirmable. The backend
+         * gate stays the authority; this is the discoverable-reason face
+         * (design standard §5/§179). */
+        blockedTitle: "Handoff unavailable",
+        blockedFailed:
+          "This build failed, so it cannot be handed off. Check the results, recover, or produce again.",
+        blockedCancelled:
+          "This build was cancelled, so it cannot be handed off. Produce again to create a new record.",
+        blockedRolledBack:
+          "This build was rolled back, so it cannot be handed off. Produce again to create a new record.",
+        recoveredBlockNote:
+          "This record was recovered. Complete the inspection and the follow-up production steps before handing off.",
+        unconfirmedNote:
+          "The handoff action is unavailable: this record cannot be confirmed.",
+        entryWorkshop: "Open Workshop",
+      },
+      /* U19 second deliverable (explicit user ruling): the standalone
+       * "Open in Unity to inspect or fix" action — deliberately separate from
+       * the handoff button (own component, own port, own copy). Never gated by
+       * the record state; opening the editor is neither a recovery execution
+       * nor an upload permission. The backend open entry is not landed yet
+       * (core seat in flight): the port answers structural absence and this
+       * face presents it honestly — no fabricated capability. */
+      openInUnity: {
+        action: "Open in Unity to inspect or fix",
+        actionNote:
+          "Opens this build's project in the Unity editor for manual inspection and fixes. Opening the editor neither resumes a production task nor permits an upload.",
+        absentTitle: "Open in Unity unavailable",
+        absentNote: "Opening this project in Unity is not wired up yet.",
+        failedTitle: "Open in Unity request rejected",
+        failedUnknown: "The request was rejected without an error code.",
+        failedWithCode: "The request was rejected: {code}",
+        retry: "Retry",
       },
     },
   },
@@ -1747,6 +1790,27 @@ demoTaskTitle: "Demo task",
       removeConfirm: "Confirm removal",
       removing: "Removing…",
       removedLine: "Removed subscription: {repoId}",
+      /** F4 repository lifecycle (027 v0.6 consumption): inline toggle/
+       *  refresh controls. Honest-wording ruling: enable state is VUA-owned
+       *  — a disabled repository stays listed (disabled-not-hidden), its
+       *  packages leave enumeration and install resolution; the shared
+       *  VCC/ALCOM settings are never written (W25 read-only evidence
+       *  ruling (c): VCC carries no enable/disable state anywhere). */
+      lifecycle: {
+        enableAction: "Enable",
+        disableAction: "Disable",
+        enableAria: "Enable repository {name}",
+        disableAria: "Disable repository {name}",
+        refreshAction: "Refresh",
+        refreshAria: "Refresh the cache of repository {name}",
+        enabling: "Enabling…",
+        disabling: "Disabling…",
+        refreshing: "Refreshing…",
+        disabledBadge: "Disabled",
+        disabledNote: "Disabled: this repository's packages no longer take part in browsing or install resolution; the subscription row stays listed.",
+        doneLine: "Done: {repoId}",
+        upToDate: "The repository cache is already up to date.",
+      },
     },
 
     create: {
@@ -1801,7 +1865,11 @@ demoTaskTitle: "Demo task",
       riskBody:
         "Community repositories are maintained by third parties and are not reviewed by VRChat or VUA. Their packages can change after you subscribe. Only add repositories from creators you trust.",
       riskAcknowledge: "Got it",
-      toggleAria: "Enable or disable {name}",
+      /** F4 consumption (2026-09-21): the toggleAria interactive wording
+       *  retires together with the local checkbox flip, replaced by the
+       *  read-only static badges */
+      enabledBadge: "Enabled",
+      disabledBadge: "Disabled",
       health: {
         unknown: "Not checked",
         ok: "Reachable",
@@ -2289,18 +2357,18 @@ demoTaskTitle: "Demo task",
       "DEV spike: T1 webview-rendered source materials vs T2 Unity-baked product; project data is read from the local demo manifest and never committed to the repo.",
     needRootTitle: "No demo project specified",
     needRootBody:
-      "Append &demoRoot=<Unity project path> to the URL; the page reads .vrcua/bridge/demo-lab.json from that project.",
+      "Append &demoRoot=<Unity project path> to the URL; the page reads .vua/bridge/demo-lab.json from that project.",
     demoRootLabel: "Project",
     manifestLoading: "Reading demo manifest…",
     manifestFailedTitle: "Demo manifest unavailable",
     manifestFailedBody:
-      "Could not read {path}. Check demoRoot and that .vrcua/bridge/demo-lab.json exists in the project.",
+      "Could not read {path}. Check demoRoot and that .vua/bridge/demo-lab.json exists in the project.",
     sourcesTitle: "Materials · T1 direct webview render",
     sourcesNote:
       "Unity custom shaders are approximated with the base material plus its main texture; FBX-embedded textures are kept. Lighting and shading differ from the Unity bake.",
     productsTitle: "Products · T2 Unity editor bake",
     productsNote:
-      "Turntable frames are baked by the Unity editor bridge into .vrcua/bridge/preview/; the VRM is rendered directly by the webview as a control.",
+      "Turntable frames are baked by the Unity editor bridge into .vua/bridge/preview/; the VRM is rendered directly by the webview as a control.",
     cardStatusLoading: "Loading…",
     cardStatusFailed: "Load failed",
     bakePending: "Bake output not found — run build_preview in Unity first ({path}).",
@@ -2407,6 +2475,28 @@ demoTaskTitle: "Demo task",
     },
     environment: {
       verifyUnavailable: "The editor verification service is not available right now.",
+    },
+    /** Material-chain error copy (desktop batch 142, task-event failure-row
+     *  presentation): keys = wire messageKeys (vua.material family errors
+     *  carried by AppErrorV01). provisionFailed is a reserved row — the
+     *  material-chain v0.2 code vua.material.provision_failed travels with
+     *  the core seat's fix slice (wt-2, pending landing); the copy lands
+     *  first in sync across the four tables so the code hits on arrival. */
+    material: {
+      executionFailed: "Material execution failed: the Unity-side operation did not complete.",
+      provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+    },
+    /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
+     *  as the normative source). Reserved rows — the codes
+     *  vua.release_handoff.record_state_blocked (params: {state}) and
+     *  vua.release_handoff.record_state_unknown travel with the core seat's
+     *  admission-gate slice (wt-2, in flight); the copy lands first in sync
+     *  across the four tables so the codes hit on arrival. */
+    releaseHandoff: {
+      stateBlocked:
+        "Handoff was rejected: this build record's current state does not permit handoff (state: {state}).",
+      stateUnknown:
+        "Handoff was rejected: this build record's state cannot be confirmed.",
     },
   },
 };

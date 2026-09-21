@@ -114,6 +114,7 @@ impl VpmBackend for FakeRegister {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn register_capabilities(&self) -> RegisterCapabilities {
@@ -511,6 +512,7 @@ fn unimplemented_register_port_capability_missing_folds_into_execution_failed() 
                 list_packages: false,
                 remove_packages: false,
                 project_registry: false,
+            resolve_project: false,
             }
         }
         fn register_capabilities(&self) -> RegisterCapabilities {

@@ -122,6 +122,7 @@ impl VpmBackend for FakeInstallBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -180,6 +181,7 @@ impl VpmBackend for NoInstallBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

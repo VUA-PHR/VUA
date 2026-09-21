@@ -1,0 +1,100 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/release-handoff/v0.2/methods/release-open-for-inspection.schema.json",
+  "title": "VUA release.openForInspection (v0.2)",
+  "description": "Tasked command face of the independent 'open in Unity to inspect/fix' entry (U19 user ruling 2026-09-21, BOARD row = normative source; v0.2 new method). The ruling keeps this path EXPLICITLY INDEPENDENT and OPEN regardless of the build record's state: opening the editor is neither recovery-execution nor upload permission, so a user may always open the project to inspect and fix it — including when the record's status would block a handoff (failed / cancelled / rolled_back / recovered), when the status is unconfirmable, and when the record has no status at all. Admission is the handoff admission MINUS the record-state gate: the params closed set {buildId} (a shape violation answers invalid_params), the wired faces (the unwired port answers unavailable — honest absence), the record existence (an unknown buildId answers build_unknown — the record is the authoritative project identity, ruling 4), and the editor-identity resolution (ruling 5: explicit injection > record's carried editor version among observed candidates > editor_unresolved). NO record-state classification happens on this route — never a whitelist pass, never a refusal. Completion judgment: the Bridge handshake arrival (001 chain), the same long-running task face as the handoff — 'process started' is never a completion judgment. The succeeded task snapshot's result carries the INSPECTION fact document, whose explicit operation key ('release.openForInspection') makes the wording un-mistakable: it is never a handoff completion fact and must never be presented as one (never '交接完成'). Like every face of this family there is no upload-status field — the upload happens in the official SDK and is never a VUA fact to guess at. Tasking: the unified task nine-state single form; the acceptance reply follows the tasked-command face.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "schemaVersion": {
+      "const": "0.2"
+    },
+    "buildId": {
+      "description": "The build-record identity anchoring the inspection (frozen build-record v0.3 face; the same identity family record.get serves). The closed params set: the build record is the single authoritative source for the project identity, so no project field repeats here.",
+      "type": "string",
+      "minLength": 1
+    },
+    "errorCode": {
+      "description": "Closed four-code typed error set for the inspection entry. The record-state codes (record_state_blocked / record_state_unknown) are deliberately ABSENT: this route never classifies the record's status (the ruling keeps the inspect/fix path open regardless of state). unavailable: the route or the production-domain port is not wired — honest absence. invalid_params: params closed-set violations. build_unknown: the buildId has no corresponding build record (checked at acceptance time). editor_unresolved: editor identity failed to resolve; the diagnosis reuses the environment.verifyEditor semantics. Later-phase failures inside the running task (handshake timeout and the like) travel the ordinary task face nine states, not this set.",
+      "enum": [
+        "vua.release_handoff.unavailable",
+        "vua.release_handoff.invalid_params",
+        "vua.release_handoff.build_unknown",
+        "vua.release_handoff.editor_unresolved"
+      ]
+    },
+    "release-openForInspectionParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["buildId"],
+      "properties": {
+        "buildId": { "$ref": "#/$defs/buildId" }
+      }
+    },
+    "release-openForInspectionAccepted": {
+      "description": "Tasked-command acceptance (inspection.requestRun reply shape): poll the application task face by taskId; do not poll this method again. The succeeded task snapshot's result carries the inspection fact document.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "operation", "taskId", "correlationId"],
+      "properties": {
+        "schemaVersion": { "const": "0.2" },
+        "operation": { "const": "release.openForInspection" },
+        "taskId": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "release-openForInspectionFact": {
+      "description": "The inspection fact document (the succeeded task snapshot's result payload): the VUA-side terminal state of the editor-open-for-inspection. Six-key closed set: the handoff fact's five identity keys PLUS the explicit operation key — the wording discipline is pinned by shape, so this fact can never be read or presented as a handoff completion (the inspection entry is not a handoff; it grants neither recovery-execution nor upload permission). additionalProperties false also pins honesty rules 1/2: there is no upload-status field.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "operation",
+        "buildId",
+        "projectId",
+        "editor",
+        "occurredAt"
+      ],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "operation": {
+          "description": "The entry wording, pinned to the inspection operation. A fact carrying any other operation value is invalid by construction (the negative vector pins it).",
+          "const": "release.openForInspection"
+        },
+        "buildId": {
+          "description": "The build-record identity the inspection anchored on.",
+          "type": "string",
+          "minLength": 1
+        },
+        "projectId": {
+          "description": "Project identity resolved from the build record (authoritative identity face; never a filesystem path — storedPath discipline).",
+          "type": "string",
+          "minLength": 1
+        },
+        "editor": {
+          "description": "The editor identity the inspection open targeted (identity facts only; exePath is the frozen editor-verify v0.1 fact family, not an artifact storage path).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exePath", "version"],
+          "properties": {
+            "exePath": {
+              "description": "The editor executable identity (editor-verify v0.1 fact family).",
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "description": "The editor version string (display form, as the verification face established it).",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "occurredAt": {
+          "description": "The instant the editor-open completed (RFC 3339), the VUA-side terminal-state fact.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

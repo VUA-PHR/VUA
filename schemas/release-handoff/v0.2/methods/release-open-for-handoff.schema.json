@@ -1,0 +1,104 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/release-handoff/v0.2/methods/release-open-for-handoff.schema.json",
+  "title": "VUA release.openForHandoff (v0.2)",
+  "description": "Tasked command face of the official-SDK upload handoff. FROZEN v0.1 (core freeze batch 2026-09-16, proposal 023): handoff semantics per the product boundary — the upload itself never enters VUA; the result document carries no upload-status field (honesty rules 1/2 pinned by shape; the negative vector pins it). Params are a closed single-key set {buildId}: the build record is the authoritative project identity (ruling 4), so no project field repeats in params. Editor identity resolution (ruling 5): explicit injection (021 authority) first, then the build record's carried editor identity, else the typed error vua.release_handoff.editor_unresolved. Completion judgment: the Bridge handshake arrival (001 chain) — 'process started' is never a completion judgment; timeout fails honestly; OS window focus enters neither the judgment nor the fact. Tasking: the unified task nine-state single form; the acceptance reply follows the tasked-command face (inspection.requestRun precedent); the succeeded task snapshot's result carries the handoff fact document. storedPath discipline (authority anchor 6): project paths and artifact paths are never wire facts. v0.2 DELTA (U19 user ruling 2026-09-21, BOARD row = normative source): the admission sequence gains the RECORD-STATE GATE, applied backend-authoritatively in the route admission order — never in a UI. State whitelist (normative table, words = the frozen build-record v0.3 status enum): succeeded and succeeded_with_warnings PASS (the warning presentation stays a desktop concern; the record is never rewritten); failed, cancelled and rolled_back are REFUSED with vua.release_handoff.record_state_blocked (typed rejection carrying the record's original state value as the state param — the desktop words its diagnostic / recovery / re-production entry around it); recovered is REFUSED with the same code (a completed inspection never rewrites a failed history record to success — ruling correction b: recovered is a build-record state, not the task-face inspect_required, and the two state sets are never mixed); a missing, non-string, or out-of-enum status is REFUSED with vua.release_handoff.record_state_unknown (the record cannot be confirmed). The whitelist is a product-policy choice (ruling correction a), not a fact check: the state is the fact, 'which states may hand off' is the policy. Scope honesty (ruling correction c): a whitelisted state does not guarantee the project still matches the record — this gate prevents obviously wrong handoffs and never claims to remove the whole 'upload the wrong avatar' risk. The independent 'open in Unity to inspect/fix' path lives in release.openForInspection (its own method schema in this family version) and is NOT state-gated. Task-runtime failures inside an accepted task (handshake timeout and the like) still travel the ordinary task face, not this error set.",
+  "type": "object",
+  "additionalProperties": false,
+  "$defs": {
+    "schemaVersion": {
+      "const": "0.2"
+    },
+    "buildId": {
+      "description": "The build-record identity handed off (frozen build-record v0.3 face; the same identity family record.get serves). The closed params set: the build record is the single authoritative source for the project identity, so no project field repeats here.",
+      "type": "string",
+      "minLength": 1
+    },
+    "errorCode": {
+      "description": "Closed six-code typed error set (vua.release_handoff.* family, v0.2). unavailable: the route or the production-domain port is not wired — honest absence, never a fabricated acceptance. invalid_params: params closed-set violations (a shape violation is never folded into an absence). build_unknown: the buildId has no corresponding build record (checked at acceptance time). record_state_blocked: the record's status sits outside the handoff whitelist (failed / cancelled / rolled_back / recovered) — carries the state param with the record's original value. record_state_unknown: the record's status is missing, non-string, or outside the build-record enum — the record cannot be confirmed. editor_unresolved: editor identity failed to resolve (no explicit injection and no usable build-record identity); the diagnosis reuses the environment.verifyEditor semantics. Later-phase failures inside the running task (handshake timeout and the like) travel the ordinary task face nine states, not this set.",
+      "enum": [
+        "vua.release_handoff.unavailable",
+        "vua.release_handoff.invalid_params",
+        "vua.release_handoff.build_unknown",
+        "vua.release_handoff.record_state_blocked",
+        "vua.release_handoff.record_state_unknown",
+        "vua.release_handoff.editor_unresolved"
+      ]
+    },
+    "release-openForHandoffParams": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["buildId"],
+      "properties": {
+        "buildId": { "$ref": "#/$defs/buildId" }
+      }
+    },
+    "recordStateBlockedParams": {
+      "description": "The localized-error params of vua.release_handoff.record_state_blocked: the record's original state value, verbatim, never normalized (the messageKey errors.releaseHandoff.stateBlocked words the diagnostic / recovery / re-production entry around it).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "properties": {
+        "state": {
+          "description": "The build record's original status value verbatim (the ruling: state = 记录状态原值).",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "release-openForHandoffAccepted": {
+      "description": "Tasked-command acceptance (inspection.requestRun reply shape): poll the application task face by taskId; do not poll this method again. The succeeded task snapshot's result carries the handoff fact document (the #22/020 result-reflux channel).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "operation", "taskId", "correlationId"],
+      "properties": {
+        "schemaVersion": { "const": "0.2" },
+        "operation": { "const": "release.openForHandoff" },
+        "taskId": { "type": "string", "minLength": 1 },
+        "correlationId": { "type": "string", "minLength": 1 }
+      }
+    },
+    "release-openForHandoffFact": {
+      "description": "The handoff fact document (the succeeded task snapshot's result payload): the VUA-side terminal state of the handoff. Carries buildId, the project identity resolved from the build record, the editor identity facts (identity, not storage paths), and the occurrence instant. additionalProperties false pins honesty rules 1/2 by shape: there is no upload-status field — the upload happens in the official SDK and is never a VUA fact to guess at.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "buildId", "projectId", "editor", "occurredAt"],
+      "properties": {
+        "schemaVersion": { "$ref": "#/$defs/schemaVersion" },
+        "buildId": {
+          "description": "The handed-off build identity (the SDK-side cross-check anchor).",
+          "type": "string",
+          "minLength": 1
+        },
+        "projectId": {
+          "description": "Project identity resolved from the build record (authoritative identity face; never a filesystem path — storedPath discipline).",
+          "type": "string",
+          "minLength": 1
+        },
+        "editor": {
+          "description": "The editor identity the handoff targeted (identity facts only; exePath is the frozen editor-verify v0.1 fact family, not an artifact storage path).",
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["exePath", "version"],
+          "properties": {
+            "exePath": {
+              "description": "The editor executable identity (editor-verify v0.1 fact family).",
+              "type": "string",
+              "minLength": 1
+            },
+            "version": {
+              "description": "The editor version string (display form, as the verification face established it).",
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "occurredAt": {
+          "description": "The instant the handoff completed (RFC 3339), the VUA-side terminal-state fact.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

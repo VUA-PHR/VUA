@@ -11,6 +11,7 @@ import type { ProjectOpsPort } from "./project-ops-port.ts";
 import type { ProductionChainPort } from "./production-chain-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
+import type { ReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
 import type { DataSource } from "./types.ts";
 
 /**
@@ -38,6 +39,9 @@ export interface VuaGateway {
   /** M7 消费切片:release.openForHandoff 交接命令端口(023 词表行;
    *  实现域未接线=诚实缺席语义) */
   readonly releaseHandoff: ReleaseHandoffPort;
+  /** U19 第二交付:「在 Unity 中打开以检查/修复」独立端口(与交棒显式
+   *  分离,不按记录状态闸;核心 open 入口入库前全装配点结构缺席) */
+  readonly releaseProjectOpen: ReleaseProjectOpenPort;
   readonly packages: PackagesPort;
   /** 数据来源标识:驱动"演示数据"徽标(原则①) */
   dataSource(): DataSource;

@@ -133,6 +133,22 @@ pub static BRIDGE_PACKAGE_FILES: &[(&str, &str)] = &[
         "Editor/Bridge/BridgeProtocol.cs.meta",
         include_str!("../../../unity/Packages/com.ph-r.vua/Editor/Bridge/BridgeProtocol.cs.meta"),
     ),
+    (
+        "Editor/Bridge/BridgePreviewBake.cs",
+        include_str!("../../../unity/Packages/com.ph-r.vua/Editor/Bridge/BridgePreviewBake.cs"),
+    ),
+    (
+        "Editor/Bridge/BridgePreviewBake.cs.meta",
+        include_str!("../../../unity/Packages/com.ph-r.vua/Editor/Bridge/BridgePreviewBake.cs.meta"),
+    ),
+    (
+        "Editor/Bridge/BridgeResultJson.cs",
+        include_str!("../../../unity/Packages/com.ph-r.vua/Editor/Bridge/BridgeResultJson.cs"),
+    ),
+    (
+        "Editor/Bridge/BridgeResultJson.cs.meta",
+        include_str!("../../../unity/Packages/com.ph-r.vua/Editor/Bridge/BridgeResultJson.cs.meta"),
+    ),
 ];
 
 /// Writes the embedded scaffold (Bridge package + MA compile stub) into

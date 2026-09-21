@@ -65,7 +65,7 @@ impl VpmBackend for NoVpm {
         "none"
     }
     fn capabilities(&self) -> VpmCapabilities {
-        VpmCapabilities { create_project: false, preview_install: false, list_packages: false, remove_packages: false, project_registry: false }
+        VpmCapabilities { create_project: false, preview_install: false, list_packages: false, remove_packages: false, project_registry: false, resolve_project: false }
     }
     fn preview_install(
         &self,
@@ -184,6 +184,13 @@ fn make_world(label: &str) -> (PathBuf, PathBuf, PathBuf) {
     for dir in ["Assets", "Packages", "ProjectSettings"] {
         fs::create_dir_all(project_root.join(dir)).unwrap();
     }
+    // Already-provisioned target: the standing fixtures plan the UNCHANGED
+    // v0.1 step set (zero-change law for provisioned projects).
+    fs::write(
+        project_root.join("ProjectSettings").join("ProjectVersion.txt"),
+        "2022.3.22f1",
+    )
+    .unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
     (base, source, project_root)
 }
@@ -886,6 +893,12 @@ fn run_failing_confirm(
     };
     assert_eq!(task.state, TaskState::Failed, "{task:?}");
     assert_eq!(task.error.as_ref().expect("typed error").code, "vua.material.bridge_timeout");
+    assert_eq!(
+        task.error.as_ref().expect("typed error").message_key,
+        "errors.material.executionFailed",
+        "a bridge-segment failure keeps the standing face at the worker too — only the \
+         provision segment presents provisionFailed (batch 150 word-face law)"
+    );
 
     (base, source, project_root, plan_id, plan_revision, confirm_task_id)
 }

@@ -6,6 +6,7 @@ import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
+import { createAbsentReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -115,11 +116,15 @@ function createEmptyPackages(): PackagesPort {
     removeRepo: () => Promise.resolve({ kind: "unavailable" }),
     // A5 写面(026 v0.5 项目创建):同 A1 纪律——恒缺席臂
     createProject: () => Promise.resolve({ kind: "unavailable" }),
+    // F4 写面(027 v0.6 仓库生命周期):同 A1 纪律——恒缺席臂;原
+    // setRepoEnabled 本地假翻转退役,本地状态绝不冒充 wire 写面
+    enableRepo: () => Promise.resolve({ kind: "unavailable" }),
+    disableRepo: () => Promise.resolve({ kind: "unavailable" }),
+    refreshRepo: () => Promise.resolve({ kind: "unavailable" }),
     addProject: () => Promise.resolve({ kind: "unavailable" }),
     importLocalPackage: () => Promise.resolve({ kind: "unavailable" }),
     previewChanges: () => Promise.resolve({ kind: "unavailable" }),
     applyChanges: () => Promise.resolve({ kind: "unavailable" }),
-    setRepoEnabled: () => Promise.resolve(packagesView),
     capability: () =>
       Promise.resolve<CapabilityReport>({
         state: "unavailable",
@@ -233,6 +238,8 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
     releaseHandoff: createAbsentReleaseHandoffPort(),
+    // U19 第二交付:open 检查入口结构缺席(核心入库前唯一实现,不虚构路由)
+    releaseProjectOpen: createAbsentReleaseProjectOpenPort(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),

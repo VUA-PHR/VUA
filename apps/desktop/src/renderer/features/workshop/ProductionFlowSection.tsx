@@ -9,6 +9,7 @@ import type {
   RecoverDecisionKind,
   SourceIntake,
 } from "../../gateway/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
 import type { ProductionFlowModel } from "./production-flow-model.ts";
 import { MaterialEntryBar } from "./MaterialEntryBar.tsx";
 import { InspectionCard } from "./InspectionCard.tsx";
@@ -43,6 +44,7 @@ export function ProductionFlowSection({
   onRequestPlan,
   onConfirmPlan,
   onRecover,
+  onNavigate,
 }: {
   flow: ProductionFlowModel;
   /** 段级读取失败(能力/意图请求异常):EmptyState + 重试 */
@@ -57,6 +59,8 @@ export function ProductionFlowSection({
   /** v0.2:确认携带风险决策(计划审阅控件)+ 可选的会话内记忆 */
   onConfirmPlan: (riskChoice: PlanRiskChoice, rememberForSession: boolean) => void;
   onRecover: (decision: RecoverDecisionKind) => void;
+  /** 记录卡「去出厂」链钮透传(缺口 (a));与页级流水线同一导航原语 */
+  onNavigate?: ((target: PageId) => void) | undefined;
 }) {
   const sectionLabel = format(copy.sectionAria, { production: termLabel("production") });
   if (failed) {
@@ -145,7 +149,7 @@ export function ProductionFlowSection({
             />
           ) : null}
           {flow.cards.buildRecord && flow.buildRecord !== null ? (
-            <BuildRecordCard record={flow.buildRecord} />
+            <BuildRecordCard record={flow.buildRecord} onNavigate={onNavigate} />
           ) : null}
         </>
       )}

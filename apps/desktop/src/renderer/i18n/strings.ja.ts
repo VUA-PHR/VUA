@@ -42,6 +42,8 @@ export const strings: Strings = {
   common: {
     fixtureBadge: "デモデータ",
     mascotAria: "VUA マスコットロボット",
+    /** コンテンツダイアログの閉じるボタン(マテリアル取り込み/コーディネート下書き) */
+    dialogClose: "閉じる",
   },
   boot: {
     loadFailedTitle: "起動データの読み込みに失敗しました",
@@ -148,11 +150,9 @@ demoTaskTitle: "デモタスク",
       tools: "ツール集",
       settings: "設定",
     },
-    groups: {
-      warehouse: "素材ライブラリ",
-      workshop: "作業場",
-      packages: "パッケージ",
-    },
+    /** 現在どのモジュールのサイドバーもグループラベルを使わない(モデル生産は
+     *  2026-09-20 のナビ再編でフラット化)。グループ機構は残す。 */
+    groups: {},
     pages: {
       home: "ハブ",
       envPlay: "プレイ環境",
@@ -175,8 +175,8 @@ demoTaskTitle: "デモタスク",
       settingsAbout: "VUA について",
       settingsDonate: "寄付",
       packages: "パッケージマネージャー",
+      /** コーディネート下書きは 2026-09-20 のナビ再編以降、レシピページ内のダイアログ。 */
       composePage: "コーディネート下書き",
-      importMaterial: "素材のインポート",
       inspectionPage: "検査",
     },
   },
@@ -608,6 +608,7 @@ rolled_back: "ロールバック済み",
       finishedAt: "完了時刻 {time}",
         recovered_badge: 'リカバリ済みの実行',
         recovered_note: 'この実行記録は、復旧処理後に完了したものです。',
+      goRelease: 'リリースへ',
     },
     phase: {
       inspecting: "検査中",
@@ -1336,6 +1337,41 @@ rolled_back: "ロールバック済み",
         retry: "再試行",
         taskErrorLine: "タスクエラー:{code}",
         taskFailedNote: "引き渡しタスクが失敗しました。",
+        /* U19 ハンドオフ准入の表示バケット(ユーザー裁定 2026-09-21):
+         * succeeded/succeeded_with_warnings → 許可(警告バッジは表示維持);
+         * failed/cancelled/rolled_back → 不許可＋理由＋検査/ワークショップ
+         * 導線;recovered → 不許可、検視と後続生産フローを先に完了;
+         * 欠落/語彙外の状態 → 拒否、記録を確認できません。バックエンドの
+         * 権威ゲートは別途ルーティング准入序にあり、これは発見可能な理由の
+         * 文面(デザイン標準 §5)。 */
+        blockedTitle: "ハンドオフ不可",
+        blockedFailed:
+          "このビルドは失敗したため、ハンドオフできません。結果を確認するか、リカバリーするか、再生産してください。",
+        blockedCancelled:
+          "このビルドはキャンセルされたため、ハンドオフできません。再生産して新しい記録を作成してください。",
+        blockedRolledBack:
+          "このビルドはロールバックされたため、ハンドオフできません。再生産して新しい記録を作成してください。",
+        recoveredBlockNote:
+          "この記録はリカバリー後に完了しました。ハンドオフの前に、検視と後続の生産フローを完了してください。",
+        unconfirmedNote: "ハンドオフ操作は利用できません:この記録は確認できません。",
+        entryWorkshop: "ワークショップへ",
+      },
+      /* U19 第 2 の成果物(ユーザー裁定の明文):独立した「確認・修正のため
+       * Unity で開く」アクション——ハンドオフボタンと明示的に分離(独立
+       * コンポーネント/ポート/文面グループ)。記録状態でゲートしない。エディター
+       * を開くことはリカバリー実行でもアップロード許可でもない。コア席の
+       * バックエンド open 検査入口はまだ未着:ポートは構造的欠席で、文面は
+       * 欠席をありのままに示し、バックエンド能力を捏造しない。 */
+      openInUnity: {
+        action: "確認・修正のため Unity で開く",
+        actionNote:
+          "このビルドのプロジェクトを Unity エディターで開き、手動での確認と修正を行います。エディターを開くことは、リカバリー実行でもアップロード許可でもありません。",
+        absentTitle: "Unity で開くは利用できません",
+        absentNote: "このプロジェクトを Unity で開く機能はまだ接続されていません。",
+        failedTitle: "Unity で開く要求が拒否されました",
+        failedUnknown: "エラーコードなしで要求が拒否されました。",
+        failedWithCode: "要求が拒否されました:{code}",
+        retry: "再試行",
       },
     },
   },
@@ -1680,6 +1716,25 @@ rolled_back: "ロールバック済み",
       removeConfirm: "解除を確認",
       removing: "解除中…",
       removedLine: "購読を解除しました:{repoId}",
+      /** F4 リポジトリライフサイクル(027 v0.6 消費バッチ):有効化/無効化/
+       *  更新の行内操作。有効状態は VUA 固有の事実——無効化したリポジトリ
+       *  も購読一覧に残り(非表示にしない)、そのパッケージは列挙とイン
+       *  ストール解決の対象外。VCC/ALCOM 共有設定は決して書き換えない。 */
+      lifecycle: {
+        enableAction: "有効化",
+        disableAction: "無効化",
+        enableAria: "リポジトリ {name} を有効化",
+        disableAria: "リポジトリ {name} を無効化",
+        refreshAction: "更新",
+        refreshAria: "リポジトリ {name} のキャッシュを更新",
+        enabling: "有効化中…",
+        disabling: "無効化中…",
+        refreshing: "更新中…",
+        disabledBadge: "無効",
+        disabledNote: "無効:このリポジトリのパッケージはブラウズとインストール解決の対象外になり、購読行は一覧に残ります。",
+        doneLine: "操作が完了しました:{repoId}",
+        upToDate: "リポジトリのキャッシュは最新です。",
+      },
     },
 
     create: {
@@ -1734,7 +1789,10 @@ rolled_back: "ロールバック済み",
       riskBody:
         "コミュニティリポジトリは第三者が保守しており、VRChat や VUA による審査を受けていません。購読後にパッケージが変わる可能性があります。信頼できる作者のリポジトリのみ追加してください。購読機能はパッケージエンジンと一緒に提供予定で、この案内は先行して表示しています。",
       riskAcknowledge: "了解",
-      toggleAria: "{name} を有効/無効にする",
+      /** F4 消費バッチ(2026-09-21):toggleAria の操作語彙はローカル
+       *  チェックボックス切替とともに引退し、読み取り専用の静的表示に置換 */
+      enabledBadge: "有効",
+      disabledBadge: "無効",
       health: {
         unknown: "未確認",
         ok: "到達可能",
@@ -2213,18 +2271,18 @@ rolled_back: "ロールバック済み",
       "DEV spike: T1 webview 直描の素材と T2 Unity ベイク成品を対比。プロジェクトデータは本機の demo マニフェストから読み取り、リポジトリには入れません。",
     needRootTitle: "デモプロジェクトが未指定です",
     needRootBody:
-      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vrcua/bridge/demo-lab.json を読み込みます。",
+      "URL に &demoRoot=<Unity プロジェクトのパス> を追加してください。そのプロジェクトの .vua/bridge/demo-lab.json を読み込みます。",
     demoRootLabel: "プロジェクト",
     manifestLoading: "デモマニフェストを読み込み中…",
     manifestFailedTitle: "デモマニフェストを読めません",
     manifestFailedBody:
-      "{path} を読み取れませんでした。demoRoot と .vrcua/bridge/demo-lab.json の存在を確認してください。",
+      "{path} を読み取れませんでした。demoRoot と .vua/bridge/demo-lab.json の存在を確認してください。",
     sourcesTitle: "素材 · T1 webview 直描",
     sourcesNote:
       "Unity カスタムシェーダーは基本マテリアル+メインテクスチャで近似し、FBX 埋め込みテクスチャは保持します。ライティングとシェーディングは Unity ベイクと異なります。",
     productsTitle: "成品 · T2 Unity エディターベイク",
     productsNote:
-      "ターンテーブルフレームは Unity エディターブリッジが .vrcua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
+      "ターンテーブルフレームは Unity エディターブリッジが .vua/bridge/preview/ にベイクします。VRM は対照として webview で直描します。",
     cardStatusLoading: "読み込み中…",
     cardStatusFailed: "読み込みに失敗しました",
     bakePending:
@@ -2332,6 +2390,27 @@ rolled_back: "ロールバック済み",
     },
     environment: {
       verifyUnavailable: "エディター検証サービスは現在利用できません。",
+    },
+    /** マテリアルチェーンのエラー文面(デスクトップ第 142 バッチ、タスク
+     *  イベント失敗行の表示):キー = ワイヤ上の messageKey(vua.material
+     *  家族のエラーは AppErrorV01 経由)。provisionFailed は予約行——
+     *  マテリアルチェーン v0.2 の新コード vua.material.provision_failed
+     *  はコア席の修正バッチ(wt-2、取込待ち)で運ばれる。文面を先行して
+     *  4 言語同期しておき、コード到着時に即ヒットさせる。 */
+    material: {
+      executionFailed: "マテリアル実行に失敗しました:Unity 側の操作が完了しませんでした。",
+      provisionFailed: "ターゲットプロジェクトの供給に失敗しました:Unity プロジェクトがマテリアル取り込み可能な状態ではありません。",
+    },
+    /** ハンドオフ准入ゲートの文面(U19 ユーザー裁定 2026-09-21、BOARD U19 行
+     *  が規範ソース)。予約行——コード vua.release_handoff.record_state_blocked
+     *  (params:{state})と vua.release_handoff.record_state_unknown はコア席
+     *  の准入ゲートスライス(wt-2、進行中)で運ばれる。文面を先行して 4 言語
+     *  同期しておき、コード到着時に即ヒットさせる。 */
+    releaseHandoff: {
+      stateBlocked:
+        "ハンドオフは拒否されました:このビルド記録の現在の状態ではハンドオフできません(状態:{state})。",
+      stateUnknown:
+        "ハンドオフは拒否されました:このビルド記録の状態を確認できません。",
     },
   },
 };

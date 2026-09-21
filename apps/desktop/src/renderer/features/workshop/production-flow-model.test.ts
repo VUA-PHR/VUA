@@ -11,6 +11,7 @@ import {
   recoverDecisionKinds,
   sourceIntakes,
   type BuildRecord,
+  type BuildRecordDisplayStatus,
   type InspectionReport,
   type MaterialRef,
   type ProductionPlan,
@@ -18,6 +19,7 @@ import {
 } from "../../gateway/model-production-port.ts";
 import type { CapabilityReport } from "../../gateway/types.ts";
 import {
+  buildRecordGoReleaseAvailable,
   flowDisabledReasons,
   phaseOfRun,
   productionFlowModel,
@@ -359,5 +361,17 @@ test("phaseOfRun/toneForPhase 穷尽十一相;取消标记优先于 runState", (
   assert.equal(phaseOfRun(runWith({ runState: "validate", cancelled: true })), "cancelled");
   for (const phase of productionFlowPhases) {
     assert.ok(["accent", "amber", "error", "neutral"].includes(toneForPhase(phase)));
+  }
+});
+
+test("buildRecordGoReleaseAvailable:仅显示投影 completed 放行(缺口 (a);四态期望表穷尽闭集,recovered 折叠 completed 后同样在场)", () => {
+  const expected: Record<BuildRecordDisplayStatus, boolean> = {
+    completed: true,
+    aborted: false,
+    rolled_back: false,
+    rollback_failed: false,
+  };
+  for (const status of buildRecordDisplayStatuses) {
+    assert.equal(buildRecordGoReleaseAvailable(status), expected[status], status);
   }
 });

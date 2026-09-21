@@ -102,6 +102,7 @@ impl VpmBackend for FakeLifecycleBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_lifecycle_capabilities(&self) -> RepoLifecycleCapabilities {
@@ -167,6 +168,7 @@ impl VpmBackend for NoLifecycleBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(
@@ -212,6 +214,7 @@ impl VpmBackend for RefusingLifecycleBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn repo_lifecycle_capabilities(&self) -> RepoLifecycleCapabilities {

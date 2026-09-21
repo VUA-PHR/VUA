@@ -1,12 +1,15 @@
 import { formatDateTime } from "../../i18n/index.ts";
 import { Badge } from "../../components/primitives/Badge.tsx";
+import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import { format, strings } from "../../i18n/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
 import {
   projectBuildRecordDisplayStatus,
   type BuildRecordDisplayStatus,
 } from "../../gateway/index.ts";
 import type { BuildRecord } from "../../gateway/index.ts";
+import { buildRecordGoReleaseAvailable } from "./production-flow-model.ts";
 
 const copy = strings.productionFlow.record;
 const stageCopy = strings.workflowStage;
@@ -21,8 +24,17 @@ function statusTone(status: BuildRecordDisplayStatus): "brand" | "error" {
  * Bridge jobsRun/allSucceeded/lastOperation 小字、本地 VPM attempted/published、
  * 验证 status。未尝试的节以 null 锚如实呈现;packageId 保留字段不做链接
  * (Release 详情链接属后续切片)。
+ * 完成态附「去出厂」链钮(wt-4 缺口 (a) 小改):纯页面导航,不携带记录身份;
+ * 可见性由 buildRecordGoReleaseAvailable 单点判定。
  */
-export function BuildRecordCard({ record }: { record: BuildRecord }) {
+export function BuildRecordCard({
+  record,
+  onNavigate,
+}: {
+  record: BuildRecord;
+  /** 出厂页跳转(S-IX-1 流水线同一导航原语);缺席时链钮不渲染 */
+  onNavigate?: ((target: PageId) => void) | undefined;
+}) {
   const displayStatus = projectBuildRecordDisplayStatus(
     record.status,
     record.restoreAttempted,
@@ -121,6 +133,16 @@ export function BuildRecordCard({ record }: { record: BuildRecord }) {
       <p className="vua-caption vua-text-secondary">
         {format(copy.finishedAt, { time: formatDateTime(record.finishedAt) })}
       </p>
+      {buildRecordGoReleaseAvailable(displayStatus) && onNavigate !== undefined ? (
+        <div>
+          <Button
+            variant="subtle"
+            onClick={() => onNavigate("release")}
+          >
+            {copy.goRelease}
+          </Button>
+        </div>
+      ) : null}
     </Card>
   );
 }

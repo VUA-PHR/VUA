@@ -11,13 +11,13 @@ use tar::{Builder, Header};
 
 use vua_orchestrator::{
     BridgeError, BuildRecordStore, BuildRecordStatus, FileSystemSnapshotStore, FixedClock,
-    MaterialEntryMode, ProjectRef, ResultStatus, RiskDecisionChoice, TaskRuntime, TaskState,
-    UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+    MaterialEntryMode, ProjectRef, ResultStatus, RiskDecisionChoice, TaskEventKind, TaskRuntime,
+    TaskState, UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
 };
 use vua_unity_bridge::{
     LocalPackageIdentityStore, MaterialCancelToken, MaterialExecutor,
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01,
-    MaterialIntakeTaskSpec, RiskDecisionV01,
+    MaterialIntakeStepKind, MaterialIntakeTaskSpec, RiskDecisionV01,
 };
 
 fn temp_dir(label: &str) -> PathBuf {
@@ -52,6 +52,13 @@ fn make_world(label: &str) -> (PathBuf, ProjectRef, PathBuf) {
     fs::create_dir_all(project_root.join("Assets")).unwrap();
     fs::create_dir_all(project_root.join("Packages")).unwrap();
     fs::create_dir_all(project_root.join("ProjectSettings")).unwrap();
+    // Already-provisioned target: the standing fixtures plan the UNCHANGED
+    // v0.1 step set (zero-change law for provisioned projects).
+    fs::write(
+        project_root.join("ProjectSettings").join("ProjectVersion.txt"),
+        "2022.3.22f1",
+    )
+    .unwrap();
     fs::write(project_root.join("vpm-manifest.json"), "{}").unwrap();
     let project = ProjectRef { id: "project".into(), root: project_root };
     (base, project, source)
@@ -77,7 +84,7 @@ impl VpmBackend for NoVpm {
         "none"
     }
     fn capabilities(&self) -> VpmCapabilities {
-        VpmCapabilities { create_project: false, preview_install: false, list_packages: false, remove_packages: false, project_registry: false }
+        VpmCapabilities { create_project: false, preview_install: false, list_packages: false, remove_packages: false, project_registry: false, resolve_project: false }
     }
     fn preview_install(
         &self,
@@ -187,6 +194,7 @@ fn b3_task_001_happy_path_runs_and_replays() {
             project.id.clone(),
             "project-fingerprint",
             inspection,
+            &project.root,
             "corr",
         )
         .unwrap();
@@ -232,6 +240,219 @@ fn b3_task_001_happy_path_runs_and_replays() {
     }
 }
 
+// --- 第 150 批：失败词面按类别分流（provisionFailed / executionFailed） ---
+
+/// An unprovisioned target: no ProjectSettings/, so the plan carries the
+/// conditional ProvisionProject step (plan v0.2).
+fn make_unprovisioned_world(label: &str) -> (PathBuf, ProjectRef, PathBuf) {
+    let base = temp_dir(label);
+    let source = base.join("source");
+    unitypackage(&source.join("pack.unitypackage"), &["Assets/Asset.prefab"]);
+    let project_root = base.join("empty-target");
+    fs::create_dir_all(&project_root).unwrap();
+    let project = ProjectRef { id: "project".into(), root: project_root };
+    (base, project, source)
+}
+
+/// A backend whose creation leg fails — the provision arm's honest failure.
+struct FailingCreateVpm;
+impl VpmBackend for FailingCreateVpm {
+    fn name(&self) -> &'static str {
+        "failing-create"
+    }
+    fn capabilities(&self) -> VpmCapabilities {
+        VpmCapabilities { create_project: true, preview_install: false, list_packages: false, remove_packages: false, project_registry: false, resolve_project: true }
+    }
+    fn preview_install(
+        &self,
+        _: &ProjectRef,
+        _: &[vua_orchestrator::PackageRequestV1],
+    ) -> Result<vua_orchestrator::ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        panic!("never reached: creation fails first")
+    }
+    fn apply_install(
+        &self,
+        _: &ProjectRef,
+        _: &[vua_orchestrator::PackageRequestV1],
+        _: &str,
+    ) -> Result<serde_json::Value, vua_orchestrator::AppErrorV1> {
+        panic!("never reached: creation fails first")
+    }
+    fn create_project(
+        &self,
+        _: &Path,
+        _: &str,
+        _: Option<&str>,
+    ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
+        Err(vua_orchestrator::AppErrorV1::new(
+            "vua.vpm.template_missing",
+            vua_orchestrator::ErrorCategory::ExternalFailure,
+            "errors.vpm.templateMissing",
+            "corr",
+        ))
+    }
+}
+
+/// Drains the subscribed events and returns the Completed payload — the
+/// serialized AppErrorV1 the task exit carried.
+fn completed_payload(
+    receiver: &mut std::sync::mpsc::Receiver<vua_orchestrator::TaskEventV1>,
+) -> serde_json::Value {
+    let deadline = Instant::now() + Duration::from_secs(5);
+    loop {
+        assert!(Instant::now() < deadline, "no Completed event arrived");
+        match receiver.recv_timeout(Duration::from_millis(200)) {
+            Ok(event) if event.kind == TaskEventKind::Completed => return event.payload,
+            Ok(_) => continue,
+            Err(_) => continue,
+        }
+    }
+}
+
+#[test]
+fn b3_task_003_provision_failure_presents_the_reserved_provision_face() {
+    let (base, project, source) = make_unprovisioned_world("task-provision-face");
+    let inspection = MaterialIntakeEngine.inspect_folder(&source, "corr").unwrap();
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            "project-fingerprint",
+            inspection,
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+    assert!(
+        plan.steps.iter().any(|step| step.kind == MaterialIntakeStepKind::ProvisionProject),
+        "the fixture must plan the provision step"
+    );
+
+    let executor = Arc::new(MaterialExecutor::new(
+        Arc::new(FakeBridge::new()),
+        FileSystemSnapshotStore,
+        Arc::new(FailingCreateVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    ));
+    let rt = runtime();
+    let mut events = rt.subscribe();
+    let accepted = vua_unity_bridge::submit_material_intake(
+        &rt,
+        executor,
+        MaterialIntakeTaskSpec {
+            confirmation: confirmation(&plan),
+            source_folder: source.clone(),
+            project: project.clone(),
+            artifact_output_root: base.join("artifacts"),
+            token: MaterialCancelToken::new(),
+        },
+        None,
+    )
+    .unwrap();
+
+    let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+    assert_eq!(snapshot.state, TaskState::Failed);
+    let payload = completed_payload(&mut events);
+    assert_eq!(
+        payload["messageKey"], "errors.material.provisionFailed",
+        "the provision segment hits the long reserved row: {payload}"
+    );
+    assert!(
+        payload["code"]
+            .as_str()
+            .unwrap_or("")
+            .starts_with("vua.material.provision_failed"),
+        "the family code still carries the detail: {payload}"
+    );
+    // The compensation is unchanged: the empty-state restore + failed receipt.
+    let receipt = BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", plan.plan_id))
+        .expect("the failed provision still publishes its receipt");
+    assert_eq!(receipt.status, BuildRecordStatus::Failed);
+    assert!(!project.root.join("ProjectSettings").exists());
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+/// A bridge that rejects the first command — the bridge-segment failure.
+struct RejectingBridge;
+impl UnityBridge for RejectingBridge {
+    fn execute(&self, _: &ProjectRef, command: &UnityCommand) -> Result<UnityResult, BridgeError> {
+        Ok(UnityResult {
+            schema_version: 1,
+            command_id: command.command_id.clone(),
+            status: ResultStatus::Rejected,
+            changed_paths: vec![],
+            diagnostics: vec![],
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: None,
+            restored_from: None,
+            project_fingerprint_before: None,
+            data: serde_json::json!({}),
+        })
+    }
+}
+
+#[test]
+fn b3_task_004_bridge_failure_keeps_the_standing_execution_face() {
+    let (base, project, source) = make_world("task-bridge-face");
+    let inspection = MaterialIntakeEngine.inspect_folder(&source, "corr").unwrap();
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            "project-fingerprint",
+            inspection,
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+
+    let executor = Arc::new(MaterialExecutor::new(
+        Arc::new(RejectingBridge),
+        FileSystemSnapshotStore,
+        Arc::new(NoVpm),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-05T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    ));
+    let rt = runtime();
+    let mut events = rt.subscribe();
+    let accepted = vua_unity_bridge::submit_material_intake(
+        &rt,
+        executor,
+        MaterialIntakeTaskSpec {
+            confirmation: confirmation(&plan),
+            source_folder: source.clone(),
+            project: project.clone(),
+            artifact_output_root: base.join("artifacts"),
+            token: MaterialCancelToken::new(),
+        },
+        None,
+    )
+    .unwrap();
+
+    let snapshot = wait_for_terminal(&rt, &accepted.task_id);
+    assert_eq!(snapshot.state, TaskState::Failed);
+    let payload = completed_payload(&mut events);
+    assert_eq!(
+        payload["messageKey"], "errors.material.executionFailed",
+        "a bridge-segment failure keeps the standing face — only the provision segment moved: {payload}"
+    );
+    assert_eq!(payload["code"], "vua.material.bridge_rejected");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
 #[test]
 fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
     let (base, project, source) = make_world("task-cancel");
@@ -242,6 +463,7 @@ fn b3_task_002_cancelled_run_exits_cancelled_without_a_receipt() {
             project.id.clone(),
             "project-fingerprint",
             inspection,
+            &project.root,
             "corr",
         )
         .unwrap();

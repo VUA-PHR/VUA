@@ -86,6 +86,7 @@ impl VpmBackend for FakeRegisterBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn register_capabilities(&self) -> RegisterCapabilities {
@@ -138,6 +139,7 @@ impl VpmBackend for NoRegisterBackend {
             list_packages: false,
             remove_packages: false,
             project_registry: false,
+        resolve_project: false,
         }
     }
     fn preview_install(

@@ -12,7 +12,7 @@ import "./preview-lab/preview-lab.css";
  * 预览实验室(本地演示工程 spike,DEV-only ?dev=preview-lab):
  * T1 webview 直渲素材 与 T2 Unity 烘焙成品 分节对照。
  *
- * 数据全部来自用户侧 Unity 工程的 .vrcua/bridge/demo-lab.json,经 vite
+ * 数据全部来自用户侧 Unity 工程的 .vua/bridge/demo-lab.json,经 vite
  * /@fs/ 读取(query 参数 demoRoot 指向工程根);付费素材不入库,repo 内
  * 不含任何项目绝对路径(vite.config.ts 的 fs.allow 行为 spike 例外,已标注)。
  * main.tsx 以 lazy() 挂载本页,three 不进主 chunk。
@@ -37,7 +37,7 @@ type ManifestPhase =
   | { state: "failed" };
 
 const copy = strings.previewLab;
-const MANIFEST_REL = ".vrcua/bridge/demo-lab.json";
+const MANIFEST_REL = ".vua/bridge/demo-lab.json";
 
 /** ?demoRoot= 归一化:反斜杠转正、去尾斜杠;缺失返回 null(needRoot 诚实态) */
 function readDemoRoot(): string | null {

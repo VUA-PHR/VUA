@@ -205,6 +205,7 @@ export type {
   TemplatesFactsV01,
   RepoInfo,
   RepoInfoRowV01,
+  RepoInfoRowV02,
 } from "./packages-port.ts";
 export type { SettingsPort, SettingsView } from "./settings-port.ts";
 export { createSignal } from "./signal.ts";
