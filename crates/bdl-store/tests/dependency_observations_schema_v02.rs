@@ -1,33 +1,40 @@
-//! Draft-batch consumer test for `schemas/bdl/v0.2` (the product-dependency
-//! observation face) — wt-4 batch 164, the pre-freeze schema design ring of
-//! collab/proposals/030 (BOARD #46).
+//! Consumer test for the FROZEN `schemas/bdl/v0.2` (the product-dependency
+//! observation face) — wt-4 batch 166 freeze batch of collab/proposals/030
+//! (BOARD #46); drafted batch 164, frozen this batch.
 //!
-//! This file consumes the DRAFT schema files directly and touches NO
-//! bdl-store code: the store still runs format v0.1, and the v0.2 store
-//! landing belongs to the freeze slice. What is pinned here, per the
-//!「Schema＋正负例向量＋至少一端消费测试」discipline:
+//! This file consumes the FROZEN schema files and the FROZEN vector files and
+//! touches NO bdl-store code: the store still runs format v0.1, and the v0.2
+//! store landing is the NEXT slice. What is pinned here, per the
+//!「Schema＋正负例向量＋至少一端消费测试」freeze triad:
 //!
 //! - the v0.1 -> v0.2 migration chain preserves v0.1 rows verbatim (CHECK
 //!   rebuild is a persistent-format obligation, data loss is a failure);
-//! - the expanded source_span closed set accepts the new members and keeps
-//!   the v0.1 word face (no swing back);
-//! - dependency_observations accepts the positive vectors and rejects every
-//!   negative vector (closed sets, NOT NULL laws, the two confidence
+//! - the vector files match the registered freeze direction: exactly nine
+//!   accept vectors (P1–P9) and eight reject vectors (N1–N8), and the frozen
+//!   dep_kind closed set is pinned by N1 rejecting the five-value draft's
+//!   `unity_or_sdk_version` member (version constraints ride version_hint);
+//! - every accept-vector case row inserts; every reject-vector case row
+//!   violates a constraint (closed sets, NOT NULL laws, the two confidence
 //!   dimensions as two columns, the resolution-evidence hard law, FKs);
 //! - the fresh readable authority (schema.sql) and the migrated chain
 //!   (001 + 002) carry the same logical shape.
 //!
-//! Positive-vector wording quotes the 030 §1 survey sample phrases (public
-//! page free text, no paid content); negative vectors are synthetic words.
+//! Vector wording quotes the 030 §1 survey sample phrases (public page free
+//! text, no paid content); synthetic negatives are marked in the vector
+//! `basis` fields. Zero end-to-end claims: schema-file behavior only, never
+//! store v0.2 behavior.
 
 use rusqlite::Connection;
+use serde::Deserialize;
+use serde_json::Value;
+use std::fs;
+use std::path::Path;
 
 const MIGRATION_001: &str = include_str!("../../../schemas/bdl/v0.1/001_initial.sql");
 const MIGRATION_002: &str = include_str!("../../../schemas/bdl/v0.2/002_dependency_observations.sql");
 const AUTHORITY_V02: &str = include_str!("../../../schemas/bdl/v0.2/schema.sql");
 
 const PRODUCT_A: &str = "booth:6584744";
-const PRODUCT_B: &str = "booth:3087170";
 
 fn open_v01_with_product() -> Connection {
     let conn = Connection::open_in_memory().unwrap();
@@ -52,29 +59,76 @@ fn migrate_to_v02() -> Connection {
     conn
 }
 
-fn insert_dependency(conn: &Connection, columns: &[&str], values: &[&dyn rusqlite::ToSql]) {
-    let sql = format!(
-        "INSERT INTO dependency_observations ({}) VALUES ({})",
-        columns.join(", "),
-        vec!["?"; values.len()].join(", ")
-    );
-    conn.execute(&sql, values).unwrap();
-}
-
-fn expect_reject(conn: &Connection, sql: &str, values: &[&dyn rusqlite::ToSql]) {
-    let result = conn.execute(sql, values);
-    let err = result.expect_err("the negative vector must be rejected");
-    assert!(
-        matches!(err, rusqlite::Error::SqliteFailure(f, _) if f.code == rusqlite::ErrorCode::ConstraintViolation),
-        "expected a constraint violation, got: {err}"
-    );
-}
-
 fn fmt_version(conn: &Connection) -> String {
     conn.query_row("SELECT value FROM bdl_meta WHERE key = 'format_version'", [], |row| {
         row.get::<_, String>(0)
     })
     .unwrap()
+}
+
+// ---------------------------------------------------------------------------
+// The frozen vector files (vectors/): the machine-readable word face.
+// ---------------------------------------------------------------------------
+
+#[derive(Deserialize)]
+struct VectorFile {
+    vector: String,
+    name: String,
+    expect: String, // "accept" | "reject"
+    #[serde(default)]
+    reject_law: Option<String>,
+    cases: Vec<VectorCase>,
+}
+
+#[derive(Deserialize)]
+struct VectorCase {
+    table: String,
+    values: serde_json::Map<String, Value>,
+}
+
+fn vectors_dir() -> &'static Path {
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl/v0.2/vectors").leak()
+}
+
+fn load_vectors() -> Vec<(String, VectorFile)> {
+    let dir = vectors_dir();
+    let mut names: Vec<String> = fs::read_dir(dir)
+        .unwrap()
+        .map(|e| e.unwrap().file_name().to_string_lossy().into_owned())
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort();
+    names
+        .into_iter()
+        .map(|name| {
+            let bytes = fs::read(dir.join(&name)).unwrap();
+            let parsed: VectorFile = serde_json::from_slice(&bytes).unwrap();
+            (name, parsed)
+        })
+        .collect()
+}
+
+fn insert_case(conn: &Connection, case: &VectorCase) -> rusqlite::Result<usize> {
+    let mut columns: Vec<String> = case.values.keys().cloned().collect();
+    columns.sort();
+    let sql = format!(
+        "INSERT INTO {} ({}) VALUES ({})",
+        case.table,
+        columns.join(", "),
+        vec!["?"; columns.len()].join(", ")
+    );
+    let bound: Vec<Box<dyn rusqlite::ToSql>> = columns
+        .iter()
+        .map(|c| match &case.values[c] {
+            Value::String(s) => Box::new(s.clone()) as Box<dyn rusqlite::ToSql>,
+            Value::Number(n) => Box::new(n.as_i64().expect("vector integers are i64"))
+                as Box<dyn rusqlite::ToSql>,
+            Value::Null => Box::new(rusqlite::types::Null) as Box<dyn rusqlite::ToSql>,
+            other => panic!("vector values are string/int/null only, got: {other}"),
+        })
+        .collect();
+    let refs: Vec<&dyn rusqlite::ToSql> = bound.iter().map(|b| b.as_ref()).collect();
+    conn.execute(&sql, refs.as_slice())
 }
 
 // ---------------------------------------------------------------------------
@@ -110,226 +164,147 @@ fn migration_preserves_v01_rows_and_moves_the_format_version() {
 }
 
 // ---------------------------------------------------------------------------
-// Expanded source_span closed set — new members in, v0.1 face stable, no
-// foreign word admitted (spans BOTH rebuilt tables).
+// The vector set matches the registered freeze direction: 9 accept (P1–P9)
+// + 8 reject (N1–N8); the dep_kind pin rides N1's first case.
 // ---------------------------------------------------------------------------
 
 #[test]
-fn rebuilt_compat_table_accepts_new_spans_and_keeps_the_v01_word_face() {
-    let conn = migrate_to_v02();
-    for span in ["body", "subproduct_name", "image", "title", "description_link"] {
-        conn.execute(
-            "INSERT INTO compatibility_observations
-                 (product_id, raw_quote, source_span, observed_at)
-             VALUES (?1, '17アバター対応', ?2, '2026-09-22T00:00:00.000Z')",
-            rusqlite::params![PRODUCT_A, span],
-        )
-        .unwrap_or_else(|_| panic!("span '{span}' must be accepted after the rebuild"));
+fn vector_files_match_the_registered_freeze_direction() {
+    let vectors = load_vectors();
+    assert_eq!(vectors.len(), 17, "nine positives + eight negatives");
+
+    let accepts: Vec<&VectorFile> = vectors
+        .iter()
+        .map(|(_, v)| v)
+        .filter(|v| v.expect == "accept")
+        .collect();
+    let rejects: Vec<&VectorFile> = vectors
+        .iter()
+        .map(|(_, v)| v)
+        .filter(|v| v.expect == "reject")
+        .collect();
+    assert_eq!(accepts.len(), 9, "P1–P9");
+    assert_eq!(rejects.len(), 8, "N1–N8");
+    for (name, v) in &vectors {
+        // The frozen naming convention: the file name is the vector's name.
+        assert_eq!(name, &format!("{}.json", v.name), "file name matches the frozen vector name");
+        assert!(!v.cases.is_empty(), "{name} carries cases");
+        if v.expect == "reject" {
+            assert!(v.reject_law.is_some(), "{name} names its law");
+        }
     }
-    for foreign in ["heading", "summary", "prose"] {
-        expect_reject(
-            &conn,
-            "INSERT INTO compatibility_observations
-                 (product_id, raw_quote, source_span, observed_at)
-             VALUES (?1, 'x', ?2, '2026-09-22T00:00:00.000Z')",
-            &[&PRODUCT_A, &foreign],
-        );
-    }
+
+    // The freeze ruling's contested member: the five-value draft's
+    // 'unity_or_sdk_version' is a REJECT case (N1), i.e. NOT a dep_kind.
+    let n1 = vectors
+        .iter()
+        .map(|(_, v)| v)
+        .find(|v| v.vector == "N1")
+        .expect("N1 present");
+    let kinds: Vec<String> = n1
+        .cases
+        .iter()
+        .map(|c| c.values["dep_kind"].as_str().unwrap().to_string())
+        .collect();
+    assert!(
+        kinds.contains(&"unity_or_sdk_version".to_string()),
+        "N1 pins the five-value member as rejected; got {kinds:?}"
+    );
 }
 
 // ---------------------------------------------------------------------------
-// Positive vectors for dependency_observations (030 §1 survey archetypes).
+// Every accept vector inserts; every reject vector violates its law.
 // ---------------------------------------------------------------------------
 
 #[test]
-fn dependency_observations_accept_the_positive_vectors() {
+fn accept_vectors_insert_and_reject_vectors_violate() {
+    for (name, vector) in load_vectors() {
+        let conn = migrate_to_v02();
+        match vector.expect.as_str() {
+            "accept" => {
+                for case in &vector.cases {
+                    insert_case(&conn, case)
+                        .unwrap_or_else(|e| panic!("{name} case must be accepted: {e}"));
+                }
+            }
+            "reject" => {
+                for case in &vector.cases {
+                    let err = insert_case(&conn, case)
+                        .expect_err(&format!("{name} case must be rejected"));
+                    assert!(
+                        matches!(err, rusqlite::Error::SqliteFailure(f, _)
+                            if f.code == rusqlite::ErrorCode::ConstraintViolation),
+                        "{name}: expected a constraint violation, got: {err}"
+                    );
+                }
+            }
+            other => panic!("{name}: unknown expect '{other}'"),
+        }
+
+        if vector.vector == "P2" {
+            // Rows that omit confirmed_by_human default to 0 — the unconfirmed
+            // by default law (clue, never suggestion) — while P4's explicit
+            // confirmation is the only 1.
+            let zeros: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM dependency_observations WHERE confirmed_by_human = 0",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            assert!(zeros >= 1, "omitted confirmed_by_human defaults to 0");
+        }
+        if vector.vector == "P9" {
+            let ones: i64 = conn
+                .query_row(
+                    "SELECT COUNT(*) FROM compatibility_observations
+                     WHERE source_span IN ('title', 'description_link')",
+                    [],
+                    |row| row.get(0),
+                )
+                .unwrap();
+            assert_eq!(ones, 2, "both new compat spans landed (P9)");
+        }
+    }
+
+    // Whole-set cross-check on one connection: every P row present, the only
+    // confirmed resolution is P4's, and the P4 evidence carries the frozen
+    // element shape {linkText, linkUrl, span, note}.
     let conn = migrate_to_v02();
-
-    // P1 version-pinned bullet line under an explicit heading
-    //    (survey sample 1: "・liltoon 2.3.2~" under「〇前提環境」).
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "version_hint", "extraction_method", "extracted_by",
-            "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"shader", &"liltoon", &"・liltoon 2.3.2~", &"body",
-            &"2.3.2~", &"explicit_heading", &"human",
-            &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-
-    // P2 one-line declaration ("Shader: Liltoon"), P5 prose, P6 bullet —
-    // the extraction_method closed set covers each layout form.
-    for (method, quote) in [
-        ("one_line", "Shader: Liltoon"),
-        ("prose", "本ギミックはlilToonのカスタムパラメータとして作動します。"),
-        ("bullet", "●最新verのliltoonを使用してください。"),
-    ] {
-        insert_dependency(
-            &conn,
-            &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-                "extraction_method", "extracted_by", "observed_at", "processor_version"],
-            &[&PRODUCT_A, &"shader", &"lilToon", &quote, &"body",
-                &method, &"human", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-        );
+    for (_, vector) in load_vectors() {
+        if vector.expect != "accept" {
+            continue;
+        }
+        for case in &vector.cases {
+            insert_case(&conn, case).unwrap();
+        }
     }
-
-    // P3 title-span declaration (survey sample 5 title suffix【liltoon】).
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "extraction_method", "extracted_by", "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"shader", &"lilToon", &"【liltoon】機能盛り沢山！", &"title",
-            &"title", &"human", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-
-    // Every closed-set span member lands on the new table too.
-    for span in ["subproduct_name", "image", "description_link"] {
-        insert_dependency(
-            &conn,
-            &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-                "extraction_method", "extracted_by", "observed_at", "processor_version"],
-            &[&PRODUCT_A, &"tool_package", &"Modular Avatar", &"MA対応", &span,
-                &"link", &"human", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-        );
-    }
-
-    // Engine/SDK pin under the draft proposal: dep_kind='other' and the pin
-    // rides version_hint (survey sample 3: "- Unity 2022.3.22f1").
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "version_hint", "extraction_method", "extracted_by",
-            "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"other", &"Unity", &"- Unity 2022.3.22f1", &"body",
-            &"2022.3.22f1", &"bullet", &"human",
-            &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-
-    // P4 confirmed resolution: a resolved reference MUST carry evidence
-    // (sample-1 lilToon product link resolved to its BDL identity).
-    let evidence = r#"[{"linkText":"lilToon","linkUrl":"https://lilxyzw.booth.pm/items/3087170","span":"body","note":null}]"#;
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "resolved_ref_product_id", "resolution_evidence", "confirmed_by_human",
-            "extraction_method", "extracted_by", "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"shader", &"lilToon", &"lilToon 本体", &"description_link",
-            &PRODUCT_B, &evidence, &1,
-            &"link", &"human", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-
-    // The two confidence dimensions are two independent columns: a pipeline
-    // extractor with an open identity word may sit next to any layout form.
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "extraction_method", "extracted_by", "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"avatar_base", &"Lapwing", &"『Lapwing』対応", &"subproduct_name",
-            &"explicit_heading", &"pipeline:dep-0.1", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-
-    // confirmed_by_human defaults to 0 (unconfirmed by default — the mislink
-    // evidence makes human confirmation the explicit, recorded step).
-    let confirmed: i64 = conn
+    let (total, confirmed): (i64, i64) = conn
         .query_row(
-            "SELECT confirmed_by_human FROM dependency_observations
-             WHERE dep_name = 'Modular Avatar' LIMIT 1",
+            "SELECT COUNT(*), COALESCE(SUM(confirmed_by_human), 0) FROM dependency_observations",
+            [],
+            |row| Ok((row.get(0)?, row.get(1)?)),
+        )
+        .unwrap();
+    assert_eq!(total, 8, "P1–P8 land eight dependency rows");
+    assert_eq!(confirmed, 1, "only P4's explicit confirmation is set");
+    let evidence: String = conn
+        .query_row(
+            "SELECT resolution_evidence FROM dependency_observations
+             WHERE confirmed_by_human = 1",
             [],
             |row| row.get(0),
         )
         .unwrap();
-    assert_eq!(confirmed, 0);
-
-    // An unconfirmed resolution row may exist (clue, never suggestion), and
-    // evidence may precede any resolution.
-    insert_dependency(
-        &conn,
-        &["product_id", "dep_kind", "dep_name", "raw_quote", "source_span",
-            "resolved_ref_product_id", "resolution_evidence",
-            "extraction_method", "extracted_by", "observed_at", "processor_version"],
-        &[&PRODUCT_A, &"shader", &"liltoon", &"◎Liltoon", &"description_link",
-            &PRODUCT_A, &r#"[{"linkText":"◎Liltoon","linkUrl":"https://booth.pm/ja/items/4993931","span":"body","note":"mislink suspect"}]"#,
-            &"link", &"human", &"2026-09-22T00:00:00.000Z", &"dep-0.1"],
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Negative vectors.
-// ---------------------------------------------------------------------------
-
-#[test]
-fn dependency_observations_reject_the_negative_vectors() {
-    let conn = migrate_to_v02();
-    let at = "2026-09-22T00:00:00.000Z";
-    let base = "INSERT INTO dependency_observations (product_id, dep_kind, dep_name,
-        raw_quote, source_span, extraction_method, extracted_by, observed_at, processor_version)
-        VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)";
-
-    // dep_kind outside the DRAFT closed set — including the v0.1-draft
-    // 'unity_or_sdk_version' member, whose rejection pins this draft's
-    // granularity proposal (version constraints ride version_hint). If the
-    // freeze batch amends the set, this vector is amended with it.
-    for kind in ["unity_or_sdk_version", "engine", ""] {
-        expect_reject(&conn, base,
-            &[&PRODUCT_A, &kind, &"x", &"q", &"body", &"prose", &"human", &at, &"dep-0.1"]);
+    let parsed: Vec<Value> = serde_json::from_str(&evidence).unwrap();
+    assert!(!parsed.is_empty(), "evidence array non-empty");
+    let element = &parsed[0];
+    for key in ["linkText", "linkUrl", "span", "note"] {
+        assert!(
+            element.get(key).is_some(),
+            "evidence element carries frozen key '{key}'"
+        );
     }
-    // source_span foreign word.
-    expect_reject(&conn, base,
-        &[&PRODUCT_A, &"shader", &"x", &"q", &"heading", &"prose", &"human", &at, &"dep-0.1"]);
-    // extraction_method foreign word.
-    expect_reject(&conn, base,
-        &[&PRODUCT_A, &"shader", &"x", &"q", &"body", &"manual", &"human", &at, &"dep-0.1"]);
-    // NOT NULL laws: raw_quote / dep_name / extraction_method / extracted_by.
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', 'x', NULL, 'body', 'prose', 'human', ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', NULL, 'q', 'body', 'prose', 'human', ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', 'x', 'q', 'body', NULL, 'human', ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', 'x', 'q', 'body', 'prose', NULL, ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-    // confirmed_by_human is a strict 0/1 flag.
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, confirmed_by_human, extraction_method, extracted_by,
-             observed_at, processor_version)
-         VALUES (?1, 'shader', 'x', 'q', 'body', 2, 'prose', 'human', ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-
-    // The resolution hard law: a resolved reference without evidence.
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, resolved_ref_product_id, resolution_evidence,
-             extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', 'lilToon', 'q', 'description_link', ?2, NULL,
-                 'link', 'human', ?3, 'dep-0.1')",
-        &[&PRODUCT_A, &PRODUCT_B, &at]);
-
-    // A dangling resolved reference (no such product) violates the FK.
-    expect_reject(&conn,
-        "INSERT INTO dependency_observations (product_id, dep_kind, dep_name, raw_quote,
-             source_span, resolved_ref_product_id, resolution_evidence,
-             extraction_method, extracted_by, observed_at, processor_version)
-         VALUES (?1, 'shader', 'lilToon', 'q', 'description_link', 'booth:9999999',
-                 '[{\"linkText\":\"x\",\"linkUrl\":\"u\",\"span\":\"body\",\"note\":null}]',
-                 'link', 'human', ?2, 'dep-0.1')",
-        &[&PRODUCT_A, &at]);
-
-    // A dangling owning product violates the FK too.
-    expect_reject(&conn, base,
-        &[&"booth:9999999", &"shader", &"x", &"q", &"body", &"prose", &"human", &at, &"dep-0.1"]);
 }
 
 // ---------------------------------------------------------------------------

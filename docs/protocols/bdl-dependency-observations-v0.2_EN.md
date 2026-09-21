@@ -1,33 +1,41 @@
-# BDL Persistent Format v0.2 (Product Dependency Observations) — Protocol Draft
+# BDL Persistent Format v0.2 (Product Dependency Observations) — Protocol
 
 [English](bdl-dependency-observations-v0.2_EN.md) | [简体中文](bdl-dependency-observations-v0.2_ZH.md)
 
-> Document version: 0.2 (draft)
-> Status: **DRAFT, freeze pending** (2026-09-22, drafted by wt-4 production,
-> batch 164) — this is the schema-design ring product after the
-> collab/proposals/030 (BOARD #46) seat ruling and before the freeze slice.
-> **NOT frozen**: the freeze slice must pass freeze acceptance with the
-> "Schema + positive/negative vectors + at least one consumer test" triad;
-> this document and its machine-readable face remain revisable until then.
+> Document version: 0.2
+> Status: **FROZEN** (2026-09-22, frozen by wt-4 production, batch 166 — the
+> freeze batch). The「Schema＋正负例向量＋至少一端消费测试」freeze triad landed
+> together:
+> - schema: `schemas/bdl/v0.2/schema.sql` (full readable authority,
+>   standalone-executable) + `schemas/bdl/v0.2/002_dependency_
+>   observations.sql` (v0.1→v0.2 incremental migration; STRICT +
+>   bdl_meta.format_version + user_version discipline);
+> - positive/negative vectors: `schemas/bdl/v0.2/vectors/` — exactly nine
+>   accept vectors (P1–P9) and eight reject vectors (N1–N8), one JSON file
+>   each (form frozen this batch, see the vector section);
+> - consumer test: `crates/bdl-store/tests/dependency_observations_schema_
+>   v02.rs` — 4 cases green this batch, driving every vector file.
 > Zero end-to-end claims — no implementation or verification claim of any
-> runtime, extraction, or consumption capability is made here.
-> Machine-readable face (draft): `schemas/bdl/v0.2/schema.sql` (full readable
-> authority, standalone-executable) + `schemas/bdl/v0.2/002_dependency_
-> observations.sql` (v0.1→v0.2 incremental migration; STRICT +
-> bdl_meta.format_version + user_version discipline)
-> Consumer test (draft batch): `crates/bdl-store/tests/dependency_observations_schema_v02.rs`
-> (5 cases, vector consumption, zero bdl-store code changes; the store itself
-> still runs format v0.1 — the v0.2 store landing belongs to the freeze slice)
+> runtime, extraction, or consumption capability is made here. The bdl-store
+> still runs format v0.1 (zero store code changed in the freeze batch); the
+> v0.2 store landing is the NEXT slice.
+> Freeze rulings registered this batch (operator-preauthorized direction
+> finalized by the production seat): dep_kind = four values, no
+> `unity_or_sdk_version`; the vector file form (registered in the
+> collab/proposals/030 inline thread, data seat pinged — a form objection
+> arriving after this freeze rides the errata batch, never an in-place
+> reshape of the frozen word face).
 > Ownership: 030 §5.1 ruling (2026-09-21 operator decision, recorded by
 > Integration batch 163) = production seat owns the build; the data seat holds
 > the consumption/query face downstream (the dependencies.* query family,
-> 030 §5.7 case A). Drafted by production (wt-4).
+> 030 §5.7 case A). Drafted (batch 164) and frozen (batch 166) by production
+> (wt-4).
 > Upstream basis: proposal 030 §1 survey (2026-09-21, 9 read-only public-page
 > accesses) + the data seat's inline stance on 030 (2026-09-22)
 
 ## Scope
 
-This protocol (when frozen) freezes **BDL persistent format v0.2**:
+This protocol freezes **BDL persistent format v0.2**:
 
 1. `compatibility_observations.source_span` closed-set expansion (the two new
    members `title` and `description_link`) — a persistent-format migration
@@ -58,7 +66,7 @@ freezes only the discipline that such a rule table exists and is versioned).
   v0.1 row verbatim, and any data loss during migration is a failure.
 - The v0.1 word face does not swing: v0.1 data survives unchanged in the new
   table; foreign words (synthetic negatives `heading`/`summary`/`prose`) keep
-  being rejected.
+  being rejected (vectors P9/N2).
 
 ### 2. dependency_observations (new table)
 
@@ -70,15 +78,15 @@ version-pinned lines, one-line declarations, bullets, prose) — structured
 BOOTH fields carry none of it — so every extraction lands as an EVIDENCED
 OBSERVATION, never as a fact claim.
 
-**Column law (draft; the freeze batch confirms or amends)**:
+**Column law (frozen)**:
 
 | Column | Law | Basis |
 | --- | --- | --- |
-| `dep_kind` | NOT NULL, draft closed set `('shader','tool_package','avatar_base','other')` | see "dep_kind granularity" below |
+| `dep_kind` | NOT NULL, frozen closed set `('shader','tool_package','avatar_base','other')` | see "dep_kind granularity" below |
 | `dep_name` | NOT NULL, the dependency's name AS WRITTEN (`lilToon`); no normalization, no equivalence guessing | the reverse-lookup search column; name→package identity is the hard problem and the library does not fabricate it |
 | `raw_quote` | **NOT NULL**, verbatim quote, zero semantic rewriting | compatibility_observations `raw_quote TEXT NOT NULL` precedent (001_initial.sql:69; spike schema.sql:64 comment "verbatim quote, no semantic rewriting") |
 | `source_span` | NOT NULL, same five-value closed set as the compat table v0.2 | same observation paradigm |
-| `version_hint` | nullable, the version string AS WRITTEN (`2.3.2~`); no normalization | 030 §2 |
+| `version_hint` | nullable, the version string AS WRITTEN (`2.3.2~`); no normalization; carries ALL version constraints (engine/SDK pins included) | 030 §2; dep_kind ruling below |
 | `resolved_ref_product_id` | nullable, FK→products | 030 §2 |
 | `resolution_evidence` | nullable; **hard law: NOT NULL whenever resolved_ref_product_id is NOT NULL** (CHECK) | sample-3 mislink evidence — a resolution must carry evidence |
 | `confirmed_by_human` | NOT NULL DEFAULT 0, CHECK (0,1) | unconfirmed by default; BDL human-revision precedent |
@@ -90,24 +98,38 @@ OBSERVATION, never as a fact claim.
 (WHICH page layout) and `extracted_by` (WHO extracted) are orthogonal
 dimensions in separate columns. The data seat's inline reminder on 030 is
 adopted verbatim: do not reuse the `term_observations.extracted_by` word face
-to carry layout form.
+to carry layout form (vector P8 pins the two-independence; N7 pins that an
+identity word like `manual` is not a layout form).
 
-**dep_kind granularity (freeze-batch pending item A)**: the data seat noted
-inline that among the 030 §2 draft five values, `unity_or_sdk_version` has a
-different granularity (a version constraint, where the others are
-dependent-thing types), while one declaration can carry both (sample 1
-「liltoon＋2.3.2~」). **This draft proposes**: dep_kind narrows to the
-dependent-thing type (four values, no `unity_or_sdk_version`), with version
-constraints carried exclusively by `version_hint`; engine/SDK pins
-(`- Unity 2022.3.22f1`) land as `dep_kind='other'` + `version_hint`.
-**Alternative** (keep the five values) stays open for the freeze batch; if it
-amends the set, this document and the vectors follow. The negative vector
-`unity_or_sdk_version` pins the current draft direction and is marked as
-contested during the draft period — the freeze batch must rule.
+**dep_kind granularity — FROZEN (four values)**: the draft's open item is
+ruled. `dep_kind` is the DEPENDENT-THING type, single choice, four values
+`'shader' | 'tool_package' | 'avatar_base' | 'other'`; there is no
+`unity_or_sdk_version` member; EVERY version constraint rides `version_hint`;
+an engine/SDK pin (`- Unity 2022.3.22f1`, sample 3) lands as
+`dep_kind='other'` + `version_hint='2022.3.22f1'` (vector P7; its rejection is
+pinned by N1).
 
-**Resolution and evidence (resolution_evidence shape — the mandatory
-freeze-batch item, now filled)**: the shape is a JSON array with a closed
-element set:
+**No-information-loss argument (frozen with the ruling)**: the five-value
+draft put two orthogonal dimensions into one single-choice field — WHAT is
+depended upon (thing type) and WHAT constraint attaches (a version). The
+single-choice set already forces the sample-1 row (「liltoon＋2.3.2~」: a
+shader pin WITH a version) to pick `shader` and carry the version in
+`version_hint` anyway. Conversely, a bare engine pin keeps every surveyed byte
+under four values: the thing type in `dep_kind='other'` (the depended-upon
+thing is the runtime/tool itself), the name as written in `dep_name='Unity'`,
+the verbatim line in `raw_quote`, the version string as written in
+`version_hint`. Nothing queryable is lost: thing type by `dep_kind`,
+constraint by `version_hint`, evidence by `raw_quote`/`source_span`/
+`extraction_method`. What is no longer expressible is only the redundant
+stored tag "this row's constraint is a version constraint" — derivable at
+read time from `version_hint IS NOT NULL`, a read-time derivation (the
+`availabilityRaw→availabilityStatus` precedent), never a stored fact. The
+narrowing also keeps the closed set single-grained: a mixed-grain field would
+push every future member (any new thing type vs. any new constraint kind)
+into the wrong dimension.
+
+**Resolution and evidence (resolution_evidence shape, frozen)**: the shape is
+a JSON array with a closed element set:
 
 ```json
 [{"linkText": "<string>", "linkUrl": "<string>", "span": "<source_span member>",
@@ -115,7 +137,8 @@ element set:
 ```
 
 - Exactly one store-level hard law: `resolved_ref_product_id` NOT NULL ⇒
-  `resolution_evidence` NOT NULL (evidence must accompany resolution; CHECK).
+  `resolution_evidence` NOT NULL (evidence must accompany resolution; CHECK;
+  vector N4).
 - A resolution with `confirmed_by_human=0` (the default) is a CLUE, not a
   conclusion: read-side derivation law — unconfirmed resolutions never enter
   suggestion output; the rule table is versioned (the
@@ -123,8 +146,8 @@ element set:
   consumption face (data seat).
 - Under the sample-3 mislink evidence, identity resolution (title/shop
   reconciliation) waits for human confirmation by default; confirmation is an
-  explicit, recorded write action (flip `confirmed_by_human` to 1), never
-  automatic.
+  explicit, recorded write action (flip `confirmed_by_human` to 1; vector
+  P4), never automatic.
 
 ## Observation-paradigm red lines (inherited)
 
@@ -141,45 +164,47 @@ element set:
   manifests) are not in the public cataloging source (030 §4/§5.5);
   "own-file observation" needs a separate decision and is NOT started here.
 
-## Positive/negative vector direction (the freeze batch lands vector files along these lines)
+## Positive/negative vectors (FROZEN: `schemas/bdl/v0.2/vectors/`)
 
-Positive vectors (accepted; wording from the 030 §1 survey archetypes, same
-shapes embedded in the test):
+**Frozen form**: one JSON file per registered vector, seventeen files (nine
+accept + eight reject). The file name IS the vector name —
+`<face>.<valid|invalid>.<id>.<slug>.json` — and carries the fields:
+`vector` (P1–P9 / N1–N8), `name` (the file stem), `basis` (the law or the 030
+§1 survey sample cited), `expect` (`accept` | `reject`), `reject_law` (reject
+vectors only), `cases` (array of `{table, values}`; one INSERT per case,
+`values` holding string/int/null only). The form follows the production
+seat's amf-production v0.2 `vectors/` precedent (same freeze-triad
+discipline, same owning seat); the data seat was pinged in the 030 inline
+thread this batch — the downstream `dependencies.*` work can machine-read the
+closed sets from these files — and a form objection arriving after this
+freeze rides the errata batch.
 
-- P1 explicit heading + version-pinned line: `dep_kind='shader'`,
-  `dep_name='liltoon'`, `raw_quote='・liltoon 2.3.2~'`,
-  `version_hint='2.3.2~'`, `extraction_method='explicit_heading'` (sample 1).
-- P2 one-line declaration: `raw_quote='Shader: Liltoon'`,
-  `extraction_method='one_line'` (sample 2).
-- P3 title-carried: `source_span='title'`, `extraction_method='title'`
-  (sample 5 title suffix【liltoon】).
-- P4 confirmed resolution: `resolved_ref_product_id` set + non-empty
-  `resolution_evidence` array + `confirmed_by_human=1`.
-- P5 prose: `extraction_method='prose'` (sample 5).
-- P6 bullet: `extraction_method='bullet'` (sample 6「●最新verのliltoonを
-  使用してください。」).
-- P7 engine pin as other: `dep_kind='other'` + `version_hint='2022.3.22f1'`.
-- P8 two dimensions independent: `extraction_method='prose'` alongside
-  `extracted_by='pipeline:dep-0.1'` in one row.
-- P9 compat-table new spans: `source_span='title'` / `'description_link'`
-  rows accepted; the old three values do not swing.
+Positive vectors (accepted; wording from the 030 §1 survey archetypes):
+
+| # | File | Pins |
+| --- | --- | --- |
+| P1 | `dependency-observations.valid.p01.explicit-heading-version-pin.json` | explicit heading + version-pinned line (sample 1); `extraction_method='explicit_heading'` |
+| P2 | `dependency-observations.valid.p02.one-line-declaration.json` | one-line declaration `Shader: Liltoon` (sample 2); `one_line` |
+| P3 | `dependency-observations.valid.p03.title-carried.json` | title-carried declaration (sample 5); `source_span='title'`, `extraction_method='title'` |
+| P4 | `dependency-observations.valid.p04.confirmed-resolution-with-evidence.json` | resolved ref + non-empty evidence array + `confirmed_by_human=1` |
+| P5 | `dependency-observations.valid.p05.prose-declaration.json` | prose (sample 5); `prose` |
+| P6 | `dependency-observations.valid.p06.bullet-line.json` | bullet (sample 6); `bullet`; no version string ⇒ `version_hint` NULL (honest absence) |
+| P7 | `dependency-observations.valid.p07.engine-pin-as-other.json` | engine pin (sample 3) as `dep_kind='other'` + `version_hint` |
+| P8 | `dependency-observations.valid.p08.confidence-two-dimensions.json` | `extraction_method` and `extracted_by` independent in one row |
+| P9 | `compatibility-observations.valid.p09.new-spans-no-swing.json` | compat table: `title`/`description_link` accepted AND the old three still accepted |
 
 Negative vectors (rejected):
 
-- N1 `dep_kind` foreign words: `'unity_or_sdk_version'` (pins the current
-  draft direction), `'engine'`, empty string.
-- N2 `source_span` foreign word: `'heading'` (both tables).
-- N3 `raw_quote` NULL (NOT NULL law).
-- N4 `resolved_ref_product_id` set while `resolution_evidence` NULL (evidence
-  hard law).
-- N5 dangling `resolved_ref_product_id` (FK, no such product).
-- N6 `confirmed_by_human=2` (strict 0/1).
-- N7 `extraction_method` foreign word: `'manual'`.
-- N8 `dep_name` / `extraction_method` / `extracted_by` NULL (NOT NULL laws).
-
-The vector file form (JSON example sets per the bdl-queries examples/
-convention, or test-embedded — placed by the freeze slice) converges at the
-freeze batch with the data seat's stance on form.
+| # | File | Law |
+| --- | --- | --- |
+| N1 | `dependency-observations.invalid.n01.dep-kind-foreign.json` | `dep_kind` foreign: `unity_or_sdk_version` (the five-value draft member — rejection pins the freeze ruling), `engine`, empty string |
+| N2 | `dependency-observations.invalid.n02.source-span-foreign-both-tables.json` | `source_span` foreign `heading` on BOTH tables |
+| N3 | `dependency-observations.invalid.n03.raw-quote-null.json` | `raw_quote` NOT NULL |
+| N4 | `dependency-observations.invalid.n04.resolution-without-evidence.json` | resolved ref without evidence (CHECK hard law) |
+| N5 | `dependency-observations.invalid.n05.dangling-resolved-reference.json` | dangling resolved ref / dangling owning product (FK) |
+| N6 | `dependency-observations.invalid.n06.confirmed-flag-strict-zero-one.json` | `confirmed_by_human` strict 0/1 |
+| N7 | `dependency-observations.invalid.n07.extraction-method-foreign.json` | `extraction_method` foreign (`manual` — an identity word, not a layout form) |
+| N8 | `dependency-observations.invalid.n08.not-null-laws.json` | `dep_name` / `extraction_method` / `extracted_by` NOT NULL |
 
 ## Migration and version discipline
 
@@ -188,27 +213,28 @@ freeze batch with the data seat's stance on form.
   commits (v0.1 host precedent).
 - v0.1 row preservation is a precondition of migration success; any loss is a
   migration failure.
-- When the freeze slice lands the store, the `bdl-store` migration registry
+- When the NEXT slice lands the store, the `bdl-store` migration registry
   advances and opening newer formats keeps the existing `UnsupportedFormat`
-  discipline — this draft batch touches no store code (no store landing).
+  discipline — this freeze batch touched no store code.
 
-## Consumer test (draft-batch facts)
+## Consumer test (freeze-batch facts)
 
-`crates/bdl-store/tests/dependency_observations_schema_v02.rs` 5/5 green
-(2026-09-22, cargo run in this tree; migration preservation / expansion
-positive+negative / new-table positive+negative / authority-vs-chain shape
-equality). The same batch ran the full bdl-store crate: 61 cases green,
-clippy all-targets clean. **This test consumes the draft schema files, not
-store behavior; store v0.2 behavior acceptance belongs to the freeze slice.
-Zero end-to-end claims.**
+`crates/bdl-store/tests/dependency_observations_schema_v02.rs` 4/4 green
+(2026-09-22, cargo run in this tree): migration preservation / vector-set
+direction (17 files = 9 accept + 8 reject; file-name convention pinned; N1
+pins `unity_or_sdk_version` rejected) / every vector case driven (accepts
+insert, rejects violate; omitted `confirmed_by_human` defaults to 0; P4's
+evidence array carries the frozen element keys) / authority-vs-chain shape
+equality. The same batch ran the full bdl-store crate: 60 cases green,
+clippy all-targets zero warnings. **This test consumes the frozen schema and
+vector files, not store behavior; store v0.2 behavior acceptance belongs to
+the next slice. Zero end-to-end claims.**
 
 ## Open items (honest list)
 
-1. **dep_kind granularity** (pending item A above): narrowed four values vs
-   five values — the freeze batch must rule.
-2. **Vector file form**: JSON example sets vs test-embedded — converges at
-   the freeze batch with the data seat.
-3. **Public-surface coverage gap** (030 §5.5) and **U18 final-ruling
+1. **Public-surface coverage gap** (030 §5.5) and **U18 final-ruling
    linkage** (030 §5.6) stay open, out of scope here.
-4. The consumption face (bdl-queries `dependencies.*`) is claimed by the data
+2. The consumption face (bdl-queries `dependencies.*`) is claimed by the data
    seat itself; this document does not ghost-write it.
+3. The store landing (migration registry v0.1→v0.2, write/read faces) is the
+   next slice and carries its own acceptance.

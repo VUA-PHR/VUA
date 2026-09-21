@@ -1,0 +1,25 @@
+{
+  "vector": "P4",
+  "name": "dependency-observations.valid.p04.confirmed-resolution-with-evidence",
+  "basis": "030 §1 sample 1's description link to the lilToon product page, resolved to its BDL identity: resolved_ref_product_id set, resolution_evidence array non-empty (element closed set {linkText, linkUrl, span, note}), confirmed_by_human=1 — the explicit, recorded confirmation step the sample-3 mislink evidence demands.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "lilToon 本体",
+        "source_span": "description_link",
+        "resolved_ref_product_id": "booth:3087170",
+        "resolution_evidence": "[{\"linkText\":\"lilToon\",\"linkUrl\":\"https://lilxyzw.booth.pm/items/3087170\",\"span\":\"description_link\",\"note\":null}]",
+        "confirmed_by_human": 1,
+        "extraction_method": "link",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

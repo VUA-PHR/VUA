@@ -1,0 +1,22 @@
+{
+  "vector": "P2",
+  "name": "dependency-observations.valid.p02.one-line-declaration",
+  "basis": "030 §1 sample 2 (booth.pm/ja/items/7547699): single-line declaration 'Shader: Liltoon' — the one_line member of the extraction_method closed set.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "Shader: Liltoon",
+        "source_span": "body",
+        "extraction_method": "one_line",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

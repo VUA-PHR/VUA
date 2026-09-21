@@ -1,5 +1,7 @@
--- BDL v0.2 migration: persistent-format v0.1 -> v0.2 (DRAFT — proposed by the
--- production seat, wt-4 batch 164; freeze batch pending).
+-- BDL v0.2 migration: persistent-format v0.1 -> v0.2 (FROZEN — frozen by the
+-- production seat, wt-4 batch 166, 2026-09-22, together with the readable
+-- authority schemas/bdl/v0.2/schema.sql, the vectors/ directory and the
+-- consumer test; see the authority header for the freeze triad).
 --
 -- Executable form of the v0.2 change set against an existing v0.1 database
 -- (schemas/bdl/v0.1/001_initial.sql baseline, user_version = 1). Same
