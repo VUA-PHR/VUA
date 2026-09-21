@@ -30,9 +30,11 @@ import {
 import {
   narrowRecipeDocumentFacts,
   narrowRecipeDocumentStructure,
+  narrowRecipeDocumentReceipt,
   recipeDocumentToGraphView,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
+  type RecipeDocumentReceipt,
   type RecipeDocumentFacts,
   type RecipeLibraryEntryNarrowed,
 } from "./recipe-model.ts";
@@ -66,6 +68,8 @@ import {
 } from "./recipe-versions.ts";
 import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
 import { ComposePage } from "../compose/ComposePage.tsx";
+import { ProductionChainSection } from "../compose/ProductionChainSection.tsx";
+import { productionChainRecipeSelectedAction } from "../../app/production-chain-store.ts";
 import "./recipe.css";
 
 const copy = strings.recipe;
@@ -539,7 +543,9 @@ function RecipeLibrarySection({
   refreshKey,
 }: {
   selectedId: string | null;
-  onSelectDocument: (document: unknown) => void;
+  /** 文档回执上抛(029 A4):narrowRecipeDocumentReceipt 收窄后的回执(文档
+   *  身份＋文档本体);null = 回执不可解释/读取失败(诚实失败路径) */
+  onSelectDocument: (receipt: RecipeDocumentReceipt | null) => void;
   onSelectId: (id: string) => void;
   refreshKey: number;
 }) {
@@ -599,13 +605,16 @@ function RecipeLibrarySection({
         if (!alive) return;
         if (!result?.ok) {
           setFacts(null);
+          setStructure(null);
           onSelectDocument(null);
           return;
         }
-        const document = (result.value as { recipe?: unknown }).recipe;
-        setFacts(narrowRecipeDocumentFacts(document));
-        setStructure(narrowRecipeDocumentStructure(document));
-        onSelectDocument(document);
+        // 冻结 wire 面 recipe-get.result v0.2:文档本体在 recipeDocument 键
+        // (链身份只取回执文档身份,029 A4);收窄失败 = 诚实失败路径
+        const receipt = narrowRecipeDocumentReceipt(result.value);
+        setFacts(receipt === null ? null : narrowRecipeDocumentFacts(receipt.document));
+        setStructure(receipt === null ? null : narrowRecipeDocumentStructure(receipt.document));
+        onSelectDocument(receipt);
       })
       .catch(() => { if (alive) onSelectDocument(null); });
     return () => {
@@ -895,9 +904,14 @@ export function RecipePage() {
   // BG-1(W24 读面预备,A 路径已确认):文档库共享选择骨架——选中库文档即
   // 经映射(recipeDocumentToGraphView)装载三视图,state=expected 期望态
   // 词表(语义标注随视图呈现);清除选择回合成纵向(reloadNonce 重取)
+  // 029 A4:选择同时是链的事实源动作——productionChainRecipeSelectedAction
+  // 只吃 recipe.get 回执文档身份(收窄自 narrowRecipeDocumentReceipt),
+  // 链身份即对象身份,不取列表标签不取本地猜测。
 
-  const handleLibraryDocument = useCallback((document: unknown) => {
-    const view = recipeDocumentToGraphView(document);
+  const handleLibraryDocument = useCallback((receipt: RecipeDocumentReceipt | null) => {
+    if (receipt === null) { setLoadFailed(true); return; }
+    productionChainRecipeSelectedAction(receipt.recipeId, receipt.revision);
+    const view = recipeDocumentToGraphView(receipt.document);
     if (view === null || view.kind !== "graph") { setLoadFailed(true); return; }
     setLoadFailed(false);
     setDocumentMode(true);
@@ -999,6 +1013,12 @@ export function RecipePage() {
           </Button>
         </Card>
       ) : null}
+
+      {/* 029 A5(选中态组装发起面):生产链段双挂载消费同一容器层 store 与
+          Gateway 端口(019 批 C 两 UI 同 store 先例)——选择驱动链身份就绪后
+          在选中态直接发起组装(解析→计划→批准→执行);无链身份时链段自行
+          不渲染,车间页消费归切片二(A6) */}
+      {documentMode ? <ProductionChainSection /> : null}
 
       {loadFailed ? (
         <Card>

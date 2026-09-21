@@ -1,12 +1,12 @@
-# VUA design standard v0.7.14
+# VUA design standard v0.7.15
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.14
+> Document version: 0.7.15
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.14)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.15)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-21
+> Updated: 2026-09-22
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -282,7 +282,34 @@ stable untilted cards.
   draft" page as a dialog behind the recipe page hero entry — draft state lives
   in the container layer (shared across UI roots), so opening or closing the
   dialog never destroys it; the save chain and production chain semantics are
-  unchanged. Graph, list, and exploded views remain peers. The list is complete and always available.
+  unchanged.
+- Recipe page as the production hub (0.7.15, U16 user-ruling consumption slice
+  1, proposal 029 A4/A5): the library selection is the preview subject —
+  selecting a library document loads the three views through the document
+  mapping, and the chain identity becomes ready with the selection. The
+  selection is a production-chain fact-source action: the chain identity keys
+  come only from the document identity of the recipe.get read receipt (the
+  recipeId/revision of the recipeDocument body itself), never from list labels
+  or local guesses (UI-02 "chain identity is object identity" extended to the
+  selection fact source); a changed document identity means a new chain — the
+  previous chain's task/record identities step aside. The selected state offers
+  the "assemble" initiation face: the production chain section double-mounts in
+  the recipe page selected state and the composing-draft dialog, consuming the
+  same container-layer store and Gateway port (batch 019 C two-UIs-one-store
+  precedent), advancing resolve → plan → approve → execute; plan approval keeps
+  the production-use-case v0.2 plan.approve idempotent wording (request face is
+  the single key {planId}); a risk decision is not part of this face (if ever
+  needed it is a v0.2→v0.3 version-bump matter for the core freeze ring — the
+  desktop invents nothing and smuggles nothing in). The stale-authorization
+  gate (stale-draft) holds only while a composing draft is present and its
+  content deviates from the saved revision; a selection-driven chain with no
+  draft present is ready. The workshop consumption face belongs to slice 2
+  (A6, 0.7.16 candidate); this version does not touch the workshop. **Word
+  discipline (#44×U16, codified for the first time)**: the user-action wording
+  is "assemble" (组装 — including the chain card's execute button and other
+  user-operation copy); "装配" (assembly) is reserved for wardrobe mounting and
+  the AMF Assembly stage semantics (stage names, pipeline stage diagrams, and
+  stage-event copy do not migrate). Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
   All views share selection, version snapshots, domain semantics, keyboard operation, and non-drag
@@ -490,6 +517,22 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.15 (2026-09-22)**: §8.4 addendum for the recipe page as the production hub
+  (U16 user-ruling consumption slice 1, proposal 029 A4/A5) — the library
+  selection is the preview subject and the production-chain fact-source action
+  (chain identity keys come only from the recipe.get receipt document identity,
+  never list labels or local guesses; a changed document identity means a new
+  chain); the selected-state assemble initiation face = the production chain
+  section double-mounted in the recipe page and the composing-draft dialog,
+  consuming the same container-layer store and Gateway port; plan approval keeps
+  the production-use-case v0.2 plan.approve idempotent wording (single key
+  {planId}, no risk decision on this face); the stale-authorization gate
+  (stale-draft) holds only while a composing draft is present and deviates from
+  the saved revision; #44×U16 word discipline codified for the first time (the
+  user action is "assemble" (组装); wardrobe mounting and the AMF Assembly stage
+  keep "装配"). The workshop page is untouched (§8.5 addendum awaits slice 2,
+  0.7.16). EN mirror of the authoritative ZH.
 
 - **0.7.14 (2026-09-21)**: §8.6 addendum for handoff admission and the standalone open path (U19
   user-ruling consumption slice) — the Release build-record handoff entry presents by a record-state

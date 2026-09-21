@@ -163,7 +163,12 @@ describe("候选装配(fetchRecipeCompareCandidates)", () => {
       if (request.method === "recipe.get") {
         const params = request.params as { recipeId: string };
         if (params.recipeId === "0190broken") throw new Error("read failed");
-        return okEnvelope({ recipe: libraryDocument() });
+        // 冻结 wire 形状:回执顶层必填身份字段＋recipeDocument 透明本体
+        return okEnvelope({
+          recipeId: params.recipeId,
+          revision: 3,
+          recipeDocument: libraryDocument(),
+        });
       }
       return errEnvelope();
     };

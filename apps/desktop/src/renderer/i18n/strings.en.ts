@@ -2242,7 +2242,7 @@ demoTaskTitle: "Demo task",
     addCta: 'Add to draft',
     chain: {
       title: "Create your avatar",
-      subtitle: "Save the recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
+      subtitle: "Select or save a recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
       recipeLine: 'Recipe {recipeId} (revision {revision}).',
       staleWarning: "The draft changed. Save it and check assets and dependencies again before using a plan.",
       inspectionNote: "Check results cannot be displayed on this page yet.",

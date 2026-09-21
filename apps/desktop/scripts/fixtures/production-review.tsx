@@ -90,7 +90,16 @@ const invoke = async (request: any) => {
   }
   if (request.method === "recipe.get") {
     getCalls++;
-    const response = ok({ recipe: documents[request.params.recipeId] });
+    // Frozen wire face (production-use-case v0.2 recipe-get.result): the
+    // receipt carries required top-level identity fields (recipeId/revision,
+    // store-authoritative) plus the transparent `recipeDocument` body; the
+    // renderer narrows the chain-selection identity from the receipt (029 A4).
+    const stored = documents[request.params.recipeId];
+    const response = ok({
+      recipeId: stored?.recipeId ?? request.params.recipeId,
+      revision: stored?.revision ?? 1,
+      recipeDocument: stored,
+    });
     if (holdGet) { holdGet = false; return new Promise((resolve) => delayed.push(() => resolve(response))); }
     return response;
   }
