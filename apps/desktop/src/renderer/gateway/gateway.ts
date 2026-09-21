@@ -10,6 +10,7 @@ import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import type { ProjectOpsPort } from "./project-ops-port.ts";
 import type { ProductionChainPort } from "./production-chain-port.ts";
 import type { RecipeExportPort } from "./recipe-export-port.ts";
+import type { DependenciesPort } from "./dependencies-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
 import type { ReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
@@ -37,6 +38,10 @@ export interface VuaGateway {
   /** 029 B 面环 4:配方导出端口(recipe.exportProjectDraft 同步只读;草稿
    *  转正唯一通道 = 用户显式确认后的既有 recipe.save 保存链) */
   readonly recipeExport: RecipeExportPort;
+  /** bdl-queries v0.5 消费准备切片:依赖反查/观察列只读端口
+   *  (dependencies.lookup 建议面 / dependencies.listByProduct 线索面;
+   *  消费页面候 U18 终裁后切片,缺席臂 = 控制不渲染先例) */
+  readonly dependencies: DependenciesPort;
   /** M7 检查切片消费批:检查读面端口(inspection.get/list;016 仲裁
    *  独立词表行) */
   readonly inspection: InspectionPort;

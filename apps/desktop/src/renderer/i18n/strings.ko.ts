@@ -2461,6 +2461,25 @@ rolled_back: "롤백됨",
       workflowId: "워크플로 ID",
     },
   },
+  /** bdl-queries v0.5 소비 준비 슬라이스(2026-09-22): 의존성 역조회/관찰
+   *  목록 어휘면 인프라 — 소비 페이지는 U18 최종 재정 후 슬라이스. 각 행은
+   *  "단서는 결론이 아니다" 법칙을 따른다: advisory 문구는 항상 제안의
+   *  어조(레이아웃 증거 등급 및 추천 설치 출처)이며, 사실 단언으로
+   *  렌더링하지 않는다. 가용성 쌍은 기존 warehouse.availability 세 행을
+   *  탄다(죽은 중복 행 없음. dependencies-port 테스트에서 고정).
+   *  installSource는 advisory 규칙 v1이 실제로 송출하는 두 값만 —
+   *  vpm/unknown은 동결된 폐집합에 남아 송출되지 않으므로 해당 행 없음
+   *  (죽은 어휘면을 남기지 않음). */
+  dependencies: {
+    confidence: {
+      strong: "제작자가 명시적으로 선언(전용 섹션 또는 단일 줄)",
+      weak: "목록 항목에서 언급됨(실재하지만 압축된 기술)",
+    },
+    installSource: {
+      booth_page: "추천 설치 출처: BOOTH 상품 페이지",
+      external_page: "추천 설치 출처: 외부 페이지",
+    },
+  },
   /** 앱 면 오류 문구: 키 = 와이어상의 messageKey(키 선행. provider는
    *  오류 채널로 errors.catalog.*를 전송). 카탈로그 브라우저는 현재
    *  실패를 not-connected/not-found로 처리하므로, 이 뷰에서의 투과

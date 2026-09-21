@@ -915,3 +915,30 @@ describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification
     }
   });
 });
+
+// bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN;桌面消费准备切片
+// 2026-09-22 登记 TS 方法闭集):模拟面无 BDL 观察库,dependencies.* 两方法
+// 恒答诚实缺席——三元与真实 provider-host catalog_request 缺席分支一致
+// (vua.catalog.unavailable,不折入 unknown_method 过渡态);绝不伪造线索/
+// 建议(「线索非结论」律,零合成依赖事实)。
+describe("mock dependencies.lookup / dependencies.listByProduct (bdl-queries v0.5, TS method union registered by the desktop seat)", () => {
+  it("answers the catalog-family honest absence triple for both read-only queries — never fabricated clues or suggestions", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    for (const method of ["dependencies.lookup", "dependencies.listByProduct"] as const) {
+      const params = method === "dependencies.lookup"
+        ? { name: "lilToon" }
+        : { productId: "booth:6584744" };
+      const response = await provider.invoke(request({
+        kind: "query",
+        method,
+        params,
+      } as Parameters<typeof request>[0]));
+      expect(response.ok, method).toBe(false);
+      if (response.ok) throw new Error("expected failure");
+      expect(response.error.code, method).toBe("vua.catalog.unavailable");
+      expect(response.error.category, method).toBe("unavailable");
+      expect(response.error.messageKey, method).toBe("errors.catalog.unavailable");
+    }
+  });
+});

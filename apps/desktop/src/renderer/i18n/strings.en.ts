@@ -2556,6 +2556,26 @@ demoTaskTitle: "Demo task",
       workflowId: "Workflow ID",
     },
   },
+  /** bdl-queries v0.5 consumption-preparation slice (2026-09-22): dependency
+   *  reverse-lookup / observation word-face infrastructure — the consuming
+   *  page lands after the U18 final ruling. The clues-not-conclusions law
+   *  governs every row: advisory copy always reads as a SUGGESTION (layout-
+   *  evidence tiers and suggested install sources), never a fact claim.
+   *  Availability pairs ride the standing warehouse.availability rows (zero
+   *  dead duplicates; pinned by the dependencies-port test). installSource
+   *  carries exactly the two values advisory rule v1 emits — vpm/unknown
+   *  stay in the frozen closed set and are never emitted, so no rows exist
+   *  for them (no dead word faces). */
+  dependencies: {
+    confidence: {
+      strong: "Explicitly declared by the author (dedicated section or single line)",
+      weak: "Mentioned in a listed line (real but compressed)",
+    },
+    installSource: {
+      booth_page: "Suggested install source: BOOTH product page",
+      external_page: "Suggested install source: external page",
+    },
+  },
   /** Application-face error copy, keyed by the messageKey the wire carries
    *  (key-first: provider sends errors.catalog.* on the error channel). The
    *  catalog browser currently degrades failures to not-connected/not-found;
