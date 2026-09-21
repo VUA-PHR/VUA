@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "dependencies.lookup",
+  "params": {
+    "name": "lilToon",
+    "fuzzy": true
+  }
+}

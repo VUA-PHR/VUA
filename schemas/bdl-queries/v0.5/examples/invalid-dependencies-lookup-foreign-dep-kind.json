@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "dependencies.lookup",
+  "params": {
+    "name": "Unity",
+    "depKind": "unity_or_sdk_version",
+    "limit": 50,
+    "offset": 0
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "dependencies.lookup",
+  "params": {
+    "name": "",
+    "limit": 50,
+    "offset": 0
+  }
+}
