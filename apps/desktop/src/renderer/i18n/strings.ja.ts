@@ -825,6 +825,15 @@ rolled_back: "ロールバック済み",
     subtitle: "商品情報と、この PC に保存した素材を管理します。BOOTH の商品ページはアプリ内またはブラウザーで開けます。購入にはご自身のアカウントを使用してください。",
     searchPlaceholder: "タイトルまたは商品 ID で検索",
     searchAria: "カタログ商品を検索",
+    /** 029 スライス3(A3 ローカル区間):素材セレクター=倉庫読み面の投影。
+     *  ここに第3の取り込み入口を設けない(取り込みはインポートページ)。
+     *  クラウド接続は BOARD #46 裁決まで正直に不在。 */
+    selector: {
+      listAria: "レシピに追加できる倉庫エントリ",
+      localOnlyNote: "セレクターが表示するのはローカル倉庫エントリのみです。新しい素材の取り込みはインポートページで行います。クラウド素材の接続は裁決まで正直に不在です。",
+      pickCta: "追加",
+      addedBadge: "レシピに追加済み",
+    },
     filters: {
       availability: "販売状態",
       entityType: "エンティティ種別",
@@ -1167,6 +1176,71 @@ rolled_back: "ロールバック済み",
     libraryMappingNote: 'ドキュメントからワークベンチビューへのマッピングは未接続です。上記の項目事実をそのまま表示しています。',
     documentModeNote: 'レシピに記載された設定を表示しています。この PC ではまだ検証されていません。',
     documentModeExit: '作業画面に戻る',
+    /** 029 スライス3(A1 作成入口昇格/A2 選択状態での素材追加/A3 倉庫読み面投影セレクター ローカル区間)。
+     *  語面規律(U16):作成入口は「作成」。「素材を追加」は独立した語で「組み立て」と混用しない。
+     *  セレクターはローカル倉庫エントリのみ表示。クラウド素材は BOARD #46 裁決まで正直に不在。 */
+    createCta: "レシピを作成",
+    addMaterialCta: "素材を追加",
+    materialPickerTitle: "素材倉庫から追加",
+    editSectionTitle: "保存待ちの追加素材",
+    saveEditCta: "変更を保存",
+    savingEditCta: "保存中…",
+    editFailedNote: "保存に失敗しました。変更は保持されているため、再試行できます。",
+    editDirtyNote: "未保存の追加素材があります。保存が成功して初めてレシピライブラリに書き込まれます。",
+    editRemoveAria: "保存待ちの追加 {title} を削除",
+    /* 029 B面ループ4(デスクトップ消費):recipe-export v0.1 下書き確認
+     * フロー。語面規律:入口は「プロジェクトから下書きを書き出す」。書き
+     * 出しは設計意図の復元を宣言せず、欠落次元の一覧をそのまま呈示する。
+     * 昇格はユーザーが明示的に補完(タイトル/読み取れない場合のUnity
+     * バージョン/1つ以上のアセット)した後、既存の recipe.save 保存チェーン
+     * のみを通る。入口は VUA 登録済みプロジェクトに限定し、任意パス入力は
+     * 開放しない。 */
+    exportCta: "プロジェクトから下書きを書き出す",
+    exportDialogTitle: "プロジェクトからレシピ下書きを書き出す",
+    exportDraftBadge: "プロジェクト書き出し下書き",
+    exportPickTitle: "書き出す VUA 管理プロジェクトを選択",
+    exportPickAria: "書き出し元の登録済みプロジェクト一覧",
+    exportPickLoading: "登録済みプロジェクトを読み込み中…",
+    exportPickEmpty: "登録済みの VUA 管理プロジェクトはまだありません。",
+    exportPickUnavailable: "プロジェクト登録サービスに接続されていません。",
+    exportStaleBadge: "登録パスが存在しません",
+    exportExporting: "下書きを書き出し中…",
+    exportFailedUnavailable: "書き出しサービスは現在利用できません。",
+    exportFailedRejected: "そのプロジェクトはもう VUA に登録されていません。",
+    exportOriginSection: "出元プロジェクト",
+    exportPathLabel: "パス",
+    exportNameLabel: "名前",
+    exportNameAbsent: "読み取れません",
+    exportIdentityLabel: "VUA ネイティブ識別",
+    exportIdentityPresent: "あり",
+    exportIdentityAbsent: "なし",
+    exportIdentityUnreadable: "読み取れません",
+    exportUnityLabel: "Unity バージョン（ディスク上の観測）",
+    exportUnityUnreadable: "読み取れないため、保存前にバージョン制約を入力してください。",
+    exportUnityInputAria: "Unity バージョン制約",
+    exportUnityPlaceholder: "例: 2022.3.22f1",
+    exportDepsTitle: "宣言済み依存パッケージ",
+    exportDepsEmpty: "プロジェクトマニフェストに依存の宣言はありません。",
+    exportDepsLocked: "{version} でロック済み",
+    exportMissingTitle: "欠落している次元（今回の書き出しには含まれません）",
+    exportHonestyNote: "書き出しはプロジェクトファイルの読み取りのみを行い、設計意図を復元するものではありません。下書きは補完と明示的な保存を経て初めてレシピになります。",
+    missingDims: {
+      assets: "アセット群",
+      instances: "インスタンスとマウント",
+      relations: "関係",
+      wardrobeGroups: "衣装グループ",
+      targetAvatar: "対象アバター",
+      assetRoles: "アセット役割",
+      assetLabels: "アセットラベル",
+      sourceRefs: "アセット出所",
+      titleSemantics: "タイトルの意味",
+      environmentUnityVersion: "Unity バージョン（ディスク上で読み取れず）",
+    },
+    exportTitleLabel: "レシピタイトル（必須）",
+    exportTitleAria: "レシピタイトル",
+    exportTitlePrefillNote: "プロジェクト名から事前入力しました。自由に編集できます。",
+    exportSaveCta: "レシピとして保存",
+    exportBlockedNote: "保存にはタイトル、Unity バージョン（読み取れない場合）、1 つ以上のアセットが必要です。",
     factsLine: 'リビジョン {revision} - アセット:{assets}、インスタンス:{instances}、リレーション:{relations}。',
     factsLocked: '解決ロックあり(望ましい状態は固定)。',
     factsUnlocked: '解決ロックなし(望ましい状態の記述であり、検証済みのローカル状態ではありません)。',
@@ -2422,13 +2496,25 @@ rolled_back: "ロールバック済み",
     },
     /** マテリアルチェーンのエラー文面(デスクトップ第 142 バッチ、タスク
      *  イベント失敗行の表示):キー = ワイヤ上の messageKey(vua.material
-     *  家族のエラーは AppErrorV01 経由)。provisionFailed は予約行——
-     *  マテリアルチェーン v0.2 の新コード vua.material.provision_failed
-     *  はコア席の修正バッチ(wt-2、取込待ち)で運ばれる。文面を先行して
-     *  4 言語同期しておき、コード到着時に即ヒットさせる。 */
+     *  家族のエラーは AppErrorV01 経由)。第 169 バッチでエンジンの完全な
+     *  12 キー errors.material.* 発射面まで補完(コア第 150 バッチの
+     *  failure_message_key 分岐 + material_intake / provider-host の
+     *  発射点。各行はその発射文脈に基づき、文脈の発明はゼロ)。失敗行は
+     *  引き続き文面+コード原語の並列表示(第 148 バッチ二重事実律)——
+     *  コードは決して隠されません。 */
     material: {
       executionFailed: "マテリアル実行に失敗しました:Unity 側の操作が完了しませんでした。",
       provisionFailed: "ターゲットプロジェクトの供給に失敗しました:Unity プロジェクトがマテリアル取り込み可能な状態ではありません。",
+      sourceInvalid: "マテリアルソースが無効です:そのパスは読み取り可能なマテリアルフォルダーを指していません。",
+      sourceEmpty: "マテリアルソースが空です:フォルダーに .unitypackage が含まれていません。",
+      sourceUnreadable: "マテリアルソースを読み取れませんでした:マテリアルフォルダーの読み取りに失敗しました。",
+      sourceDrift: "マテリアルソースが計画確認後に変更されました(ソースフィンガープリントが一致しません)。ソースを再検査して再度確認してください。",
+      planHashMismatch: "取り込み計画は完全性検査に失敗し(計画ハッシュ不一致)、拒否されました。",
+      riskDecisionStale: "記録されたリスク判定が現在の計画またはソースと一致しなくなりました。マテリアルフローをやり直してください。",
+      riskDecisionRequired: "この計画は確認前にリスク判定が必要です。",
+      cancelled: "マテリアル操作はキャンセルされました:リスク判定でキャンセルが選択されました。",
+      internal: "マテリアル操作の準備中に内部エラーが発生しました。",
+      recordFailed: "マテリアル操作はロールバックされて復元されましたが、記録の保存に失敗しました:この結果はタスク記録に永続化されていません。",
     },
     /** ハンドオフ准入ゲートの文面(U19 ユーザー裁定 2026-09-21、BOARD U19 行
      *  が規範ソース)。予約行——コード vua.release_handoff.record_state_blocked

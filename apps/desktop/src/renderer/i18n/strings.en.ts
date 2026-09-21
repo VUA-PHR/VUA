@@ -880,6 +880,15 @@ demoTaskTitle: "Demo task",
       "Manage product information and assets saved on this PC. Open BOOTH product pages in the app or your browser, and use your own account for purchases.",
     searchPlaceholder: "Search title or product ID",
     searchAria: "Search catalog products",
+    /** 029 slice 3 (A3 local segment): asset picker = warehouse read-face
+     *  projection. No third import entry lives here (imports stay on the
+     *  import page); cloud access is honestly absent pending BOARD #46. */
+    selector: {
+      listAria: "Warehouse entries to add to the recipe",
+      localOnlyNote: "This picker shows local warehouse entries only. Importing new assets stays on the import page; cloud asset access is honestly absent until a ruling lands.",
+      pickCta: "Add",
+      addedBadge: "Already in recipe",
+    },
     filters: {
       availability: "Availability",
       entityType: "Asset type",
@@ -1229,6 +1238,74 @@ demoTaskTitle: "Demo task",
     libraryMappingNote: "This recipe is shown as saved. Editing it in the workbench is not available yet.",
     documentModeNote: "These are the settings saved in the recipe. They have not been verified on this PC.",
     documentModeExit: "Back to the workbench",
+    /** 029 slice 3 (A1 creation entry upgrade / A2 add-assets in selected
+     *  state / A3 local segment of the warehouse read-face projection
+     *  picker). Word-face discipline (U16): the creation entry says
+     *  "create"; "add assets" is its own action and never mixed with
+     *  "assemble". The picker presents local warehouse entries only -
+     *  cloud asset access stays honestly absent pending BOARD #46. */
+    createCta: "Create recipe",
+    addMaterialCta: "Add assets",
+    materialPickerTitle: "Add from the asset warehouse",
+    editSectionTitle: "Pending asset additions",
+    saveEditCta: "Save changes",
+    savingEditCta: "Saving…",
+    editFailedNote: "Saving failed - your changes are kept and you can retry.",
+    editDirtyNote: "There are unsaved asset additions - they are written to the recipe library only after saving succeeds.",
+    editRemoveAria: "Remove pending addition {title}",
+    /* 029 B-face loop 4 (desktop consumption): recipe-export v0.1 draft
+     * confirmation flow. Word-face discipline: the entry says "export a
+     * draft from a project"; the export never claims to recover design
+     * intent and the missing-dimension list is rendered as-is. Promotion
+     * rides the standing recipe.save chain only after explicit user
+     * completion (title / Unity version when unreadable / at least one
+     * asset). Registered projects only - no arbitrary path input. */
+    exportCta: "Export draft from project",
+    exportDialogTitle: "Export a recipe draft from a project",
+    exportDraftBadge: "Project-exported draft",
+    exportPickTitle: "Choose a VUA-managed project",
+    exportPickAria: "Registered projects to export from",
+    exportPickLoading: "Loading registered projects…",
+    exportPickEmpty: "No VUA-managed projects are registered yet.",
+    exportPickUnavailable: "The project registry service is not connected.",
+    exportStaleBadge: "Path missing",
+    exportExporting: "Exporting draft…",
+    exportFailedUnavailable: "The export service is not available right now.",
+    exportFailedRejected: "That project is not registered with VUA anymore.",
+    exportOriginSection: "Source project",
+    exportPathLabel: "Path",
+    exportNameLabel: "Name",
+    exportNameAbsent: "not readable",
+    exportIdentityLabel: "VUA-native identity",
+    exportIdentityPresent: "Present",
+    exportIdentityAbsent: "Absent",
+    exportIdentityUnreadable: "Unreadable",
+    exportUnityLabel: "Unity version (observed on disk)",
+    exportUnityUnreadable: "Not readable - enter the version constraint to save.",
+    exportUnityInputAria: "Unity version constraint",
+    exportUnityPlaceholder: "e.g. 2022.3.22f1",
+    exportDepsTitle: "Declared dependencies",
+    exportDepsEmpty: "The project manifest declares no dependencies.",
+    exportDepsLocked: "locked {version}",
+    exportMissingTitle: "Missing dimensions (not covered by this export)",
+    exportHonestyNote: "The export reads project files only and never recovers design intent. The draft becomes a recipe only after you complete it and save it explicitly.",
+    missingDims: {
+      assets: "Assets",
+      instances: "Instances and mounts",
+      relations: "Relations",
+      wardrobeGroups: "Wardrobe groups",
+      targetAvatar: "Target avatar",
+      assetRoles: "Asset roles",
+      assetLabels: "Asset labels",
+      sourceRefs: "Asset sources",
+      titleSemantics: "Title semantics",
+      environmentUnityVersion: "Unity version (unreadable on disk)",
+    },
+    exportTitleLabel: "Recipe title (required)",
+    exportTitleAria: "Recipe title",
+    exportTitlePrefillNote: "Prefilled from the project name - edit freely.",
+    exportSaveCta: "Save as recipe",
+    exportBlockedNote: "A title, the Unity version (when unreadable), and at least one asset are required to save.",
     factsLine: 'Revision {revision} - assets: {assets}, instances: {instances}, relations: {relations}.',
     factsLocked: "Dependency choices are pinned. This does not verify the local project.",
     factsUnlocked: "Dependency choices are not pinned. This recipe has not been verified locally.",
@@ -2507,13 +2584,26 @@ demoTaskTitle: "Demo task",
     },
     /** Material-chain error copy (desktop batch 142, task-event failure-row
      *  presentation): keys = wire messageKeys (vua.material family errors
-     *  carried by AppErrorV01). provisionFailed is a reserved row — the
-     *  material-chain v0.2 code vua.material.provision_failed travels with
-     *  the core seat's fix slice (wt-2, pending landing); the copy lands
-     *  first in sync across the four tables so the code hits on arrival. */
+     *  carried by AppErrorV01). Batch 169 completes the table to the engine's
+     *  full 12-key errors.material.* emission face (core batch-150
+     *  failure_message_key split plus the material_intake / provider-host
+     *  emitters; each row anchored to its emission site, no invented
+     *  semantics). The failure row still presents the localized face AND the
+     *  raw code side by side (batch-148 dual-fact law) — the code is never
+     *  shadowed. */
     material: {
       executionFailed: "Material execution failed: the Unity-side operation did not complete.",
       provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+      sourceInvalid: "The material source is invalid: the path does not point to a readable material folder.",
+      sourceEmpty: "The material source is empty: the folder contains no .unitypackage.",
+      sourceUnreadable: "The material source could not be read: reading the material folder failed.",
+      sourceDrift: "The material source changed after the plan was confirmed (source fingerprints no longer match); inspect the source and confirm again.",
+      planHashMismatch: "The import plan failed its integrity check (plan hash mismatch) and was rejected.",
+      riskDecisionStale: "The recorded risk decision no longer matches the current plan or source; start the material flow again.",
+      riskDecisionRequired: "This plan requires a risk decision before it can be confirmed.",
+      cancelled: "The material operation was cancelled: the risk decision chose to cancel.",
+      internal: "An internal error occurred while preparing the material operation.",
+      recordFailed: "The material operation was rolled back and restored, but saving its record failed: the outcome was not persisted to the task records.",
     },
     /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
      *  as the normative source). Reserved rows — the codes

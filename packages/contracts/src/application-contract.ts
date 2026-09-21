@@ -547,6 +547,86 @@ export interface ProjectLockStatusResultV01 {
   readonly mutationStatus: ProjectLockMutationStatusV01;
 }
 
+/* ---- 029 B 面 recipe-export v0.1(核心冻结批 2026-09-22;桌面环 4 消费批
+ * TS 面登记)。单方法同步只读 Query:recipe.exportProjectDraft——从已注册
+ * Unity 工程导出「配方草稿」(draft;永不是 Recipe,转正唯一通道 = 用户显式
+ * 确认后的既有 recipe.save 版本链):读 013 检查聚合零新工程读面,params 单键
+ * projectPath 复用注册身份,未注册 = 复用 vua.project.project_not_found
+ * (024 判例);盘上观察失败不设码——manifest 缺席 = 诚实空依赖数组、版本
+ * 不可读 = null + missing 标记(诚实律 1/2,绝不虚构行)。草稿文档闭集
+ * (additionalProperties:false = 虚假断言防线,草稿携带 assets/title/
+ * recipeId 即形状违反):draftId(草稿实例身份,非 recipeId)+ exportedAt +
+ * origin(projectPath 回显/projectName 可空/vuaIdentity 三态,缺席非门)+
+ * environment.unityVersionConstraint(盘上观察 verbatim 可空)+ dependencies
+ * (声明集 verbatim,packageId 升序冻结呈现,lockedVersion 同 id 精确钉定
+ * 可缺;locked-only 系传递解析事实不产行)+ missing(缺失维度十值闭集:
+ * 关系面五维 + 语义四维恒在〔裁决一:案 B 零桥接骨架,关系面零扫描〕,
+ * environmentUnityVersion ⟺ constraint null 双向 iff)。TS 面照冻结 Schema
+ * 镜像,不复制正负例向量(消费测试骑 schemas/recipe-export/v0.1)。 */
+
+/** recipe.exportProjectDraft:已注册工程的配方草稿导出(同步只读,无任务化
+ *  命令面——纯读无物可恢复,packages-ops preview 先例) */
+export interface RecipeExportProjectDraftQueryV01 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "recipe.exportProjectDraft";
+  readonly params: { readonly projectPath: string };
+}
+
+/** 草稿缺失维度十值闭集:九维恒在(关系面五维 assets/instances/relations/
+ *  wardrobeGroups/targetAvatar + 语义四维 assetRoles/assetLabels/sourceRefs/
+ *  titleSemantics)+ environmentUnityVersion 条件第十值 */
+export type RecipeExportMissingDimensionV01 =
+  | "assets"
+  | "instances"
+  | "relations"
+  | "wardrobeGroups"
+  | "targetAvatar"
+  | "assetRoles"
+  | "assetLabels"
+  | "sourceRefs"
+  | "titleSemantics"
+  | "environmentUnityVersion";
+
+/** VUA 原生身份三态(`.vua/project.json`,013 聚合观察 verbatim;适用边界
+ *  注记,永不是 v0.1 的门——未决项 2 保持开放候用户) */
+export type VuaIdentityStatusV01 = "absent" | "present" | "unreadable";
+
+export interface RecipeExportDraftOriginV01 {
+  readonly projectPath: string;
+  /** 013 聚合观察到的工程名 verbatim;null = 无名可读。仅是来源事实——
+   *  草稿没有 title 字段,确认流是否用它预填标题属桌面呈现决策 */
+  readonly projectName: string | null;
+  readonly vuaIdentityStatus: VuaIdentityStatusV01;
+}
+
+export interface RecipeExportDraftEnvironmentV01 {
+  /** 盘上观察到的编辑器版本 verbatim(照提案边界 2 不迁移);null = 不可读,
+   *  此时 missing 必带 environmentUnityVersion(双向 iff 钉死) */
+  readonly unityVersionConstraint: string | null;
+}
+
+export interface RecipeExportDraftDependencyV01 {
+  readonly packageId: string;
+  /** 声明约束 verbatim(如 3.7.x 区间) */
+  readonly versionConstraint: string;
+  /** locked map 同 id 精确钉定;声明无锁定 = 缺席。locked-only 不产行 */
+  readonly lockedVersion?: string;
+}
+
+export interface RecipeExportProjectDraftResultV01 {
+  readonly schemaVersion: "vua.recipe-export/v0.1";
+  /** 草稿实例身份(逐导出铸造的 uuidv7);NOT recipeId——配方身份只在
+   *  用户显式确认保存后由 recipe.save 链铸造 */
+  readonly draftId: string;
+  readonly exportedAt: string;
+  readonly origin: RecipeExportDraftOriginV01;
+  readonly environment: RecipeExportDraftEnvironmentV01;
+  /** packageId 升序(冻结确定性呈现事实);空数组 = 诚实应答 */
+  readonly dependencies: readonly RecipeExportDraftDependencyV01[];
+  /** uniqueItems;九维恒在,minItems 9 maxItems 10 */
+  readonly missing: readonly RecipeExportMissingDimensionV01[];
+}
+
 /* ---- 024 P1 读面(packages-query v0.1,核心冻结批 2026-09-17;三域表态
  *  收敛:桌面 ab02215／环境 62b4989／集成第 70 批)。单方法只读:
  *  packages.listInstalled——已注册项目的已装包集合(VPM manifest＋lock
@@ -2524,7 +2604,8 @@ export type ApplicationRequestV01 =
   | WarehouseGenerateVpmCommandV01
   | WarehouseDeleteOriginalsCommandV01
   | ReleaseOpenForHandoffCommandV02
-  | ReleaseOpenForInspectionCommandV02;
+  | ReleaseOpenForInspectionCommandV02
+  | RecipeExportProjectDraftQueryV01;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -2649,7 +2730,8 @@ export type ApplicationSuccessValueV01 =
   | PackagesCreateProjectResultV05
   | WarehouseMaintenanceAcceptedV01
   | ReleaseHandoffAcceptedV02
-  | ReleaseInspectionAcceptedV02;
+  | ReleaseInspectionAcceptedV02
+  | RecipeExportProjectDraftResultV01;
 
 export type ApplicationResponseV01 =
   | {
@@ -3348,6 +3430,14 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, ["buildId"])
       && isNonEmptyText(value.params.buildId);
+  }
+  // 029 B 面 recipe-export v0.1(桌面环 4 TS 面登记):同步只读 Query,params
+  // 单键闭集 {projectPath}(013 注册身份),词表外键拒绝(形状违反 =
+  // invalid_params,绝不冒充缺席);未注册路径由 Provider 回复用码
+  if (value.kind === "query" && value.method === "recipe.exportProjectDraft") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["projectPath"])
+      && isNonEmptyText(value.params.projectPath);
   }
   return false;
 }

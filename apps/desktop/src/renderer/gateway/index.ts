@@ -144,6 +144,15 @@ export type {
   ProjectListProjectsOutcome,
   RegisteredProjectRow,
 } from "./project-ops-port.ts";
+export {
+  createUnavailableRecipeExportPort,
+  narrowRecipeProjectDraft,
+} from "./recipe-export-port.ts";
+export type {
+  RecipeExportOutcome,
+  RecipeExportPort,
+  RecipeProjectDraft,
+} from "./recipe-export-port.ts";
 export type {
   InspectionDetailView,
   InspectionListQuery,

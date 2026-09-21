@@ -1,0 +1,22 @@
+{
+  "vector": "P6",
+  "name": "dependency-observations.valid.p06.bullet-line",
+  "basis": "030 §1 sample 6 (booth.pm/ja/items/6517959): bullet-marked requirement line ('●最新verのliltoonを使用してください。') — extraction_method='bullet'. The quote names no concrete version, so version_hint stays NULL: the honest absence of a version string, never a guessed one.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "liltoon",
+        "raw_quote": "●最新verのliltoonを使用してください。",
+        "source_span": "body",
+        "extraction_method": "bullet",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

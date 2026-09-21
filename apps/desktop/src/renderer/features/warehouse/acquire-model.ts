@@ -66,6 +66,22 @@ export function artifactCardMatches(card: AcquireArtifactCard, query: string): b
   );
 }
 
+/** 素材选择器行(029 A3 本地段,仓储读面投影):条目级搜索——显示名 /
+ *  文件夹名子串匹配(大小写不敏感;空词全过)。只投影既有读面事实,不做
+ *  任何筛选外的派生;工件级展开不在选择器面(选择对象是素材包条目)。 */
+export function warehouseEntrySelectorRows(
+  entries: readonly WarehouseEntry[],
+  query: string,
+): readonly WarehouseEntry[] {
+  const text = query.trim().toLowerCase();
+  if (text === "") return entries;
+  return entries.filter(
+    (entry) =>
+      entry.displayName.toLowerCase().includes(text) ||
+      entry.folderName.toLowerCase().includes(text),
+  );
+}
+
 /** 产物模式行:覆盖与否 + 生效模式(覆盖 ?? 全局,读取面已动态解析) */
 export interface EntryModeLine {
   readonly overridden: boolean;

@@ -1,0 +1,23 @@
+{
+  "vector": "N3",
+  "name": "dependency-observations.invalid.n03.raw-quote-null",
+  "basis": "raw_quote carries the verbatim-quote law inherited from compatibility_observations (v0.1 001_initial.sql 'raw_quote TEXT NOT NULL'; spike schema.sql comment 'verbatim quote, no semantic rewriting') — an observation without its verbatim quote is not an observation.",
+  "expect": "reject",
+  "reject_law": "raw_quote NOT NULL",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": null,
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

@@ -11,7 +11,7 @@ import { GatewayProvider } from "../../src/renderer/gateway/GatewayProvider.tsx"
 import { emptyGateway } from "../../src/renderer/gateway/empty-gateway.ts";
 import { composeAddItemAction, composeSetNameHintAction, useComposeDraft } from "../../src/renderer/app/compose-draft-store.ts";
 import { recipePersisted } from "../../src/renderer/app/recipe-library-revision.ts";
-import { strings } from "../../src/renderer/i18n/index.ts";
+import { format, strings } from "../../src/renderer/i18n/index.ts";
 
 const root = createRoot(document.getElementById("root")!);
 const wait = () => new Promise<void>((resolve) => setTimeout(resolve, 40));
@@ -19,7 +19,10 @@ const results: string[] = [];
 function check(ok: unknown, name: string) { if (!ok) throw new Error(name); results.push(name); }
 function button(text: string, within: ParentNode = document): HTMLButtonElement {
   const found = [...within.querySelectorAll<HTMLButtonElement>("button")].find((node) => node.textContent?.trim() === text);
-  if (!found) throw new Error("Button missing: " + text);
+  if (!found) {
+    const body = (document.body.textContent ?? "").replace(/\s+/g, " ").slice(0, 1200);
+    throw new Error("Button missing: " + text + " | BODY: " + body);
+  }
   return found;
 }
 async function click(text: string, within: ParentNode = document) { button(text, within).click(); await wait(); }
@@ -108,7 +111,23 @@ const invoke = async (request: any) => {
   return failure();
 };
 function DraftProbe() { const draft = useComposeDraft(); return <output id="draft-probe">{JSON.stringify(draft)}</output>; }
-function recipeRoot() { root.render(<StrictMode><GatewayProvider gateway={gateway}><RecipePage /><DraftProbe /></GatewayProvider></StrictMode>); }
+// 029 A3(切片三):合成仓储读面(acquire entries)——选择器投影的本地事实源;
+// 条目 1 的 warehouseItemId 与配方文档既有素材 id 相同,验证「已在本配方」标注。
+const acquireEntries = ["synthetic-asset", "whentry-b", "whentry-c", "whentry-d"].map((id, index) => ({
+  warehouseItemId: id, folderName: `folder-${id}`,
+  displayName: id === "synthetic-asset" ? "Synthetic" : `Entry ${String.fromCharCode(66 + index - 1)}`,
+  kind: "imported_material", createdAt: "2026-09-21T00:00:00Z",
+  artifactMode: null, effectiveArtifactMode: "use_original_unitypackage", artifacts: [],
+}));
+const gatewayWithAcquire = { ...gateway, acquire: {
+  snapshot: async () => ({ schemaVersion: 1, kind: "entries", entries: acquireEntries }),
+  subscribe: () => () => {},
+  entryDetail: async () => ({ schemaVersion: 1, kind: "not-found" }),
+  capability: async () => ({ state: "unavailable", detailKey: "synthetic" }),
+} } as any;
+function recipeRoot(g = gatewayWithAcquire) { root.render(<StrictMode><GatewayProvider gateway={g}><RecipePage /><DraftProbe /></GatewayProvider></StrictMode>); }
+function pickerPanel() { return document.querySelector(`[aria-label="${strings.recipe.materialPickerTitle}"]`); }
+const savedNoteAt = (revision: number) => format(strings.compose.savedNote, { revision: String(revision) });
 function settleSave(success = true) {
   if (!pendingSave) throw new Error("No pending save");
   const { document, resolve } = pendingSave; pendingSave = null;
@@ -124,7 +143,11 @@ async function recipeTests() {
   window.vua = { gateway: { invoke } } as any;
   composeAddItemAction({ warehouseItemId: "synthetic-asset", title: "Synthetic", role: "avatar_base", nameHint: "Avatar" });
   recipeRoot(); await wait(); await wait();
-  await openCompose(); await save();
+  // 029 A1(切片三):主路径「创建」入口升格——词面用「创建」(U16 原文),
+  // 打开的仍是同一搭配草稿弹窗(草稿弹窗保留为创建起点之一,一保存链)
+  await click(strings.recipe.createCta);
+  check(document.querySelector(`[aria-label="${strings.nav.pages.composePage}"]`) !== null, "creation entry opens the same compose draft dialog (029 A1)");
+  await save();
   check(!!pendingSave, "first save submitted");
   await key("Escape"); const before = listCalls; settleSave(); await wait(); await wait();
   check(listCalls > before && !!document.querySelector(".vua-recipe-library strong"), "success after dialog close refreshes list");
@@ -152,6 +175,178 @@ async function recipeTests() {
   delayed.forEach((resolve) => resolve()); delayed = []; await wait();
   const library = document.querySelector(".vua-recipe-library")!.textContent!;
   check(library.includes("newest-recipe") && library.includes("newest-detail") && !library.includes("asset-rev-3"), "old list and detail requests cannot overwrite latest reads");
+}
+
+async function recipeEditTests() {
+  // 029 A2/A3(切片三):选中态添加素材——平行文档编辑链、同一保存链形状
+  // 同一守卫集(baseRevision 版本链＋忙碌守卫＋D5 查重＋回执分类);选择器
+  // 系仓储读面投影,不立第三导入入口;云端缺席如实(未决项 3 = #46)。
+  recipeRoot(); await wait(); await wait();
+  (document.querySelector(".vua-recipe-library li button") as HTMLElement).click(); await wait(); await wait();
+  // 选择器:诚实投影(本地条目;既有素材标注;无导入词面)
+  await click(strings.recipe.addMaterialCta);
+  const picker = pickerPanel();
+  check(picker !== null, "add-assets action opens the warehouse read-face picker");
+  check(picker!.textContent!.includes(strings.warehouse.selector.localOnlyNote), "picker carries the local-only honest scope note (cloud absent pending #46)");
+  check(!picker!.textContent!.includes(strings.warehouse.acquire.importTitle) && !picker!.textContent!.includes(strings.warehouse.acquire.importPick), "picker hosts no third import entry");
+  check(picker!.textContent!.includes(strings.warehouse.selector.addedBadge), "entry already in the recipe is honestly badged");
+  check([...picker!.querySelectorAll("button")].filter((node) => node.textContent?.trim() === strings.warehouse.selector.pickCta).length === acquireEntries.length - 1, "only entries not yet in the recipe offer the add action");
+  // 挑选 → 待保存新增(未保存不冒充已保存)
+  await click(strings.warehouse.selector.pickCta, picker!);
+  check(document.body.textContent!.includes("Entry B"), "picked entry appears as a pending addition");
+  check(document.body.textContent!.includes(strings.recipe.editDirtyNote), "pending additions carry the unsaved honesty note");
+  check(!document.body.textContent!.includes(savedNoteAt(5)), "no saved note before a receipt");
+  await key("Escape"); await wait();
+  check(pickerPanel() === null && document.body.textContent!.includes("Entry B"), "pending addition survives picker close");
+  // 同一保存链:recipe.save + baseRevision 版本链 + 忙碌守卫 + 透明合并
+  await click(strings.recipe.saveEditCta);
+  check(!!pendingSave, "document edit save rides the same recipe.save chain");
+  check(pendingSave.document.baseRevision === 4 && pendingSave.document.assets.length === 2, "save carries baseRevision 4 and the merged asset set");
+  check(pendingSave.document.title === "newest-recipe", "merge preserves the saved title (no silent rewrite)");
+  check(pendingSave.document.instances[1].entrypoint.nameHint === "Entry B", "mount name derives from the entry display name (D3 same rule)");
+  check(button(strings.recipe.savingEditCta).disabled, "busy guard disables save while a submission is in flight");
+  const samePending = pendingSave;
+  await click(strings.recipe.savingEditCta);
+  check(pendingSave === samePending, "no double submission while in flight");
+  settleSave(); await wait(); await wait();
+  check(document.body.textContent!.includes(savedNoteAt(5)), "saved note only after the receipt (revision 5)");
+  check(document.querySelector(".vua-recipe-library")!.textContent!.includes("asset-rev-5"), "selected details refetch the saved revision");
+  check(!document.body.textContent!.includes(strings.recipe.editDirtyNote), "receipt clears pending additions");
+  // 失败如实:待保存新增保留、可显式重试
+  await click(strings.recipe.addMaterialCta); await wait();
+  await click(strings.warehouse.selector.pickCta, pickerPanel()!); await wait();
+  await key("Escape"); await wait();
+  await click(strings.recipe.saveEditCta);
+  check(!!pendingSave && pendingSave.document.assets.length === 3, "second addition merges onto revision 5");
+  settleSave(false); await wait();
+  check(document.body.textContent!.includes(strings.recipe.editFailedNote), "failed save is presented as a failure");
+  check(document.body.textContent!.includes("Entry C") && document.body.textContent!.includes(strings.recipe.editDirtyNote), "failed save keeps pending additions (retry stays explicit)");
+  await click(strings.recipe.saveEditCta);
+  settleSave(); await wait(); await wait();
+  check(document.body.textContent!.includes(savedNoteAt(6)), "explicit retry succeeds (revision 6)");
+  // D5 同一守卫:文档编辑路径查重命中 → 确认框 → 用户确认才提交
+  await click(strings.recipe.addMaterialCta); await wait();
+  await click(strings.warehouse.selector.pickCta, pickerPanel()!); await wait();
+  await key("Escape"); await wait();
+  await click(strings.recipe.saveEditCta);
+  check(!!pendingSave, "third addition submits for dedup comparison");
+  const mergedDoc = pendingSave.document;
+  settleSave(false); await wait();
+  documents["twin-recipe"] = { ...structuredClone(mergedDoc), recipeId: "twin-recipe", revision: 1, title: "twin" };
+  await click(strings.recipe.saveEditCta);
+  check(document.body.textContent!.includes(strings.compose.dedupTitle), "identical content opens the same D5 confirmation on the document path");
+  check(!pendingSave, "dedup hit holds the submission until the user confirms");
+  (document.querySelector(".vua-confirm-dialog__actions button:last-child") as HTMLElement).click(); await wait();
+  check(!!pendingSave, "user confirmation submits the new revision");
+  settleSave(); await wait(); await wait();
+  check(document.body.textContent!.includes(savedNoteAt(7)), "confirmed dedup save lands (revision 7)");
+  // 读面未接入:选择器诚实缺席(A3)
+  root.render(<StrictMode><GatewayProvider gateway={gateway}><RecipePage /><DraftProbe /></GatewayProvider></StrictMode>);
+  await wait(); await wait();
+  (document.querySelector(".vua-recipe-library li button") as HTMLElement).click(); await wait(); await wait();
+  await click(strings.recipe.addMaterialCta); await wait();
+  const offlinePicker = pickerPanel();
+  check(offlinePicker !== null && offlinePicker!.textContent!.includes(strings.warehouse.acquire.states.notConnectedTitle), "picker renders the honest not-connected state when the read face is absent");
+  check([...offlinePicker!.querySelectorAll("button")].every((node) => node.textContent?.trim() !== strings.warehouse.selector.pickCta), "not-connected picker offers no add actions");
+  await key("Escape"); await wait();
+  root.render(<div>edit-done</div>); await wait();
+}
+
+async function recipeExportTests() {
+  // 029 B 面环 4(桌面消费):从工程导出配方草稿——拾取段限定 VUA 已注册
+  // 工程集(不开放任意路径输入;陈旧登记如实标注禁用);确认段草稿六事实键
+  // 如实呈现(缺失维度清单照单——不宣称还原设计意图);转正 = 用户显式补全
+  // 后走既有 recipe.save 保存链(同一守卫集;草稿绝不静默转正)。
+  // 先钉读面缺席臂:empty 网关的 projectOps 诚实不可用 → 拾取段诚实空态。
+  root.render(<StrictMode><GatewayProvider gateway={gateway}><RecipePage /></GatewayProvider></StrictMode>);
+  await wait(); await wait();
+  await click(strings.recipe.exportCta);
+  const absentDialog = document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`);
+  check(absentDialog !== null && absentDialog!.textContent!.includes(strings.recipe.exportPickUnavailable), "pick stage renders the honest unavailable state when the registry read face is absent");
+  await key("Escape"); await wait();
+
+  const exportProjects = [
+    { path: "C:/demo", name: "Demo Avatar", pathPresent: true, unityVersion: "2022.3.22f1" },
+    { path: "C:/stale", name: "Stale Project", pathPresent: false, unityVersion: null },
+  ];
+  const exportDraft = {
+    schemaVersion: "vua.recipe-export/v0.1",
+    draftId: "01900000-0000-7000-8000-000000000001",
+    exportedAt: "2026-09-22T04:30:00Z",
+    origin: { projectPath: "C:/demo", projectName: "Demo Avatar", vuaIdentityStatus: "present" },
+    environment: { unityVersionConstraint: null },
+    dependencies: [
+      { packageId: "com.vrchat.avatars", versionConstraint: "3.7.x", lockedVersion: "3.7.0" },
+      { packageId: "com.animals.box", versionConstraint: "1.2.3" },
+    ],
+    missing: ["assets", "instances", "relations", "wardrobeGroups", "targetAvatar", "assetRoles", "assetLabels", "sourceRefs", "titleSemantics", "environmentUnityVersion"],
+  };
+  const gatewayWithProjects = { ...gatewayWithAcquire,
+    projectOps: {
+      listProjects: async () => ({ ok: true, projects: exportProjects, unreadable: 0 }),
+      importCopy: async () => ({ ok: false, error: { kind: "unavailable" } }),
+      setNote: async () => ({ ok: false, error: { kind: "unavailable" } }),
+    },
+    recipeExport: {
+      exportProjectDraft: async (projectPath: string) => projectPath === "C:/demo"
+        ? { ok: true, draft: exportDraft }
+        : { ok: false, error: { kind: "request_rejected" } },
+    },
+  } as any;
+  recipeRoot(gatewayWithProjects); await wait(); await wait();
+  await click(strings.recipe.exportCta);
+  const dialog = () => document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`)!;
+  check(dialog() !== null && dialog().textContent!.includes(strings.recipe.exportPickTitle), "export entry opens the pick stage over registered projects (029 B4)");
+  check(dialog().textContent!.includes("Demo Avatar") && dialog().textContent!.includes("C:/stale"), "registered projects are listed as facts (name and path)");
+  const staleButton = [...dialog().querySelectorAll("button")].find((node) => node.textContent?.includes("Stale Project")) as HTMLButtonElement;
+  check(staleButton.disabled && dialog().textContent!.includes(strings.recipe.exportStaleBadge), "stale registration is honestly badged and disabled");
+  // 拾取 → 导出回执 → 确认段(六事实键)
+  ([...dialog().querySelectorAll("button")].find((node) => node.textContent?.includes("Demo Avatar")) as HTMLElement).click();
+  await wait();
+  check(dialog().textContent!.includes(strings.recipe.exportDraftBadge), "confirm stage presents the project-exported draft badge (never silent promotion)");
+  check(dialog().textContent!.includes("com.vrchat.avatars") && dialog().textContent!.includes(format(strings.recipe.exportDepsLocked, { version: "3.7.0" })), "declared dependencies render verbatim with the presentation-only locked pin");
+  check(dialog().textContent!.includes(strings.recipe.missingDims.assets) && dialog().textContent!.includes(strings.recipe.missingDims.environmentUnityVersion) && dialog().textContent!.includes(strings.recipe.exportHonestyNote), "missing-dimension list renders as-is with the honesty note (no design-intent claim)");
+  check(dialog().textContent!.includes(strings.recipe.exportUnityUnreadable), "unreadable unity version is honestly presented for explicit completion");
+  const titleInput = dialog().querySelector(`input[aria-label="${strings.recipe.exportTitleAria}"]`) as HTMLInputElement;
+  check(titleInput.value === "Demo Avatar" && dialog().textContent!.includes(strings.recipe.exportTitlePrefillNote), "title prefills from the project name with the labeled source (draft has no title)");
+  const saveButton = () => [...dialog().querySelectorAll("button")].find((node) => node.textContent?.trim() === strings.recipe.exportSaveCta) as HTMLButtonElement;
+  check(saveButton() !== undefined && saveButton().disabled, "promotion is blocked before completion (title / version / at least one asset)");
+  // 素材补全 = 同一仓储读面投影选择器(不立第三导入入口)
+  check(dialog().textContent!.includes(strings.warehouse.selector.localOnlyNote), "asset completion rides the same read-face picker with no import wording");
+  await click(strings.warehouse.selector.pickCta, dialog());
+  check(dialog().textContent!.includes("Synthetic"), "picked asset appears as a pending completion");
+  check(saveButton().disabled, "save stays blocked while the unreadable version is uncompleted");
+  const versionInput = dialog().querySelector(`input[aria-label="${strings.recipe.exportUnityInputAria}"]`) as HTMLInputElement;
+  // React 受控输入:经原型原生 value setter 赋值再冒泡 input 事件,驱动
+  // React 合成事件(直接赋 .value 不触发 onChange)
+  const nativeValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+  nativeValueSetter.call(versionInput, "2022.3.22f1");
+  versionInput.dispatchEvent(new Event("input", { bubbles: true })); await wait();
+  check(!saveButton().disabled, "explicit user completion enables promotion");
+  // 转正走既有保存链:recipe.save + baseRevision 0 + 两维 verbatim + 无 locked 块
+  await click(strings.recipe.exportSaveCta);
+  check(!!pendingSave, "promotion rides the standing recipe.save chain");
+  check(pendingSave.document.baseRevision === 0 && pendingSave.document.title === "Demo Avatar", "first save carries baseRevision 0 and the user title");
+  check(pendingSave.document.environment.unityVersionConstraint === "2022.3.22f1", "completed unity constraint rides the document verbatim");
+  check(JSON.stringify(pendingSave.document.dependencies).includes("com.vrchat.avatars") && !JSON.stringify(pendingSave.document).includes("3.7.0"), "declared dependencies transfer verbatim; locked pins never enter the document (no fabricated locked block)");
+  check(button(strings.recipe.savingEditCta).disabled, "busy guard disables promotion while in flight");
+  settleSave(false); await wait();
+  check(dialog().textContent!.includes(strings.recipe.editFailedNote), "failed promotion is presented as a failure");
+  await click(strings.recipe.exportSaveCta);
+  settleSave(); await wait(); await wait();
+  check(dialog().textContent!.includes(savedNoteAt(1)), "saved note only after the persistence receipt (revision 1)");
+  // D5 同一守卫:同一素材集再存 → 同一确认框,用户确认才提交
+  await click(strings.recipe.exportSaveCta); await wait();
+  check(document.body.textContent!.includes(strings.compose.dedupTitle), "second promotion of an identical asset set opens the same D5 confirmation");
+  check(!pendingSave, "dedup hit holds the promotion until the user confirms");
+  const listCallsBeforeConfirm = listCalls;
+  (document.querySelector(".vua-confirm-dialog__actions button:last-child") as HTMLElement).click(); await wait();
+  check(!!pendingSave, "user confirmation submits the promotion");
+  settleSave(); await wait(); await wait();
+  check(listCalls > listCallsBeforeConfirm, "confirmed dedup promotion lands and refreshes the library (a fresh first save mints its own recipe identity)");
+  await key("Escape"); await wait();
+  check(document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`) === null, "closing the export dialog stays user-initiated");
+  root.render(<div>export-done</div>); await wait();
 }
 
 async function importTests() {
@@ -223,4 +418,4 @@ window.review = {
   nativeCheck: async (remaining: number) => { await wait();
     check(document.querySelectorAll('[role="dialog"]').length === remaining, `native Esc leaves ${remaining} dialogs`);
     return document.activeElement?.id; },
-  run: async () => { await modalTests(); await workshopEmptyTests(); await recipeTests(); await workshopStatusTests(); await importTests(); return results; } };
+  run: async () => { await modalTests(); await workshopEmptyTests(); await recipeTests(); await recipeEditTests(); await recipeExportTests(); await workshopStatusTests(); await importTests(); return results; } };

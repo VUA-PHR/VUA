@@ -1,10 +1,10 @@
-# VUA design standard v0.7.16
+# VUA design standard v0.7.18
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.16
+> Document version: 0.7.18
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.16)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.18)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-22
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -311,7 +311,69 @@ stable untilted cards.
   is "assemble" (组装 — including the chain card's execute button and other
   user-operation copy); "装配" (assembly) is reserved for wardrobe mounting and
   the AMF Assembly stage semantics (stage names, pipeline stage diagrams, and
-  stage-event copy do not migrate). Graph, list, and exploded views remain peers. The list is complete and always available.
+  stage-event copy do not migrate).
+- Create and add assets (0.7.17, U16 user-ruling consumption slice 3, proposal
+  029 A1/A2/A3 local segment): the recipe page hero main path offers a
+  "Create" entry (worded 创建 per the U16 ruling text; never mixed with
+  "add assets"/"assemble"), opening the composing-draft dialog — the draft
+  dialog remains one of the creation starting points and the two-UIs-one-save-
+  chain discipline holds (batch 019 D); creation products enter the recipe
+  library and can be selected (save receipts already trigger library
+  invalidation refetch, landed in slice 1). The selected state offers an
+  "Add assets" action: writing into the selected recipe's asset set rides the
+  recipe.save version chain (baseRevision chain + pre-save dedup D5 + busy
+  guard — the same save-chain shape and the same guard set as the composing
+  draft; the document-edit chain takes the parallel-document-edit-chain form,
+  independent state from the project-independent draft chain, per shape-ruling
+  checkpoint 2 of judgment 4); pending additions and saved facts are presented
+  separately — the three views keep rendering the SAVED document from the
+  recipe.get receipt, and "saved" appears only after the persistence receipt —
+  local edits never masquerade as saved (honesty laws 1/2); failures are
+  presented as failures, pending additions are kept, and retry is explicitly
+  user-initiated. The asset picker is a projection of the warehouse read face
+  (acquire entries): it presents local warehouse entry facts only and honestly
+  marks entries already in the recipe; asset ingestion still uses the two
+  existing import paths on the import page (embedded browsing / system pick →
+  task center) — no third import entry is created for the recipe page (§8.3
+  discipline holds); cloud asset access (pending item 3 = BOARD #46, linked to
+  proposal 030 / U18) stays honestly absent until a ruling lands — no invented
+  cloud entry; read face absent / empty warehouse / no match render as honest
+  empty states.
+- Export a draft from a project (0.7.18, U16 user-ruling B-face loop 4
+  desktop consumption, proposal 029 B4): the recipe page hero action row gains
+  an "export draft from project" entry (recipe-export v0.1 frozen word-table
+  consumption; reverse direction project -> recipe). The pick stage is limited
+  to the VUA-registered project set (project.listProjects 013 aggregate
+  read-face projection) with no arbitrary path input; stale registrations
+  (path missing) are honestly badged and disabled; service not connected / no
+  registrations render honest empty states. The confirmation stage presents
+  the draft's six fact keys as-is: origin (path / nullable name = honest
+  absence / VUA-native identity tri-state - an applicability fact, never a
+  gate; the absent-identity difference prompt stays open as pending item 2);
+  the environment version verbatim from the on-disk observation with no
+  migration, completed explicitly by the user when unreadable and never
+  filled by the system (the missing list's environmentUnityVersion
+  dimension); declared dependencies verbatim (an empty array is the honest
+  answer; locked pins are presentation-only - the recipe's locked block is
+  minted by the save/resolve chain and a draft never fabricates one); the
+  missing-dimension list rendered as-is - the export never claims to recover
+  design intent, and "what is missing" stays honestly readable. Promotion =
+  explicit user completion (a title - the draft has none; a projectName
+  prefill is labeled as such and freely editable; at least one asset - the
+  draft has zero relation face, the picker is the same warehouse read-face
+  projection as add-assets; the environment constraint - only when
+  unreadable) riding the standing recipe.save save chain (same save-chain
+  shape and same guard set: busy guard + the same D5 dedup confirmation +
+  receipt classification; first save carries baseRevision 0); "saved" appears
+  only after the persistence receipt, failures are presented as failures with
+  content kept and retry explicitly user-initiated; a draft is never silently
+  promoted (frozen-Schema type-level facts: a draft carries no recipeId /
+  title / relation face / locked block). The save receipt aligns the
+  production-chain identity and the library invalidation refetch (same source
+  as the two standing save chains). Word discipline: the entry is "export a
+  draft", promotion is "save as a recipe"; never mixed with "create / add
+  assets / assemble".
+- Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
   All views share selection, version snapshots, domain semantics, keyboard operation, and non-drag
@@ -541,6 +603,35 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.18 (2026-09-22)**: §8.4 addendum for project draft export (U16
+  user-ruling B-face loop 4 desktop consumption, proposal 029 B4) - the
+  recipe page hero action row gains the "export draft from project" entry
+  (recipe-export v0.1 frozen word-table consumption): the pick stage is
+  limited to the VUA-registered project set (no arbitrary path input; stale
+  registrations honestly badged and disabled; not connected / no registrations
+  render honest empty states); the confirmation stage presents the draft's six
+  fact keys as-is (origin identity tri-state is not a gate [pending item 2
+  awaits a ruling]; environment version verbatim, completed by the user when
+  unreadable; dependencies verbatim with honest empty arrays and
+  presentation-only locked pins; the missing-dimension list as-is - no design
+  intent claims); promotion = explicit user completion (title + at least one
+  asset + the environment constraint when unreadable) riding the standing
+  recipe.save save chain (same shape and same guard set, first save
+  baseRevision 0), "saved" only after the receipt, a draft never silently
+  promoted. ZH mirror synced.
+
+- **0.7.17 (2026-09-22)**: §8.4 addendum for create and add-assets (U16
+  user-ruling consumption slice 3, proposal 029 A1/A2/A3 local segment) — the
+  "Create" entry promoted onto the recipe page main path (U16 ruling wording;
+  the draft dialog remains one creation starting point, two-UIs-one-save-chain
+  holds); the selected-state "Add assets" action rides the recipe.save version
+  chain (same save-chain shape, same guard set: baseRevision + D5 dedup + busy
+  guard; parallel-document-edit-chain form), pending additions and saved facts
+  presented separately with "saved" shown only after the receipt; the asset
+  picker = warehouse read-face projection (no third import entry; cloud access
+  = pending item 3/#46 stays honestly absent before a ruling). This closes the
+  proposal-029 A-face (A1–A6) desktop consumption loop. EN mirror synced.
 
 - **0.7.16 (2026-09-22)**: §8.5 addendum for the workshop as the execution status
   face (U16 user-ruling consumption slice 2, proposal 029 A6) — the workshop only

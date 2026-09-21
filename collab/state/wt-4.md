@@ -2,136 +2,145 @@
 worktree: wt-4
 branch: slot/wt-4
 role: 产线
-baseline_commit: 59c58e16
-updated: 2026-09-21
+baseline_commit: 81659e57
+updated: 2026-09-22
 ---
 ## 当前焦点
-**第 154 批（2026-09-21 23:0x–23:4x，节拍轮正常工作时段 date 实测 23:04；两笔：追平壳
-（吸收 main 59c58e16）＋本批＝#46 立项起草 proposal 030（调查＋库模式方向＋供数接口
-设想）＋恰本状态批）**：
+**第 168 批（2026-09-22 05:2x–06:2x，节拍轮正常工作时段 date 实测 05:22；三笔：
+追平壳〔吸收 main ecf0adaa〕＋本批＝030 store v0.2 落库实现环〔迁移注册升版
+＋写入/读出面＋confirmed_by_human 确认写动作面＋存储层行为测试 6 例〕＋030 内
+联落库登记＋协议本 0.2.1 双语＋REGISTRY＋恰本状态批）**——操作者第 168 批派单
+兑现（冻结 88e6a772 已随集成第 166 批入库 8c123983；本批＝产线座领件）：
 
-- **追平兑现（开工前置）**：轮首实测 main...slot/wt-4＝落后 25／领先 0（main 推进至
-  **59c58e16**＝第 152 批用户裁决登记批〔U16 立项 029 在途＋U18 方向暂可＋#46 新行
-  ＋U15/U19 登记〕＋第 153 批〔U19/U15 落账＋R1–R6 收编登记〕）。ort merge-tree 预检
-  exit 0（tree fa99cf9f）零冲突，--no-ff 合并 main 59c58e16＝追平壳 **d2091af4**，
-  **合并树与预检树逐字节全等实证**（HEAD tree＝fa99cf9f；`git diff HEAD main` 空
-  ＝零自有内容纯吸收）。基线世代刷新 **59c58e16**。
-- **brief ①区消化**：wt-3 回执（九缺口 (i) 已领：5 候选 4 改按裁决、role.warehouse
-  改「等待进入轨道」、role.recipe/inspection.subtitle 甄别保留、缺口 (a) 已做）＝
-  我席清单彼侧两项闭合，纯知会零动作；wt-7/wt-8 留言系 R1–R3 分工知会指向其树自身。
-  零指向本树的阻塞项；失鲜工作树（wt-6 baseline 落后其分支尖 12 提交）系 wt-6 树内
-  事务非本树阻塞。**用户指令红线兑现**：本轮零触碰 VUA-7/VUA-8 两工作树及其分支。
-- **任务兑现：#46 立项起草＝`collab/proposals/030-bdl-product-dependency-catalog.md`
-  （状态：提出）**，三步面照 #46 行：
-  1. **§1 调查（真实只读取证，非转述）**：2026-09-21 只读 HTTP 抓取 BOOTH 公开页
-     （未登录零 cookie 零购买零付费内容下载）**共 9 次访问≤10 页封顶＝2 搜索结果页
-     ＋6 商品页有效＋1 店铺首页 403 拒访（如实记录）**。样例集：6584744（avatar，
-     「〇前提環境」小节版本钉行 `・liltoon 2.3.2~`）、7547699（衣装，标题「17アバター
-     対応」＋`Shader: Liltoon` 单行＋15 条 avatar 内链）、7665268（衣装，明言 liltoon
-     ＋Modular Avatar 前提＋`- Unity 2022.3.22f1`／`- lilToon 2.2.1`；**描述「◎Liltoon」
-     外链实际指向 Lapwing avatar 商品＝错链实证**）、3087170（lilToon 本体免费页，
-     **当前显示非公开提示＝页面状态随时变化实证**，页面无 VPM/VCC 字段，分发系
-     zip/unitypackage）、8179865（付费派生 shader，散文表述依赖＋冲突信息
-     `LightLimitChangerV2…競合`）、6517959（材质，● 列点双语 `●最新verのliltoonを
-     使用してください。`＋包内 README 仅文件名可见零接触）。**五条结论**：说明文自由
-     文本为主载体（版面惯例各异）；商城分类/标签字段零依赖语义；描述外链不可信须身份
-     消解；标题/子商品名携压缩兼容声明（与既有 compatibility_observations.source_span
-     收录 subproduct_name 互证）；语言 ja 主导＋ja/en 双语常见。**结构化程度＝商城级
-     为零**——可解析性靠版面惯例不靠字段，提取必须作「带证据观察」存储。
-  2. **§2 库模式方向（草案，不冻结）**：BDL 域私有、观察范式同源（term/compatibility
-     _observations 同律）；存 `booth:<id>`→依赖声明观察（dep_kind 闭集草案 shader/
-     tool_package/avatar_base/unity_or_sdk_version/other＋raw_quote 逐字＋source_span
-     扩展 title/description_link＋version_hint 按原文＋resolved_ref_product_id 可空
-     伴 resolution_evidence＋**confirmed_by_human 默认待人工确认（错链实证下）**＋
-     extraction_method 闭集充作置信度）；不做语义改写断言，解释读期派生＋版本化规则表
-     （availabilityRaw→availabilityStatus 先例）；schema 冻结候定座后实现切片按
-     「Schema＋正负例向量＋至少一端消费测试」办理。
-  3. **§3 供数接口设想（U18 联动）**：三段链＝检测段（**如实：unity-bridge 与
-     com.ph-r.vua 当前零 shader 检测面，grep 实证**；形态归 U18 实现切片定座）→
-     反查段（依赖名义→库内声明观察集＋证据＋建议安装源闭集草案 vpm/booth_page/
-     external_page/unknown；出线面两案并举候仲裁：bdl-queries 新查询族 vs AMF 应用
-     契约新面）→执行段（既有底座零新言：U17 已落 VpmBackend::resolve_project 收据
-     v0.1＋packages-ops 安装面，`com.lilxyzw.liltoon` 早在夹具在案；booth_page/
-     unknown 只出指引绝不自动下载）。诚实边界：反查输出一律「带证据建议」非事实断言；
-     名义→包名同一性不得猜测。
-  4. **§4 红线专节（照 #46 行）**＋**§5 未决项七条如实列**（归属定座候裁决〔#46 行
-     本文〕／样本 6 页方向性非统计／错链消解策略候细化／可达性波动 403·非公开如实
-     落库／公开面覆盖缺口·付费后自有文件观察需另立决定本提案不启动／U18 终裁否决时
-     定位调整预案／出线面落位候仲裁）。**执行序建议**：定座→建库切片（冻结批→提取
-     管线）→供数联动切片（随 U18 合流；终裁前零端到端宣称）。
-- **红线与诚实边界（全程维持）**：调查 9 次访问全只读公开页、零登录零购买、付费资产
-  零接触、VUA-7/VUA-8 零触碰；**零端到端宣称**——提案系调查＋设计方向件，无任何实现
-  与运行宣称；本席 grep 实测（shader 检测面缺席、recipe 模型 AssetRole::Shader 已在、
-  BDL v0.1 observation 表族在案）均为只读代码事实核对。
-- **机械校验**：本批＝追平壳（零自有内容纯吸收，树全等实证）＋提案与状态批（collab
-  面）；**collab-only 免全量如实声明**：零自有代码变更、零测试跑、零编译触发、零
-  Unity Editor 触发；全部 git 操作与源码读取均只读；网络动作恰为提案内 9 次公开页
-  只读抓取（红线专节覆盖）。
+- **追平兑现（开工前置）**：轮首实测 main...slot/wt-4＝落后 10／领先 0（main
+  推进至 **ecf0adaa**＝集成第 166/167 批三栈验收入库簿记）。merge-tree 预检
+  exit 0（tree 45e9d945）零冲突，--no-ff 合并 main ecf0adaa＝追平壳 81659e57
+  （零自有内容纯吸收）。基线世代刷新 **81659e57**。brief ①区消化：指向本树
+  留言恰一条＝wt-8 R1–R3 知会（已落 main，追平即吸收，零额外动作）。
+- **迁移注册升版（v0.1 宿主先例照办）**：`BDL_FORMAT_VERSION = "0.2"`＋迁移
+  注册 001＋002 全链；**fresh 库单事务全链执行＝出生即 v0.2**、宿主
+  `user_version = 2`；**既有 v0.1 库开盖即经 002 迁移**（compatibility_
+  observations 重建逐字保真，测试钉 v0.1 行 verbatim 存活）；**Unsupported-
+  Format 纪律接线双拒绝面**＝超前 fence（`migration-3`）与外来
+  `format_version`（"9.9"）都被拒，测试钉死。
+- **写入/读出面（照 v0.1 既有表面同构）**：`record_dependency_observation`
+  ＝行**追加**为证据（无 upsert——schema 未定义去重身份）＋
+  `dependency_observations(product_id)`＝观察序诚实行集（空＝诚实空态）。
+  **法律权威单一化设计（如实申报）**：`dep_kind`/`source_span`/`extraction_
+  method` 以字符串逐字入库、store 不持重复的 Rust 闭集——冻结 schema 的真实
+  SQLite CHECK/NOT NULL/FK 是唯一拒绝者（违约以 `BdlStoreError::Database`
+  骑 ConstraintViolation 浮出），由此 17 向量文件直接驱动 store 面作行为测
+  试、拒绝例恰由 CHECK 拒绝（派单词面兑现）；证据 JSON 形状由
+  `DependencyResolutionEvidence` 类型承载（serde camelCase＋
+  `deny_unknown_fields`），存量损坏值读期按 CorruptValue 浮出（有测试）。
+- **confirmed_by_human 写动作面（人工确认入口）**：
+  `confirm_dependency_resolution`＝confirmed=1 的**唯一**写入者（写入面不
+  携旗标：行以未确认落库＝线索默认律，有测试）；一次显式留痕写钉住三件——
+  消解目标商品（须已观察商品否则 UnknownProduct，镜像 record_artifact_
+  mapping 先例）＋非空证据（空「证据」＝无证据，InvalidResolution）＋旗标；
+  行须存在（UnknownDependencyObservation）。确认绝不自动翻。
+- **存储层行为测试** `crates/bdl-store/tests/dependency_observations_store_
+  v02.rs`（**6 例绿**）：**17 个冻结向量文件为数据源**驱动 store 自有面与
+  store 自有迁移执行——接受例落库读回逐字保真（P1–P8 骑 store 写入面、P4
+  骑确认动作、P9 走 store 自身迁移库——compat 表按 v0.1 表面现实无 store
+  写入面，如实注明路由）；拒绝例被真实约束拒绝（类型面可表达者经 store 面
+  →ConstraintViolation；类型面无法诚实表达的无律值——NOT NULL 列携 SQL
+  NULL、confirmed=2——对 store 迁移库驱动、同被拒）；迁移纪律三面（出生
+  v0.2／v0.1 迁移保真／超前与外来拒绝）；确认动作各律；损坏证据浮出。
+- **文档面**：双语协议本 0.2→**0.2.1**（状态落 FROZEN and LANDED＋新增「落
+  库实况」节＋未决项 3 关闭划线——冻结词面零变化，照 recipe-export 0.1.2
+  实现批注记先例）；REGISTRY 协议本行同步 0.2.1＋落库实况；schema 消费测试
+  头部过时表述订正（「store 仍 v0.1」→第 168 批落库事实登记）。冻结
+  schema.sql/002 文件本体零触碰（schemas/ 零 diff）。
+- **验证读数（2026-09-22 本树亲测）**：bdl-store 全 crate **66 例绿**（基线
+  60＋恰本批 6）＋cargo test --workspace **107 套件 932/0**（166 批基线
+  926＋恰本批 6，数字自洽）＋clippy --workspace --all-targets **0 警告 0
+  错误**；一处跨 crate 钉定随升版如实改常量自洽＝provider-host
+  catalog_queries wire 测试 datasetRevision 字面 "0.1"→`BDL_FORMAT_
+  VERSION`（语义不变，11 例绿）；桌面侧 datasetRevision 系 mock 罐头值/
+  透传字符串与真库常量零耦合、零触碰。
+- **红线与诚实边界（全程维持）**：**零端到端宣称**——本环全部系代码面证据
+  （真实 SQLite 执行迁移与约束≠真机全链）；提取管线切片（保守提取＋消费面）
+  候下窗；U18 终裁前零端到端宣称；零 BOOTH 访问、付费资产零接触、VUA-7/
+  VUA-8 全程零触碰；冻结 schema.sql/002/向量/v0.1 目录零触碰。
 
-## 前情（第 148 批＝追平＋#44 词面订正登记＋交接段诚实地图，2026-09-21 06:1x–07:0x，
-全文见本文件 git 历史与 BOARD；更早 147/146/145/143/142/141/139/138 批见 BOARD 前录
-与 git 历史）
+## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
+第 166 批（2026-09-22 04:2x–05:0x）＝030 冻结批（dep_kind 四值定稿＋向量 17
+文件落位＋schema/002/协议本/REGISTRY 转正＋向量消费测试定稿 4 例；零 store 代
+码改动），已随集成第 166/167 批收编 8c123983。第 164 批＝030 定座后冻结前置
+schema 设计环（v0.2 草案面＋双语协议本草稿＋5 例草案消费测试），已随集成第
+164 批收编 bb4de40d。更早 154/148/147/146/145/143/142/141/139/138 批见 BOARD
+前录与 git 历史。
 
-## 本轮交付（59c58e16 基线世代）
-- **追平壳 d2091af4**（--no-ff 吸收 main 59c58e16＝第 152/153 批世代，预检 exit 0
-  tree fa99cf9f，合并树＝预检树逐字节全等，基线刷新）。
-- **本批（提案＋状态批）**：proposal 030 新建（状态：提出，§1 调查实证五结论＋§2 库
-  模式方向＋§3 供数三段链＋§4 红线＋§5 未决项七条＋执行序建议）＋本状态批。零新代码、
-  零新 schema、零新阻塞；[需用户] 项照规则未代决（归属定座候用户/操作者）。
+## 本轮交付（81659e57 基线世代）
+- **追平壳 81659e57**（--no-ff 吸收 main ecf0adaa，预检 exit 0 tree 45e9d945
+  零冲突，零自有内容纯吸收，基线刷新）。
+- **本批（030 store v0.2 落库实现环）**：crates/bdl-store（bdl_store.rs 迁移
+  升版＋三面＋lib.rs 导出＋in-module 测试升版钉＋schema 消费测试头部订正）＋
+  新存储层行为测试 6 例＋crates/provider-host catalog_queries 钉定改常量自洽
+  ＋协议本双语 0.2.1＋REGISTRY。
+- **collab 面**：030 内联落库登记（本线程回复节）＋恰本状态批。
 
 ## 在途/待他角色
-- **[等用户/操作者] proposal 030 定座**：建库与采集面归属（数据域/采集面/产线）＋
-  出线面仲裁（bdl-queries 新族 vs AMF 应用契约新面）——§5.1/§5.7；#46 行随定座更新。
-- **[等数据/核心] §2/§3 技术表态**：观察范式扩展与闭集草案、反查出线面落位，可在
-  030 内联线程回复。
-- **[等集成] 本批候随轮验收（--no-ff）**，写明「wt-4 第 154 批（#46 立项起草 proposal
-  030 ＋状态批；基点 e4c44ce1，追平至 59c58e16）」。
-- **[等操作者/用户] 沿革在途**：W25 正式执行（A3 段 Unity 侧核证义务在肩）；缺口 (b)
-  交接准入终态门槛候裁决；配方↔素材链接达归属候指派（均见第 148 批登记与 BOARD）。
+- **[等集成] 本批候随轮验收（--no-ff）**，写明「wt-4 第 168 批（030 store
+  v0.2 落库实现环；基点 81659e57）」；定向复跑面＝cargo test --workspace
+  （932/0 自洽钉）＋clippy 全 targets；collab 面请重点复核：①迁移升版三面
+  （fresh 出生 v0.2／v0.1 保真迁移／超前外来拒绝）；②库层法律权威单一化
+  设计（store 零重复 Rust 闭集、真实 CHECK 拒绝——与派单「拒绝例 CHECK 拒
+  绝」词面对表）；③confirmed_by_human 唯一写入口（写入面零旗标）；④冻结
+  schema/向量/v0.1 目录零触碰（schemas/ 零 diff）。
+- **[候下窗] 提取管线切片**（保守提取＋消费面）候操作者派发；bdl-queries
+  dependencies.* v0.5 实现环（数据座，词面骑 v0.2 闭集）由其席领取——本席
+  建库写面已齐，confirmed_by_human 翻 1 唯一写路径在库。
+- **[等操作者/用户] 沿革在途**：W25 正式执行（A3 段 Unity 侧核证义务在肩）；
+  缺口 (b) 交接准入终态门槛候裁决；配方↔素材链接达归属候指派（均见第 148 批
+  登记与 BOARD）。
 
 ## 阻塞
-- 无阻塞。调查与提案已闭环；定座前不开建库实现切片（不猜测归属不预跑）。
+- 无阻塞。零猜测项。
 
 ## 下次合并意图
-**候验收对象＝本批两笔（追平壳 d2091af4 零自有内容纯吸收 main 59c58e16，预检 tree
-fa99cf9f 零冲突、合并树逐字节全等；＋本批提交＝collab/proposals/030（新建）＋本状态
-批，实质 diff 恰两 collab 文件，collab-only 免全量），请集成随轮验收（--no-ff），
-写明「wt-4 第 154 批（#46 立项起草 proposal 030＋状态批；基点 e4c44ce1，追平至
-59c58e16）」。**提交后读数（订正后如实，观察时点 23:4x）：领先 2（追平壳 d2091af4＋
-本批 36935bf1），落后 8（本批执行期间 main 高频推进至 ab267927＝U15 双语
-project-context 收缩改写收编 ab267927＋wt-2 提案 029 起草批收编 9125f8f1＋wt-7 计划
-状态批归档 fa2290ab 等，全 collab/docs 面零实质分叉；候下轮开工追平或随集成合并自然
-收编）。030 已随批补 029 交叉引用（029 未决项明记 BOOTH 素材接入面联动 #46，030 即
-其落地件；定座两案同观）。
+**候验收对象＝本批两笔（追平壳零自有内容纯吸收 main ecf0adaa，预检 exit 0
+tree 45e9d945 零冲突；＋实现批＝crates/bdl-store 迁移升版＋三面＋行为测试
+＋provider-host 钉定自洽＋协议本 0.2.1 双语＋REGISTRY，测试全绿才提交〔
+bdl-store 66 例＋workspace 932/0＋clippy 0/0〕，＋collab 批＝030 内联落库
+登记＋本状态批），请集成随轮验收（--no-ff），写明「wt-4 第 168 批（030
+store v0.2 落库实现环；基点 81659e57）」。**
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 23:0x–23:4x，正常工作时段；两笔：追平壳＋提案状态批）：
-①pnpm collab:brief ①区判读＝wt-3 回执纯知会、wt-7/wt-8 系其树分工知会、零本树阻塞；
-②轮首追平壳 d2091af4 吸收 main 59c58e16（落后 25→0，预检 exit 0 tree fa99cf9f、
-合并树与预检树逐字节全等、diff HEAD main 空＝零自有内容）；③#46 立项起草兑现＝
-proposal 030 新建（真实只读调查 9 次访问≤10 页〔2 搜索＋6 商品页有效＋1 拒访 403
-如实记录〕、五结论实证锚定、库模式观察范式草案不冻结、供数三段链〔检测段缺席如实
-声明·反查出线面两案并举·执行段既有底座〕、红线专节、未决项七条、定座前不开实现
-切片）；④诚实边界维持＝零端到端宣称、结构化程度结论限定方向性小样本、付费资产与
-包内内容零接触、U18 终裁候实机＋数据不代答；⑤机械校验＝本批实质 diff 恰两 collab
-文件，collab-only 免全量如实声明（零自有代码变更、零测试跑、零编译触发；git 操作
-与源码读取全只读；网络动作恰为提案内 9 次公开页只读抓取）。在手无半途切片、除本批
-提交外无未提交改动。退出待命，候 proposal 030 定座（用户/操作者）与各域技术表态、
-集成验收本批、W25 窗口推进。
+本轮（2026-09-22 05:2x–06:2x，正常工作时段 date 05:22 实测；三笔：追平壳＋
+030 落库实现环＋collab 批）：①date 05:22 实测正常时段；pnpm collab:brief
+①区判读＝零本树阻塞，wt-8 R1–R3 知会系其树工作已落 main（追平即吸收）；
+②轮首追平壳吸收 main ecf0adaa（落后 10→0，预检 exit 0 tree 45e9d945 零冲
+突），基线刷新 81659e57；③通读操作者第 168 批派单＋冻结 schema/002/协议本
+＋向量 17 文件全文＋030 提案定座与数据席表态＋bdl_store.rs v0.1 全表面实读；
+④实现＝迁移注册升版（fresh 单事务出生 v0.2＋v0.1 开盖即迁＋user_version=2
+宿主先例＋UnsupportedFormat 双拒绝面）＋写入/读出面（行追加无 upsert＋观察
+序诚实读集）＋confirmed_by_human 确认写动作面（唯一 confirmed=1 写入者）＋
+证据形状类型承载 deny_unknown_fields；⑤存储层行为测试 6 例（17 向量文件驱
+动 store 面＋迁移执行；接受例落库读回、拒绝例真实约束拒绝）＋in-module 升
+版钉＋schema 消费测试头部订正；⑥文档＝协议本 0.2.1 双语（词面零变化）＋
+REGISTRY＋030 内联落库登记；⑦验证亲测＝bdl-store 66 例＋workspace 107 套件
+932/0＋clippy 0/0（provider-host datasetRevision 钉定改常量自洽一处如实登
+记）；⑧诚实边界维持＝零端到端宣称（代码面证据、测试绿≠真机绿）、冻结
+schema/向量/v0.1 目录零触碰、schemas/ 零 diff、零 BOOTH 访问、VUA-7/VUA-8
+全程零触碰；[需用户] 条目零代决。在手无半途切片、除本批提交外无未提交改动。
+退出待命，候集成验收本批、提取管线切片开窗、W25 窗口推进。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝本批两笔（追平壳 d2091af4 纯吸收 main 59c58e16
-  ＋提案状态批＝030 新建＋本文件，实质 diff 恰两 collab 文件，collab-only 免全量），
-  请随轮验收（--no-ff），写明「wt-4 第 154 批（#46 立项起草 proposal 030＋状态批；
-  基点 e4c44ce1，追平至 59c58e16）」。**随请 BOARD #46 行更新（集成维护）：候立项
-  →已立项（proposal 030 在库，状态：提出，候定座与内联表态）。零端到端宣称维持。
-- [→数据/核心]（技术表态邀约，030 内联线程）proposal 030 §2 观察范式扩展（dep_kind
-  闭集草案／source_span 扩展 title/description_link／extraction_method 充当置信度/
-  confirmed_by_human 默认）与 §3 反查出线面（bdl-queries 新族 vs AMF 应用契约新面）
-  请两域在 030 内联回复；归属定座与出线面仲裁升集成/用户（§5.1/§5.7）。本席不预跑
-  实现切片。
-- [→wt-3]（回执消化）九缺口 (i) 甄别结论收悉：4 处按裁决改＋role.warehouse「等待
-  进入轨道」＋role.recipe/inspection.subtitle 甄别保留（轨道段语义/配方链检测对象）
-  ＋compose 卡守裁决未动＋缺口 (a) 已做——本席 (i)/(a) 两项闭合，无异议。
-- （回执不回执：wt-7/wt-8 R1–R3 分工知会系其树自身工作、已按用户指令零触碰其工作树
-  与分支；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] 验收请求：**候验收对象＝本批两笔（追平壳纯吸收 main ecf0adaa＋实
+  现批＝bdl-store v0.2 落库运行时＋存储层行为测试 6 例＋协议本 0.2.1 双语
+  ＋REGISTRY＋provider-host 钉定自洽＋collab 批＝030 内联落库登记＋本文件，
+  测试全绿后提交），请随轮验收（--no-ff），写明「wt-4 第 168 批（030 store
+  v0.2 落库实现环；基点 81659e57）」。**随请 BOARD #46 行更新（集成维护）：
+  store v0.2 落库实现环已落＝bdl-store 运行 v0.2（迁移升版＋三面＋确认写动
+  作面），030 剩余＝提取管线切片＋dependencies.* v0.5（数据座）候派。零端到
+  端宣称维持。
+- [→数据]（030 内联线程知会）store v0.2 建库写面已落：confirmed_by_human
+  翻 1 的唯一写路径＝`confirm_dependency_resolution`（显式、留痕、绝不自动
+  翻），行默认未确认＝线索；你们席 dependencies.* v0.5 只读面的「仅
+  confirmed_by_human=1 出线」读期派生律所需库面事实已齐（resolved 对＋旗标
+  均按冻结词面存储）；提取管线切片候下窗，届时保守提取落线索行、人工确认走
+  本写面。
+- （回执不回执：wt-8 R1–R3 知会系其树工作已落 main、追平即吸收零动作；历史
+  留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为准。）

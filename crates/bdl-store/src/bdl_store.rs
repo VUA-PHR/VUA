@@ -1,4 +1,4 @@
-//! BDL local database (v0.1) — the acquisition-pipeline persistence surface.
+//! BDL local database (v0.2) — the acquisition-pipeline persistence surface.
 //!
 //! BDL is an AMF-private local module (docs/architecture/bdl_ZH.md): AMF
 //! decides what is persisted, BDL stores it. This store owns the B4
@@ -10,6 +10,19 @@
 //! catalog face keeps answering the honest empty state. The store only
 //! enforces that artifact mappings reference OBSERVED products — the foreign
 //! key rejects every unobserved target, which is the boundary itself.
+//!
+//! BDL persistent format v0.2 (collab/proposals/030; frozen wt-4 batch 166,
+//! landed by this store in batch 168): the store executes the migration chain
+//! (v0.1 `001_initial.sql` + `002_dependency_observations.sql`), so fresh
+//! databases are born v0.2 and existing v0.1 databases migrate on open with
+//! verbatim row carry-over; `dependency_observations` (the product-dependency
+//! observation face) is served by `record_dependency_observation` /
+//! `dependency_observations` plus the one explicit human confirmation write
+//! action `confirm_dependency_resolution` — the only writer of
+//! `confirmed_by_human = 1`. The frozen schema files are the single law
+//! authority for the new table's closed sets and hard laws: the store carries
+//! their members verbatim and lets the REAL SQLite CHECK/NOT NULL/FK
+//! constraints reject every foreign or lawless value.
 //!
 //! Inspection facts are idempotent per content (`artifact_sha256`);
 //! re-downloading the same content never duplicates a row (warehouse-layout
@@ -30,9 +43,10 @@ use serde_json::Value;
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-pub const BDL_FORMAT_VERSION: &str = "0.1";
-const BDL_MIGRATION_VERSION: i64 = 1;
+pub const BDL_FORMAT_VERSION: &str = "0.2";
+const BDL_MIGRATION_VERSION: i64 = 2;
 const MIGRATION_001: &str = include_str!("../../../schemas/bdl/v0.1/001_initial.sql");
+const MIGRATION_002: &str = include_str!("../../../schemas/bdl/v0.2/002_dependency_observations.sql");
 
 #[derive(Debug)]
 pub enum BdlStoreError {
@@ -44,6 +58,8 @@ pub enum BdlStoreError {
     UnknownArtifact(String),
     UnknownProduct(String),
     UnknownWarehouseItem(String),
+    UnknownDependencyObservation(i64),
+    InvalidResolution(&'static str),
     InvalidTransition {
         artifact_sha256: String,
         from: ArtifactInspectionState,
@@ -76,6 +92,12 @@ impl std::fmt::Display for BdlStoreError {
             ),
             Self::UnknownWarehouseItem(item) => {
                 write!(formatter, "unknown warehouse item {item}")
+            }
+            Self::UnknownDependencyObservation(observation_id) => {
+                write!(formatter, "unknown dependency observation {observation_id}")
+            }
+            Self::InvalidResolution(reason) => {
+                write!(formatter, "invalid dependency resolution: {reason}")
             }
             Self::InvalidTransition {
                 artifact_sha256,
@@ -457,6 +479,123 @@ fn parse_json_array_text(
     }
 }
 
+/// One element of the FROZEN resolution-evidence shape
+/// (docs/protocols/bdl-dependency-observations-v0.2:
+/// `{"linkText","linkUrl","span","note"}`). The shape is carried by this
+/// type: the store persists exactly these four keys and reads evidence back
+/// through it, so a stored value that does not parse into it is a corrupt
+/// value, never silently reshaped. Members are carried verbatim (the
+/// observing paradigm — no rewriting); the `span` word face is the schema's
+/// source_span set.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DependencyResolutionEvidence {
+    pub link_text: String,
+    pub link_url: String,
+    pub span: String,
+    pub note: Option<String>,
+}
+
+/// One declared-dependency observation to land (a dependency_observations
+/// row, BDL persistent format v0.2). Observation paradigm: the row is
+/// EVIDENCE, never a fact claim. `dep_kind`/`source_span`/`extraction_method`
+/// carry their FROZEN closed-set members verbatim and the schema's CHECK
+/// constraints are the single law that refuses foreign members (the store
+/// keeps no duplicate Rust closed set; a violation surfaces as
+/// `BdlStoreError::Database`). `confirmed_by_human` is deliberately NOT a
+/// field: rows land unconfirmed (DEFAULT 0 — a clue, never a suggestion),
+/// and only the explicit confirmation write action
+/// (`confirm_dependency_resolution`) ever sets 1.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NewDependencyObservation {
+    pub product_id: String,
+    pub dep_kind: String,
+    /// The dependency's name AS WRITTEN ('lilToon') — no normalization, no
+    /// equivalence guessing.
+    pub dep_name: String,
+    /// Verbatim quote — no semantic rewriting.
+    pub raw_quote: String,
+    pub source_span: String,
+    /// The version string AS WRITTEN ('2.3.2~'); carries ALL version
+    /// constraints (engine/SDK pins included, per the frozen dep_kind
+    /// ruling).
+    pub version_hint: Option<String>,
+    /// A resolution CLUE: the store persists it only as the schema admits
+    /// it (an FK into observed products; the CHECK demands evidence) — it
+    /// stays unconfirmed until the confirmation action.
+    pub resolved_ref_product_id: Option<String>,
+    /// Serialized to the frozen JSON shape. An empty slice persists NULL —
+    /// no evidence is no evidence — so a resolved reference without
+    /// evidence is refused by the schema's CHECK hard law itself, not by a
+    /// Rust copy of it.
+    pub resolution_evidence: Vec<DependencyResolutionEvidence>,
+    pub extraction_method: String,
+    pub extracted_by: String,
+    /// Pipeline observation time (RFC 3339 string), never a BOOTH publish
+    /// time.
+    pub observed_at: String,
+    pub processor_version: String,
+    /// sha256 of the observed page the quote came from; nullable when the
+    /// quote is carried across observations.
+    pub content_hash: Option<String>,
+    pub run_id: Option<String>,
+}
+
+/// One stored dependency_observations row as the read face returns it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StoredDependencyObservation {
+    pub observation_id: i64,
+    pub product_id: String,
+    pub dep_kind: String,
+    pub dep_name: String,
+    pub raw_quote: String,
+    pub source_span: String,
+    pub version_hint: Option<String>,
+    pub resolved_ref_product_id: Option<String>,
+    /// Parsed from the stored JSON text; `None` = no evidence stored.
+    pub resolution_evidence: Option<Vec<DependencyResolutionEvidence>>,
+    /// Strictly the stored 0/1 flag (CHECK-enforced); `true` only through
+    /// the explicit confirmation write action.
+    pub confirmed_by_human: bool,
+    pub extraction_method: String,
+    pub extracted_by: String,
+    pub observed_at: String,
+    pub processor_version: String,
+    pub content_hash: Option<String>,
+    pub run_id: Option<String>,
+}
+
+/// Serializes the frozen evidence shape to its JSON text form; an empty
+/// slice is no evidence and persists NULL, so the schema's CHECK hard law
+/// (resolved implies evidence) stays the single authority that refuses a
+/// bare resolution.
+fn serialize_resolution_evidence(
+    evidence: &[DependencyResolutionEvidence],
+) -> Result<Option<String>, BdlStoreError> {
+    if evidence.is_empty() {
+        return Ok(None);
+    }
+    serde_json::to_string(evidence)
+        .map(Some)
+        .map_err(BdlStoreError::Json)
+}
+
+/// Parses the stored evidence JSON text back into the frozen shape;
+/// anything that does not parse is a corrupt value.
+fn parse_resolution_evidence(
+    raw: Option<String>,
+) -> Result<Option<Vec<DependencyResolutionEvidence>>, BdlStoreError> {
+    match raw {
+        None => Ok(None),
+        Some(text) => serde_json::from_str(&text)
+            .map(Some)
+            .map_err(|_| BdlStoreError::CorruptValue {
+                field: "resolution_evidence",
+                value: text,
+            }),
+    }
+}
+
 /// One observed products row as read for `catalog.list` — the minimal
 /// projection of the card face.
 struct ObservedCard {
@@ -780,9 +919,25 @@ impl BdlStore {
             )));
         }
         if migration == 0 {
+            // Fresh database: born v0.2 — the full executable chain (001
+            // then 002) runs in one transaction, so a half-migrated fresh
+            // database cannot exist.
             let transaction =
                 connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
             transaction.execute_batch(MIGRATION_001)?;
+            transaction.execute_batch(MIGRATION_002)?;
+            transaction.pragma_update(None, "user_version", BDL_MIGRATION_VERSION)?;
+            transaction.commit()?;
+        }
+        if migration == 1 {
+            // Existing v0.1 database: 002 is the persistent-format migration
+            // (compatibility_observations CHECK rebuild with verbatim row
+            // carry-over + the dependency_observations table). Any data loss
+            // aborts it; the user_version fencing stays host-owned, exactly
+            // as the v0.1 host set it after MIGRATION_001.
+            let transaction =
+                connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+            transaction.execute_batch(MIGRATION_002)?;
             transaction.pragma_update(None, "user_version", BDL_MIGRATION_VERSION)?;
             transaction.commit()?;
         }
@@ -1780,6 +1935,133 @@ impl BdlStore {
         Ok(updated)
     }
 
+    // --- dependency observation face (BDL v0.2; docs/protocols/
+    //     bdl-dependency-observations-v0.2) ---
+
+    /// Land one declared-dependency observation. Rows are APPENDED as
+    /// evidence — no upsert: a re-observation is a new observation row (the
+    /// schema defines no identity to dedupe on). The FROZEN schema is the
+    /// single law authority: closed-set members are persisted verbatim and
+    /// the real SQLite CHECK/NOT NULL/FK constraints reject every foreign
+    /// or lawless value as `BdlStoreError::Database` — the store keeps no
+    /// duplicate Rust copy of the frozen word face. Confirmed is not
+    /// writable here: the row lands unconfirmed (DEFAULT 0).
+    pub fn record_dependency_observation(
+        &self,
+        observation: &NewDependencyObservation,
+    ) -> Result<StoredDependencyObservation, BdlStoreError> {
+        let resolution_evidence =
+            serialize_resolution_evidence(&observation.resolution_evidence)?;
+        let mut connection = self.connection.lock().expect("SQLite connection poisoned");
+        let transaction =
+            connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        transaction.execute(
+            "INSERT INTO dependency_observations(
+                product_id, dep_kind, dep_name, raw_quote, source_span,
+                version_hint, resolved_ref_product_id, resolution_evidence,
+                extraction_method, extracted_by, observed_at,
+                processor_version, content_hash, run_id
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14)",
+            params![
+                observation.product_id,
+                observation.dep_kind,
+                observation.dep_name,
+                observation.raw_quote,
+                observation.source_span,
+                observation.version_hint,
+                observation.resolved_ref_product_id,
+                resolution_evidence,
+                observation.extraction_method,
+                observation.extracted_by,
+                observation.observed_at,
+                observation.processor_version,
+                observation.content_hash,
+                observation.run_id,
+            ],
+        )?;
+        let observation_id = transaction.last_insert_rowid();
+        let stored = select_dependency_observation(&transaction, observation_id)?
+            .expect("observation row was inserted in this transaction");
+        transaction.commit()?;
+        Ok(stored)
+    }
+
+    /// The explicit, recorded human confirmation write action — the ONLY
+    /// writer of `confirmed_by_human = 1` (a resolution is by default a
+    /// clue; confirmation never happens automatically). One write pins the
+    /// resolved product identity, its reconciliation evidence and the
+    /// confirmation flag together. The evidence must be non-empty (an empty
+    /// "evidence" is no evidence — not an honest verdict), the observation
+    /// must exist, and the target must be an OBSERVED product: identity
+    /// resolution points at products the library holds, never at guessed
+    /// ones. The schema's CHECK hard law (evidence must accompany
+    /// resolution) holds underneath.
+    pub fn confirm_dependency_resolution(
+        &self,
+        observation_id: i64,
+        resolved_ref_product_id: &str,
+        resolution_evidence: &[DependencyResolutionEvidence],
+    ) -> Result<StoredDependencyObservation, BdlStoreError> {
+        if resolution_evidence.is_empty() {
+            return Err(BdlStoreError::InvalidResolution(
+                "a confirmation without resolution evidence is not an honest verdict",
+            ));
+        }
+        let evidence = serialize_resolution_evidence(resolution_evidence)?;
+        let mut connection = self.connection.lock().expect("SQLite connection poisoned");
+        let transaction =
+            connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let known: bool = transaction
+            .query_row(
+                "SELECT 1 FROM dependency_observations WHERE observation_id = ?1",
+                [observation_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !known {
+            return Err(BdlStoreError::UnknownDependencyObservation(observation_id));
+        }
+        let product_known: bool = transaction
+            .query_row(
+                "SELECT 1 FROM products WHERE product_id = ?1",
+                [resolved_ref_product_id],
+                |_| Ok(()),
+            )
+            .optional()?
+            .is_some();
+        if !product_known {
+            return Err(BdlStoreError::UnknownProduct(
+                resolved_ref_product_id.to_string(),
+            ));
+        }
+        transaction.execute(
+            "UPDATE dependency_observations SET
+                resolved_ref_product_id = ?1,
+                resolution_evidence = ?2,
+                confirmed_by_human = 1
+             WHERE observation_id = ?3",
+            params![resolved_ref_product_id, evidence, observation_id],
+        )?;
+        let stored = select_dependency_observation(&transaction, observation_id)?
+            .expect("observation row remains present after confirmation");
+        transaction.commit()?;
+        Ok(stored)
+    }
+
+    /// All stored dependency observations of one product in observation
+    /// order — the honest row set (unconfirmed clues and confirmed
+    /// resolutions alike; what leaves the library as a suggestion is the
+    /// read-side rule table's business, never the store's). Empty = the
+    /// honest empty set — 空态即终态.
+    pub fn dependency_observations(
+        &self,
+        product_id: &str,
+    ) -> Result<Vec<StoredDependencyObservation>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        select_product_dependency_observations(&connection, product_id)
+    }
+
     // --- catalog serving face (W12; docs/protocols/bdl-queries-v0.3) ---
 
     /// `catalog.list`: assembles the v0.3 card list from the observation
@@ -2062,6 +2344,147 @@ fn is_sha256_identity(value: &str) -> bool {
     hex.len() == 64 && hex.bytes().all(|b| b.is_ascii_hexdigit() && !b.is_ascii_uppercase())
 }
 
+fn select_dependency_observation(
+    connection: &Connection,
+    observation_id: i64,
+) -> Result<Option<StoredDependencyObservation>, BdlStoreError> {
+    let row = connection
+        .query_row(
+            "SELECT observation_id, product_id, dep_kind, dep_name, raw_quote,
+                    source_span, version_hint, resolved_ref_product_id,
+                    resolution_evidence, confirmed_by_human, extraction_method,
+                    extracted_by, observed_at, processor_version, content_hash,
+                    run_id
+             FROM dependency_observations
+             WHERE observation_id = ?1",
+            [observation_id],
+            |row| {
+                Ok((
+                    row.get::<_, i64>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                    row.get::<_, String>(5)?,
+                    row.get::<_, Option<String>>(6)?,
+                    row.get::<_, Option<String>>(7)?,
+                    row.get::<_, Option<String>>(8)?,
+                    row.get::<_, i64>(9)?,
+                    row.get::<_, String>(10)?,
+                    row.get::<_, String>(11)?,
+                    row.get::<_, String>(12)?,
+                    row.get::<_, String>(13)?,
+                    row.get::<_, Option<String>>(14)?,
+                    row.get::<_, Option<String>>(15)?,
+                ))
+            },
+        )
+        .optional()?;
+    row.map(stored_dependency_observation).transpose()
+}
+
+fn select_product_dependency_observations(
+    connection: &Connection,
+    product_id: &str,
+) -> Result<Vec<StoredDependencyObservation>, BdlStoreError> {
+    let mut statement = connection.prepare(
+        "SELECT observation_id, product_id, dep_kind, dep_name, raw_quote,
+                source_span, version_hint, resolved_ref_product_id,
+                resolution_evidence, confirmed_by_human, extraction_method,
+                extracted_by, observed_at, processor_version, content_hash,
+                run_id
+         FROM dependency_observations
+         WHERE product_id = ?1
+         ORDER BY observation_id",
+    )?;
+    let rows = statement
+        .query_map([product_id], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, Option<String>>(6)?,
+                row.get::<_, Option<String>>(7)?,
+                row.get::<_, Option<String>>(8)?,
+                row.get::<_, i64>(9)?,
+                row.get::<_, String>(10)?,
+                row.get::<_, String>(11)?,
+                row.get::<_, String>(12)?,
+                row.get::<_, String>(13)?,
+                row.get::<_, Option<String>>(14)?,
+                row.get::<_, Option<String>>(15)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    rows.into_iter()
+        .map(stored_dependency_observation)
+        .collect()
+}
+
+/// Assembles the stored observation from its row tuple, parsing the
+/// evidence text into the frozen shape.
+#[allow(clippy::type_complexity)]
+fn stored_dependency_observation(
+    row: (
+        i64,
+        String,
+        String,
+        String,
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        i64,
+        String,
+        String,
+        String,
+        String,
+        Option<String>,
+        Option<String>,
+    ),
+) -> Result<StoredDependencyObservation, BdlStoreError> {
+    let (
+        observation_id,
+        product_id,
+        dep_kind,
+        dep_name,
+        raw_quote,
+        source_span,
+        version_hint,
+        resolved_ref_product_id,
+        resolution_evidence,
+        confirmed_by_human,
+        extraction_method,
+        extracted_by,
+        observed_at,
+        processor_version,
+        content_hash,
+        run_id,
+    ) = row;
+    Ok(StoredDependencyObservation {
+        observation_id,
+        product_id,
+        dep_kind,
+        dep_name,
+        raw_quote,
+        source_span,
+        version_hint,
+        resolved_ref_product_id,
+        resolution_evidence: parse_resolution_evidence(resolution_evidence)?,
+        confirmed_by_human: confirmed_by_human != 0,
+        extraction_method,
+        extracted_by,
+        observed_at,
+        processor_version,
+        content_hash,
+        run_id,
+    })
+}
+
 fn download_event_kind_name(kind: DownloadEventKind) -> &'static str {
     match kind {
         DownloadEventKind::Started => "started",
@@ -2162,7 +2585,15 @@ mod tests {
                 |row| row.get(0),
             )
             .unwrap();
-        assert_eq!(format, "0.1");
+        assert_eq!(format, BDL_FORMAT_VERSION, "the store's own format is served");
+        let migration: i64 = connection
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .unwrap();
+        assert_eq!(migration, 2, "fresh databases are born v0.2 (001 + 002)");
+        let dep_table: i64 = connection
+            .query_row("SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'dependency_observations'", [], |row| row.get(0))
+            .unwrap();
+        assert_eq!(dep_table, 1, "the v0.2 table exists on a fresh store");
     }
 
     #[test]

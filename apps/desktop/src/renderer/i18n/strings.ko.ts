@@ -824,6 +824,15 @@ rolled_back: "롤백됨",
     subtitle: "이 PC에 저장된 상품 정보와 에셋을 관리합니다. 앱이나 브라우저에서 BOOTH 상품 페이지를 열고 본인 계정으로 구매하세요.",
     searchPlaceholder: "제목 또는 상품 ID 검색",
     searchAria: "카탈로그 상품 검색",
+    /** 029 슬라이스 3(A3 로컬 구간): 자산 선택기=창고 읽기 면의 투영.
+     *  여기에 세 번째 가져오기 진입을 두지 않음(가져오기는 가져오기 페이지).
+     *  클라우드 연결은 BOARD #46 재정까지 정직하게 부재. */
+    selector: {
+      listAria: "레시피에 추가할 수 있는 창고 항목",
+      localOnlyNote: "선택기는 로컬 창고 항목만 표시합니다. 새 자산 가져오기는 가져오기 페이지에서 진행하세요. 클라우드 자산 연결은 재정이 있을 때까지 정직하게 부재합니다.",
+      pickCta: "추가",
+      addedBadge: "레시피에 추가됨",
+    },
     filters: {
       availability: "판매 상태",
       entityType: "에셋 유형",
@@ -1165,6 +1174,70 @@ rolled_back: "롤백됨",
     libraryMappingNote: "저장된 레시피를 표시하고 있습니다. 작업 화면에서 편집하는 기능은 아직 지원하지 않습니다.",
     documentModeNote: "레시피에 저장된 설정입니다. 이 PC에서는 아직 검증되지 않았습니다.",
     documentModeExit: "작업 화면으로 돌아가기",
+    /** 029 슬라이스 3(A1 생성 진입 승격/A2 선택 상태 자산 추가/A3 창고 읽기 면 투영 선택기 로컬 구간).
+     *  워딩 규율(U16): 생성 진입은 "생성". "자산 추가"는 별도 동작이며 "조립"과 혼용하지 않음.
+     *  선택기는 로컬 창고 항목만 표시. 클라우드 자산은 BOARD #46 재정까지 정직하게 부재. */
+    createCta: "레시피 만들기",
+    addMaterialCta: "자산 추가",
+    materialPickerTitle: "에셋 창고에서 추가",
+    editSectionTitle: "저장 대기 중인 추가 자산",
+    saveEditCta: "변경 사항 저장",
+    savingEditCta: "저장 중…",
+    editFailedNote: "저장에 실패했습니다. 변경 사항은 유지되며 다시 시도할 수 있습니다.",
+    editDirtyNote: "저장되지 않은 자산 추가가 있습니다. 저장이 성공한 후에만 레시피 라이브러리에 기록됩니다.",
+    editRemoveAria: "저장 대기 추가 {title} 제거",
+    /* 029 B면 루프 4(데스크톱 소비): recipe-export v0.1 초안 확인 흐름.
+     * 어면 규율: 진입은 "프로젝트에서 초안 내보내기". 내보내기는 설계 의도
+     * 복원을 주장하지 않으며, 누락 차원 목록을 그대로 제시한다. 승격은
+     * 사용자가 명시적으로 보완(제목/읽을 수 없는 경우 Unity 버전/에셋 1개
+     * 이상)한 후 기존 recipe.save 저장 체인을 통해서만 이루어진다. 진입은
+     * VUA 등록 프로젝트 집합으로 한정되며 임의 경로 입력은 열지 않는다. */
+    exportCta: "프로젝트에서 초안 내보내기",
+    exportDialogTitle: "프로젝트에서 레시피 초안 내보내기",
+    exportDraftBadge: "프로젝트 내보내기 초안",
+    exportPickTitle: "내보낼 VUA 관리 프로젝트 선택",
+    exportPickAria: "내보내기 원본 등록 프로젝트 목록",
+    exportPickLoading: "등록된 프로젝트를 읽는 중…",
+    exportPickEmpty: "아직 등록된 VUA 관리 프로젝트가 없습니다.",
+    exportPickUnavailable: "프로젝트 등록 서비스에 연결되지 않았습니다.",
+    exportStaleBadge: "등록 경로가 없음",
+    exportExporting: "초안을 내보내는 중…",
+    exportFailedUnavailable: "내보내기 서비스를 현재 사용할 수 없습니다.",
+    exportFailedRejected: "해당 프로젝트는 더 이상 VUA에 등록되어 있지 않습니다.",
+    exportOriginSection: "원본 프로젝트",
+    exportPathLabel: "경로",
+    exportNameLabel: "이름",
+    exportNameAbsent: "읽을 수 없음",
+    exportIdentityLabel: "VUA 네이티브 식별",
+    exportIdentityPresent: "있음",
+    exportIdentityAbsent: "없음",
+    exportIdentityUnreadable: "읽을 수 없음",
+    exportUnityLabel: "Unity 버전(디스크 관측)",
+    exportUnityUnreadable: "읽을 수 없습니다. 저장 전에 버전 제약을 입력하세요.",
+    exportUnityInputAria: "Unity 버전 제약",
+    exportUnityPlaceholder: "예: 2022.3.22f1",
+    exportDepsTitle: "선언된 의존성",
+    exportDepsEmpty: "프로젝트 매니페스트에 선언된 의존성이 없습니다.",
+    exportDepsLocked: "{version} 잠금",
+    exportMissingTitle: "누락된 차원(이 내보내기에 포함되지 않음)",
+    exportHonestyNote: "내보내기는 프로젝트 파일만 읽으며 설계 의도를 복원하지 않습니다. 초안은 완성 후 명시적으로 저장해야 레시피가 됩니다.",
+    missingDims: {
+      assets: "에셋 목록",
+      instances: "인스턴스와 마운트",
+      relations: "관계",
+      wardrobeGroups: "의상 그룹",
+      targetAvatar: "대상 아바타",
+      assetRoles: "에셋 역할",
+      assetLabels: "에셋 라벨",
+      sourceRefs: "에셋 출처",
+      titleSemantics: "제목 의미",
+      environmentUnityVersion: "Unity 버전(디스크에서 읽을 수 없음)",
+    },
+    exportTitleLabel: "레시피 제목(필수)",
+    exportTitleAria: "레시피 제목",
+    exportTitlePrefillNote: "프로젝트 이름에서 미리 채웠습니다. 자유롭게 수정할 수 있습니다.",
+    exportSaveCta: "레시피로 저장",
+    exportBlockedNote: "저장하려면 제목, Unity 버전(읽을 수 없는 경우), 에셋 1개 이상이 필요합니다.",
     factsLine: '리비전 {revision} - 에셋:{assets}, 인스턴스:{instances}, 관계:{relations}.',
     factsLocked: "의존성 구성이 고정되어 있습니다. 로컬 프로젝트가 검증되었다는 뜻은 아닙니다.",
     factsUnlocked: "의존성 구성이 고정되지 않았습니다. 이 레시피는 로컬에서 검증되지 않았습니다.",
@@ -2416,13 +2489,24 @@ rolled_back: "롤백됨",
     },
     /** 머티리얼 체인 오류 문구(데스크톱 142批次, 작업 이벤트 실패 행 표시):
      *  키 = 와이어상의 messageKey(vua.material 계열 오류는 AppErrorV01 경유).
-     *  provisionFailed는 예약 행 — 머티리얼 체인 v0.2 신규 코드
-     *  vua.material.provision_failed는 코어 석 수정 배치(wt-2, 편입 대기)와
-     *  함께 전달됩니다. 문구를 먼저 4개 언어로 동기화하여 코드 도착 시
-     *  즉시 일치시킵니다. */
+     *  169배치에서 엔진의 완전한 12키 errors.material.* 발사 면까지 보완
+     *  (코어 150배치 failure_message_key 분기 + material_intake /
+     *  provider-host 발사점. 각 행은 그 발사 맥락에 근거하며 맥락 발명은
+     *  없음). 실패 행은 계속 문구+코드 원어 병렬 표시(148배치 이중 사실
+     *  율)——코드는 결코 가려지지 않습니다. */
     material: {
       executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
       provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
+      sourceInvalid: "머티리얼 소스가 잘못되었습니다: 해당 경로는 읽을 수 있는 머티리얼 폴더를 가리키지 않습니다.",
+      sourceEmpty: "머티리얼 소스가 비어 있습니다: 폴더에 .unitypackage가 포함되어 있지 않습니다.",
+      sourceUnreadable: "머티리얼 소스를 읽을 수 없습니다: 머티리얼 폴더 읽기에 실패했습니다.",
+      sourceDrift: "계획 확인 후 머티리얼 소스가 변경되었습니다(소스 지문이 일치하지 않음). 소스를 다시 검사하고 다시 확인해 주세요.",
+      planHashMismatch: "가져오기 계획이 무결성 검사에 실패하여(계획 해시 불일치) 거부되었습니다.",
+      riskDecisionStale: "기록된 리스크 판단이 현재 계획 또는 소스와 더 이상 일치하지 않습니다. 머티리얼 흐름을 다시 시작해 주세요.",
+      riskDecisionRequired: "이 계획은 확인 전에 리스크 판단이 필요합니다.",
+      cancelled: "머티리얼 작업이 취소되었습니다: 리스크 판단에서 취소가 선택되었습니다.",
+      internal: "머티리얼 작업 준비 중 내부 오류가 발생했습니다.",
+      recordFailed: "머티리얼 작업은 롤백되어 복원되었지만 기록 저장에 실패했습니다: 이 결과는 작업 기록에 저장되지 않았습니다.",
     },
     /** 핸드오프 허가 게이트 문구(U19 사용자 재정 2026-09-21, BOARD U19 행이
      *  규범 소스). 예약 행 — 코드 vua.release_handoff.record_state_blocked

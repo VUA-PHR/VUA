@@ -866,6 +866,14 @@ rolled_back: "已回滚",
     subtitle: "管理商品信息和保存在本机的素材。可以在应用内或浏览器中打开 BOOTH 商品页，使用自己的账号购买。",
     searchPlaceholder: "搜索标题或商品 ID",
     searchAria: "搜索目录商品",
+    /** 029 切片三(A3 本地段):素材选择器＝仓储读面投影。此处不立第三导入
+     *  入口(入库走素材导入页);云端接入候 BOARD #46 裁决,裁决前诚实缺席。 */
+    selector: {
+      listAria: "可加入配方的仓储条目",
+      localOnlyNote: "选择器只呈现本地仓储条目；素材入库请走素材导入页；云端素材接入未裁决前如实缺席。",
+      pickCta: "添加",
+      addedBadge: "已在本配方",
+    },
     filters: {
       availability: "可用性",
       entityType: "实体类型",
@@ -1231,6 +1239,70 @@ rolled_back: "已回滚",
     libraryMappingNote: '文档到工作台视图的映射尚未接线;以上条目事实原样呈现。',
     documentModeNote: '当前呈现期望态文档(state=expected,文档声明、未经本地验证)。检查事实的映射随检查投影切片接入。',
     documentModeExit: '返回合成纵向工作台',
+    /** 029 切片三(A1 创建入口升格/A2 选中态添加素材/A3 仓储读面投影选择器
+     *  本地段)。词面纪律(U16):创建入口用「创建」;「添加素材」独立成词,
+     *  不与「组装」混用。选择器只呈现本地仓储条目;云端素材接入候 BOARD
+     *  #46 裁决,裁决前诚实缺席。 */
+    createCta: "创建配方",
+    addMaterialCta: "添加素材",
+    materialPickerTitle: "从素材仓库添加",
+    editSectionTitle: "待保存的新增素材",
+    saveEditCta: "保存修改",
+    savingEditCta: "保存中…",
+    editFailedNote: "保存失败——修改已保留，可以重试。",
+    editDirtyNote: "有未保存的新增素材——保存成功后才会写入配方库。",
+    editRemoveAria: "移除待保存新增 {title}",
+    /* 029 B 面环 4(桌面消费):recipe-export v0.1 草稿确认流。词面纪律:
+     * 入口动词面为「从工程导出草稿」;导出不宣称还原设计意图,缺失维度
+     * 清单照单呈现。转正只在用户显式补全(标题/不可读时的 Unity 版本/
+     * 至少一条素材)后走既有 recipe.save 保存链;入口限定 VUA 已注册工程集,
+     * 不开放任意路径输入。 */
+    exportCta: "从工程导出草稿",
+    exportDialogTitle: "从工程导出配方草稿",
+    exportDraftBadge: "项目导出草稿",
+    exportPickTitle: "选择要导出的 VUA 管理工程",
+    exportPickAria: "可导出的已注册工程列表",
+    exportPickLoading: "正在读取已注册工程…",
+    exportPickEmpty: "尚无已注册的 VUA 管理工程。",
+    exportPickUnavailable: "工程登记服务未连接。",
+    exportStaleBadge: "登记路径不存在",
+    exportExporting: "正在导出草稿…",
+    exportFailedUnavailable: "导出服务当前不可用。",
+    exportFailedRejected: "该工程已不在 VUA 登记中。",
+    exportOriginSection: "来源工程",
+    exportPathLabel: "路径",
+    exportNameLabel: "名称",
+    exportNameAbsent: "不可读",
+    exportIdentityLabel: "VUA 原生身份",
+    exportIdentityPresent: "在场",
+    exportIdentityAbsent: "缺席",
+    exportIdentityUnreadable: "不可读",
+    exportUnityLabel: "Unity 版本（盘上观察）",
+    exportUnityUnreadable: "不可读——保存前请填写版本约束。",
+    exportUnityInputAria: "Unity 版本约束",
+    exportUnityPlaceholder: "例如 2022.3.22f1",
+    exportDepsTitle: "已声明依赖",
+    exportDepsEmpty: "工程清单未声明任何依赖。",
+    exportDepsLocked: "已锁定 {version}",
+    exportMissingTitle: "缺失维度（本次导出不含）",
+    exportHonestyNote: "导出只读取工程文件，不宣称还原设计意图——草稿经你补全并显式保存后才成为配方。",
+    missingDims: {
+      assets: "素材集",
+      instances: "实例与挂载",
+      relations: "关系面",
+      wardrobeGroups: "衣装分组",
+      targetAvatar: "目标 Avatar",
+      assetRoles: "素材角色",
+      assetLabels: "素材标签",
+      sourceRefs: "素材来源",
+      titleSemantics: "标题语义",
+      environmentUnityVersion: "Unity 版本（盘上不可读）",
+    },
+    exportTitleLabel: "配方标题（必填）",
+    exportTitleAria: "配方标题",
+    exportTitlePrefillNote: "标题预填自工程名，可自由修改。",
+    exportSaveCta: "保存为配方",
+    exportBlockedNote: "保存需要标题、Unity 版本（不可读时）与至少一条素材。",
     factsLine: '修订 {revision} - 素材:{assets},实例:{instances},关系:{relations}。',
     factsLocked: '解析锁在场(期望态已钉死)。',
     factsUnlocked: '无解析锁(期望态描述,非已验证的本地状态)。',
@@ -2457,13 +2529,24 @@ rolled_back: "已回滚",
       verifyUnavailable: "编辑器验证服务当前不可用。",
     },
     /** 素材链错误词面(027 第 142 批桌面,任务事件失败行呈现):
-     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发);
-     *  provisionFailed 为预留行——素材链 v0.2 新码 vua.material.
-     *  provision_failed 由核心座修复批(wt-2,候入库)携带,词面先行
-     *  四表同步,码落地即命中 */
+     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发)。
+     *  第 169 批补齐至引擎完整 12 键 errors.material.* 发射面(核心第
+     *  150 批 failure_message_key 分类分化 + material_intake /
+     *  provider-host 发射点;每行锚定其发射语境,零发明语义)。失败行
+     *  仍为词面+code 原词并呈(第 148 批双事实律)——code 永不被遮蔽。 */
     material: {
       executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
       provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
+      sourceInvalid: "素材源无效：该路径未指向可读的素材文件夹。",
+      sourceEmpty: "素材源为空：文件夹内不含任何 .unitypackage。",
+      sourceUnreadable: "素材源无法读取：读取素材文件夹失败。",
+      sourceDrift: "素材源在计划确认后发生了变化（源指纹不再一致）；请重新检视素材源并再次确认。",
+      planHashMismatch: "导入计划未通过完整性校验（计划哈希不匹配），已被拒绝。",
+      riskDecisionStale: "已记录的风险决策与当前计划或素材源不再一致；请重新开始素材流程。",
+      riskDecisionRequired: "此计划在确认前需要作出风险决策。",
+      cancelled: "素材操作已取消：风险决策选择了取消。",
+      internal: "准备素材操作时发生内部错误。",
+      recordFailed: "素材操作已回滚并恢复，但保存其记录失败：该结果未持久化到任务记录。",
     },
     /** 交棒准入闸词面(U19 用户裁决 2026-09-21,BOARD U19 行为规范源)。
      *  预留行——码 vua.release_handoff.record_state_blocked(params 携
