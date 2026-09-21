@@ -16,12 +16,18 @@ import type { ReleaseHandoffFactV01 } from "@vua/contracts";
  * - accepted:受理成立,按 taskId 轮询任务面;
  * - absent:诚实缺席(vua.release_handoff.unavailable 或宿主不可达)——
  *   通道未接线/不可达,绝无受理发生;
- * - failed:请求被拒(code=应用错误码原样透传;null=信封级拒绝,无应用码)。
- * 未知错误码不猜测映射为已知码,原样呈现(诚实纪律)。 */
+ * - failed:请求被拒(code=应用错误码原样透传;null=信封级拒绝,无应用码;
+ *   params=AppErrorV01 错误参数防御性透传,准入闸 record_state_blocked
+ *   的 state 原词随此到达,缺席=空表)。未知错误码不猜测映射为已知码,
+ *   原样呈现(诚实纪律)。 */
 export type ReleaseHandoffIntent =
   | { readonly kind: "accepted"; readonly taskId: string; readonly correlationId: string }
   | { readonly kind: "absent" }
-  | { readonly kind: "failed"; readonly code: string | null };
+  | {
+      readonly kind: "failed";
+      readonly code: string | null;
+      readonly params: Readonly<Record<string, string | number | boolean>>;
+    };
 
 /** 交接任务视图(task.get 快照投影;九态原词透传,不重列词表):
  * - running:非终态(state 为九态原词;词表外原样呈现,不猜测);

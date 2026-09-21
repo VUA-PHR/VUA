@@ -1,10 +1,10 @@
-# VUA design standard v0.7.13
+# VUA design standard v0.7.14
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.13
+> Document version: 0.7.14
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.13)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.14)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-21
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -306,6 +306,21 @@ stable untilted cards.
   is pinned — missing artifacts or read failures render the honest placeholder copy, never a broken
   image or a fabricated thumbnail, and static/off modes return to flat horizontal scrolling and
   stable previews without losing any result, diagnostic, or handoff action.
+
+  Handoff admission and the standalone open path (U19, user ruling 2026-09-21, 0.7.14): the official
+  SDK handoff entry on Release build records presents by a record-state whitelist — succeeded and
+  succeeded_with_warnings are allowed (the warning badge stays, never shadowed by the allowance);
+  failed, cancelled and rolled_back are withheld with a discoverable reason plus an entry chain to
+  diagnostics (Inspection) and recovery/re-production (Workshop); recovered is withheld, presenting
+  "complete the inspection and the follow-up production steps first" plus the inspection entry; a
+  missing or out-of-vocabulary record state is refused with "the record cannot be confirmed". The
+  backend stays the authority in the route admission order; the presentation bucket never pre-judges
+  the acceptance, and direct invocations rejected at the gate render the typed refusal copy
+  (discoverable reason for disabled key actions, §5). The standalone "Open in Unity to inspect or
+  fix" action is deliberately separate from the handoff button (own control, port and copy), never
+  gated by the record state — opening the editor is neither a recovery execution nor an upload
+  permission; while the backend open entry is not wired, the entry presents honest absence (no
+  pre-wired availability illusion, no fabricated capability).
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
   before install/update/remove; no third-party branding that implies embedding. Project compatibility
   no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
@@ -475,6 +490,19 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.14 (2026-09-21)**: §8.6 addendum for handoff admission and the standalone open path (U19
+  user-ruling consumption slice) — the Release build-record handoff entry presents by a record-state
+  whitelist (succeeded/succeeded_with_warnings allowed with the warning presentation preserved;
+  failed/cancelled/rolled_back withheld with a discoverable reason plus diagnostics/recovery/
+  re-production entry chain; recovered withheld until the inspection and follow-up production steps;
+  missing/out-of-vocabulary states refused as "record cannot be confirmed"); the backend gate stays
+  the authority in the route admission order, the presentation bucket never pre-judges acceptance,
+  and direct rejections render the typed refusal copy; the standalone "Open in Unity to inspect or
+  fix" action is deliberately separate from the handoff button, never gated by the record state,
+  opening the editor is neither a recovery execution nor an upload permission, and honest absence
+  presents while the backend open entry is unwired (no fabricated capability). EN mirror synced with
+  the ZH authority.
 
 - **0.7.13 (2026-09-21)**: §8.7 addendum for repository lifecycle presentation (proposal 027
   F4 consumption slice) — inline enable/disable and refresh controls on subscription rows

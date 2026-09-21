@@ -1335,6 +1335,41 @@ rolled_back: "롤백됨",
         retry: "재시도",
         taskErrorLine: "작업 오류: {code}",
         taskFailedNote: "업로드 준비에 실패했습니다.",
+        /* U19 핸드오프 허가 표시 버킷(사용자 재정 2026-09-21): succeeded/
+         * succeeded_with_warnings → 허용(경고 배지 표시 유지); failed/
+         * cancelled/rolled_back → 금지＋사유＋검사/워크숍 진입 경로;
+         * recovered → 금지, 검시와 후속 생산 흐름을 먼저 완료; 누락/어휘 외
+         * 상태 → 거부, 기록을 확인할 수 없습니다. 백엔드 권위 게이트는 별도로
+         * 라우팅 허가 순서에 있으며, 이것은 발견 가능한 사유 문구(디자인
+         * 표준 §5). */
+        blockedTitle: "핸드오프 불가",
+        blockedFailed:
+          "이 빌드는 실패하여 핸드오프할 수 없습니다. 결과를 확인하거나, 복구하거나, 다시 생산하세요.",
+        blockedCancelled:
+          "이 빌드는 취소되어 핸드오프할 수 없습니다. 다시 생산하여 새 기록을 만드세요.",
+        blockedRolledBack:
+          "이 빌드는 롤백되어 핸드오프할 수 없습니다. 다시 생산하여 새 기록을 만드세요.",
+        recoveredBlockNote:
+          "이 기록은 복구 후 완료되었습니다. 핸드오프 전에 검시와 후속 생산 흐름을 완료하세요.",
+        unconfirmedNote: "핸드오프 작업을 사용할 수 없습니다: 이 기록은 확인할 수 없습니다.",
+        entryWorkshop: "워크숍으로 이동",
+      },
+      /* U19 제 2 인도물(사용자 재정 명문): 독립적인 "검사·수정을 위해
+       * Unity에서 열기" 액션 — 핸드오프 버튼과 명시적으로 분리(독립
+       * 컴포넌트/포트/문구 그룹). 기록 상태로 게이트하지 않음. 에디터를
+       * 여는 것은 복구 실행도 업로드 허가도 아닙니다. 코어 석 백엔드 open
+       * 검사 진입점 미편입: 포트는 구조적 부재이며, 문구는 부재를 있는 그대로
+       * 표시하고 백엔드 능력을 날조하지 않습니다. */
+      openInUnity: {
+        action: "검사·수정을 위해 Unity에서 열기",
+        actionNote:
+          "이 빌드의 프로젝트를 Unity 에디터에서 열어 수동 검사와 수정을 진행합니다. 에디터를 여는 것은 복구 실행도 아니고 업로드 허가도 아닙니다.",
+        absentTitle: "Unity에서 열기 사용 불가",
+        absentNote: "이 프로젝트를 Unity에서 여는 기능이 아직 연결되지 않았습니다.",
+        failedTitle: "Unity에서 열기 요청이 거부되었습니다",
+        failedUnknown: "오류 코드 없이 요청이 거부되었습니다.",
+        failedWithCode: "요청이 거부되었습니다: {code}",
+        retry: "재시도",
       },
     },
   },
@@ -2359,6 +2394,17 @@ rolled_back: "롤백됨",
     material: {
       executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
       provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
+    },
+    /** 핸드오프 허가 게이트 문구(U19 사용자 재정 2026-09-21, BOARD U19 행이
+     *  규범 소스). 예약 행 — 코드 vua.release_handoff.record_state_blocked
+     *  (params:{state})와 vua.release_handoff.record_state_unknown은 코어 석
+     *  허가 게이트 슬라이스(wt-2, 진행 중)와 함께 전달됩니다. 문구를 먼저
+     *  4개 언어로 동기화하여 코드 도착 시 즉시 일치시킵니다. */
+    releaseHandoff: {
+      stateBlocked:
+        "핸드오프가 거부되었습니다: 이 빌드 기록의 현재 상태는 핸드오프를 허용하지 않습니다(상태: {state}).",
+      stateUnknown:
+        "핸드오프가 거부되었습니다: 이 빌드 기록의 상태를 확인할 수 없습니다.",
     },
   },
 };
