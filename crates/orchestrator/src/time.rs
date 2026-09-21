@@ -182,6 +182,45 @@ mod tests {
     }
 
     #[test]
+    fn pins_leap_century_year_rollover_and_the_measured_recipe_instant() {
+        // Ordinary leap year: 2024-02-29T00:00:00Z.
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_secs(1_709_164_800)),
+            "2024-02-29T00:00:00.000Z"
+        );
+        // Century NON-leap: 2100-02-29 does not exist — the day after
+        // 2100-02-28 is 2100-03-01 (the 36,524-day correction in
+        // `civil_from_days` exists for exactly this edge).
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_secs(4_107_456_000)),
+            "2100-02-28T00:00:00.000Z"
+        );
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_secs(4_107_542_400)),
+            "2100-03-01T00:00:00.000Z"
+        );
+        // Year rollover at the last millisecond of 2025.
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_millis(1_767_225_599_999)),
+            "2025-12-31T23:59:59.999Z"
+        );
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_millis(1_767_225_600_000)),
+            "2026-01-01T00:00:00.000Z"
+        );
+        // Data-seat regression pin (batch 156, observation A): a recipe saved
+        // at 2026-09-19T20:16:59.769Z was stamped by the former inline
+        // 365-day/30-month division as 2026-07-16T20:16:59.770Z — a civil
+        // date two months in the past. The real calendar must keep the real
+        // date (the +1ms outer stamp is the store clock at save time, the
+        // contract "store clock at save" face of StoredRecipeDocument).
+        assert_eq!(
+            rfc3339(UNIX_EPOCH + Duration::from_millis(1_789_849_019_770)),
+            "2026-09-19T20:16:59.770Z"
+        );
+    }
+
+    #[test]
     fn fixed_clock_walks_readings_then_sticks() {
         let clock = FixedClock::new(&["2026-08-30T10:00:00.000Z", "2026-08-30T10:00:01.000Z"]);
         assert_eq!(clock.now_rfc3339(), "2026-08-30T10:00:00.000Z");
