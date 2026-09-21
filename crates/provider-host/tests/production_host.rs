@@ -41,20 +41,31 @@ impl UnityBridge for FakeBridge {
         command: &UnityCommand,
     ) -> Result<UnityResult, vua_orchestrator::BridgeError> {
         self.commands.lock().unwrap().push(command.clone());
+        // 第 158 批（BOARD #45(2)）：the material executor parses a
+        // Succeeded validate receipt's loadedAssetPaths strictly (missing
+        // field = honest bridge_failed), so this fake mirrors the real C#
+        // handler — the Ordinal-sorted expected list IS the loaded list.
+        let mut data = serde_json::json!({
+            "projectFingerprint": format!("fp-{}", self.commands.lock().unwrap().len())
+        });
+        if command.operation == vua_orchestrator::UnityOperation::ValidateAssetPaths {
+            let mut loaded = command.payload.expected_asset_paths.clone();
+            loaded.sort();
+            data["loadedAssetPaths"] =
+                loaded.into_iter().map(serde_json::Value::String).collect();
+        }
         Ok(UnityResult {
             schema_version: 1,
             command_id: command.command_id.clone(),
             status: vua_orchestrator::ResultStatus::Succeeded,
             changed_paths: vec![],
             diagnostics: vec![],
-                steps: Vec::new(),
-                replayed: None,
-                snapshot_id: None,
-                restored_from: None,
-                project_fingerprint_before: None,
-            data: serde_json::json!({
-                "projectFingerprint": format!("fp-{}", self.commands.lock().unwrap().len())
-            }),
+            steps: Vec::new(),
+            replayed: None,
+            snapshot_id: None,
+            restored_from: None,
+            project_fingerprint_before: None,
+            data,
         })
     }
 }
@@ -641,13 +652,23 @@ fn ph_004_cancel_request_reaches_the_running_worker_token() {
             while !self.released.load(Ordering::SeqCst) && Instant::now() < deadline {
                 std::thread::sleep(Duration::from_millis(5));
             }
+            // 第 158 批（BOARD #45(2)）：mirror the real C# handler — a
+            // Succeeded validate receipt always carries the loadedAssetPaths
+            // evidence, and the executor now parses it strictly.
+            let mut data = serde_json::json!({"projectFingerprint": "fp-blocked"});
+            if command.operation == vua_orchestrator::UnityOperation::ValidateAssetPaths {
+                let mut loaded = command.payload.expected_asset_paths.clone();
+                loaded.sort();
+                data["loadedAssetPaths"] =
+                    loaded.into_iter().map(serde_json::Value::String).collect();
+            }
             Ok(UnityResult {
                 schema_version: 1,
                 command_id: command.command_id.clone(),
                 status: vua_orchestrator::ResultStatus::Succeeded,
                 changed_paths: vec![],
                 diagnostics: vec![],
-                data: serde_json::json!({"projectFingerprint": "fp-blocked"}),
+                data,
                 steps: Vec::new(),
                 replayed: None,
                 snapshot_id: None,
@@ -1137,13 +1158,23 @@ fn ph_010_mutation_gate_holds_lock_and_marker_during_the_run() {
             while !self.released.load(Ordering::SeqCst) && Instant::now() < deadline {
                 std::thread::sleep(Duration::from_millis(5));
             }
+            // 第 158 批（BOARD #45(2)）：mirror the real C# handler — a
+            // Succeeded validate receipt always carries the loadedAssetPaths
+            // evidence, and the executor now parses it strictly.
+            let mut data = serde_json::json!({"projectFingerprint": "fp-blocked"});
+            if command.operation == vua_orchestrator::UnityOperation::ValidateAssetPaths {
+                let mut loaded = command.payload.expected_asset_paths.clone();
+                loaded.sort();
+                data["loadedAssetPaths"] =
+                    loaded.into_iter().map(serde_json::Value::String).collect();
+            }
             Ok(UnityResult {
                 schema_version: 1,
                 command_id: command.command_id.clone(),
                 status: vua_orchestrator::ResultStatus::Succeeded,
                 changed_paths: vec![],
                 diagnostics: vec![],
-                data: serde_json::json!({"projectFingerprint": "fp-blocked"}),
+                data,
                 steps: Vec::new(),
                 replayed: None,
                 snapshot_id: None,

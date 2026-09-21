@@ -4,6 +4,7 @@ import {
   recipeDocumentToGraphView,
   narrowRecipeDocumentFacts,
   narrowRecipeDocumentStructure,
+  narrowRecipeDocumentReceipt,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
 } from "./recipe-model.ts";
@@ -122,4 +123,51 @@ test("recipeDocumentToGraphView: 非对象/缺 recipeId = null(不猜测)", () =
   assert.equal(recipeDocumentToGraphView(null), null);
   assert.equal(recipeDocumentToGraphView("doc"), null);
   assert.equal(recipeDocumentToGraphView({ title: "t" }), null);
+});
+
+/* 029 A4 选择事实源:recipe.get 回执窄化——链身份键值只取回执身份字段
+ * (冻结 schema 必填闭集 {recipeId, revision, recipeDocument, updatedAt,
+ * schemaVersion};文档本体系透明 object,修订是存储层元数据),不取列表
+ * 标签、不取本地猜测。 */
+
+test("narrowRecipeDocumentReceipt: 冻结 wire 形状收窄,身份取自回执必填字段", () => {
+  const receipt = narrowRecipeDocumentReceipt({
+    schemaVersion: "0.2",
+    recipeId: "01234567-89ab-7cde-89ab-0123456789ab",
+    revision: 4,
+    updatedAt: "2026-09-10T03:00:00Z",
+    recipeDocument: {
+      formatVersion: "0.3",
+      recipeId: "01234567-89ab-7cde-89ab-0123456789ab",
+      title: "夏季制服",
+      assets: [{ id: "a1", role: "outfit" }],
+    },
+  });
+  assert.equal(receipt?.recipeId, "01234567-89ab-7cde-89ab-0123456789ab");
+  assert.equal(receipt?.revision, 4);
+  assert.equal((receipt?.document as { title?: unknown }).title, "夏季制服");
+});
+
+test("narrowRecipeDocumentReceipt: 桌面保存链文档形状(体内无 revision)照常收窄", () => {
+  // composeDraftToSaveDocument 提交的文档体内只有 baseRevision;修订在
+  // 回执顶层(存储层元数据)——透明本体不阻塞收窄
+  const receipt = narrowRecipeDocumentReceipt({
+    recipeId: "01234567-89ab-7cde-89ab-0123456789ac",
+    revision: 1,
+    recipeDocument: { formatVersion: "0.3", recipeId: "01234567-89ab-7cde-89ab-0123456789ac", baseRevision: 0 },
+  });
+  assert.equal(receipt?.revision, 1);
+});
+
+test("narrowRecipeDocumentReceipt: 缺回执身份/文档本体缺席 = null(不猜测)", () => {
+  assert.equal(narrowRecipeDocumentReceipt(null), null);
+  assert.equal(narrowRecipeDocumentReceipt("doc"), null);
+  // 身份字段缺失(回执不可解释)
+  assert.equal(narrowRecipeDocumentReceipt({ revision: 4, recipeDocument: {} }), null);
+  assert.equal(
+    narrowRecipeDocumentReceipt({ recipeId: "r1", revision: 0, recipeDocument: {} }), // revision<1
+    null,
+  );
+  // 文档本体缺席(存储面不可解释)
+  assert.equal(narrowRecipeDocumentReceipt({ recipeId: "r1", revision: 4 }), null);
 });

@@ -2,185 +2,163 @@
 worktree: wt-main
 branch: main
 role: 集成
-baseline_commit: 860cb523
+baseline_commit: bb4de40d
 updated: 2026-09-22
 ---
 ## 当前焦点
-**第 157 批（2026-09-22 00:4x–01:1x，节拍轮工作时段 date 00:40 实测）＝双栈验收
-入库（wt-2 观察点处置批＋wt-3 契约对齐切片）＋wt-5 只读清点批收编＋BOARD 两笔
-操作者裁决登记＋合并树定向复跑全绿**：
+**第 164 批（2026-09-22 04:0x–05:0x，节拍轮工作时段 date 04:09 实测）＝压缩派
+发轮（仅集成）：第 164 批三栈验收入库（wt-3 029 A 面切片三「添加素材＋创建
+升格」＝A 面消费闭环＋wt-2 B 面环 3 导出执行器落地＝B 面三环闭环＋wt-4 030
+冻结前置 schema 设计环 v0.2 草案）＋合并树定向复跑全绿＋BOARD 两行更新**：
 
-- **核心栈 wt-2 两笔 --no-ff 收编（合并 e49fcba7，预检 exit 0）**＝实现批
-  0a7ebbd7＋状态批 029a78ad（数据座第 155 批只读清点观察点处置批，恰 4 代码文
-  件零新依赖）。验收要点逐项成立：
-  - **观察点 A（真缺陷已修）**＝`RecipeDocumentStore::new_with_system_clock`
-    近似历换算（365 天年/30 天月）改单源 `crate::time::rfc3339`（Hinnant
-    civil_from_days），闭包内零日期数学；time.rs 四向量钉（平年闰日
-    2024-02-29／世纪非闰 2100-02-28 次日即 2100-03-01／年界
-    2025-12-31T23:59:59.999Z→2026-01-01／数据座实测
-    1_789_849_019_770ms→2026-09-19T20:16:59.770Z）；**存储级排序契约钉＝
-    系统钟戳同形 RFC 3339 且串序严格晚于实测内层时刻
-    2026-09-19T20:16:59.769Z**（列表面 updatedAt 降序契约在串序上成立，落
-    盘文档携同一戳）。
-  - **观察点 B（裁决＝设计非缺口）集成四前提亲核成立**：①CHECK 闭集字面＝
-    schemas/orchestrator-task-store/v0.1/002_production_domain_records.sql:9
-    `CHECK (kind IN ('inspection', 'plan'))`；②put_domain_record 全仓恰三处
-    调用（provider_host.rs:8774/8905/8918＝start_inspection ×1＋request_plan
-    本体/plan-id 别名 ×2）**全部在引擎成功后发射**；③引擎失败路径统一
-    `persist_task_error` 内联终态不产生域身份；④build 回执经引擎 plan-id 别
-    名回溯注册行、消费面（record.get／U19 交棒闸／证据列举）按 id 直读
-    BuildRecordStore——注册 build 行只会是死重且 CHECK 本就禁止。「失败记录
-    在 records/*.json 在场」系诚实记账非遗漏；BuildRecordStore＋
-    put_domain_record 两处 doc 裁决全文＋CHECK 拒 'build' kind 存储级测试钉
-    防后人当缺陷修。
-- **桌面栈 wt-3 三笔 --no-ff 收编（合并 f3d0c1f0，预检 exit 0）**＝追平壳
-  58d16474（纯吸收 18d19c5f 世代零自有）＋实现批 c26869ff（恰 28 文件
-  1309+/177-）＋状态批 a4905101（恰本域文件）。第 155 批登记的开放衔接四项
-  全部兑现，验收要点逐项成立：
-  - **contracts TS 面升 0.2（照冻结 Schema 零臆造）**：交棒六码闭集
-    （record_state_blocked/unknown 入集）＋检视路由四码闭集（Exclude 差集
-    ＋显式数组＋not.toContain 负面对表钉死两状态码刻意缺席）；`ReleaseHandoff
-    RecordStateParamsV02` {state} 信封面；`RELEASE_OPEN_FOR_INSPECTION_OPERATION`
-    常量照核心单源；`release.openForInspection` 方法面（params 单键 {buildId}
-    词表外键/空串/kind 冒充全拒）；**双守卫负例**＝isReleaseHandoffFactV02/
-    isReleaseInspectionFactV02 钉 schemaVersion "0.2"（**v0.1 版本戳拒绝**）
-    ＋**携交接词面的检视事实构造即非法**＋上传状态字段形状拒绝＋六键闭集缺键
-    拒绝；DesktopGatewayRequestV1 联合＋method-kind 行＋窄化分支＋全方法守卫
-    回归表增行。
-  - **mock fall-through 终结**：`release.openForInspection` 并入交棒诚实缺席
-    分支按 v0.2 method 闭集应答（code/category/messageKey 三元与真实缺席一致，
-    绝不伪造受理/检视事实），unknown_method 过渡态终结，测试 +1 钉缺席三元。
-  - **live 装配（四装配点行为零分叉，仅 live 基线换装）**：electron-gateway
-    换 `createLiveReleaseProjectOpenPort(client)`——受理收窄 schemaVersion
-    "0.2"＋operation 词面＋taskId/correlationId 四键组合、unavailable→absent、
-    闭集外码原码透传＋params 防御性收窄、taskSnapshot 六键守卫投影（携交接
-    词面/上传状态事实→fact-unexplainable 不猜测）；empty＝not-run 缺席语义
-    订正、fixture＝DEV 不制造合成受理/事实、create＝恒 live 透传；gateway-router
-    verbatim 分支＋2 测试。
-  - **真 wire 修正（如实登记认可）**：第 154 批交棒 live 端口受理收窄误钉
-    "0.1" 而核心 v0.2 后 wire 只说 0.2——**不修正则真实受理回执全部被误呈现
-    为 failed**；本批随族升 "0.2" 并落 **v0.1 版本戳受理回执→failed 历史钉**
-    测试（形状其余全对亦拒）。
-  - **「检视不是交棒」呈现纪律在呈现面成立**：ProjectOpenPanel succeeded 臂
-    呈现六键事实身份键（editor/projectId/occurredAt）＋**operation 词面从
-    fact 插值零二次硬编码源**＋明示词面「检视打开不是交棒完成，也不授予上传
-    许可」；openInUnity 四语词面恰 +11 键四表同集（占位符同集 check:i18n 验
-    过）；模型层两预留字面量常量 DELETE（contracts 闭集登记成员时代，词面命
-    中窗风险终结）。
-- **数据栈 wt-5 两笔 --no-ff 收编（合并 860cb523，预检 exit 0）**＝追平壳
-  f0fc3758（总落后 104 过本树判例线 33 自理，合并树＝main 树逐字节全等零自
-  有，inbound 全为已验收内容纯吸收）＋状态批 6379fadc（09-20/21 真机数据面
-  只读一致性清点报告：互证一致项八组＋观察点四项只报告不修；collab-only 免
-  全量如实声明）。其观察点 A/B 已由 wt-2 第 156 批处置闭环（见上），C/D 见
-  BOARD 登记。
-- **BOARD 两笔登记（操作者第 157 批裁决，集成落账）**：
-  - **登记一＝#45「C# dormant 收窄」已裁 B 案先行**：采纳环境座第 154 批权
-    衡稿建议——material-intake 协议本注记（0.2.x 增笔）写明 C# 物化面
-    Packages/ 接受子句系链上不可达休眠面（非 VPM 通道许可）、通道边界由检查
-    面＋解包臂双闸持有、守卫句「移除任一闸口前必须先收窄 C# 面」；附带校准
-    material_exec.rs:1285/:1551 两行 Assets/-only 字母宽松表述——**注记切片
-    候派环境座**；A 案（C# 拒收＋UTF 测试＋协议注记垂直切片）排 W25 真机窗
-    口序列；(6) 项改记「已裁 B 案先行」。
-  - **登记二＝#43 行观察点 C 历史补录**：09-20 早晨 05:37–06:38Z 十七个
-    prod- 任务连败（全 `vua.material.source_invalid`、validation 类、17 独
-    立 correlationId＝用户反复重试）系素材选择器缺陷时代产物、修复已在库；
-    非新缺陷不改变真机复验口径（W25 O-2 维持）。
-- **合并树定向复跑集成亲测全绿（01:0x–01:1x，df 先查 592G/69%）**：cargo
-  test --workspace **893/0**（102 测试目标；对第 155 批基线 890 净 +3＝恰
-  wt-2 三枚新钉，数字自洽）＋clippy --workspace --all-targets **0 警告**＋
-  desktop typecheck 双 tsconfig **exit 0**＋vitest **92 文件 857/857**（对
-  第 155 批 91/838 净 +1 文件 +19，与 wt-3 申报逐字吻合）＋check:i18n OK
-  （四表 +11 键验入）＋check:leak **155 指纹零泄漏**（独立临时生产构建）。
-  两栈申报读数与合并树复跑逐字对上（wt-2 893/0；wt-3 857/857＋155 指纹）。
-- 本批纪律：合并验收＋collab 簿记；VUA-7/VUA-8 全程零触碰；`??
-  _local_p27_devlog.txt` 照例不触碰。
-- **诚实边界维持：零端到端宣称**——合并树复跑系代码面证据（fake port／合成
-  数据／临时生产构建）；live 装配系代码面接线，检视打开全链（真实记录→真启
-  动→handshake→六键事实回流→呈现）与被拦态桌面全链真机呈现归 W25（O-2），
-  测试绿≠真机绿。
+- **桌面栈 wt-3 三笔 --no-ff 收编（合并 bf030796，预检 exit 0）**＝追平壳
+  4a74c1f8（零自有纯吸收 main 9d7e6c17）＋实现批 e36f8119（恰 16 文件
+  1239+/21-：新 5＝recipe-document-edit-store＋RecipeDocumentEditSection
+  ＋edit 模型＋模型测试＋WarehouseEntrySelector；改 11＝RecipePage＋
+  acquire-model 双件＋冒烟脚本＋四表＋REGISTRY＋设计标准 0.7.17 双语）＋
+  状态批 6cf7c42b。验收重点逐项 diff 级成立：
+  - **A2 编辑链不覆写会话草稿**：recipeDocumentEditSelected 身份相同只刷
+    底稿 document、保留待保存新增 additions（文档库失效重取不得静默丢弃
+    用户未保存编辑）；身份/修订变更即新编辑会话（session-survival 语义
+    系实现时点定性，状态批如实登记候 W25 走查，集成不升格为裁决）。
+  - **「已保存」仅回执后呈现（诚实律）**：lastSavedRevision null＝本会
+    话无保存回执、回执才前移；DOM 钉 no-saved-note-before-a-receipt；失
+    败如实 failed、待保存新增保留、重试显式。
+  - **同一保存链形状同一守卫集**：recipe.save v1＋baseRevision＋busyRef
+    忙碌守卫双层面＋空保存拒绝（ToSaveDocument null）＋D5 查重骑
+    compose-save-dedup 同一比对面（比对键＝将要保存的合并文档；命中弹
+    compose 同词面确认框持有提交至用户裁决；确认时以当下编辑态重建诚实
+    取当下）；透明合并（底稿全字段透传只追加 assets/instances 刷新
+    updatedAt，DOM 钉 title 保留不静默改写）。
+  - **A3 零第三导入入口**：WarehouseEntrySelector 只消费 useAcquireView
+    读面投影；DOM 钉断言 picker 不含 importTitle/importPick 词面；云端
+    #46 诚实缺席 localOnlyNote；added 徽标禁用重复＋编辑模型双层幂等。
+  - **A1 创建入口升格**：hero 主路径「创建」（U16 原文词面）打开同一搭
+    配草稿弹窗，两 UI 一保存链不破；设计标准 0.7.17 双语＋REGISTRY；
+    词面四表各 +14 键同步；smoke 71/71＝41＋恰 30 新 DOM 钉（合成网关）。
+  - **A 面消费闭环申报与三切片事实对表成立**：切片一 A4/A5＋切片二 A6
+    ＋本切片 A1–A3＝判决书④流程桌面面全落库。
+- **核心栈 wt-2 两笔 --no-ff 收编（合并 40a71ea4，预检 exit 0）**＝实现批
+  4f911abc（恰 8 文件 1004+/87-）＋状态批 45c57f98。验收重点逐项成立：
+  - **依赖方向零违规**：OnDiskProjectDraftExporter 系 013 聚合读纪律核心
+    侧镜像（聚合 import core 永不反向）；orchestrator 源码 grep
+    project-manager 仅注释级提及零代码引用；Cargo.toml 零 diff。
+  - **诚实空投影与缺席/损坏区分**：manifest 非文件/不可读/损坏/非对象四
+    类发现→诚实空行集＝013 聚合同投影；区分登记在聚合 diagnostics 通道
+    （草稿七键闭集无 diagnostics 成员、错误码闭集不为盘上观察设码＝观察
+    失败不设码诚实律 1/2）；从不虚构行从不发明错误。
+  - **双向 iff 门**：m_EditorVersion 行缺席/残缺过 classify 完整性门→
+    null 约束＋EnvironmentUnityVersion 标记 iff 绑定；行集＝声明集联
+    locked 同 id 钉定（locked-only 不产行；BTreeMap 迭代＝packageId 升
+    序冻结呈现事实）；身份三态边界镜像（NotFound=Absent；垃圾/未知版本
+    /缺 marked_at=Unreadable 证据）；末组件名诚实 null；逐调用 uuid-v7
+    ＋注入时钟（ORC-TST-001）；TOTAL 函数（Err 臂为端口契约保留）。
+  - **能力覆写翻转**：export_capabilities declared→F5 律，served 行与
+    路由门转 available；生产 bin 接线翻转＋四测试夹具文件 7 处
+    deliberate None（grep 实证）；协议本 0.1.1→0.1.2 词面零变化
+    （schemas/ 零字节）；执行器矩阵 9 例＋wire 串联 11 例（接线 9＋真实
+    执行器链 2）。
+- **产线栈 wt-4 两笔 --no-ff 收编（合并 bb4de40d，预检 exit 0）**＝追平壳
+  7f1ecde7（零自有纯吸收）＋c6704a85（恰 8 文件 1290+/118-，实现批与状
+  态批合一提交）。验收重点逐项成立：
+  - **迁移保真（v0.1 数据零损失）**：002 迁移＝compatibility_observations
+    重建扩维——v02 表建后 INSERT...SELECT 逐列 verbatim 搬运全部 v0.1 行
+    （v0.1 行只含旧三值 spans 均为 v0.2 闭集成员，良构数据上 INSERT 不
+    可能失败，任何失败必须中止迁移）→DROP→RENAME→索引重建；v0.1 六列
+    与 v02 六列同序同型零列差实读核可；format_version 迁移内置、
+    user_version 留宿主。
+  - **CHECK 硬律**：source_span 五值扩维闭集＋resolution_evidence CHECK
+    （resolved 非空⇒证据非空）＋dep_kind 四值＋extraction_method 六值＋
+    confirmed_by_human 0/1；置信度两维两列（extraction_method 版面闭集
+    × extracted_by 身份开放，绝不合并）。
+  - **草案状态标注（候冻结非冻结）核可**：schema.sql 头部 DRAFT/NOT
+    frozen＋冻结片须三件齐备＋协议本草稿「草案候冻结」＋030 内联「冻结
+    前置设计环（不落库、不改 bdl-store 代码）」——store 仍运行 v0.1。
+  - **dep_kind 四值收窄自洽复核成立**（操作者预授权方向认可，集成复核自
+    洽不代冻结裁决）：版本维度由 version_hint 承载（引擎/SDK 钉行落
+    other＋version_hint）信息不丢失；五值备选在协议本草稿开放标注；负
+    例向量恰钉当前草案方向且冻结批改闭集则向量随改；「候冻结批裁决未代
+    决」如实标注。5/5 向量消费测试骑草案 schema 文件（非 store 行为）；
+    本批零 BOOTH 访问。
+- **合并树定向复跑集成亲测全绿（04:3x–05:0x，df 先查 552G/71%）**：cargo
+  test --workspace **106 套件 927/0**（ignored 28 维持；对 163 批基线
+  104 套件 911 净 +16＝恰 wt-2 十一钉〔执行器 9＋wire 2〕＋恰 wt-4 五钉，
+  数字自洽）＋clippy --workspace --all-targets **0 警告 0 错误**＋desktop
+  typecheck 双 tsconfig **exit 0**＋vitest **94 文件 876/876**（867＋恰
+  wt-3 九新钉，与申报逐字一致）＋check:i18n **OK**＋check:leak **155 指
+  纹零泄漏**（独立临时生产构建）。
+- BOARD U16 行（A 面消费闭环＋B 面三环闭环候桌面环 4）＋#46 行（030 草案
+  入库候冻结）更新＋前录轮转（插 164 段轮出 149 段，10 段维持）。本批纪
+  律：wt-5/wt-6/wt-7/wt-8 无新领先零动作（留言系上批世代残余或避让知会
+  照消化）；VUA-7/VUA-8 全程零触碰；`?? _local_p27_devlog.txt` 照例不触
+  碰。
+- **诚实边界维持：零端到端宣称**——合并树复跑系代码面证据（fake 端口/
+  合成工程/合成网关/临时生产构建/草案 schema 测试）；添加素材→保存→呈
+  现 live 全链、导出真机全链（真实工程导出→确认→组装→车间状态）、链身
+  份跨会话语义、v0.2 草案零实现零运行宣称全归 W25（O-2）/冻结批，测试
+  绿≠真机绿。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 156 批（00:0x–00:3x）＝wt-2 处置批（0a7ebbd7）＋wt-3 契约对齐切片
-（c26869ff）＋wt-5 清点批（f0fc3758/6379fadc）三栈交付在途，经本批（157）收
-编。第 155 批（23:4x–00:0x）＝U19 双栈验收入库（wt-2 合并 09a4423f＋wt-3 合
-并 18d6d15f）＋合并树复跑全绿＋wt-4/wt-5/wt-6 三树请求 is-ancestor 就地消化
-＋BOARD U19 行改记实现入库。第 154 批（23:0x–23:4x）＝提案 029 文档批验收入
-库（9125f8f1）＋U15 双语 project-context 收缩改写落地（ab267927）＋wt-7 计划
-批收编（fa2290ab）＋wt-4 提案 030 批（30efafc6，#46 改记已立项）＋wt-6 决策
-输入批（1a30bdde）。第 153 批（18:3x）＝U19/U15 用户裁决落账＋R1–R6 区块注
-记。第 152 批（16:4x）＝U16 裁决立项＋U18 方向暂可＋#46 新行。更早见 BOARD
-前录与 git 历史。
+第 163 批（03:1x–04:0x）＝第 162 批双栈验收入库（wt-3 切片二 A6＋wt-2 B
+面环 2 接线）＋两笔操作者裁决登记（030 定座＋§5.7 案 A；029 环 3 归核心
+域）＋复跑 911/0。第 161 批（02:2x–02:5x）＝第 160 批双栈验收（wt-3 切片
+一＋wt-2 环 1 冻结）＋029 双节冲突集成亲裁。第 159 批＝第 158 批四栈验收
+（wt-3 判决书＋wt-2 #45 两件＋wt-5 030 表态＋wt-6 B 案注记）。第 155 批
+＝U19 双栈验收入库。第 154 批＝029 文档批验收＋U15 落地。更早见 BOARD 前
+录与 git 历史。
 
 ## 阻塞
-无。（U19 实现已入库候 W25 真机；U18 终裁候实机＋数据；proposal 029 环流水
-线候桌面形状核可（A 面）与核心冻结领取（B 面，前置＝A 面落形）；proposal
-030 候定座＋出线面仲裁＋数据/核心内联表态；#45 已裁 B 案先行，注记切片候派
-环境座；#43 真机复验候 W25 用户回访。）
+无。（proposal 029＝**A 面消费闭环**（A1–A6 三切片全入库）＋**B 面环 1 冻
+结＋环 2 接线＋环 3 执行器三环闭环**；环 4 桌面消费候形状核可候操作者派
+发；未决项 2 候用户。proposal 030＝v0.2 草案入库，**候冻结批＝产线座按三
+件齐备纪律定稿**（向量文件形态与数据席收敛在冻结批）；§5.5/§5.6 维持开
+放。#45 余候派＝端口面取消位＋errors.* 词表候选，A 案归 W25。#43 真机复
+验候 W25 用户回访。U18 终裁候实机＋数据。）
 
 ## 下次合并意图
-候验收队列：slot/wt-2／slot/wt-3／slot/wt-5 领先 0（本批终态）；wt-4/wt-6
-全在 main（is-ancestor 实证）；无在途切片候验。候办：proposal 029 A 面形状
-核可（桌面）与 B 面冻结（核心，前置＝A 面落形）；proposal 030 定座＋出线面
-仲裁＋数据/核心内联表态；#45 B 案注记切片候派环境座（协议注记 0.2.x 增笔＋
-material_exec.rs 两行附带校准），A 案归 W25；#43 真机复验候 W25（O-2）；
-U18 终裁候实机＋数据。收尾时段 08:40 起禁开新切片。
+候验收队列：slot/wt-2／slot/wt-3／slot/wt-4 领先 0（本批终态）；slot/wt-5
+／slot/wt-6 落后且领先 0；无在途切片候验。候办：029 环 4 桌面消费（候操
+作者派发/桌面形状核可）；030 冻结批候产线座领取；#45 余候派两件；#43 真
+机复验候 W25（O-2）；U18 终裁候实机＋数据。收尾时段 08:40 起禁开新切片。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-22 00:4x–01:1x，节拍轮工作时段 date 00:40 实测；合并三笔＋复
-跑＋登记＋簿记）：①date 00:40 实测正常时段，pnpm collab:brief ①区判读＝
-wt-3 验收请求（操作者注记指定重点）＋wt-5 验收请求＋wt-4 请求经第 155 批
-is-ancestor 已就地消化（分叉表领先 0 复证）＋wt-7/wt-8 避让知会零动作，失
-鲜工作树无；②核心栈 wt-2 亲审＝观察点 B 裁决四前提逐一亲核（CHECK 闭集
-002:9 字面／put_domain_record 恰三处全在引擎成功后／失败 persist_task_error
-内联／build 消费面按 id 直读＋plan-id 别名回溯），「设计非缺口」论证成立；
-观察点 A 修法单源化亲读＋time.rs 四向量＋存储级排序契约钉（串序严格晚于内
-层）成立，收编 e49fcba7；③桌面栈 wt-3 亲审＝contracts 双闭集/双守卫（v0.1
-戳拒绝＋交接词面检视事实构造即非法＋检视四码刻意缺席负面对表）/方法面；
-mock fall-through 终结；live 端口 0.2 收窄与 v0.1 历史钉（真 wire 修正认
-可）；四装配点行为零分叉；panel succeeded 臂 operation 零二次源＋不宣称交
-接词面；四表 +11 键同集；模型层预留常量 DELETE，收编 f3d0c1f0；④数据栈
-wt-5 两笔收编 860cb523（追平壳零自有＋只读清点状态批，collab-only 免全量）；
-⑤合并树定向复跑亲测全绿＝cargo 102 目标 **893/0**＋clippy **0 警告**＋
-typecheck 双 **0**＋vitest **92 文件 857/857**＋check:i18n **OK**＋check:leak
-**155 指纹零泄漏**（df 先查 592G/69%；首跑后台读数被截断如实重跑两次取全量
-读数）；⑥BOARD 两笔登记（#45 B 案先行操作者裁决＋#43 观察点 C 历史补录）；
-⑦wt-main 状态批（本文件）＋前录轮转；⑧[需用户] 条目照规则跳过未代决；⑨诚
-实边界维持：零端到端宣称——复跑系代码面证据，live 装配系代码面接线，检视
-打开全链与被拦态桌面全链真机呈现归 W25（O-2），测试绿≠真机绿。在手无半途
-切片、除本批外无未提交改动。完成后推送并退出待命。
+本轮（2026-09-22 04:0x–05:0x，节拍轮工作时段 date 04:09 实测；三栈合并＋
+亲审＋复跑＋簿记）：①date 04:09 实测正常时段，pnpm collab:brief ①区判读
+＝wt-3/wt-4 两验收请求与操作者第 164 批派发一致，wt-2 尖 45c57f98 含实现
+批 4f911abc 与派发一致；wt-5 留言系上批世代残余、wt-7/wt-8 避让知会，失
+鲜工作树无；②桌面栈 wt-3 亲审＝四验收重点（不覆写会话草稿＋已保存仅回执
+＋守卫集同源＋零第三导入入口 DOM 钉）逐项核实＋A 面闭环三切片对表成立，
+收编 bf030796；③核心栈 wt-2 亲审＝依赖方向 grep 实证＋诚实空投影四类发
+现逐条＋iff 门＋三态边界＋构造点清点＋wire 11 例逐项成立，收编 40a71ea4；
+④产线栈 wt-4 亲审＝迁移 verbatim 保真零列差实读＋CHECK 硬律＋草案标注＋
+dep_kind 四值自洽复核逐项成立（未代冻结裁决），收编 bb4de40d；⑤合并树定
+向复跑亲测全绿＝cargo 106 套件 **927/0**＋clippy **0/0**＋typecheck 双
+**0**＋vitest **94 文件 876/876**＋check:i18n **OK**＋check:leak **155 指
+纹零泄漏**（df 先查 552G/71%）；⑥BOARD U16 行＋#46 行＋前录轮转（插 164
+轮出 149，10 段维持）＋wt-main 状态批（本文件）；⑦[需用户] 条目照规则跳
+过未代决；⑧诚实边界维持：零端到端宣称——复跑系代码面证据，live 全链与
+导出真机全链归 W25（O-2），v0.2 草案零实现零运行宣称候冻结批，测试绿≠真
+机绿。在手无半途切片、除本状态批外无未提交改动。完成后推送并退出待命。
 
 ## 留言
-- [→操作者] 第 157 批办理完毕：**双栈验收入库＋两笔裁决登记**——核心栈 wt-2
-  （合并 e49fcba7）：观察点 B「设计非缺口」裁决四前提（CHECK 闭集字面/写入
-  路径恰三处全在引擎成功后/失败 persist_task_error/build 消费面按 id 直读）
-  逐一亲核成立；观察点 A 近似历修复＋四向量＋排序契约钉成立。桌面栈 wt-3
-  （合并 f3d0c1f0）：v0.1 拒绝历史钉、live 装配与 v0.2 冻结回执形状逐项对
-  表、「检视不是交棒」呈现纪律（operation 零二次源＋明示词面）成立，真
-  wire 修正（第 154 批 0.1 误钉）如实认可。数据栈 wt-5 收编（860cb523）。
-  **#45 B 案先行＋#43 观察点 C 历史补录两笔已落 BOARD**（注记切片候派环境
-  座，A 案归 W25）。合并树定向复跑全绿（cargo 893/0＋clippy 0＋typecheck
-  双 0＋vitest 857/857＋i18n＋leak 155 指纹）。
-- [→核心/wt-2]（验收回执）第 157 批两笔已收编（e49fcba7）：观察点 B 裁决
-  前提集成亲核成立（三处写入点引擎成功后发射＋失败内联＋CHECK 闭集＋消费面
-  按 id），观察点 A 单源化＋排序钉成立，合并树复跑 893/0＋clippy 0 与申报
-  一致。mock 检视 fall-through 已由 wt-3 随批终结；后续候办：proposal 029
-  B 面冻结候领取（前置＝A 面落形）。
-- [→桌面/wt-3]（验收回执）第 156 批三笔已收编（f3d0c1f0）：contracts 双闭
-  集双守卫/方法面、mock 闭集应答、live 装配（0.2 收窄＋v0.1 历史钉）、四装
-  配点行为零分叉、succeeded 臂 operation 零二次源＋不宣称交接词面、四表
-  +11 键、模型层预留 DELETE 逐项成立；合并树复跑 vitest 857/857＋leak 155
-  指纹与申报一致。第 154 批 0.1 误钉的真 wire 修正如实登记认可。检视打开
-  全链真机呈现归 W25（O-2）。
-- [→数据/wt-5]（验收回执）第 155 批两笔已收编（860cb523）：追平壳零自有、
-  只读清点报告照章验收（collab-only 免全量）。你席观察点 A 已由核心 wt-2
-  第 156 批修复入库（合并 e49fcba7）、观察点 B 已裁决设计非缺口（两处代码
-  doc＋CHECK 拒 build 钉）、观察点 C 已按操作者裁决补录 BOARD #43 行、D 留
-  档——四观察点全部闭环，无待办。
-- [→环境/wt-6]（裁决知会）#45「C# dormant 收窄」操作者已裁＝**B 案先行**
-  （采纳你席第 154 批权衡稿建议：协议注记写明双闸与 C# 子句休眠地位＋守卫
-  句「移除任一闸口前先收窄 C# 面」；附带校准 material_exec.rs:1285/:1551
-  两行 Assets/-only 宽松表述）——**注记切片候派你席**；A 案（C# 拒收垂直
-  切片）排 W25 真机窗口序列（BOARD #45 行 (8) 项在案）。
-- （回执不回执：wt-4 请求经第 155 批 is-ancestor 实证就地消化、wt-7/wt-8
-  系避让知会；历史留言已消化归档，在途事项以 BOARD 与本状态文件当前焦点为
-  准。）
+- [→操作者] 第 164 批办理完毕：**三栈验收入库**——wt-3 切片三（A1 创建升
+  格＋A2 平行文档编辑链＋A3 仓储读面投影选择器）收编（bf030796），029 A
+  面消费闭环成立；wt-2 环 3 导出执行器收编（40a71ea4），029 B 面三环闭
+  环候桌面环 4；wt-4 030 冻结前置设计环草案收编（bb4de40d）候冻结批定
+  稿。合并树定向复跑全绿（cargo 106 套件 927/0＋clippy 0＋typecheck 双 0
+  ＋vitest 94 文件 876/876＋i18n＋leak 155 指纹）。**候裁断/派发**：029
+  环 4 桌面消费（形状核可）候派；030 冻结批候产线座领取（数据席向量形
+  态收敛在冻结批）。
+- [→桌面/wt-3]（验收回执）第 164 批三笔已收编（bf030796）：不覆写会话草
+  稿、已保存仅回执、守卫集同源、零第三导入入口、A 面闭环对表逐项核可；
+  0.7.17 双语在库。环 4 桌面消费（recipe.exportProjectDraft 读面已
+  served）候操作者派发/你席形状核可。
+- [→核心/wt-2]（验收回执）第 164 批两笔已收编（40a71ea4）：依赖方向零违
+  规、诚实空投影、iff 门、能力翻转、wire 11 例逐项核可；合并树复跑 927/0
+  （106 套件）恰含你席十一钉。029 B 面环 1–3 闭环；环 4 桌面消费候派。
+- [→产线/wt-4]（验收回执）第 164 批两笔已收编（bb4de40d）：迁移保真、
+  CHECK 硬律、草案标注核可；dep_kind 四值收窄自洽复核成立（操作者预授权
+  方向认可、集成不代冻结裁决）。**冻结批候你席领取**（三件齐备纪律；向
+  量文件形态与数据席收敛在冻结批办理）。
+- （回执不回执：wt-5/wt-6/wt-7/wt-8 无新领先零动作；历史留言已消化归档，
+  在途事项以 BOARD 与本状态文件当前焦点为准。）

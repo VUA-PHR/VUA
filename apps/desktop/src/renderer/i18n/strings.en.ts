@@ -439,15 +439,16 @@ demoTaskTitle: "Demo task",
   },
   workshop: {
     title: "Avatar workbench",
-    subtitle: "Set up, build and check your avatar, with recovery options when available.",
-    runningSubtitle: "The setup plan is confirmed and a project snapshot has been created.",
+    /** 029 A6 (0.7.16 §8.5): the workshop only displays execution state; starting and approving happen on the recipe page */
+    subtitle: "The workshop presents the execution status of your assembly chain; starting and approving happen on the recipe page.",
+    runningSubtitle: "The workshop presents the chain's live status; task progress follows the task center's authoritative snapshots.",
     idleTitle: "Production pipeline not connected yet",
     idleDescription:
       "Once {recipe} and the setup service are available, you can view progress and recovery options here.",
     blocked: {
       title: "Production environment not ready",
       description:
-        "A supported Unity editor is required to set up and build avatars.",
+        "A supported Unity editor is required for production builds. Once ready, this page presents the assembly chain's execution status.",
       cta: "Prepare creator environment",
     },
     trackAria: "{amf} production stages",
@@ -498,6 +499,17 @@ demoTaskTitle: "Demo task",
       controlsAria: "Replay controls",
       progressAria: "Replay progress {position} / {duration}",
       operationsLine: "{count} automatic operations completed (verifiable in the log)",
+    },
+    /** Execution status face (029 A6, 0.7.16 §8.5): the workshop only displays status, zero initiation actions; plan/assembly/record cards and task lines reuse strings.compose.chain wordings */
+    chain: {
+      title: "Execution status",
+      noChainTitle: "No execution chain in this session",
+      noChainDesc: "Select or save a recipe on the recipe page to start assembling; once started, this page presents the chain's resolve, plan, assembly and record status.",
+      noChainCta: "Go to the recipe page",
+      resolveIdleNote: "Resolve has not been requested yet.",
+      planApprovalNote: "Plan approval and assembly start happen in the recipe page's selected state; this page only presents status.",
+      executeIdleNote: "No assembly execution accepted yet.",
+      taskDecisionNote: "This task needs handling: make the recover or cancel decision in the task center.",
     },
   },
   /**
@@ -868,6 +880,15 @@ demoTaskTitle: "Demo task",
       "Manage product information and assets saved on this PC. Open BOOTH product pages in the app or your browser, and use your own account for purchases.",
     searchPlaceholder: "Search title or product ID",
     searchAria: "Search catalog products",
+    /** 029 slice 3 (A3 local segment): asset picker = warehouse read-face
+     *  projection. No third import entry lives here (imports stay on the
+     *  import page); cloud access is honestly absent pending BOARD #46. */
+    selector: {
+      listAria: "Warehouse entries to add to the recipe",
+      localOnlyNote: "This picker shows local warehouse entries only. Importing new assets stays on the import page; cloud asset access is honestly absent until a ruling lands.",
+      pickCta: "Add",
+      addedBadge: "Already in recipe",
+    },
     filters: {
       availability: "Availability",
       entityType: "Asset type",
@@ -1217,6 +1238,21 @@ demoTaskTitle: "Demo task",
     libraryMappingNote: "This recipe is shown as saved. Editing it in the workbench is not available yet.",
     documentModeNote: "These are the settings saved in the recipe. They have not been verified on this PC.",
     documentModeExit: "Back to the workbench",
+    /** 029 slice 3 (A1 creation entry upgrade / A2 add-assets in selected
+     *  state / A3 local segment of the warehouse read-face projection
+     *  picker). Word-face discipline (U16): the creation entry says
+     *  "create"; "add assets" is its own action and never mixed with
+     *  "assemble". The picker presents local warehouse entries only -
+     *  cloud asset access stays honestly absent pending BOARD #46. */
+    createCta: "Create recipe",
+    addMaterialCta: "Add assets",
+    materialPickerTitle: "Add from the asset warehouse",
+    editSectionTitle: "Pending asset additions",
+    saveEditCta: "Save changes",
+    savingEditCta: "Saving…",
+    editFailedNote: "Saving failed - your changes are kept and you can retry.",
+    editDirtyNote: "There are unsaved asset additions - they are written to the recipe library only after saving succeeds.",
+    editRemoveAria: "Remove pending addition {title}",
     factsLine: 'Revision {revision} - assets: {assets}, instances: {instances}, relations: {relations}.',
     factsLocked: "Dependency choices are pinned. This does not verify the local project.",
     factsUnlocked: "Dependency choices are not pinned. This recipe has not been verified locally.",
@@ -2242,7 +2278,7 @@ demoTaskTitle: "Demo task",
     addCta: 'Add to draft',
     chain: {
       title: "Create your avatar",
-      subtitle: "Save the recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
+      subtitle: "Select or save a recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
       recipeLine: 'Recipe {recipeId} (revision {revision}).',
       staleWarning: "The draft changed. Save it and check assets and dependencies again before using a plan.",
       inspectionNote: "Check results cannot be displayed on this page yet.",

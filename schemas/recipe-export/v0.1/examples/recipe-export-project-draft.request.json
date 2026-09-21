@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "recipe.exportProjectDraft",
+  "params": {
+    "projectPath": "C:\\Users\\demo\\VRChat Projects\\Comfy Avatar 2026"
+  }
+}

@@ -1,12 +1,12 @@
-# VUA design standard v0.7.14
+# VUA design standard v0.7.17
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.14
+> Document version: 0.7.17
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.14)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.17)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-21
+> Updated: 2026-09-22
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -282,7 +282,63 @@ stable untilted cards.
   draft" page as a dialog behind the recipe page hero entry — draft state lives
   in the container layer (shared across UI roots), so opening or closing the
   dialog never destroys it; the save chain and production chain semantics are
-  unchanged. Graph, list, and exploded views remain peers. The list is complete and always available.
+  unchanged.
+- Recipe page as the production hub (0.7.15, U16 user-ruling consumption slice
+  1, proposal 029 A4/A5): the library selection is the preview subject —
+  selecting a library document loads the three views through the document
+  mapping, and the chain identity becomes ready with the selection. The
+  selection is a production-chain fact-source action: the chain identity keys
+  come only from the document identity of the recipe.get read receipt (the
+  receipt's TOP-LEVEL required identity fields recipeId/revision —
+  store-authoritative, not the transparent recipeDocument body itself; the
+  body need not carry a revision), never from list labels
+  or local guesses (UI-02 "chain identity is object identity" extended to the
+  selection fact source); a changed document identity means a new chain — the
+  previous chain's task/record identities step aside. The selected state offers
+  the "assemble" initiation face: the production chain section double-mounts in
+  the recipe page selected state and the composing-draft dialog, consuming the
+  same container-layer store and Gateway port (batch 019 C two-UIs-one-store
+  precedent), advancing resolve → plan → approve → execute; plan approval keeps
+  the production-use-case v0.2 plan.approve idempotent wording (request face is
+  the single key {planId}); a risk decision is not part of this face (if ever
+  needed it is a v0.2→v0.3 version-bump matter for the core freeze ring — the
+  desktop invents nothing and smuggles nothing in). The stale-authorization
+  gate (stale-draft) holds only while a composing draft is present and its
+  content deviates from the saved revision; a selection-driven chain with no
+  draft present is ready. The workshop consumption face is covered in §8.5
+  (0.7.16). **Word
+  discipline (#44×U16, codified for the first time)**: the user-action wording
+  is "assemble" (组装 — including the chain card's execute button and other
+  user-operation copy); "装配" (assembly) is reserved for wardrobe mounting and
+  the AMF Assembly stage semantics (stage names, pipeline stage diagrams, and
+  stage-event copy do not migrate).
+- Create and add assets (0.7.17, U16 user-ruling consumption slice 3, proposal
+  029 A1/A2/A3 local segment): the recipe page hero main path offers a
+  "Create" entry (worded 创建 per the U16 ruling text; never mixed with
+  "add assets"/"assemble"), opening the composing-draft dialog — the draft
+  dialog remains one of the creation starting points and the two-UIs-one-save-
+  chain discipline holds (batch 019 D); creation products enter the recipe
+  library and can be selected (save receipts already trigger library
+  invalidation refetch, landed in slice 1). The selected state offers an
+  "Add assets" action: writing into the selected recipe's asset set rides the
+  recipe.save version chain (baseRevision chain + pre-save dedup D5 + busy
+  guard — the same save-chain shape and the same guard set as the composing
+  draft; the document-edit chain takes the parallel-document-edit-chain form,
+  independent state from the project-independent draft chain, per shape-ruling
+  checkpoint 2 of judgment 4); pending additions and saved facts are presented
+  separately — the three views keep rendering the SAVED document from the
+  recipe.get receipt, and "saved" appears only after the persistence receipt —
+  local edits never masquerade as saved (honesty laws 1/2); failures are
+  presented as failures, pending additions are kept, and retry is explicitly
+  user-initiated. The asset picker is a projection of the warehouse read face
+  (acquire entries): it presents local warehouse entry facts only and honestly
+  marks entries already in the recipe; asset ingestion still uses the two
+  existing import paths on the import page (embedded browsing / system pick →
+  task center) — no third import entry is created for the recipe page (§8.3
+  discipline holds); cloud asset access (pending item 3 = BOARD #46, linked to
+  proposal 030 / U18) stays honestly absent until a ruling lands — no invented
+  cloud entry; read face absent / empty warehouse / no match render as honest
+  empty states. Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
   All views share selection, version snapshots, domain semantics, keyboard operation, and non-drag
@@ -292,6 +348,28 @@ stable untilted cards.
   workshop remains a core visual investment: assets become parts on a track; carrying, alignment,
   locking, node illumination, missing-dependency confusion, and rollback reversal are driven by real
   task events. Increase spectacle after flow logic stabilizes; scheduling does not delete the direction.
+  Workshop as the execution status face (0.7.16, U16 user-ruling consumption
+  slice 2, proposal 029 A6): the workshop only displays status — the resolve →
+  plan → assembly → record cards of the current chain (consuming the same
+  container-layer store, Gateway port, and task-center authoritative snapshots as
+  the recipe-page initiation face; plan approval and assembly start happen in the
+  recipe page's selected state, the status face takes zero initiation actions and
+  keeps only read-style refreshes); with no chain identity this session it renders
+  the honest empty state, and "go to the recipe page" is pure navigation (023
+  projection discipline: zero record identity crosses pages — the workshop fetches
+  authoritative facts itself); when a task needs handling
+  (waitingInput/paused/failed) it points to the task center instead of building a
+  second recovery-decision surface in the status face. The replay view is the
+  status face's recorded-tape form (real-task-event-driven DNA); consumption
+  extends on it and does not start a second presentation system. The material
+  direct-chain (production-use-case v0.1) initiation point leaves the workshop and
+  lands in the warehouse page's action area (pending item 1's desktop form, ruled
+  by the operator batch 162 on 2026-09-22; zero change to the wire face or the
+  component behavior; the whole section hides honestly while capability is not
+  ready) — the material direct chain's semantic origin is the material itself and
+  it joins the continuous asset acquisition path (§8.3) on the same page. The
+  workshop's page slot and gating semantics are unchanged (the honest in-page
+  blocking state still applies while the environment is not ready).
 - **Inspection/Release:** inspection stays a standalone second-level page,
   independent of the workshop (0.7.12 navigation rework confirmed): it is the
   inspection landing point of the main flow "assembly → inspection → SDK
@@ -490,6 +568,46 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.17 (2026-09-22)**: §8.4 addendum for create and add-assets (U16
+  user-ruling consumption slice 3, proposal 029 A1/A2/A3 local segment) — the
+  "Create" entry promoted onto the recipe page main path (U16 ruling wording;
+  the draft dialog remains one creation starting point, two-UIs-one-save-chain
+  holds); the selected-state "Add assets" action rides the recipe.save version
+  chain (same save-chain shape, same guard set: baseRevision + D5 dedup + busy
+  guard; parallel-document-edit-chain form), pending additions and saved facts
+  presented separately with "saved" shown only after the receipt; the asset
+  picker = warehouse read-face projection (no third import entry; cloud access
+  = pending item 3/#46 stays honestly absent before a ruling). This closes the
+  proposal-029 A-face (A1–A6) desktop consumption loop. EN mirror synced.
+
+- **0.7.16 (2026-09-22)**: §8.5 addendum for the workshop as the execution status
+  face (U16 user-ruling consumption slice 2, proposal 029 A6) — the workshop only
+  displays status (resolve/plan/assembly/record cards share the same source and
+  store with the recipe-page initiation face, zero initiation actions; honest
+  no-chain empty state + pure-navigation CTA; task handling points to the task
+  center); §8.4 one-line erratum (registered by integration batch 161): the chain
+  identity source = the recipe.get receipt's TOP-LEVEL required identity fields
+  (store-authoritative), not the recipeDocument body itself; the material
+  direct-chain initiation point leaves the workshop and lands in the warehouse
+  page's action area (pending item 1's desktop form, ruled by operator batch 162,
+  zero change to the v0.1 wire face). EN mirror of the authoritative ZH.
+
+- **0.7.15 (2026-09-22)**: §8.4 addendum for the recipe page as the production hub
+  (U16 user-ruling consumption slice 1, proposal 029 A4/A5) — the library
+  selection is the preview subject and the production-chain fact-source action
+  (chain identity keys come only from the recipe.get receipt document identity,
+  never list labels or local guesses; a changed document identity means a new
+  chain); the selected-state assemble initiation face = the production chain
+  section double-mounted in the recipe page and the composing-draft dialog,
+  consuming the same container-layer store and Gateway port; plan approval keeps
+  the production-use-case v0.2 plan.approve idempotent wording (single key
+  {planId}, no risk decision on this face); the stale-authorization gate
+  (stale-draft) holds only while a composing draft is present and deviates from
+  the saved revision; #44×U16 word discipline codified for the first time (the
+  user action is "assemble" (组装); wardrobe mounting and the AMF Assembly stage
+  keep "装配"). The workshop page is untouched (§8.5 addendum awaits slice 2,
+  0.7.16). EN mirror of the authoritative ZH.
 
 - **0.7.14 (2026-09-21)**: §8.6 addendum for handoff admission and the standalone open path (U19
   user-ruling consumption slice) — the Release build-record handoff entry presents by a record-state

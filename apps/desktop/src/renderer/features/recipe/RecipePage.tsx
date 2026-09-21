@@ -30,9 +30,11 @@ import {
 import {
   narrowRecipeDocumentFacts,
   narrowRecipeDocumentStructure,
+  narrowRecipeDocumentReceipt,
   recipeDocumentToGraphView,
   narrowRecipeLibraryEntries,
   selectLibraryRecipe,
+  type RecipeDocumentReceipt,
   type RecipeDocumentFacts,
   type RecipeLibraryEntryNarrowed,
 } from "./recipe-model.ts";
@@ -66,6 +68,20 @@ import {
 } from "./recipe-versions.ts";
 import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
 import { ComposePage } from "../compose/ComposePage.tsx";
+import { ProductionChainSection } from "../compose/ProductionChainSection.tsx";
+import { RecipeDocumentEditSection } from "./RecipeDocumentEditSection.tsx";
+import { productionChainRecipeSelectedAction } from "../../app/production-chain-store.ts";
+import {
+  recipeDocumentAdditionIds,
+  recipeDocumentAssetIds,
+} from "./recipe-document-edit-model.ts";
+import {
+  recipeDocumentEditAddItemAction,
+  recipeDocumentEditClearedAction,
+  recipeDocumentEditSelectedAction,
+  useRecipeDocumentEdit,
+} from "../../app/recipe-document-edit-store.ts";
+import { WarehouseEntrySelector } from "../warehouse/WarehouseEntrySelector.tsx";
 import "./recipe.css";
 
 const copy = strings.recipe;
@@ -539,7 +555,9 @@ function RecipeLibrarySection({
   refreshKey,
 }: {
   selectedId: string | null;
-  onSelectDocument: (document: unknown) => void;
+  /** 文档回执上抛(029 A4):narrowRecipeDocumentReceipt 收窄后的回执(文档
+   *  身份＋文档本体);null = 回执不可解释/读取失败(诚实失败路径) */
+  onSelectDocument: (receipt: RecipeDocumentReceipt | null) => void;
   onSelectId: (id: string) => void;
   refreshKey: number;
 }) {
@@ -599,13 +617,16 @@ function RecipeLibrarySection({
         if (!alive) return;
         if (!result?.ok) {
           setFacts(null);
+          setStructure(null);
           onSelectDocument(null);
           return;
         }
-        const document = (result.value as { recipe?: unknown }).recipe;
-        setFacts(narrowRecipeDocumentFacts(document));
-        setStructure(narrowRecipeDocumentStructure(document));
-        onSelectDocument(document);
+        // 冻结 wire 面 recipe-get.result v0.2:文档本体在 recipeDocument 键
+        // (链身份只取回执文档身份,029 A4);收窄失败 = 诚实失败路径
+        const receipt = narrowRecipeDocumentReceipt(result.value);
+        setFacts(receipt === null ? null : narrowRecipeDocumentFacts(receipt.document));
+        setStructure(receipt === null ? null : narrowRecipeDocumentStructure(receipt.document));
+        onSelectDocument(receipt);
       })
       .catch(() => { if (alive) onSelectDocument(null); });
     return () => {
@@ -712,6 +733,17 @@ export function RecipePage() {
   const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
   const [documentMode, setDocumentMode] = useState(false);
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
+  /** 素材选择器弹窗(029 A3 本地段):仓储读面投影,供选中态「添加素材」 */
+  const [materialPickerOpen, setMaterialPickerOpen] = useState(false);
+  /** 文档编辑态(029 A2):底稿素材 ∪ 待保存新增 = 选择器「已在本配方」集 */
+  const edit = useRecipeDocumentEdit();
+  const addedIds = useMemo(() => {
+    if (edit === null) return new Set<string>();
+    return new Set<string>([
+      ...recipeDocumentAssetIds(edit.document),
+      ...recipeDocumentAdditionIds(edit.additions),
+    ]);
+  }, [edit]);
 
   useEffect(() => {
     if (documentMode) return;
@@ -895,9 +927,17 @@ export function RecipePage() {
   // BG-1(W24 读面预备,A 路径已确认):文档库共享选择骨架——选中库文档即
   // 经映射(recipeDocumentToGraphView)装载三视图,state=expected 期望态
   // 词表(语义标注随视图呈现);清除选择回合成纵向(reloadNonce 重取)
+  // 029 A4:选择同时是链的事实源动作——productionChainRecipeSelectedAction
+  // 只吃 recipe.get 回执文档身份(收窄自 narrowRecipeDocumentReceipt),
+  // 链身份即对象身份,不取列表标签不取本地猜测。
 
-  const handleLibraryDocument = useCallback((document: unknown) => {
-    const view = recipeDocumentToGraphView(document);
+  const handleLibraryDocument = useCallback((receipt: RecipeDocumentReceipt | null) => {
+    if (receipt === null) { setLoadFailed(true); return; }
+    productionChainRecipeSelectedAction(receipt.recipeId, receipt.revision);
+    // 029 A2:编辑态随选中事实源对齐(身份相同保留待保存新增,身份变更即
+    // 新编辑会话;文档本体为保存合并的透明底稿)
+    recipeDocumentEditSelectedAction(receipt.recipeId, receipt.revision, receipt.document);
+    const view = recipeDocumentToGraphView(receipt.document);
     if (view === null || view.kind !== "graph") { setLoadFailed(true); return; }
     setLoadFailed(false);
     setDocumentMode(true);
@@ -916,6 +956,9 @@ export function RecipePage() {
   const exitDocumentMode = () => {
     setSelectedLibraryRecipeId(null);
     setDocumentMode(false);
+    setMaterialPickerOpen(false);
+    // 029 A2:退出选中态即清除编辑会话(待保存新增随选中清除,不跨配方携带)
+    recipeDocumentEditClearedAction();
     setReloadNonce((nonce) => nonce + 1);
   };
 
@@ -964,9 +1007,14 @@ export function RecipePage() {
             </Button>
           ) : null}
         </div>
-        {/* 搭配草稿入口(2026-09-20 导航重构):原独立页收敛为本页内弹窗——
-            项目无关草稿的连续搭配起点仍在,只是不再占一个侧栏页位 */}
+        {/* 创建入口(029 A1 升格):配方页主路径「创建」(U16 裁决原文词面,
+            不与「添加素材/组装」混用)打开搭配草稿弹窗——草稿弹窗保留为创建
+            起点之一,两 UI 一保存链纪律不破(019 批 D);创建产物入配方库并可
+            被选择(保存回执已接库失效重取) */}
         <div className="vua-page__actions">
+          <Button variant="primary" onClick={() => setComposeDialogOpen(true)}>
+            {copy.createCta}
+          </Button>
           <Button variant="default" onClick={() => setComposeDialogOpen(true)}>
             {strings.nav.pages.composePage}
           </Button>
@@ -991,14 +1039,31 @@ export function RecipePage() {
 
       {documentMode ? (
         <Card>
-          <p className="vua-caption vua-text-secondary" role="note">
-            {copy.documentModeNote}
-          </p>
-          <Button variant="default" onClick={exitDocumentMode}>
-            {copy.documentModeExit}
-          </Button>
+          <div className="vua-page__stack">
+            <p className="vua-caption vua-text-secondary" role="note">
+              {copy.documentModeNote}
+            </p>
+            {/* 029 A2(选中态添加素材动作):选择器只是仓储读面投影(A3 本地
+                段);挑选进入待保存新增,保存走 recipe.save 版本链(同一保存
+                链形状、同一守卫集)——本地新增绝不冒充已保存 */}
+            <div className="vua-page__actions">
+              <Button variant="default" onClick={() => setMaterialPickerOpen(true)}>
+                {copy.addMaterialCta}
+              </Button>
+              <Button variant="default" onClick={exitDocumentMode}>
+                {copy.documentModeExit}
+              </Button>
+            </div>
+            <RecipeDocumentEditSection />
+          </div>
         </Card>
       ) : null}
+
+      {/* 029 A5(选中态组装发起面):生产链段双挂载消费同一容器层 store 与
+          Gateway 端口(019 批 C 两 UI 同 store 先例)——选择驱动链身份就绪后
+          在选中态直接发起组装(解析→计划→批准→执行);无链身份时链段自行
+          不渲染,车间页消费归切片二(A6) */}
+      {documentMode ? <ProductionChainSection /> : null}
 
       {loadFailed ? (
         <Card>
@@ -1190,6 +1255,27 @@ export function RecipePage() {
         onClose={() => setComposeDialogOpen(false)}
       >
         <ComposePage />
+      </ContentDialog>
+      {/* 素材选择器(029 A3 本地段):仓储读面(acquire entries)投影——只
+          呈现本地条目事实,云端素材接入(未决项 3 = #46)裁决前诚实缺席;
+          素材入库仍走素材导入页既有两路径,本弹窗不立第三导入入口 */}
+      <ContentDialog
+        open={materialPickerOpen}
+        title={copy.materialPickerTitle}
+        closeLabel={strings.common.dialogClose}
+        onClose={() => setMaterialPickerOpen(false)}
+      >
+        <WarehouseEntrySelector
+          addedIds={addedIds}
+          onPick={(entry) =>
+            recipeDocumentEditAddItemAction({
+              warehouseItemId: entry.warehouseItemId,
+              title: entry.displayName,
+              role: null,
+              nameHint: null,
+            })
+          }
+        />
       </ContentDialog>
     </div>
   );

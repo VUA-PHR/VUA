@@ -453,6 +453,23 @@ pub const PACKAGES_OPS_ENVELOPE_SCHEMA_VERSION_V06: &str = "0.6";
 /// const tells the consumer which word face answered, never a guess).
 pub const PACKAGES_REPOS_SCHEMA_VERSION_V02: &str = "vua.packages-repos/v0.2";
 
+/// The recipe-export v0.1 ENVELOPE version constant (proposal 029 B-face
+/// wiring loop 2, core batch 2026-09-22; the F5 templates wiring precedent):
+/// the frozen `schemas/recipe-export/v0.1/command.schema.json` locks this
+/// envelope generation — carried as its OWN named constant so consumers key
+/// on the core-owned constant, never a private literal. Independent of the
+/// family const below (the c914cf2 standing rule: every wire row carries a
+/// version constant of its own).
+pub const RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01: &str = "0.1";
+
+/// The recipe-export v0.1 RESULT family constant: the draft document carries
+/// `vua.recipe-export/v0.1` as its own family const — the route stamps it at
+/// envelope assembly (the repoCatalog P1 discipline: the route stamps the
+/// consts, the port facts stay verbatim), and the word face is ZERO byte
+/// change: the constant locks exactly the string the frozen result schema
+/// carries.
+pub const RECIPE_EXPORT_SCHEMA_VERSION_V01: &str = "vua.recipe-export/v0.1";
+
 /// Injectable verification face for the `environment.verifyEditor` route:
 /// the production composition defaults to the primitive's system wiring
 /// (`verify_editor_path_system`, whose non-Windows behavior is the
@@ -540,6 +557,19 @@ pub struct ProductionUseCaseConfig {
     /// absence — nothing here fabricates an acceptance receipt, a task
     /// snapshot, or a handoff fact.
     pub handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
+    /// The recipe-export v0.1 port face (proposal 029 B-face wiring loop 2,
+    /// the core `ProjectDraftExportPort` trait): the synchronous read-only
+    /// `recipe.exportProjectDraft` Query derives a Recipe project DRAFT
+    /// from one registered Unity project. Absent = the route answers the
+    /// frozen honest absence `vua.recipe_export.unavailable` — never a
+    /// fabricated draft (ruling 2: the draft is its own type; promotion is
+    /// only ever the user-confirmed recipe.save chain). The REAL export
+    /// executor is the NEXT loop's implementation slice: until an adapter
+    /// overrides the defaulted `export_capabilities` accessor (declared-
+    /// none default, the 025 `catalog_capabilities` law) the served row and
+    /// the route stay honestly unavailable even when a port object is
+    /// wired.
+    pub draft_exporter: Option<Arc<dyn vua_orchestrator::ProjectDraftExportPort>>,
 }
 
 struct ProductionUseCaseServices {
@@ -557,6 +587,12 @@ struct ProductionUseCaseServices {
     /// (provider binary) wires the real `EditorHandoffAdapter` since the
     /// 023 assembly slice.
     handoff: Option<Arc<dyn vua_orchestrator::ReleaseHandoffPort>>,
+    /// Proposal 029 B-face wiring loop 2 (the core
+    /// `ProjectDraftExportPort` trait): the `recipe.exportProjectDraft`
+    /// synchronous read-only Query. Absent, or present with the defaulted
+    /// declared-none capability, = the route answers the frozen honest
+    /// absence `vua.recipe_export.unavailable` — never a fabricated draft.
+    draft_exporter: Option<Arc<dyn vua_orchestrator::ProjectDraftExportPort>>,
     /// W23 production-evidence store — consumed by the Local Resolution
     /// executor (next cut).
     #[allow(dead_code)]
@@ -808,6 +844,7 @@ pub fn run_provider_host_full(
             project_root: config.project_root,
             editor_selection: config.editor_selection,
             handoff: config.handoff,
+            draft_exporter: config.draft_exporter,
             bdl,
             runtime,
             env_initial,
@@ -1218,6 +1255,14 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
         return downloads_query_request(state, method, request, request_id, correlation_id);
     }
     if method.starts_with("recipe.") {
+        // Proposal 029 B-face loop 2: the export face is its own word-row
+        // family (recipe-export, ruling 3) with its OWN honest-absence code
+        // `vua.recipe_export.unavailable` — it must not fold into the
+        // `vua.recipe.unavailable` document-face absence, so it dispatches
+        // BEFORE the use-case document-face fold.
+        if method == "recipe.exportProjectDraft" {
+            return recipe_export_request(state, request, request_id, correlation_id);
+        }
         return recipe_request(state, method, request, request_id, correlation_id);
     }
     if method.starts_with("plan.") {
@@ -1492,6 +1537,23 @@ fn served_capabilities(state: &HostState) -> Value {
         _ => "unavailable",
     };
     let overlay_availability = recipe_availability;
+    // Proposal 029 B-face wiring loop 2 (core batch 2026-09-22): the
+    // project-draft export read face rides the use-case wiring AND the
+    // port's OWN defaulted capability accessor `export_capabilities`
+    // (default declared-none — the F2/F5 accessor law; ORC-DEV-004: no
+    // implementation, no reservation). One row serving the ONE method
+    // (the removeOps/installOps/registerOps/repoOps/createOps/
+    // repoCatalogOps/templatesOps/repoLifecycleOps one-row precedent): the
+    // declared-none default keeps the row honestly unavailable until the
+    // export-executor implementation slice flips it with the real
+    // adapter's override.
+    let recipe_export_availability = match state.use_cases.as_ref() {
+        Some(use_cases) => match use_cases.draft_exporter.as_ref() {
+            Some(exporter) if exporter.export_capabilities().export_project_draft => "available",
+            _ => "unavailable",
+        },
+        None => "unavailable",
+    };
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
     let inspection_queries_availability = recipe_availability;
@@ -1509,6 +1571,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {"operationId": "inspection.requestRun", "availability": inspection_run_availability},
         {"operationId": "production.useCase", "availability": production_availability},
         {"operationId": "production.recipes", "availability": recipe_availability},
+        {
+            "operationId": "recipe.exportProjectDraft",
+            "availability": recipe_export_availability,
+        },
         {"operationId": "project.import-copy", "availability": project_ops_availability},
         {"operationId": "project.setNote", "availability": project_ops_availability},
         {"operationId": "packages.query", "availability": packages_availability},
@@ -2620,6 +2686,144 @@ fn recipe_request(
             "validation",
         )),
     }
+}
+
+/// `recipe.exportProjectDraft` (proposal 029 B-face freeze loop 1 word row,
+/// wired by this loop-2 batch): the synchronous read-only Query that derives
+/// a RECIPE PROJECT DRAFT (never a Recipe — ruling 2: the draft is its own
+/// type; promotion is only ever the user-confirmed recipe.save chain) from
+/// one registered Unity project. Route arm order (the packageCatalog
+/// isomorph): (1) the export PORT wiring answers first — absent use-case
+/// services or an absent `draft_exporter` is the frozen honest absence
+/// `vua.recipe_export.unavailable`, never a fabricated draft (the face's
+/// OWN family code: the router dispatches here BEFORE the document-face
+/// fold so the absence never masquerades as `vua.recipe.unavailable`);
+/// (2) the closed single-key params set {projectPath, non-empty} answers
+/// `vua.recipe_export.invalid_params` at the route layer, a pure shape
+/// verdict BEFORE the gate (any extra key is a shape violation, never a
+/// default); (3) the registration calibration rides the SAME 013 inspection
+/// aggregate `project.inspectProject` uses (same fact, same code:
+/// `vua.project.project_not_found` — the 024 packages-query reuse ruling;
+/// an off-aggregate path never reaches the port; absent project-ops wiring
+/// means the calibration does not exist, so the whole face stays honestly
+/// absent); (4) the capability gate reads the NEW defaulted port accessor
+/// `export_capabilities` (default declared-none — the F5
+/// `template_capabilities` accessor law; ORC-DEV-004) BEFORE the port call,
+/// answering the same honest-absence code the face's closed set reserves
+/// for it; (5) the port's typed refusals travel VERBATIM (the read-face
+/// pass-through discipline — no read-face fold exists), and an OK
+/// projection is the port's `ProjectDraftDocumentV01` facts through serde,
+/// stamped with the family const at envelope assembly (the P1 discipline:
+/// the route stamps the consts, the port facts stay verbatim — the
+/// packageId-ascending order and the missing-list closed set are PRODUCER
+/// contracts of the frozen word face, pinned by the wire tests, never route
+/// rewrites). An honest empty dependencies array and a null
+/// unityVersionConstraint plus its environmentUnityVersion marker ride as
+/// SUCCESS facts (observation failure sets no error code — honesty rules
+/// 1/2). No tasked face exists here (ruling 3: local read-only scan —
+/// nothing to cancel, nothing to recover, no nine-state task).
+fn recipe_export_request(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(exporter) = state
+        .use_cases
+        .as_ref()
+        .and_then(|use_cases| use_cases.draft_exporter.clone())
+    else {
+        return recipe_export_unavailable(request_id, correlation_id);
+    };
+    let Some(params) = request.get("params").and_then(Value::as_object) else {
+        return recipe_export_invalid_params(request_id, correlation_id);
+    };
+    // The closed single-key set: exactly projectPath, a non-empty string.
+    if params.len() != 1 {
+        return recipe_export_invalid_params(request_id, correlation_id);
+    }
+    let Some(project_path) = params.get("projectPath").and_then(Value::as_str) else {
+        return recipe_export_invalid_params(request_id, correlation_id);
+    };
+    if project_path.is_empty() {
+        return recipe_export_invalid_params(request_id, correlation_id);
+    }
+    // The registration calibration (the packageCatalog same-face
+    // discipline): without the 013 aggregate the not-found calibration does
+    // not exist, so the whole face stays honestly absent.
+    let Some(project_ops) = state.project_ops.clone() else {
+        return recipe_export_unavailable(request_id, correlation_id);
+    };
+    let snapshot = collect_project_inspections(
+        &project_ops.vcc_settings_candidates,
+        &project_ops.manager_roots,
+        &SystemClock,
+    );
+    let registered = snapshot
+        .projects
+        .iter()
+        .any(|project| project.path == project_path);
+    if !registered {
+        return FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.project.project_not_found",
+            "errors.project.projectNotFound",
+            "validation",
+        ));
+    }
+    // The capability gate (declared-none default) BEFORE the port call.
+    if !exporter.export_capabilities().export_project_draft {
+        return recipe_export_unavailable(request_id, correlation_id);
+    }
+    match exporter.export_project_draft(project_path) {
+        Ok(draft) => {
+            let mut result = serde_json::to_value(&draft).unwrap_or_else(|_| json!({}));
+            result["schemaVersion"] = json!(RECIPE_EXPORT_SCHEMA_VERSION_V01);
+            FrameOutcome::Response(application_success(
+                request_id,
+                json!({
+                    "schemaVersion": RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01,
+                    "operation": "recipe.exportProjectDraft",
+                    "result": result,
+                }),
+            ))
+        }
+        Err(error) => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            &error.code,
+            &error.message_key,
+            app_error_category(error.category),
+        )),
+    }
+}
+
+/// The recipe-export face's honest absence: the port is not wired, the
+/// capability accessor answers declared-none, or the registration
+/// calibration face is absent — the route answers the family's own code,
+/// never a fabricated draft.
+fn recipe_export_unavailable(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.recipe_export.unavailable",
+        "errors.recipeExport.unavailable",
+        "unavailable",
+    ))
+}
+
+/// The recipe-export face's params shape verdict: the closed single-key
+/// {projectPath} set is violated — a validation failure, never a default,
+/// and never a masquerade for honest absence.
+fn recipe_export_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.recipe_export.invalid_params",
+        "errors.recipeExport.invalidParams",
+        "validation",
+    ))
 }
 
 /// The plan approval/read face (011 section 4): draft -> approved is the

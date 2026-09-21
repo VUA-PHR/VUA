@@ -422,13 +422,14 @@ demoTaskTitle: "데모 작업",
   },
   workshop: {
     title: "아바타 작업 공간",
-    subtitle: "아바타 설정, 빌드, 검사를 진행합니다. 복구 가능한 경우 복구 방법을 안내합니다.",
-    runningSubtitle: "설정 계획을 확인했고 프로젝트 스냅샷을 만들었습니다.",
+    /** 029 A6(0.7.16 §8.5): 작업 공간은 실행 상태만 표시. 시작과 승인은 레시피 페이지에서 진행 */
+    subtitle: "작업 공간은 조립 체인의 실행 상태를 표시합니다. 시작과 승인은 레시피 페이지에서 이루어집니다.",
+    runningSubtitle: "작업 공간은 체인의 실시간 상태를 표시합니다. 작업 진행 상황은 작업 센터의 권위 있는 스냅샷을 따릅니다.",
     idleTitle: "제작 파이프라인이 아직 연결되지 않았습니다",
     idleDescription: "{recipe}와 설정 서비스를 사용할 수 있게 되면 진행 상황과 복구 방법이 여기에 표시됩니다.",
     blocked: {
       title: "제작 환경이 아직 준비되지 않았습니다",
-      description: "아바타를 설정하고 빌드하려면 지원되는 Unity 에디터가 필요합니다.",
+      description: "제작 빌드에는 지원되는 Unity 에디터가 필요합니다. 준비되면 이 페이지에 조립 체인의 실행 상태가 표시됩니다.",
       cta: "제작 환경 준비",
     },
     trackAria: "{amf} 제작 단계",
@@ -477,6 +478,18 @@ demoTaskTitle: "데모 작업",
       controlsAria: "재생 컨트롤",
       progressAria: "재생 위치 {position} / {duration}",
       operationsLine: "자동 작업 {count}개 완료(로그로 검증 가능)",
+    },
+    /** 실행 상태면(029 A6, 0.7.16 §8.5): 작업 공간은 상태 표시만 하고 발기 액션 없음.
+     *  계획/조립/기록 카드와 작업 행은 strings.compose.chain 어휘를 단일 소스로 재사용 */
+    chain: {
+      title: "실행 상태",
+      noChainTitle: "이 세션에 실행 체인이 없습니다",
+      noChainDesc: "레시피 페이지에서 레시피를 선택하거나 저장하면 조립을 시작할 수 있습니다. 시작 후 이곳에 해당 체인의 해석·계획·조립·기록 상태가 표시됩니다.",
+      noChainCta: "레시피 페이지로 이동",
+      resolveIdleNote: "아직 해석을 요청하지 않았습니다.",
+      planApprovalNote: "계획 승인과 조립 시작은 레시피 페이지 선택 상태에서 이루어집니다. 이 페이지는 상태만 표시합니다.",
+      executeIdleNote: "아직 조립 실행이 접수되지 않았습니다.",
+      taskDecisionNote: "이 작업에는 처리가 필요합니다: 작업 센터에서 복구 또는 취소를 결정하세요.",
     },
   },
   /** F3 프로덕션 플로우(워크숍 페이지에 호스팅;production-use-case v0.1 초안).
@@ -811,6 +824,15 @@ rolled_back: "롤백됨",
     subtitle: "이 PC에 저장된 상품 정보와 에셋을 관리합니다. 앱이나 브라우저에서 BOOTH 상품 페이지를 열고 본인 계정으로 구매하세요.",
     searchPlaceholder: "제목 또는 상품 ID 검색",
     searchAria: "카탈로그 상품 검색",
+    /** 029 슬라이스 3(A3 로컬 구간): 자산 선택기=창고 읽기 면의 투영.
+     *  여기에 세 번째 가져오기 진입을 두지 않음(가져오기는 가져오기 페이지).
+     *  클라우드 연결은 BOARD #46 재정까지 정직하게 부재. */
+    selector: {
+      listAria: "레시피에 추가할 수 있는 창고 항목",
+      localOnlyNote: "선택기는 로컬 창고 항목만 표시합니다. 새 자산 가져오기는 가져오기 페이지에서 진행하세요. 클라우드 자산 연결은 재정이 있을 때까지 정직하게 부재합니다.",
+      pickCta: "추가",
+      addedBadge: "레시피에 추가됨",
+    },
     filters: {
       availability: "판매 상태",
       entityType: "에셋 유형",
@@ -1152,6 +1174,18 @@ rolled_back: "롤백됨",
     libraryMappingNote: "저장된 레시피를 표시하고 있습니다. 작업 화면에서 편집하는 기능은 아직 지원하지 않습니다.",
     documentModeNote: "레시피에 저장된 설정입니다. 이 PC에서는 아직 검증되지 않았습니다.",
     documentModeExit: "작업 화면으로 돌아가기",
+    /** 029 슬라이스 3(A1 생성 진입 승격/A2 선택 상태 자산 추가/A3 창고 읽기 면 투영 선택기 로컬 구간).
+     *  워딩 규율(U16): 생성 진입은 "생성". "자산 추가"는 별도 동작이며 "조립"과 혼용하지 않음.
+     *  선택기는 로컬 창고 항목만 표시. 클라우드 자산은 BOARD #46 재정까지 정직하게 부재. */
+    createCta: "레시피 만들기",
+    addMaterialCta: "자산 추가",
+    materialPickerTitle: "에셋 창고에서 추가",
+    editSectionTitle: "저장 대기 중인 추가 자산",
+    saveEditCta: "변경 사항 저장",
+    savingEditCta: "저장 중…",
+    editFailedNote: "저장에 실패했습니다. 변경 사항은 유지되며 다시 시도할 수 있습니다.",
+    editDirtyNote: "저장되지 않은 자산 추가가 있습니다. 저장이 성공한 후에만 레시피 라이브러리에 기록됩니다.",
+    editRemoveAria: "저장 대기 추가 {title} 제거",
     factsLine: '리비전 {revision} - 에셋:{assets}, 인스턴스:{instances}, 관계:{relations}.',
     factsLocked: "의존성 구성이 고정되어 있습니다. 로컬 프로젝트가 검증되었다는 뜻은 아닙니다.",
     factsUnlocked: "의존성 구성이 고정되지 않았습니다. 이 레시피는 로컬에서 검증되지 않았습니다.",
@@ -2149,7 +2183,7 @@ rolled_back: "롤백됨",
     addCta: '초안에 추가',
     chain: {
       title: "아바타 제작",
-      subtitle: "레시피를 저장하고 에셋과 의존성을 확인한 뒤 계획을 검토하세요. 아바타 설정을 실행한 후 결과를 확인할 수 있습니다.",
+      subtitle: "레시피를 선택하거나 저장한 뒤 에셋과 의존성을 확인하고 계획을 검토하세요. 아바타 설정을 실행한 후 결과를 확인할 수 있습니다.",
       recipeLine: '레시피 {recipeId}(리비전 {revision}).',
       staleWarning: "초안이 변경되었습니다. 저장한 후 에셋과 의존성을 다시 확인하세요. 기존 계획은 사용할 수 없을 수 있습니다.",
       inspectionNote: "이 페이지에서는 아직 검사 결과를 표시할 수 없습니다.",

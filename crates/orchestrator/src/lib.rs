@@ -27,6 +27,7 @@ mod process;
 mod project_identity;
 mod provision;
 mod recipe;
+mod recipe_export;
 mod release_handoff;
 mod runtime;
 mod sqlite_task_store;
@@ -114,6 +115,11 @@ pub use process::{
 pub use project_identity::{ProjectIdentity, ProjectIdentityError};
 pub use provision::{ProjectProvisionError, VpmProjectProvisioner};
 pub use recipe::*;
+pub use recipe_export::{
+    DraftDependencyV01, DraftEnvironmentV01, DraftOriginV01, MissingDimensionV01,
+    OnDiskProjectDraftExporter, ProjectDraftDocumentV01, ProjectDraftExportCapabilities,
+    ProjectDraftExportPort, VuaIdentityStatusV01,
+};
 pub use runtime::{
     recovery_dispositions, SubmitRequest, TaskContext, TaskExit, TaskJob, TaskRecoveryDisposition,
     TaskRuntime, TaskSnapshot,

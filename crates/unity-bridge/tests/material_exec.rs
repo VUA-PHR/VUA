@@ -211,21 +211,35 @@ impl UnityBridge for FakeBridge {
         }
         match state.script.pop_front() {
             Some(outcome) => outcome,
-            None => Ok(UnityResult {
-                schema_version: 1,
-                command_id: command.command_id.clone(),
-                status: ResultStatus::Succeeded,
-                changed_paths: vec![],
-                diagnostics: vec![],
-                steps: Vec::new(),
-                replayed: None,
-                snapshot_id: None,
-                restored_from: None,
-                project_fingerprint_before: None,
-                data: serde_json::json!({
+            None => {
+                // 第 158 批（BOARD #45(2)）：the executor now parses a
+                // Succeeded validate receipt's loadedAssetPaths strictly
+                // (missing field = honest bridge_failed), so the default
+                // fake mirrors the real C# handler: the Ordinal-sorted
+                // expected list IS the loaded list on success.
+                let mut data = serde_json::json!({
                     "projectFingerprint": format!("fp-{}", state.commands.len())
-                }),
-            }),
+                });
+                if command.operation == vua_orchestrator::UnityOperation::ValidateAssetPaths {
+                    let mut loaded = command.payload.expected_asset_paths.clone();
+                    loaded.sort();
+                    data["loadedAssetPaths"] =
+                        loaded.into_iter().map(serde_json::Value::String).collect();
+                }
+                Ok(UnityResult {
+                    schema_version: 1,
+                    command_id: command.command_id.clone(),
+                    status: ResultStatus::Succeeded,
+                    changed_paths: vec![],
+                    diagnostics: vec![],
+                    steps: Vec::new(),
+                    replayed: None,
+                    snapshot_id: None,
+                    restored_from: None,
+                    project_fingerprint_before: None,
+                    data,
+                })
+            }
         }
     }
 }
@@ -386,6 +400,10 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
         .read(&format!("material-{}", confirmation.plan.plan_id))
         .expect("receipt published");
     assert_eq!(record.final_project_fingerprint.as_deref(), Some("fp-1"));
+    // Note: the flat fixture archive carries no guid/pathname entries, so
+    // the expectations list — and hence the evidence list — is honestly
+    // empty here; the non-empty evidence path is pinned by
+    // b3_batch158_validation_evidence_carries_the_loaded_list_into_the_record.
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }
@@ -559,6 +577,196 @@ fn b3_batch148_mutating_success_without_fingerprint_fails_honestly() {
         vua_orchestrator::BuildRecordStatus::Failed
     );
     assert_eq!(record.final_project_fingerprint, None);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- batch 158 pins (BOARD #45(2) evidence face + #45(4) residue policy) ---
+
+/// 第 158 批（BOARD #45(2) 证据面收口）：旧代码对 Succeeded validate 回执缺
+/// `data.loadedAssetPaths` 时 `unwrap_or_default` 静默记成「已验证、零素材
+/// 加载」——Bridge 从未报告过的空清单被写成证据。钉：缺字段（臂一）与含
+/// 非字符串条目（臂二）都按 bridge_failed 族诚实失败，回滚照跑、Failed
+/// 回执照发，validation 节保持 None（从未宣称过验证证据）。
+#[test]
+fn b3_batch158_validate_success_without_loaded_asset_paths_evidence_fails_honestly() {
+    for (label, data) in [
+        (
+            "missing-field",
+            serde_json::json!({ "projectFingerprint": "fp-validate" }),
+        ),
+        (
+            "non-string-entry",
+            serde_json::json!({
+                "projectFingerprint": "fp-validate",
+                "loadedAssetPaths": ["Assets/Asset.prefab", 42],
+            }),
+        ),
+    ] {
+        let (base, project) = make_world(label);
+        let source = base.join("source");
+        // Script: the import leg gets a scripted success; the validate leg
+        // gets a Succeeded receipt WITHOUT usable loadedAssetPaths evidence.
+        let bridge = FakeBridge::new(vec![
+            Ok(scripted_result(Some("fp-import"))),
+            Ok(UnityResult {
+                schema_version: 1,
+                command_id: "validate-no-evidence".into(),
+                status: ResultStatus::Succeeded,
+                changed_paths: vec![],
+                diagnostics: vec![],
+                steps: Vec::new(),
+                replayed: None,
+                snapshot_id: None,
+                restored_from: None,
+                project_fingerprint_before: None,
+                data,
+            }),
+        ]);
+        let executor = executor(&base, bridge, FakeVpm::new());
+        let confirmation =
+            confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
+
+        let report = executor.execute(
+            &confirmation,
+            &source,
+            &project,
+            &base.join("artifacts"),
+            &MaterialCancelToken::new(),
+        );
+
+        assert_eq!(report.status, MaterialExecutionStatus::Failed, "{label}");
+        assert!(
+            report
+                .error_code
+                .as_deref()
+                .unwrap_or("")
+                .starts_with("vua.material.bridge_failed"),
+            "{label}: fails under the standing bridge_failed family: {:?}",
+            report.error_code
+        );
+        assert_eq!(report.rollback, RollbackOutcome::Restored, "{label}");
+        let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+            .read(report.build_record_id.as_deref().expect("receipt published"))
+            .expect("receipt readable");
+        assert_eq!(
+            record.status,
+            vua_orchestrator::BuildRecordStatus::Failed,
+            "{label}"
+        );
+        assert_eq!(
+            record.validation, None,
+            "{label}: no validation section is fabricated"
+        );
+        if base.exists() {
+            fs::remove_dir_all(&base).unwrap();
+        }
+    }
+}
+
+/// 第 158 批（BOARD #45(4) 残留清理策略）三钉合一：
+/// ① 链开始前清扫——上一运行（模拟进程死亡）留在 `.vua/imports` 的解包
+///    残留在新链第一次解包前被清走（唯一没有在跑代码能清理的路径；安全性
+///    依据＝MutationGate 全程持有，同项目根无并发链）；
+/// ② 失败臂接线——本运行解包落地后导入失败（超时），失败出口清走本运行
+///    自己的解包根：失败运行不再留下 `.vua/imports` 磁盘残留（回滚只恢复
+///    作用域面 Assets/Packages/ProjectSettings/vpm-manifest.json，本就管
+///    不到 `.vua`）；
+/// ③ 清扫有界——`.vua/snapshots` 下的哨兵文件不被波及。
+#[test]
+fn b3_batch158_import_extractions_leave_no_residue_on_failure() {
+    let (base, project) = make_world("residue");
+    let source = base.join("source");
+    // Stale residue from a run that died mid-chain, plus a sentinel OUTSIDE
+    // the sweep scope that must survive.
+    let stale = project
+        .root
+        .join(".vua")
+        .join("imports")
+        .join("material-staleplan-import-99");
+    fs::create_dir_all(&stale).unwrap();
+    fs::write(stale.join("stale.bin"), "stale").unwrap();
+    let sentinel = project.root.join(".vua").join("snapshots").join("keep-me.txt");
+    fs::create_dir_all(sentinel.parent().unwrap()).unwrap();
+    fs::write(&sentinel, "sentinel").unwrap();
+
+    // The import leg times out AFTER this run's extraction has landed.
+    let bridge = FakeBridge::new(vec![Err(BridgeError::TimedOut)]);
+    let executor = executor(&base, bridge, FakeVpm::new());
+    let confirmation =
+        confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
+
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    let imports_root = project.root.join(".vua").join("imports");
+    let leftovers: Vec<std::path::PathBuf> = fs::read_dir(&imports_root)
+        .expect("imports root still exists")
+        .flatten()
+        .map(|entry| entry.path())
+        .collect();
+    assert!(
+        leftovers.is_empty(),
+        "no extraction residue survives a failed run: {leftovers:?}"
+    );
+    assert_eq!(fs::read_to_string(&sentinel).unwrap(), "sentinel");
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(report.build_record_id.as_deref().expect("receipt published"))
+        .expect("receipt readable");
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Failed);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+/// 第 158 批（BOARD #45(2)）正例钉：guid 布局归档（真实 .unitypackage 形态，
+/// 平面夹具归档从不产生非空期望）下，validate 成功回执的 loadedAssetPaths
+/// 被严格解析并逐字进入 build record 的 validation 节——证据携带 Bridge
+/// 实际报告的清单（fake 照 C# 面同形：Ordinal 排序的期望清单）。
+#[test]
+fn b3_batch158_validation_evidence_carries_the_loaded_list_into_the_record() {
+    let (base, project) = make_world("batch158-evidence");
+    let source = base.join("source");
+    // Replace the flat fixture archive with a guid-layout one; the plan
+    // helper re-inspects, so the expectations (and the echoed evidence)
+    // are non-empty.
+    guid_layout_package(
+        &source.join("pack.unitypackage"),
+        &[
+            ("0123456789abcdef0123456789abcdef", "Assets/second.prefab"),
+            ("ffffffffffffffffffffffffffffffff", "Assets/first.prefab"),
+        ],
+    );
+    let plan = plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root);
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge, FakeVpm::new());
+
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Succeeded);
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{}", plan.plan_id))
+        .expect("receipt published");
+    let validation = record.validation.as_ref().expect("validation evidence present");
+    assert!(validation.unity_validated);
+    // Ordinal-sorted, exactly as the C# handler reports it.
+    assert_eq!(
+        validation.expected_assets_loaded,
+        vec!["Assets/first.prefab".to_owned(), "Assets/second.prefab".to_owned()]
+    );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }

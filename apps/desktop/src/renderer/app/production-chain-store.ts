@@ -10,8 +10,12 @@ import { createSignal } from "../gateway/index.ts";
  * - 请求状态(UI-06):requesting=待提交/提交中,accepted=已受理——「已受理」
  *   永不显示为「执行成功」;任务进度以任务中心权威快照为准(UI-07),本
  *   store 不产生本地计时成功;
- * - 旧计划失效(AC-05):草稿内容偏离已保存修订(dirty)即视为旧授权——
- *   gate 派生函数给出警示与推进禁用判定,服务端版本锁守卫仍独立拒绝。
+ * - 旧计划失效(AC-05):搭配草稿在场且内容偏离已保存修订(dirty)即视为旧
+ *   授权——gate 派生函数给出警示与推进禁用判定,服务端版本锁守卫仍独立
+ *   拒绝;草稿不在场(无条目)时无「待保存内容」,旧授权警示不成立(029 A4)。
+ * - 配方身份双事实源(029 A4):保存回执(compose-save-chain)与库选择回执
+ *   (RecipePage 配方中枢)都把 recipe.get/recipe.save 服务端回执的文档身份
+ *   写入链——链身份即对象身份(UI-02),不取列表标签、不取本地猜测。
  *
  * 计划列表/记录列表是查询结果缓存(UI-02:缓存只是已取得事实的副本),
  * 由各 UI 适配层按需拉取,不进容器层;容器层只承载跨 UI 必须保留的身份。
@@ -92,6 +96,17 @@ export function productionChainRecipeSavedAction(recipeId: string, revision: num
   });
 }
 
+/** 选择事实源动作(proposal 029 A4,配方页库选择 → 链):身份键值只取
+ *  recipe.get 读面回执的文档身份(features/recipe/recipe-model.ts
+ *  narrowRecipeDocumentReceipt 收窄;不取列表标签、不取本地猜测——UI-02
+ *  「链身份即对象身份」延伸到选择事实源)。选中的文档身份与链上身份不同
+ *  = 新链:旧链的解析/执行受理与记录身份属旧配方链,不跨配方携带(AC-13
+ *  记录按执行计划身份匹配的前提是同一链);完全相同的身份 = 幂等无操作
+ *  (重选同一文档不打断在途链)。 */
+export function productionChainRecipeSelectedAction(recipeId: string, revision: number): void {
+  apply(productionChainRecipeSelected(chainSignal.get(), recipeId, revision));
+}
+
 export function productionChainResolveRequestedAction(): void {
   apply({ ...chainSignal.get(), resolve: { kind: "requesting" } });
 }
@@ -131,11 +146,22 @@ export function productionChainRecordSeenAction(buildId: string): void {
 
 /* ---- AC-05 派生:链推进闸门 ---- */
 
+/** 搭配草稿在场事实(gate 输入;调用方自 compose-draft-store 投影,本模块
+ *  不反向依赖草稿 store):present = 草稿有条目(有「待保存内容」),dirty =
+ *  内容偏离最近一次保存。 */
+export interface ProductionChainDraftFacts {
+  readonly present: boolean;
+  readonly dirty: boolean;
+}
+
 /**
  * 链推进闸门(AC-05;纯派生,不改状态):
- * - no-recipe:无已保存配方——链未开始;
- * - stale-draft:草稿内容偏离已保存修订——既有计划视为旧授权,呈现警示并
- *   禁用推进(解析应基于保存后的文档;服务端版本锁守卫独立拒绝旧授权);
+ * - no-recipe:无已保存/已选配方——链未开始;
+ * - stale-draft:搭配草稿在场且内容偏离已保存修订——既有计划视为旧授权,
+ *   呈现警示并禁用推进(解析应基于保存后的文档;服务端版本锁守卫独立拒绝
+ *   旧授权);草稿不在场(present=false)时无「待保存内容」,警示不成立
+ *   (029 A4 判决:stale-draft 仅草稿在场且 dirty 时成立;选择驱动的链无
+ *   草稿在场即 ready,AC-05 语义不破);
  * - ready:链可推进。
  */
 export type ProductionChainGate =
@@ -145,10 +171,10 @@ export type ProductionChainGate =
 
 export function productionChainGate(
   chain: ProductionChainState,
-  draftDirty: boolean,
+  draft: ProductionChainDraftFacts,
 ): ProductionChainGate {
   if (chain.recipe === null) return { kind: "no-recipe" };
-  return draftDirty ? { kind: "stale-draft" } : { kind: "ready" };
+  return draft.present && draft.dirty ? { kind: "stale-draft" } : { kind: "ready" };
 }
 
 /* ---- 纯函数语义(测试锚定;action 落地同一转换) ---- */
@@ -159,6 +185,22 @@ export function productionChainRecipeSaved(
   revision: number,
 ): ProductionChainState {
   return { ...state, recipe: { recipeId, revision } };
+}
+
+/** 选择事实源(029 A4;action 落地同一转换):身份不同 = 新链,解析/执行
+ *  受理与记录身份随旧链一并让位;身份相同 = 幂等原样返回。 */
+export function productionChainRecipeSelected(
+  state: ProductionChainState,
+  recipeId: string,
+  revision: number,
+): ProductionChainState {
+  if (state.recipe?.recipeId === recipeId && state.recipe.revision === revision) return state;
+  return {
+    recipe: { recipeId, revision },
+    resolve: { kind: "idle" },
+    execute: { kind: "idle" },
+    buildId: null,
+  };
 }
 
 export function productionChainResolveAccepted(

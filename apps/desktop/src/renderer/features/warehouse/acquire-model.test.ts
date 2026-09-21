@@ -9,6 +9,7 @@ import {
   entrySurfacesVisible,
   inferGlobalDefaultMode,
   sizeText,
+  warehouseEntrySelectorRows,
   type AcquireArtifactCard,
 } from "./acquire-model.ts";
 import type { WarehouseEntry } from "../../gateway/index.ts";
@@ -293,4 +294,32 @@ test("newlyGeneratedEntryIds: 只报两次快照之间新完成生成的条目",
   // 再一轮:无新增
   const mid = generatedVpmEntryIds(after);
   assert.deepEqual(newlyGeneratedEntryIds(mid, after), []);
+});
+
+/* ---- 029 A3 本地段:素材选择器(仓储读面投影)行源 ---- */
+
+test("warehouseEntrySelectorRows: 条目级搜索(显示名/文件夹名,大小写不敏感,空词全过,trim)", () => {
+  const entries = [
+    entryOf({ warehouseItemId: "whentry-s1", displayName: "Liltoon Shader" }),
+    entryOf({ warehouseItemId: "whentry-s2", displayName: "Outfit Pack", folderName: "Summer-Outfit" }),
+    entryOf({ warehouseItemId: "whentry-s3", displayName: "Hair A" }),
+  ];
+  // 空词全过
+  assert.equal(warehouseEntrySelectorRows(entries, "").length, 3);
+  assert.equal(warehouseEntrySelectorRows(entries, "   ").length, 3);
+  // 显示名子串,大小写不敏感
+  assert.deepEqual(
+    warehouseEntrySelectorRows(entries, "shader").map((entry) => entry.warehouseItemId),
+    ["whentry-s1"],
+  );
+  // 文件夹名命中
+  assert.deepEqual(
+    warehouseEntrySelectorRows(entries, "summer").map((entry) => entry.warehouseItemId),
+    ["whentry-s2"],
+  );
+  // 无匹配 = 空行集(诚实空态,不猜测)
+  assert.deepEqual(warehouseEntrySelectorRows(entries, "不存在"), []);
+  // 只投影,不派生:行集是读面条目本体,事实原样
+  const rows = warehouseEntrySelectorRows(entries, "");
+  assert.equal(rows, entries);
 });

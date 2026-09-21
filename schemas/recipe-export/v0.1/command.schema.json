@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/recipe-export/v0.1/command.schema.json",
+  "title": "VUA recipe-export command v0.1",
+  "description": "The recipe-export word-row command face (proposal 029 B-face freeze loop 1, core batch 2026-09-22). v0.1 carries exactly one method, recipe.exportProjectDraft: derive a RECIPE DRAFT (not a Recipe) from one registered Unity project by reading it through the standing proposal-013 inspection aggregate (VPM manifest declared dependencies and locked pins, the observed editor version, the VUA-native identity tri-state) — a synchronous read-only query with NO tasked command face: the scan touches local project files only (no Bridge, no network), so there is nothing to cancel and nothing to recover; the packages-ops preview/query precedent applies. projectPath is the same registered-path identity the proposal-013 read face uses; an unregistered path answers the REUSED typed not-found vua.project.project_not_found (same fact, same code — packages-query v0.1 precedent), and the validation face is the 013 inspection aggregate exactly as for project.inspectProject. A failed on-disk observation is NOT an error of this face: an absent manifest yields an honest empty dependencies array and an unreadable ProjectVersion.txt yields unityVersionConstraint null plus the environmentUnityVersion entry in the draft's missing list — honesty rules 1/2, never padded, never guessed. The draft this method returns is the zero-bridge skeleton (ruling: proposal 029 open item 4 resolved for option B — the relation face is never scanned in v0.1); the new read-only Bridge scan (option A) is registered as a candidate protocol-bump decision and deliberately NOT implemented or scheduled.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "params"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["recipe.exportProjectDraft"]
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The registered project path (proposal-013 identity). Exactly one key is accepted; any extra key is a vua.recipe_export.invalid_params shape violation, never a default."
+        }
+      }
+    }
+  }
+}
