@@ -80,6 +80,7 @@ fn use_case_config(root: &std::path::Path) -> ProductionUseCaseConfig {
             reason: vua_orchestrator::EditorSelectionGap::NotDetected,
         },
         handoff: None,
+        draft_exporter: None,
     }
 }
 
