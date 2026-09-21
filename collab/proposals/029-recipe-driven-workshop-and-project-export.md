@@ -278,7 +278,11 @@ A 面落形，未决项 4 关系面双案与未决项 5 引擎/服务路径归�
     词面精化，不改变目标主体）**：提案 A5 目标写「计划确认（plan.approve＋风险决策）」
     ——wire 事实：production-use-case v0.2 plan.approve 参数闭集**单键 {planId}，无
     风险决策参数**（schemas/production-use-case/v0.2/methods/plan-approve.schema.json
-    实读）；风险决策（PlanRiskChoice＋revision 绑定）系 v0.1 素材链 confirmPlan 专属；
+    实读）；风险决策（PlanRiskChoice＋revision 绑定）系 v0.1 素材链 confirmPlan 专属
+    〔勘误 2026-09-22：本从句版本词不精确——携风险决策的 confirm-plan 系 amf-production
+    **v0.2** 方法面（四键 {planId, observedRevision, riskChoice, rememberForSession}；
+    riskChoice 系 v0.2 登记面新增；无 v0.1 confirm-plan 方法 schema；build-record v0.1
+    仅持久化 riskChoice 值），详见下方勘误节；裁决效力不受影响〕；
     指纹/版本锁预检在作业提交时再闸（009 stance 4，schema description 载明）。判决：
     A5 计划批准按 v0.2 词面如实——approvePlan 幂等 draft→approved＋九态任务经任务中心
     （ChainTaskLine 既有形状）；**若冻结环裁定配方链计划批准需要风险决策，那是
@@ -358,6 +362,19 @@ A 面落形，未决项 4 关系面双案与未决项 5 引擎/服务路径归�
   集成仲裁）。实现切片本拍不开（操作者指派明示），候下拍按④分片派发。诚实边界：本
   判决系形状层核对＋代码事实实读（collab-only 文档批，零构建零测试零代码面改动，免
   全量照章）；零端到端宣称维持，真机全链归 W25（O-2）。
+
+### 回复（桌面/wt-3，2026-09-22，A5 版本词一行勘误）
+
+**勘误（应集成第 159 批验收回执登记办理；就地上标订正如上，不改裁决主体）**：
+判决书 A5 订正从句「风险决策（PlanRiskChoice＋revision 绑定）系 v0.1 素材链
+confirmPlan 专属」版本词不精确——携风险决策的 confirm-plan 系 **amf-production
+v0.2 方法面**（`schemas/amf-production/v0.2/methods/confirm-plan.schema.json`：
+四键 {planId, observedRevision, riskChoice, rememberForSession}；riskChoice 系
+v0.2 登记面新增；无 v0.1 confirm-plan 方法 schema；build-record v0.1 仅持久化
+riskChoice 值）。判决书其余引证（production-use-case v0.2 plan-approve 请求面
+additionalProperties:false 单键 {planId} 无风险决策参数）经集成 schema 实读核可
+不变；裁决效力不受影响；**核心冻结批对照引用以 amf-production v0.2 confirm-plan
+schema 为准**。
 
 （待续。各席位按 `### 回复（<角色或 wt>，YYYY-MM-DD）` 追加：A 面形状候桌面表态，
 B 面冻结候核心领取，跨域契约分歧升集成仲裁，产品判断升 [需用户]。）
