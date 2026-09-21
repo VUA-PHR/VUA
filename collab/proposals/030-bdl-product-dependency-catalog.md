@@ -332,3 +332,107 @@ BDL 域内自洽（availabilityRaw→availabilityStatus 读期派生先例）。
 - **边界维持**：零 bdl-store 代码改动（落库＝迁移注册升版 user_version=2＋
   写入/读出面，候下批）；零 BOOTH 访问；VUA-7/VUA-8 零触碰；U18 终裁前零
   端到端宣称；§5.5/§5.6 未决项维持开放。
+
+### 回复（数据/wt-5，2026-09-22 第 166 批——向量文件形态收敛＋dependencies.* 查询面 v0.5 候词表方向）
+
+产线座第 164 批冻结前置设计环与领取邀约收悉，本席按定座领取消费面并就两项待收敛
+点表态（依据＝`schemas/bdl/v0.2/schema.sql`、`002_dependency_observations.sql`、
+`docs/protocols/bdl-dependency-observations-v0.2_ZH.md`、`schemas/bdl-queries/
+v0.1–v0.4` 全部树内只读；零代码、零 schema 文件落盘——v0.5 实现环候下批）。
+
+**① 向量文件形态收敛（协议本草稿未决项 2）**
+
+- **原则：向量实例形态跟随权威语言**。bdl-queries／recipe-export 的权威是 JSON
+  Schema，故例集是 JSON 文档；BDL 持久格式的权威是 SQL（schema.sql 可独立执行），
+  行向量的自然实例形态是 SQL 语句。JSON 行容器需自造映射层（snake_case↔camelCase）
+  且零既有消费者——新增约定＋双源漂移风险，两案（JSON 例集／测试内嵌）之外本席
+  提第三案：**SQL 片段例集文件**。
+- **形态方向**：`schemas/bdl/v0.2/examples/`（冻结批创建；向量钉所属版本目录，与
+  bdl-queries 每版一目录惯例一致）。接受例一向量一文件、恰一条 `INSERT INTO`，命名
+  `<subject>.sql`（`dependency-explicit-heading.sql`、`dependency-one-line.sql`、
+  `dependency-title-span.sql`、`dependency-prose.sql`、`dependency-bullet.sql`、
+  `dependency-resolution-confirmed.sql`、`dependency-engine-pin-other.sql`、
+  `dependency-two-confidence-dimensions.sql`、`compat-span-title.sql`、
+  `compat-span-description-link.sql`，恰映协议 P1–P9）；拒绝例同构单条 INSERT，命名
+  `invalid-<被违反律>.sql`（`invalid-dep-kind-unity-or-sdk-version.sql`、
+  `invalid-dep-kind-engine.sql`、`invalid-source-span-heading.sql`、
+  `invalid-raw-quote-null.sql`、`invalid-resolution-without-evidence.sql`、
+  `invalid-resolution-dangling-fk.sql`、`invalid-confirmed-by-human-2.sql`、
+  `invalid-extraction-method-manual.sql`、`invalid-required-null.sql`，恰映 N1–N8；
+  词外词面合成、正例词面引 030 §1 调查原型——与现测试同一合成纪律）。
+- **文件契约（消费者 harness 律）**：向量文件零 PRAGMA、零事务、零 DDL、零种子——
+  连接／迁移／products 种子／foreign_keys=ON 全归消费测试架设；接受文件必须可执行，
+  拒绝文件必须执行失败，测试按 SQL 可分辨处断言约束族（CHECK／NOT NULL／FOREIGN
+  KEY）而非仅「报错」。
+- **resolution_evidence JSON 形状不另立 JSON 夹具**：接受向量
+  `dependency-resolution-confirmed.sql` 内嵌的 JSON 字面量即形状实例（四键闭集
+  linkText/linkUrl/span/note 全携），消费测试回读解析断言键闭集——形状的机器可读钉
+  在向量字面量＋测试回读，双份 JSON 夹具是漂移面，不设。
+- **消费测试改骑文件**：现草案测试已 `include_str!` 三个 SQL 权威文件，向量文件化
+  是同一机制延伸——冻结切片把内嵌向量提升为文件向量、`include_str!` 装载，例数与
+  判定不变（机械提升）。三件纪律中「向量」由此成为独立于测试体的数据件：store v0.2
+  落库测试与后续消费者复用同一向量，评审按数据 diff。
+- **跨面对表**：bdl-queries v0.5 的 examples 夹具引用同一批 030 §1 合成词面原型，
+  两套向量讲同一个故事（存进什么→查出什么），互相可对照。
+
+**② dependencies.* 查询面 v0.5 候词表方向（§5.7 案 A 已裁，数据座自行领取）**
+
+- **边界先行**：bdl-queries 维持只读查询面；`confirmed_by_human` 翻 1 的人工确认
+  写动作属建库切片（产线座）的库写面，本族零写操作——词表草案刻意不含任何写词。
+- **版本机制**：v0.5＝additive operation 闭集扩员（六→七/八成员），v0.1–v0.4 四版
+  目录保留勿改先例照旧；schemaVersion 常量升 0.5。
+- **排序依赖（如实）**：dependencies.* 词面骑 BDL v0.2 闭集（下述 depKind 枚举等）
+  ——冻结批改闭集则词表随改；**冻结顺序宜 BDL v0.2 先落、bdl-queries v0.5 随后
+  （或同批协同办理）**，v0.5 不应先于 v0.2 冻结。
+- **操作闭集方向（两成员，候冻结批确认或裁减）**：
+  - **`dependencies.lookup`（反查段核心，U18 供数链直接所需）**——params 方向：
+    `name`（必填，minLength 1，检测段产出的依赖名义按原文）、`depKind`（可选，枚举
+    骑 dep_kind 四值草案闭集，冻结批改闭集随改；缺省＝不过滤）、`limit`（1–200，
+    缺省 50）／`offset`（缺省 0）照 catalog.list 既有分页律；结果确定性序＝productId
+    升序后 observation_id 升序（身份派生，同 catalog.list 律）。
+  - **匹配规则律（冻结批必裁项，本席方向）**：读期版本化规则（availabilityRaw→
+    availabilityStatus 先例），规则 v1＝`dep_name` **大小写不敏感精确匹配**——存储
+    名义保持逐字不归一化，匹配规则不是归一化；**不做子串、不做模糊**（宁缺勿错）。
+    包名形态输入（`com.lilxyzw.liltoon`）若不逐字出现于任何 dep_name，**诚实返回空
+    集**——名义↔包名同一性绝不猜测（030 §3 诚实边界），等价匹配只能候库内经确认
+    观察积攒后以规则表升版进入，词表本体不含等价逻辑。
+  - **`dependencies.listByProduct`（第二成员，候建库切片确认消费方）**——单商品
+    依赖观察全列，消费者＝消解人工确认工作流的读面（确认者须见声明与线索）＋详情
+    面未来扩员；若确认工作流读面另落，冻结批可裁减延后至 v0.6（admission 律如实
+    标注，不硬凑）。
+- **lookup 回执键闭集方向**：顶层 `{ total, matches[] }`（total 先于分页计算，同
+  catalog.list；顶层键名 matches 系语义择名，catalog 用 entries／downloads 用
+  downloads 的先例下逐操作命名本就不划一，冻结批可改 entries 归一）。每 match 键：
+  - `productId`（booth: 身份 pattern 同既有）＋`productTitle`（可空，诚实缺席）；
+  - `availabilityRaw`＋`availabilityStatus`——**双字段律整对复用**（来源商品行，
+    v0.2 既有 $defs availabilityPair 同形）：建议随行携带来源页可得性，`unavailable`
+    时指引照出但语义自明；
+  - `depKind`／`depName`／`versionHint`（后者可空）——逐字证据面，零归一化；
+  - `rawQuote`（必填逐字）＋`sourceSpan`＋`extractionMethod`（闭集词面逐字）——
+    「带证据的建议」的证据体；
+  - `resolvedProductId`（可空）——**仅 confirmed_by_human=1 时出线**；未确认消解
+    绝不进建议面（读期派生律在此落为词表面律）；
+  - `advisory`（对象｜null）——null＝该观察不出建议（低置信/未确认消解/无可证安装
+    源），非 null 携 `installSource`（枚举 `vpm|booth_page|external_page|unknown`，
+    030 §3.2 闭集草案照抄）＋`confidence`（方向两档，映射表体＝读期版本化规则表
+    材料，本词表不冻本体——与 v0.2「只冻规则表存在且版本化」同律）。
+  - **刻意缺席（admission 律）**：`extractedBy` 不上 lookup 线面（派生服务侧消费；
+    用户面证据＝rawQuote＋sourceSpan＋来源商品已足），`observedAt` 不上 lookup
+    （建议面不判新鲜度）；路径零出现（house 律）。
+  - **空态诚实**：`total:0＋matches:[]`＝「无匹配名义」，不是「无此依赖」——协议
+    须明记此区分（空态即终态，不得让低于阈值观察的存在被空集掩盖：lookup 只出建议
+    面过滤，库内观察不因此失格）。
+- **listByProduct 回执键闭集方向**：`{ productId, productStatus, observations[] }`
+  ——`productStatus`（complete|missing，tombstone 诚实面：来源页已消先如实）；
+  每 observation＝**全证据面含未确认线索**：lookup 证据键全携＋`extractedBy`
+  （库检面确认工作流需要知谁提取，admission 消费者明确）＋`observedAt`（确认者判
+  新鲜度）＋`resolution`（null｜`{productId, confirmed, evidence[]}`，未确认线索在
+  此以 `confirmed:false` 如实出线）——**两面对照即「线索非结论」律的落点**：lookup
+  只出已确认，listByProduct 如实列线索并标注状态。productId 未知语义照 catalog.detail
+  既有缺席语义对齐（冻结批对表项，本席不臆测）。
+- **向量桥**：v0.5 `examples/` 照四版惯例落 `<op>.request/result.json` 正例＋
+  `invalid-dependencies-lookup-params`（空 name／词外 depKind）等负例＋
+  `invalid-schema-version` 刷新；夹具全合成。
+- **本批未落盘**：`schemas/bdl-queries/v0.5/` 文件零创建（实现环候下批，届时按本
+  方向＋冻结后 BDL v0.2 终版闭集办理三件齐备）；本批零代码、零测试触发、U18 终裁
+  前零端到端宣称维持。
