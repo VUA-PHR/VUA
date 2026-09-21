@@ -9,7 +9,7 @@
 
 | 路径 | 文档版本 | 状态 | 维护方 | 最近复核 |
 | --- | --- | --- | --- | --- |
-| AGENTS.md | 1.1.0 | 已接受 | 集成 | 2026-09-06 |
+| AGENTS.md | 1.2.0 | 已接受 | 集成 | 2026-09-22 |
 | docs/product-boundary_ZH.md | 1.4.0 | 已接受 | 集成 | 2026-09-19 |
 | docs/compatibility/unity-editor_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
 | docs/compatibility/alcom-vcc_ZH.md | 1.3.0 | 已接受（1.3.0，2026-09-20：U14 设置面例外落矩阵——权威与硬边界节补设置面例外段＋禁止清单补 settings.json 包管理设置面豁免注记，对齐产品边界 1.4.0；提案 028 #5 路由集成代笔修订） | 环境 | 2026-09-20 |
@@ -41,6 +41,7 @@
 | docs/protocols/bdl-queries-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-06 |
 | docs/protocols/bdl-queries-v0.4_ZH.md | 0.4 | 已冻结（downloads.listCompleted 采纳源读面，2026-09-10：Schema＋向量＋消费测试）；wire 已落（2026-09-10 核心 389912e：路由臂＋信封版本常量 0.3→0.4＋消费测试；TS 面在位。2026-09-15 注记刷新，wt-5 c749d22 登记请求，集成独立核实） | 数据 | 2026-09-15 |
+| docs/protocols/bdl-queries-v0.5_ZH.md | 0.5 | 已冻结（2026-09-22，wt-5 数据第 168 批＝dependencies.* v0.5 实现环冻结批，030 §5.7 案 A：「Schema＋正负例向量＋至少一端消费测试」三件齐备——Schema〔schemas/bdl-queries/v0.5 query＋result 双件，operation 闭集六→八成员 additive：＋dependencies.lookup 依赖反查建议面＋dependencies.listByProduct 单商品观察线索面，两方法均只读、confirmed_by_human 写面归产线建库切片〕＋向量〔examples/ 四正五负：空 name／词外 depKind 恰钉五值草案成员拒绝＝BDL v0.2 N1 同一裁决面／词外 fuzzy 键＝零模糊等价开关／listByProduct 词外过滤键／v0.4 版本重放〕＋消费测试〔crates/bdl-store/tests/dependencies_queries_v05.rs 8 例绿：向量文件驱动＋BDL v0.2 schema.sql CHECK 闭集逐字对表〔词面骑冻结闭集零漂移〕＋匹配规则 v1〔dep_name ASCII casefold 精确匹配、零子串零模糊零等价、包名形态诚实空集〕＋advisory 规则 v1〔刻意声明版面＋人工确认消解双门；installSource v1 只发 booth_page/external_page、vpm/unknown 不发；confidence strong/weak 两档骑版面维〕参考推导骑冻结 001+002 迁移链＋两面对照机械钉〔lookup 无 extractedBy/observedAt/resolution、observation 无 advisory、线索面 confirmed:false 出线〕＋无路径键扫描〕。listByProduct 保留裁决在案〔线索非结论律需两面对照／确认工作流读面／成本有界／admission 满足，协议本专节〕。排序依赖如实登记：词面骑 BDL v0.2 冻结闭集（先于本词表冻结）。契约先行分工照 v0.4 先例：信封常量与路由臂随核心接线批、TS 面归桌面、store v0.2 落库归产线；本批零 bdl-store 代码改动零 wire 落地；零端到端宣称） | 数据 | 2026-09-22 |
 | docs/protocols/bdl-commands-v0.1_ZH.md | 0.1 | 已取代（→ v0.2） | 数据 | 2026-09-07 |
 | docs/protocols/bdl-commands-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |
@@ -103,7 +104,7 @@
 | docs/design/design-standard_ZH.md | 0.7.18 | 已接受（0.7.18，2026-09-22：§8.4 增补从工程导出草稿〔U16 用户裁决 B 面环 4 桌面消费，proposal 029 B4——hero 动作位「从工程导出草稿」入口〔recipe-export v0.1 冻结词表消费〕；拾取段限定 VUA 已注册工程集不开放任意路径输入、陈旧登记如实标注禁用、未连接/无登记诚实空态；确认段草稿六事实键如实呈现〔来源身份三态非门候未决项 2；环境版本 verbatim 不可读由用户补全；依赖 verbatim 空数组诚实空态、锁定钉定只作呈现；缺失维度清单照单——导出不宣称还原设计意图〕；转正＝用户显式补全〔标题＋至少一条素材＋不可读时环境约束〕后走既有 recipe.save 保存链〔同一形状同一守卫集，首存 baseRevision 0〕，「已保存」仅回执后呈现，草稿绝不静默转正〕；0.7.17＝§8.4 增补创建与添加素材〔U16 用户裁决消费切片三，proposal 029 A1/A2/A3 本地段——「创建」入口升格配方页 hero 主路径〔U16 原文词面，草稿弹窗保留为创建起点之一，两 UI 一保存链不破〕；选中态「添加素材」走 recipe.save 版本链〔同一保存链形状同一守卫集：baseRevision＋D5 查重＋忙碌守卫；平行文档编辑链落形〕，待保存新增与已保存事实分开呈现、回执后才显「已保存」；素材选择器＝仓储读面〔acquire entries〕投影，不立第三导入入口，云端接入＝未决项 3/#46 裁决前诚实缺席；A 面 A1–A6 桌面消费闭环〕；0.7.16＝§8.5 车间＝执行状态面〔U16 切片二〕＋§8.4 一行勘误；0.7.15＝§8.4 配方页制作中枢〔U16 切片一〕；0.7.14＝§8.6 交棒准入〔U19〕；双语同步） | 桌面 | 2026-09-22 |
 | docs/development-outline_ZH.md | 2.0.2 | 已接受 | 集成 | 2026-09-07 |
 | docs/meta/documentation-governance_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
-| CONTRIBUTING_ZH.md | 1.0.0 | 已接受 | 集成 | 2026-09-06 |
+| CONTRIBUTING_ZH.md | 1.1.0 | 已接受 | 集成 | 2026-09-22 |
 | docs/REGISTRY.md | 事件驱动 | 已接受 | 集成 | 2026-09-06 |
 
 ## 排除规则

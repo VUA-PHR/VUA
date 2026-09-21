@@ -27,6 +27,9 @@ on:
       - "scripts/collab-brief.mjs"
       - ".github/workflows/collab-registry.yml"
 
+permissions:
+  contents: read
+
 concurrency:
   group: collab-registry-${{ github.ref }}
   cancel-in-progress: true

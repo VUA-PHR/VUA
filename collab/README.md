@@ -1,5 +1,7 @@
 # collab/ — VUA 协作机制（git 即消息总线）
 
+> Integration override (2026-09-22): read [protected-main policy](PROTECTED_MAIN.md) before any merge or push. All main changes, including bookkeeping, use an isolated branch and GitHub PR; canonical main only fetches and fast-forwards. This supersedes older direct-main instructions below.
+
 所有工作树共享同一个 `.git` 对象库，`git show <branch>:<path>` 可在任意工作树里直接读取其它
 分支**已提交**的文件——git 本身就是消息总线，跨树协调不再需要信件文档或人肉复制。
 

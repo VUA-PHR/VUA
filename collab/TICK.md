@@ -1,5 +1,7 @@
 # 工作节拍命令（TICK v1.6）
 
+> Integration override (2026-09-22): read [protected-main policy](PROTECTED_MAIN.md) before any merge or push. All main changes, including bookkeeping, use an isolated branch and GitHub PR; canonical main only fetches and fast-forwards. This supersedes older direct-main instructions below.
+
 > 用法：把下面「命令正文」代码块**原样**定时发送给六个常驻进程（六进程文本完全相同）。
 > 定时配置：**工作时段内每 20 分钟一次**；建议错峰：集成 :00、桌面 :05、核心 :10、
 > 产线 :15、数据 :20、环境 :25（分钟偏移，仅建议）。非工作时段不发。

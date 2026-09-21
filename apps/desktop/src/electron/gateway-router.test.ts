@@ -1039,7 +1039,7 @@ describe("bdl-queries v0.2 routing", () => {
       // 2026-09-18):三键 {schemaVersion, operation, result},内层 result 才是
       // 结果本体;平铺断言随 mock 回正一并退役(#22 live/fixture 形状一致)
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "catalog.list",
         result: { total: 0, entries: [] },
       },
@@ -1053,7 +1053,7 @@ describe("bdl-queries v0.2 routing", () => {
     expect(statusResponse).toMatchObject({
       ok: true,
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "catalog.status",
         result: { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
       },
@@ -1439,7 +1439,7 @@ describe("bdl-commands v0.1 command routing", () => {
       // mock 与 live wire 同形(三键信封,#22 形状一致纪律,2026-09-18 跟随):
       // 本用例钉的是路由原样透传——信封进、信封出,不解包不加工
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "downloads.listCompleted",
         result: { downloads: [] },
       },
@@ -1467,7 +1467,7 @@ describe("bdl-commands v0.1 command routing", () => {
     expect(response).toMatchObject({
       ok: true,
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "downloads.listCompleted",
         result: { downloads: [] },
       },
@@ -1595,5 +1595,89 @@ describe("packages-ops v0.6 F4 repo lifecycle routing (027 消费批)", () => {
     );
     expect(emptyRepoId).toMatchObject({ ok: false, error: { code: "invalid_request" } });
     expect(invoke).toHaveBeenCalledTimes(3);
+  });
+});
+
+// bdl-queries v0.5(桌面消费准备切片 2026-09-22):两方法只读 verbatim
+// 透传,零折叠——查询闭集由信封守卫验证;核心接线批升信封常量与路由臂前,
+// provider(mock 缺席臂)答类型化 vua.catalog.unavailable 诚实缺席,原样
+// 透传不折叠(缺席语义不折叠,recipe.exportProjectDraft 先例同律)。
+describe("bdl-queries v0.5 routing (dependencies.lookup / dependencies.listByProduct)", () => {
+  it("routes both read-only queries verbatim and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const lookup = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-dep-1",
+        method: "dependencies.lookup",
+        params: { name: "lilToon", depKind: null, limit: 50, offset: 0 },
+      },
+    );
+    expect(invoke).toHaveBeenNthCalledWith(1, {
+      contractVersion: "0.1",
+      requestId: "desktop-request-dep-1",
+      correlationId: "desktop-request-dep-1",
+      kind: "query",
+      method: "dependencies.lookup",
+      params: { name: "lilToon", depKind: null, limit: 50, offset: 0 },
+    });
+    expect(lookup).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.catalog.unavailable" } },
+    });
+
+    const listByProduct = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-dep-2",
+        method: "dependencies.listByProduct",
+        params: { productId: "booth:6584744" },
+      },
+    );
+    expect(invoke).toHaveBeenNthCalledWith(2, {
+      contractVersion: "0.1",
+      requestId: "desktop-request-dep-2",
+      correlationId: "desktop-request-dep-2",
+      kind: "query",
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744" },
+    });
+    expect(listByProduct).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.catalog.unavailable" } },
+    });
+
+    // 词表外键在信封守卫即拒(fuzzy 等价开关 = 冻结负例向量钉死)
+    const fuzzy = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-dep-3",
+        method: "dependencies.lookup",
+        params: { name: "lilToon", fuzzy: true },
+      },
+    );
+    expect(fuzzy).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    // listByProduct 客户端过滤 = 契约错误(信封守卫即拒,绝不静默空答)
+    const filtered = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-dep-4",
+        method: "dependencies.listByProduct",
+        params: { productId: "booth:6584744", depKind: "shader" },
+      },
+    );
+    expect(filtered).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).toHaveBeenCalledTimes(2);
   });
 });

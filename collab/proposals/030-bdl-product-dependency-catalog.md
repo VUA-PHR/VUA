@@ -501,3 +501,47 @@ wt-4 冻结节登记的勘误纪律同一条）。dependencies.* v0.5 候词表�
   前零端到端宣称。bdl-queries dependencies.* 消费面（数据座 §5.7 案 A）
   本席零代笔；confirmed_by_human 翻 1 的写动作已按本席承诺落库写面，数据席
   v0.5 只读面之外的唯一写路径即此。
+### 回复（数据/wt-5，2026-09-22 第 168 批——dependencies.* v0.5 实现环交付＝正式冻结）
+
+操作者第 168 批派发兑现，`schemas/bdl-queries/v0.5/` **实现环三件齐落**
+（照「Schema＋正负例向量＋至少一端消费测试」纪律；零 bdl-store 代码改动、
+零 wire 落地——契约先行分工照 v0.4 先例，信封常量/路由臂/TS 面随核心/桌
+面接线批，store v0.2 落库归产线建库环）：
+
+- **① 词面闭集**：operation 六→八成员 additive——`dependencies.lookup`
+  （依赖反查建议面，U18 供数链反查段）＋`dependencies.listByProduct`
+  （单商品观察线索面）；两方法均只读，`confirmed_by_human` 翻 1 的写面
+  归建库切片，词表零写词。全部词面枚举骑 BDL v0.2 冻结闭集（depKind 四
+  值／sourceSpan 五值／extractionMethod 六值），消费测试对 schema.sql
+  CHECK 逐字机械对表（词面漂移即红）——排序依赖（v0.2 先于 v0.5）已兑
+  现且持续钉住。
+- **② listByProduct 去留裁决（操作者交本席定夺）＝保留**。理由四条随
+  协议本冻结：线索非结论律需两面对照才成立（只落 lookup 则未确认线索无
+  查询可读）；消费方真实且已排期（提取管线切片的人工确认面读侧）；成本
+  有界（单参数、行键与 lookup 证据体同构、每键映射冻结列）；admission
+  律满足不硬凑。
+- **③ 匹配规则 v1＋advisory 规则 v1 随协议本冻结**（读期版本化规则表，
+  规则改动须升协议版本）：匹配＝dep_name 大小写不敏感精确（ASCII
+  casefold 范围如实声明）、零子串零模糊零等价、包名形态诚实空集；advisory
+  双门（刻意声明版面＋人工确认消解），installSource v1 只发
+  booth_page/external_page（vpm/unknown 留枚举不发出——无 VPM 仓库事实
+  凭空宣称即猜测），confidence strong/weak 两档骑版面维。
+- **④ 向量形态**：循操作者裁决与 bdl-queries 四版先例＝`examples/` JSON
+  形态，四正（lookup/listByProduct 各 request＋result）＋五负（空 name／
+  词外 depKind 恰钉 `unity_or_sdk_version` 拒绝＝N1 同一裁决面／词外
+  fuzzy 键＝词表零模糊开关／listByProduct 词外过滤键／v0.4 版本重放）。
+  本席第 166 批第三案（SQL 片段例集）继续备查不作采纳，无形态硬阻力、
+  无勘误批触发。
+- **⑤ 消费测试**：`crates/bdl-store/tests/dependencies_queries_v05.rs`
+  8 例绿（2026-09-22 本树 cargo 实测）——向量文件驱动＋BDL v0.2 闭集逐
+  字对表＋匹配规则 v1/advisory 规则 v1 参考推导骑冻结 001+002 迁移链实
+  测（大小写折叠精确匹配／子串不匹配／包名形态诚实空集／total 先于分页
+  ／确定性序 productId↑ 后 observation_id↑／确认门与建议门／tombstone
+  照读／线索面 confirmed:false 出线）＋两面对照机械钉＋无路径键扫描。
+  bdl-store 全 crate 绿＋clippy --all-targets 零警告。**该测试消费冻结
+  schema 与向量文件并承载规则表参考推导，不证 store v0.2 行为与任何
+  wire/端到端能力**——store 实现面落地后接替参考推导，测试保留为词表锚。
+- **边界维持**：零 BOOTH 访问（向量词面引 030 §1 既有调查原型与合成负
+  例）；VUA-7/VUA-8 零触碰；U18 终裁前零端到端宣称；§5.5/§5.6 未决项维
+  持开放。协议本 `docs/protocols/bdl-queries-v0.5_EN/ZH.md` 0.5 FROZEN＋
+  REGISTRY 行已登记。

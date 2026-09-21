@@ -1,9 +1,12 @@
-//! Contract anchor for `schemas/bdl-queries/v0.4` (IMP-2 batch-B data
-//! source — proposal 015 §7 data stance, accepted): the
+//! Contract anchor for `schemas/bdl-queries/v0.5` (IMP-2 batch-B data
+//! source — proposal 015 §7 data stance, accepted; v0.4 -> v0.5
+//! ride-along: the additive six->eight operation rise leaves the
+//! `downloads.listCompleted` word face identical, only the shared family
+//! envelope const rises with the vocabulary): the
 //! `downloads.listCompleted` vector drives the real read face, the
 //! assembled result validates against the frozen result schema, the
-//! negative vectors stay rejected, and the v0.4 closed set is exactly the
-//! six query methods.
+//! negative vectors stay rejected, and the closed set is exactly the
+//! frozen operation vocabulary.
 //!
 //! The face's membership predicate is the SAME server-side fact the v0.4
 //! adoption guard consumes (`staging_completion` + staging file present at
@@ -12,32 +15,57 @@
 //! in the assembled rows.
 //!
 //! The wire envelope version stays pinned to the routing batch: the
-//! v0.4 face freezes here ahead of the provider-host route (the
+//! v0.4 face froze here ahead of the provider-host route (the
 //! `BDL_QUERIES_SCHEMA_VERSION` envelope constant rises with the core
-//! wiring batch, the same contract-first split as bdl-commands v0.4).
+//! wiring batch — this file follows it to the v0.5 value, the same
+//! contract-first split as bdl-commands v0.4).
 
 use serde_json::{json, Value};
 use std::path::PathBuf;
 use vua_bdl_store::download_events::{
     DownloadEventConsumer, DownloadEventKind, DownloadEventV01,
 };
-use vua_bdl_store::{BdlStore, CompletedDownloadRow};
+use vua_bdl_store::{BdlStore, CompletedDownloadRow, BDL_QUERIES_SCHEMA_VERSION};
 
 fn schema_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.5")
+}
+
+/// The frozen v0.5 schemas (the CURRENT generation: the validators key on
+/// the word face the wire now serves).
+fn read_schema(relative: &str) -> Value {
+    let bytes = std::fs::read(schema_dir().join(relative)).expect("schema must exist");
+    serde_json::from_slice(&bytes).expect("schema must be valid JSON")
+}
+
+/// The frozen vector generation for the v0.4-method examples: the v0.5
+/// freeze added only the dependencies vectors (the additive rise keeps the
+/// six v0.4 word faces identical, so their vectors stay in the v0.4
+/// generation dir verbatim — schemaVersion "0.4" and all).
+fn vector_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.4")
 }
 
-fn read_json(relative: &str) -> Value {
-    let bytes = std::fs::read(schema_dir().join(relative)).expect("schema/vector must exist");
-    serde_json::from_slice(&bytes).expect("schema/vector must be valid JSON")
+fn read_vector(relative: &str) -> Value {
+    let bytes = std::fs::read(vector_dir().join(relative)).expect("vector must exist");
+    serde_json::from_slice(&bytes).expect("vector must be valid JSON")
+}
+
+/// The frozen request vector with its envelope schemaVersion bumped to the
+/// CURRENT family const — the additive-rise proof that the params face is
+/// identical.
+fn current_request_vector(relative: &str) -> Value {
+    let mut request = read_vector(relative);
+    request["schemaVersion"] = json!(BDL_QUERIES_SCHEMA_VERSION);
+    request
 }
 
 fn query_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("query.schema.json")).unwrap()
+    jsonschema::validator_for(&read_schema("query.schema.json")).unwrap()
 }
 
 fn result_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("result.schema.json")).unwrap()
+    jsonschema::validator_for(&read_schema("result.schema.json")).unwrap()
 }
 
 const LIST_COMPLETED_REQUEST: &str = "examples/downloads-list-completed.request.json";
@@ -120,7 +148,7 @@ fn enveloped(rows: &[CompletedDownloadRow]) -> Value {
         })
         .collect();
     json!({
-        "schemaVersion": "0.4",
+        "schemaVersion": BDL_QUERIES_SCHEMA_VERSION,
         "operation": "downloads.listCompleted",
         "result": { "downloads": downloads },
     })
@@ -128,7 +156,7 @@ fn enveloped(rows: &[CompletedDownloadRow]) -> Value {
 
 #[test]
 fn list_completed_vector_validates_against_the_query_schema() {
-    let vector = read_json(LIST_COMPLETED_REQUEST);
+    let vector = current_request_vector(LIST_COMPLETED_REQUEST);
     let errors: Vec<String> = query_validator()
         .iter_errors(&vector)
         .map(|error| format!("{}: {error}", error.instance_path()))
@@ -138,7 +166,7 @@ fn list_completed_vector_validates_against_the_query_schema() {
 
 #[test]
 fn list_completed_result_vector_validates_against_the_result_schema() {
-    let vector = read_json(LIST_COMPLETED_RESULT);
+    let vector = current_request_vector(LIST_COMPLETED_RESULT);
     let errors: Vec<String> = result_validator()
         .iter_errors(&vector)
         .map(|error| format!("{}: {error}", error.instance_path()))
@@ -150,7 +178,7 @@ fn list_completed_result_vector_validates_against_the_result_schema() {
 fn negative_vectors_are_rejected_by_the_query_schema() {
     let validator = query_validator();
     for name in NEGATIVES {
-        let vector = read_json(name);
+        let vector = read_vector(name);
         assert!(
             !validator.is_valid(&vector),
             "{name} is a negative vector and must not validate"
@@ -159,8 +187,8 @@ fn negative_vectors_are_rejected_by_the_query_schema() {
 }
 
 #[test]
-fn operation_closed_set_is_exactly_the_six_queries() {
-    let schema = read_json("query.schema.json");
+fn operation_closed_set_is_exactly_the_eight_queries() {
+    let schema = read_schema("query.schema.json");
     let operations: Vec<String> = schema["properties"]["operation"]["enum"]
         .as_array()
         .unwrap()
@@ -176,6 +204,10 @@ fn operation_closed_set_is_exactly_the_six_queries() {
             "warehouse.listEntries",
             "warehouse.entryDetail",
             "downloads.listCompleted",
+            // v0.5 additive rise (proposal 030 §5.7 case A): the two
+            // dependencies read faces join the closed set.
+            "dependencies.lookup",
+            "dependencies.listByProduct",
         ]
     );
 }

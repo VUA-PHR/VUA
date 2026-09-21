@@ -2556,6 +2556,26 @@ demoTaskTitle: "Demo task",
       workflowId: "Workflow ID",
     },
   },
+  /** bdl-queries v0.5 consumption-preparation slice (2026-09-22): dependency
+   *  reverse-lookup / observation word-face infrastructure — the consuming
+   *  page lands after the U18 final ruling. The clues-not-conclusions law
+   *  governs every row: advisory copy always reads as a SUGGESTION (layout-
+   *  evidence tiers and suggested install sources), never a fact claim.
+   *  Availability pairs ride the standing warehouse.availability rows (zero
+   *  dead duplicates; pinned by the dependencies-port test). installSource
+   *  carries exactly the two values advisory rule v1 emits — vpm/unknown
+   *  stay in the frozen closed set and are never emitted, so no rows exist
+   *  for them (no dead word faces). */
+  dependencies: {
+    confidence: {
+      strong: "Explicitly declared by the author (dedicated section or single line)",
+      weak: "Mentioned in a listed line (real but compressed)",
+    },
+    installSource: {
+      booth_page: "Suggested install source: BOOTH product page",
+      external_page: "Suggested install source: external page",
+    },
+  },
   /** Application-face error copy, keyed by the messageKey the wire carries
    *  (key-first: provider sends errors.catalog.* on the error channel). The
    *  catalog browser currently degrades failures to not-connected/not-found;
@@ -2584,13 +2604,26 @@ demoTaskTitle: "Demo task",
     },
     /** Material-chain error copy (desktop batch 142, task-event failure-row
      *  presentation): keys = wire messageKeys (vua.material family errors
-     *  carried by AppErrorV01). provisionFailed is a reserved row — the
-     *  material-chain v0.2 code vua.material.provision_failed travels with
-     *  the core seat's fix slice (wt-2, pending landing); the copy lands
-     *  first in sync across the four tables so the code hits on arrival. */
+     *  carried by AppErrorV01). Batch 169 completes the table to the engine's
+     *  full 12-key errors.material.* emission face (core batch-150
+     *  failure_message_key split plus the material_intake / provider-host
+     *  emitters; each row anchored to its emission site, no invented
+     *  semantics). The failure row still presents the localized face AND the
+     *  raw code side by side (batch-148 dual-fact law) — the code is never
+     *  shadowed. */
     material: {
       executionFailed: "Material execution failed: the Unity-side operation did not complete.",
       provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+      sourceInvalid: "The material source is invalid: the path does not point to a readable material folder.",
+      sourceEmpty: "The material source is empty: the folder contains no .unitypackage.",
+      sourceUnreadable: "The material source could not be read: reading the material folder failed.",
+      sourceDrift: "The material source changed after the plan was confirmed (source fingerprints no longer match); inspect the source and confirm again.",
+      planHashMismatch: "The import plan failed its integrity check (plan hash mismatch) and was rejected.",
+      riskDecisionStale: "The recorded risk decision no longer matches the current plan or source; start the material flow again.",
+      riskDecisionRequired: "This plan requires a risk decision before it can be confirmed.",
+      cancelled: "The material operation was cancelled: the risk decision chose to cancel.",
+      internal: "An internal error occurred while preparing the material operation.",
+      recordFailed: "The material operation was rolled back and restored, but saving its record failed: the outcome was not persisted to the task records.",
     },
     /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
      *  as the normative source). Reserved rows — the codes

@@ -2461,6 +2461,25 @@ rolled_back: "롤백됨",
       workflowId: "워크플로 ID",
     },
   },
+  /** bdl-queries v0.5 소비 준비 슬라이스(2026-09-22): 의존성 역조회/관찰
+   *  목록 어휘면 인프라 — 소비 페이지는 U18 최종 재정 후 슬라이스. 각 행은
+   *  "단서는 결론이 아니다" 법칙을 따른다: advisory 문구는 항상 제안의
+   *  어조(레이아웃 증거 등급 및 추천 설치 출처)이며, 사실 단언으로
+   *  렌더링하지 않는다. 가용성 쌍은 기존 warehouse.availability 세 행을
+   *  탄다(죽은 중복 행 없음. dependencies-port 테스트에서 고정).
+   *  installSource는 advisory 규칙 v1이 실제로 송출하는 두 값만 —
+   *  vpm/unknown은 동결된 폐집합에 남아 송출되지 않으므로 해당 행 없음
+   *  (죽은 어휘면을 남기지 않음). */
+  dependencies: {
+    confidence: {
+      strong: "제작자가 명시적으로 선언(전용 섹션 또는 단일 줄)",
+      weak: "목록 항목에서 언급됨(실재하지만 압축된 기술)",
+    },
+    installSource: {
+      booth_page: "추천 설치 출처: BOOTH 상품 페이지",
+      external_page: "추천 설치 출처: 외부 페이지",
+    },
+  },
   /** 앱 면 오류 문구: 키 = 와이어상의 messageKey(키 선행. provider는
    *  오류 채널로 errors.catalog.*를 전송). 카탈로그 브라우저는 현재
    *  실패를 not-connected/not-found로 처리하므로, 이 뷰에서의 투과
@@ -2489,13 +2508,24 @@ rolled_back: "롤백됨",
     },
     /** 머티리얼 체인 오류 문구(데스크톱 142批次, 작업 이벤트 실패 행 표시):
      *  키 = 와이어상의 messageKey(vua.material 계열 오류는 AppErrorV01 경유).
-     *  provisionFailed는 예약 행 — 머티리얼 체인 v0.2 신규 코드
-     *  vua.material.provision_failed는 코어 석 수정 배치(wt-2, 편입 대기)와
-     *  함께 전달됩니다. 문구를 먼저 4개 언어로 동기화하여 코드 도착 시
-     *  즉시 일치시킵니다. */
+     *  169배치에서 엔진의 완전한 12키 errors.material.* 발사 면까지 보완
+     *  (코어 150배치 failure_message_key 분기 + material_intake /
+     *  provider-host 발사점. 각 행은 그 발사 맥락에 근거하며 맥락 발명은
+     *  없음). 실패 행은 계속 문구+코드 원어 병렬 표시(148배치 이중 사실
+     *  율)——코드는 결코 가려지지 않습니다. */
     material: {
       executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
       provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
+      sourceInvalid: "머티리얼 소스가 잘못되었습니다: 해당 경로는 읽을 수 있는 머티리얼 폴더를 가리키지 않습니다.",
+      sourceEmpty: "머티리얼 소스가 비어 있습니다: 폴더에 .unitypackage가 포함되어 있지 않습니다.",
+      sourceUnreadable: "머티리얼 소스를 읽을 수 없습니다: 머티리얼 폴더 읽기에 실패했습니다.",
+      sourceDrift: "계획 확인 후 머티리얼 소스가 변경되었습니다(소스 지문이 일치하지 않음). 소스를 다시 검사하고 다시 확인해 주세요.",
+      planHashMismatch: "가져오기 계획이 무결성 검사에 실패하여(계획 해시 불일치) 거부되었습니다.",
+      riskDecisionStale: "기록된 리스크 판단이 현재 계획 또는 소스와 더 이상 일치하지 않습니다. 머티리얼 흐름을 다시 시작해 주세요.",
+      riskDecisionRequired: "이 계획은 확인 전에 리스크 판단이 필요합니다.",
+      cancelled: "머티리얼 작업이 취소되었습니다: 리스크 판단에서 취소가 선택되었습니다.",
+      internal: "머티리얼 작업 준비 중 내부 오류가 발생했습니다.",
+      recordFailed: "머티리얼 작업은 롤백되어 복원되었지만 기록 저장에 실패했습니다: 이 결과는 작업 기록에 저장되지 않았습니다.",
     },
     /** 핸드오프 허가 게이트 문구(U19 사용자 재정 2026-09-21, BOARD U19 행이
      *  규범 소스). 예약 행 — 코드 vua.release_handoff.record_state_blocked

@@ -20,6 +20,7 @@ import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
 import type { ModelProductionPort, ModelProductionView } from "./model-production-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import { createUnavailableRecipeExportPort } from "./recipe-export-port.ts";
+import { createUnavailableDependenciesPort } from "./dependencies-port.ts";
 import type { PackagesPort, PackagesView } from "./packages-port.ts";
 import type { TaskItem, TaskPort } from "./task-port.ts";
 import type { TaskCenterView } from "./task-port.ts";
@@ -629,6 +630,9 @@ export function fixtureGateway(
     // 029 B 面环 4:配方导出 fixture 臂诚实缺席(mock/fixture 不出 DEV;
     // 演示工程登记不含导出词表,不伪造草稿)
     recipeExport: createUnavailableRecipeExportPort(),
+    // bdl-queries v0.5 消费准备切片:依赖反查/观察列 fixture 臂诚实缺席
+    // (mock/fixture 不出 DEV;库内无演示依赖观察事实,不伪造线索/建议)
+    dependencies: createUnavailableDependenciesPort(),
     // M7 消费批:fixture 不制造合成检查证据束(观察事实纪律同构)——
     // inspection 端口任何场景下诚实缺席,检查页呈现 not-connected 空态
     inspection: createEmptyInspection(),
