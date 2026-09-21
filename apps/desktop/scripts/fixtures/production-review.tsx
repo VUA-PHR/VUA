@@ -252,6 +252,103 @@ async function recipeEditTests() {
   root.render(<div>edit-done</div>); await wait();
 }
 
+async function recipeExportTests() {
+  // 029 B 面环 4(桌面消费):从工程导出配方草稿——拾取段限定 VUA 已注册
+  // 工程集(不开放任意路径输入;陈旧登记如实标注禁用);确认段草稿六事实键
+  // 如实呈现(缺失维度清单照单——不宣称还原设计意图);转正 = 用户显式补全
+  // 后走既有 recipe.save 保存链(同一守卫集;草稿绝不静默转正)。
+  // 先钉读面缺席臂:empty 网关的 projectOps 诚实不可用 → 拾取段诚实空态。
+  root.render(<StrictMode><GatewayProvider gateway={gateway}><RecipePage /></GatewayProvider></StrictMode>);
+  await wait(); await wait();
+  await click(strings.recipe.exportCta);
+  const absentDialog = document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`);
+  check(absentDialog !== null && absentDialog!.textContent!.includes(strings.recipe.exportPickUnavailable), "pick stage renders the honest unavailable state when the registry read face is absent");
+  await key("Escape"); await wait();
+
+  const exportProjects = [
+    { path: "C:/demo", name: "Demo Avatar", pathPresent: true, unityVersion: "2022.3.22f1" },
+    { path: "C:/stale", name: "Stale Project", pathPresent: false, unityVersion: null },
+  ];
+  const exportDraft = {
+    schemaVersion: "vua.recipe-export/v0.1",
+    draftId: "01900000-0000-7000-8000-000000000001",
+    exportedAt: "2026-09-22T04:30:00Z",
+    origin: { projectPath: "C:/demo", projectName: "Demo Avatar", vuaIdentityStatus: "present" },
+    environment: { unityVersionConstraint: null },
+    dependencies: [
+      { packageId: "com.vrchat.avatars", versionConstraint: "3.7.x", lockedVersion: "3.7.0" },
+      { packageId: "com.animals.box", versionConstraint: "1.2.3" },
+    ],
+    missing: ["assets", "instances", "relations", "wardrobeGroups", "targetAvatar", "assetRoles", "assetLabels", "sourceRefs", "titleSemantics", "environmentUnityVersion"],
+  };
+  const gatewayWithProjects = { ...gatewayWithAcquire,
+    projectOps: {
+      listProjects: async () => ({ ok: true, projects: exportProjects, unreadable: 0 }),
+      importCopy: async () => ({ ok: false, error: { kind: "unavailable" } }),
+      setNote: async () => ({ ok: false, error: { kind: "unavailable" } }),
+    },
+    recipeExport: {
+      exportProjectDraft: async (projectPath: string) => projectPath === "C:/demo"
+        ? { ok: true, draft: exportDraft }
+        : { ok: false, error: { kind: "request_rejected" } },
+    },
+  } as any;
+  recipeRoot(gatewayWithProjects); await wait(); await wait();
+  await click(strings.recipe.exportCta);
+  const dialog = () => document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`)!;
+  check(dialog() !== null && dialog().textContent!.includes(strings.recipe.exportPickTitle), "export entry opens the pick stage over registered projects (029 B4)");
+  check(dialog().textContent!.includes("Demo Avatar") && dialog().textContent!.includes("C:/stale"), "registered projects are listed as facts (name and path)");
+  const staleButton = [...dialog().querySelectorAll("button")].find((node) => node.textContent?.includes("Stale Project")) as HTMLButtonElement;
+  check(staleButton.disabled && dialog().textContent!.includes(strings.recipe.exportStaleBadge), "stale registration is honestly badged and disabled");
+  // 拾取 → 导出回执 → 确认段(六事实键)
+  ([...dialog().querySelectorAll("button")].find((node) => node.textContent?.includes("Demo Avatar")) as HTMLElement).click();
+  await wait();
+  check(dialog().textContent!.includes(strings.recipe.exportDraftBadge), "confirm stage presents the project-exported draft badge (never silent promotion)");
+  check(dialog().textContent!.includes("com.vrchat.avatars") && dialog().textContent!.includes(format(strings.recipe.exportDepsLocked, { version: "3.7.0" })), "declared dependencies render verbatim with the presentation-only locked pin");
+  check(dialog().textContent!.includes(strings.recipe.missingDims.assets) && dialog().textContent!.includes(strings.recipe.missingDims.environmentUnityVersion) && dialog().textContent!.includes(strings.recipe.exportHonestyNote), "missing-dimension list renders as-is with the honesty note (no design-intent claim)");
+  check(dialog().textContent!.includes(strings.recipe.exportUnityUnreadable), "unreadable unity version is honestly presented for explicit completion");
+  const titleInput = dialog().querySelector(`input[aria-label="${strings.recipe.exportTitleAria}"]`) as HTMLInputElement;
+  check(titleInput.value === "Demo Avatar" && dialog().textContent!.includes(strings.recipe.exportTitlePrefillNote), "title prefills from the project name with the labeled source (draft has no title)");
+  const saveButton = () => [...dialog().querySelectorAll("button")].find((node) => node.textContent?.trim() === strings.recipe.exportSaveCta) as HTMLButtonElement;
+  check(saveButton() !== undefined && saveButton().disabled, "promotion is blocked before completion (title / version / at least one asset)");
+  // 素材补全 = 同一仓储读面投影选择器(不立第三导入入口)
+  check(dialog().textContent!.includes(strings.warehouse.selector.localOnlyNote), "asset completion rides the same read-face picker with no import wording");
+  await click(strings.warehouse.selector.pickCta, dialog());
+  check(dialog().textContent!.includes("Synthetic"), "picked asset appears as a pending completion");
+  check(saveButton().disabled, "save stays blocked while the unreadable version is uncompleted");
+  const versionInput = dialog().querySelector(`input[aria-label="${strings.recipe.exportUnityInputAria}"]`) as HTMLInputElement;
+  // React 受控输入:经原型原生 value setter 赋值再冒泡 input 事件,驱动
+  // React 合成事件(直接赋 .value 不触发 onChange)
+  const nativeValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value")!.set!;
+  nativeValueSetter.call(versionInput, "2022.3.22f1");
+  versionInput.dispatchEvent(new Event("input", { bubbles: true })); await wait();
+  check(!saveButton().disabled, "explicit user completion enables promotion");
+  // 转正走既有保存链:recipe.save + baseRevision 0 + 两维 verbatim + 无 locked 块
+  await click(strings.recipe.exportSaveCta);
+  check(!!pendingSave, "promotion rides the standing recipe.save chain");
+  check(pendingSave.document.baseRevision === 0 && pendingSave.document.title === "Demo Avatar", "first save carries baseRevision 0 and the user title");
+  check(pendingSave.document.environment.unityVersionConstraint === "2022.3.22f1", "completed unity constraint rides the document verbatim");
+  check(JSON.stringify(pendingSave.document.dependencies).includes("com.vrchat.avatars") && !JSON.stringify(pendingSave.document).includes("3.7.0"), "declared dependencies transfer verbatim; locked pins never enter the document (no fabricated locked block)");
+  check(button(strings.recipe.savingEditCta).disabled, "busy guard disables promotion while in flight");
+  settleSave(false); await wait();
+  check(dialog().textContent!.includes(strings.recipe.editFailedNote), "failed promotion is presented as a failure");
+  await click(strings.recipe.exportSaveCta);
+  settleSave(); await wait(); await wait();
+  check(dialog().textContent!.includes(savedNoteAt(1)), "saved note only after the persistence receipt (revision 1)");
+  // D5 同一守卫:同一素材集再存 → 同一确认框,用户确认才提交
+  await click(strings.recipe.exportSaveCta); await wait();
+  check(document.body.textContent!.includes(strings.compose.dedupTitle), "second promotion of an identical asset set opens the same D5 confirmation");
+  check(!pendingSave, "dedup hit holds the promotion until the user confirms");
+  const listCallsBeforeConfirm = listCalls;
+  (document.querySelector(".vua-confirm-dialog__actions button:last-child") as HTMLElement).click(); await wait();
+  check(!!pendingSave, "user confirmation submits the promotion");
+  settleSave(); await wait(); await wait();
+  check(listCalls > listCallsBeforeConfirm, "confirmed dedup promotion lands and refreshes the library (a fresh first save mints its own recipe identity)");
+  await key("Escape"); await wait();
+  check(document.querySelector(`[aria-label="${strings.recipe.exportDialogTitle}"]`) === null, "closing the export dialog stays user-initiated");
+  root.render(<div>export-done</div>); await wait();
+}
+
 async function importTests() {
   let listeners = new Set<(event: any) => void>(); let closed = 0, next = 0;
   window.vua = { gateway: { invoke }, capabilities: { remoteBrowser: true }, remoteContent: {
@@ -321,4 +418,4 @@ window.review = {
   nativeCheck: async (remaining: number) => { await wait();
     check(document.querySelectorAll('[role="dialog"]').length === remaining, `native Esc leaves ${remaining} dialogs`);
     return document.activeElement?.id; },
-  run: async () => { await modalTests(); await workshopEmptyTests(); await recipeTests(); await recipeEditTests(); await workshopStatusTests(); await importTests(); return results; } };
+  run: async () => { await modalTests(); await workshopEmptyTests(); await recipeTests(); await recipeEditTests(); await recipeExportTests(); await workshopStatusTests(); await importTests(); return results; } };

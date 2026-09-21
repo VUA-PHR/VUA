@@ -1,0 +1,51 @@
+{
+  "vector": "N8",
+  "name": "dependency-observations.invalid.n08.not-null-laws",
+  "basis": "The three further NOT NULL columns of the observation face: dep_name (the dependency's name AS WRITTEN — the reverse-lookup search column), extraction_method (confidence dimension 1) and extracted_by (confidence dimension 2). An observation missing any of them is not admissible evidence.",
+  "expect": "reject",
+  "reject_law": "NOT NULL on dep_name / extraction_method / extracted_by",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": null,
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": null,
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": null,
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

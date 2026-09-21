@@ -308,6 +308,17 @@ export interface RecipeResolveRequestV1 {
   readonly params: { readonly recipeId: string; readonly revision?: number };
 }
 
+/** 029 B 面 recipe-export v0.1(桌面环 4 消费批):已注册工程的配方草稿导出
+ *  ——同步只读 Query,params 单键闭集 {projectPath}(013 注册身份;入口限定
+ *  VUA 已注册工程集,不开放任意路径输入);未注册 = Provider 复用
+ *  vua.project.project_not_found(024 判例) */
+export interface RecipeExportProjectDraftRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "recipe.exportProjectDraft";
+  readonly params: { readonly projectPath: string };
+}
+
 export interface PlanApproveRequestV1 {
   readonly schemaVersion: 1;
   readonly requestId: string;
@@ -885,6 +896,7 @@ export type DesktopGatewayRequestV1 =
   | RecipeGetRequestV1
   | RecipeListRequestV1
   | RecipeResolveRequestV1
+  | RecipeExportProjectDraftRequestV1
   | PlanApproveRequestV1
   | PlanGetRequestV1
   | PlanListRequestV1
@@ -951,6 +963,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.importDownloads": "command",
   "recipe.save": "command",
   "recipe.resolve": "command",
+  // 029 B 面(桌面环 4 消费批):recipe-export v0.1 单方法同步只读 Query
+  "recipe.exportProjectDraft": "query",
   "plan.approve": "command",
   "job.execute": "command",
   "recipe.get": "query",
@@ -1706,6 +1720,12 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
       }
       return isIdentifier(value.params.recipeId)
         && (value.params.revision === undefined || typeof value.params.revision === "number");
+    // 029 B 面 recipe-export v0.1(桌面环 4):params 单键闭集 {projectPath}
+    // 非空(未注册路径由 Provider 回复用码,信封只钉键形与空值形态)
+    case "recipe.exportProjectDraft":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["projectPath"])
+        && isIdentifier(value.params.projectPath);
     case "plan.approve":
     case "plan.get":
     case "job.execute":

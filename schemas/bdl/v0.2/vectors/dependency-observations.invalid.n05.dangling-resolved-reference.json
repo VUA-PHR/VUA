@@ -1,0 +1,39 @@
+{
+  "vector": "N5",
+  "name": "dependency-observations.invalid.n05.dangling-resolved-reference",
+  "basis": "resolved_ref_product_id is a foreign key into products: a reference to a product identity the library does not hold is refused. Identity resolution points at OBSERVED products, never at guessed ones (030 §2; the products-0-row timing fact the data seat registered means the resolution chain fills in as the catalog write face lands — the FK law itself never bends).",
+  "expect": "reject",
+  "reject_law": "FK resolved_ref_product_id -> products(product_id)",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "q",
+        "source_span": "description_link",
+        "resolved_ref_product_id": "booth:9999999",
+        "resolution_evidence": "[{\"linkText\":\"x\",\"linkUrl\":\"u\",\"span\":\"body\",\"note\":null}]",
+        "extraction_method": "link",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    },
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:9999999",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

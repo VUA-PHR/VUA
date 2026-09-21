@@ -1,0 +1,23 @@
+{
+  "vector": "P1",
+  "name": "dependency-observations.valid.p01.explicit-heading-version-pin",
+  "basis": "030 §1 sample 1 (booth.pm/ja/items/6584744): version-pinned line under the author's own heading「〇前提環境」— extraction_method='explicit_heading' is confidence dimension 1 (page-layout form).",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "liltoon",
+        "raw_quote": "・liltoon 2.3.2~",
+        "source_span": "body",
+        "version_hint": "2.3.2~",
+        "extraction_method": "explicit_heading",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

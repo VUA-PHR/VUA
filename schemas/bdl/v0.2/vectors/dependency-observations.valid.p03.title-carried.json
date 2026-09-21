@@ -1,0 +1,22 @@
+{
+  "vector": "P3",
+  "name": "dependency-observations.valid.p03.title-carried",
+  "basis": "030 §1 sample 5 (booth.pm/ja/items/8179865): the product title itself carries the dependency word face (suffix【liltoon】) — source_span='title' and extraction_method='title', members the v0.2 source_span expansion exists for.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "【liltoon】機能盛り沢山！リアルなでさわシェーダー…【JP/EN】",
+        "source_span": "title",
+        "extraction_method": "title",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

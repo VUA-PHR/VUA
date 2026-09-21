@@ -56,6 +56,9 @@ function assembleDevGateway(
     // 019 批 C:生产链无 fixture 目标(禁模拟替代未完成接口)——恒 live
     // 基线(无宿主时为 not-run 诚实不可用),开发切档不产生演示生产数据
     productionChain: live.productionChain,
+    // 029 B 面环 4:配方导出同观察事实纪律(草稿不模拟)——恒 live 基线,
+    // 无宿主时诚实缺席;转正走既有保存链,开发切档不产生演示草稿
+    recipeExport: live.recipeExport,
     // M7 消费批:检查读面同 productionChain 纪律(观察事实不模拟)——恒
     // live 基线,无宿主时诚实缺席
     inspection: live.inspection,

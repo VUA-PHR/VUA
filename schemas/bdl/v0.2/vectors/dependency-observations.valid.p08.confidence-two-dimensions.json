@@ -1,0 +1,22 @@
+{
+  "vector": "P8",
+  "name": "dependency-observations.valid.p08.confidence-two-dimensions",
+  "basis": "030 §1 sample 3 subproduct compatibility wording ('『Lapwing』対応'). The two confidence dimensions sit in two independent columns in one row: extraction_method (WHICH page layout — explicit_heading) alongside extracted_by (WHO extracted — the pipeline identity 'pipeline:dep-0.1', open vocabulary, term_observations precedent). The two are never merged into one word face.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "avatar_base",
+        "dep_name": "Lapwing",
+        "raw_quote": "『Lapwing』対応",
+        "source_span": "subproduct_name",
+        "extraction_method": "explicit_heading",
+        "extracted_by": "pipeline:dep-0.1",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}
