@@ -1398,6 +1398,33 @@ rolled_back: "已回滚",
         retry: "重试",
         taskErrorLine: "任务错误:{code}",
         taskFailedNote: "交接任务失败。",
+        /* U19 交棒准入呈现分桶(用户裁决 2026-09-21):succeeded/
+         * succeeded_with_warnings → 放行(警告徽标保留);failed/cancelled/
+         * rolled_back → 禁用＋原因＋检视/车间入口链;recovered → 禁用,
+         * 先完成检视及后续生产流程;缺失/词表外状态 → 拒绝,记录无法确认。
+         * 后端权威闸独立在路由准入序,此为可发现原因词面(设计标准 §5)。 */
+        blockedTitle: "交棒不可用",
+        blockedFailed: "此构建已失败，无法交棒。请检查结果、发起恢复，或重新生产。",
+        blockedCancelled: "此构建已被取消，无法交棒。请重新生产以生成新记录。",
+        blockedRolledBack: "此构建已回滚，无法交棒。请重新生产以生成新记录。",
+        recoveredBlockNote: "此记录为恢复后完成。请先完成检视及后续生产流程，再进行交棒。",
+        unconfirmedNote: "交棒动作不可用：此记录无法确认。",
+        entryWorkshop: "前往车间",
+      },
+      /* U19 第二交付(用户裁决明文):独立「在 Unity 中打开以检查/修复」动作
+       * ——与交棒按钮显式分离(独立组件/端口/词面组);不按记录状态闸;打开
+       * 编辑器既不是恢复执行也不是上传许可。核心座后端 open 检查入口本拍未
+       * 入库:端口结构缺席,词面如实呈现缺席,不虚构后端能力。 */
+      openInUnity: {
+        action: "在 Unity 中打开以检查/修复",
+        actionNote:
+          "在 Unity 编辑器中打开此构建的工程，供人工检查与修复。打开编辑器既不是恢复执行，也不是上传许可。",
+        absentTitle: "在 Unity 中打开不可用",
+        absentNote: "在 Unity 中打开此工程的功能尚未接线。",
+        failedTitle: "在 Unity 中打开请求被拒",
+        failedUnknown: "请求被拒，未携带错误码。",
+        failedWithCode: "请求被拒：{code}",
+        retry: "重试",
       },
     },
   },
@@ -2411,6 +2438,14 @@ rolled_back: "已回滚",
     material: {
       executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
       provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
+    },
+    /** 交棒准入闸词面(U19 用户裁决 2026-09-21,BOARD U19 行为规范源)。
+     *  预留行——码 vua.release_handoff.record_state_blocked(params 携
+     *  {state})与 vua.release_handoff.record_state_unknown 由核心座准入闸
+     *  切片(wt-2,在途)携带,词面先行四表同步,码落地即命中 */
+    releaseHandoff: {
+      stateBlocked: "交棒被拒：此构建记录的当前状态不允许交棒（状态：{state}）。",
+      stateUnknown: "交棒被拒：此构建记录的状态无法确认。",
     },
   },
 };

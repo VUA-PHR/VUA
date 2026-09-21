@@ -1406,6 +1406,44 @@ demoTaskTitle: "Demo task",
         retry: "Retry",
         taskErrorLine: "Task error: {code}",
         taskFailedNote: "Upload preparation failed.",
+        /* U19 handoff admission presentation buckets (user ruling 2026-09-21):
+         * succeeded/succeeded_with_warnings -> action offered (warning badge
+         * stays); failed/cancelled/rolled_back -> action withheld, reason +
+         * inspect/workshop entry chain; recovered -> withheld until the
+         * inspection and follow-up production steps are done; missing or
+         * out-of-vocabulary state -> rejected as unconfirmable. The backend
+         * gate stays the authority; this is the discoverable-reason face
+         * (design standard §5/§179). */
+        blockedTitle: "Handoff unavailable",
+        blockedFailed:
+          "This build failed, so it cannot be handed off. Check the results, recover, or produce again.",
+        blockedCancelled:
+          "This build was cancelled, so it cannot be handed off. Produce again to create a new record.",
+        blockedRolledBack:
+          "This build was rolled back, so it cannot be handed off. Produce again to create a new record.",
+        recoveredBlockNote:
+          "This record was recovered. Complete the inspection and the follow-up production steps before handing off.",
+        unconfirmedNote:
+          "The handoff action is unavailable: this record cannot be confirmed.",
+        entryWorkshop: "Open Workshop",
+      },
+      /* U19 second deliverable (explicit user ruling): the standalone
+       * "Open in Unity to inspect or fix" action — deliberately separate from
+       * the handoff button (own component, own port, own copy). Never gated by
+       * the record state; opening the editor is neither a recovery execution
+       * nor an upload permission. The backend open entry is not landed yet
+       * (core seat in flight): the port answers structural absence and this
+       * face presents it honestly — no fabricated capability. */
+      openInUnity: {
+        action: "Open in Unity to inspect or fix",
+        actionNote:
+          "Opens this build's project in the Unity editor for manual inspection and fixes. Opening the editor neither resumes a production task nor permits an upload.",
+        absentTitle: "Open in Unity unavailable",
+        absentNote: "Opening this project in Unity is not wired up yet.",
+        failedTitle: "Open in Unity request rejected",
+        failedUnknown: "The request was rejected without an error code.",
+        failedWithCode: "The request was rejected: {code}",
+        retry: "Retry",
       },
     },
   },
@@ -2447,6 +2485,18 @@ demoTaskTitle: "Demo task",
     material: {
       executionFailed: "Material execution failed: the Unity-side operation did not complete.",
       provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+    },
+    /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
+     *  as the normative source). Reserved rows — the codes
+     *  vua.release_handoff.record_state_blocked (params: {state}) and
+     *  vua.release_handoff.record_state_unknown travel with the core seat's
+     *  admission-gate slice (wt-2, in flight); the copy lands first in sync
+     *  across the four tables so the codes hit on arrival. */
+    releaseHandoff: {
+      stateBlocked:
+        "Handoff was rejected: this build record's current state does not permit handoff (state: {state}).",
+      stateUnknown:
+        "Handoff was rejected: this build record's state cannot be confirmed.",
     },
   },
 };
