@@ -104,8 +104,15 @@ export function composeUndoAction(): void {
 
 /** 保存成功对齐(回执驱动;saved 身份/修订入容器层状态——跨 UI 根保留,
  *  请求解析入口据此启用) */
-export function composeSavedAction(recipeId: string, revision: number): void {
-  apply(composeSaved(draftSignal.get(), recipeId, revision));
+export function composeSavedAction(
+  recipeId: string, revision: number, submittedItems?: ComposeDraftState["items"],
+): boolean {
+  const current = draftSignal.get();
+  if (current.saved?.recipeId === recipeId && current.saved.revision > revision) return false;
+  const next = composeSaved(current, recipeId, revision);
+  // Edits made during an in-flight save are still unsaved.
+  apply(submittedItems && current.items !== submittedItems ? { ...next, dirty: true } : next);
+  return true;
 }
 
 /* ---- 批 B 保存链:草稿 → recipe v0.3 文档映射(core 路由裁定零词表

@@ -87,6 +87,8 @@ namespace Vua.Editor.Bridge
                 var rig = new GameObject("VUA Preview Rig");
                 SceneManager.MoveGameObjectToScene(rig, previewScene);
                 var camera = rig.AddComponent<Camera>();
+                // Moving the GameObject alone does not select the preview culling scene.
+                camera.scene = previewScene;
                 camera.clearFlags = CameraClearFlags.SolidColor;
                 camera.backgroundColor = new Color(0f, 0f, 0f, 0f);
                 camera.fieldOfView = 28f;
@@ -109,6 +111,7 @@ namespace Vua.Editor.Bridge
                 // 全部同一角度,疑似 NDMF Preview/编辑器管线状态所致),回退环绕。
                 // VRC PhysBone 属 VRChat 游戏内运行时,编辑器非 Play 模式不模拟,
                 // 反射驱动被仓库纪律禁止——物理摆动暂不可烘焙,留待 Play 模式方案。
+                var previousActive = RenderTexture.active;
                 var rt = new RenderTexture(FrameSize, FrameSize, 24, RenderTextureFormat.ARGB32);
                 var tex = new Texture2D(FrameSize, FrameSize, TextureFormat.RGBA32, false);
                 try
@@ -125,7 +128,7 @@ namespace Vua.Editor.Bridge
                         RenderTexture.active = rt;
                         tex.ReadPixels(new Rect(0f, 0f, FrameSize, FrameSize), 0, 0);
                         tex.Apply();
-                        RenderTexture.active = null;
+                        RenderTexture.active = previousActive;
                         camera.targetTexture = null;
 
                         File.WriteAllBytes(
@@ -135,7 +138,8 @@ namespace Vua.Editor.Bridge
                 }
                 finally
                 {
-                    RenderTexture.active = null;
+                    RenderTexture.active = previousActive;
+                    camera.targetTexture = null;
                     rt.Release();
                     UnityEngine.Object.DestroyImmediate(tex);
                     UnityEngine.Object.DestroyImmediate(rt);
