@@ -251,11 +251,20 @@ pub const EDITOR_VERIFY_SCHEMA_VERSION: &str = "0.1";
 /// as a verification refusal (refusals travel the result state, nail 1).
 pub const ENVIRONMENT_VERIFY_UNAVAILABLE: &str = "vua.environment.verify_unavailable";
 
-/// The `release.openForHandoff` family version constant (proposal 023 freeze
-/// batch 2026-09-16; the c914cf2 standing rule — every wire row carries a
-/// version constant of its own). Published so wire consumers key on the
-/// core-owned constant, never a private literal.
-pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.1";
+/// The release-handoff family version constant — a re-export of the
+/// core-owned constant (v0.2: the U19 record-state gate + the independent
+/// `release.openForInspection` entry, 2026-09-21; v0.1 was the single
+/// `release.openForHandoff` row frozen 2026-09-16). One source of truth:
+/// route responses key on the core constant, never a private literal.
+pub use vua_orchestrator::RELEASE_HANDOFF_SCHEMA_VERSION;
+
+/// The two typed rejection codes the U19 record-state gate answers with
+/// (v0.2). `record_state_blocked` carries the record's original state as
+/// the `state` param; `record_state_unknown` answers a missing or
+/// unparseable status. Published as constants so tests and consumers key
+/// on named facts, never inline literals.
+pub const RELEASE_HANDOFF_RECORD_STATE_BLOCKED: &str = "vua.release_handoff.record_state_blocked";
+pub const RELEASE_HANDOFF_RECORD_STATE_UNKNOWN: &str = "vua.release_handoff.record_state_unknown";
 
 /// The honest absence code for the `release.openForHandoff` route while the
 /// production-domain process/window port and the core use case are unwired
@@ -1307,6 +1316,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
             "overlay.getSnapshot" => overlay_get_snapshot(state, request, request_id, correlation_id),
             "release.openForHandoff" => {
                 release_open_for_handoff(state, request, request_id, correlation_id)
+            }
+            "release.openForInspection" => {
+                release_open_for_inspection(state, request, request_id, correlation_id)
             }
             _ => Ok(FrameOutcome::Response(application_error(
                 request_id,
@@ -4557,13 +4569,13 @@ fn overlay_get_snapshot(
 }
 
 /// The `release.openForHandoff` route (proposal 023 freeze batch,
-/// 2026-09-16; implementation wiring = follow-up slice 2, this batch).
-/// The tasked command that hands the user to the START of the official SDK
-/// upload flow. Handoff semantics per the product boundary: the upload
-/// itself never enters VUA; the succeeded task snapshot's result carries
-/// the handoff fact document — a shape with no upload-status field at all,
-/// so honesty rules 1/2 hold by construction (the negative vector pins
-/// it).
+/// 2026-09-16; implementation wiring = follow-up slice 2; v0.2 = the U19
+/// record-state gate, 2026-09-21). The tasked command that hands the user
+/// to the START of the official SDK upload flow. Handoff semantics per the
+/// product boundary: the upload itself never enters VUA; the succeeded task
+/// snapshot's result carries the handoff fact document — a shape with no
+/// upload-status field at all, so honesty rules 1/2 hold by construction
+/// (the negative vector pins it).
 ///
 /// Admission flow (validation ordering preserved): the params closed set
 /// `{buildId}` is checked FIRST — a closed-set violation answers
@@ -4582,15 +4594,103 @@ fn overlay_get_snapshot(
 /// determined — retryable, never dressed as "unknown"), and an
 /// unresolvable editor identity answers
 /// `vua.release_handoff.editor_unresolved` (ruling 5; diagnosis reuses
-/// the verifyEditor semantics). Only then is the task accepted — the
-/// task nine states carry ONLY the long-running part (launch + handshake
-/// wait), never the admission checks.
+/// the verifyEditor semantics).
+///
+/// v0.2 record-state gate (U19 user ruling, BOARD row = normative source):
+/// between the record read and the identity resolution, the record's
+/// `status` is classified backend-authoritatively against the ruling
+/// whitelist — `succeeded` / `succeeded_with_warnings` pass (the warning
+/// presentation stays a desktop concern; the record is never rewritten),
+/// `failed` / `cancelled` / `rolled_back` / `recovered` answer
+/// `vua.release_handoff.record_state_blocked` (typed rejection carrying
+/// the record's original state value as the `state` param — the desktop
+/// words its diagnostic / recovery / re-production entry around it), and a
+/// missing / non-string / out-of-enum status answers
+/// `vua.release_handoff.record_state_unknown` (the record cannot be
+/// confirmed). The gate is a policy check, never a state rewrite:
+/// `recovered` blocks like the other terminal states because a completed
+/// inspection does not turn a failed history record into a success
+/// (ruling correction b), and a whitelisted state is no guarantee the
+/// project still matches the record (correction c — this gate prevents
+/// obviously wrong handoffs, nothing more). Only then is the task
+/// accepted — the task nine states carry ONLY the long-running part
+/// (launch + handshake wait), never the admission checks.
 fn release_open_for_handoff(
     state: &HostState,
     request: &Value,
     request_id: &str,
     correlation_id: &str,
 ) -> Result<FrameOutcome, SqliteStoreError> {
+    let admission = match admit_editor_open(state, request, request_id, correlation_id, true) {
+        Ok(admission) => admission,
+        Err(response) => return Ok(FrameOutcome::Response(response)),
+    };
+    submit_editor_open_task(
+        admission,
+        request_id,
+        correlation_id,
+        "release.openForHandoff",
+        vua_orchestrator::build_handoff_fact,
+    )
+}
+
+/// The `release.openForInspection` route (U19 v0.2, 2026-09-21): the
+/// explicit independent "open in Unity to inspect/fix" path. The ruling
+/// keeps this path OPEN regardless of the build record's state — opening
+/// the editor is neither recovery-execution nor upload permission, so a
+/// user may always open the project to look at it and fix it. Admission is
+/// the handoff admission MINUS the state gate: params closed set, wired
+/// faces, record existence (`build_unknown`), project identity and editor
+/// resolution only. The completion fact is `build_inspection_fact` — its
+/// explicit `operation: "release.openForInspection"` key means the
+/// wording can never be read as a handoff completion (never "交接完成").
+fn release_open_for_inspection(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let admission = match admit_editor_open(state, request, request_id, correlation_id, false) {
+        Ok(admission) => admission,
+        Err(response) => return Ok(FrameOutcome::Response(response)),
+    };
+    submit_editor_open_task(
+        admission,
+        request_id,
+        correlation_id,
+        vua_orchestrator::OPEN_FOR_INSPECTION_OPERATION,
+        vua_orchestrator::build_inspection_fact,
+    )
+}
+
+/// Everything the shared admission sequence established for one
+/// editor-open entry (handoff or inspection): the record anchor, the
+/// project identity resolved from the record, the editor identity
+/// resolved per ruling 5, and the checked wiring (runtime + port +
+/// trusted-side project root) so the acceptance re-fetches nothing.
+struct EditorOpenAdmission {
+    build_id: String,
+    project_id: String,
+    resolved: vua_orchestrator::HandoffEditorCandidate,
+    runtime: TaskRuntime,
+    port: std::sync::Arc<dyn vua_orchestrator::ReleaseHandoffPort>,
+    project_root: PathBuf,
+}
+
+/// The shared admission sequence of the two editor-open entries (U19 v0.2):
+/// `release.openForHandoff` and `release.openForInspection` differ in
+/// exactly two points — the record-state gate (`enforce_state_gate`) and
+/// the completion fact wording. Everything here is backend-authoritative:
+/// no UI decision can admit a handoff the gate refuses, and no UI refusal
+/// is needed for a handoff the gate admits. `Ok` carries the admission,
+/// `Err` carries the ready error response payload.
+fn admit_editor_open(
+    state: &HostState,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+    enforce_state_gate: bool,
+) -> Result<EditorOpenAdmission, Value> {
     let params_ok = request
         .get("params")
         .and_then(Value::as_object)
@@ -4604,43 +4704,43 @@ fn release_open_for_handoff(
         })
         .unwrap_or(false);
     if !params_ok {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             "vua.release_handoff.invalid_params",
             "errors.releaseHandoff.invalidParams",
             "validation",
-        )));
+        ));
     }
     let Some(use_cases) = state.use_cases.clone() else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let Some(runtime) = use_cases.runtime.clone() else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let Some(port) = use_cases.handoff.clone() else {
         // The production-domain process/window adapter is not wired:
         // honest absence (category unavailable, recoverable) — never a
         // silent success, never a guessed handoff fact.
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             RELEASE_HANDOFF_UNAVAILABLE,
             "errors.releaseHandoff.unavailable",
             "unavailable",
-        )));
+        ));
     };
     let build_id = request
         .pointer("/params/buildId")
@@ -4654,37 +4754,68 @@ fn release_open_for_handoff(
     let record = match use_cases.records.get(&build_id) {
         Ok(Some(record)) => record,
         Ok(None) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.build_unknown",
                 "errors.releaseHandoff.buildUnknown",
                 "validation",
-            )));
+            ));
         }
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 RELEASE_HANDOFF_UNAVAILABLE,
                 "errors.releaseHandoff.unavailable",
                 "unavailable",
-            )));
+            ));
         }
     };
+    if enforce_state_gate {
+        // U19 record-state gate (v0.2): the whitelist is a product-policy
+        // decision (ruling correction a), applied here — before any task
+        // exists, never in a UI. Blocked carries the state verbatim as
+        // the wire param; unknown refuses a record it cannot confirm.
+        match vua_orchestrator::classify_handoff_record_state(&record) {
+            vua_orchestrator::HandoffRecordAdmission::Allowed => {}
+            vua_orchestrator::HandoffRecordAdmission::Blocked { state: record_state } => {
+                return Err(application_error_with_params(
+                    request_id,
+                    correlation_id,
+                    RELEASE_HANDOFF_RECORD_STATE_BLOCKED,
+                    "errors.releaseHandoff.stateBlocked",
+                    "permission",
+                    &[(
+                        "state",
+                        vua_orchestrator::ParamValue::Text(record_state),
+                    )],
+                ));
+            }
+            vua_orchestrator::HandoffRecordAdmission::Unknown => {
+                return Err(application_error(
+                    request_id,
+                    correlation_id,
+                    RELEASE_HANDOFF_RECORD_STATE_UNKNOWN,
+                    "errors.releaseHandoff.stateUnknown",
+                    "validation",
+                ));
+            }
+        }
+    }
     // A schema-valid v0.3 record always carries both identities; a record
     // missing them cannot establish the handoff identity, so the route
     // answers the same typed unresolved (the closed set has no separate
     // "incomplete record" code — this IS an identity-resolution failure).
     let record_version = vua_orchestrator::record_editor_version(&record).unwrap_or_default();
     let Some(record_project_id) = vua_orchestrator::record_project_id(&record) else {
-        return Ok(FrameOutcome::Response(application_error(
+        return Err(application_error(
             request_id,
             correlation_id,
             "vua.release_handoff.editor_unresolved",
             "errors.releaseHandoff.editorUnresolved",
             "dependency",
-        )));
+        ));
     };
     // Editor-identity resolution (ruling 5): explicit injection > the
     // record's carried version matched against observed candidates >
@@ -4699,40 +4830,64 @@ fn release_open_for_handoff(
     let candidates = match handoff_editor_candidates(state) {
         Ok(candidates) => candidates,
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.editor_unresolved",
                 "errors.releaseHandoff.editorUnresolved",
                 "dependency",
-            )));
+            ));
         }
     };
     let resolved = match vua_orchestrator::resolve_handoff_editor(&candidates, record_version) {
         Ok(resolved) => resolved,
         Err(_) => {
-            return Ok(FrameOutcome::Response(application_error(
+            return Err(application_error(
                 request_id,
                 correlation_id,
                 "vua.release_handoff.editor_unresolved",
                 "errors.releaseHandoff.editorUnresolved",
                 "dependency",
-            )));
+            ));
         }
     };
-    // Task acceptance: the nine states carry ONLY the long-running part.
-    // Completion = Bridge handshake arrival (ruling 3) — the port owns the
-    // wait; "process started" never completes the task; OS focus enters
-    // neither the judgment nor the fact.
-    let launch = vua_orchestrator::HandoffLaunch {
-        build_id: build_id.clone(),
+    Ok(EditorOpenAdmission {
+        build_id,
         project_id: record_project_id.to_owned(),
+        resolved,
+        runtime,
+        port,
         project_root: use_cases.project_root.clone(),
-        editor_exe: resolved.exe_path.clone(),
-        editor_version: resolved.version.clone(),
+    })
+}
+
+/// Accepts the long-running part of one editor-open entry (the shared task
+/// face of handoff and inspection): the nine states carry ONLY the
+/// long-running part. Completion = Bridge handshake arrival (ruling 3) —
+/// the port owns the wait; "process started" never completes the task; OS
+/// focus enters neither the judgment nor the fact. The `fact_builder`
+/// picks the wording: `build_handoff_fact` (handoff) vs
+/// `build_inspection_fact` (inspection — its `operation` key never reads
+/// as a handoff completion). The wiring (runtime/port/project root)
+/// arrives checked with the admission — nothing is re-fetched, so the
+/// acceptance cannot diverge from what admission validated.
+fn submit_editor_open_task(
+    admission: EditorOpenAdmission,
+    request_id: &str,
+    correlation_id: &str,
+    operation: &str,
+    fact_builder: fn(&str, &str, &str, &str, &str) -> Value,
+) -> Result<FrameOutcome, SqliteStoreError> {
+    let launch = vua_orchestrator::HandoffLaunch {
+        build_id: admission.build_id.clone(),
+        project_id: admission.project_id.clone(),
+        project_root: admission.project_root.clone(),
+        editor_exe: admission.resolved.exe_path.clone(),
+        editor_version: admission.resolved.version.clone(),
     };
+    let port = admission.port;
     let run_correlation = correlation_id.to_owned();
-    let accepted = runtime.submit(vua_orchestrator::SubmitRequest {
+    let accepted = admission.runtime.submit(vua_orchestrator::SubmitRequest {
         correlation_id: Some(correlation_id.to_owned()),
         timeout: None,
         job: Box::new(move |context| {
@@ -4741,15 +4896,13 @@ fn release_open_for_handoff(
             }
             match port.open_for_handoff(&launch) {
                 Ok(vua_orchestrator::HandoffOutcome::HandshakeArrived) => {
-                    Ok(vua_orchestrator::TaskExit::Done(
-                        vua_orchestrator::build_handoff_fact(
-                            &launch.build_id,
-                            &launch.project_id,
-                            &launch.editor_exe.to_string_lossy(),
-                            &launch.editor_version,
-                            &now_rfc3339(),
-                        ),
-                    ))
+                    Ok(vua_orchestrator::TaskExit::Done(fact_builder(
+                        &launch.build_id,
+                        &launch.project_id,
+                        &launch.editor_exe.to_string_lossy(),
+                        &launch.editor_version,
+                        &now_rfc3339(),
+                    )))
                 }
                 Ok(vua_orchestrator::HandoffOutcome::HandshakeTimeout) => {
                     // The wait ran and no handshake arrived: an honest
@@ -4782,7 +4935,7 @@ fn release_open_for_handoff(
             request_id,
             json!({
                 "schemaVersion": RELEASE_HANDOFF_SCHEMA_VERSION,
-                "operation": "release.openForHandoff",
+                "operation": operation,
                 "taskId": accepted.task_id,
                 "correlationId": correlation_id,
             }),
@@ -8209,19 +8362,57 @@ fn application_error(
     message_key: &str,
     category: &str,
 ) -> Value {
+    application_error_with_params(
+        request_id,
+        correlation_id,
+        code,
+        message_key,
+        category,
+        &[],
+    )
+}
+
+/// The error envelope with localized params (ORC-ERR-001 shape: user-facing
+/// text goes through messageKey + params). The params object is emitted
+/// ONLY when non-empty, so every pre-existing error keeps its exact wire
+/// shape (no empty-params field appears). The U19 record-state blocked
+/// rejection is the first admission-time emitter: it carries the record's
+/// original `state` value so the localized wording can name it.
+fn application_error_with_params(
+    request_id: &str,
+    correlation_id: &str,
+    code: &str,
+    message_key: &str,
+    category: &str,
+    params: &[(&str, vua_orchestrator::ParamValue)],
+) -> Value {
+    let mut error = json!({
+        "contractVersion": APPLICATION_CONTRACT_VERSION,
+        "code": code,
+        "category": category,
+        "messageKey": message_key,
+        "recoverable": true,
+        "retryable": false,
+        "correlationId": correlation_id,
+    });
+    if !params.is_empty() {
+        let object = error
+            .as_object_mut()
+            .expect("the error envelope is an object");
+        object.insert(
+            "params".to_owned(),
+            json!(params
+                .iter()
+                .map(|(key, value)| (key.to_string(), serde_json::to_value(value)
+                    .expect("ParamValue always serializes")))
+                .collect::<serde_json::Map<String, Value>>()),
+        );
+    }
     json!({
         "contractVersion": APPLICATION_CONTRACT_VERSION,
         "requestId": request_id,
         "ok": false,
-        "error": {
-            "contractVersion": APPLICATION_CONTRACT_VERSION,
-            "code": code,
-            "category": category,
-            "messageKey": message_key,
-            "recoverable": true,
-            "retryable": false,
-            "correlationId": correlation_id,
-        },
+        "error": error,
     })
 }
 

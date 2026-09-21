@@ -415,7 +415,10 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         // 缺席收敛为显式不装配的异常路径)。模拟 Provider 无构建记录面
         // 与产线进程/窗口面,恒答诚实缺席(code/category/messageKey 三元
         // 与真实缺席分支一致)——绝不伪造受理回执/任务快照/交接事实
-        // (上传状态永不进入 VUA 事实,形状钉死)
+        // (上传状态永不进入 VUA 事实,形状钉死)。U19 v0.2 检视入口
+        // (release.openForInspection)的同分支缺席候桌面 TS 契约面升 0.2
+        // 后随批补入(method 闭集在 @vua/contracts,桌面座所有权)——
+        // 其前模拟面对检视方法如实答 unknown_method,不属伪造
         return this.#failure(request, this.#error(
           "vua.release_handoff.unavailable",
           "unavailable",
