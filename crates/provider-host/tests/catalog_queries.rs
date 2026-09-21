@@ -18,7 +18,7 @@ use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
 
 use serde_json::{json, Value};
-use vua_bdl_store::{ArtifactMode, BdlStore, CatalogListParams};
+use vua_bdl_store::{ArtifactMode, BdlStore, BDL_FORMAT_VERSION, CatalogListParams};
 use vua_provider_host::{run_provider_host_with_services, WarehouseConfig};
 
 fn schema_dir() -> PathBuf {
@@ -171,7 +171,10 @@ fn empty_table_answers_the_honest_empty_state_over_the_wire() {
     assert_eq!(value["operation"], "catalog.status");
     assert_eq!(value["result"]["health"], "unknown");
     assert_eq!(value["result"]["revision"]["catalogUpdatedSeq"], Value::Null);
-    assert_eq!(value["result"]["revision"]["datasetRevision"], "0.1");
+    assert_eq!(
+        value["result"]["revision"]["datasetRevision"],
+        BDL_FORMAT_VERSION,
+    );
 }
 
 #[test]
