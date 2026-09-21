@@ -1,14 +1,14 @@
 //! The recipe-export v0.1 core port face (proposal 029 B-face wiring loop 2,
-//! core batch 2026-09-22). The frozen word-row `recipe.exportProjectDraft`
+//! core batch 2026-09-22) and the REAL export executor (implementation loop
+//! 3, same day). The frozen word-row `recipe.exportProjectDraft`
 //! (`schemas/recipe-export/v0.1/`, freeze batch the same day) routes through
-//! THIS trait — the synchronous read-only Query that derives a RECIPE DRAFT
-//! (never a Recipe) from one registered Unity project. This module lands the
-//! port face and the typed draft document; the REAL export executor (the
-//! on-disk reader of the standing proposal-013 inspection aggregate: VPM
-//! manifest declared dependencies + locked pins, the observed editor version,
-//! the VUA-native identity tri-state) is the NEXT loop's implementation slice
-//! and is deliberately absent here — the wire route and the wire tests pin
-//! the contract against fakes before any implementation exists.
+//! the [`ProjectDraftExportPort`] trait — the synchronous read-only Query
+//! that derives a RECIPE DRAFT (never a Recipe) from one registered Unity
+//! project. This module lands the port face, the typed draft document, and
+//! (loop 3) the on-disk executor [`OnDiskProjectDraftExporter`] over the
+//! standing proposal-013 inspection facts: VPM manifest declared
+//! dependencies + locked pins, the observed editor version, the VUA-native
+//! identity tri-state.
 //!
 //! Structure (three rulings of the freeze batch, 029 inline core section):
 //!
@@ -44,8 +44,14 @@
 //! the reused `vua.project.project_not_found`.
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
+use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Arc;
 
 use crate::contracts::AppErrorV1;
+use crate::editor_targets::classify_version_string;
+use crate::time::{Clock, SystemClock};
 
 /// Capability declaration for the project-draft export read face (proposal
 /// 029 B-face loop 2). Same shape law as the packages-side
@@ -187,13 +193,13 @@ pub struct ProjectDraftDocumentV01 {
 
 /// The project-draft export port (proposal 029 B-face loop 2): the core
 /// cross-domain contract the wire route serves
-/// `recipe.exportProjectDraft` through. The implementing adapter (the
-/// real 013-aggregate reader) lands with the NEXT loop's implementation
-/// slice; until then the declared-none default keeps every answer honestly
-/// unavailable. Errors travel verbatim through the route (the read-face
-/// pass-through discipline); zero new error codes — the face's closed set
-/// is `vua.recipe_export.unavailable` / `vua.recipe_export.invalid_params`
-/// / the reused `vua.project.project_not_found`.
+/// `recipe.exportProjectDraft` through. The real implementing adapter is
+/// [`OnDiskProjectDraftExporter`] (loop 3); until an implementation is wired
+/// the declared-none default keeps every answer honestly unavailable.
+/// Errors travel verbatim through the route (the read-face pass-through
+/// discipline); zero new error codes — the face's closed set is
+/// `vua.recipe_export.unavailable` / `vua.recipe_export.invalid_params` /
+/// the reused `vua.project.project_not_found`.
 pub trait ProjectDraftExportPort: Send + Sync {
     /// Capability declaration for the export face. Default declared-none
     /// (ORC-DEV-004; the 025 accessor law): the served capability row and
@@ -226,4 +232,270 @@ pub trait ProjectDraftExportPort: Send + Sync {
             "corr-recipe-export-port",
         ))
     }
+}
+
+/// The REAL export executor (proposal 029 B-face loop 3, core batch
+/// 2026-09-22): the on-disk reader that derives a Recipe project draft from
+/// one registered Unity project by observing exactly the facts the
+/// proposal-013 inspection aggregate observes — nothing else, nothing
+/// invented. The route's registration calibration (provider-host, the SAME
+/// 013 aggregate `project.inspectProject` uses) has already answered
+/// `vua.project.project_not_found` for off-aggregate paths before this port
+/// is ever called, so the executor reads without re-judging registration.
+///
+/// Facts observed (the 013 aggregate's read discipline mirrored in core —
+/// the aggregate imports core, never the reverse, so the reads are mirrored
+/// here rather than called: zero new project-manager read faces):
+///
+/// - `Packages/vpm-manifest.json` — the DECLARED `dependencies` map (rows of
+///   the draft; string-valued entries only, the aggregate's
+///   document-read rule) joined with the same-id pin from the `locked` map
+///   (a locked-only entry is a transitive resolution fact and produces no
+///   row). Rows sort by `packageId` ascending — the frozen deterministic
+///   presentation fact. An ABSENT manifest, an unreadable one, a corrupted
+///   (non-parsing) one and a non-object one all project the honest EMPTY
+///   rows vec — the 013 aggregate itself carries exactly this projection for
+///   those findings (a parse failure there is an honest warning finding,
+///   never an invented package list; its diagnostics channel documents the
+///   cause, while the draft's closed seven-key set has no diagnostics member
+///   and the face's error closed set reserves no code for on-disk
+///   observations: 观察失败不设错误码，诚实律 1/2). No row is ever guessed.
+/// - `ProjectSettings/ProjectVersion.txt` — the observed editor version,
+///   verbatim, under the same completeness gate the aggregate applies (the
+///   `m_EditorVersion:` line must carry a classifiable complete version); a
+///   missing, unreadable or incomplete version line projects
+///   `unityVersionConstraint: null` PLUS the `environmentUnityVersion`
+///   missing marker — the frozen bidirectional iff (honesty rule 2: a failed
+///   observation rides as a marked fact, never as a fabricated value and
+///   never as an invented error).
+/// - `.vua/project.json` — the VUA-native identity tri-state
+///   (absent/present/unreadable) under the same verdict boundaries as the
+///   aggregate's identity finding: a missing file is ABSENT; an existing
+///   file that fails to parse or carries an unknown identity version is
+///   UNREADABLE — itself evidence, never silently reported as absent.
+/// - the path's final component — the project-name source fact. `None` (the
+///   honest null) when the path spells no final component; the aggregate
+///   keeps a whole-path echo for stale-list visibility, which is a display
+///   concern the draft's schema gloss does not carry ("null when no name
+///   fact is readable" — a path without a final component has no name
+///   fact). The draft has NO title field either way (ruling 2).
+///
+/// The nine structural/semantic missing dimensions are constant members of
+/// every draft (the zero-bridge ruling: the relation face is never scanned;
+/// design intent — roles, labels, title semantics — is never asserted by an
+/// export; option B = the user completes by hand through the confirmation
+/// flow). The executor is therefore a TOTAL function over its input: every
+/// on-disk observation failure degrades into the honest fact the frozen
+/// word face reserves for it, and the `Err` arm exists for the port
+/// contract (typed refusals of other adapters, the wire-verified
+/// pass-through discipline) — this executor never produces one.
+pub struct OnDiskProjectDraftExporter {
+    clock: Arc<dyn Clock>,
+}
+
+impl OnDiskProjectDraftExporter {
+    /// Production constructor: the real system clock stamps `exportedAt`.
+    pub fn new() -> Self {
+        Self { clock: Arc::new(SystemClock) }
+    }
+
+    /// Injectable-clock constructor (the ORC-TST-001 replaceable-source
+    /// discipline): tests pin `exportedAt` with a fixed clock instead of
+    /// depending on the real one.
+    pub fn with_clock(clock: Arc<dyn Clock>) -> Self {
+        Self { clock }
+    }
+
+    /// Reads the observed editor version from
+    /// `ProjectSettings/ProjectVersion.txt` under the aggregate's
+    /// completeness gate: the file must read, carry an `m_EditorVersion:`
+    /// line, and the trimmed remainder must classify as a complete version —
+    /// any miss is the honest `None` (null constraint + missing marker).
+    fn observed_unity_version(project_dir: &Path) -> Option<String> {
+        let text = std::fs::read_to_string(project_dir.join("ProjectSettings").join("ProjectVersion.txt"))
+            .ok()?;
+        let raw = text
+            .lines()
+            .find_map(|line| line.strip_prefix("m_EditorVersion:"))
+            .map(str::trim)
+            .unwrap_or_default();
+        if raw.is_empty() {
+            return None;
+        }
+        // Same gate as the 013 aggregate's unity_version fact: an
+        // incomplete/unclassifiable version line is NOT an observed version.
+        classify_version_string(raw).map(|_| raw.to_owned())
+    }
+
+    /// Reads the VUA-native identity tri-state from `.vua/project.json`
+    /// under the aggregate's verdict boundaries: NotFound is ABSENT; every
+    /// other read failure, a parse failure or an unknown identity version is
+    /// UNREADABLE; only a parseable document at the current version is
+    /// PRESENT. `marked_at` participates in the parse so the tri-state
+    /// boundary matches the aggregate's identity finding exactly (a document
+    /// missing a required member is unreadable evidence, not a present
+    /// identity); the note and marking time are not draft facts.
+    fn observed_vua_identity(project_dir: &Path) -> VuaIdentityStatusV01 {
+        #[derive(Deserialize)]
+        #[serde(rename_all = "camelCase")]
+        struct IdentityProbe {
+            #[allow(dead_code)]
+            marked_at: String,
+            identity_version: u32,
+        }
+        const IDENTITY_SCHEMA_VERSION: u32 = 1;
+        match std::fs::read_to_string(project_dir.join(".vua").join("project.json")) {
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                VuaIdentityStatusV01::Absent
+            }
+            Err(_) => VuaIdentityStatusV01::Unreadable,
+            Ok(raw) => match serde_json::from_str::<IdentityProbe>(&raw) {
+                Ok(probe) if probe.identity_version == IDENTITY_SCHEMA_VERSION => {
+                    VuaIdentityStatusV01::Present
+                }
+                _ => VuaIdentityStatusV01::Unreadable,
+            },
+        }
+    }
+
+    /// Reads the manifest's `dependencies` (declared rows) and `locked`
+    /// (same-id pins) maps as documents — the aggregate's rule: string-valued
+    /// entries only, a missing or wrong-shaped field is an empty map, never a
+    /// guessed entry. Sorted maps make the projection deterministic.
+    fn observed_manifest(project_dir: &Path) -> (BTreeMap<String, String>, BTreeMap<String, String>) {
+        let manifest_path = project_dir.join("Packages").join("vpm-manifest.json");
+        // Only a FILE is a manifest (the aggregate's manifest_present gate);
+        // an absent manifest is the honest empty rows projection.
+        if !manifest_path.is_file() {
+            return (BTreeMap::new(), BTreeMap::new());
+        }
+        let Ok(text) = std::fs::read_to_string(&manifest_path) else {
+            // Unreadable: an honest warning finding in the aggregate's
+            // diagnostics channel; here the honest projection is no rows —
+            // never an invented package list, never an invented error.
+            return (BTreeMap::new(), BTreeMap::new());
+        };
+        let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) else {
+            // Corrupted JSON: same honest projection (the aggregate marks
+            // manifest_schema_ok=false and keeps the maps empty).
+            return (BTreeMap::new(), BTreeMap::new());
+        };
+        let Some(object) = value.as_object() else {
+            // Valid JSON but not an object: the aggregate's
+            // manifest_schema_unexpected finding; the maps stay empty.
+            return (BTreeMap::new(), BTreeMap::new());
+        };
+        let string_map = |field: &str| -> BTreeMap<String, String> {
+            object
+                .get(field)
+                .and_then(|field| field.as_object())
+                .map(|entries| {
+                    entries
+                        .iter()
+                        .filter_map(|(id, version)| {
+                            version.as_str().map(|version| (id.clone(), version.to_owned()))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+        (string_map("dependencies"), string_map("locked"))
+    }
+}
+
+impl Default for OnDiskProjectDraftExporter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl ProjectDraftExportPort for OnDiskProjectDraftExporter {
+    /// The loop-3 override FLIP (the F5 `template_capabilities` law): the
+    /// implementation exists, so the served capability row and the route
+    /// gate turn available — until this override the declared-none default
+    /// kept every answer honestly unavailable.
+    fn export_capabilities(&self) -> ProjectDraftExportCapabilities {
+        ProjectDraftExportCapabilities { export_project_draft: true }
+    }
+
+    fn export_project_draft(
+        &self,
+        project_path: &str,
+    ) -> Result<ProjectDraftDocumentV01, AppErrorV1> {
+        let project_dir = Path::new(project_path);
+        let (declared, locked) = Self::observed_manifest(project_dir);
+        // Rows = the DECLARED set (locked-only entries are transitive
+        // resolution facts, not user intents — no rows for them); packageId
+        // ascending is the frozen deterministic presentation fact and the
+        // BTreeMap iteration already yields it.
+        let dependencies: Vec<DraftDependencyV01> = declared
+            .into_iter()
+            .map(|(package_id, version_constraint)| DraftDependencyV01 {
+                locked_version: locked.get(&package_id).cloned(),
+                package_id,
+                version_constraint,
+            })
+            .collect();
+        let unity_version_constraint = Self::observed_unity_version(project_dir);
+        let mut missing = vec![
+            MissingDimensionV01::Assets,
+            MissingDimensionV01::Instances,
+            MissingDimensionV01::Relations,
+            MissingDimensionV01::WardrobeGroups,
+            MissingDimensionV01::TargetAvatar,
+            MissingDimensionV01::AssetRoles,
+            MissingDimensionV01::AssetLabels,
+            MissingDimensionV01::SourceRefs,
+            MissingDimensionV01::TitleSemantics,
+        ];
+        if unity_version_constraint.is_none() {
+            // The conditional tenth member — iff-bound to the null
+            // constraint by the frozen schema's two implications.
+            missing.push(MissingDimensionV01::EnvironmentUnityVersion);
+        }
+        Ok(ProjectDraftDocumentV01 {
+            dependencies,
+            draft_id: draft_identity_v7(),
+            environment: DraftEnvironmentV01 { unity_version_constraint },
+            exported_at: self.clock.now_rfc3339(),
+            missing,
+            origin: DraftOriginV01 {
+                project_name: project_dir
+                    .file_name()
+                    .map(|name| name.to_string_lossy().into_owned()),
+                project_path: project_path.to_owned(),
+                vua_identity_status: Self::observed_vua_identity(project_dir),
+            },
+        })
+    }
+}
+
+/// Generates a uuid-v7-shaped DRAFT INSTANCE identity (unix-ts-ms ordering +
+/// in-process counter randomness; single-process uniqueness is what the
+/// per-call mint needs). The version nibble is `7` and the variant bits are
+/// `10xx` so every identity satisfies the frozen `uuidV7` pattern shared by
+/// the recipe v0.3 suite, the production-use-case v0.2 word list and the
+/// recipe-export v0.1 draft face (the provider-host mint carries the same
+/// shape law; core mirrors it because the dependency direction forbids the
+/// core from calling the transport adapter).
+fn draft_identity_v7() -> String {
+    static COUNTER: AtomicU64 = AtomicU64::new(0);
+    let ms = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis() as u64)
+        .unwrap_or(0);
+    let counter = COUNTER.fetch_add(1, Ordering::Relaxed);
+    let pid = std::process::id() as u64;
+    let unix_ts_ms = ms & 0x0000_ffff_ffff_ffff;
+    let ver_rand_a = 0x7000u32 | (((counter << 1) as u32) & 0x0fff);
+    let var_hi = 0x8000u16 | (((pid << 4) as u16) & 0x3fff);
+    let var_lo = (counter & 0xffff_ffff) | 0x0000_0001_0000_0000;
+    format!(
+        "{:08x}-{:04x}-7{:03x}-{:04x}-{:012x}",
+        (unix_ts_ms >> 16) as u32,
+        (unix_ts_ms & 0xffff) as u16,
+        ver_rand_a & 0x0fff,
+        var_hi,
+        var_lo & 0xffff_ffff_ffff,
+    )
 }

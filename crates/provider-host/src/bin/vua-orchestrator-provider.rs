@@ -178,10 +178,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         handoff: Some(std::sync::Arc::new(
             vua_provider_host::EditorHandoffAdapter::new(),
         )),
-        // Proposal 029 B-face loop 2: the export-executor adapter is the
-        // NEXT loop's implementation slice — the route keeps answering the
-        // frozen honest absence until it lands (declared-none discipline).
-        draft_exporter: None,
+        // Proposal 029 B-face loop 3: the REAL on-disk export executor is
+        // wired and its capability override flips the served row — the read
+        // face derives drafts from the 013 inspection facts (declared VPM
+        // dependencies + locked pins, the observed editor version, the VUA
+        // identity tri-state). Real-machine export evidence stays W25 (O-2).
+        draft_exporter: Some(std::sync::Arc::new(
+            vua_orchestrator::OnDiskProjectDraftExporter::new(),
+        )),
     }
     });
     // Project-domain command face (proposals 013/014) + environment
