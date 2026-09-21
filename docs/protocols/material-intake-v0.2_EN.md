@@ -6,9 +6,10 @@
 > Status: FROZEN (B3 baseline v0.2 provisioning-step increment, batch 141,
 > 2026-09-21; W25 real-machine finding fix; 0.2.1 provision dependency-resolution
 > annotation, batch 146, 2026-09-21; 0.2.1 failure word-face split + Packages/
-> channel-boundary annotation, batch 150, 2026-09-21)
+> channel-boundary annotation, batch 150, 2026-09-21; 0.2.1 C# dormant-face
+> status annotation, batch 158, 2026-09-22)
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
-> Updated: 2026-09-21
+> Updated: 2026-09-22
 > Previous: [v0.1](material-intake-v0.1_EN.md) (2026-09-05, kept as history)
 
 The ONLY word-face change in v0.2 versus v0.1: the closed step-kind set gains
@@ -50,6 +51,33 @@ under the same family. A package of this kind added after planning is refused
 honestly at the pre-execution re-inspection (same `archive_invalid`, before the
 snapshot and the first mutation). Archives containing only `Assets/` entries at
 plan time behave exactly as before.
+
+v0.2.1 (batch 158, operator ruling on #45 "C# dormant narrowing", adopting the
+environment seat's batch-154 trade-off brief): annotation only; zero behavior
+change, zero C# touch. (1) **The C# materialization face's `Packages/`
+acceptance clause is a chain-unreachable dormant face**: the C# op
+(`BridgeCommandProcessor.MaterializeExtractedPackage`, whose entry-skip
+condition accepts BOTH `Assets/` and `Packages/`) is deliberately unchanged
+under the Bridge v4 single-addition freeze — its code face was never
+Assets/-only, and the clause is NOT a license for the material direct channel
+to write `Packages/`. While the two standing Rust gates of the batch-150
+annotation hold (the inspection-face precheck, so no plan or confirmation
+forms, and the execution-face extraction arm's wholesale first-pass refusal
+shared by all three materialize consumption sites), no chain path can deliver
+a `Packages/` entry to the C# op; the staging directory's sole producer is the
+extraction arm itself, so no bypass feeds the C# face. (2) **Guard sentence —
+binding removal order**: NEITHER gate may be removed or weakened BEFORE the
+C# face itself is narrowed to match; removing a gate first would silently
+reopen a vpm-manifest-bypassing write path, and the in-repo test pinning the
+extraction arm is the checked fact that keeps the dormancy true — deleting
+the pin or a gate without narrowing the C# face is a forbidden order. (3)
+**Corrigendum**: the batch-150-era Rust comment wording "the `Assets/`-only
+expectation of the C# materialization face" is recalibrated in the same batch
+— what batch 150 made impossible is the divergence MATERIALIZING through the
+chain, not a narrowing of the C# letter. The C#-side reject vertical slice
+(option A: C# refusal + UTF test + this note, one slice) stays queued for the
+W25 real-machine window (BOARD #45), where the in-repo EditMode suite can
+actually run; this annotation is the base that slice needs regardless.
 
 ## Batch and naming
 
