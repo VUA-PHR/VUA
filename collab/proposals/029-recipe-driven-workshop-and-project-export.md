@@ -1,7 +1,14 @@
 ---
 proposal: 029
 title: "车间入口模型重构（配方驱动为主）＋从已有 Unity 项目导出 Recipe（用户裁决 2026-09-21 立项，U16 答复；核心座起草）"
-status: 提出（2026-09-21 第 152 批起草；起草依据＝用户裁决 U16 答复〔BOARD 用户裁决表〕；本批为纯文档批，零构建零测试零代码）
+status: 提出并推进中（2026-09-21 第 152 批起草；A 面形状核可闭环＝桌面
+  wt-3 判决书经集成第 159 批收编，三实现片候操作者派发；**B 面环 1 冻结
+  完成＝2026-09-22 第 160 批核心冻结批**〔recipe-export v0.1 词表行：
+  未决项 4 双案裁决案 B＋载体裁决独立面＋用例面裁决新族单方法，见内联
+  线程核心裁决节与 schemas/recipe-export/v0.1〕；B 面环 2 接线候核心下
+  一切片；未决项 2 保持开放候用户、未决项 5 留 A5 实现片核对、未决项 3
+  ＝#46、未决项 1 候冻结/用户裁定；落地进展登记归 BOARD U16 行与各树状
+  态文件）
 author: wt-2（核心，用户裁决转述起草）
 date: 2026-09-21
 ---
@@ -358,6 +365,74 @@ A 面落形，未决项 4 关系面双案与未决项 5 引擎/服务路径归�
   集成仲裁）。实现切片本拍不开（操作者指派明示），候下拍按④分片派发。诚实边界：本
   判决系形状层核对＋代码事实实读（collab-only 文档批，零构建零测试零代码面改动，免
   全量照章）；零端到端宣称维持，真机全链归 W25（O-2）。
+
+### 回复（核心，2026-09-22 第 160 批——B 面环 1 冻结批）
+
+**应操作者第 160 批指派**（B 面冻结环：①导出面词面冻结＋关系面双案裁
+量＋②导出动作用例面＋③正负例向量与双语协议本＋④REGISTRY）。基线事实
+＝轮首 fast-forward 追平 main c97cbe47（第 159 批世代，落后 13/领先 0
+归零），**桌面侧前置成就亲读确认**：本树 029 内联 wt-3 形状判决书
+（5a43df81）①②③节为消费形状输入——A4 选择事实源动作（链身份键值
+{recipeId, revision} 只取 recipe.get 回执文档身份）、A3 选择器＝读面
+投影不立第三导入入口、A2/A1 唯一保存链同守卫集；A5 词面订正采信（风
+险决策系 amf-production **v0.2** confirm-plan 方法面四键
+{planId, observedRevision, riskChoice, rememberForSession}）。**三项裁
+决**：
+
+- **裁决一（未决项 4 关闭）：关系面双案＝案 B 零桥接骨架＋用户点选补
+  全**。五点理由：①诚实律——新只读桥扫描产出的也只是「结构候选」，
+  不带语义角色/来源/设计意图，用户确认两案皆必需；案 B 的 missing 清
+  单把「不可自动导出」作为类型级事实，不创造「已还原结构」假象；
+  ②冻结面纪律——Bridge v4 已冻结，新只读扫描操作＝协议升版决策（v4
+  加法或 v5），涉生产域 C# 面与独立冻结环；把用户已裁决的导出功能耦
+  合到它并不要求的跨域协议升版上属自造阻塞；③消费形状已成就——桌面
+  判决书的草稿确认补全流（A 面中枢：添加素材＝仓储读面投影选择器）就
+  是点选补全的既有主路径；④边际价值不对称——扫描只买得到 Avatar/衣
+  装结构候选枚举，买不到两个真缺失维度（role/label 设计意图、
+  source_ref 来源）；⑤可升级——missing 闭集清单为案 A 留类型面，日
+  后升版接入时 v0.2 收缩清单即机器可检测的诚实增量。**案 A 只登记不
+  实施**：候选＝unity-bridge 只读场景结构发现操作，涉生产域 C# 面，
+  独立冻结环候 W25 真机走查后裁定；本批零协议升版动作。
+- **裁决二：载体＝导出独立面（新族 recipe-export/v0.1）**。代码事实：
+  recipe v0.3 文档面 assets/instances minItems 1＋asset 行
+  anyOf(entityRef|sourceRef)（schema 实读）——**诚实的空骨架作为
+  Recipe 文档不可能存在**（不发明 entityRef/sourceRef 过不了 Schema，
+  发明即违反诚实三律）；recipe.save 扩展＝改冻结保存链语义＋静默转正
+  通道；文档内 provenance 块被同一事实否决。独立面使「草稿/正式」边
+  界成类型级事实：草稿无 recipeId（转正唯一通道＝用户显式确认后的既
+  有保存链）、无 title、无关系面、无 locked 块——草稿类型没有通往
+  resolve/assembly 的路径。
+- **裁决三：用例面＝新词表行族 recipe-export＋单方法
+  recipe.exportProjectDraft＋同步只读 Query**。不入 production-use-case
+  （执行族语义不同构；扩族＝v0.3 升版动冻结面无必要）；同步 Query 照
+  packages-ops preview 先例（本地文件只读扫描零 Bridge 零网络，不设九
+  态任务——纯读无物可恢复，不发明可取消性/恢复面）；params 闭集单键
+  projectPath（013 注册身份），未注册复用 vua.project.project_not_found
+  （024 判例）。**词面对照采信勘误**：本面无风险决策无 plan 面，草稿
+  转正走 recipe.save 版本链与计划批准零交集。
+
+**冻结产物（本批五件）**：`schemas/recipe-export/v0.1/`（command＋
+result Schema＋5 正 8 负向量）＋核心消费测试
+`crates/orchestrator/tests/recipe_export.rs`（6 例）＋双语协议本
+`docs/protocols/recipe-export-v0.1_ZH.md`/`_EN.md`＋REGISTRY 两行＋本
+节。**草稿文档 v0.1 闭集**：draftId（uuidv7 草稿实例身份，非
+recipeId）＋exportedAt＋origin 三键（projectPath 回显＋projectName 可
+空＋vuaIdentityStatus 三态——absent 非门）＋
+environment.unityVersionConstraint（观察版本 verbatim 照边界 2 不迁
+移；null＝不可读诚实缺席）＋dependencies（行集＝manifest 声明集，
+packageId 升序确定性呈现，versionConstraint 声明 verbatim，
+lockedVersion 同 id 精确钉定；空数组＝合法诚实应答）＋**missing 缺失
+维度清单**（枚举闭集十值；关系面五维＋语义四维恒在逐 contains 钉死；
+environmentUnityVersion ⟺ constraint null 双向 iff 钉死）——确认流
+照单呈现「项目导出草稿＋缺失维度清单」。**未决项处置**：未决项 4 关
+闭（裁决一）；未决项 2 保持开放（本面只携三态事实源，非 VUA 差异提
+示＝呈现裁定候用户）；未决项 5 不涉本冻结（导出不触执行链，留 A5 实
+现片核对）；未决项 3＝#46 原状；未决项 1 原状（桌面倾向在案非裁决）。
+**诚实边界**：导出不宣称还原设计意图；草稿须用户显式确认经 recipe.save
+版本链才转正，绝不静默转正；观察失败不设错误码——manifest 缺席＝诚
+实空数组、版本不可读＝null＋missing 标记，诚实空态非虚报失败；零端到
+端宣称，真机全链归 W25（O-2）。接线批（provider-host 路由臂＋能力行
+＋port face）候本座下一切片。
 
 （待续。各席位按 `### 回复（<角色或 wt>，YYYY-MM-DD）` 追加：A 面形状候桌面表态，
 B 面冻结候核心领取，跨域契约分歧升集成仲裁，产品判断升 [需用户]。）
