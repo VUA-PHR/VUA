@@ -25,10 +25,12 @@ import { format, strings } from "../../i18n/index.ts";
  * 生产链段(019 批 C,需求 §5 Production 分组;UI-04 主流程延续):
  * 保存配方后推进——解析 → 计划 → 批准 → 装配 → 记录。状态与身份在共享
  * 容器层(app/production-chain-store),本组件只是现有 UI 的呈现/操作面
- * (两套 UI 消费同一 store 与同一 Gateway 端口)。
+ * (两套 UI 消费同一 store 与同一 Gateway 端口;029 A5 起配方页选中态
+ * 双挂载同一链段——选择事实源动作把 recipe.get 回执文档身份写入链)。
  *
- * - AC-05:草稿内容偏离已保存修订(stale-draft 闸门)时警示旧授权并禁用
- *   推进——解析应基于保存后的文档;服务端版本锁守卫独立拒绝;
+ * - AC-05:搭配草稿在场且内容偏离已保存修订(stale-draft 闸门)时警示旧
+ *   授权并禁用推进——解析应基于保存后的文档;服务端版本锁守卫独立拒绝;
+ *   草稿不在场时警示不成立(029 A4 判决:选择驱动的链无草稿在场即 ready);
  * - AC-06:审批/执行进行中禁用重复提交;失败如实呈现,不自动重试;
  * - AC-07:受理后展示任务身份与任务中心权威状态;取消经任务中心
  *   (Gateway);本组件无计时器,不存在本地计时成功跳转;
@@ -39,8 +41,9 @@ import { format, strings } from "../../i18n/index.ts";
  */
 const copy = strings.compose.chain;
 
-/** 任务中心权威状态行(AC-07:快照驱动,不本地推断) */
-function ChainTaskLine({ taskId, missingNote }: { taskId: string; missingNote: string }) {
+/** 任务中心权威状态行(AC-07:快照驱动,不本地推断)。029 A6 起车间执行
+ *  状态面复用本行(任务中心同源事实,同一呈现,不另起第二呈现系)。 */
+export function ChainTaskLine({ taskId, missingNote }: { taskId: string; missingNote: string }) {
   const taskCenter = useTaskCenter();
   const task = taskCenter.tasks.find((item) => item.id === taskId);
   return (
@@ -59,7 +62,10 @@ export function ProductionChainSection() {
   const chain = useProductionChain();
   const gateway = useGateway();
 
-  const gate = productionChainGate(chain, draft.dirty);
+  const gate = productionChainGate(chain, {
+    present: draft.items.length > 0,
+    dirty: draft.dirty,
+  });
   const stale = gate.kind === "stale-draft";
 
   // 计划列表(查询缓存:按需重拉,不入容器层——UI-02 缓存只是事实副本)

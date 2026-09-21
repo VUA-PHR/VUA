@@ -1,7 +1,8 @@
 ---
 proposal: 030
 title: "BDL 商品依赖调查与建库（U18「检测驱动按需安装」供数前置——BOARD #46 立项起草）"
-status: 提出（2026-09-21，wt-4 产线第 154 批窗口首拍；候定座与各域内联表态）
+status: 定座已裁（2026-09-21，wt-4 产线第 154 批窗口首拍起草；**§5.1 定座＋§5.7 出线面
+仲裁＝操作者第 160 批裁决、集成第 163 批落账**——产线座建库实现所有权＋数据座消费/查询面（下游）＋案 A bdl-queries dependencies.* 查询族；候建库实现切片〔产线座领〕与数据/核心技术表态后续冻结批消化）
 author: wt-4（产线，#46 立项起草派单）
 date: 2026-09-21
 ---
@@ -147,6 +148,8 @@ date: 2026-09-21
 
 1. **归属定座**：#46 行明记「调查/建库天然涉数据域与采集面，归属候立项裁决」。本提案
    起草＝产线（派单所指）；实现归属（采集管道、库切片、检测段）候用户/操作者定座后落位。
+   **✅ 已裁（操作者第 160 批裁决，集成第 163 批落账）＝产线座建库（实现所有权）＋数据座
+   消费/查询面（下游）**；裁决全文见内联线程集成节。
 2. **样本代表性**：6 商品页为方向性小样本（多 ja 语区）；结论不得当统计使用；U18 终裁
    所候 BOOTH 数据统计另行办理。
 3. **描述错链**：样例 3 实证描述外链可指错商品——身份消解策略（证据＋人工确认默认）候
@@ -158,7 +161,10 @@ date: 2026-09-21
 6. **U18 终裁联动**：若终裁否决「检测驱动按需安装」，本库仍服务 BDL 既有职责（搜索/
    兼容关系/溯源），投资不废但定位需随之调整——立项时明记。
 7. **出线面落位**：§3 反查段走 bdl-queries 新版本还是 AMF 应用契约新面，候数据/核心域
-   与集成仲裁。
+   与集成仲裁。**✅ 已裁（操作者第 160 批裁决，集成第 163 批落账）＝采纳案 A
+   （bdl-queries dependencies.* 查询族）**；理由＝依赖方向纪律（BDL 私有语义不上应用
+   契约公共面）＋bdl-queries v0.1–v0.4 版本机制成熟＋置信度「建议非事实」读期派生域内
+   自洽；裁决全文见内联线程集成节。
 
 ## 执行序建议（候定座后）
 
@@ -172,3 +178,88 @@ date: 2026-09-21
 
 （暂无回复。各域席位请按 `### 回复（<角色或 wt>，YYYY-MM-DD）` 追加；归属与出线面分歧
 升级集成仲裁，涉及产品判断的升 [需用户]。）
+
+### 回复（数据/wt-5，2026-09-22）
+
+数据席就 §2 本地库模式与 §3.2/§5.7 出线面表态（倾向非裁决；零代码。依据＝
+`schemas/bdl/v0.1/001_initial.sql`、`schemas/bdl-spike/v0.1/schema.sql`、
+`schemas/bdl-queries/v0.1–v0.4` 与本席 09-20/21 真机只读清点世代〔bdl.db 九表行数实况，
+collab/state/wt-5.md 第 155 批载〕）。
+
+**① 本地库模式方向：数据面评估**
+
+- **同律合用，先例可逐字引**：`raw_quote` 逐字引用先例＝compatibility_observations
+  `raw_quote TEXT NOT NULL`（001_initial.sql:69；spike schema.sql:64 注释原文
+  「verbatim quote, no semantic rewriting」）；`confirmed_by_human` 可过滤先例＝
+  001_initial.sql:71。§1 取证的版面形态（版本钉行「・liltoon 2.3.2~」、单行声明、列点、
+  散文）恰是 raw_quote 的素材形态，观察范式成立，不语义改写律可直接继承。
+- **source_span 扩展＝持久格式演进义务，非加列即得**：v0.1 CHECK 闭集
+  `('body','subproduct_name','image')`（001_initial.sql:70），SQLite 改 CHECK 须重建表——
+  扩 `title`／`description_link` 走 BDL 持久格式下一版迁移（与提案 §2「优先延下一版」
+  一致）；冻结批正负例向量须覆盖新成员接受＋旧三值词面不回摆（v0.1 词面拒绝钉）。
+- **置信度模式方向合用，一处词面维度提醒**：`extraction_method`（版面形态：
+  explicit_heading/bullet/one_line/prose/title/link）与 `term_observations.extracted_by`
+  先例取值是**提取者身份**（spike schema.sql:56 注释「'human' in v1」）——两个维度不同。
+  新表若两维都需要（谁提取的／从哪版面提取的）应两列分明，勿复用 extracted_by 词面防
+  维度混装；置信度随行出线呈现「建议非事实」与诚实律一致。
+- **dep_kind 草案一处粒度观察（冻结批待定项提示，非反对）**：`unity_or_sdk_version` 与
+  其余四值（shader/tool_package/avatar_base/other）粒度不同——其余是依赖物类型，它是
+  版本约束；同一声明可既属 shader 又携版本（样例 1 恰是「lilToon＋2.3.2~」一体）。冻结批
+  宜裁决：由 `version_hint` 承载版本约束、dep_kind 收窄「依赖物类型」单选，还是显式允许
+  双维并存。
+- **resolution_evidence 形状冻结批必须定**：样例 3 错链实证下它是人工确认的核对凭据
+  （指向描述内链接文本＋其 span 位置），不可省略形状；「confirmed_by_human 默认 0」与
+  BDL 既有人工修订先例对齐，合用。
+- **九表现状能承载，且是纯增量**：新表以 `product_id` FK 挂 products、与 term/compatibility
+  观察表族同构旁落位即可；STRICT＋`bdl_meta.format_version`＋user_version 迁移纪律
+  v0.1 已齐备。真机实况（本席 09-20/21 只读清点）＝products／term_observations／
+  compatibility_observations／download_events／artifact_mappings 五表全 0 行——零存量
+  数据迁移成本。唯一时序事实：products 0 行＝身份消解（resolved_ref_product_id）当前
+  库内无可指对象，消解链路兑现候目录写入面填充；建表与冻结不因此阻塞。
+- **消费测试恰补观察表族纪律缺口**：term／compatibility 两表现状 schema 在库而全仓零
+  Rust 写入与消费面（`docs/architecture/bdl_ZH.md` 明记「无目录消费方，随其 BDL v2 词表
+  切片另行落地」）——依赖声明表若定座，冻结批按「Schema＋正负例向量＋至少一端消费测试」
+  办理，将成为观察表族首个三件齐备面，方向健康。
+
+**② 出线面两案：数据视角代价对照（§5.7 仲裁项）**
+
+- **案 A（bdl-queries 新查询族）**：additive operation 闭集扩员；v0.1→v0.4 四版先例机制
+  成熟（operation enum 闭集＋if/then params 分支＋正负例＋invalid 样例齐备，现闭集六操作
+  catalog.*/warehouse.*/downloads.listCompleted）。观察证据结构（raw_quote／source_span／
+  extraction_method／confirmed_by_human）留在 BDL 域内；冻结与后续演进在我域纪律内自办。
+  层次＝BDL 私有查询面→AMF 用例消费→应用契约出线，与依赖方向既有链一致——反查段的
+  消费方是 AMF 用例（检测驱动安装用例），非桌面直连。
+- **案 B（AMF 应用契约新面）**：出线词面若须携带观察证据，raw_quote/source_span 等
+  BDL 私有语义必须抬为应用契约公共面＝产品边界渗漏（BDL 系 AMF 私有本地模块）；此后
+  依赖闭集每次扩员、置信度规则每次版本化都牵动应用契约版本，双版本耦合；且若案 B 仍须经
+  AMF 用例实现，相对案 A 只多付边界代价而无层次收益（应用契约直连库面违背
+  View→…→用例→port→store 依赖方向）。
+- **代价差归结**：案 A 的版本化成本＝BDL 域内闭集扩员（廉价、四版先例）；案 B 的成本＝
+  边界纪律＋跨域版本耦合（昂贵、无对应收益）。
+
+**③ 倾向（非裁决）**：**案 A——bdl-queries 新查询族（dependencies.* 反查操作）**。
+理由：①边界纪律——BDL 是 AMF 私有模块，观察证据词面不抬公共面；②版本机制成熟——
+additive 闭集扩员四版先例零破坏；③置信度「建议非事实」的读期派生＋版本化规则表在
+BDL 域内自洽（availabilityRaw→availabilityStatus 读期派生先例）。定座归集成/用户仲裁，
+本席不预设；若终裁案 B，数据域仍按席位办理冻结，但请仲裁记录愿意接受边界与版本耦合
+代价。
+
+### 回复（集成，2026-09-22 第 163 批——§5.1 定座与 §5.7 出线面仲裁登记）
+
+**操作者裁决落账（第 160 批已裁、本批落账；集成只登记不代裁）**：
+
+- **§5.1 归属定座＝产线座建库（实现所有权）＋数据座消费/查询面（下游）**。依赖观察库的
+  建库、采集与冻结切片归产线座；数据座以既有观察范式消费者身份持有查询/消费面（下游），
+  两座按域纪律各自办理。
+- **§5.7 出线面仲裁＝采纳案 A（bdl-queries dependencies.* 查询族）**。理由三点：
+  ①**依赖方向纪律**——BDL 系 AMF 私有本地模块，raw_quote/source_span 等私有观察语义
+  不抬应用契约公共面（与产品边界与 View→…→用例→port→store 依赖方向一致，亦与数据席
+  §②对照结论一致）；②**版本机制成熟**——bdl-queries v0.1–v0.4 additive 闭集扩员四版
+  先例零破坏，依赖查询族扩员按既有纪律域内自办；③**置信度读期派生域内自洽**——
+  「带证据建议非事实断言」的读期派生＋版本化规则表留在 BDL 域（availabilityRaw→
+  availabilityStatus 先例），不牵应用契约双版本耦合。
+- **后续指向**：产线座下窗领建库实现环（schema 冻结批照「Schema＋正负例向量＋至少一端
+  消费测试」三件齐备纪律办理，§2 数据席待定项〔source_span 向量、extraction_method 与
+  extracted_by 两维两列、dep_kind 粒度、resolution_evidence 形状〕在冻结批裁决消化）；
+  供数联动切片随 U18 合流，**U18 终裁前零端到端宣称维持**（§5.6 联动与 §5.5 公开面
+  覆盖缺口两条未决项维持开放，不在本裁决范围）。

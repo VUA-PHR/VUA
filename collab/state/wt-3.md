@@ -1,174 +1,153 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: cc5a4d7c
+baseline_commit: 14806f85
 role: 桌面
-updated: 2026-09-21
+updated: 2026-09-22
 ---
 ## 当前焦点
-**第 150 批装配词面适配轮（2026-09-21 06:4x–07:0x，节拍轮工作时段 date 实测；本拍
-三笔：追平壳 553ff5d6＋修复批 441627c2＋本状态批）——任务＝BOARD #44 用户裁决
-（素材直导链在 UI 词面中不得称「装配」，「装配」保留给配方链）落桌面 workshop
-命名空间（wt-4 九缺口 i 项）＋附带缺口 (a) 车间构建记录卡出厂跳转；逐键甄别四
-表＋组件词面，改动 5 键、保留 13 处、登记 2 处，防过正守卫与产线座同律**：
+**第 162 批提案 029 A 面实现切片二「车间降级执行状态面」（2026-09-22 02:4x–03:1x，
+节拍轮工作时段 date 02:41 实测；本拍两笔：实现批＝A6 主体＋素材直导发起位迁移＋
+设计标准 0.7.16＋冒烟扩钉＋本状态批前的 18 文件实现提交；轮首追平壳 025f194e）——
+任务＝操作者第 162 批指派（判决书④第二片）：车间页内容重构为执行状态面（计划/
+执行/记录各卡如实驱动），素材直导发起位按桌面倾向（退出车间、落位仓储页动作案）
+本切片一并落（未决项 1 桌面落形）；附带①设计标准 0.7.15 §8.4 括注勘误（集成第
+161 批登记）②切片三范围预判写入状态批**：
 
-- **追平（TICK 开工纪律）**：轮首 fetch 实测落后 8（cc5a4d7c 世代＝第 149 批集成
-  登记）领先 0，merge-tree 预检 exit 0 零冲突，--no-ff 合并落地追平壳
-  **553ff5d6**（入站＝wt-2 素材链安全修复 83e267d9＋wt-3 上拍三笔收编＋wt-4 状
-  态批＋U19/[需用户] 与 #45 候派登记；零自有内容纯吸收）。VUA-7/VUA-8 全程未触。
-- **甄别方法与关键发现**： BOARD #44 行＋wt-4 本地件缺口清单（VUA-4
-  docs/plans/w25-handoff-segment-map_ZH.md §5，只读不作改动）逐键对表。**关键
-  事实＝en 源表 workshop 词面本就是 setup/build 系**（subtitle "Set up, build and
-  check…"、runningSubtitle "The setup plan is confirmed"、blocked "to set up and
-  build avatars"、role.warehouse 无装配字样），**ja 表同位键全为セットアップ系、
-  ko 表全为 설정 系——唯 zh-CN 翻译表把这批键译成「装配」**，偏离源表语义选择；
-  而 productionFlow（素材直导链）命名空间本身词面干净（导入/检查/计划/执行系零
-  装配）。修复定性＝翻译表向源表语义对齐＋裁决口径落地，en/ja/ko 零触碰。
-- **改动键清单（恰 5 键，全在 zh-CN 表 workshop 命名空间）**：
-  1. `workshop.subtitle`「装配、生产与检测任务…」→「导入、生产与检测任务…」
-     （素材直导链执行段标题宣称，裁决直指；en 源 "Set up, build and check"）。
-  2. `workshop.runningSubtitle`「装配计划已确认…」→「执行计划已确认…」（素材链
-     计划被称装配计划；与 plan.confirm「确认计划并执行」词面呼应）。
-  3. `workshop.idleDescription`「{recipe}与装配流程接入后,这里会显示装配轨道…」
-     →「{recipe}与执行流程接入后,这里会显示轨道阶段…」（流程宣称改执行系；
-     「装配轨道」改「轨道阶段」保 §7.1 轨道语义去装配宣称，en 源无 track 字样）。
-  4. `workshop.blocked.description`「…即可开始装配。」→「…即可开始导入与构建。」
-     （阻断态引导文案；en 源 "set up and build"；与素材链首尾动作呼应）。
-  5. `workshop.station.role.warehouse`「…在此排队,等待进入装配。」→「…等待进入
-     轨道。」（甄别：素材上轨第一站是配方位，「进入装配」既跳段又歧义；改轨道
-     叙事保物流语义零宣称）。
-- **保留清单（逐处理由，防过正守卫）**：
-  - `terms.assembly`「装配」＋nav 侧栏 workshop 页标签「装配 → 生产 → 检测」
-    （labelTerms 拼装）：§7.1 工厂轨道阶段命名，任务点名保留类。
-  - `home.cardDesc.production`「素材进仓、配方装配到发布」＋
-    `onboarding.goals.production.description`「整理素材、创建 {recipe}、装配、检
-    测并准备发布」：轨道段列举（§7.1 序列），非素材链动作宣称。
-  - `workshop.station.role.recipe`「配方位:装配的期望状态来源」：轨道段语义（装
-    配段＝组装工位的期望状态来源），工位职责上下文歧义低。
-  - `workshop.trackAria/trackHint/conclusion/stageState/station.role.assembly`
-    （组装工位行本用「组装」）：轨道阶段词面。
-  - `packages.subtitle`「从{recipe}装配仍是主路径」＋packages 两处空态「用{recipe}
-    装配项目/从{recipe}装配项目」：配方链语义（裁决把装配保留给配方链）。
-  - compose 配方链卡全组：`subtitle`「保存配方后依次推进:解析→计划→批准→装配→
-    记录」＋`executeCta`「执行装配」＋`executeTitle`「装配」＋`executePendingNote`
-    ＋`recordPendingNote`＋`recordEmptyDesc`——裁决明文保留。
-  - `inspection.subtitle`「装配之后的检查报告…」＋`emptyDesc`「检查随装配流程产
-    生…」：**语义归属甄别结论＝保留**——检测对象是配方链装配产物（检查随配方
-    链装配流程产生），非素材直导链宣称。
-  - `taskTitles.assembly`「装配 {name}:骨骼绑定与菜单生成」：引擎 assembly 任务
-    kind 的标题模板（en 源同位 "Set up {name}: rigging and menus"），任务身份词
-    属核心域（任务点名保留类）；骨骼绑定与菜单生成＝配方链组装语义。
-  - 代码注释「装配」（Gateway 装配/端口装配点/查重装配等约 15 处）：composition
-    组装语义非产品词面；`track-model.ts`「装配轨道覆盖的阶段」系轨道模型内部注
-    释。design-system/contracts TS 面零命中。
-- **登记不改清单（2 处）**：
-  - **[知会核心] fixtures 回放带 headline**（strings.fixtures.zh-CN.ts
-    workshop.tapes success/warning「一次完整的装配流程」/「装配在检查点等待确
-    认」）：DEV-only 演示负载（生产构建剔除），且演示内容中心是引擎 assembly 任
-    务（骨骼绑定与菜单生成）——「装配」作主语与任务身份一致，核心域词面桌面不
-    代改；若核心日后细化任务身份词面，fixture 演示自然跟随。
-  - **[知会核心] `taskTitles.assembly` 措辞与 en 源差**（zh「装配 {name}」vs en
-    "Set up {name}"）：与上条同一任务身份，桌面四表翻译不代改引擎 kind 语义归属，
-    候核心斟酌（现状按配方链组装语义保留，非阻塞）。
-- **附带缺口 (a)（甄别为小改，已做）**：车间构建记录卡完成态新增「去出厂」链
-  钮——复用 S-IX-1 流水线行同一导航原语 `onNavigate(PageId)`（纯页面跳转，不跨
-  页携带记录身份，守 023 跨源推导投影纪律）。实现：production-flow-model.ts 新
-  纯谓词 `buildRecordGoReleaseAvailable(displayStatus)`（仅显示投影 completed 放
-  行；aborted/rolled_back 无出厂对象可看、rollback_failed 阻断；recovered 权威态
-  经投影折叠 completed 后与卡头徽标同口径在场——不另设判定）；prop 钻孔
-  WorkshopPage→ProductionFlowSection→BuildRecordCard（onNavigate 可缺席，缺席时
-  链钮不渲染）；i18n 四表新键 `productionFlow.record.goRelease`（en "Go to
-  release"/zh「去出厂」/ja「リリースへ」/ko「릴리스로 이동」）；回归钉＝
-  `buildRecordDisplayStatuses` 四态闭集遍历×显式期望表（新增态缺键即编译错＋测
-  试败，防回摆）。无导航模型/任务身份语义牵扯，不属「登记候派」分支。
-- **修复批 441627c2（恰 9 文件 68+/7-，桌面域内零 wire/合同面触碰）**：strings
-  四表（zh 5 键改＋goRelease 四表新键）＋production-flow-model（谓词＋注释）＋
-  production-flow-model.test（谓词例）＋BuildRecordCard/ProductionFlowSection/
-  WorkshopPage（链钮＋prop 钻孔）。
-- **定向证据（本拍亲测）**：desktop **typecheck 双 tsconfig exit 0**；vitest
-  **90 文件 824/824**（对第 148 批世代 823 净 +1＝谓词例）；**check:i18n OK**
-  （三交付语言表与源表键集对齐，goRelease 四表同步验入）＋**check:boundary OK**
-  ＋**check:contrast 全达标**＋**build exit 0**（chunk 尺寸警告系既有状况非本批
-  引入）。诚实未跑项：cargo 全链（本拍零 Rust 文件触碰）；check:leak 照分工集
-  成侧候补跑。contracts dist 本拍未触（零 packages 改动）。
-- **design-standard 牵连甄别**：design-standard_ZH/EN 全文「装配」仅两处＝主流
-  程名「装配 → 检测 → SDK 交接」（§ 导航重构阶段命名，轨道语义），与本批 5 键
-  零牵连；「去出厂」链钮系复用既有导航原语的呈现小改，无实质交互变更——**照
-  任务纪律不升 0.7.x 版号，本批只在此登记，标准文件零触碰**。
-- **读数（收尾 fetch 实测）**：领先 2（＝修复批＋追平壳，实质 1）、落后 0，无竞
-  速。
+- **追平（TICK 开工纪律）**：轮首 fetch 实测落后 main 5（14806f85 世代＝第 161 批
+  验收本树切片一 ce7612aa＋核心 B 面环 1 冻结 2b491e3d 收编），merge-tree 预检
+  exit 0 零冲突，--no-ff 合并追平壳 **025f194e**（自有内容回吸＋wt-2 冻结产物入
+  手）。VUA-7/VUA-8 全程零触碰。
+- **A6 主体（车间执行状态面）**：新组件 ProductionChainStatusSection（features/
+  workshop）呈现当前执行链的 解析/计划/装配/记录 各卡——与配方页发起面（0.7.15
+  切片一双挂载）消费**同一**容器层 store（029 A4 选择/保存事实源）、**同一**
+  gateway.productionChain 查询、**同一**任务中心权威快照；**零发起动作**：计划
+  批准与组装发起留在配方页选中态，状态面只保留读取类刷新，批准/执行按钮结构性
+  不存在（冒烟 DOM 钉）；本会话无链身份＝诚实空态＋「前往配方页」纯导航 CTA
+  （023 投影纪律：零记录身份跨页，车间页自取权威事实）；任务需要处理
+  （waitingInput/paused/failed，taskNeedsDecision 纯派生）时指路任务中心，不在
+  状态面自建第二恢复决策面（A6 核对点④）；记录行按执行计划身份匹配（AC-13），
+  productionChainRecordSeenAction 幂等登记与发起面同源。**词面单一来源**：状态
+  卡复用 strings.compose.chain 同义词条（卡题/徽标/行式/任务行/空态/失败态），
+  车间特有句子新立 strings.workshop.chain 八键四表同步（键集＋占位符奇偶校验过）；
+  hero subtitle/runningSubtitle/blocked.description 按 A6 语义诚实改写（四表）。
+- **未决项 1 桌面落形（素材直导发起位迁移）**：按操作者第 162 批裁定（退出车间、
+  落位仓储页动作案）落行——ProductionFlowSectionHost 承接自车间页原样迁出的能力
+  获取与意图接线（production-use-case v0.1 用例面与组件行为零改动），挂载仓储页
+  （素材直产链语义起点是素材，与 §8.3 连续素材获取路径同页承接），App.tsx 接
+  onNavigate；.vua-flow 样式块随迁 workshop.css→warehouse.css；live 可用性门控
+  照旧（壳侧 VUA_UNITY_EDITOR 注入缺失⇒本段恒诚实隐藏）；车间页位/环境门控/
+  流水线条/轨道与回放 DNA 全保留（状态面在 idle/running/replay 三视图同位挂载，
+  replay 经 statusSection 槽位——在录制带形态上扩展，不另起第二呈现系）。
+- **附带①勘误兑现**：设计标准 §8.4 括注一行订正（集成第 161 批登记）——链身份
+  来源＝recipe.get 回执**顶层必填身份字段**（存储层权威），非 recipeDocument 文档
+  本体自身（文档体内可无 revision）；实现/测试本就正确，纯文档词面订正，双语同步。
+- **附带②切片三范围预判（写入状态批候下窗派发，本拍未动）**：候选切片三「添加素
+  材＋创建升格」（A1＋A2＋A3 本地段，判决书④估 15–25 文件）——选中态「添加素材」
+  动作（写入所选 Recipe 素材集，走 recipe.save 版本链＋D5 查重＋忙碌守卫同一守卫
+  集，严禁本地直改呈现为已保存）；素材选择器＝仓储读面（acquire entries）投影，
+  不立第三导入入口（A3 本地段；云端段维持未决项 3＝#46 诚实缺席）；「创建」入口
+  升格（草稿弹窗保留为创建起点之一，两 UI 一保存链纪律不破）；词面核对点：创建
+  入口用「创建」（U16 原文），不与「添加素材/组装」混用；设计标准 0.7.17 候（§8.4
+  落文余款）。与切片二互不依赖，可序可并。
+- **测试（全绿后才提交）**：production-chain-status-model 3 新钉（九态闭集上的
+  决策派生＋显式决策守卫）；smoke:production-review **＋8 真 Chromium DOM 钉**＝
+  **41/41**（基线 33＋恰 8）：无链诚实空态、发起面离开车间、纯导航 CTA（023）、
+  链在场各卡呈现无发起词、批准/执行按钮不在状态面、导航恒用户发起——含一次顺序
+  发现的如实注记：链 store 系模块级共享信号，配方链测试会写入链身份，故无链钉置
+  于配方测试之前、链在场钉复用其会话事实（两组分支各得真 DOM 证据）。
+- **验证读数（2026-09-22 03:0x 本树亲测）**：typecheck 双 tsconfig exit 0；vitest
+  **93 文件 867/867**（第 161 批基线 864＋恰本批 3 新钉，数字自洽）；build exit 0；
+  check:boundary OK；check:i18n 双检查 OK；check:contrast 全部达标；check:leak
+  **155 指纹零泄漏**（独立临时生产构建）；check:forest-leak 通过；smoke
+  **41/41**（Chromium 152.0.797.65 合成网关，证据 C:/Users/AR/AppData/Local/Temp/
+  vua-production-review-dom.json，2026-09-21T19:05Z）；df 先查 575G/70%。
+- **brief ①区判读**：[→桌面] R4–R6 已落本树知会＝切片一已消化（模态所有权与本拍
+  涉面零交叉）；其余失鲜工作树无；wt-4 回执不回执。
+- **本拍纪律**：实现批恰 18 文件（新 4：状态面组件/宿主/模型＋测试；改 14：车间页/
+  仓储页/App/compose 链段/export/双 css/四表/设计标准双语/REGISTRY＋fixture 冒烟
+  脚本）＋本状态批；零新增 wire 契约零新增依赖（提案边界 4 照准）；mock/fixture
+  不出 DEV（冒烟系 DEV 脚本＋合成网关，check:leak 155 指纹零泄漏复核）；诚实边界
+  维持**零端到端宣称**——本拍全部系代码面＋真 Chromium DOM 合成网关证据，live 链
+  状态面呈现/链身份跨会话语义（重启后诚实空态）的真机复核归 W25（O-2），测试绿
+  ≠真机绿。
 
-## 前情（本域链，全文见本文件 git 历史）
-上拍（09-21 05:5x–06:1x 三笔）＝第 148 批反向审查轮（追平壳 05d546b9＋修复批
-0e6208ea＋状态批）——行族分派律＋并呈律两缺陷同拍自修，已经第 149 批收编验收。
-更早 F4 桌面双环＋W25 呈现缺口修复见 git 历史。
+## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
+第 160 批（09-22 01:5x–02:2x 三笔）＝提案 029 A 面实现切片一「配方中枢接线」
+（A4 选择事实源动作＋A5 选中态组装发起双挂载＋`.recipe` 键两处 live wire 真缺陷
+修复＋词面「组装」化＋设计标准 0.7.15），已经第 161 批收编（合并 ce7612aa；集成
+登记 §8.4 括注词面一处不精确候勘误——本拍勘误兑现）。第 156 批（09-22 00:0x）＝
+release-handoff TS 契约对齐切片，第 157 批收编（f3d0c1f0）。第 154 批＝U19 交棒
+准入闸桌面消费切片（0.7.14），第 155 批收编（18d6d15f）。更早见 git 历史。
 
-## 本轮交付（cc5a4d7c 基线世代）
-- **追平壳 553ff5d6**（吸收 main cc5a4d7c＝第 149 批，预检 exit 0，零自有内容）。
-- **修复批 441627c2**（恰 9 文件：四表＋flow 模型＋flow 测试＋三组件）。
-- **本状态批（恰本文件）**。
-- 零新阻塞、零新升级项、零 [需用户]。
+## 本轮交付（14806f85 基线世代）
+- **追平壳 025f194e**（吸收 main 14806f85＝第 161 批，预检 exit 0，零自有内容）。
+- **实现批**（恰 18 文件，见当前焦点逐项）：A6 车间执行状态面＋未决项 1 桌面落形
+  （发起位迁仓储页）＋设计标准 0.7.16 双语（§8.5 落文＋§8.4 勘误）＋REGISTRY＋
+  测试 3 新钉＋冒烟 8 新钉。
+- **本状态批（恰本文件）**：含切片三范围预判（候下窗派发）。
 
 ## 残余风险清单（如实登记，非阻塞）
-- **词面适配的覆盖边界**：本批甄别面＝i18n 四表＋渲染器组件词面＋代码注释；引
-  擎（Rust 侧）任务身份/阶段词面未逐键过表（ crates/ 非桌面所有权，只读实证限
-  定）——引擎 wire 面若存在面向用户的「装配」宣称词面，候核心自查，桌面不代审。
-- **fixtures headline 与 taskTitles.assembly 登记项**（见上，[知会核心] 两处，
-  DEV-only/身份词性质，非生产词面缺陷）。
-- **组件层渲染行为测试基建缺席**（BOARD #37 同源，沿上拍登记）：「去出厂」链钮
-  以纯谓词＋闭集期望表钉死，按钮接线本身无 jsdom 断言——谓词与消费点单点连接，
-  回摆风险低非零。
-- **i18n 键值语义漂移类缺陷的制度性防线**：本批根因＝翻译表措辞偏离源表语义选
-  择而 typecheck/check:i18n 均不校验措辞（键集与插值参数对齐≠语义对齐）——四表
-  语义对表目前靠人工甄别，无自动化守卫；是否值得加「同源语义敏感键清单」类检
-  查属独立决策，登记不抢跑。
+- **组件层渲染行为测试基建缺席**（BOARD #37 同源沿登）：本拍状态面 React 挂载路径
+  的覆盖来自冒烟脚本（真 Chromium＋合成网关），vitest 内仍无组件挂载基建，归 W25
+  走查。
+- **链身份跨会话语义系实现时点定性**：链 store 为内存信号，应用重启后车间状态面即
+  诚实空态（本会话无链）——在途任务经任务中心仍有权威快照，但链卡（计划/记录）不
+  自行重建链身份；该语义是否符合用户对「重启后车间看到什么」的期望，候 W25 真机
+  走查确认（如需持久化链身份属新契约面，走冻结环）。
+- **smoke 41/41 系合成网关证据**：真机（Kernel live）状态面全链未行使，零端到端
+  宣称。
 
 ## 在途/待他角色
-- **[等集成] 本拍三笔候验收**（追平壳 553ff5d6＋修复批 441627c2＋本状态批）。
-- **[等核心] fixtures headline/taskTitles.assembly 两处知会**（上列登记项，非阻
-  塞非缺陷，候斟酌）。
-- **[等用户] W25 真机复验维持**：装配词面适配后的车间页真机词面＋「去出厂」链
-  钮真机呈现＋素材链全链走查——归 W25（O-2）候用户返回驱动。
+- **[等集成] 本拍两笔候验收**（追平壳 025f194e＋实现批＋本状态批）。
+- **[候操作者] 切片三派发**（范围预判见当前焦点；与切片二互不依赖）。
+- **[等用户] W25 真机复验维持**：既有链＋本拍新增（车间状态面 live 呈现、链身份
+  跨会话语义、素材直导仓储页落位观感）——归 W25（O-2）候用户返回驱动。
 
 ## 阻塞
 - 无阻塞。
 
 ## 下次合并意图
-**候验收对象＝本拍三笔（--no-ff）：追平壳 553ff5d6＋修复批 441627c2（恰 9 文件）
-＋本状态批恰本文件，写明「wt-3 第 150 批装配词面适配轮（基线 cc5a4d7c）」**。桌
-面域 TS＋collab 面两处；请重点 diff 复核：zh 表 5 键新词面（改/留清单是否守裁
-决口径防过正）、buildRecordGoReleaseAvailable 谓词与三组件 prop 钻孔接线、
-goRelease 四表键同步。
+**候验收对象＝本拍两笔（--no-ff）：实现批（恰 18 文件）＋本状态批恰本文件，写明
+「wt-3 第 162 批提案 029 A 面实现切片二车间降级执行状态面（A6＋未决项 1 桌面落形，
+基线 14806f85）」**。desktop 面（实现批请定向复跑 desktop check 链＋
+smoke:production-review）；collab 面请重点复核：A6 零发起动作（批准/执行按钮不在
+状态面——冒烟钉＋代码双证）、未决项 1 迁移的非删除性（v0.1 wire 面与组件行为零
+改动、宿主原样迁线）、023 纪律（空态 CTA 纯导航零记录身份跨页）、§8.4 勘误与集成
+第 161 批登记措辞一致、素材直导门控照旧（capability 缺席诚实隐藏）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 06:4x–07:0x，节拍轮工作时段；三笔）：①date 实测工作时段，
-pnpm collab:brief ①区判读（wt-7/wt-8 留言两件系 R4–R6 落地知会，与本拍域零交
-叉；两工作树按指派全程未触）；②追平壳 553ff5d6（落后 8 过线自理，预检 exit 0
-零冲突）；③BOARD #44＋wt-4 缺口清单只读对表，四表＋组件逐键甄别（en 源表已
-setup 系的源语言事实＝本批关键证据）；④zh 表 5 键订正＋13 处保留逐处记由＋2 处
-登记；⑤附带缺口 (a) 小改分支落地（谓词＋链钮＋四表键＋防回摆测试）；⑥定向证
-据亲测全绿（typecheck 双 0＋vitest 824/824＋i18n/boundary/contrast/build）；
-cargo 零触碰如实未跑、leak 集成侧；⑦诚实边界维持：测试绿≠真机绿、零端到端宣
-称——车间词面与链钮真机呈现归 W25（O-2）；[需用户] 条目照规则跳过未代决。在手
-无半途切片、除本状态批外无未提交改动。退出待命，候集成验收本拍三笔、用户 W25
-返回、下轮 brief 或新指派。
+本轮（2026-09-22 02:4x–03:1x，节拍轮工作时段 date 02:41 实测；追平壳＋实现批＋
+状态批）：①date 02:41 实测正常时段，pnpm collab:brief ①区判读＝[→桌面] R4–R6
+知会零交叉（切片一已消化），失鲜工作树无；②轮首追平壳 025f194e（落后 5 预检
+exit 0 零冲突）；③通读操作者第 162 批指派＋提案 029 全文（判决书④切片二＋未决
+项 1 倾向）＋集成第 161 批验收登记；④现状代码逐文件实读（WorkshopPage/
+ProductionFlowSection/ProductionChainSection/production-chain-store/WarehousePage/
+GatewayProvider/task-port/nav-model/App/四表/冒烟脚本）并核对任务中心九态与回放
+DNA；⑤A6 实现（状态面组件＋模型＋链段 ChainTaskLine 导出复用＋车间页三视图同位
+重构＋车间词面诚实改写）；⑥未决项 1 落形（宿主迁线＋仓储页挂载＋App 接线＋样式
+随迁）；⑦设计标准 0.7.16 双语（§8.5 落文＋§8.4 括注勘误）＋REGISTRY；⑧测试 3 新
+钉＋冒烟 8 新钉（含链 store 共享导致的测试顺序发现，如实注记于实现批）＋全量验证
+（typecheck 双 0＋vitest 93 文件 867/867＝基线 864＋3＋build 0＋boundary/i18n/
+contrast/leak 155 指纹/forest-leak 全过＋smoke 41/41，df 先查 575G/70%）；⑨本状
+态批（含切片三范围预判候派发）；⑩诚实边界维持：零端到端宣称——全部证据系代码
+面＋真 Chromium DOM 合成网关，live 链归 W25（O-2）；[需用户] 条目照规则跳过未
+代决。在手无半途切片、除本状态批外无未提交改动。完成后推送并退出待命，候集成验
+收本拍两笔。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝追平壳 553ff5d6＋修复批 441627c2（恰 9 文件：
-  装配词面 5 键订正＋缺口 (a) 出厂链钮＋goRelease 四表键＋谓词回归钉）＋本状态
-  批，写明「wt-3 第 150 批装配词面适配轮（基线 cc5a4d7c）」**。桌面 typecheck
-  双 0＋vitest 824/824＋build＋i18n/boundary/contrast 本拍亲测在案，check:leak
-  候你侧照分工补跑。
-- [→wt-4]（回执）九缺口 (i) 项已领——甄别结论：产线座点名候选 5 处中 4 处
-  （subtitle/runningSubtitle/idleDescription/blocked）按裁决改；role.warehouse
-  「等待进入装配」改「等待进入轨道」（轨道叙事保留、跳段歧义消除）；role.recipe
-  与 inspection.subtitle 语义归属甄别为保留（轨道段语义/配方链装配产物检测对
-  象），compose 卡全组未动守裁决。缺口 (a) 已做（记录卡完成态「去出厂」，纯导
-  航原语，谓词钉死）。贵席清单本桌侧两项至此闭合。
-- [→核心/wt-2]（知会）两处登记不改：fixtures 回放带 headline「装配流程」系演
-  示引用引擎 assembly 任务身份（DEV-only）；taskTitles.assembly zh/en 措辞差同
-  源。任务身份词面属核心所有权，候你席斟酌，桌面不代改。
-- [→wt-7]（知会）本批 i18n 新增键恰 1（productionFlow.record.goRelease，四表同
-  步）；zh 表另 5 键为措辞订正零键集变化；check:i18n 验过。
-- （回执不回执：brief ①区两件知会随本拍消化；在途事项以 BOARD 与本状态文件当
-  前焦点为准。）
+- [→集成] 验收请求：**候验收对象＝本拍两笔，写明「wt-3 第 162 批提案 029 A 面实现
+  切片二车间降级执行状态面（A6＋未决项 1 桌面落形，基线 14806f85）」**——实现批
+  恰 18 文件（desktop 面，请定向复跑 desktop check 链＋smoke:production-review）
+  ＋本状态批。重点 diff 复核面见「下次合并意图」。
+- [→核心/wt-2]（对表知会）：未决项 1 桌面落形已按操作者第 162 批裁定落地（素材直
+  导发起位退出车间、落位仓储页动作案；production-use-case v0.1 wire 面与组件行为
+  零改动，宿主 ProductionFlowSectionHost 原样迁线）——与 B 面冻结（recipe-export
+  v0.1）零交叉；判决书 A6 核对点④的恢复决策呈现按「指路任务中心、不自建第二决策
+  面」落行。
+- [→操作者] 第 162 批办理完毕：**切片二（A6 车间降级执行状态面＋素材直导发起位迁
+  仓储页）交付**，附带①§8.4 括注勘误兑现（集成第 161 批登记）②切片三范围预判已
+  写入本状态文件「当前焦点」候下窗派发（A1 创建升格＋A2/A3 添加素材与仓储读面投
+  影选择器，同一保存链同一守卫集，云端段维持 #46 诚实缺席，0.7.17 候）。切片三与
+  已落切片互不依赖，可下窗即派。
+- （回执不回执：wt-4 回执已消化零动作；在途事项以 BOARD 与本状态文件当前焦点为准。）

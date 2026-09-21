@@ -6,8 +6,10 @@
 # Local workspace guidance and decision process
 /docs/migration/
 /docs/plans/
-/docs/project-context*.md
 /docs/reference/
+# /docs/project-context*.md removed from this block per U15 ruling (2026-09-21):
+# the cold-start primer serves every worktree and its prior full text must live
+# in Git history, so the trio is tracked from slice/u15-project-context-condensed.
 
 # Credentials and user data
 .env

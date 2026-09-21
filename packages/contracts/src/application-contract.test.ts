@@ -4,9 +4,12 @@ import {
   EDITOR_REFUSAL_CODES_V01,
   ENVIRONMENT_VERIFY_UNAVAILABLE,
   isApplicationRequestV01,
-  isReleaseHandoffFactV01,
+  isReleaseHandoffFactV02,
+  isReleaseInspectionFactV02,
   isTerminalTaskStateV01,
-  RELEASE_HANDOFF_ERROR_CODES_V01,
+  RELEASE_HANDOFF_ERROR_CODES_V02,
+  RELEASE_INSPECTION_ERROR_CODES_V02,
+  RELEASE_OPEN_FOR_INSPECTION_OPERATION,
   type CatalogProductDetailV03,
   type EditorVerifyRefusedV01,
   type EnvironmentVerifyEditorResultV01,
@@ -19,7 +22,8 @@ import {
   type InspectionGetResultV01,
   type InspectionListResultV01,
   type OverlaySnapshotResultV01,
-  type ReleaseHandoffFactV01,
+  type ReleaseHandoffFactV02,
+  type ReleaseInspectionFactV02,
   type TaskDonePayloadV01,
   type TaskSnapshotV01,
 } from "./application-contract.js";
@@ -1299,7 +1303,7 @@ describe("environment.verifyEditor vocabulary row (021, core seven-point ruling)
   });
 });
 
-describe("release.openForHandoff vocabulary row (023, core freeze batch 2026-09-16)", () => {
+describe("release.openForHandoff vocabulary row (023, core freeze batch 2026-09-16; TS face v0.2 per desktop ownership)", () => {
   it("accepts the closed single-key params {buildId} and rejects extras", () => {
     // 核心冻结裁决:params 闭集修订 023 §3 草案——工程身份权威在
     // build-record 面,params 重复携带=双源对账零增益
@@ -1349,40 +1353,153 @@ describe("release.openForHandoff vocabulary row (023, core freeze batch 2026-09-
     } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
   });
 
-  it("pins the typed error-code closed set at four codes (vua.release_handoff.*)", () => {
-    // 闭集四码逐字:unavailable/invalid_params/build_unknown/editor_unresolved
-    expect(RELEASE_HANDOFF_ERROR_CODES_V01).toEqual([
+  it("pins the typed error-code closed set at six codes (v0.2: the U19 state gate joins)", () => {
+    // 闭集六码逐字(v0.2):既有四码＋U19 准入闸两码(record_state_blocked
+    // category=permission params.state 原值逐字;record_state_unknown
+    // category=validation)——照 schemas/release-handoff/v0.2 双方法 Schema
+    expect(RELEASE_HANDOFF_ERROR_CODES_V02).toEqual([
       "vua.release_handoff.unavailable",
       "vua.release_handoff.invalid_params",
       "vua.release_handoff.build_unknown",
+      "vua.release_handoff.record_state_blocked",
+      "vua.release_handoff.record_state_unknown",
       "vua.release_handoff.editor_unresolved",
     ]);
   });
 
   it("admits the handoff fact document and rejects any upload-status field by shape", () => {
-    // 正例:VUA 侧终态事实(形状即诚实纪律)
-    const fact: ReleaseHandoffFactV01 = {
-      schemaVersion: "0.1",
+    // 正例:VUA 侧终态事实(形状即诚实纪律;schemaVersion 0.2 随族单源推进)
+    const fact: ReleaseHandoffFactV02 = {
+      schemaVersion: "0.2",
       buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
       projectId: "proj-synthetic-avatar-a",
       editor: { exePath: "C:/Unity/2022.3.22f1/Editor/Unity.exe", version: "2022.3.22f1" },
       occurredAt: "2026-09-16T02:30:00Z",
     };
-    expect(isReleaseHandoffFactV01(fact)).toBe(true);
+    expect(isReleaseHandoffFactV02(fact)).toBe(true);
 
     // 诚实纪律 1/2 负例:携带上传状态字段=形状拒绝(想猜也无从猜起)
     const withUploadState = { ...fact, uploadState: "uploading" };
-    expect(isReleaseHandoffFactV01(withUploadState)).toBe(false);
+    expect(isReleaseHandoffFactV02(withUploadState)).toBe(false);
 
     // 缺字段拒绝
     const { occurredAt, ...incomplete } = fact;
     void occurredAt;
-    expect(isReleaseHandoffFactV01(incomplete)).toBe(false);
+    expect(isReleaseHandoffFactV02(incomplete)).toBe(false);
 
     // editor 子对象闭集拒绝
-    expect(isReleaseHandoffFactV01({
+    expect(isReleaseHandoffFactV02({
       ...fact,
       editor: { ...fact.editor, editorRoot: "C:/Unity/2022.3.22f1" },
     })).toBe(false);
+
+    // v0.1 版本戳拒绝(族已单源推进,wire 只说 0.2——v0.1 词面冻结于机器面)
+    expect(isReleaseHandoffFactV02({ ...fact, schemaVersion: "0.1" })).toBe(false);
+  });
+});
+
+describe("release.openForInspection vocabulary row (v0.2, core U19 batch merged 09a4423f; desktop TS face registration)", () => {
+  it("accepts the closed single-key params {buildId} and rejects extras and kind spoofing", () => {
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-inspection-1",
+      correlationId: "correlation-inspection-1",
+      commandId: "inspection-open-1",
+      kind: "command",
+      method: "release.openForInspection",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    })).toBe(true);
+
+    // 词表外键拒绝(闭集同律)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-inspection-2",
+      correlationId: "correlation-inspection-2",
+      commandId: "inspection-open-2",
+      kind: "command",
+      method: "release.openForInspection",
+      params: {
+        buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
+        projectPath: "C:/Projects/SyntheticAvatarA",
+      },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+
+    // 空 buildId 拒绝(minLength 1)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-inspection-3",
+      correlationId: "correlation-inspection-3",
+      commandId: "inspection-open-3",
+      kind: "command",
+      method: "release.openForInspection",
+      params: { buildId: "" },
+    })).toBe(false);
+
+    // kind 冒充 query 拒绝(命令分型)
+    expect(isApplicationRequestV01({
+      contractVersion: APPLICATION_CONTRACT_VERSION,
+      requestId: "request-inspection-4",
+      correlationId: "correlation-inspection-4",
+      kind: "query",
+      method: "release.openForInspection",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    } as unknown as Parameters<typeof isApplicationRequestV01>[0])).toBe(false);
+  });
+
+  it("pins the inspection error-code closed set at four codes (the two state codes deliberately absent)", () => {
+    // 检视路由绝不分类记录状态(裁决①检视/修复路径不按记录状态闸):
+    // 两状态码对检视路由刻意缺席——负面对表钉死
+    expect(RELEASE_INSPECTION_ERROR_CODES_V02).toEqual([
+      "vua.release_handoff.unavailable",
+      "vua.release_handoff.invalid_params",
+      "vua.release_handoff.build_unknown",
+      "vua.release_handoff.editor_unresolved",
+    ]);
+    expect(RELEASE_INSPECTION_ERROR_CODES_V02).not.toContain("vua.release_handoff.record_state_blocked");
+    expect(RELEASE_INSPECTION_ERROR_CODES_V02).not.toContain("vua.release_handoff.record_state_unknown");
+    // 词面单源:操作词面常量逐字照核心 OPEN_FOR_INSPECTION_OPERATION
+    expect(RELEASE_OPEN_FOR_INSPECTION_OPERATION).toBe("release.openForInspection");
+  });
+
+  it("admits the six-key inspection fact and rejects handoff-wording, upload-state and key drift by shape", () => {
+    // 正例:六键闭集=交接事实五键＋显式 operation 键(词面由形状钉死)
+    const fact: ReleaseInspectionFactV02 = {
+      schemaVersion: "0.2",
+      operation: "release.openForInspection",
+      buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
+      projectId: "proj-synthetic-avatar-a",
+      editor: { exePath: "C:/Unity/2022.3.22f1/Editor/Unity.exe", version: "2022.3.22f1" },
+      occurredAt: "2026-09-22T00:30:00Z",
+    };
+    expect(isReleaseInspectionFactV02(fact)).toBe(true);
+
+    // 词面负例(U19 专属):携交接操作词面的事实=构造即非法——检视完成
+    // 永不被误读或呈现为交接完成
+    expect(isReleaseInspectionFactV02({
+      ...fact,
+      operation: "release.openForHandoff",
+    })).toBe(false);
+
+    // 诚实纪律 1/2 负例:携带上传状态字段=形状拒绝(U19 专属负例向量同律)
+    expect(isReleaseInspectionFactV02({ ...fact, uploadState: "uploading" })).toBe(false);
+
+    // 缺 operation 键拒绝(六键闭集,五键不成检视事实)
+    const { operation, ...fiveKey } = fact;
+    void operation;
+    expect(isReleaseInspectionFactV02(fiveKey)).toBe(false);
+
+    // 缺字段拒绝
+    const { occurredAt, ...incomplete } = fact;
+    void occurredAt;
+    expect(isReleaseInspectionFactV02(incomplete)).toBe(false);
+
+    // editor 子对象闭集拒绝
+    expect(isReleaseInspectionFactV02({
+      ...fact,
+      editor: { ...fact.editor, editorRoot: "C:/Unity/2022.3.22f1" },
+    })).toBe(false);
+
+    // v0.1 版本戳拒绝(族已单源推进)
+    expect(isReleaseInspectionFactV02({ ...fact, schemaVersion: "0.1" })).toBe(false);
   });
 });

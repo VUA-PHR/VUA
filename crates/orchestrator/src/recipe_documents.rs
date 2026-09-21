@@ -84,26 +84,18 @@ impl RecipeDocumentStore {
         Self { root: root.into(), now }
     }
 
+    /// Production constructor: `updatedAt` is the real store clock, stamped
+    /// by the single hand-written civil-calendar converter (`time::rfc3339`,
+    /// Howard Hinnant's `civil_from_days`, pinned against leap/century
+    /// vectors in `time.rs`). The former inline 365-day/30-month division was
+    /// an approximate calendar that emitted false civil dates (data-seat
+    /// evidence 2026-09-19: a save at 2026-09-19T20:16:59.770Z was stamped
+    /// 2026-07-16T20:16:59.770Z); calendar math is single-sourced here so the
+    /// regression vectors in `time.rs` guard every consumer.
     pub fn new_with_system_clock(root: impl Into<PathBuf>) -> Self {
         Self::new(
             root,
-            Box::new(|| {
-                let d = std::time::SystemTime::now()
-                    .duration_since(std::time::UNIX_EPOCH)
-                    .unwrap_or_default();
-                let total = d.as_secs();
-                let millis = d.subsec_millis();
-                format!(
-                    "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}.{:03}Z",
-                    1970 + total / 31_536_000,
-                    (total / 2_592_000) % 12 + 1,
-                    (total / 86_400) % 30 + 1,
-                    (total / 3_600) % 24,
-                    (total / 60) % 60,
-                    total % 60,
-                    millis
-                )
-            }),
+            Box::new(|| crate::time::rfc3339(std::time::SystemTime::now())),
         )
     }
 
@@ -324,5 +316,44 @@ mod tests {
             store.save("../escape", &doc("x"), 0),
             Err(RecipeSaveError::InvalidId)
         ));
+    }
+
+    /// Regression pin (batch 156, observation A): the system-clock stamp must
+    /// be the real civil date (RFC 3339, same shape), not the former
+    /// 365-day/30-month approximation that answered 2026-07-16… for a save
+    /// at 2026-09-19T20:16:59.7… (data-seat evidence). Consumers sort the
+    /// list face by `updatedAt` as same-shape RFC 3339 strings, so string
+    /// order is chronological order: the stamp of any real now must sort
+    /// strictly AFTER the measured inner instant — the old approximation
+    /// sorted before it and broke the ordering contract. Deterministic
+    /// converter vectors (leap/century/rollover/measured instant) live in
+    /// `time.rs`; this pin guards the store face actually using it.
+    #[test]
+    fn system_clock_stamp_is_real_utc_sorting_after_the_measured_instant() {
+        let store = RecipeDocumentStore::new_with_system_clock(unique_root("regression"));
+        let created = store.save(ID, &doc("one"), 0).unwrap();
+        let stamp = created.updated_at.clone();
+        // Same shape: YYYY-MM-DDTHH:MM:SS.mmmZ (24 chars, fixed punctuation).
+        assert_eq!(stamp.len(), 24, "RFC 3339 millisecond UTC shape: {stamp}");
+        assert_eq!(&stamp[4..5], "-", "shape: {stamp}");
+        assert_eq!(&stamp[7..8], "-", "shape: {stamp}");
+        assert_eq!(&stamp[10..11], "T", "shape: {stamp}");
+        assert_eq!(&stamp[13..14], ":", "shape: {stamp}");
+        assert_eq!(&stamp[16..17], ":", "shape: {stamp}");
+        assert_eq!(&stamp[19..20], ".", "shape: {stamp}");
+        assert!(stamp.ends_with('Z'), "shape: {stamp}");
+        assert!(stamp[..4].bytes().all(|b| b.is_ascii_digit()), "shape: {stamp}");
+        assert!(stamp[5..7].bytes().all(|b| b.is_ascii_digit()), "shape: {stamp}");
+        assert!(stamp[8..10].bytes().all(|b| b.is_ascii_digit()), "shape: {stamp}");
+        // Chronology: real now sorts after the data-seat measured instant
+        // 2026-09-19T20:16:59.769Z (the old approximation produced
+        // 2026-07-16…, which sorts BEFORE it).
+        assert!(
+            stamp.as_str() > "2026-09-19T20:16:59.769Z",
+            "store clock must sort after the measured instant, got {stamp}"
+        );
+        // The persisted document carries the same honest stamp.
+        let read = store.get(ID).unwrap().unwrap();
+        assert_eq!(read.updated_at, stamp);
     }
 }

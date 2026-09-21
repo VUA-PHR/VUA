@@ -1,0 +1,464 @@
+---
+proposal: 029
+title: "车间入口模型重构（配方驱动为主）＋从已有 Unity 项目导出 Recipe（用户裁决 2026-09-21 立项，U16 答复；核心座起草）"
+status: 提出并推进中（2026-09-21 第 152 批起草；A 面形状核可闭环＝桌面
+  wt-3 判决书经集成第 159 批收编，三实现片候操作者派发；**B 面环 1 冻结
+  完成＝2026-09-22 第 160 批核心冻结批**〔recipe-export v0.1 词表行：
+  未决项 4 双案裁决案 B＋载体裁决独立面＋用例面裁决新族单方法，见内联
+  线程核心裁决节与 schemas/recipe-export/v0.1〕；B 面环 2 接线候核心下
+  一切片；未决项 2 保持开放候用户、未决项 5 留 A5 实现片核对、未决项 3
+  ＝#46、未决项 1 候冻结/用户裁定；落地进展登记归 BOARD U16 行与各树状
+  态文件）
+author: wt-2（核心，用户裁决转述起草）
+date: 2026-09-21
+---
+
+# 提案 029：车间入口模型重构（配方驱动为主）＋从已有 Unity 项目导出 Recipe
+
+## 背景
+
+### 用户裁决（权威源，2026-09-21，U16 答复）
+
+用户裁决车间入口模型**配方驱动为主**，期望流转为：
+
+> Recipe 列表创建 Recipe → 点选添加素材 → 打开本地素材仓库（可添加本地/云端素材）
+> → Recipe 列表选择 → 预览内容 → 点击组装 → 车间只作状态显示。
+
+并裁决新增配套功能：**从已有 Unity 项目导出 Recipe**（反向方向：项目 → 配方）。
+
+裁决落账面：①本提案 A 面（车间入口模型重构）；②本提案 B 面（项目导出 Recipe）。
+U16 行（BOARD 用户裁决表）由集成随本提案验收改记「已裁决／已立项」。
+
+### 上位权威一致性
+
+- **产品边界**：`docs/product-boundary_ZH.md` §Recipe-first（:73「先选择素材与素材目标，
+  再创建或修改 Unity 项目」）——本裁决是 Recipe-first 原则在车间入口模型上的**操作化**，
+  不改边界语义，无需边界升版（候集成验收复核）。
+- **设计标准 §2.2 Recipe-first**（0.7.13）：已接受原则与本裁决同向；§8.4/§8.5 的呈现
+  规则升级见 A 面预告节。
+- **BOARD #44 装配词面纪律**（用户裁决 2026-09-21）：「装配」保留给配方链（衣装挂接）
+  语义，素材直导链不得称「装配」。本提案用户动作词面从裁决原文用**「组装」**；
+  涉及衣装挂接语义处用「装配」。A 面落词随桌面 i18n 纪律办理。
+- **U14／027 裁决④**（2026-09-19）：包管理器以 Recipe 自动化为第一消费者——本提案 B 面
+  导出的 `dependencies` 维度与该方向同源（Recipe 输入 → 包需求集合），落地时消费 024–027
+  已冻结的 packages 读面，不另立包查询面。
+
+### 现状盘点（代码事实，slot/wt-2 于 main e394831f 世代只读实测，2026-09-21）
+
+**（1）车间页＝素材驱动链唯一接线。** `WorkshopPage.tsx` 的执行主体是
+`ProductionFlowSection`（F3 生产纵向流程段，production-use-case **v0.1** 素材直产链）：
+`pickMaterial → startInspection → requestPlan → confirmPlan → recover` 全链在车间页内
+发起（`WorkshopPage.tsx:536-635`）；车间页对配方的接触仅限流水线条（S-IX-1）的显示面——
+读 `recipeGraph(CURRENT_RECIPE_ID)` 与 `releaseWall` 取 recipeId 与最新出厂做链卡跳转
+（`WorkshopPage.tsx:500-525`），不发起任何配方链动作。
+
+**（2）配方链后端已完整。** `crates/orchestrator/src/assembly.rs`：`AssemblyEngine`
+提供 `derive_plan / confirm / execute` 三段（:259/:441/:470），八操作闭集
+`AssemblyOperation`（ProvisionProject/InstallPackages/BridgeInspect/BridgeIdentifyAssets/
+BridgeInstallModularAsset/BridgeCreateToggle/BridgeValidateAvatar/BridgeAnalyzePerformance，
+:130-141），`AssemblyPlanV1` 计划含包变更全量预览 `package_preview`（:168-196）；
+`crates/orchestrator/tests/assembly.rs` 套内在库。wire 面为 production-use-case **v0.2**
+（`schemas/production-use-case/v0.2/`：recipe-list/get/save/resolve、plan-approve/get/list、
+job-execute、record-get/list），provider 侧服务路径在 `provider_host.rs`（recipe.resolve
+→任务化 Local Resolution 执行器 :2602/:4119、plan.approve 文档面 :3982、job.execute 任务化
+编排 :3267）。**注记（如实）**：`AssemblyEngine` 自 `orchestrator/src/lib.rs:42` 导出但
+provider 服务路径当前消费的是 Local Resolution 执行器与任务化编排臂；引擎与 v0.2 服务
+路径的归一（或分工定性）属 B/A 面冻结批的核对输入，本提案不预决。
+
+**（3）桌面「配方 → 执行」入口未接入主流程。** `gateway.productionChain` 端口
+（`production-chain-port.ts:28-43`，v0.2 全方法）**已被消费**——消费点是配方链卡
+`ProductionChainSection`（resolveRecipe/approvePlan/executeJob/listRecords），挂载在
+`ComposePage.tsx:196`；而搭配草稿页自 2026-09-20 导航重构起是配方页 hero 内的内容型
+弹窗（`RecipePage.tsx:1165-1172`，`nav-model.ts` 头注）。链状态机
+（`production-chain-store.ts`）的配方身份**唯一外部写入方**是
+`productionChainRecipeSavedAction`，唯一调用方是容器层保存链 `compose-save-chain.ts`
+——即：**执行入口只在「保存搭配草稿」这一动作之后可达**；在配方库中选择一个已有
+Recipe 并不填充链，配方页主体（列表/图谱/爆炸三视图）无「组装」发起面，车间页亦无。
+裁决期望的「Recipe 列表选择 → 点击组装」在现状代码中不存在接线。
+
+**（4）VUA-8 导航重构已并入。** 合并 0f9350f（第 141 批，用户授权并线）：
+production-nav 重构＋unity-bridge v4 `build_preview`；2026-09-20 导航重构将素材导入与
+搭配草稿收敛为仓储页/配方页 hero 内弹窗（`nav-model.ts`；设计标准 0.7.12/0.7.13 §8.3/
+§8.4/§8.6）。A 面重构在该 IA 基础上进行，不再动导航骨架。
+
+## 面清单
+
+### A 面：车间入口模型重构（桌面消费为主）
+
+**目标：把「制作中枢」从车间页移到配方页，车间页降级为执行状态面。**
+A 面主要是既有 wire 面（production-use-case v0.2、recipe 读面、素材读面）的桌面重接线，
+零预期新增 wire 契约；若切片中发现事实缺口，按环流水线补冻结，不夹带。
+
+现状 → 目标逐卡对照（卡名即裁决流转步骤）：
+
+| # | 裁决流转 | 现状 | 目标形状（候桌面形状核可） |
+| --- | --- | --- | --- |
+| A1 | **Recipe 列表创建 Recipe** | 配方页有库（recipe.list 读面＋库选择）；创建走搭配草稿弹窗保存链 | 配方页主路径提供「创建」入口（现有草稿弹窗保留为创建起点之一）；创建产物进入配方库并可被选择 |
+| A2 | **点选添加素材** | 草稿弹窗内从素材读面把素材加入搭配（warehouse 读面）；配方库选中态与素材添加无关联 | 配方详情/选中态内提供「添加素材」动作，写入当前所选 Recipe 的素材集（复用 recipe.save 守卫与版本链） |
+| A3 | **打开本地素材仓库（本地/云端素材）** | 仓储页是素材库主面；云端/BOOTH 接入面在素材导入域（内嵌浏览/acquisition 链），与配方页无直连 | 「添加素材」步打开素材仓库选择面：本地素材来自仓储读面；云端素材接入面列未决项 3（不臆断形状） |
+| A4 | **Recipe 列表选择 → 预览内容** | 三视图（图谱/列表/爆炸）已是成熟预览面；库选择不驱动任何链 | 库选择即为预览主体（三视图复用）；选择态喂给组装发起（补链状态机 `selectRecipe` 动作，或等价形状候冻结核对） |
+| A5 | **点击组装** | 仅「保存草稿后」在弹窗链卡内可达（resolveRecipe→approvePlan→executeJob） | 配方页选中态提供「组装」发起，消费既有 productionChain 端口同方法；计划确认（plan.approve＋风险决策）与执行进展呈现沿用既有确认链纪律（011 计划锁定、九态任务） |
+| A6 | **车间只作状态显示** | 车间页＝素材直产链发起面＋流水线显示条 | 车间页改为执行状态面：消费组装任务进展/收据/恢复决策（任务中心同源事实），不再承担配方驱动链的发起；素材直产链在车间的去留列未决项 1 |
+
+**词面与设计标准升级预告**：§8.4（Recipe 页成为制作中枢的呈现规则）、§8.5（Assembly/
+车间＝执行状态面的演出语义——车间演出方向保留，演出密度仍以「流程逻辑冻结后」为准）、
+§8.3（仓储页动作形态候未决项 1 裁定后一并）升版候桌面按纪律办理（0.7.14+，双语同步，
+REGISTRY 随行）。本提案只登记预告，不代桌面落文。
+
+**A 面纪律**：渲染面只呈现 Gateway 实际返回（诚实律 1）；未就绪/失败/空态照既有阻断
+与重试形状；023 投影纪律（纯导航零记录身份跨页）在链卡跳转迁移时继续适用。
+
+### B 面：从已有 Unity 项目导出 Recipe（核心域为主）
+
+**目标：从已有 Unity 工程可靠导出「Recipe 草稿」（draft）——项目 → 配方的反向方向。**
+诚实纪律先行：**导出不宣称还原设计意图**；导出物是待用户确认补全的草稿，不是成品
+Recipe。
+
+**能力盘点（可导出，代码事实锚）**：
+
+1. **VPM 包依赖（可靠）**：`inspect_project_deep`
+   （`crates/project-manager/src/project_inspection.rs:238`）只读返回
+   `manifest_present / dependencies / locked / vrchat_sdk s / unity_version / mutation_status /
+   vua_identity / diagnostics`（`ProjectInspectionV01`）。`vpm-manifest.json` 的
+   dependencies＋locked → `RecipeV02.dependencies`
+   （`recipe/model.rs:334` `DependencyV02{package_id, version_constraint, …}`）是确定性映射。
+   供给安装侧已有 U17 落地的 `VpmBackend::resolve_project`（第 147 批）承接重放。
+2. **Unity 版本约束（可靠）**：检查面 `unity_version`＋分类 →
+   `EnvironmentSpec.unity_version_constraint`（`recipe/model.rs:55`）。
+3. **工程身份（可靠）**：`VuaIdentityFinding`（Absent/Present/Unreadable，:71-80）判定
+   工程是否 VUA 原生——用于适用边界注记（未决项 2），不进入配方正文。
+
+**能力盘点（需新桥接只读扫描，能力边界如实列）**：
+
+4. **Avatar/衣装结构 → 关系面**：`RecipeV02` 的 assets/instances/relations/wardrobe_groups
+   需要场景层级事实。现状只读 Bridge 操作
+   （`crates/orchestrator/src/model.rs:38-66` 非突变集：InspectProject/IdentifyAssets/
+   ValidateAvatar/AnalyzePerformance/InspectAvatarReferences/InspectLighting/
+   InspectUploadReadiness）中，**没有任何一个做「场景内 Avatar/衣装层级发现」**——
+   `IdentifyAssets`（`BridgeCommandProcessor.cs:504`）是「确认给定选择」
+   （要求调用方已给 avatar/outfit 的 globalObjectId），不是发现；InspectAvatarReferences
+   以给定 Avatar 为前提做引用完整性。→ 关系面导出**需要新的只读扫描操作**（枚举场景
+   Avatar 候选、衣装/挂接结构候选），而 Bridge v4 已冻结——新操作＝协议升版决策
+   （v4 加法或 v5），按 009/冻结纪律走冻结环，本提案不预决形状。备选路径（零桥接改动）
+   ：关系面全部留给用户在配方页点选补全，导出只产 packages＋环境＋空关系骨架。
+   两案候冻结批裁量（未决项 4）。
+
+**不可导出（诚实边界，导出面必须如实标注缺失）**：
+
+1. **设计意图**：素材为何入选、语义角色（如「夏季校服」的衣装分组语义）、标签意图
+   未落盘于工程——导出物不得虚构 role/label；`AssetRole` 缺省走 Other 并标记
+   「待补全」。
+2. **素材来源指纹**：`SourceRef{provider, product_id, url}`（`recipe/model.rs:154`）只有
+   VUA 导入记录（`.vua/imports/<command_id>` 等）可回溯；非 VUA 渠道进工程的素材**只有
+   文件指纹可提供身份比对**（material_identity 指纹能力），不提供来源——导出物中
+   source_ref 缺席即缺席，不以文件路径伪装来源。
+3. **非 MA 挂接结构**：衣装挂接若非 Modular Avatar Merge Armature 等 VUA 装配链可识别
+   结构，或 toggles 由第三方工具（如 VRCFury）创建——relations/wardrobe_groups 不可自动
+   推导，如实留空待补。
+
+**导出物定性（草案，冻结环定稿）**：导出产物是 **Recipe 草稿（draft）**——进入配方页
+草稿/确认流，用户确认补全（roles、source_refs、relations、标题语义）并显式保存后才成
+正式 Recipe（recipe.save 版本链）；草稿态在 UI 与读面中如实标注「项目导出草稿＋缺失
+维度清单」，绝不静默转正。载体形状（recipe.save 扩展 vs 导出独立面 vs 文档内
+provenance/缺失块）候冻结环，本提案不预决。
+
+**B 面环流水线**（照 024–028 五环先例的收敛形；权限按 AGENTS 六角色）：
+
+1. **冻结**（核心域）：Recipe 导出面 Schema＋正负例向量＋至少一端消费测试——
+   导出触发面（production-use-case 扩展 or 新族）、导出文档形状（含草稿定性＋缺失
+   维度标注）、关系面扫描的双案裁量（新只读桥操作＋协议升版 vs 零桥接骨架）。
+   冻结前置＝A 面切片确认消费形状（两面耦合，见下节）。
+2. **接线**（核心域）：provider-host 路由臂＋能力行协商（照 027 F3 双版本协商先例，
+   零破坏加法）。
+3. **实现**（核心＋环境/项目域协作）：导出执行器（工程只读扫描 → 草稿文档落盘）；
+   如裁定走新桥操作，含 C# 只读扫描实现（生产域）。
+4. **消费**（桌面域）：配方页「从项目导入」入口＋草稿确认补全流（与 A 面同页呈现）。
+
+### 两面耦合与排序
+
+- **A 依赖 B 的程度**：A 面重构可在「手工创建的 Recipe」上先行（现有配方链后端已完整，
+  A1/A2/A4/A6 不依赖导出物）；**B 面的草稿确认补全流消费 A 面产出的配方页中枢形状**
+  （导入草稿要有页面可落）。
+- **建议环序**：
+  1. A 面先行切片：A1/A2/A4/A5（配方页中枢＋组装发起接线）＋A6（车间降级）——
+     纯既有 wire 面桌面消费，候桌面领取；
+  2. B 面冻结（以 A 面落形为消费形状输入）→ 接线 → 实现 → 消费（导入入口落配方页）；
+  3. 设计标准升版（0.7.14+）随 A 面消费批落地；未决项 1（素材直导去留）裁定前，
+     车间页素材直产链**现状维持不拆**（诚实且可回退——降级是加「状态面」职责，
+     不是先删除既有可用链）。
+- **验收门**：A 面消费批＝desktop typecheck＋vitest＋check:i18n/boundary/leak 全绿＋
+  空态/失败态诚实呈现钉；B 面各环按 027 先例（冻结批 Schema＋正负例＋消费测试齐备，
+  接线批 wire 测试骑真帧，实现批集成亲审，消费批定向复跑）；真机（真实工程导出→
+  组装→车间状态呈现）归 W25（O-2）如实候验，**零端到端宣称**。
+
+## 边界（明确非目标）
+
+1. 本提案不改产品边界语义（Recipe-first 已在边界 §原则，本裁决是操作化不是扩权）；
+   BOOTH 购买/支付/访问控制红线不变（安全与法律边界照 AGENTS）。
+2. 本提案不改 Unity 全局版本纪律（2022.3.22f1）；导出面照实记录工程版本，不做
+   版本迁移。
+3. 本提案不立项社区插件/市场面；导出物是本地文档，不涉分发。
+4. A 面不新增 wire 契约为默认立场；发现缺口走冻结环，不夹带。
+5. Bridge v4 冻结面不做未升版的动作面改动；新只读扫描操作必须过协议版本决策。
+6. 导出不宣称还原设计意图；草稿不静默转正；来源缺席不伪装（诚实三律 1/2/3 直接适用）。
+7. 素材直产链（production-use-case v0.1）在未决项 1 裁定前不做删除性改动。
+
+## 未决项清单（如实列，不臆断）
+
+1. **素材直导链在配方驱动模型中的去留**（候桌面形状核可，涉 §8.3/§8.5）：仓储页动作
+   vs 车间备选入口 vs 仅保留只读状态面。裁定前车间现状维持（见排序节 3）。
+2. **导出对非 VUA 创建工程的适用边界**（用户手工 VCC/ALCOM 工程是否可导出、
+   `VuaIdentityFinding=Absent` 时是否提示差异）：候选用户裁决项；冻结批起草对表时如
+   判定涉产品边界语义升 [需用户]。
+3. **BOOTH/云端素材在「添加素材」步的接入面**：与 U18（shader 依赖策略，候用户裁决）
+   及 BDL 面联动（候集成随本提案验收登记开放问题行——派单称 #46，以集成登记为准）；
+   云端素材选择面是否复用素材导入域内嵌浏览/acquisition 链，候素材/采集域表态。
+4. **关系面扫描双案裁量**（冻结批输入）：新只读桥操作（需协议升版决策）vs 零桥接
+   骨架＋用户点选补全；涉 C# 面与生产域协作。
+5. **`AssemblyEngine` 与 v0.2 服务路径（Local Resolution 执行器＋任务化编排臂）的
+   归一/分工定性**：现状两套后端形状并存（引擎已测未接服务路径）；A5 接线前需核对
+   「组装」实际触达的执行链并在冻结批如实定性，本提案不预决。
+
+## 内联讨论线程
+
+### 回复（集成，2026-09-21 第 154 批）
+
+**文档批验收登记（基线 e394831f，cd8c0000＋d2063abe，--no-ff 合并 9125f8f1）**：
+提案结构照 024–028 先例核对成立，上位权威一致性复核通过（产品边界 Recipe-first 系
+操作化非扩权；设计标准 §2.2 同向；#44 装配词面纪律——用户动作词面从裁决原文用
+「组装」）；A 面四条现状盘点与 B 面三档能力盘点的代码事实锚抽核吻合。本登记系
+**文档入库验收，不是提案采纳**：status 维持「提出」，环流水线未启动。后续领取面：
+A 面形状核可候桌面（含未决项 1 素材直导链去留表态），B 面冻结候核心领取（冻结前置＝
+A 面落形，未决项 4 关系面双案与未决项 5 引擎/服务路径归一为冻结批核对输入）；未决项 3
+＝开放问题 **#46**（集成第 152 批已登记，编号 030 候用，以登记为准）；未决项 2 涉边界
+语义时按提案自订升 [需用户]。设计标准 §8.3/§8.4/§8.5 升版预告（0.7.14+）已录 BOARD
+#41 关联面，归桌面域办理，本提案不代落。零端到端宣称维持。
+
+### 桌面形状核可（A 面目标流转六卡，wt-3，2026-09-22 01:2x）
+
+**应操作者第 158 批指派**（「提案 029 A 面形状核可＝U16 裁决实现环第一环：读提案全文，
+产出形状判决书——①A1–A6 逐卡对照现状代码核可/修订；②IA 与导航影响面；③设计标准
+升版点预告；④实现切片切分建议；本拍只做形状核可＋设计标准草稿面，不开实现切片」）。
+基线事实＝本树追平壳 e17d2b73 --no-ff 吸收 main a29f9ce0（第 157 批世代；merge-tree
+预检 exit 0 零冲突，落后 9 归零）。**判决性质（照实声明）**：本核可系目标形状判决
+（环流水线第一环、B 面冻结的消费形状输入），非冻结 Schema 逐项核对——A 面自身立场＝
+零预期新增 wire 契约（提案边界 4），核可对象是 A 面「现状→目标」对照表的六卡目标形状
+与桌面侧落形输入。**现状复核**：提案现状盘点锚在 e394831f（2026-09-21 slot/wt-2 只读
+实测）；本判决在吸收世代 a29f9ce0 逐卡实读复核——区间内 A 面涉面仅两文件且系 BG-1
+文档库选择骨架补强（63a39f4f：保存回执→`recipePersisted()` 库失效计数→recipe.list
+重取；recipe.get 事实装载三视图；选择态 documentMode 接线），六卡现状实质全部成立，
+且 A1/A4 的现状强于提案盘点时点。**结论：A1–A6 六卡目标形状全部核可；A5 携一词面
+订正，A2/A3/A4/A6 携核对点；未决项 1 给桌面视角倾向候冻结裁决（不代决）**：
+
+- **①逐卡判决（现状锚均为吸收世代实读）**：
+  - **A1（Recipe 列表创建 Recipe）＝核可**。现状：配方页库（RecipeLibrarySection，
+    recipe.list 读面＋persistedRevision/refreshKey 失效重取）＋创建走搭配草稿弹窗保存链
+    （ContentDialog 挂 ComposePage；recipe.save 经容器层共享 hook compose-save-chain，
+    D5 查重＋忙碌守卫＋回执分类）。目标「主路径创建入口（草稿弹窗保留为创建起点之一）；
+    产物入库名可选」——雏形已在（保存回执已接库失效重取），落形＝入口位次升格＋词面，
+    **不新增第二保存链**（019 批 D「两 UI 一保存链」纪律不破）。核对点：创建入口词面
+    用「创建」（U16 原文），不与「添加素材／组装」混用。
+  - **A2（点选添加素材）＝核可，携核对点**。现状：素材加入走草稿弹窗
+    （composeAddItemAction，源＝acquire 读面）；库选中态与素材添加无关联（属实）。核对
+    点：①写入所选 Recipe 素材集必须走 recipe.save（baseRevision 版本链＋D5 查重＋忙碌
+    守卫全律照旧），严禁本地直改文档呈现为已保存（诚实律 1/2）；②文档编辑链与项目无关
+    草稿链的 store 复用形状（hydrate 同一草稿机制 vs 平行文档编辑链）属消费切片实现
+    决策，本判决只钉「同一保存链形状、同一守卫集」；③添加素材选择器是读面投影（见 A3）。
+  - **A3（打开本地素材仓库：本地/云端素材）＝核可（本地段）；云端段维持未决项 3**。
+    现状：仓储页是素材库主面（§8.3，0.7.12 内弹窗导入承载）；配方页无素材选择面
+    （属实）。判决：本地段形状＝仓储读面（acquire entries）选择器投影——**选择器只是
+    读面投影，素材入库仍走既有导入两路径**（内嵌浏览／系统拾取→任务中心），不为配方页
+    立第三导入入口（§8.3 纪律照旧）；云端段（BOOTH/云端素材在选择步接入）＝未决项 3＝
+    #46/proposal 030/U18 联动，候裁决前诚实缺席（选择器只呈现本地事实，不虚构云端入口）。
+  - **A4（Recipe 列表选择→预览内容）＝核可，携 selectRecipe 形状判决**。现状：三视图
+    成熟；库选择已驱动文档模式三视图（BG-1 骨架）；选择不驱动链（属实——链状态机配方
+    身份唯一外部写入方＝保存回执 action，唯一调用方 compose-save-chain）。提案留白
+    「补链状态机 selectRecipe 动作，或等价形状候冻结核对」之**桌面落形**：链状态机新增
+    **选择事实源动作**（名候实现，如 productionChainRecipeSelectedAction），身份键值
+    {recipeId, revision} **只取自 recipe.get 读面回执的文档身份**（不取列表标签、不取
+    本地猜测——「链身份即对象身份」UI-02 纪律延伸到选择事实源）；gate 派生：stale-draft
+    分支仅在草稿在场且 dirty 时成立，选择驱动链无草稿在场即 ready（AC-05 语义不破）。
+    此系桌面自有容器层形状，本判决即落形，B 面冻结可据此消费。
+  - **A5（点击组装）＝核可，携词面订正**。现状：执行入口只在保存草稿后可达
+    （ProductionChainSection 挂 ComposePage；gate no-recipe 即不渲染）——属实。目标
+    「选中态提供组装发起，消费既有 productionChain 端口同方法」成立。**订正（提案目标
+    词面精化，不改变目标主体）**：提案 A5 目标写「计划确认（plan.approve＋风险决策）」
+    ——wire 事实：production-use-case v0.2 plan.approve 参数闭集**单键 {planId}，无
+    风险决策参数**（schemas/production-use-case/v0.2/methods/plan-approve.schema.json
+    实读）；风险决策（PlanRiskChoice＋revision 绑定）系 v0.1 素材链 confirmPlan 专属
+    〔勘误 2026-09-22：本从句版本词不精确——携风险决策的 confirm-plan 系 amf-production
+    **v0.2** 方法面（四键 {planId, observedRevision, riskChoice, rememberForSession}；
+    riskChoice 系 v0.2 登记面新增；无 v0.1 confirm-plan 方法 schema；build-record v0.1
+    仅持久化 riskChoice 值），详见下方勘误节；裁决效力不受影响〕；
+    指纹/版本锁预检在作业提交时再闸（009 stance 4，schema description 载明）。判决：
+    A5 计划批准按 v0.2 词面如实——approvePlan 幂等 draft→approved＋九态任务经任务中心
+    （ChainTaskLine 既有形状）；**若冻结环裁定配方链计划批准需要风险决策，那是
+    v0.2→v0.3 升版事项（核心域冻结环），桌面不发明不夹带**。
+  - **A6（车间只作状态显示）＝核可，携核对点**。现状：车间页＝素材直产链发起面
+    （ProductionFlowSection pickMaterial→startInspection→requestPlan→confirmPlan→
+    recover）＋流水线条显示面（recipeGraph＋releaseWall 只读）＋回放视图（构建记录事件
+    带回放）＋环境未就绪诚实阻断态。目标「改为执行状态面：消费组装任务进展/收据/恢复
+    决策（任务中心同源事实），不再承担配方驱动链发起」成立。核对点：①降级＝加状态面
+    职责、不先拆既有链（排序节 3 照准；未决项 1 裁定前素材直产链现状维持）；②回放视图
+    已是状态面 DNA（真实任务事件驱动），消费切片在其上扩展，不另起第二呈现系；③发起面
+    （配方页）→状态面（车间页）跳转沿用 023 投影纪律（纯导航零记录身份跨页，车间页
+    自取权威事实）；④恢复决策呈现＝语义选择面（用户决定 ID 由 Kernel 受理时生成绑定，
+    既有 v0.1 recover 纪律同构）。
+- **②IA 与导航影响面（VUA-8 基线增量）＝零页面级变化，核可**。VUA-8 基线（0f9350f，
+  2026-09-20 导航重构；nav-model.ts 现行）：模型生产 Tab 无组平铺
+  warehouse/recipe/inspection/release/workshop/packages，素材导入/搭配草稿收敛为仓储页/
+  配方页 hero 弹窗。A 面增量：不新增页、不动侧栏、不动 Tab（nav-model.ts 预期零改动或
+  仅头注）；车间页保留页位仅内容重构（发起面退出、状态面进入）；配方页内工作重心从
+  「弹窗＋默认合成纵向」迁移到「库选择态＝工作主态」（hero 弹窗入口保留）；
+  clicksToReach 语义不变（§3.2「进入对应 Tab 后一次点击到达」不破）。与提案「A 面重构
+  在该 IA 基础上进行，不再动导航骨架」一致。
+- **③设计标准升版点预告＋草稿面（0.7.15 候，随 A 面首个消费切片落地成文；本拍不触
+  docs/design）**：升版线照 0.7.x 消费切片随批先例（双语同步＋REGISTRY 随行＋§12 记录）。
+  - **§8.4 增补（草稿面）**：配方页制作中枢——库选择即预览主体（三视图消费所选文档）；
+    「创建」入口＝搭配草稿弹窗（保留为创建起点之一，保存链唯一）；「添加素材」在选中态
+    动作、写入走 recipe.save 版本链（查重/忙碌守卫同律）；「组装」发起在选中态，计划
+    批准按 v0.2 幂等词面、执行进展以任务中心权威快照呈现。**词面纪律（#44×U16，首次
+    成文）**：用户动作词用「组装」（U16 裁决原文）；「装配」保留给衣装挂接/AMF Assembly
+    阶段语义（#44）——既有链卡词面（strings.compose.chain 的 executeCta「执行装配」等）
+    随 A 面消费切片迁移，四表同步 check:i18n；车间页侧栏术语标签（assembly·production·
+    inspection）系阶段语义维持「装配」不动。
+  - **§8.5 增补（草稿面）**：车间＝执行状态面——配方驱动链发起面移出后，车间承载组装
+    任务进展/收据/恢复决策呈现（任务中心同源事实；回放视图为其录制带形态），不承担链
+    发起；素材直产链去留候未决项 1，裁定前现状维持；演出方向保留，演出密度仍以流程
+    逻辑冻结后为准（本句照 0.7.14 现行不动）。
+  - **§8.3**：候未决项 1 裁定后一并（本拍不动）。
+  - **之外升版点排查**：§2.2 不动（原则已同向，操作化不成文于原则章）；§3 不动（零 IA
+    变化）；§6.2/6.3/6.4 沿用既有纪律零新规则；§8.6/8.7/8.9 不涉。预告面恰＝§8.4/§8.5
+    ＋§8.3（候裁），提案预告无遗漏；新增仅「词面纪律成文」一点，归入 §8.4 不另立章。
+- **④实现切片切分建议（候下拍按此派发，本拍不开）**：
+  - **候选切片一「配方中枢接线」（A4＋A5）**：选择事实源动作＋选中态组装发起面（链段
+    迁移／双挂载消费同一 store/端口，019 批 C 两 UI 同 store 先例）＋链卡词面「组装」化
+    四表迁移＋设计标准 0.7.15。估 20–30 文件（store 1–2＋recipe 页 2–4＋chain 段 1–2
+    ＋i18n 四表 4＋测试 6–10＋标准双语 2＋collab 3）——体量对齐第 156 批（28 文件
+    1309+/177-）。
+  - **候选切片二「车间降级状态面」（A6）**：车间状态面消费（组装任务进展/收据/恢复
+    决策）＋流水线条保留＋素材直产链现状维持＋设计标准 0.7.16（§8.5 落文）。估 12–20
+    文件。依赖切片一（发起面已在配方页）。
+  - **候选切片三「添加素材＋创建升格」（A1＋A2＋A3 本地段）**：选中态添加素材动作＋
+    素材选择器面（仓储读面投影）＋文档编辑保存链复用（同一守卫集）＋创建入口升格＋设计
+    标准 0.7.17（§8.4 落文余款）。估 15–25 文件。与切片二互不依赖，可序可并。
+  - **建议序＝一→二→三**（一给主链骨；二收「车间只作状态显示」的裁决终点观感；三补
+    输入端）。每片验收门照提案：desktop typecheck＋vitest＋check:i18n/boundary/leak
+    全绿＋空态/失败态诚实钉；真机归 W25（O-2），零端到端宣称。
+- **未决项 1（素材直导链去留）＝桌面视角倾向，候冻结裁决，不代决**：桌面视角倾向
+  **素材直产链退出车间发起位**（与「车间只作状态显示」裁决字面一致的形状）；落位两案
+  间倾向「仓储页动作」案——素材直产链的语义起点是素材（pickMaterial），落仓储页与
+  「连续素材获取路径」（§8.3）同页承接，IA 一次点击可达不破；「车间备选入口」案保留
+  车间双职责，与降级目标观感相悖；「仅保留只读状态面／拆除」案系产品范围收缩（删除
+  既有可用链），非桌面单方可倾向。**本倾向系形状视角输入，裁定权在冻结环/用户（涉产品
+  范围与素材/采集/产线多域）**；裁定前车间现状维持（排序节 3）。如实注记：素材直产链
+  live 呈现现状本就系诚实不可用（壳侧 VUA_UNITY_EDITOR 注入缺失⇒provider production
+  服务不装配⇒本段恒诚实不可用，WorkshopPage 注记在案）——其产品权重现状有限，两案
+  实现成本都不高。
+- **消费切片核对点登记（非缺口，不阻塞核可）**：①词面迁移清单（链卡 compose.chain.*
+  用户动作键「组装」化＋新增键四表同集 check:i18n，占位符奇偶照第 156 批纪律）；②A5
+  计划批准按 v0.2 单键词面，风险决策不在本面发明（升版候冻结环）；③选择事实源动作的
+  身份键值只取 recipe.get 回执文档身份；④选择器＝读面投影，不立第三导入入口；⑤车间
+  状态面在回放视图 DNA 上扩展＋023 投影纪律跳转；⑥渲染面只呈现 Gateway 实际返回
+  （诚实律 1），未就绪/失败/空态照既有阻断与重试形状（提案 A 面纪律照准）；⑦mock 包
+  不伪造配方链演示数据（production-chain-port fixture/not-run 恒 unavailable 既有形状
+  照旧，mock/fixture 不出 DEV）。
+- **解锁状态**：本判决书＝A 面落形输入交付；**提案 B 面冻结的桌面侧前置（「B 面的草稿
+  确认补全流消费 A 面产出的配方页中枢形状」）自本节起可由核心按本判决形状起草**（消费
+  形状输入＝本节①②③；核心对 A5 订正与未决项 1 倾向的采信/驳回照冻结环裁量，分歧升
+  集成仲裁）。实现切片本拍不开（操作者指派明示），候下拍按④分片派发。诚实边界：本
+  判决系形状层核对＋代码事实实读（collab-only 文档批，零构建零测试零代码面改动，免
+  全量照章）；零端到端宣称维持，真机全链归 W25（O-2）。
+
+### 回复（核心，2026-09-22 第 160 批——B 面环 1 冻结批）
+
+**应操作者第 160 批指派**（B 面冻结环：①导出面词面冻结＋关系面双案裁
+量＋②导出动作用例面＋③正负例向量与双语协议本＋④REGISTRY）。基线事实
+＝轮首 fast-forward 追平 main c97cbe47（第 159 批世代，落后 13/领先 0
+归零），**桌面侧前置成就亲读确认**：本树 029 内联 wt-3 形状判决书
+（5a43df81）①②③节为消费形状输入——A4 选择事实源动作（链身份键值
+{recipeId, revision} 只取 recipe.get 回执文档身份）、A3 选择器＝读面
+投影不立第三导入入口、A2/A1 唯一保存链同守卫集；A5 词面订正采信（风
+险决策系 amf-production **v0.2** confirm-plan 方法面四键
+{planId, observedRevision, riskChoice, rememberForSession}）。**三项裁
+决**：
+
+- **裁决一（未决项 4 关闭）：关系面双案＝案 B 零桥接骨架＋用户点选补
+  全**。五点理由：①诚实律——新只读桥扫描产出的也只是「结构候选」，
+  不带语义角色/来源/设计意图，用户确认两案皆必需；案 B 的 missing 清
+  单把「不可自动导出」作为类型级事实，不创造「已还原结构」假象；
+  ②冻结面纪律——Bridge v4 已冻结，新只读扫描操作＝协议升版决策（v4
+  加法或 v5），涉生产域 C# 面与独立冻结环；把用户已裁决的导出功能耦
+  合到它并不要求的跨域协议升版上属自造阻塞；③消费形状已成就——桌面
+  判决书的草稿确认补全流（A 面中枢：添加素材＝仓储读面投影选择器）就
+  是点选补全的既有主路径；④边际价值不对称——扫描只买得到 Avatar/衣
+  装结构候选枚举，买不到两个真缺失维度（role/label 设计意图、
+  source_ref 来源）；⑤可升级——missing 闭集清单为案 A 留类型面，日
+  后升版接入时 v0.2 收缩清单即机器可检测的诚实增量。**案 A 只登记不
+  实施**：候选＝unity-bridge 只读场景结构发现操作，涉生产域 C# 面，
+  独立冻结环候 W25 真机走查后裁定；本批零协议升版动作。
+- **裁决二：载体＝导出独立面（新族 recipe-export/v0.1）**。代码事实：
+  recipe v0.3 文档面 assets/instances minItems 1＋asset 行
+  anyOf(entityRef|sourceRef)（schema 实读）——**诚实的空骨架作为
+  Recipe 文档不可能存在**（不发明 entityRef/sourceRef 过不了 Schema，
+  发明即违反诚实三律）；recipe.save 扩展＝改冻结保存链语义＋静默转正
+  通道；文档内 provenance 块被同一事实否决。独立面使「草稿/正式」边
+  界成类型级事实：草稿无 recipeId（转正唯一通道＝用户显式确认后的既
+  有保存链）、无 title、无关系面、无 locked 块——草稿类型没有通往
+  resolve/assembly 的路径。
+- **裁决三：用例面＝新词表行族 recipe-export＋单方法
+  recipe.exportProjectDraft＋同步只读 Query**。不入 production-use-case
+  （执行族语义不同构；扩族＝v0.3 升版动冻结面无必要）；同步 Query 照
+  packages-ops preview 先例（本地文件只读扫描零 Bridge 零网络，不设九
+  态任务——纯读无物可恢复，不发明可取消性/恢复面）；params 闭集单键
+  projectPath（013 注册身份），未注册复用 vua.project.project_not_found
+  （024 判例）。**词面对照采信勘误**：本面无风险决策无 plan 面，草稿
+  转正走 recipe.save 版本链与计划批准零交集。
+
+**冻结产物（本批五件）**：`schemas/recipe-export/v0.1/`（command＋
+result Schema＋5 正 8 负向量）＋核心消费测试
+`crates/orchestrator/tests/recipe_export.rs`（6 例）＋双语协议本
+`docs/protocols/recipe-export-v0.1_ZH.md`/`_EN.md`＋REGISTRY 两行＋本
+节。**草稿文档 v0.1 闭集**：draftId（uuidv7 草稿实例身份，非
+recipeId）＋exportedAt＋origin 三键（projectPath 回显＋projectName 可
+空＋vuaIdentityStatus 三态——absent 非门）＋
+environment.unityVersionConstraint（观察版本 verbatim 照边界 2 不迁
+移；null＝不可读诚实缺席）＋dependencies（行集＝manifest 声明集，
+packageId 升序确定性呈现，versionConstraint 声明 verbatim，
+lockedVersion 同 id 精确钉定；空数组＝合法诚实应答）＋**missing 缺失
+维度清单**（枚举闭集十值；关系面五维＋语义四维恒在逐 contains 钉死；
+environmentUnityVersion ⟺ constraint null 双向 iff 钉死）——确认流
+照单呈现「项目导出草稿＋缺失维度清单」。**未决项处置**：未决项 4 关
+闭（裁决一）；未决项 2 保持开放（本面只携三态事实源，非 VUA 差异提
+示＝呈现裁定候用户）；未决项 5 不涉本冻结（导出不触执行链，留 A5 实
+现片核对）；未决项 3＝#46 原状；未决项 1 原状（桌面倾向在案非裁决）。
+**诚实边界**：导出不宣称还原设计意图；草稿须用户显式确认经 recipe.save
+版本链才转正，绝不静默转正；观察失败不设错误码——manifest 缺席＝诚
+实空数组、版本不可读＝null＋missing 标记，诚实空态非虚报失败；零端到
+端宣称，真机全链归 W25（O-2）。接线批（provider-host 路由臂＋能力行
+＋port face）候本座下一切片。
+
+### 回复（桌面/wt-3，2026-09-22，A5 版本词一行勘误）
+
+**勘误（应集成第 159 批验收回执登记办理；就地上标订正如上，不改裁决主体）**：
+判决书 A5 订正从句「风险决策（PlanRiskChoice＋revision 绑定）系 v0.1 素材链
+confirmPlan 专属」版本词不精确——携风险决策的 confirm-plan 系 **amf-production
+v0.2 方法面**（`schemas/amf-production/v0.2/methods/confirm-plan.schema.json`：
+四键 {planId, observedRevision, riskChoice, rememberForSession}；riskChoice 系
+v0.2 登记面新增；无 v0.1 confirm-plan 方法 schema；build-record v0.1 仅持久化
+riskChoice 值）。判决书其余引证（production-use-case v0.2 plan-approve 请求面
+additionalProperties:false 单键 {planId} 无风险决策参数）经集成 schema 实读核可
+不变；裁决效力不受影响；**核心冻结批对照引用以 amf-production v0.2 confirm-plan
+schema 为准**。
+
+（待续。各席位按 `### 回复（<角色或 wt>，YYYY-MM-DD）` 追加：A 面形状候桌面表态，
+B 面冻结候核心领取，跨域契约分歧升集成仲裁，产品判断升 [需用户]。）
+
+### 回复（集成，2026-09-22 第 163 批——B 面环 3 座位词面裁决登记）
+
+**操作者裁决（第 163 批）落账一句**：B 面环 3（导出执行器实现）座位两处词面不一致
+（操作者派单注记笔误写「环境座」vs 冻结协议本开放项「核心域」）——**裁：归核心域**
+（协议本原文为准：导出执行器读 013 检查聚合之 vpm-manifest 与工程身份、组装 draft
+文档，属 orchestrator 域职责；wt-2 状态批如实双录两词面、未猜测，照章）；核心座环 3
+实现切片覆写 `export_capabilities` 翻转 served 行（recipe-export v0.1.1 协议本
+v0.1.1 接线批载明）。

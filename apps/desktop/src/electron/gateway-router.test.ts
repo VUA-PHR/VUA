@@ -360,6 +360,63 @@ describe("inspection-queries v0.1 routing (M7 消费批)", () => {
   });
 });
 
+describe("release-handoff v0.2 inspection routing (U19 桌面对齐批)", () => {
+  const BUILD_ID = "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99";
+
+  it("routes release.openForInspection as a tasked command with the requestId-commandId and passes the typed absence through", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    // mock 无构建记录面/产线进程窗口面:vua.release_handoff.unavailable
+    // 诚实缺席照原样透传(不折叠不伪装;检视路由与交棒同缺席语义)
+    const unavailable = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-insp-open-1", method: "release.openForInspection", params: { buildId: BUILD_ID } },
+    );
+    expect(invoke).toHaveBeenCalledWith({
+      contractVersion: "0.1",
+      requestId: "desktop-request-insp-open-1",
+      correlationId: "desktop-request-insp-open-1",
+      kind: "command",
+      method: "release.openForInspection",
+      commandId: "desktop-request-insp-open-1",
+      params: { buildId: BUILD_ID },
+    });
+    expect(unavailable).toMatchObject({
+      ok: false,
+      error: { code: "application", application: { code: "vua.release_handoff.unavailable" } },
+    });
+  });
+
+  it("rejects word-list escape params and empty buildId at the envelope guard", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+
+    const extraKey = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      {
+        schemaVersion: 1,
+        requestId: "desktop-request-insp-open-2",
+        method: "release.openForInspection",
+        params: { buildId: BUILD_ID, projectPath: "C:/VRChat/Projects/Chiffon" },
+      } as unknown as { schemaVersion: 1; requestId: string; method: string; params: Record<string, string> },
+    );
+    expect(extraKey).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+
+    const emptyId = await routeDesktopGatewayInvoke(
+      { provider, productVersion: "0.4.1", platform: "win32", rendererUrl },
+      `${rendererUrl}/`,
+      { schemaVersion: 1, requestId: "desktop-request-insp-open-3", method: "release.openForInspection", params: { buildId: "" } },
+    );
+    expect(emptyId).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
+});
+
 describe("packages-ops v0.1 A1 removal routing (026 消费批)", () => {
   it("routes packages.previewRemove verbatim (query; array copied verbatim) and passes the typed absence through", async () => {
     const provider = new MockOrchestratorProviderV01();

@@ -441,14 +441,15 @@ demoTaskTitle: "演示任务",
   },
   workshop: {
     title: "工厂车间",
-    subtitle: "导入、生产与检测任务会在这里执行并全程可恢复。",
-    runningSubtitle: "执行计划已确认,快照已创建,可随时恢复。",
+    /** 029 A6(0.7.16 §8.5):车间只作状态显示,发起与批准在配方页完成 */
+    subtitle: "车间呈现组装执行链的执行状态;发起与批准在配方页完成。",
+    runningSubtitle: "车间呈现执行链的实时状态;任务进展以任务中心权威快照为准。",
     idleTitle: "生产流程尚未接入",
     idleDescription: "{recipe}与执行流程接入后,这里会显示轨道阶段、执行状态与快照恢复入口。",
     /** 生产环境未就绪时的诚实阻断态(v0.3.3 §2.1:不自动切页,由用户点击后才跳转) */
     blocked: {
       title: "生产环境尚未准备",
-      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始导入与构建。",
+      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。就绪后这里呈现组装执行链的执行状态。",
       cta: "前往准备生产环境",
     },
     trackAria: "{amf}生产阶段",
@@ -504,6 +505,18 @@ demoTaskTitle: "演示任务",
       progressAria: "回放进度 {position} / {duration}",
       /** 劳动可视化:只表达回放带 stat 事件累计的可核实操作数 */
       operationsLine: "已完成 {count} 项自动操作(可由日志核实)",
+    },
+    /** 执行状态面(029 A6,0.7.16 §8.5):车间只作状态显示,零发起动作;
+     *  计划/装配/记录卡与任务行同义词面单一来源复用 strings.compose.chain */
+    chain: {
+      title: "执行状态",
+      noChainTitle: "本会话尚无执行链",
+      noChainDesc: "到配方页选择或保存配方即可发起组装;发起后这里呈现该链的解析、计划、装配与记录状态。",
+      noChainCta: "前往配方页",
+      resolveIdleNote: "尚未请求解析。",
+      planApprovalNote: "计划批准与组装发起在配方页选中态完成;本页只呈现状态。",
+      executeIdleNote: "尚未受理装配执行。",
+      taskDecisionNote: "该任务需要处理:请在任务中心进行恢复或取消决策。",
     },
   },
   /**
@@ -1398,6 +1411,46 @@ rolled_back: "已回滚",
         retry: "重试",
         taskErrorLine: "任务错误:{code}",
         taskFailedNote: "交接任务失败。",
+        /* U19 交棒准入呈现分桶(用户裁决 2026-09-21):succeeded/
+         * succeeded_with_warnings → 放行(警告徽标保留);failed/cancelled/
+         * rolled_back → 禁用＋原因＋检视/车间入口链;recovered → 禁用,
+         * 先完成检视及后续生产流程;缺失/词表外状态 → 拒绝,记录无法确认。
+         * 后端权威闸独立在路由准入序,此为可发现原因词面(设计标准 §5)。 */
+        blockedTitle: "交棒不可用",
+        blockedFailed: "此构建已失败，无法交棒。请检查结果、发起恢复，或重新生产。",
+        blockedCancelled: "此构建已被取消，无法交棒。请重新生产以生成新记录。",
+        blockedRolledBack: "此构建已回滚，无法交棒。请重新生产以生成新记录。",
+        recoveredBlockNote: "此记录为恢复后完成。请先完成检视及后续生产流程，再进行交棒。",
+        unconfirmedNote: "交棒动作不可用：此记录无法确认。",
+        entryWorkshop: "前往车间",
+      },
+      /* U19 第二交付(用户裁决明文):独立「在 Unity 中打开以检查/修复」动作
+       * ——与交棒按钮显式分离(独立组件/端口/词面组);不按记录状态闸;打开
+       * 编辑器既不是恢复执行也不是上传许可。路由已入库(release-handoff
+       * v0.2,第 156 批桌面 TS 面对齐):完成事实臂呈现六键检视事实的身份
+       * 键＋事实自携 operation 词面,并明示检视打开不是交棒完成(负例约束
+       * 在呈现面成立);缺席/失败两臂如实呈现,不虚构后端能力。 */
+      openInUnity: {
+        action: "在 Unity 中打开以检查/修复",
+        actionNote:
+          "在 Unity 编辑器中打开此构建的工程，供人工检查与修复。打开编辑器既不是恢复执行，也不是上传许可。",
+        absentTitle: "在 Unity 中打开不可用",
+        absentNote: "在 Unity 中打开此工程的功能尚未接线。",
+        failedTitle: "在 Unity 中打开请求被拒",
+        failedUnknown: "请求被拒，未携带错误码。",
+        failedWithCode: "请求被拒：{code}",
+        retry: "重试",
+        runningNote: "正在打开 Unity 编辑器；完成后此处呈现结果。打开编辑器既不是恢复执行，也不是上传许可。",
+        readFailedNote: "任务状态本轮读取失败，将继续重试；不会猜测当前状态。",
+        succeededTitle: "编辑器已打开（检视）",
+        succeededLine: "Unity 编辑器 {editorVersion} 已于 {occurredAt} 打开（检视）。",
+        projectLine: "工程身份：{projectId}",
+        operationLine: "完成事实词面：{operation}。检视打开不是交棒完成，也不授予上传许可。",
+        cancelledNote: "打开任务已取消，无完成事实可呈现。",
+        taskErrorLine: "打开任务失败：{code}",
+        taskFailedNote: "打开任务失败，无完成事实可呈现。",
+        factUnexplainableTitle: "完成事实无法解释",
+        factUnexplainable: "任务已结束，但完成事实缺失或不可解释；此处如实呈现，不猜测事实内容。",
       },
     },
   },
@@ -2153,9 +2206,9 @@ rolled_back: "已回滚",
     addCta: '加入草稿',
     chain: {
       title: '生产链',
-      subtitle: '保存配方后依次推进:解析 → 计划 → 批准 → 装配 → 记录。',
+      subtitle: '选择或保存配方后依次推进:解析 → 计划 → 批准 → 装配 → 记录。',
       recipeLine: '配方 {recipeId}(修订 {revision})。',
-      staleWarning: '草稿已修改——请先保存再重新解析;下方既有计划可能不再可用。',
+      staleWarning: '搭配草稿已修改——请先保存再重新解析;下方既有计划可能不再可用。',
       inspectionNote: '检测证据面尚未接入(随检查切片交付);此处不以演示替代。',
       resolveTitle: '解析',
       resolveCta: '请求解析',
@@ -2176,11 +2229,11 @@ rolled_back: "已回滚",
         approved: '已批准',
         superseded: '已被取代',
       },
-      executeCta: '执行装配',
+      executeCta: '执行组装',
       executeRequesting: '执行受理中…',
       executeFailedNote: '执行请求失败——可重试。',
       executeTitle: '装配',
-      executePendingNote: '批准计划后可执行装配。',
+      executePendingNote: '批准计划后可发起组装。',
       recordTitle: '构建记录',
       recordCta: '查看构建记录',
       recordPendingNote: '装配受理后可查看本链构建记录。',
@@ -2411,6 +2464,14 @@ rolled_back: "已回滚",
     material: {
       executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
       provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
+    },
+    /** 交棒准入闸词面(U19 用户裁决 2026-09-21,BOARD U19 行为规范源)。
+     *  预留行——码 vua.release_handoff.record_state_blocked(params 携
+     *  {state})与 vua.release_handoff.record_state_unknown 由核心座准入闸
+     *  切片(wt-2,在途)携带,词面先行四表同步,码落地即命中 */
+    releaseHandoff: {
+      stateBlocked: "交棒被拒：此构建记录的当前状态不允许交棒（状态：{state}）。",
+      stateUnknown: "交棒被拒：此构建记录的状态无法确认。",
     },
   },
 };

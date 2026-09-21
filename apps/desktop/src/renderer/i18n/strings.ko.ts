@@ -422,13 +422,14 @@ demoTaskTitle: "데모 작업",
   },
   workshop: {
     title: "아바타 작업 공간",
-    subtitle: "아바타 설정, 빌드, 검사를 진행합니다. 복구 가능한 경우 복구 방법을 안내합니다.",
-    runningSubtitle: "설정 계획을 확인했고 프로젝트 스냅샷을 만들었습니다.",
+    /** 029 A6(0.7.16 §8.5): 작업 공간은 실행 상태만 표시. 시작과 승인은 레시피 페이지에서 진행 */
+    subtitle: "작업 공간은 조립 체인의 실행 상태를 표시합니다. 시작과 승인은 레시피 페이지에서 이루어집니다.",
+    runningSubtitle: "작업 공간은 체인의 실시간 상태를 표시합니다. 작업 진행 상황은 작업 센터의 권위 있는 스냅샷을 따릅니다.",
     idleTitle: "제작 파이프라인이 아직 연결되지 않았습니다",
     idleDescription: "{recipe}와 설정 서비스를 사용할 수 있게 되면 진행 상황과 복구 방법이 여기에 표시됩니다.",
     blocked: {
       title: "제작 환경이 아직 준비되지 않았습니다",
-      description: "아바타를 설정하고 빌드하려면 지원되는 Unity 에디터가 필요합니다.",
+      description: "제작 빌드에는 지원되는 Unity 에디터가 필요합니다. 준비되면 이 페이지에 조립 체인의 실행 상태가 표시됩니다.",
       cta: "제작 환경 준비",
     },
     trackAria: "{amf} 제작 단계",
@@ -477,6 +478,18 @@ demoTaskTitle: "데모 작업",
       controlsAria: "재생 컨트롤",
       progressAria: "재생 위치 {position} / {duration}",
       operationsLine: "자동 작업 {count}개 완료(로그로 검증 가능)",
+    },
+    /** 실행 상태면(029 A6, 0.7.16 §8.5): 작업 공간은 상태 표시만 하고 발기 액션 없음.
+     *  계획/조립/기록 카드와 작업 행은 strings.compose.chain 어휘를 단일 소스로 재사용 */
+    chain: {
+      title: "실행 상태",
+      noChainTitle: "이 세션에 실행 체인이 없습니다",
+      noChainDesc: "레시피 페이지에서 레시피를 선택하거나 저장하면 조립을 시작할 수 있습니다. 시작 후 이곳에 해당 체인의 해석·계획·조립·기록 상태가 표시됩니다.",
+      noChainCta: "레시피 페이지로 이동",
+      resolveIdleNote: "아직 해석을 요청하지 않았습니다.",
+      planApprovalNote: "계획 승인과 조립 시작은 레시피 페이지 선택 상태에서 이루어집니다. 이 페이지는 상태만 표시합니다.",
+      executeIdleNote: "아직 조립 실행이 접수되지 않았습니다.",
+      taskDecisionNote: "이 작업에는 처리가 필요합니다: 작업 센터에서 복구 또는 취소를 결정하세요.",
     },
   },
   /** F3 프로덕션 플로우(워크숍 페이지에 호스팅;production-use-case v0.1 초안).
@@ -1335,6 +1348,57 @@ rolled_back: "롤백됨",
         retry: "재시도",
         taskErrorLine: "작업 오류: {code}",
         taskFailedNote: "업로드 준비에 실패했습니다.",
+        /* U19 핸드오프 허가 표시 버킷(사용자 재정 2026-09-21): succeeded/
+         * succeeded_with_warnings → 허용(경고 배지 표시 유지); failed/
+         * cancelled/rolled_back → 금지＋사유＋검사/워크숍 진입 경로;
+         * recovered → 금지, 검시와 후속 생산 흐름을 먼저 완료; 누락/어휘 외
+         * 상태 → 거부, 기록을 확인할 수 없습니다. 백엔드 권위 게이트는 별도로
+         * 라우팅 허가 순서에 있으며, 이것은 발견 가능한 사유 문구(디자인
+         * 표준 §5). */
+        blockedTitle: "핸드오프 불가",
+        blockedFailed:
+          "이 빌드는 실패하여 핸드오프할 수 없습니다. 결과를 확인하거나, 복구하거나, 다시 생산하세요.",
+        blockedCancelled:
+          "이 빌드는 취소되어 핸드오프할 수 없습니다. 다시 생산하여 새 기록을 만드세요.",
+        blockedRolledBack:
+          "이 빌드는 롤백되어 핸드오프할 수 없습니다. 다시 생산하여 새 기록을 만드세요.",
+        recoveredBlockNote:
+          "이 기록은 복구 후 완료되었습니다. 핸드오프 전에 검시와 후속 생산 흐름을 완료하세요.",
+        unconfirmedNote: "핸드오프 작업을 사용할 수 없습니다: 이 기록은 확인할 수 없습니다.",
+        entryWorkshop: "워크숍으로 이동",
+      },
+      /* U19 제 2 인도물(사용자 재정 명문): 독립적인 "검사·수정을 위해
+       * Unity에서 열기" 액션 — 핸드오프 버튼과 명시적으로 분리(독립
+       * 컴포넌트/포트/문구 그룹). 기록 상태로 게이트하지 않음. 에디터를
+       * 여는 것은 복구 실행도 업로드 허가도 아닙니다. 라우트는 이미 편입됨
+       * (release-handoff v0.2, 제 156 批에서 데스크톱 TS 면 정합): 완료
+       * 사실 암은 여섯 키 검사 사실의 식별 키와 사실 자체의 operation 문구를
+       * 보여주고, 검사 오픈은 핸드오프 완료가 아님을 명시합니다(부례 제약은
+       * 이 표시면에서도 성립). 부재/실패 암은 있는 그대로 표시합니다. */
+      openInUnity: {
+        action: "검사·수정을 위해 Unity에서 열기",
+        actionNote:
+          "이 빌드의 프로젝트를 Unity 에디터에서 열어 수동 검사와 수정을 진행합니다. 에디터를 여는 것은 복구 실행도 아니고 업로드 허가도 아닙니다.",
+        absentTitle: "Unity에서 열기 사용 불가",
+        absentNote: "이 프로젝트를 Unity에서 여는 기능이 아직 연결되지 않았습니다.",
+        failedTitle: "Unity에서 열기 요청이 거부되었습니다",
+        failedUnknown: "오류 코드 없이 요청이 거부되었습니다.",
+        failedWithCode: "요청이 거부되었습니다: {code}",
+        retry: "재시도",
+        runningNote:
+          "Unity 에디터를 여는 중입니다. 완료되면 여기에 결과를 표시합니다. 에디터를 여는 것은 복구 실행도 아니고 업로드 허가도 아닙니다.",
+        readFailedNote: "이번 회차에 태스크 상태 읽기에 실패했습니다. 재시도합니다. 현재 상태를 추측하지 않습니다.",
+        succeededTitle: "에디터가 열렸습니다(검사)",
+        succeededLine: "Unity 에디터 {editorVersion}이(가) {occurredAt}에 검사를 위해 열렸습니다.",
+        projectLine: "프로젝트 식별자: {projectId}",
+        operationLine:
+          "완료 사실 문구: {operation}. 검사 오픈은 핸드오프 완료가 아니며 업로드 허가도 부여하지 않습니다.",
+        cancelledNote: "오픈 태스크가 취소되었습니다. 표시할 완료 사실이 없습니다.",
+        taskErrorLine: "오픈 태스크가 실패했습니다: {code}",
+        taskFailedNote: "오픈 태스크가 실패했습니다. 표시할 완료 사실이 없습니다.",
+        factUnexplainableTitle: "완료 사실을 해석할 수 없습니다",
+        factUnexplainable:
+          "태스크는 종료되었지만 완료 사실이 없거나 해석할 수 없습니다. 있는 그대로 표시하며 추측하지 않습니다.",
       },
     },
   },
@@ -2098,7 +2162,7 @@ rolled_back: "롤백됨",
     addCta: '초안에 추가',
     chain: {
       title: "아바타 제작",
-      subtitle: "레시피를 저장하고 에셋과 의존성을 확인한 뒤 계획을 검토하세요. 아바타 설정을 실행한 후 결과를 확인할 수 있습니다.",
+      subtitle: "레시피를 선택하거나 저장한 뒤 에셋과 의존성을 확인하고 계획을 검토하세요. 아바타 설정을 실행한 후 결과를 확인할 수 있습니다.",
       recipeLine: '레시피 {recipeId}(리비전 {revision}).',
       staleWarning: "초안이 변경되었습니다. 저장한 후 에셋과 의존성을 다시 확인하세요. 기존 계획은 사용할 수 없을 수 있습니다.",
       inspectionNote: "이 페이지에서는 아직 검사 결과를 표시할 수 없습니다.",
@@ -2359,6 +2423,17 @@ rolled_back: "롤백됨",
     material: {
       executionFailed: "머티리얼 실행 실패: Unity 측 작업이 완료되지 않았습니다.",
       provisionFailed: "대상 프로젝트 공급 실패: Unity 프로젝트가 머티리얼 가져오기 준비가 되어 있지 않습니다.",
+    },
+    /** 핸드오프 허가 게이트 문구(U19 사용자 재정 2026-09-21, BOARD U19 행이
+     *  규범 소스). 예약 행 — 코드 vua.release_handoff.record_state_blocked
+     *  (params:{state})와 vua.release_handoff.record_state_unknown은 코어 석
+     *  허가 게이트 슬라이스(wt-2, 진행 중)와 함께 전달됩니다. 문구를 먼저
+     *  4개 언어로 동기화하여 코드 도착 시 즉시 일치시킵니다. */
+    releaseHandoff: {
+      stateBlocked:
+        "핸드오프가 거부되었습니다: 이 빌드 기록의 현재 상태는 핸드오프를 허용하지 않습니다(상태: {state}).",
+      stateUnknown:
+        "핸드오프가 거부되었습니다: 이 빌드 기록의 상태를 확인할 수 없습니다.",
     },
   },
 };

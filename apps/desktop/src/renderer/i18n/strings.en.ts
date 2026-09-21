@@ -439,15 +439,16 @@ demoTaskTitle: "Demo task",
   },
   workshop: {
     title: "Avatar workbench",
-    subtitle: "Set up, build and check your avatar, with recovery options when available.",
-    runningSubtitle: "The setup plan is confirmed and a project snapshot has been created.",
+    /** 029 A6 (0.7.16 §8.5): the workshop only displays execution state; starting and approving happen on the recipe page */
+    subtitle: "The workshop presents the execution status of your assembly chain; starting and approving happen on the recipe page.",
+    runningSubtitle: "The workshop presents the chain's live status; task progress follows the task center's authoritative snapshots.",
     idleTitle: "Production pipeline not connected yet",
     idleDescription:
       "Once {recipe} and the setup service are available, you can view progress and recovery options here.",
     blocked: {
       title: "Production environment not ready",
       description:
-        "A supported Unity editor is required to set up and build avatars.",
+        "A supported Unity editor is required for production builds. Once ready, this page presents the assembly chain's execution status.",
       cta: "Prepare creator environment",
     },
     trackAria: "{amf} production stages",
@@ -498,6 +499,17 @@ demoTaskTitle: "Demo task",
       controlsAria: "Replay controls",
       progressAria: "Replay progress {position} / {duration}",
       operationsLine: "{count} automatic operations completed (verifiable in the log)",
+    },
+    /** Execution status face (029 A6, 0.7.16 §8.5): the workshop only displays status, zero initiation actions; plan/assembly/record cards and task lines reuse strings.compose.chain wordings */
+    chain: {
+      title: "Execution status",
+      noChainTitle: "No execution chain in this session",
+      noChainDesc: "Select or save a recipe on the recipe page to start assembling; once started, this page presents the chain's resolve, plan, assembly and record status.",
+      noChainCta: "Go to the recipe page",
+      resolveIdleNote: "Resolve has not been requested yet.",
+      planApprovalNote: "Plan approval and assembly start happen in the recipe page's selected state; this page only presents status.",
+      executeIdleNote: "No assembly execution accepted yet.",
+      taskDecisionNote: "This task needs handling: make the recover or cancel decision in the task center.",
     },
   },
   /**
@@ -1406,6 +1418,61 @@ demoTaskTitle: "Demo task",
         retry: "Retry",
         taskErrorLine: "Task error: {code}",
         taskFailedNote: "Upload preparation failed.",
+        /* U19 handoff admission presentation buckets (user ruling 2026-09-21):
+         * succeeded/succeeded_with_warnings -> action offered (warning badge
+         * stays); failed/cancelled/rolled_back -> action withheld, reason +
+         * inspect/workshop entry chain; recovered -> withheld until the
+         * inspection and follow-up production steps are done; missing or
+         * out-of-vocabulary state -> rejected as unconfirmable. The backend
+         * gate stays the authority; this is the discoverable-reason face
+         * (design standard §5/§179). */
+        blockedTitle: "Handoff unavailable",
+        blockedFailed:
+          "This build failed, so it cannot be handed off. Check the results, recover, or produce again.",
+        blockedCancelled:
+          "This build was cancelled, so it cannot be handed off. Produce again to create a new record.",
+        blockedRolledBack:
+          "This build was rolled back, so it cannot be handed off. Produce again to create a new record.",
+        recoveredBlockNote:
+          "This record was recovered. Complete the inspection and the follow-up production steps before handing off.",
+        unconfirmedNote:
+          "The handoff action is unavailable: this record cannot be confirmed.",
+        entryWorkshop: "Open Workshop",
+      },
+      /* U19 second deliverable (explicit user ruling): the standalone
+       * "Open in Unity to inspect or fix" action — deliberately separate from
+       * the handoff button (own component, own port, own copy). Never gated by
+       * the record state; opening the editor is neither a recovery execution
+       * nor an upload permission. The route has landed (release-handoff v0.2,
+       * desktop TS face aligned in batch 156): the completion arm presents the
+       * six-key inspection fact's identity keys plus the fact's own operation
+       * wording, and states plainly that an inspection open is not a handoff
+       * completion (the negative constraint holds on this face too); the
+       * absent/failed arms present honestly — no fabricated capability. */
+      openInUnity: {
+        action: "Open in Unity to inspect or fix",
+        actionNote:
+          "Opens this build's project in the Unity editor for manual inspection and fixes. Opening the editor neither resumes a production task nor permits an upload.",
+        absentTitle: "Open in Unity unavailable",
+        absentNote: "Opening this project in Unity is not wired up yet.",
+        failedTitle: "Open in Unity request rejected",
+        failedUnknown: "The request was rejected without an error code.",
+        failedWithCode: "The request was rejected: {code}",
+        retry: "Retry",
+        runningNote:
+          "Opening the Unity editor; the result appears here once it completes. Opening the editor neither resumes a production task nor permits an upload.",
+        readFailedNote: "Reading the task state failed this round; retrying. The current state is never guessed.",
+        succeededTitle: "Editor opened (inspection)",
+        succeededLine: "The Unity editor {editorVersion} was opened for inspection at {occurredAt}.",
+        projectLine: "Project identity: {projectId}",
+        operationLine:
+          "Completion fact wording: {operation}. An inspection open is not a handoff completion and grants no upload permission.",
+        cancelledNote: "The open task was cancelled; no completion fact to present.",
+        taskErrorLine: "The open task failed: {code}",
+        taskFailedNote: "The open task failed; no completion fact to present.",
+        factUnexplainableTitle: "Completion fact unexplainable",
+        factUnexplainable:
+          "The task ended, but the completion fact is missing or unexplainable; presented honestly, never guessed.",
       },
     },
   },
@@ -2187,7 +2254,7 @@ demoTaskTitle: "Demo task",
     addCta: 'Add to draft',
     chain: {
       title: "Create your avatar",
-      subtitle: "Save the recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
+      subtitle: "Select or save a recipe, check assets and dependencies, review the plan, then run avatar setup and view the results.",
       recipeLine: 'Recipe {recipeId} (revision {revision}).',
       staleWarning: "The draft changed. Save it and check assets and dependencies again before using a plan.",
       inspectionNote: "Check results cannot be displayed on this page yet.",
@@ -2447,6 +2514,18 @@ demoTaskTitle: "Demo task",
     material: {
       executionFailed: "Material execution failed: the Unity-side operation did not complete.",
       provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+    },
+    /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
+     *  as the normative source). Reserved rows — the codes
+     *  vua.release_handoff.record_state_blocked (params: {state}) and
+     *  vua.release_handoff.record_state_unknown travel with the core seat's
+     *  admission-gate slice (wt-2, in flight); the copy lands first in sync
+     *  across the four tables so the codes hit on arrival. */
+    releaseHandoff: {
+      stateBlocked:
+        "Handoff was rejected: this build record's current state does not permit handoff (state: {state}).",
+      stateUnknown:
+        "Handoff was rejected: this build record's state cannot be confirmed.",
     },
   },
 };

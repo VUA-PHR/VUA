@@ -6,6 +6,7 @@ import { ConfirmDialog } from "../../src/renderer/components/primitives/ConfirmD
 import { useModalOwner } from "../../src/renderer/components/primitives/modal-layer.tsx";
 import { RecipePage } from "../../src/renderer/features/recipe/RecipePage.tsx";
 import { ImportPage } from "../../src/renderer/features/import/ImportPage.tsx";
+import { WorkshopPage } from "../../src/renderer/features/workshop/WorkshopPage.tsx";
 import { GatewayProvider } from "../../src/renderer/gateway/GatewayProvider.tsx";
 import { emptyGateway } from "../../src/renderer/gateway/empty-gateway.ts";
 import { composeAddItemAction, composeSetNameHintAction, useComposeDraft } from "../../src/renderer/app/compose-draft-store.ts";
@@ -90,7 +91,16 @@ const invoke = async (request: any) => {
   }
   if (request.method === "recipe.get") {
     getCalls++;
-    const response = ok({ recipe: documents[request.params.recipeId] });
+    // Frozen wire face (production-use-case v0.2 recipe-get.result): the
+    // receipt carries required top-level identity fields (recipeId/revision,
+    // store-authoritative) plus the transparent `recipeDocument` body; the
+    // renderer narrows the chain-selection identity from the receipt (029 A4).
+    const stored = documents[request.params.recipeId];
+    const response = ok({
+      recipeId: stored?.recipeId ?? request.params.recipeId,
+      revision: stored?.revision ?? 1,
+      recipeDocument: stored,
+    });
     if (holdGet) { holdGet = false; return new Promise((resolve) => delayed.push(() => resolve(response))); }
     return response;
   }
@@ -163,6 +173,49 @@ async function importTests() {
   const before = closed; close.click(); await wait(); check(closed > before, "actual remote close remains actionable");
   root.render(<div>finished</div>); await wait(); check(!document.querySelector("[inert]"), "import unmount restores background");
 }
+async function workshopEmptyTests() {
+  // 029 A6 车间执行状态面·无链分支(空网关,零真机服务;置于配方链测试之前,
+  // 因链 store 是模块级共享信号,配方测试会写入链身份):车间只作状态显示——
+  // 本会话无链身份时诚实空态 + 纯导航 CTA;素材直产链发起面不再寄宿车间页。
+  let navigated: string | null = null;
+  root.render(
+    <StrictMode>
+      <GatewayProvider gateway={gateway}>
+        <WorkshopPage onNavigate={(target) => { navigated = target; }} />
+      </GatewayProvider>
+    </StrictMode>,
+  );
+  await wait(); await wait();
+  check(document.body.textContent!.includes(strings.workshop.chain.noChainTitle), "workshop status face renders honest no-chain empty state");
+  check(document.querySelector(".vua-flow") === null, "material direct-chain initiation face has left the workshop page");
+  const goRecipe = button(strings.workshop.chain.noChainCta);
+  goRecipe.click(); await wait();
+  check(navigated === "recipe", "no-chain CTA is pure navigation to the recipe page (023 projection discipline)");
+  root.render(<div>phase-done</div>); await wait();
+}
+
+async function workshopStatusTests() {
+  // 029 A6 车间执行状态面·链在场分支(复用配方链测试写入链 store 的会话事实):
+  // 计划/执行/记录各卡如实呈现,且零发起动作——批准/执行按钮不出现在状态面。
+  let navigated: string | null = null;
+  root.render(
+    <StrictMode>
+      <GatewayProvider gateway={gateway}>
+        <WorkshopPage onNavigate={(target) => { navigated = target; }} />
+      </GatewayProvider>
+    </StrictMode>,
+  );
+  await wait(); await wait();
+  const chainWords = strings.compose.chain;
+  const text = document.body.textContent ?? "";
+  check(text.includes(strings.workshop.chain.title), "workshop status face renders the execution status cards for the session chain");
+  check(text.includes(strings.workshop.chain.resolveIdleNote) && text.includes(strings.workshop.chain.planApprovalNote) && text.includes(strings.workshop.chain.executeIdleNote), "status face presents resolve/plan/execute facts without initiation wording");
+  check(document.querySelector(".vua-flow") === null, "chain-present status face still hosts no material direct-chain initiation");
+  check(![...document.querySelectorAll("button")].some((node) => node.textContent?.trim() === chainWords.planApproveCta || node.textContent?.trim() === chainWords.executeCta), "status face renders no approve/execute initiation buttons");
+  check(navigated === null, "status face navigation stays user-initiated");
+  root.render(<div>finished</div>); await wait();
+}
+
 window.review = {
   nativeStart: async () => { root.render(<StrictMode><ModalCase /></StrictMode>); await wait();
     document.getElementById("opener")!.focus(); await click("open");
@@ -170,4 +223,4 @@ window.review = {
   nativeCheck: async (remaining: number) => { await wait();
     check(document.querySelectorAll('[role="dialog"]').length === remaining, `native Esc leaves ${remaining} dialogs`);
     return document.activeElement?.id; },
-  run: async () => { await modalTests(); await recipeTests(); await importTests(); return results; } };
+  run: async () => { await modalTests(); await workshopEmptyTests(); await recipeTests(); await workshopStatusTests(); await importTests(); return results; } };

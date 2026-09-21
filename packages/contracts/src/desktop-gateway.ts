@@ -472,12 +472,31 @@ export interface InspectionListRequestV1 {
 
 /** release.openForHandoff 交接命令:按已验证编辑器身份请求打开/聚焦目标
  * Unity 编辑器至目标工程;受理回执照 inspection.requestRun 形状
- * (ReleaseHandoffAcceptedV01)。缺席语义由 wire 测试钉死:缺席绝不携带
+ * (ReleaseHandoffAcceptedV02)。缺席语义由 wire 测试钉死:缺席绝不携带
  * 受理形状 */
 export interface ReleaseOpenForHandoffRequestV1 {
   readonly schemaVersion: 1;
   readonly requestId: string;
   readonly method: "release.openForHandoff";
+  readonly params: { readonly buildId: string };
+}
+
+// ---- release.openForInspection(release-handoff v0.2,U19 独立检视入口,
+// 核心 U19 批 36bab970 经合并 09a4423f 入库;桌面 TS 面登记对齐。tasked
+// 检视命令:同准入减状态闸——不按记录状态闸,打开工程排错不得被禁,打开
+// 编辑器既不是恢复执行也不是上传许可;受理回执照 tasked 形状
+// (ReleaseInspectionAcceptedV02);完成事实=六键闭集携显式 operation 词面
+// (ReleaseInspectionFactV02),永不误读为交接完成。实现域未接线=路由恒答
+// vua.release_handoff.unavailable 诚实缺席。params 闭集单键 {buildId},
+// 词表外键拒绝) ----
+
+/** release.openForInspection 检视命令:按已验证编辑器身份请求打开/聚焦
+ * 目标 Unity 编辑器至目标工程供人工检查/修复(与交棒显式分离;路由绝不
+ * 答两状态码——检视路由错误闭集四码,见 RELEASE_INSPECTION_ERROR_CODES_V02) */
+export interface ReleaseOpenForInspectionRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "release.openForInspection";
   readonly params: { readonly buildId: string };
 }
 
@@ -877,6 +896,7 @@ export type DesktopGatewayRequestV1 =
   | InspectionGetRequestV1
   | InspectionListRequestV1
   | ReleaseOpenForHandoffRequestV1
+  | ReleaseOpenForInspectionRequestV1
   | PackagesListInstalledRequestV1
   | PackagesListReposRequestV1
   | PackagesPackageCatalogRequestV1
@@ -944,6 +964,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "inspection.get": "query",
   "inspection.list": "query",
   "release.openForHandoff": "command",
+  // release-handoff v0.2(U19 桌面对齐批):独立检视入口同族命令
+  "release.openForInspection": "command",
   "packages.listInstalled": "query",
   // 025 P2 读面(桌面 P2 消费批):两方法只读同族
   "packages.listRepos": "query",
@@ -1464,9 +1486,11 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
         && isIdentifier(value.params.inspectionId);
     case "inspection.list":
       return hasExactKeys(value, REQUEST_KEYS) && isInspectionListParams(value.params);
-    // release-handoff v0.1(023 消费切片):params 闭集单键 {buildId}
-    // minLength 1(词表外键拒绝,与 schema additionalProperties:false 同形)
+    // release-handoff v0.1(023 消费切片)＋v0.2 检视入口(U19 桌面对齐
+    // 批):params 闭集单键 {buildId} minLength 1(词表外键拒绝,与 schema
+    // additionalProperties:false 同形;两 editor-open 入口同律)
     case "release.openForHandoff":
+    case "release.openForInspection":
       return hasExactKeys(value, REQUEST_KEYS)
         && hasExactKeys(value.params, ["buildId"])
         && typeof value.params.buildId === "string"

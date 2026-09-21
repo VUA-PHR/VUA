@@ -6,6 +6,7 @@ import { createEmptyProjectOps } from "./project-ops-port.ts";
 import { createUnavailableProductionChainPort } from "./production-chain-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
+import { createAbsentReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
 import type {
   CatalogBrowserPort,
   CatalogDetailView,
@@ -237,6 +238,9 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
     releaseHandoff: createAbsentReleaseHandoffPort(),
+    // U19 第二交付:open 检查入口 not-run 诚实缺席——路由已入库(v0.2),
+    // 此处缺席语义=无宿主/未接入,非结构缺席;不伪造受理/任务快照
+    releaseProjectOpen: createAbsentReleaseProjectOpenPort(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),
     settings: createMemorySettingsPort(initialGoals),

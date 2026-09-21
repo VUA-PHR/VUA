@@ -32,14 +32,49 @@
 //! the route answers `vua.release_handoff.unavailable` — the frozen
 //! honest-absence semantics stay the default until the production-domain
 //! adapter slice lands.
+//!
+//! v0.2 delta (U19 user ruling, 2026-09-21, BOARD row as normative source):
+//! the family gains the record-state admission gate and the independent
+//! inspection entry. (1) The handoff admission validates the build record's
+//! `status` against the ruling whitelist BEFORE any task is accepted:
+//! `succeeded` / `succeeded_with_warnings` pass (the warning presentation
+//! stays a desktop concern — the record is never rewritten);
+//! `failed` / `cancelled` / `rolled_back` / `recovered` are refused as
+//! `vua.release_handoff.record_state_blocked` (typed rejection carrying the
+//! record's original state value as the `state` param); a missing,
+//! non-string, or out-of-enum status is refused as
+//! `vua.release_handoff.record_state_unknown` (the record cannot be
+//! confirmed). The whitelist is a product-policy choice (ruling correction
+//! a), not a fact check — the state is the fact, "which states may hand
+//! off" is the policy. (2) `release.openForInspection` is the explicit
+//! "open in Unity to inspect/fix" path (ruling: opening the editor is
+//! neither recovery-execution nor upload permission): its admission is the
+//! handoff admission MINUS the state gate (record existence + project
+//! identity + editor resolution only), and its completion fact carries an
+//! explicit `operation` key so no consumer can misread it as a handoff
+//! fact — the wording never claims a completed handoff. The ruling's three
+//! corrections are pinned by shape/tests: recovered ≠ the task-face
+//! inspect_required (the two state sets are never mixed; a completed
+//! inspection never rewrites a failed history record to success), and a
+//! succeeded record does not guarantee the project still matches it (this
+//! gate prevents obviously wrong handoffs; it never claims to remove the
+//! whole "upload the wrong avatar" risk).
 
 use serde_json::{json, Value};
 use std::path::PathBuf;
 
-/// The `release.openForHandoff` family version constant (c914cf2 standing
-/// rule: every word-list row owns its version constant; never borrowed from
-/// another family). Mirrors the TS face in `@vua/contracts`.
-pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.1";
+/// The release-handoff family version constant (c914cf2 standing rule:
+/// every word-list row owns its version constant; never borrowed from
+/// another family). v0.1 = the single `release.openForHandoff` row (frozen
+/// 2026-09-16); v0.2 = the U19 record-state gate + the independent
+/// `release.openForInspection` entry (this batch). Mirrors the TS face in
+/// `@vua/contracts`.
+pub const RELEASE_HANDOFF_SCHEMA_VERSION: &str = "0.2";
+
+/// The `operation` value of the inspection entry (fact + acceptance
+/// wording): never reads as a handoff completion (U19 — opening the editor
+/// to inspect/fix is a distinct explicit entry, not a handoff).
+pub const OPEN_FOR_INSPECTION_OPERATION: &str = "release.openForInspection";
 
 /// Everything the process/window port needs to perform one handoff. The
 /// project root is a trusted-side internal fact (the provider's configured
@@ -178,6 +213,65 @@ pub fn record_project_id(record: &Value) -> Option<&str> {
         .filter(|id| !id.is_empty())
 }
 
+/// The build-record v0.3 `status` enum, word-for-word (U19: the ruling's
+/// state words ARE this schema's enum words — aligned at implementation,
+/// the ruling text stays unamended).
+const RECORD_STATUS_ENUM: [&str; 6] = [
+    "succeeded",
+    "succeeded_with_warnings",
+    "failed",
+    "cancelled",
+    "rolled_back",
+    "recovered",
+];
+
+/// The U19 handoff whitelist: the states a production-result handoff may
+/// proceed from. `succeeded_with_warnings` passes WITH its warning
+/// presentation preserved (a desktop concern — the backend never rewrites
+/// or hides the warning). Everything else known is blocked; everything
+/// unconfirmable is unknown.
+const RECORD_STATUS_HANDOFF_ALLOWED: [&str; 2] = ["succeeded", "succeeded_with_warnings"];
+
+/// The record-state admission verdict for the handoff entry (U19 ruling —
+/// the typed rejection reasons; the provider-host maps them one-to-one onto
+/// the wire codes).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum HandoffRecordAdmission {
+    /// `succeeded` | `succeeded_with_warnings` — the handoff proceeds. The
+    /// backend passes the record through untouched; the warning
+    /// presentation stays the desktop face's job.
+    Allowed,
+    /// A known build-record state the whitelist disallows:
+    /// `failed` | `cancelled` | `rolled_back` | `recovered`. `state`
+    /// carries the record's original value verbatim (the wire error's
+    /// `state` param — the UI words its diagnostic/recovery/re-production
+    /// entry around it). `recovered` blocks like the others: a completed
+    /// inspection NEVER rewrites the failed history record to success
+    /// (ruling correction b — recovered is a build-record state, never the
+    /// task-face inspect_required, and the two sets are never mixed).
+    Blocked { state: String },
+    /// The `status` field is missing, is not a string, or sits outside the
+    /// build-record v0.3 enum — the record cannot be confirmed, so the
+    /// handoff is refused (`record_state_unknown`).
+    Unknown,
+}
+
+/// Classifies a build record's `status` for the handoff admission (U19).
+/// The classification is total: every possible stored document lands in
+/// exactly one variant, and the allowed/blocked/unknown partition is
+/// decided HERE (backend-authoritative), never in a UI.
+pub fn classify_handoff_record_state(record: &Value) -> HandoffRecordAdmission {
+    match record.get("status").and_then(Value::as_str) {
+        Some(state) if RECORD_STATUS_HANDOFF_ALLOWED.contains(&state) => {
+            HandoffRecordAdmission::Allowed
+        }
+        Some(state) if RECORD_STATUS_ENUM.contains(&state) => HandoffRecordAdmission::Blocked {
+            state: state.to_owned(),
+        },
+        _ => HandoffRecordAdmission::Unknown,
+    }
+}
+
 /// Builds the handoff fact document: the frozen five-key closed set
 /// (schemaVersion/buildId/projectId/editor{exePath,version}/occurredAt).
 /// There is NO upload-status field and this builder cannot be talked into
@@ -192,6 +286,34 @@ pub fn build_handoff_fact(
 ) -> Value {
     json!({
         "schemaVersion": RELEASE_HANDOFF_SCHEMA_VERSION,
+        "buildId": build_id,
+        "projectId": project_id,
+        "editor": {
+            "exePath": editor_exe,
+            "version": editor_version,
+        },
+        "occurredAt": occurred_at,
+    })
+}
+
+/// Builds the inspection fact document (U19 independent "open in Unity to
+/// inspect/fix" entry): the handoff fact's five identity keys PLUS an
+/// explicit leading `operation` key whose value is
+/// `release.openForInspection` — the wording can never be read as a
+/// handoff completion (the inspection entry is not a handoff; it grants
+/// neither recovery-execution nor upload permission). Like the handoff
+/// fact, there is NO upload-status field and this builder cannot be talked
+/// into adding one.
+pub fn build_inspection_fact(
+    build_id: &str,
+    project_id: &str,
+    editor_exe: &str,
+    editor_version: &str,
+    occurred_at: &str,
+) -> Value {
+    json!({
+        "schemaVersion": RELEASE_HANDOFF_SCHEMA_VERSION,
+        "operation": OPEN_FOR_INSPECTION_OPERATION,
         "buildId": build_id,
         "projectId": project_id,
         "editor": {
@@ -326,12 +448,132 @@ mod tests {
             keys,
             vec!["buildId", "editor", "occurredAt", "projectId", "schemaVersion"]
         );
-        assert_eq!(fact["schemaVersion"], "0.1");
+        assert_eq!(fact["schemaVersion"], "0.2");
         assert_eq!(fact["editor"]["exePath"], "C:/Unity/2022.3.22f1/Editor/Unity.exe");
         assert_eq!(fact["editor"]["version"], "2022.3.22f1");
         // Honesty rule 1/2 by shape: no upload-status-like field exists.
         assert!(object.get("uploadStatus").is_none());
         assert!(object.get("upload").is_none());
+    }
+
+    // ---- Record-state admission (U19 v0.2: full enum coverage) ----
+
+    #[test]
+    fn whitelist_allows_succeeded_and_succeeded_with_warnings() {
+        // 规范表放行臂:两态逐一钉。succeeded_with_warnings 放行且保留
+        // 警告呈现(后端不改写记录、不抹警告——呈现归桌面)。
+        for state in ["succeeded", "succeeded_with_warnings"] {
+            let record = json!({ "status": state });
+            assert_eq!(
+                classify_handoff_record_state(&record),
+                HandoffRecordAdmission::Allowed,
+                "{state} must pass the whitelist"
+            );
+        }
+    }
+
+    #[test]
+    fn whitelist_blocks_failed_cancelled_rolled_back_and_recovered_verbatim() {
+        // 规范表拦截臂:四态逐一钉,recovered 与其余终态同表同待遇。state
+        // 原值逐字携带(线面 param),绝不归一、绝不改写。
+        for state in ["failed", "cancelled", "rolled_back", "recovered"] {
+            let record = json!({ "status": state });
+            assert_eq!(
+                classify_handoff_record_state(&record),
+                HandoffRecordAdmission::Blocked {
+                    state: state.to_owned()
+                },
+                "{state} must be blocked with its verbatim state"
+            );
+        }
+    }
+
+    #[test]
+    fn missing_non_string_and_out_of_enum_status_are_unknown() {
+        // 规范表拒绝臂:status 缺失/非字符串/枚举外——记录无法确认。
+        assert_eq!(
+            classify_handoff_record_state(&json!({ "buildId": "b1" })),
+            HandoffRecordAdmission::Unknown,
+            "missing status cannot be confirmed"
+        );
+        assert_eq!(
+            classify_handoff_record_state(&json!({ "status": 17 })),
+            HandoffRecordAdmission::Unknown,
+            "non-string status cannot be confirmed"
+        );
+        assert_eq!(
+            classify_handoff_record_state(&json!({ "status": null })),
+            HandoffRecordAdmission::Unknown,
+            "null status cannot be confirmed"
+        );
+        assert_eq!(
+            classify_handoff_record_state(&json!({ "status": "completed" })),
+            HandoffRecordAdmission::Unknown,
+            "an out-of-enum word (program-discipline vocabulary) is not a schema state"
+        );
+        assert_eq!(
+            classify_handoff_record_state(&json!({ "status": "" })),
+            HandoffRecordAdmission::Unknown,
+            "an empty status cannot be confirmed"
+        );
+    }
+
+    #[test]
+    fn classification_covers_the_whole_schema_enum_exactly_once() {
+        // 全枚举覆盖守卫:构建记录 v0.3 状态枚举六词逐一分类,无一落入
+        // Unknown——枚举漂移(增词/改词)时此钉先红,逼对表落位。
+        for state in [
+            "succeeded",
+            "succeeded_with_warnings",
+            "failed",
+            "cancelled",
+            "rolled_back",
+            "recovered",
+        ] {
+            let record = json!({ "status": state });
+            let verdict = classify_handoff_record_state(&record);
+            assert_ne!(
+                verdict,
+                HandoffRecordAdmission::Unknown,
+                "schema state {state} must never classify as unknown"
+            );
+        }
+    }
+
+    // ---- Inspection fact builder (U19 independent entry) ----
+
+    #[test]
+    fn inspection_fact_carries_the_operation_wording_never_a_handoff_claim() {
+        let fact = build_inspection_fact(
+            "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99",
+            "proj-synthetic-avatar-a",
+            "C:/Unity/2022.3.22f1/Editor/Unity.exe",
+            "2022.3.22f1",
+            "2026-09-21T15:30:00Z",
+        );
+        let object = fact.as_object().expect("fact is an object");
+        let mut keys: Vec<_> = object.keys().cloned().collect();
+        keys.sort();
+        assert_eq!(
+            keys,
+            vec![
+                "buildId",
+                "editor",
+                "occurredAt",
+                "operation",
+                "projectId",
+                "schemaVersion"
+            ],
+            "six-key closed set: the five identity keys + the operation wording"
+        );
+        assert_eq!(fact["operation"], "release.openForInspection");
+        assert_eq!(fact["schemaVersion"], "0.2");
+        // Honesty by shape: no upload field, and the wording never claims a
+        // handoff (U19: opening the editor is neither recovery-execution
+        // nor upload permission).
+        assert!(object.get("uploadStatus").is_none());
+        assert!(object.get("upload").is_none());
+        assert_ne!(fact["operation"], "release.openForHandoff");
     }
 
     // ---- Port contract (fake consumer, ruling-15 local-first shape) ----

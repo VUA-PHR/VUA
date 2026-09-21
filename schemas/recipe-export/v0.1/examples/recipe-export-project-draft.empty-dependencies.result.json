@@ -1,0 +1,29 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "recipe.exportProjectDraft",
+  "result": {
+    "schemaVersion": "vua.recipe-export/v0.1",
+    "draftId": "0197c0de-7a2b-7cd1-9f3a-4d8e21b90c9c",
+    "exportedAt": "2026-09-22T01:55:00.000Z",
+    "origin": {
+      "projectPath": "C:\\Users\\demo\\VRChat Projects\\Fresh Empty Project",
+      "projectName": "Fresh Empty Project",
+      "vuaIdentityStatus": "present"
+    },
+    "environment": {
+      "unityVersionConstraint": "2022.3.22f1"
+    },
+    "dependencies": [],
+    "missing": [
+      "assets",
+      "instances",
+      "relations",
+      "wardrobeGroups",
+      "targetAvatar",
+      "assetRoles",
+      "assetLabels",
+      "sourceRefs",
+      "titleSemantics"
+    ]
+  }
+}

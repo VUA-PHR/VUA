@@ -23,7 +23,9 @@ export type BuildRecordStatusV03 =
   | "rolled_back"
   | "recovered";
 
-const RECORD_STATUSES: readonly BuildRecordStatusV03[] = [
+/** build-record v0.3 六态闭集运行时面(导出:交棒准入投影与闭集期望表
+ *  测试按此数组对表,不自持字面量;新增态即测试败,防回摆) */
+export const BUILD_RECORD_STATUSES_V03: readonly BuildRecordStatusV03[] = [
   "succeeded",
   "succeeded_with_warnings",
   "failed",
@@ -33,7 +35,7 @@ const RECORD_STATUSES: readonly BuildRecordStatusV03[] = [
 ];
 
 export function isBuildRecordStatusV03(value: string): value is BuildRecordStatusV03 {
-  return (RECORD_STATUSES as readonly string[]).includes(value);
+  return (BUILD_RECORD_STATUSES_V03 as readonly string[]).includes(value);
 }
 
 /** 构建记录呈现事实(从 v0.3 文档收窄;全部为文档确定事实) */
