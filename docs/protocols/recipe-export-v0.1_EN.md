@@ -2,23 +2,30 @@
 
 [English](recipe-export-v0.1_EN.md) | [简体中文](recipe-export-v0.1_ZH.md)
 
-> Document version: 0.1.1
+> Document version: 0.1.2
 > Status: **FROZEN (proposal 029 B-face freeze loop 1, core batch,
 > 2026-09-22; claimed after the desktop-side precondition landed — the
 > wt-3 shape verdict merged into the 029 inline thread by integration
-> batch 159; three rulings in "Core rulings") and WIRED (v0.1.1 core
-> wiring loop 2, 2026-09-22): the `recipe.exportProjectDraft` route arm,
+> batch 159; three rulings in "Core rulings"), WIRED (v0.1.1 core
+> wiring loop 2, 2026-09-22) and IMPLEMENTED (v0.1.2 core executor
+> loop 3, 2026-09-22): the `recipe.exportProjectDraft` route arm,
 > the two envelope constants, the served row `recipe.exportProjectDraft`,
-> and the port face (the core `ProjectDraftExportPort` trait) have
-> landed — the export executor implementation belongs to loop 3; until
-> its override flips the accessor, every wired answer stays on the honest
-> absence arm (the port's defaulted `export_capabilities -> NONE`, the
-> served row honestly unavailable).**
+> the port face (the core `ProjectDraftExportPort` trait) and the REAL
+> executor (`OnDiskProjectDraftExporter`, reading the 013 inspection
+> facts: declared VPM manifest dependencies + locked pins, the observed
+> editor version, the VUA identity tri-state) have landed — the
+> executor's capability override has FLIPPED the accessor, so the
+> production wiring answers with real drafts (observation failures ride
+> as facts: absent/corrupted manifest = the honest empty dependencies
+> array, unreadable editor version = null constraint + the
+> environmentUnityVersion marker); the loop-3 executor tests live in
+> `crates/orchestrator/tests/recipe_export_executor.rs` and the
+> real-executor chain rides the wire suite.**
 > Machine-readable word list: `schemas/recipe-export/v0.1/` (single-method
 > schema + 5 positive + 8 negative vectors; core consumer test
 > `crates/orchestrator/tests/recipe_export.rs`; wire route test
 > `crates/provider-host/tests/recipe_export_wire_v01.rs` [real frame
-> loop, 9 cases])
+> loop, 11 cases = 9 wiring + 2 real-executor chain])
 > Scope: `recipe.exportProjectDraft` (derive a **Recipe DRAFT** from one
 > registered Unity project — the project→recipe reverse read-only
 > derivation); the recipe-chain execution face stays in production-use-case
@@ -29,13 +36,22 @@
 > (recipe-page "import from project" entry + draft confirmation/completion
 > flow) = desktop domain (the wt-3 shape verdict, 029 inline thread, is the
 > consumption-shape input)
-> Updated: 2026-09-22 (v0.1.1 wiring loop 2: the `recipe.exportProjectDraft`
+> Updated: 2026-09-22 (v0.1.2 executor loop 3: the REAL on-disk
+> `OnDiskProjectDraftExporter` lands in the core recipe_export module —
+> manifest document reads mirrored from the 013 aggregate [string-valued
+> entries only; absent/corrupted/non-object manifest = honest empty rows],
+> the version gate mirrored [missing/incomplete `m_EditorVersion:` line =
+> null constraint + the marker], the identity tri-state verdict boundaries
+> mirrored [NotFound=absent; garbage/unknown-version=unreadable], the
+> per-call uuid-v7-shaped draft identity mint, the injected-clock
+> `exportedAt`; production bin wiring flips `draft_exporter`; word face
+> ZERO change. v0.1.1 wiring loop 2: the `recipe.exportProjectDraft`
 > route arm + the two envelope constants
 > `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`/`RECIPE_EXPORT_SCHEMA_VERSION_V01`
 > + the served row `recipe.exportProjectDraft` + the port face
 > `ProjectDraftExportPort` [declared-none default] + 9 wire tests riding the
-> real frame loop; word face ZERO change. First updated 2026-09-22, v0.1
-> freeze batch: bilingual protocol document + REGISTRY registration)
+> real frame loop. First updated 2026-09-22, v0.1 freeze batch: bilingual
+> protocol document + REGISTRY registration)
 
 ## B-face positioning (loop 1 of the 029 pipeline)
 
@@ -282,9 +298,11 @@ misreported as a failure when an honest empty state exists (honesty rules
 - **The served row** `recipe.exportProjectDraft` (the one-row-one-method
   precedent): availability = the use-case wiring AND the port's
   `export_capabilities`.`export_project_draft` bit — the declared-none
-  default keeps the row honestly unavailable until the loop-3 export
-  executor implementation slice flips it with the real adapter's
-  override;
+  default kept the row honestly unavailable until the loop-3 export
+  executor implementation slice flipped it with the real adapter's
+  override (landed, v0.1.2: the production bin wiring carries the real
+  executor, so the row answers available wherever the use-case face is
+  wired);
 - **Port face**: the core `ProjectDraftExportPort` trait (orchestrator
   domain, `crates/orchestrator/src/recipe_export.rs`) = the frozen
   cross-domain contract: the defaulted accessor answers declared-none,
@@ -292,22 +310,45 @@ misreported as a failure when an honest empty state exists (honesty rules
   absence code (a declared-but-unimplemented port CAN exist at the type
   level — the F5 structural law; the route gate answers first), and the
   synchronous read-only signature returns the draft document directly
-  (zero nine-state tasks);
+  (zero nine-state tasks). The real adapter is
+  `OnDiskProjectDraftExporter` (v0.1.2, same module): it mirrors the 013
+  aggregate's read discipline in core (the dependency direction forbids
+  calling project-manager) — manifest document reads (string-valued
+  entries only; absent, unreadable, corrupted or non-object manifests
+  project the honest EMPTY rows, the aggregate's own projection for
+  those findings), the version gate (a missing or incomplete
+  `m_EditorVersion:` line = null constraint + the conditional marker),
+  the identity tri-state boundaries (NotFound = absent; garbage or
+  unknown version = unreadable evidence), a per-call uuid-v7-shaped
+  draft identity, and an injected-clock `exportedAt`; it is total —
+  on-disk observation failures degrade into the honest facts the frozen
+  word face reserves for them, never an error (the face's error closed
+  set reserves no code for on-disk findings);
+- **Executor tests**: `crates/orchestrator/tests/recipe_export_executor.rs`
+  (the synthetic project matrix — normal / empty declared / absent
+  manifest / corrupted JSON / non-object manifest / incomplete version
+  line / identity tri-state / non-string version entries / no-name
+  path / the capability flip / the determinism pin, every document
+  schema-validated against the real frozen result schema) + the wire
+  chain below;
 - **Wire tests**:
-  `crates/provider-host/tests/recipe_export_wire_v01.rs`, 9 cases riding
-  the real frame loop (absent wiring = the typed honest absence + the row
-  unavailable / the wired declared port answers at the frozen word face
-  [real schema validation + the seven-key closed set + packageId
-  ascending + lockedVersion absent-not-null + the nine constant
-  dimensions] / the trait-default declared-none port = the absence arm
-  first [the port body panics if ever reached] + the row honestly
-  unavailable / an off-aggregate path = the reused not_found before the
-  port / an absent calibration face = the honest absence / port refusals
-  travel verbatim / honest empty dependencies + unreadable version = a
-  SUCCESS carrying the environmentUnityVersion marker [the iff enforced
-  by the real validator] / params violations before the gate / the two
-  envelope constants detectable and pinned against the frozen schema
-  consts).
+  `crates/provider-host/tests/recipe_export_wire_v01.rs`, 11 cases riding
+  the real frame loop (9 wiring-loop cases: absent wiring = the typed
+  honest absence + the row unavailable / the wired declared port answers
+  at the frozen word face [real schema validation + the seven-key closed
+  set + packageId ascending + lockedVersion absent-not-null + the nine
+  constant dimensions] / the trait-default declared-none port = the
+  absence arm first [the port body panics if ever reached] + the row
+  honestly unavailable / an off-aggregate path = the reused not_found
+  before the port / an absent calibration face = the honest absence /
+  port refusals travel verbatim / honest empty dependencies + unreadable
+  version = a SUCCESS carrying the environmentUnityVersion marker [the
+  iff enforced by the real validator] / params violations before the
+  gate / the two envelope constants detectable and pinned against the
+  frozen schema consts; plus 2 loop-3 real-executor chain cases: the
+  real executor serves the full frozen word face through the real route
+  with the served row available / a corrupted manifest rides as the
+  honest empty-rows success over the wire).
 
 ## Dependency direction
 
@@ -365,10 +406,11 @@ field change must bump the version; in-place rewrites are forbidden.
 
 - ~~Wire routing + capability row + port face (core wiring slice)~~:
   landed with the v0.1.1 wiring loop 2 (2026-09-22);
-- Export executor implementation (core domain, reads the 013 inspection
-  aggregate; 029 B-face loop 3) — overrides `export_capabilities` and
-  flips the served row; until then every wired answer stays on the
-  honest absence arm;
+- ~~Export executor implementation (core domain, reads the 013 inspection
+  aggregate; 029 B-face loop 3)~~: landed with the v0.1.2 executor loop 3
+  (2026-09-22) — `OnDiskProjectDraftExporter` mirrors the 013 aggregate's
+  read discipline in core, the capability override flipped the served
+  row, and the loop-2 wire suite gained the real-executor chain cases;
 - Desktop consumption batch (recipe-page "import from project" entry +
   draft confirmation/completion flow consuming the A-face hub shape;
   029 B-face loop 4) after its shape verdict;
@@ -378,5 +420,5 @@ field change must bump the version; in-place rewrites are forbidden.
   loop after the W25 real-machine walk-through;
 - The real-machine full chain (real project export → confirm → assemble
   → workshop status) belongs to W25 (O-2). End-to-end claims stay at
-  zero — this batch promises zero runtime behavior change until the
-  implementation slice's acceptance.
+  zero — the executor tests and the wire chain are code-face evidence on
+  synthetic projects, never a real-machine claim.
