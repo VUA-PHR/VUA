@@ -1,0 +1,46 @@
+name: 故障报告 / Bug report
+description: 报告可复现的问题；安全漏洞请走私密报告。
+body:
+  - type: markdown
+    attributes:
+      value: "请勿上传付费素材、完整工程、Cookie、令牌或原始私人日志。安全漏洞请使用 Security 页的私密报告入口。"
+  - type: input
+    id: version
+    attributes:
+      label: VUA 版本或提交 / Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 运行环境 / Environment
+      description: Windows 版本；如涉及 Unity，请提供编辑器版本和相关包版本。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤 / Steps to reproduce
+    validations:
+      required: true
+  - type: textarea
+    id: expected_actual
+    attributes:
+      label: 预期与实际结果 / Expected and actual result
+    validations:
+      required: true
+  - type: dropdown
+    id: data_kind
+    attributes:
+      label: 复现使用的数据 / Reproduction data
+      options:
+        - 实际本地使用数据（不上传） / Real local data (not attached)
+        - 合成或演示数据 / Synthetic or demo data
+        - 不涉及数据或不确定 / Not applicable or unsure
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: 已脱敏的诊断信息 / Sanitized diagnostics
+      description: 可选；仅贴与问题有关的片段，并移除个人路径、账号、凭据和商品内容。
