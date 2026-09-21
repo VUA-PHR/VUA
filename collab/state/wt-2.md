@@ -2,101 +2,81 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 7bc18e90
+baseline_commit: cd8c0000
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 150 批（2026-09-21，两笔：修复批 7bc18e90 恰 10 文件 533+/11-＋本状态批恰
-本文件）——桌面座 148 批实证的 messageKey 粒度细化＋操作者裁定的 `Packages/`
-盲点收口；轮首追平 main cc5a4d7c（fast-forward，落后 4→0，纯吸收集成第 149
-批世代）；用户休息中授权自主续拍，VUA-7/VUA-8 全程未触碰**：
+**第 152 批（2026-09-21 16:4x–17:0x，节拍轮工作时段 date 实测）＝纯文档起草批：
+proposal 029（车间入口模型重构〔配方驱动为主〕＋从已有 Unity 项目导出 Recipe）
+两笔——提案批 cd8c0000（恰 `collab/proposals/029-recipe-driven-workshop-and-project-export.md`
+一文件 218+）＋本状态批恰本文件；轮首追平 main e394831f（fast-forward，落后 2→0，
+纯吸收集成第 151 批世代）；**资源纪律如实遵守：用户下午在场用机，本批零 cargo、
+零构建、零测试、零代码**，全部工作为只读代码事实盘点＋文档起草；VUA-7/VUA-8
+全程未触碰**：
 
-- **任务一：失败 messageKey 按失败类别分流（BOARD #45 桌面知会件）**。
-  桌面 148 批实证：`material_task.rs` 与 provider-host 工作面对一切 Failed
-  恒发 `errors.material.executionFailed`，桌面预留的 `provisionFailed` 词面
-  永不命中、供给失败与桥接失败同句笼统。修复：`material_exec` 新增
-  `failure_message_key` 分类助手（单一来源），供给段失败（`run_provision`
-  的 create/resolve 臂及其包装臂——码一律以 `vua.material.provision_failed`
-  为前缀）改发 `errors.material.provisionFailed`，其余维持
-  `executionFailed`；两个发射面（unity-bridge 任务运行时 job＋provider-host
-  `Run::Execute` 工作面）共用同一助手。**载荷数据细化非 wire 形状变更**：
-  AppErrorV1 信封与字段闭集零触碰、Schema 零触碰、零新码；差异事实仍由
-  `code` 携带（桌面 148 批并呈律同显词面与原码，原供给原因无论键面如何都
-  到达行内）。`inspect_project` 的两处直发 AppErrorV1 维持
-  executionFailed——检查面无供给段（如实在案）。协议本 v0.2 0.2.1 注记
-  （双语）＋REGISTRY 括注照章。
-- **任务二：`Packages/` 盲点收口（BOARD #45 跨面决策项；操作者裁定：素材
-  直导通道不得静默写入 `Packages/`——那是 vpm-manifest 追踪的 VPM 通道
-  领地，绕过追踪的写入违背单通道写模型）**。机制按合同纪律裁量，两层
-  兜底、零新码：
-  1. **intake 预检面（发现/阻断）**：`scan_unitypackage` 在检查面即拒收
-     `Packages/` 前缀 pathname（既有 `vua.material.archive_invalid` 族）——
-     计划与确认根本不形成。软「发现」形态被否：仅记证据会让已确认计划
-     静默丢包（＝静默部分导入，恰是要封的死法）。
-  2. **执行臂兜底（拒绝）**：`extract_package_into_dir` 第一遍整体拒收
-     （先于第二遍任何落盘——零残留、零部分物化；Ordinal 前缀与 C# 面判
-     定逐字节同形），三处物化消费点（直导/暂存导入/generate_vpm_only）
-     共用；计划后混入的此类包在执行前重检如实拒绝（先于快照与首笔变更）。
-     暂存腿旧的静默有损形态（Packages/ 条目物化进一次性暂存工程、落在生
-     成包之外）同批变为诚实拒绝。
-  - **C# 面刻意不动，决策与理由**：Bridge v4 协议已冻结，其诊断码集合里
-    无一个能诚实承载「通道边界拒绝」的既有码——说谎复用
-    （source_type_invalid/manifest_drift/operation_not_allowed 语义皆不符）
-    或新立诊断码（操作者零新码约束所不容）两案皆被否。两层 Rust 闸口就位
-    后，链上已无任何路径能把 Packages/ 内容送达 C# op，其 Assets/-或-
-    Packages/ 接受臂成为链上不可达的**休眠面**——收窄它（一行）候码决策
-    或协议注记后再做，已在候派登记，不夹带。`ValidateAssetPaths` 继续接受
-    Packages/ 期望——那是 VPM 通道（本地包生成＋vpm install）的合法面，
-    非本裁定所及。
-  - **148 批钉不回摆**：恶意归档三形态 raw-ustar 测试套内实测保持绿——
-    其合法布局用 Assets/ pathname，条目名组件守卫与 pathname 内容检查
-    正交。
-- **素材链 messageKey 家族核对（BOARD #45 顺带件；桌面词表补齐候选清单，
-  跨域不动桌面）**：引擎侧在用 `errors.material.*` 键全量 12 个——
-  `executionFailed`（任务层＋工作面＋inspect_project ×2＋工作面回滚臂）、
-  `provisionFailed`（本批新增分类）、`sourceInvalid`（intake ×2）、
-  `sourceEmpty`、`sourceUnreadable`、`sourceDrift`、`planHashMismatch`、
-  `riskDecisionStale`（×2）、`riskDecisionRequired`、`cancelled`、
-  `internal`（digest_json）、`recordFailed`（工作面回执发布失败臂）。
-  桌面词表 material 段现有 2 键（executionFailed＋provisionFailed，四语
-  同步）——**补齐候选 10 键**：sourceInvalid、sourceEmpty、sourceUnreadable、
-  sourceDrift、planHashMismatch、riskDecisionStale、riskDecisionRequired、
-  cancelled、internal、recordFailed（现由 code 原词兜底呈词，未命中不虚构，
-  与诚实三律兼容——补齐属呈现增强非缺陷修复）。桌面裁量，本域不动。
-- **测试清单（＋6，五 crate 821/0，对表 148 批 815 自洽）**：
-  1. 源内 batch150 通道边界模块：Packages/-only 归档拒收且
-     extracted_root 从未创建（零落盘）；Assets/＋Packages/ 混装归档整体
-     拒收（无静默部分导入）。
-  2. tests/material_exec.rs：intake 阻断含 Packages/ 包＝发现面
-     （archive_invalid）；计划后混入归档执行臂诚实拒绝（VerifySource 失败、
-     rollback NotNeeded、零 Bridge 命令、无收据）。
-  3. tests/material_task.rs：任务层供给失败 Completed 事件呈现
-     provisionFailed＋provision_failed 族码＋空态诚实收据；任务层桥接拒绝
-     维持 executionFailed＋bridge_rejected。
-  4. provider-host production_host.rs：既有 bridge_timeout 工作面钉扩展
-     executionFailed messageKey 断言。
-- **证据（personally green，date 实测）**：cargo test 五 crate **821/0**
-  ＋clippy 六 crate（含 bdl-store）--all-targets **0 警告 0 错误**＋
-  desktop typecheck 双 tsconfig **exit 0**（零 TS 文件触碰，为证据形状
-  齐整复跑）＋git diff --check clean。修复批恰 10 文件 533+/11-＝
-  unity-bridge src 3＋tests 2、provider-host src 1＋tests 1、协议本双语
-  2＋REGISTRY 1。VUA-7/VUA-8 及其分支全程未触碰。
-- **候派登记（本批不动）**：
-  1. C# 物化面 `Packages/` 接受臂收窄（休眠面；需新诊断码裁决或协议注记，
-     一行改动候派）。
-  2. `loadedAssetPaths` 证据面 `unwrap_or_default`（148 批登记沿用，跨
-     crate fake 涟漪）。
-  3. 端口面取消位（VpmBackend/Bridge；快照/provision 网络段/preview/
-     apply 腿不可中断）。
-  4. 失败/取消后 `.vua/imports` 解包残留清理策略（需回滚分支小重构）。
-- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋fake/手工归档
-  证据；真实 W25 素材是否携带 `Packages/` 条目、供给失败词面在桌面真机上
-  的实际命中，均归 W25（O-2）如实候验；测试绿≠真机绿。
+- **起草依据＝用户裁决 U16 答复（2026-09-21 立项；BOARD 用户裁决表行由集成随
+  验收改记）**：车间入口模型**配方驱动为主**，期望流转「Recipe 列表创建 Recipe→
+  点选添加素材→打开本地素材仓库（可添加本地/云端素材）→Recipe 列表选择→预览
+  内容→点击组装→车间只作状态显示」；并新增配套功能**从已有 Unity 项目导出
+  Recipe**（反向方向：项目→配方）。提案结构照 024–028 先例（背景/裁决依据/
+  面清单/环流水线/边界/未决项/内联线程），status: 提出。
+- **A 面（车间入口模型重构，桌面消费为主）四条现状盘点全部代码事实实测锚**
+  （main e394831f 世代只读）：(1) 车间页＝素材驱动链唯一接线
+  （`WorkshopPage.tsx:536-635` ProductionFlowSection＝production-use-case **v0.1**
+  素材直产链全动作在车间发起；配方仅流水线条显示面 :500-525）；(2) 配方链后端
+  已完整（`assembly.rs` derive_plan/confirm/execute＋八操作闭集＋AssemblyPlanV1
+  package_preview＋tests/assembly.rs 在库；wire 面 v0.2 服务路径在 provider_host.rs）；
+  (3) 桌面「配方→执行」入口未接入主流程（**精确化注记，与派单措辞的差异如实
+  记录**：gateway.productionChain 端口已被配方链卡 `ProductionChainSection` 消费，
+  但链状态机配方身份唯一外部写入方＝`productionChainRecipeSavedAction`、唯一
+  调用方＝`compose-save-chain.ts`——即入口只在「保存搭配草稿」后可达，配方库
+  选择不填充链，配方页主体与车间页均无组装发起面）；(4) VUA-8 导航重构已并入
+  （合并 0f9350f，2026-09-20 IA＝本重构基线）。目标流转 A1–A6 逐卡对照
+  （配方页成制作中枢；车间降级执行状态面；素材直导去留列未决项 1、裁定前
+  车间现状维持不拆——降级先加「状态面」职责不删既有可用链）；设计标准
+  §8.3/§8.4/§8.5 升版预告登记（0.7.14+，桌面域办理，本提案不代落）。
+- **B 面（项目导出 Recipe，核心域为主）能力盘点三档如实**：**可导出（可靠）**
+  ＝vpm-manifest dependencies+locked（`project_inspection.rs:238` inspect_project_deep
+  → `RecipeV02.dependencies`，重放承接＝U17 已落地 `VpmBackend::resolve_project`）
+  ＋unity_version 约束＋VuaIdentityFinding 工程身份注记；**需新桥接只读扫描**
+  ＝Avatar/衣装层级发现（现状只读操作集**无发现类操作**——`IdentifyAssets`
+  系「确认给定选择」`BridgeCommandProcessor.cs:504` 非发现；Bridge v4 已冻结，
+  新操作＝协议升版决策；零桥接备选＝骨架＋用户点选补全，两案候冻结环裁量）；
+  **不可导出（诚实边界）**＝设计意图、无 VUA 导入记录时的素材来源（只有文件
+  指纹可身份比对不提供来源）、非 MA 挂接结构。导出物定性＝**Recipe 草稿
+  （draft）**，须用户在配方页确认补全并显式保存后才成正式 Recipe，草稿态如实
+  标注缺失维度清单绝不静默转正；**导出不宣称还原设计意图**（诚实律前置）。
+  B 面环流水线＝冻结（Recipe 导出面 Schema＋正负例向量＋消费测试）→接线→
+  实现→消费，照 024–028 先例。
+- **两面耦合与排序**：A 面可在手工创建 Recipe 上先行（A1/A2/A4/A5/A6 不依赖
+  导出物）；B 面冻结以 A 面落形为消费形状输入（导入草稿要有页面可落）；
+  设计标准升版随 A 面消费批。验收门：A 面消费批＝typecheck/vitest/i18n/
+  boundary/leak 全绿＋空态失败态诚实钉；B 面各环照 027 先例；真机（真实工程
+  导出→组装→车间状态呈现）归 W25（O-2），**零端到端宣称**。
+- **边界七条＋未决项五条**（提案内如实列，不臆断）：①素材直导链去留（候桌面
+  形状核可，裁定前现状维持）；②非 VUA 创建工程导出适用边界（候冻结批对表，
+  涉边界语义则升 [需用户]）；③BOOTH/云端素材在「添加素材」步接入面（与
+  U18〔shader 依赖策略，候用户裁决〕及 BDL 面联动——候集成随本提案验收登记
+  开放问题行，派单称 #46，以集成登记为准）；④关系面扫描双案裁量（新只读桥
+  操作＋协议升版 vs 零桥接骨架，冻结批输入）；⑤`AssemblyEngine` 与 v0.2 服务
+  路径（Local Resolution 执行器＋任务化编排臂）归一/分工定性（引擎已测未接
+  服务路径的现状两套形状并存，A5 接线前冻结核对，本提案不预决）。
+- **本批形状**：恰两笔两文件（提案批 cd8c0000 一文件＋本状态批一文件），
+  零构建零测试零代码；上位权威一致性已在提案内核对（产品边界 Recipe-first
+  原则＝操作化非扩权；设计标准 §2.2 同向；BOARD #44 装配词面纪律——用户
+  动作词面从裁决原文用「组装」；U14/027 裁决④ Recipe 自动化方向同源）。
+  **验收请求**：提案 029 文档批（基线 e394831f）＝cd8c0000＋本状态批，请集成
+  验收；U16 行改记与开放问题登记归集成。
+- **诚实边界维持：零端到端宣称**——本批全部结论系只读代码事实＋文档起草，
+  未运行任何构建/测试；A 面现状盘点锚定 main e394831f 世代，后续世代漂移
+  候落批时复核。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 148 批（83e267d9＋98767e61，2026-09-21）＝素材链反向审查批：tar 解包
-组件级路径守卫＋mutating 命令 id attempt 盐＋物化指纹硬要求三修复三钉，
-经集成第 149 批收编（da6a3bfb）。第 146 批（70f7476）＝供给依赖解析端口面
-钉底＋run_provision 接线（resolve 骑新建路径、指纹重取哨兵、失败两臂诚实），
-操作者裁决两笔落账（第 147 批）。更早段落见本文件 git 历史与 BOARD 前录
-（10 段轮转）。
+第 150 批（7bc18e90＋464541c3，2026-09-21）＝素材链修复批：失败 messageKey 按
+类别分流（failure_message_key 分类助手单一来源，供给段失败→provisionFailed，
+载荷数据细化非 wire 形状变更零新码）＋Packages/ 通道边界两层兜底（操作者裁定：
+intake 预检 archive_invalid 阻断＋执行臂第一遍整体拒收零残留，C# 面休眠臂收窄
+候裁决登记不夹带），五 crate 821/0，经集成第 151 批收编（合并 3e5573a6）。
+第 148 批（83e267d9＋98767e61）＝素材链反向审查批：tar 解包组件级路径守卫＋
+mutating 命令 id attempt 盐＋物化指纹硬要求三修复三钉，经集成第 149 批收编
+（da6a3bfb）。更早段落见本文件 git 历史与 BOARD 前录（10 段轮转）。
