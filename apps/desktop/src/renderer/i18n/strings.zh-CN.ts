@@ -1413,8 +1413,10 @@ rolled_back: "已回滚",
       },
       /* U19 第二交付(用户裁决明文):独立「在 Unity 中打开以检查/修复」动作
        * ——与交棒按钮显式分离(独立组件/端口/词面组);不按记录状态闸;打开
-       * 编辑器既不是恢复执行也不是上传许可。核心座后端 open 检查入口本拍未
-       * 入库:端口结构缺席,词面如实呈现缺席,不虚构后端能力。 */
+       * 编辑器既不是恢复执行也不是上传许可。路由已入库(release-handoff
+       * v0.2,第 156 批桌面 TS 面对齐):完成事实臂呈现六键检视事实的身份
+       * 键＋事实自携 operation 词面,并明示检视打开不是交棒完成(负例约束
+       * 在呈现面成立);缺席/失败两臂如实呈现,不虚构后端能力。 */
       openInUnity: {
         action: "在 Unity 中打开以检查/修复",
         actionNote:
@@ -1425,6 +1427,17 @@ rolled_back: "已回滚",
         failedUnknown: "请求被拒，未携带错误码。",
         failedWithCode: "请求被拒：{code}",
         retry: "重试",
+        runningNote: "正在打开 Unity 编辑器；完成后此处呈现结果。打开编辑器既不是恢复执行，也不是上传许可。",
+        readFailedNote: "任务状态本轮读取失败，将继续重试；不会猜测当前状态。",
+        succeededTitle: "编辑器已打开（检视）",
+        succeededLine: "Unity 编辑器 {editorVersion} 已于 {occurredAt} 打开（检视）。",
+        projectLine: "工程身份：{projectId}",
+        operationLine: "完成事实词面：{operation}。检视打开不是交棒完成，也不授予上传许可。",
+        cancelledNote: "打开任务已取消，无完成事实可呈现。",
+        taskErrorLine: "打开任务失败：{code}",
+        taskFailedNote: "打开任务失败，无完成事实可呈现。",
+        factUnexplainableTitle: "完成事实无法解释",
+        factUnexplainable: "任务已结束，但完成事实缺失或不可解释；此处如实呈现，不猜测事实内容。",
       },
     },
   },

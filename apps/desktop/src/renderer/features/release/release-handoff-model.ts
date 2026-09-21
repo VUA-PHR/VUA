@@ -1,8 +1,8 @@
 import {
-  isReleaseHandoffFactV01,
-  RELEASE_HANDOFF_ERROR_CODES_V01,
-  type ReleaseHandoffErrorCodeV01,
-  type ReleaseHandoffFactV01,
+  isReleaseHandoffFactV02,
+  RELEASE_HANDOFF_ERROR_CODES_V02,
+  type ReleaseHandoffErrorCodeV02,
+  type ReleaseHandoffFactV02,
 } from "@vua/contracts";
 import { format } from "../../i18n/format.ts";
 import {
@@ -12,25 +12,17 @@ import {
 import type { HandoffTaskView } from "./release-handoff-port.ts";
 
 /**
- * release.openForHandoff 呈现模型(023 消费切片):
+ * release.openForHandoff 呈现模型(023 消费切片;TS 面随族升 0.2):
  * - task.get 回执 → 交接任务视图的纯投影;只做字段存在性收窄与九态投影,
  *   不解释、不猜测、不重算(照 release-records-model 先例);
  * - 任务九态词表原样透传:running 视图携带原词,UI 文案对表 strings.taskStatus,
  *   词表外原样呈现(与 recordListStatusLabel 同纪律——诚实纪律 1);
- * - 交接事实经 contracts isReleaseHandoffFactV01 守卫(additionalProperties
- *   false 五键闭集,无上传状态字段)——事实不可解释 = fact-unexplainable,
- *   如实呈现,绝不合成;
- * - 受理错误码对 contracts RELEASE_HANDOFF_ERROR_CODES_V01 闭集对表,
+ * - 交接事实经 contracts isReleaseHandoffFactV02 守卫(additionalProperties
+ *   false 五键闭集,无上传状态字段;schemaVersion "0.2" 随族单源推进)——
+ *   事实不可解释 = fact-unexplainable,如实呈现,绝不合成;
+ * - 受理错误码对 contracts RELEASE_HANDOFF_ERROR_CODES_V02 闭集对表,
  *   闭集外原样透传,不猜测映射。
  */
-
-/** U19 交棒准入闸新码(用户裁决 2026-09-21,BOARD U19 行规范源;词表钉底
- *  预留行——照 errors.material.provisionFailed 先例,词面先行四表同步落位,
- *  contracts 闭集扩展随核心座准入闸切片入库,入库后本面按裁决对齐)。
- *  record_state_blocked=记录状态不在交接白名单(params 携 state 原词);
- *  record_state_unknown=记录状态无法确认(缺失/词表外)。 */
-export const RELEASE_HANDOFF_RECORD_STATE_BLOCKED = "vua.release_handoff.record_state_blocked";
-export const RELEASE_HANDOFF_RECORD_STATE_UNKNOWN = "vua.release_handoff.record_state_unknown";
 
 /**
  * U19 交棒准入呈现投影(桌面呈现面;后端权威判断独立在路由准入序——本投影
@@ -84,9 +76,9 @@ export interface HandoffIntentErrorFaces {
 
 /**
  * release.openForHandoff 受理拒绝 → 呈现词面(纯函数;调用方传词面表):
- * - 准入闸两码(词表钉底预留,见常量注)先行对表——stateBlocked 需 params
- *   state 非空串才组词面,缺席退回原码词面(占位符不猜测,format 缺参
- *   保留占位符的纪律下宁退回原码不输出半句);
+ * - 准入闸两码(contracts v0.2 闭集登记成员,词面已四表在位)先行对表——
+ *   stateBlocked 需 params state 非空串才组词面,缺席退回原码词面(占位符
+ *   不猜测,format 缺参保留占位符的纪律下宁退回原码不输出半句);
  * - 既有闭集三码照 023 词面映射;unavailable 在端口层已呈缺席,不到此处;
  * - 其余码(含 contracts 闭集外)原样透传,不猜测映射(诚实纪律)。
  */
@@ -96,8 +88,9 @@ export function handoffIntentErrorText(
   faces: HandoffIntentErrorFaces,
 ): string {
   if (code === null) return faces.failedUnknown;
-  if (code === RELEASE_HANDOFF_RECORD_STATE_UNKNOWN) return faces.stateUnknown;
-  if (code === RELEASE_HANDOFF_RECORD_STATE_BLOCKED) {
+  // 准入闸两码=contracts v0.2 六码闭集登记成员(字面照冻结 Schema 逐字)
+  if (code === "vua.release_handoff.record_state_unknown") return faces.stateUnknown;
+  if (code === "vua.release_handoff.record_state_blocked") {
     const state = params.state;
     return typeof state === "string" && state.length > 0
       ? format(faces.stateBlocked, { state })
@@ -148,8 +141,8 @@ export function projectHandoffTask(snapshot: unknown): HandoffTaskView | null {
   if (!isNonEmptyString(state)) return null;
   if (state === "succeeded" || state === "succeeded_with_warnings") {
     const fact = task.result;
-    return isReleaseHandoffFactV01(fact)
-      ? { kind: "succeeded", fact: fact as ReleaseHandoffFactV01 }
+    return isReleaseHandoffFactV02(fact)
+      ? { kind: "succeeded", fact: fact as ReleaseHandoffFactV02 }
       : { kind: "fact-unexplainable" };
   }
   if (state === "failed") {
@@ -171,8 +164,8 @@ export function isKnownTaskState(state: string): boolean {
 }
 
 /** 受理错误码是否在 release_handoff 闭集内(呈现文案对表用) */
-export function isReleaseHandoffErrorCode(code: string): code is ReleaseHandoffErrorCodeV01 {
-  return (RELEASE_HANDOFF_ERROR_CODES_V01 as readonly string[]).includes(code);
+export function isReleaseHandoffErrorCode(code: string): code is ReleaseHandoffErrorCodeV02 {
+  return (RELEASE_HANDOFF_ERROR_CODES_V02 as readonly string[]).includes(code);
 }
 
 /** strings.taskStatus 文案键(与 contract-projection TASK_STATE_PROJECTION

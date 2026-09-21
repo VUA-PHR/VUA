@@ -7,17 +7,18 @@ import type {
 import { projectHandoffTask } from "./release-handoff-model.ts";
 
 /**
- * release.openForHandoff live 端口(023 消费切片):经 Desktop Gateway 消费
- * release-handoff v0.1 词表行。消费纪律:
- * - 受理回执收窄:schemaVersion==="0.1"＋operation==="release.openForHandoff"
+ * release.openForHandoff live 端口(023 消费切片;TS 面随族升 0.2——核心
+ * U19 批单源推进,受理回执 schemaVersion 现为 "0.2"):经 Desktop Gateway
+ * 消费 release-handoff 词表行。消费纪律:
+ * - 受理回执收窄:schemaVersion==="0.2"＋operation==="release.openForHandoff"
  *   ＋taskId/correlationId 非空串四键组合才可信(联合中唯一属于本族面);
  *   形状不符如实 failed(响应不可解释≠缺席,不折叠);
  * - 诚实缺席:vua.release_handoff.unavailable(实现域未接线,路由恒答)与
  *   宿主不可达(gateway unavailable)同呈 absent——缺席语义,绝无受理假象;
- * - 其余应用错误码原样透传(invalid_params/build_unknown/editor_unresolved
- *   及未来闭集演化,含 U19 准入闸两码),不猜测映射;AppErrorV01 params
- *   防御性收窄透传(准入闸 state 原词的词面插值消费面);request_rejected
- *   无应用码,code=null;
+ * - 其余应用错误码原样透传(v0.2 六码闭集:invalid_params/build_unknown/
+ *   record_state_blocked/record_state_unknown/editor_unresolved 及未来闭集
+ *   演化),不猜测映射;AppErrorV01 params 防御性收窄透传(准入闸 state 原词
+ *   的词面插值消费面);request_rejected 无应用码,code=null;
  * - 任务快照经 task.get 重取权威状态(轮询由调用方驱动),投影见
  *   projectHandoffTask;读取失败返回 null,调用方保持上一视图。
  */
@@ -67,7 +68,8 @@ export function createLiveReleaseHandoffPort(client: GatewayClient): ReleaseHand
       !("operation" in value) ||
       value.operation !== "release.openForHandoff" ||
       !("schemaVersion" in value) ||
-      value.schemaVersion !== "0.1" ||
+      // v0.2 族版本单源推进(核心 U19 批,wire 只说 0.2)
+      value.schemaVersion !== "0.2" ||
       !("taskId" in value) ||
       typeof value.taskId !== "string" ||
       value.taskId.length === 0 ||

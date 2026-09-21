@@ -1431,9 +1431,12 @@ demoTaskTitle: "Demo task",
        * "Open in Unity to inspect or fix" action — deliberately separate from
        * the handoff button (own component, own port, own copy). Never gated by
        * the record state; opening the editor is neither a recovery execution
-       * nor an upload permission. The backend open entry is not landed yet
-       * (core seat in flight): the port answers structural absence and this
-       * face presents it honestly — no fabricated capability. */
+       * nor an upload permission. The route has landed (release-handoff v0.2,
+       * desktop TS face aligned in batch 156): the completion arm presents the
+       * six-key inspection fact's identity keys plus the fact's own operation
+       * wording, and states plainly that an inspection open is not a handoff
+       * completion (the negative constraint holds on this face too); the
+       * absent/failed arms present honestly — no fabricated capability. */
       openInUnity: {
         action: "Open in Unity to inspect or fix",
         actionNote:
@@ -1444,6 +1447,20 @@ demoTaskTitle: "Demo task",
         failedUnknown: "The request was rejected without an error code.",
         failedWithCode: "The request was rejected: {code}",
         retry: "Retry",
+        runningNote:
+          "Opening the Unity editor; the result appears here once it completes. Opening the editor neither resumes a production task nor permits an upload.",
+        readFailedNote: "Reading the task state failed this round; retrying. The current state is never guessed.",
+        succeededTitle: "Editor opened (inspection)",
+        succeededLine: "The Unity editor {editorVersion} was opened for inspection at {occurredAt}.",
+        projectLine: "Project identity: {projectId}",
+        operationLine:
+          "Completion fact wording: {operation}. An inspection open is not a handoff completion and grants no upload permission.",
+        cancelledNote: "The open task was cancelled; no completion fact to present.",
+        taskErrorLine: "The open task failed: {code}",
+        taskFailedNote: "The open task failed; no completion fact to present.",
+        factUnexplainableTitle: "Completion fact unexplainable",
+        factUnexplainable:
+          "The task ended, but the completion fact is missing or unexplainable; presented honestly, never guessed.",
       },
     },
   },

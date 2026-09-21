@@ -40,7 +40,8 @@ export interface VuaGateway {
    *  实现域未接线=诚实缺席语义) */
   readonly releaseHandoff: ReleaseHandoffPort;
   /** U19 第二交付:「在 Unity 中打开以检查/修复」独立端口(与交棒显式
-   *  分离,不按记录状态闸;核心 open 入口入库前全装配点结构缺席) */
+   *  分离,不按记录状态闸;路由已入库 release-handoff v0.2,live 装配
+   *  接线,empty/fixture 保持各自诚实缺席语义) */
   readonly releaseProjectOpen: ReleaseProjectOpenPort;
   readonly packages: PackagesPort;
   /** 数据来源标识:驱动"演示数据"徽标(原则①) */

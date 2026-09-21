@@ -61,8 +61,8 @@ function assembleDevGateway(
     inspection: live.inspection,
     // 023 消费切片:交接命令同纪律——恒 live 基线,无宿主时诚实缺席
     releaseHandoff: live.releaseHandoff,
-    // U19 第二交付:open 检查入口同纪律——恒 live 基线(核心入库前=结构
-    // 缺席),开发切档不产生演示打开受理
+    // U19 第二交付:open 检查入口同纪律——恒 live 基线(路由已入库 v0.2,
+    // live 装配已接线;无宿主时诚实缺席),开发切档不产生演示打开受理
     releaseProjectOpen: live.releaseProjectOpen,
     packages: selection.targets.packages === "fixture" ? fixture.packages : live.packages,
     dataSource: () => (anyFixturePort(selection.targets) ? "fixture" : live.dataSource()),

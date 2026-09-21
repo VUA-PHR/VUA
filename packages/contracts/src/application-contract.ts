@@ -1958,43 +1958,89 @@ export interface RecordListResultV02 {
 }
 
 
-// ---- release.openForHandoff(023 词表行,核心冻结批 2026-09-16:官方 SDK
-// 上传交接的 tasked 命令面。交接语义=把用户送到官方 SDK 流程起点——上传
-// 本身永不进 VUA(产品边界);桌面表态:方向 a 动作权威,b 回执形状并入结果
-// 文档;产线表态:Bridge 命令面以工程已打开为前提,实现域=进程/窗口面,
-// unity-bridge v3 零增操作,任务化=统一 task 九态单形态,完成判定=
-// Bridge handshake 到达(001 链),聚焦不进契约事实,冻结批不设新真机前置。
-// 机器可读面 schemas/release-handoff/v0.1,DRAFT 漂移由向量对表测试把守) ----
+// ---- release.openForHandoff ＋ release.openForInspection(release-handoff
+// v0.2 词表行,核心 U19 批 36bab970 经合并 09a4423f 入库,桌面 TS 面按所有权
+// 登记对齐;族版本 0.1→0.2 单源推进照核心 provider-host 再导出先例——wire
+// 只说 0.2,v0.1 机器面字节冻结于 schemas/release-handoff/v0.1,本面描述
+// 当前 wire。v0.2 变更=U19 用户裁决 2026-09-21(BOARD 行规范源):①准入序
+// 增记录状态闸(后端权威,绝不在 UI)——白名单两态放行且警告呈现保留;四终
+// 态拦截=record_state_blocked(category=permission,params.state 携记录状态
+// 原值逐字——政策拒绝类,裁决修正 a);缺失/非字符串/枚举外=record_state_
+// unknown(category=validation,记录无法确认);recovered 同被拦(检视完成
+// 绝不改写失败史——修正 b,与任务面 inspect_required 两套状态不混用)。
+// 白名单态不保证工程仍为当时结果(修正 c,范围诚实)。②独立检视入口
+// release.openForInspection=同准入减状态闸:打开工程排错不得被禁——打开
+// 编辑器既不是恢复执行也不是上传许可;完成事实=六键闭集(五身份键＋显式
+// operation 键),词面由形状钉死永不误读为交接完成,无上传状态字段。
+// 交接语义=把用户送到官方 SDK 流程起点——上传本身永不进 VUA(产品边界);
+// 任务化=统一 task 九态单形态,完成判定=Bridge handshake 到达(001 链),
+// 聚焦不进契约事实。机器可读面 schemas/release-handoff/v0.2,漂移由向量
+// 对表测试把守) ----
 
 /** 词表行信封 schemaVersion(族自有常量,照 editor-verify/inspection-queries
- *  先例;绝不借外族版本) */
-export type ReleaseHandoffSchemaVersionV01 = "0.1";
+ *  先例;绝不借外族版本;0.1→0.2 随核心单源推进,v0.1 词面冻结于机器面) */
+export type ReleaseHandoffSchemaVersionV02 = "0.2";
 
-/** 类型化错误码闭集四码(vua.release_handoff.* 族):unavailable=路由/产线
- *  进程窗口 port 未接线(诚实缺席,绝不折叠成伪造受理);invalid_params=
- *  params 闭集违反(形状违反绝不冒充缺席);build_unknown=buildId 无对应
- *  构建记录(受理期校验);editor_unresolved=编辑器身份解析失败(诊断复用
+/** 类型化错误码闭集六码(vua.release_handoff.* 族,v0.2;交棒路由可答全部
+ *  六码):unavailable=路由/产线进程窗口 port 未接线(诚实缺席,绝不折叠成
+ *  伪造受理);invalid_params=params 闭集违反(形状违反绝不冒充缺席);
+ *  build_unknown=buildId 无对应构建记录(受理期校验);record_state_blocked=
+ *  记录状态在交棒白名单外(failed/cancelled/rolled_back/recovered)——政策
+ *  拦截,params.state 携原值;record_state_unknown=记录状态缺失/非字符串/
+ *  枚举外——记录无法确认;editor_unresolved=编辑器身份解析失败(诊断复用
  *  environment.verifyEditor 语义,不另造词)。任务运行期失败(handshake
  *  超时等)走任务面九态,不进本闭集 */
-export type ReleaseHandoffErrorCodeV01 =
+export type ReleaseHandoffErrorCodeV02 =
   | "vua.release_handoff.unavailable"
   | "vua.release_handoff.invalid_params"
   | "vua.release_handoff.build_unknown"
+  | "vua.release_handoff.record_state_blocked"
+  | "vua.release_handoff.record_state_unknown"
   | "vua.release_handoff.editor_unresolved";
 
 /** 错误码闭集运行时面(渲染层收窄与消费测试按此数组对表,不自持字面量) */
-export const RELEASE_HANDOFF_ERROR_CODES_V01: readonly ReleaseHandoffErrorCodeV01[] = [
+export const RELEASE_HANDOFF_ERROR_CODES_V02: readonly ReleaseHandoffErrorCodeV02[] = [
+  "vua.release_handoff.unavailable",
+  "vua.release_handoff.invalid_params",
+  "vua.release_handoff.build_unknown",
+  "vua.release_handoff.record_state_blocked",
+  "vua.release_handoff.record_state_unknown",
+  "vua.release_handoff.editor_unresolved",
+];
+
+/** 检视路由错误码闭集四码:两状态码(record_state_blocked/record_state_
+ *  unknown)对检视路由刻意缺席——该路由绝不分类记录状态(裁决①检视/修复
+ *  路径不按记录状态闸);类型面以闭集差集表达,词面逐字由测试钉死 */
+export type ReleaseInspectionErrorCodeV02 = Exclude<
+  ReleaseHandoffErrorCodeV02,
+  "vua.release_handoff.record_state_blocked" | "vua.release_handoff.record_state_unknown"
+>;
+
+/** 检视路由错误码闭集运行时面(四码逐字;消费测试对表) */
+export const RELEASE_INSPECTION_ERROR_CODES_V02: readonly ReleaseInspectionErrorCodeV02[] = [
   "vua.release_handoff.unavailable",
   "vua.release_handoff.invalid_params",
   "vua.release_handoff.build_unknown",
   "vua.release_handoff.editor_unresolved",
 ];
 
+/** record_state_blocked 的信封 params 面(冻结单键闭集):state=构建记录
+ *  状态原值逐字,永不规范化(messageKey=errors.releaseHandoff.stateBlocked
+ *  围绕它组诊断/恢复/重新生产词面;record_state_unknown 对应
+ *  errors.releaseHandoff.stateUnknown,无 params)。信封 params 仅在有参时
+ *  出现(ORC-ERR-001 形状,既有码线形状逐字节不变) */
+export interface ReleaseHandoffRecordStateParamsV02 {
+  readonly state: string;
+}
+
+/** 检视入口操作词面(受理回执 operation 键＋完成事实 operation 键共用;
+ *  照核心 OPEN_FOR_INSPECTION_OPERATION 单源) */
+export const RELEASE_OPEN_FOR_INSPECTION_OPERATION = "release.openForInspection" as const;
+
 /** params 单字段闭集 {buildId}(核心冻结裁决,修订 023 §3 草案「buildId＋
  *  工程身份」:工程身份权威在 build-record 面——projectId 已随冻结记录
- *  携带,params 重复携带=双源对账零增益;桌面表态「权威身份在 build-record
- *  面」的最彻底落实。异议随 023 线程重议) */
-export interface ReleaseOpenForHandoffCommandV01 extends ApplicationRequestBaseV01 {
+ *  携带,params 重复携带=双源对账零增益。异议随 023 线程重议) */
+export interface ReleaseOpenForHandoffCommandV02 extends ApplicationRequestBaseV01 {
   readonly kind: "command";
   readonly method: "release.openForHandoff";
   readonly commandId: string;
@@ -2004,28 +2050,58 @@ export interface ReleaseOpenForHandoffCommandV01 extends ApplicationRequestBaseV
 /** 受理回执(tasked 命令 inspection.requestRun 回执形状先例):按 taskId
  *  轮询应用任务面,不再轮询本方法;succeeded 快照 result 携带交接事实
  *  文档(#22/020 result 回流通道) */
-export interface ReleaseHandoffAcceptedV01 {
-  readonly schemaVersion: ReleaseHandoffSchemaVersionV01;
+export interface ReleaseHandoffAcceptedV02 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV02;
   readonly operation: "release.openForHandoff";
+  readonly taskId: string;
+  readonly correlationId: string;
+}
+
+/** release.openForInspection 命令(params 闭集与交棒同律单键 {buildId};
+ *  路由准入=交棒准入减状态闸,检视路由绝不答两状态码) */
+export interface ReleaseOpenForInspectionCommandV02 extends ApplicationRequestBaseV01 {
+  readonly kind: "command";
+  readonly method: "release.openForInspection";
+  readonly commandId: string;
+  readonly params: { readonly buildId: string };
+}
+
+/** 检视受理回执(同 tasked 形状;operation 词面钉检视操作) */
+export interface ReleaseInspectionAcceptedV02 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV02;
+  readonly operation: typeof RELEASE_OPEN_FOR_INSPECTION_OPERATION;
   readonly taskId: string;
   readonly correlationId: string;
 }
 
 /** 编辑器身份事实(exePath 属 editor-verify v0.1 冻结事实族——身份而非
  *  存储路径;storedPath 纪律:产物物理路径永不出现) */
-export interface ReleaseHandoffEditorFactV01 {
+export interface ReleaseHandoffEditorFactV02 {
   readonly exePath: string;
   readonly version: string;
 }
 
-/** 交接事实文档(succeeded 快照 result payload):VUA 侧终态事实。
+/** 交接事实文档(succeeded 快照 result payload):VUA 侧终态事实,闭集五键。
  *  additionalProperties false 由形状钉死诚实纪律 1/2——无上传状态字段,
  *  上传在官方 SDK 中完成,绝非 VUA 可猜事实(负例向量钉死) */
-export interface ReleaseHandoffFactV01 {
-  readonly schemaVersion: ReleaseHandoffSchemaVersionV01;
+export interface ReleaseHandoffFactV02 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV02;
   readonly buildId: string;
   readonly projectId: string;
-  readonly editor: ReleaseHandoffEditorFactV01;
+  readonly editor: ReleaseHandoffEditorFactV02;
+  readonly occurredAt: string;
+}
+
+/** 检视事实文档(succeeded 快照 result payload):闭集六键=交接事实五键＋
+ *  显式 operation 键(const 检视操作词面)——词面由形状钉死,本事实永不被
+ *  误读或呈现为交接完成(检视入口不是交接;既不授予恢复执行也不授予上传
+ *  许可);同样无上传状态字段(additionalProperties false,U19 专属负例钉) */
+export interface ReleaseInspectionFactV02 {
+  readonly schemaVersion: ReleaseHandoffSchemaVersionV02;
+  readonly operation: typeof RELEASE_OPEN_FOR_INSPECTION_OPERATION;
+  readonly buildId: string;
+  readonly projectId: string;
+  readonly editor: ReleaseHandoffEditorFactV02;
   readonly occurredAt: string;
 }
 
@@ -2447,7 +2523,8 @@ export type ApplicationRequestV01 =
   | JobExecuteCommandV02
   | WarehouseGenerateVpmCommandV01
   | WarehouseDeleteOriginalsCommandV01
-  | ReleaseOpenForHandoffCommandV01;
+  | ReleaseOpenForHandoffCommandV02
+  | ReleaseOpenForInspectionCommandV02;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -2571,7 +2648,8 @@ export type ApplicationSuccessValueV01 =
   | PackagesRemoveRepoResultV04
   | PackagesCreateProjectResultV05
   | WarehouseMaintenanceAcceptedV01
-  | ReleaseHandoffAcceptedV01;
+  | ReleaseHandoffAcceptedV02
+  | ReleaseInspectionAcceptedV02;
 
 export type ApplicationResponseV01 =
   | {
@@ -3256,9 +3334,16 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     }
     return true;
   }
-  // 023 词表行(核心冻结批 2026-09-16):params 单字段闭集 {buildId},
-  // 词表外键拒绝(形状违反=invalid_params,绝不冒充缺席)
+  // 023 词表行(核心冻结批 2026-09-16)＋v0.2 检视入口(核心 U19 批入库,
+  // 桌面 TS 面登记):params 单字段闭集 {buildId},词表外键拒绝(形状违反
+  // =invalid_params,绝不冒充缺席);两 editor-open 入口同律
   if (value.kind === "command" && value.method === "release.openForHandoff") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
+      && isIdentifier(value.commandId)
+      && hasExactKeys(value.params, ["buildId"])
+      && isNonEmptyText(value.params.buildId);
+  }
+  if (value.kind === "command" && value.method === "release.openForInspection") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "commandId", "params"])
       && isIdentifier(value.commandId)
       && hasExactKeys(value.params, ["buildId"])
@@ -3267,12 +3352,40 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
   return false;
 }
 
-/** 交接事实文档运行时守卫(023 冻结批):形状即诚实纪律——闭集键外任何
- *  字段(尤其上传状态类)拒绝;消费测试负例钉死 */
-export function isReleaseHandoffFactV01(value: unknown): value is ReleaseHandoffFactV01 {
+/** 交接事实文档运行时守卫(023 冻结批,v0.2 版本戳):形状即诚实纪律——
+ *  闭集键外任何字段(尤其上传状态类)拒绝;消费测试负例钉死 */
+export function isReleaseHandoffFactV02(value: unknown): value is ReleaseHandoffFactV02 {
   if (!isRecord(value)) return false;
   if (!hasExactKeys(value, ["schemaVersion", "buildId", "projectId", "editor", "occurredAt"])) return false;
-  if (value.schemaVersion !== "0.1") return false;
+  if (value.schemaVersion !== "0.2") return false;
+  if (!isNonEmptyText(value.buildId) || !isNonEmptyText(value.projectId) || !isNonEmptyText(value.occurredAt)) {
+    return false;
+  }
+  if (!isRecord(value.editor)) return false;
+  return hasExactKeys(value.editor, ["exePath", "version"])
+    && isNonEmptyText(value.editor.exePath)
+    && isNonEmptyText(value.editor.version);
+}
+
+/** 检视事实文档运行时守卫(U19 v0.2):六键闭集＋显式 operation 词面——
+ *  携任何其他 operation 值的事实由构造即非法(负例向量钉);无上传状态
+ *  字段(形状钉);词面纪律=本事实永不误读为交接完成 */
+export function isReleaseInspectionFactV02(value: unknown): value is ReleaseInspectionFactV02 {
+  if (!isRecord(value)) return false;
+  if (
+    !hasExactKeys(value, [
+      "schemaVersion",
+      "operation",
+      "buildId",
+      "projectId",
+      "editor",
+      "occurredAt",
+    ])
+  ) {
+    return false;
+  }
+  if (value.schemaVersion !== "0.2") return false;
+  if (value.operation !== RELEASE_OPEN_FOR_INSPECTION_OPERATION) return false;
   if (!isNonEmptyText(value.buildId) || !isNonEmptyText(value.projectId) || !isNonEmptyText(value.occurredAt)) {
     return false;
   }
