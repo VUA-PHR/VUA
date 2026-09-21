@@ -1,5 +1,14 @@
 # BOARD — VUA 全局看板
 
+## 用户授权合并：R1–R6 审阅修复（2026-09-21 18:27 HKT）
+
+用户本会话明确要求“合并到main”；按 AGENTS.md 1.1.4 用户裁决及集成登记例外执行。
+合并 06ec6390，无冲突收编 slice/production-review-repairs 三笔 a7bc1b42、a09b3b68、63a39f4f。
+合并树亲测：cargo test --workspace 全通过（既有人工测试仍 ignored）；desktop typecheck 双通过、90 文件 825/825；实际 Chromium DOM 33/33（合成 Gateway）；i18n、boundary、临时生产构建及 155 指纹泄漏扫描通过。
+DOM 首次沙箱内 GPU/缓存权限启动失败，本机权限重跑通过。未重跑 Unity EditMode，沿用 wt-8 已登记的本地合成工程证据；不宣称真实 Avatar/远程网页/正式 Gateway 端到端通过。
+U15/U19 本会话仅要求建议，不构成实施裁决，仍待用户决定。用户无关文件 _local_p27_devlog.txt 未触碰。
+
+
 维护方：集成树（wt-main）。更新时机：每个 M 门关闭或合并完成后（见 collab/README.md）。
 本文件只反映"现在"；历史在 git。
 
