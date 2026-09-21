@@ -12,7 +12,8 @@ use tar::{Builder, Header};
 use vua_orchestrator::{
     BridgeError, BuildRecordStore, BuildRecordStatus, FileSystemSnapshotStore, FixedClock,
     MaterialEntryMode, ProjectRef, ResultStatus, RiskDecisionChoice, TaskEventKind, TaskRuntime,
-    TaskState, UnityBridge, UnityCommand, UnityResult, VpmBackend, VpmCapabilities,
+    TaskState, UnityBridge, UnityCommand, UnityOperation, UnityResult, VpmBackend,
+    VpmCapabilities,
 };
 use vua_unity_bridge::{
     LocalPackageIdentityStore, MaterialCancelToken, MaterialExecutor,
@@ -131,6 +132,19 @@ impl UnityBridge for FakeBridge {
     fn execute(&self, _: &ProjectRef, command: &UnityCommand) -> Result<UnityResult, BridgeError> {
         let mut commands = self.commands.lock().unwrap();
         commands.push(command.clone());
+        // 第 158 批（BOARD #45(2)）：the executor parses a Succeeded validate
+        // receipt's loadedAssetPaths strictly (missing field = honest
+        // bridge_failed), so the fake mirrors the real C# handler — the
+        // Ordinal-sorted expected list IS the loaded list on success.
+        let mut data = serde_json::json!({
+            "projectFingerprint": format!("fp-{}", commands.len())
+        });
+        if command.operation == UnityOperation::ValidateAssetPaths {
+            let mut loaded = command.payload.expected_asset_paths.clone();
+            loaded.sort();
+            data["loadedAssetPaths"] =
+                loaded.into_iter().map(serde_json::Value::String).collect();
+        }
         Ok(UnityResult {
             schema_version: 1,
             command_id: command.command_id.clone(),
@@ -142,9 +156,7 @@ impl UnityBridge for FakeBridge {
             snapshot_id: None,
             restored_from: None,
             project_fingerprint_before: None,
-            data: serde_json::json!({
-                "projectFingerprint": format!("fp-{}", commands.len())
-            }),
+            data,
         })
     }
 }

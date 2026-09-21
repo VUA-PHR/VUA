@@ -695,8 +695,15 @@ impl MaterialExecutor {
         final_fingerprint: &mut Option<String>,
         validation_expectations: &mut Vec<String>,
     ) -> Result<(), StepFailure> {
+        // 第 158 批残留清理策略（BOARD #45(4)）：链开始前清走早前运行（进程
+        // 死亡等无从接线者）留下的解包残留；本运行自己的解包根在每个错误/
+        // 取消出口由 cleanup_import_extractions 接线回收——快照回滚只恢复
+        // 作用域面，管不到 .vua/imports。
+        sweep_stale_import_extractions(&project.root);
+        let mut extracted_roots: Vec<PathBuf> = Vec::new();
         for package in &plan.source.packages {
             if token.is_cancelled() {
+                cleanup_import_extractions(&mut extracted_roots);
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
             let command_id = format!("{}{}-import-{}", plan.plan_id, run_tag, bridge_jobs.len());
@@ -706,40 +713,50 @@ impl MaterialExecutor {
             // snapshot-protected project) and the Bridge materializes it
             // into Assets/.
             let archive_path = source_folder.join(&package.relative_path);
-            let archive_digest = sha256_file(&archive_path).map_err(|error| {
-                (
-                    format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
-                    MaterialExecutionStatus::Failed,
-                )
-            })?;
+            let archive_digest = match sha256_file(&archive_path) {
+                Ok(digest) => digest,
+                Err(error) => {
+                    cleanup_import_extractions(&mut extracted_roots);
+                    return Err((
+                        format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
+                        MaterialExecutionStatus::Failed,
+                    ));
+                }
+            };
             if archive_digest != package.sha256 {
+                cleanup_import_extractions(&mut extracted_roots);
                 return Err((intake_codes::SOURCE_DRIFT.to_owned(), MaterialExecutionStatus::Failed));
             }
             let extracted_root = project.root.join(".vua/imports").join(&command_id);
-            let archive_path = source_folder.join(&package.relative_path);
-            let logical_paths = extract_package_into_dir(&archive_path, &extracted_root).map_err(
-                |error| {
-                    (
+            let logical_paths = match extract_package_into_dir(&archive_path, &extracted_root) {
+                Ok(paths) => paths,
+                Err(error) => {
+                    cleanup_import_extractions(&mut extracted_roots);
+                    return Err((
                         format!(
                             "{}: {}: {error}",
                             intake_codes::ARCHIVE_INVALID,
                             archive_path.display()
                         ),
                         MaterialExecutionStatus::Failed,
-                    )
-                },
-            )?;
+                    ));
+                }
+            };
+            extracted_roots.push(extracted_root.clone());
             validation_expectations.extend(logical_paths);
             // Bind the manifest's OWN digest into the command: the manifest
             // lives in the same editable directory as the files it describes,
             // so without this a files+manifest swap survives verification.
-            let manifest_digest =
-                sha256_file(&extracted_root.join("manifest.sha256")).map_err(|error| {
-                    (
+            let manifest_digest = match sha256_file(&extracted_root.join("manifest.sha256")) {
+                Ok(digest) => digest,
+                Err(error) => {
+                    cleanup_import_extractions(&mut extracted_roots);
+                    return Err((
                         format!("{}: {error}", intake_codes::ARCHIVE_INVALID),
                         MaterialExecutionStatus::Failed,
-                    )
-                })?;
+                    ));
+                }
+            };
             let command = UnityCommand {
                 schema_version: vua_orchestrator::ENVELOPE_SCHEMA_VERSION,
                 command_id,
@@ -754,8 +771,15 @@ impl MaterialExecutor {
                     ..UnityPayload::default()
                 },
             };
-            let result = self.dispatch(project, &command, bridge_jobs)?;
+            let result = match self.dispatch(project, &command, bridge_jobs) {
+                Ok(result) => result,
+                Err(failure) => {
+                    cleanup_import_extractions(&mut extracted_roots);
+                    return Err(failure);
+                }
+            };
             let _ = fs::remove_dir_all(&extracted_root);
+            extracted_roots.retain(|root| root != &extracted_root);
             // Chain: the next mutation must expect the post-import state. A
             // successful mutating command with NO fingerprint is receipt
             // shape drift (第 148 批诚实化): chaining the stale value would
@@ -767,6 +791,7 @@ impl MaterialExecutor {
                     *current_fingerprint = fingerprint;
                 }
                 _ => {
+                    cleanup_import_extractions(&mut extracted_roots);
                     return Err((
                         format!(
                             "{}: materialize reported no project fingerprint",
@@ -1022,18 +1047,26 @@ impl MaterialExecutor {
             }
         }
         // The validate op reports the loaded list through
-        // data.loadedAssetPaths, not through changedPaths.
-        let expected_assets_loaded = result
-            .data
-            .get("loadedAssetPaths")
-            .and_then(serde_json::Value::as_array)
-            .map(|items| {
-                items
-                    .iter()
-                    .filter_map(|item| item.as_str().map(str::to_owned))
-                    .collect()
-            })
-            .unwrap_or_default();
+        // data.loadedAssetPaths, not through changedPaths. The C# handler
+        // (BridgeCommandProcessor::ValidateAssetPaths) stamps that list on
+        // every Succeeded receipt, so a success without the field — or with
+        // a non-string entry — is a receipt-shape breach. 第 158 批（BOARD
+        // #45(2) 证据面收口）：the old `unwrap_or_default` fabricated an
+        // empty list the Bridge never reported, recording "validated, zero
+        // assets loaded" for a receipt that said nothing — an evidence face
+        // lying by omission. The honest surface is a typed bridge_failed
+        // that flows through the normal failure path (snapshot restore +
+        // Failed receipt; the record's validation section stays None =
+        // never claimed).
+        let expected_assets_loaded = match loaded_asset_paths_evidence(&result.data) {
+            Some(paths) => paths,
+            None => {
+                return Err(format!(
+                    "{}: validate success carries no usable loadedAssetPaths evidence",
+                    error_codes::BRIDGE_FAILED
+                ));
+            }
+        };
         Ok(BuildValidationEvidenceV01 {
             level: "minimum_structure".to_owned(),
             unity_validated: true,
@@ -1281,9 +1314,16 @@ pub(crate) fn extract_package_into_dir(
                 // 入 `Packages/`——那是 VPM 通道的领地，绕过 vpm-manifest
                 // 追踪的写入违背单通道写模型。含 `Packages/` 条目的归档在
                 // 解包第一遍即整体拒绝（先于任何落盘，零残留、零部分物
-                // 化），错误按既有 `archive_invalid` 族上浮，零新码。与 C#
-                // 物化面的 `Assets/`-only 校验期望从此不再可能静默分歧。
-                // Ordinal 前缀与 C# 面第 259–260 行的判定逐字节同形。
+                // 化），错误按既有 `archive_invalid` 族上浮，零新码。
+                // 第 158 批校准（#45 B 案先行注记，操作者裁决）：C# 物化面
+                // MaterializeExtractedPackage 的条目跳过条件对 `Assets/` 与
+                // `Packages/` 双前缀都接受——并非 Assets/-only；本臂与检查
+                // 面预检双闸持守下，其 `Packages/` 接受子句链上不可达（休
+                // 眠面，非 VPM 通道许可）。第 150 批终结的是分歧经链物化，
+                // 不是 C# 面字母收窄；守卫句：移除任一闸口前必须先收窄
+                // C# 面（协议本 material-intake 0.2.1 第 158 批注记同源）。
+                // Ordinal 前缀与 C# 面 MaterializeExtractedPackage 条目跳
+                // 过条件的判定逐字节同形。
                 if logical.starts_with("Packages/") {
                     return Err(std::io::Error::new(
                         std::io::ErrorKind::InvalidData,
@@ -1419,6 +1459,59 @@ fn fingerprint_of(result: &UnityResult) -> Option<String> {
         .map(str::to_owned)
 }
 
+/// The `data.loadedAssetPaths` evidence face of a Succeeded ValidateAssetPaths
+/// receipt: a JSON array of strings, or nothing usable. 第 158 批 honesty
+/// pin: a missing field, a non-array value, or a single non-string entry all
+/// return `None` so the caller fails honestly instead of recording a
+/// fabricated empty loaded list.
+fn loaded_asset_paths_evidence(data: &serde_json::Value) -> Option<Vec<String>> {
+    let items = data.get("loadedAssetPaths")?.as_array()?;
+    let mut loaded = Vec::with_capacity(items.len());
+    for item in items {
+        loaded.push(item.as_str()?.to_owned());
+    }
+    Some(loaded)
+}
+
+/// 第 158 批残留清理策略（BOARD #45(4)）：remove every stale extraction
+/// under `<project>/.vua/imports` — the residue of runs that died between
+/// extraction and cleanup, the one path no running code can ever clean.
+/// Called at direct-chain start while the mutation gate (SQLite lease →
+/// cross-profile project lock → pending-mutation marker) is held, so no
+/// concurrent chain on the same project root can own entries here.
+/// Deletion is honest, not evidence destruction: an extraction is
+/// executor-owned temporary INPUT, byte-derivable from the plan's
+/// sha256-pinned source archive; no build record and no snapshot manifest
+/// references it (`.vua` sits outside the snapshot scopes); the mutation
+/// OUTPUT it fed (Assets/Packages content) is what snapshots and the
+/// recovery quarantine protect.
+fn sweep_stale_import_extractions(project_root: &Path) {
+    let imports_root = project_root.join(".vua").join("imports");
+    let Ok(entries) = fs::read_dir(&imports_root) else {
+        return;
+    };
+    for entry in entries.flatten() {
+        let path = entry.path();
+        let _ = if path.is_dir() {
+            fs::remove_dir_all(&path)
+        } else {
+            fs::remove_file(&path)
+        };
+    }
+}
+
+/// Best-effort removal of THIS run's extracted roots on a failure or
+/// cancellation exit. The rollback branch restores only the manifest scopes
+/// (Assets/Packages/ProjectSettings/vpm-manifest.json, plus UserSettings by
+/// risk decision) — `.vua/imports` is outside every scope, so without this
+/// wiring a failed run's extractions survive the otherwise-successful
+/// restore as disk residue (第 158 批，BOARD #45(4) 回滚分支接线).
+fn cleanup_import_extractions(extracted_roots: &mut Vec<PathBuf>) {
+    for root in extracted_roots.drain(..) {
+        let _ = fs::remove_dir_all(&root);
+    }
+}
+
 #[cfg(test)]
 mod probe {
     #[test]
@@ -1548,7 +1641,12 @@ mod batch150_channel_boundary {
     //! 第 150 批通道边界钉（操作者裁定）：含 `Packages/` 条目的归档在解包
     //! 第一遍即**整体**拒绝——先于任何落盘（零残留、零部分物化），错误按
     //! 既有 `archive_invalid` 族上浮、零新码。素材直导通道不得静默写入
-    //! VPM 包域；C# 物化面的 `Assets/`-only 校验期望从此不再可能被绕开。
+    //! VPM 包域。第 158 批校准（#45 B 案先行注记）：C# 物化面在代码里对
+    //! `Assets/`/`Packages/` 双前缀都接受（BridgeCommandProcessor 的
+    //! MaterializeExtractedPackage 条目跳过条件），并非 Assets/-only——
+    //! 本钉与检查面预检共同持有边界后，其 `Packages/` 接受子句链上不可
+    //! 达（休眠面）；本钉即该不可达性的仓内检验载体，删除本钉或任一闸
+    //! 口前必须先收窄 C# 面（守卫句，同协议本 0.2.1 第 158 批注记）。
 
     use flate2::write::GzEncoder;
     use std::fs;
