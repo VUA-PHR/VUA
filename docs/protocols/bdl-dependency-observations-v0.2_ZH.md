@@ -2,8 +2,10 @@
 
 [English](bdl-dependency-observations-v0.2_EN.md) | [简体中文](bdl-dependency-observations-v0.2_ZH.md)
 
-> 文档版本：0.2
-> 状态：**已冻结（FROZEN）**（2026-09-22，wt-4 产线第 166 批＝冻结批）。
+> 文档版本：0.2.1
+> 状态：**已冻结（FROZEN）**（2026-09-22，wt-4 产线第 166 批＝冻结批）**且已落库
+> （LANDED）**（store v0.2 运行时，wt-4 产线第 168 批＝落库实现环；本 0.2.1 注记
+> 只登记该落库，冻结词面零变化）。
 > 「Schema＋正负例向量＋至少一端消费测试」三件齐备落地：
 > - schema：`schemas/bdl/v0.2/schema.sql`（全量可读权威，可独立执行）＋
 >   `schemas/bdl/v0.2/002_dependency_observations.sql`（v0.1→v0.2 增量迁移，
@@ -12,9 +14,9 @@
 >   一向量一 JSON 文件（形态本批冻结，见向量节）；
 > - 消费测试：`crates/bdl-store/tests/dependency_observations_schema_v02.rs`
 >   ——本批 4 例绿，驱动全部向量文件。
-> 零端到端宣称——本稿无任何运行、提取或消费能力的实现与验证宣称。
-> bdl-store 本体仍运行 format v0.1（冻结批零 store 代码改动）；v0.2 落库属
-> 下一切片。
+> 零端到端宣称——本稿不宣称任何提取、消费或真机能力的实现与验证。bdl-store
+> 在冻结批时仍运行 format v0.1（冻结批零 store 代码改动）；store v0.2 落库已
+> 于第 168 批兑现（见下方「落库实况」节），且仅系代码面证据。
 > 本批冻结裁决登记（收窄方向经操作者预授权，产线席定稿）：dep_kind 四值、
 > 不设 `unity_or_sdk_version`；向量文件形态（030 内联线程登记、@数据席
 > 已知会——冻结后若至形态异议走勘误批，绝不就地改写冻结词面）。
@@ -173,7 +175,38 @@ N1 钉死）。
 - v0.1 行保真是迁移成功前提；任何丢失即迁移失败。
 - 下一切片落库时，`bdl-store` 迁移注册升版＋旧库打开路径按既有
   `UnsupportedFormat` 纪律拒绝超前的 `user_version`——本冻结批零触碰
-  store 代码。
+  store 代码。**已落库（第 168 批）**：store 执行完整迁移链（001＋002；新
+  库单事务全链执行＝出生即 v0.2；既有 v0.1 库开盖即经 002 迁移、逐字保真），
+  宿主 `user_version = 2`，并对超前 fence（`migration-N`）与外来
+  `format_version` 维持 `UnsupportedFormat` 拒绝纪律。
+
+## 落库实况（v0.2.1——第 168 批事实；代码面）
+
+- `bdl-store` 运行 format v0.2：`BDL_FORMAT_VERSION = "0.2"`、迁移注册
+  001＋002、宿主 fence `user_version = 2`（v0.1 宿主先例）。
+- 写入面 `record_dependency_observation`：行**追加**为证据（无 upsert——
+  schema 未定义去重身份）；闭集成员逐字入库，真实 SQLite CHECK/NOT NULL/FK
+  约束是唯一法律权威（store 不持重复的 Rust 闭集——违约以
+  `BdlStoreError::Database` 如实浮出）。`confirmed_by_human` 不是写入面
+  字段：行以未确认落库（DEFAULT 0＝线索）。
+- 读取面 `dependency_observations(product_id)`：按观察序返回诚实行集；
+  存量证据 JSON 必须能解析回冻结元素形状（`deny_unknown_fields`），否则按
+  损坏值如实浮出。
+- 确认写动作 `confirm_dependency_resolution`——`confirmed_by_human = 1`
+  的**唯一**写入者：一次显式、留痕的写同时钉住消解目标商品（必须是已观察
+  商品，否则 `UnknownProduct`）、非空消解证据（空「证据」＝无证据——
+  `InvalidResolution`）与确认旗标，且行必须存在（否则
+  `UnknownDependencyObservation`）。确认绝不自动发生。
+- 存储层行为测试 `crates/bdl-store/tests/dependency_observations_store_
+  v02.rs`（6 例绿，第 168 批）：17 个冻结向量文件驱动 store 自有面与 store
+  自有迁移执行——全部接受例经 store 面落库读回逐字保真（P4 骑确认动作；
+  P9 走 store 自身迁移库——compat 表按其 v0.1 表面现实无 store 写入面），
+  全部拒绝例被真实约束拒绝（类型面可表达的例以
+  `BdlStoreError::Database` 骑 ConstraintViolation 浮出；类型面无法诚实
+  表达的无律值——NOT NULL 列携 SQL NULL、confirmed = 2——对 store 自身迁
+  移库驱动并同被拒绝），迁移纪律（出生 v0.2／v0.1 开盖即迁逐字保真／超前
+  fence 与外来 format 拒绝），以及确认动作各律。第 168 批合计：bdl-store
+  全 crate 66 例绿、clippy 全 targets 零警告。
 
 ## 消费测试（冻结批实况）
 
@@ -190,4 +223,5 @@ store 行为；store v0.2 行为验收属下一切片。零端到端宣称。**
 1. **公开面覆盖缺口**（030 §5.5）与 **U18 终裁联动**（030 §5.6）维持
    开放，不在本稿范围。
 2. 消费面（bdl-queries `dependencies.*`）由数据座自行领取；本稿零代笔。
-3. store 落库（迁移注册 v0.1→v0.2、写入/读出面）属下一切片，另办验收。
+3. ~~store 落库（迁移注册 v0.1→v0.2、写入/读出面）属下一切片，另办验收。~~
+   **已关闭——第 168 批落库**（见上方「落库实况」节）；验收随该批办理。
