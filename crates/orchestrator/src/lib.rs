@@ -53,9 +53,11 @@ pub use inspection_evidence::{
 };
 pub use recipe_records::RecipeRecordStore;
 pub use release_handoff::{
-    build_handoff_fact, record_editor_version, record_project_id, resolve_handoff_editor,
-    HandoffEditorCandidate, HandoffEditorSource, HandoffEditorUnresolved, HandoffLaunch,
-    HandoffOutcome, HandoffPortError, ReleaseHandoffPort, RELEASE_HANDOFF_SCHEMA_VERSION,
+    build_handoff_fact, build_inspection_fact, classify_handoff_record_state,
+    record_editor_version, record_project_id, resolve_handoff_editor, HandoffEditorCandidate,
+    HandoffEditorSource, HandoffEditorUnresolved, HandoffLaunch, HandoffOutcome, HandoffPortError,
+    HandoffRecordAdmission, ReleaseHandoffPort, OPEN_FOR_INSPECTION_OPERATION,
+    RELEASE_HANDOFF_SCHEMA_VERSION,
 };
 pub use recipe_documents::{RecipeDocumentStore, RecipeListEntry, RecipeSaveError, StoredRecipeDocument};
 pub use production_evidence::{
