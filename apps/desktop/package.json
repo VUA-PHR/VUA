@@ -23,7 +23,8 @@
     "preview:overlay": "electron scripts/preview-overlay.mjs",
     "smoke:remote-content": "pnpm build && electron scripts/smoke-remote-content.mjs",
     "smoke:download-port": "pnpm build && electron scripts/smoke-download-port.mjs",
-    "smoke:f4-deliverables": "pnpm build && node scripts/smoke-f4-deliverables.mjs"
+    "smoke:f4-deliverables": "pnpm build && node scripts/smoke-f4-deliverables.mjs",
+    "smoke:production-review": "electron scripts/smoke-production-review.mjs"
   },
   "dependencies": {
     "@vua/contracts": "workspace:*",

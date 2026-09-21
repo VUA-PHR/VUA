@@ -16,8 +16,7 @@ namespace Vua.Editor.Bridge
             {
                 var requestPath = SafeBridgePath(Argument("-vuaRequest"));
                 resultPath = SafeBridgePath(Argument("-vuaResult"));
-                command = JsonUtility.FromJson<BridgeCommand>(File.ReadAllText(requestPath));
-                result = BridgeCommandProcessor.Process(command);
+                result = ReadAndProcess(requestPath, BridgeCommandProcessor.Process);
             }
             catch (Exception exception)
             {
@@ -26,9 +25,23 @@ namespace Vua.Editor.Bridge
 
             if (!string.IsNullOrWhiteSpace(resultPath))
             {
-                WriteResultAtomically(resultPath, JsonUtility.ToJson(result, true));
+                WriteResultAtomically(resultPath, BridgeResultJson.Serialize(result));
             }
             if (Application.isBatchMode) EditorApplication.Exit(result.status == "succeeded" ? 0 : 1);
+        }
+
+        internal static BridgeResult ReadAndProcess(string requestPath, Func<BridgeCommand, BridgeResult> process)
+        {
+            BridgeCommand command = null;
+            try
+            {
+                command = JsonUtility.FromJson<BridgeCommand>(File.ReadAllText(requestPath));
+                return process(command);
+            }
+            catch (Exception exception)
+            {
+                return BridgeResult.Fail(command, "bridge.entry_failed", exception.GetType().Name + "：无法执行 Unity 命令。");
+            }
         }
 
         private static string Argument(string name)

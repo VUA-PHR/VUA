@@ -1,4 +1,5 @@
-import { useEffect, type ReactNode } from "react";
+import { ModalOwnerContext, useModalLayer } from "./modal-layer.tsx";
+import type { ReactNode } from "react";
 import "./content-dialog.css";
 
 /**
@@ -23,40 +24,35 @@ export interface ContentDialogProps {
 }
 
 export function ContentDialog({ open, title, closeLabel, children, onClose }: ContentDialogProps) {
-  useEffect(() => {
-    if (!open) return;
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => {
-      window.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open, onClose]);
+  const modal = useModalLayer(open, onClose);
 
   if (!open) return null;
   return (
-    <div className="vua-content-dialog__overlay" onClick={onClose}>
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-label={typeof title === "string" ? title : undefined}
-        className="vua-content-dialog"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <div className="vua-content-dialog__header">
-          <span className="vua-content-dialog__title">{title}</span>
-          <button
-            type="button"
-            className="vua-content-dialog__close"
-            aria-label={closeLabel}
-            onClick={onClose}
-          >
-            ×
-          </button>
+    <ModalOwnerContext value={modal.id}>
+      <div ref={modal.overlayRef} className="vua-content-dialog__overlay" onClick={modal.closeTop}>
+        <div
+          ref={modal.panelRef}
+          tabIndex={-1}
+          role="dialog"
+          aria-modal="true"
+          aria-label={typeof title === "string" ? title : undefined}
+          className="vua-content-dialog"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <div className="vua-content-dialog__header">
+            <span className="vua-content-dialog__title">{title}</span>
+            <button
+              type="button"
+              className="vua-content-dialog__close"
+              aria-label={closeLabel}
+              onClick={modal.closeTop}
+            >
+              ×
+            </button>
+          </div>
+          <div className="vua-content-dialog__body">{children}</div>
         </div>
-        <div className="vua-content-dialog__body">{children}</div>
       </div>
-    </div>
+    </ModalOwnerContext>
   );
 }
