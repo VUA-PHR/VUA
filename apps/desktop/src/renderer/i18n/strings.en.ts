@@ -439,15 +439,16 @@ demoTaskTitle: "Demo task",
   },
   workshop: {
     title: "Avatar workbench",
-    subtitle: "Set up, build and check your avatar, with recovery options when available.",
-    runningSubtitle: "The setup plan is confirmed and a project snapshot has been created.",
+    /** 029 A6 (0.7.16 §8.5): the workshop only displays execution state; starting and approving happen on the recipe page */
+    subtitle: "The workshop presents the execution status of your assembly chain; starting and approving happen on the recipe page.",
+    runningSubtitle: "The workshop presents the chain's live status; task progress follows the task center's authoritative snapshots.",
     idleTitle: "Production pipeline not connected yet",
     idleDescription:
       "Once {recipe} and the setup service are available, you can view progress and recovery options here.",
     blocked: {
       title: "Production environment not ready",
       description:
-        "A supported Unity editor is required to set up and build avatars.",
+        "A supported Unity editor is required for production builds. Once ready, this page presents the assembly chain's execution status.",
       cta: "Prepare creator environment",
     },
     trackAria: "{amf} production stages",
@@ -498,6 +499,17 @@ demoTaskTitle: "Demo task",
       controlsAria: "Replay controls",
       progressAria: "Replay progress {position} / {duration}",
       operationsLine: "{count} automatic operations completed (verifiable in the log)",
+    },
+    /** Execution status face (029 A6, 0.7.16 §8.5): the workshop only displays status, zero initiation actions; plan/assembly/record cards and task lines reuse strings.compose.chain wordings */
+    chain: {
+      title: "Execution status",
+      noChainTitle: "No execution chain in this session",
+      noChainDesc: "Select or save a recipe on the recipe page to start assembling; once started, this page presents the chain's resolve, plan, assembly and record status.",
+      noChainCta: "Go to the recipe page",
+      resolveIdleNote: "Resolve has not been requested yet.",
+      planApprovalNote: "Plan approval and assembly start happen in the recipe page's selected state; this page only presents status.",
+      executeIdleNote: "No assembly execution accepted yet.",
+      taskDecisionNote: "This task needs handling: make the recover or cancel decision in the task center.",
     },
   },
   /**

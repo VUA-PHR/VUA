@@ -422,13 +422,14 @@ demoTaskTitle: "데모 작업",
   },
   workshop: {
     title: "아바타 작업 공간",
-    subtitle: "아바타 설정, 빌드, 검사를 진행합니다. 복구 가능한 경우 복구 방법을 안내합니다.",
-    runningSubtitle: "설정 계획을 확인했고 프로젝트 스냅샷을 만들었습니다.",
+    /** 029 A6(0.7.16 §8.5): 작업 공간은 실행 상태만 표시. 시작과 승인은 레시피 페이지에서 진행 */
+    subtitle: "작업 공간은 조립 체인의 실행 상태를 표시합니다. 시작과 승인은 레시피 페이지에서 이루어집니다.",
+    runningSubtitle: "작업 공간은 체인의 실시간 상태를 표시합니다. 작업 진행 상황은 작업 센터의 권위 있는 스냅샷을 따릅니다.",
     idleTitle: "제작 파이프라인이 아직 연결되지 않았습니다",
     idleDescription: "{recipe}와 설정 서비스를 사용할 수 있게 되면 진행 상황과 복구 방법이 여기에 표시됩니다.",
     blocked: {
       title: "제작 환경이 아직 준비되지 않았습니다",
-      description: "아바타를 설정하고 빌드하려면 지원되는 Unity 에디터가 필요합니다.",
+      description: "제작 빌드에는 지원되는 Unity 에디터가 필요합니다. 준비되면 이 페이지에 조립 체인의 실행 상태가 표시됩니다.",
       cta: "제작 환경 준비",
     },
     trackAria: "{amf} 제작 단계",
@@ -477,6 +478,18 @@ demoTaskTitle: "데모 작업",
       controlsAria: "재생 컨트롤",
       progressAria: "재생 위치 {position} / {duration}",
       operationsLine: "자동 작업 {count}개 완료(로그로 검증 가능)",
+    },
+    /** 실행 상태면(029 A6, 0.7.16 §8.5): 작업 공간은 상태 표시만 하고 발기 액션 없음.
+     *  계획/조립/기록 카드와 작업 행은 strings.compose.chain 어휘를 단일 소스로 재사용 */
+    chain: {
+      title: "실행 상태",
+      noChainTitle: "이 세션에 실행 체인이 없습니다",
+      noChainDesc: "레시피 페이지에서 레시피를 선택하거나 저장하면 조립을 시작할 수 있습니다. 시작 후 이곳에 해당 체인의 해석·계획·조립·기록 상태가 표시됩니다.",
+      noChainCta: "레시피 페이지로 이동",
+      resolveIdleNote: "아직 해석을 요청하지 않았습니다.",
+      planApprovalNote: "계획 승인과 조립 시작은 레시피 페이지 선택 상태에서 이루어집니다. 이 페이지는 상태만 표시합니다.",
+      executeIdleNote: "아직 조립 실행이 접수되지 않았습니다.",
+      taskDecisionNote: "이 작업에는 처리가 필요합니다: 작업 센터에서 복구 또는 취소를 결정하세요.",
     },
   },
   /** F3 프로덕션 플로우(워크숍 페이지에 호스팅;production-use-case v0.1 초안).

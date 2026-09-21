@@ -22,6 +22,8 @@ import {
   type CatalogRelationKind,
 } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
+import type { PageId } from "../../app/nav-model.ts";
+import { ProductionFlowSectionHost } from "../workshop/ProductionFlowSectionHost.tsx";
 import {
   lifecycleOf,
   loadLifecycle,
@@ -405,7 +407,12 @@ function DetailContent({ product }: { product: CatalogProductDetail }) {
 
 /* ---- 页面 ---- */
 
-export function WarehousePage() {
+export function WarehousePage({
+  onNavigate,
+}: {
+  /** 素材直产链记录卡「去出厂」链钮透传(029 A6 迁入);与流水线同一导航原语 */
+  onNavigate?: ((target: PageId) => void) | undefined;
+}) {
   const dataSource = useDataSource();
   const connected = dataSource !== "none";
   // 双轨汇合(§2.10):目录浏览 / 本地素材接管分段切换
@@ -756,6 +763,12 @@ export function WarehousePage() {
           ) : null}
         </div>
       )}
+      {/* 素材直产链发起位(029 A6/未决项 1 桌面落形,用户裁决 2026-09-22 操作者
+          第 162 批):原寄宿车间页,现落位本页动作位——素材直产链的语义起点是
+          素材(pickMaterial),与连续素材获取路径(§8.3)同页承接;v0.1 用例面
+          与组件行为零改动。production capability 未就绪时整段诚实隐藏(live
+          默认不可用,由宿主 hidden 态保证),不占视觉位 */}
+      <ProductionFlowSectionHost onNavigate={onNavigate} />
       {cardMenu !== null ? (
         <ContextMenu menu={cardMenu} onClose={() => setCardMenu(null)} />
       ) : null}

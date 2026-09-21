@@ -41,8 +41,9 @@ import { format, strings } from "../../i18n/index.ts";
  */
 const copy = strings.compose.chain;
 
-/** 任务中心权威状态行(AC-07:快照驱动,不本地推断) */
-function ChainTaskLine({ taskId, missingNote }: { taskId: string; missingNote: string }) {
+/** 任务中心权威状态行(AC-07:快照驱动,不本地推断)。029 A6 起车间执行
+ *  状态面复用本行(任务中心同源事实,同一呈现,不另起第二呈现系)。 */
+export function ChainTaskLine({ taskId, missingNote }: { taskId: string; missingNote: string }) {
   const taskCenter = useTaskCenter();
   const task = taskCenter.tasks.find((item) => item.id === taskId);
   return (

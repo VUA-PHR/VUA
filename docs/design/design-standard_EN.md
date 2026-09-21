@@ -1,10 +1,10 @@
-# VUA design standard v0.7.15
+# VUA design standard v0.7.16
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.15
+> Document version: 0.7.16
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.15)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.16)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-22
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -289,7 +289,9 @@ stable untilted cards.
   mapping, and the chain identity becomes ready with the selection. The
   selection is a production-chain fact-source action: the chain identity keys
   come only from the document identity of the recipe.get read receipt (the
-  recipeId/revision of the recipeDocument body itself), never from list labels
+  receipt's TOP-LEVEL required identity fields recipeId/revision —
+  store-authoritative, not the transparent recipeDocument body itself; the
+  body need not carry a revision), never from list labels
   or local guesses (UI-02 "chain identity is object identity" extended to the
   selection fact source); a changed document identity means a new chain — the
   previous chain's task/record identities step aside. The selected state offers
@@ -303,8 +305,8 @@ stable untilted cards.
   desktop invents nothing and smuggles nothing in). The stale-authorization
   gate (stale-draft) holds only while a composing draft is present and its
   content deviates from the saved revision; a selection-driven chain with no
-  draft present is ready. The workshop consumption face belongs to slice 2
-  (A6, 0.7.16 candidate); this version does not touch the workshop. **Word
+  draft present is ready. The workshop consumption face is covered in §8.5
+  (0.7.16). **Word
   discipline (#44×U16, codified for the first time)**: the user-action wording
   is "assemble" (组装 — including the chain card's execute button and other
   user-operation copy); "装配" (assembly) is reserved for wardrobe mounting and
@@ -319,6 +321,28 @@ stable untilted cards.
   workshop remains a core visual investment: assets become parts on a track; carrying, alignment,
   locking, node illumination, missing-dependency confusion, and rollback reversal are driven by real
   task events. Increase spectacle after flow logic stabilizes; scheduling does not delete the direction.
+  Workshop as the execution status face (0.7.16, U16 user-ruling consumption
+  slice 2, proposal 029 A6): the workshop only displays status — the resolve →
+  plan → assembly → record cards of the current chain (consuming the same
+  container-layer store, Gateway port, and task-center authoritative snapshots as
+  the recipe-page initiation face; plan approval and assembly start happen in the
+  recipe page's selected state, the status face takes zero initiation actions and
+  keeps only read-style refreshes); with no chain identity this session it renders
+  the honest empty state, and "go to the recipe page" is pure navigation (023
+  projection discipline: zero record identity crosses pages — the workshop fetches
+  authoritative facts itself); when a task needs handling
+  (waitingInput/paused/failed) it points to the task center instead of building a
+  second recovery-decision surface in the status face. The replay view is the
+  status face's recorded-tape form (real-task-event-driven DNA); consumption
+  extends on it and does not start a second presentation system. The material
+  direct-chain (production-use-case v0.1) initiation point leaves the workshop and
+  lands in the warehouse page's action area (pending item 1's desktop form, ruled
+  by the operator batch 162 on 2026-09-22; zero change to the wire face or the
+  component behavior; the whole section hides honestly while capability is not
+  ready) — the material direct chain's semantic origin is the material itself and
+  it joins the continuous asset acquisition path (§8.3) on the same page. The
+  workshop's page slot and gating semantics are unchanged (the honest in-page
+  blocking state still applies while the environment is not ready).
 - **Inspection/Release:** inspection stays a standalone second-level page,
   independent of the workshop (0.7.12 navigation rework confirmed): it is the
   inspection landing point of the main flow "assembly → inspection → SDK
@@ -517,6 +541,18 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.16 (2026-09-22)**: §8.5 addendum for the workshop as the execution status
+  face (U16 user-ruling consumption slice 2, proposal 029 A6) — the workshop only
+  displays status (resolve/plan/assembly/record cards share the same source and
+  store with the recipe-page initiation face, zero initiation actions; honest
+  no-chain empty state + pure-navigation CTA; task handling points to the task
+  center); §8.4 one-line erratum (registered by integration batch 161): the chain
+  identity source = the recipe.get receipt's TOP-LEVEL required identity fields
+  (store-authoritative), not the recipeDocument body itself; the material
+  direct-chain initiation point leaves the workshop and lands in the warehouse
+  page's action area (pending item 1's desktop form, ruled by operator batch 162,
+  zero change to the v0.1 wire face). EN mirror of the authoritative ZH.
 
 - **0.7.15 (2026-09-22)**: §8.4 addendum for the recipe page as the production hub
   (U16 user-ruling consumption slice 1, proposal 029 A4/A5) — the library

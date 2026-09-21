@@ -10,15 +10,7 @@ import {
   CURRENT_RECIPE_ID,
   useDataSource,
   useGateway,
-  useProductionRunView,
   useWorkshopView,
-  type CapabilityReport,
-  type MaterialRef,
-  type PlanRiskChoice,
-  type ProductionIntentResult,
-  type ProductionRejectReason,
-  type RecoverDecisionKind,
-  type SourceIntake,
 } from "../../gateway/index.ts";
 import {
   isTrackStage,
@@ -33,14 +25,19 @@ import {
   type WorkshopView,
 } from "./track-model.ts";
 import { eventsForStage, formatTapeClock, tapeFrame } from "./workshop-replay.ts";
-import { productionFlowModel } from "./production-flow-model.ts";
-import { ProductionFlowSection, type FlowPending } from "./ProductionFlowSection.tsx";
+import { ProductionChainStatusSection } from "./ProductionChainStatusSection.tsx";
 import "./workshop.css";
 
 const copy = strings.workshop;
 
 /**
- * 工厂车间(美术方案 v0.4.0 §7;C-WORKSHOP):
+ * 工厂车间(美术方案 v0.4.0 §7;C-WORKSHOP;proposal 029 A6 执行状态面,
+ * 切片二 2026-09-22;设计标准 0.7.16 §8.5):车间只作状态显示——呈现当前
+ * 执行链(production-use-case v0.2)的解析/计划/装配/记录状态(计划/执行/
+ * 记录各卡如实驱动,任务进展以任务中心权威快照为准),不再承担配方驱动链
+ * 的发起(发起面在配方页选中态,0.7.15 切片一);素材直产链发起位退出车间、
+ * 落位仓储页(未决项 1 桌面落形,ProductionFlowSectionHost 由仓储页挂载)。
+ *
  * 轨道只连接 Assembly → Production → Inspection,首尾为进料口 / 出货口端点。
  * 像素吉祥物与零件上车演出在流程冻结后投入(§13 排期纪律,本切片不做)。
  *
@@ -364,12 +361,15 @@ function ReplayWorkshop({
   view,
   isFixture,
   pipeline,
+  statusSection,
   onNavigate,
 }: {
   view: Extract<WorkshopView, { kind: "replay" }>;
   isFixture: boolean;
   /** 流水线条数据(S-IX-1);null = 尚未加载完成,先不渲染 */
   pipeline: { recipeId: string | null; latestRelease: { id: string; title: string } | null } | null;
+  /** 执行状态面(029 A6):回放视图与 running/idle 同位挂载,事实同源 */
+  statusSection: ReactNode;
   onNavigate?: ((target: PageId) => void) | undefined;
 }) {
   const [positionMs, setPositionMs] = useState(0);
@@ -414,6 +414,7 @@ function ReplayWorkshop({
           onNavigate={onNavigate}
         />
       ) : null}
+      {statusSection}
       <WorkshopBody
         stages={frame.stages}
         log={frame.log}
@@ -520,95 +521,10 @@ export function WorkshopPage({
     };
   }, [gateway]);
 
-  /* ---- F3 生产纵向流程段(production-use-case v0.1〔M3 冻结〕素材直产链;
-   * 与 M5 配方链 production-use-case v0.2 是不同的用例面)----
-   * 能力未知(null)或非 ready 时整段隐藏(§2.6);读取失败走 EmptyState+重试,
-   * 重试只重拉能力报告,不修改任何本地数据。意图拒绝按 reason 行内呈现。
-   * live 可用性门控:壳侧 VUA_UNITY_EDITOR 注入缺失 ⇒ provider 端
-   * production 服务不装配 ⇒ 本段恒诚实不可用(激活需 Unity 编辑器路径
-   * 配置面立项,见 collab/state/wt-3 评估)。 */
-  const productionRun = useProductionRunView();
-  const [productionCap, setProductionCap] = useState<CapabilityReport | null>(null);
-  const [flowFailed, setFlowFailed] = useState(false);
-  const [flowNonce, setFlowNonce] = useState(0);
-  const [flowPending, setFlowPending] = useState<FlowPending | null>(null);
-  const [flowRejection, setFlowRejection] = useState<ProductionRejectReason | "unavailable" | null>(
-    null,
-  );
-  const [pickedMaterial, setPickedMaterial] = useState<MaterialRef | null>(null);
-  useEffect(() => {
-    let alive = true;
-    setFlowFailed(false);
-    gateway.modelProduction
-      .capability()
-      .then((report) => {
-        if (alive) setProductionCap(report.production);
-      })
-      .catch(() => {
-        if (alive) setFlowFailed(true);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [gateway, flowNonce]);
+  // 执行状态面(029 A6):计划/执行/记录各卡如实驱动;零发起动作——
+  // 发起面在配方页选中态(0.7.15 切片一),素材直产链发起位在仓储页
+  const statusSection = <ProductionChainStatusSection onNavigate={onNavigate} />;
 
-  const runFlowIntent = (kind: FlowPending, intent: () => Promise<ProductionIntentResult>) => {
-    setFlowPending(kind);
-    setFlowRejection(null);
-    void intent()
-      .then((result) => {
-        if (result.kind === "rejected") setFlowRejection(result.reason);
-        else if (result.kind === "unavailable") setFlowRejection("unavailable");
-      })
-      .catch(() => setFlowFailed(true))
-      .finally(() => setFlowPending(null));
-  };
-
-  const flowSection = (
-    <ProductionFlowSection
-      flow={productionFlowModel(productionRun, productionCap)}
-      failed={flowFailed}
-      pending={flowPending}
-      rejection={flowRejection}
-      material={pickedMaterial}
-      onRetry={() => setFlowNonce((nonce) => nonce + 1)}
-      onPickMaterial={(intake: SourceIntake) => {
-        setFlowPending("pick");
-        setFlowRejection(null);
-        void gateway.modelProduction
-          .pickMaterial(intake)
-          .then((material) => {
-            if (material !== null) setPickedMaterial(material);
-          })
-          .catch(() => setFlowFailed(true))
-          .finally(() => setFlowPending(null));
-      }}
-      onStartInspection={() => {
-        if (pickedMaterial === null) return;
-        const source = pickedMaterial;
-        runFlowIntent("start", () => gateway.modelProduction.startInspection(source));
-      }}
-      onRequestPlan={() => {
-        if (productionRun.kind !== "run" || productionRun.inspection === null) return;
-        const inspectionId = productionRun.inspection.inspectionId;
-        runFlowIntent("plan", () => gateway.modelProduction.requestPlan(inspectionId));
-      }}
-      onConfirmPlan={(riskChoice: PlanRiskChoice, rememberForSession: boolean) => {
-        if (productionRun.kind !== "run" || productionRun.plan === null) return;
-        const { planId, revision } = productionRun.plan;
-        // v0.2:确认绑定 revision + 风险决策(必填);rememberForSession 可选
-        runFlowIntent("confirm", () =>
-          gateway.modelProduction.confirmPlan(planId, revision, riskChoice, rememberForSession));
-      }}
-      onRecover={(kind: RecoverDecisionKind) => {
-        if (productionRun.kind !== "run") return;
-        const taskId = productionRun.taskId;
-        // 只表达语义选择;用户决定 ID 由 Kernel 受理时生成并绑定
-        runFlowIntent("recover", () => gateway.modelProduction.recover(taskId, { kind }));
-      }}
-      onNavigate={onNavigate}
-    />
-  );
   if (!envReady) {
     return (
       <div className="vua-workshop">
@@ -638,13 +554,13 @@ export function WorkshopPage({
           <h1 className="vua-title">{copy.title}</h1>
           <p className="vua-text-secondary">{copy.subtitle}</p>
         </section>
+        {statusSection}
         <Card>
           <EmptyState
             title={copy.idleTitle}
             description={format(copy.idleDescription, { recipe: termLabel("recipe") })}
           />
         </Card>
-        {flowSection}
       </div>
     );
   }
@@ -655,6 +571,7 @@ export function WorkshopPage({
         view={view}
         isFixture={isFixture}
         pipeline={pipeline}
+        statusSection={statusSection}
         onNavigate={onNavigate}
       />
     );
@@ -680,7 +597,7 @@ export function WorkshopPage({
           onNavigate={onNavigate}
         />
       ) : null}
-      {flowSection}
+      {statusSection}
       <WorkshopBody
         stages={view.stages}
         log={view.log}
