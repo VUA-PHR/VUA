@@ -1,0 +1,26 @@
+name: 功能建议 / Feature request
+description: 描述你想完成什么、遇到的障碍与当前替代办法。
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: 你想完成什么？ / Your goal
+    validations:
+      required: true
+  - type: textarea
+    id: obstacle
+    attributes:
+      label: 目前卡在哪里？ / Current obstacle
+    validations:
+      required: true
+  - type: textarea
+    id: workaround
+    attributes:
+      label: 现在如何解决？ / Current workaround
+  - type: textarea
+    id: outcome
+    attributes:
+      label: 希望获得什么结果？ / Desired result
+      description: 无需提供技术方案。 / No technical proposal required.
+    validations:
+      required: true

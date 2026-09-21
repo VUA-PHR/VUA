@@ -454,3 +454,94 @@ v0.1–v0.4` 全部树内只读；零代码、零 schema 文件落盘——v0.5 
 形态硬阻力，按既定勘误批路径再议（版本化勘误，闭集本体不随形态勘误变化——与
 wt-4 冻结节登记的勘误纪律同一条）。dependencies.* v0.5 候词表方向不受本裁决
 影响，实现环候操作者派发。
+
+### 回复（产线/wt-4，2026-09-22 第 168 批——store v0.2 落库实现环交付）
+
+操作者第 168 批派单（030 store v0.2 落库实现环；冻结 88e6a772 已入库
+8c123983）兑现，**bdl-store 升版运行 v0.2**（冻结词面零变化；schemas/ 零
+触碰——落库登记走协议本 0.2.1 注记＋REGISTRY，冻结 schema.sql/002 文件本体
+不动）：
+
+- **迁移注册升版（v0.1 宿主先例照办）**：`BDL_FORMAT_VERSION = "0.2"`、
+  迁移注册 001＋002；fresh 库单事务全链执行＝出生即 v0.2、宿主
+  `user_version = 2`；既有 v0.1 库开盖即经 002 迁移（compatibility_
+  observations 重建逐字保真）；`UnsupportedFormat` 纪律接线＝超前 fence
+  （`migration-N`）与外来 `format_version` 双拒绝面，测试钉死。
+- **写入/读出面（v0.1 既有表面同构）**：`record_dependency_observation`
+  （行追加为证据，无 upsert——schema 未定义去重身份）＋
+  `dependency_observations(product_id)`（观察序诚实行集，空＝诚实空态）。
+  **库层法律权威单一化设计（如实申报）**：`dep_kind`/`source_span`/
+  `extraction_method` 以字符串逐字入库、store 不持重复的 Rust 闭集——
+  冻结 schema 的真实 SQLite CHECK/NOT NULL/FK 就是唯一拒绝者（违约以
+  `BdlStoreError::Database` 骑 ConstraintViolation 如实浮出），由此 17 个
+  向量文件得以直接驱动 store 面作行为测试、拒绝例恰由 CHECK 拒绝（派单词
+  面）；证据 JSON 形状由 `DependencyResolutionEvidence` 类型承载
+  （`deny_unknown_fields`），存量损坏值读期按 CorruptValue 浮出。
+- **confirmed_by_human 写动作面**：`confirm_dependency_resolution`＝
+  confirmed=1 的**唯一**写入者（写入面不携旗标，行以未确认落库＝线索默认
+  律）；一次显式留痕写钉住消解目标商品（须已观察商品，否则 UnknownProduct）
+  ＋非空证据（空「证据」＝无证据，InvalidResolution）＋旗标，行须存在
+  （UnknownDependencyObservation）；确认绝不自动翻。
+- **存储层行为测试** `dependency_observations_store_v02.rs`（6 例绿）：
+  17 向量文件驱动 store 自有面与 store 自有迁移执行——接受例落库读回逐字
+  保真（P1–P8 骑 store 写入面；P4 骑确认动作；P9 走 store 自身迁移库——
+  compat 表按 v0.1 表面现实无 store 写入面，如实注明）；拒绝例真实约束
+  拒绝（类型面可表达者经 store 面、类型面无法诚实表达者——NOT NULL 列携
+  NULL、confirmed=2——对 store 迁移库驱动，同被拒）；迁移纪律三面（出生
+  v0.2／v0.1 开盖即迁／超前与外来拒绝）。
+- **验证读数（2026-09-22 本树亲测）**：bdl-store 全 crate **66 例绿**
+  （基线 60＋恰本批 6）＋cargo test --workspace **107 套件 932/0**
+  （166 批基线 926＋恰本批 6）＋clippy --workspace --all-targets
+  **0 警告 0 错误**；一处跨 crate 钉定随升版如实改常量自洽
+  （provider-host catalog_queries wire 测试 datasetRevision 字面 "0.1"
+  → `BDL_FORMAT_VERSION`，语义不变）。零 Unity Editor 触发、零网络动作、
+  零 BOOTH 访问。
+- **诚实边界维持**：零端到端宣称——本环全部系代码面证据（真实 SQLite 执行
+  迁移与约束≠真机全链）；提取管线切片（保守提取＋消费面）候下窗；U18 终裁
+  前零端到端宣称。bdl-queries dependencies.* 消费面（数据座 §5.7 案 A）
+  本席零代笔；confirmed_by_human 翻 1 的写动作已按本席承诺落库写面，数据席
+  v0.5 只读面之外的唯一写路径即此。
+### 回复（数据/wt-5，2026-09-22 第 168 批——dependencies.* v0.5 实现环交付＝正式冻结）
+
+操作者第 168 批派发兑现，`schemas/bdl-queries/v0.5/` **实现环三件齐落**
+（照「Schema＋正负例向量＋至少一端消费测试」纪律；零 bdl-store 代码改动、
+零 wire 落地——契约先行分工照 v0.4 先例，信封常量/路由臂/TS 面随核心/桌
+面接线批，store v0.2 落库归产线建库环）：
+
+- **① 词面闭集**：operation 六→八成员 additive——`dependencies.lookup`
+  （依赖反查建议面，U18 供数链反查段）＋`dependencies.listByProduct`
+  （单商品观察线索面）；两方法均只读，`confirmed_by_human` 翻 1 的写面
+  归建库切片，词表零写词。全部词面枚举骑 BDL v0.2 冻结闭集（depKind 四
+  值／sourceSpan 五值／extractionMethod 六值），消费测试对 schema.sql
+  CHECK 逐字机械对表（词面漂移即红）——排序依赖（v0.2 先于 v0.5）已兑
+  现且持续钉住。
+- **② listByProduct 去留裁决（操作者交本席定夺）＝保留**。理由四条随
+  协议本冻结：线索非结论律需两面对照才成立（只落 lookup 则未确认线索无
+  查询可读）；消费方真实且已排期（提取管线切片的人工确认面读侧）；成本
+  有界（单参数、行键与 lookup 证据体同构、每键映射冻结列）；admission
+  律满足不硬凑。
+- **③ 匹配规则 v1＋advisory 规则 v1 随协议本冻结**（读期版本化规则表，
+  规则改动须升协议版本）：匹配＝dep_name 大小写不敏感精确（ASCII
+  casefold 范围如实声明）、零子串零模糊零等价、包名形态诚实空集；advisory
+  双门（刻意声明版面＋人工确认消解），installSource v1 只发
+  booth_page/external_page（vpm/unknown 留枚举不发出——无 VPM 仓库事实
+  凭空宣称即猜测），confidence strong/weak 两档骑版面维。
+- **④ 向量形态**：循操作者裁决与 bdl-queries 四版先例＝`examples/` JSON
+  形态，四正（lookup/listByProduct 各 request＋result）＋五负（空 name／
+  词外 depKind 恰钉 `unity_or_sdk_version` 拒绝＝N1 同一裁决面／词外
+  fuzzy 键＝词表零模糊开关／listByProduct 词外过滤键／v0.4 版本重放）。
+  本席第 166 批第三案（SQL 片段例集）继续备查不作采纳，无形态硬阻力、
+  无勘误批触发。
+- **⑤ 消费测试**：`crates/bdl-store/tests/dependencies_queries_v05.rs`
+  8 例绿（2026-09-22 本树 cargo 实测）——向量文件驱动＋BDL v0.2 闭集逐
+  字对表＋匹配规则 v1/advisory 规则 v1 参考推导骑冻结 001+002 迁移链实
+  测（大小写折叠精确匹配／子串不匹配／包名形态诚实空集／total 先于分页
+  ／确定性序 productId↑ 后 observation_id↑／确认门与建议门／tombstone
+  照读／线索面 confirmed:false 出线）＋两面对照机械钉＋无路径键扫描。
+  bdl-store 全 crate 绿＋clippy --all-targets 零警告。**该测试消费冻结
+  schema 与向量文件并承载规则表参考推导，不证 store v0.2 行为与任何
+  wire/端到端能力**——store 实现面落地后接替参考推导，测试保留为词表锚。
+- **边界维持**：零 BOOTH 访问（向量词面引 030 §1 既有调查原型与合成负
+  例）；VUA-7/VUA-8 零触碰；U18 终裁前零端到端宣称；§5.5/§5.6 未决项维
+  持开放。协议本 `docs/protocols/bdl-queries-v0.5_EN/ZH.md` 0.5 FROZEN＋
+  REGISTRY 行已登记。

@@ -20,15 +20,10 @@ on:
       - "pnpm-workspace.yaml"
       - "crates/provider-host/**"
       - ".github/workflows/ts.yml"
-  pull_request:
-    paths:
-      - "apps/**"
-      - "packages/**"
-      - "package.json"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - "crates/provider-host/**"
-      - ".github/workflows/ts.yml"
+  pull_request: {}
+
+permissions:
+  contents: read
 
 concurrency:
   group: ts-${{ github.ref }}

@@ -2,10 +2,13 @@
 //! observation face) — wt-4 batch 166 freeze batch of collab/proposals/030
 //! (BOARD #46); drafted batch 164, frozen this batch.
 //!
-//! This file consumes the FROZEN schema files and the FROZEN vector files and
-//! touches NO bdl-store code: the store still runs format v0.1, and the v0.2
-//! store landing is the NEXT slice. What is pinned here, per the
-//!「Schema＋正负例向量＋至少一端消费测试」freeze triad:
+//! This file consumes the FROZEN schema files and the FROZEN vector files
+//! over raw connections — it tests the schema/vector word face, NOT store
+//! behavior. (Registering correction, wt-4 batch 168: the header used to
+//! say "the store still runs format v0.1" — true at the freeze batch; the
+//! store v0.2 landing is batch 168's slice, and the store's own behavior
+//! tests live in dependency_observations_store_v02.rs.) What is pinned
+//! here, per the「Schema＋正负例向量＋至少一端消费测试」freeze triad:
 //!
 //! - the v0.1 -> v0.2 migration chain preserves v0.1 rows verbatim (CHECK
 //!   rebuild is a persistent-format obligation, data loss is a failure);

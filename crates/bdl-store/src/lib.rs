@@ -13,11 +13,13 @@ pub use bdl_queries::{
 };
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
-    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole, EventAppendence,
+    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole,
+    DependencyResolutionEvidence, EventAppendence, NewDependencyObservation,
     NewLocalArtifact, ProductObservation, ProductObservationStatus, StoredArtifact,
-    StoredArtifactCopy, StoredDownloadEvent, StoredWarehouseItem, SubproductObservation,
-    WarehouseArtifactFact, WarehouseArtifactRef, WarehouseEntryCard, WarehouseEntryDetail,
-    WAREHOUSE_ITEM_KINDS, BDL_FORMAT_VERSION,
+    StoredArtifactCopy, StoredDependencyObservation, StoredDownloadEvent,
+    StoredWarehouseItem, SubproductObservation, WarehouseArtifactFact,
+    WarehouseArtifactRef, WarehouseEntryCard, WarehouseEntryDetail, WAREHOUSE_ITEM_KINDS,
+    BDL_FORMAT_VERSION,
 };
 pub use download_events::{
     backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
