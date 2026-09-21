@@ -35,8 +35,8 @@ use std::sync::Arc;
 use serde_json::{json, Value};
 use vua_orchestrator::{
     DraftDependencyV01, DraftEnvironmentV01, DraftOriginV01, MissingDimensionV01,
-    ProjectDraftDocumentV01, ProjectDraftExportCapabilities, ProjectDraftExportPort,
-    UnityBridge, UnityCommand, UnityResult, VuaIdentityStatusV01,
+    OnDiskProjectDraftExporter, ProjectDraftDocumentV01, ProjectDraftExportCapabilities,
+    ProjectDraftExportPort, UnityBridge, UnityCommand, UnityResult, VuaIdentityStatusV01,
 };
 use vua_project_manager::ManagerRoots;
 use vua_provider_host::{
@@ -716,5 +716,185 @@ fn envelope_consts_are_detectable_and_match_the_frozen_schema_consts() {
         payload["value"]["result"]["schemaVersion"],
         RECIPE_EXPORT_SCHEMA_VERSION_V01
     );
+    fs::remove_dir_all(&root).ok();
+}
+
+// --- loop-3 chain: the REAL on-disk executor rides the REAL route ---
+
+/// Seeds a registered project carrying the FULL observation matrix — a
+/// declared-dependencies manifest (deliberately non-ascending key order)
+/// with locked pins and a locked-only transitive entry, a readable editor
+/// version, and a VUA-native identity — so the real executor's projection
+/// rides the real route end to end (synthetic values only, no user VCC
+/// home).
+fn seed_rich_registered_project(root: &Path) -> (PathBuf, PathBuf) {
+    let project = root.join("rich-export-source");
+    fs::create_dir_all(project.join("Assets")).expect("Assets dir");
+    fs::create_dir_all(project.join("ProjectSettings")).expect("ProjectSettings dir");
+    fs::create_dir_all(project.join("Packages")).expect("Packages dir");
+    fs::create_dir_all(project.join(".vua")).expect(".vua dir");
+    fs::write(
+        project.join("ProjectSettings").join("ProjectVersion.txt"),
+        "m_EditorVersion: 2022.3.22f1",
+    )
+    .expect("project version");
+    fs::write(
+        project.join("Packages").join("vpm-manifest.json"),
+        r#"{
+            "dependencies": {
+                "dev.example.coolshader": "^1.2.0",
+                "com.vrchat.avatars": "3.7.x",
+                "com.vrchat.base": "3.7.x"
+            },
+            "locked": {
+                "com.vrchat.avatars": "3.7.12",
+                "dev.example.coolshader": "1.2.7",
+                "locked.only.transitive": "9.9.9"
+            }
+        }"#,
+    )
+    .expect("vpm manifest");
+    fs::write(
+        project.join(".vua").join("project.json"),
+        r#"{"identityVersion": 1, "markedAt": "2026-09-01T10:00:00.000Z", "note": null}"#,
+    )
+    .expect("vua identity");
+    let vcc_settings = root.join("vcc-settings-rich.json");
+    fs::write(
+        &vcc_settings,
+        json!({"userProjects": [project.to_string_lossy()]}).to_string(),
+    )
+    .expect("vcc settings");
+    (project, vcc_settings)
+}
+
+/// Seeds a registered project whose manifest is CORRUPTED JSON — the
+/// executor must ride the observation failure as the honest empty rows
+/// success, never an invented error, never an invented package list.
+fn seed_corrupted_registered_project(root: &Path) -> (PathBuf, PathBuf) {
+    let project = root.join("corrupted-manifest-source");
+    fs::create_dir_all(project.join("Assets")).expect("Assets dir");
+    fs::create_dir_all(project.join("ProjectSettings")).expect("ProjectSettings dir");
+    fs::create_dir_all(project.join("Packages")).expect("Packages dir");
+    fs::write(
+        project.join("ProjectSettings").join("ProjectVersion.txt"),
+        "m_EditorVersion: 2022.3.22f1",
+    )
+    .expect("project version");
+    fs::write(
+        project.join("Packages").join("vpm-manifest.json"),
+        r#"{"dependencies": { "com.example" "#,
+    )
+    .expect("vpm manifest");
+    let vcc_settings = root.join("vcc-settings-corrupted.json");
+    fs::write(
+        &vcc_settings,
+        json!({"userProjects": [project.to_string_lossy()]}).to_string(),
+    )
+    .expect("vcc settings");
+    (project, vcc_settings)
+}
+
+#[test]
+fn real_executor_serves_the_frozen_word_face_through_the_real_route() {
+    // The loop-3 chain: the REAL OnDiskProjectDraftExporter wired into the
+    // draft_exporter slot rides the REAL frame loop — the route's
+    // registration calibration, the capability gate (now declared by the
+    // executor's override) and the executor's on-disk projection over the
+    // seeded synthetic project, validated against the REAL frozen schema.
+    let validator = export_result_validator();
+    let root = unique_root("real-executor");
+    let database = root.join("tasks.sqlite");
+    let (project, vcc_settings) = seed_rich_registered_project(&root);
+
+    let payload = run_query_frame(
+        &database,
+        Some(use_case_config(
+            &root,
+            Some(Arc::new(OnDiskProjectDraftExporter::new())),
+        )),
+        Some(project_ops_config(&vcc_settings)),
+        "recipe.exportProjectDraft",
+        json!({"projectPath": project.to_string_lossy()}),
+    );
+    assert_eq!(payload["ok"], true, "the real executor answers success: {payload}");
+    assert!(
+        validator.is_valid(&payload["value"]),
+        "{:?}",
+        schema_violations(&validator, &payload["value"])
+    );
+    let result = &payload["value"]["result"];
+    assert_eq!(result["schemaVersion"], RECIPE_EXPORT_SCHEMA_VERSION_V01);
+    assert_eq!(result["origin"]["projectPath"], json!(project.to_string_lossy()));
+    assert_eq!(result["origin"]["projectName"], "rich-export-source");
+    assert_eq!(result["origin"]["vuaIdentityStatus"], "present");
+    assert_eq!(result["environment"]["unityVersionConstraint"], "2022.3.22f1");
+    // packageId ascending; pins only where one exists (absence, not null);
+    // the locked-only transitive entry produces no row.
+    let rows = result["dependencies"].as_array().expect("dependency rows");
+    let ids: Vec<&str> = rows.iter().map(|row| row["packageId"].as_str().unwrap()).collect();
+    assert_eq!(ids, ["com.vrchat.avatars", "com.vrchat.base", "dev.example.coolshader"]);
+    assert_eq!(rows[0]["lockedVersion"], "3.7.12");
+    assert!(rows[1].get("lockedVersion").is_none(), "unpinned declaration: no key");
+    assert_eq!(rows[2]["lockedVersion"], "1.2.7");
+    // Nine constant missing dimensions; the version was readable so the
+    // conditional tenth stays out.
+    let missing: Vec<&str> = result["missing"]
+        .as_array()
+        .expect("missing list")
+        .iter()
+        .map(|value| value.as_str().unwrap())
+        .collect();
+    assert_eq!(
+        missing,
+        ["assets", "instances", "relations", "wardrobeGroups", "targetAvatar", "assetRoles", "assetLabels", "sourceRefs", "titleSemantics"],
+    );
+    assert_ne!(result["draftId"], "");
+    assert!(!result.as_object().unwrap().contains_key("recipeId"));
+
+    // The loop-3 override flip: with the real executor wired the served row
+    // is available (loop 2 pinned it unavailable under declared-none).
+    let row = export_capability_row(
+        &database,
+        Some(use_case_config(
+            &root,
+            Some(Arc::new(OnDiskProjectDraftExporter::new())),
+        )),
+    );
+    assert_eq!(row["availability"], "available");
+    fs::remove_dir_all(&root).ok();
+}
+
+#[test]
+fn real_executor_rides_a_corrupted_manifest_as_a_success_fact_over_the_wire() {
+    // The operator matrix's corrupted-JSON case, chained: the observation
+    // failure sets NO error code over the real route — the honest empty
+    // rows ride as a success with the rest of the facts intact (the version
+    // was readable so no marker joins), validated by the real schema.
+    let validator = export_result_validator();
+    let root = unique_root("real-executor-corrupt");
+    let database = root.join("tasks.sqlite");
+    let (project, vcc_settings) = seed_corrupted_registered_project(&root);
+
+    let payload = run_query_frame(
+        &database,
+        Some(use_case_config(
+            &root,
+            Some(Arc::new(OnDiskProjectDraftExporter::new())),
+        )),
+        Some(project_ops_config(&vcc_settings)),
+        "recipe.exportProjectDraft",
+        json!({"projectPath": project.to_string_lossy()}),
+    );
+    assert_eq!(payload["ok"], true, "observation failure is not an error: {payload}");
+    assert!(
+        validator.is_valid(&payload["value"]),
+        "{:?}",
+        schema_violations(&validator, &payload["value"])
+    );
+    let result = &payload["value"]["result"];
+    assert_eq!(result["dependencies"], json!([]), "no rows derivable, none invented");
+    assert_eq!(result["environment"]["unityVersionConstraint"], "2022.3.22f1");
+    assert_eq!(result["missing"].as_array().unwrap().len(), 9);
     fs::remove_dir_all(&root).ok();
 }

@@ -824,6 +824,15 @@ rolled_back: "롤백됨",
     subtitle: "이 PC에 저장된 상품 정보와 에셋을 관리합니다. 앱이나 브라우저에서 BOOTH 상품 페이지를 열고 본인 계정으로 구매하세요.",
     searchPlaceholder: "제목 또는 상품 ID 검색",
     searchAria: "카탈로그 상품 검색",
+    /** 029 슬라이스 3(A3 로컬 구간): 자산 선택기=창고 읽기 면의 투영.
+     *  여기에 세 번째 가져오기 진입을 두지 않음(가져오기는 가져오기 페이지).
+     *  클라우드 연결은 BOARD #46 재정까지 정직하게 부재. */
+    selector: {
+      listAria: "레시피에 추가할 수 있는 창고 항목",
+      localOnlyNote: "선택기는 로컬 창고 항목만 표시합니다. 새 자산 가져오기는 가져오기 페이지에서 진행하세요. 클라우드 자산 연결은 재정이 있을 때까지 정직하게 부재합니다.",
+      pickCta: "추가",
+      addedBadge: "레시피에 추가됨",
+    },
     filters: {
       availability: "판매 상태",
       entityType: "에셋 유형",
@@ -1165,6 +1174,18 @@ rolled_back: "롤백됨",
     libraryMappingNote: "저장된 레시피를 표시하고 있습니다. 작업 화면에서 편집하는 기능은 아직 지원하지 않습니다.",
     documentModeNote: "레시피에 저장된 설정입니다. 이 PC에서는 아직 검증되지 않았습니다.",
     documentModeExit: "작업 화면으로 돌아가기",
+    /** 029 슬라이스 3(A1 생성 진입 승격/A2 선택 상태 자산 추가/A3 창고 읽기 면 투영 선택기 로컬 구간).
+     *  워딩 규율(U16): 생성 진입은 "생성". "자산 추가"는 별도 동작이며 "조립"과 혼용하지 않음.
+     *  선택기는 로컬 창고 항목만 표시. 클라우드 자산은 BOARD #46 재정까지 정직하게 부재. */
+    createCta: "레시피 만들기",
+    addMaterialCta: "자산 추가",
+    materialPickerTitle: "에셋 창고에서 추가",
+    editSectionTitle: "저장 대기 중인 추가 자산",
+    saveEditCta: "변경 사항 저장",
+    savingEditCta: "저장 중…",
+    editFailedNote: "저장에 실패했습니다. 변경 사항은 유지되며 다시 시도할 수 있습니다.",
+    editDirtyNote: "저장되지 않은 자산 추가가 있습니다. 저장이 성공한 후에만 레시피 라이브러리에 기록됩니다.",
+    editRemoveAria: "저장 대기 추가 {title} 제거",
     factsLine: '리비전 {revision} - 에셋:{assets}, 인스턴스:{instances}, 관계:{relations}.',
     factsLocked: "의존성 구성이 고정되어 있습니다. 로컬 프로젝트가 검증되었다는 뜻은 아닙니다.",
     factsUnlocked: "의존성 구성이 고정되지 않았습니다. 이 레시피는 로컬에서 검증되지 않았습니다.",

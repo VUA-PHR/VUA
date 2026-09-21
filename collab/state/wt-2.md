@@ -2,103 +2,93 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 14806f85
+baseline_commit: 9d7e6c17
 updated: 2026-09-22
 ---
 ## 当前焦点
-**第 162 批（2026-09-22 02:4x–03:1x，节拍轮工作时段 date 02:41 实测）＝
-提案 029 B 面环 2 接线批（操作者第 162 批指派；领批前置已验＝本座环 1
-冻结批 847de263 经集成合并 2b491e3d 入库 main，is-ancestor 核可后领
-取）。轮首 fast-forward 追平 main 14806f85（落后 7/领先 0 归零，吸收
-集成第 161 批双栈验收批）。接线产物四件＋文档两件（提交 00364604，
-恰 12 文件 1339+/32-；零新码零新依赖；冻结词面零字节触碰——
-application-contract/task-store/provider-process/production-use-case/
-unity-bridge/recipe v0.3/recipe-export v0.1 Schema 全未触；VUA-7/
-VUA-8 全程零触碰）**：
+**第 164 批（2026-09-22 03:3x–04:1x，节拍轮工作时段 date 03:32 实测）＝
+提案 029 B 面环 3 执行器实现批（操作者第 164 批指派；座位＝集成第 163
+批登记的操作者裁决「环 3 座位归核心域，照协议本原文」——第 162 批
+如实双录的两处不一致词面就此收敛，无猜测代决）。轮首 fast-forward
+追平 main 9d7e6c17（落后 6/领先 0 归零，吸收集成第 163 批双栈验收
+批）。实现产物（提交 4f911abc，恰 8 文件 1004+/87-；零新依赖
+Cargo.toml 零 diff；冻结词面零字节触碰——schemas/recipe-export/v0.1
+全目录未触；VUA-7/VUA-8 全程零触碰）**：
 
-- **port face（核心域冻结跨域合同）**：orchestrator 新模块
-  recipe_export.rs——`ProjectDraftExportPort` trait 同步只读签名
-  `export_project_draft(project_path)` 直接返回草稿文档（裁决 3：本
-  地只读扫描零 Bridge 零网络零突变，不设九态任务，preview 先例）；
-  新默认访问器 `export_capabilities`（默认 declared-none＝
-  `ProjectDraftExportCapabilities::NONE`——025 catalog_capabilities/
-  F5 template_capabilities 访问器律，ORC-DEV-004 无实现不预留，环 3
-  实现切片覆写翻转）；`export_project_draft` 默认体答本族缺席码
-  `vua.recipe_export.unavailable`（F5 结构律：已声明未实现端口在类
-  型层可存在，路由门先行）；typed 草稿文档
-  `ProjectDraftDocumentV01` 恰六事实键
-  draftId/exportedAt/origin/environment/dependencies/missing，
-  deny_unknown_fields 使 Recipe 面（recipeId/title/assets/instances/
-  relations/wardrobeGroups/locked）类型级不可表示（裁决 2：草稿自
-  成一类）；lockedVersion None 时跳过序列化＝缺席非 null 的诚实无
-  钉形；错误码零新立（三码闭集：unavailable/invalid_params＋复用
-  project_not_found）。
-- **路由臂**（provider-host，packages.packageCatalog 同构五段序）：
-  recipe.* 分支内**先于文档面折叠分流**（本面自有族缺席码，绝不冒
-  充 vua.recipe.unavailable）→①端口接线缺席答诚实缺席→②params
-  闭集单键 {projectPath 非空} 形状判定先于门→③注册判定骑
-  project.inspectProject 同一 013 聚合（同事实同码
-  vua.project.project_not_found，024 复用判例；聚合外路径绝不抵达
-  端口；project-ops 装配缺席＝校准面不存在＝全面诚实缺席）→④能力
-  门读 declared-none 默认访问器先于端口调用→⑤端口 typed 拒绝
-  verbatim 直传（读面零折叠），OK 投影＝六事实键经 serde＋路由盖族
-  常量（P1 纪律：常量路由盖章、端口事实 verbatim；packageId 升序与
-  missing 闭集系生产者契约由 wire 测试钉死）；诚实空依赖＋constraint
-  null 携 environmentUnityVersion 标记以成功事实过线（观察失败不设
-  码，诚实律 1/2）。
-- **served 能力行** `recipe.exportProjectDraft`（一行一方法先例族）：
-  availability＝use-case 装配＋端口 `export_project_draft` 位——默
-  认 declared-none 使行如实 unavailable 直至环 3 覆写翻转。
-- **信封双常量**（A3/A4/A5/F2/F3/F5 先例，自
-  vua_provider_host::provider_host 发布）：
-  `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`="0.1"＋族常量
-  `RECIPE_EXPORT_SCHEMA_VERSION_V01`="vua.recipe-export/v0.1"（两版
-  本独立，c914cf2 常设规则）。
-- **接线槽位**：draft_exporter 骑既有 use_cases 入口（handoff
-  Option 端口字段先例，run_provider_host_full 签名零变化）；8 处全
-  字面 ProductionUseCaseConfig 构造点机械补 `draft_exporter: None`
-  （bin 壳＋inspection_queries＋overlay_wire＋release_handoff_wire＋
-  warehouse_commands×4），struct-update 四处自动继承。
-- **wire 测试**：recipe_export_wire_v01.rs 9 例骑真实帧循环（缺席装
-  配诚实缺席＋行 unavailable／冻结词面应答真 Schema 实校验＋七键闭
-  集按集合钉＋packageId 升序＋lockedVersion 缺席非 null＋九恒在维／
-  trait 默认 declared-none 先于端口〔假端口体若达即 panic〕／聚合外
-  路径复用 not_found 先于端口／校准面缺席诚实缺席／端口拒绝
-  verbatim／诚实空依赖＋版本不可读成功事实携 iff 标记由真校验器强
-  制／params 违反先于门／双常量对冻结 Schema 钉死）。消费测试
-  recipe_export.rs 6 例未触照绿。
-- **文档**：双语协议本 0.1→0.1.1（状态落 FROZEN AND WIRED；能力行
-  与 wire 路由节实named 落地；开放项一划线已落、执行器项注明覆写
-  翻转；词面零变化）＋REGISTRY 协议本行同步 0.1.1（词干保持已冻结
-  按登记校验器词干律，接线事实入括注）。
-- **证据**：cargo test --workspace 104 套件 911/0（基线 902/0 恰加
-  本批 9 钉，零涟漪）＋cargo clippy --workspace --all-targets 0 警
-  告。
-- **环 3 派发如实记录**：操作者注记原文「实现批（后端真实导出逻辑：
-  读 vpm-manifest＋工程身份＋组装 draft 文档）候环境座环 3」；协议
-  本开放项与所有权边界节记「导出执行器实现（核心域，读 013 检查聚
-  合；029 B 面环 3）」。两处座位词面不一致，本批不改写任何一处、不
-  猜测裁决——环 3 派发座位以操作者届时指派为准（本批仅接线＋fake
-  端口测试，符合指派原文「你本批只做接线＋fake 端口测试，实现落点
-  在 state 批写明候派」）。
-- **诚实边界**：零端到端宣称——路由已存在于 wire 面但未消费（桌面
-  消费环 4 候形状核可，零 TS 面）；本批全绿数字系代码面/fake 端口
-  证据，绝不宣称真机；served 行在环 3 覆写翻转前如实 unavailable；
-  真机全链（真实工程导出→确认→组装→车间状态）归 W25（O-2）。
+- **真实执行器**：orchestrator recipe_export.rs 新增
+  `OnDiskProjectDraftExporter` 实现 `ProjectDraftExportPort`——013 检
+  查聚合读纪律**核心侧镜像**（依赖方向禁止核心调用 project-manager，
+  零新 project-manager 读面）：①`Packages/vpm-manifest.json` 文档读
+  （仅文件计数＝聚合 manifest_present 门；仅字符串值条目＝聚合
+  manifest_map 规则，非串版本值跳过绝不猜测；行集＝声明集联同 id
+  locked 钉定，locked-only 传递解析事实不入行；BTreeMap 迭代天然产
+  packageId 升序冻结呈现事实）；②manifest 缺席/不可读/损坏
+  JSON/非对象＝诚实空行集（聚合对同类发现的自身投影——聚合侧系诚实
+  告警发现绝不发明包列表；草稿七键闭集无诊断通道、错误码闭集不为落
+  盘发现留码，故观察失败以事实过线照冻结词面「观察失败不设错误
+  码」，绝不编造行也绝不发明错误——诚实律 1/2）；③
+  `ProjectSettings/ProjectVersion.txt` 照聚合完备性门
+  （`m_EditorVersion:` 行须携可分类完整版本，classify_version_string），
+  缺席/不可读/残缺版本行＝null 约束＋environmentUnityVersion 条件标
+  记（冻结双向 iff）；④`.vua/project.json` 三态照聚合判定边界
+  （NotFound＝absent；其余读错/解析失败/未知版本＝unreadable 证据；
+  marked_at 参与解析使 present/unreadable 边界与聚合身份发现一致），
+  absent 非门（029 未决项 2 维持开放）；⑤路径末段为工程名来源事实，
+  无末段路径＝诚实 null（Schema 词面「无名字事实可读＝null」治理草
+  稿；聚合全路径回显系列表可见性显示关注不入草稿）；⑥逐调用
+  uuid-v7 形草稿身份（unix-ts-ms＋进程内计数器、版本位 7、变体位
+  10xx——provider-host 铸造同形律，依赖方向下核心侧镜像）＋注入时
+  钟 exportedAt（ORC-TST-001：new()＝SystemClock，with_clock＝
+  FixedClock 测试缝）；**全函数**——落盘观察失败一律降级为冻结词面
+  预留的诚实事实，Err 臂仅为端口合同保留（其它适配器的 typed 拒
+  绝，wire 已证直传纪律），本执行器永不产生。
+- **能力覆写翻转**：`export_capabilities` 覆写 declared-none 默认为
+  declared——环 3 翻转使 served 行与路由门转 available（F5
+  template_capabilities 律 verbatim；覆写前环 2 默认使一切应答停诚
+  实缺席臂）。
+- **生产接线**：bin 壳（vua-orchestrator-provider.rs）draft_exporter
+  槽位携带真实执行器；四处测试夹具构造点刻意维持 None（它们钉其它
+  面的接线形状，不在本批指派内）。
+- **测试**：executor 矩阵 9 例（合成 temp-dir 工程，逐文档对真实冻
+  结 result Schema 实校验——路由盖章族常量注入信封形）：能力翻转／
+  正常全投影（manifest 键序故意乱序证升序呈现事实、仅 locked 处带
+  钉、locked-only 不入行、身份 present、九恒在维、固时钟
+  exportedAt、uuidv7 形钉）／缺席 manifest＋零声明＋locked-only 三
+  路均诚实空行集成功事实／损坏 JSON＋非对象＝诚实空行集且其余事实
+  照常骑／非串版本条目跳过／版本行残缺＋版本文件缺席＝null 约束＋
+  第十标记／身份三态边界四例（absent＋垃圾＋未知版本＋缺 marked_at）
+  且 absent 非门／无末段路径＝null 名字事实／确定性钉（同事实＋固
+  时钟＝除逐调用草稿身份外全文档全等、身份互异、序稳定）。
+  **wire 串联＋2**（recipe_export_wire_v01.rs 共 11 例）：真实执行器
+  骑真实路由帧循环（富注册工程种子＝校准同读的 VCC settings 注册世
+  界）——Schema 实校验全冻结词面＋packageId 升序＋lockedVersion 缺
+  席非 null＋身份 present＋served 行 available；损坏 manifest 工程
+  以诚实空行集成功事实过线。
+- **文档**：双语协议本 0.1.1→0.1.2（状态落 FROZEN AND WIRED AND
+  IMPLEMENTED；能力行节命名执行器面与翻转事实；开放项划线落地；
+  词面零变化）＋REGISTRY 协议本行同步 0.1.2（词干保持，执行器事实
+  追加，环 2 九例枚举逐字保留）。
+- **证据**：cargo test --workspace 105 套件 922/0（基线 104 套件
+  911/0＝恰加本批执行器 9＋wire 链 2，零涟漪；既有 28 ignore 未触）
+  ＋cargo clippy --workspace --all-targets 0 警告。
+- **诚实边界**：零端到端宣称——桌面消费面尚不存在（环 4 候形状核
+  可，本批零 TS 面）；全绿数字系合成工程上的代码面证据，绝不宣称
+  真机；损坏 manifest 诚实空投影系冻结词面自有法则（观察失败不设码
+  ＋聚合同类发现同投影），已在执行器文档与协议括注如实登记，非缺
+  席与损坏的静默混同；真机导出全链归 W25（O-2）。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 160 批（847de263＋19d4ba5a，2026-09-22）＝029 B 面环 1 冻结批：
-recipe-export v0.1 词表行（command＋result 两 Schema＋5 正 8 负向
-量）＋核心消费测试 recipe_export.rs 6 例＋双语协议本＋REGISTRY 两行
-＋029 内联线程核心裁决节；三裁决＝未决项 4 关闭案 B（零桥接骨架＋
-用户点选补全，案 A 只登记不实施）＋载体＝导出独立面（草稿无
-recipeId/title/关系面，转正唯一通道 recipe.save）＋用例面＝单方法
-recipe.exportProjectDraft 同步只读 Query 不设九态任务；经集成第 161
-批收编（合并 2b491e3d）。第 158 批（caddb291＋0193aced）＝BOARD #45
-两候派件处置（loadedAssetPaths 证据面收口＋`.vua/imports` 残留清理
-三触发）。第 156 批（0a7ebbd7＋029a78ad）＝数据座第 155 批清点两观
-察点处置（recipe 存储钟改单源 rfc3339＋失败运行无
-production_domain_records 行系设计非缺口裁决）。第 155 批（36bab970
-＋95cb58ba）＝U19 交棒准入闸后端切片（经集成第 155 批收编）。
-第 152 批＝proposal 029 起草批。第 150 批＝素材链修复批。更早段落
-见本文件 git 历史与 BOARD 前录。
+第 162 批（00364604＋0428d9c4，2026-09-22）＝029 B 面环 2 接线批：
+port face `ProjectDraftExportPort`（declared-none 默认访问器＋同步只
+读签名零九态任务＋typed 拒绝 verbatim）＋typed
+`ProjectDraftDocumentV01` 六事实键 deny_unknown_fields＋路由臂五段序
+（packages.packageCatalog 同构，先于文档面折叠分流）＋信封双常量＋
+served 行＋wire 测试 9 例骑真实帧循环＋双语协议本 0.1.1＋REGISTRY 行
+同步；三码闭集零新立，零新依赖；经集成第 163 批收编（合并 bf7073d1）。
+第 160 批（847de263＋19d4ba5a）＝环 1 冻结批：recipe-export v0.1 词表
+行＋5 正 8 负向量＋消费测试 6 例＋双语协议本＋REGISTRY 两行＋三裁决
+（未决项 4 关闭案 B＋载体独立面＋单方法同步 Query）；经集成第 161 批
+收编（合并 2b491e3d）。第 158 批＝BOARD #45 两候派件处置。第 156 批
+＝数据座第 155 批清点两观察点处置。第 155 批＝U19 交棒准入闸后端切片。
+第 152 批＝proposal 029 起草批。第 150 批＝素材链修复批。更早段落见
+本文件 git 历史与 BOARD 前录。

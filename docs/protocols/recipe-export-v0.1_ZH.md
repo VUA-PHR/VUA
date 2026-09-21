@@ -2,20 +2,25 @@
 
 [English](recipe-export-v0.1_EN.md) | [简体中文](recipe-export-v0.1_ZH.md)
 
-> 文档版本：0.1.1
+> 文档版本：0.1.2
 > 状态：**已冻结（proposal 029 B 面环 1 核心冻结批，2026-09-22；桌面侧前
 > 置成就〔第 159 批收编 029 内联 wt-3 形状判决书〕后领取，三裁决见「核心
-> 裁决」）且已接线（v0.1.1 核心环 2 接线批，2026-09-22）：
+> 裁决」）且已接线（v0.1.1 核心环 2 接线批，2026-09-22）且已实现（
+> v0.1.2 核心执行器环 3，2026-09-22）：
 > `recipe.exportProjectDraft` 路由臂、信封双常量、served 行
-> `recipe.exportProjectDraft` 与 port face（核心 `ProjectDraftExportPort`
-> trait）已落树——导出执行器实现归环 3；在其覆写翻转前一切已接线路由均
-> 停在诚实缺席臂（port 默认 `export_capabilities -> NONE`，served 行如实
-> unavailable）。**
+> `recipe.exportProjectDraft`、port face（核心 `ProjectDraftExportPort`
+> trait）与真实执行器（`OnDiskProjectDraftExporter`，读 013 检查事实：
+> VPM manifest 声明依赖＋locked 钉定、观察到的编辑器版本、VUA 身份
+> 三态）已落树——执行器能力覆写已**翻转访问器**，生产装配以真实草稿
+> 应答（观察失败以事实过线：manifest 缺席/损坏＝诚实空 `dependencies`
+> 数组，编辑器版本不可读＝null 约束＋`environmentUnityVersion` 标记）；
+> 环 3 执行器测试在 `crates/orchestrator/tests/recipe_export_executor.rs`，
+> 真实执行器链已串入 wire 套件。**
 > 机器可读词表：`schemas/recipe-export/v0.1/`（单方法 Schema＋正例 5＋
 > 负例 8 向量；核心消费测试 `crates/orchestrator/tests/recipe_export.rs`；
 > wire 路由测试
 > `crates/provider-host/tests/recipe_export_wire_v01.rs`〔真实帧循环，
-> 9 例〕）
+> 11 例＝接线 9＋真实执行器链 2〕）
 > 范围：`recipe.exportProjectDraft`（从一个已注册 Unity 工程导出
 > **Recipe 草稿**——项目→配方的反向只读派生）；配方链执行面归
 > production-use-case v0.2（零触碰）
@@ -23,12 +28,19 @@
 > （读 013 检查聚合，project-manager 侧零新读面）；桌面消费（配方页
 > 「从项目导入」＋草稿确认补全流）＝桌面域（形状判决书 029 内联
 > wt-3 节为消费形状输入）
-> 更新：2026-09-22（v0.1.1 环 2 接线批：`recipe.exportProjectDraft`
-> 路由臂＋信封双常量 `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`/
+> 更新：2026-09-22（v0.1.2 执行器环 3：真实落盘执行器
+> `OnDiskProjectDraftExporter` 落核心 recipe_export 模块——manifest 文
+> 档读照 013 聚合镜像〔仅字符串值条目；缺席/不可读/损坏/非对象
+> manifest＝诚实空行集〕、版本门镜像〔`m_EditorVersion:` 行缺席/残缺
+> ＝null 约束＋条件标记〕、身份三态判定边界镜像〔NotFound＝absent；
+> 垃圾/未知版本＝unreadable 证据〕、逐调用 uuid-v7 形草稿身份铸造、
+> 注入时钟 `exportedAt`；生产 bin 接线翻转 `draft_exporter`；词面零
+> 变化。v0.1.1 环 2 接线批：`recipe.exportProjectDraft` 路由臂＋信封
+> 双常量 `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`/
 > `RECIPE_EXPORT_SCHEMA_VERSION_V01`＋served 行
 > `recipe.exportProjectDraft`＋port face `ProjectDraftExportPort`
-> 〔declared-none 默认〕＋wire 测试 9 例骑真实帧循环；词面零变化。首
-> 次更新 2026-09-22 v0.1 冻结批：双语协议本＋REGISTRY 登记）
+> 〔declared-none 默认〕＋wire 测试 9 例骑真实帧循环。首次更新
+> 2026-09-22 v0.1 冻结批：双语协议本＋REGISTRY 登记）
 
 ## B 面定位语义（029 环流水线第一环）
 
@@ -207,23 +219,41 @@ params 闭集单键：`projectPath`（`minLength 1`；013 注册身份，与
   集系冻结词面的生产者契约，wire 测试钉死，绝非路由改写）；
 - **served 行** `recipe.exportProjectDraft`（一行服务一方法先例）：
   availability＝use-case 装配＋端口 `export_capabilities`.
-  `export_project_draft` 位——默认 declared-none 使该行如实
-  unavailable，直至环 3 导出执行器实现切片以真实适配器覆写翻转；
+  `export_project_draft` 位——declared-none 默认曾使该行如实
+  unavailable，直至环 3 导出执行器实现切片以真实适配器覆写翻转（已
+  落，v0.1.2：生产 bin 接线携带真实执行器，use-case 面已接线条处该
+  行如实 available）；
 - **port face**：核心 `ProjectDraftExportPort` trait（orchestrator
   域，`crates/orchestrator/src/recipe_export.rs`）＝冻结跨域合同：
   默认访问器 declared-none＋`export_project_draft` 默认体答本族缺席
   码（已声明未实现端口在类型层可存在——F5 结构律，路由门先行）、
-  同步只读签名直接返回草稿文档（零九态任务）；
+  同步只读签名直接返回草稿文档（零九态任务）。真实适配器＝
+  `OnDiskProjectDraftExporter`（v0.1.2，同模块）：在核心侧镜像 013
+  聚合读纪律（依赖方向禁止核心调用 project-manager）——manifest 文
+  档读（仅字符串值条目；缺席/不可读/损坏/非对象 manifest 投影诚实
+  空行集，即聚合对同类发现的自身投影）、版本门（`m_EditorVersion:`
+  行缺席或残缺＝null 约束＋条件标记）、身份三态判定边界（NotFound
+  ＝absent；垃圾或未知版本＝unreadable 证据）、逐调用 uuid-v7 形草
+  稿身份、注入时钟 `exportedAt`；执行器为全函数——落盘观察失败降级
+  为冻结词面为其预留的诚实事实，绝不设错误（本面错误码闭集不为落
+  盘发现保留任何码）；
+- **执行器测试**：
+  `crates/orchestrator/tests/recipe_export_executor.rs`（合成工程矩
+  阵——正常/空声明/manifest 缺席/损坏 JSON/非对象 manifest/版本行
+  残缺／身份三态/非字符串版本条目/无名字路径/能力翻转/确定性钉，
+  每份文档对真实冻结 result Schema 实校验）＋下方 wire 链；
 - **wire 测试**：
-  `crates/provider-host/tests/recipe_export_wire_v01.rs` 9 例骑真实
-  帧循环（缺席装配＝typed 诚实缺席＋行 unavailable／已接线已声明端
-  口在冻结词面应答〔Schema 实校验＋七键闭集＋packageId 升序＋
-  lockedVersion 缺席非 null＋九恒在维〕／trait 默认 declared-none
-  端口＝缺席臂先行〔端口体若达即 panic〕＋行如实 unavailable／聚
-  合外路径＝复用 not_found 先于端口／校准面缺席＝诚实缺席／端口拒
-  绝 verbatim 直传／诚实空依赖＋版本不可读＝成功事实携
-  environmentUnityVersion 标记〔iff 由真实校验器强制〕／params 违反
-  先于门／信封双常量可检测且对冻结 Schema 常量钉死）。
+  `crates/provider-host/tests/recipe_export_wire_v01.rs` 11 例骑真实
+  帧循环（接线批 9 例：缺席装配＝typed 诚实缺席＋行 unavailable／
+  已接线已声明端口在冻结词面应答〔Schema 实校验＋七键闭集＋
+  packageId 升序＋lockedVersion 缺席非 null＋九恒在维〕／trait 默
+  认 declared-none 端口＝缺席臂先行〔端口体若达即 panic〕＋行如实
+  unavailable／聚合外路径＝复用 not_found 先于端口／校准面缺席＝诚
+  实缺席／端口拒绝 verbatim 直传／诚实空依赖＋版本不可读＝成功事实
+  携 environmentUnityVersion 标记〔iff 由真实校验器强制〕／params
+  违反先于门／信封双常量可检测且对冻结 Schema 常量钉死；另环 3 真
+  实执行器链 2 例：真实执行器经真实路由应答完整冻结词面且 served
+  行 available／损坏 manifest 以诚实空行集成功事实过线）。
 
 ## 依赖方向
 
@@ -271,11 +301,14 @@ projectPath／依赖行发明 `optional` 字段〔虚假断言防线钉死〕／
 
 - ~~wire 路由＋能力行＋port face（核心域接线切片）~~：已随 v0.1.1
   环 2 接线批落地（2026-09-22）；
-- 导出执行器实现（核心域，读 013 检查聚合；029 B 面环 3）——覆写
-  `export_capabilities` 翻转 served 行，此前一切应答停在诚实缺席臂；
+- ~~导出执行器实现（核心域，读 013 检查聚合；029 B 面环 3）~~：已随
+  v0.1.2 执行器环 3 落地（2026-09-22）——`OnDiskProjectDraftExporter`
+  在核心侧镜像 013 聚合读纪律，能力覆写翻转 served 行，环 2 wire 套
+  件增补真实执行器链例；
 - 桌面消费批（配方页「从项目导入」入口＋草稿确认补全流，消费 A 面
   中枢形状；029 B 面环 4）候形状核可；
 - 非 VUA 工程适用边界呈现（029 未决项 2）：候用户裁决；
 - 案 A（只读桥扫描）候选登记：独立冻结环候 W25 真机走查后裁定；
 - 真机全链（真实工程导出→确认→组装→车间状态呈现）归 W25（O-2）。
-  端到端宣称维持为零——本批零运行时行为变化承诺到实现切片验收为止。
+  端到端宣称维持为零——执行器测试与 wire 链系合成工程上的代码面证
+  据，绝不宣称真机。
