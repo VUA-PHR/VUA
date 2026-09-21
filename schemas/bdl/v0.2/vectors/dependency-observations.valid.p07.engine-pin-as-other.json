@@ -1,0 +1,23 @@
+{
+  "vector": "P7",
+  "name": "dependency-observations.valid.p07.engine-pin-as-other",
+  "basis": "030 §1 sample 3 (booth.pm/ja/items/7665268) version line '- Unity 2022.3.22f1'. FREEZE RULING (wt-4 batch 166, operator-preauthorized direction): an engine/SDK pin is NOT its own dep_kind — dep_kind='other' (the dependent thing is the runtime/tool) and the version constraint rides version_hint verbatim; version constraints are version_hint's dimension, never dep_kind's.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "other",
+        "dep_name": "Unity",
+        "raw_quote": "- Unity 2022.3.22f1",
+        "source_span": "body",
+        "version_hint": "2022.3.22f1",
+        "extraction_method": "bullet",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

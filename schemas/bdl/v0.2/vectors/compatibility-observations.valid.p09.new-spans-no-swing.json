@@ -1,0 +1,53 @@
+{
+  "vector": "P9",
+  "name": "compatibility-observations.valid.p09.new-spans-no-swing",
+  "basis": "The v0.2 source_span expansion on the REBUILT compatibility_observations table: the two new members 'title' (030 §1 sample 2 title「17アバター対応」) and 'description_link' (sample 1's description link text) are accepted, and the three v0.1 members are still accepted — the old word face does not swing. (Foreign words are N2's business.)",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "17アバター対応",
+        "source_span": "title",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    },
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "lilToon 本体",
+        "source_span": "description_link",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    },
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "・liltoon 2.3.2~",
+        "source_span": "body",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    },
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "『Lapwing』対応",
+        "source_span": "subproduct_name",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    },
+    {
+      "table": "compatibility_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "raw_quote": "（画像内表記: Liltoon 推奨）",
+        "source_span": "image",
+        "observed_at": "2026-09-22T00:00:00.000Z"
+      }
+    }
+  ]
+}

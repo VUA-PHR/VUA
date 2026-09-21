@@ -1,0 +1,23 @@
+{
+  "vector": "N7",
+  "name": "dependency-observations.invalid.n07.extraction-method-foreign",
+  "basis": "extraction_method (confidence dimension 1: WHICH page layout the quote was lifted from) is a closed six-value set ('explicit_heading','bullet','one_line','prose','title','link'); 'manual' is a who-extracted identity word, not a layout form — the exact dimension mixing the data seat's inline stance warns against.",
+  "expect": "reject",
+  "reject_law": "extraction_method CHECK closed set",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "x",
+        "raw_quote": "q",
+        "source_span": "body",
+        "extraction_method": "manual",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}
