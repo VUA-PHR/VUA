@@ -1,0 +1,22 @@
+{
+  "vector": "P5",
+  "name": "dependency-observations.valid.p05.prose-declaration",
+  "basis": "030 §1 sample 5 (booth.pm/ja/items/8179865): the dependency stated inside running prose ('本ギミックはlilToonのカスタムパラメータとして作動します。') — extraction_method='prose', the lowest-confidence layout form; the observation stays in the library and the read side derives any suggestion.",
+  "expect": "accept",
+  "cases": [
+    {
+      "table": "dependency_observations",
+      "values": {
+        "product_id": "booth:6584744",
+        "dep_kind": "shader",
+        "dep_name": "lilToon",
+        "raw_quote": "本ギミックはlilToonのカスタムパラメータとして作動します。",
+        "source_span": "body",
+        "extraction_method": "prose",
+        "extracted_by": "human",
+        "observed_at": "2026-09-22T00:00:00.000Z",
+        "processor_version": "dep-0.1"
+      }
+    }
+  ]
+}

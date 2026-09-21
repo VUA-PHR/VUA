@@ -1,8 +1,23 @@
--- BDL production schema v0.2 (DRAFT — proposed by the production seat, wt-4
--- batch 164; freeze batch pending. NOT frozen: the freeze slice must land the
--- Schema + positive/negative vectors + at least one consumer test together,
--- per collab/proposals/030 §5.1 ruling (production seat owns the build) and
--- the「Schema＋正负例向量＋至少一端消费测试」discipline).
+-- BDL production schema v0.2 (FROZEN — frozen by the production seat, wt-4
+-- batch 166, 2026-09-22, per collab/proposals/030 §5.1 ruling (production
+-- seat owns the build) and the「Schema＋正负例向量＋至少一端消费测试」freeze
+-- triad, all three landed together:
+--   schema ....... this file + the executable migration chain
+--                  (schemas/bdl/v0.1/001_initial.sql + 002_dependency_
+--                  observations.sql);
+--   vectors ...... vectors/ — nine positive + eight negative vectors, one
+--                  JSON file each (P1–P9 / N1–N8; the vector file form is
+--                  frozen per the 030 inline-thread registration of this
+--                  batch, data-seat objections ride the errata batch);
+--   consumer test  crates/bdl-store/tests/dependency_observations_schema_
+--                  v02.rs — drives every vector file against the migration
+--                  chain and the fresh authority, all green this batch.
+-- Zero runtime claims: the bdl-store still runs format v0.1 (zero store code
+-- changed in the freeze batch); the v0.2 store landing is the NEXT slice.
+-- The dep_kind granularity, the last open item of the draft, is ruled here:
+-- four values, no 'unity_or_sdk_version' — see the dep_kind note below and
+-- the no-information-loss argument frozen in the protocol book
+-- (docs/protocols/bdl-dependency-observations-v0.2_EN/ZH.md).
 --
 -- v0.2 is the next version of the PERSISTENT FORMAT (format_version '0.2').
 -- Two changes over v0.1, both from collab/proposals/030 (BOARD #46) and the
@@ -116,14 +131,23 @@ CREATE INDEX idx_compat_product ON compatibility_observations(product_id);
 -- declarations, prose — and nowhere in any structured BOOTH field. Anything
 -- extracted is stored as an EVIDENCED OBSERVATION, never as a fact claim.
 --
--- Closed sets (draft; the freeze batch must confirm or amend):
+-- Closed sets (FROZEN — the dep_kind granularity was the draft's last open
+-- item; ruled as stated below, operator-preauthorized direction finalized by
+-- the production seat, wt-4 batch 166):
 --   dep_kind           = 'shader' | 'tool_package' | 'avatar_base' | 'other'
---     Draft proposal: dep_kind narrows to the DEPENDENT-THING type (single
---     choice); version constraints are carried by version_hint, never by
---     dep_kind. There is deliberately NO 'unity_or_sdk_version' member — an
---     engine/SDK pin ("- Unity 2022.3.22f1") lands as dep_kind='other' with
---     version_hint carrying the pin. Alternative (keep the 030 §2 draft five
---     values incl. 'unity_or_sdk_version') stays open for the freeze batch.
+--     FROZEN as the DEPENDENT-THING type (single choice, four values). There
+--     is deliberately NO 'unity_or_sdk_version' member — an engine/SDK pin
+--     ("- Unity 2022.3.22f1") lands as dep_kind='other' with version_hint
+--     carrying the pin. The five-value draft alternative is REJECTED: it
+--     conflated two orthogonal dimensions (what is depended upon / what
+--     constraint attaches) in one single-choice field, so a "lilToon＋2.3.2~"
+--     declaration (030 §1 sample 1: a shader pin WITH a version) would
+--     already have to pick 'shader' and ride version_hint anyway. Narrowing
+--     loses NO survey information: the thing type stays in dep_kind, the
+--     constraint stays in version_hint (as written), the evidence stays in
+--     raw_quote/source_span; "has a version constraint" is derivable at read
+--     time from version_hint IS NOT NULL — a read-time derivation
+--     (availabilityRaw->availabilityStatus precedent), never a stored fact.
 --   source_span        = 'body' | 'subproduct_name' | 'image' | 'title' |
 --                        'description_link'   (same closed set as the
 --                        compatibility_observations v0.2 rebuild)
@@ -159,7 +183,7 @@ CREATE TABLE dependency_observations (
   source_span             TEXT NOT NULL CHECK (source_span IN
                             ('body', 'subproduct_name', 'image',
                              'title', 'description_link')),
-  version_hint            TEXT,                -- the version string AS WRITTEN ('2.3.2~'); no normalization
+  version_hint            TEXT,                -- the version string AS WRITTEN ('2.3.2~'); no normalization; carries ALL version constraints (engine/SDK pins included — see dep_kind above)
   resolved_ref_product_id TEXT REFERENCES products(product_id), -- nullable; set only via the resolution path
   resolution_evidence     TEXT,                -- JSON array, shape frozen above; NOT NULL whenever resolved_ref_product_id is NOT NULL (CHECK)
   confirmed_by_human      INTEGER NOT NULL DEFAULT 0 CHECK (confirmed_by_human IN (0, 1)),

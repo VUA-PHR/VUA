@@ -291,3 +291,44 @@ BDL 域内自洽（availabilityRaw→availabilityStatus 读期派生先例）。
 - **边界维持**：数据座消费面（bdl-queries dependencies.* 查询族）本席零代笔，由其
   席自行领取；向量文件形态（JSON 例集 vs 测试内嵌）候冻结批与数据席收敛；U18 终裁
   前零端到端宣称；本批零 BOOTH 访问（只用 030 §1 既有调查词面作正例原型）。
+
+### 回复（产线/wt-4，2026-09-22 第 166 批——冻结批定稿：BDL 持久格式 v0.2 正式冻结）
+
+操作者第 166 批派单（030 冻结批；dep_kind 收窄四值方向经操作者预授权）兑现，
+**v0.2 冻结环四件齐落**（照「Schema＋正负例向量＋至少一端消费测试」三件纪律；
+零 bdl-store 运行时实现——store 仍运行 v0.1，落库实现环候下批）：
+
+- **① dep_kind 四值定稿**：`('shader','tool_package','avatar_base','other')`
+  单选，不设 `unity_or_sdk_version`；一切版本约束由 `version_hint` 承载，
+  引擎/SDK 钉行落 `other`＋`version_hint`。**信息不丢失论证随裁决冻结于双语
+  协议本**（要点）：五值集把「依赖物类型」与「约束类型」两正交维度混进单选
+  闭集——样例 1「liltoon＋2.3.2~」在单选下本就只能选 shader、版本照样走
+  version_hint；四值下类型查 dep_kind、约束查 version_hint、证据查
+  raw_quote/source_span/extraction_method，可查询信息零丢失；「有版本约束」
+  读期由 `version_hint IS NOT NULL` 派生即得（availabilityRaw→
+  availabilityStatus 读期派生先例），不作为存储事实；收窄同时保住闭集单粒度
+  （混粒度字段会把未来新成员推入错误维度）。
+- **② 向量文件形态收敛（@数据席）**：落位定稿＝`schemas/bdl/v0.2/vectors/`，
+  一向量一 JSON 文件，九正（P1–P9）八负（N1–N8）恰 17 文件；命名
+  `<face>.<valid|invalid>.<id>.<slug>.json`；字段 vector/name/basis/expect/
+  reject_law/cases[{table,values}]。形态循本席 amf-production v0.2 `vectors/`
+  先例（同一三件冻结纪律、同一所有权席）——选它而非 bdl-queries `examples/`
+  request/result 成对惯例的理由：本向量是持久表行级正负例，不是 wire 操作
+  请求/响应对；选它而非测试内嵌的理由：闭集词面须对数据座下游机读可见，
+  dependencies.* 工作可直接读该目录取词面，不必读 Rust 测试源。数据席异议
+  若后至走**勘误批**（版本化勘误），绝不就地改写冻结词面；闭集本体不因形态
+  勘误而变。N1 恰钉 `unity_or_sdk_version` 拒绝＝冻结裁决的拒绝面。
+- **③ schema.sql 权威面＋002 迁移正式化**：头部草案标注→冻结状态行（第 166
+  批、三件齐备、零运行宣称）；**CHECK 词面零变化**——草案四值即定稿方向，
+  冻结只转状态不改行为面；002 同批转正；schema.sql dep_kind 注释块扩入信息
+  不丢失论证。
+- **④ 双语协议本转正**：`docs/protocols/bdl-dependency-observations-v0.2_
+  EN/ZH.md` 0.2（草案）→0.2 FROZEN（裁决登记、向量文件表、消费测试实况、
+  未决项收窄为公开面缺口/U18 联动/消费面领取/store 落库四条）；REGISTRY 两
+  行（协议本＋schemas/bdl/v0.2）同批转正。
+- **测试实况**：消费测试定稿为**向量文件消费**（fs 读 vectors/ 17 文件驱动
+  全部正负例＋迁移保真＋权威/迁移链形状全等，4 例绿）；bdl-store 全 crate
+  60 例绿＋clippy 全 targets 零警告（2026-09-22 本树 cargo 实测）。
+- **边界维持**：零 bdl-store 代码改动（落库＝迁移注册升版 user_version=2＋
+  写入/读出面，候下批）；零 BOOTH 访问；VUA-7/VUA-8 零触碰；U18 终裁前零
+  端到端宣称；§5.5/§5.6 未决项维持开放。
