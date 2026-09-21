@@ -54,7 +54,7 @@
 
 - [开发大纲（当前窗口与批次）](development-outline_ZH.md)
 - [设计标准](design/design-standard_ZH.md)
-- [项目交接摘要](project-context_ZH.md)
+- [冷启动导读（原交接摘要，U15 收缩版）](project-context_ZH.md)
 - [受管文档登记表](REGISTRY.md)
 - [系统架构](architecture/system_ZH.md)
 - [Electron 桌面与表现层](architecture/desktop_ZH.md)

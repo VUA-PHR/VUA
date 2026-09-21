@@ -6,7 +6,7 @@ import type { ReleaseHandoffFactV01 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import type { PageId } from "../../app/nav-model.ts";
-import { isReleaseHandoffErrorCode, taskStateLabelKey } from "./release-handoff-model.ts";
+import { handoffIntentErrorText, taskStateLabelKey } from "./release-handoff-model.ts";
 
 const copy = strings.release.records.handoff;
 
@@ -25,7 +25,12 @@ const copy = strings.release.records.handoff;
  *   推导为投影纪律禁止——核心表态已裁选项②维持现状(023 线程):权威
  *   浏览面在检查页,本页不呈现摘要即最终形态;完成态仅按核心表态第 4 点
  *   以纯导航 IA 手段指引(不带任何检查身份,零跨源推导),onNavigate 未传
- *   时不渲染按钮(零死按钮)。
+ *   时不渲染按钮(零死按钮);
+ * - U19 交棒准入(用户裁决 2026-09-21):本面板仅在记录状态白名单桶
+ *   (succeeded/succeeded_with_warnings,警告呈现保留)被挂载——分桶判定
+ *   在 release-records-section 经 handoffAdmission 纯投影完成;后端权威
+ *   闸独立在路由准入序,受理被拒(准入闸两码)时本面板 intent-failed 臂
+ *   如实呈现类型化拒绝词面,不猜测不降标。
  */
 
 /** 轮询间隔(ms):任务面权威快照 task.get;非终态继续,终态即停 */
@@ -34,22 +39,28 @@ const POLL_MS = 2000;
 type HandoffPhase =
   | { kind: "idle" }
   | { kind: "absent" }
-  | { kind: "intent-failed"; code: string | null }
+  | { kind: "intent-failed"; code: string | null; params: Readonly<Record<string, string | number | boolean>> }
   | { kind: "polling"; taskId: string; state: string | null }
   | { kind: "succeeded"; fact: ReleaseHandoffFactV01 }
   | { kind: "task-failed"; errorCode: string | null; messageKey: string | null }
   | { kind: "cancelled" }
   | { kind: "fact-unexplainable" };
 
-function intentErrorText(code: string | null): string {
-  if (code === null) return copy.failedUnknown;
-  if (isReleaseHandoffErrorCode(code)) {
-    if (code === "vua.release_handoff.invalid_params") return copy.codeInvalidParams;
-    if (code === "vua.release_handoff.build_unknown") return copy.codeBuildUnknown;
-    if (code === "vua.release_handoff.editor_unresolved") return copy.codeEditorUnresolved;
-  }
-  // 闭集外错误码原样透传呈现,不猜测映射(诚实纪律)
-  return format(copy.failedWithCode, { code });
+/** intent-failed 词面(纯组合移入模型层,U19 准入闸两码词面同函数消费;
+ *  词面表由 strings 喂入,测试侧同表对拍) */
+function intentErrorText(
+  code: string | null,
+  params: Readonly<Record<string, string | number | boolean>>,
+): string {
+  return handoffIntentErrorText(code, params, {
+    failedUnknown: copy.failedUnknown,
+    failedWithCode: copy.failedWithCode,
+    codeInvalidParams: copy.codeInvalidParams,
+    codeBuildUnknown: copy.codeBuildUnknown,
+    codeEditorUnresolved: copy.codeEditorUnresolved,
+    stateBlocked: strings.errors.releaseHandoff.stateBlocked,
+    stateUnknown: strings.errors.releaseHandoff.stateUnknown,
+  });
 }
 
 export function HandoffPanel({
@@ -118,7 +129,7 @@ export function HandoffPanel({
       } else if (intent.kind === "absent") {
         setPhase({ kind: "absent" });
       } else {
-        setPhase({ kind: "intent-failed", code: intent.code });
+        setPhase({ kind: "intent-failed", code: intent.code, params: intent.params });
       }
     });
   };
@@ -161,7 +172,7 @@ export function HandoffPanel({
           <Badge tone="error">{copy.failedTitle}</Badge>
           {retry}
         </div>
-        <p className="vua-caption vua-text-secondary">{intentErrorText(phase.code)}</p>
+        <p className="vua-caption vua-text-secondary">{intentErrorText(phase.code, phase.params)}</p>
       </div>
     );
   }

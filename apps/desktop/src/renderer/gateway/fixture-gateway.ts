@@ -27,6 +27,7 @@ import type { VuaGateway } from "./gateway.ts";
 import type { CapabilityReport, DataSource } from "./types.ts";
 import { createEmptyInspection } from "./empty-gateway.ts";
 import { createAbsentReleaseHandoffPort } from "./empty-gateway.ts";
+import { createAbsentReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
 
 /**
  * fixture 实现(G3,仅 DEV 构建可达——见 App.tsx 的 DEV 硬防线,
@@ -629,6 +630,9 @@ export function fixtureGateway(
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(观察事实命令,DEV 演示不制造合成受理)
     releaseHandoff: createAbsentReleaseHandoffPort(),
+    // U19 第二交付:open 检查入口结构缺席(核心入库前唯一实现;DEV 演示
+    // 不制造合成打开受理)
+    releaseProjectOpen: createAbsentReleaseProjectOpenPort(),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)
     packages: name === "demo-packages" ? createFixturePackages() : createStubPackages(),
