@@ -1,6 +1,9 @@
 import type { DesktopGatewayRequestV1, DesktopGatewayResponseV1 } from "@vua/contracts";
 import type { ComposeDraftItem } from "./compose-draft-store.ts";
-import { narrowRecipeLibraryEntries } from "../features/recipe/recipe-model.ts";
+import {
+  narrowRecipeDocumentReceipt,
+  narrowRecipeLibraryEntries,
+} from "../features/recipe/recipe-model.ts";
 
 /**
  * 保存前查重比对面(D5,用户裁定 2026-09-20「点 N 次存 N 版应先查重询问」;
@@ -170,10 +173,13 @@ export async function fetchRecipeCompareCandidates(
       if (!getResult.ok) {
         return { recipeId: entry.recipeId, revision: entry.revision, compareKey: null };
       }
+      // 冻结 wire 面 recipe-get.result v0.2:文档本体在 recipeDocument 键;
+      // 回执不可解释(文档缺席/文档身份缺失)= compareKey null 不判等
+      const receipt = narrowRecipeDocumentReceipt(getResult.value);
       return {
         recipeId: entry.recipeId,
         revision: entry.revision,
-        compareKey: recipeDocumentCompareKey((getResult.value as { recipe?: unknown }).recipe),
+        compareKey: receipt === null ? null : recipeDocumentCompareKey(receipt.document),
       };
     }),
   );

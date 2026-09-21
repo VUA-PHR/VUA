@@ -420,6 +420,35 @@ export function selectLibraryRecipe(
   return recipeId.length === 0 ? current : recipeId;
 }
 
+/* ---- recipe.get 回执窄化(029 A4 选择事实源,生产链身份键值来源):冻结
+ *  wire 面 production-use-case v0.2 recipe-get.result——required 闭集
+ *  {recipeId, revision, recipeDocument, updatedAt, schemaVersion},文档本体
+ *  系透明 object(桌面保存链提交的文档体内不含 revision,修订是存储层元
+ *  数据)。链身份键值只取回执身份字段(schema 必填、存储层权威——每次受理
+ *  保存即自增),不取列表标签、不取本地猜测;文档本体缺席 = 回执不可解释
+ *  = null(不猜测,走诚实失败路径)。 */
+
+export interface RecipeDocumentReceipt {
+  /** recipe.get 回执身份(链选择事实源动作的唯一键值来源;存储层权威) */
+  readonly recipeId: string;
+  readonly revision: number;
+  /** 文档本体(三视图映射与事实窄化的输入;透明透传) */
+  readonly document: Record<string, unknown>;
+}
+
+/** recipe.get result value → 文档回执收窄(字段存在性;不匹配 = null) */
+export function narrowRecipeDocumentReceipt(value: unknown): RecipeDocumentReceipt | null {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) return null;
+  const record = value as Record<string, unknown>;
+  const recipeId = record.recipeId;
+  const revision = record.revision;
+  const document = record.recipeDocument;
+  if (typeof recipeId !== "string" || recipeId.length === 0) return null;
+  if (typeof revision !== "number" || !Number.isInteger(revision) || revision < 1) return null;
+  if (document === null || typeof document !== "object" || Array.isArray(document)) return null;
+  return { recipeId, revision, document: document as Record<string, unknown> };
+}
+
 /* ---- 文档事实呈现(BG-1 主切片,诚实纪律):选中 recipe 文档的结构事实
  * 清单——assets/instances/relations 计数与 locked 状态均为文档确定事实;
  * **不推导检查态**(文档期望态→三视图检查事实词表的映射语义属跨源推导,
