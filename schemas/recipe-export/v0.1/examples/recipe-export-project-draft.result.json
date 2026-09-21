@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "recipe.exportProjectDraft",
+  "result": {
+    "schemaVersion": "vua.recipe-export/v0.1",
+    "draftId": "0197c0de-7a2b-7cd1-9f3a-4d8e21b90c99",
+    "exportedAt": "2026-09-22T01:52:00.123Z",
+    "origin": {
+      "projectPath": "C:\\Users\\demo\\VRChat Projects\\Comfy Avatar 2026",
+      "projectName": "Comfy Avatar 2026",
+      "vuaIdentityStatus": "present"
+    },
+    "environment": {
+      "unityVersionConstraint": "2022.3.22f1"
+    },
+    "dependencies": [
+      {
+        "packageId": "com.vrchat.avatars",
+        "versionConstraint": "3.7.x",
+        "lockedVersion": "3.7.12"
+      },
+      {
+        "packageId": "com.vrchat.base",
+        "versionConstraint": "3.7.x"
+      },
+      {
+        "packageId": "dev.example.coolshader",
+        "versionConstraint": "^1.2.0",
+        "lockedVersion": "1.2.7"
+      }
+    ],
+    "missing": [
+      "assets",
+      "instances",
+      "relations",
+      "wardrobeGroups",
+      "targetAvatar",
+      "assetRoles",
+      "assetLabels",
+      "sourceRefs",
+      "titleSemantics"
+    ]
+  }
+}

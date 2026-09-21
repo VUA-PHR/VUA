@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "0.1",
+  "operation": "recipe.exportProjectDraft",
+  "result": {
+    "schemaVersion": "vua.recipe-export/v0.1",
+    "draftId": "0197c0de-7a2b-7cd1-9f3a-4d8e21b90ca3",
+    "exportedAt": "2026-09-22T01:58:30.000Z",
+    "recipeId": "0197c0de-0000-7000-8000-000000000000",
+    "title": "Comfy Avatar 2026",
+    "origin": {
+      "projectPath": "C:\\Users\\demo\\VRChat Projects\\Comfy Avatar 2026",
+      "projectName": "Comfy Avatar 2026",
+      "vuaIdentityStatus": "present"
+    },
+    "environment": {
+      "unityVersionConstraint": "2022.3.22f1"
+    },
+    "dependencies": [],
+    "assets": [
+      {
+        "id": "avatar_base",
+        "role": "avatar_base",
+        "entityRef": { "entityId": "0f0e0d0c-0b0a-0908-0700-060504030201" }
+      }
+    ],
+    "instances": [],
+    "missing": [
+      "instances",
+      "relations",
+      "wardrobeGroups",
+      "targetAvatar",
+      "assetRoles",
+      "assetLabels",
+      "sourceRefs",
+      "titleSemantics"
+    ]
+  }
+}

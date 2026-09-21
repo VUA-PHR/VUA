@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.vua.local/recipe-export/v0.1/result.schema.json",
+  "title": "VUA recipe-export result v0.1 (project draft document)",
+  "description": "Result document for the recipe-export v0.1 read face (proposal 029 B-face freeze loop 1, 2026-09-22). The envelope mirrors the standing wire shape (schemaVersion/operation/result): the envelope const is the word-list-row family version 0.1; the result document carries its own family const vua.recipe-export/v0.1 — the two versions are independent (c914cf2 standing rule: every wire row cites a version constant of its own). The result IS the Recipe project DRAFT: a draft-seed document, never a Recipe. Honesty ruling pinned by shape: the recipe v0.3 document face requires assets/instances minItems 1 and every asset to carry an entityRef or sourceRef, so an honest empty skeleton cannot exist as a Recipe document without fabricating identities — the draft is therefore its own frozen type with NO recipeId (minted only by the save chain when the user explicitly confirms), NO title, NO assets/instances/relations/wardrobeGroups and NO locked block. Deterministic export map (v0.1): origin echoes the 013 inspection facts verbatim (projectPath, project name or null, the vuaIdentity tri-state); environment.unityVersionConstraint carries the observed editor version verbatim or null when unreadable; dependencies rows are the manifest's DECLARED dependencies (packageId ascending — a frozen deterministic presentation fact, like packages-query) with versionConstraint verbatim from the declaration and lockedVersion carrying the exact locked pin when the same id exists in the locked map (locked-only entries are transitive resolution facts, not user intents, and are out of this face's vocabulary). The missing list is the draft's honesty core: a closed ten-value enum; the nine structural/semantic dimensions (assets, instances, relations, wardrobeGroups, targetAvatar, assetRoles, assetLabels, sourceRefs, titleSemantics) are ALWAYS absent in v0.1 (zero-bridge ruling, proposal 029 open item 4 option B) and each is pinned present via contains; environmentUnityVersion is present IF AND ONLY IF unityVersionConstraint is null (both implications pinned). additionalProperties:false everywhere is the false-assertion guard: a draft carrying assets, a title, a recipeId, an optional flag on a dependency row, or any other invented field is INVALID by schema, not merely discouraged.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "operation",
+    "result"
+  ],
+  "properties": {
+    "schemaVersion": { "const": "0.1" },
+    "operation": {
+      "enum": ["recipe.exportProjectDraft"]
+    },
+    "result": { "$ref": "#/$defs/projectDraft" }
+  },
+  "$defs": {
+    "projectDraft": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "draftId",
+        "exportedAt",
+        "origin",
+        "environment",
+        "dependencies",
+        "missing"
+      ],
+      "properties": {
+        "schemaVersion": { "const": "vua.recipe-export/v0.1" },
+        "draftId": {
+          "$ref": "#/$defs/uuidV7",
+          "description": "The draft instance identity, minted per export call. This is NOT a recipeId: the Recipe identity is minted only when the user explicitly confirms and saves through the standing recipe.save version chain — a draft never carries one (negative vector pinned)."
+        },
+        "exportedAt": {
+          "type": "string",
+          "minLength": 1,
+          "format": "date-time",
+          "description": "The instant the export scan completed (RFC 3339, VUA-side fact)."
+        },
+        "origin": { "$ref": "#/$defs/draftOrigin" },
+        "environment": { "$ref": "#/$defs/draftEnvironment" },
+        "dependencies": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/draftDependency" },
+          "description": "The manifest's declared dependencies projected as draft dependency rows, sorted by packageId ascending (frozen deterministic presentation fact). An EMPTY array is a valid, honest answer (manifest absent or zero declared dependencies) — absence is never padded with guesses."
+        },
+        "missing": {
+          "type": "array",
+          "uniqueItems": true,
+          "minItems": 9,
+          "maxItems": 10,
+          "items": { "$ref": "#/$defs/missingDimension" },
+          "allOf": [
+            { "contains": { "const": "assets" } },
+            { "contains": { "const": "instances" } },
+            { "contains": { "const": "relations" } },
+            { "contains": { "const": "wardrobeGroups" } },
+            { "contains": { "const": "targetAvatar" } },
+            { "contains": { "const": "assetRoles" } },
+            { "contains": { "const": "assetLabels" } },
+            { "contains": { "const": "sourceRefs" } },
+            { "contains": { "const": "titleSemantics" } }
+          ],
+          "description": "The missing-dimension list — the draft's honesty core and the confirmation flow's required rendering (project-exported draft + missing-dimension list, proposal 029 B-face). Closed ten-value enum; the nine structural/semantic dimensions are constant members of every v0.1 draft (zero-bridge ruling: the relation face is never scanned in v0.1, and design intent — roles, labels, title semantics — is never asserted by an export); environmentUnityVersion joins exactly when the editor version was unreadable."
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "type": "object",
+            "required": ["environment"],
+            "properties": {
+              "environment": {
+                "type": "object",
+                "required": ["unityVersionConstraint"],
+                "properties": {
+                  "unityVersionConstraint": { "type": "null" }
+                }
+              }
+            }
+          },
+          "then": {
+            "type": "object",
+            "required": ["missing"],
+            "properties": {
+              "missing": { "contains": { "const": "environmentUnityVersion" } }
+            }
+          }
+        },
+        {
+          "if": {
+            "type": "object",
+            "required": ["missing"],
+            "properties": {
+              "missing": { "contains": { "const": "environmentUnityVersion" } }
+            }
+          },
+          "then": {
+            "type": "object",
+            "required": ["environment"],
+            "properties": {
+              "environment": {
+                "type": "object",
+                "required": ["unityVersionConstraint"],
+                "properties": {
+                  "unityVersionConstraint": { "type": "null" }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "draftOrigin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectPath", "projectName", "vuaIdentityStatus"],
+      "properties": {
+        "projectPath": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The registered project path, echoed verbatim (the proposal-013 identity)."
+        },
+        "projectName": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "The project name as the 013 inspection aggregate observed it, verbatim; null when no name fact is readable. A source fact only — the draft has NO title field, and whether the confirmation flow prefills a title input from this name is a desktop presentation decision (proposal 029 open item 2 territory stays open)."
+        },
+        "vuaIdentityStatus": {
+          "enum": ["absent", "present", "unreadable"],
+          "description": "The VUA-native identity tri-state (`.vua/project.json`), verbatim from the 013 inspection aggregate (v0.2 additive finding). An applicability note only — never a gate in v0.1: whether an absent identity triggers a desktop difference prompt is presentation, ruling still open (proposal 029 open item 2)."
+        }
+      }
+    },
+    "draftEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unityVersionConstraint"],
+      "properties": {
+        "unityVersionConstraint": {
+          "type": ["string", "null"],
+          "minLength": 1,
+          "description": "The editor version observed on disk, verbatim (e.g. the ProjectVersion.txt content) — recorded as-is, no version migration (proposal 029 boundary 2); null when unreadable, in which case the missing list MUST carry environmentUnityVersion (both iff implications pinned at projectDraft level). No capabilities field: no producer fact exists in v0.1 (ORC-DEV-004)."
+        }
+      }
+    },
+    "draftDependency": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["packageId", "versionConstraint"],
+      "properties": {
+        "packageId": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The VPM package identifier (the manifest key), verbatim. No tighter pattern is frozen: the word list transports facts, it does not re-litigate upstream id grammar."
+        },
+        "versionConstraint": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The declared version constraint, verbatim from the manifest's dependencies declaration (e.g. a range like 3.7.x)."
+        },
+        "lockedVersion": {
+          "type": "string",
+          "minLength": 1,
+          "description": "The exact locked pin for the same packageId from the manifest's locked map, when present. Absent when the declaration has no locked pin. Locked-only entries (in locked but never declared) do not produce rows in v0.1 — they are transitive resolution facts, not user-declared intents."
+        }
+      }
+    },
+    "missingDimension": {
+      "enum": [
+        "assets",
+        "instances",
+        "relations",
+        "wardrobeGroups",
+        "targetAvatar",
+        "assetRoles",
+        "assetLabels",
+        "sourceRefs",
+        "titleSemantics",
+        "environmentUnityVersion"
+      ],
+      "description": "Closed set of dimensions a v0.1 export never asserts. Nine are constant (the relation face five — assets, instances, relations, wardrobeGroups, targetAvatar — plus the semantic four — assetRoles, assetLabels, sourceRefs, titleSemantics); environmentUnityVersion is the conditional tenth. A draft claiming any of these dimensions was exported is INVALID by construction (negative vector pinned via the top-level additionalProperties:false too: carrying assets/instances arrays is schema-invalid)."
+    },
+    "uuidV7": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    }
+  }
+}
