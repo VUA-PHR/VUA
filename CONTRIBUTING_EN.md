@@ -2,9 +2,9 @@
 
 [English](CONTRIBUTING_EN.md) | [简体中文](CONTRIBUTING_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors CONTRIBUTING_ZH.md at 1.0.0)
+> Authoritative language: 简体中文 (this English edition mirrors CONTRIBUTING_ZH.md at 1.1.0)
 
 VUA is currently pre-alpha. Contributions are welcome, but product boundaries and versioned
 contracts take priority over rapidly expanding the implementation.
@@ -41,10 +41,7 @@ and smoke tests with assets they lawfully obtained or purchased; those assets, p
 configuration, logs, and outputs must not be uploaded to the repository or cloud-CI artifacts. All
 tests must respect third-party purchase, payment, age, authentication, and access controls.
 
-If you believe you have found a security vulnerability, do not publish credentials, private user
-data, or a working exploit in a public issue. Contact the maintainers privately through an available
-repository security-reporting channel. A dedicated address will be documented before public binary
-distribution.
+Report vulnerabilities using [GitHub private reporting](https://github.com/VUA-PHR/VUA/security/advisories/new), following [SECURITY.md](SECURITY.md). Use [Issues](https://github.com/VUA-PHR/VUA/issues/new/choose) for ordinary bugs, suggestions, and questions.
 
 ## Open-source release and acceptance evidence
 
@@ -60,6 +57,10 @@ distribution.
   backfill tags for the known gate commits, and publish the v0.5.0 release notes with the acceptance
   checklist. Every later M gate gets a tag and a Release.
 
+## Integration
+
+All changes enter main through a pull request, including internal bookkeeping. Required checks must pass and review conversations must be resolved. Current staffing does not require a separate approving reviewer; agents under one account do not constitute independent approval. Workspace operators follow [the protected-main policy](collab/PROTECTED_MAIN.md).
+
 ## License of contributions
 
 The repository is licensed under the [Apache License 2.0](LICENSE). Under Section 5 of that license,
@@ -73,6 +74,8 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS_EN.md).
 
 ## Document changelog
+
+- 1.1.0 (2026-09-22): concrete private reporting and Issue routes; PR-based integration.
 
 - 1.0.0 (2026-09-06): entered version management; added the "Open-source release and acceptance
   evidence" section (repository scope, acceptance conclusions with machine-readable checklists, raw
