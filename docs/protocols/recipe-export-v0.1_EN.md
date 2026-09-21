@@ -2,14 +2,23 @@
 
 [English](recipe-export-v0.1_EN.md) | [简体中文](recipe-export-v0.1_ZH.md)
 
-> Document version: 0.1
-> Status: **FROZEN (Recipe export word-row)** (2026-09-22, proposal 029
-> B-face freeze loop 1, core batch; claimed after the desktop-side
-> precondition landed — the wt-3 shape verdict merged into the 029 inline
-> thread by integration batch 159; three rulings in "Core rulings")
+> Document version: 0.1.1
+> Status: **FROZEN (proposal 029 B-face freeze loop 1, core batch,
+> 2026-09-22; claimed after the desktop-side precondition landed — the
+> wt-3 shape verdict merged into the 029 inline thread by integration
+> batch 159; three rulings in "Core rulings") and WIRED (v0.1.1 core
+> wiring loop 2, 2026-09-22): the `recipe.exportProjectDraft` route arm,
+> the two envelope constants, the served row `recipe.exportProjectDraft`,
+> and the port face (the core `ProjectDraftExportPort` trait) have
+> landed — the export executor implementation belongs to loop 3; until
+> its override flips the accessor, every wired answer stays on the honest
+> absence arm (the port's defaulted `export_capabilities -> NONE`, the
+> served row honestly unavailable).**
 > Machine-readable word list: `schemas/recipe-export/v0.1/` (single-method
 > schema + 5 positive + 8 negative vectors; core consumer test
-> `crates/orchestrator/tests/recipe_export.rs`)
+> `crates/orchestrator/tests/recipe_export.rs`; wire route test
+> `crates/provider-host/tests/recipe_export_wire_v01.rs` [real frame
+> loop, 9 cases])
 > Scope: `recipe.exportProjectDraft` (derive a **Recipe DRAFT** from one
 > registered Unity project — the project→recipe reverse read-only
 > derivation); the recipe-chain execution face stays in production-use-case
@@ -20,8 +29,13 @@
 > (recipe-page "import from project" entry + draft confirmation/completion
 > flow) = desktop domain (the wt-3 shape verdict, 029 inline thread, is the
 > consumption-shape input)
-> Updated: 2026-09-22 (v0.1 freeze batch: bilingual protocol document +
-> REGISTRY registration)
+> Updated: 2026-09-22 (v0.1.1 wiring loop 2: the `recipe.exportProjectDraft`
+> route arm + the two envelope constants
+> `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01`/`RECIPE_EXPORT_SCHEMA_VERSION_V01`
+> + the served row `recipe.exportProjectDraft` + the port face
+> `ProjectDraftExportPort` [declared-none default] + 9 wire tests riding the
+> real frame loop; word face ZERO change. First updated 2026-09-22, v0.1
+> freeze batch: bilingual protocol document + REGISTRY registration)
 
 ## B-face positioning (loop 1 of the 029 pipeline)
 
@@ -58,7 +72,9 @@ belongs to W25 (O-2).
   acceptance/rejection, word-row identity and closed-set introspection
   pins, typed serde dual-carrier negative rejection
   [deny_unknown_fields], packageId-ascending determinism pin, honesty
-  marker iff pin); the wire frame-loop test follows the wiring batch;
+  marker iff pin); the wire frame-loop test landed with the v0.1.1
+  wiring batch (`crates/provider-host/tests/recipe_export_wire_v01.rs`,
+  9 cases);
 - **Bilingual protocol document + REGISTRY**: this file + EN mirror + two
   REGISTRY rows (this batch).
 
@@ -228,10 +244,70 @@ presented honestly, never padded into a fake read success, and never
 misreported as a failure when an honest empty state exists (honesty rules
 1/2).
 
-The capability row and wire routing (the provider-host arm, the family
-constant `vua.recipe-export/v0.1`, and the envelope-constant naming) land
-with the core wiring batch — the A3/A4/A5/F2/F3 family-constant wiring
-precedent.
+## Capability row and wire routing (landed with the v0.1.1 wiring loop 2)
+
+- **Named constants** (published from `vua_provider_host::provider_host`;
+  consumers key on the core-owned constants, never private literals): the
+  envelope constant `RECIPE_EXPORT_ENVELOPE_SCHEMA_VERSION_V01` = `"0.1"`
+  and the family constant `RECIPE_EXPORT_SCHEMA_VERSION_V01` =
+  `vua.recipe-export/v0.1` — the two versions are independent (c914cf2
+  standing rule); the word face is ZERO byte change, the constants lock
+  exactly the strings the frozen schemas carry;
+- **Route arm order** (the packages.packageCatalog isomorph): (1) absent
+  export-port wiring (no use-case services or no `draft_exporter`)
+  answers the family's OWN honest-absence code
+  `vua.recipe_export.unavailable` — the router dispatches this face
+  BEFORE the document-face fold inside the recipe.* branch, so the
+  absence never masquerades as `vua.recipe.unavailable`; (2) the closed
+  single-key params shape verdict precedes the gate (extra key / missing
+  key / empty value / non-string / non-object =
+  `vua.recipe_export.invalid_params`, a pure shape verdict, never a
+  default); (3) the registration calibration rides the SAME 013
+  inspection aggregate `project.inspectProject` uses (same fact, same
+  code `vua.project.project_not_found` — the 024 packages-query reuse
+  ruling; an off-aggregate path never reaches the port; absent
+  project-ops wiring means the calibration face does not exist, so the
+  whole face stays honestly absent); (4) the capability gate reads the
+  NEW defaulted port accessor `export_capabilities` (default
+  declared-none — the F5 `template_capabilities` accessor law;
+  ORC-DEV-004) BEFORE the port call, answering the same honest-absence
+  code; (5) the port's typed refusals travel VERBATIM (the read-face
+  pass-through discipline — no read-face fold exists), and an OK
+  projection = the port's `ProjectDraftDocumentV01` facts through serde
+  stamped with the family const at envelope assembly (the P1 discipline:
+  the route stamps the consts, the port facts stay verbatim — the
+  packageId-ascending order and the missing closed set are PRODUCER
+  contracts of the frozen word face, pinned by the wire tests, never
+  route rewrites);
+- **The served row** `recipe.exportProjectDraft` (the one-row-one-method
+  precedent): availability = the use-case wiring AND the port's
+  `export_capabilities`.`export_project_draft` bit — the declared-none
+  default keeps the row honestly unavailable until the loop-3 export
+  executor implementation slice flips it with the real adapter's
+  override;
+- **Port face**: the core `ProjectDraftExportPort` trait (orchestrator
+  domain, `crates/orchestrator/src/recipe_export.rs`) = the frozen
+  cross-domain contract: the defaulted accessor answers declared-none,
+  and the `export_project_draft` default body answers the family's
+  absence code (a declared-but-unimplemented port CAN exist at the type
+  level — the F5 structural law; the route gate answers first), and the
+  synchronous read-only signature returns the draft document directly
+  (zero nine-state tasks);
+- **Wire tests**:
+  `crates/provider-host/tests/recipe_export_wire_v01.rs`, 9 cases riding
+  the real frame loop (absent wiring = the typed honest absence + the row
+  unavailable / the wired declared port answers at the frozen word face
+  [real schema validation + the seven-key closed set + packageId
+  ascending + lockedVersion absent-not-null + the nine constant
+  dimensions] / the trait-default declared-none port = the absence arm
+  first [the port body panics if ever reached] + the row honestly
+  unavailable / an off-aggregate path = the reused not_found before the
+  port / an absent calibration face = the honest absence / port refusals
+  travel verbatim / honest empty dependencies + unreadable version = a
+  SUCCESS carrying the environmentUnityVersion marker [the iff enforced
+  by the real validator] / params violations before the gate / the two
+  envelope constants detectable and pinned against the frozen schema
+  consts).
 
 ## Dependency direction
 
@@ -259,7 +335,9 @@ constant dimension / missing carrying an out-of-vocabulary dimension /
 null without the marker [iff arm one] / marker without null [iff arm
 two] / a draft carrying the relation face + recipeId + title [the type
 boundary pinned]). Consumer test:
-`crates/orchestrator/tests/recipe_export.rs` (6 cases). Any word-list or
+`crates/orchestrator/tests/recipe_export.rs` (6 cases) + the wire route
+test `crates/provider-host/tests/recipe_export_wire_v01.rs` (9 cases,
+real frame loop). Any word-list or
 field change must bump the version; in-place rewrites are forbidden.
 
 ## Out of this face's vocabulary
@@ -285,10 +363,12 @@ field change must bump the version; in-place rewrites are forbidden.
 
 ## Open items
 
-- Wire routing + capability row + port face (core wiring slice): follows
-  this freeze batch (029 B-face loop 2);
+- ~~Wire routing + capability row + port face (core wiring slice)~~:
+  landed with the v0.1.1 wiring loop 2 (2026-09-22);
 - Export executor implementation (core domain, reads the 013 inspection
-  aggregate; 029 B-face loop 3);
+  aggregate; 029 B-face loop 3) — overrides `export_capabilities` and
+  flips the served row; until then every wired answer stays on the
+  honest absence arm;
 - Desktop consumption batch (recipe-page "import from project" entry +
   draft confirmation/completion flow consuming the A-face hub shape;
   029 B-face loop 4) after its shape verdict;
