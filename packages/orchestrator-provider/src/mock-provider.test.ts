@@ -612,6 +612,28 @@ describe("mock release.openForHandoff (023 core freeze batch)", () => {
   });
 });
 
+describe("mock release.openForInspection (v0.2 U19 inspection entry, TS method union registered by the desktop seat)", () => {
+  it("answers the honest absence code per the v0.2 method closed set — no more unknown_method fall-through", async () => {
+    // 检视入口与交棒同律:模拟面无构建记录面与产线进程/窗口面,按 v0.2
+    // method 闭集应答类型化诚实缺席(三元与真实缺席分支一致)——检视方法
+    // 已入 TS 词表,fall-through 到 unknown_method 的过渡态终结;绝不伪造
+    // 受理回执/检视事实(六键事实只属于真实后端)
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    const response = await provider.invoke(request({
+      kind: "command",
+      method: "release.openForInspection",
+      commandId: "inspection-open-1",
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    } as Parameters<typeof request>[0]));
+    expect(response.ok).toBe(false);
+    if (response.ok) throw new Error("expected failure");
+    expect(response.error.code).toBe("vua.release_handoff.unavailable");
+    expect(response.error.category).toBe("unavailable");
+    expect(response.error.messageKey).toBe("errors.releaseHandoff.unavailable");
+  });
+});
+
 describe("mock packages.listInstalled (024 P1 core freeze batch)", () => {
   it("answers the honest absence code — the simulation carries no VpmBackend engine face", async () => {
     // 024 P1 词表行:模拟面无 VpmBackend,恒答诚实缺席(三元与真实

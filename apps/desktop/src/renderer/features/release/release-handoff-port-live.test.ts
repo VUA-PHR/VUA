@@ -95,14 +95,14 @@ function clientOf(host: DesktopGatewayHost): GatewayClient {
 }
 
 const ACCEPTED = {
-  schemaVersion: "0.1",
+  schemaVersion: "0.2",
   operation: "release.openForHandoff",
   taskId: "task-1",
   correlationId: "corr-1",
 };
 
 const HANDOFF_FACT = {
-  schemaVersion: "0.1",
+  schemaVersion: "0.2",
   buildId: "build-1",
   projectId: "proj-1",
   editor: { exePath: "C:/Unity/Unity.exe", version: "2022.3.22f1" },
@@ -216,9 +216,27 @@ describe("release-handoff live port: openForHandoff", () => {
         {
           // 缺 correlationId 的形状不符回执(unknown 中转构造,测试专用)
           value: {
+            schemaVersion: "0.2",
+            operation: "release.openForHandoff",
+            taskId: "task-1",
+          } as unknown as DesktopGatewaySuccessValueV1,
+        },
+      ],
+    });
+    const port = createLiveReleaseHandoffPort(clientOf(host));
+    const intent = await port.openForHandoff("build-1");
+    assert.deepEqual(intent, { kind: "failed", code: null, params: {} });
+  });
+
+  test("v0.1 版本戳受理回执 → failed(族 0.1→0.2 单源推进,wire 只说 0.2;历史钉)", async () => {
+    const { host } = makeHost({
+      "release.openForHandoff": [
+        {
+          value: {
             schemaVersion: "0.1",
             operation: "release.openForHandoff",
             taskId: "task-1",
+            correlationId: "corr-1",
           } as unknown as DesktopGatewaySuccessValueV1,
         },
       ],

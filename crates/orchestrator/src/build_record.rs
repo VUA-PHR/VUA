@@ -219,6 +219,24 @@ pub fn wire_v02(record: &BuildRecordV01) -> BuildRecordWireV02 {
     }
 }
 
+/// The build-record document store (records/*.json), identity-addressed by
+/// the record id.
+///
+/// Registry ruling (batch 156, observation B): records of EVERY terminal
+/// status — `failed`, `cancelled`, `rolled_back` and `recovered` included —
+/// are published here and nowhere else. They are deliberately NOT rows in
+/// the `production_domain_records` SQLite registry: that registry's kind
+/// closed set is frozen at `('inspection', 'plan')` (schema
+/// orchestrator-task-store v0.1 002) and exists solely as the
+/// reference-resolution chain (requestPlan resolves an inspectionId,
+/// confirmPlan resolves a planId + revision, build receipts resolve the
+/// engine plan-id alias). Every consumer of a build record — `record.get`,
+/// the release-handoff admission gate, evidence listing — addresses it
+/// directly by record id through THIS store, so a build row in the registry
+/// (successful or failed) would be dead weight. The observed shape "a
+/// failed run has a records/*.json file but no production_domain_records
+/// row" is therefore design, not lost bookkeeping; do not "fix" it by
+/// registering builds there.
 #[derive(Debug, Clone)]
 pub struct BuildRecordStore {
     root: PathBuf,

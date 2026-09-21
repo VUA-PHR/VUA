@@ -238,7 +238,8 @@ export function emptyGateway(initialGoals: StoredGoalsV1 | null = null): VuaGate
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(不伪造受理/任务快照)
     releaseHandoff: createAbsentReleaseHandoffPort(),
-    // U19 第二交付:open 检查入口结构缺席(核心入库前唯一实现,不虚构路由)
+    // U19 第二交付:open 检查入口 not-run 诚实缺席——路由已入库(v0.2),
+    // 此处缺席语义=无宿主/未接入,非结构缺席;不伪造受理/任务快照
     releaseProjectOpen: createAbsentReleaseProjectOpenPort(),
     packages: createEmptyPackages(),
     task: createEmptyTask(),

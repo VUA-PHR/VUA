@@ -410,15 +410,14 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           false,
         ));
       case "release.openForHandoff":
-        // 023 词表行(核心冻结批 2026-09-16;后续切片②核心 use case 已落;
-        // 装配切片 2026-09-16:真实 provider-host 缺省装配已带真适配器,
-        // 缺席收敛为显式不装配的异常路径)。模拟 Provider 无构建记录面
-        // 与产线进程/窗口面,恒答诚实缺席(code/category/messageKey 三元
-        // 与真实缺席分支一致)——绝不伪造受理回执/任务快照/交接事实
-        // (上传状态永不进入 VUA 事实,形状钉死)。U19 v0.2 检视入口
-        // (release.openForInspection)的同分支缺席候桌面 TS 契约面升 0.2
-        // 后随批补入(method 闭集在 @vua/contracts,桌面座所有权)——
-        // 其前模拟面对检视方法如实答 unknown_method,不属伪造
+      case "release.openForInspection":
+        // 023 词表行(核心冻结批 2026-09-16)＋v0.2 检视入口(核心 U19 批
+        // 36bab970 入库,TS 方法闭集已随桌面登记升 0.2)。模拟 Provider 无
+        // 构建记录面与产线进程/窗口面,两 editor-open 方法恒答诚实缺席
+        // (code/category/messageKey 三元与真实缺席分支一致——按 v0.2
+        // method 闭集应答,检视入口不再 fall-through 到 unknown_method)——
+        // 绝不伪造受理回执/任务快照/交接事实/检视事实(上传状态永不进入
+        // VUA 事实,形状钉死)
         return this.#failure(request, this.#error(
           "vua.release_handoff.unavailable",
           "unavailable",

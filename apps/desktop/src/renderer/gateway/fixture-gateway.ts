@@ -630,8 +630,8 @@ export function fixtureGateway(
     inspection: createEmptyInspection(),
     // 023 消费切片:交接命令诚实缺席(观察事实命令,DEV 演示不制造合成受理)
     releaseHandoff: createAbsentReleaseHandoffPort(),
-    // U19 第二交付:open 检查入口结构缺席(核心入库前唯一实现;DEV 演示
-    // 不制造合成打开受理)
+    // U19 第二交付:open 检查入口诚实缺席(观察事实命令——路由已入库
+    // v0.2,DEV 演示仍不制造合成打开受理/合成检视事实;live 基线消费)
     releaseProjectOpen: createAbsentReleaseProjectOpenPort(),
     // 包管理(S-XVI):demo-packages 场景接完整 fixture;其余场景保持
     // not-connected 占位(同 demo-tasks 的功能场景门控先例)

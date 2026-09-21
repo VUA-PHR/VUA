@@ -516,6 +516,11 @@ function toApplicationRequest(
     // vua.release_handoff.unavailable,本路由原样透传(缺席语义不折叠)
     case "release.openForHandoff":
       return { ...base, kind: "command", method: "release.openForHandoff", commandId: request.requestId, params: request.params };
+    // release-handoff v0.2(U19 桌面对齐批):独立检视入口同律 verbatim
+    // 透传——路由准入(减状态闸)与错误闭集权威全在 Provider,本路由零折叠;
+    // 实现域未接线=Provider 回 vua.release_handoff.unavailable 诚实缺席
+    case "release.openForInspection":
+      return { ...base, kind: "command", method: "release.openForInspection", commandId: request.requestId, params: request.params };
   }
 }
 
