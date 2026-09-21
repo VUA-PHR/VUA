@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "0.5",
+  "operation": "dependencies.listByProduct",
+  "params": {
+    "productId": "booth:6584744"
+  }
+}
