@@ -866,6 +866,14 @@ rolled_back: "已回滚",
     subtitle: "管理商品信息和保存在本机的素材。可以在应用内或浏览器中打开 BOOTH 商品页，使用自己的账号购买。",
     searchPlaceholder: "搜索标题或商品 ID",
     searchAria: "搜索目录商品",
+    /** 029 切片三(A3 本地段):素材选择器＝仓储读面投影。此处不立第三导入
+     *  入口(入库走素材导入页);云端接入候 BOARD #46 裁决,裁决前诚实缺席。 */
+    selector: {
+      listAria: "可加入配方的仓储条目",
+      localOnlyNote: "选择器只呈现本地仓储条目；素材入库请走素材导入页；云端素材接入未裁决前如实缺席。",
+      pickCta: "添加",
+      addedBadge: "已在本配方",
+    },
     filters: {
       availability: "可用性",
       entityType: "实体类型",
@@ -1231,6 +1239,19 @@ rolled_back: "已回滚",
     libraryMappingNote: '文档到工作台视图的映射尚未接线;以上条目事实原样呈现。',
     documentModeNote: '当前呈现期望态文档(state=expected,文档声明、未经本地验证)。检查事实的映射随检查投影切片接入。',
     documentModeExit: '返回合成纵向工作台',
+    /** 029 切片三(A1 创建入口升格/A2 选中态添加素材/A3 仓储读面投影选择器
+     *  本地段)。词面纪律(U16):创建入口用「创建」;「添加素材」独立成词,
+     *  不与「组装」混用。选择器只呈现本地仓储条目;云端素材接入候 BOARD
+     *  #46 裁决,裁决前诚实缺席。 */
+    createCta: "创建配方",
+    addMaterialCta: "添加素材",
+    materialPickerTitle: "从素材仓库添加",
+    editSectionTitle: "待保存的新增素材",
+    saveEditCta: "保存修改",
+    savingEditCta: "保存中…",
+    editFailedNote: "保存失败——修改已保留，可以重试。",
+    editDirtyNote: "有未保存的新增素材——保存成功后才会写入配方库。",
+    editRemoveAria: "移除待保存新增 {title}",
     factsLine: '修订 {revision} - 素材:{assets},实例:{instances},关系:{relations}。',
     factsLocked: '解析锁在场(期望态已钉死)。',
     factsUnlocked: '无解析锁(期望态描述,非已验证的本地状态)。',

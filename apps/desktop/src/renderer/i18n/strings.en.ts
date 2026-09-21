@@ -880,6 +880,15 @@ demoTaskTitle: "Demo task",
       "Manage product information and assets saved on this PC. Open BOOTH product pages in the app or your browser, and use your own account for purchases.",
     searchPlaceholder: "Search title or product ID",
     searchAria: "Search catalog products",
+    /** 029 slice 3 (A3 local segment): asset picker = warehouse read-face
+     *  projection. No third import entry lives here (imports stay on the
+     *  import page); cloud access is honestly absent pending BOARD #46. */
+    selector: {
+      listAria: "Warehouse entries to add to the recipe",
+      localOnlyNote: "This picker shows local warehouse entries only. Importing new assets stays on the import page; cloud asset access is honestly absent until a ruling lands.",
+      pickCta: "Add",
+      addedBadge: "Already in recipe",
+    },
     filters: {
       availability: "Availability",
       entityType: "Asset type",
@@ -1229,6 +1238,21 @@ demoTaskTitle: "Demo task",
     libraryMappingNote: "This recipe is shown as saved. Editing it in the workbench is not available yet.",
     documentModeNote: "These are the settings saved in the recipe. They have not been verified on this PC.",
     documentModeExit: "Back to the workbench",
+    /** 029 slice 3 (A1 creation entry upgrade / A2 add-assets in selected
+     *  state / A3 local segment of the warehouse read-face projection
+     *  picker). Word-face discipline (U16): the creation entry says
+     *  "create"; "add assets" is its own action and never mixed with
+     *  "assemble". The picker presents local warehouse entries only -
+     *  cloud asset access stays honestly absent pending BOARD #46. */
+    createCta: "Create recipe",
+    addMaterialCta: "Add assets",
+    materialPickerTitle: "Add from the asset warehouse",
+    editSectionTitle: "Pending asset additions",
+    saveEditCta: "Save changes",
+    savingEditCta: "Saving…",
+    editFailedNote: "Saving failed - your changes are kept and you can retry.",
+    editDirtyNote: "There are unsaved asset additions - they are written to the recipe library only after saving succeeds.",
+    editRemoveAria: "Remove pending addition {title}",
     factsLine: 'Revision {revision} - assets: {assets}, instances: {instances}, relations: {relations}.',
     factsLocked: "Dependency choices are pinned. This does not verify the local project.",
     factsUnlocked: "Dependency choices are not pinned. This recipe has not been verified locally.",
