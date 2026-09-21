@@ -2584,13 +2584,26 @@ demoTaskTitle: "Demo task",
     },
     /** Material-chain error copy (desktop batch 142, task-event failure-row
      *  presentation): keys = wire messageKeys (vua.material family errors
-     *  carried by AppErrorV01). provisionFailed is a reserved row — the
-     *  material-chain v0.2 code vua.material.provision_failed travels with
-     *  the core seat's fix slice (wt-2, pending landing); the copy lands
-     *  first in sync across the four tables so the code hits on arrival. */
+     *  carried by AppErrorV01). Batch 169 completes the table to the engine's
+     *  full 12-key errors.material.* emission face (core batch-150
+     *  failure_message_key split plus the material_intake / provider-host
+     *  emitters; each row anchored to its emission site, no invented
+     *  semantics). The failure row still presents the localized face AND the
+     *  raw code side by side (batch-148 dual-fact law) — the code is never
+     *  shadowed. */
     material: {
       executionFailed: "Material execution failed: the Unity-side operation did not complete.",
       provisionFailed: "Target project provisioning failed: the Unity project is not ready for material import.",
+      sourceInvalid: "The material source is invalid: the path does not point to a readable material folder.",
+      sourceEmpty: "The material source is empty: the folder contains no .unitypackage.",
+      sourceUnreadable: "The material source could not be read: reading the material folder failed.",
+      sourceDrift: "The material source changed after the plan was confirmed (source fingerprints no longer match); inspect the source and confirm again.",
+      planHashMismatch: "The import plan failed its integrity check (plan hash mismatch) and was rejected.",
+      riskDecisionStale: "The recorded risk decision no longer matches the current plan or source; start the material flow again.",
+      riskDecisionRequired: "This plan requires a risk decision before it can be confirmed.",
+      cancelled: "The material operation was cancelled: the risk decision chose to cancel.",
+      internal: "An internal error occurred while preparing the material operation.",
+      recordFailed: "The material operation was rolled back and restored, but saving its record failed: the outcome was not persisted to the task records.",
     },
     /** Handoff admission gate copy (U19 user ruling 2026-09-21, BOARD U19 row
      *  as the normative source). Reserved rows — the codes
