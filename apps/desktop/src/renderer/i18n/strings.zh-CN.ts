@@ -441,14 +441,15 @@ demoTaskTitle: "演示任务",
   },
   workshop: {
     title: "工厂车间",
-    subtitle: "导入、生产与检测任务会在这里执行并全程可恢复。",
-    runningSubtitle: "执行计划已确认,快照已创建,可随时恢复。",
+    /** 029 A6(0.7.16 §8.5):车间只作状态显示,发起与批准在配方页完成 */
+    subtitle: "车间呈现组装执行链的执行状态;发起与批准在配方页完成。",
+    runningSubtitle: "车间呈现执行链的实时状态;任务进展以任务中心权威快照为准。",
     idleTitle: "生产流程尚未接入",
     idleDescription: "{recipe}与执行流程接入后,这里会显示轨道阶段、执行状态与快照恢复入口。",
     /** 生产环境未就绪时的诚实阻断态(v0.3.3 §2.1:不自动切页,由用户点击后才跳转) */
     blocked: {
       title: "生产环境尚未准备",
-      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。准备好之后即可开始导入与构建。",
+      description: "车间需要可用的 Unity 编辑器(生产构建硬前置)。就绪后这里呈现组装执行链的执行状态。",
       cta: "前往准备生产环境",
     },
     trackAria: "{amf}生产阶段",
@@ -504,6 +505,18 @@ demoTaskTitle: "演示任务",
       progressAria: "回放进度 {position} / {duration}",
       /** 劳动可视化:只表达回放带 stat 事件累计的可核实操作数 */
       operationsLine: "已完成 {count} 项自动操作(可由日志核实)",
+    },
+    /** 执行状态面(029 A6,0.7.16 §8.5):车间只作状态显示,零发起动作;
+     *  计划/装配/记录卡与任务行同义词面单一来源复用 strings.compose.chain */
+    chain: {
+      title: "执行状态",
+      noChainTitle: "本会话尚无执行链",
+      noChainDesc: "到配方页选择或保存配方即可发起组装;发起后这里呈现该链的解析、计划、装配与记录状态。",
+      noChainCta: "前往配方页",
+      resolveIdleNote: "尚未请求解析。",
+      planApprovalNote: "计划批准与组装发起在配方页选中态完成;本页只呈现状态。",
+      executeIdleNote: "尚未受理装配执行。",
+      taskDecisionNote: "该任务需要处理:请在任务中心进行恢复或取消决策。",
     },
   },
   /**

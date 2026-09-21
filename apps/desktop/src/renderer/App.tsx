@@ -640,7 +640,7 @@ function renderPage(
     case "guide-tutorials":
       return <GuidePage page={page as GuidePageId} />;
     case "warehouse":
-      return <WarehousePage />;
+      return <WarehousePage onNavigate={actions.navigate} />;
     case "recipe":
       return <RecipePage />;
     case "inspection":
