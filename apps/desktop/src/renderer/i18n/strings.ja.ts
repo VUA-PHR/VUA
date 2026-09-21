@@ -2468,6 +2468,25 @@ rolled_back: "ロールバック済み",
       workflowId: "ワークフロー ID",
     },
   },
+  /** bdl-queries v0.5 消費準備スライス(2026-09-22):依存逆引き/観察列の
+   *  語彙面インフラ——消費ページは U18 最終裁定後のスライス。各行は
+   *  「手がかりは結論ではない」律に従う:advisory 文面は常に提案の語気
+   *  (レイアウト証拠の段位と推奨インストール元)で、事実断言として
+   *  レンダリングしない。可用性ペアは既存 warehouse.availability の三行に
+   *  乗る(死んだ重複行なし。dependencies-port テストで固定)。
+   *  installSource は advisory ルール v1 が実際に送出する二値のみ——
+   *  vpm/unknown は凍結閉集合に留まり送出されないため、対応行なし
+   *  (死んだ語彙面を残さない)。 */
+  dependencies: {
+    confidence: {
+      strong: "作者が明示的に宣言（専用セクションまたは単独行）",
+      weak: "箇条書き行での言及（実在するが圧縮された記述）",
+    },
+    installSource: {
+      booth_page: "推奨インストール元：BOOTH 商品ページ",
+      external_page: "推奨インストール元：外部ページ",
+    },
+  },
   /** アプリ面エラーコピー:キー = ワイヤ上の messageKey(キー先行。
    *  provider はエラーチャネルで errors.catalog.* を送信)。カタログ
    *  ブラウザは現在、失敗を not-connected/not-found に落とすため、

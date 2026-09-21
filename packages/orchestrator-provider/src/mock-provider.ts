@@ -382,6 +382,24 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
           true,
           false,
         ));
+      case "dependencies.lookup":
+      case "dependencies.listByProduct":
+        // bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN,桌面消费
+        // 准备切片 2026-09-22 登记 TS 方法闭集时的穷尽性最小表态,业务路由
+        // 归核心接线批):模拟 Provider 无 BDL 观察库,两方法恒答诚实缺席
+        // vua.catalog.unavailable(code/category/messageKey 三元与真实
+        // provider-host catalog_request 缺席分支一致,bdl-queries 族同库
+        // 同源)——绝不伪造线索/建议(「线索非结论」律:lookup 只出人工确
+        // 认消解与过门 advisory,listByProduct 如实列库内观察,无库即诚实
+        // 缺席,零合成依赖事实)
+        return this.#failure(request, this.#error(
+          "vua.catalog.unavailable",
+          "unavailable",
+          "errors.catalog.unavailable",
+          request.correlationId,
+          true,
+          false,
+        ));
       case "warehouse.setArtifactMode":
       case "warehouse.generateVpm":
       case "warehouse.deleteOriginals":

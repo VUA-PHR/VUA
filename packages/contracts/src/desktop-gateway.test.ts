@@ -235,6 +235,103 @@ describe("production.* v0.2 方法守卫", () => {
   });
 });
 
+// bdl-queries v0.5 gateway surface(桌面 TS 登记面 2026-09-22;数据席第 168
+// 批 FROZEN,030 §5.7 案 A):dependencies.lookup/listByProduct 两方法只读,
+// 守卫与冻结 Schema additionalProperties:false 同形——词外键(含 fuzzy 等价
+// 开关,负例向量钉死)、词外 depKind(恰钉五值草案成员 unity_or_sdk_version
+// 拒绝 = BDL v0.2 N1 同一裁决面)、分页越界、身份形态不齐一律拒绝,绝不
+// 静默空答;listByProduct 无 name/过滤键(客户端过滤 = 契约错误)。
+describe("bdl-queries v0.5 gateway surface", () => {
+  const base = { schemaVersion: 1, requestId: "r" } as const;
+
+  it("accepts both read-only queries within the frozen closed sets (request example vectors)", () => {
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "lilToon", depKind: null, limit: 50, offset: 0 },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "liltoon", depKind: "shader" },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "Unity", depKind: "other", limit: 1, offset: 200 },
+    })).toBe(true);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744" },
+    })).toBe(true);
+  });
+
+  it("rejects the frozen negative-vector faces: empty name, foreign depKind, fuzzy key, out-of-range paging", () => {
+    // 负例 invalid-dependencies-lookup-empty-name
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.lookup", params: { name: "" },
+    })).toBe(false);
+    // 负例 invalid-dependencies-lookup-foreign-dep-kind:五值草案成员
+    // unity_or_sdk_version 在 BDL v0.2 N1 已裁决为词外
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "Unity", depKind: "unity_or_sdk_version" },
+    })).toBe(false);
+    // 负例 invalid-dependencies-lookup-fuzzy-param:本词表刻意不携带任何
+    // 模糊/等价开关
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "lilToon", fuzzy: true },
+    })).toBe(false);
+    // 词表外其余键一律拒绝(additionalProperties:false 同形)
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.lookup",
+      params: { name: "lilToon", text: "lil" },
+    })).toBe(false);
+    // name 必填;limit 1–200;offset ≥ 0
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.lookup", params: {},
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.lookup", params: { name: "x", limit: 0 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.lookup", params: { name: "x", limit: 201 },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.lookup", params: { name: "x", offset: -1 },
+    })).toBe(false);
+  });
+
+  it("rejects listByProduct filter keys and malformed identities (params closed single-key {productId})", () => {
+    // 负例 invalid-dependencies-listbyproduct-params:客户端给过滤 = 契约
+    // 错误,绝不静默空答
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744", depKind: "shader" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base,
+      method: "dependencies.listByProduct",
+      params: { productId: "booth:6584744", name: "lil" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.listByProduct", params: { productId: "lil" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.listByProduct", params: { productId: "booth:lil" },
+    })).toBe(false);
+    expect(isDesktopGatewayRequestV1({
+      ...base, method: "dependencies.listByProduct", params: {},
+    })).toBe(false);
+  });
+});
+
 describe("bdl-queries v0.2 gateway surface", () => {
   const base = { schemaVersion: 1, requestId: "r" } as const;
 
@@ -357,6 +454,8 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "warehouse.listEntries": {},
     "warehouse.entryDetail": { warehouseItemId: "wh-entry-1" },
     "downloads.listCompleted": {},
+    "dependencies.lookup": { name: "lilToon" },
+    "dependencies.listByProduct": { productId: "booth:6584744" },
     "project.environmentManagers": {},
     "project.listProjects": {},
     "project.inspectProject": { projectPath: "C:/proj" },

@@ -244,6 +244,44 @@ export interface DownloadRetryRequestV1 {
   readonly params: { readonly taskId: string; readonly commandId: string };
 }
 
+// ---- dependencies.lookup / dependencies.listByProduct(bdl-queries v0.5
+// additive 两成员,030 §5.7 案 A,数据席第 168 批 FROZEN;桌面 TS 登记面
+// 2026-09-22。只读查询,词面骑 BDL v0.2 冻结闭集;守卫与冻结 Schema
+// additionalProperties:false 同形,词表外键(含 fuzzy 等价开关)拒绝 = 契约
+// 错误,绝不静默空答。核心接线批升信封常量与路由臂前,实现域未接线 =
+// provider 答类型化 unknown_method 诚实缺席,本路由原样透传不折叠) ----
+
+/** dependencies.lookup 依赖名义反查(建议面):匹配规则 v1 = dep_name 大小写
+ *  不敏感精确(ASCII 折叠),零子串/模糊/等价;包名形态输入不逐字出现 =
+ *  诚实空集(total:0 = 无匹配名义,绝不渲染成「不存在该依赖」) */
+export interface DependenciesLookupRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "dependencies.lookup";
+  readonly params: {
+    /** 依赖名义原文(必填非空;输入绝不归一化入存储) */
+    readonly name: string;
+    /** 可选过滤骑 BDL v0.2 dep_kind 四值闭集;null/缺席 = 不过滤 */
+    readonly depKind?: "shader" | "tool_package" | "avatar_base" | "other" | null;
+    /** 1–200,默认 50 */
+    readonly limit?: number;
+    /** ≥ 0,默认 0 */
+    readonly offset?: number;
+  };
+}
+
+/** dependencies.listByProduct 单商品依赖观察全列(未过滤线索面):params
+ *  单键闭集 {productId}(catalog.detail 同 pattern,booth: 身份);无
+ *  name/过滤键——客户端给过滤 = 契约错误(负例向量钉死)。tombstone 商品
+ *  不拒答,以 productStatus:'missing' 如实出线;未知 productId = 应用面
+ *  not-found,绝不伪造空答 */
+export interface DependenciesListByProductRequestV1 {
+  readonly schemaVersion: 1;
+  readonly requestId: string;
+  readonly method: "dependencies.listByProduct";
+  readonly params: { readonly productId: string };
+}
+
 /** 产物模式三命令入口(bdl-commands v0.1,proposal 005):任务级动作经 AMF */
 export interface WarehouseSetArtifactModeRequestV1 {
   readonly schemaVersion: 1;
@@ -881,6 +919,8 @@ export type DesktopGatewayRequestV1 =
   | WarehouseListEntriesRequestV1
   | WarehouseEntryDetailRequestV1
   | DownloadRetryRequestV1
+  | DependenciesLookupRequestV1
+  | DependenciesListByProductRequestV1
   | WarehouseSetArtifactModeRequestV1
   | WarehouseGenerateVpmRequestV1
   | WarehouseDeleteOriginalsRequestV1
@@ -950,6 +990,9 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "warehouse.listEntries": "query",
   "warehouse.entryDetail": "query",
   "downloads.listCompleted": "query",
+  // bdl-queries v0.5(桌面 TS 登记面 2026-09-22):两方法只读同族
+  "dependencies.lookup": "query",
+  "dependencies.listByProduct": "query",
   "project.environmentManagers": "query",
   "project.listProjects": "query",
   "project.inspectProject": "query",
@@ -1485,6 +1528,41 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "downloads.listCompleted":
     case "project.environmentManagers":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    // bdl-queries v0.5(桌面 TS 登记面 2026-09-22):lookup params 闭集
+    // {name, depKind?, limit?, offset?} 与冻结 Schema additionalProperties:
+    // false 同形——name 必填非空,depKind 骑 BDL v0.2 四值闭集(null/缺席 =
+    // 不过滤),分页 1–200/≥0;词外键(含 fuzzy 等价开关)拒绝 = 契约错误
+    case "dependencies.lookup": {
+      if (!hasExactKeys(value, REQUEST_KEYS)) return false;
+      const lookupParams = value.params as DependenciesLookupRequestV1["params"];
+      const lookupKeys = Object.keys(lookupParams);
+      if (!lookupKeys.includes("name")
+        || lookupKeys.some((key) => key !== "name" && key !== "depKind" && key !== "limit" && key !== "offset")) {
+        return false;
+      }
+      if (typeof lookupParams.name !== "string" || lookupParams.name.length < 1) return false;
+      if (lookupParams.depKind !== undefined && lookupParams.depKind !== null
+        && !(["shader", "tool_package", "avatar_base", "other"] as readonly string[]).includes(lookupParams.depKind)) {
+        return false;
+      }
+      if (lookupParams.limit !== undefined
+        && (typeof lookupParams.limit !== "number" || !Number.isSafeInteger(lookupParams.limit) || lookupParams.limit < 1 || lookupParams.limit > 200)) {
+        return false;
+      }
+      if (lookupParams.offset !== undefined
+        && (typeof lookupParams.offset !== "number" || !Number.isSafeInteger(lookupParams.offset) || lookupParams.offset < 0)) {
+        return false;
+      }
+      return true;
+    }
+    // listByProduct params 单键闭集 {productId}(catalog.detail 同 pattern,
+    // booth: 命名空间身份);无 name/过滤键——客户端过滤 = 契约错误(负例
+    // 向量钉死),绝不静默空答
+    case "dependencies.listByProduct":
+      return hasExactKeys(value, REQUEST_KEYS)
+        && hasExactKeys(value.params, ["productId"])
+        && typeof value.params.productId === "string"
+        && /^booth:[0-9]+$/.test(value.params.productId);
     case "project.listProjects":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
     case "project.inspectProject":

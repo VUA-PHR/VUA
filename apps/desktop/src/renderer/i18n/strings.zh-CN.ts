@@ -2504,6 +2504,23 @@ rolled_back: "已回滚",
       workflowId: "工作流 ID",
     },
   },
+  /** bdl-queries v0.5 消费准备切片(2026-09-22):依赖反查/观察列呈现词面
+   *  基建——消费页面候 U18 终裁后切片。每行受「线索非结论」律约束:
+   *  advisory 文案一律建议语气(版面证据档位与建议安装来源),绝不渲染成
+   *  事实断言。可用性对骑既有 warehouse.availability 三行(零死重复行,由
+   *  dependencies-port 测试钉)。installSource 恰持 advisory 规则 v1 实际
+   *  发射的两值——vpm/unknown 留在冻结闭集内绝不发射,故无对应行(不留
+   *  死词面)。 */
+  dependencies: {
+    confidence: {
+      strong: "作者明确声明（专段或单行）",
+      weak: "列点行提及（真实但压缩）",
+    },
+    installSource: {
+      booth_page: "建议安装来源：BOOTH 商品页",
+      external_page: "建议安装来源：外部页面",
+    },
+  },
   /** 应用面错误文案:键 = 线上 messageKey(键先行,provider 在错误通道下发
    *  errors.catalog.*);catalog 浏览器当前将失败回落 not-connected/not-found,
    *  该视图中透传呈现这些键为后续切片 */
