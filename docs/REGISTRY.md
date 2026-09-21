@@ -45,6 +45,8 @@
 | docs/protocols/bdl-commands-v0.2_ZH.md | 0.2 | 已取代（→ v0.3） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.3_ZH.md | 0.3 | 已取代（→ v0.4） | 数据 | 2026-09-08 |
 | docs/protocols/bdl-commands-v0.4_ZH.md | 0.4 | 已冻结（IMP-3 契约先行，2026-09-09：Schema＋正负例向量＋消费测试） | 数据 | 2026-09-09 |
+| docs/protocols/bdl-dependency-observations-v0.2_ZH.md | 0.2（草案） | 草案候冻结（2026-09-22，wt-4 产线第 164 批：proposal 030 §5.1 定座〔产线建库〕后的冻结前置设计环——BDL 持久格式 v0.2 双变更：compatibility_observations source_span 闭集扩维〔＋title/description_link，SQLite CHECK 重建＝持久格式迁移义务，v0.1 行逐字保真〕＋dependency_observations 新表〔观察范式同源：raw_quote NOT NULL 逐字律、置信度两维两列 extraction_method×extracted_by、dep_kind 粒度收窄四值草案〔unity_or_sdk_version 不设专值、版本约束归 version_hint，候冻结批裁决〕、resolution_evidence 形状冻结〔JSON 数组元素闭集＋resolved 非空⇒证据非空 CHECK 硬律＋confirmed_by_human 默认 0＝线索非结论读期派生律〕；机器可读面 schemas/bdl/v0.2〔schema.sql 全量权威＋002 增量迁移〕＋草案批消费测试 5 例绿〔零 bdl-store 代码改动，store 仍 v0.1〕；数据座 dependencies.* 消费面由其席自行领取，零端到端宣称） | 产线 | 2026-09-22 |
+| schemas/bdl/v0.2 | 0.2 | 草案候冻结（2026-09-22，wt-4 第 164 批，同上协议本行；v0.1 目录冻结面零触碰） | 产线 | 2026-09-22 |
 | docs/protocols/production-evidence-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-08 |
 | docs/protocols/inspection-evidence-v0.1_ZH.md | 0.1 | 已冻结（M7，2026-09-13：proposal 016 §7 硬前置①②③经集成验收收口〔7d63abe／7a262b8〕，④协议本双语＋⑤本行随冻结批办理；向量 7＋校验测试＋核心存储/读路由/任务化驱动） | 产线 | 2026-09-13 |
 | docs/protocols/download-events-v0.1_ZH.md | 0.1 | 已冻结 | 数据 | 2026-09-06 |
