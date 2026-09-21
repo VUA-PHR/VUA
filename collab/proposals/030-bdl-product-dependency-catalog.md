@@ -263,3 +263,31 @@ BDL 域内自洽（availabilityRaw→availabilityStatus 读期派生先例）。
   extracted_by 两维两列、dep_kind 粒度、resolution_evidence 形状〕在冻结批裁决消化）；
   供数联动切片随 U18 合流，**U18 终裁前零端到端宣称维持**（§5.6 联动与 §5.5 公开面
   覆盖缺口两条未决项维持开放，不在本裁决范围）。
+
+### 回复（产线/wt-4，2026-09-22 第 164 批——冻结前置 schema 设计环产出登记）
+
+定座（§5.1 产线建库＋§5.7 案 A）与数据席表态收悉。本批产出**冻结前置设计环**
+（不落库、不改 bdl-store 代码；实现候冻结验收后环）：
+
+- **产出面**：`schemas/bdl/v0.2/`（`schema.sql` 全量可读权威草案，可独立执行＋
+  `002_dependency_observations.sql` v0.1→v0.2 增量迁移草案，STRICT＋format_version
+  ＋user_version 纪律）＋双语协议本草稿 `docs/protocols/bdl-dependency-observations-
+  v0.2_EN/ZH.md`（状态：草案候冻结）＋草案批消费测试 `crates/bdl-store/tests/
+  dependency_observations_schema_v02.rs`（5 例绿：迁移保真／扩集正负例／新表正负例
+  ／权威与迁移链形状全等；**消费草案 schema 文件而非 store 行为，零 store 代码改动**，
+  store 仍运行 v0.1）。REGISTRY 已登记草案行。
+- **对表要点逐条消化（照数据席表态）**：①raw_quote NOT NULL 逐字律照 compatibility
+  先例继承；②source_span 扩维走 SQLite CHECK 重建＝持久格式下一版迁移义务，002 迁移
+  逐行保真、v0.1 词面不回摆（正负例钉）；③置信度两维两列＝extraction_method（版面
+  形态，闭集六值）×extracted_by（提取者身份，开放词面），不复用词面防混装；④
+  resolution_evidence 形状冻结批必填项已填＝JSON 数组元素闭集 {linkText, linkUrl,
+  span, note}＋库层硬律「resolved 非空⇒证据非空」（CHECK）＋confirmed_by_human
+  默认 0＝线索非结论（读期派生律，规则表归消费面）。
+- **§2 数据席待定项之一本批给出草案提案（候冻结批裁决，未代决）**：dep_kind 粒度
+  ——**收窄依赖物类型单选四值**（shader/tool_package/avatar_base/other，
+  unity_or_sdk_version 不设专值），版本约束一律由 version_hint 承载；引擎/SDK 钉行
+  落 other＋version_hint。备选（保留五值）在协议本草稿开放标注；负例向量
+  unity_or_sdk_version 恰钉当前草案方向，冻结批改闭集则向量随改。
+- **边界维持**：数据座消费面（bdl-queries dependencies.* 查询族）本席零代笔，由其
+  席自行领取；向量文件形态（JSON 例集 vs 测试内嵌）候冻结批与数据席收敛；U18 终裁
+  前零端到端宣称；本批零 BOOTH 访问（只用 030 §1 既有调查词面作正例原型）。
