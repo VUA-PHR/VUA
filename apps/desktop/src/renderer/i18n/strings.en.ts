@@ -635,6 +635,9 @@ demoTaskTitle: "Demo task",
       recovered_badge: "Recovered run",
       recovered_note:
         "This run completed after recovery.",
+      /** Release-page link on completed record cards (batch-150 gap (a));
+       *  plain navigation only: no record identity crosses the page boundary. */
+      goRelease: "Go to release",
     },
     phase: {
       inspecting: "Inspecting",

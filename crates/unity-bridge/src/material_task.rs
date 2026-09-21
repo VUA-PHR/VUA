@@ -101,7 +101,9 @@ pub fn material_intake_job(
                 vua_orchestrator::AppErrorV1::new(
                     report.error_code.clone().unwrap_or_else(|| "vua.material.failed".to_owned()),
                     vua_orchestrator::ErrorCategory::ExternalFailure,
-                    "errors.material.executionFailed",
+                    // 第 150 批：失败词面按类别分流——供给段失败命中桌面
+                    // 预留的 provisionFailed，其余维持 executionFailed。
+                    crate::material_exec::failure_message_key(report.error_code.as_deref()),
                     &spec.confirmation.correlation_id,
                 )
                 .with_param("planId", vua_orchestrator::ParamValue::Text(plan_id))

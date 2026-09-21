@@ -1,3 +1,4 @@
+import { recipePersisted } from "./recipe-library-revision.ts";
 import { useRef, useState } from "react";
 import type { DesktopGatewayResponseV1 } from "@vua/contracts";
 import {
@@ -58,10 +59,11 @@ export type ComposeSaveResult =
 
 export function classifyComposeSaveResult(result: DesktopGatewayResponseV1): ComposeSaveResult {
   if (!result.ok) return { kind: "failed" };
+  if (result.value === null || typeof result.value !== "object") return { kind: "failed" };
   const payload = result.value as { recipeId?: unknown; revision?: unknown };
   const recipeId = typeof payload.recipeId === "string" ? payload.recipeId : null;
   const revision = typeof payload.revision === "number" ? payload.revision : null;
-  if (recipeId === null || revision === null) return { kind: "failed" };
+  if (!recipeId || revision === null || !Number.isSafeInteger(revision) || revision < 1) return { kind: "failed" };
   return { kind: "saved", recipeId, revision };
 }
 
@@ -92,12 +94,18 @@ export function useComposeSave(): {
       now: new Date().toISOString(),
     });
     if (document === null) {
+      busyRef.current = false;
       setSaveState("idle");
       return;
     }
+    const api = window.vua?.gateway;
+    if (!api) {
+      busyRef.current = false;
+      setSaveState("failed");
+      return;
+    }
     setSaveState("saving");
-    void window.vua?.gateway
-      .invoke({
+    void api.invoke({
         schemaVersion: 1,
         requestId: crypto.randomUUID(),
         method: "recipe.save",
@@ -115,8 +123,10 @@ export function useComposeSave(): {
         }
         setSaveState("idle");
         // 保存对齐:脏标记清除＋saved 身份入容器层;配方身份同步入生产链
-        composeSavedAction(outcome.recipeId, outcome.revision);
-        productionChainRecipeSavedAction(outcome.recipeId, outcome.revision);
+        if (composeSavedAction(outcome.recipeId, outcome.revision, items)) {
+          productionChainRecipeSavedAction(outcome.recipeId, outcome.revision);
+        }
+        recipePersisted();
       })
       .catch(() => {
         // 传输异常也是失败:如实落 failed,不悬挂在「保存中」(UI-06/08)

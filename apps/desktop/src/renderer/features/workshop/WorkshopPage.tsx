@@ -606,6 +606,7 @@ export function WorkshopPage({
         // 只表达语义选择;用户决定 ID 由 Kernel 受理时生成并绑定
         runFlowIntent("recover", () => gateway.modelProduction.recover(taskId, { kind }));
       }}
+      onNavigate={onNavigate}
     />
   );
   if (!envReady) {

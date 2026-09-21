@@ -25,6 +25,16 @@ namespace Vua.Editor.Bridge
 
         internal static BridgeResult Process(BridgeCommand command, string editorVersion)
         {
+            if (command?.schemaVersion != 4) return ProcessCore(command, editorVersion);
+            try { return BridgeResult.ForCommand(command, ProcessCore(command, editorVersion)); }
+            catch (Exception exception)
+            {
+                return BridgeResult.Fail(command, "bridge.unhandled", exception.GetType().Name + "：" + exception.Message);
+            }
+        }
+
+        private static BridgeResult ProcessCore(BridgeCommand command, string editorVersion)
+        {
             var invalid = ValidateEnvelope(command);
             if (invalid != null) return invalid;
 
@@ -114,13 +124,13 @@ namespace Vua.Editor.Bridge
 
                 if (result.status == "succeeded" && IsMutating(command.operation))
                 {
-                    AssetDatabase.SaveAssets();
                     // build_preview 刻意跳过场景保存:烘焙全程在 preview scene
                     // 隔离内进行(BridgePreviewBake),用户场景从未被本操作弄脏;
                     // 即使用户场景自带未保存改动,一次预览烘焙也绝不可以替用户
                     // 保存——用户场景必须零改动(用户裁决 2026-09-20)。
                     if (command.operation != "build_preview")
                     {
+                        AssetDatabase.SaveAssets();
                         var scene = SceneManager.GetActiveScene();
                         if (scene.IsValid() && scene.isDirty)
                         {
@@ -484,7 +494,7 @@ namespace Vua.Editor.Bridge
             if (string.IsNullOrWhiteSpace(directory)) throw new InvalidOperationException("回执路径缺少父目录。");
             Directory.CreateDirectory(directory);
             var temporary = path + ".tmp";
-            File.WriteAllText(temporary, JsonUtility.ToJson(result, true));
+            File.WriteAllText(temporary, BridgeResultJson.Serialize(result));
             if (File.Exists(path)) File.Delete(temporary);
             else File.Move(temporary, path);
         }

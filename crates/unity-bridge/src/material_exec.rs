@@ -62,6 +62,26 @@ pub mod error_codes {
     pub const PROVISION_FAILED: &str = "vua.material.provision_failed";
 }
 
+/// The task-layer failure word-face law (batch 150): a provision-segment
+/// failure — `run_provision`'s create/resolve arms, every one of which packs
+/// its report under the `PROVISION_FAILED` prefix — hits the desktop's long
+/// reserved `errors.material.provisionFailed` row; every other failure keeps
+/// the standing `errors.material.executionFailed`. Before batch 150 both
+/// faces emitted the coarse executionFailed regardless of code, so the
+/// reserved provision row could never hit (desktop batch-148 evidence). This
+/// is payload-data refinement only: the AppErrorV1 envelope and its field
+/// closed set are untouched, the code still carries the original detail
+/// (the desktop presents the localized face AND the raw code side by side,
+/// batch-148 dual-fact law).
+pub fn failure_message_key(error_code: Option<&str>) -> &'static str {
+    match error_code {
+        Some(code) if code.starts_with(error_codes::PROVISION_FAILED) => {
+            "errors.material.provisionFailed"
+        }
+        _ => "errors.material.executionFailed",
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum MaterialExecutionStatus {
@@ -277,6 +297,17 @@ impl MaterialExecutor {
             build_record_id: None,
             replayed: false,
         };
+        // 第 148 批真机风险修复（重试撞号）：Bridge 对 mutating 命令按
+        // commandId 把成功回执持久化在 `<project>/.vua/bridge/completed/`
+        // （快照作用域之外——回滚不清除它），同 commandId 同内容即回放既有
+        // 成功收据而**不重执行**。plan_id 由计划内容派生（跨 attempt 相同）、
+        // bridge_jobs.len() 每次 execute 从零起算——失败的 attempt 重试会
+        // 与上一 attempt 撞出同 id：已完成包命中幽灵回放（文件已被回滚清掉
+        // 但收据宣称成功），指纹链随即在新包上 stale_project 拒绝，重试
+        // 永久卡死。修复：attempt > 1 时给命令 id 注入运行盐（首 attempt
+        // 的 id 逐字节保持既有形态，既有行为零变化）；schema 对 commandId
+        // 仅约束非空，C# 侧语法 `^[A-Za-z0-9_-]{1,128}$` 同样容纳。
+        let run_tag = if attempt > 1 { format!("-r{attempt}") } else { String::new() };
         let mut bridge_jobs: Vec<BridgeJobEvidenceV01> = Vec::new();
         let started_at = self.clock.now_rfc3339();
 
@@ -371,6 +402,7 @@ impl MaterialExecutor {
                     source_folder,
                     project,
                     token,
+                    &run_tag,
                     &mut current_fingerprint,
                     &mut bridge_jobs,
                     &mut final_fingerprint,
@@ -657,6 +689,7 @@ impl MaterialExecutor {
         source_folder: &Path,
         project: &ProjectRef,
         token: &MaterialCancelToken,
+        run_tag: &str,
         current_fingerprint: &mut String,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
         final_fingerprint: &mut Option<String>,
@@ -666,7 +699,7 @@ impl MaterialExecutor {
             if token.is_cancelled() {
                 return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
             }
-            let command_id = format!("{}-import-{}", plan.plan_id, bridge_jobs.len());
+            let command_id = format!("{}{}-import-{}", plan.plan_id, run_tag, bridge_jobs.len());
             // Unity's ImportPackage is a silent no-op in batchmode, so the
             // Bridge consumes an EXTRACTED layout instead: the archive is
             // unpacked under .vua/imports/<command_id>/ (inside the
@@ -723,9 +756,26 @@ impl MaterialExecutor {
             };
             let result = self.dispatch(project, &command, bridge_jobs)?;
             let _ = fs::remove_dir_all(&extracted_root);
-            // Chain: the next mutation must expect the post-import state.
-            *current_fingerprint =
-                fingerprint_of(&result).unwrap_or_else(|| current_fingerprint.clone());
+            // Chain: the next mutation must expect the post-import state. A
+            // successful mutating command with NO fingerprint is receipt
+            // shape drift (第 148 批诚实化): chaining the stale value would
+            // either fail the next command with a confusing reject or — on
+            // the last package — publish a FALSE final fingerprint in the
+            // receipt. Fail here, honestly, and let the rollback restore.
+            match fingerprint_of(&result) {
+                Some(fingerprint) if !fingerprint.is_empty() => {
+                    *current_fingerprint = fingerprint;
+                }
+                _ => {
+                    return Err((
+                        format!(
+                            "{}: materialize reported no project fingerprint",
+                            error_codes::BRIDGE_FAILED
+                        ),
+                        MaterialExecutionStatus::Failed,
+                    ))
+                }
+            }
             *final_fingerprint = Some(current_fingerprint.clone());
         }
         validation_expectations.sort();
@@ -841,8 +891,23 @@ impl MaterialExecutor {
                 },
             };
             let result = self.dispatch(&staging_project, &command, bridge_jobs)?;
-            if let Some(fingerprint) = fingerprint_of(&result) {
-                staging_fingerprint = fingerprint;
+            // Same honesty law as the direct path (第 148 批): a successful
+            // mutating command MUST name the project's new fingerprint — a
+            // missing or empty one is receipt shape drift, never silently
+            // chained over.
+            match fingerprint_of(&result) {
+                Some(fingerprint) if !fingerprint.is_empty() => {
+                    staging_fingerprint = fingerprint;
+                }
+                _ => {
+                    return Err((
+                        format!(
+                            "{}: stage materialize reported no project fingerprint",
+                            error_codes::BRIDGE_FAILED
+                        ),
+                        MaterialExecutionStatus::Failed,
+                    ))
+                }
             }
         }
 
@@ -1073,8 +1138,21 @@ impl MaterialExecutor {
                 },
             };
             let result = self.dispatch(&staging_project, &command, &mut Vec::new())?;
-            if let Some(fingerprint) = fingerprint_of(&result) {
-                staging_fingerprint = fingerprint;
+            // Same honesty law as the direct path (第 148 批): never chain a
+            // missing fingerprint silently.
+            match fingerprint_of(&result) {
+                Some(fingerprint) if !fingerprint.is_empty() => {
+                    staging_fingerprint = fingerprint;
+                }
+                _ => {
+                    return Err((
+                        format!(
+                            "{}: stage materialize reported no project fingerprint",
+                            error_codes::BRIDGE_FAILED
+                        ),
+                        MaterialExecutionStatus::Failed,
+                    ))
+                }
             }
         }
 
@@ -1174,7 +1252,10 @@ impl MaterialExecutor {
 /// Unpacks a `.unitypackage` (tar.gz of `<guid>` folders carrying `asset`,
 /// `asset.meta`, and `pathname`) verbatim into `extracted_root` and returns
 /// the logical asset paths (`Assets/…`) recorded by the pathname entries.
-/// Untrusted pathnames are skipped, not followed.
+/// Untrusted pathnames are skipped, not followed. An archive whose pathname
+/// entries target `Packages/` is refused outright before anything lands on
+/// disk — the material direct channel never writes the VPM channel's
+/// territory (batch 150, operator ruling).
 pub(crate) fn extract_package_into_dir(
     archive_path: &Path,
     extracted_root: &Path,
@@ -1196,6 +1277,21 @@ pub(crate) fn extract_package_into_dir(
                 let mut logical = String::new();
                 entry.read_to_string(&mut logical)?;
                 let logical = logical.trim().replace('\\', "/");
+                // 第 150 批通道边界（操作者裁定）：素材直导通道不得静默写
+                // 入 `Packages/`——那是 VPM 通道的领地，绕过 vpm-manifest
+                // 追踪的写入违背单通道写模型。含 `Packages/` 条目的归档在
+                // 解包第一遍即整体拒绝（先于任何落盘，零残留、零部分物
+                // 化），错误按既有 `archive_invalid` 族上浮，零新码。与 C#
+                // 物化面的 `Assets/`-only 校验期望从此不再可能静默分歧。
+                // Ordinal 前缀与 C# 面第 259–260 行的判定逐字节同形。
+                if logical.starts_with("Packages/") {
+                    return Err(std::io::Error::new(
+                        std::io::ErrorKind::InvalidData,
+                        format!(
+                            "archive entry targets Packages/ (VPM channel boundary): {logical}"
+                        ),
+                    ));
+                }
                 if logical.starts_with("Assets/")
                     && !logical.split('/').any(|part| part.is_empty() || part == "..")
                 {
@@ -1215,7 +1311,26 @@ pub(crate) fn extract_package_into_dir(
         for entry in archive.entries()? {
             let mut entry = entry?;
             let entry_path = entry.path()?.to_string_lossy().replace('\\', "/");
-            if entry_path.contains("..") || entry_path.starts_with('/') {
+            // 第 148 批真机风险修复（zip-slip 的 tar 形态，Windows 变体）：
+            // 条目名是**不可信数据**。除既有的 `..`／前导 `/` 跳过外，还必须
+            // 拒绝任何带盘符前缀或根锚的路径——`Path::join` 对绝对路径是
+            // **替换**语义，一个名为 `C:/Users/.../x` 的 tar 条目会原样写出
+            // extracted_root 之外。判定按路径组件而非子串：Prefix／RootDir／
+            // ParentDir 一律跳过（与"Untrusted pathnames are skipped, not
+            // followed"的既有语义一致——跳过，不是失败；被跳过条目也不进
+            // manifest，Bridge 端 VerifyAgainstManifest 因此天然拒绝它们
+            // 参与物化）。
+            if entry_path.contains("..")
+                || entry_path.starts_with('/')
+                || Path::new(&entry_path)
+                    .components()
+                    .any(|component| {
+                        !matches!(
+                            component,
+                            std::path::Component::Normal(_) | std::path::Component::CurDir
+                        )
+                    })
+            {
                 continue;
             }
             let target = extracted_root.join(&entry_path);
@@ -1315,5 +1430,202 @@ mod probe {
             Ok(paths) => println!("OK {} logical paths, first: {:?}", paths.len(), paths.first()),
             Err(e) => println!("ERR io={e} raw_os_error={:?}", e.raw_os_error()),
         }
+    }
+}
+
+#[cfg(test)]
+mod batch148_extraction_guard {
+    //! 第 148 批真机风险修复的守卫钉：tar 条目名是不可信数据，任何
+    //! 盘符前缀／根锚／`..` 组件都不得把解包写引出 extracted_root
+    //! （`Path::join` 对绝对路径是替换语义——Windows 变体的 zip-slip）。
+
+    use flate2::write::GzEncoder;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    /// 手工拼 ustar 头写入任意条目名——tar-rs 的构造 API（append_data／
+    /// set_path）强制相对路径，而被测的解包面要防的正是真实恶意归档里的
+    /// 绝对路径条目，守卫测试必须能构造它们。
+    fn raw_entry(tar: &mut Vec<u8>, path: &str, bytes: &[u8]) {
+        let name = path.as_bytes();
+        assert!(name.len() <= 100, "test entries stay in the ustar name field");
+        let mut header = [0_u8; 512];
+        header[..name.len()].copy_from_slice(name);
+        header[100..108].copy_from_slice(b"0000644\0");
+        header[108..116].copy_from_slice(b"0000000\0");
+        header[116..124].copy_from_slice(b"0000000\0");
+        header[124..136].copy_from_slice(format!("{:011o}\0", bytes.len()).as_bytes());
+        header[136..148].copy_from_slice(b"00000000000\0");
+        header[156] = b'0';
+        header[257..263].copy_from_slice(b"ustar\0");
+        header[263..265].copy_from_slice(b"00");
+        for byte in &mut header[148..156] {
+            *byte = b' ';
+        }
+        let sum: u32 = header.iter().map(|byte| u32::from(*byte)).sum();
+        header[148..156].copy_from_slice(format!("{sum:06o}\0 ").as_bytes());
+        tar.extend_from_slice(&header);
+        tar.extend_from_slice(bytes);
+        let padding = (512 - bytes.len() % 512) % 512;
+        tar.extend(std::iter::repeat_n(0_u8, padding));
+    }
+
+    fn write_gztar(path: &std::path::Path, entries: &[(&str, &[u8])]) {
+        let mut tar = Vec::new();
+        for (entry_path, bytes) in entries {
+            raw_entry(&mut tar, entry_path, bytes);
+        }
+        tar.extend(std::iter::repeat_n(0_u8, 1024));
+        let file = fs::File::create(path).unwrap();
+        let mut encoder = GzEncoder::new(file, flate2::Compression::default());
+        std::io::Write::write_all(&mut encoder, &tar).unwrap();
+        encoder.finish().unwrap();
+    }
+
+    #[test]
+    fn untrusted_absolute_entry_paths_never_escape_the_extraction_root() {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let base = std::env::temp_dir().join(format!("vua-148-escape-{nanos}"));
+        let extracted_root = base.join("extracted");
+        fs::create_dir_all(&extracted_root).unwrap();
+
+        // The escape canary: an ABSOLUTE target outside extracted_root, built
+        // from the real temp dir so the "C:/..." join-replaces-base case is
+        // exercised hermetically. The unique suffix is kept short so the
+        // whole name stays inside the ustar name field.
+        let escape_dir = std::env::temp_dir().join(format!(
+            "vua148c{:08x}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos() as u32
+        ));
+        let escape_entry = format!(
+            "{}/evil.txt",
+            escape_dir.to_string_lossy().replace('\\', "/")
+        );
+
+        let guid = "0123456789abcdef0123456789abcdef";
+        let archive_path = base.join("hostile.unitypackage");
+        write_gztar(
+            &archive_path,
+            &[
+                (&format!("{guid}/pathname"), b"Assets/OK.prefab\n".as_slice()),
+                (&format!("{guid}/asset"), b"synthetic".as_slice()),
+                (&format!("{guid}/asset.meta"), b"meta".as_slice()),
+                (escape_entry.as_str(), b"escaped".as_slice()),
+                ("../outside.txt", b"escaped".as_slice()),
+                ("/root-anchored.txt", b"escaped".as_slice()),
+            ],
+        );
+
+        let logical =
+            super::extract_package_into_dir(&archive_path, &extracted_root).expect("extracts");
+
+        // The valid layout lands; logical paths come from pathname files only.
+        assert_eq!(logical, vec!["Assets/OK.prefab".to_owned()]);
+        assert!(extracted_root.join(guid).join("asset").is_file());
+
+        // Every hostile entry is skipped: never written, never manifested.
+        assert!(!escape_dir.exists(), "drive-absolute entry escaped the root");
+        assert!(!base.join("outside.txt").exists(), "`..` entry escaped the root");
+        let manifest = fs::read_to_string(extracted_root.join("manifest.sha256")).unwrap();
+        assert_eq!(manifest.lines().count(), 3, "only the guid entries manifest");
+        assert!(!manifest.contains("evil.txt"));
+        assert!(!manifest.contains("outside.txt"));
+        assert!(!manifest.contains("root-anchored.txt"));
+
+        let _ = fs::remove_dir_all(&base);
+        let _ = fs::remove_dir_all(&escape_dir);
+    }
+}
+
+#[cfg(test)]
+mod batch150_channel_boundary {
+    //! 第 150 批通道边界钉（操作者裁定）：含 `Packages/` 条目的归档在解包
+    //! 第一遍即**整体**拒绝——先于任何落盘（零残留、零部分物化），错误按
+    //! 既有 `archive_invalid` 族上浮、零新码。素材直导通道不得静默写入
+    //! VPM 包域；C# 物化面的 `Assets/`-only 校验期望从此不再可能被绕开。
+
+    use flate2::write::GzEncoder;
+    use std::fs;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn guid_archive(path: &std::path::Path, folders: &[(&str, &str)]) {
+        let file = fs::File::create(path).unwrap();
+        let mut builder = tar::Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+        for (guid, logical) in folders {
+            for (suffix, bytes) in [
+                ("pathname", format!("{logical}\n").into_bytes()),
+                ("asset", b"synthetic".to_vec()),
+                ("asset.meta", b"meta".to_vec()),
+            ] {
+                let mut header = tar::Header::new_gnu();
+                header.set_size(bytes.len() as u64);
+                header.set_mode(0o644);
+                header.set_cksum();
+                builder
+                    .append_data(&mut header, format!("{guid}/{suffix}"), &bytes[..])
+                    .unwrap();
+            }
+        }
+        builder.finish().unwrap();
+    }
+
+    fn fresh_base(label: &str) -> std::path::PathBuf {
+        let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+        std::env::temp_dir().join(format!("vua-150-boundary-{label}-{nanos}"))
+    }
+
+    #[test]
+    fn packages_prefixed_archive_is_refused_before_anything_lands() {
+        let base = fresh_base("pure-packages");
+        let extracted_root = base.join("extracted");
+        let archive = base.join("pack.unitypackage");
+        fs::create_dir_all(&base).unwrap();
+        guid_archive(&archive, &[("0123456789abcdef0123456789abcdef", "Packages/com.evil/thing.asset")]);
+
+        let error = super::extract_package_into_dir(&archive, &extracted_root)
+            .expect_err("a Packages/-targeting archive is refused at the channel boundary");
+        assert_eq!(error.kind(), std::io::ErrorKind::InvalidData);
+        assert!(
+            error.to_string().contains("Packages/"),
+            "the refusal names the boundary: {error}"
+        );
+        // Pass 1 fails BEFORE pass 2: nothing is created, nothing extracted.
+        assert!(
+            !extracted_root.exists(),
+            "no extraction residue may exist for a refused archive"
+        );
+
+        let _ = fs::remove_dir_all(&base);
+    }
+
+    #[test]
+    fn mixed_assets_and_packages_archive_is_refused_whole_never_partially() {
+        let base = fresh_base("mixed");
+        let extracted_root = base.join("extracted");
+        let archive = base.join("pack.unitypackage");
+        fs::create_dir_all(&base).unwrap();
+        guid_archive(
+            &archive,
+            &[
+                ("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "Assets/OK.prefab"),
+                ("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "Packages/com.x/y.png"),
+            ],
+        );
+
+        let error = super::extract_package_into_dir(&archive, &extracted_root)
+            .expect_err("one Packages/ entry refuses the WHOLE archive — no silent partial import");
+        assert!(error.to_string().contains("Packages/com.x/y.png"));
+        assert!(
+            !extracted_root.exists(),
+            "the Assets/ sibling must not materialize either"
+        );
+
+        let _ = fs::remove_dir_all(&base);
     }
 }

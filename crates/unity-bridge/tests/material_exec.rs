@@ -391,6 +391,179 @@ fn b3_exec_001_direct_mode_happy_path_and_idempotent_replay() {
     }
 }
 
+// --- batch 148 reverse-review pins ---
+
+fn scripted_result(fingerprint: Option<&str>) -> UnityResult {
+    UnityResult {
+        schema_version: 1,
+        command_id: "scripted".into(),
+        status: ResultStatus::Succeeded,
+        changed_paths: vec![],
+        diagnostics: vec![],
+        steps: Vec::new(),
+        replayed: None,
+        snapshot_id: None,
+        restored_from: None,
+        project_fingerprint_before: None,
+        data: match fingerprint {
+            Some(value) => serde_json::json!({ "projectFingerprint": value }),
+            None => serde_json::json!({}),
+        },
+    }
+}
+
+/// 第 148 批（重试撞号缺陷）：Bridge 把 mutating 成功回执按 commandId 持久
+/// 存于 `<project>/.vua/bridge/completed/`（快照作用域之外，回滚不清除），
+/// 同 id 同内容即回放既有收据而**不重执行**。plan_id 跨 attempt 相同、
+/// bridge_jobs.len() 每次 execute 从零起算——不加盐时重试会撞出同 id，
+/// 已完成包命中幽灵回放（文件已被回滚清掉）后，指纹链在新包上必然
+/// stale_project 拒绝，重试永久卡死。钉：首 attempt 的 id 保持历史形态；
+/// 重试 attempt 的 mutating id 注入 `-r{attempt}` 盐，绝不与上一 attempt
+/// 重合；只读 validate 不进回执库，id 不加盐。
+#[test]
+fn b3_batch148_retry_attempt_salts_mutating_command_ids_against_ghost_replay() {
+    let (base, project) = make_world("retry-salt");
+    let source = base.join("source");
+    unitypackage(&source.join("one.unitypackage"), &["Assets/One.prefab"]);
+    let confirmation =
+        confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
+    // Attempt 1: import #0 succeeds (fp-1), import #1 times out → rollback.
+    let bridge = FakeBridge::new(vec![
+        Ok(scripted_result(Some("fp-1"))),
+        Err(BridgeError::TimedOut),
+    ]);
+    let executor_first = executor(&base, bridge.clone(), FakeVpm::new());
+    let first = executor_first.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(first.status, MaterialExecutionStatus::Failed);
+    assert_eq!(first.rollback, RollbackOutcome::Restored);
+    let first_ids: Vec<String> = bridge
+        .state
+        .lock()
+        .unwrap()
+        .commands
+        .iter()
+        .map(|command| command.command_id.clone())
+        .collect();
+    assert!(
+        first_ids
+            .iter()
+            .any(|id| id == &format!("{}-import-0", confirmation.plan.plan_id)),
+        "first attempt keeps the historical id shape (no salt)"
+    );
+    assert!(first_ids.iter().all(|id| !id.contains("-r")));
+
+    // Retry the SAME confirmation (same plan → same plan_id): attempt 2.
+    let bridge_retry = FakeBridge::new(vec![]);
+    let executor_retry = executor(
+        &base,
+        bridge_retry.clone(),
+        FakeVpm::new(),
+    );
+    let second = executor_retry.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+    assert_eq!(second.status, MaterialExecutionStatus::Succeeded);
+    assert_eq!(second.rollback, RollbackOutcome::NotNeeded);
+    let retry_import_ids: Vec<String> = bridge_retry
+        .state
+        .lock()
+        .unwrap()
+        .commands
+        .iter()
+        .filter(|command| {
+            command.operation == vua_orchestrator::UnityOperation::MaterializeExtractedPackage
+        })
+        .map(|command| command.command_id.clone())
+        .collect();
+    assert_eq!(retry_import_ids.len(), 2);
+    assert!(
+        retry_import_ids
+            .iter()
+            .all(|id| !first_ids.contains(id)),
+        "retried mutating ids must never collide with the prior attempt (ghost replay)"
+    );
+    for (index, id) in retry_import_ids.iter().enumerate() {
+        assert_eq!(
+            id,
+            &format!("{}-r2-import-{index}", confirmation.plan.plan_id),
+            "retry salt shape"
+        );
+    }
+    // The read-only validate command keeps the plain id.
+    assert!(bridge_retry
+        .state
+        .lock()
+        .unwrap()
+        .commands
+        .iter()
+        .any(|command| command.command_id == format!("{}-validate", confirmation.plan.plan_id)));
+    // And the retry publishes under the attempt-2 receipt id.
+    assert_eq!(
+        second.build_record_id.as_deref(),
+        Some(format!("material-{}-attempt2", confirmation.plan.plan_id).as_str())
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+/// 第 148 批（指纹硬要求诚实化）：成功 mutating 命令必须携带
+/// `data.projectFingerprint`——缺失或空串是收据形状漂移（#36 族的表亲）。
+/// 旧代码 `unwrap_or_else(保持旧值)` 会静默骑旧链，末包场景更是把**假**的
+/// final 指纹写进回执。钉：形状漂移在这里诚实失败，回滚照跑，回执照发，
+/// 且 final 指纹保持空（绝不落假值）。
+#[test]
+fn b3_batch148_mutating_success_without_fingerprint_fails_honestly() {
+    let (base, project) = make_world("fp-shape-drift");
+    let source = base.join("source");
+    let bridge = FakeBridge::new(vec![Ok(scripted_result(None))]);
+    let executor = executor(&base, bridge, FakeVpm::new());
+    let confirmation =
+        confirmation(&plan(MaterialEntryMode::DirectUnityPackage, &source, &project.root));
+
+    let report = executor.execute(
+        &confirmation,
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    assert!(
+        report
+            .error_code
+            .as_deref()
+            .unwrap_or("")
+            .starts_with("vua.material.bridge_failed"),
+        "shape drift fails under the standing bridge_failed family: {:?}",
+        report.error_code
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    // The receipt is still published — and records NO final fingerprint.
+    let record = vua_orchestrator::BuildRecordStore::new(base.join("records"))
+        .read(report.build_record_id.as_deref().expect("receipt published"))
+        .expect("receipt readable");
+    assert_eq!(
+        record.status,
+        vua_orchestrator::BuildRecordStatus::Failed
+    );
+    assert_eq!(record.final_project_fingerprint, None);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
 #[test]
 fn b3_exec_002_source_drift_fails_before_the_first_mutation() {
     let (base, project) = make_world("drift");
@@ -1559,6 +1732,118 @@ fn b3_batch146_capability_absent_backend_fails_the_provision_honestly() {
         bridge.command_count(),
         0,
         "no Unity command may run after the refused resolve"
+    );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- 第 150 批：Packages/ 通道边界（操作者裁定） ---
+
+/// Builds a guid-layout archive whose pathname entries carry the given
+/// logical paths (the layout the real .unitypackage uses, which the plain
+/// `unitypackage` helper's flat entries never exercise).
+fn guid_layout_package(path: &Path, folders: &[(&str, &str)]) {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).unwrap();
+    }
+    let file = fs::File::create(path).unwrap();
+    let mut builder = Builder::new(GzEncoder::new(file, flate2::Compression::default()));
+    for (guid, logical) in folders {
+        for (suffix, bytes) in [
+            ("pathname", format!("{logical}\n").into_bytes()),
+            ("asset", b"synthetic".to_vec()),
+            ("asset.meta", b"meta".to_vec()),
+        ] {
+            let mut header = Header::new_gnu();
+            header.set_size(bytes.len() as u64);
+            header.set_mode(0o644);
+            header.set_cksum();
+            builder
+                .append_data(&mut header, format!("{guid}/{suffix}"), &bytes[..])
+                .unwrap();
+        }
+    }
+    builder.finish().unwrap();
+}
+
+#[test]
+fn b3_batch150_intake_blocks_a_packages_prefixed_archive_as_a_finding() {
+    let base = temp_dir("batch150-intake-block");
+    let source = base.join("source");
+    fs::create_dir_all(&source).unwrap();
+    guid_layout_package(
+        &source.join("pack.unitypackage"),
+        &[("0123456789abcdef0123456789abcdef", "Packages/com.evil/thing.asset")],
+    );
+
+    // 发现面呈现：检查面即如实阻断（既有 archive_invalid 族，零新码），
+    // 计划与确认根本不会形成——绕过 vpm-manifest 追踪的写入不可能起跑。
+    let error = MaterialIntakeEngine
+        .inspect_folder(&source, "corr")
+        .expect_err("a Packages/-carrying package is blocked at inspection");
+    assert_eq!(error.code, "vua.material.archive_invalid");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_batch150_execution_refuses_a_packages_archive_added_after_planning() {
+    let (base, project) = make_world("batch150-exec-refuse");
+    let source = base.join("source");
+
+    // Plan against the clean folder, THEN a Packages/-carrying archive
+    // appears (drift-by-addition). The run's VerifySource re-inspection is
+    // the execution-arm defense: the honest refusal fires before the
+    // snapshot, before any mutation, before any receipt.
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            project.id.clone(),
+            "project-fingerprint",
+            inspection(&source),
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+    guid_layout_package(
+        &source.join("late.unitypackage"),
+        &[("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "Packages/com.late/x.asset")],
+    );
+
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), FakeVpm::new());
+    let report = executor.execute(
+        &confirmation(&plan),
+        &source,
+        &project,
+        &base.join("artifacts"),
+        &MaterialCancelToken::new(),
+    );
+
+    assert_eq!(report.status, MaterialExecutionStatus::Failed);
+    let code = report.error_code.as_deref().unwrap_or("");
+    assert!(
+        code.starts_with("vua.material.archive_invalid"),
+        "the channel boundary rides the standing family: {code}"
+    );
+    assert_eq!(
+        report.rollback,
+        RollbackOutcome::NotNeeded,
+        "the refusal fires before the snapshot exists — nothing to restore"
+    );
+    assert!(report.completed_steps.is_empty());
+    assert_eq!(
+        bridge.command_count(),
+        0,
+        "no Unity command may run against a refused source"
+    );
+    assert!(
+        BuildRecordStore::new(base.join("records"))
+            .read(&format!("material-{}", plan.plan_id))
+            .is_err(),
+        "a pre-mutation refusal leaves no receipt"
     );
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();

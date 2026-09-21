@@ -608,6 +608,7 @@ rolled_back: "ロールバック済み",
       finishedAt: "完了時刻 {time}",
         recovered_badge: 'リカバリ済みの実行',
         recovered_note: 'この実行記録は、復旧処理後に完了したものです。',
+      goRelease: 'リリースへ',
     },
     phase: {
       inspecting: "検査中",

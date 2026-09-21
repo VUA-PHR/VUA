@@ -57,7 +57,10 @@ fn bake_preview_positive_vectors_validate_against_v4_schemas() {
     // nothing: the receipt carries the stats in data and an empty
     // changedPaths.
     assert!(receipt["changedPaths"].as_array().unwrap().is_empty());
-    assert_eq!(receipt["data"]["basis"], serde_json::json!("local_estimate"));
+    assert_eq!(
+        receipt["data"]["basis"],
+        serde_json::json!("local_estimate")
+    );
 }
 
 #[test]
@@ -170,5 +173,32 @@ fn v3_operations_remain_valid_as_v4_superset() {
     assert!(
         result_validator.is_valid(&v3_receipt),
         "v3 receipt shape must remain valid under v4"
+    );
+}
+
+/// Validate actual C# wire output, not hand-written vectors. Run after EditMode:
+/// VUA_BRIDGE_V4_RECEIPTS=<project>/.vua/bridge/v4-test-receipts cargo test ... -- --ignored
+#[test]
+#[ignore = "requires local Unity EditMode serialized receipts"]
+fn actual_unity_v4_public_exit_receipts_validate() {
+    let root = PathBuf::from(std::env::var("VUA_BRIDGE_V4_RECEIPTS").expect("receipt directory"));
+    let validator = result_validator();
+    let mut count = 0;
+    for entry in std::fs::read_dir(root).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_none_or(|ext| ext != "json") {
+            continue;
+        }
+        let receipt: Value = serde_json::from_slice(&std::fs::read(&path).unwrap()).unwrap();
+        let errors: Vec<_> = validator
+            .iter_errors(&receipt)
+            .map(|error| error.to_string())
+            .collect();
+        assert!(errors.is_empty(), "{}: {errors:?}", path.display());
+        count += 1;
+    }
+    assert!(
+        count >= 23,
+        "expected all operation/editor and public failure exits, got {count}"
     );
 }

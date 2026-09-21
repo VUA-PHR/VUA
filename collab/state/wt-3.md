@@ -1,165 +1,174 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: b3581da
+baseline_commit: cc5a4d7c
 role: 桌面
 updated: 2026-09-21
 ---
 ## 当前焦点
-**027 F4 桌面双环＋W25 呈现缺口修复轮（2026-09-21 02:2x–03:1x，节拍轮工作时段实测；
-本拍四笔＋本状态批：追平壳 29edb9c＋形状核可批 8955430＋W25 失败行修复批 8563571
-＋F4 消费批 e05e1e7）——任务一（主）F4 形状核可与 TS 消费切片、任务二（小）执行日
-志失败行呈现错误详情，两任务同批交付；同窗竞速如实登记：壳与核可批已经集成第 142
-批收编（d01fd99＋6e61c17），任务二＋消费两笔候验收**：
+**第 150 批装配词面适配轮（2026-09-21 06:4x–07:0x，节拍轮工作时段 date 实测；本拍
+三笔：追平壳 553ff5d6＋修复批 441627c2＋本状态批）——任务＝BOARD #44 用户裁决
+（素材直导链在 UI 词面中不得称「装配」，「装配」保留给配方链）落桌面 workshop
+命名空间（wt-4 九缺口 i 项）＋附带缺口 (a) 车间构建记录卡出厂跳转；逐键甄别四
+表＋组件词面，改动 5 键、保留 13 处、登记 2 处，防过正守卫与产线座同律**：
 
-- **追平（TICK 第 4 步开工纪律）**：轮首 fetch 实测落后 22（b3581da 世代＝第 141
-  批登记＋订正）领先 0，过 15 线自理追平。merge-tree 预检 exit 0 零冲突，--no-ff
-  合并 main 落地追平壳 **29edb9c**（入站含 F4 接线批合并 b6d7b29＋VUA-8 用户裁决
-  并线合并 0f9350f——production-nav 重构＋design-standard 0.7.12＋i18n 四表并集裁
-  决随壳自然吸收，零冲突零裁决动作），基线刷新 b3581da。
-- **任务一·上：F4 形状核可（核可批 8955430，恰 027 提案一文件 105 行新增）**：双
-  前置全成就（冻结 47d4185＋接线 7361213 均在库）照 F2/F3/F5 九项对照同径办理，基
-  于收编世代零预核可。九项一致通过：①三命令 TS 面单键闭集 {repoId}＋请求联合恰三
-  笔＋wire 闭集形状验证先于门（携 digest/projectPath 即形状违反）；②三收据最小诚
-  实形状（enabled/disabled 三键回显即审计链、refreshed 四键 REQUIRED cacheUpdated
-  两臂皆成功、rejected 族锁＋原端口码 detail 溯源）＋repos_v02 六键行 REQUIRED
-  enabled＋id 缺席恒 true；③路由臂顺序（形状验证→按方法门→submit→端口拒绝折
-  execution_failed 盖 V06 族）＋listRepos v0.2 协商臂＋shared-tail 参数化 A4 逐字节
-  不变钉；④三常量命名发布＋wire 对冻结 Schema 双向钉；⑤wire 11+3 例名逐一对表骑
-  真实帧循环＋consumer 4+3 对表；⑥apps/desktop 零生命周期引用（grep exit 1，
-  wired-not-consumed）；⑦请求联合恰三笔、result 侧不入成功联合；⑧向量 5正10负/
-  3正4负对表；⑨协议本双语 0.6.1/0.2.1＋REGISTRY 两行＋served 行三独立位 ANY 默认
-  declared-none 如实 unavailable。消费核对点六项登记（含集成 ①区两呈现锚：禁用在
-  列不隐藏、cacheUpdated=false 如实「已是最新」非错误）。**同窗竞速如实登记**：核
-  可批提交后集成第 142 批同窗落地——核可批经合并 d01fd99 验收入库（集成亲审 PASSED
-  与第 141 批接线亲审逐项吻合）＋6e61c17 追加登记；本树在途工作无需改道，消费批基
-  于同一收编世代不受影响。
-- **任务一·下：F4 桌面消费切片（消费批 e05e1e7，恰 17 文件 1381+/64-）**：核可解
-  锁同拍续领（F2 核可＋消费同批先例）。桌面域 TS 全链：contracts desktop-gateway.ts
-  （三请求接口单键闭集＋METHOD_KINDS 三行 command＋信封守卫三 case）→electron
-  gateway-router（三 translate 臂，lifecycle- 前缀照 A4 repo- 先例）→renderer
-  packages-port（RepoInfoRowV02 六键行＋ReposListAnswer 双族〔installed 双族同构〕
-  ＋Lifecycle 四态＋port 三方法）→packages-live（REPO_LIFECYCLE_OPERATION_ID＋双
-  族守卫六键闭集＋listReposRaw 双族化＋lifecycleViaTask〔A4 repoWriteViaTask 同构：
-  受理窄化→终态等待→Done payload 按 kind 字面量分派〕＋三方法薄封装＋blocks 投
-  影）→PackagesPage（runRepoLifecycle 单操作 busy＋P2ReposSection 行内启停/刷新控
-  制＋行内终态呈现）。**核对点六项逐条兑现**：①能力缺席降级（blocks.repoLifecycle
-  纯增量新键 p1/p2 双视图；行缺席＝控制不渲染行照常；v0.1 族无 enabled 位＝启停不
-  渲染不猜测，刷新独立；repoId null 行无控制）；②两呈现锚（禁用行在列不隐藏带标
-  注＋说明；cacheUpdated=false＝「已是最新」status 呈现绝非错误；收据骑广播读回新
-  状态）；③诚实错误态（typed 拒绝行内 alert／capability_missing 折 failed 原词与
-  unavailable 呈现区分／非成功终态原词／重复启停不宣称幂等）；④裁决 (c) 词面（VUA
-  自有状态口径如实，与 §8.7 设置面共享语义纪律的区分在 design-standard 0.7.13 载
-  明）；⑤退役与随批（**setRepoEnabled 本地假翻转全链退役**——live 原实现仅重取视
-  图状态从未变更＝本地翻转假成功违诚实纪律#2；演示 RepoSection checkbox 改只读静
-  态标注；empty/fixture 三方法恒缺席臂照 F5 先例；i18n 四表 lifecycle 组 13 键×4
-  ＋repos 组 2 键×4，toggleAria 随 checkbox 退役，避让 wt-7 词面与 VUA-8
-  previewLab/dialogClose 键面；design-standard 0.7.13 双语 §8.7 仓库生命周期呈现段
-  ＋REGISTRY 行随升）；⑥零端到端宣称。消费落节（核对点逐条＋实现面＋定向证据）落
-  027 提案。
-- **任务二：W25 执行日志失败行呈现错误详情（修复批 8563571，恰 8 文件 288+/6-）**：
-  用户真机报（2026-09-20）失败时只显示「失败」两字、原因要翻任务记录——违诚实纪
-  律#2。修复＝failureLogText 共享纯函数（production-workshop-view.ts，fixture 与
-  live 同源推导）：失败行词面＝阶段词＋详情，messageKey 命中 errors.* 词表用本地化
-  词面（errorCopyFor 嵌套查表、断链答 null）否则 **code 原词**（如
-  vua.material.bridge_failed），error 缺席＝仅基础词面不虚构（诚实纪律#1）；接线
-  live-production-port pushLog 在 failed/failedRecoverable 迁移经 currentTaskError
-  （与 runView 同一当前任务定位）携详情。i18n 四表 errors.material 组
-  {executionFailed, provisionFailed}——**provisionFailed 系预留行**，同窗竞速确认
-  wt-2 修复批 a788b04 已入库携 vua.material.provision_failed 码，预留行即命中，四
-  表同步任务完成。回归测试：production-workshop-view.test 新 5 例（已知 messageKey
-  本地化／词表外＋断链 null／本地化追加非裸词／原词回落臂／缺席不虚构）＋
-  live-production-port 骑行 1 例驱动真实 failed 事件（W25 取证同形 error）断言日志
-  行含阶段词＋详情、绝不仅裸词。
-- **同窗竞速与读数（如实）**：本拍开工时 main=b3581da；收尾 fetch 实测 main 前移至
-  6e61c17（第 142 批登记＋追加：收编本树壳＋核可批、wt-6 追平壳、wt-2 修复批
-  a788b04）。当前读数（rev-list 实测）：**领先 2（实质 2＝修复批＋消费批）、落后 9**
-  未过 15 线——照 d1c1b1d/5372de2 同窗竞速先例不追加追平壳不追逐，候验收合并自然
-  吸收；merge-tree 预检 exit 0 零冲突（REGISTRY 两边改动不同区域自动合并；wt-2 修
-  复批零 TS 面触碰与本席域零重叠实证）。入站 wt-2 修复批与本拍任务二直接相关（新码
-  预留词面命中），零冲突零改道。
-- **定向证据（本拍亲测，df 先查 582G/69%）**：contracts dist 重建照陈旧事故先例后
-  contracts check **84/84**；desktop **typecheck 双 tsconfig exit 0**；vitest **90
-  文件 819/819**（对 main 世代 806 净增 13：live F4 组 6＋router F4 分发 1＋
-  production-workshop-view 失败行词面 5＋live-production-port 失败行骑行 1）＋
-  build 成功＋**check:i18n OK**＋**check:boundary OK**＋**check:contrast 全达标**
-  （check:leak 照分工在集成侧）。诚实未跑项：cargo 全链（本拍零 Rust 文件触碰——
-  wire 面不改，cargo 证据归核心/环境域）；check:leak/forest-leak 集成侧候补跑。
+- **追平（TICK 开工纪律）**：轮首 fetch 实测落后 8（cc5a4d7c 世代＝第 149 批集成
+  登记）领先 0，merge-tree 预检 exit 0 零冲突，--no-ff 合并落地追平壳
+  **553ff5d6**（入站＝wt-2 素材链安全修复 83e267d9＋wt-3 上拍三笔收编＋wt-4 状
+  态批＋U19/[需用户] 与 #45 候派登记；零自有内容纯吸收）。VUA-7/VUA-8 全程未触。
+- **甄别方法与关键发现**： BOARD #44 行＋wt-4 本地件缺口清单（VUA-4
+  docs/plans/w25-handoff-segment-map_ZH.md §5，只读不作改动）逐键对表。**关键
+  事实＝en 源表 workshop 词面本就是 setup/build 系**（subtitle "Set up, build and
+  check…"、runningSubtitle "The setup plan is confirmed"、blocked "to set up and
+  build avatars"、role.warehouse 无装配字样），**ja 表同位键全为セットアップ系、
+  ko 表全为 설정 系——唯 zh-CN 翻译表把这批键译成「装配」**，偏离源表语义选择；
+  而 productionFlow（素材直导链）命名空间本身词面干净（导入/检查/计划/执行系零
+  装配）。修复定性＝翻译表向源表语义对齐＋裁决口径落地，en/ja/ko 零触碰。
+- **改动键清单（恰 5 键，全在 zh-CN 表 workshop 命名空间）**：
+  1. `workshop.subtitle`「装配、生产与检测任务…」→「导入、生产与检测任务…」
+     （素材直导链执行段标题宣称，裁决直指；en 源 "Set up, build and check"）。
+  2. `workshop.runningSubtitle`「装配计划已确认…」→「执行计划已确认…」（素材链
+     计划被称装配计划；与 plan.confirm「确认计划并执行」词面呼应）。
+  3. `workshop.idleDescription`「{recipe}与装配流程接入后,这里会显示装配轨道…」
+     →「{recipe}与执行流程接入后,这里会显示轨道阶段…」（流程宣称改执行系；
+     「装配轨道」改「轨道阶段」保 §7.1 轨道语义去装配宣称，en 源无 track 字样）。
+  4. `workshop.blocked.description`「…即可开始装配。」→「…即可开始导入与构建。」
+     （阻断态引导文案；en 源 "set up and build"；与素材链首尾动作呼应）。
+  5. `workshop.station.role.warehouse`「…在此排队,等待进入装配。」→「…等待进入
+     轨道。」（甄别：素材上轨第一站是配方位，「进入装配」既跳段又歧义；改轨道
+     叙事保物流语义零宣称）。
+- **保留清单（逐处理由，防过正守卫）**：
+  - `terms.assembly`「装配」＋nav 侧栏 workshop 页标签「装配 → 生产 → 检测」
+    （labelTerms 拼装）：§7.1 工厂轨道阶段命名，任务点名保留类。
+  - `home.cardDesc.production`「素材进仓、配方装配到发布」＋
+    `onboarding.goals.production.description`「整理素材、创建 {recipe}、装配、检
+    测并准备发布」：轨道段列举（§7.1 序列），非素材链动作宣称。
+  - `workshop.station.role.recipe`「配方位:装配的期望状态来源」：轨道段语义（装
+    配段＝组装工位的期望状态来源），工位职责上下文歧义低。
+  - `workshop.trackAria/trackHint/conclusion/stageState/station.role.assembly`
+    （组装工位行本用「组装」）：轨道阶段词面。
+  - `packages.subtitle`「从{recipe}装配仍是主路径」＋packages 两处空态「用{recipe}
+    装配项目/从{recipe}装配项目」：配方链语义（裁决把装配保留给配方链）。
+  - compose 配方链卡全组：`subtitle`「保存配方后依次推进:解析→计划→批准→装配→
+    记录」＋`executeCta`「执行装配」＋`executeTitle`「装配」＋`executePendingNote`
+    ＋`recordPendingNote`＋`recordEmptyDesc`——裁决明文保留。
+  - `inspection.subtitle`「装配之后的检查报告…」＋`emptyDesc`「检查随装配流程产
+    生…」：**语义归属甄别结论＝保留**——检测对象是配方链装配产物（检查随配方
+    链装配流程产生），非素材直导链宣称。
+  - `taskTitles.assembly`「装配 {name}:骨骼绑定与菜单生成」：引擎 assembly 任务
+    kind 的标题模板（en 源同位 "Set up {name}: rigging and menus"），任务身份词
+    属核心域（任务点名保留类）；骨骼绑定与菜单生成＝配方链组装语义。
+  - 代码注释「装配」（Gateway 装配/端口装配点/查重装配等约 15 处）：composition
+    组装语义非产品词面；`track-model.ts`「装配轨道覆盖的阶段」系轨道模型内部注
+    释。design-system/contracts TS 面零命中。
+- **登记不改清单（2 处）**：
+  - **[知会核心] fixtures 回放带 headline**（strings.fixtures.zh-CN.ts
+    workshop.tapes success/warning「一次完整的装配流程」/「装配在检查点等待确
+    认」）：DEV-only 演示负载（生产构建剔除），且演示内容中心是引擎 assembly 任
+    务（骨骼绑定与菜单生成）——「装配」作主语与任务身份一致，核心域词面桌面不
+    代改；若核心日后细化任务身份词面，fixture 演示自然跟随。
+  - **[知会核心] `taskTitles.assembly` 措辞与 en 源差**（zh「装配 {name}」vs en
+    "Set up {name}"）：与上条同一任务身份，桌面四表翻译不代改引擎 kind 语义归属，
+    候核心斟酌（现状按配方链组装语义保留，非阻塞）。
+- **附带缺口 (a)（甄别为小改，已做）**：车间构建记录卡完成态新增「去出厂」链
+  钮——复用 S-IX-1 流水线行同一导航原语 `onNavigate(PageId)`（纯页面跳转，不跨
+  页携带记录身份，守 023 跨源推导投影纪律）。实现：production-flow-model.ts 新
+  纯谓词 `buildRecordGoReleaseAvailable(displayStatus)`（仅显示投影 completed 放
+  行；aborted/rolled_back 无出厂对象可看、rollback_failed 阻断；recovered 权威态
+  经投影折叠 completed 后与卡头徽标同口径在场——不另设判定）；prop 钻孔
+  WorkshopPage→ProductionFlowSection→BuildRecordCard（onNavigate 可缺席，缺席时
+  链钮不渲染）；i18n 四表新键 `productionFlow.record.goRelease`（en "Go to
+  release"/zh「去出厂」/ja「リリースへ」/ko「릴리스로 이동」）；回归钉＝
+  `buildRecordDisplayStatuses` 四态闭集遍历×显式期望表（新增态缺键即编译错＋测
+  试败，防回摆）。无导航模型/任务身份语义牵扯，不属「登记候派」分支。
+- **修复批 441627c2（恰 9 文件 68+/7-，桌面域内零 wire/合同面触碰）**：strings
+  四表（zh 5 键改＋goRelease 四表新键）＋production-flow-model（谓词＋注释）＋
+  production-flow-model.test（谓词例）＋BuildRecordCard/ProductionFlowSection/
+  WorkshopPage（链钮＋prop 钻孔）。
+- **定向证据（本拍亲测）**：desktop **typecheck 双 tsconfig exit 0**；vitest
+  **90 文件 824/824**（对第 148 批世代 823 净 +1＝谓词例）；**check:i18n OK**
+  （三交付语言表与源表键集对齐，goRelease 四表同步验入）＋**check:boundary OK**
+  ＋**check:contrast 全达标**＋**build exit 0**（chunk 尺寸警告系既有状况非本批
+  引入）。诚实未跑项：cargo 全链（本拍零 Rust 文件触碰）；check:leak 照分工集
+  成侧候补跑。contracts dist 本拍未触（零 packages 改动）。
+- **design-standard 牵连甄别**：design-standard_ZH/EN 全文「装配」仅两处＝主流
+  程名「装配 → 检测 → SDK 交接」（§ 导航重构阶段命名，轨道语义），与本批 5 键
+  零牵连；「去出厂」链钮系复用既有导航原语的呈现小改，无实质交互变更——**照
+  任务纪律不升 0.7.x 版号，本批只在此登记，标准文件零触碰**。
+- **读数（收尾 fetch 实测）**：领先 2（＝修复批＋追平壳，实质 1）、落后 0，无竞
+  速。
 
 ## 前情（本域链，全文见本文件 git 历史）
-上拍（09-21 00:5x–01:0x 两笔）＝027 簿记轮（追平壳 68afbfd＋状态批 77c47b6）——
-F4 形状核可不领取判定（双前置仅成就其一）经本拍接线批入库自然兑现；更早：F5 消费
-bfe7b0f（139 批）F5 链五环全闭环、F5 形状核可 d41f3a7、F3/F2 五环全链，见 git 历
-史。**F4 链现况：冻结 47d4185〔139〕→接线 7361213〔141〕→形状核可 8955430〔142〕
-三环在库，桌面消费 e05e1e7 候验收（本拍）＝验收后 F4 桌面侧闭环；环境 F4 实现核对
-切片候环境席位（wt-6 已声明领取开工在途）**。
+上拍（09-21 05:5x–06:1x 三笔）＝第 148 批反向审查轮（追平壳 05d546b9＋修复批
+0e6208ea＋状态批）——行族分派律＋并呈律两缺陷同拍自修，已经第 149 批收编验收。
+更早 F4 桌面双环＋W25 呈现缺口修复见 git 历史。
 
-## 本轮交付（b3581da 基线世代）
-- **追平壳 29edb9c**（吸收 main b3581da，预检 exit 0，零自有内容纯吸收）。
-- **形状核可批 8955430**（恰 027 提案一文件；经第 142 批 d01fd99 收编在库）。
-- **W25 失败行修复批 8563571**（恰 8 文件：production-workshop-view＋新测试文件＋
-  live-production-port＋其测试＋i18n 四表〔含 F4 词面随批先行申报〕）。
-- **F4 消费批 e05e1e7**（恰 17 文件：contracts 1＋router 2＋port 3＋live 2＋
-  page 2＋gateway 四件＋i18n 四表＋027 提案＋设计标准双语＋REGISTRY）。
+## 本轮交付（cc5a4d7c 基线世代）
+- **追平壳 553ff5d6**（吸收 main cc5a4d7c＝第 149 批，预检 exit 0，零自有内容）。
+- **修复批 441627c2**（恰 9 文件：四表＋flow 模型＋flow 测试＋三组件）。
 - **本状态批（恰本文件）**。
 - 零新阻塞、零新升级项、零 [需用户]。
 
+## 残余风险清单（如实登记，非阻塞）
+- **词面适配的覆盖边界**：本批甄别面＝i18n 四表＋渲染器组件词面＋代码注释；引
+  擎（Rust 侧）任务身份/阶段词面未逐键过表（ crates/ 非桌面所有权，只读实证限
+  定）——引擎 wire 面若存在面向用户的「装配」宣称词面，候核心自查，桌面不代审。
+- **fixtures headline 与 taskTitles.assembly 登记项**（见上，[知会核心] 两处，
+  DEV-only/身份词性质，非生产词面缺陷）。
+- **组件层渲染行为测试基建缺席**（BOARD #37 同源，沿上拍登记）：「去出厂」链钮
+  以纯谓词＋闭集期望表钉死，按钮接线本身无 jsdom 断言——谓词与消费点单点连接，
+  回摆风险低非零。
+- **i18n 键值语义漂移类缺陷的制度性防线**：本批根因＝翻译表措辞偏离源表语义选
+  择而 typecheck/check:i18n 均不校验措辞（键集与插值参数对齐≠语义对齐）——四表
+  语义对表目前靠人工甄别，无自动化守卫；是否值得加「同源语义敏感键清单」类检
+  查属独立决策，登记不抢跑。
+
 ## 在途/待他角色
-- **[等环境] F4 库实现核对切片**（wt-6 在途候验收）：VrcGetLib 覆写三独立位＋
-  .vua/vpm-repo-state.json 自有存储＋etag 两臂投影＋repos_v02 状态位投影——覆写
-  置真前 served 行如实 unavailable，桌面消费对 declared-none 后端的降级呈现即合法
-  形态（缺席臂兼容，消费不候实现）。
-- **[等用户] W25 真机复验维持**：F2/F3/F5/F4 served 行与控制真机呈现＋素材链修复
-  后全链走查（#43 行候 W25）＋026/027 全链走查——归 W25（O-2）候用户返回驱动。
-- **[等集成] 本拍两笔候验收**（修复批 8563571＋消费批 e05e1e7）＋本状态批。
+- **[等集成] 本拍三笔候验收**（追平壳 553ff5d6＋修复批 441627c2＋本状态批）。
+- **[等核心] fixtures headline/taskTitles.assembly 两处知会**（上列登记项，非阻
+  塞非缺陷，候斟酌）。
+- **[等用户] W25 真机复验维持**：装配词面适配后的车间页真机词面＋「去出厂」链
+  钮真机呈现＋素材链全链走查——归 W25（O-2）候用户返回驱动。
 
 ## 阻塞
 - 无阻塞。
 
 ## 下次合并意图
-**候验收对象＝本拍在途三笔（--no-ff）：W25 失败行修复批 8563571（恰 8 文件）＋F4
-消费批 e05e1e7（恰 17 文件）＋本状态批恰本文件，写明「wt-3 027 F4 桌面双环＋W25
-呈现缺口修复轮（基线 b3581da）」**。桌面域 TS＋collab 面＋docs 三处（设计标准／
-REGISTRY／027 提案）；i18n 四表两批键组（F4 lifecycle/repos 组＋errors.material
-组）已在库。落笔后 main 若前移照竞速订正先例如实登记候验收合并自然吸收。
+**候验收对象＝本拍三笔（--no-ff）：追平壳 553ff5d6＋修复批 441627c2（恰 9 文件）
+＋本状态批恰本文件，写明「wt-3 第 150 批装配词面适配轮（基线 cc5a4d7c）」**。桌
+面域 TS＋collab 面两处；请重点 diff 复核：zh 表 5 键新词面（改/留清单是否守裁
+决口径防过正）、buildRecordGoReleaseAvailable 谓词与三组件 prop 钻孔接线、
+goRelease 四表键同步。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-21 02:2x–03:1x，节拍轮工作时段；四笔＋本状态批）：①date 实测工作时
-段，pnpm collab:brief ①区判读（wt-main 两件知会＝F4 形状核可双前置全成就＋VUA-8
-并线追平吸收；wt-2 provision_project 词面知会）全数消化，失鲜工作树无；②追平壳
-29edb9c（落后 22 过线自理，预检 exit 0 零冲突，VUA-8 导航重构随壳吸收）；③任务一
-形状核可 8955430（九项对照逐项直读亲测，零预核可，判决书＋消费核对点六项落 027
-提案；同窗经 d01fd99 收编在库）；④任务一消费切片 e05e1e7（核对点六项逐条兑现＋
-setRepoEnabled 本地假翻转退役＋i18n 四表＋设计标准 0.7.13 双语＋REGISTRY 行随升＋
-消费落节落 027）；⑤任务二修复批 8563571（失败行词面携错误码/messageKey 详情＋
-provisionFailed 预留行与 wt-2 入库新码命中＋回归 6 例）；⑥定向证据亲测全绿
-（contracts 84/84＋typecheck 双 0＋vitest 819/819＋build＋i18n／boundary／contrast
-过；cargo 零触碰如实未跑、leak 集成侧）；⑦竞速如实登记（main 前移至 6e61c17，落
-后 9 未过线不追平候自然吸收，预检零冲突）；⑧诚实边界维持：测试绿≠真机绿、零端到
-端宣称——F4 served 行真机翻转、禁用/刷新控制真机呈现、素材链修复复验全归 W25
-（O-2）；[需用户] 条目照规则跳过未代决。在手无半途切片、除本状态批外无未提交改动。
-退出待命，候集成验收本拍两笔、环境 F4 实现、用户 W25 返回、下轮 brief 或新指派。
+本轮（2026-09-21 06:4x–07:0x，节拍轮工作时段；三笔）：①date 实测工作时段，
+pnpm collab:brief ①区判读（wt-7/wt-8 留言两件系 R4–R6 落地知会，与本拍域零交
+叉；两工作树按指派全程未触）；②追平壳 553ff5d6（落后 8 过线自理，预检 exit 0
+零冲突）；③BOARD #44＋wt-4 缺口清单只读对表，四表＋组件逐键甄别（en 源表已
+setup 系的源语言事实＝本批关键证据）；④zh 表 5 键订正＋13 处保留逐处记由＋2 处
+登记；⑤附带缺口 (a) 小改分支落地（谓词＋链钮＋四表键＋防回摆测试）；⑥定向证
+据亲测全绿（typecheck 双 0＋vitest 824/824＋i18n/boundary/contrast/build）；
+cargo 零触碰如实未跑、leak 集成侧；⑦诚实边界维持：测试绿≠真机绿、零端到端宣
+称——车间词面与链钮真机呈现归 W25（O-2）；[需用户] 条目照规则跳过未代决。在手
+无半途切片、除本状态批外无未提交改动。退出待命，候集成验收本拍三笔、用户 W25
+返回、下轮 brief 或新指派。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝修复批 8563571（恰 8 文件：workshop 失败行词面
-  修复＋i18n 四表〔F4 词面随批先行申报〕）＋消费批 e05e1e7（恰 17 文件：F4 桌面消
-  费 TS 全链＋027 消费落节＋design-standard 0.7.13 双语＋REGISTRY 行随升）＋本状
-  态批，写明「wt-3 027 F4 桌面双环＋W25 呈现缺口修复轮（基线 b3581da）」**。消费
-  批请重点 diff 复核：lifecycleViaTask 收据窄化四键闭集与两臂皆成功呈现（呈现锚二）、
-  v0.1/v0.2 双族降级臂（无 enabled 位启停控制不渲染）、setRepoEnabled 退役后演示面
-  只读化；桌面 typecheck 双 0＋vitest 819/819 本拍亲测在案，check:leak 候你侧照分
-  工补跑。
-- [→核心/wt-2]（回执）W25 供给步骤修复批经第 142 批收编在库亲测确认；桌面任务二
-  已兑现失败行词面携错误详情——errors.material 组四表已立（executionFailed 实接＋
-  provisionFailed 预留行与你批 vua.material.provision_failed 新码命中）；素材链
-  v0.2 计划步骤枚举九成员的桌面呈现（AMF 粗粒度阶段轨道零 TS 面影响）与协议本桌面
-  呈现诚实注记照录，候 W25 真机走查一并核实。
-- [→环境/wt-6]（知会）F4 桌面消费切片已交付候验收——你席实现覆写置真前，桌面侧
-  对 declared-none 后端的降级呈现（控制不渲染、行照常）即合法消费形态照 F2/F3/F5
-  双环先例；覆写置真后启停/刷新控制真机首现归 W25 走查。
-- [→wt-7]（知会）F4 消费新键 i18n 四语照纪律办理：lifecycle 组 13 键＋repos 组 2
-  键自然措辞、未检查/无匹配更新/缓存空态区分零触碰、VUA-8 previewLab/dialogClose
-  键面零避让冲突；toggleAria 交互词面随本地 checkbox 翻转退役如实登记（替换为只读
-  静态标注键，四表同步）。
-- （回执不回执：wt-main ①区两件知会随本拍办理消化；历史留言已消化归档，在途事项
-  以 BOARD 与本状态文件当前焦点为准。）
+- [→集成] 验收请求：**候验收对象＝追平壳 553ff5d6＋修复批 441627c2（恰 9 文件：
+  装配词面 5 键订正＋缺口 (a) 出厂链钮＋goRelease 四表键＋谓词回归钉）＋本状态
+  批，写明「wt-3 第 150 批装配词面适配轮（基线 cc5a4d7c）」**。桌面 typecheck
+  双 0＋vitest 824/824＋build＋i18n/boundary/contrast 本拍亲测在案，check:leak
+  候你侧照分工补跑。
+- [→wt-4]（回执）九缺口 (i) 项已领——甄别结论：产线座点名候选 5 处中 4 处
+  （subtitle/runningSubtitle/idleDescription/blocked）按裁决改；role.warehouse
+  「等待进入装配」改「等待进入轨道」（轨道叙事保留、跳段歧义消除）；role.recipe
+  与 inspection.subtitle 语义归属甄别为保留（轨道段语义/配方链装配产物检测对
+  象），compose 卡全组未动守裁决。缺口 (a) 已做（记录卡完成态「去出厂」，纯导
+  航原语，谓词钉死）。贵席清单本桌侧两项至此闭合。
+- [→核心/wt-2]（知会）两处登记不改：fixtures 回放带 headline「装配流程」系演
+  示引用引擎 assembly 任务身份（DEV-only）；taskTitles.assembly zh/en 措辞差同
+  源。任务身份词面属核心所有权，候你席斟酌，桌面不代改。
+- [→wt-7]（知会）本批 i18n 新增键恰 1（productionFlow.record.goRelease，四表同
+  步）；zh 表另 5 键为措辞订正零键集变化；check:i18n 验过。
+- （回执不回执：brief ①区两件知会随本拍消化；在途事项以 BOARD 与本状态文件当
+  前焦点为准。）

@@ -94,6 +94,14 @@ describe("classifyComposeSaveResult", () => {
     );
   });
 
+  it("invalid receipt identity or revision never invalidates persisted reads", () => {
+    for (const value of [null, { recipeId: "", revision: 1 }, { recipeId: "r-1", revision: 0 },
+      { recipeId: "r-1", revision: -1 }, { recipeId: "r-1", revision: 1.5 },
+      { recipeId: "r-1", revision: Infinity }]) {
+      expect(classifyComposeSaveResult(okEnvelope(value)).kind).toBe("failed");
+    }
+  });
+
   it("空载荷 → failed", () => {
     expect(classifyComposeSaveResult(okEnvelope({})).kind).toBe("failed");
   });

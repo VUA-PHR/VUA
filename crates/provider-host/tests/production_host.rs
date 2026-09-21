@@ -893,6 +893,12 @@ fn run_failing_confirm(
     };
     assert_eq!(task.state, TaskState::Failed, "{task:?}");
     assert_eq!(task.error.as_ref().expect("typed error").code, "vua.material.bridge_timeout");
+    assert_eq!(
+        task.error.as_ref().expect("typed error").message_key,
+        "errors.material.executionFailed",
+        "a bridge-segment failure keeps the standing face at the worker too — only the \
+         provision segment presents provisionFailed (batch 150 word-face law)"
+    );
 
     (base, source, project_root, plan_id, plan_revision, confirm_task_id)
 }
