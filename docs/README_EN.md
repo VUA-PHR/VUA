@@ -56,7 +56,7 @@ documents above.
 
 - [Development outline (current window and batches)](development-outline_EN.md)
 - [Design standard](design/design-standard_EN.md)
-- [Project handoff summary](project-context_EN.md)
+- [Cold-start primer (former handoff summary, U15 condensed)](project-context_EN.md)
 - [Managed-document registry](REGISTRY.md)
 - [System architecture](architecture/system_EN.md)
 - [Electron desktop and presentation](architecture/desktop_EN.md)

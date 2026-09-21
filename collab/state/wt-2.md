@@ -2,101 +2,72 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 7bc18e90
+baseline_commit: 36bab970
 updated: 2026-09-21
 ---
 ## 当前焦点
-**第 150 批（2026-09-21，两笔：修复批 7bc18e90 恰 10 文件 533+/11-＋本状态批恰
-本文件）——桌面座 148 批实证的 messageKey 粒度细化＋操作者裁定的 `Packages/`
-盲点收口；轮首追平 main cc5a4d7c（fast-forward，落后 4→0，纯吸收集成第 149
-批世代）；用户休息中授权自主续拍，VUA-7/VUA-8 全程未触碰**：
+**第 155 批（2026-09-21 23:0x–23:5x，节拍轮工作时段 date 实测）＝U19 交棒准
+入闸后端切片（用户裁决 2026-09-21 下午，BOARD U19 行裁决全文照录为规范源，
+今晚窗口置顶首项）一笔实现批 36bab970；轮首合并 main fa2290ab（本树原领先
+两笔已被集成第 154 批收编为合并 9125f8f1，零分叉追平后叠加）；五 crate＋
+docs＋mock 面 6 改 9 增；cargo test --workspace 890/0＋clippy --workspace
+--all-targets 0 警告；VUA-7/VUA-8 全程零触碰**：
 
-- **任务一：失败 messageKey 按失败类别分流（BOARD #45 桌面知会件）**。
-  桌面 148 批实证：`material_task.rs` 与 provider-host 工作面对一切 Failed
-  恒发 `errors.material.executionFailed`，桌面预留的 `provisionFailed` 词面
-  永不命中、供给失败与桥接失败同句笼统。修复：`material_exec` 新增
-  `failure_message_key` 分类助手（单一来源），供给段失败（`run_provision`
-  的 create/resolve 臂及其包装臂——码一律以 `vua.material.provision_failed`
-  为前缀）改发 `errors.material.provisionFailed`，其余维持
-  `executionFailed`；两个发射面（unity-bridge 任务运行时 job＋provider-host
-  `Run::Execute` 工作面）共用同一助手。**载荷数据细化非 wire 形状变更**：
-  AppErrorV1 信封与字段闭集零触碰、Schema 零触碰、零新码；差异事实仍由
-  `code` 携带（桌面 148 批并呈律同显词面与原码，原供给原因无论键面如何都
-  到达行内）。`inspect_project` 的两处直发 AppErrorV1 维持
-  executionFailed——检查面无供给段（如实在案）。协议本 v0.2 0.2.1 注记
-  （双语）＋REGISTRY 括注照章。
-- **任务二：`Packages/` 盲点收口（BOARD #45 跨面决策项；操作者裁定：素材
-  直导通道不得静默写入 `Packages/`——那是 vpm-manifest 追踪的 VPM 通道
-  领地，绕过追踪的写入违背单通道写模型）**。机制按合同纪律裁量，两层
-  兜底、零新码：
-  1. **intake 预检面（发现/阻断）**：`scan_unitypackage` 在检查面即拒收
-     `Packages/` 前缀 pathname（既有 `vua.material.archive_invalid` 族）——
-     计划与确认根本不形成。软「发现」形态被否：仅记证据会让已确认计划
-     静默丢包（＝静默部分导入，恰是要封的死法）。
-  2. **执行臂兜底（拒绝）**：`extract_package_into_dir` 第一遍整体拒收
-     （先于第二遍任何落盘——零残留、零部分物化；Ordinal 前缀与 C# 面判
-     定逐字节同形），三处物化消费点（直导/暂存导入/generate_vpm_only）
-     共用；计划后混入的此类包在执行前重检如实拒绝（先于快照与首笔变更）。
-     暂存腿旧的静默有损形态（Packages/ 条目物化进一次性暂存工程、落在生
-     成包之外）同批变为诚实拒绝。
-  - **C# 面刻意不动，决策与理由**：Bridge v4 协议已冻结，其诊断码集合里
-    无一个能诚实承载「通道边界拒绝」的既有码——说谎复用
-    （source_type_invalid/manifest_drift/operation_not_allowed 语义皆不符）
-    或新立诊断码（操作者零新码约束所不容）两案皆被否。两层 Rust 闸口就位
-    后，链上已无任何路径能把 Packages/ 内容送达 C# op，其 Assets/-或-
-    Packages/ 接受臂成为链上不可达的**休眠面**——收窄它（一行）候码决策
-    或协议注记后再做，已在候派登记，不夹带。`ValidateAssetPaths` 继续接受
-    Packages/ 期望——那是 VPM 通道（本地包生成＋vpm install）的合法面，
-    非本裁定所及。
-  - **148 批钉不回摆**：恶意归档三形态 raw-ustar 测试套内实测保持绿——
-    其合法布局用 Assets/ pathname，条目名组件守卫与 pathname 内容检查
-    正交。
-- **素材链 messageKey 家族核对（BOARD #45 顺带件；桌面词表补齐候选清单，
-  跨域不动桌面）**：引擎侧在用 `errors.material.*` 键全量 12 个——
-  `executionFailed`（任务层＋工作面＋inspect_project ×2＋工作面回滚臂）、
-  `provisionFailed`（本批新增分类）、`sourceInvalid`（intake ×2）、
-  `sourceEmpty`、`sourceUnreadable`、`sourceDrift`、`planHashMismatch`、
-  `riskDecisionStale`（×2）、`riskDecisionRequired`、`cancelled`、
-  `internal`（digest_json）、`recordFailed`（工作面回执发布失败臂）。
-  桌面词表 material 段现有 2 键（executionFailed＋provisionFailed，四语
-  同步）——**补齐候选 10 键**：sourceInvalid、sourceEmpty、sourceUnreadable、
-  sourceDrift、planHashMismatch、riskDecisionStale、riskDecisionRequired、
-  cancelled、internal、recordFailed（现由 code 原词兜底呈词，未命中不虚构，
-  与诚实三律兼容——补齐属呈现增强非缺陷修复）。桌面裁量，本域不动。
-- **测试清单（＋6，五 crate 821/0，对表 148 批 815 自洽）**：
-  1. 源内 batch150 通道边界模块：Packages/-only 归档拒收且
-     extracted_root 从未创建（零落盘）；Assets/＋Packages/ 混装归档整体
-     拒收（无静默部分导入）。
-  2. tests/material_exec.rs：intake 阻断含 Packages/ 包＝发现面
-     （archive_invalid）；计划后混入归档执行臂诚实拒绝（VerifySource 失败、
-     rollback NotNeeded、零 Bridge 命令、无收据）。
-  3. tests/material_task.rs：任务层供给失败 Completed 事件呈现
-     provisionFailed＋provision_failed 族码＋空态诚实收据；任务层桥接拒绝
-     维持 executionFailed＋bridge_rejected。
-  4. provider-host production_host.rs：既有 bridge_timeout 工作面钉扩展
-     executionFailed messageKey 断言。
-- **证据（personally green，date 实测）**：cargo test 五 crate **821/0**
-  ＋clippy 六 crate（含 bdl-store）--all-targets **0 警告 0 错误**＋
-  desktop typecheck 双 tsconfig **exit 0**（零 TS 文件触碰，为证据形状
-  齐整复跑）＋git diff --check clean。修复批恰 10 文件 533+/11-＝
-  unity-bridge src 3＋tests 2、provider-host src 1＋tests 1、协议本双语
-  2＋REGISTRY 1。VUA-7/VUA-8 及其分支全程未触碰。
-- **候派登记（本批不动）**：
-  1. C# 物化面 `Packages/` 接受臂收窄（休眠面；需新诊断码裁决或协议注记，
-     一行改动候派）。
-  2. `loadedAssetPaths` 证据面 `unwrap_or_default`（148 批登记沿用，跨
-     crate fake 涟漪）。
-  3. 端口面取消位（VpmBackend/Bridge；快照/provision 网络段/preview/
-     apply 腿不可中断）。
-  4. 失败/取消后 `.vua/imports` 解包残留清理策略（需回滚分支小重构）。
-- **诚实边界维持：零端到端宣称**——本批全部结论系代码面＋fake/手工归档
-  证据；真实 W25 素材是否携带 `Packages/` 条目、供给失败词面在桌面真机上
-  的实际命中，均归 W25（O-2）如实候验；测试绿≠真机绿。
+- **交棒状态闸（后端权威，provider_host 准入序，不在 UI）**：核心分类函数
+  `classify_handoff_record_state`（crates/orchestrator/src/release_handoff.rs）
+  按构建记录 v0.3 status 枚举对表落位——规范表：`succeeded`／
+  `succeeded_with_warnings` 放行（警告呈现保留归桌面面，后端零改写）；
+  `failed`／`cancelled`／`rolled_back`／`recovered` 拦截＝新码
+  `vua.release_handoff.record_state_blocked`（category=**permission**＝政
+  策拒绝类，裁决修正 a「状态是事实、哪些状态可交接是政策」；`params.state`
+  携记录状态原值逐字）；status 缺失/非字符串/枚举外拒绝＝新码
+  `vua.release_handoff.record_state_unknown`（category=validation，记录无
+  法确认）。闸位＝记录存在之后、身份解析之前（wire 钉准入序）；被拦记录
+  **不受理任务**（任务库零写入、port 永不触达）。messageKey 恰两键
+  `errors.releaseHandoff.stateBlocked`／`errors.releaseHandoff.stateUnknown`
+  （四语词面归桌面座并行批，本座只管发射面）。recovered 与其余终态同待遇
+  （裁决修正 b：检视完成不改失败历史为成功，两套状态不混用）；成功记录不
+  保证工程仍是当时结果（修正 c，零宣称）。
+- **独立检视入口（裁决①「不得禁止打开工程排错」）**：新路由
+  `release.openForInspection`＝交棒受理序**去掉状态闸**的剩余全集
+  （params 闭集／接线面／build_unknown／editor_unresolved 照验，wire 钉）；
+  完成事实＝`build_inspection_fact` 六键闭集（交接事实五键＋显式
+  `operation` 键 const 检视词面）——词面由形状钉死**绝不宣称交接完成**
+  （负例向量：携交接操作词面的检视事实非法；无上传字段形状钉）。port/
+  trait 形状零变化（两入口复用 `ReleaseHandoffPort` 机制，操作语义归路
+  由面），unity-bridge 零增操作。
+- **词表升版 release-handoff v0.2**：版本常量 0.1→0.2 单源（provider-host
+  改再导出核心常量，双源字面量删除）；错误信封新增 params 面（ORC-ERR-001
+  形状，**仅非空出现**——既有码线面形状逐字节不变）；冻结集＝
+  `schemas/release-handoff/v0.2/` 双方法 Schema＋正例 5＋负例 6 向量＋双
+  语协议本 `docs/protocols/release-handoff-v0.2_ZH.md`/`_EN.md`＋REGISTRY
+  两行；**v0.1 族文档一字节不动**（历史冻结面，编译钉保留）。
+- **测试（裁决④⑤：绕过 UI 直接调用＋全部状态覆盖）**：wire 帧环 20/20
+  ——六枚举态＋缺失＋非字符串＋枚举外＋空串逐一过真环；拦截三断言
+  （码＋category＋params.state 逐字）；被拦不受理任务且 port 未达；准入
+  序钉；检视入口对被拦/缺失/枚举外全不闸＋词面钉＋三验照旧；orchestrator
+  release_handoff 单测 14（全枚举分类守卫＋检视事实构造）。全绿：
+  cargo test --workspace **890/0**＋clippy --workspace --all-targets **0
+  警告**；mock 包 tsc＋vitest 46/46 复绿。
+- **跨座接续点（候桌面座 wt-3 随环流水线下一环，非阻塞登记）**：①TS 契
+  约 face（packages/contracts，桌面所有权）词表行升 0.2＋
+  `release.openForInspection` 方法面——其前桌面编译期类型停留 0.1（运行时
+  无版本闸，桌面本地面无隐性回归，已核 release-handoff-model/port 零版本
+  字面量钉）；②四语词表两新键＋Release 页独立打开入口确认；③mock provider
+  检视入口缺席 fall-through 分支候 TS method 闭集入新方法后随批补入（本批
+  仅更新缺席分支注释如实登记——method 闭集在 @vua/contracts，本座不越域；
+  其前模拟面对检视方法如实答 unknown_method，不属伪造）。
+- **诚实边界维持：零端到端宣称**——全部证据系 fake port／临时库帧环（裁
+  决 15 本地先行）；真机（真实记录→真启动→handshake→事实回流、被拦态桌
+  面呈现全链）归 W25（O-2），证据要求不放宽。`?? _local_p27_devlog.txt`
+  照例未触碰。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 148 批（83e267d9＋98767e61，2026-09-21）＝素材链反向审查批：tar 解包
-组件级路径守卫＋mutating 命令 id attempt 盐＋物化指纹硬要求三修复三钉，
-经集成第 149 批收编（da6a3bfb）。第 146 批（70f7476）＝供给依赖解析端口面
-钉底＋run_provision 接线（resolve 骑新建路径、指纹重取哨兵、失败两臂诚实），
-操作者裁决两笔落账（第 147 批）。更早段落见本文件 git 历史与 BOARD 前录
-（10 段轮转）。
+第 152 批（cd8c0000＋d2063abe，2026-09-21）＝纯文档起草批：proposal 029
+（车间入口模型重构〔配方驱动为主〕＋从已有 Unity 项目导出 Recipe）两笔，
+经集成第 154 批收编（合并 9125f8f1）验收成立；用户下午在场资源纪律遵守
+（零构建零测试）。第 150 批（7bc18e90＋464541c3）＝素材链修复批（失败
+messageKey 类别分流＋Packages/ 通道边界两层兜底），经集成第 151 批收编
+（合并 3e5573a6）。第 148 批（83e267d9＋98767e61）＝素材链反向审查批
+（tar 解包组件级路径守卫＋mutating 命令 id attempt 盐＋物化指纹硬要求），
+经集成第 149 批收编（da6a3bfb）。更早段落见本文件 git 历史与 BOARD 前录。
