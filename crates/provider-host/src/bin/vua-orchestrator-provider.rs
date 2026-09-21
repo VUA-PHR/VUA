@@ -178,6 +178,10 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         handoff: Some(std::sync::Arc::new(
             vua_provider_host::EditorHandoffAdapter::new(),
         )),
+        // Proposal 029 B-face loop 2: the export-executor adapter is the
+        // NEXT loop's implementation slice — the route keeps answering the
+        // frozen honest absence until it lands (declared-none discipline).
+        draft_exporter: None,
     }
     });
     // Project-domain command face (proposals 013/014) + environment

@@ -512,6 +512,7 @@ fn handoff_config(
         project_root: root.join("project"),
         editor_selection: selection,
         handoff: port,
+        draft_exporter: None,
     }
 }
 
