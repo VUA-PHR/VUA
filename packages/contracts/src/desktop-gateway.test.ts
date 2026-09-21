@@ -461,6 +461,24 @@ describe("gateway guard covers every declared method (regression: silent guard g
     expect(isDesktopGatewayRequestV1({ ...request, params: { buildId: 7 } })).toBe(false);
   });
 
+  it("recipe.exportProjectDraft: params closed single-key {projectPath} minLength 1 (029 B-face freeze, recipe-export v0.1; envelope guard matches schema additionalProperties:false; the entry is limited to the registered project set - no arbitrary path face)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-44",
+      method: "recipe.exportProjectDraft" as const,
+      params: { projectPath: "C:\\VRChat\\Projects\\Demo" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串/投机字段/错型:一律拒绝(形状违反 ≠ 服务端 typed 拒绝;
+    // 未注册路径由 Provider 复用 vua.project.project_not_found,信封只钉键形)
+    expect(isDesktopGatewayRequestV1({ ...request, params: {} })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: "" } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { projectPath: "C:/x", recipeId: "r-1" } }),
+    ).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: 7 } })).toBe(false);
+  });
+
   it("packages.listRepos: params empty closed set — any key rejected (025 P2 freeze; global configuration face)", () => {
     const request = {
       schemaVersion: 1 as const,
