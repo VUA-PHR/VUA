@@ -9,6 +9,7 @@ import type { TutorialPort } from "./tutorial-port.ts";
 import type { WarehouseCommandsPort } from "./warehouse-commands-port.ts";
 import type { ProjectOpsPort } from "./project-ops-port.ts";
 import type { ProductionChainPort } from "./production-chain-port.ts";
+import type { RecipeExportPort } from "./recipe-export-port.ts";
 import type { InspectionPort } from "../features/inspection/inspection-port.ts";
 import type { ReleaseHandoffPort } from "../features/release/release-handoff-port.ts";
 import type { ReleaseProjectOpenPort } from "../features/release/release-project-open-port.ts";
@@ -33,6 +34,9 @@ export interface VuaGateway {
   readonly projectOps: ProjectOpsPort;
   /** 019 批 C:生产链共享端口(解析/计划/任务/记录;两套 UI 共用) */
   readonly productionChain: ProductionChainPort;
+  /** 029 B 面环 4:配方导出端口(recipe.exportProjectDraft 同步只读;草稿
+   *  转正唯一通道 = 用户显式确认后的既有 recipe.save 保存链) */
+  readonly recipeExport: RecipeExportPort;
   /** M7 检查切片消费批:检查读面端口(inspection.get/list;016 仲裁
    *  独立词表行) */
   readonly inspection: InspectionPort;
