@@ -1,8 +1,9 @@
-//! BDL read-model query vocabulary v0.3 (frozen 2026-09-06; serving face
-//! landed with W12, 2026-09-07).
+//! BDL read-model query vocabulary (frozen 2026-09-06 at v0.3; serving face
+//! landed with W12, 2026-09-07; v0.4 additive downloads.listCompleted;
+//! v0.5 additive dependencies.lookup/listByProduct, 2026-09-22).
 //!
-//! Rust anchor for `schemas/bdl-queries/v0.3` (docs/protocols/
-//! bdl-queries-v0.3): the five read-only operations, the wire three-state
+//! Rust anchor for `schemas/bdl-queries` (docs/protocols/bdl-queries-v0.5
+//! current): the read-only operations, the wire three-state
 //! LocalArtifact verdict, the catalog health vocabulary, the availability
 //! derivation function and the catalog serving-face result types — the
 //! executable form of the protocol's versioned rule table. The catalog face
@@ -16,7 +17,18 @@ use crate::bdl_store::ArtifactInspectionState;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
-pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.4";
+/// The bdl-queries family ENVELOPE version constant. v0.5 (2026-09-22, the
+/// core wiring batch riding the wt-5 freeze cb40bf1d): the additive
+/// six→eight operation rise (`dependencies.lookup` /
+/// `dependencies.listByProduct`); the six v0.4 methods keep their
+/// params/fields/results identical — only the envelope schemaVersion rises
+/// with the vocabulary. Both frozen schema files (query side and result
+/// side) lock this ONE shared value — the family carries no per-result
+/// version, so the dual-const law (envelope const + result family const)
+/// collapses onto this single const stamped at the single envelope
+/// assembly point. Consumers key on this core-owned constant, never a
+/// private literal.
+pub const BDL_QUERIES_SCHEMA_VERSION: &str = "0.5";
 
 /// The five read-only operations. Transport envelopes belong to the
 /// application contract; this enum pins the operation vocabulary only.

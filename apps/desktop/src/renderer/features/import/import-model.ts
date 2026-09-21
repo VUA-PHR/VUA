@@ -40,7 +40,8 @@ export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvaila
 
 /* ---- 已完成下载收窄(BOARD #36 缺陷②修复批,2026-09-18) ----
  * live wire 形状 = bdl-queries 三键信封(provider-host bdl_query_success:
- * schemaVersion "0.4" + operation + result 本体),不是契约平铺值
+ * schemaVersion "0.5" + operation + result 本体;2026-09-22 核心 v0.5 接线批
+ * 信封常量 0.4→0.5 机械跟随,additive 升版六方法词面零变化),不是契约平铺值
  * {downloads}——此前读 value.downloads 恒 undefined→诚实 unavailable
  * (「仓库服务尚未接入」假象,引擎侧直调实为健康)。修法自决申报:渲染层
  * 按嵌套路径收窄(与 packages-live 信封收窄同纪律);路由层统一解包否决——
@@ -48,7 +49,7 @@ export function browseAvailability(remoteBrowser: unknown): EmbeddedBrowseAvaila
  * 合并),统一解包需按族 wire 知识进 Kernel 且会破坏既有三个信封感知端口。
  * 词表外信封或形态不齐行如实判不可解释,不猜测。 */
 
-const BDL_QUERIES_ENVELOPE_SCHEMA_VERSION = "0.4";
+const BDL_QUERIES_ENVELOPE_SCHEMA_VERSION = "0.5";
 const DOWNLOADS_LIST_COMPLETED_OPERATION = "downloads.listCompleted";
 
 /** 行六键闭集(DownloadsListCompletedItemV04 镜像):多余键/缺键/类型不符

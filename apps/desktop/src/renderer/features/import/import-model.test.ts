@@ -187,7 +187,10 @@ const wireRow = (overrides: Record<string, unknown> = {}) => ({
 });
 
 const bdlEnvelope = (result: unknown) => ({
-  schemaVersion: "0.4",
+  // 2026-09-22 核心 v0.5 接线批信封常量 0.4→0.5 机械跟随(positive 用例
+  // 骑现行词面);下方负例保留 "0.4" 字面——升版后旧版本词面本身即词表外,
+  // 与缺键/错 operation 同判不可解释。
+  schemaVersion: "0.5",
   operation: "downloads.listCompleted",
   result,
 });
