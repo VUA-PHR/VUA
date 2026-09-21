@@ -31,7 +31,10 @@ use vua_orchestrator::{
     AppErrorV1, DependenciesListByProductResultV05, DependenciesLookupResultV05, DependenciesQueriesCapabilities,
     DependenciesQueriesPort, ErrorCategory,
 };
-use vua_bdl_store::{ArtifactMode, BdlStore, BDL_QUERIES_SCHEMA_VERSION};
+use vua_bdl_store::{
+    ArtifactMode, BdlStore, DependencyResolutionEvidence, NewDependencyObservation,
+    ProductObservation, ProductObservationStatus, BDL_QUERIES_SCHEMA_VERSION,
+};
 use vua_provider_host::{run_provider_host_full, WarehouseConfig};
 
 fn schema_dir() -> PathBuf {
@@ -499,4 +502,131 @@ fn capability_row_follows_the_declared_none_default_and_the_override_flip() {
         .expect("the dependencies row is served");
     assert_eq!(row["availability"], "available");
     let _ = fs::remove_file(&database);
+}
+
+/// The REAL executor over a SYNTHETIC seeded library, through the real
+/// frame loop — the assembly-shape proof of the implementation ring (the
+/// bin wiring passes `Some(BdlDependencyQueries::new(store))`; this test
+/// pins the same composition one layer below the bin). The answer is the
+/// executor's own derivation over the seeded rows, schema-validated.
+#[test]
+fn real_executor_answers_lookup_through_the_real_frame_loop() {
+    use vua_orchestrator::BdlDependencyQueries;
+
+    let database = temp_database("real-executor");
+    let warehouse = warehouse_with(None);
+    // Seed the synthetic library through the store's own v0.2 write faces:
+    // one declaring product, one resolution target, one CONFIRMED
+    // deliberate-declaration observation.
+    let declaring = product_observation("booth:777", ProductObservationStatus::Complete);
+    let target = product_observation("booth:888", ProductObservationStatus::Complete);
+    warehouse
+        .bdl
+        .record_product_observation(&declaring)
+        .expect("seed declaring product");
+    warehouse
+        .bdl
+        .record_product_observation(&target)
+        .expect("seed target product");
+    let evidence = DependencyResolutionEvidence {
+        link_text: "GateWire".to_owned(),
+        link_url: "https://booth.pm/ja/items/888".to_owned(),
+        span: "body".to_owned(),
+        note: None,
+    };
+    let row = warehouse
+        .bdl
+        .record_dependency_observation(&NewDependencyObservation {
+            product_id: "booth:777".to_owned(),
+            dep_kind: "shader".to_owned(),
+            dep_name: "GateWire".to_owned(),
+            raw_quote: "requires GateWire".to_owned(),
+            source_span: "body".to_owned(),
+            version_hint: None,
+            resolved_ref_product_id: Some("booth:888".to_owned()),
+            resolution_evidence: vec![evidence.clone()],
+            extraction_method: "explicit_heading".to_owned(),
+            extracted_by: "synthetic-extractor".to_owned(),
+            observed_at: "2026-09-22T00:00:00.000Z".to_owned(),
+            processor_version: "synthetic-test".to_owned(),
+            content_hash: None,
+            run_id: None,
+        })
+        .expect("seed observation");
+    warehouse
+        .bdl
+        .confirm_dependency_resolution(row.observation_id, "booth:888", &[evidence])
+        .expect("the explicit human confirmation");
+
+    // The REAL executor (the flip the bin passes) serves the route.
+    let queries: Arc<dyn DependenciesQueriesPort> =
+        Arc::new(BdlDependencyQueries::new(warehouse.bdl.clone()));
+    let payload = run_query(
+        &database,
+        Some(warehouse_with(Some(queries.clone()))),
+        "dependencies.lookup",
+        json!({"name": "gatewire"}),
+    );
+    assert_eq!(payload["ok"], true);
+    let envelope = &payload["value"];
+    assert_eq!(envelope["schemaVersion"], BDL_QUERIES_SCHEMA_VERSION);
+    assert_eq!(envelope["schemaVersion"], "0.5");
+    assert_eq!(envelope["operation"], "dependencies.lookup");
+    result_validator().validate(envelope).expect("validates the frozen result schema");
+    let result = &envelope["result"];
+    assert_eq!(result["total"], 1);
+    let match_row = &result["matches"][0];
+    assert_eq!(match_row["productId"], "booth:777");
+    assert_eq!(match_row["resolvedProductId"], "booth:888");
+    assert_eq!(match_row["advisory"]["installSource"], "booth_page");
+    assert_eq!(match_row["advisory"]["confidence"], "strong");
+    assert_eq!(match_row["availabilityStatus"], "available");
+
+    // The unknown productId rides the catalog.detail absence semantics —
+    // through the REAL executor's Ok(None).
+    let payload = run_query(
+        &database,
+        Some(warehouse_with(Some(queries.clone()))),
+        "dependencies.listByProduct",
+        json!({"productId": "booth:404"}),
+    );
+    assert_eq!(payload["ok"], false);
+    assert_eq!(payload["error"]["code"], "vua.catalog.product_not_found");
+    let _ = fs::remove_file(&database);
+}
+
+fn product_observation(
+    product_id: &str,
+    status: ProductObservationStatus,
+) -> ProductObservation {
+    ProductObservation {
+        product_id: product_id.to_owned(),
+        native_product_id: product_id
+            .strip_prefix("booth:")
+            .expect("booth:<digits>")
+            .to_owned(),
+        source_url: format!("https://booth.pm/ja/items/{}", &product_id["booth:".len()..]),
+        final_url: None,
+        status,
+        source_locale: None,
+        source_category: None,
+        title: Some(format!("product {product_id}")),
+        description: None,
+        age_restriction: None,
+        adult: false,
+        availability: Some("https://schema.org/InStock".to_owned()),
+        price_amount: None,
+        price_currency: None,
+        shop_name: None,
+        shop_url: None,
+        image_urls: Vec::new(),
+        video_urls: Vec::new(),
+        subproducts: Vec::new(),
+        source_published_at: None,
+        content_hash: format!("sha256:{}", "0".repeat(64)),
+        observed_at: "2026-09-22T00:00:00.000Z".to_owned(),
+        run_id: None,
+        processor_version: "synthetic-test".to_owned(),
+        missing_fields: Vec::new(),
+    }
 }
