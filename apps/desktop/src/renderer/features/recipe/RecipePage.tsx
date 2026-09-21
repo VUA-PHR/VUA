@@ -70,6 +70,7 @@ import { ContentDialog } from "../../components/primitives/ContentDialog.tsx";
 import { ComposePage } from "../compose/ComposePage.tsx";
 import { ProductionChainSection } from "../compose/ProductionChainSection.tsx";
 import { RecipeDocumentEditSection } from "./RecipeDocumentEditSection.tsx";
+import { RecipeProjectDraftExport } from "./RecipeProjectDraftExport.tsx";
 import { productionChainRecipeSelectedAction } from "../../app/production-chain-store.ts";
 import {
   recipeDocumentAdditionIds,
@@ -733,6 +734,8 @@ export function RecipePage() {
   const [selectedLibraryRecipeId, setSelectedLibraryRecipeId] = useState<string | null>(null);
   const [documentMode, setDocumentMode] = useState(false);
   const [composeDialogOpen, setComposeDialogOpen] = useState(false);
+  /** B 面环 4(029):从工程导出配方草稿弹窗(recipe-export v0.1 消费) */
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
   /** 素材选择器弹窗(029 A3 本地段):仓储读面投影,供选中态「添加素材」 */
   const [materialPickerOpen, setMaterialPickerOpen] = useState(false);
   /** 文档编辑态(029 A2):底稿素材 ∪ 待保存新增 = 选择器「已在本配方」集 */
@@ -1018,6 +1021,11 @@ export function RecipePage() {
           <Button variant="default" onClick={() => setComposeDialogOpen(true)}>
             {strings.nav.pages.composePage}
           </Button>
+          {/* B 面环 4(029):反向入口——从已有 VUA 管理工程导出配方草稿;入口
+              限定已注册工程集,转正走既有保存链(草稿绝不静默转正) */}
+          <Button variant="default" onClick={() => setExportDialogOpen(true)}>
+            {copy.exportCta}
+          </Button>
         </div>
       </section>
 
@@ -1255,6 +1263,17 @@ export function RecipePage() {
         onClose={() => setComposeDialogOpen(false)}
       >
         <ComposePage />
+      </ContentDialog>
+      {/* B 面环 4(029):从工程导出配方草稿——拾取段限定 VUA 已注册工程集;
+          确认段六事实键如实呈现(缺失维度清单照单),转正走既有 recipe.save
+          保存链,草稿绝不静默转正 */}
+      <ContentDialog
+        open={exportDialogOpen}
+        title={copy.exportDialogTitle}
+        closeLabel={strings.common.dialogClose}
+        onClose={() => setExportDialogOpen(false)}
+      >
+        <RecipeProjectDraftExport />
       </ContentDialog>
       {/* 素材选择器(029 A3 本地段):仓储读面(acquire entries)投影——只
           呈现本地条目事实,云端素材接入(未决项 3 = #46)裁决前诚实缺席;
