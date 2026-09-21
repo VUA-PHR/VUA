@@ -2,7 +2,7 @@ import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useRef, useState } from "react";
 import { Badge } from "../../components/primitives/Badge.tsx";
 import { Button } from "../../components/primitives/Button.tsx";
-import type { ReleaseHandoffFactV01 } from "@vua/contracts";
+import type { ReleaseHandoffFactV02 } from "@vua/contracts";
 import { useGateway } from "../../gateway/index.ts";
 import { format, strings, termLabel } from "../../i18n/index.ts";
 import type { PageId } from "../../app/nav-model.ts";
@@ -41,7 +41,7 @@ type HandoffPhase =
   | { kind: "absent" }
   | { kind: "intent-failed"; code: string | null; params: Readonly<Record<string, string | number | boolean>> }
   | { kind: "polling"; taskId: string; state: string | null }
-  | { kind: "succeeded"; fact: ReleaseHandoffFactV01 }
+  | { kind: "succeeded"; fact: ReleaseHandoffFactV02 }
   | { kind: "task-failed"; errorCode: string | null; messageKey: string | null }
   | { kind: "cancelled" }
   | { kind: "fact-unexplainable" };

@@ -1,8 +1,9 @@
-import type { ReleaseHandoffFactV01 } from "@vua/contracts";
+import type { ReleaseHandoffFactV02 } from "@vua/contracts";
 
 /**
  * release.openForHandoff 消费端口(023 词表行,核心冻结批 2026-09-16 经
- * 第 53 波 c77034f 入库;协议本 release-handoff v0.1):
+ * 第 53 波 c77034f 入库;协议本 release-handoff v0.2——族版本 0.1→0.2 随
+ * 核心 U19 批单源推进,TS 面登记对齐):
  * - tasked 命令:受理回执按 taskId 轮询应用任务面(九态单形态,完成判定
  *   = Bridge handshake 到达;succeeded 快照 result 携带交接事实文档);
  * - 实现域(产线进程/窗口面 port＋核心 use case)未接线 = 路由恒答
@@ -32,7 +33,7 @@ export type ReleaseHandoffIntent =
 /** 交接任务视图(task.get 快照投影;九态原词透传,不重列词表):
  * - running:非终态(state 为九态原词;词表外原样呈现,不猜测);
  * - succeeded:succeeded/succeeded_with_warnings 且 result 携带可解释交接
- *   事实(经 contracts isReleaseHandoffFactV01 守卫);
+ *   事实(经 contracts isReleaseHandoffFactV02 守卫,v0.2 五键闭集);
  * - failed:failed 终态(错误事实为任务面 AppErrorV01 数据负载,原样透传
  *   ——任务运行期失败不进 release_handoff 错误码闭集,协议本钉死);
  * - cancelled:用户经任务中心取消;
@@ -40,7 +41,7 @@ export type ReleaseHandoffIntent =
  *   呈现,不猜测内容(诚实纪律 1)。 */
 export type HandoffTaskView =
   | { readonly kind: "running"; readonly state: string }
-  | { readonly kind: "succeeded"; readonly fact: ReleaseHandoffFactV01 }
+  | { readonly kind: "succeeded"; readonly fact: ReleaseHandoffFactV02 }
   | {
       readonly kind: "failed";
       readonly state: string;

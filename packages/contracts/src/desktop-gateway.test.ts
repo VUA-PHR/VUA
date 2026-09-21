@@ -387,6 +387,7 @@ describe("gateway guard covers every declared method (regression: silent guard g
     "inspection.get": { inspectionId: "01982b5a-3f10-7c4e-9d2a-4b8e1f6a7c21" },
     "inspection.list": {},
     "release.openForHandoff": { buildId: "build-1" },
+    "release.openForInspection": { buildId: "build-1" },
     "packages.listInstalled": { projectPath: "C:/proj" },
     "packages.listRepos": {},
     "packages.packageCatalog": { projectPath: "C:/proj", packageId: "com.anatawa12.avatar-optimizer" },
@@ -440,6 +441,24 @@ describe("gateway guard covers every declared method (regression: silent guard g
     ).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: { projectPath: 7 } })).toBe(false);
     expect(isDesktopGatewayRequestV1({ ...request, params: { path: "C:/x" } })).toBe(false);
+  });
+
+  it("release.openForInspection: params closed single-key {buildId} minLength 1 (release-handoff v0.2 U19 inspection entry; envelope guard matches schema additionalProperties:false)", () => {
+    const request = {
+      schemaVersion: 1 as const,
+      requestId: "request-42",
+      method: "release.openForInspection" as const,
+      params: { buildId: "019513e7-7a2b-7cd1-9f3a-4d8e21b90c99" },
+    };
+    expect(isDesktopGatewayRequestV1(request)).toBe(true);
+    // 缺键/空串/投机键(工程身份权威在 build-record 面)/错型:一律拒绝
+    // (形状违反 ≠ 服务端 typed 拒绝)
+    expect(isDesktopGatewayRequestV1({ ...request, params: {} })).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { buildId: "" } })).toBe(false);
+    expect(
+      isDesktopGatewayRequestV1({ ...request, params: { buildId: "b-1", projectPath: "C:/x" } }),
+    ).toBe(false);
+    expect(isDesktopGatewayRequestV1({ ...request, params: { buildId: 7 } })).toBe(false);
   });
 
   it("packages.listRepos: params empty closed set — any key rejected (025 P2 freeze; global configuration face)", () => {

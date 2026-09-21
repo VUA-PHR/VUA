@@ -16,9 +16,8 @@ import {
   taskStateLabelKey,
   handoffAdmission,
   handoffIntentErrorText,
-  RELEASE_HANDOFF_RECORD_STATE_BLOCKED,
-  RELEASE_HANDOFF_RECORD_STATE_UNKNOWN,
 } from "./release-handoff-model.ts";
+import { RELEASE_HANDOFF_ERROR_CODES_V02 } from "@vua/contracts";
 import { BUILD_RECORD_STATUSES_V03, type BuildRecordStatusV03 } from "./release-records-model.ts";
 import { format } from "../../i18n/format.ts";
 import { strings as en } from "../../i18n/strings.en.ts";
@@ -26,8 +25,13 @@ import { strings as zhCN } from "../../i18n/strings.zh-CN.ts";
 import { strings as ja } from "../../i18n/strings.ja.ts";
 import { strings as ko } from "../../i18n/strings.ko.ts";
 
+/** 准入闸两码=contracts v0.2 六码闭集登记成员(桌面预留行已 DELETE,字面
+ *  单源在 contracts;测试按闭集数组取词,不再本地自持) */
+const RECORD_STATE_BLOCKED = "vua.release_handoff.record_state_blocked";
+const RECORD_STATE_UNKNOWN = "vua.release_handoff.record_state_unknown";
+
 const FACT = {
-  schemaVersion: "0.1",
+  schemaVersion: "0.2",
   buildId: "build-1",
   projectId: "proj-1",
   editor: { exePath: "C:/Unity/Unity.exe", version: "2022.3.22f1" },
@@ -141,10 +145,12 @@ describe("taskStateLabelKey", () => {
 });
 
 describe("isReleaseHandoffErrorCode", () => {
-  test("闭集四码判真;词表外判假(原样透传呈现)", () => {
+  test("闭集六码判真(v0.2 含准入闸两码);词表外判假(原样透传呈现)", () => {
     assert.equal(isReleaseHandoffErrorCode("vua.release_handoff.unavailable"), true);
     assert.equal(isReleaseHandoffErrorCode("vua.release_handoff.invalid_params"), true);
     assert.equal(isReleaseHandoffErrorCode("vua.release_handoff.build_unknown"), true);
+    assert.equal(isReleaseHandoffErrorCode(RECORD_STATE_BLOCKED), true);
+    assert.equal(isReleaseHandoffErrorCode(RECORD_STATE_UNKNOWN), true);
     assert.equal(isReleaseHandoffErrorCode("vua.release_handoff.editor_unresolved"), true);
     assert.equal(isReleaseHandoffErrorCode("vua.release_handoff.upload_done"), false);
     assert.equal(isReleaseHandoffErrorCode("something.else"), false);
@@ -200,7 +206,7 @@ describe("handoffIntentErrorText(U19 准入闸词面组合)", () => {
 
   test("record_state_unknown → 记录无法确认词面(无插值)", () => {
     assert.equal(
-      handoffIntentErrorText(RELEASE_HANDOFF_RECORD_STATE_UNKNOWN, {}, FACES),
+      handoffIntentErrorText(RECORD_STATE_UNKNOWN, {}, FACES),
       FACES.stateUnknown,
     );
   });
@@ -208,7 +214,7 @@ describe("handoffIntentErrorText(U19 准入闸词面组合)", () => {
   test("record_state_blocked 携 state → {state} 插值词面", () => {
     assert.equal(
       handoffIntentErrorText(
-        RELEASE_HANDOFF_RECORD_STATE_BLOCKED,
+        RECORD_STATE_BLOCKED,
         { state: "failed" },
         FACES,
       ),
@@ -216,7 +222,7 @@ describe("handoffIntentErrorText(U19 准入闸词面组合)", () => {
     );
     assert.equal(
       handoffIntentErrorText(
-        RELEASE_HANDOFF_RECORD_STATE_BLOCKED,
+        RECORD_STATE_BLOCKED,
         { state: "rolled_back" },
         FACES,
       ),
@@ -224,14 +230,22 @@ describe("handoffIntentErrorText(U19 准入闸词面组合)", () => {
     );
   });
 
+  test("准入闸两码已入 contracts v0.2 闭集(词面命中窗闭合——预留行时代终结)", () => {
+    // 第 154 批的「闭集外早期发射透传」风险随闭集扩展终结:两码现在是
+    // contracts 闭集成员,词面映射与闭集成员资格同批钉死
+    assert.equal(isReleaseHandoffErrorCode(RECORD_STATE_BLOCKED), true);
+    assert.equal(isReleaseHandoffErrorCode(RECORD_STATE_UNKNOWN), true);
+    assert.equal(RELEASE_HANDOFF_ERROR_CODES_V02.length, 6);
+  });
+
   test("record_state_blocked 缺 state → 退回原码词面(不输出半句)", () => {
     assert.equal(
-      handoffIntentErrorText(RELEASE_HANDOFF_RECORD_STATE_BLOCKED, {}, FACES),
-      format(FACES.failedWithCode, { code: RELEASE_HANDOFF_RECORD_STATE_BLOCKED }),
+      handoffIntentErrorText(RECORD_STATE_BLOCKED, {}, FACES),
+      format(FACES.failedWithCode, { code: RECORD_STATE_BLOCKED }),
     );
     assert.equal(
-      handoffIntentErrorText(RELEASE_HANDOFF_RECORD_STATE_BLOCKED, { state: 42 }, FACES),
-      format(FACES.failedWithCode, { code: RELEASE_HANDOFF_RECORD_STATE_BLOCKED }),
+      handoffIntentErrorText(RECORD_STATE_BLOCKED, { state: 42 }, FACES),
+      format(FACES.failedWithCode, { code: RECORD_STATE_BLOCKED }),
     );
   });
 
