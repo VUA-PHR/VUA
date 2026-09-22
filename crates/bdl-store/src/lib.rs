@@ -3,6 +3,7 @@
 
 pub mod bdl_queries;
 pub mod bdl_store;
+pub mod dependency_extract;
 pub mod download_events;
 
 pub use bdl_queries::{
@@ -20,6 +21,10 @@ pub use bdl_store::{
     StoredWarehouseItem, SubproductObservation, WarehouseArtifactFact,
     WarehouseArtifactRef, WarehouseEntryCard, WarehouseEntryDetail, WAREHOUSE_ITEM_KINDS,
     BDL_FORMAT_VERSION,
+};
+pub use dependency_extract::{
+    extract_dependency_leads, lead_to_new_observation, DependencyLead, EXTRACTOR_ID,
+    METHOD_BULLET, METHOD_EXPLICIT_HEADING, METHOD_ONE_LINE, SPAN_BODY,
 };
 pub use download_events::{
     backoff_for_attempt, fold_lifecycle, retry_decision, ConsumerError, DownloadEventConsumer,
