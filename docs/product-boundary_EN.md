@@ -2,11 +2,11 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.4.0
+> Document version: 1.5.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.4.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.5.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-19
+> Updated: 2026-09-22
 > Normative effect: Yes
 
 ## Product definition
@@ -21,7 +21,7 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    sessions; download interaction; desktop windows; narrow Gateway.
 2. **Orchestrator:** durable tasks, plans, approval, cancellation, recovery, Build Records, and
    adapter coordination behind a replaceable, versioned Provider boundary.
-3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, Inspection, Release; native browsing,
+3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, and Release; checks belong to production records and notifications, without a required standalone Inspection page; native browsing,
    authorized downloads, content management, and external-source adapters;
    - **Material-entry semantics (user ruling, 2026-09-07; trigger-timing clarification with the
      W15 re-review, 2026-09-08):** the default path is direct use of the original
@@ -63,6 +63,76 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    Implementation begins only after `1.0.0`.
 9. **Community plugin interface:** a versioned protocol for optional enhancements and customization,
    with declared capabilities, lifecycle, tasks, permissions, and compatibility rules.
+
+## Beginner production scope (user ruling, 2026-09-22)
+
+This is accepted product direction, not a claim that UI, protocol, and execution migration is
+complete. It supersedes older requirements for a standalone Inspection page, broad Recipe
+reproduction, and exhaustive VUA-owned validation. Frozen protocols remain unchanged; subsequent
+versions carry necessary migrations. Scope reduction does not authorize data deletion or project
+overwrite.
+
+### Recipe: asset combinations and explicit options
+
+Recipe promises reproduction of BOOTH asset combinations and explicit choices such as supported
+color options, similar to an outfit preset. Asset identities, composition, and supported options
+belong to the declaration. Local resolution, dependency locking, execution evidence, and recovery
+belong to deployment and production records, not a promise to restore arbitrary Unity projects or
+all design intent.
+
+Subsequent contracts must define the supported color/material options; arbitrary texture editing
+is not implied. SNS copy-and-paste sharing remains a user need. Text/file carriers, optional
+parameter patches, and capture/preservation/redeployment of arbitrary manual changes remain
+undecided. Narrower scope does not authorize discarding edits or silently overwriting projects.
+
+### Inspection: checks belong to production records
+
+A standalone Inspection user page is no longer required. When the user confirms and starts
+production and the workshop begins intake, Release creates a traceable entry for that run. The
+entry owns progress and problems. Notifications draw attention to problems; the entry retains its
+status and issue indicator. Both open the same explanation, next steps, and log details. Dismissing
+a notification does not clear a production problem.
+
+A subsequent contract defines the relationship between the running entry and an immutable Build
+Record; a placeholder is not a completed record. Removing the page does not remove check services,
+recovery guards, or evidence. Execution success, SDK validation, editor handoff, and user-confirmed
+upload are separate facts. Users must confirm appearance and behavior against their expectations,
+and this limitation must be clear. VUA-caused omissions, incorrect options, and incorrect calls
+remain correctness defects.
+
+### Wizard: choose the beginner's path
+
+For users unfamiliar with tools and modules, combine understandable questions (available devices,
+whether they can already play, owned assets, and the screen where they are stuck) with actual
+detection. Cover complete journeys without imposing one long path on everyone. Completed steps
+can be skipped; later tasks supply missing prerequisites in context. Asset organization does not
+require Unity installation; desktop play does not require VR hardware. Device preparation includes
+Quest first-time activation guidance and distinguishes standalone use from PC-connected use.
+Tutorials guide users without completing account, authentication, or platform authorization for them.
+
+### MA and SDK: reuse upstream rules
+
+Modular Avatar's documented capabilities and preconditions are AMF's upstream basis; VUA does not
+repeat exhaustive capability-boundary research. VUA tests its own object selection, parameters,
+version combinations, call ordering, error propagation, and representative integration examples.
+Distinguish VUA integration defects from failures reproducible through standard upstream use before
+reporting upstream.
+
+Use official SDK checks and results for build and target-platform technical restrictions rather
+than maintaining duplicate rules. VUA still owns missing-asset, dependency-installation, Bridge,
+and recovery failures. Unexecuted or unreadable SDK checks are unknown/not checked, never inferred
+passes. Final upload remains a user action in the official SDK.
+
+### Deferred and undecided scope
+
+An independent lightweight UI using egui, Slint, or another framework is indefinitely deferred until
+core functionality is stable; there is no promised release or automatic start date. Existing
+Electron UI and resource-saving mode are not cancelled.
+
+A default-off experimental BDL evidence collector, manual local-data management, and dependency
+resolution when BDL is absent are discussion only. Existing BDL ownership, capability switches,
+and data contracts do not change. Manual-edit preservation and Recipe sharing encoding remain
+undecided; implementers must not choose these policies implicitly.
 
 ## Extension and integration trust boundary
 
@@ -178,6 +248,8 @@ contribution policy is defined in the root contribution guide. Release signing a
 remain release-engineering decisions.
 
 ## Document changelog
+
+- 1.5.0 (2026-09-22): user ruling narrows Recipe, embeds checks in production records, adopts beginner Wizards and upstream MA/SDK rules, and defers independent lightweight UI; BDL/manual-edit options remain undecided.
 
 - 1.4.0 (2026-09-19): U14 user ruling landed in the boundary — project-management item 5
   reaffirmed: the most frequently used "project management" in VUA is actually the Recipe and

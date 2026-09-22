@@ -1,24 +1,22 @@
 ---
 worktree: wt-7
-branch: slice/repository-foundation-plan
+branch: slice/product-scope-clarification
 role: 集成
-baseline_commit: 2bd60a4a
+baseline_commit: 098f57a5
 updated: 2026-09-22
 ---
 ## 当前焦点
-用户已批准按顺序实施仓库基础设施；本树负责报告入口、安全设置与主干保护切换。
-执行规则：collab/PROTECTED_MAIN.md；详细计划见 assignments/2026-09-22-repository-foundation_EN.md。
+用户要求将四个产品方向落地为文档；本轮不实施产品代码，不派发实现。
 ## 自基线交付
-SECURITY、中文优先 Issue 表单、PR 模板、贡献指南和 PR 集成规则已准备。
-CI 的 PR 触发取消路径过滤以避免必需检查永久缺席；工作流 token 显式只读。
-远端已读回启用私密漏洞报告、secret scanning/push protection、Dependabot 安全更新；
-外部贡献者 Actions 全部需批准；组织新仓库安全默认值和建仓/可见性/删除转移权限已收紧。
+产品边界 EN/ZH 1.5.0：Recipe 限素材组合与明确选项；Inspection 收入制作记录；
+Wizard 选择新手路径（含 Quest 首次激活引导）；MA/SDK 规则归上游，VUA 负责自身集成。
+轻量独立 UI 在核心稳定前无限期推迟。AMF 架构 EN/ZH 1.2.0 对齐，并修正旧 U3 措辞。
 ## 阻塞
-[→集成] 主干保护尚未启用，等待操作者确认集成与自动 main 推送/同步进程暂停。
-需要真实 PR 检查证据后再确定必需检查；不宣称当前已受保护。
+BDL 默认关闭实验性证据采集、手动本地数据管理、BDL 缺席依赖解析仍未决。
+Recipe 文本/文件载体、参数补丁与任意手改保留策略未决；不允许推断为可覆盖用户工程。
 ## 下次合并意图
-先完成基础设施 PR 与检查，再切换主干保护、完成保护下真实 PR；不能 direct push 绕过。
+文档 PR 交集成收编；只改规范，不修改冻结协议或宣称界面迁移已完成。
 ## 留言
-- [→集成] 请暂停自动 main 推送并确认；重启前加载 PROTECTED_MAIN.md。簿记也改走 PR，主树只快进。
-- [→核心] [→桌面] [→产线] [→数据] [→环境] 可继续切片开发，但不得自行合并/推送 main；原仓库访问失败不准新建同名仓库、不自行换 remote，不 mirror-push。
-- 迁移尚未执行，也未获本批授权；旧/新路径均不得新建占位仓库。
+- [→集成] 用户裁决以产品边界 1.5.0 新节为准；旧设计/outline/AGENTS 的独立 Inspection 或宽泛 Recipe 描述后续按此迁移。当前仅文档授权，无实现派单；不要按旧检查页验收要求扩建。
+- [→桌面] [→核心] [→产线] [→数据] [→环境] 已接受方向与未决项分开；不得自行打开 BDL 实验开关、弃置手改、重写冻结格式或引入第二套 UI。
+- 仓库迁移/主干保护仍须等操作者确认切换窗口，本切片不操作远端设置。
