@@ -2,16 +2,16 @@
 
 [English](alcom-vcc_EN.md) | [简体中文](alcom-vcc_ZH.md)
 
-> Document version: 1.3.0  
+> Document version: 1.3.1  
 > Status: Accepted  
 > Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
-> Updated: 2026-09-20  
-> Authority: `docs/product-boundary_EN.md` 1.4.0 (user ruling U3, 2026-09-08; settings-face
+> Updated: 2026-09-23  
+> Authority: `docs/product-boundary_EN.md` 1.5.0 (user ruling U3, 2026-09-08; settings-face
 > exception U14, 2026-09-19)
 
 ## Authority and hard boundary
 
-This matrix elaborates product-boundary 1.4.0 and introduces no new semantics. VUA is
+This matrix elaborates product-boundary 1.5.0 and introduces no new semantics. VUA is
 **read-only** toward projects managed by ALCOM/VCC; the only write path is the
 user-chosen "import as a VUA-managed copy" (new project path and identity, disk usage
 stated up front, no copying of regenerable directories or old task state, re-Inspect
@@ -23,7 +23,7 @@ settings (the repository-subscription and local-package-registry faces of `setti
 are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
 immediately visible to both sides. All other storage faces such as `vcc.liteDb` stay
 denied, and the project-file face stays read-only (authoritative wording in the
-product-boundary 1.4.0 "explicit boundary" section).
+product-boundary 1.5.0 "explicit boundary" section).
 
 **Allowed** (every check in this matrix is inside this list):
 
@@ -140,6 +140,9 @@ inspection face never writes.
 
 ## Document changelog
 
+- 1.3.1 (2026-09-23): authority pointer refreshed to product-boundary 1.5.0 — the U3/U14
+  clauses in the 1.5.0 "explicit boundary" section were verified word-identical to 1.4.0, so
+  this matrix's semantics are unchanged. Mirrors the ZH edition.
 - 1.3.0 (2026-09-20): the U14 settings-face exception landed in the matrix (proposal 028
   item-5 routing, revision authored by Integration) — the "Authority and hard boundary"
   section gains a "Settings-face exception" paragraph and the Forbidden list gains the

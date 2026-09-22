@@ -2,11 +2,11 @@
 
 [English](bdl_EN.md) | [简体中文](bdl_ZH.md)
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors bdl_ZH.md at 1.2.0)
+> Authoritative language: 简体中文 (this English edition mirrors bdl_ZH.md at 1.2.1)
 > Scope: AMF-owned BDL module
-> Updated: 2026-09-22
+> Updated: 2026-09-23
 > Last conformance review: 2026-09-08
 > Normative effect: Yes
 
@@ -37,6 +37,9 @@ vertical slices.
 - Turning automatic collection off never disables base storage, ordinary import, or Recipe source
   supplementation.
 
+AMF acquisition owns the browser, Session, download task/transport, BLM/VAE adapters, and UI. BDL
+stores the normalized metadata AMF decides to persist.
+
 ## Evidence semantics and human correction (user ruling, 2026-09-22)
 
 - **No evidence means unknown:** when compatibility, dependency, or provenance lacks evidence, the
@@ -51,8 +54,7 @@ vertical slices.
 - This section does not change the existing persistence format or query contracts — the frozen
   faces of `schemas/bdl/` and `schemas/bdl-queries/` do not automatically move because of it.
 
-AMF acquisition owns the browser, Session, download task/transport, BLM/VAE adapters, and UI. BDL
-stores the normalized metadata AMF decides to persist.
+## Layering
 
 ```text
 AMF acquisition / content-management service
@@ -84,10 +86,6 @@ slice.
   mapping to BDL.
 - BDL returns catalog, terms, and compatibility results; Electron and AMF retain session and download
   controls.
-
-The native AMF path remains complete on its own. Optional BLM/VAE adapters use public, stable,
-authorized boundaries, publish honest capability snapshots, keep third-party sessions and private
-schemas within their owners, and submit data through AMF validation.
 
 ## Observation write face (W17, 2026-09-08)
 
@@ -122,6 +120,18 @@ semantics:
   `entityCount`/`entityTypes` honest empty slots) and freshness (`stale`) remain with BDL v2
   and the G13 write path, outside this face.
 
+## External tool data
+
+The native AMF browser and content manager are the complete path. Tools such as BLM and VAE
+coexist as optional AMF adapters:
+
+- Prefer public, stable, clearly authorized APIs or import/export formats;
+- third-party login sessions and private credentials stay inside their original owner's boundary;
+- third-party private database schemas stay inside the adapter;
+- the native path completes the core flows on its own;
+- each adapter publishes an honest capability snapshot;
+- adapter data enters BDL only after AMF validation.
+
 ## Landing status (reviewed 2026-09-08)
 
 The first persistent format and query contract landed with the B4 slice: `schemas/bdl/v0.1` (the
@@ -138,6 +148,10 @@ implemented; semantics under "Responsibilities" and "Evidence semantics and huma
 
 ## Document changelog
 
+- 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — the acquisition/BDL
+  ownership paragraph moved back to the end of "Responsibilities"; the layering diagram regained
+  its own "Layering" section; the condensed adapter paragraph unfolded into a full "External tool
+  data" section mirroring the ZH six-bullet list. The authoritative ZH text is unchanged.
 - 1.2.0 (2026-09-22): user ruling of 2026-09-22 landed — "Responsibilities" split into base
   storage/asset identity/source correlation/catalog capabilities retained unconditionally, and
   experimental automatic compatibility forensics off by default; new "Evidence semantics and human
