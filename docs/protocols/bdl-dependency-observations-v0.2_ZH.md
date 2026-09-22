@@ -2,10 +2,11 @@
 
 [English](bdl-dependency-observations-v0.2_EN.md) | [简体中文](bdl-dependency-observations-v0.2_ZH.md)
 
-> 文档版本：0.2.1
+> 文档版本：0.2.2
 > 状态：**已冻结（FROZEN）**（2026-09-22，wt-4 产线第 166 批＝冻结批）**且已落库
-> （LANDED）**（store v0.2 运行时，wt-4 产线第 168 批＝落库实现环；本 0.2.1 注记
-> 只登记该落库，冻结词面零变化）。
+> （LANDED）**（store v0.2 运行时，wt-4 产线第 168 批＝落库实现环，本 0.2.1 注记
+> 登记；**保守提取器能力面**，wt-4 产线第 178 批＝030 提取管线实现环，本 0.2.2
+> 注记登记——两笔注记均零冻结词面变化）。
 > 「Schema＋正负例向量＋至少一端消费测试」三件齐备落地：
 > - schema：`schemas/bdl/v0.2/schema.sql`（全量可读权威，可独立执行）＋
 >   `schemas/bdl/v0.2/002_dependency_observations.sql`（v0.1→v0.2 增量迁移，
@@ -207,6 +208,46 @@ N1 钉死）。
   移库驱动并同被拒绝），迁移纪律（出生 v0.2／v0.1 开盖即迁逐字保真／超前
   fence 与外来 format 拒绝），以及确认动作各律。第 168 批合计：bdl-store
   全 crate 66 例绿、clippy 全 targets 零警告。
+
+## 保守提取器实况（v0.2.2——第 178 批事实；能力面与旗标语义）
+
+**定位（先行）**：本批交付的是**解析与落库能力**，不是启用任何功能。按产品边界
+1.5.0（「自动兼容性证据收集为实验功能，默认关闭」）与 030 内联线程产线
+2026-09-23 重新规格化注记：**能力存在≠默认启用**——产品内零自动触发，本提取器
+在产品代码中零调用方（仅测试调用）；把它接线到任何真实输入源（用户实际的 BOOTH
+浏览与 Unity 使用过程观察通道）、实验旗标（默认关）本体与旗标 UI，一律候新提案
+立项后另行办理。「关闭自动收集不得影响 BDL 基础存储、普通导入与 Recipe 来源补
+充」的既有律不受本批影响。
+
+- **纯解析器**（`crates/bdl-store/src/dependency_extract.rs`）：输入＝调用方提供
+  的商品页内容文本；零抓取、零网络、零文件访问——抓取面维持 1.5.0 重新规格化的
+  设计留白（候选来源之一，候重议）。只提取 030 §1 版面原型中的高置信结构模式三
+  族：`explicit_heading`（作者自拟前提環境类小节标题下的行）、`bullet`（列点行
+  与版本钉行）、`one_line`（整行恰为 `com.*` 反向域包名〔可携版本钉〕）；**散文、
+  标题压缩声明、带键单行声明（「Shader: X」形）、描述内外链如实不提**——宁缺勿
+  猜。`extraction_method` 六值闭集中 `prose`/`title`/`link` 本提取器**永不产出**。
+- **词面与律**：`dep_kind` 骑冻结四值闭集，分类用窄词表（liltoon/poiyomi→
+  `shader`；modular avatar/avatar optimizer→`tool_package`；unity/vrchat/sdk 按
+  冻结裁决强制 `other`；其余一律 `other` 不猜）；`avatar_base` **永不产出**（衣
+  装→素体识别是语义判断，版面结构无法诚实承载）。`raw_quote`（原行仅去首尾空白）、
+  `dep_name`、`version_hint` 全部逐字律；`source_span` 恒 `body`；**消解绝不自动
+  填**——`resolved_ref_product_id` 恒 None、`resolution_evidence` 恒空（030 §1
+  样例 3 错链实证下身份消解完全留在人工确认路径）。
+- **落库走既有写面**：线索经 `lead_to_new_observation`（盖 `extracted_by =
+  'conservative-layout-extractor-v1'`，置信度两维两列律不混装）转
+  `NewDependencyObservation` 后走 `record_dependency_observation`；行以
+  **未确认**落库（`confirmed_by_human` 非写入面字段，恒 0＝线索），翻 1 的唯一
+  写入者仍是 `confirm_dependency_resolution`。
+- **测试实况（2026-09-23 本树亲测）**：`crates/bdl-store/tests/
+  dependency_extract_conservative.rs` **8 例绿**——夹具全合成（照 030 §1 版面
+  原型构造，零真实页内容、零网络、零文件访问），钉：三结构族提取与闭集词面／
+  散文与非结构行零提取＋`avatar_base` 零产出／既有写面落库逐字往返且恒未确认
+  （未知商品被 FK 如实拒绝）／确定性＋单文档去重／诚实空态。本批合计：bdl-store
+  全 crate 套件绿（84 例）、`cargo test --workspace` **971/0**、clippy
+  `--workspace --all-targets` **零警告**。
+- **诚实边界**：零端到端宣称——本批全部系代码面证据（真实 SQLite 落库往返≠真
+  机全链）；提取器对真实页面形态的召回率未经验证（合成夹具只证行为律，不证覆盖
+  率）；零 BOOTH 访问；冻结词面（schema.sql/002/17 向量）零字节变化。
 
 ## 消费测试（冻结批实况）
 
