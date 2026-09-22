@@ -35,8 +35,11 @@ VUA はユーザーが得たい結果から作業を始めます。環境準備�
   設定ファイルを共有します。詳細は[製品境界（英語）](docs/product-boundary_EN.md)を参照してください。
 - **Orchestrator:** 計画、承認、永続タスク、キャンセル、復旧、アダプター、Build Record を担う
   Rust 中核で、交換可能なバージョン化 Provider 境界を通じて Kernel に接続します。
-- **Avatar MegaFactory（AMF）:** Warehouse、Recipe、Assembly、Inspection、Release の 5 段階から
-  なる Recipe-first 制作フローです。
+- **Avatar MegaFactory（AMF）:** Warehouse、Recipe、Assembly、Inspection、Release の 5 段階を
+  カバーする Recipe-first の制作フローです。すべてのユーザーに固定の 5 段階フローを通過させる
+  かわりに、制作ウィザードが目的・デバイス・現在の状態に応じて経路を選択し、検査は制作記録
+  （実行記録＋通知センター）に統合される方向です。2026-09-22 の製品裁定で受理された方向で、
+  まだ実装されていません。
 - **BDL（Booth Database Local）:** カタログ、出所、利用条件、互換性、検索、Warehouse 対応情報を
   管理する AMF 専用ローカルモジュールです。
 - **Unity Bridge:** グローバル版 Unity `2022.3.22f1` で決定的な操作を実行するためのバージョン付きプロトコルです。

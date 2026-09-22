@@ -260,7 +260,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
       // 详见 #bdlQuerySuccess 注记)
       case "catalog.list":
         return this.#bdlQuerySuccess(request, {
-          schemaVersion: "0.4",
+          schemaVersion: "0.5",
           operation: "catalog.list",
           result: { total: 0, entries: [] },
         });
@@ -280,7 +280,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         ));
       case "catalog.status":
         return this.#bdlQuerySuccess(request, {
-          schemaVersion: "0.4",
+          schemaVersion: "0.5",
           operation: "catalog.status",
           result: {
             health: "unknown",
@@ -289,7 +289,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         });
       case "warehouse.listEntries":
         return this.#bdlQuerySuccess(request, {
-          schemaVersion: "0.4",
+          schemaVersion: "0.5",
           operation: "warehouse.listEntries",
           result: { entries: [] },
         });
@@ -339,7 +339,7 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
         // 机械跟随,业务语义归数据/核心)。形状照冻结 wire 信封
         // (核心 2026-09-18,#36 桌面知会回正)
         return this.#bdlQuerySuccess(request, {
-          schemaVersion: "0.4",
+          schemaVersion: "0.5",
           operation: "downloads.listCompleted",
           result: { downloads: [] },
         });
@@ -1182,9 +1182,11 @@ export class MockOrchestratorProviderV01 implements OrchestratorProviderV01 {
   }
 
   /**
-   * bdl-queries 冻结 wire 信封(核心 2026-09-18,BOARD #36 桌面知会回正):
-   * 数据域冻结 schema(schemas/bdl-queries/v0.4/result.schema.json)钉
-   * wire 应答顶层为 {schemaVersion "0.4", operation, result}(required
+   * bdl-queries 冻结 wire 信封(核心 2026-09-18,BOARD #36 桌面知会回正;
+   * 2026-09-22 核心 v0.5 接线批随版:信封常量 0.4→0.5,六个既有方法
+   * 词面零变化,字面随之——桌面 TS 面归桌面接线批):
+   * 数据域冻结 schema(schemas/bdl-queries/v0.5/result.schema.json)钉
+   * wire 应答顶层为 {schemaVersion "0.5", operation, result}(required
    * schemaVersion+operation、additionalProperties false、result 按方法
    * 分支),provider-host bdl_query_success(provider_host.rs)同形实现,
    * 且 supervised 链 invoke 零解包原样透传——OrchestratorProviderV01

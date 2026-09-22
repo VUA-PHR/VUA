@@ -10,7 +10,10 @@ use vua_unity_bridge::{
     MaterialIntakeConfirmationV01, MaterialIntakeEngine, MaterialIntakePlanV01, RiskDecisionV01,
 };
 use vua_unity_bridge::MaterialTaskResult;
-use vua_orchestrator::{ProjectRef, PackageRequestV1, VpmBackend};
+use vua_orchestrator::{
+    DependenciesListByProductParams, DependenciesLookupParams, DependenciesParamsError,
+    ProjectRef, PackageRequestV1, VpmBackend,
+};
 use vua_project_manager::{
     acquire_project_lock, apply_import_copy, begin_mutation, collect_environment_managers_snapshot,
     collect_project_inspections, plan_import_copy, read_pending_mutation, set_note,
@@ -167,6 +170,16 @@ pub struct WarehouseConfig {
     /// answers a typed unavailable error while the other two commands and
     /// the read face keep working — honest absence, never a silent success.
     pub executor: Option<Arc<MaterialExecutor>>,
+    /// The bdl-queries v0.5 dependencies read face (proposal 030 §5.7
+    /// case A; the core `DependenciesQueriesPort` trait). Absent = both
+    /// `dependencies.*` methods answer the family's typed honest absence —
+    /// never a fabricated match or observation. The REAL query executor
+    /// (reading the BDL library) is a later data/production-domain
+    /// implementation ring: until an adapter overrides the defaulted
+    /// `dependencies_capabilities` accessor (declared-none default, the
+    /// 025 `catalog_capabilities` law) the served row and both routes stay
+    /// honestly unavailable even when a port object is wired.
+    pub dependencies_queries: Option<Arc<dyn vua_orchestrator::DependenciesQueriesPort>>,
 }
 
 struct WarehouseServices {
@@ -174,6 +187,11 @@ struct WarehouseServices {
     warehouse_root: PathBuf,
     global_default: ArtifactMode,
     executor: Option<Arc<MaterialExecutor>>,
+    /// The bdl-queries v0.5 dependencies read face (the core
+    /// `DependenciesQueriesPort` trait). Absent, or present with the
+    /// defaulted declared-none capability, = both `dependencies.*` routes
+    /// answer the family's honest absence — never a fabricated match.
+    dependencies_queries: Option<Arc<dyn vua_orchestrator::DependenciesQueriesPort>>,
     /// The tasked commands (generateVpm / deleteOriginals) run on the SQLite
     /// task authority: existing nonterminal tasks register for explicit
     /// Inspect/recovery and are never resumed implicitly.
@@ -815,6 +833,7 @@ pub fn run_provider_host_full(
                     warehouse_root: config.warehouse_root,
                     global_default: config.global_default,
                     executor: config.executor,
+                    dependencies_queries: config.dependencies_queries,
                     runtime,
                 })
             })
@@ -1251,6 +1270,12 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("catalog.") {
         return catalog_request(state, method, request, request_id, correlation_id);
     }
+    if method.starts_with("dependencies.") {
+        // bdl-queries v0.5 (proposal 030 §5.7 case A): its own method
+        // prefix inside the bdl-queries family — the route arms reuse the
+        // family's existing codes, zero new registrations.
+        return dependencies_query_request(state, method, request, request_id, correlation_id);
+    }
     if method.starts_with("downloads.") {
         return downloads_query_request(state, method, request, request_id, correlation_id);
     }
@@ -1554,6 +1579,26 @@ fn served_capabilities(state: &HostState) -> Value {
         },
         None => "unavailable",
     };
+    // bdl-queries v0.5 wiring (core batch 2026-09-22, proposal 030 §5.7
+    // case A): the dependencies read face rides the warehouse/BDL wiring
+    // AND the port's OWN defaulted capability accessor
+    // `dependencies_capabilities` (default declared-none — the F2/F5
+    // accessor law; ORC-DEV-004: no implementation, no reservation). One
+    // row serving BOTH methods (the repoOps/repoLifecycleOps one-row
+    // precedent; the frozen v0.5 face is one design unit — the
+    // clues-not-conclusions law needs the two-face contrast to hold): the
+    // declared-none default keeps the row honestly unavailable until the
+    // real query-executor implementation slice flips it with the
+    // implementing adapter's override.
+    let dependencies_queries_availability = match state.warehouse.as_ref() {
+        Some(warehouse) => match warehouse.dependencies_queries.as_ref() {
+            Some(queries) if queries.dependencies_capabilities().dependencies_queries => {
+                "available"
+            }
+            _ => "unavailable",
+        },
+        None => "unavailable",
+    };
     // M7 inspection slice: the query face rides the use-case wiring; the
     // tasked run face additionally requires the shared task authority.
     let inspection_queries_availability = recipe_availability;
@@ -1574,6 +1619,10 @@ fn served_capabilities(state: &HostState) -> Value {
         {
             "operationId": "recipe.exportProjectDraft",
             "availability": recipe_export_availability,
+        },
+        {
+            "operationId": "dependencies.queries",
+            "availability": dependencies_queries_availability,
         },
         {"operationId": "project.import-copy", "availability": project_ops_availability},
         {"operationId": "project.setNote", "availability": project_ops_availability},
@@ -5310,6 +5359,145 @@ fn downloads_list_completed(
             "internal",
         )),
     }
+}
+
+/// The `dependencies.*` read face (bdl-queries v0.5, proposal 030 §5.7
+/// case A): the dependency reverse-lookup suggestion face plus the
+/// per-product observation clue face, served through the core
+/// `DependenciesQueriesPort`. Route-arm order (the catalog.request
+/// isomorph): (1) the warehouse/BDL wiring answers first — absent wiring
+/// is the family's typed honest absence, never a fabricated match; (2)
+/// the port slot answers — absent slot = the same honest absence (the
+/// real query executor reading the BDL library is a later
+/// data/production-domain implementation ring); (3) the closed params
+/// parse answers `vua.catalog.invalid_params` BEFORE the gate (unknown
+/// keys and out-of-vocabulary values are contract errors, never silently
+/// filtered answers); (4) the capability gate reads the defaulted port
+/// accessor `dependencies_capabilities` (declared-none default — the
+/// `export_capabilities` accessor law) BEFORE the port call, answering
+/// the same honest-absence code; (5) the port's typed refusals travel
+/// VERBATIM (the read-face pass-through discipline — no read-face fold
+/// exists) and an OK projection is the port's typed facts through serde,
+/// stamped with the shared family envelope const at the single envelope
+/// assembly point (`bdl_query_success` — the P1 discipline: the route
+/// stamps the consts, the port facts stay verbatim). Zero new error
+/// codes: the arms reuse the bdl-queries family's existing
+/// unavailable/invalid_params/product_not_found registrations.
+fn dependencies_query_request(
+    state: &HostState,
+    method: &str,
+    request: &Value,
+    request_id: &str,
+    correlation_id: &str,
+) -> FrameOutcome {
+    let Some(warehouse) = state.warehouse.clone() else {
+        return dependencies_unavailable(request_id, correlation_id);
+    };
+    let Some(queries) = warehouse.dependencies_queries.clone() else {
+        return dependencies_unavailable(request_id, correlation_id);
+    };
+    // The capability gate (declared-none default) BEFORE the port call.
+    if !queries.dependencies_capabilities().dependencies_queries {
+        return dependencies_unavailable(request_id, correlation_id);
+    }
+    match method {
+        "dependencies.lookup" => {
+            let params = match request.get("params") {
+                Some(params) => match DependenciesLookupParams::from_value(params) {
+                    Ok(params) => params,
+                    Err(
+                        DependenciesParamsError::UnknownKey(_)
+                        | DependenciesParamsError::InvalidValue { .. },
+                    ) => return dependencies_invalid_params(request_id, correlation_id),
+                },
+                None => return dependencies_invalid_params(request_id, correlation_id),
+            };
+            match queries.dependencies_lookup(&params) {
+                Ok(result) => match serde_json::to_value(&result) {
+                    Ok(result) => bdl_query_success(request_id, "dependencies.lookup", result),
+                    Err(_) => catalog_store_failed(request_id, correlation_id),
+                },
+                Err(error) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                )),
+            }
+        }
+        "dependencies.listByProduct" => {
+            let params = match request.get("params") {
+                Some(params) => match DependenciesListByProductParams::from_value(params) {
+                    Ok(params) => params,
+                    Err(
+                        DependenciesParamsError::UnknownKey(_)
+                        | DependenciesParamsError::InvalidValue { .. },
+                    ) => return dependencies_invalid_params(request_id, correlation_id),
+                },
+                None => return dependencies_invalid_params(request_id, correlation_id),
+            };
+            match queries.dependencies_list_by_product(&params.product_id) {
+                // A miss (an unknown productId) is the application-face
+                // not-found under the catalog.detail absence semantics —
+                // never a fabricated empty answer.
+                Ok(None) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    "vua.catalog.product_not_found",
+                    "errors.catalog.productNotFound",
+                    "validation",
+                )),
+                Ok(Some(result)) => match serde_json::to_value(&result) {
+                    Ok(result) => {
+                        bdl_query_success(request_id, "dependencies.listByProduct", result)
+                    }
+                    Err(_) => catalog_store_failed(request_id, correlation_id),
+                },
+                Err(error) => FrameOutcome::Response(application_error(
+                    request_id,
+                    correlation_id,
+                    &error.code,
+                    &error.message_key,
+                    app_error_category(error.category),
+                )),
+            }
+        }
+        _ => FrameOutcome::Response(application_error(
+            request_id,
+            correlation_id,
+            "vua.provider.unknown_method",
+            "errors.provider.unknownMethod",
+            "validation",
+        )),
+    }
+}
+
+/// The dependencies face's honest absence: the warehouse/BDL wiring, the
+/// port slot, or the capability accessor answers unavailable — the route
+/// answers the bdl-queries family's own registered absence code (zero new
+/// codes), never a fabricated match or observation.
+fn dependencies_unavailable(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.catalog.unavailable",
+        "errors.catalog.unavailable",
+        "unavailable",
+    ))
+}
+
+/// The dependencies face's params shape verdict: a closed-set violation —
+/// a validation failure, never a default, and never a masquerade for
+/// honest absence (the family's registered code, zero new codes).
+fn dependencies_invalid_params(request_id: &str, correlation_id: &str) -> FrameOutcome {
+    FrameOutcome::Response(application_error(
+        request_id,
+        correlation_id,
+        "vua.catalog.invalid_params",
+        "errors.catalog.invalidParams",
+        "validation",
+    ))
 }
 
 fn project_single_path_param(request: &Value) -> Option<std::collections::HashMap<&str, &str>> {

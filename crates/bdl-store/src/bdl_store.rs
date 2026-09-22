@@ -565,6 +565,23 @@ pub struct StoredDependencyObservation {
     pub run_id: Option<String>,
 }
 
+/// One products row as the dependencies read face consumes it (the
+/// v0.5 dependencies.* implementing executor; see
+/// `BdlStore::dependency_product_row`). Fields are the verbatim observed
+/// columns — the store derives nothing here.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DependencyProductRow {
+    pub product_id: String,
+    /// The CHECK closed set `complete|missing`, verbatim.
+    pub status: String,
+    pub title: Option<String>,
+    /// The verbatim observed availability word (the dual-field law's raw).
+    pub availability: Option<String>,
+    /// The observed page URL — the advisory rule v1 installSource
+    /// derivation reads the RESOLUTION TARGET's host from it.
+    pub source_url: Option<String>,
+}
+
 /// Serializes the frozen evidence shape to its JSON text form; an empty
 /// slice is no evidence and persists NULL, so the schema's CHECK hard law
 /// (resolved implies evidence) stays the single authority that refuses a
@@ -2062,6 +2079,54 @@ impl BdlStore {
         select_product_dependency_observations(&connection, product_id)
     }
 
+    /// The WHOLE-library dependency observation set in observation-identity
+    /// order — the reverse-lookup scan face (the v0.5 `dependencies.lookup`
+    /// implementing executor needs every declaring product's rows, and the
+    /// read-time rule tables — matching/advisory v1 — are the EXECUTOR's
+    /// law, never the store's). Rows are the same honest evidence rows the
+    /// per-product face returns; empty library = the honest empty set.
+    pub fn dependency_observations_all(
+        &self,
+    ) -> Result<Vec<StoredDependencyObservation>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        select_all_dependency_observations(&connection)
+    }
+
+    /// One products row as the dependencies read face consumes it (the v0.5
+    /// dependencies.* implementing executor): the declaring/resolution
+    /// product facts the read-time rule tables derive from — `status`
+    /// verbatim (the CHECK closed set `complete|missing`; the executor's
+    /// tombstone honesty face reads it), `title`/`availability`/`source_url`
+    /// verbatim (the dual-field law and the installSource host derivation
+    /// consume them). ANY status is served here — tombstones included —
+    /// because this is the observation read face's fact source, not the
+    /// catalog card face ("tombstones are never cards" stays catalog's law).
+    /// Unknown id = `None` (the executor maps it onto not-found / absence).
+    pub fn dependency_product_row(
+        &self,
+        product_id: &str,
+    ) -> Result<Option<DependencyProductRow>, BdlStoreError> {
+        let connection = self.connection.lock().expect("SQLite connection poisoned");
+        connection
+            .query_row(
+                "SELECT product_id, status, title, availability, source_url
+                 FROM products
+                 WHERE product_id = ?1",
+                [product_id],
+                |row| {
+                    Ok(DependencyProductRow {
+                        product_id: row.get(0)?,
+                        status: row.get(1)?,
+                        title: row.get(2)?,
+                        availability: row.get(3)?,
+                        source_url: row.get(4)?,
+                    })
+                },
+            )
+            .optional()
+            .map_err(BdlStoreError::from)
+    }
+
     // --- catalog serving face (W12; docs/protocols/bdl-queries-v0.3) ---
 
     /// `catalog.list`: assembles the v0.3 card list from the observation
@@ -2381,6 +2446,48 @@ fn select_dependency_observation(
         )
         .optional()?;
     row.map(stored_dependency_observation).transpose()
+}
+
+/// The whole-library scan (observation-identity order) for the v0.5
+/// reverse-lookup executor — the same honest row mapper as the per-product
+/// face, without the WHERE.
+fn select_all_dependency_observations(
+    connection: &Connection,
+) -> Result<Vec<StoredDependencyObservation>, BdlStoreError> {
+    let mut statement = connection.prepare(
+        "SELECT observation_id, product_id, dep_kind, dep_name, raw_quote,
+                source_span, version_hint, resolved_ref_product_id,
+                resolution_evidence, confirmed_by_human, extraction_method,
+                extracted_by, observed_at, processor_version, content_hash,
+                run_id
+         FROM dependency_observations
+         ORDER BY observation_id",
+    )?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, i64>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+                row.get::<_, String>(4)?,
+                row.get::<_, String>(5)?,
+                row.get::<_, Option<String>>(6)?,
+                row.get::<_, Option<String>>(7)?,
+                row.get::<_, Option<String>>(8)?,
+                row.get::<_, i64>(9)?,
+                row.get::<_, String>(10)?,
+                row.get::<_, String>(11)?,
+                row.get::<_, String>(12)?,
+                row.get::<_, String>(13)?,
+                row.get::<_, Option<String>>(14)?,
+                row.get::<_, Option<String>>(15)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    rows.into_iter()
+        .map(stored_dependency_observation)
+        .collect()
 }
 
 fn select_product_dependency_observations(

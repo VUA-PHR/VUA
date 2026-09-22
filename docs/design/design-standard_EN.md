@@ -1,12 +1,12 @@
-# VUA design standard v0.7.18
+# VUA design standard v0.7.20
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.18
+> Document version: 0.7.20
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.18)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.20)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-22
+> Updated: 2026-09-23
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -17,7 +17,7 @@ v0.6.1 combines UI/UX and visual-art direction into one normative source.
 | Treatment | Content |
 | --- | --- |
 | Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, fixed five-tab shell, command-center composition, slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL three-scene direction, Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
-| Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; five AMF stages |
+| Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; the five AMF stages kept as the full capability coverage (since 0.7.19 a wizard selects the path by goal/device/state — see Recipe-first) |
 | Replace | framework-private Tauri window/IPC semantics, BDB contracts, a separate Production stage, globally disabled context menus, font-size or padding reflow on hover, deceptive progress floors, paid font or icon assumptions |
 | Schedule separately | Visual direction remains part of v0.6.1. Delivery sequencing, performance gates, and fallback acceptance are reviewed independently from the design decision. |
 
@@ -41,11 +41,15 @@ information. Disabling blur, glow, WebGL, and motion must preserve hierarchy and
 Ask for the desired result before introducing Unity, VPM, Armature, Shader, and other necessary terms.
 Recommendations explain why, impact, and alternatives.
 
-### Recipe-first
+### Recipe-first and path selection
 
-```text
-Warehouse → Recipe → Assembly → Inspection → Release
-```
+AMF still covers the five stages — Warehouse, Recipe, Assembly, Inspection, and Release — but no
+longer forces every player through one fixed grand flow. A production wizard selects the path by
+goal, device, and current state, walking only the stages that production actually needs (0.7.19,
+user ruling 2026-09-22 — accepted direction, not yet implemented). The full flow remains valuable
+for troubleshooting and experienced users as an optional path, not a mandatory one. Guidance does
+not replace account authentication or platform authorization; the Quest first-time activation
+tutorial distinguishes the standalone mode from the PC-connected path.
 
 Execution, input waits, retry, and recovery are task states inside a use case, not a Production stage.
 
@@ -373,6 +377,20 @@ stable untilted cards.
   as the two standing save chains). Word discipline: the entry is "export a
   draft", promotion is "save as a recipe"; never mixed with "create / add
   assets / assemble".
+- Recipe overlay-conflict four options (0.7.19, user ruling 2026-09-22 — accepted direction, not
+  yet implemented): a Recipe is "a stackable set of modifications"; when overlaid onto the current
+  Avatar, unmentioned existing assets and settings are kept by default, and removal must be
+  explicit. Overlay conflicts offer four options: 1) Recipe wins; 2) Avatar wins; 3) carry into a
+  new Avatar (recommended); 4) cancel — handling only the fields the Recipe touches. Object-location
+  ambiguity is not a value conflict and must not be hidden behind "Recipe wins"; without a reliable
+  baseline, differences must not all be attributed to manual player edits.
+- Asset-source "fill in at share time" interaction (0.7.19, user ruling 2026-09-22 — accepted
+  direction, not yet implemented): import and local use do not require a BOOTH ID; at share time
+  only the assets involved this time and missing a source are filled in — completed in one pass,
+  minimal entry, no repeated asks. The fill-in flow prefers the purchased-library picker,
+  click-to-pick from the web page, keyword-search candidates, and batch association; per-item
+  manual typing is not the default; confirmed associations are remembered. A BOOTH ID is a source
+  declaration, not VUA authentication.
 - Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
@@ -405,11 +423,15 @@ stable untilted cards.
   it joins the continuous asset acquisition path (§8.3) on the same page. The
   workshop's page slot and gating semantics are unchanged (the honest in-page
   blocking state still applies while the environment is not ready).
-- **Inspection/Release:** inspection stays a standalone second-level page,
-  independent of the workshop (0.7.12 navigation rework confirmed): it is the
-  inspection landing point of the main flow "assembly → inspection → SDK
-  handoff", keeping evidence and next steps that distinguish local estimates
-  from official results.
+- **Inspection/Release:** inspection folds into the production record (0.7.19, user ruling
+  2026-09-22 — accepted direction, not yet implemented): this supersedes the standalone-
+  inspection-page requirement (0.7.12). When the workshop takes in material, Release creates a
+  placeholder record for that run; inspection issues surface through both the notification center
+  and the record status, and both open the explanation, logs, and follow-up actions; closing a
+  notification does not make the issue disappear; a placeholder record never masquerades as a
+  completed Build Record. The inspection service, recovery admission, and evidence-recording
+  capabilities are retained. The final upload is completed by the user in the official SDK, and
+  technical checks do not guarantee that appearance and behavior meet expectations.
   Release shows result cards, versions, snapshots, Build Records, and official SDK handoff. It retains
   the horizontal conveyor, animated-tier coverflow, WebGL pedestal, and CSS pedestal fallback. The
   Unity-baked turntable direction is promoted to an accepted form (0.7.12, user ruling 2026-09-20):
@@ -424,8 +446,8 @@ stable untilted cards.
   SDK handoff entry on Release build records presents by a record-state whitelist — succeeded and
   succeeded_with_warnings are allowed (the warning badge stays, never shadowed by the allowance);
   failed, cancelled and rolled_back are withheld with a discoverable reason plus an entry chain to
-  diagnostics (Inspection) and recovery/re-production (Workshop); recovered is withheld, presenting
-  "complete the inspection and the follow-up production steps first" plus the inspection entry; a
+  diagnostics (the run record) and recovery/re-production (Workshop); recovered is withheld, presenting
+  "complete the inspection and the follow-up production steps first" plus the run-record entry; a
   missing or out-of-vocabulary record state is refused with "the record cannot be confirmed". The
   backend stays the authority in the route admission order; the presentation bucket never pre-judges
   the acceptance, and direct invocations rejected at the gate render the typed refusal copy
@@ -433,7 +455,9 @@ stable untilted cards.
   fix" action is deliberately separate from the handoff button (own control, port and copy), never
   gated by the record state — opening the editor is neither a recovery execution nor an upload
   permission; while the backend open entry is not wired, the entry presents honest absence (no
-  pre-wired availability illusion, no fabricated capability).
+  pre-wired availability illusion, no fabricated capability). The handoff admission whitelist and
+  the standalone open-in-Unity capability are retained under the inspection-in-records direction
+  (0.7.19).
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
   before install/update/remove; no third-party branding that implies embedding. Project compatibility
   no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
@@ -593,16 +617,34 @@ A page is deliverable only when:
 ## 11. v0.6.1 accepted scope
 
 The accepted scope covers the base character, two jurisdictions, tokens, component states, fixed five tabs,
-slanted controls and overflow flyout, sidebar growth impression, task feedback, five AMF stages,
-three WebGL scenes, Recipe's three views, Release coverflow/pedestal, community-skin direction, module
-metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page layout after
-validation.
+slanted controls and overflow flyout, sidebar growth impression, task feedback, the five AMF stages as full
+capability coverage (presentation per the 0.7.19 user ruling: wizard-selected paths, inspection folded into
+production records), three WebGL scenes, Recipe's three views, Release coverflow/pedestal, community-skin
+direction, module metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page
+layout after validation.
 
 The final logo remains a separate commission. The visual direction retained here and its development
 schedule are reviewed separately; a schedule change does not automatically delete an approved design
 direction.
 
 ## 12. Document changelog
+
+- **0.7.20 (2026-09-23)**: governance-compliance maintenance — the §12 changelog is trimmed to
+  the most recent 10 entries per governance rule 2.2 (0.7.10 and earlier moved out; consult git
+  history for older records); zero normative-content change. Mirrors the ZH edition.
+
+- **0.7.19 (2026-09-22)**: user ruling 2026-09-22 (product-boundary 1.5.0) consumed —
+  §2.2 the fixed five-stage flow becomes "full capability coverage + a wizard selecting the
+  path by goal/device/current state", including guidance not replacing account authentication
+  or platform authorization and the Quest first-time tutorial distinguishing standalone vs
+  PC-connected paths; §8.6 the standalone-inspection-page requirement is superseded by
+  "inspection folds into the production record" (Release run placeholder record at workshop
+  feed + notification-center dual channel, closing a notification is not the issue
+  disappearing, placeholder records never masquerade as completed Build Records, inspection
+  service/recovery admission/evidence recording retained, handoff admission and the standalone
+  open-in-Unity capability retained, handoff failure now jumps to the run record); §8.4 adds
+  the Recipe overlay-conflict four options and the asset-source "fill in at share time"
+  interaction (both marked accepted direction, not yet implemented). ZH mirror synced.
 
 - **0.7.18 (2026-09-22)**: §8.4 addendum for project draft export (U16
   user-ruling B-face loop 4 desktop consumption, proposal 029 B4) - the
@@ -714,111 +756,5 @@ direction.
   input plus leave-empty = backend default resolution, failures and absence strictly distinguished,
   never folded into an empty listing); the §8.7 project-creation sentence "no fabricated template
   dropdown" retires with the frozen word face now consumed. EN mirror in sync.
-- **0.7.10 (2026-09-20)**: §8.9 notification-center scroll-to-close semantics clarified (W25
-  real-machine batch-4 correction) — the user observed scrolling the notification list inside
-  the panel closing the whole notification center; clarified that the scroll-to-close gesture
-  holds only for scrolling outside the panel, scrolling inside the panel's list (wheel,
-  scrollbar, keyboard) keeps it open, and scrolling outside still closes per the original rule.
 
-- **0.7.9 (2026-09-20)**: §8.7 addendum for installed-packages update awareness presentation
-  (proposal 027 F3 consumption slice) — "Updatable" column three-state honest projection
-  (null = judgment not executed, honestly empty, never "up to date", never default false;
-  false = precise "no strictly newer version under the current filter conditions" word face,
-  never generalized; true = "update available" plus inline update key reusing the A2
-  version=null semantics, gated on the installs capability row); dual-family negotiation
-  discipline (v0.1-family answers keep the column honestly empty with zero regression;
-  cacheSourced=true rides only v0.2-family answers with the "cached data" annotation and is
-  never fabricated for v0.1-family answers). EN mirror of the ZH authority.
-
-- **0.7.8 (2026-09-20)**: new §8 global-shell bullets (boot splash and notification center;
-  proposal 028 #7 desktop stance now codified) — splash exit milestone discipline (budget spent
-  plus four milestones / waiting state / hard-cap forced exit / Escape skip / flattened motion),
-  the update badge reporting only "newer available"; the notification center's single projection
-  across two presentations, entry absent entirely when the capability is not ready, the portal
-  positioning discipline (blur only on the fullscreen backdrop), clearing a notification never
-  the fact, honest task-title projection (unregistered tasks get the type word "background
-  task", bare taskId never a description), row-open returns to the origin page identically in
-  both states, and the three-way split between status glyphs, action buttons, and the panel
-  close ✕. The original stance ("after the W25 window, as 0.7.6") was advanced by the operator's
-  2026-09-20 tick assignment; 0.7.6 belongs to the wt-7 in-flight batch and 0.7.7 to the F2
-  consumption slice, so this batch takes 0.7.8. EN mirror synced.
-
-- **0.7.7 (2026-09-20)**: §8.7 supplemented with repository-discovery presentation (proposal 027
-  F2 consumption slice) — repository subscriptions and subscription management merge into a single
-  "Repositories" partition (IA stance 2 landed: subscription list rows as the main body, inline
-  row expansion as the per-repo installable-packages browse face, the search box as a
-  presentation-layer filter never a second query shape, the entry gated jointly on capability
-  fact rows); honest-presentation discipline for the browse face (cached=false "subscribed · no
-  cache yet" empty state, latestVersion=null "no qualifying version" never rendered as "up to
-  date", cacheSourced=true informational "cached data" annotation, author/compatible deliberate
-  absence never invented, failures verbatim). Version 0.7.7 skips 0.7.6, reserved for the wt-7
-  in-flight batch. EN mirror synced.
-
-- **0.7.6 (2026-09-20)**: User-approved i18n repair; §9 uses familiar localized function names without mandatory English prefixes, retains brands and internal IDs, preserves original diagnostics, and makes dates and native dialogs follow the app language.
-
-- **0.7.5 (2026-09-19)**: §8.7 projects/packages supplemented with the settings-face copy
-  discipline (proposal 027 F1, user ruling U14) — UI copy for settings-face operations such as
-  subscribing and registering local packages states the shared semantics honestly (the same
-  package-manager settings file settings.json is shared with VCC/ALCOM and changes are visible to
-  both sides immediately; VUA does not modify project files, and external imports default to
-  cloning a copy before modifying it), and exclusive claims such as "isolated backend environment"
-  or "never modifies your VCC/ALCOM settings" that contradict the shared implementation are
-  banned; the read-only project-file face and clone-first semantics are unchanged. Mirrors the ZH
-  edition.
-
-- **0.7.4 (2026-09-19)**: §8.7 projects/packages supplemented with project-creation presentation
-  (026 A5 consumption slice) — creation is a single-stage write command without the combined change
-  preview (a brand-new directory has no pre-existing state to diff and no digest to bind; the
-  explicit form submission is the confirmation); the entry is gated on the create capability fact
-  row; parent-folder path and project name inputs invent no directory enumeration, and leaving the
-  template blank means the backend default template resolution, stated honestly with no fabricated
-  dropdown; success registers the project immediately, creation is not idempotent, and refusals such
-  as an already-existing target directory render as they are. Mirrors the ZH edition.
-
-- **0.7.3 (2026-09-18)**: §8 information-architecture update (proposal 026 B, user ruling
-  2026-09-18) — the standalone "Project compatibility" second-level page is removed; its read
-  faces merge into a "Project compatibility" section at the end of the package manager page
-  (section-inside-tab shape, not gated on the package engine capability); the copy-import source
-  prefers a registered-project picker with a manual-path fallback for out-of-registry ALCOM/VCC
-  originals; the write-operation handover card stays guidance-only (honesty discipline 1, no
-  invented interaction). Mirrors the ZH edition.
-
-- **0.7.2 (2026-09-18)**: §8 environment deployment gains the alternative-group rule —
-  brand VR runtimes / streaming apps are "any one" alternatives: one group card, a single
-  pending count when unsatisfied, and neutral "optional" absent members once satisfied.
-  Mirrors the ZH edition. (Registry row catches up from 0.7.0 to 0.7.2; the 0.7.1 bump had
-  missed its registry sync.)
-
-- **0.7.1 (2026-09-10)**: §8.3 wording fix (drift flagged in the desktop batch-A
-  state) — "honest degradation pointing to the system browser" becomes "a plain
-  unavailable note with no alternative action": under the U9 four-way split,
-  http/https popups open in the current embedded view, so no "hand off to the
-  system browser" degradation path exists. Mirrors the ZH edition.
-
-- **0.7.0 (2026-09-10)**: proposal 015 reconciliation accepted (IMP-1, handled by
-  integration) — §8 gains the dedicated import-tab semantics: the continuous
-  acquisition path lands as an "Import" page (cloud section = embedded browsing +
-  catalog mode + completed-download adoption; local section = W18 submission flow
-  migration); the warehouse page converges to pure entry management (dual-track
-  header removal rides IMP-4); permanent isolation badge and isolation red lines,
-  zero purchase-flow UI, and the remoteBrowser two-state flip criterion. Mirrors
-  the ZH edition (which also fixes the EN title lagging at v0.6.2).
-
-- **0.6.3 (2026-09-08)**: W15 failed-walkthrough rework landing sync - §6.2 experimental
-  feature presentation becomes a two-state toggle model (frozen-protocol **server-behavior
-  toggle** vs unfrozen-protocol **unwired preference**; the latter is permanently labeled
-  unwired, requires the danger confirm dialog, and gains the DEV prototype note); §8.3
-  artifact-mode semantics reworked per the W15 ruling (global behavior written by the
-  Settings-Experimental "Generate VPM replacement" toggle via setGlobalDefaultMode;
-  per-entry entries return to the entry-facts mirror; the 007 preference gate is superseded
-  by the global switch semantics); terminology aligned (VPM = VRChat Package Manager,
-  VPM package = the managed package).
-
-- **0.6.2 (2026-09-07)**: W7/W9/W13 landing sync - notification-center semantics (terminal
-  tasks default to non-notification, show-completed switch, clear removes only the
-  notification), new 6.2 experimental feature presentation (preference toggle, entry badge,
-  entry-hiding is not guard removal), Warehouse layout (adaptive columns + dedicated
-  right-hand detail panel + narrow-window stacking) and artifact-mode semantics
-  (use_original default, experimental-gated per-entry entries, read-only global default);
-  failed-notification glyph distinguished from the close ✕.
-- 0.6.1 and earlier: see git history.
+- 0.7.10 and earlier: see git history.

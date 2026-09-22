@@ -1039,7 +1039,7 @@ describe("bdl-queries v0.2 routing", () => {
       // 2026-09-18):三键 {schemaVersion, operation, result},内层 result 才是
       // 结果本体;平铺断言随 mock 回正一并退役(#22 live/fixture 形状一致)
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "catalog.list",
         result: { total: 0, entries: [] },
       },
@@ -1053,7 +1053,7 @@ describe("bdl-queries v0.2 routing", () => {
     expect(statusResponse).toMatchObject({
       ok: true,
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "catalog.status",
         result: { health: "unknown", revision: { catalogUpdatedSeq: null, datasetRevision: "0.1" } },
       },
@@ -1439,7 +1439,7 @@ describe("bdl-commands v0.1 command routing", () => {
       // mock 与 live wire 同形(三键信封,#22 形状一致纪律,2026-09-18 跟随):
       // 本用例钉的是路由原样透传——信封进、信封出,不解包不加工
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "downloads.listCompleted",
         result: { downloads: [] },
       },
@@ -1467,7 +1467,7 @@ describe("bdl-commands v0.1 command routing", () => {
     expect(response).toMatchObject({
       ok: true,
       value: {
-        schemaVersion: "0.4",
+        schemaVersion: "0.5",
         operation: "downloads.listCompleted",
         result: { downloads: [] },
       },

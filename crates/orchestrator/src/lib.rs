@@ -6,8 +6,10 @@
 #![allow(clippy::result_large_err)]
 
 mod assembly;
+mod bdl_dependency_queries;
 mod booth_extraction;
 mod build_record;
+mod dependencies_queries;
 mod inspection_evidence;
 mod plan_documents;
 mod production_evidence;
@@ -78,6 +80,14 @@ pub use contracts::{
     AppErrorV1, CommandAcceptedV1, ErrorCategory, ParamValue, TaskEventKind, TaskEventV1,
     TaskState, ENVELOPE_SCHEMA_VERSION,
 };
+pub use dependencies_queries::{
+    AdvisoryConfidence, DependenciesListByProductParams, DependenciesListByProductResultV05,
+    DependenciesLookupParams, DependenciesLookupResultV05, DependenciesParamsError,
+    DependenciesQueriesCapabilities, DependenciesQueriesPort, DependencyKind, DependencyMatchV05,
+    DependencyObservationV05, DependencyProductStatus, ExtractionMethod, InstallAdvisoryV05,
+    InstallSource, ResolutionEvidenceV05, ResolutionV05, SourceSpan,
+};
+pub use bdl_dependency_queries::BdlDependencyQueries;
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, editor_version_from_path,
     parse_editor_version, EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,

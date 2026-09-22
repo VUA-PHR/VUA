@@ -280,6 +280,7 @@ fn warehouse_config(root: &std::path::Path) -> WarehouseConfig {
         warehouse_root: root.join("warehouse"),
         global_default: vua_bdl_store::ArtifactMode::UseOriginalUnitypackage,
         executor: None,
+        dependencies_queries: None,
     }
 }
 

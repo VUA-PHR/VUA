@@ -2,11 +2,11 @@
 
 [English](bdl_EN.md) | [简体中文](bdl_ZH.md)
 
-> Document version: 1.1.0
+> Document version: 1.2.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors bdl_ZH.md at 1.1.0)
+> Authoritative language: 简体中文 (this English edition mirrors bdl_ZH.md at 1.2.1)
 > Scope: AMF-owned BDL module
-> Updated: 2026-09-08
+> Updated: 2026-09-23
 > Last conformance review: 2026-09-08
 > Normative effect: Yes
 
@@ -19,14 +19,42 @@ vertical slices.
 
 ## Responsibilities
 
-- Local products, subproducts, creators, files, terms, aliases, compatibility, and provenance.
-- Mapping downloaded files and Warehouse assets to source products.
-- Local search, filtering, deduplication, and human correction for AMF.
+**Base responsibilities, retained unconditionally (user ruling, 2026-09-22):**
+
+- Local products, subproducts, creators, files, terms, aliases, compatibility relations, and
+  provenance records.
+- Asset identity, and the local mapping (source correlation) between downloaded files, Warehouse
+  assets, and source products.
+- Local search, filtering, deduplication, and catalog capabilities for AMF.
 - Provenance for VN3 and ordinary terms-of-service observations and filters.
 - Storage of source observations and download-result metadata already validated by AMF.
 
+**Experimental automatic compatibility forensics (off by default, user ruling 2026-09-22):**
+
+- Automatic compatibility-evidence collection is experimental and off by default; when enabled it
+  tries to collect evidence from the user's actual BOOTH browsing and Unity usage. It does not
+  revive the abandoned whole-site cloud-collection direction.
+- Turning automatic collection off never disables base storage, ordinary import, or Recipe source
+  supplementation.
+
 AMF acquisition owns the browser, Session, download task/transport, BLM/VAE adapters, and UI. BDL
 stores the normalized metadata AMF decides to persist.
+
+## Evidence semantics and human correction (user ruling, 2026-09-22)
+
+- **No evidence means unknown:** when compatibility, dependency, or provenance lacks evidence, the
+  state is unknown and must not be treated as resolved, compatible, or verified.
+- **Human correction: direction retained, not yet frozen.** The product direction of local evidence
+  viewing and correction is retained, but the concrete UI, editable scope, and permissions still
+  need definition. This section grants no arbitrary-database-edit authority, and implementations
+  must not silently widen the editable surface.
+- **Degradation path undecided:** how dependency completion is accomplished when automatic forensics
+  is off or resolution fails still needs a concrete flow (see the to-be-verified list in the
+  [product boundary](../product-boundary_EN.md)).
+- This section does not change the existing persistence format or query contracts — the frozen
+  faces of `schemas/bdl/` and `schemas/bdl-queries/` do not automatically move because of it.
+
+## Layering
 
 ```text
 AMF acquisition / content-management service
@@ -58,10 +86,6 @@ slice.
   mapping to BDL.
 - BDL returns catalog, terms, and compatibility results; Electron and AMF retain session and download
   controls.
-
-The native AMF path remains complete on its own. Optional BLM/VAE adapters use public, stable,
-authorized boundaries, publish honest capability snapshots, keep third-party sessions and private
-schemas within their owners, and submit data through AMF validation.
 
 ## Observation write face (W17, 2026-09-08)
 
@@ -96,6 +120,18 @@ semantics:
   `entityCount`/`entityTypes` honest empty slots) and freshness (`stale`) remain with BDL v2
   and the G13 write path, outside this face.
 
+## External tool data
+
+The native AMF browser and content manager are the complete path. Tools such as BLM and VAE
+coexist as optional AMF adapters:
+
+- Prefer public, stable, clearly authorized APIs or import/export formats;
+- third-party login sessions and private credentials stay inside their original owner's boundary;
+- third-party private database schemas stay inside the adapter;
+- the native path completes the core flows on its own;
+- each adapter publishes an honest capability snapshot;
+- adapter data enters BDL only after AMF validation.
+
 ## Landing status (reviewed 2026-09-08)
 
 The first persistent format and query contract landed with the B4 slice: `schemas/bdl/v0.1` (the
@@ -105,10 +141,23 @@ catalog serving face (W12), the warehouse command face (W8/W14), and the provide
 closeout) closed within M4. The observation write face landed with W17 (see above). The surface
 remains private to AMF application services; any later public read surface requires its own
 accepted contract. Entity identity, terms representation, and compatibility evidence evolve with
-future AMF+BDL vertical slices.
+future AMF+BDL vertical slices. The 2026-09-22 user ruling confirms that base storage, asset
+identity, source correlation, and catalog capabilities are retained unconditionally, and sets
+automatic compatibility-evidence collection as an experimental feature off by default (not yet
+implemented; semantics under "Responsibilities" and "Evidence semantics and human correction").
 
 ## Document changelog
 
+- 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — the acquisition/BDL
+  ownership paragraph moved back to the end of "Responsibilities"; the layering diagram regained
+  its own "Layering" section; the condensed adapter paragraph unfolded into a full "External tool
+  data" section mirroring the ZH six-bullet list. The authoritative ZH text is unchanged.
+- 1.2.0 (2026-09-22): user ruling of 2026-09-22 landed — "Responsibilities" split into base
+  storage/asset identity/source correlation/catalog capabilities retained unconditionally, and
+  experimental automatic compatibility forensics off by default; new "Evidence semantics and human
+  correction" section (no evidence = unknown, correction direction retained but not frozen,
+  degradation path undecided); the merge does not change the frozen faces of `schemas/bdl/` and
+  `schemas/bdl-queries/`. Mirrors the ZH edition.
 - 1.1.0 (2026-09-08): added the "Observation write face" section (W17: upsert + bookkeeping
   counter + write-face closed sets + read-face consumption of the observed columns + scope
   statement); landing status re-reviewed with the corrected implementation location
