@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.1.4
+> Document version: 1.2.1
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -83,7 +83,10 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - The Orchestrator owns application use cases and recoverable tasks independently of the renderer.
   Its language, hosting model, and transport are replaceable implementation decisions.
 - AMF is Recipe-first and owns Warehouse, Recipe, Assembly, Inspection, Release, and BDL access.
-  BDL is an AMF-private local module, not a VUA-wide data service.
+  The Inspection detection-service capability stays; a standalone Inspection page is no longer
+  required — presentation defers to the product-boundary 1.5.0 ruling (user ruling 2026-09-22;
+  see `docs/product-boundary_EN.md` / `docs/product-boundary_ZH.md`). BDL is an AMF-private
+  local module, not a VUA-wide data service.
 - Unity changes cross the versioned Unity Bridge whenever a deterministic Bridge operation can
   exist. Do not substitute unversioned UI clicking.
 - Unity production workflows use global `2022.3.22f1` exactly. `2019.4.31f1` and `2022.3.6f1` are
@@ -154,12 +157,11 @@ Electron handlers, Unity callbacks, or third-party wrappers.
    contract permits.
 5. Prefer capability detection over assumptions about installed software or upstream versions.
 6. Add dependencies only with a clear owner, purpose, license, and removal path.
-7. Preserve unrelated worktree changes. Never work directly on `main` — with two declared
-   exceptions: (a) the Integration seat's collab bookkeeping batches (state files, BOARD,
-   proposals) land on `main` directly, per `collab/README.md`; (b) an explicit user ruling may
-   direct a change onto `main` outside the slice flow. Both exceptions are registration-backed:
-   the landing commit or its collab entry must name the authority (standing mechanism or user
-   ruling) that sanctioned the direct landing.
+7. Preserve unrelated worktree changes. Never commit, merge, or push directly on main. All changes,
+   including Integration bookkeeping, use an isolated branch and GitHub PR under
+   `collab/PROTECTED_MAIN.md`. The canonical main checkout only fetches and fast-forwards after
+   remote merges; divergence is escalated, never reset away. An explicit user ruling is required
+   for any emergency policy change, with the authority and restoration recorded.
 8. Do not add `Co-authored-by: Codex` trailers.
 
 ## Documentation discipline
@@ -181,6 +183,12 @@ Electron handlers, Unity callbacks, or third-party wrappers.
   generated files, and official license text remain single-source.
 
 ## Document changelog
+
+- 1.2.1 (2026-09-22): user ruling 2026-09-22 — the AMF module description no longer requires a
+  standalone Inspection page (the detection-service capability stays; presentation defers to
+  product-boundary 1.5.0). The ruling list itself is not copied here; see `docs/product-boundary_*`.
+
+- 1.2.0 (2026-09-22): user-approved PR integration replaces local-main merges and direct bookkeeping pushes; see collab/PROTECTED_MAIN.md.
 
 - 1.1.4 (2026-09-18): working-discipline rule 7 now declares its two standing exceptions —
   Integration-seat collab bookkeeping batches on `main` (per `collab/README.md`) and explicit

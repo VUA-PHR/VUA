@@ -2504,6 +2504,23 @@ rolled_back: "已回滚",
       workflowId: "工作流 ID",
     },
   },
+  /** bdl-queries v0.5 消费准备切片(2026-09-22):依赖反查/观察列呈现词面
+   *  基建——消费页面候 U18 终裁后切片。每行受「线索非结论」律约束:
+   *  advisory 文案一律建议语气(版面证据档位与建议安装来源),绝不渲染成
+   *  事实断言。可用性对骑既有 warehouse.availability 三行(零死重复行,由
+   *  dependencies-port 测试钉)。installSource 恰持 advisory 规则 v1 实际
+   *  发射的两值——vpm/unknown 留在冻结闭集内绝不发射,故无对应行(不留
+   *  死词面)。 */
+  dependencies: {
+    confidence: {
+      strong: "作者明确声明（专段或单行）",
+      weak: "列点行提及（真实但压缩）",
+    },
+    installSource: {
+      booth_page: "建议安装来源：BOOTH 商品页",
+      external_page: "建议安装来源：外部页面",
+    },
+  },
   /** 应用面错误文案:键 = 线上 messageKey(键先行,provider 在错误通道下发
    *  errors.catalog.*);catalog 浏览器当前将失败回落 not-connected/not-found,
    *  该视图中透传呈现这些键为后续切片 */
@@ -2529,13 +2546,24 @@ rolled_back: "已回滚",
       verifyUnavailable: "编辑器验证服务当前不可用。",
     },
     /** 素材链错误词面(027 第 142 批桌面,任务事件失败行呈现):
-     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发);
-     *  provisionFailed 为预留行——素材链 v0.2 新码 vua.material.
-     *  provision_failed 由核心座修复批(wt-2,候入库)携带,词面先行
-     *  四表同步,码落地即命中 */
+     *  键 = 线上 messageKey(vua.material 家族错误经 AppErrorV01 下发)。
+     *  第 169 批补齐至引擎完整 12 键 errors.material.* 发射面(核心第
+     *  150 批 failure_message_key 分类分化 + material_intake /
+     *  provider-host 发射点;每行锚定其发射语境,零发明语义)。失败行
+     *  仍为词面+code 原词并呈(第 148 批双事实律)——code 永不被遮蔽。 */
     material: {
       executionFailed: "素材执行失败：Unity 侧操作未能成功完成。",
       provisionFailed: "目标工程供给失败：Unity 工程尚未就绪，无法导入素材。",
+      sourceInvalid: "素材源无效：该路径未指向可读的素材文件夹。",
+      sourceEmpty: "素材源为空：文件夹内不含任何 .unitypackage。",
+      sourceUnreadable: "素材源无法读取：读取素材文件夹失败。",
+      sourceDrift: "素材源在计划确认后发生了变化（源指纹不再一致）；请重新检视素材源并再次确认。",
+      planHashMismatch: "导入计划未通过完整性校验（计划哈希不匹配），已被拒绝。",
+      riskDecisionStale: "已记录的风险决策与当前计划或素材源不再一致；请重新开始素材流程。",
+      riskDecisionRequired: "此计划在确认前需要作出风险决策。",
+      cancelled: "素材操作已取消：风险决策选择了取消。",
+      internal: "准备素材操作时发生内部错误。",
+      recordFailed: "素材操作已回滚并恢复，但保存其记录失败：该结果未持久化到任务记录。",
     },
     /** 交棒准入闸词面(U19 用户裁决 2026-09-21,BOARD U19 行为规范源)。
      *  预留行——码 vua.release_handoff.record_state_blocked(params 携

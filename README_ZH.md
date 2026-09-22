@@ -30,8 +30,10 @@ VUA 从用户想得到的结果出发。用户选择目标，例如准备环境�
   本地包注册表面）与 VCC/ALCOM 共享同一份设置文件，详见[产品边界](docs/product-boundary_ZH.md)。
 - **Orchestrator**：Rust 应用核心，负责计划、批准、持久任务、取消、恢复、适配器和 Build Record，
   通过可替换的版本化 Provider 边界接入 Kernel。
-- **Avatar MegaFactory（AMF）**：Recipe-first 的生产流程，包含 Warehouse、Recipe、Assembly、
-  Inspection、Release 五个用户阶段。
+- **Avatar MegaFactory（AMF）**：Recipe-first 的生产流程，完整覆盖 Warehouse、Recipe、
+  Assembly、Inspection、Release 五个阶段。不再要求所有玩家走完一条固定大流程——生产
+  Wizard 按目标、设备与当前状态选路径，检测收进制作记录（运行记录＋通知中心）。系
+  2026-09-22 产品裁决的已接受方向，尚未实现。
 - **BDL（Booth Database Local）**：AMF 私有的本地模块，管理目录、来源、协议、兼容性、搜索和
   Warehouse 映射元数据。
 - **Unity Bridge**：面向全球版 Unity `2022.3.22f1` 执行确定性操作的版本化协议；历史项目通过

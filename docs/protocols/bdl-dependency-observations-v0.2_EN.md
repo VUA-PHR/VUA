@@ -2,10 +2,12 @@
 
 [English](bdl-dependency-observations-v0.2_EN.md) | [简体中文](bdl-dependency-observations-v0.2_ZH.md)
 
-> Document version: 0.2
+> Document version: 0.2.1
 > Status: **FROZEN** (2026-09-22, frozen by wt-4 production, batch 166 — the
-> freeze batch). The「Schema＋正负例向量＋至少一端消费测试」freeze triad landed
-> together:
+> freeze batch) **and LANDED** (store v0.2 runtime, wt-4 production, batch
+> 168 — the landing slice; this 0.2.1 note registers that landing, zero
+> change to any frozen word face). The「Schema＋正负例向量＋至少一端消费测试」
+> freeze triad landed together:
 > - schema: `schemas/bdl/v0.2/schema.sql` (full readable authority,
 >   standalone-executable) + `schemas/bdl/v0.2/002_dependency_
 >   observations.sql` (v0.1→v0.2 incremental migration; STRICT +
@@ -16,9 +18,10 @@
 > - consumer test: `crates/bdl-store/tests/dependency_observations_schema_
 >   v02.rs` — 4 cases green this batch, driving every vector file.
 > Zero end-to-end claims — no implementation or verification claim of any
-> runtime, extraction, or consumption capability is made here. The bdl-store
-> still runs format v0.1 (zero store code changed in the freeze batch); the
-> v0.2 store landing is the NEXT slice.
+> extraction, consumption, or real-machine capability is made here. The
+> bdl-store ran format v0.1 at the freeze batch (zero store code changed
+> there); the v0.2 store landing happened in batch 168 (see the store
+> landing section below) and is code-face evidence only.
 > Freeze rulings registered this batch (operator-preauthorized direction
 > finalized by the production seat): dep_kind = four values, no
 > `unity_or_sdk_version`; the vector file form (registered in the
@@ -216,6 +219,45 @@ Negative vectors (rejected):
 - When the NEXT slice lands the store, the `bdl-store` migration registry
   advances and opening newer formats keeps the existing `UnsupportedFormat`
   discipline — this freeze batch touched no store code.
+  **Landed (batch 168)**: the store executes the full chain (001 + 002, one
+  transaction for fresh databases — born v0.2; existing v0.1 databases
+  migrate on open via 002 with verbatim carry-over), sets the host-owned
+  `user_version = 2`, and keeps the `UnsupportedFormat` discipline for a
+  future fence (`migration-N`) and for a foreign `format_version`.
+
+## Store landing (v0.2.1 — batch 168 facts; code face)
+
+- `bdl-store` runs format v0.2: `BDL_FORMAT_VERSION = "0.2"`, migration
+  registry 001 + 002, host fence `user_version = 2` (v0.1 host precedent).
+- Write face `record_dependency_observation`: rows are APPENDED as evidence
+  (no upsert — the schema defines no dedupe identity); closed-set members
+  are persisted verbatim and the REAL SQLite CHECK/NOT NULL/FK constraints
+  are the single law authority (no duplicate Rust closed set — a violation
+  surfaces as `BdlStoreError::Database`). `confirmed_by_human` is not a
+  write-face field: rows land unconfirmed (DEFAULT 0 — a clue).
+- Read face `dependency_observations(product_id)`: the honest row set in
+  observation order; the stored evidence JSON must parse into the frozen
+  element shape (`deny_unknown_fields`) or it surfaces as a corrupt value.
+- Confirmation write action `confirm_dependency_resolution` — the ONLY
+  writer of `confirmed_by_human = 1`: one explicit, recorded write pins the
+  resolved product identity (must be an OBSERVED product, `UnknownProduct`
+  otherwise), the non-empty resolution evidence (an empty "evidence" is no
+  evidence — `InvalidResolution`), and the flag, on an existing observation
+  (`UnknownDependencyObservation` otherwise). Confirmation never happens
+  automatically.
+- Storage-layer behavior test
+  `crates/bdl-store/tests/dependency_observations_store_v02.rs` (6 cases
+  green, batch 168): the 17 frozen vector files drive the store's own faces
+  and the store's own migration execution — every accept vector lands and
+  reads back verbatim (P4 through the confirmation action; P9 over the
+  store's migrated database, compat having no store write face by its v0.1
+  surface reality), every reject vector is refused by the real constraints
+  (typed-face cases as `BdlStoreError::Database` over a ConstraintViolation;
+  unrepresentable lawless values — SQL NULL against NOT NULL, confirmed = 2
+  — against the store's own migrated database), the migration discipline
+  (born v0.2 / v0.1 migrates on open verbatim / future fence and foreign
+  format refused), and the confirmation action's laws. Batch 168 totals:
+  bdl-store crate 66 cases green, clippy all-targets zero warnings.
 
 ## Consumer test (freeze-batch facts)
 
@@ -236,5 +278,7 @@ the next slice. Zero end-to-end claims.**
    linkage** (030 §5.6) stay open, out of scope here.
 2. The consumption face (bdl-queries `dependencies.*`) is claimed by the data
    seat itself; this document does not ghost-write it.
-3. The store landing (migration registry v0.1→v0.2, write/read faces) is the
-   next slice and carries its own acceptance.
+3. ~~The store landing (migration registry v0.1→v0.2, write/read faces) is
+   the next slice and carries its own acceptance.~~ **CLOSED — landed in
+   batch 168** (see the store landing section above); acceptance rides that
+   batch.

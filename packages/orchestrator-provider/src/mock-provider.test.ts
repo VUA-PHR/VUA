@@ -869,8 +869,8 @@ describe("mock packages-ops A5 create face (026 core freeze batch, packages-ops 
 });
 
 describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification correction)", () => {
-  it("answers the four read-only successes with the frozen v0.4 wire envelope, never the bare result body", async () => {
-    // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.4/
+  it("answers the four read-only successes with the frozen v0.5 wire envelope, never the bare result body", async () => {
+    // Wire 权威面 = 三键信封:数据域冻结 schema(schemas/bdl-queries/v0.5/
     // result.schema.json,required schemaVersion+operation、additionalProperties
     // false)＋ provider-host bdl_query_success 同形实现＋ supervised invoke
     // 零解包原样透传。此前四分支平铺回 result 本体系 #22 同构的 live/fixture
@@ -908,10 +908,37 @@ describe("mock bdl-queries read faces (core 2026-09-18, #36 desktop notification
       const value = response.value;
       // 冻结信封三键闭集(多一键少一键均破)
       expect(Object.keys(value).sort()).toEqual(["operation", "result", "schemaVersion"]);
-      expect(value.schemaVersion).toBe("0.4");
+      expect(value.schemaVersion).toBe("0.5");
       expect(value.operation).toBe(method);
       // result 本体精确全等(诚实空集/未知健康,零多键)
       expect(value.result).toEqual(result);
+    }
+  });
+});
+
+// bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN;桌面消费准备切片
+// 2026-09-22 登记 TS 方法闭集):模拟面无 BDL 观察库,dependencies.* 两方法
+// 恒答诚实缺席——三元与真实 provider-host catalog_request 缺席分支一致
+// (vua.catalog.unavailable,不折入 unknown_method 过渡态);绝不伪造线索/
+// 建议(「线索非结论」律,零合成依赖事实)。
+describe("mock dependencies.lookup / dependencies.listByProduct (bdl-queries v0.5, TS method union registered by the desktop seat)", () => {
+  it("answers the catalog-family honest absence triple for both read-only queries — never fabricated clues or suggestions", async () => {
+    const provider = new MockOrchestratorProviderV01();
+    await provider.start();
+    for (const method of ["dependencies.lookup", "dependencies.listByProduct"] as const) {
+      const params = method === "dependencies.lookup"
+        ? { name: "lilToon" }
+        : { productId: "booth:6584744" };
+      const response = await provider.invoke(request({
+        kind: "query",
+        method,
+        params,
+      } as Parameters<typeof request>[0]));
+      expect(response.ok, method).toBe(false);
+      if (response.ok) throw new Error("expected failure");
+      expect(response.error.code, method).toBe("vua.catalog.unavailable");
+      expect(response.error.category, method).toBe("unavailable");
+      expect(response.error.messageKey, method).toBe("errors.catalog.unavailable");
     }
   });
 });

@@ -9,3 +9,5 @@ schemas/bdl-queries、schemas/download-events、docs/architecture/bdl_*。本域
 本地会话与公开入口，凭据/订单/付费素材不出设备，仓库与 CI 只用合成夹具；解决不了的
 问题写入 collab/BOARD.md「待用户裁决」并标 [需用户]——禁止猜测、禁止降标、禁止多进程
 互相背书。
+
+> 2026-09-22 用户批准的集成规则覆盖：操作前必读 collab/PROTECTED_MAIN.md。所有 main 改动（包括簿记和审阅报告）必须在独立工作树分支提交并通过 GitHub PR 合并；主树仅 fetch 后快进。此条覆盖本文旧的本地 main 合并/提交措辞。仓库访问失败不得新建同名仓库，迁移另待授权。

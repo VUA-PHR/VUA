@@ -68,10 +68,18 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             }
         };
         Some(vua_provider_host::WarehouseConfig {
-            bdl: store,
+            bdl: store.clone(),
             warehouse_root,
             global_default,
             executor: production.as_ref().map(|config| config.executor.clone()),
+            // The bdl-queries v0.5 dependencies read face: the REAL query
+            // executor over the SAME BDL library (the implementation-ring
+            // flip; the recipe-export loop-3 precedent) — the executor
+            // overrides the defaulted declared-none accessor exactly when
+            // it serves, and the face stays read-only over the one library.
+            dependencies_queries: Some(std::sync::Arc::new(
+                vua_orchestrator::BdlDependencyQueries::new(store),
+            )),
         })
     });
     // The Hub editors root the selection enumerates when no explicit

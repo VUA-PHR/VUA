@@ -455,6 +455,52 @@ v0.1–v0.4` 全部树内只读；零代码、零 schema 文件落盘——v0.5 
 wt-4 冻结节登记的勘误纪律同一条）。dependencies.* v0.5 候词表方向不受本裁决
 影响，实现环候操作者派发。
 
+### 回复（产线/wt-4，2026-09-22 第 168 批——store v0.2 落库实现环交付）
+
+操作者第 168 批派单（030 store v0.2 落库实现环；冻结 88e6a772 已入库
+8c123983）兑现，**bdl-store 升版运行 v0.2**（冻结词面零变化；schemas/ 零
+触碰——落库登记走协议本 0.2.1 注记＋REGISTRY，冻结 schema.sql/002 文件本体
+不动）：
+
+- **迁移注册升版（v0.1 宿主先例照办）**：`BDL_FORMAT_VERSION = "0.2"`、
+  迁移注册 001＋002；fresh 库单事务全链执行＝出生即 v0.2、宿主
+  `user_version = 2`；既有 v0.1 库开盖即经 002 迁移（compatibility_
+  observations 重建逐字保真）；`UnsupportedFormat` 纪律接线＝超前 fence
+  （`migration-N`）与外来 `format_version` 双拒绝面，测试钉死。
+- **写入/读出面（v0.1 既有表面同构）**：`record_dependency_observation`
+  （行追加为证据，无 upsert——schema 未定义去重身份）＋
+  `dependency_observations(product_id)`（观察序诚实行集，空＝诚实空态）。
+  **库层法律权威单一化设计（如实申报）**：`dep_kind`/`source_span`/
+  `extraction_method` 以字符串逐字入库、store 不持重复的 Rust 闭集——
+  冻结 schema 的真实 SQLite CHECK/NOT NULL/FK 就是唯一拒绝者（违约以
+  `BdlStoreError::Database` 骑 ConstraintViolation 如实浮出），由此 17 个
+  向量文件得以直接驱动 store 面作行为测试、拒绝例恰由 CHECK 拒绝（派单词
+  面）；证据 JSON 形状由 `DependencyResolutionEvidence` 类型承载
+  （`deny_unknown_fields`），存量损坏值读期按 CorruptValue 浮出。
+- **confirmed_by_human 写动作面**：`confirm_dependency_resolution`＝
+  confirmed=1 的**唯一**写入者（写入面不携旗标，行以未确认落库＝线索默认
+  律）；一次显式留痕写钉住消解目标商品（须已观察商品，否则 UnknownProduct）
+  ＋非空证据（空「证据」＝无证据，InvalidResolution）＋旗标，行须存在
+  （UnknownDependencyObservation）；确认绝不自动翻。
+- **存储层行为测试** `dependency_observations_store_v02.rs`（6 例绿）：
+  17 向量文件驱动 store 自有面与 store 自有迁移执行——接受例落库读回逐字
+  保真（P1–P8 骑 store 写入面；P4 骑确认动作；P9 走 store 自身迁移库——
+  compat 表按 v0.1 表面现实无 store 写入面，如实注明）；拒绝例真实约束
+  拒绝（类型面可表达者经 store 面、类型面无法诚实表达者——NOT NULL 列携
+  NULL、confirmed=2——对 store 迁移库驱动，同被拒）；迁移纪律三面（出生
+  v0.2／v0.1 开盖即迁／超前与外来拒绝）。
+- **验证读数（2026-09-22 本树亲测）**：bdl-store 全 crate **66 例绿**
+  （基线 60＋恰本批 6）＋cargo test --workspace **107 套件 932/0**
+  （166 批基线 926＋恰本批 6）＋clippy --workspace --all-targets
+  **0 警告 0 错误**；一处跨 crate 钉定随升版如实改常量自洽
+  （provider-host catalog_queries wire 测试 datasetRevision 字面 "0.1"
+  → `BDL_FORMAT_VERSION`，语义不变）。零 Unity Editor 触发、零网络动作、
+  零 BOOTH 访问。
+- **诚实边界维持**：零端到端宣称——本环全部系代码面证据（真实 SQLite 执行
+  迁移与约束≠真机全链）；提取管线切片（保守提取＋消费面）候下窗；U18 终裁
+  前零端到端宣称。bdl-queries dependencies.* 消费面（数据座 §5.7 案 A）
+  本席零代笔；confirmed_by_human 翻 1 的写动作已按本席承诺落库写面，数据席
+  v0.5 只读面之外的唯一写路径即此。
 ### 回复（数据/wt-5，2026-09-22 第 168 批——dependencies.* v0.5 实现环交付＝正式冻结）
 
 操作者第 168 批派发兑现，`schemas/bdl-queries/v0.5/` **实现环三件齐落**

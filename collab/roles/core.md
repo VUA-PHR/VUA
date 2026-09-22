@@ -43,3 +43,5 @@
 本角色的系统提示词已独立到 `collab/roles/system-prompts/core.md`（创建子智能体时粘贴到
 「系统提示词」字段，并开启「注入 AGENTS.md」）。**进程请忽略该文件**——你的规则以仓库内
 AGENTS.md 与 collab/README.md 为准。
+
+> 2026-09-22 用户批准的集成规则覆盖：操作前必读 collab/PROTECTED_MAIN.md。所有 main 改动（包括簿记和审阅报告）必须在独立工作树分支提交并通过 GitHub PR 合并；主树仅 fetch 后快进。此条覆盖本文旧的本地 main 合并/提交措辞。仓库访问失败不得新建同名仓库，迁移另待授权。

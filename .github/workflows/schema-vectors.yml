@@ -18,14 +18,10 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/schema-vectors.yml"
-  pull_request:
-    paths:
-      - "schemas/**"
-      - "crates/**/tests/**"
-      - "crates/*/Cargo.toml"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/schema-vectors.yml"
+  pull_request: {}
+
+permissions:
+  contents: read
 
 concurrency:
   group: schema-vectors-${{ github.ref }}

@@ -350,10 +350,12 @@ export interface ProductionBuildRecordViewV02 {
 // ---- catalog.* / warehouse.*(bdl-queries v0.3 冻结面:AMF 从本地 BDL 出的
 // 五个只读查询。传输信封归本契约;本节冻结操作词表、查询闭集、字段面与结果
 // 形状。渲染层永不直接触达 BDL;协议变更须升版,不得原地改写。2026-09-18
-// 结果面对齐:六个只读结果类型照 021 先例登记 bdl-queries v0.4 冻结 wire
-// 三键信封 {schemaVersion "0.4", operation, result}(schemas/bdl-queries/
-// v0.4/result.schema.json;BOARD #36 mock 信封回正的桌面 TS 登记面跟随,
-// 零协议变更——内层 result 才是各方法结果本体,renderer 经信封窄化取用) ----
+// 结果面对齐:六个只读结果类型照 021 先例登记 bdl-queries 冻结 wire 三键
+// 信封 {schemaVersion, operation, result}(BOARD #36 mock 信封回正的桌面
+// TS 登记面跟随,零协议变更——内层 result 才是各方法结果本体,renderer 经
+// 信封窄化取用)。2026-09-22 核心 v0.5 接线批随版:信封常量 0.4→0.5(additive
+// 八方法升版,六方法词面零变化,schemas/bdl-queries/v0.5/result.schema.json;
+// dependencies.* 两新成员的 TS 面归桌面接线批) ----
 
 /** v0.2 availability 稳定枚举:由 AMF/BDL 处理器按协议版本化规则表从观测
  *  原词派生;渲染层只消费该枚举(徽标与筛选),原词证据走 availabilityRaw */
@@ -1521,10 +1523,178 @@ export interface DownloadsListCompletedItemV04 {
  *  外层三键闭集 + result 本体(downloadsListCompletedResult 冻结行六键闭集);
  *  平铺消费即类型错误,renderer 经 narrowCompletedDownloads 信封窄化取行 */
 export interface DownloadsListCompletedResultV04 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "downloads.listCompleted";
   readonly result: {
     readonly downloads: readonly DownloadsListCompletedItemV04[];
+  };
+}
+
+// ---- dependencies.*(bdl-queries v0.5 additive 两成员,030 §5.7 案 A,数据席
+//      第 168 批 FROZEN;桌面 TS 登记面 2026-09-22。词面骑 BDL v0.2 冻结闭集
+//      (schemas/bdl/v0.2,先于本词表);两方法只读,零写词。「线索非结论」律:
+//      lookup 是建议面——resolvedProductId 仅人工确认消解出线、advisory 非空
+//      当且仅当版面刻意声明＋安装源可证;listByProduct 是未过滤观察面——
+//      未确认消解以 confirmed:false 如实出线为带标注线索。镜像纪律:全部
+//      闭集(depKind 四值/sourceSpan 五值/extractionMethod 六值/installSource
+//      四值/confidence 两档/productStatus 两值/params 键集/回执键集)照冻结
+//      Schema 逐字镜像,零臆造零增删) ----
+
+/** BDL v0.2 dep_kind 四值冻结闭集(schema 的 additionalProperties 词面:无第五
+ *  成员——引擎/SDK 钉行存为 other,钉值在 versionHint;词表外 depKind =
+ *  契约错误,负例向量钉死 v0.2 N1 同一裁决面) */
+export type DependencyKindV05 = "shader" | "tool_package" | "avatar_base" | "other";
+
+/** BDL v0.2 source_span 五值冻结闭集(逐字引文取自页面位置) */
+export type DependencySourceSpanV05 =
+  | "body"
+  | "subproduct_name"
+  | "image"
+  | "title"
+  | "description_link";
+
+/** BDL v0.2 extraction_method 六值冻结闭集(版面形态;advisory confidence 两档
+ *  只骑此维度——explicit_heading/one_line=strong,bullet=weak,prose/title/
+ *  link 低于建议线) */
+export type DependencyExtractionMethodV05 =
+  | "explicit_heading"
+  | "bullet"
+  | "one_line"
+  | "prose"
+  | "title"
+  | "link";
+
+/** proposal 030 §3.2 冻结四值闭集:规则 v1 只从确认消解目标的 source 主机
+ *  派生 booth_page/external_page 并发射;vpm/unknown 留在闭集内供规则升版,
+ *  v1 绝不发射(库内无 VPM 仓库事实,凭空宣称即猜测) */
+export type DependencyInstallSourceV05 = "vpm" | "booth_page" | "external_page" | "unknown";
+
+/** advisory confidence 两档(只骑版面维度;映射本体 = 协议版本化 advisory
+ *  规则表 v1,规则变更升本协议版本,绝不原地改写) */
+export type DependencyAdvisoryConfidenceV05 = "strong" | "weak";
+
+/** BDL v0.2 resolution_evidence 元素四键形状逐字复用(store 层硬律:resolution
+ *  在场 ⇒ evidence 非空,骑冻结 CHECK) */
+export interface DependencyResolutionEvidenceV05 {
+  readonly linkText: string;
+  readonly linkUrl: string;
+  readonly span: DependencySourceSpanV05;
+  readonly note: string | null;
+}
+
+/** 带确认状态的消解:confirmed:false = 带标注线索(030 §1 样例 3 错链实证
+ *  落点;身份消解默认未确认),confirmed:true = 在案人工结论(翻 1 是建库
+ *  切片写动作,本只读族绝不发生) */
+export interface DependencyResolutionV05 {
+  readonly productId: string;
+  readonly confirmed: boolean;
+  readonly evidence: readonly DependencyResolutionEvidenceV05[];
+}
+
+/** 观察行(listByProduct 线索面):全证据体含提取身份与观察时刻(确认工作流
+ *  消费);无 advisory——建议推导是 lookup 的职责,本面如实列观察 */
+export interface DependencyObservationV05 {
+  readonly depKind: DependencyKindV05;
+  /** 页面原文名义,零归一化 */
+  readonly depName: string;
+  /** 原文版本串('2.3.2~');null = 页面未钉版本(诚实缺席),承载全部版本约束 */
+  readonly versionHint: string | null;
+  /** 页面逐字引文(证据体,零语义改写) */
+  readonly rawQuote: string;
+  readonly sourceSpan: DependencySourceSpanV05;
+  readonly extractionMethod: DependencyExtractionMethodV05;
+  /** 提取者身份('human' 首落;开放词面——BDL v0.2 置信维度 2,不与
+   *  extractionMethod 合并) */
+  readonly extractedBy: string;
+  /** 管线观察时刻,绝非 BOOTH 发布时刻 */
+  readonly observedAt: string;
+  /** null = 页面无可消解链接线索 */
+  readonly resolution: DependencyResolutionV05 | null;
+}
+
+/** 建议载体(advisory;永不是事实断言):null = 该观察不出建议(版面低于
+ *  建议线/消解未确认/安装源不可证——行仍有效在库) */
+export interface DependencyInstallAdvisoryV05 {
+  readonly installSource: DependencyInstallSourceV05;
+  readonly confidence: DependencyAdvisoryConfidenceV05;
+}
+
+/** 建议面单行(lookup):证据键逐字;resolvedProductId 仅人工确认消解出线
+ *  (null = 无消解或未确认,不区分不泄露);刻意缺席(admission 律):
+ *  extractedBy/observedAt 不上 lookup 线面,路径零出现 */
+export interface DependencyMatchV05 {
+  /** 声明依赖的商品身份 */
+  readonly productId: string;
+  /** 声明商品标题;null = 诚实缺席 */
+  readonly productTitle: string | null;
+  /** 声明商品逐字可得性原词(双字段律证据面) */
+  readonly availabilityRaw: string | null;
+  /** 派生稳定枚举;UI 唯一消费 */
+  readonly availabilityStatus: CatalogAvailabilityStatusV03;
+  readonly depKind: DependencyKindV05;
+  readonly depName: string;
+  readonly versionHint: string | null;
+  readonly rawQuote: string;
+  readonly sourceSpan: DependencySourceSpanV05;
+  readonly extractionMethod: DependencyExtractionMethodV05;
+  readonly resolvedProductId: string | null;
+  readonly advisory: DependencyInstallAdvisoryV05 | null;
+}
+
+export interface DependenciesLookupQueryV05 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "dependencies.lookup";
+  readonly params: {
+    /** 依赖名义(调用方所持原文);匹配规则 v1 = dep_name 大小写不敏感精确
+     *  (ASCII 折叠),零子串/模糊/等价 */
+    readonly name: string;
+    /** 可选过滤骑 BDL v0.2 四值闭集;null/缺席 = 不过滤 */
+    readonly depKind?: DependencyKindV05 | null;
+    /** 1–200,默认 50 */
+    readonly limit?: number;
+    /** ≥ 0,默认 0 */
+    readonly offset?: number;
+  };
+}
+
+export interface DependenciesListByProductQueryV05 extends ApplicationRequestBaseV01 {
+  readonly kind: "query";
+  readonly method: "dependencies.listByProduct";
+  readonly params: {
+    /** 命名空间身份(同 catalog.detail pattern);未知 = 应用面 not-found,
+     *  绝不伪造空答;无 name/过滤键——客户端过滤 = 契约错误 */
+    readonly productId: string;
+  };
+}
+
+/** bdl-queries v0.5 冻结 wire 信封(021 先例对齐):外层三键闭集(schemaVersion
+ *  const "0.5" + operation 字面量),内层 result 才是结果本体;平铺消费即类型
+ *  错误。total:0 + matches:[] = 「无匹配名义」(按当前规则表),绝不渲染成
+ *  「不存在该依赖」——低于建议门的观察留在库内,listByProduct 是未过滤面 */
+export interface DependenciesLookupResultV05 {
+  readonly schemaVersion: "0.5";
+  readonly operation: "dependencies.lookup";
+  readonly result: {
+    /** 匹配观察总数(limit/offset 截取前计算) */
+    readonly total: number;
+    /** 行序 = productId 升序后观察身份升序(身份派生,确定性分页) */
+    readonly matches: readonly DependencyMatchV05[];
+  };
+}
+
+/** tombstone 诚实面:missing = 来源页已死(404/410 留存不删),观察列照常
+ *  可读——确认工作流必须仍能看到死页的声明与线索 */
+export type DependencyProductStatusV05 = "complete" | "missing";
+
+export interface DependenciesListByProductResultV05 {
+  readonly schemaVersion: "0.5";
+  readonly operation: "dependencies.listByProduct";
+  readonly result: {
+    readonly productId: string;
+    readonly productStatus: DependencyProductStatusV05;
+    /** 行序 = 观察身份升序(插入序,确定性);两面同库同源,对照呈现即
+     *  「线索非结论」律的落点 */
+    readonly observations: readonly DependencyObservationV05[];
   };
 }
 
@@ -1562,11 +1732,12 @@ export interface CatalogProductSummaryV03 {
   readonly entityTypes: readonly [];
 }
 
-/** bdl-queries v0.4 冻结 wire 信封(021 先例对齐,桌面 TS 登记面 2026-09-18):
- *  外层三键闭集(schemaVersion const "0.4" + operation 字面量),内层 result
+/** bdl-queries 冻结 wire 信封(021 先例对齐,桌面 TS 登记面 2026-09-18;
+ *  2026-09-22 核心 v0.5 接线批信封常量随版 0.4→0.5,词面零变化):
+ *  外层三键闭集(schemaVersion const "0.5" + operation 字面量),内层 result
  *  才是 catalog.list 结果本体(冻结字段面原样内联);平铺消费即类型错误 */
 export interface CatalogListResultV03 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "catalog.list";
   readonly result: {
     /** 分页总数(limit/offset 截取前计算) */
@@ -1609,7 +1780,7 @@ export interface CatalogProductDetailV03 {
 /** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐):result 本体
  *  携 detail 未命中前仅成功面的 product 文档 */
 export interface CatalogDetailResultV03 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "catalog.detail";
   readonly result: {
     readonly product: CatalogProductDetailV03;
@@ -1628,7 +1799,7 @@ export interface CatalogRevisionV03 {
 /** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);mock 未知
  *  健康语义经 result.health 承载不变 */
 export interface CatalogStatusResultV03 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "catalog.status";
   readonly result: {
     readonly health: CatalogHealthV03;
@@ -1672,7 +1843,7 @@ export interface WarehouseEntryCardV03 {
 /** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);诚实空集经
  *  result.entries 承载不变 */
 export interface WarehouseListEntriesResultV03 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "warehouse.listEntries";
   readonly result: {
     readonly entries: readonly WarehouseEntryCardV03[];
@@ -1692,7 +1863,7 @@ export interface WarehouseArtifactFactV03 extends WarehouseArtifactRefV03 {
 /** 信封形态同 CatalogListResultV03(021 先例,2026-09-18 对齐);工件事实族
  *  (含 suggestedFileName/检查时刻/诚实判定)随 result.entry 承载不变 */
 export interface WarehouseEntryDetailResultV03 {
-  readonly schemaVersion: "0.4";
+  readonly schemaVersion: "0.5";
   readonly operation: "warehouse.entryDetail";
   readonly result: {
     readonly entry: Omit<WarehouseEntryCardV03, "artifacts"> & {
@@ -2605,7 +2776,9 @@ export type ApplicationRequestV01 =
   | WarehouseDeleteOriginalsCommandV01
   | ReleaseOpenForHandoffCommandV02
   | ReleaseOpenForInspectionCommandV02
-  | RecipeExportProjectDraftQueryV01;
+  | RecipeExportProjectDraftQueryV01
+  | DependenciesLookupQueryV05
+  | DependenciesListByProductQueryV05;
 
 export interface TaskListSnapshotV01 {
   readonly contractVersion: ApplicationContractVersion;
@@ -2701,6 +2874,8 @@ export type ApplicationSuccessValueV01 =
   | WarehouseListEntriesResultV03
   | WarehouseEntryDetailResultV03
   | DownloadsListCompletedResultV04
+  | DependenciesLookupResultV05
+  | DependenciesListByProductResultV05
   | EnvironmentVerifyEditorResultV01
   | ProjectEnvironmentManagersResultV01
   | ProjectListProjectsResultV01
@@ -3008,6 +3183,40 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
   if (value.kind === "query" && value.method === "downloads.listCompleted") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
       && hasExactKeys(value.params, []);
+  }
+  // bdl-queries v0.5(030 §5.7 案 A,数据席第 168 批 FROZEN;桌面 TS 登记面):
+  // lookup params 闭集 {name, depKind?, limit?, offset?}——name 必填非空,
+  // depKind 骑 BDL v0.2 四值闭集(null/缺席 = 不过滤),分页 1–200/≥0;
+  // 词外键(含 fuzzy 等价开关)拒绝 = 契约错误,绝不静默空答(负例向量同形)
+  if (value.kind === "query" && value.method === "dependencies.lookup") {
+    if (!hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])) return false;
+    const lookupParams = value.params as DependenciesLookupQueryV05["params"];
+    const keys = Object.keys(lookupParams);
+    if (!keys.includes("name") || keys.some((key) => key !== "name" && key !== "depKind" && key !== "limit" && key !== "offset")) {
+      return false;
+    }
+    if (typeof lookupParams.name !== "string" || lookupParams.name.length < 1) return false;
+    if (lookupParams.depKind !== undefined && lookupParams.depKind !== null
+      && !(["shader", "tool_package", "avatar_base", "other"] as readonly string[]).includes(lookupParams.depKind)) {
+      return false;
+    }
+    if (lookupParams.limit !== undefined
+      && (typeof lookupParams.limit !== "number" || !Number.isSafeInteger(lookupParams.limit) || lookupParams.limit < 1 || lookupParams.limit > 200)) {
+      return false;
+    }
+    if (lookupParams.offset !== undefined
+      && (typeof lookupParams.offset !== "number" || !Number.isSafeInteger(lookupParams.offset) || lookupParams.offset < 0)) {
+      return false;
+    }
+    return true;
+  }
+  // listByProduct params 单键闭集 {productId}(catalog.detail 同 pattern);
+  // 无 name/过滤键——客户端过滤 = 契约错误(负例向量钉死),绝不静默空答
+  if (value.kind === "query" && value.method === "dependencies.listByProduct") {
+    return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && hasExactKeys(value.params, ["productId"])
+      && typeof value.params.productId === "string"
+      && /^booth:[0-9]+$/.test(value.params.productId);
   }
   // 013 读面(核心 e720544/5b65550 四查询全 live):params 闭集照冻结面
   if (value.kind === "query" && value.method === "project.environmentManagers") {

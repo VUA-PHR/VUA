@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 私密安全报告 / Private security report
+    url: https://github.com/VUA-PHR/VUA/security/advisories/new
+    about: 安全漏洞与可利用问题请勿公开提交。 / Do not disclose vulnerabilities publicly.
+  - name: 使用问题 / Usage question
+    url: https://github.com/VUA-PHR/VUA/issues/new
+    about: 普通使用问题可直接提交 Issue；请勿附带私人数据。 / Ask a question without private data.

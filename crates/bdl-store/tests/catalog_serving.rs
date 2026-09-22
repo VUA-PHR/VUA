@@ -1,5 +1,6 @@
 //! W12 consumer tests: the catalog serving face (catalog.list/detail/status)
-//! against the frozen `schemas/bdl-queries/v0.4` vocabulary.
+//! against the frozen `schemas/bdl-queries/v0.5` vocabulary (v0.4 -> v0.5
+//! ride-along: the additive rise leaves the six v0.4 methods identical).
 //!
 //! One end consumes the frozen vectors for real: positive request vectors
 //! drive the assembly, assembled results validate against the frozen result
@@ -17,21 +18,48 @@ use vua_bdl_store::{
     BDL_QUERIES_SCHEMA_VERSION,
 };
 
+/// The frozen v0.5 schemas (the CURRENT generation: the validators key on
+/// the word face the wire now serves).
 fn schema_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.5")
+}
+
+/// The frozen vector generation for the six v0.4 methods' examples: the
+/// v0.5 freeze added only the dependencies vectors (the additive rise
+/// keeps the six v0.4 word faces identical, so their vectors stay in the
+/// v0.4 generation dir verbatim — schemaVersion "0.4" and all). The params
+/// faces are identical across the rise, so a vector drives the assembly
+/// with its params alone.
+fn vector_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../schemas/bdl-queries/v0.4")
 }
 
-fn read_json(relative: &str) -> Value {
-    let bytes = std::fs::read(schema_dir().join(relative)).expect("schema/vector must exist");
-    serde_json::from_slice(&bytes).expect("schema/vector must be valid JSON")
+fn read_schema(relative: &str) -> Value {
+    let bytes = std::fs::read(schema_dir().join(relative)).expect("schema must exist");
+    serde_json::from_slice(&bytes).expect("schema must be valid JSON")
+}
+
+fn read_vector(relative: &str) -> Value {
+    let bytes = std::fs::read(vector_dir().join(relative)).expect("vector must exist");
+    serde_json::from_slice(&bytes).expect("vector must be valid JSON")
+}
+
+/// The frozen request vector with its envelope schemaVersion bumped to the
+/// CURRENT family const — the additive-rise proof that the params face is
+/// identical (the vector body is otherwise untouched, so the validation
+/// covers the frozen closed set exactly).
+fn current_request_vector(relative: &str) -> Value {
+    let mut request = read_vector(relative);
+    request["schemaVersion"] = json!(BDL_QUERIES_SCHEMA_VERSION);
+    request
 }
 
 fn query_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("query.schema.json")).unwrap()
+    jsonschema::validator_for(&read_schema("query.schema.json")).unwrap()
 }
 
 fn result_validator() -> jsonschema::Validator {
-    jsonschema::validator_for(&read_json("result.schema.json")).unwrap()
+    jsonschema::validator_for(&read_schema("result.schema.json")).unwrap()
 }
 
 fn violations(validator: &jsonschema::Validator, instance: &Value) -> Vec<String> {
@@ -132,7 +160,7 @@ fn w12_list_vector_params_drive_the_assembly_and_validate() {
     seed(&world, "booth:1000001");
 
     // The frozen positive vector parses into the closed-set params.
-    let request = read_json("examples/catalog-list.request.json");
+    let request = current_request_vector("examples/catalog-list.request.json");
     assert!(query_validator().is_valid(&request), "positive vector validates");
     let params = CatalogListParams::from_value(&request["params"]).unwrap();
 
@@ -230,7 +258,7 @@ fn w12_detail_validates_against_the_frozen_schema() {
     let world = World::open("detail");
     seed(&world, "booth:1000001");
 
-    let request = read_json("examples/catalog-detail.request.json");
+    let request = current_request_vector("examples/catalog-detail.request.json");
     assert!(query_validator().is_valid(&request), "positive vector validates");
     let detail = world
         .store
@@ -256,7 +284,7 @@ fn w12_detail_validates_against_the_frozen_schema() {
 fn w12_status_is_unknown_until_the_pipeline_counter_exists() {
     let world = World::open("status");
 
-    let request = read_json("examples/catalog-status.request.json");
+    let request = current_request_vector("examples/catalog-status.request.json");
     assert!(query_validator().is_valid(&request), "positive vector validates");
 
     let status = world.store.catalog_status().unwrap();
@@ -286,8 +314,9 @@ fn w12_status_is_unknown_until_the_pipeline_counter_exists() {
 
 #[test]
 fn w12_schema_version_constant_matches_the_frozen_vocabulary() {
-    // v0.4 is the current word list (the downloads.listCompleted read face
-    // landed); the envelope constant follows the frozen vocabulary.
-    assert_eq!(BDL_QUERIES_SCHEMA_VERSION, "0.4");
+    // v0.5 is the current word list (the dependencies.lookup/listByProduct
+    // read faces landed additively); the envelope constant follows the
+    // frozen vocabulary.
+    assert_eq!(BDL_QUERIES_SCHEMA_VERSION, "0.5");
     let _ = json!({"anchor": true});
 }

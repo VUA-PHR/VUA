@@ -1,4 +1,6 @@
-# 工作节拍命令（TICK v1.6）
+# 工作节拍命令（TICK v1.7）
+
+> Integration override (2026-09-22): read [protected-main policy](PROTECTED_MAIN.md) before any merge or push. All main changes, including bookkeeping, use an isolated branch and GitHub PR; canonical main only fetches and fast-forwards. This supersedes older direct-main instructions below.
 
 > 用法：把下面「命令正文」代码块**原样**定时发送给六个常驻进程（六进程文本完全相同）。
 > 定时配置：**工作时段内每 20 分钟一次**；建议错峰：集成 :00、桌面 :05、核心 :10、
@@ -22,6 +24,9 @@
 2. 领取任务，优先级从高到低：本树状态文件中自己的在途事项 → collab/BOARD.md 开放问题中
    本角色行 → docs/development-outline_ZH.md「当前窗口」本角色行 → 下一个未关闭 M 门的
    任务分解表中本角色行；标有 [需用户] 的条目跳过（等用户裁决，不得代决）；
+   领取旧任务前先核对最新产品裁决（product-boundary 1.5.0，2026-09-22，要点
+   见 collab/BOARD.md「最新裁决」节）：旧状态、旧 proposal 与新边界冲突时，
+   先调整任务，不得继续按原验收目标扩建；待验证事项不得当作已解决领取；
    全部为空则直接跳到第 5 步；
 3. 开工：切片完整性优先——你在本树同一分支内完成该切片的全部层（schema/Rust/TS/测试/
    文档同批）；需要他角色输入时在 proposal/留言写清后继续，不等待、不共写分支；
@@ -41,6 +46,9 @@
 
 ## 修订记录
 
+- v1.7（2026-09-22）：第 2 步新增领取前核对——领取旧任务前先核对最新产品裁决
+  （product-boundary 1.5.0，2026-09-22，见 BOARD「最新裁决」节）；旧状态、旧
+  proposal 与新边界冲突时先调整任务，不得继续按原验收目标扩建（用户裁决落账）。
 - v1.6（2026-09-19）：移除对「思考」的语言要求（用户裁定：现代模型思维链在向量空间自动
   选择最适合的语言，对思考做语言要求无实际意义、子智能体亦不可执行）；「全程用中文
   记录」要求保留——未来智能体提示词不再对思考过程做任何规定。
