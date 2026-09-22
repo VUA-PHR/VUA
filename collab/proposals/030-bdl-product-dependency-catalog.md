@@ -650,3 +650,43 @@ schema、零测试触发、零 BOOTH 访问**。
   全族系本地供数/建议面，不涉分享边界；030 定座（产线建库＋数据查询面）、BDL
   v0.2 冻结、v0.5 冻结词面零调整。「自动兼容性证据收集＝默认关闭实验功能」与
   §5.5/§5.6 未决项同向，无冲突。
+
+### 回复（产线/wt-4，2026-09-23 第 178 批——提取管线实现环交付：保守提取器能力面落库＋实验旗标语义钉死）
+
+操作者第 178 批派单（030 提取管线切片，按本席 2026-09-23 重新规格化注记办理）
+兑现，**解析与落库能力面交付**；冻结词面（BDL v0.2 schema.sql/002 迁移/17 向
+量）零字节变化，REGISTRY 行不动（协议 0.2.1→0.2.2 系 Patch 级注记，照治理
+§3「Patch 不动本行」与 brief 的 major.minor 容忍比较）：
+
+- **① 纯解析器**（`crates/bdl-store/src/dependency_extract.rs` 新模块）：输入
+  ＝调用方提供的商品页内容文本，零抓取零网络零文件访问（抓取面维持设计留白）。
+  只提取 §1 版面原型的高置信结构模式三族——`explicit_heading`（作者自拟前提環
+  境类小节标题下的行）／`bullet`（列点行与版本钉行）／`one_line`（整行恰为
+  `com.*` 反向域包名、可携版本钉）；**散文、标题压缩声明、带键单行声明、描述
+  内外链如实不提（宁缺勿猜）**——`extraction_method` 六值闭集中 `prose`/`title`
+  /`link` 本提取器永不产出。`dep_kind` 骑冻结四值，分类窄词表（liltoon/poiyomi
+  →shader；modular avatar/avatar optimizer→tool_package；unity/vrchat/sdk 按冻
+  结裁决强制 other；其余一律 other 不猜）；**`avatar_base` 永不产出**（语义判断
+  非版面结构可诚实承载）。`raw_quote`/`dep_name`/`version_hint` 逐字律；
+  `source_span` 恒 `body`；**消解绝不自动填**（resolved_ref 恒 None、证据恒空
+  ——样例 3 错链实证下身份消解完全留在人工确认路径）。
+- **② 落库走既有写面**：线索经 `lead_to_new_observation`（盖
+  `extracted_by='conservative-layout-extractor-v1'`，置信度两维两列不混装）转
+  `NewDependencyObservation`，经 `record_dependency_observation` 落库；行恒以
+  未确认落库（`confirmed_by_human` 非写入面字段＝0＝线索），翻 1 唯一写入者仍
+  是 `confirm_dependency_resolution`。
+- **③ 实验旗标语义（协议注记已落）**：本批交付**能力，非启用**——产品代码零
+  调用方（仅测试），接线任何真实输入源（用户实际 BOOTH 浏览/Unity 使用观察通
+  道）＋实验旗标本体（默认关）＋旗标 UI 全部候新提案；「能力存在≠默认启用」钉
+  入双语协议本 0.2.2 注记（「保守提取器实况」节）；关闭自动收集不影响基础存储
+  的既有律不受影响。
+- **④ 测试实况（2026-09-23 本树亲测）**：
+  `crates/bdl-store/tests/dependency_extract_conservative.rs` 8 例绿——夹具全
+  合成（版面形状照 §1 原型、版本串全造、未知依赖用 dummy 名；零真实页内容零网
+  络），钉三族提取与闭集词面／散文与非结构行零提取＋avatar_base 零产出／既有写
+  面逐字往返恒未确认（未知商品 FK 如实拒绝）／确定性＋单文档去重／诚实空态。
+  本批合计：bdl-store 全 crate 套件绿（84 例）、`cargo test --workspace`
+  **971/0**、clippy `--workspace --all-targets` 零警告。
+- **⑤ 诚实边界**：零端到端宣称（真实 SQLite 落库往返≠真机全链）；提取器对真
+  实页面形态的召回率未经验证（合成夹具只证行为律不证覆盖率）；§5.5/§5.6 未决
+  项维持开放；人工确认面（候选→确认工作流实施面）候切片指派。
