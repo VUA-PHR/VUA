@@ -2,21 +2,28 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.1.0)
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.2.0)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-16
+> Updated: 2026-09-22
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## AMF production model
 
+> Product direction changed on 2026-09-22; implementation migration is not claimed complete. Recipe
+> promises asset combinations and explicit options. Upstream MA owns its capability conditions and
+> SDK owns its checks; VUA validates integration and reports its own failures. Wizards select beginner
+> paths. Scope and unresolved choices follow [product boundary](../product-boundary_EN.md), Beginner
+> production scope. Running Release entries are distinct from immutable Build Records.
+
+
 AMF treats Recipe as desired intent: the user first selects lawfully acquired assets and a target
 combination, then the system resolves the project, dependencies, and execution steps.
 
 ```text
-Warehouse → Recipe → Assembly → Inspection → Release
+Warehouse → Recipe → Assembly → Release
 ```
 
 - **Warehouse** discovers, downloads with authorization, previews, identifies, and organizes assets
@@ -26,7 +33,7 @@ Warehouse → Recipe → Assembly → Inspection → Release
 - **Assembly** resolves local assets and capabilities into ProjectSpec, dependencies, and a reviewable
   plan, then Orchestrator performs project and Unity Bridge work. Prompts, progress, and recovery are
   represented as task states.
-- **Inspection** reports function, performance, dependencies, lighting, and upload readiness.
+- Check evidence belongs to production records; notifications and Release entries share problem details, without a required standalone Inspection page.
 - **Release** manages Build Records, snapshots, recovery, and handoff to the official SDK upload flow.
 
 A Recipe is portable, declarative intent. Importing one always requires local resolution before a
@@ -49,8 +56,8 @@ authorization, semantic interpretation, and result shaping.
 ## Project compatibility
 
 AMF uses three explicit project-management paths: VUA's own `vrc-get`-based package manager,
-capability-aware management of ALCOM-managed projects, and capability-aware management of VCC-managed
-projects. The latter two use documented project-compatibility boundaries for those applications.
+read-only inspection of ALCOM/VCC original projects, and user-initiated import as a VUA-managed copy
+for writes. The shared settings-face exception remains governed by product boundary U14.
 Unknown format, lock, or capability means read-only inspection, conversion advice, or manual handoff.
 
 ## Build Record
@@ -112,6 +119,8 @@ vocabulary takes zero new operations):
   mechanism primitives only.
 
 ## Document changelog
+
+- 1.2.0 (2026-09-22): align Recipe/check/upstream responsibilities with product boundary 1.5.0; correct stale ALCOM/VCC management wording without changing U3/U14.
 
 - 1.1.0 (2026-09-16): added the "Release handoff process face" section — proposal 023 production
   implementation slice (bridge handshake signal `EditorHandshake` + Rust process/window-face port
