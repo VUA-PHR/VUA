@@ -13,7 +13,7 @@ pub use bdl_queries::{
 };
 pub use bdl_store::{
     ArtifactInspectionState, ArtifactMappingOutcome, ArtifactMode, ArtifactRecording,
-    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole,
+    ArtifactRecordingOutcome, BdlStore, BdlStoreError, CopyRole, DependencyProductRow,
     DependencyResolutionEvidence, EventAppendence, NewDependencyObservation,
     NewLocalArtifact, ProductObservation, ProductObservationStatus, StoredArtifact,
     StoredArtifactCopy, StoredDependencyObservation, StoredDownloadEvent,

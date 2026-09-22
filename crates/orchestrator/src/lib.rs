@@ -6,6 +6,7 @@
 #![allow(clippy::result_large_err)]
 
 mod assembly;
+mod bdl_dependency_queries;
 mod booth_extraction;
 mod build_record;
 mod dependencies_queries;
@@ -86,6 +87,7 @@ pub use dependencies_queries::{
     DependencyObservationV05, DependencyProductStatus, ExtractionMethod, InstallAdvisoryV05,
     InstallSource, ResolutionEvidenceV05, ResolutionV05, SourceSpan,
 };
+pub use bdl_dependency_queries::BdlDependencyQueries;
 pub use editor_targets::{
     classify_editor, classify_version_string, codes as editor_target_codes, editor_version_from_path,
     parse_editor_version, EditorClass, ParsedEditorVersion, MIGRATION_SOURCES, PRODUCTION_TARGET,
