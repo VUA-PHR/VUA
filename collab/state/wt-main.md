@@ -1,114 +1,139 @@
 ---
-worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-179）
-branch: integration/batch-179（本批载体；正典 main 维持 origin/main 只快进）
+worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-181）
+branch: integration/batch-181（本批载体；正典 main 维持 origin/main 只快进）
 role: 集成
-baseline_commit: d87e92bd
+baseline_commit: 288ab52b
 updated: 2026-09-23
 ---
 ## 当前焦点
-**集成第 179 批（2026-09-23 03:0x–03:5x，节拍轮正常工作时段 date 03:05 实测；基线
-origin/main d87e92bd＝第 178 批 PR #12 合并尖）＝压缩派发单栈验收批：wt-4 第
-178 批验收（030 提取管线实现环：保守提取器＋既有写面落库＋实验旗标语义协议
-注记 0.2.2 双语）＋合并树定向复跑三件套（照派单 bdl-store 变更）＋BOARD #46
-行注记（提取器实现环闭环；人工确认面候切片派发、输入源接线/旗标本体/旗标 UI
-候新提案）**。全部走 PROTECTED_MAIN 政策通道（本分支 PR 落地、正典 main 只
-快进）。
+**集成第 181 批（2026-09-23 03:3x–04:2x，节拍轮正常工作时段 date 03:39 实测；基线
+origin/main 288ab52b＝第 179 批 PR #13 合并尖）＝压缩派发单栈验收批：wt-2 第
+177 批验收（#45(3) 端口取消位设计登记＝四问四答落
+collab/design/2026-09-23-port-cancellation-points_ZH.md；设计环零代码）＋BOARD
+#45 行注记（(3) 设计登记闭环；S2 候派产线）**。全部走 PROTECTED_MAIN 政策通
+道（本分支 PR 落地、正典 main 只快进）。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 178 批（09-23 02:3x–02:5x）＝wt-4 第 176 批验收（030 提取管线 1.5.0 重新
-规格化注记＋MA/SDK 职责对账＋Bridge v4 零冲突核对）＋集成登记勘误两处，经
-integration/batch-178 PR #12 入库 d87e92bd。更早段落见本文件 git 历史与 BOARD
+第 179 批（09-23 03:0x–03:5x）＝wt-4 第 178 批验收（030 提取管线实现环：保守
+提取器＋既有写面落库＋旗标语义协议注记 0.2.2 双语）＋合并树三件套亲测全绿
+（cargo 971/0＋clippy 0/0＋leak 155 零泄漏）＋BOARD #46 行注记，经
+integration/batch-179 PR #13 入库 288ab52b。更早段落见本文件 git 历史与 BOARD
 前录。
 
-## 本轮交付（d87e92bd 基线，integration/batch-179）
-- **验收合并 55946ad7＝wt-4 第 178 批**（候验收三笔＝817a5fa6 实现批＋3f176e7d
-  追平壳＋f0183710 状态批；slot/wt-4 尖 f0183710，merge-base 恰 d87e92bd＝落
-  后 0／领先 3）。验收依据（合并信息 55946ad7 逐条载明，集成直读实核）：
-  ①**纯解析器零抓取零网络零文件访问**——`dependency_extract.rs` 全文实读：
-  输入＝调用方提供 `&str`，仅 import `crate::bdl_store` 类型与
-  `std::collections::HashSet`，无 fs/net/process I/O；抓取面维持 1.5.0 重新
-  规格化设计留白。②**只提三族高置信结构模式**——`extraction_method` 仅由
-  `METHOD_EXPLICIT_HEADING`/`METHOD_BULLET`/`METHOD_ONE_LINE` 三常量产出，
-  `prose`/`title`/`link` 零产出路径；散文（非小节非列点非 bare com 行直接跳
-  过）、标题压缩声明（标题行自身跳过＋名称守卫拒句读/字段标点）、带键单行
-  声明、描述内外链如实不提；`avatar_base` 声明但分类器永不返回——宁缺勿猜律
-  由测试第 4/5 例钉死。③**raw_quote 逐字**（仅去首尾空白）＋
-  **confirmed_by_human 非写入面字段恒 0＝线索**（`bdl_store.rs:505` 实读；
-  翻 1 唯一写入者仍是 `confirm_dependency_resolution`）＋**消解绝不自动填**
-  （`resolved_ref_product_id` 恒 None、`resolution_evidence` 恒空——030 §1
-  样例 3 错链实证）。④**实验旗标语义＝能力存在≠默认启用**——协议本双语
-  0.2.2 注记（「保守提取器实况」节）实读在案；产品代码零调用方 grep 实证
-  （crates/apps/packages 全域恰 bdl-store 内 lib.rs 导出＋模块本体＋测试文件
-  命中，零产品调用方）；REGISTRY 行不动（Patch 级注记照治理 §3，brief
-  major.minor 容忍比较脚本实核）；接线输入源/旗标本体（默认关）/旗标 UI 一律
-  候新提案。⑤**合成夹具零真实页内容**——8 例测试全文实读：版面形状照 030 §1
-  原型构造、版本串全造、未知依赖 dummy 名、专名仅分类词表；零网络零文件访问。
-  ⑥追平壳 3f176e7d 纯吸收核可（双亲 817a5fa6＋d87e92bd；diff 对 817a5fa6 恰
-  main 侧簿记 BOARD.md＋wt-main.md 两文件，零自有内容、零 wt-4 文件改动）。
-- **合并树定向复跑集成亲测全绿（03:1x–03:4x，照派单 bdl-store 变更）**＝
-  `cargo test --workspace` **971/0**（28 ignored 维持；较 175 批基线 963 恰
-  +8＝提取器 8 例，数字自洽）＋`cargo clippy --workspace --all-targets`
-  **0/0**＋`pnpm --filter @vua/desktop check:leak` **155 指纹零泄漏**（独立
-  临时生产构建）。
-- **集成登记勘误两处维持登记（候 wt-4 下批状态批订正，验收入留痕）**：①v4
-  逐名清单漏 `validate_asset_paths`（计数 16 正确）；②amf-unity 版本词正文
-  1.2.0／待命声明 1.2.1 两表。
-- **BOARD #46 行注记**（提取器实现环闭环段＋剩余＝人工确认面〔候选→确认工作
-  流实施面，读侧可骑 dependencies.listByProduct 线索面〕候切片指派、输入源接
-  线/旗标本体/旗标 UI 候新提案）＋**前录轮转**（插 179 段轮出 159 段，10 段
-  维持）＋本状态批。
+## 本轮交付（288ab52b 基线，integration/batch-181）
+- **验收合并 e27c41dd＝wt-2 第 177 批**（候验收两笔＝追平壳 ab4400c0＋collab
+  批 1b0ea899；slot/wt-2 尖 1b0ea899，merge-base 恰 288ab52b＝落后 0／领先
+  2；新式 merge-tree --write-tree 预检干净）。验收依据（合并信息 e27c41dd
+  逐条载明，集成直读实核）：
+  ①**追平壳纯吸收**——ab4400c0 双亲 2ef1bff＋288ab52b（PR #13 尖），
+  `git diff 288ab52b ab4400c0` 逐字节为空；吸收世代含集成第 179 批簿记＋
+  wt-4 第 178 批提取器环＋031 代裁世代（E1/E2/E3 三纪律本批照办：设计登记
+  不取提案号、不用退役编号、落点遵派单指定 collab 设计文档）。
+  ②**分支改动面**——全分支 diff 恰两文件（设计登记新增 143 行＋wt-2 状态
+  批）；crates/ docs/ schemas/ 零触碰＝端口词面零字节变更（VpmBackend trait
+  全文 grep 零 cancel/token 命中复核维持）。
+  ③**①面判定逐面实核成立**——resolve_project 网络腿系唯一无上界长操作
+  （lib 后端 in-process block_on＋http 腿实读；CLI 无 resolve 面
+  :972/:2419 注释；trait 默认 declared-none :1009；已满足短路先于集合装载
+  ＋环回计数＋工程树双钉 :2068-2130）；Bridge 长命令维持段边界（执行器步
+  边界＋逐包环头 is_cancelled 观察位实读；中段中断必落指纹链未知态→协议
+  中断律强制 Inspect＝material-intake 0.2.1 :167 逐字；命令级取消收益≈零）；
+  快照＝保护段论证补足成立；BDL 提取面永不需要＝179 批纯解析器验收钉死
+  ＋前瞻条款恰当；下载面零新设计＝download-events v0.1 attempt 边界取消
+  ＋abandon 意图＋终态闭集与 handle_cancellation dl- 前缀折叠实读吻合。
+  ④**与第 148 批登记互证成立**——BOARD #45 行 (3) 项登记的不可中断段清单
+  （快照、供给网络腿、逐包解包、preview/apply 段）与设计登记①表逐段对应：
+  前两段维持并补足论证、解包段维持＋#45(4) 清理接线（material_exec
+  cleanup_import_extractions 取消/失败出口实读）、尾段升级 S2 候选观察位＋
+  新增诚实事实（发布 artifact 在项目外快照管不到），口径一致零回摆。
+  ⑤**②形态裁决成立**——token 传参否决三重成本核实：冻结面变更（trait 零
+  参数实证）＋对 lib 后端物理无效（resolve_project block_on 实读；block_on
+  中段无库协作不可协作中断的结构论证成立；「vrc_get_vpm 无取消 API」系
+  环境域只读核对的外部库事实、仓内不可全验、登记如实归属，集成注记在案）
+  ＋CLI 语义发散（进程杀≠协作式）。三层谱系证据齐（runtime cancel 幂等实读
+  ＋MaterialCancelToken Arc<AtomicBool> 实读＋CLI 1200s 归属进程面 :2244
+  实读），不发明第四层＝恰当保守。
+  ⑥**③补偿登记完整**——快照保护段／供给网络腿（既有快照回滚＝空态隔离区
+  ＋provision_failed 诚实失败臂，与 #43 登记语汇一致）／解包段（148 维持＋
+  清理接线）／尾段（两案候 S2 冻结裁量零代决）／恢复面零新机制（重放守卫
+  只认 SUCCEEDED :255-256 实读＋非终态重启→inspect_required＋Cancelled
+  收据诚实律）逐点成立。
+  ⑦**④切片 S1–S4 合理**——S1 已交付；S2＝P1 产线 unity-bridge 零词面变化
+  （run_provision 内 create 后 resolve 前＋local-reusable 尾段两处令牌观察位
+  ＋取消注入测试；尾段补偿两案随切片冻结裁量）——run_provision 现无令牌
+  观察 grep 实证，补位正当且小改动单 crate，候操作者派发；S3 条件触发
+  （W25 证据→超时预算/进度可见性非 token）与②自洽；S4 明确缓议与指纹链
+  论证自洽；下载/BDL 面零切片与①一致。
+  ⑧**程序性核可**——collab/design/ 新目录系派单指定「collab 设计文档」落点
+  最小实现，集成知悉 namespace 增设；诚实边界完整（设计环零实现零真机、
+  时长论断系代码面论证非实测、裁量点零代决）。
+- **纯 collab 批免全量测试照章**（PROTECTED_MAIN §4，远端必需检查随 PR）；
+  吸收世代门禁如实引记第 179 批合并树读数（cargo 971/0＋clippy 0/0＋leak
+  155 指纹零泄漏）。
+- **BOARD #45 行注记**（(3) 端口取消位设计登记闭环段全载＋余候派＝S2 候派
+  产线）＋**前录轮转**（插 181 段轮出 161 段，10 段维持）＋本状态批。
 
 ## 门禁读数（如实）
-合并树三件套全绿（读数见上，本树亲测）；本批自有内容＝纯 collab 面（BOARD＋
-本状态文件），零代码零 schema 零测试触发。环境事实：df 未复测（本批零构建产
-物增长面之外的口径沿用派单登载 73%）。
+本批自有内容＝纯 collab 面（BOARD＋本状态文件），零代码零 schema 零测试触
+发，免全量照章；被验收批吸收世代的门禁已随集成第 179 批合并树亲测全绿
+（读数见上，如实引记不复跑）。环境事实：磁盘未复测（本批零构建产物增长面，
+口径沿用派单登载 73%）。
 
 ## 在途/待他角色
-- **[知会] 各席验收请求世代核对（本批复核）**：wt-2/wt-3/wt-5/wt-6 四席 ①区
-  残言经前批领先 0 实核系世代滞后，本轮 brief 分叉表复证（slot/wt-2、wt-3、
-  wt-5 领先 0；wt-6 落后 113／领先 0）——零重复验收、无在途动作。
-- **[候操作者派发] 030 剩余两件**：人工确认面（候选→确认工作流实施面）候切片
-  指派；输入源接线/旗标本体/旗标 UI 候新提案（跨桌面/Unity/数据域，不随 030
-  办理）。
+- **[候操作者派发] S2 切片**（P1，产线域 unity-bridge，零端口词面变化：
+  run_provision 内 create 后 resolve 前＋local-reusable 尾段两处令牌观察位＋
+  取消注入测试；尾段 artifact 补偿两案随切片冻结裁量）。
+- **[知会] 各席验收请求世代核对（本批复核）**：wt-3/wt-4/wt-5/wt-6 残言经
+  brief 分叉表复证系世代滞后（slot/wt-3 领先 0；wt-4 尖 f0183710 已随 179
+  批入库＝领先 0；wt-5 领先 0；wt-6 落后 119／领先 0）——零重复验收、无
+  在途动作。slot/wt-2 经本批验收后领先 0。
 - **[候用户] W25 真机走查推进（O-2）**——M5 唯一候项，等用户项无绕行机制；
-  五未决项排优先序（029/030 线程登记）。
-- **VUA-7**：零触碰维持，阅读解禁；VUA-8 零触碰维持。
+  S3 触发条件亦系 W25 证据。
+- **[候操作者/候新提案] 030 剩余**：人工确认面候切片指派；输入源接线/旗标
+  本体/旗标 UI 候新提案。
+- VUA-7：零触碰维持，阅读解禁；VUA-8 零触碰维持。
 
 ## 阻塞
 - 无阻塞。零猜测项。
 
 ## 下次合并意图
-本批随 integration/batch-179 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并后
+本批随 integration/batch-181 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并后
 正典 main fetch＋快进，集成分支不删。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-23 03:05 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
-pnpm collab:brief，①区判读＝wt-4 验收请求在本批压缩派发范围内，wt-2/wt-3/
+本轮（2026-09-23 03:39 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
+pnpm collab:brief，①区判读＝wt-2 验收请求在本批压缩派发范围内，wt-3/wt-4/
 wt-5/wt-6 残言经分叉表复证系世代滞后（详见「在途」），失鲜工作树无；②VUA-9
-fetch＋自 origin/main d87e92bd 建 integration/batch-179；合并前逐笔审 diff
-（git diff origin/main...slot/wt-4 全量过目＝七文件）＋dependency_extract.rs
-537 行全文实读＋测试 239 行全文实读＋协议本双语 diff 全文＋030 线程 +40 全文
-＋bdl_store.rs 写面 confirmed 律实读＋零调用方 grep 实证＋REGISTRY 容忍比较
-脚本实核；③新式 `git merge-tree --write-tree` 预检干净后 --no-ff 合并
-55946ad7，合并信息逐条载明六点验收依据；④合并树定向复跑三件套（cargo 971/0
-＋clippy 0/0＋check:leak 155 指纹零泄漏）全绿后才动簿记；⑤BOARD #46 行注记
-＋前录轮转（插 179 轮出 159）＋本状态批，改动恰两文件；⑥零自有代码零冻结面
-变更（集成自有内容 diff 无 schemas/ 路径；收编世代的冻结词面零字节变化系 wt-4
-申报并经测试套件与词面引用复核）；产品版本不动、不代跑 W25、历史记录零删除
-（159 段轮转依既有轮转纪律，全文在 git 历史）；⑦VUA-7 零触碰（未动树）、
-VUA-8 零触碰；`?? _local_p27_devlog.txt`（主树）照例不触碰；⑧[需用户] 条目
-零代决（W25、五未决排序均候用户）。在手无半途切片、除本状态批外无未提交改动。
+fetch＋自 origin/main 288ab52b 建 integration/batch-181；slot/wt-2 两笔构成
+实核（ab4400c0 双亲纯吸收 diff 空＋1b0ea899 恰两 collab 文件）＋设计登记 143
+行全文实读＋四问逐项代码锚点直读（vpm_backend trait 零 token grep＋
+project-manager block_on/declared-none/1200s＋runtime cancel 幂等＋
+material_exec 六观察位与 cleanup 接线与重放守卫＋material_task 25ms＋
+provider_host handle_cancellation＋download_events attempt 边界＋协议本中断
+律 :167）＋BOARD #45 行第 148 批登记互证；③新式 `git merge-tree
+--write-tree` 预检干净后 --no-ff 合并 1b0ea899＝e27c41dd，合并信息逐条载明
+九点验收依据；④纯 collab 批免全量照章（PROTECTED_MAIN §4），远端必需检查随
+PR；⑤BOARD #45 行注记＋前录轮转（插 181 轮出 161）＋本状态批；⑥零自有代
+码零冻结面变更（本批集成自有内容＝collab 两文件）；产品版本不动、不代跑
+W25、历史记录零删除（161 段轮转依既有轮转纪律，全文在 git 历史）；⑦VUA-7
+零触碰（未动树、阅读解禁）、VUA-8 零触碰；`?? _local_p27_devlog.txt`（主树）
+照例不触碰；⑧[需用户] 条目零代决（W25、S3 触发、五未决排序均候用户）；设
+计内裁量点（尾段补偿两案）候冻结裁决零代决。在手无半途切片、除本状态批外
+无未提交改动。
 
 ## 留言
-- [→产线/wt-4]（验收回执）：第 178 批三笔（817a5fa6＋3f176e7d＋f0183710）已
-  随集成第 179 批验收入库，六点验收（纯解析器／三族模式／逐字＋恒未确认＋消
-  解不自动填／旗标语义零调用方／合成夹具／追平壳纯吸收）逐项实核通过，合并树
-  三件套复跑全绿（971/0＋clippy 0/0＋leak 155 零泄漏）。提取管线环就此闭环，
-  030 线程你席第 178 批节在案。上批登记勘误两处（v4 逐名清单漏
-  validate_asset_paths；amf-unity 版本词 1.2.0/1.2.1 两表）候你席下批状态批
-  顺手订正。人工确认面候操作者派发；输入源接线/旗标本体/旗标 UI 候新提案。
-- [→数据/wt-5]（知会）：提取器落库行 `extracted_by` 出线新管线身份词
-  `'conservative-layout-extractor-v1'`（开放词面零 schema 变化），你席
-  listByProduct 线索面 `extractedBy` 键将来会出线该值；全部行恒
-  confirmed_by_human=0，确认门/建议门照旧（wt-4 同窗知会转致，零待办）。
+- [→核心/wt-2]（验收回执）：第 177 批两笔（ab4400c0＋1b0ea899）已随集成第
+  181 批验收入库（合并 e27c41dd），四问四答逐项代码锚点实核通过，与第 148
+  批登记互证口径一致；#45 行 (3) 注记已落账（设计登记闭环＋S2 候派产线）；
+  collab/design/ 新 namespace 集成知悉。设计内裁量点（尾段补偿两案、S3 触
+  发）候冻结裁决/W25 证据，零代决维持。
+- [→产线/wt-4]（知会）：S2 切片候操作者派发（run_provision create/resolve
+  之间＋local-reusable 尾段两处令牌观察位＋取消注入测试；零端口词面变化）；
+  尾段 artifact 补偿两案（保留如实呈现 vs apply 前检查位）随切片冻结裁量；
+  快照/单包解包/Bridge 命令在飞三段维持第 148 批不可中断登记，设计登记已补
+  足保护段论证（collab/design/2026-09-23-port-cancellation-points_ZH.md）。
+- [→环境/wt-6]（知会）：设计登记引用你域只读事实两处（VrcGetLibBackend::
+  resolve_project 系 in-process block_on；vrc_get_vpm 无取消 API）——前者
+  集成仓内实读吻合；后者系外部库 API 面事实、仓内不可全验，集成已在合并信
+  息如实注记归属；如对引用有勘误请留言。
 - （回执不回执：本批为验收批，各席照纪律执行即可，无需逐一回执。）
