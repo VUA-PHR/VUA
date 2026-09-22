@@ -139,6 +139,11 @@ struct FakeBridgeState {
 #[derive(Clone)]
 struct FakeBridge {
     state: Arc<Mutex<FakeBridgeState>>,
+    /// S2 cancel-injection hook: cancels the shared token the moment the
+    /// given operation is dispatched, so the executor's observation points
+    /// that sit AFTER a Bridge command (the register/preview tail) see a
+    /// cancellation decided mid-run. None in every standing test.
+    cancel_on: Option<(vua_orchestrator::UnityOperation, MaterialCancelToken)>,
 }
 
 impl FakeBridge {
@@ -149,7 +154,19 @@ impl FakeBridge {
                 commands: Vec::new(),
                 resolve_marker_seen: Vec::new(),
             })),
+            cancel_on: None,
         }
+    }
+
+    /// S2 cancel-injection builder: fire `token.cancel()` when `operation`
+    /// is dispatched.
+    fn with_cancel_on(
+        mut self,
+        operation: vua_orchestrator::UnityOperation,
+        token: MaterialCancelToken,
+    ) -> Self {
+        self.cancel_on = Some((operation, token));
+        self
     }
 
     fn command_count(&self) -> usize {
@@ -172,6 +189,14 @@ impl UnityBridge for FakeBridge {
                 .join("batch146-resolve-marker")
                 .is_file(),
         );
+        // S2 cancel-injection: the request lands while the command is in
+        // flight, so only an observation point after this dispatch can see
+        // it — exactly the mid-run shape the new tail observations cover.
+        if let Some((operation, token)) = &self.cancel_on {
+            if *operation == command.operation {
+                token.cancel();
+            }
+        }
         // The real Bridge produces the package layout inside the staging
         // project at Packages/<packageId>/; the fake reproduces just enough
         // of that side effect for the deterministic publication step.
@@ -247,6 +272,10 @@ impl UnityBridge for FakeBridge {
 struct FakeVpm {
     installs: AtomicUsize,
     registrations: AtomicUsize,
+    /// S2 cancel-injection hook: a token cancelled inside preview_install,
+    /// so only the second tail observation point (between preview and
+    /// apply) can still see the request. None in every standing test.
+    cancel_on_preview: Option<MaterialCancelToken>,
 }
 
 impl FakeVpm {
@@ -254,6 +283,17 @@ impl FakeVpm {
         Arc::new(Self {
             installs: AtomicUsize::new(0),
             registrations: AtomicUsize::new(0),
+            cancel_on_preview: None,
+        })
+    }
+
+    /// S2 cancel-injection constructor: cancel the token from inside
+    /// preview_install.
+    fn new_cancelling_on_preview(token: MaterialCancelToken) -> Arc<Self> {
+        Arc::new(Self {
+            installs: AtomicUsize::new(0),
+            registrations: AtomicUsize::new(0),
+            cancel_on_preview: Some(token),
         })
     }
 }
@@ -279,6 +319,9 @@ impl VpmBackend for FakeVpm {
         _project: &ProjectRef,
         packages: &[PackageRequestV1],
     ) -> Result<ChangePreviewV1, vua_orchestrator::AppErrorV1> {
+        if let Some(token) = &self.cancel_on_preview {
+            token.cancel();
+        }
         Ok(ChangePreviewV1 {
             items: vec![],
             conflicts: vec![],
@@ -1232,11 +1275,29 @@ fn b3_exec_008_editing_the_declarations_after_planning_is_drift() {
 struct CreatingVpm {
     creates: AtomicUsize,
     resolves: AtomicUsize,
+    /// S2 cancel-injection hook: a token cancelled inside create_project,
+    /// so only the between-create-and-resolve observation point can still
+    /// see the request. None in every standing test.
+    cancel_on_create: Option<MaterialCancelToken>,
 }
 
 impl CreatingVpm {
     fn new() -> Arc<Self> {
-        Arc::new(Self { creates: AtomicUsize::new(0), resolves: AtomicUsize::new(0) })
+        Arc::new(Self {
+            creates: AtomicUsize::new(0),
+            resolves: AtomicUsize::new(0),
+            cancel_on_create: None,
+        })
+    }
+
+    /// S2 cancel-injection constructor: cancel the token from inside
+    /// create_project.
+    fn new_cancelling_on_create(token: MaterialCancelToken) -> Arc<Self> {
+        Arc::new(Self {
+            creates: AtomicUsize::new(0),
+            resolves: AtomicUsize::new(0),
+            cancel_on_create: Some(token),
+        })
     }
 }
 
@@ -1288,6 +1349,9 @@ impl VpmBackend for CreatingVpm {
         _template: Option<&str>,
     ) -> Result<ProjectRef, vua_orchestrator::AppErrorV1> {
         self.creates.fetch_add(1, Ordering::SeqCst);
+        if let Some(token) = &self.cancel_on_create {
+            token.cancel();
+        }
         let root = parent.join(name);
         fs::create_dir_all(root.join("ProjectSettings")).unwrap();
         fs::write(
@@ -2053,6 +2117,176 @@ fn b3_batch150_execution_refuses_a_packages_archive_added_after_planning() {
             .is_err(),
         "a pre-mutation refusal leaves no receipt"
     );
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+// --- S2 cancellation observations (design registration
+// collab/design/2026-09-23-port-cancellation-points_ZH.md): the executor's
+// new token observations short-circuit honestly under an injected cancel
+// request and ride the STANDING compensation arms — no new cancellation
+// layer, no port-face change. ---
+
+fn read_receipt(base: &Path, plan_id: &str) -> vua_orchestrator::BuildRecordV01 {
+    BuildRecordStore::new(base.join("records"))
+        .read(&format!("material-{plan_id}"))
+        .expect("the receipt publishes for cancellation like any other exit")
+}
+
+#[test]
+fn b3_s2_provision_cancel_between_create_and_resolve_skips_the_network_leg() {
+    let (base, _provisioned) = make_world("s2-provision-cancel");
+    let source = base.join("source");
+    let empty = make_empty_target(&base);
+
+    // The cancel request lands inside create_project — after the observation
+    // point's preceding step, before the resolve leg it guards.
+    let token = MaterialCancelToken::new();
+    let vpm = CreatingVpm::new_cancelling_on_create(token.clone());
+    let bridge = FakeBridge::new(vec![]);
+    let executor = MaterialExecutor::new(
+        Arc::new(bridge),
+        FileSystemSnapshotStore,
+        vpm.clone(),
+        BuildRecordStore::new(base.join("records")),
+        Arc::new(FixedClock::new(&["2026-09-04T00:00:00Z"])),
+        base.join("temp"),
+        "2022.3.22f1",
+        LocalPackageIdentityStore::new(base.join("identities.json")),
+    );
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::DirectUnityPackage,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &empty.root,
+            "corr",
+        )
+        .unwrap();
+    let report = executor.execute(&confirmation(&plan), &source, &empty, &base.join("artifacts"), &token);
+
+    assert_eq!(report.status, MaterialExecutionStatus::Cancelled);
+    // The observation sits between create and resolve: create happened, the
+    // unbounded network leg never started.
+    assert_eq!(vpm.creates.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        vpm.resolves.load(Ordering::SeqCst),
+        0,
+        "a decided cancellation must not launch the resolve leg"
+    );
+    // The standing compensation ran: the half-provisioned content is rolled
+    // back through the verified snapshot (empty-state quarantine semantics).
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    let record = read_receipt(&base, &plan.plan_id);
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Cancelled);
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_s2_tail_cancel_before_register_skips_registration_preview_and_apply() {
+    let (base, project) = make_world("s2-tail-before-register");
+    let source = base.join("source");
+    fs::write(
+        source.join("vua-dependencies.json"),
+        r#"{ "com.vrchat.avatars": "3.10.x" }"#,
+    )
+    .unwrap();
+
+    // The cancel request lands while the CreateLocalVpmPackage Bridge
+    // command is in flight — the first tail observation (before register)
+    // is the next point that can see it.
+    let token = MaterialCancelToken::new();
+    let bridge = FakeBridge::new(vec![])
+        .with_cancel_on(vua_orchestrator::UnityOperation::CreateLocalVpmPackage, token.clone());
+    let vpm = FakeVpm::new();
+    let executor = executor(&base, bridge.clone(), vpm.clone());
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::LocalReusableVpm,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+    let report = executor.execute(&confirmation(&plan), &source, &project, &base.join("artifacts"), &token);
+
+    assert_eq!(report.status, MaterialExecutionStatus::Cancelled);
+    // Cancelled during staging: the target is never touched — registration,
+    // preview and install are all skipped.
+    assert_eq!(
+        vpm.registrations.load(Ordering::SeqCst),
+        0,
+        "register must not run after a decided cancellation"
+    );
+    assert_eq!(vpm.installs.load(Ordering::SeqCst), 0);
+    // The standing compensation still ran against the target.
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    let record = read_receipt(&base, &plan.plan_id);
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Cancelled);
+    assert!(record.local_vpm.is_none(), "no install evidence when the tail never ran");
+    if base.exists() {
+        fs::remove_dir_all(&base).unwrap();
+    }
+}
+
+#[test]
+fn b3_s2_tail_cancel_between_preview_and_apply_skips_the_install() {
+    let (base, project) = make_world("s2-tail-before-apply");
+    let source = base.join("source");
+    fs::write(
+        source.join("vua-dependencies.json"),
+        r#"{ "com.vrchat.avatars": "3.10.x" }"#,
+    )
+    .unwrap();
+
+    // The cancel request lands inside preview_install — the second tail
+    // observation (between preview and apply) must skip the install itself.
+    let token = MaterialCancelToken::new();
+    let vpm = FakeVpm::new_cancelling_on_preview(token.clone());
+    let bridge = FakeBridge::new(vec![]);
+    let executor = executor(&base, bridge.clone(), vpm.clone());
+
+    let plan = MaterialIntakeEngine
+        .plan(
+            MaterialEntryMode::LocalReusableVpm,
+            "project",
+            "project-fingerprint",
+            inspection(&source),
+            &project.root,
+            "corr",
+        )
+        .unwrap();
+    let report = executor.execute(&confirmation(&plan), &source, &project, &base.join("artifacts"), &token);
+
+    assert_eq!(report.status, MaterialExecutionStatus::Cancelled);
+    // Registration and preview happened; the install itself was skipped —
+    // the target is spared an install it would only have to be rolled back.
+    assert_eq!(vpm.registrations.load(Ordering::SeqCst), 1);
+    assert_eq!(
+        vpm.installs.load(Ordering::SeqCst),
+        0,
+        "apply must not run after a decided cancellation"
+    );
+    // The honest fact both tail options share: the published artifact lives
+    // OUTSIDE the project (the output root), beyond the snapshot's reach —
+    // it stays, and the receipt says Cancelled rather than pretending the
+    // tail never ran.
+    assert!(
+        fs::read_dir(base.join("artifacts")).unwrap().next().is_some(),
+        "the published artifact stays"
+    );
+    assert_eq!(report.rollback, RollbackOutcome::Restored);
+    let record = read_receipt(&base, &plan.plan_id);
+    assert_eq!(record.status, vua_orchestrator::BuildRecordStatus::Cancelled);
+    assert!(record.local_vpm.is_none(), "no install evidence when the install never ran");
     if base.exists() {
         fs::remove_dir_all(&base).unwrap();
     }

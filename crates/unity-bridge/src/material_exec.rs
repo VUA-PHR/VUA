@@ -380,8 +380,13 @@ impl MaterialExecutor {
                 .iter()
                 .any(|step| step.kind == MaterialIntakeStepKind::ProvisionProject)
             {
-                match self.run_provision(plan, project, &mut current_fingerprint, &mut bridge_jobs)
-                {
+                match self.run_provision(
+                    plan,
+                    project,
+                    token,
+                    &mut current_fingerprint,
+                    &mut bridge_jobs,
+                ) {
                     Ok(()) => {
                         report.completed_steps.push(MaterialIntakeStepKind::ProvisionProject);
                         None
@@ -588,6 +593,7 @@ impl MaterialExecutor {
         &self,
         plan: &crate::material_intake::MaterialIntakePlanV01,
         project: &ProjectRef,
+        token: &MaterialCancelToken,
         current_fingerprint: &mut String,
         bridge_jobs: &mut Vec<BridgeJobEvidenceV01>,
     ) -> Result<(), StepFailure> {
@@ -636,6 +642,20 @@ impl MaterialExecutor {
                     MaterialExecutionStatus::Failed,
                 )
             })?;
+        // Cancellation observation between create and resolve (design
+        // registration 2026-09-23-port-cancellation-points, slice S2): the
+        // resolve leg is the material chain's only genuinely unbounded
+        // operation, and the port face carries no token by design (frozen
+        // word face; the lib backend is a physical non-cooperator anyway).
+        // The executor closes the window instead: a cancellation decided
+        // during create short-circuits here, BEFORE the network leg starts,
+        // and rides the standing compensation — the Err joins the normal
+        // failure arm, the pre-provision verified snapshot rolls the
+        // half-provisioned content into the `.vua/recovery` quarantine, and
+        // the Cancelled receipt publishes like any other exit.
+        if token.is_cancelled() {
+            return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
+        }
         // Resolve the declared SDK dependencies (batch 146): the network
         // segment is inherent to the face, and a backend without the face
         // answers the capability_missing family here — reported as a failed
@@ -992,6 +1012,19 @@ impl MaterialExecutor {
         validation_expectations.sort();
         validation_expectations.dedup();
 
+        // Cancellation observations in the register/preview/apply tail
+        // (design registration 2026-09-23-port-cancellation-points, slice
+        // S2, frozen discretion: the "skip the install" option). A cancel
+        // request arriving during staging short-circuits BEFORE the target
+        // is touched: registration, preview and install are all skipped and
+        // the standing compensation runs. One honest fact both tail options
+        // share: the published artifact lives OUTSIDE the project (the
+        // output root), so the snapshot rollback cannot reach it — the
+        // published files stay and the receipt says Cancelled, never
+        // pretending the tail never ran.
+        if token.is_cancelled() {
+            return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
+        }
         self.vpm
             .register_local_package(&artifact.package_root)
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
@@ -1003,6 +1036,12 @@ impl MaterialExecutor {
             .vpm
             .preview_install(project, std::slice::from_ref(&request))
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
+        // Second tail observation: between preview and apply. The preview is
+        // read-only; skipping the apply keeps the target free of an install
+        // it would only have to be rolled back.
+        if token.is_cancelled() {
+            return Err((intake_codes::CANCELLED.to_owned(), MaterialExecutionStatus::Cancelled));
+        }
         self.vpm
             .apply_install(project, std::slice::from_ref(&request), &preview.digest)
             .map_err(|error| (error.code, MaterialExecutionStatus::Failed))?;
