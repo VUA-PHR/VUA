@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -83,7 +83,10 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - The Orchestrator owns application use cases and recoverable tasks independently of the renderer.
   Its language, hosting model, and transport are replaceable implementation decisions.
 - AMF is Recipe-first and owns Warehouse, Recipe, Assembly, Inspection, Release, and BDL access.
-  BDL is an AMF-private local module, not a VUA-wide data service.
+  The Inspection detection-service capability stays; a standalone Inspection page is no longer
+  required — presentation defers to the product-boundary 1.5.0 ruling (user ruling 2026-09-22;
+  see `docs/product-boundary_EN.md` / `docs/product-boundary_ZH.md`). BDL is an AMF-private
+  local module, not a VUA-wide data service.
 - Unity changes cross the versioned Unity Bridge whenever a deterministic Bridge operation can
   exist. Do not substitute unversioned UI clicking.
 - Unity production workflows use global `2022.3.22f1` exactly. `2019.4.31f1` and `2022.3.6f1` are
@@ -180,6 +183,10 @@ Electron handlers, Unity callbacks, or third-party wrappers.
   generated files, and official license text remain single-source.
 
 ## Document changelog
+
+- 1.2.1 (2026-09-22): user ruling 2026-09-22 — the AMF module description no longer requires a
+  standalone Inspection page (the detection-service capability stays; presentation defers to
+  product-boundary 1.5.0). The ruling list itself is not copied here; see `docs/product-boundary_*`.
 
 - 1.2.0 (2026-09-22): user-approved PR integration replaces local-main merges and direct bookkeeping pushes; see collab/PROTECTED_MAIN.md.
 
