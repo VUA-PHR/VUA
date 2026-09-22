@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.13
+> Document version: 2.0.14
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.13)
+> Authority: Simplified Chinese (EN mirror, synced to 2.0.14)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -112,13 +112,19 @@ Responsibility rules:
 | --- | --- | --- | --- | --- |
 | W18 | **M5 first batch**: proposal 008 path-a wiring — the "delete original material after generation" toggle = a desktop local preference; after the generate Done receipt, call the existing `warehouse.deleteOriginals` entry by entry (each deletion an independently audited task) | Desktop | Core, Data | proposal 008 accepted (integration ruling, 2026-09-08); authority boundary = desktop holds only the initiation timing, execution/guards/audit stay in the provider task face |
 | W19 | **M5 first batch (merged design)**: import-time automatic-generation hook and orchestration semantics (the semantics of starting the generate task inside the import flow; desktop presentation + core/data task-face semantics designed in one batch) | Desktop | Core, Data | product-boundary 1.2.1 trigger-timing semantics; honest labeling removed when wired |
-| W20 | Recipe v0.3, Local Resolution, version locks | Core | Data | existing M5 table row |
+| W20 | Recipe v0.3, Local Resolution, version locks | Core | Data | existing M5 table row; 2.0.14 note: Recipe field whitelist and encoding, object location, and conflict-handling implementation are unsettled/to-be-measured items from the user ruling 2026-09-22 and form no scheduling commitment |
 | W21 | Unity Bridge operation extensions (dry-run, idempotency, recovery) and the C# implementation | Production | Core | existing M5 table row |
 | W22 | Full Build Record (plan diff, evidence digest) | Core | Production | existing M5 table row |
-| W23 | Compatibility/missing-evidence model | Data | Core | existing M5 table row |
-| W24 | Recipe/Assembly workbench (shared selection and domain semantics across three views) | Desktop | Core | existing M5 table row |
+| W23 | Compatibility/missing-evidence model | Data | Core | existing M5 table row; 2.0.14 note: automatic compatibility evidence acquisition is an experimental feature that is off by default and is not a standing prerequisite of core flows; disabling it does not affect basic BDL storage / ordinary import / source completion; no evidence = unknown |
+| W24 | Recipe/Assembly workbench (shared selection and domain semantics across three views) | Desktop | Core | existing M5 table row; 2.0.14 note: acceptance re-aimed per the user ruling 2026-09-22 new direction — wizard-selected paths, the Recipe conflict four options, asset sources filled in at share time (accepted direction, not yet implemented) |
 | W25 | Lawful self-owned asset smoke path and reproducibility | Production | Integration | existing M5 table row; real-machine window and lawful-asset environment variables; **the window has been opened by user instruction (2026-09-19/20, schedule exception)** |
 | W26 | Gate acceptance and release (v0.7.0) | Integration | All | per the M4 closure precedent: document review → gate-item verification → version/release/push; step-a preliminary inventory = proposal 028 user/operator-facing document audit (list landed 2026-09-20) |
+
+> 2.0.14 note (user ruling 2026-09-22; authoritative text in product-boundary 1.5.0): object
+> location, Recipe field whitelist and encoding, conflict-handling implementation, dependency
+> downgrade paths, and BDL manual revision are unsettled/to-be-measured items; no task row in this
+> plan may be read as scheduling them; the W20/W23/W24 row acceptance criteria are adjusted in
+> this batch (the original criteria are kept for reference and explicitly marked superseded).
 
 ## M sequence: Main integration and delivery
 
@@ -376,6 +382,14 @@ role picks up rows by anchor and merges the latest main before starting):
 | Desktop-overlay closure (consumes stable snapshots and semantic actions only) | Desktop | Core |
 | Gate acceptance and release (**not** in the early-open scope) | Integration | All |
 
+**2.0.14 note (user ruling 2026-09-22)**: this gate's "inspection evidence" and
+"Inspection/Release pages and official SDK handoff" rows have their acceptance criteria
+superseded — inspection folds into the production record (Release run placeholder record plus
+the notification-center dual channel); a check that was not executed must not present as
+passed; the final upload is completed by the user in the official SDK, and technical checks do
+not guarantee that appearance and behavior meet expectations. The rows above are kept for
+reference; the new direction is accepted and not yet implemented.
+
 ### M8 — v0.10.0: Beta 1 feature and contract freeze
 
 - **Documentation:** freeze the `1.0.0` feature set, public contracts, compatibility scope, and the
@@ -509,13 +523,25 @@ standing discipline; this table creates no product requirements.
 | v1.2 | Native integrations (face tracking, motion tracking, and other integrated runtimes) |
 | v1.3 | Plugin system (execution, catalog/marketplace governance) |
 | v1.4 | Avatar VN3 screening and cataloging |
-| v1.5 | Avatar compatibility screening and cataloging |
+| v1.5 | Avatar compatibility screening and cataloging (2.0.14 note: automatic compatibility evidence acquisition is an experimental, default-off feature; this direction does not take it as a standing prerequisite and needs its own acceptance decision before starting) |
 
 Runtime-tool integration, community-plugin execution, and a plugin marketplace do not begin before
 stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.0.14 (2026-09-22): **user ruling 2026-09-22 (product-boundary 1.5.0) scheduling-scope
+  correction** — the current-window W20/W23/W24 rows and the M7 task table are re-aimed per the
+  new ruling (original criteria kept for reference and explicitly marked superseded): W23
+  automatic compatibility evidence acquisition = an experimental feature off by default, not a
+  standing prerequisite of core flows (disabling it does not affect basic BDL storage / ordinary
+  import / source completion; no evidence = unknown); object location, Recipe field whitelist
+  and encoding, conflict-handling implementation, dependency downgrade paths, and BDL manual
+  revision are marked unsettled/to-be-measured and must not be read as scheduling commitments;
+  the M7 inspection criteria become inspection-folds-into-the-production-record (run placeholder
+  record + notification-center dual channel; not-executed ≠ passed; final upload completed by
+  the user in the official SDK); the "After 1.0.0" v1.5 compatibility-cataloging direction gains
+  the same note. EN mirror of the ZH 2.0.14 entry.
 - 2.0.13 (2026-09-20): **W25 real-machine window opening fact registered** (user
   instruction 2026-09-19/20, executed as a schedule exception per user instruction) —
   the current-window section gains a window-status paragraph: each role's W25 pending

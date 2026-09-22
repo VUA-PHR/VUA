@@ -1,10 +1,10 @@
-# VUA design standard v0.7.18
+# VUA design standard v0.7.19
 
 [English](design-standard_EN.md) | [简体中文](design-standard_ZH.md)
 
-> Document version: 0.7.18
+> Document version: 0.7.19
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.18)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 0.7.19)
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-22
 > Normative effect: Governs interaction, visual, and accessibility implementation;
@@ -17,7 +17,7 @@ v0.6.1 combines UI/UX and visual-art direction into one normative source.
 | Treatment | Content |
 | --- | --- |
 | Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, fixed five-tab shell, command-center composition, slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL three-scene direction, Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
-| Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; five AMF stages |
+| Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; the five AMF stages kept as the full capability coverage (since 0.7.19 a wizard selects the path by goal/device/state — see Recipe-first) |
 | Replace | framework-private Tauri window/IPC semantics, BDB contracts, a separate Production stage, globally disabled context menus, font-size or padding reflow on hover, deceptive progress floors, paid font or icon assumptions |
 | Schedule separately | Visual direction remains part of v0.6.1. Delivery sequencing, performance gates, and fallback acceptance are reviewed independently from the design decision. |
 
@@ -41,11 +41,15 @@ information. Disabling blur, glow, WebGL, and motion must preserve hierarchy and
 Ask for the desired result before introducing Unity, VPM, Armature, Shader, and other necessary terms.
 Recommendations explain why, impact, and alternatives.
 
-### Recipe-first
+### Recipe-first and path selection
 
-```text
-Warehouse → Recipe → Assembly → Inspection → Release
-```
+AMF still covers the five stages — Warehouse, Recipe, Assembly, Inspection, and Release — but no
+longer forces every player through one fixed grand flow. A production wizard selects the path by
+goal, device, and current state, walking only the stages that production actually needs (0.7.19,
+user ruling 2026-09-22 — accepted direction, not yet implemented). The full flow remains valuable
+for troubleshooting and experienced users as an optional path, not a mandatory one. Guidance does
+not replace account authentication or platform authorization; the Quest first-time activation
+tutorial distinguishes the standalone mode from the PC-connected path.
 
 Execution, input waits, retry, and recovery are task states inside a use case, not a Production stage.
 
@@ -373,6 +377,20 @@ stable untilted cards.
   as the two standing save chains). Word discipline: the entry is "export a
   draft", promotion is "save as a recipe"; never mixed with "create / add
   assets / assemble".
+- Recipe overlay-conflict four options (0.7.19, user ruling 2026-09-22 — accepted direction, not
+  yet implemented): a Recipe is "a stackable set of modifications"; when overlaid onto the current
+  Avatar, unmentioned existing assets and settings are kept by default, and removal must be
+  explicit. Overlay conflicts offer four options: 1) Recipe wins; 2) Avatar wins; 3) carry into a
+  new Avatar (recommended); 4) cancel — handling only the fields the Recipe touches. Object-location
+  ambiguity is not a value conflict and must not be hidden behind "Recipe wins"; without a reliable
+  baseline, differences must not all be attributed to manual player edits.
+- Asset-source "fill in at share time" interaction (0.7.19, user ruling 2026-09-22 — accepted
+  direction, not yet implemented): import and local use do not require a BOOTH ID; at share time
+  only the assets involved this time and missing a source are filled in — completed in one pass,
+  minimal entry, no repeated asks. The fill-in flow prefers the purchased-library picker,
+  click-to-pick from the web page, keyword-search candidates, and batch association; per-item
+  manual typing is not the default; confirmed associations are remembered. A BOOTH ID is a source
+  declaration, not VUA authentication.
 - Graph, list, and exploded views remain peers. The list is complete and always available.
   The graph uses deterministic force layout, reset, persisted positions, adjacency highlighting, and
   a performance target up to 100 nodes. The exploded view separates semantic layers with CSS 3D.
@@ -405,11 +423,15 @@ stable untilted cards.
   it joins the continuous asset acquisition path (§8.3) on the same page. The
   workshop's page slot and gating semantics are unchanged (the honest in-page
   blocking state still applies while the environment is not ready).
-- **Inspection/Release:** inspection stays a standalone second-level page,
-  independent of the workshop (0.7.12 navigation rework confirmed): it is the
-  inspection landing point of the main flow "assembly → inspection → SDK
-  handoff", keeping evidence and next steps that distinguish local estimates
-  from official results.
+- **Inspection/Release:** inspection folds into the production record (0.7.19, user ruling
+  2026-09-22 — accepted direction, not yet implemented): this supersedes the standalone-
+  inspection-page requirement (0.7.12). When the workshop takes in material, Release creates a
+  placeholder record for that run; inspection issues surface through both the notification center
+  and the record status, and both open the explanation, logs, and follow-up actions; closing a
+  notification does not make the issue disappear; a placeholder record never masquerades as a
+  completed Build Record. The inspection service, recovery admission, and evidence-recording
+  capabilities are retained. The final upload is completed by the user in the official SDK, and
+  technical checks do not guarantee that appearance and behavior meet expectations.
   Release shows result cards, versions, snapshots, Build Records, and official SDK handoff. It retains
   the horizontal conveyor, animated-tier coverflow, WebGL pedestal, and CSS pedestal fallback. The
   Unity-baked turntable direction is promoted to an accepted form (0.7.12, user ruling 2026-09-20):
@@ -424,8 +446,8 @@ stable untilted cards.
   SDK handoff entry on Release build records presents by a record-state whitelist — succeeded and
   succeeded_with_warnings are allowed (the warning badge stays, never shadowed by the allowance);
   failed, cancelled and rolled_back are withheld with a discoverable reason plus an entry chain to
-  diagnostics (Inspection) and recovery/re-production (Workshop); recovered is withheld, presenting
-  "complete the inspection and the follow-up production steps first" plus the inspection entry; a
+  diagnostics (the run record) and recovery/re-production (Workshop); recovered is withheld, presenting
+  "complete the inspection and the follow-up production steps first" plus the run-record entry; a
   missing or out-of-vocabulary record state is refused with "the record cannot be confirmed". The
   backend stays the authority in the route admission order; the presentation bucket never pre-judges
   the acceptance, and direct invocations rejected at the gate render the typed refusal copy
@@ -433,7 +455,9 @@ stable untilted cards.
   fix" action is deliberately separate from the handoff button (own control, port and copy), never
   gated by the record state — opening the editor is neither a recovery execution nor an upload
   permission; while the backend open entry is not wired, the entry presents honest absence (no
-  pre-wired availability illusion, no fabricated capability).
+  pre-wired availability illusion, no fabricated capability). The handoff admission whitelist and
+  the standalone open-in-Unity capability are retained under the inspection-in-records direction
+  (0.7.19).
 - **Projects/packages:** compact tables, fact rows, and capability badges; combined change preview
   before install/update/remove; no third-party branding that implies embedding. Project compatibility
   no longer holds a standalone second-level page (proposal 026 B, user ruling 2026-09-18): its read
@@ -593,16 +617,30 @@ A page is deliverable only when:
 ## 11. v0.6.1 accepted scope
 
 The accepted scope covers the base character, two jurisdictions, tokens, component states, fixed five tabs,
-slanted controls and overflow flyout, sidebar growth impression, task feedback, five AMF stages,
-three WebGL scenes, Recipe's three views, Release coverflow/pedestal, community-skin direction, module
-metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page layout after
-validation.
+slanted controls and overflow flyout, sidebar growth impression, task feedback, the five AMF stages as full
+capability coverage (presentation per the 0.7.19 user ruling: wizard-selected paths, inspection folded into
+production records), three WebGL scenes, Recipe's three views, Release coverflow/pedestal, community-skin
+direction, module metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page
+layout after validation.
 
 The final logo remains a separate commission. The visual direction retained here and its development
 schedule are reviewed separately; a schedule change does not automatically delete an approved design
 direction.
 
 ## 12. Document changelog
+
+- **0.7.19 (2026-09-22)**: user ruling 2026-09-22 (product-boundary 1.5.0) consumed —
+  §2.2 the fixed five-stage flow becomes "full capability coverage + a wizard selecting the
+  path by goal/device/current state", including guidance not replacing account authentication
+  or platform authorization and the Quest first-time tutorial distinguishing standalone vs
+  PC-connected paths; §8.6 the standalone-inspection-page requirement is superseded by
+  "inspection folds into the production record" (Release run placeholder record at workshop
+  feed + notification-center dual channel, closing a notification is not the issue
+  disappearing, placeholder records never masquerade as completed Build Records, inspection
+  service/recovery admission/evidence recording retained, handoff admission and the standalone
+  open-in-Unity capability retained, handoff failure now jumps to the run record); §8.4 adds
+  the Recipe overlay-conflict four options and the asset-source "fill in at share time"
+  interaction (both marked accepted direction, not yet implemented). ZH mirror synced.
 
 - **0.7.18 (2026-09-22)**: §8.4 addendum for project draft export (U16
   user-ruling B-face loop 4 desktop consumption, proposal 029 B4) - the
