@@ -2,18 +2,23 @@
 
 [English](product-boundary_EN.md) | [简体中文](product-boundary_ZH.md)
 
-> Document version: 1.4.0
+> Document version: 1.5.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.4.0)
+> Authoritative language: 简体中文 (this English edition mirrors product-boundary_ZH.md at 1.5.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-19
+> Updated: 2026-09-22
 > Normative effect: Yes
 
 ## Product definition
 
 VUA is a Windows-first, local VRChat desktop production environment for players who want to move
 from asset discovery and environment preparation through Avatar production and runtime-tool setup.
-It is Recipe-first, local-first, capability-aware, and designed for recoverable execution.
+The core audience is VRChat players who are unfamiliar with Unity and may not even know what they
+need (user ruling, 2026-09-22). It is Recipe-first, local-first, capability-aware, and designed
+for recoverable execution: new users get a Wizard that selects a path by goal, device, and current
+state instead of everyone being marched through one fixed master flow (end-to-end flow coverage
+remains a valuable capability), while experienced users keep inspectable, reproducible production
+records.
 
 ## Accepted product areas
 
@@ -21,8 +26,11 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    sessions; download interaction; desktop windows; narrow Gateway.
 2. **Orchestrator:** durable tasks, plans, approval, cancellation, recovery, Build Records, and
    adapter coordination behind a replaceable, versioned Provider boundary.
-3. **Avatar MegaFactory:** owns Warehouse, Recipe, Assembly, Inspection, Release; native browsing,
-   authorized downloads, content management, and external-source adapters;
+3. **Avatar MegaFactory:** owns the Warehouse, Recipe, Assembly, and Release user flows — check
+   evidence is folded into production records and the notification center, and a standalone
+   Inspection page is no longer required (user ruling, 2026-09-22; see "Production scope and
+   product rulings"); native browsing, authorized downloads, content management, and
+   external-source adapters;
    - **Material-entry semantics (user ruling, 2026-09-07; trigger-timing clarification with the
      W15 re-review, 2026-09-08):** the default path is direct use of the original
      `.unitypackage` (beginner-oriented positioning); the **target trigger timing** of "generate
@@ -63,6 +71,115 @@ It is Recipe-first, local-first, capability-aware, and designed for recoverable 
    Implementation begins only after `1.0.0`.
 9. **Community plugin interface:** a versioned protocol for optional enhancements and customization,
    with declared capabilities, lifecycle, tasks, permissions, and compatibility rules.
+
+## Production scope and product rulings (user ruling, 2026-09-22)
+
+> **This section is accepted product direction. It does not mean the related UI, protocols, or
+> execution chain are implemented, and it is not a real-machine acceptance claim.** It supersedes
+> conflicting older statements in this file and related documents (a fixed five-stage flow, the
+> standalone Inspection page requirement, any implication that a Recipe fully reproduces arbitrary
+> projects, and VUA exhaustively testing upstream capabilities). **Frozen protocols and existing
+> data formats do not automatically change because of this documentation merge**; where change is
+> needed, it lands through later versioned migrations. This section authorizes neither deleting
+> existing data nor silently overwriting user projects.
+
+### Confirmed scope
+
+**Product positioning and beginner guidance.** The core audience is VRChat players unfamiliar with
+Unity — including players who do not yet know what they need. End-to-end flow coverage remains
+valuable, but a Wizard selects a path for the user by goal, device, and current state; no player is
+required to walk one big flow. Device preparation adds Quest first-time-activation guidance and
+distinguishes standalone use from PC-connected use. Guidance and tutorials never complete account
+authentication or platform authorization on the user's behalf.
+
+**Recipe = a stackable set of modifications.** A Recipe expresses an asset combination and explicit,
+supported options, with semantics similar to a mod manager. A new Recipe stacks onto the current
+Avatar; existing assets and settings it does not mention are preserved by default and must not be
+deleted merely because they are absent from the new Recipe. Deletion must be an explicit action;
+conflicts require explicit handling. A Recipe does not undertake full reproduction of arbitrary
+Unity projects, scenes, or all hand-authored work.
+
+Applying a Recipe to an existing Avatar offers four options: (1) Recipe settings win (supported
+fields in conflict take the Recipe value); (2) Avatar settings win (conflicting fields keep the
+current Avatar value); (3) create a new Avatar to carry the Recipe (recommended); (4) cancel. These
+options cover only the fields the Recipe touches and do not authorize overwriting unrelated
+content. Creating a new Avatar does not require creating a new Unity project, and adding, removing,
+or changing assets on the same Avatar must not by itself demand a new project either. The ownership
+limits of existing external projects (see the ALCOM/VCC clauses under "Explicit boundaries") apply
+separately.
+
+An object that cannot be identified is a different situation from a value conflict: "Recipe wins"
+must not be used to paper over object-location ambiguity. And without a reliable baseline, not
+every diff may be dismissed as a player's manual edit.
+
+**Recipe sharing and reproduction boundary.** Shareable content = BOOTH asset references + clearly
+supported boolean, enum, integer, and float options (for example color, brightness, hue, local
+position, rotation, and scale). Not included: custom texture files, custom FBX, paid asset bodies,
+and smuggling arbitrary content such as meshes or pixels into sharing by encoding it as numbers.
+An SNS paste text and a file may carry the same declaration; the file itself may be nothing more
+than long text and does not need to become a Unity scene package for that reason.
+
+**Asset provenance (fill in at sharing time; as little as possible).** Import and local use do not
+require entering a BOOTH ID immediately. Only when actually sharing, provenance is required only
+for the assets this Recipe touches that lack it. The preferred flows are picking from the purchased
+library or the product page, choosing from keyword-search candidate lists, and batch correlation —
+typing in numbers one by one is not the default experience. Confirmed correlations are remembered
+to avoid repeated work: human supplementation is as little as possible, as late as possible, and
+never repeated once done. A BOOTH ID is the author's or user's provenance statement, not VUA's
+certification of authenticity, unmodified state, or reproducibility. A wrong correlation is a
+UGC-content responsibility; VUA still reports parse failures honestly and owns its own execution
+and application errors. A reproducer re-acquires assets through their own BOOTH entitlement. A
+provenance statement grants no purchase rights, and VUA is not required to prove the local package
+is identical to the store original.
+
+**BDL.** The existing base storage, asset identity, source correlation, and catalog capabilities
+are retained. Automatic compatibility-evidence collection is an experimental feature, off by
+default; when enabled it tries to collect evidence from the user's actual BOOTH browsing and Unity
+usage, without reviving the whole-site cloud-collection direction. Turning automatic collection off
+never disables base storage, ordinary import, or Recipe provenance supplementation. The direction
+of local evidence viewing and correction is retained; the concrete UI and editable scope still need
+definition and must not be derived into arbitrary database-edit rights. No evidence means unknown;
+it must not be treated as compatibility or dependency being resolved.
+
+**Inspection folded into production records.** A standalone Inspection page is no longer required.
+When the user confirms production and the workshop starts intake, Release creates a placeholder
+record for that run. Production problems surface through both the notification center and the record
+status; both open the same explanation, logs, and follow-up actions. Closing a notification does
+not make the problem go away. A placeholder record of a run in flight must never pose as a completed
+Build Record. The page change removes none of the inspection services, recovery guards, or evidence
+records.
+
+**MA and SDK responsibilities.** Modular Avatar's declared capability boundary is accepted; VUA no
+longer exhaustively tests everything MA can do. VUA validates its own integration, parameters,
+object selection, call ordering, and representative real flows; issues also reproducible through
+standard upstream use are reported upstream. Build and target-platform technical limits reuse the
+official SDK checks instead of maintaining duplicate rules. Missing assets, dependency
+installation, Bridge execution, and recovery remain VUA's responsibility. A check that did not run
+must never display as passed. The final upload is performed by the user in the official SDK;
+technical checks cannot guarantee that appearance and behavior match player expectations, and this
+must be stated clearly.
+
+### Explicitly deferred
+
+An independent lightweight UI based on egui, Slint, or similar frameworks is deferred indefinitely
+until core functionality is stable; no start date is promised. This deferral does not cancel the
+existing Electron resource-saving mode.
+
+### To be verified / undecided
+
+The following items are **undecided**; nothing in this section's wording implies any of them is
+resolved:
+
+- **Object location (undecided):** same-name bones, cross-project location, and repeated
+  application require real-machine verification; the current approach must not be assumed reliable.
+- **Recipe fields and encoding (undecided):** the product capability is decided; the field
+  whitelist, location identifiers, and versioned format are not.
+- **Conflict-handling implementation (undecided):** the four options are decided; diff detection,
+  preview, and protection need implementation verification.
+- **Dependency degradation path (undecided):** how dependency completion is accomplished when
+  automatic forensics is off or resolution fails still needs a concrete flow.
+- **BDL human correction (undecided):** the viewing/correction direction is retained; concrete
+  permissions and interaction are not yet frozen.
 
 ## Extension and integration trust boundary
 
@@ -167,7 +284,10 @@ gate derives risk from declared capabilities and behavior.
   bypasses anti-cheat.
 - The first delivery phase supplies the capability protocol and security model; marketplace
   governance follows a later release decision.
-- Final VRChat Avatar login and upload remain in the official SDK flow; VUA prepares and validates.
+- Final VRChat Avatar login and upload remain a user action in the official SDK flow; VUA prepares
+  and validates. A technical check passing does not guarantee appearance and behavior match player
+  expectations (this must be stated clearly to the user), and a check that did not run must never
+  display as passed (user ruling, 2026-09-22).
 
 ## Current stage
 
@@ -179,6 +299,17 @@ remain release-engineering decisions.
 
 ## Document changelog
 
+- 1.5.0 (2026-09-22): the full user ruling of 2026-09-22 landed — new "Production scope and product
+  rulings" section (confirmed scope: beginner Wizard and Quest guidance, Recipe as a stackable set
+  of modifications with four conflict options, sharing and reproduction boundary, provenance filled
+  at sharing time, BDL base capabilities retained with experimental forensics off by default,
+  Inspection folded into production records, MA/SDK responsibilities reusing upstream checks;
+  explicitly deferred: an egui/Slint lightweight standalone UI; five to-be-verified items listed as
+  undecided); AMF composition item 3 no longer lists Inspection as a user stage; the SDK-upload
+  boundary clause gains the technical-check limitations and honest display of unexecuted checks;
+  prominent notice that the section is accepted direction, not an implementation or real-machine
+  acceptance claim, and that frozen protocols and data formats do not automatically change.
+  Mirrors the ZH edition.
 - 1.4.0 (2026-09-19): U14 user ruling landed in the boundary — project-management item 5
   reaffirmed: the most frequently used "project management" in VUA is actually the Recipe and
   Release modules; the package manager's primary form is Recipe-driven automatic resolution and

@@ -2,21 +2,24 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Document version: 1.1.0
+> Document version: 1.2.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.1.0)
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.2.1)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-16
+> Updated: 2026-09-23
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
 ## AMF production model
 
-AMF treats Recipe as desired intent: the user first selects lawfully acquired assets and a target
-combination, then the system resolves the project, dependencies, and execution steps.
+AMF treats Recipe as the source of a stackable set of modifications: a Recipe expresses an asset
+combination and explicit, supported options (overlay semantics and conflict handling live in the
+[product boundary](../product-boundary_EN.md), "Production scope and product rulings"). The user
+first selects lawfully acquired assets and a target combination, then the system resolves the
+project, dependencies, and execution steps.
 
 ```text
-Warehouse → Recipe → Assembly → Inspection → Release
+Warehouse → Recipe → Assembly → Release
 ```
 
 - **Warehouse** discovers, downloads with authorization, previews, identifies, and organizes assets
@@ -26,11 +29,20 @@ Warehouse → Recipe → Assembly → Inspection → Release
 - **Assembly** resolves local assets and capabilities into ProjectSpec, dependencies, and a reviewable
   plan, then Orchestrator performs project and Unity Bridge work. Prompts, progress, and recovery are
   represented as task states.
-- **Inspection** reports function, performance, dependencies, lighting, and upload readiness.
+- Check evidence belongs to production records and the notification center; a standalone Inspection
+  page is no longer required. When the user confirms production and the workshop starts intake,
+  Release creates a placeholder record for that run; problems surface through both the notification
+  center and the record status, and both open the same explanation, logs, and follow-up actions. A
+  placeholder record in flight must never pose as a completed Build Record (user ruling,
+  2026-09-22).
 - **Release** manages Build Records, snapshots, recovery, and handoff to the official SDK upload flow.
 
 A Recipe is portable, declarative intent. Importing one always requires local resolution before a
-plan can be produced.
+plan can be produced. Application semantics are overlay-based: a new Recipe stacks onto the current
+Avatar; unmentioned existing assets and settings are preserved by default; deletion must be an
+explicit action; conflicts are handled through the four options defined in the product boundary. A
+Recipe does not promise full reproduction of arbitrary Unity projects, scenes, or all hand-authored
+work.
 
 ## Warehouse, acquisition, and BDL
 
@@ -49,9 +61,10 @@ authorization, semantic interpretation, and result shaping.
 ## Project compatibility
 
 AMF uses three explicit project-management paths: VUA's own `vrc-get`-based package manager,
-capability-aware management of ALCOM-managed projects, and capability-aware management of VCC-managed
-projects. The latter two use documented project-compatibility boundaries for those applications.
-Unknown format, lock, or capability means read-only inspection, conversion advice, or manual handoff.
+read-only compatibility with ALCOM-managed original projects, and read-only compatibility with
+VCC-managed original projects; for the latter two, the only write path is the user-initiated
+"import as a VUA-managed copy" (user ruling U3, 2026-09-08). Unknown format, lock, or capability
+means read-only inspection, conversion advice, or manual handoff.
 
 ## Build Record
 
@@ -72,18 +85,31 @@ promotion rules.
 
 ## Unity Bridge boundary
 
-The Unity `2022.3.22f1` Editor package inspects projects and imported assets; uses stable GUID and
+The Unity `2022.3.22f1` Editor package inspects projects and imported assets; uses GUID and
 `GlobalObjectId` references; validates and dry-runs supported operations; performs bone, menu,
 parameter, animation, material, and Modular Avatar component work through public APIs; and returns
-structured changes, diagnostics, fingerprints, and retry information.
+structured changes, diagnostics, fingerprints, and retry information. Object location (same-name
+bones, cross-project location, repeated application) has not passed real-machine verification; the
+current approach must not be assumed reliable (undecided — see the to-be-verified list in the
+[product boundary](../product-boundary_EN.md)).
 
 AMF and Orchestrator retain the user journey, Recipe, downloads, credentials, approvals, and project
-history. Bridge requests and results use versioned schemas in a controlled `.vua` job directory. Project-fingerprint
-mismatch rejects mutation. Repeated command IDs follow protocol idempotency. A valid snapshot or
-provable compensation boundary precedes mutation. Repository and cloud-CI tests use structurally
-equivalent synthetic projects and assets without real product or user content. Developers may use
-lawfully obtained assets for local Unity integration and smoke validation; the assets, projects,
-configuration, and outputs remain local. Deterministic operations use defined Bridge commands.
+history. Final login and upload stay in the official VRChat SDK Panel.
+
+## MA and SDK responsibility boundary (user ruling, 2026-09-22)
+
+- Modular Avatar's declared capability boundary is accepted; VUA no longer exhaustively tests
+  everything MA can do.
+- VUA validates its own integration, parameters, object selection, call ordering, and
+  representative real flows; issues also reproducible through standard upstream use are reported
+  upstream.
+- Build and target-platform technical limits reuse official SDK checks instead of maintaining
+  duplicate rules.
+- Missing assets, dependency installation, Bridge execution, and recovery remain VUA's
+  responsibility.
+- A check that did not run must never display as passed.
+- The final upload is performed by the user in the official SDK; technical checks cannot guarantee
+  that appearance and behavior match player expectations, and this must be stated clearly.
 
 ## Release handoff process face
 
@@ -111,8 +137,38 @@ vocabulary takes zero new operations):
   nine-state mapping) belongs to the core use case slice; this port provides mechanism facts and
   mechanism primitives only.
 
+## Operations and safety
+
+- Requests and results use versioned schemas and are written to the controlled `.vua` job
+  directory inside the project;
+- the Orchestrator writes requests atomically and Unity writes results atomically;
+- repeated execution of the same command ID follows the idempotency rules defined by the protocol;
+- a project-fingerprint mismatch rejects the mutation and requires a fresh Inspect;
+- a snapshot suited to the operation or a verifiable compensation boundary must exist before any
+  mutation;
+- deterministic operations use the defined Bridge commands;
+- repository and cloud CI use structurally equivalent synthetic projects and assets free of real
+  product or user content; developers may use their own lawfully obtained assets for local Unity
+  integration and smoke validation, and the assets, projects, configuration, and outputs remain
+  local.
+
 ## Document changelog
 
+- 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — "Operations and
+  safety" is its own section again, recovering two sub-points lost to the folded wording ("the
+  Orchestrator writes requests atomically and Unity writes results atomically" and "a
+  project-fingerprint mismatch requires a fresh Inspect"), and the "Unity Bridge boundary"
+  section regains "final login and upload stay in the official VRChat SDK Panel"; the
+  authoritative ZH text is unchanged.
+- 1.2.0 (2026-09-22): user ruling of 2026-09-22 landed — Recipe redefined from "desired state" to
+  a stackable set of modifications (overlay semantics, preserve-by-default, explicit deletion,
+  four conflict options, bounded reproduction, pointing at product boundary 1.5.0's "Production
+  scope and product rulings"); the Inspection stage left the production model, checks fold into
+  production records and the notification center, and a Release placeholder record is distinct
+  from an immutable Build Record; new "MA and SDK responsibility boundary" section; the "stable
+  references" wording now states object location awaits real-machine verification (undecided);
+  stale ALCOM/VCC wording corrected to read-only originals plus the copy write path (aligned with
+  the accepted U3/U14 rulings, changing no existing boundary). Mirrors the ZH edition.
 - 1.1.0 (2026-09-16): added the "Release handoff process face" section — proposal 023 production
   implementation slice (bridge handshake signal `EditorHandshake` + Rust process/window-face port
   `handoff` module + `schemas/unity-bridge/handshake/v1.0/`); the Bridge command face is unchanged.

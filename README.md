@@ -38,8 +38,11 @@ preparation, import order, binding, menus, optimization, validation, and recover
   [product boundary](docs/product-boundary_EN.md).
 - **Orchestrator:** the Rust application core for plans, approvals, durable tasks, cancellation,
   recovery, adapters, and Build Records, exposed through a replaceable versioned Provider boundary.
-- **Avatar MegaFactory (AMF):** a Recipe-first production flow with five user stages: Warehouse,
-  Recipe, Assembly, Inspection, and Release.
+- **Avatar MegaFactory (AMF):** a Recipe-first production flow covering Warehouse, Recipe,
+  Assembly, Inspection, and Release. Instead of forcing every player through one fixed
+  five-stage flow, a production wizard selects the path by goal, device, and current state, and
+  inspection is being folded into production records (run records plus the notification
+  center). Accepted direction from the 2026-09-22 product ruling — not yet implemented.
 - **BDL (Booth Database Local):** an AMF-private local module for catalog, source, terms,
   compatibility, search, and Warehouse mapping metadata.
 - **Unity Bridge:** a versioned protocol for deterministic operations on global Unity
