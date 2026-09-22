@@ -23,7 +23,7 @@ ALCOM 与 VCC 是用户自行安装的独立项目管理器，拥有自己的设
 显式选择「导入为 VUA 管理的副本」。**设置面例外（用户裁决 U14，2026-09-19）**：VPM
 包管理设置（`settings.json` 的仓库订阅与本地包注册表面）与 VCC/ALCOM 共享同一文件，
 VUA 经裁决读写该面且改动双方立即可见；`vcc.liteDb` 等其余存储面与项目文件面维持
-禁止不变（权威措辞见[产品边界](../../product-boundary_ZH.md) 1.4.0「明确边界」节）。
+禁止不变（权威措辞见[产品边界](../../product-boundary_ZH.md) 1.5.0「明确边界」节）。
 读面与设置面已随提案 024–027 链落地（开发窗口内，发行面候 v0.7.0）。检测矩阵与
 允许/禁止清单见[ALCOM/VCC 项目兼容矩阵](../../compatibility/alcom-vcc_ZH.md)。
 
@@ -41,7 +41,7 @@ settings (the repository-subscription and local-package-registry faces of `setti
 are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
 immediately visible to both sides. All other storage faces such as `vcc.liteDb`, and the
 project files themselves, stay denied (authoritative wording in the
-[product boundary](../../product-boundary_EN.md) 1.4.0 "explicit boundary" section). The
+[product boundary](../../product-boundary_EN.md) 1.5.0 "explicit boundary" section). The
 read face and the settings face have landed with the proposal 024–027 chain (in the
 development window; the release face awaits v0.7.0). The detection matrix and the
 allow/forbidden lists are in the

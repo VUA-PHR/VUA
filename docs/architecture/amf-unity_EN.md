@@ -2,11 +2,11 @@
 
 [English](amf-unity_EN.md) | [简体中文](amf-unity_ZH.md)
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.2.0)
+> Authoritative language: 简体中文 (this English edition mirrors amf-unity_ZH.md at 1.2.1)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-22
+> Updated: 2026-09-23
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -94,12 +94,7 @@ current approach must not be assumed reliable (undecided — see the to-be-verif
 [product boundary](../product-boundary_EN.md)).
 
 AMF and Orchestrator retain the user journey, Recipe, downloads, credentials, approvals, and project
-history. Bridge requests and results use versioned schemas in a controlled `.vua` job directory. Project-fingerprint
-mismatch rejects mutation. Repeated command IDs follow protocol idempotency. A valid snapshot or
-provable compensation boundary precedes mutation. Repository and cloud-CI tests use structurally
-equivalent synthetic projects and assets without real product or user content. Developers may use
-lawfully obtained assets for local Unity integration and smoke validation; the assets, projects,
-configuration, and outputs remain local. Deterministic operations use defined Bridge commands.
+history. Final login and upload stay in the official VRChat SDK Panel.
 
 ## MA and SDK responsibility boundary (user ruling, 2026-09-22)
 
@@ -142,8 +137,29 @@ vocabulary takes zero new operations):
   nine-state mapping) belongs to the core use case slice; this port provides mechanism facts and
   mechanism primitives only.
 
+## Operations and safety
+
+- Requests and results use versioned schemas and are written to the controlled `.vua` job
+  directory inside the project;
+- the Orchestrator writes requests atomically and Unity writes results atomically;
+- repeated execution of the same command ID follows the idempotency rules defined by the protocol;
+- a project-fingerprint mismatch rejects the mutation and requires a fresh Inspect;
+- a snapshot suited to the operation or a verifiable compensation boundary must exist before any
+  mutation;
+- deterministic operations use the defined Bridge commands;
+- repository and cloud CI use structurally equivalent synthetic projects and assets free of real
+  product or user content; developers may use their own lawfully obtained assets for local Unity
+  integration and smoke validation, and the assets, projects, configuration, and outputs remain
+  local.
+
 ## Document changelog
 
+- 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — "Operations and
+  safety" is its own section again, recovering two sub-points lost to the folded wording ("the
+  Orchestrator writes requests atomically and Unity writes results atomically" and "a
+  project-fingerprint mismatch requires a fresh Inspect"), and the "Unity Bridge boundary"
+  section regains "final login and upload stay in the official VRChat SDK Panel"; the
+  authoritative ZH text is unchanged.
 - 1.2.0 (2026-09-22): user ruling of 2026-09-22 landed — Recipe redefined from "desired state" to
   a stackable set of modifications (overlay semantics, preserve-by-default, explicit deletion,
   four conflict options, bounded reproduction, pointing at product boundary 1.5.0's "Production
