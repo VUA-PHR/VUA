@@ -490,3 +490,48 @@ fn manual_local_snapshot_conforms_to_the_versioned_schema() {
         assert!(errors.is_empty(), "{}: {errors:#?}", path.display());
     }
 }
+
+/// BG-12 家族环境域成员（wt-6 反向审查批 2026-09-24）：settings 数组携带
+/// 非字符串项时，可读字符串照常保留，被丢弃项以 VCC_SETTINGS_SCHEMA_
+/// UNEXPECTED 警告如实申报——静默丢弃会让已注册项目从发现面消失且无迹
+/// 可寻。发现照旧推进：幸存条目仍是注册事实。
+#[test]
+fn mixed_type_user_projects_keeps_strings_and_announces_the_dropped_entries() {
+    let base = unique_dir("mixed-projects");
+    let good = install_vpm_project(&base, "Good Project", "2022.3.22f1");
+    let settings = base.join("vcc/settings.json");
+    fs::create_dir_all(settings.parent().unwrap()).unwrap();
+    let good_json = serde_json::to_string(&good).unwrap();
+    fs::write(
+        &settings,
+        format!(r#"{{ "userProjects": [{good_json}, 42, null] }}"#),
+    )
+    .unwrap();
+
+    let snapshot = probe(&base);
+    assert_eq!(snapshot.vcc.presence, ManagerPresence::Found);
+    assert_eq!(snapshot.vcc.projects_source, Some("userProjects"));
+    assert_eq!(
+        snapshot.vcc.user_projects,
+        vec![good.clone()],
+        "the readable string survives; nothing is invented"
+    );
+
+    let announced = snapshot.diagnostics.iter().any(|diagnostic| {
+        diagnostic.code == env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED
+            && diagnostic.severity == FindingSeverity::Warning
+            && diagnostic.detail.contains("userProjects")
+            && diagnostic.detail.contains("2 non-string entries")
+    });
+    assert!(
+        announced,
+        "the skipped entries must be announced: {:?}",
+        snapshot.diagnostics
+    );
+
+    // Discovery proceeds with the surviving registration.
+    assert_eq!(snapshot.projects.len(), 1);
+    assert_eq!(snapshot.projects[0].path, good);
+
+    cleanup(&base);
+}
