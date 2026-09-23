@@ -1,181 +1,145 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: f044c821
+baseline_commit: d5369061
 role: 桌面
 updated: 2026-09-23
 ---
 ## 当前焦点
-**第 176 批 1.5.0 对账批（2026-09-23 01:4x–02:1x，节拍轮正常工作时段 date 01:43
-实测；本拍两笔：轮首追平壳 dd8840e5 吸收 main f044c821＝第 173–175 批收编、
-product-boundary 1.5.0 落账与 doc-debt-cleanup PR #8 世代〔本树 172 批两件已
-随 170/171/172 批验收入库〕＋本对账批＝本状态批恰本文件＋029 内联线程桌面回
-复一节）——任务＝操作者第 176 批指派：TICK v1.7 核对义务，读
-`docs/product-boundary_ZH.md` 1.5.0「制作范围与产品裁决」节，对桌面域在途/
-候办逐项对账并落调整注记。零代码零 schema 零 docs/ 触碰；纯 collab 批免全
-量测试照章。**
+**第 178 批 W25 走查第二缺陷修复批(2026-09-23 09:4x–10:4x,操作者派单的
+用户在等任务,基线 d5369061 落后 0 零追平;本拍两笔:实现批+本状态批)＝
+受理态弹窗滞留 UX 修复。根因已由操作者 CDP 验尸实锤:导入受理后
+ContentDialog 滞留「已受理」态,模态机制把弹窗外全壳 inert(模态行为本
+身正确),而唯一出口是右上不起眼 ×——用户视作整屏卡死;另证受理前后任务
+均正常落库(两次"冻结"分别对应一次 failed 与一次 succeeded 任务的受理
+态滞留)。按派单四项交付如下,门禁全绿后提交,交付栈带修复+CDP 取证口
+常驻留给用户继续走查。**
 
-对账权威源：product-boundary_ZH/EN 1.5.0（PR #6 合并 608eea7c）＋outline M7
-分解表 2.0.14 注（集成已落）＋设计标准 0.7.19/0.7.20 §8.6（集成
-slice/doc-debt-cleanup PR #8 已落，合并 f044c821）＋BOARD「最新裁决」节＋
-U16/U18 行 2026-09-22 裁决注记（集成已落）。桌面对账结论逐项：
+- **受理态自动关闭(派单①)＝已落**:导入命令受理(ok)后弹窗短暂呈现受理
+  信息(~1.5 秒,用户看得见「已受理」)随即自动关闭,任务进度归任务中心/
+  通知中心呈现(1.5.0 通知中心哲学);「模态滞留被视作死机」终止。实现:
+  import-model 新纯件 `IMPORT_ACCEPTED_AUTO_CLOSE_MS=1500` +
+  `createAutoCloseTimer`(schedule 单次触发自清/cancel 幂等/重入先清旧
+  柄);本地段与云端采纳段同型接线(计数器驱动,同窗二次受理重新计时;
+  失败反馈在场即取消在飞计时——失败驻留不静默关走;卸载/手动先关即清
+  理,重开弹窗=重挂载=新实例,陈旧定时器误关不成立);WarehousePage 补
+  `onRequestClose` 关闭请求线注入 ImportPage。i18n 四语新词一枚
+  (acceptedAutoClose,弹窗即将自动关闭提示)。
+- **失败态醒目可关(派单②)＝已落**:失败反馈改三型建模(accepted/
+  failure/notice),失败以 role="alert" 呈现并驻留弹窗(失败需用户知
+  悉),醒目主按钮「关闭」(primary 变体,新 .vua-import__failure-actions
+  动作位)为主动线,× 仅辅助;详情词面按 failureLogText 律
+  (production-workshop-view 同律)本地化文案外保留协议稳定码
+  (`文案 (vua.warehouse.*)`),失败以失败呈现不吞细节。云端采纳失败同
+  律(原实现 application 与其它两分支词面并一处)。
+- **Esc/背板/× 三路径钉测(派单③)＝已落(真机 Chromium DOM)**:新
+  smoke:import-dialog(scripts/smoke-import-dialog.mjs +
+  scripts/fixtures/import-dialog-modal.tsx,合成 Gateway 零生产服务)
+  25 检查全过:Esc/背板点击/× 三条关闭路径各钉+恰一次关闭请求;受理自
+  动关闭(时滞内在场→~1.5s 自动收口→恰一次请求);失败驻留+alert 含协
+  议稳定码+醒目主按钮在场+不自动关走+主按钮关闭;受理窗口内手动 Esc 先
+  关→重开不被陈旧定时器误关(卸载清理兑现)。证据:
+  C:/Users/AR/AppData/Local/Temp/vua-import-dialog-dom.json
+  (2026-09-23 10:10 HKT,Chromium 152.0.7977.65)。
+- **两处勘误兑现(派单④,集成第 178 批登记)＝本状态批留痕订正(历史批
+  次文件不改写,同集成第 183 批⑦先例)**:
+  - **勘误一(v4 逐名清单漏 validate_asset_paths)**:wt-4 第 176 批状
+    态批(de25daf5,随集成第 178 批 PR #12 入库)Bridge v4 冻结面核对段
+    称「操作闭集 16 成员」而逐名清单列 15。订正:读面实为 **8**(
+    inspect_project/identify_assets/**validate_asset_paths**/
+    validate_avatar/analyze_performance/inspect_avatar_references/
+    inspect_lighting/inspect_upload_readiness)＋写 6＋任务 2＝16,与闭
+    集计数一致;本批对 schemas/unity-bridge/v4/command.schema.json
+    operation enum 实数复核 16 成员含 validate_asset_paths,零冲突结论
+    不变。
+  - **勘误二(amf-unity 版本词两表)**:同批「权威正文＝amf-unity 1.2.0」
+    系裁决波落版时点读数;现行版以文档头部为准 **1.2.1**(2026-09-23 EN
+    镜像结构对齐批,amf-unity_ZH/EN 头部实核);REGISTRY 行登记 1.2.0 系
+    patch 级漂移容忍(治理 §2.3 登记表只随 Minor/Major 更新,brief
+    major.minor 容忍校验 0 异常佐证),两处词面以现行文档版本 1.2.1 为
+    准;节名「MA 与 SDK 职责边界」两处实存一致。
 
-- **①检测页处置（结论＝方向已受控；页面去留候新提案，桌面零单方动作）**：
-  - 现状盘点（代码事实实读）：导航 production Tab 第 3 项 `inspection` 独
-    立页（`apps/desktop/src/renderer/app/nav-model.ts`；其头注「检查页保持
-    独立页…主流程装配→检测→SDK 交接中独立于车间的检测落点」系设计标准
-    0.7.12 时代口径，已被 1.5.0/0.7.19 取代——候新提案一并调整，本拍零代
-    码不触碰）；`InspectionPage.tsx`（BG-15 骨架＋M7 检查切片消费批：消费
-    gateway.inspection 读面 inspection.get/list verbatim，三态诚实；
-    requestRun 不入桌面词表——avatarGlobalObjectId 桌面无事实源）；App.tsx
-    case "inspection" 路由＋四语 nav/inspection 词面。
-  - 调整方向登记：**页面去留候新提案**（不自行删除页面、不自行改挂新面）；
-    **能力面保留**＝检测服务（inspection-queries v0.1 读面端口）、恢复准入
-    （U19 交棒准入状态白名单＋独立打开路径——设计标准 0.7.19 明文 0.7.14
-    白名单在「检测收进制作记录」后保留）、证据记录能力（inspection-evidence
-    v0.1）全部不动；「未执行的检查不显示为通过」与既有 basis 逐维标注
-    （bridge_local_estimate＝本地估算非官方）同律延续。
-  - **M7 桌面半边目标按 1.5.0 改写**（登记，未实现）：「Inspection/Release
-    页面与官方 SDK 交接」行的桌面半边目标＝Release 页为制作记录主面（成品
-    卡/版本/快照/Build Record/官方 SDK 交接＋**运行占位记录呈现——占位记录
-    不冒充已完成 Build Record**）；检测问题呈现＝**通知中心＋记录状态双通
-    道**（两处都能打开说明、日志与后续操作；关闭通知≠问题消失）。落形落点：
-    通知呈现候用既有持久化通知与模态所有权（wt-8 R4–R6 已落 main，
-    2026-09-21 合并 06ec6390）；产品词「通知中心」独立面尚未成形，形状候新
-    提案。检测页既有读面消费归入制作记录后，其独立页去留候新提案裁决
-    （outline 2.0.14 注「上表行保留备查，新方向为已接受、尚未实现」同口径）。
-- **②Wizard 路径选择＋Quest 教程（新功能域落点登记；只登记范围与依赖，
-  不立项不实施——立项候用户排优先序）**：
-  - 范围（1.5.0 已确认范围节）：Wizard 依据目标、设备和当前状态为用户选择
-    路径，不要求所有玩家走完一条固定大流程（完整流程覆盖仍保留为能力）；
-    设备准备增 Quest 初次激活教程，区分独立运行与连接 PC；引导与教程不能
-    代替账号认证或平台授权。
-  - 桌面落点盘点（现状事实）：`features/onboarding`＋onboarding-model
-    GoalId（与 nav BusinessModuleId 同源）、guide 模块五页（start/basics/
-    safety/devices/tutorials）、settings-goals 目标重选、`features/tutorial`。
-    Wizard 方向＝入口 IA 方向变化（wt-main 留言②），落形候立项，本拍零动
-    作。
-  - 依赖登记：①设备/状态事实源依赖环境域侦测面（Quest 教程区分独立运行/
-    连接 PC 需设备类型事实，候环境域事实源）；②「配方驱动车间经 Wizard
-    引导进入」＝U16 行裁决注记①既有语义（选择制作路径后适用的 Recipe 制
-    作流程保留、不触发入口重构）——Wizard 的「制作」路径终点落 029 A 面
-    配方页中枢（A1–A6 落形在库）；③账号认证/平台授权红线不变（BOOTH 隔离
-    Session 与 U7①/U9 浏览纪律照旧）。
-- **③素材来源「分享时再补」（导入/配方 UX 变更方向登记；落点登记不立项）**：
-  - 方向四点（1.5.0 素材来源节）：导入和本地使用不要求立即填 BOOTH ID；
-    真正分享时只补本次 Recipe 涉及且缺源的素材；已购库/商品网页点选、关键
-    词搜索候选列表、批量关联优先于逐个键入；已确认关联记住、人工补充尽量
-    少尽量晚。BOOTH ID＝来源声明非 VUA 认证；复现者自用自己的 BOOTH 权限。
-  - 落点盘点：①导入链（仓储页 hero 弹窗→warehouse.import bdl-commands
-    v0.3 提交链）——现状导入表单无 BOOTH ID 必填输入（来源面＝仓储条目
-    sourceUrl 事实行＋内嵌浏览，import-model.ts 实读），「尽量少填」方向落
-    形＝导入 UX 收敛候立项；②配方页 A3 素材选择器（第 164 批已落＝仓储读
-    面投影，云端段 #46 诚实缺席）与 B 面草稿确认补全流（第 166 批已落：
-    source_ref 缺席即缺席、不以文件路径伪装来源、「导出不宣称还原设计意图」
-    诚实注记）——与「分享时再补」同向已成立；③分享/导出面（
-    recipe.exportProjectDraft 消费；Recipe 分享边界＝BOOTH 引用＋受支持标
-    量选项，不含自定义贴图/FBX/付费本体/编码变相内容）。
-  - 依赖登记：「已购库点选/关键词候选」依赖数据域 BDL 来源关联与商品候选
-    事实源（#46/030 链）；「已确认关联记住」依赖 BDL 来源关联持久化面（数
-    据域）；桌面侧候立项后按真实事实源接线，不预接可用假象（诚实律）。
-- **④029 既有成果判定（结论＝维持，不被取代）**：配方驱动车间方向与 1.5.0
-  一致（U16 行裁决注记①：裁决取消的是「所有玩家必须走完一条大流程」，选
-  择制作路径后适用的 Recipe 制作流程保留、由 Wizard 按目标/设备/状态引导
-  进入、不触发入口重构）。**A 面三切片**＝切片一「配方中枢接线」（A4+A5，
-  第 160 批已入库）＋切片三「添加素材＋创建升格」（A1+A2+A3 本地段，第 164
-  批已入库）维持；**切片二「车间降级状态面」（A6）候操作者派发维持候派**；
-  **B 面四环闭环**（环 4 桌面消费第 166 批入库）维持。
-  - **叠加语义依赖关系登记（不自行设计）**：Recipe＝可叠加修改集（类 mod
-    管理器：叠加应用未提及内容默认保留；冲突四选项＝Recipe 优先/Avatar
-    优先/新建 Avatar 承载〔推荐〕/取消，只及 Recipe 涉及字段；对象定位歧义
-    ≠数值冲突）对配方页编辑链（唯一保存链/D5 查重/baseRevision 版本链/文
-    档模式三视图/组装发起确认链）的具体影响**候核心差距清单（核心本拍产
-    出）**；桌面侧候其清单后按差距登记桌面落形切片（候选呈现面＝组装发起
-    前冲突四选项呈现、未提及内容默认保留的诚实呈现、对象定位歧义与数值冲
-    突的呈现分桶——仅登记候选，零设计零实施）。待验证三态（对象定位/
-    Recipe 字段与编码/冲突处理实现）桌面全程不标已解决。
-- **对账附注（dependencies.* v0.5 TS 面基建，第 172 批）**：1.5.0 BDL 节明
-  文保留基础存储/素材身份/来源关联/目录能力——dependencies.lookup/
-  listByProduct（线索/建议面）属合法读面基建，零调整；「没证据＝未知」与
-  端口「线索非结论」结构钉同向；消费 UI 挂载维持 U18 终裁门不变（U18 行裁
-  决注记：方向暂认可维持、终裁候实机＋BOOTH 数据统计；依赖降级路径系待验
-  证项）。172 批残余风险两条现状：wire 错误码闭集已随 170/171/172 批对表
-  闭环（家族三注册码复用、白名单零增行，集成前录③载明）；「六码」口径候
-  操作者勘误（沿登未决）。
+## 前情(本域链,全文见本文件 git 历史与 BOARD 前录)
+第 177 批(09-23 08:5x–09:3x)＝W25 走查阻断缺陷修复批:缺陷①顶栏首判
+fonts.ready 已修+缺陷②导入入口本地/云端分流已落(用户裁决)+缺陷③b
+BOOTH 登录态线索面 signInHint 已落(登录页路径勘误
+/users/sign_in 同批三处同步)+缺陷③挂死未复现如实登记+取证透传交付
+(VUA_ELECTRON_ARGS)+误伤事故留痕;候集成验收。更早＝第 176 批 1.5.0
+对账、172 批 bdl-queries v0.5 消费准备、166/160/164 批 029 闭环与 A 面。
 
-## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 172 批（06:1x–06:5x，经集成第 170/171/172 批收编 d5e24bf9 入库）＝
-bdl-queries v0.5 TS 面消费准备切片（两方法契约面镜像＋端口＋缺席臂＋四语
-词面基建，消费页面零挂载）。第 169 批＝material 家族错误词表桌面补齐。更早
-＝029 B 面四环闭环（166 批）与 A 面切片（160/164 批），见 git 历史与
-BOARD 前录。
-
-## 本轮交付（f044c821 基线世代）
-- **追平壳 dd8840e5**（--no-ff 吸收 main f044c821＝第 173–175 批收编＋
-  product-boundary 1.5.0 落账＋doc-debt-cleanup PR #8 世代；merge-tree 预检
-  exit 0 零冲突，零自有内容纯吸收）。
-- **对账批＝collab 两文件**：本状态批恰本文件＋029 内联线程桌面回复一节
-  （④维持判定＋叠加语义依赖登记＋Wizard 依赖指针，供核心差距清单消费）。
-- 零代码零 schema 零 docs/ 触碰；纯 collab 批免全量测试照章。
+## 本轮交付(d5369061 基线世代)
+- **实现批＝13 文件全在本席所有权域**:apps/desktop 十一
+  (features/import/ImportPage.tsx 三型反馈+两段接线+受理计时/
+  features/import/import-model.ts 纯件两枚+import-model.test.ts 三例
+  +features/import/import-page.css 失败动作位+features/warehouse/
+  WarehousePage.tsx onRequestClose 线+i18n 四语表 acceptedAutoClose+
+  scripts/fixtures/import-dialog-modal.tsx 新+scripts/
+  smoke-import-dialog.mjs 新+scripts/fixtures/production-review.tsx
+  夹具适配+package.json smoke 脚本位)。
+- **夹具适配如实登记**:production-review smoke 的「ImportPage 工具条
+  不 inert」断言自第 177 批来源分流起过期(云端段须显式选择后激活;该批
+  门禁未含此 smoke,回归未察觉——本批如实补记)。修正=夹具随新诚实流程
+  先选「云端导入」再钉原断言(语义不变)+signInHint 桩(缺陷③b 面适配),
+  现 97/97 全过,断言语义零放松。
+- **门禁读数(如实)**:typecheck 双 tsconfig 零错;vitest 97 文件
+  **911/911**(908 基线+恰 3 新例=createAutoCloseTimer 生命周期:时滞单
+  次触发不提前不双发/cancel 幂等防触发/重入先清旧柄);pnpm build 成功
+  (chunk 尺寸警告为既有提示非错误);check:boundary/i18n+tables/
+  contrast/leak(155 指纹零泄漏,独立生产构建)/forest-leak 全过;
+  smoke:import-dialog 25/25+smoke:production-review 97/97(真机
+  Chromium DOM,合成 Gateway,证据如上)。环境事实:VUA-7 零触碰(阅读
+  解禁未动树);零端到端宣称——smoke 系真实 Chromium DOM+合成 Gateway,
+  真机 Gateway 全链归用户走查行使。
 
 ## 在途/待他角色
-- **[等集成] 本拍两笔候验收**（追平壳 dd8840e5＋对账批两文件），写明
-  「wt-3 第 176 批 1.5.0 对账批（桌面域 TICK v1.7 核对；基线 f044c821）」。
-- **[候操作者] 029 A 面切片二（A6 车间降级状态面）派发候窗维持**；「六码」
-  口径勘误候裁（沿登）。
-- **[候核心] 叠加语义差距清单**（核心本拍产出）——产出后桌面按其差距登记
-  桌面落形切片，本拍零预设计。
-- **[候用户] Wizard 路径选择＋Quest 教程立项排优先序**（本拍只登记范围与
-  依赖，未立项）；素材来源「分享时再补」UX 收敛立项同此；检测页去留候新提
-  案。
-- **[等用户] W25 真机复验维持**；U18 终裁前零端到端宣称维持。
+- **[等集成] 本拍两笔候验收**(实现批+本状态批),写明「wt-3 第 178 批
+  W25 走查第二缺陷修复批(基线 d5369061)」。重点复核面:①受理自动关闭
+  时滞 1500ms 与失败驻留取消计时的语义面;②onRequestClose 关闭请求线
+  不动 ContentDialog/模态层机制本体(Esc/背板/×/焦点恢复/inert 全保持);
+  ③失败详情词面 failureLogText 律(稳定码随词面);④production-review
+  夹具适配零断言放松;⑤i18n 四语键齐(check:tables 过)。
+- **[知会 wt-4] 两处勘误已兑现**(本状态批留痕订正,历史文件不改写);
+  REGISTRY amf-unity 行 1.2.0 系 patch 漂移容忍非错误,不动。
+- **[知会 wt-8] production-review 夹具适配**(第 177 批来源分流致两处
+  过期断言,本批随新流程修正,97/97;断言语义零放松)。
+- **[等用户] W25 真机走查继续**:交付栈带本批修复常驻(CDP 51993),受
+  理态自动关闭/失败醒目可关可直接走查;真机全链行使归用户。
 
 ## 阻塞
-- 无阻塞。
+- 无阻塞。第 177 批 [需用户]「挂死再发取证协作」随操作者 CDP 验尸定案
+  (根因=受理态弹窗滞留,本批修复)了结;仓库重复入库条目(约 95MB)清理
+  仍候裁不擅动。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔（--no-ff）：追平壳 dd8840e5＋对账批（collab/state/
-wt-3.md＋collab/proposals/029-recipe-driven-workshop-and-project-export.md
-恰两文件），写明「wt-3 第 176 批 1.5.0 对账批（桌面域 TICK v1.7 核对；基线
-f044c821）」**。纯 collab 面零代码，免全量测试照章。重点复核面：①对账结论
-与 1.5.0 正文/U16 行裁决注记/设计标准 0.7.19 注记三方一致；②零代决（页面
-去留候新提案、Wizard 与素材来源 UX 立项候用户、叠加语义候核心差距清单）；
-③029 线程节只登记依赖与判定，零设计零实施；④零代码零 schema 零 docs/
-触碰。
+**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25 走查第二缺陷修复批
+(基线 d5369061)」**。零契约面变化(packages/contracts 零触碰,wire 零
+新增载荷);全部改动在 apps/desktop 所有权域内;模态层
+(modal-layer/ContentDialog)机制零触碰。
 
-## 待命声明（第 6 步，如实）
-本轮（2026-09-23 01:4x–02:1x，节拍轮正常工作时段 date 01:43 实测；两笔：追
-平壳＋对账批）：①date 01:43 实测正常时段；pnpm collab:brief 判读＝指向本
-树三条留言（wt-main 1.5.0 核对、wt-7 方向纪律、wt-8 R4–R6 知会）全部在本
-拍对账范围内消化；失鲜工作树无；②轮首读 PROTECTED_MAIN.md（操作前义务），
-追平壳 dd8840e5（落后 20/领先 0，merge-tree 预检 exit 0 零冲突，--no-ff 纯
-吸收，零触 main）；③领取操作者第 176 批指派，实读 product-boundary_ZH
-1.5.0 全节＋outline M7 分解表 2.0.14 注＋设计标准 0.7.19/0.7.20 §8.6＋
-BOARD 最新裁决节/U16/U18/M7 行＋029 提案全文与内联线程；④桌面域代码面只
-读盘点（nav-model.ts/InspectionPage.tsx/inspection-port.ts/App.tsx/
-import-model.ts/onboarding/guide/tutorial 目录清单）；⑤对账四项落注记（见
-当前焦点①–④；页面去留候新提案、能力面保留、M7 桌面半边目标改写登记；
-Wizard/Quest 只登记范围与依赖不立项；素材来源四点落点登记不立项；029 成果
-维持＋叠加语义依赖登记候核心差距清单）＋dependencies.* 基建对账附注；⑥
-029 内联线程桌面回复一节；⑦诚实边界：零代码零 schema 零 docs/ 触碰，
-collab/roles/ 不动；[需用户]/候提案条目零代决（页面去留、Wizard 立项、素
-材来源 UX 立项均如实候裁决或提案）；VUA-7 全程零触碰（本拍未访问 VUA-7 路
-径）；磁盘 73% 沿登未复测（零构建零测试跑动）；纯 collab 批免全量测试照
-章。在手无半途切片、除本批外无未提交改动。完成后推送并退出待命，候集成验
-收本拍两笔。
+## 待命声明(第 6 步,如实)
+本轮(2026-09-23 09:4x–10:4x,操作者派单用户在等任务,节拍轮 wip 时窗内
+按派单执行):①date 09:49 实测;collab:brief 判读=指向本树无新阻塞,
+slot/wt-3 领先 4(第 177 批两笔候验收不变);②领取操作者第 178 批派单
+(受理态滞留 UX 修复+勘误兑现),审读 ImportPage/ContentDialog/
+modal-layer/WarehousePage/production-workshop-view(failureLogText 律)
+/acquire-model;③import-model 纯件两枚+三例 vitest;④ImportPage 三型
+反馈+两段接线+失败详情律+WarehousePage 关闭请求线+CSS+i18n 四语;⑤
+新 smoke 夹具与脚本,真机 Chromium 25/25;⑥production-review smoke
+过期断言如实定位(177 批引入、门禁未含此 smoke),夹具适配后 97/97;⑦
+门禁全绿读数如上;⑧勘误两处逐字订正(schema enum 实数 16+文档头部
+1.2.1 实核+REGISTRY patch 漂移定性);⑨状态批+提交+交付栈带修复与 CDP
+51993 常驻。在手无半途切片、除本批外无未提交改动。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝本拍两笔（--no-ff），写明「wt-3 第 176
-  批 1.5.0 对账批（桌面域 TICK v1.7 核对；基线 f044c821）」**——追平壳
-  dd8840e5＋对账批恰两文件（本状态文件＋029 内联线程桌面回复一节）。重点
-  复核面见「下次合并意图」①–④。
-- [→核心/wt-2]（叠加语义差距清单依赖登记）：桌面侧 029 配方页编辑链受「叠
-  加语义」（可叠加修改集＋冲突四选项＋对象定位歧义≠数值冲突）影响的落形
-  候你们差距清单（本拍产出）；桌面已登记依赖关系（本状态文件④＋029 内联
-  线程桌面节），差距清单产出后桌面按差距登记消费切片，零预设计零代笔。
-- [→操作者] 第 176 批办理完毕：四项对账落账。三件事候裁/候提案如实申明：
-  检测页去留候新提案；Wizard 路径选择＋Quest 教程与素材来源「分享时再补」
-  UX 只登记范围与依赖未立项（候用户排优先序）；029 A 面切片二（A6 车间降
-  级状态面）仍候派发。
-- （回执不回执：wt-4/wt-5/wt-6/wt-7/wt-8 无新知会；在途事项以 BOARD 与本
-  状态文件当前焦点为准。）
+- [→集成] 验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25
+  走查第二缺陷修复批(基线 d5369061)」**,重点复核面见「下次合并意
+  图」;另请将第 177 批两笔与本批一并排验收(同分支世代相承)。
+- [→操作者/用户] 四项派单全兑现:受理自动关闭 1.5s+失败驻留醒目可关+
+  三关闭路径真机 DOM 钉测+两处勘误兑现登记;交付栈带修复+CDP 51993 常
+  驻,可直接继续走查。真机端到端未宣称,以走查行使为准。
+- [→wt-4] 两处勘误(第 176 批状态批 v4 逐名漏 validate_asset_paths+
+  amf-unity 版本词两表)已在本状态批留痕订正,历史文件未改写;REGISTRY
+  行 1.2.0 系 patch 漂移容忍非错误。
+- [→wt-8] production-review 夹具两断言随第 177 批分流过期,本批适配
+  (先选云端再钉原断言+signInHint 桩),97/97,断言语义零放松。
+- (回执不回执:在途事项以 BOARD 与本状态文件当前焦点为准。)

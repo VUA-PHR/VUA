@@ -353,6 +353,7 @@ async function importTests() {
   let listeners = new Set<(event: any) => void>(); let closed = 0, next = 0;
   window.vua = { gateway: { invoke }, capabilities: { remoteBrowser: true }, remoteContent: {
     events: { subscribe: (listener: any) => { listeners.add(listener); return () => listeners.delete(listener); } },
+    signInHint: async () => "stored",
     open: async () => { const viewId = `synthetic-${++next}`;
       const state = { viewId, currentUrl: "https://booth.pm/", canGoBack: false, canGoForward: false, loading: false };
       queueMicrotask(() => listeners.forEach((listener) => listener({ kind: "view-opened", viewId, url: state.currentUrl })));
@@ -360,6 +361,11 @@ async function importTests() {
     close: async (viewId: string) => { closed++; listeners.forEach((listener) => listener({ kind: "view-closed", viewId })); },
   } } as any;
   root.render(<StrictMode><GatewayProvider gateway={gateway}><ContentDialog open title="import" closeLabel="close" onClose={() => {}}><ImportPage /></ContentDialog></GatewayProvider></StrictMode>);
+  await wait(); await wait();
+  // W25 走查缺陷②来源分流(用户裁决 2026-09-23):云端段只在显式选择后
+  // 激活——夹具随行先选「云端导入」,原断言语义(工具条不 inert、可点)
+  // 不变;signInHint 桩为同批新增(缺陷③b 首导线索面)。
+  await click(strings.importPage.chooseCloudCta);
   await wait(); await wait();
   const bar = document.querySelector<HTMLElement>(".vua-import__browse-bar");
   check(bar && bar.parentElement === document.body && !bar.closest("[inert]"), "actual ImportPage body toolbar is not inert");

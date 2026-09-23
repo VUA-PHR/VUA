@@ -15,11 +15,14 @@ import { format, strings } from "../../i18n/index.ts";
 import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
   BOOTH_HOME_URL,
+  BOOTH_SIGN_IN_URL,
   browseAvailability,
   classifyRemoteOpenError,
+  createAutoCloseTimer,
   createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
+  initialBrowseUrl,
   initialEmbeddedBrowseState,
   normalizeBrowseAddress,
   bytesText,
@@ -73,6 +76,17 @@ function commandErrorTextFor(error: {
   code?: string;
 }): string {
   return commandErrorText(error, acquireCopy.commandErrors as Record<string, string>);
+}
+
+/** 失败详情词面(律同 production-workshop-view.failureLogText):本地化
+ *  文案之外保留协议稳定码——词面不可解释时码仍是可取证细节,失败以失败
+ *  呈现不吞细节。 */
+function failureDetailText(error: {
+  kind: "unavailable" | "request_rejected" | "application";
+  code?: string;
+}): string {
+  const base = commandErrorTextFor(error);
+  return typeof error.code === "string" && error.code !== "" ? `${base} (${error.code})` : base;
 }
 
 /** 内嵌视图 open 失败文案映射(BOARD #39 修复):按拒绝原因呈现——
@@ -168,14 +182,23 @@ function EmbeddedBrowsePanel({
     });
   };
 
-  // 首开自动导航默认首页(booth.pm,允许清单内;用户实测缺口修复):
-  // 仅面板挂载且无打开视图时执行一次——用户关闭视图后不强行重开,
-  // 后续导航历史照常保留。StrictMode 双调用下首挂的 open 在次挂后
-  // 落定,由生命周期代次判失配随即关闭,只留次挂(#37 修复)视图
+  // 首开自动导航(W25 走查缺陷③b 改造):先取本机登录态线索——未登录
+  // 线索引导登录页(accounts.booth.pm/sign_in),已登录/未知回落 booth.pm
+  // 主页(unknown 不冒充已检测)。仅面板挂载且无打开视图时执行一次——
+  // 用户关闭视图后不强行重开,后续导航历史照常保留。StrictMode 双调用下
+  // 首挂的 open 在次挂后落定,由生命周期代次判失配随即关闭,只留次挂
+  // (#37 修复)视图。线索探测异步一瞬,落定前不开视图,不呈现猜测态。
   useEffect(() => {
     if (availability.kind !== "available") return;
-    if (window.vua?.remoteContent === undefined) return;
-    openAddress(BOOTH_HOME_URL);
+    const remote = window.vua?.remoteContent;
+    if (remote === undefined) return;
+    let active = true;
+    void remote.signInHint().then((hint) => {
+      if (active) openAddress(initialBrowseUrl(hint));
+    });
+    return () => {
+      active = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载一次性动作
   }, [availability.kind]);
 
@@ -344,17 +367,46 @@ function EmbeddedBrowsePanel({
 
 /* ---- 本地段:W18 提交流(仓储页 verbatim 迁入,IMP-4 收口) ---- */
 
-function LocalImportSection() {
+/** 本地段提交回执的呈现态:受理/失败/提示三型——失败以 alert 呈现并取消
+ *  在飞自动关闭(失败需用户知悉,不静默关走),受理以 status 呈现并武装
+ *  自动关闭计时,提示(如空选)仅 status 呈现。 */
+interface ImportFeedback {
+  readonly kind: "accepted" | "failure" | "notice";
+  readonly text: string;
+}
+
+/** 关闭请求线属性(exactOptionalPropertyTypes 下显式容 undefined:解构
+ *  透传链上 undefined 合法——无宿主即无请求,不猜测)。 */
+interface ImportCloseRequest {
+  readonly onRequestClose?: (() => void) | undefined;
+}
+
+function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
   const gateway = useGateway();
   const [pendingFolders, setPendingFolders] = useState<readonly string[] | null>(null);
   const [importBusy, setImportBusy] = useState(false);
-  const [importFeedback, setImportFeedback] = useState<string | null>(null);
+  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
+  // 受理态自动关闭(W25 走查缺陷③根因修复):受理后弹窗短暂呈现「已受理」
+  // 随即自动关闭,任务进度归任务中心——模态滞留(背景全部 inert)被用户
+  // 视作整屏卡死的行为终止。计数器驱动:同窗内二次受理重新计时;失败反馈
+  // 在场即取消在飞计时(失败驻留,不静默关走);卸载/手动先关即清理,重开
+  // 弹窗(重挂载)不被旧定时器误关。回调经 ref 读取,宿主重渲染不重排
+  // 定时器。
+  const [acceptedTick, setAcceptedTick] = useState(0);
+  const requestCloseRef = useRef(onRequestClose);
+  requestCloseRef.current = onRequestClose;
+  useEffect(() => {
+    if (acceptedTick === 0 || importFeedback?.kind === "failure") return undefined;
+    const timer = createAutoCloseTimer(() => requestCloseRef.current?.());
+    timer.schedule();
+    return () => timer.cancel();
+  }, [acceptedTick, importFeedback]);
 
   const startImport = () => {
     setImportFeedback(null);
     void window.vua?.dialog.pickWarehouseFolders().then((folders) => {
       if (folders === null || folders.length === 0) {
-        setImportFeedback(folders === null ? null : acquireCopy.importEmptySelection);
+        setImportFeedback(folders === null ? null : { kind: "notice", text: acquireCopy.importEmptySelection });
         return;
       }
       setPendingFolders(folders);
@@ -368,9 +420,12 @@ function LocalImportSection() {
       setImportBusy(false);
       if (outcome.ok) {
         setPendingFolders(null);
-        setImportFeedback(acquireCopy.importAccepted);
+        setImportFeedback({ kind: "accepted", text: acquireCopy.importAccepted });
+        setAcceptedTick((tick) => tick + 1);
       } else {
-        setImportFeedback(commandErrorTextFor(outcome.error));
+        // 失败态保持打开(失败需用户知悉):醒目主按钮「关闭」为主动线,
+        // × 仅辅助;详情词面按 failureLogText 律保留协议稳定码。
+        setImportFeedback({ kind: "failure", text: failureDetailText(outcome.error) });
       }
     });
   };
@@ -381,8 +436,16 @@ function LocalImportSection() {
         {acquireCopy.importTitle}
       </Button>
       {importFeedback !== null ? (
+        <p
+          className="vua-caption vua-text-secondary"
+          role={importFeedback.kind === "failure" ? "alert" : "status"}
+        >
+          {importFeedback.text}
+        </p>
+      ) : null}
+      {importFeedback?.kind === "accepted" ? (
         <p className="vua-caption vua-text-secondary" role="status">
-          {importFeedback}
+          {copy.acceptedAutoClose}
         </p>
       ) : null}
       {pendingFolders !== null ? (
@@ -414,6 +477,13 @@ function LocalImportSection() {
           </div>
         </div>
       ) : null}
+      {importFeedback?.kind === "failure" ? (
+        <div className="vua-import__failure-actions">
+          <Button variant="primary" onClick={() => requestCloseRef.current?.()}>
+            {strings.common.dialogClose}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -428,14 +498,25 @@ interface DownloadsViewLoaded {
   readonly downloads: readonly DownloadsListCompletedItemV04[];
 }
 
-function CompletedDownloadsPanel() {
+function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
   const gateway = useGateway();
   const [state, setState] = useState<DownloadsViewState | DownloadsViewLoaded>({
     kind: "loading",
   });
   const [reloadKey, setReloadKey] = useState(0);
   const [adoptBusyId, setAdoptBusyId] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
+  // 采纳受理同样自动关闭(W25 走查缺陷③同根因:采纳即导入任务受理,模态
+  // 滞留同形态)。计数器驱动＋失败在场取消计时,语义与本地段一致。
+  const [acceptedTick, setAcceptedTick] = useState(0);
+  const requestCloseRef = useRef(onRequestClose);
+  requestCloseRef.current = onRequestClose;
+  useEffect(() => {
+    if (acceptedTick === 0 || feedback?.kind === "failure") return undefined;
+    const timer = createAutoCloseTimer(() => requestCloseRef.current?.());
+    timer.schedule();
+    return () => timer.cancel();
+  }, [acceptedTick, feedback]);
 
   useEffect(() => {
     let active = true;
@@ -471,14 +552,13 @@ function CompletedDownloadsPanel() {
     void gateway.warehouseCommands.importDownloads([downloadId]).then((outcome: WarehouseCommandOutcome) => {
       setAdoptBusyId(null);
       if (outcome.ok) {
-        setFeedback(copy.downloadAccepted);
+        setFeedback({ kind: "accepted", text: copy.downloadAccepted });
+        setAcceptedTick((tick) => tick + 1);
         setReloadKey((key) => key + 1);
       } else {
-        setFeedback(
-          outcome.error.kind === "application"
-            ? `${commandErrorTextFor(outcome.error)}`
-            : acquireCopy.commandErrors.vua_warehouse_unavailable,
-        );
+        // 失败态保持打开:醒目主按钮「关闭」＋详情词面(failureLogText 律),
+        // 与本地段同一失败呈现律。
+        setFeedback({ kind: "failure", text: failureDetailText(outcome.error) });
       }
     });
   };
@@ -486,9 +566,24 @@ function CompletedDownloadsPanel() {
   return (
     <div className="vua-import__downloads">
       {feedback !== null ? (
-        <p className="vua-caption vua-text-secondary" role="status">
-          {feedback}
+        <p
+          className="vua-caption vua-text-secondary"
+          role={feedback.kind === "failure" ? "alert" : "status"}
+        >
+          {feedback.text}
         </p>
+      ) : null}
+      {feedback?.kind === "accepted" ? (
+        <p className="vua-caption vua-text-secondary" role="status">
+          {copy.acceptedAutoClose}
+        </p>
+      ) : null}
+      {feedback?.kind === "failure" ? (
+        <div className="vua-import__failure-actions">
+          <Button variant="primary" onClick={() => requestCloseRef.current?.()}>
+            {strings.common.dialogClose}
+          </Button>
+        </div>
       ) : null}
       {state.kind === "loading" ? (
         <p className="vua-caption vua-text-secondary">{acquireCopy.importConfirmTitle}</p>
@@ -538,7 +633,7 @@ function CompletedDownloadsPanel() {
 
 /* ---- 页面 ---- */
 
-export function ImportPage() {
+export function ImportPage({ onRequestClose }: ImportCloseRequest = {}) {
   // 能力两态数据源 = 壳能力自报(proposal 015 §11 仲裁方案 a:能力拥有者
   // (Electron 壳)经 preload 面静态自报,不经 provider 转述)。无壳环境
   // (浏览器开发)保守不可用;非函数态读取同样保守不可用。
@@ -546,6 +641,14 @@ export function ImportPage() {
     () => browseAvailability(window.vua?.capabilities?.remoteBrowser),
     [],
   );
+  // 来源分流(W25 走查缺陷②,用户裁决期望):弹窗打开先选「本地导入/
+  // 云端导入」再进入对应段——不再同时铺开两段,云端段(内嵌 BOOTH 视图)
+  // 只在用户显式选择后激活,不再一开弹窗就自动盖出浏览器。弹窗关闭即
+  // 卸载组件,重开回到选择态(诚实起点,无记忆猜测)。
+  // onRequestClose(W25 走查缺陷③根因修复):宿主弹窗的关闭请求线——
+  // 受理态自动关闭计时与失败态醒目「关闭」主按钮都经此线收口;缺省
+  // (如独立夹具挂载)诚实降级为无自动关闭,不猜测宿主。
+  const [section, setSection] = useState<"choose" | "local" | "cloud">("choose");
 
   return (
     <div className="vua-page">
@@ -554,25 +657,51 @@ export function ImportPage() {
         <p className="vua-caption vua-text-secondary">{copy.subtitle}</p>
       </section>
 
-      <Card>
-        <div className="vua-page__stack">
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
-            <EmbeddedBrowsePanel availability={availability} />
-            <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
-            <CompletedDownloadsPanel />
-          </section>
-        </div>
-      </Card>
-
-      <Card>
-        <div className="vua-page__stack">
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">{copy.localTitle}</h3>
-            <LocalImportSection />
-          </section>
-        </div>
-      </Card>
+      {section === "choose" ? (
+        <Card>
+          <div className="vua-import__choose" role="group" aria-label={copy.chooseAria}>
+            <p className="vua-text-secondary">{copy.chooseLead}</p>
+            <div className="vua-import__choose-actions">
+              <Button variant="primary" onClick={() => setSection("local")}>
+                {copy.chooseLocalCta}
+              </Button>
+              <Button
+                variant="default"
+                disabled={availability.kind !== "available"}
+                onClick={() => setSection("cloud")}
+              >
+                {copy.chooseCloudCta}
+              </Button>
+            </div>
+            {availability.kind !== "available" ? (
+              <p className="vua-caption vua-text-secondary">{copy.cloudUnavailable}</p>
+            ) : null}
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="vua-page__stack">
+            <div>
+              <Button variant="subtle" onClick={() => setSection("choose")}>
+                {copy.rechooseCta}
+              </Button>
+            </div>
+            {section === "cloud" ? (
+              <section>
+                <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
+                <EmbeddedBrowsePanel availability={availability} />
+                <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
+                <CompletedDownloadsPanel onRequestClose={onRequestClose} />
+              </section>
+            ) : (
+              <section>
+                <h3 className="vua-warehouse-detail__section-title">{copy.localTitle}</h3>
+                <LocalImportSection onRequestClose={onRequestClose} />
+              </section>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

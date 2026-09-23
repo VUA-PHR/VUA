@@ -78,6 +78,7 @@ const api: VuaDesktopApiV1 = Object.freeze({
     close: (viewId: string) => ipcRenderer.invoke("vua:remote-content:close", viewId),
     setVisible: (viewId: string, visible: boolean) =>
       ipcRenderer.invoke("vua:remote-content:set-visible", viewId, visible),
+    signInHint: () => ipcRenderer.invoke("vua:remote-content:sign-in-hint"),
     events: Object.freeze({
       subscribe: (listener: (event: RemoteContentEventV1) => void) => {
         const wrapped = (_event: IpcRendererEvent, payload: RemoteContentEventV1) => listener(payload);

@@ -1199,6 +1199,14 @@ export interface RemoteContentApiV1 {
   reload(viewId: string): Promise<RemoteContentViewStateV1>;
   close(viewId: string): Promise<void>;
   setVisible(viewId: string, visible: boolean): Promise<RemoteContentViewStateV1>;
+  /** BOOTH 登录态线索(只读探测;W25 走查缺陷③b 最小实现):检查本机分区
+   *  Session 中账户域(accounts.booth.pm)是否存在已存 Cookie——Cookie 值
+   *  永不过本面(只返回三态线索,不读取、不传输内容)。"stored" = 账户域有
+   *  存储痕迹(大概率登录过,首导主页);"none" = 无痕迹(引导登录页);
+   *  "unknown" = 探测失败(诚实未知,回落主页,不冒充已检测)。会话 cookie
+   *  名无公开文档,不作具体键名猜测;本线索非登录判定,登录与否以站点
+   *  实际呈现为准。 */
+  signInHint(): Promise<"stored" | "none" | "unknown">;
   events: { subscribe(listener: (event: RemoteContentEventV1) => void): () => void };
 }
 
