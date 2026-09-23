@@ -44,8 +44,38 @@ pub const STAGING_MANIFEST_JSON: &str = r#"{
 
 /// `%TEMP%\VUA_Staging_{session_id}` — never user-visible folders
 /// (Downloads/Desktop), where real-time antivirus scanning produces locks.
-pub fn staging_root(temp_root: &Path, session_id: &str) -> PathBuf {
-    temp_root.join(format!("VUA_Staging_{session_id}"))
+///
+/// 第 183 批反向审查（#43 路径形态族成员）：`session_id` 是文件名组件，而
+/// 生产 wire 上它就是客户端可控的确认 `correlationId`（provider-host 帧层
+/// 原样透传、无词面校验）。这里在命名点钉词面守卫——字符闭集与 Bridge C#
+/// 侧 commandId 语法同族（`^[A-Za-z0-9_-]{1,128}$`，uuid-v7、`task-*`、
+/// `material-<hex>` 全部满足）——含路径分隔符、`..`、盘符/verbatim 前缀、
+/// 空白或超长的 id 在**任何目录创建之前**即被拒绝：宿敌 id 走诚实失败臂
+/// （STAGING_FAILED、快照回滚、Failed 收据），绝不物化到 temp root 之外。
+pub fn staging_root(temp_root: &Path, session_id: &str) -> io::Result<PathBuf> {
+    validate_session_id(session_id)?;
+    Ok(temp_root.join(format!("VUA_Staging_{session_id}")))
+}
+
+/// The staging-safe word face for identifiers used as filename components.
+/// Same character class the Bridge C# side enforces for command ids
+/// (`^[A-Za-z0-9_-]{1,128}$`). The error message carries only the length,
+/// never the rejected value — hostile content must not propagate into
+/// receipts or logs.
+fn validate_session_id(session_id: &str) -> io::Result<()> {
+    let valid = !session_id.is_empty()
+        && session_id.len() <= 128
+        && session_id
+            .chars()
+            .all(|character| character.is_ascii_alphanumeric() || character == '-' || character == '_');
+    if valid {
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("invalid staging session id (len {})", session_id.len()),
+        ))
+    }
 }
 
 /// One staging project guarded for the duration of one atomic task.
@@ -59,7 +89,7 @@ impl StagingProject {
     /// `%TEMP%\VUA_Staging_{session_id}` and writes the `.vua/staging.json`
     /// token marker the Bridge requires for `create_local_vpm_package`.
     pub fn create(temp_root: &Path, session_id: &str, staging_token: &str) -> io::Result<Self> {
-        let root = staging_root(temp_root, session_id);
+        let root = staging_root(temp_root, session_id)?;
         fs::create_dir_all(root.join("Assets"))?;
         fs::create_dir_all(root.join("ProjectSettings"))?;
         fs::create_dir_all(root.join("Packages"))?;
@@ -91,7 +121,7 @@ impl StagingProject {
         session_id: &str,
         staging_token: &str,
     ) -> io::Result<Self> {
-        let root = staging_root(temp_root, session_id);
+        let root = staging_root(temp_root, session_id)?;
         copy_tree(template_override_dir, &root)?;
         fs::create_dir_all(root.join(".vua"))?;
         fs::write(root.join(".vua").join("staging.json"), staging_token)?;

@@ -688,7 +688,8 @@ fn m3_real_local_reusable_vertical_slice() {
     }
 
     // The staging project is destroyed — no leftovers.
-    let staging_expected = vua_unity_bridge::staging_root(&base.join("temp"), correlation);
+    let staging_expected = vua_unity_bridge::staging_root(&base.join("temp"), correlation)
+        .expect("valid session id");
     assert!(
         !staging_expected.exists(),
         "staging leftovers poison later runs"
@@ -1250,8 +1251,11 @@ fn m3_real_local_reusable_cancel_at_step_boundary_records_facts() {
     );
     assert_eq!(report.error_code.as_deref(), Some("vua.material.cancelled"));
     assert!(report.build_record_id.is_some(), "cancelled runs get a receipt");
-    let staging_expected =
-        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    let staging_expected = vua_unity_bridge::staging_root(
+        &harness.base.join("temp"),
+        &harness.confirmation.correlation_id,
+    )
+    .expect("valid session id");
     assert!(!staging_expected.exists(), "cancelled staging must be destroyed");
 
     let _ = fs::remove_dir_all(&harness.base);
@@ -1343,8 +1347,11 @@ fn m3_real_local_reusable_bridge_timeout_budget_is_enforced() {
 #[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER); injects a staging mutation mid-run"]
 fn m3_real_local_reusable_staging_rejection_restores_target() {
     let harness = p2_harness("vpm-reject");
-    let staging_dir =
-        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    let staging_dir = vua_unity_bridge::staging_root(
+        &harness.base.join("temp"),
+        &harness.confirmation.correlation_id,
+    )
+    .expect("valid session id");
     let injector = staging_dir.clone();
     std::thread::spawn(move || {
         // Wait until the first staging import has returned (its result file
@@ -1421,8 +1428,11 @@ fn m3_real_local_reusable_staging_rejection_restores_target() {
 #[ignore = "manual: launches real Unity 2022.3.22f1 (VUA_UNITY_EXECUTABLE + VUA_REAL_SOURCE_FOLDER); injects snapshot loss mid-run"]
 fn m3_real_local_reusable_rollback_failure_is_recorded_not_hidden() {
     let harness = p2_harness("vpm-rbfail");
-    let staging_dir =
-        vua_unity_bridge::staging_root(&harness.base.join("temp"), &harness.confirmation.correlation_id);
+    let staging_dir = vua_unity_bridge::staging_root(
+        &harness.base.join("temp"),
+        &harness.confirmation.correlation_id,
+    )
+    .expect("valid session id");
     let injector_root = harness.project_root.clone();
     let injector_staging = staging_dir.clone();
     std::thread::spawn(move || {
