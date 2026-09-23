@@ -14,6 +14,7 @@ import { commandErrorText } from "../warehouse/acquire-model.ts";
 import { format, strings } from "../../i18n/index.ts";
 import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
+  autoCloseArmed,
   BOOTH_HOME_URL,
   BOOTH_SIGN_IN_URL,
   browseAvailability,
@@ -388,19 +389,20 @@ function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
   const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
   // 受理态自动关闭(W25 走查缺陷③根因修复):受理后弹窗短暂呈现「已受理」
   // 随即自动关闭,任务进度归任务中心——模态滞留(背景全部 inert)被用户
-  // 视作整屏卡死的行为终止。计数器驱动:同窗内二次受理重新计时;失败反馈
-  // 在场即取消在飞计时(失败驻留,不静默关走);卸载/手动先关即清理,重开
-  // 弹窗(重挂载)不被旧定时器误关。回调经 ref 读取,宿主重渲染不重排
-  // 定时器。
-  const [acceptedTick, setAcceptedTick] = useState(0);
+  // 视作整屏卡死的行为终止。武装判据见 autoCloseArmed(import-model,第
+  // 181 批反向审查收紧):仅受理态武装;失败到达不武装(失败驻留);用户
+  // 在受理窗口内再次发起拾取(反馈被清空=用户接管)即取消在飞计时——
+  // 自动关闭不跑在用户进行中的操作下面;同窗二次受理经「清空→再置受理」
+  // 重新武装 = 重新计时。卸载/手动先关即清理,重开弹窗(重挂载)不被旧
+  // 定时器误关。回调经 ref 读取,宿主重渲染不重排定时器。
   const requestCloseRef = useRef(onRequestClose);
   requestCloseRef.current = onRequestClose;
   useEffect(() => {
-    if (acceptedTick === 0 || importFeedback?.kind === "failure") return undefined;
+    if (!autoCloseArmed(importFeedback)) return undefined;
     const timer = createAutoCloseTimer(() => requestCloseRef.current?.());
     timer.schedule();
     return () => timer.cancel();
-  }, [acceptedTick, importFeedback]);
+  }, [importFeedback]);
 
   const startImport = () => {
     setImportFeedback(null);
@@ -421,7 +423,6 @@ function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
       if (outcome.ok) {
         setPendingFolders(null);
         setImportFeedback({ kind: "accepted", text: acquireCopy.importAccepted });
-        setAcceptedTick((tick) => tick + 1);
       } else {
         // 失败态保持打开(失败需用户知悉):醒目主按钮「关闭」为主动线,
         // × 仅辅助;详情词面按 failureLogText 律保留协议稳定码。
@@ -507,16 +508,16 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
   const [adoptBusyId, setAdoptBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
   // 采纳受理同样自动关闭(W25 走查缺陷③同根因:采纳即导入任务受理,模态
-  // 滞留同形态)。计数器驱动＋失败在场取消计时,语义与本地段一致。
-  const [acceptedTick, setAcceptedTick] = useState(0);
+  // 滞留同形态)。武装判据与本地段同一纯件 autoCloseArmed(第 181 批反向
+  // 审查收紧,语义两段一致):失败驻留、用户接管取消计时、二次受理重新计时。
   const requestCloseRef = useRef(onRequestClose);
   requestCloseRef.current = onRequestClose;
   useEffect(() => {
-    if (acceptedTick === 0 || feedback?.kind === "failure") return undefined;
+    if (!autoCloseArmed(feedback)) return undefined;
     const timer = createAutoCloseTimer(() => requestCloseRef.current?.());
     timer.schedule();
     return () => timer.cancel();
-  }, [acceptedTick, feedback]);
+  }, [feedback]);
 
   useEffect(() => {
     let active = true;
@@ -553,7 +554,6 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
       setAdoptBusyId(null);
       if (outcome.ok) {
         setFeedback({ kind: "accepted", text: copy.downloadAccepted });
-        setAcceptedTick((tick) => tick + 1);
         setReloadKey((key) => key + 1);
       } else {
         // 失败态保持打开:醒目主按钮「关闭」＋详情词面(failureLogText 律),
@@ -586,7 +586,10 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
         </div>
       ) : null}
       {state.kind === "loading" ? (
-        <p className="vua-caption vua-text-secondary">{acquireCopy.importConfirmTitle}</p>
+        // 加载态词面(第 181 批反向审查纠正):原借用确认段标题
+        // importConfirmTitle「确认导入以下文件夹」与本过程态语义无关
+        // (#39「误用他面文案」族同构),改用专属加载词面如实呈现。
+        <p className="vua-caption vua-text-secondary">{copy.downloadsLoading}</p>
       ) : null}
       {state.kind === "unavailable" ? (
         <p className="vua-caption vua-text-secondary" role="alert">

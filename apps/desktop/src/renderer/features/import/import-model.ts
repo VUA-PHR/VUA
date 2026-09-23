@@ -46,30 +46,50 @@ export const IMPORT_ACCEPTED_AUTO_CLOSE_MS = 1500;
 
 /** 受理自动关闭定时器(纯件,可测):schedule 单次触发后自清,cancel 幂等;
  * 重开弹窗 = 组件重挂载 = 新定时器实例——旧定时器随卸载清理,不存在
- * 跨弹窗实例的陈旧关闭(手动先关再重开不被旧定时器误关)。 */
+ * 跨弹窗实例的陈旧关闭(手动先关再重开不被旧定时器误关)。
+ * (第 181 批反向审查小修:schedule/cancel 以局部闭包函数实现,不再经
+ * this 互调——解构调用形态(this 为 undefined)不再炸裂,调用形态与
+ * 绑定解耦;语义零变化。) */
 export function createAutoCloseTimer(
   close: () => void,
   delayMs: number = IMPORT_ACCEPTED_AUTO_CLOSE_MS,
 ): { schedule: () => void; cancel: () => void; readonly pending: boolean } {
   let handle: ReturnType<typeof setTimeout> | null = null;
+  const cancel = (): void => {
+    if (handle !== null) {
+      clearTimeout(handle);
+      handle = null;
+    }
+  };
+  const schedule = (): void => {
+    cancel();
+    handle = setTimeout(() => {
+      handle = null;
+      close();
+    }, delayMs);
+  };
   return {
-    schedule() {
-      this.cancel();
-      handle = setTimeout(() => {
-        handle = null;
-        close();
-      }, delayMs);
-    },
-    cancel() {
-      if (handle !== null) {
-        clearTimeout(handle);
-        handle = null;
-      }
-    },
+    schedule,
+    cancel,
     get pending() {
       return handle !== null;
     },
   };
+}
+
+/** 自动关闭武装判据(纯函数,第 181 批反向审查):仅受理态武装——失败/
+ * 提示/无反馈一律不武装。组件 effect 以反馈对象为依赖:反馈离开受理态
+ * 即解除武装 = 清理在飞计时——
+ * - 失败到达:不武装(失败驻留,不静默关走);
+ * - 用户接管(受理窗口内再次发起拾取/采纳,反馈被清空):取消在飞计时
+ *   ——自动关闭不跑在用户进行中的操作下面(否则原生拾取对话框停留期间
+ *   弹窗静默关闭,拾取结果落在已卸载组件上被丢弃,操作上下文丢失);
+ * - 同窗二次受理:必经「反馈清空 → 再置受理」两拍,引用变化重新武装 =
+ *   从最后一次受理重新计时(同第 178 批登记语义)。 */
+export function autoCloseArmed(
+  feedback: { readonly kind: "accepted" | "failure" | "notice" } | null,
+): boolean {
+  return feedback?.kind === "accepted";
 }
 
 /** 地址脱敏显示(导航条只读位):origin + 路径,弃查询串与片段——登录态
