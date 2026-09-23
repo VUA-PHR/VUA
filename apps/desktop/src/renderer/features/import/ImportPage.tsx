@@ -508,7 +508,7 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
   const [adoptBusyId, setAdoptBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
   // 采纳受理同样自动关闭(W25 走查缺陷③同根因:采纳即导入任务受理,模态
-  // 滞留同形态)。武装判据与本地段同一纯件 autoCloseArmed(第 181 批反向
+  // 滞留同形态)。武装判据与本地段同一纯件 autoCloseArmed(第 179 批反向
   // 审查收紧,语义两段一致):失败驻留、用户接管取消计时、二次受理重新计时。
   const requestCloseRef = useRef(onRequestClose);
   requestCloseRef.current = onRequestClose;
@@ -586,7 +586,7 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
         </div>
       ) : null}
       {state.kind === "loading" ? (
-        // 加载态词面(第 181 批反向审查纠正):原借用确认段标题
+        // 加载态词面(第 179 批反向审查纠正):原借用确认段标题
         // importConfirmTitle「确认导入以下文件夹」与本过程态语义无关
         // (#39「误用他面文案」族同构),改用专属加载词面如实呈现。
         <p className="vua-caption vua-text-secondary">{copy.downloadsLoading}</p>
