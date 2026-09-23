@@ -245,8 +245,14 @@ pub fn read_vcc_settings(
                 )
             }
         };
-        let user_projects = string_array(value.get("userProjects"), &display, diagnostics);
-        let local_project_folders = string_array(value.get("localProjectFolders"), &display, diagnostics);
+        let user_projects =
+            string_array(value.get("userProjects"), "userProjects", &display, diagnostics);
+        let local_project_folders = string_array(
+            value.get("localProjectFolders"),
+            "localProjectFolders",
+            &display,
+            diagnostics,
+        );
         if value.get("userProjects").is_none() && value.get("localProjectFolders").is_none() {
             // A found-but-unrecognized settings file is a finding, not a
             // crash: report presence with an unexpected-schema warning.
@@ -327,13 +333,40 @@ fn vcc_read_failed(
     }
 }
 
-fn string_array(value: Option<&Value>, source: &str, diagnostics: &mut Vec<ManagerDiagnostic>) -> Vec<String> {
+/// Reads a JSON string array field. A recognized array carrying non-string
+/// entries keeps the readable strings, and the dropped entries are
+/// announced with a warning (BG-12 family: a partially readable project
+/// list is a partial finding — a silently skipped entry would make a
+/// registered project vanish from discovery without a trace).
+fn string_array(
+    value: Option<&Value>,
+    field: &str,
+    source: &str,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
+) -> Vec<String> {
     match value {
         None => Vec::new(),
-        Some(Value::Array(items)) => items
-            .iter()
-            .filter_map(|item| item.as_str().map(str::to_owned))
-            .collect(),
+        Some(Value::Array(items)) => {
+            let mut strings = Vec::new();
+            let mut skipped = 0usize;
+            for item in items {
+                if let Some(text) = item.as_str() {
+                    strings.push(text.to_owned());
+                } else {
+                    skipped += 1;
+                }
+            }
+            if skipped > 0 {
+                diagnostics.push(ManagerDiagnostic {
+                    code: env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
+                    severity: FindingSeverity::Warning,
+                    detail: format!(
+                        "{source}: {field} carries {skipped} non-string entries; they were skipped and their projects are not discoverable"
+                    ),
+                });
+            }
+            strings
+        }
         Some(_) => {
             diagnostics.push(ManagerDiagnostic {
                 code: env_managers_codes::VCC_SETTINGS_SCHEMA_UNEXPECTED,
@@ -390,8 +423,12 @@ pub fn read_alcom_settings(candidates: &[PathBuf], diagnostics: &mut Vec<Manager
         let (top_level_keys, user_projects) = match serde_json::from_str::<Value>(&text) {
             Ok(value) => {
                 let keys = top_level_keys(&value);
-                let user_projects =
-                    string_array(value.get("userProjects"), &display, diagnostics);
+                let user_projects = string_array(
+                    value.get("userProjects"),
+                    "userProjects",
+                    &display,
+                    diagnostics,
+                );
                 if value.get("userProjects").is_none() {
                     diagnostics.push(ManagerDiagnostic {
                         code: env_managers_codes::ALCOM_PROJECTS_NOT_RECOGNIZED,

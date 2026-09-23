@@ -593,11 +593,26 @@ pub fn apply_import_copy(
     drop(lock); // the copy is complete; the new project is owned by the user
 
     // The copy takes its own Unity-facing identity (new project identity,
-    // 1.2.0 spec item 1).
-    let _ = crate::vpm_backend::set_product_name(
+    // 1.2.0 spec item 1). A failed identity write is a typed refusal, never
+    // a swallowed side effect: the receipt must not claim a complete copy
+    // while the new project silently kept the ORIGINAL product name
+    // (BG-12 family: no Err-same-flow on a spec-carrying step). The
+    // set_product_name internal best-effort no-op legs (file absent / no
+    // productName line) stay as pinned — this call site no longer discards
+    // the errors the primitive does report.
+    crate::vpm_backend::set_product_name(
         &target_path.join("ProjectSettings").join("ProjectSettings.asset"),
         name,
-    );
+    )
+    .map_err(|error| {
+        ImportRejected::new(
+            RejectionGuard::ExecutionFailed,
+            format!(
+                "{}: writing the copied project's own productName failed: {error:?}",
+                target_path.display()
+            ),
+        )
+    })?;
 
     // Fresh VUA store + the source link (spec item 5: keep the source
     // relationship so the user can go back).

@@ -33,6 +33,7 @@ use vua_orchestrator::{
 use serde::Serialize;
 use serde_json::Value;
 use std::collections::BTreeMap;
+use std::io;
 use std::path::Path;
 
 use crate::environment_managers::{read_alcom_settings, read_vcc_settings, ManagerRoots};
@@ -296,24 +297,42 @@ fn inspect_one(
     inspection.path_present = true;
 
     // Unity version + classification (same policy as the editor matrix).
+    // A version file that exists but cannot be read is an observation
+    // failure and announces itself (BG-12 family) — only a genuinely
+    // absent file is the designed silent absence.
     let version_file = dir.join("ProjectSettings").join("ProjectVersion.txt");
-    if let Ok(text) = std::fs::read_to_string(&version_file) {
-        let raw = text
-            .lines()
-            .find_map(|line| line.strip_prefix("m_EditorVersion:"))
-            .map(str::trim)
-            .unwrap_or_default();
-        if !raw.is_empty() {
-            if let Some((classification, _)) = classify_version_string(raw) {
-                inspection.unity_version = Some(raw.to_owned());
-                inspection.unity_classification = Some(classification);
-            } else {
-                inspection.diagnostics.push(ManagerDiagnostic {
-                    code: env_managers_codes::PROJECT_VERSION_UNPARSEABLE,
-                    severity: FindingSeverity::Warning,
-                    detail: format!("{path}: ProjectVersion.txt does not contain a complete version string: {raw}"),
-                });
+    match std::fs::read_to_string(&version_file) {
+        Ok(text) => {
+            let raw = text
+                .lines()
+                .find_map(|line| line.strip_prefix("m_EditorVersion:"))
+                .map(str::trim)
+                .unwrap_or_default();
+            if !raw.is_empty() {
+                if let Some((classification, _)) = classify_version_string(raw) {
+                    inspection.unity_version = Some(raw.to_owned());
+                    inspection.unity_classification = Some(classification);
+                } else {
+                    inspection.diagnostics.push(ManagerDiagnostic {
+                        code: env_managers_codes::PROJECT_VERSION_UNPARSEABLE,
+                        severity: FindingSeverity::Warning,
+                        detail: format!("{path}: ProjectVersion.txt does not contain a complete version string: {raw}"),
+                    });
+                }
             }
+        }
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            // Absent version file: a registered path without the Unity
+            // marker is a normal finding (unityVersion stays None).
+        }
+        Err(error) => {
+            inspection.diagnostics.push(ManagerDiagnostic {
+                code: env_managers_codes::PROJECT_MARKERS_INCOMPLETE,
+                severity: FindingSeverity::Warning,
+                detail: format!(
+                    "{path}: ProjectVersion.txt exists but cannot be read: {error}"
+                ),
+            });
         }
     }
 
@@ -325,8 +344,12 @@ fn inspect_one(
             Ok(text) => match serde_json::from_str::<Value>(&text) {
                 Ok(value) if value.is_object() => {
                     inspection.manifest_schema_ok = true;
-                    inspection.dependencies = manifest_map(&value, "dependencies");
-                    inspection.locked = manifest_map(&value, "locked");
+                    let dependencies =
+                        manifest_map(&value, "dependencies", path, &mut inspection.diagnostics);
+                    let locked =
+                        manifest_map(&value, "locked", path, &mut inspection.diagnostics);
+                    inspection.dependencies = dependencies;
+                    inspection.locked = locked;
                     inspection.vrchat_sdks = vrchat_sdks(&inspection.dependencies, &inspection.locked);
                 }
                 Ok(_) => inspection.diagnostics.push(ManagerDiagnostic {
@@ -365,22 +388,53 @@ fn inspect_one(
 
 /// Extracts a sorted `string -> string` map field from the manifest. A
 /// field with the wrong shape yields an empty vector plus a warning —
-/// never a guessed entry.
-fn manifest_map(manifest: &Value, field: &str) -> Vec<ManifestPackage> {
+/// never a guessed entry. Entries whose version value is not a JSON
+/// string are skipped, and the skip is announced with the same warning
+/// discipline (BG-12 family: a partially readable map is a partial
+/// finding, never a silently truncated one).
+fn manifest_map(
+    manifest: &Value,
+    field: &str,
+    path: &str,
+    diagnostics: &mut Vec<ManagerDiagnostic>,
+) -> Vec<ManifestPackage> {
     let mut packages = Vec::new();
     match manifest.get(field) {
         Some(Value::Object(map)) => {
+            let mut skipped: Vec<&str> = Vec::new();
             for (package_id, version) in map {
                 if let Some(version) = version.as_str() {
                     packages.push(ManifestPackage {
                         package_id: package_id.clone(),
                         version: version.to_owned(),
                     });
+                } else {
+                    skipped.push(package_id.as_str());
                 }
+            }
+            if !skipped.is_empty() {
+                skipped.sort_unstable();
+                diagnostics.push(ManagerDiagnostic {
+                    code: codes::MANIFEST_SCHEMA_UNEXPECTED,
+                    severity: FindingSeverity::Warning,
+                    detail: format!(
+                        "{path}: manifest {field} carries non-string version values; skipped: {}",
+                        skipped.join(", ")
+                    ),
+                });
             }
         }
         Some(Value::Null) => {}
-        Some(_) | None => {}
+        Some(_) => {
+            diagnostics.push(ManagerDiagnostic {
+                code: codes::MANIFEST_SCHEMA_UNEXPECTED,
+                severity: FindingSeverity::Warning,
+                detail: format!(
+                    "{path}: manifest field {field} is present but not an object; reported as empty"
+                ),
+            });
+        }
+        None => {}
     }
     packages.sort_by(|left, right| left.package_id.cmp(&right.package_id));
     packages

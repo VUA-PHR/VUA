@@ -478,3 +478,60 @@ fn rejected_documents_validate_with_the_frozen_guard_closed_set() {
     assert!(problems.is_empty(), "violations: {problems:#?}");
     assert_eq!(enveloped["result"]["code"], json!("vua.project.insufficient_disk_space"));
 }
+
+/// BG-12 家族环境域成员（wt-6 反向审查批 2026-09-24）：副本自身
+/// productName 写失败不再被 `let _ =` 吞掉——身份步是 1.2.0 规格项 1，
+/// 失败必须以 ExecutionFailed 类型化拒绝申报，而不是收据宣称完整成功、
+/// 新项目静默沿用旧名。半成品副本照词面留盘作证据（无隐式清理）。
+/// 只读位经 fs::copy 权限位继承落到副本上，写腿必然失败而读腿照常。
+#[test]
+fn failed_product_name_write_refuses_instead_of_silent_success() {
+    fn force_writable(path: &Path) {
+        if let Ok(metadata) = fs::metadata(path) {
+            let mut permissions = metadata.permissions();
+            // Clearing the readonly bit is exactly this helper's job (the
+            // test just asserted against it); the clippy alternative
+            // (`Permissions::new(mode)`) needs the platform-specific mode
+            // word this test deliberately avoids.
+            #[allow(clippy::permissions_set_readonly_false)]
+            permissions.set_readonly(false);
+            let _ = fs::set_permissions(path, permissions);
+        }
+    }
+
+    let base = unique_dir("readonly-identity");
+    let source = install_source(&base, "Source Project");
+    let vcc = vcc_candidates(&base);
+    let manager_roots = roots(&base);
+
+    let settings = source.join("ProjectSettings").join("ProjectSettings.asset");
+    {
+        let mut permissions = fs::metadata(&settings).unwrap().permissions();
+        permissions.set_readonly(true);
+        fs::set_permissions(&settings, permissions).unwrap();
+    }
+
+    let workspace = base.join("workspace");
+    fs::create_dir_all(&workspace).unwrap();
+    let req = request(&source, &workspace, "New Name", &vcc, &manager_roots);
+    let plan = plan_import_copy(&req).expect("plan guards pass");
+
+    let error = apply_import_copy(&req, &plan.plan_digest, "corr-readonly", &clock())
+        .expect_err("a failed identity write must refuse, not claim success");
+    assert_eq!(error.guard, RejectionGuard::ExecutionFailed);
+    assert_eq!(error.code, "vua.project.execution_failed");
+    assert!(
+        error.detail.contains("productName"),
+        "the detail names the failed step: {}",
+        error.detail
+    );
+
+    // 半成品留存：已复制的副本在盘上作证据，不隐式清理、不隐式重试。
+    let target = base.join("workspace").join("New Name");
+    assert!(target.is_dir(), "the half-copy stays as evidence");
+
+    // 清理：解除只读位再删（Windows remove_dir_all 不越只读位）。
+    force_writable(&settings);
+    force_writable(&target.join("ProjectSettings").join("ProjectSettings.asset"));
+    cleanup(&base);
+}
