@@ -25,7 +25,9 @@ use vua_bdl_store::bdl_store::{
 };
 use vua_orchestrator::{ErrorCategory, ParamValue};
 use vua_unity_bridge::{MaterialCancelToken, MaterialExecutor};
-use vua_orchestrator::{SubmitRequest, TaskExit, TaskJob, TaskRuntime};
+use vua_orchestrator::{
+    Clock, SubmitRequest, SystemClock, TaskExit, TaskJob, TaskRuntime,
+};
 use serde::Serialize;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -296,7 +298,12 @@ fn run_delete_originals(
         kept_generated_sha256: kept_generated,
         deleted_relative_paths: deleted_paths,
     };
-    let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+    // Invariant (BG-12): DeleteOriginalsResult contains only strings,
+    // counters and nested serializable structs — serde cannot fail on it;
+    // a serialization error would be an invariant break, surfaced as a
+    // panic instead of a silently null Done payload.
+    let payload = serde_json::to_value(&result)
+        .expect("task result serializes infallibly (plain data shapes only)");
     Ok(TaskExit::Done(payload))
 }
 
@@ -537,6 +544,10 @@ fn run_generate_vpm(
     // The generated archive enters BDL like any other sighting first: copy
     // rows reference registered artifacts, so an unregistered sha would make
     // the recording below fail (the regression this registration closes).
+    // first_seen_at/created_at are REAL clock readings: a fabricated
+    // constant would write false observation facts into the persistence
+    // surface (honesty discipline — the store's timestamps are evidence).
+    let now = SystemClock.now_rfc3339();
     store.record_untrusted_artifact(&NewLocalArtifact {
         artifact_sha256: archive_sha.clone(),
         size_bytes: fs::metadata(&destination)?.len(),
@@ -546,7 +557,7 @@ fn run_generate_vpm(
             .file_name()
             .map(|name| name.to_string_lossy().into_owned()),
         download_id: None,
-        first_seen_at: now_rfc3339(),
+        first_seen_at: now.clone(),
     })?;
 
     store.record_artifact_copy(
@@ -555,7 +566,7 @@ fn run_generate_vpm(
         &relative_path,
         &destination.to_string_lossy(),
         CopyRole::GeneratedVpm,
-        &now_rfc3339(),
+        &now,
     )?;
 
     let result = GenerateVpmResult {
@@ -566,7 +577,11 @@ fn run_generate_vpm(
         archive_sha256: archive_sha,
         import_correlation_id: spec.import_correlation_id.clone(),
     };
-    let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+    // Invariant (BG-12): GenerateVpmResult contains only plain data shapes —
+    // serde cannot fail on it; a serialization error would be an invariant
+    // break, surfaced as a panic instead of a silently null Done payload.
+    let payload = serde_json::to_value(&result)
+        .expect("task result serializes infallibly (plain data shapes only)");
     ctx.emit_progress(payload.clone());
     Ok(TaskExit::Done(payload))
 }
@@ -599,10 +614,6 @@ pub fn submit_generate_vpm(
         timeout,
         job: generate_vpm_job(store, executor, Arc::new(spec)),
     })
-}
-
-fn now_rfc3339() -> String {
-    "2026-09-06T00:00:00.000Z".to_owned()
 }
 
 
@@ -1054,6 +1065,9 @@ mod tests {
             .set_artifact_mode(&world.entry_id, Some(ArtifactMode::GenerateVpm))
             .unwrap();
 
+        // Fixed-width UTC readings: lexicographic order is chronological.
+        let before = SystemClock.now_rfc3339();
+
         let (rt, journal) = generate_runtime();
         let accepted = submit_generate_vpm(
             &rt,
@@ -1124,6 +1138,26 @@ mod tests {
             format!("sha256:{}", hex_lower(&digest)),
             generated[0].artifact_sha256,
             "the recorded identity matches the physical file"
+        );
+        // Persisted times are REAL clock readings, never a fabricated
+        // constant (honesty discipline: observation times are evidence).
+        assert_ne!(
+            generated[0].created_at, "2026-09-06T00:00:00.000Z",
+            "created_at is a real reading, not the retired fabricated constant"
+        );
+        assert!(
+            generated[0].created_at.as_str() >= before.as_str(),
+            "created_at was read at generation time ({before} ..= {})",
+            generated[0].created_at
+        );
+        let generated_artifact = world
+            .store
+            .artifact(&generated[0].artifact_sha256)
+            .unwrap()
+            .unwrap();
+        assert_ne!(
+            generated_artifact.first_seen_at, "2026-09-06T00:00:00.000Z",
+            "first_seen_at is a real reading, not the retired fabricated constant"
         );
         assert!(world.original_path.exists(), "generation keeps the originals");
 
