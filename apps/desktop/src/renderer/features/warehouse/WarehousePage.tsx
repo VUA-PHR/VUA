@@ -778,7 +778,10 @@ export function WarehousePage({
         closeLabel={strings.common.dialogClose}
         onClose={() => setImportDialogOpen(false)}
       >
-        <ImportPage />
+        {/* onRequestClose(W25 走查缺陷③根因修复):受理态自动关闭与失败态
+            醒目「关闭」按钮的关闭请求线——受理后 ~1.5s 弹窗自动收口,任务
+            进度归任务中心;模态滞留被用户视作整屏卡死的行为终止。 */}
+        <ImportPage onRequestClose={() => setImportDialogOpen(false)} />
       </ContentDialog>
     </div>
   );

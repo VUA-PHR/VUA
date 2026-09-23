@@ -37,6 +37,29 @@
   width: 100%;
 }
 
+/* 失败态醒目可关(W25 走查缺陷③根因修复,操作者第 178 批派单):失败
+ * 驻留弹窗时的主动线主按钮行——「关闭」用 primary 变体承担醒目出口,
+ * × 仅辅助;色彩间距全引既有 token */
+.vua-import__failure-actions {
+  display: flex;
+  gap: var(--vua-space-2);
+}
+
+/* 来源分流选择(W25 走查缺陷②,用户裁决):弹窗打开先选本地/云端;
+ * 色彩间距全引既有 token,与卡内其它分组同语言 */
+.vua-import__choose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  align-items: flex-start;
+}
+
+.vua-import__choose-actions {
+  display: flex;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
 /* 内嵌视图固定导航条(用户实测缺口修复 2026-09-12):视图打开时固定于
  * 窗口顶部,Main 侧 WebContentsView 上缘让位同高条带(remote-content
  * REMOTE_VIEW_NAV_STRIP_PX = 44px,两处必须同批改动)。条内空白可拖拽

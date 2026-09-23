@@ -811,12 +811,34 @@ function AppShell({
         navLevelNext({ level, required, available, subtitleSaving }),
       );
     };
-    update();
+    // W25 走查缺陷①修复(2026-09-23):首判前等字体就绪——首判若在
+    // webfont 加载完成前量测,fallback 字体宽度偏大,量尺行 required 虚高,
+    // 启动即误判收缩(初始整排 Tab 收进折叠按钮)。document.fonts.ready 在
+    // 字体已就绪时立即 resolve(零等待,行为不变);不可用环境(极老内核)
+    // 诚实降级为原时序。observer 同样在就绪后挂载,避免字体加载触发的
+    // 布局变化被 #28 快照吞成「自反馈」而不再重判。
+    let disposed = false;
     const observer = new ResizeObserver(update);
-    observer.observe(nav);
-    observer.observe(measure);
-    observer.observe(subtitleProbe);
-    return () => observer.disconnect();
+    const start = (): void => {
+      if (disposed) return;
+      update();
+      observer.observe(nav);
+      observer.observe(measure);
+      observer.observe(subtitleProbe);
+    };
+    const fontsReady: Promise<unknown> | undefined =
+      typeof document !== "undefined" && "fonts" in document
+        ? document.fonts.ready
+        : undefined;
+    if (fontsReady === undefined) {
+      start();
+    } else {
+      void fontsReady.then(start, start);
+    }
+    return () => {
+      disposed = true;
+      observer.disconnect();
+    };
   }, []);
 
   // 目标态变化 → 进入过渡相位;过渡窗(与 CSS 动画时长对齐)结束 → 落定

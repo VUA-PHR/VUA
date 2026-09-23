@@ -1,129 +1,144 @@
 ---
-worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-183）
-branch: integration/batch-183（本批载体；正典 main 维持 origin/main 只快进）
+worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-184）
+branch: integration/batch-184（本批载体；正典 main 维持 origin/main 只快进）
 role: 集成
-baseline_commit: 2a31beca
+baseline_commit: d5369061
 updated: 2026-09-23
 ---
 ## 当前焦点
-**集成第 183 批（2026-09-23 04:1x–05:1x，节拍轮正常工作时段 date 04:18 实测；基线
-origin/main 2a31beca＝第 181 批 PR #14 合并尖）＝压缩派发单栈验收批：wt-4 第
-182 批验收（#45(3) S2 取消观察位实现切片：run_provision create 后 resolve 前
-观察位＋local-reusable 尾段 register/preview 前＋apply 前两处＋三例取消注入
-测试；端口词面零变更复核维持；(3) 项全项清零——余留仅 S3 候 W25 证据触发、
-S4 缓议）＋合并树定向复跑三闸全绿**。全部走 PROTECTED_MAIN 政策通道（本分支
-PR 落地、正典 main 只快进）。
+**集成第 184 批（2026-09-23 23:0x 起，节拍轮正常工作时段 date 23:01 实测；基线
+origin/main d5369061＝第 183 批 PR #15 合并尖）＝用户 W25 走查第一步五发现修复
+栈双批验收：wt-3 第 177 批（W25 走查第一缺陷修复批：顶栏 fonts.ready＋导入入口
+本地/云端分流＋BOOTH 登录态线索面 signInHint＋dev.mjs VUA_ELECTRON_ARGS 取证
+透传＋登录页路径勘误）＋第 178 批（受理态自动关闭批：受理态 1.5s 自动关＋失败
+态驻留醒目可关＋Esc/背板/× 三路径 smoke 25/25）＋W25 走查进行中 BOARD 登记
+（新节「W25 用户走查发现与处置」；挂死项维持开放候再现）＋合并树定向复跑四闸
+全绿**。全部走 PROTECTED_MAIN 政策通道（本分支 PR 落地、正典 main 只快进）。
+轻负载拍纪律兑现：用户开发栈在跑，四闸顺序跑未并行、未触 cargo。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 181 批（09-23 03:3x–04:2x）＝wt-2 第 177 批验收（#45(3) 端口取消位设计登
-记四问四答落 collab/design/2026-09-23-port-cancellation-points_ZH.md）＋
-BOARD #45 行注记（S1 闭环；S2 候派产线），经 integration/batch-181 PR #14
-入库 2a31beca。更早段落见本文件 git 历史与 BOARD 前录。
+第 183 批（09-23 04:1x–05:1x）＝wt-4 第 182 批验收（#45(3) S2 取消观察位实现
+切片，端口词面零变更，(3) 全项清零）＋合并树定向复跑三闸全绿，经
+integration/batch-183 PR #15 入库 d5369061。更早段落见本文件 git 历史与 BOARD
+前录。
 
-## 本轮交付（2a31beca 基线，integration/batch-183）
-- **验收合并＝wt-4 第 182 批**（候验收三笔＝追平壳 6a2f0973＋实现批
-  0673ab10＋状态批 4b92e6e1；merge-base 恰 2a31beca＝落后 0／领先 3；新式
-  merge-tree --write-tree 预检干净）。验收依据（合并信息九点全载，集成直
-  读实核）：
-  ①**追平壳纯吸收**——`git diff 2a31beca 6a2f0973` 逐字节为空（吸收设计
-  登记入库世代）。
-  ②**分支改动面**——实现批恰 2 文件（crates/unity-bridge/src/
-  material_exec.rs 43+/3-＋tests/material_exec.rs 236+）＋状态批恰 1 文件；
-  docs/ schemas/ 零触碰；冻结词面零字节触碰。
-  ③**端口词面零变更声明复核成立**——VpmBackend trait 定义
-  crates/orchestrator/src/vpm_backend.rs:613 全文 grep 零 cancel/token 命
-  中；全分支对该文件零 diff；run_provision 补 token 系执行器私有方法签名
-  非端口面（源码注释同文自证）；三层谱系维持不发明第四层。
-  ④**观察位位置与设计登记④ S2 逐点吻合**——run_provision create 后
-  resolve 前一观察位（已决定取消不再启动无上界网络腿；Err 骑既有失败臂
-  →verified-snapshot 回滚→空态隔离区→Cancelled 收据照常发布＝③表供给行
-  「不改补偿臂」兑现）；尾段 register/preview 前＋preview/apply 间两观察
-  位（登记「register/preview 前、apply 前」原文照办）。
-  ⑤**尾段补偿裁量关系复核留痕**——登记③表两案＝「保留＋如实呈现」vs
-  「apply 前加检查位跳过安装」（两案补偿均诚实，候 S2 切片随冻结裁量）。
-  S2 域内冻结裁量采「跳过安装」案且形态系两案组合：形式上落案 B 检查位且
-  提前至 register 前（staging 期间取消跳过整个尾段＝比字面 apply 前更保
-  守）；两案共享的登记诚实事实（发布 artifact 在项目外输出根、快照回滚管
-  不到）以测试钉死＝已发布文件保留＋收据 Cancelled＋local_vpm 证据保持
-  None（绝不宣称未发生的安装），「保留＋如实呈现」诚实面同时兑现。裁量系
-  产线域内按登记授权办理非新裁决，集成复核自洽。
-  ⑥**三例取消注入测试实读吻合**——取消注入点 create_project 内／
-  CreateLocalVpmPackage dispatch 期间／preview_install 内（取消在飞、后
-  继观察位可见＝设计登记②步界观察形态直测）：creates=1/resolves=0＋
-  rollback Restored＋收据 Cancelled；registrations=0/installs=0＋local_vpm
-  None；registrations=1/installs=0＋artifact 保留断言＋rollback Restored＋
-  local_vpm None。mock 钩子默认 None＝既有测试零行为变化。
-  ⑦**状态批陈旧读数留痕订正**——4b92e6e1 称「第 178 批两笔（817a5fa6＋
-  3f176e7d）候集成验收」系陈旧读数：两笔已随集成第 179 批 PR #13 入库
-  288ab52b（merge-base --is-ancestor 集成实测在案；第 181 批合并信息同载
-  吸收）；本批合并信息与 BOARD 前录双处留痕，wt-4 树不改写。
-  ⑧**诚实边界复核成立**——零端到端宣称维持（mock 注入钉代码面行为；真
-  机取消链路未行使归 W25）；[需用户] 条目零代决。
-- **合并树定向复跑三闸集成亲测全绿（照派单）**＝cargo test --workspace
-  **974/0**（971 基线＋恰 3 新例自洽；**如实登记**：首跑
-  ph_010_mutation_gate 一例瞬败〔production_host.rs:163 JSON 解析 EOF；
-  provider-host 本批零触碰、该套件有 BOARD #7 行在案竞态史〕，定向复跑
-  **15/15** 绿＋全量复跑 **974/0** 绿，按 #7 判例零代码改动零猜测性修复）
-  ＋clippy --workspace --all-targets **0 警告 0 错误**＋check:leak **155
-  指纹零泄漏**（独立临时生产构建）。
-- **BOARD #45 行更新**（S2 闭环段全载＋(3) 全项清零——S1 设计登记＋S2 实
-  现切片双双交付，第 148 批核心候派四件与桌面知会件全部闭环；余留仅 S3
-  候 W25 证据触发、S4 缓议、(8) A 案归 W25）＋**前录轮转**（插 183 段轮出
-  163 段，10 段维持）＋本状态批。
+## 本轮交付（d5369061 基线，integration/batch-184）
+- **验收合并＝wt-3 第 177＋178 批六笔**（追平壳 105341b2＋实现批 2b9f83d2＋
+  状态批 77cc8626＋勘误批 e37a28e0＋实现批 d55bf7b2＋状态批 adf9a670；
+  merge-base 恰 d5369061＝落后 0／领先 6（实质 3）；新式 merge-tree
+  --write-tree 预检干净；合并 dc3778ef 合并信息十三点全载，集成直读实核）：
+  ①**追平壳纯吸收**——`git diff d5369061 105341b2` 逐字节为空。
+  ②**改动面逐笔核对**——实现批 2b9f83d2 恰 14 文件（apps/desktop 13＋
+  packages/contracts TS face 1）；状态批 77cc8626/adf9a670 各恰 1 文件；勘误
+  批 e37a28e0 恰 3 文件（登录页路径源码修正＋测试＋状态批同步）；实现批
+  d55bf7b2 恰 13 文件全在 apps/desktop。全范围 crates/ docs/ schemas/ 零触碰。
+  ③**Cookie 隐私面成立**——signInHint 三层（remote-content/main/preload）只
+  返 stored/none/unknown 三态存在性线索，Cookie 值零读取零传输；异常如实
+  unknown 不猜测；IPC 有 assertLocalSender 护栏；契约注释同文自证「Cookie 值
+  永不过本面」；会话 Cookie 键名无公开文档不作键名猜测。
+  ④**登录导航证据在案**——勘误批以真机实测为准（/sign_in 404、/users/sign_in
+  200＝HTTP HEAD -L）；initialBrowseUrl 纯函数 none→登录页、stored/unknown→
+  主页（unknown 不冒充已检测）；allowedOrigins 扩 accounts.booth.pm 仅内嵌浏
+  览清单，下载域/本地窗口弹窗清单不动。
+  ⑤**fonts.ready 修法与 #28 抖动快照机制共存成立**——首判与 ResizeObserver
+  挂载同移 document.fonts.ready 之后（就绪时零等待），#28 输入快照机制本体
+  （App.tsx:774–784）零触碰；不可用环境诚实降级原时序。
+  ⑥**dev.mjs VUA_ELECTRON_ARGS** 显式取证透传不默认开启（CDP 取证护栏）。
+  ⑦**本地/云端入口分流**（用户裁决 2026-09-23）——弹窗先选来源再进段，云端段
+  只在显式选择后激活，重开回选择态（诚实起点）。
+  ⑧**受理态 1.5s 自动关闭**——import-model 纯件
+  IMPORT_ACCEPTED_AUTO_CLOSE_MS=1500＋createAutoCloseTimer（schedule 单次触
+  发自清/cancel 幂等/重入先清旧柄）；本地段与云端采纳段计数器驱动接线（acceptedTick
+  重受理重新计时；失败反馈在场即取消在飞计时＝失败驻留不静默关走；卸载清理防
+  陈旧定时器误关；onRequestClose 经 ref 读取宿主重渲染不重排定时器；缺省宿主
+  诚实降级无自动关闭）。
+  ⑨**失败态醒目可关**——三型反馈建模（accepted/failure/notice），失败
+  role=alert 驻留＋failureDetailText 按 failureLogText 律保留协议稳定码＋
+  primary 主按钮「关闭」主动线，× 仅辅助；模态层（modal-layer/ContentDialog）
+  机制零触碰，onRequestClose 仅宿主关闭请求线。
+  ⑩**smoke 双套证据在案**（wt-3 本树亲测）——import-dialog 新 smoke 真机
+  Chromium DOM 25/25（Esc/背板/× 三路径各恰一次关闭请求＋受理自动关＋失败驻
+  留＋重开不被陈旧定时器误关；证据
+  C:/Users/AR/AppData/Local/Temp/vua-import-dialog-dom.json 2026-09-23 10:10
+  Chromium 152.0.7977.65）；production-review 夹具适配第 177 批来源分流（先选
+  云端再钉原断言＋signInHint 桩）97/97，断言语义零放松（集成 diff 实读确认）。
+  ⑪**i18n 四语键齐**——集成逐语 grep en/ja/ko/zh-CN 各 1（acceptedAutoClose
+  ＋选择面五键）。
+  ⑫**零契约面变化申报成立**——第 178 批 packages/contracts 零触碰（wire 零新
+  增载荷）；第 177 批契约面仅 TS face 登记 signInHint（桌面所有权内）。
+  ⑬**勘误与诚实边界**——adf9a670 两处勘误兑现（v4 逐名清单漏
+  validate_asset_paths＝读面实为 8＋写 6＋任务 2＝16 与闭集一致；amf-unity 版
+  本词两表＝现行文档头部 1.2.1 为准，REGISTRY 行 1.2.0 系 patch 漂移容忍）系
+  留痕订正历史文件不改写（同第 183 批⑦先例）；零端到端宣称维持（smoke 系真
+  实 Chromium DOM＋合成 Gateway 非真机 Gateway 全链，真机走查归用户 W25 行
+  使）；[需用户] 条目零代决。
+- **W25 走查进行中 BOARD 登记**——新节「W25 用户走查发现与处置」（五发现
+  ①顶栏②入口分流③b 登录引导已修随本批入库；③挂死滞留根因已修而挂死项维持
+  开放候再现〔交付栈 CDP 51993 常驻〕；④多层目录扫描/压缩包提取/PSD 记录用
+  户明令只登记候裁决；[需用户] 两件随节登记＝挂死再发取证协作＋误伤事故 95MB
+  重复入库条目清理候裁）。
+- **BOARD 前录轮转**（插 184 段轮出 164 段，10 段维持）＋本状态批。
 
 ## 门禁读数（如实）
-本批合并树定向复跑三闸全绿（读数见上，本批亲测）：cargo 974/0＋clippy
-0/0＋leak 155 指纹零泄漏。簿记提交面（BOARD＋本状态文件）系 collab-only，
-免全量照章（PROTECTED_MAIN §4，远端必需检查随 PR）。环境事实：磁盘未复
-测（本批构建产物增量有限，口径沿用派单登载 73%）。
+合并树定向复跑四闸集成亲测全绿（照派单；contracts dist 按陈旧事故先例先重建）：
+typecheck 双 tsconfig **exit 0**＋vitest **97 文件 911/911**（908 基线＋恰 3
+新例＝createAutoCloseTimer 生命周期，申报自洽）＋check:i18n **交付语言表对齐
+OK**＋check:leak **155 指纹零泄漏**（独立临时生产构建；chunk 尺寸警告系既有
+非错误提示）。cargo 免跑（crates/ 零触碰全范围复核）。磁盘 74%（df 实测，与
+派单登载 ~73% 口径一致）。环境事实：用户开发栈在跑，四闸顺序跑未并行。
 
 ## 在途/待他角色
-- **[候用户] W25 真机走查推进（O-2）**——M5 唯一候项；真机取消链路行使、
-  S3 触发条件、(8) A 案均系 W25 证据；等用户项无绕行机制。
-- **[候操作者派发] 030 剩余**：人工确认面候切片指派；输入源接线/旗标
-  本体/旗标 UI 候新提案。
-- **[知会] 各席验收请求世代核对（本批复核）**：brief ①区 wt-2/wt-3/wt-5/
-  wt-7/wt-8 残言经分叉表复证系世代滞后（slot/wt-2、slot/wt-3、slot/wt-5
-  领先 0；wt-7/wt-8 无在途）——零重复验收、无在途动作。slot/wt-4 经本批
-  验收后领先 0。
+- **[候用户] W25 真机走查推进（O-2，进行中）**——M5 唯一候项；五发现登记见
+  BOARD 新节；[需用户] 三件＝挂死再发取证协作（保持现场＋CDP 51993 取栈）、
+  误伤事故 95MB 重复入库条目清理候裁、④多层目录扫描候裁决与派发。等用户项无
+  绕行机制。
+- **[知会] 各席验收请求世代核对（本批复核）**——brief ①区 wt-2/wt-4/wt-5
+  残言经分叉表复证领先 0 系世代滞后（slot/wt-2 领先 0、slot/wt-4 领先 0、
+  slot/wt-5 领先 0），零重复验收；wt-7 残言系既录裁决知会（文档切片无实现派
+  单）、wt-8 已验收销账；slot/wt-3 经本批验收后领先 0。
+- **[知会 wt-8] production-review 夹具适配**（先选云端再钉原断言＋signInHint
+  桩，97/97 断言零放松）已随本批入库。
 - VUA-7：零触碰维持，阅读解禁；VUA-8 零触碰维持。
 
 ## 阻塞
 - 无阻塞。零猜测项。
 
 ## 下次合并意图
-本批随 integration/batch-183 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并
+本批随 integration/batch-184 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并
 后正典 main fetch＋快进，集成分支不删。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-23 04:18 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
-pnpm collab:brief，①区判读＝wt-4 验收请求在本批压缩派发范围内，其余残言
-经分叉表复证系世代滞后（详见「在途」），失鲜工作树无；②VUA-9 fetch＋自
-origin/main 2a31beca 建 integration/batch-183；slot/wt-4 三笔构成实核（追
-平壳 diff 空＋实现批恰 2 文件＋状态批恰 1 文件）＋源码 diff 全文实读＋
-trait 词面 grep＋设计登记③④表对表＋三例测试断言实读＋两笔陈旧 SHA
-is-ancestor 实测；③新式 merge-tree --write-tree 预检干净后 --no-ff 合并
-4b92e6e1，合并信息逐条载明九点验收依据；④合并树定向复跑三闸（首跑
-ph_010 一例瞬败按 #7 判例定向复跑＋全量复跑全绿零代码改动，如实登记）；
-⑤BOARD #45 行注记＋前录轮转（插 183 轮出 163，10 段维持）＋本状态批；⑥
-零自有产品代码（本批集成自有内容＝合并信息＋collab 两文件）；产品版本不
-动、不代跑 W25、历史记录零删除（163 段轮转依既有轮转纪律，全文在 git 历
-史）；簿记途中一处自伤（前录插入吞 181 段头）当即发现当即补回并经段列
-表＋行长度双重校验；⑦VUA-7 零触碰（未动树、阅读解禁）、VUA-8 零触碰；
-`?? _local_p27_devlog.txt`（主树）照例不触碰；⑧[需用户] 条目零代决（W25、
-S3 触发维持候用户/候证据）；设计内裁量复核（尾段两案关系）已留痕零新裁
-决。在手无半途切片、除本状态批外无未提交改动。
+本轮（2026-09-23 23:01 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
+pnpm collab:brief，①区判读＝wt-3 验收请求（第 177/178 批两栈六笔）在操作者
+第 178 批派发范围内，wt-2/wt-4/wt-5 残言经分叉表复证领先 0 系世代滞后，失鲜
+工作树无；②origin/main d5369061 与本地一致零分叉；slot/wt-3 六笔构成实核
+（追平壳 diff 空＋两实现批恰 14/13 文件＋两状态批各恰 1 文件＋勘误批恰 3 文
+件）＋源码 diff 全文实读（remote-content/main/preload 隐私三层、App.tsx
+fonts.ready 与 #28 共存、ImportPage 三型反馈与计时接线、WarehousePage 关闭
+请求线、production-review 夹具适配零放松）＋i18n 四语逐语 grep；③VUA-9 自
+origin/main d5369061 建 integration/batch-184，merge-tree 预检干净后 --no-ff
+合并 adf9a670（dc3778ef，合并信息十三点全载）；④合并树定向复跑四闸（typecheck
+＋vitest 911/911＋check:i18n＋check:leak 155 零）全绿；cargo 免跑如实申报
+（crates/ 零触碰）；⑤BOARD 新节「W25 用户走查发现与处置」＋前录轮转（插 184
+轮出 164，10 段维持）＋本状态批；⑥零自有产品代码（本批集成自有内容＝合并信
+息＋collab 两文件）；产品版本不动、不代跑 W25、历史记录零删除（164 段轮转依
+既有轮转纪律，全文在 git 历史）；⑦VUA-7 零触碰（未动树、阅读解禁）、VUA-8
+零触碰；`?? _local_p27_devlog.txt`（主树）照例不触碰；轻负载拍纪律兑现＝四闸
+顺序跑未并行未触 cargo、未触用户开发栈进程；⑧[需用户] 条目零代决（挂死再发
+取证、95MB 条目清理、④多层目录候裁决均维持候用户）。在手无半途切片、除本状
+态批外无未提交改动。
 
 ## 留言
-- [→产线/wt-4]（验收回执）：第 182 批三笔（6a2f0973＋0673ab10＋4b92e6e1）
-  已随集成第 183 批验收入库，观察位位置与设计登记④ S2 逐点吻合、端口词
-  面零变更复核维持、三例取消注入测试实读通过；尾段补偿「apply 前跳过安
-  装」案系域内裁量按登记③表办理，集成复核其与两案的关系留痕（案 B 检查
-  位提前至 register 前＋两案共享诚实事实以测试钉死）＝自洽认许；**状态批
-  陈旧读数订正留痕**：你树 4b92e6e1「第 178 批两笔（817a5fa6＋3f176e7d）
-  仍候验收」与事实不符——两笔已随第 179 批 PR #13 入库 288ab52b（合并信
-  息⑦与 BOARD 前录②双处订正，你树不改写），下批状态批顺手消化即可；#45
-  行 (3) 全项清零（S1＋S2 双交付），余留仅 S3 候 W25 证据、S4 缓议。门禁
-  读数：合并树 cargo 974/0＋clippy 0/0＋leak 155 零（与申报一致，另如实
-  登记首跑 ph_010 一例瞬败复跑全绿）。
+- [→桌面/wt-3]（验收回执）：第 177＋178 批六笔（105341b2＋2b9f83d2＋77cc8626
+  ＋e37a28e0＋d55bf7b2＋adf9a670）已随集成第 184 批验收入库，重点复核面五项
+  逐项成立——①受理自动关闭 1500ms 与失败驻留取消计时语义面（纯件生命周期三
+  性质＋计数器驱动＋失败在场取消在飞计时实读吻合）；②onRequestClose 关闭请
+  求线不动 ContentDialog/模态层机制本体（零触碰复核维持）；③失败详情词面
+  failureLogText 律（failureDetailText 稳定码随词面）；④production-review
+  夹具适配零断言放松（先选云端再钉原断言＋signInHint 桩，diff 实读）；⑤i18n
+  四语键齐（逐语 grep 实测）。另：Cookie 隐私面（零 Cookie 值过 IPC）与
+  fonts.ready/#28 共存成立；两处勘误兑现随批留痕认许（历史文件不改写先例）。
+  门禁读数：合并树 typecheck 0 错＋vitest 911/911＋i18n OK＋leak 155 零（与
+  申报一致）。第 177 批 [需用户] 挂死再发取证协作与 95MB 重复条目清理候裁已
+  折入 BOARD 新节随批登记。
 - （回执不回执：本批为验收批，各席照纪律执行即可，无需逐一回执。）
