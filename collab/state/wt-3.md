@@ -6,139 +6,140 @@ role: 桌面
 updated: 2026-09-23
 ---
 ## 当前焦点
-**第 177 批 W25 走查阻断缺陷修复批(2026-09-23 08:50–09:3x,收尾窗口内由操作
-者派单指派的用户在等任务,基线 d5369061;本拍两笔:轮首追平壳 105341b2 吸收
-main d5369061＝第 177–183 批集成收编世代+本实现批+本状态批)。四缺陷按派单
-优先序处置,交付如下;门禁全绿后提交,交付栈带修复+CDP 取证口常驻留给用户
-继续 W25 走查。**
+**第 178 批 W25 走查第二缺陷修复批(2026-09-23 09:4x–10:4x,操作者派单的
+用户在等任务,基线 d5369061 落后 0 零追平;本拍两笔:实现批+本状态批)＝
+受理态弹窗滞留 UX 修复。根因已由操作者 CDP 验尸实锤:导入受理后
+ContentDialog 滞留「已受理」态,模态机制把弹窗外全壳 inert(模态行为本
+身正确),而唯一出口是右上不起眼 ×——用户视作整屏卡死;另证受理前后任务
+均正常落库(两次"冻结"分别对应一次 failed 与一次 succeeded 任务的受理
+态滞留)。按派单四项交付如下,门禁全绿后提交,交付栈带修复+CDP 取证口
+常驻留给用户继续走查。**
 
-- **缺陷③(渲染层挂死,阻断级)＝两轮真机复现均未复现,根因未确证,如实登
-  记不宣称修复**。复现方法与读数:①自建 dev 栈(vite 5173+electron
-  --remote-debugging-port=51993 CDP),CDP 全驱动用户操作序(导航仓库页→
-  开素材导入弹窗→自动开 BOOTH→原生文件夹对话框经键盘注入→确认列表→确认
-  导入),第一轮用**用户挂死会话同款真实素材目录**(Meiyun_v2.1.0,约
-  130MB,多层子目录),第二轮用 **3001 文件三层合成夹具**(Temp 内,零触碰
-  用户区)——两轮 warehouse.import 均正常受理(provider.db WAL 落任务,
-  任务 succeeded,条目入库),提交后 0–20s 高频 ping 全通,CDP Profiler
-  20s 采样主线程 19.7s idle(React 渲染峰值 15ms);②静态面:渲染层+preload
-  零 sendSync/readFileSync/Atomics.wait/同步 XHR,gateway 链路全异步,
-  main 侧 pick handler 纯 dialog.showOpenDialog 无文件操作。操作者取证
-  「provider.db 无新任务=网关调用发出之前挂死」与本轮全部读数不相容,挂死
-  形态(间歇性/环境相关)未在本实例重现。**交付取证能力**:dev.mjs 增
-  VUA_ELECTRON_ARGS 透传(空格分词追加 electron 参数,不默认开启);交付栈
-  以 --remote-debugging-port=51993 常驻,挂死再发时即刻 CDP
-  Debugger.pause 取主线程调用栈定位(复现脚本留痕 C:/tmp/w25-cdp.mjs 与
-  C:/tmp/w25-stress.mjs,非仓内交付物)。**[需用户] 如下轮走查再遇挂死,
-  请保持窗口现场并通知操作者,取栈后即定位;本批不以猜测修复冒充。**
-  - **误伤事故如实留痕(诚实纪律)**:第一轮复现中,CDP 键盘注入
-    (SendKeys)焦点失控,Windows 原生对话框按「上次访问位置」确认了用户上
-    轮走查所选目录 Meiyun_v2.1.0(非合成夹具),等效提交一次导入任务
-    (task-1790125584380211000-0002,succeeded)。后果核验:导入链对源目录
-    只读复制(源目录全部文件在位,mtime 未动,零写入);「生成后删除原始素
-    材」偏好虽为 on,删除腿只挂「生成 VPM 完成」事件,本任务
-    effectiveArtifactMode=use_original_unitypackage 未触发生成,删除未触
-    发——用户素材零损失。副产物:仓库 userData/warehouse 内新增一条重复
-    入库条目(与 09-19 既有条目同源同 SHA),约 95MB,[需用户] 是否清理候
-    裁,不擅动。
-- **缺陷①(顶栏 tab 初始收缩)＝已修**:AppShell 顶栏分级折叠的首判定尺
-  时序在 webfont 加载完成前量测,fallback 字体宽度偏大致量尺行 required
-  虚高,启动即误判收缩。修复:首判与 ResizeObserver 挂载统一移至
-  document.fonts.ready 之后(字体已就绪时 ready 立即 resolve,零等待零行
-  为回归;无 fonts API 环境诚实降级原时序)。#28 抖动快照机制不动。
-- **缺陷②(导入入口分流,用户已裁决期望)＝已修**:ImportPage(仓储页
-  ContentDialog 弹窗)打开先呈现「选择导入来源:本地导入/云端导入
-  (BOOTH)」两按钮,进入对应段后可「重选来源」;不再同时铺开两段,云端段
-  (内嵌 BOOTH 视图)只在显式选择后激活,一开弹窗即自动盖出浏览器视图的行
-  为终止。弹窗关闭即卸载,重开回到选择态(诚实起点)。能力不可用时云端
-  按钮禁用+不可用标注照旧。i18n 四语新词五枚(chooseAria/chooseLead/
-  chooseLocalCta/chooseCloudCta/rechooseCta)。
-- **缺陷③b(BOOTH 登录态检测,最小实现)＝已落**:①契约 TS 面登记
-  RemoteContentApiV1.signInHint(): Promise<"stored"|"none"|"unknown">
-  (packages/contracts desktop-gateway;三态线索面,契约文档版本不动,
-  wire 无新增传输载荷——Cookie 值永不过 IPC,只回存在性线索);②main 侧
-  RemoteContentManager.signInHint 只读探测分区 Session 中账户域
-  (accounts.booth.pm)Cookie 存在性——会话 Cookie 具体键名无公开文档,不
-  作键名猜测,域级痕迹为保守线索非登录判定,探测异常如实 "unknown";
-  ③IPC vua:remote-content:sign-in-hint+preload 窄面;④内嵌浏览允许清单
-  增 https://accounts.booth.pm(登录/库/会话唯一账户子域,未登录引导与视
-  图内登录跳转同域受益;下载域清单与本地窗口弹窗清单不动);⑤首开导航改
-  initialBrowseUrl(纯函数+测试):"none"→登录页
-  https://accounts.booth.pm/sign_in(登录页 URL 经公开资料确证),
-  "stored"/"unknown"→booth.pm 主页(unknown 不冒充已检测)。真机行使:本
-  机 hint="none",云端段首导登录页成功(URL 广播回现,清单放行同证)。
-  **勘误(提交后即时发现即时修,同批第三笔)**:登录页路径初版取
-  /sign_in 经真机 404,HTTP HEAD -L 实测 /users/sign_in 200,BOOTH_SIGN_IN_URL
-  以实测勘误(代码+测试断言+本行三处同步)。
-- **缺陷④(多层目录递归扫描/压缩包提取/PSD 记录)＝只登记不动手(用户明
-  令)**:现状导入链对扩展名allowlist 外文件逐文件跳过并进任务报告
-  skipped 明细(多层子目录文件路径可见,如 PNG\2P\Body.png);目录递归扫
-  描深度、压缩包提取、PSD 记录能力均维持现状,后续候用户裁决与派发。
+- **受理态自动关闭(派单①)＝已落**:导入命令受理(ok)后弹窗短暂呈现受理
+  信息(~1.5 秒,用户看得见「已受理」)随即自动关闭,任务进度归任务中心/
+  通知中心呈现(1.5.0 通知中心哲学);「模态滞留被视作死机」终止。实现:
+  import-model 新纯件 `IMPORT_ACCEPTED_AUTO_CLOSE_MS=1500` +
+  `createAutoCloseTimer`(schedule 单次触发自清/cancel 幂等/重入先清旧
+  柄);本地段与云端采纳段同型接线(计数器驱动,同窗二次受理重新计时;
+  失败反馈在场即取消在飞计时——失败驻留不静默关走;卸载/手动先关即清
+  理,重开弹窗=重挂载=新实例,陈旧定时器误关不成立);WarehousePage 补
+  `onRequestClose` 关闭请求线注入 ImportPage。i18n 四语新词一枚
+  (acceptedAutoClose,弹窗即将自动关闭提示)。
+- **失败态醒目可关(派单②)＝已落**:失败反馈改三型建模(accepted/
+  failure/notice),失败以 role="alert" 呈现并驻留弹窗(失败需用户知
+  悉),醒目主按钮「关闭」(primary 变体,新 .vua-import__failure-actions
+  动作位)为主动线,× 仅辅助;详情词面按 failureLogText 律
+  (production-workshop-view 同律)本地化文案外保留协议稳定码
+  (`文案 (vua.warehouse.*)`),失败以失败呈现不吞细节。云端采纳失败同
+  律(原实现 application 与其它两分支词面并一处)。
+- **Esc/背板/× 三路径钉测(派单③)＝已落(真机 Chromium DOM)**:新
+  smoke:import-dialog(scripts/smoke-import-dialog.mjs +
+  scripts/fixtures/import-dialog-modal.tsx,合成 Gateway 零生产服务)
+  25 检查全过:Esc/背板点击/× 三条关闭路径各钉+恰一次关闭请求;受理自
+  动关闭(时滞内在场→~1.5s 自动收口→恰一次请求);失败驻留+alert 含协
+  议稳定码+醒目主按钮在场+不自动关走+主按钮关闭;受理窗口内手动 Esc 先
+  关→重开不被陈旧定时器误关(卸载清理兑现)。证据:
+  C:/Users/AR/AppData/Local/Temp/vua-import-dialog-dom.json
+  (2026-09-23 10:10 HKT,Chromium 152.0.7977.65)。
+- **两处勘误兑现(派单④,集成第 178 批登记)＝本状态批留痕订正(历史批
+  次文件不改写,同集成第 183 批⑦先例)**:
+  - **勘误一(v4 逐名清单漏 validate_asset_paths)**:wt-4 第 176 批状
+    态批(de25daf5,随集成第 178 批 PR #12 入库)Bridge v4 冻结面核对段
+    称「操作闭集 16 成员」而逐名清单列 15。订正:读面实为 **8**(
+    inspect_project/identify_assets/**validate_asset_paths**/
+    validate_avatar/analyze_performance/inspect_avatar_references/
+    inspect_lighting/inspect_upload_readiness)＋写 6＋任务 2＝16,与闭
+    集计数一致;本批对 schemas/unity-bridge/v4/command.schema.json
+    operation enum 实数复核 16 成员含 validate_asset_paths,零冲突结论
+    不变。
+  - **勘误二(amf-unity 版本词两表)**:同批「权威正文＝amf-unity 1.2.0」
+    系裁决波落版时点读数;现行版以文档头部为准 **1.2.1**(2026-09-23 EN
+    镜像结构对齐批,amf-unity_ZH/EN 头部实核);REGISTRY 行登记 1.2.0 系
+    patch 级漂移容忍(治理 §2.3 登记表只随 Minor/Major 更新,brief
+    major.minor 容忍校验 0 异常佐证),两处词面以现行文档版本 1.2.1 为
+    准;节名「MA 与 SDK 职责边界」两处实存一致。
 
 ## 前情(本域链,全文见本文件 git 历史与 BOARD 前录)
-第 176 批(09-23 01:4x–02:1x)＝1.5.0 对账批(检测页处置/Wizard+Quest/素材
-来源/029 成果维持,纯 collab 两文件)。更早＝bdl-queries v0.5 TS 面消费准
-备(172 批)、029 B 面四环闭环(166 批)与 A 面切片(160/164 批)。
+第 177 批(09-23 08:5x–09:3x)＝W25 走查阻断缺陷修复批:缺陷①顶栏首判
+fonts.ready 已修+缺陷②导入入口本地/云端分流已落(用户裁决)+缺陷③b
+BOOTH 登录态线索面 signInHint 已落(登录页路径勘误
+/users/sign_in 同批三处同步)+缺陷③挂死未复现如实登记+取证透传交付
+(VUA_ELECTRON_ARGS)+误伤事故留痕;候集成验收。更早＝第 176 批 1.5.0
+对账、172 批 bdl-queries v0.5 消费准备、166/160/164 批 029 闭环与 A 面。
 
 ## 本轮交付(d5369061 基线世代)
-- **追平壳 105341b2**(--no-ff 吸收 main d5369061,merge-tree 预检干净,
-  零自有内容纯吸收)。
-- **实现批＝九文件**:packages/contracts/src/desktop-gateway.ts
-  (RemoteContentApiV1.signInHint 登记为主,契约测试零断言面不破坏)+
-  apps/desktop 七处(dev.mjs 透传/main.ts IPC+清单/preload.ts 窄面/
-  remote-content.ts 探测/ImportPage.tsx 分流+首导/import-model.ts+测试/
-  App.tsx fonts.ready)+import-page.css 选择态样式+i18n 四语表。
-
-## 门禁读数(如实)
-contracts 95/95;桌面 typecheck 双 tsconfig 零错;vitest 908/908(**如实登
-记**:首跑 1 例红=gateway-router catalog.list schemaVersion 0.4/0.5 断言,
-定位为 orchestrator-provider 陈旧 dist——test 脚本本含前置 build,按脚本
-先 build 后复跑 908/908 全绿,零代码改动,基线 stash 复跑同红同解,非本批
-引入);check:boundary/i18n/tables/contrast/leak(155 指纹零泄漏,独立生产
-构建)/forest-leak 全过;pnpm build 成功(chunk 尺寸警告为既有提示非错
-误)。环境事实:磁盘 ~73%(操作者批注沿用,本轮构建产物增量有限);VUA-7 零
-触碰;用户素材目录只读引用零写入(误伤事故源目录完整性已核验留痕)。
+- **实现批＝13 文件全在本席所有权域**:apps/desktop 十一
+  (features/import/ImportPage.tsx 三型反馈+两段接线+受理计时/
+  features/import/import-model.ts 纯件两枚+import-model.test.ts 三例
+  +features/import/import-page.css 失败动作位+features/warehouse/
+  WarehousePage.tsx onRequestClose 线+i18n 四语表 acceptedAutoClose+
+  scripts/fixtures/import-dialog-modal.tsx 新+scripts/
+  smoke-import-dialog.mjs 新+scripts/fixtures/production-review.tsx
+  夹具适配+package.json smoke 脚本位)。
+- **夹具适配如实登记**:production-review smoke 的「ImportPage 工具条
+  不 inert」断言自第 177 批来源分流起过期(云端段须显式选择后激活;该批
+  门禁未含此 smoke,回归未察觉——本批如实补记)。修正=夹具随新诚实流程
+  先选「云端导入」再钉原断言(语义不变)+signInHint 桩(缺陷③b 面适配),
+  现 97/97 全过,断言语义零放松。
+- **门禁读数(如实)**:typecheck 双 tsconfig 零错;vitest 97 文件
+  **911/911**(908 基线+恰 3 新例=createAutoCloseTimer 生命周期:时滞单
+  次触发不提前不双发/cancel 幂等防触发/重入先清旧柄);pnpm build 成功
+  (chunk 尺寸警告为既有提示非错误);check:boundary/i18n+tables/
+  contrast/leak(155 指纹零泄漏,独立生产构建)/forest-leak 全过;
+  smoke:import-dialog 25/25+smoke:production-review 97/97(真机
+  Chromium DOM,合成 Gateway,证据如上)。环境事实:VUA-7 零触碰(阅读
+  解禁未动树);零端到端宣称——smoke 系真实 Chromium DOM+合成 Gateway,
+  真机 Gateway 全链归用户走查行使。
 
 ## 在途/待他角色
-- **[等集成] 本拍两笔候验收**(追平壳 105341b2+实现批+本状态批),写明
-  「wt-3 第 177 批 W25 走查阻断缺陷修复批(基线 d5369061)」。
-- **[需用户] 缺陷③挂死再发取证协作**(保持现场+CDP 51993 取栈);仓库重复
-  入库条目(约 95MB)清理候裁。
-- **[知会 wt-8] RemoteContentApiV1.signInHint 契约 TS 面登记**(内嵌浏览
-  面扩展,渲染层消费零破坏;@vua/contracts 95/95 全绿)。
-- **[等用户] W25 真机走查继续**:交付栈已带本批修复常驻(CDP 51993),①②
-  ②b 可直接走查;④只登记未动手维持。
+- **[等集成] 本拍两笔候验收**(实现批+本状态批),写明「wt-3 第 178 批
+  W25 走查第二缺陷修复批(基线 d5369061)」。重点复核面:①受理自动关闭
+  时滞 1500ms 与失败驻留取消计时的语义面;②onRequestClose 关闭请求线
+  不动 ContentDialog/模态层机制本体(Esc/背板/×/焦点恢复/inert 全保持);
+  ③失败详情词面 failureLogText 律(稳定码随词面);④production-review
+  夹具适配零断言放松;⑤i18n 四语键齐(check:tables 过)。
+- **[知会 wt-4] 两处勘误已兑现**(本状态批留痕订正,历史文件不改写);
+  REGISTRY amf-unity 行 1.2.0 系 patch 漂移容忍非错误,不动。
+- **[知会 wt-8] production-review 夹具适配**(第 177 批来源分流致两处
+  过期断言,本批随新流程修正,97/97;断言语义零放松)。
+- **[等用户] W25 真机走查继续**:交付栈带本批修复常驻(CDP 51993),受
+  理态自动关闭/失败醒目可关可直接走查;真机全链行使归用户。
 
 ## 阻塞
-- 无阻塞。缺陷③根因未确证如实登记为待取证,非猜测项。
+- 无阻塞。第 177 批 [需用户]「挂死再发取证协作」随操作者 CDP 验尸定案
+  (根因=受理态弹窗滞留,本批修复)了结;仓库重复入库条目(约 95MB)清理
+  仍候裁不擅动。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔(--no-ff),写明「wt-3 第 177 批 W25 走查阻断缺陷修
-复批(基线 d5369061)」**。重点复核面:①契约扩面 signInHint 为 TS 类型面
-登记(wire 零新增载荷,Cookie 值不过 IPC);②accounts.booth.pm 清单扩展仅
-及内嵌浏览清单(下载/弹窗清单不动);③缺陷③零修复宣称(未复现,取证能力交
-付),误伤事故留痕与源目录零写入核验;④fonts.ready 首判对 #28 抖动快照机
-制零影响;⑤四语表键齐(check:tables 过)。
+**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25 走查第二缺陷修复批
+(基线 d5369061)」**。零契约面变化(packages/contracts 零触碰,wire 零
+新增载荷);全部改动在 apps/desktop 所有权域内;模态层
+(modal-layer/ContentDialog)机制零触碰。
 
 ## 待命声明(第 6 步,如实)
-本轮(2026-09-23 08:50–09:3x,收尾窗口内操作者派单指派在途任务):①date
-08:50 实测;collab:brief 判读＝指向本树无新阻塞,slot/wt-3 领先 0(第 176
-批已入库);②读 PROTECTED_MAIN.md,追平壳 105341b2(落后 35/领先 0,预检
-干净);③领取操作者第 177 批派单,导入链静态面审读(ImportPage/
-warehouse-commands-live/gateway-client/main.ts/remote-content.ts/
-modal-layer/ContentDialog/busy-timing/task-center);④dev 栈搭建+CDP 驱动
-复现两轮(真实目录/3001 文件夹具)+Profiler 取证,均未复现挂死,如实登记;
-⑤误伤事故当即核验(源目录完整性+偏好触发面+任务状态),双处留痕;⑥修复
-①②②b+取证透传,测试补齐,九文件提交;⑦门禁全绿读数如上;⑧交付栈带修复
-+CDP 常驻,UI 已重置干净态;⑨[需用户] 两项如实候裁,零代决。在手无半途切
-片、除本批外无未提交改动。
+本轮(2026-09-23 09:4x–10:4x,操作者派单用户在等任务,节拍轮 wip 时窗内
+按派单执行):①date 09:49 实测;collab:brief 判读=指向本树无新阻塞,
+slot/wt-3 领先 4(第 177 批两笔候验收不变);②领取操作者第 178 批派单
+(受理态滞留 UX 修复+勘误兑现),审读 ImportPage/ContentDialog/
+modal-layer/WarehousePage/production-workshop-view(failureLogText 律)
+/acquire-model;③import-model 纯件两枚+三例 vitest;④ImportPage 三型
+反馈+两段接线+失败详情律+WarehousePage 关闭请求线+CSS+i18n 四语;⑤
+新 smoke 夹具与脚本,真机 Chromium 25/25;⑥production-review smoke
+过期断言如实定位(177 批引入、门禁未含此 smoke),夹具适配后 97/97;⑦
+门禁全绿读数如上;⑧勘误两处逐字订正(schema enum 实数 16+文档头部
+1.2.1 实核+REGISTRY patch 漂移定性);⑨状态批+提交+交付栈带修复与 CDP
+51993 常驻。在手无半途切片、除本批外无未提交改动。
 
 ## 留言
-- [→集成] 验收请求:**候验收对象＝本拍两笔(--no-ff),写明「wt-3 第 177
-  批 W25 走查阻断缺陷修复批(基线 d5369061)」**,重点复核面见「下次合并
-  意图」①–⑤。
-- [→操作者/用户] 缺陷③未复现未修,如实申明:两轮真机复现+静态面审读全
-  数排除同步阻塞常见源,挂死形态间歇/环境相关,取证口已常驻(CDP 51993);
-  下轮走查再遇请保持现场。仓库重复条目清理候裁。
-- [→wt-8] RemoteContentApiV1.signInHint 契约 TS 面登记知会(三态线索,
-  Cookie 值不过面),消费零破坏。
+- [→集成] 验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25
+  走查第二缺陷修复批(基线 d5369061)」**,重点复核面见「下次合并意
+  图」;另请将第 177 批两笔与本批一并排验收(同分支世代相承)。
+- [→操作者/用户] 四项派单全兑现:受理自动关闭 1.5s+失败驻留醒目可关+
+  三关闭路径真机 DOM 钉测+两处勘误兑现登记;交付栈带修复+CDP 51993 常
+  驻,可直接继续走查。真机端到端未宣称,以走查行使为准。
+- [→wt-4] 两处勘误(第 176 批状态批 v4 逐名漏 validate_asset_paths+
+  amf-unity 版本词两表)已在本状态批留痕订正,历史文件未改写;REGISTRY
+  行 1.2.0 系 patch 漂移容忍非错误。
+- [→wt-8] production-review 夹具两断言随第 177 批分流过期,本批适配
+  (先选云端再钉原断言+signInHint 桩),97/97,断言语义零放松。
 - (回执不回执:在途事项以 BOARD 与本状态文件当前焦点为准。)
