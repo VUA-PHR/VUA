@@ -391,6 +391,18 @@ fn orc_sto_009_snapshot_identifier_rejects_traversal_and_invalid_characters() {
     store
         .create(&project_ref, "safe-Id_1")
         .expect("alphanumeric, dash and underscore identifiers must be accepted");
+    // The public grammar gate (for callers re-validating ids recovered from
+    // persisted payloads) shares the same vectors — single grammar source.
+    for id in ["", "../escape", "a/b", "a\\b", "a b", "快照", "a.b", ".hidden"] {
+        assert_eq!(
+            FileSystemSnapshotStore::validate_snapshot_id(id)
+                .unwrap_err()
+                .kind(),
+            std::io::ErrorKind::InvalidInput,
+            "id {id:?}"
+        );
+    }
+    assert!(FileSystemSnapshotStore::validate_snapshot_id("safe-Id_1").is_ok());
     fs::remove_dir_all(project_ref.root).unwrap();
 }
 

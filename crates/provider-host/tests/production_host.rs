@@ -1055,6 +1055,84 @@ fn ph_007_recover_rollback_restores_without_rerunning() {
 }
 
 #[test]
+fn ph_007a_recover_rollback_refuses_malformed_record_snapshot_id() {
+    let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
+        run_failing_confirm("recover-rollback-guard");
+
+    // Tamper the failed attempt's receipt: a snapshot id that the
+    // creation-time grammar gate never saw. The receipt is deserialized
+    // payload data, and its snapshot id feeds the ownership probe, the
+    // SnapshotRef path and the stale-quarantine rename — all before
+    // restore_verified's containment checks run.
+    let store = vua_orchestrator::SqliteTaskStore::open(base.join("provider.db")).unwrap();
+    let original = store
+        .task(&confirm_task_id)
+        .unwrap()
+        .expect("failed task persists");
+    let record_id = original
+        .result
+        .as_ref()
+        .expect("failed run carries a receipt")
+        .get("buildRecordId")
+        .and_then(Value::as_str)
+        .expect("receipt names its record")
+        .to_owned();
+    let record_path = base.join("records").join(format!("{record_id}.json"));
+    let mut record: Value =
+        serde_json::from_str(&fs::read_to_string(&record_path).unwrap()).unwrap();
+    // BuildSnapshotEvidenceV01 serializes camelCase — the field on the wire
+    // is `snapshotId`.
+    record["snapshot"]["snapshotId"] = json!("../evil-target");
+    fs::write(&record_path, serde_json::to_vec(&record).unwrap()).unwrap();
+
+    // The traversal target EXISTS, so the lexical ownership probe would
+    // pass and the quarantine rename would MOVE the marker directory —
+    // this test pins the grammar gate, not an accidental is_dir refusal.
+    let marker = project_root.join("evil-target");
+    fs::create_dir_all(&marker).unwrap();
+
+    let (config, _bridge) = production_config(&base, &project_root);
+    let output = {
+        let mut output_buffer = Vec::new();
+        vua_provider_host::run_provider_host_with(
+            frames_input(vec![frame(
+                "f1",
+                request(
+                    "req-recover",
+                    "production.recover",
+                    "cmd-recover-rollback-guard",
+                    recover_params_v02("rollback", &confirm_task_id, &plan_id),
+                ),
+            )]),
+            &mut output_buffer,
+            base.join("provider.db"),
+            Some(config),
+        )
+        .unwrap();
+        output_buffer
+    };
+    let frames = parse_frames(&output);
+    // Run construction happens before task acceptance: a malformed receipt
+    // id is a synchronous validation refusal, never a half-created task.
+    let error = response_frame(&frames, "req-recover")["payload"]["error"].clone();
+    assert_eq!(error["code"], "vua.production.not_recoverable", "{error}");
+
+    // Nothing moved: the marker stays put and no superseded copy appeared.
+    assert!(marker.is_dir(), "marker directory untouched");
+    let mut relocated = fs::read_dir(&project_root).unwrap();
+    assert!(
+        !relocated.any(|entry| {
+            entry
+                .ok()
+                .is_some_and(|entry| entry.file_name().to_string_lossy().starts_with("evil-target.superseded-"))
+        }),
+        "no superseded relocation of the traversal target",
+    );
+
+    let _ = fs::remove_dir_all(&base);
+}
+
+#[test]
 fn ph_008_recover_requires_user_decision_and_recoverable_source() {
     let (base, _source, project_root, plan_id, _plan_revision, confirm_task_id) =
         run_failing_confirm("recover-guards");

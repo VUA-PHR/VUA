@@ -185,6 +185,17 @@ impl FileSystemProjectStore {
 pub struct FileSystemSnapshotStore;
 
 impl FileSystemSnapshotStore {
+    /// The snapshot identifier grammar, as a single public source: non-empty
+    /// ASCII alphanumeric plus `-` and `_`. Snapshot ids become path segments
+    /// under `.vua/snapshots` and `.vua/recovery`, so any other character —
+    /// separators, dots, drive letters, whitespace — is rejected before it
+    /// can traverse. Callers that receive an id from a persisted payload
+    /// (a build record, a task result) must re-validate before the id joins
+    /// a path; creation-time validation does not follow the data.
+    pub fn validate_snapshot_id(value: &str) -> io::Result<()> {
+        validate_identifier(value)
+    }
+
     /// Creates a scope-limited snapshot (files or directories, project-root
     /// relative), builds an integrity manifest and verifies it by read-back.
     /// A failed verification leaves no snapshot behind, so callers can never
