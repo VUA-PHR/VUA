@@ -2,9 +2,9 @@
 
 [English](documentation-governance_EN.md) | [简体中文](documentation-governance_ZH.md)
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: Simplified Chinese (EN is the mirror, synced to 1.0.0)
+> Authoritative language: Simplified Chinese (EN is the mirror, synced to 1.1.0)
 > Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
 > (`docs/plans/docs-governance-reform_ZH.md`). The plan itself carries no normative effect;
 > from acceptance onward this document is the sole authority for document version management.
@@ -103,7 +103,31 @@ The release notes of every M gate end with the "document version matrix accepted
   REGISTRY row, and reports any mismatch. Low-cost detection replaces preventive high-frequency
   updates; a human writes one line only when an event occurs.
 
+## 4. Reference whitelist for managed-document bodies (2026-09-23, proposal 031-E4)
+
+When the normative body text of a managed document (T0–T5) references a collaboration work
+item, only the following forms are allowed:
+
+- `proposal NNN` (a `collab/proposals/` proposal number);
+- `U#` (a BOARD "pending user ruling" row number, only when citing an issued ruling);
+- managed-document versions (internal SemVer), protocol/schema versions, product versions.
+
+The following identifiers **must not enter managed documents**: integration batch numbers
+("batch N"), worktree numbers (wt-N/VUA-N), and **bare** facet letters from inside proposals
+(cross-document references must use the `NNN-facet` form, e.g. 026-A3).
+
+Disposition of existing residue: the G13 references currently present in the
+`docs/protocols/bdl-queries-*` protocol documents and `docs/architecture/bdl_*` are listed
+as a **ride-along cleanup item for the next version bump of those documents**; no freeze face
+is re-versioned just for this. Old identifiers in historical files are never rewritten
+retroactively (see the retired-namespace table in `collab/README.md`).
+
 ## Document changelog
 
+- 1.1.0 (2026-09-23): added §4 "Reference whitelist for managed-document bodies" (landing
+  of proposal 031-E4) — normative bodies cite only proposal NNN / U# / managed-document
+  versions / protocol and schema versions / product versions; batch numbers, wt-N, and bare
+  facet letters are barred from managed documents; the G13 residue becomes a ride-along
+  cleanup item at the next version bump.
 - 1.0.0 (2026-09-06): initial version, formalized from §2 of the documentation and
   collaboration repair plan.

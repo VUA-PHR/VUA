@@ -2,9 +2,9 @@
 
 [English](development-outline_EN.md) | [简体中文](development-outline_ZH.md)
 
-> Document version: 2.0.14
+> Document version: 2.1.0
 > Status: Accepted
-> Authority: Simplified Chinese (EN mirror, synced to 2.0.14)
+> Authority: Simplified Chinese (EN mirror, synced to 2.1.0)
 > Scope: v0.4 rebuild baseline through stable `1.0.0`
 > Normative effect: Schedules accepted work without expanding the product boundary
 
@@ -15,11 +15,15 @@ Since 2026-09-06, work is organized as a **single integration branch plus vertic
 product gate sequence; on the execution side, 2.0.0 divides work into **six roles** (next section),
 replacing the former M/F/B three lanes and the transitional F/B two-role arrangement.
 
-An M gate is a tag on the integration branch plus an acceptance checklist: once the gate checklist
-is green, the tag is cut and release notes are published. M gates close in order. Contracts and
-migration results confirmed by a previous gate form the next shared baseline; work that does not
-depend on an unsettled contract may proceed early inside slices, but it cannot create a product
-release while bypassing its M gate.
+An M gate is a **release gate plus a version map** (2.1.0 redefinition, proposal 031-E6): a tag on
+the integration branch plus an acceptance checklist; once the gate checklist is green, the tag is
+cut and release notes are published. M gates close in order. Contracts and migration results
+confirmed by a previous gate form the next shared baseline; work that does not depend on an
+unsettled contract may proceed early inside slices, but it cannot create a product release while
+bypassing its M gate. **M gates no longer carry a work list**: a gate freezes its scope when it
+opens, and any later work is initiated as a new proposal (`collab/proposals/`) routed to the next
+gate; the factual work queue lives in the `collab/BOARD.md` open-questions table and in
+proposals, not in the gate table.
 
 The following is the starting-state snapshot taken when the plan was accepted (2026-09-04, the v0.4
 rebuild baseline); see each gate section and `collab/BOARD.md` for the latest acceptance status:
@@ -107,6 +111,13 @@ Responsibility rules:
 > after). The zero-end-to-end-claim discipline is unchanged: everything produced
 > in-window is registered item by item against real-machine evidence, and segments
 > not run are honestly reported as not run.
+>
+> Gate status (2.1.0 explicit marking, proposal 031-E6/E7): **M5 functional scope is
+> complete (the implementation surface is in the repository); the only pending item
+> is W25 real-machine acceptance**. W25 is a "waiting-for-user" item (it requires the
+> user to personally launch VRChat); this document provides no bypass mechanism. Gate
+> acceptance and release (W26) proceed per the M4 precedent once W25 real-machine
+> evidence is on file.
 
 | # | Task | Owning role | Collaborators | Anchor / acceptance |
 | --- | --- | --- | --- | --- |
@@ -125,6 +136,11 @@ Responsibility rules:
 > downgrade paths, and BDL manual revision are unsettled/to-be-measured items; no task row in this
 > plan may be read as scheduling them; the W20/W23/W24 row acceptance criteria are adjusted in
 > this batch (the original criteria are kept for reference and explicitly marked superseded).
+>
+> 2.1.0 note (proposal 031-E1/E6): **this W-window table is frozen as a historical record and
+> no new W numbers are issued**; new work is initiated as a new proposal (`collab/proposals/`),
+> and the factual work queue lives in the `collab/BOARD.md` open-questions table and in
+> proposals. Existing rows in the table are not rewritten retroactively.
 
 ## M sequence: Main integration and delivery
 
@@ -305,6 +321,13 @@ then landed into the current window as W18–W26; the desktop M5 first batch is 
 | Lawful self-owned asset smoke path and reproducibility | Production | Integration | W25 |
 | 008 path-a wiring (delete originals after generation) + import-time automatic-generation hook and orchestration semantics (merged design, M5 first batch) | Desktop | Core, Data | W18/W19 |
 | Gate acceptance and release | Integration | All | W26 |
+
+> 2.1.0 gate status (proposal 031-E6/E7; explicit gate status, no bypass mechanism): **M5
+> functional scope is complete (the implementation surface is in the repository); the only
+> pending item is W25 real-machine acceptance** — work added while the gate was open
+> (019/026/029/030 etc.) is carried by proposals and is not appended to this gate's list;
+> from 2.1.0 this gate row is a release-gate/version-map row, and closure awaits W25
+> real-machine evidence on file, then the W26 procedure (M4 precedent).
 
 ### M6 — v0.8.0: Project management and environment deployment
 
@@ -530,6 +553,20 @@ stable `1.0.0` (standing product boundary).
 
 ## Document changelog
 
+- 2.1.0 (2026-09-23): **M gates redefined as "release gate plus version map"** (proposal
+  031-E6/E7; user ruling 2026-09-23 adopting plan A — release/planning decoupling plus a single
+  work-item namespace — executed as proposal 031 batch 2): the "Goal and baseline" M-gate
+  definition now
+  reads that M gates no longer carry a work list — a gate freezes its scope when it opens, later
+  work is initiated as a new proposal routed to the next gate, and the factual work queue lives
+  in the BOARD open-questions table and proposals; the current-window section and the M5 section
+  carry the **explicit gate status** = M5 functional scope complete (implementation surface in
+  the repository), the only pending item being W25 real-machine acceptance (a waiting-for-user
+  item; no bypass mechanism); the W-window table is frozen as a historical record and no new W
+  numbers are issued (same source as E1). The M8–M10 gate-status table rows land in
+  `collab/BOARD.md` (this file's M8–M10 breakdown sections already exist and are untouched).
+  Product version unmoved (0.6.0 awaiting M5); W25 not run by proxy; M0–M4 closure results not
+  overturned; no history deleted. ZH-authoritative; this is the EN mirror.
 - 2.0.14 (2026-09-22): **user ruling 2026-09-22 (product-boundary 1.5.0) scheduling-scope
   correction** — the current-window W20/W23/W24 rows and the M7 task table are re-aimed per the
   new ruling (original criteria kept for reference and explicitly marked superseded): W23

@@ -2,11 +2,13 @@
 
 [English](bdl-dependency-observations-v0.2_EN.md) | [简体中文](bdl-dependency-observations-v0.2_ZH.md)
 
-> Document version: 0.2.1
+> Document version: 0.2.2
 > Status: **FROZEN** (2026-09-22, frozen by wt-4 production, batch 166 — the
 > freeze batch) **and LANDED** (store v0.2 runtime, wt-4 production, batch
-> 168 — the landing slice; this 0.2.1 note registers that landing, zero
-> change to any frozen word face). The「Schema＋正负例向量＋至少一端消费测试」
+> 168 — the landing slice, registered by the 0.2.1 note; **conservative
+> extractor capability face**, wt-4 production, batch 178 — the 030
+> extractor slice, registered by this 0.2.2 note — both notes change zero
+> frozen word faces). The「Schema＋正负例向量＋至少一端消费测试」
 > freeze triad landed together:
 > - schema: `schemas/bdl/v0.2/schema.sql` (full readable authority,
 >   standalone-executable) + `schemas/bdl/v0.2/002_dependency_
@@ -258,6 +260,68 @@ Negative vectors (rejected):
   (born v0.2 / v0.1 migrates on open verbatim / future fence and foreign
   format refused), and the confirmation action's laws. Batch 168 totals:
   bdl-store crate 66 cases green, clippy all-targets zero warnings.
+
+## Conservative extractor landing (v0.2.2 — batch 178 facts; capability face and flag semantics)
+
+**Positioning first**: this batch delivers a PARSE-AND-LAND CAPABILITY, not an
+enabled feature. Per product-boundary 1.5.0 ("automatic compatibility-evidence
+collection is an experimental feature, off by default") and the production
+seat's 2026-09-23 respecification note in the 030 inline thread: **capability
+existing is NOT the feature being enabled** — zero automatic triggers exist,
+and the extractor has zero callers in product code (tests only). Wiring it to
+any real input source (the user's actual BOOTH browsing and Unity usage
+observation channels), the experiment flag (default OFF) itself, and any flag
+UI all await a separately accepted proposal. The standing law that turning
+auto-collection off must not affect BDL base storage, ordinary imports, or
+Recipe source supplementation is untouched by this batch.
+
+- **Pure parser** (`crates/bdl-store/src/dependency_extract.rs`): input =
+  caller-provided product-page CONTENT TEXT; zero fetching, zero network,
+  zero file access — the crawl surface stays design-blank per the 1.5.0
+  respecification (a candidate source among others, awaiting re-decision).
+  Only three high-confidence structural layout families from the 030 §1
+  prototypes are extracted: `explicit_heading` (lines under an author-made
+  prerequisite-environment heading), `bullet` (bullet and version-pinned
+  lines), and `one_line` (a whole line that is a `com.*` reverse-domain
+  package name, optionally version-pinned). **Running prose, compressed
+  title claims, keyed one-line declarations ("Shader: X"), and description
+  links are honestly NOT extracted** — prefer missing over guessing. Of the
+  six-value `extraction_method` closed set this extractor NEVER emits
+  `prose`/`title`/`link`.
+- **Word face and laws**: `dep_kind` rides the frozen four-value closed set;
+  classification uses a deliberately narrow lexicon (liltoon/poiyomi →
+  `shader`; modular avatar/avatar optimizer → `tool_package`; unity/vrchat/sdk
+  forced to `other` by the frozen ruling; everything else `other`, never
+  guessed). `avatar_base` is NEVER emitted (outfit-to-base recognition is
+  semantic; a layout parser cannot honestly carry it). `raw_quote` (source
+  line, outer whitespace trimmed only), `dep_name`, and `version_hint` are
+  all verbatim; `source_span` is always `body`; **resolution is never
+  auto-populated** — `resolved_ref_product_id` stays None and
+  `resolution_evidence` stays empty (identity resolution stays entirely on
+  the human-confirmation path per the 030 §1 sample-3 mislink evidence).
+- **Landing through the existing write face**: leads pass through
+  `lead_to_new_observation` (stamping `extracted_by =
+  'conservative-layout-extractor-v1'`; the two-confidence-dimensions law
+  stays two columns) into `NewDependencyObservation` and land via
+  `record_dependency_observation`; rows land UNCONFIRMED
+  (`confirmed_by_human` is not a write-face field, always 0 — a clue), and
+  the only writer of 1 remains `confirm_dependency_resolution`.
+- **Test facts (2026-09-23, local cargo run)**:
+  `crates/bdl-store/tests/dependency_extract_conservative.rs` **8 cases
+  green** — all fixtures synthetic (built on the 030 §1 layout prototypes,
+  zero real page content, zero network, zero file access), pinning: the three
+  structural families with closed-set word faces / prose and non-structural
+  lines never extracted plus zero `avatar_base` output / verbatim round-trip
+  through the existing write face, always unconfirmed (unknown product
+  refused by the FK, honestly) / determinism plus per-document dedupe /
+  honest empty states. Batch totals: bdl-store crate all suites green
+  (84 cases), `cargo test --workspace` **971/0**, clippy
+  `--workspace --all-targets` **zero warnings**.
+- **Honesty boundary**: zero end-to-end claims — code-face evidence only (a
+  real SQLite landing round-trip is not a real-machine chain); the
+  extractor's recall on real page shapes is UNVERIFIED (synthetic fixtures
+  prove the behavior laws, not coverage); zero BOOTH access; the frozen word
+  faces (schema.sql/002/the 17 vectors) unchanged byte for byte.
 
 ## Consumer test (freeze-batch facts)
 
