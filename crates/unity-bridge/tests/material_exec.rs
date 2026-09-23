@@ -1037,7 +1037,8 @@ fn b3_exec_006_vpm_mode_runs_the_staging_contract_and_cleans_up() {
     assert_eq!(vpm.installs.load(Ordering::SeqCst), 1);
 
     // The staging directory is destroyed on the success path.
-    let staging = vua_unity_bridge::staging_root(&base.join("temp"), "corr");
+    let staging = vua_unity_bridge::staging_root(&base.join("temp"), "corr")
+        .expect("valid session id");
     assert!(!staging.exists(), "staging leftovers poison later runs");
 
     // The receipt carries the local VPM evidence.

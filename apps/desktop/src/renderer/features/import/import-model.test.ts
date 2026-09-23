@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { test, vi } from "vitest";
 import {
   IMPORT_ACCEPTED_AUTO_CLOSE_MS,
+  autoCloseArmed,
   createAutoCloseTimer,
   BOOTH_HOME_URL,
   BOOTH_SIGN_IN_URL,
@@ -395,4 +396,29 @@ test("createAutoCloseTimer:重入 schedule 先清旧柄——同窗二次受理�
   } finally {
     vi.useRealTimers();
   }
+});
+
+test("createAutoCloseTimer:schedule/cancel 解构调用形态可独立调用(不依赖 this 绑定,第 181 批反向审查钉死)", () => {
+  vi.useFakeTimers();
+  try {
+    let closed = 0;
+    const timer = createAutoCloseTimer(() => {
+      closed++;
+    }, 1000);
+    const { schedule, cancel } = timer;
+    schedule();
+    assert.equal(timer.pending, true, "解构后的 schedule 武装正常");
+    cancel();
+    vi.advanceTimersByTime(5_000);
+    assert.equal(closed, 0, "解构后的 cancel 正常取消(不因 this 为 undefined 炸裂)");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("autoCloseArmed:仅受理态武装——失败/提示/无反馈一律不武装(第 181 批反向审查)", () => {
+  assert.equal(autoCloseArmed({ kind: "accepted" }), true, "受理态武装(自动关闭唯一的武装依据)");
+  assert.equal(autoCloseArmed({ kind: "failure" }), false, "失败态不武装(失败驻留,不静默关走)");
+  assert.equal(autoCloseArmed({ kind: "notice" }), false, "提示态不武装(如空选提示)");
+  assert.equal(autoCloseArmed(null), false, "无反馈不武装(用户接管:受理窗口内再发起拾取/采纳即取消在飞计时,自动关闭不跑在用户操作下面)");
 });

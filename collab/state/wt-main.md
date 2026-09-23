@@ -1,144 +1,156 @@
 ---
-worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-184）
-branch: integration/batch-184（本批载体；正典 main 维持 origin/main 只快进）
+worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-185）
+branch: integration/batch-185（本批载体；正典 main 维持 origin/main 只快进）
 role: 集成
-baseline_commit: d5369061
-updated: 2026-09-23
+baseline_commit: 6e706e7d
+updated: 2026-09-24
 ---
 ## 当前焦点
-**集成第 184 批（2026-09-23 23:0x 起，节拍轮正常工作时段 date 23:01 实测；基线
-origin/main d5369061＝第 183 批 PR #15 合并尖）＝用户 W25 走查第一步五发现修复
-栈双批验收：wt-3 第 177 批（W25 走查第一缺陷修复批：顶栏 fonts.ready＋导入入口
-本地/云端分流＋BOOTH 登录态线索面 signInHint＋dev.mjs VUA_ELECTRON_ARGS 取证
-透传＋登录页路径勘误）＋第 178 批（受理态自动关闭批：受理态 1.5s 自动关＋失败
-态驻留醒目可关＋Esc/背板/× 三路径 smoke 25/25）＋W25 走查进行中 BOARD 登记
-（新节「W25 用户走查发现与处置」；挂死项维持开放候再现）＋合并树定向复跑四闸
-全绿**。全部走 PROTECTED_MAIN 政策通道（本分支 PR 落地、正典 main 只快进）。
-轻负载拍纪律兑现：用户开发栈在跑，四闸顺序跑未并行、未触 cargo。
+**集成第 185 批（2026-09-24 05:2x 起，节拍轮正常工作时段 date 05:22 实测；基线
+origin/main 6e706e7d＝第 184 批 PR #16 合并尖）＝双批验收入库：wt-3 第 179 批
+（桌面域自我反向审查批，先例第 148 批：受理自动关闭「用户接管」重排边界修＋
+downloadsLoading 四语新词＋createAutoCloseTimer 局部闭包化，恰 8 文件全在
+apps/desktop）＋wt-4 第 183 批（产线域空队列反向审查批：#43 路径形态族新成员
+修复＝staging 目录名 session_id 词面守卫 `^[A-Za-z0-9_-]{1,128}$`，恰 4 文件
+全在 crates/unity-bridge）＋合并树全闸复跑全绿（本批含 crates/ 变更，cargo
+test --workspace 与 clippy 合并树实跑）＋BOARD #43 行注记折入（wt-4 请求）**。
+全部走 PROTECTED_MAIN 政策通道（本分支 PR 落地、正典 main 只快进）。轻负载拍
+纪律兑现：用户交付栈（vite 5173＋electron CDP 51993）全程未触，门禁在 VUA-9
+树内顺序跑未并行。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 183 批（09-23 04:1x–05:1x）＝wt-4 第 182 批验收（#45(3) S2 取消观察位实现
-切片，端口词面零变更，(3) 全项清零）＋合并树定向复跑三闸全绿，经
-integration/batch-183 PR #15 入库 d5369061。更早段落见本文件 git 历史与 BOARD
+第 184 批（09-23 23:0x）＝wt-3 第 177＋178 批双批验收（W25 走查第一步五发现
+修复栈：fonts.ready＋入口分流＋signInHint＋受理自动关闭＋失败驻留醒目可关）
+＋W25 走查进行中 BOARD 新节登记＋合并树定向复跑四闸全绿，经
+integration/batch-184 PR #16 入库 6e706e7d。更早段落见本文件 git 历史与 BOARD
 前录。
 
-## 本轮交付（d5369061 基线，integration/batch-184）
-- **验收合并＝wt-3 第 177＋178 批六笔**（追平壳 105341b2＋实现批 2b9f83d2＋
-  状态批 77cc8626＋勘误批 e37a28e0＋实现批 d55bf7b2＋状态批 adf9a670；
-  merge-base 恰 d5369061＝落后 0／领先 6（实质 3）；新式 merge-tree
-  --write-tree 预检干净；合并 dc3778ef 合并信息十三点全载，集成直读实核）：
-  ①**追平壳纯吸收**——`git diff d5369061 105341b2` 逐字节为空。
-  ②**改动面逐笔核对**——实现批 2b9f83d2 恰 14 文件（apps/desktop 13＋
-  packages/contracts TS face 1）；状态批 77cc8626/adf9a670 各恰 1 文件；勘误
-  批 e37a28e0 恰 3 文件（登录页路径源码修正＋测试＋状态批同步）；实现批
-  d55bf7b2 恰 13 文件全在 apps/desktop。全范围 crates/ docs/ schemas/ 零触碰。
-  ③**Cookie 隐私面成立**——signInHint 三层（remote-content/main/preload）只
-  返 stored/none/unknown 三态存在性线索，Cookie 值零读取零传输；异常如实
-  unknown 不猜测；IPC 有 assertLocalSender 护栏；契约注释同文自证「Cookie 值
-  永不过本面」；会话 Cookie 键名无公开文档不作键名猜测。
-  ④**登录导航证据在案**——勘误批以真机实测为准（/sign_in 404、/users/sign_in
-  200＝HTTP HEAD -L）；initialBrowseUrl 纯函数 none→登录页、stored/unknown→
-  主页（unknown 不冒充已检测）；allowedOrigins 扩 accounts.booth.pm 仅内嵌浏
-  览清单，下载域/本地窗口弹窗清单不动。
-  ⑤**fonts.ready 修法与 #28 抖动快照机制共存成立**——首判与 ResizeObserver
-  挂载同移 document.fonts.ready 之后（就绪时零等待），#28 输入快照机制本体
-  （App.tsx:774–784）零触碰；不可用环境诚实降级原时序。
-  ⑥**dev.mjs VUA_ELECTRON_ARGS** 显式取证透传不默认开启（CDP 取证护栏）。
-  ⑦**本地/云端入口分流**（用户裁决 2026-09-23）——弹窗先选来源再进段，云端段
-  只在显式选择后激活，重开回选择态（诚实起点）。
-  ⑧**受理态 1.5s 自动关闭**——import-model 纯件
-  IMPORT_ACCEPTED_AUTO_CLOSE_MS=1500＋createAutoCloseTimer（schedule 单次触
-  发自清/cancel 幂等/重入先清旧柄）；本地段与云端采纳段计数器驱动接线（acceptedTick
-  重受理重新计时；失败反馈在场即取消在飞计时＝失败驻留不静默关走；卸载清理防
-  陈旧定时器误关；onRequestClose 经 ref 读取宿主重渲染不重排定时器；缺省宿主
-  诚实降级无自动关闭）。
-  ⑨**失败态醒目可关**——三型反馈建模（accepted/failure/notice），失败
-  role=alert 驻留＋failureDetailText 按 failureLogText 律保留协议稳定码＋
-  primary 主按钮「关闭」主动线，× 仅辅助；模态层（modal-layer/ContentDialog）
-  机制零触碰，onRequestClose 仅宿主关闭请求线。
-  ⑩**smoke 双套证据在案**（wt-3 本树亲测）——import-dialog 新 smoke 真机
-  Chromium DOM 25/25（Esc/背板/× 三路径各恰一次关闭请求＋受理自动关＋失败驻
-  留＋重开不被陈旧定时器误关；证据
-  C:/Users/AR/AppData/Local/Temp/vua-import-dialog-dom.json 2026-09-23 10:10
-  Chromium 152.0.7977.65）；production-review 夹具适配第 177 批来源分流（先选
-  云端再钉原断言＋signInHint 桩）97/97，断言语义零放松（集成 diff 实读确认）。
-  ⑪**i18n 四语键齐**——集成逐语 grep en/ja/ko/zh-CN 各 1（acceptedAutoClose
-  ＋选择面五键）。
-  ⑫**零契约面变化申报成立**——第 178 批 packages/contracts 零触碰（wire 零新
-  增载荷）；第 177 批契约面仅 TS face 登记 signInHint（桌面所有权内）。
-  ⑬**勘误与诚实边界**——adf9a670 两处勘误兑现（v4 逐名清单漏
-  validate_asset_paths＝读面实为 8＋写 6＋任务 2＝16 与闭集一致；amf-unity 版
-  本词两表＝现行文档头部 1.2.1 为准，REGISTRY 行 1.2.0 系 patch 漂移容忍）系
-  留痕订正历史文件不改写（同第 183 批⑦先例）；零端到端宣称维持（smoke 系真
-  实 Chromium DOM＋合成 Gateway 非真机 Gateway 全链，真机走查归用户 W25 行
-  使）；[需用户] 条目零代决。
-- **W25 走查进行中 BOARD 登记**——新节「W25 用户走查发现与处置」（五发现
-  ①顶栏②入口分流③b 登录引导已修随本批入库；③挂死滞留根因已修而挂死项维持
-  开放候再现〔交付栈 CDP 51993 常驻〕；④多层目录扫描/压缩包提取/PSD 记录用
-  户明令只登记候裁决；[需用户] 两件随节登记＝挂死再发取证协作＋误伤事故 95MB
-  重复入库条目清理候裁）。
-- **BOARD 前录轮转**（插 184 段轮出 164 段，10 段维持）＋本状态批。
+## 本轮交付（6e706e7d 基线，integration/batch-185）
+- **验收合并＝wt-3 第 179 批两笔**（实现批 99341f83＋状态批 8553e8d8；
+  merge-base 恰 6e706e7d＝落后 0／领先 2（实质 1）；merge-tree --write-tree
+  预检干净；合并 d9308d46 合并信息九点全载，集成直读实核）：
+  ①**改动面逐笔核对**——实现批恰 8 文件全在 apps/desktop（import-model.ts＋
+  ImportPage.tsx＋四语 strings＋import-model.test.ts＋smoke fixture）；
+  packages/contracts 零触碰＝零契约面变化申报成立；modal-layer/ContentDialog
+  机制零触碰；signInHint 三层零 diff＝Cookie 隐私面不被本批削弱。
+  ②**发现一（受理自动关闭「用户接管」边界）成立**——武装判据收紧为纯件
+  autoCloseArmed（仅 kind==="accepted" 武装），两处 effect 依赖只留 feedback
+  对象、acceptedTick 两处删除；失败到达不武装（失败驻留保持）、反馈清空＝
+  用户接管即取消在飞计时（「不该关时关」反面新成员封死：原生拾取停留期间
+  弹窗自关/拾取结果落已卸载组件被丢弃）、同窗二次受理经「清空→再置受理」
+  重新武装＝重新计时（第 178 批登记语义逐项保持，diff 实读）。
+  ③**发现二（下载清单 loading 词面误用纠正）成立**——loading 分支改引专属
+  词面 downloadsLoading（如实过程态），弃借 importConfirmTitle（#39 族纠正）；
+  i18n 四语各恰一枚新键逐语实读对齐。
+  ④**发现三（createAutoCloseTimer this 绑定脆弱性）成立**——schedule/cancel
+  改局部闭包函数，解构调用形态不再炸裂；pending 语义保持行为零变化。
+  ⑤**测试钉死核实**——vitest 新例恰 2（autoCloseArmed 判据表四态＋解构调用
+  钉死）；smoke fixture 新场景 userTakeoverCancelsAutoClose 自有 6 检查＋共享
+  driveToLocalSubmission 检查＝7（计数机制实读核对，25 基线＋7＝32 与申报口径
+  一致）；既有断言零放松（测试改动全为新增）。
+  ⑥**留痕勘误（如实登记，不阻塞验收）**——实现批源码注释四处写作「第 181 批
+  反向审查」与本席状态批/验收请求/提交申报的第 179 批不一致，系注释批号笔误
+  （语义零影响）；以状态批与提交申报为准，不改写代码，候 wt-3 下批状态批
+  顺手订正。
+- **验收合并＝wt-4 第 183 批两笔**（实现批 9f9e1282＋状态批 5ad68979；
+  merge-base 恰 6e706e7d＝落后 0／领先 2（实质 1）；预检干净含两分支交叉
+  预检；合并 769b553d 合并信息八点全载，集成直读实核）：
+  ①**改动面逐笔核对**——实现批恰 4 tracked 文件全在 crates/unity-bridge
+  （material_staging.rs＋三个测试文件）；docs/ schemas/ 零触碰；冻结词面
+  （unity-bridge v4、amf-production v0.2、material-intake 0.2.x）零字节触碰；
+  端口词面零变更（VpmBackend 零 diff）；packages/contracts 零触碰。
+  ②**#43 路径形态族新成员修复成立**——staging 目录名内插的 session_id 在
+  生产 wire 上即客户端可控确认 correlationId（provider-host 帧层原样透传无
+  词面校验），修法在命名点 staging_root 钉词面守卫（闭集 ASCII 字母数字/-/_
+  、1..=128，与 Bridge C# commandId 语法同族），签名改 io::Result<PathBuf>、
+  create/create_from_template 以 ? 传播——宿敌 id 在任何目录创建之前被拒
+  （staging_root 先于 create_dir_all，diff 实读）。
+  ③**失败臂语义成立**——骑既有 io::Result 失败臂（STAGING_FAILED→快照回滚→
+  Failed 收据），material_exec 运行时零改动＝零补偿臂变化；错误词面只携带
+  长度不回显宿敌值（新钉测试显式断言实读确认）。
+  ④**新钉两例核实**——宿敌九形态（../evil、a/b、a\b、盘符、\\?\ verbatim、
+  空白、空、控制符、129 超长）全拒且 create 不触文件系统＋不回显；合法六形态
+  （corr/uuid-v7/task-*/material-<hex>/128 边界）全放行且单组件约束断言在位；
+  调用点适配四处纯机械（material_exec.rs 一处＋material_exec_real.rs 三处，
+  合法 id 只补 .expect）——既有断言零放松、material_exec 25/25 既有行为零
+  变化自洽。
+- **BOARD 维护**——前录轮转（插 185 段轮出实际最老段＝第 166/167 批段；派单
+  书「轮出 165 段」系批号笔误，无 165 段在档，按「10 段维持」纪律执行并如实
+  登记）＋#43 行注记一句折入（wt-4 请求：staging session_id 词面守卫修复入账，
+  写明批号 185/第 183 批与提交号 9f9e1282/合并 769b553d）＋本状态批。
+- **origin 推送记录节登记**（本批恢复登记口径）：PR 号与 CI run 号随补登笔
+  入库（PROTECTED_MAIN 流程内推送记录见 BOARD 该节）。
 
 ## 门禁读数（如实）
-合并树定向复跑四闸集成亲测全绿（照派单；contracts dist 按陈旧事故先例先重建）：
-typecheck 双 tsconfig **exit 0**＋vitest **97 文件 911/911**（908 基线＋恰 3
-新例＝createAutoCloseTimer 生命周期，申报自洽）＋check:i18n **交付语言表对齐
-OK**＋check:leak **155 指纹零泄漏**（独立临时生产构建；chunk 尺寸警告系既有
-非错误提示）。cargo 免跑（crates/ 零触碰全范围复核）。磁盘 74%（df 实测，与
-派单登载 ~73% 口径一致）。环境事实：用户开发栈在跑，四闸顺序跑未并行。
+合并树全闸集成亲测全绿（05:2x–05:4x 顺序跑未并行；contracts dist 按陈旧事故
+先例先重建 exit 0；df 实测 74%＝499G 空闲）：typecheck 双 tsconfig **exit 0**
+＋vitest **97 文件 913/913**（911 基线＋恰 wt-3 两新例，申报自洽）＋check:i18n
+＋tables **OK（3 交付语言表对齐）**＋check:leak **155 指纹零泄漏**（独立临时
+生产构建；chunk 尺寸警告系既有非错误提示）＋build **exit 0**（非 cargo 段
+clean＋tsc electron＋vite build；cargo build release 段随 build 通过）＋
+**cargo test --workspace 976/0**（第 182 批基线 974＋恰 wt-4 两新例自洽；
+material_staging 3/3、material_exec 25/25 维持、material_exec_real 14 ignored
+系真机件照旧；exit 0 复核）＋clippy --workspace --all-targets **0 警告 0 错误**
+（exit 0 复核）＋check:boundary/contrast/forest-leak **全过**（wt-3 申报面
+顺带补核）。远端 CI 判定随 PR 检查页（见在途）。
 
 ## 在途/待他角色
-- **[候用户] W25 真机走查推进（O-2，进行中）**——M5 唯一候项；五发现登记见
-  BOARD 新节；[需用户] 三件＝挂死再发取证协作（保持现场＋CDP 51993 取栈）、
-  误伤事故 95MB 重复入库条目清理候裁、④多层目录扫描候裁决与派发。等用户项无
-  绕行机制。
-- **[知会] 各席验收请求世代核对（本批复核）**——brief ①区 wt-2/wt-4/wt-5
-  残言经分叉表复证领先 0 系世代滞后（slot/wt-2 领先 0、slot/wt-4 领先 0、
-  slot/wt-5 领先 0），零重复验收；wt-7 残言系既录裁决知会（文档切片无实现派
-  单）、wt-8 已验收销账；slot/wt-3 经本批验收后领先 0。
-- **[知会 wt-8] production-review 夹具适配**（先选云端再钉原断言＋signInHint
-  桩，97/97 断言零放松）已随本批入库。
+- **[候用户] W25 真机走查推进（O-2，进行中）**——M5 唯一候项；既有 [需用户]
+  三件维持＝挂死再发取证协作（保持现场＋CDP 51993 取栈）、误伤事故 95MB 重复
+  入库条目清理候裁、④多层目录扫描候裁决与派发。等用户项无绕行机制。本批两席
+  三发现（wt-3）与一发现（wt-4）均系代码审查/真机 DOM smoke 所得，非用户走查
+  新发现；交付栈未动，真机走查可继续。
+- **[知会 wt-3] 注释批号勘误候订正**——实现批注释四处「第 181 批」应系
+  「第 179 批」，本批已如实登记（BOARD 前录 ③），候下批状态批顺手订正，
+  不阻塞任何面。
+- **[知会 wt-4] BOARD #43 行注记已折入**（随本批 PR 入库）；真机行使随 W25，
+  复验口径不变。
+- **[候 CI] 本批 PR 四 workflow 判定**——ts/rust/schema-vectors 对 PR 全量
+  触发（pull_request 无路径过滤）；合并以全绿为前置，如实守望。
 - VUA-7：零触碰维持，阅读解禁；VUA-8 零触碰维持。
 
 ## 阻塞
 - 无阻塞。零猜测项。
 
 ## 下次合并意图
-本批随 integration/batch-184 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并
-后正典 main fetch＋快进，集成分支不删。
+本批随 integration/batch-185 → main 的 PR 落地（PROTECTED_MAIN 政策）；合并
+后正典 main fetch＋快进核对，集成分支不删。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-23 23:01 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
-pnpm collab:brief，①区判读＝wt-3 验收请求（第 177/178 批两栈六笔）在操作者
-第 178 批派发范围内，wt-2/wt-4/wt-5 残言经分叉表复证领先 0 系世代滞后，失鲜
-工作树无；②origin/main d5369061 与本地一致零分叉；slot/wt-3 六笔构成实核
-（追平壳 diff 空＋两实现批恰 14/13 文件＋两状态批各恰 1 文件＋勘误批恰 3 文
-件）＋源码 diff 全文实读（remote-content/main/preload 隐私三层、App.tsx
-fonts.ready 与 #28 共存、ImportPage 三型反馈与计时接线、WarehousePage 关闭
-请求线、production-review 夹具适配零放松）＋i18n 四语逐语 grep；③VUA-9 自
-origin/main d5369061 建 integration/batch-184，merge-tree 预检干净后 --no-ff
-合并 adf9a670（dc3778ef，合并信息十三点全载）；④合并树定向复跑四闸（typecheck
-＋vitest 911/911＋check:i18n＋check:leak 155 零）全绿；cargo 免跑如实申报
-（crates/ 零触碰）；⑤BOARD 新节「W25 用户走查发现与处置」＋前录轮转（插 184
-轮出 164，10 段维持）＋本状态批；⑥零自有产品代码（本批集成自有内容＝合并信
-息＋collab 两文件）；产品版本不动、不代跑 W25、历史记录零删除（164 段轮转依
-既有轮转纪律，全文在 git 历史）；⑦VUA-7 零触碰（未动树、阅读解禁）、VUA-8
-零触碰；`?? _local_p27_devlog.txt`（主树）照例不触碰；轻负载拍纪律兑现＝四闸
-顺序跑未并行未触 cargo、未触用户开发栈进程；⑧[需用户] 条目零代决（挂死再发
-取证、95MB 条目清理、④多层目录候裁决均维持候用户）。在手无半途切片、除本状
-态批外无未提交改动。
+本轮（2026-09-24 05:22 正常时段实测）：①读 collab/PROTECTED_MAIN.md 后跑
+pnpm collab:brief，①区判读＝无指向本树/本角色的阻塞与留言，wt-3/wt-4 两条
+验收请求（第 179 批/第 183 批）在操作者第 185 批派单范围内，失鲜工作树无；
+②origin/main 6e706e7d 与本地一致零分叉；两分支 merge-base 恰 6e706e7d（各
+落后 0／领先 2，实质 1）构成实核＋四笔 diff 全文实读（文件数 8/1/4/1 与申报
+一致、改动面全在各席所有权域、冻结词面/schemas/docs 零触碰、零契约面、
+signInHint 零 diff、守卫失败臂语义与不回显实读、测试断言零放松）＋smoke
+计数口径实读核对（25＋7＝32）；③VUA-9 自 origin/main 6e706e7d 建
+integration/batch-185，merge-tree 预检三组干净后 --no-ff 顺序合并 8553e8d8
+（d9308d46）与 5ad68979（769b553d）；④合并树全闸亲测（typecheck＋vitest
+913/913＋i18n＋leak 155 零＋build＋cargo 976/0＋clippy 0＋boundary/contrast/
+forest-leak）全绿如实登载；⑤BOARD 前录轮转＋#43 行注记＋本状态批；⑥零自有
+产品代码（本批集成自有内容＝两合并信息＋collab 两文件）；产品版本不动、
+不代跑 W25、历史记录零删除；⑦正典 main 零直改；用户交付栈两进程未触、
+未杀 node/electron；VUA-7 零触碰（阅读解禁）、VUA-8 零触碰；`??
+_local_p27_devlog.txt`（主树）照例不触碰；门禁顺序跑未并行；⑧[需用户] 条目
+零代决（挂死再发取证、95MB 条目清理、④多层目录候裁决均维持候用户）。
+在手无半途切片、除本状态批与 BOARD 簿记外无未提交改动。
 
 ## 留言
-- [→桌面/wt-3]（验收回执）：第 177＋178 批六笔（105341b2＋2b9f83d2＋77cc8626
-  ＋e37a28e0＋d55bf7b2＋adf9a670）已随集成第 184 批验收入库，重点复核面五项
-  逐项成立——①受理自动关闭 1500ms 与失败驻留取消计时语义面（纯件生命周期三
-  性质＋计数器驱动＋失败在场取消在飞计时实读吻合）；②onRequestClose 关闭请
-  求线不动 ContentDialog/模态层机制本体（零触碰复核维持）；③失败详情词面
-  failureLogText 律（failureDetailText 稳定码随词面）；④production-review
-  夹具适配零断言放松（先选云端再钉原断言＋signInHint 桩，diff 实读）；⑤i18n
-  四语键齐（逐语 grep 实测）。另：Cookie 隐私面（零 Cookie 值过 IPC）与
-  fonts.ready/#28 共存成立；两处勘误兑现随批留痕认许（历史文件不改写先例）。
-  门禁读数：合并树 typecheck 0 错＋vitest 911/911＋i18n OK＋leak 155 零（与
-  申报一致）。第 177 批 [需用户] 挂死再发取证协作与 95MB 重复条目清理候裁已
-  折入 BOARD 新节随批登记。
+- [→桌面/wt-3]（验收回执）：第 179 批两笔（99341f83＋8553e8d8）已随集成第
+  185 批验收入库，重点复核面四项逐项成立——①autoCloseArmed 武装判据收紧
+  不改第 178 批任何登记语义（失败驻留/二次受理重新计时/卸载清理/手动先关，
+  diff 实读）；②downloadsLoading 四语新词齐（逐语实读，check:tables 合并树
+  过）；③smoke 新场景 7 检查行为语义与计数口径（25＋7＝32）实读吻合；
+  ④cargo 跳过的轻负载纪律适用（crates/ 零触碰 diff 复核），合并树 cargo 由
+  集成实跑补证（976/0）。一处留痕勘误随批登记：注释四处「第 181 批」系批号
+  笔误（以第 179 批为准），不改代码，候下批顺手订正。
+- [→产线/wt-4]（验收回执）：第 183 批两笔（9f9e1282＋5ad68979）已随集成
+  第 185 批验收入库，重点复核面四项逐项成立——①staging 守卫信任链定位与
+  命名点修法（staging_root 先于任何目录创建，diff 实读）；②闭集与 C#
+  commandId 同族、现网全部身份形态放行（六合法形态测试实读）；③宿敌 id
+  拒绝先于任何文件系统写入＋骑既有失败臂零补偿臂变化＋错误不回显宿敌值
+  （断言实读）；④既有测试零行为变化（material_exec 25/25 维持，合并树
+  workspace 976/0＋clippy 零告警集成亲测复核）。BOARD #43 行注记已随批
+  折入（写明批号与提交号）。
 - （回执不回执：本批为验收批，各席照纪律执行即可，无需逐一回执。）

@@ -187,6 +187,29 @@ async function manualCloseDuringWindowNoStaleTimer() {
   check(closeCount === closesBefore, "重开期间零额外关闭请求");
 }
 
+/** 第 181 批反向审查钉死(受理窗口内用户接管):受理后 1.5s 窗口内用户再次
+ *  发起导入(反馈被清空=用户接管)——在飞自动关闭即取消,弹窗不得跑在用户
+ *  进行中的操作下面静默关闭(否则原生拾取停留期间弹窗自关、拾取结果落在
+ *  已卸载组件上被丢弃);用户完成二次提交后重新武装,照常自动收口(同窗
+ *  二次受理重新计时语义保持)。 */
+async function userTakeoverCancelsAutoClose() {
+  importMode = "ok";
+  closeCount = 0;
+  await driveToLocalSubmission();
+  check(document.body.textContent!.includes(strings.warehouse.acquire.importAccepted), "受理词面呈现(第一次受理)");
+  await button(strings.warehouse.acquire.importTitle).click();
+  await wait();
+  check(dialogOpen(), "受理窗口内用户再次发起导入,弹窗仍在(用户接管,反馈清空)");
+  await wait(IMPORT_ACCEPTED_AUTO_CLOSE_MS + 250);
+  check(dialogOpen(), "用户接管后自动关闭取消——弹窗不跑在用户新操作下面(不静默关走)");
+  check(closeCount === 0, "用户接管期间零关闭请求(在飞计时已解除)");
+  await button(strings.warehouse.acquire.importConfirmCta).click();
+  await wait();
+  check(document.body.textContent!.includes(strings.warehouse.acquire.importAccepted), "二次受理词面呈现");
+  await wait(IMPORT_ACCEPTED_AUTO_CLOSE_MS + 250);
+  check(!dialogOpen(), "二次受理重新武装后照常自动收口(同窗二次受理重新计时语义保持)");
+}
+
 window.importDialog = {
   run: async () => {
     root.render(<Harness />);
@@ -197,6 +220,7 @@ window.importDialog = {
     await acceptAutoCloses();
     await failureStaysWithProminentClose();
     await manualCloseDuringWindowNoStaleTimer();
+    await userTakeoverCancelsAutoClose();
     return results;
   },
 };
