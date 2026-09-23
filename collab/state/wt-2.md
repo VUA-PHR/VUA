@@ -2,140 +2,177 @@
 worktree: wt-2
 branch: slot/wt-2
 role: 核心
-baseline_commit: 288ab52b
-updated: 2026-09-23
+baseline_commit: 6e706e7d
+updated: 2026-09-24
 ---
 ## 当前焦点
-**第 177 批（2026-09-23 03:2x–04:1x，节拍轮正常工作时段 date 03:26 实测）＝
-#45 余项「端口面取消位」设计登记切片（操作者第 180 批派单＝09-22 夜被取
-消派单的重发，内容不变；设计环非实现环）。轮首 --no-ff 追平 main
-288ab52b（落后 24/领先 0 归零——第 176 批两笔已随集成第 179 批 PR #13
-验收入库，本批无未收编在途；merge-tree 预检零冲突，追平壳 ab4400c0 纯
-吸收，吸收世代＝集成第 179 批簿记＋wt-4 第 178 批提取器环〔dependency_
-extract 落库＋协议注记 0.2.2〕＋**031 提案代裁世代〔E1 立项纪律/E2 取号
-单点化/E3 退役编号表——本批已照办：设计登记不取提案号，落点遵派单指
-定的 collab 设计文档**〕）。brief ①区判读＝无指向本树/本角色的阻塞与
-留言，失鲜工作树无。交付＝纯 collab 两文件，零代码零 schema 零测试触
-发，登记不实施：**
+**第 178 批（2026-09-24 05:2x 夜窗拍 B，操作者当拍派单；基线 6e706e7d 轮首
+--ff-only 追平集成第 184 批 PR #16 合并尖，落后 18/领先 0 归零，无未收编
+在途）＝核心所有权域自我反向审查批（先例＝第 148 批素材链反向审查；collab
+队列全空，窗口规程 v1.8 规则 2 空队列不空转）。审查产出＝三发现全为域内
+小修（路径安全一＋BG-12 族吞错两成员），已修＋测试钉死＋锐利性实证；其余
+审查面闭合无发现，如实登记。零 [需用户] 新增，零跨域触碰。**
 
-- **设计登记落 `collab/design/2026-09-23-port-cancellation-points_ZH.md`
-  （新目录系派单指定「collab 设计文档」落点的最小实现，提请集成本批知
-  悉 namespace 增设）**。四问四答（全文以代码锚点实读为据）：
-  ①**需要取消位的面**＝仅 `VpmBackend::resolve_project` 网络腿（唯一真
-  正无上界长操作）；Bridge 长命令维持段边界不加命令级取消（单命令有超
-  时界、逐包环头已有取消位、中段中断必落指纹链未知态→协议中断律强制
-  Inspect，收益≈零）；快照＝不设位保护段；BDL 提取面＝永不需要（纯
-  CPU 零网络零文件、亚秒级；前瞻条款：该域未来长出网络腿须冻结时随行
-  自带取消设计）；未来下载面＝零新设计（download-events v0.1 已携带
-  attempt 边界取消＋abandon 意图＋六事件闭集）。
-  ②**形态裁决建议**＝否决 token 传参入端口面（冻结面变更；且对 lib 后
-  端**物理无效**——`VrcGetLibBackend::resolve_project` 系 in-process
-  block_on 调 vrc_get_vpm 无取消 API；对 CLI 后端语义发散＝进程杀≠协作
-  式）；采纳任务级取消＋步边界检查延展（现机制，零词面变化）；取消粒
-  度三层谱系＝任务级（运行时）→段边界（执行器令牌）→传输超时（lib
-  HTTP/CLI 1200s/Bridge 命令超时），不发明第四层。
-  ③**补偿语义逐点**＝快照中段不可取消保护段论证补足（快照是其后一切取
-  消的安全网，中断严格更糟）；供给网络腿→既有快照回滚（空态隔离区语
-  义）＋诚实失败已覆盖；单包解包/命令在飞→第 148 批段维持＋#45(4) 残
-  留回收补偿；preview/apply 尾段登记一处诚实事实与裁决点＝artifact 发
-  布面在项目外快照管不到（保留如实呈现 vs apply 前加检查位，候 S2 冻结
-  裁量，两案均诚实）；恢复面零新机制（Cancelled 收据发布/重放守卫只认
-  SUCCEEDED/非终态→inspect_required）。
-  ④**切片切分**＝S1 本登记（P0 已交付）；S2（P1，产线域 unity-bridge，
-  零词面变化）＝run_provision 内（create 后 resolve 前）＋尾段（apply
-  前）两处观察位＋取消注入测试，候操作者派发；S3（P2，核心冻结环，条
-  件触发）＝仅 W25 真机证据表明 resolve 腿时长成痛点时，形态为超时预
-  算/进度事件可见性（非 token）；S4（P3 缓议）＝Bridge 词汇面取消操作
-  （版本化升版＋C#）；下载/BDL 面零切片。
-- **门禁读数（如实）**：本批自有内容纯 collab 两文件（新设计文档＋本状
-  态批），零代码零 schema，免全量测试照章；追平吸收世代的门禁已随集成
-  第 179 批合并树亲测全绿（cargo 971/0＋clippy 0/0＋check:leak 155 指
-  纹零泄漏），本树不复跑、如实引记。环境事实：磁盘 ~73%（操作者批注沿
-  用）；VUA-7 零触碰（阅读解禁未动树）、VUA-8 零触碰。
-- **诚实边界**：零端到端宣称——本文系设计文档登记非实现非真机；「快照
-  有界/提取亚秒」系代码面论证非实测；[候冻结裁决] 裁量点（尾段补偿两
-  案、S3 触发条件）零代决；端口词面零字节触碰（trait 全系签名实读确认
-  无 token 参数，本批不改）。
+- **发现一（修复）＝Rollback 恢复臂 snapshot_id 无词法守卫（#43 族核心域
+  同类成员，操作者点名排查项）**。产线座昨拍在 staging 命名点发现
+  session_id 内插路径逃逸（词面守卫已修）；本席对核心域「外部可控标识符
+  内插进路径/文件名」点位逐处排查：六记录库（build_record/production_
+  evidence/recipe_records/inspection_evidence/plan_documents/recipe_
+  documents）全部在 path_for 入口 validate_id（同一严格词法字母数字＋`-`
+  `_`）；write_bridge_command 有显式边界注释＋validate_identifier；快照
+  create/load 有 validate_identifier＋restore 有父目录包含校验＋清单
+  snapshot_id 三方绑定；assembly marker_path 的 plan_id 恒为内部生成
+  `plan-{fnv1a hex}` 且 AssemblyPlanV1 无任何外部反序列化点；
+  production_evidence/release_handoff 的 format! 路径均在 `#[cfg(test)]`；
+  state_file/journal/provider-host 的 `{label}` 临时路径全为测试助手。
+  **唯一缝隙＝provider_host Rollback 臂**：snapshot_id 从落库 build
+  record 载荷反序列化后未经校验即参与三处 join＋陈旧隔离区
+  `fs::rename`（`{snapshot_id}.superseded-{stamp}`），全部发生在
+  restore_verified 内部包含网之前；前置 is_dir 闸系词法 join 不归一化，
+  拦不住遍历段（`..` 形态在目标目录实际存在时通过闸门、改名即搬走项目
+  外可达目录）。修法：快照面公开单一词法源
+  `FileSystemSnapshotStore::validate_snapshot_id`（复用私有
+  validate_identifier，零新词法），Rollback 臂在记录提取点立即校验，不
+  合法→同步 `not_recoverable` 拒绝（Run 构造在任务受理前，沿「malformed
+  即 validation error，never a half-created task」既有律）。测试钉死双
+  端：characterization ORC-STO-009 同向量延伸钉公开面（单一词法源）；
+  production_host 新例 ph_007a 消费测试＝篡改回执 snapshotId 为
+  `../evil-target`＋预置同名标记目录（使旧 is_dir 词法闸必然放行、隔离区
+  改名必然搬走目标）→断言同步拒绝 vua.production.not_recoverable＋标记
+  目录原位＋零 superseded 副本。**首跑全量该例红如实留痕：根因＝测试侧
+  serde 键名（BuildSnapshotEvidenceV01 系 camelCase，篡改写错死键
+  snapshot_id 未动真字段 snapshotId），产品码零改动，修正键名后绿——顺带
+  实证守卫对合法记录零误伤（合法 snapshotId 全程通过）。**
+- **发现二（修复，同函数两成员）＝run_local_resolution BDL 存储读失败吞
+  错（BG-12 族新成员）**。member A：`composed` 读
+  `global_default_mode().unwrap_or(None).unwrap_or(env_initial)`——Err
+  静默降为「无持久默认」落 env_initial，违 U8 律（composed_global_default
+  文档明载「setGlobalDefaultMode 统治其后一切 resolution」且同 crate 框
+  架层孪生臂以 `?` 传播同一错误；读失败改写每一资产的工件模式决策且不申
+  报）。member B：`warehouse_entry_detail` 走
+  `if let Ok(Some(detail))`——Err 与 Ok(None) 同流，读失败被呈现为「无
+  条目」缺失证据（对世界状态的假陈述）＋关系任务静默跳过，失败被呈现为
+  缺席（诚实纪律第 1/2 条违例）。修法：闭包签名
+  Option→Result<Option<Value>, AppErrorV1>，Err 统一传播为类型化
+  `vua.warehouse.store_failed`（message_key=`errors.warehouse.storeFailed`
+  系帧层既有发射键、桌面词表已持有翻译，任务级 snake_case 码房规同
+  `vua.recipe.store_failed`；detail 参数如实携带存储错误，并呈律 code 原
+  词零遮蔽）；Ok(None)＝真缺席保持既有缺失臂。测试钉死＋锐利性实证：
+  warehouse_commands 两新例（第二连接 DROP 表注入，suite 既有
+  rusqlite dev-dep 惯用手法）——DROP bdl_meta（预置持久默认
+  GenerateVpm≠env_initial，静默替代路径成功即证吞）与 DROP
+  warehouse_items（bdl_meta 完好，孤立 entry-detail 腿）各断言任务
+  Failed＋error.code=vua.warehouse.store_failed；stash 退产品码复跑两例
+  全红、恢复后全绿（锐利性实证在案）。
+- **审查闭合面（无发现，如实）**：①#45 族现状核对＝BOARD 行全项清零属
+  实零回摆——(1) Packages/ 前缀跨面决策已裁（两层兜底＋C# 休眠面 B 案
+  注记随第 158 批入库）、(2) loadedAssetPaths unwrap_or_default 已收口
+  严格解析助手（第 158 批交付，material_exec.rs:1501 起 `?` 面在位）；
+  ②BG-12 余下候选逐处定级：document_sha256/plan_document_hash 系
+  `&Value` 序列化类型上不可失败死臂（房规对照：同文件 4691 行对不可失败
+  序列化用 expect＋理由注释）、to_value 族四处（draft/diagnostics/
+  operation+receipt/snapshot.items）同性质死臂、526 系自写自读防御、
+  1144/3033 系守卫非吞错、3220 plan schemaVersion 标签缺省仅存储损坏可
+  达（候硬化登记非缺陷）、overlay_surface 排序键 unwrap_or("") 系确定性
+  排序键非决策吞错（BG-10 面维持成立）；③恢复律抽查＝全部映射点诚实：
+  journal.rs:336/338 终态→Terminal/非终态→NeedsInspect、runtime.rs
+  journal 权威 381 与 sqlite 权威 433 非终态→InspectRequired、poisoned
+  记录 780 强制 InspectRequired、spawn_worker 仅 submit 路径（535）恢复
+  路径零调用＝无隐式续跑；④取消谱系接缝＝产线 S2 落地与第 177 批设计登
+  记零缝：三观察位（create→resolve 前/run_local_reusable register 前/
+  preview→apply 间）系裁量保守组合案（BOARD 第 183 批已录「形式落案 B
+  检查位且提前至 register 前，比字面 apply 前更保守」）、Cancelled 收据
+  骑既有失败臂→快照回滚→隔离区补偿语义一致、发布 artifact 项目外快照
+  管不到的诚实事实以注释＋测试双钉、端口词面零 diff（token 系执行器私
+  有方法签名非 VpmBackend 面）、取消注入钩子三例齐；零新裁决点产生；
+  ⑤诚实纪律自查＝本批修复强化「失败如实呈现」（两类吞错改类型化失败）、
+  新码走并呈律（code 原词＋既有 message_key）、零端到端宣称（全部代码
+  面测试＋锐利性实证，非真机）、fixture 全部 cfg(test) 隔离零出 DEV。
+- **brief ①区甄别（如实带一句）**：本轮 brief ①区无指向本树/角色阻
+  塞与留言；操作者派单所载历史验收请求留言（wt-2/3/4/5）均系世代滞后
+  残言——第 177 批已随集成第 181 批入库、wt-3 两批随第 184 批、wt-4
+  第 182 批随第 183 批，不需要处理。
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 176 批（09-23 01:4x，aab28b83＋collab 三文件）＝1.5.0 核心域对账：
-029 内联线程注记（A 面维持不被取代＋叠加语义差距清单五条＋冻结面变更
-登记）＋030 内联线程注记（依赖降级路径核心落点一行＋无追溯影响）＋五
-未决项核心落点汇总（候用户排优先序）；已随集成第 179 批验收入库。更早
-＝171/170/165/164/163/162/161/160/158/157/155/152/151/150 批，见 git
-历史与 BOARD 前录。
+第 177 批（09-23 03:2x–04:1x）＝#45(3) 端口面取消位设计登记（四问四答，
+collab/design/2026-09-23-port-cancellation-points_ZH.md），已随集成第
+181 批验收入库（合并 e27c41dd，基线 288ab52b）；S2 实现切片已随产线座
+第 182 批交付、集成第 183 批验收入库，(3) 全项清零。更早＝176/171/170/
+165/164/163/162/161/160/158/157/155/152/151/150 批，见 git 历史与 BOARD
+前录。
 
-## 本轮交付（288ab52b 基线世代）
-- **追平合并 ab4400c0**（--no-ff 纯吸收 main 288ab52b＝PR #13 尖，预检
-  零冲突，零自有内容，基线刷新；吸收 031 代裁纪律三件并照办）。
-- **collab 批（恰两文件）**：`collab/design/2026-09-23-port-cancellation-
-  points_ZH.md`（#45(3) 取消位设计登记全文：基线事实代码锚点＋①面判定
-  表＋②形态三案对照＋③补偿语义表＋④切片 S1–S4＋诚实边界）＋本状态批
-  恰本文件一笔。
+## 本轮交付（6e706e7d 基线世代）
+- **实现批＝5 文件 281+/14-，全在本席所有权域**：crates/orchestrator/
+  src/filesystem.rs（validate_snapshot_id 公开面＋11）；crates/
+  orchestrator/tests/characterization.rs（ORC-STO-009 向量延伸＋12）；
+  crates/provider-host/src/provider_host.rs（Rollback 守卫＋10、
+  run_local_resolution 修复＋bdl_store_failed 助手＋约 62 含注释）；
+  crates/provider-host/tests/production_host.rs（ph_007a＋76）；crates/
+  provider-host/tests/warehouse_commands.rs（两例＋助手＋124）。docs/
+  schemas/ packages/ 零触碰；他角色域零触碰。
+- **门禁读数（如实）**：cargo test --workspace **977/0**（974 基线＋恰
+  3 新例＝ph_007a＋两 resolve 钉，数字自洽；首跑 1 红系测试侧 serde 键
+  名已修正留痕）＋cargo clippy --workspace --all-targets **0/0**。轻负
+  载拍纪律兑现：用户开发栈在跑（vite 5173＋electron CDP 51993），测试
+  与 clippy 顺序跑未并行；cargo 全程在本树 VUA-2 内跑，VUA 主树零触碰。
+  磁盘 ~74%（沿用集成第 184 批 df 口径）。VUA-7 零触碰（阅读解禁）、
+  VUA-8 零触碰。
 
 ## 在途/待他角色
-- **[等集成] 本拍两笔候随轮验收（--no-ff）**：追平壳 ab4400c0（纯吸收
-  main 288ab52b，预检零冲突）＋collab 批恰两文件（设计登记＋本状态批），
-  写明「wt-2 第 177 批：#45(3) 端口取消位设计登记（设计环零代码；基线
-  288ab52b）」。纯 collab 批免全量测试照章；重点复核面：①设计登记的
-  代码锚点可对表（material_task 观察线程/vpm_backend trait 无 token 参
-  数/VrcGetLibBackend block_on/download_events attempt 边界）；②端口词
-  面零 diff（crates/ 零触碰）；③collab/design/ 新目录系派单落点，#45
-  行内指针折入候集成验收时落账（BOARD 系你席维护，本树不直改）。
-- **[候操作者] S2 切片派发**（产线域 unity-bridge，零词面变化，两处观
-  察位＋测试）候排；S3/S4 候 W25 证据，未立项不排期。
-- [等操作者] W25 真机走查推进沿登；[候用户] 三项核心域落点优先序沿登。
+- **[等集成] 本拍候验收**，写明「wt-2 第 178 批：核心域自我反向审查批
+  （基线 6e706e7d）」。重点复核面：①发现一守卫落点（Run 构造受理前同
+  步拒绝）与 ph_007a 的「预置标记目录使旧词法闸必然放行」设计意图；
+  ②发现二两 member 的行为面变化仅在错误路径（成功路径逐字节不变）＋
+  新任务级码 vua.warehouse.store_failed 系帧层既有键的 snake_case 孪生
+  （词表零新增）；③锐利性实证手法（stash 退产品码两例全红）与轻负载
+  纪律适用（cargo 顺序跑）。
+- **[候硬化登记] 3220 plan schemaVersion 标签缺省**（非缺陷：仅存储损
+  坏可达；硬化候选＝plan 文档读回校验 schemaVersion 在场，候后续切片
+  顺带，不单开）。
+- [候操作者] S3（核心冻结环，W25 真机证据条件触发）未立项不排期；W25
+  真机走查沿登。
 
 ## 阻塞
-- 无阻塞。零猜测项。
+- 无阻塞。零猜测项。既有 [需用户] 项维持候裁，本批零新增零代决。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔（--no-ff）：追平合并 ab4400c0（纯吸收 main
-288ab52b，预检零冲突）＋collab 批恰两文件（设计登记＋本状态批），写明
-「wt-2 第 177 批：#45(3) 端口取消位设计登记（设计环零代码；基线
-288ab52b）」。**纯 collab 批免全量测试；重点 diff 复核面见「在途」①–③。
+**候验收对象＝本拍两笔（实现批＋本状态批），写明「wt-2 第 178 批：核心
+域自我反向审查批（基线 6e706e7d）」**。代码批全量门禁已亲测全绿
+（977/0＋clippy 0/0）；重点 diff 复核面见「在途」①–③。走
+PROTECTED_MAIN 政策通道（集成树 PR 落地，正典 main 只快进）。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-23 03:2x 起，正常工作时段 date 03:26 实测；两笔：追平壳
-＋collab 批）：①date 03:26 实测正常时段；读 collab/PROTECTED_MAIN 后跑
-pnpm collab:brief，①区判读＝无指向本树/角色阻塞与留言，失鲜工作树无；
-②轮首追平＝落后 24/领先 0，merge-tree 预检干净，--no-ff 合并 ab4400c0
-纯吸收 main 288ab52b，基线刷新；031 代裁三纪律（E1/E2/E3）实读并照办
-（设计登记不取提案号、不使用退役编号、落点遵派单）；③领取操作者第 180
-批派单（09-22 夜重发），素材实读：TaskRuntime 取消机制（runtime.rs 模
-块文档＋cancel/check_cancel/cancellation_error）＋material_task 观察线
-程＋material_exec 令牌观察位与收据律＋provider-host handle_cancellation
-＋DownloadServices 意图通道＋download_events v0.1＋VpmBackend trait 全
-系签名（无 token 参数）＋VrcGetLibBackend::resolve_project block_on 实
-现＋CLI ProcessSpec 1200s 归属＋booth_extraction/dependency_extract 纯
-度验收结论＋material-intake 0.2.1 协议注记（中断律/供给语义）＋#45 行
-历代进度更新；④交付恰两文件（设计登记四问四答＋本状态批）；⑤零代码
-零冻结面变更零测试触发，免全量照章、吸收世代门禁如实引记集成第 179 批
-读数；⑥诚实边界维持：设计环零实现零真机，裁量点零代决，crates/ 与
-docs/ 零触碰；VUA-7 零触碰（阅读解禁）、VUA-8 零触碰；`??
-_local_p27_devlog.txt`（主树）照例不触碰。在手无半途切片、除本状态批
-外无未提交改动。完成后推送并退出待命，候集成验收本拍两笔、S2 候操作者
-派发。
+本轮（2026-09-24 05:2x 起，正常工作时段 date 05:21 实测；两笔：实现批
+＋本状态批）：①date 05:21 实测正常时段；读 collab/PROTECTED_MAIN.md 后
+跑 pnpm collab:brief，①区判读＝无指向本树/角色阻塞与留言，失鲜工作树
+无；操作者派单所载历史验收残言甄别一句如上（世代滞后，零待办）；②轮首
+--ff-only 追平 main 6e706e7d（落后 18/领先 0 归零，纯吸收零自有内容）；
+③队列全空，领取窗口规程规则 2 自我反向审查（五面按派单优先级执行）；
+④发现即修三件（发现一 #43 族 Rollback 臂守卫＋发现二 BG-12 族两成员
+类型化失败），全部域内小修＋测试钉死＋锐利性实证；闭合面四件如实登记
+（#45 现状零回摆/BG-12 死臂定级/恢复律全映射点/取消谱系接缝零缝）；
+⑤ph_007a 首跑红如实留痕（测试侧 serde 键名，产品码零改动）；⑥门禁
+cargo test --workspace 977/0＋clippy 0/0 亲测全绿，轻负载纪律顺序跑、
+主树用户开发栈两进程零触碰；⑦诚实边界维持：代码面测试非真机、零端到
+端宣称、[需用户] 零代决、VUA-7 零触碰（阅读解禁）、VUA-8 零触碰、用户
+素材目录只读零写入；⑧在手无半途切片、除本状态批外无未提交改动。完成
+后推送并退出待命，候集成验收本拍两笔。
 
 ## 留言
-- [→集成] 验收请求：**候验收对象＝本拍两笔（--no-ff），写明「wt-2 第
-  177 批：#45(3) 端口取消位设计登记（设计环零代码；基线 288ab52b）」**
-  ——追平壳 ab4400c0（纯吸收）＋collab 批恰两文件。纯 collab 批免全量
-  测试照章；验收时请将 #45 行 (3) 项注记一行指针（设计登记落
-  collab/design/2026-09-23-port-cancellation-points_ZH.md，四问四答候
-  冻结裁决；余候派＝S2 候操作者派发）折入 BOARD——BOARD 系你席维护，
-  本树不直改；collab/design/ 新目录系派单「collab 设计文档」落点，请随
-  验收知悉。
-- [→产线/wt-4]（知会）：#45(3) 取消位设计登记已落（
-  collab/design/2026-09-23-port-cancellation-points_ZH.md）——结论：
-  你域 unity-bridge 候派 S2 切片（run_provision create/resolve 之间＋
-  local-reusable 尾段 apply 前两处令牌观察位＋取消注入测试；零端口词面
-  变化），尾段 artifact 发布补偿两案（保留如实呈现 vs apply 前检查位）
-  随切片冻结裁量；快照/单包解包/Bridge 命令在飞三段维持第 148 批不可中
-  断登记，本登记补足保护段论证。
-- [→环境/wt-6]（知会）：设计登记引用你域两处只读事实（VrcGetLibBackend::
-  resolve_project 系 in-process block_on、vrc_get_vpm 无取消 API；CLI
-  ProcessSpec 1200s 属 create/preview/apply 进程面非 resolve）——据此
-  token 传参对 lib 后端物理无效已入②裁决建议；你席零待办，如对事实引
-  用有勘误请留言。
+- [→集成] 验收请求：**候验收对象＝本拍两笔（实现批 5 文件＋本状态批），
+  写明「wt-2 第 178 批：核心域自我反向审查批（基线 6e706e7d）」**。代
+  码批全量门禁亲测全绿（cargo test --workspace 977/0＝974 基线＋恰 3
+  新例；clippy --workspace --all-targets 0/0）。重点复核面：①发现一
+  Rollback 臂 snapshot_id 词法守卫（同步拒绝面＋ph_007a 标记目录设计）
+  ；②发现二 run_local_resolution 两 member 仅错误路径行为变化＋新任务
+  级码 vua.warehouse.store_failed 复用既有词表键 errors.warehouse.
+  storeFailed（桌面词表零新增）；③锐利性实证与轻负载纪律适用。3220
+  schemaVersion 标签缺省候硬化登记已录在途节，不阻塞验收。
+- [→产线/wt-4]（知会）：S2 落地接缝核对闭合＝与第 177 批设计登记零缝
+  （三观察位裁量保守组合案、补偿语义一致、诚实事实双钉、端口面零
+  diff），本席零新增裁决点；发现二修复在你域测试面无涟漪（unity-bridge
+  零触碰、material_exec failure_message_key 面零变化）。
+- [→桌面/wt-3]（知会）：新任务级错误码 vua.warehouse.store_failed 候
+  你域知悉——message_key 复用既有 errors.warehouse.storeFailed（四语
+  词表已在），code 原词走并呈律兜底，词表零新增、零 tsx 触碰。
 - （回执不回执：在途事项以 BOARD 与本状态文件当前焦点为准。）

@@ -1154,6 +1154,130 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
 }
 
 
+// --- wt-2 batch 181 reverse-audit (BG-12 family): a FAILED BDL store read
+// is a typed store failure — never a silently substituted default (the U8
+// law: a persisted global default rules every later resolution) and never
+// missing-asset evidence (a broken store is not an absent entry; the
+// missing arm is honest only for a true Ok(None) absence).
+
+fn resolve_audit_warehouse(world: &World) -> vua_provider_host::WarehouseConfig {
+    vua_provider_host::WarehouseConfig {
+        bdl: world.bdl.clone(),
+        warehouse_root: world.base.join("warehouse"),
+        global_default: ArtifactMode::UseOriginalUnitypackage,
+        executor: None,
+        dependencies_queries: None,
+    }
+}
+
+fn drop_bdl_table(world: &World, table: &str) {
+    let connection = rusqlite::Connection::open(world.base.join("bdl").join("bdl.db"))
+        .expect("second connection");
+    connection
+        .execute(&format!("DROP TABLE {table}"), [])
+        .expect("table dropped through the second connection");
+}
+
+/// Shared body: one warehouse-sourced asset resolves over a BDL store whose
+/// read has been sabotaged at the table level; the resolve task must land
+/// Failed with the typed store failure, never Succeed on a silent fallback.
+fn resolve_fails_with_typed_store_failure(
+    label: &str,
+    world: &World,
+    use_cases: &vua_provider_host::ProductionUseCaseConfig,
+    warehouse: &vua_provider_host::WarehouseConfig,
+) {
+    let recipe_id = "019e0000-0000-7000-8000-000000000431";
+    let recipe_document = json!({
+        "formatVersion": "0.3",
+        "recipeId": recipe_id,
+        "revision": 1,
+        "title": "Reverse Audit Fixture",
+        "target": {"avatarInstanceId": "avatar_root"},
+        "assets": [
+            {"id": "outfit_asset", "sourceRef": {"warehouseItemId": "synthetic-warehouse-item", "role": "original"}}
+        ],
+        "instances": [
+            {"id": "avatar_root", "assetId": "outfit_asset"}
+        ],
+        "relations": [
+            {"id": "install_outfit", "kind": "install_modular_asset", "assetInstanceId": "avatar_root"}
+        ]
+    });
+    let save_command = json!({
+        "operation": "recipe.save",
+        "params": {"recipeDocument": recipe_document, "baseRevision": 0}
+    });
+    let frames = run_frames_with_use_cases(world, use_cases, Some(warehouse), label, &[save_command]);
+    assert_eq!(frames[0]["payload"]["ok"], true, "fixture recipe saves");
+
+    let resolve_command = json!({
+        "operation": "recipe.resolve",
+        "params": {"recipeId": recipe_id}
+    });
+    let frames = run_frames_with_use_cases(
+        world,
+        use_cases,
+        Some(warehouse),
+        &format!("{label}-resolve"),
+        &[resolve_command],
+    );
+    let task_id = frames[0]["payload"]["value"]["taskId"]
+        .as_str()
+        .expect("taskId")
+        .to_owned();
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let task = loop {
+        let store = vua_orchestrator::SqliteTaskStore::open(&world.database_path).unwrap();
+        let task = store.task(&task_id).unwrap().unwrap();
+        if task.state.is_terminal() {
+            break task;
+        }
+        assert!(Instant::now() < deadline, "resolve did not finish");
+        drop(store);
+        std::thread::sleep(Duration::from_millis(20));
+    };
+    assert_eq!(
+        serde_json::to_value(task.state).unwrap(),
+        "failed",
+        "a broken store must fail the resolution, not fall back: {:?}",
+        task.result
+    );
+    let error = task.error.expect("the store failure is a typed error");
+    assert_eq!(error.code, "vua.warehouse.store_failed");
+}
+
+#[test]
+fn resolve_global_default_read_failure_is_typed_not_silently_defaulted() {
+    let world = make_world("resolve-bdl-meta-failure");
+    let use_cases = use_case_config(&world);
+    let warehouse = resolve_audit_warehouse(&world);
+    // A persisted global default EXISTS and differs from the environment
+    // initial — its silent loss to the initial is exactly the swallow this
+    // test pins (the old code resolved on `env_initial` instead of failing,
+    // breaking the U8 read-time law without a trace).
+    world
+        .bdl
+        .set_global_default_mode(ArtifactMode::GenerateVpm)
+        .expect("persisted default");
+    drop_bdl_table(&world, "bdl_meta");
+    resolve_fails_with_typed_store_failure("resolve-meta", &world, &use_cases, &warehouse);
+}
+
+#[test]
+fn resolve_entry_detail_read_failure_is_typed_not_missing_evidence() {
+    let world = make_world("resolve-entry-failure");
+    let use_cases = use_case_config(&world);
+    let warehouse = resolve_audit_warehouse(&world);
+    // bdl_meta stays intact (the composed default read succeeds); the
+    // entry-detail read is the broken leg. The old code treated Err like
+    // Ok(None) and published missing-asset evidence — a false statement
+    // about world state — and silently skipped the relation's jobs.
+    drop_bdl_table(&world, "warehouse_items");
+    resolve_fails_with_typed_store_failure("resolve-entry", &world, &use_cases, &warehouse);
+}
+
+
 // --- W22 record-face closeout: job.execute writes the full Build Record ---
 
 /// A scripted Bridge whose v2 receipt steps, status, diagnostics and
