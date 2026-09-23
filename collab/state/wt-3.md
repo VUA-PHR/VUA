@@ -1,145 +1,123 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: d5369061
+baseline_commit: 6e706e7d
 role: 桌面
-updated: 2026-09-23
+updated: 2026-09-24
 ---
 ## 当前焦点
-**第 178 批 W25 走查第二缺陷修复批(2026-09-23 09:4x–10:4x,操作者派单的
-用户在等任务,基线 d5369061 落后 0 零追平;本拍两笔:实现批+本状态批)＝
-受理态弹窗滞留 UX 修复。根因已由操作者 CDP 验尸实锤:导入受理后
-ContentDialog 滞留「已受理」态,模态机制把弹窗外全壳 inert(模态行为本
-身正确),而唯一出口是右上不起眼 ×——用户视作整屏卡死;另证受理前后任务
-均正常落库(两次"冻结"分别对应一次 failed 与一次 succeeded 任务的受理
-态滞留)。按派单四项交付如下,门禁全绿后提交,交付栈带修复+CDP 取证口
-常驻留给用户继续走查。**
+**第 179 批桌面所有权域自我反向审查批(2026-09-24 04:5x–05:2x,夜间工作
+时段;基线 6e706e7d 轮首 ff-only 追平集成第 184 批 PR #16 合并尖,落后 0;
+先例＝第 148 批反向审查)＝collab 队列全空(窗口规程规则 2 空队列不空转
+),按操作者派定执行四面审查:①第 177/178 批新落地代码边界与生命周期;
+②W25-③「挂死」族新成员狩猎;③#36 信封丢字段族/#43 路径形态族桌面域
+新成员;④诚实纪律四条自查。审查产出＝三发现全为域内小修,已修+测试钉
+死;其余审查面闭合无发现,如实登记。**
 
-- **受理态自动关闭(派单①)＝已落**:导入命令受理(ok)后弹窗短暂呈现受理
-  信息(~1.5 秒,用户看得见「已受理」)随即自动关闭,任务进度归任务中心/
-  通知中心呈现(1.5.0 通知中心哲学);「模态滞留被视作死机」终止。实现:
-  import-model 新纯件 `IMPORT_ACCEPTED_AUTO_CLOSE_MS=1500` +
-  `createAutoCloseTimer`(schedule 单次触发自清/cancel 幂等/重入先清旧
-  柄);本地段与云端采纳段同型接线(计数器驱动,同窗二次受理重新计时;
-  失败反馈在场即取消在飞计时——失败驻留不静默关走;卸载/手动先关即清
-  理,重开弹窗=重挂载=新实例,陈旧定时器误关不成立);WarehousePage 补
-  `onRequestClose` 关闭请求线注入 ImportPage。i18n 四语新词一枚
-  (acceptedAutoClose,弹窗即将自动关闭提示)。
-- **失败态醒目可关(派单②)＝已落**:失败反馈改三型建模(accepted/
-  failure/notice),失败以 role="alert" 呈现并驻留弹窗(失败需用户知
-  悉),醒目主按钮「关闭」(primary 变体,新 .vua-import__failure-actions
-  动作位)为主动线,× 仅辅助;详情词面按 failureLogText 律
-  (production-workshop-view 同律)本地化文案外保留协议稳定码
-  (`文案 (vua.warehouse.*)`),失败以失败呈现不吞细节。云端采纳失败同
-  律(原实现 application 与其它两分支词面并一处)。
-- **Esc/背板/× 三路径钉测(派单③)＝已落(真机 Chromium DOM)**:新
-  smoke:import-dialog(scripts/smoke-import-dialog.mjs +
-  scripts/fixtures/import-dialog-modal.tsx,合成 Gateway 零生产服务)
-  25 检查全过:Esc/背板点击/× 三条关闭路径各钉+恰一次关闭请求;受理自
-  动关闭(时滞内在场→~1.5s 自动收口→恰一次请求);失败驻留+alert 含协
-  议稳定码+醒目主按钮在场+不自动关走+主按钮关闭;受理窗口内手动 Esc 先
-  关→重开不被陈旧定时器误关(卸载清理兑现)。证据:
-  C:/Users/AR/AppData/Local/Temp/vua-import-dialog-dom.json
-  (2026-09-23 10:10 HKT,Chromium 152.0.7977.65)。
-- **两处勘误兑现(派单④,集成第 178 批登记)＝本状态批留痕订正(历史批
-  次文件不改写,同集成第 183 批⑦先例)**:
-  - **勘误一(v4 逐名清单漏 validate_asset_paths)**:wt-4 第 176 批状
-    态批(de25daf5,随集成第 178 批 PR #12 入库)Bridge v4 冻结面核对段
-    称「操作闭集 16 成员」而逐名清单列 15。订正:读面实为 **8**(
-    inspect_project/identify_assets/**validate_asset_paths**/
-    validate_avatar/analyze_performance/inspect_avatar_references/
-    inspect_lighting/inspect_upload_readiness)＋写 6＋任务 2＝16,与闭
-    集计数一致;本批对 schemas/unity-bridge/v4/command.schema.json
-    operation enum 实数复核 16 成员含 validate_asset_paths,零冲突结论
-    不变。
-  - **勘误二(amf-unity 版本词两表)**:同批「权威正文＝amf-unity 1.2.0」
-    系裁决波落版时点读数;现行版以文档头部为准 **1.2.1**(2026-09-23 EN
-    镜像结构对齐批,amf-unity_ZH/EN 头部实核);REGISTRY 行登记 1.2.0 系
-    patch 级漂移容忍(治理 §2.3 登记表只随 Minor/Major 更新,brief
-    major.minor 容忍校验 0 异常佐证),两处词面以现行文档版本 1.2.1 为
-    准;节名「MA 与 SDK 职责边界」两处实存一致。
+- **发现一(修复)＝受理自动关闭「用户接管」重排计时边界**:原实现武装
+  判据为「acceptedTick>0 且非 failure」(effect 依赖 [acceptedTick,
+  feedback]),反馈引用任何变化都会取消+重排在飞计时——受理后 1.5s 窗
+  口内用户再次发起拾取/采纳(startImport/adopt 开头 setFeedback(null)
+  =用户接管)会**重新武装**计时器,弹窗可能跑在用户进行中的操作下面静
+  默关闭:原生文件夹拾取对话框停留期间弹窗自关,拾取结果落在已卸载组
+  件上被 React 静默丢弃,操作上下文丢失;用户点开拾取又取消的路径同样
+  中招(无操作也见弹窗自己消失)。W25-③ 挂死族(该关不关)已修,此为同
+  一自动关闭机制的反面新成员(不该关时关)。修法:武装判据收紧为「仅
+  受理态武装」——新纯件 `autoCloseArmed(feedback)`(kind==="accepted")
+  ,effect 依赖只留 feedback 对象:失败到达不武装(失败驻留语义保持);
+  反馈清空=用户接管即解除武装(取消在飞计时);同窗二次受理必经「清空
+  →再置受理」两拍,引用变化重新武装=从最后一次受理重新计时(第 178 批
+  登记语义全部保持);acceptedTick 计数器随之冗余,两处删除。
+- **发现二(修复)＝下载清单加载态词面误用**:CompletedDownloadsPanel
+  loading 分支借用 `acquireCopy.importConfirmTitle`(「确认导入以下
+  文件夹」)呈现加载过程态,与语义完全无关——IMP-2 批 B(f5bb1f45)引入
+  的既有词面误用,#39「误用他面文案」族同构(用户据此外观误判状态)。
+  修法:i18n 四语新词一枚 `downloadsLoading`(如实「正在加载已完成下
+  载…」),渲染改引。
+- **发现三(修复)＝createAutoCloseTimer this 绑定脆弱性**:schedule 经
+  `this.cancel()` 互调,方法被解构后调用(this=undefined)会炸裂。修法:
+  schedule/cancel 改局部闭包函数,调用形态与绑定解耦;语义零变化。
+- **审查闭合面(无发现,如实)**:①App.tsx fonts.ready 段(disposed 守卫
+  /不可用环境降级/.then(start,start) 双臂)与 #28 抖动快照机制共存成立;
+  signInHint 三层(remote-content 存在性三态+Cookie 值零读取零传输/
+  preload 纯透传/main assertLocalSender 护栏)隐私面成立;导入本地/云端
+  来源分流(重开回选择态)与失败三型反馈(failureLogText 律)词面闭合;
+  WarehousePage onRequestClose 关闭请求线正确。②挂死族:modal-layer/
+  ContentDialog 机制本体闭合(隔离 map 恢复/嵌套深度排序/焦点恢复
+  microtask/三层守卫),ContentDialog 全部调用点(Compose×1/Recipe×3/
+  Warehouse 导入弹窗)收口路径齐备,无新滞留路径;失败态驻留弹窗有醒目
+  主按钮主动线非滞留。③#36 信封丢字段族:gateway-router app.snapshot
+  面 operations 原样透传在位(第 88 批修复保持),信封异常路径经 catch
+  落诊断+internal failure 诚实可查;#43 路径形态族:本批改动面无路径
+  呈现/解析新成员。④诚实纪律四条:新词面「正在加载…」系过程态非数据
+  伪装,空态(downloadsEmpty)与不可用态照旧如实;零端到端宣称维持。
 
 ## 前情(本域链,全文见本文件 git 历史与 BOARD 前录)
-第 177 批(09-23 08:5x–09:3x)＝W25 走查阻断缺陷修复批:缺陷①顶栏首判
-fonts.ready 已修+缺陷②导入入口本地/云端分流已落(用户裁决)+缺陷③b
-BOOTH 登录态线索面 signInHint 已落(登录页路径勘误
-/users/sign_in 同批三处同步)+缺陷③挂死未复现如实登记+取证透传交付
-(VUA_ELECTRON_ARGS)+误伤事故留痕;候集成验收。更早＝第 176 批 1.5.0
-对账、172 批 bdl-queries v0.5 消费准备、166/160/164 批 029 闭环与 A 面。
+第 178 批(09-23 09:4x–10:4x)＝W25 走查第二缺陷修复批(受理态 1.5s 自
+动关闭+失败态醒目可关+三关闭路径 smoke+两处勘误兑现),已经集成第 184
+批(PR #16)验收入库。第 177 批＝W25 走查第一缺陷修复批(fonts.ready+
+导入入口分流+signInHint+取证透传+登录页路径勘误),同批入库。
 
-## 本轮交付(d5369061 基线世代)
-- **实现批＝13 文件全在本席所有权域**:apps/desktop 十一
-  (features/import/ImportPage.tsx 三型反馈+两段接线+受理计时/
-  features/import/import-model.ts 纯件两枚+import-model.test.ts 三例
-  +features/import/import-page.css 失败动作位+features/warehouse/
-  WarehousePage.tsx onRequestClose 线+i18n 四语表 acceptedAutoClose+
-  scripts/fixtures/import-dialog-modal.tsx 新+scripts/
-  smoke-import-dialog.mjs 新+scripts/fixtures/production-review.tsx
-  夹具适配+package.json smoke 脚本位)。
-- **夹具适配如实登记**:production-review smoke 的「ImportPage 工具条
-  不 inert」断言自第 177 批来源分流起过期(云端段须显式选择后激活;该批
-  门禁未含此 smoke,回归未察觉——本批如实补记)。修正=夹具随新诚实流程
-  先选「云端导入」再钉原断言(语义不变)+signInHint 桩(缺陷③b 面适配),
-  现 97/97 全过,断言语义零放松。
-- **门禁读数(如实)**:typecheck 双 tsconfig 零错;vitest 97 文件
-  **911/911**(908 基线+恰 3 新例=createAutoCloseTimer 生命周期:时滞单
-  次触发不提前不双发/cancel 幂等防触发/重入先清旧柄);pnpm build 成功
-  (chunk 尺寸警告为既有提示非错误);check:boundary/i18n+tables/
-  contrast/leak(155 指纹零泄漏,独立生产构建)/forest-leak 全过;
-  smoke:import-dialog 25/25+smoke:production-review 97/97(真机
-  Chromium DOM,合成 Gateway,证据如上)。环境事实:VUA-7 零触碰(阅读
-  解禁未动树);零端到端宣称——smoke 系真实 Chromium DOM+合成 Gateway,
-  真机 Gateway 全链归用户走查行使。
+## 本轮交付(6e706e7d 基线世代)
+- **实现批＝8 文件全在本席所有权域 apps/desktop**:features/import/
+  import-model.ts(autoCloseArmed 纯件+计时器闭包化)/features/import/
+  ImportPage.tsx(两处 effect 收紧+acceptedTick 删除+loading 词面改引)
+  /i18n/strings.{zh-CN,en,ja,ko}.ts(四语 downloadsLoading 各一枚)/
+  features/import/import-model.test.ts(恰 2 新例)/scripts/fixtures/
+  import-dialog-modal.tsx(新场景 userTakeoverCancelsAutoClose)。
+- **测试钉死**:vitest 97 文件 **913/913**(911 基线+恰 2 新例=
+  autoCloseArmed 判据表「仅受理态武装,失败/提示/无反馈不武装」+
+  schedule/cancel 解构调用形态钉死);smoke:import-dialog **32/32** 真
+  机 Chromium DOM(25 基线+新场景 7 检查=受理窗口内用户接管→零关闭请
+  求/自动关闭取消/弹窗不跑在用户新操作下面+二次受理重新武装照常收口
+  「同窗二次受理重新计时」语义保持);smoke:production-review 97/97
+  (断言语义零放松)。证据:C:/Users/AR/AppData/Local/Temp/
+  vua-import-dialog-dom.json(2026-09-24 05:1x 真机 Chromium)。
+- **门禁读数(如实)**:typecheck 双 tsconfig exit 0;check:boundary/
+  i18n+tables(四语对齐)/contrast 全过;check:leak 155 指纹零泄漏(独立
+  生产构建);check:forest-leak 通过;build 手动跑非 cargo 段(clean+
+  tsc electron+vite build)成功,chunk 尺寸警告系既有提示非错误;
+  **cargo 段按轻负载拍纪律跳过**(用户交付栈 vite 5173+CDP 51993 在跑
+  勿扰;`git diff origin/main -- crates/` 为空全范围复核=零触碰,与集
+  成第 184 批「cargo 免跑+零触碰复核」同先例)。
 
 ## 在途/待他角色
-- **[等集成] 本拍两笔候验收**(实现批+本状态批),写明「wt-3 第 178 批
-  W25 走查第二缺陷修复批(基线 d5369061)」。重点复核面:①受理自动关闭
-  时滞 1500ms 与失败驻留取消计时的语义面;②onRequestClose 关闭请求线
-  不动 ContentDialog/模态层机制本体(Esc/背板/×/焦点恢复/inert 全保持);
-  ③失败详情词面 failureLogText 律(稳定码随词面);④production-review
-  夹具适配零断言放松;⑤i18n 四语键齐(check:tables 过)。
-- **[知会 wt-4] 两处勘误已兑现**(本状态批留痕订正,历史文件不改写);
-  REGISTRY amf-unity 行 1.2.0 系 patch 漂移容忍非错误,不动。
-- **[知会 wt-8] production-review 夹具适配**(第 177 批来源分流致两处
-  过期断言,本批随新流程修正,97/97;断言语义零放松)。
-- **[等用户] W25 真机走查继续**:交付栈带本批修复常驻(CDP 51993),受
-  理态自动关闭/失败醒目可关可直接走查;真机全链行使归用户。
+- **[等集成] 本拍候验收**,写明「wt-3 第 179 批桌面域自我反向审查批
+  (基线 6e706e7d)」。重点复核面:①autoCloseArmed 武装判据收紧不改第
+  178 批任何登记语义(失败驻留/二次受理重新计时/卸载清理/手动先关);
+  ②loading 词面四语新词(check:tables 过);③smoke 新场景 7 检查的行
+  为语义;④cargo 跳过的轻负载纪律适用。
+- **[知会 wt-8] 无**:production-review smoke 本批零改动即 97/97。
+- **[等用户] W25 真机走查继续**(沿第 178 批登记):交付栈 CDP 51993 常
+  驻;挂死再发候取证 [需用户] 项不变;本批三发现均系代码审查/真机 DOM
+  smoke 所得,非用户走查新发现,真机端到端未宣称。
 
 ## 阻塞
-- 无阻塞。第 177 批 [需用户]「挂死再发取证协作」随操作者 CDP 验尸定案
-  (根因=受理态弹窗滞留,本批修复)了结;仓库重复入库条目(约 95MB)清理
-  仍候裁不擅动。
+- 无阻塞。既有 [需用户] 项(挂死再发取证协作/95MB 重复入库条目清理)
+  维持候裁,本批不代决。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25 走查第二缺陷修复批
-(基线 d5369061)」**。零契约面变化(packages/contracts 零触碰,wire 零
-新增载荷);全部改动在 apps/desktop 所有权域内;模态层
-(modal-layer/ContentDialog)机制零触碰。
+**候验收对象＝本拍两笔(实现批+本状态批),写明「wt-3 第 179 批桌面域
+自我反向审查批(基线 6e706e7d)」**。全部改动在 apps/desktop 所有权域
+内;零契约面变化(packages/contracts 零触碰);模态层(modal-layer/
+ContentDialog)机制零触碰;cargo 未跑(轻负载纪律+crates 零触碰复核)。
 
 ## 待命声明(第 6 步,如实)
-本轮(2026-09-23 09:4x–10:4x,操作者派单用户在等任务,节拍轮 wip 时窗内
-按派单执行):①date 09:49 实测;collab:brief 判读=指向本树无新阻塞,
-slot/wt-3 领先 4(第 177 批两笔候验收不变);②领取操作者第 178 批派单
-(受理态滞留 UX 修复+勘误兑现),审读 ImportPage/ContentDialog/
-modal-layer/WarehousePage/production-workshop-view(failureLogText 律)
-/acquire-model;③import-model 纯件两枚+三例 vitest;④ImportPage 三型
-反馈+两段接线+失败详情律+WarehousePage 关闭请求线+CSS+i18n 四语;⑤
-新 smoke 夹具与脚本,真机 Chromium 25/25;⑥production-review smoke
-过期断言如实定位(177 批引入、门禁未含此 smoke),夹具适配后 97/97;⑦
-门禁全绿读数如上;⑧勘误两处逐字订正(schema enum 实数 16+文档头部
-1.2.1 实核+REGISTRY patch 漂移定性);⑨状态批+提交+交付栈带修复与 CDP
-51993 常驻。在手无半途切片、除本批外无未提交改动。
+本轮(2026-09-24 04:5x–05:2x,夜间工作时段,date 04:56 实测):①轮首
+ff-only 追平 main(6e706e7d);②collab:brief 判读=①区指向本树仅
+wt-7(BDL 红线提醒)/wt-8(R4–R6 知会)两条知会无阻塞,各树状态批中
+wt-2/3/4/5 四条验收请求留言经核过时(对应批次已随集成第 181/183/184
+批验收入库,无需处理);③队列全空,按窗口规程规则 2 领取桌面域自我反
+向审查(操作者派定,先例第 148 批);④四面审查(新代码边界/挂死族狩
+猎/#36·#43 族/诚实纪律),三发现域内小修+测试钉死,其余闭合如实登
+记;⑤门禁全绿读数如上(轻负载纪律顺序跑);⑥状态批+提交+验收请求留
+言。在手无半途切片、除本批外无未提交改动。
 
 ## 留言
-- [→集成] 验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 178 批 W25
-  走查第二缺陷修复批(基线 d5369061)」**,重点复核面见「下次合并意
-  图」;另请将第 177 批两笔与本批一并排验收(同分支世代相承)。
-- [→操作者/用户] 四项派单全兑现:受理自动关闭 1.5s+失败驻留醒目可关+
-  三关闭路径真机 DOM 钉测+两处勘误兑现登记;交付栈带修复+CDP 51993 常
-  驻,可直接继续走查。真机端到端未宣称,以走查行使为准。
-- [→wt-4] 两处勘误(第 176 批状态批 v4 逐名漏 validate_asset_paths+
-  amf-unity 版本词两表)已在本状态批留痕订正,历史文件未改写;REGISTRY
-  行 1.2.0 系 patch 漂移容忍非错误。
-- [→wt-8] production-review 夹具两断言随第 177 批分流过期,本批适配
-  (先选云端再钉原断言+signInHint 桩),97/97,断言语义零放松。
+- [→集成] 验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 179 批桌面
+  域自我反向审查批(基线 6e706e7d)」**,重点复核面见「下次合并意图」
+  与「在途/待他角色」。
+- [→操作者/用户] 反向审查三发现均系第 177/178 批新落地代码的边界收
+  紧与既有词面误用纠正,非用户走查新发现;交付栈未动(vite 5173+CDP
+  51993 常驻照旧),真机走查可继续。
 - (回执不回执:在途事项以 BOARD 与本状态文件当前焦点为准。)
