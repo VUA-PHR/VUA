@@ -122,6 +122,12 @@ if (killedStale) await waitPortFree(VITE_PORT);
 
 const vite = spawn("pnpm", ["exec", "vite"], { stdio: "inherit", shell: useShell });
 
+// Electron 额外参数透传(W25 走查取证护栏,2026-09-23):VUA_ELECTRON_ARGS
+// 以空格分词追加到 electron 命令(如 --remote-debugging-port=51993,供
+// 挂死时 CDP Debugger.pause 抓主线程栈)。仅透传,不默认开启——取证面
+// 只在显式要求时在场。
+const extraArgs = (process.env.VUA_ELECTRON_ARGS ?? "").split(" ").filter(Boolean);
+
 let electron;
 try {
   const compile = spawn("pnpm", ["exec", "tsc", "-p", "tsconfig.electron.json"], {
@@ -131,7 +137,7 @@ try {
   const code = await new Promise((resolve) => compile.once("exit", resolve));
   if (code !== 0) throw new Error("Electron TypeScript compilation failed");
   await waitForRenderer();
-  electron = spawn("pnpm", ["exec", "electron", "."], {
+  electron = spawn("pnpm", ["exec", "electron", ".", ...extraArgs], {
     stdio: "inherit",
     shell: useShell,
     env: { ...process.env, VUA_RENDERER_URL: `http://127.0.0.1:${VITE_PORT}` },

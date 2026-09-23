@@ -2,11 +2,13 @@ import assert from "node:assert/strict";
 import { test } from "vitest";
 import {
   BOOTH_HOME_URL,
+  BOOTH_SIGN_IN_URL,
   browseAvailability,
   classifyRemoteOpenError,
   createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
+  initialBrowseUrl,
   initialEmbeddedBrowseState,
   narrowCompletedDownloads,
   normalizeBrowseAddress,
@@ -40,6 +42,17 @@ test("browseAvailability: 两态开关——仅显式 true 可用,未知/缺失�
 
 test("BOOTH_HOME_URL: 默认首页在浏览允许清单内(booth.pm)", () => {
   assert.equal(BOOTH_HOME_URL, "https://booth.pm/");
+});
+
+test("BOOTH_SIGN_IN_URL: 登录引导页在账户域,origin 已随批入内嵌浏览允许清单", () => {
+  assert.equal(BOOTH_SIGN_IN_URL, "https://accounts.booth.pm/sign_in");
+  assert.equal(new URL(BOOTH_SIGN_IN_URL).origin, "https://accounts.booth.pm");
+});
+
+test("initialBrowseUrl: 未登录线索引导登录页;已登录/未知回落主页(unknown 不冒充已检测)", () => {
+  assert.equal(initialBrowseUrl("none"), BOOTH_SIGN_IN_URL);
+  assert.equal(initialBrowseUrl("stored"), BOOTH_HOME_URL);
+  assert.equal(initialBrowseUrl("unknown"), BOOTH_HOME_URL);
 });
 
 test("displayUrl: origin+路径显示,弃查询串与片段;解析失败如实回显原文", () => {

@@ -191,6 +191,28 @@ export class RemoteContentManager {
     return this.#stateOf(managed);
   }
 
+  /**
+   * BOOTH 登录态线索(W25 走查缺陷③b 最小实现,只读探测):检查本机分区
+   * Session 中账户域(accounts.booth.pm——登录/库/会话功能唯一子域,普通
+   * 浏览 booth.pm 主页不在此域种 Cookie)是否存在已存 Cookie。
+   * - 诚实边界:会话 Cookie 具体键名无公开文档,不作键名猜测;「有 Cookie」
+   *   只说明账户域有存储痕迹(登录过/访问过账户页),不是登录判定——返回
+   *   线索三态,登录与否以站点实际呈现为准;
+   * - Cookie 值永不过本方法(只计存在性),符合「Cookie 数据只落本机分区,
+   *   永不离开本机」红线;
+   * - 探测异常如实返回 "unknown",不猜测不降级为已登录/未登录任一断言。
+   */
+  async signInHint(): Promise<"stored" | "none" | "unknown"> {
+    try {
+      const cookies = await this.#session.cookies.get({ domain: "booth.pm" });
+      const accountCookies = cookies.filter((cookie) => cookie.domain === "accounts.booth.pm"
+        || cookie.domain === ".accounts.booth.pm");
+      return accountCookies.length > 0 ? "stored" : "none";
+    } catch {
+      return "unknown";
+    }
+  }
+
   /** 宿主窗口尺寸变化时重排可见视图(骨架行为:占满内容区) */
   refreshBounds(): void {
     for (const managed of this.#views.values()) {

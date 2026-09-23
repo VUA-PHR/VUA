@@ -15,11 +15,13 @@ import { format, strings } from "../../i18n/index.ts";
 import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
 import {
   BOOTH_HOME_URL,
+  BOOTH_SIGN_IN_URL,
   browseAvailability,
   classifyRemoteOpenError,
   createBrowsePanelLifecycle,
   displayUrl,
   embeddedBrowseReducer,
+  initialBrowseUrl,
   initialEmbeddedBrowseState,
   normalizeBrowseAddress,
   bytesText,
@@ -168,14 +170,23 @@ function EmbeddedBrowsePanel({
     });
   };
 
-  // 首开自动导航默认首页(booth.pm,允许清单内;用户实测缺口修复):
-  // 仅面板挂载且无打开视图时执行一次——用户关闭视图后不强行重开,
-  // 后续导航历史照常保留。StrictMode 双调用下首挂的 open 在次挂后
-  // 落定,由生命周期代次判失配随即关闭,只留次挂(#37 修复)视图
+  // 首开自动导航(W25 走查缺陷③b 改造):先取本机登录态线索——未登录
+  // 线索引导登录页(accounts.booth.pm/sign_in),已登录/未知回落 booth.pm
+  // 主页(unknown 不冒充已检测)。仅面板挂载且无打开视图时执行一次——
+  // 用户关闭视图后不强行重开,后续导航历史照常保留。StrictMode 双调用下
+  // 首挂的 open 在次挂后落定,由生命周期代次判失配随即关闭,只留次挂
+  // (#37 修复)视图。线索探测异步一瞬,落定前不开视图,不呈现猜测态。
   useEffect(() => {
     if (availability.kind !== "available") return;
-    if (window.vua?.remoteContent === undefined) return;
-    openAddress(BOOTH_HOME_URL);
+    const remote = window.vua?.remoteContent;
+    if (remote === undefined) return;
+    let active = true;
+    void remote.signInHint().then((hint) => {
+      if (active) openAddress(initialBrowseUrl(hint));
+    });
+    return () => {
+      active = false;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 挂载一次性动作
   }, [availability.kind]);
 
@@ -546,6 +557,11 @@ export function ImportPage() {
     () => browseAvailability(window.vua?.capabilities?.remoteBrowser),
     [],
   );
+  // 来源分流(W25 走查缺陷②,用户裁决期望):弹窗打开先选「本地导入/
+  // 云端导入」再进入对应段——不再同时铺开两段,云端段(内嵌 BOOTH 视图)
+  // 只在用户显式选择后激活,不再一开弹窗就自动盖出浏览器。弹窗关闭即
+  // 卸载组件,重开回到选择态(诚实起点,无记忆猜测)。
+  const [section, setSection] = useState<"choose" | "local" | "cloud">("choose");
 
   return (
     <div className="vua-page">
@@ -554,25 +570,51 @@ export function ImportPage() {
         <p className="vua-caption vua-text-secondary">{copy.subtitle}</p>
       </section>
 
-      <Card>
-        <div className="vua-page__stack">
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
-            <EmbeddedBrowsePanel availability={availability} />
-            <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
-            <CompletedDownloadsPanel />
-          </section>
-        </div>
-      </Card>
-
-      <Card>
-        <div className="vua-page__stack">
-          <section>
-            <h3 className="vua-warehouse-detail__section-title">{copy.localTitle}</h3>
-            <LocalImportSection />
-          </section>
-        </div>
-      </Card>
+      {section === "choose" ? (
+        <Card>
+          <div className="vua-import__choose" role="group" aria-label={copy.chooseAria}>
+            <p className="vua-text-secondary">{copy.chooseLead}</p>
+            <div className="vua-import__choose-actions">
+              <Button variant="primary" onClick={() => setSection("local")}>
+                {copy.chooseLocalCta}
+              </Button>
+              <Button
+                variant="default"
+                disabled={availability.kind !== "available"}
+                onClick={() => setSection("cloud")}
+              >
+                {copy.chooseCloudCta}
+              </Button>
+            </div>
+            {availability.kind !== "available" ? (
+              <p className="vua-caption vua-text-secondary">{copy.cloudUnavailable}</p>
+            ) : null}
+          </div>
+        </Card>
+      ) : (
+        <Card>
+          <div className="vua-page__stack">
+            <div>
+              <Button variant="subtle" onClick={() => setSection("choose")}>
+                {copy.rechooseCta}
+              </Button>
+            </div>
+            {section === "cloud" ? (
+              <section>
+                <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
+                <EmbeddedBrowsePanel availability={availability} />
+                <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
+                <CompletedDownloadsPanel />
+              </section>
+            ) : (
+              <section>
+                <h3 className="vua-warehouse-detail__section-title">{copy.localTitle}</h3>
+                <LocalImportSection />
+              </section>
+            )}
+          </div>
+        </Card>
+      )}
     </div>
   );
 }

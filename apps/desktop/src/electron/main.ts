@@ -391,6 +391,12 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     if (typeof viewId !== "string" || typeof visible !== "boolean") throw new Error("invalid remote content request");
     return remoteContent!.setVisible(viewId, visible);
   });
+  // BOOTH 登录态线索(W25 走查缺陷③b):只读探测本机分区 Cookie 存在性,
+  // Cookie 值不过 IPC;探测失败在管理器内归并为 "unknown"(诚实未知)
+  ipcMain.handle("vua:remote-content:sign-in-hint", (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    return remoteContent!.signInHint();
+  });
 
   // 导航确认作答(015 §12):只受理本地来源;未知 confirmId/重复作答忽略
   // (渲染层不能伪造未发出的确认);作答后 pending 移除,确认 Promise 落定
@@ -563,10 +569,13 @@ async function createWindow(): Promise<void> {
 
   // 远程内容管理器(F4-2):独立 partition Session;目录浏览域为种子允许清单,
   // 真实值随 catalog 契约冻结(F4-1②)调整;违规事件广播到本地来源窗口;
-  // 确认层注入使 U9(1) 清单外「提示后放行」与 U9(3) 外部协议确认在视图内生效
+  // 确认层注入使 U9(1) 清单外「提示后放行」与 U9(3) 外部协议确认在视图内生效。
+  // accounts.booth.pm(W25 走查缺陷③b):登录/库/会话唯一账户子域——未登录
+  // 引导首导登录页需直行该域(否则登录引导被清单拒绝),视图内登录跳转
+  // 同域受益;仅内嵌浏览清单扩此域,下载域清单与本地窗口弹窗清单不动
   remoteContent = new RemoteContentManager({
     partition: "persist:vua-remote",
-    allowedOrigins: ["https://booth.pm"],
+    allowedOrigins: ["https://booth.pm", "https://accounts.booth.pm"],
     openExternal: (url) => void shell.openExternal(url),
     broadcast: (event) => broadcastRemoteContentEvent(rendererUrl, event),
     confirmNavigation,

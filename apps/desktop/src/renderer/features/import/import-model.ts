@@ -22,6 +22,20 @@ export type EmbeddedBrowseAvailability =
  *  导航历史照常保留,「回首页」按钮同址。 */
 export const BOOTH_HOME_URL = "https://booth.pm/";
 
+/** BOOTH 登录页(W25 走查缺陷③b):未登录线索("none")时首开引导至此而非
+ *  主页——用户裁决期望「未登录引导到登录页」。URL 为公开账户域登录地址
+ *  (accounts.booth.pm 为登录/库/会话唯一账户子域);该域已入内嵌浏览
+ *  允许清单(main 侧同批),登录后的会话 Cookie 存活沿用既有持久化策略。
+ *  「已登录/未知」回落主页:登录与否以站点实际呈现为准,线索非判定。 */
+export const BOOTH_SIGN_IN_URL = "https://accounts.booth.pm/sign_in";
+
+/** 首开地址决定(纯函数,可测):登录态线索 → 首导航地址。
+ *  "none" = 账户域零存储痕迹 → 登录页;"stored"/"unknown" → 主页
+ *  (unknown 不冒充已检测,如实回落主页不猜测)。 */
+export function initialBrowseUrl(signInHint: "stored" | "none" | "unknown"): string {
+  return signInHint === "none" ? BOOTH_SIGN_IN_URL : BOOTH_HOME_URL;
+}
+
 /** 地址脱敏显示(导航条只读位):origin + 路径,弃查询串与片段——登录态
  *  令牌/追踪参数不展示;解析失败如实回显原文(不猜测) */
 export function displayUrl(url: string): string {
