@@ -2404,6 +2404,20 @@ fn plan_document_hash(document: &Value) -> String {
     )
 }
 
+/// The typed failure for a BDL store read/write that breaks a tasked
+/// use case (the task-level twin of the frame-layer `warehouse_store_failed`
+/// arm): same warehouse word-face key the desktop already holds, internal
+/// category, the store error carried honestly in the detail param.
+fn bdl_store_failed(correlation_id: &str, error: impl std::fmt::Display) -> AppErrorV1 {
+    AppErrorV1::new(
+        "vua.warehouse.store_failed",
+        ErrorCategory::Internal,
+        "errors.warehouse.storeFailed",
+        correlation_id,
+    )
+    .with_param("detail", vua_orchestrator::ParamValue::Text(error.to_string()))
+}
+
 /// Local Resolution over a Recipe v0.3 document (011 section 5, minimal
 /// honest semantics): warehouse-sourced assets resolve through the frozen
 /// entry detail query against the composed global default; provider-sourced
@@ -2443,7 +2457,17 @@ fn run_local_resolution(
             )
         })?;
     let recipe = &stored.recipe;
-    let composed = store.global_default_mode().unwrap_or(None).unwrap_or(env_initial);
+    // The composed global default (U8 two-level options): a persisted value
+    // rules every later resolution. A failed read must surface as a typed
+    // failure — silently demoting it to the environment initial presented a
+    // broken store as "no default was set" and silently switched the
+    // artifact-mode decision for every asset in the resolution (BG-12
+    // family member, wt-2 batch 181 reverse-audit; the frame-layer twin
+    // `composed_global_default` propagates the same error).
+    let composed = match store.global_default_mode() {
+        Ok(persisted) => persisted.unwrap_or(env_initial),
+        Err(error) => return Err(bdl_store_failed(correlation_id, &error)),
+    };
 
     let local_resolution_id = uuid_v7_identity();
     let mut resolved_assets: std::collections::HashMap<String, Value> =
@@ -2453,21 +2477,31 @@ fn run_local_resolution(
     let mut skipped_job_ids: Vec<String> = Vec::new();
 
     // resolve_one_asset: returns the resolvedSource value or None after
-    // publishing the honest missing evidence.
+    // publishing the honest missing evidence. A failed entry-detail READ is
+    // neither of those: it is a store failure and surfaces as the typed
+    // failure — treating Err like "no entry" would publish missing-asset
+    // evidence (a false statement about world state) and silently skip the
+    // relation's jobs (BG-12 family member, wt-2 batch 181 reverse-audit;
+    // only Ok(None) — a true absence — earns the missing arm).
     let resolve_one_asset = |asset: &Value,
                              evidence_ids: &mut Vec<String>,
                              missing_count: &mut usize,
                              local_resolution_id: &str|
-     -> Option<Value> {
-        let source_ref = asset.get("sourceRef")?;
+     -> Result<Option<Value>, AppErrorV1> {
+        let source_ref = match asset.get("sourceRef") {
+            Some(source_ref) => source_ref,
+            None => return Ok(None),
+        };
         if let Some(warehouse_item_id) =
             source_ref.get("warehouseItemId").and_then(Value::as_str)
         {
             let requested_role =
                 source_ref.get("role").and_then(Value::as_str).unwrap_or("original");
-            if let Ok(Some(detail)) =
-                store.warehouse_entry_detail(warehouse_item_id, composed)
-            {
+            let detail = match store.warehouse_entry_detail(warehouse_item_id, composed) {
+                Ok(detail) => detail,
+                Err(error) => return Err(bdl_store_failed(correlation_id, &error)),
+            };
+            if let Some(detail) = detail {
                 // Source selection follows the entry's effective artifact
                 // mode (override ?? composed global, W14): generate_vpm
                 // prefers a CLEAN generated_vpm copy, anything else falls
@@ -2485,12 +2519,12 @@ fn run_local_resolution(
                     _ => original.map(|fact| (fact, false)),
                 };
                 if let Some((fact, fallback_used)) = chosen {
-                    return Some(serde_json::json!({
+                    return Ok(Some(serde_json::json!({
                         "sourceKind": fact.role.name(),
                         "artifactSha256": fact.artifact_sha256,
                         "warehouseItemId": warehouse_item_id,
                         "fallbackUsed": fallback_used,
-                    }));
+                    })));
                 }
             }
             let evidence_id = uuid_v7_identity();
@@ -2509,14 +2543,14 @@ fn run_local_resolution(
                 evidence_ids.push(evidence_id.clone());
                 *missing_count += 1;
             }
-            Some(serde_json::json!({
+            Ok(Some(serde_json::json!({
                 "sourceKind": requested_role,
                 "artifactSha256": Value::Null,
                 "warehouseItemId": warehouse_item_id,
                 "fallbackUsed": false,
                 "missing": true,
                 "evidenceId": evidence_id,
-            }))
+            })))
         } else {
             // Provider-sourced asset: no import record exists on this
             // machine - honest missing evidence (never invented paths).
@@ -2540,14 +2574,14 @@ fn run_local_resolution(
                 evidence_ids.push(evidence_id.clone());
                 *missing_count += 1;
             }
-            Some(serde_json::json!({
+            Ok(Some(serde_json::json!({
                 "sourceKind": "original",
                 "artifactSha256": Value::Null,
                 "warehouseItemId": Value::Null,
                 "fallbackUsed": false,
                 "missing": true,
                 "evidenceId": evidence_id,
-            }))
+            })))
         }
     };
 
@@ -2556,7 +2590,7 @@ fn run_local_resolution(
         for asset in assets {
             let asset_id = asset.get("id").and_then(Value::as_str).unwrap_or_default();
             if let Some(resolved_source) =
-                resolve_one_asset(asset, &mut evidence_ids, &mut missing_count, &local_resolution_id)
+                resolve_one_asset(asset, &mut evidence_ids, &mut missing_count, &local_resolution_id)?
             {
                 resolved_assets.insert(asset_id.to_owned(), resolved_source);
             }
@@ -9547,6 +9581,16 @@ fn confirm_plan(
             .as_ref()
             .map(|snapshot| snapshot.snapshot_id.clone())
             .ok_or_else(not_recoverable_error)?;
+        // The record payload is deserialized data: an older record written
+        // before validation existed at every write site, or a hand-edited
+        // one, can carry an id that creation-time checks never saw. This id
+        // is interpolated into the ownership probe, the SnapshotRef path and
+        // the stale-quarantine rename below — all BEFORE restore_verified's
+        // containment checks run — so the same grammar gate as snapshot
+        // creation applies here, at the boundary where the id re-enters the
+        // filesystem (wt-2 batch 181 reverse-audit, #43-family member).
+        vua_orchestrator::FileSystemSnapshotStore::validate_snapshot_id(&snapshot_id)
+            .map_err(|_| not_recoverable_error())?;
         // The requested project must actually own this snapshot: a
         // recovery can never restore a snapshot directory from ANOTHER
         // project root the caller supplies.
