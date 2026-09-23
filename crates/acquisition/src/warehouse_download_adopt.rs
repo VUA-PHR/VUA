@@ -153,6 +153,20 @@ pub struct WarehouseDownloadAdoptTaskResult {
     pub adopted: Vec<AdoptedDownload>,
 }
 
+/// The on-disk file name for an adopted copy: the FINAL path component of
+/// the delivery's name facts. `suggested_file_name` is server-controlled
+/// Content-Disposition content riding the port event; joining it verbatim
+/// would let an absolute or `..`-bearing name escape the entry folder (the
+/// #43 path-shape family: externally controllable names never ride into a
+/// path join unguarded). The port itself takes only the final component
+/// when reserving staging names — the same discipline applies at adoption.
+fn adoptable_file_component(name: &str) -> Option<String> {
+    let normalized = name.replace('\\', "/");
+    let component = normalized.rsplit('/').next()?.trim();
+    let usable = !component.is_empty() && component != "." && component != "..";
+    usable.then(|| component.to_string())
+}
+
 pub struct DownloadAdopter<'a> {
     store: &'a BdlStore,
     clock: &'a dyn Clock,
@@ -213,15 +227,18 @@ impl<'a> DownloadAdopter<'a> {
 
         // Display name: the delivery's suggested file name stem, else the
         // staging file name stem, else the download id. The entry identity
-        // stays VUA-generated, never derived from the display name.
+        // stays VUA-generated, never derived from the display name. The
+        // on-disk name is the FINAL path component only — the verbatim
+        // suggested name is server-controlled and never joins a path.
         let file_name = completion
             .suggested_file_name
-            .clone()
+            .as_deref()
+            .and_then(adoptable_file_component)
             .or_else(|| {
                 staging_path
                     .file_name()
                     .and_then(|name| name.to_str())
-                    .map(str::to_string)
+                    .and_then(adoptable_file_component)
             })
             .ok_or_else(|| DownloadAdoptError::DownloadNotFound(download_id.to_string()))?;
         let display_name = Path::new(&file_name)
@@ -514,5 +531,50 @@ mod tests {
             }
             other => panic!("expected DownloadNotFound, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn a_path_like_suggested_name_never_escapes_the_entry_folder() {
+        let store = BdlStore::open_in_memory().unwrap();
+        let staging_dir = unique_dir("vua-adopt", "staging");
+        let staging = staging_dir.join("material-pack.zip");
+        std::fs::write(&staging, b"PK hostile name fixture").unwrap();
+        let size = b"PK hostile name fixture".len() as u64;
+        let consumer = DownloadEventConsumer::new(&store);
+        for (kind, occurred) in [
+            (vua_bdl_store::download_events::DownloadEventKind::Started, "2026-09-09T12:00:00.000Z"),
+            (vua_bdl_store::download_events::DownloadEventKind::Completed, "2026-09-09T12:00:01.000Z"),
+        ] {
+            let mut delivery = event(kind, "dl-hostile", Some(staging.to_string_lossy().into_owned()), Some(size));
+            // Server-controlled Content-Disposition content pointing two
+            // levels above the entry folder.
+            delivery.suggested_file_name = Some("..\\..\\evil.zip".into());
+            delivery.occurred_at = occurred.into();
+            consumer.ingest(&delivery).unwrap();
+        }
+
+        let warehouse_root = unique_dir("vua-adopt", "wh");
+        let clock = FixedClock::new(&["2026-09-09T13:00:00.000Z"]);
+        let adopter = DownloadAdopter::new(&store, &clock, &warehouse_root);
+        let adopted = adopter.adopt_download("dl-hostile").unwrap();
+
+        // The copy landed INSIDE the entry folder under its final
+        // component — never at the hostile path.
+        assert_eq!(adopted.file_name, "evil.zip");
+        let entry_folder = warehouse_root.join(&adopted.entry.folder_name);
+        assert!(entry_folder.join("evil.zip").is_file());
+        assert!(
+            !warehouse_root
+                .parent()
+                .unwrap()
+                .join("evil.zip")
+                .exists(),
+            "the hostile relative escape target must not exist"
+        );
+        // The copy rows carry the guarded component as the relative path.
+        let copies = store.entry_copies(&adopted.entry.warehouse_item_id).unwrap();
+        assert_eq!(copies[0].relative_path, "evil.zip");
+        std::fs::remove_dir_all(&warehouse_root).ok();
+        std::fs::remove_dir_all(&staging_dir).ok();
     }
 }
