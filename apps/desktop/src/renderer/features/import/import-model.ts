@@ -32,10 +32,44 @@ export const BOOTH_HOME_URL = "https://booth.pm/";
 export const BOOTH_SIGN_IN_URL = "https://accounts.booth.pm/users/sign_in";
 
 /** 首开地址决定(纯函数,可测):登录态线索 → 首导航地址。
- *  "none" = 账户域零存储痕迹 → 登录页;"stored"/"unknown" → 主页
- *  (unknown 不冒充已检测,如实回落主页不猜测)。 */
+ * "none" = 账户域零存储痕迹 → 登录页;"stored"/"unknown" → 主页
+ * (unknown 不冒充已检测,如实回落主页不猜测)。 */
 export function initialBrowseUrl(signInHint: "stored" | "none" | "unknown"): string {
   return signInHint === "none" ? BOOTH_SIGN_IN_URL : BOOTH_HOME_URL;
+}
+
+/** 受理态自动关闭时滞(W25 走查缺陷③根因修复,操作者第 178 批派单):
+ * 导入命令受理后弹窗短暂呈现受理信息让用户看见「已受理」,随后自动关闭
+ * ——任务进度归任务中心/通知中心呈现(1.5.0 通知中心哲学),模态滞留
+ * (HEADER/SIDEBAR/HERO/TASKBAR 全部 inert 被用户视作整屏卡死)终止。 */
+export const IMPORT_ACCEPTED_AUTO_CLOSE_MS = 1500;
+
+/** 受理自动关闭定时器(纯件,可测):schedule 单次触发后自清,cancel 幂等;
+ * 重开弹窗 = 组件重挂载 = 新定时器实例——旧定时器随卸载清理,不存在
+ * 跨弹窗实例的陈旧关闭(手动先关再重开不被旧定时器误关)。 */
+export function createAutoCloseTimer(
+  close: () => void,
+  delayMs: number = IMPORT_ACCEPTED_AUTO_CLOSE_MS,
+): { schedule: () => void; cancel: () => void; readonly pending: boolean } {
+  let handle: ReturnType<typeof setTimeout> | null = null;
+  return {
+    schedule() {
+      this.cancel();
+      handle = setTimeout(() => {
+        handle = null;
+        close();
+      }, delayMs);
+    },
+    cancel() {
+      if (handle !== null) {
+        clearTimeout(handle);
+        handle = null;
+      }
+    },
+    get pending() {
+      return handle !== null;
+    },
+  };
 }
 
 /** 地址脱敏显示(导航条只读位):origin + 路径,弃查询串与片段——登录态

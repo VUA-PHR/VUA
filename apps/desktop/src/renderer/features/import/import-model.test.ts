@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test, vi } from "vitest";
 import {
+  IMPORT_ACCEPTED_AUTO_CLOSE_MS,
+  createAutoCloseTimer,
   BOOTH_HOME_URL,
   BOOTH_SIGN_IN_URL,
   browseAvailability,
@@ -327,4 +329,70 @@ test("classifyRemoteOpenError: Main 清单外拒绝(origin_not_allowed)与其它
   });
   // 非 Error 值同样兜底通用失败
   assert.deepEqual(classifyRemoteOpenError("network down"), { kind: "open-failed" });
+});
+
+test("createAutoCloseTimer:受理时滞单次触发(1500ms 默认),不提前不双发", () => {
+  vi.useFakeTimers();
+  try {
+    let closed = 0;
+    const timer = createAutoCloseTimer(() => {
+      closed++;
+    });
+    assert.equal(timer.pending, false, "未武装时不挂定时器");
+    timer.schedule();
+    assert.equal(timer.pending, true, "武装后挂定时器");
+    vi.advanceTimersByTime(IMPORT_ACCEPTED_AUTO_CLOSE_MS - 1);
+    assert.equal(closed, 0, "时滞内不提前关闭(用户须看见「已受理」)");
+    vi.advanceTimersByTime(1);
+    assert.equal(closed, 1, "恰在 1500ms 触发一次");
+    assert.equal(timer.pending, false, "触发后自清");
+    vi.advanceTimersByTime(10_000);
+    assert.equal(closed, 1, "触发后不双发");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("createAutoCloseTimer:cancel 幂等且防触发——手动先关/失败驻留路径", () => {
+  vi.useFakeTimers();
+  try {
+    let closed = 0;
+    const timer = createAutoCloseTimer(() => {
+      closed++;
+    }, 1000);
+    timer.schedule();
+    timer.cancel();
+    timer.cancel();
+    assert.equal(timer.pending, false, "cancel 后不挂定时器(幂等)");
+    vi.advanceTimersByTime(5_000);
+    assert.equal(closed, 0, "取消后不触发(弹窗已被手动关闭/失败驻留)");
+    // 重开弹窗 = 新实例:旧实例取消不影响新实例计时
+    timer.schedule();
+    vi.advanceTimersByTime(1_000);
+    assert.equal(closed, 1, "重新武装后正常触发");
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+test("createAutoCloseTimer:重入 schedule 先清旧柄——同窗二次受理不双发", () => {
+  vi.useFakeTimers();
+  try {
+    let closed = 0;
+    const timer = createAutoCloseTimer(() => {
+      closed++;
+    }, 1500);
+    timer.schedule();
+    vi.advanceTimersByTime(1_000);
+    timer.schedule();
+    assert.equal(timer.pending, true, "重入武装仍恰一柄");
+    vi.advanceTimersByTime(1_499);
+    assert.equal(closed, 0, "旧时点不触发(已被重入清除)");
+    vi.advanceTimersByTime(1);
+    assert.equal(closed, 1, "恰在新时点触发一次");
+    vi.advanceTimersByTime(1_500);
+    assert.equal(closed, 1, "不双发");
+  } finally {
+    vi.useRealTimers();
+  }
 });
