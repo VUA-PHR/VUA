@@ -429,3 +429,90 @@ fn vua_identity_finding_reflects_the_marker_file_states() {
 
     cleanup(&base);
 }
+
+/// BG-12 家族环境域成员（wt-6 反向审查批 2026-09-24）：manifest 字段形状
+/// 错误与非字符串版本值都如实申报（兑现 manifest_map 文档承诺的警告腿）
+/// ——部分可读的清单是部分发现，不是静默截断。清单本身是合法 JSON 对象，
+/// manifestSchemaOk 保持 true，形状发现走 diagnostics。
+#[test]
+fn partially_readable_manifest_maps_announce_what_was_skipped() {
+    let base = unique_dir("partial-manifest");
+    let manifest = r#"{
+        "dependencies": "not-an-object",
+        "locked": {
+            "com.vrchat.base": "3.7.4",
+            "com.example.broken": 42
+        }
+    }"#;
+    let project = install_vpm_project(&base, "Partial", "2022.3.22f1", Some(manifest));
+    vcc_settings(&base, &[project]);
+
+    let snapshot = probe(&base);
+    let finding = &snapshot.projects[0];
+    assert!(
+        finding.manifest_present && finding.manifest_schema_ok,
+        "valid-JSON manifests stay schema-ok; shape findings ride on diagnostics"
+    );
+    assert!(finding.dependencies.is_empty(), "wrong shape is never guessed into entries");
+    assert_eq!(finding.locked.len(), 1, "the readable entry survives");
+    assert_eq!(finding.locked[0].package_id, "com.vrchat.base");
+
+    let details: Vec<&str> = finding
+        .diagnostics
+        .iter()
+        .map(|diagnostic| diagnostic.detail.as_str())
+        .collect();
+    assert!(
+        details.iter().any(|detail| detail.contains("dependencies") && detail.contains("not an object")),
+        "the wrong-shape field must be announced: {details:#?}"
+    );
+    assert!(
+        details.iter().any(|detail| detail.contains("locked") && detail.contains("com.example.broken")),
+        "the skipped entry must be announced: {details:#?}"
+    );
+    assert!(
+        finding
+            .diagnostics
+            .iter()
+            .all(|diagnostic| diagnostic.code == "vua.project_inspection.manifest_schema_unexpected"),
+        "the inspection family owns these shape findings: {:?}",
+        finding.diagnostics
+    );
+
+    cleanup(&base);
+}
+
+/// BG-12 家族环境域成员（wt-6 反向审查批 2026-09-24）：ProjectVersion.txt
+/// 存在但不可读（此处：无效 UTF-8 字节）是观测失败，必须以
+/// PROJECT_MARKERS_INCOMPLETE 警告申报——文件缺席才是设计内静默缺席；
+/// 版本照旧不猜测（unityVersion 保持 None）。
+#[test]
+fn unreadable_project_version_file_announces_itself_instead_of_silence() {
+    let base = unique_dir("unreadable-version");
+    let project = base.join("projects").join("Corrupted");
+    fs::create_dir_all(project.join("Packages")).unwrap();
+    fs::create_dir_all(project.join("ProjectSettings")).unwrap();
+    fs::write(project.join("Packages").join("vpm-manifest.json"), "{}").unwrap();
+    // 0xFF/0xFE are never valid UTF-8: read_to_string fails with InvalidData.
+    fs::write(
+        project.join("ProjectSettings").join("ProjectVersion.txt"),
+        [0xFFu8, 0xFE, 0x41, 0x00],
+    )
+    .unwrap();
+    vcc_settings(&base, &[project]);
+
+    let snapshot = probe(&base);
+    let finding = &snapshot.projects[0];
+    assert!(finding.path_present);
+    assert_eq!(finding.unity_version, None, "no version is invented");
+    assert!(
+        finding.diagnostics.iter().any(|diagnostic| {
+            diagnostic.code == vua_orchestrator::env_managers_codes::PROJECT_MARKERS_INCOMPLETE
+                && diagnostic.detail.contains("ProjectVersion.txt exists but cannot be read")
+        }),
+        "the unreadable marker must be announced: {:?}",
+        finding.diagnostics
+    );
+
+    cleanup(&base);
+}
