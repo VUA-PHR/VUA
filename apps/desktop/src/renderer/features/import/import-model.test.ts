@@ -45,7 +45,8 @@ test("BOOTH_HOME_URL: 默认首页在浏览允许清单内(booth.pm)", () => {
 });
 
 test("BOOTH_SIGN_IN_URL: 登录引导页在账户域,origin 已随批入内嵌浏览允许清单", () => {
-  assert.equal(BOOTH_SIGN_IN_URL, "https://accounts.booth.pm/sign_in");
+  // 路径勘误(2026-09-23 真机实测):/sign_in 404,/users/sign_in 200(HTTP HEAD -L)
+  assert.equal(BOOTH_SIGN_IN_URL, "https://accounts.booth.pm/users/sign_in");
   assert.equal(new URL(BOOTH_SIGN_IN_URL).origin, "https://accounts.booth.pm");
 });
 

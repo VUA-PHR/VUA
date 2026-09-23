@@ -26,8 +26,10 @@ export const BOOTH_HOME_URL = "https://booth.pm/";
  *  主页——用户裁决期望「未登录引导到登录页」。URL 为公开账户域登录地址
  *  (accounts.booth.pm 为登录/库/会话唯一账户子域);该域已入内嵌浏览
  *  允许清单(main 侧同批),登录后的会话 Cookie 存活沿用既有持久化策略。
- *  「已登录/未知」回落主页:登录与否以站点实际呈现为准,线索非判定。 */
-export const BOOTH_SIGN_IN_URL = "https://accounts.booth.pm/sign_in";
+ *  「已登录/未知」回落主页:登录与否以站点实际呈现为准,线索非判定。
+ *  路径勘误(2026-09-23 真机实测):/sign_in 404,/users/sign_in 200
+ *  (HTTP HEAD -L 实测),以实测为准。 */
+export const BOOTH_SIGN_IN_URL = "https://accounts.booth.pm/users/sign_in";
 
 /** 首开地址决定(纯函数,可测):登录态线索 → 首导航地址。
  *  "none" = 账户域零存储痕迹 → 登录页;"stored"/"unknown" → 主页

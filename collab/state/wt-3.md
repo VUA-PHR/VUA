@@ -66,6 +66,9 @@ main d5369061＝第 177–183 批集成收编世代+本实现批+本状态批)�
   https://accounts.booth.pm/sign_in(登录页 URL 经公开资料确证),
   "stored"/"unknown"→booth.pm 主页(unknown 不冒充已检测)。真机行使:本
   机 hint="none",云端段首导登录页成功(URL 广播回现,清单放行同证)。
+  **勘误(提交后即时发现即时修,同批第三笔)**:登录页路径初版取
+  /sign_in 经真机 404,HTTP HEAD -L 实测 /users/sign_in 200,BOOTH_SIGN_IN_URL
+  以实测勘误(代码+测试断言+本行三处同步)。
 - **缺陷④(多层目录递归扫描/压缩包提取/PSD 记录)＝只登记不动手(用户明
   令)**:现状导入链对扩展名allowlist 外文件逐文件跳过并进任务报告
   skipped 明细(多层子目录文件路径可见,如 PNG\2P\Body.png);目录递归扫
