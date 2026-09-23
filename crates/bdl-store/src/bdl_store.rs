@@ -853,31 +853,41 @@ pub struct WarehouseArtifactFact {
     pub role: CopyRole,
 }
 
-fn effective_mode(artifact_mode: Option<String>, global_default: ArtifactMode) -> ArtifactMode {
-    artifact_mode
-        .as_deref()
-        .map(|mode| ArtifactMode::parse(mode).unwrap_or(global_default))
-        .unwrap_or(global_default)
+/// Resolves the effective mode: the per-entry override, else the injected
+/// global default. The stored column carries a schema-level CHECK closed
+/// set, so through SQL the value is always a frozen member; if the storage
+/// invariant is ever broken by non-SQL means, the parse failure propagates
+/// as a corrupt value — never silently "no override" (a corrupt fact must
+/// not rewrite the entry's resolution decision) and never a panic.
+fn effective_mode(
+    artifact_mode: Option<&str>,
+    global_default: ArtifactMode,
+) -> Result<ArtifactMode, BdlStoreError> {
+    match artifact_mode {
+        None => Ok(global_default),
+        Some(mode) => ArtifactMode::parse(mode),
+    }
 }
 
 fn warehouse_card(
     item: StoredWarehouseItem,
     global_default: ArtifactMode,
     artifacts: Vec<WarehouseArtifactRef>,
-) -> WarehouseEntryCard {
-    WarehouseEntryCard {
-        effective_artifact_mode: effective_mode(item.artifact_mode.clone(), global_default),
+) -> Result<WarehouseEntryCard, BdlStoreError> {
+    Ok(WarehouseEntryCard {
+        effective_artifact_mode: effective_mode(item.artifact_mode.as_deref(), global_default)?,
         artifact_mode: item
             .artifact_mode
             .as_deref()
-            .map(|mode| ArtifactMode::parse(mode).expect("stored mode is enum-validated")),
+            .map(ArtifactMode::parse)
+            .transpose()?,
         warehouse_item_id: item.warehouse_item_id,
         folder_name: item.folder_name,
         display_name: item.display_name,
         kind: item.kind,
         created_at: item.created_at,
         artifacts,
-    }
+    })
 }
 
 pub struct BdlStore {
@@ -1569,7 +1579,7 @@ impl BdlStore {
         for item in items {
             let artifacts =
                 self.warehouse_artifact_refs(&connection, &item.warehouse_item_id)?;
-            cards.push(warehouse_card(item, global_default, artifacts));
+            cards.push(warehouse_card(item, global_default, artifacts)?);
         }
         Ok(cards)
     }
@@ -1733,8 +1743,9 @@ impl BdlStore {
             artifact_mode: item
                 .artifact_mode
                 .as_deref()
-                .map(|mode| ArtifactMode::parse(mode).expect("stored mode is enum-validated")),
-            effective_artifact_mode: effective_mode(item.artifact_mode, global_default),
+                .map(ArtifactMode::parse)
+                .transpose()?,
+            effective_artifact_mode: effective_mode(item.artifact_mode.as_deref(), global_default)?,
             created_at: item.created_at,
             artifacts,
         }))
@@ -2248,14 +2259,24 @@ impl BdlStore {
     /// 空态即终态); `datasetRevision` is the BDL format_version.
     pub fn catalog_status(&self) -> Result<CatalogStatusResult, BdlStoreError> {
         let connection = self.connection.lock().expect("SQLite connection poisoned");
-        let catalog_updated_seq: Option<i64> = connection
+        // A persisted counter that is not an integer is stored corruption,
+        // surfaced as such — the sibling write face maps the same parse
+        // failure to CorruptValue, and silently answering health=unknown
+        // would dress corruption up as the honest empty state.
+        let catalog_updated_seq: Option<i64> = match connection
             .query_row(
                 "SELECT value FROM bdl_meta WHERE key = 'catalog_updated_seq'",
                 [],
                 |row| row.get::<_, String>(0),
             )
             .optional()?
-            .and_then(|value| value.parse().ok());
+        {
+            None => None,
+            Some(value) => Some(value.parse().map_err(|_| BdlStoreError::CorruptValue {
+                field: "catalog_updated_seq",
+                value,
+            })?),
+        };
         let dataset_revision: String = connection
             .query_row(
                 "SELECT value FROM bdl_meta WHERE key = 'format_version'",
@@ -3012,6 +3033,102 @@ mod tests {
         assert_eq!(deleted, 1);
         let cards = store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage).unwrap();
         assert_eq!(cards[0].artifacts.len(), 0, "generated_vpm copies would survive");
+    }
+
+    #[test]
+    fn corrupt_stored_artifact_mode_surfaces_as_a_typed_error() {
+        let store = BdlStore::open_in_memory().unwrap();
+        let item = store
+            .create_warehouse_item("Fixture", "imported_material", "2026-09-06T08:20:00.000Z")
+            .unwrap();
+        {
+            let connection = store.connection.lock().unwrap();
+            // The column carries a schema-level CHECK closed set, so SQL
+            // cannot write a foreign member; the pragma simulates storage
+            // drift arriving by non-SQL means — exactly the state the
+            // read-face defensive layer exists for.
+            connection
+                .execute_batch("PRAGMA ignore_check_constraints = ON")
+                .unwrap();
+            connection
+                .execute(
+                    "UPDATE warehouse_items SET artifact_mode = 'generate_vpm-tampered'
+                     WHERE warehouse_item_id = ?1",
+                    params![item.warehouse_item_id],
+                )
+                .unwrap();
+            connection
+                .execute_batch("PRAGMA ignore_check_constraints = OFF")
+                .unwrap();
+        }
+        // The read faces report the corrupt override instead of silently
+        // resolving the entry to the global default (a false statement
+        // about the entry) or panicking on a data-dependent expect.
+        assert!(matches!(
+            store.warehouse_entry_cards(ArtifactMode::UseOriginalUnitypackage),
+            Err(BdlStoreError::CorruptValue { field: "artifact mode", .. })
+        ));
+        assert!(matches!(
+            store.warehouse_entry_detail(
+                &item.warehouse_item_id,
+                ArtifactMode::UseOriginalUnitypackage,
+            ),
+            Err(BdlStoreError::CorruptValue { field: "artifact mode", .. })
+        ));
+    }
+
+    #[test]
+    fn corrupt_catalog_seq_surfaces_as_corruption_not_unknown_health() {
+        let store = BdlStore::open_in_memory().unwrap();
+        {
+            let connection = store.connection.lock().unwrap();
+            connection
+                .execute(
+                    "INSERT INTO bdl_meta(key, value) VALUES ('catalog_updated_seq', 'not-a-number')",
+                    [],
+                )
+                .unwrap();
+        }
+        assert!(matches!(
+            store.catalog_status(),
+            Err(BdlStoreError::CorruptValue { field: "catalog_updated_seq", .. })
+        ));
+    }
+
+    #[test]
+    fn corrupt_completed_event_poisons_the_adoptable_list_as_an_error_not_a_panic() {
+        let store = BdlStore::open_in_memory().unwrap();
+        let started = DownloadEventV01 {
+            schema_version: crate::download_events::DOWNLOAD_EVENT_SCHEMA_VERSION.into(),
+            kind: DownloadEventKind::Started,
+            download_id: "dl-corrupt".into(),
+            attempt: 1,
+            source_url: "https://booth.example.com/download/1000001/fixture".into(),
+            initiated_from_page_url: None,
+            url_chain: None,
+            suggested_file_name: Some("pack.zip".into()),
+            stored_path: Some("C:\\staging\\dl-corrupt-pack.zip".into()),
+            expected_bytes: Some(1024),
+            received_bytes: Some(0),
+            resumable: true,
+            failure_kind: None,
+            occurred_at: "2026-09-06T08:15:00.000Z".into(),
+        };
+        store.append_download_event(&started).unwrap();
+        let mut completed = started.clone();
+        completed.kind = DownloadEventKind::Completed;
+        completed.received_bytes = None;
+        completed.occurred_at = "2026-09-06T08:16:00.000Z".into();
+        store.append_download_event(&completed).unwrap();
+        // The serving face folds every history: the corrupt completed row
+        // surfaces as stored corruption — never the old panic inside the
+        // completion manifest, and never a silent skip dressed as an empty
+        // list.
+        let error = store.list_adoptable_downloads().unwrap_err();
+        assert!(matches!(
+            error,
+            BdlStoreError::CorruptValue { field: "download_events", .. }
+        ));
     }
 
     #[test]

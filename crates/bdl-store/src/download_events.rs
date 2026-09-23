@@ -227,6 +227,24 @@ pub fn fold_lifecycle(
         received_bytes: None,
     };
     for event in events {
+        // The frozen wire schema's per-kind field law for the completion
+        // event (storedPath/receivedBytes required), enforced here because
+        // the Rust mirror type carries them as plain Options: a completed
+        // event without them would fold to TransferDone and then panic
+        // every later completion-manifest read. Stored histories that hold
+        // such a row are corruption, surfaced as an error — never folded
+        // into a lie.
+        if event.kind == DownloadEventKind::Completed
+            && (event.stored_path.as_deref().map(str::trim).unwrap_or("").is_empty()
+                || event.received_bytes.is_none())
+        {
+            return Err(ConsumerError::IllegalSequence {
+                download_id: download_id.to_string(),
+                kind: event.kind,
+                reason:
+                    "the frozen schema requires storedPath and receivedBytes on download.completed",
+            });
+        }
         // A user-cancelled download is final; a hard failure inside the
         // attempt bound may be followed by an AMF-adjudicated fresh attempt
         // (the B3 attempt discipline — new attempt, new record).
@@ -358,6 +376,18 @@ fn check_sequence(
         kind: event.kind,
         reason,
     };
+    // The frozen wire schema's per-kind field law for the completion event
+    // (storedPath/receivedBytes required) — the ingest gate enforces it so
+    // a schema-violating delivery never reaches the fact log (the Rust
+    // mirror type carries these fields as plain Options).
+    if event.kind == DownloadEventKind::Completed
+        && (event.stored_path.as_deref().map(str::trim).unwrap_or("").is_empty()
+            || event.received_bytes.is_none())
+    {
+        return Err(reject(
+            "the frozen schema requires storedPath and receivedBytes on download.completed",
+        ));
+    }
     let adjudicated_retry_start = prior.phase == DownloadPhase::Failed
         && prior.started
         && event.kind == DownloadEventKind::Started
@@ -542,12 +572,22 @@ impl<'a> DownloadEventConsumer<'a> {
             .rev()
             .find(|event| event.kind == DownloadEventKind::Completed)
             .expect("a TransferDone fold has a completed event");
-        let stored_path = completed.stored_path.clone().expect(
-            "the frozen schema requires storedPath on download.completed",
-        );
-        let reported_size_bytes = completed.received_bytes.expect(
-            "the frozen schema requires receivedBytes on download.completed",
-        );
+        // The fold gate enforces the frozen per-kind law (storedPath and
+        // receivedBytes required on download.completed); this mapping is
+        // the defensive backstop — stored corruption surfaces as a typed
+        // error, never a panic.
+        let stored_path = completed.stored_path.clone().ok_or_else(|| {
+            ConsumerError::Store(BdlStoreError::CorruptValue {
+                field: "download completed event",
+                value: download_id.to_string(),
+            })
+        })?;
+        let reported_size_bytes = completed.received_bytes.ok_or_else(|| {
+            ConsumerError::Store(BdlStoreError::CorruptValue {
+                field: "download completed event",
+                value: download_id.to_string(),
+            })
+        })?;
         Ok(Some(StagingCompletion {
             staging_token: staging_token_for(download_id, &completed.occurred_at),
             download_id: download_id.to_string(),
@@ -919,6 +959,71 @@ mod tests {
             }];
             assert!(matches!(
                 fold_lifecycle("dl-bad", &corrupted),
+                Err(ConsumerError::IllegalSequence { .. })
+            ));
+        }
+
+        #[test]
+        fn a_completed_delivery_without_its_schema_facts_is_refused_at_the_gate() {
+            let store = store();
+            let consumer = DownloadEventConsumer::new(&store);
+            let id = "dl-nofacts";
+            ingest_all(
+                &consumer,
+                &[event(DownloadEventKind::Started, id, 1, "2026-09-06T08:15:00.000Z")],
+            );
+            // A completed event without storedPath: the sequence would be
+            // legal, but the frozen wire schema requires the delivery facts.
+            let mut no_path = event(DownloadEventKind::Completed, id, 1, "2026-09-06T08:16:00.000Z");
+            no_path.stored_path = None;
+            assert!(matches!(
+                consumer.ingest(&no_path),
+                Err(ConsumerError::IllegalSequence { .. })
+            ));
+            // A completed event without receivedBytes is refused too.
+            let mut no_size = event(DownloadEventKind::Completed, id, 1, "2026-09-06T08:16:01.000Z");
+            no_size.received_bytes = None;
+            assert!(matches!(
+                consumer.ingest(&no_size),
+                Err(ConsumerError::IllegalSequence { .. })
+            ));
+            assert_eq!(
+                store.download_events(id).unwrap().len(),
+                1,
+                "schema-violating completions never reach the fact log"
+            );
+            // The well-formed completion still lands exactly as before.
+            ingest_all(
+                &consumer,
+                &[with_received(
+                    event(DownloadEventKind::Completed, id, 1, "2026-09-06T08:16:02.000Z"),
+                    1024,
+                )],
+            );
+            let lifecycle = consumer.lifecycle(id).unwrap().unwrap();
+            assert_eq!(lifecycle.phase, DownloadPhase::TransferDone);
+        }
+
+        #[test]
+        fn a_stored_completed_event_missing_its_facts_folds_to_a_typed_error() {
+            let store = store();
+            // Raw store appends carry no per-kind law (the consumer is the
+            // gate) — this is exactly the shape a gate-hole row would have.
+            let started = event(DownloadEventKind::Started, "dl-corrupt", 1, "2026-09-06T08:15:00.000Z");
+            store.append_download_event(&started).unwrap();
+            let mut completed = event(DownloadEventKind::Completed, "dl-corrupt", 1, "2026-09-06T08:16:00.000Z");
+            completed.stored_path = None;
+            store.append_download_event(&completed).unwrap();
+
+            let consumer = DownloadEventConsumer::new(&store);
+            // The manifest read folds to a typed error — never the old
+            // panic on the schema-required fields.
+            assert!(matches!(
+                consumer.staging_completion("dl-corrupt"),
+                Err(ConsumerError::IllegalSequence { .. })
+            ));
+            assert!(matches!(
+                consumer.lifecycle("dl-corrupt"),
                 Err(ConsumerError::IllegalSequence { .. })
             ));
         }

@@ -456,7 +456,12 @@ pub fn warehouse_import_job(
             folders_imported: reports.len(),
             reports,
         };
-        let payload = serde_json::to_value(&result).unwrap_or(serde_json::Value::Null);
+        // Invariant (BG-12): WarehouseImportTaskResult contains only plain
+        // data shapes — serde cannot fail on it; a serialization error
+        // would be an invariant break, surfaced as a panic instead of a
+        // silently null Done payload presented as success.
+        let payload = serde_json::to_value(&result)
+            .expect("task result serializes infallibly (plain data shapes only)");
         Ok(TaskExit::Done(payload))
     })
 }
