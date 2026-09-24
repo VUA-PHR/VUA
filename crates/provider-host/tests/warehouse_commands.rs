@@ -1154,7 +1154,7 @@ fn resolve_flow_generates_a_draft_plan_from_imported_entries() {
 }
 
 
-// --- wt-2 batch 181 reverse-audit (BG-12 family): a FAILED BDL store read
+// --- wt-2 batch 178 reverse-audit (BG-12 family): a FAILED BDL store read
 // is a typed store failure — never a silently substituted default (the U8
 // law: a persisted global default rules every later resolution) and never
 // missing-asset evidence (a broken store is not an absent entry; the
