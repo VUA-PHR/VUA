@@ -4265,6 +4265,106 @@ fn f6_resolve_version_unsatisfiable_answers_the_honest_failed_receipt() {
     fs::remove_dir_all(&base).ok();
 }
 
+/// The void world: official/curated repos ignored via the library's own
+/// experimental switches and ZERO user repo rows — every declared dependency
+/// is unknown to the collection world, so one resolve fails wholesale and the
+/// library's DependenciesNotFound carries ALL declared roots at once. Zero
+/// network faces exist by construction (no server, no repo rows).
+fn f6_resolve_void_world(label: &str) -> (VrcGetLibBackend, ProjectRef, PathBuf) {
+    let base = unique_dir(label);
+    let environment_root = base.join("isolated-vpm-environment");
+    fs::create_dir_all(environment_root.join("vrc-get")).unwrap();
+    fs::write(
+        environment_root.join("vrc-get/settings.json"),
+        serde_json::json!({
+            "ignoreOfficialRepository": true,
+            "ignoreCuratedRepository": true
+        })
+        .to_string(),
+    )
+    .unwrap();
+    fs::write(
+        environment_root.join("settings.json"),
+        serde_json::json!({ "userRepos": [] }).to_string(),
+    )
+    .unwrap();
+    // 声明序刻意非字母序——夹具本身演示「载体迭代序 ≠ id 序」的漂移面。
+    let project = f6_declared_project(
+        &base.join("managed-project"),
+        "2022.3.22f1",
+        &[
+            ("com.vua.test.missing.eta", "1.0.0"),
+            ("com.vua.test.missing.alpha", "1.0.0"),
+            ("com.vua.test.missing.delta", "1.0.0"),
+            ("com.vua.test.missing.beta", "1.0.0"),
+            ("com.vua.test.missing.gamma", "1.0.0"),
+        ],
+    );
+    let backend = VrcGetLibBackend::with_environment_root(environment_root, false).unwrap();
+    (backend, project, base)
+}
+
+/// 失败集可复现钉（批 195，操作者裁决采纳兑现）：多依赖全部不可解→
+/// DependenciesNotFound 臂逐依赖进 failed。库内载体 MissingDependencies 是
+/// 每进程随机盐的 HashMap，未排序时同一工程＋同一环境两次运行的 failed 序
+/// 逐字漂移（失败证据不可复现）。排序后：同一输入两次调用（两次独立慢路
+/// 径、两个独立映射实例——failed 解析零写入故第二次绝不走 locked 快路径）
+/// 的 failed 序列逐字一致。钉的是「可复现性」而非具体序：具体序不进断言，
+/// 未来任何确定性序替换不受本钉阻碍；failed 集合恒等于声明集（按集合比较，
+/// 与序无关）、全员复用 no_matching_package、工程树逐字节零写入。
+#[test]
+fn f6_resolve_missing_dependencies_failed_sequence_is_reproducible_across_calls() {
+    let (backend, project, base) = f6_resolve_void_world("f6-resolve-reproducible");
+    let before = f6_tree_bytes(&project.root);
+
+    let first = backend.resolve_project(&project.root).unwrap();
+    let second = backend.resolve_project(&project.root).unwrap();
+
+    assert!(first.resolved.is_empty(), "nothing resolves in a void world");
+    assert!(
+        first.already_satisfied.is_empty(),
+        "nothing was ever locked — no already-satisfied face"
+    );
+    assert_eq!(
+        first.failed.len(),
+        5,
+        "every declared dependency fails, carried at once"
+    );
+    // 集合相等（显式排序后比较）——断言集合成员，不断言收据顺序。
+    let mut first_ids: Vec<&str> = first.failed.iter().map(|f| f.id.as_str()).collect();
+    first_ids.sort_unstable();
+    assert_eq!(
+        first_ids,
+        [
+            "com.vua.test.missing.alpha",
+            "com.vua.test.missing.beta",
+            "com.vua.test.missing.delta",
+            "com.vua.test.missing.eta",
+            "com.vua.test.missing.gamma",
+        ],
+        "the failed set is exactly the declared set"
+    );
+    assert!(
+        first
+            .failed
+            .iter()
+            .all(|f| f.reason_code == "vua.vpm.no_matching_package"),
+        "every failed entry reuses the standing code — zero new codes"
+    );
+    // 钉本体：同一输入两次调用，failed 序列逐字一致（可复现，非具体序）。
+    assert_eq!(
+        first.failed, second.failed,
+        "the same project twice names its failures in the SAME order — \
+         failure evidence is reproducible"
+    );
+    assert_eq!(
+        f6_tree_bytes(&project.root),
+        before,
+        "a failed resolve writes nothing — never a half-landed state"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
 /// 仓库全禁用→解析失败诚实（与 F4 collection_world 语义互证）：禁用行的
 /// 包不参与解析→failed 收据如实；被禁行的源站零接触（恰零连接）；对照臂
 /// （重新启用同一世界、零其他改动）→同包解析落地成功——失败确证来自

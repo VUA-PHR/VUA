@@ -2148,17 +2148,28 @@ impl VpmBackend for VrcGetLibBackend {
                     return match error {
                         vrc_get_vpm::unity_project::ResolvePackageErr::DependenciesNotFound {
                             dependencies,
-                        } => Ok(ResolveReceiptV01 {
-                            resolved: Vec::new(),
-                            already_satisfied: Vec::new(),
-                            failed: dependencies
+                        } => {
+                            // failed 收集后按 id 排序（与下方 resolved 同律同
+                            // 位）：库内载体 MissingDependencies 是 HashMap
+                            // （每进程随机盐），未排序时同一工程＋同一环境两
+                            // 次运行的 failed 序逐字漂移——失败证据不可复现；
+                            // 排序后素材链 receipt.failed.first() 点名随之确
+                            // 定。收据词面零变化，仅序确定（批 195，操作者裁
+                            // 决采纳兑现；测试钉钉可复现性而非具体序）。
+                            let mut failed = dependencies
                                 .into_iter()
                                 .map(|(id, _range)| ResolveFailureV01 {
                                     id: id.to_string(),
                                     reason_code: error_codes::NO_MATCHING_PACKAGE.to_owned(),
                                 })
-                                .collect::<Vec<_>>(),
-                        }),
+                                .collect::<Vec<_>>();
+                            failed.sort_by(|left, right| left.id.cmp(&right.id));
+                            Ok(ResolveReceiptV01 {
+                                resolved: Vec::new(),
+                                already_satisfied: Vec::new(),
+                                failed,
+                            })
+                        }
                         // 库错误当前唯一变体如上；non_exhaustive 面前不猜测，
                         // 其余形态按环境不可用如实拒绝。
                         #[allow(unreachable_patterns)]
