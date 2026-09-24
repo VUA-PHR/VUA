@@ -24,6 +24,7 @@
 use std::fs;
 use std::io::Cursor;
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 
 use serde_json::{json, Value};
@@ -123,14 +124,30 @@ impl DependenciesQueriesPort for FakeQueries {
     }
 }
 
+/// Process-unique serial for the temp paths below. The nanosecond clock
+/// alone has collided under CI load — parallel tests in this same process
+/// sampled the same coarse clock tick and shared one SQLite file, so two
+/// `BdlStore::open` calls raced one database's migration and WAL-switch
+/// locks and lost the 5 s busy window ("BDL opens: DatabaseBusy",
+/// dependencies_queries_wire_v05.rs:195, CI runs 35931927077 and the PR
+/// #31/#33 attempts). The serial removes the collision class entirely (the
+/// acquisition `unique_dir` law, BOARD #7 precedent); the pid term stays
+/// for cross-binary isolation, the nanos term stays for crash-run reuse.
+static TEMP_SERIAL: AtomicU64 = AtomicU64::new(0);
+
+fn next_temp_serial() -> u64 {
+    TEMP_SERIAL.fetch_add(1, Ordering::Relaxed)
+}
+
 fn temp_database(label: &str) -> PathBuf {
     let nanos = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .expect("clock")
         .as_nanos();
     let base = std::env::temp_dir().join(format!(
-        "vua-provider-dependencies-{label}-{}-{nanos}",
-        std::process::id()
+        "vua-provider-dependencies-{label}-{}-{nanos}-{}",
+        std::process::id(),
+        next_temp_serial()
     ));
     fs::create_dir_all(&base).expect("temp layout");
     base.join("tasks.db")
@@ -187,8 +204,9 @@ fn warehouse_with(queries: Option<Arc<dyn DependenciesQueriesPort>>) -> Warehous
         .expect("clock")
         .as_nanos();
     let bdl_root = std::env::temp_dir().join(format!(
-        "vua-provider-dependencies-bdl-{}-{nanos}",
-        std::process::id()
+        "vua-provider-dependencies-bdl-{}-{nanos}-{}",
+        std::process::id(),
+        next_temp_serial()
     ));
     fs::create_dir_all(&bdl_root).expect("temp layout");
     WarehouseConfig {
