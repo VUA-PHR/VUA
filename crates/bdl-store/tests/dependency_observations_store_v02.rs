@@ -662,6 +662,32 @@ fn the_confirmation_write_action_is_the_only_confirmed_writer() {
     );
     let rows = store.dependency_observations("booth:6584744").unwrap();
     assert!(rows[0].confirmed_by_human, "the confirmation persists");
+
+    // Re-confirmation (batch-192 reverse review pin): the same single writer
+    // acting again MAY re-pin — even to a different observed product — and
+    // every guard still holds on the repeat path (no second write face, no
+    // guard bypass once a row is already confirmed).
+    let reconfirmed = store
+        .confirm_dependency_resolution(stored.observation_id, "booth:6584744", &[evidence_element()])
+        .unwrap();
+    assert!(reconfirmed.confirmed_by_human);
+    assert_eq!(
+        reconfirmed.resolved_ref_product_id.as_deref(),
+        Some("booth:6584744"),
+        "a repeat confirm re-pins the resolution it carries"
+    );
+    assert_eq!(
+        reconfirmed.resolution_evidence.as_deref(),
+        Some(&[evidence_element()][..])
+    );
+    assert!(matches!(
+        store.confirm_dependency_resolution(stored.observation_id, "booth:9999999", &[evidence_element()]),
+        Err(BdlStoreError::UnknownProduct(_))
+    ), "the unknown-target guard holds on the repeat path too");
+    assert!(matches!(
+        store.confirm_dependency_resolution(stored.observation_id, "booth:3087170", &[]),
+        Err(BdlStoreError::InvalidResolution(_))
+    ), "the empty-evidence guard holds on the repeat path too");
 }
 
 // ---------------------------------------------------------------------------

@@ -272,7 +272,17 @@ fn compute_section_membership(lines: &[&str]) -> Vec<bool> {
             continue;
         }
         let bullet_stripped = strip_bullet(trimmed);
-        if bullet_stripped.is_some() || pinned_declaration_lead(bullet_stripped.unwrap_or(trimmed)).is_some()
+        let body = bullet_stripped.unwrap_or(trimmed);
+        // All THREE structural families count as declaration-shaped here —
+        // including a bare `com.*` package line. The main loop extracts a
+        // bare com line as a lead (it IS one of the 030 §1 families), so the
+        // section scan must treat it the same way: letting it close the
+        // section contradicted this function's own contract and demoted the
+        // line's method (and silently dropped the bare declaration lines
+        // after it) — batch-192 reverse review fix, same fix+pin discipline.
+        if bullet_stripped.is_some()
+            || pinned_declaration_lead(body).is_some()
+            || bare_com_lead(body).is_some()
         {
             in_section[index] = true;
         } else {

@@ -164,6 +164,54 @@ fn extraction_is_deterministic_and_deduplicates_one_document() {
 }
 
 #[test]
+fn a_bare_com_line_inside_a_heading_section_keeps_the_section_and_its_method() {
+    // Batch-192 reverse review pin: a bare `com.*` line IS one of the three
+    // structural families, so inside a heading section it must keep the
+    // section open — its own method stays explicit_heading, and the bare
+    // declaration lines after it are not silently dropped (before the fix
+    // the section scan treated the com line as running prose, closed the
+    // section, demoted the line to one_line and dropped the rest).
+    let fixture = "\
+〇前提環境
+com.example.coolglow 1.2.0
+liltoon 1.2.3~";
+
+    let leads = extract_dependency_leads(fixture);
+    assert_eq!(leads.len(), 2, "{leads:?}");
+
+    assert_eq!(leads[0].dep_name, "com.example.coolglow");
+    assert_eq!(leads[0].version_hint.as_deref(), Some("1.2.0"));
+    assert_eq!(
+        leads[0].extraction_method, METHOD_EXPLICIT_HEADING,
+        "a com line inside the section registers the section method, not one_line"
+    );
+
+    assert_eq!(leads[1].dep_name, "liltoon");
+    assert_eq!(
+        leads[1].extraction_method, METHOD_EXPLICIT_HEADING,
+        "the com line must not close the section: the bare declaration after it still extracts"
+    );
+}
+
+#[test]
+fn crlf_input_and_lone_cr_text_stay_honest() {
+    // CRLF line endings: str::lines strips the \r, extraction is identical
+    // to the LF form — the verbatim quote never carries the carriage return.
+    let crlf = "〇前提環境\r\n・liltoon 1.2.3~\r\n";
+    let leads = extract_dependency_leads(crlf);
+    assert_eq!(leads.len(), 1, "{leads:?}");
+    assert_eq!(leads[0].raw_quote, "・liltoon 1.2.3~");
+    assert_eq!(leads[0].extraction_method, METHOD_EXPLICIT_HEADING);
+    assert_eq!(leads[0].version_hint.as_deref(), Some("1.2.3~"));
+
+    // Lone-CR text (no \n at all) is ONE line to the line scanner: no
+    // fabricated split — the line either reads as a heading (nothing after
+    // it) or as prose, and either way the answer is the honest empty set.
+    let lone_cr = "〇前提環境\r・liltoon 1.2.3~";
+    assert!(extract_dependency_leads(lone_cr).is_empty());
+}
+
+#[test]
 fn leads_land_through_the_existing_store_write_face_as_unconfirmed_clues() {
     let store = BdlStore::open_in_memory().expect("in-memory store opens");
     store
