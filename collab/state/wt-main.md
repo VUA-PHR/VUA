@@ -94,10 +94,18 @@ check:contrast／check:forest-leak **全过**；check:leak **155 指纹生产构
   行为面回归（修复仅收窄无宿主形态），交付栈未动，真机走查可继续。
 - **[维持登记] import-copy 收据不载 productName 候词面升版提案**——wt-6 状态
   批自录残余，维持登记态不折入本批、不扩行为半径。
-- **[维持登记] 测试侧时序/环境敏感族**——本批 CI 三 workflow attempt 1 全绿
-  零瞬败零新例；既有登记（#7 SQLITE_BUSY、第 189 批 process.rs 两例、
-  第 190 批 ph_011、第 187 批 DatabaseBusy、provider-host helper 命名收敛
-  候选、第 191 批 wt-2 座树一例）维持候核心域顺手评估。
+- **[维持登记] 测试侧时序/环境敏感族（本批更新：dependencies_queries_wire_v05
+  :195 helper 两连败新读数）**——簿记续 PR #31 test-and-clippy attempt 1/2
+  两例瞬败同位 `:195:63` helper「BDL opens: DatabaseBusy database is
+  locked」（attempt 1＝absent_port_answers_the_family_honest_absence，与
+  第 187 批前录⑨登记同例同名同错；attempt 2＝capability_row_follows_the_
+  declared_none_default_and_the_override_flip 换名同位，两测试共享 :195
+  helper）；本批 diff 恰两 collab .md 零代码关系、PR #30 同 crates 内容
+  attempt 1 全绿为凭、attempt 3 全绿＋本机合并树定向复跑同套件 **12/12 绿
+  0.15s** 双证，零代码改动零猜测性修复照 #7 判例归因。该 helper（多测试共
+  享 BDL 打开点）与既有 #7 SQLITE_BUSY、provider-host helper 命名收敛候选
+  同族，登记读数加重候核心域顺手硬化评估。其余既有登记（第 189 批
+  process.rs 两例、第 190 批 ph_011、第 191 批 wt-2 座树一例）维持。
 - **[知会核心/wt-2] 注释指涉测试名词面勘误候办（维持）**——第 180 批新注释
   指涉测试名与实际新钉名不符（第 191 批⑤在案），1 行词面订正候 wt-2 下批
   状态批顺手，语义零影响不改写代码。
