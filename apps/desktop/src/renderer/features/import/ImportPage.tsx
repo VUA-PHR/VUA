@@ -520,9 +520,19 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
   }, [feedback]);
 
   useEffect(() => {
+    // 无宿主降级(第 181 批反向审查修复):window.vua 缺席(浏览器 dev 等
+    // 无壳环境)时可选链整条短路,原实现连 .then 都不执行——state 恒悬挂
+    // 在 loading(「加载中」假陈述,失败未被呈现)。同配方库列表先例
+    // (RecipePage !result?.ok → unavailable):无宿主 = 读面不可达,诚实
+    // unavailable,不悬挂过程态。
+    const api = window.vua?.gateway;
+    if (api === undefined) {
+      setState({ kind: "unavailable" });
+      return undefined;
+    }
     let active = true;
     setState({ kind: "loading" });
-    void window.vua?.gateway
+    void api
       .invoke({
         schemaVersion: 1,
         requestId: crypto.randomUUID(),
