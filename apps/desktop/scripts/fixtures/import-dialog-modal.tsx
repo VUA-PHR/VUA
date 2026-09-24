@@ -12,10 +12,12 @@ import { strings } from "../../src/renderer/i18n/index.ts";
 import { IMPORT_ACCEPTED_AUTO_CLOSE_MS } from "../../src/renderer/features/import/import-model.ts";
 
 const root = createRoot(document.getElementById("root")!);
-// 壳面桩:原生文件夹拾取返回合成路径(零真实对话框);capabilities 缺席 =
-// 云端段诚实不可用,本夹具只走本地段与弹窗机制面。
+// 壳面桩:原生文件夹拾取返回合成路径(零真实对话框);capabilities 自报
+// remoteBrowser 可用 = 云端段入口可达(下载面板无宿主降级场景需要);
+// gateway 宿主刻意缺席——下载读面不可达的诚实降级由此钉死。
 (window as any).vua = {
   dialog: { pickWarehouseFolders: async () => ["C:/synthetic/material-pack"] },
+  capabilities: { remoteBrowser: true },
 };
 const wait = (ms = 40) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 const results: string[] = [];
@@ -210,6 +212,30 @@ async function userTakeoverCancelsAutoClose() {
   check(!dialogOpen(), "二次受理重新武装后照常自动收口(同窗二次受理重新计时语义保持)");
 }
 
+/** 第 181 批反向审查钉死(无宿主降级,族②/#36 旁支):capabilities 自报可用
+ *  而 gateway 宿主缺席(本夹具桩即此形态)时,云端段下载清单读面不可达 =
+ *  诚实 unavailable——不悬挂「加载中」过程态(修复前可选链整条短路,
+ *  .then 不执行,loading 假陈述恒挂;同配方库列表 !result?.ok → unavailable
+ *  先例)。真机 DOM 为准。 */
+async function cloudDownloadsWithoutHostHonestUnavailable() {
+  const unavailableText = strings.warehouse.acquire.commandErrors.vua_warehouse_unavailable;
+  await openDialog();
+  check(dialogOpen(), "无宿主场景:弹窗打开");
+  await button(strings.importPage.chooseCloudCta).click();
+  await wait();
+  check(
+    document.body.textContent!.includes(unavailableText),
+    "无宿主时下载面板诚实 unavailable(读面不可达如实呈现)",
+  );
+  check(
+    !document.body.textContent!.includes(strings.importPage.downloadsLoading),
+    "无宿主时不悬挂「加载中」假陈述",
+  );
+  await key("Escape");
+  await wait();
+  check(!dialogOpen(), "无宿主场景收尾:弹窗已关");
+}
+
 window.importDialog = {
   run: async () => {
     root.render(<Harness />);
@@ -221,6 +247,7 @@ window.importDialog = {
     await failureStaysWithProminentClose();
     await manualCloseDuringWindowNoStaleTimer();
     await userTakeoverCancelsAutoClose();
+    await cloudDownloadsWithoutHostHonestUnavailable();
     return results;
   },
 };
