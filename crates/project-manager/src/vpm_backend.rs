@@ -737,6 +737,17 @@ fn load_disabled_set(state_path: &Path) -> Result<BTreeSet<String>, String> {
 /// Writes the disable set (the ONLY writer of the VUA-owned file; settings.json
 /// is never touched on this path — the storage ruling's whole point). The
 /// `.vua` directory is created on demand.
+///
+/// 第 160 批（自我反向审查·半写面）：落盘走家法原子替换（ORC-STO-003
+/// state_file.rs `save` 同律；material_identity.rs 同加 sync_all）——先写
+/// 同目录 `.tmp` 伴兄弟、sync_all 落盘、再 `fs::rename` 原位替换（std 在
+/// Windows 走 MOVEFILE_REPLACE_EXISTING，同卷同目录确定性生效）。直接
+/// `fs::write` 的断电窗口会把文件截成半份 JSON：读侧虽有诚实拒绝钉
+/// （f4/f6 两钉、绝不猜「全启用」），但此后全部集合装载面将拒绝服务直至
+/// 手工修复；原子替换把坏状态档从根上排除。刻意不走 material_identity 的
+/// 先 remove-后-rename 变体——两步之间的崩溃会制造「文件缺席」，而本文件
+/// 词面「缺席＝全部启用」会把禁用集静默丢失；直接 rename 下崩溃只落在
+/// 旧完整档或新完整档，永不缺席、永不半份。成功后无 `.tmp` 残留。
 fn write_disabled_set(state_path: &Path, disabled: &BTreeSet<String>) -> std::io::Result<()> {
     if let Some(parent) = state_path.parent() {
         fs::create_dir_all(parent)?;
@@ -747,7 +758,18 @@ fn write_disabled_set(state_path: &Path, disabled: &BTreeSet<String>) -> std::io
     };
     let mut bytes = serde_json::to_vec_pretty(&document)?;
     bytes.push(b'\n');
-    fs::write(state_path, bytes)
+    use std::io::Write as _;
+    let temporary = state_path.with_extension("tmp");
+    {
+        let mut output = fs::OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&temporary)?;
+        output.write_all(&bytes)?;
+        output.sync_all()?;
+    }
+    fs::rename(&temporary, state_path)
 }
 
 /// Drops one repoId from the disable set, writing only when something was
@@ -773,8 +795,9 @@ fn prune_disabled_entry(environment_root: &Path, repo_id: &str) -> Result<(), Ap
 /// 面（repo-catalog 列表、latest 判定、A2 安装解析器）不再见其包——过滤
 /// 在集合装载之前、settings 的内存克隆上一次完成；全部装载点
 /// （`repo_catalog`／`package_catalog_impl`／`list_packages_v02` latest 判
-/// 定／`preview_install`+`apply_install` 安装解析）共用本函数，绝不在消费
-/// 点重复判断。
+/// 定／`preview_install`+`apply_install` 安装解析／`resolve_project`
+/// 依赖解析——第 160 批枚举校准：该面第 146 批起同律接入）共用本函数，
+/// 绝不在消费点重复判断。
 ///
 /// - 状态事实源＝VUA 自有状态文件（`repo_state_path`；文件缺席＝全启用的
 ///   诚实空态）。读取失败＝`Err(String)`，调用面经 `backend_unavailable_state`

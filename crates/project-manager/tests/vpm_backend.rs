@@ -2840,6 +2840,72 @@ fn f4_unknown_repo_id_answers_reused_repo_not_found_and_writes_nothing() {
     fs::remove_dir_all(&base).ok();
 }
 
+/// The state write is an ATOMIC replace (batch 160 self reverse-review
+/// half-write face, the state_file.rs ORC-STO-003 house law): the toggle
+/// lands via a synced `.tmp` sibling renamed into place, so a successful
+/// write leaves NO temp residue and a stale `.tmp` from a dead prior run
+/// neither breaks the toggle nor survives it. The rename-replace path is
+/// also what keeps the word face "absent = all enabled" from ever firing
+/// spuriously — the state file is never absent and never half-written
+/// between two toggles (power-loss aside, which a unit test cannot arrange;
+/// what IS pinned here is the writer's observable contract).
+#[test]
+fn f4_state_write_leaves_no_temp_residue_and_replaces_in_place() {
+    let base = unique_dir("f4-atomic-write");
+    let environment_root = base.join("isolated-vpm-environment");
+    synthetic_settings(
+        &environment_root,
+        serde_json::json!([
+            {
+                "localPath": environment_root.join("Repos").join("a.json").display().to_string(),
+                "name": "Repo A",
+                "id": "com.vua.test.repo.a",
+                "url": "https://example.invalid/vua/a.json"
+            }
+        ]),
+    );
+    let vua_dir = environment_root.join(".vua");
+    let temp_sibling = vua_dir.join("vpm-repo-state.tmp");
+    fs::create_dir_all(&vua_dir).unwrap();
+    fs::write(&temp_sibling, b"dead-prior-run leftover").unwrap();
+    let backend =
+        VrcGetLibBackend::with_environment_root(environment_root.clone(), true).unwrap();
+
+    backend.disable_repo("com.vua.test.repo.a").unwrap();
+    let state = f4_read_state(&environment_root);
+    assert_eq!(
+        state["disabledRepoIds"],
+        serde_json::json!(["com.vua.test.repo.a"]),
+        "the replace-over-stale-sibling write lands exactly the toggled set"
+    );
+    assert!(
+        !temp_sibling.exists(),
+        "the atomic write consumes its .tmp sibling — no residue"
+    );
+
+    // The second toggle writes over an EXISTING state file (the
+    // rename-replace path): the content stays exact, still no residue, and
+    // the .vua directory carries exactly the one state document.
+    backend.enable_repo("com.vua.test.repo.a").unwrap();
+    let state = f4_read_state(&environment_root);
+    assert_eq!(
+        state["disabledRepoIds"],
+        serde_json::json!([]),
+        "re-enable empties the set in place"
+    );
+    let mut landed: Vec<String> = fs::read_dir(&vua_dir)
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+        .collect();
+    landed.sort();
+    assert_eq!(
+        landed,
+        vec!["vpm-repo-state.json".to_owned()],
+        "exactly the state file — no temp siblings, no stray entries"
+    );
+    fs::remove_dir_all(&base).ok();
+}
+
 /// The v0.2 row projection: the frozen v0.1 five keys project verbatim and
 /// EXACTLY one REQUIRED fact joins them — `enabled`. The id-absent row is
 /// ALWAYS enabled (id-absent rows sit outside the toggle faces' reach — the
