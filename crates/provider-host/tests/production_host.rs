@@ -156,8 +156,24 @@ fn request(request_id: &str, method: &str, command_id: &str, params: Value) -> V
     })
 }
 
+/// Parses the COMPLETE frames only. A frame is terminated by '\n', so a
+/// trailing fragment means the host is still mid-frame — the frame loop's
+/// `write_frame` emits the JSON body through several small `Write` calls
+/// before the newline, and a concurrent `wait_for_response` poll used to
+/// clone the buffer between two of those writes and panic on the fragment
+/// ("EOF while parsing a string", the ph_004/ph_010 CI family at :163).
+/// The protocol boundary is the newline: everything after the last one is
+/// an unfinished frame that a poll simply re-reads on its next tick, and a
+/// frame that never completes still fails through wait_for_response's
+/// deadline or the post-join frame assertions. No assertion is weakened:
+/// every complete frame parses exactly as before.
 fn parse_frames(bytes: &[u8]) -> Vec<Value> {
-    String::from_utf8_lossy(bytes)
+    let text = String::from_utf8_lossy(bytes);
+    let complete = match text.rfind('\n') {
+        Some(end) => &text[..end],
+        None => "",
+    };
+    complete
         .lines()
         .filter(|line| !line.trim().is_empty())
         .map(|line| serde_json::from_str(line).unwrap())
