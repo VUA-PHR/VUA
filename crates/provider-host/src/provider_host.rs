@@ -2462,7 +2462,7 @@ fn run_local_resolution(
     // failure — silently demoting it to the environment initial presented a
     // broken store as "no default was set" and silently switched the
     // artifact-mode decision for every asset in the resolution (BG-12
-    // family member, wt-2 batch 181 reverse-audit; the frame-layer twin
+    // family member, wt-2 batch 178 reverse-audit; the frame-layer twin
     // `composed_global_default` propagates the same error).
     let composed = match store.global_default_mode() {
         Ok(persisted) => persisted.unwrap_or(env_initial),
@@ -2481,7 +2481,7 @@ fn run_local_resolution(
     // neither of those: it is a store failure and surfaces as the typed
     // failure — treating Err like "no entry" would publish missing-asset
     // evidence (a false statement about world state) and silently skip the
-    // relation's jobs (BG-12 family member, wt-2 batch 181 reverse-audit;
+    // relation's jobs (BG-12 family member, wt-2 batch 178 reverse-audit;
     // only Ok(None) — a true absence — earns the missing arm).
     let resolve_one_asset = |asset: &Value,
                              evidence_ids: &mut Vec<String>,
@@ -9588,7 +9588,7 @@ fn confirm_plan(
         // the stale-quarantine rename below — all BEFORE restore_verified's
         // containment checks run — so the same grammar gate as snapshot
         // creation applies here, at the boundary where the id re-enters the
-        // filesystem (wt-2 batch 181 reverse-audit, #43-family member).
+        // filesystem (wt-2 batch 178 reverse-audit, #43-family member).
         vua_orchestrator::FileSystemSnapshotStore::validate_snapshot_id(&snapshot_id)
             .map_err(|_| not_recoverable_error())?;
         // The requested project must actually own this snapshot: a
