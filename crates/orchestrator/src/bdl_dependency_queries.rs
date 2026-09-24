@@ -304,6 +304,16 @@ impl DependenciesQueriesPort for BdlDependencyQueries {
             product_id: product.product_id.clone(),
             // The tombstone honesty face; the CHECK closed set is
             // complete|missing, so the residual arm IS the complete case.
+            // Constraint authority: the EXECUTABLE migration chain
+            // (schemas/bdl/v0.1/001_initial.sql products DDL carries
+            // `CHECK (status IN ('complete','missing'))`; the runtime
+            // database is born from 001+002). The v0.2 restatement
+            // (schemas/bdl/v0.2/schema.sql) shows this column's closed
+            // set as a comment only — the test pin
+            // product_status_maps_both_legal_words_and_refuses_foreign_
+            // drift holds the executable CHECK against silent loss in a
+            // future table rebuild (the 002 compatibility_observations
+            // rebuild precedent).
             product_status: if product.status == "missing" {
                 DependencyProductStatus::Missing
             } else {
