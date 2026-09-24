@@ -398,7 +398,7 @@ test("createAutoCloseTimer:重入 schedule 先清旧柄——同窗二次受理�
   }
 });
 
-test("createAutoCloseTimer:schedule/cancel 解构调用形态可独立调用(不依赖 this 绑定,第 181 批反向审查钉死)", () => {
+test("createAutoCloseTimer:schedule/cancel 解构调用形态可独立调用(不依赖 this 绑定,第 179 批反向审查钉死)", () => {
   vi.useFakeTimers();
   try {
     let closed = 0;
@@ -416,7 +416,7 @@ test("createAutoCloseTimer:schedule/cancel 解构调用形态可独立调用(不
   }
 });
 
-test("autoCloseArmed:仅受理态武装——失败/提示/无反馈一律不武装(第 181 批反向审查)", () => {
+test("autoCloseArmed:仅受理态武装——失败/提示/无反馈一律不武装(第 179 批反向审查)", () => {
   assert.equal(autoCloseArmed({ kind: "accepted" }), true, "受理态武装(自动关闭唯一的武装依据)");
   assert.equal(autoCloseArmed({ kind: "failure" }), false, "失败态不武装(失败驻留,不静默关走)");
   assert.equal(autoCloseArmed({ kind: "notice" }), false, "提示态不武装(如空选提示)");
