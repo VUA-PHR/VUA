@@ -18,7 +18,8 @@ clippy 照章亲测全绿（992/0＋0/0）；集成红先绿后实证＝仅回�
 一红、恢复即绿；验收 PR #32 先行落地 6a2c4936，簿记随同分支续 PR 入库。CI
 三 workflow attempt 1 全绿零瞬败。另＝操作者指令兑现——测试侧时序敏感族登
 记（dependencies_queries_wire_v05 :195 helper DatabaseBusy 两晚同位瞬败）
-随本批以 [→核心/wt-2] 留言显式路由核心座。**
+随本批以 [→核心/wt-2] 留言显式路由核心座；簿记续 PR #33 CI 自录 ph_010 具
+名瞬败一例（attempt 2 全绿），照第 192 批「簿记补笔」先例随批补记。**
 
 ## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
 第 192 批（09-25 00:2x–01:0x）＝wt-3 第 181 批（桌面域自我反向审查批）单批
@@ -77,7 +78,13 @@ provider-host production_host 15 过 1 败，失败测试名未及捕获〔集�
 目标先例）；clippy --workspace --all-targets **0 警告 0 错误**；TS 侧零触
 碰免跑（apps/ packages/ 对基线零 diff 为凭）。远端 CI 判定随 PR #32 检查页
 （check 36035508282 ✓ 3m0s／test-and-clippy 36035508240 ✓ 6m44s attempt 1
-全绿零瞬败／vectors 36035508123 ✓ 3m27s）。
+全绿零瞬败／vectors 36035508123 ✓ 3m27s）。簿记续 PR #33 CI 读数（如实，#7
+判例照章）＝test-and-clippy 36036963384 ✗→✓（attempt 1 一例瞬败＝
+provider-host production_host **ph_010_mutation_gate_holds_lock_and_marker_
+during_the_run**，production_host.rs:163:48 JSON 解析 EOF，与第 183 批前录③
+同名同位完全一致；本簿记 diff 恰两 collab .md 零代码关系为凭；attempt 2
+复跑全绿 5m57s 零代码改动）＋check 36036963386 ✓ 3m17s＋vectors
+36036963355 ✓ 3m36s；具名新读数随补笔加重族登记。
 
 ## 在途/待他角色
 - **[候用户] W25 真机走查推进（O-2，进行中）**——M5 唯一候项；既有 [需用户]
@@ -91,8 +98,12 @@ provider-host production_host 15 过 1 败，失败测试名未及捕获〔集�
   production_host 集成树一例新读数＋:195 helper 登记显式指核心座）**——既
   有登记（dependencies_queries_wire_v05 :195 helper DatabaseBusy 两晚同位＋
   第 189 批 process.rs 两例＋第 190 批 ph_011＋第 191 批 wt-2 座树一例）维
-  持；本批新增读数＝集成合并树首趟全量 production_host 15 过 1 败（失败名
-  未及捕获如实登记）定向复跑 16/16＋全量 992/0 双证零代码改动归因。操作者
+  持；本批新增读数两件＝①集成合并树首趟全量 production_host 15 过 1 败（失
+  败名未及捕获如实登记）定向复跑 16/16＋全量 992/0 双证零代码改动归因；②簿
+  记续 PR #33 CI attempt 1 具名一例＝**ph_010_mutation_gate_holds_lock_and_
+  marker_during_the_run**（production_host.rs:163:48 JSON 解析 EOF，与第 183
+  批前录③同名同位完全一致；簿记 diff 恰两 collab .md 零代码关系＋attempt 2
+  全绿 5m57s 为凭）。操作者
   指令兑现＝该族登记（尤其 :195 helper 命名/隔离硬化候选）随本批
   [→核心/wt-2] 留言显式路由核心席，候顺手硬化评估不催办。
 - **[知会核心/wt-2] 注释指涉测试名词面勘误候办（维持）**——第 180 批新注释
@@ -148,9 +159,13 @@ workflow attempt 1 全绿零瞬败、合并 6a2c4936、正典 main ff-only 快�
   none_default_and_the_override_flip＝两测试共享该 helper）；第 191 批
   wt-2 座树一例同族。该 helper（多测试共享 BDL 打开点）与 #7 SQLITE_BUSY、
   provider-host helper 命名收敛候选同族，登记读数加重，候你席顺手硬化评估
-  （临时目录/打开点隔离或命名 serial），不催办不派单；另本批集成合并树
-  production_host 新增一例瞬败读数（名未捕获、复跑归因）随族登记一并知会
-  。
+  （临时目录/打开点隔离或命名 serial），不催办不派单；另本批两件 production
+  _host 新读数随族登记一并知会＝①集成合并树首趟全量一例（名未捕获、定向复
+  跑 16/16＋全量 992/0 归因）；②簿记续 PR #33 CI attempt 1 具名一例＝
+  **ph_010_mutation_gate_holds_lock_and_marker_during_the_run**（
+  production_host.rs:163:48 JSON 解析 EOF，与第 183 批前录③同名同位完全一
+  致；簿记 diff 恰两 collab .md 零代码关系＋attempt 2 全绿为凭）——该例系
+  ph_010 既有登记位（第 183 批）复现读数加重非新成员。
 - （回执不回执：wt-2/wt-3/wt-5/wt-6 验收请求经分叉表复证均已闭环或世代滞
   后零待办；wt-7 留言系知会；在途事项以 BOARD 与本状态文件当前焦点为准。
   ）
