@@ -658,3 +658,79 @@ fn tombstoned_declaring_products_stay_readable_on_both_faces() {
     assert_eq!(result.product_status, DependencyProductStatus::Missing);
     assert_eq!(result.observations.len(), 1, "the dead page's declarations stay readable");
 }
+
+/// The status residual arm's premise, pinned: `productStatus` folds the
+/// residual case into `complete` BECAUSE the stored closed set is
+/// database-enforced — the EXECUTABLE migration chain carries
+/// `CHECK (status IN ('complete','missing'))` on the products DDL
+/// (schemas/bdl/v0.1/001_initial.sql; fresh databases are born from
+/// 001+002). The v0.2 restatement (schemas/bdl/v0.2/schema.sql) shows the
+/// closed set as a comment only, so this pin holds the executable CHECK
+/// against silent loss in a future table rebuild (the 002
+/// compatibility_observations CHECK rebuild is the precedent that rebuilds
+/// can drop constraints) and pins both legal words mapping verbatim
+/// through the executor.
+#[test]
+fn product_status_maps_both_legal_words_and_the_closed_set_is_database_enforced() {
+    let nanos = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let db_path = std::env::temp_dir().join(format!(
+        "vua-deps-queries-status-law-{}-{nanos}.bdl",
+        std::process::id()
+    ));
+    // A FILE-backed library: the enforcement check below needs a second
+    // raw SQLite connection attempting the corruption shape the store's
+    // own enum-gated write face can never produce.
+    let store = Arc::new(BdlStore::open(&db_path).expect("file-backed library"));
+    store
+        .record_product_observation(&product(
+            "booth:424242",
+            ProductObservationStatus::Complete,
+            Some("Alive Page"),
+            None,
+            "https://booth.pm/items/424242",
+        ))
+        .expect("seed product");
+    store
+        .record_product_observation(&product(
+            "booth:424243",
+            ProductObservationStatus::Missing,
+            None,
+            None,
+            "https://booth.pm/items/424243",
+        ))
+        .expect("seed tombstone");
+    let queries = executor(&store);
+    let complete = queries
+        .dependencies_list_by_product("booth:424242")
+        .expect("read succeeds")
+        .expect("the product exists");
+    assert_eq!(complete.product_status, DependencyProductStatus::Complete);
+    let missing = queries
+        .dependencies_list_by_product("booth:424243")
+        .expect("read succeeds")
+        .expect("the tombstoned product exists");
+    assert_eq!(missing.product_status, DependencyProductStatus::Missing);
+
+    // The stored closed set is database-enforced: a foreign status word is
+    // REFUSED at rest (a corrupting second connection cannot plant it), so
+    // the executor's residual arm stays unreachable for foreign words and
+    // the folded `complete` can never fire on a non-`complete` row.
+    let tamper = rusqlite::Connection::open(&db_path).expect("second connection opens");
+    let refused = tamper.execute(
+        "UPDATE products SET status = 'archived' WHERE product_id = 'booth:424242'",
+        [],
+    );
+    match refused {
+        Err(error) => assert!(
+            error.to_string().contains("CHECK constraint failed"),
+            "the refusal must be the status CHECK itself, got: {error}"
+        ),
+        Ok(updated) => panic!(
+            "a foreign status word must be refused by the executable CHECK, \
+             not applied ({updated} rows) — the residual arm's premise is gone"
+        ),
+    }
+}
