@@ -16,7 +16,13 @@
 //!
 //! - the operation closed set is exactly the eight queries (six v0.4 + two
 //!   new), and the word faces equal the FROZEN BDL v0.2 closed sets
-//!   (dep_kind / source_span / extraction_method parsed from schema.sql);
+//!   (dep_kind / source_span / extraction_method) on BOTH frozen
+//!   authorities — the readable schema.sql AND the executable 002 migration
+//!   chain whose CHECKs are the hard law a runtime database actually
+//!   carries (data-seat batch-193 self reverse-review: the batch-190/191
+//!   core-seat lesson is that a restatement can under-report the constraint,
+//!   so the anchor pins both documents; productStatus likewise pins the
+//!   products.status CHECK that lives only in 001_initial.sql);
 //! - matching rule v1: case-insensitive EXACT over dep_name (ASCII fold),
 //!   no substring, no fuzzy, package-form miss = honest empty set;
 //! - the clues-not-conclusions gates on the wire: resolvedProductId
@@ -608,7 +614,7 @@ fn word_faces_equal_the_frozen_bdl_v02_authority() {
     // face's enum: the vocabulary rides the frozen sets, no drift.
     assert_eq!(
         sorted(sql_check_lists(AUTHORITY_V02, "dep_kind").into_iter().flatten().collect()),
-        sorted(dep_kind_enum),
+        sorted(dep_kind_enum.clone()),
         "dep_kind enum must equal the frozen four-value set"
     );
     for list in sql_check_lists(AUTHORITY_V02, "source_span") {
@@ -620,9 +626,56 @@ fn word_faces_equal_the_frozen_bdl_v02_authority() {
     }
     assert_eq!(
         sorted(sql_check_lists(AUTHORITY_V02, "extraction_method").into_iter().flatten().collect()),
-        sorted(extraction_method_enum),
+        sorted(extraction_method_enum.clone()),
         "extraction_method enum must equal the frozen six-value set"
     );
+
+    // The SAME three word faces against the EXECUTABLE migration chain —
+    // the CHECKs that actually guard a runtime database (open_v02 executes
+    // exactly 001+002). The readable restatement and the executable chain
+    // must carry identical closed sets; drift in either authority now turns
+    // this anchor red instead of passing silently while the runtime law
+    // moves (core seats batches 180/191: the chain, not a restatement, is
+    // the constraint authority — and table rebuilds can change constraints,
+    // the 002 compat rebuild being the standing precedent).
+    assert_eq!(
+        sorted(sql_check_lists(MIGRATION_002, "dep_kind").into_iter().flatten().collect()),
+        sorted(dep_kind_enum.clone()),
+        "dep_kind enum must equal the executable chain's four-value set"
+    );
+    for list in sql_check_lists(MIGRATION_002, "source_span") {
+        assert_eq!(
+            sorted(list),
+            sorted(source_span_enum.clone()),
+            "source_span enum must equal the executable chain's five-value set"
+        );
+    }
+    assert_eq!(
+        sorted(sql_check_lists(MIGRATION_002, "extraction_method").into_iter().flatten().collect()),
+        sorted(extraction_method_enum),
+        "extraction_method enum must equal the executable chain's six-value set"
+    );
+
+    // productStatus rides the products.status closed set — whose CHECK
+    // lives ONLY in the executable 001 chain (the v0.2 restatement carries
+    // the column as comment-only; core seat batch-180 candidate refuted and
+    // pinned there). The wire enum equals the hard law verbatim, so a
+    // future rebuild that drops or edits the constraint cannot drift past
+    // this anchor silently.
+    let product_status_enum: Vec<String> = result["$defs"]["dependenciesListByProductResult"]
+        ["properties"]["productStatus"]["enum"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|value| value.as_str().unwrap().to_owned())
+        .collect();
+    for list in sql_check_lists(MIGRATION_001, "status") {
+        assert_eq!(
+            sorted(list),
+            sorted(product_status_enum.clone()),
+            "productStatus enum must equal the executable status CHECK (001 chain)"
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------
