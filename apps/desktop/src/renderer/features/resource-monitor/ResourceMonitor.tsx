@@ -68,13 +68,17 @@ export function ResourceMonitor() {
         setOpen(false);
       }
     };
+    // 失焦关闭必须用具名处理器:removeEventListener 按引用匹配,匿名箭头
+    // 每次都是新引用、移除永不生效——每次开合循环泄漏一个常驻 blur 监听
+    // (2026-09-25 反向审查发现,cae84388 引入;与通知弹层的具名 close 同构)
+    const onWindowBlur = () => setOpen(false);
     window.addEventListener("pointerdown", onPointerDown, true);
     window.addEventListener("keydown", onKeyDown, true);
-    window.addEventListener("blur", () => setOpen(false));
+    window.addEventListener("blur", onWindowBlur);
     return () => {
       window.removeEventListener("pointerdown", onPointerDown, true);
       window.removeEventListener("keydown", onKeyDown, true);
-      window.removeEventListener("blur", () => setOpen(false));
+      window.removeEventListener("blur", onWindowBlur);
     };
   }, [open]);
 
