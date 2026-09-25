@@ -42,6 +42,7 @@ import {
 } from "./security.js";
 import { checkLatestRelease } from "./update-check.js";
 import { SystemUsageCollector } from "./system-usage.js";
+import { createFsDirectory, listFsDirectory } from "./fs-directory.js";
 
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
@@ -337,6 +338,28 @@ function registerIpc(provider: OrchestratorProviderV01): void {
   ipcMain.handle("vua:system:resource-usage", (event) => {
     assertLocalSender(senderFrameUrl(event));
     return systemUsage.snapshot();
+  });
+
+  // 文件系统窄面(2026-09-25 用户裁决:素材导入应用内文件夹选择器):
+  // 只读列目录(仅子目录) + 单层新建;失败收信不抛,渲染层按 error
+  // 词表如实呈现;参数形状非法 = 形状违反,沿用本文件先例以错误拒绝
+  ipcMain.handle("vua:fs:list-directory", async (event, target: unknown, options: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (target !== null && typeof target !== "string") {
+      throw new Error("invalid fs list target");
+    }
+    const showHidden =
+      typeof options === "object" && options !== null
+        ? (options as { showHidden?: unknown }).showHidden === true
+        : false;
+    return listFsDirectory(target, { showHidden });
+  });
+  ipcMain.handle("vua:fs:create-directory", async (event, parentPath: unknown, name: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (typeof parentPath !== "string" || typeof name !== "string") {
+      throw new Error("invalid fs create params");
+    }
+    return createFsDirectory(parentPath, name);
   });
 
   ipcMain.handle("vua:window:minimize", (event) => {

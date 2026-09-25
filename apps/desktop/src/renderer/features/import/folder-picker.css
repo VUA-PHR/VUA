@@ -1,0 +1,233 @@
+/* 应用内文件夹选择器(2026-09-25 用户裁决,本地导入段;ALCOM
+ * 「选择工作区目录」形态):遮罩 + 面板,叠于素材导入内容弹窗之上;
+ * 遮罩用 translucent color-mix(BOARD #38 纪律:禁用 backdrop-filter,
+ * 合成伪影);色彩/间距/圆角全部引用既有 token。 */
+
+.vua-folder-picker__overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--vua-z-dialog, 100);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--vua-bg-canvas) 55%, transparent);
+}
+
+.vua-folder-picker {
+  width: min(640px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-card);
+  background: var(--vua-bg-elevated);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--vua-bg-canvas) 60%, transparent);
+}
+
+.vua-folder-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--vua-space-3) var(--vua-space-3) var(--vua-space-2);
+}
+
+.vua-folder-picker__title {
+  font-weight: 700;
+}
+
+.vua-folder-picker__close {
+  border: none;
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.vua-folder-picker__close:hover {
+  color: var(--vua-text);
+}
+
+/* 路径行:只读位(ellipsis,LTR——Windows 路径恒左起)+ 铅笔编辑钮;
+ * 编辑态换输入框,内联错误置下 */
+.vua-folder-picker__path-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+  padding: 0 var(--vua-space-3) var(--vua-space-2);
+}
+
+.vua-folder-picker__path {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  direction: ltr;
+  text-align: left;
+  padding-top: var(--vua-space-1);
+}
+
+.vua-folder-picker__path-edit {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-1);
+}
+
+.vua-folder-picker__path-edit input {
+  width: 100%;
+}
+
+.vua-folder-picker__inline-error {
+  color: var(--vua-error);
+}
+
+.vua-folder-picker__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  padding: 0 var(--vua-space-3) var(--vua-space-2);
+}
+
+.vua-folder-picker__icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.vua-folder-picker__icon-button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--vua-text-strong) 8%, transparent);
+  color: var(--vua-text-strong);
+}
+
+.vua-folder-picker__icon-button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* 新建行:输入 + 创建,内联错误置下 */
+.vua-folder-picker__new-folder {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: var(--vua-space-2);
+  padding: 0 var(--vua-space-3) var(--vua-space-2);
+}
+
+.vua-folder-picker__new-folder input {
+  flex: 1;
+  min-width: 12rem;
+}
+
+/* 目录列表:定高滚动;行 = 图标 + 名 + 选中对勾 + 右端进入钮;
+ * 行单击切换选中,双击/右端钮进入——与 ALCOM 同款分工 */
+.vua-folder-picker__list {
+  flex: 1;
+  min-height: 180px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0 var(--vua-space-3);
+  padding: var(--vua-space-1);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-control);
+}
+
+.vua-folder-picker__row {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-1) var(--vua-space-2);
+  border-radius: var(--vua-radius-control);
+  color: var(--vua-text);
+  cursor: pointer;
+  user-select: none;
+}
+
+.vua-folder-picker__row:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 6%, transparent);
+}
+
+.vua-folder-picker__row[data-selected] {
+  background: color-mix(in srgb, var(--vua-text-strong) 12%, transparent);
+}
+
+.vua-folder-picker__row-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: ltr;
+  text-align: left;
+}
+
+.vua-folder-picker__row > svg {
+  color: var(--vua-text-secondary);
+  flex-shrink: 0;
+}
+
+.vua-folder-picker__row[data-selected] > svg {
+  color: var(--vua-text-strong);
+}
+
+.vua-folder-picker__error {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-2);
+}
+
+.vua-folder-picker__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--vua-space-2);
+  padding: var(--vua-space-3);
+}
+
+.vua-folder-picker__footer-left,
+.vua-folder-picker__footer-right {
+  display: flex;
+  align-items: center;
+  gap: var(--vua-space-2);
+  flex-wrap: wrap;
+}
+
+/* 显示隐藏开关:caption 文字钮,pressed 态用品牌淡底表达(不只用颜色:
+ * aria-pressed 同步存在,视觉为辅助) */
+.vua-folder-picker__toggle {
+  border: none;
+  background: transparent;
+  color: var(--vua-text-secondary);
+  font: var(--vua-font-caption);
+  cursor: pointer;
+  padding: var(--vua-space-1) var(--vua-space-2);
+  border-radius: var(--vua-radius-control);
+}
+
+.vua-folder-picker__toggle:hover {
+  color: var(--vua-text);
+}
+
+.vua-folder-picker__toggle[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--vua-text-strong) 12%, transparent);
+  color: var(--vua-text-strong);
+}

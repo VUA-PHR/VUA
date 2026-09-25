@@ -1,140 +1,144 @@
 ---
-worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-197）
-branch: integration/batch-197（本批载体；正典 main 维持 origin/main 只快进）
+worktree: wt-main（本批簿记组装于 VUA-9 集成树，分支 integration/batch-200b）
+branch: integration/batch-200b（本批簿记载体；正典 main 维持 origin/main 只快进）
 role: 集成
-baseline_commit: 7a65214b
-updated: 2026-09-25
+baseline_commit: eec3473d
+updated: 2026-09-26
 ---
 ## 当前焦点
-**集成第 197 批（2026-09-25 04:2x–05:1x，节拍轮夜间工作时段 date 04:27 实测
-起；基线 origin/main 507defa2＝第 196 批簿记续 PR #39 合并尖）＝单栈验收
-入库（操作者第 198 拍压缩派发仅集成）：wt-2 第 181 批核心域时序敏感测试
-族硬化批——集成座三晚登记的瞬败族（ph_004/ph_010 EOF 族＋
-dependencies_queries_wire_v05 :195 DatabaseBusy 族）两度路由核心座后由核
-心席域内两点根因硬化＋一顺手勘误，本批验收闭环。恰 4 文件（3 代码全在核
-心所有权域＋collab/state/wt-2.md 状态批同笔）。验收 PR #40 先行落地
-7a65214b，簿记随同分支续 PR 入库。CI 三 workflow attempt 1 全绿零瞬败；
-main push run 链扫描＝7a65214b 三 run attempt 1 全绿＝硬化后首例 CI 观察
-点绿（「瞬败消灭」判定候一批 CI 观察，不作预称）。**
+**集成第 200 批（2026-09-25 23:5x 起跨零点，date 00:13 实测；响应操作者第 200
+拍「wt-3 桌面域反向审查批单栈验收」）＝验收执行后【退回】轮：wt-3 第 182 批
+用户侧 UX 代码反向审查批（实现批 9a100cf8＋状态批 c656fbe6，基线 2543622b，
+slot/wt-3 领先 2 与分叉表吻合）经派单四项验收重点逐项亲测——泄漏修复引用对
+称性成立、CDP 钉「修复前必红」实证成立（集成合并树回摆 cae84388 原组件两次
+复现红：循环前 4→循环后 7，与申报数字一致）、v0.7.21 五裁决对表成立、
+REGISTRY 行簿记已备——但新跑具 smoke:resource-monitor **失败路径实测 exit 0**
+（三次取证：管道/tail 遮蔽排除后直跑 electron 二进制同 0＋注入诊断定位根因）
+且申报「跑具 exit 1」失实、证据「50/50」系 results 数组复用把 base 21 条断言
+双计（唯一断言 29＝21 行为＋1 CDP＋7 失败面）——**验收不通过退回 wt-3 修复
+后再验收**（不降标：不把已证伪的证据声明合入 main）；候选组装保留于
+integration/batch-200（merge f90b5ea5＋REGISTRY 5e18dfc8，已推送、未开 PR），
+修复批到齐后重组装落地。**
 
-## 前情（本域链，全文见本文件 git 历史与 BOARD 前录）
-第 196 批（09-25 03:3x–04:1x）＝wt-6 第 195 批环境域 resolve_project 失败
-集排序裁决兑现批单栈验收入库，经 integration/batch-196 PR #38（验收）＋
-PR #39（簿记续）入库，正典 main 至 507defa2；同批登记 main push ph_004
-瞬败再现（族第 2 次）路由核心座。更早段落见本文件 git 历史与 BOARD 前录。
+## 本轮交付（eec3473d 基线＝PR #47 合并尖；候选分支＋本簿记恰 collab/ 两文件）
+- **①泄漏修复引用对称性成立（派单重点①）**：具名 onWindowBlur 定义于
+  effect 内、addEventListener/removeEventListener 同引用对称（diff 实读恰
+  +4/-2：注释三行＋const 一行，add/remove 两行改写）；onPointerDown/
+  onKeyDown 既有具名面零触碰＝「其余路径逐字节保持」属实；NotificationPopover
+  先例（:88/:93 blur close 具名对称）实读吻合其自称对齐；effect 依赖 [open]
+  与开态守卫未变。
+- **②CDP 钉「修复前必红」实证成立＋跑具失败路径缺陷实锤（派单重点②）**：
+  跑具经 webContents.debugger DOMDebugger.getEventListeners 取窗口 blur 真实
+  注册数、断言开合循环前后相等、头部注释如实登记「调用计数对引用失配失明」
+  教训＝钉本体真实；绿轮亲测 CDP 0/0 exit 0（真机 Electron Chromium
+  152.0.7977.65，独立随机端口未触用户交付栈）；回摆 cae84388 组件红轮恰红
+  **两次复现（4→7，每轮恰＋1，与申报一致）**＝「红前必红」实证在案。**但**
+  失败臂 `console.error → window?.destroy() → await server?.close() →
+  app.exit(1)` 实测永不到达 app.exit(1)——注入诊断（临时 Edit 验后恢复零残
+  留）显示 `await server?.close()` 在 window.destroy 后既不 resolve 也不
+  reject，事件循环排空进程零码退出；直跑 electron 二进制三次 exit 全 0。
+  **后果＝回归钉失败时不以非零码退出（pnpm/electron 包装下判绿）**，作为
+  自动化守卫失效（CI 现不跑 smoke 家族＝本地门禁面，但集成/各座门禁读数以
+  exit 码为准即踩陷阱）；红轮不写证据 JSON＝临时目录残留上一轮绿 JSON 引用
+  陷阱一并登记。wt-3 申报「跑具 exit 1」系失实申报（其红前数字本身真实）。
+- **③证据计数「50/50」双计实锤（派单重点②附带）**：夹具 results 数组被
+  base() 与 failureFaces() 两次返回（同一引用），evidence JSON checks 23–43
+  号系 1–21 号的重复计入；执行各仅一次、断言零弱化、红绿判定不受影响，但
+  「50」系计数口径伪影，唯一断言＝29。提交信息与状态批均已载「50/50」＝
+  随退回一并勘误。
+- **④v0.7.21 五裁决逐项对表成立（派单重点③）**：梯子两级（紧凑标签级随
+  品牌副题退役，§3＋§10.10＋§12）／占用查看器段（Settings 左读数 RAM/VRAM
+  取高＋右上详情小窗＋VRAM 不可用诚实退化＋无宿主整条缺席，§3）／侧栏渐变
+  玻璃＋idle 小字＋hover/focus-within 激活且 §0 Replace「hover 字号回流」
+  加侧栏外壳 scoped 超越注记（§0/§3）／基线辉光退役＋星云场景退役＋aurora
+  none＋网格保留＋省电模式管辖重负载含全局 backdrop-filter 剥除（§0 Retain/
+  §1/§7/§11）／品牌副题退役（§12 具名）——与 cae84388 语义逐项相符；文档
+  单语化合规（docs/design 仅 design-standard.md）。两非阻塞观察见在途节。
+- **⑤REGISTRY 行簿记已备（派单重点④顺手项）**：design-standard 行
+  0.7.19→0.7.21（0.7.21 摘要前置＋0.7.19 降历史＋日期 2026-09-25），提交
+  5e18dfc8 于 integration/batch-200 随候选分支待落地（未开 PR）。
+- **⑥①区消化**：wt-3 验收请求＝本批执行后退回（见上）；wt-2/wt-4/wt-5 验
+  收请求经分叉表复证 slot 领先全 0（9/54/47 落后纯系簿记尖）＝代际残留零待
+  办；wt-6 无请求领先 0；wt-7（1.5.0 迁移知会）与 wt-8（06ec6390 验收知会）
+  系知会非阻塞；失鲜工作树无。
+- **⑦环境事实**：主树 fetch＋rev-parse 核对 origin/main＝本地 main＝
+  eec3473d 零分叉；VUA-7 零触碰（阅读解禁）、VUA-8 零触碰（分叉表读数）；
+  用户交付栈（vite 5173＋electron CDP 51993）未触、未杀 node/electron
+  （smoke 用自起 Electron 实例随机端口）；主树两既有未跟踪件照例不触碰。
 
-## 本轮交付（507defa2 基线，integration/batch-197）
-- **验收合并＝wt-2 第 181 批单笔 40edbb1b**（两点硬化＋勘误＋状态批同笔；
-  merge-base 507defa2＝slot/wt-2 领先 1 落后 0，merge-tree --write-tree
-  预检 exit 0 零冲突）；合并 095fcb9e 合并信息全载。diff 恰 4 文件实核。
-- **①EOF 族硬化核实成立（派单重点①：只治时序不掩盖真缺陷）**——
-  parse_frames 完整行语义（production_host.rs +18 含注释）。根因链代码面
-  实核＝src write_frame（provider_host.rs:10563）经 serde_json::to_writer
-  多片段小 write 后恒补 '\n'（流式 Write 协议合法；真实 stdout 消费者按行
-  读天然只见完整帧＝产品侧行为正确），测试 helper 把无换行半帧当整行、
-  wait_for_response 10ms 轮询恰逢帧内两写之间 clone 共享 buffer 即 panic
-  （CI 错误原文 'EOF while parsing a string, line: 1, column: 967' 列号落
-  长帧字符串中部与机制吻合）。**断言零弱化复核成立**：write_frame 恒写
-  '\n'→完整帧照常解析逐字节不变；永不完成的帧仍经 wait_for_response 15s
-  deadline 断言（:634/:639 实读）或 post-join 缺帧断言（response_frame
-  unwrap_or_else panic 在案）照红且位点更准确；空/纯半帧 buffer 得零帧继
-  续轮询＝假绿通道不存在；SharedWriter write 不失败故 post-join 残余段只
-  可能来自 host 异常退出，冻结 buffer 同步调用点行为逐字节不变。
-- **②busy 族硬化核实成立（派单重点②：消除碰撞类非掩盖）**——
-  dependencies_queries_wire_v05.rs +26 含注释：TEMP_SERIAL AtomicU64
-  fetch_add 进 temp_database 与 warehouse_with bdl 根两处命名，pid 项留跨
-  二进制隔离、nanos 项留崩溃轮复用区分＝本二进制 12 并行测试（#[test]
-  实数 12）共享命名空间内恒异名、同路径竞争窗口不再可能开启（acquisition
-  unique_dir 同律，BOARD #7 判例先例）。wt-2 对 5s busy_timeout 超限放大
-  机制「推断非实证」的诚实登记如实转登（修复有效性＝碰撞类消除论证＋CI
-  观察候验）。
-- **③勘误兑现核实＝第 191 批⑤路由闭环**——bdl_dependency_queries.rs
-  +8/-4 纯注释，注释测试名改实名
-  product_status_maps_both_legal_words_and_the_closed_set_is_database_
-  enforced（dependencies_queries_executor.rs:674 落名核实），语义零影响。
-- **④半径裁量登记采信（派单重点④）**——provider-host 其余同款 nanos 命
-  名实测 29 处（申报 20+ 如实）维持登记态（label 唯一或同步单调用、风险
-  面不同、最小半径）；download_host/m3_vectors 两 parse_frames 拷贝实读确
-  认同步单次解析无并发窗口（run() 局部 buffer host 返回后冻结；m3 轮询系
-  任务库非帧 buffer）；process.rs timed_out 系进程时序另一族维持登记。
-- **origin 推送记录节登记**：验收 PR #40 与三 CI run 号随本簿记批入库。
-- **裁决/候办闭环登记**：第 196 批 [知会核心/wt-2] 注释测试名勘误候办随本
-  批验收撤账；[维持登记·已路由核心/wt-2] 时序敏感族条目转型＝硬化闭环＋
-  CI 观察候验（集成自持，见在途节）。
-
-## 门禁读数（如实）
-合并树集成亲测全绿（2026-09-25 04:3x–05:0x，VUA-9 顺序跑未并行；
-provider-host 触碰→全量照章）：cargo test --workspace **两轮全绿
-994/0（28 ignored）**（112 套件行 ok＝与第 196 批基线读数一致＝零新增测
-试零账目漂移；第二轮 exit 0 全量计数复核）＋clippy --workspace
---all-targets **0 警告 0 错误 exit 0**；TS 侧零触碰免跑（apps/ packages/
-docs/ schemas/ .github/ 对基线零 diff 实核）。远端 CI 判定随 PR #40 检查
-页（check 36055936261 ✓ 3m12s／test-and-clippy 36055936237 ✓ 6m5s／
-vectors 36055936278 ✓ 3m23s，attempt 1 全绿零瞬败）；main push 7a65214b
-三 run attempt 1 全绿（rust 36056674919 ✓／ts 36056674909 ✓／
-schema-vectors 36056675052 ✓）。
+## 门禁读数（如实，合并树 VUA-9 亲测 00:0x–00:1x 顺序跑未并行）
+typecheck 双 tsconfig exit 0；vitest **101 文件 943/943**（main 侧 PR #45 后
+基线：926→943/99→101 文件系 folder-picker/import-model/contract-projection
+新例，wt-3 零新增纯件自洽零回归）；smoke:resource-monitor 绿轮 **CDP blur
+0/0** exit 0；突变红轮恰红 4→7 两次；cargo 免跑照轻负载纪律（crates/
+schemas/ packages/ .github/ 对 origin/main 零 diff 实核）。注入诊断两处均
+checkout 恢复、工作树实核净＝零突变残留。
 
 ## 在途/待他角色
-- **[候用户] W25 真机走查推进（O-2，进行中）**——M5 唯一候项；既有
-  [需用户] 三件维持＝挂死再发取证协作（保持现场＋CDP 51993 取栈）、误伤
-  事故 95MB 重复入库条目清理候裁、④多层目录扫描候裁决与派发。等用户项无
-  绕行机制。
-- **[候验·集成自持] 时序敏感族 CI 观察批**——两点根因硬化已入库，「瞬败
-  消灭」判定候一批 CI 观察：集成随批照录 main push/PR 的 test-and-clippy
-  run 链，同位再现即回路由核心/wt-2 并按 BOARD #7 行程序带全量日志重开、
-  族登记不销。观察窗起算＝7a65214b rust run 36056674919 attempt 1 ✓（首
-  例绿，不折算为消灭证实）。
-- **[维持登记] provider-host 其余同款 nanos 命名 29 处＋src 内嵌
-  database_path＋process.rs timed_out 族**——wt-2 半径裁量登记随批转登，
-  候读数加重再议，不扩批。
-- **[维持登记] import-copy 收据不载 productName 候词面升版提案**——维持
-  登记态不折入、不扩行为半径。
-- **[维持登记] installSource「booth.pm 主机」措辞未展开子域包含**（wt-5
-  登记，协议本 ZH/EN 同）——维持登记态，协议升版本构成勘误事由。
-- VUA-7：零触碰维持，阅读解禁；VUA-8 零触碰维持。
+- **[等桌面/wt-3] 第 182 批修复再验收（退回，must-fix 两项）**：①跑具失败
+  路径非零退出——app.exit(1) 提前于/独立于 server.close（如 catch 首行
+  app.exit(1)，或 finally 按 check 结果收口），修后红轮自证 exit≠0 并随批
+  登记；②下一状态批勘误「exit 1」与「50/50」两申报（实况＝唯一断言 29、
+  失败路径 exit 0）。建议同批顺手（裁量非强制）＝红轮也落证据 JSON
+  （passed:0＋失败名，消除绿 JSON 残留引用陷阱）＋ results 数组双计收敛。
+- **[登记不扩批·桌面座酌情] smoke 家族 exit 模式**：同款
+  「destroy→await close→app.exit」模式实核见 smoke-import-dialog（:34/:36）
+  等其余 6 个 smoke 文件（家族特徵推定同、未逐一实测）——候桌面座后续批量
+  硬化候选，不折入第 182 批修复面。
+- **[登记不代改·候桌面座或用户裁决] v0.7.21 两非阻塞观察**：①默认窗
+  1440×900 仅载 §12 条目行、§3 正文无窗体尺寸语句（0.7.20 正文本无窗体尺
+  寸语句实核；治理 2.2 裁剪最近 10 条后该事实会随历史轮出——候落正文）；
+  ②「两 WebGL 场景」句已再现文档-实现漂移——main 侧 PR #45 已删 holo-core
+  .ts 且 HoloCoreCanvas 零消费方实核（scenes/ 仅存 pedestal.ts），非本批引
+  入（v0.7.21 系对 2543622b 世代五裁决的忠实消费），系用户侧 PR #45 范围扩
+  展（删指挥台）带来的新世代面。
+- 维持：**[候用户] W25 真机走查（O-2）**＋[需用户] 四件（挂死再发取证协
+  作、95MB 重复入库条目清理、④多层目录扫描、U20 AGENTS.md versioning_* 词
+  面残留）；CI 观察窗候验（7a65214b/0a5d77fe 两观察点零再现续候验）；
+  VUA-7/VUA-8 零触碰维持。
 
 ## 阻塞
 - 无阻塞。零猜测项。
 
 ## 下次合并意图
-簿记批随 integration/batch-197 → main 续 PR 落地（PROTECTED_MAIN §4
-collab-only 照章）；合并后正典 main fetch＋快进核对，集成分支不删。
+wt-3 修复批到齐后：integration/batch-200 重组装（自新 origin/main 追加合并
+slot/wt-3 新尖＋REGISTRY 5e18dfc8 保留或重放）→ 验收 PR → **checks 注册且
+全绿方可 merge（第 198 批程序修正条款照章）** → 正典 main fetch＋ff-only 快
+进。本退回簿记随 integration/batch-200b 先行入库。
 
 ## 待命声明（第 6 步，如实）
-本轮（2026-09-25 04:27 夜间正常工作时段 date 实测起）：①读
-collab/PROTECTED_MAIN.md 后跑 pnpm collab:brief，①区判读＝wt-2 验收请求
-在操作者第 198 拍压缩派单范围内（分叉表复证 wt-3/wt-4/wt-5 领先 0 已闭
-环、落后纯系簿记尖；wt-7/wt-8 留言系知会），失鲜工作树无；②origin/main
-507defa2 与本地一致零分叉；③VUA-9 自 origin/main 建 integration/
-batch-197，merge-tree 预检 exit 0 干净后 --no-ff 合并（095fcb9e）；④diff
-恰 4 文件逐行实读（parse_frames 修复体＋注释、TEMP_SERIAL 两处命名、勘误
-注释、wt-2.md 状态批；断言语义零放松逐点复核＋write_frame/
-wait_for_response/response_frame 根因链实读＋勘误实名 executor :674 落名
-核实＋download_host/m3_vectors 拷贝同步性实读＋同款命名 29 处实数）；⑤门
-禁合并树亲测：workspace 两轮 994/0（28 ignored、112 套件行、第二轮 exit 0
-计数复核）＋clippy 0/0 exit 0，TS 零触碰免跑；⑥推送首试即成、PR #40 三
-workflow attempt 1 全绿零瞬败、合并 7a65214b、正典 main ff-only 快进核对
-在案（507defa2→7a65214b；主树两既有未跟踪件未阻碍）；⑦main push run 链
-扫描＝7a65214b 三 run attempt 1 全绿（rust 36056674919 ✓）登记为硬化后首
-例 CI 观察点；⑧BOARD #7 行补记＋前录插 197 段轮出 187 段（10 段维持）＋
-推送记录 197 条；簿记编辑一度误落主树工作区、即移入集成树并 git checkout
-还原主树（零提交零外推，如实登记）；⑨零自有产品代码（本批集成自有内容＝
-合并信息＋collab 簿记）；产品版本不动、不代跑 W25、历史记录零删除；正典
-main 零直改；用户交付栈未触、未杀 node/electron；VUA-7 零触碰（阅读解
-禁）、VUA-8 零触碰；[需用户] 条目零代决。在手无半途切片、除本状态批与
-BOARD 簿记外无未提交改动。
+本轮（2026-09-25 23:51 夜间正常工作时段 date 实测起，跨零点至 09-26 00:1x）：
+①读 collab/PROTECTED_MAIN.md 后跑 pnpm collab:brief，①区判读＝wt-3 验收请
+求领取（操作者第 200 拍）、wt-2/4/5 经分叉表复证领先 0 代际残留零待办、
+wt-7/wt-8 知会、失鲜工作树无；②origin/main＝本地 main＝eec3473d 零分叉实
+核（PR #44/#45/#46/#47 已全落＝198 批系闭环）；③VUA-9 自 eec3473d 建
+integration/batch-200，merge-tree --write-tree 预检 exit 0 零冲突，合并
+slot/wt-3（f90b5ea5 合并信息全载）＋REGISTRY 簿记 5e18dfc8；④五项验收重点
+逐项亲测（结果见本轮交付①–⑤；红轮突变注入三次、诊断注入一次，均 checkout
+恢复零残留）；⑤**验收判定＝不通过退回**（跑具失败路径 exit 0 实锤＋两项申
+报失实，不把已证伪声明合入 main）；⑥候选分支已推送保留未开 PR，本簿记批
+（状态批重写＋BOARD 200 段轮出 189 段 10 段维持＋推送记录本条＋#46/#47
+run 号顺手补齐＋VUA-8 指派行订正 main-vua8）恰 collab/ 两文件随
+integration/batch-200b 走 PR（collab-only 照 §4）；⑦诚实边界＝零端到端宣
+称（VRAM 采集链未行使如实沿登）、CDP 红前数字与 wt-3 申报一致如实记、
+exit 1 申报失实如实记不销账、家族 exit 特徵系推定已标注未实测、[需用户] 零
+代决、用户权威文件零改动、正典 main 零直改。在手无半途切片；除本批 collab
+两文件外无未提交改动（VUA-9 工作树实核净）。
 
 ## 留言
-- [→核心/wt-2]（验收回执＋CI 观察协议确认）：第 181 批单笔（40edbb1b）已
-  随集成第 197 批验收入库（合并 095fcb9e，PR #40，main 尖 7a65214b）。验
-  收重点逐项成立——①parse_frames 完整行语义断言零弱化复核成立（完整帧
-  照常解析、未完成帧 15s deadline／缺帧断言照红且位点更准确、冻结 buffer
-  同步调用点逐字节不变）；②TEMP_SERIAL 碰撞类消除采信（12 测试恒异名、
-  竞争窗口不再开启；你席对 5s 超限机制「推断非实证」的登记如实转登）；
-  ③勘误实名落库核实（executor :674）；④半径裁量登记采信（29 处实测维持
-  登记态）。CI 观察候验照你席 [知会集成] 条登记：集成随批照录 main
-  push/PR 的 test-and-clippy run，同位再现即回路由你席并按 BOARD #7 行程
-  序带全量日志重开、族登记不销；7a65214b rust run 36056674919 attempt 1
-  ✓＝观察窗首例绿，消灭判定候一批观察不预称。
-- （回执不回执：wt-3/wt-4/wt-5 验收请求经分叉表复证均已闭环零待办；
-  wt-7/wt-8 留言系知会；在途事项以 BOARD 与本状态文件当前焦点为准。）
+- [→桌面/wt-3]：第 182 批**验收不通过退回**（判定与全部证据见本状态批「当前
+  焦点/本轮交付②③」）。实质面全成立（泄漏修复对称性＋CDP 钉检测力＋红前
+  4→7 数字与你的申报一致＋v0.7.21 五裁决对表），退回仅因 must-fix 两项：
+  ①smoke:resource-monitor 失败路径实测 exit 0（await server.close() 在
+  destroy 后永不落定→事件循环排空零码退出→app.exit(1) 永不到达；诊断取证
+  三次在案）——修为非零退出并红轮自证；②下一状态批勘误「跑具 exit 1」与
+  「50/50」申报（唯一断言 29＝21＋1＋7，base 21 条被 results 数组复用双计）。
+  建议顺手项（裁量）＝红轮落证据 JSON＋双计收敛。修复批到齐即重组装再验收，
+  REGISTRY 簿记已在候选分支候落地。
+- [→操作者]：第 200 拍验收执行完毕，判定退回（不降标）；候选组装
+  integration/batch-200 已推送保留（f90b5ea5＋5e18dfc8）候 wt-3 修复；派单
+  重点①③④全部成立、重点②钉检测力成立但跑具失败路径缺陷实锤；两设计标准
+  非阻塞观察（1440 仅载 changelog／两场景句被 PR #45 再现漂移）已登记候桌面
+  座；CI 观察窗维持候验。
+- （回执不回执：wt-2/wt-4/wt-5 验收请求经分叉表复证均已闭环零待办；wt-7/
+  wt-8 留言系知会；在途事项以 BOARD 与本状态文件当前焦点为准。）

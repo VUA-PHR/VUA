@@ -1293,6 +1293,57 @@ export interface DesktopSystemApiV1 {
   readResourceUsage(): Promise<SystemResourceUsageV1>;
 }
 
+// ---- 本地文件系统窄面(2026-09-25 用户裁决:素材导入应用内文件夹选择器;
+// 只读列表 + 单层新建,渲染层经此面做目录浏览,不持任何文件句柄;
+// 所有失败内收于结果信封,本面永不抛) ----
+
+/** 目录列表条目(仅子目录;文件不进词表——素材包以文件夹为单位导入) */
+export interface DesktopFsEntryV1 {
+  readonly name: string;
+  readonly path: string;
+  /** Windows 隐藏属性经 Node fs 不可得,仅以点前缀为启发式判据(诚实
+   *  注释:dot-prefix heuristic only;属性级检测不可用时如实呈现启发式
+   *  结果,不冒充精确判定) */
+  readonly hidden: boolean;
+}
+
+export interface DesktopFsListV1 {
+  /** 实际列出的目录(请求 null = 用户主目录时回落地解析结果) */
+  readonly path: string;
+  /** 上一级;根目录/无法再上时 null */
+  readonly parent: string | null;
+  readonly entries: readonly DesktopFsEntryV1[];
+}
+
+export type DesktopFsErrorV1 =
+  | "not_found"
+  | "not_a_directory"
+  | "access_denied"
+  | "invalid_name"
+  | "already_exists"
+  | "failed";
+
+/** 文件系统面结果信封:失败是值不是异常——渲染层按 error 词表如实呈现 */
+export type DesktopFsResultV1<T> =
+  | { readonly ok: true; readonly value: T }
+  | { readonly ok: false; readonly error: DesktopFsErrorV1 };
+
+export interface DesktopFsApiV1 {
+  /** 列目录(仅子目录):path null = 用户主目录;showHidden 缺省 false——
+   * 隐藏目录以点前缀启发式判定,见 DesktopFsEntryV1.hidden */
+  listDirectory(
+    path: string | null,
+    options?: { readonly showHidden?: boolean },
+  ): Promise<DesktopFsResultV1<DesktopFsListV1>>;
+  /** 在 parentPath 下新建单层目录:名字非法(空/含分隔符或控制字符/
+   * "." ".."/超长)= invalid_name;已存在 = already_exists(不 recursive,
+   * 不猜测不覆盖) */
+  createDirectory(
+    parentPath: string,
+    name: string,
+  ): Promise<DesktopFsResultV1<{ readonly path: string }>>;
+}
+
 /** 系统资源占用快照(瞬时读数,不持久化;schemaVersion 随形状演进) */
 export interface SystemResourceUsageV1 {
   readonly schemaVersion: 1;
@@ -1316,6 +1367,7 @@ export interface VuaDesktopApiV1 {
   readonly navigationConfirm: DesktopNavigationConfirmApiV1;
   readonly editorSettings: DesktopEditorSettingsApiV1;
   readonly system: DesktopSystemApiV1;
+  readonly fs: DesktopFsApiV1;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

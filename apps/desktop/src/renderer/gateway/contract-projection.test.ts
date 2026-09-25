@@ -45,7 +45,8 @@ describe("contract task state projection", () => {
     const item = projectTaskItem(task({ taskId: "task-178984402495255500-0001" }));
     expect(item.title).toBe(strings.taskCenter.unlabeledTask);
     expect(item.title).not.toBe("task-178984402495255500-0001");
-    expect(item.originPage).toBe("home");
+    // 未登记回落 warehouse(生产着陆;指挥台页退役,2026-09-25 用户裁决)
+    expect(item.originPage).toBe("warehouse");
   });
 
   it("uses the registered identity title and origin page when the renderer initiated the task", () => {

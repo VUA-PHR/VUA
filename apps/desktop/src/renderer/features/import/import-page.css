@@ -8,15 +8,14 @@
   gap: var(--vua-space-2);
 }
 
-.vua-import__cloud-address {
+/* 云端段极简空态(2026-09-25 用户裁决):短说明 + 一个入口钮
+ * (用户关闭过视图时换「重新打开内嵌浏览」细钮,同一自动导航线);
+ * 地址输入行退役,相关样式随之移除 */
+.vua-import__cloud-idle {
   display: flex;
+  flex-direction: column;
   gap: var(--vua-space-2);
-  align-items: center;
-}
-
-.vua-import__cloud-address input {
-  flex: 1;
-  min-width: 0;
+  align-items: flex-start;
 }
 
 .vua-import__cloud-degraded {

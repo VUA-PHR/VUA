@@ -42,15 +42,16 @@ function moduleLabel(def: ModuleDef): string {
   return strings.nav.tabs[def.labelKey];
 }
 
-test("top-level structure is hub plus four goal tabs plus an independent settings section", () => {
+test("top-level structure is four goal tabs plus an independent settings section", () => {
+  // 2026-09-25 用户裁决:指挥台(home)页退役——首 Tab 为环境部署
   assert.deepEqual(
     businessModules.map((m) => m.id),
-    ["home", "env", "guide", "tools", "production"],
+    ["env", "guide", "tools", "production"],
   );
   assert.equal(settingsModule.id, "settings");
   assert.deepEqual(
     modules.map((m) => m.id),
-    ["home", "env", "guide", "tools", "production", "settings"],
+    ["env", "guide", "tools", "production", "settings"],
   );
 });
 
@@ -72,7 +73,6 @@ test("no forced redirects: tab landing is unconditional, workshop stays workshop
 });
 
 test("every page belongs to exactly its own module", () => {
-  assert.equal(moduleOf("home"), "home");
   assert.equal(moduleOf("env-play"), "env");
   assert.equal(moduleOf("env-create"), "env");
   assert.equal(moduleOf("guide-start"), "guide");
@@ -130,17 +130,16 @@ test("label keys resolve in the string table and term ids are valid", () => {
 test("sidebar labels use localized names without English prefixes", () => {
   const warehouse = allPages.find((p) => p.id === "warehouse");
   assert.equal(warehouse ? pageLabel(warehouse) : "", "仓储");
+  // 2026-09-25 用户裁决:车间侧栏标签由复合术语序列(装配 → 生产 → 检测)
+  // 改为直给词面「车间」
   const workshop = allPages.find((p) => p.id === "workshop");
-  assert.equal(
-    workshop ? pageLabel(workshop) : "",
-    "装配 → 生产 → 检测",
-  );
+  assert.equal(workshop ? pageLabel(workshop) : "", "车间");
 });
 
-test("tab labels come from the string table (hub + four goals + settings)", () => {
+test("tab labels come from the string table (four goals + settings)", () => {
   assert.deepEqual(
     modules.map((m) => moduleLabel(m)),
-    ["指挥台", "环境部署", "游戏引导", "工具合集", "模型生产", "设置"],
+    ["环境部署", "游戏引导", "工具合集", "模型生产", "设置"],
   );
 });
 
@@ -184,9 +183,9 @@ test("nav measure snapshot: 外部事实未变即观察者噪声,判定跳过(#2
   assert.equal(navMeasureChanged(snapshot, { ...snapshot, available: 701 }), true);
 });
 
-test("default landing is the hub home page", () => {
-  // S-VFX-2:默认落地页由游戏引导概览改为指挥台首页
-  assert.equal(defaultPage, "home");
+test("default landing is the environment module default page", () => {
+  // 2026-09-25 用户裁决:指挥台(home)页退役,默认落点为环境部署
+  assert.equal(defaultPage, "env-play");
 });
 
 test("isPageId rejects unknown and legacy ids", () => {
@@ -195,6 +194,9 @@ test("isPageId rejects unknown and legacy ids", () => {
   // 2026-09-20 导航重构退役页:不再合法,存储的过期落点由 resolveEntry 回退默认页
   assert.ok(!isPageId("import-material"));
   assert.ok(!isPageId("compose"));
+  // 2026-09-25 用户裁决:指挥台(home)页退役——存储的 home 落点同判非法,
+  // resolveEntry 回退默认页(env-play)
+  assert.ok(!isPageId("home"));
   assert.ok(!isPageId("nope"));
   assert.ok(!isPageId(null));
 });

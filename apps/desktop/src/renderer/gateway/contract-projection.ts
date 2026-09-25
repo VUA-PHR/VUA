@@ -50,7 +50,8 @@ export function projectTaskState(state: TaskStateV01): TaskStatus {
  *   渲染层发起操作的命令受理已登记身份的任务用登记标题,演示任务给本地化
  *   标签,其余任务如实给类型词「后台任务」——W25 走查 D1 修复:裸 taskId
  *   不再充当标题(投影不到的事实不编造描述,宁可显示类型词);
- * - originPage:登记身份携带真实来源页,未登记回落 home;
+ * - originPage:登记身份携带真实来源页,未登记回落 warehouse(生产着陆;
+ *   原回落 home 随指挥台页退役改置,2026-09-25 用户裁决);
  * - cancellable:由应用层事实派生(未请求取消且非终态),前端不自行猜测;
  * - errorText:契约错误码(工程事实);显示层另加本地化说明，原码保留。
  */
@@ -62,7 +63,7 @@ export function projectTaskItem(task: TaskSnapshotV01): TaskItem {
       identity?.title ??
       (task.taskId.startsWith("demo-") ? strings.taskCenter.demoTaskTitle : strings.taskCenter.unlabeledTask),
     status: projectTaskState(task.state),
-    originPage: identity?.originPage ?? "home",
+    originPage: identity?.originPage ?? "warehouse",
     cancellable: !task.cancellationRequested && !isTerminalTaskStateV01(task.state),
     ...(task.error === undefined ? {} : { errorText: task.error.code }),
     // 重启恢复(M2):遗留非终态任务如实标注,前端不得当作仍在执行
