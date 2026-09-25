@@ -65,6 +65,84 @@ async function key(value: string) {
   await wait();
 }
 
+/* ---- 云端段合成桩(2026-09-25 自动收口场景):remoteContent 事件流 +
+ *      gateway downloads.listCompleted 信封。默认缺席(无宿主降级场景
+ *      需要);仅自动收口场景临时挂上,用完即卸。 */
+type DownloadsMode = "empty" | "one";
+let downloadsMode: DownloadsMode = "empty";
+const syntheticDownloadRow = {
+  adoptedWarehouseItemIds: [] as string[],
+  completedAt: "2026-09-25T00:00:00.000Z",
+  downloadId: "dl-synthetic-1",
+  receivedBytes: 2048,
+  sourceUrl: "https://booth.pm/download/1",
+  suggestedFileName: "pack.unitypackage",
+};
+const remoteListeners = new Set<(event: unknown) => void>();
+let syntheticViewSeq = 0;
+const syntheticRemoteContent = {
+  open: async ({ url }: { url: string }) => {
+    syntheticViewSeq += 1;
+    const viewId = `view-synthetic-${syntheticViewSeq}`;
+    queueMicrotask(() => {
+      for (const listener of remoteListeners) listener({ kind: "view-opened", viewId, url });
+    });
+    return { viewId, url, visible: true, canGoBack: false, canGoForward: false };
+  },
+  navigate: async (viewId: string, url: string) => ({ viewId, url, visible: true, canGoBack: true, canGoForward: false }),
+  goBack: async (viewId: string) => ({ viewId, url: "https://booth.pm/", visible: true, canGoBack: false, canGoForward: true }),
+  goForward: async (viewId: string) => ({ viewId, url: "https://booth.pm/", visible: true, canGoBack: true, canGoForward: false }),
+  reload: async (viewId: string) => ({ viewId, url: "https://booth.pm/", visible: true, canGoBack: false, canGoForward: false }),
+  close: async (viewId: string) => {
+    queueMicrotask(() => {
+      for (const listener of remoteListeners) listener({ kind: "view-closed", viewId });
+    });
+  },
+  setVisible: async (viewId: string, visible: boolean) => ({ viewId, url: "https://booth.pm/", visible, canGoBack: false, canGoForward: false }),
+  signInHint: async () => "stored" as const,
+  events: {
+    subscribe: (listener: (event: unknown) => void) => {
+      remoteListeners.add(listener);
+      return () => {
+        remoteListeners.delete(listener);
+      };
+    },
+  },
+};
+const syntheticGatewayHost = {
+  invoke: async (request: { method: string }) => {
+    if (request.method === "downloads.listCompleted") {
+      const downloads = downloadsMode === "one" ? [syntheticDownloadRow] : [];
+      return {
+        ok: true as const,
+        value: {
+          schemaVersion: "0.5",
+          operation: "downloads.listCompleted",
+          result: { downloads },
+        },
+      };
+    }
+    return { ok: false as const, error: { kind: "unavailable" as const } };
+  },
+};
+function setCloudStubs(on: boolean) {
+  const shell = (window as any).vua;
+  if (on) {
+    shell.gateway = syntheticGatewayHost;
+    shell.remoteContent = syntheticRemoteContent;
+  } else {
+    delete shell.gateway;
+    delete shell.remoteContent;
+  }
+}
+function navCloseButton(): HTMLButtonElement {
+  const found = [...document.querySelectorAll<HTMLButtonElement>(".vua-import__browse-button")].find(
+    (node) => node.getAttribute("aria-label") === strings.importPage.navClose,
+  );
+  if (!found) throw new Error("导航条 × 不在场");
+  return found;
+}
+
 /* ---- 合成写面:importFolders/importDownloads 由场景切换 ok/fail ---- */
 const gateway = emptyGateway();
 let importMode: "ok" | "fail" = "ok";
@@ -299,6 +377,58 @@ async function cloudDownloadsWithoutHostHonestUnavailable() {
   check(!dialogOpen(), "无宿主场景收尾:弹窗已关");
 }
 
+/** 2026-09-25 用户裁决:用户经导航条 × 关闭内嵌视图且已完成下载为零 →
+ *  宿主弹窗自动收口(恰一次关闭请求);拆卸/代次兜底关闭永不武装(由
+ *  模型测试钉死,此处钉用户路径的 DOM 级接线)。 */
+async function userClosesViewWithNoDownloadsAutoCloses() {
+  closeCount = 0;
+  downloadsMode = "empty";
+  setCloudStubs(true);
+  try {
+    await openDialog();
+    check(dialogOpen(), "零下载收口:弹窗打开");
+    await button(strings.importPage.chooseCloudCta).click();
+    await wait();
+    check(document.querySelector(".vua-import__browse-bar") !== null, "首开自动导航:内嵌视图打开,导航条在场");
+    navCloseButton().click();
+    await wait();
+    check(!dialogOpen(), "用户关闭视图且零完成下载:宿主弹窗自动收口");
+    check(closeCount === 1, "自动收口恰一次关闭请求");
+  } finally {
+    setCloudStubs(false);
+    downloadsMode = "empty";
+  }
+}
+
+/** 2026-09-25 用户裁决:有已完成下载 → 用户关闭视图弹窗驻留,云端段呈现
+ *  「重新打开内嵌浏览」细钮继续操作。 */
+async function userClosesViewWithDownloadsStaysOpen() {
+  closeCount = 0;
+  downloadsMode = "one";
+  setCloudStubs(true);
+  try {
+    await openDialog();
+    check(dialogOpen(), "有下载驻留:弹窗打开");
+    await button(strings.importPage.chooseCloudCta).click();
+    await wait();
+    check(document.querySelector(".vua-import__browse-bar") !== null, "有下载驻留:内嵌视图打开");
+    navCloseButton().click();
+    await wait();
+    check(dialogOpen(), "有已完成下载:弹窗驻留(不自动收口)");
+    check(closeCount === 0, "驻留期间零关闭请求");
+    check(
+      document.body.textContent!.includes(strings.importPage.reopenBrowseCta),
+      "「重新打开内嵌浏览」细钮呈现",
+    );
+  } finally {
+    setCloudStubs(false);
+    downloadsMode = "empty";
+    await key("Escape");
+    await wait();
+    check(!dialogOpen(), "有下载驻留场景收尾:弹窗已关");
+  }
+}
+
 window.importDialog = {
   run: async () => {
     root.render(<Harness />);
@@ -312,6 +442,8 @@ window.importDialog = {
     await userTakeoverCancelsAutoClose();
     await windowsPickerPathInsideDialog();
     await cloudDownloadsWithoutHostHonestUnavailable();
+    await userClosesViewWithNoDownloadsAutoCloses();
+    await userClosesViewWithDownloadsStaysOpen();
     return results;
   },
 };

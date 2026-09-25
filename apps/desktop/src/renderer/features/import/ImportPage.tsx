@@ -23,6 +23,8 @@ import {
   classifyRemoteOpenError,
   createAutoCloseTimer,
   createBrowsePanelLifecycle,
+  createViewCloseTracker,
+  dialogAutoCloseOnViewClose,
   displayUrl,
   embeddedBrowseReducer,
   initialBrowseUrl,
@@ -45,9 +47,15 @@ import "./import-page.css";
  *
  * - 云端段:内嵌浏览面板。能力两态(desktop 架构 1.1.0):壳能力自报驱动——
  *   false = 未接线诚实降级(不可用标注,无替代假动作);true = 面板可用。
- *   首开自动导航默认首页 booth.pm(允许清单内;用户实测缺口修复),用户
- *   关闭后不强行重开,后续导航历史照常保留;地址栏手动导航保留。视图
- *   打开时呈现固定导航条(后退/前进/刷新/回首页/URL 脱敏显示/关闭回
+ *   首开自动导航默认首页 booth.pm(允许清单内;用户实测缺口修复)——
+ *   signInHint 引导(未登录 → 登录页,已登录/未知 → 主页)。2026-09-25
+ *   用户裁决极简形态:地址输入行退役(它不导入链接,只开内嵌浏览器,
+ *   而允许清单本就只有 booth.pm/accounts.booth.pm——近死重),空态 =
+ *   短说明 + 一个主钮(与首开同一条自动导航线);「重选来源」回行云端
+ *   段移除(本地段保留)。用户关闭视图(导航条 ×)的归因(import-model
+ *   ViewCloseTracker,拆卸/代次兜底关闭永不误判):已完成下载为零 →
+ *   宿主弹窗自动收口;有下载 → 驻留,空态换「重新打开内嵌浏览」细钮。
+ *   视图打开时呈现固定导航条(后退/前进/刷新/回首页/URL 脱敏显示/关闭回
  *   VUA+窗口控制;用户实测缺口修复——全屏视图原盖死壳界面无法退出),
  *   Main 侧视图上缘让位同高条带(remote-content REMOTE_VIEW_NAV_STRIP_PX)。
  *   视图生命周期随组件卸载(#25 定性修复 2026-09-13):宿主弹窗关闭即卸载
@@ -62,12 +70,9 @@ import "./import-page.css";
  *   按 CSS 规范构成 fixed 后代的包含块,把 position:fixed;top:0 的导航
  *   条钉进卡片内部、落入视图覆盖区看不见点不着(视图内无退出);portal
  *   脱离该包含块,top:0 恢复相对视口,与 Main 侧让位条带重新对齐。
- *   地址栏输入归一化(#39 修复 2026-09-18):无 scheme 的裸域名(如
- *   booth.pm)自动补 https:// 再开,无法解析的输入本地失败态呈现;
- *   open 失败按拒绝原因三分呈现(地址无法解析/清单外拒绝/打开失败),
- *   不再误用仓储命令文案(原「仓库服务尚未接入」与本错误无关,用户
- *   据此误判 #37 未修复)。Main 侧清单裁决语义不变。
- *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
+ *   首开地址归一化(#39 修复 2026-09-18)保留:裸域名自动补 https:// 再开,
+ *   open 失败按拒绝原因三分呈现,不再误用仓储命令文案。Main 侧清单裁决
+ *   语义不变。批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组);
  * - 本地段:W18 提交流迁入(确认列表→单命令 warehouse.import→任务中心;
  *   IMP-4 收口)。拾取面 2026-09-25 起为应用内文件夹选择器(用户裁决,
  *   ALCOM 形态:目录浏览/多选/新建/记忆,DesktopFsApiV1 窄面;Windows
@@ -109,13 +114,20 @@ const openFailureText: Record<EmbeddedBrowseOpenFailure["kind"], string> = {
 
 function EmbeddedBrowsePanel({
   availability,
+  onViewClosedByUser,
 }: {
   availability: EmbeddedBrowseAvailability;
+  /** 用户经导航条 × 关闭当前视图(且已完成下载为零时宿主弹窗自动收口
+   *  的裁决在 ImportPage):仅「用户关闭」会触发,拆卸/代次兜底关闭
+   *  永不触发(归因见 import-model ViewCloseTracker) */
+  onViewClosedByUser?: (() => void) | undefined;
 }) {
   const modalOwner = useModalOwner();
   const [browse, setBrowse] = useState<EmbeddedBrowseState>(initialEmbeddedBrowseState);
-  const [address, setAddress] = useState("");
   const [openFailure, setOpenFailure] = useState<EmbeddedBrowseOpenFailure | null>(null);
+  // 用户关闭过视图(当前代次内):空态呈现「重新打开内嵌浏览」细钮,
+  // 否则呈现「打开 BOOTH 内嵌浏览」主钮——同一条自动导航线,两态词面
+  const [userClosedView, setUserClosedView] = useState(false);
   // 视图生命周期守卫(#25 卸载即关 + #37 StrictMode 修复):Main 侧视图在
   // 壳导航切页后仍存续,而导航条/视图状态随本面板卸载——失联视图既无导航
   // 条也不可控(渲染层 viewId 判空,关闭入口缺席),重挂载首开还会叠加无人
@@ -125,12 +137,28 @@ function EmbeddedBrowsePanel({
   // mount)后永真,每个新视图被竞态兜底立即关闭(#37 根因);代次模型下
   // 活跃挂载的 open 落定即保留,已卸载/过期挂载的 open 落定即关闭
   const lifecycleRef = useRef(createBrowsePanelLifecycle());
+  // 视图关闭归因(2026-09-25 用户裁决):view-closed 事件不区分来源
+  // (用户 ×/拆卸即关/孤儿清理同事件),武装弹窗收口前必须归因——
+  // 导航条 × 先 markUserClose;拆卸与代次兜底清理先 markTeardownClose;
+  // 订阅本身随卸载退订,但事件可能已排队,teardown 标记兜该竞态
+  const trackerRef = useRef(createViewCloseTracker());
+  const onViewClosedByUserRef = useRef(onViewClosedByUser);
+  onViewClosedByUserRef.current = onViewClosedByUser;
   const viewIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     const remote = window.vua?.remoteContent;
     if (remote === undefined) return undefined;
     return remote.events.subscribe((event) => {
+      if (event.kind === "view-closed") {
+        // 归因消费:仅用户 × 关闭武装(置 reopen 态 + 上报宿主);
+        // teardown/unrelated 静默归约,不武装(拆卸永不触发弹窗收口)
+        if (trackerRef.current.classify(event.viewId) === "user") {
+          setUserClosedView(true);
+          onViewClosedByUserRef.current?.();
+        }
+      }
+      if (event.kind === "view-opened") trackerRef.current.reset();
       setBrowse((state) => embeddedBrowseReducer(state, event));
     });
   }, []);
@@ -149,6 +177,10 @@ function EmbeddedBrowsePanel({
       lifecycleRef.current.unmount();
       const current = viewIdRef.current;
       if (current !== null) {
+        // 拆卸引发的关闭先归因标记:排队中/晚到的 view-closed 判
+        // teardown,永不武装弹窗收口(卸载后宿主弹窗可能仍在,误收口
+        // = 跑在用户操作下面)
+        trackerRef.current.markTeardownClose(current);
         void window.vua?.remoteContent?.close(current).catch(() => {
           /* 视图已被关闭(重复清理/竞态):诚实忽略,无状态可猜 */
         });
@@ -176,6 +208,7 @@ function EmbeddedBrowsePanel({
       // (StrictMode 首挂的自动打开),代次失配:视图随即关闭,不留失联/
       // 孤儿视图;活跃挂载的 open 正常保留(#37 修复点)
       if (lifecycleRef.current.isStale(generation)) {
+        trackerRef.current.markTeardownClose(state.viewId);
         void remote.close(state.viewId).catch(() => {});
       }
     }).catch((error: unknown) => {
@@ -188,19 +221,27 @@ function EmbeddedBrowsePanel({
     });
   };
 
-  // 首开自动导航(W25 走查缺陷③b 改造):先取本机登录态线索——未登录
-  // 线索引导登录页(accounts.booth.pm/sign_in),已登录/未知回落 booth.pm
-  // 主页(unknown 不冒充已检测)。仅面板挂载且无打开视图时执行一次——
-  // 用户关闭视图后不强行重开,后续导航历史照常保留。StrictMode 双调用下
-  // 首挂的 open 在次挂后落定,由生命周期代次判失配随即关闭,只留次挂
-  // (#37 修复)视图。线索探测异步一瞬,落定前不开视图,不呈现猜测态。
-  useEffect(() => {
-    if (availability.kind !== "available") return;
+  // 首开/重开同一条自动导航线(2026-09-25 用户裁决:云端段极简形态,
+  // 唯一入口按钮与首开挂载共用):先取本机登录态线索——未登录引导登录页
+  // (accounts.booth.pm/users/sign_in),已登录/未知回落 booth.pm 主页
+  // (unknown 不冒充已检测)。仅面板挂载时首开一次;用户关闭视图后不强行
+  // 重开(重开须点「重新打开内嵌浏览」)。StrictMode 双调用下首挂的 open
+  // 在次挂后落定,由生命周期代次判失配随即关闭,只留次挂(#37 修复)视图。
+  // 线索探测异步一瞬,落定前不开视图,不呈现猜测态
+  const openInitialBrowse = () => {
+    setOpenFailure(null);
     const remote = window.vua?.remoteContent;
     if (remote === undefined) return;
-    let active = true;
     void remote.signInHint().then((hint) => {
-      if (active) openAddress(initialBrowseUrl(hint));
+      openAddress(initialBrowseUrl(hint));
+    });
+  };
+
+  useEffect(() => {
+    if (availability.kind !== "available") return;
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (active) openInitialBrowse();
     });
     return () => {
       active = false;
@@ -211,9 +252,16 @@ function EmbeddedBrowsePanel({
   const viewId = browse.viewId;
   const closeView = () => {
     if (viewId === null) return;
+    // 用户经导航条 × 关闭:在途标记,事件到达归因「user」——这是唯一
+    // 武装弹窗自动收口的关闭来源(2026-09-25 用户裁决)
+    trackerRef.current.markUserClose(viewId);
     void window.vua?.remoteContent?.close(viewId).catch(() => {
       // 未知视图(已被关闭等):视图关闭事件会同步状态,这里不猜测
     });
+  };
+  const reopenBrowse = () => {
+    setUserClosedView(false);
+    openInitialBrowse();
   };
   const historyAction = (action: "goBack" | "goForward" | "reload") => {
     if (viewId === null) return;
@@ -233,34 +281,28 @@ function EmbeddedBrowsePanel({
   return (
     <div className="vua-import__cloud-panel">
       <Badge tone="neutral">{copy.cloudBadge}</Badge>
-      <div className="vua-import__cloud-address" role="group" aria-label={copy.addressAria}>
-        <input
-          type="text"
-          value={address}
-          aria-label={copy.addressAria}
-          placeholder={copy.addressPlaceholder}
-          onChange={(event) => setAddress(event.target.value)}
-        />
-        <Button
-          variant="default"
-          disabled={address.trim() === ""}
-          onClick={() => openAddress(address.trim())}
-        >
-          {copy.openCta}
-        </Button>
-        {viewId !== null ? (
-          <Button variant="subtle" onClick={closeView}>
-            {copy.closeCta}
-          </Button>
-        ) : null}
-      </div>
-      {openFailure !== null ? (
-        <p className="vua-caption vua-text-secondary" role="alert">
-          {openFailureText[openFailure.kind]}
-        </p>
-      ) : null}
       {browse.viewId === null ? (
-        <p className="vua-caption vua-text-secondary">{copy.noView}</p>
+        /* 极简空态(2026-09-25 用户裁决):地址输入行退役——它不导入链接,
+           只开内嵌浏览器,而允许清单本就只有 booth.pm/accounts.booth.pm。
+           空态 = 短说明 + 一个主钮(首开自动导航线);用户关闭过视图则换
+           「重新打开内嵌浏览」细钮。自动打开失败按 #39 分类词面诚实呈现 */
+        <div className="vua-import__cloud-idle">
+          <p className="vua-caption vua-text-secondary">{copy.noView}</p>
+          {userClosedView ? (
+            <Button variant="subtle" onClick={reopenBrowse}>
+              {copy.reopenBrowseCta}
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={openInitialBrowse}>
+              {copy.openBrowseCta}
+            </Button>
+          )}
+          {openFailure !== null ? (
+            <p className="vua-caption vua-text-secondary" role="alert">
+              {openFailureText[openFailure.kind]}
+            </p>
+          ) : null}
+        </div>
       ) : (
         <p className="vua-caption vua-text-secondary" title={browse.currentUrl ?? undefined}>
           {browse.currentUrl}
@@ -522,7 +564,15 @@ interface DownloadsViewLoaded {
   readonly downloads: readonly DownloadsListCompletedItemV04[];
 }
 
-function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
+function CompletedDownloadsPanel({
+  onRequestClose,
+  onDownloadsLoaded,
+}: ImportCloseRequest & {
+  /** 清单每次落定(含刷新/采纳后)上报条目数;读面不可达上报 null——
+   *  宿主据此裁决「用户关闭内嵌视图且下载为零 → 弹窗自动收口」
+   *  (计数未知不武装,不猜态) */
+  onDownloadsLoaded?: ((count: number | null) => void) | undefined;
+}) {
   const gateway = useGateway();
   const [state, setState] = useState<DownloadsViewState | DownloadsViewLoaded>({
     kind: "loading",
@@ -530,6 +580,8 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
   const [reloadKey, setReloadKey] = useState(0);
   const [adoptBusyId, setAdoptBusyId] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
+  const onDownloadsLoadedRef = useRef(onDownloadsLoaded);
+  onDownloadsLoadedRef.current = onDownloadsLoaded;
   // 采纳受理同样自动关闭(W25 走查缺陷③同根因:采纳即导入任务受理,模态
   // 滞留同形态)。武装判据与本地段同一纯件 autoCloseArmed(第 179 批反向
   // 审查收紧,语义两段一致):失败驻留、用户接管取消计时、二次受理重新计时。
@@ -551,6 +603,7 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
     const api = window.vua?.gateway;
     if (api === undefined) {
       setState({ kind: "unavailable" });
+      onDownloadsLoadedRef.current?.(null);
       return undefined;
     }
     let active = true;
@@ -571,8 +624,10 @@ function CompletedDownloadsPanel({ onRequestClose }: ImportCloseRequest) {
         const downloads = result.ok ? narrowCompletedDownloads(result.value) : null;
         if (downloads !== null) {
           setState({ kind: "loaded", downloads });
+          onDownloadsLoadedRef.current?.(downloads.length);
         } else {
           setState({ kind: "unavailable" });
+          onDownloadsLoadedRef.current?.(null);
         }
       });
     return () => {
@@ -685,6 +740,18 @@ export function ImportPage({ onRequestClose }: ImportCloseRequest = {}) {
   // 受理态自动关闭计时与失败态醒目「关闭」主按钮都经此线收口;缺省
   // (如独立夹具挂载)诚实降级为无自动关闭,不猜测宿主。
   const [section, setSection] = useState<"choose" | "local" | "cloud">("choose");
+  // 已完成下载计数(云端段自动收口裁决的事实源):null = 读面不可达/
+  // 未落定,未知不武装(不猜态);由 CompletedDownloadsPanel 落定即报
+  const [downloadsCount, setDownloadsCount] = useState<number | null>(null);
+  const onRequestCloseRef = useRef(onRequestClose);
+  onRequestCloseRef.current = onRequestClose;
+  const handleViewClosedByUser = () => {
+    // 2026-09-25 用户裁决:内嵌视图被用户关闭且已完成下载为零 → 弹窗
+    // 自动收口;有下载 → 驻留,云端段自持「重新打开内嵌浏览」继续操作
+    if (dialogAutoCloseOnViewClose(downloadsCount)) {
+      onRequestCloseRef.current?.();
+    }
+  };
 
   return (
     <div className="vua-page">
@@ -717,20 +784,29 @@ export function ImportPage({ onRequestClose }: ImportCloseRequest = {}) {
       ) : (
         <Card>
           <div className="vua-page__stack">
-            <div>
-              <Button variant="subtle" onClick={() => setSection("choose")}>
-                {copy.rechooseCta}
-              </Button>
-            </div>
             {section === "cloud" ? (
+              /* 云端段(2026-09-25 用户裁决极简形态):无「重选来源」回行
+                 (本地段保留)——空下载时关视图即弹窗收口,有下载时面板内
+                 「重新打开内嵌浏览」继续,收口路径不缺 */
               <section>
                 <h3 className="vua-warehouse-detail__section-title">{copy.cloudTitle}</h3>
-                <EmbeddedBrowsePanel availability={availability} />
+                <EmbeddedBrowsePanel
+                  availability={availability}
+                  onViewClosedByUser={handleViewClosedByUser}
+                />
                 <h3 className="vua-warehouse-detail__section-title">{copy.downloadsTitle}</h3>
-                <CompletedDownloadsPanel onRequestClose={onRequestClose} />
+                <CompletedDownloadsPanel
+                  onRequestClose={onRequestClose}
+                  onDownloadsLoaded={setDownloadsCount}
+                />
               </section>
             ) : (
               <section>
+                <div>
+                  <Button variant="subtle" onClick={() => setSection("choose")}>
+                    {copy.rechooseCta}
+                  </Button>
+                </div>
                 <h3 className="vua-warehouse-detail__section-title">{copy.localTitle}</h3>
                 <LocalImportSection onRequestClose={onRequestClose} />
               </section>
