@@ -6,80 +6,85 @@
 [![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
 [![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
 
-VUA 是以 Windows 为首要平台、本地优先的 VRChat 桌面生产环境。它把环境部署、授权素材获取、
-Avatar 装配与检测、本地素材管理和可复现生产记录组织为一套连贯工作流。
+> 「Packed up and ready！（整装待发！）」——《红色警戒》MCV 基地车
+
+**VUA（VRC Ultra Assistant）** 是面向 VRChat 玩家的 Windows 桌面生产环境——尤其面向
+没接触过 Unity、甚至还不清楚自己需要什么的玩家。从目标和自有素材出发，由 VUA 引导
+完成环境准备、工程准备、Avatar 装配、检测与恢复。
 
 > [!IMPORTANT]
-> **当前产品版本为 v0.6.0（pre-alpha）；发行说明见 [docs/release/](docs/release/)。**
-> 本仓库提供开发预览与早期试用版本；面向普通玩家的稳定性承诺从 `1.0.0` 开始。
+> **当前状态：v0.6.0（pre-alpha）。** 本仓库发布的是开发者预览版。下列能力已在仓库内
+> 实现并有自动化测试覆盖，但真机端到端验证尚未完成，少数能力还未接入 UI 入口。请把
+> 每条流程都当作早期评估来使用。面向普通玩家的稳定性承诺自 `1.0.0` 开始。
 
-## 产品方向
+## 你可以用 VUA 做什么
 
-VUA 从用户想得到的结果出发。用户选择目标，例如准备环境或用已选素材制作 Avatar；VUA 规划所需
-步骤，通过 Unity Bridge 执行确定性 Unity 操作，验证结果，并保存可复查的 Build Record。
+- **部署环境。** VUA 检查硬件、软件与网络，按你的目标生成安装方案：只为你的头显
+  实际需要的 VR 运行时与驱动、Unity `2022.3.22f1`、VRChat SDK，以及你选用的追踪
+  工具。账号注册与授权始终留在官方页面——VUA 负责引导，绝不替你完成认证。
+- **学习游戏。** 五页内置教程覆盖入门准备、移动与菜单、值得调整的安全设置
+  （`Personal Space`、`Allow Untrusted URLs`、Avatar 显示限制）和你的设备。
+  SteamVR 覆盖教程是 `1.0.0` 之后的目标。
+- **生产 Avatar。** 从仓储挑选素材或导入你拥有的素材，组合成 Recipe，由 VUA 通过
+  确定性的版本化 Bridge 在 Unity 内执行装配——导入顺序、绑定、菜单、参数——每步
+  都有快照与恢复路径。
+- **检测并留存记录。** 每次生产运行都留下一份 Build Record，附检测证据与日志。
+  问题同时出现在通知中心与运行记录里；关掉通知不会让问题消失。
+- **管理项目与包。** 内置包管理器（基于 `vrc-get`）处理 VPM 仓库订阅、包的
+  安装/升级/移除、本地包与新建项目——并与 ALCOM 或官方 VCC 管理的项目保持兼容。
+- **分享 Recipe，而不是文件。** Recipe 是一份可分享的文本声明：BOOTH 素材引用加
+  明确受支持的选项（颜色、开关、位置旋转缩放等）。它不包含付费素材、自定义贴图
+  或网格——复现者通过自己的 BOOTH 权限重新获取素材。
 
-用户选择“终点”，VUA 处理依赖、项目准备、导入顺序、绑定、菜单、优化、验证与恢复等路线。
+## 它如何工作
 
-## 主要模块
+VUA 目标先行：你选目的地，它规划路线。向导按你的目标、设备与当前状态选择路径，
+不要求所有玩家走完同一条大流程。所有 Unity 改动都经过版本化 Unity Bridge——绝不
+用无协议的界面点击代替——有风险的操作必须显式确认，并备有回滚路径。
 
-- **桌面应用**：Electron、React、TypeScript 与 Vite；使用窄化的类型化 Gateway，并隔离远程网页。
-- **Kernel 与应用宿主**：小型 Node.js Kernel 负责启动、桌面安全、Gateway 与 Orchestrator Provider
-  生命周期；React UI 构成受控表现层。
-- **环境与项目管理**：检测并引导配置 VR、Unity、VRChat 及相关工具；提供基于 `vrc-get` 的 VUA
-  包管理器，并兼容 ALCOM 和 VCC 管理的项目。VPM 包管理设置（`settings.json` 的仓库订阅与
-  本地包注册表面）与 VCC/ALCOM 共享同一份设置文件，详见[产品边界](docs/product-boundary.md)。
-- **Orchestrator**：Rust 应用核心，负责计划、批准、持久任务、取消、恢复、适配器和 Build Record，
-  通过可替换的版本化 Provider 边界接入 Kernel。
-- **Avatar MegaFactory（AMF）**：Recipe-first 的生产流程，完整覆盖 Warehouse、Recipe、
-  Assembly、Inspection、Release 五个阶段。不再要求所有玩家走完一条固定大流程——生产
-  Wizard 按目标、设备与当前状态选路径，检测收进制作记录（运行记录＋通知中心）。系
-  2026-09-22 产品裁决的已接受方向，尚未实现。
-- **BDL（Booth Database Local）**：AMF 私有的本地模块，管理目录、来源、协议、兼容性、搜索和
-  Warehouse 映射元数据。
-- **Unity Bridge**：面向全球版 Unity `2022.3.22f1` 执行确定性操作的版本化协议；历史项目通过
-  已定义的迁移路径接入。
-- **桌面与 VR Overlay**：基于稳定应用服务提供状态与引导；VR Overlay 为 `1.0.0` 后方向锚。
-- **插件协议**：计划中的能力声明式扩展边界；首轮交付覆盖协议与宿主安全模型，市场治理由后续
-  发行决议安排。
+底层结构：Electron 桌面壳、走窄类型化 Gateway 的 React 界面、拥有用例/持久任务/
+恢复的 Rust Orchestrator。详见[架构文档](docs/architecture/system.md)。
 
-SlimeVR Server、VRCFaceTracking 等运行时集成从 `1.0.0` 发布后开始实施。
+## VUA、AMF 与 BDL
 
-## 架构边界
+| 名称 | 定义 |
+| --- | --- |
+| **VUA** | Windows 桌面客户端本体——本仓库 |
+| **AMF**（Avatar MegaFactory） | VUA 的生产域：Warehouse 仓储、Recipe 配方、Assembly 装配、Inspection 检测、Release 出厂 |
+| **BDL**（Booth Database Local） | AMF 私有的本地目录：素材、来源与兼容性记录——在你的磁盘上，不是云服务 |
 
-```text
-React View
-  -> 类型化前端 Feature / Gateway
-  -> Electron Preload 与 Main 适配器
-  -> 版本化应用契约
-  -> Orchestrator 用例
-  -> 领域端口
-  -> 本地或第三方适配器
-```
+## 安全边界
 
-View 统一通过类型化 Gateway 使用本地能力。远程网页运行在只具备 Web 权限的隔离 Session 中。
-AMF 独占 BDL 能力入口；确定性的 Unity 修改统一经过 Unity Bridge。
+- 付费素材只在你的电脑上处理，绝不上传到任何服务器、仓库或诊断链路。
+- VUA 不收集 VRChat、BOOTH 或 Unity 的密码、Cookie 与两步验证码，不绕过购买、
+  支付、年龄、认证或访问控制。
+- VUA 不注入、不修改 VRChat 客户端。登录与最终上传留在 VRChat 官方流程——上传
+  按钮由你在官方 SDK 中按下。
+- 分享的 Recipe 只含结构、来源引用与设置。
+- 技术检查报告事实而非品味：它不能保证 Avatar 的外观与行为符合你的预期。
 
-## 安全与分发边界
+## VUA 的方向
 
-- 平台购买、付费、身份、年龄、认证与访问控制保持权威。
-- BOOTH 会话、订单、下载、付费素材与生产状态保留在用户设备。
-- 仓库与云端 CI 测试使用结构具有代表性、但不含真实商品或用户内容的合成数据；本地只读兼容性
-  测试可以访问公开 BOOTH 页面。
-- 开发者可以在本地使用自己合法取得的素材验证 Unity 工作流；付费素材、用户项目、凭据、网页
-  捕获内容、生产数据和私人日志均保留在本地。
-- 每个第三方二进制在随包分发前都必须单独审查许可证、再分发、更新、签名与 NOTICE 要求。
+- `1.0.0`：面向普通玩家的稳定性承诺，以完整流程的真机验收为门槛。
+- `1.0.0` 之后：SteamVR 覆盖教程、运行时集成（SlimeVR、VRCFaceTracking）与插件
+  生态——各自以独立的安全裁决为前提。
+- 已接受但未实现的方向：向导路径选择、Recipe 叠加语义与显式冲突选项、分享时再
+  补来源、检测完全收进制作记录。默认关闭的实验性兼容性取证可能随后到来；无论
+  开关与否，BDL 的本地存储都不受影响。
+- 独立轻量 UI（egui/Slint）无限期延后；Electron 资源节约模式保留。
 
-## 文档与贡献
+## 文档
 
-- [Developer documentation — English](docs/README.md)
-- [开发文档 — 简体中文](docs/README.md)
-- [Versioning policy — English](docs/release/versioning.md)
-- [版本政策 — 简体中文](docs/release/versioning.md)
-- [Contributing — English](CONTRIBUTING.md)
-- [贡献指南 — 简体中文](CONTRIBUTING.md)
+- [文档指南](docs/README.md)——每项任务的最小阅读路径
+- [产品边界](docs/product-boundary.md)
+- [系统架构](docs/architecture/system.md)
+- [v0.6.0 发行说明](docs/release/v0.6.0.md)
+- [贡献指南](CONTRIBUTING.md) · [安全策略](SECURITY.md)
 
-本仓库采用 [Apache License 2.0](LICENSE)。另见 [NOTICE](NOTICE)、[商标说明](TRADEMARKS.md)和
-[第三方声明](THIRD_PARTY_NOTICES.md)。
-产品发行遵循 Semantic Versioning 2.0.0；版本化协议和 Schema 仍保留独立兼容版本。
+## 许可证
+
+本仓库采用 [Apache License 2.0](LICENSE)。另见 [NOTICE](NOTICE)、
+[商标指引](TRADEMARKS.md) 与[第三方声明](THIRD_PARTY_NOTICES.md)。产品版本遵循
+Semantic Versioning 2.0.0；版本化协议与 Schema 保留各自独立的兼容性版本。
 
 Copyright 2026 Aran52.
