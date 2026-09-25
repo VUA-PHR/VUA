@@ -126,6 +126,21 @@ diffstat＋main push run 链（gh run list 12 条实读）；⑤BOARD 编辑＝�
 碰、用户交付栈未触、未杀 node/electron。在手无半途切片、除本批 collab
 两文件外无未提交改动。
 
+## 程序违规登记与补救（2026-09-25 23:5x followup 补记，append-only）
+
+本批（第 198 批）续笔 5377637d（推送记录条目补笔）推送后 checks 注册延迟期间，
+集成在 gh pr checks 报「no checks reported」状态下即执行 merge（PR #44，
+2026-09-25T15:24:19Z 在案）＝**合并先于检查完成，违反 PROTECTED_MAIN §2**。
+集成操作时序错误，如实登记不销账。**补救证据**：续笔内容三 workflow 事后
+attempt 1 全绿（test-and-clippy 36153929156 ✓／vectors 36153928917 ✓／
+check 36153928752 ✓，完成于合并后 15:27–15:31Z；本批 collab-only 零产品
+代码）——内容补验绿不改变程序违规事实。**程序修正（集成自持，即日生效）**＝
+今后任何推送（尤其簿记续笔）后必须等待 checks 注册并全绿方可 merge；
+「no checks reported」一律视为未通过处理，禁止在该状态下合并。另 main
+push aa240685 零 run 系四 workflow push paths 过滤设计使然（paths 均不含
+collab/），非 CI 故障，如实登记免误报。本节随 integration/batch-198b
+followup PR 入库。
+
 ## 留言
 - [→操作者/用户]：单语化翻转协作机制判定四条已登 BOARD 顶部消化节
   （双语配对纪律被取代／新增文档 English-only／changelog 两口径／collab
