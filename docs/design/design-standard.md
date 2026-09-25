@@ -1,10 +1,10 @@
-# VUA design standard v0.7.20
+# VUA design standard v0.7.21
 
 
-> Document version: 0.7.20
+> Document version: 0.7.21
 > Status: Accepted
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
-> Updated: 2026-09-23
+> Updated: 2026-09-25
 > Normative effect: Governs interaction, visual, and accessibility implementation;
 > does not expand product scope or replace versioned application contracts
 
@@ -14,9 +14,9 @@ v0.6.1 combines UI/UX and visual-art direction into one normative source.
 
 | Treatment | Content |
 | --- | --- |
-| Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, fixed five-tab shell, command-center composition, slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL three-scene direction, Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
+| Retain | goal before terminology, Recipe-first, explicit state, recovery first, honest progress, user-content priority, dark-first, VUA purple/AMF orange jurisdictions, 4 px grid, semantic tokens, workshop-track metaphor, fixed five-tab shell, command-center composition, slanted tab language, transparent overflow flyout, sidebar growth impression, three motion levels, WebGL scene direction (the nebula backdrop scene retired by the 2026-09-25 user ruling; see §7), Recipe graph/list/exploded views, Release coverflow and 3D pedestal, community-skin direction, WCAG 2.2 AA and APG gates |
 | Standardize | Windows and Fluent 2 desktop behavior; macOS native-tool texture as a visual reference; Carbon as information-structure reference only; global success/warning/error colors while reserving large traffic-light treatments for environment deployment; tokenized motion; transform-only sidebar growth; Electron mechanism + AMF use case for browsing/download; the five AMF stages kept as the full capability coverage (since 0.7.19 a wizard selects the path by goal/device/state — see Recipe-first) |
-| Replace | framework-private Tauri window/IPC semantics, BDB contracts, a separate Production stage, globally disabled context menus, font-size or padding reflow on hover, deceptive progress floors, paid font or icon assumptions |
+| Replace | framework-private Tauri window/IPC semantics, BDB contracts, a separate Production stage, globally disabled context menus, font-size or padding reflow on hover (superseded for the sidebar shell only by the 2026-09-25 user ruling: the idle sidebar rests as small type and hover/focus-within activates it — see §3), deceptive progress floors, paid font or icon assumptions |
 | Schedule separately | Visual direction remains part of v0.6.1. Delivery sequencing, performance gates, and fallback acceptance are reviewed independently from the design decision. |
 
 ## 1. Experience position
@@ -27,7 +27,8 @@ high-saturation cyber dashboard or an Office-style management application.
 
 The visual system has four layers: predictable Windows desktop behavior; compact spacing, restrained
 translucency, precise typography, and quiet surface hierarchy inspired by macOS native tools; a
-near-black purple workshop atmosphere with restrained purple/orange ambient light, degradable WebGL,
+near-black purple workshop atmosphere with restrained purple/orange accent light (baseline ambient
+glow retired by the 2026-09-25 user ruling; the grid texture is retained), degradable WebGL,
 and limited glass; and task narrative such as tracks and real task events only when they explain real
 work. The macOS reference does not change Windows behavior. Atmosphere never carries the only
 information. Disabling blur, glow, WebGL, and motion must preserve hierarchy and operation.
@@ -81,14 +82,25 @@ module count alone does not silently rewrite it.
 
 Primary tabs retain the original slanted language: the visual shell uses `skewX(-12deg)` while the
 label is counter-skewed, and selected or pressed states read as physical engagement. The responsive
-ladder is full labels, compact labels, then a transparent overflow flyout that carries the original
-tab controls rather than replacing them with an unrelated menu style. The flyout still follows APG
-keyboard behavior, exposes focus visibly, and becomes static when reduced motion is requested.
+ladder is two levels since the 2026-09-25 user ruling — full labels, then a transparent overflow
+flyout that carries the original tab controls rather than replacing them with an unrelated menu
+style (the former compact-label middle level retired together with the topbar brand subtitle). The
+flyout still follows APG keyboard behavior, exposes focus visibly, and becomes static when reduced
+motion is requested.
+
+A resource reading sits in the topbar left of Settings (the 2026-09-25 user ruling): it shows the
+higher of the RAM/VRAM usage percentages, and a click opens a small detail panel anchored top-right
+with per-resource bars, byte figures, and the sample time. VRAM collection unavailability presents
+honestly as "unavailable" and the reading degrades to RAM-only — never a guessed value. When the
+host surface is absent the whole indicator is absent.
 
 The current area's index remains at the left; an available task center remains at the bottom; and
 content scrolls in its own container. Sidebar items retain the original visual impression of growing
-and shifting toward the user, implemented with transform and a stable layout slot. Font size and
-padding remain fixed during hover and selection so adjacent items never move.
+and shifting toward the user, implemented with transform and a stable layout slot. Since the
+2026-09-25 user ruling the sidebar rests as gradient glass without a hard border with its items
+vertically centered; idle items render as small type, and pointer entry or keyboard focus-within
+activates the sidebar (type grows and the glass layer animates wider). This activation reflow is
+scoped to the sidebar shell and supersedes the general fixed-type-during-hover rule for it.
 
 Custom title bars retain Windows drag, maximize, system-menu, scaling, and control expectations.
 Remote pages visibly identify origin and security boundary and never imitate a local form.
@@ -218,9 +230,12 @@ Default staged easing is `cubic-bezier(0.2, 0.9, 0.25, 1)`. Motion uses opacity/
 Reduced motion removes translation, scale, parallax, and loops, leaving at most 120 ms opacity.
 `data-effects="off"` disables decorative motion, glow, blur, and optional canvas effects without
 changing function. Infinite motion is reserved for real active state/loading, restrained breathing,
-and low-frame mascots and pauses offscreen/unfocused/inactive. Three WebGL scenes are part of the
-v0.6.1 visual direction: a nebula canvas for the dark application background, a holographic core for
-the Command Center, and a three-dimensional pedestal for Release. Each scene provides
+and low-frame mascots and pauses offscreen/unfocused/inactive. Two WebGL scenes remain since the
+2026-09-25 user ruling: a holographic core for the Command Center, and a three-dimensional pedestal
+for Release; the nebula canvas that formed the dark application background is retired from the
+baseline together with the aurora glow tokens (the grid texture is kept), and the resource saver
+governs the remaining heavy display features — 3D previews (release turntable, hub core), motion,
+glow, and glass blur, with `data-effects="off"` also stripping backdrop-filter globally. Each scene provides
 off/static/animated tiers, a CSS fallback, context-loss recovery, a measured performance budget, and
 offscreen/unfocused pause behavior. Light, forced-colors, resource-saving, and reduced-motion modes
 follow the same degradation chain. Pointer tilt and spotlight are animated-tier card enhancements;
@@ -605,8 +620,10 @@ A page is deliverable only when:
 7. high-impact work shows scope and recovery;
 8. fixtures do not enter production;
 9. 960×600, maximized, 125%/150% DPI, and long Chinese/Japanese/English strings retain key actions;
-10. the fixed five tabs, three-step responsive ladder, slanted controls, and transparent overflow
-    flyout pass mouse, keyboard, scaling, and reduced-motion checks; sidebar growth moves no neighbor;
+10. the fixed five tabs, two-level responsive ladder (2026-09-25), slanted controls, and transparent
+    overflow flyout pass mouse, keyboard, scaling, and reduced-motion checks; sidebar growth moves no
+    neighbor (transform-only; the 2026-09-25 idle-small-type/activation ruling governs the sidebar's
+    idle and hover/focus-within type sizes);
 11. each WebGL scene passes animated/static/off, CSS fallback, context-loss, focus pause, and measured
     performance checks; no wall-to-wall blur, continuous parallax, or layout reflow motion appears;
 12. Recipe's three views and Release coverflow/pedestal retain complete degradation paths;
@@ -617,7 +634,7 @@ A page is deliverable only when:
 The accepted scope covers the base character, two jurisdictions, tokens, component states, fixed five tabs,
 slanted controls and overflow flyout, sidebar growth impression, task feedback, the five AMF stages as full
 capability coverage (presentation per the 0.7.19 user ruling: wizard-selected paths, inspection folded into
-production records), three WebGL scenes, Recipe's three views, Release coverflow/pedestal, community-skin
+production records), the WebGL scene direction (the nebula backdrop retired by the 2026-09-25 ruling), Recipe's three views, Release coverflow/pedestal, community-skin
 direction, module metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page
 layout after validation.
 
@@ -626,6 +643,22 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.21 (2026-09-25)**: the 2026-09-25 user ruling (five topbar/sidebar UX rulings, landed as
+  commit cae84388) consumed — §3 the responsive ladder is two levels (full labels → transparent
+  overflow flyout; the compact-label middle level retired with the topbar brand subtitle "VRC Ultra
+  Assistant") and the default window is 1440×900; §3 the topbar gains the resource reading left of
+  Settings (higher of RAM/VRAM, click opens the top-right detail panel, VRAM unavailability presents
+  honestly as unavailable and degrades to RAM-only, absent host = absent indicator); §3 the sidebar
+  rests as gradient glass without a hard border, items vertically centered, idle = small type,
+  hover/focus-within activation (type grows, glass layer animates wider — scoped supersession of the
+  fixed-type-during-hover rule, §0 Replace annotated); §1/§7 baseline ambient glow retired (aurora
+  tokens baseline none, grid retained) and the WebGL scene set drops the nebula backdrop (§0 Retain
+  and §11 annotated); §7 the resource saver governs the heavy display features — 3D previews
+  (release turntable, hub core), motion, glow, and glass blur — with `data-effects="off"` stripping
+  backdrop-filter globally; §10.10 acceptance bar moved to the two-level ladder. Consumed from the
+  shipped implementation by the desktop seat's reverse review (wt-3 batch 182); zero wire or
+  contract-face change.
 
 - **0.7.20 (2026-09-23)**: governance-compliance maintenance — the §12 changelog is trimmed to
   the most recent 10 entries per governance rule 2.2 (0.7.10 and earlier moved out; consult git

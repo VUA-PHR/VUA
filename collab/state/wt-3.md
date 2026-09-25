@@ -1,125 +1,114 @@
 ---
 worktree: wt-3
 branch: slot/wt-3
-baseline_commit: 36bee197
+baseline_commit: c6413d40
 role: 桌面
-updated: 2026-09-25
+updated: 2026-09-26
 ---
 ## 当前焦点
-**第 181 批桌面域自我反向审查批(2026-09-25 00:0x,夜间工作时段 date 00:08
-实测;基线 36bee197 轮首 ff-only 追平集成第 190 批 PR #27 合并尖,落后
-0)＝操作者第 191 拍派定:按 v1.8 空队列条款对第 148 批后新落地桌面域
-代码面做反向审查(先例第 148/179/180 批),猎五缺陷族。审查结论＝一实
-锤缺陷(族②/#36 旁支成员)域内修复＋smoke 回归钉,其余审查面如实零发
-现;全量 TS 门禁亲测全绿;零 wire/契约面变化;真机端到端未宣称。**
+**第 182 批退回修复批(2026-09-26 00:2x–00:4x,夜间工作时段 date 00:27
+实测)＝操作者第 201 拍派定,响应集成第 200 批验收退回(must-fix 两件
+＋建议两件裁量)。轮首合并 main c6413d40 进 slot/wt-3(slot 有第 182
+批两笔被退回提交,无法 ff,分叉合并 9eb5dfa0;PR #45 用户侧产品代码
+随之入库)。must-fix ①＝跑具失败路径 exit 0 假绿已修:根因＝
+window.destroy() 后 await server?.close() 永不 settle,事件循环排空
+进程零码退出,app.exit(1) 永不到达;修法＝关停顺序重排(先关 server,
+窗口仍在、事件循环健康)＋5s 超时竞速兜底＋app.exit 保证退出码到达;
+红轮回摆自证 exit 1(硬标准达成,CDP 4→7 与集成两次复现一致)。
+must-fix ②＝申报勘误两处(见勘误节)。建议两件裁量采纳＝红轮也落证
+据 JSON＋夹具双计收敛。合并后基线门禁复跑全绿。**
 
-- **审查对象与五族结论(逐面如实登记)**:
-  - **对象 A 导入弹窗面(import-model.ts＋ImportPage.tsx)**——
-    受理自动关定时器(schedule 内先 cancel 重入安全/触发后自清/cleanup
-    幂等)与两处 effect(依赖 [importFeedback]/[feedback]、autoCloseArmed
-    仅受理态武装、卸载清理)复核干净;narrowCompletedDownloads 信封三键
-    ＋行六键闭集、任一行形态不齐整份 null(不渲染半可信清单)落地正确;
-    busy 永真疑点(importFolders/importDownloads 链无 .catch)经实读排
-    除——client 层 createGatewayClient.invoke try/catch 全覆盖永不
-    reject＋Main 侧 routeDesktopGatewayInvoke catch 折错进 internal 信
-    封,transport reject 在可信渲染器路径不可达,不虚构缺陷;signInHint
-    探测 Main 侧 try/catch 全覆盖恒 resolve 三态,无 unhandled 路径。
-  - **对象 B 交棒准入＋独立打开动作(release 域)**——六态闭集投影
-    ADMISSION_TABLE 系 Record 完备性(contracts 扩员即编译错),词表外/
-    缺记录一律 unconfirmed 不猜测;handoffIntentErrorText 准入闸两码先
-    行对表、state 缺参退回原码词面不输出半句;两 live 端口收窄逐键核验
-    ＋unavailable 缺席语义;两面板轮询生命周期干净(alive 守卫＋timer 清
-    理＋读取失败保持上一视图续轮询);empty/fixture 装配恒缺席不伪造受
-    理。零发现。
-  - **对象 C 配方中枢 A 面三切片**——selection(链身份只取 recipe.get
-    回执身份,同身份幂等/异身份新链让位);编辑链(recipeDocumentEdit
-    State 底稿透明合并/身份幂等双层守卫/submittedAdditions 在途编辑不
-    冒充已保存);导出草稿消费(草稿六事实键 verbatim/锁定钉定只呈现不
-    入文档/守卫三件与搭配草稿同一函数);三条保存链 busyRef 释放路径
-    (失败/空保存/确认框取消/守卫未过)逐路核实闭环,D5 查重命中确认框
-    busy 持有至确认/取消与注释一致。零发现。
-  - **对象 D WarehouseEntrySelector**——仓储读面纯投影(条目级搜索,
-    添加幂等双层守卫在编辑模型);AcquireView 联合仅 not-connected|
-    entries 两态,TS 穷尽性保证未处理分支不存在。零发现。
-  - **族④ 词面四语键位**——check:i18n＋check:i18n-tables 双过(四语表
-    对齐＋零汉字硬编码);本批零词面新增。绿。
-  - **族⑤ 弹窗层叠/滞留盘点**——modal-layer 层级栈(parent 链 depth
-    排序/inert 遍历放行 top 层 overlay＋portals/嵌套模态递归放行内层
-    子树/Esc 恰关 top/焦点圈与 focusin 越层拉回/卸载清理含焦点还原守
-    卫)复核扎实;全仓库弹窗宿主盘点(ContentDialog ×4＋ConfirmDialog
-    ×4)均有完整关闭线(×/Esc/背板),ImportPage 受理自动关仍是唯一
-    「受理后应关」形态且已在位,导出/搭配/素材选择弹窗系编辑型显式关
-    闭无滞留形态。无新成员。
-- **发现一(实锤,族②/#36 族旁支成员)＝CompletedDownloadsPanel 无宿
-  主 loading 永真,已修**——原实现 `void window.vua?.gateway
-  .invoke(...).then(...)`:window.vua 缺席(浏览器 dev 等无壳环境)时
-  可选链整条短路,连 .then 都不执行,state 恒悬挂 loading(「正在加载
-  已完成下载…」假陈述,读面不可达未被如实呈现)——违反诚实律第 2 条
-  (失败/不可用呈现为进行中)。同文件其它段走 useGateway 装配层获得
-  empty 端口诚实降级,唯此面板绕过装配层直探 window.vua 且无降级臂,
-  同页形状分裂。修法＝同配方库列表先例(RecipePage :587 `!result?.ok
-  → unavailable`):`window.vua?.gateway` 缺席时同步 setState
-  unavailable,不进入 loading;有宿主路径逐字节保持。零词面新增
-  (unavailable 词面既有),零契约面变化。
-- **回归钉(真机 DOM smoke)**——smoke:import-dialog 夹具桩补
-  `capabilities:{remoteBrowser:true}`(云端段入口可达;gateway 宿主刻
-  意缺席即无宿主形态),新场景 cloudDownloadsWithoutHostHonestUnavail
-  able:进云端段断言 unavailable 词面在场＋downloadsLoading 词面不在
-  场＋场景收尾弹窗已关;修复前该场景 loading 假陈述在场必红。smoke
-  **36/36**(32 基线＋4 新检查,00:0x 实测);既有 7 场景零放松。
+- **申报勘误(诚实纪律,勘正第 182 批状态批两处失实申报)**:
+  - ①「修复前跑具 exit 1」**失实**——实况失败路径 exit 0(集成第
+    200 批三次取证:管道/tail 遮蔽排除后直跑 electron 二进制同 0,
+    注入诊断定位根因;本席原申报中「红前 7/4」等 CDP 实数本身真实,
+    失实仅在退出码一句)。
+  - ②「50/50」**失实**——实况唯一断言 29＝21 行为＋1 CDP＋7 失败
+    面;evidence JSON 23–43 号系 1–21 号双计(夹具 results 数组同一
+    引用被 base()/failureFaces() 两次返回;执行各仅一次、断言零弱
+    化、红绿判定不受影响,系计数口径伪影)。
+- **本轮交付(实现批恰 2 文件,全在本席所有权域 apps/desktop/scripts)**:
+  - smoke-resource-monitor.mjs:失败/成功臂统一 shutdown(exitCode)
+    ——同步落证据(红绿两轮都落;失败证据 status:"failed"＋error＋
+    已过断言,覆盖同名文件,消除 tmp 残留上一轮绿 JSON 被误引的陷阱)
+    → 先关 server(窗口仍在,close 可正常 settle;5s 超时竞速兜底防
+    挂)→ 再销毁窗口 → app.exit(exitCode) 保证退出码到达;头部注释
+    登记根因与「顺序不可重排回 destroy 在前」教训。
+  - fixtures/resource-monitor-popover.tsx:base()/failureFaces() 各
+    返回本阶段快照(results.slice(start)),双计收敛;跑具 evidence
+    unique 29/29 实测。
+  - 零 src/ 生产代码触碰、零 wire/契约面、零 crates 触碰。
+- **证据链(合并后基线 9eb5dfa0;红轮自证系验收硬标准)**:
+  - 绿轮:exit 0;evidence status=passed,passed 29＝unique 29,CDP
+    blur 监听循环前 0/循环后 0。
+  - 红轮(回摆法:git show cae84388 覆盖组件,验后 git checkout 恢复,
+    src/ 零残留 git status 为凭):**exit 1**——app.exit(1) 到达的
+    自证(事件循环排空只会 exit 0);evidence status=failed,error＝
+    CDP 钉失败名(循环前 4 循环后 7,每轮恰＋1,与集成第 200 批两次
+    复现一致),行为面 21 条先过。修复前同场景 exit 0 假绿(集成取
+    证)vs 修复后红轮 exit 1,跑具检测力闭合。
+- **门禁读数(合并后基线 9eb5dfa0,如实)**:typecheck 双 tsconfig
+  exit 0;vitest **943/943**(101 文件;较第 182 批 926 增 17 系
+  PR #45 用户侧带入 folder-picker 等新测试,非本批变化);
+  smoke:resource-monitor 绿轮 exit 0(29/29 唯一)＋红轮 exit 1;
+  check:boundary OK;check:leak 155 指纹生产构建零泄漏。i18n/contrast
+  等门禁消费面本批零触碰未复跑(第 182 批读数在案;本批触碰面仅
+  scripts 两文件)。cargo 免跑(零 crates 触碰;VUA-7/VUA-8 零触碰)。
+- **登记照抄(集成第 200 批登记,本批不动)**:
+  - smoke 家族同款「destroy→await close→app.exit」exit 模式:集成
+    实核 smoke-import-dialog(:34/:36)等其余 6 文件(家族特徵推定同、
+    未逐一实测)——候桌面座后续批量硬化候选,本批不折入。
+  - v0.7.21 两非阻塞观察维持:①默认窗 1440×900 仅载 §12 条目行、
+    §3 正文无窗体尺寸语句(候落正文);②「两 WebGL 场景」句经用户侧
+    PR #45(删 holo-core.ts)再现文档-实现漂移,非本批引入,候用户裁
+    决或后续批处理。
 
 ## 前情(本域链,全文见本文件 git 历史与 BOARD 前录)
-第 180 批(09-24 07:4x)＝桌面勘误＋核对批(注释批号订正 7 处/词面键形
-核对两键系刻意设计零改码/旧留言甄别),已经集成第 189 批(PR #24)验收
-入库。第 179 批＝桌面域自我反向审查批(三发现:受理自动关用户接管边
-界/下载清单加载态词面/计时器绑定解耦),经集成第 185 批入库。
-
-## 本轮交付(36bee197 基线世代)
-- **实现批＝恰 2 文件全在本席所有权域 apps/desktop**:
-  features/import/ImportPage.tsx(CompletedDownloadsPanel effect 无宿
-  主降级臂,一处)＋scripts/fixtures/import-dialog-modal.tsx(桩
-  capabilities 一处＋新场景一函数＋run 序一行)。零 crates/ docs/
-  schemas/ packages/ 触碰(diff 复核空)。
-- **门禁读数(如实,全量 TS 门禁亲测)**:typecheck 双 tsconfig exit 0;
-  vitest **913/913**(97 文件,基线 913 零增零减——本批回归钉在 smoke
-  层,纯件测试面无新纯函数);smoke:import-dialog **36/36** 真机
-  Chromium DOM(32 基线＋4 新检查);check:boundary OK(Gateway 引用全
-  经 barrel);check:leak **155 指纹生产构建零泄漏**;check:i18n＋
-  check:i18n-tables OK;check:contrast OK;check:forest-leak OK;
-  build 非 cargo 段成功(271 modules)。cargo 段照轻负载拍纪律免跑
-  (零 crates 触碰 diff 复核为凭;用户交付栈在跑勿扰)。
+第 182 批(09-25 23:0x)＝用户侧 UX 代码反向审查批(cae84388 五裁决第
+一双审查眼):族⑤一实锤(ResourceMonitor blur 监听引用失配泄漏)域内
+修复＋CDP 回归钉＋设计标准 v0.7.21 消费五裁决;经集成第 200 批验收
+退回——实质面全成立(泄漏修复对称性/CDP 钉检测力/红前 4→7 两次复
+现/v0.7.21 五裁决对表/REGISTRY 已备),但跑具失败路径实测 exit 0 且
+本席申报「exit 1」「50/50」两处失实,不降标退回,即本批修复对象。
+第 181 批＝桌面域自我反向审查批;第 180 批＝勘误＋核对批。
 
 ## 在途/待他角色
-- **[等集成] 本拍候验收**,写明「wt-3 第 181 批桌面域自我反向审查批
-  (基线 36bee197)」。重点复核面:①发现一证据链(可选链短路语义/同页
-  装配层对照/RecipePage 先例同构);②smoke 新场景的修复前必红性(桩无
-  gateway＋capabilities 可达即无宿主形态);③其余审查面零发现登记的
-  采信(对象 A busy 永真疑点的双层 reject 不可达论证)。
-- **[知会 wt-2/核心] 无**——本批零跨域发现;v0.5 dependencies 窄端口
-  (dependencies-port.ts)审毕零发现:行收不齐整份 absent 系第 172 批
-  登记过的刻意设计(缺席臂控制不渲染,集成第 170/171/172 批读数在案),
-  本席维持该裁决不翻案。
+- **[等集成] 本拍候再验收**,写明「wt-3 第 182 批退回修复批(基线
+  c6413d40,合并尖 9eb5dfa0)」。重点复核面:①红轮自证 exit≠0(回摆
+  法＋CDP 4→7＋evidence status=failed)与绿轮 exit 0(29/29 唯一);
+  ②勘误两处落字与本批读数一致性;③smoke 家族 7 文件与 v0.7.21 两
+  观察维持登记未动;④候选组装 integration/batch-200(merge f90b5ea5
+  ＋REGISTRY 5e18dfc8)候集成重组装落地。
+- **[知会] 无**——本批零跨域发现。
 
 ## 阻塞
 - 无阻塞。既有 [需用户] 项(挂死再发取证协作/95MB 重复入库条目清理)
   维持候裁,本批不代决。
 
 ## 下次合并意图
-**候验收对象＝本拍两笔(实现批＋本状态批),写明「wt-3 第 181 批桌面
-域自我反向审查批(基线 36bee197)」**。实现批恰 2 文件在本席域内;状态
-批系 collab;零契约面变化(packages/contracts 零触碰);cargo 免跑(轻
-负载纪律＋域外零触碰 diff 复核)。
+**候验收对象＝本拍两笔(实现批＋状态批),写明「wt-3 第 182 批退回
+修复批(基线 c6413d40,合并尖 9eb5dfa0)」**。实现批恰 2 文件在
+apps/desktop/scripts;状态批系 collab;零契约面变化(packages/
+contracts 零触碰);cargo 免跑(零 crates 触碰 diff 复核)。
 
 ## 待命声明(第 6 步,如实)
-本轮(2026-09-25 00:0x,夜间工作时段,date 00:08 实测):①轮首 ff-only
-追平 main 36bee197(落后 0);跑 pnpm collab:brief,①区 wt-7/wt-8 两条
-均系知会非阻塞,失鲜工作树无;②按操作者第 191 拍派定执行空队列自我
-反向审查:四对象五族逐面实读(证据链见当前焦点),一实锤缺陷域内修复
-＋smoke 回归钉,其余如实零发现;③全量 TS 门禁亲测全绿(读数见门禁
-节),cargo 免跑如实申报;④状态批＋提交＋验收请求留言。在手无半途切
-片、除本批外无未提交改动。完成后推送并退出待命,候集成验收本拍两笔。
+本轮(2026-09-26 00:2x–00:4x,夜间工作时段,date 00:27 实测):①轮首
+pnpm collab:brief(①区 wt-7/wt-8 知会非阻塞,wt-8 R4–R6 落地知会,
+失鲜工作树无)＋读本状态文件;fetch 核对发现 slot 与 main 分叉
+(main 领先 14 笔含 PR #45 用户侧产品代码与集成退回簿记),merge
+main 进 slot/wt-3(9eb5dfa0)追平;②响应第 201 拍执行退回修复:跑具
+关停顺序重排＋超时竞速＋app.exit 退出码保证＋红轮落证据,夹具双计
+收敛;③红轮回摆自证 exit 1(合并前基线一次＋合并后基线复证一次,
+CDP 4→7 均与集成复现一致)、绿轮 exit 0(合并后基线终证);④合并后
+基线门禁复跑全绿(读数见门禁节);⑤状态批勘误＋提交推送候再验收。
+在手无半途切片、除本批外无未提交改动。完成后推送并退出待命,候集
+成再验收本拍两笔。
 
 ## 留言
-- [→集成] 验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 181 批桌面
-  域自我反向审查批(基线 36bee197)」**,重点复核面见「在途/待他角色」。
+- [→集成] 再验收请求:**候验收对象＝本拍两笔,写明「wt-3 第 182 批
+  退回修复批(基线 c6413d40,合并尖 9eb5dfa0)」**,重点复核面见「在
+  途/待他角色」。红轮自证证据:回摆 cae84388 组件→exit 1＋evidence
+  status=failed(CDP 4→7);恢复→绿轮 exit 0(29/29 唯一,CDP 0/0);
+  修复前同场景 exit 0 假绿已由本批关闭。顺手项:候选组装
+  integration/batch-200 可随本批修复重组装。
 - (回执不回执:在途事项以 BOARD 与本状态文件当前焦点为准。)
