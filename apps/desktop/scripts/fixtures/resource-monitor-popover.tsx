@@ -187,21 +187,26 @@ async function firstPollFailureHonestAbsence() {
   usageMode = "full";
 }
 
+// base/failureFaces 各返回「本阶段新增」快照:results 系模块级累计数组,
+// 直接返回同一引用会让跑具把 base 阶段断言双计(集成第 200 批勘误:
+// 「50」系计数伪影,唯一断言 29=21 行为+1 CDP+7 失败面)。
 window.resourceMonitorSmoke = {
   base: async () => {
+    const start = results.length;
     root.render(<Harness />);
     await wait();
     await hostAbsentHonestAbsence();
     await indicatorAndPanelFullFace();
     await closePaths();
-    return results;
+    return results.slice(start);
   },
   lifecycleCycles,
   failureFaces: async () => {
+    const start = results.length;
     await vramUnavailableHonestFace();
     await singlePollFailureRetainsFrame();
     await firstPollFailureHonestAbsence();
-    return results;
+    return results.slice(start);
   },
   run: async () => {
     const base = await window.resourceMonitorSmoke.base();
