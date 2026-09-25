@@ -152,6 +152,16 @@ demoTaskTitle: "演示任务",
     waitingServices: "正在等待本地服务就绪…",
     updateAvailable: "发现新版本 {version}",
   },
+  /** 顶栏占用查看器(2026-09-25 用户裁决):读数 = RAM/VRAM 取高 */
+  resourceMonitor: {
+    indicatorAria: "系统资源占用 {percent}%,点击查看详情",
+    title: "系统资源",
+    ram: "内存 (RAM)",
+    vram: "显存 (VRAM)",
+    vramUnavailable: "不可用(采集未接入)",
+    sampledAt: "采样于 {time}",
+    closeAria: "关闭资源详情",
+  },
   nav: {
     tabs: {
       home: "指挥台",
@@ -2194,10 +2204,11 @@ rolled_back: "已回滚",
       hcAria: "高对比度模式",
       hcAuto: "跟随系统",
       hcOn: "始终开启",
-      /** 资源节约模式(S-VFX-5 落地:手动 + SteamVR 自动偏好,issue #27) */
+      /** 资源节约模式(S-VFX-5 落地:手动 + SteamVR 自动偏好,issue #27;
+       *  2026-09-25 起基线界面已无背景光效,开关管辖重负载展示) */
       saverHeading: "资源节约模式",
       saverDescription:
-        "关闭全部界面动效、光效与 3D 背景,在你游玩 VR 时节约系统资源;界面功能与状态提示不受影响。",
+        "关闭 3D 展示(出厂转盘预览、指挥台立体核心)、界面动效、光效与毛玻璃等重负载显示效果,在你游玩 VR 时节约系统资源;界面功能与状态提示不受影响。",
       saverTurnOn: "打开资源节约模式",
       saverTurnOff: "关闭资源节约模式",
       saverStateOff: "当前:已关闭",

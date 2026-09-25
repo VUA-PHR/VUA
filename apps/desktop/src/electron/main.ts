@@ -41,6 +41,7 @@ import {
   localWindowWebPreferences,
 } from "./security.js";
 import { checkLatestRelease } from "./update-check.js";
+import { SystemUsageCollector } from "./system-usage.js";
 
 const rendererUrl = process.env.VUA_RENDERER_URL;
 let mainWindow: BrowserWindow | null = null;
@@ -48,6 +49,8 @@ let overlayWindow: BrowserWindow | null = null;
 let provider: OrchestratorProviderV01 | null = null;
 let remoteContent: RemoteContentManager | null = null;
 let downloadPort: DownloadPort | null = null;
+// 系统资源占用采集器(顶栏占用查看器):whenReady 启动,退出前 stop
+const systemUsage = new SystemUsageCollector();
 let providerHandshake: Awaited<ReturnType<OrchestratorProviderV01["start"]>> | null = null;
 const lastAppliedIntentSeq = new Map<string, number>();
 let shutdownStarted = false;
@@ -329,6 +332,13 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     });
   });
 
+  // 系统资源占用(2026-09-25 用户裁决:顶栏占用查看器):读采集器缓存
+  // 快照,单次调用零采集成本;VRAM 不可用时字段 null,不猜值
+  ipcMain.handle("vua:system:resource-usage", (event) => {
+    assertLocalSender(senderFrameUrl(event));
+    return systemUsage.snapshot();
+  });
+
   ipcMain.handle("vua:window:minimize", (event) => {
     assertLocalSender(senderFrameUrl(event));
     BrowserWindow.fromWebContents(event.sender)?.minimize();
@@ -499,8 +509,10 @@ function toggleOverlayWindow(): { readonly visible: boolean } {
 async function createWindow(): Promise<void> {
   const preload = path.join(__dirname, "preload.js");
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    /* 默认 1440×900(2026-09-25):顶栏新增占用查看器后,1280 下全量 Tab
+     * 排不下(两级折叠会收进折叠按钮);1440 保证默认窗口即完整顶栏 */
+    width: 1440,
+    height: 900,
     minWidth: 960,
     minHeight: 600,
     frame: false,
@@ -625,6 +637,7 @@ app.whenReady().then(async () => {
   });
   installPermissionDenyPolicy(session.defaultSession);
   registerIpc(provider);
+  systemUsage.start();
   await createWindow();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) void createWindow();
@@ -642,6 +655,7 @@ app.on("window-all-closed", () => {
  * 由 SQLite 权威状态标记 inspect_required,下次启动如实呈现。
  */
 app.on("before-quit", (event) => {
+  systemUsage.stop();
   if (provider === null || shutdownStarted || provider.status().state === "stopped") return;
   event.preventDefault();
   shutdownStarted = true;

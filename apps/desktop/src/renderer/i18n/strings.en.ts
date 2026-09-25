@@ -148,6 +148,16 @@ demoTaskTitle: "Demo task",
     waitingServices: "Waiting for local services…",
     updateAvailable: "New version {version} available",
   },
+  /** Top-bar resource monitor (2026-09-25 ruling): reading = max(RAM, VRAM) */
+  resourceMonitor: {
+    indicatorAria: "System resource usage {percent}% — open details",
+    title: "System resources",
+    ram: "Memory (RAM)",
+    vram: "Video memory (VRAM)",
+    vramUnavailable: "Unavailable (collection not connected)",
+    sampledAt: "Sampled at {time}",
+    closeAria: "Close resource details",
+  },
   nav: {
     tabs: {
       home: "Hub",
@@ -2250,7 +2260,7 @@ demoTaskTitle: "Demo task",
       hcOn: "Always on",
       saverHeading: "Resource saver",
       saverDescription:
-        "Turns off all interface motion, glow effects and the 3D backdrop to free system resources while you play in VR. Functionality and status cues are unaffected.",
+        "Turns off heavy display features — 3D previews (release turntable, hub core), interface motion, glow and glass blur — to free system resources while you play in VR. Functionality and status cues are unaffected.",
       saverTurnOn: "Turn on resource saver",
       saverTurnOff: "Turn off resource saver",
       saverStateOff: "Currently off",

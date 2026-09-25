@@ -1287,6 +1287,23 @@ export interface UpdateCheckResultV1 {
 export interface DesktopSystemApiV1 {
   /** 只读版本探测:比对 GitHub latest release;永不抛——失败恒落 check-failed */
   checkUpdate(): Promise<UpdateCheckResultV1>;
+  /** 系统资源占用快照(2026-09-25 用户裁决:顶栏占用查看器):
+   * RAM 恒在场(os 直接读);VRAM 尽力采集(Windows GPU 性能计数器),
+   * 不可用/非 Windows 平台恒 null,渲染层如实呈现「不可用」不猜值 */
+  readResourceUsage(): Promise<SystemResourceUsageV1>;
+}
+
+/** 系统资源占用快照(瞬时读数,不持久化;schemaVersion 随形状演进) */
+export interface SystemResourceUsageV1 {
+  readonly schemaVersion: 1;
+  readonly ramUsedBytes: number;
+  readonly ramTotalBytes: number;
+  /** 显存已用(主导适配器口径):采集不可用为 null */
+  readonly vramUsedBytes: number | null;
+  /** 显存总量(主导适配器口径):采集不可用为 null */
+  readonly vramTotalBytes: number | null;
+  /** 采样完成时刻(RFC 3339,Main 侧落戳) */
+  readonly sampledAt: string;
 }
 
 export interface VuaDesktopApiV1 {

@@ -231,21 +231,17 @@ export function resolveTabLanding(tab: AppSectionId): PageId {
 }
 
 /**
- * 顶栏窄窗分级折叠(S-XIII-2 初版;S-XIV-3 升级为梯子,借鉴 Comfy-Desktop
- * 标题栏的实测驱动分级降级):
- * - 0 级 = 完整(品牌副标题 + 全量 Tab);
- * - 1 级 = 隐藏副标题:Tab 排与两侧的间隙低于 TIGHT_GAP 就先降这一级,
- *   不等真正溢出;
- * - 2 级 = 整排 Tab 收进一个折叠按钮(NavOverflowMenu 展开原控件);
- * 回扩要求可用宽度多出 BUFFER 余量(1→0 还要加计副标题收益),
- * 防临界点抖动;各级宽度全部由表现层实测传入,本函数保持纯。
+ * 顶栏窄窗折叠(2026-09-25 用户裁决:品牌副标题退役,梯子随之简化):
+ * 品牌区宽度恒定后分级收敛为两级——
+ * - 0 级 = 完整(全量 Tab);
+ * - 1 级 = 整排 Tab 收进一个折叠按钮(NavOverflowMenu 展开原控件);
+ * 回扩要求可用宽度多出 BUFFER 余量防临界点抖动;各级宽度全部由表现层
+ * 实测传入,本函数保持纯。
  */
-/** 降级触发间隙:Tab 排可用间隙低于此值即先藏副标题 */
-export const NAV_TIGHT_GAP_PX = 16;
-/** 回扩余量:恢复一级要求可用宽度多出这么多 */
+/** 回扩余量:恢复完整要求可用宽度多出这么多 */
 export const NAV_LEVEL_BUFFER_PX = 24;
 
-export type NavLevel = 0 | 1 | 2;
+export type NavLevel = 0 | 1;
 
 export interface NavLevelInput {
   readonly level: NavLevel;
@@ -253,34 +249,30 @@ export interface NavLevelInput {
   readonly required: number;
   /** 轨道内容盒当前宽 */
   readonly available: number;
-  /** 副标题收益(隐藏探针实测的自然宽):1→0 回扩判定的恢复成本 */
-  readonly subtitleSaving: number;
 }
 
 export function navLevelNext(input: NavLevelInput): NavLevel {
-  const { level, required, available, subtitleSaving } = input;
-  if (level === 0) return required > available - NAV_TIGHT_GAP_PX ? 1 : 0;
-  if (level === 1) {
-    if (required > available) return 2;
-    return required + subtitleSaving <= available - NAV_LEVEL_BUFFER_PX ? 0 : 1;
-  }
-  return required <= available - NAV_LEVEL_BUFFER_PX ? 1 : 2;
+  const { level, required, available } = input;
+  if (level === 0) return required > available ? 1 : 0;
+  return required <= available - NAV_LEVEL_BUFFER_PX ? 0 : 1;
 }
 
 /**
- * 判定输入快照(#28 顶栏抖动修复):决定分级的外部事实只有三样——窗口宽、
- * 全量 Tab 自然宽(量尺行)、副标题收益(探针)。折叠/展开动作本身会改变
- * 轨道内容盒宽(滚动条出现消失、布局回流),ResizeObserver 据此再次触发
- * 判定即在临界宽度下形成 1↔2 自反馈振荡;快照未变则该次触发必是自反馈,
- * 判定跳过——观察者仍监听窗口/量尺/探针,语言切换与用户改窗照常重判。
+ * 判定输入快照(#28 顶栏抖动修复;2026-09-25 随两级化修订):决定分级的外部
+ * 事实是窗口宽、全量 Tab 自然宽与轨道可用宽。副标题时代折叠动作会经品牌区
+ * 收放改变轨道宽(自反馈),快照曾刻意排除 available——那同时吞掉了布局沉降
+ * 后的合法重判,是「启动即卡最窄态」缺陷的根因(首判用副标题在位的几何连降
+ * 两级,品牌收起让出宽度后,快照未变守卫把纠正触发吞掉)。品牌区宽度恒定后
+ * available 只随外部事实变化,纳入快照不再构成自反馈环;快照未变即观察者
+ * 噪声,判定跳过——语言切换与用户改窗照常重判。
  */
 export interface NavMeasureSnapshot {
-  /** 视口宽(window.innerWidth,含滚动条):不随折叠/展开动作变化 */
+  /** 视口宽(window.innerWidth) */
   readonly windowWidth: number;
   /** 全量 Tab 自然宽(量尺行实测) */
   readonly required: number;
-  /** 副标题收益(探针实测) */
-  readonly subtitleSaving: number;
+  /** 轨道内容盒宽(折叠/展开不改变:容器 flex:1,品牌区恒定) */
+  readonly available: number;
 }
 
 export function navMeasureChanged(
@@ -290,5 +282,5 @@ export function navMeasureChanged(
   if (prev === null) return true;
   return prev.windowWidth !== next.windowWidth
     || prev.required !== next.required
-    || prev.subtitleSaving !== next.subtitleSaving;
+    || prev.available !== next.available;
 }

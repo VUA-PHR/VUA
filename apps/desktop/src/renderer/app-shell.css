@@ -29,31 +29,9 @@
   align-items: baseline;
   gap: var(--vua-space-3);
   /* 品牌区不缩:窗口变窄时压缩的是 Tabs 轨道(自身 overflow 截断),
-   * 避免副标题换行、字标被挤出窗口 */
+   * 避免字标被挤出窗口 */
   flex-shrink: 0;
   white-space: nowrap;
-}
-
-/* 副标题(S-XIV-3 梯子 1 级):间隙不足时 max-width 收起到 0,把宽度让给
- * Tab 轨道;只挂在 brand 下——nav 里的隐藏探针不受上限影响,测的是自然宽 */
-.vua-shell__brand .vua-shell__subtitle {
-  display: inline-block;
-  max-width: 180px;
-  overflow: hidden;
-  white-space: nowrap;
-  transition:
-    max-width 180ms ease,
-    opacity 140ms ease;
-}
-
-.vua-shell__brand--compact .vua-shell__subtitle {
-  max-width: 0;
-  opacity: 0;
-}
-
-/* 收起副标题时同步去掉它与字标的间隔,让宽度收益完整给轨道 */
-.vua-shell__brand--compact {
-  gap: 0;
 }
 
 /* 占位字标:几何宽字形 + 中性金属渐变(text-strong → text-secondary),
@@ -276,6 +254,9 @@
   min-height: 0;
 }
 
+/* 侧栏(2026-09-25 用户裁决重塑):淡化无边框——渐变毛玻璃取代实底+右边线;
+ * 页项垂直居中靠左;未激活态全栏小字,指针进入/键盘聚焦(:hover/:focus-within)
+ * 即激活——字号动画长大,毛玻璃层向右动画扩大 */
 .vua-shell__sidebar {
   position: relative;
   width: 232px;
@@ -287,16 +268,52 @@
   /* 走查#2:设置区页项增多后,底部项被固定任务栏遮挡——允许滚动并预留任务栏高度 */
   overflow-y: auto;
   padding-bottom: calc(var(--vua-space-4) + 56px);
-  background: color-mix(in srgb, var(--vua-bg-panel) 50%, transparent);
-  backdrop-filter: blur(18px) saturate(1.5);
-  -webkit-backdrop-filter: blur(18px) saturate(1.5);
-  border-right: 1px solid var(--vua-border);
+  /* 基态:向左浓向右淡的渐变玻璃,无边框分界 */
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--vua-bg-panel) 44%, transparent) 0%,
+    color-mix(in srgb, var(--vua-bg-panel) 16%, transparent) 76%,
+    transparent 100%
+  );
+  backdrop-filter: blur(12px) saturate(1.3);
+  -webkit-backdrop-filter: blur(12px) saturate(1.3);
+}
+
+/* 激活玻璃层:常态缩在左半、低可见;激活时向右铺满并增强——
+ * 模糊区域随宽度动画扩大。绝对定位于滚动容器内,内容溢出滚动时
+ * 该层随内容移动(极端矮窗下 glass 随滚出属可接受降级) */
+.vua-shell__sidebar::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 56%;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--vua-bg-panel) 52%, transparent) 0%,
+    color-mix(in srgb, var(--vua-bg-panel) 24%, transparent) 72%,
+    transparent 100%
+  );
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+  opacity: 0.35;
+  pointer-events: none;
+  transition:
+    width 240ms ease,
+    opacity 240ms ease;
+}
+
+.vua-shell__sidebar:hover::before,
+.vua-shell__sidebar:focus-within::before {
+  width: 100%;
+  opacity: 1;
 }
 
 .vua-shell__sidebar-group {
   display: flex;
   flex-direction: column;
   gap: var(--vua-space-1);
+  /* 垂直居中:auto 外边距在内容溢出时自动归零,退回顶对齐+滚动,不裁首项 */
+  margin-block: auto;
 }
 
 /* 分组标签(AMF 的"仓库"/"车间"):小字弱化;
@@ -330,6 +347,12 @@
     background-color 140ms ease,
     color 140ms ease,
     box-shadow 140ms ease;
+}
+
+/* 未激活态(指针/键盘焦点均不在侧栏):全栏收为小字,选中项也只保留
+ * 颜色与左条身份;特异性须高于下方 hover/选中规则 */
+.vua-shell__sidebar:not(:hover):not(:focus-within) .vua-shell__sidebar-item {
+  font-size: 0.86em;
 }
 
 .vua-shell__sidebar-item:hover {

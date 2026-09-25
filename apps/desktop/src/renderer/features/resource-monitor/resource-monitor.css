@@ -1,0 +1,144 @@
+/* 顶栏占用查看器(2026-09-25 用户裁决):设置按钮左侧常驻读数 +
+ * 点击展开的右上角详情小窗。视觉纪律同顶栏按钮族(hover 淡底、
+ * 辖区色高亮);弹层实底不模糊(走查#2 残影判例),只消费 Token。 */
+
+.vua-shell__usage {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--vua-space-1);
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  padding: var(--vua-space-1) var(--vua-space-2);
+  cursor: pointer;
+  /* 读数等宽数字,刷新不抖动 */
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+
+.vua-shell__usage:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 6%, transparent);
+  color: var(--vua-text-strong);
+}
+
+.vua-shell__usage[aria-expanded="true"] {
+  color: var(--vua-accent-text);
+}
+
+.vua-shell__usage-value {
+  font-weight: 600;
+}
+
+/* 详情小窗:贴近右上角,实底(94%) + 细边框;入场自上而下滑入 */
+.vua-usage-panel {
+  position: fixed;
+  top: 48px;
+  right: 12px;
+  z-index: 700;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--vua-space-3);
+  padding: var(--vua-space-3) var(--vua-space-4);
+  border: 1px solid var(--vua-border);
+  border-radius: var(--vua-radius-overlay);
+  background: color-mix(in srgb, var(--vua-bg-elevated) 94%, transparent);
+  box-shadow: var(--vua-shadow-elevated);
+  animation: vua-usage-panel-in 180ms cubic-bezier(0.2, 0.9, 0.25, 1);
+}
+
+@keyframes vua-usage-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.vua-usage-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vua-usage-panel__title {
+  font: var(--vua-font-body);
+  font-weight: 600;
+  color: var(--vua-text-strong);
+}
+
+.vua-usage-panel__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: var(--vua-radius-control);
+  background: transparent;
+  color: var(--vua-text-secondary);
+  cursor: pointer;
+}
+
+.vua-usage-panel__close:hover {
+  background: color-mix(in srgb, var(--vua-text-strong) 6%, transparent);
+  color: var(--vua-text-strong);
+}
+
+.vua-usage-panel__row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: var(--vua-space-2);
+}
+
+.vua-usage-panel__label {
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}
+
+.vua-usage-panel__bar {
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--vua-text-strong) 10%, transparent);
+  overflow: hidden;
+}
+
+.vua-usage-panel__bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--vua-accent);
+  transition: width 400ms ease;
+}
+
+.vua-usage-panel__pct {
+  font: var(--vua-font-caption);
+  font-weight: 600;
+  color: var(--vua-text-strong);
+  font-variant-numeric: tabular-nums;
+  min-width: 4ch;
+  text-align: right;
+}
+
+.vua-usage-panel__bytes {
+  grid-column: 2 / 4;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.vua-usage-panel__unavailable {
+  grid-column: 2 / 4;
+  font: var(--vua-font-caption);
+  color: var(--vua-text-secondary);
+}
+
+.vua-usage-panel__footer {
+  border-top: 1px solid var(--vua-border);
+  padding-top: var(--vua-space-2);
+}
