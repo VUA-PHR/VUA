@@ -25,7 +25,8 @@
     "smoke:download-port": "pnpm build && electron scripts/smoke-download-port.mjs",
     "smoke:f4-deliverables": "pnpm build && node scripts/smoke-f4-deliverables.mjs",
     "smoke:production-review": "electron scripts/smoke-production-review.mjs",
-    "smoke:import-dialog": "electron scripts/smoke-import-dialog.mjs"
+    "smoke:import-dialog": "electron scripts/smoke-import-dialog.mjs",
+    "smoke:resource-monitor": "electron scripts/smoke-resource-monitor.mjs"
   },
   "dependencies": {
     "@vua/contracts": "workspace:*",
