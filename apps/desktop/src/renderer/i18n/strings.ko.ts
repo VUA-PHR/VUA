@@ -153,7 +153,6 @@ demoTaskTitle: "데모 작업",
   },
   nav: {
     tabs: {
-      home: "허브",
       env: "환경 설정",
       guide: "게임 가이드",
       production: "아바타 제작",
@@ -164,7 +163,6 @@ demoTaskTitle: "데모 작업",
      *  내비게이션 재편으로 플랫화). 그룹 메커니즘은 유지. */
     groups: {},
     pages: {
-      home: "허브",
       envPlay: "플레이 환경",
       envCreate: "제작 환경",
       guideStart: "시작하기",
@@ -185,12 +183,13 @@ demoTaskTitle: "데모 작업",
       settingsAbout: "VUA 정보",
       settingsDonate: "후원",
       packages: "패키지 관리자",
+      /** 워크숍 사이드바 레이블(2026-09-25 사용자 결정): 복합 용어 시퀀스는 퇴역, 직접 표기로 */
+      workshop: "워크숍",
       /** 코디네이트 초안은 2026-09-20 내비게이션 재편 이후 레시피 페이지 내 대화상자. */
       composePage: "아바타 구성",
       inspectionPage: "검사",
     },
   },
-  /** 허브 랜딩 페이지(S-VFX-2): 기본 시작 페이지 */
   /** 소재 가져오기 페이지(M6 IMP-2 배치 A, proposal 015 정합): 두 개의
    *  정직한 섹션 — 클라우드(내장 브라우징, 능력 이중 상태 게이트)와
    *  로컬(W18 제출 흐름 그대로 이전, 어휘 추가 없음). */
@@ -256,18 +255,6 @@ demoTaskTitle: "데모 작업",
     cancel: "취소",
     openCta: "열기",
     retry: "다시 시도",
-  },
-  home: {
-    tagline: "VRChat 플레이와 창작의 커맨드 허브",
-    commandCta: "페이지, 기능, 작업 검색…",
-    quickHeading: "바로 가기",
-    statusHeading: "환경 상태",
-    cardDesc: {
-      env: "실행 환경을 검사·복구하고 한 줄 결론 제공",
-      guide: "제로부터 시작하는 VRChat 가이드",
-      production: "에셋 가져오기, 레시피 구성, 아바타 제작",
-      tools: "디바이스, 캘리브레이션, 유틸리티",
-    },
   },
   app: {
     moduleNavAria: "모듈",
@@ -2195,7 +2182,7 @@ rolled_back: "롤백됨",
       hcOn: "항상 켜기",
       saverHeading: "리소스 절약 모드",
       saverDescription:
-        "3D 표시(릴리스 턴테이블, 허브 3D 코어), UI 모션, 글로우, 유리 블러 등 무거운 표시 효과를 끄고 VR 플레이 중 시스템 리소스를 절약합니다. 기능과 상태 표시에는 영향이 없습니다.",
+        "3D 표시(릴리스 턴테이블), UI 모션, 글로우, 유리 블러 등 무거운 표시 효과를 끄고 VR 플레이 중 시스템 리소스를 절약합니다. 기능과 상태 표시에는 영향이 없습니다.",
       saverTurnOn: "리소스 절약 모드 켜기",
       saverTurnOff: "리소스 절약 모드 끄기",
       saverStateOff: "현재: 꺼짐",

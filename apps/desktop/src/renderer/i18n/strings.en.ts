@@ -160,7 +160,6 @@ demoTaskTitle: "Demo task",
   },
   nav: {
     tabs: {
-      home: "Hub",
       env: "Environment",
       guide: "Guide",
       production: "Avatar creation",
@@ -172,7 +171,6 @@ demoTaskTitle: "Demo task",
      * with the next labeled group. */
     groups: {},
     pages: {
-      home: "Hub",
       envPlay: "Play Environment",
       envCreate: "Creator environment",
       guideStart: "Getting Started",
@@ -193,6 +191,8 @@ demoTaskTitle: "Demo task",
       settingsAbout: "About VUA",
       settingsDonate: "Donate",
       packages: "Package Manager",
+      /** 车间侧栏标签(2026-09-25 用户裁决):复合术语序列退役为直给词面 */
+      workshop: "Workshop",
       /** Composing draft lives in a dialog inside the recipe page since the
        * 2026-09-20 navigation rework; the key stays as its word face. */
       composePage: "Avatar draft",
@@ -265,19 +265,6 @@ demoTaskTitle: "Demo task",
     cancel: "Cancel",
     openCta: "Open",
     retry: "Retry",
-  },
-  /** Hub landing page (S-VFX-2): default entry */
-  home: {
-    tagline: "Your VRChat play & creation command hub",
-    commandCta: "Search pages, features, and actions…",
-    quickHeading: "Jump in",
-    statusHeading: "Environment status",
-    cardDesc: {
-      env: "Check and repair runtimes with a one-line verdict",
-      guide: "A guided path into VRChat from zero",
-      production: "Import assets, create recipes and build avatars",
-      tools: "Devices, calibration, and utilities",
-    },
   },
   app: {
     moduleNavAria: "Modules",
@@ -2285,7 +2272,7 @@ demoTaskTitle: "Demo task",
       hcOn: "Always on",
       saverHeading: "Resource saver",
       saverDescription:
-        "Turns off heavy display features — 3D previews (release turntable, hub core), interface motion, glow and glass blur — to free system resources while you play in VR. Functionality and status cues are unaffected.",
+        "Turns off heavy display features — 3D previews (release turntable), interface motion, glow and glass blur — to free system resources while you play in VR. Functionality and status cues are unaffected.",
       saverTurnOn: "Turn on resource saver",
       saverTurnOff: "Turn off resource saver",
       saverStateOff: "Currently off",
