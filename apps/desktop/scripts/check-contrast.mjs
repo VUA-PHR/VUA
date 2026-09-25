@@ -5,7 +5,7 @@
  * WCAG 2.x 对比度,文字对低于 4.5:1、非文字对低于 3:1 即非零退出;
  * forced-colors 系统色映射不可算对比度,另做结构守卫(§2.6)。
  *
- * 辖区必须使用真实模块标识(§3.2.2):紫辖区 = env / guide /
+ * 辖区必须使用真实模块标识(§3.2.2):紫辖区 = env /
  * settings(:root 默认),橙辖区 = production([data-module="production"]);
  * 不得用已经废弃的模块名生成虚假的通过结果。防回退守卫:橙辖区未解析到
  * --vua-orange、紫辖区未解析到 --vua-purple(例如选择器改名导致桶为空)
@@ -102,9 +102,9 @@ function makeContext(...layers) {
 }
 
 const contexts = {
-  "深色·紫辖区(env/guide/settings)": makeContext(buckets.base),
+  "深色·紫辖区(env/settings)": makeContext(buckets.base),
   "深色·橙辖区(production)": makeContext(buckets.base, buckets.darkProduction),
-  "浅色·紫辖区(env/guide/settings)": makeContext(buckets.base, buckets.lightBase),
+  "浅色·紫辖区(env/settings)": makeContext(buckets.base, buckets.lightBase),
   "浅色·橙辖区(production)": makeContext(
     buckets.base,
     buckets.darkProduction,

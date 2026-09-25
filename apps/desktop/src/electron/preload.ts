@@ -4,6 +4,7 @@ import type {
   DesktopGatewayRequestV1,
   EditorSettingsV1,
   NavigationConfirmRequestV1,
+  OverlayViewV1,
   RemoteContentEventV1,
   VuaDesktopApiV1,
 } from "@vua/contracts";
@@ -27,6 +28,11 @@ const remoteContentListeners = new WeakMap<
 const navConfirmListeners = new WeakMap<
   (request: NavigationConfirmRequestV1) => void,
   (event: IpcRendererEvent, payload: NavigationConfirmRequestV1) => void
+>();
+
+const overlayViewListeners = new WeakMap<
+  (view: OverlayViewV1) => void,
+  (event: IpcRendererEvent, payload: OverlayViewV1) => void
 >();
 
 const api: VuaDesktopApiV1 = Object.freeze({
@@ -67,6 +73,22 @@ const api: VuaDesktopApiV1 = Object.freeze({
     // Overlay 置顶窗开关(proposal 017 实现面备注):同一 preload 契约面对
     // 主窗口与 overlay 窗口共用,零新增连接语义
     toggleOverlay: () => ipcRenderer.invoke("vua:overlay:toggle"),
+    // 打开/聚焦覆盖层并切视图(2026-09-26 additive):缺省 guide;undefined
+    // 经 IPC 序列化为 null,Main 侧按 null=缺省收窄
+    showOverlay: (view?: OverlayViewV1) => ipcRenderer.invoke("vua:overlay:show", view ?? null),
+    // 覆盖层视图事件(2026-09-26 additive):Main 只投递给覆盖层窗口本身
+    overlayViewEvents: Object.freeze({
+      subscribe: (listener: (view: OverlayViewV1) => void) => {
+        const wrapped = (_event: IpcRendererEvent, payload: OverlayViewV1) => listener(payload);
+        overlayViewListeners.set(listener, wrapped);
+        ipcRenderer.on("vua:overlay:set-view", wrapped);
+        return () => {
+          const wrappedListener = overlayViewListeners.get(listener);
+          if (wrappedListener) ipcRenderer.removeListener("vua:overlay:set-view", wrappedListener);
+          overlayViewListeners.delete(listener);
+        };
+      },
+    }),
   }),
   // 远程内容窄面(F4-2):只发语义动作;远程页面本身无 preload、无本面
   remoteContent: Object.freeze({

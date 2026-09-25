@@ -154,7 +154,6 @@ demoTaskTitle: "데모 작업",
   nav: {
     tabs: {
       env: "환경 설정",
-      guide: "게임 가이드",
       production: "아바타 제작",
       settings: "설정",
     },
@@ -264,7 +263,9 @@ demoTaskTitle: "데모 작업",
     windowMinimize: "최소화",
     windowMaximize: "최대화/복원",
     windowClose: "닫기",
-    overlayToggle: "오버레이",
+    /** 顶栏覆盖层入口(2026-09-26 판정): 고정 창을 열거나 포커스해 가이드
+     *  보기로 전환 */
+    overlayGuide: "가이드",
   },
   onboarding: {
     steps: {
@@ -287,11 +288,6 @@ demoTaskTitle: "데모 작업",
         title: "환경 설정",
         description: "VRChat 플레이 또는 아바타 제작에 필요한 소프트웨어, 공간, 설정을 확인하고 준비합니다.",
         impact: "환경 검사와 플레이/제작 환경 상태 페이지를 활성화합니다.",
-      },
-      guide: {
-        title: "게임 가이드",
-        description: "VRChat 입장, 기본 조작, 안전 설정, 디바이스 사용법을 배웁니다.",
-        impact: "튜토리얼 페이지와 학습 진행 기록을 활성화합니다.",
       },
       production: {
         title: "아바타 제작",
@@ -687,15 +683,7 @@ rolled_back: "롤백됨",
     },
   },
   guide: {
-    progressSlotTitle: "학습 목표와 진행",
-    progressSlotEmpty: "아래 페이지 중 하나에서 튜토리얼을 시작하면 현재 학습 목표, 완료 진행률, 「지난 튜토리얼 이어하기」가 여기에 표시됩니다.",
-    progressSlotActive: "튜토리얼 진행 중: {index} / {total}단계 —— {title}",
-    progressSlotCompleted: "튜토리얼 완료. 튜토리얼 창에서 닫거나 다시 시작할 수 있습니다.",
-    progressSlotFailed: "튜토리얼 진행을 읽지 못했습니다.",
-    progressSlotRetry: "다시 시도",
-    startTutorialCta: "튜토리얼 창에서 이 페이지 배우기",
-    startTutorialFailed: "튜토리얼 창을 열지 못했습니다. 다시 시도하세요.",
-    draftNotice: "이 페이지의 내용은 초기 자리 표시자 초안입니다. 정식 튜토리얼 콘텐츠는 이후 버전(M5)에서 완성됩니다.",
+    topicsAria: "가이드 주제",
     mediaAlt: {
       pcKeys: "PC 키보드 도식: 말하기, 채팅, 이모트 휠 키와 스페이스바 강조",
       vrController: "VR 컨트롤러 도식: 트리거와 그립 부위 강조",
@@ -799,6 +787,54 @@ rolled_back: "롤백됨",
             id: "accounts",
             title: "계정 안내",
             paragraphs: ["Steam 플랫폼 계정을 VRChat 계정으로 업그레이드하거나 기존 계정과 연동할 수 있습니다. 친구와 즐겨찾기를 유지하려면 공식 계정 업그레이드 안내를 따르세요."],
+          },
+        ],
+      },
+      /** VUA 사용법 주제(2026-09-26 가이드 호스트 판정): 읽기 전용. 지금
+       *  실제로 되는 것만 담고 미연결 기능을 약속하지 않음. */
+      vua: {
+        title: "VUA 사용법",
+        intro: "VUA 창과 주요 흐름을 빠르게 소개합니다. 지금 실제로 되는 것만 담았습니다.",
+        sections: [
+          {
+            id: "window-tour",
+            title: "VUA 창 둘러보기",
+            paragraphs: [
+              "상단 바에는 왼쪽부터 모듈 전환(환경 설정/아바타 제작), 설정, 기능 검색(Ctrl+P), 가이드, 알림이 있고, 왼쪽 사이드바에는 현재 모듈의 기능 그룹이 나엽니다.",
+              "화면 하단의 작업 센터에 백그라운드 작업과 다운로드가 모이며, 오른쪽 위 종 아이콘으로 알림 목록을 엽니다.",
+            ],
+          },
+          {
+            id: "environment-page",
+            title: "환경 페이지",
+            paragraphs: [
+              "플레이/제작 환경 페이지에서는 먼저 환경 검사를 실행하고, 결과가 부족하면 수정 계획이 단계를 안내합니다.",
+              "도구 모음은 환경 모듈 사이드바의 「도구」 그룹에 있습니다. 아직 연결되지 않았으며 정직한 빈 상태를 표시합니다.",
+            ],
+          },
+          {
+            id: "import-paths",
+            title: "소재 가져오기 두 가지",
+            paragraphs: [
+              "로컬 소재: 창고 페이지의 앱 내 폀더 선택기로 .unitypackage가 들어 있는 폀더를 고르면 창고에 등록됩니다.",
+              "BOOTH 상품: 내장 브라우저 창에서 상품 페이지를 열고 본인 계정으로 구매·다운로드한 뒤, 다운로드를 한 번 클릭해 창고에 받습니다.",
+            ],
+          },
+          {
+            id: "production-line",
+            title: "제작 라인",
+            paragraphs: [
+              "라인은 창고 → 레시피 → 작업장 → 출고 순으로 진행됩니다. 소재는 창고에 들어가 레시피에서 조합하고, 작업장에서 실행 계획을 확인해 진행합니다.",
+              "검사는 제작 기록에 통합됩니다. 결과는 기록과 함께 표시되며 별도 단계가 아닙니다.",
+            ],
+          },
+          {
+            id: "settings-basics",
+            title: "자주 쓰는 설정",
+            paragraphs: [
+              "외관은 다크/라이트/시스템 설정 따름을 고를 수 있으며, 시스템 따름은 Windows의 밝기 모드를 실시간으로 따라갑니다.",
+              "리소스 절약 모드는 장식 애니메이션을 꺼서 부하를 낮추므로 VR이나 저사양 환경에 적합합니다.",
+            ],
           },
         ],
       },
@@ -1139,6 +1175,13 @@ rolled_back: "롤백됨",
    *  BuildRecordStatusV02 열거형을 미러링. */
   overlay: {
     surfaceTitle: "VUA 오버레이",
+    /** 보기 전환(2026-09-26 가이드 호스트 판정): 제목과 segmented 컨트롤의
+     *  보기 레이블 */
+    views: {
+      guide: "가이드",
+      status: "상태",
+    },
+    viewSwitchAria: "오버레이 보기 전환",
     taskSectionLabel: "작업",
     productionSectionLabel: "제작",
     downloadSectionLabel: "다운로드",

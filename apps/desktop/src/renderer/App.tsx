@@ -61,8 +61,6 @@ import { format, strings, termLabel, termSequence, TERMS } from "./i18n/index.ts
 import { currentLocale, localeRegistry } from "./i18n/index.ts";
 import { creatorEnvReady } from "./features/deployer/deployer-model.ts";
 import { DeployerPage } from "./features/deployer/DeployerPage.tsx";
-import { GuidePage } from "./features/guide/GuidePage.tsx";
-import type { GuidePageId } from "./features/guide/guide-content.ts";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
@@ -160,7 +158,7 @@ const overrideGoals: Record<Exclude<OnboardingOverride, null>, StoredGoalsV1> = 
   all: {
     version: 1,
     onboarding: "completed",
-    goals: ["env", "guide", "production"],
+    goals: ["env", "production"],
     environments: ["play", "create"],
   },
   skip: { version: 1, onboarding: "skipped", goals: [], environments: [] },
@@ -637,12 +635,6 @@ function renderPage(
           : ("env-off" as const);
       return <DeployerPage zone={zone} goal={goal} onChooseGoals={actions.chooseGoals} />;
     }
-    case "guide-start":
-    case "guide-basics":
-    case "guide-safety":
-    case "guide-devices":
-    case "guide-tutorials":
-      return <GuidePage page={page as GuidePageId} />;
     case "warehouse":
       return <WarehousePage onNavigate={actions.navigate} />;
     case "recipe":
@@ -1144,16 +1136,17 @@ function AppShell({
         >
           {strings.commandPalette.cta} · {strings.commandPalette.ctaHint}
         </button>
-        {/* Overlay 置顶窗正式入口(proposal 017 实现面备注,DevScenario 之外):
-         *  显隐切换经 Main 裁决(overlay-window 决策面);无 preload 环境
-         *  (浏览器直开主壳)可选链安全退化为无动作 */}
+        {/* Overlay 置顶窗引导入口(2026-09-26 用户裁决:游戏引导 Tab 退役,
+         *  覆盖层窗口成为引导宿主):showOverlay(\"guide\") 打开/聚焦覆盖层
+         *  并切到引导视图(窗口缺席=创建并显示;隐藏=显示并切视图;可见=
+         *  仅切视图);无 preload 环境(浏览器直开主壳)可选链安全退化为无动作 */}
         <button
           type="button"
           className="vua-shell__theme-toggle vua-caption"
-          title={strings.app.overlayToggle}
-          onClick={() => void window.vua?.window.toggleOverlay()}
+          title={strings.app.overlayGuide}
+          onClick={() => void window.vua?.window.showOverlay("guide")}
         >
-          {strings.app.overlayToggle}
+          {strings.app.overlayGuide}
         </button>
         {/* 通知中心顶栏入口(对标 Comfy 铃铛,自绘):与底部任务条共用同一通知投影;
          *  capability 非 ready 时组件自身不渲染 */}

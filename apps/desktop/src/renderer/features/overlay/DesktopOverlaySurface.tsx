@@ -14,6 +14,12 @@ import { formatDateTime } from "../../i18n/index.ts";
  * 仍由任务卡承载(downloadId 是 correlationId 非 taskId,不做行内猜测);
  * 环境摘要属批 2 未投影,本表面不渲染。
  *
+ * 2026-09-26 用户裁决:覆盖层窗口成为引导宿主——顶部视图切换(引导|
+ * 状态)segemented 控件;引导视图 = GuideOverlayView(原游戏引导内容,
+ * 经 ?view= 首帧落位,已开窗的切换经 vua:overlay:set-view 事件投递);
+ * 状态视图即本面的 017 任务/下载内容,不变。Esc 关闭与关闭 chrome
+ * 对所有视图一致(关窗不切换视图语义)。
+ *
  * 交互规格(键鼠):紧凑面板 + 拖拽区标题栏 + 关闭 chrome;Tab/Shift+Tab
  * 焦点环(base.css 全局 :focus-visible)、Enter/Space 激活(原生 button)、
  * Esc 关闭;hover 态;目标 32–40px;单主操作(dismiss)。取消用 DelayedButton
@@ -25,6 +31,12 @@ import { formatDateTime } from "../../i18n/index.ts";
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { Icon } from "@vua/design-system";
 import { overlayPort } from "./overlay-port-instance.ts";
+import { GuideOverlayView } from "./GuideOverlayView.tsx";
+import {
+  isOverlayView,
+  parseOverlayView,
+  type OverlayView,
+} from "./overlay-view-model.ts";
 import type {
   OverlayAction,
   OverlayActionPayload,
@@ -80,6 +92,20 @@ function taskStateLabel(state: string): string {
 export function DesktopOverlaySurface() {
   const [snapshot, setSnapshot] = useState<OverlaySnapshot | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
+  // 2026-09-26 视图宿主裁决:首视图经加载查询 ?view= 投递(创建窗口的
+  // Main 侧决定,渲染层词表外值回落默认视图引导,不猜态);已开窗的切换
+  // 经 vua:overlay:set-view 事件投递(下方订阅)
+  const [view, setView] = useState<OverlayView>(() =>
+    parseOverlayView(new URLSearchParams(window.location.search).get("view")),
+  );
+
+  useEffect(() => {
+    const events = window.vua?.window.overlayViewEvents;
+    if (!events) return;
+    return events.subscribe((next) => {
+      if (isOverlayView(next)) setView(next);
+    });
+  }, []);
 
   const loadSnapshot = useCallback((onFailure: () => void) => {
     // 首帧快照必须带超时与失败态:请求永不返回(应用层冻结/后端不可达)时
@@ -180,7 +206,8 @@ export function DesktopOverlaySurface() {
       style={{ "--vua-overlay-text-scale": model?.textScale ?? 1 } as CSSProperties}
     >
       <header className="vua-overlay__titlebar vua-drag-region">
-        <span className="vua-overlay__title vua-drag-region">{copy.surfaceTitle}</span>
+        {/* 标题随活动视图(引导/状态);总控语义由下方 segmented 控件表达 */}
+        <span className="vua-overlay__title vua-drag-region">{copy.views[view]}</span>
         {import.meta.env.DEV ? (
           <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
         ) : null}
@@ -195,8 +222,32 @@ export function DesktopOverlaySurface() {
         </button>
       </header>
 
+      {/* 视图切换(2026-09-26 引导宿主裁决):引导 = 引导内容;状态 = 017
+          任务/下载面。已开窗时 Main 经 set-view 事件驱动,与本控件同态 */}
+      <div
+        className="vua-overlay__view-switch"
+        role="tablist"
+        aria-label={copy.viewSwitchAria}
+      >
+        {(["guide", "status"] as const).map((id) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={view === id}
+            className="vua-overlay__view-tab"
+            data-active={view === id || undefined}
+            onClick={() => setView(id)}
+          >
+            {copy.views[id]}
+          </button>
+        ))}
+      </div>
+
       <main className="vua-overlay__body">
-        {loadFailed ? (
+        {view === "guide" ? (
+          <GuideOverlayView />
+        ) : loadFailed ? (
           <>
             <EmptyState title={copy.loadErrorTitle} description={copy.loadErrorBody} />
             <div className="vua-overlay__error-actions">

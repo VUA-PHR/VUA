@@ -42,17 +42,18 @@ function moduleLabel(def: ModuleDef): string {
   return strings.nav.tabs[def.labelKey];
 }
 
-test("top-level structure is three goal tabs plus an independent settings section", () => {
+test("top-level structure is two goal tabs plus an independent settings section", () => {
   // 2026-09-25 用户裁决:指挥台(home)页退役——首 Tab 为环境部署;
-  // 2026-09-26 用户裁决:工具合集并入环境部署(第二分组),顶栏剩三个业务模块
+  // 2026-09-26 用户裁决:工具合集并入环境部署、游戏引导迁至覆盖层窗口,
+  // 顶栏剩两个业务模块
   assert.deepEqual(
     businessModules.map((m) => m.id),
-    ["env", "guide", "production"],
+    ["env", "production"],
   );
   assert.equal(settingsModule.id, "settings");
   assert.deepEqual(
     modules.map((m) => m.id),
-    ["env", "guide", "production", "settings"],
+    ["env", "production", "settings"],
   );
 });
 
@@ -66,7 +67,6 @@ test("no forced redirects: tab landing is unconditional, workshop stays workshop
   // v0.3.3 §2.1:不自动切页;车间阻断由页面内阻断态表达,导航层不再门控
   assert.equal(resolveTabLanding("production"), "warehouse");
   assert.equal(resolveTabLanding("env"), "env-play");
-  assert.equal(resolveTabLanding("guide"), "guide-start");
   assert.equal(resolveTabLanding("settings"), "settings-goals");
   assert.ok(isPageId("workshop"));
   assert.ok(clicksToReach("workshop") <= 2);
@@ -75,8 +75,6 @@ test("no forced redirects: tab landing is unconditional, workshop stays workshop
 test("every page belongs to exactly its own module", () => {
   assert.equal(moduleOf("env-play"), "env");
   assert.equal(moduleOf("env-create"), "env");
-  assert.equal(moduleOf("guide-start"), "guide");
-  assert.equal(moduleOf("guide-tutorials"), "guide");
   assert.equal(moduleOf("warehouse"), "production");
   assert.equal(moduleOf("recipe"), "production");
   assert.equal(moduleOf("inspection"), "production");
@@ -160,11 +158,12 @@ test("sidebar labels use localized names without English prefixes", () => {
   assert.equal(workshop ? pageLabel(workshop) : "", "车间");
 });
 
-test("tab labels come from the string table (three goals + settings)", () => {
-  // 2026-09-26 用户裁决:工具合集并入环境部署,顶栏剩三个业务模块
+test("tab labels come from the string table (two goals + settings)", () => {
+  // 2026-09-26 用户裁决:工具合集并入环境部署、游戏引导迁至覆盖层窗口,
+  // 顶栏剩两个业务模块
   assert.deepEqual(
     modules.map((m) => moduleLabel(m)),
-    ["环境部署", "游戏引导", "模型生产", "设置"],
+    ["环境部署", "模型生产", "设置"],
   );
 });
 
@@ -222,6 +221,13 @@ test("isPageId rejects unknown and legacy ids", () => {
   // 2026-09-25 用户裁决:指挥台(home)页退役——存储的 home 落点同判非法,
   // resolveEntry 回退默认页(env-play)
   assert.ok(!isPageId("home"));
+  // 2026-09-26 用户裁决:游戏引导页退役(引导内容迁至覆盖层窗口)——存储的
+  // guide-* 落点同判非法,resolveEntry 回退默认页(env-play)
+  assert.ok(!isPageId("guide-start"));
+  assert.ok(!isPageId("guide-basics"));
+  assert.ok(!isPageId("guide-safety"));
+  assert.ok(!isPageId("guide-devices"));
+  assert.ok(!isPageId("guide-tutorials"));
   assert.ok(!isPageId("nope"));
   assert.ok(!isPageId(null));
 });

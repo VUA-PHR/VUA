@@ -165,7 +165,6 @@ demoTaskTitle: "演示任务",
   nav: {
     tabs: {
       env: "环境部署",
-      guide: "游戏引导",
       production: "模型生产",
       settings: "设置",
     },
@@ -274,7 +273,8 @@ demoTaskTitle: "演示任务",
     windowMinimize: "最小化",
     windowMaximize: "最大化/还原",
     windowClose: "关闭",
-    overlayToggle: "悬浮窗",
+    /** 顶栏覆盖层入口(2026-09-26 裁决):打开/聚焦置顶窗并切到引导视图 */
+    overlayGuide: "引导",
   },
   /** 首次目标引导(美术方案 v0.3.3 §2.2 / §4.3) */
   onboarding: {
@@ -298,11 +298,6 @@ demoTaskTitle: "演示任务",
         title: "环境部署",
         description: "检查并准备游玩 VRChat 或制作 Avatar 所需的软件、空间与设置。",
         impact: "启用环境检查与游玩/生产环境状态页。",
-      },
-      guide: {
-        title: "游戏引导",
-        description: "学习进入 VRChat、基础操作、安全设置与设备使用。",
-        impact: "启用教程页面与学习进度记录。",
       },
       production: {
         title: "模型生产",
@@ -723,15 +718,7 @@ rolled_back: "已回滚",
   },
   /** 游戏引导模块(v0.3.3 §5):G6 起五页接入教程会话,内容为早期占位草稿 */
   guide: {
-    progressSlotTitle: "学习目标与进度",
-    progressSlotEmpty: "从下方任意一页启动教程后,这里会显示当前学习目标、完成进度和「继续上次教程」。",
-    progressSlotActive: "教程进行中:第 {index} / {total} 步——{title}",
-    progressSlotCompleted: "教程已完成,可在教程窗口中关闭或重新开始。",
-    progressSlotFailed: "教程进度读取失败。",
-    progressSlotRetry: "重试",
-    startTutorialCta: "在教程窗口中学习本页",
-    startTutorialFailed: "教程窗口打开失败,请再试一次。",
-    draftNotice: "本页内容为早期占位草稿,正式教程内容将在后续版本(M5)完善。",
+    topicsAria: "引导主题",
     /** 页内自制 SVG 示意图的替代文本(图本身无文字,键名经此处 i18n) */
     mediaAlt: {
       pcKeys: "PC 键盘示意图:高亮说话、聊天、表情轮盘键与空格键",
@@ -836,6 +823,54 @@ rolled_back: "已回滚",
             id: "accounts",
             title: "账号说明",
             paragraphs: ["Steam 平台账号可以升级为 VRChat 账号或关联已有账号。请按官方账号升级说明操作，以保留好友和收藏。"],
+          },
+        ],
+      },
+      /** VUA 使用教程(2026-09-26 引导宿主裁决新增主题):阅读型,按当前真实
+       *  能力编写——不承诺未接入功能 */
+      vua: {
+        title: "VUA 使用教程",
+        intro: "VUA 窗口与主要流程的快速导览,按当前真实能力编写。",
+        sections: [
+          {
+            id: "window-tour",
+            title: "认识 VUA 窗口",
+            paragraphs: [
+              "顶栏从左到右是模块切换(环境部署/模型生产)、设置、功能搜索(Ctrl+P)、引导与通知;左侧栏是当前模块的功能分组。",
+              "屏幕底部是任务中心,后台任务与下载进度都收在那里;右上角铃铛打开通知列表。",
+            ],
+          },
+          {
+            id: "environment-page",
+            title: "环境部署页",
+            paragraphs: [
+              "游玩/生产环境页会先运行环境检测,结论不理想时会给出修复计划,按步骤完成即可。",
+              "工具合集在环境部署模块侧栏的「工具」分组里,目前尚未接入,页面会如实显示空状态。",
+            ],
+          },
+          {
+            id: "import-paths",
+            title: "素材导入两条路",
+            paragraphs: [
+              "本地素材:在仓储页用应用内文件夹选择器挑选包含 .unitypackage 的素材文件夹入库。",
+              "BOOTH 商品:在内嵌浏览窗口打开商品页,用自己的账号购买并下载,完成后将下载一键采纳进仓储。",
+            ],
+          },
+          {
+            id: "production-line",
+            title: "模型生产流水线",
+            paragraphs: [
+              "流水线依次是仓储 → 配方 → 车间 → 出厂:素材入库后在配方页搭配,到车间生成执行计划并确认执行。",
+              "检测已并入制作记录:结果随生产记录一起呈现,不再单独占一个流程环节。",
+            ],
+          },
+          {
+            id: "settings-basics",
+            title: "设置里的常用项",
+            paragraphs: [
+              "外观可选深色、浅色或跟随系统;跟随系统会随 Windows 明暗模式实时切换。",
+              "资源节约模式会关闭装饰动效以降低占用,适合 VR 或低配置环境。",
+            ],
           },
         ],
       },
@@ -1202,6 +1237,12 @@ rolled_back: "已回滚",
    *  BuildRecordStatusV02 枚举。 */
   overlay: {
     surfaceTitle: "VUA 覆盖层",
+    /** 视图切换(2026-09-26 引导宿主裁决):标题与 segmented 控件的视图标签 */
+    views: {
+      guide: "引导",
+      status: "状态",
+    },
+    viewSwitchAria: "切换覆盖层视图",
     taskSectionLabel: "任务",
     productionSectionLabel: "生产",
     downloadSectionLabel: "下载",

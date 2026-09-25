@@ -9,10 +9,10 @@ import "./onboarding.css";
 const copy = strings.onboarding;
 
 /** 目标展示顺序 = 顶部 Tab 从左到右顺序(v0.3.3 §2.1/§2.2) */
-const goalOrder: readonly GoalId[] = ["env", "guide", "production"];
+const goalOrder: readonly GoalId[] = ["env", "production"];
 
 /** 新玩家推荐目标(§4.3:推荐项紫色描边 + 说明推荐原因) */
-const recommendedGoals: readonly GoalId[] = ["env", "guide"];
+const recommendedGoals: readonly GoalId[] = ["env"];
 
 const envOrder: readonly EnvGoalId[] = ["play", "create"];
 

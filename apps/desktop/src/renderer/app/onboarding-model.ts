@@ -26,9 +26,10 @@ export interface StoredGoalsV1 {
 
 export const goalsStorageKey = storageKeys.goals;
 
-// 2026-09-26 用户裁决:工具合集并入环境部署——其引导目标随之退役;
-// 旧存储里的 "tools" 目标由 sanitizeGoals 当未知 id 丢弃(与既往漂移同纪律)
-const goalIds: readonly GoalId[] = ["env", "guide", "production"];
+// 2026-09-26 用户裁决:工具合集并入环境部署、游戏引导迁至覆盖层窗口——
+// 两者的引导目标随之退役;旧存储里的 "tools"/"guide" 目标由 sanitizeGoals
+// 当未知 id 丢弃(与既往漂移同纪律)
+const goalIds: readonly GoalId[] = ["env", "production"];
 const envGoalIds: readonly EnvGoalId[] = ["play", "create"];
 
 function isGoalId(value: unknown): value is GoalId {

@@ -6,9 +6,10 @@
  * 重新落地。此处保留纯载荷构建器:VR 表面不持有任何界面文案,一切文字经
  * 此载荷下发;DEV 入口在此期间显式失败(诚实,不静默)。
  *
- * 生产隔离门:本模块唯一调用点在 GuidePage 的 import.meta.env.DEV 分支内,
- * 生产构建 tree-shaking 后整个模块被剔除(check-leak 验证)。
- * 模块不得有顶层副作用(不自动发布文案),否则无法被安全剔除。
+ * 生产隔离门:原唯一调用点(GuidePage 的 import.meta.env.DEV 分支)已随
+ * 游戏引导 Tab 退役(2026-09-26 裁决)——模块当前仅被其测试引用,纯载荷
+ * 构建器为 G7/M5 重新落地保留。模块不得有顶层副作用(不自动发布文案),
+ * 否则无法被安全剔除。
  */
 import type { TutorialCardContentV1 } from "./tutorial-contract.ts";
 import { strings } from "../i18n/index.ts";
@@ -48,8 +49,9 @@ export interface OverlayStartOutcome {
 }
 
 /**
- * DEV 入口:VR overlay helper 未随 Electron 迁移(G7/M5 排期),显式失败;
- * GuidePage 的 DEV 按钮捕获后进控制台,不伪造启动成功。
+ * DEV 入口:VR overlay helper 未随 Electron 迁移(G7/M5 排期),显式失败。
+ * 原调用方(GuidePage 的 DEV 按钮)已随游戏引导 Tab 退役,入口暂时无
+ * 在册调用点;helper 落地后由教程切片重新接线。
  */
 export async function startVrTutorial(): Promise<OverlayStartOutcome> {
   throw new Error("vr_overlay_helper_not_migrated");

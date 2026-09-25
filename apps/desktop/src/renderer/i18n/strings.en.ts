@@ -161,7 +161,6 @@ demoTaskTitle: "Demo task",
   nav: {
     tabs: {
       env: "Environment",
-      guide: "Guide",
       production: "Avatar creation",
       settings: "Settings",
     },
@@ -274,7 +273,9 @@ demoTaskTitle: "Demo task",
     windowMinimize: "Minimize",
     windowMaximize: "Maximize/Restore",
     windowClose: "Close",
-    overlayToggle: "Overlay",
+    /** Topbar overlay entry (2026-09-26 ruling): open/focus the pinned window
+     *  on the guide view */
+    overlayGuide: "Guide",
   },
   onboarding: {
     steps: {
@@ -298,11 +299,6 @@ demoTaskTitle: "Demo task",
         description:
           "Check and prepare the software, space and settings needed to play VRChat or create avatars.",
         impact: "Enables environment checks and the play/production environment status pages.",
-      },
-      guide: {
-        title: "Game Guide",
-        description: "Learn to enter VRChat, basic controls, safety settings and device usage.",
-        impact: "Enables tutorial pages and learning progress tracking.",
       },
       production: {
         title: "Avatar creation",
@@ -718,17 +714,7 @@ demoTaskTitle: "Demo task",
     },
   },
   guide: {
-    progressSlotTitle: "Learning goals & progress",
-    progressSlotEmpty:
-      "Start a tutorial from any page below and this area shows your current goal, progress and “resume last tutorial”.",
-    progressSlotActive: "Tutorial in progress: step {index} / {total} — {title}",
-    progressSlotCompleted: "Tutorial completed; close or restart it in the tutorial window.",
-    progressSlotFailed: "Failed to read tutorial progress.",
-    progressSlotRetry: "Retry",
-    startTutorialCta: "Learn this page in the tutorial window",
-    startTutorialFailed: "Failed to open the tutorial window. Please try again.",
-    draftNotice:
-      "This page is an early placeholder draft; final tutorial content arrives in a later release (M5).",
+    topicsAria: "Guide topics",
     mediaAlt: {
       pcKeys: "PC keyboard diagram highlighting the talk, chat, emoji wheel keys and spacebar",
       vrController: "VR controller diagram highlighting the trigger and grip areas",
@@ -851,6 +837,55 @@ demoTaskTitle: "Demo task",
             title: "About accounts",
             paragraphs: [
               "You can upgrade a Steam platform account to a VRChat account or link it to an existing one. Follow the official account-upgrade instructions to keep friends and favorites.",
+            ],
+          },
+        ],
+      },
+      /** VUA walkthrough topic (2026-09-26 guide-host ruling): read-only, written
+       *  for what the app actually does today — no promises about unshipped
+       *  capabilities. */
+      vua: {
+        title: "Using VUA",
+        intro: "A quick tour of the VUA window and its main flows, written for what the app actually does today.",
+        sections: [
+          {
+            id: "window-tour",
+            title: "Meet the VUA window",
+            paragraphs: [
+              "The top bar holds, left to right, the module tabs (Environment / Avatar creation), Settings, feature search (Ctrl+P), the guide and notifications; the sidebar lists the active module's feature groups.",
+              "The task center sits at the bottom of the screen — background tasks and downloads collect there; the bell in the top-right opens the notification list.",
+            ],
+          },
+          {
+            id: "environment-page",
+            title: "The environment pages",
+            paragraphs: [
+              "The play/production pages run an environment check first; when the result falls short, a fix plan walks you through the steps.",
+              "The tool collection lives in the Tools group of the environment sidebar. It is not connected yet, and the page shows its honest empty state.",
+            ],
+          },
+          {
+            id: "import-paths",
+            title: "Two ways to import assets",
+            paragraphs: [
+              "Local assets: pick a folder containing .unitypackage files with the in-app folder picker on the warehouse page, and it lands in the warehouse.",
+              "BOOTH items: open the product page in the embedded browser window, buy and download with your own account, then adopt the download into the warehouse in one click.",
+            ],
+          },
+          {
+            id: "production-line",
+            title: "The production line",
+            paragraphs: [
+              "The line runs Warehouse → Recipe → Workshop → Release: assets enter the warehouse, get combined in a recipe, then move to the workshop for a confirmed run.",
+              "Inspection is folded into the build record: its results appear with the record instead of as a separate step.",
+            ],
+          },
+          {
+            id: "settings-basics",
+            title: "Handy settings",
+            paragraphs: [
+              "Appearance offers dark, light, or follow system; follow system tracks Windows' light/dark mode live.",
+              "Resource saver mode turns off decorative motion to reduce usage — handy for VR or low-end machines.",
             ],
           },
         ],
@@ -1202,6 +1237,13 @@ demoTaskTitle: "Demo task",
    *  frozen PlanStatusV02/BuildRecordStatusV02 enums. */
   overlay: {
     surfaceTitle: "VUA Overlay",
+    /** View switch (2026-09-26 guide-host ruling): labels for the title and
+     *  the segmented control */
+    views: {
+      guide: "Guide",
+      status: "Status",
+    },
+    viewSwitchAria: "Switch overlay view",
     taskSectionLabel: "Tasks",
     productionSectionLabel: "Production",
     downloadSectionLabel: "Downloads",
