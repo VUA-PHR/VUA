@@ -386,6 +386,14 @@ W15 首轮走查裁决（用户 2026-09-08，操作者落账；**判定：不通
 
 ## origin 推送记录
 
+- **2026-09-25（23:4x，第 198 批簿记 PR 推送，成功；本批自记）**：PROTECTED_MAIN
+  政策通道（集成分支 PR 落地、正典 main 只快进）——integration/batch-198（基线
+  2543622b＝用户侧 PR #43 合并尖；collab-only 簿记批＝用户侧三合并消化＋例行，
+  见顶部消化节与前录 198 段）→ **PR #44**。推送首试即成零重试。**PR 检查三
+  workflow attempt 1 全绿零瞬败（PR #44 实测）**：check run **36153185127** ✓
+  （3m22s），test-and-clippy run **36153185242** ✓（5m44s），vectors run
+  **36153185247** ✓（2m53s）。合并后正典 main fetch＋ff-only 快进核对；main
+  push run 链随下一批观察窗照录。本条随同分支续笔入库。
 - **2026-09-25（04:5x，第 197 批验收 PR 推送，成功；本批自记）**：PROTECTED_MAIN
   政策通道（集成分支 PR 落地、正典 main 只快进）——integration/batch-197（基线
   507defa2＝第 196 批簿记续 PR #39 合并尖；分支内容＝wt-2 第 181 批时序敏感测试
