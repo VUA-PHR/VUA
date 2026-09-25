@@ -55,7 +55,6 @@ import { creatorEnvReady } from "./features/deployer/deployer-model.ts";
 import { DeployerPage } from "./features/deployer/DeployerPage.tsx";
 import { GuidePage } from "./features/guide/GuidePage.tsx";
 import type { GuidePageId } from "./features/guide/guide-content.ts";
-import { HomePage } from "./features/home/HomePage.tsx";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
@@ -620,8 +619,6 @@ function renderPage(
   onUiRootChange: (root: UiRootId) => void,
 ) {
   switch (page) {
-    case "home":
-      return <HomePage onOpenPalette={actions.openPalette} onNavigate={actions.navigate} />;
     case "env-play":
     case "env-create": {
       const zone = page === "env-play" ? ("play" as const) : ("create" as const);
@@ -904,7 +901,8 @@ function AppShell({
   // 沉浸式自定义标题栏:仅在 Electron 壳内渲染窗口控制(浏览器预览无 preload,不渲染)
   const inShell = window.vua !== undefined;
 
-  // 指挥台首页(S-VFX-2):命令面板与导航动作注入 renderPage
+  // 命令面板与导航动作注入 renderPage(指挥台页退役后面板入口仅剩
+  // 顶栏 palette 按钮,动作注入面不变)
   const pageActions: PageActions = {
     ...actions,
     openPalette: () => setPaletteOpen(true),
@@ -1172,7 +1170,8 @@ function AppShell({
         ) : null}
       </header>
       <div className="vua-shell__body">
-        {/* 指挥台首页整页宽(hideSidebar):不渲染二级侧栏 */}
+        {/* 整页宽模块(hideSidebar)不渲染二级侧栏;指挥台退役后当前
+            所有模块均带侧栏,机制保留 */}
         {!moduleDef(activeModule).hideSidebar ? (
         <aside className="vua-shell__sidebar" aria-label={strings.app.sidebarAria}>
           {moduleDef(activeModule).groups.map((group, index) => (

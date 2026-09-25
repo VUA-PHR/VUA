@@ -3,13 +3,16 @@ import type { TermId } from "../i18n/terms.ts";
 
 /**
  * 信息架构与导航模型(美术方案 v0.5.0 §2.1)。
- * 一级 Tab = 指挥台 + 四类用户目标(环境部署/游戏引导/工具合集/模型生产,
+ * 一级 Tab = 四类用户目标(环境部署/游戏引导/工具合集/模型生产,
  * S-XIII-3 起工具合集第四、模型生产第五),
  * 设置不是用户目标,固定在顶部最右侧但仍参与路由、颜色辖区与侧栏计算;
  * 模型生产侧栏与其余模块一致为无组标签平铺(2026-09-20 导航重构,用户
  * 裁决):素材导入与搭配草稿不再是独立页,分别收敛为仓储页/配方页
  * hero 内的内容型弹窗,导航模型不产生对应页面;
- * 任意已开放功能进入对应 Tab 后一次点击到达(验收 §12-6)。
+ * 指挥台(home)页 2026-09-25 退役(用户裁决):其独有内容均为装饰性
+ * (全息 3D/速达卡重复顶部 Tab/环境状态带重复环境部署页),整页删除,
+ * 默认落点改为环境部署;任意已开放功能进入对应 Tab 后一次点击到达
+ * (验收 §12-6)。
  *
  * 门控语义(v0.3.3 §2.1 的页面粒度解释):
  * 不自动切页、不强制重定向。车间依赖生产环境,未就绪时车间页内显示
@@ -23,11 +26,10 @@ import type { TermId } from "../i18n/terms.ts";
 /** 四类用户目标(业务模块);与首次引导的目标 id 一致(onboarding-model.GoalId) */
 export type BusinessModuleId = "env" | "guide" | "production" | "tools";
 
-/** 应用区块:指挥台首页 + 业务模块 + 独立的设置区 */
-export type AppSectionId = "home" | BusinessModuleId | "settings";
+/** 应用区块:业务模块 + 独立的设置区(指挥台区块随 home 页退役移除) */
+export type AppSectionId = BusinessModuleId | "settings";
 
 export type PageId =
-  | "home"
   | "env-play"
   | "env-create"
   | "guide-start"
@@ -78,29 +80,16 @@ export interface ModuleDef {
   labelKey: NavTabKey;
   defaultPage: PageId;
   groups: SidebarGroup[];
-  /** 指挥台首页:整页宽布局,不渲染二级侧栏 */
+  /** 整页宽布局模块不渲染二级侧栏(机制保留;指挥台退役后当前无使用者) */
   hideSidebar?: boolean;
 }
 
-/** 默认落点:无历史页面时打开指挥台首页(S-VFX-2;原 guide-start 默认已被取代) */
-export const defaultPage: PageId = "home";
+/** 默认落点:无历史页面时打开环境部署(2026-09-25 用户裁决:指挥台
+ *  页退役,生产着陆前移——环境部署是四类用户目标之首的默认页) */
+export const defaultPage: PageId = "env-play";
 
-/** 指挥台首页(S-VFX-2):整页宽布局(无侧栏),固定 Tab 首位 */
-export const homeModule: ModuleDef = {
-  id: "home",
-  labelKey: "home",
-  defaultPage: "home",
-  hideSidebar: true,
-  groups: [
-    {
-      pages: [{ id: "home", labelKey: "home" }],
-    },
-  ],
-};
-
-/** Tab 顺序即顶部从左到右:指挥台 + 四个业务模块 */
+/** Tab 顺序即顶部从左到右:四个业务模块(指挥台 Tab 随 home 页退役移除) */
 export const businessModules: readonly ModuleDef[] = [
-  homeModule,
   {
     id: "env",
     labelKey: "env",
@@ -161,7 +150,9 @@ export const businessModules: readonly ModuleDef[] = [
           { id: "recipe", labelKey: null, labelTerms: ["recipe"] },
           { id: "inspection", labelKey: null, labelTerms: ["inspection"] },
           { id: "release", labelKey: null, labelTerms: ["release"] },
-          { id: "workshop", labelKey: null, labelTerms: ["assembly", "production", "inspection"] },
+          // 2026-09-25 用户裁决:复合术语序列(装配 → 生产 → 检测)退役为
+          // 「车间」——术语行退化成自指缩写,直给词面更诚实
+          { id: "workshop", labelKey: "workshop" },
           { id: "packages", labelKey: "packages" },
         ],
       },

@@ -9,6 +9,8 @@ import {
   browseAvailability,
   classifyRemoteOpenError,
   createBrowsePanelLifecycle,
+  createViewCloseTracker,
+  dialogAutoCloseOnViewClose,
   displayUrl,
   embeddedBrowseReducer,
   initialBrowseUrl,
@@ -421,4 +423,41 @@ test("autoCloseArmed:仅受理态武装——失败/提示/无反馈一律不武
   assert.equal(autoCloseArmed({ kind: "failure" }), false, "失败态不武装(失败驻留,不静默关走)");
   assert.equal(autoCloseArmed({ kind: "notice" }), false, "提示态不武装(如空选提示)");
   assert.equal(autoCloseArmed(null), false, "无反馈不武装(用户接管:受理窗口内再发起拾取/采纳即取消在飞计时,自动关闭不跑在用户操作下面)");
+});
+
+/* ---- 视图关闭归因 + 弹窗自动收口判据(2026-09-25 用户裁决) ---- */
+
+test("viewCloseTracker: 导航条 × 关闭归因 user,事件到达即消费", () => {
+  const tracker = createViewCloseTracker();
+  tracker.markUserClose("view-1");
+  assert.equal(tracker.classify("view-1"), "user");
+  // 标记已消费:重复事件(竞态双发)不再判 user
+  assert.equal(tracker.classify("view-1"), "unrelated");
+});
+
+test("viewCloseTracker: 拆卸/代次兜底关闭归因 teardown,永不武装弹窗收口", () => {
+  const tracker = createViewCloseTracker();
+  tracker.markTeardownClose("orphan-view");
+  assert.equal(tracker.classify("orphan-view"), "teardown");
+  assert.equal(tracker.classify("orphan-view"), "unrelated", "teardown 标记同样一次性消费");
+  // 无标记的陌生关闭 = unrelated(不猜测来源)
+  assert.equal(tracker.classify("mystery"), "unrelated");
+});
+
+test("viewCloseTracker: user/teardown 双标记同视图时 user 优先,新视图打开清空在途", () => {
+  const tracker = createViewCloseTracker();
+  tracker.markTeardownClose("view-2");
+  tracker.markUserClose("view-2");
+  assert.equal(tracker.classify("view-2"), "user", "用户 × 后同视图又遭拆卸兜底:用户归因优先");
+  // 新视图打开:旧 teardown 标记清空(reset)
+  const tracker2 = createViewCloseTracker();
+  tracker2.markTeardownClose("old-view");
+  tracker2.reset();
+  assert.equal(tracker2.classify("old-view"), "unrelated", "reset 后旧标记不再判 teardown");
+});
+
+test("dialogAutoCloseOnViewClose: 已知零下载才收口;未知(null)/有下载驻留(不猜态)", () => {
+  assert.equal(dialogAutoCloseOnViewClose(0), true, "用户关闭视图 + 已完成下载为零 = 弹窗自动收口");
+  assert.equal(dialogAutoCloseOnViewClose(2), false, "有已完成下载 = 驻留(继续采纳)");
+  assert.equal(dialogAutoCloseOnViewClose(null), false, "计数未知(读面不可达/未落定)不武装,不猜态");
 });

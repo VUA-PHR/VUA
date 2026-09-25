@@ -109,6 +109,15 @@ const api: VuaDesktopApiV1 = Object.freeze({
     // 快照;VRAM 采集不可用时字段 null,渲染层如实呈现「不可用」
     readResourceUsage: () => ipcRenderer.invoke("vua:system:resource-usage"),
   }),
+  // 文件系统窄面(2026-09-25 用户裁决:素材导入应用内文件夹选择器):
+  // 只读列目录 + 单层新建;失败收信不抛,options 缺席经 null 透传(Main
+  // 侧按形状收窄,IPC 序列化 undefined→null 的可选参数洞由此封死)
+  fs: Object.freeze({
+    listDirectory: (target: string | null, options?: { readonly showHidden?: boolean }) =>
+      ipcRenderer.invoke("vua:fs:list-directory", target, options ?? null),
+    createDirectory: (parentPath: string, name: string) =>
+      ipcRenderer.invoke("vua:fs:create-directory", parentPath, name),
+  }),
   // 导航确认流(015 §12,批 B-3):Main 发确认请求,渲染层以 i18n 确认卡
   // 作答;确认在前/逐次无记忆,用户不答=不执行
   navigationConfirm: Object.freeze({

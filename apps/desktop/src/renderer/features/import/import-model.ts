@@ -259,6 +259,61 @@ export function createBrowsePanelLifecycle(): BrowsePanelLifecycle {
   };
 }
 
+/* ---- 视图关闭归因 + 弹窗自动收口判据(2026-09-25 用户裁决:内嵌视图
+ * 被用户关闭且已完成下载为零时,素材导入弹窗自动收口;有下载则驻留并
+ * 给出「重新打开内嵌浏览」) ----
+ * 归因是必要的:view-closed 事件不区分来源——用户经导航条 × 关闭、
+ * 组件拆卸即关(#25)、StrictMode 过期挂载的孤儿清理(#37)都会产生
+ * 同一事件。只有第一种武装弹窗收口;后两种经 markTeardownClose 在途
+ * 标记,事件到达即判 teardown,永不武装。 */
+
+/** 视图关闭归因:user = 用户经导航条 × 发起(武装弹窗收口);teardown =
+ *  组件拆卸/代次兜底关闭(不武装);unrelated = 在途标记之外(不武装) */
+export type ViewCloseKind = "user" | "teardown" | "unrelated";
+
+export interface ViewCloseTracker {
+  /** 导航条 × 发起关闭:置在途标记,事件到达即消费 */
+  markUserClose(viewId: string): void;
+  /** 拆卸/代次兜底关闭:置 teardown 标记,事件到达判 teardown */
+  markTeardownClose(viewId: string): void;
+  /** 事件归因(消费匹配的标记;未匹配 = unrelated,不猜测) */
+  classify(eventViewId: string): ViewCloseKind;
+  /** 新视图打开时清空全部在途标记(旧标记不跨视图存活) */
+  reset(): void;
+}
+
+export function createViewCloseTracker(): ViewCloseTracker {
+  let userCloseInFlight: string | null = null;
+  const teardownCloses = new Set<string>();
+  return {
+    markUserClose(viewId) {
+      userCloseInFlight = viewId;
+    },
+    markTeardownClose(viewId) {
+      teardownCloses.add(viewId);
+    },
+    classify(eventViewId) {
+      if (userCloseInFlight === eventViewId) {
+        userCloseInFlight = null;
+        return "user";
+      }
+      if (teardownCloses.delete(eventViewId)) return "teardown";
+      return "unrelated";
+    },
+    reset() {
+      userCloseInFlight = null;
+      teardownCloses.clear();
+    },
+  };
+}
+
+/** 弹窗自动收口判据(纯函数,2026-09-25 用户裁决):视图被用户关闭 +
+ *  已完成下载计数已知且为零 → 收口;计数未知(null,读面不可达/未回)
+ *  或大于零 → 驻留(不猜态) */
+export function dialogAutoCloseOnViewClose(downloadsCount: number | null): boolean {
+  return downloadsCount !== null && downloadsCount === 0;
+}
+
 /* ---- 地址栏输入归一化与打开失败分类(BOARD #39 修复,2026-09-18) ----
  * 用户真机实测:地址栏输入裸域名 booth.pm(无 https:// 前缀)点「打开」,
  * openAddress 原样透传,Main 侧 isAllowedRemoteOrigin 的 URL 解析对无

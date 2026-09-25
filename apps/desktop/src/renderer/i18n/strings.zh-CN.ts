@@ -164,7 +164,6 @@ demoTaskTitle: "演示任务",
   },
   nav: {
     tabs: {
-      home: "指挥台",
       env: "环境部署",
       guide: "游戏引导",
       production: "模型生产",
@@ -175,7 +174,6 @@ demoTaskTitle: "演示任务",
      *  分组机制保留,下一个有标签的分组在此补键。 */
     groups: {},
     pages: {
-      home: "指挥台",
       envPlay: "游玩环境",
       envCreate: "生产环境",
       guideStart: "开始游玩",
@@ -196,12 +194,13 @@ demoTaskTitle: "演示任务",
       settingsAbout: "关于",
       settingsDonate: "捐赠",
       packages: "包管理器",
+      /** 车间侧栏标签(2026-09-25 用户裁决):复合术语序列退役为直给词面 */
+      workshop: "车间",
       /** 搭配草稿自 2026-09-20 导航重构起为配方页内弹窗;键保留作词面。 */
       composePage: "搭配草稿",
       inspectionPage: "检测",
     },
   },
-  /** 指挥台首页(S-VFX-2):默认落地页 */
   /** 素材导入页(M6 IMP-2 批 A,proposal 015 对账):两段诚实呈现——云端
    *  (内嵌浏览,能力两态门控)与本地(W18 提交流原样迁移,零新增词表)。 */
   importPage: {
@@ -215,12 +214,10 @@ demoTaskTitle: "演示任务",
     cloudTitle: '云端下载',
     cloudBadge: 'VUA 内嵌浏览 · Session 隔离',
     cloudUnavailable: '应用内内嵌浏览尚未启用。能力开启后此面板即可用;平台页面保持其自有购买流程,VUA 不提供任何购买流。',
-    addressAria: '内嵌页地址',
-    addressPlaceholder: 'https://booth.pm',
-    openCta: '打开',
-    closeCta: '关闭内嵌视图',
     blockedTitle: '策略拦截(已上报,不静默)',
     noView: '当前没有打开的内嵌视图。',
+    openBrowseCta: '打开 BOOTH 内嵌浏览',
+    reopenBrowseCta: '重新打开内嵌浏览',
     localTitle: '本地导入',
     downloadsTitle: '已完成下载',
     downloadsEmpty: '还没有已完成的下载。在内嵌视图中下载的文件会出现在这里供采纳。',
@@ -242,17 +239,32 @@ demoTaskTitle: "演示任务",
     openOriginNotAllowed: '该来源不在内嵌浏览允许清单内,未打开。',
     openFailed: '内嵌视图打开失败。',
   },
-  home: {
-    tagline: "VRChat 游玩与创作的指挥中心",
-    commandCta: "搜索页面、功能与操作…",
-    quickHeading: "快速进入",
-    statusHeading: "环境状态",
-    cardDesc: {
-      env: "检测与修复运行环境,一句话结论",
-      guide: "从零开始的 VRChat 上手引导",
-      production: "素材进仓、配方装配到发布",
-      tools: "设备、校准与实用工具",
-    },
+  /** 应用内文件夹选择器(2026-09-25 用户裁决):本地导入在弹窗内选取
+   * 素材文件夹(ALCOM 形态);记住上次浏览目录;Windows 原生选择为
+   * 次级路径。 */
+  folderPicker: {
+    title: "选择素材文件夹",
+    pathLabel: "当前文件夹",
+    editPath: "编辑路径",
+    pathInputAria: "文件夹路径",
+    up: "上一级",
+    refresh: "刷新",
+    loading: "正在加载文件夹…",
+    emptyFolder: "此文件夹没有子文件夹。",
+    errorNotFound: "该文件夹不存在。",
+    errorNotDirectory: "该路径不是文件夹。",
+    errorAccessDenied: "无法访问该文件夹(拒绝访问)。请选择其它文件夹。",
+    errorFailed: "该文件夹无法打开。",
+    newFolder: "新建文件夹",
+    newFolderNameAria: "新文件夹名称",
+    newFolderSubmit: "创建",
+    newFolderInvalid: "该名称不能用作文件夹名。",
+    newFolderExists: "已存在同名文件夹。",
+    windowsPicker: "使用 Windows 选择文件夹",
+    showHidden: "显示隐藏文件",
+    cancel: "取消",
+    openCta: "打开",
+    retry: "重试",
   },
   app: {
     moduleNavAria: "模块",
@@ -2208,7 +2220,7 @@ rolled_back: "已回滚",
        *  2026-09-25 起基线界面已无背景光效,开关管辖重负载展示) */
       saverHeading: "资源节约模式",
       saverDescription:
-        "关闭 3D 展示(出厂转盘预览、指挥台立体核心)、界面动效、光效与毛玻璃等重负载显示效果,在你游玩 VR 时节约系统资源;界面功能与状态提示不受影响。",
+        "关闭 3D 展示(出厂转盘预览)、界面动效、光效与毛玻璃等重负载显示效果,在你游玩 VR 时节约系统资源;界面功能与状态提示不受影响。",
       saverTurnOn: "打开资源节约模式",
       saverTurnOff: "关闭资源节约模式",
       saverStateOff: "当前:已关闭",

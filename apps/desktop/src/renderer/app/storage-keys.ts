@@ -48,4 +48,8 @@ export const storageKeys = {
   /** 版本检测最近结果缓存(开屏角标/设置页冷启动呈现):版本化
    *  StoredUpdateCheckV1;见 app/update-check-store.ts */
   updateCheckCache: "vua-update-check-cache",
+  /** 素材导入应用内文件夹选择器的上次浏览目录(2026-09-25 用户裁决):
+   *  裸路径字符串,非法/缺失 = 回落用户主目录;见
+   *  features/import/folder-picker-model.ts */
+  importLastFolder: "vua-import-last-folder",
 } as const;
