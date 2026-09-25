@@ -141,6 +141,16 @@ demoTaskTitle: "데모 작업",
     waitingServices: "로컬 서비스 준비를 기다리는 중…",
     updateAvailable: "새 버전 {version} 사용 가능",
   },
+  /** 상단바 리소스 모니터(2026-09-25 사용자 결정): 표시값 = RAM/VRAM 중 높은 값 */
+  resourceMonitor: {
+    indicatorAria: "시스템 리소스 사용률 {percent}% — 자세히 보기",
+    title: "시스템 리소스",
+    ram: "메모리 (RAM)",
+    vram: "비디오 메모리 (VRAM)",
+    vramUnavailable: "사용할 수 없음(수집 미연결)",
+    sampledAt: "샘플링 시각 {time}",
+    closeAria: "리소스 상세 닫기",
+  },
   nav: {
     tabs: {
       home: "허브",
@@ -2160,7 +2170,7 @@ rolled_back: "롤백됨",
       hcOn: "항상 켜기",
       saverHeading: "리소스 절약 모드",
       saverDescription:
-        "모든 UI 모션, 글로우 효과, 3D 배경을 끄고 VR 플레이 중 시스템 리소스를 절약합니다. 기능과 상태 표시에는 영향이 없습니다.",
+        "3D 표시(릴리스 턴테이블, 허브 3D 코어), UI 모션, 글로우, 유리 블러 등 무거운 표시 효과를 끄고 VR 플레이 중 시스템 리소스를 절약합니다. 기능과 상태 표시에는 영향이 없습니다.",
       saverTurnOn: "리소스 절약 모드 켜기",
       saverTurnOff: "리소스 절약 모드 끄기",
       saverStateOff: "현재: 꺼짐",

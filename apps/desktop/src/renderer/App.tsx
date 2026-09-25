@@ -1,5 +1,5 @@
 import { formatDateTime } from "./i18n/index.ts";
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { saveDebugMode, useDebugMode } from "./app/debug-mode.ts";
 import {
   businessModules,
@@ -69,6 +69,7 @@ import {
 } from "./features/production/production-intro-state.ts";
 import { Taskbar } from "./features/task-center/Taskbar.tsx";
 import { NotificationPopover } from "./features/task-center/NotificationPopover.tsx";
+import { ResourceMonitor } from "./features/resource-monitor/ResourceMonitor.tsx";
 import { BootSplash } from "./components/splash/BootSplash.tsx";
 import { bootProgress } from "./app/boot-progress.ts";
 import { ToolsPage, type ToolsPageId } from "./features/tools/ToolsPage.tsx";
@@ -96,8 +97,6 @@ import {
   CommandPalette,
 } from "./features/command-palette/CommandPalette.tsx";
 import type { CommandItem } from "./features/command-palette/command-palette-model.ts";
-/* 星云云幕(S-VFX-1):three.js 体积大,装饰层懒加载不挡首屏 */
-const NebulaCanvas = lazy(() => import("./components/three/NebulaCanvas.tsx"));
 import {
   createGatewayState,
   type GatewayStateName,
@@ -756,67 +755,64 @@ function AppShell({
     return () => window.removeEventListener("keydown", onKeyDown);
   }, []);
 
-  // 顶栏分级折叠(S-XIV-3):梯子 0=完整 / 1=藏副标题 / 2=Tab 收进折叠按钮。
-  // 量尺行测全量 Tab 自然宽,副标题探针测其收益;轨道与探针的
-  // ResizeObserver 在窗口/语言变化时重新触发判定。
-  // 相位机只管 1↔2 的飞入飞出动画窗;0↔1 由 CSS max-width 过渡自理。
-  // 首次判定直接落位不播动画(启动即窄窗不应看到整排 Tab 飞走)
+  // 顶栏折叠(2026-09-25 两级化):梯子 0=完整 / 1=Tab 收进折叠按钮。
+  // 量尺行测全量 Tab 自然宽;轨道与量尺的 ResizeObserver 在窗口/语言
+  // 变化时重新触发判定。相位机只管 0↔1 的飞入飞出动画窗。
+  // 首次判定直接落位不播动画(启动即窄窗不应看到整排 Tab 飞走);
+  // 每次判定循环至不动点——几何与级别解耦(品牌区宽度恒定),一次外部
+  // 事件直接落到最终级,不留中间卡态
   const [navLevel, setNavLevel] = useState<NavLevel>(0);
-  const navCollapsed = navLevel === 2;
+  const navCollapsed = navLevel === 1;
   const [navPhase, setNavPhase] = useState<NavPhase>("expanded");
   /** 折叠菜单打开状态:null 即关闭;x/y 为折叠按钮下缘的视口坐标 */
   const [navMenu, setNavMenu] = useState<{ x: number; y: number } | null>(null);
   const tabsRef = useRef<HTMLElement | null>(null);
   const tabsMeasureRef = useRef<HTMLDivElement | null>(null);
-  const subtitleMeasureRef = useRef<HTMLSpanElement | null>(null);
   const navToggleRef = useRef<HTMLButtonElement | null>(null);
   const navMeasuredRef = useRef(false);
-  /** 上次判定的输入快照(#28 抖动修复):折叠/展开动作改变轨道内容盒宽
-   *  (滚动条出现消失、布局回流),ResizeObserver 因自反馈再次触发时,
-   *  快照未变即跳过判定,断开临界宽度下的 1↔2 振荡环 */
+  /** 上次判定的输入快照(#28 抖动修复):轨道/品牌几何不随折叠动作变化,
+   *  快照未变的 resize 触发即观察者噪声,跳过判定断开临界宽度振荡环 */
   const lastMeasureRef = useRef<NavMeasureSnapshot | null>(null);
   useEffect(() => {
     const nav = tabsRef.current;
     const measure = tabsMeasureRef.current;
-    const subtitleProbe = subtitleMeasureRef.current;
-    if (!nav || !measure || !subtitleProbe) return;
+    if (!nav || !measure) return;
+    const settle = (from: NavLevel, required: number, available: number): NavLevel => {
+      let level = from;
+      for (let step = 0; step < 4; step += 1) {
+        const next = navLevelNext({ level, required, available });
+        if (next === level) return level;
+        level = next;
+      }
+      return level;
+    };
     const update = () => {
-      // #28 自反馈断链:决定分级的外部事实(窗口宽/量尺行/探针)未变时,
-      // 本次 resize 必由折叠动作自身引起,不喂回判定
-      const snapshot: NavMeasureSnapshot = {
-        windowWidth: window.innerWidth,
-        required: measure.offsetWidth,
-        subtitleSaving: subtitleProbe.offsetWidth,
-      };
-      if (!navMeasureChanged(lastMeasureRef.current, snapshot)) return;
-      lastMeasureRef.current = snapshot;
+      // #28 自反馈断链:外部事实(窗口宽/量尺行/轨道宽)未变时不喂回判定
       const style = getComputedStyle(nav);
       const available =
         nav.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
-      const required = measure.offsetWidth;
-      const subtitleSaving = subtitleProbe.offsetWidth;
+      const snapshot: NavMeasureSnapshot = {
+        windowWidth: window.innerWidth,
+        required: measure.offsetWidth,
+        available,
+      };
+      if (!navMeasureChanged(lastMeasureRef.current, snapshot)) return;
+      lastMeasureRef.current = snapshot;
       if (!navMeasuredRef.current) {
         navMeasuredRef.current = true;
-        const first = navLevelNext({ level: 0, required, available, subtitleSaving });
-        // 首判落位:连降两级也一步到终态
-        const level =
-          first === 1
-            ? navLevelNext({ level: 1, required, available, subtitleSaving })
-            : first;
+        // 首判落位:一步收敛到终态,不播折叠动画
+        const level = settle(0, snapshot.required, available);
         setNavLevel(level);
-        setNavPhase(level === 2 ? "collapsed" : "expanded");
+        setNavPhase(level === 1 ? "collapsed" : "expanded");
         return;
       }
-      setNavLevel((level) =>
-        navLevelNext({ level, required, available, subtitleSaving }),
-      );
+      setNavLevel((level) => settle(level, snapshot.required, available));
     };
     // W25 走查缺陷①修复(2026-09-23):首判前等字体就绪——首判若在
     // webfont 加载完成前量测,fallback 字体宽度偏大,量尺行 required 虚高,
-    // 启动即误判收缩(初始整排 Tab 收进折叠按钮)。document.fonts.ready 在
-    // 字体已就绪时立即 resolve(零等待,行为不变);不可用环境(极老内核)
-    // 诚实降级为原时序。observer 同样在就绪后挂载,避免字体加载触发的
-    // 布局变化被 #28 快照吞成「自反馈」而不再重判。
+    // 启动即误判收缩。document.fonts.ready 在字体已就绪时立即 resolve
+    // (零等待,行为不变);不可用环境(极老内核)诚实降级为原时序。
+    // observer 同样在就绪后挂载,字体加载触发的布局变化照常重判。
     let disposed = false;
     const observer = new ResizeObserver(update);
     const start = (): void => {
@@ -824,7 +820,6 @@ function AppShell({
       update();
       observer.observe(nav);
       observer.observe(measure);
-      observer.observe(subtitleProbe);
     };
     const fontsReady: Promise<unknown> | undefined =
       typeof document !== "undefined" && "fonts" in document
@@ -1027,28 +1022,16 @@ function AppShell({
         event.preventDefault();
       }}
     >
-      {/* 星云云幕(S-VFX-1):WebGL 背景场景,仅深色主题挂载;
-       *  降级(reduced-motion/HC/effects-off/WebGL 不可用)时不渲染,CSS 场景兜底 */}
-      {theme === "dark" && (
-        <Suspense fallback={null}>
-          <NebulaCanvas />
-        </Suspense>
-      )}
+      {/* 背景光效退役(2026-09-25 用户裁决):基线界面不再挂载星云云幕
+       *  WebGL 背景与辉光斑,保留网格纹理;重负载展示(出厂转盘/指挥台
+       *  3D 核心/动效/毛玻璃)由资源节约模式统一关闭 */}
       {/* 沉浸式标题栏(§氛围基线 #12):顶栏即标题栏,空白处可拖拽;
        *  拖拽属性只放在容器与品牌元素上,Tabs/按钮保持可点 */}
       <header className="vua-shell__header vua-drag-region">
-        <div
-          className={
-            navLevel >= 1
-              ? "vua-shell__brand vua-shell__brand--compact vua-drag-region"
-              : "vua-shell__brand vua-drag-region"
-          }
-        >
-          {/* §10:占位字标阶段,中性色不随模块变(§10【建议】),正式标志 v0.5 以后另立文档 */}
+        <div className="vua-shell__brand vua-drag-region">
+          {/* §10:占位字标阶段,中性色不随模块变(§10【建议】),正式标志 v0.5 以后另立文档;
+           *  2026-09-25 用户裁决:「VRC Ultra Assistant」副标题自顶栏退役 */}
           <span className="vua-shell__wordmark vua-drag-region">VUA</span>
-          <span className="vua-shell__subtitle vua-caption vua-text-secondary vua-drag-region">
-            VRC Ultra Assistant
-          </span>
         </div>
         {/* tabs 容器 flex:1 占满中段——拖拽属性必须落在容器上,否则按钮右侧的
          *  空白属于 nav 而非 header,无法拖动窗口(按钮自身不受影响) */}
@@ -1109,8 +1092,7 @@ function AppShell({
             ))
           )}
           {/* 量尺:不可见的全量 Tab 行,内容与真实 Tab 一一对应;绝对定位
-           *  脱离布局流,offsetWidth 恒为自然总宽,不受轨道收缩影响。
-           *  副标题探针同理:测"藏副标题能省多少"(1→0 回扩的恢复成本) */}
+           *  脱离布局流,offsetWidth 恒为自然总宽,不受轨道收缩影响 */}
           <div className="vua-shell__tabs-measure" aria-hidden="true" ref={tabsMeasureRef}>
             {businessModules.map((m) => (
               <span key={m.id} className="vua-shell__tab">
@@ -1118,14 +1100,10 @@ function AppShell({
               </span>
             ))}
           </div>
-          <span
-            className="vua-shell__tabs-measure vua-shell__subtitle-probe vua-caption"
-            aria-hidden="true"
-            ref={subtitleMeasureRef}
-          >
-            VRC Ultra Assistant
-          </span>
         </nav>
+        {/* 占用查看器(2026-09-25 用户裁决):设置按钮左侧常驻读数,
+         *  RAM/VRAM 取高;点击展开右上角详情小窗 */}
+        <ResourceMonitor />
         {/* 设置固定最右侧(§2.1):与业务 Tab 同款平行四边形 pressed 卡;
          *  S-X-1 起顶栏选中态由卡片自身承载(深底+内阴影),不再用滑动 pill */}
         <button

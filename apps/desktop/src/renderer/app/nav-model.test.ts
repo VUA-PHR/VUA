@@ -144,85 +144,44 @@ test("tab labels come from the string table (hub + four goals + settings)", () =
   );
 });
 
-test("nav ladder: 间隙不足先藏副标题,真溢出才折叠,回扩带余量", () => {
-  // 0 级:间隙低于 TIGHT_GAP(未溢出)先降 1 级
+test("nav ladder: 两级折叠——真溢出才收进折叠按钮,回扩带余量", () => {
+  // 0 级:排得下保持(等宽也不收)
+  assert.equal(navLevelNext({ level: 0, required: 600, available: 600 }), 0);
+  // 0 级:真正溢出才折叠到 1
+  assert.equal(navLevelNext({ level: 0, required: 601, available: 600 }), 1);
+  // 1 级:回扩到 0 要求 Tab 加余量排得下
   assert.equal(
-    navLevelNext({ level: 0, required: 585, available: 600, subtitleSaving: 120 }),
-    1,
-  );
-  // 0 级:间隙充足保持
-  assert.equal(
-    navLevelNext({ level: 0, required: 500, available: 600, subtitleSaving: 120 }),
-    0,
-  );
-  // 1 级:真正溢出才折叠到 2
-  assert.equal(
-    navLevelNext({ level: 1, required: 601, available: 600, subtitleSaving: 120 }),
-    2,
-  );
-  // 1 级:回扩到 0 要求 Tab + 副标题收益 + 余量都排得下
-  assert.equal(
-    navLevelNext({
-      level: 1,
-      required: 400,
-      available: 400 + 120 + NAV_LEVEL_BUFFER_PX,
-      subtitleSaving: 120,
-    }),
+    navLevelNext({ level: 1, required: 400, available: 400 + NAV_LEVEL_BUFFER_PX }),
     0,
   );
   assert.equal(
-    navLevelNext({
-      level: 1,
-      required: 400,
-      available: 400 + 120 + NAV_LEVEL_BUFFER_PX - 1,
-      subtitleSaving: 120,
-    }),
+    navLevelNext({ level: 1, required: 400, available: 400 + NAV_LEVEL_BUFFER_PX - 1 }),
     1,
   );
-  // 2 级:回扩到 1 只要求 Tab 加余量排得下
-  assert.equal(
-    navLevelNext({
-      level: 2,
-      required: 400,
-      available: 400 + NAV_LEVEL_BUFFER_PX,
-      subtitleSaving: 120,
-    }),
-    1,
-  );
-  assert.equal(
-    navLevelNext({
-      level: 2,
-      required: 400,
-      available: 400 + NAV_LEVEL_BUFFER_PX - 1,
-      subtitleSaving: 120,
-    }),
-    2,
-  );
+  // 1 级:仍溢出保持折叠
+  assert.equal(navLevelNext({ level: 1, required: 601, available: 600 }), 1);
 });
 
-test("nav measure snapshot: 外部事实未变即自反馈,判定跳过(#28 抖动修复)", () => {
+test("nav measure snapshot: 外部事实未变即观察者噪声,判定跳过(#28 抖动修复)", () => {
   const snapshot: NavMeasureSnapshot = {
     windowWidth: 1000,
     required: 600,
-    subtitleSaving: 120,
+    available: 700,
   };
   // 首次判定:无前值必判
   assert.equal(navMeasureChanged(null, snapshot), true);
-  // 完全相同的快照(同窗宽/同量尺/同探针):折叠动作引起的轨道宽自反馈,
-  // 必须跳过——这是 #28 临界振荡(1↔2 反复切换)的断链点
+  // 完全相同的快照:折叠/展开不改变自己量的三样事实,相同即噪声,断开
+  // #28 临界振荡环(0↔1 反复切换)的判定回路
   assert.equal(navMeasureChanged(snapshot, { ...snapshot }), false);
   // 窗口宽变化(用户改窗/DevTools 开合):必须重判
   assert.equal(navMeasureChanged(snapshot, { ...snapshot, windowWidth: 1001 }), true);
   // 量尺行变化(语言切换/字体加载):必须重判
   assert.equal(navMeasureChanged(snapshot, { ...snapshot, required: 601 }), true);
-  // 探针变化(文案/字号):必须重判
-  assert.equal(navMeasureChanged(snapshot, { ...snapshot, subtitleSaving: 121 }), true);
-  // 回归场景:#28 报告的振荡序列——折叠(available 变小)→布局回流(available
-  // 变大)交替触发,窗口宽与两把量尺恒定,每次都判 false 即断开循环
-  const afterCollapse: NavMeasureSnapshot = { ...snapshot };
-  const afterExpand: NavMeasureSnapshot = { ...snapshot };
-  assert.equal(navMeasureChanged(snapshot, afterCollapse), false);
-  assert.equal(navMeasureChanged(afterCollapse, afterExpand), false);
+  // 轨道宽变化(布局沉降/邻接控件增减):必须重判——2026-09-25 修订:
+  // 副标题时代快照排除 available,曾把启动首判后的合法纠正触发吞成
+  // 「自反馈」,致启动即卡最窄态;品牌区宽度恒定后 available 只随外部
+  // 事实变化,纳入快照不再构成自反馈环
+  assert.equal(navMeasureChanged(snapshot, { ...snapshot, available: 701 }), true);
 });
 
 test("default landing is the hub home page", () => {

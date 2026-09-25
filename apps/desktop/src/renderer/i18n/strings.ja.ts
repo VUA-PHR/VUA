@@ -141,6 +141,16 @@ demoTaskTitle: "デモタスク",
     waitingServices: "ローカルサービスの起動を待っています…",
     updateAvailable: "新しいバージョン {version} があります",
   },
+  /** トップバー占用モニター(2026-09-25 ユーザー裁定):読み値 = RAM/VRAM の高い方 */
+  resourceMonitor: {
+    indicatorAria: "システムリソース使用率 {percent}% — 詳細を開く",
+    title: "システムリソース",
+    ram: "メモリ (RAM)",
+    vram: "ビデオメモリ (VRAM)",
+    vramUnavailable: "利用できません(収集未接続)",
+    sampledAt: "サンプリング時刻 {time}",
+    closeAria: "リソース詳細を閉じる",
+  },
   nav: {
     tabs: {
       home: "ハブ",
@@ -2167,7 +2177,7 @@ rolled_back: "ロールバック済み",
       hcOn: "常にオン",
       saverHeading: "リソース節約モード",
       saverDescription:
-        "UI のモーション・グロー・3D 背景をすべてオフにし、VR プレイ中のシステムリソースを節約します。機能や状態表示には影響しません。",
+        "3D 表示(リリースのターンテーブル、ハブの 3D コア)、UI モーション、グロー、ガラスぼかしなどの重い表示効果をオフにし、VR プレイ中のシステムリソースを節約します。機能や状態表示には影響しません。",
       saverTurnOn: "リソース節約モードをオン",
       saverTurnOff: "リソース節約モードをオフ",
       saverStateOff: "現在:オフ",

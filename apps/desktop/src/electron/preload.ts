@@ -105,6 +105,9 @@ const api: VuaDesktopApiV1 = Object.freeze({
   // 应用更新属 Phase C 独立提案;失败恒落 check-failed,渲染层如实呈现)
   system: Object.freeze({
     checkUpdate: () => ipcRenderer.invoke("vua:system:check-update"),
+    // 系统资源占用(2026-09-25 裁决:顶栏占用查看器):读 Main 侧缓存
+    // 快照;VRAM 采集不可用时字段 null,渲染层如实呈现「不可用」
+    readResourceUsage: () => ipcRenderer.invoke("vua:system:resource-usage"),
   }),
   // 导航确认流(015 §12,批 B-3):Main 发确认请求,渲染层以 i18n 确认卡
   // 作答;确认在前/逐次无记忆,用户不答=不执行
