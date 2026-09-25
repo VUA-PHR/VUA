@@ -2098,7 +2098,7 @@ rolled_back: "已回滚",
   },
   /** 命令面板(C-EFFICIENCY,ui-ux §6.1 Ctrl+P) */
   commandPalette: {
-    cta: "命令",
+    cta: "功能搜索",
     ctaHint: "Ctrl+P",
     aria: "命令面板",
     placeholder: "跳转到页面或执行命令…",

@@ -2062,7 +2062,7 @@ rolled_back: "롤백됨",
     },
   },
   commandPalette: {
-    cta: "명령",
+    cta: "기능 검색",
     ctaHint: "Ctrl+P",
     aria: "명령 팔레트",
     placeholder: "페이지로 이동하거나 명령 실행…",

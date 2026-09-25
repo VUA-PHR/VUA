@@ -2148,7 +2148,7 @@ demoTaskTitle: "Demo task",
     },
   },
   commandPalette: {
-    cta: "Commands",
+    cta: "Feature search",
     ctaHint: "Ctrl+P",
     aria: "Command palette",
     placeholder: "Jump to a page or run a command…",

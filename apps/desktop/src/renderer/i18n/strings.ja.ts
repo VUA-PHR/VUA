@@ -2068,7 +2068,7 @@ rolled_back: "ロールバック済み",
     },
   },
   commandPalette: {
-    cta: "コマンド",
+    cta: "機能検索",
     ctaHint: "Ctrl+P",
     aria: "コマンドパレット",
     placeholder: "ページへ移動またはコマンドを実行…",
