@@ -583,7 +583,15 @@ async function createWindow(): Promise<void> {
     frame: false,
     show: false,
     backgroundColor: "#0b0a12",
-    webPreferences: localWindowWebPreferences(preload),
+    webPreferences: {
+      ...localWindowWebPreferences(preload),
+      /* 遮挡误判防护(2026-09-26):Windows 下 Chromium 偶发把可见的无边框
+       * 主窗口误判为被遮挡→停止产帧,界面定格在旧样式(截图/强制的
+       * BeginFrame 一来又"自愈",观测即治愈)。关闭后台节流后误判期
+       * rAF/计时器照走,症状面消除;代价是窗口真最小化时仍有少量帧
+       * 调度开销。悬浮窗恒置顶不被遮挡,不在此列。 */
+      backgroundThrottling: false,
+    },
   });
 
   // U9 四分法(本地壳窗口):http/https 弹窗不再交系统浏览器——清单内直行/
@@ -686,7 +694,14 @@ app.whenReady().then(async () => {
   // 保证首个渲染层请求可见的登记与上一次会话一致
   loadMaterialSourcesFromDisk();
   provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
-  providerHandshake = await provider.start();
+  try {
+    providerHandshake = await provider.start();
+  } catch (error) {
+    /* 启动韧性(2026-09-26):Provider 起不来(如端口被僵尸实例占用)不再
+     * 带走主窗口——历史症状是"启动器打印版本号后永远无窗口"。窗口照常
+     * 开,Gateway 调用经既有拒绝路径如实呈现不可用,恢复手段=重启应用。 */
+    console.error("[vua] provider start failed; main window still opens:", error);
+  }
   provider.subscribe((event) => {
     if (event.kind === "download.intent") {
       // 端口意图:intentSeq 去重后串行解释;Main 内部消费,不广播渲染层
