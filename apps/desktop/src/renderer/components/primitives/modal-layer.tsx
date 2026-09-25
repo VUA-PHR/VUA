@@ -79,6 +79,13 @@ function keydown(event: KeyboardEvent): void {
   const layer = top();
   if (!layer) return;
   if (event.key === "Escape") {
+    // 层内局部 Esc 语义 opt-out(2026-09-25 文件夹选择器路径输入:Esc =
+    // 取消编辑,非关闭弹窗):事件目标位于声明 [data-vua-esc-local] 的
+    // 子树时,本层不拦截——目标元素自行经冒泡 onKeyDown 处理;未声明处
+    // 行为不变(Esc 恒关顶层弹窗)。焦点管理由使用方负责(取消编辑后
+    // 焦点须移出局部区,否则后续 Esc 仍被局部吞掉)
+    const target = event.target;
+    if (target instanceof HTMLElement && target.closest("[data-vua-esc-local]")) return;
     event.preventDefault();
     event.stopImmediatePropagation();
     layer.close();

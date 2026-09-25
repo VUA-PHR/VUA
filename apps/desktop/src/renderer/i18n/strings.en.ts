@@ -241,6 +241,33 @@ demoTaskTitle: "Demo task",
     openOriginNotAllowed: 'That origin is not on the embedded-browse allowlist; nothing was opened.',
     openFailed: 'The embedded view failed to open.',
   },
+  /** In-app folder picker (2026-09-25 user ruling): local import picks asset
+   * folders inside the dialog (ALCOM-style); remembers the last browsed
+   * folder; the Windows native picker stays as a secondary path. */
+  folderPicker: {
+    title: "Choose asset folder",
+    pathLabel: "Current folder",
+    editPath: "Edit path",
+    pathInputAria: "Folder path",
+    up: "Up one level",
+    refresh: "Refresh",
+    loading: "Loading folders…",
+    emptyFolder: "This folder has no subfolders.",
+    errorNotFound: "That folder does not exist.",
+    errorNotDirectory: "That path is not a folder.",
+    errorAccessDenied: "Access was denied. Choose another folder.",
+    errorFailed: "The folder could not be opened.",
+    newFolder: "New folder",
+    newFolderNameAria: "New folder name",
+    newFolderSubmit: "Create",
+    newFolderInvalid: "That name is not valid for a folder.",
+    newFolderExists: "A folder with that name already exists.",
+    windowsPicker: "Use Windows folder picker",
+    showHidden: "Show hidden files",
+    cancel: "Cancel",
+    openCta: "Open",
+    retry: "Retry",
+  },
   /** Hub landing page (S-VFX-2): default entry */
   home: {
     tagline: "Your VRChat play & creation command hub",

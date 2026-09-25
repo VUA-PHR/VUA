@@ -12,11 +12,34 @@ import { strings } from "../../src/renderer/i18n/index.ts";
 import { IMPORT_ACCEPTED_AUTO_CLOSE_MS } from "../../src/renderer/features/import/import-model.ts";
 
 const root = createRoot(document.getElementById("root")!);
-// 壳面桩:原生文件夹拾取返回合成路径(零真实对话框);capabilities 自报
-// remoteBrowser 可用 = 云端段入口可达(下载面板无宿主降级场景需要);
-// gateway 宿主刻意缺席——下载读面不可达的诚实降级由此钉死。
+// 壳面桩:文件系统窄面返回合成目录树(零真实文件操作);原生文件夹拾取
+// 返回合成路径(零真实对话框);capabilities 自报 remoteBrowser 可用 =
+// 云端段入口可达(下载面板无宿主降级场景需要);gateway 宿主刻意缺席——
+// 下载读面不可达的诚实降级由此钉死。
 (window as any).vua = {
   dialog: { pickWarehouseFolders: async () => ["C:/synthetic/material-pack"] },
+  fs: {
+    listDirectory: async (target: string | null) => {
+      if (target === null || target === "C:/Users/Synthetic") {
+        return {
+          ok: true as const,
+          value: {
+            path: "C:/Users/Synthetic",
+            parent: "C:/Users",
+            entries: [
+              { name: "material-pack", path: "C:/Users/Synthetic/material-pack", hidden: false },
+              { name: "more-assets", path: "C:/Users/Synthetic/more-assets", hidden: false },
+            ],
+          },
+        };
+      }
+      return { ok: false as const, error: "not_found" as const };
+    },
+    createDirectory: async (parentPath: string, name: string) => ({
+      ok: true as const,
+      value: { path: `${parentPath}/${name}` },
+    }),
+  },
   capabilities: { remoteBrowser: true },
 };
 const wait = (ms = 40) => new Promise<void>((resolve) => setTimeout(resolve, ms));
@@ -103,7 +126,20 @@ const dialogOpen = () => document.querySelector('[role="dialog"]') !== null;
 
 /* ---- 场景 ---- */
 
-/** 受理段行进:选择本地 → 拾取(合成 pickWarehouseFolders)→ 确认提交。
+/** 应用内文件夹选择器(2026-09-25 用户裁决)确认当前浏览目录:选择器
+ *  面板内点「打开」(空选 = 确认当前目录),合成路径进入待确认清单。 */
+async function confirmViaPicker() {
+  const panel = document.querySelector(".vua-folder-picker");
+  check(panel !== null, "文件夹选择器在场");
+  await button(strings.folderPicker.openCta, panel as ParentNode).click();
+  await wait();
+  check(
+    !document.querySelector(".vua-folder-picker"),
+    "选择器确认后关闭(回到待确认清单)",
+  );
+}
+
+/** 受理段行进:选择本地 → 拾取(应用内选择器,合成 fs 面)→ 确认提交。
  *  返回前停在提交回执落定后(等待微任务排空)。 */
 async function driveToLocalSubmission() {
   await openDialog();
@@ -112,6 +148,7 @@ async function driveToLocalSubmission() {
   await wait();
   await button(strings.warehouse.acquire.importTitle).click();
   await wait();
+  await confirmViaPicker();
   await button(strings.warehouse.acquire.importConfirmCta).click();
   await wait();
 }
@@ -201,15 +238,41 @@ async function userTakeoverCancelsAutoClose() {
   check(document.body.textContent!.includes(strings.warehouse.acquire.importAccepted), "受理词面呈现(第一次受理)");
   await button(strings.warehouse.acquire.importTitle).click();
   await wait();
-  check(dialogOpen(), "受理窗口内用户再次发起导入,弹窗仍在(用户接管,反馈清空)");
+  check(dialogOpen(), "受理窗口内用户再次发起导入,选择器打开(用户接管,反馈清空)");
   await wait(IMPORT_ACCEPTED_AUTO_CLOSE_MS + 250);
   check(dialogOpen(), "用户接管后自动关闭取消——弹窗不跑在用户新操作下面(不静默关走)");
   check(closeCount === 0, "用户接管期间零关闭请求(在飞计时已解除)");
+  await confirmViaPicker();
   await button(strings.warehouse.acquire.importConfirmCta).click();
   await wait();
   check(document.body.textContent!.includes(strings.warehouse.acquire.importAccepted), "二次受理词面呈现");
   await wait(IMPORT_ACCEPTED_AUTO_CLOSE_MS + 250);
   check(!dialogOpen(), "二次受理重新武装后照常自动收口(同窗二次受理重新计时语义保持)");
+}
+
+/** 选择器内「使用 Windows 选择文件夹」次级路径(2026-09-25 用户裁决):
+ *  原生拾取结果经同一 onConfirm 合流进待确认清单,选择器关闭、弹窗不关。 */
+async function windowsPickerPathInsideDialog() {
+  closeCount = 0;
+  await openDialog();
+  check(dialogOpen(), "原生次级路径:弹窗打开");
+  await button(strings.importPage.chooseLocalCta).click();
+  await wait();
+  await button(strings.warehouse.acquire.importTitle).click();
+  await wait();
+  const panel = document.querySelector(".vua-folder-picker");
+  check(panel !== null, "选择器在场");
+  await button(strings.folderPicker.windowsPicker, panel as ParentNode).click();
+  await wait();
+  check(!document.querySelector(".vua-folder-picker"), "原生拾取确认后选择器关闭");
+  check(dialogOpen(), "宿主弹窗不关(选取进入待确认清单)");
+  check(
+    document.body.textContent!.includes("C:/synthetic/material-pack"),
+    "原生选取路径进入待确认清单",
+  );
+  await key("Escape");
+  await wait();
+  check(!dialogOpen(), "原生次级路径收尾:弹窗已关");
 }
 
 /** 第 181 批反向审查钉死(无宿主降级,族②/#36 旁支):capabilities 自报可用
@@ -247,6 +310,7 @@ window.importDialog = {
     await failureStaysWithProminentClose();
     await manualCloseDuringWindowNoStaleTimer();
     await userTakeoverCancelsAutoClose();
+    await windowsPickerPathInsideDialog();
     await cloudDownloadsWithoutHostHonestUnavailable();
     return results;
   },

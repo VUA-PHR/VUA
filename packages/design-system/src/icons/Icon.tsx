@@ -13,6 +13,8 @@ export type IconName =
   | "arrow-right"
   | "flask"
   | "arrow-left"
+  | "arrow-up"
+  | "edit"
   | "clock"
   | "minimize"
   | "maximize"
@@ -38,6 +40,9 @@ const paths: Record<IconName, string> = {
   question: "M9.5 9a2.5 2.5 0 1 1 3.4 2.34c-.83.3-.9 1-.9 1.66M12 17v.5",
   "arrow-right": "M4 12h15M13 6l6 6-6 6",
   "arrow-left": "M20 12H5M11 6l-6 6 6 6",
+  // 应用内文件夹选择器(2026-09-25):上一级 = 上箭头,路径编辑 = 铅笔
+  "arrow-up": "M12 20V5M6 11l6-6 6 6",
+  edit: "M4 20h4.5L19.7 8.8a2.1 2.1 0 0 0-3-3L5.5 17v3ZM13.8 6.2l3 3",
   flask: "M10 3h4M10 3v5l-5.5 9.5A2 2 0 0 0 6.2 21h11.6a2 2 0 0 0 1.7-3.5L14 8V3",
   clock: "M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18ZM12 7.5V12l3.5 2",
   minimize: "M5 12h14",

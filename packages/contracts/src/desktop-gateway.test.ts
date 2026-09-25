@@ -3,7 +3,59 @@ import {
   DESKTOP_GATEWAY_MAX_REQUEST_BYTES,
   isDesktopGatewayRequestV1,
   requestByteLength,
+  type DesktopFsApiV1,
+  type DesktopFsListV1,
+  type DesktopFsResultV1,
 } from "./desktop-gateway.js";
+
+describe("DesktopFsApiV1 (2026-09-25 用户裁决:素材导入应用内文件夹选择器)", () => {
+  // 形状锚(additive 面,与 DesktopSystemApiV1 同批纪律):结果信封可判别、
+  // 错误闭集六值、列表三键——类型由 TS 编译期强制,此处钉运行期词面与信封语义
+  const list: DesktopFsListV1 = {
+    path: "C:/Users/synthetic",
+    parent: "C:/Users",
+    entries: [{ name: "material-pack", path: "C:/Users/synthetic/material-pack", hidden: false }],
+  };
+  const okResult: DesktopFsResultV1<DesktopFsListV1> = { ok: true, value: list };
+  const denied: DesktopFsResultV1<DesktopFsListV1> = { ok: false, error: "access_denied" };
+
+  it("result envelope discriminates ok/value from error", () => {
+    expect(okResult.ok).toBe(true);
+    if (okResult.ok) {
+      expect(okResult.value.path).toBe("C:/Users/synthetic");
+      expect(okResult.value.parent).toBe("C:/Users");
+      expect(okResult.value.entries).toHaveLength(1);
+      expect(okResult.value.entries[0]?.hidden).toBe(false);
+    }
+    expect(denied.ok).toBe(false);
+    if (!denied.ok) {
+      expect(denied.error).toBe("access_denied");
+    }
+  });
+
+  it("error vocabulary is the closed six-value set", () => {
+    const all: readonly DesktopFsResultV1<unknown>[] = [
+      { ok: false, error: "not_found" },
+      { ok: false, error: "not_a_directory" },
+      { ok: false, error: "access_denied" },
+      { ok: false, error: "invalid_name" },
+      { ok: false, error: "already_exists" },
+      { ok: false, error: "failed" },
+    ];
+    for (const result of all) {
+      expect(result.ok).toBe(false);
+    }
+  });
+
+  it("api surface declares listDirectory and createDirectory (shape drift guard)", () => {
+    // 编译期即锁定形状;运行期钉方法名存在性,防 preload 面漂移
+    const apiShape: Record<keyof DesktopFsApiV1, true> = {
+      listDirectory: true,
+      createDirectory: true,
+    };
+    expect(Object.keys(apiShape)).toEqual(["listDirectory", "createDirectory"]);
+  });
+});
 
 describe("desktop Gateway v1", () => {
   it("accepts the single M1 query", () => {

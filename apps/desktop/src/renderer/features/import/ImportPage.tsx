@@ -13,6 +13,8 @@ import {
 import { commandErrorText } from "../warehouse/acquire-model.ts";
 import { format, strings } from "../../i18n/index.ts";
 import type { DownloadsListCompletedItemV04 } from "@vua/contracts";
+import { FolderPickerDialog } from "./FolderPickerDialog.tsx";
+import { mergeUniqueFolders } from "./folder-picker-model.ts";
 import {
   autoCloseArmed,
   BOOTH_HOME_URL,
@@ -66,8 +68,11 @@ import "./import-page.css";
  *   不再误用仓储命令文案(原「仓库服务尚未接入」与本错误无关,用户
  *   据此误判 #37 未修复)。Main 侧清单裁决语义不变。
  *   批 A 未含:目录模式(catalog 轨迁移随 IMP-4 重组,双轨头移除桌面自排);
- * - 本地段:W18 提交流原样迁入(拾取→确认列表→单命令 warehouse.import→
-   任务中心;IMP-4 收口,零新增词表)。两段落成同一素材包条目模型。
+ * - 本地段:W18 提交流迁入(确认列表→单命令 warehouse.import→任务中心;
+ *   IMP-4 收口)。拾取面 2026-09-25 起为应用内文件夹选择器(用户裁决,
+ *   ALCOM 形态:目录浏览/多选/新建/记忆,DesktopFsApiV1 窄面;Windows
+ *   原生选择降为选择器内次级路径),确认合流去重累加。两段落成同一素
+ *   材包条目模型。
  */
 const copy = strings.importPage;
 const acquireCopy = strings.warehouse.acquire;
@@ -387,6 +392,10 @@ function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
   const [pendingFolders, setPendingFolders] = useState<readonly string[] | null>(null);
   const [importBusy, setImportBusy] = useState(false);
   const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
+  // 应用内文件夹选择器(2026-09-25 用户裁决,ALCOM 形态):拾取从原生
+  // 对话框改为弹窗内目录浏览(DesktopFsApiV1 窄面),原生选择降为选择器
+  // 内次级路径;确认合流去重累加(重复拾取补选,不清空既有待确认清单)
+  const [pickerOpen, setPickerOpen] = useState(false);
   // 受理态自动关闭(W25 走查缺陷③根因修复):受理后弹窗短暂呈现「已受理」
   // 随即自动关闭,任务进度归任务中心——模态滞留(背景全部 inert)被用户
   // 视作整屏卡死的行为终止。武装判据见 autoCloseArmed(import-model,第
@@ -406,13 +415,21 @@ function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
 
   const startImport = () => {
     setImportFeedback(null);
-    void window.vua?.dialog.pickWarehouseFolders().then((folders) => {
-      if (folders === null || folders.length === 0) {
-        setImportFeedback(folders === null ? null : { kind: "notice", text: acquireCopy.importEmptySelection });
-        return;
-      }
-      setPendingFolders(folders);
-    });
+    setPickerOpen(true);
+  };
+
+  const handlePickerConfirm = (folders: readonly string[]) => {
+    if (folders.length === 0) {
+      setImportFeedback({ kind: "notice", text: acquireCopy.importEmptySelection });
+      return;
+    }
+    setPendingFolders((current) => mergeUniqueFolders(current, folders));
+  };
+
+  const handleUseWindowsPicker = (): Promise<readonly string[] | null> => {
+    const dialog = window.vua?.dialog;
+    if (dialog === undefined) return Promise.resolve(null);
+    return dialog.pickWarehouseFolders();
   };
 
   const submitImport = (folders: readonly string[]) => {
@@ -485,6 +502,12 @@ function LocalImportSection({ onRequestClose }: ImportCloseRequest) {
           </Button>
         </div>
       ) : null}
+      <FolderPickerDialog
+        open={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        onConfirm={handlePickerConfirm}
+        onUseWindowsPicker={handleUseWindowsPicker}
+      />
     </div>
   );
 }
