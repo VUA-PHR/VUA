@@ -20,7 +20,7 @@ collab/
 - 固定结构：front-matter（worktree / branch / role / baseline_commit / updated）+ 五节
   （当前焦点 / 自基线交付 / 阻塞 / 下次合并意图 / 留言）。
 - 阻塞与留言用 `[→角色]` 路由（六角色：集成/桌面/核心/产线/数据/环境，定义与代码所有权见
-  `docs/development-outline_ZH.md`；域 Schema 冻结责任归域角色，TS 面登记归桌面角色，
+  `docs/development-outline.md`；域 Schema 冻结责任归域角色，TS 面登记归桌面角色，
   集成本体路由 `[→集成]`）。
 - 文件随分支走：在自己分支上更新并提交，合并即传播到集成树，不需要任何复制。
 

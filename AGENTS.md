@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.2.1
+> Document version: 1.3.0
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -12,10 +12,8 @@ current implementation authority.
 
 0. Before starting any work in any worktree, run `pnpm collab:brief` and read the blockers and
    messages routed to this worktree or your role. The mechanism is defined in `collab/README.md`.
-1. Read `README.md`, then choose `docs/README_EN.md` or `docs/README_ZH.md` and follow the smallest
-   task-specific reading path.
-2. Read `docs/product-boundary_EN.md` or `docs/product-boundary_ZH.md` before changing product scope
-   or module ownership.
+1. Read `README.md`, then `docs/README.md` and follow the smallest task-specific reading path.
+2. Read `docs/product-boundary.md` before changing product scope or module ownership.
 3. Follow this authority order: current user ruling, product boundary, versioned protocols and tests,
    accepted decisions, architecture, design standards, then development plans.
 4. Resolve conflicting normative sources before implementation.
@@ -43,7 +41,7 @@ current implementation authority.
   (BOARD「待用户裁决」, tagged `[需用户]`) instead of being worked around by guessing, lowering the
   bar, or manufacturing consensus across processes. Rule text: `collab/README.md`.
 - Execution uses six roles — Integration, Desktop, Core, Production, Data, and Environment —
-  defined with code ownership in `docs/development-outline_ZH.md` ("执行角色（六角色）"). A role is
+  defined with code ownership in `docs/development-outline.md` ("执行角色（六角色）"). A role is
   a hat a session wears, not a branch or a worktree; within one slice the same session may hold
   several hats. Domain schemas are frozen by their owning role; Desktop registers the TS face of
   contracts; Integration arbitrates disputes.
@@ -85,7 +83,7 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - AMF is Recipe-first and owns Warehouse, Recipe, Assembly, Inspection, Release, and BDL access.
   The Inspection detection-service capability stays; a standalone Inspection page is no longer
   required — presentation defers to the product-boundary 1.5.0 ruling (user ruling 2026-09-22;
-  see `docs/product-boundary_EN.md` / `docs/product-boundary_ZH.md`). BDL is an AMF-private
+  see `docs/product-boundary.md`). BDL is an AMF-private
   local module, not a VUA-wide data service.
 - Unity changes cross the versioned Unity Bridge whenever a deterministic Bridge operation can
   exist. Do not substitute unversioned UI clicking.
@@ -103,7 +101,7 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
 - Current code reality: the Cargo workspace splits the Orchestrator into `crates/orchestrator`
   (core: task runtime, recovery, use cases, domain ports, contract types) plus `bdl-store`,
   `unity-bridge`, `provider-host`, `acquisition`, and `project-manager` (layout table in
-  `docs/architecture/system_ZH.md`). `environment_managers` moved to `project-manager` behind the
+  `docs/architecture/system.md`). `environment_managers` moved to `project-manager` behind the
   core-owned `VccSettingsReader` port (proposal 004, option 3, landed 2026-09-07); wire face and
   core port contracts are unchanged. New modules land in their owning crate from the start; the
   core must not grow adapter code.
@@ -167,10 +165,8 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 ## Documentation discipline
 
 - Managed documents carry a version header and are registered in `docs/REGISTRY.md`; the layering,
-  internal SemVer, and registry rules live in `docs/meta/documentation-governance_ZH.md` (EN mirror
-  alongside).
-- Product scope belongs in the matching `docs/product-boundary_EN.md` and
-  `docs/product-boundary_ZH.md` pair.
+  internal SemVer, and registry rules live in `docs/meta/documentation-governance.md`.
+- Product scope belongs in `docs/product-boundary.md`.
 - Dependency direction and ownership belong in architecture documents.
 - Interaction and visual acceptance belong in the accepted design standard.
 - Wire and persistent formats require explicit machine-readable versions.
@@ -178,11 +174,18 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 - Product releases and Git tags follow `docs/release/versioning_*`; product SemVer does not replace
   protocol, schema, persistence, or plugin-contract versions.
 - Reference and research material does not become implementation authority by implication.
-- Active developer documentation keeps matching `_EN.md` and `_ZH.md` versions. The bilingual
-  single-file entries under `docs/tool-catalog/` are the explicit exception. Schemas, source,
-  generated files, and official license text remain single-source.
+- Tracked documentation is single-language English (user ruling 2026-09-25). Two exceptions:
+  changelogs (`docs/release/v*.md`) are single-language Chinese, and the root README is maintained
+  in English, Chinese, Japanese, and Korean. Chinese mirrors live in the local gitignored
+  `docs-zh/` and carry no normative force. Schemas, source, generated files, and official license
+  text remain single-source.
 
 ## Document changelog
+
+- 1.3.0 (2026-09-25): user ruling — documentation language policy flip: tracked docs become
+  single-language English (suffix-less canonical names; the bilingual navigation pages are gone),
+  changelogs single-language Chinese, README four-language, Chinese mirrors local-only under
+  `docs-zh/`; documentation-discipline bullet rewritten and document references updated.
 
 - 1.2.1 (2026-09-22): user ruling 2026-09-22 — the AMF module description no longer requires a
   standalone Inspection page (the detection-service capability stays; presentation defers to
@@ -204,7 +207,7 @@ Electron handlers, Unity callbacks, or third-party wrappers.
   worktree↔role assignment in BOARD).
 - 1.1.0 (2026-09-06): six execution roles (Integration / Desktop / Core / Production / Data /
   Environment) replace the transitional F/B role pair; schema-freeze responsibility moves to the
-  domain-owning role. See `docs/development-outline_ZH.md` 2.0.0.
+  domain-owning role. See `docs/development-outline.md` 2.0.0.
 - 1.0.1 (2026-09-06): crate split landed (merge `a261393`) — the code-reality bullet now describes
   the six-crate layout; the `environment_managers` exception is registered as proposal 004.
 - 1.0.0 (2026-09-06): entered version management. Added the collab-first read step, the

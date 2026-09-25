@@ -31,4 +31,4 @@ This policy supersedes older local-main merge/direct-push instructions in collab
    repositories, or reinitialize worktrees to recover access. Report access failures to the operator.
 
 The foundation assignment contains the full transfer invariants and cutover checklist:
-[execution context](assignments/2026-09-22-repository-foundation_EN.md).
+[execution context](assignments/2026-09-22-repository-foundation.md).

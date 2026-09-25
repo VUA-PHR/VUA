@@ -1,6 +1,6 @@
 //! BDL local database (v0.2) — the acquisition-pipeline persistence surface.
 //!
-//! BDL is an AMF-private local module (docs/architecture/bdl_ZH.md): AMF
+//! BDL is an AMF-private local module (docs/architecture/bdl.md): AMF
 //! decides what is persisted, BDL stores it. This store owns the B4
 //! acquisition tables (download_events / local_artifacts / artifact_mappings)
 //! with the durability discipline of the task store (WAL, synchronous FULL,
@@ -1836,7 +1836,7 @@ impl BdlStore {
         Ok(())
     }
 
-    // --- observation write face (W17; docs/architecture/bdl_ZH.md) ---
+    // --- observation write face (W17; docs/architecture/bdl.md) ---
 
     /// Record one product observation: an upsert of the latest observed
     /// facts (a re-observation overwrites the row in the same transaction

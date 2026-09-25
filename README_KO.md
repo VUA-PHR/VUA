@@ -6,88 +6,98 @@
 [![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
 [![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
 
-VUA는 Windows를 우선 대상으로 하는 로컬 우선 VRChat 데스크톱 제작 환경입니다. 환경 구성,
-정당하게 허가된 에셋 획득, Avatar 조립과 검사, 로컬 에셋 관리, 재현 가능한 제작 기록을 하나의
-하나의 연속된 워크플로로 구성합니다.
+> 「Packed up and ready!(출격 준비 완료!)」——『Command & Conquer: Red Alert』의 MCV
+
+**VUA(VRC Ultra Assistant)** 는 VRChat 플레이어를 위한 Windows 데스크톱 제작
+환경입니다——특히 Unity를 다뤄 본 적이 없거나, 무엇이 필요한지 아직 모르는 플레이어를
+위합니다. 목표와 보유한 에셋에서 출발하여, 환경 구축·프로젝트 준비·Avatar 조립·검사·
+복구까지 VUA가 안내합니다.
 
 > [!IMPORTANT]
-> **현재 제품 버전은 v0.6.0(pre-alpha)입니다. 릴리스 노트는 [docs/release/](docs/release/)를
-> 참조하세요.** 이 저장소는 초기 평가와 개발을 위한 것이며, 일반 사용자가 일상적으로 사용할 수 있는
-> 안정 버전은 아직 아닙니다.
+> **현재 상태: v0.6.0(pre-alpha).** 이 리포지토리는 개발자 프리뷰를 제공합니다.
+> 아래 기능들은 리포지토리에 구현되어 있고 자동화 테스트로 검증되지만, 실제 기기에서의
+> 엔드투엔드 검증은 아직 완료되지 않았으며 일부 기능은 UI에서 아직 사용할 수 없습니다.
+> 모든 흐름을 초기 평가판으로 다뤄 주세요. 일반 플레이어를 위한 안정성 약속은
+> `1.0.0`부터 시작됩니다.
 
-## 제품 방향
+## VUA로 할 수 있는 것
 
-VUA는 사용자가 원하는 결과에서 시작합니다. 환경 준비 또는 선택한 에셋으로 Avatar 제작 같은 목표를
-고르면 필요한 단계를 계획하고, Unity Bridge를 통해 결정적인 Unity 작업을 실행하고, 결과를 검증한 뒤
-검토 가능한 Build Record를 보관합니다.
+- **환경 구축.** VUA가 하드웨어·소프트웨어·네트워크를 확인하고 목표에 맞는 설치 계획을
+  만듭니다. 헤드셋이 실제로 필요로 하는 VR 런타임과 드라이버, Unity `2022.3.22f1`,
+  VRChat SDK, 그리고 선택한 트래킹 도구. 계정 등록과 인증은 항상 공식 페이지에서
+  진행됩니다——VUA는 안내할 뿐, 대신 인증하지 않습니다.
+- **게임 배우기.** 5개 페이지의 인앱 튜토리얼이 설정 기초, 이동과 메뉴, 조정해 두면 좋은
+  안전 설정(`Personal Space`, `Allow Untrusted URLs`, Avatar 표시 제한), 그리고 사용 중인
+  디바이스를 다룹니다. SteamVR 오버레이 튜토리얼은 `1.0.0` 이후의 목표입니다.
+- **Avatar 제작.** Warehouse에서 에셋을 고르거나 보유한 에셋을 가져와 Recipe로 조합하면,
+  VUA가 결정론적이고 버전 관리되는 Bridge를 통해 Unity 안에서 조립을 실행합니다——가져오기
+  순서, 바인딩, 메뉴, 파라미터. 모든 단계에 스냅샷과 복구 경로가 있습니다.
+- **검사와 기록 보관.** 모든 제작 실행은 Build Record를 남기고, 검사 증거와 로그를
+  담습니다. 문제는 알림 센터와 실행 기록 양쪽에 표시됩니다. 알림을 닫아도 문제는
+  사라지지 않습니다.
+- **프로젝트와 패키지 관리.** 내장 패키지 매니저(`vrc-get` 기반)가 VPM 리포지토리 구독,
+  패키지 설치/업그레이드/제거, 로컬 패키지, 프로젝트 생성을 처리합니다. ALCOM이나 공식
+  VCC가 관리하는 프로젝트와의 호환성도 유지됩니다.
+- **파일이 아닌 Recipe 공유.** Recipe는 공유 가능한 텍스트 선언입니다: BOOTH 에셋 참조와
+  색상·토글·위치/회전/크기처럼 명시적으로 지원되는 옵션. 유료 에셋, 커스텀 텍스처, 메시는
+  절대 포함되지 않습니다. 재현하는 사람은 자신의 BOOTH 권한으로 에셋을 다시 가져옵니다.
 
-사용자는 목적지를 고르고, VUA는 의존성, 프로젝트 준비, 가져오기 순서, 바인딩, 메뉴, 최적화, 검증,
-복구라는 경로를 처리합니다.
+## 작동 방식
 
-## 주요 모듈
+VUA는 골 퍼스트입니다. 목적지는 당신이 고르고, 경로는 VUA가 계획합니다. 마법사가 목표·
+디바이스·현재 상태에 따라 경로를 고르기 때문에, 모든 플레이어가 하나의 큰 흐름을 따라갈
+필요가 없습니다. 모든 Unity 변경은 버전 관리되는 Unity Bridge를 거치며——스크립트 없는
+UI 클릭으로 대신하지 않습니다——위험한 단계에는 명시적 확인과 롤백 경로가 준비됩니다.
 
-- **데스크톱 앱:** Electron, React, TypeScript, Vite와 제한된 타입 기반 Gateway, 격리된 원격 웹
-  콘텐츠를 사용합니다.
-- **Kernel 및 애플리케이션 호스트:** 소형 Node.js Kernel이 시작, 데스크톱 보안, Gateway,
-  Orchestrator Provider 수명 주기를 담당합니다. React UI는 통제된 프레젠테이션 표면입니다.
-- **환경 및 프로젝트 관리:** VR, Unity, VRChat과 관련 도구를 검사하고 안내합니다. `vrc-get` 기반
-  VUA 패키지 관리자와 ALCOM/VCC 관리 프로젝트 호환성을 제공합니다. VPM 패키지 관리 설정
-  (`settings.json`의 저장소 구독 및 로컬 패키지 등록 표면)은 VCC/ALCOM과 동일한 설정 파일을
-  공유합니다. 자세한 내용은 [제품 경계(영어)](docs/product-boundary_EN.md)를 참조하세요.
-- **Orchestrator:** 계획, 승인, 영속 작업, 취소, 복구, 어댑터, Build Record를 담당하는 Rust 핵심이며,
-  교체 가능한 버전형 Provider 경계를 통해 Kernel에 연결됩니다.
-- **Avatar MegaFactory(AMF):** Warehouse, Recipe, Assembly, Inspection, Release의 다섯 단계를
-  포괄하는 Recipe-first 제작 흐름입니다. 모든 사용자가 고정된 다섯 단계를 거치도록 강제하는 대신
-  제작 마법사가 목표·기기·현재 상태에 따라 경로를 선택하고, 검사는 제작 기록(실행 기록+알림 센터)에
-  통합되는 방향입니다. 2026-09-22 제품 결정으로 수락된 방향이며 아직 구현되지 않았습니다.
-- **BDL(Booth Database Local):** 카탈로그, 출처, 이용 조건, 호환성, 검색, Warehouse 매핑 메타데이터를
-  관리하는 AMF 전용 로컬 모듈입니다.
-- **Unity Bridge:** 글로벌 Unity `2022.3.22f1`에서 결정적인 작업을 수행하는 버전 지정 프로토콜입니다.
-- **데스크톱 및 VR Overlay:** 안정된 애플리케이션 서비스를 통해 상태와 안내를 표시합니다. VR Overlay는
-  `1.0.0` 이후 방향 앵커입니다.
-- **플러그인 프로토콜:** 기능 선언형 확장 경계로 계획되어 있습니다. 호스팅 마켓플레이스와 신뢰할 수
-  없는 코드 실행은 현재 제공 계획에 포함되지 않습니다.
+내부 구조: Electron 데스크톱 셸, 좁은 타입 게이트웨이 뒤의 React UI, 그리고 유스케이스·
+영구 작업·복구를 소유하는 Rust Orchestrator. 자세한 내용은
+[아키텍처 문서](docs/architecture/system.md)를 참조하세요.
 
-SlimeVR Server, VRCFaceTracking 같은 런타임 통합은 제품 방향에 남아 있지만 구현은 `1.0.0`
-출시 이후에 시작합니다.
+## VUA · AMF · BDL
 
-## 아키텍처 경계
+| 이름 | 정의 |
+| --- | --- |
+| **VUA** | Windows 데스크톱 클라이언트 본체——이 리포지토리 |
+| **AMF**(Avatar MegaFactory) | VUA의 제작 도메인: Warehouse, Recipe, Assembly, Inspection, Release |
+| **BDL**(Booth Database Local) | AMF 전용 로컬 카탈로그: 에셋·출처·호환성 메모——클우드가 아니라 당신의 디스크 |
 
-```text
-React View
-  -> typed frontend feature / Gateway
-  -> Electron preload and main-process adapter
-  -> versioned application contract
-  -> Orchestrator use case
-  -> domain port
-  -> local or third-party adapter
-```
+## 보안 경계
 
-View는 Electron, Node.js, SQLite, Unity, Orchestrator 내부 또는 OS API를 직접 호출하지 않습니다.
-원격 페이지에는 로컬 애플리케이션 권한을 주지 않습니다. BDL은 AMF를 통해서만 사용하며 결정적인
-Unity 변경은 Unity Bridge를 거칩니다.
+- 유료 에셋은 당신의 PC에서만 처리되며, 어떤 서버·리포지토리·진단 파이프라인에도
+  업로드되지 않습니다.
+- VUA는 VRChat·BOOTH·Unity의 비밀번호, 쿠키, 2단계 인증 코드를 수집하지 않으며, 구매·
+  결제·연령·인증·접근 제어를 우회하지 않습니다.
+- VUA는 VRChat 클라이언트에 주입하거나 수정하지 않습니다. 로그인과 최종 업로드는 VRChat
+  공식 흐름에 남습니다——업로드 버튼은 공식 SDK에서 당신이 직접 누릅니다.
+- 공유되는 Recipe에는 구조·출처 참조·설정만 포함됩니다.
+- 기술적 검사는 취향이 아니라 사실을 보고합니다. Avatar의 외모와 동작이 기대에 부합함을
+  보장하지 않습니다.
 
-## 보안 및 배포 경계
+## VUA의 방향
 
-- 구매, 결제, 신원, 연령, 인증 또는 접근 제어를 우회하지 않습니다.
-- BOOTH 세션, 주문, 다운로드, 유료 에셋 및 제작 상태는 사용자 기기에 유지합니다.
-- 저장소와 클라우드 CI 테스트에는 실제 상품이나 사용자 콘텐츠 없이 운영 데이터와 같은 구조를 가진
-  합성 데이터를 사용합니다. 로컬 읽기 전용 호환성 테스트에서는 공개 BOOTH 페이지를 사용할 수 있습니다.
-- 개발자는 합법적으로 취득한 에셋으로 Unity 워크플로를 로컬에서 검증할 수 있습니다. 유료 에셋,
-  사용자 프로젝트, 인증 정보, 캡처한 페이지 콘텐츠, 운영 데이터 및 비공개 로그는 로컬에만 보관합니다.
-- 제3자 바이너리를 번들하기 전에 라이선스, 재배포, 업데이트, 서명, 고지 요건을 개별 심사합니다.
+- `1.0.0`: 일반 플레이어를 위한 안정성 약속. 전체 흐름의 실기 수용을 관문으로 합니다.
+- `1.0.0` 이후: SteamVR 오버레이 튜토리얼, 런타임 통합(SlimeVR, VRCFaceTracking),
+  플러그인 생태계——각각 독립적인 보안 결정을 전제로 합니다.
+- 채택되었지만 아직 미구현인 방향: 마법사 경로 선택, Recipe 오버레이 의미와 명시적 충돌
+  선택지, 공유 시 출처 보완, 검사의 제작 기록으로의 완전한 통합. 기본 꺼짐 상태의 실험적
+  호환성 증거 수집기가 뒤따를 수 있습니다. 어느 쪽이든 BDL의 로컬 저장소는 영향을 받지
+  않습니다.
+- 독립 경량 UI(egui/Slint)는 무기한 연기되었습니다. Electron 리소스 절약 모드는
+  유지됩니다.
 
-## 문서 및 기여
+## 문서
 
-- [Developer documentation — English](docs/README_EN.md)
-- [开发文档 — 简体中文](docs/README_ZH.md)
-- [Versioning policy — English](docs/release/versioning_EN.md)
-- [Contributing — English](CONTRIBUTING_EN.md)
-- [贡献指南 — 简体中文](CONTRIBUTING_ZH.md)
+- [문서 가이드](docs/README.md)——작업별 최소 경로
+- [제품 경계](docs/product-boundary.md)
+- [아키텍처](docs/architecture/system.md)
+- [v0.6.0 릴리스 노트(중국어)](docs/release/v0.6.0.md)
+- [기여 가이드](CONTRIBUTING.md) · [보안 정책](SECURITY.md)
 
-이 저장소는 [Apache License 2.0](LICENSE)으로 배포됩니다. [NOTICE](NOTICE),
-[상표 지침(영문)](TRADEMARKS_EN.md), [제3자 고지(영문)](THIRD_PARTY_NOTICES_EN.md)도 확인하세요.
-제품 릴리스는 Semantic Versioning 2.0.0을 따르며 버전이 지정된 프로토콜과 Schema는 독립적인
-호환성 버전을 유지합니다.
+## 라이선스
+
+이 리포지토리는 [Apache License 2.0](LICENSE)으로 라이선스됩니다. [NOTICE](NOTICE),
+[상표 안내](TRADEMARKS.md), [서드파티 고지](THIRD_PARTY_NOTICES.md)도 참조하세요.
+제품 릴리스는 Semantic Versioning 2.0.0을 따릅니다. 버전 관리되는 프로토콜과 스키마는
+각각 독립적인 호환성 버전을 유지합니다.
 
 Copyright 2026 Aran52.

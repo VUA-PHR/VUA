@@ -2124,7 +2124,7 @@ fn b3_batch150_execution_refuses_a_packages_archive_added_after_planning() {
 }
 
 // --- S2 cancellation observations (design registration
-// collab/design/2026-09-23-port-cancellation-points_ZH.md): the executor's
+// collab/design/2026-09-23-port-cancellation-points.md): the executor's
 // new token observations short-circuit honestly under an injected cancel
 // request and ride the STANDING compensation arms — no new cancellation
 // layer, no port-face change. ---

@@ -7,6 +7,9 @@
 /docs/migration/
 /docs/plans/
 /docs/reference/
+# Local Chinese mirrors of the (single-language English) tracked documentation;
+# maintained and synced locally only, never registered (user ruling 2026-09-25).
+/docs-zh/
 # /docs/project-context*.md removed from this block per U15 ruling (2026-09-21):
 # the cold-start primer serves every worktree and its prior full text must live
 # in Git history, so the trio is tracked from slice/u15-project-context-condensed.

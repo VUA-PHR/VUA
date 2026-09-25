@@ -22,7 +22,7 @@
 1. 运行 `pnpm collab:brief`，先处理【① 注意】中指向本角色的阻塞与留言（在相关 proposal
    内联线程回复，或更新本树状态文件）；
 2. 领取任务，优先级从高到低：本树状态文件中自己的在途事项 → collab/BOARD.md 开放问题中
-   本角色行 → docs/development-outline_ZH.md「当前窗口」本角色行 → 下一个未关闭 M 门的
+   本角色行 → docs/development-outline.md「当前窗口」本角色行 → 下一个未关闭 M 门的
    任务分解表中本角色行；标有 [需用户] 的条目跳过（等用户裁决，不得代决）；
    领取旧任务前先核对最新产品裁决（product-boundary 1.5.0，2026-09-22，要点
    见 collab/BOARD.md「最新裁决」节）：旧状态、旧 proposal 与新边界冲突时，

@@ -2,7 +2,7 @@
 //! face (`record_product_observation`) and the catalog assembly that now
 //! consumes the observed columns.
 //!
-//! Semantics under test (docs/architecture/bdl_ZH.md, write-face section):
+//! Semantics under test (docs/architecture/bdl.md, write-face section):
 //! - upsert of the latest observed facts + the `catalog_updated_seq`
 //!   bookkeeping counter in the same transaction (status turns `ok` with
 //!   the first write);
