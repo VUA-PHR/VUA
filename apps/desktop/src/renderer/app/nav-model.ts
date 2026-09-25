@@ -3,8 +3,9 @@ import type { TermId } from "../i18n/terms.ts";
 
 /**
  * 信息架构与导航模型(美术方案 v0.5.0 §2.1)。
- * 一级 Tab = 四类用户目标(环境部署/游戏引导/工具合集/模型生产,
- * S-XIII-3 起工具合集第四、模型生产第五),
+ * 一级 Tab = 三个用户目标(环境部署/游戏引导/模型生产;2026-09-26 用户
+ * 裁决:工具合集模块并入环境部署,成为其第二个侧栏分组,页面 id 不变,
+ * 组标签机制随之启用——环境/工具),
  * 设置不是用户目标,固定在顶部最右侧但仍参与路由、颜色辖区与侧栏计算;
  * 模型生产侧栏与其余模块一致为无组标签平铺(2026-09-20 导航重构,用户
  * 裁决):素材导入与搭配草稿不再是独立页,分别收敛为仓储页/配方页
@@ -23,8 +24,8 @@ import type { TermId } from "../i18n/terms.ts";
  * key 与术语 id;显示文案由表现层经 strings / termLabel 解析。
  */
 
-/** 四类用户目标(业务模块);与首次引导的目标 id 一致(onboarding-model.GoalId) */
-export type BusinessModuleId = "env" | "guide" | "production" | "tools";
+/** 三类用户目标(业务模块);与首次引导的目标 id 一致(onboarding-model.GoalId) */
+export type BusinessModuleId = "env" | "guide" | "production";
 
 /** 应用区块:业务模块 + 独立的设置区(指挥台区块随 home 页退役移除) */
 export type AppSectionId = BusinessModuleId | "settings";
@@ -88,17 +89,29 @@ export interface ModuleDef {
  *  页退役,生产着陆前移——环境部署是四类用户目标之首的默认页) */
 export const defaultPage: PageId = "env-play";
 
-/** Tab 顺序即顶部从左到右:四个业务模块(指挥台 Tab 随 home 页退役移除) */
+/** Tab 顺序即顶部从左到右:三个业务模块(指挥台 Tab 随 home 页退役移除) */
 export const businessModules: readonly ModuleDef[] = [
   {
     id: "env",
     labelKey: "env",
     defaultPage: "env-play",
+    // 2026-09-26 用户裁决:工具合集模块并入环境部署,页面 id 不变(深链接
+    // #/tools-* 保持有效),成为第二个侧栏分组;组标签机制随之启用
     groups: [
       {
+        labelKey: "env",
         pages: [
           { id: "env-play", labelKey: "envPlay" },
           { id: "env-create", labelKey: "envCreate" },
+        ],
+      },
+      {
+        labelKey: "tools",
+        pages: [
+          { id: "tools-discover", labelKey: "toolsDiscover" },
+          { id: "tools-devices", labelKey: "toolsDevices" },
+          { id: "tools-calibration", labelKey: "toolsCalibration" },
+          { id: "tools-installed", labelKey: "toolsInstalled" },
         ],
       },
     ],
@@ -115,21 +128,6 @@ export const businessModules: readonly ModuleDef[] = [
           { id: "guide-safety", labelKey: "guideSafety" },
           { id: "guide-devices", labelKey: "guideDevices" },
           { id: "guide-tutorials", labelKey: "guideTutorials" },
-        ],
-      },
-    ],
-  },
-  {
-    id: "tools",
-    labelKey: "tools",
-    defaultPage: "tools-discover",
-    groups: [
-      {
-        pages: [
-          { id: "tools-discover", labelKey: "toolsDiscover" },
-          { id: "tools-devices", labelKey: "toolsDevices" },
-          { id: "tools-calibration", labelKey: "toolsCalibration" },
-          { id: "tools-installed", labelKey: "toolsInstalled" },
         ],
       },
     ],

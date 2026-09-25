@@ -163,13 +163,15 @@ demoTaskTitle: "Demo task",
       env: "Environment",
       guide: "Guide",
       production: "Avatar creation",
-      tools: "Tools",
       settings: "Settings",
     },
-    /** No module currently uses sidebar group labels (production went flat in
-     * the 2026-09-20 navigation rework); the mechanism stays, keys return here
-     * with the next labeled group. */
-    groups: {},
+    /** 2026-09-26 ruling: the tool collection merged into the environment
+     *  module as its second sidebar group, enabling the group-label
+     *  mechanism for the first time — environment group and tools group. */
+    groups: {
+      env: "Environment",
+      tools: "Tools",
+    },
     pages: {
       envPlay: "Play Environment",
       envCreate: "Creator environment",
@@ -307,11 +309,6 @@ demoTaskTitle: "Demo task",
         description:
           "Organize assets, create a {recipe}, then set up, check and prepare your avatar for upload.",
         impact: "Enables the asset library, recipes and avatar workbench.",
-      },
-      tools: {
-        title: "Tool Collection",
-        description: "Discover and manage reviewed community tools, device adapters and calibration.",
-        impact: "Enables the tool catalog and device entries.",
       },
     },
     step2Title: "Which environments should be prepared?",

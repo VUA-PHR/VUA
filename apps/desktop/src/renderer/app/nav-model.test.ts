@@ -42,16 +42,17 @@ function moduleLabel(def: ModuleDef): string {
   return strings.nav.tabs[def.labelKey];
 }
 
-test("top-level structure is four goal tabs plus an independent settings section", () => {
-  // 2026-09-25 用户裁决:指挥台(home)页退役——首 Tab 为环境部署
+test("top-level structure is three goal tabs plus an independent settings section", () => {
+  // 2026-09-25 用户裁决:指挥台(home)页退役——首 Tab 为环境部署;
+  // 2026-09-26 用户裁决:工具合集并入环境部署(第二分组),顶栏剩三个业务模块
   assert.deepEqual(
     businessModules.map((m) => m.id),
-    ["env", "guide", "tools", "production"],
+    ["env", "guide", "production"],
   );
   assert.equal(settingsModule.id, "settings");
   assert.deepEqual(
     modules.map((m) => m.id),
-    ["env", "guide", "tools", "production", "settings"],
+    ["env", "guide", "production", "settings"],
   );
 });
 
@@ -66,7 +67,6 @@ test("no forced redirects: tab landing is unconditional, workshop stays workshop
   assert.equal(resolveTabLanding("production"), "warehouse");
   assert.equal(resolveTabLanding("env"), "env-play");
   assert.equal(resolveTabLanding("guide"), "guide-start");
-  assert.equal(resolveTabLanding("tools"), "tools-discover");
   assert.equal(resolveTabLanding("settings"), "settings-goals");
   assert.ok(isPageId("workshop"));
   assert.ok(clicksToReach("workshop") <= 2);
@@ -83,11 +83,35 @@ test("every page belongs to exactly its own module", () => {
   assert.equal(moduleOf("release"), "production");
   assert.equal(moduleOf("workshop"), "production");
   assert.equal(moduleOf("packages"), "production");
-  assert.equal(moduleOf("tools-discover"), "tools");
-  assert.equal(moduleOf("tools-installed"), "tools");
+  // 2026-09-26 用户裁决:工具合集并入环境部署——页面 id 不变,模块归属换为 env
+  assert.equal(moduleOf("tools-discover"), "env");
+  assert.equal(moduleOf("tools-devices"), "env");
+  assert.equal(moduleOf("tools-calibration"), "env");
+  assert.equal(moduleOf("tools-installed"), "env");
   assert.equal(moduleOf("settings-version"), "settings");
   assert.equal(moduleOf("settings-experimental"), "settings");
   assert.equal(moduleOf("settings-goals"), "settings");
+});
+
+test("environment module carries the merged tools group with labels, page ids unchanged", () => {
+  // 2026-09-26 用户裁决:工具合集成为环境部署的第二侧栏分组;
+  // 组标签机制首次启用(环境/工具),深链接 #/tools-* 保持有效
+  const env = modules.find((m) => m.id === "env");
+  assert.equal(env?.defaultPage, "env-play");
+  assert.deepEqual(
+    env?.groups.map((g) => g.labelKey),
+    ["env", "tools"],
+  );
+  assert.deepEqual(
+    env?.groups[0]?.pages.map((p) => p.id),
+    ["env-play", "env-create"],
+  );
+  assert.deepEqual(
+    env?.groups[1]?.pages.map((p) => p.id),
+    ["tools-discover", "tools-devices", "tools-calibration", "tools-installed"],
+  );
+  assert.equal(strings.nav.groups.env, "环境");
+  assert.equal(strings.nav.groups.tools, "工具");
 });
 
 test("production sidebar is one flat group without a group label, pages in flow order", () => {
@@ -136,10 +160,11 @@ test("sidebar labels use localized names without English prefixes", () => {
   assert.equal(workshop ? pageLabel(workshop) : "", "车间");
 });
 
-test("tab labels come from the string table (four goals + settings)", () => {
+test("tab labels come from the string table (three goals + settings)", () => {
+  // 2026-09-26 用户裁决:工具合集并入环境部署,顶栏剩三个业务模块
   assert.deepEqual(
     modules.map((m) => moduleLabel(m)),
-    ["环境部署", "游戏引导", "工具合集", "模型生产", "设置"],
+    ["环境部署", "游戏引导", "模型生产", "设置"],
   );
 });
 

@@ -75,7 +75,7 @@ test("serialize always writes a clean, parseable payload", () => {
 
 test("goal gates require both the env goal and the specific environment", () => {
   assert.equal(goalEnabled(completedAll, "guide"), true);
-  assert.equal(goalEnabled(completedAll, "tools"), false);
+  assert.equal(goalEnabled({ ...completedAll, goals: ["production"] }, "env"), false);
   assert.equal(goalEnabled(null, "env"), false);
   assert.equal(envGoalEnabled(completedAll, "play"), true);
   assert.equal(
@@ -85,6 +85,21 @@ test("goal gates require both the env goal and the specific environment", () => 
   assert.equal(
     envGoalEnabled({ ...completedAll, goals: ["guide"] }, "play"),
     false,
+  );
+});
+
+test("sanitize drops retired goal ids from older stored payloads", () => {
+  // 2026-09-26 用户裁决:工具合集目标退役——旧存储的 "tools" 当未知 id 丢弃
+  assert.deepEqual(
+    parseStoredGoals(
+      JSON.stringify({
+        version: 1,
+        onboarding: "completed",
+        goals: ["tools", "env"],
+        environments: ["play"],
+      }),
+    ),
+    { version: 1, onboarding: "completed", goals: ["env"], environments: ["play"] },
   );
 });
 

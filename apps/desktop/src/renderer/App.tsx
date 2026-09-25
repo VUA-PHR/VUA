@@ -160,7 +160,7 @@ const overrideGoals: Record<Exclude<OnboardingOverride, null>, StoredGoalsV1> = 
   all: {
     version: 1,
     onboarding: "completed",
-    goals: ["env", "guide", "production", "tools"],
+    goals: ["env", "guide", "production"],
     environments: ["play", "create"],
   },
   skip: { version: 1, onboarding: "skipped", goals: [], environments: [] },
@@ -1070,7 +1070,7 @@ function AppShell({
           ref={tabsRef}
         >
           {navPhase === "collapsed" ? (
-            /* 窄窗折叠:整排 Tab 收进一个按钮,点击在按钮下方弹出原 5 项;
+            /* 窄窗折叠:整排 Tab 收进一个按钮,点击在按钮下方弹出原两项;
              * 标签显示当前模块(落在设置页时退回通用导航名);
              * 当前模块是业务模块时带 aria-current,按下态视觉与展开时一致 */
             <button
