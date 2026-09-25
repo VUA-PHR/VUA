@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Icon } from "@vua/design-system";
 import type { DesktopFsErrorV1, DesktopFsListV1 } from "@vua/contracts";
 import { Button } from "../../components/primitives/Button.tsx";
@@ -224,7 +225,10 @@ export function FolderPickerDialog({
   };
 
   if (!open) return null;
-  return (
+  // portal 到 body:内联渲染会被祖先 .vua-card 的 backdrop-filter 劫持
+  // (backdrop-filter 使元素成为 fixed 后代的包含块,遮罩只剩卡片大小);
+  // modal-layer 的隔离/焦点循环本就从 document.body 起步,portal 完全兼容
+  return createPortal(
     <ModalOwnerContext value={modal.id}>
       <div
         ref={modal.overlayRef}
@@ -446,6 +450,7 @@ export function FolderPickerDialog({
           </div>
         </div>
       </div>
-    </ModalOwnerContext>
+    </ModalOwnerContext>,
+    document.body,
   );
 }
