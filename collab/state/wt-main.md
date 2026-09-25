@@ -141,6 +141,16 @@ push aa240685 零 run 系四 workflow push paths 过滤设计使然（paths 均�
 collab/），非 CI 故障，如实登记免误报。本节随 integration/batch-198b
 followup PR 入库。
 
+### 后续演进补记（2026-09-25 23:5x，append-only）
+
+本批「④分叉事实」登记后数分钟内，desktop-nav-import-ux 已由用户侧随 PR #45
+合并入 main（962f3557，2026-09-25T15:38:51Z；合并时分支头 82482d8b＝较本席
+23:0x 观测的 bd37cdf2 又新增提交，范围扩展＝folder picker portal 修复＋删
+指挥台＋车间标签）——「候派发」被超越闭环，本批登记以闭环补记为准；main
+push ts run 36155580399 ✓ attempt 1（rust/schema-vectors 系 paths 过滤未触
+发）。桌面读数以 PR #45 提交信息自载为准，本席未复测。用户侧合并仍在活跃
+推进（PR #44→#45 相隔 14 分钟），后序集成批照录演进。
+
 ## 留言
 - [→操作者/用户]：单语化翻转协作机制判定四条已登 BOARD 顶部消化节
   （双语配对纪律被取代／新增文档 English-only／changelog 两口径／collab
