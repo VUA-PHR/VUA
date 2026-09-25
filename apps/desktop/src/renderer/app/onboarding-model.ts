@@ -10,7 +10,7 @@ import { storageKeys } from "./storage-keys.ts";
  * 旧子目标不得继续生效。
  */
 
-/** 目标 id 与业务模块一一对应(§2.1 四类用户目标) */
+/** 目标 id 与业务模块一一对应(§2.1 两类用户目标) */
 export type GoalId = BusinessModuleId;
 
 /** 环境细化目标:play = 游玩环境,create = 生产环境(与 deployer-model.CheckZone 一致) */
@@ -26,7 +26,10 @@ export interface StoredGoalsV1 {
 
 export const goalsStorageKey = storageKeys.goals;
 
-const goalIds: readonly GoalId[] = ["env", "guide", "production", "tools"];
+// 2026-09-26 用户裁决:工具合集并入环境部署、游戏引导迁至覆盖层窗口——
+// 两者的引导目标随之退役;旧存储里的 "tools"/"guide" 目标由 sanitizeGoals
+// 当未知 id 丢弃(与既往漂移同纪律)
+const goalIds: readonly GoalId[] = ["env", "production"];
 const envGoalIds: readonly EnvGoalId[] = ["play", "create"];
 
 function isGoalId(value: unknown): value is GoalId {

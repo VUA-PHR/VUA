@@ -16,7 +16,9 @@ export const tutorialWindowAvailable = false;
 
 /** 打开/聚焦桌面教程窗口(会话非进行中时由应用层启动新会话);
  * tutorialId 指定要开始的教程(游戏引导各页 CTA),缺省继续当前/默认教程。
- * M5 接入前显式失败:调用方(GuidePage)呈现"启动失败"诚实文案 */
+ * M5 接入前显式失败。原调用方 GuidePage 已随游戏引导 Tab 退役
+ * (2026-09-26 裁决,引导内容迁至覆盖层窗口);本端口为 M5 教程切片保留,
+ * 接入前无在册调用方。 */
 export function openTutorialWindow(tutorialId?: string): Promise<TutorialSnapshotV1> {
   return Promise.reject(new Error(`tutorial_service_unavailable:${tutorialId ?? "default"}`));
 }

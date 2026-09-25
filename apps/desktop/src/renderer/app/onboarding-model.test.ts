@@ -14,7 +14,7 @@ import {
 const completedAll: StoredGoalsV1 = {
   version: 1,
   onboarding: "completed",
-  goals: ["env", "guide"],
+  goals: ["env", "production"],
   environments: ["play", "create"],
 };
 
@@ -50,32 +50,32 @@ test("parse: valid payload round-trips and unknown goal ids are dropped", () => 
 
 test("sanitize: unselecting env clears stale environment sub-goals", () => {
   // 勾选环境部署后又取消:旧子目标不得继续生效
-  assert.deepEqual(sanitizeGoals(["guide"], ["play", "create"]), {
-    goals: ["guide"],
+  assert.deepEqual(sanitizeGoals(["production"], ["play", "create"]), {
+    goals: ["production"],
     environments: [],
   });
-  assert.deepEqual(sanitizeGoals(["env", "guide"], ["create"]), {
-    goals: ["env", "guide"],
+  assert.deepEqual(sanitizeGoals(["env", "production"], ["create"]), {
+    goals: ["env", "production"],
     environments: ["create"],
   });
 });
 
 test("serialize always writes a clean, parseable payload", () => {
-  const raw = serializeGoals("completed", ["env", "guide"], ["play"]);
+  const raw = serializeGoals("completed", ["env", "production"], ["play"]);
   assert.deepEqual(parseStoredGoals(raw), {
     version: 1,
     onboarding: "completed",
-    goals: ["env", "guide"],
+    goals: ["env", "production"],
     environments: ["play"],
   });
   // 序列化前同样清洗:env 未选时 environments 落盘为空
-  const cleared = serializeGoals("completed", ["guide"], ["play"]);
+  const cleared = serializeGoals("completed", ["production"], ["play"]);
   assert.deepEqual(parseStoredGoals(cleared)?.environments, []);
 });
 
 test("goal gates require both the env goal and the specific environment", () => {
-  assert.equal(goalEnabled(completedAll, "guide"), true);
-  assert.equal(goalEnabled(completedAll, "tools"), false);
+  assert.equal(goalEnabled(completedAll, "production"), true);
+  assert.equal(goalEnabled({ ...completedAll, goals: ["production"] }, "env"), false);
   assert.equal(goalEnabled(null, "env"), false);
   assert.equal(envGoalEnabled(completedAll, "play"), true);
   assert.equal(
@@ -83,8 +83,24 @@ test("goal gates require both the env goal and the specific environment", () => 
     false,
   );
   assert.equal(
-    envGoalEnabled({ ...completedAll, goals: ["guide"] }, "play"),
+    envGoalEnabled({ ...completedAll, goals: ["production"] }, "play"),
     false,
+  );
+});
+
+test("sanitize drops retired goal ids from older stored payloads", () => {
+  // 2026-09-26 用户裁决:工具合集/游戏引导目标退役——旧存储的 "tools"/"guide"
+  // 当未知 id 丢弃
+  assert.deepEqual(
+    parseStoredGoals(
+      JSON.stringify({
+        version: 1,
+        onboarding: "completed",
+        goals: ["tools", "guide", "env"],
+        environments: ["play"],
+      }),
+    ),
+    { version: 1, onboarding: "completed", goals: ["env"], environments: ["play"] },
   );
 });
 

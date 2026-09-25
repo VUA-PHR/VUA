@@ -154,14 +154,15 @@ demoTaskTitle: "デモタスク",
   nav: {
     tabs: {
       env: "環境セットアップ",
-      guide: "ゲームガイド",
       production: "アバター制作",
-      tools: "ツール集",
       settings: "設定",
     },
-    /** 現在どのモジュールのサイドバーもグループラベルを使わない(モデル生産は
-     *  2026-09-20 のナビ再編でフラット化)。グループ機構は残す。 */
-    groups: {},
+    /** 2026-09-26 ユーザー裁決:ツール集は環境モジュールに統合され、2 つ目の
+     *  サイドバーグループに——グループラベル機構が初めて有効化。 */
+    groups: {
+      env: "環境",
+      tools: "ツール",
+    },
     pages: {
       envPlay: "プレイ環境",
       envCreate: "制作環境",
@@ -259,12 +260,12 @@ demoTaskTitle: "デモタスク",
   app: {
     moduleNavAria: "モジュール",
     sidebarAria: "機能",
-    themeToLight: "ライトテーマに切替",
-    themeToDark: "ダークテーマに切替",
     windowMinimize: "最小化",
     windowMaximize: "最大化/元に戻す",
     windowClose: "閉じる",
-    overlayToggle: "オーバーレイ",
+    /** 顶栏覆盖层入口(2026-09-26 裁決):常駐ウィンドウを開き/フォーカスして
+     *  ガイドビューへ切替 */
+    overlayGuide: "ガイド",
   },
   onboarding: {
     steps: {
@@ -288,20 +289,10 @@ demoTaskTitle: "デモタスク",
         description: "VRChat で遊ぶ、またはアバターを作るために必要なソフト・空間・設定を確認して準備します。",
         impact: "環境チェックとプレイ/制作環境の状態ページを有効にします。",
       },
-      guide: {
-        title: "ゲームガイド",
-        description: "VRChat への入り方、基本操作、安全設定、デバイスの使い方を学びます。",
-        impact: "チュートリアルページと学習進捗の記録を有効にします。",
-      },
       production: {
         title: "アバター制作",
         description: "素材を整理し、{recipe}を作成して、セットアップ・検査・公開準備を行います。",
         impact: "倉庫・レシピ・作業場ページを有効にします。",
-      },
-      tools: {
-        title: "ツール集",
-        description: "審査済みのコミュニティツール、デバイスアダプタ、キャリブレーションを見つけて管理します。",
-        impact: "ツールカタログとデバイス入口を有効にします。",
       },
     },
     step2Title: "どの環境を準備しますか?",
@@ -693,15 +684,7 @@ rolled_back: "ロールバック済み",
     },
   },
   guide: {
-    progressSlotTitle: "学習目標と進捗",
-    progressSlotEmpty: "下の任意のページからチュートリアルを始めると、現在の学習目標・完了進捗・「前回の続き」がここに表示されます。",
-    progressSlotActive: "チュートリアル進行中: ステップ {index} / {total} —— {title}",
-    progressSlotCompleted: "チュートリアル完了。チュートリアルウィンドウで閉じるか再開できます。",
-    progressSlotFailed: "チュートリアル進捗の読み取りに失敗しました。",
-    progressSlotRetry: "再試行",
-    startTutorialCta: "チュートリアルウィンドウでこのページを学ぶ",
-    startTutorialFailed: "チュートリアルウィンドウを開けませんでした。もう一度お試しください。",
-    draftNotice: "このページの内容は初期のプレースホルダ草稿です。正式なチュートリアル内容は今後のバージョン(M5)で整備されます。",
+    topicsAria: "ガイドのテーマ",
     mediaAlt: {
       pcKeys: "PC キーボード図: トーク・チャット・エモートホイールキーとスペースキーを強調",
       vrController: "VR コントローラ図: トリガーとグリップ部を強調",
@@ -805,6 +788,54 @@ rolled_back: "ロールバック済み",
             id: "accounts",
             title: "アカウントについて",
             paragraphs: ["Steam アカウントで始めた場合も、VRChat アカウントへのアップグレードや既存アカウントとの連携ができます。フレンドやお気に入りを引き継ぐには、公式の手順に従ってください。"],
+          },
+        ],
+      },
+      /** VUA 使用教程トピック(2026-09-26 ガイド宿主裁決):閲覧型。現在の
+       *  実装でできることだけを記述し、未接続機能を約束しない。 */
+      vua: {
+        title: "VUA の使い方",
+        intro: "VUA のウィンドウと主要フローの簡単な案内です。現在の実装でできることだけを書いています。",
+        sections: [
+          {
+            id: "window-tour",
+            title: "VUA のウィンドウを知る",
+            paragraphs: [
+              "トップバーには左から、モジュール切替(環境セットアップ/アバター制作)、設定、機能検索(Ctrl+P)、ガイド、通知が並び、左側のサイドバーには現在のモジュールの機能グループが表示されます。",
+              "画面下部のタスクセンターにバックグラウンドタスクとダウンロードが集まり、右上のベルで通知一覧を開けます。",
+            ],
+          },
+          {
+            id: "environment-page",
+            title: "環境ページ",
+            paragraphs: [
+              "プレイ/制作環境のページでは最初に環境検査が行われ、結果が足りない場合は修正プランが手順を案内します。",
+              "ツール集は環境モジュールのサイドバー「ツール」グループにあります。まだ未接続で、正直な空状態が表示されます。",
+            ],
+          },
+          {
+            id: "import-paths",
+            title: "素材の 2 つの取り込み方",
+            paragraphs: [
+              "ローカル素材: 倉庫ページのアプリ内フォルダ選択器で .unitypackage を含むフォルダを選ぶと、倉庫に登録されます。",
+              "BOOTH 商品: 内蔵ブラウザウィンドウで商品ページを開き、自分のアカウントで購入・ダウンロード後、ダウンロードをワンクリックで倉庫に取り込めます。",
+            ],
+          },
+          {
+            id: "production-line",
+            title: "制作ライン",
+            paragraphs: [
+              "ラインは倉庫 → レシピ → 作業場 → 出荷の順に進みます。素材は倉庫に入り、レシピで組み合わせ、作業場で実行計画を確認して進めます。",
+              "検査は制作記録に統合されています。結果は記録と一緒に表示され、独立した工程ではありません。",
+            ],
+          },
+          {
+            id: "settings-basics",
+            title: "設定の便利項目",
+            paragraphs: [
+              "外観はダーク/ライト/システムに従うが選べ、「システムに従う」は Windows の明暗モードに追従します。",
+              "リソース節約モードは装飾アニメーションを止めて負荷を下げるため、VR や低スペック環境に向いています。",
+            ],
           },
         ],
       },
@@ -1145,6 +1176,13 @@ rolled_back: "ロールバック済み",
    *  BuildRecordStatusV02 列挙をミラー。 */
   overlay: {
     surfaceTitle: "VUA オーバーレイ",
+    /** ビュー切替(2026-09-26 ガイド宿主裁決):タイトルと segmented コントロール
+     *  のビューラベル */
+    views: {
+      guide: "ガイド",
+      status: "ステータス",
+    },
+    viewSwitchAria: "オーバーレイ表示の切替",
     taskSectionLabel: "タスク",
     productionSectionLabel: "プロダクション",
     downloadSectionLabel: "ダウンロード",
@@ -2068,7 +2106,7 @@ rolled_back: "ロールバック済み",
     },
   },
   commandPalette: {
-    cta: "コマンド",
+    cta: "機能検索",
     ctaHint: "Ctrl+P",
     aria: "コマンドパレット",
     placeholder: "ページへ移動またはコマンドを実行…",
@@ -2180,6 +2218,7 @@ rolled_back: "ロールバック済み",
     theme: {
       appearanceHeading: "外観",
       appearanceAria: "外観テーマ",
+      system: "システムに従う",
       dark: "ダーク",
       light: "ライト",
       hcHeading: "ハイコントラスト",

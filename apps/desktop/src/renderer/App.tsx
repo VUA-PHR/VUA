@@ -32,6 +32,14 @@ import {
 import { resourceSaverActive, resourceSaverSource } from "./app/resource-saver.ts";
 import { storageKeys } from "./app/storage-keys.ts";
 import {
+  loadThemePreference,
+  resolveTheme,
+  saveThemePreference,
+  toggledPreference,
+  type ResolvedTheme,
+  type ThemePreference,
+} from "./app/theme-preference.ts";
+import {
   isUiRootAvailable,
   readUiRootSelection,
   writeUiRootSelection,
@@ -53,8 +61,6 @@ import { format, strings, termLabel, termSequence, TERMS } from "./i18n/index.ts
 import { currentLocale, localeRegistry } from "./i18n/index.ts";
 import { creatorEnvReady } from "./features/deployer/deployer-model.ts";
 import { DeployerPage } from "./features/deployer/DeployerPage.tsx";
-import { GuidePage } from "./features/guide/GuidePage.tsx";
-import type { GuidePageId } from "./features/guide/guide-content.ts";
 import { OnboardingPage, type OnboardingResult } from "./features/onboarding/OnboardingPage.tsx";
 import { NavigationConfirmOverlay } from "./app/NavigationConfirmOverlay.tsx";
 import { PackagesPage } from "./features/packages/PackagesPage.tsx";
@@ -108,8 +114,6 @@ import {
 import "./app-shell.css";
 import "./features/settings/settings.css";
 
-type Theme = "dark" | "light";
-
 /** 高对比度(C-I18N):auto = 跟随系统 forced-colors;on = 显式高对比配色 */
 type HcMode = "auto" | "on";
 
@@ -154,7 +158,7 @@ const overrideGoals: Record<Exclude<OnboardingOverride, null>, StoredGoalsV1> = 
   all: {
     version: 1,
     onboarding: "completed",
-    goals: ["env", "guide", "production", "tools"],
+    goals: ["env", "production"],
     environments: ["play", "create"],
   },
   skip: { version: 1, onboarding: "skipped", goals: [], environments: [] },
@@ -302,8 +306,9 @@ function ThemeSettingsPage({
               className="vua-settings-select"
               aria-label={copy.appearanceAria}
               value={theme}
-              onChange={(event) => onThemeChange(event.target.value as Theme)}
+              onChange={(event) => onThemeChange(event.target.value as ThemePreference)}
             >
+              <option value="system">{copy.system}</option>
               <option value="dark">{copy.dark}</option>
               <option value="light">{copy.light}</option>
             </select>
@@ -593,11 +598,12 @@ interface PageActions {
   navigate: (target: PageId) => void;
 }
 
-/** 主题页偏好管道(C-I18N/主题页):AppShell 持有的主题/HC/资源节约状态下传给主题设置页 */
+/** 主题页偏好管道(C-I18N/主题页):AppShell 持有的主题偏好/HC/资源节约状态下传给主题设置页 */
 interface PagePrefs {
-  theme: Theme;
+  /** 外观选择当前值:跟随系统时为偏好值;走查覆盖(?theme=)时为覆盖值 */
+  theme: ThemePreference;
   hc: HcMode;
-  onThemeChange: (theme: Theme) => void;
+  onThemeChange: (theme: ThemePreference) => void;
   onHcChange: (mode: HcMode) => void;
   /** 资源节约模式(S-VFX-5 落地):手动开状态(持久化) */
   saverOn: boolean;
@@ -629,12 +635,6 @@ function renderPage(
           : ("env-off" as const);
       return <DeployerPage zone={zone} goal={goal} onChooseGoals={actions.chooseGoals} />;
     }
-    case "guide-start":
-    case "guide-basics":
-    case "guide-safety":
-    case "guide-devices":
-    case "guide-tutorials":
-      return <GuidePage page={page as GuidePageId} />;
     case "warehouse":
       return <WarehousePage onNavigate={actions.navigate} />;
     case "recipe":
@@ -717,24 +717,23 @@ function AppShell({
   useEffect(() => {
     bootProgress.report("paint");
   }, []);
-  // 主题(C-RESUME 工作区恢复):localStorage 持久化优先,?theme= 仅作走查覆盖
-  const [themeOverrideFromUrl] = useState(() => {
+  // 主题(C-RESUME 工作区恢复 + 2026-09-26 跟随系统裁决):偏好三值
+  // dark|light|system 持久化(键 vua-theme,旧 dark|light 存储仍然合法);
+  // ?theme=dark|light 仅作走查覆盖——强制生效值,不写存储,会话内可被
+  // 设置页/palette 翻转(沿用覆盖语义)
+  const [themeOverride, setThemeOverride] = useState<ResolvedTheme | null>(() => {
     const value = new URLSearchParams(window.location.search).get("theme");
-    return value === "light" || value === "dark";
+    return value === "light" || value === "dark" ? value : null;
   });
-  const [theme, setTheme] = useState<Theme>(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("theme") === "light" || params.get("theme") === "dark") {
-      return params.get("theme") as Theme;
-    }
-    try {
-      const stored = localStorage.getItem(storageKeys.theme);
-      if (stored === "light" || stored === "dark") return stored;
-    } catch {
-      /* localStorage 不可用时仅本次会话生效 */
-    }
-    return "dark";
-  });
+  const [systemDark, setSystemDark] = useState(
+    () => window.matchMedia("(prefers-color-scheme: dark)").matches,
+  );
+  const [themePref, setThemePref] = useState<ThemePreference>(() =>
+    loadThemePreference((key) => localStorage.getItem(key)),
+  );
+  // 生效主题 = 覆盖 ?? 偏好解析;pref=system 时按系统深浅色解析
+  const resolvedTheme: ResolvedTheme =
+    themeOverride ?? resolveTheme(themePref, systemDark);
   const environmentView = useEnvironmentView();
   const creatorReady = creatorEnvReady(environmentView.deployer);
   const activeModule: AppSectionId = moduleOf(page);
@@ -880,16 +879,24 @@ function AppShell({
         id: "toggle-theme",
         group: "actions",
         label:
-          theme === "dark"
+          resolvedTheme === "dark"
             ? strings.commandPalette.toggleThemeToLight
             : strings.commandPalette.toggleThemeToDark,
         keywords: "theme",
-        run: () => setTheme((current) => (current === "dark" ? "light" : "dark")),
+        // pref=system 时落当前生效主题的反面(此后不再跟随系统);走查覆盖
+        // 在时翻转覆盖值(不写存储);其余直翻偏好
+        run: () => {
+          if (themeOverride !== null) {
+            setThemeOverride(themeOverride === "dark" ? "light" : "dark");
+            return;
+          }
+          setThemePref(toggledPreference(resolvedTheme));
+        },
       },
     ];
     return [...pages, ...actions];
     // navigate 由 App 每次渲染新建;命令表重建成本低,无需缓存
-  }, [navigate, theme]);
+  }, [navigate, resolvedTheme, themeOverride]);
 
   // 模型生产假加载页(需求 2026-08):本次启动首次进入 production 模块时覆盖,
   // 固定时长/点击/Escape 退出;真实初始化任务接入后由任务状态驱动(G10)
@@ -909,17 +916,27 @@ function AppShell({
     navigate,
   };
 
-  // 默认深色主题(§3.1),浅色可切换;选择持久化(C-RESUME,重启恢复);
-  // ?theme= 走查覆盖不写存储
+  // 生效主题 → data-theme:单次 dataset 写入,变化才触发,不做二次翻转
+  // (防双写闪烁;已知的间歇性 stale-compositor 重绘缺陷不猜因、不作投机修复)
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-    if (themeOverrideFromUrl) return;
-    try {
-      localStorage.setItem(storageKeys.theme, theme);
-    } catch {
-      /* localStorage 不可用时仅本次会话生效 */
-    }
-  }, [theme, themeOverrideFromUrl]);
+    document.documentElement.dataset.theme = resolvedTheme;
+  }, [resolvedTheme]);
+
+  // 偏好持久化:覆盖在时跳过(走查不写存储)
+  useEffect(() => {
+    if (themeOverride !== null) return;
+    saveThemePreference((key, value) => localStorage.setItem(key, value), themePref);
+  }, [themePref, themeOverride]);
+
+  // pref=system 时订阅系统深浅色变化,实时重解析生效主题;其余偏好不监听
+  // (覆盖在时同样不监听——生效值被覆盖钉死)
+  useEffect(() => {
+    if (themeOverride !== null || themePref !== "system") return;
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => setSystemDark(media.matches);
+    media.addEventListener("change", onChange);
+    return () => media.removeEventListener("change", onChange);
+  }, [themeOverride, themePref]);
 
   // 高对比度(C-I18N):auto=跟随系统 forced-colors;on=显式高对比配色;
   // ?hc=on 仅作走查覆盖(不写存储),存储选择持久化
@@ -1045,7 +1062,7 @@ function AppShell({
           ref={tabsRef}
         >
           {navPhase === "collapsed" ? (
-            /* 窄窗折叠:整排 Tab 收进一个按钮,点击在按钮下方弹出原 5 项;
+            /* 窄窗折叠:整排 Tab 收进一个按钮,点击在按钮下方弹出原两项;
              * 标签显示当前模块(落在设置页时退回通用导航名);
              * 当前模块是业务模块时带 aria-current,按下态视觉与展开时一致 */
             <button
@@ -1119,23 +1136,17 @@ function AppShell({
         >
           {strings.commandPalette.cta} · {strings.commandPalette.ctaHint}
         </button>
+        {/* Overlay 置顶窗引导入口(2026-09-26 用户裁决:游戏引导 Tab 退役,
+         *  覆盖层窗口成为引导宿主):showOverlay(\"guide\") 打开/聚焦覆盖层
+         *  并切到引导视图(窗口缺席=创建并显示;隐藏=显示并切视图;可见=
+         *  仅切视图);无 preload 环境(浏览器直开主壳)可选链安全退化为无动作 */}
         <button
           type="button"
           className="vua-shell__theme-toggle vua-caption"
-          onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
+          title={strings.app.overlayGuide}
+          onClick={() => void window.vua?.window.showOverlay("guide")}
         >
-          {theme === "dark" ? strings.app.themeToLight : strings.app.themeToDark}
-        </button>
-        {/* Overlay 置顶窗正式入口(proposal 017 实现面备注,DevScenario 之外):
-         *  显隐切换经 Main 裁决(overlay-window 决策面);无 preload 环境
-         *  (浏览器直开主壳)可选链安全退化为无动作 */}
-        <button
-          type="button"
-          className="vua-shell__theme-toggle vua-caption"
-          title={strings.app.overlayToggle}
-          onClick={() => void window.vua?.window.toggleOverlay()}
-        >
-          {strings.app.overlayToggle}
+          {strings.app.overlayGuide}
         </button>
         {/* 通知中心顶栏入口(对标 Comfy 铃铛,自绘):与底部任务条共用同一通知投影;
          *  capability 非 ready 时组件自身不渲染 */}
@@ -1197,9 +1208,17 @@ function AppShell({
         <main className="vua-shell__main">
           <div key={page} className="vua-page-enter">
             {renderPage(page, goals, creatorReady, pageActions, {
-              theme,
+              theme: themeOverride ?? themePref,
               hc,
-              onThemeChange: setTheme,
+              onThemeChange: (next) => {
+                // 走查覆盖在时:dark|light 选择翻转覆盖值(不写存储);
+                // 跟随系统无法由覆盖表达,忽略(开发面,不猜态)
+                if (themeOverride !== null) {
+                  if (next === "dark" || next === "light") setThemeOverride(next);
+                  return;
+                }
+                setThemePref(next);
+              },
               onHcChange: setHc,
               saverOn: effects === "off",
               onSaverToggle: () =>

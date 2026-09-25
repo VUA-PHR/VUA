@@ -7,6 +7,7 @@ import type {
   DownloadEventV01,
   EditorSettingsV1,
   NavigationConfirmRequestV1,
+  OverlayViewV1,
   RemoteContentEventV1,
 } from "@vua/contracts";
 import { APPLICATION_CONTRACT_VERSION } from "@vua/contracts";
@@ -384,6 +385,19 @@ function registerIpc(provider: OrchestratorProviderV01): void {
     return toggleOverlayWindow();
   });
 
+  // 打开/聚焦覆盖层并切视图(2026-09-26 additive 裁决:覆盖层窗口成为引导
+  // 宿主):只受理本地来源;视图词表闭集 guide|status,缺省 guide;
+  // 语义在 showOverlayWindow——无窗口=创建并显示请求视图(首视图经加载
+  // 查询投递),隐藏=显示并切视图,可见=仅切视图(不隐藏;经
+  // vua:overlay:set-view 事件投递给覆盖层窗口本身)
+  ipcMain.handle("vua:overlay:show", (event, view: unknown) => {
+    assertLocalSender(senderFrameUrl(event));
+    if (view !== null && view !== "guide" && view !== "status") {
+      throw new Error("invalid overlay view");
+    }
+    return showOverlayWindow(view === null ? "guide" : view);
+  });
+
   // 远程内容窄面(F4-2 隔离基座):Renderer 只发语义动作;来源允许清单在
   // Main 侧裁决,视图内违规以事件透明上报。种子允许清单只含目录浏览域,
   // 真实值随 catalog 契约冻结(F4-1②)调整
@@ -478,17 +492,20 @@ function confirmNavigation(
  *
  * - 形态参数(F7a spike 结论):transparent + frameless + skipTaskbar +
  *   hasShadow:false,460×640,alwaysOnTop("screen-saver" 级);渲染面加载
- *   ?surface=overlay-desktop(main.tsx 表面路由既有分流,不初始化主壳);
+ *   ?surface=overlay-desktop&view=<guide|status>(main.tsx 表面路由既有分流,
+ *   不初始化主壳;2026-09-26 additive:view 参数投递首视图,缺省 guide);
  * - 显隐以 showInactive 执行:悬浮窗出现不夺焦点(VRChat 全屏时不打断);
  * - 事件面零新增:broadcastGatewayEvent/isAllowedLocalSender 对 ?surface=
  *   参数 URL 天然放行(前缀/路径匹配),overlay 窗口天然在广播清单内;
+ *   唯一例外是视图切换事件 vua:overlay:set-view(2026-09-26 additive)——
+ *   只投递给覆盖层窗口本身;
  * - 读面 wire 词表不预接(候选核心批 1,017 内联领取声明):渲染面生产
  *   路径恒为诚实 inactive 空态,本窗口层不含任何快照语义;
  * - 生命周期:显隐切换不销毁(hide 保状态);窗口自身关闭(closed)清引用,
  *   下次 toggle 重建;主窗口关闭(closed)销毁 overlay——主窗口关闭＝应用
  *   退出语义不变(window-all-closed 行为不被悬浮窗拖住)。
  */
-function createOverlayWindow(): void {
+function createOverlayWindow(view: OverlayViewV1 = "guide"): void {
   const preload = path.join(__dirname, "preload.js");
   const win = new BrowserWindow({
     width: OVERLAY_WINDOW_WIDTH,
@@ -509,10 +526,11 @@ function createOverlayWindow(): void {
   win.on("closed", () => {
     if (overlayWindow === win) overlayWindow = null;
   });
-  if (rendererUrl) void win.loadURL(`${rendererUrl}?surface=${OVERLAY_SURFACE_PARAM}`);
+  const search = `surface=${OVERLAY_SURFACE_PARAM}&view=${view}`;
+  if (rendererUrl) void win.loadURL(`${rendererUrl}?${search}`);
   else {
     void win.loadFile(path.join(__dirname, "../renderer/index.html"), {
-      search: `surface=${OVERLAY_SURFACE_PARAM}`,
+      search,
     });
   }
 }
@@ -529,6 +547,30 @@ function toggleOverlayWindow(): { readonly visible: boolean } {
   return { visible: overlayVisibilityAfterDecision(decision) };
 }
 
+/**
+ * showOverlay 语义(2026-09-26 additive,契约 OverlayWindowShowResultV1):
+ * 窗口缺席 = 创建并显示请求视图(首视图经加载查询投递,渲染层首帧即落
+ * 正确视图);隐藏 = showInactive 显示并投递视图切换;可见 = 仅投递视图
+ * 切换(绝不隐藏)。已开窗的切换经 vua:overlay:set-view 事件投递给覆盖层
+ * 窗口本身——发送前校验 webContents 存活,窗口恰在关闭途中则丢弃(下次
+ * 创建经查询参数恢复,无状态丢失)。
+ */
+function showOverlayWindow(view: OverlayViewV1): {
+  readonly visible: boolean;
+  readonly view: OverlayViewV1;
+} {
+  const exists = overlayWindow !== null && !overlayWindow.isDestroyed();
+  if (!exists) {
+    createOverlayWindow(view);
+    return { visible: true, view };
+  }
+  if (!overlayWindow!.isVisible()) overlayWindow!.showInactive();
+  if (!overlayWindow!.webContents.isDestroyed()) {
+    overlayWindow!.webContents.send("vua:overlay:set-view", view);
+  }
+  return { visible: true, view };
+}
+
 async function createWindow(): Promise<void> {
   const preload = path.join(__dirname, "preload.js");
   mainWindow = new BrowserWindow({
@@ -541,7 +583,15 @@ async function createWindow(): Promise<void> {
     frame: false,
     show: false,
     backgroundColor: "#0b0a12",
-    webPreferences: localWindowWebPreferences(preload),
+    webPreferences: {
+      ...localWindowWebPreferences(preload),
+      /* 遮挡误判防护(2026-09-26):Windows 下 Chromium 偶发把可见的无边框
+       * 主窗口误判为被遮挡→停止产帧,界面定格在旧样式(截图/强制的
+       * BeginFrame 一来又"自愈",观测即治愈)。关闭后台节流后误判期
+       * rAF/计时器照走,症状面消除;代价是窗口真最小化时仍有少量帧
+       * 调度开销。悬浮窗恒置顶不被遮挡,不在此列。 */
+      backgroundThrottling: false,
+    },
   });
 
   // U9 四分法(本地壳窗口):http/https 弹窗不再交系统浏览器——清单内直行/
@@ -644,7 +694,14 @@ app.whenReady().then(async () => {
   // 保证首个渲染层请求可见的登记与上一次会话一致
   loadMaterialSourcesFromDisk();
   provider = createDesktopOrchestratorProvider(resolveProviderEndpoint());
-  providerHandshake = await provider.start();
+  try {
+    providerHandshake = await provider.start();
+  } catch (error) {
+    /* 启动韧性(2026-09-26):Provider 起不来(如端口被僵尸实例占用)不再
+     * 带走主窗口——历史症状是"启动器打印版本号后永远无窗口"。窗口照常
+     * 开,Gateway 调用经既有拒绝路径如实呈现不可用,恢复手段=重启应用。 */
+    console.error("[vua] provider start failed; main window still opens:", error);
+  }
   provider.subscribe((event) => {
     if (event.kind === "download.intent") {
       // 端口意图:intentSeq 去重后串行解释;Main 内部消费,不广播渲染层

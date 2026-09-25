@@ -6,7 +6,44 @@ import {
   type DesktopFsApiV1,
   type DesktopFsListV1,
   type DesktopFsResultV1,
+  type DesktopWindowApiV1,
+  type OverlayViewV1,
+  type OverlayWindowShowResultV1,
 } from "./desktop-gateway.js";
+
+describe("DesktopWindowApiV1 overlay faces (2026-09-26 additive: showOverlay + view events)", () => {
+  // 形状锚(additive 面,与 DesktopFsApiV1 同批纪律):方法面可判别、视图
+  // 词表闭集二值、回执双键——类型由 TS 编译期强制,此处钉运行期词面
+  it("api surface keeps toggleOverlay and adds showOverlay with view events (shape drift guard)", () => {
+    // 编译期即锁定形状;运行期钉方法名存在性,防 preload 面漂移
+    const apiShape: Record<keyof DesktopWindowApiV1, true> = {
+      minimize: true,
+      toggleMaximize: true,
+      close: true,
+      toggleOverlay: true,
+      showOverlay: true,
+      overlayViewEvents: true,
+    };
+    expect(Object.keys(apiShape)).toEqual([
+      "minimize",
+      "toggleMaximize",
+      "close",
+      "toggleOverlay",
+      "showOverlay",
+      "overlayViewEvents",
+    ]);
+  });
+
+  it("view vocabulary is the closed two-value set and the show receipt carries visibility + view", () => {
+    const views: readonly OverlayViewV1[] = ["guide", "status"];
+    expect(views).toHaveLength(2);
+    const created: OverlayWindowShowResultV1 = { visible: true, view: "guide" };
+    const switched: OverlayWindowShowResultV1 = { visible: true, view: "status" };
+    expect(created.visible).toBe(true);
+    expect(created.view).toBe("guide");
+    expect(switched.view).toBe("status");
+  });
+});
 
 describe("DesktopFsApiV1 (2026-09-25 用户裁决:素材导入应用内文件夹选择器)", () => {
   // 形状锚(additive 面,与 DesktopSystemApiV1 同批纪律):结果信封可判别、

@@ -1,36 +1,63 @@
 /**
- * 游戏引导内容模型(G6):五页 ↔ 内容包教程的映射,以及页内插图的资产解析。
- * 页文案在 i18n strings(guide.pages.*);本模块只持有结构性事实——
- * 每页对应哪个教程、媒体 id 解析到哪张自制 SVG。
+ * 引导内容模型(G6 → 2026-09-26 覆盖层宿主裁决):主题 ↔ 内容包教程的映射,
+ * 以及主题内插图的资产解析。页文案在 i18n strings(guide.pages.*);
+ * 本模块只持有结构性事实——每个主题对应哪个教程、媒体 id 解析到哪张
+ * 自制 SVG。游戏引导 Tab 退役后,本模型由覆盖层引导视图(GuideOverlayView)
+ * 消费,深链接语义不再经页面路由。
  * 本模块不 import 内容包 JSON(node --test 无法裸 import JSON);
  * 与内容包的一致性由 validateGuideContent 在测试中以注入方式校验。
  */
 import type { TutorialContentPackV1 } from "../../app/tutorial-content-pack.ts";
 import { strings } from "../../i18n/index.ts";
 
-export type GuidePageId =
+/** 引导主题 id:五个教程支撑主题(原游戏引导五页)+ 阅读型 VUA 使用教程 */
+export type GuideTopicId =
   | "guide-start"
   | "guide-basics"
   | "guide-safety"
   | "guide-devices"
-  | "guide-tutorials";
+  | "guide-tutorials"
+  | "guide-vua";
 
-export const GUIDE_PAGE_IDS: readonly GuidePageId[] = [
+/** 主题顺序即覆盖层主题切换条的展示顺序(VUA 使用教程殿后) */
+export const GUIDE_TOPIC_IDS: readonly GuideTopicId[] = [
   "guide-start",
   "guide-basics",
   "guide-safety",
   "guide-devices",
   "guide-tutorials",
+  "guide-vua",
 ];
 
-/** 页 → 内容包教程 id(每页 CTA 启动对应教程;教程 id 与页 id 同名是约定) */
-export const GUIDE_PAGE_TUTORIAL: Record<GuidePageId, string> = {
+/** 主题 id → strings.guide.pages 键(主题内容与 i18n 的接缝) */
+export const GUIDE_TOPIC_COPY_KEY: Record<GuideTopicId, keyof typeof strings.guide.pages> = {
+  "guide-start": "start",
+  "guide-basics": "basics",
+  "guide-safety": "safety",
+  "guide-devices": "devices",
+  "guide-tutorials": "tutorials",
+  "guide-vua": "vua",
+};
+
+/** 教程支撑子集:主题 → 内容包教程 id(教程 id 与主题 id 同名是约定)。
+ *  guide-vua 是阅读型主题,无教程支撑——教程端口未接入前不伪造内容包行。 */
+export type GuideTutorialTopicId = Exclude<GuideTopicId, "guide-vua">;
+
+export const GUIDE_PAGE_TUTORIAL: Record<GuideTutorialTopicId, string> = {
   "guide-start": "guide-start",
   "guide-basics": "guide-basics",
   "guide-safety": "guide-safety",
   "guide-devices": "guide-devices",
   "guide-tutorials": "guide-tutorials",
 };
+
+export const GUIDE_TUTORIAL_TOPIC_IDS: readonly GuideTutorialTopicId[] = [
+  "guide-start",
+  "guide-basics",
+  "guide-safety",
+  "guide-devices",
+  "guide-tutorials",
+];
 
 export type GuideMediaId = "pc-keys" | "vr-controller";
 
@@ -49,14 +76,14 @@ export function resolveGuideMedia(mediaId: string): { src: string; alt: string }
 
 /**
  * 结构一致性校验(测试注入内容包):
- * - 每个引导页的教程必须存在于内容包;
+ * - 每个教程支撑主题的教程必须存在于内容包;
  * - strings 中引用的每个媒体 id 必须已登记资产。
  * 校验失败抛 Error——两者都是构建期内容损坏,不是运行时分支。
  */
 export function validateGuideContent(pack: TutorialContentPackV1): void {
   const tutorialIds = new Set(pack.tutorials.map((t) => t.id));
-  for (const page of GUIDE_PAGE_IDS) {
-    const tutorialId = GUIDE_PAGE_TUTORIAL[page];
+  for (const topic of GUIDE_TUTORIAL_TOPIC_IDS) {
+    const tutorialId = GUIDE_PAGE_TUTORIAL[topic];
     if (!tutorialIds.has(tutorialId)) {
       throw new Error(`guide_content_missing_tutorial:${tutorialId}`);
     }

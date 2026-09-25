@@ -1114,6 +1114,21 @@ export interface OverlayWindowVisibilityV1 {
   readonly visible: boolean;
 }
 
+/** Overlay 窗口视图词面(2026-09-26 additive 裁决:覆盖层窗口成为引导宿主):
+ *  guide = 引导内容(原游戏引导五主题 + VUA 使用教程),status = 任务/下载
+ *  状态面(017 表面批形态,内容不变)。词表闭集二值。 */
+export type OverlayViewV1 = "guide" | "status";
+
+/**
+ * showOverlay 动作回执(additive):动作后的可见性与当前视图。
+ * 语义:窗口缺席 = 创建并显示请求视图(首视图经加载查询投递);
+ * 隐藏 = 显示并切到请求视图;可见 = 仅切视图(绝不隐藏)。
+ */
+export interface OverlayWindowShowResultV1 {
+  readonly visible: boolean;
+  readonly view: OverlayViewV1;
+}
+
 export interface DesktopWindowApiV1 {
   minimize(): Promise<void>;
   toggleMaximize(): Promise<void>;
@@ -1121,6 +1136,17 @@ export interface DesktopWindowApiV1 {
   /** Overlay 置顶窗开关(proposal 017 实现面备注,桌面域内切片):无窗口=
    * 创建并显示;隐藏=显示;可见=隐藏。回执携带切换后的可见性 */
   toggleOverlay(): Promise<OverlayWindowVisibilityV1>;
+  /** 打开(或聚焦)覆盖层窗口并切到请求视图(2026-09-26 additive):
+   *  无窗口 = 创建并显示该视图(缺省 guide;首视图经加载查询
+   *  ?surface=overlay-desktop&view= 投递);隐藏 = 显示并切视图;
+   *  可见 = 仅切视图(不隐藏)——已开窗的切换经 vua:overlay:set-view
+   *  事件投递,渲染层经 overlayViewEvents 订阅 */
+  showOverlay(view?: OverlayViewV1): Promise<OverlayWindowShowResultV1>;
+  /** 覆盖层视图事件(Main → 本地渲染层;additive):已开窗时的视图切换
+   *  通知(载荷即 OverlayViewV1 词面);只投递给覆盖层窗口本身 */
+  overlayViewEvents: {
+    subscribe(listener: (view: OverlayViewV1) => void): () => void;
+  };
 }
 
 /**

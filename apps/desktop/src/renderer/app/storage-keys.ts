@@ -16,7 +16,8 @@ export const storageKeys = {
   recipeLayout: "vua-recipe-layout",
   /** 配方版本管理器(S-IX-4):版本化 StoredRecipeVersionsV1,见 features/recipe/recipe-versions.ts */
   recipeVersions: "vua-recipe-versions",
-  /** 主题(C-RESUME 工作区恢复):dark | light;缺省 dark(§3.1) */
+  /** 主题偏好(2026-09-26 跟随系统裁决):dark | light | system;缺省 system;
+   *  旧版写入的 dark|light 仍是合法子集。解析/写入见 app/theme-preference.ts */
   theme: "vua-theme",
   /** 界面语言(C-I18N):LocaleId;缺省走系统探测,fallback 见 i18n/locales.ts */
   locale: "vua-locale",
