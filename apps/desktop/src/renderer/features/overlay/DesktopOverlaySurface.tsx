@@ -208,7 +208,8 @@ export function DesktopOverlaySurface() {
       <header className="vua-overlay__titlebar vua-drag-region">
         {/* 标题随活动视图(引导/状态);总控语义由下方 segmented 控件表达 */}
         <span className="vua-overlay__title vua-drag-region">{copy.views[view]}</span>
-        {import.meta.env.DEV ? (
+        {/* 演示徽标只钉在状态视图:引导是静态真实内容,标"演示数据"属误标 */}
+        {import.meta.env.DEV && view === "status" ? (
           <Badge tone="warning">{strings.common.fixtureBadge}</Badge>
         ) : null}
         <button
