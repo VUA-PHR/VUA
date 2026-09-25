@@ -1928,7 +1928,7 @@ export interface DownloadIntentEventV03 {
 
 // ---- warehouse 写命令(bdl-commands v0.1 冻结业务词表的 TS 面,proposal 005;
 //      wire 信封 schemaVersion/operation 由应用契约 response 层承载,镜像按
-//      既有惯例剥除;稳定错误码词表见 docs/protocols/bdl-commands-v0.1_ZH.md) ----
+//      既有惯例剥除;稳定错误码词表见 docs/protocols/bdl-commands-v0.1.md) ----
 
 /** setArtifactMode 的受理载荷即结果:条目级覆盖设置/清除后的查询期生效模式 */
 export interface WarehouseSetArtifactModeResultV01 {

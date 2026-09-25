@@ -9,7 +9,7 @@ import type { ReleaseWallView } from "./model-production-port.ts";
  *
  * bakePreview(T2 烘焙转盘,DEV 接线):指向本机 Unity 演示工程的
  * build_preview 产物(两个本地演示工程,工程名与路径均为合成占位,
- * 方法锚点见 docs/protocols/unity-bridge-v4_ZH.md 与设计标准 §8.6);
+ * 方法锚点见 docs/protocols/unity-bridge-v4.md 与设计标准 §8.6);
  * 仅 DEV 经 vite /@fs/ 读取,正式实现由资产协议替换寻址。
  */
 export function fixtureReleaseWall(): ReleaseWallView {

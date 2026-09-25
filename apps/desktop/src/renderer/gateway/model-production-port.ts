@@ -267,7 +267,7 @@ export interface ProductionPlan {
 
 /**
  * B 权威状态词表(build_record.rs v0.1 五态):契约事实,显示裁决由投影承担。
- * 2026-09-04 B 线回复对齐(见 docs/plans/b-line-reply-to-f-line-requirements_ZH.md)。
+ * 2026-09-04 B 线回复对齐(见 docs/plans/b-line-reply-to-f-line-requirements.md)。
  */
 export type BuildRecordAuthorityStatus =
   | "succeeded"

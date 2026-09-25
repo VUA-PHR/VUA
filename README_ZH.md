@@ -27,7 +27,7 @@ VUA 从用户想得到的结果出发。用户选择目标，例如准备环境�
   生命周期；React UI 构成受控表现层。
 - **环境与项目管理**：检测并引导配置 VR、Unity、VRChat 及相关工具；提供基于 `vrc-get` 的 VUA
   包管理器，并兼容 ALCOM 和 VCC 管理的项目。VPM 包管理设置（`settings.json` 的仓库订阅与
-  本地包注册表面）与 VCC/ALCOM 共享同一份设置文件，详见[产品边界](docs/product-boundary_ZH.md)。
+  本地包注册表面）与 VCC/ALCOM 共享同一份设置文件，详见[产品边界](docs/product-boundary.md)。
 - **Orchestrator**：Rust 应用核心，负责计划、批准、持久任务、取消、恢复、适配器和 Build Record，
   通过可替换的版本化 Provider 边界接入 Kernel。
 - **Avatar MegaFactory（AMF）**：Recipe-first 的生产流程，完整覆盖 Warehouse、Recipe、
@@ -71,15 +71,15 @@ AMF 独占 BDL 能力入口；确定性的 Unity 修改统一经过 Unity Bridge
 
 ## 文档与贡献
 
-- [Developer documentation — English](docs/README_EN.md)
-- [开发文档 — 简体中文](docs/README_ZH.md)
-- [Versioning policy — English](docs/release/versioning_EN.md)
-- [版本政策 — 简体中文](docs/release/versioning_ZH.md)
-- [Contributing — English](CONTRIBUTING_EN.md)
-- [贡献指南 — 简体中文](CONTRIBUTING_ZH.md)
+- [Developer documentation — English](docs/README.md)
+- [开发文档 — 简体中文](docs/README.md)
+- [Versioning policy — English](docs/release/versioning.md)
+- [版本政策 — 简体中文](docs/release/versioning.md)
+- [Contributing — English](CONTRIBUTING.md)
+- [贡献指南 — 简体中文](CONTRIBUTING.md)
 
-本仓库采用 [Apache License 2.0](LICENSE)。另见 [NOTICE](NOTICE)、[商标说明](TRADEMARKS_ZH.md)和
-[第三方声明](THIRD_PARTY_NOTICES_ZH.md)。
+本仓库采用 [Apache License 2.0](LICENSE)。另见 [NOTICE](NOTICE)、[商标说明](TRADEMARKS.md)和
+[第三方声明](THIRD_PARTY_NOTICES.md)。
 产品发行遵循 Semantic Versioning 2.0.0；版本化协议和 Schema 仍保留独立兼容版本。
 
 Copyright 2026 Aran52.

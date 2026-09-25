@@ -2,7 +2,7 @@
  * Overlay 表面契约的渲染层本地镜像(v2,017 表面批 1 wire 消费接线)。
  *
  * 语义来源:packages/contracts 的 OverlaySnapshotResultV01 冻结面(应用契约
- * 017 批 1,main 1d3509b 入库)+ docs/architecture/integrations-and-overlays_ZH.md
+ * 017 批 1,main 1d3509b 入库)+ docs/architecture/integrations-and-overlays.md
  * §Overlay。v1 镜像(切片五)预设的 revision/allowedActions/environment 与
  * stage/progress 字段在冻结 wire 面不存在——纯函数纪律不带聚合 revision,
  * 动作权限守卫在服务权威侧(017 §3),环境/下载卡属批 2 未投影——v2 以

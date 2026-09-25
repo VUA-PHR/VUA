@@ -35,7 +35,7 @@ preparation, import order, binding, menus, optimization, validation, and recover
   tooling; a VUA package manager built on `vrc-get`; compatibility with ALCOM- and VCC-managed
   projects. The VPM package-management settings (the repository-subscription and
   local-package-registry faces of `settings.json`) are shared as one file with VCC/ALCOM; see the
-  [product boundary](docs/product-boundary_EN.md).
+  [product boundary](docs/product-boundary.md).
 - **Orchestrator:** the Rust application core for plans, approvals, durable tasks, cancellation,
   recovery, adapters, and Build Records, exposed through a replaceable versioned Provider boundary.
 - **Avatar MegaFactory (AMF):** a Recipe-first production flow covering Warehouse, Recipe,
@@ -83,15 +83,15 @@ changes cross the Unity Bridge.
 
 ## Documentation and contributing
 
-- [Developer documentation — English](docs/README_EN.md)
-- [开发文档 — 简体中文](docs/README_ZH.md)
-- [Versioning policy — English](docs/release/versioning_EN.md)
-- [版本政策 — 简体中文](docs/release/versioning_ZH.md)
-- [Contributing — English](CONTRIBUTING_EN.md)
-- [贡献指南 — 简体中文](CONTRIBUTING_ZH.md)
+- [Developer documentation — English](docs/README.md)
+- [开发文档 — 简体中文](docs/README.md)
+- [Versioning policy — English](docs/release/versioning.md)
+- [版本政策 — 简体中文](docs/release/versioning.md)
+- [Contributing — English](CONTRIBUTING.md)
+- [贡献指南 — 简体中文](CONTRIBUTING.md)
 
 The repository is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE),
-[trademark guidance](TRADEMARKS_EN.md), and [third-party notices](THIRD_PARTY_NOTICES_EN.md).
+[trademark guidance](TRADEMARKS.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
 Product releases follow Semantic Versioning 2.0.0; versioned protocols and schemas retain their own
 independent compatibility versions.
 

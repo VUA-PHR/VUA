@@ -9,7 +9,7 @@
 
 1. 读仓库根 `AGENTS.md`（工作纪律与诚实纪律，必须遵守）；
 2. 运行 `pnpm collab:brief`，读全部四区输出；
-3. 读 `docs/development-outline_ZH.md` 的「执行角色（六角色）」「当前窗口」两节；
+3. 读 `docs/development-outline.md` 的「执行角色（六角色）」「当前窗口」两节；
 4. 读本树状态文件 `collab/state/wt-main.md` 与 `collab/BOARD.md`（你维护 BOARD）。
 
 ## 你的所有权域

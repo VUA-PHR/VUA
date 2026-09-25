@@ -33,7 +33,7 @@ VUA는 사용자가 원하는 결과에서 시작합니다. 환경 준비 또는
 - **환경 및 프로젝트 관리:** VR, Unity, VRChat과 관련 도구를 검사하고 안내합니다. `vrc-get` 기반
   VUA 패키지 관리자와 ALCOM/VCC 관리 프로젝트 호환성을 제공합니다. VPM 패키지 관리 설정
   (`settings.json`의 저장소 구독 및 로컬 패키지 등록 표면)은 VCC/ALCOM과 동일한 설정 파일을
-  공유합니다. 자세한 내용은 [제품 경계(영어)](docs/product-boundary_EN.md)를 참조하세요.
+  공유합니다. 자세한 내용은 [제품 경계(영어)](docs/product-boundary.md)를 참조하세요.
 - **Orchestrator:** 계획, 승인, 영속 작업, 취소, 복구, 어댑터, Build Record를 담당하는 Rust 핵심이며,
   교체 가능한 버전형 Provider 경계를 통해 Kernel에 연결됩니다.
 - **Avatar MegaFactory(AMF):** Warehouse, Recipe, Assembly, Inspection, Release의 다섯 단계를
@@ -79,14 +79,14 @@ Unity 변경은 Unity Bridge를 거칩니다.
 
 ## 문서 및 기여
 
-- [Developer documentation — English](docs/README_EN.md)
-- [开发文档 — 简体中文](docs/README_ZH.md)
-- [Versioning policy — English](docs/release/versioning_EN.md)
-- [Contributing — English](CONTRIBUTING_EN.md)
-- [贡献指南 — 简体中文](CONTRIBUTING_ZH.md)
+- [Developer documentation — English](docs/README.md)
+- [开发文档 — 简体中文](docs/README.md)
+- [Versioning policy — English](docs/release/versioning.md)
+- [Contributing — English](CONTRIBUTING.md)
+- [贡献指南 — 简体中文](CONTRIBUTING.md)
 
 이 저장소는 [Apache License 2.0](LICENSE)으로 배포됩니다. [NOTICE](NOTICE),
-[상표 지침(영문)](TRADEMARKS_EN.md), [제3자 고지(영문)](THIRD_PARTY_NOTICES_EN.md)도 확인하세요.
+[상표 지침(영문)](TRADEMARKS.md), [제3자 고지(영문)](THIRD_PARTY_NOTICES.md)도 확인하세요.
 제품 릴리스는 Semantic Versioning 2.0.0을 따르며 버전이 지정된 프로토콜과 Schema는 독립적인
 호환성 버전을 유지합니다.
 

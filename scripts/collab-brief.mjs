@@ -280,7 +280,7 @@ function registryCheck() {
     const st = head.match(/^>\s*(?:状态|Status)[:：]\s*(.+?)\s*$/im);
     const docVer = v ? normVer(v[1]) : null;
     // 状态比较取“（/→”之前的词干，容忍两侧括注写法不同；英文头部键按同义词归一
-    const STATUS_ALIAS = { accepted: '已接受', frozen: '已冻结', draft: '草案', superseded: '已取代', candidate: '候选' };
+    const STATUS_ALIAS = { accepted: '已接受', frozen: '已冻结', draft: '草案', superseded: '已取代', candidate: '候选', 'b2 implementation baseline': 'B2 实现基线', 'b3 implementation baseline': 'B3 实现基线' };
     const stem = (x) => {
       const s0 = normStatus(x).replace(/\*+/g, '').split(/[（(→—]|--/)[0].trim();
       return STATUS_ALIAS[s0.toLowerCase()] ?? s0;

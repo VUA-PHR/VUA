@@ -79,7 +79,7 @@ webSecurity，关闭 nodeIntegration，并默认拒绝权限请求、远程导�
 二进制再分发、NOTICE、签名、更新来源和移除路径审计
 本地验证：pnpm build 通过；pnpm check 通过；contracts 2 项、desktop 4 项，共 6 项测试通过；
 Windows Electron Main/Preload/Renderer 联合启动成功，VUA 窗口正常响应；冒烟退出后无残留 Electron 进程
-迁移内记录：apps/desktop/MIGRATION_ASSETS_ZH.md 与 MIGRATION_ASSETS_EN.md
+迁移内记录：apps/desktop/MIGRATION_ASSETS.md 与 MIGRATION_ASSETS.md
 CI 状态：尚未建立
 迁移提交：本次 Electron 表现层迁移提交
 ```
@@ -104,7 +104,7 @@ Electron 边界：沿用切片一（contextIsolation/sandbox/来源校验/请求
 许可证与 NOTICE：新增 three 0.185.1 / @types/three 0.185.4（MIT）；正式分发前仍需完成完整第三方声明审计
 本地验证：pnpm check 全绿（desktop 252 项测试；renderer/electron 双严格类型检查；vite 构建含 three 懒加载分包）；
 5 个质量门通过（含 120 条 fixture 指纹生产零泄漏、5 上下文 WCAG AA 对比度）；Windows Electron 冒烟启动与退出无残留
-迁移内记录：apps/desktop/MIGRATION_ASSETS_ZH.md 与 MIGRATION_ASSETS_EN.md（切片二章节）
+迁移内记录：apps/desktop/MIGRATION_ASSETS.md 与 MIGRATION_ASSETS.md（切片二章节）
 CI 状态：尚未建立
 ```
 

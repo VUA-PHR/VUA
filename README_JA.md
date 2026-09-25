@@ -32,7 +32,7 @@ VUA はユーザーが得たい結果から作業を始めます。環境準備�
 - **環境・プロジェクト管理:** VR、Unity、VRChat と関連ツールを検出・案内し、`vrc-get` ベースの
   VUA パッケージマネージャーと、ALCOM/VCC 管理プロジェクトとの互換性を提供します。VPM パッケージ
   管理設定（`settings.json` のリポジトリ購読とローカルパッケージ登録面）は VCC/ALCOM と同一の
-  設定ファイルを共有します。詳細は[製品境界（英語）](docs/product-boundary_EN.md)を参照してください。
+  設定ファイルを共有します。詳細は[製品境界（英語）](docs/product-boundary.md)を参照してください。
 - **Orchestrator:** 計画、承認、永続タスク、キャンセル、復旧、アダプター、Build Record を担う
   Rust 中核で、交換可能なバージョン化 Provider 境界を通じて Kernel に接続します。
 - **Avatar MegaFactory（AMF）:** Warehouse、Recipe、Assembly、Inspection、Release の 5 段階を
@@ -79,14 +79,14 @@ Unity Bridge を経由します。
 
 ## ドキュメントと貢献
 
-- [Developer documentation — English](docs/README_EN.md)
-- [开发文档 — 简体中文](docs/README_ZH.md)
-- [Versioning policy — English](docs/release/versioning_EN.md)
-- [Contributing — English](CONTRIBUTING_EN.md)
-- [贡献指南 — 简体中文](CONTRIBUTING_ZH.md)
+- [Developer documentation — English](docs/README.md)
+- [开发文档 — 简体中文](docs/README.md)
+- [Versioning policy — English](docs/release/versioning.md)
+- [Contributing — English](CONTRIBUTING.md)
+- [贡献指南 — 简体中文](CONTRIBUTING.md)
 
 本リポジトリは [Apache License 2.0](LICENSE) で公開します。[NOTICE](NOTICE)、
-[商標ガイダンス（英語）](TRADEMARKS_EN.md)、[第三者通知（英語）](THIRD_PARTY_NOTICES_EN.md)も
+[商標ガイダンス（英語）](TRADEMARKS.md)、[第三者通知（英語）](THIRD_PARTY_NOTICES.md)も
 参照してください。
 製品リリースは Semantic Versioning 2.0.0 に従い、各プロトコルと Schema は独立した互換性
 バージョンを保持します。
