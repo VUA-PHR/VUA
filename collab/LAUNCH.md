@@ -1,5 +1,9 @@
 # VUA 六进程启动清单（操作者/主进程用）
 
+> Scope (2026-09-28): use this checklist only when explicitly starting a collab installation.
+> Ordinary single-checkout development follows [CONTRIBUTING.md](../CONTRIBUTING.md); do not
+> create the six worktrees merely because this checklist is present in a clone.
+
 > 用途：启动或重启六角色常驻进程时照此执行。规则本体在 `collab/README.md`，本清单不复述规则，
 > 只给操作步骤。
 

@@ -1,5 +1,16 @@
 # BOARD — VUA 全局看板
 
+## Development entry ruling — 2026-09-28
+
+User ruling: ordinary and collab development are parallel supported entries. Ordinary sessions,
+including the space-constrained workstation B, may use one checkout and feature branches without
+collab bootstrap or bookkeeping. Existing explicitly assigned collab installations retain their
+participant workflow. Directory names and replicated historical records do not enroll a machine.
+See AGENTS.md 1.4.0, CONTRIBUTING.md 1.2.0 and PROTECTED_MAIN.md 1.1.0. Both entries retain common
+product/contract/test requirements and GitHub PR integration; no direct-main exception is created.
+Maintainers relay accepted Issue/PR decisions and overlapping work to active participants. This
+change does not deploy Silvium/CCCC or retire workstation A's seats. Silvium remains undecided.
+
 ## 用户侧并行开发合并消化（2026-09-25，集成第 198 批登记）
 
 用户授权并行开发（非六进程产物）三合并已落 main（git 实测合并日 2026-09-25；操作者第 199 拍交办消化）：

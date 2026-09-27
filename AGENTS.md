@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.3.0
+> Document version: 1.4.0
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -10,8 +10,10 @@ current implementation authority.
 
 ## Read first
 
-0. Before starting any work in any worktree, run `pnpm collab:brief` and read the blockers and
-   messages routed to this worktree or your role. The mechanism is defined in `collab/README.md`.
+0. Choose the development entry: ordinary development is the default. Use collab only when the
+   user explicitly assigns this session to the collab process or this checkout has a confirmed
+   active assignment on this machine. A directory name, copied BOARD, historical state file, or
+   brief output does not enroll a checkout. Ordinary sessions skip collab bootstrap entirely.
 1. Read `README.md`, then `docs/README.md` and follow the smallest task-specific reading path.
 2. Read `docs/product-boundary.md` before changing product scope or module ownership.
 3. Follow this authority order: current user ruling, product boundary, versioned protocols and tests,
@@ -20,6 +22,20 @@ current implementation authority.
 
 ## Collaboration and merge discipline
 
+- Two equal development entries share all product, architecture, security, testing, and PR rules:
+  **ordinary development** follows `CONTRIBUTING.md`; **collab development** additionally follows
+  `collab/README.md`. Collab is optional and requires neither adoption by other contributors nor
+  deployment on every machine. Ordinary contributors need no role, state file, proposal number,
+  BOARD update, tick, or `pnpm collab:brief`. Discuss substantial changes in Issues/PRs and update
+  their owning documents; maintainers relay relevant decisions to active collab participants.
+- Ordinary development may switch feature branches in one checkout; linked worktrees are optional.
+  Do not run concurrent writers in the same checkout. Preserve existing changes before switching.
+  The fixed canonical-main checkout and numbered-tree convention below apply only to an explicitly
+  designated collab installation, not every clone named `VUA`.
+- In collab mode, run `pnpm collab:brief` before work and read routed blockers/messages. The collab
+  coordination, standing-process, role-assignment, and BOARD escalation duties below bind only
+  participants. Ordinary sessions report blockers to the user or in the relevant Issue/PR instead;
+  domain ownership and contract review still apply, without requiring standing role sessions.
 - `main` is the single integration branch. Work happens on short-lived vertical-slice branches named
   `slice/<slug>`: a slice lives at most 3 days and falls at most 15 commits behind `main`; reaching
   either limit first triggers a merge or rebase.
@@ -157,7 +173,8 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 6. Add dependencies only with a clear owner, purpose, license, and removal path.
 7. Preserve unrelated worktree changes. Never commit, merge, or push directly on main. All changes,
    including Integration bookkeeping, use an isolated branch and GitHub PR under
-   `collab/PROTECTED_MAIN.md`. The canonical main checkout only fetches and fast-forwards after
+   `collab/PROTECTED_MAIN.md` (a repository-wide policy, not collab enrollment). An ordinary checkout
+   may switch to its feature branch in place. The designated canonical main checkout only fetches and fast-forwards after
    remote merges; divergence is escalated, never reset away. An explicit user ruling is required
    for any emergency policy change, with the authority and restoration recorded.
 8. Do not add `Co-authored-by: Codex` trailers.
@@ -181,6 +198,10 @@ Electron handlers, Unity callbacks, or third-party wrappers.
   text remain single-source.
 
 ## Document changelog
+
+- 1.4.0 (2026-09-28): user ruling — add ordinary and opt-in collab development entries; allow
+  single-checkout feature branches outside designated collab installations while retaining PR
+  protection, common quality rules, and maintainer handoff of cross-entry decisions.
 
 - 1.3.0 (2026-09-25): user ruling — documentation language policy flip: tracked docs become
   single-language English (suffix-less canonical names; the bilingual navigation pages are gone),

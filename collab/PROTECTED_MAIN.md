@@ -1,13 +1,17 @@
 # Protected-main integration policy
 
-> Version: 1.0.0
+> Version: 1.1.0
 > Authority: user-approved repository foundation work, 2026-09-22
 > Effective: when this policy is merged; server enforcement is recorded separately.
 
 This policy supersedes older local-main merge/direct-push instructions in collab, role prompts,
 .zcode agent prompts, and recurring prompts. Read it before any integration action.
 
-1. Work and bookkeeping use an isolated worktree and a slice or integration branch. Never commit
+1. All work uses a slice or integration branch and a GitHub PR. Ordinary development may switch
+   branches in a single checkout; a separate worktree is optional. Only an explicitly designated
+   collab installation requires its canonical checkout to stay on main and work/bookkeeping to
+   use assigned linked worktrees. A clone named `VUA` is not automatically that installation.
+   This distinction follows the user ruling of 2026-09-28 and does not relax main protection. Never commit
    or merge locally on the canonical main checkout. Integration can assemble slices with merge
    commits on its own branch, then open a pull request to main.
 2. Merge through GitHub only after applicable tests and required checks succeed and review
@@ -16,6 +20,7 @@ This policy supersedes older local-main merge/direct-push instructions in collab
    using the same account is not an independent reviewer.
 3. After a remote merge, fetch and fast-forward the canonical main checkout. Stop and report if
    main diverged or local changes obstruct the update; never reset or discard another process's work.
+   Ordinary checkouts follow the same fast-forward-only rule when returning to main.
 4. Collab-only changes still use a PR, preferably batched with an existing integration. They need
    no extra local full-suite run, but must satisfy the remote required checks. Idle rounds do not
    create commits, PRs, syncs, or status churn.

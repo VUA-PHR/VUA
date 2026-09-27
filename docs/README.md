@@ -2,7 +2,7 @@
 
 > Status: Accepted  
 > Scope: Public VUA repository  
-> Updated: 2026-09-25
+> Updated: 2026-09-28
 > Normative effect: Defines public documentation routes and authority
 
 The public repository contains final product boundaries, architecture, versioned interfaces, release
@@ -97,8 +97,11 @@ current managed set with versions and status is indexed in [REGISTRY.md](REGISTR
 - [v0.5.0 release notes (Chinese)](release/v0.5.0.md)
 - [v0.4.2 release notes (Chinese)](release/v0.4.2.md)
 - [Community-maintainable tool catalog](tool-catalog/README.md)
-- Collaborator entry point: the repository collaboration mechanism lives in
-  [`collab/README.md`](../collab/README.md) (workspace instructions in the root `AGENTS.md`).
+- Default contributor entry: [CONTRIBUTING.md](../CONTRIBUTING.md), with shared workspace rules in
+  [AGENTS.md](../AGENTS.md). One checkout and a feature branch are sufficient; collab bootstrap,
+  roles, and bookkeeping are not required.
+- Optional collab participant entry: [`collab/README.md`](../collab/README.md), for explicitly
+  assigned sessions/checkouts. Historical files and checkout names do not enroll contributors.
 
 ## Documentation rules
 
