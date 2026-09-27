@@ -1,5 +1,24 @@
 # collab/ — VUA 协作机制（git 即消息总线）
 
+## Participation boundary (user ruling, 2026-09-28)
+
+This is an optional workflow for explicitly assigned collab participants. Ordinary development
+starts at [CONTRIBUTING.md](../CONTRIBUTING.md) and may use one checkout with feature branches.
+It requires no brief, role, state file, proposal, BOARD update, periodic tick, or linked worktree.
+Copied coordination files, a checkout named `VUA`, or the brief's directory-based role inference
+do not enroll a machine/session. Confirm the actual local assignment before applying this workflow.
+
+All participant duties below, including mandatory startup, proposal numbering, and the six-role
+process, are scoped to collab participants. Shared architecture, ownership, evidence and PR rules
+still bind both entries. Ordinary contributors use Issues/PRs; maintainers relay relevant accepted
+decisions and overlapping work into BOARD/proposals and back to the relevant Issue/PR. Collab
+participants must check those accepted changes before continuing an older assignment. Neither
+entry creates a competing product authority or requires the other to adopt its bookkeeping.
+
+Changing an active collab checkout to ordinary development requires an explicit handoff: record
+unfinished work and retire/reassign its active seat in BOARD/state first. Do not silently abandon
+an active assignment. A separate, unassigned clone on another machine defaults to ordinary mode.
+
 > Integration override (2026-09-22): read [protected-main policy](PROTECTED_MAIN.md) before any merge or push. All main changes, including bookkeeping, use an isolated branch and GitHub PR; canonical main only fetches and fast-forwards. This supersedes older direct-main instructions below.
 
 所有工作树共享同一个 `.git` 对象库，`git show <branch>:<path>` 可在任意工作树里直接读取其它

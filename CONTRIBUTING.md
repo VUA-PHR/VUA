@@ -1,20 +1,37 @@
 # Contributing to VUA
 
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors CONTRIBUTING.md at 1.1.0)
 
 VUA is currently pre-alpha. Contributions are welcome, but product boundaries and versioned
 contracts take priority over rapidly expanding the implementation.
 
 ## Before you start
 
+Ordinary development is the default for people and agents, including single-checkout machines.
+You do not need to join `collab/`, create linked worktrees, run `pnpm collab:brief`, or maintain
+its roles, proposals, state files, or BOARD. Read [AGENTS.md](AGENTS.md) for shared workspace rules.
+An explicit collab assignment adds the [participant workflow](collab/README.md); cloning the
+repository or finding historical collab files does not create that assignment.
+
 1. Read the [developer documentation](docs/README.md) and the task-specific documents it routes
    you to.
 2. Open or join an issue before a large feature, dependency, protocol, architecture, or product-scope
    change. Small corrections and narrowly scoped fixes do not need advance discussion.
 3. Keep changes in a focused branch and avoid mixing unrelated cleanup into the same pull request.
+
+In a clean ordinary checkout, `git switch -c slice/<slug>` starts work without another checkout.
+Preserve uncommitted work before switching; do not let concurrent agents write the same checkout.
+After review and remote merge, return to `main` and update it with `git pull --ff-only`.
+If it diverges, report the problem rather than resetting away work. A designated collab main
+checkout remains fixed on `main`; its participants use their assigned linked worktrees.
+
+Use Issues/PRs to agree on scope, report blockers, and record decisions. A collab proposal is not
+a prerequisite for an ordinary contribution. Include changed contracts, validation evidence, and
+remaining limitations in the PR. Maintainers check overlap with active collab work and relay
+accepted decisions into its BOARD/proposals as needed; contributors need not duplicate records.
+Neither entry may bypass the owning product documents or required checks.
 
 ## What a contribution should include
 
@@ -23,7 +40,7 @@ contracts take priority over rapidly expanding the implementation.
 - Add tests for new behavior and regression tests for repaired correctness or recovery defects.
 - Keep long-running work observable, cancellable, recoverable, and safe to retry where its contract
   permits.
-- Update both `.md` and `.md` versions when changing active developer documentation. Protocol
+- Update the canonical English documentation and its registry entry when applicable. Protocol
   schemas, source code, generated files, and the official license text remain single-source.
 - Clearly identify new dependencies, their purpose, license, owner, and removal path.
 
@@ -73,6 +90,9 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS.md).
 
 ## Document changelog
+
+- 1.2.0 (2026-09-28): add the default ordinary single-checkout workflow, optional collab entry,
+  shared acceptance rules, and maintainer handoff between entries.
 
 - 1.1.0 (2026-09-22): concrete private reporting and Issue routes; PR-based integration.
 
