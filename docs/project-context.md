@@ -3,7 +3,7 @@
 
 > Status: cold-start primer (no normative effect)
 > Scope: the minimal entry map for a fresh session
-> Updated: 2026-09-21
+> Updated: 2026-09-28
 > Conflict handling: when this primer disagrees with any normative source, the normative source wins
 > Maintenance trigger: update only when entry points, responsibilities, or reading paths change;
 > version numbers, current progress, todo lists, and hosting candidates stay out of this document
@@ -27,7 +27,7 @@ Older history is evidence only and imposes no implementation constraint.
 
 ## Reading order and authority conflicts
 
-1. Read the root [README](../README.md), then the [documentation guide](README.md to pick the
+1. Read the root [README](../README.md), then the [documentation guide](README.md) to pick the
    smallest task-specific path.
 2. Authority order (the former wins on conflict): current user rulings →
    [product boundary](product-boundary.md) → versioned protocols and tests → accepted decisions →
@@ -37,24 +37,28 @@ Older history is evidence only and imposes no implementation constraint.
 4. Scope and module ownership go to the [product boundary](product-boundary.md); managed
    documents and versions go to the [registry](REGISTRY.md).
 
-## collab:brief first, then role and domain documents
+## Choose the development entry, then role and domain documents
 
-- Before any work in any worktree, run `pnpm collab:brief` and handle the blockers and messages
-  routed to your worktree/role (mechanism: [collab/README.md](../collab/README.md)).
-- Read your worktree state file `collab/state/wt-N.md` and the shared board `collab/BOARD.md` to
-  claim work; the shared periodic command is [collab/TICK.md](../collab/TICK.md).
-- The six execution roles (Integration / Desktop / Core / Production / Data / Environment) are
-  defined with code ownership in the [development outline](development-outline.md)
-  ("Execution roles (six roles)"); bootstrap prompts live in [collab/roles/](../collab/roles/);
-  worktree↔role assignments live in the BOARD. A role is a hat a session wears, not a branch or
-  worktree.
+- Default — ordinary development: follow [CONTRIBUTING.md](../CONTRIBUTING.md); one checkout and
+  a `slice/<slug>` branch are enough. No collab bootstrap, roles, state files, proposals, BOARD
+  updates, ticks, or `pnpm collab:brief`; discuss substantial changes in Issues/PRs.
+- Optional — collab development: only for explicitly assigned sessions/checkouts. Run
+  `pnpm collab:brief` before work and handle the blockers and messages routed to your
+  worktree/role (mechanism: [collab/README.md](../collab/README.md)); claim work from the state
+  file `collab/state/wt-N.md` and the board `collab/BOARD.md`; the shared periodic command is
+  [collab/TICK.md](../collab/TICK.md). Directory names, copied coordination files, or brief
+  output do not enroll a checkout or session.
+- In collab development, the six execution roles (Integration / Desktop / Core / Production /
+  Data / Environment) are defined with code ownership in the
+  [development outline](development-outline.md) ("Execution roles (six roles)"); bootstrap
+  prompts live in [collab/roles/](../collab/roles/); worktree↔role assignments live in the
+  BOARD. A role is a hat a session wears, not a branch or worktree.
 - Then enter the task's domain documents: product boundary, architecture, protocols and schemas,
   design standards.
 
 ## Ownership map (links, not copies)
 
-- Product scope and module ownership: [product-boundary_EN](product-boundary.md) (ZH mirror
-  alongside)
+- Product scope and module ownership: [product boundary](product-boundary.md)
 - Six-crate layout and dependency direction: [system architecture](architecture/system.md)
 - Six-role responsibilities and collaboration discipline:
   [development outline](development-outline.md)

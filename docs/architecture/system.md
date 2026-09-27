@@ -1,9 +1,9 @@
 # VUA system architecture
 
 
-> Document version: 1.0.1
+> Document version: 1.0.2
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors system.md at 1.0.1)
+> Authority: single-language English (user ruling 2026-09-25)
 > Scope: Entire VUA system
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
@@ -121,10 +121,14 @@ The coordination substrate is version-controlled at the repository root in `coll
 
 Worktrees are numbered, not role-bound. The `VUA` main checkout holds the `.git` directory, stays on
 the integration branch `main`, and never moves; linked worktrees are named `VUA-2`, `VUA-3`, … and
-may host any slice. Work proceeds in vertical slices on `slice/<slug>` branches (lifetime ≤3 days,
-≤15 commits behind `main`); schemas and contracts align only through git merges — manual copying is
-forbidden. Run `pnpm collab:brief` before starting work to read blockers and messages routed to this
-worktree or your role. Coordination conclusions count only in `collab/`; `docs/plans/` is a local
+may host any slice. This numbered-worktree convention applies to an explicitly designated collab
+installation; a clone named `VUA` is not automatically that installation (user ruling 2026-09-28).
+Ordinary development may switch feature branches in a single checkout and skips collab bootstrap
+entirely ([CONTRIBUTING.md](../CONTRIBUTING.md)). Work proceeds in vertical slices on `slice/<slug>`
+branches (lifetime ≤3 days, ≤15 commits behind `main`); schemas and contracts align only through git
+merges — manual copying is forbidden. In a designated collab installation, run `pnpm collab:brief`
+before starting work to read blockers and messages routed to this worktree or your role.
+Coordination conclusions count only once they land in `collab/`; `docs/plans/` is a local
 scratch area.
 
 ## Dependency direction
@@ -184,6 +188,11 @@ paths, tokens, cookies, and paid-asset filenames by default.
 
 ## Document changelog
 
+- 1.0.2 (2026-09-28): collaboration section aligned with the two-entry development ruling
+  (AGENTS.md 1.4.0) — the numbered-worktree convention and the `collab:brief` startup step are
+  scoped to an explicitly designated collab installation; ordinary single-checkout development
+  is the default entry (CONTRIBUTING.md 1.2.0). Ride-along cleanup: the header now states the
+  single-language policy instead of the retired bilingual-pair wording.
 - 1.0.0 (2026-09-06): entered version management and was rewritten against reality. Added the
   code-structure reality section (single-crate module inventory), the Provider process boundary
   section, the target crate layout (accepted split decision), and the collaboration/worktree
