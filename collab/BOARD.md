@@ -1,5 +1,26 @@
 # BOARD — VUA 全局看板
 
+## Active N-sequence ruling - 2026-09-28
+
+The user-approved [development sequence](../docs/development-outline.md) 3.0.0 supersedes all
+M/W scheduling and post-v1 tool deferrals below. Old M4 closure is withdrawn as current evidence
+of complete material management; N5 audits existing capabilities before retaining, completing,
+or replacing them. Historical entries below remain evidence of what was recorded then, not
+active acceptance. Do not infer that the audit has already proved the user's initial assessment.
+
+N1/v0.7.0 deployment; N2/v0.7.1 exactly VRCFaceTracking and modified hyblocker Space Calibrator;
+N3/v0.8.0 complex 1 Avatar + 2 used dependencies/plugins + 6 other materials; N4/v0.8.1 Recipe;
+N5/v0.8.2 material rework including both BOOTH workflows; N6/v0.9.0 recovery; N7/v0.9.1 Beta
+installer and illustrated guide. All remain Beta until the author explicitly requests otherwise.
+
+Local uninstall/reinstall testing is authorized but is not a clean OS claim; cross-Windows claims
+need recorded remote CI coverage and remain limited to tested scope. UI receives human review;
+non-UI acceptance may be agent-driven. AGENTS.md 1.5.0, product-boundary 2.0.0 and versioning 2.0.0
+own the corresponding policy. This supersedes incompatible historical scheduling/acceptance text.
+The user will notify agents to revise their own plans, followed by a separate review; no messages
+or per-agent plan edits were dispatched by this documentation change.
+
+
 ## Development entry ruling — 2026-09-28
 
 User ruling: ordinary and collab development are parallel supported entries. Ordinary sessions,

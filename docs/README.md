@@ -53,9 +53,16 @@ current managed set with versions and status is indexed in [REGISTRY.md](REGISTR
 | External integrations | Product boundary, integration architecture, [external catalog](tool-catalog/external/README.md) | Upstream audit and capability matrix |
 | Release/version change | [Versioning policy](release/versioning.md) | Owning protocol or schema |
 
+## Current development policy
+
+The accepted [N1-N7 sequence](development-outline.md) replaces M/W scheduling. Development remains
+Beta until the author requests otherwise. N5 audits old M4 before rework; N2 has exactly two named
+tools; non-UI acceptance may be automated; N7 includes an illustrated user guide. Agents should
+revise their own plans against this sequence for subsequent review.
+
 ## Current entry points
 
-- [Development outline (current window and batches)](development-outline.md)
+- [Development sequence (N gates and actionable acceptance)](development-outline.md)
 - [Design standard](design/design-standard.md)
 - [Cold-start primer (former handoff summary, U15 condensed)](project-context.md)
 - [Managed-document registry](REGISTRY.md)

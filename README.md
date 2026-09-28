@@ -14,11 +14,10 @@ need. Start from a goal and your own assets; VUA guides you through environment 
 project preparation, Avatar assembly, inspection, and recovery.
 
 > [!IMPORTANT]
-> **Current status: v0.6.0 (pre-alpha).** This repository publishes developer previews.
-> The capabilities below are implemented in the repository and covered by automated
-> tests, but end-to-end validation on a real machine is still pending, and a few are
-> not yet reachable from the UI. Treat every flow as early evaluation. The
-> everyday-player stability commitment begins with `1.0.0`.
+> **Current artifact: v0.6.0 (historically pre-alpha).** Development now follows the N sequence
+> and remains Beta until the author explicitly requests otherwise. No v1.0.0 milestone or
+> production-safety guarantee is promised. Implemented pieces and automated tests do not establish
+> complete user workflows; material management requires a capability audit and rework.
 
 ## What you can do with VUA
 
@@ -29,8 +28,8 @@ project preparation, Avatar assembly, inspection, and recovery.
   signs for you.
 - **Learn the game.** A five-part in-app tutorial covers setup basics, movement and
   menus, safety settings worth adjusting (`Personal Space`, `Allow Untrusted URLs`,
-  Avatar display limits), and your devices. A SteamVR overlay tutorial is a
-  post-`1.0.0` goal.
+  Avatar display limits), and your devices. A SteamVR overlay tutorial remains
+  unscheduled outside the current N acceptance scope.
 - **Produce an Avatar.** Pick assets from your Warehouse or import ones you own,
   combine them into a Recipe, and VUA runs the assembly inside Unity through a
   deterministic, versioned bridge — import order, bindings, menus, parameters — with
@@ -82,11 +81,12 @@ in the [architecture documentation](docs/architecture/system.md).
 
 ## Where VUA is going
 
-- `1.0.0`: the stability commitment for everyday players, gated by real-machine
-  acceptance of the full flow.
-- After `1.0.0`: the SteamVR overlay tutorial, runtime integrations (SlimeVR,
-  VRCFaceTracking), and the plugin ecosystem — each behind its own accepted security
-  decision.
+- Follow the [N1-N7 development sequence](docs/development-outline.md): deployment, the two
+  specified gameplay tools, complex Avatar production, Recipe reproduction, audited material
+  management, recovery, and a Beta installer with illustrated user instructions.
+- Releases remain Beta through v0.9.1 and thereafter until the author explicitly requests a
+  change. N2 includes VRCFaceTracking and modified hyblocker Space Calibrator; other runtime
+  tools, the VR overlay tutorial, and community-plugin execution are not added by implication.
 - Accepted direction, not yet implemented: wizard path selection, Recipe overlay
   semantics with explicit conflict choices, share-time source supplement, and folding
   inspection fully into production records. An experimental, off-by-default

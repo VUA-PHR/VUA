@@ -1,10 +1,10 @@
 # Versioning policy
 
 
-> Document version: 1.0.0  
-> Status: Accepted  
-> Scope: VUA product releases, tags, packages, and public contracts  
-> Updated: 2026-09-02  
+> Document version: 2.0.0
+> Status: Accepted
+> Scope: VUA product releases, tags, packages, and public contracts
+> Updated: 2026-09-28
 > Normative effect: Yes
 
 ## Product version
@@ -15,27 +15,34 @@ VUA product releases follow [Semantic Versioning 2.0.0](https://semver.org/spec/
 - Git release tags use `vMAJOR.MINOR.PATCH`; the `v` is a tag prefix, not part of the SemVer value.
 - `0.y.z` is initial development. Public contracts can still change incompatibly, but every breaking
   change must be explicit in release notes and accompanied by the owning protocol/schema/migration.
-- Within `0.x`, VUA reserves patch releases for compatible fixes and minor releases for planned
-  stages, new capability, or intentionally documented contract change.
-- `1.0.0` defines the first stable public product API and compatibility commitment.
+- Under the 2026-09-28 user ruling, the explicit N-stage mapping below replaces the former
+  patch-only-fixes convention during major-zero development. Patch-numbered N releases may add
+  capabilities. Protocol/schema versions and breaking-change/migration disclosure remain required.
+- No `1.0.0`, stable release, or production-safety commitment is scheduled. Only an explicit
+  request from the author can change the continuing-Beta policy.
 - A published tag and artifact are immutable. Any change is a new version.
 
-## Beta and release-candidate labels
+## Continuing Beta and N-stage versions
 
-`0.10.0` and `0.11.0` are normal SemVer versions in major-zero development. VUA may label their
-release channels “Beta 1” and “Beta 2”, but that label is project lifecycle metadata rather than a
-SemVer pre-release identifier. A candidate for the exact `1.0.0` contract may use
-`1.0.0-rc.1`, followed by `1.0.0`; pre-release versions sort below the corresponding normal version.
+Beta is lifecycle metadata rather than an automatically appended SemVer suffix. Keep the exact
+numeric versions below. Do not generate v1.0.0 candidates or stable claims from earlier M plans.
+Historical tags/artifacts and their original stage labels remain unchanged; adoption of this plan
+does not itself bump the current package version or create a release.
 
-Planned sequence:
+| Gate | Product version | Delivery |
+| --- | --- | --- |
+| N1 | v0.7.0 | Purpose-driven deployment |
+| N2 | v0.7.1 | VRCFaceTracking and modified hyblocker Space Calibrator |
+| N3 | v0.8.0 | Complex real-material production and SDK handoff |
+| N4 | v0.8.1 | Recipe reproduction |
+| N5 | v0.8.2 | Audited old-M4 material-management rework |
+| N6 | v0.9.0 | Recovery and environment maintenance |
+| N7 | v0.9.1 | Beta installer, regression, and illustrated user guide |
 
-```text
-0.9.0       feature-path completion
-0.10.0      Beta 1: feature and public-contract freeze
-0.11.0      Beta 2: recovery, security, upgrade, packaging, and release validation
-1.0.0-rc.1  optional release candidate for the intended 1.0 contract
-1.0.0       first stable release
-```
+All are Beta. The [development sequence](../development-outline.md) owns their acceptance rows.
+Known non-blocking defects may ship with impact/workaround/follow-up disclosed. A pass covers
+recorded scenarios, not production safety or all Windows versions. Non-UI acceptance can be
+agent-driven; human acceptance is required for UI usability. Private real-run artifacts stay local.
 
 ## What is independently versioned
 
@@ -65,3 +72,8 @@ version strings are not authoritative.
 - Build metadata such as `+sha.<commit>` may identify CI artifacts but does not affect precedence or
   compatibility.
 - Marketing stage names (`pre-alpha`, `alpha`, `beta`, `stable`) never replace the numeric version.
+
+## Document changelog
+
+- 2.0.0 (2026-09-28): replace the stable-release roadmap and patch-only-fix convention with the explicitly mapped continuing-Beta N sequence.
+- 1.0.0 (2026-09-02): original product/protocol versioning policy.

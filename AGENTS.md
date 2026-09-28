@@ -1,12 +1,35 @@
 # VUA Workspace Instructions
 
-> Document version: 1.4.0
+> Document version: 1.5.0
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
 
 VUA is a Windows-first, local-first VRChat desktop production environment. This repository is the
 current implementation authority.
+
+## Active delivery policy (user rulings, 2026-09-28)
+
+- Follow the N1-N7 sequence in `docs/development-outline.md`, not the historical M/W schedule.
+  Old M4 closure is withdrawn as evidence of complete material management; N5 must audit actual
+  capabilities before deciding what to retain, complete, or redo. The user's initial assessment
+  is an audit input, not an already verified absence of implementation.
+- Develop usable paths quickly and carry explicit non-blocking gaps forward. Avoid speculative
+  frameworks and exhaustive module completion as prerequisites. Keep results factual and retain
+  the necessary contract, privacy, access, recovery, and PR boundaries below.
+- Remain Beta until the author explicitly requests otherwise. Do not schedule or claim v1.0.0
+  or production safety. Use the exact N-stage version map in `docs/release/versioning.md`.
+- Human usability acceptance is required for UI. Non-UI acceptance may use agent/script execution
+  against real software and outputs; required user account/consent steps block only dependent work.
+- Local software uninstall/reinstall on this machine is authorized for deployment testing, while
+  preserving unrelated user data/projects. Residual settings mean this is not a clean OS. Before
+  remote CI coverage, do not guarantee other Windows versions; afterward report only tested scope.
+- N2 accepts both and only benaclejames/VRCFaceTracking and modified hyblocker/OpenVR-SpaceCalibrator
+  without SimpleBLE/base-station BLE management. N3 requires a simultaneous 1 Avatar + at least
+  2 used dependencies/plugins + 6 other materials case. N5 includes both BOOTH account-library
+  catalog/selective-download and cloud-material import. N7 includes a screenshot user guide.
+- The user will notify existing agents to update their own plans, then request review. This ruling
+  does not itself dispatch agents or authorize replacing their plans on their behalf.
 
 ## Read first
 
@@ -128,8 +151,8 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
   natural-language descriptions, not secondary labels. Catalog risk is derived by the release gate,
   never self-assigned; registration grants no implementation, distribution, trust, or execution
   authority.
-- Runtime integrations begin after `1.0.0`; a marketplace or untrusted execution needs a separate
-  accepted decision.
+- The two named runtime-tool integrations enter N2; other tools are unscheduled. A marketplace or
+  untrusted VUA plugin execution still needs a separate accepted decision.
 - Proposed ADRs are study material without normative effect until explicitly accepted.
 
 ## Dependency direction
@@ -199,6 +222,9 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 
 ## Document changelog
 
+- 1.5.0 (2026-09-28): adopt the user-approved N sequence, continuing Beta, agile delivery,
+  automated non-UI acceptance, local reinstall tests, and exact tool/material/guide outcomes.
+
 - 1.4.0 (2026-09-28): user ruling — add ordinary and opt-in collab development entries; allow
   single-checkout feature branches outside designated collab installations while retaining PR
   protection, common quality rules, and maintainer handoff of cross-entry decisions.
@@ -229,9 +255,3 @@ Electron handlers, Unity callbacks, or third-party wrappers.
 - 1.1.0 (2026-09-06): six execution roles (Integration / Desktop / Core / Production / Data /
   Environment) replace the transitional F/B role pair; schema-freeze responsibility moves to the
   domain-owning role. See `docs/development-outline.md` 2.0.0.
-- 1.0.1 (2026-09-06): crate split landed (merge `a261393`) — the code-reality bullet now describes
-  the six-crate layout; the `environment_managers` exception is registered as proposal 004.
-- 1.0.0 (2026-09-06): entered version management. Added the collab-first read step, the
-  collaboration/merge discipline (single integration branch, vertical slices, numbered worktrees),
-  the codified honesty discipline with checks, and the single-crate reality with the accepted
-  crate-split target layout; F/B lanes redefined as roles.

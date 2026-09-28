@@ -1,11 +1,14 @@
 # Contributing to VUA
 
 
-> Document version: 1.2.0
+> Document version: 1.3.0
 > Status: Accepted
 
-VUA is currently pre-alpha. Contributions are welcome, but product boundaries and versioned
-contracts take priority over rapidly expanding the implementation.
+VUA is in continuing Beta. Follow the N sequence in docs/development-outline.md: deliver a usable
+path quickly, record known gaps, and improve it through real runs. No production-safety guarantee
+or v1.0.0 milestone is promised before the author explicitly requests it. Required application
+contracts, privacy boundaries and PR checks still apply. Human acceptance is for UI; non-UI
+acceptance may be performed by agents/scripts against real software and outputs.
 
 ## Before you start
 
@@ -63,15 +66,14 @@ Report vulnerabilities using [GitHub private reporting](https://github.com/VUA-P
 
 - Shipped in the repository: source code, tests, schemas and test vectors, managed documents, and
   release notes.
-- Acceptance conclusions are committed: each M gate's acceptance result is written into the release
+- Acceptance conclusions are committed: each N gate's acceptance result is written into the release
   notes with a machine-readable acceptance checklist. Raw logs, screenshots, and run artifacts are
   not committed; they stay local under the `_local_*` convention.
 - CI is the publicly reviewable acceptance: GitHub Actions runs cargo test/clippy, pnpm check, and
   schema-vector validation, and the badges are the public acceptance state. The real Unity matrix
   keeps running locally, with its conclusions recorded in the release notes.
-- The remote is created on the day the M3 (v0.5.0) local acceptance passes: push the full history,
-  backfill tags for the known gate commits, and publish the v0.5.0 release notes with the acceptance
-  checklist. Every later M gate gets a tag and a Release.
+- The repository already has historical M releases. New releases follow the N mapping in
+  docs/release/versioning.md; never rewrite old tags or treat old M4 closure as current acceptance.
 
 ## Integration
 
@@ -90,6 +92,8 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS.md).
 
 ## Document changelog
+
+- 1.3.0 (2026-09-28): align contribution and evidence policy with agile N delivery, continuing Beta, and automated non-UI acceptance.
 
 - 1.2.0 (2026-09-28): add the default ordinary single-checkout workflow, optional collab entry,
   shared acceptance rules, and maintainer handoff between entries.

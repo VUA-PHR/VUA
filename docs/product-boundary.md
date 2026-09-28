@@ -1,11 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 1.5.0
+> Document version: 2.0.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors product-boundary.md at 1.5.0)
 > Scope: Entire VUA product
-> Updated: 2026-09-22
+> Updated: 2026-09-28
 > Normative effect: Yes
 
 ## Product definition
@@ -38,7 +37,7 @@ records.
      **experimental** capabilities presented under the Settings-Experimental location; in the
      current version this automatic generation is **not yet wired** (honestly labeled in the
      UI) — generation is still started manually by the user from the warehouse entry, and the
-     import-time hook and orchestration semantics land with the M5 wiring; VPM package
+     current wiring is subject to the N5 capability audit; VPM package
      generation results are always clearly distinguished from direct-import results
      (`unityValidated` vs experimental offline output);
    - and **BDL**, its private
@@ -54,7 +53,7 @@ records.
    ALCOM/VCC-managed projects, whose only write path is the user-initiated "import as a
    VUA-managed copy" (user ruling U3, 2026-09-08; allow/deny lists, copy spec, and tightening
    clause under Explicit boundaries; write capability against original projects is uniformly
-   false within the `1.0.x` boundary). **Settings-face exception (user ruling U14,
+   false under the current boundary). **Settings-face exception (user ruling U14,
    2026-09-19):** the VPM package-manager settings (the repository-subscription and
    local-package-registry faces of `settings.json`) are the same file shared with VCC/ALCOM;
    VUA may read and write it, and changes are visible to both sides immediately — this exception
@@ -62,12 +61,11 @@ records.
 6. **Unity Bridge:** a versioned deterministic protocol whose production target is exactly global
    Unity `2022.3.22f1`; historical editor projects enter through the documented migration boundary.
 7. **Desktop overlay:** guidance, status, and runtime information through stable application
-   services; part of the `1.0.0` product composition. **VR overlay:** removed from the `1.0.0`
-   scope (user ruling, 2026-09-06) and kept as a post-`1.0.0` direction anchor (see the v1.1
-   outlook in the [development plan outline](development-outline.md)).
+   services. **VR overlay:** remains unscheduled outside the active
+   [N acceptance sequence](development-outline.md).
 8. **Integrated runtimes:** major optional native-feeling capabilities, including face tracking,
    motion tracking, and Avatar optimization, through managed or external-connection adapters.
-   Implementation begins only after `1.0.0`.
+   The two tools named in the active delivery policy enter N2; other integrations remain unscheduled.
 9. **Community plugin interface:** a versioned protocol for optional enhancements and customization,
    with declared capabilities, lifecycle, tasks, permissions, and compatibility rules.
 
@@ -244,7 +242,7 @@ gate derives risk from declared capabilities and behavior.
   user can go back. **Rationale:** VUA's project lock coordinates VUA instances only — ALCOM/VCC
   do not honor it, so "allow writes + warn about conflicts" would promise a safety that does not
   exist; both sides understanding the VPM format does not mean they share compatible transaction
-  and recovery mechanics. **Tightening clause:** within the `1.0.x` boundary, write capability
+  and recovery mechanics. **Tightening clause:** under the current product boundary, write capability
   against ALCOM/VCC-managed projects is uniformly false; it may only be opened later through a
   **new user ruling** once the upstream offers verifiable transactions/locks/a supported write
   interface — warnings alone are not sufficient. **Settings-face exception (user ruling U14,
@@ -288,15 +286,56 @@ gate derives risk from declared capabilities and behavior.
   expectations (this must be stated clearly to the user), and a check that did not run must never
   display as passed (user ruling, 2026-09-22).
 
+## Active delivery policy (user rulings, 2026-09-28)
+
+The [N1-N7 sequence](development-outline.md) replaces M/W scheduling. Develop usable vertical
+paths quickly, record bounded gaps, and fill them as real runs expose needs. Do not require
+exhaustive module completeness or universal human acceptance. Existing access, privacy, ownership,
+and explicit recovery requirements remain implementation constraints; results must still be factual.
+
+The project remains **Beta until the author explicitly requests otherwise**, with no planned
+v1.0.0 milestone and no production-safety guarantee. Historical release labels/tags are unchanged.
+N-gate completion applies only to its recorded scenarios and disclosed limitations. Old M4 closure
+is withdrawn as proof of complete material management. N5 first audits actual capabilities;
+the user's report of minimal functionality is a reason to investigate, not a verified absence
+of the remaining implementation. Retain, complete, or replace code based on that audit.
+
+N2 acceptance includes both and only VRCFaceTracking from benaclejames and a derived hyblocker
+OpenVR-SpaceCalibrator with SimpleBLE and base-station BLE management removed. Keep calibration
+and required SteamVR-driver behavior; verify the pinned dependency/build/artifact inventory and
+retain applicable third-party notices. This is external-tool integration, not authorization for
+VRChat client injection or a general untrusted VUA plugin host. Other tools are outside N2.
+
+N3's minimum real case is one Avatar, at least two actively used dependencies/plugins, and at
+least six other real materials simultaneously in one project, followed by actual VRC SDK handoff.
+Actual account upload remains user-operated and is not a gate prerequisite. N5 includes local
+material management and two separate BOOTH workflows: authorized account login followed by
+automatic available-material listing into a local catalog and selective download; and importing
+an already accessible cloud item into the local Warehouse/production-selection flow. This does
+not authorize purchasing, access bypass, or a project-operated asset server. Source sessions,
+orders, files and account catalogs remain local. N7 includes an illustrated end-user guide for
+the tested build, based on references the user will provide then.
+
+Local uninstall/reinstall on this machine is authorized for deployment testing, with unrelated
+user data/projects preserved. Residual registry/configuration/environment state means such a run
+is not a completely clean OS. Separate VM and CI results are labeled by their actual environment.
+Before remote CI coverage there is no claim of guaranteed operation on other Windows versions;
+afterward, only the versions and operations actually exercised may be reported as tested.
+
+UI requires human usability acceptance. Non-UI operations may be accepted using agent/script runs
+against real software and outputs. Required account/consent actions and unavailable physical
+hardware affect only dependent steps; they do not globally suspend development. Mock outcomes
+remain explicitly simulated. Numerical Beta mapping is owned by [versioning](release/versioning.md).
+
 ## Current stage
 
-The project is in pre-alpha. Component ownership is effective now; versioned and locally tested
-protocols govern implementation. Runtime-tool integration begins after `1.0.0`. The repository
-license is Apache-2.0 and the public
-contribution policy is defined in the root contribution guide. Release signing and update design
-remain release-engineering decisions.
+Current development is continuing Beta under the N sequence. The historical v0.6.0 artifact remains
+unchanged; this ruling is not a new product release. Runtime-tool deployment is active. Community
+plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.0.0 (2026-09-28): adopt agile continuing-Beta N delivery, automated non-UI acceptance, exact N2 integrations, complex production, audited material rework, local reinstall testing and illustrated user guidance.
 
 - 1.5.0 (2026-09-22): the full user ruling of 2026-09-22 landed — new "Production scope and product
   rulings" section (confirmed scope: beginner Wizard and Quest guidance, Recipe as a stackable set
