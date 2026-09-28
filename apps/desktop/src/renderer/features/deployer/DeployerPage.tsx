@@ -415,7 +415,7 @@ function RuntimeGroupCard({
   members: CheckItem[];
 }) {
   const verdict = summarizeGroup(members);
-  const groupCopy = (copy.groups as Readonly<Record<string, typeof copy.groups.vrRuntime>>)[
+  const groupCopy = (copy.groups as Readonly<Record<string, typeof copy.groups["vr_runtime"]>>)[
     groupId
   ];
   const detectedCount = members.filter((member) => member.status === "ok").length;

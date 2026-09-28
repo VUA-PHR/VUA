@@ -393,7 +393,7 @@ demoTaskTitle: "デモタスク",
     },
     /** 代替グループ文案(CHECK_GROUPS):グループごとに1枚のカード、キーはグループ id に対応 */
     groups: {
-      vrRuntime: {
+      "vr_runtime": {
         title: "VR ランタイム・ストリーミング",
         badge: "いずれか一つ",
         satisfied: "利用可能なランタイムを {count} 個検出しました。いずれか一つでプレイできます。",
