@@ -1,20 +1,20 @@
 # ALCOM/VCC Project Compatibility Matrix
 
 
-> Document version: 1.3.1  
+> Document version: 1.3.2
 > Status: Accepted  
 > Scope: read-only compatibility detection and capability matrix for ALCOM/VCC-managed projects  
 > Updated: 2026-09-23  
-> Authority: `docs/product-boundary.md` 1.5.0 (user ruling U3, 2026-09-08; settings-face
+> Authority: `docs/product-boundary.md` 2.0.0 (user ruling U3, 2026-09-08; settings-face
 > exception U14, 2026-09-19)
 
 ## Authority and hard boundary
 
-This matrix elaborates product-boundary 1.5.0 and introduces no new semantics. VUA is
+This matrix elaborates product-boundary 2.0.0 and introduces no new semantics. VUA is
 **read-only** toward projects managed by ALCOM/VCC; the only write path is the
 user-chosen "import as a VUA-managed copy" (new project path and identity, disk usage
 stated up front, no copying of regenerable directories or old task state, re-Inspect
-after import, source link kept). Inside the `1.0.x` boundary the write capability toward
+after import, source link kept). Under the current product boundary, the write capability toward
 the original project is always false; any future opening requires a new user ruling.
 
 **Settings-face exception (user ruling U14, 2026-09-19):** the VPM package-management
@@ -22,7 +22,7 @@ settings (the repository-subscription and local-package-registry faces of `setti
 are one file shared with VCC/ALCOM; VUA reads and writes that face by ruling, with changes
 immediately visible to both sides. All other storage faces such as `vcc.liteDb` stay
 denied, and the project-file face stays read-only (authoritative wording in the
-product-boundary 1.5.0 "explicit boundary" section).
+product-boundary 2.0.0 "explicit boundary" section).
 
 **Allowed** (every check in this matrix is inside this list):
 
@@ -139,6 +139,9 @@ inspection face never writes.
 
 ## Document changelog
 
+- 1.3.2 (2026-09-28): erratum — authority pointers refreshed to product-boundary 2.0.0 (the U3/U14
+  clauses are retained verbatim there) and the "inside the `1.0.x` boundary" phrase replaced by
+  "under the current product boundary"; no rule change.
 - 1.3.1 (2026-09-23): authority pointer refreshed to product-boundary 1.5.0 — the U3/U14
   clauses in the 1.5.0 "explicit boundary" section were verified word-identical to 1.4.0, so
   this matrix's semantics are unchanged. Mirrors the ZH edition.

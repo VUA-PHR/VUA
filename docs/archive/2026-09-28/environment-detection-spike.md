@@ -1,3 +1,6 @@
+> Archived on 2026-09-28. Historical snapshot only; embedded statuses are not current authority.
+> See [archive index](../README.md) for disposition and current replacements.
+
 # Environment detection spike
 
 

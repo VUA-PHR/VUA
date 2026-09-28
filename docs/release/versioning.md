@@ -1,7 +1,7 @@
 # Versioning policy
 
 
-> Document version: 2.0.0
+> Document version: 2.1.0
 > Status: Accepted
 > Scope: VUA product releases, tags, packages, and public contracts
 > Updated: 2026-09-28
@@ -73,7 +73,33 @@ version strings are not authoritative.
   compatibility.
 - Marketing stage names (`pre-alpha`, `alpha`, `beta`, `stable`) never replace the numeric version.
 
+## Third-party changes and compatibility
+
+Third-party integrations may require changes to VUA's application protocols, persisted formats,
+and supported version combinations during Beta. This is advance notice of possible change, not
+an authorization to silently break an existing contract or a promise to support every upstream
+version. Keep vendor-specific types and version handling behind adapters.
+
+For each concrete integration/update, record the upstream version/build, affected operations,
+compatibility impact, and verification evidence in the owning implementation slice. Adapter-only
+changes do not require a speculative protocol bump. A normative change to a frozen wire/storage
+face requires a new explicit version with schemas, producers, consumers and tests updated together;
+retain the old definition and state migration, continued support, or explicit rejection behavior.
+Release notes explain user action and affected versions before users take the update. Do not
+reserve invented fields or promise universal downgrade solely because upstream might change.
+
+Licensing is separate from wire compatibility. VUA's repository license does not replace a
+third-party component's license. Before bundling or changing a dependency, record the exact
+source/version, applicable terms, notices, redistribution/update/removal requirements and any
+excluded components. Keep notices consistent with the actual distributed build. Do not announce
+a future VUA license change merely because an integration is planned; any proposed change needs
+an explicit decision based on the selected code and distribution. N2's removal of SimpleBLE and
+base-station BLE management remains required; this policy is not a completed license audit.
+
 ## Document changelog
+
+- 2.1.0 (2026-09-28): clarify third-party compatibility change disclosure and separate licensing review.
+
 
 - 2.0.0 (2026-09-28): replace the stable-release roadmap and patch-only-fix convention with the explicitly mapped continuing-Beta N sequence.
 - 1.0.0 (2026-09-02): original product/protocol versioning policy.

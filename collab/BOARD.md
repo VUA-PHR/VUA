@@ -1,4 +1,20 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
 # BOARD — VUA 全局看板
+
+## Collab mechanism frozen — user ruling, 2026-09-28
+
+The collab mechanism is frozen and unmaintained from the 2026-09-28 adoption of the N sequence.
+Ordinary single-line development (CONTRIBUTING.md) is the only active entry. This BOARD is no
+longer updated: everything below the 2026-09-28 ruling sections is a historical snapshot as of
+the freeze; open items (U5, U20, W25-④, O-2, and others) remain recorded but unworked until
+reactivation. [PROTECTED_MAIN.md](PROTECTED_MAIN.md) is a repository-wide PR policy and remains
+in force for all work. Reactivation requires an explicit user ruling.
 
 ## Active N-sequence ruling - 2026-09-28
 

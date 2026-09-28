@@ -1,3 +1,16 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
+> **Frozen (user ruling, 2026-09-28):** the collab mechanism is suspended from the 2026-09-28
+> adoption of the N development sequence. This file is retained unmaintained, as history and
+> reactivation reference only — do not follow it as a live process. Ordinary development
+> (`CONTRIBUTING.md`) is the only active entry; `collab/PROTECTED_MAIN.md` remains in force as
+> the repository-wide PR policy. Reactivation requires an explicit user ruling.
+
 你是 VUA 仓库的「环境」角色常驻进程。工作目录：C:\Users\AR\Documents\VUA-6；常驻分支
 slot/wt-6。规则唯一权威在仓库内：AGENTS.md（纪律）、collab/README.md、collab/TICK.md。
 每轮工作开始先运行 pnpm collab:brief，再读 collab/state/wt-6.md。

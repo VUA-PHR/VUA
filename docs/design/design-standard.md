@@ -1,7 +1,7 @@
-# VUA design standard v0.7.21
+# VUA design standard v0.7.22
 
 
-> Document version: 0.7.21
+> Document version: 0.7.22
 > Status: Accepted
 > Scope: Electron desktop, desktop overlay, and VR overlay presentation  
 > Updated: 2026-09-25
@@ -635,7 +635,7 @@ The accepted scope covers the base character, two jurisdictions, tokens, compone
 slanted controls and overflow flyout, sidebar growth impression, task feedback, the five AMF stages as full
 capability coverage (presentation per the 0.7.19 user ruling: wizard-selected paths, inspection folded into
 production records), the WebGL scene direction (the nebula backdrop retired by the 2026-09-25 ruling), Recipe's three views, Release coverflow/pedestal, community-skin
-direction, module metaphors, motion fallbacks, and accessibility gates. Real M1–M7 slices may refine page
+direction, module metaphors, motion fallbacks, and accessibility gates. Real N-gate slices may refine page
 layout after validation.
 
 The final logo remains a separate commission. The visual direction retained here and its development
@@ -643,6 +643,11 @@ schedule are reviewed separately; a schedule change does not automatically delet
 direction.
 
 ## 12. Document changelog
+
+- **0.7.22 (2026-09-28)**: erratum — §11 "Real M1–M7 slices may refine page layout after
+  validation" becomes "Real N-gate slices may refine page layout after validation" following the
+  2026-09-28 sequence change; dated W15/W25 provenance citations elsewhere are retained as
+  history; no rule change.
 
 - **0.7.21 (2026-09-25)**: the 2026-09-25 user ruling (five topbar/sidebar UX rulings, landed as
   commit cae84388) consumed — §3 the responsive ladder is two levels (full labels → transparent

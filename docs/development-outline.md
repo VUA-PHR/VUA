@@ -1,6 +1,6 @@
 # VUA development sequence
 
-> Document version: 3.0.0
+> Document version: 3.1.0
 > Status: Accepted
 > Updated: 2026-09-28
 > Authority: User rulings of 2026-09-28, including the final four clarifications
@@ -292,7 +292,8 @@ presentation, not other N7 work; do not invent what the references contain.
 ## Execution roles (six roles)
 
 Roles express ownership, not mandatory standing sessions or separate branches. An ordinary session
-may wear several hats. Existing collab sessions keep their opt-in mechanics and PR rules.
+may wear several hats. The collab mechanism is frozen and unmaintained since 2026-09-28 (user
+ruling); its entry files are retained for history, and reactivation requires an explicit ruling.
 
 | Role | Ownership |
 | --- | --- |
@@ -326,5 +327,7 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 
 ## Document changelog
 
+- 3.1.0 (2026-09-28): user ruling — the collab mechanism is frozen and unmaintained from the
+  N-sequence adoption; ordinary development is the only active entry; roles remain ownership hats.
 - 3.0.0 (2026-09-28): replace M/W scheduling with the user-approved N1-N7 Beta sequence, capability-first N5 rework, exact N2 tools, local reinstall tests, automated non-UI acceptance, and N7 illustrated guide.
 - 2.1.0 (2026-09-23): historical M release-gate/version-map definition; superseded for active scheduling by 3.0.0.

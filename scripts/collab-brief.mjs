@@ -14,6 +14,8 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 
+console.log('collab is archived and retired (2026-09-28); this compatibility report creates no coordination duties. PR protection remains active in docs/meta/protected-main.md.');
+
 const WT_BY_DIR = { VUA: 'wt-main', 'VUA-2': 'wt-2', 'VUA-3': 'wt-3', 'VUA-4': 'wt-4', 'VUA-5': 'wt-5', 'VUA-6': 'wt-6' };
 // 角色以各状态文件 front-matter 的 role: 字段为准（六角色制）；本表仅作旧文件兜底
 const ROLE_FALLBACK = { 'wt-main': '集成', 'wt-2': '核心', 'wt-3': '桌面', 'wt-4': '产线', 'wt-5': '数据', 'wt-6': '环境' };
@@ -280,7 +282,7 @@ function registryCheck() {
     const st = head.match(/^>\s*(?:状态|Status)[:：]\s*(.+?)\s*$/im);
     const docVer = v ? normVer(v[1]) : null;
     // 状态比较取“（/→”之前的词干，容忍两侧括注写法不同；英文头部键按同义词归一
-    const STATUS_ALIAS = { accepted: '已接受', frozen: '已冻结', draft: '草案', superseded: '已取代', candidate: '候选', 'b2 implementation baseline': 'B2 实现基线', 'b3 implementation baseline': 'B3 实现基线' };
+    const STATUS_ALIAS = { accepted: '已接受', frozen: '已冻结', draft: '草案', superseded: '已取代', candidate: '候选', 'implementation baseline': '实现基线', 'b2 implementation baseline': 'B2 实现基线', 'b3 implementation baseline': 'B3 实现基线' };
     const stem = (x) => {
       const s0 = normStatus(x).replace(/\*+/g, '').split(/[（(→—]|--/)[0].trim();
       return STATUS_ALIAS[s0.toLowerCase()] ?? s0;

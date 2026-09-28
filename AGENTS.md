@@ -1,6 +1,6 @@
 # VUA Workspace Instructions
 
-> Document version: 1.5.0
+> Document version: 1.7.0
 > Status: Accepted
 > Authority: this file is the single-language authority for workspace instructions; it has no
 > bilingual pair.
@@ -31,59 +31,45 @@ current implementation authority.
 - The user will notify existing agents to update their own plans, then request review. This ruling
   does not itself dispatch agents or authorize replacing their plans on their behalf.
 
+## Collab retirement (user ruling, 2026-09-28)
+
+Collab is archived and retired, superseding all freeze/reactivation wording below. It is kept
+in place solely to preserve historical references and accepted decision provenance. Do not
+resume its roles, ticks, BOARD or state maintenance. Any future mechanism requires a new design
+and explicit acceptance. Ordinary development remains the only workflow. The repository-wide
+PR policy now lives in `docs/meta/protected-main.md`; `collab/PROTECTED_MAIN.md` remains a
+permanent forwarding entry. Keep `pnpm collab:brief` and report-only CI as compatibility utilities.
+
 ## Read first
 
-0. Choose the development entry: ordinary development is the default. Use collab only when the
-   user explicitly assigns this session to the collab process or this checkout has a confirmed
-   active assignment on this machine. A directory name, copied BOARD, historical state file, or
-   brief output does not enroll a checkout. Ordinary sessions skip collab bootstrap entirely.
+0. Ordinary development is the only active entry. Collab is archived and retired; do not run
+   bootstrap, ticks, proposals or BOARD bookkeeping. Retained files and utilities do not enroll
+   this checkout in a collaboration mechanism.
 1. Read `README.md`, then `docs/README.md` and follow the smallest task-specific reading path.
 2. Read `docs/product-boundary.md` before changing product scope or module ownership.
 3. Follow this authority order: current user ruling, product boundary, versioned protocols and tests,
    accepted decisions, architecture, design standards, then development plans.
 4. Resolve conflicting normative sources before implementation.
 
-## Collaboration and merge discipline
+## Development and merge discipline
 
-- Two equal development entries share all product, architecture, security, testing, and PR rules:
-  **ordinary development** follows `CONTRIBUTING.md`; **collab development** additionally follows
-  `collab/README.md`. Collab is optional and requires neither adoption by other contributors nor
-  deployment on every machine. Ordinary contributors need no role, state file, proposal number,
-  BOARD update, tick, or `pnpm collab:brief`. Discuss substantial changes in Issues/PRs and update
-  their owning documents; maintainers relay relevant decisions to active collab participants.
-- Ordinary development may switch feature branches in one checkout; linked worktrees are optional.
-  Do not run concurrent writers in the same checkout. Preserve existing changes before switching.
-  The fixed canonical-main checkout and numbered-tree convention below apply only to an explicitly
-  designated collab installation, not every clone named `VUA`.
-- In collab mode, run `pnpm collab:brief` before work and read routed blockers/messages. The collab
-  coordination, standing-process, role-assignment, and BOARD escalation duties below bind only
-  participants. Ordinary sessions report blockers to the user or in the relevant Issue/PR instead;
-  domain ownership and contract review still apply, without requiring standing role sessions.
-- `main` is the single integration branch. Work happens on short-lived vertical-slice branches named
-  `slice/<slug>`: a slice lives at most 3 days and falls at most 15 commits behind `main`; reaching
-  either limit first triggers a merge or rebase.
-- A vertical slice carries everything one user-perceivable capability needs in a single branch:
-  schema (when involved), Rust, TypeScript, tests, and documentation. The "three places in one
-  batch" rule is structural, not a cross-branch procedure.
-- Schemas and contracts align across work only through git merges. Manual byte-identical copying
-  between branches or worktrees is forbidden.
-- Worktrees are numbered, not role-bound. The `VUA` main checkout holds the `.git` directory, stays
-  on the integration branch, and never moves; linked worktrees are named `VUA-2`, `VUA-3`, … and may
-  host any slice.
-- Coordination conclusions count only once they land in `collab/` (state files, proposals, BOARD;
-  mechanism in `collab/README.md`). `docs/plans/` remains a local scratch area and carries no
-  coordination authority.
-- Standing processes: per-role bootstrap prompts live in `collab/roles/<role>.md`, and the shared
-  periodic command lives in `collab/TICK.md`; worktree↔role assignments are recorded in
-  `collab/BOARD.md` and mirrored in each `collab/state/wt-N.md` front-matter.
-- Escalation beats stubbornness: a problem that cannot be solved honestly is escalated to the user
-  (BOARD「待用户裁决」, tagged `[需用户]`) instead of being worked around by guessing, lowering the
-  bar, or manufacturing consensus across processes. Rule text: `collab/README.md`.
-- Execution uses six roles — Integration, Desktop, Core, Production, Data, and Environment —
-  defined with code ownership in `docs/development-outline.md` ("执行角色（六角色）"). A role is
-  a hat a session wears, not a branch or a worktree; within one slice the same session may hold
-  several hats. Domain schemas are frozen by their owning role; Desktop registers the TS face of
-  contracts; Integration arbitrates disputes.
+- Ordinary single-line development follows `CONTRIBUTING.md`. No role enrollment, collab brief,
+  proposal, BOARD update, tick or standing session is required. Do not run concurrent writers
+  in the same checkout. Linked worktrees are optional; preserve changes before switching branches.
+- `main` is the integration branch. Use short-lived `slice/<slug>` feature branches and GitHub
+  PRs under `docs/meta/protected-main.md`. Preserve merge commits and public history.
+- A slice lasts at most 3 days or 15 commits behind main; reconcile through merge/rebase as
+  appropriate without rewriting public history. Never bypass required checks or reset lost work.
+- A vertical slice carries the schema, Rust, TypeScript, tests and documentation needed for one
+  user-perceivable capability. Contracts align through Git merges, never manual byte-copying
+  across branches. Define the owning contract before implementing cross-module behavior.
+- Domain ownership remains: Integration, Desktop, Core, Production, Data and Environment are
+  responsibility hats, not running agents or assigned worktrees. Domain owners define schemas;
+  Desktop maintains the TypeScript face; Integration resolves cross-domain disputes. One session
+  may hold several hats. This does not authorize dispatching agents.
+- Record decisions in their owning documents and Issues/PRs. Escalate unresolved problems to the
+  user; do not manufacture consensus or lower acceptance to close a task. Historical collab
+  decisions remain provenance; current user rulings and owning documents determine current rules.
 
 ## Honesty discipline
 
@@ -221,6 +207,15 @@ Electron handlers, Unity callbacks, or third-party wrappers.
   text remain single-source.
 
 ## Document changelog
+
+- 1.7.0 (2026-09-28): retire collab as an archive; preserve effective decisions and move PR policy to ordinary documentation.
+
+
+- 1.6.0 (2026-09-28): user ruling — collab mechanism frozen and unmaintained from the N-sequence
+  adoption; ordinary single-line development is the only active entry; collab entries are retained
+  unmaintained until an explicit reactivation ruling; `collab/PROTECTED_MAIN.md` remains in force
+  as the repository-wide PR policy. Also fixes the stale outline section-name citation in the
+  six-roles bullet.
 
 - 1.5.0 (2026-09-28): adopt the user-approved N sequence, continuing Beta, agile delivery,
   automated non-UI acceptance, local reinstall tests, and exact tool/material/guide outcomes.

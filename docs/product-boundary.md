@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.0.0
+> Document version: 2.0.1
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-09-28
@@ -34,10 +34,10 @@ records.
      `.unitypackage` (beginner-oriented positioning); the **target trigger timing** of "generate
      a VPM package as a replacement" is **at material import** (automatic generation, replacing
      the original UnityPackage); both it and "delete original material after generation" are
-     **experimental** capabilities presented under the Settings-Experimental location; in the
-     current version this automatic generation is **not yet wired** (honestly labeled in the
-     UI) — generation is still started manually by the user from the warehouse entry, and the
-     current wiring is subject to the N5 capability audit; VPM package
+     **experimental** capabilities presented under the Settings-Experimental location; the
+     implementation contains an import-time auto-generation hook in the acquisition crate;
+     UI wiring and real usability must be established by the N5 capability audit rather than
+     inferred from that hook or historical completion claims. VPM package
      generation results are always clearly distinguished from direct-import results
      (`unityValidated` vs experimental offline output);
    - and **BDL**, its private
@@ -334,6 +334,9 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.0.1 (2026-09-28): replace an outdated unwired claim with source evidence and the N5 verification boundary.
+
 
 - 2.0.0 (2026-09-28): adopt agile continuing-Beta N delivery, automated non-UI acceptance, exact N2 integrations, complex production, audited material rework, local reinstall testing and illustrated user guidance.
 

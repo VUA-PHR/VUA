@@ -1,9 +1,8 @@
 # Orchestrator architecture
 
 
-> Document version: 1.0.0
+> Document version: 1.0.1
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors orchestrator.md at 1.0.0)
 > Scope: Orchestrator application core and local adapters
 > Updated: 2026-09-06
 > Last conformance review: 2026-09-06
@@ -24,10 +23,11 @@ third-party applications own their user interfaces.
 Orchestrator
 ├─ domain         pure rules, state, value objects
 ├─ application    use cases, workflows, authorization boundaries
-├─ ports          required input/output capabilities
-├─ adapters       SQLite, files, processes, HTTP, Unity, vendors
-└─ bootstrap      fixed startup wiring and configuration
+└─ ports          required input/output capabilities
 ```
+
+Adapter implementations live in their owning crates (with documented legacy core coupling).
+provider-host is the explicit composition root; this is a logical map, not a source-directory tree.
 
 The accepted implementation keeps the Orchestrator in Rust and uses a supervised independent-process
 Provider. Gateway DTOs map explicitly to Rust application types; transport types stay at the Provider
@@ -66,9 +66,9 @@ single-instance, and shutdown semantics are defined by the
 - Events publish only after commit and carry the corresponding revision.
 - Idempotency records can recognize repeated commands and reuse results.
 
-The database driver, leases, recovery tables, Provider transport, supervision, and shutdown behavior
-are fixed by the B2 implementation and tests. B3 continues complete panic-to-stable-application-error
-coverage with the first real use case.
+The current database driver, leases, recovery tables, Provider transport, supervision, and shutdown
+behavior are governed by their existing implementation contracts/tests. N slices reuse these
+boundaries and add operation-specific behavior; historical B labels do not prescribe active work.
 
 ## External processes
 
@@ -77,6 +77,8 @@ cancellation/exit semantics per tool, execute allowlisted programs from trusted 
 supervise Windows process trees, and redact and truncate logs.
 
 ## Document changelog
+
+- 1.0.1 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
 
 - 1.0.0 (2026-09-06): entered version management; header normalized, conformance-review date added,
   and a duplicated contract-reference sentence removed. Content otherwise reviewed against reality

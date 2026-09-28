@@ -2,7 +2,7 @@
 
 
 > Document version: 0.2
-> Status: B2 implementation baseline (handshake frame face frozen as machine-readable schema per proposal 001)
+> Status: Implementation baseline (handshake frame face frozen as machine-readable schema per proposal 001)
 > Owner: Electron Kernel and Orchestrator Provider adapters
 > Updated: 2026-09-07
 > Frame version: `0.1`
@@ -12,9 +12,9 @@
 The production hosting shape is an independent Rust executable supervised by Electron Main:
 `vua-orchestrator-provider.exe`. Renderer code cannot start or access it directly. Its only startup argument is
 `--database <absolute path>`; no shell is used, the working directory is the executable directory, and only
-`SystemRoot/WINDIR/TEMP/TMP` are inherited. The development build validates a single-EXE artifact shape. B10/M10
-performs release signing, exact dependency inventory, and installer pinning with the release certificate; B2 does
-not claim that a development binary is signed.
+`SystemRoot/WINDIR/TEMP/TMP` are inherited. The development build validates a single-EXE artifact shape. The N7 installer
+gate owns release signing, exact dependency inventory, and installer pinning with the release certificate; the
+current implementation baseline does not claim that a development binary is signed.
 
 On Windows the Provider joins itself to a Job Object with `KILL_ON_JOB_CLOSE`, so future descendants are collected
 after an abnormal Provider exit. An adjacent `.provider.lock` holds an exclusive operating-system file lock for one
@@ -62,6 +62,7 @@ mutation must Inspect first and explicitly take over at a higher generation.
 
 ## Document changelog
 
+- 0.2 erratum (2026-09-28): stale lane labels removed — the B10/M10 release-signing sentence now assigns that duty to the N7 installer gate, and the Status header drops the B2 prefix to match the REGISTRY status; protocol version and normative content unchanged.
 - 0.2 (2026-09-07): handshake frame face frozen — request/response JSON Schemas and both-side
   positive/negative vectors landed (proposal 001); a handshake request `payload` must be `null`
   (violations get `protocol_error`), and the five-field response (mandatory `downloadIngest`) is the

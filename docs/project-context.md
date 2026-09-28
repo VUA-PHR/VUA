@@ -42,17 +42,14 @@ Older history is evidence only and imposes no implementation constraint.
 - Default — ordinary development: follow [CONTRIBUTING.md](../CONTRIBUTING.md); one checkout and
   a `slice/<slug>` branch are enough. No collab bootstrap, roles, state files, proposals, BOARD
   updates, ticks, or `pnpm collab:brief`; discuss substantial changes in Issues/PRs.
-- Optional — collab development: only for explicitly assigned sessions/checkouts. Run
-  `pnpm collab:brief` before work and handle the blockers and messages routed to your
-  worktree/role (mechanism: [collab/README.md](../collab/README.md)); claim work from the state
-  file `collab/state/wt-N.md` and the board `collab/BOARD.md`; the shared periodic command is
-  [collab/TICK.md](../collab/TICK.md). Directory names, copied coordination files, or brief
-  output do not enroll a checkout or session.
-- In collab development, the six execution roles (Integration / Desktop / Core / Production /
-  Data / Environment) are defined with code ownership in the
-  [development outline](development-outline.md) ("Execution roles (six roles)"); bootstrap
-  prompts live in [collab/roles/](../collab/roles/); worktree↔role assignments live in the
-  BOARD. A role is a hat a session wears, not a branch or worktree.
+- Collab development is **frozen and unmaintained since the 2026-09-28 N-sequence adoption
+  (user ruling)**: [collab/](../collab/README.md) is retained as history and reactivation
+  reference only. Do not run `pnpm collab:brief`, ticks, proposals, or BOARD bookkeeping;
+  reactivation requires an explicit user ruling.
+- The six execution roles (Integration / Desktop / Core / Production / Data / Environment) remain
+  ownership hats with code ownership defined in the
+  [development outline](development-outline.md) ("Execution roles (six roles)"); an ordinary
+  session may wear several hats.
 - Then enter the task's domain documents: product boundary, architecture, protocols and schemas,
   design standards.
 

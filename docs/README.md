@@ -1,123 +1,61 @@
 # Documentation guide
 
-> Status: Accepted  
-> Scope: Public VUA repository  
+> Status: Accepted
 > Updated: 2026-09-28
-> Normative effect: Defines public documentation routes and authority
+> Scope: Current documentation routes for ordinary single-line N-sequence development
 
-The public repository contains final product boundaries, architecture, versioned interfaces, release
-policy, and community-maintainable catalogs. Each task starts with the smallest relevant set.
+Collab is now **archived and retired**, superseding the prior freeze. Historical files stay at
+their paths for provenance; future collaboration requires a fresh design. The
+[repository PR policy](meta/protected-main.md) continues independently.
 
-## Authority order
+## Start here
 
-1. [Product boundary](product-boundary.md)
-2. Versioned protocols, schemas, and fixed test vectors
-3. Accepted architecture decision records under [`decisions/`](decisions/)
-4. Module architecture
-5. Release and compatibility policy
-6. Tool-catalog rules for catalog entries
+1. Read [the N1-N7 sequence](development-outline.md) for the next user outcome and acceptance.
+2. Read [product boundaries](product-boundary.md) for scope and ownership.
+3. Use [the system map](architecture/system.md) to find the current code owner, then follow the
+   shortest task route below. Do not read every protocol before starting a small slice.
 
-Higher layers own product meaning; lower layers supply implementation detail.
+[AGENTS.md](../AGENTS.md) and [CONTRIBUTING.md](../CONTRIBUTING.md) define repository work.
+Collab is frozen and unmaintained since the 2026-09-28 N-sequence adoption. Its entries remain
+historical/reactivation references. **[collab/PROTECTED_MAIN.md](../collab/PROTECTED_MAIN.md)
+continues in force for all work.** The collab:brief script and report-only CI stay; no bootstrap,
+ticks, proposals, or BOARD maintenance are required. The [cold-start primer](project-context.md)
+is optional context, not a second schedule.
 
-## Public directories
+## Read by task
 
-| Location | Public content | Authority |
+| Task | Read next | Add only when needed |
 | --- | --- | --- |
-| `product-boundary.md` | Product goals, module ownership, delivery boundary | Product scope |
-| `architecture/` | Module structure, dependency direction, adapters, data ownership | Implementation architecture |
-| `compatibility/` | Verified production targets, migration inputs, and unsupported environments | Compatibility policy |
-| `protocols/` and `schemas/` | Gateway, Recipe, Unity Bridge, plugin, and persistent formats | Versioned interfaces |
-| `decisions/` | Accepted architecture decision records (ADRs) | Accepted decisions |
-| `release/` | Product versions (Chinese changelogs), compatibility, tags, and artifacts | Release engineering |
-| `tool-catalog/` | `core / plugin / external` entries and release-risk rules | Catalog classification and contribution |
+| N1 deployment / N2 tools | [System map](architecture/system.md), [integration boundaries](architecture/integrations-and-overlays.md), [incremental evolution](architecture/evolution.md) | Environment/editor compatibility, relevant Gateway contract, selected upstream adapter |
+| N3 production / N4 Recipe | [AMF and Unity](architecture/amf-unity.md), [Orchestrator](architecture/orchestrator.md) | Production/material/Recipe/SDK handoff contracts and real-run evidence |
+| N5 material audit/rework | [BDL](architecture/bdl.md), [AMF](architecture/amf-unity.md) | Current UI/Gateway/code/tests; account listing, selective download and import contracts |
+| UI changes | [Desktop](architecture/desktop.md), [design standard](design/design-standard.md) | Relevant feature and human UI acceptance |
+| Recovery | [Orchestrator](architecture/orchestrator.md) | Task store, operation-specific failure/retry format and tests |
+| Versions / N7 distribution | [Version policy](release/versioning.md), N7 acceptance | Installer, actual-build screenshots and user-provided guide reference |
+| Contract change | [Protocol guide](protocols/README.md) | Specific schema and consumer tests; do not assume highest version replaces all older faces |
+| Document cleanup | [Audit/disposition](meta/document-audit-2026-09-28.md), [governance](meta/documentation-governance.md) | [Registry](REGISTRY.md) and [archive index](archive/README.md) |
 
-Working decision history, migration evidence, plans, research, project handoff context, and
-visual-design working material stay in the local workspace. Accepted architecture decision
-records are published under `decisions/`; their outcomes are consolidated into the public
-documents above.
+## Directory roles
 
-Superseded protocol versions live under [`protocols/superseded/`](protocols/superseded/); the
-current managed set with versions and status is indexed in [REGISTRY.md](REGISTRY.md).
+| Location | Role |
+| --- | --- |
+| Root product-boundary/development-outline | What the product does; what is delivered next |
+| `architecture/` | Current code/ownership; explicitly marked proposals for incremental evolution |
+| `protocols/`, repository `schemas/` | Exact wire/storage behavior, with active/coexisting/historical status |
+| `compatibility/` | Supported targets and evidence limits, not universal Windows guarantees |
+| `design/` | Current UI acceptance authority; refine relevant sections with actual UI work |
+| `decisions/` | Accepted decisions retained with historical rationale; supersede explicitly, never silently rewrite |
+| `release/` | Version policy and immutable historical Chinese release notes |
+| `tool-catalog/` | Core/plugin/external classification; a catalog entry is not implemented capability |
+| `meta/` | Small documentation maintenance rules and this migration's audit |
+| `research/` | Retained extraction/boundary research pending owning-domain review, not a new feature roadmap |
+| `archive/` | Outdated snapshots and completed spike evidence, excluded from the current reading path |
 
-## Reading routes
+Current authority: user ruling, product boundary, versioned contracts/tests, accepted decisions,
+architecture, design, then plans. A Draft proposal does not override an accepted contract.
+A source review does not establish runtime acceptance. M history does not close N gates.
 
-| Task | Required | Add as needed |
-| --- | --- | --- |
-| Electron / React | Product boundary, [desktop architecture](architecture/desktop.md) | Gateway contract and security tests |
-| Orchestrator | Product boundary, [Orchestrator architecture](architecture/orchestrator.md) | State, recovery, and adapter protocols |
-| AMF acquisition / BDL | Product boundary, [AMF](architecture/amf-unity.md), [BDL](architecture/bdl.md) | Session, download, and persistence contracts |
-| AMF / Recipe / Unity | Product boundary, AMF architecture, [Unity editor compatibility](compatibility/unity-editor.md) | Recipe and [Unity Bridge v4 (current)](protocols/unity-bridge-v4.md) |
-| Kernel / Provider hosting | Product boundary, [system architecture](architecture/system.md) | Desktop and Orchestrator architecture |
-| Core tools | Product boundary, [integration architecture](architecture/integrations-and-overlays.md), [core catalog](tool-catalog/core/README.md) | Safety evidence and capability matrices |
-| Plugins | Product boundary, integration architecture, [plugin catalog](tool-catalog/plugin/README.md) | Plugin protocol and compatibility tests |
-| External integrations | Product boundary, integration architecture, [external catalog](tool-catalog/external/README.md) | Upstream audit and capability matrix |
-| Release/version change | [Versioning policy](release/versioning.md) | Owning protocol or schema |
-
-## Current development policy
-
-The accepted [N1-N7 sequence](development-outline.md) replaces M/W scheduling. Development remains
-Beta until the author requests otherwise. N5 audits old M4 before rework; N2 has exactly two named
-tools; non-UI acceptance may be automated; N7 includes an illustrated user guide. Agents should
-revise their own plans against this sequence for subsequent review.
-
-## Current entry points
-
-- [Development sequence (N gates and actionable acceptance)](development-outline.md)
-- [Design standard](design/design-standard.md)
-- [Cold-start primer (former handoff summary, U15 condensed)](project-context.md)
-- [Managed-document registry](REGISTRY.md)
-- [System architecture](architecture/system.md)
-- [Electron desktop and presentation](architecture/desktop.md)
-- [Orchestrator](architecture/orchestrator.md)
-- [AMF and Unity Bridge](architecture/amf-unity.md)
-- [Unity editor compatibility](compatibility/unity-editor.md)
-- [BDL](architecture/bdl.md)
-- [Core, plugins, external integrations, and overlays](architecture/integrations-and-overlays.md)
-- [Unity Bridge v4 (current frozen; the v2 production path remains in effect)](protocols/unity-bridge-v4.md)
-- [Application Contract v0.1](protocols/application-contract-v0.1.md)
-- [Orchestrator Task Store Format v0.1](protocols/task-store-v0.1.md)
-- [Supervised Provider Process Protocol v0.1](protocols/provider-process-v0.1.md)
-- [Download Events Protocol v0.1](protocols/download-events-v0.1.md)
-- [BDL Read-Model Protocol v0.5](protocols/bdl-queries-v0.5.md)
-- [BDL Command Protocol v0.4](protocols/bdl-commands-v0.4.md)
-- [BDL Dependency Observations v0.2](protocols/bdl-dependency-observations-v0.2.md)
-- [Packages Query Protocol v0.2](protocols/packages-query-v0.2.md)
-- [Packages Catalog Protocol v0.2](protocols/packages-catalog-v0.2.md)
-- [Packages Ops Protocol v0.6](protocols/packages-ops-v0.6.md)
-- [Packages Repos Protocol v0.2](protocols/packages-repos-v0.2.md)
-- [Packages Repos Catalog Protocol v0.1](protocols/packages-repos-catalog-v0.1.md)
-- [Repo-Level Package Catalog Protocol v0.1](protocols/packages-repo-catalog-v0.1.md)
-- [Package Templates Protocol v0.1](protocols/packages-templates-v0.1.md)
-- [Project Inspection Protocol v0.2](protocols/project-inspection-v0.2.md)
-- [Project Ops Protocol v0.2](protocols/project-ops-v0.2.md)
-- [Inspection Queries Protocol v0.1](protocols/inspection-queries-v0.1.md)
-- [Inspection Evidence Protocol v0.1](protocols/inspection-evidence-v0.1.md)
-- [Editor Verify Protocol v0.1](protocols/editor-verify-v0.1.md)
-- [Production Use-Case Protocol v0.2](protocols/production-use-case-v0.2.md)
-- [Production Evidence Protocol v0.1](protocols/production-evidence-v0.1.md)
-- [Material Intake Protocol v0.2](protocols/material-intake-v0.2.md)
-- [Recipe Export Protocol v0.1](protocols/recipe-export-v0.1.md)
-- [SDK Handoff Protocol v0.2](protocols/release-handoff-v0.2.md)
-- [ADR: Supervised independent-process Orchestrator Provider](decisions/orchestrator-supervised-provider.md)
-- [Versioning policy](release/versioning.md)
-- [v0.6.0 release notes (Chinese)](release/v0.6.0.md)
-- [v0.5.0 release notes (Chinese)](release/v0.5.0.md)
-- [v0.4.2 release notes (Chinese)](release/v0.4.2.md)
-- [Community-maintainable tool catalog](tool-catalog/README.md)
-- Default contributor entry: [CONTRIBUTING.md](../CONTRIBUTING.md), with shared workspace rules in
-  [AGENTS.md](../AGENTS.md). One checkout and a feature branch are sufficient; collab bootstrap,
-  roles, and bookkeeping are not required.
-- Optional collab participant entry: [`collab/README.md`](../collab/README.md), for explicitly
-  assigned sessions/checkouts. Historical files and checkout names do not enroll contributors.
-
-## Documentation rules
-
-- Each fact has one normative owner; summaries link to that owner.
-- Tracked documentation is single-language English (user ruling 2026-09-25). Changelogs under
-  `release/` are single-language Chinese; the root README keeps English, Chinese, Japanese, and
-  Korean editions. Chinese mirrors are maintained locally under the gitignored `docs-zh/` and
-  carry no normative force.
-- `tool-catalog/` uses one file per category and entry so each community change remains complete.
-- Schemas, wire formats, source code, generated files, and official license texts remain single-source.
-- Wire, schema, persistence, and plugin formats carry machine-readable versions.
-- New public documents accompany real architecture, interfaces, or implemented module needs.
+Tracked docs are English except Chinese release notes and the four-language root README.
+Local Chinese mirrors under docs-zh are optional and non-authoritative. Each fact has one owning
+document; navigation links to it instead of copying detailed rules. Raw real-machine artifacts
+remain local. Registry and document changes ride with the feature, not a separate paperwork cycle.

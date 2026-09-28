@@ -35,5 +35,5 @@ VPM package declared-face inspection (including VRChat SDK spotting and the pend
 marker); the matrix and the allow/forbidden lists are in the
 [ALCOM/VCC project compatibility matrix](../../compatibility/alcom-vcc.md); the external-tool
 boundary is in the [ALCOM / VCC entry](../external/alcom-vcc.md). The write capability toward the
-original project is always false inside the `1.0.x` boundary; the only write path is the
+original project is always false under the current product boundary; the only write path is the
 user-chosen "import as a VUA-managed copy".

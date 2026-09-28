@@ -1,4 +1,17 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
 # 工作节拍命令（TICK v1.8）
+
+> **Frozen (user ruling, 2026-09-28):** the collab mechanism is suspended from the 2026-09-28
+> adoption of the N development sequence. This file is retained unmaintained, as history and
+> reactivation reference only — do not follow it as a live process. Ordinary development
+> (`CONTRIBUTING.md`) is the only active entry; `collab/PROTECTED_MAIN.md` remains in force as
+> the repository-wide PR policy. Reactivation requires an explicit user ruling.
 
 > Scope (2026-09-28): this command is for explicitly assigned collab sessions only. Ordinary
 > development has no tick or collab bookkeeping obligation; see ../CONTRIBUTING.md.

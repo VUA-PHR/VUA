@@ -1,3 +1,6 @@
+> Archived on 2026-09-28. Historical snapshot only; embedded statuses are not current authority.
+> See [archive index](../README.md) for disposition and current replacements.
+
 # VPM asset-package Spike closure record
 
 Date: 2026-09-03

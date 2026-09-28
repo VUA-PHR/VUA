@@ -1,4 +1,23 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
 # collab/ — VUA 协作机制（git 即消息总线）
+
+## Frozen — unmaintained since 2026-09-28 (user ruling)
+
+The collab mechanism is suspended from the 2026-09-28 adoption of the N development sequence.
+Ordinary single-line development ([CONTRIBUTING.md](../CONTRIBUTING.md)) is the only active entry.
+This directory is retained as history and reactivation reference only: do not run
+`pnpm collab:brief` as a duty, open proposals, update BOARD/state files, dispatch ticks, or start
+role sessions. Everything below predates the freeze and may drift from the current normative
+documents (`AGENTS.md`, `docs/product-boundary.md`, `docs/development-outline.md`,
+`docs/release/versioning.md`); where it conflicts, the normative documents win.
+[PROTECTED_MAIN.md](PROTECTED_MAIN.md) is a repository-wide PR policy and remains in force.
+Reactivation requires an explicit user ruling.
 
 ## Participation boundary (user ruling, 2026-09-28)
 

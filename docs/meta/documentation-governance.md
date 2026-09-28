@@ -1,9 +1,8 @@
 # VUA documentation governance
 
 
-> Document version: 2.0.0
+> Document version: 2.2.0
 > Status: Accepted
-> Authoritative language: English (single-language canonical, user ruling 2026-09-25; see §2.3)
 > Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
 > (`docs/plans/docs-governance-reform.md`). The plan itself carries no normative effect;
 > from acceptance onward this document is the sole authority for document version management.
@@ -16,8 +15,8 @@
 | T1 Product boundary | product-boundary, compatibility policy | Tracked in git | Internal SemVer | Major requires user ruling |
 | T2 Contracts/protocols/Schemas | docs/protocols, schemas/ | Tracked in git | Independent versions per contract | After freeze, bump version only; never edit in place |
 | T3 Decisions | docs/decisions (ADR) | Tracked in git | Immutable numbering | Can only be superseded by a new ADR |
-| T4 Architecture/design | docs/architecture, docs/design | All tracked in git | Internal SemVer | Implementation-conformance review at every M gate |
-| T5 Plans/collaboration | development-outline, collab/ | Tracked in git | outline uses internal SemVer; collab follows the collaboration-mechanism rules | User rules plan direction; worktrees self-maintain state |
+| T4 Architecture/design | docs/architecture, docs/design | All tracked in git | Internal SemVer | Implementation-conformance review at every N gate |
+| T5 Plans/history | development-outline; frozen collab history | Tracked in git | outline uses internal SemVer; collab is unmaintained | User rules N direction; no collab bookkeeping |
 
 ## 2. Internal document SemVer
 
@@ -42,7 +41,7 @@ version line is placed near the status block without altering the status wording
 
 ### 2.2 Changelog section
 
-Every document ends with a fixed `## Document changelog` section, one line per version
+Every document ends with a fixed `Document changelog` section, one line per version
 (version, date, one sentence), keeping only the latest 10 entries; earlier history lives in
 git. Patch changes may ride along with any commit; Minor/Major changes must name the document
 and the version action in the commit message.
@@ -93,14 +92,14 @@ Paths refer to the canonical file (single-language per §2.3). Update rules are 
 
 ### 2.7 Traceability
 
-The release notes of every M gate end with the "document version matrix accepted at this gate"
+The release notes of every N gate end with the "document version matrix accepted at this gate"
 (a REGISTRY snapshot), making product versions and document versions mutually traceable.
 
 ## 3. REGISTRY update cadence (event-driven, not per collaboration count)
 
 - **Update triggers** (exactly four): ① a managed document changes Minor/Major version;
   ② a document changes status (Draft → Accepted → Frozen → Superseded); ③ a new managed
-  document is added; ④ review dates are refreshed after an M-gate conformance review.
+  document is added; ④ review dates are refreshed after an N-gate conformance review.
   **Patch-level edits never touch the REGISTRY**.
 - **Same-batch commits**: a REGISTRY row edit rides along with the document commit that caused
   it — no extra commits, no extra collaboration round trips.
@@ -131,8 +130,48 @@ as a **ride-along cleanup item for the next version bump of those documents**; n
 is re-versioned just for this. Old identifiers in historical files are never rewritten
 retroactively (see the retired-namespace table in `collab/README.md`).
 
+## 5. Current routes, proposals and archives (2026-09-28)
+
+Keep one short docs/README route by user task. Architecture distinguishes current implementation
+from Draft evolution; a proposal does not change a frozen interface. Update the smallest owning
+document with its implementation slice. Do not make exhaustive documentation cleanup a dependency
+of a working N feature.
+
+Before retirement, check runtime/schema/test consumers, inherited definitions, and accepted
+constraints. Older version numbers can be concurrently served faces. Move only demonstrated
+historical material into docs/archive with a reason and current-route pointer; preserve original
+content, adjust links, and record the disposition. Existing protocols/superseded paths may remain.
+Archived embedded status headers are historical, not current authority. Registry tracks current
+owners, not copied archive snapshots. Research with implementation consumers needs domain review
+before its constraints are discarded.
+
+Collab is frozen and unmaintained from 2026-09-28. Its entries remain, and
+[collab/PROTECTED_MAIN.md](../../collab/PROTECTED_MAIN.md) continues in force. Keep pnpm collab:brief
+and report-only CI; registry-only checking does not reactivate collab bootstrap. Current decisions
+land in owning documents/PRs, not mandatory BOARD updates.
+
+## 6. Local environment and reproducible evidence
+
+Keep the workstation inventory in the gitignored `_local_environment/` directory. The ignore
+file contains exclusion patterns, not machine facts. Record the observation date, software and
+version where known, evidence source, and whether each entry is user-reported, detected, or
+actually exercised. Unknown is distinct from absent. Refresh observations before deployment
+and after installation/removal; a stale inventory is not an execution prerequisite or proof.
+
+Keep paths, accounts, device identifiers, raw logs and private artifacts local. Public documents
+record the target scenario, required versions, procedure and sanitized result/scope. A tracked
+acceptance recipe can name PICO PCVR without claiming any developer's current runtime is working.
+Real runs keep dated before/after snapshots under `_local_real_machine/`; the current inventory
+is only a convenience index. Local reinstall is not a clean OS, and one machine is not evidence
+of compatibility with other Windows versions. A synthetic CI fixture contains no real inventory.
+
 ## Document changelog
 
+- 2.2.0 (2026-09-28): define local inventory versus public test evidence; repair misplaced section insertion.
+- 2.1.0 (2026-09-28): add task routes, current/proposed distinction and evidence-based archival under the collab freeze.
+
+- 2.0.1 (2026-09-28): erratum — M-gate references replaced by N gates following the 2026-09-28
+  sequence change (T4 change gate, §2.7 traceability, §3 trigger ④); no rule change.
 - 2.0.0 (2026-09-25): user ruling — language policy flip. Tracked documentation becomes
   single-language English (this file, formerly the EN mirror, becomes the canonical document);
   changelogs become single-language Chinese; README stays four-language; Chinese mirrors move to

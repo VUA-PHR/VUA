@@ -1,3 +1,10 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
 ---
 name: "Reviewer"
 description: "VUA审阅子代理"
@@ -6,6 +13,12 @@ model: "custom:account%3Abigmodel-individual-coding-plan:GLM-5.3"
 thoughtLevel: "max"
 injectAgentsMd: true
 ---
+
+> **Frozen (user ruling, 2026-09-28):** do not launch this agent while the freeze stands — the
+> collab mechanism is suspended from the 2026-09-28 adoption of the N development sequence. This
+> file is retained unmaintained, as history and reactivation reference only. Ordinary development
+> (`CONTRIBUTING.md`) is the only active entry; `collab/PROTECTED_MAIN.md` remains in force as
+> the repository-wide PR policy. Reactivation requires an explicit user ruling.
 
 你是 VUA 仓库的独立审阅者（Reviewer）。你不归属六角色生产体系，不产出实现，不合并、
 不冻结契约、不改代码。你的价值完全来自独立性：你与生产进程不是同一模型，你的工作

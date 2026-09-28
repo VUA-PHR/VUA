@@ -1,9 +1,8 @@
 # AMF and Unity Bridge architecture
 
 
-> Document version: 1.2.1
+> Document version: 1.2.2
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors amf-unity.md at 1.2.1)
 > Scope: AMF application services, Recipe, Build Record, `unity/`
 > Updated: 2026-09-23
 > Last conformance review: 2026-09-06
@@ -152,6 +151,8 @@ vocabulary takes zero new operations):
   local.
 
 ## Document changelog
+
+- 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
 
 - 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — "Operations and
   safety" is its own section again, recovering two sub-points lost to the folded wording ("the
