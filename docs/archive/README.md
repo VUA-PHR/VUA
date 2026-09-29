@@ -16,6 +16,9 @@ was moved: the BOOTH extraction implementation cites its research specification,
 research includes previously accepted constraints. Those need domain comparison before retirement.
 No runtime behavior, schema, or historical release artifact is removed by this archive.
 
-Collab is separately frozen and unmaintained since 2026-09-28, not relocated into this archive.
-[collab/PROTECTED_MAIN.md](../../collab/PROTECTED_MAIN.md) remains in force. The collab:brief script
+Collab was retired on 2026-09-28 and relocated into this archive on 2026-09-29.
+[collab/PROTECTED_MAIN.md](2026-09-29/collab/PROTECTED_MAIN.md) remains in force. The collab:brief script
 and report-only CI remain available without reactivating the collab mechanism.
+
+The [2026-09-29 collab archive](2026-09-29/README.md) contains the retired collaboration
+mechanism and role prompts. Current [PR protection](../meta/protected-main.md) remains effective.

@@ -1,6 +1,6 @@
 # Protected-main integration policy
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
 > Authority: user-approved repository foundation work, 2026-09-22
 > Effective: when this policy is merged; server enforcement is recorded separately.
@@ -13,13 +13,8 @@ the same repository identity at its new owner; never recreate or mirror-push a r
 This policy supersedes older local-main merge/direct-push instructions in collab, role prompts,
 .zcode agent prompts, and recurring prompts. Read it before any integration action.
 
-1. All work uses a slice or integration branch and a GitHub PR. Ordinary development may switch
-   branches in a single checkout; a separate worktree is optional. Only an explicitly designated
-   collab installation requires its canonical checkout to stay on main and work/bookkeeping to
-   use assigned linked worktrees. A clone named `VUA` is not automatically that installation.
-   This distinction follows the user ruling of 2026-09-28 and does not relax main protection. Never commit
-   or merge locally on the canonical main checkout. Integration can assemble slices with merge
-   commits on its own branch, then open a pull request to main.
+1. All work uses a feature branch and GitHub PR. Ordinary development may switch branches
+   in one checkout; linked worktrees are optional. Never commit, merge or push directly on main.
 2. Merge through GitHub only after applicable tests and required checks succeed and review
    conversations are resolved. Preserve merge commits; do not rewrite public history. Current
    single-maintainer staffing does not require an independent approving review. Another agent
@@ -37,12 +32,13 @@ This policy supersedes older local-main merge/direct-push instructions in collab
    manufacture approvals, or recreate a repository after an access failure. If protection needs
    emergency adjustment, stop automatic integration and obtain an explicit user ruling; record
    the exact change and restoration. There is no standing agent/admin bypass.
-7. Transfer remains separately authorized. Never create VUA-Project/VUA as a placeholder or
+7. The organizational transfer is on hold for the user review requested on 2026-09-29.
+   Do not execute it until the user releases the hold. Never create VUA-Project/VUA as a placeholder or
    recreate VUA-PHR/VUA after transfer. Never independently change remotes, mirror-push, delete
    repositories, or reinitialize worktrees to recover access. Report access failures to the operator.
 
 The foundation assignment contains the full transfer invariants and cutover checklist:
-[historical execution context](../../collab/assignments/2026-09-22-repository-foundation_EN.md).
+[historical execution context](../archive/2026-09-29/collab/assignments/2026-09-22-repository-foundation_EN.md).
 
 ## Document changelog
 

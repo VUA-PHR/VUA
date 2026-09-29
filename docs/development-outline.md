@@ -1,6 +1,6 @@
 # VUA development sequence
 
-> Document version: 3.1.0
+> Document version: 3.1.1
 > Status: Accepted
 > Updated: 2026-09-28
 > Authority: User rulings of 2026-09-28, including the final four clarifications
@@ -292,8 +292,8 @@ presentation, not other N7 work; do not invent what the references contain.
 ## Execution roles (six roles)
 
 Roles express ownership, not mandatory standing sessions or separate branches. An ordinary session
-may wear several hats. The collab mechanism is frozen and unmaintained since 2026-09-28 (user
-ruling); its entry files are retained for history, and reactivation requires an explicit ruling.
+may wear several hats. Collab is retired and preserved under docs/archive/2026-09-29/. A future
+collaboration mechanism needs a new design and acceptance; these hats do not dispatch agents.
 
 | Role | Ownership |
 | --- | --- |

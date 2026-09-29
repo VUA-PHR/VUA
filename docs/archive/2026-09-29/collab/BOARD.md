@@ -18,7 +18,7 @@ in force for all work. Reactivation requires an explicit user ruling.
 
 ## Active N-sequence ruling - 2026-09-28
 
-The user-approved [development sequence](../docs/development-outline.md) 3.0.0 supersedes all
+The user-approved [development sequence](../../../development-outline.md) 3.0.0 supersedes all
 M/W scheduling and post-v1 tool deferrals below. Old M4 closure is withdrawn as current evidence
 of complete material management; N5 audits existing capabilities before retaining, completing,
 or replacing them. Historical entries below remain evidence of what was recorded then, not

@@ -4,23 +4,20 @@
 > Updated: 2026-09-28
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
-Collab is now **archived and retired**, superseding the prior freeze. Historical files stay at
-their paths for provenance; future collaboration requires a fresh design. The
-[repository PR policy](meta/protected-main.md) continues independently.
-
 ## Start here
 
-1. Read [the N1-N7 sequence](development-outline.md) for the next user outcome and acceptance.
-2. Read [product boundaries](product-boundary.md) for scope and ownership.
-3. Use [the system map](architecture/system.md) to find the current code owner, then follow the
-   shortest task route below. Do not read every protocol before starting a small slice.
+| Question | One owning document |
+| --- | --- |
+| What is VUA and where do I start? | [Project README](../README.md) |
+| How do I develop and submit changes? | [Contributing](../CONTRIBUTING.md) |
+| What does the product include? | [Product boundary](product-boundary.md) |
+| What comes next and what counts as passing? | [N sequence](development-outline.md) |
+| Where does each responsibility live? | [System map](architecture/system.md) |
+| Which exact contract do I need? | [Protocol guide](protocols/README.md) |
 
-[AGENTS.md](../AGENTS.md) and [CONTRIBUTING.md](../CONTRIBUTING.md) define repository work.
-Collab is frozen and unmaintained since the 2026-09-28 N-sequence adoption. Its entries remain
-historical/reactivation references. **[collab/PROTECTED_MAIN.md](../collab/PROTECTED_MAIN.md)
-continues in force for all work.** The collab:brief script and report-only CI stay; no bootstrap,
-ticks, proposals, or BOARD maintenance are required. The [cold-start primer](project-context.md)
-is optional context, not a second schedule.
+Read only the owning documents needed for the task. Collab is [archived and retired](archive/2026-09-29/README.md).
+[PR protection](meta/protected-main.md) continues independently; the retained brief and report-only
+CI perform documentation checks, not coordination.
 
 ## Read by task
 

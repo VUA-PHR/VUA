@@ -1,7 +1,4 @@
 # Protected-main policy — permanent compatibility entry
 
-The repository-wide PR policy remains in force at
-[docs/meta/protected-main.md](../docs/meta/protected-main.md).
-
-Collab is archived and retired by user ruling on 2026-09-28. Its retirement does not relax
-main protection. This path remains to preserve historical references.
+The [repository-wide PR policy](../docs/meta/protected-main.md) remains in force.
+Collab retirement does not relax main protection. Historical references can keep this path.

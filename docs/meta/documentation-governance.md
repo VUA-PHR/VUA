@@ -1,7 +1,7 @@
 # VUA documentation governance
 
 
-> Document version: 2.2.0
+> Document version: 2.3.0
 > Status: Accepted
 > Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
 > (`docs/plans/docs-governance-reform.md`). The plan itself carries no normative effect;
@@ -105,7 +105,7 @@ The release notes of every N gate end with the "document version matrix accepted
   it — no extra commits, no extra collaboration round trips.
 - **Expected frequency**: at the current pace, roughly 0–3 single-line edits per day; status
   files, proposal discussions, and similar collaboration actions **never touch** the REGISTRY
-  (that is collab/'s job; the two mechanisms stay separate).
+  (historical coordination records are no longer maintained).
 - **Drift is prevented by machine checks, not high-frequency human effort**: `collab:brief`
   (and later CI) verifies that each managed document's header version/status matches its
   REGISTRY row, and reports any mismatch. Low-cost detection replaces preventive high-frequency
@@ -145,8 +145,8 @@ Archived embedded status headers are historical, not current authority. Registry
 owners, not copied archive snapshots. Research with implementation consumers needs domain review
 before its constraints are discarded.
 
-Collab is frozen and unmaintained from 2026-09-28. Its entries remain, and
-[collab/PROTECTED_MAIN.md](../../collab/PROTECTED_MAIN.md) continues in force. Keep pnpm collab:brief
+Collab is retired and physically archived. The
+[protected-main policy](protected-main.md) continues in force. Keep pnpm collab:brief
 and report-only CI; registry-only checking does not reactivate collab bootstrap. Current decisions
 land in owning documents/PRs, not mandatory BOARD updates.
 
@@ -165,7 +165,21 @@ Real runs keep dated before/after snapshots under `_local_real_machine/`; the cu
 is only a convenience index. Local reinstall is not a clean OS, and one machine is not evidence
 of compatibility with other Windows versions. A synthetic CI fixture contains no real inventory.
 
+## 7. One owner per rule
+
+Current entry points link to the owning document instead of restating complete policies.
+Product boundaries define scope; the N sequence defines outcomes and acceptance; release policy
+defines versions; architecture defines responsibilities; protocols define wire/storage behavior;
+engineering rules define implementation/evidence safeguards. REGISTRY contains concise metadata,
+not implementation histories. Keep historical claims in archives and Git history.
+
+Collab and old role prompts live under `docs/archive/2026-09-29/`. The two legacy collab entry
+files forward to the archive and current PR policy. No archived prompt is an active instruction.
+
 ## Document changelog
+
+- 2.3.0 (2026-09-29): define one-rule-one-owner routes and physical collab archival.
+
 
 - 2.2.0 (2026-09-28): define local inventory versus public test evidence; repair misplaced section insertion.
 - 2.1.0 (2026-09-28): add task routes, current/proposed distinction and evidence-based archival under the collab freeze.

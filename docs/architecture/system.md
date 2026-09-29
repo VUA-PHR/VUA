@@ -1,6 +1,6 @@
 # VUA system architecture
 
-> Document version: 2.0.0
+> Document version: 2.0.1
 > Status: Accepted
 > Scope: Current implementation and incremental code placement
 > Last conformance review: 2026-09-28 (source/layout review, not real-machine acceptance)
@@ -104,9 +104,8 @@ facts while avoiding disclosure of account/private material data.
 
 ## Single-line development
 
-Ordinary single-line development is the only active entry. Collab has been frozen and unmaintained
-since 2026-09-28. Do not bootstrap it or use its BOARD as the active work queue.
-[collab/PROTECTED_MAIN.md](../../collab/PROTECTED_MAIN.md) remains the repository-wide PR policy.
+Ordinary single-line development is the only active entry. Collab is retired; its records are in docs/archive/2026-09-29/. Do not bootstrap it or use its BOARD as the active work queue.
+[Protected-main policy](../meta/protected-main.md) remains the repository-wide PR policy.
 The collab:brief script and report-only registry CI are retained; their existence does not
 reactivate collaboration. Use the [N sequence](../development-outline.md) and
 [contributor workflow](../../CONTRIBUTING.md) for current work.
