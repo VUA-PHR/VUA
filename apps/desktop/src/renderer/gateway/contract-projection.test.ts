@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { APPLICATION_CONTRACT_VERSION, type EnvironmentCheckItemV01, type TaskSnapshotV01 } from "@vua/contracts";
 import { strings } from "../i18n/index.js";
 import {
+  CHECK_TITLE_KEYS,
   projectEnvironmentSnapshot,
   projectTaskItem,
   projectTaskState,
@@ -440,5 +441,29 @@ describe("alternative check groups projection (vr_runtime)", () => {
     const network = items.find((item) => item.id === "network");
     expect(network?.groupId).toBeUndefined();
     expect(network?.status).toBe("warning");
+  });
+});
+
+describe("deployer check title key parity", () => {
+  it("resolves every CHECK_TITLE_KEYS value in all four delivered tables", async () => {
+    // checks 查表被 `as unknown as` 断言绕过类型检查:映射加了键而词表
+    // 忘加时不会有编译错误,运行期静默透传裸 checkId(#31 家族,2026-09-28
+    // 组卡 vr_runtime 先例)。此处钉住:映射值键在四语表 deployer.checks
+    // 下均有非空文案;22 的闭集计数是"引擎加 id 须有意识更新本测试"的绊线。
+    const tableNames = ["en", "zh-CN", "ja", "ko"] as const;
+    const tables = await Promise.all(
+      tableNames.map(async (name) => ({
+        name,
+        strings: (await import(`../i18n/strings.${name}.ts`)).strings,
+      })),
+    );
+    const checkIds = Object.keys(CHECK_TITLE_KEYS);
+    expect(checkIds).toHaveLength(22);
+    for (const table of tables) {
+      for (const key of Object.values(CHECK_TITLE_KEYS)) {
+        const copy = (table.strings.deployer.checks as Readonly<Record<string, string>>)[key];
+        expect(copy, `${table.name}.deployer.checks.${key}`).toBeTruthy();
+      }
+    }
   });
 });
