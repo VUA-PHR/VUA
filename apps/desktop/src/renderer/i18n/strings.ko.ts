@@ -392,7 +392,7 @@ demoTaskTitle: "데모 작업",
     },
     /** 대안 그룹 문구(CHECK_GROUPS): 그룹당 카드 한 장, 키는 그룹 id와 대응 */
     groups: {
-      vrRuntime: {
+      "vr_runtime": {
         title: "VR 런타임 및 스트리밍",
         badge: "하나만 있으면 됨",
         satisfied: "사용 가능한 런타임: {count}개. 하나만 있으면 플레이할 수 있습니다.",

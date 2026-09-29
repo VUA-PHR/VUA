@@ -409,7 +409,7 @@ demoTaskTitle: "Demo task",
     },
     /** Alternative-group copy (CHECK_GROUPS): one card per group; keys match group ids */
     groups: {
-      vrRuntime: {
+      "vr_runtime": {
         title: "VR Runtimes & Streaming",
         badge: "Any one",
         satisfied: "Usable runtimes: {count}. You only need one.",

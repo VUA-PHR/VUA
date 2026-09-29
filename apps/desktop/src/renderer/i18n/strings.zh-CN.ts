@@ -407,7 +407,7 @@ demoTaskTitle: "演示任务",
     },
     /** 替代组文案(CHECK_GROUPS):整组一张卡,键与组注册表 id 对应 */
     groups: {
-      vrRuntime: {
+      "vr_runtime": {
         title: "VR 运行时与串流",
         badge: "任选其一",
         satisfied: "已检测到 {count} 个可用运行时,任选其一即可游玩。",
