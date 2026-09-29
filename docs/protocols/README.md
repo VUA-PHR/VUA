@@ -1,9 +1,16 @@
 # Protocol reading guide
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
 > Updated: 2026-09-28
 > Scope: Navigation and retention guidance; no wire-format changes
+
+**For people:** use this index when a contribution affects an API or stored format; read only
+the relevant family and its compatibility notes.
+
+**If you are an Agent:** identify the exact operation, schema version, producer and consumer
+before coding. Check executable tests and served capabilities; the newest filename alone does
+not prove migration. Do not treat historical proposal text as current authorization.
 
 Choose the operations your slice uses, then read their schema and consumer tests. A document's
 number is not sufficient to decide whether it can be archived. Some version directories describe
@@ -34,5 +41,8 @@ retirement, then update the registry and links.
 For upstream-driven changes, follow the [third-party compatibility and licensing policy](../release/versioning.md#third-party-changes-and-compatibility).
 
 ## Document changelog
+
+- 1.1.0 (2026-09-29): distinguish human lookup from Agent contract-verification workflow.
+
 
 - 1.0.0 (2026-09-28): add task-based protocol navigation and explicit coexistence/retention guidance.

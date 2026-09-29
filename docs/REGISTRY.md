@@ -7,8 +7,8 @@ Current owners, versions and statuses only. [Governance](meta/documentation-gove
 
 | Path | Document version | Status | Maintainer | Last review |
 | --- | --- | --- | --- | --- |
-| AGENTS.md | 2.0.0 | Accepted | Integration | 2026-09-28 |
-| docs/product-boundary.md | 2.0.0 | Accepted | Integration | 2026-09-28 |
+| AGENTS.md | 2.1.0 | Accepted | Integration | 2026-09-28 |
+| docs/product-boundary.md | 2.1.0 | Accepted | Integration | 2026-09-28 |
 | docs/compatibility/unity-editor.md | 1.0.0 | Accepted | Integration | 2026-09-06 |
 | docs/compatibility/alcom-vcc.md | 1.3.0 | Accepted | Environment | 2026-09-20 |
 | schemas/project-inspection/v0.1 | 0.1 | Superseded | Environment | 2026-09-09 |
@@ -100,12 +100,12 @@ Current owners, versions and statuses only. [Governance](meta/documentation-gove
 | docs/protocols/recipe-export-v0.1.md | 0.1.2 | Frozen | Core | 2026-09-22 |
 | docs/release/versioning.md | 2.1.0 | Accepted | Integration | 2026-09-28 |
 | docs/design/design-standard.md | 0.7.21 | Accepted | Desktop | 2026-09-25 |
-| docs/development-outline.md | 3.1.0 | Accepted | Integration | 2026-09-28 |
+| docs/development-outline.md | 3.2.0 | Accepted | Integration | 2026-09-28 |
 | docs/meta/documentation-governance.md | 2.3.0 | Accepted | Integration | 2026-09-28 |
-| CONTRIBUTING.md | 2.0.0 | Accepted | Integration | 2026-09-28 |
+| CONTRIBUTING.md | 2.1.0 | Accepted | Integration | 2026-09-28 |
 | docs/REGISTRY.md | event-driven | Accepted | Integration | 2026-09-06 |
 | docs/architecture/evolution.md | 1.0.0 | Accepted | Integration | 2026-09-28 |
-| docs/protocols/README.md | 1.0.0 | Accepted | Integration | 2026-09-28 |
+| docs/protocols/README.md | 1.1.0 | Accepted | Integration | 2026-09-28 |
 | docs/meta/document-audit-2026-09-28.md | 1.0.0 | Accepted | Integration | 2026-09-28 |
 | docs/meta/protected-main.md | 1.2.0 | Accepted | Integration | 2026-09-28 |
 | docs/development/engineering-rules.md | 1.0.0 | Accepted | Integration | 2026-09-29 |

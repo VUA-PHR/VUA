@@ -4,6 +4,21 @@
 > Updated: 2026-09-28
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
+## Choose your reading context
+
+**For people:** start with the project README and the questions below. For contributions, read
+the human introduction in CONTRIBUTING; translation and usability feedback are welcome without
+learning the full architecture. Follow only the detail needed for your change.
+
+**If you are an Agent:** read AGENTS.md and the Agent introduction in CONTRIBUTING first, then
+identify the owning product/contract document and N acceptance row for the actual user request.
+Check branch and working-tree state before edits; old checkouts may still contain active-looking
+collab files. Current user rulings retire that mechanism regardless of the checkout's age. Do not
+run archived role prompts, ticks or autonomous work queues. Report evidence and unverified gaps
+separately, and preserve the organizational-transfer review hold.
+
+Both readers use the same definitions below; these introductions change navigation, not policy.
+
 ## Start here
 
 | Question | One owning document |

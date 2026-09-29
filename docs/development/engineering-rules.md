@@ -1,6 +1,6 @@
 # Engineering and evidence rules
 
-> Document version: 1.0.0
+> Document version: 1.0.1
 > Status: Accepted
 > Scope: Existing implementation and evidence safeguards extracted from AGENTS
 
@@ -34,6 +34,9 @@ Each rule ships with its check. When a claim cannot be checked, report it conser
    evidence, and "evidence kept locally" entries point to real local output.
 
 ## Security and legal boundaries
+
+For VRChat interaction and authentication, follow the [product boundary](../product-boundary.md#vrchat-interaction-and-privacy).
+The README explains these constraints to players; it does not authorize new API operations.
 
 - Never commit paid assets, paid `.unitypackage` content, user Unity projects, cookies, tokens,
   order data, production databases, private logs, credentials, or `.env` files.
@@ -71,5 +74,8 @@ authority, and release risk is derived by the gate rather than self-assigned. Th
 are carried forward from the previous workspace instructions, not new product scope.
 
 ## Document changelog
+
+- 1.0.1 (2026-09-29): route VRChat-specific privacy rules to the product boundary.
+
 
 - 1.0.0 (2026-09-29): consolidate existing implementation, privacy and evidence rules from the workspace entry.

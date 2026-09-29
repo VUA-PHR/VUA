@@ -1,11 +1,21 @@
 # VUA development sequence
 
-> Document version: 3.1.1
+> Document version: 3.2.0
 > Status: Accepted
 > Updated: 2026-09-28
 > Authority: User rulings of 2026-09-28, including the final four clarifications
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
+
+## Reading context
+
+**For people:** the sequence and acceptance tables describe what each stage should let you do
+and what evidence establishes success; detailed implementation choices belong elsewhere.
+
+**If you are an Agent:** use the user's current task and its acceptance row to bound the slice.
+Do not mark a gate complete from document edits, simulated results or code presence. Record the
+actual environment, outputs, remaining blockers and whether UI human acceptance is still pending.
+The role table assigns responsibility, not standing sessions or permission to dispatch agents.
 
 ## Direction and historical disposition
 
@@ -326,6 +336,9 @@ Prioritize the first real blocker, repair and rerun it, then expand. Record boun
 do not turn documentation completeness, speculative coverage, or idle agent activity into goals.
 
 ## Document changelog
+
+- 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
+
 
 - 3.1.0 (2026-09-28): user ruling — the collab mechanism is frozen and unmaintained from the
   N-sequence adoption; ordinary development is the only active entry; roles remain ownership hats.

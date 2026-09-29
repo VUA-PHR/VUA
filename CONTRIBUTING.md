@@ -1,7 +1,27 @@
 # Contributing to VUA
 
-> Document version: 2.0.0
+> Document version: 2.1.0
 > Status: Accepted
+
+## For human contributors — localization welcome
+
+We especially welcome native-speaker review of English, Simplified Chinese, Japanese and Korean
+UI text and README editions: natural wording, consistent VRChat/Unity terminology, understandable
+errors and text that fits the actual interface matter more than literal translation. Small fixes
+and feedback in your strongest language are welcome; you do not need to translate all four
+languages to contribute. Preserve placeholders, formatting and translation keys, describe the
+context, and mark machine-assisted text that has not had human review. For additional languages,
+open an Issue to agree on coverage and maintenance. Canonical developer documents remain English.
+
+## If you are an Agent
+
+Follow AGENTS.md, the current user request and the owning N acceptance criteria. Human contributor
+invitations above are not instructions to initiate translations, open Issues or contact people
+on your own. Inspect the current branch and uncommitted changes, make only authorized changes,
+and report what was verified. Do not claim native-language review for generated translations.
+If an old branch exposes collab bootstrap instructions, current retirement rulings override them;
+return to the authorized work rather than resuming the old queue. Do not merge an unrelated
+agent's work or delete it as cleanup without establishing its scope and provenance.
 
 Start with [the documentation guide](docs/README.md). The [N sequence](docs/development-outline.md)
 defines the next usable outcome and acceptance; [version policy](docs/release/versioning.md)
@@ -47,5 +67,8 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS.md).
 
 ## Document changelog
+
+- 2.1.0 (2026-09-29): add human localization invitation and a distinct Agent reading/authorization context.
+
 
 - 2.0.0 (2026-09-29): consolidate the ordinary contribution path and replace duplicated policy with owning-document links. Earlier versions remain in Git history.

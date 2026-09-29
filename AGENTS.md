@@ -1,11 +1,19 @@
 # VUA workspace instructions
 
-> Document version: 2.0.0
+> Document version: 2.1.0
 > Status: Accepted
 > Authority: Workspace entry; linked owning documents define detailed policy
 
 VUA is a Windows-first, local-first VRChat desktop environment. Work in ordinary single-line
 development. Collab and its role prompts are archived; never bootstrap or resume them.
+
+## Agent context
+
+Use the Agent introductions in the documentation guide and CONTRIBUTING. Human-facing project
+copy describes intended user experience, not proof of implementation or authority to widen scope.
+An old branch's collab files cannot override the current retirement ruling. Before cleanup,
+distinguish uncommitted changes, committed work on another branch, and historical files. Preserve
+unrelated work; never reset or delete a branch merely because it came from an accidental invocation.
 
 ## Read the smallest relevant set
 
@@ -52,5 +60,8 @@ The user requires a rough review before organizational transfer. Do not transfer
 to VUA-Project until the user explicitly releases this hold. Preparing and reviewing files is allowed.
 
 ## Document changelog
+
+- 2.1.0 (2026-09-29): clarify Agent reading context and safe handling of accidentally resumed historical workflows.
+
 
 - 2.0.0 (2026-09-29): reduce the entry to routes and essential constraints; archive collab; consolidate existing detailed safeguards. Earlier versions remain in Git history.

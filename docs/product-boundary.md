@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.0.1
+> Document version: 2.1.0
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-09-28
@@ -208,6 +208,29 @@ gate derives risk from declared capabilities and behavior.
 - **Least privilege:** remote content, plugins, and third-party components receive only required
   capabilities.
 
+## VRChat interaction and privacy
+
+User-adopted implementation boundary (2026-09-29), informed by the
+[Creator Guidelines](https://hello.vrchat.com/creator-guidelines) and
+[documented configuration](https://docs.vrchat.com/docs/configuration-file), checked on that date:
+
+- Use supported external surfaces, OSC, launch options, necessary local logs and documented
+  configuration fields. Never inject, hook or patch the VRChat client or bypass EAC. Hidden
+  configuration and undocumented client behavior are not authorized by an existing third-party tool.
+- Do not request, read, store or transmit VRChat login credentials: passwords, authentication
+  tokens, cookies, session data or usernames collected as login credentials. Do not scrape another
+  application's session. This is distinct from BOOTH's isolated, authorized local browser session.
+- User initiation is necessary for account changes, but is not sufficient authorization for an
+  undocumented operation or credential access. Unsupported operations stay unavailable; direct
+  the user to the official flow. No cloud account control and no automatic upload on a user's
+  behalf, including from their device; final Avatar login/upload stays in the official SDK.
+- Store only necessary data locally by default; no unnecessary friend-activity tracking, profiling
+  or cross-user database. Sanitize logs and retain purchased files locally.
+- Any future allowed API adapter needs bounded request rates, backoff and accurate identification,
+  and a concrete policy review. This section grants no new API feature or execution permission.
+- State clearly that VUA has no VRChat Inc. affiliation or endorsement. Do not infer approval from
+  the continued existence of VRCX or other tools, or promise blanket policy compliance.
+
 ## Explicit boundaries
 
 - BDL is AMF's private local data module in this repository; AMF provides its application services.
@@ -334,6 +357,9 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.1.0 (2026-09-29): consolidate user-requested VRChat interaction, credential, account-operation and privacy boundaries.
+
 
 - 2.0.1 (2026-09-28): replace an outdated unwired claim with source evidence and the N5 verification boundary.
 
