@@ -2,39 +2,39 @@
 
 [English](README.md) | 简体中文 | [日本語](README_JA.md) | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA（VRC Ultra Assistant）** 是面向 VRChat 玩家的 Windows 桌面生产环境——尤其面向
 没接触过 Unity、甚至还不清楚自己需要什么的玩家。从目标和自有素材出发，由 VUA 引导
 完成环境准备、工程准备、Avatar 装配、检测与恢复。
 
-## 你可以用 VUA 做什么
+## VUA 的用途
 
 ### [1] 游戏助手
 
-**Materials checked and cleared.**
+> **Materials checked and cleared.**
 
-部署游玩所需的软件与设置，学习移动、菜单、安全选项和设备使用等基本知识。根据你的目标与硬件说明需要安装什么，并引导完成环境准备。
+VUA 帮助玩家部署游玩所需的软件与设置，并学习移动、菜单、安全选项和设备使用等基本知识。根据用户的目标与硬件说明需要安装什么，并引导完成环境准备。
 
 ### [2] Avatar 生产
 
-**Sugar, spice, and everything nice.**
+> **Sugar, spice, and everything nice.**
 
-搭配你拥有的素材，把选择与设置记录为 Recipe，分享给同样自行取得素材的玩家复现。目标是自动制作 Avatar，并通过检查与受控修改保护制作过程，再把成品交给官方 SDK；Recipe 分享来源引用与设置，不包含付费素材本体。
+玩家搭配自己拥有的素材，把选择与设置记录为 Recipe，分享给同样自行取得素材的玩家复现。目标是自动制作 Avatar，并通过检查与受控修改保护制作过程，再把成品交给官方 SDK；Recipe 分享来源引用与设置，不包含付费素材本体。
 
 ## 它如何工作
 
-从你的目标和现有素材出发，查看计划、执行步骤与结果。Build Record 将制作步骤、检查证据和错误汇集为制作记录，帮助你了解做了什么、哪里需要处理。
+VUA 从用户的目标和现有素材出发，展示计划、执行步骤与结果。Build Record 将制作步骤、检查证据和错误汇集为制作记录，帮助用户了解做了什么、哪里需要处理。
 
-项目与包管理负责准备所需的 Unity 环境和依赖，包括 VPM 仓库订阅、包的安装、更新与移除。已有 ALCOM/VCC 工程按只读方式检查；需要编辑时，由你主动导入为 VUA 管理的副本。最终登录与上传仍由你在 VRChat 官方 SDK 中完成。
+项目与包管理负责准备所需的 Unity 环境和依赖，包括 VPM 仓库订阅、包的安装、更新与移除。已有 ALCOM/VCC 工程按只读方式检查；需要编辑时，由用户主动导入为 VUA 管理的副本。最终登录与上传仍由用户在 VRChat 官方 SDK 中完成。
 
 ## 安全边界
 
 - VUA 是独立运行的第三方助手，与 VRChat Inc. 无官方隶属或背书关系；交互范围限定为公开支持的外部接口、OSC、启动参数、必要的本地日志和公开配置项，不注入、Hook、Patch VRChat 客户端或绕过 EAC。
-- VUA 不得请求、读取、保存或传输你的 VRChat 登录凭据，包括密码、认证 Token、Cookie 与 Session。
-- 涉及账号修改的操作必须由你通过允许的流程主动发起，VUA 不在云端代替你控制账号，也不代替你自动上传 Avatar。
+- VUA 不请求、读取、保存或传输用户的 VRChat 登录凭据，包括密码、认证 Token、Cookie 与 Session。
+- 涉及账号修改的操作必须由用户通过允许的流程主动发起，VUA 不在云端代替用户控制账号，也不代替用户自动上传 Avatar。
 - 仅保留功能所必需的数据，默认本地保存，不建立不必要的好友活动追踪或用户画像；付费素材留在本地，分享的 Recipe 不含素材本体。
 - 未公开支持的客户端行为、隐藏配置项与不受控的 API 自动化不属于默认功能范围，技术检查通过也不保证外观、行为或生产安全性。
 

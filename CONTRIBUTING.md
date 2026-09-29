@@ -1,6 +1,6 @@
 # Contributing to VUA
 
-> Document version: 2.1.0
+> Document version: 2.1.1
 > Status: Accepted
 
 ## For human contributors — localization welcome
@@ -48,7 +48,11 @@ preserves provenance; no role sessions, proposals, BOARD updates or ticks are re
 
 ## Reporting and assets
 
-Use [Issues](https://github.com/VUA-PHR/VUA/issues/new/choose) for ordinary questions, bugs and
+Issues in different languages are welcome. Issue templates are English-only for consistency;
+contributors may answer in their preferred language. Maintainers may use LLM translation, which
+can reduce clarity or lose nuance; clarification may be needed.
+
+Use [Issues](https://github.com/VUA-Project/VUA/issues/new/choose) for ordinary questions, bugs and
 suggestions. Follow [SECURITY.md](SECURITY.md) for private vulnerability reporting. Follow
 [privacy and evidence rules](docs/development/engineering-rules.md#security-and-legal-boundaries)
 before sharing diagnostics or assets. Raw real-machine evidence stays local; sanitized acceptance

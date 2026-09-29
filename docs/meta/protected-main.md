@@ -1,6 +1,6 @@
 # Protected-main integration policy
 
-> Document version: 1.2.1
+> Document version: 1.2.2
 > Status: Accepted
 > Authority: user-approved repository foundation work, 2026-09-22
 > Effective: when this policy is merged; server enforcement is recorded separately.
@@ -32,8 +32,8 @@ This policy supersedes older local-main merge/direct-push instructions in collab
    manufacture approvals, or recreate a repository after an access failure. If protection needs
    emergency adjustment, stop automatic integration and obtain an explicit user ruling; record
    the exact change and restoration. There is no standing agent/admin bypass.
-7. The organizational transfer is on hold for the user review requested on 2026-09-29.
-   Do not execute it until the user releases the hold. Never create VUA-Project/VUA as a placeholder or
+7. The user released the organizational-transfer review hold on 2026-09-29, subject to the
+   requested README and Issue-template corrections. Preserve repository identity and history. Never create VUA-Project/VUA as a placeholder or
    recreate VUA-PHR/VUA after transfer. Never independently change remotes, mirror-push, delete
    repositories, or reinitialize worktrees to recover access. Report access failures to the operator.
 

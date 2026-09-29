@@ -2,9 +2,9 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | 한국어
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA(VRC Ultra Assistant)** 는 VRChat 플레이어를 위한 Windows 데스크톱 제작
 환경입니다——특히 Unity를 다뤄 본 적이 없거나, 무엇이 필요한지 아직 모르는 플레이어를
@@ -15,13 +15,13 @@
 
 ### [1] 게임 도우미
 
-**Materials checked and cleared.**
+> **Materials checked and cleared.**
 
 플레이에 필요한 소프트웨어와 설정을 준비하고 이동, 메뉴, 안전 설정, 기기 사용의 기초를 배웁니다. 사용 목적과 하드웨어에 맞춰 필요한 항목을 설명하고 환경 설치를 안내합니다.
 
 ### [2] Avatar 제작
 
-**Sugar, spice, and everything nice.**
+> **Sugar, spice, and everything nice.**
 
 보유한 소재를 조합하고 선택과 설정을 Recipe에 기록해 공유하며, 다른 사용자는 직접 구한 소재로 이를 재현합니다. 목표는 검사와 통제된 변경을 거쳐 Avatar를 자동 제작하고 결과물을 공식 SDK에 전달하는 것입니다. Recipe에는 참조와 설정만 담으며 유료 소재 자체는 포함하지 않습니다.
 

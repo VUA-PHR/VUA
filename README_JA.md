@@ -2,9 +2,9 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | 日本語 | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA（VRC Ultra Assistant）** は、VRChat プレイヤーのための Windows デスクトップ
 制作環境です——特に、Unity に触れたことがない、あるいは何が必要かまだ分からない
@@ -15,13 +15,13 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 ### [1] ゲームアシスタント
 
-**Materials checked and cleared.**
+> **Materials checked and cleared.**
 
 プレイに必要なソフトウェアや設定を準備し、移動、メニュー、安全設定、デバイスの基本を学びます。目的と機器に応じて必要なものを説明し、環境構築を案内します。
 
 ### [2] Avatar 制作
 
-**Sugar, spice, and everything nice.**
+> **Sugar, spice, and everything nice.**
 
 所有する素材を組み合わせ、選択と設定を Recipe に記録して共有し、各自で素材を入手した人が再現できるようにします。目標は、検査と制御された変更を伴う Avatar 制作の自動化と、公式 SDK への成果物の引き渡しです。Recipe に含めるのは参照と設定であり、有料素材そのものではありません。
 

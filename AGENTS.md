@@ -1,6 +1,6 @@
 # VUA workspace instructions
 
-> Document version: 2.1.0
+> Document version: 2.1.1
 > Status: Accepted
 > Authority: Workspace entry; linked owning documents define detailed policy
 
@@ -54,10 +54,11 @@ Tracked docs are English; release changelogs are Chinese and root README has fou
 Local `docs-zh/` mirrors have no normative authority. Frozen contract behavior requires an explicit
 new version. Preserve accepted decisions and historical release artifacts.
 
-## Current review hold
+## Organizational transfer approval
 
-The user requires a rough review before organizational transfer. Do not transfer VUA-PHR/VUA
-to VUA-Project until the user explicitly releases this hold. Preparing and reviewing files is allowed.
+The user completed the rough review and authorized transfer to VUA-Project after the requested
+README and Issue-template corrections (2026-09-29). Preserve repository identity and history,
+merge through PR checks, and verify the new owner and configuration after transfer.
 
 ## Document changelog
 

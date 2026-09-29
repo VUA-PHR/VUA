@@ -2,9 +2,9 @@
 
 English | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA (VRC Ultra Assistant)** is a Windows desktop production environment for VRChat
 players — especially players who have never touched Unity, or don't yet know what they
@@ -15,13 +15,13 @@ project preparation, Avatar assembly, inspection, and recovery.
 
 ### [1] Game assistant
 
-**Materials checked and cleared.**
+> **Materials checked and cleared.**
 
 Prepare the software and settings your play setup needs, then learn the basics of movement, menus, safety options and devices. Choose your goal and hardware; deployment is intended to explain what is needed and guide installation.
 
 ### [2] Avatar production
 
-**Sugar, spice, and everything nice.**
+> **Sugar, spice, and everything nice.**
 
 Combine your own materials, capture the choices in a Recipe, and share the Recipe so others can reproduce the setup with assets they obtain themselves. The goal is automated Avatar production with checks and controlled changes before handing the result to the official SDK; a Recipe contains references and settings, not paid assets.
 
