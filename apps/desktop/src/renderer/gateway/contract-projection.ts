@@ -143,8 +143,10 @@ function presenceText(presence: EnvironmentPresenceV01): string {
  *  双区同 id);引擎新增 id 而本表未收录时如实透传 checkId——不猜测、
  *  不伪造标题。 ---- */
 
-/** 检查 id → 四语文案键(strings.deployer.checks.*) */
-const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
+/** 检查 id → 四语文案键(strings.deployer.checks.*);导出供键一致性
+ *  机器检查消费(查表被 as unknown as 断言绕过类型检查,缺键会静默
+ *  透传裸 id,#31 家族,2026-09-28 组卡先例)。 */
+export const CHECK_TITLE_KEYS: Readonly<Record<string, string>> = {
   steam: "steam",
   vrchat: "vrchat",
   steamvr: "steamvr",
