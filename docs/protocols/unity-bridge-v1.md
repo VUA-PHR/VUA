@@ -15,7 +15,7 @@ Unity operations only. It accepts no arbitrary script and owns no login, downloa
 
 ## Editor precondition
 
-The M0 gate accepts Bridge v1 for production execution only after both the selected Editor and the
+Bridge v1 is admitted for production execution only after both the selected Editor and the
 project after migration match `2022.3.22f1` as complete strings. Orchestrator must check the installed
 Editor and `ProjectSettings/ProjectVersion.txt` before launch; Bridge must independently check its
 running `Application.unityVersion` before inspection or mutation.

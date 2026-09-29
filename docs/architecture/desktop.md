@@ -1,9 +1,8 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.2.0
+> Document version: 1.2.2
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors desktop.md at 1.2.0)
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
 > Updated: 2026-09-12
 > Last conformance review: 2026-09-06
@@ -99,8 +98,9 @@ isolated by the Electron process model — no separate Gateway connection instan
   toggle recreates it), and closing the main window destroys the Overlay — main-window close keeps
   its application-exit semantics;
 - Overlay only consumes stable snapshots and semantic actions and never becomes a business-logic
-  host (AGENTS architecture constraints; the consumption split is in the M7 breakdown-table desktop
-  row), and Overlay failures never block the desktop mainline (M7 gate delivery definition). The
+  host (AGENTS architecture constraints; the consumption split follows proposal 017; see the
+  Overlay boundary section in integrations-and-overlays.md), and Overlay failures never block the
+  desktop mainline (standing delivery rule). The
   Overlay read-face wire vocabulary lands with the core freeze batch; until then the rendered
   surface shows an honest empty state and never fabricates a session.
 
@@ -119,6 +119,12 @@ rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
 
+- 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
+
+- 1.2.1 (2026-09-28): erratum — two dangling M7 citations in the Overlay bullet replaced (the
+  consumption split now cites proposal 017 and the Overlay boundary section in
+  integrations-and-overlays.md; the gate-delivery parenthetical becomes a standing delivery
+  rule); no rule change.
 - 1.2.0 (2026-09-12): added the "Overlay always-on-top window" section — Overlay window
   creation/pinning/show-hide and the formal entry shape (proposal 017 §4 desktop statement landed;
   desktop-domain advance slice); the wire read face is honestly declared as not yet connected.

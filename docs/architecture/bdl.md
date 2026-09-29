@@ -1,9 +1,8 @@
 # BDL architecture boundary
 
 
-> Document version: 1.2.1
+> Document version: 1.2.3
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors bdl.md at 1.2.1)
 > Scope: AMF-owned BDL module
 > Updated: 2026-09-23
 > Last conformance review: 2026-09-08
@@ -36,8 +35,9 @@ vertical slices.
 - Turning automatic collection off never disables base storage, ordinary import, or Recipe source
   supplementation.
 
-AMF acquisition owns the browser, Session, download task/transport, BLM/VAE adapters, and UI. BDL
-stores the normalized metadata AMF decides to persist.
+Electron Main owns browser/session isolation and download transport. AMF acquisition owns intent,
+tasks, source correlation, inspection and Warehouse mapping; its UI consumes those services. BDL
+stores the normalized metadata AMF decides to persist. N5 audits which paths are actually usable.
 
 ## Evidence semantics and human correction (user ruling, 2026-09-22)
 
@@ -86,12 +86,11 @@ slice.
 - BDL returns catalog, terms, and compatibility results; Electron and AMF retain session and download
   controls.
 
-## Observation write face (W17, 2026-09-08)
+## Observation write face
 
-The observation pipeline (the G13 write path, a future slice) is the intended caller that
-writes observed facts into the BDL products table; its storage-side write face
-(`record_product_observation` in `crates/bdl-store`) landed first with W17, with these
-semantics:
+The storage-side `record_product_observation` operation in `crates/bdl-store` writes
+observed product facts. Its presence does not establish a working account-library acquisition
+pipeline; N5 must trace and exercise that caller path. The existing write-face semantics are:
 
 - **Upsert**: one observation = one row of latest facts (`INSERT … ON CONFLICT DO UPDATE`,
   full-column overwrite); replaying the same observation is safe (same-content overwrite,
@@ -117,7 +116,7 @@ semantics:
   `term_observations` and `compatibility_observations` have no catalog consumer yet and
   stay with their own BDL v2 vocabulary slices; entity/relation storage (the
   `entityCount`/`entityTypes` honest empty slots) and freshness (`stale`) remain with BDL v2
-  and the G13 write path, outside this face.
+  and future observation integration, outside this face.
 
 ## External tool data
 
@@ -131,21 +130,25 @@ coexist as optional AMF adapters:
 - each adapter publishes an honest capability snapshot;
 - adapter data enters BDL only after AMF validation.
 
-## Landing status (reviewed 2026-09-08)
+## Implementation status (source check 2026-09-28)
 
-The first persistent format and query contract landed with the B4 slice: `schemas/bdl/v0.1` (the
-BDL SQLite persistent format) and `schemas/bdl-queries/` (the query contract, now at v0.3),
-implemented in `crates/bdl-store` (moved out of `crates/orchestrator` in the crate split). The
-catalog serving face (W12), the warehouse command face (W8/W14), and the provider routing (W12
-closeout) closed within M4. The observation write face landed with W17 (see above). The surface
-remains private to AMF application services; any later public read surface requires its own
-accepted contract. Entity identity, terms representation, and compatibility evidence evolve with
-future AMF+BDL vertical slices. The 2026-09-22 user ruling confirms that base storage, asset
-identity, source correlation, and catalog capabilities are retained unconditionally, and sets
-automatic compatibility-evidence collection as an experimental feature off by default (not yet
-implemented; semantics under "Responsibilities" and "Evidence semantics and human correction").
+`crates/bdl-store/src/bdl_store.rs` declares persistent format `0.2` and includes the
+`v0.1` baseline and `v0.2` migration. Query and command faces are independently versioned;
+use the [protocol guide](../protocols/README.md) and actual operation consumers.
+
+Historical M4 closure is withdrawn as evidence of complete material management. Existing store,
+observation, catalog and Warehouse code is input to N5's capability audit, not proof of a usable
+account library or material-management workflow. Audit both authorized BOOTH account catalog /
+selective download and cloud-material import before deciding what to retain, complete or redo.
+Base storage and source-correlation responsibilities remain; automatic evidence collection is
+experimental and off by default. No runtime acceptance is asserted by this source check.
 
 ## Document changelog
+
+- 1.2.3 (2026-09-28): correct storage version and replace old M4 completion claims with N5 audit scope.
+
+
+- 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
 
 - 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — the acquisition/BDL
   ownership paragraph moved back to the end of "Responsibilities"; the layering diagram regained

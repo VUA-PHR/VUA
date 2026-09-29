@@ -1,11 +1,10 @@
 # Core, plugin, external integration, and overlay architecture
 
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Authoritative language: 简体中文 (this English edition mirrors integrations-and-overlays.md at 1.0.0)
 > Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays
-> Updated: 2026-09-06
+> Updated: 2026-09-28
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -42,9 +41,12 @@ stable interface.
   public boundary without taking over accounts or private state.
 
 Each mode reports capabilities independently. Recipes, local projects, and recovery retain native
-paths across external capability changes. Accepted post-`1.0.0` directions include face tracking through
-VRCFaceTracking, motion tracking through SlimeVR Server and OpenVR Space Calibrator, and an Avatar
-optimizer through a reviewed public boundary. Project-management, AMF-source, and overlay adapters
+paths across external capability changes. The 2026-09-28 product ruling brings gameplay-tool setup
+into the active real-machine progression without changing these adapter or security boundaries.
+N2 accepts exactly benaclejames/VRCFaceTracking and a modified hyblocker/OpenVR-SpaceCalibrator
+with SimpleBLE and base-station BLE management removed. Other tools remain outside N2. The
+development sequence defines source/build verification and functional acceptance for both.
+Project-management, AMF-source, and overlay adapters
 use the same inward dependency direction but retain their own product ownership.
 
 ## Environment mutation and EAC recovery
@@ -95,12 +97,9 @@ described as complete compatibility; unsafe writes become read-only, conversion 
 Desktop and VR overlays consume the same versioned display snapshot and return semantic actions.
 The application core owns task and business state.
 
-> Scope ruling (2026-09-06): the desktop overlay stays in the `1.0.0` product composition; the VR
-> overlay is removed from `1.0.0` and kept as a post-`1.0.0` direction anchor (the v1.1 outlook —
-> see item 7 of the [product boundary](../product-boundary.md) and the
-> [development plan outline](../development-outline.md)). The VR path described below is the
-> accepted design constraint set for when that direction starts; it is not a `1.0.0` scope
-> commitment.
+> Current scope (2026-09-28): the desktop overlay remains a supported host surface. The VR
+> overlay is unscheduled outside the current N acceptance set. The design below constrains
+> future work; it does not create a v1.0.0 milestone or add another N2 tool.
 
 The first VR path is a separately built, explicitly started
 SteamVR Dashboard helper using public `IVROverlay`. It receives display snapshots and returns actions
@@ -113,6 +112,8 @@ VRChat process memory, modify EAC, or confirm account, safety, or upload UI. Pub
 untrusted and cannot authorize local mutation.
 
 ## Document changelog
+
+- 1.1.0 (2026-09-28): align external tool scheduling with the real-machine-first product ruling.
 
 - 1.0.0 (2026-09-06): entered version management; added the scope-ruling note to the overlay
   boundary section (VR overlay removed from `1.0.0`, pointing to product boundary item 7 and the

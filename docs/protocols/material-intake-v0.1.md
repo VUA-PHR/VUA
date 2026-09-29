@@ -2,7 +2,7 @@
 
 
 > Document version: 0.1
-> Status: B3 implementation baseline
+> Status: Implementation baseline
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
 > Updated: 2026-09-05
 

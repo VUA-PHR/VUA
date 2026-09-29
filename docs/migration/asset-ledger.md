@@ -56,7 +56,8 @@ CI 状态：按当前裁决不建立 Unity CI
 
 ## Unity Bridge M0 人工验收截图
 
-![Unity 2022.3.22f1 Test Runner 验收结果](evidence/unity-bridge-m0-2026-09-02.png)
+> Archive note (2026-09-28): the historical screenshot `evidence/unity-bridge-m0-2026-09-02.png`
+> is unavailable in this checkout. The original claim above is preserved as history, not newly verified evidence.
 
 ## Electron 表现层迁移记录
 

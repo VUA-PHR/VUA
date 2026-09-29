@@ -26,9 +26,37 @@ The Unity Bridge package declares VRChat Avatars SDK and Modular Avatar as Unity
 dependencies. They are resolved from their own package sources and are not relicensed by VUA.
 
 This is a human-readable summary, not a complete generated bill of materials. `Cargo.lock`, Unity
-package manifests, and future JavaScript lockfiles are the authoritative dependency snapshots.
+package manifests, and `pnpm-lock.yaml` are the authoritative dependency snapshots.
 Transitive dependencies currently include multiple permissive licenses and components under
 licenses such as MPL-2.0, Unicode-3.0, Zlib, and CDLA-Permissive-2.0.
+
+## First runtime-tool adaptation targets (N2)
+
+These are the two planned N2 integrations, not a declaration that their binaries are currently
+bundled or that modified builds have passed acceptance. Upstream license sources were checked
+on 2026-09-29; branches below are moving references, not release pins.
+
+| Component | Upstream license / attribution | VUA adaptation scope |
+| --- | --- | --- |
+| [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) | [Apache-2.0](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE); copyright 2024 benaclejames | External face-tracking integration; independently audit selected modules and dependencies |
+| [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator) | [MIT core and third-party notices](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE); copyright 2023–2026 Hyblocker and contributors, 2020–2022 Justin Li and contributors | Modified build retaining calibration and SteamVR driver, excluding SimpleBLE and base-station BLE management |
+
+VRCFaceTracking distributions must retain the Apache-2.0 license, applicable attribution/NOTICE
+and modification notices. The MIT portion of Space Calibrator retains its copyright and permission
+notice; other included components keep their own licenses. Neither tool is relicensed by VUA.
+
+Upstream explicitly says its SimpleBLE commercial grant does not cover forks. VUA's planned
+variant must remove the SimpleBLE submodule, patch/build/link configuration and the base-station
+BLE implementation, lifecycle calls, UI and configuration handling. Keep ordinary SteamVR
+shutdown handling and calibration functionality; the [N2 acceptance](docs/development-outline.md)
+owns the detailed removal and real-run criteria. Merely hiding the BLE page is insufficient.
+
+Only remove a dependency notice from the modified distribution after confirming the corresponding
+code and binary dependency are absent; retain notices for everything that remains. This summary
+does not certify a source tree has already been cleaned. Before distribution pin the actual commit,
+audit all remaining dependencies, record modifications, include complete applicable license texts
+and validate the produced binary. Do not redistribute an unmodified official build as the planned
+SimpleBLE-free variant.
 
 ## Distribution rule
 
