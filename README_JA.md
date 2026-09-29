@@ -2,94 +2,50 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | 日本語 | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
-
-> 「Packed up and ready!（出撃準備完了！）」——『Command & Conquer: Red Alert』の MCV
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA（VRC Ultra Assistant）** は、VRChat プレイヤーのための Windows デスクトップ
 制作環境です——特に、Unity に触れたことがない、あるいは何が必要かまだ分からない
 プレイヤーのために。目標と自分の素材から出発し、環境構築・プロジェクト準備・
 Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
-> [!IMPORTANT]
-> **現在の状態：v0.6.0（pre-alpha）。** このリポジトリは開発者プレビューを公開して
-> います。以下の機能はリポジトリ内に実装され自動テストで検証されていますが、実機での
-> エンドツーエンド検証はまだ完了しておらず、一部の機能は UI からまだ利用できません。
-> すべてのフローを早期評価版として扱ってください。一般プレイヤー向けの安定性の約束は
-> `1.0.0` から始まります。
-
 ## VUA でできること
 
-- **環境をセットアップする。** ハードウェア・ソフトウェア・ネットワークを確認し、
-  目標に応じたインストール計画を作成します。お使いのヘッドセットが実際に必要とする
-  VR ランタイムとドライバー、Unity `2022.3.22f1`、VRChat SDK、そして任意のトラッキング
-  ツール。アカウント登録と認証は常に公式ページで行います——VUA は案内するだけで、
-  代行することはありません。
-- **ゲームを学ぶ。** 5 ページのアプリ内チュートリアルで、セットアップの基本、移動と
-  メニュー、調整しておきたい安全設定（`Personal Space`、`Allow Untrusted URLs`、
-  Avatar 表示制限）、そしてお使いのデバイスをカバーします。SteamVR オーバーレイの
-  チュートリアルは `1.0.0` 以降の目標です。
-- **Avatar を制作する。** Warehouse から素材を選ぶか、所有する素材をインポートして
-  Recipe に組み合わせると、VUA が決定論的でバージョン管理された Bridge を通じて
-  Unity 内で組み立てを実行します——インポート順序、バインド、メニュー、パラメータ。
-  すべてのステップにスナップショットと復旧経路があります。
-- **検査して記録を残す。** すべての制作実行は Build Record を残し、検査証跡とログを
-  保持します。問題は通知センターと実行記録の両方に表示されます。通知を閉じても問題は
-  消えません。
-- **プロジェクトとパッケージを管理する。** 内蔵パッケージマネージャー（`vrc-get`
-  ベース）が VPM リポジトリの購読、パッケージのインストール／アップグレード／削除、
-  ローカルパッケージ、プロジェクト作成を処理します。ALCOM や公式 VCC が管理する
-  プロジェクトとの互換性も維持されます。
-- **ファイルではなく Recipe を共有する。** Recipe は共有可能なテキスト宣言です：
-  BOOTH 素材への参照と、色・オンオフ・位置回転拡縮など明示的にサポートされた設定。
-  有償素材・カスタムテクスチャ・メッシュは一切含まれません。再現する人は自分の
-  BOOTH アクセス権で素材を取得し直します。
+### [1] ゲームアシスタント
 
-## 仕組み
+> **Materials checked and cleared.**
 
-VUA はゴールファーストです。目的地を選ぶのはあなた、経路を計画するのは VUA。
-目標・デバイス・現在の状態に応じてウィザードが経路を選ぶため、すべてのプレイヤーが
-一本の大きなフローを通る必要はありません。Unity への変更はすべてバージョン管理された
-Unity Bridge を経由し——未検証の UI 操作で代行することはありません——リスクのある
-ステップでは明示的な確認とロールバック経路が用意されます。
+プレイに必要なソフトウェアや設定を準備し、移動、メニュー、安全設定、デバイスの基本を学びます。目的と機器に応じて必要なものを説明し、環境構築を案内します。
 
-内部構造：Electron デスクトップシェル、狭い型付き Gateway の後ろにある React UI、
-そしてユースケース・永続タスク・復旧を所有する Rust Orchestrator。詳細は
-[アーキテクチャドキュメント](docs/architecture/system.md) を参照してください。
+### [2] Avatar 制作
 
-## VUA・AMF・BDL
+> **Sugar, spice, and everything nice.**
 
-| 名前 | 定義 |
-| --- | --- |
-| **VUA** | Windows デスクトップクライアント本体——このリポジトリ |
-| **AMF**（Avatar MegaFactory） | VUA の制作ドメイン：Warehouse、Recipe、Assembly、Inspection、Release |
-| **BDL**（Booth Database Local） | AMF 専用のローカルカタログ：素材・出所・互換性メモ——クラウドではなくあなたのディスク上 |
+所有する素材を組み合わせ、選択と設定を Recipe に記録して共有し、各自で素材を入手した人が再現できるようにします。目標は、検査と制御された変更を伴う Avatar 制作の自動化と、公式 SDK への成果物の引き渡しです。Recipe に含めるのは参照と設定であり、有料素材そのものではありません。
+
+## 使い方の流れ
+
+目的と手元の素材から始め、計画、手順、結果を確認します。Build Record は制作手順、検査の証拠、エラーをまとめ、実行内容と対処が必要な箇所を示します。
+
+プロジェクトとパッケージの管理では、Unity 環境や依存関係、VPM リポジトリ、パッケージのインストール・更新・削除を扱います。既存の ALCOM/VCC プロジェクトは読み取り専用で確認し、編集はユーザーが指定して作成する VUA 管理のコピーで行います。最後のログインとアップロードは、ユーザー自身が VRChat 公式 SDK で行います。
 
 ## 安全上の境界
 
-- 有償素材はお使いの PC 上でのみ処理され、サーバー・リポジトリ・診断パイプラインに
-  アップロードされることはありません。
-- VUA は VRChat・BOOTH・Unity のパスワード、Cookie、二要素認証コードを収集せず、
-  購入・決済・年齢・認証・アクセス制御を迂回しません。
-- VUA は VRChat クライアントへの注入や改変を行いません。ログインと最終アップロードは
-  VRChat の公式フローに残ります——アップロードボタンは公式 SDK であなた自身が押します。
-- 共有される Recipe に含まれるのは構造・出所参照・設定のみです。
-- 技術的チェックが報告するのは事実であり、趣味ではありません。Avatar の見た目や動作が
-  期待どおりであることを保証するものではありません。
+- VUA は VRChat Inc. と提携せず、公認も受けていない独立した第三者製アシスタントであり、公開された外部インターフェース、OSC、起動オプション、必要なローカルログと公開設定のみを対象とし、VRChat クライアントへの注入、フック、パッチや EAC の回避を行いません。
+- VUA は VRChat のパスワード、認証トークン、Cookie、セッションなどのログイン認証情報を要求、読み取り、保存、送信してはなりません。
+- アカウントの変更はユーザーが許可された手順で開始し、VUA がクラウドからアカウントを操作したり、Avatar を代理で自動アップロードしたりすることはありません。
+- 必要最小限のデータを原則ローカルに保存し、不要なフレンド活動の追跡やプロファイリングは行わず、有料素材をローカルに保ち、共有 Recipe に素材本体を含めません。
+- 非公開のクライアント動作、隠し設定、制御されない API 自動化は標準の対象外であり、技術検査の成功は外観、動作、本番環境での安全性を保証しません。
 
-## VUA の今後
+[VRChat Creator Guidelines](https://hello.vrchat.com/creator-guidelines) · [Configuration File](https://docs.vrchat.com/docs/configuration-file)
 
-- `1.0.0`：一般プレイヤー向けの安定性の約束。全フローの実機受け入れを条件とします。
-- `1.0.0` 以降：SteamVR オーバーレイチュートリアル、ランタイム統合（SlimeVR、
-  VRCFaceTracking）、プラグインエコシステム——それぞれ独立したセキュリティ決定を前提とします。
-- 採択済みだが未実装の方向：ウィザードの経路選択、Recipe の重ね合わせ意味論と明示的な
-  競合の選択肢、共有時の出所補完、検査の制作記録への完全な統合。デフォルトでオフの
-  実験的な互換性証跡コレクターが続く可能性があります。いずれの場合も BDL のローカル
-  ストレージは影響を受けません。
-- 独立した軽量 UI（egui/Slint）は無期限に延期されています。Electron のリソース節約
-  モードは維持されます。
+## 開発状況
+
+最新の公開成果物は引き続き v0.6.0 で、当時の公開区分は pre-alpha です。[N1–N7](docs/development-outline.md) に沿って環境構築、指定の二つのツール、複雑な Avatar 制作、Recipe 再現、素材管理の監査と再実装、復旧、画像付きガイドを備えた Beta インストーラーを進めます。
+
+プロジェクトは今後も長期間 Beta の状態が続く見込みです。説明は製品の方向性であり、実装や自動テストだけで実機の一連の動作が検証済みになるわけではありません。実際の受け入れ状況は開発計画とリリースの証拠を参照してください。
 
 ## ドキュメント
 
@@ -101,9 +57,8 @@ Unity Bridge を経由し——未検証の UI 操作で代行することはあ
 
 ## ライセンス
 
-このリポジトリは [Apache License 2.0](LICENSE) の下でライセンスされています。
-[NOTICE](NOTICE)、[商標ガイダンス](TRADEMARKS.md)、[サードパーティ通知](THIRD_PARTY_NOTICES.md)
-も参照してください。製品リリースは Semantic Versioning 2.0.0 に従います。バージョン管理
-されたプロトコルとスキーマは、それぞれ独自の互換性バージョンを保持します。
+VUA は [Apache-2.0](LICENSE) です。最初の対応予定ツールは [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator の MIT 部分](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) です。Space Calibrator の変更版では SimpleBLE とベースステーションの BLE 管理を除去する計画です。[第三者通知](THIRD_PARTY_NOTICES.md) に帰属、その他の依存ライセンスと配布条件を記載していますが、変更版の配布完了を意味するものではありません。
+
+[NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 
 Copyright 2026 Aran52.

@@ -1,7 +1,7 @@
 # Unity editor compatibility
 
 
-> Document version: 1.0.0  
+> Document version: 1.0.1
 > Status: Accepted  
 > Scope: Unity detection, project intake, AMF production, and Unity Bridge execution  
 > Updated: 2026-09-02  
@@ -48,9 +48,9 @@ Tuanjie Engine is currently unsupported. VUA may identify it for diagnostics, th
 production path and guides the user to global Unity `2022.3.22f1`. Tuanjie project-format similarity
 does not authorize Bridge execution, VRChat SDK validation, building, or upload preparation.
 
-## M0 enforcement requirements
+## Enforcement requirements
 
-- M0 migration closure is decided by local Unity Bridge verification; the current Orchestrator
+- Migration closure is decided by local Unity Bridge verification; the current Orchestrator
   reference implementation and its tests are not a rejection gate.
 - A production Orchestrator implementation must select only an exact production-target editor for
   Bridge jobs.
@@ -58,3 +58,9 @@ does not authorize Bridge execution, VRChat SDK validation, building, or upload 
 - Version mismatch leaves project files unchanged and returns a typed remediation path.
 - Migration always works on a backup or explicit copy and records source and target versions.
 - Build Records store the complete editor version used for every successful production run.
+
+## Document changelog
+
+- 1.0.1 (2026-09-28): erratum — the "M0 enforcement requirements" section is renamed
+  "Enforcement requirements" and its closure bullet drops the M0 label following the 2026-09-28
+  sequence change; no rule change.

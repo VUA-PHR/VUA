@@ -2,88 +2,50 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | [日本語](README_JA.md) | 한국어
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
-
-> 「Packed up and ready!(출격 준비 완료!)」——『Command & Conquer: Red Alert』의 MCV
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA(VRC Ultra Assistant)** 는 VRChat 플레이어를 위한 Windows 데스크톱 제작
 환경입니다——특히 Unity를 다뤄 본 적이 없거나, 무엇이 필요한지 아직 모르는 플레이어를
 위합니다. 목표와 보유한 에셋에서 출발하여, 환경 구축·프로젝트 준비·Avatar 조립·검사·
 복구까지 VUA가 안내합니다.
 
-> [!IMPORTANT]
-> **현재 상태: v0.6.0(pre-alpha).** 이 리포지토리는 개발자 프리뷰를 제공합니다.
-> 아래 기능들은 리포지토리에 구현되어 있고 자동화 테스트로 검증되지만, 실제 기기에서의
-> 엔드투엔드 검증은 아직 완료되지 않았으며 일부 기능은 UI에서 아직 사용할 수 없습니다.
-> 모든 흐름을 초기 평가판으로 다뤄 주세요. 일반 플레이어를 위한 안정성 약속은
-> `1.0.0`부터 시작됩니다.
+## VUA로 할 수 있는 일
 
-## VUA로 할 수 있는 것
+### [1] 게임 도우미
 
-- **환경 구축.** VUA가 하드웨어·소프트웨어·네트워크를 확인하고 목표에 맞는 설치 계획을
-  만듭니다. 헤드셋이 실제로 필요로 하는 VR 런타임과 드라이버, Unity `2022.3.22f1`,
-  VRChat SDK, 그리고 선택한 트래킹 도구. 계정 등록과 인증은 항상 공식 페이지에서
-  진행됩니다——VUA는 안내할 뿐, 대신 인증하지 않습니다.
-- **게임 배우기.** 5개 페이지의 인앱 튜토리얼이 설정 기초, 이동과 메뉴, 조정해 두면 좋은
-  안전 설정(`Personal Space`, `Allow Untrusted URLs`, Avatar 표시 제한), 그리고 사용 중인
-  디바이스를 다룹니다. SteamVR 오버레이 튜토리얼은 `1.0.0` 이후의 목표입니다.
-- **Avatar 제작.** Warehouse에서 에셋을 고르거나 보유한 에셋을 가져와 Recipe로 조합하면,
-  VUA가 결정론적이고 버전 관리되는 Bridge를 통해 Unity 안에서 조립을 실행합니다——가져오기
-  순서, 바인딩, 메뉴, 파라미터. 모든 단계에 스냅샷과 복구 경로가 있습니다.
-- **검사와 기록 보관.** 모든 제작 실행은 Build Record를 남기고, 검사 증거와 로그를
-  담습니다. 문제는 알림 센터와 실행 기록 양쪽에 표시됩니다. 알림을 닫아도 문제는
-  사라지지 않습니다.
-- **프로젝트와 패키지 관리.** 내장 패키지 매니저(`vrc-get` 기반)가 VPM 리포지토리 구독,
-  패키지 설치/업그레이드/제거, 로컬 패키지, 프로젝트 생성을 처리합니다. ALCOM이나 공식
-  VCC가 관리하는 프로젝트와의 호환성도 유지됩니다.
-- **파일이 아닌 Recipe 공유.** Recipe는 공유 가능한 텍스트 선언입니다: BOOTH 에셋 참조와
-  색상·토글·위치/회전/크기처럼 명시적으로 지원되는 옵션. 유료 에셋, 커스텀 텍스처, 메시는
-  절대 포함되지 않습니다. 재현하는 사람은 자신의 BOOTH 권한으로 에셋을 다시 가져옵니다.
+> **Materials checked and cleared.**
 
-## 작동 방식
+플레이에 필요한 소프트웨어와 설정을 준비하고 이동, 메뉴, 안전 설정, 기기 사용의 기초를 배웁니다. 사용 목적과 하드웨어에 맞춰 필요한 항목을 설명하고 환경 설치를 안내합니다.
 
-VUA는 골 퍼스트입니다. 목적지는 당신이 고르고, 경로는 VUA가 계획합니다. 마법사가 목표·
-디바이스·현재 상태에 따라 경로를 고르기 때문에, 모든 플레이어가 하나의 큰 흐름을 따라갈
-필요가 없습니다. 모든 Unity 변경은 버전 관리되는 Unity Bridge를 거치며——스크립트 없는
-UI 클릭으로 대신하지 않습니다——위험한 단계에는 명시적 확인과 롤백 경로가 준비됩니다.
+### [2] Avatar 제작
 
-내부 구조: Electron 데스크톱 셸, 좁은 타입 게이트웨이 뒤의 React UI, 그리고 유스케이스·
-영구 작업·복구를 소유하는 Rust Orchestrator. 자세한 내용은
-[아키텍처 문서](docs/architecture/system.md)를 참조하세요.
+> **Sugar, spice, and everything nice.**
 
-## VUA · AMF · BDL
+보유한 소재를 조합하고 선택과 설정을 Recipe에 기록해 공유하며, 다른 사용자는 직접 구한 소재로 이를 재현합니다. 목표는 검사와 통제된 변경을 거쳐 Avatar를 자동 제작하고 결과물을 공식 SDK에 전달하는 것입니다. Recipe에는 참조와 설정만 담으며 유료 소재 자체는 포함하지 않습니다.
 
-| 이름 | 정의 |
-| --- | --- |
-| **VUA** | Windows 데스크톱 클라이언트 본체——이 리포지토리 |
-| **AMF**(Avatar MegaFactory) | VUA의 제작 도메인: Warehouse, Recipe, Assembly, Inspection, Release |
-| **BDL**(Booth Database Local) | AMF 전용 로컬 카탈로그: 에셋·출처·호환성 메모——클우드가 아니라 당신의 디스크 |
+## 사용 흐름
 
-## 보안 경계
+목표와 보유한 소재에서 시작하여 계획, 실행 단계와 결과를 확인합니다. Build Record는 제작 단계, 검사 근거와 오류를 모아 수행한 작업과 조치가 필요한 부분을 보여 줍니다.
 
-- 유료 에셋은 당신의 PC에서만 처리되며, 어떤 서버·리포지토리·진단 파이프라인에도
-  업로드되지 않습니다.
-- VUA는 VRChat·BOOTH·Unity의 비밀번호, 쿠키, 2단계 인증 코드를 수집하지 않으며, 구매·
-  결제·연령·인증·접근 제어를 우회하지 않습니다.
-- VUA는 VRChat 클라이언트에 주입하거나 수정하지 않습니다. 로그인과 최종 업로드는 VRChat
-  공식 흐름에 남습니다——업로드 버튼은 공식 SDK에서 당신이 직접 누릅니다.
-- 공유되는 Recipe에는 구조·출처 참조·설정만 포함됩니다.
-- 기술적 검사는 취향이 아니라 사실을 보고합니다. Avatar의 외모와 동작이 기대에 부합함을
-  보장하지 않습니다.
+프로젝트 및 패키지 관리는 Unity 환경과 의존성, VPM 저장소, 패키지 설치·업데이트·제거를 준비합니다. 기존 ALCOM/VCC 프로젝트는 읽기 전용으로 검사하고, 편집은 사용자가 요청해 만든 VUA 관리 사본에서 진행합니다. 최종 로그인과 업로드는 사용자가 VRChat 공식 SDK에서 직접 수행합니다.
 
-## VUA의 방향
+## 안전 경계
 
-- `1.0.0`: 일반 플레이어를 위한 안정성 약속. 전체 흐름의 실기 수용을 관문으로 합니다.
-- `1.0.0` 이후: SteamVR 오버레이 튜토리얼, 런타임 통합(SlimeVR, VRCFaceTracking),
-  플러그인 생태계——각각 독립적인 보안 결정을 전제로 합니다.
-- 채택되었지만 아직 미구현인 방향: 마법사 경로 선택, Recipe 오버레이 의미와 명시적 충돌
-  선택지, 공유 시 출처 보완, 검사의 제작 기록으로의 완전한 통합. 기본 꺼짐 상태의 실험적
-  호환성 증거 수집기가 뒤따를 수 있습니다. 어느 쪽이든 BDL의 로컬 저장소는 영향을 받지
-  않습니다.
-- 독립 경량 UI(egui/Slint)는 무기한 연기되었습니다. Electron 리소스 절약 모드는
-  유지됩니다.
+- VUA는 VRChat Inc.와 제휴하거나 공식 승인을 받은 제품이 아닌 독립적인 서드파티 도우미이며, 공개된 외부 인터페이스, OSC, 실행 옵션, 필요한 로컬 로그와 공개 설정만 사용하고 VRChat 클라이언트 주입·후킹·패치 또는 EAC 우회를 하지 않습니다.
+- VUA는 비밀번호, 인증 토큰, Cookie, Session을 포함한 VRChat 로그인 인증 정보를 요청·읽기·저장·전송해서는 안 됩니다.
+- 계정 변경은 사용자가 허용된 절차로 시작해야 하며, VUA가 클라우드에서 계정을 대신 조작하거나 Avatar를 자동으로 대신 업로드하지 않습니다.
+- 기능에 필요한 최소 데이터만 기본적으로 로컬에 보관하고 불필요한 친구 활동 추적이나 프로파일링을 만들지 않으며, 유료 소재는 로컬에 두고 공유 Recipe에는 소재 자체를 넣지 않습니다.
+- 공개적으로 지원되지 않는 클라이언트 동작, 숨겨진 설정 및 통제되지 않는 API 자동화는 기본 범위에서 제외되며, 기술 검사 통과는 외형·동작·실사용 안전성을 보장하지 않습니다.
+
+[VRChat Creator Guidelines](https://hello.vrchat.com/creator-guidelines) · [Configuration File](https://docs.vrchat.com/docs/configuration-file)
+
+## 개발 진행 상황
+
+최신 공개 결과물은 여전히 v0.6.0이며 당시 공개 단계는 pre-alpha입니다. [N1–N7 개발 순서](docs/development-outline.md)에 따라 환경 설치, 지정된 두 도구, 복합 Avatar 제작, Recipe 재현, 소재 관리 점검과 재작업, 복구 및 스크린샷 가이드가 포함된 Beta 설치 프로그램을 개발합니다.
+
+프로젝트는 앞으로도 오랫동안 Beta 상태를 유지할 것으로 예상합니다. 소개는 제품의 방향이며, 구현과 자동 테스트만으로 전체 실제 기기 흐름의 검증을 의미하지 않습니다. 실제 검증 상태는 개발 순서와 릴리스 근거를 확인해 주세요.
 
 ## 문서
 
@@ -95,9 +57,8 @@ UI 클릭으로 대신하지 않습니다——위험한 단계에는 명시적 
 
 ## 라이선스
 
-이 리포지토리는 [Apache License 2.0](LICENSE)으로 라이선스됩니다. [NOTICE](NOTICE),
-[상표 안내](TRADEMARKS.md), [서드파티 고지](THIRD_PARTY_NOTICES.md)도 참조하세요.
-제품 릴리스는 Semantic Versioning 2.0.0을 따릅니다. 버전 관리되는 프로토콜과 스키마는
-각각 독립적인 호환성 버전을 유지합니다.
+VUA는 [Apache-2.0](LICENSE)을 사용합니다. 첫 대응 예정 도구는 [VRCFaceTracking(Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE)과 [Space Calibrator의 MIT 본체](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)입니다. 공간 보정 수정판에서는 SimpleBLE와 베이스 스테이션 BLE 관리를 제거할 예정입니다. 저작권, 다른 의존성 라이선스와 배포 조건은 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 확인하세요. 이는 수정 바이너리가 이미 배포되었다는 뜻이 아닙니다.
+
+[NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 
 Copyright 2026 Aran52.

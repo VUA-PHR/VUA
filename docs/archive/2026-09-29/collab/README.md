@@ -1,0 +1,155 @@
+> **Archived and retired — user ruling, 2026-09-28.** This collaboration mechanism is no longer
+> maintained or available for reactivation. Preserve its historical decisions and evidence; a future
+> collaboration workflow must be designed and accepted anew. Ordinary development follows
+> CONTRIBUTING.md. The repository-wide PR policy at `docs/meta/protected-main.md` continues
+> in force through the permanent `collab/PROTECTED_MAIN.md` entry. Older freeze/reactivation
+> wording below is historical and superseded.
+
+# collab/ — VUA 协作机制（git 即消息总线）
+
+## Frozen — unmaintained since 2026-09-28 (user ruling)
+
+The collab mechanism is suspended from the 2026-09-28 adoption of the N development sequence.
+Ordinary single-line development ([CONTRIBUTING.md](../../../../CONTRIBUTING.md)) is the only active entry.
+This directory is retained as history and reactivation reference only: do not run
+`pnpm collab:brief` as a duty, open proposals, update BOARD/state files, dispatch ticks, or start
+role sessions. Everything below predates the freeze and may drift from the current normative
+documents (`AGENTS.md`, `docs/product-boundary.md`, `docs/development-outline.md`,
+`docs/release/versioning.md`); where it conflicts, the normative documents win.
+[PROTECTED_MAIN.md](PROTECTED_MAIN.md) is a repository-wide PR policy and remains in force.
+Reactivation requires an explicit user ruling.
+
+## Participation boundary (user ruling, 2026-09-28)
+
+This is an optional workflow for explicitly assigned collab participants. Ordinary development
+starts at [CONTRIBUTING.md](../../../../CONTRIBUTING.md) and may use one checkout with feature branches.
+It requires no brief, role, state file, proposal, BOARD update, periodic tick, or linked worktree.
+Copied coordination files, a checkout named `VUA`, or the brief's directory-based role inference
+do not enroll a machine/session. Confirm the actual local assignment before applying this workflow.
+
+All participant duties below, including mandatory startup, proposal numbering, and the six-role
+process, are scoped to collab participants. Shared architecture, ownership, evidence and PR rules
+still bind both entries. Ordinary contributors use Issues/PRs; maintainers relay relevant accepted
+decisions and overlapping work into BOARD/proposals and back to the relevant Issue/PR. Collab
+participants must check those accepted changes before continuing an older assignment. Neither
+entry creates a competing product authority or requires the other to adopt its bookkeeping.
+
+Changing an active collab checkout to ordinary development requires an explicit handoff: record
+unfinished work and retire/reassign its active seat in BOARD/state first. Do not silently abandon
+an active assignment. A separate, unassigned clone on another machine defaults to ordinary mode.
+
+> Integration override (2026-09-22): read [protected-main policy](PROTECTED_MAIN.md) before any merge or push. All main changes, including bookkeeping, use an isolated branch and GitHub PR; canonical main only fetches and fast-forwards. This supersedes older direct-main instructions below.
+
+所有工作树共享同一个 `.git` 对象库，`git show <branch>:<path>` 可在任意工作树里直接读取其它
+分支**已提交**的文件——git 本身就是消息总线，跨树协调不再需要信件文档或人肉复制。
+
+```text
+collab/
+  README.md            # 本文件：机制说明
+  BOARD.md             # 全局看板：M 门状态、冻结契约表、跨树开放问题（集成树维护）
+  state/wt-N.md        # 工作树状态文件（覆盖式，每棵活跃工作树一份）
+  proposals/NNN-slug.md# 提案单文件线程
+```
+
+## 状态文件：按工作树登记
+
+- 每棵工作树一份 `collab/state/wt-N.md`（编号与工作树目录一致：VUA→wt-main、VUA-2→wt-2、VUA-3→wt-3），
+  覆盖式维护、**非追加**，上限约 60 行。历史不进文件——git 历史就是档案，文件永远只反映"现在"。
+- 固定结构：front-matter（worktree / branch / role / baseline_commit / updated）+ 五节
+  （当前焦点 / 自基线交付 / 阻塞 / 下次合并意图 / 留言）。
+- 阻塞与留言用 `[→角色]` 路由（六角色：集成/桌面/核心/产线/数据/环境，定义与代码所有权见
+  `docs/development-outline.md`；域 Schema 冻结责任归域角色，TS 面登记归桌面角色，
+  集成本体路由 `[→集成]`）。
+- 文件随分支走：在自己分支上更新并提交，合并即传播到集成树，不需要任何复制。
+
+## 提案：单文件线程
+
+- 契约变更与跨树需求走 `collab/proposals/`：一议题一文件，讨论线程内联在同一文件，
+  状态字段按 `提出 → 讨论中 → 已接受/已拒绝/已撤回` 演进；关闭后不再修改。
+- **立项纪律（031-E1，2026-09-23）**：新工作一律以 proposal 立项；W 号停止增发，
+  outline 窗口表定格为历史记录，事实工作队列见 BOARD 与 proposals。提案内部的面/环/段
+  编号允许存在，但**跨文档引用必须限定为 `NNN-面号` 形式**（如 026-A3、027-F5）；
+  裸面字母（只写 A3、F5）禁止出提案文件。
+- **取号单点化（031-E2，2026-09-23）**：proposal、BG 工单、BOARD 开放问题 # 号统一由
+  集成座在 BOARD 登记时发号，工作树不得自取。撞号处置＝后登记者改号（判例：009/010
+  同 tick 撞号产线在先保 009；BG-18 重号改 BG-20）。
+- 写作规则见 `collab/proposals/README.md`。废止 b-*/f-* 成对信件模式。
+
+## 退役命名空间墓表（031-E3，2026-09-23）
+
+历史文件中出现的以下编号体系已退役：**旧文不改为史**（历史原样保留，靠本表解释），
+**新文禁用**（新写的文档、提案、留言一律使用现行替代物）。
+
+| 退役编号 | 现行替代物 |
+| --- | --- |
+| G-#（G 系） | proposal NNN；受管文档中的残留（如 G13）按 031-E4 列为升版搭车清理项 |
+| b-*/f-* 成对信件（旧 F/B 车道） | `collab/proposals/` 单文件线程 |
+| I-# | BOARD 开放问题 #（原 I-1 真机矩阵即现表 #1 行） |
+| T-# | proposal NNN 与 outline 任务分解表行 |
+| IMP-# | proposal NNN（素材导入页任务包由提案流与 M6 行承载） |
+| O-# | proposal NNN / BOARD 开放问题 # |
+| R-# | proposal NNN（如 EAC 边界 R1–R9 即 006 号提案） |
+| H/M/L-# | proposal NNN / BOARD 开放问题 # |
+| AC-# | 承载提案的内联验收清单（随提案文件，如 019 号 AC-01～13；不跨文档裸引） |
+| 批号（第 N 批） | 集成内部簿记专用（BOARD 前录/wt-main 状态文件），不进受管文档 |
+| W-#（窗口号） | **停止增发**（031-E1）；outline 窗口表定格为历史，工作项以 proposal NNN 承载 |
+
+## 看板 BOARD.md（集成树维护）
+
+每个 M 门关闭或合并完成后更新：M 门状态、冻结契约表、跨树开放问题清单。
+
+## 开工前必跑（强制）
+
+```sh
+pnpm collab:brief
+```
+
+四区输出：① 指向本树/本角色的阻塞与留言、失鲜工作树；② 各工作树状态文件全文；
+③ 各分支相对 main 的分叉；④ 文档 REGISTRY 登记一致性。
+
+## 固化点（强制，任一时点即更新本树状态文件并提交）
+
+1. 每个工作会话结束（随最后一次提交）；
+2. 遇到阻塞时立即；
+3. 契约版本落地时；
+4. 请求合并前。
+
+## 常驻进程模型（六角色 × 六工作树）
+
+- 当前指派：集成→VUA（main）、核心→VUA-2、桌面→VUA-3、产线→VUA-4、数据→VUA-5、
+  环境→VUA-6。工作树本身不受角色限制，改派在 BOARD 登记。
+- 每棵工作树一条常驻槽位分支 `slot/wt-N`：切片工作在其上提交（开工前先对齐 main），
+  合并回 main 后继续使用；一次性会话可用 `slice/<slug>`。
+- 切片由负责角色的进程单独执行；协作方经留言/proposal 参与，不共写分支。
+- 合并 main：改动只含本角色所有权域且相关测试全绿时可自并；跨域合并留给集成角色。
+- 入职提示词在 `collab/roles/<role>.md`；统一定时节拍命令在 `collab/TICK.md`；
+  操作者启动清单在 `collab/LAUNCH.md`。
+- harness 适配：支持自定义系统提示词的（如 ZCode 子智能体）——每角色建专用子智能体，
+  系统提示词用 `collab/roles/system-prompts/<role>.md`（独立文件，与入职提示词分离，防误读）、
+  注入 AGENTS.md 开启、角色文件全文作首条任务消息；不支持的——角色文件全文即首条消息
+  （内置引导会读 AGENTS.md）。
+
+## 合并节奏（v2：防空转反馈环）
+
+- 分叉上限按**非 collab/ 实质提交**计：切片分支寿命 ≤3 天、落后集成分支 ≤15 个实质提交，
+  先到先触发合并/变基（brief ③ 分别显示全部与实质分叉）。
+- Schema 与契约只经 git 合并对齐，禁止手工拷贝。
+- 含代码/Schema/脚本变化的合并回 main 后，合并者跑全量测试并更新 BOARD；
+  **纯 collab/ 合并免测**（不触发测试链，只更新 BOARD/状态）。
+- **空转不提交**：监视轮无实质变化时不提交、不同步、不更新状态文件——状态文件只在内容
+  实质变化时更新（baseline 追平不算实质变化）。
+- **切片完整性优先于所有权**：切片由负责角色在同一分支内完成全部层（schema/Rust/TS/测试/
+  文档同批）；所有权域约束的是日常改动归属与合并审查，不再作为切片内的接力边界。
+  跨域切片合并回 main 由集成角色验收。
+
+## 升级规则（防"臭皮匠共识"）
+
+六路并行不等于六份判断力叠加。解决不了的问题必须升级给人，而不是在进程间打转：
+
+- **触发**：同一问题连续两轮 tick 无实质进展；需要猜测/假设才能继续；proposal 讨论两轮
+  无收敛；涉及安全、法律、付费资产、产品边界的判断。
+- **动作**：写入 `collab/BOARD.md`「待用户裁决」区并标 `[需用户]`，写清问题、已尝试路径、
+  卡点、待裁决的具体选项；本角色在该项上的工作暂停。
+- **禁止**：不得通过多进程互相引用制造共识假象；不得为了不停工而降低标准（跳测试、放宽
+  校验、收窄范围而不声明）；不得替用户做产品裁决。
+- 用户侧约定：白天批量处理 `[需用户]` 项；TICK 命令正文让进程自动跳过这些条目。

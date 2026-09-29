@@ -35,7 +35,7 @@ boundary: "core | plugin | external"
 status: "proposed | planned | experimental | supported | deprecated"
 risk: "pending | low | medium | high"
 risk_rule: "vua.risk-gate/v1"
-delivery: "version, post-1.0, or unscheduled"
+delivery: "version or unscheduled"
 maintainer: "VUA-Project or community identity"
 distribution: "core | plugin-package | managed-optional | external-connection"
 platforms: ["windows"]

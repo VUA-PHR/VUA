@@ -2,98 +2,50 @@
 
 English | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-PHR/VUA/actions/workflows/schema-vectors.yml)
-
-> "Packed up and ready!" — the MCV, *Command & Conquer: Red Alert*
+[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
+[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
+[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
 
 **VUA (VRC Ultra Assistant)** is a Windows desktop production environment for VRChat
 players — especially players who have never touched Unity, or don't yet know what they
 need. Start from a goal and your own assets; VUA guides you through environment setup,
 project preparation, Avatar assembly, inspection, and recovery.
 
-> [!IMPORTANT]
-> **Current status: v0.6.0 (pre-alpha).** This repository publishes developer previews.
-> The capabilities below are implemented in the repository and covered by automated
-> tests, but end-to-end validation on a real machine is still pending, and a few are
-> not yet reachable from the UI. Treat every flow as early evaluation. The
-> everyday-player stability commitment begins with `1.0.0`.
-
 ## What you can do with VUA
 
-- **Set up your environment.** VUA checks hardware, software, and network, then builds
-  an installation plan for your goal: the VR runtime and drivers your headset actually
-  needs, Unity `2022.3.22f1`, the VRChat SDK, and optional tracking tools. Account
-  registration and authorization always stay on official pages — VUA guides, it never
-  signs for you.
-- **Learn the game.** A five-part in-app tutorial covers setup basics, movement and
-  menus, safety settings worth adjusting (`Personal Space`, `Allow Untrusted URLs`,
-  Avatar display limits), and your devices. A SteamVR overlay tutorial is a
-  post-`1.0.0` goal.
-- **Produce an Avatar.** Pick assets from your Warehouse or import ones you own,
-  combine them into a Recipe, and VUA runs the assembly inside Unity through a
-  deterministic, versioned bridge — import order, bindings, menus, parameters — with
-  snapshots and a recovery path at every step.
-- **Inspect and keep records.** Every production run leaves a Build Record with its
-  inspection evidence and logs. Problems surface both in the notification center and
-  on the run record; closing a notification never makes a problem disappear.
-- **Manage projects and packages.** A built-in package manager (based on `vrc-get`)
-  handles VPM repository subscriptions, package install/upgrade/removal, local
-  packages, and project creation — and VUA stays compatible with projects managed by
-  ALCOM or the official VCC.
-- **Share Recipes, not files.** A Recipe is a shareable text declaration: BOOTH asset
-  references plus explicit, supported options such as colors, toggles, and transforms.
-  It never contains paid assets, custom textures, or meshes — re-creators fetch the
-  assets through their own BOOTH access.
+### [1] Game assistant
+
+> **Materials checked and cleared.**
+
+Prepare the software and settings your play setup needs, then learn the basics of movement, menus, safety options and devices. Choose your goal and hardware; deployment is intended to explain what is needed and guide installation.
+
+### [2] Avatar production
+
+> **Sugar, spice, and everything nice.**
+
+Combine your own materials, capture the choices in a Recipe, and share the Recipe so others can reproduce the setup with assets they obtain themselves. The goal is automated Avatar production with checks and controlled changes before handing the result to the official SDK; a Recipe contains references and settings, not paid assets.
 
 ## How it works
 
-VUA is goal-first: you choose the destination, VUA plans the route. A wizard picks a
-path by your goal, device, and current state instead of forcing every player through
-one fixed pipeline. Every Unity change crosses the versioned Unity Bridge — never
-unscripted UI clicking — and risky steps ask for explicit confirmation with a rollback
-path ready.
+Start with your goal and available materials, review the proposed steps, and follow the results. A Build Record keeps production steps, inspection evidence and errors together so that you can see what happened and what needs attention.
 
-Under the hood: an Electron desktop shell, a React UI behind a narrow typed Gateway,
-and a Rust Orchestrator that owns use cases, durable tasks, and recovery. Details live
-in the [architecture documentation](docs/architecture/system.md).
-
-## VUA, AMF, and BDL
-
-| Name | What it is |
-| --- | --- |
-| **VUA** | The Windows desktop client itself — this repository |
-| **AMF** (Avatar MegaFactory) | VUA's production domain: Warehouse, Recipe, Assembly, Inspection, and Release |
-| **BDL** (Booth Database Local) | AMF's private local catalog: your assets, their sources, and compatibility notes — on your disk, not a cloud service |
+Project and package management prepares the required Unity environment and dependencies, including VPM repositories, package installation, updates and removal. Existing ALCOM/VCC projects are inspected read-only; editing starts from a user-requested VUA-managed copy. Final login and upload remain your actions in the official VRChat SDK.
 
 ## Safety boundaries
 
-- Paid assets are processed only on your PC — never uploaded to any server,
-  repository, or diagnostic pipeline.
-- VUA never collects VRChat, BOOTH, or Unity passwords, cookies, or two-factor codes,
-  and never bypasses purchase, payment, age, authentication, or access controls.
-- VUA does not inject into or modify the VRChat client. Login and the final Avatar
-  upload stay in VRChat's official flow — you press the upload button in the
-  official SDK.
-- Shared Recipes contain structure, source references, and settings only.
-- Technical checks report facts, not taste: they cannot guarantee an Avatar looks or
-  behaves the way you expect.
+- VUA is an independent third-party assistant, with no affiliation with or endorsement by VRChat Inc.; its integration policy permits documented external interfaces, OSC, launch options, necessary local logs and documented configuration fields, never VRChat client injection, hooks, patches or EAC bypass.
+- VUA must not request, read, store or transmit your VRChat login credentials, including passwords, authentication tokens, cookies and session data.
+- Account changes must be initiated by you through an allowed path; VUA does not take over your account from a cloud service or automatically upload Avatars on your behalf.
+- Only data needed for the feature is kept, locally by default, without unnecessary friend-activity tracking or profiling; purchased materials stay local and shared Recipes exclude their contents.
+- Undocumented client behavior, hidden configuration fields and uncontrolled API automation are outside the default scope; a successful technical check is not a guarantee of appearance, behavior or production safety.
 
-## Where VUA is going
+[VRChat Creator Guidelines](https://hello.vrchat.com/creator-guidelines) · [Configuration File](https://docs.vrchat.com/docs/configuration-file)
 
-- `1.0.0`: the stability commitment for everyday players, gated by real-machine
-  acceptance of the full flow.
-- After `1.0.0`: the SteamVR overlay tutorial, runtime integrations (SlimeVR,
-  VRCFaceTracking), and the plugin ecosystem — each behind its own accepted security
-  decision.
-- Accepted direction, not yet implemented: wizard path selection, Recipe overlay
-  semantics with explicit conflict choices, share-time source supplement, and folding
-  inspection fully into production records. An experimental, off-by-default
-  compatibility-evidence collector may follow; BDL's local storage is unaffected
-  either way.
-- An independent lightweight UI (egui/Slint) is indefinitely deferred; the Electron
-  resource-saving mode stays.
+## Development progress
+
+The latest published artifact remains v0.6.0, historically labeled pre-alpha. Development follows the [N1–N7 sequence](docs/development-outline.md): deployment, two selected runtime tools, complex Avatar production, Recipe reproduction, audited material-management rework, recovery, and a Beta installer with an illustrated guide.
+
+The project is expected to remain in Beta for a long time. These descriptions express the product direction; implemented pieces and automated tests do not establish complete real-machine workflows. Read the sequence and release evidence for actual acceptance status.
 
 ## Documentation
 
@@ -105,9 +57,8 @@ in the [architecture documentation](docs/architecture/system.md).
 
 ## License
 
-The repository is licensed under the [Apache License 2.0](LICENSE). See [NOTICE](NOTICE),
-[trademark guidance](TRADEMARKS.md), and [third-party notices](THIRD_PARTY_NOTICES.md).
-Product releases follow Semantic Versioning 2.0.0; versioned protocols and schemas retain
-their own independent compatibility versions.
+VUA is licensed under [Apache-2.0](LICENSE). The first planned runtime-tool adaptations are [VRCFaceTracking (Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) and the [MIT-licensed Space Calibrator core](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE). The planned modified Space Calibrator excludes SimpleBLE and base-station BLE management. See [third-party notices](THIRD_PARTY_NOTICES.md) for attribution, remaining dependency licenses and distribution requirements; this is not a claim that the adapted binaries have shipped.
+
+[NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 
 Copyright 2026 Aran52.
