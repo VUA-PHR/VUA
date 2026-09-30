@@ -1,9 +1,9 @@
 # VUA development sequence
 
-> Document version: 3.3.1
+> Document version: 3.4.0
 > Status: Accepted
 > Updated: 2026-09-30
-> Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope update
+> Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope and release-decoupling updates
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
 
@@ -35,21 +35,23 @@ old schedules, indivisible W25 windows, and global waits for human operation are
 
 VUA remains Beta until the author explicitly requests a different release stage. There is no
 scheduled v1.0.0 or production-safety guarantee. Passing a gate proves its recorded scenarios,
-not universal compatibility or defect-free operation. Numeric versions remain as listed below;
-Beta is lifecycle metadata, not an instruction to rewrite historical package versions or tags.
+not universal compatibility or defect-free operation. N stages define outcomes and acceptance;
+product versions are selected independently from actual release changes. One stage can span
+several releases, and a release can include slices from several stages. Publication does not
+close a stage. Beta is lifecycle metadata; historical package versions and tags are unchanged.
 See [versioning](release/versioning.md).
 
 ## New sequence
 
-| Gate | Product version | User task | Initial status |
-| --- | --- | --- | --- |
-| N1 | v0.7.0 Beta | Deploy the software and settings needed to play or edit Avatars | Active priority; acceptance pending |
-| N2 | v0.7.1 Beta | Connect to upstream VRCFaceTracking and hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
-| N3 | v0.8.0 Beta | Produce a complex real-material Avatar and hand it to VRC SDK | Planned |
-| N4 | v0.8.1 Beta | Save, share, and reproduce Recipes across real workflows | Planned |
-| N5 | v0.8.2 Beta | Audit and redo old M4 material management, including BOOTH acquisition | Planned; capability audit required before rework |
-| N6 | v0.9.0 Beta | Recover interrupted work and maintain installed environments | Planned |
-| N7 | v0.9.1 Beta | Distribute and regress a Beta installer with illustrated user instructions | Planned |
+| Gate | User task | Initial status |
+| --- | --- | --- |
+| N1 | Deploy the software and settings needed to play or edit Avatars | Active priority; acceptance pending |
+| N2 | Connect to upstream VRCFaceTracking and hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
+| N3 | Produce a complex real-material Avatar and hand it to VRC SDK | Planned |
+| N4 | Save, share, and reproduce Recipes across real workflows | Planned |
+| N5 | Audit and redo old M4 material management, including BOOTH acquisition | Planned; capability audit required before rework |
+| N6 | Recover interrupted work and maintain installed environments | Planned |
+| N7 | Distribute and regress a Beta installer with illustrated user instructions | Planned |
 
 Gate order is delivery order, not a prohibition on useful independent work. Minimum material
 handling needed by N3 lands there; full material-management rework follows the N5 audit. No gate
@@ -101,7 +103,7 @@ This inventory does not install, launch, or approve any workflow. The existing m
 harness is in vua-unity-bridge and can use synthetic inputs or an MA stub; inspect each case's
 actual provenance before using it for N3 acceptance.
 
-## N1 - v0.7.0: purpose-driven deployment
+## N1: purpose-driven deployment
 
 User task: choose what to do; VUA identifies missing prerequisites and helps install them.
 Deliver purpose-driven install/update/uninstall plus validation, repair/retry, component additions,
@@ -144,7 +146,7 @@ account submissions require the user's actions. Record those steps as blocked/no
 VRChat web-information reading and experimental persistence follow the first usable delivery;
 they are not first-round blockers. N5 BOOTH account-library acceptance remains unchanged.
 
-## N2 - v0.7.1: exactly two gameplay tools
+## N2: exactly two gameplay tools
 
 The acceptance set contains **both and only** these independently distributed tools:
 
@@ -179,7 +181,7 @@ automatic configuration edits, internal IPC and calibration control are not init
 Any future copied source or bundled binary needs a new scope and distribution review under
 [third-party notices](../THIRD_PARTY_NOTICES.md).
 
-## N3 - v0.8.0: complex real-material Avatar production
+## N3: complex real-material Avatar production
 
 User task: combine owned materials in one project and hand the result to VRC SDK.
 Minimum successful case: **one real Avatar + at least two actively used dependencies/plugins +
@@ -201,7 +203,7 @@ or relationship-conflict variant with a concrete resolution path. Agents may dri
 Bridge, and SDK and inspect bindings/build outputs/logs. Actual account upload is not mandatory
 for this gate and remains a user action. N5's complete library work does not block minimum intake.
 
-## N4 - v0.8.1: Recipe and multi-flow reproduction
+## N4: Recipe and multi-flow reproduction
 
 | User task | Required behavior and observable acceptance |
 | --- | --- |
@@ -217,7 +219,7 @@ application, missing-then-supplied inputs, and conflict cases. Validate relation
 not byte equality of all Unity-generated metadata. Exercise original-package intake and the
 experimental local-VPM route separately; neither proves the other.
 
-## N5 - v0.8.2: audit and redo material management
+## N5: audit and redo material management
 
 ### Mandatory first step: capability audit
 
@@ -271,7 +273,7 @@ packages, and dependencies. Define supported directory/archive behavior during t
 issue merely being registered is not acceptance. Close the gate only with both acquisition paths
 and library outcomes exercised; remaining non-blocking limitations are named.
 
-## N6 - v0.9.0: recovery and environment maintenance
+## N6: recovery and environment maintenance
 
 | User task | Required behavior and observable acceptance |
 | --- | --- |
@@ -287,7 +289,7 @@ Inject interruption, cancellation, missing inputs, and external changes into bot
 complex production. Show a workable next action even if it requires reinstall or manual repair.
 N6 consolidates recovery; basic failures/retry cannot all be deferred from earlier gates.
 
-## N7 - v0.9.1: Beta installer, regression, and illustrated user guide
+## N7: Beta installer, regression, and illustrated user guide
 
 | Deliverable | Required behavior and observable acceptance |
 | --- | --- |
@@ -345,6 +347,8 @@ Prioritize the first real blocker, repair and rerun it, then expand. Record boun
 do not turn documentation completeness, speculative coverage, or idle agent activity into goals.
 
 ## Document changelog
+
+- 3.4.0 (2026-09-30): decouple N stages from product versions while retaining every delivery outcome and acceptance requirement.
 
 - 3.3.1 (2026-09-30): state the selected external-tool delivery path directly.
 

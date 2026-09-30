@@ -2,7 +2,7 @@
 
 > Status: Accepted catalog format  
 > Catalog schema: `vua.tool-entry/v3`  
-> Updated: 2026-09-25  
+> Updated: 2026-09-30
 > Normative effect: Trust classification, entry metadata, and contribution rules only
 
 This community-maintainable catalog classifies entries by contact with VUA data and authority.
@@ -42,6 +42,11 @@ platforms: ["windows"]
 capabilities: ["declared.capability"]
 ---
 ```
+
+`delivery` identifies a selected product release version, or `unscheduled` when no release version
+is assigned. It is not an N-stage number or acceptance claim. Unreleased entries use
+`unscheduled`; their delivery priority and acceptance belong to the [N sequence](../development-outline.md),
+where scheduled. Assign a product version only when its inclusion is selected for publication.
 
 Each entry body explains value, classification, included/excluded behavior, data flow,
 permissions, failure/degradation, license/redistribution, warnings, acceptance, and removal. Add or

@@ -1,6 +1,6 @@
 # VUA workspace instructions
 
-> Document version: 2.1.2
+> Document version: 2.1.3
 > Status: Accepted
 > Authority: Workspace entry; linked owning documents define detailed policy
 
@@ -19,7 +19,8 @@ unrelated work; never reset or delete a branch merely because it came from an ac
 
 1. Read [README.md](README.md), then [docs/README.md](docs/README.md).
 2. Follow [the N sequence](docs/development-outline.md), whose natural-language outcomes define
-   the work. [Version policy](docs/release/versioning.md) owns exact versions and continuing Beta.
+   the work. [Version policy](docs/release/versioning.md) owns release numbering and continuing Beta,
+   independently of N-stage acceptance.
 3. Before changing scope or ownership, read [product boundaries](docs/product-boundary.md).
 4. Read [CONTRIBUTING.md](CONTRIBUTING.md) and the relevant
    [engineering/evidence rules](docs/development/engineering-rules.md).
@@ -63,6 +64,8 @@ README and Issue-template corrections (2026-09-29). Preserve repository identity
 merge through PR checks, and verify the new owner and configuration after transfer.
 
 ## Document changelog
+
+- 2.1.3 (2026-09-30): route release numbering independently of N delivery-stage acceptance.
 
 - 2.1.2 (2026-09-30): clarify initial four-language UI i18n, expandable README editions and default English documentation.
 

@@ -5,7 +5,7 @@ boundary: "core"
 status: "planned"
 risk: "medium"
 risk_rule: "vua.risk-gate/v1"
-delivery: "v0.7.0"
+delivery: "unscheduled"
 maintainer: "VUA-Project"
 distribution: "core"
 platforms: ["windows"]
