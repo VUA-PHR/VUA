@@ -110,4 +110,4 @@ Current owners, versions and statuses only. [Governance](meta/documentation-gove
 | docs/meta/document-audit-2026-09-28.md | 1.0.0 | Accepted | Integration | 2026-09-28 |
 | docs/meta/protected-main.md | 1.2.0 | Accepted | Integration | 2026-09-28 |
 | docs/development/engineering-rules.md | 1.0.0 | Accepted | Integration | 2026-09-29 |
-| docs/architecture/unity-deployment.md | 1.0.0 | Accepted | Environment | 2026-09-30 |
+| docs/architecture/unity-deployment.md | 1.1.0 | Accepted | Environment | 2026-10-01 |

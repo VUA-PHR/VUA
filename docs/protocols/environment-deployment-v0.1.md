@@ -2,7 +2,7 @@
 
 > Document version: 0.1
 > Status: Candidate
-> Updated: 2026-09-30
+> Updated: 2026-10-01
 > Scope: Additive purpose-plan and confirmed-execution family under Gateway v1 / application 0.1
 
 ## Reading context and ownership
@@ -115,6 +115,12 @@ two-hour timeout. VUA never changes the shared Unity installation root or active
 Unsupported observations require inspection or an explicit official-tool handoff, never silent
 upgrade, agreement acceptance or authorization. Hub is optional; installer kind selects the exact
 command family.
+Standalone CLI mutations explicitly request JSON and disable proxy request logging. They require
+both a clean process completion and a successful result for the requested command, followed by
+the normal file inspection. `vua.deployment.vendor_install_failed` reports Unity's structured
+`INSTALL_FAILED` without guessing its cause; `vua.deployment.vendor_result_unreadable` reports an
+unverifiable result. Both are `external_failure`, keep readiness false and trigger no automatic
+retry. Raw vendor messages and shared logs are not copied into application errors.
 
 Cancellation is cooperative before/after an installer boundary, not forced interruption of a
 shared application or OS rollback. Timeout/Provider interruption can leave partial files;
@@ -156,8 +162,9 @@ game launch, hardware behavior or cross-Windows compatibility.
 A subsequent standalone-CLI run on the same date actually acquired and verified the fixed official
 CLI, then required fresh consent before Editor installation. The fresh Editor task failed with
 `vua.deployment.install_failed`; readiness remained false. Official CLI error logs reported a
-checksum mismatch for the exact target. Validation was retained, with no forced install or
-version substitution. This is distinct from the earlier manual
+checksum mismatch for the exact target. A follow-up download and signature inspection identified
+the regional CDN returning `2022.3.22f1c1` under the global-version filename. That artifact was not
+executed. Validation was retained, with no forced install or version substitution. This is distinct from the earlier manual
 handoff smoke; details and local evidence are linked from the [deployment direction](../architecture/unity-deployment.md).
 
 N1 remains open: actual Editor installation and licensing and Android module addition, disposable Unity
@@ -167,6 +174,7 @@ evidence must distinguish synthetic coverage from dated real-machine runs kept l
 
 ## Document changelog
 
+- 0.1 Candidate update (2026-10-01): require structured CLI completion and add bounded vendor-failure guidance; record the regional artifact mismatch.
 - 0.1 Candidate update (2026-09-30): add fixed official CLI acquisition, Hub-independent installation authority and consent-bound executable identity; retain existing frozen methods.
 
 - 0.1 (2026-09-30): introduce the additive executable N1 planning/confirmation slice and its safety/verification limits.

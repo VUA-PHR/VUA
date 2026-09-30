@@ -104,6 +104,8 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
       {step !== null ? <p>{copy.components[step.component as keyof typeof copy.components]}{": "}{step.phase === "verified" ? copy.reasons.verified : copy.actions[step.action]}</p> : null}
       {typeof failedComponent === "string" && Object.hasOwn(copy.components, failedComponent) ? <p>{copy.components[failedComponent as keyof typeof copy.components]}</p> : null}
       {task.error !== undefined ? <p>{copy.failedHint}<code>{task.error.code}</code></p> : null}
+      {task.error?.code === "vua.deployment.vendor_install_failed" ? <p>{copy.vendorInstallFailed}</p> : null}
+      {task.error?.code === "vua.deployment.vendor_result_unreadable" ? <p>{copy.vendorResultUnreadable}</p> : null}
       {outcome === "manual_required" ? <p>{copy.manualRequired}</p> : null}
       {outcome === "prerequisites_verified" ? <p>{copy.verified}</p> : null}
       {active && !task.cancellationRequested ? <Button disabled={busy} onClick={() => {

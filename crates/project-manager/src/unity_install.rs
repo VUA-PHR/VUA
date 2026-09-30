@@ -149,6 +149,9 @@ impl UnityInstallProbe {
         }
         let args = install_args(confirmed.kind, action)?;
         let outcome = self.run(exe, &args, 7200)?;
+        if confirmed.kind == DeploymentInstallerKind::UnityCli {
+            cli_install_result(&outcome, action)?;
+        }
         if !outcome.success() {
             return Err("vua.deployment.install_failed");
         }
@@ -195,6 +198,55 @@ fn plain_version(value: &str) -> bool {
         && value
             .bytes()
             .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'.' | b'-' | b'+'))
+}
+
+/// Consume only the official CLI's structured result, never its free-text diagnostics or
+/// shared log history. Exit zero alone is insufficient, and INSTALL_FAILED does not identify
+/// a root cause: it can include a regional replacement, bad checksum or installer failure.
+/// Keep those possibilities as guidance rather than fabricating a more specific diagnosis.
+fn cli_install_result(
+    outcome: &ProcessOutcome,
+    action: DeploymentAction,
+) -> Result<(), &'static str> {
+    #[derive(serde::Deserialize)]
+    struct CliError {
+        code: String,
+    }
+    #[derive(serde::Deserialize)]
+    struct CliResult {
+        success: bool,
+        command: String,
+        errors: Vec<CliError>,
+    }
+    if outcome.timed_out || outcome.cancelled || !outcome.process_tree_clean {
+        return Err("vua.deployment.process_failed");
+    }
+    if outcome.truncated {
+        return Err("vua.deployment.vendor_result_unreadable");
+    }
+    let result: CliResult = serde_json::from_str(&outcome.stdout)
+        .map_err(|_| "vua.deployment.vendor_result_unreadable")?;
+    let command = match action {
+        DeploymentAction::InstallEditor => "install",
+        DeploymentAction::AddAndroidModules => "install-modules",
+        _ => return Err("vua.deployment.action_refused"),
+    };
+    if result.command != command {
+        return Err("vua.deployment.vendor_result_unreadable");
+    }
+    if outcome.exit_code == Some(6)
+        && !result.success
+        && result
+            .errors
+            .iter()
+            .any(|error| error.code == "INSTALL_FAILED")
+    {
+        return Err("vua.deployment.vendor_install_failed");
+    }
+    if !outcome.success() || !result.success || !result.errors.is_empty() {
+        return Err("vua.deployment.install_failed");
+    }
+    Ok(())
 }
 
 fn supported_help(
@@ -268,7 +320,9 @@ fn install_args(
     let prefix = if kind == DeploymentInstallerKind::HubCli {
         vec!["--", "--headless"]
     } else {
-        vec![]
+        // Piped CLI output defaults to TSV and can be empty on failure. JSON is an
+        // explicit machine contract; disable proxy request logging even if configured.
+        vec!["--no-log-proxy", "--format", "json"]
     };
     let mut args = prefix;
     match action {
@@ -412,5 +466,48 @@ mod tests {
         assert!(!same_windows_path("notice\nC:\\Editors", r"C:\Editors"));
         assert!(plain_version("0.1.0-beta.3"));
         assert!(!plain_version("0.1.0\nlogged in as someone"));
+    }
+
+    #[test]
+    fn structured_install_failure_exposes_only_a_closed_code() {
+        let mut failed = result(
+            r#"{"success":false,"command":"install","data":null,"errors":[{"code":"INSTALL_FAILED","message":"private vendor details"}],"warnings":[]}"#,
+        );
+        failed.exit_code = Some(6);
+        assert_eq!(
+            cli_install_result(&failed, DeploymentAction::InstallEditor),
+            Err("vua.deployment.vendor_install_failed")
+        );
+        // Never classify a cancelled or still-running process by stale stdout.
+        failed.process_tree_clean = false;
+        assert_eq!(
+            cli_install_result(&failed, DeploymentAction::InstallEditor),
+            Err("vua.deployment.process_failed")
+        );
+    }
+
+    #[test]
+    fn cli_completion_requires_matching_complete_json_and_exit_status() {
+        let valid = result(r#"{"success":true,"command":"install","errors":[]}"#);
+        assert!(cli_install_result(&valid, DeploymentAction::InstallEditor).is_ok());
+        assert_eq!(
+            cli_install_result(&valid, DeploymentAction::AddAndroidModules),
+            Err("vua.deployment.vendor_result_unreadable")
+        );
+        for stdout in ["", "installed", r#"{"success":true}"#] {
+            assert_eq!(
+                cli_install_result(&result(stdout), DeploymentAction::InstallEditor),
+                Err("vua.deployment.vendor_result_unreadable")
+            );
+        }
+        let mut truncated = valid.clone();
+        truncated.truncated = true;
+        assert!(cli_install_result(&truncated, DeploymentAction::InstallEditor).is_err());
+        let mut nonzero = valid;
+        nonzero.exit_code = Some(6);
+        assert!(cli_install_result(&nonzero, DeploymentAction::InstallEditor).is_err());
+        let contradictory =
+            result(r#"{"success":true,"command":"install","errors":[{"code":"INSTALL_FAILED"}]}"#);
+        assert!(cli_install_result(&contradictory, DeploymentAction::InstallEditor).is_err());
     }
 }

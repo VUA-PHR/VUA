@@ -452,6 +452,8 @@ fn deployment_error(code: &str, correlation: &str) -> AppErrorV1 {
         code,
         "vua.deployment.process_failed"
             | "vua.deployment.install_failed"
+            | "vua.deployment.vendor_install_failed"
+            | "vua.deployment.vendor_result_unreadable"
             | "vua.deployment.verification_failed"
             | "vua.deployment.cli_acquisition_failed"
             | "vua.deployment.cli_integrity_failed"

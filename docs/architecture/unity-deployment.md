@@ -1,8 +1,8 @@
 # Unity deployment without Hub
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Last conformance review: 2026-09-30
+> Last conformance review: 2026-10-01
 
 For people: VUA should install the VRChat-compatible Unity Editor using Unity's official
 standalone CLI. Installing Unity Hub is optional. Users still choose their license, accept
@@ -61,6 +61,11 @@ Editor/module commands are bounded to two hours. Cancellation waits for a safe s
 there is no promise of OS rollback. Errors remain visible and never become successful readiness.
 Vendor output is bounded and does not enter task logs. Do not start cloud project creation or
 service-account authentication; future local CLI project creation must explicitly disable cloud.
+Installation commands explicitly request JSON and disable proxy request logging. Both the process
+result and the matching command's structured success must pass before filesystem reinspection.
+`INSTALL_FAILED` is an upstream failure, not proof of a particular network or checksum problem.
+Unknown, truncated or contradictory results fail closed; shared vendor log history is never used
+to guess the current task's result.
 
 ## Source and policy reasoning
 
@@ -94,8 +99,35 @@ following inspection kept prerequisites unready. A separate CLI JSON diagnostic 
 code `6` and upstream error `INSTALL_FAILED`. The official error-level log then identified
 an Editor-file checksum mismatch against the release manifest. The CLI reports that the file
 length matches the server response and suggests stale release data as a possible cause; that
-inference has not been independently proved. No permission/terms prompt was reported by the user. The dry-run returned zero without diagnostic data, so it does not
-establish a successful preflight. No Editor/license/SDK success is claimed.
+inference was not evidence of a manifest defect. No permission/terms prompt was reported by the user.
+The initially empty dry-run used the CLI's piped default format. Repeating it with explicit
+`--format json` returned the target and its declared checksum; it did not install the Editor.
+
+## Diagnosing an unexpected Editor download
+
+The 2026-09-30 follow-up established a different artifact at the download destination:
+
+| Observation | Result |
+| --- | --- |
+| Requested global target | `2022.3.22f1`, changeset `887be4894c44` |
+| CLI dry-run checksum | `md5-NGI1YmNlYTYzZjNkZTgzNzdlNjlkMTI3ZDNjZTRjMWQ=`; decoded hex `4b5bcea63f3de8377e69d127d3ce4c1d` |
+| Global download response on this network | HTTP 302 to the same path on `download.unitychina.cn` |
+| Downloaded artifact | 2,829,747,392 bytes; MD5 `9aa1b61f75fc6ad3fe8025bbb7265b64` |
+| Windows signature | Valid signature by Unity's China company; not the reviewed global signer |
+| PE product identity | `Unity 2022.3.22f1c1`; the filename still says `2022.3.22f1` |
+
+The regional response substituted a China-edition installer. This explains this workstation's
+checksum failure without assuming stale release data or a broken CLI verifier. The artifact was
+not executed. Local headers, JSON preflight, hashes and signature evidence are retained under
+ignored `_local_real_machine/n1-editor-integrity/`; no account data is involved.
+
+For a repeat failure, first inspect redirects and artifact identity, then compare the actual hash
+with the declared checksum algorithm. Do not assume every manifest uses SHA-256, trust the filename,
+or treat a valid signature from a different publisher/edition as equivalent. Correct the user's
+download route to the official global artifact, then prepare fresh consent and rerun the official
+CLI with its verification intact. VUA does not change the machine's proxy configuration or disable
+TLS/checksum checks to achieve installation. A manual global-installer fallback would need its own
+reviewed source, integrity, consent and registration path before becoming an automatic adapter.
 
 Automated tests cover Hub-independent planning, fresh consent after bootstrap, installer drift,
 fixed command families, redirect restrictions, untrusted bytes and existing-file preservation.
@@ -106,4 +138,5 @@ newer incompatible Editor to pass acceptance. Synthetic tests cannot close N1.
 
 ## Document changelog
 
+- 1.1.0 (2026-10-01): identify the regional China-edition substitution and require explicit structured CLI installation results; document source diagnostics without weakening verification.
 - 1.0.0 (2026-09-30): define the official standalone CLI direction, bounded acquisition/installation slice and separate license/functional evidence.
