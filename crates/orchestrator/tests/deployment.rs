@@ -56,12 +56,21 @@ fn wait(runtime: &TaskRuntime, id: &str) -> TaskState {
 struct FakeAdapter {
     facts: Mutex<Vec<DeploymentObservation>>,
     installs: AtomicUsize,
+    installer: Mutex<Option<DeploymentInstaller>>,
     fail: bool,
     boundary: Option<(mpsc::Sender<()>, Mutex<mpsc::Receiver<()>>)>,
 }
 impl FakeAdapter {
     fn new(facts: Vec<DeploymentObservation>) -> Self {
         Self {
+            installer: Mutex::new(
+                facts
+                    .iter()
+                    .any(|f| {
+                        f.component == "unity_cli" && f.presence == DeploymentPresence::Verified
+                    })
+                    .then(test_installer),
+            ),
             facts: Mutex::new(facts),
             installs: AtomicUsize::new(0),
             fail: false,
@@ -73,11 +82,16 @@ impl DeploymentAdapter for FakeAdapter {
     fn observe(&self, _intent: &DeploymentIntent) -> Vec<DeploymentObservation> {
         self.facts.lock().unwrap().clone()
     }
+    fn installer(&self, _intent: &DeploymentIntent) -> Option<DeploymentInstaller> {
+        self.installer.lock().unwrap().clone()
+    }
     fn install(
         &self,
         _intent: &DeploymentIntent,
         action: DeploymentAction,
+        confirmed: &DeploymentInstaller,
     ) -> Result<(), &'static str> {
+        assert_eq!(self.installer.lock().unwrap().as_ref(), Some(confirmed));
         self.installs.fetch_add(1, Ordering::SeqCst);
         if let Some((entered, release)) = &self.boundary {
             entered.send(()).unwrap();
@@ -91,6 +105,11 @@ impl DeploymentAdapter for FakeAdapter {
             return Err("vua.deployment.install_failed");
         }
         let component = match action {
+            DeploymentAction::InstallUnityCli => {
+                self.installer.lock().unwrap().as_mut().unwrap().kind =
+                    DeploymentInstallerKind::UnityCli;
+                "unity_cli"
+            }
             DeploymentAction::InstallEditor => "unity_editor",
             DeploymentAction::AddAndroidModules => "android_modules",
             _ => panic!("unsupported action"),
@@ -105,19 +124,31 @@ impl DeploymentAdapter for FakeAdapter {
         Ok(())
     }
 }
+fn test_installer() -> DeploymentInstaller {
+    DeploymentInstaller {
+        kind: DeploymentInstallerKind::UnityCli,
+        location: r"C:\Unity Tools\unity.exe".into(),
+        version: "1.0.0-beta.11".into(),
+        file_sha256: "a".repeat(64),
+        editor_root: r"C:\VUA Test\Editors".into(),
+    }
+}
 fn creator_facts() -> Vec<DeploymentObservation> {
     vec![
-        fact("unity_hub", DeploymentPresence::Verified),
+        fact("unity_cli", DeploymentPresence::Verified),
         fact("unity_editor", DeploymentPresence::Missing),
         fact("android_modules", DeploymentPresence::Missing),
-        fact("hub_install_api", DeploymentPresence::Verified),
     ]
 }
 
 #[test]
 fn play_never_requires_unity_or_steamvr_and_pico_requires_both_runtimes() {
-    let plan =
-        plan_deployment(&intent(vec![DeploymentPurpose::DesktopPlay]), &ready_play()).unwrap();
+    let plan = plan_deployment(
+        &intent(vec![DeploymentPurpose::DesktopPlay]),
+        &ready_play(),
+        None,
+    )
+    .unwrap();
     assert_eq!(
         plan.steps
             .iter()
@@ -126,7 +157,12 @@ fn play_never_requires_unity_or_steamvr_and_pico_requires_both_runtimes() {
         ["steam", "vrchat"]
     );
     assert!(plan.prerequisites_ready);
-    let pico = plan_deployment(&intent(vec![DeploymentPurpose::PicoPcvr]), &ready_play()).unwrap();
+    let pico = plan_deployment(
+        &intent(vec![DeploymentPurpose::PicoPcvr]),
+        &ready_play(),
+        None,
+    )
+    .unwrap();
     assert_eq!(pico.steps.len(), 4);
     assert!(pico.steps[2..]
         .iter()
@@ -146,17 +182,22 @@ fn canonical_consent_binds_observations_and_refuses_ambiguity() {
     ]);
     let mut facts = ready_play();
     facts.extend(creator_facts());
-    let original = plan_deployment(&a, &facts).unwrap();
-    assert_eq!(original.digest, plan_deployment(&b, &facts).unwrap().digest);
+    let original = plan_deployment(&a, &facts, Some(test_installer())).unwrap();
+    assert_eq!(
+        original.digest,
+        plan_deployment(&b, &facts, Some(test_installer()))
+            .unwrap()
+            .digest
+    );
     facts[0].location = Some(r"D:\Steam".into());
-    let changed = plan_deployment(&b, &facts).unwrap();
+    let changed = plan_deployment(&b, &facts, Some(test_installer())).unwrap();
     assert_eq!(
         confirm_deployment(&changed, &original.digest),
         Err("vua.deployment.plan_changed")
     );
     facts.push(fact("steam", DeploymentPresence::Verified));
     assert_eq!(
-        plan_deployment(&a, &facts).unwrap_err(),
+        plan_deployment(&a, &facts, Some(test_installer())).unwrap_err(),
         "vua.deployment.ambiguous_observation"
     );
 }
@@ -201,7 +242,7 @@ fn parameter_schema_rejects_extra_commands_and_missing_confirmation() {
 fn a_manual_handoff_is_not_a_ready_environment() {
     let (store, runtime) = store_runtime();
     let adapter = Arc::new(FakeAdapter::new(vec![
-        fact("unity_hub", DeploymentPresence::Missing),
+        fact("unity_cli", DeploymentPresence::Missing),
         fact("unity_editor", DeploymentPresence::Missing),
     ]));
     let service = DeploymentService::new(adapter.clone(), runtime);
@@ -397,4 +438,76 @@ fn recovered_work_is_inspect_required_and_never_resubmitted() {
             .recovery_disposition,
         TaskRecoveryDisposition::InspectRequired
     );
+}
+
+#[test]
+fn cli_deployment_does_not_require_hub_and_bootstrap_does_not_expand_consent() {
+    let (_, runtime) = store_runtime();
+    let mut facts = creator_facts();
+    facts.push(fact("unity_hub", DeploymentPresence::Missing));
+    let adapter = Arc::new(FakeAdapter::new(facts));
+    let service = DeploymentService::new(adapter.clone(), runtime);
+    let plan = service
+        .plan(&intent(vec![DeploymentPurpose::PcAvatar]))
+        .unwrap();
+    assert!(plan.steps.iter().all(|s| s.component != "unity_hub"));
+    let receipt = service
+        .execute(plan.intent, &plan.digest, "without-hub", "corr")
+        .unwrap();
+    assert_eq!(
+        wait(&service.runtime, &receipt.task_id),
+        TaskState::Succeeded
+    );
+
+    let (_, runtime) = store_runtime();
+    let mut facts = creator_facts();
+    facts[0].presence = DeploymentPresence::Missing;
+    let fake = FakeAdapter::new(facts);
+    let mut reviewed = test_installer();
+    reviewed.kind = DeploymentInstallerKind::UnityCliBootstrap;
+    *fake.installer.lock().unwrap() = Some(reviewed);
+    let adapter = Arc::new(fake);
+    let service = DeploymentService::new(adapter.clone(), runtime);
+    let plan = service
+        .plan(&intent(vec![DeploymentPurpose::PcAvatar]))
+        .unwrap();
+    assert_eq!(plan.steps[0].action, DeploymentAction::InstallUnityCli);
+    assert_eq!(plan.steps[1].action, DeploymentAction::ManualInstall);
+    let receipt = service
+        .execute(plan.intent.clone(), &plan.digest, "bootstrap", "corr")
+        .unwrap();
+    assert_eq!(
+        wait(&service.runtime, &receipt.task_id),
+        TaskState::SucceededWithWarnings
+    );
+    assert_eq!(adapter.installs.load(Ordering::SeqCst), 1);
+    let next = service.plan(&plan.intent).unwrap();
+    assert_ne!(plan.digest, next.digest);
+    assert_eq!(next.steps[1].action, DeploymentAction::InstallEditor);
+}
+
+#[test]
+fn installer_changes_invalidate_consent_without_starting_an_install() {
+    for changed in ["hash", "kind", "location"] {
+        let (_, runtime) = store_runtime();
+        let adapter = Arc::new(FakeAdapter::new(creator_facts()));
+        let service = DeploymentService::new(adapter.clone(), runtime);
+        let plan = service
+            .plan(&intent(vec![DeploymentPurpose::PcAvatar]))
+            .unwrap();
+        {
+            let mut identity = adapter.installer.lock().unwrap();
+            let i = identity.as_mut().unwrap();
+            match changed {
+                "hash" => i.file_sha256 = "b".repeat(64),
+                "kind" => i.kind = DeploymentInstallerKind::HubCli,
+                _ => i.location = r"D:\Other Tools\unity.exe".into(),
+            }
+        }
+        let receipt = service
+            .execute(plan.intent, &plan.digest, changed, "corr-drift")
+            .unwrap();
+        assert_eq!(wait(&service.runtime, &receipt.task_id), TaskState::Failed);
+        assert_eq!(adapter.installs.load(Ordering::SeqCst), 0);
+    }
 }

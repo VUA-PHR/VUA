@@ -94,6 +94,8 @@ export function DeploymentPanel({ zone }: { zone: CheckZone }) {
         {s.location !== null ? <code>{s.location}</code> : null}
         {s.action !== "retain" && s.officialUrl !== null ? <Button variant="subtle" disabled={disabled} onClick={() => { void openExternalUrl(s.officialUrl!); }}>{copy.official}</Button> : null}
       </li>)}</ol>
+      {plan.installer !== null ? <p>{copy.installer}{": "}{copy.installerKinds[plan.installer.kind]} ({plan.installer.version})<br /><code>{plan.installer.location}</code></p> : null}
+      {plan.installer?.kind !== "hub_cli" && plan.installer !== null ? <p>{copy.installerHint}</p> : null}
       <p>{copy.consent}</p>
       <Button variant="primary" disabled={disabled || plan.steps.some(s => s.action === "inspect")} onClick={() => { void execute(); }}>{copy.execute}</Button>
     </> : null}

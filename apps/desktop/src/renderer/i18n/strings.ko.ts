@@ -319,6 +319,9 @@ demoTaskTitle: "데모 작업",
   deployment: {
     "title": "목적에 맞는 환경 구성",
     "description": "준비할 환경을 선택합니다. 계획에는 확인된 사전 조건이 표시됩니다. 게임, 장치 및 SDK 프로젝트의 실제 동작은 별도로 검증해야 합니다.",
+    "installer": "설치 도구",
+    "installerHint": "Unity CLI는 실험 단계입니다. 도구를 받은 후 다시 검사하고 Editor를 설치합니다. 로그인과 라이선스 선택은 사용자가 별도로 진행합니다.",
+    "installerKinds": {"unity_cli":"Unity CLI","hub_cli":"기존 Unity Hub CLI","unity_cli_bootstrap":"공식 Unity CLI 다운로드"},
     "purpose": "목적",
     "purposes": {
       "desktop_play": "데스크톱 플레이",
@@ -327,7 +330,7 @@ demoTaskTitle: "데모 작업",
       "quest_avatar": "Quest 아바타 편집"
     },
     "location": "Unity Editor 설치 루트 경로",
-    "locationHint": "자동 설치 경로는 Unity Hub의 현재 설정과 같아야 합니다. VUA는 이 전역 설정을 변경하지 않습니다.",
+    "locationHint": "자동 설치 경로는 Unity CLI에 설정된 Editor 경로와 같아야 합니다. Hub는 선택 사항이며 VUA는 이 공유 설정을 변경하지 않습니다.",
     "plan": "검사 후 계획 만들기",
     "working": "처리 중…",
     "execute": "이 계획을 확인하고 실행",
@@ -337,7 +340,8 @@ demoTaskTitle: "데모 작업",
       "retain": "기존 설치 유지",
       "manual_install": "공식 앱을 통해 설치",
       "inspect": "변경 전에 검사",
-      "install_editor": "Unity Hub를 통해 지정 Editor 설치",
+      "install_editor": "검증된 설치 도구로 지정 Editor 설치",
+      "install_unity_cli": "공식 Unity CLI 다운로드 및 검증",
       "add_android_modules": "필요한 Android 모듈 추가"
     },
     "reasons": {
@@ -374,6 +378,7 @@ demoTaskTitle: "데모 작업",
       "steamvr": "SteamVR",
       "pico_runtime": "PICO Connect / Runtime",
       "unity_hub": "Unity Hub",
+      "unity_cli": "Unity CLI",
       "unity_editor": "Unity Editor",
       "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
     }

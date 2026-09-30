@@ -46,7 +46,7 @@ acceptance and UI human review remain pending; no existing frozen method changes
 
 ## Plan and observed prerequisites
 
-The plan has `schemaVersion`, normalized `intent`, ordered `steps`, `digest` and
+The plan has `schemaVersion`, normalized `intent`, ordered `steps`, nullable `installer`, `digest` and
 `prerequisitesReady`. A step has `component`, `action`, `reason`, nullable `location`, nullable
 `version` and nullable backend-owned `officialUrl`. Returned URLs are from the family's closed
 official-destination list; the renderer rejects arbitrary destinations.
@@ -55,7 +55,7 @@ official-destination list; the renderer rejects arbitrary destinations.
 | --- | --- |
 | Desktop play | Steam, VRChat; no Unity or SteamVR requirement |
 | PICO PCVR | Steam, VRChat, SteamVR, PICO Connect |
-| PC Avatar editing | Unity Hub, exact global Unity 2022.3.22f1 |
+| PC Avatar editing | Supported standalone Unity CLI (or existing supported Hub fallback), exact global Unity 2022.3.22f1 |
 | Quest Avatar editing | Same creator prerequisites plus Android support, SDK/NDK and OpenJDK |
 
 Observations distinguish `verified`, `missing`, `unsuitable`, `detection_failed`. For play tools,
@@ -63,17 +63,24 @@ verified means the entry-point files were observed, not launched. Empty director
 unsuitable. Editor verification reads the executable version resource, not a version-shaped
 directory name. Android detection requires Editor identity and four expected module files;
 it does not replace an actual Android build test. Other supported Editor locations are not
-silently moved or overwritten: this slice inspects the explicitly chosen Hub root.
+silently moved or overwritten: this slice inspects the explicitly chosen Editor root.
 
-Actions are `retain`, `manual_install`, `inspect`, `install_editor`, `add_android_modules`.
+Actions are `retain`, `manual_install`, `inspect`, `install_unity_cli`, `install_editor`,
+`add_android_modules`.
 Verified facts are retained. Unknown/failed/unsuitable facts require inspection. Missing
-components use official handoffs unless an exact supported Unity Hub installation path and
-trusted CLI permit one of the two automatic actions. `prerequisitesReady` is true only when
+components use official handoffs unless a trusted supported installer and matching Editor root
+permit automatic installation. Missing CLI may be acquired from a reviewed, fixed official artifact.
+Its acquisition plan never includes automatic Editor/module installation: prepare fresh consent
+after the tool is verified. The [standalone deployment direction](../architecture/unity-deployment.md)
+owns artifact/source, path semantics and account/license handoff. `prerequisitesReady` is true only when
 all steps retain verified facts. Accounts, SDK/MA package resolution and device behavior are
 not inferred from that boolean.
 
 The digest is SHA-256 over compact serde JSON serialization of the normalized intent and
-ordered steps. Purpose order is normalized; timestamps are excluded. No consumer computes
+ordered steps and nullable installer identity. `installer` has `kind` (`unity_cli`, `hub_cli`,
+`unity_cli_bootstrap`), `location`, `version`, `fileSha256` and `editorRoot`. Bootstrap identifies a
+reviewed artifact to acquire; other kinds identify an observed executable. The root equals intent;
+the file digest is 64 lowercase hexadecimal characters. Purpose order is normalized; timestamps are excluded. No consumer computes
 consent independently: send the returned digest unchanged. Missing/duplicate contradictory
 facts do not authorize installation. Before writes, reobserve and compare the entire digest;
 changed consent fails with `vua.deployment.plan_changed`.
@@ -98,15 +105,16 @@ automatic steps include `component` in the error params. Progress and final resu
 the current panel consumes live progress and authoritative task snapshots. Reopening a page may
 miss earlier live progress; the task list and final state remain authoritative, not guessed.
 
-Automatic actions reverify Hub trust/capability at the mutation boundary. Trust uses Windows
-Authenticode plus an exact allowlisted Unity signer common name, without a shell. Certificate
-retrieval is cache-only; unavailable cached trust data refuses automation instead of blocking a
-plan on certificate-network access. Commands use
-fixed argument arrays, stripped credential environment variables, bounded output and a two-hour
-installer timeout. VUA never changes Hub's global installation path or the active VR runtime.
-Unsupported CLI/trust/path observations fall back to the official UI; they are not permission
-to download or execute another installer. [Hub CLI is deprecated](https://docs.unity.com/en-us/hub/hub-cli-reference);
-new Unity CLI support is a separate adapter increment, not assumed equivalent.
+Automatic actions reverify installer trust, binary digest, capabilities and destination at the
+mutation boundary. Trust uses Windows Authenticode plus an exact allowlisted Unity signer common
+name, without a shell. Certificate retrieval is cache-only; unavailable trust data refuses
+automation. CLI acquisition verifies pinned size/hash/signature and publishes into an absent managed
+slot without replacement. It makes no PATH/registry writes and refuses redirected ancestors.
+Editor commands use fixed argument arrays, stripped service credentials, bounded output and a
+two-hour timeout. VUA never changes the shared Unity installation root or active VR runtime.
+Unsupported observations require inspection or an explicit official-tool handoff, never silent
+upgrade, agreement acceptance or authorization. Hub is optional; installer kind selects the exact
+command family.
 
 Cancellation is cooperative before/after an installer boundary, not forced interruption of a
 shared application or OS rollback. Timeout/Provider interruption can leave partial files;
@@ -124,7 +132,7 @@ prerequisites and returns `{outcome:"prerequisites_verified", prerequisitesReady
 functionalVerification:"not_run"}`. A successful exit code alone never produces that result.
 
 Errors use the existing application error envelope: invalid input is `validation`, stale/busy
-or ambiguous observations are `conflict`, missing/unsupported Hub is `dependency`, and installer
+or ambiguous observations are `conflict`, unavailable installer/platform is `dependency`, and installer
 or verification failures are `external_failure`. UI keeps errors visible and offers reinspection;
 there is no universal resume, uninstall or downgrade command in this family.
 
@@ -145,11 +153,20 @@ and replay returned the same task. Raw observations remain local under
 `_local_real_machine/n1-2026-09-30/`. This exercised presence/plan/task handoff, not installation,
 game launch, hardware behavior or cross-Windows compatibility.
 
-N1 remains open: actual Hub/Editor installation and Android module addition, disposable Unity
+A subsequent standalone-CLI run on the same date actually acquired and verified the fixed official
+CLI, then required fresh consent before Editor installation. The fresh Editor task failed with
+`vua.deployment.install_failed`; readiness remained false. Official CLI error logs reported a
+checksum mismatch for the exact target. Validation was retained, with no forced install or
+version substitution. This is distinct from the earlier manual
+handoff smoke; details and local evidence are linked from the [deployment direction](../architecture/unity-deployment.md).
+
+N1 remains open: actual Editor installation and licensing and Android module addition, disposable Unity
 project launch with real SDK/MA, play/device checks, account guidance, software update/removal,
 configuration backup/repair and human UI acceptance are not completed by these tests. Public
 evidence must distinguish synthetic coverage from dated real-machine runs kept locally.
 
 ## Document changelog
+
+- 0.1 Candidate update (2026-09-30): add fixed official CLI acquisition, Hub-independent installation authority and consent-bound executable identity; retain existing frozen methods.
 
 - 0.1 (2026-09-30): introduce the additive executable N1 planning/confirmation slice and its safety/verification limits.

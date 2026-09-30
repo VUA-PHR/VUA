@@ -69,7 +69,7 @@ const appError = (code: string) => ({
 
 describe("N1 deployment consumer", () => {
   const intent = { purposes: ["pc_avatar"] as const, editorRoot: "C:\\VUA Test\\Editors" };
-  const plan = { schemaVersion: "vua.environment-deployment/v0.1" as const, intent, digest: "a".repeat(64), prerequisitesReady: false,
+  const plan = { schemaVersion: "vua.environment-deployment/v0.1" as const, intent, digest: "a".repeat(64), prerequisitesReady: false, installer: null,
     steps: ["unity_hub", "unity_editor"].map(component => ({ component, action: "manual_install" as const, reason: "missing" as const, location: null, version: null, officialUrl: "https://unity.com/download" })) };
   it("requires both served deployment capabilities rather than inferring them from inspection", async () => {
     for (const available of [true, false]) {

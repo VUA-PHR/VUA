@@ -108,6 +108,7 @@ pub enum DeploymentAction {
     Inspect,
     InstallEditor,
     AddAndroidModules,
+    InstallUnityCli,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -131,22 +132,47 @@ pub struct DeploymentPlan {
     pub digest: String,
     /// Prerequisites observed, not a real project/device/SDK functional acceptance.
     pub prerequisites_ready: bool,
+    /// Identity of the installation authority observed with this plan. Binds consent to
+    /// the exact binary, command family and destination, including between component steps.
+    pub installer: Option<DeploymentInstaller>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct DeploymentInstaller {
+    pub kind: DeploymentInstallerKind,
+    pub location: String,
+    pub version: String,
+    pub file_sha256: String,
+    pub editor_root: String,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeploymentInstallerKind {
+    UnityCli,
+    HubCli,
+    /// Reviewed official artifact to acquire, not a claim that it is already installed.
+    UnityCliBootstrap,
 }
 
 /// Infrastructure implements these facts/actions in project-manager. New installers must
 /// not bypass this boundary or change the plan's meanings in React/Electron handlers.
 pub trait DeploymentAdapter: Send + Sync {
     fn observe(&self, intent: &DeploymentIntent) -> Vec<DeploymentObservation>;
+    fn installer(&self, intent: &DeploymentIntent) -> Option<DeploymentInstaller>;
     fn install(
         &self,
         intent: &DeploymentIntent,
         action: DeploymentAction,
+        confirmed: &DeploymentInstaller,
     ) -> Result<(), &'static str>;
 }
 
 pub fn plan_deployment(
     intent: &DeploymentIntent,
     facts: &[DeploymentObservation],
+    installer: Option<DeploymentInstaller>,
 ) -> Result<DeploymentPlan, &'static str> {
     intent.validate()?;
     let play = intent.purposes.iter().any(|p| {
@@ -163,6 +189,19 @@ pub fn plan_deployment(
         )
     });
     let quest = intent.purposes.contains(&DeploymentPurpose::QuestAvatar);
+    let installer = if create { installer } else { None };
+    if installer.as_ref().is_some_and(|i| {
+        i.location.is_empty()
+            || i.version.is_empty()
+            || i.editor_root != intent.editor_root
+            || i.file_sha256.len() != 64
+            || !i
+                .file_sha256
+                .bytes()
+                .all(|b| b.is_ascii_digit() || matches!(b, b'a'..=b'f'))
+    }) {
+        return Err("vua.deployment.invalid_installer");
+    }
     let mut required = Vec::new();
     if play {
         required.extend([
@@ -180,8 +219,19 @@ pub fn plan_deployment(
         ]);
     }
     if create {
+        let installer_component = if installer
+            .as_ref()
+            .is_some_and(|i| i.kind == DeploymentInstallerKind::HubCli)
+        {
+            ("unity_hub", "https://unity.com/download")
+        } else {
+            (
+                "unity_cli",
+                "https://docs.unity.com/en-us/unity-cli/use-unity-cli",
+            )
+        };
         required.extend([
-            ("unity_hub", "https://unity.com/download"),
+            installer_component,
             (
                 "unity_editor",
                 "https://unity.com/releases/editor/whats-new/2022.3.22f1",
@@ -191,7 +241,7 @@ pub fn plan_deployment(
     if quest {
         required.push((
             "android_modules",
-            "https://docs.unity.com/en-us/hub/add-modules",
+            "https://docs.unity.com/en-us/unity-cli/use-unity-cli",
         ));
     }
     let mut steps = Vec::new();
@@ -201,19 +251,27 @@ pub fn plan_deployment(
         }
         let fact = facts.iter().find(|f| f.component == component);
         let reason = fact.map_or(DeploymentPresence::DetectionFailed, |f| f.presence);
-        let hub_ready = facts.iter().any(|f| {
-            f.component == "hub_install_api" && f.presence == DeploymentPresence::Verified
-        });
+        let installer_ready = installer
+            .as_ref()
+            .is_some_and(|i| i.kind != DeploymentInstallerKind::UnityCliBootstrap);
         let action = match reason {
             DeploymentPresence::Verified => DeploymentAction::Retain,
             DeploymentPresence::DetectionFailed | DeploymentPresence::Unsuitable => {
                 DeploymentAction::Inspect
             }
-            DeploymentPresence::Missing if component == "unity_editor" && hub_ready => {
+            DeploymentPresence::Missing if component == "unity_editor" && installer_ready => {
                 DeploymentAction::InstallEditor
             }
-            DeploymentPresence::Missing if component == "android_modules" && hub_ready => {
+            DeploymentPresence::Missing if component == "android_modules" && installer_ready => {
                 DeploymentAction::AddAndroidModules
+            }
+            DeploymentPresence::Missing
+                if component == "unity_cli"
+                    && installer
+                        .as_ref()
+                        .is_some_and(|i| i.kind == DeploymentInstallerKind::UnityCliBootstrap) =>
+            {
+                DeploymentAction::InstallUnityCli
             }
             DeploymentPresence::Missing => DeploymentAction::ManualInstall,
         };
@@ -221,8 +279,14 @@ pub fn plan_deployment(
             component: component.into(),
             action,
             reason,
-            location: fact.and_then(|f| f.location.clone()),
-            version: fact.and_then(|f| f.version.clone()),
+            location: fact.and_then(|f| f.location.clone()).or_else(|| {
+                (action == DeploymentAction::InstallUnityCli)
+                    .then(|| installer.as_ref().unwrap().location.clone())
+            }),
+            version: fact.and_then(|f| f.version.clone()).or_else(|| {
+                (action == DeploymentAction::InstallUnityCli)
+                    .then(|| installer.as_ref().unwrap().version.clone())
+            }),
             official_url: Some(url.into()),
         });
     }
@@ -230,8 +294,8 @@ pub fn plan_deployment(
     // not make an unchanged plan stale. Canonical purpose ordering avoids incidental drift.
     let mut normalized = intent.clone();
     normalized.purposes.sort();
-    let bytes =
-        serde_json::to_vec(&(&normalized, &steps)).expect("plain deployment values serialize");
+    let bytes = serde_json::to_vec(&(&normalized, &steps, &installer))
+        .expect("plain deployment values serialize");
     let digest = Sha256::digest(bytes)
         .iter()
         .map(|b| format!("{b:02x}"))
@@ -242,6 +306,7 @@ pub fn plan_deployment(
         prerequisites_ready: steps.iter().all(|s| s.action == DeploymentAction::Retain),
         steps,
         digest,
+        installer,
     })
 }
 
@@ -293,7 +358,11 @@ impl DeploymentService {
 
     pub fn plan(&self, intent: &DeploymentIntent) -> Result<DeploymentPlan, &'static str> {
         intent.validate()?;
-        plan_deployment(intent, &self.adapter.observe(intent))
+        plan_deployment(
+            intent,
+            &self.adapter.observe(intent),
+            self.adapter.installer(intent),
+        )
     }
 
     pub fn execute(
@@ -329,7 +398,7 @@ impl DeploymentService {
                     return Err(deployment_error("vua.deployment.busy", &correlation));
                 }
                 let _lease = DeploymentLease(active);
-                let fresh = plan_deployment(&intent, &adapter.observe(&intent)).map_err(|e| deployment_error(e, &correlation))?;
+                let fresh = plan_deployment(&intent, &adapter.observe(&intent), adapter.installer(&intent)).map_err(|e| deployment_error(e, &correlation))?;
                 confirm_deployment(&fresh, &confirmed).map_err(|e| deployment_error(e, &correlation))?;
                 for (index, step) in fresh.steps.iter().enumerate() {
                     if ctx.check_cancel() { return Ok(TaskExit::Cancelled); }
@@ -344,7 +413,7 @@ impl DeploymentService {
                                 "operation": "environment.executeDeployment", "outcome": "manual_required",
                                 "nextStep": step, "prerequisitesReady": false, "functionalVerification": "not_run"})));
                         },
-                        action => adapter.install(&intent, action).map_err(|e| deployment_error(e, &correlation)
+                        action => adapter.install(&intent, action, fresh.installer.as_ref().ok_or_else(|| deployment_error("vua.deployment.installer_unavailable", &correlation))?).map_err(|e| deployment_error(e, &correlation)
                             .with_param("component", crate::ParamValue::Text(step.component.clone())))?,
                     }
                     // Cancellation arriving during an installer takes effect only after the
@@ -352,7 +421,7 @@ impl DeploymentService {
                     if ctx.check_cancel() { return Ok(TaskExit::Cancelled); }
                     ctx.emit_progress(progress(step, index + 1, fresh.steps.len(), "verified"));
                 }
-                let after = plan_deployment(&intent, &adapter.observe(&intent)).map_err(|e| deployment_error(e, &correlation))?;
+                let after = plan_deployment(&intent, &adapter.observe(&intent), adapter.installer(&intent)).map_err(|e| deployment_error(e, &correlation))?;
                 if !after.prerequisites_ready { return Err(deployment_error("vua.deployment.verification_failed", &correlation)); }
                 Ok(TaskExit::Done(serde_json::json!({"schemaVersion": DEPLOYMENT_SCHEMA,
                     "operation": "environment.executeDeployment", "outcome": "prerequisites_verified",
@@ -384,11 +453,13 @@ fn deployment_error(code: &str, correlation: &str) -> AppErrorV1 {
         "vua.deployment.process_failed"
             | "vua.deployment.install_failed"
             | "vua.deployment.verification_failed"
+            | "vua.deployment.cli_acquisition_failed"
+            | "vua.deployment.cli_integrity_failed"
     ) {
         ErrorCategory::ExternalFailure
     } else if matches!(
         code,
-        "vua.deployment.hub_missing" | "vua.deployment.hub_unsupported"
+        "vua.deployment.installer_unavailable" | "vua.deployment.unsupported_platform"
     ) {
         ErrorCategory::Dependency
     } else {

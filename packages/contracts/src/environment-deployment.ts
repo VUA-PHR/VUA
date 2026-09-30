@@ -10,7 +10,7 @@ export interface DeploymentIntent {
 export type DeploymentPresence = "verified" | "missing" | "unsuitable" | "detection_failed";
 export interface DeploymentStep {
   readonly component: string;
-  readonly action: "retain" | "manual_install" | "inspect" | "install_editor" | "add_android_modules";
+  readonly action: "retain" | "manual_install" | "inspect" | "install_editor" | "add_android_modules" | "install_unity_cli";
   readonly reason: DeploymentPresence;
   readonly location: string | null;
   readonly version: string | null;
@@ -22,6 +22,14 @@ export interface DeploymentPlan {
   readonly steps: readonly DeploymentStep[];
   readonly digest: string;
   readonly prerequisitesReady: boolean;
+  readonly installer: DeploymentInstaller | null;
+}
+export interface DeploymentInstaller {
+  readonly kind: "unity_cli" | "hub_cli" | "unity_cli_bootstrap";
+  readonly location: string;
+  readonly version: string;
+  readonly fileSha256: string;
+  readonly editorRoot: string;
 }
 export interface DeploymentPlanResult {
   readonly deploymentPlan: DeploymentPlan;
@@ -77,16 +85,27 @@ export function isDeploymentAccepted(v: unknown): v is DeploymentAccepted {
 export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
   if (!record(v) || !keys(v, ["deploymentPlan"]) || !record(v.deploymentPlan)) return false;
   const p = v.deploymentPlan;
-  return keys(p, ["schemaVersion", "intent", "steps", "digest", "prerequisitesReady"])
+  return keys(p, ["schemaVersion", "intent", "steps", "digest", "prerequisitesReady", "installer"])
     && p.schemaVersion === DEPLOYMENT_SCHEMA && isDeploymentIntent(p.intent)
     && typeof p.digest === "string" && /^[0-9a-f]{64}$/.test(p.digest)
+    && (p.installer === null || (record(p.installer) && keys(p.installer, ["kind", "location", "version", "fileSha256", "editorRoot"])
+      && ["unity_cli", "hub_cli", "unity_cli_bootstrap"].includes(String(p.installer.kind)) && typeof p.installer.location === "string" && p.installer.location.length > 0
+      && typeof p.installer.version === "string" && p.installer.version.length > 0
+      && typeof p.installer.fileSha256 === "string" && /^[0-9a-f]{64}$/.test(p.installer.fileSha256)
+      && record(p.intent) && p.installer.editorRoot === p.intent.editorRoot))
     && typeof p.prerequisitesReady === "boolean" && Array.isArray(p.steps) && p.steps.length >= 2 && p.steps.length <= 7
     && new Set(p.steps.map(s => record(s) ? s.component : null)).size === p.steps.length
     && p.prerequisitesReady === p.steps.every(s => record(s) && s.action === "retain")
     && p.steps.every(s => record(s) && keys(s, ["component", "action", "reason", "location", "version", "officialUrl"])
-      && typeof s.component === "string" && ["steam", "vrchat", "steamvr", "pico_runtime", "unity_hub", "unity_editor", "android_modules"].includes(s.component)
-      && typeof s.action === "string" && ["retain", "manual_install", "inspect", "install_editor", "add_android_modules"].includes(s.action)
+      && typeof s.component === "string" && ["steam", "vrchat", "steamvr", "pico_runtime", "unity_hub", "unity_cli", "unity_editor", "android_modules"].includes(s.component)
+      && typeof s.action === "string" && ["retain", "manual_install", "inspect", "install_editor", "add_android_modules", "install_unity_cli"].includes(s.action)
       && typeof s.reason === "string" && ["verified", "missing", "unsuitable", "detection_failed"].includes(s.reason)
+      && ((s.action === "retain") === (s.reason === "verified"))
+      && (s.action !== "install_unity_cli" || (s.component === "unity_cli" && s.reason === "missing"
+        && record(p.installer) && p.installer.kind === "unity_cli_bootstrap"))
+      && (!["install_editor", "add_android_modules"].includes(s.action) || (s.reason === "missing"
+        && record(p.installer) && ["unity_cli", "hub_cli"].includes(String(p.installer.kind))
+        && s.component === (s.action === "install_editor" ? "unity_editor" : "android_modules")))
       && (s.location === null || typeof s.location === "string") && (s.version === null || typeof s.version === "string")
       && (s.officialUrl === null || (typeof s.officialUrl === "string" && OFFICIAL_DESTINATIONS.includes(s.officialUrl))));
 }
@@ -95,6 +114,6 @@ export function isDeploymentPlanResult(v: unknown): v is DeploymentPlanResult {
 const OFFICIAL_DESTINATIONS = [
   "https://store.steampowered.com/about/", "https://store.steampowered.com/app/438100/",
   "https://store.steampowered.com/app/250820/", "https://www.picoxr.com/software/pico-connect",
-  "https://unity.com/download", "https://unity.com/releases/editor/whats-new/2022.3.22f1",
+  "https://docs.unity.com/en-us/unity-cli/use-unity-cli", "https://unity.com/download", "https://unity.com/releases/editor/whats-new/2022.3.22f1",
   "https://docs.unity.com/en-us/hub/add-modules",
 ];

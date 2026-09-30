@@ -13,6 +13,8 @@ path = "src/lib.rs"
 reqwest = { version = "0.13.4", default-features = false, features = ["stream", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# N1: bind user confirmation to installer bytes; already used by the core planner.
+sha2 = "0.11.0"
 # A4 repo subscription face (proposal 026): url parsing for
 # `add_remote_repo` — the vrc-get-vpm Settings API takes a parsed
 # `url::Url`. Same major ("2") as the library's own dependency; owner

@@ -1,0 +1,416 @@
+//! Installation authority for N1. Probe the standalone Unity CLI before legacy Hub CLI,
+//! without PATH lookup, global configuration edits, authentication or automatic upgrades.
+//! Each command has fixed semantics; help output is capability evidence, never completion.
+
+use sha2::{Digest, Sha256};
+use std::{
+    io::Read,
+    path::{Path, PathBuf},
+    sync::Arc,
+    time::Duration,
+};
+use vua_orchestrator::deployment::{
+    DeploymentAction, DeploymentInstaller, DeploymentInstallerKind, DeploymentObservation,
+    DeploymentPresence,
+};
+use vua_orchestrator::{ProcessOutcome, ProcessRunner, ProcessSpec};
+
+pub(super) const UNITY_VERSION: &str = vua_orchestrator::PRODUCTION_TARGET;
+const UNITY_CHANGESET: &str = "887be4894c44";
+const MAX_BINARY_BYTES: u64 = 256 * 1024 * 1024;
+
+/// Official self-installer locations. UNITY_CLI_HOME is a process-local, user-configured
+/// official override; neither this value nor executable paths are accepted from the UI.
+pub(super) fn cli_candidates() -> Vec<PathBuf> {
+    let mut candidates = Vec::new();
+    if let Some(root) = std::env::var_os("UNITY_CLI_HOME") {
+        candidates.push(PathBuf::from(root).join("bin/unity.exe"));
+    }
+    if let Some(root) = std::env::var_os("LOCALAPPDATA") {
+        candidates.push(PathBuf::from(root).join("Unity/bin/unity.exe"));
+    }
+    candidates
+}
+
+pub(super) struct UnityInstallProbe {
+    pub runner: Arc<dyn ProcessRunner>,
+    pub cli_candidates: Vec<PathBuf>,
+}
+
+impl UnityInstallProbe {
+    pub fn cli_observation(&self, root: &str) -> DeploymentObservation {
+        let supported = self
+            .cli_candidates
+            .iter()
+            .find_map(|exe| self.probe(exe, DeploymentInstallerKind::UnityCli, root));
+        let candidate = self.cli_candidates.iter().find(|exe| exe.exists());
+        DeploymentObservation {
+            component: "unity_cli".into(),
+            presence: if supported.is_some() {
+                DeploymentPresence::Verified
+            } else if candidate.is_some() {
+                DeploymentPresence::Unsuitable
+            } else {
+                DeploymentPresence::Missing
+            },
+            location: supported
+                .as_ref()
+                .map(|i| i.location.clone())
+                .or_else(|| candidate.map(|p| p.to_string_lossy().into())),
+            version: supported.map(|i| i.version),
+        }
+    }
+    /// Signed executable discovery is independent of Hub presence. Licensing remains a
+    /// separate user handoff; an installed CLI cannot fabricate an active license.
+    pub fn discover(&self, hub: Option<&Path>, root: &str) -> Option<DeploymentInstaller> {
+        if !safe_install_root(Path::new(root)) {
+            return None;
+        }
+        self.cli_candidates
+            .iter()
+            .find_map(|exe| self.probe(exe, DeploymentInstallerKind::UnityCli, root))
+            .or_else(|| hub.and_then(|exe| self.probe(exe, DeploymentInstallerKind::HubCli, root)))
+    }
+
+    fn probe(
+        &self,
+        exe: &Path,
+        kind: DeploymentInstallerKind,
+        root: &str,
+    ) -> Option<DeploymentInstaller> {
+        if !safe_install_root(exe.parent()?)
+            || !crate::deployment_trust::trusted_unity_executable(exe)
+        {
+            return None;
+        }
+        let version = match kind {
+            DeploymentInstallerKind::UnityCli => {
+                let result = self.run(exe, &["--version"], 30).ok()?;
+                let value = result.stdout.trim();
+                if !result.success()
+                    || result.truncated
+                    || !plain_version(value)
+                    || value != crate::unity_cli_bootstrap::CLI_VERSION
+                {
+                    return None;
+                }
+                value.to_owned()
+            }
+            // Hub's PE identity is display evidence; capability is checked below.
+            DeploymentInstallerKind::HubCli => "legacy-hub-cli".to_owned(),
+            DeploymentInstallerKind::UnityCliBootstrap => return None,
+        };
+        let help_args: &[&str] = match kind {
+            DeploymentInstallerKind::UnityCli => &["install", "--help"],
+            DeploymentInstallerKind::HubCli => &["--", "--headless", "help"],
+            DeploymentInstallerKind::UnityCliBootstrap => return None,
+        };
+        let help = self.run(exe, help_args, 30).ok()?;
+        let modules = if kind == DeploymentInstallerKind::UnityCli {
+            Some(self.run(exe, &["install-modules", "--help"], 30).ok()?)
+        } else {
+            None
+        };
+        if !supported_help(kind, &help, modules.as_ref()) {
+            return None;
+        }
+        let path_args: &[&str] = match kind {
+            DeploymentInstallerKind::UnityCli => &["install-path", "--get"],
+            DeploymentInstallerKind::HubCli => &["--", "--headless", "install-path", "--get"],
+            DeploymentInstallerKind::UnityCliBootstrap => return None,
+        };
+        let path = self.run(exe, path_args, 30).ok()?;
+        if !path.success() || path.truncated || !same_windows_path(path.stdout.trim(), root) {
+            return None;
+        }
+        Some(DeploymentInstaller {
+            kind,
+            location: exe.to_str()?.to_owned(),
+            version,
+            file_sha256: binary_digest(exe)?,
+            editor_root: root.to_owned(),
+        })
+    }
+
+    /// Mutation uses the same binary and command family as the reviewed plan. Changed
+    /// bytes, trust, capabilities or destination require fresh consent, even between steps.
+    pub fn install(
+        &self,
+        action: DeploymentAction,
+        confirmed: &DeploymentInstaller,
+    ) -> Result<(), &'static str> {
+        let exe = Path::new(&confirmed.location);
+        if self
+            .probe(exe, confirmed.kind, &confirmed.editor_root)
+            .as_ref()
+            != Some(confirmed)
+        {
+            return Err("vua.deployment.plan_changed");
+        }
+        let args = install_args(confirmed.kind, action)?;
+        let outcome = self.run(exe, &args, 7200)?;
+        if !outcome.success() {
+            return Err("vua.deployment.install_failed");
+        }
+        // The caller must verify Editor identity/module files after success; an exit code
+        // is not readiness. Timeout may leave partial files; no implicit OS rollback.
+        Ok(())
+    }
+
+    fn run(&self, exe: &Path, args: &[&str], seconds: u64) -> Result<ProcessOutcome, &'static str> {
+        let mut spec = ProcessSpec {
+            executable: exe.into(),
+            args: args.iter().map(|s| (*s).into()).collect(),
+            timeout: Duration::from_secs(seconds),
+            output_limit: 64 * 1024,
+            ..ProcessSpec::default()
+        };
+        // No application-service credentials or output-format overrides flow to the CLI.
+        // User-owned Hub/CLI browser sessions stay inside Unity's own storage.
+        spec.removals.extend(
+            [
+                "UNITY_SERVICE_ACCOUNT_ID",
+                "UNITY_SERVICE_ACCOUNT_SECRET",
+                "UNITY_AUTH_TOKEN",
+                "UNITY_FORMAT",
+            ]
+            .map(str::to_owned),
+        );
+        spec.sets.insert("UNITY_NO_CLOUD".into(), "1".into());
+        spec.sets.insert("UNITY_NO_PAGER".into(), "1".into());
+        spec.sets.insert("UNITY_NO_UPDATE_CHECK".into(), "1".into());
+        // Prompts/EULAs are not auto-accepted. Modules requiring consent fail with a
+        // manual official-CLI path; captured vendor output never enters task/user logs.
+        spec.sets.insert("UNITY_NON_INTERACTIVE".into(), "1".into());
+        self.runner
+            .run(&spec)
+            .map_err(|_| "vua.deployment.process_failed")
+    }
+}
+
+fn plain_version(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 64
+        && value.starts_with(|c: char| c.is_ascii_digit())
+        && value
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || matches!(c, b'.' | b'-' | b'+'))
+}
+
+fn supported_help(
+    kind: DeploymentInstallerKind,
+    help: &ProcessOutcome,
+    modules: Option<&ProcessOutcome>,
+) -> bool {
+    if !help.success() || help.truncated {
+        return false;
+    }
+    match kind {
+        DeploymentInstallerKind::HubCli => {
+            help.stdout.contains("install-modules") && help.stdout.contains("install-path")
+        }
+        DeploymentInstallerKind::UnityCli => {
+            help.stdout.contains("Usage: unity install")
+                && help.stdout.contains("--changeset")
+                && modules.is_some_and(|m| {
+                    m.success()
+                        && !m.truncated
+                        && m.stdout.contains("Usage: unity install-modules")
+                        && m.stdout.contains("--editor-version")
+                        && m.stdout.contains("--module")
+                })
+        }
+        DeploymentInstallerKind::UnityCliBootstrap => false,
+    }
+}
+
+fn binary_digest(exe: &Path) -> Option<String> {
+    let mut file = std::fs::File::open(exe).ok()?;
+    let size = file.metadata().ok()?.len();
+    if size == 0 || size > MAX_BINARY_BYTES {
+        return None;
+    }
+    let mut digest = Sha256::new();
+    let mut buffer = [0; 64 * 1024];
+    let mut total = 0u64;
+    loop {
+        let count = file.read(&mut buffer).ok()?;
+        if count == 0 {
+            break;
+        }
+        total += count as u64;
+        if total > MAX_BINARY_BYTES {
+            return None;
+        }
+        digest.update(&buffer[..count]);
+    }
+    if total != size {
+        return None;
+    }
+    Some(
+        digest
+            .finalize()
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect(),
+    )
+}
+
+/// Closed vendor commands. Never use latest/LTS aliases, service auth, --force, global
+/// install-path writes or project/cloud commands. Components are added explicitly.
+fn install_args(
+    kind: DeploymentInstallerKind,
+    action: DeploymentAction,
+) -> Result<Vec<&'static str>, &'static str> {
+    if kind == DeploymentInstallerKind::UnityCliBootstrap {
+        return Err("vua.deployment.action_refused");
+    }
+    let prefix = if kind == DeploymentInstallerKind::HubCli {
+        vec!["--", "--headless"]
+    } else {
+        vec![]
+    };
+    let mut args = prefix;
+    match action {
+        DeploymentAction::InstallEditor => {
+            args.push("install");
+            if kind == DeploymentInstallerKind::HubCli {
+                args.push("--version");
+            }
+            args.extend([UNITY_VERSION, "--changeset", UNITY_CHANGESET]);
+        }
+        DeploymentAction::AddAndroidModules => {
+            args.extend([
+                "install-modules",
+                if kind == DeploymentInstallerKind::HubCli {
+                    "--version"
+                } else {
+                    "--editor-version"
+                },
+                UNITY_VERSION,
+                "--module",
+                "android",
+                "android-sdk-ndk-tools",
+                "android-open-jdk",
+            ]);
+        }
+        _ => return Err("vua.deployment.action_refused"),
+    }
+    if kind == DeploymentInstallerKind::HubCli {
+        args.push("--errors");
+    }
+    Ok(args)
+}
+
+pub(super) fn same_windows_path(a: &str, b: &str) -> bool {
+    a.replace('/', "\\")
+        .trim_end_matches('\\')
+        .eq_ignore_ascii_case(b.replace('/', "\\").trim_end_matches('\\'))
+}
+
+/// Refuse redirected/unreadable ancestors before both probes and installation. This is
+/// accidental-redirection protection, not an OS transaction against hostile file replacement.
+pub(super) fn safe_install_root(root: &Path) -> bool {
+    if !cfg!(windows) || !root.is_absolute() {
+        return false;
+    }
+    for ancestor in root.ancestors() {
+        match std::fs::symlink_metadata(ancestor) {
+            Ok(meta) => {
+                #[cfg(windows)]
+                {
+                    use std::os::windows::fs::MetadataExt;
+                    if meta.file_attributes() & 0x400 != 0 {
+                        return false;
+                    }
+                }
+                if !meta.is_dir() || meta.file_type().is_symlink() {
+                    return false;
+                }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+            Err(_) => return false,
+        }
+    }
+    true
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    fn result(stdout: &str) -> ProcessOutcome {
+        ProcessOutcome {
+            exit_code: Some(0),
+            timed_out: false,
+            cancelled: false,
+            process_tree_clean: true,
+            stdout: stdout.into(),
+            stderr: String::new(),
+            truncated: false,
+        }
+    }
+    #[test]
+    fn help_must_describe_the_requested_command_not_a_successful_unknown_command() {
+        let install = result("Usage: unity install [version] --changeset");
+        let modules = result("Usage: unity install-modules --editor-version --module");
+        assert!(supported_help(
+            DeploymentInstallerKind::UnityCli,
+            &install,
+            Some(&modules)
+        ));
+        assert!(!supported_help(
+            DeploymentInstallerKind::UnityCli,
+            &result("Usage: unity [command] install-modules"),
+            Some(&modules)
+        ));
+        assert!(!supported_help(
+            DeploymentInstallerKind::UnityCli,
+            &install,
+            Some(&result("Usage: unity [command]"))
+        ));
+        let mut truncated = modules.clone();
+        truncated.truncated = true;
+        assert!(!supported_help(
+            DeploymentInstallerKind::UnityCli,
+            &install,
+            Some(&truncated)
+        ));
+    }
+    #[test]
+    fn command_families_cannot_mix_or_select_a_floating_editor() {
+        for kind in [
+            DeploymentInstallerKind::UnityCli,
+            DeploymentInstallerKind::HubCli,
+        ] {
+            let install = install_args(kind, DeploymentAction::InstallEditor).unwrap();
+            assert!(install.contains(&UNITY_VERSION) && install.contains(&UNITY_CHANGESET));
+            assert_eq!(
+                install.contains(&"--headless"),
+                kind == DeploymentInstallerKind::HubCli
+            );
+            assert_eq!(
+                install.contains(&"--version"),
+                kind == DeploymentInstallerKind::HubCli
+            );
+            let modules = install_args(kind, DeploymentAction::AddAndroidModules).unwrap();
+            assert!(
+                modules.contains(&"android-sdk-ndk-tools") && modules.contains(&"android-open-jdk")
+            );
+            for action in [
+                DeploymentAction::Retain,
+                DeploymentAction::Inspect,
+                DeploymentAction::ManualInstall,
+            ] {
+                assert!(install_args(kind, action).is_err());
+            }
+            assert!(!install.contains(&"--force") && !install.contains(&"lts"));
+        }
+    }
+    #[test]
+    fn path_output_and_version_do_not_accept_extra_diagnostic_lines() {
+        assert!(same_windows_path(r"c:/Editors", r"C:\Editors"));
+        assert!(!same_windows_path("notice\nC:\\Editors", r"C:\Editors"));
+        assert!(plain_version("0.1.0-beta.3"));
+        assert!(!plain_version("0.1.0\nlogged in as someone"));
+    }
+}

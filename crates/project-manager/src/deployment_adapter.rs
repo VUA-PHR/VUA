@@ -1,37 +1,42 @@
 //! N1 Windows installation adapter. Vendor executable discovery and command syntax live here.
 //!
-//! Hub owns downloads, installation and licensing. VUA never edits Hub's global install path,
+//! Unity's CLI owns Editor downloads, installation and licensing. VUA never edits its global install path,
 //! changes the VR runtime, invokes a shell, or accepts renderer-supplied commands. An automatic
-//! action requires a trusted Unity-signed Hub, a working documented CLI, and the exact confirmed
+//! action requires a trusted Unity-signed CLI, checked capabilities, and the exact confirmed
 //! installation root. Unsupported/deprecated CLI behavior degrades to official UI guidance.
 
 use crate::{verify_editor_path_system, EditorPathVerdict, VccSettingsFileReader};
 use std::{
     path::{Path, PathBuf},
     sync::Arc,
-    time::Duration,
 };
 use vua_orchestrator::deployment::{
-    DeploymentAction, DeploymentAdapter, DeploymentIntent, DeploymentObservation,
-    DeploymentPresence, DeploymentPurpose,
+    DeploymentAction, DeploymentAdapter, DeploymentInstaller, DeploymentIntent,
+    DeploymentObservation, DeploymentPresence, DeploymentPurpose,
 };
 use vua_orchestrator::{
-    EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, ProcessRunner, ProcessSpec,
-    StdProcessRunner, SystemClock,
+    EnvironmentEngine, EnvironmentPresence, EnvironmentRoots, ProcessRunner, StdProcessRunner,
+    SystemClock,
 };
 
 const UNITY_VERSION: &str = vua_orchestrator::PRODUCTION_TARGET;
-// Official release archive: https://unity.com/releases/editor/whats-new/2022.3.22f1
-const UNITY_CHANGESET: &str = "887be4894c44";
+use crate::unity_install::UnityInstallProbe;
 
 pub struct WindowsDeploymentAdapter {
     engine: EnvironmentEngine,
-    runner: Arc<dyn ProcessRunner>,
+    install_probe: UnityInstallProbe,
+    data_root: PathBuf,
 }
 
 impl WindowsDeploymentAdapter {
     pub fn new(roots: EnvironmentRoots) -> Self {
         let runner: Arc<dyn ProcessRunner> = Arc::new(StdProcessRunner);
+        let data_root = std::env::var_os("VUA_PROVIDER_DATA")
+            .map(PathBuf::from)
+            .or_else(|| std::env::var_os("LOCALAPPDATA").map(|p| PathBuf::from(p).join("VUA")))
+            .unwrap_or_default();
+        let mut cli_candidates = vec![crate::unity_cli_bootstrap::managed_cli_path(&data_root)];
+        cli_candidates.extend(crate::unity_install::cli_candidates());
         Self {
             engine: EnvironmentEngine::new(
                 runner.clone(),
@@ -39,7 +44,11 @@ impl WindowsDeploymentAdapter {
                 roots,
                 Arc::new(VccSettingsFileReader),
             ),
-            runner,
+            install_probe: UnityInstallProbe {
+                runner,
+                cli_candidates,
+            },
+            data_root,
         }
     }
 
@@ -52,52 +61,6 @@ impl WindowsDeploymentAdapter {
             .and_then(|f| f.facts.get("exe").and_then(|s| s.as_str()))
             .map(PathBuf::from)
     }
-
-    fn run(
-        &self,
-        executable: &Path,
-        args: &[&str],
-        seconds: u64,
-    ) -> Result<vua_orchestrator::ProcessOutcome, &'static str> {
-        self.runner
-            .run(&ProcessSpec {
-                executable: executable.into(),
-                args: args.iter().map(|s| (*s).into()).collect(),
-                timeout: Duration::from_secs(seconds),
-                output_limit: 64 * 1024,
-                ..ProcessSpec::default()
-            })
-            .map_err(|_| "vua.deployment.process_failed")
-    }
-
-    fn hub_supported(&self, hub: &Path, intent: &DeploymentIntent) -> bool {
-        if !safe_install_root(Path::new(&intent.editor_root)) {
-            return false;
-        }
-        if !crate::deployment_trust::trusted_unity_executable(hub) {
-            return false;
-        }
-        let Ok(help) = self.run(hub, &["--", "--headless", "help"], 30) else {
-            return false;
-        };
-        if !help.success() || help.truncated || !help.stdout.contains("install-modules") {
-            return false;
-        }
-        let Ok(root) = self.run(hub, &["--", "--headless", "install-path", "--get"], 30) else {
-            return false;
-        };
-        // No global path mutation and no guessing among diagnostic lines. Non-plain output
-        // is an unsupported CLI response, requiring the user to use Hub instead.
-        root.success()
-            && !root.truncated
-            && same_windows_path(root.stdout.trim(), &intent.editor_root)
-    }
-}
-
-fn same_windows_path(a: &str, b: &str) -> bool {
-    a.replace('/', "\\")
-        .trim_end_matches('\\')
-        .eq_ignore_ascii_case(b.replace('/', "\\").trim_end_matches('\\'))
 }
 
 fn editor_observation(intent: &DeploymentIntent) -> DeploymentObservation {
@@ -183,49 +146,62 @@ impl DeploymentAdapter for WindowsDeploymentAdapter {
             editor.presence == DeploymentPresence::Verified,
         ));
         facts.push(editor);
-        let creator = intent.purposes.iter().any(|p| {
+        if intent.purposes.iter().any(|p| {
             matches!(
                 p,
                 DeploymentPurpose::PcAvatar | DeploymentPurpose::QuestAvatar
             )
-        });
-        let supported = creator
-            && self
-                .hub()
-                .is_some_and(|hub| self.hub_supported(&hub, intent));
-        facts.push(DeploymentObservation {
-            component: "hub_install_api".into(),
-            presence: if supported {
-                DeploymentPresence::Verified
-            } else {
-                DeploymentPresence::Missing
-            },
-            location: None,
-            version: None,
-        });
+        }) {
+            facts.push(self.install_probe.cli_observation(&intent.editor_root));
+        }
         facts
+    }
+
+    fn installer(&self, intent: &DeploymentIntent) -> Option<DeploymentInstaller> {
+        if !intent.purposes.iter().any(|p| {
+            matches!(
+                p,
+                DeploymentPurpose::PcAvatar | DeploymentPurpose::QuestAvatar
+            )
+        }) {
+            return None;
+        }
+        self.install_probe
+            .discover(None, &intent.editor_root)
+            .or_else(|| {
+                crate::unity_cli_bootstrap::planned_cli(&self.data_root, &intent.editor_root)
+            })
+            .or_else(|| {
+                self.install_probe
+                    .discover(self.hub().as_deref(), &intent.editor_root)
+            })
     }
 
     fn install(
         &self,
         intent: &DeploymentIntent,
         action: DeploymentAction,
+        confirmed: &DeploymentInstaller,
     ) -> Result<(), &'static str> {
         intent.validate()?;
         let _machine_lease = InstallLease::acquire()?;
-        let hub = self.hub().ok_or("vua.deployment.hub_missing")?;
-        // Recheck identity and CLI at the mutation boundary, not only when the plan was shown.
-        if !self.hub_supported(&hub, intent) {
-            return Err("vua.deployment.hub_unsupported");
+        if !crate::unity_install::same_windows_path(&intent.editor_root, &confirmed.editor_root) {
+            return Err("vua.deployment.plan_changed");
         }
-        let args = install_args(action)?;
-        // User cancellation is cooperative BEFORE/AFTER the installer. The process runner's
-        // two-hour timeout contains only this invocation's owned tree, never an existing Hub.
-        // Interrupted/timed-out installs may leave partial files: reinspection, no rollback.
-        let outcome = self.run(&hub, &args, 7200)?;
-        if !outcome.success() {
-            return Err("vua.deployment.install_failed");
+        if action == DeploymentAction::InstallUnityCli {
+            crate::unity_cli_bootstrap::acquire_cli(&self.data_root, confirmed)?;
+            if self
+                .install_probe
+                .cli_observation(&intent.editor_root)
+                .presence
+                != DeploymentPresence::Verified
+            {
+                return Err("vua.deployment.verification_failed");
+            }
+            return Ok(());
         }
+        // Installer identity is rechecked while the machine installation lease is held.
+        self.install_probe.install(action, confirmed)?;
         let after = self.observe(intent);
         let component = if action == DeploymentAction::InstallEditor {
             "unity_editor"
@@ -239,35 +215,6 @@ impl DeploymentAdapter for WindowsDeploymentAdapter {
             return Err("vua.deployment.verification_failed");
         }
         Ok(())
-    }
-}
-
-/// Closed vendor command vocabulary. Purpose/path input cannot become an argument list.
-fn install_args(action: DeploymentAction) -> Result<Vec<&'static str>, &'static str> {
-    match action {
-        DeploymentAction::InstallEditor => Ok(vec![
-            "--",
-            "--headless",
-            "install",
-            "--version",
-            UNITY_VERSION,
-            "--changeset",
-            UNITY_CHANGESET,
-            "--errors",
-        ]),
-        DeploymentAction::AddAndroidModules => Ok(vec![
-            "--",
-            "--headless",
-            "install-modules",
-            "--version",
-            UNITY_VERSION,
-            "--module",
-            "android",
-            "android-sdk-ndk-tools",
-            "android-open-jdk",
-            "--errors",
-        ]),
-        _ => Err("vua.deployment.action_refused"),
     }
 }
 
@@ -337,56 +284,10 @@ fn component_files_present(component: &str, location: &Path) -> bool {
     }
 }
 
-/// Existing ancestors must be ordinary directories. Fail closed on unreadable ancestors,
-/// junctions/symlinks or files, so a confirmed root cannot intentionally redirect installation.
-fn safe_install_root(root: &Path) -> bool {
-    if !cfg!(windows) || !root.is_absolute() {
-        return false;
-    }
-    for ancestor in root.ancestors() {
-        match std::fs::symlink_metadata(ancestor) {
-            Ok(meta) => {
-                #[cfg(windows)]
-                {
-                    use std::os::windows::fs::MetadataExt;
-                    if meta.file_attributes() & 0x400 != 0 {
-                        return false;
-                    }
-                }
-                if !meta.is_dir() || meta.file_type().is_symlink() {
-                    return false;
-                }
-            }
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-            Err(_) => return false,
-        }
-    }
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test]
-    fn adapter_never_overwrites_or_uninstalls_from_a_read_only_action() {
-        for action in [
-            DeploymentAction::Retain,
-            DeploymentAction::Inspect,
-            DeploymentAction::ManualInstall,
-        ] {
-            assert!(install_args(action).is_err());
-        }
-        let args = install_args(DeploymentAction::InstallEditor).unwrap();
-        assert!(args.windows(2).any(|p| p == ["--version", UNITY_VERSION]));
-        assert!(args
-            .windows(2)
-            .any(|p| p == ["--changeset", UNITY_CHANGESET]));
-        let modules = install_args(DeploymentAction::AddAndroidModules).unwrap();
-        assert!(
-            modules.contains(&"android-sdk-ndk-tools") && modules.contains(&"android-open-jdk")
-        );
-        assert!(!args.contains(&"--latest") && !args.contains(&"install-path"));
-    }
+    use crate::unity_install::safe_install_root;
     #[test]
     fn empty_directory_does_not_verify_a_runtime() {
         let root = std::env::temp_dir().join(format!("vua-empty-runtime-{}", std::process::id()));

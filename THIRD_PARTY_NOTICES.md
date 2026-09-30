@@ -30,6 +30,16 @@ package manifests, and `pnpm-lock.yaml` are the authoritative dependency snapsho
 Transitive dependencies currently include multiple permissive licenses and components under
 licenses such as MPL-2.0, Unicode-3.0, Zlib, and CDLA-Permissive-2.0.
 
+## Official Unity tools (N1)
+
+Unity CLI and Unity Editor are independently downloaded onto the user’s machine from Unity’s
+official sources. They are proprietary Unity offerings governed by [Unity terms](https://unity.com/legal/terms-of-service)
+and [Editor software terms](https://unity.com/legal/editor-terms-of-service/software), not VUA’s
+Apache-2.0 license. VUA does not bundle or mirror these tools or grant a Unity license. Users
+complete authorization, license selection and agreement acceptance through Unity’s own tooling.
+The [deployment direction](docs/architecture/unity-deployment.md) specifies the reviewed artifact
+and verification limits. Unity Hub is optional.
+
 ## Optional external integrations (N2)
 
 The planned N2 adapters discover, launch and guide setup of independently installed applications.

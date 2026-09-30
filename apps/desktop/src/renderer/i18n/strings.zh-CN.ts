@@ -329,6 +329,9 @@ demoTaskTitle: "演示任务",
   deployment: {
     "title": "按用途部署环境",
     "description": "选择需要准备的环境。计划显示已观察到的前置条件；游戏、设备和 SDK 工程的实际验证另行进行。",
+    "installer": "安装工具",
+    "installerHint": "Unity CLI 仍处于实验阶段。取得工具后，重新检测再安装 Editor；登录和许可选择由用户单独完成。",
+    "installerKinds": {"unity_cli":"Unity CLI","hub_cli":"已有 Unity Hub CLI","unity_cli_bootstrap":"官方 Unity CLI 下载"},
     "purpose": "用途",
     "purposes": {
       "desktop_play": "桌面游玩",
@@ -337,7 +340,7 @@ demoTaskTitle: "演示任务",
       "quest_avatar": "Quest Avatar 改模"
     },
     "location": "Unity Editor 安装根目录",
-    "locationHint": "自动安装必须与 Unity Hub 当前的安装位置一致，VUA 不修改该全局设置。",
+    "locationHint": "自动安装须与 Unity CLI 配置的 Editor 路径一致。Hub 可选；VUA 不修改此共享设置。",
     "plan": "检测并生成计划",
     "working": "正在处理…",
     "execute": "确认此计划并执行",
@@ -347,7 +350,8 @@ demoTaskTitle: "演示任务",
       "retain": "保留已有安装",
       "manual_install": "通过官方应用安装",
       "inspect": "先检查，再决定是否修改",
-      "install_editor": "通过 Unity Hub 安装指定 Editor",
+      "install_editor": "通过已核验的安装工具安装指定 Editor",
+      "install_unity_cli": "下载并核验官方 Unity CLI",
       "add_android_modules": "添加所需 Android 组件"
     },
     "reasons": {
@@ -384,6 +388,7 @@ demoTaskTitle: "演示任务",
       "steamvr": "SteamVR",
       "pico_runtime": "PICO Connect / Runtime",
       "unity_hub": "Unity Hub",
+      "unity_cli": "Unity CLI",
       "unity_editor": "Unity Editor",
       "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
     }

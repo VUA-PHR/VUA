@@ -8,6 +8,18 @@ const vectors = JSON.parse(readFileSync(new URL("../../../schemas/environment-de
 const intent = { purposes: ["pc_avatar"], editorRoot: "C:\\VUA Test\\Editors" };
 const digest = "a".repeat(64);
 describe("deployment v0.1 closed boundary", () => {
+  it("requires the right installer authority for acquisition and installation", () => {
+    const installer = { kind: "unity_cli_bootstrap", location: "C:\\VUA\\unity.exe", version: "1.0.0-beta.11", fileSha256: digest, editorRoot: intent.editorRoot };
+    const cli = { component: "unity_cli", action: "install_unity_cli", reason: "missing", location: installer.location, version: installer.version, officialUrl: "https://docs.unity.com/en-us/unity-cli/use-unity-cli" };
+    const editor = { ...cli, component: "unity_editor", action: "manual_install" };
+    const plan = { schemaVersion: DEPLOYMENT_SCHEMA, intent, steps: [cli, editor], digest, prerequisitesReady: false, installer };
+    expect(isDeploymentPlanResult({ deploymentPlan: plan })).toBe(true);
+    for (const identity of [null, { ...installer, kind: "unity_cli" }, { ...installer, editorRoot: "D:\\Editors" }, { ...installer, fileSha256: "invalid" }]) {
+      expect(isDeploymentPlanResult({ deploymentPlan: { ...plan, installer: identity } })).toBe(false);
+    }
+    expect(isDeploymentPlanResult({ deploymentPlan: { ...plan, steps: [cli, { ...editor, action: "install_editor" }] } })).toBe(false);
+    expect(isDeploymentPlanResult({ deploymentPlan: { ...plan, installer: { ...installer, kind: "unity_cli" }, steps: [{ ...cli, action: "retain", reason: "verified" }, { ...editor, action: "install_editor" }] } })).toBe(true);
+  });
   it("does not mistake an accepted receipt for an installer result or accept malformed identity", () => {
     const receipt = { schemaVersion: DEPLOYMENT_SCHEMA, operation: "environment.executeDeployment", taskId: "task-1", correlationId: "corr-1" };
     expect(isDeploymentAccepted(receipt)).toBe(true);
@@ -39,7 +51,7 @@ describe("deployment v0.1 closed boundary", () => {
   it("rejects arbitrary URLs, duplicate components and false-ready results", () => {
     const step = { component: "unity_hub", action: "retain", reason: "verified", location: null, version: null, officialUrl: "https://unity.com/download" };
     const editor = { ...step, component: "unity_editor", action: "manual_install", reason: "missing" };
-    const plan = { schemaVersion: DEPLOYMENT_SCHEMA, intent, steps: [step, editor], digest, prerequisitesReady: false };
+    const plan = { schemaVersion: DEPLOYMENT_SCHEMA, intent, steps: [step, editor], digest, prerequisitesReady: false, installer: null };
     expect(isDeploymentPlanResult({ deploymentPlan: plan })).toBe(true);
     expect(isDeploymentPlanResult({ deploymentPlan: { ...plan, prerequisitesReady: true } })).toBe(false);
     expect(isDeploymentPlanResult({ deploymentPlan: { ...plan, steps: [step, step] } })).toBe(false);

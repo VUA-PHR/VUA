@@ -333,6 +333,9 @@ demoTaskTitle: "Demo task",
   deployment: {
     "title": "Deploy by purpose",
     "description": "Choose the environment to prepare. The plan reports observed prerequisites; real game/device and SDK project checks remain separate.",
+    "installer": "Installation tool",
+    "installerHint": "Unity CLI is experimental. After acquiring it, inspect again before installing Editor. Login and license selection remain separate user steps.",
+    "installerKinds": {"unity_cli":"Unity CLI","hub_cli":"Existing Unity Hub CLI","unity_cli_bootstrap":"Official Unity CLI download"},
     "purpose": "Purposes",
     "purposes": {
       "desktop_play": "Desktop play",
@@ -341,7 +344,7 @@ demoTaskTitle: "Demo task",
       "quest_avatar": "Quest Avatar editing"
     },
     "location": "Unity Editor installation root",
-    "locationHint": "Automatic installation must match Unity Hub’s existing install path. VUA does not change that global setting.",
+    "locationHint": "Automatic installation must match Unity CLI’s configured Editor location. Hub is optional; VUA does not change this shared setting.",
     "plan": "Inspect and prepare a plan",
     "working": "Working…",
     "execute": "Confirm this plan and execute",
@@ -351,7 +354,8 @@ demoTaskTitle: "Demo task",
       "retain": "Keep existing installation",
       "manual_install": "Install through the official application",
       "inspect": "Inspect before changing anything",
-      "install_editor": "Install the required Editor through Unity Hub",
+      "install_editor": "Install the specified Editor through the verified installer",
+      "install_unity_cli": "Download and verify the official Unity CLI",
       "add_android_modules": "Add the required Android modules"
     },
     "reasons": {
@@ -388,6 +392,7 @@ demoTaskTitle: "Demo task",
       "steamvr": "SteamVR",
       "pico_runtime": "PICO Connect / Runtime",
       "unity_hub": "Unity Hub",
+      "unity_cli": "Unity CLI",
       "unity_editor": "Unity Editor",
       "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
     }

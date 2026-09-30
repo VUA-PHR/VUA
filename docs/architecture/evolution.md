@@ -1,6 +1,6 @@
 # N-sequence architecture evolution
 
-> Document version: 1.2.0
+> Document version: 1.3.0
 > Status: Accepted
 > Updated: 2026-09-30
 > Scope: Incremental software and documentation structure for N1-N7
@@ -112,12 +112,12 @@ selection and plan review to durable confirmed execution. Reuse the existing fil
 discovery as hints, then strengthen prerequisite checks in project-manager. Core planning does
 not depend on Hub syntax or Windows handles. The Provider only constructs/delegates these services.
 
-The first automatic adapter uses a trusted Unity Hub's supported headless commands for the exact
-global Editor and Android modules; unsupported paths/CLI versions require official user handoff.
-There is no Hub install-path mutation, VR runtime replacement or latest-version guessing. The
-contract owns exact confirmation, idempotency, safe cancellation, verification and pending work.
-Its synthetic tests establish policy/transport behavior; actual installation, SDK/MA project
-launch, account guidance and human UI acceptance still belong to N1's remaining real-machine work.
+The [standalone Unity deployment direction](unity-deployment.md) prefers the official Unity CLI
+for the exact global Editor and Android modules. Hub is optional. Reviewed CLI acquisition and
+Editor installation use separate confirmed plans; unsupported capabilities or paths require
+explicit handoff. There is no shared install-path mutation, VR runtime replacement or floating
+version selection. The contract owns confirmation, idempotency, cancellation and verification.
+Actual installation, licensing, SDK/MA project launch and human UI review remain distinct evidence.
 
 ## Material and production evolution
 
@@ -173,6 +173,8 @@ responsibilities while reorganizing docs. This direction is accepted. Illustrati
 installer choices above are not frozen interfaces; define them from the first executable N1 slice.
 
 ## Document changelog
+
+- 1.3.0 (2026-09-30): prefer official standalone Unity CLI deployment; retain existing Hub only as optional fallback.
 
 - 1.2.0 (2026-09-30): link the implemented purpose-plan/confirmation slice and distinguish remaining N1 functional acceptance.
 
