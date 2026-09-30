@@ -1,6 +1,6 @@
 # VUA development sequence
 
-> Document version: 3.3.0
+> Document version: 3.3.1
 > Status: Accepted
 > Updated: 2026-09-30
 > Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope update
@@ -156,8 +156,8 @@ The acceptance set contains **both and only** these independently distributed to
 
 Required hardware modules are not extra top-level tools. Other tools remain outside N2. Record
 the actual upstream release, install source, modules and device versions used in each local run;
-Steam's current release is not a fixed test version. No fork, code integration, BLE stripping,
-VUA-built binary or rebundling is required or scheduled by this gate.
+Steam's current release is not a fixed test version. The delivery path is guided Steam library
+addition and installation, followed by supported external invocation and status observation.
 
 | Function | Required behavior and observable acceptance for each tool |
 | --- | --- |
@@ -177,7 +177,7 @@ relevant case pending. No requirement to automate every calibration mode or rebu
 Later diagnostics may examine documented logs/configuration through a separately scoped adapter;
 automatic configuration edits, internal IPC and calibration control are not initial requirements.
 Any future copied source or bundled binary needs a new scope and distribution review under
-[third-party notices](../THIRD_PARTY_NOTICES.md). The earlier BLE-removal work package is superseded.
+[third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## N3 - v0.8.0: complex real-material Avatar production
 
@@ -335,7 +335,7 @@ create roles, or replace their plans on their behalf. Once revised plans are ava
 - Every task maps to an N gate/version and a concrete user action/result, with prerequisites,
   evidence method, current code to reuse, and deferred gaps.
 - Neither old M closure nor old post-v1 scheduling overrides the new sequence. N5 starts with audit.
-- N1 accounts are guided registration/library/linking only; N2 connects to exactly the two named upstream tools without fork/build/BLE-removal work.
+- N1 accounts are guided registration/library/linking only; N2 connects to exactly the two named upstream tools through Steam installation guidance and supported external invocation.
 - N3 has the full 1 + 2 + 6 simultaneous case, not a single outfit or simulated substitute.
 - N5 includes both BOOTH acquisition workflows; N7 includes the actual screenshot guide.
 - Local reinstall permission, OS claim limits, human UI review and automated non-UI acceptance
@@ -346,7 +346,9 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 
 ## Document changelog
 
-- 3.3.0 (2026-09-30): add four-platform guided account acceptance and replace N2 fork/build work with upstream external-connection acceptance.
+- 3.3.1 (2026-09-30): state the selected external-tool delivery path directly.
+
+- 3.3.0 (2026-09-30): add four-platform guided account acceptance and define Steam installation guidance and upstream external-connection acceptance for N2.
 
 - 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
 

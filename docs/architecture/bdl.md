@@ -1,7 +1,7 @@
 # BDL architecture boundary
 
 
-> Document version: 1.2.3
+> Document version: 1.2.4
 > Status: Accepted
 > Scope: AMF-owned BDL module
 > Updated: 2026-09-23
@@ -111,7 +111,7 @@ pipeline; N5 must trace and exercise that caller path. The existing write-face s
   (`availabilityRaw` rides along verbatim; `availabilityStatus` is derived at read time per
   the versioned v0.2 rule table, never stored) reach cards and details; the `catalog.list`
   text filter = title + productId substring (the protocol surface unchanged). The honest
-  empty-state semantics before any observation lands are unchanged (空态即终态).
+  empty-state semantics before any observation lands are unchanged.
 - **Scope statement**: this write face serves the products table only.
   `term_observations` and `compatibility_observations` have no catalog consumer yet and
   stay with their own BDL v2 vocabulary slices; entity/relation storage (the
@@ -144,6 +144,8 @@ Base storage and source-correlation responsibilities remain; automatic evidence 
 experimental and off by default. No runtime acceptance is asserted by this source check.
 
 ## Document changelog
+
+- 1.2.4 (2026-09-30): use English for explanatory prose.
 
 - 1.2.3 (2026-09-28): correct storage version and replace old M4 completion claims with N5 audit scope.
 

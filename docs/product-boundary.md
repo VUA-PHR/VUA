@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.2.0
+> Document version: 2.2.1
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-09-30
@@ -367,9 +367,9 @@ N2 acceptance includes both and only upstream VRCFaceTracking from benaclejames 
 OpenVR-SpaceCalibrator as independently installed external applications. VUA discovers them,
 guides official installation, launches them on request and explains setup and verification.
 Steam/upstream tools own installation, updates, removal, hardware modules and calibration.
-VUA does not vendor, fork, compile, link or bundle their code/binaries in this delivery. This
-supersedes the modified Space Calibrator / BLE-removal work package: the official installation
-keeps its upstream features and license terms. Internal Space Calibrator driver IPC is not a VUA
+Users add the tools to their Steam library and install them through Steam; VUA invokes supported
+external launch routes and observes their independent installations. The official applications
+retain their upstream features and license terms. Internal Space Calibrator driver IPC is not a VUA
 integration contract. This grants no VRChat injection or generic plugin-host authority.
 
 N3's minimum real case is one Avatar, at least two actively used dependencies/plugins, and at
@@ -400,6 +400,8 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
 
 - 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
 
@@ -460,7 +462,3 @@ plugin execution and a marketplace still require their separately accepted secur
   coordinates VUA instances only; cross-tool locking is not feasible; "allow writes + warn" is
   not a real guarantee), and the tightening clause (write capability uniformly false in `1.0.x`;
   future opening only via a new user ruling). Mirrors the ZH edition.
-- 1.1.1 (2026-09-08): terminology fix (hard user ruling, 2026-09-08) — VPM = VRChat Package
-  Manager (the manager), VPM package = the managed package; in the item-3 material-entry
-  semantics, "generate VPM as a replacement" and "VPM generation results" became "generate a
-  VPM package as a replacement" and "VPM package generation results". Mirrors the ZH edition.

@@ -61,7 +61,7 @@ The project is expected to remain in Beta for a long time. These descriptions ex
 
 ## License
 
-VUA is licensed under [Apache-2.0](LICENSE). Planned optional external connections are [VRCFaceTracking (Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) and [Space Calibrator (MIT core; separate third-party licenses)](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE). Users install the official applications separately; VUA does not bundle or modify them under this plan. The previous Space Calibrator BLE-removal plan is superseded. See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream attribution and conditions for any future redistribution.
+VUA is licensed under [Apache-2.0](LICENSE). The first planned external connections are [VRCFaceTracking (Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) and [Space Calibrator (MIT core; separate third-party licenses)](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE). See [third-party notices](THIRD_PARTY_NOTICES.md) for upstream attribution and conditions for any future redistribution.
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

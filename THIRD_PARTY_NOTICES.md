@@ -43,16 +43,15 @@ were checked on 2026-09-30 and are moving references, not release pins.
 | [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) | [Apache-2.0](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE); copyright 2024 benaclejames | Discover, guide official installation, launch, and explain hardware-module/OSC setup; no source or binary redistribution |
 | [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator) | [MIT core with separately licensed third-party components](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE); copyright 2023–2026 Hyblocker and contributors, 2020–2022 Justin Li and contributors | Discover, guide official installation, launch, and explain device selection/calibration in the upstream UI; no modified build or bundled driver |
 
-The previous plan to fork Space Calibrator and remove SimpleBLE/base-station BLE management is
-superseded. VUA does not copy, compile, link or redistribute SimpleBLE under this external-only
-model, and does not remove features from the user's official installation. Upstream's commercial
-SimpleBLE grant does not cover forks; it must not be treated as a grant to VUA. The official
-application's full license inventory remains distinct from its MIT core and from VUA's Apache-2.0.
+VUA guides users to add these applications to their Steam library, install them through Steam,
+and launch their independent installations through supported external entry points. Upstream
+applications retain their own features, dependencies and license inventories; Space Calibrator's
+full distribution has terms beyond its MIT core. Those terms are distinct from VUA's Apache-2.0.
 
 If a later VUA release incorporates, modifies or redistributes source/binaries from either tool,
 review the exact version and all included dependencies before release; preserve applicable license,
 copyright, attribution/NOTICE and modification notices. External connection alone is not permission
-to redistribute. The old removal checklist is not an outstanding N2 release requirement.
+to redistribute.
 
 ## Distribution rule
 

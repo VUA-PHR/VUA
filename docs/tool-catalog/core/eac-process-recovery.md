@@ -14,10 +14,6 @@ capabilities: ["process.inspect", "process.terminate.allowlisted"]
 
 # EAC Conflict Detection and Residual-Process Recovery
 
-> **实验性高风险功能：终止 EAC 或 VRChat 相关进程可能导致游戏中断、EAC 状态异常；极端情况下
-> 可能触发平台或账号安全检查并出现账号异常。VUA 无法保证平台侧结果。功能默认关闭，每次执行
-> 都必须由用户明确选择并再次确认。**
-
 > **Experimental high-risk feature: terminating EAC- or VRChat-related processes can interrupt the
 > game or leave EAC in an abnormal state. In extreme cases it may trigger platform or account safety
 > checks and account anomalies. VUA cannot guarantee platform-side outcomes. It is disabled by

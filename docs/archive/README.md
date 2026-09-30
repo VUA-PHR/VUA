@@ -22,3 +22,6 @@ and report-only CI remain available without reactivating the collab mechanism.
 
 The [2026-09-29 collab archive](2026-09-29/README.md) contains the retired collaboration
 mechanism and role prompts. Current [PR protection](../meta/protected-main.md) remains effective.
+
+The [2026-09-30 language audit](2026-09-30/README.md) preserves the original asset migration ledger;
+its active entry is an English historical summary.

@@ -60,7 +60,7 @@ VUA 从用户的目标和现有素材出发，展示计划、执行步骤与结�
 
 ## 许可证
 
-VUA 采用 [Apache-2.0](LICENSE)。计划中的可选外部连接包括 [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) 和 [Space Calibrator（MIT 主体及单独授权的第三方组件）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)。用户独立安装官方软件；本方案不由 VUA 打包或修改它们，原定的空间校准 BLE 删改方案已被替代。上游归属及未来再分发条件见[第三方声明](THIRD_PARTY_NOTICES.md)。
+VUA 采用 [Apache-2.0](LICENSE)。首批计划支持的外部连接包括 [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) 和 [Space Calibrator（MIT 主体及单独授权的第三方组件）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)。上游归属及未来再分发条件见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

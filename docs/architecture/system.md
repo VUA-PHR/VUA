@@ -1,6 +1,6 @@
 # VUA system architecture
 
-> Document version: 2.1.0
+> Document version: 2.1.1
 > Status: Accepted
 > Scope: Current implementation and incremental code placement
 > Last conformance review: 2026-09-28 (source/layout review, not real-machine acceptance)
@@ -129,10 +129,12 @@ The local guide stores no account credentials and makes no automatic account-ver
 
 N2 connects to independent VRCFT and Space Calibrator installations; upstream owns specialist code,
 hardware modules, drivers, calibration and updates. Existing local adapters discover and launch;
-there is no new VUA plugin host, fork build pipeline or generic process supervisor for these tools.
+Steam provides library addition/installation and upstream tools retain their own lifecycle.
 See [integration modes](integrations-and-overlays.md#external-integration-modes).
 
 ## Document changelog
+
+- 2.1.1 (2026-09-30): describe upstream installation and lifecycle directly.
 
 - 2.1.0 (2026-09-30): route account guidance through existing browser and keep N2 tools outside VUA distribution.
 

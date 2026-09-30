@@ -1,6 +1,6 @@
 # VUA workspace instructions
 
-> Document version: 2.1.1
+> Document version: 2.1.2
 > Status: Accepted
 > Authority: Workspace entry; linked owning documents define detailed policy
 
@@ -50,7 +50,9 @@ Drafts and historical records do not override current definitions.
 
 Each rule has one owner. Use links for details rather than copying full policies. Follow
 [documentation governance](docs/meta/documentation-governance.md) for versions and REGISTRY.
-Tracked docs are English; release changelogs are Chinese and root README has four languages.
+Desktop UI uses i18n, initially English, Simplified Chinese, Japanese and Korean, with more languages
+allowed. Tracked docs default to English; release changelogs are Chinese. Root README currently has
+the same four language editions and may expand.
 Local `docs-zh/` mirrors have no normative authority. Frozen contract behavior requires an explicit
 new version. Preserve accepted decisions and historical release artifacts.
 
@@ -61,6 +63,8 @@ README and Issue-template corrections (2026-09-29). Preserve repository identity
 merge through PR checks, and verify the new owner and configuration after transfer.
 
 ## Document changelog
+
+- 2.1.2 (2026-09-30): clarify initial four-language UI i18n, expandable README editions and default English documentation.
 
 - 2.1.0 (2026-09-29): clarify Agent reading context and safe handling of accidentally resumed historical workflows.
 

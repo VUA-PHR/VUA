@@ -18,8 +18,8 @@ capabilities: ["external.runtime.discover", "external.runtime.connect", "trackin
 N2 selects [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator)
 as an independently installed official application. VUA guides Steam installation, discovers and
 launches it and explains SteamVR prerequisites, device selection and calibration in its own UI.
-The previous fork/BLE-removal plan is superseded; official features remain untouched. No upstream
-code, driver or binary is bundled with VUA, and internal overlay/driver IPC is not a VUA API.
+Users add the application to their Steam library and install it there. VUA invokes the independent
+official application externally; internal overlay/driver IPC is not a VUA API.
 Process existence is distinct from actual mixed-space calibration; N2 requires real measured
 calibration and disconnect/reconnect evidence. No VRChat injection, graphics/OpenXR hooks or EAC
 modification. Later documented log/configuration diagnostics remain separate from first delivery.

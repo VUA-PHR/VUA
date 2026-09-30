@@ -61,7 +61,7 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 ## ライセンス
 
-VUA は [Apache-2.0](LICENSE) です。任意の外部連携として [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator（MIT の本体と個別ライセンスの第三者コンポーネント）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) を予定しています。利用者が公式アプリを個別にインストールし、本計画では VUA に同梱せず、改変もしません。従来の BLE 除去計画は置き換えられました。帰属と将来の再配布条件は[第三者通知](THIRD_PARTY_NOTICES.md)を参照してください。
+VUA は [Apache-2.0](LICENSE) です。最初に対応予定の外部連携は [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator（MIT の本体と個別ライセンスの第三者コンポーネント）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) です。帰属と将来の再配布条件は[第三者通知](THIRD_PARTY_NOTICES.md)を参照してください。
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

@@ -61,7 +61,7 @@
 
 ## 라이선스
 
-VUA는 [Apache-2.0](LICENSE)을 사용합니다. 선택적 외부 연결 대상으로 [VRCFaceTracking(Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE)과 [Space Calibrator(MIT 본체 및 별도 라이선스의 서드파티 구성 요소)](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)를 계획하고 있습니다. 사용자가 공식 앱을 별도로 설치하며, 이 계획에서는 VUA가 앱을 번들로 배포하거나 수정하지 않습니다. 기존 BLE 제거 계획은 대체되었습니다. 저작권과 향후 재배포 조건은 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 참조하세요.
+VUA는 [Apache-2.0](LICENSE)을 사용합니다. 첫 지원 예정 외부 연결 대상은 [VRCFaceTracking(Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE)과 [Space Calibrator(MIT 본체 및 별도 라이선스의 서드파티 구성 요소)](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)입니다. 저작권과 향후 재배포 조건은 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 참조하세요.
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

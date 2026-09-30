@@ -7,7 +7,7 @@
 > 168 — the landing slice, registered by the 0.2.1 note; **conservative
 > extractor capability face**, wt-4 production, batch 178 — the 030
 > extractor slice, registered by this 0.2.2 note — both notes change zero
-> frozen word faces). The「Schema＋正负例向量＋至少一端消费测试」
+> frozen word faces). Theschema, positive/negative vectors, and at least one consumer test
 > freeze triad landed together:
 > - schema: `schemas/bdl/v0.2/schema.sql` (full readable authority,
 >   standalone-executable) + `schemas/bdl/v0.2/002_dependency_

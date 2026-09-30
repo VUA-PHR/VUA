@@ -1,7 +1,7 @@
 # Core, plugin, external integration, and overlay architecture
 
 
-> Document version: 1.2.0
+> Document version: 1.2.1
 > Status: Accepted
 > Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays
 > Updated: 2026-09-30
@@ -45,7 +45,8 @@ paths across external capability changes. The 2026-09-28 product ruling brings g
 into the active real-machine progression without changing these adapter or security boundaries.
 N2 uses **external connection only** for benaclejames/VRCFaceTracking and
 hyblocker/OpenVR-SpaceCalibrator. Official Steam/upstream installations own their updates, modules,
-drivers and removal. VUA has no tool fork, linked library, bundled binary or BLE-removal artifact.
+drivers and removal. VUA guides Steam library addition/installation and uses supported external
+launch routes.
 Other tools remain outside N2; the development sequence owns functional acceptance.
 
 The Orchestrator coordinates discovery, installation handoff, launch and reinspection through
@@ -125,6 +126,8 @@ VRChat process memory, modify EAC, or confirm account, safety, or upload UI. Pub
 untrusted and cannot authorize local mutation.
 
 ## Document changelog
+
+- 1.2.1 (2026-09-30): state Steam library/install guidance and external invocation directly.
 
 - 1.2.0 (2026-09-30): define thin N2 external connectors and upstream-owned lifecycle.
 
