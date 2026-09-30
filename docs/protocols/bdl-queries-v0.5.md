@@ -5,7 +5,7 @@
 > Status: **Frozen (domain business vocabulary)** (2026-09-22, wt-5 data
 > batch 168 = the freeze batch; the dependencies.* v0.5 implementation ring
 > dispatched by the operator, per the proposal 030 §5.7 case-A ruling).
-> The「Schema＋正负例向量＋至少一端消费测试」freeze triad landed together:
+> Theschema, positive/negative vectors, and at least one consumer testfreeze triad landed together:
 > - schemas: `schemas/bdl-queries/v0.5/query.schema.json` +
 >   `result.schema.json` (the eight-member operation closed set, the
 >   params/result shapes, the word-face enums);

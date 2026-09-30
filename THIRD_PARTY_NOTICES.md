@@ -30,33 +30,28 @@ package manifests, and `pnpm-lock.yaml` are the authoritative dependency snapsho
 Transitive dependencies currently include multiple permissive licenses and components under
 licenses such as MPL-2.0, Unicode-3.0, Zlib, and CDLA-Permissive-2.0.
 
-## First runtime-tool adaptation targets (N2)
+## Optional external integrations (N2)
 
-These are the two planned N2 integrations, not a declaration that their binaries are currently
-bundled or that modified builds have passed acceptance. Upstream license sources were checked
-on 2026-09-29; branches below are moving references, not release pins.
+The planned N2 adapters discover, launch and guide setup of independently installed applications.
+Neither application nor its dependencies are bundled with VUA under this delivery model. Users
+obtain official distributions from Steam or upstream; those distributions retain their own terms.
+This describes the selected integration model, not completed runtime acceptance. Sources below
+were checked on 2026-09-30 and are moving references, not release pins.
 
-| Component | Upstream license / attribution | VUA adaptation scope |
+| Application | Upstream license / attribution | Planned VUA connection |
 | --- | --- | --- |
-| [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) | [Apache-2.0](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE); copyright 2024 benaclejames | External face-tracking integration; independently audit selected modules and dependencies |
-| [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator) | [MIT core and third-party notices](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE); copyright 2023–2026 Hyblocker and contributors, 2020–2022 Justin Li and contributors | Modified build retaining calibration and SteamVR driver, excluding SimpleBLE and base-station BLE management |
+| [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking) | [Apache-2.0](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE); copyright 2024 benaclejames | Discover, guide official installation, launch, and explain hardware-module/OSC setup; no source or binary redistribution |
+| [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator) | [MIT core with separately licensed third-party components](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE); copyright 2023–2026 Hyblocker and contributors, 2020–2022 Justin Li and contributors | Discover, guide official installation, launch, and explain device selection/calibration in the upstream UI; no modified build or bundled driver |
 
-VRCFaceTracking distributions must retain the Apache-2.0 license, applicable attribution/NOTICE
-and modification notices. The MIT portion of Space Calibrator retains its copyright and permission
-notice; other included components keep their own licenses. Neither tool is relicensed by VUA.
+VUA guides users to add these applications to their Steam library, install them through Steam,
+and launch their independent installations through supported external entry points. Upstream
+applications retain their own features, dependencies and license inventories; Space Calibrator's
+full distribution has terms beyond its MIT core. Those terms are distinct from VUA's Apache-2.0.
 
-Upstream explicitly says its SimpleBLE commercial grant does not cover forks. VUA's planned
-variant must remove the SimpleBLE submodule, patch/build/link configuration and the base-station
-BLE implementation, lifecycle calls, UI and configuration handling. Keep ordinary SteamVR
-shutdown handling and calibration functionality; the [N2 acceptance](docs/development-outline.md)
-owns the detailed removal and real-run criteria. Merely hiding the BLE page is insufficient.
-
-Only remove a dependency notice from the modified distribution after confirming the corresponding
-code and binary dependency are absent; retain notices for everything that remains. This summary
-does not certify a source tree has already been cleaned. Before distribution pin the actual commit,
-audit all remaining dependencies, record modifications, include complete applicable license texts
-and validate the produced binary. Do not redistribute an unmodified official build as the planned
-SimpleBLE-free variant.
+If a later VUA release incorporates, modifies or redistributes source/binaries from either tool,
+review the exact version and all included dependencies before release; preserve applicable license,
+copyright, attribution/NOTICE and modification notices. External connection alone is not permission
+to redistribute.
 
 ## Distribution rule
 

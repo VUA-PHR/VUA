@@ -1,10 +1,10 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.2.2
+> Document version: 1.3.0
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-09-12
+> Updated: 2026-09-30
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -48,8 +48,31 @@ Core catalog entries represent trusted behavior built directly into VUA and gain
 runtime registration. The future community plugin host provides a separate capability context.
 
 Main returns normalized navigation/download events through narrow ports and retains `Session`,
-`WebContents`, `DownloadItem`, cookies, and tokens. AMF owns acquisition intent, task and source
+`WebContents` and `DownloadItem` handles. Browser storage owns cookies/tokens; they are not copied
+into Main application state, Gateway, Orchestrator or Agent inputs. AMF owns acquisition intent, task and source
 correlation, post-download inspection, and Warehouse/BDL decisions.
+
+## Account-guide browser
+
+The first account slice opens official Steam/VRChat registration pages and optional Unity/BOOTH
+pages in the existing isolated built-in browser. Reuse security enforcement; do not create an
+Auth Broker service. Separate temporary account-guide partitions from AMF's BOOTH acquisition
+profile and from one another except for required in-flow identity-provider navigation. Do not
+persist these guide partitions; dispose/clear them when the guide session ends. Do not scrape
+forms, intercept credentials, copy cookies, or log credential-bearing URLs/page content.
+
+Main owns creating/discarding views and enforcing navigation, not an application credential store.
+This responsibility split does not claim Electron Main is technically incapable of session access.
+The local UI receives guide progress and user-declared completion only, not authenticated page data.
+Official client or external-browser handoffs retain the existing per-action protocol confirmation.
+If embedding fails, explain the fallback instead of bypassing platform restrictions. Users perform
+registration, CAPTCHA, terms acceptance and account linking themselves. UI human acceptance covers
+the flow and the distinction between opened, user-confirmed and actually detected outcomes.
+
+The product boundary records later web-reading and experimental persistence intent; neither is
+enabled by this first slice. Any future persisted profile needs explicit consent, local browser
+storage and tested clearing/logout semantics, without secrets in application or Agent data paths.
+This is intended architecture, not evidence that existing browser code already meets these cases.
 
 ## Remote content isolation
 
@@ -118,6 +141,8 @@ dependency/license review, Electron security checks, remote-permission tests, si
 rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
+
+- 1.3.0 (2026-09-30): specify isolated temporary account-guide pages and credential-free application state.
 
 - 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
 

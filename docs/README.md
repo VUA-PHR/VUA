@@ -1,7 +1,7 @@
 # Documentation guide
 
 > Status: Accepted
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Scope: Current documentation routes for ordinary single-line N-sequence development
 
 ## Choose your reading context
@@ -15,7 +15,7 @@ identify the owning product/contract document and N acceptance row for the actua
 Check branch and working-tree state before edits; old checkouts may still contain active-looking
 collab files. Current user rulings retire that mechanism regardless of the checkout's age. Do not
 run archived role prompts, ticks or autonomous work queues. Report evidence and unverified gaps
-separately, and preserve the organizational-transfer review hold.
+separately. Repository migration is complete; use VUA-Project/VUA and the current PR policy.
 
 Both readers use the same definitions below; these introductions change navigation, not policy.
 
@@ -33,6 +33,20 @@ Both readers use the same definitions below; these introductions change navigati
 Read only the owning documents needed for the task. Collab is [archived and retired](archive/2026-09-29/README.md).
 [PR protection](meta/protected-main.md) continues independently; the retained brief and report-only
 CI perform documentation checks, not coordination.
+
+## Choose a reading route
+
+These are task perspectives, not standing Agent roles or separate policies. Agents first read
+AGENTS.md and CONTRIBUTING; then follow one route below instead of reading the entire repository.
+
+| Reader | Read in order | Ready to act when |
+| --- | --- | --- |
+| Player / end user | [Current delivery and limits](../README.md#current-delivery-and-starting-points) → [release evidence](release/v0.6.0.md) → [questions and bugs](../CONTRIBUTING.md#reporting-and-assets) | The available artifact and its limits are clear; planned N features are not assumed usable |
+| Human developer | [Contributor workflow](../CONTRIBUTING.md#develop-one-useful-slice) → [local setup and launch](../apps/desktop/README.md#development-commands) → the relevant task below | The app can be started and the checks relevant to the change are identified |
+| Frontend UI/UX Agent | [Product scope](product-boundary.md) + [N acceptance](development-outline.md#new-sequence) → [Desktop](architecture/desktop.md) → [interaction rules](design/design-standard.md#6-interaction-and-feedback) and [i18n/accessibility](design/design-standard.md#9-accessibility-internationalization-and-performance) | Required states, real Gateway data and human UI acceptance are identified; new account flows also read [account-guide browser](architecture/desktop.md#account-guide-browser) |
+| Environment business-logic Agent | [N1](development-outline.md#n1---v070-purpose-driven-deployment) / [N2](development-outline.md#n2---v071-exactly-two-gameplay-tools) → [deployment flow and code placement](architecture/evolution.md#deployment-architecture-first-slice) → [external integrations](architecture/integrations-and-overlays.md#external-integration-modes) → [contract status](protocols/README.md#delivery-status-and-implementation-entry-points) | Detection, installation handoff, mutation ownership and missing contracts are distinguished |
+| AMF business-logic Agent | [N3–N5 outcomes](development-outline.md#n3---v080-complex-real-material-avatar-production) → [AMF/Unity](architecture/amf-unity.md) → [BDL](architecture/bdl.md) when acquisition is involved → [production contracts](protocols/README.md#delivery-status-and-implementation-entry-points) | The material → Recipe → production → SDK path, exact contract versions and real-material evidence are identified |
+| Frontend/backend integration Agent | [Dependency direction](architecture/system.md#dependency-and-state-boundaries) → [method registry](protocols/application-contract-v0.1.md#method-surface) → [contract-to-code route](protocols/README.md#delivery-status-and-implementation-entry-points) → relevant producer/consumer tests | The method, types, runtime capability, both ends and absent/error states agree |
 
 ## Read by task
 

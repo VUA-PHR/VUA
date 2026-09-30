@@ -15,10 +15,12 @@ capabilities: ["external.runtime.discover", "external.runtime.connect", "trackin
 # Motion Tracking
 
 
-N2 selects only a derived [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator)
-with SimpleBLE and base-station BLE management removed, as specified in the development sequence.
-It retains independent state and works
-with devices, SteamVR, or VRChat through public boundaries, receiving no VUA internal service. Any
-VUA-side connector is classified and authorized separately. No VRChat injection, graphics/OpenXR
-hooks, or EAC modification; validate coordinates/units, calibration, versions, disconnect, and a
-manual path.
+N2 selects [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator)
+as an independently installed official application. VUA guides Steam installation, discovers and
+launches it and explains SteamVR prerequisites, device selection and calibration in its own UI.
+Users add the application to their Steam library and install it there. VUA invokes the independent
+official application externally; internal overlay/driver IPC is not a VUA API.
+Process existence is distinct from actual mixed-space calibration; N2 requires real measured
+calibration and disconnect/reconnect evidence. No VRChat injection, graphics/OpenXR hooks or EAC
+modification. Later documented log/configuration diagnostics remain separate from first delivery.
+See [third-party notices](../../../THIRD_PARTY_NOTICES.md).

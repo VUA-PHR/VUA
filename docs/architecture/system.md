@@ -1,6 +1,6 @@
 # VUA system architecture
 
-> Document version: 2.0.1
+> Document version: 2.1.1
 > Status: Accepted
 > Scope: Current implementation and incremental code placement
 > Last conformance review: 2026-09-28 (source/layout review, not real-machine acceptance)
@@ -119,7 +119,24 @@ reactivate collaboration. Use the [N sequence](../development-outline.md) and
 - N5: [BDL](bdl.md), AMF/Unity, then an implementation/UI/evidence capability audit.
 - Exact wire/storage behavior: [protocol guide](../protocols/README.md), schemas and consumer tests.
 
+## Initial account and external-tool delivery
+
+N1 account guidance uses the existing Wizard, typed Gateway and isolated desktop browser. The
+Orchestrator owns guide progress/handoff semantics; browser storage owns temporary authentication
+state, which does not cross into the application contract. See [desktop browser responsibilities](desktop.md#account-guide-browser)
+and [product scope](../product-boundary.md#account-onboarding-user-ruling-2026-09-30).
+The local guide stores no account credentials and makes no automatic account-verification claim.
+
+N2 connects to independent VRCFT and Space Calibrator installations; upstream owns specialist code,
+hardware modules, drivers, calibration and updates. Existing local adapters discover and launch;
+Steam provides library addition/installation and upstream tools retain their own lifecycle.
+See [integration modes](integrations-and-overlays.md#external-integration-modes).
+
 ## Document changelog
+
+- 2.1.1 (2026-09-30): describe upstream installation and lifecycle directly.
+
+- 2.1.0 (2026-09-30): route account guidance through existing browser and keep N2 tools outside VUA distribution.
 
 - 2.0.0 (2026-09-28): replace contradictory layout/history with the verified six-crate map, single-line entry, and incremental responsibility guidance; preserve prior text in the archive.
 - 1.0.3 (2026-09-28): incoming erratum recorded collab freeze; superseded by the corrected current map.

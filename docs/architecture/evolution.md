@@ -1,8 +1,8 @@
 # N-sequence architecture evolution
 
-> Document version: 1.0.0
+> Document version: 1.1.0
 > Status: Accepted
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Scope: Incremental software and documentation structure for N1-N7
 > Normative effect: Accepted incremental direction; existing wire/storage contracts remain authoritative
 
@@ -22,7 +22,7 @@ when a measured dependency, build, packaging, or independent lifecycle problem j
 | Capability | Application responsibility | Existing implementation to reuse | Increment to build |
 | --- | --- | --- | --- |
 | Deploy environment (N1) | Turn goal + observations into actions; execute and verify them | Environment facts, project-manager adapters, task runtime, deployer UI | Purpose-based planner and actual install/configuration adapters |
-| Deploy tools (N2) | Deploy/configure/verify exactly the two approved tools | Tool discovery and process supervision | Tool-specific install/configuration/verification; modified Space Calibrator artifact |
+| Deploy tools (N2) | Discover/launch/guide exactly the two approved external tools | Existing discovery and supported launch paths | Thin status/setup adapters; Steam/upstream owns installation, updates and calibration |
 | Produce Avatar (N3) | Resolve materials, dependencies and objects; execute and hand off to SDK | AMF use cases, project creation/resolution, Bridge, records | Complex 1+2+6 path and fixes found by real runs |
 | Reproduce Recipe (N4) | Save, resolve, apply and compare supported intent | Recipe formats/use cases and production path | Measured gaps in reapply/conflicts/reproduction |
 | Manage materials (N5) | Audit, enumerate account materials, catalog, download selectively, import | Acquisition, BDL, Electron session/download transport | Only capabilities missing after audit; separate listing from file acquisition |
@@ -45,6 +45,19 @@ The first executable path is the current machine's existing play environment to 
 2022.3.22f1 project with real SDK/MA. Purpose plans for other declared N1 targets follow the same
 pattern once their prerequisites are available. Successful installation is not inferred from an
 installer process starting or exiting alone.
+
+### Account guidance alongside deployment
+
+Use the existing Wizard and isolated browser to show the four-platform guide defined in the
+product boundary. Start with an ordered guide step, official destination, user-declared progress
+and explicit handoff/resume. Do not build a multi-platform Auth Broker, account database or token
+vault. Browser session state is not task state; no passwords, cookies or authentication URLs with
+secrets enter the deployment journal. A user declaration is not a detected account fact.
+
+Keep registration and Steam library/link guidance in N1; BOOTH acquisition remains N5.
+Add VRChat web-information reading only after the first usable delivery, with its own minimal
+versioned data contract. Experimental persistence is a separate deferred slice, not implied by
+opening a registration guide or reusing the BOOTH acquisition session.
 
 ### Small data model, not a framework
 
@@ -146,5 +159,7 @@ responsibilities while reorganizing docs. This direction is accepted. Illustrati
 installer choices above are not frozen interfaces; define them from the first executable N1 slice.
 
 ## Document changelog
+
+- 1.1.0 (2026-09-30): add minimal account-guide state and external-only N2 adapter responsibilities.
 
 - 1.0.0 (2026-09-28): user accepted retaining the stack and incrementally reorganizing software responsibilities and documentation for N1-N7.

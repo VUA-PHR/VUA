@@ -1,9 +1,9 @@
 # VUA development sequence
 
-> Document version: 3.2.0
+> Document version: 3.3.1
 > Status: Accepted
-> Updated: 2026-09-28
-> Authority: User rulings of 2026-09-28, including the final four clarifications
+> Updated: 2026-09-30
+> Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope update
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
 
@@ -44,7 +44,7 @@ See [versioning](release/versioning.md).
 | Gate | Product version | User task | Initial status |
 | --- | --- | --- | --- |
 | N1 | v0.7.0 Beta | Deploy the software and settings needed to play or edit Avatars | Active priority; acceptance pending |
-| N2 | v0.7.1 Beta | Deploy VRCFaceTracking and the modified hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
+| N2 | v0.7.1 Beta | Connect to upstream VRCFaceTracking and hyblocker Space Calibrator | Planned; exactly these two acceptance targets |
 | N3 | v0.8.0 Beta | Produce a complex real-material Avatar and hand it to VRC SDK | Planned |
 | N4 | v0.8.1 Beta | Save, share, and reproduce Recipes across real workflows | Planned |
 | N5 | v0.8.2 Beta | Audit and redo old M4 material management, including BOOTH acquisition | Planned; capability audit required before rework |
@@ -123,52 +123,61 @@ Unity 2022.3.22f1 and necessary components, resolve actual SDK/MA dependencies, 
 project. Exercise each declared purpose on an applicable environment; record missing equipment
 as blocked rather than inventing results. UI gets human review; backend operations may be automated.
 
+### Initial account guidance acceptance
+
+This is part of N1's first usable path; [product scope](product-boundary.md#account-onboarding-user-ruling-2026-09-30)
+owns the account and later-experiment boundaries. Use official pages in the isolated built-in
+browser, with explicit client/system-browser handoff when needed. Do not add an Auth Broker or
+a generic account/token manager before this path works.
+
+| Case | Required behavior and observable acceptance |
+| --- | --- |
+| New player | Offer Steam and VRChat registration guidance; users submit official forms themselves. Guide adding VRChat to the Steam library and installing/launching through Steam. An opened page is recorded as opened, not as an account or successful installation |
+| Existing player | Allow skipping existing accounts; guide the official Steam-platform-account upgrade/link path when needed, without storing credentials or inventing a VUA binding |
+| Optional creator | Offer Unity and BOOTH/pixiv registration only for the creator route. Explain purchase and Hub/SDK handoffs. Skipping them leaves the play route usable |
+| Upload eligibility | Explain full VRChat account plus New User or higher; show user-reported or unknown eligibility honestly. Normal-play guidance promises no promotion date. A Visitor can continue local preparation/testing; only upload remains gated |
+| Interrupt/decline | Closing a page, refusing consent, failed registration or blocked embedding leaves a resume/manual route. CAPTCHA, terms, account linking and payment stay with the user |
+| Privacy | First-slice registration sessions are nonpersistent and isolated; no cookie/password/token values in app state, IPC, Agent context or logs. Ending the guide session clears its temporary state. Saved progress does not imply authenticated verification |
+
+Use synthetic data for automated guide-state tests and real official pages for local flow checks;
+account submissions require the user's actions. Record those steps as blocked/not_run until performed.
+VRChat web-information reading and experimental persistence follow the first usable delivery;
+they are not first-round blockers. N5 BOOTH account-library acceptance remains unchanged.
+
 ## N2 - v0.7.1: exactly two gameplay tools
 
-The acceptance set contains **both and only** these top-level tools, not one arbitrary tool:
+The acceptance set contains **both and only** these independently distributed tools:
 
-1. Face tracking: [benaclejames/VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking).
-2. Mixed tracking: a modified [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator), with SimpleBLE and base-station BLE management removed.
+1. [VRCFaceTracking](https://github.com/benaclejames/VRCFaceTracking): guide installation from
+   [Steam](https://store.steampowered.com/app/3329480/) and hardware-module/OSC setup in the upstream UI.
+2. [hyblocker/OpenVR-SpaceCalibrator](https://github.com/hyblocker/OpenVR-SpaceCalibrator): guide
+   [Steam installation](https://store.steampowered.com/app/3368750/), device selection and calibration
+   in its own UI, retaining the official application's functionality.
 
-Their required device modules/dependencies are allowed, but are not additional top-level acceptance
-targets. Do not substitute pushrax, SlimeVR, or another tool, and do not expand N2 to all trackers.
-Pin each tested source/release and dependency set during implementation; a moving branch or the
-referenced conversation's historical short commit is not a release pin.
+Required hardware modules are not extra top-level tools. Other tools remain outside N2. Record
+the actual upstream release, install source, modules and device versions used in each local run;
+Steam's current release is not a fixed test version. The delivery path is guided Steam library
+addition and installation, followed by supported external invocation and status observation.
 
 | Function | Required behavior and observable acceptance for each tool |
 | --- | --- |
-| Applicability | Explain purpose, supported test device, prerequisites, and missing hardware; optional tools are not compulsory play dependencies |
-| Install/discover | Reuse a recognized install or install the reviewed artifact; distinguish installed, configured, and functionally verified |
-| Configure | Apply or explain the specific connection/module/runtime settings and check the result |
-| Run | VRCFaceTracking produces actual tracking/OSC output through its supported route; Space Calibrator applies a measured mixed-space calibration. Process existence alone does not pass |
-| Stop/remove | Exercise stopping and the supported removal path, showing which settings VUA owns and retaining unrelated play functionality |
+| Applicability | Explain the purpose, test hardware and prerequisites; neither tool becomes compulsory for ordinary play |
+| Discover/install | Detect a supported existing installation; otherwise open its official installation route. After the user installs through Steam/upstream, refresh detection. Opening the store is not installation success; unknown versions remain unknown |
+| Launch/status | Launch on explicit request through a supported route; distinguish missing, installed, running, detection failure and functional verification. A process alone proves only running |
+| Face setup | Guide the user to the required VRCFT hardware module, VRChat OSC setting and compatible Avatar; module installation remains in VRCFT. Verify real tracking/OSC output on the named device |
+| Mixed-space setup | Guide SteamVR prerequisites, reference/target device selection, sampling and applying calibration in Space Calibrator. Record an actual measured calibration; do not implement its internal overlay-to-driver IPC |
+| Missing capability | Missing hardware, unsupported versions, disconnects or unavailable status leave an explicit unknown/blocked result and manual route. Exercise reconnect without reporting fabricated tracking success |
+| Stop/update/remove | Guide the owning application's or Steam's supported stop/update/removal route and reinspect afterward; preserve unrelated play functionality and user configuration. VUA does not own upstream processes or force-terminate them as task children |
 
-Both targets require real execution evidence. Agent/device telemetry may establish non-UI
-acceptance; unavailable hardware leaves its functional case pending, not silently waived. Test
-disconnection and re-connection where applicable. UI still receives human review.
+Real functional evidence is still required for both targets. External connection reduces VUA's
+implementation burden, not the N2 real-hardware acceptance standard. Agents/scripts can collect
+non-UI evidence from permitted outputs; UI receives human review. Lack of hardware leaves the
+relevant case pending. No requirement to automate every calibration mode or rebuild upstream UI.
 
-### Space Calibrator modification work package
-
-The user selected the removal approach described in the referenced comparison conversation.
-That conversation is research input; recheck the pinned source before editing. Required work:
-
-- Remove the SimpleBLE submodule/source, its patch, vendor build block, include paths, and
-  simpleble/simplecble link targets. Remove BLE-only system links only after verifying their users.
-- Remove base_station_management implementation and declarations, Bluetooth init/shutdown and
-  automatic station power actions, and their page, tutorial, image, and UI state references.
-- Remove obsolete station-management configuration and translations; test loading old configuration
-  without breaking unrelated settings. Do not remove general SteamVR shutdown handling.
-- Retain normal, continuous, and relative calibration plus the required SteamVR driver. Verify
-  applicable retained modes on real hardware; continuous mode requires its actual reference tracker.
-- Keep upstream attribution and all notices for remaining components. Remove obsolete SimpleBLE
-  notices from the derived distribution only after it contains none of that component. Do not
-  relabel all third-party code Apache-2.0 or assume the official binary's license transfers.
-- Inspect fetched dependencies, generated build graph, a clean build, and shipped artifact inventory
-  for remaining SimpleBLE/SimpleCBLE content. Search source references as an aid, not the sole proof.
-
-Reference: the upstream [license](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)
-identifies separate terms for SimpleBLE and remaining components; reviewed 2026-09-28. This plan
-records required work, not a claim that removal, a build, or redistribution review has passed.
+Later diagnostics may examine documented logs/configuration through a separately scoped adapter;
+automatic configuration edits, internal IPC and calibration control are not initial requirements.
+Any future copied source or bundled binary needs a new scope and distribution review under
+[third-party notices](../THIRD_PARTY_NOTICES.md).
 
 ## N3 - v0.8.0: complex real-material Avatar production
 
@@ -326,7 +335,7 @@ create roles, or replace their plans on their behalf. Once revised plans are ava
 - Every task maps to an N gate/version and a concrete user action/result, with prerequisites,
   evidence method, current code to reuse, and deferred gaps.
 - Neither old M closure nor old post-v1 scheduling overrides the new sequence. N5 starts with audit.
-- N2 has exactly the two named tools and the Space Calibrator removal/build verification work.
+- N1 accounts are guided registration/library/linking only; N2 connects to exactly the two named upstream tools through Steam installation guidance and supported external invocation.
 - N3 has the full 1 + 2 + 6 simultaneous case, not a single outfit or simulated substitute.
 - N5 includes both BOOTH acquisition workflows; N7 includes the actual screenshot guide.
 - Local reinstall permission, OS claim limits, human UI review and automated non-UI acceptance
@@ -336,6 +345,10 @@ Prioritize the first real blocker, repair and rerun it, then expand. Record boun
 do not turn documentation completeness, speculative coverage, or idle agent activity into goals.
 
 ## Document changelog
+
+- 3.3.1 (2026-09-30): state the selected external-tool delivery path directly.
+
+- 3.3.0 (2026-09-30): add four-platform guided account acceptance and define Steam installation guidance and upstream external-connection acceptance for N2.
 
 - 3.2.0 (2026-09-29): add human/Agent reading contexts without changing N acceptance or version mapping.
 

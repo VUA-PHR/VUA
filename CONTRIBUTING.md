@@ -1,6 +1,6 @@
 # Contributing to VUA
 
-> Document version: 2.1.1
+> Document version: 2.1.3
 > Status: Accepted
 
 ## For human contributors — localization welcome
@@ -11,7 +11,8 @@ errors and text that fits the actual interface matter more than literal translat
 and feedback in your strongest language are welcome; you do not need to translate all four
 languages to contribute. Preserve placeholders, formatting and translation keys, describe the
 context, and mark machine-assisted text that has not had human review. For additional languages,
-open an Issue to agree on coverage and maintenance. Canonical developer documents remain English.
+open an Issue to agree on coverage and maintenance. Desktop UI uses i18n and may add languages beyond the initial four; README editions may expand too.
+Other documentation defaults to English, with Chinese release changelogs.
 
 ## If you are an Agent
 
@@ -26,6 +27,8 @@ agent's work or delete it as cleanup without establishing its scope and provenan
 Start with [the documentation guide](docs/README.md). The [N sequence](docs/development-outline.md)
 defines the next usable outcome and acceptance; [version policy](docs/release/versioning.md)
 defines release numbers and continuing Beta.
+
+For a local checkout, start with [dependency setup, app launch and scoped checks](apps/desktop/README.md#development-commands).
 
 ## Develop one useful slice
 
@@ -71,6 +74,10 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS.md).
 
 ## Document changelog
+
+- 2.1.3 (2026-09-30): link directly to local setup, app launch and scoped checks.
+
+- 2.1.2 (2026-09-30): clarify expandable UI/README localization and Chinese release changelogs.
 
 - 2.1.0 (2026-09-29): add human localization invitation and a distinct Agent reading/authorization context.
 

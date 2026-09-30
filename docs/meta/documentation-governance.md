@@ -1,7 +1,7 @@
 # VUA documentation governance
 
 
-> Document version: 2.3.0
+> Document version: 2.4.0
 > Status: Accepted
 > Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
 > (`docs/plans/docs-governance-reform.md`). The plan itself carries no normative effect;
@@ -53,9 +53,17 @@ language suffix, and the tracked English file is the sole authority. Three stand
 
 - **Changelogs** (`docs/release/v*.md` release notes) are single-language **Chinese**;
 - **README** is maintained in four languages: English (`README.md`), Chinese (`README_ZH.md`),
-  Japanese (`README_JA.md`), Korean (`README_KO.md`);
+  Japanese (`README_JA.md`), Korean (`README_KO.md`); more editions may be added;
 - Schemas, wire formats, source code, generated files, and official license texts remain
   single-source as before.
+
+Desktop application copy uses the i18n system, initially supporting English, Simplified Chinese,
+Japanese and Korean, with further languages allowed. UI translation resources are not duplicated
+developer documentation. Literal UI terminology, source-language examples and official license text
+may retain their original language within an English document. Archived records preserve their
+historical wording and carry no current implementation authority; new instructions belong in
+English current documents. Internal document-version changelog sections follow their document's
+language; the Chinese changelog exception above refers to product release notes.
 
 Chinese mirrors of the English documentation are maintained **locally** under the gitignored
 `docs-zh/` directory (same relative paths). They are not tracked, are never registered, carry no
@@ -177,6 +185,8 @@ Collab and old role prompts live under `docs/archive/2026-09-29/`. The two legac
 files forward to the archive and current PR policy. No archived prompt is an active instruction.
 
 ## Document changelog
+
+- 2.4.0 (2026-09-30): clarify UI i18n, expandable README languages, English current documentation and preserved source-language examples/history.
 
 - 2.3.0 (2026-09-29): define one-rule-one-owner routes and physical collab archival.
 

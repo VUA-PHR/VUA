@@ -19,6 +19,10 @@
 
 플레이에 필요한 소프트웨어와 설정을 준비하고 이동, 메뉴, 안전 설정, 기기 사용의 기초를 배웁니다. 사용 목적과 하드웨어에 맞춰 필요한 항목을 설명하고 환경 설치를 안내합니다.
 
+첫 계정 안내는 내장 브라우저에서 공식 가입 페이지를 엽니다. 플레이 경로는 Steam과 VRChat, 제작 경로는 선택적으로 Unity와 BOOTH를 안내합니다. 가입, Steam 라이브러리 추가 및 공식 계정 연결은 사용자가 직접 수행합니다. 업로드에는 정식 VRChat 계정과 New User 이상 등급이 필요하지만, 자격을 얻기 전에도 로컬 Avatar 제작 준비를 진행할 수 있습니다.
+
+첫 선택적 외부 연결 대상은 VRCFaceTracking과 hyblocker OpenVR Space Calibrator입니다. VUA는 별도로 설치된 공식 앱을 감지하고 실행하며 해당 앱의 설정 과정을 안내할 예정입니다. 설치와 업데이트는 Steam 또는 상위 앱이 관리합니다.
+
 ### [2] Avatar 제작
 
 > **Sugar, spice, and everything nice.**
@@ -34,7 +38,7 @@
 ## 안전 경계
 
 - VUA는 VRChat Inc.와 제휴하거나 공식 승인을 받은 제품이 아닌 독립적인 서드파티 도우미이며, 공개된 외부 인터페이스, OSC, 실행 옵션, 필요한 로컬 로그와 공개 설정만 사용하고 VRChat 클라이언트 주입·후킹·패치 또는 EAC 우회를 하지 않습니다.
-- VUA는 비밀번호, 인증 토큰, Cookie, Session을 포함한 VRChat 로그인 인증 정보를 요청·읽기·저장·전송해서는 안 됩니다.
+- 첫 계정 안내는 격리된 임시 브라우저 세션을 사용합니다. VUA 앱 기능은 비밀번호를 수집하거나 로그인 Cookie와 토큰을 앱 또는 Agent 데이터로 추출하지 않으며, 첫 제공 범위에서는 VRChat 로그인을 기억하지 않습니다. 이후 웹 정보 읽기와 실험적 로그인 유지 기능은 별도 개발 방향이며 플랫폼 승인을 뜻하지 않습니다. [계정 경계](docs/product-boundary.md#account-onboarding-user-ruling-2026-09-30)를 참조하세요.
 - 계정 변경은 사용자가 허용된 절차로 시작해야 하며, VUA가 클라우드에서 계정을 대신 조작하거나 Avatar를 자동으로 대신 업로드하지 않습니다.
 - 기능에 필요한 최소 데이터만 기본적으로 로컬에 보관하고 불필요한 친구 활동 추적이나 프로파일링을 만들지 않으며, 유료 소재는 로컬에 두고 공유 Recipe에는 소재 자체를 넣지 않습니다.
 - 공개적으로 지원되지 않는 클라이언트 동작, 숨겨진 설정 및 통제되지 않는 API 자동화는 기본 범위에서 제외되며, 기술 검사 통과는 외형·동작·실사용 안전성을 보장하지 않습니다.
@@ -47,6 +51,12 @@
 
 프로젝트는 앞으로도 오랫동안 Beta 상태를 유지할 것으로 예상합니다. 소개는 제품의 방향이며, 구현과 자동 테스트만으로 전체 실제 기기 흐름의 검증을 의미하지 않습니다. 실제 검증 상태는 개발 순서와 릴리스 근거를 확인해 주세요.
 
+### 현재 제공 상태와 시작 방법
+
+- 사용자는 [공개된 배포물](https://github.com/VUA-Project/VUA/releases)과 [v0.6.0 검증 기록 및 제한 사항](docs/release/v0.6.0.md)을 참고할 수 있습니다. 위 설명은 제품 방향이며 N1–N7의 검증 완료를 뜻하지 않습니다.
+- 스크린샷 사용자 가이드와 검증된 Beta 설치 프로그램은 N7 산출물이며 현재 제공되는 사용 설명서가 아닙니다. 사용 질문은 [Issues](https://github.com/VUA-Project/VUA/issues/new/choose)로 남길 수 있습니다.
+- 개발자는 [의존성 설치, 데스크톱 앱 실행 및 검사 선택](apps/desktop/README.md#development-commands)부터 시작하고 [기여 가이드](CONTRIBUTING.md)를 따르면 됩니다.
+
 ## 문서
 
 - [문서 가이드](docs/README.md)——작업별 최소 경로
@@ -57,7 +67,7 @@
 
 ## 라이선스
 
-VUA는 [Apache-2.0](LICENSE)을 사용합니다. 첫 대응 예정 도구는 [VRCFaceTracking(Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE)과 [Space Calibrator의 MIT 본체](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)입니다. 공간 보정 수정판에서는 SimpleBLE와 베이스 스테이션 BLE 관리를 제거할 예정입니다. 저작권, 다른 의존성 라이선스와 배포 조건은 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 확인하세요. 이는 수정 바이너리가 이미 배포되었다는 뜻이 아닙니다.
+VUA는 [Apache-2.0](LICENSE)을 사용합니다. 첫 지원 예정 외부 연결 대상은 [VRCFaceTracking(Apache-2.0)](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE)과 [Space Calibrator(MIT 본체 및 별도 라이선스의 서드파티 구성 요소)](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)입니다. 저작권과 향후 재배포 조건은 [서드파티 고지](THIRD_PARTY_NOTICES.md)를 참조하세요.
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 
