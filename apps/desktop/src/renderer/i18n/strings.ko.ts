@@ -316,6 +316,68 @@ demoTaskTitle: "데모 작업",
     wontDoItems: "시스템 설정을 변경하거나 소프트웨어를 설치하거나 데이터를 업로드하지 않습니다. 변경 전에는 반드시 다시 확인합니다.",
     confirm: "VUA 시작하기",
   },
+  deployment: {
+    "title": "목적에 맞는 환경 구성",
+    "description": "준비할 환경을 선택합니다. 계획에는 확인된 사전 조건이 표시됩니다. 게임, 장치 및 SDK 프로젝트의 실제 동작은 별도로 검증해야 합니다.",
+    "purpose": "목적",
+    "purposes": {
+      "desktop_play": "데스크톱 플레이",
+      "pico_pcvr": "PICO PCVR",
+      "pc_avatar": "PC 아바타 편집",
+      "quest_avatar": "Quest 아바타 편집"
+    },
+    "location": "Unity Editor 설치 루트 경로",
+    "locationHint": "자동 설치 경로는 Unity Hub의 현재 설정과 같아야 합니다. VUA는 이 전역 설정을 변경하지 않습니다.",
+    "plan": "검사 후 계획 만들기",
+    "working": "처리 중…",
+    "execute": "이 계획을 확인하고 실행",
+    "official": "공식 안내 열기",
+    "consent": "자동 단계는 표시된 경로에 지정 버전과 모듈을 설치하고 기존 소프트웨어를 유지합니다. 로그인, 라이선스 및 권한 승인은 사용자가 처리합니다. 취소는 안전한 단계 경계에서 적용되며 완료된 설치는 되돌리지 않습니다.",
+    "actions": {
+      "retain": "기존 설치 유지",
+      "manual_install": "공식 앱을 통해 설치",
+      "inspect": "변경 전에 검사",
+      "install_editor": "Unity Hub를 통해 지정 Editor 설치",
+      "add_android_modules": "필요한 Android 모듈 추가"
+    },
+    "reasons": {
+      "verified": "사전 조건 확인됨",
+      "missing": "필수 구성 요소 없음",
+      "unsuitable": "설치가 불완전하거나 버전이 적합하지 않음",
+      "detection_failed": "구성 요소를 검증할 수 없음"
+    },
+    "states": {
+      "queued": "대기 중",
+      "preparing": "확인한 계획 재검사 중",
+      "running": "환경 구성 단계 실행 중",
+      "waiting_for_input": "사용자 작업 대기 중",
+      "paused": "일시 정지됨",
+      "succeeded": "환경 구성 작업 완료",
+      "succeeded_with_warnings": "남은 단계가 있는 상태로 작업 완료",
+      "failed": "환경 구성 실패",
+      "cancelled": "환경 구성 취소됨"
+    },
+    "planFailed": "계획을 만들 수 없습니다. 선택한 목적과 절대 설치 경로를 확인한 후 다시 시도하세요.",
+    "executeFailed": "접수를 확인할 수 없습니다. 같은 계획을 다시 시도하면 같은 작업을 받을 수 있습니다. 확인 내용을 변경하기 전에 다시 검사하세요.",
+    "statusFailed": "작업 상태를 가져올 수 없습니다. 설치가 계속 진행 중일 수 있습니다.",
+    "reinspectFailed": "작업은 종료되었으나 환경 갱신에 실패했습니다. 다시 검사하세요.",
+    "inspectRequired": "재시작 후 복구된 작업입니다. 새 작업을 시작하기 전에 실제 환경을 검사하세요.",
+    "failedHint": "환경을 검사하고 새 계획을 만든 후 다시 시도하세요. 오류: ",
+    "manualRequired": "사용자 작업이 필요합니다. 계획에 표시된 공식 경로를 이용한 후 다시 검사하여 새 계획을 만드세요. 이 작업은 설치 성공을 증명하지 않습니다.",
+    "verified": "사전 조건이 확인되었습니다. 게임 및 장치 동작, Unity 실행, SDK/MA 프로젝트는 이 작업에서 검증되지 않았습니다.",
+    "cancel": "취소 요청",
+    "cancelPending": "취소 요청이 접수되었습니다. 현재 설치 단계가 안전한 경계에 도달할 때까지 기다려 주세요.",
+    "cancelFailed": "취소 요청을 확인할 수 없습니다. 상태를 새로 고친 후 다시 시도하세요.",
+    "components": {
+      "steam": "Steam",
+      "vrchat": "VRChat",
+      "steamvr": "SteamVR",
+      "pico_runtime": "PICO Connect / Runtime",
+      "unity_hub": "Unity Hub",
+      "unity_editor": "Unity Editor",
+      "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
+    }
+  },
   deployer: {
     zones: {
       play: {

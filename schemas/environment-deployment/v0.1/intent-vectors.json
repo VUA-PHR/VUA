@@ -1,0 +1,23 @@
+[
+  {"name":"creator root with spaces","valid":true,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\VUA Test\\Editors"}},
+  {"name":"four purposes and Unicode","valid":true,"intent":{"purposes":["desktop_play","pico_pcvr","pc_avatar","quest_avatar"],"editorRoot":"D:/用户/Unity"}},
+  {"name":"shell punctuation is data","valid":true,"intent":{"purposes":["desktop_play"],"editorRoot":"D:\\Unity $&; Editors"}},
+  {"name":"no purpose","valid":false,"intent":{"purposes":[],"editorRoot":"C:\\Editors"}},
+  {"name":"duplicate purpose","valid":false,"intent":{"purposes":["pc_avatar","pc_avatar"],"editorRoot":"C:\\Editors"}},
+  {"name":"unsupported purpose","valid":false,"intent":{"purposes":["latest_unity"],"editorRoot":"C:\\Editors"}},
+  {"name":"UI cannot supply commands","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors","args":["install"]}},
+  {"name":"relative drive path","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:Editors"}},
+  {"name":"UNC path","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"\\\\server\\Editors"}},
+  {"name":"device path","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"\\\\?\\C:\\Editors"}},
+  {"name":"drive root","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\"}},
+  {"name":"parent traversal","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors\\..\\Windows"}},
+  {"name":"empty segment","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors\\\\Unity"}},
+  {"name":"trailing space alias","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors "}},
+  {"name":"trailing dot alias","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors."}},
+  {"name":"reserved name","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\con.txt\\Editors"}},
+  {"name":"reserved serial device","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\COM1"}},
+  {"name":"reserved superscript serial device","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\COM¹"}},
+  {"name":"alternate data stream","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors:stream"}},
+  {"name":"Unicode control character","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors\u0085"}},
+  {"name":"wildcard","valid":false,"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editor*"}}
+]

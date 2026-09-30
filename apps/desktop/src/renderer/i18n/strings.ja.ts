@@ -316,6 +316,68 @@ demoTaskTitle: "デモタスク",
     wontDoItems: "システム設定の変更・ソフトのインストール・データのアップロードは行いません。変更前には必ず再確認します。",
     confirm: "VUA へ進む",
   },
+  deployment: {
+    "title": "目的に合わせた環境構築",
+    "description": "準備する環境を選択します。計画には確認できた前提条件が表示されます。ゲーム、機器、SDK プロジェクトの実動作確認は別途必要です。",
+    "purpose": "目的",
+    "purposes": {
+      "desktop_play": "デスクトップでプレイ",
+      "pico_pcvr": "PICO PCVR",
+      "pc_avatar": "PC アバター編集",
+      "quest_avatar": "Quest アバター編集"
+    },
+    "location": "Unity Editor のインストール先ルート",
+    "locationHint": "自動インストール先は Unity Hub の現在の設定と一致する必要があります。VUA はその設定を変更しません。",
+    "plan": "確認して計画を作成",
+    "working": "処理中…",
+    "execute": "この計画を確認して実行",
+    "official": "公式の手順を開く",
+    "consent": "自動処理は表示された場所に指定バージョンとモジュールをインストールします。既存のソフトウェアは保持します。ログイン、ライセンス、権限の確認はユーザーが行います。キャンセルは安全な区切りで反映され、完了したインストールは戻しません。",
+    "actions": {
+      "retain": "既存のインストールを保持",
+      "manual_install": "公式アプリからインストール",
+      "inspect": "変更前に確認",
+      "install_editor": "Unity Hub から指定 Editor をインストール",
+      "add_android_modules": "必要な Android モジュールを追加"
+    },
+    "reasons": {
+      "verified": "前提条件を確認済み",
+      "missing": "必要なコンポーネントがありません",
+      "unsuitable": "インストールが不完全、またはバージョンが対象外",
+      "detection_failed": "コンポーネントを確認できません"
+    },
+    "states": {
+      "queued": "待機中",
+      "preparing": "確認済み計画を再確認中",
+      "running": "構築手順を実行中",
+      "waiting_for_input": "ユーザーの操作待ち",
+      "paused": "一時停止中",
+      "succeeded": "構築タスク完了",
+      "succeeded_with_warnings": "未完了の手順を残してタスク完了",
+      "failed": "構築に失敗",
+      "cancelled": "構築をキャンセル済み"
+    },
+    "planFailed": "計画を作成できません。目的と絶対パスを確認して再試行してください。",
+    "executeFailed": "受付を確認できません。同じ計画の再試行で同じタスクを取得できます。確認内容を変更する前に再確認してください。",
+    "statusFailed": "タスクの状態を取得できません。インストールが継続している可能性があります。",
+    "reinspectFailed": "タスクは終了しましたが、環境を更新できません。再確認してください。",
+    "inspectRequired": "再起動から復旧したタスクです。新しい操作の前に実環境を確認してください。",
+    "failedHint": "環境を確認し、新しい計画を作成してから再試行してください。エラー: ",
+    "manualRequired": "ユーザーの操作が必要です。計画の公式手順を実施し、環境を再確認して新しい計画を作成してください。このタスクはインストール成功を保証しません。",
+    "verified": "前提条件を確認しました。ゲームと機器の動作、Unity 起動、SDK/MA プロジェクトはこのタスクでは未検証です。",
+    "cancel": "キャンセルを要求",
+    "cancelPending": "キャンセル要求済みです。現在のインストール手順が安全な区切りに達するまでお待ちください。",
+    "cancelFailed": "キャンセル要求を確認できません。状態を更新して再試行してください。",
+    "components": {
+      "steam": "Steam",
+      "vrchat": "VRChat",
+      "steamvr": "SteamVR",
+      "pico_runtime": "PICO Connect / Runtime",
+      "unity_hub": "Unity Hub",
+      "unity_editor": "Unity Editor",
+      "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
+    }
+  },
   deployer: {
     zones: {
       play: {

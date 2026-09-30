@@ -32,6 +32,9 @@ windows-sys = { version = "=0.61.2", features = [
     "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_Security_Cryptography",
+    # N1: obtain the verified WinTrust leaf signer, never invoke a command shell.
+    "Win32_Security_Cryptography_Catalog",
+    "Win32_Security_Cryptography_Sip",
     "Win32_Security_WinTrust",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_Threading",

@@ -330,6 +330,68 @@ demoTaskTitle: "Demo task",
       "No system settings are modified, no software is installed, no data is uploaded; you will be asked again before any change.",
     confirm: "Enter VUA",
   },
+  deployment: {
+    "title": "Deploy by purpose",
+    "description": "Choose the environment to prepare. The plan reports observed prerequisites; real game/device and SDK project checks remain separate.",
+    "purpose": "Purposes",
+    "purposes": {
+      "desktop_play": "Desktop play",
+      "pico_pcvr": "PICO PCVR",
+      "pc_avatar": "PC Avatar editing",
+      "quest_avatar": "Quest Avatar editing"
+    },
+    "location": "Unity Editor installation root",
+    "locationHint": "Automatic installation must match Unity Hub’s existing install path. VUA does not change that global setting.",
+    "plan": "Inspect and prepare a plan",
+    "working": "Working…",
+    "execute": "Confirm this plan and execute",
+    "official": "Open official instructions",
+    "consent": "Automatic steps install the listed version/components at the listed location. Existing software is retained. Account sign-in, licenses and elevation stay with the user. Cancellation takes effect at safe step boundaries; completed installation is not rolled back.",
+    "actions": {
+      "retain": "Keep existing installation",
+      "manual_install": "Install through the official application",
+      "inspect": "Inspect before changing anything",
+      "install_editor": "Install the required Editor through Unity Hub",
+      "add_android_modules": "Add the required Android modules"
+    },
+    "reasons": {
+      "verified": "Prerequisite observed",
+      "missing": "Required component missing",
+      "unsuitable": "Installation incomplete or version unsuitable",
+      "detection_failed": "Could not verify this component"
+    },
+    "states": {
+      "queued": "Queued",
+      "preparing": "Rechecking the confirmed plan",
+      "running": "Executing deployment steps",
+      "waiting_for_input": "Waiting for user action",
+      "paused": "Paused",
+      "succeeded": "Deployment task completed",
+      "succeeded_with_warnings": "Task completed with outstanding steps",
+      "failed": "Deployment failed",
+      "cancelled": "Deployment cancelled"
+    },
+    "planFailed": "Could not prepare a plan. Check the selected purposes and absolute installation root, then retry.",
+    "executeFailed": "Acceptance could not be confirmed. Retry this plan to retrieve the same task, or reinspect before changing consent.",
+    "statusFailed": "Task status is temporarily unavailable. Installation may still be running.",
+    "reinspectFailed": "The task finished, but environment refresh failed. Run detection again.",
+    "inspectRequired": "Recovered task: inspect the actual environment before starting new work.",
+    "failedHint": "Inspect the environment and prepare a fresh plan before retrying. Error: ",
+    "manualRequired": "User action is required. Follow the official route shown in the plan, then inspect and prepare a new plan; this task does not prove successful installation.",
+    "verified": "Prerequisites were observed. Game/device behavior, Unity launch and SDK/MA project acceptance have not been verified by this task.",
+    "cancel": "Request cancellation",
+    "cancelPending": "Cancellation requested; the current installer step must reach a safe boundary.",
+    "cancelFailed": "Cancellation could not be confirmed. Refresh status before retrying.",
+    "components": {
+      "steam": "Steam",
+      "vrchat": "VRChat",
+      "steamvr": "SteamVR",
+      "pico_runtime": "PICO Connect / Runtime",
+      "unity_hub": "Unity Hub",
+      "unity_editor": "Unity Editor",
+      "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
+    }
+  },
   deployer: {
     zones: {
       play: {

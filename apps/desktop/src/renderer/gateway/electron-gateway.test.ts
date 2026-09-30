@@ -67,6 +67,60 @@ const appError = (code: string) => ({
   },
 });
 
+describe("N1 deployment consumer", () => {
+  const intent = { purposes: ["pc_avatar"] as const, editorRoot: "C:\\VUA Test\\Editors" };
+  const plan = { schemaVersion: "vua.environment-deployment/v0.1" as const, intent, digest: "a".repeat(64), prerequisitesReady: false,
+    steps: ["unity_hub", "unity_editor"].map(component => ({ component, action: "manual_install" as const, reason: "missing" as const, location: null, version: null, officialUrl: "https://unity.com/download" })) };
+  it("requires both served deployment capabilities rather than inferring them from inspection", async () => {
+    for (const available of [true, false]) {
+      const { host } = stubHost(() => ok({ capabilities: { operations: available
+        ? ["environment.planDeployment", "environment.executeDeployment"].map(operationId => ({ operationId, availability: "available" }))
+        : [{ operationId: "environment.getSnapshot", availability: "available" }] } }));
+      expect((await createElectronGateway(host, null).environment.deployment!.capability()).state).toBe(available ? "ready" : "unavailable");
+    }
+  });
+  it("uses confirmed backend intent and command identity, then reads authoritative task state", async () => {
+    const { host, calls } = stubHost(call => call.method === "environment.planDeployment"
+      ? ok({ deploymentPlan: plan }) : call.method === "environment.executeDeployment"
+        ? ok({ schemaVersion: plan.schemaVersion, operation: "environment.executeDeployment", taskId: "deployment-1", correlationId: "corr" })
+        : ok(taskSnapshot({ taskId: "deployment-1" })));
+    const port = createElectronGateway(host, null).environment.deployment!;
+    expect(await port.plan(intent)).toEqual(plan);
+    expect(await port.execute(plan, "command-1")).toBe("deployment-1");
+    expect(calls[1]!.params).toEqual({ intent, confirmedDigest: plan.digest, commandId: "command-1" });
+    expect((await port.status("deployment-1")).state).toBe("queued");
+    await port.cancel("deployment-1", 4);
+    expect(calls[3]!.params).toMatchObject({ taskId: "deployment-1", observedRevision: 4 });
+  });
+  it("keeps unavailable plans, malformed receipts and failed refresh visible", async () => {
+    const { host } = stubHost(() => ok({ taskId: "looks-successful" }));
+    const env = createElectronGateway(host, null).environment;
+    await expect(env.deployment!.plan(intent)).rejects.toThrow();
+    await expect(env.deployment!.execute(plan, "command-1")).rejects.toThrow();
+    await expect(env.runCheck("create")).rejects.toThrow("environment_snapshot_unavailable");
+  });
+  it("refuses another task's snapshot and unknown states instead of inventing progress", async () => {
+    for (const snapshot of [taskSnapshot({ taskId: "wrong-task" }), taskSnapshot({ taskId: "deployment-1", state: "installed" })]) {
+      const { host } = stubHost(() => ok(snapshot));
+      await expect(createElectronGateway(host, null).environment.deployment!.status("deployment-1")).rejects.toThrow("deployment_status_unavailable");
+    }
+  });
+  it("accepts only this task's closed live step facts and unsubscribes", () => {
+    const { host, emit } = stubHost(() => ok({}));
+    const callback = vi.fn();
+    const unsubscribe = createElectronGateway(host, null).environment.deployment!.subscribe("deployment-1", callback);
+    const event: ApplicationEventV01 = { contractVersion: "0.1", kind: "task.progressed", eventId: "e", taskId: "deployment-1", revision: 4,
+      correlationId: "corr", occurredAt: "2026-09-30T00:00:00Z", state: "running", payload: { completed: 0, total: 2,
+        messageKey: "deployment.actions.install_editor", params: { operation: "environment.executeDeployment", component: "unity_editor", action: "install_editor", phase: "started" } } };
+    emit({ ...event, taskId: "different-task" });
+    emit({ ...event, payload: { ...event.payload, params: { ...event.payload.params, action: "erase_disk" } } });
+    expect(callback).not.toHaveBeenCalled();
+    emit(event);
+    expect(callback).toHaveBeenCalledWith({ component: "unity_editor", action: "install_editor", phase: "started" });
+    unsubscribe(); emit(event); expect(callback).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("live Electron Gateway (F2)", () => {
   it("serves the task center from task.list and projects contract values", async () => {
     const { host } = stubHost(() => ok({

@@ -1,6 +1,6 @@
 # N-sequence architecture evolution
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
 > Updated: 2026-09-30
 > Scope: Incremental software and documentation structure for N1-N7
@@ -105,6 +105,20 @@ New journal/step persistence must be designed against the current task-store for
 available. Use the existing revision, cancellation, waiting-for-input and inspect-required semantics
 where they fit; version a persistence change if the first concrete slice requires it.
 
+### Implemented N1 increment
+
+The [deployment v0.1 family](../protocols/environment-deployment-v0.1.md) now connects purpose
+selection and plan review to durable confirmed execution. Reuse the existing filesystem/registry
+discovery as hints, then strengthen prerequisite checks in project-manager. Core planning does
+not depend on Hub syntax or Windows handles. The Provider only constructs/delegates these services.
+
+The first automatic adapter uses a trusted Unity Hub's supported headless commands for the exact
+global Editor and Android modules; unsupported paths/CLI versions require official user handoff.
+There is no Hub install-path mutation, VR runtime replacement or latest-version guessing. The
+contract owns exact confirmation, idempotency, safe cancellation, verification and pending work.
+Its synthetic tests establish policy/transport behavior; actual installation, SDK/MA project
+launch, account guidance and human UI acceptance still belong to N1's remaining real-machine work.
+
 ## Material and production evolution
 
 Retain AMF/BDL ownership. BOOTH account enumeration, selective file download and import are distinct
@@ -159,6 +173,8 @@ responsibilities while reorganizing docs. This direction is accepted. Illustrati
 installer choices above are not frozen interfaces; define them from the first executable N1 slice.
 
 ## Document changelog
+
+- 1.2.0 (2026-09-30): link the implemented purpose-plan/confirmation slice and distinguish remaining N1 functional acceptance.
 
 - 1.1.0 (2026-09-30): add minimal account-guide state and external-only N2 adapter responsibilities.
 

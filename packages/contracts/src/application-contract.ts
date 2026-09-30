@@ -1,3 +1,4 @@
+import { isDeploymentCommandId, isDeploymentParams, type DeploymentPlanParams, type DeploymentExecuteParams, type DeploymentPlanResult, type DeploymentAccepted } from "./environment-deployment.js";
 import { isDownloadEventV01 } from "./download-events.js";
 
 export const APPLICATION_CONTRACT_VERSION = "0.1" as const;
@@ -2708,7 +2709,12 @@ export interface ProjectImportCopyCommandV01 extends ApplicationRequestBaseV01 {
   };
 }
 
+export interface DeploymentPlanQuery extends ApplicationRequestBaseV01 { readonly kind: "query"; readonly method: "environment.planDeployment"; readonly params: DeploymentPlanParams }
+export interface DeploymentExecuteCommand extends ApplicationRequestBaseV01 { readonly kind: "command"; readonly method: "environment.executeDeployment"; readonly commandId: string; readonly params: DeploymentExecuteParams }
+
 export type ApplicationRequestV01 =
+  | DeploymentPlanQuery
+  | DeploymentExecuteCommand
   | ApplicationSnapshotQueryV01
   | TaskListQueryV01
   | TaskGetQueryV01
@@ -2857,6 +2863,8 @@ export interface DemoTaskStartedV01 {
 }
 
 export type ApplicationSuccessValueV01 =
+  | DeploymentPlanResult
+  | DeploymentAccepted
   | ApplicationSnapshotV01
   | TaskListSnapshotV01
   | TaskSnapshotV01
@@ -3062,6 +3070,12 @@ export function isApplicationRequestV01(value: unknown): value is ApplicationReq
     const keys = Object.keys(value.params);
     if (!keys.every((key) => key === "taskId" || key === "observedRevision") || !keys.includes("taskId")) return false;
     return value.params.observedRevision === undefined || isNonNegativeInteger(value.params.observedRevision);
+  }
+  if (value.method === "environment.planDeployment" || value.method === "environment.executeDeployment") {
+    const execute = value.method === "environment.executeDeployment";
+    return value.kind === (execute ? "command" : "query")
+      && hasExactKeys(value, execute ? ["contractVersion", "requestId", "correlationId", "kind", "method", "params", "commandId"] : ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])
+      && (!execute || isDeploymentCommandId(value.commandId)) && isDeploymentParams(value.params, execute);
   }
   if (value.kind === "query" && value.method === "environment.getSnapshot") {
     return hasExactKeys(value, ["contractVersion", "requestId", "correlationId", "kind", "method", "params"])

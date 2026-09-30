@@ -219,6 +219,7 @@ pub struct EnvironmentConfig {
 }
 
 struct EnvironmentServices {
+    deployment: vua_orchestrator::deployment::DeploymentService,
     engine: EnvironmentEngine,
 }
 
@@ -886,16 +887,19 @@ pub fn run_provider_host_full(
             })
         })
         .transpose()?;
-    let environment = environment.map(|config| {
-        Arc::new(EnvironmentServices {
+    let environment = environment.map(|config| -> Result<_, SqliteStoreError> {
+        Ok(Arc::new(EnvironmentServices {
+            deployment: vua_orchestrator::deployment::DeploymentService::new(
+                Arc::new(vua_project_manager::deployment_adapter::WindowsDeploymentAdapter::new(config.roots.clone())),
+                TaskRuntime::with_sqlite(store.clone(), Arc::new(SystemClock), Arc::new(NanosTaskIdGenerator::default()))?),
             engine: EnvironmentEngine::new(
                 Arc::new(vua_orchestrator::StdProcessRunner),
                 Arc::new(SystemClock),
                 config.roots,
                 Arc::new(vua_project_manager::VccSettingsFileReader),
             ),
-        })
-    });
+        }))
+    }).transpose()?;
     // Proposal 021 routing batch: the default verification face is the
     // primitive's own system wiring — the route adds the wire mapping
     // only, never verification logic of its own.
@@ -931,10 +935,13 @@ pub fn run_provider_host_full(
         if let Some(project_ops) = &state.project_ops {
             driven_runtimes.push(project_ops.runtime.clone());
         }
+        if let Some(environment) = &state.environment { driven_runtimes.push(environment.deployment.runtime.clone()); }
         for runtime in driven_runtimes {
             let sink = sink.clone();
+            // Register before dispatch starts: even a short deployment/manual handoff must
+            // publish acceptance and progress without a subscriber-thread startup race.
+            let receiver = runtime.subscribe();
             std::thread::spawn(move || {
-                let receiver = runtime.subscribe();
                 for event in receiver {
                     let stored = StoredTaskEvent {
                         task_id: event.task_id,
@@ -1094,7 +1101,7 @@ pub fn run_provider_host_full(
     Ok(())
 }
 
-enum FrameOutcome {
+pub(crate) enum FrameOutcome {
     Response(Value),
     ProtocolError(Value),
     ResponseAndEvent {
@@ -1207,6 +1214,15 @@ fn wait_for_safe_boundary(state: &HostState, timeout: Duration) -> FrameOutcome 
 
 fn blocking_tasks(state: &HostState) -> Result<Vec<Value>, SqliteStoreError> {
     let mut tasks = Vec::new();
+    // A queued deployment already owns future machine side effects. Only this runtime's
+    // live jobs block shutdown; recovered jobs are inspect-required and never resume.
+    if let Some(environment) = &state.environment {
+        for task in environment.deployment.runtime.snapshot_all() {
+            if !task.state.is_terminal() && task.recovery_disposition == vua_orchestrator::TaskRecoveryDisposition::None {
+                tasks.push(json!({"taskId": task.task_id, "revision": task.revision, "state": state_name(task.state)}));
+            }
+        }
+    }
     // A registered production task blocks shutdown even BEFORE its
     // worker acquired the lease (the spawn window) — a safe_to_stop
     // verdict must never race a mutation that is about to start.
@@ -1332,6 +1348,9 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
     if method.starts_with("packages.") {
         return packages_request(state, method, request, request_id, correlation_id);
     }
+    if matches!(method, "environment.planDeployment" | "environment.executeDeployment") {
+        return crate::deployment_routes::request(state.environment.as_ref().map(|s| &s.deployment), method, request, request_id, correlation_id);
+    }
     let outcome = (|| -> Result<FrameOutcome, SqliteStoreError> {
         match method {
             "application.getSnapshot" => Ok(FrameOutcome::Response(application_success(
@@ -1413,6 +1432,16 @@ fn handle_application_request(state: &mut HostState, request: &Value) -> FrameOu
 /// Kernel-side derivation source for the Gateway boolean capabilities and the
 /// entry visibility (contract operation-level Capability). demo.task leaves the
 /// production capability table once the F3 real use-case command lands.
+fn deployment_capability(state: &HostState, operation: &str) -> Value {
+    if state.environment.is_some() {
+        json!({"operationId": operation, "availability": "available"})
+    } else {
+        json!({"operationId": operation, "availability": "unavailable", "reason":
+            application_error("capability", "corr-capability-deployment", "vua.deployment.unavailable",
+                "errors.deployment.failed", "unavailable")["error"]})
+    }
+}
+
 fn served_capabilities(state: &HostState) -> Value {
     let production_availability = if state.production.is_some() {
         "available"
@@ -1609,6 +1638,8 @@ fn served_capabilities(state: &HostState) -> Value {
     json!([
         {"operationId": "task.list", "availability": "available"},
         {"operationId": "environment.getSnapshot", "availability": "available"},
+        deployment_capability(state, "environment.planDeployment"),
+        deployment_capability(state, "environment.executeDeployment"),
         {"operationId": "environment.verifyEditor", "availability": "available"},
         {"operationId": "demo.task", "availability": "available"},
         {"operationId": "overlay.snapshot", "availability": overlay_availability},
@@ -1973,7 +2004,7 @@ fn task_event(event_id: &str, event: &StoredTaskEvent) -> Value {
     })
 }
 
-fn application_success(request_id: &str, value: Value) -> Value {
+pub(crate) fn application_success(request_id: &str, value: Value) -> Value {
     json!({
         "contractVersion": APPLICATION_CONTRACT_VERSION,
         "requestId": request_id,
@@ -8781,7 +8812,7 @@ fn download_retry(
     ))
 }
 
-fn application_error(
+pub(crate) fn application_error(
     request_id: &str,
     correlation_id: &str,
     code: &str,

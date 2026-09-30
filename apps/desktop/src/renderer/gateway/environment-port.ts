@@ -1,3 +1,4 @@
+import type { DeploymentIntent, DeploymentPlan, TaskSnapshotV01 } from "@vua/contracts";
 import type { CheckZone, DeployerView, VersionTrack } from "../features/deployer/deployer-model.ts";
 import type { FixPlanV1 } from "../features/deployer/fix-plan-model.ts";
 import type { CapabilityReport, Unsubscribe } from "./types.ts";
@@ -20,7 +21,19 @@ export interface EnvironmentView {
   versions: Record<CheckZone, VersionTrack[]>;
 }
 
+/** Real deployment port; fixture/empty sources deliberately do not simulate installation. */
+export interface DeploymentPort {
+  capability(): Promise<CapabilityReport>;
+  plan(intent: DeploymentIntent): Promise<DeploymentPlan>;
+  execute(plan: DeploymentPlan, commandId: string): Promise<string>;
+  status(taskId: string): Promise<TaskSnapshotV01>;
+  cancel(taskId: string, revision: number): Promise<void>;
+  /** Live step facts; task.get remains authoritative for final/cancellation/recovery state. */
+  subscribe(taskId: string, callback: (step: { component: string; action: DeploymentPlan["steps"][number]["action"]; phase: "started" | "verified" }) => void): Unsubscribe;
+}
+
 export interface EnvironmentPort {
+  readonly deployment?: DeploymentPort;
   /** 只读快照:渲染前拉取;订阅推送到达前不得把本地缓存当事实来源 */
   snapshot(): Promise<EnvironmentView>;
   /** 订阅快照广播(检测完成、状态变化时推送) */

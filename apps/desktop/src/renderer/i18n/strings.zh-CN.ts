@@ -326,6 +326,68 @@ demoTaskTitle: "演示任务",
     wontDoItems: "不会修改系统设置、不会安装软件、不会上传任何数据;任何变更前都会再次询问。",
     confirm: "进入 VUA",
   },
+  deployment: {
+    "title": "按用途部署环境",
+    "description": "选择需要准备的环境。计划显示已观察到的前置条件；游戏、设备和 SDK 工程的实际验证另行进行。",
+    "purpose": "用途",
+    "purposes": {
+      "desktop_play": "桌面游玩",
+      "pico_pcvr": "PICO PCVR",
+      "pc_avatar": "PC Avatar 改模",
+      "quest_avatar": "Quest Avatar 改模"
+    },
+    "location": "Unity Editor 安装根目录",
+    "locationHint": "自动安装必须与 Unity Hub 当前的安装位置一致，VUA 不修改该全局设置。",
+    "plan": "检测并生成计划",
+    "working": "正在处理…",
+    "execute": "确认此计划并执行",
+    "official": "打开官方说明",
+    "consent": "自动步骤会将指定版本和组件安装到列出的位置，保留已有软件。登录、许可和提权由用户处理。取消在步骤安全边界生效，已完成的安装不自动回滚。",
+    "actions": {
+      "retain": "保留已有安装",
+      "manual_install": "通过官方应用安装",
+      "inspect": "先检查，再决定是否修改",
+      "install_editor": "通过 Unity Hub 安装指定 Editor",
+      "add_android_modules": "添加所需 Android 组件"
+    },
+    "reasons": {
+      "verified": "已观察到前置条件",
+      "missing": "缺少必需组件",
+      "unsuitable": "安装不完整或版本不适用",
+      "detection_failed": "无法核验此组件"
+    },
+    "states": {
+      "queued": "已排队",
+      "preparing": "重新核验已确认计划",
+      "running": "正在执行部署步骤",
+      "waiting_for_input": "等待用户操作",
+      "paused": "已暂停",
+      "succeeded": "部署任务已完成",
+      "succeeded_with_warnings": "任务完成，仍有待处理步骤",
+      "failed": "部署失败",
+      "cancelled": "部署已取消"
+    },
+    "planFailed": "无法生成计划。检查所选用途和绝对安装路径后重试。",
+    "executeFailed": "无法确认是否受理。重试此计划可获取同一任务；改变确认内容前应重新检测。",
+    "statusFailed": "暂时无法获取任务状态，安装可能仍在进行。",
+    "reinspectFailed": "任务已结束，但环境刷新失败，请重新检测。",
+    "inspectRequired": "任务由重启恢复：开始新操作前先检查实际环境。",
+    "failedHint": "重试前检查环境并生成新计划。错误：",
+    "manualRequired": "需要用户操作。按计划中的官方入口完成操作后，重新检测并生成计划；本任务不证明安装成功。",
+    "verified": "已观察到前置条件。本任务尚未验证游戏和设备功能、Unity 启动或 SDK/MA 工程。",
+    "cancel": "请求取消",
+    "cancelPending": "已请求取消，当前安装步骤需先到达安全边界。",
+    "cancelFailed": "无法确认取消请求，请刷新状态后重试。",
+    "components": {
+      "steam": "Steam",
+      "vrchat": "VRChat",
+      "steamvr": "SteamVR",
+      "pico_runtime": "PICO Connect / Runtime",
+      "unity_hub": "Unity Hub",
+      "unity_editor": "Unity Editor",
+      "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
+    }
+  },
   deployer: {
     zones: {
       play: {
