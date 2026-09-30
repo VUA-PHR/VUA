@@ -5,7 +5,7 @@ boundary: "external"
 status: "experimental"
 risk: "medium"
 risk_rule: "vua.risk-gate/v1"
-delivery: "v0.7.0"
+delivery: "unscheduled"
 maintainer: "external-upstream"
 distribution: "external-connection"
 platforms: ["windows"]
@@ -29,6 +29,6 @@ immediately visible to both sides. All other storage faces such as `vcc.liteDb`,
 project files themselves, stay denied (authoritative wording in the
 [product boundary](../../product-boundary.md) 1.5.0 "explicit boundary" section). The
 read face and the settings face have landed with the proposal 024–027 chain (in the
-development window; the release face awaits v0.7.0). The detection matrix and the
+development window; publication is evaluated separately from N-stage acceptance). The detection matrix and the
 allow/forbidden lists are in the
 [ALCOM/VCC project compatibility matrix](../../compatibility/alcom-vcc.md).

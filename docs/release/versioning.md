@@ -1,10 +1,10 @@
 # Versioning policy
 
 
-> Document version: 2.1.0
+> Document version: 3.0.0
 > Status: Accepted
 > Scope: VUA product releases, tags, packages, and public contracts
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Normative effect: Yes
 
 ## Product version
@@ -15,34 +15,52 @@ VUA product releases follow [Semantic Versioning 2.0.0](https://semver.org/spec/
 - Git release tags use `vMAJOR.MINOR.PATCH`; the `v` is a tag prefix, not part of the SemVer value.
 - `0.y.z` is initial development. Public contracts can still change incompatibly, but every breaking
   change must be explicit in release notes and accompanied by the owning protocol/schema/migration.
-- Under the 2026-09-28 user ruling, the explicit N-stage mapping below replaces the former
-  patch-only-fixes convention during major-zero development. Patch-numbered N releases may add
-  capabilities. Protocol/schema versions and breaking-change/migration disclosure remain required.
+- Under the 2026-09-30 user ruling, N stages define delivery outcomes and acceptance, not product
+  version numbers. Select the release version from its actual changes before publication.
 - No `1.0.0`, stable release, or production-safety commitment is scheduled. Only an explicit
   request from the author can change the continuing-Beta policy.
 - A published tag and artifact are immutable. Any change is a new version.
 
-## Continuing Beta and N-stage versions
+## Continuing Beta and independent delivery stages
 
-Beta is lifecycle metadata rather than an automatically appended SemVer suffix. Keep the exact
-numeric versions below. Do not generate v1.0.0 candidates or stable claims from earlier M plans.
+Beta is lifecycle metadata rather than an automatically appended SemVer suffix.
+Do not generate v1.0.0 candidates or stable claims from earlier M plans.
 Historical tags/artifacts and their original stage labels remain unchanged; adoption of this plan
 does not itself bump the current package version or create a release.
 
-| Gate | Product version | Delivery |
-| --- | --- | --- |
-| N1 | v0.7.0 | Purpose-driven deployment |
-| N2 | v0.7.1 | VRCFaceTracking and modified hyblocker Space Calibrator |
-| N3 | v0.8.0 | Complex real-material production and SDK handoff |
-| N4 | v0.8.1 | Recipe reproduction |
-| N5 | v0.8.2 | Audited old-M4 material-management rework |
-| N6 | v0.9.0 | Recovery and environment maintenance |
-| N7 | v0.9.1 | Beta installer, regression, and illustrated user guide |
-
-All are Beta. The [development sequence](../development-outline.md) owns their acceptance rows.
+The [development sequence](../development-outline.md) owns N1-N7 outcomes and acceptance.
+One stage may span several releases, and a release may include useful slices from several stages.
+Partial delivery may be released with its remaining acceptance explicit; neither publication nor
+a version increment closes a stage. Completion requires its actual acceptance evidence.
 Known non-blocking defects may ship with impact/workaround/follow-up disclosed. A pass covers
 recorded scenarios, not production safety or all Windows versions. Non-UI acceptance can be
 agent-driven; human acceptance is required for UI usability. Private real-run artifacts stay local.
+
+## Selecting a release version
+
+Compare the release candidate with the last published release, not with an N-stage number.
+Identify the public application behavior/contracts and any stored-format compatibility changes;
+select and record the version before tagging and publishing. Planned version targets are tentative
+and may change before publication. Do not reserve a version for each N stage.
+
+During `0.y.z` development, VUA uses this project convention:
+
+- New user-facing capabilities or breaking application/compatibility changes increment the minor
+  version and reset the patch to zero. Disclose breaking changes and required migration separately;
+  a `0.x` increment does not promise a stable public API.
+- Backward-compatible fixes, documentation or packaging corrections to an existing released
+  capability increment the patch. Documentation edits alone do not require a product release.
+- If a release includes both kinds, use a minor increment. Evaluate changes against the last
+  published release even when the work crosses several N stages.
+
+SemVer permits an unstable public API during major-zero development; the convention above gives
+VUA predictable release meaning. Only after the author explicitly authorizes `1.0.0` does the
+stable-API rule apply: incompatible public API changes increment major, backward-compatible new
+functionality increments minor, and backward-compatible fixes increment patch.
+
+Release notes identify delivered slices, relevant N acceptance evidence and pending requirements.
+Protocol, schema, persistence and document versions remain independent; product numbering does
+not authorize editing a frozen format in place.
 
 ## What is independently versioned
 
@@ -93,10 +111,16 @@ third-party component's license. Before bundling or changing a dependency, recor
 source/version, applicable terms, notices, redistribution/update/removal requirements and any
 excluded components. Keep notices consistent with the actual distributed build. Do not announce
 a future VUA license change merely because an integration is planned; any proposed change needs
-an explicit decision based on the selected code and distribution. N2's removal of SimpleBLE and
-base-station BLE management remains required; this policy is not a completed license audit.
+an explicit decision based on the selected code and distribution. N2 guides Steam library addition
+and installation, then invokes independently installed official tools through supported external
+entry points. Upstream distributions retain their own licenses; follow
+[third-party notices](../../THIRD_PARTY_NOTICES.md) for any future redistribution.
 
 ## Document changelog
+
+- 3.0.0 (2026-09-30): user ruling decouples N delivery stages from product versions; choose release numbers from actual changes and retain independent contract/document versions.
+
+- 2.1.1 (2026-09-30): align the N2 summary and licensing guidance with official external-tool connections.
 
 - 2.1.0 (2026-09-28): clarify third-party compatibility change disclosure and separate licensing review.
 

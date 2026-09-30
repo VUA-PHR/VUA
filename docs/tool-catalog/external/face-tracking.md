@@ -5,7 +5,7 @@ boundary: "external"
 status: "planned"
 risk: "medium"
 risk_rule: "vua.risk-gate/v1"
-delivery: "v0.7.1"
+delivery: "unscheduled"
 maintainer: "external-upstream"
 distribution: "external-connection"
 platforms: ["windows"]

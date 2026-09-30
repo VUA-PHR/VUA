@@ -1,7 +1,7 @@
 # VUA product boundary
 
 
-> Document version: 2.2.1
+> Document version: 2.2.2
 > Status: Accepted
 > Scope: Entire VUA product
 > Updated: 2026-09-30
@@ -358,6 +358,8 @@ and explicit recovery requirements remain implementation constraints; results mu
 
 The project remains **Beta until the author explicitly requests otherwise**, with no planned
 v1.0.0 milestone and no production-safety guarantee. Historical release labels/tags are unchanged.
+N stages define delivery outcomes independently of product release numbers; the
+[versioning policy](release/versioning.md) selects versions from actual release changes.
 N-gate completion applies only to its recorded scenarios and disclosed limitations. Old M4 closure
 is withdrawn as proof of complete material management. N5 first audits actual capabilities;
 the user's report of minimal functionality is a reason to investigate, not a verified absence
@@ -400,6 +402,8 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.
 
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
 

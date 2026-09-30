@@ -1,7 +1,7 @@
 # VUA documentation governance
 
 
-> Document version: 2.4.0
+> Document version: 2.4.1
 > Status: Accepted
 > Source: formalization of §2 of the "VUA documentation and collaboration repair plan"
 > (`docs/plans/docs-governance-reform.md`). The plan itself carries no normative effect;
@@ -100,8 +100,10 @@ Paths refer to the canonical file (single-language per §2.3). Update rules are 
 
 ### 2.7 Traceability
 
-The release notes of every N gate end with the "document version matrix accepted at this gate"
-(a REGISTRY snapshot), making product versions and document versions mutually traceable.
+Each product release records its accepted document version matrix (a REGISTRY snapshot) in the
+release notes. N-gate acceptance records cite the document versions reviewed and the release or
+commit actually tested. A gate may span several releases; release numbering and gate completion
+remain independent.
 
 ## 3. REGISTRY update cadence (event-driven, not per collaboration count)
 
@@ -185,6 +187,8 @@ Collab and old role prompts live under `docs/archive/2026-09-29/`. The two legac
 files forward to the archive and current PR policy. No archived prompt is an active instruction.
 
 ## Document changelog
+
+- 2.4.1 (2026-09-30): separate release document matrices from N-gate acceptance traceability.
 
 - 2.4.0 (2026-09-30): clarify UI i18n, expandable README languages, English current documentation and preserved source-language examples/history.
 

@@ -2,10 +2,6 @@
 
 English | [简体中文](README_ZH.md) | [日本語](README_JA.md) | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
-
 **VUA (VRC Ultra Assistant)** is a Windows desktop production environment for VRChat
 players — especially players who have never touched Unity, or don't yet know what they
 need. Start from a goal and your own assets; VUA guides you through environment setup,
