@@ -51,6 +51,12 @@ The latest published artifact remains v0.6.0, historically labeled pre-alpha. De
 
 The project is expected to remain in Beta for a long time. These descriptions express the product direction; implemented pieces and automated tests do not establish complete real-machine workflows. Read the sequence and release evidence for actual acceptance status.
 
+### Current delivery and starting points
+
+- For players: consult the [published artifacts](https://github.com/VUA-Project/VUA/releases) and [v0.6.0 evidence and limitations](docs/release/v0.6.0.md). The features described above are product direction; N1–N7 outcomes are not declared accepted by this README.
+- The screenshot-based user guide and tested Beta installer are N7 deliverables, not current onboarding instructions. Use [Issues](https://github.com/VUA-Project/VUA/issues/new/choose) for usage questions.
+- For developers: [install dependencies, launch the desktop app and select checks](apps/desktop/README.md#development-commands), then follow [Contributing](CONTRIBUTING.md).
+
 ## Documentation
 
 - [Documentation guide](docs/README.md) — the smallest route for every task

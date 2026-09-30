@@ -50,6 +50,12 @@ VUA 从用户的目标和现有素材出发，展示计划、执行步骤与结�
 
 项目预期还将持续 Beta 状态很长一段时间。以上介绍表达产品方向，已有实现和自动化测试不代表完整真机流程已经通过；实际验收状态以开发序列和发行证据为准。
 
+### 当前交付与开始入口
+
+- 玩家可查看[已发布产物](https://github.com/VUA-Project/VUA/releases)及 [v0.6.0 验证记录与限制](docs/release/v0.6.0.md)。上文介绍的是产品方向，本 README 不宣称 N1–N7 流程已通过验收。
+- 带截图的用户指南与经过验收的 Beta 安装包属于 N7 交付，目前不作为已有使用教程。使用问题可通过 [Issues](https://github.com/VUA-Project/VUA/issues/new/choose) 提出。
+- 开发者可从[安装依赖、启动桌面应用与选择检查](apps/desktop/README.md#development-commands)开始，再阅读[贡献指南](CONTRIBUTING.md)。
+
 ## 文档
 
 - [文档指南](docs/README.md)——每项任务的最小阅读路径

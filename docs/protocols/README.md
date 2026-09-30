@@ -1,8 +1,8 @@
 # Protocol reading guide
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Scope: Navigation and retention guidance; no wire-format changes
 
 **For people:** use this index when a contribution affects an API or stored format; read only
@@ -20,13 +20,37 @@ separate concurrently served operations, and some newer documents extend an earl
 | --- | --- | --- |
 | Gateway/tasks | [Application](application-contract-v0.1.md), [task store](task-store-v0.1.md), [Provider](provider-process-v0.1.md) | Current shared boundaries; document version and wire version may differ |
 | Environment/projects | [Inspection](project-inspection-v0.2.md), [project operations](project-ops-v0.2.md), [editor verification](editor-verify-v0.1.md) | Preserve current guards and external-project read-only policy |
-| Package reads | [Query](packages-query-v0.2.md), [catalog](packages-catalog-v0.2.md), repository/template protocols | Check method consumers before retiring an older face |
-| Package writes | packages-ops v0.1 through v0.6 | Concurrent faces: provider constants and TS types use all six; v0.6 is not blanket replacement of v0.1-v0.5 |
+| Package reads | [Query](packages-query-v0.2.md), [catalog](packages-catalog-v0.2.md), [repository list](packages-repos-catalog-v0.1.md), [repository packages](packages-repo-catalog-v0.1.md), [repositories](packages-repos-v0.2.md), [templates](packages-templates-v0.1.md) | Check method consumers before retiring an older face |
+| Package writes | [v0.1](packages-ops-v0.1.md), [v0.2](packages-ops-v0.2.md), [v0.3](packages-ops-v0.3.md), [v0.4](packages-ops-v0.4.md), [v0.5](packages-ops-v0.5.md), [v0.6](packages-ops-v0.6.md) | Concurrent faces: provider constants and TS types use all six; v0.6 is not blanket replacement of v0.1-v0.5 |
 | Materials/production | [Material v0.2](material-intake-v0.2.md), [production v0.2](production-use-case-v0.2.md), [evidence](production-evidence-v0.1.md) | Earlier baselines may be needed for incremental definitions and tests; not archived by date |
 | Recipe/SDK | [Recipe export](recipe-export-v0.1.md), [handoff v0.2](release-handoff-v0.2.md) | Check stored-format and consumer compatibility before retiring the earlier handoff face |
 | BDL/acquisition | [Queries v0.5](bdl-queries-v0.5.md), [commands v0.4](bdl-commands-v0.4.md), [observations](bdl-dependency-observations-v0.2.md), [downloads](download-events-v0.1.md) | Follow actual schema/route versions; N5 audit is still required |
 | Unity | [v4](unity-bridge-v4.md), [v3](unity-bridge-v3.md), [v2](unity-bridge-v2.md), [v1](unity-bridge-v1.md) | Newest frozen operation set does not prove every production path migrated; inspect actual command consumers |
 | Previously superseded | [superseded/](superseded/) | Historical version lookup only; retaining these files does not reactivate their implementation |
+
+## Delivery status and implementation entry points
+
+Use three distinct descriptions when planning a slice: **existing implementation** (a route and
+consumer can be inspected; availability still depends on runtime capabilities), **contract exists,
+integration/acceptance to verify** (a schema is not execution evidence), or **contract to design**
+(accepted behavior does not yet supply a wire format). Do not label an entire domain operational
+from the existence of one method. This is a navigation aid, not a second completion ledger:
+[N acceptance](../development-outline.md) and release evidence own delivery claims.
+
+| Feature | Contract / method starting point | Implementation and test starting point | What this establishes |
+| --- | --- | --- | --- |
+| Environment presence | [Application contract](application-contract-v0.1.md), `environment.getSnapshot` | [Rust observations](../../crates/orchestrator/src/environment.rs) → [frontend port](../../apps/desktop/src/renderer/gateway/environment-port.ts) → [projection tests](../../apps/desktop/src/renderer/gateway/contract-projection.test.ts) | Existing inspection path; does not establish N1 automated deployment |
+| Account guide and purpose-driven install | [Accepted minimal design](../architecture/evolution.md#small-data-model-not-a-framework), [account guidance](../architecture/evolution.md#account-guidance-alongside-deployment) | Reuse the existing Gateway/task runtime and desktop browser; define exact new methods and consumer tests with the first implementation slice | Contract to design for new guide/install behavior; no implied new frozen methods |
+| N2 external tools | [External-connection responsibilities](../architecture/integrations-and-overlays.md#external-integration-modes) | [Adapter ownership](../architecture/system.md#current-code-layout), then tool-specific discovery/launch code and tests in the implementation slice | Accepted scope; runtime support and any new contract remain to be established |
+| Material/Recipe production | [Intake](material-intake-v0.2.md), [production](production-use-case-v0.2.md), [Recipe export](recipe-export-v0.1.md), [SDK handoff](release-handoff-v0.2.md) | [Provider routes](../../crates/provider-host/src/provider_host.rs) → [frontend production adapter](../../apps/desktop/src/renderer/gateway/live-production-port.ts) and [tests](../../apps/desktop/src/renderer/gateway/live-production-port.test.ts); [Recipe export consumer](../../apps/desktop/src/renderer/gateway/recipe-export-port.test.ts) | Contracts and implementation entry points exist; inspect the exact operation/capability. N3/N4 real-flow acceptance remains separate |
+| BOOTH library/catalog/download | [BDL queries](bdl-queries-v0.5.md), [commands](bdl-commands-v0.4.md), [download events](download-events-v0.1.md) | [Acquisition](../../crates/acquisition/), [BDL store](../../crates/bdl-store/), [desktop session boundary](../architecture/desktop.md#remote-content-isolation) | Existing parts require the N5 capability audit; these contracts alone do not prove complete account-library retrieval |
+
+For any row: find the exact method in the [application registry](application-contract-v0.1.md),
+follow its [TypeScript types](../../packages/contracts/src/index.ts) and [Provider dispatch](../../crates/provider-host/src/provider_host.rs),
+then inspect the corresponding frontend port and producer/consumer tests. For methods defined by
+a linked family, use that family's own operation table and schema links. Verify the served
+capability and missing/error behavior before wiring UI. Add links here only when a real slice
+establishes the entry point; do not invent implementation files for planned features.
 
 Source review on 2026-09-28 found package-operation version constants v0.1-v0.6 in
 crates/provider-host/src/provider_host.rs and matching TS types in packages/contracts. This is
@@ -41,6 +65,8 @@ retirement, then update the registry and links.
 For upstream-driven changes, follow the [third-party compatibility and licensing policy](../release/versioning.md#third-party-changes-and-compatibility).
 
 ## Document changelog
+
+- 1.2.0 (2026-09-30): add direct family links, scoped delivery-status guidance and contract-to-code reading routes.
 
 - 1.1.0 (2026-09-29): distinguish human lookup from Agent contract-verification workflow.
 

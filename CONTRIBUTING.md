@@ -1,6 +1,6 @@
 # Contributing to VUA
 
-> Document version: 2.1.2
+> Document version: 2.1.3
 > Status: Accepted
 
 ## For human contributors — localization welcome
@@ -27,6 +27,8 @@ agent's work or delete it as cleanup without establishing its scope and provenan
 Start with [the documentation guide](docs/README.md). The [N sequence](docs/development-outline.md)
 defines the next usable outcome and acceptance; [version policy](docs/release/versioning.md)
 defines release numbers and continuing Beta.
+
+For a local checkout, start with [dependency setup, app launch and scoped checks](apps/desktop/README.md#development-commands).
 
 ## Develop one useful slice
 
@@ -72,6 +74,8 @@ Use of the VUA name and visual identity is governed separately by the
 [trademark guidance](TRADEMARKS.md).
 
 ## Document changelog
+
+- 2.1.3 (2026-09-30): link directly to local setup, app launch and scoped checks.
 
 - 2.1.2 (2026-09-30): clarify expandable UI/README localization and Chinese release changelogs.
 

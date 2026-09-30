@@ -51,6 +51,12 @@
 
 프로젝트는 앞으로도 오랫동안 Beta 상태를 유지할 것으로 예상합니다. 소개는 제품의 방향이며, 구현과 자동 테스트만으로 전체 실제 기기 흐름의 검증을 의미하지 않습니다. 실제 검증 상태는 개발 순서와 릴리스 근거를 확인해 주세요.
 
+### 현재 제공 상태와 시작 방법
+
+- 사용자는 [공개된 배포물](https://github.com/VUA-Project/VUA/releases)과 [v0.6.0 검증 기록 및 제한 사항](docs/release/v0.6.0.md)을 참고할 수 있습니다. 위 설명은 제품 방향이며 N1–N7의 검증 완료를 뜻하지 않습니다.
+- 스크린샷 사용자 가이드와 검증된 Beta 설치 프로그램은 N7 산출물이며 현재 제공되는 사용 설명서가 아닙니다. 사용 질문은 [Issues](https://github.com/VUA-Project/VUA/issues/new/choose)로 남길 수 있습니다.
+- 개발자는 [의존성 설치, 데스크톱 앱 실행 및 검사 선택](apps/desktop/README.md#development-commands)부터 시작하고 [기여 가이드](CONTRIBUTING.md)를 따르면 됩니다.
+
 ## 문서
 
 - [문서 가이드](docs/README.md)——작업별 최소 경로
