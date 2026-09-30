@@ -1,10 +1,10 @@
 # Versioning policy
 
 
-> Document version: 2.1.0
+> Document version: 2.1.1
 > Status: Accepted
 > Scope: VUA product releases, tags, packages, and public contracts
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Normative effect: Yes
 
 ## Product version
@@ -32,7 +32,7 @@ does not itself bump the current package version or create a release.
 | Gate | Product version | Delivery |
 | --- | --- | --- |
 | N1 | v0.7.0 | Purpose-driven deployment |
-| N2 | v0.7.1 | VRCFaceTracking and modified hyblocker Space Calibrator |
+| N2 | v0.7.1 | Steam-guided installation and external connections to VRCFaceTracking and hyblocker Space Calibrator |
 | N3 | v0.8.0 | Complex real-material production and SDK handoff |
 | N4 | v0.8.1 | Recipe reproduction |
 | N5 | v0.8.2 | Audited old-M4 material-management rework |
@@ -93,10 +93,14 @@ third-party component's license. Before bundling or changing a dependency, recor
 source/version, applicable terms, notices, redistribution/update/removal requirements and any
 excluded components. Keep notices consistent with the actual distributed build. Do not announce
 a future VUA license change merely because an integration is planned; any proposed change needs
-an explicit decision based on the selected code and distribution. N2's removal of SimpleBLE and
-base-station BLE management remains required; this policy is not a completed license audit.
+an explicit decision based on the selected code and distribution. N2 guides Steam library addition
+and installation, then invokes independently installed official tools through supported external
+entry points. Upstream distributions retain their own licenses; follow
+[third-party notices](../../THIRD_PARTY_NOTICES.md) for any future redistribution.
 
 ## Document changelog
+
+- 2.1.1 (2026-09-30): align the N2 summary and licensing guidance with official external-tool connections.
 
 - 2.1.0 (2026-09-28): clarify third-party compatibility change disclosure and separate licensing review.
 
