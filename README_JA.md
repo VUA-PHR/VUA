@@ -2,10 +2,6 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | 日本語 | [한국어](README_KO.md)
 
-[![rust](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/rust.yml)
-[![ts](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/ts.yml)
-[![schema-vectors](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml/badge.svg)](https://github.com/VUA-Project/VUA/actions/workflows/schema-vectors.yml)
-
 **VUA（VRC Ultra Assistant）** は、VRChat プレイヤーのための Windows デスクトップ
 制作環境です——特に、Unity に触れたことがない、あるいは何が必要かまだ分からない
 プレイヤーのために。目標と自分の素材から出発し、環境構築・プロジェクト準備・
