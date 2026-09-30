@@ -1,10 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 2.1.0
+> Document version: 2.2.0
 > Status: Accepted
 > Scope: Entire VUA product
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Normative effect: Yes
 
 ## Product definition
@@ -208,6 +208,43 @@ gate derives risk from declared capabilities and behavior.
 - **Least privilege:** remote content, plugins, and third-party components receive only required
   capabilities.
 
+## Account onboarding (user ruling, 2026-09-30)
+
+The first usable delivery guides people through official pages in the built-in browser. It is
+not a multi-platform account manager. The initial scope is exactly Steam and VRChat for play,
+with optional Unity and BOOTH/pixiv registration guidance for the creator route. Existing users
+can skip registration. VUA explains each step; users enter account information, solve challenges,
+accept terms, add VRChat to their Steam library, and perform account upgrade/linking themselves.
+Account linking means the official Steam-platform-account to full VRChat-account flow, not a
+VUA identity binding or a VUA account database. Steam client, game and Unity Hub steps are explicit
+handoffs; an official page that refuses embedding has a system-browser fallback.
+
+Only guide progress and user-declared completion are saved by this first slice. A page opening
+does not prove registration, ownership or account linking. No authenticated API automation, page
+data extraction, cloud account service, password vault, cookie import or persistent sign-in is
+required for first delivery. Isolated temporary browser sessions handle interactive pages; secret
+values never enter VUA application state, Gateway, Orchestrator, Agent context or diagnostic logs.
+This does not claim that embedded authentication is automatically permitted by every platform.
+
+Creator guidance explains that SDK upload requires a full VRChat account and New User or higher.
+VUA can explain normal play and the official eligibility checks; it cannot grant a trust rank,
+promise a time to promotion or automate rank farming. Rank is user-reported until a later supported
+read path exists. A missing upload prerequisite does not block local Avatar preparation or testing.
+Unity/BOOTH registration is optional for players; purchases and SDK upload remain user-operated.
+BOOTH library acquisition remains the separate N5 requirement, not an N1 account-system expansion.
+
+After the first usable delivery, attempt VRChat web-information reading as a separate slice.
+The author's intended local sign-in persistence is a deferred experimental option, off by default:
+before the first experimental login, explain conflict with the written platform credential/session
+policy and possible account sanctions up to a ban, and let the user decline persistence. Put the
+switch in Experimental settings. This is recorded product intent, not an implemented feature or
+platform permission. Its implementation must define browser-owned local storage, expiry/clearing,
+logout and consent behavior without exposing secrets to application or Agent data paths. Consent
+does not change platform terms. It is not an N1 prerequisite or permission for cloud account control.
+
+Sources checked 2026-09-30: [SDK upload prerequisites](https://creators.vrchat.com/avatars/creating-your-first-avatar/)
+and [VRChat Creator Guidelines](https://hello.vrchat.com/creator-guidelines).
+
 ## VRChat interaction and privacy
 
 User-adopted implementation boundary (2026-09-29), informed by the
@@ -217,9 +254,12 @@ User-adopted implementation boundary (2026-09-29), informed by the
 - Use supported external surfaces, OSC, launch options, necessary local logs and documented
   configuration fields. Never inject, hook or patch the VRChat client or bypass EAC. Hidden
   configuration and undocumented client behavior are not authorized by an existing third-party tool.
-- Do not request, read, store or transmit VRChat login credentials: passwords, authentication
-  tokens, cookies, session data or usernames collected as login credentials. Do not scrape another
-  application's session. This is distinct from BOOTH's isolated, authorized local browser session.
+- VUA application features do not collect or extract VRChat login credentials, including passwords,
+  tokens, cookies and session data. Users type into official pages, not VUA-owned credential forms;
+  temporary browser state is confined to the isolated browser. Do not import another application's
+  session. The account-onboarding section supersedes the previous blanket ban only for this guided
+  browser flow and records the separate, deferred experimental persistence direction. BOOTH's N5
+  acquisition session remains a distinct, authorized local boundary.
 - User initiation is necessary for account changes, but is not sufficient authorization for an
   undocumented operation or credential access. Unsupported operations stay unavailable; direct
   the user to the official flow. No cloud account control and no automatic upload on a user's
@@ -323,11 +363,14 @@ is withdrawn as proof of complete material management. N5 first audits actual ca
 the user's report of minimal functionality is a reason to investigate, not a verified absence
 of the remaining implementation. Retain, complete, or replace code based on that audit.
 
-N2 acceptance includes both and only VRCFaceTracking from benaclejames and a derived hyblocker
-OpenVR-SpaceCalibrator with SimpleBLE and base-station BLE management removed. Keep calibration
-and required SteamVR-driver behavior; verify the pinned dependency/build/artifact inventory and
-retain applicable third-party notices. This is external-tool integration, not authorization for
-VRChat client injection or a general untrusted VUA plugin host. Other tools are outside N2.
+N2 acceptance includes both and only upstream VRCFaceTracking from benaclejames and hyblocker
+OpenVR-SpaceCalibrator as independently installed external applications. VUA discovers them,
+guides official installation, launches them on request and explains setup and verification.
+Steam/upstream tools own installation, updates, removal, hardware modules and calibration.
+VUA does not vendor, fork, compile, link or bundle their code/binaries in this delivery. This
+supersedes the modified Space Calibrator / BLE-removal work package: the official installation
+keeps its upstream features and license terms. Internal Space Calibrator driver IPC is not a VUA
+integration contract. This grants no VRChat injection or generic plugin-host authority.
 
 N3's minimum real case is one Avatar, at least two actively used dependencies/plugins, and at
 least six other real materials simultaneously in one project, followed by actual VRC SDK handoff.
@@ -357,6 +400,8 @@ unchanged; this ruling is not a new product release. Runtime-tool deployment is 
 plugin execution and a marketplace still require their separately accepted security decisions.
 
 ## Document changelog
+
+- 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
 
 - 2.1.0 (2026-09-29): consolidate user-requested VRChat interaction, credential, account-operation and privacy boundaries.
 
@@ -419,10 +464,3 @@ plugin execution and a marketplace still require their separately accepted secur
   Manager (the manager), VPM package = the managed package; in the item-3 material-entry
   semantics, "generate VPM as a replacement" and "VPM generation results" became "generate a
   VPM package as a replacement" and "VPM package generation results". Mirrors the ZH edition.
-- 1.1.0 (2026-09-07): added the material-entry semantics clause to the AMF composition item —
-  the default path is the original `.unitypackage`; "generate VPM as a replacement" and "delete
-  original after generation" are experimental, presented under Settings-Experimental (user ruling
-  2026-09-07). Mirrors the ZH edition.
-- 1.0.0 (2026-09-06): entered version management. Item 7 split into the desktop overlay (retained
-  in the `1.0.0` composition) and the VR overlay (removed from `1.0.0`, pointing to the v1.1
-  outlook in the development outline); all other items unchanged.

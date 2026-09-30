@@ -18,6 +18,10 @@
 
 VUA 帮助玩家部署游玩所需的软件与设置，并学习移动、菜单、安全选项和设备使用等基本知识。根据用户的目标与硬件说明需要安装什么，并引导完成环境准备。
 
+首轮账号引导在内建浏览器中打开官方注册页面：游玩路线涉及 Steam 与 VRChat，创作者路线可选 Unity 与 BOOTH。注册、Steam 入库和官方账号绑定由用户亲手完成。上传指引说明完整 VRChat 账号及 New User 等级要求；尚未取得上传资格时，玩家仍可进行本地 Avatar 制作准备。
+
+首批两项可选外部连接为 VRCFaceTracking 与 hyblocker OpenVR Space Calibrator。计划由 VUA 检测、启动独立安装的上游软件，并引导用户在上游界面完成配置；安装与更新由 Steam 或上游负责。
+
 ### [2] Avatar 生产
 
 > **Sugar, spice, and everything nice.**
@@ -33,7 +37,7 @@ VUA 从用户的目标和现有素材出发，展示计划、执行步骤与结�
 ## 安全边界
 
 - VUA 是独立运行的第三方助手，与 VRChat Inc. 无官方隶属或背书关系；交互范围限定为公开支持的外部接口、OSC、启动参数、必要的本地日志和公开配置项，不注入、Hook、Patch VRChat 客户端或绕过 EAC。
-- VUA 不请求、读取、保存或传输用户的 VRChat 登录凭据，包括密码、认证 Token、Cookie 与 Session。
+- 首轮账号引导使用隔离的临时浏览器会话，VUA 应用功能不收集密码，也不把登录 Cookie、Token 提取到应用或 Agent 数据中；首轮不记住 VRChat 登录状态。后续网页读取与实验性持久化另行开发，不代表平台认可，详见[账号边界](docs/product-boundary.md#account-onboarding-user-ruling-2026-09-30)。
 - 涉及账号修改的操作必须由用户通过允许的流程主动发起，VUA 不在云端代替用户控制账号，也不代替用户自动上传 Avatar。
 - 仅保留功能所必需的数据，默认本地保存，不建立不必要的好友活动追踪或用户画像；付费素材留在本地，分享的 Recipe 不含素材本体。
 - 未公开支持的客户端行为、隐藏配置项与不受控的 API 自动化不属于默认功能范围，技术检查通过也不保证外观、行为或生产安全性。
@@ -56,7 +60,7 @@ VUA 从用户的目标和现有素材出发，展示计划、执行步骤与结�
 
 ## 许可证
 
-VUA 采用 [Apache-2.0](LICENSE)。首批计划适配的游玩工具包括 [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) 和 [Space Calibrator 的 MIT 主体](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)。计划中的空间校准修改版移除 SimpleBLE 与基站 BLE 管理；版权归属、其它依赖许可证及分发要求见[第三方声明](THIRD_PARTY_NOTICES.md)，这不代表修改版二进制已经交付。
+VUA 采用 [Apache-2.0](LICENSE)。计划中的可选外部连接包括 [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) 和 [Space Calibrator（MIT 主体及单独授权的第三方组件）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE)。用户独立安装官方软件；本方案不由 VUA 打包或修改它们，原定的空间校准 BLE 删改方案已被替代。上游归属及未来再分发条件见[第三方声明](THIRD_PARTY_NOTICES.md)。
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

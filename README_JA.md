@@ -19,6 +19,10 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 プレイに必要なソフトウェアや設定を準備し、移動、メニュー、安全設定、デバイスの基本を学びます。目的と機器に応じて必要なものを説明し、環境構築を案内します。
 
+初回のアカウント案内では、内蔵ブラウザーで公式の登録ページを開きます。プレイ向けは Steam と VRChat、制作向けは任意で Unity と BOOTH を案内します。登録、Steam ライブラリへの追加、公式のアカウント連携は利用者自身が行います。アップロードには完全な VRChat アカウントと New User 以上のランクが必要ですが、資格を得る前でもローカルで Avatar の制作準備を進められます。
+
+最初の任意の外部連携対象は VRCFaceTracking と hyblocker OpenVR Space Calibrator です。VUA は個別にインストールされた公式アプリの検出・起動と設定手順の案内を行う予定です。インストールと更新は Steam または上流アプリが管理します。
+
 ### [2] Avatar 制作
 
 > **Sugar, spice, and everything nice.**
@@ -34,7 +38,7 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 ## 安全上の境界
 
 - VUA は VRChat Inc. と提携せず、公認も受けていない独立した第三者製アシスタントであり、公開された外部インターフェース、OSC、起動オプション、必要なローカルログと公開設定のみを対象とし、VRChat クライアントへの注入、フック、パッチや EAC の回避を行いません。
-- VUA は VRChat のパスワード、認証トークン、Cookie、セッションなどのログイン認証情報を要求、読み取り、保存、送信してはなりません。
+- 初回のアカウント案内は分離された一時ブラウザーセッションを使用します。VUA のアプリ機能はパスワードを収集せず、ログイン Cookie やトークンをアプリや Agent のデータへ取り出しません。初回提供では VRChat のログインを記憶しません。後続のウェブ情報読み取りと実験的な永続化は別途開発する方向であり、プラットフォームの承認を意味しません。[アカウント境界](docs/product-boundary.md#account-onboarding-user-ruling-2026-09-30)を参照してください。
 - アカウントの変更はユーザーが許可された手順で開始し、VUA がクラウドからアカウントを操作したり、Avatar を代理で自動アップロードしたりすることはありません。
 - 必要最小限のデータを原則ローカルに保存し、不要なフレンド活動の追跡やプロファイリングは行わず、有料素材をローカルに保ち、共有 Recipe に素材本体を含めません。
 - 非公開のクライアント動作、隠し設定、制御されない API 自動化は標準の対象外であり、技術検査の成功は外観、動作、本番環境での安全性を保証しません。
@@ -57,7 +61,7 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 ## ライセンス
 
-VUA は [Apache-2.0](LICENSE) です。最初の対応予定ツールは [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator の MIT 部分](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) です。Space Calibrator の変更版では SimpleBLE とベースステーションの BLE 管理を除去する計画です。[第三者通知](THIRD_PARTY_NOTICES.md) に帰属、その他の依存ライセンスと配布条件を記載していますが、変更版の配布完了を意味するものではありません。
+VUA は [Apache-2.0](LICENSE) です。任意の外部連携として [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator（MIT の本体と個別ライセンスの第三者コンポーネント）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) を予定しています。利用者が公式アプリを個別にインストールし、本計画では VUA に同梱せず、改変もしません。従来の BLE 除去計画は置き換えられました。帰属と将来の再配布条件は[第三者通知](THIRD_PARTY_NOTICES.md)を参照してください。
 
 [NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
 

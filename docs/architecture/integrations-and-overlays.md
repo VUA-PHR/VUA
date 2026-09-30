@@ -1,10 +1,10 @@
 # Core, plugin, external integration, and overlay architecture
 
 
-> Document version: 1.1.0
+> Document version: 1.2.0
 > Status: Accepted
 > Scope: Environment deployment, project management, integrated runtimes, plugin host, desktop/VR overlays
-> Updated: 2026-09-28
+> Updated: 2026-09-30
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -43,9 +43,22 @@ stable interface.
 Each mode reports capabilities independently. Recipes, local projects, and recovery retain native
 paths across external capability changes. The 2026-09-28 product ruling brings gameplay-tool setup
 into the active real-machine progression without changing these adapter or security boundaries.
-N2 accepts exactly benaclejames/VRCFaceTracking and a modified hyblocker/OpenVR-SpaceCalibrator
-with SimpleBLE and base-station BLE management removed. Other tools remain outside N2. The
-development sequence defines source/build verification and functional acceptance for both.
+N2 uses **external connection only** for benaclejames/VRCFaceTracking and
+hyblocker/OpenVR-SpaceCalibrator. Official Steam/upstream installations own their updates, modules,
+drivers and removal. VUA has no tool fork, linked library, bundled binary or BLE-removal artifact.
+Other tools remain outside N2; the development sequence owns functional acceptance.
+
+The Orchestrator coordinates discovery, installation handoff, launch and reinspection through
+small ports; local/Steam adapters return observed install/process facts and unsupported/unknown
+outcomes. Do not expose vendor types to React. Unlike supervised VUA Providers, a launched upstream
+application is not a VUA-owned process tree to terminate on cancellation or shutdown. Canceling a
+guide stops VUA's work; stopping/updating/removing the external tool uses its supported user route.
+
+VRCFT owns device modules, tracking and its OSC output. Space Calibrator owns device selection,
+sampling, transforms and calibration UI. First adapters do not consume Space Calibrator's internal
+overlay/driver IPC or automatically rewrite either tool's private settings. Documented status/log
+diagnostics can be added later when a concrete need exists; unknown never means configured or working.
+
 Project-management, AMF-source, and overlay adapters
 use the same inward dependency direction but retain their own product ownership.
 
@@ -112,6 +125,8 @@ VRChat process memory, modify EAC, or confirm account, safety, or upload UI. Pub
 untrusted and cannot authorize local mutation.
 
 ## Document changelog
+
+- 1.2.0 (2026-09-30): define thin N2 external connectors and upstream-owned lifecycle.
 
 - 1.1.0 (2026-09-28): align external tool scheduling with the real-machine-first product ruling.
 
