@@ -23,8 +23,9 @@
 //! 内存有上界；
 //! 轮询 `try_wait` 直到退出码或超时——std 没有带超时的 wait，只能
 //! 5ms 一次轮询；超时就 `kill()` 后再 `wait()` 收尸（不留僵尸）。
-//! Windows 上每次调用进入独立 Job Object；超时、取消或父进程正常
+//! Windows 上普通调用进入独立 Job Object；超时、取消或父进程正常
 //! 结束时都会收束本次调用留下的整个进程树，并记录是否清理完成；
+//! 需要 UAC 的 NSIS 安装器交给 Windows 提权并单独等待，安装适配器核验产物；
 //! 汇总 `ProcessOutcome`：退出码、是否超时、截断后的输出。
 //!
 //! `drain_bounded` —— `total > limit` 才置 truncated 标记并追加
@@ -66,6 +67,10 @@ use windows_sys::Win32::System::JobObjects::{
 pub struct ProcessSpec {
     pub executable: PathBuf,
     pub args: Vec<String>,
+    /// NSIS installers consume /D= followed by the entire unquoted command-line tail.
+    /// Keep this a directory value, assembled by the owning adapter, never shell text.
+    /// Normal programs leave it absent and retain standard argument escaping.
+    pub windows_nsis_install_dir: Option<PathBuf>,
     pub working_dir: Option<PathBuf>,
     /// Mandatory wall-clock budget (ORC-CON-004: unlimited waits are not
     /// accepted).
@@ -107,6 +112,7 @@ impl Default for ProcessSpec {
         Self {
             executable: PathBuf::new(),
             args: Vec::new(),
+            windows_nsis_install_dir: None,
             working_dir: None,
             timeout: Duration::ZERO,
             output_limit: 0,
@@ -125,7 +131,8 @@ impl Default for ProcessSpec {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ProcessOutcome {
     pub exit_code: Option<i32>,
-    /// True when the timeout fired and the process was killed.
+    /// True when the timeout fired. Ordinary owned processes are killed; an
+    /// OS-owned elevated installer remains available for user inspection.
     pub timed_out: bool,
     /// True when a caller-provided cancellation signal stopped the process.
     pub cancelled: bool,
@@ -174,10 +181,80 @@ pub trait ProcessRunner: Send + Sync {
     }
 }
 
+/// Windows owns elevation for a reviewed NSIS installer. The adapter verifies its output.
+/// Elevated processes are waited directly; no command interpreter or output pipe is used.
+#[cfg(windows)]
+fn run_elevated_nsis(spec: &ProcessSpec) -> Result<ProcessOutcome, ProcessError> {
+    use windows_sys::Win32::{
+        Foundation::{WAIT_OBJECT_0, WAIT_TIMEOUT},
+        System::Threading::{GetExitCodeProcess, WaitForSingleObject},
+        UI::{
+            Shell::{
+                ShellExecuteExW, SEE_MASK_NOASYNC, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+            },
+            WindowsAndMessaging::SW_HIDE,
+        },
+    };
+    let directory = spec
+        .windows_nsis_install_dir
+        .as_ref()
+        .ok_or_else(|| ProcessError::Io(std::io::Error::other("missing NSIS directory")))?;
+    if spec.args != ["/S"] || spec.timeout.is_zero() || spec.timeout > Duration::from_secs(7200) {
+        return Err(ProcessError::Io(std::io::Error::other(
+            "unsupported elevated installer command",
+        )));
+    }
+    let wide = |value: &str| value.encode_utf16().chain(Some(0)).collect::<Vec<u16>>();
+    let exe = wide(&spec.executable.to_string_lossy());
+    let verb = wide("runas");
+    let args = wide(&format!("/S /D={}", directory.display()));
+    // SAFETY: all UTF-16 buffers outlive ShellExecuteExW; zeroed optional fields are absent.
+    let mut info: SHELLEXECUTEINFOW = unsafe { std::mem::zeroed() };
+    info.cbSize = std::mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+    info.fMask = SEE_MASK_NOCLOSEPROCESS | SEE_MASK_NOASYNC;
+    info.lpVerb = verb.as_ptr();
+    info.lpFile = exe.as_ptr();
+    info.lpParameters = args.as_ptr();
+    info.nShow = SW_HIDE;
+    if unsafe { ShellExecuteExW(&mut info) } == 0 {
+        return Err(ProcessError::Io(std::io::Error::last_os_error()));
+    }
+    struct ElevatedHandle(HANDLE);
+    impl Drop for ElevatedHandle {
+        fn drop(&mut self) {
+            unsafe {
+                CloseHandle(self.0);
+            }
+        }
+    }
+    let handle = ElevatedHandle(info.hProcess);
+    if handle.0.is_null() {
+        return Err(ProcessError::Io(std::io::Error::other(
+            "missing installer process",
+        )));
+    }
+    let waited = unsafe { WaitForSingleObject(handle.0, spec.timeout.as_millis() as u32) };
+    if waited != WAIT_OBJECT_0 && waited != WAIT_TIMEOUT {
+        return Err(ProcessError::Io(std::io::Error::last_os_error()));
+    }
+    let mut exit_code = 0;
+    if waited == WAIT_OBJECT_0 && unsafe { GetExitCodeProcess(handle.0, &mut exit_code) } == 0 {
+        return Err(ProcessError::Io(std::io::Error::last_os_error()));
+    }
+    Ok(ProcessOutcome {
+        exit_code: (waited == WAIT_OBJECT_0).then_some(exit_code as i32),
+        timed_out: waited == WAIT_TIMEOUT,
+        cancelled: false,
+        process_tree_clean: false,
+        stdout: String::new(),
+        stderr: String::new(),
+        truncated: false,
+    })
+}
+
 /// Real runner over `std::process`. The child is spawned without a shell;
-/// output is drained on dedicated threads and capped. Windows invocations use
-/// one Job Object per call so timeout/cancellation and normal completion leave
-/// no helper processes behind.
+/// output is drained on dedicated threads and capped. Ordinary Windows invocations
+/// use a Job Object; an elevation-required NSIS installer uses the explicit OS-owned path.
 #[derive(Debug, Default)]
 pub struct StdProcessRunner;
 
@@ -195,8 +272,38 @@ impl ProcessRunner for StdProcessRunner {
         // 不存在"被 shell 重新解释"的环节，注入无从谈起（ORC-ADP-001）。
         // stdin 直接关闭：外部工具不该等输入。
         let mut command = Command::new(&spec.executable);
+        #[cfg(windows)]
+        if let Some(directory) = &spec.windows_nsis_install_dir {
+            use std::os::windows::process::CommandExt;
+            let directory = directory.to_string_lossy();
+            if !directory.starts_with(|c: char| c.is_ascii_alphabetic())
+                || !directory.as_bytes().get(1).is_some_and(|b| *b == b':')
+                || !directory
+                    .as_bytes()
+                    .get(2)
+                    .is_some_and(|b| matches!(b, b'\\' | b'/'))
+                || directory.chars().any(|c| c.is_control() || c == '"')
+            {
+                return Err(ProcessError::Io(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "invalid NSIS directory",
+                )));
+            }
+            command.args(&spec.args).raw_arg(format!("/D={directory}"));
+        } else {
+            command.args(&spec.args);
+        }
+        #[cfg(not(windows))]
+        {
+            if spec.windows_nsis_install_dir.is_some() {
+                return Err(ProcessError::Io(std::io::Error::new(
+                    std::io::ErrorKind::Unsupported,
+                    "NSIS installation requires Windows",
+                )));
+            }
+            command.args(&spec.args);
+        }
         command
-            .args(&spec.args)
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
@@ -210,7 +317,16 @@ impl ProcessRunner for StdProcessRunner {
         for (key, value) in &spec.sets {
             command.env(key, value);
         }
-        let mut child = command.spawn().map_err(ProcessError::Io)?;
+        let mut child = match command.spawn() {
+            Ok(child) => child,
+            #[cfg(windows)]
+            Err(error)
+                if error.raw_os_error() == Some(740) && spec.windows_nsis_install_dir.is_some() =>
+            {
+                return run_elevated_nsis(spec);
+            }
+            Err(error) => return Err(ProcessError::Io(error)),
+        };
         #[cfg(windows)]
         let process_job = match ProcessJob::attach(&child) {
             Ok(job) => job,
@@ -515,6 +631,25 @@ mod tests {
         assert!(outcome.success(), "{outcome:?}");
         assert!(outcome.stdout.contains("typed-args-ok"));
         assert!(!outcome.truncated);
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn nsis_directory_tail_preserves_spaces_and_punctuation_without_a_shell() {
+        let mut spec = node_spec(
+            "process.stdout.write(process.argv.slice(1).join(' '))",
+            Duration::from_secs(15),
+            4096,
+        );
+        let directory = r"C:\VUA Test\Editors $&;";
+        spec.windows_nsis_install_dir = Some(directory.into());
+        let outcome = StdProcessRunner.run(&spec).unwrap();
+        assert!(outcome.success(), "{outcome:?}");
+        assert_eq!(outcome.stdout, format!("/D={directory}"));
+        for invalid in [r"C:relative", "C:\\quote\"", "C:\\new\nline"] {
+            spec.windows_nsis_install_dir = Some(invalid.into());
+            assert!(StdProcessRunner.run(&spec).is_err());
+        }
     }
 
     #[test]

@@ -1,10 +1,10 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.3.0
+> Document version: 1.4.0
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-09-30
+> Updated: 2026-10-01
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -84,8 +84,8 @@ blocking confirmation first and then opens in the current embedded view (per-att
 no exempt-from-confirmation memory at any level); new windows are always denied, with http/https
 popup targets redirected into the current embedded view (directly when allowlisted, after
 confirmation otherwise); pseudo-protocol (`javascript:`, `data:`, `blob:`, `file:`, …) windows are
-denied unconditionally; external protocols (initially exactly `mailto:`, `steam:`, `vrchat:`,
-`discord:`) go through a per-attempt dedicated confirmation before the system handler opens them —
+denied unconditionally; external protocols (`mailto:`, `steam:`, `vrchat:`, `discord:` and
+`unityhub:` for the N1 installation handoff) go through a per-attempt dedicated confirmation before the system handler opens them —
 the window-open details expose no gesture field, so the confirmation click itself is the explicit
 user gesture and automatically triggered openings never execute without confirmation (a stricter
 equivalent of the literal rule) — and unknown schemes are denied by default. The browsing allowlist and the
@@ -141,6 +141,8 @@ dependency/license review, Electron security checks, remote-permission tests, si
 rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
+
+- 1.4.0 (2026-10-01): allow the Unity Hub installation handoff under the existing per-action external-protocol confirmation.
 
 - 1.3.0 (2026-09-30): specify isolated temporary account-guide pages and credential-free application state.
 

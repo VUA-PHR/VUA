@@ -72,8 +72,8 @@ describe("U9 navigation target classification", () => {
     });
   });
 
-  it("classifies the four allowlisted external protocols", () => {
-    for (const url of ["mailto:a@b.test", "steam://open/friends", "vrchat://launch", "discord://rpc"]) {
+  it("classifies the allowlisted external protocols including the Unity Hub handoff", () => {
+    for (const url of ["mailto:a@b.test", "steam://open/friends", "vrchat://launch", "discord://rpc", "unityhub://2022.3.22f1/887be4894c44"]) {
       expect(classifyNavigationTarget(url, allowed).kind).toBe("external-protocol");
     }
   });

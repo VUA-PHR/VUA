@@ -13,6 +13,11 @@ path = "src/lib.rs"
 reqwest = { version = "0.13.4", default-features = false, features = ["stream", "rustls"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+# N1: bind user confirmation to installer bytes; already used by the core planner.
+sha2 = "0.11.0"
+# N1 Editor acquisition: compare Unity's published MD5; SHA-256 records local bytes.
+# Owned by the Editor adapter; remove when the upstream manifest replaces MD5.
+md-5 = "=0.10.6"
 # A4 repo subscription face (proposal 026): url parsing for
 # `add_remote_repo` — the vrc-get-vpm Settings API takes a parsed
 # `url::Url`. Same major ("2") as the library's own dependency; owner
@@ -32,6 +37,9 @@ windows-sys = { version = "=0.61.2", features = [
     "Win32_Storage_FileSystem",
     "Win32_System_IO",
     "Win32_Security_Cryptography",
+    # N1: obtain the verified WinTrust leaf signer, never invoke a command shell.
+    "Win32_Security_Cryptography_Catalog",
+    "Win32_Security_Cryptography_Sip",
     "Win32_Security_WinTrust",
     "Win32_System_Diagnostics_ToolHelp",
     "Win32_System_Threading",

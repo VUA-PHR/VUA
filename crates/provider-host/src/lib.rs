@@ -21,3 +21,5 @@ pub use provider_host::{
 };
 #[cfg(windows)]
 pub use provider_job::ProviderJobGuard;
+
+mod deployment_routes;

@@ -1,7 +1,7 @@
 # Unity editor compatibility
 
 
-> Document version: 1.0.1
+> Document version: 1.1.0
 > Status: Accepted  
 > Scope: Unity detection, project intake, AMF production, and Unity Bridge execution  
 > Updated: 2026-09-02  
@@ -33,12 +33,19 @@ Bridge v1 operations start after a project copy reaches the production target. T
 [VRChat 2019-to-2022 guide](https://creators.vrchat.com/sdk/upgrade/unity-2022/) remains authoritative
 for that upgrade.
 
+## Installation route
+
+The [standalone deployment direction](../architecture/unity-deployment.md) installs the exact
+global target using Unity’s official CLI; Hub is optional. Installer version/support and Editor
+compatibility are separate checks. A successful download does not establish a licensed, usable
+Editor, and the production target below is not widened by CLI availability.
+
 ## Other Unity versions
 
 Every complete version string outside the production target and migration sources follows the same
 unsupported-version path; VUA creates no separate product class for a particular distribution
 suffix. It reports the detected version, required production target, and available installation
-guidance while leaving `ProjectSettings/ProjectVersion.txt` unchanged. Unity Hub and Editor retain
+guidance while leaving `ProjectSettings/ProjectVersion.txt` unchanged. Unity CLI, optional Hub and Editor retain
 credentials, account sessions, and license activation; VUA receives capability and readiness results
 only.
 
@@ -60,6 +67,8 @@ does not authorize Bridge execution, VRChat SDK validation, building, or upload 
 - Build Records store the complete editor version used for every successful production run.
 
 ## Document changelog
+
+- 1.1.0 (2026-09-30): link Hub-independent official CLI installation without changing Editor eligibility.
 
 - 1.0.1 (2026-09-28): erratum — the "M0 enforcement requirements" section is renamed
   "Enforcement requirements" and its closure bullet drops the M0 label following the 2026-09-28

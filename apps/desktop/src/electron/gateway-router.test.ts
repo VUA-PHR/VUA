@@ -15,6 +15,19 @@ function request(): unknown {
 }
 
 describe("Electron Desktop Gateway routing", () => {
+  it("maps N1 confirmation into the application command and rejects renderer commands", async () => {
+    const provider = new MockOrchestratorProviderV01(); await provider.start();
+    const invoke = vi.spyOn(provider, "invoke");
+    const context = { provider, productVersion: "0.6.0", platform: "win32", rendererUrl };
+    const params = { intent: { purposes: ["pc_avatar"], editorRoot: "C:\\VUA Test\\Editors" }, confirmedDigest: "a".repeat(64), commandId: "deployment-command" };
+    await routeDesktopGatewayInvoke(context, `${rendererUrl}/`, { schemaVersion: 1, requestId: "deploy", method: "environment.executeDeployment", params });
+    expect(invoke).toHaveBeenCalledWith(expect.objectContaining({ kind: "command", method: "environment.executeDeployment", commandId: params.commandId,
+      params: { intent: params.intent, confirmedDigest: params.confirmedDigest } }));
+    invoke.mockClear();
+    const rejected = await routeDesktopGatewayInvoke(context, `${rendererUrl}/`, { schemaVersion: 1, requestId: "bad", method: "environment.executeDeployment", params: { ...params, executable: "cmd.exe" } });
+    expect(rejected).toMatchObject({ ok: false, error: { code: "invalid_request" } });
+    expect(invoke).not.toHaveBeenCalled();
+  });
   it("rejects an invalid envelope before invoking the Provider", async () => {
     const provider = new MockOrchestratorProviderV01();
     await provider.start();

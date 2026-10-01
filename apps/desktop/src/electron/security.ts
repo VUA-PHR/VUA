@@ -45,6 +45,7 @@ export function installPermissionDenyPolicy(
 export const EXTERNAL_PROTOCOL_ALLOWLIST: readonly string[] = [
   "mailto:",
   "steam:",
+  "unityhub:",
   "vrchat:",
   "discord:",
 ];

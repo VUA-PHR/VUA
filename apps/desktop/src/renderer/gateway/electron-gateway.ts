@@ -1,5 +1,5 @@
+import { createLiveDeploymentPort } from "./live-deployment-port.ts";
 import type { ApplicationEventV01, TaskEventV01 } from "@vua/contracts";
-import { neverChecked } from "../features/deployer/deployer-model.ts";
 import type { StoredGoalsV1 } from "../app/onboarding-model.ts";
 import { projectEnvironmentSnapshot, projectTaskItem } from "./contract-projection.ts";
 import { emptyGateway } from "./empty-gateway.ts";
@@ -139,6 +139,7 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
     return projectEnvironmentSnapshot(result.value);
   };
   return {
+    deployment: createLiveDeploymentPort(client),
     snapshot: fetchView,
     subscribe(callback) {
       // 契约 v0.1 尚无环境事件;capability.changed 时重取快照保持新鲜
@@ -153,11 +154,7 @@ function createLiveEnvironmentPort(client: GatewayClient): EnvironmentPort {
     // 快照(E3 切片):runCheck=触发刷新(重取快照;C-ENV 状态机语义保留,
     // 只换数据源——fixture 的模拟 running→results 迁移不在 live 复制)
     runCheck: () =>
-      fetchView().catch(() => ({
-        schemaVersion: 1,
-        deployer: neverChecked(),
-        versions: { play: [], create: [] },
-      })),
+      fetchView(),
     async planFix(): Promise<FixPlanResult> {
       return { kind: "unavailable" };
     },
