@@ -1,3 +1,4 @@
+import { DeploymentPanel } from "./DeploymentPanel.tsx";
 import { formatDateTime } from "../../i18n/index.ts";
 import { useEffect, useState } from "react";
 import { useMinBusyValue } from "../../app/busy-timing.ts";
@@ -316,6 +317,7 @@ export function DeployerPage({
         </Card>
       )}
 
+      {checkReady && goal === "active" ? <DeploymentPanel zone={zone} /> : null}
       {planError !== null ? (
         <p className="vua-caption vua-text-secondary">{planError}</p>
       ) : null}

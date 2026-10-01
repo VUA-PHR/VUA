@@ -1,6 +1,6 @@
 # VUA system architecture
 
-> Document version: 2.1.2
+> Document version: 2.1.3
 > Status: Accepted
 > Scope: Current implementation and incremental code placement
 > Last conformance review: 2026-10-01 (source/layout review, not real-machine acceptance)
@@ -106,8 +106,9 @@ facts while avoiding disclosure of account/private material data.
 
 Ordinary single-line development is the only active entry. Collab is retired; its records are in docs/archive/2026-09-29/. Do not bootstrap it or use its BOARD as the active work queue.
 [Protected-main policy](../meta/protected-main.md) remains the repository-wide PR policy.
-The collab:brief script and report-only registry CI are retained; their existence does not
-reactivate collaboration. Use the [N sequence](../development-outline.md) and
+The collab-era registry checker (script and report-only CI) was removed with the mechanism's
+full retirement; REGISTRY consistency is maintained by the governance update rules, not by an
+automated check. Use the [N sequence](../development-outline.md) and
 [contributor workflow](../../CONTRIBUTING.md) for current work.
 
 ## Reading routes
@@ -134,6 +135,8 @@ discover and launch; upstream lifecycle ownership and the external-connection mo
 
 ## Document changelog
 
+- 2.1.3 (2026-10-02): record the removal of the collab-era registry checker (script and
+  report-only CI); REGISTRY consistency now rests on the governance update rules alone.
 - 2.1.2 (2026-10-01): name the real renderer features (`features/onboarding`, `features/guide`)
   instead of a nonexistent Wizard module; link N2 upstream-lifecycle ownership to the integration
   architecture instead of restating it. Code-layout table re-verified against crate sources

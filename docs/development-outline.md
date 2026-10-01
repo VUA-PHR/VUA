@@ -1,8 +1,8 @@
 # VUA development sequence
 
-> Document version: 3.4.1
+> Document version: 3.5.1
 > Status: Accepted
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Authority: User rulings of 2026-09-28 and the 2026-09-30 account/external-tool scope and release-decoupling updates
 > Scope: N1-N7, real-machine deployment and real-material workflows, continuing Beta
 > Normative effect: Schedules accepted product work; product scope belongs to product-boundary.md
@@ -122,7 +122,8 @@ a general environment version manager are not prerequisites.
 | Repeat | A second run reuses satisfied prerequisites and installs only missing components; failed operations have a usable retry or manual path |
 
 First local path: keep existing SteamVR/PICO/VRChat, choose PC Avatar editing, install global
-Unity 2022.3.22f1 and necessary components, resolve actual SDK/MA dependencies, and open the test
+Unity 2022.3.22f1 following the [standalone deployment route](architecture/unity-deployment.md)
+(Hub optional), complete user licensing and necessary components, resolve actual SDK/MA dependencies, and open the test
 project. Exercise each declared purpose on an applicable environment; record missing equipment
 as blocked rather than inventing results. UI gets human review; backend operations may be automated.
 
@@ -137,7 +138,7 @@ a generic account/token manager before this path works.
 | --- | --- |
 | New player | Offer Steam and VRChat registration guidance; users submit official forms themselves. Guide adding VRChat to the Steam library and installing/launching through Steam. An opened page is recorded as opened, not as an account or successful installation |
 | Existing player | Allow skipping existing accounts; guide the official Steam-platform-account upgrade/link path when needed, without storing credentials or inventing a VUA binding |
-| Optional creator | Offer Unity and BOOTH/pixiv registration only for the creator route. Explain purchase and Hub/SDK handoffs. Skipping them leaves the play route usable |
+| Optional creator | Offer Unity and BOOTH/pixiv registration only for the creator route. Explain purchase, official Unity authorization/licensing and SDK handoffs; Hub is optional. Skipping them leaves the play route usable |
 | Upload eligibility | Explain full VRChat account plus New User or higher; show user-reported or unknown eligibility honestly. Normal-play guidance promises no promotion date. A Visitor can continue local preparation/testing; only upload remains gated |
 | Interrupt/decline | Closing a page, refusing consent, failed registration or blocked embedding leaves a resume/manual route. CAPTCHA, terms, account linking and payment stay with the user |
 | Privacy | First-slice registration sessions are nonpersistent and isolated; no cookie/password/token values in app state, IPC, Agent context or logs. Ending the guide session clears its temporary state. Saved progress does not imply authenticated verification |
@@ -351,6 +352,11 @@ do not turn documentation completeness, speculative coverage, or idle agent acti
 
 ## Document changelog
 
+- 3.5.1 (2026-10-02): describe the N1 first local path as following the standalone deployment
+  route owned by the architecture document instead of restating its install mechanism (the
+  original installer installs the Editor; the official CLI registers it), absorbing the 3.4.1
+  wording hygiene; no acceptance change.
+- 3.5.0 (2026-09-30): make the official standalone CLI the first N1 Editor route, preserving license and real-project acceptance.
 - 3.4.1 (2026-10-01): rename the sequence table's status column, date the current-workstation
   inventory claim and note its mutation by deployment work, replace the N5 audit "where possible"
   hedge with blocked-with-reason recording, expand first-use jargon (MA/OSC/VPM/BDL), and fix the

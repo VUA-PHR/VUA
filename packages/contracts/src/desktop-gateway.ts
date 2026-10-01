@@ -1,3 +1,4 @@
+import { isDeploymentCommandId, isDeploymentParams, type DeploymentPlanParams, type DeploymentExecuteParams } from "./environment-deployment.js";
 import type {
   AppErrorV01,
   ApplicationEventV01,
@@ -897,7 +898,12 @@ export interface PackagesCreateProjectRequestV1 {
   };
 }
 
+export interface GatewayDeploymentPlanRequest { readonly schemaVersion: 1; readonly requestId: string; readonly method: "environment.planDeployment"; readonly params: DeploymentPlanParams }
+export interface GatewayDeploymentExecuteRequest { readonly schemaVersion: 1; readonly requestId: string; readonly method: "environment.executeDeployment"; readonly params: DeploymentExecuteParams & { readonly commandId: string } }
+
 export type DesktopGatewayRequestV1 =
+  | GatewayDeploymentPlanRequest
+  | GatewayDeploymentExecuteRequest
   | AppSnapshotRequestV1
   | GatewayTaskListRequestV1
   | GatewayTaskGetRequestV1
@@ -974,6 +980,8 @@ export const DESKTOP_GATEWAY_METHOD_KINDS = {
   "task.get": "query",
   "task.requestCancellation": "command",
   "environment.getSnapshot": "query",
+  "environment.planDeployment": "query",
+  "environment.executeDeployment": "command",
   "environment.verifyEditor": "query",
   "overlay.getSnapshot": "query",
   "task.startDemo": "command",
@@ -1521,6 +1529,12 @@ export function isDesktopGatewayRequestV1(value: unknown): value is DesktopGatew
     case "environment.getSnapshot":
     case "overlay.getSnapshot":
       return hasExactKeys(value, REQUEST_KEYS) && hasExactKeys(value.params, []);
+    case "environment.planDeployment":
+      return hasExactKeys(value, REQUEST_KEYS) && isDeploymentParams(value.params, false);
+    case "environment.executeDeployment": {
+      if (!hasExactKeys(value, REQUEST_KEYS) || !hasExactKeys(value.params, ["intent", "confirmedDigest", "commandId"]) || !isDeploymentCommandId(value.params.commandId)) return false;
+      return isDeploymentParams({ intent: value.params.intent, confirmedDigest: value.params.confirmedDigest }, true);
+    }
     case "environment.verifyEditor":
       // 021 词表行:params 单字段闭集 {path} minLength 1(裁决③ verbatim
       // 纪律,不设 maxLength);词表外键拒绝

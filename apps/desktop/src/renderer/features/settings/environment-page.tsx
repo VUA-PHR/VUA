@@ -3,6 +3,7 @@ import type { ConfirmedEditorV1 } from "@vua/contracts";
 import { Button } from "../../components/primitives/Button.tsx";
 import { Card } from "../../components/primitives/Card.tsx";
 import { format, strings } from "../../i18n/index.ts";
+import { saveUnityMirrors, useUnityMirrors } from "../../app/unity-download-preference.ts";
 import {
   narrowEditorFindings,
   narrowVerifyEditorResult,
@@ -54,6 +55,7 @@ function classificationText(classification: string, known: boolean): string {
 
 export function EnvironmentSettingsPage() {
   const copy = strings.settings.environment;
+  const useMirrors = useUnityMirrors();
   const [editorsState, setEditorsState] = useState<EditorsState>({ kind: "loading" });
   const [reloadKey, setReloadKey] = useState(0);
   const [verify, setVerify] = useState<VerifyState>({ kind: "idle" });
@@ -158,6 +160,17 @@ export function EnvironmentSettingsPage() {
       <section className="vua-page__hero">
         <h1 className="vua-title">{strings.nav.pages.settingsEnvironment}</h1>
       </section>
+
+      <Card>
+        <div className="vua-page__stack">
+          <h2 className="vua-title">{strings.deployment.mirrorHeading}</h2>
+          <label className="vua-settings-row">
+            <input type="checkbox" checked={useMirrors} onChange={event => saveUnityMirrors(event.target.checked)} />
+            {strings.deployment.mirrorLabel}
+          </label>
+          <p className="vua-caption vua-text-secondary">{strings.deployment.mirrorHint}</p>
+        </div>
+      </Card>
 
       <Card>
         <div className="vua-page__stack">

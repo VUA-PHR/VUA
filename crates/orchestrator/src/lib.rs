@@ -162,3 +162,6 @@ pub use vpm_backend::{
 };
 pub use workflow::{AvatarSetupWorkflow, WorkflowError};
 pub use win_registry::{FakeRegistrySource, RegistryHive, RegistrySource, WindowsRegistrySource};
+
+/// N1 deployment decisions and adapter port; independent of vendor/process types.
+pub mod deployment;

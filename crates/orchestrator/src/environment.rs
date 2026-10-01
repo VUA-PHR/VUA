@@ -583,6 +583,15 @@ impl EnvironmentEngine {
         }
     }
 
+    /// Narrow, read-only prerequisite discovery for deployment. Reuse known roots and Steam
+    /// libraries without running unrelated package tools, network probes or hardware checks.
+    /// The deployment adapter strengthens these presence hints before claiming readiness.
+    pub fn inspect_deployment_components(&self) -> Vec<EnvironmentCheckItemV1> {
+        vec![self.check_steam(), self.check_vrchat(), self.check_steamvr(),
+            self.check_brand_runtime("pico_runtime", &self.roots.vr_runtime_roots.pico),
+            self.check_unity_hub()]
+    }
+
     // --- play zone: Steam chain ---
 
     /// Locates the Steam install (registry first, then candidate roots)

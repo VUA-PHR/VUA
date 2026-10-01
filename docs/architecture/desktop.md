@@ -1,11 +1,11 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.3.1
+> Document version: 1.4.1
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-10-01
-> Last conformance review: 2026-09-06
+> Updated: 2026-10-02
+> Last conformance review: 2026-10-02 (source/layout review, not runtime acceptance)
 > Normative effect: Yes
 
 ## Technology decision
@@ -87,7 +87,7 @@ no exempt-from-confirmation memory at any level); new windows are always denied,
 popup targets redirected into the current embedded view (directly when allowlisted, after
 confirmation otherwise); pseudo-protocol (`javascript:`, `data:`, `blob:`, `file:`, …) windows are
 denied unconditionally; external protocols (initially `mailto:`, `steam:`, `vrchat:`,
-`discord:` — the [product boundary](../product-boundary.md) owns this list rule) go through a per-attempt dedicated confirmation before the system handler opens them —
+`discord:`, and `unityhub:` for the N1 installation handoff — the [product boundary](../product-boundary.md) owns this list rule) go through a per-attempt dedicated confirmation before the system handler opens them —
 the window-open details expose no gesture field, so the confirmation click itself is the explicit
 user gesture and automatically triggered openings never execute without confirmation (a stricter
 equivalent of the literal rule) — and unknown schemes are denied by default. The browsing allowlist and the
@@ -149,6 +149,9 @@ rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
 
+- 1.4.1 (2026-10-02): merge the N1 Unity Hub handoff protocol with the status-quo alignment;
+  no rule change.
+- 1.4.0 (2026-10-01): allow the Unity Hub installation handoff under the existing per-action external-protocol confirmation.
 - 1.3.1 (2026-10-01): status-quo alignment — Main supervises the Provider as a separate process
   (orchestrator.md wording); U9 external-protocol list phrasing defers to the owning product
   boundary; overlay shape parameters cite the spike-overlay.mjs verification; proposal 017 cited

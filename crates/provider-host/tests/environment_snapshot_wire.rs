@@ -94,6 +94,72 @@ fn run_snapshot(database: &Path, environment: Option<EnvironmentConfig>) -> Valu
     frames[0]["payload"]["value"].clone()
 }
 
+fn deployment_frame(base: &Path, enabled: bool, payload: Value) -> Value {
+    let mut output = Vec::new();
+    let frame =
+        json!({"frameVersion":"0.1","frameId":"deployment","kind":"request","payload":payload});
+    run_provider_host_full(
+        Cursor::new(format!("{frame}\n")),
+        &mut output,
+        base.join("deploy.sqlite"),
+        None,
+        None,
+        None,
+        None,
+        None,
+        enabled.then(|| EnvironmentConfig {
+            roots: synthetic_roots(base),
+            vcc_settings_candidates: Vec::new(),
+        }),
+        None,
+        None,
+    )
+    .unwrap();
+    String::from_utf8(output)
+        .unwrap()
+        .lines()
+        .map(|l| serde_json::from_str::<Value>(l).unwrap())
+        .find(|f| f["kind"] == "response")
+        .unwrap()["payload"]
+        .clone()
+}
+
+#[test]
+fn deployment_plan_is_an_actual_missing_prerequisite_plan_or_explicitly_unavailable() {
+    let request = json!({"contractVersion":"0.1","requestId":"plan","correlationId":"corr-test","kind":"query","method":"environment.planDeployment",
+        "params":{"intent":{"purposes":["desktop_play"],"editorRoot":"C:\\VUA Test\\Editors"}}});
+    let base = unique_root("deployment-disabled");
+    let disabled = deployment_frame(&base, false, request.clone());
+    assert_eq!(disabled["error"]["code"], "vua.deployment.unavailable");
+    std::fs::remove_dir_all(base).unwrap();
+    let base = unique_root("deployment-plan");
+    let response = deployment_frame(&base, true, request);
+    assert_eq!(response["ok"], true);
+    let plan = &response["value"]["deploymentPlan"];
+    assert_eq!(plan["schemaVersion"], "vua.environment-deployment/v0.1");
+    assert_eq!(plan["steps"].as_array().unwrap().len(), 2);
+    assert_eq!(plan["steps"][0]["action"], "manual_install");
+    assert_eq!(plan["prerequisitesReady"], false);
+    std::fs::remove_dir_all(base).unwrap();
+}
+
+#[test]
+fn deployment_provider_refuses_wrong_kind_unknown_fields_and_malformed_consent() {
+    for (index, params) in [
+        json!({"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors"},"confirmedDigest":"x"}),
+        json!({"intent":{"purposes":["pc_avatar"],"editorRoot":"C:\\Editors"},"confirmedDigest":"a".repeat(64),"executable":"cmd.exe"}),
+    ].into_iter().enumerate() {
+        let base = unique_root(&format!("deployment-refused-{index}"));
+        let response = deployment_frame(&base, true, json!({"contractVersion":"0.1","requestId":"execute","correlationId":"corr-test", "kind":"query",
+            "method":"environment.executeDeployment","commandId":"command-1","params":params}));
+        assert_eq!(response["ok"], false);
+        assert_eq!(response["error"]["category"], "validation");
+        let store = vua_orchestrator::SqliteTaskStore::open(base.join("deploy.sqlite")).unwrap();
+        assert!(store.tasks().unwrap().is_empty()); drop(store);
+        std::fs::remove_dir_all(base).unwrap();
+    }
+}
+
 #[test]
 fn environment_snapshot_consumes_the_real_detection_engine() {
     let base = unique_root("synthetic");

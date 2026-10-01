@@ -1,7 +1,7 @@
 # VUA documentation governance
 
 
-> Document version: 2.5.0
+> Document version: 2.5.1
 > Status: Accepted
 > Source: formalization of §2 of the 2026-09 "VUA documentation and collaboration repair plan",
 > a local working plan that was never tracked in git; provenance is preserved in this document's
@@ -143,13 +143,11 @@ retrofitted.
 - **Expected frequency**: at the current pace, roughly 0–3 single-line edits per day; status
   files, proposal discussions, and similar collaboration actions **never touch** the REGISTRY
   (historical coordination records are no longer maintained).
-- **Drift is prevented by machine checks, not high-frequency human effort**: `pnpm collab:brief`
-  and the existing report-only `collab-registry` CI workflow
-  (`.github/workflows/collab-registry.yml`, `continue-on-error: true`) verify that each managed
-  document's header version/status matches its REGISTRY row. Versions are compared at
-  major.minor granularity, tolerating patch drift per the update triggers above; mismatches are
-  reported without blocking merges. Low-cost detection replaces preventive high-frequency
-  updates; a human writes one line only when an event occurs.
+- **Drift is limited by low-frequency rules, not machine checks**: versions are compared at
+  major.minor granularity when a row is updated, tolerating patch drift per the update triggers
+  above. The collab-era checker (`collab:brief` script and report-only CI) was removed with the
+  mechanism's full retirement (2026-10-02); REGISTRY consistency rests on these update rules and
+  review at registration time. A human writes one line only when an event occurs.
 
 ## 4. Reference whitelist for managed-document bodies (2026-09-23, proposal 031-E4)
 
@@ -195,8 +193,8 @@ owners, not copied archive snapshots. Research with implementation consumers nee
 before its constraints are discarded.
 
 Collab is retired and physically archived. The
-[protected-main policy](protected-main.md) continues in force. Keep pnpm collab:brief
-and report-only CI; registry-only checking does not reactivate collab bootstrap. Current decisions
+[protected-main policy](protected-main.md) continues in force. The collab-era registry checker
+was removed with the full retirement; registry hygiene follows §3's update rules. Current decisions
 land in owning documents/PRs, not mandatory BOARD updates.
 
 ## 6. Local environment and reproducible evidence
@@ -228,6 +226,9 @@ archived prompt is an active instruction.
 
 ## Document changelog
 
+- 2.5.1 (2026-10-02): remove the collab-era registry checker (script, CI workflow and the
+  `collab:brief` command) with the mechanism's full retirement; §3 drift control now rests on
+  the update rules and registration-time review.
 - 2.5.0 (2026-10-01): define the Candidate and Implementation baseline statuses (§2.1); define
   REGISTRY coverage edges (§2.6); state the release-notes matrix rule applies from the next
   release (§2.7); correct the collab:brief/report-only CI description (§3); extend the §4

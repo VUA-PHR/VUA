@@ -1,10 +1,10 @@
 # VUA product boundary
 
 
-> Document version: 2.2.3
+> Document version: 2.4.1
 > Status: Accepted
 > Scope: Entire VUA product
-> Updated: 2026-10-01
+> Updated: 2026-10-02
 > Normative effect: Yes
 
 ## Product definition
@@ -208,6 +208,19 @@ gate derives risk from declared capabilities and behavior.
 - **Least privilege:** remote content, plugins, and third-party components receive only required
   capabilities.
 
+## Unity deployment
+
+For N1, detect the download-network region first: mainland China prefers NoUnityCN; other or
+unknown regions prefer Unity's official source (user ruling, 2026-10-01). Try the other enabled
+source if acquisition fails, then guide installation through Unity Hub. Settings includes an
+enabled-by-default mirror switch; when off, use only the official source and Hub fallback.
+Download the exact supported global Editor onto the user's machine, install it with Unity's
+original installer, and register it with the official standalone CLI. Hub is optional until a
+fallback is needed. VUA does not bundle Unity CLI/Editor or operate its own Unity mirror. Users choose
+licenses and accept agreements themselves, and Unity's tooling keeps its own credentials. The
+[deployment direction](architecture/unity-deployment.md) owns the installation and evidence path;
+this does not widen first-delivery account storage or authentication automation.
+
 ## Account onboarding (user ruling, 2026-09-30)
 
 The first usable delivery guides people through official pages in the built-in browser. It is
@@ -216,8 +229,8 @@ with optional Unity and BOOTH/pixiv registration guidance for the creator route.
 can skip registration. VUA explains each step; users enter account information, solve challenges,
 accept terms, add VRChat to their Steam library, and perform account upgrade/linking themselves.
 Account linking means the official Steam-platform-account to full VRChat-account flow, not a
-VUA identity binding or a VUA account database. Steam client, game and Unity Hub steps are explicit
-handoffs; an official page that refuses embedding has a system-browser fallback.
+VUA identity binding or a VUA account database. Steam client, game and Unity CLI authorization/licensing steps are explicit
+handoffs; Unity Hub is optional. An official page that refuses embedding has a system-browser fallback.
 
 Only guide progress and user-declared completion are saved by this first slice. A page opening
 does not prove registration, ownership or account linking. Authenticated API automation, page
@@ -390,9 +403,11 @@ plugin execution and a marketplace still require their separately accepted secur
 
 ## Document changelog
 
-- 2.2.3 (2026-10-01): state the first-delivery account exclusions at full strength (not "required")
+- 2.4.1 (2026-10-02): state the first-delivery account exclusions at full strength (not "required")
   and compress the active-delivery policy to boundary rulings, linking acceptance definitions to
   the development outline; no scope change.
+- 2.4.0 (2026-10-01): select region-aware Unity/NoUnityCN source priority, a mirror switch and Hub fallback; authorize original-installer deployment with official CLI registration during N1 development.
+- 2.3.0 (2026-09-30): select official standalone Unity CLI installation with separate user licensing; Hub is optional.
 - 2.2.2 (2026-09-30): link the independent product-release numbering policy; N acceptance scope is unchanged.
 - 2.2.1 (2026-09-30): describe the selected Steam/external integration path directly.
 - 2.2.0 (2026-09-30): limit initial accounts to guided onboarding and select external-only N2 tools; record deferred VRChat account experiments.
@@ -410,23 +425,5 @@ plugin execution and a marketplace still require their separately accepted secur
   prominent notice that the section is accepted direction, not an implementation or real-machine
   acceptance claim, and that frozen protocols and data formats do not automatically change.
   Mirrors the ZH edition.
-- 1.4.0 (2026-09-19): U14 user ruling landed in the boundary — project-management item 5
-  reaffirmed: the most frequently used "project management" in VUA is actually the Recipe and
-  Release modules; the package manager's primary form is Recipe-driven automatic resolution and
-  import (finding and importing the matching packages from a Recipe's inputs), with manual
-  per-package management as the secondary form; a settings-face exception is opened: the VPM
-  package-manager settings (the repository-subscription and local-package-registry faces of
-  `settings.json`) are shared with VCC/ALCOM as one file, VUA may read and write it, and changes
-  are visible to both sides immediately; the project-file face keeps U3 unchanged — external
-  import still defaults to clone-then-modify-the-copy and original projects stay read-only.
-  Mirrors the ZH edition.
-- 1.3.0 (2026-09-09): U7② + U9 user rulings landed in the boundary — a new Explicit-boundaries
-  clause, **remote web browsing and window/protocol boundary**: allowlist-first browsing,
-  non-allowlisted domains prompted but not blocked; purchase flow out of scope for now (not
-  permanent); download host domains proposed and approved per domain after real-machine
-  verification; the four-way split for new windows/external protocols (web-class new windows
-  never open separate windows; pseudo-protocols rejected unconditionally; external protocols
-  via a dedicated per-invocation confirmation layer without permanent skip; gesture requirement
-  plus unconditional denial of native new-window creation). Mirrors the ZH edition.
 
-Earlier entries (1.2.1 and older) live in git history.
+Earlier entries (1.4.0 and older) live in git history.

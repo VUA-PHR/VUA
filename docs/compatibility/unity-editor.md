@@ -1,10 +1,10 @@
 # Unity editor compatibility
 
 
-> Document version: 1.0.2
+> Document version: 1.1.1
 > Status: Accepted  
 > Scope: Unity detection, project intake, AMF production, and Unity Bridge execution  
-> Updated: 2026-10-01  
+> Updated: 2026-10-02  
 > Normative effect: Defines VUA's editor support matrix
 
 ## Support matrix
@@ -25,8 +25,9 @@ not load in VRChat. VUA therefore promotes a new production target only after VR
 VUA release passes the Bridge, SDK, package, synthetic-project, and local smoke matrices. Upstream
 recommendation and VUA verification remain separate states.
 
-Independently of the version class, Unity Hub and the Unity Editor retain credentials, account
-sessions, and license activation; VUA receives capability and readiness results only.
+Independently of the version class, the Unity CLI, the optional Unity Hub, and the Unity Editor
+retain credentials, account sessions, and license activation; VUA receives capability and
+readiness results only.
 
 ## Migration sources
 
@@ -35,6 +36,14 @@ sessions, and license activation; VUA receives capability and readiness results 
 Bridge v1 operations start after a project copy reaches the production target. The official
 [VRChat 2019-to-2022 guide](https://creators.vrchat.com/sdk/upgrade/unity-2022/) remains authoritative
 for that upgrade.
+
+## Installation route
+
+The [standalone deployment direction](../architecture/unity-deployment.md) owns the route:
+Unity's original installer installs the exact global target, and the official CLI registers the
+Editor and handles licensing; Hub is optional. Installer version/support and Editor
+compatibility are separate checks. A successful download does not establish a licensed, usable
+Editor, and the production target above is not widened by the installation route.
 
 ## Other Unity versions
 
@@ -62,6 +71,12 @@ does not authorize Bridge execution, VRChat SDK validation, building, or upload 
 
 ## Document changelog
 
+- 1.1.1 (2026-10-02): align the Installation route section with the owning deployment document
+  (the original installer installs the Editor; the official CLI registers it), fix the
+  production-target direction reference, move the credential-ownership sentence out of the
+  version-classification section into the general support-matrix text, and refresh the stale
+  header date; no matrix change.
+- 1.1.0 (2026-09-30): link Hub-independent official CLI installation without changing Editor eligibility.
 - 1.0.2 (2026-10-01): move the credential-ownership sentence out of the version-classification
   section into the general support-matrix text and refresh the stale header date; no matrix change.
 - 1.0.1 (2026-09-28): erratum — the "M0 enforcement requirements" section is renamed

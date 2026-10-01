@@ -70,3 +70,11 @@ pub use vua_identity::{
     mark_vua_native, read_identity, set_note, write_identity, SetNoteError, VuaIdentity,
     VuaProjectIdentityV1, IDENTITY_FILE_NAME, IDENTITY_SCHEMA_VERSION,
 };
+
+/// Concrete Windows adapters for the N1 deployment port.
+pub mod deployment_adapter;
+mod deployment_trust;
+mod unity_cli_bootstrap;
+mod unity_download_region;
+mod unity_editor_install;
+mod unity_install;

@@ -283,6 +283,46 @@ impl RuntimeInner {
         }
     }
 
+    /// A Gateway cancellation can race a worker's durable progress/transition. Only that
+    /// one external revision is reconciled; arbitrary concurrent edits still freeze the task.
+    /// The caller holds the runtime task lock. SQLite CAS keeps both writers ordered.
+    fn persist_record_mutation(
+        &self,
+        task_id: &str,
+        record: &mut TaskRecord,
+        occurred_at: &str,
+        mutation: TaskMutation,
+    ) -> Result<(), PersistenceFailure> {
+        let result = self.persist_mutation(task_id, record.revision, occurred_at, mutation.clone());
+        if matches!(
+            result,
+            Err(PersistenceFailure::Sqlite(
+                SqliteStoreError::RevisionConflict { .. }
+            ))
+        ) {
+            if let Some(sqlite) = &self.sqlite {
+                let current = sqlite.task(task_id).map_err(PersistenceFailure::Sqlite)?;
+                if let Some(current) = current {
+                    if current.revision == record.revision + 1
+                        && current.state == record.state
+                        && current.cancel_requested
+                        && !record.cancel_requested.load(Ordering::SeqCst)
+                    {
+                        record.revision = current.revision;
+                        record.cancel_requested.store(true, Ordering::SeqCst);
+                        return self.persist_mutation(
+                            task_id,
+                            record.revision,
+                            occurred_at,
+                            mutation,
+                        );
+                    }
+                }
+            }
+        }
+        result
+    }
+
     fn publish(&self, event: TaskEventV1) {
         let mut subscribers = self.subscribers.lock().expect("subscribers poisoned");
         // retain 静默剔除已关闭的订阅者（前端窗口关了 channel 就断了）；
@@ -466,6 +506,27 @@ impl TaskRuntime {
     /// caller observes success (ORC-STA-006); a journal failure rejects the
     /// command without starting the job.
     pub fn submit(&self, request: SubmitRequest) -> Result<CommandAcceptedV1, AppErrorV1> {
+        self.submit_inner(request, None)
+    }
+
+    /// Atomically bind a command ID and fingerprint to durable task acceptance. Replays
+    /// return the original receipt without spawning another worker, including after restart.
+    /// This uses the existing SQLite idempotency table; it introduces no persistence format.
+    pub fn submit_idempotent(
+        &self,
+        request: SubmitRequest,
+        command_kind: &str,
+        command_id: &str,
+        fingerprint: &str,
+    ) -> Result<CommandAcceptedV1, AppErrorV1> {
+        self.submit_inner(request, Some((command_kind, command_id, fingerprint)))
+    }
+
+    fn submit_inner(
+        &self,
+        request: SubmitRequest,
+        idempotency: Option<(&str, &str, &str)>,
+    ) -> Result<CommandAcceptedV1, AppErrorV1> {
         if !self.inner.journal_accepting.load(Ordering::Acquire) {
             return Err(AppErrorV1::new(
                 error_codes::JOURNAL_RECOVERY_REQUIRED,
@@ -492,7 +553,7 @@ impl TaskRuntime {
         // task, and two broken generators cannot overwrite one another.
         {
             let mut tasks = self.inner.tasks.lock().expect("tasks poisoned");
-            if tasks.contains_key(&task_id) {
+            if idempotency.is_none() && tasks.contains_key(&task_id) {
                 return Err(AppErrorV1::new(
                     error_codes::ID_COLLISION,
                     ErrorCategory::Internal,
@@ -500,7 +561,53 @@ impl TaskRuntime {
                     format!("corr-{task_id}"),
                 ));
             }
-            if let Err(error) =
+            if let Some((kind, key, fingerprint)) = idempotency {
+                let sqlite = self.inner.sqlite.as_ref().ok_or_else(|| {
+                    AppErrorV1::new(
+                        "vua.task.idempotency_unavailable",
+                        ErrorCategory::Unavailable,
+                        "errors.task.idempotencyUnavailable",
+                        correlation_id.clone(),
+                    )
+                })?;
+                let task = NewTask {
+                    task_id: task_id.clone(),
+                    correlation_id: correlation_id.clone(),
+                    occurred_at: accepted_at.clone(),
+                };
+                let response = serde_json::to_value(&accepted).expect("task receipt serializes");
+                match sqlite.accept_idempotent_task(kind, key, fingerprint, &task, &response) {
+                    Ok(crate::sqlite_task_store::IdempotentTaskAcceptance::Replayed {
+                        response,
+                        ..
+                    }) => {
+                        return serde_json::from_value(response).map_err(|_| {
+                            AppErrorV1::new(
+                                "vua.task.invalid_receipt",
+                                ErrorCategory::Internal,
+                                "errors.task.invalidReceipt",
+                                correlation_id.clone(),
+                            )
+                        });
+                    }
+                    Ok(crate::sqlite_task_store::IdempotentTaskAcceptance::Accepted { .. }) => {}
+                    Err(SqliteStoreError::IdempotencyConflict { .. }) => {
+                        return Err(AppErrorV1::new(
+                            "vua.task.idempotency_conflict",
+                            ErrorCategory::Conflict,
+                            "errors.task.idempotencyConflict",
+                            correlation_id.clone(),
+                        ))
+                    }
+                    Err(error) => {
+                        self.inner.journal_accepting.store(false, Ordering::Release);
+                        return Err(persistence_failure(
+                            &PersistenceFailure::Sqlite(error),
+                            &task_id,
+                        ));
+                    }
+                }
+            } else if let Err(error) =
                 self.inner
                     .persist_acceptance(&task_id, &correlation_id, &accepted_at, &accepted)
             {
@@ -576,9 +683,9 @@ impl TaskRuntime {
             if record.cancel_requested.load(Ordering::SeqCst) {
                 return Ok(());
             }
-            if let Err(error) = self.inner.persist_mutation(
+            if let Err(error) = self.inner.persist_record_mutation(
                 task_id,
-                record.revision,
+                record,
                 &occurred_at,
                 TaskMutation::RequestCancellation {
                     payload: Value::Null,
@@ -830,10 +937,35 @@ impl TaskContext {
     /// decides where its safe boundaries are and exits with
     /// [`TaskExit::Cancelled`] (ORC-CON-006).
     pub fn check_cancel(&self) -> bool {
+        // Gateway cancellation is accepted directly by the shared SQLite authority. Refresh
+        // under the runtime lock before a safe boundary so its newer revision and cancel flag
+        // cannot be missed, or make the following transition fail due to a stale revision.
+        if let Some(sqlite) = &self.runtime.inner.sqlite {
+            let mut tasks = self.runtime.inner.tasks.lock().expect("tasks poisoned");
+            match sqlite.task(&self.task_id) {
+                Ok(Some(stored)) => {
+                    if let Some(record) = tasks.get_mut(&self.task_id) {
+                        if stored.revision > record.revision {
+                            record.revision = stored.revision;
+                            record.state = stored.state;
+                            record
+                                .cancel_requested
+                                .store(stored.cancel_requested, Ordering::SeqCst);
+                        }
+                    }
+                }
+                // Failed reobservation is a safe stop, never permission to continue writes.
+                _ => return true,
+            }
+        }
         self.runtime
             .snapshot(&self.task_id)
-            .map(|snapshot| snapshot.cancel_requested)
-            .unwrap_or(false)
+            .map(|snapshot| {
+                snapshot.cancel_requested
+                    || snapshot.poisoned
+                    || snapshot.recovery_disposition == TaskRecoveryDisposition::InspectRequired
+            })
+            .unwrap_or(true)
     }
 
     fn timeout_requested(&self) -> bool {
@@ -900,9 +1032,9 @@ impl TaskContext {
                     if self
                         .runtime
                         .inner
-                        .persist_mutation(
+                        .persist_record_mutation(
                             &self.task_id,
-                            record.revision,
+                            record,
                             &occurred_at,
                             TaskMutation::Progress {
                                 payload: payload.clone(),
@@ -979,9 +1111,9 @@ impl TaskContext {
                     self.task_id.clone(),
                 ));
             }
-            if let Err(error) = self.runtime.inner.persist_mutation(
+            if let Err(error) = self.runtime.inner.persist_record_mutation(
                 &self.task_id,
-                record.revision,
+                record,
                 &occurred_at,
                 TaskMutation::Transition {
                     state: to,
@@ -1042,9 +1174,9 @@ impl TaskContext {
             if self
                 .runtime
                 .inner
-                .persist_mutation(
+                .persist_record_mutation(
                     &self.task_id,
-                    record.revision,
+                    record,
                     &occurred_at,
                     TaskMutation::Complete {
                         state: desired,
@@ -1103,9 +1235,9 @@ impl TaskContext {
             if self
                 .runtime
                 .inner
-                .persist_mutation(
+                .persist_record_mutation(
                     &self.task_id,
-                    record.revision,
+                    record,
                     &occurred_at,
                     TaskMutation::RequestCancellation {
                         payload: serde_json::json!({ "reason": "timeout" }),

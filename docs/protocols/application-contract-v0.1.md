@@ -41,6 +41,8 @@ backward-compatibility statement.
 | Query | `task.get` | Returns one authoritative task snapshot | B1 |
 | Command | `task.requestCancellation` | Submits a monotonic, idempotent cancellation intent for a stable task instance | B1 |
 | Query | `environment.getSnapshot` | Returns the read-only environment presence snapshot for both zones | F2 |
+| Query | `environment.planDeployment` | Reads the purpose-based plan defined by deployment v0.1; gated on configured environment services | N1 |
+| Command | `environment.executeDeployment` | Accepts exact deployment v0.1 consent as an idempotent durable task; same service gate, automatic actions additionally capability-checked | N1 |
 | Command | `task.startDemo` | Capability-gated demonstration command: creates one observable, cancellable demo task | F2 |
 | Command | `production.startInspection` | Starts Inspect for the first production use case (dual material intake; candidate) | B3/F3 |
 | Query | `production.getInspection` | Reads an inspection result (compatibility/missing evidence) | B3/F3 |
@@ -208,6 +210,8 @@ caches, display, and diagnostics always reference the original contract values.
 - Tests do not depend on Rust, Electron, FFI, network, SQLite, or real Unity.
 
 ## Revision history
+
+- 2026-09-30: register the additive [environment deployment v0.1 Candidate family](environment-deployment-v0.1.md), with its own schema/vectors and producer/consumer tests. Existing environment/task method semantics and envelope versions are unchanged.
 
 - 2026-09-02: B1 candidate contract. Four-method minimal surface: `application.getSnapshot`,
   `task.list`, `task.get`, `task.requestCancellation`.

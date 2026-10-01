@@ -30,6 +30,59 @@ fn wait_for_terminal(runtime: &TaskRuntime, task_id: &str) {
 }
 
 #[test]
+fn gateway_cancel_racing_worker_progress_preserves_the_durable_revision() {
+    let store = Arc::new(SqliteTaskStore::open_in_memory().unwrap());
+    let runtime = TaskRuntime::with_sqlite(
+        store.clone(),
+        Arc::new(SystemClock),
+        Arc::new(NanosTaskIdGenerator::default()),
+    )
+    .unwrap();
+    let (entered_tx, entered_rx) = std::sync::mpsc::channel();
+    let (release_tx, release_rx) = std::sync::mpsc::channel();
+    let accepted = runtime
+        .submit(SubmitRequest {
+            correlation_id: None,
+            timeout: None,
+            job: Box::new(move |context| {
+                entered_tx.send(()).unwrap();
+                release_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+                // Deliberately no check_cancel before progress: reproduce the external writer race.
+                context.emit_progress(serde_json::json!({"completed":1,"messageKey":"test.step"}));
+                assert!(context.check_cancel());
+                Ok(TaskExit::Cancelled)
+            }),
+        })
+        .unwrap();
+    entered_rx.recv_timeout(Duration::from_secs(5)).unwrap();
+    store
+        .request_cancellation_idempotent(
+            "external-cancel",
+            "test",
+            &accepted.task_id,
+            None,
+            "2026-09-30T00:00:00Z",
+        )
+        .unwrap();
+    release_tx.send(()).unwrap();
+    wait_for_terminal(&runtime, &accepted.task_id);
+    let snapshot = runtime.snapshot(&accepted.task_id).unwrap();
+    assert_eq!(snapshot.state, TaskState::Cancelled);
+    assert!(!snapshot.poisoned);
+    let events = store.events_after(&accepted.task_id, 0).unwrap();
+    assert!(events
+        .windows(2)
+        .all(|p| p[1].revision == p[0].revision + 1));
+    assert_eq!(
+        events
+            .iter()
+            .filter(|e| e.kind == TaskEventKind::CancelRequested)
+            .count(),
+        1
+    );
+}
+
+#[test]
 fn b2_sqlite_runtime_commits_before_publish_and_recovers_revision() {
     let path = database_path("runtime");
     let store = Arc::new(SqliteTaskStore::open(&path).unwrap());

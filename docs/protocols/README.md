@@ -1,6 +1,6 @@
 # Protocol reading guide
 
-> Document version: 1.2.1
+> Document version: 1.3.1
 > Status: Accepted
 > Updated: 2026-10-02
 > Scope: Navigation and retention guidance; no wire-format changes
@@ -40,7 +40,8 @@ from the existence of one method. This is a navigation aid, not a second complet
 | Feature | Contract / method starting point | Implementation and test starting point | What this establishes |
 | --- | --- | --- | --- |
 | Environment presence | [Application contract](application-contract-v0.1.md), `environment.getSnapshot` | [Rust observations](../../crates/orchestrator/src/environment.rs) → [frontend port](../../apps/desktop/src/renderer/gateway/environment-port.ts) → [projection tests](../../apps/desktop/src/renderer/gateway/contract-projection.test.ts) | Existing inspection path; does not establish N1 automated deployment |
-| Account guide and purpose-driven install | [Accepted minimal design](../architecture/evolution.md#small-data-model-not-a-framework), [account guidance](../architecture/evolution.md#account-guidance-alongside-deployment) | Reuse the existing Gateway/task runtime and desktop browser; define exact new methods and consumer tests with the first implementation slice | Contract to design for new guide/install behavior; no implied new frozen methods |
+| Purpose-driven deployment | [Deployment v0.1](environment-deployment-v0.1.md), `environment.planDeployment` / `environment.executeDeployment` | [Core policy/use case](../../crates/orchestrator/src/deployment.rs) → [Windows adapter](../../crates/project-manager/src/deployment_adapter.rs) → [consumer tests](../../apps/desktop/src/renderer/gateway/electron-gateway.test.ts) | Candidate executable slice with synthetic tests; real installer/project/device and UI acceptance pending |
+| Account guide | [Accepted minimal state](../architecture/evolution.md#account-guidance-alongside-deployment) | Reuse the existing isolated desktop browser; define exact guide methods and consumer tests with its implementation | Contract to design; deployment does not imply account registration/verification |
 | N2 external tools | [External-connection responsibilities](../architecture/integrations-and-overlays.md#external-integration-modes) | [Adapter ownership](../architecture/system.md#current-code-layout), then tool-specific discovery/launch code and tests in the implementation slice | Accepted scope; runtime support and any new contract remain to be established |
 | Material/Recipe production | [Intake](material-intake-v0.2.md), [production](production-use-case-v0.2.md), [Recipe export](recipe-export-v0.1.md), [SDK handoff](release-handoff-v0.2.md) | [Provider routes](../../crates/provider-host/src/provider_host.rs) → [frontend production adapter](../../apps/desktop/src/renderer/gateway/live-production-port.ts) and [tests](../../apps/desktop/src/renderer/gateway/live-production-port.test.ts); [Recipe export consumer](../../apps/desktop/src/renderer/gateway/recipe-export-port.test.ts) | Contracts and implementation entry points exist; inspect the exact operation/capability. N3/N4 real-flow acceptance remains separate |
 | BOOTH library/catalog/download | [BDL queries](bdl-queries-v0.5.md), [commands](bdl-commands-v0.4.md), [download events](download-events-v0.1.md) | [Acquisition](../../crates/acquisition/), [BDL store](../../crates/bdl-store/), [desktop session boundary](../architecture/desktop.md#remote-content-isolation) | Existing parts require the N5 capability audit; these contracts alone do not prove complete account-library retrieval |
@@ -66,7 +67,8 @@ For upstream-driven changes, follow the [third-party compatibility and licensing
 
 ## Document changelog
 
-- 1.2.1 (2026-10-02): index inspection-queries/inspection-evidence in the Materials/production row; disambiguate the packages-repos-catalog / packages-repo-catalog / packages-repos labels (v0.1 combined base spec vs per-repository inventory vs v0.2 increment).
+- 1.3.1 (2026-10-02): index inspection-queries/inspection-evidence in the Materials/production row; disambiguate the packages-repos-catalog / packages-repo-catalog / packages-repos labels (v0.1 combined base spec vs per-repository inventory vs v0.2 increment).
+- 1.3.0 (2026-09-30): route the executable Candidate N1 deployment family separately from pending account guidance.
 
 - 1.2.0 (2026-09-30): add direct family links, scoped delivery-status guidance and contract-to-code reading routes.
 

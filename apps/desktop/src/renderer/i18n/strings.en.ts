@@ -330,6 +330,85 @@ demoTaskTitle: "Demo task",
       "No system settings are modified, no software is installed, no data is uploaded; you will be asked again before any change.",
     confirm: "Enter VUA",
   },
+  deployment: {
+    mirrorHeading: "Unity download sources",
+    mirrorLabel: "Allow mirror downloads",
+    mirrorHint: "Mainland China uses NoUnityCN first; other regions use Unity first. A failed source falls back to the other, then Unity Hub. Turning this off uses only Unity and Hub.",
+    downloadRegion: "Download network",
+    downloadOrder: "Download order",
+    downloadRegions: { china_mainland: "Mainland China", other: "Outside mainland China", unknown: "Not determined" },
+    downloadSources: { official: "Unity", nounitycn: "NoUnityCN" },
+    hubFallback: "Use Unity Hub to install Unity 2022.3.22f1 after the download sources fail.",
+    openHub: "Install this version in Unity Hub",
+    getHub: "Download Unity Hub",
+    "title": "Deploy by purpose",
+    "description": "Choose the environment to prepare. The plan reports observed prerequisites; real game/device and SDK project checks remain separate.",
+    "installer": "Installation tool",
+    "installerHint": "Unity CLI is experimental. After acquiring it, inspect again before installing Editor. Login and license selection remain separate user steps.",
+    "installerKinds": {"unity_cli":"Unity CLI","hub_cli":"Existing Unity Hub CLI","unity_cli_bootstrap":"Official Unity CLI download"},
+    "purpose": "Purposes",
+    "purposes": {
+      "desktop_play": "Desktop play",
+      "pico_pcvr": "PICO PCVR",
+      "pc_avatar": "PC Avatar editing",
+      "quest_avatar": "Quest Avatar editing"
+    },
+    "location": "Unity Editor installation root",
+    "locationHint": "Automatic installation must match Unity CLI’s configured Editor location. Hub is optional; VUA does not change this shared setting.",
+    "plan": "Inspect and prepare a plan",
+    "working": "Working…",
+    "execute": "Confirm this plan and execute",
+    "official": "Open instructions / download source",
+    "consent": "Automatic steps install the listed version/components at the listed location. Existing software is retained. Account sign-in, licenses and elevation stay with the user. Cancellation takes effect at safe step boundaries; completed installation is not rolled back.",
+    "actions": {
+      "retain": "Keep existing installation",
+      "manual_install": "Install through the official application",
+      "inspect": "Inspect before changing anything",
+      "install_editor": "Install the specified Editor through the verified installer",
+      "install_unity_cli": "Download and verify the official Unity CLI",
+      "add_android_modules": "Add the required Android modules"
+    },
+    "reasons": {
+      "verified": "Prerequisite observed",
+      "missing": "Required component missing",
+      "unsuitable": "Installation incomplete or version unsuitable",
+      "detection_failed": "Could not verify this component"
+    },
+    "states": {
+      "queued": "Queued",
+      "preparing": "Rechecking the confirmed plan",
+      "running": "Executing deployment steps",
+      "waiting_for_input": "Waiting for user action",
+      "paused": "Paused",
+      "succeeded": "Deployment task completed",
+      "succeeded_with_warnings": "Task completed with outstanding steps",
+      "failed": "Deployment failed",
+      "cancelled": "Deployment cancelled"
+    },
+    "planFailed": "Could not prepare a plan. Check the selected purposes and absolute installation root, then retry.",
+    "executeFailed": "Acceptance could not be confirmed. Retry this plan to retrieve the same task, or reinspect before changing consent.",
+    "statusFailed": "Task status is temporarily unavailable. Installation may still be running.",
+    "reinspectFailed": "The task finished, but environment refresh failed. Run detection again.",
+    "inspectRequired": "Recovered task: inspect the actual environment before starting new work.",
+    "failedHint": "Inspect the environment and prepare a fresh plan before retrying. Error: ",
+    "vendorInstallFailed": "Unity refused the installation. Check Unity CLI’s own installation log for the cause. A regional download can substitute a China edition for the required global Editor. Correct the download source or network route before retrying; keep integrity checks enabled.",
+    "vendorResultUnreadable": "Unity’s installation result could not be verified. Inspect the installed files and Unity’s own log before preparing another plan; the installer will not be retried automatically.",
+    "manualRequired": "User action is required. Follow the official route shown in the plan, then inspect and prepare a new plan; this task does not prove successful installation.",
+    "verified": "Prerequisites were observed. Game/device behavior, Unity launch and SDK/MA project acceptance have not been verified by this task.",
+    "cancel": "Request cancellation",
+    "cancelPending": "Cancellation requested; the current installer step must reach a safe boundary.",
+    "cancelFailed": "Cancellation could not be confirmed. Refresh status before retrying.",
+    "components": {
+      "steam": "Steam",
+      "vrchat": "VRChat",
+      "steamvr": "SteamVR",
+      "pico_runtime": "PICO Connect / Runtime",
+      "unity_hub": "Unity Hub",
+      "unity_cli": "Unity CLI",
+      "unity_editor": "Unity Editor",
+      "android_modules": "Android Build Support / SDK / NDK / OpenJDK"
+    }
+  },
   deployer: {
     zones: {
       play: {
@@ -1568,7 +1647,7 @@ demoTaskTitle: "Demo task",
          * inspection and follow-up production steps are done; missing or
          * out-of-vocabulary state -> rejected as unconfirmable. The backend
          * gate stays the authority; this is the discoverable-reason face
-         * (design standard §5/§179). */
+         * (design standard §5). */
         blockedTitle: "Handoff unavailable",
         blockedFailed:
           "This build failed, so it cannot be handed off. Check the results, recover, or produce again.",

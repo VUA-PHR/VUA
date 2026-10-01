@@ -100,6 +100,10 @@ function toApplicationRequest(
             : { observedRevision: request.params.observedRevision }),
         },
       };
+    case "environment.planDeployment":
+      return { ...base, kind: "query", method: request.method, params: request.params };
+    case "environment.executeDeployment":
+      return { ...base, kind: "command", method: request.method, commandId: request.params.commandId, params: { intent: request.params.intent, confirmedDigest: request.params.confirmedDigest } };
     case "environment.getSnapshot":
       return { ...base, kind: "query", method: "environment.getSnapshot", params: {} };
     // 021 词表行(核心七点裁决):手选路径三形态 verbatim 透传,桌面零本地
