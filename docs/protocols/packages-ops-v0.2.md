@@ -31,7 +31,7 @@
 > upgrade, `blocks.changes` evolution per desktop stance 93752d5
 > item 3)
 > Updated: 2026-09-19 (v0.2 freeze batch: dual schemas + vectors +
-> core consumer tests + TS face + bilingual protocol doc + REGISTRY);
+> core consumer tests + TS face + protocol document + REGISTRY);
 > 2026-09-19 (v0.2.1 wiring batch: both wire route arms + the served
 > row landed, the honesty-boundary section honestly updated, the word
 > face zero-change); 2026-09-19 (v0.2.2 shape-approval pin-gap
@@ -40,6 +40,21 @@
 > guard narrowing with its tests, and the wire-layer request check;
 > the previous wording overstated what the negative-vector set and the
 > TS narrowing covered)
+> Erratum (2026-10-02): the newest slice of this family is
+> [packages-ops-v0.6.md](packages-ops-v0.6.md); the six slices are concurrent
+> faces — v0.6 is not a blanket replacement of v0.1–v0.5. Bilingual-era
+> wording removed from the Updated lines (the EN mirror no longer exists;
+> this English file is the sole canonical document per the 2026-09-25
+> language ruling). Protocol version and normative content unchanged.
+> Erratum (2026-10-02): stale line citations repaired — the Ownership
+> boundary line above cites `preview_install` :528 / `apply_install` :757
+> in `crates/project-manager/src/vpm_backend.rs`; the definitions now live
+> at `vpm_backend.rs:1658` (`preview_install`) and `:1892`
+> (`apply_install`). The "stays with W25 (awaiting the user window O-2)"
+> deferral in the honesty section below is reworded to pending/unscheduled
+> — the W25 window is retired (the development outline supersedes the W25
+> schedule); the walkthrough itself stays open. Protocol version and
+> normative content unchanged.
 
 ## A2 word-face semantics (install/upgrade = one family, no upgrade verb)
 
@@ -243,8 +258,8 @@ the word list transports facts.
   `blocks.changes` write entries upgrade per the A2 consumption slice
   (fixture shapes are never moved into live — the #22/#36 lessons,
   twice on record); wired is not end-to-end: the real-machine
-  walkthrough stays with W25 (awaiting the user window
-  O-2).
+  walkthrough is pending; unscheduled (the W25 window is
+  retired).
 - **Cache degradation is a documented behavior, not a transported
   fact (this face).** The preview may be computed against the package
   cache after a failed online refresh; the digest binding and the

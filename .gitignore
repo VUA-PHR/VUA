@@ -4,7 +4,9 @@
 /_local_*/
 
 # Local workspace guidance and decision process
-/docs/migration/
+# docs/migration/ is local scratch except the tracked legacy asset ledger.
+/docs/migration/*
+!/docs/migration/asset-ledger.md
 /docs/plans/
 /docs/reference/
 # Local Chinese mirrors of the (single-language English) tracked documentation;

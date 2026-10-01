@@ -21,6 +21,14 @@
 > role); provider routing belongs to the core domain; the desktop list
 > inline-editing interaction belongs to the desktop domain.
 > Updated: 2026-09-12
+> Erratum (2026-10-02): guard-table scope clarified — the "Guard closed set"
+> lead-in read as if the 4-row table were the whole v0.2 closed set while
+> the text says ten guards (the v0.1 seven + three setNote additions). The
+> table lists the **setNote guard set** (the three additions plus the
+> reused `execution_failed`); the full v0.2 closed set is the v0.1 seven
+> carried over unchanged plus the three additions — ten values, pinned by
+> the `guard` enum in `schemas/project-ops/v0.2/result.schema.json`.
+> Protocol version and normative content unchanged.
 
 ## Operation face (two vocabulary rows in v0.2)
 
@@ -54,7 +62,10 @@
 Guards are evaluated inside the task; a guard refusal is the `rejected`
 result document inside the Done payload (the task honestly completed and
 its verdict is the refusal — the import-copy discipline), never a transport
-error. v0.2 extends the v0.1 seven guards with three setNote guards:
+error. v0.2 extends the v0.1 seven guards with three setNote guards
+(ten values in total — the v0.1 seven carried over unchanged, pinned by
+the schema's `guard` enum); the table below lists the **setNote guard
+set** (the three additions plus the reused `execution_failed`):
 
 | guard | code | semantics |
 | --- | --- | --- |

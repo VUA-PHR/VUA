@@ -12,4 +12,4 @@ no runtime module or registration mechanism.
 ## Entries
 
 - [Environment detection and guided deployment](environment-detection-and-deployment.md)
-- [EAC conflict detection and residual-process recovery](eac-process-recovery.md) — **experimental, high risk**
+- [EAC conflict detection and residual-process recovery](eac-process-recovery.md)

@@ -31,6 +31,23 @@
 > Updated: 2026-09-20 (v0.2.1 wiring batch: route dual-arm negotiation +
 > named family constants `PACKAGES_INSTALLED_SCHEMA_VERSION_V01/_V02` +
 > wire tests 6 riding the real frame loop; word face ZERO change)
+> Erratum (2026-10-02): open-items state refresh — the remaining batches
+> named below have landed, verified against the code on main:
+> (1) the environment implementation-verification slice —
+> `crates/project-manager/src/vpm_backend.rs:1136` (`query_v02` override)
+> and `:1145` (`list_packages_v02`);
+> (2) the desktop shape-approval + consumption batch — dual family-const
+> admission in `apps/desktop/src/renderer/gateway/packages-live.ts` (:275
+> the v0.2 guard, :1160 the dispatch) and the installed table's honest
+> "updatable" column consuming `updateAvailable` in
+> `apps/desktop/src/renderer/features/packages/PackageTable.tsx` (:63,
+> :304), with the cacheSourced "cached data" annotation in
+> `PackagesPage.tsx:1277`. Only the real-machine walkthrough stays open
+> (pending; unscheduled — the W25 window is retired). The Status line's
+> trailing "until that lands every wired backend keeps answering the
+> frozen v0.1 family (the trait-default `query_v02 -> false`)" describes
+> the pre-landing interim and no longer holds. Protocol version and
+> normative content unchanged.
 
 ## Increment content (exactly three new facts)
 
@@ -208,18 +225,19 @@ created.
   verbatim refusals on both arms + the shared P1 preconditions under a
   v0.2 backend + the const-detectability pin against the frozen schema
   consts).
-- **Environment implementation-verification slice**: the
+- ~~**Environment implementation-verification slice**: the
   `VrcGetLibBackend` `list_packages_v02` + `query_v02` override + the
   one-collection-load batch judgment + the offline-degradation
   cacheSourced arm + unit tests; the acceptance anchor = this protocol
-  doc's backend-root-facts section, checked item by item.
-- **Desktop shape approval + consumption batch**: the installed table's
+  doc's backend-root-facts section, checked item by item.~~ **(landed —
+  Erratum 2026-10-02)**
+- ~~**Desktop shape approval + consumption batch**: the installed table's
   "updatable" column — the judgment facts come only from this word face;
   **no judgment fact (null) never renders "already latest", the column
   renders an honest empty**; cacheSourced renders a "cached data"
   informational annotation; the inline update key reuses the A2 install
-  face's version=null semantics (desktop IA stance 3, as ruled).
-- Zero end-to-end claims maintained: the route is wired, **not consumed**
-  — no desktop surface reads the v0.2 family until the shape-approval +
-  consumption batch lands, and the real-machine walkthrough stays W25
-  (the user window O-2 pending).
+  face's version=null semantics (desktop IA stance 3, as ruled).~~
+  **(landed — Erratum 2026-10-02)**
+- Zero end-to-end claims maintained: the route is wired and consumed;
+  the real-machine walkthrough is pending; unscheduled (the W25 window
+  is retired).

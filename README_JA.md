@@ -2,14 +2,14 @@
 
 [English](README.md) | [简体中文](README_ZH.md) | 日本語 | [한국어](README_KO.md)
 
-**VUA（VRC Ultra Assistant）** は、VRChat プレイヤーのための Windows デスクトップ
-制作環境です——特に、Unity に触れたことがない、あるいは何が必要かまだ分からない
+**VUA（VRC Ultra Assistant）** は、VRChat プレイヤーのための Windows 優先・ローカル優先の
+デスクトップ制作環境です——特に、Unity に触れたことがない、あるいは何が必要かまだ分からない
 プレイヤーのために。目標と自分の素材から出発し、環境構築・プロジェクト準備・
 Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 ## VUA でできること
 
-### [1] ゲームアシスタント
+### 1. ゲームアシスタント
 
 > **Materials checked and cleared.**
 
@@ -17,9 +17,9 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 初回のアカウント案内では、内蔵ブラウザーで公式の登録ページを開きます。プレイ向けは Steam と VRChat、制作向けは任意で Unity と BOOTH を案内します。登録、Steam ライブラリへの追加、公式のアカウント連携は利用者自身が行います。アップロードには完全な VRChat アカウントと New User 以上のランクが必要ですが、資格を得る前でもローカルで Avatar の制作準備を進められます。
 
-最初の任意の外部連携対象は VRCFaceTracking と hyblocker OpenVR Space Calibrator です。VUA は個別にインストールされた公式アプリの検出・起動と設定手順の案内を行う予定です。インストールと更新は Steam または上流アプリが管理します。
+最初の任意の外部連携対象は VRCFaceTracking と hyblocker OpenVR Space Calibrator です。VUA は独立してインストールされた上流アプリの検出・起動と、上流アプリ側での設定手順の案内を行う予定です。インストールと更新は Steam または上流アプリが管理します。
 
-### [2] Avatar 制作
+### 2. Avatar 制作
 
 > **Sugar, spice, and everything nice.**
 
@@ -33,24 +33,24 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 ## 安全上の境界
 
-- VUA は VRChat Inc. と提携せず、公認も受けていない独立した第三者製アシスタントであり、公開された外部インターフェース、OSC、起動オプション、必要なローカルログと公開設定のみを対象とし、VRChat クライアントへの注入、フック、パッチや EAC の回避を行いません。
-- 初回のアカウント案内は分離された一時ブラウザーセッションを使用します。VUA のアプリ機能はパスワードを収集せず、ログイン Cookie やトークンをアプリや Agent のデータへ取り出しません。初回提供では VRChat のログインを記憶しません。後続のウェブ情報読み取りと実験的な永続化は別途開発する方向であり、プラットフォームの承認を意味しません。[アカウント境界](docs/product-boundary.md#account-onboarding-user-ruling-2026-09-30)を参照してください。
+- VUA は VRChat Inc. と提携せず、公認も受けていない独立した第三者製アシスタントであり、文書化された外部インターフェース、OSC、起動オプション、必要なローカルログと文書化された設定のみを対象とし、VRChat クライアントへの注入、フック、パッチや EAC の回避を行いません。
+- 初回のアカウント案内は分離された一時ブラウザーセッションを使用します。VUA のアプリ機能はパスワードを収集せず、ログイン Cookie やトークンをアプリのデータ、ログ、エージェントコンテキストへ取り出しません。初回提供では VRChat のログインを記憶しません。後続のウェブ情報読み取りと実験的な永続化は別途開発する方向であり、プラットフォームの承認を意味しません。[アカウント境界](docs/product-boundary.md#account-onboarding-user-ruling-2026-09-30)を参照してください。
 - アカウントの変更はユーザーが許可された手順で開始し、VUA がクラウドからアカウントを操作したり、Avatar を代理で自動アップロードしたりすることはありません。
 - 必要最小限のデータを原則ローカルに保存し、不要なフレンド活動の追跡やプロファイリングは行わず、有料素材をローカルに保ち、共有 Recipe に素材本体を含めません。
-- 非公開のクライアント動作、隠し設定、制御されない API 自動化は標準の対象外であり、技術検査の成功は外観、動作、本番環境での安全性を保証しません。
+- 文書化されていないクライアント動作、隠し設定、制御されない API 自動化は標準の対象外であり、技術検査の成功は外観、動作、本番環境での安全性を保証しません。
 
 [VRChat Creator Guidelines](https://hello.vrchat.com/creator-guidelines) · [Configuration File](https://docs.vrchat.com/docs/configuration-file)
 
 ## 開発状況
 
-最新の公開成果物は引き続き v0.6.0 で、当時の公開区分は pre-alpha です。[N1–N7](docs/development-outline.md) に沿って環境構築、指定の二つのツール、複雑な Avatar 制作、Recipe 再現、素材管理の監査と再実装、復旧、画像付きガイドを備えた Beta インストーラーを進めます。
+v0.6.0 は最新のソースタグであり、インストール可能な成果物はまだ公開されていません（唯一の GitHub Release である v0.5.0 にはアセットがありません）。[N1–N7](docs/development-outline.md) に沿って環境構築、指定の二つのツール、複雑な Avatar 制作、Recipe 再現、素材管理の監査と再実装、復旧、画像付きユーザーガイドを備えた Beta インストーラーを進めます。
 
-プロジェクトは今後も長期間 Beta の状態が続く見込みです。説明は製品の方向性であり、実装や自動テストだけで実機の一連の動作が検証済みになるわけではありません。実際の受け入れ状況は開発計画とリリースの証拠を参照してください。
+プロジェクトは今後も長期間 Beta の状態が続く見込みです。説明は製品の方向性であり、実装や自動テストだけで実機の一連の動作が検証済みになるわけではありません。実際の受け入れ状況は[開発シーケンス](docs/development-outline.md)と[リリースノート](docs/release/)を参照してください。
 
 ### 現在の提供状況と開始方法
 
-- 利用者は[公開済み成果物](https://github.com/VUA-Project/VUA/releases)と [v0.6.0 の検証記録・制限事項](docs/release/v0.6.0.md)を参照してください。上記は製品の方向性であり、N1–N7 の受入完了を意味しません。
-- スクリーンショット付き利用ガイドと検証済み Beta インストーラーは N7 の成果物です。現在利用できる操作手順ではありません。利用上の質問は [Issues](https://github.com/VUA-Project/VUA/issues/new/choose)へお願いします。
+- インストール可能な成果物はまだ公開されていません。[v0.6.0 の検証記録・制限事項（中国語）](docs/release/v0.6.0.md)に最新のタグの状態を記録しています。上記は製品の方向性であり、N1–N7 の受入完了を意味しません。
+- 画像付きユーザーガイドと検証済み Beta インストーラーは N7 の成果物です。現在利用できる操作手順ではありません。利用上の質問は [Issues](https://github.com/VUA-Project/VUA/issues/new/choose)へお願いします。
 - 開発者は[依存関係の準備・デスクトップ起動・チェックの選択](apps/desktop/README.md#development-commands)から始め、[貢献ガイド](CONTRIBUTING.md)に従ってください。
 
 ## ドキュメント
@@ -65,6 +65,6 @@ Avatar の組み立て・検査・復旧まで、VUA がガイドします。
 
 VUA は [Apache-2.0](LICENSE) です。最初に対応予定の外部連携は [VRCFaceTracking（Apache-2.0）](https://github.com/benaclejames/VRCFaceTracking/blob/master/LICENSE) と [Space Calibrator（MIT の本体と個別ライセンスの第三者コンポーネント）](https://github.com/hyblocker/OpenVR-SpaceCalibrator/blob/develop/LICENSE) です。帰属と将来の再配布条件は[第三者通知](THIRD_PARTY_NOTICES.md)を参照してください。
 
-[NOTICE](NOTICE) · [Trademark guidance](TRADEMARKS.md)
+[NOTICE](NOTICE) · [商標ガイダンス](TRADEMARKS.md)
 
 Copyright 2026 Aran52.

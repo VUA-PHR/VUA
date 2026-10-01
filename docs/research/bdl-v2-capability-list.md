@@ -1,11 +1,12 @@
 # BDL v2 Capability List: Compatibility / Dependency Analysis
 
 
+> Document version: 1.0.0
 > Status: Draft — awaiting product-owner ruling; no normative effect until accepted
-> Scope: The future capability layer above the frozen BDL v1 boundary (`bdl-v1-boundary`)
+> Scope: The future capability layer above the BDL v1 boundary research ([`bdl-v1-boundary`](bdl-v1-boundary.md))
 > Precondition: All of v1's IN/OUT, schema admission rules, and crawl discipline remain in
 > force; this document only adds, it never overturns
-> Updated: 2026-09-05
+> Updated: 2026-10-02
 
 ## The question v2 answers
 
@@ -42,7 +43,7 @@ what has been fetched gets analyzed.**
 | V2-2 | User-driven relationship expansion (one-hop deepening) | When a viewed product declares "corresponds to / compatible with X", AMF acquisition may **propose** adding X's product page to the acquisition flow; it happens only on user confirmation; observations enter BDL validated as usual | Existing AMF browse/download ports; no new fetching surface |
 | V2-3 | Local relationship graph (incremental, versioned) | Two edge kinds: product↔product (declared compatibility / same series) and product↔package (author-declared dependency); every edge carries evidence kind, confirmation state, provenance pointer; lands as a versioned schema migration, never reshaped in place on v1 tables | V2-1; extension of the v1 schema admission rules (below) |
 | V2-4 | Consumption of the alias/entity-resolution table | The "networked, periodically updated table" reserved by v1's OUT is consumed here as an evidence input: locally cached, licensed, provenance-carrying, invalidatable and reloadable as a whole; **no local automatic alias derivation** — pattern-hunting in page structures remains a failure mode | Needs ruling: table source, maintainer, license, cache and invalidation policy |
-| V2-5 | Dependency evidence → Recipe supply | "This outfit needs lilToon" becomes an evidence record feeding Recipe dependency declaration (B3 ruling: dependency declaration belongs to the Recipe layer); BDL supplies evidence only, never declares | The Recipe v0.3 dependency-declaration consumption interface |
+| V2-5 | Dependency evidence → Recipe supply | "This outfit needs lilToon" becomes an evidence record feeding Recipe dependency declaration (ruling recorded 2026-09-05: dependency declaration belongs to the Recipe layer); BDL supplies evidence only, never declares | The Recipe v0.3 dependency-declaration consumption interface |
 | V2-6 | Relationship query surface | Per-product relationship views, find outfits for an Avatar, find dependency gaps; based strictly on locally observed data — gaps are honestly reported as "not observed" and become V2-2 proposal sources | V2-3; the five v1 boundary queries keep passing |
 
 ## OUT — v2 still does not do
@@ -97,13 +98,22 @@ clearly-marked synthetic relationship rows (same verification discipline as v1).
 
 ## Sequencing and prerequisites
 
-- **Does not block v1/B4**: B4 lands the minimal BDL SQLite schema (the v1 boundary); the
-  v2 relationship layer follows as a versioned migration and does not jump the gun inside
-  B4's scope.
+- **Does not block v1 delivery**: the minimal BDL SQLite schema for the v1 boundary landed on
+  2026-09-06 (`schemas/bdl/v0.1`; the current frozen production format is `schemas/bdl/v0.2`,
+  frozen 2026-09-22); the v2 relationship layer follows as a versioned migration and does not
+  jump the gun inside the v1 schema's scope.
 - Prerequisite research items (in dependency order):
   1. The compatibility/dependency extraction rules written up (extraction spec open
      item 2; methodology already fixed);
   2. Source and license ruling for the networked alias/compatibility table (the only
      open item in V2-4);
   3. The Recipe v0.3 dependency-declaration interface for consuming BDL evidence
-     (alignment with the B5 line).
+     (the Recipe v0.3 suite froze on 2026-09-08).
+
+## Document changelog
+
+- 1.0.0 (2026-10-02): add the managed-document header and replace collab-era stage
+  labels with dated plain descriptions ("B3 ruling" → ruling recorded 2026-09-05;
+  "v1/B4" → the v1 schema landing of 2026-09-06 with the current `schemas/bdl/v0.2`
+  pointer; "the B5 line" → the Recipe v0.3 freeze of 2026-09-08). Content otherwise
+  unchanged; the document remains a Draft with no normative effect.

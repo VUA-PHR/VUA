@@ -1,10 +1,12 @@
 # BDL v1 functional boundary
 
 
-> Status: Frozen by product-owner ruling (2026-09-04)
-> Scope: BDL v1 spike schema and pipeline design input
-> Normative effect: Bounds what BDL v1 stores and filters; module ownership
-> stays with `docs/architecture/bdl.md`
+> Document version: 1.0.0
+> Status: Research record — historical boundary study (product-owner ruling recorded 2026-09-04); input to the N5 capability audit, no current normative effect
+> Scope: BDL v1 spike schema and pipeline design input (historical)
+> Updated: 2026-10-02
+> Module ownership: current BDL architecture lives in `docs/architecture/bdl.md`;
+> the frozen production schema is `schemas/bdl/v0.2`
 
 ## Why this boundary exists
 
@@ -47,8 +49,10 @@ boundary plus real corpus formats, and builds SQLite infrastructure last.
 
 A column enters the schema only if it answers "which IN row and which
 filter/mapping query needs it?", and its evidence is either the extraction
-spec plus real corpus fields or an IN-row query requirement. Proposed
-schema: `schemas/bdl-spike/v0.1/schema.sql`.
+spec plus real corpus fields or an IN-row query requirement. Proposed schema
+(historical spike): `schemas/bdl-spike/v0.1/schema.sql`. The current frozen
+production schema is `schemas/bdl/v0.2` (frozen 2026-09-22); its header
+records that this admission rule carries over from this boundary study.
 
 ## Validation
 
@@ -77,7 +81,17 @@ the same namespaced value.
   external LLM is a separate data-flow decision to make consciously.
 - `source_published_at` is admitted by ruling with a confirmed rendered-page
   location; values remain null until a rendered fetch capability exists.
-- Extraction spec formalization: the real-HTML extraction rules (selectors,
-  fallbacks, negative knowledge) are being promoted into a versioned
-  document; the recognition pipeline is then rewritten from zero against
-  the two golden anchors and synthetic fixtures.
+- Extraction spec formalization: completed 2026-09-04 as
+  [`booth-product-extraction.md`](booth-product-extraction.md) (spec content
+  0.2); a from-zero recognition pipeline was exercised against the two golden
+  anchors and synthetic fixtures the same day. Under the N5 audit-first
+  ruling, whether that pipeline is retained, completed, or replaced is
+  decided by the capability audit, not by this document.
+
+## Document changelog
+
+- 1.0.0 (2026-10-02): re-header as a research record — the 2026-09-04 freeze
+  ruling is historical; the spike-era normative framing is retired in favor
+  of the N5 capability audit, the current frozen production schema
+  (`schemas/bdl/v0.2`) is named next to the historical spike schema, and the
+  extraction-spec open item is updated to its landed state.

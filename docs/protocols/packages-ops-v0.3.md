@@ -34,8 +34,18 @@
 > gated on the accessor + the envelope assembly + the closed-set
 > projection + the wire tests + this document names the wire envelope
 > const — word face ZERO change); 2026-09-19 (v0.3 freeze batch: dual
-> schemas + vectors + core consumer tests + TS face + bilingual protocol
-> doc + REGISTRY)
+> schemas + vectors + core consumer tests + TS face + protocol
+> document + REGISTRY)
+> Erratum (2026-10-02): the newest slice of this family is
+> [packages-ops-v0.6.md](packages-ops-v0.6.md); the six slices are concurrent
+> faces — v0.6 is not a blanket replacement of v0.1–v0.5. Bilingual-era
+> wording removed from the Updated lines (the EN mirror no longer exists;
+> this English file is the sole canonical document per the 2026-09-25
+> language ruling). The "stays with W25 (pending the user opening window
+> O-2)" deferral below is reworded to pending/unscheduled — the W25 window
+> is retired (the development outline supersedes the W25 schedule); the
+> walkthrough itself stays open. Protocol version and normative content
+> unchanged.
 
 ## A3 word-face semantics (registration is deliberately NOT a preview/apply pair)
 
@@ -166,6 +176,6 @@ transports facts.
   has not landed (the served row answers honestly unavailable until it
   does), and the real backend consumption is the environment
   implementation-verification slice. The consumer and wire tests ride
-  schema vectors and fake backends; the end-to-end walkthrough stays
-  with W25 (pending the user opening window O-2). Nothing here claims
+  schema vectors and fake backends; the end-to-end walkthrough is
+  pending; unscheduled (the W25 window is retired). Nothing here claims
   runtime behavior beyond the wire face this batch landed.

@@ -1,13 +1,19 @@
 # BDL Warehouse Write-Command Protocol v0.1 (artifact-mode trio)
 
 
+> **⚠️ Superseded by v0.2 (2026-09-07)**: the U8 global-default write
+> `warehouse.setGlobalDefaultMode` added. The current normative text is
+> [bdl-commands-v0.4.md](../bdl-commands-v0.4.md) (v0.2 and v0.3 are
+> themselves superseded); this document is kept as history only, matching
+> `schemas/bdl-commands/v0.1/` (never edited).
+
 > Document version: 0.1.1
 > Status: **Superseded** (→ v0.2; the 2026-09-07 frozen wording and two-end verification record remain in git history and the document body)
 > Machine-readable vocabulary: `schemas/bdl-commands/v0.1/` (schema + positive/negative
 > vectors; two-end consumer tests `crates/acquisition/tests/bdl_commands_contract.rs`
 > and `crates/provider-host/tests/warehouse_commands.rs`)
 > Scope: the three warehouse write commands reserved by revision 2 of
-> `docs/protocols/bdl-queries-v0.3.md` — `warehouse.setArtifactMode`,
+> `docs/protocols/superseded/bdl-queries-v0.3.md` — `warehouse.setArtifactMode`,
 > `warehouse.generateVpm`, `warehouse.deleteOriginals`
 > Ownership boundaries: `docs/architecture/bdl.md` (BDL is an AMF-private local
 > module); the server-side facts (guards, tasking, audit) live in `crates/acquisition`

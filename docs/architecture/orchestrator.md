@@ -1,10 +1,10 @@
 # Orchestrator architecture
 
 
-> Document version: 1.0.1
+> Document version: 1.0.2
 > Status: Accepted
 > Scope: Orchestrator application core and local adapters
-> Updated: 2026-09-06
+> Updated: 2026-10-01
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -36,7 +36,8 @@ for the selection and removal path.
 
 ## Hosting and Gateway
 
-Electron Main hosts or supervises one trusted Orchestrator Provider through the Kernel. The Provider
+Electron Main supervises one trusted Orchestrator Provider as a separate process through the
+Kernel (in-process hosting is a future option, not the current implementation). The Provider
 converts values, coordinates lifecycle, and forwards Orchestrator
 use cases. The contract owns request/correlation IDs, cancellation, stable errors, task
 operations, events, and capability snapshots independently of FFI, pipes, or another transport.
@@ -49,8 +50,8 @@ authoritative persistence. Provider replacement occurs only at an idle shutdown 
 
 The transport-independent B1 request, task, cancellation, operation-level Capability, and safe
 shutdown semantics are defined by [Application Contract v0.1](../protocols/application-contract-v0.1.md).
-The contract was frozen as stable Gateway v1 at M2 (2026-09-04) after passing the real two-end
-integration acceptance.
+The contract was frozen as stable Gateway v1 at M2 (2026-09-04, under the retired M schedule)
+after passing the real two-end integration acceptance.
 
 B2 SQLite tables, transactions, idempotency, durability, and restart semantics are defined by
 [Task Store Format v0.1](../protocols/task-store-v0.1.md). Process framing, handshake, supervision,
@@ -78,8 +79,10 @@ supervise Windows process trees, and redact and truncate logs.
 
 ## Document changelog
 
+- 1.0.2 (2026-10-01): mark the Gateway v1 freeze reference as historical under the retired M
+  schedule and align Provider hosting with the supervised separate-process implementation; no
+  behavior change.
 - 1.0.1 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
-
 - 1.0.0 (2026-09-06): entered version management; header normalized, conformance-review date added,
   and a duplicated contract-reference sentence removed. Content otherwise reviewed against reality
   with no change.

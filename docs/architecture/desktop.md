@@ -1,10 +1,10 @@
 # Electron desktop and presentation architecture
 
 
-> Document version: 1.3.0
+> Document version: 1.3.1
 > Status: Accepted
 > Scope: `apps/desktop`, `packages/design-system`, frontend Gateway
-> Updated: 2026-09-30
+> Updated: 2026-10-01
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -40,7 +40,9 @@ application use cases without a generic module registry or runtime composition f
   download transport, origins, destinations, types, and external protocols.
 - Owns Kernel bootstrap, security policy, Provider hosting/supervision,
   diagnostics, and community-plugin host boundary.
-- Hosts or supervises the selected Rust Orchestrator Provider and maps allowed calls to the versioned
+- Supervises the selected Rust Orchestrator Provider as a separate process through the Kernel
+  (in-process hosting is a future option, not the current implementation; see
+  [orchestrator.md](orchestrator.md)) and maps allowed calls to the versioned
   application contract without exposing its transport to the Renderer.
 - Delegates AMF, Recipe, recovery, and compatibility behavior to application use cases.
 
@@ -84,8 +86,8 @@ blocking confirmation first and then opens in the current embedded view (per-att
 no exempt-from-confirmation memory at any level); new windows are always denied, with http/https
 popup targets redirected into the current embedded view (directly when allowlisted, after
 confirmation otherwise); pseudo-protocol (`javascript:`, `data:`, `blob:`, `file:`, …) windows are
-denied unconditionally; external protocols (initially exactly `mailto:`, `steam:`, `vrchat:`,
-`discord:`) go through a per-attempt dedicated confirmation before the system handler opens them —
+denied unconditionally; external protocols (initially `mailto:`, `steam:`, `vrchat:`,
+`discord:` — the [product boundary](../product-boundary.md) owns this list rule) go through a per-attempt dedicated confirmation before the system handler opens them —
 the window-open details expose no gesture field, so the confirmation click itself is the explicit
 user gesture and automatically triggered openings never execute without confirmation (a stricter
 equivalent of the literal rule) — and unknown schemes are denied by default. The browsing allowlist and the
@@ -101,13 +103,15 @@ Main-managed `WebContentsView` is the remote-content surface.
 
 The desktop Overlay is a separate `BrowserWindow` inside the same Electron process (frameless,
 transparent, absent from the taskbar, pinned at the `screen-saver` level; shape parameters come from
-the slice-five spike conclusions). It shares the same `VuaDesktopApiV1` preload contract face with
+the overlay-window spike verification in `apps/desktop/scripts/spike-overlay.mjs`, mirrored by
+`preview-overlay.mjs`). It shares the same `VuaDesktopApiV1` preload contract face with
 the main window and, via the surface-routing parameter (`?surface=overlay-desktop`), renders only
 the Overlay surface at the earliest application-initialization stage, without bootstrapping the main
 shell Gateway, DEV scenario, or business stores. Failure isolation is carried by two layers: the
 Orchestrator Provider is an independent supervised process, and an Overlay renderer crash is
 isolated by the Electron process model — no separate Gateway connection instance is needed
-(proposal 017 §4 desktop statement).
+(archived [proposal 017](../archive/2026-09-29/collab/proposals/017-overlay-surface.md) §4
+desktop statement, 2026-09-10).
 
 - Zero new event surface: application events broadcast to every locally-originated window by local
   origin checks, and Overlay windows are naturally on that list; snapshots are read by on-demand
@@ -124,14 +128,17 @@ isolated by the Electron process model — no separate Gateway connection instan
   host (AGENTS architecture constraints; the consumption split follows proposal 017; see the
   Overlay boundary section in integrations-and-overlays.md), and Overlay failures never block the
   desktop mainline (standing delivery rule). The
-  Overlay read-face wire vocabulary lands with the core freeze batch; until then the rendered
+  Overlay read-face wire vocabulary lands with a future ordinary slice — no scheduled window; until then the rendered
   surface shows an honest empty state and never fabricates a session.
 
 ## React and release boundaries
 
 React implements workbenches, guidance, cards, Recipe editing, feedback, and accessibility while
-domain models remain in the application core. Typed error codes map to localized messages. Accepted tasks survive
-page unload. Drag-and-drop always has keyboard and button alternatives. Tokens and components are
+domain models remain in the application core. Typed error codes map to localized messages. The UI
+ships four initial locales — English, Simplified Chinese, Japanese, and Korean
+(`apps/desktop/src/renderer/i18n/strings.{en,zh-CN,ja,ko}.ts`); the language policy is owned by
+[documentation governance §2.3](../meta/documentation-governance.md#23-language-policy-user-ruling-2026-09-25).
+Accepted tasks survive page unload. Drag-and-drop always has keyboard and button alternatives. Tokens and components are
 promoted only after real-page validation.
 
 Electron, Chromium, Node.js, packaging, the selected Orchestrator Provider, and native dependencies
@@ -141,6 +148,12 @@ dependency/license review, Electron security checks, remote-permission tests, si
 rollback validation. The redistribution review authorizes each bundled binary.
 
 ## Document changelog
+
+- 1.3.1 (2026-10-01): status-quo alignment — Main supervises the Provider as a separate process
+  (orchestrator.md wording); U9 external-protocol list phrasing defers to the owning product
+  boundary; overlay shape parameters cite the spike-overlay.mjs verification; proposal 017 cited
+  as a dated archived proposal; "core freeze batch" scheduling residue removed; four-locale UI
+  i18n fact recorded with the §2.3 policy link. No rule change.
 
 - 1.3.0 (2026-09-30): specify isolated temporary account-guide pages and credential-free application state.
 

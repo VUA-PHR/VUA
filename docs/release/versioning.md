@@ -1,10 +1,10 @@
 # Versioning policy
 
 
-> Document version: 3.0.0
+> Document version: 3.0.1
 > Status: Accepted
 > Scope: VUA product releases, tags, packages, and public contracts
-> Updated: 2026-09-30
+> Updated: 2026-10-01
 > Normative effect: Yes
 
 ## Product version
@@ -20,6 +20,10 @@ VUA product releases follow [Semantic Versioning 2.0.0](https://semver.org/spec/
 - No `1.0.0`, stable release, or production-safety commitment is scheduled. Only an explicit
   request from the author can change the continuing-Beta policy.
 - A published tag and artifact are immutable. Any change is a new version.
+- A git tag marks a revision; a tag alone is not a publication. A *published release* is a GitHub
+  Release, and a *published artifact* is an installable asset attached to one. Current state
+  (2026-10-01): `v0.6.0` is a tag without a GitHub Release, and the only published Release,
+  `v0.5.0`, carries no assets — no installable artifact has been published yet.
 
 ## Continuing Beta and independent delivery stages
 
@@ -83,8 +87,12 @@ version strings are not authoritative.
 
 ## Compatibility and communication
 
-- Each public release has release notes. Breaking `0.x` changes name the affected API/format and the
-  required migration or reset behavior.
+- Each public release has release notes; this rule applies going forward. Tag `v0.4.0` predates it
+  and has no release notes — the notes series starts at `v0.4.1`. Breaking `0.x` changes name the
+  affected API/format and the required migration or reset behavior. Per
+  [documentation governance](../meta/documentation-governance.md) §2.7, the release-notes document
+  version matrix rule applies from the next release after 2026-10-01; existing release notes
+  predate it and, as immutable historical records, are not retrofitted.
 - Deprecation is documented before removal wherever users or community developers need a migration
   window.
 - Build metadata such as `+sha.<commit>` may identify CI artifacts but does not affect precedence or
@@ -117,6 +125,10 @@ entry points. Upstream distributions retain their own licenses; follow
 [third-party notices](../../THIRD_PARTY_NOTICES.md) for any future redistribution.
 
 ## Document changelog
+
+- 3.0.1 (2026-10-01): define tag versus published release/artifact, record the current publication
+  state (`v0.6.0` tag without a GitHub Release; the only Release, `v0.5.0`, carries no assets),
+  note the `v0.4.0` release-notes gap, and qualify the notes rule as forward-going.
 
 - 3.0.0 (2026-09-30): user ruling decouples N delivery stages from product versions; choose release numbers from actual changes and retain independent contract/document versions.
 

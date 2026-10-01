@@ -1,17 +1,24 @@
 # BOOTH product page extraction spec
 
 
-> Status: Accepted — governs the recognition-pipeline rewrite
-> Spec version: 0.2 (0.1 amended by golden-anchor ancestor trace)
-> Scope: BOOTH product page (static archive) extraction for BDL
-> Updated: 2026-09-04
-> Normative effect: Extraction rules for the BDL v1 recognition pipeline;
-> the pipeline itself is rewritten from zero against this spec
+> Document version: 1.0.0
+> Status: Research record — retained extraction study; input to the N5 capability audit, no normative effect
+> Spec content version: 0.2 (0.1 amended by golden-anchor ancestor trace)
+> Scope: BOOTH product page (static archive) extraction research for BDL
+> Updated: 2026-10-02
+> Effect: none. The earlier "Accepted — governs the recognition-pipeline
+> rewrite" framing predates the N5 audit-first ruling; this study is evidence
+> input to the N5 capability audit ([development-outline](../development-outline.md)),
+> and any recognition-pipeline rework is a proposal that audit judges.
 
 Derived from real product HTML observed in the local corpus; the golden
 anchors are products 4431242 and 5986971 (full archives kept locally, never
-in the repository). Every rule below was confirmed against that observed
-HTML, including the negative knowledge in the pitfalls section.
+in the repository). Rules drawn from static page structure were confirmed
+against those two archived pages, including the negative knowledge in the
+pitfalls section. Rows describing live-site or post-render behavior that two
+static archives cannot prove (for example `Delisted → HTTP 404/410`) are
+marked **live-check pending**: they record expectations, not
+archive-confirmed facts.
 
 ## Page structure
 
@@ -38,13 +45,13 @@ HTML, including the negative knowledge in the pitfalls section.
 | Author / shop name | `article .shop-name` (inside the `section.shop-items` block: `.shop-info` → `.shop-name`) | The displayed name. v0.1 first located it under `.summary`; the golden-anchor ancestor trace (4431242) showed the shop block is a separate section outside `.summary`. |
 | Author page | JSON-LD Product `brand.url`, or the shop link | Records the author/shop itself; not treated as a body link. |
 | Adult marker | `.summary [class~="bg-primary700"]` with text `Adult` | Only BOOTH's explicit display counts; never guess from the title. |
-| Likes | `#js-item-wishlist-button` | After browser rendering the count sits in the button's text node (usually `.typography-14`); may be empty in static archives. |
-| Published date | `#js-item-published-date` | Rendered text, e.g. `商品公開日時：2024年8月11日 20時22分`. |
+| Likes | `#js-item-wishlist-button` | After browser rendering the count sits in the button's text node (usually `.typography-14`); may be empty in static archives. **Live-check pending** — the rendered count is not observable in the archived static HTML. |
+| Published date | `#js-item-published-date` | Rendered text, e.g. `商品公開日時：2024年8月11日 20時22分`. **Live-check pending** — rendered-only field, null in the archived static HTML (pitfall 3). |
 | Updated date | no stable source field | Standing decision: keep `null`. |
 | Single price | `#items[data-product-price]` or JSON-LD `offers.price` | Only valid for products without complex options. |
 | Overall availability | JSON-LD `offers.availability` | `InStock`, `OutOfStock`, … |
 | Sold out | `li.variation-item.sold-out` or a disabled buy button | Record as unavailable; never delete the product record. |
-| Delisted | HTTP 404/410 | Record a deleted/tombstone state. |
+| Delisted | HTTP 404/410 | Record a deleted/tombstone state. **Live-check pending** — a live HTTP status cannot be confirmed from static archives. |
 | Subproducts | `#variations > li.variation-item` | Each `li` is one publicly sold option. |
 | Subproduct name | `li .variation-name` | Original text; never replace with a semantic classification. |
 | Subproduct price | `li .variation-price` | Amount and currency. |
@@ -67,7 +74,8 @@ HTML, including the negative knowledge in the pitfalls section.
    automatically become images or videos.
 3. `favorites_count` and `source_published_at` currently return `null` in
    static archives; `source_updated_at` being empty is a standing decision.
-   The locations above are nonetheless confirmed extraction locations.
+   The locations above rest on rendered-page observation rather than the two
+   static archives, so they are marked live-check pending in the table.
 4. `created_at`, `updated_at`, and `observed_at` are pipeline times — they
    are never BOOTH product publish times.
 
@@ -76,12 +84,18 @@ HTML, including the negative knowledge in the pitfalls section.
 - Fetch pace for any BOOTH HTML/image re-verification: **6 seconds per
   request**, inherited from the legacy crawler's observed rule; `robots.txt`
   is fetched and hashed alongside (`robots_url` + `robots_sha256`).
-- Extraction output feeds `schemas/bdl-spike/v0.1/schema.sql` (`products`
-  columns); every row carries `content_hash`, `observed_at`, `run_id`, and
-  `processor_version` so trust is traceable to the producing pipeline.
-- The recognition pipeline is rewritten from zero against this spec: golden
-  assertions run on the two anchor archives locally; CI uses structurally
-  equivalent synthetic fixtures only.
+- Extraction output fed the spike schema `schemas/bdl-spike/v0.1/schema.sql`
+  (`products` columns); the current frozen production schema is
+  `schemas/bdl/v0.2`. Every row carries `content_hash`, `observed_at`,
+  `run_id`, and `processor_version` so trust is traceable to the producing
+  pipeline.
+- A from-zero recognition-pipeline rewrite against these rules was proposed
+  here and exercised on 2026-09-04: `crates/orchestrator/src/booth_extraction.rs`
+  cites this document as its rule source, golden assertions run on the two
+  anchor archives locally, and CI uses structurally equivalent synthetic
+  fixtures only. Under the N5 audit-first ruling, the capability audit
+  decides whether that pipeline is retained, completed, or replaced — this
+  document no longer prescribes a rewrite.
 
 ## Open items
 
@@ -90,8 +104,15 @@ HTML, including the negative knowledge in the pitfalls section.
 - Compatibility/dependency extraction rules from body text and subproduct
   names — same method: real HTML first, rules second.
 
-## Changelog
+## Document changelog
 
+- 1.0.0 (2026-10-02): re-header as a research record — the previous
+  "Accepted — governs the recognition-pipeline rewrite" status predated the
+  N5 audit-first ruling; the spec is now evidence input to the N5 capability
+  audit with no normative effect, the from-zero rewrite is reframed as an
+  exercised proposal the audit judges, live-site/post-render rows beyond the
+  two-archive evidence base are marked live-check pending, and the current
+  production schema (`schemas/bdl/v0.2`) is named alongside the spike schema.
 - 0.2 (2026-09-04): corrected the author/shop-name location — the shop
   block is a separate `section.shop-items` outside `.summary`; found by the
   golden-anchor ancestor trace during the first recognition-pipeline run

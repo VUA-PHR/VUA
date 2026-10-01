@@ -1,10 +1,10 @@
 # AMF and Unity Bridge architecture
 
 
-> Document version: 1.2.2
+> Document version: 1.2.3
 > Status: Accepted
 > Scope: AMF application services, Recipe, Build Record, `unity/`
-> Updated: 2026-09-23
+> Updated: 2026-10-01
 > Last conformance review: 2026-09-06
 > Normative effect: Yes
 
@@ -112,9 +112,11 @@ history. Final login and upload stay in the official VRChat SDK Panel.
 ## Release handoff process face
 
 The execution domain of the official SDK upload handoff (`release.openForHandoff`, release-handoff
-protocol v0.1) is **editor process lifecycle management**, not the Bridge command face (proposal 023
-production stance: both paths are not editor-internal commands; the unity-bridge v3 command
-vocabulary takes zero new operations):
+protocol v0.1) is **editor process lifecycle management**, not the Bridge command face (production
+stance of archived [proposal 023](../archive/2026-09-29/collab/proposals/023-release-sdk-handoff.md),
+2026-09-16: both paths are not editor-internal commands; the then-current unity-bridge v3 command
+vocabulary took zero new operations — the current frozen face is
+[unity-bridge v4](../protocols/unity-bridge-v4.md)):
 
 - **Handshake signal**: when a project finishes loading, the bridge package atomically writes a
   handshake fact to `<project>/.vua/bridge/handshake.json` (`InitializeOnLoadMethod`; closed set of
@@ -152,8 +154,10 @@ vocabulary takes zero new operations):
 
 ## Document changelog
 
+- 1.2.3 (2026-10-01): mark the handoff section's proposal-023 stance as an archived 2026-09-16
+  historical reference and note that the current frozen Bridge command face is v4 (v3 was current
+  when the section landed); refresh the stale header date; no behavior change.
 - 1.2.2 (2026-09-28): remove obsolete mirror metadata and clarify current ownership where needed during the N documentation audit.
-
 - 1.2.1 (2026-09-23): structure aligned with the authoritative ZH edition — "Operations and
   safety" is its own section again, recovering two sub-points lost to the folded wording ("the
   Orchestrator writes requests atomically and Unity writes results atomically" and "a

@@ -1,10 +1,16 @@
 # AMF material-intake protocol v0.1
 
 
-> Document version: 0.1
+> **⚠️ Superseded by [material-intake v0.2](material-intake-v0.2.md)**: v0.2 (Frozen 2026-09-21;
+> plan schema promoted to `schemas/amf-production/v0.2/material-plan.schema.json`) is the current
+> face of this protocol, and this v0.1 document is kept as history. The `Status` line below is
+> retained from the pre-v0.2 era; the formal status transition rides its own REGISTRY-coupled
+> update.
+
+> Document version: 0.1.1
 > Status: Implementation baseline
 > Scope: direct `.unitypackage` import and `local-reusable` VPM creation/installation
-> Updated: 2026-09-05
+> Updated: 2026-10-02
 
 ## Batch and naming
 
@@ -77,6 +83,14 @@ Operational rules:
 Both paths use `validate_asset_paths` to prove only `minimum_structure`. AssetDatabase loading does not establish
 Avatar, outfit, material, animation, or Modular Avatar semantics.
 
-Plans conform to `schemas/amf-production/v0.1/material-plan.schema.json`; immutable results conform to the sibling
+Plans conform to `schemas/amf-production/v0.1/material-plan.schema.json` (historical reference — v0.2
+promotes the plan schema to `schemas/amf-production/v0.2/material-plan.schema.json`); immutable results
+conform to the sibling
 `build-record.schema.json`. A completed Bridge mutation receipt binds `commandId` to the command digest. Interruption
 before that receipt requires Inspect and cannot automatically replay an unknown side effect.
+
+## Document changelog
+
+- 0.1.1 (2026-10-02): non-normative status-quo corrections — added the superseded-by banner pointing to
+  material-intake v0.2 and marked the v0.1 plan-schema pointer as historical; no protocol content change.
+- 0.1 (2026-09-05): initial implementation baseline.

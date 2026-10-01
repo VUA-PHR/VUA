@@ -4,7 +4,7 @@
 > Document version: 0.1
 > Status: **Frozen (M2, 2026-09-04) — stable Gateway v1**
 > Scope: application semantics between the Electron Kernel and an Orchestrator Provider
-> Updated: 2026-09-04
+> Updated: 2026-10-02 (erratum only; the latest registered method increment remains 2026-09-16)
 > Authority: binds Kernel, Provider, and Renderer implementations; breaking changes require a
 > version bump, new methods follow the "Versioning and evolution" registration and the revision
 > history
@@ -21,11 +21,16 @@ carries it; unknown versions are rejected explicitly.
 
 ## Versioning and evolution
 
-The method surface grows with vertical slices, and this document is the single registry: every new method
-must be registered here with its owning use case, port, and capability gating. The contract was frozen as
-stable Gateway v1 at M2 (2026-09-04): breaking changes now require a version bump; new methods continue to
-be registered incrementally, recorded in the revision history with an explicit backward-compatibility
-statement.
+The method surface grows with vertical slices. The table below registers the core stable set — the fifteen
+methods this document froze or registered directly (M2 plus the increments through 2026-09-16); it is not
+the complete method surface. The complete current method surface is the `ApplicationRequestV01` union in
+[packages/contracts/src/application-contract.ts](../../packages/contracts/src/application-contract.ts)
+(70 request members as of 2026-10-02 — the code is the authority on which methods exist) together with the
+per-family protocol documents indexed in the [protocol reading guide](README.md) (the family table and the
+delivery-status table). The contract was frozen as stable Gateway v1 at M2 (2026-09-04): breaking changes
+now require a version bump; new methods continue to be registered incrementally in their owning family's
+protocol document, and core-set registrations are recorded in the revision history with an explicit
+backward-compatibility statement.
 
 ## Method surface
 
@@ -272,3 +277,11 @@ caches, display, and diagnostics always reference the original contract values.
   implementation domain — production port + core use case — lands in a later slice), never a
   fabricated acceptance/handoff fact. Vocabulary in the
   [release-handoff protocol v0.1](release-handoff-v0.1.md).
+- 2026-10-02: **Erratum** (non-normative; protocol version 0.1 and all wire/schema/behavior text
+  unchanged). Two corrections: (1) the "Versioning and evolution" paragraph no longer claims this
+  document is the single method registry — the table above is the core stable set (15 methods), while
+  the complete current method surface is the `ApplicationRequestV01` union in
+  `packages/contracts/src/application-contract.ts` together with the per-family protocol documents
+  indexed in [the protocol reading guide](README.md); (2) the header `Updated` date was corrected from
+  2026-09-04, which predated the 2026-09-12/09-15/09-16 increments registered below. The revision
+  history stays in ascending order; this entry is appended last.

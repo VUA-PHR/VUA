@@ -12,6 +12,9 @@
 > are the machine-decidable source of truth
 > Source rulings: proposal 016 (operation-shape proposal 2026-09-12 23:4x;
 > core/data/desktop stances closed, integration arbitration on record)
+> Current family version: [unity-bridge-v4.md](unity-bridge-v4.md) (pointer added 2026-10-02 —
+> v4 adds exactly one operation as a frozen superset; this v3 face stays frozen and remains
+> the inspection read face's consumption face per the coexistence rules).
 
 ## Purpose and boundary
 
@@ -109,6 +112,19 @@ must not be cited as done on the production job face.
 
 ## Document changelog
 
+- v3 erratum (2026-10-02): non-normative — the redacted pseudo-timestamps in the header and
+  the v3 entry below ("0:0x", "0:2x", "1:4x", "23:4x") are collab-era minute-masked forms,
+  redacted at the source: the archived proposal 016
+  ([docs/archive/2026-09-29/collab/proposals/016-inspection-evidence-draft.md](../archive/2026-09-29/collab/proposals/016-inspection-evidence-draft.md))
+  carries the same masked values, so the exact minutes are unrecoverable; the dates
+  (2026-09-12/13) are accurate. The v3 entry's "(W25)" deferral is reworded to
+  pending/unscheduled — the W25 window is retired (the development outline supersedes the
+  W25 schedule); the real-machine run itself stays open. Protocol version and normative
+  content unchanged.
+- v3 erratum (2026-10-02): non-normative — added the header pointer to the current family
+  version (v4); corrected the bilingual-era phrase in the v3 entry below ("bilingual
+  protocol" → "protocol document"; the EN mirror no longer exists — single-language English
+  per the 2026-09-25 language ruling). Protocol version and normative content unchanged.
 - v3 (2026-09-13): the inspection read-face protocol — the three read-only
   operations `inspect_avatar_references` / `inspect_lighting` /
   `inspect_upload_readiness` (proposal 016 §7 hard precondition 1) + the
@@ -117,6 +133,7 @@ must not be cited as done on the production job face.
   0:0x / data 0:2x / desktop 1:4x, zero revision opinions). Landed-material
   precedent: the schema + 11 vectors + Rust consumer tests + the C#
   implementation landed with the anchor implementation batch (7d63abe);
-  this batch completes the contract-face freeze (bilingual protocol +
+  this batch completes the contract-face freeze (protocol document +
   REGISTRY + contract table). The C# EditMode contract tests are landed but
-  never run on a real machine (W25) — zero end-to-end claim.
+  never run on a real machine (pending; unscheduled — the W25 window is
+  retired) — zero end-to-end claim.

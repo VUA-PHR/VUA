@@ -5,7 +5,7 @@
 > Status: **Frozen (domain business vocabulary)** (2026-09-22, wt-5 data
 > batch 168 = the freeze batch; the dependencies.* v0.5 implementation ring
 > dispatched by the operator, per the proposal 030 §5.7 case-A ruling).
-> Theschema, positive/negative vectors, and at least one consumer testfreeze triad landed together:
+> The schema, positive/negative vectors, and at least one consumer test freeze triad landed together:
 > - schemas: `schemas/bdl-queries/v0.5/query.schema.json` +
 >   `result.schema.json` (the eight-member operation closed set, the
 >   params/result shapes, the word-face enums);
@@ -33,6 +33,28 @@
 > section, frozen per that direction) + the operator's vector-file-form
 > ruling (the frozen JSON form stands; this family's examples follow the
 > bdl-queries four-version `examples/` precedent)
+> Erratum (2026-10-02): missing word breaks in the header ("Theschema" →
+> "The schema", "testfreeze" → "test freeze") repaired. Protocol version and
+> normative content unchanged.
+> Erratum (2026-10-02): open-items state refresh — three items this header
+> and the Open items list below left pending have since landed, verified
+> against the code on main:
+> (1) the envelope version constant rose to 0.5 —
+> `crates/bdl-store/src/bdl_queries.rs:31`
+> (`BDL_QUERIES_SCHEMA_VERSION = "0.5"`);
+> (2) the provider-host route arms landed —
+> `crates/provider-host/src/provider_host.rs:5438` (`dependencies.lookup`)
+> and `:5463` (`dependencies.listByProduct`);
+> (3) the renderer TS face landed —
+> `apps/desktop/src/renderer/gateway/dependencies-port.ts`.
+> The bdl-store v0.2 landing also no longer "awaits dispatch": the v0.2
+> migration chain is registered in the store
+> (`crates/bdl-store/src/bdl_store.rs:47` `BDL_MIGRATION_VERSION = 2`,
+> `:49` includes `002_dependency_observations.sql`), matching the LANDED
+> status [bdl-dependency-observations-v0.2.md](bdl-dependency-observations-v0.2.md)
+> already records (0.2.1 note). The header sentence "this batch changes
+> zero bdl-store code and lands zero wire" stays true of the 2026-09-22
+> freeze batch itself. Protocol version and normative content unchanged.
 
 ## v0.5 revision (relative to v0.4)
 
@@ -265,13 +287,20 @@ changes must bump the version, never rewrite in place.
 
 ## Open items
 
-- The bdl-store v0.2 landing (migration registration to user_version=2 +
+> Erratum (2026-10-02): the first two bullets below are closed — see the
+> header Erratum (2026-10-02) for the landed code locations. The remaining
+> bullets stay open as written.
+
+- ~~The bdl-store v0.2 landing (migration registration to user_version=2 +
   write/read faces + this family's executable read face): the production
   build ring awaits dispatch; when it lands, this test's reference
   derivation is superseded by the store implementation (the test stays as
-  the vocabulary anchor).
-- The envelope version constant 0.4→0.5 + provider-host route arms + the
-  TS face: the core/desktop wiring batches.
+  the vocabulary anchor).~~ **(landed — Erratum 2026-10-02: the store v0.2
+  runtime is in, and `dependencies_queries_v05.rs` still carries the
+  reference derivation as the vocabulary anchor).**
+- ~~The envelope version constant 0.4→0.5 + provider-host route arms + the
+  TS face: the core/desktop wiring batches~~ **(all three landed —
+  Erratum 2026-10-02)**.
 - Equivalence matching rules (v2+): await accumulated confirmed
   observations and a VPM-repo reconciliation fact, entering through a
   protocol revision; the vocabulary itself carries zero equivalence
